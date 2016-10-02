@@ -70,7 +70,7 @@ enum {
 	LAST_PROP
 };
 
-/*************************************************************/
+/*****************************************************************************/
 
 static void
 _internal_unregister (NMSecretAgentOld *self)
@@ -472,7 +472,7 @@ impl_secret_agent_old_delete_secrets (NMSecretAgentOld *self,
 	g_object_unref (connection);
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static gboolean
 check_nm_running (NMSecretAgentOld *self, GError **error)
@@ -493,7 +493,7 @@ check_nm_running (NMSecretAgentOld *self, GError **error)
 	return FALSE;
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_secret_agent_old_register:
@@ -878,7 +878,7 @@ nm_secret_agent_old_get_registered (NMSecretAgentOld *self)
 	return NM_SECRET_AGENT_OLD_GET_PRIVATE (self)->registered;
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_secret_agent_old_get_secrets:
@@ -984,7 +984,7 @@ nm_secret_agent_old_delete_secrets (NMSecretAgentOld *self,
 	                                                  user_data);
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static gboolean
 validate_identifier (const char *identifier)

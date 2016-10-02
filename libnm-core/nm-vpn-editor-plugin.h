@@ -48,9 +48,9 @@ NMVpnEditorPlugin *nm_vpn_editor_plugin_factory (GError **error);
 #endif
 
 
-/**************************************************/
+/*****************************************************************************/
 /* Editor plugin interface                        */
-/**************************************************/
+/*****************************************************************************/
 
 #define NM_TYPE_VPN_EDITOR_PLUGIN               (nm_vpn_editor_plugin_get_type ())
 #define NM_VPN_EDITOR_PLUGIN(obj)               (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VPN_EDITOR_PLUGIN, NMVpnEditorPlugin))

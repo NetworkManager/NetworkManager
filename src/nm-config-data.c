@@ -115,7 +115,7 @@ G_DEFINE_TYPE (NMConfigData, nm_config_data, G_TYPE_OBJECT)
 
 #define NM_CONFIG_DATA_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CONFIG_DATA, NMConfigDataPrivate))
 
-/************************************************************************/
+/*****************************************************************************/
 
 #define _HAS_PREFIX(str, prefix) \
 	({ \
@@ -123,7 +123,7 @@ G_DEFINE_TYPE (NMConfigData, nm_config_data, G_TYPE_OBJECT)
 		g_str_has_prefix ( _str, ""prefix"") && _str[NM_STRLEN(prefix)] != '\0'; \
 	})
 
-/************************************************************************/
+/*****************************************************************************/
 
 const char *
 nm_config_data_get_config_main_file (const NMConfigData *self)
@@ -328,7 +328,7 @@ _nm_config_data_get_keyfile_user (const NMConfigData *self)
 	return NM_CONFIG_DATA_GET_PRIVATE (self)->keyfile_user;
 }
 
-/************************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_config_data_get_groups:
@@ -391,7 +391,7 @@ nm_config_data_is_intern_atomic_group (const NMConfigData *self, const char *gro
 	return g_key_file_has_group (priv->keyfile, group);
 }
 
-/************************************************************************/
+/*****************************************************************************/
 
 static GKeyFile *
 _merge_keyfiles (GKeyFile *keyfile_user, GKeyFile *keyfile_intern)
@@ -456,7 +456,7 @@ _merge_keyfiles (GKeyFile *keyfile_user, GKeyFile *keyfile_intern)
 	return keyfile;
 }
 
-/************************************************************************/
+/*****************************************************************************/
 
 static int
 _nm_config_data_log_sort (const char **pa, const char **pb, gpointer dummy)
@@ -595,7 +595,7 @@ nm_config_data_log (const NMConfigData *self,
 #undef _LOG
 }
 
-/************************************************************************/
+/*****************************************************************************/
 
 const char *const *
 nm_global_dns_config_get_searches (const NMGlobalDnsConfig *dns)
@@ -1081,7 +1081,7 @@ global_dns_equal (NMGlobalDnsConfig *old, NMGlobalDnsConfig *new)
 	return TRUE;
 }
 
-/************************************************************************/
+/*****************************************************************************/
 
 static const MatchSectionInfo *
 _match_section_infos_lookup (const MatchSectionInfo *match_section_infos,
@@ -1261,7 +1261,7 @@ _match_section_infos_construct (GKeyFile *keyfile, const char *prefix)
 	return match_section_infos;
 }
 
-/************************************************************************/
+/*****************************************************************************/
 
 static gboolean
 _slist_str_equals (GSList *a, GSList *b)
@@ -1318,7 +1318,7 @@ nm_config_data_diff (NMConfigData *old_data, NMConfigData *new_data)
 	return changes;
 }
 
-/************************************************************************/
+/*****************************************************************************/
 
 static void
 get_property (GObject *object,

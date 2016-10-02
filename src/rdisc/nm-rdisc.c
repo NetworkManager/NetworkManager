@@ -423,7 +423,7 @@ nm_rdisc_add_dns_domain (NMRDisc *rdisc, const NMRDiscDNSDomain *new)
 	return !!new->lifetime;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_rdisc_set_iid:
@@ -857,7 +857,7 @@ nm_rdisc_ra_received (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap changed)
 	check_timestamps (rdisc, now, changed);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static void
 dns_domain_free (gpointer data)

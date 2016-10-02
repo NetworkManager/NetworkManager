@@ -136,7 +136,7 @@ nm_setting_macvlan_get_tap (NMSettingMacvlan *setting)
 	return NM_SETTING_MACVLAN_GET_PRIVATE (setting)->tap;
 }
 
-/*********************************************************************/
+/*****************************************************************************/
 
 static void
 nm_setting_macvlan_init (NMSettingMacvlan *setting)

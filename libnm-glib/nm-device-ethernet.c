@@ -235,7 +235,7 @@ get_hw_address (NMDevice *device)
 	return nm_device_ethernet_get_hw_address (NM_DEVICE_ETHERNET (device));
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_ethernet_init (NMDeviceEthernet *device)

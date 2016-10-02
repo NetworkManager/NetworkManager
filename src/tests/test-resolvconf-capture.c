@@ -287,7 +287,7 @@ test_capture_dns_options_valid6 (void)
 	g_array_free (ns6, TRUE);
 	g_ptr_array_free (dns_options, TRUE);
 }
-/*******************************************/
+/*****************************************************************************/
 
 NMTST_DEFINE ();
 

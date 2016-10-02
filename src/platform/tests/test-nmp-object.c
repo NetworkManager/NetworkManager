@@ -28,7 +28,7 @@ struct {
 	GList *udev_devices;
 } global;
 
-/******************************************************************/
+/*****************************************************************************/
 
 static gboolean
 _nmp_object_id_equal (const NMPObject *a, const NMPObject *b)
@@ -50,7 +50,7 @@ _nmp_object_equal (const NMPObject *a, const NMPObject *b)
 }
 #define nmp_object_equal _nmp_object_equal
 
-/******************************************************************/
+/*****************************************************************************/
 
 static void
 _assert_cache_multi_lookup_contains (const NMPCache *cache, const NMPCacheId *cache_id, const NMPObject *obj, gboolean contains)
@@ -85,7 +85,7 @@ _assert_cache_multi_lookup_contains (const NMPCache *cache, const NMPCacheId *ca
 	g_assert (!!contains == found);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 typedef struct {
 	NMPCache *cache;
@@ -382,7 +382,7 @@ test_cache_link (void)
 	nmp_cache_free (cache);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 NMTST_DEFINE ();
 

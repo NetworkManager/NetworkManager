@@ -72,7 +72,7 @@ nm_vpn_editor_plugin_default_init (NMVpnEditorPluginInterface *iface)
 		                      G_PARAM_STATIC_STRINGS));
 }
 
-/*********************************************************************/
+/*****************************************************************************/
 
 typedef struct {
 	NMVpnPluginInfo *plugin_info;
@@ -113,7 +113,7 @@ _private_get (NMVpnEditorPlugin *plugin, gboolean create)
 #define NM_VPN_EDITOR_PLUGIN_GET_PRIVATE(plugin)     _private_get (plugin, TRUE)
 #define NM_VPN_EDITOR_PLUGIN_TRY_GET_PRIVATE(plugin) _private_get (plugin, FALSE)
 
-/*********************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_vpn_editor_plugin_get_plugin_info:
@@ -178,7 +178,7 @@ nm_vpn_editor_plugin_set_plugin_info (NMVpnEditorPlugin *plugin, NMVpnPluginInfo
 
 }
 
-/*********************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_vpn_editor_plugin_get_vt:
@@ -225,7 +225,7 @@ nm_vpn_editor_plugin_get_vt (NMVpnEditorPlugin *plugin,
 	return p_vt_size;
 }
 
-/*********************************************************************/
+/*****************************************************************************/
 
 static NMVpnEditorPlugin *
 _nm_vpn_editor_plugin_load (const char *plugin_name,
@@ -446,7 +446,7 @@ nm_vpn_editor_plugin_load (const char *plugin_name,
 	                                   error);
 }
 
-/*********************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_vpn_editor_plugin_get_editor:

@@ -181,7 +181,7 @@ get_setting_type (NMDevice *device)
 	return NM_TYPE_SETTING_MACVLAN;
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_macvlan_init (NMDeviceMacvlan *device)

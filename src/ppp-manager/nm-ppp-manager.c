@@ -178,7 +178,7 @@ nm_ppp_manager_new (const char *iface)
 	                                      NULL);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static gboolean
 monitor_cb (gpointer user_data)
@@ -224,7 +224,7 @@ monitor_stats (NMPPPManager *manager)
 		_LOGW ("could not monitor PPP stats: %s", strerror (errno));
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 remove_timeout_handler (NMPPPManager *manager)
@@ -657,7 +657,7 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 	                                        NULL);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 
 
@@ -714,7 +714,7 @@ nm_cmd_line_add_int (NMCmdLine *cmd, int i)
 	g_free (str);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 ppp_exit_code (guint pppd_exit_status, GPid pid)
@@ -1148,7 +1148,7 @@ _ppp_cleanup (NMPPPManager *manager)
 	nm_clear_g_source (&priv->ppp_watch_id);
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 typedef struct {
 	NMPPPManager *manager;

@@ -48,7 +48,7 @@ static void device_factory_interface_init (NMDeviceFactoryInterface *factory_ifa
 G_DEFINE_TYPE_EXTENDED (NMWifiFactory, nm_wifi_factory, G_TYPE_OBJECT, 0,
                         G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_FACTORY, device_factory_interface_init))
 
-/**************************************************************************/
+/*****************************************************************************/
 
 G_MODULE_EXPORT NMDeviceFactory *
 nm_device_factory_create (GError **error)
@@ -56,7 +56,7 @@ nm_device_factory_create (GError **error)
 	return (NMDeviceFactory *) g_object_new (NM_TYPE_WIFI_FACTORY, NULL);
 }
 
-/**************************************************************************/
+/*****************************************************************************/
 
 static NMDevice *
 create_device (NMDeviceFactory *factory,

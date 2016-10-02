@@ -29,7 +29,7 @@ const char *nm_keyfile_plugin_get_alias_for_setting_name (const char *setting_na
 
 const char *nm_keyfile_plugin_get_setting_name_for_alias (const char *alias);
 
-/*********************************************************/
+/*****************************************************************************/
 
 /* List helpers */
 #define DEFINE_KF_LIST_WRAPPER_PROTO(stype, get_ctype, set_ctype) \

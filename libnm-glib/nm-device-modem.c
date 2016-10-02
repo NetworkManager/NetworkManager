@@ -176,7 +176,7 @@ get_setting_type (NMDevice *device)
 		return G_TYPE_INVALID;
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_modem_init (NMDeviceModem *device)

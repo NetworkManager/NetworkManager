@@ -140,11 +140,11 @@ G_DEFINE_TYPE_WITH_CODE (NMConfig, nm_config, G_TYPE_OBJECT,
 
 #define NM_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CONFIG, NMConfigPrivate))
 
-/************************************************************************/
+/*****************************************************************************/
 
 static void _set_config_data (NMConfig *self, NMConfigData *new_data, NMConfigChangeFlags reload_flags);
 
-/************************************************************************/
+/*****************************************************************************/
 
 #define _HAS_PREFIX(str, prefix) \
 	({ \
@@ -152,7 +152,7 @@ static void _set_config_data (NMConfig *self, NMConfigData *new_data, NMConfigCh
 		g_str_has_prefix ( _str, ""prefix"") && _str[NM_STRLEN(prefix)] != '\0'; \
 	})
 
-/************************************************************************/
+/*****************************************************************************/
 
 gint
 nm_config_parse_boolean (const char *str,
@@ -238,7 +238,7 @@ nm_config_keyfile_set_string_list (GKeyFile *keyfile,
 	g_free (new_value);
 }
 
-/************************************************************************/
+/*****************************************************************************/
 
 NMConfigData *
 nm_config_get_data (NMConfig *config)
@@ -327,7 +327,7 @@ nm_config_get_is_debug (NMConfig *config)
 	return NM_CONFIG_GET_PRIVATE (config)->cli.is_debug;
 }
 
-/************************************************************************/
+/*****************************************************************************/
 
 static char **
 no_auto_default_from_file (const char *no_auto_default_file)
@@ -431,7 +431,7 @@ nm_config_set_no_auto_default_for_device (NMConfig *self, NMDevice *device)
 	_set_config_data (self, new_data, NM_CONFIG_CHANGE_CAUSE_NO_AUTO_DEFAULT);
 }
 
-/************************************************************************/
+/*****************************************************************************/
 
 static void
 _nm_config_cmd_line_options_clear (NMConfigCmdLineOptions *cli)
@@ -520,7 +520,7 @@ nm_config_cmd_line_options_add_to_entries (NMConfigCmdLineOptions *cli,
 	}
 }
 
-/************************************************************************/
+/*****************************************************************************/
 
 GKeyFile *
 nm_config_create_keyfile ()
@@ -1509,7 +1509,7 @@ intern_config_write (const char *filename,
 	return success;
 }
 
-/************************************************************************/
+/*****************************************************************************/
 
 GSList *
 nm_config_get_match_spec (const GKeyFile *keyfile, const char *group, const char *key, gboolean *out_has_key)
@@ -1525,7 +1525,7 @@ nm_config_get_match_spec (const GKeyFile *keyfile, const char *group, const char
 	return nm_match_spec_split (value);
 }
 
-/************************************************************************/
+/*****************************************************************************/
 
 gboolean
 nm_config_set_global_dns (NMConfig *self, NMGlobalDnsConfig *global_dns, GError **error)

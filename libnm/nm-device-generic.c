@@ -62,7 +62,7 @@ nm_device_generic_get_hw_address (NMDeviceGeneric *device)
 	return NM_DEVICE_GENERIC_GET_PRIVATE (device)->hw_address;
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static const char *
 get_type_description (NMDevice *device)
@@ -108,7 +108,7 @@ get_setting_type (NMDevice *device)
 	return NM_TYPE_SETTING_GENERIC;
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_generic_init (NMDeviceGeneric *device)

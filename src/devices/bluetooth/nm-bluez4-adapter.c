@@ -233,7 +233,7 @@ query_properties (NMBluez4Adapter *self)
 	                   get_properties_cb, self);
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 NMBluez4Adapter *
 nm_bluez4_adapter_new (const char *path, NMSettings *settings)

@@ -303,7 +303,7 @@ update (NMDnsPlugin *plugin,
 	return TRUE;
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static gboolean
 is_caching (NMDnsPlugin *plugin)
@@ -317,7 +317,7 @@ get_name (NMDnsPlugin *plugin)
 	return "systemd-resolved";
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 NMDnsPlugin *
 nm_dns_systemd_resolved_new (void)

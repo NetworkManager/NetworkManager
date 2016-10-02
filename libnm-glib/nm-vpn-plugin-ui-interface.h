@@ -38,9 +38,9 @@ typedef NMVpnPluginUiInterface * (*NMVpnPluginUiFactory) (GError **error);
 NMVpnPluginUiInterface *nm_vpn_plugin_ui_factory (GError **error);
 
 
-/**************************************************/
+/*****************************************************************************/
 /* Plugin interface                               */
-/**************************************************/
+/*****************************************************************************/
 
 #define NM_TYPE_VPN_PLUGIN_UI_INTERFACE      (nm_vpn_plugin_ui_interface_get_type ())
 #define NM_VPN_PLUGIN_UI_INTERFACE(obj)      (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VPN_PLUGIN_UI_INTERFACE, NMVpnPluginUiInterface))
@@ -174,9 +174,9 @@ gboolean nm_vpn_plugin_ui_interface_delete_connection (NMVpnPluginUiInterface *i
                                                        GError **error);
 
 
-/**************************************************/
+/*****************************************************************************/
 /* UI widget interface                            */
-/**************************************************/
+/*****************************************************************************/
 
 #define NM_TYPE_VPN_PLUGIN_UI_WIDGET_INTERFACE      (nm_vpn_plugin_ui_widget_interface_get_type ())
 #define NM_VPN_PLUGIN_UI_WIDGET_INTERFACE(obj)      (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VPN_PLUGIN_UI_WIDGET_INTERFACE, NMVpnPluginUiWidgetInterface))

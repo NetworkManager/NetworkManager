@@ -127,11 +127,11 @@ NM_DEFINE_SINGLETON_GETTER (NMDefaultRouteManager, nm_default_route_manager_get,
         } \
     } G_STMT_END
 
-/***********************************************************************************/
+/*****************************************************************************/
 
 static void _resync_idle_cancel (NMDefaultRouteManager *self);
 
-/***********************************************************************************/
+/*****************************************************************************/
 
 typedef struct {
 	union {
@@ -695,7 +695,7 @@ _entry_at_idx_remove (const VTableIP *vtable, NMDefaultRouteManager *self, guint
 	_entry_free (entry);
 }
 
-/***********************************************************************************/
+/*****************************************************************************/
 
 static void
 _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, gpointer source)
@@ -888,7 +888,7 @@ nm_default_route_manager_ip6_update_default_route (NMDefaultRouteManager *self, 
 	_ipx_update_default_route (&vtable_ip6, self, source);
 }
 
-/***********************************************************************************/
+/*****************************************************************************/
 
 static gboolean
 _ipx_connection_has_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, NMConnection *connection, gboolean *out_is_never_default)
@@ -947,7 +947,7 @@ nm_default_route_manager_ip6_connection_has_default_route (NMDefaultRouteManager
 	return _ipx_connection_has_default_route (&vtable_ip6, self, connection, out_is_never_default);
 }
 
-/***********************************************************************************/
+/*****************************************************************************/
 
 static NMDevice *
 _ipx_get_best_device (const VTableIP *vtable, NMDefaultRouteManager *self, const GSList *devices)
@@ -1085,7 +1085,7 @@ nm_default_route_manager_ip6_get_best_device (NMDefaultRouteManager *self, const
 		return _ipx_get_best_activating_device (&vtable_ip6, self, devices, preferred_device);
 }
 
-/***********************************************************************************/
+/*****************************************************************************/
 
 static gpointer
 _ipx_get_best_config (const VTableIP *vtable,
@@ -1218,7 +1218,7 @@ nm_default_route_manager_ip6_get_best_config (NMDefaultRouteManager *self,
 	                             out_vpn);
 }
 
-/***********************************************************************************/
+/*****************************************************************************/
 
 static GPtrArray *
 _v4_get_entries (NMDefaultRouteManagerPrivate *priv)
@@ -1242,7 +1242,7 @@ static const VTableIP vtable_ip6 = {
 	.get_entries                    = _v6_get_entries,
 };
 
-/***********************************************************************************/
+/*****************************************************************************/
 
 static gboolean
 _resync_idle_now (NMDefaultRouteManager *self)
@@ -1374,7 +1374,7 @@ _platform_changed_cb (NMPlatform *platform,
 	}
 }
 
-/***********************************************************************************/
+/*****************************************************************************/
 
 static void
 set_property (GObject *object, guint prop_id,

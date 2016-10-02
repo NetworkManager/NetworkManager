@@ -74,7 +74,7 @@ struct _NMDeviceOlpcMeshPrivate {
 	gboolean  stage1_waiting;
 };
 
-/*******************************************************************/
+/*****************************************************************************/
 
 static gboolean
 check_connection_compatible (NMDevice *device, NMConnection *connection)
@@ -152,7 +152,7 @@ complete_connection (NMDevice *device,
 	return TRUE;
 }
 
-/****************************************************************************/
+/*****************************************************************************/
 
 static NMActStageReturn
 act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
@@ -245,7 +245,7 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 	return TRUE;
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 static void
 companion_cleanup (NMDeviceOlpcMesh *self)
@@ -415,7 +415,7 @@ state_changed (NMDevice *device,
 		find_companion (NM_DEVICE_OLPC_MESH (device));
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 NMDevice *
 nm_device_olpc_mesh_new (const char *iface)

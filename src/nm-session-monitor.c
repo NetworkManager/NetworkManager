@@ -33,7 +33,7 @@
 #include <systemd/sd-login.h>
 #endif
 
-/********************************************************************/
+/*****************************************************************************/
 
 /* <internal>
  * SECTION:nm-session-monitor
@@ -76,7 +76,7 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-/********************************************************************/
+/*****************************************************************************/
 
 #ifdef SESSION_TRACKING_SYSTEMD
 static gboolean
@@ -136,7 +136,7 @@ st_sd_finalize (NMSessionMonitor *monitor)
 }
 #endif /* SESSION_TRACKING_SYSTEMD */
 
-/********************************************************************/
+/*****************************************************************************/
 
 #ifdef SESSION_TRACKING_CONSOLEKIT
 typedef struct {
@@ -274,7 +274,7 @@ ck_finalize (NMSessionMonitor *monitor)
 }
 #endif /* SESSION_TRACKING_CONSOLEKIT */
 
-/********************************************************************/
+/*****************************************************************************/
 
 NM_DEFINE_SINGLETON_GETTER (NMSessionMonitor, nm_session_monitor_get, NM_TYPE_SESSION_MONITOR);
 
@@ -356,7 +356,7 @@ nm_session_monitor_session_exists (NMSessionMonitor *self,
 	return FALSE;
 }
 
-/********************************************************************/
+/*****************************************************************************/
 
 static void
 nm_session_monitor_init (NMSessionMonitor *monitor)

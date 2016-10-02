@@ -187,7 +187,7 @@ stop (NMDhcpClient *client, gboolean release, const GByteArray *duid)
 	/* FIXME: implement release... */
 }
 
-/***************************************************/
+/*****************************************************************************/
 
 static void
 nm_dhcp_dhcpcd_init (NMDhcpDhcpcd *self)

@@ -73,7 +73,7 @@ G_DEFINE_TYPE_EXTENDED (NMBluezManager, nm_bluez_manager, G_TYPE_OBJECT, 0,
 
 static void check_bluez_and_try_setup (NMBluezManager *self);
 
-/**************************************************************************/
+/*****************************************************************************/
 
 G_MODULE_EXPORT NMDeviceFactory *
 nm_device_factory_create (GError **error)
@@ -81,7 +81,7 @@ nm_device_factory_create (GError **error)
 	return (NMDeviceFactory *) g_object_new (NM_TYPE_BLUEZ_MANAGER, NULL);
 }
 
-/************************************************************************/
+/*****************************************************************************/
 
 struct AsyncData {
 	NMBluezManager *self;
@@ -387,7 +387,7 @@ NM_DEVICE_FACTORY_DECLARE_TYPES (
 	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_BLUETOOTH_SETTING_NAME)
 )
 
-/*********************************************************************/
+/*****************************************************************************/
 
 static void
 dispose (GObject *object)

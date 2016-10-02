@@ -99,7 +99,7 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 
-/********************************************************************/
+/*****************************************************************************/
 
 GQuark
 nm_secret_agent_error_quark (void)
@@ -111,7 +111,7 @@ nm_secret_agent_error_quark (void)
 	return ret;
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 static const char *
 get_nm_owner (NMSecretAgent *self)
@@ -512,7 +512,7 @@ impl_secret_agent_delete_secrets (NMSecretAgent *self,
 	g_object_unref (connection);
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static void
 reg_result (NMSecretAgent *self, GError *error)
@@ -692,7 +692,7 @@ auto_register_cb (gpointer user_data)
 	return FALSE;
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_secret_agent_get_secrets:
@@ -796,7 +796,7 @@ nm_secret_agent_delete_secrets (NMSecretAgent *self,
 	                                                  user_data);
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static gboolean
 validate_identifier (const char *identifier)

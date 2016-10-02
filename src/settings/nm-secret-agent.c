@@ -84,7 +84,7 @@ enum {
 };
 static guint signals[LAST_SIGNAL] = { 0 };
 
-/*************************************************************/
+/*****************************************************************************/
 
 struct _NMSecretAgentCallId {
 	NMSecretAgent *agent;
@@ -153,7 +153,7 @@ request_check_return (Request *r)
 	return TRUE;
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 static char *
 _create_description (const char *dbus_owner, const char *identifier, gulong uid)
@@ -307,7 +307,7 @@ nm_secret_agent_has_permission (NMSecretAgent *agent, const char *permission)
 	return FALSE;
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 static void
 get_callback (GObject *proxy,
@@ -378,7 +378,7 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
 	return r;
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 static void
 cancel_done (GObject *proxy, GAsyncResult *result, gpointer user_data)
@@ -468,7 +468,7 @@ nm_secret_agent_cancel_secrets (NMSecretAgent *self, NMSecretAgentCallId call_id
 	do_cancel_secrets (self, r, FALSE);
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 static void
 agent_save_cb (GObject *proxy,
@@ -521,7 +521,7 @@ nm_secret_agent_save_secrets (NMSecretAgent *self,
 	return r;
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 static void
 agent_delete_cb (GObject *proxy,
@@ -574,7 +574,7 @@ nm_secret_agent_delete_secrets (NMSecretAgent *self,
 	return r;
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 static void
 _on_disconnected_cleanup (NMSecretAgentPrivate *priv)
@@ -640,7 +640,7 @@ _on_disconnected_name_owner_changed (GDBusConnection *connection,
 	}
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 NMSecretAgent *
 nm_secret_agent_new (GDBusMethodInvocation *context,

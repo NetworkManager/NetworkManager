@@ -308,7 +308,7 @@ bluez_cleanup (NMBluez5Manager *self, gboolean do_signal)
 		g_hash_table_remove_all (priv->devices);
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 NMBluez5Manager *
 nm_bluez5_manager_new (NMSettings *settings)

@@ -127,7 +127,7 @@ get_hw_address (NMDevice *device)
 	return nm_device_infiniband_get_hw_address (NM_DEVICE_INFINIBAND (device));
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_infiniband_init (NMDeviceInfiniband *device)

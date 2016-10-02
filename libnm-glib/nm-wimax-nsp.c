@@ -198,7 +198,7 @@ nm_wimax_nsp_filter_connections (NMWimaxNsp *nsp, const GSList *connections)
 	return g_slist_reverse (filtered);
 }
 
-/************************************************************/
+/*****************************************************************************/
 
 static void
 nm_wimax_nsp_init (NMWimaxNsp *nsp)

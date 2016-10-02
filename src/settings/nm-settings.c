@@ -2069,7 +2069,7 @@ nm_settings_device_removed (NMSettings *self, NMDevice *device, gboolean quittin
 	}
 }
 
-/***************************************************************/
+/*****************************************************************************/
 
 /* GCompareFunc helper for sorting "best" connections.
  * The function sorts connections in ascending timestamp order.
@@ -2170,7 +2170,7 @@ nm_settings_get_best_connections (NMSettings *self,
 	return g_slist_reverse (sorted);
 }
 
-/***************************************************************/
+/*****************************************************************************/
 
 gboolean
 nm_settings_get_startup_complete (NMSettings *self)
@@ -2180,7 +2180,7 @@ nm_settings_get_startup_complete (NMSettings *self)
 	return priv->startup_complete;
 }
 
-/***************************************************************/
+/*****************************************************************************/
 
 static void
 hostnamed_properties_changed (GDBusProxy *proxy,

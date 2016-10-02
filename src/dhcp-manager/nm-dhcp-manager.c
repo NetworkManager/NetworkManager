@@ -56,7 +56,7 @@ typedef struct {
 
 G_DEFINE_TYPE (NMDhcpManager, nm_dhcp_manager, G_TYPE_OBJECT)
 
-/***************************************************/
+/*****************************************************************************/
 
 typedef struct {
 	GType gtype;
@@ -124,7 +124,7 @@ is_client_enabled (const char *name)
 	return G_TYPE_INVALID;
 }
 
-/***************************************************/
+/*****************************************************************************/
 
 static NMDhcpClient *
 get_client_for_ifindex (NMDhcpManager *manager, int ifindex, gboolean ip6)
@@ -356,7 +356,7 @@ nm_dhcp_manager_get_lease_ip_configs (NMDhcpManager *self,
 	return NULL;
 }
 
-/***************************************************/
+/*****************************************************************************/
 
 NM_DEFINE_SINGLETON_GETTER (NMDhcpManager, nm_dhcp_manager_get, NM_TYPE_DHCP_MANAGER);
 

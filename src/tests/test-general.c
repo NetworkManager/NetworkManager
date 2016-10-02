@@ -267,7 +267,7 @@ test_nm_utils_log_connection_diff (void)
 	g_clear_object (&connection);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static NMConnection *
 _match_connection_new (void)
@@ -953,7 +953,7 @@ test_connection_sort_autoconnect_priority (void)
 	_test_connection_sort_autoconnect_priority_free (c2);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static const char *_test_match_spec_all[] = {
 	"e",
@@ -1085,7 +1085,7 @@ test_nm_match_spec_interface_name (void)
 #undef S
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 _do_test_match_spec_match_config (const char *file, gint line, const char *spec_str, guint version, guint v_maj, guint v_min, guint v_mic, NMMatchSpecMatchType expected)
@@ -1227,7 +1227,7 @@ test_nm_match_spec_match_config (void)
 	do_test_match_spec_match_config ("nm-version-min:1.6,nm-version-min:1.4.6,nm-version-min:1.2.16,except:nm-version:1.4.8", 1, 8, 8, NM_MATCH_SPEC_MATCH);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_nm_utils_strbuf_append (void)

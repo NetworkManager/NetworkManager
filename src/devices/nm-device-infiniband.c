@@ -52,7 +52,7 @@ enum {
 	LAST_PROP
 };
 
-/*************************************************************/
+/*****************************************************************************/
 
 static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *dev)
@@ -317,7 +317,7 @@ unrealize (NMDevice *device, GError **error)
 	return TRUE;
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_infiniband_init (NMDeviceInfiniband * self)
@@ -389,7 +389,7 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 	                                        NULL);
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 #define NM_TYPE_INFINIBAND_FACTORY (nm_infiniband_factory_get_type ())
 #define NM_INFINIBAND_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_INFINIBAND_FACTORY, NMInfinibandFactory))

@@ -79,7 +79,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 
 NM_DEFINE_SINGLETON_GETTER (NMRouteManager, nm_route_manager_get, NM_TYPE_ROUTE_MANAGER);
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 typedef struct {
 	const NMPlatformVTableRoute *vt;
@@ -112,7 +112,7 @@ static const VTableIP vtable_v4, vtable_v6;
 			return 1; \
 	} G_STMT_END
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 #define _NMLOG_PREFIX_NAME   "route-mgr"
 #undef  _NMLOG_ENABLED
@@ -144,11 +144,11 @@ static const VTableIP vtable_v4, vtable_v6;
         } \
     } G_STMT_END
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 static gboolean _ip4_device_routes_cancel (NMRouteManager *self);
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 #if NM_MORE_ASSERTS && !defined (G_DISABLE_ASSERT)
 inline static void
@@ -202,7 +202,7 @@ ASSERT_route_index_valid (const VTableIP *vtable, const GArray *entries, const R
 #define ASSERT_route_index_valid(vtable, entries, index, unique_ifindexes) G_STMT_START { (void) 0; } G_STMT_END
 #endif
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 static int
 _v4_route_dest_cmp (const NMPlatformIP4Route *r1, const NMPlatformIP4Route *r2)
@@ -254,7 +254,7 @@ _v6_route_id_cmp (const NMPlatformIP6Route *r1, const NMPlatformIP6Route *r2)
 	return 0;
 }
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 static int
 _route_index_create_sort (const NMPlatformIPXRoute **p1, const NMPlatformIPXRoute ** p2, const VTableIP *vtable)
@@ -340,7 +340,7 @@ _route_index_reverse_idx (const VTableIP *vtable, const RouteIndex *index, guint
 	return offset;
 }
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 static gboolean
 _route_equals_ignoring_ifindex (const VTableIP *vtable, const NMPlatformIPXRoute *r1, const NMPlatformIPXRoute *r2, gint64 r2_metric)
@@ -431,7 +431,7 @@ _sort_indexes_cmp (guint *a, guint *b)
 	g_return_val_if_reached (0);
 }
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 static gboolean
 _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const GArray *known_routes, gboolean ignore_kernel_routes, gboolean full_sync)
@@ -951,7 +951,7 @@ nm_route_manager_route_flush (NMRouteManager *self, int ifindex)
 	return success;
 }
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 static gboolean
 _ip4_device_routes_entry_expired (const IP4DeviceRoutePurgeEntry *entry, gint64 now)
@@ -1126,7 +1126,7 @@ nm_route_manager_ip4_route_register_device_route_purge_list (NMRouteManager *sel
 	}
 }
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 static const VTableIP vtable_v4 = {
 	.vt                             = &nm_platform_vtable_route_v4,
@@ -1140,7 +1140,7 @@ static const VTableIP vtable_v6 = {
 	.route_id_cmp                   = (int (*) (const NMPlatformIPXRoute *, const NMPlatformIPXRoute *)) _v6_route_id_cmp,
 };
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 static void
 set_property (GObject *object, guint prop_id,

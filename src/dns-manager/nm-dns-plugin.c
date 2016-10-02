@@ -48,7 +48,7 @@ enum {
 };
 static guint signals[LAST_SIGNAL] = { 0 };
 
-/******************************************************************************/
+/*****************************************************************************/
 
 #define _NMLOG_PREFIX_NAME                "dns-plugin"
 #define _NMLOG_DOMAIN                     LOGD_DNS
@@ -70,7 +70,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
         } \
     } G_STMT_END
 
-/******************************************************************************/
+/*****************************************************************************/
 
 gboolean
 nm_dns_plugin_update (NMDnsPlugin *self,
@@ -105,7 +105,7 @@ nm_dns_plugin_get_name (NMDnsPlugin *self)
 	return NM_DNS_PLUGIN_GET_CLASS (self)->get_name (self);
 }
 
-/********************************************/
+/*****************************************************************************/
 
 static void
 _clear_pidfile (NMDnsPlugin *self)
@@ -260,7 +260,7 @@ nm_dns_plugin_stop (NMDnsPlugin *self)
 	nm_dns_plugin_child_kill (self);
 }
 
-/********************************************/
+/*****************************************************************************/
 
 static void
 nm_dns_plugin_init (NMDnsPlugin *self)

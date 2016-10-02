@@ -151,7 +151,7 @@ get_setting_type (NMDevice *device)
 	return NM_TYPE_SETTING_TEAM;
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_team_init (NMDeviceTeam *device)

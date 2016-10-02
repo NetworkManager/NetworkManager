@@ -112,7 +112,7 @@ platform_mode_to_string (guint mode)
 	}
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static void
 parent_state_changed (NMDevice *parent,
@@ -258,7 +258,7 @@ create_and_realize (NMDevice *device,
 	return TRUE;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *dev)
@@ -267,7 +267,7 @@ get_generic_capabilities (NMDevice *dev)
 	return NM_DEVICE_CAP_CARRIER_DETECT | NM_DEVICE_CAP_IS_SOFTWARE;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static gboolean
 is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
@@ -300,7 +300,7 @@ notify_new_device_added (NMDevice *device, NMDevice *new_device)
 	nm_device_macvlan_set_parent (self, new_device);
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 
 static gboolean
@@ -527,7 +527,7 @@ realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
 	update_properties (device);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_macvlan_init (NMDeviceMacvlan *self)
@@ -649,7 +649,7 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *klass)
 	                                        NULL);
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 #define NM_TYPE_MACVLAN_FACTORY (nm_macvlan_factory_get_type ())
 #define NM_MACVLAN_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MACVLAN_FACTORY, NMMacvlanFactory))

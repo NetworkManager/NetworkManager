@@ -130,7 +130,7 @@ typedef struct {
 
 } NMSettingsConnectionPrivate;
 
-/*******************************************************************/
+/*****************************************************************************/
 
 static void
 _emit_updated (NMSettingsConnection *self, gboolean by_user)
@@ -139,7 +139,7 @@ _emit_updated (NMSettingsConnection *self, gboolean by_user)
 	g_signal_emit (self, signals[UPDATED_INTERNAL], 0, by_user);
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 gboolean
 nm_settings_connection_has_unmodified_applied_connection (NMSettingsConnection *self,
@@ -155,7 +155,7 @@ nm_settings_connection_has_unmodified_applied_connection (NMSettingsConnection *
 	return nm_connection_compare (NM_CONNECTION (self), applied_connection, compare_flags);
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 /* Return TRUE to keep, FALSE to drop */
 typedef gboolean (*ForEachSecretFunc) (NMSettingSecretFlags flags,
@@ -290,7 +290,7 @@ find_secret (NMConnection *self,
 	return data.found;
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static void
 set_visible (NMSettingsConnection *self, gboolean new_visible)
@@ -357,7 +357,7 @@ session_changed_cb (NMSessionMonitor *self, gpointer user_data)
 	nm_settings_connection_recheck_visibility (NM_SETTINGS_CONNECTION (user_data));
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 /* Return TRUE if any active user in the connection's ACL has the given
  * permission without having to authorize for it via PolicyKit.  Connections
@@ -408,7 +408,7 @@ nm_settings_connection_check_permission (NMSettingsConnection *self,
 	return FALSE;
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static gboolean
 secrets_filter_cb (NMSetting *setting,
@@ -759,7 +759,7 @@ do_delete (NMSettingsConnection *self,
 	g_object_unref (self);
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 
 typedef enum {
@@ -1933,7 +1933,7 @@ out_err:
 	g_dbus_method_invocation_take_error (context, error);
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static void
 dbus_get_agent_secrets_cb (NMSettingsConnection *self,
@@ -2084,7 +2084,7 @@ impl_settings_connection_clear_secrets (NMSettingsConnection *self,
 	}
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 void
 nm_settings_connection_signal_remove (NMSettingsConnection *self)
@@ -2103,7 +2103,7 @@ nm_settings_connection_get_unsaved (NMSettingsConnection *self)
 	return NM_FLAGS_HAS (nm_settings_connection_get_flags (self), NM_SETTINGS_CONNECTION_FLAGS_UNSAVED);
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 NMSettingsConnectionFlags
 nm_settings_connection_get_flags (NMSettingsConnection *self)
@@ -2149,7 +2149,7 @@ nm_settings_connection_set_flags_all (NMSettingsConnection *self, NMSettingsConn
 	return old_flags;
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_settings_connection_get_timestamp:
@@ -2604,7 +2604,7 @@ nm_settings_connection_get_uuid (NMSettingsConnection *self)
 	return nm_connection_get_uuid (NM_CONNECTION (self));
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static void
 nm_settings_connection_init (NMSettingsConnection *self)

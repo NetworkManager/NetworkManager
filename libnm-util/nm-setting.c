@@ -82,7 +82,7 @@ enum {
 	PROP_LAST
 };
 
-/*************************************************************/
+/*****************************************************************************/
 
 static GHashTable *registered_settings = NULL;
 static GHashTable *registered_settings_by_type = NULL;
@@ -124,7 +124,7 @@ _ensure_registered_constructor (void)
 		} \
 	} G_STMT_END
 
-/*************************************************************/
+/*****************************************************************************/
 
 /*
  * _nm_register_setting:
@@ -286,7 +286,7 @@ _nm_setting_compare_priority (gconstpointer a, gconstpointer b)
 	return 1;
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 static void
 destroy_gvalue (gpointer data)

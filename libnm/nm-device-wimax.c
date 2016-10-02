@@ -350,7 +350,7 @@ get_hw_address (NMDevice *device)
 	return nm_device_wimax_get_hw_address (NM_DEVICE_WIMAX (device));
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_wimax_init (NMDeviceWimax *device)

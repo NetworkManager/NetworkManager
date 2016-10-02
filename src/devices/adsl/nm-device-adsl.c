@@ -57,7 +57,7 @@ enum {
 	LAST_PROP
 };
 
-/**********************************************/
+/*****************************************************************************/
 
 typedef struct {
 	guint         carrier_poll_id;
@@ -74,7 +74,7 @@ typedef struct {
 	guint         nas_update_count;
 } NMDeviceAdslPrivate;
 
-/**************************************************************/
+/*****************************************************************************/
 
 static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *dev)
@@ -138,7 +138,7 @@ complete_connection (NMDevice *device,
 	return TRUE;
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static gboolean
 br2684_assign_vcc (NMDeviceAdsl *self, NMSettingAdsl *s_adsl)
@@ -526,7 +526,7 @@ deactivate (NMDevice *device)
 	adsl_cleanup (NM_DEVICE_ADSL (device));
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static gboolean
 carrier_update_cb (gpointer user_data)
@@ -545,7 +545,7 @@ carrier_update_cb (gpointer user_data)
 	return TRUE;
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 NMDevice *
 nm_device_adsl_new (const char *udi,

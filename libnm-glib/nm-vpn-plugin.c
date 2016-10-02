@@ -508,7 +508,7 @@ impl_vpn_plugin_connect_interactive (NMVPNPlugin *plugin,
 	return _connect_generic (plugin, connection, details, error);
 }
 
-/***************************************************************/
+/*****************************************************************************/
 
 static gboolean
 impl_vpn_plugin_need_secrets (NMVPNPlugin *plugin,
@@ -635,7 +635,7 @@ nm_vpn_plugin_secrets_required (NMVPNPlugin *plugin,
 	g_signal_emit (plugin, signals[SECRETS_REQUIRED], 0, message, hints);
 }
 
-/***************************************************************/
+/*****************************************************************************/
 
 static gboolean
 impl_vpn_plugin_disconnect (NMVPNPlugin *plugin,
@@ -684,7 +684,7 @@ impl_vpn_plugin_set_failure (NMVPNPlugin *plugin,
 	return TRUE;
 }
 
-/*********************************************************************/
+/*****************************************************************************/
 
 static void
 sigterm_handler (int signum)
@@ -706,7 +706,7 @@ setup_unix_signal_handler (void)
 	sigaction (SIGTERM, &action, NULL);
 }
 
-/*********************************************************************/
+/*****************************************************************************/
 
 static void
 one_plugin_destroyed (gpointer data,

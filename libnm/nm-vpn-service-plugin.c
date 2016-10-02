@@ -554,7 +554,7 @@ impl_vpn_service_plugin_connect_interactive (NMVpnServicePlugin *plugin,
 	_connect_generic (plugin, context, connection, details);
 }
 
-/***************************************************************/
+/*****************************************************************************/
 
 static void
 impl_vpn_service_plugin_need_secrets (NMVpnServicePlugin *plugin,
@@ -702,7 +702,7 @@ nm_vpn_service_plugin_secrets_required (NMVpnServicePlugin *plugin,
 	nmdbus_vpn_plugin_emit_secrets_required (priv->dbus_vpn_service_plugin, message, hints);
 }
 
-/***************************************************************/
+/*****************************************************************************/
 
 #define DATA_KEY_TAG "DATA_KEY="
 #define DATA_VAL_TAG "DATA_VAL="
@@ -868,7 +868,7 @@ nm_vpn_service_plugin_get_secret_flags (GHashTable *data,
 	return success;
 }
 
-/***************************************************************/
+/*****************************************************************************/
 
 static void
 impl_vpn_service_plugin_disconnect (NMVpnServicePlugin *plugin,
@@ -923,7 +923,7 @@ impl_vpn_service_plugin_set_failure (NMVpnServicePlugin *plugin,
 	g_dbus_method_invocation_return_value (context, NULL);
 }
 
-/*********************************************************************/
+/*****************************************************************************/
 
 static void
 sigterm_handler (int signum)
@@ -945,7 +945,7 @@ setup_unix_signal_handler (void)
 	sigaction (SIGTERM, &action, NULL);
 }
 
-/*********************************************************************/
+/*****************************************************************************/
 
 static void
 one_plugin_destroyed (gpointer data,

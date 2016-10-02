@@ -47,7 +47,7 @@ typedef struct {
 	GHashTable *active_services;
 } NMVpnManagerPrivate;
 
-/******************************************************************************/
+/*****************************************************************************/
 
 static void
 vpn_state_changed (NMVpnConnection *vpn,
@@ -120,7 +120,7 @@ nm_vpn_manager_activate_connection (NMVpnManager *manager,
 	return TRUE;
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 static void
 try_add_plugin (NMVpnManager *self, NMVpnPluginInfo *plugin_info)
@@ -202,7 +202,7 @@ vpn_dir_changed (GFileMonitor *monitor,
 	}
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 NM_DEFINE_SINGLETON_GETTER (NMVpnManager, nm_vpn_manager_get, NM_TYPE_VPN_MANAGER);
 

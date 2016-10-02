@@ -159,11 +159,11 @@ G_STATIC_ASSERT (sizeof (NMLogDomain) >= sizeof (guint64));
 #define LOGD_DHCP_STRING    "DHCP"
 #define LOGD_IP_STRING      "IP"
 
-/************************************************************************/
+/*****************************************************************************/
 
 static char *_domains_to_string (gboolean include_level_override);
 
-/************************************************************************/
+/*****************************************************************************/
 
 static gboolean
 match_log_level (const char  *level,
@@ -617,7 +617,7 @@ _nm_log_impl (const char *file,
 	g_free (msg);
 }
 
-/************************************************************************/
+/*****************************************************************************/
 
 static void
 nm_log_handler (const gchar *log_domain,

@@ -172,7 +172,7 @@ nm_wimax_nsp_filter_connections (NMWimaxNsp *nsp, const GPtrArray *connections)
 	return filtered;
 }
 
-/************************************************************/
+/*****************************************************************************/
 
 static void
 nm_wimax_nsp_init (NMWimaxNsp *nsp)

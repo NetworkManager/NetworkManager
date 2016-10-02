@@ -955,7 +955,7 @@ pppoe_stage3_ip4_config_start (NMDeviceEthernet *self, NMDeviceStateReason *reas
 	return ret;
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static void dcb_state (NMDevice *device, gboolean timeout);
 
@@ -1123,7 +1123,7 @@ dcb_carrier_changed (NMDevice *device, GParamSpec *pspec, gpointer unused)
 	}
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static gboolean
 wake_on_lan_enable (NMDevice *device)
@@ -1164,7 +1164,7 @@ found:
 	return nm_platform_ethtool_set_wake_on_lan (NM_PLATFORM_GET, nm_device_get_iface (device), wol, password);
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static NMActStageReturn
 act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
@@ -1677,7 +1677,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	                                        NULL);
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 #define NM_TYPE_ETHERNET_FACTORY (nm_ethernet_factory_get_type ())
 #define NM_ETHERNET_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_ETHERNET_FACTORY, NMEthernetFactory))

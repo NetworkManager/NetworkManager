@@ -428,7 +428,7 @@ static const ObjectType objtypes[10] = {
 	{ NULL },
 };
 
-/**************************************************************************/
+/*****************************************************************************/
 
 static void
 cert_writer_default (NMConnection *connection,
@@ -540,7 +540,7 @@ cert_writer (KeyfileWriterInfo *info,
 	cert_writer_default (info->connection, info->keyfile, &type_data);
 }
 
-/**************************************************************************/
+/*****************************************************************************/
 
 typedef struct {
 	const char *setting_name;

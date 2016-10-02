@@ -61,7 +61,7 @@ enum {
 	LAST_PROP
 };
 
-/*******************************************************************/
+/*****************************************************************************/
 
 NMSettingsConnection *
 nm_act_request_get_settings_connection (NMActRequest *req)
@@ -79,7 +79,7 @@ nm_act_request_get_applied_connection (NMActRequest *req)
 	return nm_active_connection_get_applied_connection (NM_ACTIVE_CONNECTION (req));
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 struct _NMActRequestGetSecretsCallId {
 	NMActRequest *self;
@@ -245,7 +245,7 @@ nm_act_request_clear_secrets (NMActRequest *self)
 	nm_active_connection_clear_secrets ((NMActiveConnection *) self);
 }
 
-/********************************************************************/
+/*****************************************************************************/
 
 static void
 clear_share_rules (NMActRequest *req)
@@ -346,7 +346,7 @@ nm_act_request_add_share_rule (NMActRequest *req,
 	priv->share_rules = g_slist_prepend (priv->share_rules, rule);
 }
 
-/********************************************************************/
+/*****************************************************************************/
 
 static void
 device_notify (GObject    *object,
@@ -456,7 +456,7 @@ master_failed (NMActiveConnection *self)
 	nm_active_connection_set_state (self, NM_ACTIVE_CONNECTION_STATE_DEACTIVATED);
 }
 
-/********************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_act_request_new:

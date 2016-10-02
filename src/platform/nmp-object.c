@@ -29,7 +29,7 @@
 #include "nm-core-utils.h"
 #include "nm-platform-utils.h"
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 #define _NMLOG_DOMAIN LOGD_PLATFORM
 #define _NMLOG(level, obj, ...) \
@@ -51,7 +51,7 @@
  * Disabled by default. */
 #define _LOGr(...) G_STMT_START { if (FALSE) { _LOGt (__VA_ARGS__); } } G_STMT_END
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 struct _NMPCache {
 	/* the cache contains only one hash table for all object types, and similarly
@@ -74,7 +74,7 @@ struct _NMPCache {
 	gboolean use_udev;
 };
 
-/******************************************************************/
+/*****************************************************************************/
 
 static inline guint
 _id_hash_ip6_addr (const struct in6_addr *addr)
@@ -121,7 +121,7 @@ _vlan_xgress_qos_mappings_cpy (guint *dst_n_map,
 	}
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static const char *
 _link_get_driver (GUdevDevice *udev_device, const char *kind, const char *ifname)
@@ -196,7 +196,7 @@ _nmp_object_fixup_link_master_connected (NMPObject *obj, const NMPCache *cache)
 		obj->link.connected = !obj->link.connected;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 const NMPClass *
 nmp_class_from_type (NMPObjectType obj_type)
@@ -206,7 +206,7 @@ nmp_class_from_type (NMPObjectType obj_type)
 	return &_nmp_classes[obj_type - 1];
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 NMPObject *
 nmp_object_ref (NMPObject *obj)
@@ -292,7 +292,7 @@ nmp_object_new_link (int ifindex)
 	return obj;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static const NMPObject *
 _nmp_object_stackinit_from_class (NMPObject *obj, const NMPClass *klass)
@@ -415,7 +415,7 @@ _vt_cmd_obj_stackinit_id_ip6_route (NMPObject *obj, const NMPObject *src)
 	nmp_object_stackinit_id_ip6_route (obj, src->ip_route.ifindex, &src->ip6_route.network, src->ip_route.plen, src->ip_route.metric);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 const char *
 nmp_object_to_string (const NMPObject *obj, NMPObjectToStringMode to_string_mode, char *buf, gsize buf_size)
@@ -954,7 +954,7 @@ _vt_cmd_obj_is_visible_link (const NMPObject *obj)
 	       && obj->link.name[0];
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 #define _STRUCT_SIZE(struct_type, field) \
 	(G_STRUCT_OFFSET (struct_type, field) + sizeof (((struct_type *) NULL)->field))
@@ -1021,7 +1021,7 @@ nmp_cache_id_destroy (NMPCacheId *id)
 	g_slice_free1 (n, id);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 NMPCacheId _nmp_cache_id_static;
 
@@ -1143,7 +1143,7 @@ nmp_cache_id_init_routes_by_destination_ip6 (NMPCacheId *id,
 	return id;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static gboolean
 _nmp_object_init_cache_id (const NMPObject *obj, NMPCacheIdType id_type, NMPCacheId *id, const NMPCacheId **out_id)
@@ -1301,7 +1301,7 @@ _vt_cmd_obj_init_cache_id_ipx_route (const NMPObject *obj, NMPCacheIdType id_typ
 	return TRUE;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 gboolean
 nmp_cache_use_udev_get (const NMPCache *cache)
@@ -1311,7 +1311,7 @@ nmp_cache_use_udev_get (const NMPCache *cache)
 	return cache->use_udev;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 /**
  * nmp_cache_link_connected_needs_toggle:
@@ -1416,7 +1416,7 @@ nmp_cache_link_connected_needs_toggle_by_ifindex (const NMPCache *cache, int mas
 	return NULL;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 const NMPlatformObject *const *
 nmp_cache_lookup_multi (const NMPCache *cache, const NMPCacheId *cache_id, guint *out_len)
@@ -1581,7 +1581,7 @@ nmp_cache_lookup_all_to_hash (const NMPCache *cache,
 	return hash;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static void
 _nmp_cache_update_cache (NMPCache *cache, NMPObject *obj, gboolean remove)
@@ -1993,7 +1993,7 @@ nmp_cache_update_link_master_connected (NMPCache *cache, int ifindex, NMPObject 
 	return NMP_CACHE_OPS_UPDATED;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 NMPCache *
 nmp_cache_new (gboolean use_udev)
@@ -2034,7 +2034,7 @@ nmp_cache_free (NMPCache *cache)
 	g_free (cache);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 void
 ASSERT_nmp_cache_is_consistent (const NMPCache *cache)
@@ -2092,7 +2092,7 @@ ASSERT_nmp_cache_is_consistent (const NMPCache *cache)
 	}
 #endif
 }
-/******************************************************************/
+/*****************************************************************************/
 
 const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 	[NMP_OBJECT_TYPE_LINK - 1] = {

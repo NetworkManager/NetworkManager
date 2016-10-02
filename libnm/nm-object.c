@@ -1509,7 +1509,7 @@ _nm_object_get_nm_running (NMObject *self)
 	return NM_OBJECT_GET_PRIVATE (self)->nm_running;
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static void
 on_name_owner_changed (GObject    *proxy,
@@ -1588,7 +1588,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	return _nm_object_reload_properties (self, error);
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 typedef struct {
 	NMObject *object;
@@ -1724,7 +1724,7 @@ init_finish (GAsyncInitable *initable, GAsyncResult *result, GError **error)
 		return TRUE;
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static void
 nm_object_initable_iface_init (GInitableIface *iface)

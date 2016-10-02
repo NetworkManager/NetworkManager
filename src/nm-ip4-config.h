@@ -163,7 +163,7 @@ gboolean nm_ip4_config_get_metered (const NMIP4Config *config);
 void nm_ip4_config_hash (const NMIP4Config *config, GChecksum *sum, gboolean dns_only);
 gboolean nm_ip4_config_equal (const NMIP4Config *a, const NMIP4Config *b);
 
-/******************************************************/
+/*****************************************************************************/
 /* Testing-only functions */
 
 gboolean nm_ip4_config_capture_resolv_conf (GArray *nameservers, GPtrArray *dns_options,

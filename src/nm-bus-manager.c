@@ -113,7 +113,7 @@ nm_bus_manager_setup (NMBusManager *instance)
 	_LOGD ("setup %s singleton (%p)", "NMBusManager", singleton_instance);
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 struct _PrivateServer {
 	const char *tag;
@@ -382,7 +382,7 @@ private_server_get_connection_by_owner (PrivateServer *s, const char *owner)
 	return NULL;
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static gboolean
 _bus_get_unix_pid (NMBusManager *self,
@@ -616,7 +616,7 @@ nm_bus_manager_get_unix_user (NMBusManager *self,
 	return TRUE;
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static void
 nm_bus_manager_init (NMBusManager *self)

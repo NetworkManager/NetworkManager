@@ -22,7 +22,7 @@
 #ifndef __NM_COMMON_MACROS_H__
 #define __NM_COMMON_MACROS_H__
 
-/******************************************************************************/
+/*****************************************************************************/
 
 #define NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK     "org.freedesktop.NetworkManager.enable-disable-network"
 #define NM_AUTH_PERMISSION_SLEEP_WAKE                 "org.freedesktop.NetworkManager.sleep-wake"
@@ -55,6 +55,6 @@ NM_CLONED_MAC_IS_SPECIAL (const char *str)
 	                     NM_CLONED_MAC_STABLE);
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 #endif /* __NM_COMMON_MACROS_H__ */

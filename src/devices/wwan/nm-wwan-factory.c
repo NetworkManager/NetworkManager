@@ -44,7 +44,7 @@ typedef struct {
 	NMModemManager *mm;
 } NMWwanFactoryPrivate;
 
-/************************************************************************/
+/*****************************************************************************/
 
 G_MODULE_EXPORT NMDeviceFactory *
 nm_device_factory_create (GError **error)
@@ -52,7 +52,7 @@ nm_device_factory_create (GError **error)
 	return (NMDeviceFactory *) g_object_new (NM_TYPE_WWAN_FACTORY, NULL);
 }
 
-/************************************************************************/
+/*****************************************************************************/
 
 static void
 modem_added_cb (NMModemManager *manager,

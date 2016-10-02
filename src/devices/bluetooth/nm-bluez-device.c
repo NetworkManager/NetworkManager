@@ -107,7 +107,7 @@ static gboolean connection_compatible (NMBluezDevice *self, NMConnection *connec
 #define VARIANT_IS_OF_TYPE_OBJECT_PATH(v)  ((v) != NULL && ( g_variant_is_of_type ((v), G_VARIANT_TYPE_OBJECT_PATH) ))
 #define VARIANT_IS_OF_TYPE_STRING_ARRAY(v) ((v) != NULL && ( g_variant_is_of_type ((v), G_VARIANT_TYPE_STRING_ARRAY) ))
 
-/***********************************************************/
+/*****************************************************************************/
 
 const char *
 nm_bluez_device_get_path (NMBluezDevice *self)
@@ -307,7 +307,7 @@ check_emit_usable_schedule (NMBluezDevice *self)
 		priv->check_emit_usable_id = g_idle_add ((GSourceFunc) check_emit_usable, self);
 }
 
-/********************************************************************/
+/*****************************************************************************/
 
 static gboolean
 connection_compatible (NMBluezDevice *self, NMConnection *connection)
@@ -417,7 +417,7 @@ load_connections (NMBluezDevice *self)
 		check_emit_usable (self);
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static void
 bluez_disconnect_cb (GDBusConnection *dbus_connection,
@@ -634,7 +634,7 @@ nm_bluez_device_connect_finish (NMBluezDevice *self,
 	return device;
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static void
 set_adapter_address (NMBluezDevice *self, const char *address)
@@ -1027,7 +1027,7 @@ on_bus_acquired (GObject *object, GAsyncResult *res, NMBluezDevice *self)
 	g_object_unref (self);
 }
 
-/********************************************************************/
+/*****************************************************************************/
 
 NMBluezDevice *
 nm_bluez_device_new (const char *path,

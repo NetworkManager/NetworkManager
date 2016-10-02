@@ -1870,7 +1870,7 @@ again:
 	nmtstp_link_del (NULL, -1, ifindex_dummy0, IFACE_DUMMY0);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static void
 _test_netns_setup (gpointer fixture, gconstpointer test_data)
@@ -1933,7 +1933,7 @@ _test_netns_check_skip (void)
 	return FALSE;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 #define _sysctl_assert_eq(plat, path, value) \
 	G_STMT_START { \

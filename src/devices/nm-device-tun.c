@@ -345,7 +345,7 @@ unrealize_notify (NMDevice *device)
 	g_free (properties);
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_tun_init (NMDeviceTun *self)
@@ -480,7 +480,7 @@ nm_device_tun_class_init (NMDeviceTunClass *klass)
 }
 
 
-/*************************************************************/
+/*****************************************************************************/
 
 #define NM_TYPE_TUN_FACTORY (nm_tun_factory_get_type ())
 #define NM_TUN_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_TUN_FACTORY, NMTunFactory))

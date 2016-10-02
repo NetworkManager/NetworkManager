@@ -108,7 +108,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 static void check_master_ready (NMActiveConnection *self);
 static void _device_cleanup (NMActiveConnection *self);
 
-/****************************************************************/
+/*****************************************************************************/
 
 #define _NMLOG_DOMAIN         LOGD_DEVICE
 #define _NMLOG_PREFIX_NAME    "active-connection"
@@ -123,7 +123,7 @@ static void _device_cleanup (NMActiveConnection *self);
                 _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
     } G_STMT_END
 
-/****************************************************************/
+/*****************************************************************************/
 
 NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_state_to_string, NMActiveConnectionState,
 	NM_UTILS_LOOKUP_DEFAULT (NULL),
@@ -135,7 +135,7 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_state_to_string, NMActiveConnectionState,
 );
 #define state_to_string(state) NM_UTILS_LOOKUP_STR (_state_to_string, state)
 
-/****************************************************************/
+/*****************************************************************************/
 
 static void
 _settings_connection_updated (NMSettingsConnection *connection,
@@ -336,7 +336,7 @@ nm_active_connection_has_unmodified_applied_connection (NMActiveConnection *self
 	                                                                 compare_flags);
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 void
 nm_active_connection_clear_secrets (NMActiveConnection *self)
@@ -354,7 +354,7 @@ nm_active_connection_clear_secrets (NMActiveConnection *self)
 	nm_connection_clear_secrets (priv->applied_connection);
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 const char *
 nm_active_connection_get_specific_object (NMActiveConnection *self)
@@ -718,7 +718,7 @@ nm_active_connection_get_assumed (NMActiveConnection *self)
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->assumed;
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static void unwatch_parent (NMActiveConnection *self, gboolean unref);
 
@@ -782,7 +782,7 @@ nm_active_connection_set_parent (NMActiveConnection *self, NMActiveConnection *p
 	g_object_weak_ref ((GObject *) priv->parent, parent_destroyed, self);
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static void
 auth_done (NMAuthChain *chain,
@@ -901,7 +901,7 @@ nm_active_connection_authorize (NMActiveConnection *self,
 	priv->user_data2 = user_data2;
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static guint64
 _version_id_new (void)
@@ -932,7 +932,7 @@ nm_active_connection_version_id_bump (NMActiveConnection *self)
 	return priv->version_id;
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static void
 nm_active_connection_init (NMActiveConnection *self)

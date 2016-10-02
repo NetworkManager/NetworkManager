@@ -66,7 +66,7 @@ enum {
 };
 static guint signals[LAST_SIGNAL] = { 0 };
 
-/******************************************************************/
+/*****************************************************************************/
 
 static void
 fake_ra_free (gpointer data)
@@ -218,7 +218,7 @@ nm_fake_rdisc_done (NMFakeRDisc *self)
 	return !NM_FAKE_RDISC_GET_PRIVATE (self)->ras;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static gboolean
 send_rs (NMRDisc *rdisc, GError **error)
@@ -346,7 +346,7 @@ nm_fake_rdisc_emit_new_ras (NMFakeRDisc *self)
 		start (NM_RDISC (self));
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 NMRDisc *
 nm_fake_rdisc_new (int ifindex, const char *ifname)

@@ -36,7 +36,7 @@ struct _NMParamSpecSpecialized {
 
 #include "nm-dbus-glib-types.h"
 
-/***********************************************************/
+/*****************************************************************************/
 /* _gvalues_compare */
 
 static gint _gvalues_compare (const GValue *value1, const GValue *value2);
@@ -561,7 +561,7 @@ _gvalues_compare (const GValue *value1, const GValue *value2)
 	return ret;
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static void
 param_specialized_init (GParamSpec *pspec)
@@ -638,7 +638,7 @@ _nm_param_spec_specialized (const char *name,
 	return G_PARAM_SPEC (pspec);
 }
 
-/***********************************************************/
+/*****************************************************************************/
 /* Tests */
 
 #if 0

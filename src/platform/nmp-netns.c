@@ -63,7 +63,7 @@ __ns_types_to_str (int ns_types, int ns_types_already_set, char *buf, gsize len)
 #define _ns_types_to_str(ns_types, ns_types_already_set, buf) \
 	__ns_types_to_str (ns_types, ns_types_already_set, buf, sizeof (buf))
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 #define _NMLOG_DOMAIN        LOGD_PLATFORM
 #define _NMLOG_PREFIX_NAME   "netns"
@@ -83,7 +83,7 @@ __ns_types_to_str (int ns_types, int ns_types_already_set, char *buf, gsize len)
         } \
     } G_STMT_END
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_FD_NET,
@@ -106,7 +106,7 @@ typedef struct {
 static void _stack_push (NMPNetns *netns, int ns_types);
 static NMPNetns *_netns_new (GError **error);
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 static GArray *netns_stack = NULL;
 
@@ -262,13 +262,13 @@ _stack_size (void)
 	return netns_stack->len;
 }
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 G_DEFINE_TYPE (NMPNetns, nmp_netns, G_TYPE_OBJECT);
 
 #define NMP_NETNS_GET_PRIVATE(o) ((o)->priv)
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 static NMPNetns *
 _netns_new (GError **error)
@@ -390,7 +390,7 @@ _netns_switch_pop (NMPNetns *self, int ns_types)
 	return success;
 }
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 int
 nmp_netns_get_fd_net (NMPNetns *self)
@@ -408,7 +408,7 @@ nmp_netns_get_fd_mnt (NMPNetns *self)
 	return self->priv->fd_mnt;
 }
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 static gboolean
 _nmp_netns_push_type (NMPNetns *self, int ns_types)
@@ -579,7 +579,7 @@ nmp_netns_is_initial (void)
 	return nmp_netns_get_current () == nmp_netns_get_initial ();
 }
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 gboolean
 nmp_netns_bind_to_path (NMPNetns *self, const char *filename, int *out_fd)
@@ -657,7 +657,7 @@ nmp_netns_bind_to_path_destroy (NMPNetns *self, const char *filename)
 	return TRUE;
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 static void
 set_property (GObject *object, guint prop_id,

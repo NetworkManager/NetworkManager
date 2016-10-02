@@ -74,7 +74,7 @@ enum {
 	PROP_LAST
 };
 
-/*************************************************************/
+/*****************************************************************************/
 
 static GHashTable *registered_settings = NULL;
 static GHashTable *registered_settings_by_type = NULL;
@@ -115,7 +115,7 @@ _ensure_registered_constructor (void)
 		} \
 	} G_STMT_END
 
-/*************************************************************/
+/*****************************************************************************/
 
 /*
  * _nm_register_setting:
@@ -264,7 +264,7 @@ _nm_setting_compare_priority (gconstpointer a, gconstpointer b)
 	return 1;
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 gboolean
 _nm_setting_slave_type_is_valid (const char *slave_type, const char **out_port_type)
@@ -288,7 +288,7 @@ _nm_setting_slave_type_is_valid (const char *slave_type, const char **out_port_t
 	return found;
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 typedef struct {
 	const char *name;
@@ -592,7 +592,7 @@ nm_setting_class_find_property (NMSettingClass *setting_class, const char *prope
 	return find_property (properties, property_name);
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 static const GVariantType *
 variant_type_for_gtype (GType type)

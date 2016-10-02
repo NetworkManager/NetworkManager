@@ -51,7 +51,7 @@ typedef struct {
 	gboolean info_only;
 } NMDhcpSystemdPrivate;
 
-/************************************************************/
+/*****************************************************************************/
 
 #define DHCP_OPTION_NIS_DOMAIN         40
 #define DHCP_OPTION_NIS_SERVERS        41
@@ -388,7 +388,7 @@ lease_to_ip4_config (const char *iface,
 	return ip4_config;
 }
 
-/************************************************************/
+/*****************************************************************************/
 
 static char *
 get_leasefile_path (const char *iface, const char *uuid, gboolean ipv6)
@@ -427,7 +427,7 @@ nm_dhcp_systemd_get_lease_ip_configs (const char *iface,
 	return leases;
 }
 
-/************************************************************/
+/*****************************************************************************/
 
 static void
 _save_client_id (NMDhcpSystemd *self,
@@ -990,7 +990,7 @@ stop (NMDhcpClient *client, gboolean release, const GByteArray *duid)
 		_LOGW ("failed to stop client (%d)", r);
 }
 
-/***************************************************/
+/*****************************************************************************/
 
 static void
 nm_dhcp_systemd_init (NMDhcpSystemd *self)

@@ -56,7 +56,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 NM_DEFINE_SINGLETON_GETTER (NMFirewallManager, nm_firewall_manager_get, NM_TYPE_FIREWALL_MANAGER);
 
-/********************************************************************/
+/*****************************************************************************/
 
 typedef enum {
 	CB_INFO_OPS_ADD = 1,
@@ -89,7 +89,7 @@ struct _NMFirewallManagerCallId {
 };
 typedef struct _NMFirewallManagerCallId CBInfo;
 
-/********************************************************************/
+/*****************************************************************************/
 
 static const char *
 _ops_type_to_string (CBInfoOpsType ops_type)
@@ -131,7 +131,7 @@ _ops_type_to_string (CBInfoOpsType ops_type)
         } \
     } G_STMT_END
 
-/********************************************************************/
+/*****************************************************************************/
 
 static gboolean
 _cb_info_is_idle (CBInfo *info)
@@ -396,7 +396,7 @@ nm_firewall_manager_cancel_call (NMFirewallManagerCallId call)
 	}
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 static void
 set_running (NMFirewallManager *self, gboolean now_running)
@@ -428,7 +428,7 @@ name_owner_changed (GObject    *object,
 	}
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 static void
 nm_firewall_manager_init (NMFirewallManager * self)

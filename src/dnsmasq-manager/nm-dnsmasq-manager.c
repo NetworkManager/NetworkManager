@@ -108,7 +108,7 @@ nm_cmd_line_add_string (NMCmdLine *cmd, const char *str)
 	g_ptr_array_add (cmd->array, g_string_chunk_insert (cmd->chunk, str));
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 dm_watch_cb (GPid pid, gint status, gpointer user_data)

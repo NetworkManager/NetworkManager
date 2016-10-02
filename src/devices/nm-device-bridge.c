@@ -43,7 +43,7 @@ typedef struct {
 	int dummy;
 } NMDeviceBridgePrivate;
 
-/******************************************************************/
+/*****************************************************************************/
 
 static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *dev)
@@ -121,7 +121,7 @@ complete_connection (NMDevice *device,
 	return TRUE;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 typedef struct {
 	const char *name;
@@ -411,7 +411,7 @@ create_and_realize (NMDevice *device,
 	return TRUE;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_bridge_init (NMDeviceBridge * self)
@@ -447,7 +447,7 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 	                                        NULL);
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 #define NM_TYPE_BRIDGE_FACTORY (nm_bridge_factory_get_type ())
 #define NM_BRIDGE_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_BRIDGE_FACTORY, NMBridgeFactory))

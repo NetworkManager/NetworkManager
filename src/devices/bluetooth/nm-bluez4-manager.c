@@ -222,7 +222,7 @@ name_owner_changed_cb (GObject *object,
 	}
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 NMBluez4Manager *
 nm_bluez4_manager_new (NMSettings *settings)

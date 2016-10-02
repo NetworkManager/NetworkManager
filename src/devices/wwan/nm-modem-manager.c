@@ -67,7 +67,7 @@ enum {
 };
 static guint signals[LAST_SIGNAL] = { 0 };
 
-/************************************************************************/
+/*****************************************************************************/
 
 static void
 handle_new_modem (NMModemManager *self, NMModem *modem)
@@ -546,7 +546,7 @@ bus_get_ready (GObject *source,
 #endif
 }
 
-/************************************************************************/
+/*****************************************************************************/
 
 static void
 nm_modem_manager_init (NMModemManager *self)

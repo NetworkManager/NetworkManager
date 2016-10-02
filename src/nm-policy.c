@@ -1446,7 +1446,7 @@ device_removed (NMManager *manager, NMDevice *device, gpointer user_data)
 	 */
 }
 
-/**************************************************************************/
+/*****************************************************************************/
 
 static void
 vpn_connection_activated (NMPolicy *self, NMVpnConnection *vpn)
@@ -1595,7 +1595,7 @@ active_connection_removed (NMManager *manager,
 	                                      self);
 }
 
-/**************************************************************************/
+/*****************************************************************************/
 
 static gboolean
 schedule_activate_all_cb (gpointer user_data)

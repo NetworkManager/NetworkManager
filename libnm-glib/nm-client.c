@@ -127,7 +127,7 @@ static void proxy_name_owner_changed (DBusGProxy *proxy,
                                       const char *new_owner,
                                       gpointer user_data);
 
-/**********************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_client_error_quark:
@@ -148,7 +148,7 @@ nm_client_error_quark (void)
 	return quark;
 }
 
-/**********************************************************************/
+/*****************************************************************************/
 
 static void
 nm_client_init (NMClient *client)
@@ -1315,7 +1315,7 @@ nm_client_get_activating_connection (NMClient *client)
 	return NM_CLIENT_GET_PRIVATE (client)->activating_connection;
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static void
 free_devices (NMClient *client, gboolean in_dispose)
@@ -1658,7 +1658,7 @@ nm_client_check_connectivity_finish (NMClient *client,
 	return ccd->connectivity;
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_client_new:

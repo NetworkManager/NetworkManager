@@ -140,7 +140,7 @@ get_setting_type (NMDevice *device)
 	return NM_TYPE_SETTING_ADSL;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_adsl_init (NMDeviceAdsl *device)

@@ -98,7 +98,7 @@ typedef struct {
 	NMSupplicantConfig *cfg;
 } NMSupplicantInterfacePrivate;
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 #define _NMLOG_DOMAIN           LOGD_SUPPLICANT
 #define _NMLOG_PREFIX_NAME      "sup-iface"
@@ -118,7 +118,7 @@ typedef struct {
                  _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
     } G_STMT_END
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 static void
 emit_error_helper (NMSupplicantInterface *self, GError *error)
@@ -1436,7 +1436,7 @@ nm_supplicant_interface_get_max_scan_ssids (NMSupplicantInterface *self)
 	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->max_scan_ssids;
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 NMSupplicantInterface *
 nm_supplicant_interface_new (const char *ifname,

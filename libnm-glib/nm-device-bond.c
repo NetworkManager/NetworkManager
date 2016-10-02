@@ -200,7 +200,7 @@ get_hw_address (NMDevice *device)
 	return nm_device_bond_get_hw_address (NM_DEVICE_BOND (device));
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_bond_init (NMDeviceBond *device)

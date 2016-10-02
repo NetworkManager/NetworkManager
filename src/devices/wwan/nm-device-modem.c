@@ -455,7 +455,7 @@ deactivate (NMDevice *device)
 	nm_modem_deactivate (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem, device);
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static gboolean
 deactivate_async_finish (NMDevice *self,
@@ -497,7 +497,7 @@ deactivate_async (NMDevice *self,
 	                           simple);
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static NMActStageReturn
 act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)

@@ -178,7 +178,7 @@ get_hw_address (NMDevice *device)
 	return nm_device_bt_get_hw_address (NM_DEVICE_BT (device));
 }
 
-/************************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_bt_init (NMDeviceBt *device)

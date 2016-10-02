@@ -42,12 +42,12 @@
 
 #define NM_PLATFORM_NETNS_SUPPORT_DEFAULT    FALSE
 
-/******************************************************************/
+/*****************************************************************************/
 
 #define NM_PLATFORM_NETNS_SUPPORT      "netns-support"
 #define NM_PLATFORM_REGISTER_SINGLETON "register-singleton"
 
-/******************************************************************/
+/*****************************************************************************/
 
 /* workaround for older libnl version, that does not define these flags. */
 #ifndef IFA_F_MANAGETEMPADDR
@@ -481,7 +481,7 @@ typedef struct {
 	bool multi_queue:1;
 } NMPlatformTunProperties;
 
-/******************************************************************/
+/*****************************************************************************/
 
 struct _NMPlatform {
 	GObject parent;
@@ -672,7 +672,7 @@ typedef struct {
 
 const char *nm_platform_signal_change_type_to_string (NMPlatformSignalChangeType change_type);
 
-/******************************************************************/
+/*****************************************************************************/
 
 GType nm_platform_get_type (void);
 
@@ -682,7 +682,7 @@ NMPlatform *nm_platform_try_get (void);
 
 #define NM_PLATFORM_GET (nm_platform_get ())
 
-/******************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_platform_route_scope_inv:

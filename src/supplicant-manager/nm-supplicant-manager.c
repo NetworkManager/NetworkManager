@@ -56,11 +56,11 @@ typedef struct {
 	guint             die_count;
 } NMSupplicantManagerPrivate;
 
-/********************************************************************/
+/*****************************************************************************/
 
 G_DEFINE_QUARK (nm-supplicant-error-quark, nm_supplicant_error);
 
-/********************************************************************/
+/*****************************************************************************/
 
 static inline gboolean
 die_count_exceeded (guint32 count)
@@ -77,7 +77,7 @@ is_available (NMSupplicantManager *self)
 	       && !die_count_exceeded (priv->die_count);
 }
 
-/********************************************************************/
+/*****************************************************************************/
 
 static void
 _sup_iface_last_ref (gpointer data,
@@ -351,7 +351,7 @@ on_proxy_acquired (GObject *object, GAsyncResult *result, gpointer user_data)
 	name_owner_cb (priv->proxy, NULL, self);
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 NM_DEFINE_SINGLETON_GETTER (NMSupplicantManager, nm_supplicant_manager_get, NM_TYPE_SUPPLICANT_MANAGER);
 

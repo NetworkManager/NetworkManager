@@ -227,7 +227,7 @@ GVariant *_nm_dbus_proxy_call_sync   (GDBusProxy           *proxy,
 gboolean _nm_dbus_error_has_name (GError     *error,
                                   const char *dbus_error_name);
 
-/***********************************************************/
+/*****************************************************************************/
 
 gboolean _nm_vpn_plugin_info_check_file (const char *filename,
                                          gboolean check_absolute,
@@ -247,7 +247,7 @@ GSList *_nm_vpn_plugin_info_list_load_dir (const char *dirname,
                                            NMUtilsCheckFilePredicate check_file,
                                            gpointer user_data);
 
-/***********************************************************/
+/*****************************************************************************/
 
 typedef struct {
 	const char *name;
@@ -262,7 +262,7 @@ gboolean    _nm_utils_dns_option_validate (const char *option, char **out_name,
                                            const NMUtilsDNSOptionDesc *option_descs);
 int         _nm_utils_dns_option_find_idx (GPtrArray *array, const char *option);
 
-/***********************************************************/
+/*****************************************************************************/
 
 typedef struct _NMUtilsStrStrDictKey NMUtilsStrStrDictKey;
 guint                 _nm_utils_strstrdictkey_hash   (gconstpointer a);
@@ -272,7 +272,7 @@ NMUtilsStrStrDictKey *_nm_utils_strstrdictkey_create (const char *v1, const char
 #define _nm_utils_strstrdictkey_static(v1, v2) \
     ( (NMUtilsStrStrDictKey *) ("\03" v1 "\0" v2 "") )
 
-/***********************************************************/
+/*****************************************************************************/
 
 gboolean _nm_setting_vlan_set_priorities (NMSettingVlan *setting,
                                           NMVlanPriorityMap map,
@@ -283,7 +283,7 @@ void     _nm_setting_vlan_get_priorities (NMSettingVlan *setting,
                                           NMVlanQosMapping **out_qos_map,
                                           guint *out_n_qos_map);
 
-/***********************************************************/
+/*****************************************************************************/
 
 struct ether_addr;
 
@@ -293,7 +293,7 @@ gboolean _nm_utils_generate_mac_address_mask_parse (const char *value,
                                                     gsize *out_ouis_len,
                                                     GError **error);
 
-/***********************************************************/
+/*****************************************************************************/
 
 typedef enum {
 	NM_BOND_OPTION_TYPE_INT,
@@ -307,7 +307,7 @@ typedef enum {
 NMBondOptionType
 _nm_setting_bond_get_option_type (NMSettingBond *setting, const char *name);
 
-/***********************************************************/
+/*****************************************************************************/
 
 typedef enum {
 	NM_BOND_MODE_UNKNOWN = 0,
@@ -323,11 +323,11 @@ typedef enum {
 NMBondMode _nm_setting_bond_mode_from_string (const char *str);
 gboolean _nm_setting_bond_option_supported (const char *option, NMBondMode mode);
 
-/***********************************************************/
+/*****************************************************************************/
 
 gboolean _nm_utils_inet6_is_token (const struct in6_addr *in6addr);
 
-/***********************************************************/
+/*****************************************************************************/
 
 gboolean    _nm_utils_team_config_equal (const char *conf1, const char *conf2, gboolean port);
 

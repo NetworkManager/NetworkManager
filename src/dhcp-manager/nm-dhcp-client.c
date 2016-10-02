@@ -81,7 +81,7 @@ enum {
 	LAST_PROP
 };
 
-/********************************************/
+/*****************************************************************************/
 
 pid_t
 nm_dhcp_client_get_pid (NMDhcpClient *self)
@@ -186,7 +186,7 @@ nm_dhcp_client_get_fqdn (NMDhcpClient *self)
 	return NM_DHCP_CLIENT_GET_PRIVATE (self)->fqdn;
 }
 
-/********************************************/
+/*****************************************************************************/
 
 static const char *state_table[NM_DHCP_STATE_MAX + 1] = {
 	[NM_DHCP_STATE_UNKNOWN]  = "unknown",
@@ -232,7 +232,7 @@ reason_to_state (NMDhcpClient *self, const char *iface, const char *reason)
 	return NM_DHCP_STATE_UNKNOWN;
 }
 
-/********************************************/
+/*****************************************************************************/
 
 static void
 timeout_cleanup (NMDhcpClient *self)
@@ -618,7 +618,7 @@ nm_dhcp_client_stop (NMDhcpClient *self, gboolean release)
 	nm_dhcp_client_set_state (self, NM_DHCP_STATE_DONE, NULL, NULL);
 }
 
-/********************************************/
+/*****************************************************************************/
 
 static char *
 bytearray_variant_to_string (NMDhcpClient *self, GVariant *value, const char *key)
@@ -776,7 +776,7 @@ nm_dhcp_client_handle_event (gpointer unused,
 	return TRUE;
 }
 
-/********************************************/
+/*****************************************************************************/
 
 static void
 nm_dhcp_client_init (NMDhcpClient *self)

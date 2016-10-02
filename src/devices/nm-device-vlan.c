@@ -62,7 +62,7 @@ enum {
 	LAST_PROP
 };
 
-/******************************************************************/
+/*****************************************************************************/
 
 static void
 parent_state_changed (NMDevice *parent,
@@ -273,7 +273,7 @@ unrealize_notify (NMDevice *device)
 	nm_device_vlan_set_parent (NM_DEVICE_VLAN (device), NULL);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *dev)
@@ -282,7 +282,7 @@ get_generic_capabilities (NMDevice *dev)
 	return NM_DEVICE_CAP_CARRIER_DETECT | NM_DEVICE_CAP_IS_SOFTWARE;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static gboolean
 is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
@@ -318,7 +318,7 @@ notify_new_device_added (NMDevice *device, NMDevice *new_device)
 	nm_device_vlan_set_parent (self, new_device);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static gboolean
 match_parent (NMDeviceVlan *self, const char *parent)
@@ -599,7 +599,7 @@ ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 	}
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_vlan_init (NMDeviceVlan * self)
@@ -687,7 +687,7 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	                                        NULL);
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 #define NM_TYPE_VLAN_FACTORY (nm_vlan_factory_get_type ())
 #define NM_VLAN_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VLAN_FACTORY, NMVlanFactory))

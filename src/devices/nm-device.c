@@ -135,7 +135,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDevice,
 
 #define DEFAULT_AUTOCONNECT TRUE
 
-/***********************************************************/
+/*****************************************************************************/
 
 #define PENDING_ACTION_DHCP4 "dhcp4"
 #define PENDING_ACTION_DHCP6 "dhcp6"
@@ -465,7 +465,7 @@ static void nm_device_set_mtu (NMDevice *self, guint32 mtu);
 static void dhcp_schedule_restart (NMDevice *self, int family, const char *reason);
 static void _cancel_activation (NMDevice *self);
 
-/***********************************************************/
+/*****************************************************************************/
 
 #define QUEUED_PREFIX "queued state change to "
 
@@ -569,7 +569,7 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_reason_to_string, NMDeviceStateReason,
 #define reason_to_string(reason) \
 	NM_UTILS_LOOKUP_STR (_reason_to_string, reason)
 
-/***********************************************************/
+/*****************************************************************************/
 
 NMSettings *
 nm_device_get_settings (NMDevice *self)
@@ -603,7 +603,7 @@ init_ip6_config_dns_priority (NMDevice *self, NMIP6Config *config)
 	nm_ip6_config_set_dns_priority (config, priority ?: NM_DNS_PRIORITY_DEFAULT_NORMAL);
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 gboolean
 nm_device_ipv6_sysctl_set (NMDevice *self, const char *property, const char *value)
@@ -634,7 +634,7 @@ _add_capabilities (NMDevice *self, NMDeviceCapabilities capabilities)
 	}
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static const char *
 _get_stable_id (NMConnection *connection, NMUtilsStableType *out_stable_type)
@@ -658,7 +658,7 @@ _get_stable_id (NMConnection *connection, NMUtilsStableType *out_stable_type)
 	return stable_id;
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_ip_state_to_string, IpState,
 	NM_UTILS_LOOKUP_DEFAULT_WARN ("unknown"),
@@ -1320,7 +1320,7 @@ nm_device_get_physical_port_id (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->physical_port_id;
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static gboolean
 nm_device_uses_generated_assumed_connection (NMDevice *self)
@@ -4245,7 +4245,7 @@ nm_device_ip_method_failed (NMDevice *self, int family, NMDeviceStateReason reas
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 }
 
-/*********************************************/
+/*****************************************************************************/
 /* IPv4 DAD stuff */
 
 static guint
@@ -4429,7 +4429,7 @@ ipv4_dad_start (NMDevice *self, NMIP4Config **configs, ArpingCallback cb)
 	}
 }
 
-/*********************************************/
+/*****************************************************************************/
 /* IPv4LL stuff */
 
 static void
@@ -4620,7 +4620,7 @@ fail:
 	return NM_ACT_STAGE_RETURN_FAILURE;
 }
 
-/*********************************************/
+/*****************************************************************************/
 
 static gboolean
 _device_get_default_route_from_platform (NMDevice *self, int addr_family, NMPlatformIPRoute *out_route)
@@ -4666,7 +4666,7 @@ _device_get_default_route_from_platform (NMDevice *self, int addr_family, NMPlat
 	return success;
 }
 
-/*********************************************/
+/*****************************************************************************/
 
 static void
 ensure_con_ip4_config (NMDevice *self)
@@ -4720,7 +4720,7 @@ ensure_con_ip6_config (NMDevice *self)
 	}
 }
 
-/*********************************************/
+/*****************************************************************************/
 /* DHCPv4 stuff */
 
 static void
@@ -5218,7 +5218,7 @@ nm_device_dhcp4_renew (NMDevice *self, gboolean release)
 	return (ret != NM_ACT_STAGE_RETURN_FAILURE);
 }
 
-/*********************************************/
+/*****************************************************************************/
 
 static GHashTable *shared_ips = NULL;
 
@@ -5288,7 +5288,7 @@ shared4_new_config (NMDevice *self, NMConnection *connection, NMDeviceStateReaso
 	return config;
 }
 
-/*********************************************/
+/*****************************************************************************/
 
 static gboolean
 connection_ip4_method_requires_carrier (NMConnection *connection,
@@ -5466,7 +5466,7 @@ act_stage3_ip4_config_start (NMDevice *self,
 	return ret;
 }
 
-/*********************************************/
+/*****************************************************************************/
 /* DHCPv6 stuff */
 
 static void
@@ -6045,7 +6045,7 @@ nm_device_dhcp6_renew (NMDevice *self, gboolean release)
 	return dhcp6_start (self, FALSE, NULL);
 }
 
-/******************************************/
+/*****************************************************************************/
 
 static void
 linklocal6_cleanup (NMDevice *self)
@@ -6225,7 +6225,7 @@ linklocal6_start (NMDevice *self)
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
 
-/******************************************/
+/*****************************************************************************/
 
 static void nm_device_ipv6_set_mtu (NMDevice *self, guint32 mtu);
 
@@ -6548,7 +6548,7 @@ addrconf6_cleanup (NMDevice *self)
 	g_clear_object (&priv->rdisc);
 }
 
-/******************************************/
+/*****************************************************************************/
 
 static const char *ip6_properties_to_save[] = {
 	"accept_ra",
@@ -6644,7 +6644,7 @@ set_nm_ipv6ll (NMDevice *self, gboolean enable)
 	}
 }
 
-/************************************************************************/
+/*****************************************************************************/
 
 static NMSettingIP6ConfigPrivacy
 _ip6_privacy_clamp (NMSettingIP6ConfigPrivacy use_tempaddr)
@@ -6702,7 +6702,7 @@ _ip6_privacy_get (NMDevice *self)
 	return _ip6_privacy_clamp (ip6_privacy);
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static gboolean
 ip6_requires_slaves (NMConnection *connection)
@@ -8852,7 +8852,7 @@ nm_device_get_ip6_config (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->ip6_config;
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static void
 dispatcher_cleanup (NMDevice *self)
@@ -8882,7 +8882,7 @@ dispatcher_complete_proceed_state (guint call_id, gpointer user_data)
 	priv->dispatcher.post_state_reason = NM_DEVICE_STATE_REASON_NONE;
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static void
 ip_check_pre_up (NMDevice *self)
@@ -9110,7 +9110,7 @@ nm_device_start_ip_check (NMDevice *self)
 		ip_check_pre_up (self);
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static gboolean
 carrier_wait_timeout (gpointer user_data)
@@ -10663,7 +10663,7 @@ nm_device_has_pending_action (NMDevice *self)
 	return !!priv->pending_actions;
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static void
 _cancel_activation (NMDevice *self)
@@ -11025,7 +11025,7 @@ nm_device_spawn_iface_helper (NMDevice *self)
 	g_ptr_array_unref (argv);
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static gboolean
 ip_config_valid (NMDeviceState state)
@@ -11566,7 +11566,7 @@ nm_device_get_state (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->state;
 }
 
-/***********************************************************/
+/*****************************************************************************/
 /* NMConfigDevice interface related stuff */
 
 const char *
@@ -12121,7 +12121,7 @@ spec_match_list (NMDevice *self, const GSList *specs)
 	return matched;
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static const char *
 _activation_func_to_string (ActivationHandleFunc func)
@@ -12141,7 +12141,7 @@ _activation_func_to_string (ActivationHandleFunc func)
 	g_return_val_if_reached ("unknown");
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_init (NMDevice *self)

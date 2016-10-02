@@ -605,7 +605,7 @@ update (NMDnsPlugin *plugin,
 	return TRUE;
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static void
 child_quit (NMDnsPlugin *plugin, gint status)
@@ -637,7 +637,7 @@ child_quit (NMDnsPlugin *plugin, gint status)
 		g_signal_emit_by_name (self, NM_DNS_PLUGIN_FAILED);
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static gboolean
 is_caching (NMDnsPlugin *plugin)
@@ -651,7 +651,7 @@ get_name (NMDnsPlugin *plugin)
 	return "dnsmasq";
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 NMDnsPlugin *
 nm_dns_dnsmasq_new (void)

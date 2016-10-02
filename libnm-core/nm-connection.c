@@ -77,7 +77,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 static NMSettingVerifyResult _nm_connection_verify (NMConnection *connection, GError **error);
 
 
-/*************************************************************/
+/*****************************************************************************/
 
 static void
 setting_changed_cb (NMSetting *setting,
@@ -1860,7 +1860,7 @@ nm_connection_get_virtual_device_description (NMConnection *connection)
 	return g_strdup_printf ("%s (%s)", display_type, iface);
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_connection_get_setting_802_1x:
@@ -2360,7 +2360,7 @@ nm_connection_get_setting_vlan (NMConnection *connection)
 	return (NMSettingVlan *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VLAN);
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 static void
 nm_connection_private_free (NMConnectionPrivate *priv)

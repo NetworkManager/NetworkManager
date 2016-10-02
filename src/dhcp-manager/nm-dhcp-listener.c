@@ -269,7 +269,7 @@ dis_connection_cb (NMBusManager *mgr,
 	}
 }
 
-/***************************************************/
+/*****************************************************************************/
 
 static void
 nm_dhcp_listener_init (NMDhcpListener *self)

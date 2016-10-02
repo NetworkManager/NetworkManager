@@ -71,7 +71,7 @@ enum {
 	LAST_PROP
 };
 
-/**************************************************************/
+/*****************************************************************************/
 
 static void
 update_properties (NMDevice *device)
@@ -543,7 +543,7 @@ ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 	}
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_vxlan_init (NMDeviceVxlan *self)
@@ -771,7 +771,7 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 	                                        NULL);
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 #define NM_TYPE_VXLAN_FACTORY (nm_vxlan_factory_get_type ())
 #define NM_VXLAN_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VXLAN_FACTORY, NMVxlanFactory))

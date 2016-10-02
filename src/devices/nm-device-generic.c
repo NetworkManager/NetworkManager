@@ -108,7 +108,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 	              NULL);
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 NMDevice *
 nm_device_generic_new (const NMPlatformLink *plink, gboolean nm_plugin_missing)

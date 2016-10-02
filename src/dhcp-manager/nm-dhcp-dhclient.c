@@ -600,7 +600,7 @@ get_duid (NMDhcpClient *client)
 	return duid ? duid : NM_DHCP_CLIENT_CLASS (nm_dhcp_dhclient_parent_class)->get_duid (client);
 }
 
-/***************************************************/
+/*****************************************************************************/
 
 static const char *def_leasefiles[] = {
 	SYSCONFDIR "/dhclient6.leases",

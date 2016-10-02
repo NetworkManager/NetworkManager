@@ -234,7 +234,7 @@ get_hw_address (NMDevice *device)
 	return nm_device_tun_get_hw_address (NM_DEVICE_TUN (device));
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_tun_init (NMDeviceTun *device)

@@ -188,7 +188,7 @@ static void _set_vpn_state (NMVpnConnection *self,
                             NMVpnConnectionStateReason reason,
                             gboolean quitting);
 
-/*********************************************************************/
+/*****************************************************************************/
 
 #define _NMLOG_DOMAIN      LOGD_VPN
 #define _NMLOG_PREFIX_NAME "vpn-connection"
@@ -243,7 +243,7 @@ __LOG_create_prefix (char *buf, NMVpnConnection *self)
         } \
     } G_STMT_END
 
-/*********************************************************************/
+/*****************************************************************************/
 
 static void
 cancel_get_secrets (NMVpnConnection *self)
@@ -2321,7 +2321,7 @@ nm_vpn_connection_deactivate (NMVpnConnection *self,
 	return success;
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 static void
 plugin_need_secrets_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
@@ -2532,7 +2532,7 @@ plugin_interactive_secrets_required (NMVpnConnection *self,
 	g_strfreev (hints);
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 static void
 device_changed (NMActiveConnection *active,
@@ -2563,7 +2563,7 @@ device_changed (NMActiveConnection *active,
 		apply_parent_device_config (NM_VPN_CONNECTION (active));
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 static void
 nm_vpn_connection_init (NMVpnConnection *self)

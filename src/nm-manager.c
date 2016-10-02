@@ -210,7 +210,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMManager,
 
 NM_DEFINE_SINGLETON_INSTANCE (NMManager);
 
-/************************************************************************/
+/*****************************************************************************/
 
 #define _NMLOG_PREFIX_NAME      "manager"
 #define _NMLOG(level, domain, ...) \
@@ -232,7 +232,7 @@ NM_DEFINE_SINGLETON_INSTANCE (NMManager);
         } \
     } G_STMT_END
 
-/************************************************************************/
+/*****************************************************************************/
 
 static void active_connection_state_changed (NMActiveConnection *active,
                                              GParamSpec *pspec,
@@ -460,7 +460,7 @@ active_connection_get_by_path (NMManager *manager, const char *path)
 	return NULL;
 }
 
-/************************************************************************/
+/*****************************************************************************/
 
 static void
 _config_changed_cb (NMConfig *config, NMConfigData *config_data, NMConfigChangeFlags changes, NMConfigData *old_data, NMManager *self)
@@ -573,7 +573,7 @@ impl_manager_reload (NMManager *self,
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_RELOAD, TRUE);
 }
 
-/************************************************************************/
+/*****************************************************************************/
 
 NMDevice *
 nm_manager_get_device_by_path (NMManager *manager, const char *path)
@@ -1017,7 +1017,7 @@ nm_manager_get_state (NMManager *manager)
 	return NM_MANAGER_GET_PRIVATE (manager)->state;
 }
 
-/***************************/
+/*****************************************************************************/
 
 static NMDevice *
 find_parent_device_for_connection (NMManager *self, NMConnection *connection, NMDeviceFactory *cached_factory)
@@ -1363,9 +1363,9 @@ system_hostname_changed_cb (NMSettings *settings,
 	nm_dhcp_manager_set_default_hostname (nm_dhcp_manager_get (), priv->hostname);
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 /* General NMManager stuff                                         */
-/*******************************************************************/
+/*****************************************************************************/
 
 static gboolean
 radio_enabled_for_rstate (RadioState *rstate, gboolean check_changeable)
@@ -2025,7 +2025,7 @@ add_device (NMManager *self, NMDevice *device, GError **error)
 	return TRUE;
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 static void
 factory_device_added_cb (NMDeviceFactory *factory,
@@ -2079,7 +2079,7 @@ _register_device_factory (NMDeviceFactory *factory, gpointer user_data)
 	                  self);
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 static void
 platform_link_added (NMManager *self,
@@ -3450,7 +3450,7 @@ error:
 	return NULL;
 }
 
-/***********************************************************************/
+/*****************************************************************************/
 
 static void
 _activation_auth_done (NMActiveConnection *active,
@@ -3584,7 +3584,7 @@ error:
 	g_dbus_method_invocation_take_error (context, error);
 }
 
-/***********************************************************************/
+/*****************************************************************************/
 
 typedef struct {
 	NMManager *manager;
@@ -3796,7 +3796,7 @@ error:
 	g_dbus_method_invocation_take_error (context, error);
 }
 
-/***********************************************************************/
+/*****************************************************************************/
 
 gboolean
 nm_manager_deactivate_connection (NMManager *manager,
@@ -5171,7 +5171,7 @@ prop_filter (GDBusConnection *connection,
 	return NULL;
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 static int
 _set_prop_filter_free2 (gpointer user_data)
@@ -5218,7 +5218,7 @@ _set_prop_filter (NMManager *self, GDBusConnection *connection)
 	}
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 static NMCheckpointManager *
 _checkpoint_mgr_get (NMManager *self, gboolean create_as_needed)
@@ -5386,7 +5386,7 @@ impl_manager_checkpoint_rollback (NMManager *self,
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_CHECKPOINT_ROLLBACK, TRUE);
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 static void
 auth_mgr_changed (NMAuthManager *auth_manager, gpointer user_data)
@@ -5529,7 +5529,7 @@ dbus_connection_changed_cb (NMBusManager *dbus_mgr,
 	_set_prop_filter (NM_MANAGER (user_data), connection);
 }
 
-/**********************************************************************/
+/*****************************************************************************/
 
 void
 nm_manager_set_capability (NMManager *self,
@@ -5562,7 +5562,7 @@ nm_manager_set_capability (NMManager *self,
 	_notify (self, PROP_CAPABILITIES);
 }
 
-/**********************************************************************/
+/*****************************************************************************/
 
 NM_DEFINE_SINGLETON_REGISTER (NMManager);
 

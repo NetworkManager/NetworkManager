@@ -142,7 +142,7 @@ guint32 nm_ip6_config_get_mss (const NMIP6Config *config);
 void nm_ip6_config_hash (const NMIP6Config *config, GChecksum *sum, gboolean dns_only);
 gboolean nm_ip6_config_equal (const NMIP6Config *a, const NMIP6Config *b);
 
-/******************************************************/
+/*****************************************************************************/
 /* Testing-only functions */
 
 gboolean nm_ip6_config_capture_resolv_conf (GArray *nameservers,

@@ -36,7 +36,7 @@
 #define CLOCK_BOOTTIME 7
 #endif
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_nm_utils_monotonic_timestamp_as_boottime (void)
@@ -72,7 +72,7 @@ test_nm_utils_monotonic_timestamp_as_boottime (void)
 	}
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 struct test_nm_utils_kill_child_async_data
 {
@@ -370,7 +370,7 @@ test_nm_utils_kill_child (void)
 	g_test_assert_expected_messages ();
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 _remove_at_indexes_init_random_idx (GArray *idx, guint array_len, guint idx_len)
@@ -469,7 +469,7 @@ test_nm_utils_array_remove_at_indexes (void)
 	}
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_nm_ethernet_address_is_valid (void)
@@ -496,7 +496,7 @@ test_nm_ethernet_address_is_valid (void)
 	g_assert ( nm_ethernet_address_is_valid (((guint8[8]) { 0x02,0x30,0xb4,0x00,0x00,0x01 }), ETH_ALEN));
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 typedef struct {
 	union {
@@ -852,7 +852,7 @@ test_nm_multi_index (void)
 	_mi_test_run (50, 18);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_nm_utils_new_vlan_name (void)
@@ -895,7 +895,7 @@ test_nm_utils_new_vlan_name (void)
 	}
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 NMTST_DEFINE ();
 

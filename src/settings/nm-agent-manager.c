@@ -138,7 +138,7 @@ static void _con_del_request_start (Request *req);
 
 static gboolean _con_get_try_complete_early (Request *req);
 
-/*************************************************************/
+/*****************************************************************************/
 
 static gboolean
 remove_agent (NMAgentManager *self, const char *owner)
@@ -186,7 +186,7 @@ maybe_remove_agent_on_error (NMSecretAgent *agent,
 		remove_agent (nm_agent_manager_get (), nm_secret_agent_get_dbus_owner (agent));
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 static gboolean
 validate_identifier (const char *identifier, GError **error)
@@ -433,7 +433,7 @@ done:
 	g_free (sender);
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 struct _NMAgentManagerCallId {
 	NMAgentManager *self;
@@ -815,7 +815,7 @@ out:
 	return FALSE;
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 static void
 _con_get_request_done (NMSecretAgent *agent,
@@ -1263,7 +1263,7 @@ nm_agent_manager_cancel_secrets (NMAgentManager *self,
 	req_complete_cancel (request_id, FALSE);
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 static void
 _con_save_request_done (NMSecretAgent *agent,
@@ -1352,7 +1352,7 @@ nm_agent_manager_save_secrets (NMAgentManager *self,
 	req->idle_id = g_idle_add (request_start, req);
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 static void
 _con_del_request_done (NMSecretAgent *agent,
@@ -1440,7 +1440,7 @@ nm_agent_manager_delete_secrets (NMAgentManager *self,
 	req->idle_id = g_idle_add (request_start, req);
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 NMSecretAgent *
 nm_agent_manager_get_agent_by_user (NMAgentManager *self, const char *username)
@@ -1458,7 +1458,7 @@ nm_agent_manager_get_agent_by_user (NMAgentManager *self, const char *username)
 	return NULL;
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 gboolean
 nm_agent_manager_all_agents_have_capability (NMAgentManager *manager,
@@ -1484,7 +1484,7 @@ nm_agent_manager_all_agents_have_capability (NMAgentManager *manager,
 	return TRUE;
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 static void
 agent_permissions_changed_done (NMAuthChain *chain,
@@ -1548,7 +1548,7 @@ authority_changed_cb (NMAuthManager *auth_manager, NMAgentManager *self)
 	}
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 NM_DEFINE_SINGLETON_GETTER (NMAgentManager, nm_agent_manager_get, NM_TYPE_AGENT_MANAGER);
 

@@ -31,7 +31,7 @@
 #include "nm-dhcp-client-logging.h"
 #include "nm-core-internal.h"
 
-/********************************************/
+/*****************************************************************************/
 
 static gboolean
 ip4_process_dhcpcd_rfc3442_routes (const char *iface,
@@ -596,7 +596,7 @@ error:
 	return NULL;
 }
 
-/********************************************/
+/*****************************************************************************/
 
 static void
 ip6_add_domain_search (gpointer data, gpointer user_data)

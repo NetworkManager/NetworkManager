@@ -106,12 +106,12 @@
 
 #include "nm-utils.h"
 
-/*******************************************************************************/
+/*****************************************************************************/
 
 #define NMTST_G_RETURN_MSG_S(expr) "*: assertion '"NM_ASSERT_G_RETURN_EXPR(expr)"' failed"
 #define NMTST_G_RETURN_MSG(expr)   NMTST_G_RETURN_MSG_S(#expr)
 
-/*******************************************************************************/
+/*****************************************************************************/
 
 /* general purpose functions that have no dependency on other nmtst functions */
 
@@ -168,7 +168,7 @@
 		g_assert (!(success)); \
 	} G_STMT_END
 
-/*******************************************************************************/
+/*****************************************************************************/
 
 struct __nmtst_internal
 {
@@ -1123,7 +1123,7 @@ __nmtst_spawn_sync (const char *working_directory, char **standard_out, char **s
 	return exit_status;
 }
 
-/*******************************************************************************/
+/*****************************************************************************/
 
 inline static char *
 nmtst_file_resolve_relative_path (const char *rel, const char *cwd)
@@ -1156,7 +1156,7 @@ _nmtst_assert_resolve_relative_path_equals (const char *f1, const char *f2, cons
 }
 #define nmtst_assert_resolve_relative_path_equals(f1, f2) _nmtst_assert_resolve_relative_path_equals (f1, f2, __FILE__, __LINE__);
 
-/*******************************************************************************/
+/*****************************************************************************/
 
 #ifdef NM_SETTING_IP_CONFIG_H
 inline static void

@@ -44,7 +44,7 @@ static void device_factory_interface_init (NMDeviceFactoryInterface *factory_ifa
 G_DEFINE_TYPE_EXTENDED (NMAtmManager, nm_atm_manager, G_TYPE_OBJECT, 0,
                         G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_FACTORY, device_factory_interface_init))
 
-/**************************************************************************/
+/*****************************************************************************/
 
 G_MODULE_EXPORT NMDeviceFactory *
 nm_device_factory_create (GError **error)
@@ -52,7 +52,7 @@ nm_device_factory_create (GError **error)
 	return (NMDeviceFactory *) g_object_new (NM_TYPE_ATM_MANAGER, NULL);
 }
 
-/************************************************************************/
+/*****************************************************************************/
 
 static gboolean
 dev_get_attrs (GUdevDevice *udev_device,
@@ -223,7 +223,7 @@ NM_DEVICE_FACTORY_DECLARE_TYPES (
 	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_ADSL_SETTING_NAME)
 )
 
-/*********************************************************************/
+/*****************************************************************************/
 
 static void
 nm_atm_manager_init (NMAtmManager *self)

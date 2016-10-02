@@ -3318,7 +3318,7 @@ test_setting_old_uuid (void)
 	nmtst_assert_setting_verifies (NM_SETTING (setting));
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 static void
 test_connection_normalize_uuid (void)
@@ -3335,7 +3335,7 @@ test_connection_normalize_uuid (void)
 	nmtst_assert_connection_verifies_after_normalization (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY);
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 /*
  * Test normalization of interface-name
@@ -4313,7 +4313,7 @@ test_hexstr2bin (void)
 	}
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 #define UUID_NIL        "00000000-0000-0000-0000-000000000000"
 #define UUID_NS_DNS     "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
@@ -4367,7 +4367,7 @@ test_nm_utils_uuid_generate_from_string (void)
 	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "002a0ada-f547-375a-bab5-896a11d1927e", "a\0b", 3, UUID_NS_DNS);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 __test_uuid (const char *expected_uuid, const char *str, gssize slen, char *uuid_test)
@@ -4414,7 +4414,7 @@ test_nm_utils_uuid_generate_from_strings (void)
 	_test_uuid ("dd265bf7-c05a-3037-9939-b9629858a477", "a\0b\0",   4, "a",  "b");
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 static void
 test_nm_utils_ascii_str_to_int64_check (const char *str, guint base, gint64 min,
@@ -4545,7 +4545,7 @@ test_nm_utils_ascii_str_to_int64 (void)
 	test_nm_utils_ascii_str_to_int64_do ("0x70",  0, G_MININT64, G_MAXINT64, -1, 0, 0x70);
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 static void
 test_nm_utils_strstrdictkey (void)
@@ -4593,7 +4593,7 @@ test_nm_utils_strstrdictkey (void)
 	}
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 static void
 test_nm_utils_dns_option_validate_do (char *option, gboolean ipv6, const NMUtilsDNSOptionDesc *descs,
@@ -4677,7 +4677,7 @@ test_nm_utils_dns_option_find_idx (void)
 	g_ptr_array_free (options, TRUE);
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 static void
 _json_config_check_valid (const char *conf, gboolean expected)
@@ -4781,7 +4781,7 @@ test_nm_utils_team_config_equal (void)
 #endif
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 enum TEST_IS_POWER_OF_TWP_ENUM_SIGNED {
 	_DUMMY_1 = -1,
@@ -4878,7 +4878,7 @@ again:
 	}
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 static void
 test_g_ptr_array_insert (void)
@@ -4903,7 +4903,7 @@ test_g_ptr_array_insert (void)
 #endif
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 static void
 test_g_hash_table_get_keys_as_array (void)
@@ -4938,7 +4938,7 @@ test_g_hash_table_get_keys_as_array (void)
 	g_hash_table_unref (table);
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 static int
 _test_find_binary_search_cmp (gconstpointer a, gconstpointer b, gpointer dummy)
@@ -5082,7 +5082,7 @@ test_nm_utils_ptrarray_find_binary_search (void)
 	test_find_binary_search_do (-3, -2, -1, 1, 2, 3, 4);
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 static void
 test_nm_utils_enum_from_str_do (GType type, const char *str,
                                 gboolean exp_result, int exp_flags,
@@ -5177,7 +5177,7 @@ static void test_nm_utils_enum (void)
 	test_nm_utils_enum_get_values_do (color_flags, 0, G_MAXINT, "blue,red,green");
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 static int
 _test_nm_in_set_get (int *call_counter, gboolean allow_called, int value)
@@ -5269,7 +5269,7 @@ test_nm_in_set (void)
 #undef _ASSERT
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 static const char *
 _test_nm_in_set_getstr (int *call_counter, gboolean allow_called, const char *value)
@@ -5397,7 +5397,7 @@ test_nm_in_strset (void)
 #undef _ASSERT
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 static gboolean
 do_test_nm_set_out_called (gint *call_count)
@@ -5427,7 +5427,7 @@ test_nm_set_out (void)
 	g_assert_cmpint (call_count, ==, 0);
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 NMTST_DEFINE ();
 

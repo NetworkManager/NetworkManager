@@ -65,7 +65,7 @@ typedef struct {
 
 #define NM_REMOTE_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_REMOTE_CONNECTION, NMRemoteConnectionPrivate))
 
-/****************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_remote_connection_commit_changes:
@@ -557,7 +557,7 @@ nm_remote_connection_get_visible (NMRemoteConnection *connection)
 	return NM_REMOTE_CONNECTION_GET_PRIVATE (connection)->visible;
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static void
 replace_settings (NMRemoteConnection *self, GVariant *new_settings)
@@ -615,7 +615,7 @@ updated_cb (NMDBusSettingsConnection *proxy, gpointer user_data)
 	                                              g_object_ref (self));
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static void
 init_dbus (NMObject *object)

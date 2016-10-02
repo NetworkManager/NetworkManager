@@ -45,7 +45,7 @@ typedef struct {
 	int dummy;
 } NMDeviceBondPrivate;
 
-/******************************************************************/
+/*****************************************************************************/
 
 static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *dev)
@@ -115,7 +115,7 @@ complete_connection (NMDevice *device,
 	return TRUE;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static gboolean
 set_bond_attr (NMDevice *device, NMBondMode mode, const char *attr, const char *value)
@@ -482,7 +482,7 @@ create_and_realize (NMDevice *device,
 	return TRUE;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_bond_init (NMDeviceBond * self)
@@ -519,7 +519,7 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 	                                        NULL);
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 #define NM_TYPE_BOND_FACTORY (nm_bond_factory_get_type ())
 #define NM_BOND_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_BOND_FACTORY, NMBondFactory))

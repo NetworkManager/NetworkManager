@@ -68,7 +68,7 @@ nm_keyfile_plugin_get_setting_name_for_alias (const char *alias)
 	return NULL;
 }
 
-/**********************************************************************/
+/*****************************************************************************/
 
 /* List helpers */
 #define DEFINE_KF_LIST_WRAPPER(stype, get_ctype, set_ctype) \
@@ -202,7 +202,7 @@ nm_keyfile_plugin_kf_has_key (GKeyFile *kf,
 	return has;
 }
 
-/************************************************************************/
+/*****************************************************************************/
 
 void
 _nm_keyfile_copy (GKeyFile *dst, GKeyFile *src)
@@ -232,7 +232,7 @@ _nm_keyfile_copy (GKeyFile *dst, GKeyFile *src)
 	}
 }
 
-/************************************************************************/
+/*****************************************************************************/
 
 gboolean
 _nm_keyfile_a_contains_all_in_b (GKeyFile *kf_a, GKeyFile *kf_b)

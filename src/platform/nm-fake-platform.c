@@ -36,7 +36,7 @@
 
 #include "nm-test-utils-core.h"
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 #define _NMLOG_PREFIX_NAME                "platform-fake"
 #define _NMLOG_DOMAIN                     LOGD_PLATFORM
@@ -62,7 +62,7 @@
         } \
     } G_STMT_END
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 typedef struct {
 	GHashTable *options;
@@ -85,7 +85,7 @@ typedef struct {
 
 G_DEFINE_TYPE (NMFakePlatform, nm_fake_platform, NM_TYPE_PLATFORM)
 
-/******************************************************************/
+/*****************************************************************************/
 
 static void link_changed (NMPlatform *platform, NMFakePlatformLink *device, gboolean raise_signal);
 
@@ -99,7 +99,7 @@ static gboolean ip6_address_add (NMPlatform *platform,
                                  guint flags);
 static gboolean ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, guint8 plen);
 
-/******************************************************************/
+/*****************************************************************************/
 
 static gboolean
 _ip4_address_equal_peer_net (in_addr_t peer1, in_addr_t peer2, guint8 plen)
@@ -107,7 +107,7 @@ _ip4_address_equal_peer_net (in_addr_t peer1, in_addr_t peer2, guint8 plen)
 	return ((peer1 ^ peer2) & nm_utils_ip4_prefix_to_netmask (plen)) == 0;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static gboolean
 sysctl_set (NMPlatform *platform, const char *path, const char *value)
@@ -839,7 +839,7 @@ mesh_set_ssid (NMPlatform *platform, int ifindex, const guint8 *ssid, gsize len)
 	return FALSE;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static GArray *
 ip4_address_get_all (NMPlatform *platform, int ifindex)
@@ -1081,7 +1081,7 @@ ip6_address_get (NMPlatform *platform, int ifindex, struct in6_addr addr, guint8
 	return NULL;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static GArray *
 ip4_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteFlags flags)
@@ -1367,7 +1367,7 @@ ip6_route_get (NMPlatform *platform, int ifindex, struct in6_addr network, guint
 	return NULL;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static void
 nm_fake_platform_init (NMFakePlatform *fake_platform)

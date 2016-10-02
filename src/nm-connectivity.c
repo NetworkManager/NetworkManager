@@ -329,7 +329,7 @@ nm_connectivity_check_finish (NMConnectivity  *self,
 	return (NMConnectivityState) g_simple_async_result_get_op_res_gssize (simple);
 }
 
-/**************************************************************************/
+/*****************************************************************************/
 
 NMConnectivity *
 nm_connectivity_new (const char *uri,

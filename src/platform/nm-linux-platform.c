@@ -62,11 +62,11 @@
 /* nm-internal error codes for libnl. Make sure they don't overlap. */
 #define _NLE_NM_NOBUFS 500
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 #define IFQDISCSIZ                      32
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 #ifndef IFLA_PROMISCUITY
 #define IFLA_PROMISCUITY                30
@@ -114,7 +114,7 @@
 #define IP6_FLOWINFO_TCLASS_SHIFT       20
 #define IP6_FLOWINFO_FLOWLABEL_MASK     0x000FFFFF
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 #define _NMLOG_PREFIX_NAME                "platform-linux"
 #define _NMLOG_DOMAIN                     LOGD_PLATFORM
@@ -550,7 +550,7 @@ _addrtime_get_lifetimes (guint32 timestamp,
 	*out_preferred = preferred;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static const NMPObject *
 _lookup_cached_link (const NMPCache *cache, int ifindex, gboolean *completed_from_cache, const NMPObject **link_cached)
@@ -571,7 +571,7 @@ _lookup_cached_link (const NMPCache *cache, int ifindex, gboolean *completed_fro
 	return *link_cached;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 #define DEVTYPE_PREFIX "DEVTYPE="
 
@@ -1975,7 +1975,7 @@ nmp_object_new_from_nl (NMPlatform *platform, const NMPCache *cache, struct nl_m
 	}
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static gboolean
 _nl_msg_new_link_set_afspec (struct nl_msg *msg,
@@ -2352,7 +2352,7 @@ nla_put_failure:
 	g_return_val_if_reached (NULL);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static int _support_kernel_extended_ifa_flags = -1;
 
@@ -2471,7 +2471,7 @@ nm_linux_platform_setup (void)
 	              NULL);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static void
 _assert_netns_current (NMPlatform *platform)
@@ -2703,7 +2703,7 @@ sysctl_get (NMPlatform *platform, const char *path)
 	return contents;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static gboolean
 check_support_kernel_extended_ifa_flags (NMPlatform *platform)
@@ -2727,14 +2727,14 @@ process_events (NMPlatform *platform)
 	delayed_action_handle_all (platform, TRUE);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 #define cache_lookup_all_objects(type, platform, obj_type, visible_only) \
 	((const type *const*) nmp_cache_lookup_multi (NM_LINUX_PLATFORM_GET_PRIVATE ((platform))->cache, \
 	                                              nmp_cache_id_init_object_type (NMP_CACHE_ID_STATIC, (obj_type), (visible_only)), \
 	                                              NULL))
 
-/******************************************************************/
+/*****************************************************************************/
 
 static void
 do_emit_signal (NMPlatform *platform, const NMPObject *obj, NMPCacheOpsType cache_op, gboolean was_visible)
@@ -2804,7 +2804,7 @@ do_emit_signal (NMPlatform *platform, const NMPObject *obj, NMPCacheOpsType cach
 	               (NMPlatformSignalChangeType) cache_op);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 _NM_UTILS_LOOKUP_DEFINE (static, delayed_action_refresh_from_object_type, NMPObjectType, DelayedActionType,
 	NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT (DELAYED_ACTION_TYPE_NONE),
@@ -3163,7 +3163,7 @@ delayed_action_schedule_WAIT_FOR_NL_RESPONSE (NMPlatform *platform,
 	                         &data);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static void
 cache_prune_candidates_record_all (NMPlatform *platform, NMPObjectType obj_type)
@@ -3509,7 +3509,7 @@ cache_post (NMPlatform *platform,
 	}
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static int
 _nl_send_auto_with_seq (NMPlatform *platform,
@@ -3771,7 +3771,7 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 	cache_prune_candidates_drop (platform, obj_cache);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static const NMPObject *
 cache_lookup_link (NMPlatform *platform, int ifindex)
@@ -5224,7 +5224,7 @@ link_release (NMPlatform *platform, int master, int slave)
 	return link_enslave (platform, 0, slave);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static gboolean
 _infiniband_partition_action (NMPlatform *platform,
@@ -5290,7 +5290,7 @@ infiniband_partition_delete (NMPlatform *platform, int parent, int p_key)
 	return _infiniband_partition_action (platform, INFINIBAND_ACTION_DELETE_CHILD, parent, p_key, NULL);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static WifiData *
 wifi_get_wifi_data (NMPlatform *platform, int ifindex)
@@ -5421,7 +5421,7 @@ wifi_indicate_addressing_running (NMPlatform *platform, int ifindex, gboolean ru
 	wifi_utils_indicate_addressing_running (wifi_data, running);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static gboolean
 link_can_assume (NMPlatform *platform, int ifindex)
@@ -5464,7 +5464,7 @@ link_can_assume (NMPlatform *platform, int ifindex)
 	return FALSE;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static guint32
 mesh_get_channel (NMPlatform *platform, int ifindex)
@@ -5487,7 +5487,7 @@ mesh_set_ssid (NMPlatform *platform, int ifindex, const guint8 *ssid, gsize len)
 	return wifi_utils_set_mesh_ssid (wifi_data, ssid, len);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static gboolean
 link_get_wake_on_lan (NMPlatform *platform, int ifindex)
@@ -5529,7 +5529,7 @@ link_get_driver_info (NMPlatform *platform,
 	                                          out_fw_version);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static GArray *
 ipx_address_get_all (NMPlatform *platform, int ifindex, NMPObjectType obj_type)
@@ -5694,7 +5694,7 @@ ip6_address_get (NMPlatform *platform, int ifindex, struct in6_addr addr, guint8
 	return NULL;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static GArray *
 ipx_route_get_all (NMPlatform *platform, int ifindex, NMPObjectType obj_type, NMPlatformGetRouteFlags flags)
@@ -5909,7 +5909,7 @@ ip6_route_get (NMPlatform *platform, int ifindex, struct in6_addr network, guint
 	return NULL;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 #define EVENT_CONDITIONS      ((GIOCondition) (G_IO_IN | G_IO_PRI))
 #define ERROR_CONDITIONS      ((GIOCondition) (G_IO_ERR | G_IO_NVAL))
@@ -6236,7 +6236,7 @@ after_read:
 	}
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static void
 cache_update_link_udev (NMPlatform *platform, int ifindex, GUdevDevice *udev_device)
@@ -6352,7 +6352,7 @@ handle_udev_event (GUdevClient *client,
 		udev_device_removed (platform, udev_device);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static void
 nm_linux_platform_init (NMLinuxPlatform *self)

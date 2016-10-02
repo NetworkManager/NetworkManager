@@ -61,7 +61,7 @@ typedef struct {
 
 static gboolean teamd_start (NMDevice *device, NMSettingTeam *s_team);
 
-/******************************************************************/
+/*****************************************************************************/
 
 static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *device)
@@ -214,7 +214,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 	g_object_set (G_OBJECT (s_team), NM_SETTING_TEAM_CONFIG, priv->config, NULL);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static gboolean
 master_update_slave_connection (NMDevice *self,
@@ -281,7 +281,7 @@ master_update_slave_connection (NMDevice *self,
 	return TRUE;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static void
 teamd_cleanup (NMDevice *device, gboolean free_tdc)
@@ -748,7 +748,7 @@ create_and_realize (NMDevice *device,
 	return TRUE;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 NMDevice *
 nm_device_team_new (const char *iface)

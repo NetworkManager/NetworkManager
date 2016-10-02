@@ -79,7 +79,7 @@ enum {
 	LAST_PROP
 };
 
-/**************************************************************/
+/*****************************************************************************/
 
 static gboolean
 address_equal_pp (int family, const char *a, const char *b)
@@ -583,7 +583,7 @@ tunnel_mode_to_link_type (NMIPTunnelMode tunnel_mode)
 	}
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_ip_tunnel_init (NMDeviceIPTunnel *self)
@@ -980,7 +980,7 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 	                                        NMDBUS_TYPE_DEVICE_IPTUNNEL_SKELETON,
 	                                        NULL);
 }
-/*************************************************************/
+/*****************************************************************************/
 
 #define NM_TYPE_IP_TUNNEL_FACTORY (nm_ip_tunnel_factory_get_type ())
 #define NM_IP_TUNNEL_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_IP_TUNNEL_FACTORY, NMIPTunnelFactory))
