@@ -356,6 +356,9 @@ pushd "$DIRNAME"
     elif [[ "$BUILD_TYPE" == "NetworkManager-libreswan" ]]; then
         git remote add origin "git://git.gnome.org/network-manager-libreswan";
         git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-libreswan"
+    elif [[ "$BUILD_TYPE" == "NetworkManager-fortisslvpn" ]]; then
+        git remote add origin "git://git.gnome.org/network-manager-fortisslvpn";
+        git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-fortisslvpn"
     elif [[ "$BUILD_TYPE" == "NetworkManager-pptp" ]]; then
         git remote add origin "git://git.gnome.org/network-manager-pptp";
         git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-pptp"
@@ -405,6 +408,7 @@ pushd "$DIRNAME"
         # if RELEASE_BASE_COMMIT is not set, try detecting the BASE_COMMIT...
 
         if [[ "$BUILD_TYPE" == "NetworkManager" ||
+              "$BUILD_TYPE" == "NetworkManager-fortisslvpn" ||
               "$BUILD_TYPE" == "NetworkManager-libreswan" ||
               "$BUILD_TYPE" == "NetworkManager-pptp" ||
               "$BUILD_TYPE" == "NetworkManager-openconnect" ||
