@@ -356,6 +356,9 @@ pushd "$DIRNAME"
     elif [[ "$BUILD_TYPE" == "NetworkManager-libreswan" ]]; then
         git remote add origin "git://git.gnome.org/network-manager-libreswan";
         git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-libreswan"
+    elif [[ "$BUILD_TYPE" == "NetworkManager-pptp" ]]; then
+        git remote add origin "git://git.gnome.org/network-manager-pptp";
+        git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-pptp"
     elif [[ "$BUILD_TYPE" == "NetworkManager-vpnc" ]]; then
         git remote add origin "git://git.gnome.org/network-manager-vpnc";
         git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-vpnc"
