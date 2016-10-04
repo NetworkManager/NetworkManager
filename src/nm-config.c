@@ -285,7 +285,7 @@ nm_config_get_monitor_connection_files (NMConfig *config)
 gboolean
 nm_config_get_auth_polkit (NMConfig *config)
 {
-	g_return_val_if_fail (NM_IS_CONFIG (config), NM_CONFIG_DEFAULT_AUTH_POLKIT);
+	g_return_val_if_fail (NM_IS_CONFIG (config), NM_CONFIG_DEFAULT_AUTH_POLKIT_BOOL);
 
 	return NM_CONFIG_GET_PRIVATE (config)->auth_polkit;
 }
@@ -512,7 +512,7 @@ nm_config_cmd_line_options_add_to_entries (NMConfigCmdLineOptions *cli,
 			{ "intern-config", 0, 0, G_OPTION_ARG_FILENAME, &cli->intern_config_file, N_("Internal config file location"), N_(DEFAULT_INTERN_CONFIG_FILE) },
 			{ "state-file", 0, 0, G_OPTION_ARG_FILENAME, &cli->state_file, N_("State file location"), N_(DEFAULT_STATE_FILE) },
 			{ "no-auto-default", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_FILENAME, &cli->no_auto_default_file, N_("State file for no-auto-default devices"), N_(DEFAULT_NO_AUTO_DEFAULT_FILE) },
-			{ "plugins", 0, 0, G_OPTION_ARG_STRING, &cli->plugins, N_("List of plugins separated by ','"), N_(CONFIG_PLUGINS_DEFAULT) },
+			{ "plugins", 0, 0, G_OPTION_ARG_STRING, &cli->plugins, N_("List of plugins separated by ','"), N_(NM_CONFIG_PLUGINS_DEFAULT) },
 			{ "configure-and-quit", 0, 0, G_OPTION_ARG_NONE, &cli->configure_and_quit, N_("Quit after initial configuration"), NULL },
 			{ "debug", 'd', 0, G_OPTION_ARG_NONE, &cli->is_debug, N_("Don't become a daemon, and log to stderr"), NULL },
 
@@ -947,7 +947,6 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 	guint i;
 	gs_free char *o_config_main_file = NULL;
 	GString *str;
-	char **plugins_default;
 
 	g_return_val_if_fail (config_dir, NULL);
 	g_return_val_if_fail (system_config_dir, NULL);
@@ -957,11 +956,6 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 
 	/* create a default configuration file. */
 	keyfile = nm_config_create_keyfile ();
-
-	plugins_default = g_strsplit (CONFIG_PLUGINS_DEFAULT, ",", -1);
-	if (plugins_default && plugins_default[0])
-		nm_config_keyfile_set_string_list (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins", (const char *const*) plugins_default, -1);
-	g_strfreev (plugins_default);
 
 	system_confs = _get_config_dir_files (system_config_dir);
 	confs = _get_config_dir_files (config_dir);
@@ -2305,12 +2299,10 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 
 	priv->plugins = _nm_utils_strv_cleanup (g_key_file_get_string_list (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins", NULL, NULL),
 	                                        TRUE, TRUE, TRUE);
-	if (!priv->plugins)
-		priv->plugins = g_new0 (char *, 1);
 
 	priv->monitor_connection_files = nm_config_keyfile_get_boolean (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "monitor-connection-files", FALSE);
 
-	priv->auth_polkit = nm_config_keyfile_get_boolean (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "auth-polkit", NM_CONFIG_DEFAULT_AUTH_POLKIT);
+	priv->auth_polkit = nm_config_keyfile_get_boolean (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "auth-polkit", NM_CONFIG_DEFAULT_AUTH_POLKIT_BOOL);
 
 	priv->dhcp_client = nm_strstrip (g_key_file_get_string (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "dhcp", NULL));
 
@@ -2351,7 +2343,7 @@ nm_config_init (NMConfig *config)
 {
 	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
 
-	priv->auth_polkit = NM_CONFIG_DEFAULT_AUTH_POLKIT;
+	priv->auth_polkit = NM_CONFIG_DEFAULT_AUTH_POLKIT_BOOL;
 }
 
 NMConfig *
