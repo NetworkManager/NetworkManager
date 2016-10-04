@@ -28,11 +28,11 @@
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 
-NM_DEFINE_SINGLETON_INSTANCE (NMPacRunnerManager);
-
 #define PACRUNNER_DBUS_SERVICE "org.pacrunner"
 #define PACRUNNER_DBUS_INTERFACE "org.pacrunner.Manager"
 #define PACRUNNER_DBUS_PATH "/org/pacrunner/manager"
+
+/*****************************************************************************/
 
 struct remove_data {
 	char *iface;
@@ -59,18 +59,11 @@ struct _NMPacRunnerManagerClass {
 
 G_DEFINE_TYPE (NMPacRunnerManager, nm_pac_runner_manager, G_TYPE_OBJECT)
 
-#define NM_PACRUNNER_MANAGER_GET_PRIVATE(self) \
-	({ \
-		/* preserve the const-ness of self. Unfortunately, that
-		 * way, @self cannot be a void pointer */ \
-		typeof (self) _self = (self); \
-		\
-		/* Get compiler error if variable is of wrong type */ \
-		_nm_unused const NMPacRunnerManager *_self2 = (_self); \
-		\
-		nm_assert (NM_IS_PACRUNNER_MANAGER (_self)); \
-		&_self->_priv; \
-	})
+#define NM_PACRUNNER_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMPacRunnerManager, NM_IS_PACRUNNER_MANAGER)
+
+/*****************************************************************************/
+
+NM_DEFINE_SINGLETON_GETTER (NMPacRunnerManager, nm_pac_runner_manager_get, NM_TYPE_PACRUNNER_MANAGER);
 
 /*****************************************************************************/
 
@@ -432,7 +425,7 @@ nm_pac_runner_manager_remove (NMPacRunnerManager *self, const char *iface)
 	}
 }
 
-NM_DEFINE_SINGLETON_GETTER (NMPacRunnerManager, nm_pac_runner_manager_get, NM_TYPE_PACRUNNER_MANAGER);
+/*****************************************************************************/
 
 static void
 nm_pac_runner_manager_init (NMPacRunnerManager *self)

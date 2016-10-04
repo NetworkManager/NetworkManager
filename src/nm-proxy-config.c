@@ -26,6 +26,8 @@
 
 #include "nm-core-internal.h"
 
+/*****************************************************************************/
+
 typedef struct {
 	NMProxyConfigMethod method;
 	gboolean browser_only;
@@ -44,26 +46,9 @@ struct _NMProxyConfigClass {
 
 G_DEFINE_TYPE (NMProxyConfig, nm_proxy_config, G_TYPE_OBJECT)
 
-#define NM_PROXY_CONFIG_GET_PRIVATE(self) \
-	({ \
-		/* preserve the const-ness of self. Unfortunately, that
-		 * way, @self cannot be a void pointer */ \
-		typeof (self) _self = (self); \
-		\
-		/* Get compiler error if variable is of wrong type */ \
-		_nm_unused const NMProxyConfig *_self2 = (_self); \
-		\
-		nm_assert (NM_IS_PROXY_CONFIG (_self)); \
-		&_self->_priv; \
-	})
+#define NM_PROXY_CONFIG_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMProxyConfig, NM_IS_PROXY_CONFIG)
 
 /*****************************************************************************/
-
-NMProxyConfig *
-nm_proxy_config_new (void)
-{
-	return NM_PROXY_CONFIG (g_object_new (NM_TYPE_PROXY_CONFIG, NULL));
-}
 
 void
 nm_proxy_config_set_method (NMProxyConfig *config, NMProxyConfigMethod method)
@@ -165,12 +150,20 @@ nm_proxy_config_get_pac_script (const NMProxyConfig *config)
 	return priv->pac_script;
 }
 
+/*****************************************************************************/
+
 static void
 nm_proxy_config_init (NMProxyConfig *config)
 {
 	NMProxyConfigPrivate *priv = NM_PROXY_CONFIG_GET_PRIVATE (config);
 
 	priv->method = NM_PROXY_CONFIG_METHOD_NONE;
+}
+
+NMProxyConfig *
+nm_proxy_config_new (void)
+{
+	return NM_PROXY_CONFIG (g_object_new (NM_TYPE_PROXY_CONFIG, NULL));
 }
 
 static void

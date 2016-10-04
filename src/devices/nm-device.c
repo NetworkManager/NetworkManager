@@ -297,8 +297,8 @@ typedef struct _NMDevicePrivate {
 	char *          dhcp_anycast_address;
 
 	/* Proxy Configuration */
-	NMProxyConfig * proxy_config;
-	NMPacRunnerManager * pacrunner_manager;
+	NMProxyConfig *proxy_config;
+	NMPacRunnerManager *pacrunner_manager;
 
 	/* IP4 configuration info */
 	NMIP4Config *   ip4_config;     /* Combined config from VPN, settings, and device */
