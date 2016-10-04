@@ -46,24 +46,24 @@ typedef struct {
 	GCancellable *pacrunner_cancellable;
 	GList *args;
 	GList *remove;
-} NMPacRunnerManagerPrivate;
+} NMPacrunnerManagerPrivate;
 
-struct _NMPacRunnerManager {
+struct _NMPacrunnerManager {
 	GObject parent;
-	NMPacRunnerManagerPrivate _priv;
+	NMPacrunnerManagerPrivate _priv;
 };
 
-struct _NMPacRunnerManagerClass {
+struct _NMPacrunnerManagerClass {
 	GObjectClass parent;
 };
 
-G_DEFINE_TYPE (NMPacRunnerManager, nm_pac_runner_manager, G_TYPE_OBJECT)
+G_DEFINE_TYPE (NMPacrunnerManager, nm_pacrunner_manager, G_TYPE_OBJECT)
 
-#define NM_PACRUNNER_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMPacRunnerManager, NM_IS_PACRUNNER_MANAGER)
+#define NM_PACRUNNER_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMPacrunnerManager, NM_IS_PACRUNNER_MANAGER)
 
 /*****************************************************************************/
 
-NM_DEFINE_SINGLETON_GETTER (NMPacRunnerManager, nm_pac_runner_manager_get, NM_TYPE_PACRUNNER_MANAGER);
+NM_DEFINE_SINGLETON_GETTER (NMPacrunnerManager, nm_pacrunner_manager_get, NM_TYPE_PACRUNNER_MANAGER);
 
 /*****************************************************************************/
 
@@ -92,7 +92,7 @@ remove_data_destroy (struct remove_data *data)
 }
 
 static void
-add_proxy_config (NMPacRunnerManager *self, GVariantBuilder *proxy_data, const NMProxyConfig *proxy_config)
+add_proxy_config (NMPacrunnerManager *self, GVariantBuilder *proxy_data, const NMProxyConfig *proxy_config)
 {
 	const char *pac_url, *pac_script;
 	NMProxyConfigMethod method;
@@ -121,9 +121,9 @@ add_proxy_config (NMPacRunnerManager *self, GVariantBuilder *proxy_data, const N
 }
 
 static void
-add_ip4_config (NMPacRunnerManager *self, GVariantBuilder *proxy_data, NMIP4Config *ip4)
+add_ip4_config (NMPacrunnerManager *self, GVariantBuilder *proxy_data, NMIP4Config *ip4)
 {
-	NMPacRunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
+	NMPacrunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
 	int i;
 	char *cidr = NULL;
 
@@ -158,9 +158,9 @@ add_ip4_config (NMPacRunnerManager *self, GVariantBuilder *proxy_data, NMIP4Conf
 }
 
 static void
-add_ip6_config (NMPacRunnerManager *self, GVariantBuilder *proxy_data, NMIP6Config *ip6)
+add_ip6_config (NMPacrunnerManager *self, GVariantBuilder *proxy_data, NMIP6Config *ip6)
 {
-	NMPacRunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
+	NMPacrunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
 	int i;
 	char *cidr = NULL;
 
@@ -197,8 +197,8 @@ add_ip6_config (NMPacRunnerManager *self, GVariantBuilder *proxy_data, NMIP6Conf
 static void
 pacrunner_send_done (GObject *source, GAsyncResult *res, gpointer user_data)
 {
-	NMPacRunnerManager *self = NM_PACRUNNER_MANAGER (user_data);
-	NMPacRunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
+	NMPacrunnerManager *self = NM_PACRUNNER_MANAGER (user_data);
+	NMPacrunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
 	gs_free_error GError *error = NULL;
 	gs_unref_variant GVariant *variant = NULL;
 	const char *path = NULL;
@@ -236,9 +236,9 @@ pacrunner_send_done (GObject *source, GAsyncResult *res, gpointer user_data)
 }
 
 static void
-send_pacrunner_proxy_data (NMPacRunnerManager *self, GVariant *pacrunner_manager_args)
+send_pacrunner_proxy_data (NMPacrunnerManager *self, GVariant *pacrunner_manager_args)
 {
-	NMPacRunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
+	NMPacrunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
 
 	if (!pacrunner_manager_args)
 		return;
@@ -259,8 +259,8 @@ name_owner_changed (GObject *object,
                     GParamSpec *pspec,
                     gpointer user_data)
 {
-	NMPacRunnerManager *self = NM_PACRUNNER_MANAGER (user_data);
-	NMPacRunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
+	NMPacrunnerManager *self = NM_PACRUNNER_MANAGER (user_data);
+	NMPacrunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
 	gs_free char *owner = NULL;
 	GList *iter = NULL;
 
@@ -278,8 +278,8 @@ name_owner_changed (GObject *object,
 static void
 pacrunner_proxy_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 {
-	NMPacRunnerManager *self = user_data;
-	NMPacRunnerManagerPrivate *priv;
+	NMPacrunnerManager *self = user_data;
+	NMPacrunnerManagerPrivate *priv;
 	GError *error = NULL;
 	GDBusProxy *proxy;
 
@@ -301,23 +301,23 @@ pacrunner_proxy_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 }
 
 /**
- * nm_pac_runner_manager_send():
- * @self: the #NMPacRunnerManager
+ * nm_pacrunner_manager_send():
+ * @self: the #NMPacrunnerManager
  * @iface: the iface for the connection or %NULL
  * @proxy_config: Proxy config of the connection
  * @ip4_conifg: IP4 Cofig of the connection
  * @ip6_config: IP6 Config of the connection
  */
 void
-nm_pac_runner_manager_send (NMPacRunnerManager *self,
-                            const char *iface,
-                            NMProxyConfig *proxy_config,
-                            NMIP4Config *ip4_config,
-                            NMIP6Config *ip6_config)
+nm_pacrunner_manager_send (NMPacrunnerManager *self,
+                           const char *iface,
+                           NMProxyConfig *proxy_config,
+                           NMIP4Config *ip4_config,
+                           NMIP6Config *ip6_config)
 {
 	char **strv = NULL;
 	NMProxyConfigMethod method;
-	NMPacRunnerManagerPrivate *priv;
+	NMPacrunnerManagerPrivate *priv;
 	GVariantBuilder proxy_data;
 	GVariant *pacrunner_manager_args;
 
@@ -384,7 +384,7 @@ pacrunner_remove_done (GObject *source, GAsyncResult *res, gpointer user_data)
 {
 	/* @self may be a dangling pointer. However, we don't use it as the
 	 * logging macro below does not dereference @self. */
-	NMPacRunnerManager *self = user_data;
+	NMPacrunnerManager *self = user_data;
 	gs_free_error GError *error = NULL;
 	gs_unref_variant GVariant *ret = NULL;
 
@@ -397,15 +397,15 @@ pacrunner_remove_done (GObject *source, GAsyncResult *res, gpointer user_data)
 }
 
 /**
- * nm_pac_runner_manager_remove():
- * @self: the #NMPacRunnerManager
+ * nm_pacrunner_manager_remove():
+ * @self: the #NMPacrunnerManager
  * @iface: the iface for the connection to be removed
  * from PacRunner
  */
 void
-nm_pac_runner_manager_remove (NMPacRunnerManager *self, const char *iface)
+nm_pacrunner_manager_remove (NMPacrunnerManager *self, const char *iface)
 {
-	NMPacRunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
+	NMPacrunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
 	GList *list;
 
 	for (list = g_list_first(priv->remove); list; list = g_list_next(list)) {
@@ -428,9 +428,9 @@ nm_pac_runner_manager_remove (NMPacRunnerManager *self, const char *iface)
 /*****************************************************************************/
 
 static void
-nm_pac_runner_manager_init (NMPacRunnerManager *self)
+nm_pacrunner_manager_init (NMPacrunnerManager *self)
 {
-	NMPacRunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
+	NMPacrunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
 
 	priv->pacrunner_cancellable = g_cancellable_new ();
 
@@ -448,7 +448,7 @@ nm_pac_runner_manager_init (NMPacRunnerManager *self)
 static void
 dispose (GObject *object)
 {
-	NMPacRunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE ((NMPacRunnerManager *) object);
+	NMPacrunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE ((NMPacrunnerManager *) object);
 
 	g_clear_pointer (&priv->iface, g_free);
 
@@ -462,11 +462,11 @@ dispose (GObject *object)
 	g_list_free_full (priv->remove, (GDestroyNotify) remove_data_destroy);
 	priv->remove = NULL;
 
-	G_OBJECT_CLASS (nm_pac_runner_manager_parent_class)->dispose (object);
+	G_OBJECT_CLASS (nm_pacrunner_manager_parent_class)->dispose (object);
 }
 
 static void
-nm_pac_runner_manager_class_init (NMPacRunnerManagerClass *klass)
+nm_pacrunner_manager_class_init (NMPacrunnerManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
