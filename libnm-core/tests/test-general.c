@@ -3900,6 +3900,7 @@ test_connection_normalize_gateway_never_default (void)
 
 	nm_connection_add_setting (con, (NMSetting *) s_ip4);
 	nm_connection_add_setting (con, (NMSetting *) s_ip6);
+	nm_connection_add_setting (con, nm_setting_proxy_new ());
 
 	nmtst_assert_connection_verifies_without_normalization (con);
 	g_assert_cmpstr ("1.1.1.254", ==, nm_setting_ip_config_get_gateway (s_ip4));
@@ -3942,7 +3943,7 @@ test_connection_normalize_may_fail (void)
 	nm_connection_add_setting (con, (NMSetting *) s_ip4);
 	nm_connection_add_setting (con, (NMSetting *) s_ip6);
 
-	nmtst_assert_connection_verifies_without_normalization (con);
+	nmtst_assert_connection_verifies_and_normalizable (con);
 
 	/* Now set method=disabled/ignore and check that may-fail becomes TRUE
 	 * after normalization
@@ -3989,7 +3990,7 @@ test_connection_normalize_shared_addresses (void)
 	nm_connection_add_setting (con, (NMSetting *) s_ip4);
 	nm_connection_add_setting (con, (NMSetting *) s_ip6);
 
-	nmtst_assert_connection_verifies_without_normalization (con);
+	nmtst_assert_connection_verifies_and_normalizable (con);
 
 	/* Now we add other addresses and check that they are
 	 * removed during normalization
