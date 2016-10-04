@@ -1087,5 +1087,13 @@ global:
 libnm_1_6_0 {
 global:
 	nm_capability_get_type;
+	nm_connection_get_setting_proxy;
+	nm_setting_proxy_get_type;
+	nm_setting_proxy_new;
+	nm_setting_proxy_get_method;
+	nm_setting_proxy_method_get_type;
+	nm_setting_proxy_get_browser_only;
+	nm_setting_proxy_get_pac_url;
+	nm_setting_proxy_get_pac_script;
 	nm_utils_is_json_object;
 } libnm_1_4_0;

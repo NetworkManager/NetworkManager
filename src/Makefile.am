@@ -442,6 +442,8 @@ libNetworkManager_la_SOURCES = \
 	nm-exported-object.h \
 	nm-firewall-manager.c \
 	nm-firewall-manager.h \
+	nm-proxy-config.c \
+	nm-proxy-config.h \
 	nm-ip4-config.c \
 	nm-ip4-config.h \
 	nm-ip6-config.c \
@@ -456,6 +458,8 @@ libNetworkManager_la_SOURCES = \
 	nm-manager.h \
 	nm-multi-index.c \
 	nm-multi-index.h \
+	nm-pacrunner-manager.c \
+	nm-pacrunner-manager.h \
 	nm-policy.c \
 	nm-policy.h \
 	nm-rfkill-manager.c \
@@ -556,6 +560,9 @@ nm_iface_helper_SOURCES = \
 	platform/wifi/wifi-utils.c \
 	platform/wifi/wifi-utils.h \
 	\
+	nm-pacrunner-manager.c \
+	nm-pacrunner-manager.h \
+	\
 	rdisc/nm-lndp-rdisc.c \
 	rdisc/nm-lndp-rdisc.h \
 	rdisc/nm-rdisc.c \
@@ -566,6 +573,8 @@ nm_iface_helper_SOURCES = \
 	\
 	nm-exported-object.c \
 	nm-exported-object.h \
+	nm-proxy-config.c \
+	nm-proxy-config.h \
 	nm-ip4-config.c \
 	nm-ip4-config.h \
 	nm-ip6-config.c \

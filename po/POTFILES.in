@@ -71,6 +71,7 @@ libnm-core/nm-setting-macvlan.c
 libnm-core/nm-setting-olpc-mesh.c
 libnm-core/nm-setting-ppp.c
 libnm-core/nm-setting-pppoe.c
+libnm-core/nm-setting-proxy.c
 libnm-core/nm-setting-team.c
 libnm-core/nm-setting-team-port.c
 libnm-core/nm-setting-tun.c

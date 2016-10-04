@@ -36,6 +36,7 @@
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-8021x.h"
+#include "nm-setting-proxy.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-setting-pppoe.h"
@@ -1998,6 +1999,50 @@ error:
 }
 
 static gboolean
+write_proxy_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
+{
+	NMSettingProxy *s_proxy;
+	NMSettingProxyMethod method;
+	const char *pac_url, *pac_script;
+	gboolean browser_only;
+
+	s_proxy = nm_connection_get_setting_proxy (connection);
+	if (!s_proxy)
+		return TRUE;
+
+	svSetValue (ifcfg, "BROWSER_ONLY", NULL, FALSE);
+	svSetValue (ifcfg, "PAC_URL", NULL, FALSE);
+	svSetValue (ifcfg, "PAC_SCRIPT", NULL, FALSE);
+
+	method = nm_setting_proxy_get_method (s_proxy);
+	switch (method) {
+	case NM_SETTING_PROXY_METHOD_AUTO:
+		svSetValue (ifcfg, "PROXY_METHOD", "auto", FALSE);
+
+		pac_url = nm_setting_proxy_get_pac_url (s_proxy);
+		if (pac_url)
+			svSetValue (ifcfg, "PAC_URL", pac_url, FALSE);
+
+		pac_script = nm_setting_proxy_get_pac_script (s_proxy);
+		if (pac_script)
+			svSetValue (ifcfg, "PAC_SCRIPT", pac_script, FALSE);
+
+		break;
+	case NM_SETTING_PROXY_METHOD_NONE:
+		svSetValue (ifcfg, "PROXY_METHOD", "none", FALSE);
+		/* Write nothing more */
+	}
+
+	browser_only = nm_setting_proxy_get_browser_only (s_proxy);
+	if (browser_only)
+		svSetValue (ifcfg, "BROWSER_ONLY", "yes", FALSE);
+	else
+		svSetValue (ifcfg, "BROWSER_ONLY", "no", FALSE);
+
+	return TRUE;
+}
+
+static gboolean
 write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 {
 	NMSettingIPConfig *s_ip4;
@@ -2885,6 +2930,9 @@ write_connection (NMConnection *connection,
 		goto out;
 
 	if (!write_dcb_setting (connection, ifcfg, error))
+		goto out;
+
+	if (!write_proxy_setting (connection, ifcfg, error))
 		goto out;
 
 	svSetValue (ifcfg, "DHCP_HOSTNAME", NULL, FALSE);

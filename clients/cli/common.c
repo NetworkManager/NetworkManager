@@ -900,6 +900,82 @@ nmc_team_check_config (const char *config, char **out_config, GError **error)
 }
 
 /*
+ * nmc_proxy_check_script:
+ * @script: file name with PAC script, or raw PAC Script data
+ * @out_script: raw PAC Script (with removed new-line characters)
+ * @error: location to store error, or %NULL
+ *
+ * Check PAC Script from @script parameter and return the checked/sanitized
+ * config in @out_script.
+ *
+ * Returns: %TRUE if the script is valid, %FALSE if it is invalid
+ */
+gboolean
+nmc_proxy_check_script (const char *script, char **out_script, GError **error)
+{
+	enum {
+		_PAC_SCRIPT_TYPE_GUESS,
+		_PAC_SCRIPT_TYPE_FILE,
+		_PAC_SCRIPT_TYPE_JSON,
+	} desired_type = _PAC_SCRIPT_TYPE_GUESS;
+	const char *filename = NULL;
+	size_t c_len = 0;
+	gs_free char *script_clone = NULL;
+
+	*out_script = NULL;
+
+	if (!script || !script[0])
+		return TRUE;
+
+	if (g_str_has_prefix (script, "file://")) {
+		script += NM_STRLEN ("file://");
+		desired_type = _PAC_SCRIPT_TYPE_FILE;
+	} else if (g_str_has_prefix (script, "js://")) {
+		script += NM_STRLEN ("js://");
+		desired_type = _PAC_SCRIPT_TYPE_JSON;
+	}
+
+	if (NM_IN_SET (desired_type, _PAC_SCRIPT_TYPE_FILE, _PAC_SCRIPT_TYPE_GUESS)) {
+		gs_free char *contents = NULL;
+
+		if (!g_file_get_contents (script, &contents, &c_len, NULL)) {
+			if (desired_type == _PAC_SCRIPT_TYPE_FILE) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("cannot read pac-script from file '%s'"),
+				             script);
+				return FALSE;
+			}
+		} else {
+			if (c_len != strlen (contents)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("file '%s' contains non-valid utf-8"),
+				             script);
+				return FALSE;
+			}
+			filename = script;
+			script = script_clone = g_steal_pointer (&contents);
+		}
+	}
+
+	if (   !strstr (script, "FindProxyForURL")
+	    || !g_utf8_validate (script, -1, NULL)) {
+		if (filename) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("'%s' does not contain a valid PAC Script"), filename);
+		} else {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("Not a valid PAC Script"));
+		}
+		return FALSE;
+	}
+
+	*out_script = (script == script_clone)
+	              ? g_steal_pointer (&script_clone)
+	              : g_strdup (script);
+	return TRUE;
+}
+
+/*
  * nmc_find_connection:
  * @connections: array of NMConnections to search in
  * @filter_type: "id", "uuid", "path" or %NULL

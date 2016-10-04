@@ -1983,6 +1983,19 @@ It's equivalent of using <literal>+ipv6.addresses</literal> syntax.</entry>
     </tbody>
     </tgroup></table>
 
+    <table><title>Proxy options</title><tgroup cols="3">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry><entry>Note</entry></row>
+    </thead>
+    <tbody>
+      <row>
+        <entry align="left"></entry>
+        <entry align="left"><link linkend="nm-settings.property.proxy.pac-script">proxy.pac-script</link></entry>
+        <entry align="left" valign="top">Read the java script pac-script from file or pass it directly on the command line. Prefix the value with "file://" or "js://" to force one or the other.</entry>
+      </row>
+    </tbody>
+    </tgroup></table>
+
   </refsect1>
 
   <refsect1 id='environment_variables'><title>Environment Variables</title>

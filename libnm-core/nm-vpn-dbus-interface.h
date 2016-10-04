@@ -183,6 +183,9 @@ typedef enum {
 /* string: VPN interface name (tun0, tap0, etc) */
 #define NM_VPN_PLUGIN_CONFIG_TUNDEV      "tundev"
 
+/* string: Proxy PAC */
+#define NM_VPN_PLUGIN_CONFIG_PROXY_PAC   "pac"
+
 /* string: Login message */
 #define NM_VPN_PLUGIN_CONFIG_BANNER      "banner"
 

@@ -68,6 +68,8 @@ void                 nm_vpn_connection_disconnect      (NMVpnConnection *self,
                                                         NMVpnConnectionStateReason reason,
                                                         gboolean quitting);
 
+NMProxyConfig *      nm_vpn_connection_get_proxy_config (NMVpnConnection *self);
+
 NMIP4Config *        nm_vpn_connection_get_ip4_config  (NMVpnConnection *self);
 NMIP6Config *        nm_vpn_connection_get_ip6_config  (NMVpnConnection *self);
 const char *         nm_vpn_connection_get_ip_iface    (NMVpnConnection *self, gboolean fallback_device);

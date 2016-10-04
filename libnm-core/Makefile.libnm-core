@@ -32,6 +32,7 @@ libnm_core_headers =				\
 	$(core)/nm-setting-olpc-mesh.h		\
 	$(core)/nm-setting-ppp.h		\
 	$(core)/nm-setting-pppoe.h		\
+	$(core)/nm-setting-proxy.h		\
 	$(core)/nm-setting-serial.h		\
 	$(core)/nm-setting-team-port.h		\
 	$(core)/nm-setting-team.h		\
@@ -94,6 +95,7 @@ libnm_core_sources =				\
 	$(core)/nm-setting-olpc-mesh.c		\
 	$(core)/nm-setting-ppp.c		\
 	$(core)/nm-setting-pppoe.c		\
+	$(core)/nm-setting-proxy.c		\
 	$(core)/nm-setting-serial.c		\
 	$(core)/nm-setting-team-port.c		\
 	$(core)/nm-setting-team.c		\

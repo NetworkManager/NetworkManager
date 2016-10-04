@@ -48,6 +48,7 @@
 #include "nm-setting-bridge.h"
 #include "nm-setting-bridge-port.h"
 #include "nm-setting-dcb.h"
+#include "nm-setting-proxy.h"
 #include "nm-setting-generic.h"
 #include "nm-core-internal.h"
 #include "nm-utils.h"
@@ -899,6 +900,62 @@ error:
 	return success;
 }
 
+static NMSetting *
+make_proxy_setting (shvarFile *ifcfg, GError **error)
+{
+	NMSettingProxy *s_proxy = NULL;
+	char *value = NULL;
+	NMSettingProxyMethod method;
+
+	value = svGetValue (ifcfg, "PROXY_METHOD", FALSE);
+	if (!value)
+		return NULL;
+
+	if (!g_ascii_strcasecmp (value, "auto"))
+		method = NM_SETTING_PROXY_METHOD_AUTO;
+	else
+		method = NM_SETTING_PROXY_METHOD_NONE;
+	g_free (value);
+
+	s_proxy = (NMSettingProxy *) nm_setting_proxy_new ();
+
+	switch (method) {
+	case NM_SETTING_PROXY_METHOD_AUTO:
+		g_object_set (s_proxy,
+		              NM_SETTING_PROXY_METHOD, NM_SETTING_PROXY_METHOD_AUTO,
+		              NULL);
+
+		value = svGetValue (ifcfg, "PAC_URL", FALSE);
+		if (value) {
+			value = g_strstrip (value);
+			g_object_set (s_proxy, NM_SETTING_PROXY_PAC_URL, value, NULL);
+			g_free (value);
+		}
+
+		value = svGetValue (ifcfg, "PAC_SCRIPT", FALSE);
+		if (value) {
+			value = g_strstrip (value);
+			g_object_set (s_proxy, NM_SETTING_PROXY_PAC_SCRIPT, value, NULL);
+			g_free (value);
+		}
+
+		break;
+	case NM_SETTING_PROXY_METHOD_NONE:
+		g_object_set (s_proxy,
+		              NM_SETTING_PROXY_METHOD, NM_SETTING_PROXY_METHOD_NONE,
+		              NULL);
+	}
+
+	value = svGetValue (ifcfg, "BROWSER_ONLY", FALSE);
+	if (value) {
+		if (!g_ascii_strcasecmp (value, "yes")) {
+			g_object_set (s_proxy, NM_SETTING_PROXY_BROWSER_ONLY, TRUE, NULL);
+			g_free (value);
+		}
+	}
+
+	return NM_SETTING (s_proxy);
+}
 
 static NMSetting *
 make_ip4_setting (shvarFile *ifcfg,
@@ -4962,7 +5019,7 @@ connection_from_file_full (const char *filename,
 	shvarFile *parsed;
 	gs_free char *type = NULL;
 	char *devtype, *bootproto;
-	NMSetting *s_ip4, *s_ip6, *s_port, *s_dcb = NULL;
+	NMSetting *s_ip4, *s_ip6, *s_proxy, *s_port, *s_dcb = NULL;
 	const char *ifcfg_name = NULL;
 
 	g_return_val_if_fail (filename != NULL, NULL);
@@ -5178,6 +5235,10 @@ connection_from_file_full (const char *filename,
 	 * DOMAIN and put the values into IPv6 config instead.
 	 */
 	check_dns_search_domains (parsed, s_ip4, s_ip6);
+
+	s_proxy = make_proxy_setting (parsed, error);
+	if (s_proxy)
+		nm_connection_add_setting (connection, s_proxy);
 
 	/* Bridge port? */
 	s_port = make_bridge_port_setting (parsed);

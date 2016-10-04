@@ -44,6 +44,7 @@ nmc_vlan_parse_priority_maps (const char *priority_map,
 
 const char *nmc_bond_validate_mode (const char *mode, GError **error);
 gboolean nmc_team_check_config (const char *config, char **out_config, GError **error);
+gboolean nmc_proxy_check_script (const char *script, char **out_script, GError **error);
 
 NMConnection *nmc_find_connection (const GPtrArray *connections,
                                    const char *filter_type,
