@@ -153,7 +153,19 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	NMSettingProxyMethod method;
 
 	method = priv->method;
-	if (method == NM_SETTING_PROXY_METHOD_NONE) {
+
+	if (!NM_IN_SET (method,
+	                NM_SETTING_PROXY_METHOD_NONE,
+	                NM_SETTING_PROXY_METHOD_AUTO)) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("invalid proxy method"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_PROXY_SETTING_NAME, NM_SETTING_PROXY_PAC_URL);
+		return FALSE;
+	}
+
+	if (method != NM_SETTING_PROXY_METHOD_AUTO) {
 		if (priv->pac_url) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
@@ -188,9 +200,6 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 static void
 nm_setting_proxy_init (NMSettingProxy *setting)
 {
-	NMSettingProxyPrivate *priv = NM_SETTING_PROXY_GET_PRIVATE (setting);
-
-	priv->method = NM_SETTING_PROXY_METHOD_NONE;
 }
 
 static void
@@ -207,7 +216,7 @@ finalize (GObject *object)
 
 static void
 get_property (GObject *object, guint prop_id,
-			  GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
 	NMSettingProxy *setting = NM_SETTING_PROXY (object);
 

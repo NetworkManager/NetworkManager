@@ -3482,7 +3482,7 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 
 	s_proxy = (NMSettingProxy *) nm_setting_proxy_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_proxy));
-	g_object_set (s_proxy, NM_SETTING_PROXY_METHOD, NM_SETTING_PROXY_METHOD_NONE, NULL);
+	g_object_set (s_proxy, NM_SETTING_PROXY_METHOD, (int) NM_SETTING_PROXY_METHOD_NONE, NULL);
 
 	/* Activate the connection now */
 	nmc->nowait_flag = (nmc->timeout == 0);

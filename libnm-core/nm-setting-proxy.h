@@ -32,16 +32,16 @@ G_BEGIN_DECLS
 
 /**
  * NMSettingProxyMethod:
- * @NM_SETTING_PROXY_METHOD_AUTO:   DHCP obtained Proxy/ Manual override
- * @NM_SETTING_PROXY_METHOD_NONE:   No Proxy for the Connection
+ * @NM_SETTING_PROXY_METHOD_NONE: No Proxy for the Connection
+ * @NM_SETTING_PROXY_METHOD_AUTO: DHCP obtained Proxy/ Manual override
  *
  * The Proxy method.
  *
  * Since: 1.6
  */
 typedef enum {
-	NM_SETTING_PROXY_METHOD_AUTO = 0,
-	NM_SETTING_PROXY_METHOD_NONE
+	NM_SETTING_PROXY_METHOD_NONE = 0,
+	NM_SETTING_PROXY_METHOD_AUTO = 1,
 } NMSettingProxyMethod;
 
 #define NM_TYPE_SETTING_PROXY            (nm_setting_proxy_get_type ())

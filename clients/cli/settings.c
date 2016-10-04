@@ -2133,18 +2133,18 @@ static gboolean
 nmc_property_proxy_set_method (NMSetting *setting, const char *prop,
                                const char *val, GError **error)
 {
-	NMSettingProxyMethod method;
+	int method;
 	gboolean ret;
 
 	ret = nm_utils_enum_from_str (nm_setting_proxy_method_get_type(), val,
-	                               (int *) &method, NULL);
+	                              &method, NULL);
 
 	if (!ret) {
 		gs_free const char **values = NULL;
 		gs_free char *values_str = NULL;
 
 		values = nm_utils_enum_get_values (nm_setting_proxy_method_get_type (),
-		                                   NM_SETTING_PROXY_METHOD_AUTO,
+		                                   NM_SETTING_PROXY_METHOD_NONE,
 		                                   G_MAXINT);
 		values_str = g_strjoinv (",", (char **) values);
 		g_set_error (error, 1, 0, _("invalid method '%s', use one of %s"),
@@ -2559,7 +2559,7 @@ nmc_setting_custom_init (NMSetting *setting)
 		              NULL);
 	} else if (NM_IS_SETTING_PROXY (setting)) {
 		g_object_set (NM_SETTING_PROXY (setting),
-		              NM_SETTING_PROXY_METHOD, NM_SETTING_PROXY_METHOD_NONE,
+		              NM_SETTING_PROXY_METHOD, (int) NM_SETTING_PROXY_METHOD_NONE,
 		              NULL);
 	} else if (NM_IS_SETTING_TUN (setting)) {
 		g_object_set (NM_SETTING_TUN (setting),
