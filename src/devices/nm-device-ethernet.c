@@ -32,12 +32,14 @@
 #include <gudev/gudev.h>
 
 #include "nm-device-private.h"
-#include "nm-activation-request.h"
+#include "nm-act-request.h"
+#include "nm-ip4-config.h"
 #include "NetworkManagerUtils.h"
 #include "nm-supplicant-manager.h"
 #include "nm-supplicant-interface.h"
 #include "nm-supplicant-config.h"
 #include "ppp-manager/nm-ppp-manager.h"
+#include "ppp-manager/nm-ppp-status.h"
 #include "nm-enum-types.h"
 #include "nm-platform.h"
 #include "nm-platform-utils.h"
@@ -955,7 +957,7 @@ pppoe_stage3_ip4_config_start (NMDeviceEthernet *self, NMDeviceStateReason *reas
 	return ret;
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static void dcb_state (NMDevice *device, gboolean timeout);
 
@@ -1123,7 +1125,7 @@ dcb_carrier_changed (NMDevice *device, GParamSpec *pspec, gpointer unused)
 	}
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static gboolean
 wake_on_lan_enable (NMDevice *device)
@@ -1164,7 +1166,7 @@ found:
 	return nm_platform_ethtool_set_wake_on_lan (NM_PLATFORM_GET, nm_device_get_iface (device), wol, password);
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static NMActStageReturn
 act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
@@ -1633,7 +1635,6 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_WIRED_SETTING_NAME, NM_LINK_TYPE_ETHERNET)
 
-	/* virtual methods */
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
@@ -1677,7 +1678,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	                                        NULL);
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 #define NM_TYPE_ETHERNET_FACTORY (nm_ethernet_factory_get_type ())
 #define NM_ETHERNET_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_ETHERNET_FACTORY, NMEthernetFactory))

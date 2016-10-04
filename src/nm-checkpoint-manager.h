@@ -22,6 +22,7 @@
 #define __NM_CHECKPOINT_MANAGER_H__
 
 #include "nm-dbus-interface.h"
+
 #include "nm-checkpoint.h"
 
 typedef struct _NMCheckpointManager NMCheckpointManager;
@@ -47,4 +48,3 @@ gboolean nm_checkpoint_manager_rollback (NMCheckpointManager *self,
                                          GError **error);
 
 #endif /* __NM_CHECKPOINT_MANAGER_H__ */
-

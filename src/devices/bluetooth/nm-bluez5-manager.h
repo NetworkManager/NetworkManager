@@ -29,20 +29,8 @@
 #define NM_IS_BLUEZ5_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_BLUEZ5_MANAGER))
 #define NM_BLUEZ5_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_BLUEZ5_MANAGER, NMBluez5ManagerClass))
 
-typedef struct {
-	GObject parent;
-} NMBluez5Manager;
-
-typedef struct {
-	GObjectClass parent;
-
-	/* Signals */
-	void (*bdaddr_added) (NMBluez5Manager *manager,
-	                      const char *bdaddr,
-	                      const char *name,
-	                      const char *object_path,
-	                      guint uuids);
-} NMBluez5ManagerClass;
+typedef struct _NMBluez5Manager NMBluez5Manager;
+typedef struct _NMBluez5ManagerClass NMBluez5ManagerClass;
 
 GType nm_bluez5_manager_get_type (void);
 
@@ -51,4 +39,3 @@ NMBluez5Manager *nm_bluez5_manager_new (NMSettings *settings);
 void nm_bluez5_manager_query_devices (NMBluez5Manager *manager);
 
 #endif /* __NETWORKMANAGER_BLUEZ5_MANAGER_H__ */
-

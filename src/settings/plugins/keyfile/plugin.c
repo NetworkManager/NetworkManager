@@ -21,6 +21,8 @@
 
 #include "nm-default.h"
 
+#include "plugin.h"
+
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -35,19 +37,12 @@
 #include "nm-config.h"
 #include "nm-core-internal.h"
 
-#include "plugin.h"
 #include "nm-settings-plugin.h"
 #include "nm-keyfile-connection.h"
 #include "writer.h"
 #include "utils.h"
 
-static void settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface);
-
-G_DEFINE_TYPE_EXTENDED (SettingsPluginKeyfile, settings_plugin_keyfile, G_TYPE_OBJECT, 0,
-                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_PLUGIN,
-                                               settings_plugin_interface_init))
-
-#define SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), SETTINGS_TYPE_PLUGIN_KEYFILE, SettingsPluginKeyfilePrivate))
+/*****************************************************************************/
 
 typedef struct {
 	GHashTable *connections;  /* uuid::connection */
@@ -59,10 +54,29 @@ typedef struct {
 	NMConfig *config;
 } SettingsPluginKeyfilePrivate;
 
+struct _SettingsPluginKeyfile {
+	GObject parent;
+	SettingsPluginKeyfilePrivate _priv;
+};
+
+struct _SettingsPluginKeyfileClass {
+	GObjectClass parent;
+};
+
+static void settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface);
+
+G_DEFINE_TYPE_EXTENDED (SettingsPluginKeyfile, settings_plugin_keyfile, G_TYPE_OBJECT, 0,
+                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_PLUGIN,
+                                               settings_plugin_interface_init))
+
+#define SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE(self) _NM_GET_PRIVATE (self, SettingsPluginKeyfile, SETTINGS_IS_PLUGIN_KEYFILE)
+
+/*****************************************************************************/
+
 static void
 connection_removed_cb (NMSettingsConnection *obj, gpointer user_data)
 {
-	g_hash_table_remove (SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (user_data)->connections,
+	g_hash_table_remove (SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE ((SettingsPluginKeyfile *) user_data)->connections,
 	                     nm_connection_get_uuid (NM_CONNECTION (obj)));
 }
 
@@ -327,7 +341,7 @@ config_changed_cb (NMConfig *config,
 static void
 setup_monitoring (NMSettingsPlugin *config)
 {
-	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (config);
+	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE ((SettingsPluginKeyfile *) config);
 	GFile *file;
 	GFileMonitor *monitor;
 
@@ -455,12 +469,12 @@ read_connections (NMSettingsPlugin *config)
 	}
 }
 
-/* Plugin */
+/*****************************************************************************/
 
 static GSList *
 get_connections (NMSettingsPlugin *config)
 {
-	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (config);
+	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE ((SettingsPluginKeyfile *) config);
 
 	if (!priv->initialized) {
 		setup_monitoring (config);
@@ -474,7 +488,7 @@ static gboolean
 load_connection (NMSettingsPlugin *config,
                  const char *filename)
 {
-	SettingsPluginKeyfile *self = SETTINGS_PLUGIN_KEYFILE (config);
+	SettingsPluginKeyfile *self = SETTINGS_PLUGIN_KEYFILE ((SettingsPluginKeyfile *) config);
 	NMKeyfileConnection *connection;
 	int dir_len = strlen (nm_keyfile_plugin_get_path ());
 
@@ -516,7 +530,7 @@ add_connection (NMSettingsPlugin *config,
 static GSList *
 get_unmanaged_specs (NMSettingsPlugin *config)
 {
-	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (config);
+	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE ((SettingsPluginKeyfile *) config);
 	gs_free char *value = NULL;
 
 	value = nm_config_data_get_value (nm_config_get_data (priv->config),
@@ -526,19 +540,11 @@ get_unmanaged_specs (NMSettingsPlugin *config)
 	return nm_match_spec_split (value);
 }
 
-/* GObject */
-
-static void
-settings_plugin_keyfile_init (SettingsPluginKeyfile *plugin)
-{
-	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (plugin);
-
-	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
-}
+/*****************************************************************************/
 
 static void
 get_property (GObject *object, guint prop_id,
-		    GValue *value, GParamSpec *pspec)
+            GValue *value, GParamSpec *pspec)
 {
 	switch (prop_id) {
 	case NM_SETTINGS_PLUGIN_PROP_NAME:
@@ -556,21 +562,20 @@ get_property (GObject *object, guint prop_id,
 	}
 }
 
+/*****************************************************************************/
+
 static void
-set_property (GObject *object, guint prop_id,
-			  const GValue *value, GParamSpec *pspec)
+settings_plugin_keyfile_init (SettingsPluginKeyfile *plugin)
 {
-	switch (prop_id) {
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (plugin);
+
+	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
 }
 
 static void
 constructed (GObject *object)
 {
-	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (object);
+	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE ((SettingsPluginKeyfile *) object);
 
 	priv->config = g_object_ref (nm_config_get ());
 	if (nm_config_data_has_value (nm_config_get_data_orig (priv->config),
@@ -580,10 +585,16 @@ constructed (GObject *object)
 		nm_log_warn (LOGD_SETTINGS, "keyfile: 'hostname' option is deprecated and has no effect");
 }
 
+GObject *
+nm_settings_keyfile_plugin_new (void)
+{
+	return g_object_new (SETTINGS_TYPE_PLUGIN_KEYFILE, NULL);
+}
+
 static void
 dispose (GObject *object)
 {
-	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (object);
+	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE ((SettingsPluginKeyfile *) object);
 
 	if (priv->monitor) {
 		nm_clear_g_signal_handler (priv->monitor, &priv->monitor_id);
@@ -610,12 +621,9 @@ settings_plugin_keyfile_class_init (SettingsPluginKeyfileClass *req_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (req_class);
 
-	g_type_class_add_private (req_class, sizeof (SettingsPluginKeyfilePrivate));
-
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
-	object_class->set_property = set_property;
 
 	g_object_class_override_property (object_class,
 	                                  NM_SETTINGS_PLUGIN_PROP_NAME,
@@ -633,16 +641,9 @@ settings_plugin_keyfile_class_init (SettingsPluginKeyfileClass *req_class)
 static void
 settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface)
 {
-	/* interface implementation */
 	plugin_iface->get_connections = get_connections;
 	plugin_iface->load_connection = load_connection;
 	plugin_iface->reload_connections = reload_connections;
 	plugin_iface->add_connection = add_connection;
 	plugin_iface->get_unmanaged_specs = get_unmanaged_specs;
-}
-
-GObject *
-nm_settings_keyfile_plugin_new (void)
-{
-	return g_object_new (SETTINGS_TYPE_PLUGIN_KEYFILE, NULL);
 }

@@ -432,7 +432,7 @@ nm_access_point_filter_connections (NMAccessPoint *ap, const GSList *connections
 	return g_slist_reverse (filtered);
 }
 
-/************************************************************/
+/*****************************************************************************/
 
 static void
 nm_access_point_init (NMAccessPoint *ap)

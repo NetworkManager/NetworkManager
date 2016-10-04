@@ -104,7 +104,7 @@ nm_ip4_config_get_ifindex (const NMIP4Config *config)
 	return NM_IP4_CONFIG_GET_PRIVATE (config)->ifindex;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static gboolean
 _ipv4_is_zeronet (in_addr_t network)
@@ -113,7 +113,7 @@ _ipv4_is_zeronet (in_addr_t network)
 	return (network & htonl(0xff000000)) == htonl(0x00000000);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_ip4_config_capture_resolv_conf():
@@ -650,7 +650,7 @@ nm_ip4_config_create_setting (const NMIP4Config *config)
 	return NM_SETTING (s_ip4);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 void
 nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src, NMIPConfigMergeFlags merge_flags)
@@ -745,7 +745,7 @@ nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src, NMIPConfigMergeFl
 	g_object_thaw_notify (G_OBJECT (dst));
 }
 
-/*******************************************************************************/
+/*****************************************************************************/
 
 static int
 _addresses_get_index (const NMIP4Config *self, const NMPlatformIP4Address *addr)
@@ -868,7 +868,7 @@ _wins_get_index (const NMIP4Config *self, guint32 wins_server)
 	return -1;
 }
 
-/*******************************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_ip4_config_subtract:
@@ -1388,7 +1388,7 @@ nm_ip4_config_destination_is_direct (const NMIP4Config *config, guint32 network,
 	return FALSE;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 void
 nm_ip4_config_set_never_default (NMIP4Config *config, gboolean never_default)
@@ -1464,7 +1464,7 @@ nm_ip4_config_get_route_metric (const NMIP4Config *config)
 	return priv->route_metric;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 void
 nm_ip4_config_reset_addresses (NMIP4Config *config)
@@ -1570,7 +1570,7 @@ nm_ip4_config_address_exists (const NMIP4Config *config,
 	return _addresses_get_index (config, needle) >= 0;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 void
 nm_ip4_config_reset_routes (NMIP4Config *config)
@@ -1685,7 +1685,7 @@ nm_ip4_config_get_direct_route_for_host (const NMIP4Config *config, guint32 host
 	return best_route;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 void
 nm_ip4_config_reset_nameservers (NMIP4Config *config)
@@ -1741,7 +1741,7 @@ nm_ip4_config_get_nameserver (const NMIP4Config *config, guint i)
 	return g_array_index (priv->nameservers, guint32, i);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 void
 nm_ip4_config_reset_domains (NMIP4Config *config)
@@ -1798,7 +1798,7 @@ nm_ip4_config_get_domain (const NMIP4Config *config, guint i)
 	return g_ptr_array_index (priv->domains, i);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 void
 nm_ip4_config_reset_searches (NMIP4Config *config)
@@ -1870,7 +1870,7 @@ nm_ip4_config_get_search (const NMIP4Config *config, guint i)
 	return g_ptr_array_index (priv->searches, i);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 void
 nm_ip4_config_reset_dns_options (NMIP4Config *config)
@@ -1927,7 +1927,7 @@ nm_ip4_config_get_dns_option (const NMIP4Config *config, guint i)
 	return g_ptr_array_index (priv->dns_options, i);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 void
 nm_ip4_config_set_dns_priority (NMIP4Config *config, gint priority)
@@ -1948,7 +1948,7 @@ nm_ip4_config_get_dns_priority (const NMIP4Config *config)
 	return priv->dns_priority;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 void
 nm_ip4_config_set_mss (NMIP4Config *config, guint32 mss)
@@ -1966,7 +1966,7 @@ nm_ip4_config_get_mss (const NMIP4Config *config)
 	return priv->mss;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 void
 nm_ip4_config_reset_nis_servers (NMIP4Config *config)
@@ -2032,7 +2032,7 @@ nm_ip4_config_get_nis_domain (const NMIP4Config *config)
 	return priv->nis_domain;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 void
 nm_ip4_config_reset_wins (NMIP4Config *config)
@@ -2088,7 +2088,7 @@ nm_ip4_config_get_wins (const NMIP4Config *config, guint i)
 	return g_array_index (priv->wins, guint32, i);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 void
 nm_ip4_config_set_mtu (NMIP4Config *config, guint32 mtu, NMIPConfigSource source)
@@ -2118,7 +2118,7 @@ nm_ip4_config_get_mtu_source (const NMIP4Config *config)
 	return priv->mtu_source;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 void
 nm_ip4_config_set_metered (NMIP4Config *config, gboolean metered)
@@ -2136,7 +2136,7 @@ nm_ip4_config_get_metered (const NMIP4Config *config)
 	return priv->metered;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static inline void
 hash_u32 (GChecksum *sum, guint32 n)
@@ -2243,7 +2243,7 @@ nm_ip4_config_equal (const NMIP4Config *a, const NMIP4Config *b)
 	return equal;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static void
 nm_ip4_config_init (NMIP4Config *config)

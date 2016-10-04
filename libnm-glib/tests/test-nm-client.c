@@ -39,7 +39,7 @@
 static GMainLoop *loop = NULL;
 static NMTstcServiceInfo *sinfo;
 
-/*******************************************************************/
+/*****************************************************************************/
 
 static gboolean
 loop_quit (gpointer user_data)
@@ -93,7 +93,7 @@ add_wired_device (const char *method, const char *ifname, char **out_path)
 	return TRUE;
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 typedef struct {
 	GMainLoop *loop;
@@ -197,7 +197,7 @@ test_device_added (void)
 	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 static const char *expected_bssid = "66:55:44:33:22:11";
 
@@ -420,7 +420,7 @@ test_wifi_ap_added_removed (void)
 	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 static const char *expected_nsp_name = "Clear";
 
@@ -643,7 +643,7 @@ test_wimax_nsp_added_removed (void)
 	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 typedef struct {
 	GMainLoop *loop;
@@ -873,7 +873,7 @@ test_client_manager_running (void)
 	g_object_unref (client2);
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 static GPtrArray *
 _slist_to_array (GPtrArray **connections, GSList *list)
@@ -1121,7 +1121,7 @@ test_connection_invalid (void)
 #undef ASSERT_IDX
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 NMTST_DEFINE ();
 

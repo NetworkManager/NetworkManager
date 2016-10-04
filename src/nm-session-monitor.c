@@ -21,29 +21,30 @@
  */
 #include "nm-default.h"
 
+#include "nm-session-monitor.h"
+
 #include <pwd.h>
 #include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
 
-#include "nm-session-monitor.h"
-#include "NetworkManagerUtils.h"
-
 #ifdef SESSION_TRACKING_SYSTEMD
 #include <systemd/sd-login.h>
 #endif
 
-/********************************************************************/
+#include "NetworkManagerUtils.h"
 
-/* <internal>
- * SECTION:nm-session-monitor
- * @title: NMSessionMonitor
- * @short_description: Monitor sessions
- *
- * The #NMSessionMonitor class is a utility class to track and monitor sessions.
- */
+/*****************************************************************************/
+
+enum {
+	CHANGED,
+	LAST_SIGNAL,
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
+
 struct _NMSessionMonitor {
-	GObject parent_instance;
+	GObject parent;
 
 #ifdef SESSION_TRACKING_SYSTEMD
 	struct {
@@ -62,21 +63,12 @@ struct _NMSessionMonitor {
 };
 
 struct _NMSessionMonitorClass {
-	GObjectClass parent_class;
-
-	void (*changed) (NMSessionMonitor *monitor);
+	GObjectClass parent;
 };
 
 G_DEFINE_TYPE (NMSessionMonitor, nm_session_monitor, G_TYPE_OBJECT);
 
-enum {
-	CHANGED,
-	LAST_SIGNAL,
-};
-
-static guint signals[LAST_SIGNAL] = { 0 };
-
-/********************************************************************/
+/*****************************************************************************/
 
 #ifdef SESSION_TRACKING_SYSTEMD
 static gboolean
@@ -136,7 +128,7 @@ st_sd_finalize (NMSessionMonitor *monitor)
 }
 #endif /* SESSION_TRACKING_SYSTEMD */
 
-/********************************************************************/
+/*****************************************************************************/
 
 #ifdef SESSION_TRACKING_CONSOLEKIT
 typedef struct {
@@ -274,7 +266,7 @@ ck_finalize (NMSessionMonitor *monitor)
 }
 #endif /* SESSION_TRACKING_CONSOLEKIT */
 
-/********************************************************************/
+/*****************************************************************************/
 
 NM_DEFINE_SINGLETON_GETTER (NMSessionMonitor, nm_session_monitor_get, NM_TYPE_SESSION_MONITOR);
 
@@ -356,7 +348,7 @@ nm_session_monitor_session_exists (NMSessionMonitor *self,
 	return FALSE;
 }
 
-/********************************************************************/
+/*****************************************************************************/
 
 static void
 nm_session_monitor_init (NMSessionMonitor *monitor)
@@ -371,7 +363,7 @@ nm_session_monitor_init (NMSessionMonitor *monitor)
 }
 
 static void
-nm_session_monitor_finalize (GObject *object)
+finalize (GObject *object)
 {
 #ifdef SESSION_TRACKING_SYSTEMD
 	st_sd_finalize (NM_SESSION_MONITOR (object));
@@ -381,8 +373,7 @@ nm_session_monitor_finalize (GObject *object)
 	ck_finalize (NM_SESSION_MONITOR (object));
 #endif
 
-	if (G_OBJECT_CLASS (nm_session_monitor_parent_class)->finalize != NULL)
-		G_OBJECT_CLASS (nm_session_monitor_parent_class)->finalize (object);
+	G_OBJECT_CLASS (nm_session_monitor_parent_class)->finalize (object);
 }
 
 static void
@@ -390,7 +381,7 @@ nm_session_monitor_class_init (NMSessionMonitorClass *klass)
 {
 	GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 
-	gobject_class->finalize = nm_session_monitor_finalize;
+	gobject_class->finalize = finalize;
 
 	/**
 	 * NMSessionMonitor::changed:
@@ -399,12 +390,10 @@ nm_session_monitor_class_init (NMSessionMonitorClass *klass)
 	 * Emitted when something changes.
 	 */
 	signals[CHANGED] = g_signal_new (NM_SESSION_MONITOR_CHANGED,
-	                                        NM_TYPE_SESSION_MONITOR,
-	                                        G_SIGNAL_RUN_LAST,
-	                                        G_STRUCT_OFFSET (NMSessionMonitorClass, changed),
-	                                        NULL,                   /* accumulator      */
-	                                        NULL,                   /* accumulator data */
-	                                        g_cclosure_marshal_VOID__VOID,
-	                                        G_TYPE_NONE,
-	                                        0);
+	                                 NM_TYPE_SESSION_MONITOR,
+	                                 G_SIGNAL_RUN_LAST,
+	                                 0, NULL, NULL,
+	                                 g_cclosure_marshal_VOID__VOID,
+	                                 G_TYPE_NONE,
+	                                 0);
 }

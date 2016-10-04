@@ -20,36 +20,40 @@
 
 #include "nm-default.h"
 
+#include "nm-dhcp6-config.h"
+
 #include <string.h>
 
 #include "nm-dbus-interface.h"
-#include "nm-dhcp6-config.h"
 #include "nm-utils.h"
+#include "nm-exported-object.h"
 
 #include "nmdbus-dhcp6-config.h"
 
-G_DEFINE_TYPE (NMDhcp6Config, nm_dhcp6_config, NM_TYPE_EXPORTED_OBJECT)
+/*****************************************************************************/
 
-#define NM_DHCP6_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP6_CONFIG, NMDhcp6ConfigPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE (NMDhcp6Config,
+	PROP_OPTIONS,
+);
 
 typedef struct {
 	GVariant *options;
 } NMDhcp6ConfigPrivate;
 
-
-enum {
-	PROP_0,
-	PROP_OPTIONS,
-
-	LAST_PROP
+struct _NMDhcp6Config {
+	NMExportedObject parent;
+	NMDhcp6ConfigPrivate _priv;
 };
 
+struct _NMDhcp6ConfigClass {
+	NMExportedObjectClass parent;
+};
 
-NMDhcp6Config *
-nm_dhcp6_config_new (void)
-{
-	return NM_DHCP6_CONFIG (g_object_new (NM_TYPE_DHCP6_CONFIG, NULL));
-}
+G_DEFINE_TYPE (NMDhcp6Config, nm_dhcp6_config, NM_TYPE_EXPORTED_OBJECT)
+
+#define NM_DHCP6_CONFIG_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDhcp6Config, NM_IS_DHCP6_CONFIG)
+
+/*****************************************************************************/
 
 void
 nm_dhcp6_config_set_options (NMDhcp6Config *self,
@@ -72,7 +76,7 @@ nm_dhcp6_config_set_options (NMDhcp6Config *self,
 
 	priv->options = g_variant_builder_end (&builder);
 	g_variant_ref_sink (priv->options);
-	g_object_notify (G_OBJECT (self), NM_DHCP6_CONFIG_OPTIONS);
+	_notify (self, PROP_OPTIONS);
 }
 
 const char *
@@ -98,30 +102,13 @@ nm_dhcp6_config_get_options (NMDhcp6Config *self)
 	return g_variant_ref (NM_DHCP6_CONFIG_GET_PRIVATE (self)->options);
 }
 
-static void
-nm_dhcp6_config_init (NMDhcp6Config *self)
-{
-	NMDhcp6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE (self);
-
-	priv->options = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
-	g_variant_ref_sink (priv->options);
-}
-
-static void
-finalize (GObject *object)
-{
-	NMDhcp6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE (object);
-
-	g_variant_unref (priv->options);
-
-	G_OBJECT_CLASS (nm_dhcp6_config_parent_class)->finalize (object);
-}
+/*****************************************************************************/
 
 static void
 get_property (GObject *object, guint prop_id,
-			  GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
-	NMDhcp6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE (object);
+	NMDhcp6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE ((NMDhcp6Config *) object);
 
 	switch (prop_id) {
 	case PROP_OPTIONS:
@@ -134,28 +121,50 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
+nm_dhcp6_config_init (NMDhcp6Config *self)
+{
+	NMDhcp6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE (self);
+
+	priv->options = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
+	g_variant_ref_sink (priv->options);
+}
+
+NMDhcp6Config *
+nm_dhcp6_config_new (void)
+{
+	return NM_DHCP6_CONFIG (g_object_new (NM_TYPE_DHCP6_CONFIG, NULL));
+}
+
+static void
+finalize (GObject *object)
+{
+	NMDhcp6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE ((NMDhcp6Config *) object);
+
+	g_variant_unref (priv->options);
+
+	G_OBJECT_CLASS (nm_dhcp6_config_parent_class)->finalize (object);
+}
+
+static void
 nm_dhcp6_config_class_init (NMDhcp6ConfigClass *config_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
 	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (config_class);
 
-	g_type_class_add_private (config_class, sizeof (NMDhcp6ConfigPrivate));
+	object_class->get_property = get_property;
+	object_class->finalize = finalize;
 
 	exported_object_class->export_path = NM_DBUS_PATH "/DHCP6Config/%u";
 	exported_object_class->export_on_construction = TRUE;
 
-	/* virtual methods */
-	object_class->get_property = get_property;
-	object_class->finalize = finalize;
+	obj_properties[PROP_OPTIONS] =
+	     g_param_spec_variant (NM_DHCP6_CONFIG_OPTIONS, "", "",
+	                           G_VARIANT_TYPE ("a{sv}"),
+	                           NULL,
+	                           G_PARAM_READABLE |
+	                           G_PARAM_STATIC_STRINGS);
 
-	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_OPTIONS,
-		 g_param_spec_variant (NM_DHCP6_CONFIG_OPTIONS, "", "",
-		                       G_VARIANT_TYPE ("a{sv}"),
-		                       NULL,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (config_class),
 	                                        NMDBUS_TYPE_DHCP6_CONFIG_SKELETON,

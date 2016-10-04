@@ -108,7 +108,7 @@ nm_remote_connection_error_quark (void)
 	return quark;
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static void
 _nm_remote_connection_ensure_inited (NMRemoteConnection *self)
@@ -131,7 +131,7 @@ _nm_remote_connection_ensure_inited (NMRemoteConnection *self)
 	}
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static void
 remote_call_dbus_cb (DBusGProxy *proxy, DBusGProxyCall *proxy_call, gpointer user_data)
@@ -213,7 +213,7 @@ proxy_destroy_cb (DBusGProxy* proxy, gpointer user_data) {
 	proxy_set_destroyed (user_data);
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static void
 result_cb (RemoteCall *call, DBusGProxyCall *proxy_call, GError *error)
@@ -445,7 +445,7 @@ nm_remote_connection_get_unsaved (NMRemoteConnection *connection)
 	return NM_REMOTE_CONNECTION_GET_PRIVATE (connection)->unsaved;
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static void
 updated_get_settings_cb (DBusGProxy *proxy,
@@ -531,7 +531,7 @@ properties_changed_cb (DBusGProxy *proxy,
 	}
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_remote_connection_new:

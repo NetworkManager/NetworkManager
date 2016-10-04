@@ -20,6 +20,8 @@
 
 #include "nm-default.h"
 
+#include "nm-dns-dnsmasq.h"
+
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -28,7 +30,6 @@
 #include <sys/stat.h>
 #include <linux/if.h>
 
-#include "nm-dns-dnsmasq.h"
 #include "nm-core-internal.h"
 #include "nm-platform.h"
 #include "nm-utils.h"
@@ -37,15 +38,13 @@
 #include "nm-bus-manager.h"
 #include "NetworkManagerUtils.h"
 
-G_DEFINE_TYPE (NMDnsDnsmasq, nm_dns_dnsmasq, NM_TYPE_DNS_PLUGIN)
-
-#define NM_DNS_DNSMASQ_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DNS_DNSMASQ, NMDnsDnsmasqPrivate))
-
 #define PIDFILE NMRUNDIR "/dnsmasq.pid"
 #define CONFDIR NMCONFDIR "/dnsmasq.d"
 
 #define DNSMASQ_DBUS_SERVICE "org.freedesktop.NetworkManager.dnsmasq"
 #define DNSMASQ_DBUS_PATH "/uk/org/thekelleys/dnsmasq"
+
+/*****************************************************************************/
 
 typedef struct {
 	GDBusProxy *dnsmasq;
@@ -55,6 +54,19 @@ typedef struct {
 
 	GVariant *set_server_ex_args;
 } NMDnsDnsmasqPrivate;
+
+struct _NMDnsDnsmasq {
+	NMDnsPlugin parent;
+	NMDnsDnsmasqPrivate _priv;
+};
+
+struct _NMDnsDnsmasqClass {
+	NMDnsPluginClass parent;
+};
+
+G_DEFINE_TYPE (NMDnsDnsmasq, nm_dns_dnsmasq, NM_TYPE_DNS_PLUGIN)
+
+#define NM_DNS_DNSMASQ_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDnsDnsmasq, NM_IS_DNS_DNSMASQ)
 
 /*****************************************************************************/
 
@@ -605,7 +617,7 @@ update (NMDnsPlugin *plugin,
 	return TRUE;
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static void
 child_quit (NMDnsPlugin *plugin, gint status)
@@ -637,7 +649,7 @@ child_quit (NMDnsPlugin *plugin, gint status)
 		g_signal_emit_by_name (self, NM_DNS_PLUGIN_FAILED);
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static gboolean
 is_caching (NMDnsPlugin *plugin)
@@ -651,7 +663,12 @@ get_name (NMDnsPlugin *plugin)
 	return "dnsmasq";
 }
 
-/****************************************************************/
+/*****************************************************************************/
+
+static void
+nm_dns_dnsmasq_init (NMDnsDnsmasq *self)
+{
+}
 
 NMDnsPlugin *
 nm_dns_dnsmasq_new (void)
@@ -660,14 +677,9 @@ nm_dns_dnsmasq_new (void)
 }
 
 static void
-nm_dns_dnsmasq_init (NMDnsDnsmasq *self)
-{
-}
-
-static void
 dispose (GObject *object)
 {
-	NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE (object);
+	NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE ((NMDnsDnsmasq *) object);
 
 	nm_clear_g_cancellable (&priv->dnsmasq_cancellable);
 	nm_clear_g_cancellable (&priv->update_cancellable);
@@ -685,8 +697,6 @@ nm_dns_dnsmasq_class_init (NMDnsDnsmasqClass *dns_class)
 	NMDnsPluginClass *plugin_class = NM_DNS_PLUGIN_CLASS (dns_class);
 	GObjectClass *object_class = G_OBJECT_CLASS (dns_class);
 
-	g_type_class_add_private (dns_class, sizeof (NMDnsDnsmasqPrivate));
-
 	object_class->dispose = dispose;
 
 	plugin_class->child_quit = child_quit;
@@ -694,4 +704,3 @@ nm_dns_dnsmasq_class_init (NMDnsDnsmasqClass *dns_class)
 	plugin_class->update = update;
 	plugin_class->get_name = get_name;
 }
-

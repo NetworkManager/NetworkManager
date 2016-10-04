@@ -27,6 +27,8 @@
 
 #include "nm-default.h"
 
+#if WITH_DHCLIENT
+
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -36,7 +38,6 @@
 #include <arpa/inet.h>
 #include <ctype.h>
 
-#include "nm-dhcp-dhclient.h"
 #include "nm-utils.h"
 #include "nm-dhcp-dhclient-utils.h"
 #include "nm-dhcp-manager.h"
@@ -44,9 +45,21 @@
 #include "nm-dhcp-listener.h"
 #include "nm-dhcp-client-logging.h"
 
-G_DEFINE_TYPE (NMDhcpDhclient, nm_dhcp_dhclient, NM_TYPE_DHCP_CLIENT)
+/*****************************************************************************/
 
-#define NM_DHCP_DHCLIENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP_DHCLIENT, NMDhcpDhclientPrivate))
+#define NM_TYPE_DHCP_DHCLIENT            (nm_dhcp_dhclient_get_type ())
+#define NM_DHCP_DHCLIENT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP_DHCLIENT, NMDhcpDhclient))
+#define NM_DHCP_DHCLIENT_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DHCP_DHCLIENT, NMDhcpDhclientClass))
+#define NM_IS_DHCP_DHCLIENT(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DHCP_DHCLIENT))
+#define NM_IS_DHCP_DHCLIENT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DHCP_DHCLIENT))
+#define NM_DHCP_DHCLIENT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP_DHCLIENT, NMDhcpDhclientClass))
+
+typedef struct _NMDhcpDhclient NMDhcpDhclient;
+typedef struct _NMDhcpDhclientClass NMDhcpDhclientClass;
+
+static GType nm_dhcp_dhclient_get_type (void);
+
+/*****************************************************************************/
 
 typedef struct {
 	char *conf_file;
@@ -56,14 +69,25 @@ typedef struct {
 	NMDhcpListener *dhcp_listener;
 } NMDhcpDhclientPrivate;
 
+struct _NMDhcpDhclient {
+	NMDhcpClient parent;
+	NMDhcpDhclientPrivate _priv;
+};
+
+struct _NMDhcpDhclientClass {
+	NMDhcpClientClass parent;
+};
+
+G_DEFINE_TYPE (NMDhcpDhclient, nm_dhcp_dhclient, NM_TYPE_DHCP_CLIENT)
+
+#define NM_DHCP_DHCLIENT_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDhcpDhclient, NM_IS_DHCP_DHCLIENT)
+
+/*****************************************************************************/
+
 static const char *
 nm_dhcp_dhclient_get_path (void)
 {
-	const char *path = NULL;
-
-	if (WITH_DHCLIENT)
-		path = nm_utils_find_helper ("dhclient", DHCLIENT_PATH, NULL);
-	return path;
+	return nm_utils_find_helper ("dhclient", DHCLIENT_PATH, NULL);
 }
 
 /**
@@ -542,11 +566,11 @@ stop (NMDhcpClient *client, gboolean release, const GByteArray *duid)
 
 static void
 state_changed (NMDhcpClient *client,
-	           NMDhcpState state,
-	           GObject *ip_config,
-	           GHashTable *options)
+               NMDhcpState state,
+               GObject *ip_config,
+               GHashTable *options)
 {
-	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
+	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE ((NMDhcpDhclient *) client);
 	gs_unref_bytes GBytes *client_id = NULL;
 
 	if (nm_dhcp_client_get_client_id (client))
@@ -600,7 +624,7 @@ get_duid (NMDhcpClient *client)
 	return duid ? duid : NM_DHCP_CLIENT_CLASS (nm_dhcp_dhclient_parent_class)->get_duid (client);
 }
 
-/***************************************************/
+/*****************************************************************************/
 
 static const char *def_leasefiles[] = {
 	SYSCONFDIR "/dhclient6.leases",
@@ -637,7 +661,7 @@ nm_dhcp_dhclient_init (NMDhcpDhclient *self)
 static void
 dispose (GObject *object)
 {
-	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (object);
+	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE ((NMDhcpDhclient *) object);
 
 	if (priv->dhcp_listener) {
 		g_signal_handlers_disconnect_by_func (priv->dhcp_listener,
@@ -646,9 +670,9 @@ dispose (GObject *object)
 		g_clear_object (&priv->dhcp_listener);
 	}
 
-	g_free (priv->pid_file);
-	g_free (priv->conf_file);
-	g_free (priv->lease_file);
+	nm_clear_g_free (&priv->pid_file);
+	nm_clear_g_free (&priv->conf_file);
+	nm_clear_g_free (&priv->lease_file);
 
 	G_OBJECT_CLASS (nm_dhcp_dhclient_parent_class)->dispose (object);
 }
@@ -659,9 +683,6 @@ nm_dhcp_dhclient_class_init (NMDhcpDhclientClass *dhclient_class)
 	NMDhcpClientClass *client_class = NM_DHCP_CLIENT_CLASS (dhclient_class);
 	GObjectClass *object_class = G_OBJECT_CLASS (dhclient_class);
 
-	g_type_class_add_private (dhclient_class, sizeof (NMDhcpDhclientPrivate));
-
-	/* virtual methods */
 	object_class->dispose = dispose;
 
 	client_class->ip4_start = ip4_start;
@@ -671,13 +692,11 @@ nm_dhcp_dhclient_class_init (NMDhcpDhclientClass *dhclient_class)
 	client_class->state_changed = state_changed;
 }
 
-static void __attribute__((constructor))
-register_dhcp_dhclient (void)
-{
-	nm_g_type_init ();
-	_nm_dhcp_client_register (NM_TYPE_DHCP_DHCLIENT,
-	                          "dhclient",
-	                          nm_dhcp_dhclient_get_path,
-	                          nm_dhcp_dhclient_get_lease_ip_configs);
-}
+const NMDhcpClientFactory _nm_dhcp_client_factory_dhclient = {
+	.name = "dhclient",
+	.get_type = nm_dhcp_dhclient_get_type,
+	.get_path = nm_dhcp_dhclient_get_path,
+	.get_lease_ip_configs = nm_dhcp_dhclient_get_lease_ip_configs,
+};
 
+#endif /* WITH_DHCLIENT */

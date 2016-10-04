@@ -40,37 +40,9 @@
 #define SETTINGS_TIMESTAMPS_FILE  NMSTATEDIR "/timestamps"
 #define SETTINGS_SEEN_BSSIDS_FILE NMSTATEDIR "/seen-bssids"
 
-#define _NMLOG_DOMAIN        LOGD_SETTINGS
-#define _NMLOG_PREFIX_NAME   "settings-connection"
-#define _NMLOG(level, ...) \
-    G_STMT_START { \
-        const NMLogLevel __level = (level); \
-        \
-        if (nm_logging_enabled (__level, _NMLOG_DOMAIN)) { \
-            char __prefix[128]; \
-            const char *__p_prefix = _NMLOG_PREFIX_NAME; \
-            \
-            if (self) { \
-                const char *__uuid = nm_settings_connection_get_uuid (self); \
-                \
-                g_snprintf (__prefix, sizeof (__prefix), "%s[%p%s%s]", _NMLOG_PREFIX_NAME, self, __uuid ? "," : "", __uuid ? __uuid : ""); \
-                __p_prefix = __prefix; \
-            } \
-            _nm_log (__level, _NMLOG_DOMAIN, 0, \
-                     "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
-                     __p_prefix _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
-        } \
-    } G_STMT_END
+/*****************************************************************************/
 
 static void nm_settings_connection_connection_interface_init (NMConnectionInterface *iface);
-
-G_DEFINE_TYPE_WITH_CODE (NMSettingsConnection, nm_settings_connection, NM_TYPE_EXPORTED_OBJECT,
-                         G_IMPLEMENT_INTERFACE (NM_TYPE_CONNECTION, nm_settings_connection_connection_interface_init)
-                         )
-
-#define NM_SETTINGS_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
-                                               NM_TYPE_SETTINGS_CONNECTION, \
-                                               NMSettingsConnectionPrivate))
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMSettingsConnection,
 	PROP_VISIBLE,
@@ -86,9 +58,10 @@ enum {
 	UPDATED_INTERNAL,
 	LAST_SIGNAL
 };
+
 static guint signals[LAST_SIGNAL] = { 0 };
 
-typedef struct {
+typedef struct _NMSettingsConnectionPrivate {
 	gboolean removed;
 
 	NMAgentManager *agent_mgr;
@@ -127,10 +100,39 @@ typedef struct {
 	NMDeviceStateReason autoconnect_blocked_reason;
 
 	char *filename;
-
 } NMSettingsConnectionPrivate;
 
-/*******************************************************************/
+G_DEFINE_TYPE_WITH_CODE (NMSettingsConnection, nm_settings_connection, NM_TYPE_EXPORTED_OBJECT,
+                         G_IMPLEMENT_INTERFACE (NM_TYPE_CONNECTION, nm_settings_connection_connection_interface_init)
+                         )
+
+#define NM_SETTINGS_CONNECTION_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR (self, NMSettingsConnection, NM_IS_SETTINGS_CONNECTION)
+
+/*****************************************************************************/
+
+#define _NMLOG_DOMAIN        LOGD_SETTINGS
+#define _NMLOG_PREFIX_NAME   "settings-connection"
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        const NMLogLevel __level = (level); \
+        \
+        if (nm_logging_enabled (__level, _NMLOG_DOMAIN)) { \
+            char __prefix[128]; \
+            const char *__p_prefix = _NMLOG_PREFIX_NAME; \
+            \
+            if (self) { \
+                const char *__uuid = nm_settings_connection_get_uuid (self); \
+                \
+                g_snprintf (__prefix, sizeof (__prefix), "%s[%p%s%s]", _NMLOG_PREFIX_NAME, self, __uuid ? "," : "", __uuid ? __uuid : ""); \
+                __p_prefix = __prefix; \
+            } \
+            _nm_log (__level, _NMLOG_DOMAIN, 0, \
+                     "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+                     __p_prefix _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+        } \
+    } G_STMT_END
+
+/*****************************************************************************/
 
 static void
 _emit_updated (NMSettingsConnection *self, gboolean by_user)
@@ -139,7 +141,7 @@ _emit_updated (NMSettingsConnection *self, gboolean by_user)
 	g_signal_emit (self, signals[UPDATED_INTERNAL], 0, by_user);
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 gboolean
 nm_settings_connection_has_unmodified_applied_connection (NMSettingsConnection *self,
@@ -155,7 +157,7 @@ nm_settings_connection_has_unmodified_applied_connection (NMSettingsConnection *
 	return nm_connection_compare (NM_CONNECTION (self), applied_connection, compare_flags);
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 /* Return TRUE to keep, FALSE to drop */
 typedef gboolean (*ForEachSecretFunc) (NMSettingSecretFlags flags,
@@ -290,7 +292,7 @@ find_secret (NMConnection *self,
 	return data.found;
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static void
 set_visible (NMSettingsConnection *self, gboolean new_visible)
@@ -357,7 +359,7 @@ session_changed_cb (NMSessionMonitor *self, gpointer user_data)
 	nm_settings_connection_recheck_visibility (NM_SETTINGS_CONNECTION (user_data));
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 /* Return TRUE if any active user in the connection's ACL has the given
  * permission without having to authorize for it via PolicyKit.  Connections
@@ -408,7 +410,7 @@ nm_settings_connection_check_permission (NMSettingsConnection *self,
 	return FALSE;
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static gboolean
 secrets_filter_cb (NMSetting *setting,
@@ -759,7 +761,7 @@ do_delete (NMSettingsConnection *self,
 	g_object_unref (self);
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 
 typedef enum {
@@ -1933,7 +1935,7 @@ out_err:
 	g_dbus_method_invocation_take_error (context, error);
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static void
 dbus_get_agent_secrets_cb (NMSettingsConnection *self,
@@ -2084,7 +2086,7 @@ impl_settings_connection_clear_secrets (NMSettingsConnection *self,
 	}
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 void
 nm_settings_connection_signal_remove (NMSettingsConnection *self)
@@ -2103,7 +2105,7 @@ nm_settings_connection_get_unsaved (NMSettingsConnection *self)
 	return NM_FLAGS_HAS (nm_settings_connection_get_flags (self), NM_SETTINGS_CONNECTION_FLAGS_UNSAVED);
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 NMSettingsConnectionFlags
 nm_settings_connection_get_flags (NMSettingsConnection *self)
@@ -2149,7 +2151,7 @@ nm_settings_connection_set_flags_all (NMSettingsConnection *self, NMSettingsConn
 	return old_flags;
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_settings_connection_get_timestamp:
@@ -2604,12 +2606,15 @@ nm_settings_connection_get_uuid (NMSettingsConnection *self)
 	return nm_connection_get_uuid (NM_CONNECTION (self));
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static void
 nm_settings_connection_init (NMSettingsConnection *self)
 {
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+	NMSettingsConnectionPrivate *priv;
+
+	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_SETTINGS_CONNECTION, NMSettingsConnectionPrivate);
+	self->_priv = priv;
 
 	priv->visible = FALSE;
 	priv->ready = TRUE;
@@ -2748,7 +2753,6 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 
 	exported_object_class->export_path = NM_DBUS_PATH_SETTINGS "/%u";
 
-	/* Virtual methods */
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
@@ -2759,7 +2763,6 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 	class->delete = do_delete;
 	class->supports_secrets = supports_secrets;
 
-	/* Properties */
 	obj_properties[PROP_VISIBLE] =
 	     g_param_spec_boolean (NM_SETTINGS_CONNECTION_VISIBLE, "", "",
 	                           FALSE,
@@ -2794,7 +2797,6 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-	/* Signals */
 
 	signals[UPDATED] =
 	    g_signal_new (NM_SETTINGS_CONNECTION_UPDATED,

@@ -22,21 +22,19 @@
 
 #include "nm-default.h"
 
-#include <string.h>
+#include "plugin.h"
 
+#include <string.h>
 #include <gmodule.h>
 
 #include "nm-utils.h"
 #include "nm-setting-connection.h"
-
-#include "nm-default.h"
 #include "nm-dbus-interface.h"
 #include "nm-settings-plugin.h"
-#include "nm-ifnet-connection.h"
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"
 
-#include "plugin.h"
+#include "nm-ifnet-connection.h"
 #include "net_utils.h"
 #include "net_parser.h"
 #include "wpa_parser.h"
@@ -46,14 +44,7 @@
 #define IFNET_PLUGIN_INFO "(C) 1999-2010 Gentoo Foundation, Inc. To report bugs please use bugs.gentoo.org with [networkmanager] or [qiaomuf] prefix."
 #define IFNET_MANAGE_WELL_KNOWN_DEFAULT TRUE
 
-typedef struct {
-	GHashTable *connections;  /* uuid::connection */
-	gboolean unmanaged_well_known;
-
-	GFileMonitor *net_monitor;
-	GFileMonitor *wpa_monitor;
-
-} SettingsPluginIfnetPrivate;
+/*****************************************************************************/
 
 typedef void (*FileChangedFn) (gpointer user_data);
 
@@ -62,17 +53,44 @@ typedef struct {
 	gpointer user_data;
 } FileMonitorInfo;
 
-static void settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface);
+/*****************************************************************************/
 
-static void reload_connections (NMSettingsPlugin *config);
+typedef struct {
+	GHashTable *connections;  /* uuid::connection */
+	gboolean unmanaged_well_known;
+
+	GFileMonitor *net_monitor;
+	GFileMonitor *wpa_monitor;
+} SettingsPluginIfnetPrivate;
+
+struct _SettingsPluginIfnet {
+	GObject parent;
+	SettingsPluginIfnetPrivate _priv;
+};
+
+struct _SettingsPluginIfnetClass {
+	GObjectClass parent;
+};
+
+static void settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface);
 
 G_DEFINE_TYPE_EXTENDED (SettingsPluginIfnet, settings_plugin_ifnet, G_TYPE_OBJECT, 0,
                         G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_PLUGIN,
                                                settings_plugin_interface_init))
-#define SETTINGS_PLUGIN_IFNET_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), SETTINGS_TYPE_PLUGIN_IFNET, SettingsPluginIfnetPrivate))
+
+#define SETTINGS_PLUGIN_IFNET_GET_PRIVATE(self) _NM_GET_PRIVATE (self, SettingsPluginIfnet, SETTINGS_IS_PLUGIN_IFNET)
+
+/*****************************************************************************/
 
 static SettingsPluginIfnet *settings_plugin_ifnet_get (void);
+
 NM_DEFINE_SINGLETON_GETTER (SettingsPluginIfnet, settings_plugin_ifnet_get, SETTINGS_TYPE_PLUGIN_IFNET);
+
+/*****************************************************************************/
+
+static void reload_connections (NMSettingsPlugin *config);
+
+/*****************************************************************************/
 
 static gboolean
 is_managed_plugin (void)
@@ -84,9 +102,9 @@ is_managed_plugin (void)
 
 static void
 file_changed (GFileMonitor * monitor,
-	      GFile * file,
-	      GFile * other_file,
-	      GFileMonitorEvent event_type, gpointer user_data)
+              GFile * file,
+              GFile * other_file,
+              GFileMonitorEvent event_type, gpointer user_data)
 {
 	FileMonitorInfo *info;
 
@@ -102,7 +120,7 @@ file_changed (GFileMonitor * monitor,
 
 static GFileMonitor *
 monitor_file_changes (const char *filename,
-		      FileChangedFn callback, gpointer user_data)
+                      FileChangedFn callback, gpointer user_data)
 {
 	GFile *file;
 	GFileMonitor *monitor;
@@ -166,7 +184,7 @@ cancel_monitors (NMIfnetConnection * connection, gpointer user_data)
 static void
 connection_removed_cb (NMSettingsConnection *obj, gpointer user_data)
 {
-	g_hash_table_remove (SETTINGS_PLUGIN_IFNET_GET_PRIVATE (user_data)->connections,
+	g_hash_table_remove (SETTINGS_PLUGIN_IFNET_GET_PRIVATE ((SettingsPluginIfnet *) user_data)->connections,
 	                     nm_connection_get_uuid (NM_CONNECTION (obj)));
 }
 
@@ -296,7 +314,7 @@ add_connection (NMSettingsPlugin *config,
                 gboolean save_to_disk,
                 GError **error)
 {
-	SettingsPluginIfnetPrivate *priv = SETTINGS_PLUGIN_IFNET_GET_PRIVATE (config);
+	SettingsPluginIfnetPrivate *priv = SETTINGS_PLUGIN_IFNET_GET_PRIVATE ((SettingsPluginIfnet *) config);
 	NMIfnetConnection *new = NULL;
 
 	/* Ensure we reject attempts to add the connection long before we're
@@ -358,13 +376,60 @@ check_unmanaged (gpointer key, gpointer data, gpointer user_data)
 static GSList *
 get_unmanaged_specs (NMSettingsPlugin * config)
 {
-	SettingsPluginIfnetPrivate *priv = SETTINGS_PLUGIN_IFNET_GET_PRIVATE (config);
+	SettingsPluginIfnetPrivate *priv = SETTINGS_PLUGIN_IFNET_GET_PRIVATE ((SettingsPluginIfnet *) config);
 	GSList *list = NULL;
 
 	nm_log_info (LOGD_SETTINGS, "getting unmanaged specs...");
 	g_hash_table_foreach (priv->connections, check_unmanaged, &list);
 	return list;
 }
+
+static GSList *
+get_connections (NMSettingsPlugin *config)
+{
+	SettingsPluginIfnetPrivate *priv = SETTINGS_PLUGIN_IFNET_GET_PRIVATE ((SettingsPluginIfnet *) config);
+	GSList *connections = NULL;
+	GHashTableIter iter;
+	NMIfnetConnection *connection;
+
+	nm_log_info (LOGD_SETTINGS, "(%p) ... get_connections.", config);
+
+	g_hash_table_iter_init (&iter, priv->connections);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &connection)) {
+		const char *conn_name = nm_ifnet_connection_get_conn_name (connection);
+
+		if (!conn_name || (!priv->unmanaged_well_known && is_managed (conn_name)))
+			connections = g_slist_prepend (connections, connection);
+	}
+	nm_log_info (LOGD_SETTINGS, "(%p) connections count: %d",
+	             config, g_slist_length (connections));
+	return connections;
+}
+
+/*****************************************************************************/
+
+static void
+get_property (GObject * object, guint prop_id, GValue * value,
+              GParamSpec * pspec)
+{
+	switch (prop_id) {
+	case NM_SETTINGS_PLUGIN_PROP_NAME:
+		g_value_set_string (value, IFNET_PLUGIN_NAME_PRINT);
+		break;
+	case NM_SETTINGS_PLUGIN_PROP_INFO:
+		g_value_set_string (value, IFNET_PLUGIN_INFO);
+		break;
+	case NM_SETTINGS_PLUGIN_PROP_CAPABILITIES:
+		g_value_set_uint (value,
+		                  NM_SETTINGS_PLUGIN_CAP_MODIFY_CONNECTIONS);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+/*****************************************************************************/
 
 static void
 init (NMSettingsPlugin *config)
@@ -385,37 +450,7 @@ init (NMSettingsPlugin *config)
 	nm_log_info (LOGD_SETTINGS, "Initialzation complete!");
 }
 
-static GSList *
-get_connections (NMSettingsPlugin *config)
-{
-	SettingsPluginIfnetPrivate *priv = SETTINGS_PLUGIN_IFNET_GET_PRIVATE (config);
-	GSList *connections = NULL;
-	GHashTableIter iter;
-	NMIfnetConnection *connection;
-
-	nm_log_info (LOGD_SETTINGS, "(%p) ... get_connections.", config);
-
-	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &connection)) {
-		const char *conn_name = nm_ifnet_connection_get_conn_name (connection);
-
-		if (!conn_name || (!priv->unmanaged_well_known && is_managed (conn_name)))
-			connections = g_slist_prepend (connections, connection);
-	}
-	nm_log_info (LOGD_SETTINGS, "(%p) connections count: %d",
-	             config, g_slist_length (connections));
-	return connections;
-}
-
-static void
-settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface)
-{
-	plugin_iface->init = init;
-	plugin_iface->get_connections = get_connections;
-	plugin_iface->get_unmanaged_specs = get_unmanaged_specs;
-	plugin_iface->add_connection = add_connection;
-	plugin_iface->reload_connections = reload_connections;
-}
+/*****************************************************************************/
 
 static void
 settings_plugin_ifnet_init (SettingsPluginIfnet * plugin)
@@ -423,42 +458,10 @@ settings_plugin_ifnet_init (SettingsPluginIfnet * plugin)
 }
 
 static void
-get_property (GObject * object, guint prop_id, GValue * value,
-	      GParamSpec * pspec)
-{
-	switch (prop_id) {
-	case NM_SETTINGS_PLUGIN_PROP_NAME:
-		g_value_set_string (value, IFNET_PLUGIN_NAME_PRINT);
-		break;
-	case NM_SETTINGS_PLUGIN_PROP_INFO:
-		g_value_set_string (value, IFNET_PLUGIN_INFO);
-		break;
-	case NM_SETTINGS_PLUGIN_PROP_CAPABILITIES:
-		g_value_set_uint (value,
-		                  NM_SETTINGS_PLUGIN_CAP_MODIFY_CONNECTIONS);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-set_property (GObject * object, guint prop_id, const GValue * value,
-	      GParamSpec * pspec)
-{
-	switch (prop_id) {
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
 dispose (GObject * object)
 {
 	SettingsPluginIfnet *plugin = SETTINGS_PLUGIN_IFNET (object);
-	SettingsPluginIfnetPrivate *priv = SETTINGS_PLUGIN_IFNET_GET_PRIVATE (plugin);
+	SettingsPluginIfnetPrivate *priv = SETTINGS_PLUGIN_IFNET_GET_PRIVATE ((SettingsPluginIfnet *) plugin);
 
 	cancel_monitors (NULL, object);
 	if (priv->connections) {
@@ -476,24 +479,33 @@ settings_plugin_ifnet_class_init (SettingsPluginIfnetClass * req_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (req_class);
 
-	g_type_class_add_private (req_class, sizeof (SettingsPluginIfnetPrivate));
-
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
-	object_class->set_property = set_property;
 
 	g_object_class_override_property (object_class,
-					  NM_SETTINGS_PLUGIN_PROP_NAME,
-					  NM_SETTINGS_PLUGIN_NAME);
+	                                  NM_SETTINGS_PLUGIN_PROP_NAME,
+	                                  NM_SETTINGS_PLUGIN_NAME);
 
 	g_object_class_override_property (object_class,
-					  NM_SETTINGS_PLUGIN_PROP_INFO,
-					  NM_SETTINGS_PLUGIN_INFO);
+	                                  NM_SETTINGS_PLUGIN_PROP_INFO,
+	                                  NM_SETTINGS_PLUGIN_INFO);
 
 	g_object_class_override_property (object_class,
-					  NM_SETTINGS_PLUGIN_PROP_CAPABILITIES,
-					  NM_SETTINGS_PLUGIN_CAPABILITIES);
+	                                  NM_SETTINGS_PLUGIN_PROP_CAPABILITIES,
+	                                  NM_SETTINGS_PLUGIN_CAPABILITIES);
 }
+
+static void
+settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface)
+{
+	plugin_iface->init = init;
+	plugin_iface->get_connections = get_connections;
+	plugin_iface->get_unmanaged_specs = get_unmanaged_specs;
+	plugin_iface->add_connection = add_connection;
+	plugin_iface->reload_connections = reload_connections;
+}
+
+/*****************************************************************************/
 
 G_MODULE_EXPORT GObject *
 nm_settings_plugin_factory (void)

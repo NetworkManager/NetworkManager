@@ -21,28 +21,15 @@
 
 #include "nm-default.h"
 
+#include "nm-supplicant-manager.h"
+
 #include <string.h>
 
-#include "nm-supplicant-manager.h"
 #include "nm-supplicant-interface.h"
 #include "nm-supplicant-types.h"
 #include "nm-core-internal.h"
 
-#define NM_SUPPLICANT_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
-                                              NM_TYPE_SUPPLICANT_MANAGER, \
-                                              NMSupplicantManagerPrivate))
-
-G_DEFINE_TYPE (NMSupplicantManager, nm_supplicant_manager, G_TYPE_OBJECT)
-
-#define _NMLOG_DOMAIN         LOGD_SUPPLICANT
-#define _NMLOG_PREFIX_NAME    "supplicant"
-#define _NMLOG(level, ...) \
-    G_STMT_START { \
-        nm_log ((level), _NMLOG_DOMAIN, \
-                "%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-                _NMLOG_PREFIX_NAME": " \
-                _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
-    } G_STMT_END
+/*****************************************************************************/
 
 typedef struct {
 	GDBusProxy *     proxy;
@@ -56,11 +43,36 @@ typedef struct {
 	guint             die_count;
 } NMSupplicantManagerPrivate;
 
-/********************************************************************/
+struct _NMSupplicantManager {
+	GObject parent;
+	NMSupplicantManagerPrivate _priv;
+};
+
+struct _NMSupplicantManagerClass {
+	GObjectClass parent;
+};
+
+G_DEFINE_TYPE (NMSupplicantManager, nm_supplicant_manager, G_TYPE_OBJECT)
+
+#define NM_SUPPLICANT_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMSupplicantManager, NM_IS_SUPPLICANT_MANAGER)
+
+/*****************************************************************************/
+
+#define _NMLOG_DOMAIN         LOGD_SUPPLICANT
+#define _NMLOG_PREFIX_NAME    "supplicant"
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        nm_log ((level), _NMLOG_DOMAIN, \
+                "%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                _NMLOG_PREFIX_NAME": " \
+                _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+    } G_STMT_END
+
+/*****************************************************************************/
 
 G_DEFINE_QUARK (nm-supplicant-error-quark, nm_supplicant_error);
 
-/********************************************************************/
+/*****************************************************************************/
 
 static inline gboolean
 die_count_exceeded (guint32 count)
@@ -77,7 +89,7 @@ is_available (NMSupplicantManager *self)
 	       && !die_count_exceeded (priv->die_count);
 }
 
-/********************************************************************/
+/*****************************************************************************/
 
 static void
 _sup_iface_last_ref (gpointer data,
@@ -351,7 +363,7 @@ on_proxy_acquired (GObject *object, GAsyncResult *result, gpointer user_data)
 	name_owner_cb (priv->proxy, NULL, self);
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 NM_DEFINE_SINGLETON_GETTER (NMSupplicantManager, nm_supplicant_manager_get, NM_TYPE_SUPPLICANT_MANAGER);
 
@@ -402,8 +414,6 @@ static void
 nm_supplicant_manager_class_init (NMSupplicantManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
-
-	g_type_class_add_private (object_class, sizeof (NMSupplicantManagerPrivate));
 
 	object_class->dispose = dispose;
 }

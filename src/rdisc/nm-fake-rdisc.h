@@ -32,15 +32,8 @@
 
 #define NM_FAKE_RDISC_RS_SENT "rs-sent"
 
-typedef struct {
-	NMRDisc parent;
-} NMFakeRDisc;
-
-typedef struct {
-	NMRDiscClass parent;
-} NMFakeRDiscClass;
-
-/******************************************************************/
+typedef struct _NMFakeRRDisc NMFakeRDisc;
+typedef struct _NMFakeRRDiscClass NMFakeRDiscClass;
 
 GType nm_fake_rdisc_get_type (void);
 

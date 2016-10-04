@@ -63,7 +63,7 @@ __ns_types_to_str (int ns_types, int ns_types_already_set, char *buf, gsize len)
 #define _ns_types_to_str(ns_types, ns_types_already_set, buf) \
 	__ns_types_to_str (ns_types, ns_types_already_set, buf, sizeof (buf))
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 #define _NMLOG_DOMAIN        LOGD_PLATFORM
 #define _NMLOG_PREFIX_NAME   "netns"
@@ -83,19 +83,32 @@ __ns_types_to_str (int ns_types, int ns_types_already_set, char *buf, gsize len)
         } \
     } G_STMT_END
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_FD_NET,
 	PROP_FD_MNT,
 );
 
-typedef struct _NMPNetnsPrivate NMPNetnsPrivate;
-
-struct _NMPNetnsPrivate {
+typedef struct {
 	int fd_net;
 	int fd_mnt;
+} NMPNetnsPrivate;
+
+struct _NMPNetns {
+	GObject parent;
+	NMPNetnsPrivate _priv;
 };
+
+struct _NMPNetnsClass {
+	GObjectClass parent;
+};
+
+G_DEFINE_TYPE (NMPNetns, nmp_netns, G_TYPE_OBJECT);
+
+#define NMP_NETNS_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMPNetns, NMP_IS_NETNS)
+
+/*****************************************************************************/
 
 typedef struct {
 	NMPNetns *netns;
@@ -106,7 +119,7 @@ typedef struct {
 static void _stack_push (NMPNetns *netns, int ns_types);
 static NMPNetns *_netns_new (GError **error);
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 static GArray *netns_stack = NULL;
 
@@ -262,13 +275,7 @@ _stack_size (void)
 	return netns_stack->len;
 }
 
-/*********************************************************************************************/
-
-G_DEFINE_TYPE (NMPNetns, nmp_netns, G_TYPE_OBJECT);
-
-#define NMP_NETNS_GET_PRIVATE(o) ((o)->priv)
-
-/*********************************************************************************************/
+/*****************************************************************************/
 
 static NMPNetns *
 _netns_new (GError **error)
@@ -311,10 +318,11 @@ _setns (NMPNetns *self, int type)
 {
 	char buf[100];
 	int fd;
+	NMPNetnsPrivate *priv = NMP_NETNS_GET_PRIVATE (self);
 
 	nm_assert (NM_IN_SET (type, _CLONE_NS_ALL_V));
 
-	fd = (type == CLONE_NEWNET) ? self->priv->fd_net : self->priv->fd_mnt;
+	fd = (type == CLONE_NEWNET) ? priv->fd_net : priv->fd_mnt;
 
 	_LOGt (self, "set netns(%s, %d)", _ns_types_to_str (type, 0, buf), fd);
 
@@ -390,14 +398,14 @@ _netns_switch_pop (NMPNetns *self, int ns_types)
 	return success;
 }
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 int
 nmp_netns_get_fd_net (NMPNetns *self)
 {
 	g_return_val_if_fail (NMP_IS_NETNS (self), 0);
 
-	return self->priv->fd_net;
+	return NMP_NETNS_GET_PRIVATE (self)->fd_net;
 }
 
 int
@@ -405,10 +413,10 @@ nmp_netns_get_fd_mnt (NMPNetns *self)
 {
 	g_return_val_if_fail (NMP_IS_NETNS (self), 0);
 
-	return self->priv->fd_mnt;
+	return NMP_NETNS_GET_PRIVATE (self)->fd_mnt;
 }
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 static gboolean
 _nmp_netns_push_type (NMPNetns *self, int ns_types)
@@ -579,7 +587,7 @@ nmp_netns_is_initial (void)
 	return nmp_netns_get_current () == nmp_netns_get_initial ();
 }
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 gboolean
 nmp_netns_bind_to_path (NMPNetns *self, const char *filename, int *out_fd)
@@ -657,24 +665,25 @@ nmp_netns_bind_to_path_destroy (NMPNetns *self, const char *filename)
 	return TRUE;
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
 	NMPNetns *self = NMP_NETNS (object);
+	NMPNetnsPrivate *priv = NMP_NETNS_GET_PRIVATE (self);
 
 	switch (prop_id) {
 	case PROP_FD_NET:
 		/* construct only */
-		self->priv->fd_net = g_value_get_int (value);
-		g_return_if_fail (self->priv->fd_net > 0);
+		priv->fd_net = g_value_get_int (value);
+		g_return_if_fail (priv->fd_net > 0);
 		break;
 	case PROP_FD_MNT:
 		/* construct only */
-		self->priv->fd_mnt = g_value_get_int (value);
-		g_return_if_fail (self->priv->fd_mnt > 0);
+		priv->fd_mnt = g_value_get_int (value);
+		g_return_if_fail (priv->fd_mnt > 0);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -685,22 +694,22 @@ set_property (GObject *object, guint prop_id,
 static void
 nmp_netns_init (NMPNetns *self)
 {
-	self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NMP_TYPE_NETNS, NMPNetnsPrivate);
 }
 
 static void
 dispose (GObject *object)
 {
 	NMPNetns *self = NMP_NETNS (object);
+	NMPNetnsPrivate *priv = NMP_NETNS_GET_PRIVATE (self);
 
-	if (self->priv->fd_net > 0) {
-		close (self->priv->fd_net);
-		self->priv->fd_net = 0;
+	if (priv->fd_net > 0) {
+		close (priv->fd_net);
+		priv->fd_net = 0;
 	}
 
-	if (self->priv->fd_mnt > 0) {
-		close (self->priv->fd_mnt);
-		self->priv->fd_mnt = 0;
+	if (priv->fd_mnt > 0) {
+		close (priv->fd_mnt);
+		priv->fd_mnt = 0;
 	}
 
 	G_OBJECT_CLASS (nmp_netns_parent_class)->dispose (object);
@@ -710,8 +719,6 @@ static void
 nmp_netns_class_init (NMPNetnsClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
-
-	g_type_class_add_private (klass, sizeof (NMPNetnsPrivate));
 
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;

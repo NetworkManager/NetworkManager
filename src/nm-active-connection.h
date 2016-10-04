@@ -61,8 +61,11 @@
 #define NM_ACTIVE_CONNECTION_DEVICE_METERED_CHANGED  "device-metered-changed"
 #define NM_ACTIVE_CONNECTION_PARENT_ACTIVE           "parent-active"
 
+struct _NMActiveConnectionPrivate;
+
 struct _NMActiveConnection {
 	NMExportedObject parent;
+	struct _NMActiveConnectionPrivate *_priv;
 };
 
 typedef struct {

@@ -37,7 +37,26 @@
 
 #include "nm-dhcp-client-logging.h"
 
-typedef struct {
+/*****************************************************************************/
+
+enum {
+	SIGNAL_STATE_CHANGED,
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
+
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_IFACE,
+	PROP_IFINDEX,
+	PROP_HWADDR,
+	PROP_IPV6,
+	PROP_UUID,
+	PROP_PRIORITY,
+	PROP_TIMEOUT,
+);
+
+typedef struct _NMDhcpClientPrivate {
 	char *       iface;
 	int          ifindex;
 	GByteArray * hwaddr;
@@ -55,33 +74,13 @@ typedef struct {
 	guint        timeout_id;
 	guint        watch_id;
 	gboolean     info_only;
-
 } NMDhcpClientPrivate;
-
-#define NM_DHCP_CLIENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP_CLIENT, NMDhcpClientPrivate))
 
 G_DEFINE_TYPE_EXTENDED (NMDhcpClient, nm_dhcp_client, G_TYPE_OBJECT, G_TYPE_FLAG_ABSTRACT, {})
 
-enum {
-	SIGNAL_STATE_CHANGED,
-	LAST_SIGNAL
-};
+#define NM_DHCP_CLIENT_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR (self, NMDhcpClient, NM_IS_DHCP_CLIENT)
 
-static guint signals[LAST_SIGNAL] = { 0 };
-
-enum {
-	PROP_0,
-	PROP_IFACE,
-	PROP_IFINDEX,
-	PROP_HWADDR,
-	PROP_IPV6,
-	PROP_UUID,
-	PROP_PRIORITY,
-	PROP_TIMEOUT,
-	LAST_PROP
-};
-
-/********************************************/
+/*****************************************************************************/
 
 pid_t
 nm_dhcp_client_get_pid (NMDhcpClient *self)
@@ -186,7 +185,7 @@ nm_dhcp_client_get_fqdn (NMDhcpClient *self)
 	return NM_DHCP_CLIENT_GET_PRIVATE (self)->fqdn;
 }
 
-/********************************************/
+/*****************************************************************************/
 
 static const char *state_table[NM_DHCP_STATE_MAX + 1] = {
 	[NM_DHCP_STATE_UNKNOWN]  = "unknown",
@@ -232,7 +231,7 @@ reason_to_state (NMDhcpClient *self, const char *iface, const char *reason)
 	return NM_DHCP_STATE_UNKNOWN;
 }
 
-/********************************************/
+/*****************************************************************************/
 
 static void
 timeout_cleanup (NMDhcpClient *self)
@@ -618,7 +617,7 @@ nm_dhcp_client_stop (NMDhcpClient *self, gboolean release)
 	nm_dhcp_client_set_state (self, NM_DHCP_STATE_DONE, NULL, NULL);
 }
 
-/********************************************/
+/*****************************************************************************/
 
 static char *
 bytearray_variant_to_string (NMDhcpClient *self, GVariant *value, const char *key)
@@ -776,19 +775,13 @@ nm_dhcp_client_handle_event (gpointer unused,
 	return TRUE;
 }
 
-/********************************************/
-
-static void
-nm_dhcp_client_init (NMDhcpClient *self)
-{
-	NM_DHCP_CLIENT_GET_PRIVATE (self)->pid = -1;
-}
+/*****************************************************************************/
 
 static void
 get_property (GObject *object, guint prop_id,
-			  GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
-	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (object);
+	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE ((NMDhcpClient *) object);
 
 	switch (prop_id) {
 	case PROP_IFACE:
@@ -820,10 +813,10 @@ get_property (GObject *object, guint prop_id,
 
 static void
 set_property (GObject *object, guint prop_id,
-			  const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
-	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (object);
- 
+	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE ((NMDhcpClient *) object);
+
 	switch (prop_id) {
 	case PROP_IFACE:
 		/* construct-only */
@@ -857,6 +850,19 @@ set_property (GObject *object, guint prop_id,
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
 	}
+}
+
+/*****************************************************************************/
+
+static void
+nm_dhcp_client_init (NMDhcpClient *self)
+{
+	NMDhcpClientPrivate *priv;
+
+	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_DHCP_CLIENT, NMDhcpClientPrivate);
+	self->_priv = priv;
+
+	priv->pid = -1;
 }
 
 static void
@@ -899,7 +905,6 @@ nm_dhcp_client_class_init (NMDhcpClientClass *client_class)
 
 	g_type_class_add_private (client_class, sizeof (NMDhcpClientPrivate));
 
-	/* virtual methods */
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
@@ -907,61 +912,56 @@ nm_dhcp_client_class_init (NMDhcpClientClass *client_class)
 	client_class->stop = stop;
 	client_class->get_duid = get_duid;
 
-	g_object_class_install_property
-		(object_class, PROP_IFACE,
-		 g_param_spec_string (NM_DHCP_CLIENT_INTERFACE, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_IFACE] =
+	    g_param_spec_string (NM_DHCP_CLIENT_INTERFACE, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_IFINDEX,
-		 g_param_spec_int (NM_DHCP_CLIENT_IFINDEX, "", "",
-		                   -1, G_MAXINT, -1,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+	obj_properties[PROP_IFINDEX] =
+	    g_param_spec_int (NM_DHCP_CLIENT_IFINDEX, "", "",
+	                      -1, G_MAXINT, -1,
+	                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                      G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_HWADDR,
-		 g_param_spec_boxed (NM_DHCP_CLIENT_HWADDR, "", "",
-		                     G_TYPE_BYTE_ARRAY,
-		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_HWADDR] =
+	    g_param_spec_boxed (NM_DHCP_CLIENT_HWADDR, "", "",
+	                        G_TYPE_BYTE_ARRAY,
+	                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                        G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_IPV6,
-		 g_param_spec_boolean (NM_DHCP_CLIENT_IPV6, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_IPV6] =
+	    g_param_spec_boolean (NM_DHCP_CLIENT_IPV6, "", "",
+	                          FALSE,
+	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_UUID,
-		 g_param_spec_string (NM_DHCP_CLIENT_UUID, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_UUID] =
+	    g_param_spec_string (NM_DHCP_CLIENT_UUID, "", "",
+	                         NULL,
+	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_PRIORITY,
-		 g_param_spec_uint (NM_DHCP_CLIENT_PRIORITY, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PRIORITY] =
+	    g_param_spec_uint (NM_DHCP_CLIENT_PRIORITY, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                       G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_TIMEOUT,
-		 g_param_spec_uint (NM_DHCP_CLIENT_TIMEOUT, "", "",
-		                    0, G_MAXUINT, 45,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_TIMEOUT] =
+	    g_param_spec_uint (NM_DHCP_CLIENT_TIMEOUT, "", "",
+	                       0, G_MAXUINT, 45,
+	                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                       G_PARAM_STATIC_STRINGS);
 
-	/* signals */
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+
 	signals[SIGNAL_STATE_CHANGED] =
-		g_signal_new (NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED,
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMDhcpClientClass, state_changed),
-					  NULL, NULL, NULL,
-					  G_TYPE_NONE, 4, G_TYPE_UINT, G_TYPE_OBJECT, G_TYPE_HASH_TABLE, G_TYPE_STRING);
+	    g_signal_new (NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMDhcpClientClass, state_changed),
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 4, G_TYPE_UINT, G_TYPE_OBJECT, G_TYPE_HASH_TABLE, G_TYPE_STRING);
 }
 

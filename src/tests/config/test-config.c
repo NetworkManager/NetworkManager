@@ -29,7 +29,7 @@
 
 #include "nm-test-utils-core.h"
 
-/********************************************************************************/
+/*****************************************************************************/
 
 static void
 _assert_config_value (const NMConfigData *config_data, const char *group, const char *key, const char *expected_value, const char *file, int line)
@@ -46,7 +46,7 @@ _assert_config_value (const NMConfigData *config_data, const char *group, const 
 }
 #define assert_config_value(config_data, group, key, expected_value) _assert_config_value (config_data, group, key, expected_value, __FILE__, __LINE__)
 
-/********************************************************************************/
+/*****************************************************************************/
 
 static NMConfig *
 setup_config (GError **error, const char *config_file, const char *intern_config, const char *const* atomic_section_prefixes, const char *config_dir, const char *system_config_dir, ...)

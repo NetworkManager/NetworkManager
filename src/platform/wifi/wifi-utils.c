@@ -53,7 +53,7 @@ wifi_data_free (WifiData *data)
 	g_free (data);
 }
 
-/***************************************************************/
+/*****************************************************************************/
 
 WifiData *
 wifi_utils_init (const char *iface, int ifindex, gboolean check_scan)

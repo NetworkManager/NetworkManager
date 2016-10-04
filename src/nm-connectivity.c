@@ -21,28 +21,25 @@
 
 #include "nm-default.h"
 
+#include "nm-connectivity.h"
+
 #include <string.h>
 #if WITH_CONCHECK
 #include <libsoup/soup.h>
 #endif
 
-#include "nm-connectivity.h"
 #include "nm-config.h"
 #include "nm-dispatcher.h"
 #include "NetworkManagerUtils.h"
 
-G_DEFINE_TYPE (NMConnectivity, nm_connectivity, G_TYPE_OBJECT)
+/*****************************************************************************/
 
-#define NM_CONNECTIVITY_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CONNECTIVITY, NMConnectivityPrivate))
-
-#define _NMLOG_DOMAIN  LOGD_CONCHECK
-#define _NMLOG(level, ...) \
-    G_STMT_START { \
-        nm_log ((level), (_NMLOG_DOMAIN), \
-                "%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-                "connectivity: " \
-                _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
-    } G_STMT_END
+NM_GOBJECT_PROPERTIES_DEFINE (NMConnectivity,
+	PROP_URI,
+	PROP_INTERVAL,
+	PROP_RESPONSE,
+	PROP_STATE,
+);
 
 typedef struct {
 	char *uri;
@@ -59,15 +56,31 @@ typedef struct {
 	NMConnectivityState state;
 } NMConnectivityPrivate;
 
-enum {
-	PROP_0,
-	PROP_URI,
-	PROP_INTERVAL,
-	PROP_RESPONSE,
-	PROP_STATE,
-	LAST_PROP
+struct _NMConnectivity {
+	GObject parent;
+	NMConnectivityPrivate _priv;
 };
 
+struct _NMConnectivityClass {
+	GObjectClass parent;
+};
+
+G_DEFINE_TYPE (NMConnectivity, nm_connectivity, G_TYPE_OBJECT)
+
+#define NM_CONNECTIVITY_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMConnectivity, NM_IS_CONNECTIVITY)
+
+/*****************************************************************************/
+
+#define _NMLOG_DOMAIN  LOGD_CONCHECK
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        nm_log ((level), (_NMLOG_DOMAIN), \
+                "%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                "connectivity: " \
+                _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+    } G_STMT_END
+
+/*****************************************************************************/
 
 NMConnectivityState
 nm_connectivity_get_state (NMConnectivity *connectivity)
@@ -96,7 +109,7 @@ update_state (NMConnectivity *self, NMConnectivityState state)
 		       nm_connectivity_state_to_string (priv->state),
 		       nm_connectivity_state_to_string (state));
 		priv->state = state;
-		g_object_notify (G_OBJECT (self), NM_CONNECTIVITY_STATE);
+		_notify (self, PROP_STATE);
 
 		/* Notify dispatcher scripts of a connectivity state change */
 		nm_dispatcher_call_connectivity (DISPATCHER_ACTION_CONNECTIVITY_CHANGE, state);
@@ -329,18 +342,35 @@ nm_connectivity_check_finish (NMConnectivity  *self,
 	return (NMConnectivityState) g_simple_async_result_get_op_res_gssize (simple);
 }
 
-/**************************************************************************/
+/*****************************************************************************/
 
-NMConnectivity *
-nm_connectivity_new (const char *uri,
-                     guint interval,
-                     const char *response)
+static void
+get_property (GObject *object, guint property_id,
+              GValue *value, GParamSpec *pspec)
 {
-	return g_object_new (NM_TYPE_CONNECTIVITY,
-	                     NM_CONNECTIVITY_URI, uri,
-	                     NM_CONNECTIVITY_INTERVAL, interval,
-	                     NM_CONNECTIVITY_RESPONSE, response,
-	                     NULL);
+	NMConnectivity *self = NM_CONNECTIVITY (object);
+	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
+
+	switch (property_id) {
+	case PROP_URI:
+		g_value_set_string (value, priv->uri);
+		break;
+	case PROP_INTERVAL:
+		g_value_set_uint (value, priv->interval);
+		break;
+	case PROP_RESPONSE:
+		if (priv->response)
+			g_value_set_string (value, priv->response);
+		else
+			g_value_set_static_string (value, NM_CONFIG_DEFAULT_CONNECTIVITY_RESPONSE);
+		break;
+	case PROP_STATE:
+		g_value_set_uint (value, priv->state);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -403,35 +433,7 @@ set_property (GObject *object, guint property_id,
 	}
 }
 
-static void
-get_property (GObject *object, guint property_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMConnectivity *self = NM_CONNECTIVITY (object);
-	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
-
-	switch (property_id) {
-	case PROP_URI:
-		g_value_set_string (value, priv->uri);
-		break;
-	case PROP_INTERVAL:
-		g_value_set_uint (value, priv->interval);
-		break;
-	case PROP_RESPONSE:
-		if (priv->response)
-			g_value_set_string (value, priv->response);
-		else
-			g_value_set_static_string (value, NM_CONFIG_DEFAULT_CONNECTIVITY_RESPONSE);
-		break;
-	case PROP_STATE:
-		g_value_set_uint (value, priv->state);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-		break;
-	}
-}
-
+/*****************************************************************************/
 
 static void
 nm_connectivity_init (NMConnectivity *self)
@@ -444,6 +446,17 @@ nm_connectivity_init (NMConnectivity *self)
 	priv->state = NM_CONNECTIVITY_NONE;
 }
 
+NMConnectivity *
+nm_connectivity_new (const char *uri,
+                     guint interval,
+                     const char *response)
+{
+	return g_object_new (NM_TYPE_CONNECTIVITY,
+	                     NM_CONNECTIVITY_URI, uri,
+	                     NM_CONNECTIVITY_INTERVAL, interval,
+	                     NM_CONNECTIVITY_RESPONSE, response,
+	                     NULL);
+}
 
 static void
 dispose (GObject *object)
@@ -466,48 +479,42 @@ dispose (GObject *object)
 	G_OBJECT_CLASS (nm_connectivity_parent_class)->dispose (object);
 }
 
-
 static void
 nm_connectivity_class_init (NMConnectivityClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
-	g_type_class_add_private (klass, sizeof (NMConnectivityPrivate));
 
-	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 
-	/* properties */
-	g_object_class_install_property
-	    (object_class, PROP_URI,
+	obj_properties[PROP_URI] =
 	     g_param_spec_string (NM_CONNECTIVITY_URI, "", "",
 	                          NULL,
 	                          G_PARAM_READWRITE |
 	                          G_PARAM_CONSTRUCT |
-	                          G_PARAM_STATIC_STRINGS));
+	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-	    (object_class, PROP_INTERVAL,
+	obj_properties[PROP_INTERVAL] =
 	     g_param_spec_uint (NM_CONNECTIVITY_INTERVAL, "", "",
 	                        0, G_MAXUINT, NM_CONFIG_DEFAULT_CONNECTIVITY_INTERVAL,
 	                        G_PARAM_READWRITE |
 	                        G_PARAM_CONSTRUCT |
-	                        G_PARAM_STATIC_STRINGS));
+	                        G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-	    (object_class, PROP_RESPONSE,
+	obj_properties[PROP_RESPONSE] =
 	     g_param_spec_string (NM_CONNECTIVITY_RESPONSE, "", "",
 	                          NM_CONFIG_DEFAULT_CONNECTIVITY_RESPONSE,
 	                          G_PARAM_READWRITE |
 	                          G_PARAM_CONSTRUCT |
-	                          G_PARAM_STATIC_STRINGS));
+	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-	    (object_class, PROP_STATE,
+	obj_properties[PROP_STATE] =
 	     g_param_spec_uint (NM_CONNECTIVITY_STATE, "", "",
 	                        NM_CONNECTIVITY_UNKNOWN, NM_CONNECTIVITY_FULL, NM_CONNECTIVITY_UNKNOWN,
 	                        G_PARAM_READABLE |
-	                        G_PARAM_STATIC_STRINGS));
+	                        G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }
 

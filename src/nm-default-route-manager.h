@@ -32,13 +32,7 @@
 
 #define NM_DEFAULT_ROUTE_MANAGER_PLATFORM "platform"
 
-struct _NMDefaultRouteManager {
-	GObject parent;
-};
-
-typedef struct {
-	GObjectClass parent;
-} NMDefaultRouteManagerClass;
+typedef struct _NMDefaultRouteManagerClass NMDefaultRouteManagerClass;
 
 GType nm_default_route_manager_get_type (void);
 
@@ -68,4 +62,3 @@ NMIP6Config *nm_default_route_manager_ip6_get_best_config (NMDefaultRouteManager
                                                            NMVpnConnection **out_vpn);
 
 #endif  /* NM_DEFAULT_ROUTE_MANAGER_H */
-

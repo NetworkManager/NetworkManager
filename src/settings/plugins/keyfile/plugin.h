@@ -19,8 +19,8 @@
  * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
-#ifndef _PLUGIN_H_
-#define _PLUGIN_H_
+#ifndef __NMKF_PLUGIN_H__
+#define __NMKF_PLUGIN_H__
 
 #define SETTINGS_TYPE_PLUGIN_KEYFILE            (settings_plugin_keyfile_get_type ())
 #define SETTINGS_PLUGIN_KEYFILE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), SETTINGS_TYPE_PLUGIN_KEYFILE, SettingsPluginKeyfile))
@@ -29,16 +29,11 @@
 #define SETTINGS_IS_PLUGIN_KEYFILE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), SETTINGS_TYPE_PLUGIN_KEYFILE))
 #define SETTINGS_PLUGIN_KEYFILE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), SETTINGS_TYPE_PLUGIN_KEYFILE, SettingsPluginKeyfileClass))
 
-typedef struct {
-	GObject parent;
-} SettingsPluginKeyfile;
-
-typedef struct {
-	GObjectClass parent;
-} SettingsPluginKeyfileClass;
+typedef struct _SettingsPluginKeyfile SettingsPluginKeyfile;
+typedef struct _SettingsPluginKeyfileClass SettingsPluginKeyfileClass;
 
 GType settings_plugin_keyfile_get_type (void);
 
 GObject *nm_settings_keyfile_plugin_new (void);
 
-#endif	/* _PLUGIN_H_ */
+#endif /* __NMKF_PLUGIN_H__ */

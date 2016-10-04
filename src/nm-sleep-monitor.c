@@ -64,8 +64,17 @@
 
 #endif
 
+/*****************************************************************************/
+
+enum {
+	SLEEPING,
+	LAST_SIGNAL,
+};
+
+static guint signals[LAST_SIGNAL] = {0};
+
 struct _NMSleepMonitor {
-	GObject parent_instance;
+	GObject parent;
 
 	GDBusProxy *proxy;
 
@@ -81,18 +90,10 @@ struct _NMSleepMonitor {
 };
 
 struct _NMSleepMonitorClass {
-	GObjectClass parent_class;
+	GObjectClass parent;
 };
-
-enum {
-	SLEEPING,
-	LAST_SIGNAL,
-};
-static guint signals[LAST_SIGNAL] = {0};
 
 G_DEFINE_TYPE (NMSleepMonitor, nm_sleep_monitor, G_TYPE_OBJECT);
-
-static void sleep_signal (NMSleepMonitor *self, gboolean is_about_to_suspend);
 
 /*****************************************************************************/
 
@@ -104,6 +105,10 @@ static void sleep_signal (NMSleepMonitor *self, gboolean is_about_to_suspend);
                 _NMLOG_PREFIX_NAME \
                 _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
     } G_STMT_END
+
+/*****************************************************************************/
+
+static void sleep_signal (NMSleepMonitor *self, gboolean is_about_to_suspend);
 
 /*****************************************************************************/
 
@@ -336,6 +341,8 @@ on_proxy_acquired (GObject *object,
 	}
 #endif
 }
+
+/*****************************************************************************/
 
 static void
 nm_sleep_monitor_init (NMSleepMonitor *self)

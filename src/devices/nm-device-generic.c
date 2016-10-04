@@ -21,6 +21,7 @@
 #include "nm-default.h"
 
 #include "nm-device-generic.h"
+
 #include "nm-device-private.h"
 #include "nm-enum-types.h"
 #include "nm-platform.h"
@@ -28,20 +29,30 @@
 
 #include "nmdbus-device-generic.h"
 
-G_DEFINE_TYPE (NMDeviceGeneric, nm_device_generic, NM_TYPE_DEVICE)
+/*****************************************************************************/
 
-#define NM_DEVICE_GENERIC_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_GENERIC, NMDeviceGenericPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_TYPE_DESCRIPTION,
+);
 
 typedef struct {
 	char *type_description;
 } NMDeviceGenericPrivate;
 
-enum {
-	PROP_0,
-	PROP_TYPE_DESCRIPTION,
-
-	LAST_PROP
+struct _NMDeviceGeneric {
+	NMDevice parent;
+	NMDeviceGenericPrivate _priv;
 };
+
+struct _NMDeviceGenericClass {
+	NMDeviceClass parent;
+};
+
+G_DEFINE_TYPE (NMDeviceGeneric, nm_device_generic, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_GENERIC_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceGeneric, NM_IS_DEVICE_GENERIC)
+
+/*****************************************************************************/
 
 static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *dev)
@@ -55,8 +66,8 @@ get_generic_capabilities (NMDevice *dev)
 static const char *
 get_type_description (NMDevice *device)
 {
-	if (NM_DEVICE_GENERIC_GET_PRIVATE (device)->type_description)
-		return NM_DEVICE_GENERIC_GET_PRIVATE (device)->type_description;
+	if (NM_DEVICE_GENERIC_GET_PRIVATE ((NMDeviceGeneric *) device)->type_description)
+		return NM_DEVICE_GENERIC_GET_PRIVATE ((NMDeviceGeneric *) device)->type_description;
 	return NM_DEVICE_CLASS (nm_device_generic_parent_class)->get_type_description (device);
 }
 
@@ -108,52 +119,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 	              NULL);
 }
 
-/**************************************************************/
-
-NMDevice *
-nm_device_generic_new (const NMPlatformLink *plink, gboolean nm_plugin_missing)
-{
-	g_return_val_if_fail (plink != NULL, NULL);
-
-	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_GENERIC,
-	                                  NM_DEVICE_IFACE, plink->name,
-	                                  NM_DEVICE_TYPE_DESC, "Generic",
-	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_GENERIC,
-	                                  NM_DEVICE_NM_PLUGIN_MISSING, nm_plugin_missing,
-	                                  NULL);
-}
-
-static void
-nm_device_generic_init (NMDeviceGeneric *self)
-{
-}
-
-static GObject *
-constructor (GType type,
-             guint n_construct_params,
-             GObjectConstructParam *construct_params)
-{
-	GObject *object;
-
-	object = G_OBJECT_CLASS (nm_device_generic_parent_class)->constructor (type,
-	                                                                       n_construct_params,
-	                                                                       construct_params);
-
-	nm_device_set_unmanaged_flags ((NMDevice *) object, NM_UNMANAGED_BY_DEFAULT, TRUE);
-
-	return object;
-}
-
-static void
-dispose (GObject *object)
-{
-	NMDeviceGeneric *self = NM_DEVICE_GENERIC (object);
-	NMDeviceGenericPrivate *priv = NM_DEVICE_GENERIC_GET_PRIVATE (self);
-
-	g_clear_pointer (&priv->type_description, g_free);
-
-	G_OBJECT_CLASS (nm_device_generic_parent_class)->dispose (object);
-}
+/*****************************************************************************/
 
 static void
 get_property (GObject *object, guint prop_id,
@@ -189,13 +155,58 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
+/*****************************************************************************/
+
+static void
+nm_device_generic_init (NMDeviceGeneric *self)
+{
+}
+
+static GObject *
+constructor (GType type,
+             guint n_construct_params,
+             GObjectConstructParam *construct_params)
+{
+	GObject *object;
+
+	object = G_OBJECT_CLASS (nm_device_generic_parent_class)->constructor (type,
+	                                                                       n_construct_params,
+	                                                                       construct_params);
+
+	nm_device_set_unmanaged_flags ((NMDevice *) object, NM_UNMANAGED_BY_DEFAULT, TRUE);
+
+	return object;
+}
+
+NMDevice *
+nm_device_generic_new (const NMPlatformLink *plink, gboolean nm_plugin_missing)
+{
+	g_return_val_if_fail (plink != NULL, NULL);
+
+	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_GENERIC,
+	                                  NM_DEVICE_IFACE, plink->name,
+	                                  NM_DEVICE_TYPE_DESC, "Generic",
+	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_GENERIC,
+	                                  NM_DEVICE_NM_PLUGIN_MISSING, nm_plugin_missing,
+	                                  NULL);
+}
+
+static void
+dispose (GObject *object)
+{
+	NMDeviceGeneric *self = NM_DEVICE_GENERIC (object);
+	NMDeviceGenericPrivate *priv = NM_DEVICE_GENERIC_GET_PRIVATE (self);
+
+	g_clear_pointer (&priv->type_description, g_free);
+
+	G_OBJECT_CLASS (nm_device_generic_parent_class)->dispose (object);
+}
+
 static void
 nm_device_generic_class_init (NMDeviceGenericClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
-
-	g_type_class_add_private (klass, sizeof (NMDeviceGenericPrivate));
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_GENERIC_SETTING_NAME, NM_LINK_TYPE_ANY)
 
@@ -210,13 +221,13 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->update_connection = update_connection;
 
-	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_TYPE_DESCRIPTION,
-		 g_param_spec_string (NM_DEVICE_GENERIC_TYPE_DESCRIPTION, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_TYPE_DESCRIPTION] =
+	     g_param_spec_string (NM_DEVICE_GENERIC_TYPE_DESCRIPTION, "", "",
+	                          NULL,
+	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        NMDBUS_TYPE_DEVICE_GENERIC_SKELETON,

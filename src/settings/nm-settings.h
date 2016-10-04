@@ -61,13 +61,7 @@ typedef gboolean (*NMConnectionFilterFunc) (NMSettings *settings,
                                             NMConnection *connection,
                                             gpointer func_data);
 
-struct _NMSettings {
-	NMExportedObject parent_instance;
-};
-
-typedef struct {
-	NMExportedObjectClass parent_class;
-} NMSettingsClass;
+typedef struct _NMSettingsClass NMSettingsClass;
 
 typedef void (*NMSettingsSetHostnameCb) (const char *name, gboolean result, gpointer user_data);
 

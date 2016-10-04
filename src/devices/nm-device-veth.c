@@ -51,7 +51,7 @@ struct _NMDeviceVeth {
 };
 
 struct _NMDeviceVethClass {
-	NMDeviceEthernetClass parent_class;
+	NMDeviceEthernetClass parent;
 };
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceVeth,
@@ -115,7 +115,7 @@ can_unmanaged_external_down (NMDevice *self)
 	return FALSE;
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_veth_init (NMDeviceVeth *self)
@@ -180,7 +180,7 @@ nm_device_veth_class_init (NMDeviceVethClass *klass)
 	                                        NULL);
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 #define NM_TYPE_VETH_FACTORY (nm_veth_factory_get_type ())
 #define NM_VETH_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VETH_FACTORY, NMVethFactory))

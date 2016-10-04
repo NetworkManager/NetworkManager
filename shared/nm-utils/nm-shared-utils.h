@@ -22,14 +22,14 @@
 #ifndef __NM_SHARED_UTILS_H__
 #define __NM_SHARED_UTILS_H__
 
-/******************************************************************************/
+/*****************************************************************************/
 
 gint64 _nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max, gint64 fallback);
 
 gint _nm_utils_ascii_str_to_bool (const char *str,
                                   gint default_value);
 
-/******************************************************************************/
+/*****************************************************************************/
 
 /**
  * NMUtilsError:
@@ -54,13 +54,13 @@ void nm_utils_error_set_cancelled (GError **error,
 gboolean nm_utils_error_is_cancelled (GError *error,
                                       gboolean consider_is_disposing);
 
-/******************************************************************************/
+/*****************************************************************************/
 
 gboolean nm_g_object_set_property (GObject *object,
                                    const gchar  *property_name,
                                    const GValue *value,
                                    GError **error);
 
-/******************************************************************************/
+/*****************************************************************************/
 
 #endif /* __NM_SHARED_UTILS_H__ */

@@ -39,7 +39,7 @@ _new_connection (const char *id)
 	return a;
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static char *
 _get_default_wired_name (GSList *list)
@@ -55,7 +55,7 @@ _get_default_wired_name (GSList *list)
 	return nm_device_ethernet_utils_get_default_wired_name (v);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_defname_no_connections (void)
@@ -66,7 +66,7 @@ test_defname_no_connections (void)
 	g_assert_cmpstr (name, ==, "Wired connection 1");
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_defname_no_conflict (void)
@@ -84,7 +84,7 @@ test_defname_no_conflict (void)
 	g_slist_free_full (list, g_object_unref);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_defname_conflict (void)
@@ -102,7 +102,7 @@ test_defname_conflict (void)
 	g_slist_free_full (list, g_object_unref);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_defname_multiple_conflicts (void)
@@ -124,7 +124,7 @@ test_defname_multiple_conflicts (void)
 	g_slist_free_full (list, g_object_unref);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 NMTST_DEFINE ();
 

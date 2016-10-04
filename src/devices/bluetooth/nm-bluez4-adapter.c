@@ -30,9 +30,21 @@
 #include "nm-core-internal.h"
 #include "nm-settings.h"
 
-G_DEFINE_TYPE (NMBluez4Adapter, nm_bluez4_adapter, G_TYPE_OBJECT)
+/*****************************************************************************/
 
-#define NM_BLUEZ4_ADAPTER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_BLUEZ4_ADAPTER, NMBluez4AdapterPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_PATH,
+	PROP_ADDRESS,
+);
+
+enum {
+	INITIALIZED,
+	DEVICE_ADDED,
+	DEVICE_REMOVED,
+	LAST_SIGNAL,
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
 	char *path;
@@ -46,25 +58,24 @@ typedef struct {
 	NMSettings *settings;
 } NMBluez4AdapterPrivate;
 
-
-enum {
-	PROP_0,
-	PROP_PATH,
-	PROP_ADDRESS,
-
-	LAST_PROP
+struct _NMBluez4Adapter {
+	GObject parent;
+	NMBluez4AdapterPrivate _priv;
 };
 
-/* Signals */
-enum {
-	INITIALIZED,
-	DEVICE_ADDED,
-	DEVICE_REMOVED,
-	LAST_SIGNAL
+struct _NMBluez4AdapterClass {
+	GObjectClass parent;
 };
-static guint signals[LAST_SIGNAL] = { 0 };
+
+G_DEFINE_TYPE (NMBluez4Adapter, nm_bluez4_adapter, G_TYPE_OBJECT)
+
+#define NM_BLUEZ4_ADAPTER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMBluez4Adapter, NM_IS_BLUEZ4_ADAPTER)
+
+/*****************************************************************************/
 
 static void device_do_remove (NMBluez4Adapter *self, NMBluezDevice *device);
+
+/*****************************************************************************/
 
 const char *
 nm_bluez4_adapter_get_path (NMBluez4Adapter *self)
@@ -233,7 +244,62 @@ query_properties (NMBluez4Adapter *self)
 	                   get_properties_cb, self);
 }
 
-/***********************************************************/
+/*****************************************************************************/
+
+static gboolean
+_find_all (gpointer key, gpointer value, gpointer user_data)
+{
+	return TRUE;
+}
+
+/*****************************************************************************/
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE ((NMBluez4Adapter *) object);
+
+	switch (prop_id) {
+	case PROP_PATH:
+		g_value_set_string (value, priv->path);
+		break;
+	case PROP_ADDRESS:
+		g_value_set_string (value, priv->address);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE ((NMBluez4Adapter *) object);
+
+	switch (prop_id) {
+	case PROP_PATH:
+		/* construct only */
+		priv->path = g_value_dup_string (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+/*****************************************************************************/
+
+static void
+nm_bluez4_adapter_init (NMBluez4Adapter *self)
+{
+	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (self);
+
+	priv->devices = g_hash_table_new_full (g_str_hash, g_str_equal,
+	                                       NULL, NULL);
+}
 
 NMBluez4Adapter *
 nm_bluez4_adapter_new (const char *path, NMSettings *settings)
@@ -267,21 +333,6 @@ nm_bluez4_adapter_new (const char *path, NMSettings *settings)
 }
 
 static void
-nm_bluez4_adapter_init (NMBluez4Adapter *self)
-{
-	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (self);
-
-	priv->devices = g_hash_table_new_full (g_str_hash, g_str_equal,
-	                                       NULL, NULL);
-}
-
-static gboolean
-_find_all (gpointer key, gpointer value, gpointer user_data)
-{
-	return TRUE;
-}
-
-static void
 dispose (GObject *object)
 {
 	NMBluez4Adapter *self = NM_BLUEZ4_ADAPTER (object);
@@ -297,7 +348,7 @@ dispose (GObject *object)
 static void
 finalize (GObject *object)
 {
-	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (object);
+	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE ((NMBluez4Adapter *) object);
 
 	g_hash_table_destroy (priv->devices);
 	g_free (priv->address);
@@ -310,74 +361,33 @@ finalize (GObject *object)
 }
 
 static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_PATH:
-		g_value_set_string (value, priv->path);
-		break;
-	case PROP_ADDRESS:
-		g_value_set_string (value, priv->address);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
-{
-	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_PATH:
-		/* construct only */
-		priv->path = g_value_dup_string (value);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
 nm_bluez4_adapter_class_init (NMBluez4AdapterClass *config_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
 
-	g_type_class_add_private (config_class, sizeof (NMBluez4AdapterPrivate));
-
-	/* virtual methods */
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
-	/* Properties */
-	g_object_class_install_property
-		(object_class, PROP_PATH,
-		 g_param_spec_string (NM_BLUEZ4_ADAPTER_PATH, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PATH] =
+	     g_param_spec_string (NM_BLUEZ4_ADAPTER_PATH, "", "",
+	                          NULL,
+	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_ADDRESS,
-		 g_param_spec_string (NM_BLUEZ4_ADAPTER_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ADDRESS] =
+	     g_param_spec_string (NM_BLUEZ4_ADAPTER_ADDRESS, "", "",
+	                          NULL,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
-	/* Signals */
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+
 	signals[INITIALIZED] = g_signal_new ("initialized",
 	                                     G_OBJECT_CLASS_TYPE (object_class),
 	                                     G_SIGNAL_RUN_LAST,
-	                                     G_STRUCT_OFFSET (NMBluez4AdapterClass, initialized),
+	                                     0,
 	                                     NULL, NULL,
 	                                     g_cclosure_marshal_VOID__BOOLEAN,
 	                                     G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
@@ -385,7 +395,7 @@ nm_bluez4_adapter_class_init (NMBluez4AdapterClass *config_class)
 	signals[DEVICE_ADDED] = g_signal_new ("device-added",
 	                                      G_OBJECT_CLASS_TYPE (object_class),
 	                                      G_SIGNAL_RUN_LAST,
-	                                      G_STRUCT_OFFSET (NMBluez4AdapterClass, device_added),
+	                                      0,
 	                                      NULL, NULL,
 	                                      g_cclosure_marshal_VOID__OBJECT,
 	                                      G_TYPE_NONE, 1, G_TYPE_OBJECT);
@@ -393,7 +403,7 @@ nm_bluez4_adapter_class_init (NMBluez4AdapterClass *config_class)
 	signals[DEVICE_REMOVED] = g_signal_new ("device-removed",
 	                                        G_OBJECT_CLASS_TYPE (object_class),
 	                                        G_SIGNAL_RUN_LAST,
-	                                        G_STRUCT_OFFSET (NMBluez4AdapterClass, device_removed),
+	                                        0,
 	                                        NULL, NULL,
 	                                        g_cclosure_marshal_VOID__OBJECT,
 	                                        G_TYPE_NONE, 1, G_TYPE_OBJECT);

@@ -32,13 +32,7 @@
 #define NM_IS_AUDIT_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_AUDIT_MANAGER))
 #define NM_AUDIT_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_AUDIT_MANAGER, NMAuditManagerClass))
 
-struct _NMAuditManager {
-	GObject parent;
-};
-
-typedef struct {
-	GObjectClass parent;
-} NMAuditManagerClass;
+typedef struct _NMAuditManagerClass NMAuditManagerClass;
 
 #define NM_AUDIT_OP_CONN_ADD                "connection-add"
 #define NM_AUDIT_OP_CONN_DELETE             "connection-delete"

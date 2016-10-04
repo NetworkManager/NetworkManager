@@ -41,7 +41,7 @@ static NMRemoteSettings *settings = NULL;
 DBusGConnection *bus = NULL;
 NMRemoteConnection *remote = NULL;
 
-/*******************************************************************/
+/*****************************************************************************/
 
 static void
 add_cb (NMRemoteSettings *s,
@@ -105,7 +105,7 @@ test_add_connection (void)
 	                                 NM_SETTING_COMPARE_FLAG_EXACT) == TRUE);
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 static void
 set_visible_cb (DBusGProxy *proxy,
@@ -192,7 +192,7 @@ test_make_invisible (void)
 	g_object_unref (proxy);
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 static void
 vis_new_connection_cb (NMRemoteSettings *foo,
@@ -262,7 +262,7 @@ test_make_visible (void)
 	g_object_unref (proxy);
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 static void
 deleted_cb (DBusGProxy *proxy,
@@ -336,7 +336,7 @@ test_remove_connection (void)
 	g_object_unref (proxy);
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 static GMainLoop *loop;
 
@@ -418,7 +418,7 @@ test_service_running (void)
 	g_object_unref (settings2);
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 NMTST_DEFINE ();
 

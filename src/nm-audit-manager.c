@@ -32,6 +32,46 @@
 #include "nm-config.h"
 #include "nm-settings-connection.h"
 
+/*****************************************************************************/
+
+typedef enum {
+	BACKEND_LOG    = (1 << 0),
+	BACKEND_AUDITD = (1 << 1),
+	_BACKEND_LAST,
+	BACKEND_ALL    = ((_BACKEND_LAST - 1) << 1) - 1,
+} AuditBackend;
+
+typedef struct {
+	const char *name;
+	GValue value;
+	gboolean need_encoding;
+	AuditBackend backends;
+} AuditField;
+
+/*****************************************************************************/
+
+typedef struct {
+	NMConfig *config;
+	int auditd_fd;
+} NMAuditManagerPrivate;
+
+struct _NMAuditManager {
+	GObject parent;
+#if HAVE_LIBAUDIT
+	NMAuditManagerPrivate _priv;
+#endif
+};
+
+struct _NMAuditManagerClass {
+	GObjectClass parent;
+};
+
+G_DEFINE_TYPE (NMAuditManager, nm_audit_manager, G_TYPE_OBJECT)
+
+#define NM_AUDIT_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMAuditManager, NM_IS_AUDIT_MANAGER)
+
+/*****************************************************************************/
+
 #define AUDIT_LOG_LEVEL LOGL_INFO
 
 #define _NMLOG_PREFIX_NAME    "audit"
@@ -43,32 +83,11 @@
                 _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
     } G_STMT_END
 
-typedef enum {
-       BACKEND_LOG    = (1 << 0),
-       BACKEND_AUDITD = (1 << 1),
-       _BACKEND_LAST,
-       BACKEND_ALL    = ((_BACKEND_LAST - 1) << 1) - 1,
-} AuditBackend;
-
-typedef struct {
-       const char *name;
-       GValue value;
-       gboolean need_encoding;
-       AuditBackend backends;
-} AuditField;
-
-#if HAVE_LIBAUDIT
-typedef struct {
-	NMConfig *config;
-	int auditd_fd;
-} NMAuditManagerPrivate;
-
-#define NM_AUDIT_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_AUDIT_MANAGER, NMAuditManagerPrivate))
-#endif
-
-G_DEFINE_TYPE (NMAuditManager, nm_audit_manager, G_TYPE_OBJECT)
+/*****************************************************************************/
 
 NM_DEFINE_SINGLETON_GETTER (NMAuditManager, nm_audit_manager_get, NM_TYPE_AUDIT_MANAGER);
+
+/*****************************************************************************/
 
 static void
 _audit_field_init_string (AuditField *field, const char *name, const char *str,
@@ -346,6 +365,8 @@ config_changed_cb (NMConfig *config,
 }
 #endif
 
+/*****************************************************************************/
+
 static void
 nm_audit_manager_init (NMAuditManager *self)
 {
@@ -389,11 +410,5 @@ nm_audit_manager_class_init (NMAuditManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-#if HAVE_LIBAUDIT
-	g_type_class_add_private (klass, sizeof (NMAuditManagerPrivate));
-#endif
-
-	/* virtual methods */
 	object_class->dispose = dispose;
 }
-

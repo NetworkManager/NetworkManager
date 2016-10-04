@@ -28,16 +28,15 @@
 #include "nm-device-private.h"
 #include "nm-modem.h"
 #include "nm-platform.h"
-
-G_DEFINE_TYPE (NMModemOfono, nm_modem_ofono, NM_TYPE_MODEM)
-
-#define NM_MODEM_OFONO_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_MODEM_OFONO, NMModemOfonoPrivate))
+#include "nm-ip4-config.h"
 
 #define VARIANT_IS_OF_TYPE_BOOLEAN(v)      ((v) != NULL && ( g_variant_is_of_type ((v), G_VARIANT_TYPE_BOOLEAN) ))
 #define VARIANT_IS_OF_TYPE_STRING(v)       ((v) != NULL && ( g_variant_is_of_type ((v), G_VARIANT_TYPE_STRING) ))
 #define VARIANT_IS_OF_TYPE_OBJECT_PATH(v)  ((v) != NULL && ( g_variant_is_of_type ((v), G_VARIANT_TYPE_OBJECT_PATH) ))
 #define VARIANT_IS_OF_TYPE_STRING_ARRAY(v) ((v) != NULL && ( g_variant_is_of_type ((v), G_VARIANT_TYPE_STRING_ARRAY) ))
 #define VARIANT_IS_OF_TYPE_DICTIONARY(v)   ((v) != NULL && ( g_variant_is_of_type ((v), G_VARIANT_TYPE_DICTIONARY) ))
+
+/*****************************************************************************/
 
 typedef struct {
 	GHashTable *connect_properties;
@@ -57,6 +56,19 @@ typedef struct {
 
 	NMIP4Config *ip4_config;
 } NMModemOfonoPrivate;
+
+struct _NMModemOfono {
+	NMModem parent;
+	NMModemOfonoPrivate _priv;
+};
+
+struct _NMModemOfonoClass {
+	NMModemClass parent;
+};
+
+G_DEFINE_TYPE (NMModemOfono, nm_modem_ofono, NM_TYPE_MODEM)
+
+#define NM_MODEM_OFONO_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMModemOfono, NM_IS_MODEM_OFONO)
 
 /*****************************************************************************/
 
@@ -239,7 +251,7 @@ disconnect (NMModem *modem,
 		                                         user_data,
 		                                         disconnect);
 	}
-	/* Setup cancellable */
+
 	ctx->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
 	if (disconnect_context_complete_if_cancelled (ctx))
 		return;
@@ -261,17 +273,16 @@ disconnect (NMModem *modem,
 }
 
 static void
-deactivate_cleanup (NMModem *_self, NMDevice *device)
+deactivate_cleanup (NMModem *modem, NMDevice *device)
 {
-	NMModemOfono *self = NM_MODEM_OFONO (_self);
+	NMModemOfono *self = NM_MODEM_OFONO (modem);
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
 
 	/* TODO: cancel SimpleConnect() if any */
 
 	g_clear_object (&priv->ip4_config);
 
-	/* Chain up parent's */
-	NM_MODEM_CLASS (nm_modem_ofono_parent_class)->deactivate_cleanup (_self, device);
+	NM_MODEM_CLASS (nm_modem_ofono_parent_class)->deactivate_cleanup (modem, device);
 }
 
 
@@ -700,30 +711,6 @@ modem_get_properties_done (GDBusProxy *proxy, GAsyncResult *result, gpointer use
 	g_variant_unref (v_properties);
 }
 
-NMModem *
-nm_modem_ofono_new (const char *path)
-{
-	gs_free char *basename = NULL;
-
-	g_return_val_if_fail (path != NULL, NULL);
-
-	nm_log_info (LOGD_MB, "ofono: creating new Ofono modem path %s", path);
-
-	/* Use short modem name (not its object path) as the NM device name (which
-	 * comes from NM_MODEM_UID)and the device ID.
-	 */
-	basename = g_path_get_basename (path);
-
-	return (NMModem *) g_object_new (NM_TYPE_MODEM_OFONO,
-	                                 NM_MODEM_PATH, path,
-	                                 NM_MODEM_UID, basename,
-	                                 NM_MODEM_DEVICE_ID, basename,
-	                                 NM_MODEM_CONTROL_PORT, "ofono", /* mandatory */
-	                                 NM_MODEM_DRIVER, "ofono",
-	                                 NM_MODEM_STATE, NM_MODEM_STATE_INITIALIZING,
-	                                 NULL);
-}
-
 static void
 stage1_prepare_done (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
@@ -933,11 +920,11 @@ out:
 }
 
 static NMActStageReturn
-static_stage3_ip4_config_start (NMModem *_self,
+static_stage3_ip4_config_start (NMModem *modem,
                                 NMActRequest *req,
                                 NMDeviceStateReason *reason)
 {
-	NMModemOfono *self = NM_MODEM_OFONO (_self);
+	NMModemOfono *self = NM_MODEM_OFONO (modem);
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	GError *error = NULL;
@@ -1123,6 +1110,8 @@ modem_proxy_new_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	                   g_object_ref (self));
 }
 
+/*****************************************************************************/
+
 static void
 nm_modem_ofono_init (NMModemOfono *self)
 {
@@ -1142,6 +1131,30 @@ constructed (GObject *object)
 	                          NULL,
 	                          (GAsyncReadyCallback) modem_proxy_new_cb,
 	                          g_object_ref (self));
+}
+
+NMModem *
+nm_modem_ofono_new (const char *path)
+{
+	gs_free char *basename = NULL;
+
+	g_return_val_if_fail (path != NULL, NULL);
+
+	nm_log_info (LOGD_MB, "ofono: creating new Ofono modem path %s", path);
+
+	/* Use short modem name (not its object path) as the NM device name (which
+	 * comes from NM_MODEM_UID)and the device ID.
+	 */
+	basename = g_path_get_basename (path);
+
+	return (NMModem *) g_object_new (NM_TYPE_MODEM_OFONO,
+	                                 NM_MODEM_PATH, path,
+	                                 NM_MODEM_UID, basename,
+	                                 NM_MODEM_DEVICE_ID, basename,
+	                                 NM_MODEM_CONTROL_PORT, "ofono", /* mandatory */
+	                                 NM_MODEM_DRIVER, "ofono",
+	                                 NM_MODEM_STATE, NM_MODEM_STATE_INITIALIZING,
+	                                 NULL);
 }
 
 static void
@@ -1182,9 +1195,6 @@ nm_modem_ofono_class_init (NMModemOfonoClass *klass)
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMModemClass *modem_class = NM_MODEM_CLASS (klass);
 
-	g_type_class_add_private (object_class, sizeof (NMModemOfonoPrivate));
-
-	/* Virtual methods */
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 
@@ -1194,9 +1204,6 @@ nm_modem_ofono_class_init (NMModemOfonoClass *klass)
 	modem_class->deactivate_cleanup = deactivate_cleanup;
 	modem_class->check_connection_compatible = check_connection_compatible;
 
-	/* same as nm-modem-broadband */
 	modem_class->act_stage1_prepare = act_stage1_prepare;
-
-	/* same as nm-modem-broadband */
 	modem_class->static_stage3_ip4_config_start = static_stage3_ip4_config_start;
 }

@@ -30,32 +30,14 @@
 #define POLKIT_OBJECT_PATH                  "/org/freedesktop/PolicyKit1/Authority"
 #define POLKIT_INTERFACE                    "org.freedesktop.PolicyKit1.Authority"
 
+/*****************************************************************************/
 
-#define _NMLOG_PREFIX_NAME    "auth"
-#define _NMLOG_DOMAIN         LOGD_CORE
-#define _NMLOG(level, ...) \
-    G_STMT_START { \
-        if (nm_logging_enabled ((level), (_NMLOG_DOMAIN))) { \
-            char __prefix[30] = _NMLOG_PREFIX_NAME; \
-            \
-            if ((self) != singleton_instance) \
-                g_snprintf (__prefix, sizeof (__prefix), ""_NMLOG_PREFIX_NAME"[%p]", (self)); \
-            _nm_log ((level), (_NMLOG_DOMAIN), 0, \
-                     "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-                     __prefix _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
-        } \
-    } G_STMT_END
-
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_POLKIT_ENABLED,
-
-	LAST_PROP
-};
+);
 
 enum {
 	CHANGED_SIGNAL,
-
 	LAST_SIGNAL,
 };
 
@@ -71,11 +53,37 @@ typedef struct {
 #endif
 } NMAuthManagerPrivate;
 
-NM_DEFINE_SINGLETON_REGISTER (NMAuthManager);
+struct _NMAuthManager {
+	GObject parent;
+	NMAuthManagerPrivate _priv;
+};
+
+struct _NMAuthManagerClass {
+	GObjectClass parent;
+};
 
 G_DEFINE_TYPE (NMAuthManager, nm_auth_manager, G_TYPE_OBJECT)
 
-#define NM_AUTH_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_AUTH_MANAGER, NMAuthManagerPrivate))
+#define NM_AUTH_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMAuthManager, NM_IS_AUTH_MANAGER)
+
+NM_DEFINE_SINGLETON_REGISTER (NMAuthManager);
+
+/*****************************************************************************/
+
+#define _NMLOG_PREFIX_NAME    "auth"
+#define _NMLOG_DOMAIN         LOGD_CORE
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        if (nm_logging_enabled ((level), (_NMLOG_DOMAIN))) { \
+            char __prefix[30] = _NMLOG_PREFIX_NAME; \
+            \
+            if ((self) != singleton_instance) \
+                g_snprintf (__prefix, sizeof (__prefix), ""_NMLOG_PREFIX_NAME"[%p]", (self)); \
+            _nm_log ((level), (_NMLOG_DOMAIN), 0, \
+                     "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                     __prefix _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+        } \
+    } G_STMT_END
 
 /*****************************************************************************/
 
@@ -477,32 +485,12 @@ nm_auth_manager_get ()
 	return singleton_instance;
 }
 
-NMAuthManager *
-nm_auth_manager_setup (gboolean polkit_enabled)
-{
-	NMAuthManager *self;
-
-	g_return_val_if_fail (!singleton_instance, singleton_instance);
-
-	self = g_object_new (NM_TYPE_AUTH_MANAGER,
-	                     NM_AUTH_MANAGER_POLKIT_ENABLED, polkit_enabled,
-	                     NULL);
-	_LOGD ("set instance");
-
-	singleton_instance = self;
-	nm_singleton_instance_register ();
-
-	nm_log_dbg (LOGD_CORE, "setup %s singleton (%p)", "NMAuthManager", singleton_instance);
-
-	return self;
-}
-
 /*****************************************************************************/
 
 static void
 get_property (GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-	NMAuthManagerPrivate *priv = NM_AUTH_MANAGER_GET_PRIVATE (object);
+	NMAuthManagerPrivate *priv = NM_AUTH_MANAGER_GET_PRIVATE ((NMAuthManager *) object);
 
 	switch (prop_id) {
 	case PROP_POLKIT_ENABLED:
@@ -517,7 +505,7 @@ get_property (GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 static void
 set_property (GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-	NMAuthManagerPrivate *priv = NM_AUTH_MANAGER_GET_PRIVATE (object);
+	NMAuthManagerPrivate *priv = NM_AUTH_MANAGER_GET_PRIVATE ((NMAuthManager *) object);
 
 	switch (prop_id) {
 	case PROP_POLKIT_ENABLED:
@@ -529,6 +517,8 @@ set_property (GObject *object, guint prop_id, const GValue *value, GParamSpec *p
 		break;
 	}
 }
+
+/*****************************************************************************/
 
 static void
 nm_auth_manager_init (NMAuthManager *self)
@@ -571,6 +561,25 @@ constructed (GObject *object)
 #endif
 }
 
+NMAuthManager *
+nm_auth_manager_setup (gboolean polkit_enabled)
+{
+	NMAuthManager *self;
+
+	g_return_val_if_fail (!singleton_instance, singleton_instance);
+
+	self = g_object_new (NM_TYPE_AUTH_MANAGER,
+	                     NM_AUTH_MANAGER_POLKIT_ENABLED, polkit_enabled,
+	                     NULL);
+	_LOGD ("set instance");
+
+	singleton_instance = self;
+	nm_singleton_instance_register ();
+
+	nm_log_dbg (LOGD_CORE, "setup %s singleton (%p)", "NMAuthManager", singleton_instance);
+
+	return self;
+}
 
 static void
 dispose (GObject *object)
@@ -605,20 +614,19 @@ nm_auth_manager_class_init (NMAuthManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-	g_type_class_add_private (klass, sizeof (NMAuthManagerPrivate));
-
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 
-	g_object_class_install_property
-	    (object_class, PROP_POLKIT_ENABLED,
+	obj_properties[PROP_POLKIT_ENABLED] =
 	     g_param_spec_boolean (NM_AUTH_MANAGER_POLKIT_ENABLED, "", "",
 	                           FALSE,
 	                           G_PARAM_READWRITE |
 	                           G_PARAM_CONSTRUCT_ONLY |
-	                           G_PARAM_STATIC_STRINGS));
+	                           G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	signals[CHANGED_SIGNAL] = g_signal_new (NM_AUTH_MANAGER_SIGNAL_CHANGED,
 	                                        NM_TYPE_AUTH_MANAGER,
@@ -629,6 +637,5 @@ nm_auth_manager_class_init (NMAuthManagerClass *klass)
 	                                        g_cclosure_marshal_VOID__VOID,
 	                                        G_TYPE_NONE,
 	                                        0);
-
 }
 

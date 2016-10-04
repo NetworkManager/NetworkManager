@@ -38,13 +38,8 @@
 #define OFONO_DBUS_INTERFACE_CONNECTION_CONTEXT "org.ofono.ConnectionContext"
 #define OFONO_DBUS_INTERFACE_SIM_MANAGER        "org.ofono.SimManager"
 
-typedef struct {
-	NMModem parent;
-} NMModemOfono;
-
-typedef struct {
-	NMModemClass parent;
-} NMModemOfonoClass;
+typedef struct _NMModemOfono NMModemOfono;
+typedef struct _NMModemOfonoClass NMModemOfonoClass;
 
 GType nm_modem_ofono_get_type (void);
 

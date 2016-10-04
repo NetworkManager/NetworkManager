@@ -31,15 +31,7 @@
 typedef struct _SettingsPluginIbft SettingsPluginIbft;
 typedef struct _SettingsPluginIbftClass SettingsPluginIbftClass;
 
-struct _SettingsPluginIbft {
-	GObject parent;
-};
-
-struct _SettingsPluginIbftClass {
-	GObjectClass parent;
-};
-
 GType settings_plugin_ibft_get_type (void);
 
-#endif	/* _PLUGIN_H_ */
+#endif /* _PLUGIN_H_ */
 

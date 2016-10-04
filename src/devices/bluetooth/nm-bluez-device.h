@@ -41,18 +41,8 @@
 /* Signals */
 #define NM_BLUEZ_DEVICE_REMOVED      "removed"
 
-typedef struct {
-	GObject parent;
-} NMBluezDevice;
-
-typedef struct {
-	GObjectClass parent;
-
-	/* virtual functions */
-	void (*initialized) (NMBluezDevice *self, gboolean success);
-
-	void (*removed)     (NMBluezDevice *self);
-} NMBluezDeviceClass;
+typedef struct _NMBluezDevice NMBluezDevice;
+typedef struct _NMBluezDeviceClass NMBluezDeviceClass;
 
 GType nm_bluez_device_get_type (void);
 

@@ -90,7 +90,6 @@ noinst_LTLIBRARIES = \
 	libNetworkManagerBase.la \
 	libNetworkManager.la \
 	libNetworkManagerTest.la \
-	libnm-iface-helper.la \
 	libsystemd-nm.la
 
 ###############################################################################
@@ -290,24 +289,9 @@ nm_device_headers = \
 	devices/nm-device-vxlan.h \
 	$(NULL)
 
-nm_dhcp_client_sources = \
-	dhcp-manager/nm-dhcp-dhclient.c \
-	dhcp-manager/nm-dhcp-dhcpcd.c \
-	dhcp-manager/nm-dhcp-systemd.c \
-	$(NULL)
-
-nm_dhcp_client_headers = \
-	dhcp-manager/nm-dhcp-dhclient.h \
-	dhcp-manager/nm-dhcp-dhcpcd.h \
-	dhcp-manager/nm-dhcp-systemd.h \
-	$(NULL)
-
 ###############################################################################
 
 libNetworkManager_la_SOURCES = \
-	\
-	dhcp-manager/nm-dhcp-dhclient-utils.c \
-	dhcp-manager/nm-dhcp-dhclient-utils.h \
 	\
 	nm-checkpoint-manager.c \
 	nm-checkpoint-manager.h \
@@ -332,13 +316,18 @@ libNetworkManager_la_SOURCES = \
 	dhcp-manager/nm-dhcp-client.c \
 	dhcp-manager/nm-dhcp-client.h \
 	dhcp-manager/nm-dhcp-client-logging.h \
-	dhcp-manager/nm-dhcp-helper-api.h \
 	dhcp-manager/nm-dhcp-utils.c \
-	dhcp-manager/nm-dhcp-utils.h \
-	dhcp-manager/nm-dhcp-listener.c \
-	dhcp-manager/nm-dhcp-listener.h \
 	dhcp-manager/nm-dhcp-manager.c \
 	dhcp-manager/nm-dhcp-manager.h \
+	dhcp-manager/nm-dhcp-utils.h \
+	dhcp-manager/nm-dhcp-dhclient.c \
+	dhcp-manager/nm-dhcp-dhcpcd.c \
+	dhcp-manager/nm-dhcp-systemd.c \
+	dhcp-manager/nm-dhcp-helper-api.h \
+	dhcp-manager/nm-dhcp-listener.c \
+	dhcp-manager/nm-dhcp-listener.h \
+	dhcp-manager/nm-dhcp-dhclient-utils.c \
+	dhcp-manager/nm-dhcp-dhclient-utils.h \
 	\
 	dns-manager/nm-dns-dnsmasq.c \
 	dns-manager/nm-dns-dnsmasq.h \
@@ -421,8 +410,8 @@ libNetworkManager_la_SOURCES = \
 	vpn-manager/nm-vpn-manager.c \
 	vpn-manager/nm-vpn-manager.h \
 	\
-	nm-activation-request.c \
-	nm-activation-request.h \
+	nm-act-request.c \
+	nm-act-request.h \
 	nm-active-connection.c \
 	nm-active-connection.h \
 	nm-audit-manager.c \
@@ -524,9 +513,6 @@ NetworkManager_SOURCES = \
 	$(nm_device_sources) \
 	$(nm_device_headers) \
 	\
-	$(nm_dhcp_client_sources) \
-	$(nm_dhcp_client_headers) \
-	\
 	main-utils.c \
 	main-utils.h \
 	main.c
@@ -540,7 +526,10 @@ NetworkManager_LDFLAGS = \
 
 ###############################################################################
 
-libnm_iface_helper_la_SOURCES = \
+nm_iface_helper_CFLAGS = \
+	-DNM_DHCP_INTERNAL_ONLY
+
+nm_iface_helper_SOURCES = \
 	\
 	dhcp-manager/nm-dhcp-client.c \
 	dhcp-manager/nm-dhcp-client.h \
@@ -549,6 +538,7 @@ libnm_iface_helper_la_SOURCES = \
 	dhcp-manager/nm-dhcp-utils.h \
 	dhcp-manager/nm-dhcp-manager.c \
 	dhcp-manager/nm-dhcp-manager.h \
+	dhcp-manager/nm-dhcp-systemd.c \
 	\
 	platform/nmp-netns.c \
 	platform/nmp-netns.h \
@@ -586,15 +576,19 @@ libnm_iface_helper_la_SOURCES = \
 	nm-multi-index.c \
 	nm-multi-index.h \
 	NetworkManagerUtils.c \
-	NetworkManagerUtils.h
+	NetworkManagerUtils.h \
+	\
+	nm-iface-helper.c \
+	main-utils.c \
+	main-utils.h
 
 if WITH_WEXT
-libnm_iface_helper_la_SOURCES += \
+nm_iface_helper_SOURCES += \
 	platform/wifi/wifi-utils-wext.c \
 	platform/wifi/wifi-utils-wext.h
 endif
 
-libnm_iface_helper_la_LIBADD = \
+nm_iface_helper_LDADD = \
 	$(top_builddir)/libnm-core/libnm-core.la \
 	$(top_builddir)/introspection/libnmdbus.la \
 	libNetworkManagerBase.la \
@@ -604,22 +598,6 @@ libnm_iface_helper_la_LIBADD = \
 	$(LIBNL_LIBS) \
 	$(LIBNDP_LIBS) \
 	$(DL_LIBS) \
-	$(LIBM)
-
-nm_iface_helper_SOURCES = \
-	dhcp-manager/nm-dhcp-systemd.h \
-	dhcp-manager/nm-dhcp-systemd.c \
-	nm-iface-helper.c \
-	main-utils.c \
-	main-utils.h
-
-nm_iface_helper_LDADD = \
-	$(top_builddir)/libnm-core/libnm-core.la \
-	libnm-iface-helper.la \
-	$(GLIB_LIBS) \
-	$(GUDEV_LIBS) \
-	$(LIBNL_LIBS) \
-	$(LIBNDP_LIBS) \
 	$(LIBM)
 
 nm_iface_helper_LDFLAGS = \

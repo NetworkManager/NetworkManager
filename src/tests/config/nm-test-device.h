@@ -30,14 +30,8 @@
 #define NM_IS_TEST_DEVICE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_TEST_DEVICE))
 #define NM_TEST_DEVICE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_TEST_DEVICE, NMTestDeviceClass))
 
-typedef struct {
-	NMDevice parent;
-
-} NMTestDevice;
-
-typedef struct {
-	NMDeviceClass parent;
-} NMTestDeviceClass;
+typedef struct _NMTestDevice NMTestDevice;
+typedef struct _NMTestDeviceClass NMTestDeviceClass;
 
 GType nm_test_device_get_type (void);
 

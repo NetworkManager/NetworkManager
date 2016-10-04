@@ -28,10 +28,9 @@ pkglib_LTLIBRARIES = libnm-device-plugin-team.la
 SYMBOL_VIS_FILE=$(srcdir)/exports.ver
 
 libnm_device_plugin_team_la_SOURCES = \
-	nm-device-team.c \
-	nm-device-team.h \
 	nm-team-factory.c \
-	nm-team-factory.h
+	nm-device-team.c \
+	nm-device-team.h
 
 libnm_device_plugin_team_la_LDFLAGS = \
 	-module -avoid-version \

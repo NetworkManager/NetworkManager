@@ -71,52 +71,7 @@ enum {
 #define NM_SUPPLICANT_INTERFACE_CONNECTION_ERROR "connection-error"
 #define NM_SUPPLICANT_INTERFACE_CREDENTIALS_REQUEST "credentials-request"
 
-struct _NMSupplicantInterface {
-	GObject parent;
-};
-
-typedef struct {
-	GObjectClass parent;
-
-	/* Signals */
-
-	/* change in the interface's state */
-	void (*state)            (NMSupplicantInterface * iface,
-	                          guint32 new_state,
-	                          guint32 old_state,
-	                          int disconnect_reason);
-
-	/* interface was removed by the supplicant */
-	void (*removed)          (NMSupplicantInterface * iface);
-
-	/* interface saw a new BSS */
-	void (*new_bss)          (NMSupplicantInterface *iface,
-	                          const char *object_path,
-	                          GVariant *props);
-
-	/* a BSS property changed */
-	void (*bss_updated)      (NMSupplicantInterface *iface,
-	                          const char *object_path,
-	                          GVariant *props);
-
-	/* supplicant removed a BSS from its scan list */
-	void (*bss_removed)      (NMSupplicantInterface *iface,
-	                          const char *object_path);
-
-	/* wireless scan is done */
-	void (*scan_done)        (NMSupplicantInterface *iface,
-	                          gboolean success);
-
-	/* an error occurred during a connection request */
-	void (*connection_error) (NMSupplicantInterface * iface,
-	                          const char * name,
-	                          const char * message);
-
-	/* 802.1x credentials requested */
-	void (*credentials_request) (NMSupplicantInterface *iface,
-	                             const char *field,
-	                             const char *message);
-} NMSupplicantInterfaceClass;
+typedef struct _NMSupplicantInterfaceClass NMSupplicantInterfaceClass;
 
 GType nm_supplicant_interface_get_type (void);
 

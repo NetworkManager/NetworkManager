@@ -520,7 +520,7 @@ fail:
 	return 0;
 }
 
-/******************************************************************************************/
+/*****************************************************************************/
 
 typedef struct {
 	pid_t pid;
@@ -1167,7 +1167,7 @@ nm_utils_find_helper(const char *progname, const char *try_first, GError **error
 	return nm_utils_file_search_in_paths (progname, try_first, NM_PATHS_DEFAULT, G_FILE_TEST_IS_EXECUTABLE, NULL, NULL, error);
 }
 
-/******************************************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_utils_read_link_absolute:
@@ -1201,7 +1201,7 @@ nm_utils_read_link_absolute (const char *link_file, GError **error)
 	return ln_abs;
 }
 
-/******************************************************************************************/
+/*****************************************************************************/
 
 #define MAC_TAG "mac:"
 #define INTERFACE_NAME_TAG "interface-name:"
@@ -2083,7 +2083,7 @@ nm_utils_cmp_connection_by_autoconnect_priority (NMConnection **a, NMConnection 
 	return 0;
 }
 
-/**************************************************************************/
+/*****************************************************************************/
 
 static gint64 monotonic_timestamp_offset_sec;
 static int monotonic_timestamp_clock_mode = 0;
@@ -2652,7 +2652,7 @@ nm_utils_is_specific_hostname (const char *name)
 	return FALSE;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 gboolean
 nm_utils_machine_id_parse (const char *id_str, /*uuid_t*/ guchar *out_uuid)

@@ -34,7 +34,7 @@
 #include "nm-device-factory.h"
 #include "nm-core-internal.h"
 #include "nm-settings.h"
-#include "nm-activation-request.h"
+#include "nm-act-request.h"
 #include "nm-ip4-config.h"
 
 #include "nmdbus-device-ip-tunnel.h"
@@ -42,9 +42,21 @@
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceIPTunnel);
 
-G_DEFINE_TYPE (NMDeviceIPTunnel, nm_device_ip_tunnel, NM_TYPE_DEVICE)
+/*****************************************************************************/
 
-#define NM_DEVICE_IP_TUNNEL_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_IP_TUNNEL, NMDeviceIPTunnelPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceIPTunnel,
+	PROP_MODE,
+	PROP_PARENT,
+	PROP_LOCAL,
+	PROP_REMOTE,
+	PROP_TTL,
+	PROP_TOS,
+	PROP_PATH_MTU_DISCOVERY,
+	PROP_INPUT_KEY,
+	PROP_OUTPUT_KEY,
+	PROP_ENCAPSULATION_LIMIT,
+	PROP_FLOW_LABEL,
+);
 
 typedef struct {
 	NMIPTunnelMode mode;
@@ -62,24 +74,20 @@ typedef struct {
 	guint32 flow_label;
 } NMDeviceIPTunnelPrivate;
 
-enum {
-	PROP_0,
-	PROP_MODE,
-	PROP_PARENT,
-	PROP_LOCAL,
-	PROP_REMOTE,
-	PROP_TTL,
-	PROP_TOS,
-	PROP_PATH_MTU_DISCOVERY,
-	PROP_INPUT_KEY,
-	PROP_OUTPUT_KEY,
-	PROP_ENCAPSULATION_LIMIT,
-	PROP_FLOW_LABEL,
-
-	LAST_PROP
+struct _NMDeviceIPTunnel {
+	NMDevice parent;
+	NMDeviceIPTunnelPrivate _priv;
 };
 
-/**************************************************************/
+struct _NMDeviceIPTunnelClass {
+	NMDeviceClass parent;
+};
+
+G_DEFINE_TYPE (NMDeviceIPTunnel, nm_device_ip_tunnel, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_IP_TUNNEL_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceIPTunnel, NM_IS_DEVICE_IP_TUNNEL)
+
+/*****************************************************************************/
 
 static gboolean
 address_equal_pp (int family, const char *a, const char *b)
@@ -118,7 +126,6 @@ update_properties_from_ifindex (NMDevice *device, int ifindex)
 {
 	NMDeviceIPTunnel *self = NM_DEVICE_IP_TUNNEL (device);
 	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE (self);
-	GObject *object = G_OBJECT (device);
 	NMDevice *parent;
 	int parent_ifindex;
 	in_addr_t local4, remote4;
@@ -133,23 +140,23 @@ clear:
 		if (priv->parent || priv->parent_ifindex) {
 			g_clear_object (&priv->parent);
 			priv->parent_ifindex = 0;
-			g_object_notify (object, NM_DEVICE_IP_TUNNEL_PARENT);
+			_notify (self, PROP_PARENT);
 		}
 		if (priv->local) {
 			g_clear_pointer (&priv->local, g_free);
-			g_object_notify (object, NM_DEVICE_IP_TUNNEL_LOCAL);
+			_notify (self, PROP_LOCAL);
 		}
 		if (priv->remote) {
 			g_clear_pointer (&priv->remote, g_free);
-			g_object_notify (object, NM_DEVICE_IP_TUNNEL_REMOTE);
+			_notify (self, PROP_REMOTE);
 		}
 		if (priv->input_key) {
 			g_clear_pointer (&priv->input_key, g_free);
-			g_object_notify (object, NM_DEVICE_IP_TUNNEL_INPUT_KEY);
+			_notify (self, PROP_INPUT_KEY);
 		}
 		if (priv->output_key) {
 			g_clear_pointer (&priv->output_key, g_free);
-			g_object_notify (object, NM_DEVICE_IP_TUNNEL_OUTPUT_KEY);
+			_notify (self, PROP_OUTPUT_KEY);
 		}
 
 		goto out;
@@ -176,13 +183,13 @@ clear:
 			if (g_strcmp0 (priv->input_key, key)) {
 				g_free (priv->input_key);
 				priv->input_key = key;
-				g_object_notify (object, NM_DEVICE_IP_TUNNEL_INPUT_KEY);
+				_notify (self, PROP_INPUT_KEY);
 			} else
 				g_free (key);
 		} else {
 			if (priv->input_key) {
 				g_clear_pointer (&priv->input_key, g_free);
-				g_object_notify (object, NM_DEVICE_IP_TUNNEL_INPUT_KEY);
+				_notify (self, PROP_INPUT_KEY);
 			}
 		}
 
@@ -191,13 +198,13 @@ clear:
 			if (g_strcmp0 (priv->output_key, key)) {
 				g_free (priv->output_key);
 				priv->output_key = key;
-				g_object_notify (object, NM_DEVICE_IP_TUNNEL_OUTPUT_KEY);
+				_notify (self, PROP_OUTPUT_KEY);
 			} else
 				g_free (key);
 		} else {
 			if (priv->output_key) {
 				g_clear_pointer (&priv->output_key, g_free);
-				g_object_notify (object, NM_DEVICE_IP_TUNNEL_OUTPUT_KEY);
+				_notify (self, PROP_OUTPUT_KEY);
 			}
 		}
 	} else if (priv->mode == NM_IP_TUNNEL_MODE_SIT) {
@@ -256,7 +263,7 @@ clear:
 		parent = nm_manager_get_device_by_ifindex (nm_manager_get (), parent_ifindex);
 		if (parent)
 			priv->parent = g_object_ref (parent);
-		g_object_notify (object, NM_DEVICE_IP_TUNNEL_PARENT);
+		_notify (self, PROP_PARENT);
 	}
 
 	if (priv->addr_family == AF_INET) {
@@ -264,28 +271,28 @@ clear:
 			g_clear_pointer (&priv->local, g_free);
 			if (local4)
 				priv->local = g_strdup (nm_utils_inet4_ntop (local4, NULL));
-			g_object_notify (object, NM_DEVICE_IP_TUNNEL_LOCAL);
+			_notify (self, PROP_LOCAL);
 		}
 
 		if (!address_equal_pn (AF_INET, priv->remote, &remote4)) {
 			g_clear_pointer (&priv->remote, g_free);
 			if (remote4)
 				priv->remote = g_strdup (nm_utils_inet4_ntop (remote4, NULL));
-			g_object_notify (object, NM_DEVICE_IP_TUNNEL_REMOTE);
+			_notify (self, PROP_REMOTE);
 		}
 	} else {
 		if (!address_equal_pn (AF_INET6, priv->local, &local6)) {
 			g_clear_pointer (&priv->local, g_free);
 			if (memcmp (&local6, &in6addr_any, sizeof (in6addr_any)))
 				priv->local = g_strdup (nm_utils_inet6_ntop (&local6, NULL));
-			g_object_notify (object, NM_DEVICE_IP_TUNNEL_LOCAL);
+			_notify (self, PROP_LOCAL);
 		}
 
 		if (!address_equal_pn (AF_INET6, priv->remote, &remote6)) {
 			g_clear_pointer (&priv->remote, g_free);
 			if (memcmp (&remote6, &in6addr_any, sizeof (in6addr_any)))
 				priv->remote = g_strdup (nm_utils_inet6_ntop (&remote6, NULL));
-			g_object_notify (object, NM_DEVICE_IP_TUNNEL_REMOTE);
+			_notify (self, PROP_REMOTE);
 		}
 	}
 
@@ -293,27 +300,27 @@ out:
 
 	if (priv->ttl != ttl) {
 		priv->ttl = ttl;
-		g_object_notify (object, NM_DEVICE_IP_TUNNEL_TTL);
+		_notify (self, PROP_TTL);
 	}
 
 	if (priv->tos != tos) {
 		priv->tos = tos;
-		g_object_notify (object, NM_DEVICE_IP_TUNNEL_TOS);
+		_notify (self, PROP_TOS);
 	}
 
 	if (priv->path_mtu_discovery != pmtud) {
 		priv->path_mtu_discovery = pmtud;
-		g_object_notify (object, NM_DEVICE_IP_TUNNEL_PATH_MTU_DISCOVERY);
+		_notify (self, PROP_PATH_MTU_DISCOVERY);
 	}
 
 	if (priv->encap_limit != encap_limit) {
 		priv->encap_limit = encap_limit;
-		g_object_notify (object, NM_DEVICE_IP_TUNNEL_ENCAPSULATION_LIMIT);
+		_notify (self, PROP_ENCAPSULATION_LIMIT);
 	}
 
 	if (priv->flow_label != flow_label) {
 		priv->flow_label = flow_label;
-		g_object_notify (object, NM_DEVICE_IP_TUNNEL_FLOW_LABEL);
+		_notify (self, PROP_FLOW_LABEL);
 	}
 }
 
@@ -583,26 +590,7 @@ tunnel_mode_to_link_type (NMIPTunnelMode tunnel_mode)
 	}
 }
 
-/**************************************************************/
-
-static void
-nm_device_ip_tunnel_init (NMDeviceIPTunnel *self)
-{
-}
-
-static void
-constructed (GObject *object)
-{
-	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE (object);
-
-	if (   priv->mode == NM_IP_TUNNEL_MODE_IPIP6
-	    || priv->mode == NM_IP_TUNNEL_MODE_IP6IP6)
-		priv->addr_family = AF_INET6;
-	else
-		priv->addr_family = AF_INET;
-
-	G_OBJECT_CLASS (nm_device_ip_tunnel_parent_class)->constructed (object);
-}
+/*****************************************************************************/
 
 static gboolean
 create_and_realize (NMDevice *device,
@@ -804,11 +792,13 @@ unrealize_notify (NMDevice *device)
 	update_properties_from_ifindex (device, 0);
 }
 
+/*****************************************************************************/
+
 static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE (object);
+	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE ((NMDeviceIPTunnel *) object);
 	NMDevice *parent;
 
 	switch (prop_id) {
@@ -854,9 +844,9 @@ get_property (GObject *object, guint prop_id,
 
 static void
 set_property (GObject *object, guint prop_id,
-			  const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
-	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE (object);
+	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE ((NMDeviceIPTunnel *) object);
 
 	switch (prop_id) {
 	case PROP_MODE:
@@ -867,13 +857,32 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
+/*****************************************************************************/
+
+static void
+nm_device_ip_tunnel_init (NMDeviceIPTunnel *self)
+{
+}
+
+static void
+constructed (GObject *object)
+{
+	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE ((NMDeviceIPTunnel *) object);
+
+	if (   priv->mode == NM_IP_TUNNEL_MODE_IPIP6
+	    || priv->mode == NM_IP_TUNNEL_MODE_IP6IP6)
+		priv->addr_family = AF_INET6;
+	else
+		priv->addr_family = AF_INET;
+
+	G_OBJECT_CLASS (nm_device_ip_tunnel_parent_class)->constructed (object);
+}
+
 static void
 nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
-
-	g_type_class_add_private (klass, sizeof (NMDeviceIPTunnelPrivate));
 
 	object_class->constructed = constructed;
 	object_class->get_property = get_property;
@@ -896,91 +905,81 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 	                               NM_LINK_TYPE_IPIP,
 	                               NM_LINK_TYPE_SIT);
 
-	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_MODE,
-		 g_param_spec_uint (NM_DEVICE_IP_TUNNEL_MODE, "", "",
-		                    0, G_MAXUINT, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT_ONLY |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_MODE] =
+	     g_param_spec_uint (NM_DEVICE_IP_TUNNEL_MODE, "", "",
+	                        0, G_MAXUINT, 0,
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_CONSTRUCT_ONLY |
+	                        G_PARAM_STATIC_STRINGS);
 
-	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_PARENT,
-		 g_param_spec_string (NM_DEVICE_IP_TUNNEL_PARENT, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PARENT] =
+	     g_param_spec_string (NM_DEVICE_IP_TUNNEL_PARENT, "", "",
+	                          NULL,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_LOCAL,
-		 g_param_spec_string (NM_DEVICE_IP_TUNNEL_LOCAL, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_LOCAL] =
+	     g_param_spec_string (NM_DEVICE_IP_TUNNEL_LOCAL, "", "",
+	                          NULL,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_REMOTE,
-		 g_param_spec_string (NM_DEVICE_IP_TUNNEL_REMOTE, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_REMOTE] =
+	     g_param_spec_string (NM_DEVICE_IP_TUNNEL_REMOTE, "", "",
+	                          NULL,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_TTL,
-		 g_param_spec_uchar (NM_DEVICE_IP_TUNNEL_TTL, "", "",
-		                     0, 255, 0,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_TTL] =
+	     g_param_spec_uchar (NM_DEVICE_IP_TUNNEL_TTL, "", "",
+	                         0, 255, 0,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_TOS,
-		 g_param_spec_uchar (NM_DEVICE_IP_TUNNEL_TOS, "", "",
-		                     0, 255, 0,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_TOS] =
+	     g_param_spec_uchar (NM_DEVICE_IP_TUNNEL_TOS, "", "",
+	                         0, 255, 0,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_PATH_MTU_DISCOVERY,
-		 g_param_spec_boolean (NM_DEVICE_IP_TUNNEL_PATH_MTU_DISCOVERY, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PATH_MTU_DISCOVERY] =
+	     g_param_spec_boolean (NM_DEVICE_IP_TUNNEL_PATH_MTU_DISCOVERY, "", "",
+	                           FALSE,
+	                           G_PARAM_READABLE |
+	                           G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_INPUT_KEY,
-		 g_param_spec_string (NM_DEVICE_IP_TUNNEL_INPUT_KEY, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_INPUT_KEY] =
+	     g_param_spec_string (NM_DEVICE_IP_TUNNEL_INPUT_KEY, "", "",
+	                          NULL,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_OUTPUT_KEY,
-		 g_param_spec_string (NM_DEVICE_IP_TUNNEL_OUTPUT_KEY, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_OUTPUT_KEY] =
+	     g_param_spec_string (NM_DEVICE_IP_TUNNEL_OUTPUT_KEY, "", "",
+	                          NULL,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_ENCAPSULATION_LIMIT,
-		  g_param_spec_uchar (NM_DEVICE_IP_TUNNEL_ENCAPSULATION_LIMIT, "", "",
-		                      0, 255, 0,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ENCAPSULATION_LIMIT] =
+	      g_param_spec_uchar (NM_DEVICE_IP_TUNNEL_ENCAPSULATION_LIMIT, "", "",
+	                          0, 255, 0,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_FLOW_LABEL,
-		 g_param_spec_uint (NM_DEVICE_IP_TUNNEL_FLOW_LABEL, "", "",
-		                    0, (1 << 20) - 1, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_FLOW_LABEL] =
+	     g_param_spec_uint (NM_DEVICE_IP_TUNNEL_FLOW_LABEL, "", "",
+	                        0, (1 << 20) - 1, 0,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        NMDBUS_TYPE_DEVICE_IPTUNNEL_SKELETON,
 	                                        NULL);
 }
-/*************************************************************/
+
+/*****************************************************************************/
 
 #define NM_TYPE_IP_TUNNEL_FACTORY (nm_ip_tunnel_factory_get_type ())
 #define NM_IP_TUNNEL_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_IP_TUNNEL_FACTORY, NMIPTunnelFactory))
@@ -1057,4 +1056,4 @@ NM_DEVICE_FACTORY_DEFINE_INTERNAL (IP_TUNNEL, IPTunnel, ip_tunnel,
 	factory_iface->create_device = create_device;
 	factory_iface->get_connection_parent = get_connection_parent;
 	factory_iface->get_connection_iface = get_connection_iface;
-)
+);

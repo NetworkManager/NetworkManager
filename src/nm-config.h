@@ -100,13 +100,7 @@ typedef struct {
 	bool dirty;
 } NMConfigState;
 
-struct _NMConfig {
-	GObject parent;
-};
-
-typedef struct {
-	GObjectClass parent;
-} NMConfigClass;
+typedef struct _NMConfigClass NMConfigClass;
 
 GType nm_config_get_type (void);
 
@@ -160,11 +154,11 @@ void _nm_config_state_set (NMConfig *config,
 gint nm_config_parse_boolean (const char *str, gint default_value);
 
 GKeyFile *nm_config_create_keyfile (void);
-gint nm_config_keyfile_get_boolean (GKeyFile *keyfile,
+gint nm_config_keyfile_get_boolean (const GKeyFile *keyfile,
                                     const char *section,
                                     const char *key,
                                     gint default_value);
-char *nm_config_keyfile_get_value (GKeyFile *keyfile,
+char *nm_config_keyfile_get_value (const GKeyFile *keyfile,
                                    const char *section,
                                    const char *key,
                                    NMConfigGetValueFlags flags);
@@ -195,14 +189,14 @@ typedef enum {
 	NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_MANAGED   = 1,
 } NMConfigDeviceStateManagedType;
 
-typedef struct {
+struct _NMConfigDeviceStateData {
 	int ifindex;
 	NMConfigDeviceStateManagedType managed;
 
 	/* the UUID of the last settings-connection active
 	 * on the device. */
 	const char *connection_uuid;
-} NMConfigDeviceStateData;
+};
 
 NMConfigDeviceStateData *nm_config_device_state_load (NMConfig *self,
                                                       int ifindex);
@@ -215,4 +209,3 @@ void nm_config_device_state_prune_unseen (NMConfig *self, GHashTable *seen_ifind
 /*****************************************************************************/
 
 #endif /* __NETWORKMANAGER_CONFIG_H__ */
-

@@ -20,10 +20,19 @@
 
 #include "nm-default.h"
 
+#include "nm-rfkill-manager.h"
+
 #include <string.h>
 #include <gudev/gudev.h>
 
-#include "nm-rfkill-manager.h"
+/*****************************************************************************/
+
+enum {
+	RFKILL_CHANGED,
+	LAST_SIGNAL,
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
 	GUdevClient *client;
@@ -31,21 +40,22 @@ typedef struct {
 	/* Authoritative rfkill state (RFKILL_* enum) */
 	RfKillState rfkill_states[RFKILL_TYPE_MAX];
 	GSList *killswitches;
-
 } NMRfkillManagerPrivate;
 
-#define NM_RFKILL_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_RFKILL_MANAGER, NMRfkillManagerPrivate))
+struct _NMRfkillManager {
+	GObject parent;
+	NMRfkillManagerPrivate _priv;
+};
+
+struct _NMRfkillManagerClass {
+	GObjectClass parent;
+};
 
 G_DEFINE_TYPE (NMRfkillManager, nm_rfkill_manager, G_TYPE_OBJECT)
 
-enum {
-	RFKILL_CHANGED,
+#define NM_RFKILL_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMRfkillManager, NM_IS_RFKILL_MANAGER)
 
-	LAST_SIGNAL
-};
-
-static guint signals[LAST_SIGNAL] = { 0 };
-
+/*****************************************************************************/
 
 typedef struct {
 	char *name;
@@ -147,12 +157,6 @@ killswitch_destroy (Killswitch *ks)
 	g_free (ks->driver);
 	memset (ks, 0, sizeof (Killswitch));
 	g_free (ks);
-}
-
-NMRfkillManager *
-nm_rfkill_manager_new (void)
-{
-	return NM_RFKILL_MANAGER (g_object_new (NM_TYPE_RFKILL_MANAGER, NULL));
 }
 
 static RfKillState
@@ -358,6 +362,8 @@ handle_uevent (GUdevClient *client,
 	recheck_killswitches (self);
 }
 
+/*****************************************************************************/
+
 static void
 nm_rfkill_manager_init (NMRfkillManager *self)
 {
@@ -382,6 +388,12 @@ nm_rfkill_manager_init (NMRfkillManager *self)
 	recheck_killswitches (self);
 }
 
+NMRfkillManager *
+nm_rfkill_manager_new (void)
+{
+	return NM_RFKILL_MANAGER (g_object_new (NM_TYPE_RFKILL_MANAGER, NULL));
+}
+
 static void
 dispose (GObject *object)
 {
@@ -403,17 +415,13 @@ nm_rfkill_manager_class_init (NMRfkillManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-	g_type_class_add_private (klass, sizeof (NMRfkillManagerPrivate));
-
-	/* virtual methods */
 	object_class->dispose = dispose;
 
-	/* Signals */
 	signals[RFKILL_CHANGED] =
-		g_signal_new (NM_RFKILL_MANAGER_SIGNAL_RFKILL_CHANGED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMRfkillManagerClass, rfkill_changed),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
+	    g_signal_new (NM_RFKILL_MANAGER_SIGNAL_RFKILL_CHANGED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0,
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 }

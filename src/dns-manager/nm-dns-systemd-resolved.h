@@ -29,17 +29,11 @@
 #define NM_IS_DNS_SYSTEMD_RESOLVED_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DNS_SYSTEMD_RESOLVED))
 #define NM_DNS_SYSTEMD_RESOLVED_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DNS_SYSTEMD_RESOLVED, NMDnsSystemdResolvedClass))
 
-typedef struct {
-	NMDnsPlugin parent;
-} NMDnsSystemdResolved;
-
-typedef struct {
-	NMDnsPluginClass parent;
-} NMDnsSystemdResolvedClass;
+typedef struct _NMDnsSystemdResolved NMDnsSystemdResolved;
+typedef struct _NMDnsSystemdResolvedClass NMDnsSystemdResolvedClass;
 
 GType nm_dns_systemd_resolved_get_type (void);
 
 NMDnsPlugin *nm_dns_systemd_resolved_new (void);
 
 #endif /* __NETWORKMANAGER_DNS_SYSTEMD_RESOLVED_H__ */
-

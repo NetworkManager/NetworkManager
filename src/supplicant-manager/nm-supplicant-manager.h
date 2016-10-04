@@ -25,22 +25,14 @@
 #include "nm-supplicant-types.h"
 #include "nm-device.h"
 
-#define NM_TYPE_SUPPLICANT_MANAGER				(nm_supplicant_manager_get_type ())
-#define NM_SUPPLICANT_MANAGER(obj)				(G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SUPPLICANT_MANAGER, NMSupplicantManager))
-#define NM_SUPPLICANT_MANAGER_CLASS(klass)		(G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_SUPPLICANT_MANAGER, NMSupplicantManagerClass))
-#define NM_IS_SUPPLICANT_MANAGER(obj)			(G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_SUPPLICANT_MANAGER))
-#define NM_IS_SUPPLICANT_MANAGER_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_SUPPLICANT_MANAGER))
-#define NM_SUPPLICANT_MANAGER_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SUPPLICANT_MANAGER, NMSupplicantManagerClass))
+#define NM_TYPE_SUPPLICANT_MANAGER              (nm_supplicant_manager_get_type ())
+#define NM_SUPPLICANT_MANAGER(obj)              (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SUPPLICANT_MANAGER, NMSupplicantManager))
+#define NM_SUPPLICANT_MANAGER_CLASS(klass)      (G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_SUPPLICANT_MANAGER, NMSupplicantManagerClass))
+#define NM_IS_SUPPLICANT_MANAGER(obj)           (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_SUPPLICANT_MANAGER))
+#define NM_IS_SUPPLICANT_MANAGER_CLASS(klass)   (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_SUPPLICANT_MANAGER))
+#define NM_SUPPLICANT_MANAGER_GET_CLASS(obj)    (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SUPPLICANT_MANAGER, NMSupplicantManagerClass))
 
-struct _NMSupplicantManager
-{
-	GObject parent;
-};
-
-typedef struct
-{
-	GObjectClass parent;
-} NMSupplicantManagerClass;
+typedef struct _NMSupplicantManagerClass NMSupplicantManagerClass;
 
 GType nm_supplicant_manager_get_type (void);
 

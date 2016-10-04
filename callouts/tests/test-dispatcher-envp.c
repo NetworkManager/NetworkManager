@@ -30,7 +30,7 @@
 
 #include "nm-utils/nm-test-utils.h"
 
-/*******************************************/
+/*****************************************************************************/
 
 static gboolean
 parse_main (GKeyFile *kf,
@@ -444,7 +444,7 @@ out:
 	return success;
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_generic (const char *file, const char *override_vpn_ip_iface)
@@ -556,7 +556,7 @@ test_generic (const char *file, const char *override_vpn_ip_iface)
 	g_assert_cmpstr (expected_iface, ==, out_iface);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_up (void)
@@ -606,7 +606,7 @@ test_up_empty_vpn_iface (void)
 	test_generic ("dispatcher-up", "");
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 NMTST_DEFINE ();
 

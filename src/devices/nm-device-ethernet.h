@@ -42,7 +42,7 @@ typedef struct {
 } NMDeviceEthernet;
 
 typedef struct {
-	NMDeviceClass parent_class;
+	NMDeviceClass parent;
 } NMDeviceEthernetClass;
 
 GType nm_device_ethernet_get_type (void);

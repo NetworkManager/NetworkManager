@@ -19,10 +19,8 @@
  * Copyright (C) 2007 - 2013 Red Hat, Inc.
  */
 
-#ifndef __NETWORKMANAGER_RFKILL_MANAGER_H__
-#define __NETWORKMANAGER_RFKILL_MANAGER_H__
-
-#define NM_RFKILL_MANAGER_SIGNAL_RFKILL_CHANGED "rfkill-changed"
+#ifndef __NM_RFKILL_MANAGER_H__
+#define __NM_RFKILL_MANAGER_H__
 
 typedef enum { /*< skip >*/
 	RFKILL_UNBLOCKED = 0,
@@ -42,7 +40,6 @@ typedef enum { /*< skip >*/
 	RFKILL_TYPE_MAX = RFKILL_TYPE_UNKNOWN
 } RfKillType;
 
-
 #define NM_TYPE_RFKILL_MANAGER            (nm_rfkill_manager_get_type ())
 #define NM_RFKILL_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_RFKILL_MANAGER, NMRfkillManager))
 #define NM_RFKILL_MANAGER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_RFKILL_MANAGER, NMRfkillManagerClass))
@@ -50,16 +47,9 @@ typedef enum { /*< skip >*/
 #define NM_IS_RFKILL_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_RFKILL_MANAGER))
 #define NM_RFKILL_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_RFKILL_MANAGER, NMRfkillManagerClass))
 
-struct _NMRfkillManager {
-	GObject parent;
-};
+#define NM_RFKILL_MANAGER_SIGNAL_RFKILL_CHANGED "rfkill-changed"
 
-typedef struct {
-	GObjectClass parent;
-
-	/* signals */
-	void (*rfkill_changed) (NMRfkillManager *manager, RfKillType rtype, RfKillState state);
-} NMRfkillManagerClass;
+typedef struct _NMRfkillManagerClass NMRfkillManagerClass;
 
 GType nm_rfkill_manager_get_type (void);
 
@@ -67,5 +57,4 @@ NMRfkillManager *nm_rfkill_manager_new (void);
 
 RfKillState nm_rfkill_manager_get_rfkill_state (NMRfkillManager *manager, RfKillType rtype);
 
-#endif  /* NM_RFKILL_MANAGER_H */
-
+#endif  /* __NM_RFKILL_MANAGER_H__ */

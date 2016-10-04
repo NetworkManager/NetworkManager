@@ -43,13 +43,8 @@
 #define NM_DEVICE_IP_TUNNEL_ENCAPSULATION_LIMIT "encapsulation-limit"
 #define NM_DEVICE_IP_TUNNEL_FLOW_LABEL          "flow-label"
 
-typedef struct {
-	NMDevice parent;
-} NMDeviceIPTunnel;
-
-typedef struct {
-	NMDeviceClass parent;
-} NMDeviceIPTunnelClass;
+typedef struct _NMDeviceIPTunnel NMDeviceIPTunnel;
+typedef struct _NMDeviceIPTunnelClass NMDeviceIPTunnelClass;
 
 GType nm_device_ip_tunnel_get_type (void);
 

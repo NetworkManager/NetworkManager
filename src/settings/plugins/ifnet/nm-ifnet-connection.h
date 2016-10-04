@@ -32,13 +32,8 @@
 #define NM_IS_IFNET_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_IFNET_CONNECTION))
 #define NM_IFNET_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_IFNET_CONNECTION, NMIfnetConnectionClass))
 
-typedef struct {
-	NMSettingsConnection parent;
-} NMIfnetConnection;
-
-typedef struct {
-	NMSettingsConnectionClass parent;
-} NMIfnetConnectionClass;
+typedef struct _NMIfnetConnection NMIfnetConnection;
+typedef struct _NMIfnetConnectionClass NMIfnetConnectionClass;
 
 GType nm_ifnet_connection_get_type (void);
 

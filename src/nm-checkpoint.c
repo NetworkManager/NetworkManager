@@ -19,6 +19,7 @@
  */
 
 #include "nm-default.h"
+
 #include "nm-checkpoint.h"
 
 #include <string.h>
@@ -33,6 +34,49 @@
 #include "nm-simple-connection.h"
 #include "nm-utils.h"
 #include "nmdbus-checkpoint.h"
+
+/*****************************************************************************/
+
+typedef struct {
+	char *original_dev_path;
+	NMDevice *device;
+	NMConnection *applied_connection;
+	NMConnection *settings_connection;
+	NMDeviceState state;
+	bool realized:1;
+	bool unmanaged_explicit:1;
+} DeviceCheckpoint;
+
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_DEVICES,
+	PROP_CREATED,
+	PROP_ROLLBACK_TIMEOUT,
+);
+
+typedef struct {
+	/* properties */
+	GHashTable *devices;
+	gint64 created;
+	guint32 rollback_timeout;
+	/* private members */
+	NMManager *manager;
+	gint64 rollback_ts;
+} NMCheckpointPrivate;
+
+struct _NMCheckpoint {
+	NMExportedObject parent;
+	NMCheckpointPrivate _priv;
+};
+
+struct _NMCheckpointClass {
+	NMExportedObjectClass parent;
+};
+
+G_DEFINE_TYPE (NMCheckpoint, nm_checkpoint, NM_TYPE_EXPORTED_OBJECT)
+
+#define NM_CHECKPOINT_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMCheckpoint, NM_IS_CHECKPOINT)
+
+/*****************************************************************************/
 
 #define _NMLOG_PREFIX_NAME                "checkpoint"
 #define _NMLOG_DOMAIN                     LOGD_CORE
@@ -52,44 +96,7 @@
 		} \
 	} G_STMT_END
 
-typedef struct {
-	char *original_dev_path;
-	NMDevice *device;
-	NMConnection *applied_connection;
-	NMConnection *settings_connection;
-	NMDeviceState state;
-	bool realized:1;
-	bool unmanaged_explicit:1;
-} DeviceCheckpoint;
-
-typedef struct {
-	/* properties */
-	GHashTable *devices;
-	gint64 created;
-	guint32 rollback_timeout;
-	/* private members */
-	NMManager *manager;
-	gint64 rollback_ts;
-} NMCheckpointPrivate;
-
-struct _NMCheckpoint {
-	NMExportedObject parent;
-	NMCheckpointPrivate _priv;
-};
-
-typedef struct {
-	NMExportedObjectClass parent;
-} NMCheckpointClass;
-
-G_DEFINE_TYPE (NMCheckpoint, nm_checkpoint, NM_TYPE_EXPORTED_OBJECT)
-
-#define NM_CHECKPOINT_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMCheckpoint, NM_IS_CHECKPOINT)
-
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_DEVICES,
-	PROP_CREATED,
-	PROP_ROLLBACK_TIMEOUT,
-);
+/*****************************************************************************/
 
 guint64
 nm_checkpoint_get_rollback_ts (NMCheckpoint *self)
@@ -289,6 +296,39 @@ device_checkpoint_destroy (gpointer data)
 	g_slice_free (DeviceCheckpoint, dev_checkpoint);
 }
 
+/*****************************************************************************/
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMCheckpoint *self = NM_CHECKPOINT (object);
+	NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE (self);
+	gs_free_slist GSList *devices = NULL;
+	GHashTableIter iter;
+	NMDevice *device;
+
+	switch (prop_id) {
+	case PROP_DEVICES:
+		g_hash_table_iter_init (&iter, priv->devices);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &device, NULL))
+			devices = g_slist_append (devices, device);
+		nm_utils_g_value_set_object_path_array (value, devices, NULL, NULL);
+		break;
+	case PROP_CREATED:
+		g_value_set_int64 (value, priv->created);
+		break;
+	case PROP_ROLLBACK_TIMEOUT:
+		g_value_set_uint (value, priv->rollback_timeout);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+/*****************************************************************************/
+
 static void
 nm_checkpoint_init (NMCheckpoint *self)
 {
@@ -356,50 +396,17 @@ dispose (GObject *object)
 }
 
 static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMCheckpoint *self = NM_CHECKPOINT (object);
-	NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE (self);
-	gs_free_slist GSList *devices = NULL;
-	GHashTableIter iter;
-	NMDevice *device;
-
-	switch (prop_id) {
-	case PROP_DEVICES:
-		g_hash_table_iter_init (&iter, priv->devices);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &device, NULL))
-			devices = g_slist_append (devices, device);
-		nm_utils_g_value_set_object_path_array (value, devices, NULL, NULL);
-		break;
-	case PROP_CREATED:
-		g_value_set_int64 (value, priv->created);
-		break;
-	case PROP_ROLLBACK_TIMEOUT:
-		g_value_set_uint (value, priv->rollback_timeout);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
 nm_checkpoint_class_init (NMCheckpointClass *checkpoint_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (checkpoint_class);
 	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (checkpoint_class);
 
-	g_type_class_add_private (checkpoint_class, sizeof (NMCheckpointPrivate));
-
 	exported_object_class->export_path = NM_DBUS_PATH "/Checkpoint/%u";
 	exported_object_class->export_on_construction = FALSE;
 
-	/* virtual methods */
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
 
-	/* properties */
 	obj_properties[PROP_DEVICES] =
 	     g_param_spec_boxed (NM_CHECKPOINT_DEVICES, "", "",
 	                         G_TYPE_STRV,

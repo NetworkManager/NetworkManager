@@ -67,7 +67,7 @@ G_DEFINE_TYPE_WITH_CODE (NMVpnPluginInfo, nm_vpn_plugin_info, G_TYPE_OBJECT,
 
 #define NM_VPN_PLUGIN_INFO_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_VPN_PLUGIN_INFO, NMVpnPluginInfoPrivate))
 
-/*********************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_vpn_plugin_info_validate_filename:
@@ -412,7 +412,7 @@ nm_vpn_plugin_info_new_search_file (const char *name, const char *service)
 	return plugin_info;
 }
 
-/*********************************************************************/
+/*****************************************************************************/
 
 static gboolean
 _check_no_conflict (NMVpnPluginInfo *i1, NMVpnPluginInfo *i2, GError **error)
@@ -775,7 +775,7 @@ nm_vpn_plugin_info_list_get_service_types (GSList *list,
 	return (char **) g_ptr_array_free (l, FALSE);
 }
 
-/*********************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_vpn_plugin_info_get_filename:
@@ -987,7 +987,7 @@ nm_vpn_plugin_info_lookup_property (NMVpnPluginInfo *self, const char *group, co
 	return g_hash_table_lookup (priv->keys, k);
 }
 
-/*********************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_vpn_plugin_info_get_editor_plugin:
@@ -1094,7 +1094,7 @@ nm_vpn_plugin_info_load_editor_plugin (NMVpnPluginInfo *self, GError **error)
 	return priv->editor_plugin;
 }
 
-/*********************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_vpn_plugin_info_new_from_file:
@@ -1152,7 +1152,7 @@ nm_vpn_plugin_info_new_with_data (const char *filename,
 	                                           NULL));
 }
 
-/*********************************************************************/
+/*****************************************************************************/
 
 static void
 nm_vpn_plugin_info_init (NMVpnPluginInfo *plugin)

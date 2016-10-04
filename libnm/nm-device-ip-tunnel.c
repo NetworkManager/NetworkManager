@@ -264,7 +264,7 @@ get_setting_type (NMDevice *device)
 	return NM_TYPE_SETTING_IP_TUNNEL;
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_ip_tunnel_init (NMDeviceIPTunnel *device)

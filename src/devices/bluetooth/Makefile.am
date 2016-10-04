@@ -33,7 +33,6 @@ SYMBOL_VIS_FILE=$(srcdir)/exports.ver
 
 libnm_device_plugin_bluetooth_la_SOURCES = \
 	nm-bluez-manager.c \
-	nm-bluez-manager.h \
 	nm-bluez-common.h \
 	nm-bluez-device.c \
 	nm-bluez-device.h \

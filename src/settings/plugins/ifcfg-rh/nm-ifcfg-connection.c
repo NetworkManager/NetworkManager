@@ -23,7 +23,7 @@
 #include "nm-ifcfg-connection.h"
 
 #include <string.h>
-
+#include <sys/inotify.h>
 #include <glib/gstdio.h>
 
 #include "nm-dbus-interface.h"
@@ -44,9 +44,19 @@
 #include "nm-inotify-helper.h"
 #include "utils.h"
 
-G_DEFINE_TYPE (NMIfcfgConnection, nm_ifcfg_connection, NM_TYPE_SETTINGS_CONNECTION)
+/*****************************************************************************/
 
-#define NM_IFCFG_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IFCFG_CONNECTION, NMIfcfgConnectionPrivate))
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_UNMANAGED_SPEC,
+	PROP_UNRECOGNIZED_SPEC,
+);
+
+enum {
+	IFCFG_CHANGED,
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
 	gulong ih_event_id;
@@ -71,20 +81,20 @@ typedef struct {
 	NMInotifyHelper *inotify_helper;
 } NMIfcfgConnectionPrivate;
 
-enum {
-	PROP_0,
-	PROP_UNMANAGED_SPEC,
-	PROP_UNRECOGNIZED_SPEC,
-	LAST_PROP
+struct _NMIfcfgConnection {
+	NMSettingsConnection parent;
+	NMIfcfgConnectionPrivate _priv;
 };
 
-/* Signals */
-enum {
-	IFCFG_CHANGED,
-	LAST_SIGNAL
+struct _NMIfcfgConnectionClass {
+	NMSettingsConnectionClass parent;
 };
 
-static guint signals[LAST_SIGNAL] = { 0 };
+G_DEFINE_TYPE (NMIfcfgConnection, nm_ifcfg_connection, NM_TYPE_SETTINGS_CONNECTION)
+
+#define NM_IFCFG_CONNECTION_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMIfcfgConnection, NM_IS_IFCFG_CONNECTION)
+
+/*****************************************************************************/
 
 static NMInotifyHelper *
 _get_inotify_helper (NMIfcfgConnectionPrivate *priv)
@@ -110,7 +120,7 @@ link_changed (NMPlatform *platform, NMPObjectType *obj_type, int ifindex, const 
               NMPlatformSignalChangeType change_type,
               NMConnection *self)
 {
-	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (self);
+	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE ((NMIfcfgConnection *) self);
 	const char *ifname;
 
 	ifname = nm_connection_get_interface_name (self);
@@ -209,63 +219,6 @@ files_changed_cb (NMInotifyHelper *ih,
 
 	/* push the event up to the plugin */
 	g_signal_emit (self, signals[IFCFG_CHANGED], 0);
-}
-
-NMIfcfgConnection *
-nm_ifcfg_connection_new (NMConnection *source,
-                         const char *full_path,
-                         GError **error,
-                         gboolean *out_ignore_error)
-{
-	GObject *object;
-	NMConnection *tmp;
-	char *unhandled_spec = NULL;
-	const char *unmanaged_spec = NULL, *unrecognized_spec = NULL;
-	gboolean update_unsaved = TRUE;
-
-	g_assert (source || full_path);
-
-	if (out_ignore_error)
-		*out_ignore_error = FALSE;
-
-	/* If we're given a connection already, prefer that instead of re-reading */
-	if (source)
-		tmp = g_object_ref (source);
-	else {
-		tmp = connection_from_file (full_path,
-		                            &unhandled_spec,
-		                            error,
-		                            out_ignore_error);
-		if (!tmp)
-			return NULL;
-
-		/* If we just read the connection from disk, it's clearly not Unsaved */
-		update_unsaved = FALSE;
-	}
-
-	if (unhandled_spec && g_str_has_prefix (unhandled_spec, "unmanaged:"))
-		unmanaged_spec = unhandled_spec + strlen ("unmanaged:");
-	else if (unhandled_spec && g_str_has_prefix (unhandled_spec, "unrecognized:"))
-		unrecognized_spec = unhandled_spec + strlen ("unrecognized:");
-
-	object = (GObject *) g_object_new (NM_TYPE_IFCFG_CONNECTION,
-	                                   NM_SETTINGS_CONNECTION_FILENAME, full_path,
-	                                   NM_IFCFG_CONNECTION_UNMANAGED_SPEC, unmanaged_spec,
-	                                   NM_IFCFG_CONNECTION_UNRECOGNIZED_SPEC, unrecognized_spec,
-	                                   NULL);
-	/* Update our settings with what was read from the file */
-	if (nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
-	                                             tmp,
-	                                             update_unsaved,
-	                                             NULL,
-	                                             error))
-		nm_ifcfg_connection_check_devtimeout (NM_IFCFG_CONNECTION (object));
-	else
-		g_clear_object (&object);
-
-	g_object_unref (tmp);
-	g_free (unhandled_spec);
-	return (NMIfcfgConnection *) object;
 }
 
 static void
@@ -382,7 +335,7 @@ commit_changes (NMSettingsConnection *connection,
                 NMSettingsConnectionCommitFunc callback,
                 gpointer user_data)
 {
-	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (connection);
+	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE ((NMIfcfgConnection *) connection);
 	GError *error = NULL;
 	NMConnection *reread;
 	gboolean same = FALSE, success = FALSE;
@@ -444,7 +397,7 @@ do_delete (NMSettingsConnection *connection,
 	       NMSettingsConnectionDeleteFunc callback,
 	       gpointer user_data)
 {
-	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (connection);
+	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE ((NMIfcfgConnection *) connection);
 	const char *filename;
 
 	filename = nm_settings_connection_get_filename (connection);
@@ -461,39 +414,13 @@ do_delete (NMSettingsConnection *connection,
 	NM_SETTINGS_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->delete (connection, callback, user_data);
 }
 
-/* GObject */
-
-static void
-nm_ifcfg_connection_init (NMIfcfgConnection *connection)
-{
-	g_signal_connect (connection, "notify::" NM_SETTINGS_CONNECTION_FILENAME,
-	                  G_CALLBACK (filename_changed), NULL);
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-            const GValue *value, GParamSpec *pspec)
-{
-	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_UNMANAGED_SPEC:
-		priv->unmanaged_spec = g_value_dup_string (value);
-		break;
-	case PROP_UNRECOGNIZED_SPEC:
-		priv->unrecognized_spec = g_value_dup_string (value);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
+/*****************************************************************************/
 
 static void
 get_property (GObject *object, guint prop_id,
-            GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
-	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (object);
+	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE ((NMIfcfgConnection *) object);
 
 	switch (prop_id) {
 	case PROP_UNMANAGED_SPEC:
@@ -509,9 +436,94 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE ((NMIfcfgConnection *) object);
+
+	switch (prop_id) {
+	case PROP_UNMANAGED_SPEC:
+		priv->unmanaged_spec = g_value_dup_string (value);
+		break;
+	case PROP_UNRECOGNIZED_SPEC:
+		priv->unrecognized_spec = g_value_dup_string (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+/*****************************************************************************/
+
+static void
+nm_ifcfg_connection_init (NMIfcfgConnection *connection)
+{
+	g_signal_connect (connection, "notify::" NM_SETTINGS_CONNECTION_FILENAME,
+	                  G_CALLBACK (filename_changed), NULL);
+}
+
+NMIfcfgConnection *
+nm_ifcfg_connection_new (NMConnection *source,
+                         const char *full_path,
+                         GError **error,
+                         gboolean *out_ignore_error)
+{
+	GObject *object;
+	NMConnection *tmp;
+	char *unhandled_spec = NULL;
+	const char *unmanaged_spec = NULL, *unrecognized_spec = NULL;
+	gboolean update_unsaved = TRUE;
+
+	g_assert (source || full_path);
+
+	if (out_ignore_error)
+		*out_ignore_error = FALSE;
+
+	/* If we're given a connection already, prefer that instead of re-reading */
+	if (source)
+		tmp = g_object_ref (source);
+	else {
+		tmp = connection_from_file (full_path,
+		                            &unhandled_spec,
+		                            error,
+		                            out_ignore_error);
+		if (!tmp)
+			return NULL;
+
+		/* If we just read the connection from disk, it's clearly not Unsaved */
+		update_unsaved = FALSE;
+	}
+
+	if (unhandled_spec && g_str_has_prefix (unhandled_spec, "unmanaged:"))
+		unmanaged_spec = unhandled_spec + strlen ("unmanaged:");
+	else if (unhandled_spec && g_str_has_prefix (unhandled_spec, "unrecognized:"))
+		unrecognized_spec = unhandled_spec + strlen ("unrecognized:");
+
+	object = (GObject *) g_object_new (NM_TYPE_IFCFG_CONNECTION,
+	                                   NM_SETTINGS_CONNECTION_FILENAME, full_path,
+	                                   NM_IFCFG_CONNECTION_UNMANAGED_SPEC, unmanaged_spec,
+	                                   NM_IFCFG_CONNECTION_UNRECOGNIZED_SPEC, unrecognized_spec,
+	                                   NULL);
+	/* Update our settings with what was read from the file */
+	if (nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
+	                                             tmp,
+	                                             update_unsaved,
+	                                             NULL,
+	                                             error))
+		nm_ifcfg_connection_check_devtimeout (NM_IFCFG_CONNECTION (object));
+	else
+		g_clear_object (&object);
+
+	g_object_unref (tmp);
+	g_free (unhandled_spec);
+	return (NMIfcfgConnection *) object;
+}
+
+static void
 dispose (GObject *object)
 {
-	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (object);
+	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE ((NMIfcfgConnection *) object);
 
 	path_watch_stop (NM_IFCFG_CONNECTION (object));
 
@@ -532,36 +544,34 @@ nm_ifcfg_connection_class_init (NMIfcfgConnectionClass *ifcfg_connection_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (ifcfg_connection_class);
 	NMSettingsConnectionClass *settings_class = NM_SETTINGS_CONNECTION_CLASS (ifcfg_connection_class);
 
-	g_type_class_add_private (ifcfg_connection_class, sizeof (NMIfcfgConnectionPrivate));
-
-	/* Virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->dispose      = dispose;
+
 	settings_class->delete = do_delete;
 	settings_class->replace_and_commit = replace_and_commit;
 	settings_class->commit_changes = commit_changes;
 
-	/* Properties */
-	g_object_class_install_property
-		(object_class, PROP_UNMANAGED_SPEC,
-		 g_param_spec_string (NM_IFCFG_CONNECTION_UNMANAGED_SPEC, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property
-		(object_class, PROP_UNRECOGNIZED_SPEC,
-		 g_param_spec_string (NM_IFCFG_CONNECTION_UNRECOGNIZED_SPEC, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_UNMANAGED_SPEC] =
+	     g_param_spec_string (NM_IFCFG_CONNECTION_UNMANAGED_SPEC, "", "",
+	                          NULL,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_UNRECOGNIZED_SPEC] =
+	     g_param_spec_string (NM_IFCFG_CONNECTION_UNRECOGNIZED_SPEC, "", "",
+	                          NULL,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	signals[IFCFG_CHANGED] =
-		g_signal_new ("ifcfg-changed",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
-		              0, NULL, NULL,
-		              g_cclosure_marshal_VOID__VOID,
-		              G_TYPE_NONE, 0);
+	    g_signal_new ("ifcfg-changed",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_LAST,
+	                  0, NULL, NULL,
+	                  g_cclosure_marshal_VOID__VOID,
+	                  G_TYPE_NONE, 0);
 }
 

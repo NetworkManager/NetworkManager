@@ -595,7 +595,7 @@ nm_setting_vlan_clear_priorities (NMSettingVlan *setting, NMVlanPriorityMap map)
 	set_map (setting, map, NULL);
 }
 
-/*********************************************************************/
+/*****************************************************************************/
 
 static void
 nm_setting_vlan_init (NMSettingVlan *setting)

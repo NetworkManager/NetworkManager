@@ -18,8 +18,8 @@
  * Copyright (C) 2015 Red Hat, Inc.
  */
 
-#ifndef __NETWORKMANAGER_ROUTE_MANAGER_H__
-#define __NETWORKMANAGER_ROUTE_MANAGER_H__
+#ifndef __NM_ROUTE_MANAGER_H__
+#define __NM_ROUTE_MANAGER_H__
 
 #define NM_TYPE_ROUTE_MANAGER            (nm_route_manager_get_type ())
 #define NM_ROUTE_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_ROUTE_MANAGER, NMRouteManager))
@@ -30,13 +30,7 @@
 
 #define NM_ROUTE_MANAGER_PLATFORM "platform"
 
-struct _NMRouteManager {
-	GObject parent;
-};
-
-typedef struct {
-	GObjectClass parent;
-} NMRouteManagerClass;
+typedef struct _NMRouteManagerClass NMRouteManagerClass;
 
 GType nm_route_manager_get_type (void);
 
@@ -49,4 +43,4 @@ void nm_route_manager_ip4_route_register_device_route_purge_list (NMRouteManager
 NMRouteManager *nm_route_manager_get (void);
 NMRouteManager *nm_route_manager_new (NMPlatform *platform);
 
-#endif  /* NM_ROUTE_MANAGER_H */
+#endif /* __NM_ROUTE_MANAGER_H__ */

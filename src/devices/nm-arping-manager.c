@@ -16,14 +16,17 @@
 
 #include "nm-default.h"
 
+#include "nm-arping-manager.h"
+
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include "nm-arping-manager.h"
 #include "nm-platform.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
+
+/*****************************************************************************/
 
 typedef enum {
 	STATE_INIT,
@@ -31,6 +34,23 @@ typedef enum {
 	STATE_PROBE_DONE,
 	STATE_ANNOUNCING,
 } State;
+
+typedef struct {
+	in_addr_t address;
+	GPid pid;
+	guint watch;
+	gboolean duplicate;
+	NMArpingManager *manager;
+} AddressInfo;
+
+/*****************************************************************************/
+
+enum {
+	PROBE_TERMINATED,
+	LAST_SIGNAL,
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
 	int            ifindex;
@@ -41,23 +61,20 @@ typedef struct {
 	guint          round2_id;
 } NMArpingManagerPrivate;
 
-typedef struct {
-	in_addr_t address;
-	GPid pid;
-	guint watch;
-	gboolean duplicate;
-	NMArpingManager *manager;
-} AddressInfo;
-
-enum {
-	PROBE_TERMINATED,
-	LAST_SIGNAL,
+struct _NMArpingManager {
+	GObject parent;
+	NMArpingManagerPrivate _priv;
 };
-static guint signals[LAST_SIGNAL] = { 0 };
+
+struct _NMArpingManagerClass {
+	GObjectClass parent;
+};
 
 G_DEFINE_TYPE (NMArpingManager, nm_arping_manager, G_TYPE_OBJECT)
 
-#define NM_ARPING_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_ARPING_MANAGER, NMArpingManagerPrivate))
+#define NM_ARPING_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMArpingManager, NM_IS_ARPING_MANAGER)
+
+/*****************************************************************************/
 
 #define _NMLOG_DOMAIN         LOGD_IP4
 #define _NMLOG_PREFIX_NAME    "arping"
@@ -73,6 +90,8 @@ G_DEFINE_TYPE (NMArpingManager, nm_arping_manager, G_TYPE_OBJECT)
                                        NM_ARPING_MANAGER_GET_PRIVATE (self)->ifindex) : "" \
                 _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
     } G_STMT_END
+
+/*****************************************************************************/
 
 /**
  * nm_arping_manager_add_address:
@@ -350,7 +369,7 @@ send_announcements (NMArpingManager *self, const char *mode_arg)
 static gboolean
 arp_announce_round2 (gpointer self)
 {
-	NMArpingManagerPrivate *priv = NM_ARPING_MANAGER_GET_PRIVATE (self);
+	NMArpingManagerPrivate *priv = NM_ARPING_MANAGER_GET_PRIVATE ((NMArpingManager *) self);
 
 	priv->round2_id = 0;
 	send_announcements (self, "-U");
@@ -395,18 +414,7 @@ destroy_address_info (gpointer data)
 	g_slice_free (AddressInfo, info);
 }
 
-static void
-dispose (GObject *object)
-{
-	NMArpingManager *self = NM_ARPING_MANAGER (object);
-	NMArpingManagerPrivate *priv = NM_ARPING_MANAGER_GET_PRIVATE (self);
-
-	nm_clear_g_source (&priv->timer);
-	nm_clear_g_source (&priv->round2_id);
-	g_clear_pointer (&priv->addresses, g_hash_table_destroy);
-
-	G_OBJECT_CLASS (nm_arping_manager_parent_class)->dispose (object);
-}
+/*****************************************************************************/
 
 static void
 nm_arping_manager_init (NMArpingManager *self)
@@ -427,8 +435,20 @@ nm_arping_manager_new (int ifindex)
 	self = g_object_new (NM_TYPE_ARPING_MANAGER, NULL);
 	priv = NM_ARPING_MANAGER_GET_PRIVATE (self);
 	priv->ifindex = ifindex;
-
 	return self;
+}
+
+static void
+dispose (GObject *object)
+{
+	NMArpingManager *self = NM_ARPING_MANAGER (object);
+	NMArpingManagerPrivate *priv = NM_ARPING_MANAGER_GET_PRIVATE (self);
+
+	nm_clear_g_source (&priv->timer);
+	nm_clear_g_source (&priv->round2_id);
+	g_clear_pointer (&priv->addresses, g_hash_table_destroy);
+
+	G_OBJECT_CLASS (nm_arping_manager_parent_class)->dispose (object);
 }
 
 static void
@@ -436,14 +456,12 @@ nm_arping_manager_class_init (NMArpingManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-	g_type_class_add_private (klass, sizeof (NMArpingManagerPrivate));
-
 	object_class->dispose = dispose;
 
 	signals[PROBE_TERMINATED] =
-		g_signal_new (NM_ARPING_MANAGER_PROBE_TERMINATED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL, NULL,
-		              G_TYPE_NONE, 0);
+	    g_signal_new (NM_ARPING_MANAGER_PROBE_TERMINATED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 0);
 }

@@ -30,17 +30,8 @@
 #define NM_IS_FAKE_PLATFORM_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_FAKE_PLATFORM))
 #define NM_FAKE_PLATFORM_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_FAKE_PLATFORM, NMFakePlatformClass))
 
-/******************************************************************/
-
-typedef struct {
-	NMPlatform parent;
-} NMFakePlatform;
-
-typedef struct {
-	NMPlatformClass parent;
-} NMFakePlatformClass;
-
-/******************************************************************/
+typedef struct _NMFakePlatform NMFakePlatform;
+typedef struct _NMFakePlatformClass NMFakePlatformClass;
 
 GType nm_fake_platform_get_type (void);
 

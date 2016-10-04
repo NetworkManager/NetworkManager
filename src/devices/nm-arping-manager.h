@@ -28,13 +28,7 @@
 
 #define NM_ARPING_MANAGER_PROBE_TERMINATED  "probe-terminated"
 
-struct _NMArpingManager {
-	GObject parent;
-};
-
-typedef struct {
-	GObjectClass parent;
-} NMArpingManagerClass;
+typedef struct _NMArpingManagerClass NMArpingManagerClass;
 
 GType nm_arping_manager_get_type (void);
 

@@ -34,13 +34,8 @@
 #define NM_IFCFG_CONNECTION_UNMANAGED_SPEC    "unmanaged-spec"
 #define NM_IFCFG_CONNECTION_UNRECOGNIZED_SPEC "unrecognized-spec"
 
-typedef struct {
-	NMSettingsConnection parent;
-} NMIfcfgConnection;
-
-typedef struct {
-	NMSettingsConnectionClass parent;
-} NMIfcfgConnectionClass;
+typedef struct _NMIfcfgConnection NMIfcfgConnection;
+typedef struct _NMIfcfgConnectionClass NMIfcfgConnectionClass;
 
 GType nm_ifcfg_connection_get_type (void);
 

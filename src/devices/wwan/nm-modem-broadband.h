@@ -30,18 +30,8 @@
 #define NM_IS_MODEM_BROADBAND_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_MODEM_BROADBAND))
 #define NM_MODEM_BROADBAND_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_MODEM_BROADBAND, NMModemBroadbandClass))
 
-typedef struct _NMModemBroadband        NMModemBroadband;
-typedef struct _NMModemBroadbandClass   NMModemBroadbandClass;
-typedef struct _NMModemBroadbandPrivate NMModemBroadbandPrivate;
-
-struct _NMModemBroadband {
-	NMModem parent;
-	NMModemBroadbandPrivate *priv;
-};
-
-struct _NMModemBroadbandClass {
-	NMModemClass parent;
-};
+typedef struct _NMModemBroadband NMModemBroadband;
+typedef struct _NMModemBroadbandClass NMModemBroadbandClass;
 
 GType nm_modem_broadband_get_type (void);
 

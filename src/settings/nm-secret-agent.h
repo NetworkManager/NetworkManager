@@ -32,15 +32,7 @@
 
 #define NM_SECRET_AGENT_DISCONNECTED "disconnected"
 
-struct _NMSecretAgent {
-	GObject parent;
-};
-
-typedef struct {
-	GObjectClass parent;
-
-	void (*disconnected) (NMSecretAgent *self);
-} NMSecretAgentClass;
+typedef struct _NMSecretAgentClass NMSecretAgentClass;
 
 typedef struct _NMSecretAgentCallId *NMSecretAgentCallId;
 

@@ -44,7 +44,7 @@ gboolean nm_rdisc_add_route                (NMRDisc *rdisc, const NMRDiscRoute *
 gboolean nm_rdisc_add_dns_server           (NMRDisc *rdisc, const NMRDiscDNSServer *new);
 gboolean nm_rdisc_add_dns_domain           (NMRDisc *rdisc, const NMRDiscDNSDomain *new);
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 #define _NMLOG_DOMAIN                     LOGD_IP6
 #define _NMLOG(level, ...)                _LOG(level, _NMLOG_DOMAIN,  rdisc, __VA_ARGS__)
@@ -72,6 +72,6 @@ gboolean nm_rdisc_add_dns_domain           (NMRDisc *rdisc, const NMRDiscDNSDoma
         } \
     } G_STMT_END
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 #endif /* __NETWORKMANAGER_RDISC_PRIVATE_H__ */

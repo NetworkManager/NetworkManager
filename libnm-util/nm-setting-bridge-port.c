@@ -84,7 +84,7 @@ enum {
 	LAST_PROP
 };
 
-/**************************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_setting_bridge_port_get_priority:
@@ -134,7 +134,7 @@ nm_setting_bridge_port_get_hairpin_mode (NMSettingBridgePort *setting)
 	return NM_SETTING_BRIDGE_PORT_GET_PRIVATE (setting)->hairpin_mode;
 }
 
-/**************************************************************************/
+/*****************************************************************************/
 
 #define BR_MAX_PORT_PRIORITY 63
 #define BR_DEF_PRIORITY      32
@@ -174,7 +174,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	return TRUE;
 }
 
-/**************************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_setting_bridge_port_new:

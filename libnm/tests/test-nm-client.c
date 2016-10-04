@@ -29,7 +29,7 @@
 static GMainLoop *loop = NULL;
 static NMTstcServiceInfo *sinfo;
 
-/*******************************************************************/
+/*****************************************************************************/
 
 static gboolean
 loop_quit (gpointer user_data)
@@ -38,7 +38,7 @@ loop_quit (gpointer user_data)
 	return G_SOURCE_REMOVE;
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 static void
 devices_notify_cb (NMClient *c,
@@ -107,7 +107,7 @@ test_device_added (void)
 	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 typedef enum {
 	SIGNAL_FIRST  = 0x01,
@@ -206,7 +206,7 @@ test_device_added_signal_after_init (void)
 	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 static const char *expected_bssid = "66:55:44:33:22:11";
 
@@ -405,7 +405,7 @@ test_wifi_ap_added_removed (void)
 	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 static const char *expected_nsp_name = "Clear";
 
@@ -604,7 +604,7 @@ test_wimax_nsp_added_removed (void)
 	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 typedef struct {
 	GMainLoop *loop;
@@ -1228,7 +1228,7 @@ test_device_connection_compatibility (void)
 	g_clear_pointer (&sinfo, nmtstc_service_cleanup);
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 static gboolean
 _test_connection_invalid_find_connections (gpointer element, gpointer needle, gpointer user_data)
@@ -1568,7 +1568,7 @@ test_connection_invalid (void)
 #undef ASSERT_IDX
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 NMTST_DEFINE ();
 

@@ -20,9 +20,10 @@
 
 #include "nm-default.h"
 
+#include "nm-device-bridge.h"
+
 #include <stdlib.h>
 
-#include "nm-device-bridge.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-enum-types.h"
@@ -35,15 +36,19 @@
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceBridge);
 
+/*****************************************************************************/
+
+struct _NMDeviceBridge {
+	NMDevice parent;
+};
+
+struct _NMDeviceBridgeClass {
+	NMDeviceClass parent;
+};
+
 G_DEFINE_TYPE (NMDeviceBridge, nm_device_bridge, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_BRIDGE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_BRIDGE, NMDeviceBridgePrivate))
-
-typedef struct {
-	int dummy;
-} NMDeviceBridgePrivate;
-
-/******************************************************************/
+/*****************************************************************************/
 
 static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *dev)
@@ -121,7 +126,7 @@ complete_connection (NMDevice *device,
 	return TRUE;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 typedef struct {
 	const char *name;
@@ -411,7 +416,7 @@ create_and_realize (NMDevice *device,
 	return TRUE;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_bridge_init (NMDeviceBridge * self)
@@ -421,10 +426,7 @@ nm_device_bridge_init (NMDeviceBridge * self)
 static void
 nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
-
-	g_type_class_add_private (object_class, sizeof (NMDeviceBridgePrivate));
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_BRIDGE_SETTING_NAME, NM_LINK_TYPE_BRIDGE)
 
@@ -447,7 +449,7 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 	                                        NULL);
 }
 
-/*************************************************************/
+/*****************************************************************************/
 
 #define NM_TYPE_BRIDGE_FACTORY (nm_bridge_factory_get_type ())
 #define NM_BRIDGE_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_BRIDGE_FACTORY, NMBridgeFactory))
@@ -473,5 +475,4 @@ NM_DEVICE_FACTORY_DEFINE_INTERNAL (BRIDGE, Bridge, bridge,
 	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES    (NM_LINK_TYPE_BRIDGE)
 	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_BRIDGE_SETTING_NAME),
 	factory_iface->create_device = create_device;
-	)
-
+);

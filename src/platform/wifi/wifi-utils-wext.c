@@ -369,7 +369,7 @@ wifi_wext_get_qual (WifiData *data)
 	return wext_qual_to_percent (&stats.qual, &wext->max_qual);
 }
 
-/*********************/
+/*****************************************************************************/
 /* OLPC Mesh-only functions */
 
 static guint32
@@ -441,7 +441,7 @@ wifi_wext_set_mesh_ssid (WifiData *data, const guint8 *ssid, gsize len)
 	return FALSE;
 }
 
-/*********************/
+/*****************************************************************************/
 
 static gboolean
 wext_can_scan (WifiDataWext *wext)

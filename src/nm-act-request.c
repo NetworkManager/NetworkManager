@@ -21,24 +21,19 @@
 
 #include "nm-default.h"
 
+#include "nm-act-request.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include "nm-activation-request.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-8021x.h"
 #include "nm-device.h"
 #include "nm-active-connection.h"
 #include "nm-settings-connection.h"
 #include "nm-auth-subject.h"
-
-G_DEFINE_TYPE (NMActRequest, nm_act_request, NM_TYPE_ACTIVE_CONNECTION)
-
-#define NM_ACT_REQUEST_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
-                                       NM_TYPE_ACT_REQUEST, \
-                                       NMActRequestPrivate))
 
 typedef struct {
 	char *table;
@@ -51,6 +46,15 @@ typedef struct {
 	GSList *share_rules;
 } NMActRequestPrivate;
 
+struct _NMActRequest {
+	NMActiveConnection parent;
+	NMActRequestPrivate _priv;
+};
+
+typedef struct {
+	NMActiveConnectionClass parent;
+} NMActRequestClass;
+
 enum {
 	PROP_0,
 	PROP_IP4_CONFIG,
@@ -61,7 +65,11 @@ enum {
 	LAST_PROP
 };
 
-/*******************************************************************/
+G_DEFINE_TYPE (NMActRequest, nm_act_request, NM_TYPE_ACTIVE_CONNECTION)
+
+#define NM_ACT_REQUEST_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMActRequest, NM_IS_ACT_REQUEST)
+
+/*****************************************************************************/
 
 NMSettingsConnection *
 nm_act_request_get_settings_connection (NMActRequest *req)
@@ -79,7 +87,7 @@ nm_act_request_get_applied_connection (NMActRequest *req)
 	return nm_active_connection_get_applied_connection (NM_ACTIVE_CONNECTION (req));
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 struct _NMActRequestGetSecretsCallId {
 	NMActRequest *self;
@@ -245,7 +253,7 @@ nm_act_request_clear_secrets (NMActRequest *self)
 	nm_active_connection_clear_secrets ((NMActiveConnection *) self);
 }
 
-/********************************************************************/
+/*****************************************************************************/
 
 static void
 clear_share_rules (NMActRequest *req)
@@ -346,7 +354,7 @@ nm_act_request_add_share_rule (NMActRequest *req,
 	priv->share_rules = g_slist_prepend (priv->share_rules, rule);
 }
 
-/********************************************************************/
+/*****************************************************************************/
 
 static void
 device_notify (GObject    *object,
@@ -456,7 +464,43 @@ master_failed (NMActiveConnection *self)
 	nm_active_connection_set_state (self, NM_ACTIVE_CONNECTION_STATE_DEACTIVATED);
 }
 
-/********************************************************************/
+/*****************************************************************************/
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMDevice *device;
+
+	device = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (object));
+	if (!device) {
+		g_value_set_string (value, "/");
+		return;
+	}
+
+	switch (prop_id) {
+	case PROP_IP4_CONFIG:
+		g_object_get_property (G_OBJECT (device), NM_DEVICE_IP4_CONFIG, value);
+		break;
+	case PROP_DHCP4_CONFIG:
+		g_object_get_property (G_OBJECT (device), NM_DEVICE_DHCP4_CONFIG, value);
+		break;
+	case PROP_IP6_CONFIG:
+		g_object_get_property (G_OBJECT (device), NM_DEVICE_IP6_CONFIG, value);
+		break;
+	case PROP_DHCP6_CONFIG:
+		g_object_get_property (G_OBJECT (device), NM_DEVICE_DHCP6_CONFIG, value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+nm_act_request_init (NMActRequest *req)
+{
+}
 
 /**
  * nm_act_request_new:
@@ -494,11 +538,6 @@ nm_act_request_new (NMSettingsConnection *settings_connection,
 }
 
 static void
-nm_act_request_init (NMActRequest *req)
-{
-}
-
-static void
 dispose (GObject *object)
 {
 	NMActRequest *self = NM_ACT_REQUEST (object);
@@ -518,43 +557,10 @@ dispose (GObject *object)
 }
 
 static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMDevice *device;
-
-	device = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (object));
-	if (!device) {
-		g_value_set_string (value, "/");
-		return;
-	}
-
-	switch (prop_id) {
-	case PROP_IP4_CONFIG:
-		g_object_get_property (G_OBJECT (device), NM_DEVICE_IP4_CONFIG, value);
-		break;
-	case PROP_DHCP4_CONFIG:
-		g_object_get_property (G_OBJECT (device), NM_DEVICE_DHCP4_CONFIG, value);
-		break;
-	case PROP_IP6_CONFIG:
-		g_object_get_property (G_OBJECT (device), NM_DEVICE_IP6_CONFIG, value);
-		break;
-	case PROP_DHCP6_CONFIG:
-		g_object_get_property (G_OBJECT (device), NM_DEVICE_DHCP6_CONFIG, value);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
 nm_act_request_class_init (NMActRequestClass *req_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (req_class);
 	NMActiveConnectionClass *active_class = NM_ACTIVE_CONNECTION_CLASS (req_class);
-
-	g_type_class_add_private (req_class, sizeof (NMActRequestPrivate));
 
 	/* virtual methods */
 	object_class->dispose = dispose;

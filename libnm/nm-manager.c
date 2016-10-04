@@ -128,7 +128,7 @@ static void nm_running_changed_cb (GObject *object,
                                    GParamSpec *pspec,
                                    gpointer user_data);
 
-/**********************************************************************/
+/*****************************************************************************/
 
 static void
 nm_manager_init (NMManager *manager)
@@ -657,9 +657,9 @@ nm_manager_check_connectivity_finish (NMManager *manager,
 	return (NMConnectivityState) g_simple_async_result_get_op_res_gssize (simple);
 }
 
-/****************************************************************/
+/*****************************************************************************/
 /* Devices                                                      */
-/****************************************************************/
+/*****************************************************************************/
 
 const GPtrArray *
 nm_manager_get_devices (NMManager *manager)
@@ -721,9 +721,9 @@ nm_manager_get_device_by_iface (NMManager *manager, const char *iface)
 	return device;
 }
 
-/****************************************************************/
+/*****************************************************************************/
 /* Active Connections                                           */
-/****************************************************************/
+/*****************************************************************************/
 
 const GPtrArray *
 nm_manager_get_active_connections (NMManager *manager)
@@ -1184,7 +1184,7 @@ nm_manager_deactivate_connection_finish (NMManager *manager,
 		return g_simple_async_result_get_op_res_gboolean (simple);
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static void
 free_devices (NMManager *manager, gboolean in_dispose)
@@ -1320,7 +1320,7 @@ nm_running_changed_cb (GObject *object,
 	}
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static void
 constructed (GObject *object)

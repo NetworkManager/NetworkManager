@@ -70,7 +70,7 @@ G_DEFINE_TYPE (NMAuthSubject, nm_auth_subject, G_TYPE_OBJECT)
 
 #define NM_AUTH_SUBJECT_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMAuthSubject, NM_IS_AUTH_SUBJECT)
 
-/**************************************************************/
+/*****************************************************************************/
 
 #define CHECK_SUBJECT(self, error_value) \
 	NMAuthSubjectPrivate *priv; \
@@ -172,7 +172,7 @@ nm_auth_subject_get_unix_process_dbus_sender (NMAuthSubject *subject)
 	return priv->unix_process.dbus_sender;
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static NMAuthSubject *
 _new_unix_process (GDBusMethodInvocation *context,
@@ -256,7 +256,7 @@ nm_auth_subject_new_internal (void)
 	                                      NULL));
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static void
 get_property (GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)

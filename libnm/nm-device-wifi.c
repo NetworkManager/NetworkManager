@@ -656,7 +656,7 @@ get_hw_address (NMDevice *device)
 	return nm_device_wifi_get_hw_address (NM_DEVICE_WIFI (device));
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_wifi_init (NMDeviceWifi *device)

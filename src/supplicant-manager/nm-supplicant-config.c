@@ -21,20 +21,15 @@
 
 #include "nm-default.h"
 
+#include "nm-supplicant-config.h"
+
 #include <string.h>
 #include <stdlib.h>
 
-#include "nm-supplicant-config.h"
 #include "nm-supplicant-settings-verify.h"
 #include "nm-setting.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
-
-#define NM_SUPPLICANT_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
-                                             NM_TYPE_SUPPLICANT_CONFIG, \
-                                             NMSupplicantConfigPrivate))
-
-G_DEFINE_TYPE (NMSupplicantConfig, nm_supplicant_config, G_TYPE_OBJECT)
 
 typedef struct {
 	char *value;
@@ -42,14 +37,30 @@ typedef struct {
 	OptType type;
 } ConfigOption;
 
-typedef struct
-{
+/*****************************************************************************/
+
+typedef struct {
 	GHashTable *config;
 	GHashTable *blobs;
 	guint32    ap_scan;
 	gboolean   fast_required;
 	gboolean   dispose_has_run;
 } NMSupplicantConfigPrivate;
+
+struct _NMSupplicantConfig {
+	GObject parent;
+	NMSupplicantConfigPrivate _priv;
+};
+
+struct _NMSupplicantConfigClass {
+	GObjectClass parent;
+};
+
+G_DEFINE_TYPE (NMSupplicantConfig, nm_supplicant_config, G_TYPE_OBJECT)
+
+#define NM_SUPPLICANT_CONFIG_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMSupplicantConfig, NM_IS_SUPPLICANT_CONFIG)
+
+/*****************************************************************************/
 
 NMSupplicantConfig *
 nm_supplicant_config_new (void)
@@ -243,11 +254,11 @@ nm_supplicant_config_add_blob_for_connection (NMSupplicantConfig *self,
 static void
 nm_supplicant_config_finalize (GObject *object)
 {
-	/* Complete object destruction */
-	g_hash_table_destroy (NM_SUPPLICANT_CONFIG_GET_PRIVATE (object)->config);
-	g_hash_table_destroy (NM_SUPPLICANT_CONFIG_GET_PRIVATE (object)->blobs);
+	NMSupplicantConfigPrivate *priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE ((NMSupplicantConfig *) object);
 
-	/* Chain up to the parent class */
+	g_hash_table_destroy (priv->config);
+	g_hash_table_destroy (priv->blobs);
+
 	G_OBJECT_CLASS (nm_supplicant_config_parent_class)->finalize (object);
 }
 
@@ -258,8 +269,6 @@ nm_supplicant_config_class_init (NMSupplicantConfigClass *klass)
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
 	object_class->finalize = nm_supplicant_config_finalize;
-
-	g_type_class_add_private (object_class, sizeof (NMSupplicantConfigPrivate));
 }
 
 guint32

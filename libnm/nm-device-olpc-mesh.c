@@ -125,7 +125,7 @@ get_setting_type (NMDevice *device)
 	return NM_TYPE_SETTING_OLPC_MESH;
 }
 
-/**************************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_olpc_mesh_init (NMDeviceOlpcMesh *device)

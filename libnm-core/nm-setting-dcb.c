@@ -506,7 +506,7 @@ nm_setting_dcb_set_priority_traffic_class (NMSettingDcb *setting,
 	}
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 #define DCB_FLAGS_ALL (NM_SETTING_DCB_FLAG_ENABLE | \
                        NM_SETTING_DCB_FLAG_ADVERTISE | \
@@ -724,7 +724,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	return TRUE;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static void
 nm_setting_dcb_init (NMSettingDcb *setting)

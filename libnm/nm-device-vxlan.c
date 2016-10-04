@@ -410,7 +410,7 @@ get_hw_address (NMDevice *device)
 	return nm_device_vxlan_get_hw_address (NM_DEVICE_VXLAN (device));
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_vxlan_init (NMDeviceVxlan *device)

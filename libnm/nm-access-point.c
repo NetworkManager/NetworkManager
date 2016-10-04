@@ -381,7 +381,7 @@ nm_access_point_filter_connections (NMAccessPoint *ap, const GPtrArray *connecti
 	return filtered;
 }
 
-/************************************************************/
+/*****************************************************************************/
 
 static void
 nm_access_point_init (NMAccessPoint *ap)

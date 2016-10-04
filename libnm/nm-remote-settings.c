@@ -73,7 +73,7 @@ enum {
 };
 static guint signals[LAST_SIGNAL] = { 0 };
 
-/**********************************************************************/
+/*****************************************************************************/
 
 typedef struct {
 	NMRemoteSettings *self;
@@ -660,7 +660,7 @@ nm_running_changed (GObject *object,
 	g_object_thaw_notify (object);
 }
 
-/****************************************************************/
+/*****************************************************************************/
 
 static void
 nm_remote_settings_init (NMRemoteSettings *self)

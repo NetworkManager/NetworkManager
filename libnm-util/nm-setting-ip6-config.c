@@ -1306,7 +1306,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 		                   G_PARAM_STATIC_STRINGS));
 }
 
-/********************************************************************/
+/*****************************************************************************/
 
 struct NMIP6Address {
 	guint32 refcount;
@@ -1521,7 +1521,7 @@ nm_ip6_address_set_gateway (NMIP6Address *address, const struct in6_addr *gatewa
 	memcpy (&address->gateway, gateway, sizeof (struct in6_addr));
 }
 
-/********************************************************************/
+/*****************************************************************************/
 
 struct NMIP6Route {
 	guint32 refcount;

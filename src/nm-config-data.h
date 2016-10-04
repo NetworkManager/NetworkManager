@@ -28,7 +28,6 @@
 #define NM_IS_CONFIG_DATA_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_CONFIG_DATA))
 #define NM_CONFIG_DATA_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_CONFIG_DATA, NMConfigDataClass))
 
-
 #define NM_CONFIG_DATA_CONFIG_MAIN_FILE      "config-main-file"
 #define NM_CONFIG_DATA_CONFIG_DESCRIPTION    "config-description"
 #define NM_CONFIG_DATA_KEYFILE_USER          "keyfile-user"
@@ -128,13 +127,7 @@ typedef enum { /*< flags >*/
 
 } NMConfigChangeFlags;
 
-struct _NMConfigData {
-	GObject parent;
-};
-
-typedef struct {
-	GObjectClass parent;
-} NMConfigDataClass;
+typedef struct _NMConfigDataClass NMConfigDataClass;
 
 typedef struct _NMGlobalDnsConfig NMGlobalDnsConfig;
 typedef struct _NMGlobalDnsDomain NMGlobalDnsDomain;

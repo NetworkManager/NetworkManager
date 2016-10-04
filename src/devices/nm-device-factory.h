@@ -48,7 +48,7 @@ NMDeviceFactory *nm_device_factory_create (GError **error);
 /* Should match nm_device_factory_create() */
 typedef NMDeviceFactory * (*NMDeviceFactoryCreateFunc) (GError **error);
 
-/********************************************************************/
+/*****************************************************************************/
 
 #define NM_TYPE_DEVICE_FACTORY               (nm_device_factory_get_type ())
 #define NM_DEVICE_FACTORY(obj)               (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE_FACTORY, NMDeviceFactory))

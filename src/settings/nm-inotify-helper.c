@@ -20,35 +20,51 @@
 
 #include "nm-default.h"
 
+#include "nm-inotify-helper.h"
+
 #include <unistd.h>
 #include <string.h>
 #include <sys/inotify.h>
 #include <errno.h>
 
-#include "nm-inotify-helper.h"
 #include "NetworkManagerUtils.h"
 
 /* NOTE: this code should be killed once we depend on a new enough glib to
  * include the patches from https://bugzilla.gnome.org/show_bug.cgi?id=532815
  */
 
-G_DEFINE_TYPE (NMInotifyHelper, nm_inotify_helper, G_TYPE_OBJECT)
+/*****************************************************************************/
 
-#define NM_INOTIFY_HELPER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_INOTIFY_HELPER, NMInotifyHelperPrivate))
-
-typedef struct {
-	int ifd;
-
-	GHashTable *wd_refs;
-} NMInotifyHelperPrivate;
-
-/* Signals */
 enum {
 	EVENT,
 	LAST_SIGNAL
 };
 
 static guint signals[LAST_SIGNAL] = { 0 };
+
+typedef struct {
+	int ifd;
+	GHashTable *wd_refs;
+} NMInotifyHelperPrivate;
+
+struct _NMInotifyHelper {
+	GObject parent;
+	NMInotifyHelperPrivate _priv;
+};
+
+struct _NMInotifyHelperClass {
+	GObjectClass parent;
+};
+
+G_DEFINE_TYPE (NMInotifyHelper, nm_inotify_helper, G_TYPE_OBJECT)
+
+#define NM_INOTIFY_HELPER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMInotifyHelper, NM_IS_INOTIFY_HELPER)
+
+/*****************************************************************************/
+
+NM_DEFINE_SINGLETON_GETTER (NMInotifyHelper, nm_inotify_helper_get, NM_TYPE_INOTIFY_HELPER);
+
+/*****************************************************************************/
 
 int
 nm_inotify_helper_add_watch (NMInotifyHelper *self, const char *path)
@@ -139,7 +155,7 @@ init_inotify (NMInotifyHelper *self)
 	/* Watch the inotify descriptor for file/directory change events */
 	channel = g_io_channel_unix_new (priv->ifd);
 	g_io_channel_set_flags (channel, G_IO_FLAG_NONBLOCK, NULL);
-	g_io_channel_set_encoding (channel, NULL, NULL); 
+	g_io_channel_set_encoding (channel, NULL, NULL);
 
 	source_id = g_io_add_watch (channel,
 	                            G_IO_IN | G_IO_ERR,
@@ -149,7 +165,7 @@ init_inotify (NMInotifyHelper *self)
 	return TRUE;
 }
 
-NM_DEFINE_SINGLETON_GETTER (NMInotifyHelper, nm_inotify_helper_get, NM_TYPE_INOTIFY_HELPER);
+/*****************************************************************************/
 
 static void
 nm_inotify_helper_init (NMInotifyHelper *self)
@@ -170,7 +186,7 @@ constructed (GObject *object)
 static void
 finalize (GObject *object)
 {
-	NMInotifyHelperPrivate *priv = NM_INOTIFY_HELPER_GET_PRIVATE (object);
+	NMInotifyHelperPrivate *priv = NM_INOTIFY_HELPER_GET_PRIVATE ((NMInotifyHelper *) object);
 
 	if (priv->ifd >= 0)
 		close (priv->ifd);
@@ -185,19 +201,15 @@ nm_inotify_helper_class_init (NMInotifyHelperClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-	g_type_class_add_private (klass, sizeof (NMInotifyHelperPrivate));
-
-	/* Virtual methods */
 	object_class->constructed = constructed;
 	object_class->finalize = finalize;
 
-	/* Signals */
 	signals[EVENT] =
-		g_signal_new ("event",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
-		              G_STRUCT_OFFSET (NMInotifyHelperClass, event),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 2, G_TYPE_POINTER, G_TYPE_STRING);
+	    g_signal_new ("event",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_LAST,
+	                  0,
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 2, G_TYPE_POINTER, G_TYPE_STRING);
 }
 

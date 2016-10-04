@@ -51,6 +51,7 @@ typedef struct _NMRouteManager       NMRouteManager;
 typedef struct _NMSessionMonitor     NMSessionMonitor;
 typedef struct _NMSleepMonitor       NMSleepMonitor;
 typedef struct _NMLldpListener       NMLldpListener;
+typedef struct _NMConfigDeviceStateData NMConfigDeviceStateData;
 
 typedef enum {
 	/* In priority order; higher number == higher priority */

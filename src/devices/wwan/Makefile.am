@@ -68,7 +68,6 @@ SYMBOL_VIS_FILE=$(srcdir)/exports.ver
 
 libnm_device_plugin_wwan_la_SOURCES = \
 	nm-wwan-factory.c \
-	nm-wwan-factory.h \
 	nm-device-modem.c \
 	nm-device-modem.h
 

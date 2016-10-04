@@ -30,7 +30,7 @@
 
 #define DEBUG 1
 
-/*******************************************/
+/*****************************************************************************/
 
 #define COMPARE(src, expected, success, error, edomain, ecode) \
 { \
@@ -246,7 +246,7 @@ create_basic (const char *ssid,
 	return connection;
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_lock_bssid (void)
@@ -270,7 +270,7 @@ test_lock_bssid (void)
 	g_object_unref (expected);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_open_ap_empty_connection (void)
@@ -298,7 +298,7 @@ test_open_ap_empty_connection (void)
 	g_object_unref (expected);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_open_ap_leap_connection_1 (gconstpointer add_wifi)
@@ -330,7 +330,7 @@ test_open_ap_leap_connection_1 (gconstpointer add_wifi)
 	g_object_unref (src);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_open_ap_leap_connection_2 (void)
@@ -360,7 +360,7 @@ test_open_ap_leap_connection_2 (void)
 	g_object_unref (src);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_open_ap_wep_connection (gconstpointer add_wifi)
@@ -394,7 +394,7 @@ test_open_ap_wep_connection (gconstpointer add_wifi)
 	g_object_unref (src);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_ap_wpa_psk_connection_base (const char *key_mgmt,
@@ -515,7 +515,7 @@ test_open_ap_wpa_psk_connection_5 (void)
 	                                 NULL);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_ap_wpa_eap_connection_base (const char *key_mgmt,
@@ -707,7 +707,7 @@ test_ap_wpa_eap_connection_5 (gconstpointer data)
 	                                 error_code_for_idx (idx, 5));
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_priv_ap_empty_connection (void)
@@ -741,7 +741,7 @@ test_priv_ap_empty_connection (void)
 	g_object_unref (expected);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_priv_ap_leap_connection_1 (gconstpointer add_wifi)
@@ -788,7 +788,7 @@ test_priv_ap_leap_connection_1 (gconstpointer add_wifi)
 	g_object_unref (expected);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_priv_ap_leap_connection_2 (void)
@@ -821,7 +821,7 @@ test_priv_ap_leap_connection_2 (void)
 	g_object_unref (src);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_priv_ap_dynamic_wep_1 (void)
@@ -870,7 +870,7 @@ test_priv_ap_dynamic_wep_1 (void)
 	g_object_unref (expected);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_priv_ap_dynamic_wep_2 (void)
@@ -918,7 +918,7 @@ test_priv_ap_dynamic_wep_2 (void)
 	g_object_unref (expected);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_priv_ap_dynamic_wep_3 (void)
@@ -955,7 +955,7 @@ test_priv_ap_dynamic_wep_3 (void)
 	g_object_unref (src);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_priv_ap_wpa_psk_connection_1 (void)
@@ -1040,7 +1040,7 @@ test_priv_ap_wpa_psk_connection_5 (void)
 	                                 NULL);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_wpa_ap_empty_connection (gconstpointer data)
@@ -1077,7 +1077,7 @@ test_wpa_ap_empty_connection (gconstpointer data)
 	g_object_unref (expected);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_wpa_ap_leap_connection_1 (gconstpointer data)
@@ -1113,7 +1113,7 @@ test_wpa_ap_leap_connection_1 (gconstpointer data)
 	g_object_unref (src);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_wpa_ap_leap_connection_2 (gconstpointer data)
@@ -1147,7 +1147,7 @@ test_wpa_ap_leap_connection_2 (gconstpointer data)
 	g_object_unref (src);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_wpa_ap_dynamic_wep_connection (gconstpointer data)
@@ -1180,7 +1180,7 @@ test_wpa_ap_dynamic_wep_connection (gconstpointer data)
 	g_object_unref (src);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_wpa_ap_wpa_psk_connection_1 (gconstpointer data)
@@ -1283,7 +1283,7 @@ test_wpa_ap_wpa_psk_connection_5 (gconstpointer data)
 	g_object_unref (expected);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_strength_dbm (void)
@@ -1334,7 +1334,7 @@ test_strength_wext (void)
 	g_assert_cmpint (nm_ap_utils_level_to_quality (215), ==, 99);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 NMTST_DEFINE ();
 

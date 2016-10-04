@@ -32,8 +32,11 @@
 #define NM_DNS_PLUGIN_FAILED "failed"
 #define NM_DNS_PLUGIN_CHILD_QUIT "child-quit"
 
+struct _NMDnsPluginPrivate;
+
 typedef struct {
 	GObject parent;
+	struct _NMDnsPluginPrivate *_priv;
 } NMDnsPlugin;
 
 typedef struct {
@@ -61,13 +64,6 @@ typedef struct {
 	const char *(*get_name) (NMDnsPlugin *self);
 
 	/* Signals */
-
-	/* Emitted by the plugin and consumed by NMDnsManager when
-	 * some error happens with the nameserver subprocess.  Causes NM to fall
-	 * back to writing out a non-local-caching resolv.conf until the next
-	 * DNS update.
-	 */
-	void (*failed) (NMDnsPlugin *self);
 
 	/* Emitted by the plugin base class when the nameserver subprocess
 	 * quits.  This signal is consumed by the plugin subclasses and not
@@ -108,4 +104,3 @@ GPid nm_dns_plugin_child_pid (NMDnsPlugin *self);
 gboolean nm_dns_plugin_child_kill (NMDnsPlugin *self);
 
 #endif /* __NETWORKMANAGER_DNS_PLUGIN_H__ */
-

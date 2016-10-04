@@ -27,7 +27,7 @@
 #include "nm-connection.h"
 #include "nm-setting-8021x.h"
 
-/*********************************************************/
+/*****************************************************************************/
 
 #define NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB "data:;base64,"
 #define NM_KEYFILE_CERT_SCHEME_PREFIX_PATH "file://"
@@ -94,7 +94,7 @@ NMConnection *nm_keyfile_read (GKeyFile *keyfile,
                                void *user_data,
                                GError **error);
 
-/*********************************************************/
+/*****************************************************************************/
 
 typedef enum {
 	NM_KEYFILE_WRITE_TYPE_CERT              = 1,
@@ -155,7 +155,7 @@ GKeyFile *nm_keyfile_write (NMConnection *connection,
                             void *user_data,
                             GError **error);
 
-/*********************************************************/
+/*****************************************************************************/
 
 char *nm_keyfile_plugin_kf_get_string (GKeyFile *kf, const char *group, const char *key, GError **error);
 void nm_keyfile_plugin_kf_set_string (GKeyFile *kf, const char *group, const char *key, const char *value);

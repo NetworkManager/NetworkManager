@@ -130,7 +130,7 @@ get_hw_address (NMDevice *device)
 	return nm_device_bridge_get_hw_address (NM_DEVICE_BRIDGE (device));
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_bridge_init (NMDeviceBridge *device)

@@ -12,7 +12,7 @@
 
 #define DEVICE_NAME "nm-test-device"
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 #define _NMLOG_PREFIX_NAME                "platform-test"
 #define _NMLOG_DOMAIN                     LOGD_PLATFORM
@@ -35,12 +35,12 @@
         } \
     } G_STMT_END
 
-/*********************************************************************************************/
+/*****************************************************************************/
 
 gboolean nmtstp_is_root_test (void);
 gboolean nmtstp_is_sysfs_writable (void);
 
-/******************************************************************************/
+/*****************************************************************************/
 
 typedef struct _NMTstpNamespaceHandle NMTstpNamespaceHandle;
 
@@ -51,7 +51,7 @@ pid_t nmtstp_namespace_handle_get_pid (NMTstpNamespaceHandle *handle);
 
 int nmtstp_namespace_get_fd_for_process (pid_t pid, const char *ns_name);
 
-/******************************************************************************/
+/*****************************************************************************/
 
 typedef struct {
 	gulong handler_id;

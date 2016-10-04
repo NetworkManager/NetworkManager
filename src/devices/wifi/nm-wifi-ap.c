@@ -85,7 +85,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMAccessPoint,
 	PROP_LAST_SEEN,
 );
 
-/*****************************************************************/
+/*****************************************************************************/
 
 const char *
 nm_ap_get_supplicant_path (NMAccessPoint *ap)
@@ -344,7 +344,7 @@ nm_ap_set_last_seen (NMAccessPoint *ap, gint32 last_seen)
 	}
 }
 
-/*****************************************************************/
+/*****************************************************************************/
 
 static NM80211ApSecurityFlags
 security_from_vardict (GVariant *security)
@@ -871,7 +871,7 @@ nm_ap_complete_connection (NMAccessPoint *self,
 	                                        error);
 }
 
-/*****************************************************************/
+/*****************************************************************************/
 
 static void
 nm_ap_init (NMAccessPoint *ap)

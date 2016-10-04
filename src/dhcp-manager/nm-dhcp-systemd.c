@@ -28,7 +28,6 @@
 #include <ctype.h>
 #include <net/if_arp.h>
 
-#include "nm-dhcp-systemd.h"
 #include "nm-utils.h"
 #include "nm-dhcp-utils.h"
 #include "NetworkManagerUtils.h"
@@ -36,9 +35,21 @@
 #include "nm-dhcp-client-logging.h"
 #include "systemd/nm-sd.h"
 
-G_DEFINE_TYPE (NMDhcpSystemd, nm_dhcp_systemd, NM_TYPE_DHCP_CLIENT)
+/*****************************************************************************/
 
-#define NM_DHCP_SYSTEMD_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP_SYSTEMD, NMDhcpSystemdPrivate))
+#define NM_TYPE_DHCP_SYSTEMD            (nm_dhcp_systemd_get_type ())
+#define NM_DHCP_SYSTEMD(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP_SYSTEMD, NMDhcpSystemd))
+#define NM_DHCP_SYSTEMD_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DHCP_SYSTEMD, NMDhcpSystemdClass))
+#define NM_IS_DHCP_SYSTEMD(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DHCP_SYSTEMD))
+#define NM_IS_DHCP_SYSTEMD_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DHCP_SYSTEMD))
+#define NM_DHCP_SYSTEMD_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP_SYSTEMD, NMDhcpSystemdClass))
+
+typedef struct _NMDhcpSystemd NMDhcpSystemd;
+typedef struct _NMDhcpSystemdClass NMDhcpSystemdClass;
+
+static GType nm_dhcp_systemd_get_type (void);
+
+/*****************************************************************************/
 
 typedef struct {
 	sd_dhcp_client *client4;
@@ -51,7 +62,20 @@ typedef struct {
 	gboolean info_only;
 } NMDhcpSystemdPrivate;
 
-/************************************************************/
+struct _NMDhcpSystemd {
+	NMDhcpClient parent;
+	NMDhcpSystemdPrivate _priv;
+};
+
+struct _NMDhcpSystemdClass {
+	NMDhcpClientClass parent;
+};
+
+G_DEFINE_TYPE (NMDhcpSystemd, nm_dhcp_systemd, NM_TYPE_DHCP_CLIENT)
+
+#define NM_DHCP_SYSTEMD_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDhcpSystemd, NM_IS_DHCP_SYSTEMD)
+
+/*****************************************************************************/
 
 #define DHCP_OPTION_NIS_DOMAIN         40
 #define DHCP_OPTION_NIS_SERVERS        41
@@ -388,7 +412,7 @@ lease_to_ip4_config (const char *iface,
 	return ip4_config;
 }
 
-/************************************************************/
+/*****************************************************************************/
 
 static char *
 get_leasefile_path (const char *iface, const char *uuid, gboolean ipv6)
@@ -427,7 +451,7 @@ nm_dhcp_systemd_get_lease_ip_configs (const char *iface,
 	return leases;
 }
 
-/************************************************************/
+/*****************************************************************************/
 
 static void
 _save_client_id (NMDhcpSystemd *self,
@@ -990,7 +1014,7 @@ stop (NMDhcpClient *client, gboolean release, const GByteArray *duid)
 		_LOGW ("failed to stop client (%d)", r);
 }
 
-/***************************************************/
+/*****************************************************************************/
 
 static void
 nm_dhcp_systemd_init (NMDhcpSystemd *self)
@@ -1000,7 +1024,7 @@ nm_dhcp_systemd_init (NMDhcpSystemd *self)
 static void
 dispose (GObject *object)
 {
-	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (object);
+	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE ((NMDhcpSystemd *) object);
 
 	g_clear_pointer (&priv->lease_file, g_free);
 
@@ -1025,9 +1049,6 @@ nm_dhcp_systemd_class_init (NMDhcpSystemdClass *sdhcp_class)
 	NMDhcpClientClass *client_class = NM_DHCP_CLIENT_CLASS (sdhcp_class);
 	GObjectClass *object_class = G_OBJECT_CLASS (sdhcp_class);
 
-	g_type_class_add_private (sdhcp_class, sizeof (NMDhcpSystemdPrivate));
-
-	/* virtual methods */
 	object_class->dispose = dispose;
 
 	client_class->ip4_start = ip4_start;
@@ -1035,13 +1056,9 @@ nm_dhcp_systemd_class_init (NMDhcpSystemdClass *sdhcp_class)
 	client_class->stop = stop;
 }
 
-static void __attribute__((constructor))
-register_dhcp_dhclient (void)
-{
-	nm_g_type_init ();
-	_nm_dhcp_client_register (NM_TYPE_DHCP_SYSTEMD,
-	                          "internal",
-	                          NULL,
-	                          nm_dhcp_systemd_get_lease_ip_configs);
-}
-
+const NMDhcpClientFactory _nm_dhcp_client_factory_internal = {
+	.name = "internal",
+	.get_type = nm_dhcp_systemd_get_type,
+	.get_path = NULL,
+	.get_lease_ip_configs = nm_dhcp_systemd_get_lease_ip_configs,
+};

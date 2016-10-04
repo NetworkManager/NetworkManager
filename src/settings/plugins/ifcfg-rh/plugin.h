@@ -34,15 +34,6 @@
 typedef struct _SettingsPluginIfcfg SettingsPluginIfcfg;
 typedef struct _SettingsPluginIfcfgClass SettingsPluginIfcfgClass;
 
-struct _SettingsPluginIfcfg {
-	GObject parent;
-};
-
-struct _SettingsPluginIfcfgClass {
-	GObjectClass parent;
-};
-
 GType settings_plugin_ifcfg_get_type (void);
 
 #endif /* _PLUGIN_H_ */
-

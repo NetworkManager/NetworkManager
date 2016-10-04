@@ -164,7 +164,7 @@ get_hw_address (NMDevice *device)
 	return nm_device_vlan_get_hw_address (NM_DEVICE_VLAN (device));
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_vlan_init (NMDeviceVlan *device)

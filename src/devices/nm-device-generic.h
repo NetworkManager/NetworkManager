@@ -32,14 +32,8 @@
 
 #define NM_DEVICE_GENERIC_TYPE_DESCRIPTION "type-description"
 
-typedef struct {
-	NMDevice parent;
-} NMDeviceGeneric;
-
-typedef struct {
-	NMDeviceClass parent;
-
-} NMDeviceGenericClass;
+typedef struct _NMDeviceGeneric NMDeviceGeneric;
+typedef struct _NMDeviceGenericClass NMDeviceGenericClass;
 
 GType nm_device_generic_get_type (void);
 

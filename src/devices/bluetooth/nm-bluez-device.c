@@ -21,13 +21,13 @@
 
 #include "nm-default.h"
 
+#include "nm-bluez-device.h"
+
 #include <string.h>
 
 #include "nm-core-internal.h"
-
 #include "nm-bt-error.h"
 #include "nm-bluez-common.h"
-#include "nm-bluez-device.h"
 #include "nm-settings.h"
 #include "nm-settings-connection.h"
 #include "NetworkManagerUtils.h"
@@ -36,9 +36,31 @@
 #include "nm-bluez5-dun.h"
 #endif
 
-G_DEFINE_TYPE (NMBluezDevice, nm_bluez_device, G_TYPE_OBJECT)
+/*****************************************************************************/
 
-#define NM_BLUEZ_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_BLUEZ_DEVICE, NMBluezDevicePrivate))
+#define VARIANT_IS_OF_TYPE_BOOLEAN(v)      ((v) != NULL && ( g_variant_is_of_type ((v), G_VARIANT_TYPE_BOOLEAN) ))
+#define VARIANT_IS_OF_TYPE_STRING(v)       ((v) != NULL && ( g_variant_is_of_type ((v), G_VARIANT_TYPE_STRING) ))
+#define VARIANT_IS_OF_TYPE_OBJECT_PATH(v)  ((v) != NULL && ( g_variant_is_of_type ((v), G_VARIANT_TYPE_OBJECT_PATH) ))
+#define VARIANT_IS_OF_TYPE_STRING_ARRAY(v) ((v) != NULL && ( g_variant_is_of_type ((v), G_VARIANT_TYPE_STRING_ARRAY) ))
+
+/*****************************************************************************/
+
+NM_GOBJECT_PROPERTIES_DEFINE (NMBluezDevice,
+	PROP_PATH,
+	PROP_ADDRESS,
+	PROP_NAME,
+	PROP_CAPABILITIES,
+	PROP_USABLE,
+	PROP_CONNECTED,
+);
+
+enum {
+	INITIALIZED,
+	REMOVED,
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
 	char *path;
@@ -75,39 +97,26 @@ typedef struct {
 	gboolean pan_connection_no_autocreate;
 } NMBluezDevicePrivate;
 
-
-enum {
-	PROP_0,
-	PROP_PATH,
-	PROP_ADDRESS,
-	PROP_NAME,
-	PROP_CAPABILITIES,
-	PROP_USABLE,
-	PROP_CONNECTED,
-
-	LAST_PROP
+struct _NMBluezDevice {
+	GObject parent;
+	NMBluezDevicePrivate _priv;
 };
 
-/* Signals */
-enum {
-	INITIALIZED,
-	REMOVED,
-	LAST_SIGNAL
+struct _NMBluezDeviceClass {
+	GObjectClass parent;
 };
-static guint signals[LAST_SIGNAL] = { 0 };
 
+G_DEFINE_TYPE (NMBluezDevice, nm_bluez_device, G_TYPE_OBJECT)
+
+#define NM_BLUEZ_DEVICE_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMBluezDevice, NM_IS_BLUEZ_DEVICE)
+
+/*****************************************************************************/
 
 static void cp_connection_added (NMSettings *settings,
                                  NMConnection *connection, NMBluezDevice *self);
 static gboolean connection_compatible (NMBluezDevice *self, NMConnection *connection);
 
-
-#define VARIANT_IS_OF_TYPE_BOOLEAN(v)      ((v) != NULL && ( g_variant_is_of_type ((v), G_VARIANT_TYPE_BOOLEAN) ))
-#define VARIANT_IS_OF_TYPE_STRING(v)       ((v) != NULL && ( g_variant_is_of_type ((v), G_VARIANT_TYPE_STRING) ))
-#define VARIANT_IS_OF_TYPE_OBJECT_PATH(v)  ((v) != NULL && ( g_variant_is_of_type ((v), G_VARIANT_TYPE_OBJECT_PATH) ))
-#define VARIANT_IS_OF_TYPE_STRING_ARRAY(v) ((v) != NULL && ( g_variant_is_of_type ((v), G_VARIANT_TYPE_STRING_ARRAY) ))
-
-/***********************************************************/
+/*****************************************************************************/
 
 const char *
 nm_bluez_device_get_path (NMBluezDevice *self)
@@ -292,7 +301,7 @@ check_emit_usable (NMBluezDevice *self)
 END:
 	if (new_usable != priv->usable) {
 		priv->usable = new_usable;
-		g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_USABLE);
+		_notify (self, PROP_USABLE);
 	}
 
 	return G_SOURCE_REMOVE;
@@ -307,7 +316,7 @@ check_emit_usable_schedule (NMBluezDevice *self)
 		priv->check_emit_usable_id = g_idle_add ((GSourceFunc) check_emit_usable, self);
 }
 
-/********************************************************************/
+/*****************************************************************************/
 
 static gboolean
 connection_compatible (NMBluezDevice *self, NMConnection *connection)
@@ -417,14 +426,14 @@ load_connections (NMBluezDevice *self)
 		check_emit_usable (self);
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static void
 bluez_disconnect_cb (GDBusConnection *dbus_connection,
                      GAsyncResult *res,
                      gpointer user_data)
 {
-	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (user_data);
+	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE ((NMBluezDevice *) user_data);
 	GError *error = NULL;
 	GVariant *variant;
 
@@ -628,13 +637,13 @@ nm_bluez_device_connect_finish (NMBluezDevice *self,
 	device = (const char *) g_simple_async_result_get_op_res_gpointer (simple);
 	if (device && priv->bluez_version == 5) {
 		priv->connected = TRUE;
-		g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_CONNECTED);
+		_notify (self, PROP_CONNECTED);
 	}
 
 	return device;
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 static void
 set_adapter_address (NMBluezDevice *self, const char *address)
@@ -695,7 +704,7 @@ _set_property_capabilities (NMBluezDevice *self, const char **uuids)
 		            ((uint_val & NM_BT_CAPABILITY_DUN) && (uint_val &NM_BT_CAPABILITY_NAP)) ? " | " : "",
 		            uint_val & NM_BT_CAPABILITY_DUN ? "DUN" : "");
 		priv->capabilities = uint_val;
-		g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_CAPABILITIES);
+		_notify (self, PROP_CAPABILITIES);
 	}
 }
 
@@ -727,7 +736,7 @@ _set_property_address (NMBluezDevice *self, const char *addr)
 	}
 
 	priv->address = g_strdup (addr);
-	g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_ADDRESS);
+	_notify (self, PROP_ADDRESS);
 }
 
 static void
@@ -749,7 +758,7 @@ _take_variant_property_name (NMBluezDevice *self, GVariant *v)
 		if (g_strcmp0 (priv->name, str)) {
 			g_free (priv->name);
 			priv->name = g_strdup (str);
-			g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_NAME);
+			_notify (self, PROP_NAME);
 		}
 	}
 	if (v)
@@ -779,7 +788,7 @@ _take_variant_property_connected (NMBluezDevice *self, GVariant *v)
 
 		if (priv->connected != connected) {
 			priv->connected = connected;
-			g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_CONNECTED);
+			_notify (self, PROP_CONNECTED);
 		}
 	}
 	if (v)
@@ -1027,7 +1036,62 @@ on_bus_acquired (GObject *object, GAsyncResult *res, NMBluezDevice *self)
 	g_object_unref (self);
 }
 
-/********************************************************************/
+/*****************************************************************************/
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE ((NMBluezDevice *) object);
+
+	switch (prop_id) {
+	case PROP_PATH:
+		g_value_set_string (value, priv->path);
+		break;
+	case PROP_ADDRESS:
+		g_value_set_string (value, priv->address);
+		break;
+	case PROP_NAME:
+		g_value_set_string (value, priv->name);
+		break;
+	case PROP_CAPABILITIES:
+		g_value_set_uint (value, priv->capabilities);
+		break;
+	case PROP_USABLE:
+		g_value_set_boolean (value, priv->usable);
+		break;
+	case PROP_CONNECTED:
+		g_value_set_boolean (value, priv->connected);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE ((NMBluezDevice *) object);
+
+	switch (prop_id) {
+	case PROP_PATH:
+		/* construct only */
+		priv->path = g_value_dup_string (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+/*****************************************************************************/
+
+static void
+nm_bluez_device_init (NMBluezDevice *self)
+{
+}
 
 NMBluezDevice *
 nm_bluez_device_new (const char *path,
@@ -1090,11 +1154,6 @@ nm_bluez_device_new (const char *path,
 }
 
 static void
-nm_bluez_device_init (NMBluezDevice *self)
-{
-}
-
-static void
 dispose (GObject *object)
 {
 	NMBluezDevice *self = NM_BLUEZ_DEVICE (object);
@@ -1146,7 +1205,7 @@ dispose (GObject *object)
 static void
 finalize (GObject *object)
 {
-	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (object);
+	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE ((NMBluezDevice *) object);
 
 	nm_log_dbg (LOGD_BT, "bluez[%s]: finalize NMBluezDevice", priv->path);
 
@@ -1164,121 +1223,64 @@ finalize (GObject *object)
 }
 
 static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_PATH:
-		g_value_set_string (value, priv->path);
-		break;
-	case PROP_ADDRESS:
-		g_value_set_string (value, priv->address);
-		break;
-	case PROP_NAME:
-		g_value_set_string (value, priv->name);
-		break;
-	case PROP_CAPABILITIES:
-		g_value_set_uint (value, priv->capabilities);
-		break;
-	case PROP_USABLE:
-		g_value_set_boolean (value, priv->usable);
-		break;
-	case PROP_CONNECTED:
-		g_value_set_boolean (value, priv->connected);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
-{
-	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_PATH:
-		/* construct only */
-		priv->path = g_value_dup_string (value);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
 nm_bluez_device_class_init (NMBluezDeviceClass *config_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
 
-	g_type_class_add_private (config_class, sizeof (NMBluezDevicePrivate));
-
-	/* virtual methods */
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
-	/* Properties */
-	g_object_class_install_property
-		(object_class, PROP_PATH,
-		 g_param_spec_string (NM_BLUEZ_DEVICE_PATH, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_PATH] =
+	     g_param_spec_string (NM_BLUEZ_DEVICE_PATH, "", "",
+	                          NULL,
+	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_ADDRESS,
-		 g_param_spec_string (NM_BLUEZ_DEVICE_ADDRESS, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ADDRESS] =
+	     g_param_spec_string (NM_BLUEZ_DEVICE_ADDRESS, "", "",
+	                          NULL,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_NAME,
-		 g_param_spec_string (NM_BLUEZ_DEVICE_NAME, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_NAME] =
+	     g_param_spec_string (NM_BLUEZ_DEVICE_NAME, "", "",
+	                          NULL,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_CAPABILITIES,
-		 g_param_spec_uint (NM_BLUEZ_DEVICE_CAPABILITIES, "", "",
-		                    0, G_MAXUINT, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CAPABILITIES] =
+	     g_param_spec_uint (NM_BLUEZ_DEVICE_CAPABILITIES, "", "",
+	                        0, G_MAXUINT, 0,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_USABLE,
-		 g_param_spec_boolean (NM_BLUEZ_DEVICE_USABLE, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_USABLE] =
+	     g_param_spec_boolean (NM_BLUEZ_DEVICE_USABLE, "", "",
+	                           FALSE,
+	                           G_PARAM_READABLE |
+	                           G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_CONNECTED,
-		 g_param_spec_boolean (NM_BLUEZ_DEVICE_CONNECTED, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_CONNECTED] =
+	     g_param_spec_boolean (NM_BLUEZ_DEVICE_CONNECTED, "", "",
+	                           FALSE,
+	                           G_PARAM_READABLE |
+	                           G_PARAM_STATIC_STRINGS);
 
-	/* Signals */
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+
 	signals[INITIALIZED] = g_signal_new ("initialized",
 	                                     G_OBJECT_CLASS_TYPE (object_class),
 	                                     G_SIGNAL_RUN_LAST,
-	                                     G_STRUCT_OFFSET (NMBluezDeviceClass, initialized),
+	                                     0,
 	                                     NULL, NULL, NULL,
 	                                     G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
 
 	signals[REMOVED] =     g_signal_new (NM_BLUEZ_DEVICE_REMOVED,
 	                                     G_OBJECT_CLASS_TYPE (object_class),
 	                                     G_SIGNAL_RUN_LAST,
-	                                     G_STRUCT_OFFSET (NMBluezDeviceClass, removed),
+	                                     0,
 	                                     NULL, NULL, NULL,
 	                                     G_TYPE_NONE, 0);
 }

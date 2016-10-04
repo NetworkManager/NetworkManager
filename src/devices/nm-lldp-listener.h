@@ -30,13 +30,7 @@
 
 #define NM_LLDP_LISTENER_NEIGHBORS "neighbors"
 
-struct _NMLldpListener {
-	GObject parent;
-};
-
-typedef struct {
-	GObjectClass parent;
-} NMLldpListenerClass;
+typedef struct _NMLldpListenerClass NMLldpListenerClass;
 
 GType nm_lldp_listener_get_type (void);
 NMLldpListener *nm_lldp_listener_new (void);

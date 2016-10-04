@@ -80,10 +80,6 @@ G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OF
 
 /*****************************************************************************/
 
-#define NM_PLATFORM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_PLATFORM, NMPlatformPrivate))
-
-G_DEFINE_TYPE (NMPlatform, nm_platform, G_TYPE_OBJECT)
-
 static guint signals[_NM_PLATFORM_SIGNAL_ID_LAST] = { 0 };
 
 enum {
@@ -93,11 +89,15 @@ enum {
 	LAST_PROP,
 };
 
-typedef struct {
-	gboolean register_singleton;
+typedef struct _NMPlatformPrivate {
+	bool register_singleton:1;
 } NMPlatformPrivate;
 
-/******************************************************************/
+G_DEFINE_TYPE (NMPlatform, nm_platform, G_TYPE_OBJECT)
+
+#define NM_PLATFORM_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR (self, NMPlatform, NM_IS_PLATFORM)
+
+/*****************************************************************************/
 
 guint
 _nm_platform_signal_id_get (NMPlatformSignalIdType signal_type)
@@ -109,7 +109,7 @@ _nm_platform_signal_id_get (NMPlatformSignalIdType signal_type)
 	return signals[signal_type];
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 /* Singleton NMPlatform subclass instance and cached class object */
 NM_DEFINE_SINGLETON_INSTANCE (NMPlatform);
@@ -184,7 +184,7 @@ nm_platform_try_get (void)
 	return singleton_instance;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 /**
  * _nm_platform_error_to_string:
@@ -209,7 +209,7 @@ NM_UTILS_LOOKUP_STR_DEFINE (_nm_platform_error_to_string, NMPlatformError,
 	NM_UTILS_LOOKUP_ITEM_IGNORE (_NM_PLATFORM_ERROR_MININT),
 );
 
-/******************************************************************/
+/*****************************************************************************/
 
 gboolean
 nm_platform_check_support_kernel_extended_ifa_flags (NMPlatform *self)
@@ -254,7 +254,7 @@ nm_platform_process_events (NMPlatform *self)
 		klass->process_events (self);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_platform_sysctl_set:
@@ -386,7 +386,7 @@ nm_platform_sysctl_get_int_checked (NMPlatform *self, const char *path, guint ba
 	return ret;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static int
 _link_get_all_presort (gconstpointer  p_a,
@@ -1764,7 +1764,7 @@ nm_platform_sysctl_slave_get_option (NMPlatform *self, int ifindex, const char *
 	return link_get_option (self, ifindex, slave_category (self, ifindex), option);
 }
 
-/******************************************************************************/
+/*****************************************************************************/
 
 gboolean
 nm_platform_link_vlan_change (NMPlatform *self,
@@ -2467,7 +2467,7 @@ _to_string_ifa_flags (guint32 ifa_flags, char *buf, gsize size)
 	return buf;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 gboolean
 nm_platform_ethtool_set_wake_on_lan (NMPlatform *self, const char *ifname, NMSettingWiredWakeOnLan wol, const char *wol_password)
@@ -2493,7 +2493,7 @@ nm_platform_ethtool_get_link_speed (NMPlatform *self, const char *ifname, guint3
 	return nmp_utils_ethtool_get_link_speed (ifname, out_speed);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 void
 nm_platform_ip4_address_set_addr (NMPlatformIP4Address *addr, in_addr_t address, guint8 plen)
@@ -2838,7 +2838,7 @@ nm_platform_address_flush (NMPlatform *self, int ifindex)
 	       && nm_platform_ip6_address_sync (self, ifindex, NULL, FALSE);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 GArray *
 nm_platform_ip4_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteFlags flags)
@@ -2986,7 +2986,7 @@ nm_platform_ip6_route_get (NMPlatform *self, int ifindex, struct in6_addr networ
 	return klass->ip6_route_get (self, ifindex, network, plen, metric);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 const char *
 nm_platform_vlan_qos_mapping_to_string (const char *name,
@@ -4083,7 +4083,7 @@ log_ip6_route (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatform
 	_LOGD ("signal: route   6 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip6_route_to_string (route, NULL, 0));
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 NMPNetns *
 nm_platform_netns_get (NMPlatform *self)
@@ -4108,7 +4108,7 @@ nm_platform_netns_push (NMPlatform *platform, NMPNetns **netns)
 	return TRUE;
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 static gboolean
 _vtr_v4_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route, gint64 metric)
@@ -4175,7 +4175,7 @@ _vtr_v6_route_delete_default (NMPlatform *self, int ifindex, guint32 metric)
 	return nm_platform_ip6_route_delete (self, ifindex, in6addr_any, 0, metric);
 }
 
-/******************************************************************/
+/*****************************************************************************/
 
 const NMPlatformVTableRoute nm_platform_vtable_route_v4 = {
 	.is_ip4                         = TRUE,
@@ -4203,7 +4203,7 @@ const NMPlatformVTableRoute nm_platform_vtable_route_v6 = {
 	.metric_normalize               = nm_utils_ip6_route_metric_normalize,
 };
 
-/******************************************************************/
+/*****************************************************************************/
 
 static void
 set_property (GObject *object, guint prop_id,
@@ -4246,8 +4246,9 @@ constructed (GObject *object)
 }
 
 static void
-nm_platform_init (NMPlatform *object)
+nm_platform_init (NMPlatform *self)
 {
+	self->_priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_PLATFORM, NMPlatformPrivate);
 }
 
 static void

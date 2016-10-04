@@ -29,10 +29,11 @@
 
 #define NM_SLEEP_MONITOR_SLEEPING "sleeping"
 
-typedef struct _NMSleepMonitorClass    NMSleepMonitorClass;
+typedef struct _NMSleepMonitorClass NMSleepMonitorClass;
 
-GType           nm_sleep_monitor_get_type     (void) G_GNUC_CONST;
-NMSleepMonitor *nm_sleep_monitor_new          (void);
+GType           nm_sleep_monitor_get_type (void) G_GNUC_CONST;
+
+NMSleepMonitor *nm_sleep_monitor_new (void);
 
 typedef struct _NMSleepMonitorInhibitorHandle NMSleepMonitorInhibitorHandle;
 

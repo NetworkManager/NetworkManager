@@ -26,7 +26,7 @@
 
 #include "nm-glib.h"
 
-/********************************************************/
+/*****************************************************************************/
 
 #define _nm_packed __attribute__ ((packed))
 #define _nm_unused __attribute__ ((unused))
@@ -59,7 +59,7 @@ _nm_auto_free_gstring_impl (GString **str)
 }
 #define nm_auto_free_gstring nm_auto(_nm_auto_free_gstring_impl)
 
-/********************************************************/
+/*****************************************************************************/
 
 /* http://stackoverflow.com/a/11172679 */
 #define  _NM_UTILS_MACRO_FIRST(...)                           __NM_UTILS_MACRO_FIRST_HELPER(__VA_ARGS__, throwaway)
@@ -78,7 +78,7 @@ _nm_auto_free_gstring_impl (GString **str)
                 TWOORMORE, TWOORMORE, TWOORMORE, ONE, throwaway)
 #define __NM_UTILS_MACRO_REST_SELECT_20TH(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, ...) a20
 
-/********************************************************/
+/*****************************************************************************/
 
 /* http://stackoverflow.com/a/2124385/354393 */
 
@@ -103,7 +103,7 @@ _nm_auto_free_gstring_impl (GString **str)
          19,18,17,16,15,14,13,12,11,10, \
          9,8,7,6,5,4,3,2,1,0
 
-/********************************************************/
+/*****************************************************************************/
 
 #if defined (__GNUC__)
 #define _NM_PRAGMA_WARNING_DO(warning)       G_STRINGIFY(GCC diagnostic ignored warning)
@@ -139,7 +139,7 @@ _nm_auto_free_gstring_impl (GString **str)
 #define NM_PRAGMA_WARNING_REENABLE
 #endif
 
-/********************************************************/
+/*****************************************************************************/
 
 /**
  * NM_G_ERROR_MSG:
@@ -159,7 +159,7 @@ NM_G_ERROR_MSG (GError *error)
 	return error ? (error->message ? : "(null)") : "(no-error)"; \
 }
 
-/********************************************************/
+/*****************************************************************************/
 
 /* macro to return strlen() of a compile time string. */
 #define NM_STRLEN(str)     ( sizeof ("" str) - 1 )
@@ -178,7 +178,7 @@ NM_G_ERROR_MSG (GError *error)
 		} \
 	} G_STMT_END
 
-/********************************************************/
+/*****************************************************************************/
 
 #define _NM_IN_SET_EVAL_1( op, _x, y)           (_x == (y))
 #define _NM_IN_SET_EVAL_2( op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_1  (op, _x, __VA_ARGS__)
@@ -214,7 +214,7 @@ NM_G_ERROR_MSG (GError *error)
  * side-effects. */
 #define NM_IN_SET_SE(x, ...)            _NM_IN_SET_EVAL_N(|, x, NM_NARG (__VA_ARGS__), __VA_ARGS__)
 
-/********************************************************/
+/*****************************************************************************/
 
 static inline gboolean
 _NM_IN_STRSET_streq (const char *x, const char *s)
@@ -372,6 +372,27 @@ nm_g_object_unref (gpointer obj)
 	if (obj)
 		g_object_unref (obj);
 }
+
+/* basically, replaces
+ *   g_clear_pointer (&location, g_free)
+ * with
+ *   nm_clear_g_free (&location)
+ *
+ * Another advantage is that by using a macro and typeof(), it is more
+ * typesafe and gives you for example a compiler warning when pp is a const
+ * pointer or points to a const-pointer.
+ */
+#define nm_clear_g_free(pp) \
+	({  \
+		typeof (*(pp)) *_pp = (pp); \
+		typeof (**_pp) *_p = *_pp; \
+		\
+		if (_p) { \
+			*_pp = NULL; \
+			g_free (_p); \
+		} \
+		!!_p; \
+	})
 
 static inline gboolean
 nm_clear_g_source (guint *id)

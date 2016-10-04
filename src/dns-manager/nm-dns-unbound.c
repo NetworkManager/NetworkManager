@@ -20,11 +20,22 @@
 #include "nm-default.h"
 
 #include "nm-dns-unbound.h"
+
 #include "NetworkManagerUtils.h"
+
+/*****************************************************************************/
+
+struct _NMDnsUnbound {
+	NMDnsPlugin parent;
+};
+
+struct _NMDnsUnboundClass {
+	NMDnsPluginClass parent;
+};
 
 G_DEFINE_TYPE (NMDnsUnbound, nm_dns_unbound, NM_TYPE_DNS_PLUGIN)
 
-/*******************************************/
+/*****************************************************************************/
 
 static gboolean
 update (NMDnsPlugin *plugin,
@@ -56,17 +67,17 @@ get_name (NMDnsPlugin *plugin)
 	return "unbound";
 }
 
-/****************************************************************/
+/*****************************************************************************/
+
+static void
+nm_dns_unbound_init (NMDnsUnbound *unbound)
+{
+}
 
 NMDnsPlugin *
 nm_dns_unbound_new (void)
 {
 	return g_object_new (NM_TYPE_DNS_UNBOUND, NULL);
-}
-
-static void
-nm_dns_unbound_init (NMDnsUnbound *unbound)
-{
 }
 
 static void

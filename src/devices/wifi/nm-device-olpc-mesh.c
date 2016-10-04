@@ -26,6 +26,8 @@
 
 #include "nm-default.h"
 
+#include "nm-device-olpc-mesh.h"
+
 #include <netinet/in.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -37,11 +39,10 @@
 
 #include "nm-device.h"
 #include "nm-device-wifi.h"
-#include "nm-device-olpc-mesh.h"
 #include "nm-device-private.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
-#include "nm-activation-request.h"
+#include "nm-act-request.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-olpc-mesh.h"
 #include "nm-manager.h"
@@ -56,25 +57,33 @@
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceOlpcMesh);
 
-G_DEFINE_TYPE (NMDeviceOlpcMesh, nm_device_olpc_mesh, NM_TYPE_DEVICE)
+/*****************************************************************************/
 
-#define NM_DEVICE_OLPC_MESH_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_OLPC_MESH, NMDeviceOlpcMeshPrivate))
-
-enum {
-	PROP_0,
+NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceOlpcMesh,
 	PROP_COMPANION,
 	PROP_ACTIVE_CHANNEL,
+);
 
-	LAST_PROP
-};
-
-struct _NMDeviceOlpcMeshPrivate {
+typedef struct {
 	NMDevice *companion;
 	NMManager *manager;
 	gboolean  stage1_waiting;
+} NMDeviceOlpcMeshPrivate;
+
+struct _NMDeviceOlpcMesh {
+	NMDevice parent;
+	NMDeviceOlpcMeshPrivate _priv;
 };
 
-/*******************************************************************/
+struct _NMDeviceOlpcMeshClass {
+	NMDeviceClass parent;
+};
+
+G_DEFINE_TYPE (NMDeviceOlpcMesh, nm_device_olpc_mesh, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_OLPC_MESH_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceOlpcMesh, NM_IS_DEVICE_OLPC_MESH)
+
+/*****************************************************************************/
 
 static gboolean
 check_connection_compatible (NMDevice *device, NMConnection *connection)
@@ -152,13 +161,13 @@ complete_connection (NMDevice *device,
 	return TRUE;
 }
 
-/****************************************************************************/
+/*****************************************************************************/
 
 static NMActStageReturn
 act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (device);
-	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (device);
+	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
 	NMActStageReturn ret;
 	gboolean scanning;
 
@@ -196,7 +205,7 @@ _mesh_set_channel (NMDeviceOlpcMesh *self, guint32 channel)
 
 	if (nm_platform_mesh_get_channel (NM_PLATFORM_GET, ifindex) != channel) {
 		if (nm_platform_mesh_set_channel (NM_PLATFORM_GET, ifindex, channel))
-			g_object_notify (G_OBJECT (self), NM_DEVICE_OLPC_MESH_ACTIVE_CHANNEL);
+			_notify (self, PROP_ACTIVE_CHANNEL);
 	}
 }
 
@@ -245,7 +254,7 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 	return TRUE;
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 static void
 companion_cleanup (NMDeviceOlpcMesh *self)
@@ -256,7 +265,7 @@ companion_cleanup (NMDeviceOlpcMesh *self)
 		g_signal_handlers_disconnect_by_data (priv->companion, self);
 		g_clear_object (&priv->companion);
 	}
-	g_object_notify (G_OBJECT (self), NM_DEVICE_OLPC_MESH_COMPANION);
+	_notify (self, PROP_COMPANION);
 }
 
 static void
@@ -354,7 +363,7 @@ check_companion (NMDeviceOlpcMesh *self, NMDevice *other)
 	g_signal_connect (G_OBJECT (other), NM_DEVICE_AUTOCONNECT_ALLOWED,
 	                  G_CALLBACK (companion_autoconnect_allowed_cb), self);
 
-	g_object_notify (G_OBJECT (self), NM_DEVICE_OLPC_MESH_COMPANION);
+	_notify (self, PROP_COMPANION);
 
 	return TRUE;
 }
@@ -415,18 +424,29 @@ state_changed (NMDevice *device,
 		find_companion (NM_DEVICE_OLPC_MESH (device));
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
-NMDevice *
-nm_device_olpc_mesh_new (const char *iface)
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
 {
-	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_OLPC_MESH,
-	                                  NM_DEVICE_IFACE, iface,
-	                                  NM_DEVICE_TYPE_DESC, "802.11 OLPC Mesh",
-	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_OLPC_MESH,
-	                                  NM_DEVICE_LINK_TYPE, NM_LINK_TYPE_OLPC_MESH,
-	                                  NULL);
+	NMDeviceOlpcMesh *device = NM_DEVICE_OLPC_MESH (object);
+	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (device);
+
+	switch (prop_id) {
+	case PROP_COMPANION:
+		nm_utils_g_value_set_object_path (value, priv->companion);
+		break;
+	case PROP_ACTIVE_CHANNEL:
+		g_value_set_uint (value, nm_platform_mesh_get_channel (NM_PLATFORM_GET, nm_device_get_ifindex (NM_DEVICE (device))));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
+
+/*****************************************************************************/
 
 static void
 nm_device_olpc_mesh_init (NMDeviceOlpcMesh * self)
@@ -450,35 +470,15 @@ constructed (GObject *object)
 	nm_device_set_dhcp_timeout (NM_DEVICE (self), 20);
 }
 
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
+NMDevice *
+nm_device_olpc_mesh_new (const char *iface)
 {
-	NMDeviceOlpcMesh *device = NM_DEVICE_OLPC_MESH (object);
-	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (device);
-
-	switch (prop_id) {
-	case PROP_COMPANION:
-		nm_utils_g_value_set_object_path (value, priv->companion);
-		break;
-	case PROP_ACTIVE_CHANNEL:
-		g_value_set_uint (value, nm_platform_mesh_get_channel (NM_PLATFORM_GET, nm_device_get_ifindex (NM_DEVICE (device))));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
-{
-	switch (prop_id) {
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_OLPC_MESH,
+	                                  NM_DEVICE_IFACE, iface,
+	                                  NM_DEVICE_TYPE_DESC, "802.11 OLPC Mesh",
+	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_OLPC_MESH,
+	                                  NM_DEVICE_LINK_TYPE, NM_LINK_TYPE_OLPC_MESH,
+	                                  NULL);
 }
 
 static void
@@ -504,39 +504,33 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
 
-	g_type_class_add_private (object_class, sizeof (NMDeviceOlpcMeshPrivate));
-
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_OLPC_MESH_SETTING_NAME, NM_LINK_TYPE_OLPC_MESH)
 
 	object_class->constructed = constructed;
 	object_class->get_property = get_property;
-	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->can_auto_connect = can_auto_connect;
 	parent_class->complete_connection = complete_connection;
-
 	parent_class->is_available = is_available;
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->act_stage2_config = act_stage2_config;
-
 	parent_class->state_changed = state_changed;
 
-	/* Properties */
-	g_object_class_install_property
-		(object_class, PROP_COMPANION,
-		 g_param_spec_string (NM_DEVICE_OLPC_MESH_COMPANION, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_COMPANION] =
+	     g_param_spec_string (NM_DEVICE_OLPC_MESH_COMPANION, "", "",
+	                          NULL,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_property
-		(object_class, PROP_ACTIVE_CHANNEL,
-		 g_param_spec_uint (NM_DEVICE_OLPC_MESH_ACTIVE_CHANNEL, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+	obj_properties[PROP_ACTIVE_CHANNEL] =
+	     g_param_spec_uint (NM_DEVICE_OLPC_MESH_ACTIVE_CHANNEL, "", "",
+	                        0, G_MAXUINT32, 0,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        NMDBUS_TYPE_DEVICE_OLPC_MESH_SKELETON,

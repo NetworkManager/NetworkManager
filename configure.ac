@@ -742,48 +742,71 @@ AM_CONDITIONAL(WITH_OFONO, test "${with_ofono}" = "yes")
 
 # DHCP client support
 AC_ARG_WITH([dhclient], AS_HELP_STRING([--with-dhclient=yes|no|path], [Enable dhclient 4.x support]))
-AC_ARG_WITH([dhcpcd], AS_HELP_STRING([--with-dhcpcd=yes|no|path], [Enable dhcpcd 4.x support]))
-# Default to "yes"
-AS_IF([test -z "$with_dhclient"], with_dhclient=yes)
-AS_IF([test -z "$with_dhcpcd"], with_dhcpcd=yes)
-# Search and check the executables
-if test "$with_dhclient" = "yes"; then
-	AC_PATH_PROGS(with_dhclient, dhclient, no, /sbin:/usr/sbin:/usr/local/sbin)
-	if test "$with_dhclient" != "no"; then
-		if ! $with_dhclient --version 2>&1 | grep -q "^isc-dhclient-4\."; then
-			AC_MSG_WARN([Cannot use dhclient, version 4.x is required])
-			with_dhclient=no
-		fi
-	fi
-fi
-if test "$with_dhcpcd" = "yes"; then
-	AC_PATH_PROGS(with_dhcpcd, dhcpcd, no, /sbin:/usr/sbin:/usr/local/sbin)
-	if test "$with_dhcpcd" != "no"; then
-		if ! $with_dhcpcd --version 2>&1 | grep -q "^dhcpcd [[456789]]\."; then
-			AC_MSG_WARN([Cannot use dhcpcd, version 4.x or higher is required])
-			with_dhcpcd=no
-		elif $with_dhcpcd --version 2>&1 | grep -q "^dhcpcd [[6789]]\."; then
-			AC_DEFINE(DHCPCD_SUPPORTS_IPV6, 1, [Define if dhcpcd supports IPv6 (6.x+)])
-		fi
-	fi
-fi
-# Fallback
-if test "$with_dhclient" = "no" -a "$with_dhcpcd" = "no"; then
-	AC_MSG_WARN([Could not find a suitable DHCP client, falling back to dhclient])
-	with_dhclient=/sbin/dhclient
-fi
-# Add substitutions
 if test "$with_dhclient" != "no"; then
-	AC_DEFINE(WITH_DHCLIENT, TRUE, [Define if you have dhclient])
+	with_dhclient_="$with_dhclient"
+	AC_PATH_PROGS(with_dhclient, dhclient, no, /sbin:/usr/sbin:/usr/local/sbin)
+	if test "$with_dhclient" == "no"; then
+		if test "$with_dhclient_" == yes; then
+			AC_MSG_WARN([dhclient not found, assume path /usr/sbin/dhclient])
+			with_dhclient=/usr/sbin/dhclient
+		fi
+	else
+		if ! $with_dhclient --version 2>&1 | grep -q "^isc-dhclient-4\."; then
+			AC_MSG_WARN([Seems version of dhclient $with_dhclient is too old, version 4.x or newer is required.])
+		fi
+	fi
+fi
+if test "$with_dhclient" != "no"; then
+	AC_DEFINE(WITH_DHCLIENT, 1, [Define if you have dhclient])
 	AC_SUBST(DHCLIENT_PATH, $with_dhclient)
 else
-	AC_DEFINE(WITH_DHCLIENT, FALSE, [Define if you have dhclient])
+	AC_DEFINE(WITH_DHCLIENT, 0, [Define if you have dhclient])
+fi
+
+AC_ARG_WITH([dhcpcd], AS_HELP_STRING([--with-dhcpcd=yes|no|path], [Enable dhcpcd 4.x support]))
+AC_ARG_WITH([dhcpcd-supports-ipv6], AS_HELP_STRING([--with-dhcpcd-supports-ipv6=yes|no|auto], [Whether using dhcpcd >= 6.x which has IPv6 support]), [with_dhcpcd_supports_ipv6=$withval], [with_dhcpcd_supports_ipv6=auto])
+if test "$with_dhcpcd" != "no"; then
+	with_dhcpcd_="$with_dhcpcd"
+	AC_PATH_PROGS(with_dhcpcd, dhcpcd, no, /sbin:/usr/sbin:/usr/local/sbin)
+	if test "$with_dhcpcd" == "no"; then
+		if test "$with_dhcpcd_" == yes; then
+			AC_MSG_WARN([dhcpcd not found, assume path /usr/sbin/dhcpcd])
+			with_dhcpcd=/usr/sbin/dhcpcd
+			if test "$with_dhcpcd_supports_ipv6" == auto; then
+				with_dhcpcd_supports_ipv6=yes
+			fi
+		fi
+	else
+		if ! $with_dhcpcd --version 2>&1 | grep -q "^dhcpcd [[456789]]\."; then
+			AC_MSG_WARN([Seems version of dhcpcd $with_dhcpcd is too old, version 4.x or newer is required])
+		fi
+	fi
 fi
 if test "$with_dhcpcd" != "no"; then
-	AC_DEFINE(WITH_DHCPCD, TRUE, [Define if you have dhcpcd])
+	if $with_dhcpcd --version 2>&1 | grep -q "^dhcpcd [[6789]]\."; then
+		if test "$with_dhcpcd_supports_ipv6" == no; then
+			AC_MSG_WARN([Seems version of dhcpcd $with_dhcpcd supports IPv6, but compiling --with-dhcpcd-supports-ipv6=no])
+		else
+			with_dhcpcd_supports_ipv6=yes
+		fi
+	else
+		if test "$with_dhcpcd_supports_ipv6" == yes; then
+			AC_MSG_WARN([Seems version of dhcpcd $with_dhcpcd does not support IPv6, but compiling --with-dhcpcd-supports-ipv6=yes])
+		else
+			with_dhcpcd_supports_ipv6=no
+		fi
+	fi
+	if test "$with_dhcpcd_supports_ipv6" != no; then
+		AC_DEFINE(DHCPCD_SUPPORTS_IPV6, 1, [Define if dhcpcd supports IPv6 (6.x+)])
+	fi
+else
+	with_dhcpcd_supports_ipv6=no
+fi
+if test "$with_dhcpcd" != "no"; then
+	AC_DEFINE(WITH_DHCPCD, 1, [Define if you have dhcpcd])
 	AC_SUBST(DHCPCD_PATH, $with_dhcpcd)
 else
-	AC_DEFINE(WITH_DHCPCD, FALSE, [Define if you have dhcpcd])
+	AC_DEFINE(WITH_DHCPCD, 0, [Define if you have dhcpcd])
 fi
 
 # resolvconf and netconfig support
@@ -792,6 +815,7 @@ AC_ARG_WITH(netconfig, AS_HELP_STRING([--with-netconfig=yes|no], [Enable SUSE ne
 AC_ARG_WITH(config-dns-rc-manager-default, AS_HELP_STRING([--with-config-dns-rc-manager-default=symlink|file|netconfig|resolvconf], [Configure default value for main.rc-manager setting]), [config_dns_rc_manager_default=$withval])
 if test "$config_dns_rc_manager_default" != symlink -a \
         "$config_dns_rc_manager_default" != file -a \
+        "$config_dns_rc_manager_default" != "" -a \
         "$config_dns_rc_manager_default" != netconfig -a \
         "$config_dns_rc_manager_default" != resolvconf; then
 	AC_MSG_WARN([Unknown --with-config-dns-rc-manager-default=$config_dns_rc_manager_default setting.])
@@ -1265,6 +1289,7 @@ echo
 echo "DHCP clients:"
 echo "  dhclient: $with_dhclient"
 echo "  dhcpcd: $with_dhcpcd"
+echo "  dhcpcd-supports-ipv6: $with_dhcpcd_supports_ipv6"
 echo
 
 echo "Miscellaneous:"

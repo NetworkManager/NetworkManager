@@ -21,16 +21,23 @@
 
 #include "nm-default.h"
 
+#include "nm-default-route-manager.h"
+
 #include <string.h>
 
-#include "nm-default-route-manager.h"
 #include "nm-device.h"
 #include "nm-vpn-connection.h"
 #include "nm-platform.h"
 #include "nm-manager.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
-#include "nm-activation-request.h"
+#include "nm-act-request.h"
+
+/*****************************************************************************/
+
+NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_PLATFORM,
+);
 
 typedef struct {
 	GPtrArray *entries_ip4;
@@ -54,15 +61,22 @@ typedef struct {
 	NMPlatform *platform;
 } NMDefaultRouteManagerPrivate;
 
-#define NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEFAULT_ROUTE_MANAGER, NMDefaultRouteManagerPrivate))
+struct _NMDefaultRouteManager {
+	GObject parent;
+	NMDefaultRouteManagerPrivate _priv;
+};
+
+struct _NMDefaultRouteManagerClass {
+	GObjectClass parent;
+};
 
 G_DEFINE_TYPE (NMDefaultRouteManager, nm_default_route_manager, G_TYPE_OBJECT)
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_PLATFORM,
-);
+#define NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDefaultRouteManager, NM_IS_DEFAULT_ROUTE_MANAGER)
 
 NM_DEFINE_SINGLETON_GETTER (NMDefaultRouteManager, nm_default_route_manager_get, NM_TYPE_DEFAULT_ROUTE_MANAGER);
+
+/*****************************************************************************/
 
 #define _NMLOG_PREFIX_NAME   "default-route"
 #undef  _NMLOG_ENABLED
@@ -127,11 +141,11 @@ NM_DEFINE_SINGLETON_GETTER (NMDefaultRouteManager, nm_default_route_manager_get,
         } \
     } G_STMT_END
 
-/***********************************************************************************/
+/*****************************************************************************/
 
 static void _resync_idle_cancel (NMDefaultRouteManager *self);
 
-/***********************************************************************************/
+/*****************************************************************************/
 
 typedef struct {
 	union {
@@ -695,7 +709,7 @@ _entry_at_idx_remove (const VTableIP *vtable, NMDefaultRouteManager *self, guint
 	_entry_free (entry);
 }
 
-/***********************************************************************************/
+/*****************************************************************************/
 
 static void
 _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, gpointer source)
@@ -888,7 +902,7 @@ nm_default_route_manager_ip6_update_default_route (NMDefaultRouteManager *self, 
 	_ipx_update_default_route (&vtable_ip6, self, source);
 }
 
-/***********************************************************************************/
+/*****************************************************************************/
 
 static gboolean
 _ipx_connection_has_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, NMConnection *connection, gboolean *out_is_never_default)
@@ -947,7 +961,7 @@ nm_default_route_manager_ip6_connection_has_default_route (NMDefaultRouteManager
 	return _ipx_connection_has_default_route (&vtable_ip6, self, connection, out_is_never_default);
 }
 
-/***********************************************************************************/
+/*****************************************************************************/
 
 static NMDevice *
 _ipx_get_best_device (const VTableIP *vtable, NMDefaultRouteManager *self, const GSList *devices)
@@ -1085,7 +1099,7 @@ nm_default_route_manager_ip6_get_best_device (NMDefaultRouteManager *self, const
 		return _ipx_get_best_activating_device (&vtable_ip6, self, devices, preferred_device);
 }
 
-/***********************************************************************************/
+/*****************************************************************************/
 
 static gpointer
 _ipx_get_best_config (const VTableIP *vtable,
@@ -1218,7 +1232,7 @@ nm_default_route_manager_ip6_get_best_config (NMDefaultRouteManager *self,
 	                             out_vpn);
 }
 
-/***********************************************************************************/
+/*****************************************************************************/
 
 static GPtrArray *
 _v4_get_entries (NMDefaultRouteManagerPrivate *priv)
@@ -1242,7 +1256,7 @@ static const VTableIP vtable_ip6 = {
 	.get_entries                    = _v6_get_entries,
 };
 
-/***********************************************************************************/
+/*****************************************************************************/
 
 static gboolean
 _resync_idle_now (NMDefaultRouteManager *self)
@@ -1374,7 +1388,7 @@ _platform_changed_cb (NMPlatform *platform,
 	}
 }
 
-/***********************************************************************************/
+/*****************************************************************************/
 
 static void
 set_property (GObject *object, guint prop_id,
@@ -1396,6 +1410,8 @@ set_property (GObject *object, guint prop_id,
 		break;
 	}
 }
+
+/*****************************************************************************/
 
 static void
 nm_default_route_manager_init (NMDefaultRouteManager *self)
@@ -1464,9 +1480,6 @@ nm_default_route_manager_class_init (NMDefaultRouteManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-	g_type_class_add_private (klass, sizeof (NMDefaultRouteManagerPrivate));
-
-	/* virtual methods */
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->set_property = set_property;
@@ -1477,7 +1490,6 @@ nm_default_route_manager_class_init (NMDefaultRouteManagerClass *klass)
 	                         G_PARAM_WRITABLE |
 	                         G_PARAM_CONSTRUCT_ONLY |
 	                         G_PARAM_STATIC_STRINGS);
+
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
-
 }
-

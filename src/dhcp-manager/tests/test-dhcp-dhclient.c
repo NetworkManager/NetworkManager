@@ -86,7 +86,7 @@ test_config (const char *orig,
 		g_assert (new_client_id == NULL);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static const char *orig_missing_expected = \
 	"# Created by NetworkManager\n"
@@ -108,7 +108,7 @@ test_orig_missing (void)
 	test_config (NULL, orig_missing_expected, FALSE, NULL, NULL, NULL, NULL, "eth0", NULL);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static const char *override_client_id_orig = \
 	"send dhcp-client-identifier 00:30:04:20:7A:08;\n";
@@ -141,7 +141,7 @@ test_override_client_id (void)
 	             NULL);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static const char *quote_client_id_expected = \
 	"# Created by NetworkManager\n"
@@ -170,7 +170,7 @@ test_quote_client_id (void)
 	             NULL);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static const char *ascii_client_id_expected = \
 	"# Created by NetworkManager\n"
@@ -199,7 +199,7 @@ test_ascii_client_id (void)
 	             NULL);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static const char *hex_single_client_id_expected = \
 	"# Created by NetworkManager\n"
@@ -228,7 +228,7 @@ test_hex_single_client_id (void)
 	             NULL);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static const char *existing_hex_client_id_orig = \
 	"send dhcp-client-identifier 00:30:04:20:7A:08;\n";
@@ -265,7 +265,7 @@ test_existing_hex_client_id (void)
 	             NULL);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 #define EACID "qb:cd:ef:12:34:56"
 
@@ -304,7 +304,7 @@ test_existing_ascii_client_id (void)
 	             "eth0",
 	             NULL);
 }
-/*******************************************/
+/*****************************************************************************/
 
 static const char *fqdn_expected = \
 	"# Created by NetworkManager\n"
@@ -374,7 +374,7 @@ test_fqdn_options_override (void)
 	             NULL);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static const char *override_hostname_orig = \
 	"send host-name \"foobar\";\n";
@@ -407,7 +407,7 @@ test_override_hostname (void)
 	             NULL);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static const char *override_hostname6_orig = \
 	"send fqdn.fqdn \"foobar\";\n";
@@ -436,7 +436,7 @@ test_override_hostname6 (void)
 	             NULL);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static const char *nonfqdn_hostname6_expected = \
 	"# Created by NetworkManager\n"
@@ -458,7 +458,7 @@ test_nonfqdn_hostname6 (void)
 	             NULL);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static const char *existing_alsoreq_orig = \
 	"also request something;\n"
@@ -494,7 +494,7 @@ test_existing_alsoreq (void)
 	             NULL);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static const char *existing_multiline_alsoreq_orig = \
 	"also request something another-thing yet-another-thing\n"
@@ -533,7 +533,7 @@ test_existing_multiline_alsoreq (void)
 	             NULL);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_one_duid (const char *escaped, const guint8 *unescaped, guint len)
@@ -703,7 +703,7 @@ test_write_existing_commented_duid (void)
 	g_free (contents);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 static void
 test_read_lease_ip4_config_basic (void)
@@ -827,7 +827,7 @@ test_read_lease_ip4_config_expect_failure (gconstpointer user_data)
 	g_free (contents);
 }
 
-/*******************************************/
+/*****************************************************************************/
 
 NMTST_DEFINE ();
 

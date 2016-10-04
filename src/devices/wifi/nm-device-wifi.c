@@ -33,7 +33,7 @@
 #include "nm-device-private.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
-#include "nm-activation-request.h"
+#include "nm-act-request.h"
 #include "nm-supplicant-manager.h"
 #include "nm-supplicant-interface.h"
 #include "nm-supplicant-config.h"
@@ -2349,7 +2349,7 @@ error:
 	return NULL;
 }
 
-/****************************************************************************/
+/*****************************************************************************/
 
 static NMActStageReturn
 act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
@@ -3000,7 +3000,7 @@ set_enabled (NMDevice *device, gboolean enabled)
 	}
 }
 
-/********************************************************************/
+/*****************************************************************************/
 
 NMDevice *
 nm_device_wifi_new (const char *iface, NMDeviceWifiCapabilities capabilities)

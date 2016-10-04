@@ -81,7 +81,7 @@ _nm_ssid_demarshal (GValue *value, GByteArray **dest)
 	return TRUE;
 }
 
-/*****************************/
+/*****************************************************************************/
 
 static gpointer
 _nm_uint_array_copy (GArray *src)
@@ -133,7 +133,7 @@ _nm_uint_array_demarshal (GValue *value, GArray **dest)
 	return TRUE;
 }
 
-/*****************************/
+/*****************************************************************************/
 
 static gpointer
 _nm_string_array_copy (GPtrArray *src)
@@ -194,7 +194,7 @@ _nm_string_array_demarshal (GValue *value, GPtrArray **dest)
 	return TRUE;
 }
 
-/*****************************/
+/*****************************************************************************/
 
 static gpointer
 _nm_object_array_copy (GPtrArray *src)
@@ -276,7 +276,7 @@ _nm_object_array_demarshal (GValue *value,
 	return TRUE;
 }
 
-/*****************************/
+/*****************************************************************************/
 
 static gpointer
 _nm_ip6_address_object_array_copy (GPtrArray *src)
@@ -312,7 +312,7 @@ nm_ip6_address_object_array_get_type (void)
 	return our_type;
 }
 
-/*****************************/
+/*****************************************************************************/
 
 static gpointer
 _nm_ip6_address_array_copy (GPtrArray *src)
@@ -384,7 +384,7 @@ _nm_ip6_address_array_demarshal (GValue *value, GSList **dest)
 	return TRUE;
 }
 
-/*****************************/
+/*****************************************************************************/
 
 static gpointer
 _nm_ip6_route_object_array_copy (GPtrArray *src)

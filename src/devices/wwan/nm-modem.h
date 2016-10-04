@@ -76,7 +76,7 @@ typedef enum {
  * combination of flags is possible.  For example, (%NM_MODEM_IP_TYPE_IPV4 |
  * %NM_MODEM_IP_TYPE_IPV6) indicates that the modem supports IPv4 and IPv6
  * but not simultaneously on the same bearer.
- */ 
+ */
 typedef enum {
 	NM_MODEM_IP_TYPE_UNKNOWN = 0x0,
 	NM_MODEM_IP_TYPE_IPV4 = 0x1,
@@ -100,9 +100,11 @@ typedef enum {  /*< underscore_name=nm_modem_state >*/
 	NM_MODEM_STATE_CONNECTED     = 12,
 } NMModemState;
 
+struct _NMModemPrivate;
 
 typedef struct {
 	GObject parent;
+	struct _NMModemPrivate *_priv;
 } NMModem;
 
 typedef struct {
@@ -153,26 +155,6 @@ typedef struct {
 	void     (*deactivate_cleanup)             (NMModem *self, NMDevice *device);
 
 	gboolean (*owns_port)                      (NMModem *self, const char *iface);
-
-	/* Signals */
-	void (*ppp_stats)  (NMModem *self, guint32 in_bytes, guint32 out_bytes);
-	void (*ppp_failed) (NMModem *self, NMDeviceStateReason reason);
-
-	void (*prepare_result)    (NMModem *self, gboolean success, NMDeviceStateReason reason);
-	void (*ip4_config_result) (NMModem *self, NMIP4Config *config, GError *error);
-	void (*ip6_config_result) (NMModem *self,
-	                           NMIP6Config *config,
-	                           gboolean do_slaac,
-	                           GError *error);
-
-	void (*auth_requested)    (NMModem *self);
-	void (*auth_result)       (NMModem *self, GError *error);
-
-	void (*state_changed)     (NMModem *self,
-	                           NMModemState new_state,
-	                           NMModemState old_state);
-
-	void (*removed)           (NMModem *self);
 } NMModemClass;
 
 GType nm_modem_get_type (void);

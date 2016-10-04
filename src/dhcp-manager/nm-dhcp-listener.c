@@ -52,7 +52,7 @@ struct _NMDhcpListener {
 };
 
 struct _NMDhcpListenerClass {
-	GObjectClass parent_class;
+	GObjectClass parent;
 };
 
 enum {
@@ -269,7 +269,7 @@ dis_connection_cb (NMBusManager *mgr,
 	}
 }
 
-/***************************************************/
+/*****************************************************************************/
 
 static void
 nm_dhcp_listener_init (NMDhcpListener *self)

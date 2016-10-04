@@ -213,7 +213,7 @@ nm_device_factory_get_connection_iface (NMDeviceFactory *factory,
 	return ifname;
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 static void
 nm_device_factory_default_init (NMDeviceFactoryInterface *factory_iface)
@@ -234,7 +234,7 @@ nm_device_factory_default_init (NMDeviceFactoryInterface *factory_iface)
 	                                         G_TYPE_BOOLEAN, 1, G_TYPE_OBJECT);
 }
 
-/*******************************************************************/
+/*****************************************************************************/
 
 static GSList *internal_types = NULL;
 static GHashTable *factories_by_link = NULL;

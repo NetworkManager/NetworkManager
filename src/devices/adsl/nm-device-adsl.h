@@ -22,7 +22,6 @@
 #ifndef __NETWORKMANAGER_DEVICE_ADSL_H__
 #define __NETWORKMANAGER_DEVICE_ADSL_H__
 
-// Parent class
 #include "nm-device.h"
 
 #define NM_TYPE_DEVICE_ADSL            (nm_device_adsl_get_type ())
@@ -34,13 +33,8 @@
 
 #define NM_DEVICE_ADSL_ATM_INDEX "atm-index"
 
-typedef struct {
-	NMDevice parent;
-} NMDeviceAdsl;
-
-typedef struct {
-	NMDeviceClass parent;
-} NMDeviceAdslClass;
+typedef struct _NMDeviceAdsl NMDeviceAdsl;
+typedef struct _NMDeviceAdslClass NMDeviceAdslClass;
 
 GType nm_device_adsl_get_type (void);
 

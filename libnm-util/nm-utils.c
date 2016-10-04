@@ -1730,7 +1730,7 @@ nm_utils_file_is_pkcs12 (const char *filename)
 	return crypto_is_pkcs12_file (filename, NULL);
 }
 
-/**********************************************************************************************/
+/*****************************************************************************/
 
 /**
  * nm_utils_file_search_in_paths:
@@ -1804,7 +1804,7 @@ NOT_FOUND:
 	return NULL;
 }
 
-/**********************************************************************************************/
+/*****************************************************************************/
 
 /* Band, channel/frequency stuff for wireless */
 struct cf_pair {
@@ -2577,7 +2577,7 @@ nm_utils_check_virtual_device_compatibility (GType virtual_type, GType other_typ
 	}
 }
 
-/***********************************************************/
+/*****************************************************************************/
 
 /* Unused prototypes to make the compiler happy */
 gconstpointer nm_utils_get_private (void);

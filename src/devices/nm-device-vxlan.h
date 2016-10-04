@@ -47,8 +47,8 @@
 #define NM_DEVICE_VXLAN_L2MISS       "l2miss"
 #define NM_DEVICE_VXLAN_L3MISS       "l3miss"
 
-typedef NMDevice NMDeviceVxlan;
-typedef NMDeviceClass NMDeviceVxlanClass;
+typedef struct _NMDeviceVxlan NMDeviceVxlan;
+typedef struct _NMDeviceVxlanClass NMDeviceVxlanClass;
 
 GType nm_device_vxlan_get_type (void);
 
