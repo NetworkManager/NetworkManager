@@ -133,6 +133,23 @@ write_test_connection_and_reread (NMConnection *connection, gboolean normalize_c
 	assert_reread_and_unlink (connection, normalize_connection, testfile);
 }
 
+static GKeyFile *
+keyfile_load_from_file (const char *testfile)
+{
+	GKeyFile *keyfile;
+	GError *error = NULL;
+	gboolean success;
+
+	g_assert (testfile && *testfile);
+
+	keyfile = g_key_file_new ();
+	success = g_key_file_load_from_file (keyfile, testfile, G_KEY_FILE_NONE, &error);
+	g_assert_no_error (error);
+	g_assert(success);
+
+	return keyfile;
+}
+
 /*****************************************************************************/
 
 static void
@@ -810,8 +827,7 @@ test_write_string_ssid (void)
 	write_test_connection (connection, &testfile);
 
 	/* Ensure the SSID was written out as a string */
-	keyfile = g_key_file_new ();
-	g_assert (g_key_file_load_from_file (keyfile, testfile, 0, NULL));
+	keyfile = keyfile_load_from_file (testfile);
 	tmp = g_key_file_get_string (keyfile, "wifi", NM_SETTING_WIRELESS_SSID, NULL);
 	g_assert (tmp);
 	g_assert_cmpmem (tmp, strlen (tmp), tmpssid, sizeof (tmpssid));
@@ -861,7 +877,6 @@ test_write_intlist_ssid (void)
 	gs_free char *testfile = NULL;
 	GBytes *ssid;
 	unsigned char tmpssid[] = { 65, 49, 50, 51, 0, 50, 50 };
-	gboolean success;
 	gs_free_error GError *error = NULL;
 	gs_unref_keyfile GKeyFile *keyfile = NULL;
 	gint *intlist;
@@ -900,10 +915,7 @@ test_write_intlist_ssid (void)
 	write_test_connection (connection, &testfile);
 
 	/* Ensure the SSID was written out as an int list */
-	keyfile = g_key_file_new ();
-	success = g_key_file_load_from_file (keyfile, testfile, 0, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	keyfile = keyfile_load_from_file (testfile);
 
 	intlist = g_key_file_get_integer_list (keyfile, "wifi", NM_SETTING_WIRELESS_SSID, &len, &error);
 	g_assert_no_error (error);
@@ -990,7 +1002,6 @@ test_write_intlike_ssid (void)
 	gs_free char *testfile = NULL;
 	GBytes *ssid;
 	unsigned char tmpssid[] = { 49, 48, 49 };
-	gboolean success;
 	gs_free_error GError *error = NULL;
 	gs_unref_keyfile GKeyFile *keyfile = NULL;
 	char *tmp;
@@ -1027,10 +1038,7 @@ test_write_intlike_ssid (void)
 	write_test_connection (connection, &testfile);
 
 	/* Ensure the SSID was written out as a plain "101" */
-	keyfile = g_key_file_new ();
-	success = g_key_file_load_from_file (keyfile, testfile, 0, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	keyfile = keyfile_load_from_file (testfile);
 
 	tmp = g_key_file_get_string (keyfile, "wifi", NM_SETTING_WIRELESS_SSID, &error);
 	g_assert_no_error (error);
@@ -1052,7 +1060,6 @@ test_write_intlike_ssid_2 (void)
 	gs_free char *testfile = NULL;
 	GBytes *ssid;
 	unsigned char tmpssid[] = { 49, 49, 59, 49, 50, 59, 49, 51, 59};
-	gboolean success;
 	gs_free_error GError *error = NULL;
 	gs_unref_keyfile GKeyFile *keyfile = NULL;
 	char *tmp;
@@ -1090,10 +1097,7 @@ test_write_intlike_ssid_2 (void)
 	write_test_connection (connection, &testfile);
 
 	/* Ensure the SSID was written out as a plain "11;12;13;" */
-	keyfile = g_key_file_new ();
-	success = g_key_file_load_from_file (keyfile, testfile, 0, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	keyfile = keyfile_load_from_file (testfile);
 
 	tmp = g_key_file_get_string (keyfile, "wifi", NM_SETTING_WIRELESS_SSID, &error);
 	g_assert_no_error (error);
@@ -1644,14 +1648,7 @@ test_write_wired_8021x_tls_connection_path (void)
 	}
 
 	/* Ensure the cert and key values are properly written out */
-	keyfile = g_key_file_new ();
-	g_assert (keyfile);
-	success = g_key_file_load_from_file (keyfile, testfile, G_KEY_FILE_NONE, &error);
-	if (!success) {
-		g_assert (error);
-		g_warning ("Failed to re-read test file %s: %s", testfile, error->message);
-		g_assert (success);
-	}
+	keyfile = keyfile_load_from_file (testfile);
 
 	/* Depending on whether this test is being run from 'make check' or
 	 * 'make distcheck' we might be using relative paths (check) or
@@ -2090,7 +2087,6 @@ test_write_new_wired_group_name (void)
 	gs_unref_keyfile GKeyFile *kf = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	gboolean success;
 	gs_free char *testfile = NULL;
 	gs_free_error GError *error = NULL;
 	char *s;
@@ -2121,10 +2117,7 @@ test_write_new_wired_group_name (void)
 	assert_reread (connection, TRUE, testfile);
 
 	/* Look at the keyfile itself to ensure we wrote out the new group names and type */
-	kf = g_key_file_new ();
-	success = g_key_file_load_from_file (kf, testfile, G_KEY_FILE_NONE, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	kf = keyfile_load_from_file (testfile);
 
 	s = g_key_file_get_string (kf, NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_TYPE, &error);
 	g_assert_no_error (error);
@@ -2189,7 +2182,6 @@ test_write_new_wireless_group_names (void)
 	GBytes *ssid;
 	unsigned char tmpssid[] = { 0x31, 0x33, 0x33, 0x37 };
 	const char *expected_psk = "asdfasdfasdfa12315";
-	gboolean success;
 	gs_free char *testfile = NULL;
 	gs_free_error GError *error = NULL;
 	char *s;
@@ -2231,10 +2223,7 @@ test_write_new_wireless_group_names (void)
 	assert_reread (connection, TRUE, testfile);
 
 	/* Look at the keyfile itself to ensure we wrote out the new group names and type */
-	kf = g_key_file_new ();
-	success = g_key_file_load_from_file (kf, testfile, G_KEY_FILE_NONE, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	kf = keyfile_load_from_file (testfile);
 
 	s = g_key_file_get_string (kf, NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_TYPE, &error);
 	g_assert_no_error (error);
