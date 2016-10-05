@@ -314,12 +314,12 @@ add_one_ip_route (NMSettingIPConfig *s_ip,
 static void
 test_write_wired_connection (void)
 {
+	NMTST_UUID_INIT (uuid);
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
-	char *uuid;
 	const char *mac = "99:88:77:66:55:44";
 	const char *dns1 = "4.2.2.1";
 	const char *dns2 = "4.2.2.2";
@@ -355,7 +355,6 @@ test_write_wired_connection (void)
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
-	uuid = nm_utils_uuid_generate ();
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, "Work Wired",
 	              NM_SETTING_CONNECTION_UUID, uuid,
@@ -363,7 +362,6 @@ test_write_wired_connection (void)
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
 	              NM_SETTING_CONNECTION_TIMESTAMP, timestamp,
 	              NULL);
-	g_free (uuid);
 
 	/* Wired setting */
 
@@ -473,12 +471,12 @@ test_read_ip6_wired_connection (void)
 static void
 test_write_ip6_wired_connection (void)
 {
+	NMTST_UUID_INIT (uuid);
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
-	char *uuid;
 	const char *dns = "1::cafe";
 	const char *address = "abcd::beef";
 	const char *gw = "dcba::beef";
@@ -490,14 +488,12 @@ test_write_ip6_wired_connection (void)
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
-	uuid = nm_utils_uuid_generate ();
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, "Work Wired IP6",
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, FALSE,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
 	              NULL);
-	g_free (uuid);
 
 	/* Wired setting */
 
@@ -677,12 +673,12 @@ test_read_valid_wireless_connection (void)
 static void
 test_write_wireless_connection (void)
 {
+	NMTST_UUID_INIT (uuid);
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
-	char *uuid;
 	const char *bssid = "aa:b9:a1:74:55:44";
 	GBytes *ssid;
 	unsigned char tmpssid[] = { 0x31, 0x33, 0x33, 0x37 };
@@ -695,7 +691,6 @@ test_write_wireless_connection (void)
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
-	uuid = nm_utils_uuid_generate ();
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, "Work Wireless",
 	              NM_SETTING_CONNECTION_UUID, uuid,
@@ -703,7 +698,6 @@ test_write_wireless_connection (void)
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
 	              NM_SETTING_CONNECTION_TIMESTAMP, timestamp,
 	              NULL);
-	g_free (uuid);
 
 	/* Wireless setting */
 
@@ -771,11 +765,12 @@ test_read_string_ssid (void)
 static void
 test_write_string_ssid (void)
 {
+	NMTST_UUID_INIT (uuid);
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingIPConfig *s_ip4;
-	char *uuid, *tmp;
+	char *tmp;
 	gs_free char *testfile = NULL;
 	GBytes *ssid;
 	unsigned char tmpssid[] = { 65, 49, 50, 51, 32, 46, 92, 46, 36, 37, 126, 93 };
@@ -788,13 +783,11 @@ test_write_string_ssid (void)
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
-	uuid = nm_utils_uuid_generate ();
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, "String SSID Test",
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
 	              NULL);
-	g_free (uuid);
 
 	/* Wireless setting */
 
@@ -860,11 +853,11 @@ test_read_intlist_ssid (void)
 static void
 test_write_intlist_ssid (void)
 {
+	NMTST_UUID_INIT (uuid);
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingIPConfig *s_ip4;
-	char *uuid;
 	gs_free char *testfile = NULL;
 	GBytes *ssid;
 	unsigned char tmpssid[] = { 65, 49, 50, 51, 0, 50, 50 };
@@ -883,13 +876,11 @@ test_write_intlist_ssid (void)
 	g_assert (s_con);
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
-	uuid = nm_utils_uuid_generate ();
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, "Intlist SSID Test",
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
 	              NULL);
-	g_free (uuid);
 
 	/* Wireless setting */
 	s_wifi = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
@@ -991,11 +982,11 @@ test_read_intlike_ssid_2 (void)
 static void
 test_write_intlike_ssid (void)
 {
+	NMTST_UUID_INIT (uuid);
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingIPConfig *s_ip4;
-	char *uuid;
 	gs_free char *testfile = NULL;
 	GBytes *ssid;
 	unsigned char tmpssid[] = { 49, 48, 49 };
@@ -1012,13 +1003,11 @@ test_write_intlike_ssid (void)
 	g_assert (s_con);
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
-	uuid = nm_utils_uuid_generate ();
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, "Intlike SSID Test",
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
 	              NULL);
-	g_free (uuid);
 
 	/* Wireless setting */
 	s_wifi = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
@@ -1055,11 +1044,11 @@ test_write_intlike_ssid (void)
 static void
 test_write_intlike_ssid_2 (void)
 {
+	NMTST_UUID_INIT (uuid);
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingIPConfig *s_ip4;
-	char *uuid;
 	gs_free char *testfile = NULL;
 	GBytes *ssid;
 	unsigned char tmpssid[] = { 49, 49, 59, 49, 50, 59, 49, 51, 59};
@@ -1077,13 +1066,11 @@ test_write_intlike_ssid_2 (void)
 	g_assert (s_con);
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
-	uuid = nm_utils_uuid_generate ();
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, "Intlike SSID Test 2",
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
 	              NULL);
-	g_free (uuid);
 
 	/* Wireless setting */
 	s_wifi = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
@@ -1166,12 +1153,12 @@ test_read_bt_dun_connection (void)
 static void
 test_write_bt_dun_connection (void)
 {
+	NMTST_UUID_INIT (uuid);
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSettingBluetooth *s_bt;
 	NMSettingIPConfig *s_ip4;
 	NMSettingGsm *s_gsm;
-	char *uuid;
 	const char *bdaddr = "aa:b9:a1:74:55:44";
 	guint64 timestamp = 0x12344433L;
 
@@ -1182,7 +1169,6 @@ test_write_bt_dun_connection (void)
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
-	uuid = nm_utils_uuid_generate ();
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, "T-Mobile Funkadelic",
 	              NM_SETTING_CONNECTION_UUID, uuid,
@@ -1190,7 +1176,6 @@ test_write_bt_dun_connection (void)
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_BLUETOOTH_SETTING_NAME,
 	              NM_SETTING_CONNECTION_TIMESTAMP, timestamp,
 	              NULL);
-	g_free (uuid);
 
 	/* Bluetooth setting */
 
@@ -1274,11 +1259,11 @@ test_read_gsm_connection (void)
 static void
 test_write_gsm_connection (void)
 {
+	NMTST_UUID_INIT (uuid);
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
 	NMSettingGsm *s_gsm;
-	char *uuid;
 	guint64 timestamp = 0x12344433L;
 
 	connection = nm_simple_connection_new ();
@@ -1288,7 +1273,6 @@ test_write_gsm_connection (void)
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
-	uuid = nm_utils_uuid_generate ();
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, "T-Mobile Funkadelic 2",
 	              NM_SETTING_CONNECTION_UUID, uuid,
@@ -1296,7 +1280,6 @@ test_write_gsm_connection (void)
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_GSM_SETTING_NAME,
 	              NM_SETTING_CONNECTION_TIMESTAMP, timestamp,
 	              NULL);
-	g_free (uuid);
 
 	/* IP4 setting */
 
@@ -1553,12 +1536,12 @@ test_read_wired_8021x_tls_new_connection (void)
 static NMConnection *
 create_wired_tls_connection (NMSetting8021xCKScheme scheme)
 {
+	NMTST_UUID_INIT (uuid);
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
 	NMSetting *s_wired;
 	NMSetting8021x *s_8021x;
-	char *uuid;
 	gboolean success;
 	gs_free_error GError *error = NULL;
 
@@ -1570,13 +1553,11 @@ create_wired_tls_connection (NMSetting8021xCKScheme scheme)
 	g_assert (s_con);
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
-	uuid = nm_utils_uuid_generate ();
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, "Wired Really Secure TLS",
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
 	              NULL);
-	g_free (uuid);
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
@@ -1836,12 +1817,12 @@ test_read_infiniband_connection (void)
 static void
 test_write_infiniband_connection (void)
 {
+	NMTST_UUID_INIT (uuid);
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSettingInfiniband *s_ib;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
-	char *uuid;
 	const char *mac = "99:88:77:66:55:44:ab:bc:cd:de:ef:f0:0a:1b:2c:3d:4e:5f:6f:ba";
 
 	connection = nm_simple_connection_new ();
@@ -1852,14 +1833,12 @@ test_write_infiniband_connection (void)
 	g_assert (s_con);
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
-	uuid = nm_utils_uuid_generate ();
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, "Work InfiniBand",
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, FALSE,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_INFINIBAND_SETTING_NAME,
 	              NULL);
-	g_free (uuid);
 
 	/* InfiniBand setting */
 	s_ib = (NMSettingInfiniband *) nm_setting_infiniband_new ();
@@ -1933,12 +1912,12 @@ test_read_bridge_main (void)
 static void
 test_write_bridge_main (void)
 {
+	NMTST_UUID_INIT (uuid);
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSettingBridge *s_bridge;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
-	char *uuid;
 
 	connection = nm_simple_connection_new ();
 	g_assert (connection);
@@ -1948,7 +1927,6 @@ test_write_bridge_main (void)
 	g_assert (s_con);
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
-	uuid = nm_utils_uuid_generate ();
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, "Test Write Bridge Main",
 	              NM_SETTING_CONNECTION_UUID, uuid,
@@ -1956,7 +1934,6 @@ test_write_bridge_main (void)
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_BRIDGE_SETTING_NAME,
 	              NM_SETTING_CONNECTION_INTERFACE_NAME, "br0",
 	              NULL);
-	g_free (uuid);
 
 	/* Bridge setting */
 	s_bridge = (NMSettingBridge *) nm_setting_bridge_new ();
@@ -2031,11 +2008,11 @@ test_read_bridge_component (void)
 static void
 test_write_bridge_component (void)
 {
+	NMTST_UUID_INIT (uuid);
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSettingBridgePort *s_port;
 	NMSettingWired *s_wired;
-	char *uuid;
 	const char *mac = "99:88:77:66:55:44";
 
 	connection = nm_simple_connection_new ();
@@ -2046,7 +2023,6 @@ test_write_bridge_component (void)
 	g_assert (s_con);
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
-	uuid = nm_utils_uuid_generate ();
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, "Test Write Bridge Component",
 	              NM_SETTING_CONNECTION_UUID, uuid,
@@ -2055,7 +2031,6 @@ test_write_bridge_component (void)
 	              NM_SETTING_CONNECTION_MASTER, "br0",
 	              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BRIDGE_SETTING_NAME,
 	              NULL);
-	g_free (uuid);
 
 	/* Wired setting */
 	s_wired = NM_SETTING_WIRED (nm_setting_wired_new ());
@@ -2110,11 +2085,11 @@ test_read_new_wired_group_name (void)
 static void
 test_write_new_wired_group_name (void)
 {
+	NMTST_UUID_INIT (uuid);
 	gs_unref_object NMConnection *connection = NULL;
 	gs_unref_keyfile GKeyFile *kf = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	char *uuid;
 	gboolean success;
 	gs_free char *testfile = NULL;
 	gs_free_error GError *error = NULL;
@@ -2129,13 +2104,11 @@ test_write_new_wired_group_name (void)
 	g_assert (s_con);
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
-	uuid = nm_utils_uuid_generate ();
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, "Test Write Wired New Group Name",
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
 	              NULL);
-	g_free (uuid);
 
 	/* Wired setting */
 	s_wired = (NMSettingWired *) nm_setting_wired_new ();
@@ -2207,12 +2180,12 @@ test_read_new_wireless_group_names (void)
 static void
 test_write_new_wireless_group_names (void)
 {
+	NMTST_UUID_INIT (uuid);
 	gs_unref_object NMConnection *connection = NULL;
 	gs_unref_keyfile GKeyFile *kf = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	char *uuid;
 	GBytes *ssid;
 	unsigned char tmpssid[] = { 0x31, 0x33, 0x33, 0x37 };
 	const char *expected_psk = "asdfasdfasdfa12315";
@@ -2228,13 +2201,11 @@ test_write_new_wireless_group_names (void)
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
-	uuid = nm_utils_uuid_generate ();
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, "Test Write New Wireless Group Names",
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
 	              NULL);
-	g_free (uuid);
 
 	/* WiFi setting */
 	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
@@ -2456,11 +2427,11 @@ test_read_enum_property (void)
 static void
 test_write_enum_property (void)
 {
+	NMTST_UUID_INIT (uuid);
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip6;
-	char *uuid;
 
 	connection = nm_simple_connection_new ();
 
@@ -2469,13 +2440,11 @@ test_write_enum_property (void)
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
-	uuid = nm_utils_uuid_generate ();
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, "Test Write Enum Property",
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
 	              NULL);
-	g_free (uuid);
 
 	/* Wired setting */
 	s_wired = NM_SETTING_WIRED (nm_setting_wired_new ());
@@ -2519,10 +2488,10 @@ test_read_flags_property (void)
 static void
 test_write_flags_property (void)
 {
+	NMTST_UUID_INIT (uuid);
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSetting *s_gsm;
-	char *uuid;
 
 	connection = nm_simple_connection_new ();
 
@@ -2531,13 +2500,11 @@ test_write_flags_property (void)
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
-	uuid = nm_utils_uuid_generate ();
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, "Test Write Flags Property",
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_GSM_SETTING_NAME,
 	              NULL);
-	g_free (uuid);
 
 	/* GSM setting */
 	s_gsm = nm_setting_gsm_new ();
