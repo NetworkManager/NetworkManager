@@ -14,7 +14,7 @@ AM_CPPFLAGS = \
 	-I$(srcdir)/../ \
 	$(GLIB_CFLAGS) \
 	$(CODE_COVERAGE_CFLAGS) \
-	-DG_LOG_DOMAIN=\""NetworkManager-keyfile"\" \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	-DTEST_KEYFILES_DIR=\"$(abs_srcdir)/keyfiles\" \
 	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/keyfiles\" \

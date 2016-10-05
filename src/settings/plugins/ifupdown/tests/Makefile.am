@@ -10,7 +10,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/settings \
 	-I$(srcdir)/../ \
-	-DG_LOG_DOMAIN=\""NetworkManager-ifupdown"\" \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS) \
 	-DTEST_ENI_DIR=\"$(abs_srcdir)\"

@@ -9,7 +9,7 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/shared \
 	-I$(top_srcdir)/libnm-core \
 	-I$(top_builddir)/libnm-core \
-	-DG_LOG_DOMAIN=\""NetworkManager-ifupdown"\" \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS) \
 	$(GUDEV_CFLAGS) \

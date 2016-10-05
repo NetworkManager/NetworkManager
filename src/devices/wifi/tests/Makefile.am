@@ -8,7 +8,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/devices/wifi \
 	-I$(top_builddir)/src \
-	-DG_LOG_DOMAIN=\""NetworkManager-wifi"\" \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS)
 

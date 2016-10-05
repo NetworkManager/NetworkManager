@@ -50,7 +50,7 @@ AM_CPPFLAGS = \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS) \
 	$(NSS_CFLAGS) \
-	-DG_LOG_DOMAIN=\""NetworkManager-ifcfg-rh"\" \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DSBINDIR=\"$(sbindir)\"
 

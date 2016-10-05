@@ -10,7 +10,7 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/shared \
 	-I$(top_srcdir)/libnm-core \
 	-I$(top_builddir)/libnm-core \
-	-DG_LOG_DOMAIN=\""NetworkManager-ifnet"\" \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS) \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
@@ -24,7 +24,7 @@ libnm_settings_plugin_ifnet_la_SOURCES = \
 	nm-ifnet-connection.c \
 	nm-ifnet-connection.h \
 	plugin.c \
-	plugin.h 
+	plugin.h
 
 libnm_settings_plugin_ifnet_la_LDFLAGS = -module -avoid-version
 

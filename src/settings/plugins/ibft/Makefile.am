@@ -20,7 +20,7 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/libnm-core \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS) \
-	-DG_LOG_DOMAIN=\""NetworkManager-ibft"\" \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DSBINDIR=\"$(sbindir)\"
 
