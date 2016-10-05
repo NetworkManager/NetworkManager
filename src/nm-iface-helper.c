@@ -271,7 +271,7 @@ setup_signals (void)
 	g_unix_signal_add (SIGTERM, quit_handler, NULL);
 }
 
-static void
+static gboolean
 do_early_setup (int *argc, char **argv[])
 {
 	gint64 priority64_v4 = -1;
@@ -314,12 +314,13 @@ do_early_setup (int *argc, char **argv[])
 	                                NULL,
 	                                NULL,
 	                                _("nm-iface-helper is a small, standalone process that manages a single network interface.")))
-		exit (1);
+		return FALSE;
 
 	if (priority64_v4 >= 0 && priority64_v4 <= G_MAXUINT32)
 		global_opt.priority_v4 = (guint32) priority64_v4;
 	if (priority64_v6 >= 0 && priority64_v6 <= G_MAXUINT32)
 		global_opt.priority_v6 = (guint32) priority64_v6;
+	return TRUE;
 }
 
 static void
@@ -354,7 +355,8 @@ main (int argc, char *argv[])
 
 	setpgid (getpid (), getpid ());
 
-	do_early_setup (&argc, &argv);
+	if (!do_early_setup (&argc, &argv))
+		return 1;
 
 	if (global_opt.g_fatal_warnings) {
 		GLogLevelFlags fatal_mask;
@@ -366,20 +368,20 @@ main (int argc, char *argv[])
 
 	if (global_opt.show_version) {
 		fprintf (stdout, NM_DIST_VERSION "\n");
-		exit (0);
+		return 0;
 	}
 
 	nm_main_utils_ensure_root ();
 
 	if (!global_opt.ifname || !global_opt.uuid) {
 		fprintf (stderr, _("An interface name and UUID are required\n"));
-		exit (1);
+		return 1;
 	}
 
 	gl.ifindex = if_nametoindex (global_opt.ifname);
 	if (gl.ifindex <= 0) {
 		fprintf (stderr, _("Failed to find interface index for %s (%s)\n"), global_opt.ifname, strerror (errno));
-		exit (1);
+		return 1;
 	}
 	pidfile = g_strdup_printf (NMIH_PID_FILE_FMT, gl.ifindex);
 	nm_main_utils_ensure_not_running_pidfile (pidfile);
@@ -393,7 +395,7 @@ main (int argc, char *argv[])
 		fprintf (stderr,
 		         _("%s.  Please use --help to see a list of valid options.\n"),
 		         error->message);
-		exit (1);
+		return 1;
 	} else if (bad_domains) {
 		fprintf (stderr,
 		         _("Ignoring unrecognized log domain(s) '%s' passed on command line.\n"),
@@ -409,7 +411,7 @@ main (int argc, char *argv[])
 			fprintf (stderr, _("Could not daemonize: %s [error %u]\n"),
 			         g_strerror (saved_errno),
 			         saved_errno);
-			exit (1);
+			return 1;
 		}
 		if (nm_main_utils_write_pidfile (pidfile))
 			wrote_pidfile = TRUE;
@@ -441,7 +443,7 @@ main (int argc, char *argv[])
 		bytes = nm_utils_hexstr2bin (global_opt.iid_str);
 		if (!bytes || g_bytes_get_size (bytes) != sizeof (*iid)) {
 			fprintf (stderr, _("(%s): Invalid IID %s\n"), global_opt.ifname, global_opt.iid_str);
-			exit (1);
+			return 1;
 		}
 		iid = g_bytes_unref_to_data (bytes, &ignored);
 	}
@@ -524,7 +526,7 @@ main (int argc, char *argv[])
 	nm_log_info (LOGD_CORE, "exiting");
 
 	nm_clear_g_source (&sd_id);
-	exit (0);
+	return 0;
 }
 
 /*****************************************************************************/
