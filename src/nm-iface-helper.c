@@ -52,8 +52,14 @@ extern unsigned int if_nametoindex (const char *__ifname);
 
 #define NMIH_PID_FILE_FMT NMRUNDIR "/nm-iface-helper-%d.pid"
 
-static GMainLoop *main_loop = NULL;
-static int ifindex = -1;
+/*****************************************************************************/
+
+static struct {
+	GMainLoop *main_loop;
+	int ifindex;
+} gl/*obal*/ = {
+	.ifindex = -1,
+};
 
 static struct {
 	gboolean slaac;
@@ -84,6 +90,8 @@ static struct {
 	.priority_v6 = NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6,
 };
 
+/*****************************************************************************/
+
 static void
 dhcp4_state_changed (NMDhcpClient *client,
                      NMDhcpState state,
@@ -102,12 +110,12 @@ dhcp4_state_changed (NMDhcpClient *client,
 	switch (state) {
 	case NM_DHCP_STATE_BOUND:
 		g_assert (ip4_config);
-		existing = nm_ip4_config_capture (ifindex, FALSE);
+		existing = nm_ip4_config_capture (gl.ifindex, FALSE);
 		if (last_config)
 			nm_ip4_config_subtract (existing, last_config);
 
 		nm_ip4_config_merge (existing, ip4_config, NM_IP_CONFIG_MERGE_DEFAULT);
-		if (!nm_ip4_config_commit (existing, ifindex, TRUE, global_opt.priority_v4))
+		if (!nm_ip4_config_commit (existing, gl.ifindex, TRUE, global_opt.priority_v4))
 			nm_log_warn (LOGD_DHCP4, "(%s): failed to apply DHCPv4 config", global_opt.ifname);
 
 		if (last_config)
@@ -120,7 +128,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 	case NM_DHCP_STATE_FAIL:
 		if (global_opt.dhcp4_required) {
 			nm_log_warn (LOGD_DHCP4, "(%s): DHCPv4 timed out or failed, quitting...", global_opt.ifname);
-			g_main_loop_quit (main_loop);
+			g_main_loop_quit (gl.main_loop);
 		} else
 			nm_log_warn (LOGD_DHCP4, "(%s): DHCPv4 timed out or failed", global_opt.ifname);
 		break;
@@ -159,11 +167,11 @@ rdisc_config_changed (NMRDisc *rdisc, const NMRDiscData *rdata, guint changed_in
 		ifa_flags |= IFA_F_MANAGETEMPADDR;
 	}
 
-	existing = nm_ip6_config_capture (ifindex, FALSE, global_opt.tempaddr);
+	existing = nm_ip6_config_capture (gl.ifindex, FALSE, global_opt.tempaddr);
 	if (rdisc_config)
 		nm_ip6_config_subtract (existing, rdisc_config);
 	else
-		rdisc_config = nm_ip6_config_new (ifindex);
+		rdisc_config = nm_ip6_config_new (gl.ifindex);
 
 	if (changed & NM_RDISC_CONFIG_GATEWAYS) {
 		/* Use the first gateway as ordered in router discovery cache. */
@@ -234,7 +242,7 @@ rdisc_config_changed (NMRDisc *rdisc, const NMRDiscData *rdata, guint changed_in
 	}
 
 	nm_ip6_config_merge (existing, rdisc_config, NM_IP_CONFIG_MERGE_DEFAULT);
-	if (!nm_ip6_config_commit (existing, ifindex, TRUE))
+	if (!nm_ip6_config_commit (existing, gl.ifindex, TRUE))
 		nm_log_warn (LOGD_IP6, "(%s): failed to apply IPv6 config", global_opt.ifname);
 }
 
@@ -243,7 +251,7 @@ rdisc_ra_timeout (NMRDisc *rdisc, gpointer user_data)
 {
 	if (global_opt.slaac_required) {
 		nm_log_warn (LOGD_IP6, "(%s): IPv6 timed out or failed, quitting...", global_opt.ifname);
-		g_main_loop_quit (main_loop);
+		g_main_loop_quit (gl.main_loop);
 	} else
 		nm_log_warn (LOGD_IP6, "(%s): IPv6 timed out or failed", global_opt.ifname);
 }
@@ -251,7 +259,7 @@ rdisc_ra_timeout (NMRDisc *rdisc, gpointer user_data)
 static gboolean
 quit_handler (gpointer user_data)
 {
-	g_main_loop_quit (main_loop);
+	g_main_loop_quit (gl.main_loop);
 	return G_SOURCE_REMOVE;
 }
 
@@ -368,12 +376,12 @@ main (int argc, char *argv[])
 		exit (1);
 	}
 
-	ifindex = if_nametoindex (global_opt.ifname);
-	if (ifindex <= 0) {
+	gl.ifindex = if_nametoindex (global_opt.ifname);
+	if (gl.ifindex <= 0) {
 		fprintf (stderr, _("Failed to find interface index for %s (%s)\n"), global_opt.ifname, strerror (errno));
 		exit (1);
 	}
-	pidfile = g_strdup_printf (NMIH_PID_FILE_FMT, ifindex);
+	pidfile = g_strdup_printf (NMIH_PID_FILE_FMT, gl.ifindex);
 	nm_main_utils_ensure_not_running_pidfile (pidfile);
 
 	nm_main_utils_ensure_rundir ();
@@ -408,7 +416,7 @@ main (int argc, char *argv[])
 	}
 
 	/* Set up unix signal handling - before creating threads, but after daemonizing! */
-	main_loop = g_main_loop_new (NULL, FALSE);
+	gl.main_loop = g_main_loop_new (NULL, FALSE);
 	setup_signals ();
 
 	nm_logging_syslog_openlog (global_opt.logging_backend
@@ -420,7 +428,7 @@ main (int argc, char *argv[])
 	/* Set up platform interaction layer */
 	nm_linux_platform_setup ();
 
-	tmp = nm_platform_link_get_address (NM_PLATFORM_GET, ifindex, &hwaddr_len);
+	tmp = nm_platform_link_get_address (NM_PLATFORM_GET, gl.ifindex, &hwaddr_len);
 	if (tmp) {
 		hwaddr = g_byte_array_sized_new (hwaddr_len);
 		g_byte_array_append (hwaddr, tmp, hwaddr_len);
@@ -443,7 +451,7 @@ main (int argc, char *argv[])
 
 		dhcp4_client = nm_dhcp_manager_start_ip4 (nm_dhcp_manager_get (),
 		                                          global_opt.ifname,
-		                                          ifindex,
+		                                          gl.ifindex,
 		                                          hwaddr,
 		                                          global_opt.uuid,
 		                                          global_opt.priority_v4,
@@ -465,7 +473,7 @@ main (int argc, char *argv[])
 		NMUtilsStableType stable_type = NM_UTILS_STABLE_TYPE_UUID;
 		const char *stable_id = global_opt.uuid;
 
-		nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, ifindex, TRUE);
+		nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, gl.ifindex, TRUE);
 
 		if (   global_opt.stable_id
 		    && (global_opt.stable_id[0] >= '0' && global_opt.stable_id[0] <= '9')
@@ -476,7 +484,7 @@ main (int argc, char *argv[])
 			stable_type = (global_opt.stable_id[0] - '0');
 			stable_id = &global_opt.stable_id[2];
 		}
-		rdisc = nm_lndp_rdisc_new (NM_PLATFORM_GET, ifindex, global_opt.ifname,
+		rdisc = nm_lndp_rdisc_new (NM_PLATFORM_GET, gl.ifindex, global_opt.ifname,
 		                           stable_type, stable_id,
 		                           global_opt.addr_gen_mode, NULL);
 		g_assert (rdisc);
@@ -506,7 +514,7 @@ main (int argc, char *argv[])
 
 	sd_id = nm_sd_event_attach_default ();
 
-	g_main_loop_run (main_loop);
+	g_main_loop_run (gl.main_loop);
 
 	g_clear_pointer (&hwaddr, g_byte_array_unref);
 
