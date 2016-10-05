@@ -790,7 +790,7 @@ test_write_string_ssid (void)
 	gs_free_error GError *error = NULL;
 	pid_t owner_grp;
 	uid_t owner_uid;
-	GKeyFile *keyfile;
+	gs_unref_keyfile GKeyFile *keyfile = NULL;
 
 	connection = nm_simple_connection_new ();
 
@@ -840,7 +840,6 @@ test_write_string_ssid (void)
 	g_assert (tmp);
 	g_assert_cmpmem (tmp, strlen (tmp), tmpssid, sizeof (tmpssid));
 	g_free (tmp);
-	g_key_file_free (keyfile);
 
 	assert_reread_and_unlink (connection, TRUE, testfile);
 }
@@ -890,7 +889,7 @@ test_write_intlist_ssid (void)
 	gs_free_error GError *error = NULL;
 	pid_t owner_grp;
 	uid_t owner_uid;
-	GKeyFile *keyfile;
+	gs_unref_keyfile GKeyFile *keyfile = NULL;
 	gint *intlist;
 	gsize len = 0, i;
 
@@ -948,8 +947,6 @@ test_write_intlist_ssid (void)
 	for (i = 0; i < len; i++)
 		g_assert_cmpint (intlist[i], ==, tmpssid[i]);
 	g_free (intlist);
-
-	g_key_file_free (keyfile);
 
 	assert_reread_and_unlink (connection, TRUE, testfile);
 }
@@ -1031,11 +1028,10 @@ test_write_intlike_ssid (void)
 	gs_free_error GError *error = NULL;
 	pid_t owner_grp;
 	uid_t owner_uid;
-	GKeyFile *keyfile;
+	gs_unref_keyfile GKeyFile *keyfile = NULL;
 	char *tmp;
 
 	connection = nm_simple_connection_new ();
-	g_assert (connection);
 
 	/* Connection setting */
 
@@ -1086,8 +1082,6 @@ test_write_intlike_ssid (void)
 	g_assert_cmpstr (tmp, ==, "101");
 	g_free (tmp);
 
-	g_key_file_free (keyfile);
-
 	assert_reread_and_unlink (connection, TRUE, testfile);
 }
 
@@ -1106,7 +1100,7 @@ test_write_intlike_ssid_2 (void)
 	gs_free_error GError *error = NULL;
 	pid_t owner_grp;
 	uid_t owner_uid;
-	GKeyFile *keyfile;
+	gs_unref_keyfile GKeyFile *keyfile = NULL;
 	char *tmp;
 
 	connection = nm_simple_connection_new ();
@@ -1160,8 +1154,6 @@ test_write_intlike_ssid_2 (void)
 	g_assert (tmp);
 	g_assert_cmpstr (tmp, ==, "11\\;12\\;13\\;");
 	g_free (tmp);
-
-	g_key_file_free (keyfile);
 
 	assert_reread_and_unlink (connection, TRUE, testfile);
 }
@@ -1714,7 +1706,7 @@ test_write_wired_8021x_tls_connection_path (void)
 	gboolean success;
 	gs_free char *testfile = NULL;
 	gs_free_error GError *error = NULL;
-	GKeyFile *keyfile;
+	gs_unref_keyfile GKeyFile *keyfile = NULL;
 	gboolean relative = FALSE;
 
 	connection = create_wired_tls_connection (NM_SETTING_802_1X_CK_SCHEME_PATH);
@@ -1792,7 +1784,6 @@ test_write_wired_8021x_tls_connection_path (void)
 	g_free (tmp2);
 	g_free (tmp);
 
-	g_key_file_free (keyfile);
 	unlink (testfile);
 }
 
