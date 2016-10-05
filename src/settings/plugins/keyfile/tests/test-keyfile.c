@@ -36,6 +36,8 @@
 
 #include "nm-test-utils-core.h"
 
+/*****************************************************************************/
+
 static void
 check_ip_address (NMSettingIPConfig *config, int idx, const char *address, int plen)
 {
@@ -74,6 +76,32 @@ keyfile_read_connection_from_file (const char *filename)
 
 	return connection;
 }
+
+static void
+assert_reread (NMConnection *connection, gboolean normalize_connection, const char *testfile)
+{
+	gs_unref_object NMConnection *reread = NULL;
+	GError *error = NULL;
+	GError **p_error = (nmtst_get_rand_int () % 2) ? &error : NULL;
+
+	g_assert (NM_IS_CONNECTION (connection));
+	g_assert (testfile && testfile[0]);
+
+	reread = nm_keyfile_plugin_connection_from_file (testfile, p_error);
+	g_assert_no_error (error);
+	g_assert (NM_IS_CONNECTION (reread));
+
+	nmtst_assert_connection_equals (connection, normalize_connection, reread, FALSE);
+}
+
+static void
+assert_reread_and_unlink (NMConnection *connection, gboolean normalize_connection, const char *testfile)
+{
+	assert_reread (connection, normalize_connection, testfile);
+	unlink (testfile);
+}
+
+/*****************************************************************************/
 
 static void
 test_read_valid_wired_connection (void)
@@ -255,7 +283,6 @@ static void
 test_write_wired_connection (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
-	gs_unref_object NMConnection *reread = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
@@ -379,11 +406,7 @@ test_write_wired_connection (void)
 	g_assert (success);
 	g_assert (testfile);
 
-	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = nm_keyfile_plugin_connection_from_file (testfile, NULL);
-	nmtst_assert_connection_equals (connection, FALSE, reread, FALSE);
-
-	unlink (testfile);
+	assert_reread_and_unlink (connection, FALSE, testfile);
 }
 
 static void
@@ -432,7 +455,6 @@ static void
 test_write_ip6_wired_connection (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
-	gs_unref_object NMConnection *reread = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
@@ -504,11 +526,7 @@ test_write_ip6_wired_connection (void)
 	g_assert (success);
 	g_assert (testfile);
 
-	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = nm_keyfile_plugin_connection_from_file (testfile, NULL);
-	nmtst_assert_connection_equals (connection, FALSE, reread, FALSE);
-
-	unlink (testfile);
+	assert_reread_and_unlink (connection, FALSE, testfile);
 }
 
 static void
@@ -654,7 +672,6 @@ static void
 test_write_wireless_connection (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
-	gs_unref_object NMConnection *reread = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingIPConfig *s_ip4;
@@ -728,11 +745,7 @@ test_write_wireless_connection (void)
 	g_assert (success);
 	g_assert (testfile);
 
-	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = nm_keyfile_plugin_connection_from_file (testfile, NULL);
-	nmtst_assert_connection_equals (connection, FALSE, reread, FALSE);
-
-	unlink (testfile);
+	assert_reread_and_unlink (connection, FALSE, testfile);
 }
 
 static void
@@ -766,7 +779,6 @@ static void
 test_write_string_ssid (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
-	gs_unref_object NMConnection *reread = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingIPConfig *s_ip4;
@@ -830,11 +842,7 @@ test_write_string_ssid (void)
 	g_free (tmp);
 	g_key_file_free (keyfile);
 
-	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = nm_keyfile_plugin_connection_from_file (testfile, NULL);
-	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
-
-	unlink (testfile);
+	assert_reread_and_unlink (connection, TRUE, testfile);
 }
 
 static void
@@ -871,7 +879,6 @@ static void
 test_write_intlist_ssid (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
-	gs_unref_object NMConnection *reread = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingIPConfig *s_ip4;
@@ -944,12 +951,7 @@ test_write_intlist_ssid (void)
 
 	g_key_file_free (keyfile);
 
-	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
-	g_assert_no_error (error);
-	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
-
-	unlink (testfile);
+	assert_reread_and_unlink (connection, TRUE, testfile);
 }
 
 static void
@@ -1018,7 +1020,6 @@ static void
 test_write_intlike_ssid (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
-	gs_unref_object NMConnection *reread = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingIPConfig *s_ip4;
@@ -1087,19 +1088,13 @@ test_write_intlike_ssid (void)
 
 	g_key_file_free (keyfile);
 
-	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
-	g_assert_no_error (error);
-	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
-
-	unlink (testfile);
+	assert_reread_and_unlink (connection, TRUE, testfile);
 }
 
 static void
 test_write_intlike_ssid_2 (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
-	gs_unref_object NMConnection *reread = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingIPConfig *s_ip4;
@@ -1168,12 +1163,7 @@ test_write_intlike_ssid_2 (void)
 
 	g_key_file_free (keyfile);
 
-	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
-	g_assert_no_error (error);
-	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
-
-	unlink (testfile);
+	assert_reread_and_unlink (connection, TRUE, testfile);
 }
 
 static void
@@ -1226,7 +1216,6 @@ static void
 test_write_bt_dun_connection (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
-	gs_unref_object NMConnection *reread = NULL;
 	NMSettingConnection *s_con;
 	NMSettingBluetooth *s_bt;
 	NMSettingIPConfig *s_ip4;
@@ -1293,13 +1282,8 @@ test_write_bt_dun_connection (void)
 	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
 	g_assert_no_error (error);
 	g_assert (success);
-	g_assert (testfile);
 
-	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = nm_keyfile_plugin_connection_from_file (testfile, NULL);
-	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
-
-	unlink (testfile);
+	assert_reread_and_unlink (connection, TRUE, testfile);
 }
 
 static void
@@ -1352,7 +1336,6 @@ static void
 test_write_gsm_connection (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
-	gs_unref_object NMConnection *reread = NULL;
 	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
 	NMSettingGsm *s_gsm;
@@ -1415,12 +1398,7 @@ test_write_gsm_connection (void)
 	g_assert (success);
 	g_assert (testfile != NULL);
 
-	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
-	g_assert_no_error (error);
-	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
-
-	unlink (testfile);
+	assert_reread_and_unlink (connection, TRUE, testfile);
 }
 
 static void
@@ -1949,7 +1927,6 @@ static void
 test_write_infiniband_connection (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
-	gs_unref_object NMConnection *reread = NULL;
 	NMSettingConnection *s_con;
 	NMSettingInfiniband *s_ib;
 	NMSettingIPConfig *s_ip4;
@@ -2011,12 +1988,7 @@ test_write_infiniband_connection (void)
 	g_assert (success);
 	g_assert (testfile);
 
-	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
-	g_assert_no_error (error);
-	nmtst_assert_connection_equals (connection, FALSE, reread, FALSE);
-
-	unlink (testfile);
+	assert_reread_and_unlink (connection, FALSE, testfile);
 }
 
 static void
@@ -2066,7 +2038,6 @@ static void
 test_write_bridge_main (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
-	gs_unref_object NMConnection *reread = NULL;
 	NMSettingConnection *s_con;
 	NMSettingBridge *s_bridge;
 	NMSettingIPConfig *s_ip4;
@@ -2127,12 +2098,7 @@ test_write_bridge_main (void)
 	g_assert (success);
 	g_assert (testfile);
 
-	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
-	g_assert_no_error (error);
-	nmtst_assert_connection_equals (connection, FALSE, reread, FALSE);
-
-	unlink (testfile);
+	assert_reread_and_unlink (connection, FALSE, testfile);
 }
 
 static void
@@ -2183,7 +2149,6 @@ static void
 test_write_bridge_component (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
-	gs_unref_object NMConnection *reread = NULL;
 	NMSettingConnection *s_con;
 	NMSettingBridgePort *s_port;
 	NMSettingWired *s_wired;
@@ -2242,12 +2207,7 @@ test_write_bridge_component (void)
 	g_assert (success);
 	g_assert (testfile);
 
-	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
-	g_assert_no_error (error);
-	nmtst_assert_connection_equals (connection, FALSE, reread, FALSE);
-
-	unlink (testfile);
+	assert_reread_and_unlink (connection, FALSE, testfile);
 }
 
 static void
@@ -2281,7 +2241,6 @@ static void
 test_write_new_wired_group_name (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
-	gs_unref_object NMConnection *reread = NULL;
 	gs_unref_keyfile GKeyFile *kf = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
@@ -2324,10 +2283,7 @@ test_write_new_wired_group_name (void)
 	g_assert (success);
 	g_assert (testfile);
 
-	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
-	g_assert_no_error (error);
-	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
+	assert_reread (connection, TRUE, testfile);
 
 	/* Look at the keyfile itself to ensure we wrote out the new group names and type */
 	kf = g_key_file_new ();
@@ -2390,7 +2346,6 @@ static void
 test_write_new_wireless_group_names (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
-	gs_unref_object NMConnection *reread = NULL;
 	gs_unref_keyfile GKeyFile *kf = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
@@ -2447,12 +2402,7 @@ test_write_new_wireless_group_names (void)
 	g_assert_no_error (error);
 	g_assert (success);
 
-	g_assert (testfile);
-
-	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
-	g_assert_no_error (error);
-	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
+	assert_reread (connection, TRUE, testfile);
 
 	/* Look at the keyfile itself to ensure we wrote out the new group names and type */
 	kf = g_key_file_new ();
@@ -2652,7 +2602,6 @@ static void
 test_write_enum_property (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
-	gs_unref_object NMConnection *reread = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip6;
@@ -2698,14 +2647,8 @@ test_write_enum_property (void)
 	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
 	g_assert_no_error (error);
 	g_assert (success);
-	g_assert (testfile);
 
-	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
-	g_assert_no_error (error);
-	nmtst_assert_connection_equals (reread, FALSE, connection, FALSE);
-
-	unlink (testfile);
+	assert_reread_and_unlink (connection, FALSE, testfile);
 }
 
 static void
@@ -2734,7 +2677,6 @@ static void
 test_write_flags_property (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
-	gs_unref_object NMConnection *reread = NULL;
 	NMSettingConnection *s_con;
 	NMSetting *s_gsm;
 	char *uuid;
@@ -2777,14 +2719,8 @@ test_write_flags_property (void)
 	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
 	g_assert_no_error (error);
 	g_assert (success);
-	g_assert (testfile);
 
-	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
-	g_assert_no_error (error);
-	nmtst_assert_connection_equals (reread, FALSE, connection, FALSE);
-
-	unlink (testfile);
+	assert_reread_and_unlink (connection, FALSE, testfile);
 }
 
 /*****************************************************************************/
