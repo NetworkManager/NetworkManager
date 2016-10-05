@@ -949,10 +949,9 @@ make_proxy_setting (shvarFile *ifcfg, GError **error)
 
 	value = svGetValue (ifcfg, "BROWSER_ONLY", FALSE);
 	if (value) {
-		if (!g_ascii_strcasecmp (value, "yes")) {
+		if (!g_ascii_strcasecmp (value, "yes"))
 			g_object_set (s_proxy, NM_SETTING_PROXY_BROWSER_ONLY, TRUE, NULL);
-			g_free (value);
-		}
+		g_free (value);
 	}
 
 	return NM_SETTING (s_proxy);
