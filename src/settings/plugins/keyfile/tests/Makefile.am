@@ -24,9 +24,9 @@ noinst_PROGRAMS = test-keyfile
 
 test_keyfile_SOURCES = \
 	test-keyfile.c \
-	../reader.c \
-	../writer.c \
-	../utils.c
+	../nms-keyfile-reader.c \
+	../nms-keyfile-writer.c \
+	../nms-keyfile-utils.c
 
 test_keyfile_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la \

@@ -30,9 +30,9 @@
 
 #include "nm-core-internal.h"
 
-#include "reader.h"
-#include "writer.h"
-#include "utils.h"
+#include "nms-keyfile-reader.h"
+#include "nms-keyfile-writer.h"
+#include "nms-keyfile-utils.h"
 
 #include "nm-test-utils-core.h"
 

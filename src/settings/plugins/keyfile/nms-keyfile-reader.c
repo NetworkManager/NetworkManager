@@ -20,12 +20,13 @@
 
 #include "nm-default.h"
 
+#include "nms-keyfile-reader.h"
+
 #include <sys/stat.h>
 #include <string.h>
 
-#include "reader.h"
-
 #include "nm-keyfile-internal.h"
+
 #include "NetworkManagerUtils.h"
 
 static const char *

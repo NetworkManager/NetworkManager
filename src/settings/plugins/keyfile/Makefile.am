@@ -21,22 +21,22 @@ noinst_LTLIBRARIES = \
 ##### I/O library for testcases #####
 
 libkeyfile_io_la_SOURCES = \
-	reader.c \
-	reader.h \
-	writer.c \
-	writer.h \
-	utils.c \
-	utils.h
+	nms-keyfile-reader.c \
+	nms-keyfile-reader.h \
+	nms-keyfile-writer.c \
+	nms-keyfile-writer.h \
+	nms-keyfile-utils.c \
+	nms-keyfile-utils.h
 
 libkeyfile_io_la_LIBADD = $(GLIB_LIBS)
 
 #####################################
 
 libnm_settings_plugin_keyfile_la_SOURCES = \
-	nm-keyfile-connection.c \
-	nm-keyfile-connection.h \
-	plugin.c \
-	plugin.h
+	nms-keyfile-connection.c \
+	nms-keyfile-connection.h \
+	nms-keyfile-plugin.c \
+	nms-keyfile-plugin.h
 
 libnm_settings_plugin_keyfile_la_LIBADD = \
 	libkeyfile-io.la

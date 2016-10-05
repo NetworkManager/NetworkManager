@@ -21,15 +21,17 @@
 
 #include "nm-default.h"
 
+#include "nms-keyfile-writer.h"
+
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
 
-#include "writer.h"
-#include "utils.h"
 #include "nm-keyfile-internal.h"
+
+#include "nms-keyfile-utils.h"
 
 typedef struct {
 	const char *keyfile_dir;

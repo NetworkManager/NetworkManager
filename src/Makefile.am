@@ -384,16 +384,16 @@ libNetworkManager_la_SOURCES = \
 	settings/nm-settings.c \
 	settings/nm-settings.h \
 	\
-	settings/plugins/keyfile/nm-keyfile-connection.c \
-	settings/plugins/keyfile/nm-keyfile-connection.h \
-	settings/plugins/keyfile/plugin.c \
-	settings/plugins/keyfile/plugin.h \
-	settings/plugins/keyfile/reader.c \
-	settings/plugins/keyfile/reader.h \
-	settings/plugins/keyfile/utils.c \
-	settings/plugins/keyfile/utils.h \
-	settings/plugins/keyfile/writer.c \
-	settings/plugins/keyfile/writer.h \
+	settings/plugins/keyfile/nms-keyfile-connection.c \
+	settings/plugins/keyfile/nms-keyfile-connection.h \
+	settings/plugins/keyfile/nms-keyfile-plugin.c \
+	settings/plugins/keyfile/nms-keyfile-plugin.h \
+	settings/plugins/keyfile/nms-keyfile-reader.c \
+	settings/plugins/keyfile/nms-keyfile-reader.h \
+	settings/plugins/keyfile/nms-keyfile-utils.c \
+	settings/plugins/keyfile/nms-keyfile-utils.h \
+	settings/plugins/keyfile/nms-keyfile-writer.c \
+	settings/plugins/keyfile/nms-keyfile-writer.h \
 	\
 	supplicant-manager/nm-supplicant-config.c \
 	supplicant-manager/nm-supplicant-config.h \

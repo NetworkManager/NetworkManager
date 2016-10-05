@@ -21,6 +21,8 @@
 
 #include "nm-default.h"
 
+#include "nms-keyfile-connection.h"
+
 #include <string.h>
 #include <glib/gstdio.h>
 
@@ -29,10 +31,10 @@
 #include "nm-utils.h"
 
 #include "nm-settings-plugin.h"
-#include "nm-keyfile-connection.h"
-#include "reader.h"
-#include "writer.h"
-#include "utils.h"
+
+#include "nms-keyfile-reader.h"
+#include "nms-keyfile-writer.h"
+#include "nms-keyfile-utils.h"
 
 G_DEFINE_TYPE (NMKeyfileConnection, nm_keyfile_connection, NM_TYPE_SETTINGS_CONNECTION)
 

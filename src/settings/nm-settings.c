@@ -69,7 +69,7 @@
 #include "nm-auth-utils.h"
 #include "nm-auth-subject.h"
 #include "nm-session-monitor.h"
-#include "plugins/keyfile/plugin.h"
+#include "plugins/keyfile/nms-keyfile-plugin.h"
 #include "nm-agent-manager.h"
 #include "nm-config.h"
 #include "nm-audit-manager.h"

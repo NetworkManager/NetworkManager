@@ -20,10 +20,11 @@
 
 #include "nm-default.h"
 
+#include "nms-keyfile-utils.h"
+
 #include <stdlib.h>
 #include <string.h>
 
-#include "utils.h"
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"

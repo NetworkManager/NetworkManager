@@ -21,7 +21,7 @@
 
 #include "nm-default.h"
 
-#include "plugin.h"
+#include "nms-keyfile-plugin.h"
 
 #include <sys/stat.h>
 #include <unistd.h>
@@ -38,9 +38,10 @@
 #include "nm-core-internal.h"
 
 #include "nm-settings-plugin.h"
-#include "nm-keyfile-connection.h"
-#include "writer.h"
-#include "utils.h"
+
+#include "nms-keyfile-connection.h"
+#include "nms-keyfile-writer.h"
+#include "nms-keyfile-utils.h"
 
 /*****************************************************************************/
 
