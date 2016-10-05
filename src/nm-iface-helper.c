@@ -92,6 +92,17 @@ static struct {
 
 /*****************************************************************************/
 
+#define _NMLOG_PREFIX_NAME      "nm-iface-helper"
+#define _NMLOG(level, domain, ...) \
+    nm_log ((level), (domain), \
+            "%s[%ld] (%s): " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+            _NMLOG_PREFIX_NAME, \
+            (long) getpid (), \
+            global_opt.ifname \
+            _NM_UTILS_MACRO_REST (__VA_ARGS__))
+
+/*****************************************************************************/
+
 static void
 dhcp4_state_changed (NMDhcpClient *client,
                      NMDhcpState state,
@@ -105,7 +116,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 
 	g_return_if_fail (!ip4_config || NM_IS_IP4_CONFIG (ip4_config));
 
-	nm_log_dbg (LOGD_DHCP4, "(%s): new DHCPv4 client state %d", global_opt.ifname, state);
+	_LOGD (LOGD_DHCP4, "new DHCPv4 client state %d", state);
 
 	switch (state) {
 	case NM_DHCP_STATE_BOUND:
@@ -116,7 +127,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 
 		nm_ip4_config_merge (existing, ip4_config, NM_IP_CONFIG_MERGE_DEFAULT);
 		if (!nm_ip4_config_commit (existing, gl.ifindex, TRUE, global_opt.priority_v4))
-			nm_log_warn (LOGD_DHCP4, "(%s): failed to apply DHCPv4 config", global_opt.ifname);
+			_LOGW (LOGD_DHCP4, "failed to apply DHCPv4 config");
 
 		if (last_config)
 			g_object_unref (last_config);
@@ -127,10 +138,10 @@ dhcp4_state_changed (NMDhcpClient *client,
 	case NM_DHCP_STATE_DONE:
 	case NM_DHCP_STATE_FAIL:
 		if (global_opt.dhcp4_required) {
-			nm_log_warn (LOGD_DHCP4, "(%s): DHCPv4 timed out or failed, quitting...", global_opt.ifname);
+			_LOGW (LOGD_DHCP4, "DHCPv4 timed out or failed, quitting...");
 			g_main_loop_quit (gl.main_loop);
 		} else
-			nm_log_warn (LOGD_DHCP4, "(%s): DHCPv4 timed out or failed", global_opt.ifname);
+			_LOGW (LOGD_DHCP4, "DHCPv4 timed out or failed");
 		break;
 	default:
 		break;
@@ -243,17 +254,17 @@ rdisc_config_changed (NMRDisc *rdisc, const NMRDiscData *rdata, guint changed_in
 
 	nm_ip6_config_merge (existing, rdisc_config, NM_IP_CONFIG_MERGE_DEFAULT);
 	if (!nm_ip6_config_commit (existing, gl.ifindex, TRUE))
-		nm_log_warn (LOGD_IP6, "(%s): failed to apply IPv6 config", global_opt.ifname);
+		_LOGW (LOGD_IP6, "failed to apply IPv6 config");
 }
 
 static void
 rdisc_ra_timeout (NMRDisc *rdisc, gpointer user_data)
 {
 	if (global_opt.slaac_required) {
-		nm_log_warn (LOGD_IP6, "(%s): IPv6 timed out or failed, quitting...", global_opt.ifname);
+		_LOGW (LOGD_IP6, "IPv6 timed out or failed, quitting...");
 		g_main_loop_quit (gl.main_loop);
 	} else
-		nm_log_warn (LOGD_IP6, "(%s): IPv6 timed out or failed", global_opt.ifname);
+		_LOGW (LOGD_IP6, "IPv6 timed out or failed");
 }
 
 static gboolean
@@ -425,7 +436,7 @@ main (int argc, char *argv[])
 	                           ? global_opt.logging_backend
 	                           : (global_opt.debug ? "debug" : NULL));
 
-	nm_log_info (LOGD_CORE, "nm-iface-helper (version " NM_DIST_VERSION ") is starting...");
+	_LOGI (LOGD_CORE, "nm-iface-helper (version " NM_DIST_VERSION ") is starting...");
 
 	/* Set up platform interaction layer */
 	nm_linux_platform_setup ();
@@ -523,7 +534,7 @@ main (int argc, char *argv[])
 	if (pidfile && wrote_pidfile)
 		unlink (pidfile);
 
-	nm_log_info (LOGD_CORE, "exiting");
+	_LOGI (LOGD_CORE, "exiting");
 
 	nm_clear_g_source (&sd_id);
 	g_clear_pointer (&gl.main_loop, g_main_loop_unref);
@@ -536,7 +547,7 @@ main (int argc, char *argv[])
 void
 nm_main_config_reload (int signal)
 {
-	nm_log_info (LOGD_CORE, "reloading configuration not supported");
+	_LOGI (LOGD_CORE, "reloading configuration not supported");
 }
 
 gconstpointer nm_config_get (void);
