@@ -10977,6 +10977,12 @@ nm_device_spawn_iface_helper (NMDevice *self)
 		g_ptr_array_add (argv, logging_backend);
 	}
 
+	g_ptr_array_add (argv, g_strdup ("--log-level"));
+	g_ptr_array_add (argv, g_strdup (nm_logging_level_to_string ()));
+
+	g_ptr_array_add (argv, g_strdup ("--log-domains"));
+	g_ptr_array_add (argv, g_strdup (nm_logging_domains_to_string ()));
+
 	dhcp4_address = find_dhcp4_address (self);
 
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
