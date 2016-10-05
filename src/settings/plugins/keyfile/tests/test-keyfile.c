@@ -101,6 +101,38 @@ assert_reread_and_unlink (NMConnection *connection, gboolean normalize_connectio
 	unlink (testfile);
 }
 
+static void
+write_test_connection (NMConnection *connection, char **testfile)
+{
+	uid_t owner_uid;
+	gid_t owner_grp;
+	gboolean success;
+	GError *error = NULL;
+	GError **p_error = (nmtst_get_rand_int () % 2) ? &error : NULL;
+
+	g_assert (NM_IS_CONNECTION (connection));
+	g_assert (testfile && !*testfile);
+
+	owner_uid = geteuid ();
+	owner_grp = getegid ();
+
+	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, testfile, p_error);
+	g_assert_no_error (error);
+	g_assert (success);
+	g_assert (*testfile && (*testfile)[0]);
+}
+
+static void
+write_test_connection_and_reread (NMConnection *connection, gboolean normalize_connection)
+{
+	gs_free char *testfile = NULL;
+
+	g_assert (NM_IS_CONNECTION (connection));
+
+	write_test_connection (connection, &testfile);
+	assert_reread_and_unlink (connection, normalize_connection, testfile);
+}
+
 /*****************************************************************************/
 
 static void
@@ -289,11 +321,6 @@ test_write_wired_connection (void)
 	NMSettingIPConfig *s_ip6;
 	char *uuid;
 	const char *mac = "99:88:77:66:55:44";
-	gboolean success;
-	gs_free char *testfile = NULL;
-	gs_free_error GError *error = NULL;
-	pid_t owner_grp;
-	uid_t owner_uid;
 	const char *dns1 = "4.2.2.1";
 	const char *dns2 = "4.2.2.2";
 	const char *address1 = "192.168.0.5";
@@ -398,15 +425,7 @@ test_write_wired_connection (void)
 	/* DNS searches */
 	nm_setting_ip_config_add_dns_search (s_ip6, "wallaceandgromit.com");
 
-	/* Write out the connection */
-	owner_uid = geteuid ();
-	owner_grp = getegid ();
-	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-	g_assert (testfile);
-
-	assert_reread_and_unlink (connection, FALSE, testfile);
+	write_test_connection_and_reread (connection, FALSE);
 }
 
 static void
@@ -460,11 +479,6 @@ test_write_ip6_wired_connection (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *uuid;
-	gboolean success;
-	gs_free char *testfile = NULL;
-	gs_free_error GError *error = NULL;
-	pid_t owner_grp;
-	uid_t owner_uid;
 	const char *dns = "1::cafe";
 	const char *address = "abcd::beef";
 	const char *gw = "dcba::beef";
@@ -518,15 +532,7 @@ test_write_ip6_wired_connection (void)
 	/* DNS searches */
 	nm_setting_ip_config_add_dns_search (s_ip6, "wallaceandgromit.com");
 
-	/* Write out the connection */
-	owner_uid = geteuid ();
-	owner_grp = getegid ();
-	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-	g_assert (testfile);
-
-	assert_reread_and_unlink (connection, FALSE, testfile);
+	write_test_connection_and_reread (connection, FALSE);
 }
 
 static void
@@ -680,11 +686,6 @@ test_write_wireless_connection (void)
 	const char *bssid = "aa:b9:a1:74:55:44";
 	GBytes *ssid;
 	unsigned char tmpssid[] = { 0x31, 0x33, 0x33, 0x37 };
-	gboolean success;
-	gs_free char *testfile = NULL;
-	gs_free_error GError *error = NULL;
-	pid_t owner_grp;
-	uid_t owner_uid;
 	guint64 timestamp = 0x12344433L;
 
 	connection = nm_simple_connection_new ();
@@ -737,15 +738,7 @@ test_write_wireless_connection (void)
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
 	              NULL);
 
-	/* Write out the connection */
-	owner_uid = geteuid ();
-	owner_grp = getegid ();
-	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-	g_assert (testfile);
-
-	assert_reread_and_unlink (connection, FALSE, testfile);
+	write_test_connection_and_reread (connection, FALSE);
 }
 
 static void
@@ -786,10 +779,6 @@ test_write_string_ssid (void)
 	gs_free char *testfile = NULL;
 	GBytes *ssid;
 	unsigned char tmpssid[] = { 65, 49, 50, 51, 32, 46, 92, 46, 36, 37, 126, 93 };
-	gboolean success;
-	gs_free_error GError *error = NULL;
-	pid_t owner_grp;
-	uid_t owner_uid;
 	gs_unref_keyfile GKeyFile *keyfile = NULL;
 
 	connection = nm_simple_connection_new ();
@@ -825,13 +814,7 @@ test_write_string_ssid (void)
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 	              NULL);
 
-	/* Write out the connection */
-	owner_uid = geteuid ();
-	owner_grp = getegid ();
-	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-	g_assert (testfile);
+	write_test_connection (connection, &testfile);
 
 	/* Ensure the SSID was written out as a string */
 	keyfile = g_key_file_new ();
@@ -887,8 +870,6 @@ test_write_intlist_ssid (void)
 	unsigned char tmpssid[] = { 65, 49, 50, 51, 0, 50, 50 };
 	gboolean success;
 	gs_free_error GError *error = NULL;
-	pid_t owner_grp;
-	uid_t owner_uid;
 	gs_unref_keyfile GKeyFile *keyfile = NULL;
 	gint *intlist;
 	gsize len = 0, i;
@@ -925,13 +906,7 @@ test_write_intlist_ssid (void)
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
-	/* Write out the connection */
-	owner_uid = geteuid ();
-	owner_grp = getegid ();
-	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-	g_assert (testfile != NULL);
+	write_test_connection (connection, &testfile);
 
 	/* Ensure the SSID was written out as an int list */
 	keyfile = g_key_file_new ();
@@ -1026,8 +1001,6 @@ test_write_intlike_ssid (void)
 	unsigned char tmpssid[] = { 49, 48, 49 };
 	gboolean success;
 	gs_free_error GError *error = NULL;
-	pid_t owner_grp;
-	uid_t owner_uid;
 	gs_unref_keyfile GKeyFile *keyfile = NULL;
 	char *tmp;
 
@@ -1062,13 +1035,7 @@ test_write_intlike_ssid (void)
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
-	/* Write out the connection */
-	owner_uid = geteuid ();
-	owner_grp = getegid ();
-	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-	g_assert (testfile != NULL);
+	write_test_connection (connection, &testfile);
 
 	/* Ensure the SSID was written out as a plain "101" */
 	keyfile = g_key_file_new ();
@@ -1098,8 +1065,6 @@ test_write_intlike_ssid_2 (void)
 	unsigned char tmpssid[] = { 49, 49, 59, 49, 50, 59, 49, 51, 59};
 	gboolean success;
 	gs_free_error GError *error = NULL;
-	pid_t owner_grp;
-	uid_t owner_uid;
 	gs_unref_keyfile GKeyFile *keyfile = NULL;
 	char *tmp;
 
@@ -1135,13 +1100,7 @@ test_write_intlike_ssid_2 (void)
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
-	/* Write out the connection */
-	owner_uid = geteuid ();
-	owner_grp = getegid ();
-	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-	g_assert (testfile != NULL);
+	write_test_connection (connection, &testfile);
 
 	/* Ensure the SSID was written out as a plain "11;12;13;" */
 	keyfile = g_key_file_new ();
@@ -1214,11 +1173,6 @@ test_write_bt_dun_connection (void)
 	NMSettingGsm *s_gsm;
 	char *uuid;
 	const char *bdaddr = "aa:b9:a1:74:55:44";
-	gboolean success;
-	gs_free char *testfile = NULL;
-	gs_free_error GError *error = NULL;
-	pid_t owner_grp;
-	uid_t owner_uid;
 	guint64 timestamp = 0x12344433L;
 
 	connection = nm_simple_connection_new ();
@@ -1268,14 +1222,7 @@ test_write_bt_dun_connection (void)
 	              NM_SETTING_GSM_NUMBER,  "*99#",
 	              NULL);
 
-	/* Write out the connection */
-	owner_uid = geteuid ();
-	owner_grp = getegid ();
-	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-
-	assert_reread_and_unlink (connection, TRUE, testfile);
+	write_test_connection_and_reread (connection, TRUE);
 }
 
 static void
@@ -1332,11 +1279,6 @@ test_write_gsm_connection (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingGsm *s_gsm;
 	char *uuid;
-	gboolean success;
-	gs_free char *testfile = NULL;
-	gs_free_error GError *error = NULL;
-	pid_t owner_grp;
-	uid_t owner_uid;
 	guint64 timestamp = 0x12344433L;
 
 	connection = nm_simple_connection_new ();
@@ -1382,15 +1324,7 @@ test_write_gsm_connection (void)
 	              NM_SETTING_GSM_SIM_OPERATOR_ID, "310260",
 	              NULL);
 
-	/* Write out the connection */
-	owner_uid = geteuid ();
-	owner_grp = getegid ();
-	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-	g_assert (testfile != NULL);
-
-	assert_reread_and_unlink (connection, TRUE, testfile);
+	write_test_connection_and_reread (connection, TRUE);
 }
 
 static void
@@ -1712,14 +1646,7 @@ test_write_wired_8021x_tls_connection_path (void)
 	connection = create_wired_tls_connection (NM_SETTING_802_1X_CK_SCHEME_PATH);
 	g_assert (connection != NULL);
 
-	/* Write out the connection */
-	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, geteuid (), getegid (), &testfile, &error);
-	if (!success) {
-		g_assert (error);
-		g_warning ("Failed to write keyfile: %s", error->message);
-		g_assert (success);
-	}
-	g_assert (testfile);
+	write_test_connection (connection, &testfile);
 
 	/* Read the connection back in and compare it to the one we just wrote out */
 	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
@@ -1794,7 +1721,6 @@ test_write_wired_8021x_tls_connection_blob (void)
 	gs_unref_object NMConnection *reread = NULL;
 	NMSettingConnection *s_con;
 	NMSetting8021x *s_8021x;
-	gboolean success;
 	gs_free char *testfile = NULL;
 	char *new_ca_cert;
 	char *new_client_cert;
@@ -1817,14 +1743,7 @@ test_write_wired_8021x_tls_connection_blob (void)
 	              NULL);
 	g_bytes_unref (password_raw);
 
-	/* Write out the connection */
-	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, geteuid (), getegid (), &testfile, &error);
-	if (!success) {
-		g_assert (error);
-		g_warning ("Failed to write keyfile: %s", error->message);
-		g_assert (success);
-	}
-	g_assert (testfile);
+	write_test_connection (connection, &testfile);
 
 	/* Check that the new certs got written out */
 	s_con = nm_connection_get_setting_connection (connection);
@@ -1924,14 +1843,8 @@ test_write_infiniband_connection (void)
 	NMSettingIPConfig *s_ip6;
 	char *uuid;
 	const char *mac = "99:88:77:66:55:44:ab:bc:cd:de:ef:f0:0a:1b:2c:3d:4e:5f:6f:ba";
-	gboolean success;
-	gs_free char *testfile = NULL;
-	gs_free_error GError *error = NULL;
-	pid_t owner_grp;
-	uid_t owner_uid;
 
 	connection = nm_simple_connection_new ();
-	g_assert (connection);
 
 	/* Connection setting */
 
@@ -1971,15 +1884,7 @@ test_write_infiniband_connection (void)
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 	g_object_set (s_ip6, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
 
-	/* Write out the connection */
-	owner_uid = geteuid ();
-	owner_grp = getegid ();
-	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-	g_assert (testfile);
-
-	assert_reread_and_unlink (connection, FALSE, testfile);
+	write_test_connection_and_reread (connection, FALSE);
 }
 
 static void
@@ -2034,11 +1939,6 @@ test_write_bridge_main (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *uuid;
-	gboolean success;
-	gs_free char *testfile = NULL;
-	gs_free_error GError *error = NULL;
-	pid_t owner_grp;
-	uid_t owner_uid;
 
 	connection = nm_simple_connection_new ();
 	g_assert (connection);
@@ -2081,15 +1981,7 @@ test_write_bridge_main (void)
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 	g_object_set (s_ip6, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
 
-	/* Write out the connection */
-	owner_uid = geteuid ();
-	owner_grp = getegid ();
-	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-	g_assert (testfile);
-
-	assert_reread_and_unlink (connection, FALSE, testfile);
+	write_test_connection_and_reread (connection, FALSE);
 }
 
 static void
@@ -2145,11 +2037,6 @@ test_write_bridge_component (void)
 	NMSettingWired *s_wired;
 	char *uuid;
 	const char *mac = "99:88:77:66:55:44";
-	gboolean success;
-	gs_free char *testfile = NULL;
-	gs_free_error GError *error = NULL;
-	pid_t owner_grp;
-	uid_t owner_uid;
 
 	connection = nm_simple_connection_new ();
 	g_assert (connection);
@@ -2190,15 +2077,7 @@ test_write_bridge_component (void)
 	              NM_SETTING_BRIDGE_PORT_PATH_COST, 99,
 	              NULL);
 
-	/* Write out the connection */
-	owner_uid = geteuid ();
-	owner_grp = getegid ();
-	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-	g_assert (testfile);
-
-	assert_reread_and_unlink (connection, FALSE, testfile);
+	write_test_connection_and_reread (connection, FALSE);
 }
 
 static void
@@ -2239,8 +2118,6 @@ test_write_new_wired_group_name (void)
 	gboolean success;
 	gs_free char *testfile = NULL;
 	gs_free_error GError *error = NULL;
-	pid_t owner_grp;
-	uid_t owner_uid;
 	char *s;
 	gint mtu;
 
@@ -2266,13 +2143,7 @@ test_write_new_wired_group_name (void)
 	g_object_set (s_wired, NM_SETTING_WIRED_MTU, 1400, NULL);
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
-	/* Write out the connection */
-	owner_uid = geteuid ();
-	owner_grp = getegid ();
-	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-	g_assert (testfile);
+	write_test_connection (connection, &testfile);
 
 	assert_reread (connection, TRUE, testfile);
 
@@ -2348,8 +2219,6 @@ test_write_new_wireless_group_names (void)
 	gboolean success;
 	gs_free char *testfile = NULL;
 	gs_free_error GError *error = NULL;
-	pid_t owner_grp;
-	uid_t owner_uid;
 	char *s;
 
 	connection = nm_simple_connection_new ();
@@ -2386,12 +2255,7 @@ test_write_new_wireless_group_names (void)
 	              NM_SETTING_WIRELESS_SECURITY_PSK, expected_psk,
 	              NULL);
 
-	/* Write out the connection */
-	owner_uid = geteuid ();
-	owner_grp = getegid ();
-	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	write_test_connection (connection, &testfile);
 
 	assert_reread (connection, TRUE, testfile);
 
@@ -2597,11 +2461,6 @@ test_write_enum_property (void)
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip6;
 	char *uuid;
-	gboolean success;
-	gs_free char *testfile = NULL;
-	gs_free_error GError *error = NULL;
-	pid_t owner_grp;
-	uid_t owner_uid;
 
 	connection = nm_simple_connection_new ();
 
@@ -2632,14 +2491,7 @@ test_write_enum_property (void)
 
 	nmtst_connection_normalize (connection);
 
-	/* Write out the connection */
-	owner_uid = geteuid ();
-	owner_grp = getegid ();
-	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-
-	assert_reread_and_unlink (connection, FALSE, testfile);
+	write_test_connection_and_reread (connection, FALSE);
 }
 
 static void
@@ -2671,11 +2523,6 @@ test_write_flags_property (void)
 	NMSettingConnection *s_con;
 	NMSetting *s_gsm;
 	char *uuid;
-	gboolean success;
-	gs_free char *testfile = NULL;
-	gs_free_error GError *error = NULL;
-	pid_t owner_grp;
-	uid_t owner_uid;
 
 	connection = nm_simple_connection_new ();
 
@@ -2704,14 +2551,7 @@ test_write_flags_property (void)
 
 	nmtst_connection_normalize (connection);
 
-	/* Write out the connection */
-	owner_uid = geteuid ();
-	owner_grp = getegid ();
-	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-
-	assert_reread_and_unlink (connection, FALSE, testfile);
+	write_test_connection_and_reread (connection, FALSE);
 }
 
 /*****************************************************************************/
