@@ -3645,6 +3645,8 @@ test_write_wired_static (void)
 	g_assert_cmpint (nm_setting_ip_config_get_route_metric (reread_s_ip4), ==, 204);
 	g_assert_cmpint (nm_setting_ip_config_get_route_metric (reread_s_ip6), ==, 206);
 
+	nm_connection_add_setting (connection, nm_setting_proxy_new ());
+
 	nmtst_assert_connection_equals (connection, FALSE, reread, FALSE);
 
 	route6file = utils_get_route6_path (testfile);
@@ -7149,6 +7151,8 @@ test_write_bridge_main (void)
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 	              NULL);
 
+	nm_connection_add_setting (connection, nm_setting_proxy_new ());
+
 	nmtst_assert_connection_verifies_without_normalization (connection);
 
 	_writer_new_connection (connection,
@@ -7759,6 +7763,8 @@ test_write_bond_main (void)
 	g_object_set (s_ip6,
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 	              NULL);
+
+	nm_connection_add_setting (connection, nm_setting_proxy_new ());
 
 	nmtst_assert_connection_verifies_without_normalization (connection);
 
@@ -8537,6 +8543,8 @@ test_write_team_master (void)
 	g_object_set (s_ip6,
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
 	              NULL);
+
+	nm_connection_add_setting (connection, nm_setting_proxy_new ());
 
 	nmtst_assert_connection_verifies_without_normalization (connection);
 

@@ -2030,7 +2030,7 @@ write_proxy_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		break;
 	case NM_SETTING_PROXY_METHOD_NONE:
 		svSetValue (ifcfg, "PROXY_METHOD", "none", FALSE);
-		/* Write nothing more */
+		break;
 	}
 
 	browser_only = nm_setting_proxy_get_browser_only (s_proxy);

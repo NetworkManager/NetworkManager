@@ -724,6 +724,7 @@ _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 	const char *default_ip4_method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
 	const char *default_ip6_method = NULL;
 	NMSettingIPConfig *s_ip4, *s_ip6;
+	NMSettingProxy *s_proxy;
 	NMSetting *setting;
 	gboolean changed = FALSE;
 	guint num, i;
@@ -735,6 +736,7 @@ _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 
 	s_ip4 = nm_connection_get_setting_ip4_config (self);
 	s_ip6 = nm_connection_get_setting_ip6_config (self);
+	s_proxy = nm_connection_get_setting_proxy (self);
 
 	if (nm_setting_connection_get_master (s_con)) {
 		/* Slave connections don't have IP configuration. */
@@ -745,7 +747,10 @@ _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 		if (s_ip6)
 			nm_connection_remove_setting (self, NM_TYPE_SETTING_IP6_CONFIG);
 
-		return s_ip4 || s_ip6;
+		if (s_proxy)
+			nm_connection_remove_setting (self, NM_TYPE_SETTING_PROXY);
+
+		return s_ip4 || s_ip6 || s_proxy;
 	} else {
 		/* Ensure all non-slave connections have IP4 and IP6 settings objects. If no
 		 * IP6 setting was specified, then assume that means IP6 config is allowed
@@ -822,7 +827,13 @@ _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 				changed = TRUE;
 			}
 		}
-		return !s_ip4 || !s_ip6 || changed;
+
+		if (!s_proxy) {
+			setting = nm_setting_proxy_new ();
+			nm_connection_add_setting (self, setting);
+		}
+
+		return !s_ip4 || !s_ip6 || !s_proxy || changed;
 	}
 }
 
@@ -986,11 +997,11 @@ _nm_connection_verify (NMConnection *connection, GError **error)
 	NMConnectionPrivate *priv;
 	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4, *s_ip6;
+	NMSettingProxy *s_proxy;
 	GHashTableIter iter;
 	gpointer value;
 	GSList *all_settings = NULL, *setting_i;
-	NMSettingVerifyResult success = NM_SETTING_VERIFY_ERROR;
-	GError *normalizable_error = NULL;
+	gs_free_error GError *normalizable_error = NULL;
 	NMSettingVerifyResult normalizable_error_type = NM_SETTING_VERIFY_SUCCESS;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NM_SETTING_VERIFY_ERROR);
@@ -1006,7 +1017,7 @@ _nm_connection_verify (NMConnection *connection, GError **error)
 		                     NM_CONNECTION_ERROR_MISSING_SETTING,
 		                     _("setting not found"));
 		g_prefix_error (error, "%s: ", NM_SETTING_CONNECTION_SETTING_NAME);
-		goto EXIT;
+		return NM_SETTING_VERIFY_ERROR;
 	}
 
 	/* Build up the list of settings */
@@ -1051,8 +1062,8 @@ _nm_connection_verify (NMConnection *connection, GError **error)
 		} else if (verify_result != NM_SETTING_VERIFY_SUCCESS) {
 			g_propagate_error (error, verify_error);
 			g_slist_free (all_settings);
-			g_return_val_if_fail (verify_result == NM_SETTING_VERIFY_ERROR, success);
-			goto EXIT;
+			g_return_val_if_fail (verify_result == NM_SETTING_VERIFY_ERROR, NM_SETTING_VERIFY_ERROR);
+			return NM_SETTING_VERIFY_ERROR;
 		}
 		g_clear_error (&verify_error);
 	}
@@ -1060,28 +1071,39 @@ _nm_connection_verify (NMConnection *connection, GError **error)
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	s_proxy = nm_connection_get_setting_proxy (connection);
 
 	if (nm_setting_connection_get_master (s_con)) {
-		if ((normalizable_error_type == NM_SETTING_VERIFY_SUCCESS ||
-		    (normalizable_error_type == NM_SETTING_VERIFY_NORMALIZABLE))  && (s_ip4 || s_ip6)) {
+		if (   NM_IN_SET (normalizable_error_type, NM_SETTING_VERIFY_SUCCESS,
+		                                           NM_SETTING_VERIFY_NORMALIZABLE)
+		    && (s_ip4 || s_ip6 || s_proxy)) {
 			g_clear_error (&normalizable_error);
 			g_set_error_literal (&normalizable_error,
 			                     NM_CONNECTION_ERROR,
 			                     NM_CONNECTION_ERROR_INVALID_SETTING,
 			                     _("setting not allowed in slave connection"));
 			g_prefix_error (&normalizable_error, "%s: ",
-			                s_ip4 ? NM_SETTING_IP4_CONFIG_SETTING_NAME : NM_SETTING_IP6_CONFIG_SETTING_NAME);
+			                s_ip4
+			                ? NM_SETTING_IP4_CONFIG_SETTING_NAME
+			                : (s_ip6
+			                   ? NM_SETTING_IP6_CONFIG_SETTING_NAME
+			                   : NM_SETTING_PROXY_SETTING_NAME));
 			/* having a slave with IP config *was* and is a verify() error. */
 			normalizable_error_type = NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
 		}
 	} else {
-		if (normalizable_error_type == NM_SETTING_VERIFY_SUCCESS && (!s_ip4 || !s_ip6)) {
+		if (   NM_IN_SET (normalizable_error_type, NM_SETTING_VERIFY_SUCCESS)
+		    && (!s_ip4 || !s_ip6 || !s_proxy)) {
 			g_set_error_literal (&normalizable_error,
 			                     NM_CONNECTION_ERROR,
 			                     NM_CONNECTION_ERROR_MISSING_SETTING,
 			                     _("setting is required for non-slave connections"));
 			g_prefix_error (&normalizable_error, "%s: ",
-			                !s_ip4 ? NM_SETTING_IP4_CONFIG_SETTING_NAME : NM_SETTING_IP6_CONFIG_SETTING_NAME);
+			                !s_ip4
+			                ? NM_SETTING_IP4_CONFIG_SETTING_NAME
+			                : (!s_ip6
+			                   ? NM_SETTING_IP6_CONFIG_SETTING_NAME
+			                   : NM_SETTING_PROXY_SETTING_NAME));
 			/* having a master without IP config was not a verify() error, accept
 			 * it for backward compatibility. */
 			normalizable_error_type = NM_SETTING_VERIFY_NORMALIZABLE;
@@ -1091,13 +1113,10 @@ _nm_connection_verify (NMConnection *connection, GError **error)
 	if (normalizable_error_type != NM_SETTING_VERIFY_SUCCESS) {
 		g_propagate_error (error, normalizable_error);
 		normalizable_error = NULL;
-		success = normalizable_error_type;
-	} else
-		success = NM_SETTING_VERIFY_SUCCESS;
+		return normalizable_error_type;
+	}
 
-EXIT:
-	g_clear_error (&normalizable_error);
-	return success;
+	return NM_SETTING_VERIFY_SUCCESS;
 }
 
 /**
