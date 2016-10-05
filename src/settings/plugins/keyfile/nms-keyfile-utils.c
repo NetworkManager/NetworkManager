@@ -32,6 +32,8 @@
 
 #define NM_CONFIG_KEYFILE_PATH_DEFAULT NMCONFDIR "/system-connections"
 
+/*****************************************************************************/
+
 static const char temp_letters[] =
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
@@ -165,6 +167,4 @@ nms_keyfile_utils_get_path (void)
 	}
 	return path;
 }
-
-/*****************************************************************************/
 

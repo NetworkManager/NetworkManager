@@ -34,6 +34,6 @@ typedef struct _NMSKeyfilePluginClass NMSKeyfilePluginClass;
 
 GType nms_keyfile_plugin_get_type (void);
 
-GObject *nms_keyfile_plugin_new (void);
+NMSKeyfilePlugin *nms_keyfile_plugin_new (void);
 
 #endif /* __NMS_KEYFILE_PLUGIN_H__ */

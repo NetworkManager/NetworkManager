@@ -346,7 +346,7 @@ setup_monitoring (NMSettingsPlugin *config)
 	GFile *file;
 	GFileMonitor *monitor;
 
-	if (nm_config_get_monitor_connection_files (nm_config_get ())) {
+	if (nm_config_get_monitor_connection_files (priv->config)) {
 		file = g_file_new_for_path (nms_keyfile_utils_get_path ());
 		monitor = g_file_monitor_directory (file, G_FILE_MONITOR_NONE, NULL, NULL);
 		g_object_unref (file);
@@ -586,7 +586,7 @@ constructed (GObject *object)
 		nm_log_warn (LOGD_SETTINGS, "keyfile: 'hostname' option is deprecated and has no effect");
 }
 
-GObject *
+NMSKeyfilePlugin *
 nms_keyfile_plugin_new (void)
 {
 	return g_object_new (NMS_TYPE_KEYFILE_PLUGIN, NULL);

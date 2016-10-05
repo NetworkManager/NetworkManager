@@ -29,6 +29,8 @@
 
 #include "NetworkManagerUtils.h"
 
+/*****************************************************************************/
+
 static const char *
 _fmt_warn (const char *group, NMSetting *setting, const char *property_name, const char *message, char **out_message)
 {

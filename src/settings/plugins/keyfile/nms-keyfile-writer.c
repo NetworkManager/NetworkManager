@@ -33,10 +33,13 @@
 
 #include "nms-keyfile-utils.h"
 
+/*****************************************************************************/
+
 typedef struct {
 	const char *keyfile_dir;
 } WriteInfo;
 
+/*****************************************************************************/
 
 static gboolean
 write_cert_key_file (const char *path,

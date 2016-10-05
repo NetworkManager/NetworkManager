@@ -31,13 +31,8 @@
 #define NMS_IS_KEYFILE_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NMS_TYPE_KEYFILE_CONNECTION))
 #define NMS_KEYFILE_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NMS_TYPE_KEYFILE_CONNECTION, NMSKeyfileConnectionClass))
 
-typedef struct {
-	NMSettingsConnection parent;
-} NMSKeyfileConnection;
-
-typedef struct {
-	NMSettingsConnectionClass parent;
-} NMSKeyfileConnectionClass;
+typedef struct _NMSKeyfileConnection NMSKeyfileConnection;
+typedef struct _NMSKeyfileConnectionClass NMSKeyfileConnectionClass;
 
 GType nms_keyfile_connection_get_type (void);
 

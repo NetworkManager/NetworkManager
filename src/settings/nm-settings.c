@@ -798,10 +798,9 @@ find_plugin (GSList *list, const char *pname)
 static void
 add_keyfile_plugin (NMSettings *self)
 {
-	gs_unref_object GObject *keyfile_plugin = NULL;
+	gs_unref_object NMSKeyfilePlugin *keyfile_plugin = NULL;
 
 	keyfile_plugin = nms_keyfile_plugin_new ();
-	g_assert (keyfile_plugin);
 	if (!add_plugin (self, NM_SETTINGS_PLUGIN (keyfile_plugin)))
 		g_return_if_reached ();
 }

@@ -36,57 +36,19 @@
 #include "nms-keyfile-writer.h"
 #include "nms-keyfile-utils.h"
 
+/*****************************************************************************/
+
+struct _NMSKeyfileConnection {
+	NMSettingsConnection parent;
+};
+
+struct _NMSKeyfileConnectionClass {
+	NMSettingsConnectionClass parent;
+};
+
 G_DEFINE_TYPE (NMSKeyfileConnection, nms_keyfile_connection, NM_TYPE_SETTINGS_CONNECTION)
 
-NMSKeyfileConnection *
-nms_keyfile_connection_new (NMConnection *source,
-                            const char *full_path,
-                            GError **error)
-{
-	GObject *object;
-	NMConnection *tmp;
-	const char *uuid;
-	gboolean update_unsaved = TRUE;
-
-	g_assert (source || full_path);
-
-	/* If we're given a connection already, prefer that instead of re-reading */
-	if (source)
-		tmp = g_object_ref (source);
-	else {
-		tmp = nms_keyfile_reader_from_file (full_path, error);
-		if (!tmp)
-			return NULL;
-
-		uuid = nm_connection_get_uuid (NM_CONNECTION (tmp));
-		if (!uuid) {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Connection in file %s had no UUID", full_path);
-			g_object_unref (tmp);
-			return NULL;
-		}
-
-		/* If we just read the connection from disk, it's clearly not Unsaved */
-		update_unsaved = FALSE;
-	}
-
-	object = (GObject *) g_object_new (NMS_TYPE_KEYFILE_CONNECTION,
-	                                   NM_SETTINGS_CONNECTION_FILENAME, full_path,
-	                                   NULL);
-
-	/* Update our settings with what was read from the file */
-	if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
-	                                              tmp,
-	                                              update_unsaved,
-	                                              NULL,
-	                                              error)) {
-		g_object_unref (object);
-		object = NULL;
-	}
-
-	g_object_unref (tmp);
-	return (NMSKeyfileConnection *) object;
-}
+/*****************************************************************************/
 
 static void
 commit_changes (NMSettingsConnection *connection,
@@ -151,11 +113,61 @@ do_delete (NMSettingsConnection *connection,
 	                                                                            user_data);
 }
 
-/* GObject */
+/*****************************************************************************/
 
 static void
 nms_keyfile_connection_init (NMSKeyfileConnection *connection)
 {
+}
+
+NMSKeyfileConnection *
+nms_keyfile_connection_new (NMConnection *source,
+                            const char *full_path,
+                            GError **error)
+{
+	GObject *object;
+	NMConnection *tmp;
+	const char *uuid;
+	gboolean update_unsaved = TRUE;
+
+	g_assert (source || full_path);
+
+	/* If we're given a connection already, prefer that instead of re-reading */
+	if (source)
+		tmp = g_object_ref (source);
+	else {
+		tmp = nms_keyfile_reader_from_file (full_path, error);
+		if (!tmp)
+			return NULL;
+
+		uuid = nm_connection_get_uuid (NM_CONNECTION (tmp));
+		if (!uuid) {
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "Connection in file %s had no UUID", full_path);
+			g_object_unref (tmp);
+			return NULL;
+		}
+
+		/* If we just read the connection from disk, it's clearly not Unsaved */
+		update_unsaved = FALSE;
+	}
+
+	object = (GObject *) g_object_new (NMS_TYPE_KEYFILE_CONNECTION,
+	                                   NM_SETTINGS_CONNECTION_FILENAME, full_path,
+	                                   NULL);
+
+	/* Update our settings with what was read from the file */
+	if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
+	                                              tmp,
+	                                              update_unsaved,
+	                                              NULL,
+	                                              error)) {
+		g_object_unref (object);
+		object = NULL;
+	}
+
+	g_object_unref (tmp);
+	return (NMSKeyfileConnection *) object;
 }
 
 static void
@@ -163,7 +175,6 @@ nms_keyfile_connection_class_init (NMSKeyfileConnectionClass *keyfile_connection
 {
 	NMSettingsConnectionClass *settings_class = NM_SETTINGS_CONNECTION_CLASS (keyfile_connection_class);
 
-	/* Virtual methods */
 	settings_class->commit_changes = commit_changes;
 	settings_class->delete = do_delete;
 }
