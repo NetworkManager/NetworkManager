@@ -95,10 +95,7 @@ static struct {
 #define _NMLOG_PREFIX_NAME      "nm-iface-helper"
 #define _NMLOG(level, domain, ...) \
     nm_log ((level), (domain), \
-            "%s[%ld] (%s): " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
-            _NMLOG_PREFIX_NAME, \
-            (long) getpid (), \
-            global_opt.ifname \
+            "iface-helper: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__) \
             _NM_UTILS_MACRO_REST (__VA_ARGS__))
 
 /*****************************************************************************/
@@ -368,6 +365,11 @@ main (int argc, char *argv[])
 
 	if (!do_early_setup (&argc, &argv))
 		return 1;
+
+	nm_logging_set_prefix ("%s[%ld] (%s): ",
+	                       _NMLOG_PREFIX_NAME,
+	                       (long) getpid (),
+	                       global_opt.ifname ?: "???");
 
 	if (global_opt.g_fatal_warnings) {
 		GLogLevelFlags fatal_mask;
