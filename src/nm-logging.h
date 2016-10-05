@@ -188,6 +188,9 @@ gboolean nm_logging_setup (const char  *level,
                            const char  *domains,
                            char       **bad_domains,
                            GError     **error);
+
+void nm_logging_set_prefix (const char *format, ...) _nm_printf (1, 2);
+
 void     nm_logging_syslog_openlog (const char *logging_backend);
 gboolean nm_logging_syslog_enabled (void);
 

@@ -82,6 +82,7 @@ NMLogDomain _nm_logging_enabled_state[_LOGL_N_REAL] = {
 static struct {
 	NMLogLevel log_level;
 	bool uses_syslog:1;
+	const char *prefix;
 	enum {
 		LOG_BACKEND_GLIB,
 		LOG_BACKEND_SYSLOG,
@@ -98,6 +99,7 @@ static struct {
 	/* nm_logging_setup ("INFO", LOGD_DEFAULT_STRING, NULL, NULL); */
 	.log_level = LOGL_INFO,
 	.log_backend = LOG_BACKEND_GLIB,
+	.prefix = "",
 	.level_desc = {
 		[LOGL_TRACE] = { "TRACE", "<trace>", LOG_DEBUG,   G_LOG_LEVEL_DEBUG,   },
 		[LOGL_DEBUG] = { "DEBUG", "<debug>", LOG_DEBUG,   G_LOG_LEVEL_DEBUG,   },
@@ -531,7 +533,8 @@ _nm_log_impl (const char *file,
 
 			_iovec_set_format (iov, iov_free, i_field++, "PRIORITY=%d", global.level_desc[level].syslog_level);
 			_iovec_set_format (iov, iov_free, i_field++, "MESSAGE="
-			                   "%-7s%s %s",
+			                   "%s%-7s%s %s",
+			                   global.prefix,
 			                   global.level_desc[level].level_str,
 			                   s_buf_timestamp,
 			                   msg);
@@ -602,7 +605,8 @@ _nm_log_impl (const char *file,
 		break;
 #endif
 	default:
-		fullmsg = g_strdup_printf ("%-7s%s %s",
+		fullmsg = g_strdup_printf ("%s%-7s%s %s",
+		                           global.prefix,
 		                           global.level_desc[level].level_str,
 		                           s_buf_timestamp,
 		                           msg);
@@ -660,7 +664,7 @@ nm_log_handler (const gchar *log_domain,
 			boottime = nm_utils_monotonic_timestamp_as_boottime (now, 1);
 
 			sd_journal_send ("PRIORITY=%d", syslog_priority,
-			                 "MESSAGE=%s", message ?: "",
+			                 "MESSAGE=%s%s", global.prefix, message ?: "",
 			                 "SYSLOG_IDENTIFIER=%s", G_LOG_DOMAIN,
 			                 "SYSLOG_PID=%ld", (long) getpid (),
 			                 "SYSLOG_FACILITY=GLIB",
@@ -673,7 +677,7 @@ nm_log_handler (const gchar *log_domain,
 		break;
 #endif
 	default:
-		syslog (syslog_priority, "%s", message ?: "");
+		syslog (syslog_priority, "%s%s", global.prefix, message ?: "");
 		break;
 	}
 }
@@ -682,6 +686,30 @@ gboolean
 nm_logging_syslog_enabled (void)
 {
 	return global.uses_syslog;
+}
+
+void
+nm_logging_set_prefix (const char *format, ...)
+{
+	char *prefix;
+	va_list ap;
+
+	/* prefix can only be set once, to a non-empty string. Also, after
+	 * nm_logging_syslog_openlog() the prefix cannot be set either. */
+	if (global.log_backend != LOG_BACKEND_GLIB)
+		g_return_if_reached ();
+	if (global.prefix[0])
+		g_return_if_reached ();
+
+	va_start (ap, format);
+	prefix = g_strdup_vprintf (format, ap);
+	va_end (ap);
+
+	if (!prefix || !prefix[0])
+		g_return_if_reached ();
+
+	/* we pass the allocated string on and never free it. */
+	global.prefix = prefix;
 }
 
 void
