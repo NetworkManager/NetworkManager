@@ -526,6 +526,7 @@ main (int argc, char *argv[])
 	nm_log_info (LOGD_CORE, "exiting");
 
 	nm_clear_g_source (&sd_id);
+	g_clear_pointer (&gl.main_loop, g_main_loop_unref);
 	return 0;
 }
 
