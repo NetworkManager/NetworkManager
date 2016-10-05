@@ -979,6 +979,10 @@ __define_nmtst_static(02, 1024)
 __define_nmtst_static(03, 1024)
 #undef __define_nmtst_static
 
+#define NMTST_UUID_INIT(uuid) \
+	gs_free char *_nmtst_hidden_##uuid = nm_utils_uuid_generate (); \
+	const char *const uuid = _nmtst_hidden_##uuid
+
 inline static const char *
 nmtst_uuid_generate (void)
 {
