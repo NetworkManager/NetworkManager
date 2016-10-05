@@ -88,7 +88,7 @@ check_suffix (const char *base, const char *tag)
 #define DER_TAG ".der"
 
 gboolean
-nm_keyfile_plugin_utils_should_ignore_file (const char *filename)
+nms_keyfile_utils_should_ignore_file (const char *filename)
 {
 	gs_free char *base = NULL;
 
@@ -112,7 +112,7 @@ nm_keyfile_plugin_utils_should_ignore_file (const char *filename)
 }
 
 char *
-nm_keyfile_plugin_utils_escape_filename (const char *filename)
+nms_keyfile_utils_escape_filename (const char *filename)
 {
 	GString *str;
 	const char *f = filename;
@@ -151,7 +151,7 @@ nm_keyfile_plugin_utils_escape_filename (const char *filename)
 /*****************************************************************************/
 
 const char *
-nm_keyfile_plugin_get_path (void)
+nms_keyfile_utils_get_path (void)
 {
 	static char *path = NULL;
 

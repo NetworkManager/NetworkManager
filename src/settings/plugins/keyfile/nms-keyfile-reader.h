@@ -19,11 +19,11 @@
  * Copyright (C) 2008 Red Hat, Inc.
  */
 
-#ifndef _KEYFILE_PLUGIN_READER_H
-#define _KEYFILE_PLUGIN_READER_H
+#ifndef __NMS_KEYFILE_READER_H__
+#define __NMS_KEYFILE_READER_H__
 
 #include <nm-connection.h>
 
-NMConnection *nm_keyfile_plugin_connection_from_file (const char *filename, GError **error);
+NMConnection *nms_keyfile_reader_from_file (const char *filename, GError **error);
 
-#endif /* _KEYFILE_PLUGIN_READER_H */
+#endif /* __NMS_KEYFILE_READER_H__ */

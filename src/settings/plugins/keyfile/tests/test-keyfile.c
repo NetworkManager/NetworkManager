@@ -69,7 +69,7 @@ keyfile_read_connection_from_file (const char *filename)
 
 	g_assert (filename);
 
-	connection = nm_keyfile_plugin_connection_from_file (filename, &error);
+	connection = nms_keyfile_reader_from_file (filename, &error);
 	g_assert_no_error (error);
 
 	nmtst_assert_connection_verifies_without_normalization (connection);
@@ -89,7 +89,7 @@ assert_reread (NMConnection *connection, gboolean normalize_connection, const ch
 	g_assert (NM_IS_CONNECTION (connection));
 	g_assert (testfile && testfile[0]);
 
-	reread = nm_keyfile_plugin_connection_from_file (testfile, p_error);
+	reread = nms_keyfile_reader_from_file (testfile, p_error);
 	g_assert_no_error (error);
 	g_assert (NM_IS_CONNECTION (reread));
 
@@ -127,7 +127,7 @@ write_test_connection (NMConnection *connection, char **testfile)
 	owner_uid = geteuid ();
 	owner_grp = getegid ();
 
-	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, testfile, p_error);
+	success = nms_keyfile_writer_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, testfile, p_error);
 	g_assert_no_error (error);
 	g_assert (success);
 	g_assert (*testfile && (*testfile)[0]);
@@ -204,7 +204,7 @@ test_read_valid_wired_connection (void)
 	                       "*ipv6.routes*semicolon at the end*routes1*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*ipv6.route*semicolon at the end*route6*");
-	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR "/Test_Wired_Connection", NULL);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Wired_Connection", NULL);
 	g_test_assert_expected_messages ();
 	g_assert (connection);
 
@@ -465,7 +465,7 @@ test_read_ip6_wired_connection (void)
 	gs_free_error GError *error = NULL;
 	gboolean success;
 
-	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR "/Test_Wired_Connection_IP6", NULL);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Wired_Connection_IP6", NULL);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
 	g_assert_no_error (error);
@@ -576,7 +576,7 @@ test_read_wired_mac_case (void)
 	                       "*ipv4.addresses*semicolon at the end*addresses2*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*ipv6.routes*semicolon at the end*routes1*");
-	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR "/Test_Wired_Connection_MAC_Case", NULL);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Wired_Connection_MAC_Case", NULL);
 	g_test_assert_expected_messages ();
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
@@ -608,7 +608,7 @@ test_read_mac_old_format (void)
 	char expected_mac[ETH_ALEN] = { 0x00, 0x11, 0xaa, 0xbb, 0xcc, 0x55 };
 	char expected_cloned_mac[ETH_ALEN] = { 0x00, 0x16, 0xaa, 0xbb, 0xcc, 0xfe };
 
-	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR "/Test_MAC_Old_Format", &error);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_MAC_Old_Format", &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 
@@ -642,7 +642,7 @@ test_read_mac_ib_old_format (void)
 		0x77, 0x88, 0x99, 0x01, 0x12, 0x23, 0x34, 0x45, 0x56, 0x67, 0x78, 0x89,
 		0x90 };
 
-	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR "/Test_MAC_IB_Old_Format", &error);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_MAC_IB_Old_Format", &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 
@@ -671,7 +671,7 @@ test_read_valid_wireless_connection (void)
 	const guint8 expected_bssid[ETH_ALEN] = { 0x00, 0x1a, 0x33, 0x44, 0x99, 0x82 };
 	gboolean success;
 
-	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR "/Test_Wireless_Connection", NULL);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Wireless_Connection", NULL);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
 	g_assert_no_error (error);
@@ -775,7 +775,7 @@ test_read_string_ssid (void)
 	const char *expected_ssid = "blah blah ssid 1234";
 	gboolean success;
 
-	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR "/Test_String_SSID", NULL);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_String_SSID", NULL);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
 	g_assert_no_error (error);
@@ -859,7 +859,7 @@ test_read_intlist_ssid (void)
 	gsize ssid_len;
 	const char *expected_ssid = "blah1234";
 
-	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR "/Test_Intlist_SSID", &error);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Intlist_SSID", &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 
@@ -952,7 +952,7 @@ test_read_intlike_ssid (void)
 	gsize ssid_len;
 	const char *expected_ssid = "101";
 
-	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR "/Test_Intlike_SSID", &error);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Intlike_SSID", &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 
@@ -983,7 +983,7 @@ test_read_intlike_ssid_2 (void)
 	gsize ssid_len;
 	const char *expected_ssid = "11;12;13;";
 
-	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR "/Test_Intlike_SSID_2", &error);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Intlike_SSID_2", &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 
@@ -1132,7 +1132,7 @@ test_read_bt_dun_connection (void)
 	const guint8 expected_bdaddr[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 };
 	gboolean success;
 
-	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR "/ATT_Data_Connect_BT", NULL);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/ATT_Data_Connect_BT", NULL);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
 	g_assert_no_error (error);
@@ -1235,7 +1235,7 @@ test_read_gsm_connection (void)
 	gs_free_error GError *error = NULL;
 	gboolean success;
 
-	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR "/ATT_Data_Connect_Plain", &error);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/ATT_Data_Connect_Plain", &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 
@@ -1340,7 +1340,7 @@ test_read_wired_8021x_tls_blob_connection (void)
 	                       "*<warn> * keyfile: 802-1x.client-cert: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*<warn> * keyfile: 802-1x.private-key: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
-	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR "/Test_Wired_TLS_Blob", &error);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Wired_TLS_Blob", &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
@@ -1399,7 +1399,7 @@ test_read_wired_8021x_tls_bad_path_connection (void)
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*does not exist*");
-	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR "/Test_Wired_TLS_Path_Missing", &error);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Wired_TLS_Path_Missing", &error);
 	g_test_assert_expected_messages ();
 	g_assert_no_error (error);
 	g_assert (connection);
@@ -1457,7 +1457,7 @@ test_read_wired_8021x_tls_old_connection (void)
 	                       "*<warn> * keyfile: 802-1x.client-cert: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*<warn> * keyfile: 802-1x.private-key: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
-	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR "/Test_Wired_TLS_Old", &error);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Wired_TLS_Old", &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
@@ -1503,7 +1503,7 @@ test_read_wired_8021x_tls_new_connection (void)
 	char *tmp2;
 	gboolean success;
 
-	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR "/Test_Wired_TLS_New", &error);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Wired_TLS_New", &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
@@ -1645,7 +1645,7 @@ test_write_wired_8021x_tls_connection_path (void)
 	write_test_connection (connection, &testfile);
 
 	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
+	reread = nms_keyfile_reader_from_file (testfile, &error);
 	if (!reread) {
 		g_assert (error);
 		g_warning ("Failed to re-read test connection: %s", error->message);
@@ -1753,7 +1753,7 @@ test_write_wired_8021x_tls_connection_blob (void)
 	g_assert (g_file_test (new_priv_key, G_FILE_TEST_EXISTS));
 
 	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
+	reread = nms_keyfile_reader_from_file (testfile, &error);
 	if (!reread) {
 		g_assert (error);
 		g_warning ("Failed to re-read test connection: %s", error->message);
@@ -1800,7 +1800,7 @@ test_read_infiniband_connection (void)
 	const char *expected_uuid = "4e80a56d-c99f-4aad-a6dd-b449bc398c57";
 	gboolean success;
 
-	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR "/Test_InfiniBand_Connection", &error);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_InfiniBand_Connection", &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
@@ -1886,7 +1886,7 @@ test_read_bridge_main (void)
 	const char *expected_uuid = "8f061643-fe41-4d4c-a8d9-097d26e2ad3a";
 	gboolean success;
 
-	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR "/Test_Bridge_Main", &error);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Bridge_Main", &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
@@ -1983,7 +1983,7 @@ test_read_bridge_component (void)
 	const char *expected_uuid = "d7b4f96c-c45e-4298-bef8-f48574f8c1c0";
 	gboolean success;
 
-	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR "/Test_Bridge_Component", &error);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Bridge_Component", &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
@@ -2073,7 +2073,7 @@ test_read_new_wired_group_name (void)
 	gs_free_error GError *error = NULL;
 	gboolean success;
 
-	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR"/Test_New_Wired_Group_Name", &error);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR"/Test_New_Wired_Group_Name", &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
@@ -2155,7 +2155,7 @@ test_read_new_wireless_group_names (void)
 	gs_free_error GError *error = NULL;
 	gboolean success;
 
-	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR"/Test_New_Wireless_Group_Names", &error);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR"/Test_New_Wireless_Group_Names", &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
@@ -2262,7 +2262,7 @@ test_read_missing_vlan_setting (void)
 	gs_free_error GError *error = NULL;
 	gboolean success;
 
-	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR"/Test_Missing_Vlan_Setting", &error);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR"/Test_Missing_Vlan_Setting", &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
@@ -2284,7 +2284,7 @@ test_read_missing_vlan_flags (void)
 	gs_free_error GError *error = NULL;
 	gboolean success;
 
-	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR"/Test_Missing_Vlan_Flags", &error);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR"/Test_Missing_Vlan_Flags", &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
@@ -2307,7 +2307,7 @@ test_read_missing_id_uuid (void)
 	gs_free_error GError *error = NULL;
 	gboolean success;
 
-	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR"/Test_Missing_ID_UUID", &error);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR"/Test_Missing_ID_UUID", &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
@@ -2411,7 +2411,7 @@ test_read_enum_property (void)
 	gs_free_error GError *error = NULL;
 	gboolean success;
 
-	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR"/Test_Enum_Property", &error);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR"/Test_Enum_Property", &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
@@ -2471,7 +2471,7 @@ test_read_flags_property (void)
 	gs_free_error GError *error = NULL;
 	gboolean success;
 
-	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR"/Test_Flags_Property", &error);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR"/Test_Flags_Property", &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
@@ -2530,18 +2530,18 @@ _escape_filename (const char *filename, gboolean would_be_ignored)
 
 	g_assert (filename && filename[0]);
 
-	if (!!would_be_ignored != !!nm_keyfile_plugin_utils_should_ignore_file (filename)) {
+	if (!!would_be_ignored != !!nms_keyfile_utils_should_ignore_file (filename)) {
 		if (would_be_ignored)
 			g_error ("We expect filename \"%s\" to be ignored, but it isn't", filename);
 		else
 			g_error ("We expect filename \"%s\" not to be ignored, but it is", filename);
 	}
 
-	esc = nm_keyfile_plugin_utils_escape_filename (filename);
+	esc = nms_keyfile_utils_escape_filename (filename);
 	g_assert (esc && esc[0]);
 	g_assert (!strchr (esc, '/'));
 
-	if (nm_keyfile_plugin_utils_should_ignore_file (esc))
+	if (nms_keyfile_utils_should_ignore_file (esc))
 		g_error ("Escaping filename \"%s\" yielded \"%s\", but this is ignored", filename, esc);
 }
 

@@ -800,7 +800,7 @@ add_keyfile_plugin (NMSettings *self)
 {
 	gs_unref_object GObject *keyfile_plugin = NULL;
 
-	keyfile_plugin = nm_settings_keyfile_plugin_new ();
+	keyfile_plugin = nms_keyfile_plugin_new ();
 	g_assert (keyfile_plugin);
 	if (!add_plugin (self, NM_SETTINGS_PLUGIN (keyfile_plugin)))
 		g_return_if_reached ();

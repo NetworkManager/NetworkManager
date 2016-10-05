@@ -19,22 +19,22 @@
  * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
-#ifndef _KEYFILE_PLUGIN_WRITER_H
-#define _KEYFILE_PLUGIN_WRITER_H
+#ifndef __NMS_KEYFILE_WRITER_H__
+#define __NMS_KEYFILE_WRITER_H__
 
 #include <nm-connection.h>
 
-gboolean nm_keyfile_plugin_write_connection (NMConnection *connection,
-                                             const char *existing_path,
-                                             gboolean force_rename,
+gboolean nms_keyfile_writer_connection (NMConnection *connection,
+                                        const char *existing_path,
+                                        gboolean force_rename,
+                                        char **out_path,
+                                        GError **error);
+
+gboolean nms_keyfile_writer_test_connection (NMConnection *connection,
+                                             const char *keyfile_dir,
+                                             uid_t owner_uid,
+                                             pid_t owner_grp,
                                              char **out_path,
                                              GError **error);
 
-gboolean nm_keyfile_plugin_write_test_connection (NMConnection *connection,
-                                                  const char *keyfile_dir,
-                                                  uid_t owner_uid,
-                                                  pid_t owner_grp,
-                                                  char **out_path,
-                                                  GError **error);
-
-#endif /* _KEYFILE_PLUGIN_WRITER_H */
+#endif /* __NMS_KEYFILE_WRITER_H__ */

@@ -19,30 +19,30 @@
  * Copyright (C) 2008 - 2012 Red Hat, Inc.
  */
 
-#ifndef __NETWORKMANAGER_KEYFILE_CONNECTION_H__
-#define __NETWORKMANAGER_KEYFILE_CONNECTION_H__
+#ifndef __NMS_KEYFILE_CONNECTION_H__
+#define __NMS_KEYFILE_CONNECTION_H__
 
 #include <nm-settings-connection.h>
 
-#define NM_TYPE_KEYFILE_CONNECTION            (nm_keyfile_connection_get_type ())
-#define NM_KEYFILE_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_KEYFILE_CONNECTION, NMKeyfileConnection))
-#define NM_KEYFILE_CONNECTION_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_KEYFILE_CONNECTION, NMKeyfileConnectionClass))
-#define NM_IS_KEYFILE_CONNECTION(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_KEYFILE_CONNECTION))
-#define NM_IS_KEYFILE_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_KEYFILE_CONNECTION))
-#define NM_KEYFILE_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_KEYFILE_CONNECTION, NMKeyfileConnectionClass))
+#define NMS_TYPE_KEYFILE_CONNECTION            (nms_keyfile_connection_get_type ())
+#define NMS_KEYFILE_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMS_TYPE_KEYFILE_CONNECTION, NMSKeyfileConnection))
+#define NMS_KEYFILE_CONNECTION_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMS_TYPE_KEYFILE_CONNECTION, NMSKeyfileConnectionClass))
+#define NMS_IS_KEYFILE_CONNECTION(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NMS_TYPE_KEYFILE_CONNECTION))
+#define NMS_IS_KEYFILE_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NMS_TYPE_KEYFILE_CONNECTION))
+#define NMS_KEYFILE_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NMS_TYPE_KEYFILE_CONNECTION, NMSKeyfileConnectionClass))
 
 typedef struct {
 	NMSettingsConnection parent;
-} NMKeyfileConnection;
+} NMSKeyfileConnection;
 
 typedef struct {
 	NMSettingsConnectionClass parent;
-} NMKeyfileConnectionClass;
+} NMSKeyfileConnectionClass;
 
-GType nm_keyfile_connection_get_type (void);
+GType nms_keyfile_connection_get_type (void);
 
-NMKeyfileConnection *nm_keyfile_connection_new (NMConnection *source,
-                                                const char *filename,
-                                                GError **error);
+NMSKeyfileConnection *nms_keyfile_connection_new (NMConnection *source,
+                                                  const char *filename,
+                                                  GError **error);
 
-#endif /* __NETWORKMANAGER_KEYFILE_CONNECTION_H__ */
+#endif /* __NMS_KEYFILE_CONNECTION_H__ */

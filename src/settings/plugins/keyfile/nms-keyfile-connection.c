@@ -36,12 +36,12 @@
 #include "nms-keyfile-writer.h"
 #include "nms-keyfile-utils.h"
 
-G_DEFINE_TYPE (NMKeyfileConnection, nm_keyfile_connection, NM_TYPE_SETTINGS_CONNECTION)
+G_DEFINE_TYPE (NMSKeyfileConnection, nms_keyfile_connection, NM_TYPE_SETTINGS_CONNECTION)
 
-NMKeyfileConnection *
-nm_keyfile_connection_new (NMConnection *source,
-                           const char *full_path,
-                           GError **error)
+NMSKeyfileConnection *
+nms_keyfile_connection_new (NMConnection *source,
+                            const char *full_path,
+                            GError **error)
 {
 	GObject *object;
 	NMConnection *tmp;
@@ -54,7 +54,7 @@ nm_keyfile_connection_new (NMConnection *source,
 	if (source)
 		tmp = g_object_ref (source);
 	else {
-		tmp = nm_keyfile_plugin_connection_from_file (full_path, error);
+		tmp = nms_keyfile_reader_from_file (full_path, error);
 		if (!tmp)
 			return NULL;
 
@@ -70,7 +70,7 @@ nm_keyfile_connection_new (NMConnection *source,
 		update_unsaved = FALSE;
 	}
 
-	object = (GObject *) g_object_new (NM_TYPE_KEYFILE_CONNECTION,
+	object = (GObject *) g_object_new (NMS_TYPE_KEYFILE_CONNECTION,
 	                                   NM_SETTINGS_CONNECTION_FILENAME, full_path,
 	                                   NULL);
 
@@ -85,7 +85,7 @@ nm_keyfile_connection_new (NMConnection *source,
 	}
 
 	g_object_unref (tmp);
-	return (NMKeyfileConnection *) object;
+	return (NMSKeyfileConnection *) object;
 }
 
 static void
@@ -97,12 +97,12 @@ commit_changes (NMSettingsConnection *connection,
 	char *path = NULL;
 	GError *error = NULL;
 
-	if (!nm_keyfile_plugin_write_connection (NM_CONNECTION (connection),
-	                                         nm_settings_connection_get_filename (connection),
-	                                         NM_FLAGS_ALL (commit_reason,   NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION
-	                                                                      | NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED),
-	                                         &path,
-	                                         &error)) {
+	if (!nms_keyfile_writer_connection (NM_CONNECTION (connection),
+	                                    nm_settings_connection_get_filename (connection),
+	                                    NM_FLAGS_ALL (commit_reason,   NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION
+	                                                                 | NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED),
+	                                    &path,
+	                                    &error)) {
 		callback (connection, error, user_data);
 		g_clear_error (&error);
 		return;
@@ -115,27 +115,27 @@ commit_changes (NMSettingsConnection *connection,
 
 		nm_settings_connection_set_filename (connection, path);
 		if (old_path) {
-			nm_log_info (LOGD_SETTINGS, "keyfile: update "NM_KEYFILE_CONNECTION_LOG_FMT" and rename from \"%s\"",
-			             NM_KEYFILE_CONNECTION_LOG_ARG (connection),
+			nm_log_info (LOGD_SETTINGS, "keyfile: update "NMS_KEYFILE_CONNECTION_LOG_FMT" and rename from \"%s\"",
+			             NMS_KEYFILE_CONNECTION_LOG_ARG (connection),
 			             old_path);
 		} else {
-			nm_log_info (LOGD_SETTINGS, "keyfile: update "NM_KEYFILE_CONNECTION_LOG_FMT" and persist connection",
-			             NM_KEYFILE_CONNECTION_LOG_ARG (connection));
+			nm_log_info (LOGD_SETTINGS, "keyfile: update "NMS_KEYFILE_CONNECTION_LOG_FMT" and persist connection",
+			             NMS_KEYFILE_CONNECTION_LOG_ARG (connection));
 		}
 	} else {
-		nm_log_info (LOGD_SETTINGS, "keyfile: update "NM_KEYFILE_CONNECTION_LOG_FMT,
-		             NM_KEYFILE_CONNECTION_LOG_ARG (connection));
+		nm_log_info (LOGD_SETTINGS, "keyfile: update "NMS_KEYFILE_CONNECTION_LOG_FMT,
+		             NMS_KEYFILE_CONNECTION_LOG_ARG (connection));
 	}
 
 	g_free (path);
 
-	NM_SETTINGS_CONNECTION_CLASS (nm_keyfile_connection_parent_class)->commit_changes (connection,
-	                                                                                   commit_reason,
-	                                                                                   callback,
-	                                                                                   user_data);
+	NM_SETTINGS_CONNECTION_CLASS (nms_keyfile_connection_parent_class)->commit_changes (connection,
+	                                                                                    commit_reason,
+	                                                                                    callback,
+	                                                                                    user_data);
 }
 
-static void 
+static void
 do_delete (NMSettingsConnection *connection,
            NMSettingsConnectionDeleteFunc callback,
            gpointer user_data)
@@ -146,20 +146,20 @@ do_delete (NMSettingsConnection *connection,
 	if (path)
 		g_unlink (path);
 
-	NM_SETTINGS_CONNECTION_CLASS (nm_keyfile_connection_parent_class)->delete (connection,
-	                                                                           callback,
-	                                                                           user_data);
+	NM_SETTINGS_CONNECTION_CLASS (nms_keyfile_connection_parent_class)->delete (connection,
+	                                                                            callback,
+	                                                                            user_data);
 }
 
 /* GObject */
 
 static void
-nm_keyfile_connection_init (NMKeyfileConnection *connection)
+nms_keyfile_connection_init (NMSKeyfileConnection *connection)
 {
 }
 
 static void
-nm_keyfile_connection_class_init (NMKeyfileConnectionClass *keyfile_connection_class)
+nms_keyfile_connection_class_init (NMSKeyfileConnectionClass *keyfile_connection_class)
 {
 	NMSettingsConnectionClass *settings_class = NM_SETTINGS_CONNECTION_CLASS (keyfile_connection_class);
 

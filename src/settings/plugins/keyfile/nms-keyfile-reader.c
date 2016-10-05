@@ -87,7 +87,7 @@ _handler_read (GKeyFile *keyfile,
 }
 
 NMConnection *
-nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
+nms_keyfile_reader_from_file (const char *filename, GError **error)
 {
 	GKeyFile *key_file;
 	struct stat statbuf;

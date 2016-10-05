@@ -19,21 +19,21 @@
  * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
-#ifndef __NMKF_PLUGIN_H__
-#define __NMKF_PLUGIN_H__
+#ifndef __NMS_KEYFILE_PLUGIN_H__
+#define __NMS_KEYFILE_PLUGIN_H__
 
-#define SETTINGS_TYPE_PLUGIN_KEYFILE            (settings_plugin_keyfile_get_type ())
-#define SETTINGS_PLUGIN_KEYFILE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), SETTINGS_TYPE_PLUGIN_KEYFILE, SettingsPluginKeyfile))
-#define SETTINGS_PLUGIN_KEYFILE_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), SETTINGS_TYPE_PLUGIN_KEYFILE, SettingsPluginKeyfileClass))
-#define SETTINGS_IS_PLUGIN_KEYFILE(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), SETTINGS_TYPE_PLUGIN_KEYFILE))
-#define SETTINGS_IS_PLUGIN_KEYFILE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), SETTINGS_TYPE_PLUGIN_KEYFILE))
-#define SETTINGS_PLUGIN_KEYFILE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), SETTINGS_TYPE_PLUGIN_KEYFILE, SettingsPluginKeyfileClass))
+#define NMS_TYPE_KEYFILE_PLUGIN            (nms_keyfile_plugin_get_type ())
+#define NMS_KEYFILE_PLUGIN(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMS_TYPE_KEYFILE_PLUGIN, NMSKeyfilePlugin))
+#define NMS_KEYFILE_PLUGIN_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMS_TYPE_KEYFILE_PLUGIN, NMSKeyfilePluginClass))
+#define NMS_IS_KEYFILE_PLUGIN(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NMS_TYPE_KEYFILE_PLUGIN))
+#define NMS_IS_KEYFILE_PLUGIN_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NMS_TYPE_KEYFILE_PLUGIN))
+#define NMS_KEYFILE_PLUGIN_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NMS_TYPE_KEYFILE_PLUGIN, NMSKeyfilePluginClass))
 
-typedef struct _SettingsPluginKeyfile SettingsPluginKeyfile;
-typedef struct _SettingsPluginKeyfileClass SettingsPluginKeyfileClass;
+typedef struct _NMSKeyfilePlugin NMSKeyfilePlugin;
+typedef struct _NMSKeyfilePluginClass NMSKeyfilePluginClass;
 
-GType settings_plugin_keyfile_get_type (void);
+GType nms_keyfile_plugin_get_type (void);
 
-GObject *nm_settings_keyfile_plugin_new (void);
+GObject *nms_keyfile_plugin_new (void);
 
-#endif /* __NMKF_PLUGIN_H__ */
+#endif /* __NMS_KEYFILE_PLUGIN_H__ */

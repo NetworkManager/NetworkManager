@@ -264,7 +264,7 @@ _internal_write_connection (NMConnection *connection,
 	if (existing_path != NULL && !force_rename) {
 		path = g_strdup (existing_path);
 	} else {
-		char *filename_escaped = nm_keyfile_plugin_utils_escape_filename (id);
+		char *filename_escaped = nms_keyfile_utils_escape_filename (id);
 
 		path = g_build_filename (keyfile_dir, filename_escaped, NULL);
 		g_free (filename_escaped);
@@ -290,7 +290,7 @@ _internal_write_connection (NMConnection *connection,
 			else
 				filename = g_strdup_printf ("%s-%s-%u", id, nm_connection_get_uuid (connection), i);
 
-			filename_escaped = nm_keyfile_plugin_utils_escape_filename (filename);
+			filename_escaped = nms_keyfile_utils_escape_filename (filename);
 
 			g_free (path);
 			path = g_strdup_printf ("%s/%s", keyfile_dir, filename_escaped);
@@ -353,14 +353,14 @@ out:
 }
 
 gboolean
-nm_keyfile_plugin_write_connection (NMConnection *connection,
-                                    const char *existing_path,
-                                    gboolean force_rename,
-                                    char **out_path,
-                                    GError **error)
+nms_keyfile_writer_connection (NMConnection *connection,
+                          const char *existing_path,
+                          gboolean force_rename,
+                          char **out_path,
+                          GError **error)
 {
 	return _internal_write_connection (connection,
-	                                   nm_keyfile_plugin_get_path (),
+	                                   nms_keyfile_utils_get_path (),
 	                                   0, 0,
 	                                   existing_path,
 	                                   force_rename,
@@ -369,12 +369,12 @@ nm_keyfile_plugin_write_connection (NMConnection *connection,
 }
 
 gboolean
-nm_keyfile_plugin_write_test_connection (NMConnection *connection,
-                                         const char *keyfile_dir,
-                                         uid_t owner_uid,
-                                         pid_t owner_grp,
-                                         char **out_path,
-                                         GError **error)
+nms_keyfile_writer_test_connection (NMConnection *connection,
+                               const char *keyfile_dir,
+                               uid_t owner_uid,
+                               pid_t owner_grp,
+                               char **out_path,
+                               GError **error)
 {
 	return _internal_write_connection (connection,
 	                                   keyfile_dir,
