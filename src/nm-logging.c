@@ -79,10 +79,12 @@ NMLogDomain _nm_logging_enabled_state[_LOGL_N_REAL] = {
 	[LOGL_ERR]  = LOGD_DEFAULT,
 };
 
-static struct {
+static struct Global {
 	NMLogLevel log_level;
 	bool uses_syslog:1;
+	bool syslog_identifier_initialized:1;
 	const char *prefix;
+	const char *syslog_identifier;
 	enum {
 		LOG_BACKEND_GLIB,
 		LOG_BACKEND_SYSLOG,
@@ -99,6 +101,7 @@ static struct {
 	/* nm_logging_setup ("INFO", LOGD_DEFAULT_STRING, NULL, NULL); */
 	.log_level = LOGL_INFO,
 	.log_backend = LOG_BACKEND_GLIB,
+	.syslog_identifier = "SYSLOG_IDENTIFIER="G_LOG_DOMAIN,
 	.prefix = "",
 	.level_desc = {
 		[LOGL_TRACE] = { "TRACE", "<trace>", LOG_DEBUG,   G_LOG_LEVEL_DEBUG,   },
@@ -165,6 +168,70 @@ G_STATIC_ASSERT (sizeof (NMLogDomain) >= sizeof (guint64));
 /*****************************************************************************/
 
 static char *_domains_to_string (gboolean include_level_override);
+
+/*****************************************************************************/
+
+static gboolean
+_syslog_identifier_valid_domain (const char *domain)
+{
+	char c;
+
+	if (!domain || !domain[0])
+		return FALSE;
+
+	/* we pass the syslog identifier as format string. No funny stuff. */
+
+	for (; (c = domain[0]); domain++) {
+		if (   (c >= 'a' && c <= 'z')
+		    || (c >= 'A' && c <= 'Z')
+		    || (c >= '0' && c <= '9')
+		    || NM_IN_SET (c, '-', '_'))
+			continue;
+		return FALSE;
+	}
+	return TRUE;
+}
+
+static gboolean
+_syslog_identifier_assert (const struct Global *gl)
+{
+	g_assert (gl);
+	g_assert (gl->syslog_identifier);
+	g_assert (g_str_has_prefix (gl->syslog_identifier, "SYSLOG_IDENTIFIER="));
+	g_assert (_syslog_identifier_valid_domain (&gl->syslog_identifier[NM_STRLEN ("SYSLOG_IDENTIFIER=")]));
+	return TRUE;
+}
+
+static const char *
+syslog_identifier_domain (const struct Global *gl)
+{
+	nm_assert (_syslog_identifier_assert (gl));
+	return &gl->syslog_identifier[NM_STRLEN ("SYSLOG_IDENTIFIER=")];
+}
+
+static const char *
+syslog_identifier_full (const struct Global *gl)
+{
+	nm_assert (_syslog_identifier_assert (gl));
+	return &gl->syslog_identifier[0];
+}
+
+void
+nm_logging_set_syslog_identifier (const char *domain)
+{
+	if (global.log_backend != LOG_BACKEND_GLIB)
+		g_return_if_reached ();
+
+	if (!_syslog_identifier_valid_domain (domain))
+		g_return_if_reached ();
+
+	if (global.syslog_identifier_initialized)
+		g_return_if_reached ();
+
+	global.syslog_identifier_initialized = TRUE;
+	global.syslog_identifier = g_strdup_printf ("SYSLOG_IDENTIFIER=%s", domain);
+	nm_assert (_syslog_identifier_assert (&global));
+}
 
 /*****************************************************************************/
 
@@ -472,13 +539,20 @@ _iovec_set_format (struct iovec *iov, gboolean *iov_free, int i, const char *for
 }
 
 static void
-_iovec_set_string (struct iovec *iov, gboolean *iov_free, int i, const char *str, gsize len)
+_iovec_set_string_l (struct iovec *iov, gboolean *iov_free, int i, const char *str, gsize len)
 {
 	iov[i].iov_base = (char *) str;
 	iov[i].iov_len = len;
 	iov_free[i] = FALSE;
 }
-#define _iovec_set_literal_string(iov, iov_free, i, str) _iovec_set_string ((iov), (iov_free), (i), (""str""), NM_STRLEN (str))
+
+static void
+_iovec_set_string (struct iovec *iov, gboolean *iov_free, int i, const char *str)
+{
+	_iovec_set_string_l (iov, iov_free, i, str, strlen (str));
+}
+
+#define _iovec_set_literal_string(iov, iov_free, i, str) _iovec_set_string_l ((iov), (iov_free), (i), (""str""), NM_STRLEN (str))
 #endif
 
 void
@@ -538,7 +612,7 @@ _nm_log_impl (const char *file,
 			                   global.level_desc[level].level_str,
 			                   s_buf_timestamp,
 			                   msg);
-			_iovec_set_literal_string (iov, iov_free, i_field++, "SYSLOG_IDENTIFIER=" G_LOG_DOMAIN);
+			_iovec_set_string (iov, iov_free, i_field++, syslog_identifier_full (&global));
 			_iovec_set_format (iov, iov_free, i_field++, "SYSLOG_PID=%ld", (long) getpid ());
 			{
 				const LogDesc *diter;
@@ -614,7 +688,7 @@ _nm_log_impl (const char *file,
 		if (global.log_backend == LOG_BACKEND_SYSLOG)
 			syslog (global.level_desc[level].syslog_level, "%s", fullmsg);
 		else
-			g_log (G_LOG_DOMAIN, global.level_desc[level].g_log_level, "%s", fullmsg);
+			g_log (syslog_identifier_domain (&global), global.level_desc[level].g_log_level, "%s", fullmsg);
 		g_free (fullmsg);
 		break;
 	}
@@ -665,7 +739,7 @@ nm_log_handler (const gchar *log_domain,
 
 			sd_journal_send ("PRIORITY=%d", syslog_priority,
 			                 "MESSAGE=%s%s", global.prefix, message ?: "",
-			                 "SYSLOG_IDENTIFIER=%s", G_LOG_DOMAIN,
+			                 syslog_identifier_full (&global),
 			                 "SYSLOG_PID=%ld", (long) getpid (),
 			                 "SYSLOG_FACILITY=GLIB",
 			                 "GLIB_DOMAIN=%s", log_domain ?: "",
@@ -723,7 +797,7 @@ nm_logging_syslog_openlog (const char *logging_backend)
 
 	if (strcmp (logging_backend, "debug") == 0) {
 		global.log_backend = LOG_BACKEND_SYSLOG;
-		openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR | LOG_PID, LOG_USER);
+		openlog (syslog_identifier_domain (&global), LOG_CONS | LOG_PERROR | LOG_PID, LOG_USER);
 #if SYSTEMD_JOURNAL
 	} else if (strcmp (logging_backend, "syslog") != 0) {
 		global.log_backend = LOG_BACKEND_JOURNAL;
@@ -736,10 +810,10 @@ nm_logging_syslog_openlog (const char *logging_backend)
 	} else {
 		global.log_backend = LOG_BACKEND_SYSLOG;
 		global.uses_syslog = TRUE;
-		openlog (G_LOG_DOMAIN, LOG_PID, LOG_DAEMON);
+		openlog (syslog_identifier_domain (&global), LOG_PID, LOG_DAEMON);
 	}
 
-	g_log_set_handler (G_LOG_DOMAIN,
+	g_log_set_handler (syslog_identifier_domain (&global),
 	                   G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
 	                   nm_log_handler,
 	                   NULL);
