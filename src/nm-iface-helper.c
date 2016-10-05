@@ -366,6 +366,7 @@ main (int argc, char *argv[])
 	if (!do_early_setup (&argc, &argv))
 		return 1;
 
+	nm_logging_set_syslog_identifier ("nm-iface-helper");
 	nm_logging_set_prefix ("%s[%ld] (%s): ",
 	                       _NMLOG_PREFIX_NAME,
 	                       (long) getpid (),
