@@ -69,6 +69,7 @@ gboolean nm_ppp_manager_start (NMPPPManager *manager,
                                NMActRequest *req,
                                const char *ppp_name,
                                guint32 timeout_secs,
+                               guint baud_override,
                                GError **err);
 
 void     nm_ppp_manager_stop        (NMPPPManager *manager,
