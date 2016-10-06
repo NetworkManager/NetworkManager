@@ -180,7 +180,7 @@ update_properties (NMDevice *device)
 		props = nm_platform_link_get_lnk_macvlan (NM_PLATFORM_GET, nm_device_get_ifindex (device), &plink);
 
 	if (!props) {
-		_LOGW (LOGD_HW, "could not get %s properties", priv->props.tap ? "macvtap" : "macvlan");
+		_LOGW (LOGD_PLATFORM, "could not get %s properties", priv->props.tap ? "macvtap" : "macvlan");
 		return;
 	}
 

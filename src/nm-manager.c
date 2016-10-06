@@ -2127,10 +2127,10 @@ platform_link_added (NMManager *self,
 		device = nm_device_factory_create_device (factory, plink->name, plink, NULL, &ignore, &error);
 		if (!device) {
 			if (!ignore) {
-				_LOGW (LOGD_HW, "%s: factory failed to create device: %s",
+				_LOGW (LOGD_PLATFORM, "%s: factory failed to create device: %s",
 				       plink->name, error->message);
 			} else {
-				_LOGD (LOGD_HW, "%s: factory failed to create device: %s",
+				_LOGD (LOGD_PLATFORM, "%s: factory failed to create device: %s",
 				       plink->name, error->message);
 			}
 			return;
@@ -2144,7 +2144,7 @@ platform_link_added (NMManager *self,
 		case NM_LINK_TYPE_OLPC_MESH:
 		case NM_LINK_TYPE_TEAM:
 		case NM_LINK_TYPE_WIFI:
-			_LOGI (LOGD_HW, "(%s): '%s' plugin not available; creating generic device",
+			_LOGI (LOGD_PLATFORM, "(%s): '%s' plugin not available; creating generic device",
 			       plink->name, nm_link_type_to_string (plink->type));
 			nm_plugin_missing = TRUE;
 			/* fall through */

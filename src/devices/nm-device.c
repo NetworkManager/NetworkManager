@@ -756,7 +756,7 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 				nm_platform_link_set_up (NM_PLATFORM_GET, priv->ip_ifindex, NULL);
 		} else {
 			/* Device IP interface must always be a kernel network interface */
-			_LOGW (LOGD_HW, "failed to look up interface index");
+			_LOGW (LOGD_PLATFORM, "failed to look up interface index");
 		}
 	}
 
@@ -899,7 +899,7 @@ get_ip_iface_identifier (NMDevice *self, NMUtilsIPv6IfaceId *out_iid)
 	                                                  priv->dev_id,
 	                                                  out_iid);
 	if (!success) {
-		_LOGW (LOGD_HW, "failed to generate interface identifier "
+		_LOGW (LOGD_PLATFORM, "failed to generate interface identifier "
 		       "for link type %u hwaddr_len %u", pllink->type, (unsigned) pllink->addr.len);
 	}
 	return success;
@@ -2298,7 +2298,7 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 
 	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
 		check_carrier (self);
-		_LOGD (LOGD_HW,
+		_LOGD (LOGD_PLATFORM,
 		       "carrier is %s%s",
 		       priv->carrier ? "ON" : "OFF",
 		       priv->ignore_carrier ? " (but ignored)" : "");
@@ -9033,7 +9033,7 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
-	_LOGD (LOGD_HW, "bringing up device");
+	_LOGD (LOGD_PLATFORM, "bringing up device");
 
 	if (NM_DEVICE_GET_CLASS (self)->bring_up) {
 		if (!NM_DEVICE_GET_CLASS (self)->bring_up (self, no_firmware))
@@ -9059,9 +9059,9 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 
 	if (!device_is_up) {
 		if (block)
-			_LOGW (LOGD_HW, "device not up after timeout!");
+			_LOGW (LOGD_PLATFORM, "device not up after timeout!");
 		else
-			_LOGD (LOGD_HW, "device not up immediately");
+			_LOGD (LOGD_PLATFORM, "device not up immediately");
 		return FALSE;
 	}
 
@@ -9125,7 +9125,7 @@ nm_device_take_down (NMDevice *self, gboolean block)
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
-	_LOGD (LOGD_HW, "taking down device");
+	_LOGD (LOGD_PLATFORM, "taking down device");
 
 	if (NM_DEVICE_GET_CLASS (self)->take_down) {
 		if (!NM_DEVICE_GET_CLASS (self)->take_down (self))
@@ -9147,9 +9147,9 @@ nm_device_take_down (NMDevice *self, gboolean block)
 
 	if (device_is_up) {
 		if (block)
-			_LOGW (LOGD_HW, "device not down after timeout!");
+			_LOGW (LOGD_PLATFORM, "device not down after timeout!");
 		else
-			_LOGD (LOGD_HW, "device not down immediately");
+			_LOGD (LOGD_PLATFORM, "device not down immediately");
 	}
 }
 
@@ -9162,7 +9162,7 @@ take_down (NMDevice *self)
 		return nm_platform_link_set_down (NM_PLATFORM_GET, ifindex);
 
 	/* devices without ifindex are always up. */
-	_LOGD (LOGD_HW, "cannot take down device without ifindex");
+	_LOGD (LOGD_PLATFORM, "cannot take down device without ifindex");
 	return FALSE;
 }
 
@@ -11150,7 +11150,7 @@ _set_state_full (NMDevice *self,
 		if (reason != NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED) {
 			if (old_state == NM_DEVICE_STATE_UNMANAGED || priv->firmware_missing) {
 				if (!nm_device_bring_up (self, TRUE, &no_firmware) && no_firmware)
-					_LOGW (LOGD_HW, "firmware may be missing.");
+					_LOGW (LOGD_PLATFORM, "firmware may be missing.");
 				nm_device_set_firmware_missing (self, no_firmware ? TRUE : FALSE);
 			}
 
@@ -11533,7 +11533,7 @@ nm_device_update_hw_address (NMDevice *self)
 			g_free (priv->hw_addr);
 			priv->hw_addr = nm_utils_hwaddr_ntoa (hwaddr, hwaddrlen);
 
-			_LOGD (LOGD_HW | LOGD_DEVICE, "hw-addr: hardware address now %s", priv->hw_addr);
+			_LOGD (LOGD_PLATFORM | LOGD_DEVICE, "hw-addr: hardware address now %s", priv->hw_addr);
 			_notify (self, PROP_HW_ADDRESS);
 
 			if (   !priv->hw_addr_initial
@@ -11550,11 +11550,11 @@ nm_device_update_hw_address (NMDevice *self)
 	} else {
 		/* Invalid or no hardware address */
 		if (priv->hw_addr_len != 0) {
-			_LOGD (LOGD_HW | LOGD_DEVICE,
+			_LOGD (LOGD_PLATFORM | LOGD_DEVICE,
 			       "hw-addr: failed reading current MAC address (stay with %s)",
 			       priv->hw_addr);
 		} else {
-			_LOGD (LOGD_HW | LOGD_DEVICE,
+			_LOGD (LOGD_PLATFORM | LOGD_DEVICE,
 			       "hw-addr: failed reading current MAC address");
 		}
 	}
@@ -11614,7 +11614,7 @@ nm_device_update_permanent_hw_address (NMDevice *self)
 		 *
 		 * In some cases it might be necessary to know whether this is a "real" or
 		 * a temporary address (fake). */
-		_LOGD (LOGD_HW | LOGD_ETHER, "hw-addr: %s (use current: %s)",
+		_LOGD (LOGD_PLATFORM | LOGD_ETHER, "hw-addr: %s (use current: %s)",
 		       success_read
 		           ? "read HW addr length of permanent MAC address differs"
 		           : "unable to read permanent MAC address",

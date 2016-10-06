@@ -369,7 +369,7 @@ read_device_factory_paths (void)
 
 	dir = g_dir_open (NMPLUGINDIR, 0, &error);
 	if (!dir) {
-		nm_log_warn (LOGD_HW, "device plugin: failed to open directory %s: %s",
+		nm_log_warn (LOGD_PLATFORM, "device plugin: failed to open directory %s: %s",
 		             NMPLUGINDIR,
 		             error->message);
 		g_clear_error (&error);
@@ -391,17 +391,17 @@ read_device_factory_paths (void)
 
 		if (stat (data.path, &data.st) != 0) {
 			errsv = errno;
-			nm_log_warn (LOGD_HW, "device plugin: skip invalid file %s (error during stat: %s)", data.path, strerror (errsv));
+			nm_log_warn (LOGD_PLATFORM, "device plugin: skip invalid file %s (error during stat: %s)", data.path, strerror (errsv));
 			goto NEXT;
 		}
 		if (!S_ISREG (data.st.st_mode))
 			goto NEXT;
 		if (data.st.st_uid != 0) {
-			nm_log_warn (LOGD_HW, "device plugin: skip invalid file %s (file must be owned by root)", data.path);
+			nm_log_warn (LOGD_PLATFORM, "device plugin: skip invalid file %s (file must be owned by root)", data.path);
 			goto NEXT;
 		}
 		if (data.st.st_mode & (S_IWGRP | S_IWOTH | S_ISUID)) {
-			nm_log_warn (LOGD_HW, "device plugin: skip invalid file %s (invalid file permissions)", data.path);
+			nm_log_warn (LOGD_PLATFORM, "device plugin: skip invalid file %s (invalid file permissions)", data.path);
 			goto NEXT;
 		}
 
@@ -443,7 +443,7 @@ _add_factory (NMDeviceFactory *factory,
 	if (check_duplicates) {
 		found = find_factory (link_types, setting_types);
 		if (found) {
-			nm_log_warn (LOGD_HW, "Loading device plugin failed: multiple plugins "
+			nm_log_warn (LOGD_PLATFORM, "Loading device plugin failed: multiple plugins "
 			             "for same type (using '%s' instead of '%s')",
 			             (char *) g_object_get_data (G_OBJECT (found), PLUGIN_PATH_TAG),
 			             path);
@@ -459,7 +459,7 @@ _add_factory (NMDeviceFactory *factory,
 
 	callback (factory, user_data);
 
-	nm_log_info (LOGD_HW, "Loaded device plugin: %s (%s)", G_OBJECT_TYPE_NAME (factory), path);
+	nm_log_info (LOGD_PLATFORM, "Loaded device plugin: %s (%s)", G_OBJECT_TYPE_NAME (factory), path);
 	return TRUE;
 }
 
@@ -502,12 +502,12 @@ nm_device_factory_manager_load_factories (NMDeviceFactoryManagerFactoryFunc call
 		plugin = g_module_open (*path, G_MODULE_BIND_LOCAL);
 
 		if (!plugin) {
-			nm_log_warn (LOGD_HW, "(%s): failed to load plugin: %s", item, g_module_error ());
+			nm_log_warn (LOGD_PLATFORM, "(%s): failed to load plugin: %s", item, g_module_error ());
 			continue;
 		}
 
 		if (!g_module_symbol (plugin, "nm_device_factory_create", (gpointer) &create_func)) {
-			nm_log_warn (LOGD_HW, "(%s): failed to find device factory creator: %s", item, g_module_error ());
+			nm_log_warn (LOGD_PLATFORM, "(%s): failed to find device factory creator: %s", item, g_module_error ());
 			g_module_close (plugin);
 			continue;
 		}
@@ -518,7 +518,7 @@ nm_device_factory_manager_load_factories (NMDeviceFactoryManagerFactoryFunc call
 
 		factory = create_func (&error);
 		if (!factory) {
-			nm_log_warn (LOGD_HW, "(%s): failed to initialize device factory: %s",
+			nm_log_warn (LOGD_PLATFORM, "(%s): failed to initialize device factory: %s",
 			             item, NM_G_ERROR_MSG (error));
 			g_clear_error (&error);
 			continue;

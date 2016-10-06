@@ -171,7 +171,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 	}
 
 	if (!nm_platform_link_tun_get_properties (NM_PLATFORM_GET, nm_device_get_ifindex (device), &props)) {
-		_LOGW (LOGD_HW, "failed to get TUN interface info while updating connection.");
+		_LOGW (LOGD_PLATFORM, "failed to get TUN interface info while updating connection.");
 		return;
 	}
 
