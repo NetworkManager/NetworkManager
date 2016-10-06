@@ -14,7 +14,7 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/shared \
 	-I${top_builddir}/libnm-core \
 	-I${top_srcdir}/libnm-core \
-	-DG_LOG_DOMAIN=\""NetworkManager-adsl"\" \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GUDEV_CFLAGS)
 

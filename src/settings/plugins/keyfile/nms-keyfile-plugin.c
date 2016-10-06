@@ -21,7 +21,7 @@
 
 #include "nm-default.h"
 
-#include "plugin.h"
+#include "nms-keyfile-plugin.h"
 
 #include <sys/stat.h>
 #include <unistd.h>
@@ -38,9 +38,10 @@
 #include "nm-core-internal.h"
 
 #include "nm-settings-plugin.h"
-#include "nm-keyfile-connection.h"
-#include "writer.h"
-#include "utils.h"
+
+#include "nms-keyfile-connection.h"
+#include "nms-keyfile-writer.h"
+#include "nms-keyfile-utils.h"
 
 /*****************************************************************************/
 
@@ -52,49 +53,59 @@ typedef struct {
 	gulong monitor_id;
 
 	NMConfig *config;
-} SettingsPluginKeyfilePrivate;
+} NMSKeyfilePluginPrivate;
 
-struct _SettingsPluginKeyfile {
+struct _NMSKeyfilePlugin {
 	GObject parent;
-	SettingsPluginKeyfilePrivate _priv;
+	NMSKeyfilePluginPrivate _priv;
 };
 
-struct _SettingsPluginKeyfileClass {
+struct _NMSKeyfilePluginClass {
 	GObjectClass parent;
 };
 
 static void settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface);
 
-G_DEFINE_TYPE_EXTENDED (SettingsPluginKeyfile, settings_plugin_keyfile, G_TYPE_OBJECT, 0,
+G_DEFINE_TYPE_EXTENDED (NMSKeyfilePlugin, nms_keyfile_plugin, G_TYPE_OBJECT, 0,
                         G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_PLUGIN,
                                                settings_plugin_interface_init))
 
-#define SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE(self) _NM_GET_PRIVATE (self, SettingsPluginKeyfile, SETTINGS_IS_PLUGIN_KEYFILE)
+#define NMS_KEYFILE_PLUGIN_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMSKeyfilePlugin, NMS_IS_KEYFILE_PLUGIN)
+
+/*****************************************************************************/
+
+#define _NMLOG_PREFIX_NAME      "keyfile"
+#define _NMLOG_DOMAIN           LOGD_SETTINGS
+#define _NMLOG(level, ...) \
+    nm_log ((level), _NMLOG_DOMAIN, \
+            "%s" _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+            _NMLOG_PREFIX_NAME": " \
+            _NM_UTILS_MACRO_REST (__VA_ARGS__))
 
 /*****************************************************************************/
 
 static void
 connection_removed_cb (NMSettingsConnection *obj, gpointer user_data)
 {
-	g_hash_table_remove (SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE ((SettingsPluginKeyfile *) user_data)->connections,
+	g_hash_table_remove (NMS_KEYFILE_PLUGIN_GET_PRIVATE ((NMSKeyfilePlugin *) user_data)->connections,
 	                     nm_connection_get_uuid (NM_CONNECTION (obj)));
 }
 
 /* Monitoring */
 
 static void
-remove_connection (SettingsPluginKeyfile *self, NMKeyfileConnection *connection)
+remove_connection (NMSKeyfilePlugin *self, NMSKeyfileConnection *connection)
 {
 	gboolean removed;
 
 	g_return_if_fail (connection != NULL);
 
-	nm_log_info (LOGD_SETTINGS, "keyfile: removed " NM_KEYFILE_CONNECTION_LOG_FMT, NM_KEYFILE_CONNECTION_LOG_ARG (connection));
+	_LOGI ("removed " NMS_KEYFILE_CONNECTION_LOG_FMT, NMS_KEYFILE_CONNECTION_LOG_ARG (connection));
 
 	/* Removing from the hash table should drop the last reference */
 	g_object_ref (connection);
 	g_signal_handlers_disconnect_by_func (connection, connection_removed_cb, self);
-	removed = g_hash_table_remove (SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (self)->connections,
+	removed = g_hash_table_remove (NMS_KEYFILE_PLUGIN_GET_PRIVATE (self)->connections,
 	                               nm_connection_get_uuid (NM_CONNECTION (connection)));
 	nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (connection));
 	g_object_unref (connection);
@@ -102,10 +113,10 @@ remove_connection (SettingsPluginKeyfile *self, NMKeyfileConnection *connection)
 	g_return_if_fail (removed);
 }
 
-static NMKeyfileConnection *
-find_by_path (SettingsPluginKeyfile *self, const char *path)
+static NMSKeyfileConnection *
+find_by_path (NMSKeyfilePlugin *self, const char *path)
 {
-	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (self);
+	NMSKeyfilePluginPrivate *priv = NMS_KEYFILE_PLUGIN_GET_PRIVATE (self);
 	GHashTableIter iter;
 	NMSettingsConnection *candidate = NULL;
 
@@ -114,7 +125,7 @@ find_by_path (SettingsPluginKeyfile *self, const char *path)
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &candidate)) {
 		if (g_strcmp0 (path, nm_settings_connection_get_filename (candidate)) == 0)
-			return NM_KEYFILE_CONNECTION (candidate);
+			return NMS_KEYFILE_CONNECTION (candidate);
 	}
 	return NULL;
 }
@@ -150,18 +161,18 @@ find_by_path (SettingsPluginKeyfile *self, const char *path)
  *
  * Returns: the updated connection.
  * */
-static NMKeyfileConnection *
-update_connection (SettingsPluginKeyfile *self,
+static NMSKeyfileConnection *
+update_connection (NMSKeyfilePlugin *self,
                    NMConnection *source,
                    const char *full_path,
-                   NMKeyfileConnection *connection,
+                   NMSKeyfileConnection *connection,
                    gboolean protect_existing_connection,
                    GHashTable *protected_connections,
                    GError **error)
 {
-	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (self);
-	NMKeyfileConnection *connection_new;
-	NMKeyfileConnection *connection_by_uuid;
+	NMSKeyfilePluginPrivate *priv = NMS_KEYFILE_PLUGIN_GET_PRIVATE (self);
+	NMSKeyfileConnection *connection_new;
+	NMSKeyfileConnection *connection_by_uuid;
 	GError *local = NULL;
 	const char *uuid;
 
@@ -169,15 +180,15 @@ update_connection (SettingsPluginKeyfile *self,
 	g_return_val_if_fail (full_path || source, NULL);
 
 	if (full_path)
-		nm_log_dbg (LOGD_SETTINGS, "keyfile: loading from file \"%s\"...", full_path);
+		_LOGD ("loading from file \"%s\"...", full_path);
 
-	connection_new = nm_keyfile_connection_new (source, full_path, &local);
+	connection_new = nms_keyfile_connection_new (source, full_path, &local);
 	if (!connection_new) {
 		/* Error; remove the connection */
 		if (source)
-			nm_log_warn (LOGD_SETTINGS, "keyfile: error creating connection %s: %s", nm_connection_get_uuid (source), local->message);
+			_LOGW ("error creating connection %s: %s", nm_connection_get_uuid (source), local->message);
 		else
-			nm_log_warn (LOGD_SETTINGS, "keyfile: error loading connection from file %s: %s", full_path, local->message);
+			_LOGW ("error loading connection from file %s: %s", full_path, local->message);
 		if (   connection
 		    && !protect_existing_connection
 		    && (!protected_connections || !g_hash_table_contains (protected_connections, connection)))
@@ -194,12 +205,12 @@ update_connection (SettingsPluginKeyfile *self,
 
 		if (   (protect_existing_connection && connection_by_uuid != NULL)
 		    || (protected_connections && g_hash_table_contains (protected_connections, connection))) {
-			NMKeyfileConnection *conflicting = (protect_existing_connection && connection_by_uuid != NULL) ? connection_by_uuid : connection;
+			NMSKeyfileConnection *conflicting = (protect_existing_connection && connection_by_uuid != NULL) ? connection_by_uuid : connection;
 
 			if (source)
-				nm_log_warn (LOGD_SETTINGS, "keyfile: cannot update protected "NM_KEYFILE_CONNECTION_LOG_FMT" connection due to conflicting UUID %s", NM_KEYFILE_CONNECTION_LOG_ARG (conflicting), uuid);
+				_LOGW ("cannot update protected "NMS_KEYFILE_CONNECTION_LOG_FMT" connection due to conflicting UUID %s", NMS_KEYFILE_CONNECTION_LOG_ARG (conflicting), uuid);
 			else
-				nm_log_warn (LOGD_SETTINGS, "keyfile: cannot load %s due to conflicting UUID for "NM_KEYFILE_CONNECTION_LOG_FMT, full_path, NM_KEYFILE_CONNECTION_LOG_ARG (conflicting));
+				_LOGW ("cannot load %s due to conflicting UUID for "NMS_KEYFILE_CONNECTION_LOG_FMT, full_path, NMS_KEYFILE_CONNECTION_LOG_ARG (conflicting));
 			g_object_unref (connection_new);
 			g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 			                      "Cannot update protected connection due to conflicting UUID");
@@ -215,9 +226,9 @@ update_connection (SettingsPluginKeyfile *self,
 	    && (   (!connection && protect_existing_connection)
 	        || (protected_connections && g_hash_table_contains (protected_connections, connection_by_uuid)))) {
 		if (source)
-			nm_log_warn (LOGD_SETTINGS, "keyfile: cannot update connection due to conflicting UUID for "NM_KEYFILE_CONNECTION_LOG_FMT, NM_KEYFILE_CONNECTION_LOG_ARG (connection_by_uuid));
+			_LOGW ("cannot update connection due to conflicting UUID for "NMS_KEYFILE_CONNECTION_LOG_FMT, NMS_KEYFILE_CONNECTION_LOG_ARG (connection_by_uuid));
 		else
-			nm_log_warn (LOGD_SETTINGS, "keyfile: cannot load %s due to conflicting UUID for "NM_KEYFILE_CONNECTION_LOG_FMT, full_path, NM_KEYFILE_CONNECTION_LOG_ARG (connection_by_uuid));
+			_LOGW ("cannot load %s due to conflicting UUID for "NMS_KEYFILE_CONNECTION_LOG_FMT, full_path, NMS_KEYFILE_CONNECTION_LOG_ARG (connection_by_uuid));
 		g_object_unref (connection_new);
 		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		                      "Skip updating protected connection during reload");
@@ -235,17 +246,17 @@ update_connection (SettingsPluginKeyfile *self,
 		                           NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)) {
 			/* Nothing to do... except updating the path. */
 			if (old_path && g_strcmp0 (old_path, full_path) != 0)
-				nm_log_info (LOGD_SETTINGS, "keyfile: rename \"%s\" to "NM_KEYFILE_CONNECTION_LOG_FMT" without other changes", old_path, NM_KEYFILE_CONNECTION_LOG_ARG (connection_new));
+				_LOGI ("rename \"%s\" to "NMS_KEYFILE_CONNECTION_LOG_FMT" without other changes", old_path, NMS_KEYFILE_CONNECTION_LOG_ARG (connection_new));
 		} else {
 			/* An existing connection changed. */
 			if (source)
-				nm_log_info (LOGD_SETTINGS, "keyfile: update "NM_KEYFILE_CONNECTION_LOG_FMT" from %s", NM_KEYFILE_CONNECTION_LOG_ARG (connection_new), NM_KEYFILE_CONNECTION_LOG_PATH (old_path));
+				_LOGI ("update "NMS_KEYFILE_CONNECTION_LOG_FMT" from %s", NMS_KEYFILE_CONNECTION_LOG_ARG (connection_new), NMS_KEYFILE_CONNECTION_LOG_PATH (old_path));
 			else if (!g_strcmp0 (old_path, nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection_new))))
-				nm_log_info (LOGD_SETTINGS, "keyfile: update "NM_KEYFILE_CONNECTION_LOG_FMT, NM_KEYFILE_CONNECTION_LOG_ARG (connection_new));
+				_LOGI ("update "NMS_KEYFILE_CONNECTION_LOG_FMT, NMS_KEYFILE_CONNECTION_LOG_ARG (connection_new));
 			else if (old_path)
-				nm_log_info (LOGD_SETTINGS, "keyfile: rename \"%s\" to "NM_KEYFILE_CONNECTION_LOG_FMT, old_path, NM_KEYFILE_CONNECTION_LOG_ARG (connection_new));
+				_LOGI ("rename \"%s\" to "NMS_KEYFILE_CONNECTION_LOG_FMT, old_path, NMS_KEYFILE_CONNECTION_LOG_ARG (connection_new));
 			else
-				nm_log_info (LOGD_SETTINGS, "keyfile: update and persist "NM_KEYFILE_CONNECTION_LOG_FMT, NM_KEYFILE_CONNECTION_LOG_ARG (connection_new));
+				_LOGI ("update and persist "NMS_KEYFILE_CONNECTION_LOG_FMT, NMS_KEYFILE_CONNECTION_LOG_ARG (connection_new));
 
 			if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (connection_by_uuid),
 			                                              NM_CONNECTION (connection_new),
@@ -263,9 +274,9 @@ update_connection (SettingsPluginKeyfile *self,
 		return connection_by_uuid;
 	} else {
 		if (source)
-			nm_log_info (LOGD_SETTINGS, "keyfile: add connection "NM_KEYFILE_CONNECTION_LOG_FMT, NM_KEYFILE_CONNECTION_LOG_ARG (connection_new));
+			_LOGI ("add connection "NMS_KEYFILE_CONNECTION_LOG_FMT, NMS_KEYFILE_CONNECTION_LOG_ARG (connection_new));
 		else
-			nm_log_info (LOGD_SETTINGS, "keyfile: new connection "NM_KEYFILE_CONNECTION_LOG_FMT, NM_KEYFILE_CONNECTION_LOG_ARG (connection_new));
+			_LOGI ("new connection "NMS_KEYFILE_CONNECTION_LOG_FMT, NMS_KEYFILE_CONNECTION_LOG_ARG (connection_new));
 		g_hash_table_insert (priv->connections, g_strdup (uuid), connection_new);
 
 		g_signal_connect (connection_new, NM_SETTINGS_CONNECTION_REMOVED,
@@ -289,31 +300,31 @@ dir_changed (GFileMonitor *monitor,
              gpointer user_data)
 {
 	NMSettingsPlugin *config = NM_SETTINGS_PLUGIN (user_data);
-	SettingsPluginKeyfile *self = SETTINGS_PLUGIN_KEYFILE (config);
-	NMKeyfileConnection *connection;
+	NMSKeyfilePlugin *self = NMS_KEYFILE_PLUGIN (config);
+	NMSKeyfileConnection *connection;
 	char *full_path;
 	gboolean exists;
 
 	full_path = g_file_get_path (file);
-	if (nm_keyfile_plugin_utils_should_ignore_file (full_path)) {
+	if (nms_keyfile_utils_should_ignore_file (full_path)) {
 		g_free (full_path);
 		return;
 	}
 	exists = g_file_test (full_path, G_FILE_TEST_EXISTS);
 
-	nm_log_dbg (LOGD_SETTINGS, "dir_changed(%s) = %d; file %s", full_path, event_type, exists ? "exists" : "does not exist");
+	_LOGD ("dir_changed(%s) = %d; file %s", full_path, event_type, exists ? "exists" : "does not exist");
 
 	connection = find_by_path (self, full_path);
 
 	switch (event_type) {
 	case G_FILE_MONITOR_EVENT_DELETED:
 		if (!exists && connection)
-			remove_connection (SETTINGS_PLUGIN_KEYFILE (config), connection);
+			remove_connection (NMS_KEYFILE_PLUGIN (config), connection);
 		break;
 	case G_FILE_MONITOR_EVENT_CREATED:
 	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
 		if (exists)
-			update_connection (SETTINGS_PLUGIN_KEYFILE (config), NULL, full_path, connection, TRUE, NULL, NULL);
+			update_connection (NMS_KEYFILE_PLUGIN (config), NULL, full_path, connection, TRUE, NULL, NULL);
 		break;
 	default:
 		break;
@@ -327,7 +338,7 @@ config_changed_cb (NMConfig *config,
                    NMConfigData *config_data,
                    NMConfigChangeFlags changes,
                    NMConfigData *old_data,
-                   SettingsPluginKeyfile *self)
+                   NMSKeyfilePlugin *self)
 {
 	gs_free char *old_value = NULL, *new_value = NULL;
 
@@ -341,12 +352,12 @@ config_changed_cb (NMConfig *config,
 static void
 setup_monitoring (NMSettingsPlugin *config)
 {
-	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE ((SettingsPluginKeyfile *) config);
+	NMSKeyfilePluginPrivate *priv = NMS_KEYFILE_PLUGIN_GET_PRIVATE ((NMSKeyfilePlugin *) config);
 	GFile *file;
 	GFileMonitor *monitor;
 
-	if (nm_config_get_monitor_connection_files (nm_config_get ())) {
-		file = g_file_new_for_path (nm_keyfile_plugin_get_path ());
+	if (nm_config_get_monitor_connection_files (priv->config)) {
+		file = g_file_new_for_path (nms_keyfile_utils_get_path ());
 		monitor = g_file_monitor_directory (file, G_FILE_MONITOR_NONE, NULL, NULL);
 		g_object_unref (file);
 
@@ -366,7 +377,7 @@ static GHashTable *
 _paths_from_connections (GHashTable *connections)
 {
 	GHashTableIter iter;
-	NMKeyfileConnection *connection;
+	NMSKeyfileConnection *connection;
 	GHashTable *paths = g_hash_table_new (g_str_hash, g_str_equal);
 
 	g_hash_table_iter_init (&iter, connections);
@@ -402,23 +413,23 @@ _sort_paths (const char **f1, const char **f2, GHashTable *paths)
 static void
 read_connections (NMSettingsPlugin *config)
 {
-	SettingsPluginKeyfile *self = SETTINGS_PLUGIN_KEYFILE (config);
-	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (self);
+	NMSKeyfilePlugin *self = NMS_KEYFILE_PLUGIN (config);
+	NMSKeyfilePluginPrivate *priv = NMS_KEYFILE_PLUGIN_GET_PRIVATE (self);
 	GDir *dir;
 	GError *error = NULL;
 	const char *item;
 	GHashTable *alive_connections;
 	GHashTableIter iter;
-	NMKeyfileConnection *connection;
+	NMSKeyfileConnection *connection;
 	GPtrArray *dead_connections = NULL;
 	guint i;
 	GPtrArray *filenames;
 	GHashTable *paths;
 
-	dir = g_dir_open (nm_keyfile_plugin_get_path (), 0, &error);
+	dir = g_dir_open (nms_keyfile_utils_get_path (), 0, &error);
 	if (!dir) {
-		nm_log_warn (LOGD_SETTINGS, "keyfile: cannot read directory '%s': %s",
-		             nm_keyfile_plugin_get_path (),
+		_LOGW ("cannot read directory '%s': %s",
+		             nms_keyfile_utils_get_path (),
 		             error->message);
 		g_clear_error (&error);
 		return;
@@ -428,9 +439,9 @@ read_connections (NMSettingsPlugin *config)
 
 	filenames = g_ptr_array_new_with_free_func (g_free);
 	while ((item = g_dir_read_name (dir))) {
-		if (nm_keyfile_plugin_utils_should_ignore_file (item))
+		if (nms_keyfile_utils_should_ignore_file (item))
 			continue;
-		g_ptr_array_add (filenames, g_build_filename (nm_keyfile_plugin_get_path (), item, NULL));
+		g_ptr_array_add (filenames, g_build_filename (nms_keyfile_utils_get_path (), item, NULL));
 	}
 	g_dir_close (dir);
 
@@ -474,7 +485,7 @@ read_connections (NMSettingsPlugin *config)
 static GSList *
 get_connections (NMSettingsPlugin *config)
 {
-	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE ((SettingsPluginKeyfile *) config);
+	NMSKeyfilePluginPrivate *priv = NMS_KEYFILE_PLUGIN_GET_PRIVATE ((NMSKeyfilePlugin *) config);
 
 	if (!priv->initialized) {
 		setup_monitoring (config);
@@ -488,16 +499,16 @@ static gboolean
 load_connection (NMSettingsPlugin *config,
                  const char *filename)
 {
-	SettingsPluginKeyfile *self = SETTINGS_PLUGIN_KEYFILE ((SettingsPluginKeyfile *) config);
-	NMKeyfileConnection *connection;
-	int dir_len = strlen (nm_keyfile_plugin_get_path ());
+	NMSKeyfilePlugin *self = NMS_KEYFILE_PLUGIN ((NMSKeyfilePlugin *) config);
+	NMSKeyfileConnection *connection;
+	int dir_len = strlen (nms_keyfile_utils_get_path ());
 
-	if (   strncmp (filename, nm_keyfile_plugin_get_path (), dir_len) != 0
+	if (   strncmp (filename, nms_keyfile_utils_get_path (), dir_len) != 0
 	    || filename[dir_len] != '/'
 	    || strchr (filename + dir_len + 1, '/') != NULL)
 		return FALSE;
 
-	if (nm_keyfile_plugin_utils_should_ignore_file (filename + dir_len + 1))
+	if (nms_keyfile_utils_should_ignore_file (filename + dir_len + 1))
 		return FALSE;
 
 	connection = update_connection (self, NULL, filename, find_by_path (self, filename), TRUE, NULL, NULL);
@@ -517,11 +528,11 @@ add_connection (NMSettingsPlugin *config,
                 gboolean save_to_disk,
                 GError **error)
 {
-	SettingsPluginKeyfile *self = SETTINGS_PLUGIN_KEYFILE (config);
+	NMSKeyfilePlugin *self = NMS_KEYFILE_PLUGIN (config);
 	gs_free char *path = NULL;
 
 	if (save_to_disk) {
-		if (!nm_keyfile_plugin_write_connection (connection, NULL, FALSE, &path, error))
+		if (!nms_keyfile_writer_connection (connection, NULL, FALSE, &path, error))
 			return NULL;
 	}
 	return NM_SETTINGS_CONNECTION (update_connection (self, connection, path, NULL, FALSE, NULL, error));
@@ -530,7 +541,7 @@ add_connection (NMSettingsPlugin *config,
 static GSList *
 get_unmanaged_specs (NMSettingsPlugin *config)
 {
-	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE ((SettingsPluginKeyfile *) config);
+	NMSKeyfilePluginPrivate *priv = NMS_KEYFILE_PLUGIN_GET_PRIVATE ((NMSKeyfilePlugin *) config);
 	gs_free char *value = NULL;
 
 	value = nm_config_data_get_value (nm_config_get_data (priv->config),
@@ -548,10 +559,10 @@ get_property (GObject *object, guint prop_id,
 {
 	switch (prop_id) {
 	case NM_SETTINGS_PLUGIN_PROP_NAME:
-		g_value_set_string (value, KEYFILE_PLUGIN_NAME);
+		g_value_set_string (value, NMS_KEYFILE_PLUGIN_NAME);
 		break;
 	case NM_SETTINGS_PLUGIN_PROP_INFO:
-		g_value_set_string (value, KEYFILE_PLUGIN_INFO);
+		g_value_set_string (value, NMS_KEYFILE_PLUGIN_INFO);
 		break;
 	case NM_SETTINGS_PLUGIN_PROP_CAPABILITIES:
 		g_value_set_uint (value, NM_SETTINGS_PLUGIN_CAP_MODIFY_CONNECTIONS);
@@ -565,36 +576,38 @@ get_property (GObject *object, guint prop_id,
 /*****************************************************************************/
 
 static void
-settings_plugin_keyfile_init (SettingsPluginKeyfile *plugin)
+nms_keyfile_plugin_init (NMSKeyfilePlugin *plugin)
 {
-	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (plugin);
+	NMSKeyfilePluginPrivate *priv = NMS_KEYFILE_PLUGIN_GET_PRIVATE (plugin);
 
+	priv->config = g_object_ref (nm_config_get ());
 	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
 }
 
 static void
 constructed (GObject *object)
 {
-	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE ((SettingsPluginKeyfile *) object);
+	NMSKeyfilePluginPrivate *priv = NMS_KEYFILE_PLUGIN_GET_PRIVATE ((NMSKeyfilePlugin *) object);
 
-	priv->config = g_object_ref (nm_config_get ());
+	G_OBJECT_CLASS (nms_keyfile_plugin_parent_class)->constructed (object);
+
 	if (nm_config_data_has_value (nm_config_get_data_orig (priv->config),
 	                              NM_CONFIG_KEYFILE_GROUP_KEYFILE,
 	                              NM_CONFIG_KEYFILE_KEY_KEYFILE_HOSTNAME,
 	                              NM_CONFIG_GET_VALUE_RAW))
-		nm_log_warn (LOGD_SETTINGS, "keyfile: 'hostname' option is deprecated and has no effect");
+		_LOGW ("'hostname' option is deprecated and has no effect");
 }
 
-GObject *
-nm_settings_keyfile_plugin_new (void)
+NMSKeyfilePlugin *
+nms_keyfile_plugin_new (void)
 {
-	return g_object_new (SETTINGS_TYPE_PLUGIN_KEYFILE, NULL);
+	return g_object_new (NMS_TYPE_KEYFILE_PLUGIN, NULL);
 }
 
 static void
 dispose (GObject *object)
 {
-	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE ((SettingsPluginKeyfile *) object);
+	NMSKeyfilePluginPrivate *priv = NMS_KEYFILE_PLUGIN_GET_PRIVATE ((NMSKeyfilePlugin *) object);
 
 	if (priv->monitor) {
 		nm_clear_g_signal_handler (priv->monitor, &priv->monitor_id);
@@ -613,11 +626,11 @@ dispose (GObject *object)
 		g_clear_object (&priv->config);
 	}
 
-	G_OBJECT_CLASS (settings_plugin_keyfile_parent_class)->dispose (object);
+	G_OBJECT_CLASS (nms_keyfile_plugin_parent_class)->dispose (object);
 }
 
 static void
-settings_plugin_keyfile_class_init (SettingsPluginKeyfileClass *req_class)
+nms_keyfile_plugin_class_init (NMSKeyfilePluginClass *req_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (req_class);
 

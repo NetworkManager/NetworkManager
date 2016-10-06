@@ -16,7 +16,7 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/shared \
 	-I${top_builddir}/libnm-core \
 	-I${top_srcdir}/libnm-core \
-	-DG_LOG_DOMAIN=\""NetworkManager-bluetooth"\" \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS)
 

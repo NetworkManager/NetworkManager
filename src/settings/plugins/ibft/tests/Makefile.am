@@ -15,7 +15,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/platform \
 	-I$(top_srcdir)/src/settings \
 	-I$(srcdir)/../ \
-	-DG_LOG_DOMAIN=\""NetworkManager-ibft"\" \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	-DTEST_IBFT_DIR=\"$(abs_srcdir)\" \
 	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/\"

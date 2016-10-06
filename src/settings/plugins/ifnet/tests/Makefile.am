@@ -13,7 +13,7 @@ AM_CPPFLAGS= \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/src/platform \
-	-DG_LOG_DOMAIN=\""NetworkManager-ifnet"\" \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(CHECK_CFLAGS) \
 	$(GLIB_CFLAGS) \

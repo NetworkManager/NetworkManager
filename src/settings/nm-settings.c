@@ -69,7 +69,7 @@
 #include "nm-auth-utils.h"
 #include "nm-auth-subject.h"
 #include "nm-session-monitor.h"
-#include "plugins/keyfile/plugin.h"
+#include "plugins/keyfile/nms-keyfile-plugin.h"
 #include "nm-agent-manager.h"
 #include "nm-config.h"
 #include "nm-audit-manager.h"
@@ -798,10 +798,9 @@ find_plugin (GSList *list, const char *pname)
 static void
 add_keyfile_plugin (NMSettings *self)
 {
-	gs_unref_object GObject *keyfile_plugin = NULL;
+	gs_unref_object NMSKeyfilePlugin *keyfile_plugin = NULL;
 
-	keyfile_plugin = nm_settings_keyfile_plugin_new ();
-	g_assert (keyfile_plugin);
+	keyfile_plugin = nms_keyfile_plugin_new ();
 	if (!add_plugin (self, NM_SETTINGS_PLUGIN (keyfile_plugin)))
 		g_return_if_reached ();
 }

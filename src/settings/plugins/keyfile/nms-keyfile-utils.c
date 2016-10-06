@@ -20,16 +20,19 @@
 
 #include "nm-default.h"
 
+#include "nms-keyfile-utils.h"
+
 #include <stdlib.h>
 #include <string.h>
 
-#include "utils.h"
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-config.h"
 
 #define NM_CONFIG_KEYFILE_PATH_DEFAULT NMCONFDIR "/system-connections"
+
+/*****************************************************************************/
 
 static const char temp_letters[] =
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -87,7 +90,7 @@ check_suffix (const char *base, const char *tag)
 #define DER_TAG ".der"
 
 gboolean
-nm_keyfile_plugin_utils_should_ignore_file (const char *filename)
+nms_keyfile_utils_should_ignore_file (const char *filename)
 {
 	gs_free char *base = NULL;
 
@@ -111,7 +114,7 @@ nm_keyfile_plugin_utils_should_ignore_file (const char *filename)
 }
 
 char *
-nm_keyfile_plugin_utils_escape_filename (const char *filename)
+nms_keyfile_utils_escape_filename (const char *filename)
 {
 	GString *str;
 	const char *f = filename;
@@ -150,7 +153,7 @@ nm_keyfile_plugin_utils_escape_filename (const char *filename)
 /*****************************************************************************/
 
 const char *
-nm_keyfile_plugin_get_path (void)
+nms_keyfile_utils_get_path (void)
 {
 	static char *path = NULL;
 
@@ -164,6 +167,4 @@ nm_keyfile_plugin_get_path (void)
 	}
 	return path;
 }
-
-/*****************************************************************************/
 

@@ -20,13 +20,16 @@
 
 #include "nm-default.h"
 
+#include "nms-keyfile-reader.h"
+
 #include <sys/stat.h>
 #include <string.h>
 
-#include "reader.h"
-
 #include "nm-keyfile-internal.h"
+
 #include "NetworkManagerUtils.h"
+
+/*****************************************************************************/
 
 static const char *
 _fmt_warn (const char *group, NMSetting *setting, const char *property_name, const char *message, char **out_message)
@@ -86,7 +89,7 @@ _handler_read (GKeyFile *keyfile,
 }
 
 NMConnection *
-nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
+nms_keyfile_reader_from_file (const char *filename, GError **error)
 {
 	GKeyFile *key_file;
 	struct stat statbuf;
