@@ -329,6 +329,13 @@ nm_logging_setup (const char  *level,
 
 		bits = 0;
 
+		if (domains_free) {
+			/* The caller didn't provide any domains to set (`nmcli general logging level DEBUG`).
+			 * We reset all domains that were previously set, but we still want to protect
+			 * VPN_PLUGIN domain. */
+			protect = LOGD_VPN_PLUGIN;
+		}
+
 		/* Check for combined domains */
 		if (!g_ascii_strcasecmp (*iter, LOGD_ALL_STRING)) {
 			bits = LOGD_ALL;
@@ -380,7 +387,7 @@ nm_logging_setup (const char  *level,
 					new_logging[i] &= ~bits;
 				else {
 					new_logging[i] |= bits;
-					if (   protect
+					if (   (protect & bits)
 					    && i < LOGL_INFO)
 						new_logging[i] &= ~protect;
 				}
