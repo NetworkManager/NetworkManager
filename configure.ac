@@ -524,16 +524,16 @@ else
 fi
 if test "$have_libaudit" = "yes"; then
     AC_DEFINE(HAVE_LIBAUDIT, 1, [Define if you have libaudit support])
-	if test "$with_libaudit" = "yes-disabled-by-default"; then
-		AC_DEFINE(NM_CONFIG_DEFAULT_LOGGING_AUDIT, FALSE, [The default value of the logging.audit configuration option])
-		NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT='false'
-	else
-		AC_DEFINE(NM_CONFIG_DEFAULT_LOGGING_AUDIT, TRUE,  [The default value of the logging.audit configuration option])
-		NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT='true'
-	fi
+    if test "$with_libaudit" = "yes-disabled-by-default"; then
+        AC_DEFINE(NM_CONFIG_DEFAULT_LOGGING_AUDIT, "false", [The default value of the logging.audit configuration option])
+        NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT='false'
+    else
+        AC_DEFINE(NM_CONFIG_DEFAULT_LOGGING_AUDIT, "true",  [The default value of the logging.audit configuration option])
+        NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT='true'
+    fi
 else
     AC_DEFINE(HAVE_LIBAUDIT, 0, [Define if you have libaudit support])
-	AC_DEFINE(NM_CONFIG_DEFAULT_LOGGING_AUDIT, FALSE, [The default value of the logging.audit configuration option])
+    AC_DEFINE(NM_CONFIG_DEFAULT_LOGGING_AUDIT, "false", [The default value of the logging.audit configuration option])
     NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT='false'
 fi
 AC_SUBST(NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT)
