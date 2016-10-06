@@ -40,6 +40,17 @@
 #include "nm-errors.h"
 #include "nm-core-utils.h"
 
+/* often we have some static string where we need to know the maximum length.
+ * _MAX_LEN() returns @max but adds a debugging assertion that @str is indeed
+ * shorter then @mac. */
+#define _MAX_LEN(max, str) \
+	({ \
+		const char *const _str = (str); \
+		\
+		nm_assert (_str && strlen (str) < (max)); \
+		(max); \
+	})
+
 void (*_nm_logging_clear_platform_logging_cache) (void);
 
 static void
@@ -524,9 +535,22 @@ nm_logging_get_level (NMLogDomain domain)
 }
 
 #if SYSTEMD_JOURNAL
-_nm_printf (4, 5)
 static void
-_iovec_set_format (struct iovec *iov, gboolean *iov_free, int i, const char *format, ...)
+_iovec_set (struct iovec *iov, const void *str, gsize len)
+{
+	iov->iov_base = (void *) str;
+	iov->iov_len = len;
+}
+
+static void
+_iovec_set_string (struct iovec *iov, const char *str)
+{
+	_iovec_set (iov, str, strlen (str));
+}
+
+_nm_printf (3, 4)
+static void
+_iovec_set_format (struct iovec *iov, gpointer *iov_free, const char *format, ...)
 {
 	va_list ap;
 	char *str;
@@ -535,26 +559,24 @@ _iovec_set_format (struct iovec *iov, gboolean *iov_free, int i, const char *for
 	str = g_strdup_vprintf (format, ap);
 	va_end (ap);
 
-	iov[i].iov_base = str;
-	iov[i].iov_len = strlen (str);
-	iov_free[i] = TRUE;
+	_iovec_set_string (iov, str);
+	*iov_free = str;
 }
 
-static void
-_iovec_set_string_l (struct iovec *iov, gboolean *iov_free, int i, const char *str, gsize len)
-{
-	iov[i].iov_base = (char *) str;
-	iov[i].iov_len = len;
-	iov_free[i] = FALSE;
-}
-
-static void
-_iovec_set_string (struct iovec *iov, gboolean *iov_free, int i, const char *str)
-{
-	_iovec_set_string_l (iov, iov_free, i, str, strlen (str));
-}
-
-#define _iovec_set_literal_string(iov, iov_free, i, str) _iovec_set_string_l ((iov), (iov_free), (i), (""str""), NM_STRLEN (str))
+#define _iovec_set_format_a(iov, reserve_extra, format, ...) \
+	G_STMT_START { \
+		const gsize _size = (reserve_extra) + (NM_STRLEN (format) + 3); \
+		char *const _buf = g_alloca (_size); \
+		int _len; \
+		\
+		_len = g_snprintf (_buf, _size, ""format"", ##__VA_ARGS__);\
+		\
+		nm_assert (_len >= 0); \
+		nm_assert (_len <= _size); \
+		nm_assert (_len == strlen (_buf)); \
+		\
+		_iovec_set ((iov), _buf, _len); \
+	} G_STMT_END
 #endif
 
 void
@@ -604,23 +626,23 @@ _nm_log_impl (const char *file,
 		{
 			gint64 now, boottime;
 #define _NUM_MAX_FIELDS_SYSLOG_FACILITY 10
-#define _NUM_FIELDS (10 + _NUM_MAX_FIELDS_SYSLOG_FACILITY)
-			int i_field = 0;
-			struct iovec iov[_NUM_FIELDS];
-			gboolean iov_free[_NUM_FIELDS];
+			struct iovec iov_data[12 + _NUM_MAX_FIELDS_SYSLOG_FACILITY];
+			struct iovec *iov = iov_data;
+			gpointer iov_free_data[3];
+			gpointer *iov_free = iov_free_data;
+			nm_auto_free_gstring GString *s_domain_all = NULL;
 
 			now = nm_utils_get_monotonic_timestamp_ns ();
 			boottime = nm_utils_monotonic_timestamp_as_boottime (now, 1);
 
-			_iovec_set_format (iov, iov_free, i_field++, "PRIORITY=%d", global.level_desc[level].syslog_level);
-			_iovec_set_format (iov, iov_free, i_field++, "MESSAGE="MESSAGE_FMT, MESSAGE_ARG (global, tv, msg));
-			_iovec_set_string (iov, iov_free, i_field++, syslog_identifier_full (&global));
-			_iovec_set_format (iov, iov_free, i_field++, "SYSLOG_PID=%ld", (long) getpid ());
+			_iovec_set_format_a (iov++, 30, "PRIORITY=%d", global.level_desc[level].syslog_level);
+			_iovec_set_format (iov++, iov_free++, "MESSAGE="MESSAGE_FMT, MESSAGE_ARG (global, tv, msg));
+			_iovec_set_string (iov++, syslog_identifier_full (&global));
+			_iovec_set_format_a (iov++, 30, "SYSLOG_PID=%ld", (long) getpid ());
 			{
 				const LogDesc *diter;
 				int i_domain = _NUM_MAX_FIELDS_SYSLOG_FACILITY;
 				const char *s_domain_1 = NULL;
-				GString *s_domain_all = NULL;
 				NMLogDomain dom_all = domain;
 				NMLogDomain dom = dom_all & _nm_logging_enabled_state[level];
 
@@ -635,8 +657,10 @@ _nm_log_impl (const char *file,
 					if (!s_domain_1)
 						s_domain_1 = diter->name;
 					else {
-						if (!s_domain_all)
-							s_domain_all = g_string_new (s_domain_1);
+						if (!s_domain_all) {
+							s_domain_all = g_string_new ("NM_LOG_DOMAINS=");
+							g_string_append (s_domain_all, s_domain_1);
+						}
 						g_string_append_c (s_domain_all, ',');
 						g_string_append (s_domain_all, diter->name);
 					}
@@ -644,7 +668,7 @@ _nm_log_impl (const char *file,
 					if (NM_FLAGS_HAS (dom, diter->num)) {
 						if (i_domain > 0) {
 							/* SYSLOG_FACILITY is specified multiple times for each domain that is actually enabled. */
-							_iovec_set_format (iov, iov_free, i_field++, "SYSLOG_FACILITY=%s", diter->name);
+							_iovec_set_format_a (iov++, _MAX_LEN (30, diter->name), "SYSLOG_FACILITY=%s", diter->name);
 							i_domain--;
 						}
 						dom &= ~diter->num;
@@ -652,31 +676,28 @@ _nm_log_impl (const char *file,
 					if (!dom && !dom_all)
 						break;
 				}
-				if (s_domain_all) {
-					_iovec_set_format (iov, iov_free, i_field++, "NM_LOG_DOMAINS=%s", s_domain_all->str);
-					g_string_free (s_domain_all, TRUE);
-				} else
-					_iovec_set_format (iov, iov_free, i_field++, "NM_LOG_DOMAINS=%s", s_domain_1);
+				if (s_domain_all)
+					_iovec_set (iov++, s_domain_all->str, s_domain_all->len);
+				else
+					_iovec_set_format_a (iov++, _MAX_LEN (30, s_domain_1), "NM_LOG_DOMAINS=%s", s_domain_1);
 			}
-			_iovec_set_format (iov, iov_free, i_field++, "NM_LOG_LEVEL=%s", global.level_desc[level].name);
+			_iovec_set_format_a (iov++, _MAX_LEN (15, global.level_desc[level].name), "NM_LOG_LEVEL=%s", global.level_desc[level].name);
 			if (func)
-				_iovec_set_format (iov, iov_free, i_field++, "CODE_FUNC=%s", func);
-			_iovec_set_format (iov, iov_free, i_field++, "CODE_FILE=%s", file ?: "");
-			_iovec_set_format (iov, iov_free, i_field++, "CODE_LINE=%u", line);
-			_iovec_set_format (iov, iov_free, i_field++, "TIMESTAMP_MONOTONIC=%lld.%06lld", (long long) (now / NM_UTILS_NS_PER_SECOND), (long long) ((now % NM_UTILS_NS_PER_SECOND) / 1000));
-			_iovec_set_format (iov, iov_free, i_field++, "TIMESTAMP_BOOTTIME=%lld.%06lld", (long long) (boottime / NM_UTILS_NS_PER_SECOND), (long long) ((boottime % NM_UTILS_NS_PER_SECOND) / 1000));
+				_iovec_set_format (iov++, iov_free++, "CODE_FUNC=%s", func);
+			_iovec_set_format (iov++, iov_free++, "CODE_FILE=%s", file ?: "");
+			_iovec_set_format_a (iov++, 20, "CODE_LINE=%u", line);
+			_iovec_set_format_a (iov++, 60, "TIMESTAMP_MONOTONIC=%lld.%06lld", (long long) (now / NM_UTILS_NS_PER_SECOND), (long long) ((now % NM_UTILS_NS_PER_SECOND) / 1000));
+			_iovec_set_format_a (iov++, 60, "TIMESTAMP_BOOTTIME=%lld.%06lld", (long long) (boottime / NM_UTILS_NS_PER_SECOND), (long long) ((boottime % NM_UTILS_NS_PER_SECOND) / 1000));
 			if (error != 0)
-				_iovec_set_format (iov, iov_free, i_field++, "ERRNO=%d", error);
+				_iovec_set_format_a (iov++, 30, "ERRNO=%d", error);
 
-			nm_assert (i_field <= G_N_ELEMENTS (iov));
+			nm_assert (iov <= &iov_data[G_N_ELEMENTS (iov_data)]);
+			nm_assert (iov_free <= &iov_free_data[G_N_ELEMENTS (iov_free_data)]);
 
-			sd_journal_sendv (iov, i_field);
+			sd_journal_sendv (iov_data, iov - iov_data);
 
-			for (; i_field > 0; ) {
-				i_field--;
-				if (iov_free[i_field])
-					g_free (iov[i_field].iov_base);
-			}
+			for (; --iov_free >= iov_free_data; )
+				g_free (*iov_free);
 		}
 		break;
 #endif
