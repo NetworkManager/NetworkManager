@@ -79,7 +79,6 @@ typedef enum  { /*< skip >*/
 	/* aliases: */
 	LOGD_DHCP       = LOGD_DHCP4 | LOGD_DHCP6,
 	LOGD_IP         = LOGD_IP4 | LOGD_IP6,
-	LOGD_HW         = LOGD_PLATFORM,
 } NMLogDomain;
 
 /* Log levels */

@@ -167,7 +167,7 @@ clear:
 
 		lnk = nm_platform_link_get_lnk_gre (NM_PLATFORM_GET, ifindex, NULL);
 		if (!lnk) {
-			_LOGW (LOGD_HW, "could not read %s properties", "gre");
+			_LOGW (LOGD_PLATFORM, "could not read %s properties", "gre");
 			goto clear;
 		}
 
@@ -212,7 +212,7 @@ clear:
 
 		lnk = nm_platform_link_get_lnk_sit (NM_PLATFORM_GET, ifindex, NULL);
 		if (!lnk) {
-			_LOGW (LOGD_HW, "could not read %s properties", "sit");
+			_LOGW (LOGD_PLATFORM, "could not read %s properties", "sit");
 			goto clear;
 		}
 
@@ -227,7 +227,7 @@ clear:
 
 		lnk = nm_platform_link_get_lnk_ipip (NM_PLATFORM_GET, ifindex, NULL);
 		if (!lnk) {
-			_LOGW (LOGD_HW, "could not read %s properties", "ipip");
+			_LOGW (LOGD_PLATFORM, "could not read %s properties", "ipip");
 			goto clear;
 		}
 
@@ -243,7 +243,7 @@ clear:
 
 		lnk = nm_platform_link_get_lnk_ip6tnl (NM_PLATFORM_GET, ifindex, NULL);
 		if (!lnk) {
-			_LOGW (LOGD_HW, "could not read %s properties", "ip6tnl");
+			_LOGW (LOGD_PLATFORM, "could not read %s properties", "ip6tnl");
 			goto clear;
 		}
 
