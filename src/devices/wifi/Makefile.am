@@ -30,8 +30,8 @@ libnm_device_plugin_wifi_la_SOURCES = \
 	nm-device-wifi.h \
 	nm-wifi-ap.c \
 	nm-wifi-ap.h \
-	nm-wifi-ap-utils.c \
-	nm-wifi-ap-utils.h \
+	nm-wifi-utils.c \
+	nm-wifi-utils.h \
 	nm-device-olpc-mesh.c \
 	nm-device-olpc-mesh.h
 

@@ -19,78 +19,78 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#ifndef __NETWORKMANAGER_ACCESS_POINT_H__
-#define __NETWORKMANAGER_ACCESS_POINT_H__
+#ifndef __NM_WIFI_AP_H__
+#define __NM_WIFI_AP_H__
 
 #include "nm-exported-object.h"
 #include "nm-dbus-interface.h"
 #include "nm-connection.h"
 
-#define NM_TYPE_AP            (nm_ap_get_type ())
-#define NM_AP(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_AP, NMAccessPoint))
-#define NM_AP_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_AP, NMAccessPointClass))
-#define NM_IS_AP(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_AP))
-#define NM_IS_AP_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_AP))
-#define NM_AP_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_AP, NMAccessPointClass))
+#define NM_TYPE_WIFI_AP            (nm_wifi_ap_get_type ())
+#define NM_WIFI_AP(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_WIFI_AP, NMWifiAP))
+#define NM_WIFI_AP_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_WIFI_AP, NMWifiAPClass))
+#define NM_IS_WIFI_AP(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_WIFI_AP))
+#define NM_IS_WIFI_AP_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_WIFI_AP))
+#define NM_WIFI_AP_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_WIFI_AP, NMWifiAPClass))
 
-#define NM_AP_FLAGS "flags"
-#define NM_AP_WPA_FLAGS "wpa-flags"
-#define NM_AP_RSN_FLAGS "rsn-flags"
-#define NM_AP_SSID "ssid"
-#define NM_AP_FREQUENCY "frequency"
-#define NM_AP_HW_ADDRESS "hw-address"
-#define NM_AP_MODE "mode"
-#define NM_AP_MAX_BITRATE "max-bitrate"
-#define NM_AP_STRENGTH "strength"
-#define NM_AP_LAST_SEEN "last-seen"
+#define NM_WIFI_AP_FLAGS                "flags"
+#define NM_WIFI_AP_WPA_FLAGS            "wpa-flags"
+#define NM_WIFI_AP_RSN_FLAGS            "rsn-flags"
+#define NM_WIFI_AP_SSID                 "ssid"
+#define NM_WIFI_AP_FREQUENCY            "frequency"
+#define NM_WIFI_AP_HW_ADDRESS           "hw-address"
+#define NM_WIFI_AP_MODE                 "mode"
+#define NM_WIFI_AP_MAX_BITRATE          "max-bitrate"
+#define NM_WIFI_AP_STRENGTH             "strength"
+#define NM_WIFI_AP_LAST_SEEN            "last-seen"
 
-typedef struct _NMAccessPoint NMAccessPoint;
-typedef struct _NMAccessPointClass NMAccessPointClass;
+typedef struct _NMWifiAP NMWifiAP;
+typedef struct _NMWifiAPClass NMWifiAPClass;
 
-GType nm_ap_get_type (void);
+GType nm_wifi_ap_get_type (void);
 
-NMAccessPoint *   nm_ap_new_from_properties      (const char *supplicant_path,
+NMWifiAP *   nm_wifi_ap_new_from_properties      (const char *supplicant_path,
                                                   GVariant *properties);
-NMAccessPoint *   nm_ap_new_fake_from_connection (NMConnection *connection);
+NMWifiAP *   nm_wifi_ap_new_fake_from_connection (NMConnection *connection);
 
-void              nm_ap_update_from_properties   (NMAccessPoint *ap,
-                                                  const char *supplicant_path,
-                                                  GVariant *properties);
+void              nm_wifi_ap_update_from_properties   (NMWifiAP *ap,
+                                                       const char *supplicant_path,
+                                                       GVariant *properties);
 
-gboolean          nm_ap_check_compatible         (NMAccessPoint *self,
-                                                  NMConnection *connection);
+gboolean          nm_wifi_ap_check_compatible         (NMWifiAP *self,
+                                                       NMConnection *connection);
 
-gboolean          nm_ap_complete_connection      (NMAccessPoint *self,
-                                                  NMConnection *connection,
-                                                  gboolean lock_bssid,
-                                                  GError **error);
+gboolean          nm_wifi_ap_complete_connection      (NMWifiAP *self,
+                                                       NMConnection *connection,
+                                                       gboolean lock_bssid,
+                                                       GError **error);
 
-const char *      nm_ap_get_supplicant_path      (NMAccessPoint *ap);
-guint32           nm_ap_get_id                   (NMAccessPoint *ap);
-const GByteArray *nm_ap_get_ssid                 (const NMAccessPoint *ap);
-void              nm_ap_set_ssid                 (NMAccessPoint *ap,
-                                                  const guint8 *ssid,
-                                                  gsize len);
-const char *      nm_ap_get_address              (const NMAccessPoint *ap);
-void              nm_ap_set_address              (NMAccessPoint *ap,
-                                                  const char *addr);
-NM80211Mode       nm_ap_get_mode                 (NMAccessPoint *ap);
-gboolean          nm_ap_is_hotspot               (NMAccessPoint *ap);
-gint8             nm_ap_get_strength             (NMAccessPoint *ap);
-void              nm_ap_set_strength             (NMAccessPoint *ap,
-                                                  gint8 strength);
-guint32           nm_ap_get_freq                 (NMAccessPoint *ap);
-void              nm_ap_set_freq                 (NMAccessPoint *ap,
-                                                  guint32 freq);
-guint32           nm_ap_get_max_bitrate          (NMAccessPoint *ap);
-void              nm_ap_set_max_bitrate          (NMAccessPoint *ap,
-                                                  guint32 bitrate);
-gboolean          nm_ap_get_fake                 (const NMAccessPoint *ap);
-void              nm_ap_set_fake                 (NMAccessPoint *ap,
-                                                  gboolean fake);
+const char *      nm_wifi_ap_get_supplicant_path      (NMWifiAP *ap);
+guint32           nm_wifi_ap_get_id                   (NMWifiAP *ap);
+const GByteArray *nm_wifi_ap_get_ssid                 (const NMWifiAP *ap);
+void              nm_wifi_ap_set_ssid                 (NMWifiAP *ap,
+                                                       const guint8 *ssid,
+                                                       gsize len);
+const char *      nm_wifi_ap_get_address              (const NMWifiAP *ap);
+void              nm_wifi_ap_set_address              (NMWifiAP *ap,
+                                                       const char *addr);
+NM80211Mode       nm_wifi_ap_get_mode                 (NMWifiAP *ap);
+gboolean          nm_wifi_ap_is_hotspot               (NMWifiAP *ap);
+gint8             nm_wifi_ap_get_strength             (NMWifiAP *ap);
+void              nm_wifi_ap_set_strength             (NMWifiAP *ap,
+                                                       gint8 strength);
+guint32           nm_wifi_ap_get_freq                 (NMWifiAP *ap);
+void              nm_wifi_ap_set_freq                 (NMWifiAP *ap,
+                                                       guint32 freq);
+guint32           nm_wifi_ap_get_max_bitrate          (NMWifiAP *ap);
+void              nm_wifi_ap_set_max_bitrate          (NMWifiAP *ap,
+                                                       guint32 bitrate);
+gboolean          nm_wifi_ap_get_fake                 (const NMWifiAP *ap);
+void              nm_wifi_ap_set_fake                 (NMWifiAP *ap,
+                                                       gboolean fake);
 
-void              nm_ap_dump                     (NMAccessPoint *self,
-                                                  const char *prefix,
-                                                  const char *ifname);
+void              nm_wifi_ap_dump                     (NMWifiAP *self,
+                                                       const char *prefix,
+                                                       const char *ifname);
 
-#endif /* __NETWORKMANAGER_ACCESS_POINT_H__ */
+#endif /* __NM_WIFI_AP_H__ */

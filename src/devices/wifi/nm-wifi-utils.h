@@ -18,9 +18,8 @@
  * (C) Copyright 2011 Red Hat, Inc.
  */
 
-#ifndef __NETWORKMANAGER_WIFI_AP_UTILS_H__
-#define __NETWORKMANAGER_WIFI_AP_UTILS_H__
-
+#ifndef __NM_WIFI_UTILS_H__
+#define __NM_WIFI_UTILS_H__
 
 #include <nm-dbus-interface.h>
 #include <nm-connection.h>
@@ -28,17 +27,16 @@
 #include <nm-setting-wireless-security.h>
 #include <nm-setting-8021x.h>
 
-gboolean nm_ap_utils_complete_connection (const GByteArray *ssid,
-                                          const char *bssid,
-                                          NM80211Mode mode,
-                                          guint32 flags,
-                                          guint32 wpa_flags,
-                                          guint32 rsn_flags,
-                                          NMConnection *connection,
-                                          gboolean lock_bssid,
-                                          GError **error);
+gboolean nm_wifi_utils_complete_connection (const GByteArray *ssid,
+                                            const char *bssid,
+                                            NM80211Mode mode,
+                                            guint32 flags,
+                                            guint32 wpa_flags,
+                                            guint32 rsn_flags,
+                                            NMConnection *connection,
+                                            gboolean lock_bssid,
+                                            GError **error);
 
-guint32 nm_ap_utils_level_to_quality (gint val);
+guint32 nm_wifi_utils_level_to_quality (gint val);
 
-#endif  /* NM_WIFI_AP_UTILS_H */
-
+#endif  /* __NM_WIFI_UTILS_H__ */

@@ -12,17 +12,17 @@ AM_CPPFLAGS = \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS)
 
-noinst_PROGRAMS = test-wifi-ap-utils
+noinst_PROGRAMS = test-general
 
-test_wifi_ap_utils_SOURCES = \
-	test-wifi-ap-utils.c \
+test_general_SOURCES = \
+	test-general.c \
 	$(srcdir)/../nm-wifi-ap.c \
 	$(srcdir)/../nm-wifi-ap.h \
-	$(srcdir)/../nm-wifi-ap-utils.c \
-	$(srcdir)/../nm-wifi-ap-utils.h
+	$(srcdir)/../nm-wifi-utils.c \
+	$(srcdir)/../nm-wifi-utils.h
 
-test_wifi_ap_utils_LDADD = $(top_builddir)/src/libNetworkManager.la
+test_general_LDADD = $(top_builddir)/src/libNetworkManager.la
 
 @VALGRIND_RULES@
-TESTS = test-wifi-ap-utils
+TESTS = test-general
 
