@@ -569,8 +569,6 @@ _nm_log_impl (const char *file,
 {
 	va_list args;
 	char *msg;
-	char *fullmsg;
-	char s_buf_timestamp[64];
 	GTimeVal tv;
 
 	if ((guint) level >= G_N_ELEMENTS (_nm_logging_enabled_state))
@@ -590,8 +588,15 @@ _nm_log_impl (const char *file,
 	msg = g_strdup_vprintf (fmt, args);
 	va_end (args);
 
+#define MESSAGE_FMT "%s%-7s [%ld.%04ld] %s"
+#define MESSAGE_ARG(global, tv, msg) \
+    (global).prefix, \
+    (global).level_desc[level].level_str, \
+    (tv).tv_sec, \
+    ((tv).tv_usec / 100), \
+    (msg)
+
 	g_get_current_time (&tv);
-	nm_sprintf_buf (s_buf_timestamp, " [%ld.%04ld]", tv.tv_sec, tv.tv_usec / 100);
 
 	switch (global.log_backend) {
 #if SYSTEMD_JOURNAL
@@ -608,12 +613,7 @@ _nm_log_impl (const char *file,
 			boottime = nm_utils_monotonic_timestamp_as_boottime (now, 1);
 
 			_iovec_set_format (iov, iov_free, i_field++, "PRIORITY=%d", global.level_desc[level].syslog_level);
-			_iovec_set_format (iov, iov_free, i_field++, "MESSAGE="
-			                   "%s%-7s%s %s",
-			                   global.prefix,
-			                   global.level_desc[level].level_str,
-			                   s_buf_timestamp,
-			                   msg);
+			_iovec_set_format (iov, iov_free, i_field++, "MESSAGE="MESSAGE_FMT, MESSAGE_ARG (global, tv, msg));
 			_iovec_set_string (iov, iov_free, i_field++, syslog_identifier_full (&global));
 			_iovec_set_format (iov, iov_free, i_field++, "SYSLOG_PID=%ld", (long) getpid ());
 			{
@@ -680,18 +680,13 @@ _nm_log_impl (const char *file,
 		}
 		break;
 #endif
+	case LOG_BACKEND_SYSLOG:
+		syslog (global.level_desc[level].syslog_level,
+		        MESSAGE_FMT, MESSAGE_ARG (global, tv, msg));
+		break;
 	default:
-		fullmsg = g_strdup_printf ("%s%-7s%s %s",
-		                           global.prefix,
-		                           global.level_desc[level].level_str,
-		                           s_buf_timestamp,
-		                           msg);
-
-		if (global.log_backend == LOG_BACKEND_SYSLOG)
-			syslog (global.level_desc[level].syslog_level, "%s", fullmsg);
-		else
-			g_log (syslog_identifier_domain (&global), global.level_desc[level].g_log_level, "%s", fullmsg);
-		g_free (fullmsg);
+		g_log (syslog_identifier_domain (&global), global.level_desc[level].g_log_level,
+		       MESSAGE_FMT, MESSAGE_ARG (global, tv, msg));
 		break;
 	}
 
