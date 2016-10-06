@@ -23,7 +23,9 @@
 
 #include "nm-modem.h"
 
+#include <fcntl.h>
 #include <string.h>
+#include <termios.h>
 
 #include "nm-core-internal.h"
 #include "nm-platform.h"
@@ -489,6 +491,23 @@ ppp_stats (NMPPPManager *ppp_manager,
 	}
 }
 
+static gboolean
+port_speed_is_zero (const char *port)
+{
+    struct termios options;
+    gs_fd_close int fd = -1;
+
+    fd = open (port, O_RDWR | O_NONBLOCK | O_NOCTTY);
+    if (fd < 0)
+		return FALSE;
+
+    memset (&options, 0, sizeof (struct termios));
+    if (tcgetattr (fd, &options) != 0)
+        return FALSE;
+
+    return cfgetospeed (&options) == B0;
+}
+
 static NMActStageReturn
 ppp_stage3_ip_config_start (NMModem *self,
                             NMActRequest *req,
@@ -499,6 +518,7 @@ ppp_stage3_ip_config_start (NMModem *self,
 	GError *error = NULL;
 	NMActStageReturn ret;
 	guint ip_timeout = 30;
+	guint baud_override = 0;
 
 	g_return_val_if_fail (NM_IS_MODEM (self), NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), NM_ACT_STAGE_RETURN_FAILURE);
@@ -528,8 +548,16 @@ ppp_stage3_ip_config_start (NMModem *self,
 		ip_timeout = priv->mm_ip_timeout;
 	}
 
+	/* Some tty drivers and modems ignore port speed, but pppd requires the
+	 * port speed to be > 0 or it exits. If the port speed is 0 pass an
+	 * explicit speed to pppd to prevent the exit.
+	 * https://bugzilla.redhat.com/show_bug.cgi?id=1281731
+	 */
+	if (port_speed_is_zero (priv->data_port))
+		baud_override = 57600;
+
 	priv->ppp_manager = nm_ppp_manager_new (priv->data_port);
-	if (nm_ppp_manager_start (priv->ppp_manager, req, ppp_name, ip_timeout, &error)) {
+	if (nm_ppp_manager_start (priv->ppp_manager, req, ppp_name, ip_timeout, baud_override, &error)) {
 		g_signal_connect (priv->ppp_manager, NM_PPP_MANAGER_STATE_CHANGED,
 		                  G_CALLBACK (ppp_state_changed),
 		                  self);
