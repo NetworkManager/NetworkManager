@@ -570,6 +570,7 @@ nms_keyfile_plugin_init (NMSKeyfilePlugin *plugin)
 {
 	NMSKeyfilePluginPrivate *priv = NMS_KEYFILE_PLUGIN_GET_PRIVATE (plugin);
 
+	priv->config = g_object_ref (nm_config_get ());
 	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
 }
 
@@ -578,7 +579,8 @@ constructed (GObject *object)
 {
 	NMSKeyfilePluginPrivate *priv = NMS_KEYFILE_PLUGIN_GET_PRIVATE ((NMSKeyfilePlugin *) object);
 
-	priv->config = g_object_ref (nm_config_get ());
+	G_OBJECT_CLASS (nms_keyfile_plugin_parent_class)->constructed (object);
+
 	if (nm_config_data_has_value (nm_config_get_data_orig (priv->config),
 	                              NM_CONFIG_KEYFILE_GROUP_KEYFILE,
 	                              NM_CONFIG_KEYFILE_KEY_KEYFILE_HOSTNAME,
