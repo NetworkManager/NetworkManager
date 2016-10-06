@@ -707,6 +707,7 @@ create_pppd_cmd_line (NMPPPManager *self,
                       NMSettingPppoe *pppoe,
                       NMSettingAdsl  *adsl,
                       const char *ppp_name,
+                      guint baud_override,
                       GError **err)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (self);
@@ -798,6 +799,8 @@ create_pppd_cmd_line (NMPPPManager *self,
 
 	if (nm_setting_ppp_get_baud (setting))
 		nm_cmd_line_add_int (cmd, nm_setting_ppp_get_baud (setting));
+	else if (baud_override)
+		nm_cmd_line_add_int (cmd, (int) baud_override);
 
 	/* noauth by default, because we certainly don't have any information
 	 * with which to verify anything the peer gives us if we ask it to
@@ -896,6 +899,7 @@ nm_ppp_manager_start (NMPPPManager *manager,
                       NMActRequest *req,
                       const char *ppp_name,
                       guint32 timeout_secs,
+                      guint baud_override,
                       GError **err)
 {
 	NMPPPManagerPrivate *priv;
@@ -949,7 +953,7 @@ nm_ppp_manager_start (NMPPPManager *manager,
 
 	adsl_setting = (NMSettingAdsl *) nm_connection_get_setting (connection, NM_TYPE_SETTING_ADSL);
 
-	ppp_cmd = create_pppd_cmd_line (manager, s_ppp, pppoe_setting, adsl_setting, ppp_name, err);
+	ppp_cmd = create_pppd_cmd_line (manager, s_ppp, pppoe_setting, adsl_setting, ppp_name, baud_override, err);
 	if (!ppp_cmd)
 		goto out;
 
