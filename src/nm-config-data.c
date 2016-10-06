@@ -473,6 +473,7 @@ _nm_config_data_log_sort (const char **pa, const char **pb, gpointer dummy)
 	gboolean a_is_connection, b_is_connection;
 	gboolean a_is_device, b_is_device;
 	gboolean a_is_intern, b_is_intern;
+	gboolean a_is_main, b_is_main;
 	const char *a = *pa;
 	const char *b = *pb;
 
@@ -531,8 +532,12 @@ _nm_config_data_log_sort (const char **pa, const char **pb, gpointer dummy)
 	if (b_is_device && !a_is_device)
 		return -1;
 
-	/* no reordering. */
-	return 0;
+	a_is_main = nm_streq0 (a, "main");
+	b_is_main = nm_streq0 (b, "main");
+	if (a_is_main != b_is_main)
+		return a_is_main ? -1 : 1;
+
+	return g_strcmp0 (a, b);
 }
 
 static struct {
@@ -558,6 +563,8 @@ nm_config_data_log (const NMConfigData *self,
 	gsize ngroups;
 	guint g, k, i;
 	FILE *stream = print_stream;
+	gs_unref_ptrarray GPtrArray *groups_full = NULL;
+	gboolean print_default = !!stream;
 
 	g_return_if_fail (NM_IS_CONFIG_DATA (self));
 
@@ -583,18 +590,35 @@ nm_config_data_log (const NMConfigData *self,
 	if (!groups)
 		ngroups = 0;
 
-	if (groups && groups[0]) {
-		g_qsort_with_data (groups, ngroups,
-		                   sizeof (char *),
-		                   (GCompareDataFunc) _nm_config_data_log_sort,
-		                   NULL);
+	groups_full = g_ptr_array_sized_new (ngroups + 5);
+
+	if (ngroups) {
+		g_ptr_array_set_size (groups_full, ngroups);
+		memcpy (groups_full->pdata, groups, sizeof (groups[0]) * ngroups);
+		g_ptr_array_sort_with_data (groups_full, (GCompareDataFunc) _nm_config_data_log_sort, NULL);
+	}
+
+	if (print_default) {
+		for (g = 0; g < G_N_ELEMENTS (default_values); g++) {
+			const char *group = default_values[g].group;
+			gssize idx;
+
+			idx = _nm_utils_array_find_binary_search ((gconstpointer *) groups_full->pdata,
+			                                          sizeof (char *),
+			                                          groups_full->len,
+			                                          &group,
+			                                          (GCompareDataFunc) _nm_config_data_log_sort,
+			                                          NULL);
+			if (idx < 0)
+				g_ptr_array_insert (groups_full, (~idx), (gpointer) group);
+		}
 	}
 
 	if (!stream)
-		_LOG (stream, prefix, "config-data[%p]: %lu groups", self, (unsigned long) ngroups);
+		_LOG (stream, prefix, "config-data[%p]: %u groups", self, groups_full->len);
 
-	for (g = 0; g < ngroups; g++) {
-		const char *group = groups[g];
+	for (g = 0; g < groups_full->len; g++) {
+		const char *group = groups_full->pdata[g];
 		gs_strfreev char **keys = NULL;
 		gboolean is_atomic;
 
@@ -604,11 +628,13 @@ nm_config_data_log (const NMConfigData *self,
 		_LOG (stream, prefix, "[%s]%s", group, is_atomic && !stream ? " # atomic section" : "");
 
 		/* Print default values as comments */
-		for (i = 0; i < G_N_ELEMENTS (default_values); i++) {
-			if (   nm_streq (default_values[i].group, group)
-			    && !g_key_file_has_key (priv->keyfile, group, default_values[i].key, NULL)) {
-				_LOG (stream, prefix, "%s# %s=%s", key_prefix, default_values[i].key,
-				      default_values[i].value);
+		if (print_default) {
+			for (i = 0; i < G_N_ELEMENTS (default_values); i++) {
+				if (   nm_streq (default_values[i].group, group)
+				    && !g_key_file_has_key (priv->keyfile, group, default_values[i].key, NULL)) {
+					_LOG (stream, prefix, "%s# %s=%s", key_prefix, default_values[i].key,
+					      default_values[i].value);
+				}
 			}
 		}
 
