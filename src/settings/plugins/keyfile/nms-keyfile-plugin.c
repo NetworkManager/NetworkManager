@@ -74,6 +74,16 @@ G_DEFINE_TYPE_EXTENDED (NMSKeyfilePlugin, nms_keyfile_plugin, G_TYPE_OBJECT, 0,
 
 /*****************************************************************************/
 
+#define _NMLOG_PREFIX_NAME      "keyfile"
+#define _NMLOG_DOMAIN           LOGD_SETTINGS
+#define _NMLOG(level, ...) \
+    nm_log ((level), _NMLOG_DOMAIN, \
+            "%s" _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+            _NMLOG_PREFIX_NAME": " \
+            _NM_UTILS_MACRO_REST (__VA_ARGS__))
+
+/*****************************************************************************/
+
 static void
 connection_removed_cb (NMSettingsConnection *obj, gpointer user_data)
 {
@@ -90,7 +100,7 @@ remove_connection (NMSKeyfilePlugin *self, NMSKeyfileConnection *connection)
 
 	g_return_if_fail (connection != NULL);
 
-	nm_log_info (LOGD_SETTINGS, "keyfile: removed " NMS_KEYFILE_CONNECTION_LOG_FMT, NMS_KEYFILE_CONNECTION_LOG_ARG (connection));
+	_LOGI ("removed " NMS_KEYFILE_CONNECTION_LOG_FMT, NMS_KEYFILE_CONNECTION_LOG_ARG (connection));
 
 	/* Removing from the hash table should drop the last reference */
 	g_object_ref (connection);
@@ -170,15 +180,15 @@ update_connection (NMSKeyfilePlugin *self,
 	g_return_val_if_fail (full_path || source, NULL);
 
 	if (full_path)
-		nm_log_dbg (LOGD_SETTINGS, "keyfile: loading from file \"%s\"...", full_path);
+		_LOGD ("loading from file \"%s\"...", full_path);
 
 	connection_new = nms_keyfile_connection_new (source, full_path, &local);
 	if (!connection_new) {
 		/* Error; remove the connection */
 		if (source)
-			nm_log_warn (LOGD_SETTINGS, "keyfile: error creating connection %s: %s", nm_connection_get_uuid (source), local->message);
+			_LOGW ("error creating connection %s: %s", nm_connection_get_uuid (source), local->message);
 		else
-			nm_log_warn (LOGD_SETTINGS, "keyfile: error loading connection from file %s: %s", full_path, local->message);
+			_LOGW ("error loading connection from file %s: %s", full_path, local->message);
 		if (   connection
 		    && !protect_existing_connection
 		    && (!protected_connections || !g_hash_table_contains (protected_connections, connection)))
@@ -198,9 +208,9 @@ update_connection (NMSKeyfilePlugin *self,
 			NMSKeyfileConnection *conflicting = (protect_existing_connection && connection_by_uuid != NULL) ? connection_by_uuid : connection;
 
 			if (source)
-				nm_log_warn (LOGD_SETTINGS, "keyfile: cannot update protected "NMS_KEYFILE_CONNECTION_LOG_FMT" connection due to conflicting UUID %s", NMS_KEYFILE_CONNECTION_LOG_ARG (conflicting), uuid);
+				_LOGW ("cannot update protected "NMS_KEYFILE_CONNECTION_LOG_FMT" connection due to conflicting UUID %s", NMS_KEYFILE_CONNECTION_LOG_ARG (conflicting), uuid);
 			else
-				nm_log_warn (LOGD_SETTINGS, "keyfile: cannot load %s due to conflicting UUID for "NMS_KEYFILE_CONNECTION_LOG_FMT, full_path, NMS_KEYFILE_CONNECTION_LOG_ARG (conflicting));
+				_LOGW ("cannot load %s due to conflicting UUID for "NMS_KEYFILE_CONNECTION_LOG_FMT, full_path, NMS_KEYFILE_CONNECTION_LOG_ARG (conflicting));
 			g_object_unref (connection_new);
 			g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 			                      "Cannot update protected connection due to conflicting UUID");
@@ -216,9 +226,9 @@ update_connection (NMSKeyfilePlugin *self,
 	    && (   (!connection && protect_existing_connection)
 	        || (protected_connections && g_hash_table_contains (protected_connections, connection_by_uuid)))) {
 		if (source)
-			nm_log_warn (LOGD_SETTINGS, "keyfile: cannot update connection due to conflicting UUID for "NMS_KEYFILE_CONNECTION_LOG_FMT, NMS_KEYFILE_CONNECTION_LOG_ARG (connection_by_uuid));
+			_LOGW ("cannot update connection due to conflicting UUID for "NMS_KEYFILE_CONNECTION_LOG_FMT, NMS_KEYFILE_CONNECTION_LOG_ARG (connection_by_uuid));
 		else
-			nm_log_warn (LOGD_SETTINGS, "keyfile: cannot load %s due to conflicting UUID for "NMS_KEYFILE_CONNECTION_LOG_FMT, full_path, NMS_KEYFILE_CONNECTION_LOG_ARG (connection_by_uuid));
+			_LOGW ("cannot load %s due to conflicting UUID for "NMS_KEYFILE_CONNECTION_LOG_FMT, full_path, NMS_KEYFILE_CONNECTION_LOG_ARG (connection_by_uuid));
 		g_object_unref (connection_new);
 		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		                      "Skip updating protected connection during reload");
@@ -236,17 +246,17 @@ update_connection (NMSKeyfilePlugin *self,
 		                           NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)) {
 			/* Nothing to do... except updating the path. */
 			if (old_path && g_strcmp0 (old_path, full_path) != 0)
-				nm_log_info (LOGD_SETTINGS, "keyfile: rename \"%s\" to "NMS_KEYFILE_CONNECTION_LOG_FMT" without other changes", old_path, NMS_KEYFILE_CONNECTION_LOG_ARG (connection_new));
+				_LOGI ("rename \"%s\" to "NMS_KEYFILE_CONNECTION_LOG_FMT" without other changes", old_path, NMS_KEYFILE_CONNECTION_LOG_ARG (connection_new));
 		} else {
 			/* An existing connection changed. */
 			if (source)
-				nm_log_info (LOGD_SETTINGS, "keyfile: update "NMS_KEYFILE_CONNECTION_LOG_FMT" from %s", NMS_KEYFILE_CONNECTION_LOG_ARG (connection_new), NMS_KEYFILE_CONNECTION_LOG_PATH (old_path));
+				_LOGI ("update "NMS_KEYFILE_CONNECTION_LOG_FMT" from %s", NMS_KEYFILE_CONNECTION_LOG_ARG (connection_new), NMS_KEYFILE_CONNECTION_LOG_PATH (old_path));
 			else if (!g_strcmp0 (old_path, nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection_new))))
-				nm_log_info (LOGD_SETTINGS, "keyfile: update "NMS_KEYFILE_CONNECTION_LOG_FMT, NMS_KEYFILE_CONNECTION_LOG_ARG (connection_new));
+				_LOGI ("update "NMS_KEYFILE_CONNECTION_LOG_FMT, NMS_KEYFILE_CONNECTION_LOG_ARG (connection_new));
 			else if (old_path)
-				nm_log_info (LOGD_SETTINGS, "keyfile: rename \"%s\" to "NMS_KEYFILE_CONNECTION_LOG_FMT, old_path, NMS_KEYFILE_CONNECTION_LOG_ARG (connection_new));
+				_LOGI ("rename \"%s\" to "NMS_KEYFILE_CONNECTION_LOG_FMT, old_path, NMS_KEYFILE_CONNECTION_LOG_ARG (connection_new));
 			else
-				nm_log_info (LOGD_SETTINGS, "keyfile: update and persist "NMS_KEYFILE_CONNECTION_LOG_FMT, NMS_KEYFILE_CONNECTION_LOG_ARG (connection_new));
+				_LOGI ("update and persist "NMS_KEYFILE_CONNECTION_LOG_FMT, NMS_KEYFILE_CONNECTION_LOG_ARG (connection_new));
 
 			if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (connection_by_uuid),
 			                                              NM_CONNECTION (connection_new),
@@ -264,9 +274,9 @@ update_connection (NMSKeyfilePlugin *self,
 		return connection_by_uuid;
 	} else {
 		if (source)
-			nm_log_info (LOGD_SETTINGS, "keyfile: add connection "NMS_KEYFILE_CONNECTION_LOG_FMT, NMS_KEYFILE_CONNECTION_LOG_ARG (connection_new));
+			_LOGI ("add connection "NMS_KEYFILE_CONNECTION_LOG_FMT, NMS_KEYFILE_CONNECTION_LOG_ARG (connection_new));
 		else
-			nm_log_info (LOGD_SETTINGS, "keyfile: new connection "NMS_KEYFILE_CONNECTION_LOG_FMT, NMS_KEYFILE_CONNECTION_LOG_ARG (connection_new));
+			_LOGI ("new connection "NMS_KEYFILE_CONNECTION_LOG_FMT, NMS_KEYFILE_CONNECTION_LOG_ARG (connection_new));
 		g_hash_table_insert (priv->connections, g_strdup (uuid), connection_new);
 
 		g_signal_connect (connection_new, NM_SETTINGS_CONNECTION_REMOVED,
@@ -302,7 +312,7 @@ dir_changed (GFileMonitor *monitor,
 	}
 	exists = g_file_test (full_path, G_FILE_TEST_EXISTS);
 
-	nm_log_dbg (LOGD_SETTINGS, "dir_changed(%s) = %d; file %s", full_path, event_type, exists ? "exists" : "does not exist");
+	_LOGD ("dir_changed(%s) = %d; file %s", full_path, event_type, exists ? "exists" : "does not exist");
 
 	connection = find_by_path (self, full_path);
 
@@ -418,7 +428,7 @@ read_connections (NMSettingsPlugin *config)
 
 	dir = g_dir_open (nms_keyfile_utils_get_path (), 0, &error);
 	if (!dir) {
-		nm_log_warn (LOGD_SETTINGS, "keyfile: cannot read directory '%s': %s",
+		_LOGW ("cannot read directory '%s': %s",
 		             nms_keyfile_utils_get_path (),
 		             error->message);
 		g_clear_error (&error);
@@ -585,7 +595,7 @@ constructed (GObject *object)
 	                              NM_CONFIG_KEYFILE_GROUP_KEYFILE,
 	                              NM_CONFIG_KEYFILE_KEY_KEYFILE_HOSTNAME,
 	                              NM_CONFIG_GET_VALUE_RAW))
-		nm_log_warn (LOGD_SETTINGS, "keyfile: 'hostname' option is deprecated and has no effect");
+		_LOGW ("'hostname' option is deprecated and has no effect");
 }
 
 NMSKeyfilePlugin *
