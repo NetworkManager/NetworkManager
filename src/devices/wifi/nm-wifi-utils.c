@@ -20,10 +20,11 @@
 
 #include "nm-default.h"
 
+#include "nm-wifi-utils.h"
+
 #include <string.h>
 #include <stdlib.h>
 
-#include "nm-wifi-ap-utils.h"
 #include "nm-utils.h"
 
 static gboolean
@@ -524,15 +525,15 @@ verify_adhoc (NMSettingWirelessSecurity *s_wsec,
 }
 
 gboolean
-nm_ap_utils_complete_connection (const GByteArray *ap_ssid,
-                                 const char *bssid,
-                                 NM80211Mode ap_mode,
-                                 guint32 ap_flags,
-                                 guint32 ap_wpa_flags,
-                                 guint32 ap_rsn_flags,
-                                 NMConnection *connection,
-                                 gboolean lock_bssid,
-                                 GError **error)
+nm_wifi_utils_complete_connection (const GByteArray *ap_ssid,
+                                   const char *bssid,
+                                   NM80211Mode ap_mode,
+                                   guint32 ap_flags,
+                                   guint32 ap_wpa_flags,
+                                   guint32 ap_rsn_flags,
+                                   NMConnection *connection,
+                                   gboolean lock_bssid,
+                                   GError **error)
 {
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
@@ -763,7 +764,7 @@ nm_ap_utils_complete_connection (const GByteArray *ap_ssid,
 }
 
 guint32
-nm_ap_utils_level_to_quality (gint val)
+nm_wifi_utils_level_to_quality (gint val)
 {
 	if (val < 0) {
 		/* Assume dBm already; rough conversion: best = -40, worst = -100 */

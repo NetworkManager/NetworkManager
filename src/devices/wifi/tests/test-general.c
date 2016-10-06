@@ -22,7 +22,7 @@
 
 #include <string.h>
 
-#include "nm-wifi-ap-utils.h"
+#include "nm-wifi-utils.h"
 
 #include "nm-core-internal.h"
 
@@ -88,15 +88,15 @@ complete_connection (const char *ssid,
 	tmp = g_byte_array_sized_new (strlen (ssid));
 	g_byte_array_append (tmp, (const guint8 *) ssid, strlen (ssid));
 
-	success = nm_ap_utils_complete_connection (tmp,
-	                                           bssid,
-	                                           mode,
-	                                           flags,
-	                                           wpa_flags,
-	                                           rsn_flags,
-	                                           src,
-	                                           lock_bssid,
-	                                           error);
+	success = nm_wifi_utils_complete_connection (tmp,
+	                                             bssid,
+	                                             mode,
+	                                             flags,
+	                                             wpa_flags,
+	                                             rsn_flags,
+	                                             src,
+	                                             lock_bssid,
+	                                             error);
 	g_byte_array_free (tmp, TRUE);
 	return success;
 }
@@ -1289,17 +1289,17 @@ static void
 test_strength_dbm (void)
 {
 	/* boundary conditions first */
-	g_assert_cmpint (nm_ap_utils_level_to_quality (-1), ==, 100);
-	g_assert_cmpint (nm_ap_utils_level_to_quality (-40), ==, 100);
-	g_assert_cmpint (nm_ap_utils_level_to_quality (-30), ==, 100);
-	g_assert_cmpint (nm_ap_utils_level_to_quality (-100), ==, 0);
-	g_assert_cmpint (nm_ap_utils_level_to_quality (-200), ==, 0);
+	g_assert_cmpint (nm_wifi_utils_level_to_quality (-1), ==, 100);
+	g_assert_cmpint (nm_wifi_utils_level_to_quality (-40), ==, 100);
+	g_assert_cmpint (nm_wifi_utils_level_to_quality (-30), ==, 100);
+	g_assert_cmpint (nm_wifi_utils_level_to_quality (-100), ==, 0);
+	g_assert_cmpint (nm_wifi_utils_level_to_quality (-200), ==, 0);
 
-	g_assert_cmpint (nm_ap_utils_level_to_quality (-81), ==, 32);
-	g_assert_cmpint (nm_ap_utils_level_to_quality (-92), ==, 14);
-	g_assert_cmpint (nm_ap_utils_level_to_quality (-74), ==, 44);
-	g_assert_cmpint (nm_ap_utils_level_to_quality (-81), ==, 32);
-	g_assert_cmpint (nm_ap_utils_level_to_quality (-66), ==, 57);
+	g_assert_cmpint (nm_wifi_utils_level_to_quality (-81), ==, 32);
+	g_assert_cmpint (nm_wifi_utils_level_to_quality (-92), ==, 14);
+	g_assert_cmpint (nm_wifi_utils_level_to_quality (-74), ==, 44);
+	g_assert_cmpint (nm_wifi_utils_level_to_quality (-81), ==, 32);
+	g_assert_cmpint (nm_wifi_utils_level_to_quality (-66), ==, 57);
 }
 
 static void
@@ -1308,30 +1308,30 @@ test_strength_percent (void)
 	int i;
 
 	/* boundary conditions first */
-	g_assert_cmpint (nm_ap_utils_level_to_quality (0), ==, 0);
-	g_assert_cmpint (nm_ap_utils_level_to_quality (100), ==, 100);
-	g_assert_cmpint (nm_ap_utils_level_to_quality (110), ==, 100);
+	g_assert_cmpint (nm_wifi_utils_level_to_quality (0), ==, 0);
+	g_assert_cmpint (nm_wifi_utils_level_to_quality (100), ==, 100);
+	g_assert_cmpint (nm_wifi_utils_level_to_quality (110), ==, 100);
 
 	for (i = 0; i <= 100; i++)
-		g_assert_cmpint (nm_ap_utils_level_to_quality (i), ==, i);
+		g_assert_cmpint (nm_wifi_utils_level_to_quality (i), ==, i);
 }
 
 static void
 test_strength_wext (void)
 {
 	/* boundary conditions that we assume aren't WEXT first */
-	g_assert_cmpint (nm_ap_utils_level_to_quality (256), ==, 100);
-	g_assert_cmpint (nm_ap_utils_level_to_quality (110), ==, 100);
+	g_assert_cmpint (nm_wifi_utils_level_to_quality (256), ==, 100);
+	g_assert_cmpint (nm_wifi_utils_level_to_quality (110), ==, 100);
 
 	/* boundary conditions that we assume are WEXT */
-	g_assert_cmpint (nm_ap_utils_level_to_quality (111), ==, 0);
-	g_assert_cmpint (nm_ap_utils_level_to_quality (150), ==, 0);
-	g_assert_cmpint (nm_ap_utils_level_to_quality (225), ==, 100);
-	g_assert_cmpint (nm_ap_utils_level_to_quality (255), ==, 100);
+	g_assert_cmpint (nm_wifi_utils_level_to_quality (111), ==, 0);
+	g_assert_cmpint (nm_wifi_utils_level_to_quality (150), ==, 0);
+	g_assert_cmpint (nm_wifi_utils_level_to_quality (225), ==, 100);
+	g_assert_cmpint (nm_wifi_utils_level_to_quality (255), ==, 100);
 
-	g_assert_cmpint (nm_ap_utils_level_to_quality (157), ==, 2);
-	g_assert_cmpint (nm_ap_utils_level_to_quality (200), ==, 74);
-	g_assert_cmpint (nm_ap_utils_level_to_quality (215), ==, 99);
+	g_assert_cmpint (nm_wifi_utils_level_to_quality (157), ==, 2);
+	g_assert_cmpint (nm_wifi_utils_level_to_quality (200), ==, 74);
+	g_assert_cmpint (nm_wifi_utils_level_to_quality (215), ==, 99);
 }
 
 /*****************************************************************************/

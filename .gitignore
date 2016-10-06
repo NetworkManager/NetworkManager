@@ -240,7 +240,7 @@ test-*.trs
 /src/NetworkManager
 /src/devices/tests/test-arping
 /src/devices/tests/test-lldp
-/src/devices/wifi/tests/test-wifi-ap-utils
+/src/devices/wifi/tests/test-general
 /src/dhcp-manager/nm-dhcp-helper
 /src/dhcp-manager/tests/test-dhcp-dhclient
 /src/dhcp-manager/tests/test-dhcp-options
