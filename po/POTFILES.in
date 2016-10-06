@@ -166,7 +166,7 @@ src/devices/nm-device-vxlan.c
 src/devices/team/nm-device-team.c
 src/devices/wifi/nm-device-olpc-mesh.c
 src/devices/wifi/nm-device-wifi.c
-src/devices/wifi/nm-wifi-ap-utils.c
+src/devices/wifi/nm-wifi-utils.c
 src/devices/wwan/nm-modem-broadband.c
 src/nm-config.c
 src/nm-iface-helper.c
