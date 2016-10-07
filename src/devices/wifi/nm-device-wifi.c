@@ -538,10 +538,8 @@ deactivate (NMDevice *device)
 	}
 
 	/* Ensure we trigger a scan after deactivating a Hotspot */
-	if (old_mode == NM_802_11_MODE_AP) {
-		nm_clear_g_source (&priv->pending_scan_id);
+	if (old_mode == NM_802_11_MODE_AP)
 		request_wireless_scan (self, NULL);
-	}
 }
 
 static void
@@ -1139,7 +1137,6 @@ request_scan_cb (NMDevice *device,
 
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	nm_clear_g_source (&priv->pending_scan_id);
 	request_wireless_scan (self, new_scan_options);
 	g_dbus_method_invocation_return_value (context, NULL);
 }
@@ -1381,6 +1378,8 @@ request_wireless_scan (NMDeviceWifi *self, GVariant *scan_options)
 	gboolean backoff = FALSE;
 	GPtrArray *ssids = NULL;
 
+	nm_clear_g_source (&priv->pending_scan_id);
+
 	if (priv->requested_scan) {
 		/* There's already a scan in progress */
 		return;
@@ -1435,7 +1434,6 @@ request_wireless_scan (NMDeviceWifi *self, GVariant *scan_options)
 	} else
 		_LOGD (LOGD_WIFI_SCAN, "scan requested but not allowed at this time");
 
-	priv->pending_scan_id = 0;
 	schedule_scan (self, backoff);
 }
 
@@ -1447,7 +1445,7 @@ request_wireless_scan_periodic (gpointer user_data)
 
 	priv->pending_scan_id = 0;
 	request_wireless_scan (self, NULL);
-	return FALSE;
+	return G_SOURCE_REMOVE;
 }
 
 /*
@@ -2046,7 +2044,6 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 		break;
 	case NM_SUPPLICANT_INTERFACE_STATE_INACTIVE:
 		_requested_scan_set (self, FALSE);
-		nm_clear_g_source (&priv->pending_scan_id);
 		request_wireless_scan (self, NULL);
 		break;
 	default:
@@ -2927,7 +2924,6 @@ device_state_changed (NMDevice *device,
 	case NM_DEVICE_STATE_DISCONNECTED:
 		/* Kick off a scan to get latest results */
 		priv->scan_interval = SCAN_INTERVAL_MIN;
-		nm_clear_g_source (&priv->pending_scan_id);
 		request_wireless_scan (self, NULL);
 		break;
 	default:
