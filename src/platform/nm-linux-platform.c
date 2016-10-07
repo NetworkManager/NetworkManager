@@ -36,12 +36,7 @@
 #include <linux/if_tun.h>
 #include <linux/if_tunnel.h>
 #include <netlink/netlink.h>
-#include <netlink/object.h>
-#include <netlink/cache.h>
-#include <netlink/route/link.h>
-#include <netlink/route/link/vlan.h>
-#include <netlink/route/addr.h>
-#include <netlink/route/route.h>
+#include <netlink/msg.h>
 #include <gudev/gudev.h>
 
 #include "nm-utils.h"

@@ -21,7 +21,6 @@
 #ifndef __NMP_OBJECT_H__
 #define __NMP_OBJECT_H__
 
-#include <netlink/netlink.h>
 #include <gudev/gudev.h>
 
 #include "nm-platform.h"
