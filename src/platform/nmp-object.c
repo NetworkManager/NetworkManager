@@ -23,6 +23,7 @@
 #include "nmp-object.h"
 
 #include <unistd.h>
+#include <linux/rtnetlink.h>
 
 #include "nm-utils.h"
 

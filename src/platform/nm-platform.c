@@ -28,11 +28,10 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string.h>
-#include <netlink/route/addr.h>
-#include <netlink/route/rtnl.h>
 #include <linux/ip.h>
 #include <linux/if_tun.h>
 #include <linux/if_tunnel.h>
+#include <linux/rtnetlink.h>
 
 #include "nm-utils.h"
 #include "nm-core-internal.h"

@@ -33,7 +33,6 @@
 #include <sys/wait.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
-#include <netlink/route/addr.h>
 #include <linux/if_addr.h>
 
 #include "nm-common-macros.h"
