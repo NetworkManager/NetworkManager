@@ -28,7 +28,7 @@ AM_LDFLAGS = \
 	$(GLIB_LIBS) \
 	$(CODE_COVERAGE_LDFLAGS)
 
-noinst_PROGRAMS = test-ifcfg-rh test-ifcfg-rh-utils
+noinst_PROGRAMS = test-ifcfg-rh
 
 test_ifcfg_rh_SOURCES = \
 	test-ifcfg-rh.c \
@@ -40,19 +40,10 @@ test_ifcfg_rh_SOURCES = \
 test_ifcfg_rh_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
-test_ifcfg_rh_utils_SOURCES = \
-	test-ifcfg-rh-utils.c \
-	../nms-ifcfg-rh-utils.c \
-	../shvar.c
-
-test_ifcfg_rh_utils_LDADD = \
-	$(top_builddir)/src/libNetworkManager.la
-
 @VALGRIND_RULES@
-TESTS = test-ifcfg-rh-utils test-ifcfg-rh
+TESTS = test-ifcfg-rh
 
 check-local:
 	$(call check_so_symbols,$(builddir)/../.libs/libnm-settings-plugin-ifcfg-rh.so)
 
 endif
-

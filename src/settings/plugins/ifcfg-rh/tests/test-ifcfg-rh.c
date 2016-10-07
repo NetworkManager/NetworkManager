@@ -8850,6 +8850,120 @@ test_sit_read_ignore (void)
 
 /*****************************************************************************/
 
+static void
+do_test_utils_name (const char *desc,
+                    const char *path,
+                    gboolean only_ifcfg,
+                    const char *expected)
+{
+	const char *result;
+
+	result = utils_get_ifcfg_name (path, only_ifcfg);
+	g_assert_cmpstr (result, ==, expected);
+}
+
+static void
+test_utils_name (void)
+{
+	do_test_utils_name ("get-ifcfg-name-bad", "/foo/bar/adfasdfadf", FALSE, NULL);
+	do_test_utils_name ("get-ifcfg-name-good", "/foo/bar/ifcfg-FooBar", FALSE, "FooBar");
+	do_test_utils_name ("get-ifcfg-name-keys", "/foo/bar/keys-BlahLbah", FALSE, "BlahLbah");
+	do_test_utils_name ("get-ifcfg-name-route", "/foo/bar/route-Lalalala", FALSE, "Lalalala");
+	do_test_utils_name ("get-ifcfg-name-only-ifcfg-route", "/foo/bar/route-Lalalala", TRUE, NULL);
+	do_test_utils_name ("get-ifcfg-name-only-ifcfg-keys", "/foo/bar/keys-Lalalala", TRUE, NULL);
+	do_test_utils_name ("get-ifcfg-name-no-path-ifcfg", "ifcfg-Lalalala", FALSE, "Lalalala");
+	do_test_utils_name ("get-ifcfg-name-no-path-keys", "keys-Lalalala", FALSE, "Lalalala");
+	do_test_utils_name ("get-ifcfg-name-no-path-route", "route-Lalalala", FALSE, "Lalalala");
+
+	do_test_utils_name ("get-ifcfg-name-bad2-ifcfg", "/foo/bar/asdfasifcfg-Foobar", FALSE, NULL);
+	do_test_utils_name ("get-ifcfg-name-bad2-keys", "/foo/bar/asdfaskeys-Foobar", FALSE, NULL);
+	do_test_utils_name ("get-ifcfg-name-bad2-route", "/foo/bar/asdfasroute-Foobar", FALSE, NULL);
+}
+
+/*****************************************************************************/
+
+static void
+do_test_utils_path_ifcfg (const char *desc,
+                          const char *path,
+                          const char *expected)
+{
+	char *result;
+
+	result = utils_get_ifcfg_path (path);
+	g_assert_cmpstr (result, ==, expected);
+	g_free (result);
+}
+
+static void
+do_test_utils_path_keys (const char *desc,
+                         const char *path,
+                         const char *expected)
+{
+	char *result;
+
+	result = utils_get_keys_path (path);
+	g_assert_cmpstr (result, ==, expected);
+	g_free (result);
+}
+
+static void
+do_test_utils_path_route (const char *desc,
+                          const char *path,
+                          const char *expected)
+{
+	char *result;
+
+	result = utils_get_route_path (path);
+	g_assert_cmpstr (result, ==, expected);
+	g_free (result);
+}
+
+static void
+test_utils_path (void)
+{
+	do_test_utils_path_ifcfg ("ifcfg-path-bad", "/foo/bar/adfasdfasdf", NULL);
+	do_test_utils_path_ifcfg ("ifcfg-path-from-keys-no-path", "keys-BlahBlah", "ifcfg-BlahBlah");
+	do_test_utils_path_ifcfg ("ifcfg-path-from-keys", "/foo/bar/keys-BlahBlah", "/foo/bar/ifcfg-BlahBlah");
+	do_test_utils_path_ifcfg ("ifcfg-path-from-route", "/foo/bar/route-BlahBlah", "/foo/bar/ifcfg-BlahBlah");
+
+	do_test_utils_path_keys ("keys-path-bad", "/foo/bar/asdfasdfasdfasdf", NULL);
+	do_test_utils_path_keys ("keys-path-from-ifcfg-no-path", "ifcfg-FooBar", "keys-FooBar");
+	do_test_utils_path_keys ("keys-path-from-ifcfg", "/foo/bar/ifcfg-FooBar", "/foo/bar/keys-FooBar");
+	do_test_utils_path_keys ("keys-path-from-route", "/foo/bar/route-FooBar", "/foo/bar/keys-FooBar");
+
+	do_test_utils_path_route ("route-path-bad", "/foo/bar/asdfasdfasdfasdf", NULL);
+	do_test_utils_path_route ("route-path-from-ifcfg-no-path", "ifcfg-FooBar", "route-FooBar");
+	do_test_utils_path_route ("route-path-from-ifcfg", "/foo/bar/ifcfg-FooBar", "/foo/bar/route-FooBar");
+	do_test_utils_path_route ("route-path-from-keys", "/foo/bar/keys-FooBar", "/foo/bar/route-FooBar");
+}
+
+/*****************************************************************************/
+
+static void
+do_test_utils_ignored (const char *desc, const char *path, gboolean expected_ignored)
+{
+	gboolean result;
+
+	result = utils_should_ignore_file (path, FALSE);
+	g_assert (result == expected_ignored);
+}
+
+static void
+test_utils_ignore (void)
+{
+	do_test_utils_ignored ("ignored-ifcfg", "ifcfg-FooBar", FALSE);
+	do_test_utils_ignored ("ignored-keys", "keys-FooBar", FALSE);
+	do_test_utils_ignored ("ignored-route", "route-FooBar", FALSE);
+	do_test_utils_ignored ("ignored-bak", "ifcfg-FooBar" BAK_TAG, TRUE);
+	do_test_utils_ignored ("ignored-tilde", "ifcfg-FooBar" TILDE_TAG, TRUE);
+	do_test_utils_ignored ("ignored-orig", "ifcfg-FooBar" ORIG_TAG, TRUE);
+	do_test_utils_ignored ("ignored-rej", "ifcfg-FooBar" REJ_TAG, TRUE);
+	do_test_utils_ignored ("ignored-rpmnew", "ifcfg-FooBar" RPMNEW_TAG, TRUE);
+	do_test_utils_ignored ("ignored-augnew", "ifcfg-FooBar" AUGNEW_TAG, TRUE);
+	do_test_utils_ignored ("ignored-augtmp", "ifcfg-FooBar" AUGTMP_TAG, TRUE);
+}
+
+/*****************************************************************************/
 
 #define TPATH "/settings/plugins/ifcfg-rh/"
 
@@ -9098,6 +9212,9 @@ int main (int argc, char **argv)
 	g_test_add_data_func (TPATH "wwan/write-gsm", GUINT_TO_POINTER (TRUE), test_write_mobile_broadband);
 	g_test_add_data_func (TPATH "wwan/write-cdma", GUINT_TO_POINTER (FALSE), test_write_mobile_broadband);
 
+	g_test_add_func (TPATH "utils/name", test_utils_name);
+	g_test_add_func (TPATH "utils/path", test_utils_path);
+	g_test_add_func (TPATH "utils/ignore", test_utils_ignore);
+
 	return g_test_run ();
 }
-
