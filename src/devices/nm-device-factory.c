@@ -19,27 +19,36 @@
  */
 
 #include "nm-default.h"
+
+#include "nm-device-factory.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <string.h>
 #include <gmodule.h>
 
-#include "nm-device-factory.h"
 #include "nm-platform.h"
 #include "nm-utils.h"
+
+/*****************************************************************************/
 
 const NMLinkType _nm_device_factory_no_default_links[] = { NM_LINK_TYPE_NONE };
 const char *_nm_device_factory_no_default_settings[] = { NULL };
 
-G_DEFINE_INTERFACE (NMDeviceFactory, nm_device_factory, G_TYPE_OBJECT)
+/*****************************************************************************/
 
 enum {
 	DEVICE_ADDED,
 	COMPONENT_ADDED,
 	LAST_SIGNAL
 };
+
 static guint signals[LAST_SIGNAL] = { 0 };
+
+G_DEFINE_INTERFACE (NMDeviceFactory, nm_device_factory, G_TYPE_OBJECT)
+
+/*****************************************************************************/
 
 gboolean
 nm_device_factory_emit_component_added (NMDeviceFactory *factory, GObject *component)
