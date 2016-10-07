@@ -233,21 +233,9 @@ extern const char *_nm_device_factory_no_default_settings[];
 		NMDeviceFactoryClass parent; \
 	} NM##mixed##DeviceFactoryClass; \
  \
-	static GType nm_##lower##_device_factory_get_type (void); \
+	GType nm_##lower##_device_factory_get_type (void); \
  \
-	G_DEFINE_TYPE_WITH_CODE (NM##mixed##DeviceFactory, nm_##lower##_device_factory, NM_TYPE_DEVICE_FACTORY, \
-	                         _nm_device_factory_internal_register_type (g_define_type_id);) \
- \
-	/* Use a module constructor to register the factory's GType at load \
-	 * time, which then calls _nm_device_factory_internal_register_type() \
-	 * to register the factory's GType with the Manager. \
-	 */ \
-	static void __attribute__((constructor)) \
-	register_device_factory_internal_##lower (void) \
-	{ \
-		nm_g_type_init (); \
-		g_type_ensure (NM_TYPE_##upper##_DEVICE_FACTORY); \
-	} \
+	G_DEFINE_TYPE (NM##mixed##DeviceFactory, nm_##lower##_device_factory, NM_TYPE_DEVICE_FACTORY) \
  \
 	NM_DEVICE_FACTORY_DECLARE_TYPES(st_code) \
  \
@@ -264,8 +252,6 @@ extern const char *_nm_device_factory_no_default_settings[];
 		factory_class->get_supported_types = get_supported_types; \
 		dfi_code \
 	}
-
-void _nm_device_factory_internal_register_type (GType factory_type);
 
 /**************************************************************************
  * PRIVATE FACTORY FUNCTIONS - for factory consumers (eg, NMManager).

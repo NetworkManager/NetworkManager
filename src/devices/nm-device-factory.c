@@ -254,21 +254,12 @@ nm_device_factory_class_init (NMDeviceFactoryClass *klass)
 
 /*****************************************************************************/
 
-static GSList *internal_types = NULL;
 static GHashTable *factories_by_link = NULL;
 static GHashTable *factories_by_setting = NULL;
-
-void
-_nm_device_factory_internal_register_type (GType factory_type)
-{
-	g_return_if_fail (g_slist_find (internal_types, GUINT_TO_POINTER (factory_type)) == NULL);
-	internal_types = g_slist_prepend (internal_types, GUINT_TO_POINTER (factory_type));
-}
 
 static void __attribute__((destructor))
 _cleanup (void)
 {
-	g_clear_pointer (&internal_types, g_slist_free);
 	g_clear_pointer (&factories_by_link, g_hash_table_unref);
 	g_clear_pointer (&factories_by_setting, g_hash_table_unref);
 }
@@ -481,12 +472,22 @@ _add_factory (NMDeviceFactory *factory,
 	return TRUE;
 }
 
+static void
+_load_internal_factory (GType factory_gtype,
+                        NMDeviceFactoryManagerFactoryFunc callback,
+                        gpointer user_data)
+{
+	NMDeviceFactory *factory;
+
+	factory = (NMDeviceFactory *) g_object_new (factory_gtype, NULL);
+	_add_factory (factory, FALSE, "internal", callback, user_data);
+}
+
 void
 nm_device_factory_manager_load_factories (NMDeviceFactoryManagerFactoryFunc callback,
                                           gpointer user_data)
 {
 	NMDeviceFactory *factory;
-	const GSList *iter;
 	GError *error = NULL;
 	char **path, **paths;
 
@@ -496,14 +497,23 @@ nm_device_factory_manager_load_factories (NMDeviceFactoryManagerFactoryFunc call
 	factories_by_link = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_object_unref);
 	factories_by_setting = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
 
-	/* Register internal factories first */
-	for (iter = internal_types; iter; iter = iter->next) {
-		GType ftype = (GType) GPOINTER_TO_SIZE (iter->data);
+#define _ADD_INTERNAL(get_type_fcn) \
+	G_STMT_START { \
+		GType get_type_fcn (void); \
+		_load_internal_factory (get_type_fcn (), \
+		                        callback, user_data); \
+	} G_STMT_END
 
-		factory = (NMDeviceFactory *) g_object_new (ftype, NULL);
-		g_assert (factory);
-		_add_factory (factory, FALSE, "internal", callback, user_data);
-	}
+	_ADD_INTERNAL (nm_bond_device_factory_get_type);
+	_ADD_INTERNAL (nm_bridge_device_factory_get_type);
+	_ADD_INTERNAL (nm_ethernet_device_factory_get_type);
+	_ADD_INTERNAL (nm_infiniband_device_factory_get_type);
+	_ADD_INTERNAL (nm_ip_tunnel_device_factory_get_type);
+	_ADD_INTERNAL (nm_macvlan_device_factory_get_type);
+	_ADD_INTERNAL (nm_tun_device_factory_get_type);
+	_ADD_INTERNAL (nm_veth_device_factory_get_type);
+	_ADD_INTERNAL (nm_vlan_device_factory_get_type);
+	_ADD_INTERNAL (nm_vxlan_device_factory_get_type);
 
 	paths = read_device_factory_paths ();
 	if (!paths)
