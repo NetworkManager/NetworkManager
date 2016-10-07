@@ -25,8 +25,8 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "common.h"
-#include "utils.h"
+#include "nms-ifcfg-rh-common.h"
+#include "nms-ifcfg-rh-utils.h"
 
 #include "nm-test-utils-core.h"
 

@@ -20,7 +20,7 @@
 
 #include "nm-default.h"
 
-#include "nm-ifcfg-connection.h"
+#include "nms-ifcfg-rh-connection.h"
 
 #include <string.h>
 #include <sys/inotify.h>
@@ -36,13 +36,13 @@
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-8021x.h"
 #include "nm-platform.h"
-
-#include "common.h"
-#include "nm-config.h"
-#include "reader.h"
-#include "writer.h"
 #include "nm-inotify-helper.h"
-#include "utils.h"
+#include "nm-config.h"
+
+#include "nms-ifcfg-rh-common.h"
+#include "nms-ifcfg-rh-reader.h"
+#include "nms-ifcfg-rh-writer.h"
+#include "nms-ifcfg-rh-utils.h"
 
 /*****************************************************************************/
 

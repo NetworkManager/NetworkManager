@@ -50,10 +50,10 @@
 
 #include "NetworkManagerUtils.h"
 
-#include "common.h"
-#include "reader.h"
-#include "writer.h"
-#include "utils.h"
+#include "nms-ifcfg-rh-common.h"
+#include "nms-ifcfg-rh-reader.h"
+#include "nms-ifcfg-rh-writer.h"
+#include "nms-ifcfg-rh-utils.h"
 
 #include "nm-test-utils-core.h"
 

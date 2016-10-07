@@ -32,17 +32,17 @@ noinst_PROGRAMS = test-ifcfg-rh test-ifcfg-rh-utils
 
 test_ifcfg_rh_SOURCES = \
 	test-ifcfg-rh.c \
-	../reader.c \
+	../nms-ifcfg-rh-reader.c \
 	../shvar.c \
-	../utils.c \
-	../writer.c
+	../nms-ifcfg-rh-utils.c \
+	../nms-ifcfg-rh-writer.c
 
 test_ifcfg_rh_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
 test_ifcfg_rh_utils_SOURCES = \
 	test-ifcfg-rh-utils.c \
-	../utils.c \
+	../nms-ifcfg-rh-utils.c \
 	../shvar.c
 
 test_ifcfg_rh_utils_LDADD = \

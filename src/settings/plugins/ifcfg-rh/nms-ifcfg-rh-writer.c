@@ -20,7 +20,7 @@
 
 #include "nm-default.h"
 
-#include "writer.h"
+#include "nms-ifcfg-rh-writer.h"
 
 #include <string.h>
 #include <sys/types.h>
@@ -47,10 +47,10 @@
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 
-#include "common.h"
+#include "nms-ifcfg-rh-common.h"
+#include "nms-ifcfg-rh-reader.h"
+#include "nms-ifcfg-rh-utils.h"
 #include "shvar.h"
-#include "reader.h"
-#include "utils.h"
 
 /*****************************************************************************/
 

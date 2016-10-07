@@ -173,4 +173,4 @@ src/nm-iface-helper.c
 src/nm-logging.c
 src/nm-manager.c
 src/settings/plugins/ibft/nms-ibft-plugin.c
-src/settings/plugins/ifcfg-rh/reader.c
+src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c

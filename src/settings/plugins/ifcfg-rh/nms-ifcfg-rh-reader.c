@@ -20,7 +20,7 @@
 
 #include "nm-default.h"
 
-#include "reader.h"
+#include "nms-ifcfg-rh-reader.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -56,9 +56,9 @@
 #include "nm-platform.h"
 #include "NetworkManagerUtils.h"
 
-#include "common.h"
+#include "nms-ifcfg-rh-common.h"
+#include "nms-ifcfg-rh-utils.h"
 #include "shvar.h"
-#include "utils.h"
 
 /*****************************************************************************/
 

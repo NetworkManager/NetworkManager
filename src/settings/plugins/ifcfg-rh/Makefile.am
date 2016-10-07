@@ -31,13 +31,13 @@ noinst_LTLIBRARIES += libifcfg-rh-io.la
 libifcfg_rh_io_la_SOURCES = \
 	shvar.c \
 	shvar.h \
-	reader.c \
-	reader.h \
-	writer.c \
-	writer.h \
-	common.h \
-	utils.c \
-	utils.h
+	nms-ifcfg-rh-reader.c \
+	nms-ifcfg-rh-reader.h \
+	nms-ifcfg-rh-writer.c \
+	nms-ifcfg-rh-writer.h \
+	nms-ifcfg-rh-common.h \
+	nms-ifcfg-rh-utils.c \
+	nms-ifcfg-rh-utils.h
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/ \
@@ -55,10 +55,10 @@ AM_CPPFLAGS = \
 	-DSBINDIR=\"$(sbindir)\"
 
 libnm_settings_plugin_ifcfg_rh_la_SOURCES = \
-	plugin.c \
-	plugin.h \
-	nm-ifcfg-connection.c \
-	nm-ifcfg-connection.h
+	nms-ifcfg-rh-plugin.c \
+	nms-ifcfg-rh-plugin.h \
+	nms-ifcfg-rh-connection.c \
+	nms-ifcfg-rh-connection.h
 
 libnm_settings_plugin_ifcfg_rh_la_LDFLAGS = -module -avoid-version
 libnm_settings_plugin_ifcfg_rh_la_LIBADD = libifcfg-rh-io.la libnmdbus-ifcfg-rh.la
