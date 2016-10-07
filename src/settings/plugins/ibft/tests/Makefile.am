@@ -27,10 +27,10 @@ AM_LDFLAGS = \
 noinst_PROGRAMS = test-ibft
 
 test_ibft_SOURCES = \
-	test-ibft.c \
-	../nms-ibft-reader.c
+	test-ibft.c
 
 test_ibft_LDADD = \
+	$(top_builddir)/src/settings/plugins/ibft/libnms-ibft-core.la \
 	$(top_builddir)/src/libNetworkManager.la
 
 @VALGRIND_RULES@
