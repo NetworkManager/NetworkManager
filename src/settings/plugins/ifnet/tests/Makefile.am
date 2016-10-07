@@ -24,17 +24,17 @@ AM_CPPFLAGS= \
 	-DSYSCONFDIR=\"nonexistent\"
 
 noinst_PROGRAMS = test-ifnet
+
 test_ifnet_SOURCES = \
-	test-ifnet.c \
-	../connection_parser.c \
-	../net_parser.c \
-	../net_utils.c \
-	../wpa_parser.c
+	test-ifnet.c
 
 test_ifnet_LDFLAGS = \
+	$(GLIB_LDFLAGS)
 	$(CODE_COVERAGE_LDFLAGS)
 
-test_ifnet_LDADD = $(top_builddir)/src/libNetworkManager.la
+test_ifnet_LDADD = \
+	$(top_builddir)/src/settings/plugins/ifnet/libnms-ifnet-core.la \
+	$(top_builddir)/src/libNetworkManager.la
 
 @VALGRIND_RULES@
 TESTS = test-ifnet

@@ -31,13 +31,10 @@ AM_LDFLAGS = \
 noinst_PROGRAMS = test-ifcfg-rh
 
 test_ifcfg_rh_SOURCES = \
-	test-ifcfg-rh.c \
-	../nms-ifcfg-rh-reader.c \
-	../shvar.c \
-	../nms-ifcfg-rh-utils.c \
-	../nms-ifcfg-rh-writer.c
+	test-ifcfg-rh.c
 
 test_ifcfg_rh_LDADD = \
+	$(top_builddir)/src/settings/plugins/ifcfg-rh/libnms-ifcfg-rh-core.la \
 	$(top_builddir)/src/libNetworkManager.la
 
 @VALGRIND_RULES@

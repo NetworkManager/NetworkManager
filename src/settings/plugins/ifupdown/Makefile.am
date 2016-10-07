@@ -15,15 +15,21 @@ AM_CPPFLAGS = \
 	$(GUDEV_CFLAGS) \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
 
-noinst_LTLIBRARIES = libifupdown-io.la
+pkglib_LTLIBRARIES = \
+	libnm-settings-plugin-ifupdown.la
 
-libifupdown_io_la_SOURCES = \
+noinst_LTLIBRARIES = \
+	libnms-ifupdown-core.la
+
+###############################################################################
+
+libnms_ifupdown_core_la_SOURCES = \
 	interface_parser.c \
 	interface_parser.h \
 	parser.c \
 	parser.h
 
-pkglib_LTLIBRARIES = libnm-settings-plugin-ifupdown.la
+###############################################################################
 
 libnm_settings_plugin_ifupdown_la_SOURCES = \
 	nm-ifupdown-connection.c \
@@ -31,6 +37,9 @@ libnm_settings_plugin_ifupdown_la_SOURCES = \
 	plugin.c \
 	plugin.h
 
-libnm_settings_plugin_ifupdown_la_LDFLAGS = -module -avoid-version
-libnm_settings_plugin_ifupdown_la_LIBADD = libifupdown-io.la
+libnm_settings_plugin_ifupdown_la_LDFLAGS = \
+	-module -avoid-version
+
+libnm_settings_plugin_ifupdown_la_LIBADD = \
+	libnms-ifupdown-core.la
 

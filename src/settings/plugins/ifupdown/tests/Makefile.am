@@ -18,11 +18,14 @@ AM_CPPFLAGS = \
 noinst_PROGRAMS = test-ifupdown
 
 test_ifupdown_SOURCES = \
-	test-ifupdown.c \
-	../interface_parser.c \
-	../parser.c
+	test-ifupdown.c
+
+test_ifupdown_LDFLAGS = \
+	$(GLIB_LDFLAGS)
+	$(CODE_COVERAGE_LDFLAGS)
 
 test_ifupdown_LDADD = \
+	$(top_builddir)/src/settings/plugins/ifupdown/libnms-ifupdown-core.la \
 	$(top_builddir)/src/libNetworkManager.la
 
 @VALGRIND_RULES@

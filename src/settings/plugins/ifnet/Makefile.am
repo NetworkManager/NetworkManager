@@ -16,21 +16,15 @@ AM_CPPFLAGS = \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
 	-DSBINDIR=\"$(sbindir)\"
 
-pkglib_LTLIBRARIES = libnm-settings-plugin-ifnet.la
+pkglib_LTLIBRARIES = \
+	libnm-settings-plugin-ifnet.la
 
-noinst_LTLIBRARIES = lib-ifnet-io.la
+noinst_LTLIBRARIES = \
+	libnms-ifnet-core.la
 
-libnm_settings_plugin_ifnet_la_SOURCES = \
-	nm-ifnet-connection.c \
-	nm-ifnet-connection.h \
-	plugin.c \
-	plugin.h
+###############################################################################
 
-libnm_settings_plugin_ifnet_la_LDFLAGS = -module -avoid-version
-
-libnm_settings_plugin_ifnet_la_LIBADD = lib-ifnet-io.la
-
-lib_ifnet_io_la_SOURCES = \
+libnms_ifnet_core_la_SOURCES = \
 	net_parser.c\
 	net_parser.h\
 	connection_parser.c \
@@ -39,3 +33,17 @@ lib_ifnet_io_la_SOURCES = \
 	net_utils.c\
 	wpa_parser.h\
 	wpa_parser.c
+
+###############################################################################
+
+libnm_settings_plugin_ifnet_la_SOURCES = \
+	nm-ifnet-connection.c \
+	nm-ifnet-connection.h \
+	plugin.c \
+	plugin.h
+
+libnm_settings_plugin_ifnet_la_LDFLAGS = \
+	-module -avoid-version
+
+libnm_settings_plugin_ifnet_la_LIBADD = \
+	libnms-ifnet-core.la
