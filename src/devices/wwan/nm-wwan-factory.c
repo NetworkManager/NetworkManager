@@ -39,32 +39,37 @@
 #define NM_IS_WWAN_FACTORY_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_WWAN_FACTORY))
 #define NM_WWAN_FACTORY_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_WWAN_FACTORY, NMWwanFactoryClass))
 
-typedef struct _NMWwanFactory NMWwanFactory;
-typedef struct _NMWwanFactoryClass NMWwanFactoryClass;
-
-static GType nm_wwan_factory_get_type (void);
-
-/*****************************************************************************/
-
 typedef struct {
 	NMModemManager *mm;
 } NMWwanFactoryPrivate;
 
-struct _NMWwanFactory {
-	GObject parent;
+typedef struct {
+	NMDeviceFactory parent;
 	NMWwanFactoryPrivate _priv;
-};
+} NMWwanFactory;
 
-struct _NMWwanFactoryClass {
-	GObjectClass parent;
-};
+typedef struct {
+	NMDeviceFactoryClass parent;
+} NMWwanFactoryClass;
 
-static void device_factory_interface_init (NMDeviceFactoryInterface *factory_iface);
+static GType nm_wwan_factory_get_type (void);
 
-G_DEFINE_TYPE_EXTENDED (NMWwanFactory, nm_wwan_factory, G_TYPE_OBJECT, 0,
-                        G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_FACTORY, device_factory_interface_init))
+G_DEFINE_TYPE (NMWwanFactory, nm_wwan_factory, NM_TYPE_DEVICE_FACTORY)
 
 #define NM_WWAN_FACTORY_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMWwanFactory, NM_IS_WWAN_FACTORY)
+
+/*****************************************************************************/
+
+NM_DEVICE_FACTORY_DECLARE_TYPES (
+	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES    (NM_LINK_TYPE_WWAN_NET)
+	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_GSM_SETTING_NAME, NM_SETTING_CDMA_SETTING_NAME)
+)
+
+G_MODULE_EXPORT NMDeviceFactory *
+nm_device_factory_create (GError **error)
+{
+	return (NMDeviceFactory *) g_object_new (NM_TYPE_WWAN_FACTORY, NULL);
+}
 
 /*****************************************************************************/
 
@@ -102,11 +107,6 @@ modem_added_cb (NMModemManager *manager,
 	g_object_unref (device);
 }
 
-
-NM_DEVICE_FACTORY_DECLARE_TYPES (
-	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES    (NM_LINK_TYPE_WWAN_NET)
-	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_GSM_SETTING_NAME, NM_SETTING_CDMA_SETTING_NAME)
-)
 
 static NMDevice *
 create_device (NMDeviceFactory *factory,
@@ -160,22 +160,11 @@ static void
 nm_wwan_factory_class_init (NMWwanFactoryClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMDeviceFactoryClass *factory_class = NM_DEVICE_FACTORY_CLASS (klass);
 
 	object_class->dispose = dispose;
-}
 
-static void
-device_factory_interface_init (NMDeviceFactoryInterface *factory_iface)
-{
-	factory_iface->get_supported_types = get_supported_types;
-	factory_iface->create_device = create_device;
-	factory_iface->start = start;
-}
-
-/*****************************************************************************/
-
-G_MODULE_EXPORT NMDeviceFactory *
-nm_device_factory_create (GError **error)
-{
-	return (NMDeviceFactory *) g_object_new (NM_TYPE_WWAN_FACTORY, NULL);
+	factory_class->get_supported_types = get_supported_types;
+	factory_class->create_device = create_device;
+	factory_class->start = start;
 }

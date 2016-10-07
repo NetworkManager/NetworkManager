@@ -38,35 +38,31 @@
 #define NM_IS_ATM_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_ATM_MANAGER))
 #define NM_ATM_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_ATM_MANAGER, NMAtmManagerClass))
 
-typedef struct _NMAtmManager NMAtmManager;
-typedef struct _NMAtmManagerClass NMAtmManagerClass;
-
-static GType nm_atm_manager_get_type (void);
-
-/*****************************************************************************/
-
 typedef struct {
 	GUdevClient *client;
 	GSList *devices;
 } NMAtmManagerPrivate;
 
-struct _NMAtmManager {
-	GObject parent;
+typedef struct {
+	NMDeviceFactory parent;
 	NMAtmManagerPrivate _priv;
-};
+} NMAtmManager;
 
-struct _NMAtmManagerClass {
-	GObjectClass parent;
-};
+typedef struct {
+	NMDeviceFactoryClass parent;
+} NMAtmManagerClass;
 
-static void device_factory_interface_init (NMDeviceFactoryInterface *factory_iface);
+static GType nm_atm_manager_get_type (void);
 
-G_DEFINE_TYPE_EXTENDED (NMAtmManager, nm_atm_manager, G_TYPE_OBJECT, 0,
-                        G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_FACTORY, device_factory_interface_init))
+G_DEFINE_TYPE (NMAtmManager, nm_atm_manager, NM_TYPE_DEVICE_FACTORY);
 
 #define NM_ATM_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMAtmManager, NM_IS_ATM_MANAGER)
 
 /*****************************************************************************/
+
+NM_DEVICE_FACTORY_DECLARE_TYPES (
+	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_ADSL_SETTING_NAME)
+);
 
 G_MODULE_EXPORT NMDeviceFactory *
 nm_device_factory_create (GError **error)
@@ -241,11 +237,17 @@ handle_uevent (GUdevClient *client,
 		adsl_remove (self, device);
 }
 
-NM_DEVICE_FACTORY_DECLARE_TYPES (
-	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_ADSL_SETTING_NAME)
-)
-
 /*****************************************************************************/
+
+static void
+nm_atm_manager_init (NMAtmManager *self)
+{
+	NMAtmManagerPrivate *priv = NM_ATM_MANAGER_GET_PRIVATE (self);
+	const char *subsys[] = { "atm", NULL };
+
+	priv->client = g_udev_client_new (subsys);
+	g_signal_connect (priv->client, "uevent", G_CALLBACK (handle_uevent), self);
+}
 
 static void
 dispose (GObject *object)
@@ -270,25 +272,10 @@ static void
 nm_atm_manager_class_init (NMAtmManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMDeviceFactoryClass *factory_class = NM_DEVICE_FACTORY_CLASS (klass);
 
 	object_class->dispose = dispose;
-}
 
-/*****************************************************************************/
-
-static void
-nm_atm_manager_init (NMAtmManager *self)
-{
-	NMAtmManagerPrivate *priv = NM_ATM_MANAGER_GET_PRIVATE (self);
-	const char *subsys[] = { "atm", NULL };
-
-	priv->client = g_udev_client_new (subsys);
-	g_signal_connect (priv->client, "uevent", G_CALLBACK (handle_uevent), self);
-}
-
-static void
-device_factory_interface_init (NMDeviceFactoryInterface *factory_iface)
-{
-	factory_iface->get_supported_types = get_supported_types;
-	factory_iface->start = start;
+	factory_class->get_supported_types = get_supported_types;
+	factory_class->start = start;
 }

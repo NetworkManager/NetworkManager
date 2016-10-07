@@ -202,6 +202,5 @@ create_device (NMDeviceFactory *factory,
 
 NM_DEVICE_FACTORY_DEFINE_INTERNAL (VETH, Veth, veth,
 	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES (NM_LINK_TYPE_VETH),
-	factory_iface->create_device = create_device;
-	)
-
+	factory_class->create_device = create_device;
+);

@@ -474,5 +474,5 @@ create_device (NMDeviceFactory *factory,
 NM_DEVICE_FACTORY_DEFINE_INTERNAL (BRIDGE, Bridge, bridge,
 	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES    (NM_LINK_TYPE_BRIDGE)
 	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_BRIDGE_SETTING_NAME),
-	factory_iface->create_device = create_device;
+	factory_class->create_device = create_device;
 );

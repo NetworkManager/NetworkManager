@@ -46,7 +46,7 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-G_DEFINE_INTERFACE (NMDeviceFactory, nm_device_factory, G_TYPE_OBJECT)
+G_DEFINE_ABSTRACT_TYPE (NMDeviceFactory, nm_device_factory, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
@@ -54,6 +54,9 @@ gboolean
 nm_device_factory_emit_component_added (NMDeviceFactory *factory, GObject *component)
 {
 	gboolean consumed = FALSE;
+
+	g_return_val_if_fail (NM_IS_DEVICE_FACTORY (factory), FALSE);
+	g_return_val_if_fail (G_IS_OBJECT (component), FALSE);
 
 	g_signal_emit (factory, signals[COMPONENT_ADDED], 0, component, &consumed);
 	return consumed;
@@ -67,16 +70,16 @@ nm_device_factory_get_supported_types (NMDeviceFactory *factory,
 	const NMLinkType *link_types_fallback;
 	const char **setting_types_fallback;
 
-	g_return_if_fail (factory != NULL);
+	g_return_if_fail (NM_IS_DEVICE_FACTORY (factory));
 
 	if (!out_link_types)
 		out_link_types = &link_types_fallback;
 	if (!out_setting_types)
 		out_setting_types = &setting_types_fallback;
 
-	NM_DEVICE_FACTORY_GET_INTERFACE (factory)->get_supported_types (factory,
-	                                                                out_link_types,
-	                                                                out_setting_types);
+	NM_DEVICE_FACTORY_GET_CLASS (factory)->get_supported_types (factory,
+	                                                            out_link_types,
+	                                                            out_setting_types);
 }
 
 void
@@ -84,8 +87,8 @@ nm_device_factory_start (NMDeviceFactory *factory)
 {
 	g_return_if_fail (factory != NULL);
 
-	if (NM_DEVICE_FACTORY_GET_INTERFACE (factory)->start)
-		NM_DEVICE_FACTORY_GET_INTERFACE (factory)->start (factory);
+	if (NM_DEVICE_FACTORY_GET_CLASS (factory)->start)
+		NM_DEVICE_FACTORY_GET_CLASS (factory)->start (factory);
 }
 
 NMDevice *
@@ -96,7 +99,7 @@ nm_device_factory_create_device (NMDeviceFactory *factory,
                                  gboolean *out_ignore,
                                  GError **error)
 {
-	NMDeviceFactoryInterface *interface;
+	NMDeviceFactoryClass *klass;
 	const NMLinkType *link_types = NULL;
 	const char **setting_types = NULL;
 	int i;
@@ -142,15 +145,15 @@ nm_device_factory_create_device (NMDeviceFactory *factory,
 		}
 	}
 
-	interface = NM_DEVICE_FACTORY_GET_INTERFACE (factory);
-	if (!interface->create_device) {
+	klass = NM_DEVICE_FACTORY_GET_CLASS (factory);
+	if (!klass->create_device) {
 		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
 		             "Device factory %s cannot manage new devices",
 		             G_OBJECT_TYPE_NAME (factory));
 		return NULL;
 	}
 
-	device = interface->create_device (factory, iface, plink, connection, &ignore);
+	device = klass->create_device (factory, iface, plink, connection, &ignore);
 	NM_SET_OUT (out_ignore, ignore);
 	if (!device) {
 		if (ignore) {
@@ -176,8 +179,8 @@ nm_device_factory_get_connection_parent (NMDeviceFactory *factory,
 	if (!nm_connection_is_virtual (connection))
 		return NULL;
 
-	if (NM_DEVICE_FACTORY_GET_INTERFACE (factory)->get_connection_parent)
-		return NM_DEVICE_FACTORY_GET_INTERFACE (factory)->get_connection_parent (factory, connection);
+	if (NM_DEVICE_FACTORY_GET_CLASS (factory)->get_connection_parent)
+		return NM_DEVICE_FACTORY_GET_CLASS (factory)->get_connection_parent (factory, connection);
 	return NULL;
 }
 
@@ -187,14 +190,14 @@ nm_device_factory_get_connection_iface (NMDeviceFactory *factory,
                                         const char *parent_iface,
                                         GError **error)
 {
-	NMDeviceFactoryInterface *klass;
+	NMDeviceFactoryClass *klass;
 	char *ifname;
 
 	g_return_val_if_fail (factory != NULL, NULL);
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (!error || !*error, NULL);
 
-	klass = NM_DEVICE_FACTORY_GET_INTERFACE (factory);
+	klass = NM_DEVICE_FACTORY_GET_CLASS (factory);
 
 	ifname = g_strdup (nm_connection_get_interface_name (connection));
 	if (!ifname && klass->get_connection_iface)
@@ -225,20 +228,26 @@ nm_device_factory_get_connection_iface (NMDeviceFactory *factory,
 /*****************************************************************************/
 
 static void
-nm_device_factory_default_init (NMDeviceFactoryInterface *factory_iface)
+nm_device_factory_init (NMDeviceFactory *self)
 {
-	/* Signals */
+}
+
+static void
+nm_device_factory_class_init (NMDeviceFactoryClass *klass)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
 	signals[DEVICE_ADDED] = g_signal_new (NM_DEVICE_FACTORY_DEVICE_ADDED,
-	                                      NM_TYPE_DEVICE_FACTORY,
+	                                      G_OBJECT_CLASS_TYPE (object_class),
 	                                      G_SIGNAL_RUN_FIRST,
-	                                      G_STRUCT_OFFSET (NMDeviceFactoryInterface, device_added),
+	                                      G_STRUCT_OFFSET (NMDeviceFactoryClass, device_added),
 	                                      NULL, NULL, NULL,
 	                                      G_TYPE_NONE, 1, NM_TYPE_DEVICE);
 
 	signals[COMPONENT_ADDED] = g_signal_new (NM_DEVICE_FACTORY_COMPONENT_ADDED,
-	                                         NM_TYPE_DEVICE_FACTORY,
+	                                         G_OBJECT_CLASS_TYPE (object_class),
 	                                         G_SIGNAL_RUN_LAST,
-	                                         G_STRUCT_OFFSET (NMDeviceFactoryInterface, component_added),
+	                                         G_STRUCT_OFFSET (NMDeviceFactoryClass, component_added),
 	                                         g_signal_accumulator_true_handled, NULL, NULL,
 	                                         G_TYPE_BOOLEAN, 1, G_TYPE_OBJECT);
 }

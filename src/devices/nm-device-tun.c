@@ -532,6 +532,5 @@ create_device (NMDeviceFactory *factory,
 NM_DEVICE_FACTORY_DEFINE_INTERNAL (TUN, Tun, tun,
 	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES (NM_LINK_TYPE_TUN, NM_LINK_TYPE_TAP)
 	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_TUN_SETTING_NAME),
-	factory_iface->create_device = create_device;
+	factory_class->create_device = create_device;
 );
-

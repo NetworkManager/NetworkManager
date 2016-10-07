@@ -30,37 +30,22 @@
  * not meant to enable third-party plugins.
  */
 
-typedef struct _NMDeviceFactory NMDeviceFactory;
+#define NM_TYPE_DEVICE_FACTORY            (nm_device_factory_get_type ())
+#define NM_DEVICE_FACTORY(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE_FACTORY, NMDeviceFactory))
+#define NM_DEVICE_FACTORY_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DEVICE_FACTORY, NMDeviceFactoryClass))
+#define NM_IS_DEVICE_FACTORY(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DEVICE_FACTORY))
+#define NM_IS_DEVICE_FACTORY_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DEVICE_FACTORY))
+#define NM_DEVICE_FACTORY_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_FACTORY, NMDeviceFactoryClass))
 
-/**
- * nm_device_factory_create:
- * @error: an error if creation of the factory failed, or %NULL
- *
- * Creates a #GObject that implements the #NMDeviceFactory interface. This
- * function must not emit any signals or perform any actions that would cause
- * devices or components to be created immediately.  Instead these should be
- * deferred to the "start" interface method.
- *
- * Returns: the #GObject implementing #NMDeviceFactory or %NULL
- */
-NMDeviceFactory *nm_device_factory_create (GError **error);
-
-/* Should match nm_device_factory_create() */
-typedef NMDeviceFactory * (*NMDeviceFactoryCreateFunc) (GError **error);
-
-/*****************************************************************************/
-
-#define NM_TYPE_DEVICE_FACTORY               (nm_device_factory_get_type ())
-#define NM_DEVICE_FACTORY(obj)               (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE_FACTORY, NMDeviceFactory))
-#define NM_IS_DEVICE_FACTORY(obj)            (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DEVICE_FACTORY))
-#define NM_DEVICE_FACTORY_GET_INTERFACE(obj) (G_TYPE_INSTANCE_GET_INTERFACE ((obj), NM_TYPE_DEVICE_FACTORY, NMDeviceFactoryInterface))
-
-/* signals */
 #define NM_DEVICE_FACTORY_COMPONENT_ADDED "component-added"
 #define NM_DEVICE_FACTORY_DEVICE_ADDED    "device-added"
 
 typedef struct {
-	GTypeInterface g_iface;
+	GObject parent;
+} NMDeviceFactory;
+
+typedef struct {
+	GObjectClass parent;
 
 	/**
 	 * get_supported_types:
@@ -164,9 +149,30 @@ typedef struct {
 	 * Returns: %TRUE if the component was claimed by a device, %FALSE if not
 	 */
 	gboolean   (*component_added) (NMDeviceFactory *factory, GObject *component);
-} NMDeviceFactoryInterface;
+
+} NMDeviceFactoryClass;
 
 GType      nm_device_factory_get_type    (void);
+
+/*****************************************************************************/
+
+/**
+ * nm_device_factory_create:
+ * @error: an error if creation of the factory failed, or %NULL
+ *
+ * Creates a #GObject that implements the #NMDeviceFactory interface. This
+ * function must not emit any signals or perform any actions that would cause
+ * devices or components to be created immediately.  Instead these should be
+ * deferred to the "start" interface method.
+ *
+ * Returns: the #GObject implementing #NMDeviceFactory or %NULL
+ */
+NMDeviceFactory *nm_device_factory_create (GError **error);
+
+/* Should match nm_device_factory_create() */
+typedef NMDeviceFactory * (*NMDeviceFactoryCreateFunc) (GError **error);
+
+/*****************************************************************************/
 
 void       nm_device_factory_get_supported_types (NMDeviceFactory *factory,
                                                   const NMLinkType **out_link_types,
@@ -180,7 +186,7 @@ char *     nm_device_factory_get_connection_iface (NMDeviceFactory *factory,
                                                    const char *parent_iface,
                                                    GError **error);
 
-void       nm_device_factory_start       (NMDeviceFactory *factory);
+void       nm_device_factory_start (NMDeviceFactory *factory);
 
 NMDevice * nm_device_factory_create_device (NMDeviceFactory *factory,
                                             const char *iface,
@@ -220,15 +226,17 @@ extern const char *_nm_device_factory_no_default_settings[];
  **************************************************************************/
 
 #define NM_DEVICE_FACTORY_DEFINE_INTERNAL(upper, mixed, lower, st_code, dfi_code) \
-	typedef GObject NM##mixed##Factory; \
-	typedef GObjectClass NM##mixed##FactoryClass; \
+	typedef struct { \
+		NMDeviceFactory parent; \
+	} NM##mixed##Factory; \
+	typedef struct { \
+		NMDeviceFactoryClass parent; \
+	} NM##mixed##FactoryClass; \
  \
 	static GType nm_##lower##_factory_get_type (void); \
-	static void device_factory_interface_init (NMDeviceFactoryInterface *factory_iface); \
  \
-	G_DEFINE_TYPE_EXTENDED (NM##mixed##Factory, nm_##lower##_factory, G_TYPE_OBJECT, 0, \
-	                        G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_FACTORY, device_factory_interface_init) \
-	                        _nm_device_factory_internal_register_type (g_define_type_id);) \
+	G_DEFINE_TYPE_WITH_CODE (NM##mixed##Factory, nm_##lower##_factory, NM_TYPE_DEVICE_FACTORY, \
+	                         _nm_device_factory_internal_register_type (g_define_type_id);) \
  \
 	/* Use a module constructor to register the factory's GType at load \
 	 * time, which then calls _nm_device_factory_internal_register_type() \
@@ -244,20 +252,17 @@ extern const char *_nm_device_factory_no_default_settings[];
 	NM_DEVICE_FACTORY_DECLARE_TYPES(st_code) \
  \
 	static void \
-	device_factory_interface_init (NMDeviceFactoryInterface *factory_iface) \
-	{ \
-		factory_iface->get_supported_types = get_supported_types; \
-		dfi_code \
-	} \
- \
-	static void \
 	nm_##lower##_factory_init (NM##mixed##Factory *self) \
 	{ \
 	} \
  \
 	static void \
-	nm_##lower##_factory_class_init (NM##mixed##FactoryClass *lower##_class) \
+	nm_##lower##_factory_class_init (NM##mixed##FactoryClass *klass) \
 	{ \
+		NMDeviceFactoryClass *factory_class = NM_DEVICE_FACTORY_CLASS (klass); \
+		\
+		factory_class->get_supported_types = get_supported_types; \
+		dfi_code \
 	}
 
 void _nm_device_factory_internal_register_type (GType factory_type);

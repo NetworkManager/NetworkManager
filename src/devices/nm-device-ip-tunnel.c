@@ -1053,7 +1053,7 @@ get_connection_iface (NMDeviceFactory *factory,
 NM_DEVICE_FACTORY_DEFINE_INTERNAL (IP_TUNNEL, IPTunnel, ip_tunnel,
 	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES (NM_LINK_TYPE_GRE, NM_LINK_TYPE_SIT, NM_LINK_TYPE_IPIP)
 	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_IP_TUNNEL_SETTING_NAME),
-	factory_iface->create_device = create_device;
-	factory_iface->get_connection_parent = get_connection_parent;
-	factory_iface->get_connection_iface = get_connection_iface;
+	factory_class->create_device = create_device;
+	factory_class->get_connection_parent = get_connection_parent;
+	factory_class->get_connection_iface = get_connection_iface;
 );
