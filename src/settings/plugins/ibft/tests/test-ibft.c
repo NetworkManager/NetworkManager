@@ -44,7 +44,7 @@ read_block (const char *iscsiadm_path, const char *expected_mac)
 	GError *error = NULL;
 	gboolean success;
 
-	success = read_ibft_blocks (iscsiadm_path, &blocks, &error);
+	success = nms_ibft_reader_load_blocks (iscsiadm_path, &blocks, &error);
 	g_assert_no_error (error);
 	g_assert (success);
 	g_assert (blocks);
@@ -52,7 +52,7 @@ read_block (const char *iscsiadm_path, const char *expected_mac)
 	for (iter = blocks; iter; iter = iter->next) {
 		const char *s_hwaddr = NULL;
 
-		if (!parse_ibft_config (iter->data, NULL, "iface.hwaddress", &s_hwaddr, NULL))
+		if (!nms_ibft_reader_parse_block (iter->data, NULL, "iface.hwaddress", &s_hwaddr, NULL))
 			continue;
 		g_assert (s_hwaddr);
 		if (nm_utils_hwaddr_matches (s_hwaddr, -1, expected_mac, -1)) {
@@ -80,7 +80,7 @@ test_read_ibft_dhcp (void)
 
 	block = read_block (TEST_IBFT_DIR "/iscsiadm-test-dhcp", expected_mac_address);
 
-	connection = connection_from_block (block, &error);
+	connection = nms_ibft_reader_get_connection_from_block (block, &error);
 	g_assert_no_error (error);
 	nmtst_assert_connection_verifies_without_normalization (connection);
 
@@ -127,7 +127,7 @@ test_read_ibft_static (void)
 
 	block = read_block (TEST_IBFT_DIR "/iscsiadm-test-static", expected_mac_address);
 
-	connection = connection_from_block (block, &error);
+	connection = nms_ibft_reader_get_connection_from_block (block, &error);
 	g_assert_no_error (error);
 	nmtst_assert_connection_verifies_without_normalization (connection);
 
@@ -183,7 +183,7 @@ test_read_ibft_malformed (gconstpointer user_data)
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*malformed iscsiadm record*");
 
-	success = read_ibft_blocks (iscsiadm_path, &blocks, &error);
+	success = nms_ibft_reader_load_blocks (iscsiadm_path, &blocks, &error);
 	g_assert_no_error (error);
 	g_assert (success);
 	g_assert (blocks == NULL);
@@ -204,7 +204,7 @@ test_read_ibft_bad_address (gconstpointer user_data)
 
 	block = read_block (iscsiadm_path, expected_mac_address);
 
-	connection = connection_from_block (block, &error);
+	connection = nms_ibft_reader_get_connection_from_block (block, &error);
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (strstr (error->message, "iBFT: malformed iscsiadm record: invalid"));
 	g_clear_error (&error);
@@ -229,7 +229,7 @@ test_read_ibft_vlan (void)
 
 	block = read_block (TEST_IBFT_DIR "/iscsiadm-test-vlan", expected_mac_address);
 
-	connection = connection_from_block (block, &error);
+	connection = nms_ibft_reader_get_connection_from_block (block, &error);
 	g_assert_no_error (error);
 	nmtst_assert_connection_verifies_without_normalization (connection);
 

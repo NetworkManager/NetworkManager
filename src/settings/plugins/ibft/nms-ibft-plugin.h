@@ -18,20 +18,19 @@
  * Copyright 2014 Red Hat, Inc.
  */
 
-#ifndef _PLUGIN_H_
-#define _PLUGIN_H_
+#ifndef __NMS_IBFT_PLUGIN_H__
+#define __NMS_IBFT_PLUGIN_H__
 
-#define SETTINGS_TYPE_PLUGIN_IBFT            (settings_plugin_ibft_get_type ())
-#define SETTINGS_PLUGIN_IBFT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), SETTINGS_TYPE_PLUGIN_IBFT, SettingsPluginIbft))
-#define SETTINGS_PLUGIN_IBFT_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), SETTINGS_TYPE_PLUGIN_IBFT, SettingsPluginIbftClass))
-#define SETTINGS_IS_PLUGIN_IBFT(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), SETTINGS_TYPE_PLUGIN_IBFT))
-#define SETTINGS_IS_PLUGIN_IBFT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), SETTINGS_TYPE_PLUGIN_IBFT))
-#define SETTINGS_PLUGIN_IBFT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), SETTINGS_TYPE_PLUGIN_IBFT, SettingsPluginIbftClass))
+#define NMS_TYPE_IBFT_PLUGIN            (nms_ibft_plugin_get_type ())
+#define NMS_IBFT_PLUGIN(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMS_TYPE_IBFT_PLUGIN, NMSIbftPlugin))
+#define NMS_IBFT_PLUGIN_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMS_TYPE_IBFT_PLUGIN, NMSIbftPluginClass))
+#define NMS_IS_IBFT_PLUGIN(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NMS_TYPE_IBFT_PLUGIN))
+#define NMS_IS_IBFT_PLUGIN_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NMS_TYPE_IBFT_PLUGIN))
+#define NMS_IBFT_PLUGIN_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NMS_TYPE_IBFT_PLUGIN, NMSIbftPluginClass))
 
-typedef struct _SettingsPluginIbft SettingsPluginIbft;
-typedef struct _SettingsPluginIbftClass SettingsPluginIbftClass;
+typedef struct _NMSIbftPlugin NMSIbftPlugin;
+typedef struct _NMSIbftPluginClass NMSIbftPluginClass;
 
-GType settings_plugin_ibft_get_type (void);
+GType nms_ibft_plugin_get_type (void);
 
-#endif /* _PLUGIN_H_ */
-
+#endif /* __NMS_IBFT_PLUGIN_H__ */

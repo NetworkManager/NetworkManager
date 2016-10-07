@@ -18,24 +18,24 @@
  * Copyright 2014 Red Hat, Inc.
  */
 
-#ifndef NM_IBFT_CONNECTION_H
-#define NM_IBFT_CONNECTION_H
+#ifndef __NMS_IBFT_CONNECTION_H__
+#define __NMS_IBFT_CONNECTION_H__
 
 #include <nm-settings-connection.h>
 
-#define NM_TYPE_IBFT_CONNECTION            (nm_ibft_connection_get_type ())
-#define NM_IBFT_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_IBFT_CONNECTION, NMIbftConnection))
-#define NM_IBFT_CONNECTION_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_IBFT_CONNECTION, NMIbftConnectionClass))
-#define NM_IS_IBFT_CONNECTION(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_IBFT_CONNECTION))
-#define NM_IS_IBFT_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_IBFT_CONNECTION))
-#define NM_IBFT_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_IBFT_CONNECTION, NMIbftConnectionClass))
+#define NMS_TYPE_IBFT_CONNECTION            (nms_ibft_connection_get_type ())
+#define NMS_IBFT_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMS_TYPE_IBFT_CONNECTION, NMSIbftConnection))
+#define NMS_IBFT_CONNECTION_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMS_TYPE_IBFT_CONNECTION, NMSIbftConnectionClass))
+#define NMS_IS_IBFT_CONNECTION(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NMS_TYPE_IBFT_CONNECTION))
+#define NMS_IS_IBFT_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NMS_TYPE_IBFT_CONNECTION))
+#define NMS_IBFT_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NMS_TYPE_IBFT_CONNECTION, NMSIbftConnectionClass))
 
-typedef struct _NMIbftConnection NMIbftConnection;
-typedef struct _NMIbftConnectionClass NMIbftConnectionClass;
+typedef struct _NMSIbftConnection NMSIbftConnection;
+typedef struct _NMSIbftConnectionClass NMSIbftConnectionClass;
 
-GType nm_ibft_connection_get_type (void);
+GType nms_ibft_connection_get_type (void);
 
-NMIbftConnection *nm_ibft_connection_new (const GPtrArray *block,
-                                          GError **error);
+NMSIbftConnection *nms_ibft_connection_new (const GPtrArray *block,
+                                           GError **error);
 
-#endif /* NM_IBFT_CONNECTION_H */
+#endif /* __NMS_IBFT_CONNECTION_H__ */

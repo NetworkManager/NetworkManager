@@ -18,18 +18,17 @@
  * Copyright 2014 Red Hat, Inc.
  */
 
-#ifndef __READER_H__
-#define __READER_H__
+#ifndef __NMS_IBFT_READER_H__
+#define __NMS_IBFT_READER_H__
 
 #include <nm-connection.h>
 
-gboolean read_ibft_blocks (const char *iscsiadm_path,
-                           GSList **out_blocks,
-                           GError **error);
+gboolean nms_ibft_reader_load_blocks (const char *iscsiadm_path,
+                                      GSList **out_blocks,
+                                      GError **error);
 
-NMConnection *connection_from_block (const GPtrArray *block, GError **error);
+NMConnection *nms_ibft_reader_get_connection_from_block (const GPtrArray *block, GError **error);
 
-/* For testcases */
-gboolean parse_ibft_config (const GPtrArray *data, GError **error, ...) G_GNUC_NULL_TERMINATED;
+gboolean nms_ibft_reader_parse_block (const GPtrArray *block, GError **error, ...) G_GNUC_NULL_TERMINATED;
 
-#endif  /* __READER_H__ */
+#endif  /* __NMS_IBFT_READER_H__ */
