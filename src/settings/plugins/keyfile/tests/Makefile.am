@@ -20,14 +20,17 @@ AM_CPPFLAGS = \
 	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/keyfiles\" \
 	-DNMCONFDIR=\"nonexistent\"
 
+AM_LDFLAGS = \
+	$(GLIB_LIBS) \
+	$(CODE_COVERAGE_LDFLAGS)
+
 noinst_PROGRAMS = test-keyfile
 
 test_keyfile_SOURCES = \
 	test-keyfile.c
 
 test_keyfile_LDADD = \
-	$(top_builddir)/src/libNetworkManager.la \
-	$(CODE_COVERAGE_LDFLAGS)
+	$(top_builddir)/src/libNetworkManager.la
 
 @VALGRIND_RULES@
 TESTS = test-keyfile
