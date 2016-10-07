@@ -95,6 +95,8 @@ typedef struct {
 	GSList *reload_results;
 	guint reload_remaining;
 	GError *reload_error;
+
+	GSList *pending;        /* ordered list of pending property updates. */
 } NMObjectPrivate;
 
 enum {
@@ -447,7 +449,7 @@ typedef struct {
 	GObject **objects;
 	int length, remaining;
 
-	GPtrArray *array;
+	gboolean array;
 	const char *property_name;
 } ObjectCreatedData;
 
@@ -458,12 +460,10 @@ odata_free (gpointer data)
 
 	g_object_unref (odata->self);
 	g_free (odata->objects);
-	if (odata->array)
-		g_ptr_array_unref (odata->array);
 	g_slice_free (ObjectCreatedData, odata);
 }
 
-static void object_property_maybe_complete (ObjectCreatedData *odata);
+static void object_property_maybe_complete (NMObject *self);
 
 
 typedef void (*NMObjectCreateCallbackFunc) (GObject *, const char *, gpointer);
@@ -523,8 +523,7 @@ create_async_inited (GObject *object, GAsyncResult *result, gpointer user_data)
 		while (priv->waiters) {
 			odata = priv->waiters->data;
 			priv->waiters = g_slist_remove (priv->waiters, odata);
-			object_property_maybe_complete (odata);
-
+			object_property_maybe_complete (odata->self);
 		}
 	}
 }
@@ -729,104 +728,117 @@ already_awaits (ObjectCreatedData *odata, GObject *object)
 }
 
 static void
-object_property_maybe_complete (ObjectCreatedData *odata)
+object_property_maybe_complete (NMObject *self)
 {
-	NMObject *self = odata->self;
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
-	PropertyInfo *pi = odata->pi;
-	gboolean different = TRUE;
+	/* The odata may hold the last reference. */
+	_nm_unused gs_unref_object NMObject *self_keep_alive = g_object_ref (self);
 	int i;
 
-	/* Only complete the array property load when all the objects are initialized. */
-	for (i = 0; i < odata->length; i++) {
-		GObject *obj = odata->objects[i];
-		NMObjectPrivate *obj_priv;
+	while (priv->pending) {
+		ObjectCreatedData *odata = priv->pending->data;
+		PropertyInfo *pi = odata->pi;
+		gboolean different = TRUE;
 
-		/* Could not load the object. Perhaps it was removed. */
-		if (!obj)
-			continue;
+		if (odata->remaining > 0)
+			return;
 
-		obj_priv = NM_OBJECT_GET_PRIVATE (obj);
-		if (!obj_priv->inited) {
+		/* Only complete the array property load when all the objects are initialized. */
+		for (i = 0; i < odata->length; i++) {
+			GObject *obj = odata->objects[i];
+			NMObjectPrivate *obj_priv;
 
-			/* The object is not finished because we block its creation. */
-			if (already_awaits (odata, obj))
+			/* Could not load the object. Perhaps it was removed. */
+			if (!obj)
 				continue;
 
-			if (!g_slist_find (obj_priv->waiters, odata))
-				obj_priv->waiters = g_slist_prepend (obj_priv->waiters, odata);
-			return;
+			obj_priv = NM_OBJECT_GET_PRIVATE (obj);
+			if (!obj_priv->inited) {
+
+				/* The object is not finished because we block its creation. */
+				if (already_awaits (odata, obj))
+					continue;
+
+				if (!g_slist_find (obj_priv->waiters, odata))
+					obj_priv->waiters = g_slist_prepend (obj_priv->waiters, odata);
+				return;
+			}
 		}
-	}
 
-	if (odata->array) {
-		GPtrArray *pi_old = *((GPtrArray **) pi->field);
-		GPtrArray *old = odata->array;
-		GPtrArray *new;
+		if (odata->array) {
+			GPtrArray *old = *((GPtrArray **) pi->field);
+			GPtrArray *new;
 
-		/* Build up new array */
-		new = g_ptr_array_new_full (odata->length, g_object_unref);
-		for (i = 0; i < odata->length; i++)
-			add_to_object_array_unique (new, odata->objects[i]);
+			/* Build up new array */
+			new = g_ptr_array_new_full (odata->length, g_object_unref);
+			for (i = 0; i < odata->length; i++)
+				add_to_object_array_unique (new, odata->objects[i]);
 
-		*((GPtrArray **) pi->field) = new;
+			*((GPtrArray **) pi->field) = new;
 
-		if (pi->signal_prefix) {
-			GPtrArray *added = g_ptr_array_sized_new (3);
-			GPtrArray *removed = g_ptr_array_sized_new (3);
+			if (pi->signal_prefix) {
+				GPtrArray *added = g_ptr_array_sized_new (3);
+				GPtrArray *removed = g_ptr_array_sized_new (3);
 
-			/* Find objects in 'old' that do not exist in 'new' */
-			array_diff (old, new, removed);
+				if (old) {
+					/* Find objects in 'old' that do not exist in 'new' */
+					array_diff (old, new, removed);
 
-			/* Find objects in 'new' that do not exist in old */
-			array_diff (new, old, added);
+					/* Find objects in 'new' that do not exist in old */
+					array_diff (new, old, added);
+				} else {
+					for (i = 0; i < new->len; i++)
+						g_ptr_array_add (added, g_ptr_array_index (new, i));
+				}
 
-			/* Emit added & removed */
-			for (i = 0; i < removed->len; i++) {
-				queue_added_removed_signal (self,
-				                            pi->signal_prefix,
-				                            g_ptr_array_index (removed, i),
-				                            FALSE);
+				/* Emit added & removed */
+				for (i = 0; i < removed->len; i++) {
+					queue_added_removed_signal (self,
+								    pi->signal_prefix,
+								    g_ptr_array_index (removed, i),
+								    FALSE);
+				}
+
+				for (i = 0; i < added->len; i++) {
+					queue_added_removed_signal (self,
+								    pi->signal_prefix,
+								    g_ptr_array_index (added, i),
+								    TRUE);
+				}
+
+				different = removed->len || added->len;
+				g_ptr_array_unref (added);
+				g_ptr_array_unref (removed);
+			} else {
+				/* No added/removed signals to send, just replace the property with
+				 * the new values.
+				 */
+				different = TRUE;
 			}
 
-			for (i = 0; i < added->len; i++) {
-				queue_added_removed_signal (self,
-				                            pi->signal_prefix,
-				                            g_ptr_array_index (added, i),
-				                            TRUE);
-			}
-
-			different = removed->len || added->len;
-			g_ptr_array_unref (added);
-			g_ptr_array_unref (removed);
-		} else {
-			/* No added/removed signals to send, just replace the property with
-			 * the new values.
+			/* Free old array last since it will release references, thus freeing
+			 * any objects in the 'removed' array.
 			 */
-			different = TRUE;
+			if (old)
+				g_ptr_array_unref (old);
+		} else {
+			GObject **obj_p = pi->field;
+
+			different = (*obj_p != odata->objects[0]);
+			if (*obj_p)
+				g_object_unref (*obj_p);
+			*obj_p = odata->objects[0];
 		}
 
-		/* Free old array last since it will release references, thus freeing
-		 * any objects in the 'removed' array.
-		 */
-		if (pi_old)
-			g_ptr_array_unref (pi_old);
-	} else {
-		GObject **obj_p = pi->field;
+		if (different && odata->property_name)
+			_nm_object_queue_notify (self, odata->property_name);
 
-		different = (*obj_p != odata->objects[0]);
-		if (*obj_p)
-			g_object_unref (*obj_p);
-		*obj_p = odata->objects[0];
+		if (--priv->reload_remaining == 0)
+			reload_complete (self, TRUE);
+
+		priv->pending = g_slist_remove (priv->pending, odata);
+		odata_free (odata);
 	}
-
-	if (different && odata->property_name)
-		_nm_object_queue_notify (self, odata->property_name);
-
-	if (--priv->reload_remaining == 0)
-		reload_complete (self, FALSE);
-
-	odata_free (odata);
 }
 
 static void
@@ -844,8 +856,7 @@ object_created (GObject *obj, const char *path, gpointer user_data)
 	}
 
 	odata->objects[--odata->remaining] = obj;
-	if (!odata->remaining)
-		object_property_maybe_complete (odata);
+	object_property_maybe_complete (odata->self);
 }
 
 static gboolean
@@ -862,9 +873,10 @@ handle_object_property (NMObject *self, const char *property_name, GVariant *val
 	odata->pi = pi;
 	odata->objects = g_new (GObject *, 1);
 	odata->length = odata->remaining = 1;
-	odata->array = NULL;
+	odata->array = FALSE;
 	odata->property_name = property_name;
 
+	priv->pending = g_slist_append (priv->pending, odata);
 	priv->reload_remaining++;
 
 	path = g_variant_get_string (value, NULL);
@@ -901,7 +913,6 @@ handle_object_array_property (NMObject *self, const char *property_name, GVarian
 	GPtrArray **array = pi->field;
 	const char *path;
 	ObjectCreatedData *odata;
-	guint i, len = *array ? (*array)->len : 0;
 
 	npaths = g_variant_n_children (value);
 
@@ -910,17 +921,14 @@ handle_object_array_property (NMObject *self, const char *property_name, GVarian
 	odata->pi = pi;
 	odata->objects = g_new0 (GObject *, npaths);
 	odata->length = odata->remaining = npaths;
+	odata->array = TRUE;
 	odata->property_name = property_name;
 
-	/* Objects known at this point. */
-	odata->array = g_ptr_array_new_full (len, g_object_unref);
-	for (i = 0; i < len; i++)
-		g_ptr_array_add (odata->array, g_object_ref (g_ptr_array_index (*array, i)));
-
+	priv->pending = g_slist_append (priv->pending, odata);
 	priv->reload_remaining++;
 
 	if (npaths == 0) {
-		object_property_maybe_complete (odata);
+		object_property_maybe_complete (self);
 		return TRUE;
 	}
 
