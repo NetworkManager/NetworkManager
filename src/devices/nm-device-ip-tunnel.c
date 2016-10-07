@@ -981,8 +981,8 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 
 /*****************************************************************************/
 
-#define NM_TYPE_IP_TUNNEL_FACTORY (nm_ip_tunnel_factory_get_type ())
-#define NM_IP_TUNNEL_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_IP_TUNNEL_FACTORY, NMIPTunnelFactory))
+#define NM_TYPE_IP_TUNNEL_DEVICE_FACTORY (nm_ip_tunnel_device_factory_get_type ())
+#define NM_IP_TUNNEL_DEVICE_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_IP_TUNNEL_DEVICE_FACTORY, NMIPTunnelDeviceFactory))
 
 static NMDevice *
 create_device (NMDeviceFactory *factory,

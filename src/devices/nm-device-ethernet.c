@@ -1677,8 +1677,8 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 
 /*****************************************************************************/
 
-#define NM_TYPE_ETHERNET_FACTORY (nm_ethernet_factory_get_type ())
-#define NM_ETHERNET_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_ETHERNET_FACTORY, NMEthernetFactory))
+#define NM_TYPE_ETHERNET_DEVICE_FACTORY (nm_ethernet_device_factory_get_type ())
+#define NM_ETHERNET_DEVICE_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_ETHERNET_DEVICE_FACTORY, NMEthernetDeviceFactory))
 
 static NMDevice *
 create_device (NMDeviceFactory *factory,

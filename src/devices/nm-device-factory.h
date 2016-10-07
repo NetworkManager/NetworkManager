@@ -228,14 +228,14 @@ extern const char *_nm_device_factory_no_default_settings[];
 #define NM_DEVICE_FACTORY_DEFINE_INTERNAL(upper, mixed, lower, st_code, dfi_code) \
 	typedef struct { \
 		NMDeviceFactory parent; \
-	} NM##mixed##Factory; \
+	} NM##mixed##DeviceFactory; \
 	typedef struct { \
 		NMDeviceFactoryClass parent; \
-	} NM##mixed##FactoryClass; \
+	} NM##mixed##DeviceFactoryClass; \
  \
-	static GType nm_##lower##_factory_get_type (void); \
+	static GType nm_##lower##_device_factory_get_type (void); \
  \
-	G_DEFINE_TYPE_WITH_CODE (NM##mixed##Factory, nm_##lower##_factory, NM_TYPE_DEVICE_FACTORY, \
+	G_DEFINE_TYPE_WITH_CODE (NM##mixed##DeviceFactory, nm_##lower##_device_factory, NM_TYPE_DEVICE_FACTORY, \
 	                         _nm_device_factory_internal_register_type (g_define_type_id);) \
  \
 	/* Use a module constructor to register the factory's GType at load \
@@ -246,18 +246,18 @@ extern const char *_nm_device_factory_no_default_settings[];
 	register_device_factory_internal_##lower (void) \
 	{ \
 		nm_g_type_init (); \
-		g_type_ensure (NM_TYPE_##upper##_FACTORY); \
+		g_type_ensure (NM_TYPE_##upper##_DEVICE_FACTORY); \
 	} \
  \
 	NM_DEVICE_FACTORY_DECLARE_TYPES(st_code) \
  \
 	static void \
-	nm_##lower##_factory_init (NM##mixed##Factory *self) \
+	nm_##lower##_device_factory_init (NM##mixed##DeviceFactory *self) \
 	{ \
 	} \
  \
 	static void \
-	nm_##lower##_factory_class_init (NM##mixed##FactoryClass *klass) \
+	nm_##lower##_device_factory_class_init (NM##mixed##DeviceFactoryClass *klass) \
 	{ \
 		NMDeviceFactoryClass *factory_class = NM_DEVICE_FACTORY_CLASS (klass); \
 		\

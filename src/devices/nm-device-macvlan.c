@@ -658,8 +658,8 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *klass)
 
 /*****************************************************************************/
 
-#define NM_TYPE_MACVLAN_FACTORY (nm_macvlan_factory_get_type ())
-#define NM_MACVLAN_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MACVLAN_FACTORY, NMMacvlanFactory))
+#define NM_TYPE_MACVLAN_DEVICE_FACTORY (nm_macvlan_device_factory_get_type ())
+#define NM_MACVLAN_DEVICE_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MACVLAN_DEVICE_FACTORY, NMMacvlanDeviceFactory))
 
 static NMDevice *
 create_device (NMDeviceFactory *factory,

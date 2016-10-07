@@ -688,8 +688,8 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 
 /*****************************************************************************/
 
-#define NM_TYPE_VLAN_FACTORY (nm_vlan_factory_get_type ())
-#define NM_VLAN_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VLAN_FACTORY, NMVlanFactory))
+#define NM_TYPE_VLAN_DEVICE_FACTORY (nm_vlan_device_factory_get_type ())
+#define NM_VLAN_DEVICE_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VLAN_DEVICE_FACTORY, NMVlanDeviceFactory))
 
 static NMDevice *
 create_device (NMDeviceFactory *factory,

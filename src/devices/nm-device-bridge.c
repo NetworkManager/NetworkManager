@@ -451,8 +451,8 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 
 /*****************************************************************************/
 
-#define NM_TYPE_BRIDGE_FACTORY (nm_bridge_factory_get_type ())
-#define NM_BRIDGE_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_BRIDGE_FACTORY, NMBridgeFactory))
+#define NM_TYPE_BRIDGE_DEVICE_FACTORY (nm_bridge_device_factory_get_type ())
+#define NM_BRIDGE_DEVICE_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_BRIDGE_DEVICE_FACTORY, NMBridgeDeviceFactory))
 
 static NMDevice *
 create_device (NMDeviceFactory *factory,
