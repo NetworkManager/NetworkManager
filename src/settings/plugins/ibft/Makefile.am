@@ -7,8 +7,8 @@ pkglib_LTLIBRARIES = libnm-settings-plugin-ibft.la
 noinst_LTLIBRARIES = libibft-io.la
 
 libibft_io_la_SOURCES = \
-	reader.c \
-	reader.h
+	nms-ibft-reader.c \
+	nms-ibft-reader.h
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/ \
@@ -25,10 +25,10 @@ AM_CPPFLAGS = \
 	-DSBINDIR=\"$(sbindir)\"
 
 libnm_settings_plugin_ibft_la_SOURCES = \
-	plugin.c \
-	plugin.h \
-	nm-ibft-connection.c \
-	nm-ibft-connection.h
+	nms-ibft-plugin.c \
+	nms-ibft-plugin.h \
+	nms-ibft-connection.c \
+	nms-ibft-connection.h
 
 libnm_settings_plugin_ibft_la_LDFLAGS = -module -avoid-version
 libnm_settings_plugin_ibft_la_LIBADD = libibft-io.la

@@ -20,7 +20,7 @@
 
 #include "nm-default.h"
 
-#include "plugin.h"
+#include "nms-ibft-plugin.h"
 
 #include <string.h>
 #include <unistd.h>
@@ -31,8 +31,8 @@
 #include "nm-settings-plugin.h"
 #include "NetworkManagerUtils.h"
 
-#include "reader.h"
-#include "nm-ibft-connection.h"
+#include "nms-ibft-reader.h"
+#include "nms-ibft-connection.h"
 
 /*****************************************************************************/
 

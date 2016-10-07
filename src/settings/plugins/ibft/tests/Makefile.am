@@ -28,7 +28,7 @@ noinst_PROGRAMS = test-ibft
 
 test_ibft_SOURCES = \
 	test-ibft.c \
-	../reader.c
+	../nms-ibft-reader.c
 
 test_ibft_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la

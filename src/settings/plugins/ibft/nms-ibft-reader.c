@@ -35,7 +35,7 @@
 #include "nm-platform.h"
 #include "NetworkManagerUtils.h"
 
-#include "reader.h"
+#include "nms-ibft-reader.h"
 
 #define PARSE_WARNING(msg...) nm_log_warn (LOGD_SETTINGS, "    " msg)
 
