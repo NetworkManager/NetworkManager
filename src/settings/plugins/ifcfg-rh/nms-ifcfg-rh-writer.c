@@ -1767,6 +1767,11 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	svSetValue (ifcfg, "AUTOCONNECT_PRIORITY", tmp, FALSE);
 	g_free (tmp);
 
+	i_int = nm_setting_connection_get_autoconnect_retries (s_con);
+	tmp = i_int != -1 ? g_strdup_printf ("%d", i_int) : NULL;
+	svSetValue (ifcfg, "AUTOCONNECT_RETRIES", tmp, FALSE);
+	g_free (tmp);
+
 	/* Only save the value for master connections */
 	svUnsetValue (ifcfg, "AUTOCONNECT_SLAVES");
 	type = nm_setting_connection_get_connection_type (s_con);

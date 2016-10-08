@@ -1606,6 +1606,15 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * giving up. Zero means forever, -1 means the global default (4 times if not
 	 * overridden).
 	 */
+	/* ---ifcfg-rh---
+	 * property: autoconnect-retries
+	 * variable: AUTOCONNECT_RETRIES(+)
+	 * description: The number of times a connection should be autoactivated
+	 * before giving up and switching to the next one.
+	 * values: -1 (use global default), 0 (forever) or a positive value
+	 * example: AUTOCONNECT_RETRIES=1
+	 * ---end---
+	 */
 	g_object_class_install_property
 	    (object_class, PROP_AUTOCONNECT_RETRIES,
 	     g_param_spec_int (NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES, "", "",

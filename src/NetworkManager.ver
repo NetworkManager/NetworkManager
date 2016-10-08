@@ -292,6 +292,7 @@ global:
 	nm_setting_connection_add_secondary;
 	nm_setting_connection_get_autoconnect;
 	nm_setting_connection_get_autoconnect_priority;
+	nm_setting_connection_get_autoconnect_retries;
 	nm_setting_connection_get_autoconnect_slaves;
 	nm_setting_connection_get_connection_type;
 	nm_setting_connection_get_gateway_ping_timeout;
