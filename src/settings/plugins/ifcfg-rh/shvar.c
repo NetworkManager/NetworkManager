@@ -441,10 +441,11 @@ svSetValueFull (shvarFile *s, const char *key, const char *value, gboolean verba
 void
 svSetValueInt64 (shvarFile *s, const char *key, gint64 value)
 {
-	gs_free char *v = NULL;
+	char buf[NM_DECIMAL_STR_MAX (value)];
 
-	v = g_strdup_printf ("%"G_GINT64_FORMAT, value);
-	svSetValueFull (s, key, v, TRUE);
+	svSetValueFull (s, key,
+	                nm_sprintf_buf (buf, "%"G_GINT64_FORMAT, value),
+	                TRUE);
 }
 
 void

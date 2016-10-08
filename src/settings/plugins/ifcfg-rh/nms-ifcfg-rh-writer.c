@@ -125,12 +125,11 @@ set_secret (shvarFile *ifcfg,
 		goto error;
 	}
 
-	/* Clear the secret from the associated "keys" file */
-	svUnsetValue (keyfile, key);
-
 	/* Only write the secret if it's system owned and supposed to be saved */
 	if (flags == NM_SETTING_SECRET_FLAG_NONE)
 		svSetValue (keyfile, key, value, verbatim);
+	else
+		svUnsetValue (keyfile, key);
 
 	if (!svWriteFile (keyfile, 0600, &error)) {
 		_LOGW ("could not update ifcfg file '%s': %s",
@@ -485,7 +484,7 @@ write_8021x_setting (NMConnection *connection,
 		if (value)
 			tmp = g_ascii_strup (value, -1);
 	}
-	svSetValue (ifcfg, "IEEE_8021X_EAP_METHODS", tmp ? tmp : NULL, FALSE);
+	svSetValue (ifcfg, "IEEE_8021X_EAP_METHODS", tmp, FALSE);
 	g_free (tmp);
 
 	svSetValue (ifcfg, "IEEE_8021X_IDENTITY",
@@ -1616,19 +1615,16 @@ write_team_port_setting (NMConnection *connection, shvarFile *ifcfg, GError **er
 static void
 write_dcb_flags (shvarFile *ifcfg, const char *tag, NMSettingDcbFlags flags)
 {
-	char *prop;
+	char prop[NM_STRLEN ("DCB_xxxxxxxxxxxxxxxxxxxxxxx_yyyyyyyyyyyyyyyyyyyy")];
 
-	prop = g_strdup_printf ("DCB_%s_ENABLE", tag);
+	nm_sprintf_buf (prop, "DCB_%s_ENABLE", tag);
 	svSetValue (ifcfg, prop, (flags & NM_SETTING_DCB_FLAG_ENABLE) ? "yes" : NULL, FALSE);
-	g_free (prop);
 
-	prop = g_strdup_printf ("DCB_%s_ADVERTISE", tag);
+	nm_sprintf_buf (prop, "DCB_%s_ADVERTISE", tag);
 	svSetValue (ifcfg, prop, (flags & NM_SETTING_DCB_FLAG_ADVERTISE) ? "yes" : NULL, FALSE);
-	g_free (prop);
 
-	prop = g_strdup_printf ("DCB_%s_WILLING", tag);
+	nm_sprintf_buf (prop, "DCB_%s_WILLING", tag);
 	svSetValue (ifcfg, prop, (flags & NM_SETTING_DCB_FLAG_WILLING) ? "yes" : NULL, FALSE);
-	g_free (prop);
 }
 
 static void
@@ -1637,16 +1633,15 @@ write_dcb_app (shvarFile *ifcfg,
                NMSettingDcbFlags flags,
                gint priority)
 {
-	char *prop, *tmp = NULL;
+	char prop[NM_STRLEN ("DCB_xxxxxxxxxxxxxxxxxxxxxxx_yyyyyyyyyyyyyyyyyyyy")];
 
 	write_dcb_flags (ifcfg, tag, flags);
 
+	nm_sprintf_buf (prop, "DCB_%s_PRIORITY", tag);
 	if ((flags & NM_SETTING_DCB_FLAG_ENABLE) && (priority >= 0))
-		tmp = g_strdup_printf ("%d", priority);
-	prop = g_strdup_printf ("DCB_%s_PRIORITY", tag);
-	svSetValue (ifcfg, prop, tmp, FALSE);
-	g_free (prop);
-	g_free (tmp);
+		svSetValueInt64 (ifcfg, prop, priority);
+	else
+		svUnsetValue (ifcfg, prop);
 }
 
 typedef gboolean (*DcbGetBoolFunc) (NMSettingDcb *, guint);
