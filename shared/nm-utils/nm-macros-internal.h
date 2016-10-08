@@ -615,6 +615,20 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro) {
 }
 /*****************************************************************************/
 
+/* taken from systemd's DECIMAL_STR_MAX()
+ *
+ * Returns the number of chars needed to format variables of the
+ * specified type as a decimal string. Adds in extra space for a
+ * negative '-' prefix (hence works correctly on signed
+ * types). Includes space for the trailing NUL. */
+#define NM_DECIMAL_STR_MAX(type) \
+    (2+(sizeof(type) <= 1 ? 3 : \
+        sizeof(type) <= 2 ? 5 : \
+        sizeof(type) <= 4 ? 10 : \
+        sizeof(type) <= 8 ? 20 : sizeof(int[-2*(sizeof(type) > 8)])))
+
+/*****************************************************************************/
+
 /* if @str is NULL, return "(null)". Otherwise, allocate a buffer using
  * alloca() of size @bufsize and fill it with @str. @str will be quoted with
  * single quote, and in case @str is too long, the final quote will be '^'. */
