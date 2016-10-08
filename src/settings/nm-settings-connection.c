@@ -26,6 +26,8 @@
 #include <string.h>
 
 #include "nm-common-macros.h"
+#include "nm-config.h"
+#include "nm-config-data.h"
 #include "nm-dbus-interface.h"
 #include "nm-session-monitor.h"
 #include "nm-auth-utils.h"
@@ -39,6 +41,11 @@
 
 #define SETTINGS_TIMESTAMPS_FILE  NMSTATEDIR "/timestamps"
 #define SETTINGS_SEEN_BSSIDS_FILE NMSTATEDIR "/seen-bssids"
+
+#define AUTOCONNECT_RETRIES_UNSET       -2
+#define AUTOCONNECT_RETRIES_FOREVER     -1
+#define AUTOCONNECT_RETRIES_DEFAULT      4
+#define AUTOCONNECT_RESET_RETRIES_TIMER 300
 
 /*****************************************************************************/
 
@@ -2433,12 +2440,47 @@ nm_settings_connection_read_and_fill_seen_bssids (NMSettingsConnection *self)
 	}
 }
 
-#define AUTOCONNECT_RETRIES_DEFAULT 4
-#define AUTOCONNECT_RESET_RETRIES_TIMER 300
-
+/**
+ * nm_settings_connection_get_autoconnect_retries:
+ * @self: the settings connection
+ *
+ * Returns the number of autoconnect retries left. If the value is
+ * not yet set, initialize it with the value from the connection or
+ * with the global default.
+ */
 int
 nm_settings_connection_get_autoconnect_retries (NMSettingsConnection *self)
 {
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+
+	if (priv->autoconnect_retries == AUTOCONNECT_RETRIES_UNSET) {
+		NMSettingConnection *s_con;
+		int retries = -1;
+		const char *value;
+
+		s_con = nm_connection_get_setting_connection ((NMConnection *) self);
+		if (s_con)
+			retries = nm_setting_connection_get_autoconnect_retries (s_con);
+
+		/* -1 means 'default' */
+		if (retries == -1) {
+			value = nm_config_data_get_value_cached (NM_CONFIG_GET_DATA,
+			                                         NM_CONFIG_KEYFILE_GROUP_MAIN,
+			                                         "autoconnect-retries-default",
+			                                         NM_CONFIG_GET_VALUE_STRIP);
+
+			retries = _nm_utils_ascii_str_to_int64 (value,
+			                                        10, 0, G_MAXINT32,
+			                                        AUTOCONNECT_RETRIES_DEFAULT);
+		}
+
+		/* 0 means 'forever', which is translated to a retry count of -1 */
+		if (retries == 0)
+			retries = AUTOCONNECT_RETRIES_FOREVER;
+
+		priv->autoconnect_retries = retries;
+	}
+
 	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->autoconnect_retries;
 }
 
@@ -2458,7 +2500,7 @@ nm_settings_connection_set_autoconnect_retries (NMSettingsConnection *self,
 void
 nm_settings_connection_reset_autoconnect_retries (NMSettingsConnection *self)
 {
-	nm_settings_connection_set_autoconnect_retries (self, AUTOCONNECT_RETRIES_DEFAULT);
+	nm_settings_connection_set_autoconnect_retries (self, AUTOCONNECT_RETRIES_UNSET);
 }
 
 gint32
@@ -2628,7 +2670,7 @@ nm_settings_connection_init (NMSettingsConnection *self)
 
 	priv->seen_bssids = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 
-	priv->autoconnect_retries = AUTOCONNECT_RETRIES_DEFAULT;
+	priv->autoconnect_retries = AUTOCONNECT_RETRIES_UNSET;
 	priv->autoconnect_blocked_reason = NM_DEVICE_STATE_REASON_NONE;
 
 	g_signal_connect (self, NM_CONNECTION_SECRETS_CLEARED, G_CALLBACK (secrets_cleared_cb), NULL);
