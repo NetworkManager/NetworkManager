@@ -30,13 +30,13 @@
 
 #include "nm-utils.h"
 
+#include "nm-config.h"
 #include "nm-linux-platform.h"
 
-#include "net_parser.h"
-#include "net_utils.h"
-#include "wpa_parser.h"
-#include "connection_parser.h"
-#include "nm-config.h"
+#include "nms-ifnet-net-parser.h"
+#include "nms-ifnet-net-utils.h"
+#include "nms-ifnet-wpa-parser.h"
+#include "nms-ifnet-connection-parser.h"
 
 #include "nm-test-utils-core.h"
 

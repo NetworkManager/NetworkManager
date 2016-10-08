@@ -21,6 +21,8 @@
 
 #include "nm-default.h"
 
+#include "nms-ifnet-net-utils.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -30,9 +32,9 @@
 #include "NetworkManagerUtils.h"
 #include "nm-settings-plugin.h"
 #include "nm-config.h"
-#include "net_utils.h"
-#include "wpa_parser.h"
-#include "net_parser.h"
+
+#include "nms-ifnet-wpa-parser.h"
+#include "nms-ifnet-net-parser.h"
 
 /* emit heading and tailing blank space, tab, character t */
 gchar *

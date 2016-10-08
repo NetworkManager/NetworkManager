@@ -22,7 +22,7 @@
 
 #include "nm-default.h"
 
-#include "plugin.h"
+#include "nms-ifnet-plugin.h"
 
 #include <string.h>
 #include <gmodule.h>
@@ -34,11 +34,11 @@
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"
 
-#include "nm-ifnet-connection.h"
-#include "net_utils.h"
-#include "net_parser.h"
-#include "wpa_parser.h"
-#include "connection_parser.h"
+#include "nms-ifnet-connection.h"
+#include "nms-ifnet-net-utils.h"
+#include "nms-ifnet-net-parser.h"
+#include "nms-ifnet-wpa-parser.h"
+#include "nms-ifnet-connection-parser.h"
 
 #define IFNET_PLUGIN_NAME_PRINT "ifnet"
 #define IFNET_PLUGIN_INFO "(C) 1999-2010 Gentoo Foundation, Inc. To report bugs please use bugs.gentoo.org with [networkmanager] or [qiaomuf] prefix."

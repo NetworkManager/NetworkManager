@@ -21,6 +21,8 @@
 
 #include "nm-default.h"
 
+#include "nms-ifnet-connection-parser.h"
+
 #include <string.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
@@ -30,10 +32,9 @@
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 
-#include "net_utils.h"
-#include "wpa_parser.h"
-#include "connection_parser.h"
-#include "nm-ifnet-connection.h"
+#include "nms-ifnet-net-utils.h"
+#include "nms-ifnet-wpa-parser.h"
+#include "nms-ifnet-connection.h"
 
 static char *
 connection_id_from_ifnet_name (const char *conn_name)

@@ -28,7 +28,8 @@
 
 #include <nm-setting-ip6-config.h>
 #include <nm-setting-ip4-config.h>
-#include "net_parser.h"
+
+#include "nms-ifnet-net-parser.h"
 
 #define has_default_ip4_route(conn_name) has_default_route((conn_name), &is_ip4_address)
 #define has_default_ip6_route(conn_name) has_default_route((conn_name), &is_ip6_address)
