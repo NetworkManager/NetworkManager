@@ -1199,18 +1199,18 @@ init_async_complete (NMManagerInitData *init_data)
 static void
 init_async_got_permissions (GObject *object, GAsyncResult *result, gpointer user_data)
 {
-	NMManagerInitData *init_data = user_data;
+	NMManager *manager = user_data;
 	GVariant *permissions;
 
 	if (nmdbus_manager_call_get_permissions_finish (NMDBUS_MANAGER (object),
 	                                                &permissions,
 	                                                result, NULL)) {
-		update_permissions (init_data->manager, permissions);
+		update_permissions (manager, permissions);
 		g_variant_unref (permissions);
 	} else
-		update_permissions (init_data->manager, NULL);
+		update_permissions (manager, NULL);
 
-	init_async_complete (init_data);
+	g_object_unref (manager);
 }
 
 static void
@@ -1228,7 +1228,10 @@ init_async_parent_inited (GObject *source, GAsyncResult *result, gpointer user_d
 
 	nmdbus_manager_call_get_permissions (priv->manager_proxy,
 	                                     init_data->cancellable,
-	                                     init_async_got_permissions, init_data);
+	                                     init_async_got_permissions,
+	                                     g_object_ref (init_data->manager));
+
+	init_async_complete (init_data);
 }
 
 static void
