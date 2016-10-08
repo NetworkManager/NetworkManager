@@ -336,9 +336,10 @@ test_remove_connection (void)
 	do {
 		now = time (NULL);
 		g_main_context_iteration (NULL, FALSE);
-	} while ((done == FALSE) && (now - start < 5));
+		if (done && !remote)
+			break;
+	} while (now - start < 5);
 	g_assert (done == TRUE);
-
 	g_assert (!remote);
 
 	/* Ensure NMClient no longer has the connection */
