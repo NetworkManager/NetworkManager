@@ -25,7 +25,8 @@
 #define __PARSER_H__
 
 #include <nm-connection.h>
-#include "interface_parser.h"
+
+#include "nms-ifupdown-interface-parser.h"
 
 gboolean
 ifupdown_update_connection_from_if_block (NMConnection *connection,

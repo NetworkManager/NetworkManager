@@ -23,6 +23,8 @@
 
 #include "nm-default.h"
 
+#include "nms-ifupdown-parser.h"
+
 #include <string.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
@@ -32,13 +34,9 @@
 #include "nm-core-internal.h"
 #include "nm-settings-plugin.h"
 
-#include "parser.h"
-#include "plugin.h"
+#include "nms-ifupdown-plugin.h"
+#include "nms-ifupdown-parser.h"
 
-
-#define WPA_PMK_LEN 32
-
-#include "parser.h"
 
 static const gchar*
 _ifupdownplugin_guess_connection_type (if_block *block)

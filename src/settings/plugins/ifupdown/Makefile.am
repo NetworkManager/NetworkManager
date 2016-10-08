@@ -24,18 +24,18 @@ noinst_LTLIBRARIES = \
 ###############################################################################
 
 libnms_ifupdown_core_la_SOURCES = \
-	interface_parser.c \
-	interface_parser.h \
-	parser.c \
-	parser.h
+	nms-ifupdown-interface-parser.c \
+	nms-ifupdown-interface-parser.h \
+	nms-ifupdown-parser.c \
+	nms-ifupdown-parser.h
 
 ###############################################################################
 
 libnm_settings_plugin_ifupdown_la_SOURCES = \
-	nm-ifupdown-connection.c \
-	nm-ifupdown-connection.h \
-	plugin.c \
-	plugin.h
+	nms-ifupdown-connection.c \
+	nms-ifupdown-connection.h \
+	nms-ifupdown-plugin.c \
+	nms-ifupdown-plugin.h
 
 libnm_settings_plugin_ifupdown_la_LDFLAGS = \
 	-module -avoid-version

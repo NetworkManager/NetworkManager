@@ -22,7 +22,7 @@
 
 #include "nm-default.h"
 
-#include "interface_parser.h"
+#include "nms-ifupdown-interface-parser.h"
 
 #include <stdio.h>
 #include <stdlib.h>
