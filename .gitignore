@@ -280,5 +280,5 @@ test-*.trs
 /include/
 /initscript/Slackware/rc.networkmanager
 /initscript/*/[Nn]etwork[Mm]anager
+/src/devices/wifi/tests/test-wifi-ap-utils
 /src/settings/plugins/ifnet/tests/check_ifnet
-
