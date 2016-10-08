@@ -447,6 +447,12 @@ svSetValueInt64 (shvarFile *s, const char *key, gint64 value)
 	svSetValueFull (s, key, v, TRUE);
 }
 
+void
+svUnsetValue (shvarFile *s, const char *key)
+{
+	svSetValueFull (s, key, NULL, FALSE);
+}
+
 /* Write the current contents iff modified.  Returns FALSE on error
  * and TRUE on success.  Do not write if no values have been modified.
  * The mode argument is only used if creating the file, not if

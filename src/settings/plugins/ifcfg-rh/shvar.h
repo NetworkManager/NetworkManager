@@ -73,6 +73,7 @@ void svSetValue (shvarFile *s, const char *key, const char *value, gboolean verb
 void svSetValueFull (shvarFile *s, const char *key, const char *value, gboolean verbatim);
 void svSetValueInt64 (shvarFile *s, const char *key, gint64 value);
 
+void svUnsetValue (shvarFile *s, const char *key);
 
 /* Write the current contents iff modified.  Returns FALSE on error
  * and TRUE on success.  Do not write if no values have been modified.
