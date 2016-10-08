@@ -1088,6 +1088,7 @@ libnm_1_6_0 {
 global:
 	nm_capability_get_type;
 	nm_connection_get_setting_proxy;
+	nm_setting_connection_get_autoconnect_retries;
 	nm_setting_proxy_get_type;
 	nm_setting_proxy_new;
 	nm_setting_proxy_get_method;
