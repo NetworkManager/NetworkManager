@@ -102,6 +102,7 @@ EXTRA_DIST = \
 	shared/nm-utils/nm-vpn-plugin-macros.h \
 	shared/nm-utils/nm-vpn-plugin-utils.c \
 	shared/nm-utils/nm-vpn-plugin-utils.h \
+	shared/nm-utils/unaligned.h \
 	shared/nm-version-macros.h.in \
 	\
 	$(NULL)
