@@ -646,23 +646,27 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro) {
 
 #define nm_sprintf_buf(buf, format, ...) ({ \
 		char * _buf = (buf); \
+		int _buf_len; \
 		\
 		/* some static assert trying to ensure that the buffer is statically allocated.
 		 * It disallows a buffer size of sizeof(gpointer) to catch that. */ \
 		G_STATIC_ASSERT (G_N_ELEMENTS (buf) == sizeof (buf) && sizeof (buf) != sizeof (char *)); \
-		g_snprintf (_buf, sizeof (buf), \
-		            ""format"", ##__VA_ARGS__); \
+		_buf_len = g_snprintf (_buf, sizeof (buf), \
+		                       ""format"", ##__VA_ARGS__); \
+		nm_assert (_buf_len < sizeof (buf)); \
 		_buf; \
 	})
 
 #define nm_sprintf_bufa(n_elements, format, ...) \
 	({ \
 		char *_buf; \
+		int _buf_len; \
 		\
 		G_STATIC_ASSERT (sizeof (char[MAX ((n_elements), 1)]) == (n_elements)); \
 		_buf = g_alloca (n_elements); \
-		g_snprintf (_buf, n_elements, \
-		            ""format"", ##__VA_ARGS__); \
+		_buf_len = g_snprintf (_buf, (n_elements), \
+		                       ""format"", ##__VA_ARGS__); \
+		nm_assert (_buf_len < (n_elements)); \
 		_buf; \
 	})
 
