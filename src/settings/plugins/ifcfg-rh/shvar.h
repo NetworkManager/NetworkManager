@@ -32,14 +32,8 @@
 #define _SHVAR_H
 
 typedef struct _shvarFile shvarFile;
-struct _shvarFile {
-	char      *fileName;    /* read-only */
-	int        fd;          /* read-only */
-	GList     *lineList;    /* read-only */
-	GList     *current;     /* set implicitly or explicitly, points to element of lineList */
-	gboolean   modified;    /* ignore */
-};
 
+const char *svFileGetName (const shvarFile *s);
 
 /* Create the file <name>, return a shvarFile (never fails) */
 shvarFile *svCreateFile (const char *name);

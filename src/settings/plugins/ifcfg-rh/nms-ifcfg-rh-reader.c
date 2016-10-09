@@ -145,7 +145,7 @@ make_connection_setting (const char *file,
 	uuid = svGetValue (ifcfg, "UUID", FALSE);
 	if (!uuid || !strlen (uuid)) {
 		g_free (uuid);
-		uuid = nm_utils_uuid_generate_from_string (ifcfg->fileName, -1, NM_UTILS_UUID_TYPE_LEGACY, NULL);
+		uuid = nm_utils_uuid_generate_from_string (svFileGetName (ifcfg), -1, NM_UTILS_UUID_TYPE_LEGACY, NULL);
 	}
 
 	stable_id = svGetValue (ifcfg, "STABLE_ID", FALSE);
@@ -1130,7 +1130,7 @@ make_ip4_setting (shvarFile *ifcfg,
 				goto done;
 
 			if (gateway && nm_setting_ip_config_get_num_addresses (s_ip4) == 0) {
-				gs_free char *f = g_path_get_basename (ifcfg->fileName);
+				gs_free char *f = g_path_get_basename (svFileGetName (ifcfg));
 				PARSE_WARNING ("ignoring GATEWAY (/etc/sysconfig/network) for %s "
 				               "because the connection has no static addresses", f);
 				g_clear_pointer (&gateway, g_free);
@@ -1204,13 +1204,13 @@ make_ip4_setting (shvarFile *ifcfg,
 	              NULL);
 
 	/* Static routes  - route-<name> file */
-	route_path = utils_get_route_path (ifcfg->fileName);
+	route_path = utils_get_route_path (svFileGetName (ifcfg));
 
 	if (utils_has_complex_routes (route_path)) {
 		PARSE_WARNING ("'rule-' or 'rule6-' file is present; you will need to use a dispatcher script to apply these routes");
 	} else if (utils_has_route_file_new_syntax (route_path)) {
 		/* Parse route file in new syntax */
-		route_ifcfg = utils_get_route_ifcfg (ifcfg->fileName, FALSE);
+		route_ifcfg = utils_get_route_ifcfg (svFileGetName (ifcfg), FALSE);
 		if (route_ifcfg) {
 			for (i = 0; i < 256; i++) {
 				NMIPRoute *route = NULL;
@@ -1626,9 +1626,9 @@ make_ip6_setting (shvarFile *ifcfg,
 
 	/* DNS searches ('DOMAIN' key) are read by make_ip4_setting() and included in NMSettingIPConfig */
 
-	if (!utils_has_complex_routes (ifcfg->fileName)) {
+	if (!utils_has_complex_routes (svFileGetName (ifcfg))) {
 		/* Read static routes from route6-<interface> file */
-		route6_path = utils_get_route6_path (ifcfg->fileName);
+		route6_path = utils_get_route6_path (svFileGetName (ifcfg));
 		if (!read_route6_file (route6_path, s_ip6, error))
 			goto error;
 
@@ -2596,7 +2596,7 @@ eap_tls_reader (const char *eap_method,
 
 	ca_cert = svGetValue (ifcfg, ca_cert_key, FALSE);
 	if (ca_cert) {
-		real_path = get_full_file_path (ifcfg->fileName, ca_cert);
+		real_path = get_full_file_path (svFileGetName (ifcfg), ca_cert);
 		if (phase2) {
 			if (!nm_setting_802_1x_set_phase2_ca_cert (s_8021x,
 			                                           real_path,
@@ -2651,7 +2651,7 @@ eap_tls_reader (const char *eap_method,
 		goto done;
 	}
 
-	real_path = get_full_file_path (ifcfg->fileName, privkey);
+	real_path = get_full_file_path (svFileGetName (ifcfg), privkey);
 	if (phase2) {
 		if (!nm_setting_802_1x_set_phase2_private_key (s_8021x,
 		                                               real_path,
@@ -2688,7 +2688,7 @@ eap_tls_reader (const char *eap_method,
 			goto done;
 		}
 
-		real_path = get_full_file_path (ifcfg->fileName, client_cert);
+		real_path = get_full_file_path (svFileGetName (ifcfg), client_cert);
 		if (phase2) {
 			if (!nm_setting_802_1x_set_phase2_client_cert (s_8021x,
 			                                               real_path,
@@ -2738,7 +2738,7 @@ eap_peap_reader (const char *eap_method,
 
 	ca_cert = svGetValue (ifcfg, "IEEE_8021X_CA_CERT", FALSE);
 	if (ca_cert) {
-		real_cert_path = get_full_file_path (ifcfg->fileName, ca_cert);
+		real_cert_path = get_full_file_path (svFileGetName (ifcfg), ca_cert);
 		if (!nm_setting_802_1x_set_ca_cert (s_8021x,
 		                                    real_cert_path,
 		                                    NM_SETTING_802_1X_CK_SCHEME_PATH,
@@ -2842,7 +2842,7 @@ eap_ttls_reader (const char *eap_method,
 
 	ca_cert = svGetValue (ifcfg, "IEEE_8021X_CA_CERT", FALSE);
 	if (ca_cert) {
-		real_cert_path = get_full_file_path (ifcfg->fileName, ca_cert);
+		real_cert_path = get_full_file_path (svFileGetName (ifcfg), ca_cert);
 		if (!nm_setting_802_1x_set_ca_cert (s_8021x,
 		                                    real_cert_path,
 		                                    NM_SETTING_802_1X_CK_SCHEME_PATH,
@@ -2933,7 +2933,7 @@ eap_fast_reader (const char *eap_method,
 
 	pac_file = svGetValue (ifcfg, "IEEE_8021X_PAC_FILE", FALSE);
 	if (pac_file) {
-		real_pac_path = get_full_file_path (ifcfg->fileName, pac_file);
+		real_pac_path = get_full_file_path (svFileGetName (ifcfg), pac_file);
 		g_object_set (s_8021x, NM_SETTING_802_1X_PAC_FILE, real_pac_path, NULL);
 	}
 
@@ -4971,7 +4971,7 @@ uuid_from_file (const char *filename)
 	uuid = svGetValue (ifcfg, "UUID", FALSE);
 	if (!uuid || !strlen (uuid)) {
 		g_free (uuid);
-		uuid = nm_utils_uuid_generate_from_string (ifcfg->fileName, -1, NM_UTILS_UUID_TYPE_LEGACY, NULL);
+		uuid = nm_utils_uuid_generate_from_string (svFileGetName (ifcfg), -1, NM_UTILS_UUID_TYPE_LEGACY, NULL);
 	}
 
 	svCloseFile (ifcfg);

@@ -119,9 +119,9 @@ set_secret (shvarFile *ifcfg,
 	/* Save secret flags */
 	save_secret_flags (ifcfg, flags_key, flags);
 
-	keyfile = utils_get_keys_ifcfg (ifcfg->fileName, TRUE);
+	keyfile = utils_get_keys_ifcfg (svFileGetName (ifcfg), TRUE);
 	if (!keyfile) {
-		_LOGW ("could not create ifcfg file for '%s'", ifcfg->fileName);
+		_LOGW ("could not create ifcfg file for '%s'", svFileGetName (ifcfg));
 		goto error;
 	}
 
@@ -133,7 +133,7 @@ set_secret (shvarFile *ifcfg,
 
 	if (!svWriteFile (keyfile, 0600, &error)) {
 		_LOGW ("could not update ifcfg file '%s': %s",
-		       keyfile->fileName, error->message);
+		       svFileGetName (keyfile), error->message);
 		g_clear_error (&error);
 		svCloseFile (keyfile);
 		goto error;
@@ -321,7 +321,7 @@ write_object (NMSetting8021x *s_8021x,
 		 * /etc/sysconfig/network-scripts/ca-cert-Test_Write_Wifi_WPA_EAP-TLS.der
 		 * will be deleted, but /etc/pki/tls/cert.pem will not.
 		 */
-		standard_file = utils_cert_path (ifcfg->fileName, objtype->suffix);
+		standard_file = utils_cert_path (svFileGetName (ifcfg), objtype->suffix);
 		if (g_file_test (standard_file, G_FILE_TEST_EXISTS))
 			ignored = unlink (standard_file);
 		g_free (standard_file);
@@ -344,7 +344,7 @@ write_object (NMSetting8021x *s_8021x,
 		char *new_file;
 		GError *write_error = NULL;
 
-		new_file = utils_cert_path (ifcfg->fileName, objtype->suffix);
+		new_file = utils_cert_path (svFileGetName (ifcfg), objtype->suffix);
 		if (!new_file) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 			             "Could not create file path for %s / %s",
@@ -997,7 +997,7 @@ write_wireless_setting (NMConnection *connection,
 		set_secret (ifcfg, "WPA_PSK", NULL, "WPA_PSK_FLAGS", NM_SETTING_SECRET_FLAG_NONE, FALSE);
 
 		/* Kill any old keys file */
-		keys_path = utils_get_keys_path (ifcfg->fileName);
+		keys_path = utils_get_keys_path (svFileGetName (ifcfg));
 		(void) unlink (keys_path);
 		g_free (keys_path);
 	}
@@ -2107,7 +2107,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 			g_free (gw_key);
 		}
 
-		route_path = utils_get_route_path (ifcfg->fileName);
+		route_path = utils_get_route_path (svFileGetName (ifcfg));
 		result = unlink (route_path);
 		g_free (route_path);
 		return TRUE;
@@ -2283,17 +2283,17 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	g_free (tmp);
 
 	/* Static routes - route-<name> file */
-	route_path = utils_get_route_path (ifcfg->fileName);
+	route_path = utils_get_route_path (svFileGetName (ifcfg));
 	if (!route_path) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "Could not get route file path for '%s'", ifcfg->fileName);
+		             "Could not get route file path for '%s'", svFileGetName (ifcfg));
 		return FALSE;
 	}
 
 	if (utils_has_route_file_new_syntax (route_path)) {
 		shvarFile *routefile;
 
-		routefile = utils_get_route_ifcfg (ifcfg->fileName, TRUE);
+		routefile = utils_get_route_ifcfg (svFileGetName (ifcfg), TRUE);
 		if (!routefile) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 			             "Could not create route file '%s'", route_path);
@@ -2710,10 +2710,10 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		svUnsetValue (ifcfg, "IPV6_DNS_PRIORITY");
 
 	/* Static routes go to route6-<dev> file */
-	route6_path = utils_get_route6_path (ifcfg->fileName);
+	route6_path = utils_get_route6_path (svFileGetName (ifcfg));
 	if (!route6_path) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "Could not get route6 file path for '%s'", ifcfg->fileName);
+		             "Could not get route6 file path for '%s'", svFileGetName (ifcfg));
 		goto error;
 	}
 	write_route6_file (route6_path, s_ip6, error);

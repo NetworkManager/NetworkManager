@@ -40,6 +40,16 @@
 
 /*****************************************************************************/
 
+struct _shvarFile {
+	char      *fileName;    /* read-only */
+	int        fd;          /* read-only */
+	GList     *lineList;    /* read-only */
+	GList     *current;     /* set implicitly or explicitly, points to element of lineList */
+	gboolean   modified;    /* ignore */
+};
+
+/*****************************************************************************/
+
 /**
  * svParseBoolean:
  * @value: the input string
@@ -183,6 +193,16 @@ svUnescape (char *s)
 		s[idx_wr++] = c;
 	}
 	s[idx_wr] = '\0';
+}
+
+/*****************************************************************************/
+
+const char *
+svFileGetName (const shvarFile *s)
+{
+	nm_assert (s);
+
+	return s->fileName;
 }
 
 /*****************************************************************************/
