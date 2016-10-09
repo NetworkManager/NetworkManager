@@ -287,32 +287,42 @@ svCreateFile (const char *name)
 
 /*****************************************************************************/
 
+static const char *
+find_line (shvarFile *s, const char *key)
+{
+	const char *line;
+	gsize len;
+
+	len = strlen (key);
+
+	for (s->current = s->lineList; s->current; s->current = s->current->next) {
+		line = s->current->data;
+		if (!strncmp (key, line, len) && line[len] == '=')
+			return line + len + 1;
+	}
+
+	return NULL;
+}
+
 /* svGetValueFull() is identical to svGetValue() except that
  * svGetValue() will never return an empty value (but %NULL instead).
  * svGetValueFull() will return empty values if that is the value for the @key. */
 char *
 svGetValueFull (shvarFile *s, const char *key, gboolean verbatim)
 {
-	char *value = NULL;
-	char *line;
-	guint len;
+	const char *line_val;
+	char *value;
 
 	g_return_val_if_fail (s != NULL, NULL);
 	g_return_val_if_fail (key != NULL, NULL);
 
-	len = strlen (key);
+	line_val = find_line (s, key);
+	if (!line_val)
+		return NULL;
 
-	for (s->current = s->lineList; s->current; s->current = s->current->next) {
-		line = s->current->data;
-		if (!strncmp (key, line, len) && line[len] == '=') {
-			/* Strip trailing spaces before unescaping to preserve spaces quoted whitespace */
-			value = g_strchomp (g_strdup (line + len + 1));
-			if (!verbatim)
-				svUnescape (value);
-			break;
-		}
-	}
-
+	value = g_strchomp (g_strdup (line_val));
+	if (!verbatim)
+		svUnescape (value);
 	return value;
 }
 
@@ -403,11 +413,10 @@ svSetValueFull (shvarFile *s, const char *key, const char *value, gboolean verba
 		newval = value;
 	else
 		newval = svEscape (value, &newval_free);
-	oldval = svGetValueFull (s, key, FALSE);
 
 	if (!newval) {
 		/* delete value */
-		if (oldval) {
+		if (find_line (s, key)) {
 			/* delete line */
 			s->lineList = g_list_remove_link (s->lineList, s->current);
 			g_free (s->current->data);
@@ -416,6 +425,8 @@ svSetValueFull (shvarFile *s, const char *key, const char *value, gboolean verba
 		}
 		return;
 	}
+
+	oldval = svGetValueFull (s, key, FALSE);
 
 	keyValue = g_strdup_printf ("%s=%s", key, newval);
 	if (!oldval) {
