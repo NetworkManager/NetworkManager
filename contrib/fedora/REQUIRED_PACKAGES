@@ -18,7 +18,6 @@ yum install \
     libnl3-devel \
     libndp-devel \
     libtool \
-    autopoint \
     gettext-devel \
     dbus-devel \
     dbus-glib-devel \
@@ -40,7 +39,7 @@ yum install \
     readline-devel \
     teamd-devel \
     rpm-build \
-    perl-YAML-LibYAM \
+    perl-YAML-LibYAML \
     perl-YAML \
     audit-libs-devel \
     bluez-libs-devel \
