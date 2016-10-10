@@ -171,11 +171,8 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 
 	ifindex = nm_device_get_ifindex ((NMDevice *) self);
 	dev = (GUdevDevice *) nm_g_object_ref (nm_platform_link_get_udev_device (NM_PLATFORM_GET, ifindex));
-	if (!dev) {
-		/* we only call _update_s390_subchannels() when platform claims the device to be initialized.
-		 * Thus, we expect to successfully lookup a GUdevDevice. */
-		g_return_if_reached ();
-	}
+	if (!dev)
+		return;
 
 	/* Try for the "ccwgroup" parent */
 	parent = g_udev_device_get_parent_with_subsystem (dev, "ccwgroup", NULL);
