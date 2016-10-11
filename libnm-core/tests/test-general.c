@@ -5426,6 +5426,15 @@ test_nm_set_out (void)
 	call_count = 0;
 	NM_SET_OUT (p_val, do_test_nm_set_out_called (&call_count));
 	g_assert_cmpint (call_count, ==, 0);
+
+	/* test that we successfully re-defined _G_BOOLEAN_EXPR() */
+#define _T1(a) \
+	({ \
+		g_assert (a > 5); \
+		a; \
+	})
+	g_assert (_T1 (3) > 1);
+#undef _T1
 }
 
 /*****************************************************************************/

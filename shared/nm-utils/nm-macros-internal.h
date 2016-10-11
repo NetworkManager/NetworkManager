@@ -731,6 +731,33 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro) {
 #define false   0
 #endif
 
+
+#ifdef _G_BOOLEAN_EXPR
+/* g_assert() uses G_LIKELY(), which in turn uses _G_BOOLEAN_EXPR().
+ * As glib's implementation uses a local variable _g_boolean_var_,
+ * we cannot do
+ *   g_assert (some_macro ());
+ * where some_macro() itself expands to ({g_assert(); ...}).
+ * In other words, you cannot have a g_assert() inside a g_assert()
+ * without getting a -Werror=shadow failure.
+ *
+ * Workaround that by re-defining _G_BOOLEAN_EXPR()
+ **/
+#undef  _G_BOOLEAN_EXPR
+#define __NM_G_BOOLEAN_EXPR_IMPL(v, expr) \
+	({ \
+		int NM_UNIQ_T(V, v); \
+		\
+		if (expr) \
+			NM_UNIQ_T(V, v) = 1; \
+		else \
+			NM_UNIQ_T(V, v) = 0; \
+		NM_UNIQ_T(V, v); \
+	})
+#define _G_BOOLEAN_EXPR(expr) __NM_G_BOOLEAN_EXPR_IMPL (NM_UNIQ, expr)
+#endif
+
+
 /*****************************************************************************/
 
 #endif /* __NM_MACROS_INTERNAL_H__ */
