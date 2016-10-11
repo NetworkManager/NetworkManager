@@ -3536,95 +3536,35 @@ nm_device_can_assume_connections (NMDevice *self)
 	return !!NM_DEVICE_GET_CLASS (self)->update_connection;
 }
 
-/**
- * nm_device_can_assume_active_connection:
- * @self: #NMDevice instance
- *
- * This is a convenience function to determine whether the device's active
- * connection can be assumed if NetworkManager restarts.  This method returns
- * %TRUE if and only if the device can assume connections, and the device has
- * an active connection, and that active connection can be assumed.
- *
- * Returns: %TRUE if the device's active connection can be assumed, or %FALSE
- * if there is no active connection or the active connection cannot be
- * assumed.
- */
-static gboolean
-nm_device_can_assume_active_connection (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMConnection *connection;
-	const char *method;
-	const char *assumable_ip6_methods[] = {
-		NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-		NM_SETTING_IP6_CONFIG_METHOD_AUTO,
-		NM_SETTING_IP6_CONFIG_METHOD_DHCP,
-		NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
-		NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
-		NULL
-	};
-	const char *assumable_ip4_methods[] = {
-		NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
-		NM_SETTING_IP6_CONFIG_METHOD_AUTO,
-		NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
-		NULL
-	};
-
-	if (!nm_device_can_assume_connections (self))
-		return FALSE;
-
-	connection = nm_device_get_applied_connection (self);
-	if (!connection)
-		return FALSE;
-
-	/* Can't assume connections that aren't yet configured
-	 * FIXME: what about bridges/bonds waiting for slaves?
-	 */
-	if (priv->state < NM_DEVICE_STATE_IP_CONFIG)
-		return FALSE;
-	if (priv->ip4_state != IP_DONE && priv->ip6_state != IP_DONE)
-		return FALSE;
-
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
-	if (!g_strv_contains (assumable_ip6_methods, method))
-		return FALSE;
-
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
-	if (!g_strv_contains (assumable_ip4_methods, method))
-		return FALSE;
-
-	return TRUE;
-}
-
 static gboolean
 unmanaged_on_quit (NMDevice *self)
 {
-	/* Leave certain devices alone when quitting so their configuration
-	 * can be taken over when NM restarts.  This ensures connectivity while
-	 * NM is stopped.
-	 */
-	if (nm_device_uses_assumed_connection (self)) {
-		/* An assume connection must be left alone */
-		return FALSE;
+	NMConnection *connection;
+
+	/* NMDeviceWifi overwrites this function to always unmanage wifi devices.
+	 *
+	 * For all other types, if the device type can assume connections, we leave
+	 * it up on quit.
+	 *
+	 * Originally, we would only keep devices up that can be assumed afterwards.
+	 * However, that meant we unmanged layer-2 only devices. So, this was step
+	 * by step refined to unmanage less (commit 25aaaab3, rh#1311988, rh#1333983).
+	 * But there are more scenarios where we also want to keep the device up
+	 * (rh#1378418, rh#1371126). */
+	if (!nm_device_can_assume_connections (self))
+		return TRUE;
+
+	/* the only exception are IPv4 shared connections. We unmanage them on quit. */
+	connection = nm_device_get_applied_connection (self);
+	if (connection) {
+		if (NM_IN_STRSET (nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG),
+		                  NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
+			/* shared connections are to be unmangaed. */
+			return TRUE;
+		}
 	}
 
-	if (!nm_device_get_act_request (self)) {
-		/* a device without any active connection is either UNAVAILABLE or DISCONNECTED
-		 * state. Since we don't know whether the device was upped by NetworkManager,
-		 * we must leave it up on exit.
-		 */
-		return FALSE;
-	}
-
-	if (!nm_platform_link_can_assume (NM_PLATFORM_GET, nm_device_get_ifindex (self))) {
-		/* The device has no layer 3 configuration. Leave it up. */
-		return FALSE;
-	}
-
-	if (nm_device_can_assume_active_connection (self))
-		return FALSE;
-
-	return TRUE;
+	return FALSE;
 }
 
 gboolean
