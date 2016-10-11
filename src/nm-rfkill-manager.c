@@ -351,7 +351,7 @@ handle_uevent (GUdevClient *client,
 	subsys = g_udev_device_get_subsystem (device);
 	g_return_if_fail (!g_strcmp0 (subsys, "rfkill"));
 
-	nm_log_dbg (LOGD_HW, "udev rfkill event: action '%s' device '%s'",
+	nm_log_dbg (LOGD_PLATFORM, "udev rfkill event: action '%s' device '%s'",
 	            action, g_udev_device_get_name (device));
 
 	if (!strcmp (action, "add"))

@@ -187,7 +187,7 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 	parent_path = g_udev_device_get_sysfs_path (parent);
 	dir = g_dir_open (parent_path, 0, &error);
 	if (!dir) {
-		_LOGW (LOGD_DEVICE | LOGD_HW, "update-s390: failed to open directory '%s': %s",
+		_LOGW (LOGD_DEVICE | LOGD_PLATFORM, "update-s390: failed to open directory '%s': %s",
 		       parent_path, error->message);
 		g_clear_error (&error);
 		return;
@@ -217,11 +217,11 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 				g_hash_table_insert (priv->s390_options, g_strdup (item), value);
 				value = NULL;
 			} else
-				_LOGW (LOGD_DEVICE | LOGD_HW, "update-s390: error reading %s", path);
+				_LOGW (LOGD_DEVICE | LOGD_PLATFORM, "update-s390: error reading %s", path);
 		}
 
 		if (error) {
-			_LOGW (LOGD_DEVICE | LOGD_HW, "update-s390: failed reading sysfs for %s (%s)", item, error->message);
+			_LOGW (LOGD_DEVICE | LOGD_PLATFORM, "update-s390: failed reading sysfs for %s (%s)", item, error->message);
 			g_clear_error (&error);
 		}
 	}
@@ -246,7 +246,7 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 	priv->subchannels_dbus[2] = g_strdup (priv->subchan3);
 	priv->subchannels_dbus[3] = NULL;
 
-	_LOGI (LOGD_DEVICE | LOGD_HW, "update-s390: found s390 '%s' subchannels [%s]",
+	_LOGI (LOGD_DEVICE | LOGD_PLATFORM, "update-s390: found s390 '%s' subchannels [%s]",
 	       nm_device_get_driver ((NMDevice *) self) ?: "(unknown driver)",
 	       priv->subchannels);
 
@@ -310,7 +310,7 @@ get_generic_capabilities (NMDevice *device)
 	if (nm_platform_link_supports_carrier_detect (NM_PLATFORM_GET, nm_device_get_ifindex (device)))
 	    return NM_DEVICE_CAP_CARRIER_DETECT;
 	else {
-		_LOGI (LOGD_HW, "driver '%s' does not support carrier detection.",
+		_LOGI (LOGD_PLATFORM, "driver '%s' does not support carrier detection.",
 		       nm_device_get_driver (device));
 		return NM_DEVICE_CAP_NONE;
 	}
@@ -1323,7 +1323,7 @@ deactivate (NMDevice *device)
 	s_dcb = (NMSettingDcb *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_DCB);
 	if (s_dcb) {
 		if (!nm_dcb_cleanup (nm_device_get_iface (device), &error)) {
-			_LOGW (LOGD_DEVICE | LOGD_HW, "failed to disable DCB/FCoE: %s",
+			_LOGW (LOGD_DEVICE | LOGD_PLATFORM, "failed to disable DCB/FCoE: %s",
 			       error->message);
 			g_clear_error (&error);
 		}
@@ -1528,7 +1528,7 @@ get_link_speed (NMDevice *device)
 	priv->speed = speed;
 	_notify (self, PROP_SPEED);
 
-	_LOGD (LOGD_HW | LOGD_ETHER, "speed is now %d Mb/s", speed);
+	_LOGD (LOGD_PLATFORM | LOGD_ETHER, "speed is now %d Mb/s", speed);
 }
 
 static void

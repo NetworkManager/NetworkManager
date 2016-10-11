@@ -134,7 +134,7 @@ set_bond_attr (NMDevice *device, NMBondMode mode, const char *attr, const char *
 
 	ret = nm_platform_sysctl_master_set_option (NM_PLATFORM_GET, ifindex, attr, value);
 	if (!ret)
-		_LOGW (LOGD_HW, "failed to set bonding attribute '%s' to '%s'", attr, value);
+		_LOGW (LOGD_PLATFORM, "failed to set bonding attribute '%s' to '%s'", attr, value);
 	return ret;
 }
 

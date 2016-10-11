@@ -92,7 +92,7 @@ update_properties (NMDevice *device)
 
 	props = nm_platform_link_get_lnk_vxlan (NM_PLATFORM_GET, nm_device_get_ifindex (device), NULL);
 	if (!props) {
-		_LOGW (LOGD_HW, "could not get vxlan properties");
+		_LOGW (LOGD_PLATFORM, "could not get vxlan properties");
 		return;
 	}
 

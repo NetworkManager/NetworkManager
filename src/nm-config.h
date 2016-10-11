@@ -182,7 +182,9 @@ extern char *_nm_config_match_env;
 /*****************************************************************************/
 
 #define NM_CONFIG_DEVICE_STATE_DIR ""NMRUNDIR"/devices"
-#define NM_CONFIG_DEFAULT_AUTH_POLKIT_BOOL (nm_streq0 (NM_CONFIG_DEFAULT_AUTH_POLKIT, "true"))
+
+#define NM_CONFIG_DEFAULT_AUTH_POLKIT_BOOL          (nm_streq (""NM_CONFIG_DEFAULT_AUTH_POLKIT, "true"))
+#define NM_CONFIG_DEFAULT_LOGGING_AUDIT_BOOL        (nm_streq (""NM_CONFIG_DEFAULT_LOGGING_AUDIT, "true"))
 
 typedef enum {
 	NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_UNKNOWN   = -1,

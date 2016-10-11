@@ -91,7 +91,7 @@ get_peer (NMDeviceVeth *self)
 		return priv->peer;
 
 	if (!nm_platform_link_veth_get_properties (NM_PLATFORM_GET, nm_device_get_ifindex (device), &peer_ifindex)) {
-		_LOGW (LOGD_HW, "could not read veth properties");
+		_LOGW (LOGD_PLATFORM, "could not read veth properties");
 		return NULL;
 	}
 

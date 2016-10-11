@@ -1003,7 +1003,7 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 			case WLAN_CIPHER_SUITE_SMS4:
 				break;
 			default:
-				nm_log_dbg (LOGD_HW | LOGD_WIFI, "Don't know the meaning of NL80211_ATTR_CIPHER_SUITE %#8.8x.", ciphers[i]);
+				nm_log_dbg (LOGD_PLATFORM | LOGD_WIFI, "Don't know the meaning of NL80211_ATTR_CIPHER_SUITE %#8.8x.", ciphers[i]);
 				break;
 			}
 		}
@@ -1071,42 +1071,42 @@ wifi_nl80211_init (const char *iface, int ifindex)
 
 	if (nl80211_send_and_recv (nl80211, msg, nl80211_wiphy_info_handler,
 	                           &device_info) < 0) {
-		nm_log_dbg (LOGD_HW | LOGD_WIFI,
+		nm_log_dbg (LOGD_PLATFORM | LOGD_WIFI,
 		            "(%s): NL80211_CMD_GET_WIPHY request failed",
 		            nl80211->parent.iface);
 		goto error;
 	}
 
 	if (!device_info.success) {
-		nm_log_dbg (LOGD_HW | LOGD_WIFI,
+		nm_log_dbg (LOGD_PLATFORM | LOGD_WIFI,
 		            "(%s): NL80211_CMD_GET_WIPHY request indicated failure",
 		            nl80211->parent.iface);
 		goto error;
 	}
 
 	if (!device_info.supported) {
-		nm_log_dbg (LOGD_HW | LOGD_WIFI,
+		nm_log_dbg (LOGD_PLATFORM | LOGD_WIFI,
 		            "(%s): driver does not fully support nl80211, falling back to WEXT",
 		            nl80211->parent.iface);
 		goto error;
 	}
 
 	if (!device_info.can_scan_ssid) {
-		nm_log_err (LOGD_HW | LOGD_WIFI,
+		nm_log_err (LOGD_PLATFORM | LOGD_WIFI,
 		            "(%s): driver does not support SSID scans",
 		            nl80211->parent.iface);
 		goto error;
 	}
 
 	if (device_info.num_freqs == 0 || device_info.freqs == NULL) {
-		nm_log_err (LOGD_HW | LOGD_WIFI,
+		nm_log_err (LOGD_PLATFORM | LOGD_WIFI,
 		            "(%s): driver reports no supported frequencies",
 		            nl80211->parent.iface);
 		goto error;
 	}
 
 	if (device_info.caps == 0) {
-		nm_log_err (LOGD_HW | LOGD_WIFI,
+		nm_log_err (LOGD_PLATFORM | LOGD_WIFI,
 		            "(%s): driver doesn't report support of any encryption",
 		            nl80211->parent.iface);
 		goto error;
@@ -1120,7 +1120,7 @@ wifi_nl80211_init (const char *iface, int ifindex)
 	if (device_info.can_wowlan)
 		nl80211->parent.get_wowlan = wifi_nl80211_get_wowlan;
 
-	nm_log_info (LOGD_HW | LOGD_WIFI,
+	nm_log_info (LOGD_PLATFORM | LOGD_WIFI,
 	             "(%s): using nl80211 for WiFi device control",
 	             nl80211->parent.iface);
 

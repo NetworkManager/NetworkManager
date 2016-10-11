@@ -1474,12 +1474,12 @@ constructor (GType type,
 	priv = NM_MODEM_GET_PRIVATE ((NMModem *) object);
 
 	if (!priv->data_port && !priv->control_port) {
-		nm_log_err (LOGD_HW, "neither modem command nor data interface provided");
+		nm_log_err (LOGD_PLATFORM, "neither modem command nor data interface provided");
 		goto err;
 	}
 
 	if (!priv->path) {
-		nm_log_err (LOGD_HW, "D-Bus path not provided");
+		nm_log_err (LOGD_PLATFORM, "D-Bus path not provided");
 		goto err;
 	}
 
