@@ -9,12 +9,14 @@
         @connection: The connection for which this action was triggered.
         @connection_properties: Properties of the connection, including service and path.
         @device_properties: Properties of the device, including type, path, interface, and state.
+        @device_proxy_properties: Properties of the device's proxy configuration.
         @device_ip4_config: Properties of the device's IPv4 configuration.
         @device_ip6_config: Properties of the device's IPv6 configuration.
         @device_dhcp4_config: Properties of the device's DHCPv4 configuration.
         @device_dhcp6_config: Properties of the device's DHCPv6 configuration.
         @connectivity_state: Current connectivity state: unknown, none, limited, portal or full.
         @vpn_ip_iface: VPN interface name.
+        @vpn_proxy_properties: Properties of the VPN's proxy configuration.
         @vpn_ip4_config: Properties of the VPN's IPv4 configuration.
         @vpn_ip6_config: Properties of the VPN's IPv6 configuration.
         @debug: Whether to log debug output.
@@ -27,12 +29,14 @@
       <arg name="connection" type="a{sa{sv}}" direction="in"/>
       <arg name="connection_properties" type="a{sv}" direction="in"/>
       <arg name="device_properties" type="a{sv}" direction="in"/>
+      <arg name="device_proxy_properties" type="a{sv}" direction="in"/>
       <arg name="device_ip4_config" type="a{sv}" direction="in"/>
       <arg name="device_ip6_config" type="a{sv}" direction="in"/>
       <arg name="device_dhcp4_config" type="a{sv}" direction="in"/>
       <arg name="device_dhcp6_config" type="a{sv}" direction="in"/>
       <arg name="connectivity_state" type="s" direction="in"/>
       <arg name="vpn_ip_iface" type="s" direction="in"/>
+      <arg name="vpn_proxy_properties" type="a{sv}" direction="in"/>
       <arg name="vpn_ip4_config" type="a{sv}" direction="in"/>
       <arg name="vpn_ip6_config" type="a{sv}" direction="in"/>
       <arg name="debug" type="b" direction="in"/>
