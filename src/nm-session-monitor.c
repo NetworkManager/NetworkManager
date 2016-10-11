@@ -78,6 +78,19 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 /********************************************************************/
 
+#define _NMLOG_PREFIX_NAME    "session-monitor"
+#define _NMLOG_DOMAIN         LOGD_CORE
+
+#define _NMLOG(level, ...) \
+	G_STMT_START { \
+		nm_log (level, _NMLOG_DOMAIN, \
+		        "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+		        _NMLOG_PREFIX_NAME \
+		        _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+	} G_STMT_END
+
+/*****************************************************************************/
+
 #ifdef SESSION_TRACKING_SYSTEMD
 static gboolean
 st_sd_session_exists (NMSessionMonitor *monitor, uid_t uid, gboolean active)
@@ -90,8 +103,7 @@ st_sd_session_exists (NMSessionMonitor *monitor, uid_t uid, gboolean active)
 	status = sd_uid_get_sessions (uid, active, NULL);
 
 	if (status < 0)
-		nm_log_err (LOGD_CORE, "Failed to get systemd sessions for uid %d: %d",
-		            uid, status);
+		_LOGE ("failed to get systemd sessions for uid %d: %d", uid, status);
 
 	return status > 0;
 }
@@ -118,7 +130,7 @@ st_sd_init (NMSessionMonitor *monitor)
 		return;
 
 	if ((status = sd_login_monitor_new (NULL, &monitor->sd.monitor)) < 0) {
-		nm_log_err (LOGD_CORE, "Failed to create systemd login monitor: %d", status);
+		_LOGE ("failed to create systemd login monitor: %d", status);
 		return;
 	}
 
@@ -156,7 +168,7 @@ ck_load_cache (GHashTable *cache)
 		goto out;
 
 	if (!(groups = g_key_file_get_groups (keyfile, &len))) {
-		nm_log_err (LOGD_CORE, "Could not load groups from " CKDB_PATH);
+		_LOGE ("could not load groups from " CKDB_PATH);
 		goto out;
 	}
 
@@ -183,7 +195,7 @@ ck_load_cache (GHashTable *cache)
 	finished = TRUE;
 out:
 	if (error)
-		nm_log_err (LOGD_CORE, "ConsoleKit: Failed to load database: %s", error->message);
+		_LOGE ("failed to load ConsoleKit database: %s", error->message);
 	g_clear_error (&error);
 	g_clear_pointer (&groups, g_strfreev);
 	g_clear_pointer (&keyfile, g_key_file_free);
@@ -201,7 +213,7 @@ ck_update_cache (NMSessionMonitor *monitor)
 
 	/* Check the database file */
 	if (stat (CKDB_PATH, &statbuf) != 0) {
-		nm_log_err (LOGD_CORE, "Failed to check ConsoleKit timestamp: %s", strerror (errno));
+		_LOGE ("failed to check ConsoleKit timestamp: %s", strerror (errno));
 		return FALSE;
 	}
 	if (statbuf.st_mtime == monitor->ck.timestamp)
@@ -258,7 +270,7 @@ ck_init (NMSessionMonitor *monitor)
 							  G_CALLBACK (ck_changed),
 							  monitor);
 		} else {
-			nm_log_err (LOGD_CORE, "Error monitoring " CKDB_PATH ": %s", error->message);
+			_LOGE ("error monitoring " CKDB_PATH ": %s", error->message);
 			g_clear_error (&error);
 		}
 	}
@@ -363,10 +375,12 @@ nm_session_monitor_init (NMSessionMonitor *monitor)
 {
 #ifdef SESSION_TRACKING_SYSTEMD
 	st_sd_init (monitor);
+	_LOGD ("using systemd-logind session tracking");
 #endif
 
 #ifdef SESSION_TRACKING_CONSOLEKIT
 	ck_init (monitor);
+	_LOGD ("using ConsoleKit session tracking");
 #endif
 }
 
