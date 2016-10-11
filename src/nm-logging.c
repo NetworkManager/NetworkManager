@@ -209,12 +209,14 @@ syslog_identifier_domain (const struct Global *gl)
 	return &gl->syslog_identifier[NM_STRLEN ("SYSLOG_IDENTIFIER=")];
 }
 
+#if SYSTEMD_JOURNAL
 static const char *
 syslog_identifier_full (const struct Global *gl)
 {
 	nm_assert (_syslog_identifier_assert (gl));
 	return &gl->syslog_identifier[0];
 }
+#endif
 
 void
 nm_logging_set_syslog_identifier (const char *domain)
