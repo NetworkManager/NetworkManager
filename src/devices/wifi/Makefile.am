@@ -1,5 +1,7 @@
 include $(GLIB_MAKEFILE)
 
+include $(top_srcdir)/nm.mk
+
 @GNOME_CODE_COVERAGE_RULES@
 
 if ENABLE_TESTS
