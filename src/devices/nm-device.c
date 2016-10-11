@@ -12177,7 +12177,7 @@ spec_match_list (NMDevice *self, const GSList *specs)
 		}
 	}
 
-	hw_addr_perm = nm_device_get_permanent_hw_address (self, FALSE);
+	hw_addr_perm = nm_device_get_permanent_hw_address (self, TRUE);
 	if (hw_addr_perm) {
 		m = nm_match_spec_hwaddr (specs, hw_addr_perm);
 		matched = MAX (matched, m);
