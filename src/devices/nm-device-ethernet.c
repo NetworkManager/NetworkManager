@@ -1677,8 +1677,8 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 
 /*****************************************************************************/
 
-#define NM_TYPE_ETHERNET_FACTORY (nm_ethernet_factory_get_type ())
-#define NM_ETHERNET_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_ETHERNET_FACTORY, NMEthernetFactory))
+#define NM_TYPE_ETHERNET_DEVICE_FACTORY (nm_ethernet_device_factory_get_type ())
+#define NM_ETHERNET_DEVICE_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_ETHERNET_DEVICE_FACTORY, NMEthernetDeviceFactory))
 
 static NMDevice *
 create_device (NMDeviceFactory *factory,
@@ -1698,6 +1698,5 @@ create_device (NMDeviceFactory *factory,
 NM_DEVICE_FACTORY_DEFINE_INTERNAL (ETHERNET, Ethernet, ethernet,
 	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES    (NM_LINK_TYPE_ETHERNET)
 	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_PPPOE_SETTING_NAME),
-	factory_iface->create_device = create_device;
-	)
-
+	factory_class->create_device = create_device;
+);

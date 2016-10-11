@@ -763,8 +763,8 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 
 /*****************************************************************************/
 
-#define NM_TYPE_VXLAN_FACTORY (nm_vxlan_factory_get_type ())
-#define NM_VXLAN_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VXLAN_FACTORY, NMVxlanFactory))
+#define NM_TYPE_VXLAN_DEVICE_FACTORY (nm_vxlan_device_factory_get_type ())
+#define NM_VXLAN_DEVICE_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VXLAN_DEVICE_FACTORY, NMVxlanDeviceFactory))
 
 static NMDevice *
 create_device (NMDeviceFactory *factory,
@@ -817,8 +817,7 @@ get_connection_iface (NMDeviceFactory *factory,
 NM_DEVICE_FACTORY_DEFINE_INTERNAL (VXLAN, Vxlan, vxlan,
 	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES (NM_LINK_TYPE_VXLAN)
 	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_VXLAN_SETTING_NAME),
-	factory_iface->create_device = create_device;
-	factory_iface->get_connection_parent = get_connection_parent;
-	factory_iface->get_connection_iface = get_connection_iface;
+	factory_class->create_device = create_device;
+	factory_class->get_connection_parent = get_connection_parent;
+	factory_class->get_connection_iface = get_connection_iface;
 );
-

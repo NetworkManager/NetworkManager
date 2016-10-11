@@ -658,8 +658,8 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *klass)
 
 /*****************************************************************************/
 
-#define NM_TYPE_MACVLAN_FACTORY (nm_macvlan_factory_get_type ())
-#define NM_MACVLAN_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MACVLAN_FACTORY, NMMacvlanFactory))
+#define NM_TYPE_MACVLAN_DEVICE_FACTORY (nm_macvlan_device_factory_get_type ())
+#define NM_MACVLAN_DEVICE_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MACVLAN_DEVICE_FACTORY, NMMacvlanDeviceFactory))
 
 static NMDevice *
 create_device (NMDeviceFactory *factory,
@@ -739,7 +739,7 @@ get_connection_iface (NMDeviceFactory *factory,
 NM_DEVICE_FACTORY_DEFINE_INTERNAL (MACVLAN, Macvlan, macvlan,
 	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES (NM_LINK_TYPE_MACVLAN, NM_LINK_TYPE_MACVTAP)
 	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_MACVLAN_SETTING_NAME),
-	factory_iface->create_device = create_device;
-	factory_iface->get_connection_parent = get_connection_parent;
-	factory_iface->get_connection_iface = get_connection_iface;
+	factory_class->create_device = create_device;
+	factory_class->get_connection_parent = get_connection_parent;
+	factory_class->get_connection_iface = get_connection_iface;
 );

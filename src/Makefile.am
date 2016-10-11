@@ -259,38 +259,6 @@ libNetworkManagerBase_la_LIBADD = \
 
 ###############################################################################
 
-# These source files have a attribute((constructor)) to register their factories.
-# This gets stripped out from the resulting binary if we add them to libNetworkManager.la.
-# Instead, add them to the binary. An alternative would be to link with --as-needed.
-
-nm_device_sources = \
-	devices/nm-device-bond.c \
-	devices/nm-device-bridge.c \
-	devices/nm-device-ethernet.c \
-	devices/nm-device-infiniband.c \
-	devices/nm-device-ip-tunnel.c \
-	devices/nm-device-macvlan.c \
-	devices/nm-device-tun.c \
-	devices/nm-device-veth.c \
-	devices/nm-device-vlan.c \
-	devices/nm-device-vxlan.c \
-	$(NULL)
-
-nm_device_headers = \
-	devices/nm-device-bond.h \
-	devices/nm-device-bridge.h \
-	devices/nm-device-ethernet.h \
-	devices/nm-device-infiniband.h \
-	devices/nm-device-ip-tunnel.h \
-	devices/nm-device-macvlan.h \
-	devices/nm-device-tun.h \
-	devices/nm-device-veth.h \
-	devices/nm-device-vlan.h \
-	devices/nm-device-vxlan.h \
-	$(NULL)
-
-###############################################################################
-
 libNetworkManager_la_SOURCES = \
 	\
 	nm-checkpoint-manager.c \
@@ -312,6 +280,27 @@ libNetworkManager_la_SOURCES = \
 	devices/nm-device-generic.h \
 	devices/nm-device-logging.h \
 	devices/nm-device-private.h \
+	\
+	devices/nm-device-bond.c \
+	devices/nm-device-bond.h \
+	devices/nm-device-bridge.c \
+	devices/nm-device-bridge.h \
+	devices/nm-device-ethernet.c \
+	devices/nm-device-ethernet.h \
+	devices/nm-device-infiniband.c \
+	devices/nm-device-infiniband.h \
+	devices/nm-device-ip-tunnel.c \
+	devices/nm-device-ip-tunnel.h \
+	devices/nm-device-macvlan.c \
+	devices/nm-device-macvlan.h \
+	devices/nm-device-tun.c \
+	devices/nm-device-tun.h \
+	devices/nm-device-veth.c \
+	devices/nm-device-veth.h \
+	devices/nm-device-vlan.c \
+	devices/nm-device-vlan.h \
+	devices/nm-device-vxlan.c \
+	devices/nm-device-vxlan.h \
 	\
 	dhcp-manager/nm-dhcp-client.c \
 	dhcp-manager/nm-dhcp-client.h \
@@ -513,10 +502,6 @@ libNetworkManagerTest_la_LIBADD = \
 ###############################################################################
 
 NetworkManager_SOURCES = \
-	\
-	$(nm_device_sources) \
-	$(nm_device_headers) \
-	\
 	main-utils.c \
 	main-utils.h \
 	main.c

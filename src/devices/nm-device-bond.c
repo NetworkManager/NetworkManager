@@ -523,8 +523,8 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 
 /*****************************************************************************/
 
-#define NM_TYPE_BOND_FACTORY (nm_bond_factory_get_type ())
-#define NM_BOND_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_BOND_FACTORY, NMBondFactory))
+#define NM_TYPE_BOND_DEVICE_FACTORY (nm_bond_device_factory_get_type ())
+#define NM_BOND_DEVICE_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_BOND_DEVICE_FACTORY, NMBondDeviceFactory))
 
 static NMDevice *
 create_device (NMDeviceFactory *factory,
@@ -546,5 +546,5 @@ create_device (NMDeviceFactory *factory,
 NM_DEVICE_FACTORY_DEFINE_INTERNAL (BOND, Bond, bond,
 	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES    (NM_LINK_TYPE_BOND)
 	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_BOND_SETTING_NAME),
-	factory_iface->create_device = create_device;
+	factory_class->create_device = create_device;
 );

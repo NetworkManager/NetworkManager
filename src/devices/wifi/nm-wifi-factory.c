@@ -39,25 +39,30 @@
 #define NM_IS_WIFI_FACTORY_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_WIFI_FACTORY))
 #define NM_WIFI_FACTORY_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_WIFI_FACTORY, NMWifiFactoryClass))
 
-typedef struct _NMWifiFactory NMWifiFactory;
-typedef struct _NMWifiFactoryClass NMWifiFactoryClass;
+typedef struct {
+	NMDeviceFactory parent;
+} NMWifiFactory;
+
+typedef struct {
+	NMDeviceFactoryClass parent;
+} NMWifiFactoryClass;
 
 static GType nm_wifi_factory_get_type (void);
 
+G_DEFINE_TYPE (NMWifiFactory, nm_wifi_factory, NM_TYPE_DEVICE_FACTORY)
+
 /*****************************************************************************/
 
-struct _NMWifiFactory {
-	GObject parent;
-};
+NM_DEVICE_FACTORY_DECLARE_TYPES (
+	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES    (NM_LINK_TYPE_WIFI, NM_LINK_TYPE_OLPC_MESH)
+	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_OLPC_MESH_SETTING_NAME)
+)
 
-struct _NMWifiFactoryClass {
-	GObjectClass parent;
-};
-
-static void device_factory_interface_init (NMDeviceFactoryInterface *factory_iface);
-
-G_DEFINE_TYPE_EXTENDED (NMWifiFactory, nm_wifi_factory, G_TYPE_OBJECT, 0,
-                        G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_FACTORY, device_factory_interface_init))
+G_MODULE_EXPORT NMDeviceFactory *
+nm_device_factory_create (GError **error)
+{
+	return (NMDeviceFactory *) g_object_new (NM_TYPE_WIFI_FACTORY, NULL);
+}
 
 /*****************************************************************************/
 
@@ -99,11 +104,6 @@ create_device (NMDeviceFactory *factory,
 		return nm_device_olpc_mesh_new (iface);
 }
 
-NM_DEVICE_FACTORY_DECLARE_TYPES (
-	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES    (NM_LINK_TYPE_WIFI, NM_LINK_TYPE_OLPC_MESH)
-	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_OLPC_MESH_SETTING_NAME)
-)
-
 /*****************************************************************************/
 
 static void
@@ -112,21 +112,10 @@ nm_wifi_factory_init (NMWifiFactory *self)
 }
 
 static void
-nm_wifi_factory_class_init (NMWifiFactoryClass *wf_class)
+nm_wifi_factory_class_init (NMWifiFactoryClass *klass)
 {
-}
+	NMDeviceFactoryClass *factory_class = NM_DEVICE_FACTORY_CLASS (klass);
 
-static void
-device_factory_interface_init (NMDeviceFactoryInterface *factory_iface)
-{
-	factory_iface->create_device = create_device;
-	factory_iface->get_supported_types = get_supported_types;
-}
-
-/*****************************************************************************/
-
-G_MODULE_EXPORT NMDeviceFactory *
-nm_device_factory_create (GError **error)
-{
-	return (NMDeviceFactory *) g_object_new (NM_TYPE_WIFI_FACTORY, NULL);
+	factory_class->create_device = create_device;
+	factory_class->get_supported_types = get_supported_types;
 }

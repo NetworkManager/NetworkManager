@@ -485,8 +485,8 @@ nm_device_tun_class_init (NMDeviceTunClass *klass)
 
 /*****************************************************************************/
 
-#define NM_TYPE_TUN_FACTORY (nm_tun_factory_get_type ())
-#define NM_TUN_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_TUN_FACTORY, NMTunFactory))
+#define NM_TYPE_TUN_DEVICE_FACTORY (nm_tun_device_factory_get_type ())
+#define NM_TUN_DEVICE_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_TUN_DEVICE_FACTORY, NMTunDeviceFactory))
 
 static NMDevice *
 create_device (NMDeviceFactory *factory,
@@ -532,6 +532,5 @@ create_device (NMDeviceFactory *factory,
 NM_DEVICE_FACTORY_DEFINE_INTERNAL (TUN, Tun, tun,
 	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES (NM_LINK_TYPE_TUN, NM_LINK_TYPE_TAP)
 	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_TUN_SETTING_NAME),
-	factory_iface->create_device = create_device;
+	factory_class->create_device = create_device;
 );
-

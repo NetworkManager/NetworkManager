@@ -168,19 +168,3 @@ TESTS = \
 	test-wired-defname \
 	test-utils
 
-
-if ENABLE_TESTS
-
-check-local:
-	@for t in bond bridge ethernet infiniband ip_tunnel macvlan tun veth vlan vxlan; do \
-		# Ensure the device subclass factory registration constructors exist \
-		# which could inadvertently break if src/Makefile.am gets changed \
-		if ! LC_ALL=C nm $(top_builddir)/src/NetworkManager | LC_ALL=C grep -q "register_device_factory_internal_$$t" ; then \
-			echo "Testing device factory symbols... FAILED" ; \
-			exit 1 ; \
-		fi \
-	done
-	@echo "Testing device factory symbols... PASSED"
-
-endif
-

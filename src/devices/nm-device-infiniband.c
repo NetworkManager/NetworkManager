@@ -402,8 +402,8 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 
 /*****************************************************************************/
 
-#define NM_TYPE_INFINIBAND_FACTORY (nm_infiniband_factory_get_type ())
-#define NM_INFINIBAND_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_INFINIBAND_FACTORY, NMInfinibandFactory))
+#define NM_TYPE_INFINIBAND_DEVICE_FACTORY (nm_infiniband_device_factory_get_type ())
+#define NM_INFINIBAND_DEVICE_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_INFINIBAND_DEVICE_FACTORY, NMInfinibandDeviceFactory))
 
 static NMDevice *
 create_device (NMDeviceFactory *factory,
@@ -472,7 +472,7 @@ get_connection_iface (NMDeviceFactory *factory,
 NM_DEVICE_FACTORY_DEFINE_INTERNAL (INFINIBAND, Infiniband, infiniband,
 	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES    (NM_LINK_TYPE_INFINIBAND)
 	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_INFINIBAND_SETTING_NAME),
-	factory_iface->create_device = create_device;
-	factory_iface->get_connection_parent = get_connection_parent;
-	factory_iface->get_connection_iface = get_connection_iface;
-)
+	factory_class->create_device = create_device;
+	factory_class->get_connection_parent = get_connection_parent;
+	factory_class->get_connection_iface = get_connection_iface;
+);

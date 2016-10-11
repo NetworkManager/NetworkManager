@@ -46,13 +46,6 @@
 #define NM_IS_BLUEZ_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_BLUEZ_MANAGER))
 #define NM_BLUEZ_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_BLUEZ_MANAGER, NMBluezManagerClass))
 
-typedef struct _NMBluezManager NMBluezManager;
-typedef struct _NMBluezManagerClass NMBluezManagerClass;
-
-static GType nm_bluez_manager_get_type (void);
-
-/*****************************************************************************/
-
 typedef struct {
 	int bluez_version;
 
@@ -66,21 +59,33 @@ typedef struct {
 	GCancellable *async_cancellable;
 } NMBluezManagerPrivate;
 
-struct _NMBluezManager {
-	GObject parent;
+typedef struct {
+	NMDeviceFactory parent;
 	NMBluezManagerPrivate _priv;
-};
+} NMBluezManager;
 
-struct _NMBluezManagerClass {
-	GObjectClass parent;
-};
+typedef struct {
+	NMDeviceFactoryClass parent;
+} NMBluezManagerClass;
 
-static void device_factory_interface_init (NMDeviceFactoryInterface *factory_iface);
+static GType nm_bluez_manager_get_type (void);
 
-G_DEFINE_TYPE_EXTENDED (NMBluezManager, nm_bluez_manager, G_TYPE_OBJECT, 0,
-                        G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_FACTORY, device_factory_interface_init))
+G_DEFINE_TYPE (NMBluezManager, nm_bluez_manager, NM_TYPE_DEVICE_FACTORY);
 
 #define NM_BLUEZ_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMBluezManager, NM_IS_BLUEZ_MANAGER)
+
+/*****************************************************************************/
+
+NM_DEVICE_FACTORY_DECLARE_TYPES (
+	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES    (NM_LINK_TYPE_BNEP)
+	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_BLUETOOTH_SETTING_NAME)
+)
+
+G_MODULE_EXPORT NMDeviceFactory *
+nm_device_factory_create (GError **error)
+{
+	return (NMDeviceFactory *) g_object_new (NM_TYPE_BLUEZ_MANAGER, NULL);
+}
 
 /*****************************************************************************/
 
@@ -411,11 +416,6 @@ create_device (NMDeviceFactory *factory,
 	return NULL;
 }
 
-NM_DEVICE_FACTORY_DECLARE_TYPES (
-	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES    (NM_LINK_TYPE_BNEP)
-	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_BLUETOOTH_SETTING_NAME)
-)
-
 /*****************************************************************************/
 
 static void
@@ -454,22 +454,11 @@ static void
 nm_bluez_manager_class_init (NMBluezManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMDeviceFactoryClass *factory_class = NM_DEVICE_FACTORY_CLASS (klass);
 
 	object_class->dispose = dispose;
-}
 
-static void
-device_factory_interface_init (NMDeviceFactoryInterface *factory_iface)
-{
-	factory_iface->get_supported_types = get_supported_types;
-	factory_iface->create_device = create_device;
-	factory_iface->start = start;
-}
-
-/*****************************************************************************/
-
-G_MODULE_EXPORT NMDeviceFactory *
-nm_device_factory_create (GError **error)
-{
-	return (NMDeviceFactory *) g_object_new (NM_TYPE_BLUEZ_MANAGER, NULL);
+	factory_class->get_supported_types = get_supported_types;
+	factory_class->create_device = create_device;
+	factory_class->start = start;
 }
