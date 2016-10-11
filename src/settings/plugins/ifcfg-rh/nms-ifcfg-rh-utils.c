@@ -20,7 +20,7 @@
 
 #include "nm-default.h"
 
-#include "utils.h"
+#include "nms-ifcfg-rh-utils.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -28,7 +28,7 @@
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 
-#include "common.h"
+#include "nms-ifcfg-rh-common.h"
 
 /*
  * utils_single_quote_string

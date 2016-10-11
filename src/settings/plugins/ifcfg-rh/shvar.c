@@ -38,6 +38,175 @@
 
 #include "nm-core-internal.h"
 
+/*****************************************************************************/
+
+struct _shvarFile {
+	char      *fileName;    /* read-only */
+	int        fd;          /* read-only */
+	GList     *lineList;    /* read-only */
+	GList     *current;     /* set implicitly or explicitly, points to element of lineList */
+	gboolean   modified;    /* ignore */
+};
+
+/*****************************************************************************/
+
+/**
+ * svParseBoolean:
+ * @value: the input string
+ * @fallback: the fallback value
+ *
+ * Parses a string and returns the boolean value it contains or,
+ * in case no valid value is found, the fallback value. Valid values
+ * are: "yes", "true", "t", "y", "1" and "no", "false", "f", "n", "0".
+ *
+ * Returns: the parsed boolean value or @fallback.
+ */
+gint
+svParseBoolean (const char *value, gint fallback)
+{
+	if (!value)
+		return fallback;
+
+	if (   !g_ascii_strcasecmp ("yes", value)
+	    || !g_ascii_strcasecmp ("true", value)
+	    || !g_ascii_strcasecmp ("t", value)
+	    || !g_ascii_strcasecmp ("y", value)
+	    || !g_ascii_strcasecmp ("1", value))
+		return TRUE;
+	else if (   !g_ascii_strcasecmp ("no", value)
+	         || !g_ascii_strcasecmp ("false", value)
+	         || !g_ascii_strcasecmp ("f", value)
+	         || !g_ascii_strcasecmp ("n", value)
+	         || !g_ascii_strcasecmp ("0", value))
+		return FALSE;
+
+	return fallback;
+}
+
+/*****************************************************************************/
+
+/* create a new string with all necessary characters escaped.
+ * caller must free returned string
+ */
+static const char escapees[] = "\"'\\$~`";		/* must be escaped */
+static const char spaces[] = " \t|&;()<>";		/* only require "" */
+static const char newlines[] = "\n\r";			/* will be removed */
+
+const char *
+svEscape (const char *s, char **to_free)
+{
+	char *new;
+	int i, j, mangle = 0, space = 0, newline = 0;
+	int newlen, slen;
+
+	slen = strlen (s);
+
+	for (i = 0; i < slen; i++) {
+		if (strchr (escapees, s[i]))
+			mangle++;
+		if (strchr (spaces, s[i]))
+			space++;
+		if (strchr (newlines, s[i]))
+			newline++;
+	}
+	if (!mangle && !space && !newline) {
+		*to_free = NULL;
+		return s;
+	}
+
+	newlen = slen + mangle - newline + 3;	/* 3 is extra ""\0 */
+	new = g_malloc (newlen);
+
+	j = 0;
+	new[j++] = '"';
+	for (i = 0; i < slen; i++) {
+		if (strchr (newlines, s[i]))
+			continue;
+		if (strchr (escapees, s[i])) {
+			new[j++] = '\\';
+		}
+		new[j++] = s[i];
+	}
+	new[j++] = '"';
+	new[j++] = '\0';
+	g_assert (j == slen + mangle - newline + 3);
+
+	*to_free = new;
+	return new;
+}
+
+/* remove escaped characters in place */
+void
+svUnescape (char *s)
+{
+	size_t len, idx_rd = 0, idx_wr = 0;
+	char c;
+
+	len = strlen (s);
+	if (len < 2) {
+		if (s[0] == '\\')
+			s[0] = '\0';
+		return;
+	}
+
+	if ((s[0] == '"' || s[0] == '\'') && s[0] == s[len-1]) {
+		if (len == 2) {
+			s[0] = '\0';
+			return;
+		}
+		if (len == 3) {
+			if (s[1] == '\\') {
+				s[0] = '\0';
+			} else {
+				s[0] = s[1];
+				s[1] = '\0';
+			}
+			return;
+		}
+		s[--len] = '\0';
+		idx_rd = 1;
+	} else {
+		/* seek for the first escape... */
+		char *p = strchr (s, '\\');
+
+		if (!p)
+			return;
+		if (p[1] == '\0') {
+			p[0] = '\0';
+			return;
+		}
+		idx_wr = idx_rd = (p - s);
+	}
+
+	/* idx_rd points to the first escape. Walk the string and shift the
+	 * characters from idx_rd to idx_wr.
+	 */
+	while ((c = s[idx_rd++])) {
+		if (c == '\\') {
+			if (s[idx_rd] == '\0') {
+				s[idx_wr] = '\0';
+				return;
+			}
+			s[idx_wr++] = s[idx_rd++];
+			continue;
+		}
+		s[idx_wr++] = c;
+	}
+	s[idx_wr] = '\0';
+}
+
+/*****************************************************************************/
+
+const char *
+svFileGetName (const shvarFile *s)
+{
+	nm_assert (s);
+
+	return s->fileName;
+}
+
+/*****************************************************************************/
+
 /* Open the file <name>, returning a shvarFile on success and NULL on failure.
  * Add a wrinkle to let the caller specify whether or not to create the file
  * (actually, return a structure anyway) if it doesn't exist.
@@ -136,114 +305,45 @@ svCreateFile (const char *name)
 	return svOpenFileInternal (name, TRUE, NULL);
 }
 
-/* remove escaped characters in place */
-void
-svUnescape (char *s)
+/*****************************************************************************/
+
+static const char *
+find_line (shvarFile *s, const char *key)
 {
-	size_t len, idx_rd = 0, idx_wr = 0;
-	char c;
+	const char *line;
+	gsize len;
 
-	len = strlen (s);
-	if (len < 2) {
-		if (s[0] == '\\')
-			s[0] = '\0';
-		return;
+	len = strlen (key);
+
+	for (s->current = s->lineList; s->current; s->current = s->current->next) {
+		line = s->current->data;
+		if (!strncmp (key, line, len) && line[len] == '=')
+			return line + len + 1;
 	}
 
-	if ((s[0] == '"' || s[0] == '\'') && s[0] == s[len-1]) {
-		if (len == 2) {
-			s[0] = '\0';
-			return;
-		}
-		if (len == 3) {
-			if (s[1] == '\\') {
-				s[0] = '\0';
-			} else {
-				s[0] = s[1];
-				s[1] = '\0';
-			}
-			return;
-		}
-		s[--len] = '\0';
-		idx_rd = 1;
-	} else {
-		/* seek for the first escape... */
-		char *p = strchr (s, '\\');
-
-		if (!p)
-			return;
-		if (p[1] == '\0') {
-			p[0] = '\0';
-			return;
-		}
-		idx_wr = idx_rd = (p - s);
-	}
-
-	/* idx_rd points to the first escape. Walk the string and shift the
-	 * characters from idx_rd to idx_wr.
-	 */
-	while ((c = s[idx_rd++])) {
-		if (c == '\\') {
-			if (s[idx_rd] == '\0') {
-				s[idx_wr] = '\0';
-				return;
-			}
-			s[idx_wr++] = s[idx_rd++];
-			continue;
-		}
-		s[idx_wr++] = c;
-	}
-	s[idx_wr] = '\0';
+	return NULL;
 }
 
-/* create a new string with all necessary characters escaped.
- * caller must free returned string
- */
-static const char escapees[] = "\"'\\$~`";		/* must be escaped */
-static const char spaces[] = " \t|&;()<>";		/* only require "" */
-static const char newlines[] = "\n\r";			/* will be removed */
-
-const char *
-svEscape (const char *s, char **to_free)
+/* svGetValueFull() is identical to svGetValue() except that
+ * svGetValue() will never return an empty value (but %NULL instead).
+ * svGetValueFull() will return empty values if that is the value for the @key. */
+char *
+svGetValueFull (shvarFile *s, const char *key, gboolean verbatim)
 {
-	char *new;
-	int i, j, mangle = 0, space = 0, newline = 0;
-	int newlen, slen;
+	const char *line_val;
+	char *value;
 
-	slen = strlen (s);
+	g_return_val_if_fail (s != NULL, NULL);
+	g_return_val_if_fail (key != NULL, NULL);
 
-	for (i = 0; i < slen; i++) {
-		if (strchr (escapees, s[i]))
-			mangle++;
-		if (strchr (spaces, s[i]))
-			space++;
-		if (strchr (newlines, s[i]))
-			newline++;
-	}
-	if (!mangle && !space && !newline) {
-		*to_free = NULL;
-		return s;
-	}
+	line_val = find_line (s, key);
+	if (!line_val)
+		return NULL;
 
-	newlen = slen + mangle - newline + 3;	/* 3 is extra ""\0 */
-	new = g_malloc (newlen);
-
-	j = 0;
-	new[j++] = '"';
-	for (i = 0; i < slen; i++) {
-		if (strchr (newlines, s[i]))
-			continue;
-		if (strchr (escapees, s[i])) {
-			new[j++] = '\\';
-		}
-		new[j++] = s[i];
-	}
-	new[j++] = '"';
-	new[j++] = '\0';
-	g_assert (j == slen + mangle - newline + 3);
-
-	*to_free = new;
-	return new;
+	value = g_strchomp (g_strdup (line_val));
+	if (!verbatim)
+		svUnescape (value);
+	return value;
 }
 
 /* Get the value associated with the key, and leave the current pointer
@@ -261,68 +361,6 @@ svGetValue (shvarFile *s, const char *key, gboolean verbatim)
 		return NULL;
 	}
 	return value;
-}
-
-/* svGetValueFull() is identical to svGetValue() except that
- * svGetValue() will never return an empty value (but %NULL instead).
- * svGetValueFull() will return empty values if that is the value for the @key. */
-char *
-svGetValueFull (shvarFile *s, const char *key, gboolean verbatim)
-{
-	char *value = NULL;
-	char *line;
-	guint len;
-
-	g_return_val_if_fail (s != NULL, NULL);
-	g_return_val_if_fail (key != NULL, NULL);
-
-	len = strlen (key);
-
-	for (s->current = s->lineList; s->current; s->current = s->current->next) {
-		line = s->current->data;
-		if (!strncmp (key, line, len) && line[len] == '=') {
-			/* Strip trailing spaces before unescaping to preserve spaces quoted whitespace */
-			value = g_strchomp (g_strdup (line + len + 1));
-			if (!verbatim)
-				svUnescape (value);
-			break;
-		}
-	}
-
-	return value;
-}
-
-/**
- * svParseBoolean:
- * @value: the input string
- * @fallback: the fallback value
- *
- * Parses a string and returns the boolean value it contains or,
- * in case no valid value is found, the fallback value. Valid values
- * are: "yes", "true", "t", "y", "1" and "no", "false", "f", "n", "0".
- *
- * Returns: the parsed boolean value or @fallback.
- */
-gint
-svParseBoolean (const char *value, gint fallback)
-{
-	if (!value)
-		return fallback;
-
-	if (   !g_ascii_strcasecmp ("yes", value)
-	    || !g_ascii_strcasecmp ("true", value)
-	    || !g_ascii_strcasecmp ("t", value)
-	    || !g_ascii_strcasecmp ("y", value)
-	    || !g_ascii_strcasecmp ("1", value))
-		return TRUE;
-	else if (   !g_ascii_strcasecmp ("no", value)
-	         || !g_ascii_strcasecmp ("false", value)
-	         || !g_ascii_strcasecmp ("f", value)
-	         || !g_ascii_strcasecmp ("n", value)
-	         || !g_ascii_strcasecmp ("0", value))
-		return FALSE;
-
-	return fallback;
 }
 
 /* svGetValueBoolean:
@@ -375,16 +413,7 @@ svGetValueInt64 (shvarFile *s, const char *key, guint base, gint64 min, gint64 m
 	return result;
 }
 
-/* Set the variable <key> equal to the value <value>.
- * If <key> does not exist, and the <current> pointer is set, append
- * the key=value pair after that line.  Otherwise, append the pair
- * to the bottom of the file.
- */
-void
-svSetValue (shvarFile *s, const char *key, const char *value, gboolean verbatim)
-{
-	svSetValueFull (s, key, value && value[0] ? value : NULL, verbatim);
-}
+/*****************************************************************************/
 
 /* Same as svSetValue() but it preserves empty @value -- contrary to
  * svSetValue() for which "" effectively means to remove the value. */
@@ -404,11 +433,10 @@ svSetValueFull (shvarFile *s, const char *key, const char *value, gboolean verba
 		newval = value;
 	else
 		newval = svEscape (value, &newval_free);
-	oldval = svGetValueFull (s, key, FALSE);
 
 	if (!newval) {
 		/* delete value */
-		if (oldval) {
+		if (find_line (s, key)) {
 			/* delete line */
 			s->lineList = g_list_remove_link (s->lineList, s->current);
 			g_free (s->current->data);
@@ -417,6 +445,8 @@ svSetValueFull (shvarFile *s, const char *key, const char *value, gboolean verba
 		}
 		return;
 	}
+
+	oldval = svGetValueFull (s, key, FALSE);
 
 	keyValue = g_strdup_printf ("%s=%s", key, newval);
 	if (!oldval) {
@@ -438,14 +468,34 @@ svSetValueFull (shvarFile *s, const char *key, const char *value, gboolean verba
 		g_free (keyValue);
 }
 
+/* Set the variable <key> equal to the value <value>.
+ * If <key> does not exist, and the <current> pointer is set, append
+ * the key=value pair after that line.  Otherwise, append the pair
+ * to the bottom of the file.
+ */
+void
+svSetValue (shvarFile *s, const char *key, const char *value, gboolean verbatim)
+{
+	svSetValueFull (s, key, value && value[0] ? value : NULL, verbatim);
+}
+
 void
 svSetValueInt64 (shvarFile *s, const char *key, gint64 value)
 {
-	gs_free char *v = NULL;
+	char buf[NM_DECIMAL_STR_MAX (value)];
 
-	v = g_strdup_printf ("%"G_GINT64_FORMAT, value);
-	svSetValueFull (s, key, v, TRUE);
+	svSetValueFull (s, key,
+	                nm_sprintf_buf (buf, "%"G_GINT64_FORMAT, value),
+	                TRUE);
 }
+
+void
+svUnsetValue (shvarFile *s, const char *key)
+{
+	svSetValueFull (s, key, NULL, FALSE);
+}
+
+/*****************************************************************************/
 
 /* Write the current contents iff modified.  Returns FALSE on error
  * and TRUE on success.  Do not write if no values have been modified.

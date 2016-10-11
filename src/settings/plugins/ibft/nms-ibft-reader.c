@@ -20,6 +20,8 @@
 
 #include "nm-default.h"
 
+#include "nms-ibft-reader.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
@@ -35,7 +37,7 @@
 #include "nm-platform.h"
 #include "NetworkManagerUtils.h"
 
-#include "reader.h"
+/*****************************************************************************/
 
 #define PARSE_WARNING(msg...) nm_log_warn (LOGD_SETTINGS, "    " msg)
 
@@ -75,7 +77,7 @@ remove_most_whitespace (const char *src)
 #define TAG_END   "# END RECORD"
 
 /**
- * read_ibft_blocks:
+ * nms_ibft_reader_load_blocks:
  * @iscsiadm_path: path to iscsiadm program
  * @out_blocks: on return if successful, a #GSList of #GPtrArray, or %NULL on
  * failure
@@ -88,9 +90,9 @@ remove_most_whitespace (const char *src)
  * Returns: %TRUE on success, %FALSE on errors
  */
 gboolean
-read_ibft_blocks (const char *iscsiadm_path,
-                  GSList **out_blocks,
-                  GError **error)
+nms_ibft_reader_load_blocks (const char *iscsiadm_path,
+                             GSList **out_blocks,
+                             GError **error)
 {
 	const char *argv[4] = { iscsiadm_path, "-m", "fw", NULL };
 	const char *envp[1] = { NULL };
@@ -205,20 +207,20 @@ match_iscsiadm_tag (const char *line, const char *tag)
 }
 
 /**
- * parse_ibft_config:
- * @data: an array of iscsiadm interface block lines
+ * nms_ibft_reader_parse_block:
+ * @block: an array of iscsiadm interface block lines
  * @error: return location for errors
  * @...: pairs of key (const char *) : location (const char **) indicating the
  * key to look for and the location to store the retrieved value in
  *
  * Parses an iscsiadm interface block into variables requested by the caller.
  * Callers should verify the returned data is complete and valid.  Returned
- * strings are owned by @data and should not be used after @data is freed.
+ * strings are owned by @block and should not be used after @block is freed.
  *
  * Returns: %TRUE if at least , %FALSE on failure
  */
 gboolean
-parse_ibft_config (const GPtrArray *data, GError **error, ...)
+nms_ibft_reader_parse_block (const GPtrArray *block, GError **error, ...)
 {
 	gboolean success = FALSE;
 	const char **out_value, *p;
@@ -226,16 +228,16 @@ parse_ibft_config (const GPtrArray *data, GError **error, ...)
 	const char *key;
 	guint i;
 
-	g_return_val_if_fail (data != NULL, FALSE);
-	g_return_val_if_fail (data->len > 0, FALSE);
+	g_return_val_if_fail (block != NULL, FALSE);
+	g_return_val_if_fail (block->len > 0, FALSE);
 
 	/* Find requested keys and populate return values */
 	va_start (ap, error);
 	while ((key = va_arg (ap, const char *))) {
 		out_value = va_arg (ap, const char **);
 		*out_value = NULL;
-		for (i = 0; i < data->len; i++) {
-			p = match_iscsiadm_tag (g_ptr_array_index (data, i), key);
+		for (i = 0; i < block->len; i++) {
+			p = match_iscsiadm_tag (g_ptr_array_index (block, i), key);
 			if (p) {
 				*out_value = p;
 				success = TRUE;
@@ -270,14 +272,14 @@ ip4_setting_add_from_block (const GPtrArray *block,
 
 	g_assert (block);
 
-	if (!parse_ibft_config (block, error,
-	                        ISCSI_BOOTPROTO_TAG, &s_method,
-	                        ISCSI_IPADDR_TAG,    &s_ipaddr,
-	                        ISCSI_SUBNET_TAG,    &s_netmask,
-	                        ISCSI_GATEWAY_TAG,   &s_gateway,
-	                        ISCSI_DNS1_TAG,      &s_dns1,
-	                        ISCSI_DNS2_TAG,      &s_dns2,
-	                        NULL))
+	if (!nms_ibft_reader_parse_block (block, error,
+	                                  ISCSI_BOOTPROTO_TAG, &s_method,
+	                                  ISCSI_IPADDR_TAG,    &s_ipaddr,
+	                                  ISCSI_SUBNET_TAG,    &s_netmask,
+	                                  ISCSI_GATEWAY_TAG,   &s_gateway,
+	                                  ISCSI_DNS1_TAG,      &s_dns1,
+	                                  ISCSI_DNS2_TAG,      &s_dns2,
+	                                  NULL))
 		goto error;
 
 	if (!s_method) {
@@ -376,11 +378,11 @@ connection_setting_add (const GPtrArray *block,
 	char *id, *uuid;
 	const char *s_hwaddr = NULL, *s_ip4addr = NULL, *s_vlanid;
 
-	if (!parse_ibft_config (block, error,
-	                        ISCSI_VLAN_ID_TAG, &s_vlanid,
-	                        ISCSI_HWADDR_TAG,  &s_hwaddr,
-	                        ISCSI_IPADDR_TAG,  &s_ip4addr,
-	                        NULL))
+	if (!nms_ibft_reader_parse_block (block, error,
+	                                  ISCSI_VLAN_ID_TAG, &s_vlanid,
+	                                  ISCSI_HWADDR_TAG,  &s_hwaddr,
+	                                  ISCSI_IPADDR_TAG,  &s_ip4addr,
+	                                  NULL))
 		return FALSE;
 	if (!s_hwaddr) {
 		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
@@ -421,7 +423,7 @@ is_ibft_vlan_device (const GPtrArray *block)
 {
 	char *s_vlan_id = NULL;
 
-	if (parse_ibft_config (block, NULL, ISCSI_VLAN_ID_TAG, &s_vlan_id, NULL)) {
+	if (nms_ibft_reader_parse_block (block, NULL, ISCSI_VLAN_ID_TAG, &s_vlan_id, NULL)) {
 		g_assert (s_vlan_id);
 
 		/* VLAN 0 is normally a valid VLAN ID, but in the iBFT case it
@@ -449,7 +451,7 @@ vlan_setting_add_from_block (const GPtrArray *block,
 	/* This won't fail since this function shouldn't be called unless the
 	 * iBFT VLAN ID exists and is > 0.
 	 */
-	success = parse_ibft_config (block, NULL, ISCSI_VLAN_ID_TAG, &vlan_id_str, NULL);
+	success = nms_ibft_reader_parse_block (block, NULL, ISCSI_VLAN_ID_TAG, &vlan_id_str, NULL);
 	g_assert (success);
 	g_assert (vlan_id_str);
 
@@ -479,7 +481,7 @@ wired_setting_add_from_block (const GPtrArray *block,
 	g_assert (block);
 	g_assert (connection);
 
-	if (!parse_ibft_config (block, NULL, ISCSI_HWADDR_TAG, &hwaddr, NULL)) {
+	if (!nms_ibft_reader_parse_block (block, NULL, ISCSI_HWADDR_TAG, &hwaddr, NULL)) {
 		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		                     "iBFT: malformed iscsiadm record: missing " ISCSI_HWADDR_TAG);
 		return FALSE;
@@ -500,7 +502,7 @@ wired_setting_add_from_block (const GPtrArray *block,
 }
 
 NMConnection *
-connection_from_block (const GPtrArray *block, GError **error)
+nms_ibft_reader_get_connection_from_block (const GPtrArray *block, GError **error)
 {
 	NMConnection *connection = NULL;
 	gboolean is_vlan = FALSE;
@@ -508,7 +510,7 @@ connection_from_block (const GPtrArray *block, GError **error)
 
 	g_assert (block);
 
-	if (!parse_ibft_config (block, error, ISCSI_IFACE_TAG, &iface, NULL)) {
+	if (!nms_ibft_reader_parse_block (block, error, ISCSI_IFACE_TAG, &iface, NULL)) {
 		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		                     "iBFT: malformed iscsiadm record: missing " ISCSI_IFACE_TAG);
 		return NULL;

@@ -26,7 +26,7 @@
 
 #include <nm-settings-connection.h>
 
-#include "interface_parser.h"
+#include "nms-ifupdown-interface-parser.h"
 
 #define NM_TYPE_IFUPDOWN_CONNECTION            (nm_ifupdown_connection_get_type ())
 #define NM_IFUPDOWN_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_IFUPDOWN_CONNECTION, NMIfupdownConnection))

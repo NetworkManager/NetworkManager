@@ -615,6 +615,20 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro) {
 }
 /*****************************************************************************/
 
+/* taken from systemd's DECIMAL_STR_MAX()
+ *
+ * Returns the number of chars needed to format variables of the
+ * specified type as a decimal string. Adds in extra space for a
+ * negative '-' prefix (hence works correctly on signed
+ * types). Includes space for the trailing NUL. */
+#define NM_DECIMAL_STR_MAX(type) \
+    (2+(sizeof(type) <= 1 ? 3 : \
+        sizeof(type) <= 2 ? 5 : \
+        sizeof(type) <= 4 ? 10 : \
+        sizeof(type) <= 8 ? 20 : sizeof(int[-2*(sizeof(type) > 8)])))
+
+/*****************************************************************************/
+
 /* if @str is NULL, return "(null)". Otherwise, allocate a buffer using
  * alloca() of size @bufsize and fill it with @str. @str will be quoted with
  * single quote, and in case @str is too long, the final quote will be '^'. */
@@ -646,23 +660,27 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro) {
 
 #define nm_sprintf_buf(buf, format, ...) ({ \
 		char * _buf = (buf); \
+		int _buf_len; \
 		\
 		/* some static assert trying to ensure that the buffer is statically allocated.
 		 * It disallows a buffer size of sizeof(gpointer) to catch that. */ \
 		G_STATIC_ASSERT (G_N_ELEMENTS (buf) == sizeof (buf) && sizeof (buf) != sizeof (char *)); \
-		g_snprintf (_buf, sizeof (buf), \
-		            ""format"", ##__VA_ARGS__); \
+		_buf_len = g_snprintf (_buf, sizeof (buf), \
+		                       ""format"", ##__VA_ARGS__); \
+		nm_assert (_buf_len < sizeof (buf)); \
 		_buf; \
 	})
 
 #define nm_sprintf_bufa(n_elements, format, ...) \
 	({ \
 		char *_buf; \
+		int _buf_len; \
 		\
 		G_STATIC_ASSERT (sizeof (char[MAX ((n_elements), 1)]) == (n_elements)); \
 		_buf = g_alloca (n_elements); \
-		g_snprintf (_buf, n_elements, \
-		            ""format"", ##__VA_ARGS__); \
+		_buf_len = g_snprintf (_buf, (n_elements), \
+		                       ""format"", ##__VA_ARGS__); \
+		nm_assert (_buf_len < (n_elements)); \
 		_buf; \
 	})
 

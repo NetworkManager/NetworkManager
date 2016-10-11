@@ -23,7 +23,7 @@
 
 #include "nm-default.h"
 
-#include "plugin.h"
+#include "nms-ifcfg-rh-plugin.h"
 
 #include <string.h>
 #include <unistd.h>
@@ -39,12 +39,12 @@
 #include "NetworkManagerUtils.h"
 #include "nm-exported-object.h"
 
-#include "nm-ifcfg-connection.h"
+#include "nms-ifcfg-rh-connection.h"
+#include "nms-ifcfg-rh-common.h"
+#include "nms-ifcfg-rh-reader.h"
+#include "nms-ifcfg-rh-writer.h"
+#include "nms-ifcfg-rh-utils.h"
 #include "shvar.h"
-#include "common.h"
-#include "reader.h"
-#include "writer.h"
-#include "utils.h"
 
 #include "nmdbus-ifcfg-rh.h"
 

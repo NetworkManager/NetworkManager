@@ -24,7 +24,7 @@
 
 #include "nm-default.h"
 
-#include "plugin.h"
+#include "nms-ifupdown-plugin.h"
 
 #include <string.h>
 #include <arpa/inet.h>
@@ -43,9 +43,9 @@
 #include "NetworkManagerUtils.h"
 #include "nm-config.h"
 
-#include "interface_parser.h"
-#include "nm-ifupdown-connection.h"
-#include "parser.h"
+#include "nms-ifupdown-interface-parser.h"
+#include "nms-ifupdown-connection.h"
+#include "nms-ifupdown-parser.h"
 
 #define ENI_INTERFACES_FILE "/etc/network/interfaces"
 

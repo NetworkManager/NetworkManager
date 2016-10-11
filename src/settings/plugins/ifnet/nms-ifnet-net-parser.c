@@ -21,18 +21,18 @@
 
 #include "nm-default.h"
 
+#include "nms-ifnet-net-parser.h"
+
 #include <string.h>
 #include <stdio.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 
 #include "nm-settings-plugin.h"
-
-#include "plugin.h"
 #include "nm-platform.h"
 
-#include "net_parser.h"
-#include "net_utils.h"
+#include "nms-ifnet-plugin.h"
+#include "nms-ifnet-net-utils.h"
 
 /* Save all the connection information */
 static GHashTable *conn_table;

@@ -21,13 +21,15 @@
 
 #include "nm-default.h"
 
+#include "nms-ifnet-wpa-parser.h"
+
 #include <string.h>
 #include <stdlib.h>
 
 #include "nm-settings-plugin.h"
-#include "wpa_parser.h"
-#include "net_parser.h"
-#include "net_utils.h"
+
+#include "nms-ifnet-net-parser.h"
+#include "nms-ifnet-net-utils.h"
 
 /* Security information */
 static GHashTable *wsec_table = NULL;

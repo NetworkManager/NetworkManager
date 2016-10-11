@@ -21,8 +21,10 @@
 
 #ifndef _CONNECTION_PARSER_H
 #define _CONNECTION_PARSER_H
+
 #include <nm-connection.h>
-#include "net_parser.h"
+
+#include "nms-ifnet-net-parser.h"
 
 gboolean ifnet_can_write_connection (NMConnection *connection, GError **error);
 

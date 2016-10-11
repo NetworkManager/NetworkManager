@@ -20,45 +20,45 @@
 
 #include "nm-default.h"
 
-#include "nm-ibft-connection.h"
+#include "nms-ibft-connection.h"
 
 #include <string.h>
 #include <net/ethernet.h>
 #include <netinet/ether.h>
 #include <glib/gstdio.h>
 
-#include "reader.h"
+#include "nms-ibft-reader.h"
 
 /*****************************************************************************/
 
-struct _NMIbftConnection {
+struct _NMSIbftConnection {
 	NMSettingsConnection parent;
 };
 
-struct _NMIbftConnectionClass {
+struct _NMSIbftConnectionClass {
 	NMSettingsConnectionClass parent;
 };
 
-G_DEFINE_TYPE (NMIbftConnection, nm_ibft_connection, NM_TYPE_SETTINGS_CONNECTION)
+G_DEFINE_TYPE (NMSIbftConnection, nms_ibft_connection, NM_TYPE_SETTINGS_CONNECTION)
 
 /*****************************************************************************/
 
 static void
-nm_ibft_connection_init (NMIbftConnection *connection)
+nms_ibft_connection_init (NMSIbftConnection *connection)
 {
 }
 
-NMIbftConnection *
-nm_ibft_connection_new (const GPtrArray *block, GError **error)
+NMSIbftConnection *
+nms_ibft_connection_new (const GPtrArray *block, GError **error)
 {
 	NMConnection *source;
 	GObject *object;
 
-	source = connection_from_block (block, error);
+	source = nms_ibft_reader_get_connection_from_block (block, error);
 	if (!source)
 		return NULL;
 
-	object = g_object_new (NM_TYPE_IBFT_CONNECTION, NULL);
+	object = g_object_new (NMS_TYPE_IBFT_CONNECTION, NULL);
 	/* Update settings with what was read from iscsiadm */
 	if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
 	                                              source,
@@ -67,11 +67,11 @@ nm_ibft_connection_new (const GPtrArray *block, GError **error)
 	                                              error))
 		g_clear_object (&object);
 
-	return (NMIbftConnection *) object;
+	return (NMSIbftConnection *) object;
 }
 
 static void
-nm_ibft_connection_class_init (NMIbftConnectionClass *ibft_connection_class)
+nms_ibft_connection_class_init (NMSIbftConnectionClass *ibft_connection_class)
 {
 }
 

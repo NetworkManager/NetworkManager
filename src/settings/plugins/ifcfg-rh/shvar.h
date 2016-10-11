@@ -32,14 +32,8 @@
 #define _SHVAR_H
 
 typedef struct _shvarFile shvarFile;
-struct _shvarFile {
-	char      *fileName;    /* read-only */
-	int        fd;          /* read-only */
-	GList     *lineList;    /* read-only */
-	GList     *current;     /* set implicitly or explicitly, points to element of lineList */
-	gboolean   modified;    /* ignore */
-};
 
+const char *svFileGetName (const shvarFile *s);
 
 /* Create the file <name>, return a shvarFile (never fails) */
 shvarFile *svCreateFile (const char *name);
@@ -73,6 +67,7 @@ void svSetValue (shvarFile *s, const char *key, const char *value, gboolean verb
 void svSetValueFull (shvarFile *s, const char *key, const char *value, gboolean verbatim);
 void svSetValueInt64 (shvarFile *s, const char *key, gint64 value);
 
+void svUnsetValue (shvarFile *s, const char *key);
 
 /* Write the current contents iff modified.  Returns FALSE on error
  * and TRUE on success.  Do not write if no values have been modified.

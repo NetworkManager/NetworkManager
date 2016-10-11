@@ -20,7 +20,7 @@
 
 #include "nm-default.h"
 
-#include "plugin.h"
+#include "nms-ibft-plugin.h"
 
 #include <string.h>
 #include <unistd.h>
@@ -31,57 +31,57 @@
 #include "nm-settings-plugin.h"
 #include "NetworkManagerUtils.h"
 
-#include "reader.h"
-#include "nm-ibft-connection.h"
+#include "nms-ibft-reader.h"
+#include "nms-ibft-connection.h"
 
 /*****************************************************************************/
 
 typedef struct {
 	GHashTable *connections;  /* uuid::connection */
 	gboolean initialized;
-} SettingsPluginIbftPrivate;
+} NMSIbftPluginPrivate;
 
-struct _SettingsPluginIbft {
+struct _NMSIbftPlugin {
 	GObject parent;
-	SettingsPluginIbftPrivate _priv;
+	NMSIbftPluginPrivate _priv;
 };
 
-struct _SettingsPluginIbftClass {
+struct _NMSIbftPluginClass {
 	GObjectClass parent;
 };
 
 static void settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface);
 
-G_DEFINE_TYPE_EXTENDED (SettingsPluginIbft, settings_plugin_ibft, G_TYPE_OBJECT, 0,
+G_DEFINE_TYPE_EXTENDED (NMSIbftPlugin, nms_ibft_plugin, G_TYPE_OBJECT, 0,
                         G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_PLUGIN,
                                                settings_plugin_interface_init))
 
-#define SETTINGS_PLUGIN_IBFT_GET_PRIVATE(self) _NM_GET_PRIVATE (self, SettingsPluginIbft, SETTINGS_IS_PLUGIN_IBFT)
+#define NMS_IBFT_PLUGIN_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMSIbftPlugin, NMS_IS_IBFT_PLUGIN)
 
 /*****************************************************************************/
 
-static SettingsPluginIbft *settings_plugin_ibft_get (void);
+static NMSIbftPlugin *nms_ibft_plugin_get (void);
 
-NM_DEFINE_SINGLETON_GETTER (SettingsPluginIbft, settings_plugin_ibft_get, SETTINGS_TYPE_PLUGIN_IBFT);
+NM_DEFINE_SINGLETON_GETTER (NMSIbftPlugin, nms_ibft_plugin_get, NMS_TYPE_IBFT_PLUGIN);
 
 /*****************************************************************************/
 
 static void
-read_connections (SettingsPluginIbft *self)
+read_connections (NMSIbftPlugin *self)
 {
-	SettingsPluginIbftPrivate *priv = SETTINGS_PLUGIN_IBFT_GET_PRIVATE (self);
+	NMSIbftPluginPrivate *priv = NMS_IBFT_PLUGIN_GET_PRIVATE (self);
 	GSList *blocks = NULL, *iter;
 	GError *error = NULL;
-	NMIbftConnection *connection;
+	NMSIbftConnection *connection;
 
-	if (!read_ibft_blocks ("/sbin/iscsiadm", &blocks, &error)) {
+	if (!nms_ibft_reader_load_blocks ("/sbin/iscsiadm", &blocks, &error)) {
 		nm_log_dbg (LOGD_SETTINGS, "ibft: failed to read iscsiadm records: %s", error->message);
 		g_error_free (error);
 		return;
 	}
 
 	for (iter = blocks; iter; iter = iter->next) {
-		connection = nm_ibft_connection_new (iter->data, &error);
+		connection = nms_ibft_connection_new (iter->data, &error);
 		if (connection) {
 			nm_log_info (LOGD_SETTINGS, "ibft: read connection '%s'",
 			             nm_connection_get_id (NM_CONNECTION (connection)));
@@ -100,11 +100,11 @@ read_connections (SettingsPluginIbft *self)
 static GSList *
 get_connections (NMSettingsPlugin *config)
 {
-	SettingsPluginIbft *self = SETTINGS_PLUGIN_IBFT (config);
-	SettingsPluginIbftPrivate *priv = SETTINGS_PLUGIN_IBFT_GET_PRIVATE (self);
+	NMSIbftPlugin *self = NMS_IBFT_PLUGIN (config);
+	NMSIbftPluginPrivate *priv = NMS_IBFT_PLUGIN_GET_PRIVATE (self);
 	GSList *list = NULL;
 	GHashTableIter iter;
-	NMIbftConnection *connection;
+	NMSIbftConnection *connection;
 
 	if (!priv->initialized) {
 		read_connections (self);
@@ -148,9 +148,9 @@ init (NMSettingsPlugin *config)
 }
 
 static void
-settings_plugin_ibft_init (SettingsPluginIbft *self)
+nms_ibft_plugin_init (NMSIbftPlugin *self)
 {
-	SettingsPluginIbftPrivate *priv = SETTINGS_PLUGIN_IBFT_GET_PRIVATE (self);
+	NMSIbftPluginPrivate *priv = NMS_IBFT_PLUGIN_GET_PRIVATE (self);
 
 	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
 }
@@ -158,19 +158,19 @@ settings_plugin_ibft_init (SettingsPluginIbft *self)
 static void
 dispose (GObject *object)
 {
-	SettingsPluginIbft *self = SETTINGS_PLUGIN_IBFT (object);
-	SettingsPluginIbftPrivate *priv = SETTINGS_PLUGIN_IBFT_GET_PRIVATE (self);
+	NMSIbftPlugin *self = NMS_IBFT_PLUGIN (object);
+	NMSIbftPluginPrivate *priv = NMS_IBFT_PLUGIN_GET_PRIVATE (self);
 
 	if (priv->connections) {
 		g_hash_table_destroy (priv->connections);
 		priv->connections = NULL;
 	}
 
-	G_OBJECT_CLASS (settings_plugin_ibft_parent_class)->dispose (object);
+	G_OBJECT_CLASS (nms_ibft_plugin_parent_class)->dispose (object);
 }
 
 static void
-settings_plugin_ibft_class_init (SettingsPluginIbftClass *req_class)
+nms_ibft_plugin_class_init (NMSIbftPluginClass *req_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (req_class);
 
@@ -202,5 +202,5 @@ settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface)
 G_MODULE_EXPORT GObject *
 nm_settings_plugin_factory (void)
 {
-	return g_object_ref (settings_plugin_ibft_get ());
+	return g_object_ref (nms_ibft_plugin_get ());
 }

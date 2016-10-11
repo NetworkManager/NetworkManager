@@ -18,18 +18,19 @@
  * Copyright 2014 Red Hat, Inc.
  */
 
-#ifndef __READER_H__
-#define __READER_H__
+#ifndef __NMS_IBFT_PLUGIN_H__
+#define __NMS_IBFT_PLUGIN_H__
 
-#include <nm-connection.h>
+#define NMS_TYPE_IBFT_PLUGIN            (nms_ibft_plugin_get_type ())
+#define NMS_IBFT_PLUGIN(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMS_TYPE_IBFT_PLUGIN, NMSIbftPlugin))
+#define NMS_IBFT_PLUGIN_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMS_TYPE_IBFT_PLUGIN, NMSIbftPluginClass))
+#define NMS_IS_IBFT_PLUGIN(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NMS_TYPE_IBFT_PLUGIN))
+#define NMS_IS_IBFT_PLUGIN_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NMS_TYPE_IBFT_PLUGIN))
+#define NMS_IBFT_PLUGIN_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NMS_TYPE_IBFT_PLUGIN, NMSIbftPluginClass))
 
-gboolean read_ibft_blocks (const char *iscsiadm_path,
-                           GSList **out_blocks,
-                           GError **error);
+typedef struct _NMSIbftPlugin NMSIbftPlugin;
+typedef struct _NMSIbftPluginClass NMSIbftPluginClass;
 
-NMConnection *connection_from_block (const GPtrArray *block, GError **error);
+GType nms_ibft_plugin_get_type (void);
 
-/* For testcases */
-gboolean parse_ibft_config (const GPtrArray *data, GError **error, ...) G_GNUC_NULL_TERMINATED;
-
-#endif  /* __READER_H__ */
+#endif /* __NMS_IBFT_PLUGIN_H__ */

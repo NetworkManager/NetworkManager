@@ -22,7 +22,7 @@
 
 #include "nm-default.h"
 
-#include "nm-ifupdown-connection.h"
+#include "nms-ifupdown-connection.h"
 
 #include <string.h>
 #include <glib/gstdio.h>
@@ -32,7 +32,8 @@
 #include "nm-setting-wireless-security.h"
 #include "nm-settings-connection.h"
 #include "nm-settings-plugin.h"
-#include "parser.h"
+
+#include "nms-ifupdown-parser.h"
 
 /*****************************************************************************/
 

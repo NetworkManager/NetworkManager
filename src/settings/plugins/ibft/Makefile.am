@@ -4,11 +4,7 @@ SUBDIRS = . tests
 
 pkglib_LTLIBRARIES = libnm-settings-plugin-ibft.la
 
-noinst_LTLIBRARIES = libibft-io.la
-
-libibft_io_la_SOURCES = \
-	reader.c \
-	reader.h
+noinst_LTLIBRARIES = libnms-ibft-core.la
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/ \
@@ -24,14 +20,26 @@ AM_CPPFLAGS = \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DSBINDIR=\"$(sbindir)\"
 
-libnm_settings_plugin_ibft_la_SOURCES = \
-	plugin.c \
-	plugin.h \
-	nm-ibft-connection.c \
-	nm-ibft-connection.h
+###############################################################################
 
-libnm_settings_plugin_ibft_la_LDFLAGS = -module -avoid-version
-libnm_settings_plugin_ibft_la_LIBADD = libibft-io.la
+libnms_ibft_core_la_SOURCES = \
+	nms-ibft-reader.c \
+	nms-ibft-reader.h
+
+###############################################################################
+
+libnm_settings_plugin_ibft_la_SOURCES = \
+	nms-ibft-plugin.c \
+	nms-ibft-plugin.h \
+	nms-ibft-connection.c \
+	nms-ibft-connection.h
+
+libnm_settings_plugin_ibft_la_LDFLAGS = \
+	-module -avoid-version
+
+libnm_settings_plugin_ibft_la_LIBADD = \
+	libnms-ibft-core.la
+
+###############################################################################
 
 CLEANFILES = $(BUILT_SOURCES)
-

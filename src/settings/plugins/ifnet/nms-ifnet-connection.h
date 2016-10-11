@@ -23,7 +23,8 @@
 #define __NETWORKMANAGER_IFNET_CONNECTION_H__
 
 #include <nm-settings-connection.h>
-#include "net_parser.h"
+
+#include "nms-ifnet-net-parser.h"
 
 #define NM_TYPE_IFNET_CONNECTION            (nm_ifnet_connection_get_type ())
 #define NM_IFNET_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_IFNET_CONNECTION, NMIfnetConnection))
