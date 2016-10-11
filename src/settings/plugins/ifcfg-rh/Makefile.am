@@ -63,7 +63,7 @@ libnms_ifcfg_rh_core_la_SOURCES = \
 
 ###############################################################################
 
-libnm_settings_plugin_ifcfg_rh_la_SOURCES =
+libnm_settings_plugin_ifcfg_rh_la_SOURCES = \
 	nms-ifcfg-rh-connection.c \
 	nms-ifcfg-rh-connection.h \
 	nms-ifcfg-rh-plugin.c \
