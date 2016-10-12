@@ -2,6 +2,8 @@ SUBDIRS = . tests
 
 @GNOME_CODE_COVERAGE_RULES@
 
+include $(top_srcdir)/nm.mk
+
 pkglib_LTLIBRARIES = \
 	libnm-settings-plugin-ifcfg-rh.la
 
@@ -78,6 +80,11 @@ libnm_settings_plugin_ifcfg_rh_la_LIBADD = \
 
 ###############################################################################
 
+check-local:
+	$(call check_so_symbols,$(builddir)/.libs/libnm-settings-plugin-ifcfg-rh.so)
+
+###############################################################################
+
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = nm-ifcfg-rh.conf
 
@@ -86,4 +93,5 @@ EXTRA_DIST = \
 	nm-ifcfg-rh.xml
 
 CLEANFILES = $(BUILT_SOURCES)
+
 

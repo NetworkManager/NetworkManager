@@ -2,6 +2,8 @@ SUBDIRS = . tests
 
 @GNOME_CODE_COVERAGE_RULES@
 
+include $(top_srcdir)/nm.mk
+
 pkglib_LTLIBRARIES = libnm-settings-plugin-ibft.la
 
 noinst_LTLIBRARIES = libnms-ibft-core.la
@@ -39,6 +41,11 @@ libnm_settings_plugin_ibft_la_LDFLAGS = \
 
 libnm_settings_plugin_ibft_la_LIBADD = \
 	libnms-ibft-core.la
+
+###############################################################################
+
+check-local:
+	$(call check_so_symbols,$(builddir)/.libs/libnm-settings-plugin-ibft.so)
 
 ###############################################################################
 

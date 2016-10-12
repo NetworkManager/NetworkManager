@@ -1,7 +1,5 @@
 if ENABLE_TESTS
 
-include $(top_srcdir)/nm.mk
-
 SUBDIRS=network-scripts
 
 @GNOME_CODE_COVERAGE_RULES@
@@ -39,8 +37,5 @@ test_ifcfg_rh_LDADD = \
 
 @VALGRIND_RULES@
 TESTS = test-ifcfg-rh
-
-check-local:
-	$(call check_so_symbols,$(builddir)/../.libs/libnm-settings-plugin-ifcfg-rh.so)
 
 endif

@@ -2,6 +2,8 @@ SUBDIRS = . tests
 
 @GNOME_CODE_COVERAGE_RULES@
 
+include $(top_srcdir)/nm.mk
+
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/platform \
@@ -47,3 +49,8 @@ libnm_settings_plugin_ifnet_la_LDFLAGS = \
 
 libnm_settings_plugin_ifnet_la_LIBADD = \
 	libnms-ifnet-core.la
+
+###############################################################################
+
+check-local:
+	$(call check_so_symbols,$(builddir)/.libs/libnm-settings-plugin-ifnet.so)

@@ -2,6 +2,8 @@ SUBDIRS = . tests
 
 @GNOME_CODE_COVERAGE_RULES@
 
+include $(top_srcdir)/nm.mk
+
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/settings \
@@ -43,3 +45,7 @@ libnm_settings_plugin_ifupdown_la_LDFLAGS = \
 libnm_settings_plugin_ifupdown_la_LIBADD = \
 	libnms-ifupdown-core.la
 
+###############################################################################
+
+check-local:
+	$(call check_so_symbols,$(builddir)/.libs/libnm-settings-plugin-ifupdown.so)
