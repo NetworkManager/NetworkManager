@@ -1295,6 +1295,7 @@ nm_supplicant_interface_set_config (NMSupplicantInterface *self,
 
 	g_clear_object (&priv->cfg);
 	if (cfg) {
+		priv->assoc_cancellable = g_cancellable_new ();
 		priv->cfg = g_object_ref (cfg);
 		g_dbus_proxy_call (priv->iface_proxy,
 		                   DBUS_INTERFACE_PROPERTIES ".Set",
@@ -1532,13 +1533,9 @@ dispose (GObject *object)
 		g_signal_handlers_disconnect_by_data (priv->iface_proxy, object);
 	g_clear_object (&priv->iface_proxy);
 
-	if (priv->init_cancellable)
-		g_cancellable_cancel (priv->init_cancellable);
-	g_clear_object (&priv->init_cancellable);
-
-	if (priv->other_cancellable)
-		g_cancellable_cancel (priv->other_cancellable);
-	g_clear_object (&priv->other_cancellable);
+	nm_clear_g_cancellable (&priv->init_cancellable);
+	nm_clear_g_cancellable (&priv->other_cancellable);
+	nm_clear_g_cancellable (&priv->assoc_cancellable);
 
 	g_clear_object (&priv->wpas_proxy);
 	g_clear_pointer (&priv->bss_proxies, (GDestroyNotify) g_hash_table_destroy);
