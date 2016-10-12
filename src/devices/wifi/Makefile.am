@@ -4,9 +4,7 @@ include $(top_srcdir)/nm.mk
 
 @GNOME_CODE_COVERAGE_RULES@
 
-if ENABLE_TESTS
 SUBDIRS=. tests
-endif
 
 AM_CPPFLAGS = \
 	-I${top_srcdir}/src \

@@ -1,3 +1,5 @@
+if ENABLE_TESTS
+
 AM_CPPFLAGS = \
 	-I$(top_builddir)/introspection \
 	-I$(top_srcdir)/shared \
@@ -26,3 +28,4 @@ test_general_LDADD = $(top_builddir)/src/libNetworkManager.la
 @VALGRIND_RULES@
 TESTS = test-general
 
+endif
