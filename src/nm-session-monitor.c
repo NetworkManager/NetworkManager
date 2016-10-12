@@ -166,7 +166,7 @@ ck_load_cache (GHashTable *cache)
 		guint uid = G_MAXUINT;
 		CkSession session = { .active = FALSE };
 
-		if (!g_str_has_prefix (groups[i], "CkSession "))
+		if (!g_str_has_prefix (groups[i], "Session "))
 			continue;
 
 		uid = g_key_file_get_integer (keyfile, groups[i], "uid", &error);
