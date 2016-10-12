@@ -166,18 +166,28 @@ ensure_teamd_connection (NMDevice *device)
 	return !!priv->tdc;
 }
 
+static const char *
+_get_config (NMDeviceTeam *self)
+{
+	return nm_str_not_empty (NM_DEVICE_TEAM_GET_PRIVATE (self)->config);
+}
+
 static gboolean
 teamd_read_config (NMDevice *device)
 {
 	NMDeviceTeam *self = NM_DEVICE_TEAM (device);
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
-	char *config = NULL;
+	const char *config = NULL;
 	int err;
 
 	if (priv->tdc) {
-		err = teamdctl_config_actual_get_raw_direct (priv->tdc, &config);
+		err = teamdctl_config_actual_get_raw_direct (priv->tdc, (char **) &config);
 		if (err)
 			return FALSE;
+		if (!config) {
+			/* set "" to distinguish an empty result from no config at all. */
+			config = "";
+		}
 	}
 
 	if (!nm_streq0 (config, priv->config)) {
@@ -224,7 +234,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 		priv->tdc = NULL;
 	}
 
-	g_object_set (G_OBJECT (s_team), NM_SETTING_TEAM_CONFIG, priv->config, NULL);
+	g_object_set (G_OBJECT (s_team), _get_config (self), NULL);
 }
 
 /*****************************************************************************/
@@ -768,11 +778,10 @@ get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
 	NMDeviceTeam *self = NM_DEVICE_TEAM (object);
-	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
 
 	switch (prop_id) {
 	case PROP_CONFIG:
-		g_value_set_string (value, priv->config);
+		g_value_set_string (value, _get_config (self));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
