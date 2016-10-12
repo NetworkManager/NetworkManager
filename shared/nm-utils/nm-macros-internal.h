@@ -265,13 +265,11 @@ _NM_IN_STRSET_streq (const char *x, const char *s)
 
 /*****************************************************************************/
 
-#define nm_str_not_empty(str) \
-	({ \
-		/* implemented as macro to preserve constness */ \
-		typeof (str) __str = (str); \
-		_nm_unused const char *__str_type_check = __str; \
-		((__str && __str[0]) ? __str : ((char *) NULL)); \
-	})
+static inline const char *
+nm_str_not_empty (const char *str)
+{
+	return str && str[0] ? str : NULL;
+}
 
 static inline char *
 nm_strdup_not_empty (const char *str)
