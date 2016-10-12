@@ -34,6 +34,7 @@ EXTRA_DIST = \
 	intltool-extract.in \
 	intltool-merge.in \
 	intltool-update.in \
+	linker-script-settings.ver \
 	Makefile.glib \
 	autogen.sh \
 	valgrind.suppressions

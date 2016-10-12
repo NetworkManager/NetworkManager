@@ -37,7 +37,8 @@ libnm_settings_plugin_ibft_la_SOURCES = \
 	nms-ibft-connection.h
 
 libnm_settings_plugin_ibft_la_LDFLAGS = \
-	-module -avoid-version
+	-module -avoid-version \
+	-Wl,--version-script="$(top_srcdir)/linker-script-settings.ver"
 
 libnm_settings_plugin_ibft_la_LIBADD = \
 	libnms-ibft-core.la
