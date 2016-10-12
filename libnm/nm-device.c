@@ -2084,16 +2084,9 @@ done:
 const char *
 nm_device_get_physical_port_id (NMDevice *device)
 {
-	NMDevicePrivate *priv;
-
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	priv = NM_DEVICE_GET_PRIVATE (device);
-
-	if (priv->physical_port_id && *priv->physical_port_id)
-		return priv->physical_port_id;
-	else
-		return NULL;
+	return nm_str_not_empty (NM_DEVICE_GET_PRIVATE (device)->physical_port_id);
 }
 
 /**
