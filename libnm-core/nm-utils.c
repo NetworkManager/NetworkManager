@@ -2904,7 +2904,6 @@ nm_utils_wifi_2ghz_freqs (void)
 {
 	return _wifi_freqs (TRUE);
 }
-NM_BACKPORT_SYMBOL (libnm_1_0_6, const guint *, nm_utils_wifi_2ghz_freqs, (void), ());
 
 /**
  * nm_utils_wifi_5ghz_freqs:
@@ -2920,7 +2919,6 @@ nm_utils_wifi_5ghz_freqs (void)
 {
 	return _wifi_freqs (FALSE);
 }
-NM_BACKPORT_SYMBOL (libnm_1_0_6, const guint *, nm_utils_wifi_5ghz_freqs, (void), ());
 
 /**
  * nm_utils_wifi_strength_bars:
@@ -4277,8 +4275,6 @@ char *nm_utils_enum_to_str (GType type, int value)
 	g_type_class_unref (class);
 	return ret;
 }
-NM_BACKPORT_SYMBOL (libnm_1_0_6, char *, nm_utils_enum_to_str,
-                    (GType type, int value), (type, value));
 
 /**
  * nm_utils_enum_from_str:
@@ -4350,9 +4346,6 @@ gboolean nm_utils_enum_from_str (GType type, const char *str,
 	g_type_class_unref (class);
 	return ret;
 }
-NM_BACKPORT_SYMBOL (libnm_1_0_6, gboolean, nm_utils_enum_from_str,
-                    (GType type, const char *str, int *out_value, char **err_token),
-                    (type, str, out_value, err_token));
 
 /**
  * nm_utils_enum_get_values:

@@ -2419,3 +2419,50 @@ nm_client_async_initable_iface_init (GAsyncInitableIface *iface)
 	iface->init_async = init_async;
 	iface->init_finish = init_finish;
 }
+
+/*****************************************************************************
+ * Backported symbols. Usually, new API is only added in new major versions
+ * of NetworkManager (that is, on "master" branch). Sometimes however, we might
+ * have to backport some API to an older stable branch. In that case, we backport
+ * the symbols with a different version corresponding to the minor API.
+ *
+ * To allow upgrading from such a extended minor-release, "master" contains these
+ * backported symbols too.
+ *
+ * For example, 1.2.0 added nm_setting_connection_autoconnect_slaves_get_type.
+ * This was backported for 1.0.4 as nm_setting_connection_autoconnect_slaves_get_type@libnm_1_0_4
+ * To allow an application that was linked against 1.0.4 to seamlessly upgrade to
+ * a newer major version, the same symbols is also exposed on "master". Note, that
+ * a user can only seamlessly upgrade to a newer major version, that is released
+ * *after* 1.0.4 is out. In this example, 1.2.0 was released after 1.4.0, and thus
+ * a 1.0.4 user can upgrade to 1.2.0 ABI.
+ *****************************************************************************/
+
+NM_BACKPORT_SYMBOL (libnm_1_0_4, NMSettingConnectionAutoconnectSlaves, nm_setting_connection_get_autoconnect_slaves, (NMSettingConnection *setting), (setting));
+
+NM_BACKPORT_SYMBOL (libnm_1_0_4, GType, nm_setting_connection_autoconnect_slaves_get_type, (void), ());
+
+NM_BACKPORT_SYMBOL (libnm_1_0_6, NMMetered, nm_setting_connection_get_metered, (NMSettingConnection *setting), (setting));
+
+NM_BACKPORT_SYMBOL (libnm_1_0_6, GType, nm_metered_get_type, (void), ());
+
+NM_BACKPORT_SYMBOL (libnm_1_0_6, NMSettingWiredWakeOnLan, nm_setting_wired_get_wake_on_lan,
+                    (NMSettingWired *setting), (setting));
+
+NM_BACKPORT_SYMBOL (libnm_1_0_6, const char *, nm_setting_wired_get_wake_on_lan_password,
+                    (NMSettingWired *setting), (setting));
+
+NM_BACKPORT_SYMBOL (libnm_1_0_6, GType, nm_setting_wired_wake_on_lan_get_type, (void), ());
+
+NM_BACKPORT_SYMBOL (libnm_1_0_6, const guint *, nm_utils_wifi_2ghz_freqs, (void), ());
+
+NM_BACKPORT_SYMBOL (libnm_1_0_6, const guint *, nm_utils_wifi_5ghz_freqs, (void), ());
+
+NM_BACKPORT_SYMBOL (libnm_1_0_6, char *, nm_utils_enum_to_str,
+                    (GType type, int value), (type, value));
+
+NM_BACKPORT_SYMBOL (libnm_1_0_6, gboolean, nm_utils_enum_from_str,
+                    (GType type, const char *str, int *out_value, char **err_token),
+                    (type, str, out_value, err_token));
+
+NM_BACKPORT_SYMBOL (libnm_1_2_4, gint, nm_setting_ip_config_get_dns_priority, (NMSettingIPConfig *setting), (setting));

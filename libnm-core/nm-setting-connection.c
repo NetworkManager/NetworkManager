@@ -647,9 +647,6 @@ nm_setting_connection_get_autoconnect_slaves (NMSettingConnection *setting)
 
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->autoconnect_slaves;
 }
-NM_BACKPORT_SYMBOL (libnm_1_0_4, NMSettingConnectionAutoconnectSlaves, nm_setting_connection_get_autoconnect_slaves, (NMSettingConnection *setting), (setting));
-
-NM_BACKPORT_SYMBOL (libnm_1_0_4, GType, nm_setting_connection_autoconnect_slaves_get_type, (void), ());
 
 /**
  * nm_setting_connection_get_num_secondaries:
@@ -803,10 +800,6 @@ nm_setting_connection_get_metered (NMSettingConnection *setting)
 
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->metered;
 }
-
-NM_BACKPORT_SYMBOL (libnm_1_0_6, NMMetered, nm_setting_connection_get_metered, (NMSettingConnection *setting), (setting));
-
-NM_BACKPORT_SYMBOL (libnm_1_0_6, GType, nm_metered_get_type, (void), ());
 
 /**
  * nm_setting_connection_get_lldp:
