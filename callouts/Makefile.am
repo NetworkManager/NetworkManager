@@ -1,5 +1,12 @@
 SUBDIRS = . tests
 
+libexec_PROGRAMS = \
+	nm-dispatcher
+
+noinst_LTLIBRARIES = \
+	libnm-dispatcher-core.la \
+	libnmdbus-dispatcher.la
+
 AM_CPPFLAGS = \
 	-I${top_srcdir}/shared \
 	-I${top_builddir}/shared \
@@ -11,36 +18,39 @@ AM_CPPFLAGS = \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DLIBEXECDIR=\"$(libexecdir)\"
 
-###########################################
-# Test libraries
-###########################################
-
-noinst_LTLIBRARIES = \
-	libtest-dispatcher-envp.la
-
+###############################################################################
 
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = \
 	nm-dispatcher.conf
 
-libexec_PROGRAMS = \
-	nm-dispatcher
+###############################################################################
 
-
-nm_dispatcher_SOURCES = \
+libnm_dispatcher_core_la_SOURCES = \
 	$(top_srcdir)/shared/nm-dispatcher-api.h \
-	nm-dispatcher.c \
 	nm-dispatcher-utils.c \
 	nm-dispatcher-utils.h
 
+libnm_dispatcher_core_la_LIBADD = \
+	$(top_builddir)/libnm/libnm.la \
+	$(GLIB_LIBS)
+
+###############################################################################
+
+nm_dispatcher_SOURCES = \
+	$(top_srcdir)/shared/nm-dispatcher-api.h \
+	nm-dispatcher.c
+
+nm_dispatcher_LDFLAGS = \
+	-Wl,--version-script="$(top_srcdir)/linker-script-binary.ver"
+
 nm_dispatcher_LDADD = \
 	$(top_builddir)/libnm/libnm.la \
+	libnm-dispatcher-core.la \
 	libnmdbus-dispatcher.la \
 	$(GLIB_LIBS)
 
-# See note about gdbus-codegen in introspection/Makefile.am
-
-noinst_LTLIBRARIES += libnmdbus-dispatcher.la
+###############################################################################
 
 nodist_libnmdbus_dispatcher_la_SOURCES = \
 	nmdbus-dispatcher.c \
@@ -60,21 +70,7 @@ nmdbus-dispatcher.c: nmdbus-dispatcher.h
 
 BUILT_SOURCES = nmdbus-dispatcher.h nmdbus-dispatcher.c
 
-###########################################
-# dispatcher envp
-###########################################
-
-libtest_dispatcher_envp_la_SOURCES = \
-	nm-dispatcher-utils.c \
-	nm-dispatcher-utils.h
-
-libtest_dispatcher_envp_la_CPPFLAGS = \
-	$(AM_CPPFLAGS)
-
-libtest_dispatcher_envp_la_LIBADD = \
-	$(top_builddir)/libnm/libnm.la \
-	$(GLIB_LIBS)
-
+###############################################################################
 
 dbusactivationdir = $(datadir)/dbus-1/system-services
 dbusactivation_in_files = org.freedesktop.nm_dispatcher.service.in
@@ -96,7 +92,11 @@ install-data-hook:
 	   $(mkinstalldirs) -m 0755 $(DESTDIR)$(dispatcherdir)/pre-up.d
 	   $(mkinstalldirs) -m 0755 $(DESTDIR)$(dispatcherdir)/no-wait.d
 
-CLEANFILES = $(nodist_libnmdbus_dispatcher_la_SOURCES) $(dbusactivation_DATA)
+###############################################################################
+
+CLEANFILES = \
+	$(BUILT_SOURCES) \
+	$(dbusactivation_DATA)
 
 EXTRA_DIST = \
 	$(dbusservice_DATA) \
