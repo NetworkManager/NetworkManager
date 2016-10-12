@@ -66,7 +66,7 @@ nm_device_team_get_hw_address (NMDeviceTeam *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_TEAM (device), NULL);
 
-	return NM_DEVICE_TEAM_GET_PRIVATE (device)->hw_address;
+	return nm_str_not_empty (NM_DEVICE_TEAM_GET_PRIVATE (device)->hw_address);
 }
 
 /**
@@ -119,7 +119,7 @@ nm_device_team_get_config (NMDeviceTeam *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_TEAM (device), NULL);
 
-	return NM_DEVICE_TEAM_GET_PRIVATE (device)->config;
+	return nm_str_not_empty (NM_DEVICE_TEAM_GET_PRIVATE (device)->config);
 }
 
 static const char *

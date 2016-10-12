@@ -65,7 +65,7 @@ nm_device_bt_get_hw_address (NMDeviceBt *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_BT (device), NULL);
 
-	return NM_DEVICE_BT_GET_PRIVATE (device)->hw_address;
+	return nm_str_not_empty (NM_DEVICE_BT_GET_PRIVATE (device)->hw_address);
 }
 
 /**

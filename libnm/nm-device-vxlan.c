@@ -95,7 +95,7 @@ nm_device_vxlan_get_hw_address (NMDeviceVxlan *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_VXLAN (device), NULL);
 
-	return NM_DEVICE_VXLAN_GET_PRIVATE (device)->hw_address;
+	return nm_str_not_empty (NM_DEVICE_VXLAN_GET_PRIVATE (device)->hw_address);
 }
 
 /**
@@ -162,7 +162,7 @@ nm_device_vxlan_get_group (NMDeviceVxlan *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_VXLAN (device), NULL);
 
-	return NM_DEVICE_VXLAN_GET_PRIVATE (device)->group;
+	return nm_str_not_empty (NM_DEVICE_VXLAN_GET_PRIVATE (device)->group);
 }
 
 /**
@@ -178,7 +178,7 @@ nm_device_vxlan_get_local (NMDeviceVxlan *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_VXLAN (device), NULL);
 
-	return NM_DEVICE_VXLAN_GET_PRIVATE (device)->local;
+	return nm_str_not_empty (NM_DEVICE_VXLAN_GET_PRIVATE (device)->local);
 }
 
 /**
