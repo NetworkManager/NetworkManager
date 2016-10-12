@@ -595,7 +595,6 @@ nm_iface_helper_LDADD = \
 	$(LIBM)
 
 nm_iface_helper_LDFLAGS = \
-	-rdynamic \
 	-Wl,--version-script="$(top_srcdir)/linker-script-binary.ver"
 
 ###############################################################################
