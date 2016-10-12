@@ -24,7 +24,6 @@ SYMBOL_VIS_FILE=$(srcdir)/exports.ver
 
 libnm_device_plugin_adsl_la_SOURCES = \
 	nm-atm-manager.c \
-	nm-atm-manager.h \
 	nm-device-adsl.c \
 	nm-device-adsl.h
 
