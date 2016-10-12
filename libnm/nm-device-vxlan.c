@@ -458,6 +458,8 @@ finalize (GObject *object)
 
 	g_free (priv->hw_address);
 	g_clear_object (&priv->parent);
+	g_free (priv->group);
+	g_free (priv->local);
 
 	G_OBJECT_CLASS (nm_device_vxlan_parent_class)->finalize (object);
 }
