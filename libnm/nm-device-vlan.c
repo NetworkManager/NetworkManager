@@ -116,6 +116,7 @@ nm_device_vlan_get_vlan_id (NMDeviceVlan *device)
 static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
+	NMDeviceVlanPrivate *priv;
 	NMSettingVlan *s_vlan;
 	NMSettingWired *s_wired;
 	const char *setting_hwaddr;
@@ -142,8 +143,10 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	else
 		setting_hwaddr = NULL;
 	if (setting_hwaddr) {
-		if (!nm_utils_hwaddr_matches (setting_hwaddr, -1,
-		                              NM_DEVICE_VLAN_GET_PRIVATE (device)->hw_address, -1)) {
+		priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
+		if (   !priv->hw_address
+		    || !nm_utils_hwaddr_matches (setting_hwaddr, -1,
+		                                 priv->hw_address, -1)) {
 			g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
 			                     _("The hardware address of the device and the connection didn't match."));
 		}
