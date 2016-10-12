@@ -7,7 +7,7 @@ SUBDIRS = \
 	libnm-core \
 	libnm \
 	src \
-	callouts \
+	dispatcher \
 	clients \
 	tools \
 	policy \

@@ -87,7 +87,7 @@ parse_main (GKeyFile *kf,
 	                       g_variant_new_object_path ("/org/freedesktop/NetworkManager/Connections/5"));
 
 	/* Strip out the non-fixed portion of the filename */
-	filename = strstr (filename, "/callouts");
+	filename = strstr (filename, "/dispatcher");
 	g_variant_builder_add (&props, "{sv}",
 	                       "filename",
 	                       g_variant_new_string (filename));

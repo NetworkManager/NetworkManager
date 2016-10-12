@@ -3,7 +3,7 @@ action=connectiviy-change
 expected-iface=wlan0
 uuid=3fd2a33a-d81b-423f-ae99-e6baba742311
 id=Random Connection
-connectivity-state=FULL
+connectivity-state=UNKNOWN
 
 [device]
 state=30
@@ -17,7 +17,6 @@ PATH=
 CONNECTION_UUID=3fd2a33a-d81b-423f-ae99-e6baba742311
 CONNECTION_DBUS_PATH=/org/freedesktop/NetworkManager/Connections/5
 CONNECTION_ID=Random Connection
-CONNECTION_FILENAME=/callouts/tests/dispatcher-connectivity-full
+CONNECTION_FILENAME=/dispatcher/tests/dispatcher-connectivity-unknown
 DEVICE_IFACE=wlan0
 DEVICE_IP_IFACE=wlan0
-CONNECTIVITY_STATE=FULL

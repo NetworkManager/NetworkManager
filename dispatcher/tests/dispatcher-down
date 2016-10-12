@@ -16,7 +16,7 @@ PATH=
 CONNECTION_UUID=3fd2a33a-d81b-423f-ae99-e6baba742311
 CONNECTION_DBUS_PATH=/org/freedesktop/NetworkManager/Connections/5
 CONNECTION_ID=Random Connection
-CONNECTION_FILENAME=/callouts/tests/dispatcher-down
+CONNECTION_FILENAME=/dispatcher/tests/dispatcher-down
 DEVICE_IFACE=wlan0
 DEVICE_IP_IFACE=wlan0
 

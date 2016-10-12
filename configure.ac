@@ -1184,8 +1184,8 @@ libnm-glib/libnm-glib.pc
 libnm-glib/libnm-glib-vpn.pc
 libnm-glib/Makefile
 libnm-glib/tests/Makefile
-callouts/Makefile
-callouts/tests/Makefile
+dispatcher/Makefile
+dispatcher/tests/Makefile
 tools/Makefile
 clients/Makefile
 clients/cli/Makefile
