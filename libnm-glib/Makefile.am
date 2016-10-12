@@ -222,10 +222,5 @@ typelib_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
 CLEANFILES += $(gir_DATA) $(typelib_DATA)
 endif
 
-if ENABLE_TESTS
-
 check-local:
 	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-glib.so $(SYMBOL_VIS_FILE)
-
-endif
-

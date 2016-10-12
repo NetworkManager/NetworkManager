@@ -85,14 +85,9 @@ libnm_device_plugin_wwan_la_LIBADD = \
 CLEANFILES = $(BUILT_SOURCES)
 EXTRA_DIST = $(SYMBOL_VIS_FILE) $(WWAN_SYMBOL_VIS_FILE)
 
-if ENABLE_TESTS
-
 check-local:
 	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-device-plugin-wwan.so $(SYMBOL_VIS_FILE)
 	$(call check_so_symbols,$(builddir)/.libs/libnm-device-plugin-wwan.so)
-
 	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-wwan.so $(WWAN_SYMBOL_VIS_FILE)
 	$(call check_so_symbols,$(builddir)/.libs/libnm-wwan.so)
-
-endif
 

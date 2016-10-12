@@ -37,11 +37,6 @@ libnm_device_plugin_adsl_la_LIBADD = \
 
 EXTRA_DIST = $(SYMBOL_VIS_FILE)
 
-if ENABLE_TESTS
-
 check-local:
 	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-device-plugin-adsl.so $(SYMBOL_VIS_FILE)
 	$(call check_so_symbols,$(builddir)/.libs/libnm-device-plugin-adsl.so)
-
-endif
-
