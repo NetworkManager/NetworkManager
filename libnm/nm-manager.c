@@ -1197,11 +1197,10 @@ free_devices (NMManager *manager, gboolean in_dispose)
 	if (in_dispose) {
 		priv->devices = NULL;
 		priv->all_devices = NULL;
-		return;
+	} else {
+		priv->devices = g_ptr_array_new_with_free_func (g_object_unref);
+		priv->all_devices = g_ptr_array_new_with_free_func (g_object_unref);
 	}
-
-	priv->devices = g_ptr_array_new_with_free_func (g_object_unref);
-	priv->all_devices = g_ptr_array_new_with_free_func (g_object_unref);
 
 	if (all_devices && all_devices->len > 0)
 		devices = all_devices;
@@ -1218,14 +1217,23 @@ free_devices (NMManager *manager, gboolean in_dispose)
 						goto next;
 				}
 			}
-			g_signal_emit (manager, signals[DEVICE_REMOVED], 0, d);
+			if (in_dispose)
+				device_removed (manager, d);
+			else
+				g_signal_emit (manager, signals[DEVICE_REMOVED], 0, d);
 next:
 			;
 		}
 	}
 	if (devices) {
-		for (i = 0; i < devices->len; i++)
-			g_signal_emit (manager, signals[DEVICE_REMOVED], 0, devices->pdata[i]);
+		for (i = 0; i < devices->len; i++) {
+			NMDevice *d = devices->pdata[i];
+
+			if (in_dispose)
+				device_removed (manager, d);
+			else
+				g_signal_emit (manager, signals[DEVICE_REMOVED], 0, d);
+		}
 	}
 }
 
