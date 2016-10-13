@@ -11890,7 +11890,7 @@ nm_device_hw_addr_set_cloned (NMDevice *self, NMConnection *connection, gboolean
 	}
 
 	if (nm_streq (addr, NM_CLONED_MAC_PERMANENT)) {
-		addr = nm_device_get_permanent_hw_address (self, TRUE);
+		addr = nm_device_get_permanent_hw_address (self);
 		if (!addr)
 			return FALSE;
 		priv->hw_addr_type = HW_ADDR_TYPE_PERMANENT;
@@ -11979,19 +11979,11 @@ nm_device_get_permanent_hw_address_full (NMDevice *self, gboolean *out_is_fake)
 }
 
 const char *
-nm_device_get_permanent_hw_address (NMDevice *self, gboolean fallback_fake)
+nm_device_get_permanent_hw_address (NMDevice *self)
 {
-	NMDevicePrivate *priv;
-
 	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
 
-	priv = NM_DEVICE_GET_PRIVATE (self);
-	if (!priv->hw_addr_perm)
-		return NULL;
-	if (   priv->hw_addr_perm_fake
-	    && !fallback_fake)
-		return NULL;
-	return priv->hw_addr_perm;
+	return NM_DEVICE_GET_PRIVATE (self)->hw_addr_perm;
 }
 
 const char *
@@ -12048,7 +12040,7 @@ spec_match_list (NMDevice *self, const GSList *specs)
 		}
 	}
 
-	hw_addr_perm = nm_device_get_permanent_hw_address (self, TRUE);
+	hw_addr_perm = nm_device_get_permanent_hw_address (self);
 	if (hw_addr_perm) {
 		m = nm_match_spec_hwaddr (specs, hw_addr_perm);
 		matched = MAX (matched, m);
@@ -12522,10 +12514,15 @@ get_property (GObject *object, guint prop_id,
 	case PROP_HW_ADDRESS:
 		g_value_set_string (value, priv->hw_addr);
 		break;
-	case PROP_PERM_HW_ADDRESS:
+	case PROP_PERM_HW_ADDRESS: {
+		const char *perm_hw_addr;
+		gboolean perm_hw_addr_is_fake;
+
+		perm_hw_addr = nm_device_get_permanent_hw_address_full (self, &perm_hw_addr_is_fake);
 		/* this property is exposed on D-Bus for NMDeviceEthernet and NMDeviceWifi. */
-		g_value_set_string (value, nm_device_get_permanent_hw_address (self, FALSE));
+		g_value_set_string (value, perm_hw_addr && !perm_hw_addr_is_fake ? perm_hw_addr : NULL);
 		break;
+	}
 	case PROP_HAS_PENDING_ACTION:
 		g_value_set_boolean (value, nm_device_has_pending_action (self));
 		break;

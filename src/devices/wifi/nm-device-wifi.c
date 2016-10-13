@@ -615,7 +615,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	if (!s_wireless)
 		return FALSE;
 
-	perm_hw_addr = nm_device_get_permanent_hw_address (device, FALSE);
+	perm_hw_addr = nm_device_get_permanent_hw_address (device);
 	mac = nm_setting_wireless_get_mac_address (s_wireless);
 	if (perm_hw_addr) {
 		if (mac && !nm_utils_hwaddr_matches (mac, -1, perm_hw_addr, -1))
@@ -907,7 +907,7 @@ complete_connection (NMDevice *device,
 	if (hidden)
 		g_object_set (s_wifi, NM_SETTING_WIRELESS_HIDDEN, TRUE, NULL);
 
-	perm_hw_addr = nm_device_get_permanent_hw_address (device, FALSE);
+	perm_hw_addr = nm_device_get_permanent_hw_address (device);
 	if (perm_hw_addr) {
 		setting_mac = nm_setting_wireless_get_mac_address (s_wifi);
 		if (setting_mac) {

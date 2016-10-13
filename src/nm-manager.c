@@ -610,7 +610,7 @@ find_device_by_permanent_hw_addr (NMManager *manager, const char *hwaddr)
 
 	if (nm_utils_hwaddr_valid (hwaddr, -1)) {
 		for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
-			device_addr = nm_device_get_permanent_hw_address (NM_DEVICE (iter->data), FALSE);
+			device_addr = nm_device_get_permanent_hw_address (NM_DEVICE (iter->data));
 			if (device_addr && nm_utils_hwaddr_matches (hwaddr, -1, device_addr, -1))
 				return NM_DEVICE (iter->data);
 		}

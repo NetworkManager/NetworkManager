@@ -399,7 +399,7 @@ nm_config_set_no_auto_default_for_device (NMConfig *self, NMDevice *device)
 
 	priv = NM_CONFIG_GET_PRIVATE (self);
 
-	hw_address = nm_device_get_permanent_hw_address (device, TRUE);
+	hw_address = nm_device_get_permanent_hw_address (device);
 	if (!hw_address)
 		return;
 

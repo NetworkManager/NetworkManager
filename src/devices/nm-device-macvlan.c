@@ -373,7 +373,7 @@ match_hwaddr (NMDevice *device, NMConnection *connection, gboolean fail_if_no_hw
 	if (!priv->parent)
 		return !fail_if_no_hwaddr;
 
-	parent_mac = nm_device_get_permanent_hw_address (priv->parent, FALSE);
+	parent_mac = nm_device_get_permanent_hw_address (priv->parent);
 	return parent_mac && nm_utils_hwaddr_matches (setting_mac, -1, parent_mac, -1);
 }
 

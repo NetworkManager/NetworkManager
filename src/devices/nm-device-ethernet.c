@@ -396,7 +396,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 		if (!match_subchans (self, s_wired, &try_mac))
 			return FALSE;
 
-		perm_hw_addr = nm_device_get_permanent_hw_address (device, TRUE);
+		perm_hw_addr = nm_device_get_permanent_hw_address (device);
 		mac = nm_setting_wired_get_mac_address (s_wired);
 		if (perm_hw_addr) {
 			if (try_mac && mac && !nm_utils_hwaddr_matches (mac, -1, perm_hw_addr, -1))
@@ -1346,6 +1346,7 @@ complete_connection (NMDevice *device,
 	NMSettingPppoe *s_pppoe;
 	const char *setting_mac;
 	const char *perm_hw_addr;
+	gboolean perm_hw_addr_is_fake;
 
 	s_pppoe = nm_connection_get_setting_pppoe (connection);
 
@@ -1373,8 +1374,8 @@ complete_connection (NMDevice *device,
 		nm_connection_add_setting (connection, NM_SETTING (s_wired));
 	}
 
-	perm_hw_addr = nm_device_get_permanent_hw_address (device, FALSE);
-	if (perm_hw_addr) {
+	perm_hw_addr = nm_device_get_permanent_hw_address_full (device, &perm_hw_addr_is_fake);
+	if (perm_hw_addr && !perm_hw_addr_is_fake) {
 		setting_mac = nm_setting_wired_get_mac_address (s_wired);
 		if (setting_mac) {
 			/* Make sure the setting MAC (if any) matches the device's permanent MAC */
@@ -1410,7 +1411,7 @@ new_default_connection (NMDevice *self)
 	if (nm_config_get_no_auto_default_for_device (nm_config_get (), self))
 		return NULL;
 
-	perm_hw_addr = nm_device_get_permanent_hw_address (self, TRUE);
+	perm_hw_addr = nm_device_get_permanent_hw_address (self);
 	if (!perm_hw_addr)
 		return NULL;
 
@@ -1470,7 +1471,8 @@ update_connection (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE ((NMDeviceEthernet *) device);
 	NMSettingWired *s_wired = nm_connection_get_setting_wired (connection);
-	const char *perm_hw_addr = nm_device_get_permanent_hw_address (device, FALSE);
+	gboolean perm_hw_addr_is_fake;
+	const char *perm_hw_addr;
 	const char *mac = nm_device_get_hw_address (device);
 	const char *mac_prop = NM_SETTING_WIRED_MAC_ADDRESS;
 	GHashTableIter iter;
@@ -1489,7 +1491,8 @@ update_connection (NMDevice *device, NMConnection *connection)
 	/* If the device reports a permanent address, use that for the MAC address
 	 * and the current MAC, if different, is the cloned MAC.
 	 */
-	if (perm_hw_addr) {
+	perm_hw_addr = nm_device_get_permanent_hw_address_full (device, &perm_hw_addr_is_fake);
+	if (perm_hw_addr && !perm_hw_addr_is_fake) {
 		g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, perm_hw_addr, NULL);
 
 		mac_prop = NULL;
