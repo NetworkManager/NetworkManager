@@ -2,18 +2,14 @@ SUBDIRS = . tests
 
 @GNOME_CODE_COVERAGE_RULES@
 
+include $(top_srcdir)/nm.mk
+
 pkglib_LTLIBRARIES = \
 	libnm-settings-plugin-ifcfg-rh.la
 
 noinst_LTLIBRARIES = \
 	libnmdbus-ifcfg-rh.la \
 	libnms-ifcfg-rh-core.la
-
-BUILT_SOURCES = \
-	nmdbus-ifcfg-rh.h \
-	nmdbus-ifcfg-rh.c
-
-###############################################################################
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/ \
@@ -29,6 +25,10 @@ AM_CPPFLAGS = \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DSBINDIR=\"$(sbindir)\"
+
+BUILT_SOURCES = \
+	nmdbus-ifcfg-rh.h \
+	nmdbus-ifcfg-rh.c
 
 ###############################################################################
 
@@ -70,11 +70,17 @@ libnm_settings_plugin_ifcfg_rh_la_SOURCES = \
 	nms-ifcfg-rh-plugin.h
 
 libnm_settings_plugin_ifcfg_rh_la_LDFLAGS = \
-	-module -avoid-version
+	-module -avoid-version \
+	-Wl,--version-script="$(top_srcdir)/linker-script-settings.ver"
 
 libnm_settings_plugin_ifcfg_rh_la_LIBADD = \
 	libnms-ifcfg-rh-core.la \
 	libnmdbus-ifcfg-rh.la
+
+###############################################################################
+
+check-local:
+	$(call check_so_symbols,$(builddir)/.libs/libnm-settings-plugin-ifcfg-rh.so)
 
 ###############################################################################
 
@@ -86,4 +92,5 @@ EXTRA_DIST = \
 	nm-ifcfg-rh.xml
 
 CLEANFILES = $(BUILT_SOURCES)
+
 

@@ -1,7 +1,5 @@
 if ENABLE_TESTS
 
-include $(top_srcdir)/nm.mk
-
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/shared \
 	-I$(top_builddir)/shared \
@@ -30,9 +28,6 @@ test_ifupdown_LDADD = \
 
 @VALGRIND_RULES@
 TESTS = test-ifupdown
-
-check-local:
-	$(call check_so_symbols,$(builddir)/../.libs/libnm-settings-plugin-ifupdown.so)
 
 endif
 

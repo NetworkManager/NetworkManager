@@ -1,7 +1,5 @@
 if ENABLE_TESTS
 
-include $(top_srcdir)/nm.mk
-
 @GNOME_CODE_COVERAGE_RULES@
 
 AM_CPPFLAGS= \
@@ -38,9 +36,6 @@ test_ifnet_LDADD = \
 
 @VALGRIND_RULES@
 TESTS = test-ifnet
-
-check-local:
-	$(call check_so_symbols,$(builddir)/../.libs/libnm-settings-plugin-ifnet.so)
 
 endif
 

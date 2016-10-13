@@ -1136,7 +1136,6 @@ AM_CONDITIONAL(SETTING_DOCS_AVAILABLE, test "$build_setting_docs" = "yes" -o "$h
 
 AC_CONFIG_FILES([
 Makefile
-shared/Makefile
 shared/nm-version-macros.h
 src/Makefile
 src/tests/Makefile
@@ -1184,8 +1183,8 @@ libnm-glib/libnm-glib.pc
 libnm-glib/libnm-glib-vpn.pc
 libnm-glib/Makefile
 libnm-glib/tests/Makefile
-callouts/Makefile
-callouts/tests/Makefile
+dispatcher/Makefile
+dispatcher/tests/Makefile
 tools/Makefile
 clients/Makefile
 clients/cli/Makefile
@@ -1195,7 +1194,6 @@ introspection/Makefile
 man/Makefile
 man/common.ent
 po/Makefile.in
-policy/Makefile
 policy/org.freedesktop.NetworkManager.policy.in
 data/Makefile
 docs/Makefile

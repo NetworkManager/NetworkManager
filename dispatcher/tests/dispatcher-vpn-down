@@ -1,12 +1,12 @@
 [main]
-action=up
-expected-iface=wlan0
-uuid=3fd2a33a-d81b-423f-ae99-e6baba742311
+action=vpn-down
+expected-iface=tun0
+uuid=355653c0-34d3-4777-ad25-f9a498b7ef8e
 id=Random Connection
 
 [device]
 state=100
-ip-interface=wlan0
+ip-interface=tun0
 type=2
 interface=wlan0
 path=/org/freedesktop/NetworkManager/Devices/0
@@ -23,7 +23,7 @@ dhcp_server_identifier=192.168.1.1
 routers=192.168.1.1
 broadcast_address=192.168.1.255
 subnet_mask=255.255.255.0
-expiry=1304300446
+expiry=1304349405
 
 [proxy]
 pac-url=http://networkmanager.com/proxy.pac
@@ -36,12 +36,12 @@ domains=hsd1.mn.comcast.net.
 
 [env]
 PATH=
-CONNECTION_UUID=3fd2a33a-d81b-423f-ae99-e6baba742311
+CONNECTION_UUID=355653c0-34d3-4777-ad25-f9a498b7ef8e
 CONNECTION_DBUS_PATH=/org/freedesktop/NetworkManager/Connections/5
 CONNECTION_ID=Random Connection
-CONNECTION_FILENAME=/callouts/tests/dispatcher-up
+CONNECTION_FILENAME=/dispatcher/tests/dispatcher-vpn-down
 DEVICE_IFACE=wlan0
-DEVICE_IP_IFACE=wlan0
+DEVICE_IP_IFACE=tun0
 PROXY_PAC_URL=http://networkmanager.com/proxy.pac
 PROXY_PAC_SCRIPT="function FindProxyForURL (url, host) {}"
 IP4_ADDRESS_0=192.168.1.119/24 192.168.1.1
@@ -61,5 +61,4 @@ DHCP4_DHCP_SERVER_IDENTIFIER=192.168.1.1
 DHCP4_ROUTERS=192.168.1.1
 DHCP4_BROADCAST_ADDRESS=192.168.1.255
 DHCP4_SUBNET_MASK=255.255.255.0
-DHCP4_EXPIRY=1304300446
-
+DHCP4_EXPIRY=1304349405

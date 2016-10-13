@@ -20,8 +20,6 @@ AM_CPPFLAGS = \
 
 pkglib_LTLIBRARIES = libnm-device-plugin-adsl.la
 
-SYMBOL_VIS_FILE=$(srcdir)/exports.ver
-
 libnm_device_plugin_adsl_la_SOURCES = \
 	nm-atm-manager.c \
 	nm-device-adsl.c \
@@ -29,19 +27,12 @@ libnm_device_plugin_adsl_la_SOURCES = \
 
 libnm_device_plugin_adsl_la_LDFLAGS = \
 	-module -avoid-version \
-	-Wl,--version-script=$(SYMBOL_VIS_FILE)
+	-Wl,--version-script="$(top_srcdir)/linker-script-devices.ver"
 
 libnm_device_plugin_adsl_la_LIBADD = \
 	$(top_builddir)/introspection/libnmdbus.la \
 	$(GUDEV_LIBS)
 
-EXTRA_DIST = $(SYMBOL_VIS_FILE)
-
-if ENABLE_TESTS
-
 check-local:
-	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-device-plugin-adsl.so $(SYMBOL_VIS_FILE)
+	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-device-plugin-adsl.so "$(top_srcdir)/linker-script-devices.ver"
 	$(call check_so_symbols,$(builddir)/.libs/libnm-device-plugin-adsl.so)
-
-endif
-

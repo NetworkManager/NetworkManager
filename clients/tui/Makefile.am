@@ -119,6 +119,9 @@ nmtui_SOURCES = \
 	$(srcdir)/../common/nm-vpn-helpers.h \
 	$(NULL)
 
+nmtui_LDFLAGS = \
+	-Wl,--version-script="$(top_srcdir)/linker-script-binary.ver"
+
 nmtui_LDADD = \
 	$(top_builddir)/libnm/libnm.la \
 	$(builddir)/newt/libnmt-newt.a \

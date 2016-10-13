@@ -25,8 +25,6 @@ endif
 
 pkglib_LTLIBRARIES = libnm-device-plugin-team.la
 
-SYMBOL_VIS_FILE=$(srcdir)/exports.ver
-
 libnm_device_plugin_team_la_SOURCES = \
 	nm-team-factory.c \
 	nm-device-team.c \
@@ -34,7 +32,7 @@ libnm_device_plugin_team_la_SOURCES = \
 
 libnm_device_plugin_team_la_LDFLAGS = \
 	-module -avoid-version \
-	-Wl,--version-script=$(SYMBOL_VIS_FILE)
+	-Wl,--version-script="$(top_srcdir)/linker-script-devices.ver"
 
 libnm_device_plugin_team_la_LIBADD = \
 	$(top_builddir)/introspection/libnmdbus.la \
@@ -45,12 +43,6 @@ if WITH_TEAMDCTL
 libnm_device_plugin_team_la_LIBADD += $(LIBTEAMDCTL_LIBS)
 endif
 
-EXTRA_DIST = $(SYMBOL_VIS_FILE)
-
-if ENABLE_TESTS
-
 check-local:
-	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-device-plugin-team.so $(SYMBOL_VIS_FILE)
+	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-device-plugin-team.so "$(top_srcdir)/linker-script-devices.ver"
 	$(call check_so_symbols,$(builddir)/.libs/libnm-device-plugin-team.so)
-
-endif

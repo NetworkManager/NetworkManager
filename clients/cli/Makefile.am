@@ -54,6 +54,9 @@ nmcli_SOURCES += $(srcdir)/../common/nm-polkit-listener.c $(srcdir)/../common/nm
 nmcli_LDADD += $(POLKIT_LIBS)
 endif
 
+nmcli_LDFLAGS = \
+	-Wl,--version-script="$(top_srcdir)/linker-script-binary.ver"
+
 if BUILD_SETTING_DOCS
 settings-docs.c: settings-docs.xsl $(top_builddir)/libnm/nm-property-docs.xml
 	$(AM_V_GEN) xsltproc --output $@ $^

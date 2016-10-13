@@ -196,10 +196,5 @@ CLEANFILES = $(gir_DATA) $(typelib_DATA)
 
 endif
 
-if ENABLE_TESTS
-
 check-local:
 	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-util.so $(SYMBOL_VIS_FILE)
-
-endif
-

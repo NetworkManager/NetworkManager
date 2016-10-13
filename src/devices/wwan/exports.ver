@@ -1,6 +1,0 @@
-{
-global:
-	nm_device_factory_create;
-local:
-	*;
-};

@@ -1773,7 +1773,6 @@ nm_setting_ip_config_get_dns_priority (NMSettingIPConfig *setting)
 
 	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->dns_priority;
 }
-NM_BACKPORT_SYMBOL (libnm_1_2_4, gint, nm_setting_ip_config_get_dns_priority, (NMSettingIPConfig *setting), (setting));
 
 /**
  * nm_setting_ip_config_get_num_addresses:

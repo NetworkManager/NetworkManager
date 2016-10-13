@@ -49,11 +49,11 @@ test-*.trs
 /conftest.[ch]
 /conftest.o.*
 
-/callouts/nm-avahi-autoipd.action
-/callouts/nm-dispatcher
-/callouts/nmdbus-dispatcher.*
-/callouts/org.freedesktop.nm_dispatcher.service
-/callouts/tests/test-dispatcher-envp
+/dispatcher/nm-avahi-autoipd.action
+/dispatcher/nm-dispatcher
+/dispatcher/nmdbus-dispatcher.*
+/dispatcher/org.freedesktop.nm_dispatcher.service
+/dispatcher/tests/test-dispatcher-envp
 
 /clients/cli/nmcli
 /clients/cli/settings-docs.c
@@ -276,6 +276,11 @@ test-*.trs
 # but they were on older versions. Thus keep ignoring them
 # otherwise when switching branches these untracked files show
 # up.
+/callouts/nm-avahi-autoipd.action
+/callouts/nm-dispatcher
+/callouts/nmdbus-dispatcher.*
+/callouts/org.freedesktop.nm_dispatcher.service
+/callouts/tests/test-dispatcher-envp
 /include/
 /initscript/Slackware/rc.networkmanager
 /initscript/*/[Nn]etwork[Mm]anager

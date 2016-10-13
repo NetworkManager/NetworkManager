@@ -2,6 +2,14 @@ SUBDIRS = . tests
 
 @GNOME_CODE_COVERAGE_RULES@
 
+include $(top_srcdir)/nm.mk
+
+pkglib_LTLIBRARIES = \
+	libnm-settings-plugin-ifupdown.la
+
+noinst_LTLIBRARIES = \
+	libnms-ifupdown-core.la
+
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/settings \
@@ -14,12 +22,6 @@ AM_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(GUDEV_CFLAGS) \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
-
-pkglib_LTLIBRARIES = \
-	libnm-settings-plugin-ifupdown.la
-
-noinst_LTLIBRARIES = \
-	libnms-ifupdown-core.la
 
 ###############################################################################
 
@@ -38,8 +40,13 @@ libnm_settings_plugin_ifupdown_la_SOURCES = \
 	nms-ifupdown-plugin.h
 
 libnm_settings_plugin_ifupdown_la_LDFLAGS = \
-	-module -avoid-version
+	-module -avoid-version \
+	-Wl,--version-script="$(top_srcdir)/linker-script-settings.ver"
 
 libnm_settings_plugin_ifupdown_la_LIBADD = \
 	libnms-ifupdown-core.la
 
+###############################################################################
+
+check-local:
+	$(call check_so_symbols,$(builddir)/.libs/libnm-settings-plugin-ifupdown.so)
