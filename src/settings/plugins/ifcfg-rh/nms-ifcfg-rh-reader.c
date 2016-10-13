@@ -1381,7 +1381,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	char *route6_path = NULL;
 	gs_free char *dns_options_free = NULL;
 	const char *dns_options = NULL;
-	gboolean ipv6init, ipv6forwarding, ipv6_autoconf, dhcp6 = FALSE;
+	gboolean ipv6init, ipv6forwarding, dhcp6 = FALSE;
 	char *method = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
 	char *ipv6addr, *ipv6addr_secondaries;
 	char **list = NULL, **iter;
@@ -1454,10 +1454,12 @@ make_ip6_setting (shvarFile *ifcfg,
 		method = NM_SETTING_IP6_CONFIG_METHOD_IGNORE;  /* IPv6 is disabled */
 	else {
 		ipv6forwarding = svGetValueBoolean (ifcfg, "IPV6FORWARDING", FALSE);
-		ipv6_autoconf = svGetValueBoolean (ifcfg, "IPV6_AUTOCONF", !ipv6forwarding);
+		str_value = svGetValueString (ifcfg, "IPV6_AUTOCONF");
 		dhcp6 = svGetValueBoolean (ifcfg, "DHCPV6C", FALSE);
 
-		if (ipv6_autoconf)
+		if (!g_strcmp0 (str_value, "shared"))
+			method = NM_SETTING_IP6_CONFIG_METHOD_SHARED;
+		else if (svParseBoolean (str_value, !ipv6forwarding))
 			method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
 		else if (dhcp6)
 			method = NM_SETTING_IP6_CONFIG_METHOD_DHCP;
