@@ -488,14 +488,29 @@ create_async_complete (GObject *object, NMObjectTypeAsyncData *async_data)
 static void
 create_async_inited (GObject *object, GAsyncResult *result, gpointer user_data)
 {
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+	NMObjectPrivate *odata_priv;
 	NMObjectTypeAsyncData *async_data = user_data;
 	GError *error = NULL;
+	ObjectCreatedData *odata;
 
-	NM_OBJECT_GET_PRIVATE (object)->inited = TRUE;
+	priv->inited = TRUE;
 	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (object), result, &error)) {
 		dbgmsg ("Could not create object for %s: %s",
 		        nm_object_get_path (NM_OBJECT (object)),
 		        error->message);
+
+		while (priv->waiters) {
+			odata = priv->waiters->data;
+			odata_priv = NM_OBJECT_GET_PRIVATE (odata->self);
+
+			priv->waiters = g_slist_remove (priv->waiters, odata);
+			if (!odata_priv->reload_error)
+				odata_priv->reload_error = g_error_copy (error);
+			odata_priv->reload_remaining--;
+			reload_complete (odata->self, FALSE);
+		}
+
 		g_error_free (error);
 		g_clear_object (&object);
 	}
@@ -503,15 +518,13 @@ create_async_inited (GObject *object, GAsyncResult *result, gpointer user_data)
 	create_async_complete (object, async_data);
 
 	if (object) {
-		NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
-
 		/* There are some object properties whose creation couldn't proceed
 		 * because it depended on this object. */
 		while (priv->waiters) {
-			ObjectCreatedData *odata = priv->waiters->data;
-
+			odata = priv->waiters->data;
 			priv->waiters = g_slist_remove (priv->waiters, odata);
 			object_property_maybe_complete (odata);
+
 		}
 	}
 }
