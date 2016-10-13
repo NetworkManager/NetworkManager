@@ -40,8 +40,8 @@ extern unsigned int if_nametoindex (const char *__ifname);
 #include "NetworkManagerUtils.h"
 #include "nm-linux-platform.h"
 #include "nm-dhcp-manager.h"
-#include "nm-rdisc.h"
-#include "nm-lndp-rdisc.h"
+#include "nm-ndisc.h"
+#include "nm-lndp-ndisc.h"
 #include "nm-utils.h"
 #include "nm-setting-ip6-config.h"
 #include "systemd/nm-sd.h"
@@ -146,10 +146,10 @@ dhcp4_state_changed (NMDhcpClient *client,
 }
 
 static void
-rdisc_config_changed (NMRDisc *rdisc, const NMRDiscData *rdata, guint changed_int, gpointer user_data)
+ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_int, gpointer user_data)
 {
-	NMRDiscConfigMap changed = changed_int;
-	static NMIP6Config *rdisc_config = NULL;
+	NMNDiscConfigMap changed = changed_int;
+	static NMIP6Config *ndisc_config = NULL;
 	NMIP6Config *existing;
 	static int system_support = -1;
 	guint32 ifa_flags = 0x00;
@@ -176,30 +176,30 @@ rdisc_config_changed (NMRDisc *rdisc, const NMRDiscData *rdata, guint changed_in
 	}
 
 	existing = nm_ip6_config_capture (gl.ifindex, FALSE, global_opt.tempaddr);
-	if (rdisc_config)
-		nm_ip6_config_subtract (existing, rdisc_config);
+	if (ndisc_config)
+		nm_ip6_config_subtract (existing, ndisc_config);
 	else
-		rdisc_config = nm_ip6_config_new (gl.ifindex);
+		ndisc_config = nm_ip6_config_new (gl.ifindex);
 
-	if (changed & NM_RDISC_CONFIG_GATEWAYS) {
-		/* Use the first gateway as ordered in router discovery cache. */
+	if (changed & NM_NDISC_CONFIG_GATEWAYS) {
+		/* Use the first gateway as ordered in neighbor discovery cache. */
 		if (rdata->gateways_n)
-			nm_ip6_config_set_gateway (rdisc_config, &rdata->gateways[0].address);
+			nm_ip6_config_set_gateway (ndisc_config, &rdata->gateways[0].address);
 		else
-			nm_ip6_config_set_gateway (rdisc_config, NULL);
+			nm_ip6_config_set_gateway (ndisc_config, NULL);
 	}
 
-	if (changed & NM_RDISC_CONFIG_ADDRESSES) {
-		/* Rebuild address list from router discovery cache. */
-		nm_ip6_config_reset_addresses (rdisc_config);
+	if (changed & NM_NDISC_CONFIG_ADDRESSES) {
+		/* Rebuild address list from neighbor discovery cache. */
+		nm_ip6_config_reset_addresses (ndisc_config);
 
-		/* rdisc->addresses contains at most max_addresses entries.
+		/* ndisc->addresses contains at most max_addresses entries.
 		 * This is different from what the kernel does, which
 		 * also counts static and temporary addresses when checking
 		 * max_addresses.
 		 **/
 		for (i = 0; i < rdata->addresses_n; i++) {
-			const NMRDiscAddress *discovered_address = &rdata->addresses[i];
+			const NMNDiscAddress *discovered_address = &rdata->addresses[i];
 			NMPlatformIP6Address address;
 
 			memset (&address, 0, sizeof (address));
@@ -210,52 +210,52 @@ rdisc_config_changed (NMRDisc *rdisc, const NMRDiscData *rdata, guint changed_in
 			address.preferred = discovered_address->preferred;
 			if (address.preferred > address.lifetime)
 				address.preferred = address.lifetime;
-			address.addr_source = NM_IP_CONFIG_SOURCE_RDISC;
+			address.addr_source = NM_IP_CONFIG_SOURCE_NDISC;
 			address.n_ifa_flags = ifa_flags;
 
-			nm_ip6_config_add_address (rdisc_config, &address);
+			nm_ip6_config_add_address (ndisc_config, &address);
 		}
 	}
 
-	if (changed & NM_RDISC_CONFIG_ROUTES) {
-		/* Rebuild route list from router discovery cache. */
-		nm_ip6_config_reset_routes (rdisc_config);
+	if (changed & NM_NDISC_CONFIG_ROUTES) {
+		/* Rebuild route list from neighbor discovery cache. */
+		nm_ip6_config_reset_routes (ndisc_config);
 
 		for (i = 0; i < rdata->routes_n; i++) {
-			const NMRDiscRoute *discovered_route = &rdata->routes[i];
+			const NMNDiscRoute *discovered_route = &rdata->routes[i];
 			const NMPlatformIP6Route route = {
 				.network    = discovered_route->network,
 				.plen       = discovered_route->plen,
 				.gateway    = discovered_route->gateway,
-				.rt_source  = NM_IP_CONFIG_SOURCE_RDISC,
+				.rt_source  = NM_IP_CONFIG_SOURCE_NDISC,
 				.metric     = global_opt.priority_v6,
 			};
 
-			nm_ip6_config_add_route (rdisc_config, &route);
+			nm_ip6_config_add_route (ndisc_config, &route);
 		}
 	}
 
-	if (changed & NM_RDISC_CONFIG_DHCP_LEVEL) {
+	if (changed & NM_NDISC_CONFIG_DHCP_LEVEL) {
 		/* Unsupported until systemd DHCPv6 is ready */
 	}
 
-	if (changed & NM_RDISC_CONFIG_HOP_LIMIT)
+	if (changed & NM_NDISC_CONFIG_HOP_LIMIT)
 		nm_platform_sysctl_set_ip6_hop_limit_safe (NM_PLATFORM_GET, global_opt.ifname, rdata->hop_limit);
 
-	if (changed & NM_RDISC_CONFIG_MTU) {
+	if (changed & NM_NDISC_CONFIG_MTU) {
 		char val[16];
 
 		g_snprintf (val, sizeof (val), "%d", rdata->mtu);
 		nm_platform_sysctl_set (NM_PLATFORM_GET, nm_utils_ip6_property_path (global_opt.ifname, "mtu"), val);
 	}
 
-	nm_ip6_config_merge (existing, rdisc_config, NM_IP_CONFIG_MERGE_DEFAULT);
+	nm_ip6_config_merge (existing, ndisc_config, NM_IP_CONFIG_MERGE_DEFAULT);
 	if (!nm_ip6_config_commit (existing, gl.ifindex, TRUE))
 		_LOGW (LOGD_IP6, "failed to apply IPv6 config");
 }
 
 static void
-rdisc_ra_timeout (NMRDisc *rdisc, gpointer user_data)
+ndisc_ra_timeout (NMNDisc *ndisc, gpointer user_data)
 {
 	if (global_opt.slaac_required) {
 		_LOGW (LOGD_IP6, "IPv6 timed out or failed, quitting...");
@@ -337,13 +337,13 @@ ip6_address_changed (NMPlatform *platform,
                      int iface,
                      NMPlatformIP6Address *addr,
                      int change_type_i,
-                     NMRDisc *rdisc)
+                     NMNDisc *ndisc)
 {
 	const NMPlatformSignalChangeType change_type = change_type_i;
 
 	if (   (change_type == NM_PLATFORM_SIGNAL_CHANGED && addr->n_ifa_flags & IFA_F_DADFAILED)
 	    || (change_type == NM_PLATFORM_SIGNAL_REMOVED && addr->n_ifa_flags & IFA_F_TENTATIVE))
-		nm_rdisc_dad_failed (rdisc, &addr->address);
+		nm_ndisc_dad_failed (ndisc, &addr->address);
 }
 
 int
@@ -354,7 +354,7 @@ main (int argc, char *argv[])
 	gboolean wrote_pidfile = FALSE;
 	gs_free char *pidfile = NULL;
 	gs_unref_object NMDhcpClient *dhcp4_client = NULL;
-	gs_unref_object NMRDisc *rdisc = NULL;
+	gs_unref_object NMNDisc *ndisc = NULL;
 	GByteArray *hwaddr = NULL;
 	size_t hwaddr_len = 0;
 	gconstpointer tmp;
@@ -502,13 +502,13 @@ main (int argc, char *argv[])
 			stable_type = (global_opt.stable_id[0] - '0');
 			stable_id = &global_opt.stable_id[2];
 		}
-		rdisc = nm_lndp_rdisc_new (NM_PLATFORM_GET, gl.ifindex, global_opt.ifname,
+		ndisc = nm_lndp_ndisc_new (NM_PLATFORM_GET, gl.ifindex, global_opt.ifname,
 		                           stable_type, stable_id,
 		                           global_opt.addr_gen_mode, NULL);
-		g_assert (rdisc);
+		g_assert (ndisc);
 
 		if (iid)
-			nm_rdisc_set_iid (rdisc, *iid);
+			nm_ndisc_set_iid (ndisc, *iid);
 
 		nm_platform_sysctl_set (NM_PLATFORM_GET, nm_utils_ip6_property_path (global_opt.ifname, "accept_ra"), "1");
 		nm_platform_sysctl_set (NM_PLATFORM_GET, nm_utils_ip6_property_path (global_opt.ifname, "accept_ra_defrtr"), "0");
@@ -518,16 +518,16 @@ main (int argc, char *argv[])
 		g_signal_connect (NM_PLATFORM_GET,
 		                  NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED,
 		                  G_CALLBACK (ip6_address_changed),
-		                  rdisc);
-		g_signal_connect (rdisc,
-		                  NM_RDISC_CONFIG_CHANGED,
-		                  G_CALLBACK (rdisc_config_changed),
+		                  ndisc);
+		g_signal_connect (ndisc,
+		                  NM_NDISC_CONFIG_CHANGED,
+		                  G_CALLBACK (ndisc_config_changed),
 		                  NULL);
-		g_signal_connect (rdisc,
-		                  NM_RDISC_RA_TIMEOUT,
-		                  G_CALLBACK (rdisc_ra_timeout),
+		g_signal_connect (ndisc,
+		                  NM_NDISC_RA_TIMEOUT,
+		                  G_CALLBACK (ndisc_ra_timeout),
 		                  NULL);
-		nm_rdisc_start (rdisc);
+		nm_ndisc_start (ndisc);
 	}
 
 	sd_id = nm_sd_event_attach_default ();

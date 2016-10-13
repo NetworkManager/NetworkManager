@@ -1,5 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-/* nm-lndp-rdisc.h - Implementation of router discovery using libndp
+/* nm-lndp-ndisc.h - Implementation of neighbor discovery using libndp
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,25 +18,25 @@
  * Copyright (C) 2013 Red Hat, Inc.
  */
 
-#ifndef __NETWORKMANAGER_LNDP_RDISC_H__
-#define __NETWORKMANAGER_LNDP_RDISC_H__
+#ifndef __NETWORKMANAGER_LNDP_NDISC_H__
+#define __NETWORKMANAGER_LNDP_NDISC_H__
 
-#include "nm-rdisc.h"
+#include "nm-ndisc.h"
 #include "nm-core-utils.h"
 
-#define NM_TYPE_LNDP_RDISC            (nm_lndp_rdisc_get_type ())
-#define NM_LNDP_RDISC(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_LNDP_RDISC, NMLndpRDisc))
-#define NM_LNDP_RDISC_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_LNDP_RDISC, NMLndpRDiscClass))
-#define NM_IS_LNDP_RDISC(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_LNDP_RDISC))
-#define NM_IS_LNDP_RDISC_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_LNDP_RDISC))
-#define NM_LNDP_RDISC_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_LNDP_RDISC, NMLndpRDiscClass))
+#define NM_TYPE_LNDP_NDISC            (nm_lndp_ndisc_get_type ())
+#define NM_LNDP_NDISC(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_LNDP_NDISC, NMLndpNDisc))
+#define NM_LNDP_NDISC_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_LNDP_NDISC, NMLndpNDiscClass))
+#define NM_IS_LNDP_NDISC(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_LNDP_NDISC))
+#define NM_IS_LNDP_NDISC_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_LNDP_NDISC))
+#define NM_LNDP_NDISC_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_LNDP_NDISC, NMLndpNDiscClass))
 
-typedef struct _NMLndpRDisc NMLndpRDisc;
-typedef struct _NMLndpRDiscClass NMLndpRDiscClass;
+typedef struct _NMLndpNDisc NMLndpNDisc;
+typedef struct _NMLndpNDiscClass NMLndpNDiscClass;
 
-GType nm_lndp_rdisc_get_type (void);
+GType nm_lndp_ndisc_get_type (void);
 
-NMRDisc *nm_lndp_rdisc_new (NMPlatform *platform,
+NMNDisc *nm_lndp_ndisc_new (NMPlatform *platform,
                             int ifindex,
                             const char *ifname,
                             NMUtilsStableType stable_type,
@@ -44,4 +44,4 @@ NMRDisc *nm_lndp_rdisc_new (NMPlatform *platform,
                             NMSettingIP6ConfigAddrGenMode addr_gen_mode,
                             GError **error);
 
-#endif /* __NETWORKMANAGER_LNDP_RDISC_H__ */
+#endif /* __NETWORKMANAGER_LNDP_NDISC_H__ */

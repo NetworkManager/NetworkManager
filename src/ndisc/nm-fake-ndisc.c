@@ -1,5 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-/* nm-fake-rdisc.c - Fake implementation of router discovery
+/* nm-fake-ndisc.c - Fake implementation of neighbor discovery
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,14 +20,14 @@
 
 #include "nm-default.h"
 
-#include "nm-fake-rdisc.h"
+#include "nm-fake-ndisc.h"
 
 #include <string.h>
 #include <arpa/inet.h>
 
-#include "nm-rdisc-private.h"
+#include "nm-ndisc-private.h"
 
-#define _NMLOG_PREFIX_NAME                "rdisc-fake"
+#define _NMLOG_PREFIX_NAME                "ndisc-fake"
 
 /*****************************************************************************/
 
@@ -35,7 +35,7 @@ typedef struct {
 	guint id;
 	guint when;
 
-	NMRDiscDHCPLevel dhcp_level;
+	NMNDiscDHCPLevel dhcp_level;
 	GArray *gateways;
 	GArray *prefixes;
 	GArray *dns_servers;
@@ -51,7 +51,7 @@ typedef struct {
         guint32 timestamp;
         guint32 lifetime;
         guint32 preferred;
-        NMRDiscPreference preference;
+        NMNDiscPreference preference;
 } FakePrefix;
 
 /*****************************************************************************/
@@ -65,20 +65,20 @@ static guint signals[LAST_SIGNAL] = { 0 };
 typedef struct {
 	guint receive_ra_id;
 	GSList *ras;
-} NMFakeRDiscPrivate;
+} NMFakeNDiscPrivate;
 
-struct _NMFakeRRDisc {
-	NMRDisc parent;
-	NMFakeRDiscPrivate _priv;
+struct _NMFakeRNDisc {
+	NMNDisc parent;
+	NMFakeNDiscPrivate _priv;
 };
 
-struct _NMFakeRRDiscClass {
-	NMRDiscClass parent;
+struct _NMFakeRNDiscClass {
+	NMNDiscClass parent;
 };
 
-G_DEFINE_TYPE (NMFakeRDisc, nm_fake_rdisc, NM_TYPE_RDISC)
+G_DEFINE_TYPE (NMFakeNDisc, nm_fake_ndisc, NM_TYPE_NDISC)
 
-#define NM_FAKE_RDISC_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMFakeRDisc, NM_IS_FAKE_RDISC)
+#define NM_FAKE_NDISC_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMFakeNDisc, NM_IS_FAKE_NDISC)
 
 /*****************************************************************************/
 
@@ -97,7 +97,7 @@ fake_ra_free (gpointer data)
 static void
 ra_dns_domain_free (gpointer data)
 {
-	g_free (((NMRDiscDNSDomain *)(data))->domain);
+	g_free (((NMNDiscDNSDomain *)(data))->domain);
 }
 
 static FakeRa *
@@ -113,13 +113,13 @@ find_ra (GSList *ras, guint id)
 }
 
 guint
-nm_fake_rdisc_add_ra (NMFakeRDisc *self,
+nm_fake_ndisc_add_ra (NMFakeNDisc *self,
                       guint seconds_after_previous,
-                      NMRDiscDHCPLevel dhcp_level,
+                      NMNDiscDHCPLevel dhcp_level,
                       int hop_limit,
                       guint32 mtu)
 {
-	NMFakeRDiscPrivate *priv = NM_FAKE_RDISC_GET_PRIVATE (self);
+	NMFakeNDiscPrivate *priv = NM_FAKE_NDISC_GET_PRIVATE (self);
 	static guint counter = 1;
 	FakeRa *ra;
 
@@ -129,10 +129,10 @@ nm_fake_rdisc_add_ra (NMFakeRDisc *self,
 	ra->dhcp_level = dhcp_level;
 	ra->hop_limit = hop_limit;
 	ra->mtu = mtu;
-	ra->gateways = g_array_new (FALSE, FALSE, sizeof (NMRDiscGateway));
+	ra->gateways = g_array_new (FALSE, FALSE, sizeof (NMNDiscGateway));
 	ra->prefixes = g_array_new (FALSE, FALSE, sizeof (FakePrefix));
-	ra->dns_servers = g_array_new (FALSE, FALSE, sizeof (NMRDiscDNSServer));
-	ra->dns_domains = g_array_new (FALSE, FALSE, sizeof (NMRDiscDNSDomain));
+	ra->dns_servers = g_array_new (FALSE, FALSE, sizeof (NMNDiscDNSServer));
+	ra->dns_domains = g_array_new (FALSE, FALSE, sizeof (NMNDiscDNSDomain));
 	g_array_set_clear_func (ra->dns_domains, ra_dns_domain_free);
 
 	priv->ras = g_slist_append (priv->ras, ra);
@@ -140,20 +140,20 @@ nm_fake_rdisc_add_ra (NMFakeRDisc *self,
 }
 
 void
-nm_fake_rdisc_add_gateway (NMFakeRDisc *self,
+nm_fake_ndisc_add_gateway (NMFakeNDisc *self,
                            guint ra_id,
                            const char *addr,
                            guint32 timestamp,
                            guint32 lifetime,
-                           NMRDiscPreference preference)
+                           NMNDiscPreference preference)
 {
-	NMFakeRDiscPrivate *priv = NM_FAKE_RDISC_GET_PRIVATE (self);
+	NMFakeNDiscPrivate *priv = NM_FAKE_NDISC_GET_PRIVATE (self);
 	FakeRa *ra = find_ra (priv->ras, ra_id);
-	NMRDiscGateway *gw;
+	NMNDiscGateway *gw;
 
 	g_assert (ra);
 	g_array_set_size (ra->gateways, ra->gateways->len + 1);
-	gw = &g_array_index (ra->gateways, NMRDiscGateway, ra->gateways->len - 1);
+	gw = &g_array_index (ra->gateways, NMNDiscGateway, ra->gateways->len - 1);
 	g_assert (inet_pton (AF_INET6, addr, &gw->address) == 1);
 	gw->timestamp = timestamp;
 	gw->lifetime = lifetime;
@@ -161,7 +161,7 @@ nm_fake_rdisc_add_gateway (NMFakeRDisc *self,
 }
 
 void
-nm_fake_rdisc_add_prefix (NMFakeRDisc *self,
+nm_fake_ndisc_add_prefix (NMFakeNDisc *self,
                           guint ra_id,
                           const char *network,
                           guint plen,
@@ -169,9 +169,9 @@ nm_fake_rdisc_add_prefix (NMFakeRDisc *self,
                           guint32 timestamp,
                           guint32 lifetime,
                           guint32 preferred,
-                          NMRDiscPreference preference)
+                          NMNDiscPreference preference)
 {
-	NMFakeRDiscPrivate *priv = NM_FAKE_RDISC_GET_PRIVATE (self);
+	NMFakeNDiscPrivate *priv = NM_FAKE_NDISC_GET_PRIVATE (self);
 	FakeRa *ra = find_ra (priv->ras, ra_id);
 	FakePrefix *prefix;
 
@@ -189,70 +189,70 @@ nm_fake_rdisc_add_prefix (NMFakeRDisc *self,
 }
 
 void
-nm_fake_rdisc_add_dns_server (NMFakeRDisc *self,
+nm_fake_ndisc_add_dns_server (NMFakeNDisc *self,
                               guint ra_id,
                               const char *address,
                               guint32 timestamp,
                               guint32 lifetime)
 {
-	NMFakeRDiscPrivate *priv = NM_FAKE_RDISC_GET_PRIVATE (self);
+	NMFakeNDiscPrivate *priv = NM_FAKE_NDISC_GET_PRIVATE (self);
 	FakeRa *ra = find_ra (priv->ras, ra_id);
-	NMRDiscDNSServer *dns;
+	NMNDiscDNSServer *dns;
 
 	g_assert (ra);
 	g_array_set_size (ra->dns_servers, ra->dns_servers->len + 1);
-	dns = &g_array_index (ra->dns_servers, NMRDiscDNSServer, ra->dns_servers->len - 1);
+	dns = &g_array_index (ra->dns_servers, NMNDiscDNSServer, ra->dns_servers->len - 1);
 	g_assert (inet_pton (AF_INET6, address, &dns->address) == 1);
 	dns->timestamp = timestamp;
 	dns->lifetime = lifetime;
 }
 
 void
-nm_fake_rdisc_add_dns_domain (NMFakeRDisc *self,
+nm_fake_ndisc_add_dns_domain (NMFakeNDisc *self,
                               guint ra_id,
                               const char *domain,
                               guint32 timestamp,
                               guint32 lifetime)
 {
-	NMFakeRDiscPrivate *priv = NM_FAKE_RDISC_GET_PRIVATE (self);
+	NMFakeNDiscPrivate *priv = NM_FAKE_NDISC_GET_PRIVATE (self);
 	FakeRa *ra = find_ra (priv->ras, ra_id);
-	NMRDiscDNSDomain *dns;
+	NMNDiscDNSDomain *dns;
 
 	g_assert (ra);
 	g_array_set_size (ra->dns_domains, ra->dns_domains->len + 1);
-	dns = &g_array_index (ra->dns_domains, NMRDiscDNSDomain, ra->dns_domains->len - 1);
+	dns = &g_array_index (ra->dns_domains, NMNDiscDNSDomain, ra->dns_domains->len - 1);
 	dns->domain = g_strdup (domain);
 	dns->timestamp = timestamp;
 	dns->lifetime = lifetime;
 }
 
 gboolean
-nm_fake_rdisc_done (NMFakeRDisc *self)
+nm_fake_ndisc_done (NMFakeNDisc *self)
 {
-	return !NM_FAKE_RDISC_GET_PRIVATE (self)->ras;
+	return !NM_FAKE_NDISC_GET_PRIVATE (self)->ras;
 }
 
 /*****************************************************************************/
 
 static gboolean
-send_rs (NMRDisc *rdisc, GError **error)
+send_rs (NMNDisc *ndisc, GError **error)
 {
-	g_signal_emit (rdisc, signals[RS_SENT], 0);
+	g_signal_emit (ndisc, signals[RS_SENT], 0);
 	return TRUE;
 }
 
 static gboolean
 receive_ra (gpointer user_data)
 {
-	NMFakeRDisc *self = user_data;
-	NMFakeRDiscPrivate *priv = NM_FAKE_RDISC_GET_PRIVATE (self);
-	NMRDisc *rdisc = NM_RDISC (self);
-	NMRDiscDataInternal *rdata = rdisc->rdata;
+	NMFakeNDisc *self = user_data;
+	NMFakeNDiscPrivate *priv = NM_FAKE_NDISC_GET_PRIVATE (self);
+	NMNDisc *ndisc = NM_NDISC (self);
+	NMNDiscDataInternal *rdata = ndisc->rdata;
 	FakeRa *ra = priv->ras->data;
-	NMRDiscConfigMap changed = 0;
+	NMNDiscConfigMap changed = 0;
 	guint32 now = nm_utils_get_monotonic_timestamp_s ();
 	guint i;
-	NMRDiscDHCPLevel dhcp_level;
+	NMNDiscDHCPLevel dhcp_level;
 
 	priv->receive_ra_id = 0;
 
@@ -261,19 +261,19 @@ receive_ra (gpointer user_data)
 
 	if (rdata->public.dhcp_level != dhcp_level) {
 		rdata->public.dhcp_level = dhcp_level;
-		changed |= NM_RDISC_CONFIG_DHCP_LEVEL;
+		changed |= NM_NDISC_CONFIG_DHCP_LEVEL;
 	}
 
 	for (i = 0; i < ra->gateways->len; i++) {
-		NMRDiscGateway *item = &g_array_index (ra->gateways, NMRDiscGateway, i);
+		NMNDiscGateway *item = &g_array_index (ra->gateways, NMNDiscGateway, i);
 
-		if (nm_rdisc_add_gateway (rdisc, item))
-			changed |= NM_RDISC_CONFIG_GATEWAYS;
+		if (nm_ndisc_add_gateway (ndisc, item))
+			changed |= NM_NDISC_CONFIG_GATEWAYS;
 	}
 
 	for (i = 0; i < ra->prefixes->len; i++) {
 		FakePrefix *item = &g_array_index (ra->prefixes, FakePrefix, i);
-		NMRDiscRoute route = {
+		NMNDiscRoute route = {
 			.network = item->network,
 			.plen = item->plen,
 			.gateway = item->gateway,
@@ -284,11 +284,11 @@ receive_ra (gpointer user_data)
 
 		g_assert (route.plen > 0 && route.plen <= 128);
 
-		if (nm_rdisc_add_route (rdisc, &route))
-			changed |= NM_RDISC_CONFIG_ROUTES;
+		if (nm_ndisc_add_route (ndisc, &route))
+			changed |= NM_NDISC_CONFIG_ROUTES;
 
 		if (item->plen == 64) {
-			NMRDiscAddress address = {
+			NMNDiscAddress address = {
 				.address = item->network,
 				.timestamp = item->timestamp,
 				.lifetime = item->lifetime,
@@ -296,39 +296,39 @@ receive_ra (gpointer user_data)
 				.dad_counter = 0,
 			};
 
-			if (nm_rdisc_complete_and_add_address (rdisc, &address))
-				changed |= NM_RDISC_CONFIG_ADDRESSES;
+			if (nm_ndisc_complete_and_add_address (ndisc, &address))
+				changed |= NM_NDISC_CONFIG_ADDRESSES;
 		}
 	}
 
 	for (i = 0; i < ra->dns_servers->len; i++) {
-		NMRDiscDNSServer *item = &g_array_index (ra->dns_servers, NMRDiscDNSServer, i);
+		NMNDiscDNSServer *item = &g_array_index (ra->dns_servers, NMNDiscDNSServer, i);
 
-		if (nm_rdisc_add_dns_server (rdisc, item))
-			changed |= NM_RDISC_CONFIG_DNS_SERVERS;
+		if (nm_ndisc_add_dns_server (ndisc, item))
+			changed |= NM_NDISC_CONFIG_DNS_SERVERS;
 	}
 
 	for (i = 0; i < ra->dns_domains->len; i++) {
-		NMRDiscDNSDomain *item = &g_array_index (ra->dns_domains, NMRDiscDNSDomain, i);
+		NMNDiscDNSDomain *item = &g_array_index (ra->dns_domains, NMNDiscDNSDomain, i);
 
-		if (nm_rdisc_add_dns_domain (rdisc, item))
-			changed |= NM_RDISC_CONFIG_DNS_DOMAINS;
+		if (nm_ndisc_add_dns_domain (ndisc, item))
+			changed |= NM_NDISC_CONFIG_DNS_DOMAINS;
 	}
 
 	if (rdata->public.mtu != ra->mtu) {
 		rdata->public.mtu = ra->mtu;
-		changed |= NM_RDISC_CONFIG_MTU;
+		changed |= NM_NDISC_CONFIG_MTU;
 	}
 
 	if (rdata->public.hop_limit != ra->hop_limit) {
 		rdata->public.hop_limit = ra->hop_limit;
-		changed |= NM_RDISC_CONFIG_HOP_LIMIT;
+		changed |= NM_NDISC_CONFIG_HOP_LIMIT;
 	}
 
 	priv->ras = g_slist_remove (priv->ras, priv->ras->data);
 	fake_ra_free (ra);
 
-	nm_rdisc_ra_received (NM_RDISC (self), now, changed);
+	nm_ndisc_ra_received (NM_NDISC (self), now, changed);
 
 	/* Schedule next RA */
 	if (priv->ras) {
@@ -340,9 +340,9 @@ receive_ra (gpointer user_data)
 }
 
 static void
-start (NMRDisc *rdisc)
+start (NMNDisc *ndisc)
 {
-	NMFakeRDiscPrivate *priv = NM_FAKE_RDISC_GET_PRIVATE ((NMFakeRDisc *) rdisc);
+	NMFakeNDiscPrivate *priv = NM_FAKE_NDISC_GET_PRIVATE ((NMFakeNDisc *) ndisc);
 	FakeRa *ra;
 
 	/* Queue up the first fake RA */
@@ -350,58 +350,58 @@ start (NMRDisc *rdisc)
 	ra = priv->ras->data;
 
 	g_assert (!priv->receive_ra_id);
-	priv->receive_ra_id = g_timeout_add_seconds (ra->when, receive_ra, rdisc);
+	priv->receive_ra_id = g_timeout_add_seconds (ra->when, receive_ra, ndisc);
 }
 
 void
-nm_fake_rdisc_emit_new_ras (NMFakeRDisc *self)
+nm_fake_ndisc_emit_new_ras (NMFakeNDisc *self)
 {
-	if (!NM_FAKE_RDISC_GET_PRIVATE (self)->receive_ra_id)
-		start (NM_RDISC (self));
+	if (!NM_FAKE_NDISC_GET_PRIVATE (self)->receive_ra_id)
+		start (NM_NDISC (self));
 }
 
 /*****************************************************************************/
 
 static void
-nm_fake_rdisc_init (NMFakeRDisc *fake_rdisc)
+nm_fake_ndisc_init (NMFakeNDisc *fake_ndisc)
 {
 }
 
-NMRDisc *
-nm_fake_rdisc_new (int ifindex, const char *ifname)
+NMNDisc *
+nm_fake_ndisc_new (int ifindex, const char *ifname)
 {
-	return g_object_new (NM_TYPE_FAKE_RDISC,
-	                     NM_RDISC_IFINDEX, ifindex,
-	                     NM_RDISC_IFNAME, ifname,
+	return g_object_new (NM_TYPE_FAKE_NDISC,
+	                     NM_NDISC_IFINDEX, ifindex,
+	                     NM_NDISC_IFNAME, ifname,
 	                     NULL);
 }
 
 static void
 dispose (GObject *object)
 {
-	NMFakeRDiscPrivate *priv = NM_FAKE_RDISC_GET_PRIVATE ((NMFakeRDisc *) object);
+	NMFakeNDiscPrivate *priv = NM_FAKE_NDISC_GET_PRIVATE ((NMFakeNDisc *) object);
 
 	nm_clear_g_source (&priv->receive_ra_id);
 
 	g_slist_free_full (priv->ras, fake_ra_free);
 	priv->ras = NULL;
 
-	G_OBJECT_CLASS (nm_fake_rdisc_parent_class)->dispose (object);
+	G_OBJECT_CLASS (nm_fake_ndisc_parent_class)->dispose (object);
 }
 
 static void
-nm_fake_rdisc_class_init (NMFakeRDiscClass *klass)
+nm_fake_ndisc_class_init (NMFakeNDiscClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
-	NMRDiscClass *rdisc_class = NM_RDISC_CLASS (klass);
+	NMNDiscClass *ndisc_class = NM_NDISC_CLASS (klass);
 
 	object_class->dispose = dispose;
 
-	rdisc_class->start = start;
-	rdisc_class->send_rs = send_rs;
+	ndisc_class->start = start;
+	ndisc_class->send_rs = send_rs;
 
 	signals[RS_SENT] =
-	    g_signal_new (NM_FAKE_RDISC_RS_SENT,
+	    g_signal_new (NM_FAKE_NDISC_RS_SENT,
 	                  G_OBJECT_CLASS_TYPE (klass),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0,  NULL, NULL, NULL,
