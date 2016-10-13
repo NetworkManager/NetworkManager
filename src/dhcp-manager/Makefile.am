@@ -14,4 +14,7 @@ nm_dhcp_helper_CPPFLAGS = \
 	-DG_LOG_DOMAIN=\""nm-dhcp-helper"\" \
 	-DNMRUNDIR=\"$(nmrundir)\"
 
+nm_dhcp_helper_LDFLAGS = \
+	-Wl,--version-script="$(top_srcdir)/linker-script-binary.ver"
+
 nm_dhcp_helper_LDADD = $(GLIB_LIBS)
