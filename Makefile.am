@@ -1,5 +1,9 @@
 include $(GLIB_MAKEFILE)
 
+@GNOME_CODE_COVERAGE_RULES@
+
+###############################################################################
+
 SUBDIRS = \
 	. \
 	introspection \
@@ -25,7 +29,37 @@ SUBDIRS += \
 	docs \
 	vapi
 
-@GNOME_CODE_COVERAGE_RULES@
+###############################################################################
+
+DISTCHECK_CONFIGURE_FLAGS = \
+	--enable-tests=yes \
+	--with-valgrind=no \
+	--enable-gtk-doc \
+	--enable-more-warnings=error \
+	--with-udev-dir=$$dc_install_base/lib/udev \
+	--with-wext=no \
+	--enable-ifcfg-rh \
+	--enable-ifupdown \
+	--enable-ifnet
+
+if BUILD_SETTING_DOCS
+dist-check-setting-docs:
+else
+dist-check-setting-docs:
+	@echo "*** gobject-introspection and pygobject are needed to run 'make dist'. ***"
+	@false
+endif
+
+dist: dist-check-setting-docs
+
+DISTCLEANFILES = intltool-extract intltool-merge intltool-update
+
+###############################################################################
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = NetworkManager.pc
+
+###############################################################################
 
 EXTRA_DIST = \
 	CONTRIBUTING \
@@ -60,32 +94,6 @@ EXTRA_DIST = \
 	\
 	$(NULL)
 
-DISTCHECK_CONFIGURE_FLAGS = \
-	--enable-tests=yes \
-	--with-valgrind=no \
-	--enable-gtk-doc \
-	--enable-more-warnings=error \
-	--with-udev-dir=$$dc_install_base/lib/udev \
-	--with-wext=no \
-	--enable-ifcfg-rh \
-	--enable-ifupdown \
-	--enable-ifnet
-
-if BUILD_SETTING_DOCS
-dist-check-setting-docs:
-else
-dist-check-setting-docs:
-	@echo "*** gobject-introspection and pygobject are needed to run 'make dist'. ***"
-	@false
-endif
-
-dist: dist-check-setting-docs
-
-DISTCLEANFILES = intltool-extract intltool-merge intltool-update
-
-pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = NetworkManager.pc
-
 CLEANFILES = \
 	cscope.in.out \
 	cscope.out \
@@ -95,7 +103,11 @@ CLEANFILES = \
 	\
 	$(NULL)
 
+###############################################################################
+
 cscope:
 	cscope -b -q -R -sshared -ssrc -slibnm-core -slibnm -slibnm-glib -slibnm-util -sclients;
+
+###############################################################################
 
 .PHONY: cscope
