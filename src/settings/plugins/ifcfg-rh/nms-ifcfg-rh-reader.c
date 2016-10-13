@@ -1477,7 +1477,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	/* Read IPv6 Privacy Extensions configuration */
 	str_value = svGetValueString (ifcfg, "IPV6_PRIVACY");
 	if (str_value) {
-		ip6_privacy = svGetValueBoolean (ifcfg, "IPV6_PRIVACY", FALSE);
+		ip6_privacy = svParseBoolean (str_value, FALSE);
 		if (!ip6_privacy)
 			ip6_privacy = (g_strcmp0 (str_value, "rfc4941") == 0) ||
 			              (g_strcmp0 (str_value, "rfc3041") == 0);
