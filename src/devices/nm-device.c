@@ -11806,25 +11806,25 @@ nm_device_hw_addr_is_explict (NMDevice *self)
 }
 
 static gboolean
-_hw_addr_matches (NMDevice *self, const char *addr)
+_hw_addr_matches (NMDevice *self, const guint8 *addr, gsize addr_len)
 {
 	const char *cur_addr;
 
 	cur_addr = nm_device_get_hw_address (self);
-	return cur_addr && nm_utils_hwaddr_matches (cur_addr, -1, addr, -1);
+	return cur_addr && nm_utils_hwaddr_matches (addr, addr_len, cur_addr, -1);
 }
 
 static gboolean
 _hw_addr_set (NMDevice *self,
-              const char *addr,
-              const char *operation,
-              const char *detail)
+              const char *const addr,
+              const char *const operation,
+              const char *const detail)
 {
 	NMDevicePrivate *priv;
 	gboolean success = FALSE;
 	NMPlatformError plerr;
 	guint8 addr_bytes[NM_UTILS_HWADDR_LEN_MAX];
-	guint hw_addr_len;
+	gsize addr_len;
 	gboolean was_up;
 
 	nm_assert (NM_IS_DEVICE (self));
@@ -11833,18 +11833,20 @@ _hw_addr_set (NMDevice *self,
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
+	if (!_nm_utils_hwaddr_aton (addr, addr_bytes, sizeof (addr_bytes), &addr_len))
+		g_return_val_if_reached (FALSE);
+
 	/* Do nothing if current MAC is same */
-	if (_hw_addr_matches (self, addr)) {
+	if (_hw_addr_matches (self, addr_bytes, addr_len)) {
 		_LOGT (LOGD_DEVICE, "set-hw-addr: no MAC address change needed (%s)", addr);
 		return TRUE;
 	}
 
-	hw_addr_len = priv->hw_addr_len;
-	if (!hw_addr_len)
-		hw_addr_len = _nm_utils_hwaddr_length (addr);
-	if (   !hw_addr_len
-	    || !nm_utils_hwaddr_aton (addr, addr_bytes, hw_addr_len))
-		g_return_val_if_reached (FALSE);
+	if (priv->hw_addr_len != addr_len) {
+		if (priv->hw_addr_len)
+			g_return_val_if_reached (FALSE);
+		priv->hw_addr_len = addr_len;
+	}
 
 	_LOGT (LOGD_DEVICE, "set-hw-addr: setting MAC address to '%s' (%s, %s)...", addr, operation, detail);
 
@@ -11854,12 +11856,12 @@ _hw_addr_set (NMDevice *self,
 		nm_device_take_down (self, FALSE);
 	}
 
-	plerr = nm_platform_link_set_address (NM_PLATFORM_GET, nm_device_get_ip_ifindex (self), addr_bytes, hw_addr_len);
+	plerr = nm_platform_link_set_address (NM_PLATFORM_GET, nm_device_get_ip_ifindex (self), addr_bytes, addr_len);
 	success = (plerr == NM_PLATFORM_ERROR_SUCCESS);
 	if (success) {
 		/* MAC address succesfully changed; update the current MAC to match */
 		nm_device_update_hw_address (self);
-		if (_hw_addr_matches (self, addr)) {
+		if (_hw_addr_matches (self, addr_bytes, addr_len)) {
 			_LOGI (LOGD_DEVICE, "set-hw-addr: %s MAC address to %s (%s)",
 			       operation, addr, detail);
 		} else {
@@ -11889,7 +11891,7 @@ _hw_addr_set (NMDevice *self,
 					goto handle_fail;
 				if (!nm_device_update_hw_address (self))
 					goto handle_wait;
-				if (!_hw_addr_matches (self, addr))
+				if (!_hw_addr_matches (self, addr_bytes, addr_len))
 					goto handle_fail;
 
 				break;
@@ -12016,9 +12018,8 @@ nm_device_hw_addr_set_cloned (NMDevice *self, NMConnection *connection, gboolean
 		addr = hw_addr_generated;
 	} else {
 		/* this must be a valid address. Otherwise, we shouldn't come here. */
-		if (_nm_utils_hwaddr_length (addr) <= 0) {
+		if (!nm_utils_hwaddr_valid (addr, -1))
 			g_return_val_if_reached (FALSE);
-		}
 		priv->hw_addr_type = HW_ADDR_TYPE_EXPLICIT;
 	}
 
@@ -12217,13 +12218,16 @@ constructor (GType type,
 	}
 
 	if (priv->hw_addr_perm) {
-		priv->hw_addr_len = _nm_utils_hwaddr_length (priv->hw_addr_perm);
-		if (!priv->hw_addr_len) {
+		guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
+		gsize l;
+
+		if (!_nm_utils_hwaddr_aton (priv->hw_addr_perm, buf, sizeof (buf), &l)) {
 			g_clear_pointer (&priv->hw_addr_perm, g_free);
 			g_return_val_if_reached (object);
 		}
 
-		priv->hw_addr = g_strdup (priv->hw_addr_perm);
+		priv->hw_addr_len = l;
+		priv->hw_addr = nm_utils_hwaddr_ntoa (buf, l);
 		_LOGT (LOGD_DEVICE, "hw-addr: has permanent hw-address '%s'", priv->hw_addr_perm);
 	}
 
