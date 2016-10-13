@@ -17,6 +17,9 @@ nm_online_CPPFLAGS = \
 	-DG_LOG_DOMAIN=\""nm-online"\" \
 	$(AM_CPPFLAGS)
 
+nm_online_LDFLAGS = \
+	-Wl,--version-script="$(top_srcdir)/linker-script-binary.ver"
+
 nm_online_LDADD = \
 	$(top_builddir)/libnm/libnm.la \
 	$(GLIB_LIBS)
