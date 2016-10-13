@@ -2965,17 +2965,64 @@ nm_utils_wifi_strength_bars (guint8 strength)
 gsize
 nm_utils_hwaddr_len (int type)
 {
-	g_return_val_if_fail (type == ARPHRD_ETHER || type == ARPHRD_INFINIBAND, 0);
-
 	if (type == ARPHRD_ETHER)
 		return ETH_ALEN;
 	else if (type == ARPHRD_INFINIBAND)
 		return INFINIBAND_ALEN;
 
-	g_assert_not_reached ();
+	g_return_val_if_reached (0);
 }
 
-#define HEXVAL(c) ((c) <= '9' ? (c) - '0' : ((c) & 0x4F) - 'A' + 10)
+static guint8 *
+hwaddr_aton (const char *asc, guint8 *buffer, gsize buffer_length, gsize *out_len)
+{
+	const char *in = asc;
+	guint8 *out = buffer;
+	guint8 delimiter = '\0';
+
+	nm_assert (asc);
+	nm_assert (buffer);
+	nm_assert (buffer_length);
+	nm_assert (out_len);
+
+	while (TRUE) {
+		const guint8 d1 = in[0];
+		guint8 d2;
+
+		if (!g_ascii_isxdigit (d1))
+			return NULL;
+
+#define HEXVAL(c) ((c) <= '9' ? (c) - '0' : ((c) & 0x4F) - ('A' - 10))
+
+		/* If there's no leading zero (ie "aa:b:cc") then fake it */
+		d2 = in[1];
+		if (d2 && g_ascii_isxdigit (d2)) {
+			*out++ = (HEXVAL (d1) << 4) + HEXVAL (d2);
+			d2 = in[2];
+			in += 3;
+		} else {
+			/* Fake leading zero */
+			*out++ = HEXVAL (d1);
+			in += 2;
+		}
+
+		if (!d2)
+			break;
+		if (--buffer_length == 0)
+			return NULL;
+
+		if (d2 != delimiter) {
+			if (   delimiter == '\0'
+			    && (d2 == ':' || d2 == '-'))
+				delimiter = d2;
+			else
+				return NULL;
+		}
+	}
+
+	*out_len = out - buffer;
+	return buffer;
+}
 
 /**
  * nm_utils_hwaddr_atoba:
@@ -2992,18 +3039,52 @@ GByteArray *
 nm_utils_hwaddr_atoba (const char *asc, gsize length)
 {
 	GByteArray *ba;
+	gsize l;
 
-	g_return_val_if_fail (asc != NULL, NULL);
+	g_return_val_if_fail (asc, NULL);
 	g_return_val_if_fail (length > 0 && length <= NM_UTILS_HWADDR_LEN_MAX, NULL);
 
 	ba = g_byte_array_sized_new (length);
 	g_byte_array_set_size (ba, length);
-	if (!nm_utils_hwaddr_aton (asc, ba->data, length)) {
-		g_byte_array_unref (ba);
-		return NULL;
-	}
+	if (!hwaddr_aton (asc, ba->data, length, &l))
+		goto fail;
+	if (length != l)
+		goto fail;
 
 	return ba;
+fail:
+	g_byte_array_unref (ba);
+	return NULL;
+}
+
+/**
+ * _nm_utils_hwaddr_aton:
+ * @asc: the ASCII representation of a hardware address
+ * @buffer: buffer to store the result into. Must have
+ *   at least a size of @buffer_length.
+ * @buffer_length: the length of the input buffer @buffer.
+ *   The result must fit into that buffer, otherwise
+ *   the function fails and returns %NULL.
+ * @out_length: the output length in case of success.
+ *
+ * Parses @asc and converts it to binary form in @buffer.
+ * Bytes in @asc can be sepatared by colons (:), or hyphens (-), but not mixed.
+ *
+ * It is like nm_utils_hwaddr_aton(), but contrary to that it
+ * can parse addresses of any length. That is, you don't need
+ * to know the length before-hand.
+ *
+ * Return value: @buffer, or %NULL if @asc couldn't be parsed.
+ */
+guint8 *
+_nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize buffer_length, gsize *out_length)
+{
+	g_return_val_if_fail (asc, NULL);
+	g_return_val_if_fail (buffer, NULL);
+	g_return_val_if_fail (buffer_length > 0, NULL);
+	g_return_val_if_fail (out_length, NULL);
+
+	return hwaddr_aton (asc, buffer, buffer_length, out_length);
 }
 
 /**
@@ -3022,72 +3103,55 @@ nm_utils_hwaddr_atoba (const char *asc, gsize length)
 guint8 *
 nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize length)
 {
-	const char *in = asc;
-	guint8 *out = (guint8 *)buffer;
-	char delimiter = '\0';
+	gsize l;
 
-	g_return_val_if_fail (asc != NULL, NULL);
-	g_return_val_if_fail (buffer != NULL, NULL);
+	g_return_val_if_fail (asc, NULL);
+	g_return_val_if_fail (buffer, NULL);
 	g_return_val_if_fail (length > 0 && length <= NM_UTILS_HWADDR_LEN_MAX, NULL);
 
-	while (length && *in) {
-		guint8 d1 = in[0], d2 = in[1];
+	if (!hwaddr_aton (asc, buffer, length, &l))
+		return NULL;
+	if (length != l)
+		return NULL;
+	return buffer;
+}
 
-		if (!g_ascii_isxdigit (d1))
-			return NULL;
+static void
+_bin2str_buf (gconstpointer addr, gsize length, gboolean upper_case, char *out)
+{
+	const guint8 *in = addr;
+	const char *LOOKUP = upper_case ? "0123456789ABCDEF" : "0123456789abcdef";
 
-		/* If there's no leading zero (ie "aa:b:cc") then fake it */
-		if (d2 && g_ascii_isxdigit (d2)) {
-			*out++ = (HEXVAL (d1) << 4) + HEXVAL (d2);
-			in += 2;
-		} else {
-			/* Fake leading zero */
-			*out++ = (HEXVAL ('0') << 4) + HEXVAL (d1);
-			in += 1;
-		}
+	nm_assert (addr);
+	nm_assert (out);
+	nm_assert (length > 0);
 
+	/* @out must contain at least @length*3 bytes */
+
+	for (;;) {
+		const guint8 v = *in++;
+
+		*out++ = LOOKUP[v >> 4];
+		*out++ = LOOKUP[v & 0x0F];
 		length--;
-		if (*in) {
-			if (delimiter == '\0') {
-				if (*in == ':' || *in == '-')
-					delimiter = *in;
-				else
-					return NULL;
-			} else {
-				if (*in != delimiter)
-					return NULL;
-			}
-			in++;
-		}
+		if (!length)
+			break;
+		*out++ = ':';
 	}
 
-	if (length == 0 && !*in)
-		return buffer;
-	else
-		return NULL;
+	*out = 0;
 }
 
 static char *
 _bin2str (gconstpointer addr, gsize length, gboolean upper_case)
 {
-	const guint8 *in = addr;
-	char *out, *result;
-	const char *LOOKUP = upper_case ? "0123456789ABCDEF" : "0123456789abcdef";
+	char *result;
 
-	g_return_val_if_fail (addr != NULL, g_strdup (""));
-	g_return_val_if_fail (length > 0, g_strdup (""));
+	nm_assert (addr);
+	nm_assert (length > 0);
 
-	result = out = g_malloc (length * 3);
-	while (length--) {
-		guint8 v = *in++;
-
-		*out++ = LOOKUP[v >> 4];
-		*out++ = LOOKUP[v & 0x0F];
-		if (length)
-			*out++ = ':';
-	}
-
-	*out = 0;
+	result = g_malloc (length * 3);
+	_bin2str_buf (addr, length, upper_case, result);
 	return result;
 }
 
@@ -3103,7 +3167,23 @@ _bin2str (gconstpointer addr, gsize length, gboolean upper_case)
 char *
 nm_utils_hwaddr_ntoa (gconstpointer addr, gsize length)
 {
+	g_return_val_if_fail (addr, g_strdup (""));
+	g_return_val_if_fail (length > 0, g_strdup (""));
+
 	return _bin2str (addr, length, TRUE);
+}
+
+const char *
+nm_utils_hwaddr_ntoa_buf (gconstpointer addr, gsize addr_len, gboolean upper_case, char *buf, gsize buf_len)
+{
+	g_return_val_if_fail (addr, NULL);
+	g_return_val_if_fail (addr_len > 0, NULL);
+	g_return_val_if_fail (buf, NULL);
+	if (buf_len < addr_len * 3)
+		g_return_val_if_reached (NULL);
+
+	_bin2str_buf (addr, addr_len, TRUE, buf);
+	return buf;
 }
 
 /**
@@ -3119,49 +3199,10 @@ nm_utils_hwaddr_ntoa (gconstpointer addr, gsize length)
 char *
 _nm_utils_bin2str (gconstpointer addr, gsize length, gboolean upper_case)
 {
+	g_return_val_if_fail (addr, g_strdup (""));
+	g_return_val_if_fail (length > 0, g_strdup (""));
+
 	return _bin2str (addr, length, upper_case);
-}
-
-static int
-hwaddr_binary_len (const char *asc)
-{
-	int octets = 1;
-
-	if (!*asc)
-		return 0;
-
-	for (; *asc; asc++) {
-		if (*asc == ':' || *asc == '-')
-			octets++;
-	}
-	return octets;
-}
-
-/**
- * _nm_utils_hwaddr_length:
- * @asc: the ASCII representation of the hardware address
- *
- * Validates that @asc is a valid representation of a hardware
- * address up to (including) %NM_UTILS_HWADDR_LEN_MAX bytes.
- *
- * Returns: binary length of the hardware address @asc or
- *   0 on error.
- */
-guint
-_nm_utils_hwaddr_length (const char *asc)
-{
-	int l;
-
-	if (!asc)
-		return 0;
-
-	l = hwaddr_binary_len (asc);
-	if (l <= 0 || l > NM_UTILS_HWADDR_LEN_MAX)
-		return 0;
-
-	if (!nm_utils_hwaddr_valid (asc, l))
-		return 0;
-	return l;
 }
 
 /**
@@ -3180,17 +3221,18 @@ gboolean
 nm_utils_hwaddr_valid (const char *asc, gssize length)
 {
 	guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
+	gsize l;
 
 	g_return_val_if_fail (asc != NULL, FALSE);
-	g_return_val_if_fail (length == -1 || (length > 0 && length <= NM_UTILS_HWADDR_LEN_MAX), FALSE);
 
-	if (length == -1) {
-		length = hwaddr_binary_len (asc);
-		if (length == 0 || length > NM_UTILS_HWADDR_LEN_MAX)
+	if (length > 0 && length <= NM_UTILS_HWADDR_LEN_MAX) {
+		if (!hwaddr_aton (asc, buf, length, &l))
 			return FALSE;
-	}
-
-	return nm_utils_hwaddr_aton (asc, buf, length) != NULL;
+		return length == l;
+	} else if (length == -1) {
+		return !!hwaddr_aton (asc, buf, sizeof (buf), &l);
+	} else
+		g_return_val_if_reached (FALSE);
 }
 
 /**
@@ -3210,20 +3252,23 @@ char *
 nm_utils_hwaddr_canonical (const char *asc, gssize length)
 {
 	guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
+	gsize l;
 
-	g_return_val_if_fail (asc != NULL, NULL);
+	g_return_val_if_fail (asc, NULL);
 	g_return_val_if_fail (length == -1 || (length > 0 && length <= NM_UTILS_HWADDR_LEN_MAX), NULL);
 
-	if (length == -1) {
-		length = hwaddr_binary_len (asc);
-		if (length == 0 || length > NM_UTILS_HWADDR_LEN_MAX)
+	if (length > 0 && length <= NM_UTILS_HWADDR_LEN_MAX) {
+		if (!hwaddr_aton (asc, buf, length, &l))
 			return NULL;
-	}
+		if (l != length)
+			return NULL;
+	} else if (length == -1) {
+		if (!hwaddr_aton (asc, buf, NM_UTILS_HWADDR_LEN_MAX, &l))
+			return NULL;
+	} else
+		g_return_val_if_reached (NULL);
 
-	if (nm_utils_hwaddr_aton (asc, buf, length) == NULL)
-		return NULL;
-
-	return nm_utils_hwaddr_ntoa (buf, length);
+	return nm_utils_hwaddr_ntoa (buf, l);
 }
 
 /* This is used to possibly canonicalize values passed to MAC address property
@@ -3287,17 +3332,17 @@ nm_utils_hwaddr_matches (gconstpointer hwaddr1,
                          gssize        hwaddr2_len)
 {
 	guint8 buf1[NM_UTILS_HWADDR_LEN_MAX], buf2[NM_UTILS_HWADDR_LEN_MAX];
+	gsize l;
 
 	if (hwaddr1_len == -1) {
 		g_return_val_if_fail (hwaddr1 != NULL, FALSE);
 
-		hwaddr1_len = hwaddr_binary_len (hwaddr1);
-		if (hwaddr1_len == 0 || hwaddr1_len > NM_UTILS_HWADDR_LEN_MAX)
+		if (!hwaddr_aton (hwaddr1, buf1, sizeof (buf1), &l)) {
+			g_return_val_if_fail ((hwaddr2_len == -1 && hwaddr2) || (hwaddr2_len > 0 && hwaddr2_len <= NM_UTILS_HWADDR_LEN_MAX), FALSE);
 			return FALSE;
-		if (!nm_utils_hwaddr_aton (hwaddr1, buf1, hwaddr1_len))
-			return FALSE;
-
+		}
 		hwaddr1 = buf1;
+		hwaddr1_len = l;
 	} else {
 		g_return_val_if_fail (hwaddr1_len > 0 && hwaddr1_len <= NM_UTILS_HWADDR_LEN_MAX, FALSE);
 
@@ -3310,22 +3355,23 @@ nm_utils_hwaddr_matches (gconstpointer hwaddr1,
 	if (hwaddr2_len == -1) {
 		g_return_val_if_fail (hwaddr2 != NULL, FALSE);
 
-		if (!nm_utils_hwaddr_aton (hwaddr2, buf2, hwaddr1_len))
+		if (!hwaddr_aton (hwaddr2, buf2, sizeof (buf2), &l))
 			return FALSE;
-
+		if (l != hwaddr1_len)
+			return FALSE;
 		hwaddr2 = buf2;
 		hwaddr2_len = hwaddr1_len;
 	} else {
 		g_return_val_if_fail (hwaddr2_len > 0 && hwaddr2_len <= NM_UTILS_HWADDR_LEN_MAX, FALSE);
+
+		if (hwaddr2_len != hwaddr1_len)
+			return FALSE;
 
 		if (!hwaddr2) {
 			memset (buf2, 0, hwaddr2_len);
 			hwaddr2 = buf2;
 		}
 	}
-
-	if (hwaddr1_len != hwaddr2_len)
-		return FALSE;
 
 	if (hwaddr1_len == INFINIBAND_ALEN) {
 		hwaddr1 = (guint8 *)hwaddr1 + INFINIBAND_ALEN - 8;
@@ -3342,16 +3388,11 @@ static GVariant *
 _nm_utils_hwaddr_to_dbus_impl (const char *str)
 {
 	guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
-	int len;
+	gsize len;
 
 	if (!str)
 		return NULL;
-
-	len = _nm_utils_hwaddr_length (str);
-	if (len == 0)
-		return NULL;
-
-	if (!nm_utils_hwaddr_aton (str, buf, len))
+	if (!hwaddr_aton (str, buf, sizeof (buf), &len))
 		return NULL;
 
 	return g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, buf, len, 1);
