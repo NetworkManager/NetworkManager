@@ -331,9 +331,11 @@ nm_pacrunner_manager_send (NMPacrunnerManager *self,
 
 	g_variant_builder_init (&proxy_data, G_VARIANT_TYPE_VARDICT);
 
-	g_variant_builder_add (&proxy_data, "{sv}",
-	                       "Interface",
-	                       g_variant_new_string (iface));
+	if (iface) {
+		g_variant_builder_add (&proxy_data, "{sv}",
+		                       "Interface",
+		                       g_variant_new_string (iface));
+	}
 
 	method = nm_proxy_config_get_method (proxy_config);
 	switch (method) {
