@@ -51,11 +51,9 @@ libnm_wwan_la_SOURCES += \
 	$(NULL)
 endif
 
-WWAN_SYMBOL_VIS_FILE=$(srcdir)/wwan-exports.ver
-
 libnm_wwan_la_LDFLAGS = \
 	-avoid-version \
-	-Wl,--version-script=$(WWAN_SYMBOL_VIS_FILE)
+	-Wl,--version-script="$(srcdir)/libnm-wwan.ver"
 libnm_wwan_la_LIBADD = \
 	$(top_builddir)/introspection/libnmdbus.la \
 	$(GLIB_LIBS) \
@@ -64,8 +62,6 @@ libnm_wwan_la_LIBADD = \
 
 ###########################################################
 
-SYMBOL_VIS_FILE=$(srcdir)/exports.ver
-
 libnm_device_plugin_wwan_la_SOURCES = \
 	nm-wwan-factory.c \
 	nm-device-modem.c \
@@ -73,7 +69,7 @@ libnm_device_plugin_wwan_la_SOURCES = \
 
 libnm_device_plugin_wwan_la_LDFLAGS = \
 	-module -avoid-version \
-	-Wl,--version-script=$(SYMBOL_VIS_FILE)
+	-Wl,--version-script="$(top_srcdir)/linker-script-devices.ver"
 
 libnm_device_plugin_wwan_la_LIBADD = \
 	$(top_builddir)/introspection/libnmdbus.la \
@@ -83,11 +79,12 @@ libnm_device_plugin_wwan_la_LIBADD = \
 ###########################################################
 
 CLEANFILES = $(BUILT_SOURCES)
-EXTRA_DIST = $(SYMBOL_VIS_FILE) $(WWAN_SYMBOL_VIS_FILE)
+
+EXTRA_DIST = \
+	libnm-wwan.ver
 
 check-local:
-	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-device-plugin-wwan.so $(SYMBOL_VIS_FILE)
+	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-device-plugin-wwan.so "$(top_srcdir)/linker-script-devices.ver"
 	$(call check_so_symbols,$(builddir)/.libs/libnm-device-plugin-wwan.so)
-	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-wwan.so $(WWAN_SYMBOL_VIS_FILE)
+	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-wwan.so "$(srcdir)/libnm-wwan.ver"
 	$(call check_so_symbols,$(builddir)/.libs/libnm-wwan.so)
-

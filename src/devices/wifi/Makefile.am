@@ -35,19 +35,15 @@ libnm_device_plugin_wifi_la_SOURCES = \
 	nm-device-olpc-mesh.c \
 	nm-device-olpc-mesh.h
 
-SYMBOL_VIS_FILE=$(srcdir)/exports.ver
-
 libnm_device_plugin_wifi_la_LDFLAGS = \
 	-module -avoid-version \
-	 -Wl,--version-script=$(SYMBOL_VIS_FILE)
+	 -Wl,--version-script="$(top_srcdir)/linker-script-devices.ver"
 
 libnm_device_plugin_wifi_la_LIBADD = \
 	$(top_builddir)/introspection/libnmdbus.la \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS)
 
-EXTRA_DIST = $(SYMBOL_VIS_FILE)
-
 check-local:
-	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-device-plugin-wifi.so $(SYMBOL_VIS_FILE)
+	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-device-plugin-wifi.so "$(top_srcdir)/linker-script-devices.ver"
 	$(call check_so_symbols,$(builddir)/.libs/libnm-device-plugin-wifi.so)

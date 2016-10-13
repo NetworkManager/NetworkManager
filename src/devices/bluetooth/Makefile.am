@@ -29,8 +29,6 @@ BUILT_SOURCES = $(GLIB_GENERATED)
 
 pkglib_LTLIBRARIES = libnm-device-plugin-bluetooth.la
 
-SYMBOL_VIS_FILE=$(srcdir)/exports.ver
-
 libnm_device_plugin_bluetooth_la_SOURCES = \
 	nm-bluez-manager.c \
 	nm-bluez-common.h \
@@ -52,7 +50,7 @@ libnm_device_plugin_bluetooth_la_SOURCES = \
 
 libnm_device_plugin_bluetooth_la_LDFLAGS = \
 	-module -avoid-version \
-	-Wl,--version-script=$(SYMBOL_VIS_FILE)
+	-Wl,--version-script="$(top_srcdir)/linker-script-devices.ver"
 
 libnm_device_plugin_bluetooth_la_LIBADD = \
 	$(top_builddir)/introspection/libnmdbus.la \
@@ -71,8 +69,7 @@ libnm_device_plugin_bluetooth_la_LIBADD += $(BLUEZ5_LIBS)
 endif
 
 CLEANFILES = $(BUILT_SOURCES)
-EXTRA_DIST = $(SYMBOL_VIS_FILE)
 
 check-local:
-	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-device-plugin-bluetooth.so $(SYMBOL_VIS_FILE)
+	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-device-plugin-bluetooth.so "$(top_srcdir)/linker-script-devices.ver"
 	$(call check_so_symbols,$(builddir)/.libs/libnm-device-plugin-bluetooth.so)

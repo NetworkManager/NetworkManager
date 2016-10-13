@@ -35,6 +35,7 @@ EXTRA_DIST = \
 	intltool-merge.in \
 	intltool-update.in \
 	linker-script-binary.ver \
+	linker-script-devices.ver \
 	linker-script-settings.ver \
 	Makefile.glib \
 	autogen.sh \
