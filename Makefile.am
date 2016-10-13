@@ -2,7 +2,6 @@ include $(GLIB_MAKEFILE)
 
 SUBDIRS = \
 	. \
-	shared \
 	introspection \
 	libnm-core \
 	libnm \
@@ -39,7 +38,27 @@ EXTRA_DIST = \
 	linker-script-settings.ver \
 	Makefile.glib \
 	autogen.sh \
-	valgrind.suppressions
+	valgrind.suppressions \
+	\
+	shared/nm-common-macros.h \
+	shared/nm-dbus-compat.h \
+	shared/nm-default.h \
+	shared/nm-dispatcher-api.h \
+	shared/nm-test-libnm-utils.h \
+	shared/nm-test-utils-impl.c \
+	shared/nm-utils/gsystem-local-alloc.h \
+	shared/nm-utils/nm-glib.h \
+	shared/nm-utils/nm-macros-internal.h \
+	shared/nm-utils/nm-shared-utils.c \
+	shared/nm-utils/nm-shared-utils.h \
+	shared/nm-utils/nm-test-utils.h \
+	shared/nm-utils/nm-vpn-editor-plugin-call.h \
+	shared/nm-utils/nm-vpn-plugin-macros.h \
+	shared/nm-utils/nm-vpn-plugin-utils.c \
+	shared/nm-utils/nm-vpn-plugin-utils.h \
+	shared/nm-version-macros.h.in \
+	\
+	$(NULL)
 
 DISTCHECK_CONFIGURE_FLAGS = \
 	--enable-tests=yes \
@@ -67,7 +86,14 @@ DISTCLEANFILES = intltool-extract intltool-merge intltool-update
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = NetworkManager.pc
 
-CLEANFILES = cscope.in.out cscope.out cscope.po.out
+CLEANFILES = \
+	cscope.in.out \
+	cscope.out \
+	cscope.po.out \
+	\
+	shared/nm-version-macros.h \
+	\
+	$(NULL)
 
 cscope:
 	cscope -b -q -R -sshared -ssrc -slibnm-core -slibnm -slibnm-glib -slibnm-util -sclients;
