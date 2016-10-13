@@ -13,7 +13,6 @@ SUBDIRS = \
 	dispatcher \
 	clients \
 	tools \
-	policy \
 	data \
 	po \
 	man \
@@ -61,6 +60,19 @@ pkgconfig_DATA = NetworkManager.pc
 
 ###############################################################################
 
+polkit_policydir = $(datadir)/polkit-1/actions
+
+dist_polkit_policy_in_in_files = \
+	policy/org.freedesktop.NetworkManager.policy.in.in
+
+polkit_policy_DATA = $(dist_polkit_policy_in_in_files:.policy.in.in=.policy)
+
+@INTLTOOL_POLICY_RULE@
+
+DISTCLEANFILES += $(polkit_policy_DATA)
+
+###############################################################################
+
 EXTRA_DIST = \
 	CONTRIBUTING \
 	NetworkManager.pc.in \
@@ -100,6 +112,8 @@ CLEANFILES = \
 	cscope.po.out \
 	\
 	shared/nm-version-macros.h \
+	\
+	policy/*~ \
 	\
 	$(NULL)
 

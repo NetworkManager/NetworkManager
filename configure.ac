@@ -1194,7 +1194,6 @@ introspection/Makefile
 man/Makefile
 man/common.ent
 po/Makefile.in
-policy/Makefile
 policy/org.freedesktop.NetworkManager.policy.in
 data/Makefile
 docs/Makefile
