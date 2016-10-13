@@ -11697,24 +11697,49 @@ nm_device_update_permanent_hw_address (NMDevice *self)
 
 	success_read = nm_platform_link_get_permanent_address (NM_PLATFORM_GET, priv->ifindex, buf, &len);
 	if (!success_read || len != priv->hw_addr_len) {
-		/* Fall back to current address. We use the fake address and keep it
-		 * until the device unrealizes.
+		gs_free NMConfigDeviceStateData *dev_state = NULL;
+
+		/* we failed to read a permanent MAC address, thus we use a fake address,
+		 * that is the current MAC address of the device.
 		 *
-		 * In some cases it might be necessary to know whether this is a "real" or
-		 * a temporary address (fake). */
+		 * Note that the permanet MAC address of a NMDevice instance does not change
+		 * after being set once. Thus, we use now a fake address and stick to that
+		 * (until we unrealize the device). */
+		priv->hw_addr_perm_fake = TRUE;
+
+		/* We also persist our choice of the fake address to the device state
+		 * file to use the same address on restart of NetworkManager.
+		 * First, try to reload the address from the state file. */
+		dev_state = nm_config_device_state_load (nm_config_get (), priv->ifindex);
+		if (   dev_state
+		    && dev_state->perm_hw_addr_fake
+		    && nm_utils_hwaddr_aton (dev_state->perm_hw_addr_fake, buf, priv->hw_addr_len)
+		    && !nm_utils_hwaddr_matches (buf, priv->hw_addr_len, priv->hw_addr, -1)) {
+			_LOGD (LOGD_PLATFORM | LOGD_ETHER, "hw-addr: %s (use from statefile: %s, current: %s)",
+			       success_read
+			           ? "read HW addr length of permanent MAC address differs"
+			           : "unable to read permanent MAC address",
+			       dev_state->perm_hw_addr_fake,
+			       priv->hw_addr);
+			priv->hw_addr_perm = nm_utils_hwaddr_ntoa (buf, priv->hw_addr_len);
+			goto out;
+		}
+
 		_LOGD (LOGD_PLATFORM | LOGD_ETHER, "hw-addr: %s (use current: %s)",
 		       success_read
 		           ? "read HW addr length of permanent MAC address differs"
 		           : "unable to read permanent MAC address",
 		       priv->hw_addr);
-		priv->hw_addr_perm_fake = TRUE;
 		priv->hw_addr_perm = g_strdup (priv->hw_addr);
-	} else {
-		priv->hw_addr_perm_fake = FALSE;
-		priv->hw_addr_perm = nm_utils_hwaddr_ntoa (buf, len);
-		_LOGD (LOGD_DEVICE, "hw-addr: read permanent MAC address '%s'",
-		       priv->hw_addr_perm);
+		goto out;
 	}
+
+	priv->hw_addr_perm_fake = FALSE;
+	priv->hw_addr_perm = nm_utils_hwaddr_ntoa (buf, len);
+	_LOGD (LOGD_DEVICE, "hw-addr: read permanent MAC address '%s'",
+	       priv->hw_addr_perm);
+
+out:
 	_notify (self, PROP_PERM_HW_ADDRESS);
 }
 
@@ -12048,6 +12073,18 @@ nm_device_hw_addr_reset (NMDevice *self, const char *detail)
 	}
 
 	return _hw_addr_set (self, addr, "reset", detail);
+}
+
+const char *
+nm_device_get_permanent_hw_address_full (NMDevice *self, gboolean *out_is_fake)
+{
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	NM_SET_OUT (out_is_fake, priv->hw_addr_perm && priv->hw_addr_perm_fake);
+	return priv->hw_addr_perm;
 }
 
 const char *

@@ -4674,6 +4674,8 @@ nm_manager_write_device_state (NMManager *self)
 		gboolean managed;
 		NMConnection *settings_connection;
 		const char *uuid = NULL;
+		const char *perm_hw_addr_fake = NULL;
+		gboolean perm_hw_addr_is_fake;
 
 		ifindex = nm_device_get_ip_ifindex (device);
 		if (ifindex <= 0)
@@ -4693,9 +4695,14 @@ nm_manager_write_device_state (NMManager *self)
 				uuid = nm_connection_get_uuid (settings_connection);
 		}
 
+		perm_hw_addr_fake = nm_device_get_permanent_hw_address_full (device, &perm_hw_addr_is_fake);
+		if (perm_hw_addr_fake && !perm_hw_addr_is_fake)
+			perm_hw_addr_fake = NULL;
+
 		if (nm_config_device_state_write (priv->config,
 		                                  ifindex,
 		                                  managed,
+		                                  perm_hw_addr_fake,
 		                                  uuid))
 			g_hash_table_add (seen_ifindexes, GINT_TO_POINTER (ifindex));
 	}
