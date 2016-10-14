@@ -379,6 +379,7 @@ intltoolize --automake --copy --force
 	--with-more-logging \
 	--with-more-asserts=10000 \
 %endif
+	--enable-ld-gc \
 	--enable-ppp=yes \
 	--with-libaudit=yes-disabled-by-default \
 %if 0%{?with_modem_manager_1}
