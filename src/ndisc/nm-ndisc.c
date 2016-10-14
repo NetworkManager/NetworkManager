@@ -46,7 +46,7 @@ struct _NMNDiscPrivate {
 	gint32 last_rs;
 	guint ra_timeout_id;  /* first RA timeout */
 	guint timeout_id;   /* prefix/dns/etc lifetime timeout */
-	char *last_send_rs_error;
+	char *last_error;
 	NMUtilsIPv6IfaceId iid;
 
 	/* immutable values: */
@@ -425,6 +425,17 @@ nm_ndisc_add_dns_domain (NMNDisc *ndisc, const NMNDiscDNSDomain *new)
 
 /*****************************************************************************/
 
+#define _MAYBE_WARN(...) G_STMT_START { \
+		gboolean _different_message; \
+		\
+		_different_message = g_strcmp0 (priv->last_error, error->message) != 0; \
+		_NMLOG (_different_message ? LOGL_WARN : LOGL_DEBUG, __VA_ARGS__); \
+		if (_different_message) { \
+			g_clear_pointer (&priv->last_error, g_free); \
+			priv->last_error = g_strdup (error->message); \
+		} \
+	} G_STMT_END
+
 static gboolean
 send_rs_timeout (NMNDisc *ndisc)
 {
@@ -441,17 +452,9 @@ send_rs_timeout (NMNDisc *ndisc)
 	if (klass->send_rs (ndisc, &error)) {
 		_LOGD ("router solicitation sent");
 		priv->solicitations_left--;
-		g_clear_pointer (&priv->last_send_rs_error, g_free);
+		g_clear_pointer (&priv->last_error, g_free);
 	} else {
-		gboolean different_message;
-
-		different_message = g_strcmp0 (priv->last_send_rs_error, error->message) != 0;
-		_NMLOG (different_message ? LOGL_WARN : LOGL_DEBUG,
-		        "failure sending router solicitation: %s", error->message);
-		if (different_message) {
-			g_clear_pointer (&priv->last_send_rs_error, g_free);
-			priv->last_send_rs_error = g_strdup (error->message);
-		}
+		_MAYBE_WARN ("failure sending router solicitation: %s", error->message);
 		g_clear_error (&error);
 	}
 
@@ -855,7 +858,7 @@ nm_ndisc_ra_received (NMNDisc *ndisc, guint32 now, NMNDiscConfigMap changed)
 
 	nm_clear_g_source (&priv->ra_timeout_id);
 	nm_clear_g_source (&priv->send_rs_id);
-	g_clear_pointer (&priv->last_send_rs_error, g_free);
+	g_clear_pointer (&priv->last_error, g_free);
 	check_timestamps (ndisc, now, changed);
 }
 
@@ -962,7 +965,7 @@ dispose (GObject *object)
 
 	nm_clear_g_source (&priv->ra_timeout_id);
 	nm_clear_g_source (&priv->send_rs_id);
-	g_clear_pointer (&priv->last_send_rs_error, g_free);
+	g_clear_pointer (&priv->last_error, g_free);
 
 	nm_clear_g_source (&priv->timeout_id);
 
