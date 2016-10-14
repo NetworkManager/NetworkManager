@@ -111,8 +111,6 @@ CLEANFILES = \
 	cscope.out \
 	cscope.po.out \
 	\
-	shared/nm-version-macros.h \
-	\
 	policy/*~ \
 	\
 	$(NULL)
