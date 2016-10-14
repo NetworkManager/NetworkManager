@@ -119,6 +119,7 @@ fi
 SOURCE_NETWORKMANAGER_CONF="$(abs_path "$SOURCE_NETWORKMANAGER_CONF" "$SCRIPTDIR/NetworkManager.conf")" || die "invalid \$SOURCE_NETWORKMANAGER_CONF argument"
 SOURCE_CONFIG_SERVER="$(abs_path "$SOURCE_CONFIG_SERVER" "$SCRIPTDIR/00-server.conf")" || die "invalid \$SOURCE_CONFIG_SERVER argument"
 SOURCE_CONFIG_CONNECTIVITY_FEDORA="$(abs_path "$SOURCE_CONFIG_CONNECTIVITY_FEDORA" "$SCRIPTDIR/20-connectivity-fedora.conf")" || die "invalid \$SOURCE_CONFIG_CONNECTIVITY_FEDORA argument"
+SOURCE_CONFIG_DHCP_DHCLIENT="$(abs_path "$SOURCE_CONFIG_DHCP_DHCLIENT" "$SCRIPTDIR/05-dhcp-dhclient.conf")" || die "invalid \$SOURCE_CONFIG_DHCP_DHCLIENT argument"
 
 TEMP="$(mktemp -d "$SCRIPTDIR/NetworkManager.$DATE.XXXXXX")"
 TEMPBASE="$(basename "$TEMP")"
@@ -156,6 +157,7 @@ cp "$SOURCE" "$TEMP/SOURCES/" || die "Could not copy source $SOURCE to $TEMP/SOU
 cp "$SOURCE_NETWORKMANAGER_CONF" "$TEMP/SOURCES/NetworkManager.conf" || die "Could not copy source $SOURCE_NETWORKMANAGER_CONF to $TEMP/SOURCES"
 cp "$SOURCE_CONFIG_SERVER" "$TEMP/SOURCES/00-server.conf" || die "Could not copy source $SOURCE_CONFIG_SERVER to $TEMP/SOURCES"
 cp "$SOURCE_CONFIG_CONNECTIVITY_FEDORA" "$TEMP/SOURCES/20-connectivity-fedora.conf" || die "Could not copy source $SOURCE_CONFIG_CONNECTIVITY_FEDORA to $TEMP/SOURCES"
+cp "$SOURCE_CONFIG_DHCP_DHCLIENT" "$TEMP/SOURCES/05-dhcp-dhclient.conf" || die "Could not copy source $SOURCE_CONFIG_DHCP_DHCLIENT to $TEMP/SOURCES"
 
 write_changelog
 
