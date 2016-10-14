@@ -4,10 +4,13 @@ include $(GLIB_MAKEFILE)
 
 ###############################################################################
 
+AUTOMAKE_OPTIONS = subdir-objects
+
 noinst_LTLIBRARIES =
 CLEANFILES =
 EXTRA_DIST =
 BUILT_SOURCES =
+GLIB_GENERATED =
 
 SUBDIRS = \
 	. \
@@ -258,6 +261,184 @@ EXTRA_DIST += \
 
 ###############################################################################
 
+libnm_core_libnm_core_headers = \
+	shared/nm-version-macros.h \
+	libnm-core/nm-core-enum-types.h \
+	libnm-core/nm-connection.h \
+	libnm-core/nm-core-types.h \
+	libnm-core/nm-dbus-interface.h \
+	libnm-core/nm-errors.h \
+	libnm-core/nm-setting-8021x.h \
+	libnm-core/nm-setting-adsl.h \
+	libnm-core/nm-setting-bluetooth.h \
+	libnm-core/nm-setting-bond.h \
+	libnm-core/nm-setting-bridge-port.h \
+	libnm-core/nm-setting-bridge.h \
+	libnm-core/nm-setting-cdma.h \
+	libnm-core/nm-setting-connection.h \
+	libnm-core/nm-setting-dcb.h \
+	libnm-core/nm-setting-generic.h \
+	libnm-core/nm-setting-gsm.h \
+	libnm-core/nm-setting-infiniband.h \
+	libnm-core/nm-setting-ip-config.h \
+	libnm-core/nm-setting-ip-tunnel.h \
+	libnm-core/nm-setting-ip4-config.h \
+	libnm-core/nm-setting-ip6-config.h \
+	libnm-core/nm-setting-macvlan.h \
+	libnm-core/nm-setting-olpc-mesh.h \
+	libnm-core/nm-setting-ppp.h \
+	libnm-core/nm-setting-pppoe.h \
+	libnm-core/nm-setting-proxy.h \
+	libnm-core/nm-setting-serial.h \
+	libnm-core/nm-setting-team-port.h \
+	libnm-core/nm-setting-team.h \
+	libnm-core/nm-setting-tun.h \
+	libnm-core/nm-setting-vlan.h \
+	libnm-core/nm-setting-vpn.h \
+	libnm-core/nm-setting-vxlan.h \
+	libnm-core/nm-setting-wimax.h \
+	libnm-core/nm-setting-wired.h \
+	libnm-core/nm-setting-wireless-security.h \
+	libnm-core/nm-setting-wireless.h \
+	libnm-core/nm-setting.h \
+	libnm-core/nm-simple-connection.h \
+	libnm-core/nm-utils.h \
+	libnm-core/nm-version.h \
+	libnm-core/nm-vpn-dbus-interface.h \
+	libnm-core/nm-vpn-editor-plugin.h \
+	libnm-core/nm-vpn-plugin-info.h
+
+libnm_core_libnm_core_private_headers = \
+	shared/nm-utils/nm-shared-utils.h \
+	libnm-core/crypto.h \
+	libnm-core/nm-connection-private.h \
+	libnm-core/nm-core-internal.h \
+	libnm-core/nm-core-types-internal.h \
+	libnm-core/nm-keyfile-internal.h \
+	libnm-core/nm-keyfile-utils.h \
+	libnm-core/nm-property-compare.h \
+	libnm-core/nm-setting-private.h \
+	libnm-core/nm-utils-private.h
+
+libnm_core_libnm_core_sources = \
+	shared/nm-utils/nm-shared-utils.c \
+	libnm-core/nm-core-enum-types.c \
+	libnm-core/crypto.c \
+	libnm-core/nm-connection.c \
+	libnm-core/nm-dbus-utils.c \
+	libnm-core/nm-errors.c \
+	libnm-core/nm-keyfile-reader.c \
+	libnm-core/nm-keyfile-utils.c \
+	libnm-core/nm-keyfile-writer.c \
+	libnm-core/nm-property-compare.c \
+	libnm-core/nm-setting-8021x.c \
+	libnm-core/nm-setting-adsl.c \
+	libnm-core/nm-setting-bluetooth.c \
+	libnm-core/nm-setting-bond.c \
+	libnm-core/nm-setting-bridge-port.c \
+	libnm-core/nm-setting-bridge.c \
+	libnm-core/nm-setting-cdma.c \
+	libnm-core/nm-setting-connection.c \
+	libnm-core/nm-setting-dcb.c \
+	libnm-core/nm-setting-generic.c \
+	libnm-core/nm-setting-gsm.c \
+	libnm-core/nm-setting-infiniband.c \
+	libnm-core/nm-setting-ip-config.c \
+	libnm-core/nm-setting-ip-tunnel.c \
+	libnm-core/nm-setting-ip4-config.c \
+	libnm-core/nm-setting-ip6-config.c \
+	libnm-core/nm-setting-macvlan.c \
+	libnm-core/nm-setting-olpc-mesh.c \
+	libnm-core/nm-setting-ppp.c \
+	libnm-core/nm-setting-pppoe.c \
+	libnm-core/nm-setting-proxy.c \
+	libnm-core/nm-setting-serial.c \
+	libnm-core/nm-setting-team-port.c \
+	libnm-core/nm-setting-team.c \
+	libnm-core/nm-setting-tun.c \
+	libnm-core/nm-setting-vlan.c \
+	libnm-core/nm-setting-vpn.c \
+	libnm-core/nm-setting-vxlan.c \
+	libnm-core/nm-setting-wimax.c \
+	libnm-core/nm-setting-wired.c \
+	libnm-core/nm-setting-wireless-security.c \
+	libnm-core/nm-setting-wireless.c \
+	libnm-core/nm-setting.c \
+	libnm-core/nm-simple-connection.c \
+	libnm-core/nm-utils.c \
+	libnm-core/nm-vpn-editor-plugin.c \
+	libnm-core/nm-vpn-plugin-info.c
+
+###############################################################################
+
+libnmincludedir = $(includedir)/libnm
+
+libnminclude_HEADERS = $(libnm_core_libnm_core_headers)
+
+###############################################################################
+
+noinst_LTLIBRARIES += libnm-core/libnm-core.la
+
+GLIB_GENERATED += \
+	libnm-core/nm-core-enum-types.h \
+	libnm-core/nm-core-enum-types.c
+
+nm_core_enum_types_sources = $(filter-out %nm-core-enum-types.h,$(libnm_core_libnm_core_headers))
+nm_core_enum_types_MKENUMS_H_FLAGS = --identifier-prefix NM
+nm_core_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM
+
+libnm_core_libnm_core_la_CPPFLAGS = \
+	-I${srcdir}/shared \
+	-I${builddir}/shared \
+	-I${srcdir}/libnm-core \
+	-I${builddir}/libnm-core \
+	-DG_LOG_DOMAIN=\""libnm"\" \
+	-DLOCALEDIR=\"$(datadir)/locale\" \
+	-DNMCONFDIR=\"$(nmconfdir)\" \
+	-DNMLIBDIR=\"$(nmlibdir)\" \
+	-DNMPLUGINDIR=\"$(pkglibdir)\" \
+	-DLIBEXECDIR=\"$(libexecdir)\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB \
+	$(GLIB_CFLAGS) \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(JANSSON_CFLAGS)
+
+libnm_core_libnm_core_la_SOURCES = \
+	$(libnm_core_libnm_core_sources) \
+	$(libnm_core_libnm_core_private_headers)
+
+libnm_core_libnm_core_la_LIBADD = \
+	$(GLIB_LIBS) \
+	$(UUID_LIBS) \
+	$(JANSSON_LIBS)
+
+libnm_core_libnm_core_la_LDFLAGS = \
+	$(CODE_COVERAGE_LDFLAGS)
+
+if WITH_GNUTLS
+libnm_core_libnm_core_la_CPPFLAGS += $(GNUTLS_CFLAGS)
+libnm_core_libnm_core_la_SOURCES += libnm-core/crypto_gnutls.c
+libnm_core_libnm_core_la_LIBADD += $(GNUTLS_LIBS)
+endif
+
+if WITH_NSS
+libnm_core_libnm_core_la_CPPFLAGS += $(NSS_CFLAGS)
+libnm_core_libnm_core_la_SOURCES += libnm-core/crypto_nss.c
+libnm_core_libnm_core_la_LIBADD += $(NSS_LIBS)
+endif
+
+libnm-core/nm-vpn-dbus-types.xml: libnm-core/nm-vpn-dbus-interface.h tools/enums-to-docbook.pl
+	$(AM_V_GEN) @PERL@ $(srcdir)/tools/enums-to-docbook.pl 'nm-vpn-dbus-types' 'VPN Plugin D-Bus API Types' $^ >$@
+
+libnm-core/nm-dbus-types.xml: libnm-core/nm-dbus-interface.h tools/enums-to-docbook.pl
+	$(AM_V_GEN) @PERL@ $(srcdir)/tools/enums-to-docbook.pl 'nm-dbus-types' 'NetworkManager D-Bus API Types' $^ >$@
+
+BUILT_SOURCES += \
+	libnm-core/nm-vpn-dbus-types.xml \
+	libnm-core/nm-dbus-types.xml
+
+###############################################################################
+
 EXTRA_DIST += \
 	CONTRIBUTING \
 	NetworkManager.pc.in \
@@ -291,6 +472,8 @@ EXTRA_DIST += \
 	shared/nm-version-macros.h.in \
 	\
 	$(NULL)
+
+BUILT_SOURCES += $(GLIB_GENERATED)
 
 CLEANFILES += \
 	$(BUILT_SOURCES) \
