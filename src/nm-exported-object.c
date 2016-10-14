@@ -74,23 +74,11 @@ G_DEFINE_QUARK (NMExportedObjectClassInfo, nm_exported_object_class_info)
 
 /*****************************************************************************/
 
-#define _NMLOG_PREFIX_NAME                "exported-object"
-#define _NMLOG_DOMAIN                     LOGD_CORE
+#define _NMLOG_DOMAIN      LOGD_CORE
+#define _NMLOG(level, ...) __NMLOG_DEFAULT_WITH_ADDR (level, _NMLOG_DOMAIN, "exported-object", __VA_ARGS__)
 
-#define _NMLOG(level, ...) \
-    nm_log ((level), _NMLOG_DOMAIN, \
-            "%s[%p]: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
-            _NMLOG_PREFIX_NAME, (self) \
-            _NM_UTILS_MACRO_REST (__VA_ARGS__))
-
-#define _NMLOG2_PREFIX_NAME               "properties-changed"
-#define _NMLOG2_DOMAIN                    LOGD_DBUS_PROPS
-
-#define _NMLOG2(level, ...) \
-    nm_log ((level), _NMLOG2_DOMAIN, \
-            "%s[%p]: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
-            _NMLOG2_PREFIX_NAME, (self) \
-            _NM_UTILS_MACRO_REST (__VA_ARGS__))
+#define _NMLOG2_DOMAIN      LOGD_DBUS_PROPS
+#define _NMLOG2(level, ...) __NMLOG_DEFAULT_WITH_ADDR (level, _NMLOG2_DOMAIN, "properties-changed", __VA_ARGS__)
 
 /*****************************************************************************/
 

@@ -108,15 +108,8 @@ G_DEFINE_TYPE (NMPPPManager, nm_ppp_manager, NM_TYPE_EXPORTED_OBJECT)
 
 /*****************************************************************************/
 
-#define _NMLOG_DOMAIN         LOGD_PPP
-#define _NMLOG_PREFIX_NAME    "ppp-manager"
-#define _NMLOG(level, ...) \
-    G_STMT_START { \
-        nm_log ((level), _NMLOG_DOMAIN, \
-                "%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-                _NMLOG_PREFIX_NAME": " \
-                _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
-    } G_STMT_END
+#define _NMLOG_DOMAIN      LOGD_PPP
+#define _NMLOG(level, ...) __NMLOG_DEFAULT (level, _NMLOG_DOMAIN, "ppp-manager", __VA_ARGS__)
 
 /*****************************************************************************/
 

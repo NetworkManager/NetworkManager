@@ -76,16 +76,8 @@ G_DEFINE_TYPE (NMDnsSystemdResolved, nm_dns_systemd_resolved, NM_TYPE_DNS_PLUGIN
 
 /*****************************************************************************/
 
-#define _NMLOG_DOMAIN         LOGD_DNS
-#define _NMLOG_PREFIX_NAME    "systemd-resolved"
-#define _NMLOG(level, ...) \
-    G_STMT_START { \
-        nm_log ((level), _NMLOG_DOMAIN, \
-                "%s[%p]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-                _NMLOG_PREFIX_NAME, \
-                (self) \
-                _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
-    } G_STMT_END
+#define _NMLOG_DOMAIN      LOGD_DNS
+#define _NMLOG(level, ...) __NMLOG_DEFAULT_WITH_ADDR (level, _NMLOG_DOMAIN, "dns-sd-resolved", __VA_ARGS__)
 
 /*****************************************************************************/
 

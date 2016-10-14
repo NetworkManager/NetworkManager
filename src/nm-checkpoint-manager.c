@@ -51,14 +51,8 @@ struct _NMCheckpointManager {
 
 /*****************************************************************************/
 
-#define _NMLOG_PREFIX_NAME                "checkpoint"
-#define _NMLOG_DOMAIN                     LOGD_CORE
-
-#define _NMLOG(level, ...) \
-	nm_log (level, _NMLOG_DOMAIN, \
-	        "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-	        _NMLOG_PREFIX_NAME \
-	        _NM_UTILS_MACRO_REST(__VA_ARGS__))
+#define _NMLOG_DOMAIN      LOGD_CORE
+#define _NMLOG(level, ...) __NMLOG_DEFAULT (level, _NMLOG_DOMAIN, "checkpoint", __VA_ARGS__)
 
 /*****************************************************************************/
 

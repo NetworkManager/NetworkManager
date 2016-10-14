@@ -67,16 +67,8 @@ NM_DEFINE_SINGLETON_GETTER (NMPacrunnerManager, nm_pacrunner_manager_get, NM_TYP
 
 /*****************************************************************************/
 
-#define _NMLOG_DOMAIN         LOGD_PROXY
-#define _NMLOG_PREFIX_NAME    "pacrunner"
-#define _NMLOG(level, ...) \
-    G_STMT_START { \
-        nm_log ((level), _NMLOG_DOMAIN, \
-                "%s[%p]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-                _NMLOG_PREFIX_NAME, \
-                (self) /* Beware: must not dereference @self (see pacrunner_remove_done) */\
-                _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
-    } G_STMT_END
+#define _NMLOG_DOMAIN      LOGD_PROXY
+#define _NMLOG(level, ...) __NMLOG_DEFAULT_WITH_ADDR (level, _NMLOG_DOMAIN, "pacrunner", __VA_ARGS__)
 
 /*****************************************************************************/
 

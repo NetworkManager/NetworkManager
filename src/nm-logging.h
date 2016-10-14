@@ -275,4 +275,21 @@ extern void (*_nm_logging_clear_platform_logging_cache) (void);
 
 /*****************************************************************************/
 
+#define __NMLOG_DEFAULT(level, domain, prefix, ...) \
+	G_STMT_START { \
+		nm_log ((level), (domain), \
+		        "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+		        (prefix) \
+		        _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+	} G_STMT_END
+
+#define __NMLOG_DEFAULT_WITH_ADDR(level, domain, prefix, ...) \
+	G_STMT_START { \
+		nm_log ((level), (domain), \
+		        "%s[%p]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+		        (prefix), \
+		        (self) \
+		        _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+	} G_STMT_END
+
 #endif /* __NETWORKMANAGER_LOGGING_H__ */

@@ -138,14 +138,8 @@ G_DEFINE_TYPE_WITH_CODE (NMConfig, nm_config, G_TYPE_OBJECT,
 
 /*****************************************************************************/
 
-#define _NMLOG_PREFIX_NAME                "config"
-#define _NMLOG_DOMAIN                     LOGD_CORE
-
-#define _NMLOG(level, ...) \
-	nm_log (level, _NMLOG_DOMAIN, \
-	        "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-	        _NMLOG_PREFIX_NAME \
-	        _NM_UTILS_MACRO_REST(__VA_ARGS__))
+#define _NMLOG_DOMAIN      LOGD_CORE
+#define _NMLOG(level, ...) __NMLOG_DEFAULT (level, _NMLOG_DOMAIN, "config", __VA_ARGS__)
 
 /*****************************************************************************/
 

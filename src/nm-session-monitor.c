@@ -68,16 +68,8 @@ struct _NMSessionMonitorClass {
 
 G_DEFINE_TYPE (NMSessionMonitor, nm_session_monitor, G_TYPE_OBJECT);
 
-#define _NMLOG_PREFIX_NAME    "session-monitor"
-#define _NMLOG_DOMAIN         LOGD_CORE
-
-#define _NMLOG(level, ...) \
-	G_STMT_START { \
-		nm_log (level, _NMLOG_DOMAIN, \
-		        "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-		        _NMLOG_PREFIX_NAME \
-		        _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
-	} G_STMT_END
+#define _NMLOG_DOMAIN      LOGD_CORE
+#define _NMLOG(level, ...) __NMLOG_DEFAULT (level, _NMLOG_DOMAIN, "session-monitor", __VA_ARGS__)
 
 /*****************************************************************************/
 

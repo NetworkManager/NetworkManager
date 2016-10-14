@@ -97,14 +97,8 @@ G_DEFINE_TYPE (NMSleepMonitor, nm_sleep_monitor, G_TYPE_OBJECT);
 
 /*****************************************************************************/
 
-#define _NMLOG_DOMAIN                     LOGD_SUSPEND
-#define _NMLOG(level, ...) \
-    G_STMT_START { \
-        nm_log ((level), _NMLOG_DOMAIN, \
-                "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
-                _NMLOG_PREFIX_NAME \
-                _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
-    } G_STMT_END
+#define _NMLOG_DOMAIN      LOGD_SUSPEND
+#define _NMLOG(level, ...) __NMLOG_DEFAULT (level, _NMLOG_DOMAIN, _NMLOG_PREFIX_NAME, __VA_ARGS__)
 
 /*****************************************************************************/
 
