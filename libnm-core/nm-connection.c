@@ -2205,7 +2205,7 @@ nm_connection_get_setting_pppoe (NMConnection *connection)
  *
  * A shortcut to return any #NMSettingProxy the connection might contain.
  *
- * Returns:an #NMSettingProxy if the connection contains one, otherwise %NULL
+ * Returns: (transfer none): an #NMSettingProxy if the connection contains one, otherwise %NULL
  *
  * Since: 1.6
  **/
