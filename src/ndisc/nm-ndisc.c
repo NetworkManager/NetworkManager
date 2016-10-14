@@ -425,53 +425,6 @@ nm_ndisc_add_dns_domain (NMNDisc *ndisc, const NMNDiscDNSDomain *new)
 
 /*****************************************************************************/
 
-/**
- * nm_ndisc_set_iid:
- * @ndisc: the #NMNDisc
- * @iid: the new interface ID
- *
- * Sets the "Modified EUI-64" interface ID to be used when generating
- * IPv6 addresses using received prefixes. Identifiers are either generated
- * from the hardware addresses or manually set by the operator with
- * "ip token" command.
- *
- * Upon token change (or initial setting) all addresses generated using
- * the old identifier are removed. The caller should ensure the addresses
- * will be reset by soliciting router advertisements.
- *
- * In case the stable privacy addressing is used %FALSE is returned and
- * addresses are left untouched.
- *
- * Returns: %TRUE if addresses need to be regenerated, %FALSE otherwise.
- **/
-gboolean
-nm_ndisc_set_iid (NMNDisc *ndisc, const NMUtilsIPv6IfaceId iid)
-{
-	NMNDiscPrivate *priv;
-	NMNDiscDataInternal *rdata;
-
-	g_return_val_if_fail (NM_IS_NDISC (ndisc), FALSE);
-
-	priv = NM_NDISC_GET_PRIVATE (ndisc);
-	rdata = &priv->rdata;
-
-	if (priv->iid.id != iid.id) {
-		priv->iid = iid;
-
-		if (priv->addr_gen_mode == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY)
-			return FALSE;
-
-		if (rdata->addresses->len) {
-			_LOGD ("IPv6 interface identifier changed, flushing addresses");
-			g_array_remove_range (rdata->addresses, 0, rdata->addresses->len);
-			_emit_config_change (ndisc, NM_NDISC_CONFIG_ADDRESSES);
-		}
-		return TRUE;
-	}
-
-	return FALSE;
-}
-
 static gboolean
 send_rs_timeout (NMNDisc *ndisc)
 {
@@ -534,6 +487,55 @@ solicit (NMNDisc *ndisc)
 	_LOGD ("scheduling explicit router solicitation request in %" G_GINT64_FORMAT " seconds.",
 	       next);
 	priv->send_rs_id = g_timeout_add_seconds ((guint32) next, (GSourceFunc) send_rs_timeout, ndisc);
+}
+
+/*****************************************************************************/
+
+/**
+ * nm_ndisc_set_iid:
+ * @ndisc: the #NMNDisc
+ * @iid: the new interface ID
+ *
+ * Sets the "Modified EUI-64" interface ID to be used when generating
+ * IPv6 addresses using received prefixes. Identifiers are either generated
+ * from the hardware addresses or manually set by the operator with
+ * "ip token" command.
+ *
+ * Upon token change (or initial setting) all addresses generated using
+ * the old identifier are removed. The caller should ensure the addresses
+ * will be reset by soliciting router advertisements.
+ *
+ * In case the stable privacy addressing is used %FALSE is returned and
+ * addresses are left untouched.
+ *
+ * Returns: %TRUE if addresses need to be regenerated, %FALSE otherwise.
+ **/
+gboolean
+nm_ndisc_set_iid (NMNDisc *ndisc, const NMUtilsIPv6IfaceId iid)
+{
+	NMNDiscPrivate *priv;
+	NMNDiscDataInternal *rdata;
+
+	g_return_val_if_fail (NM_IS_NDISC (ndisc), FALSE);
+
+	priv = NM_NDISC_GET_PRIVATE (ndisc);
+	rdata = &priv->rdata;
+
+	if (priv->iid.id != iid.id) {
+		priv->iid = iid;
+
+		if (priv->addr_gen_mode == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY)
+			return FALSE;
+
+		if (rdata->addresses->len) {
+			_LOGD ("IPv6 interface identifier changed, flushing addresses");
+			g_array_remove_range (rdata->addresses, 0, rdata->addresses->len);
+			_emit_config_change (ndisc, NM_NDISC_CONFIG_ADDRESSES);
+		}
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
 static gboolean
