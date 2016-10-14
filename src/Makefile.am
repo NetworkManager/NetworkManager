@@ -501,6 +501,9 @@ libNetworkManagerTest_la_LIBADD = \
 
 ###############################################################################
 
+EXTRA_NetworkManager_DEPENDENCIES = \
+	NetworkManager.ver
+
 NetworkManager_SOURCES = \
 	main-utils.c \
 	main-utils.h \

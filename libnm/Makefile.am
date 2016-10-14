@@ -136,6 +136,9 @@ nm_enum_types_sources = $(libnminclude_HEADERS)
 GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM --fhead '\#include <nm-core-enum-types.h>\n'
 GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\n'
 
+EXTRA_libnm_la_DEPENDENCIES = \
+	libnm.ver
+
 libnm_la_LIBADD = \
 	$(top_builddir)/libnm-core/libnm-core.la \
 	$(top_builddir)/introspection/libnmdbus.la \
