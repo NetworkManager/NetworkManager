@@ -429,6 +429,11 @@ intltoolize --automake --copy --force
 
 make %{?_smp_mflags}
 
+# regenerate src/NetworkManager.ver with the actually used
+# symbols and relink.
+./tools/create-exports-NetworkManager.sh update
+make %{?_smp_mflags}
+
 %install
 # install NM
 make install DESTDIR=%{buildroot}
