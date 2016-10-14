@@ -1187,7 +1187,6 @@ clients/Makefile
 clients/cli/Makefile
 clients/tui/Makefile
 clients/tui/newt/Makefile
-introspection/Makefile
 man/Makefile
 man/common.ent
 po/Makefile.in

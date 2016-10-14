@@ -8,7 +8,8 @@
 *.la
 *.gir
 *.typelib
-*.stamp
+**.stamp
+.dirstamp
 *-enum-types.[ch]
 *-glue.h
 *.loT
