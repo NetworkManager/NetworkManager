@@ -24,7 +24,7 @@
 %global release_version __RELEASE_VERSION__
 %global epoch_version 1
 
-%global obsoletes_nmver 1:0.9.9.95-1
+%global obsoletes_device_plugins 1:0.9.9.95-1
 
 %global systemd_dir %{_prefix}/lib/systemd/system
 %global nmlibdir %{_prefix}/lib/%{name}
@@ -125,7 +125,7 @@ Requires: udev
 Requires: iptables
 Requires: readline
 Obsoletes: dhcdbd
-Obsoletes: NetworkManager < %{obsoletes_nmver}
+Obsoletes: NetworkManager < %{obsoletes_device_plugins}
 Obsoletes: NetworkManager-wimax < 1.2
 
 Conflicts: NetworkManager-vpnc < 1:0.7.0.99-1
@@ -193,7 +193,7 @@ services.
 Summary: ADSL device plugin for NetworkManager
 Group: System Environment/Base
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
-Obsoletes: NetworkManager < %{obsoletes_nmver}
+Obsoletes: NetworkManager < %{obsoletes_device_plugins}
 Obsoletes: NetworkManager-atm
 
 %description adsl
@@ -208,7 +208,7 @@ Group: System Environment/Base
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: NetworkManager-wwan = %{epoch}:%{version}-%{release}
 Requires: bluez >= 4.101-5
-Obsoletes: NetworkManager < %{obsoletes_nmver}
+Obsoletes: NetworkManager < %{obsoletes_device_plugins}
 Obsoletes: NetworkManager-bt
 
 %description bluetooth
@@ -222,7 +222,7 @@ Summary: Team device plugin for NetworkManager
 Group: System Environment/Base
 BuildRequires: teamd-devel
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
-Obsoletes: NetworkManager < %{obsoletes_nmver}
+Obsoletes: NetworkManager < %{obsoletes_device_plugins}
 # Team was split from main NM binary between 0.9.10 and 1.0
 Obsoletes: NetworkManager < 1.0.0
 
@@ -237,7 +237,7 @@ Summary: Wifi plugin for NetworkManager
 Group: System Environment/Base
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: wpa_supplicant >= 1:1.1
-Obsoletes: NetworkManager < %{obsoletes_nmver}
+Obsoletes: NetworkManager < %{obsoletes_device_plugins}
 
 %description wifi
 This package contains NetworkManager support for Wifi and OLPC devices.
@@ -250,7 +250,7 @@ Summary: Mobile broadband device plugin for NetworkManager
 Group: System Environment/Base
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: ModemManager
-Obsoletes: NetworkManager < %{obsoletes_nmver}
+Obsoletes: NetworkManager < %{obsoletes_device_plugins}
 
 %description wwan
 This package contains NetworkManager support for mobile broadband (WWAN)
