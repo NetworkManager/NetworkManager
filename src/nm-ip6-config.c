@@ -384,7 +384,6 @@ gboolean
 nm_ip6_config_commit (const NMIP6Config *config, int ifindex, gboolean routes_full_sync)
 {
 	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
-	int i;
 	gboolean success;
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
@@ -395,7 +394,8 @@ nm_ip6_config_commit (const NMIP6Config *config, int ifindex, gboolean routes_fu
 
 	/* Routes */
 	{
-		int count = nm_ip6_config_get_num_routes (config);
+		guint i;
+		guint count = nm_ip6_config_get_num_routes (config);
 		GArray *routes = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP6Route), count);
 		const NMPlatformIP6Route *route;
 
@@ -712,8 +712,8 @@ nm_ip6_config_merge (NMIP6Config *dst, const NMIP6Config *src, NMIPConfigMergeFl
 gboolean
 nm_ip6_config_destination_is_direct (const NMIP6Config *config, const struct in6_addr *network, guint8 plen)
 {
-	int num = nm_ip6_config_get_num_addresses (config);
-	int i;
+	guint num = nm_ip6_config_get_num_addresses (config);
+	guint i;
 
 	nm_assert (network);
 	nm_assert (plen <= 128);
@@ -1626,7 +1626,7 @@ nm_ip6_config_del_nameserver (NMIP6Config *config, guint i)
 	_notify (config, PROP_NAMESERVERS);
 }
 
-guint32
+guint
 nm_ip6_config_get_num_nameservers (const NMIP6Config *config)
 {
 	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
@@ -1683,7 +1683,7 @@ nm_ip6_config_del_domain (NMIP6Config *config, guint i)
 	_notify (config, PROP_DOMAINS);
 }
 
-guint32
+guint
 nm_ip6_config_get_num_domains (const NMIP6Config *config)
 {
 	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
@@ -1755,7 +1755,7 @@ nm_ip6_config_del_search (NMIP6Config *config, guint i)
 	_notify (config, PROP_SEARCHES);
 }
 
-guint32
+guint
 nm_ip6_config_get_num_searches (const NMIP6Config *config)
 {
 	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
@@ -1812,7 +1812,7 @@ nm_ip6_config_del_dns_option (NMIP6Config *config, guint i)
 	_notify (config, PROP_DNS_OPTIONS);
 }
 
-guint32
+guint
 nm_ip6_config_get_num_dns_options (const NMIP6Config *config)
 {
 	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
@@ -2038,8 +2038,8 @@ get_property (GObject *object, guint prop_id,
 	case PROP_ADDRESS_DATA:
 		{
 			GVariantBuilder array_builder, addr_builder;
-			int naddr = nm_ip6_config_get_num_addresses (config);
-			int i;
+			guint naddr = nm_ip6_config_get_num_addresses (config);
+			guint i;
 
 			g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("aa{sv}"));
 			for (i = 0; i < naddr; i++) {
@@ -2069,8 +2069,8 @@ get_property (GObject *object, guint prop_id,
 		{
 			GVariantBuilder array_builder;
 			const struct in6_addr *gateway = nm_ip6_config_get_gateway (config);
-			int naddr = nm_ip6_config_get_num_addresses (config);
-			int i;
+			guint naddr = nm_ip6_config_get_num_addresses (config);
+			guint i;
 
 			g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("a(ayuay)"));
 			for (i = 0; i < naddr; i++) {
