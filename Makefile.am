@@ -2,19 +2,22 @@ include $(GLIB_MAKEFILE)
 
 @GNOME_CODE_COVERAGE_RULES@
 
+@NM_LOG_COMPILER@
+
 ###############################################################################
 
 AUTOMAKE_OPTIONS = subdir-objects
 
 noinst_LTLIBRARIES =
+noinst_PROGRAMS =
 CLEANFILES =
 EXTRA_DIST =
 BUILT_SOURCES =
 GLIB_GENERATED =
+TESTS =
 
 SUBDIRS = \
 	. \
-	libnm-core \
 	libnm \
 	src \
 	dispatcher \
@@ -436,6 +439,103 @@ libnm-core/nm-dbus-types.xml: libnm-core/nm-dbus-interface.h tools/enums-to-docb
 BUILT_SOURCES += \
 	libnm-core/nm-vpn-dbus-types.xml \
 	libnm-core/nm-dbus-types.xml
+
+###############################################################################
+
+if ENABLE_TESTS
+
+libnm_core_tests_programs = \
+	libnm-core/tests/test-compare \
+	libnm-core/tests/test-crypto \
+	libnm-core/tests/test-general \
+	libnm-core/tests/test-keyfile \
+	libnm-core/tests/test-secrets \
+	libnm-core/tests/test-setting-8021x \
+	libnm-core/tests/test-setting-bond \
+	libnm-core/tests/test-setting-dcb \
+	libnm-core/tests/test-settings-defaults
+
+noinst_PROGRAMS += $(libnm_core_tests_programs)
+
+GLIB_GENERATED += \
+	libnm-core/tests/nm-core-tests-enum-types.h \
+	libnm-core/tests/nm-core-tests-enum-types.c
+
+nm_core_tests_enum_types_sources = libnm-core/tests/test-general-enums.h
+nm_core_tests_enum_types_MKENUMS_H_FLAGS = --identifier-prefix NM
+nm_core_tests_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM
+
+libnm_core_tests_cppflags = \
+	-I${srcdir}/shared \
+	-I${builddir}/shared \
+	-I$(srcdir)/libnm-core \
+	-I$(builddir)/libnm-core \
+	-I$(srcdir)/libnm-core/tests \
+	-DNETWORKMANAGER_COMPILATION \
+	$(GLIB_CFLAGS) \
+	-DTEST_CERT_DIR=\"$(abs_srcdir)/libnm-core/tests/certs\"
+
+libnm_core_tests_test_compare_CPPFLAGS = $(libnm_core_tests_cppflags)
+libnm_core_tests_test_crypto_CPPFLAGS = $(libnm_core_tests_cppflags)
+libnm_core_tests_test_general_CPPFLAGS = $(libnm_core_tests_cppflags)
+libnm_core_tests_test_keyfile_CPPFLAGS = $(libnm_core_tests_cppflags)
+libnm_core_tests_test_secrets_CPPFLAGS = $(libnm_core_tests_cppflags)
+libnm_core_tests_test_setting_8021x_CPPFLAGS = $(libnm_core_tests_cppflags)
+libnm_core_tests_test_setting_bond_CPPFLAGS = $(libnm_core_tests_cppflags)
+libnm_core_tests_test_setting_dcb_CPPFLAGS = $(libnm_core_tests_cppflags)
+libnm_core_tests_test_settings_defaults_CPPFLAGS = $(libnm_core_tests_cppflags)
+
+libnm_core_tests_test_general_SOURCES = \
+	libnm-core/tests/nm-core-tests-enum-types.c \
+	libnm-core/tests/nm-core-tests-enum-types.h \
+	libnm-core/tests/test-general-enums.h \
+	libnm-core/tests/test-general.c
+
+libnm_core_tests_ldadd = \
+	libnm-core/libnm-core.la \
+	$(GLIB_LIBS)
+
+libnm_core_tests_test_compare_LDADD = $(libnm_core_tests_ldadd)
+libnm_core_tests_test_crypto_LDADD = $(libnm_core_tests_ldadd)
+libnm_core_tests_test_general_LDADD = $(libnm_core_tests_ldadd)
+libnm_core_tests_test_keyfile_LDADD = $(libnm_core_tests_ldadd)
+libnm_core_tests_test_secrets_LDADD = $(libnm_core_tests_ldadd)
+libnm_core_tests_test_setting_8021x_LDADD = $(libnm_core_tests_ldadd)
+libnm_core_tests_test_setting_bond_LDADD = $(libnm_core_tests_ldadd)
+libnm_core_tests_test_setting_dcb_LDADD = $(libnm_core_tests_ldadd)
+libnm_core_tests_test_settings_defaults_LDADD = $(libnm_core_tests_ldadd)
+
+TESTS += $(libnm_core_tests_programs)
+
+endif
+
+# test-cert.p12 created with:
+#
+# openssl pkcs12 -export \
+#	-in test_key_and_cert.pem \
+#	-inkey test_key_and_cert.pem \
+#	-certfile test_ca_cert.pem \
+#	-name "test-pkcs12" \
+#	-out test-cert.p12
+
+EXTRA_DIST += \
+	libnm-core/tests/certs/ca-no-ending-newline.pem \
+	libnm-core/tests/certs/pkcs8-decrypted.der \
+	libnm-core/tests/certs/pkcs8-enc-key.pem \
+	libnm-core/tests/certs/pkcs8-noenc-key.pem \
+	libnm-core/tests/certs/test2_ca_cert.pem \
+	libnm-core/tests/certs/test2-cert.p12 \
+	libnm-core/tests/certs/test2_key_and_cert.pem \
+	libnm-core/tests/certs/test-aes-key.pem \
+	libnm-core/tests/certs/test_ca_cert.der \
+	libnm-core/tests/certs/test_ca_cert.pem \
+	libnm-core/tests/certs/test-ca-cert.pem \
+	libnm-core/tests/certs/test-cert.p12 \
+	libnm-core/tests/certs/test_key_and_cert.pem \
+	libnm-core/tests/certs/test-key-and-cert.pem \
+	libnm-core/tests/certs/test-key-only-decrypted.der \
+	libnm-core/tests/certs/test-key-only-decrypted.pem \
+	libnm-core/tests/certs/test-key-only.pem
 
 ###############################################################################
 

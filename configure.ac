@@ -1168,8 +1168,6 @@ src/devices/team/Makefile
 src/devices/wifi/Makefile
 src/devices/wifi/tests/Makefile
 src/devices/wwan/Makefile
-libnm-core/Makefile
-libnm-core/tests/Makefile
 libnm/libnm.pc
 libnm/Makefile
 libnm/tests/Makefile
