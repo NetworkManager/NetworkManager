@@ -148,13 +148,13 @@ add_interface_configuration (NMDnsSystemdResolved *self,
 }
 
 static void
-add_domain(GVariantBuilder *domains,
-           const gchar *domain,
-           gboolean never_default)
+add_domain (GVariantBuilder *domains,
+            const char *domain,
+            gboolean never_default)
 {
-		/* If this link is never the default (e.g. only used for resources on this
-		 * network) add a routing domain. */
-		g_variant_builder_add (domains, "(sb)", domain, never_default);
+	/* If this link is never the default (e.g. only used for resources on this
+	 * network) add a routing domain. */
+	g_variant_builder_add (domains, "(sb)", domain, never_default);
 }
 
 static void
@@ -177,15 +177,16 @@ update_add_ip6_config (NMDnsSystemdResolved *self,
 	}
 
 	for (i = 0; i < nm_ip6_config_get_num_searches (config); i++) {
-		add_domain(domains, nm_ip6_config_get_search (config, i),
-				   nm_ip6_config_get_never_default (config));
+		add_domain (domains, nm_ip6_config_get_search (config, i),
+		            nm_ip6_config_get_never_default (config));
 	}
 
-	if (nm_ip6_config_get_num_searches(config) == 0)
+	if (nm_ip6_config_get_num_searches (config) == 0) {
 		for (i = 0; i < nm_ip6_config_get_num_domains (config); i++) {
-			add_domain(domains, nm_ip6_config_get_domain (config, i),
-					   nm_ip6_config_get_never_default (config));
+			add_domain (domains, nm_ip6_config_get_domain (config, i),
+			            nm_ip6_config_get_never_default (config));
 		}
+	}
 }
 
 static void
@@ -208,15 +209,16 @@ update_add_ip4_config (NMDnsSystemdResolved *self,
 	}
 
 	for (i = 0; i < nm_ip4_config_get_num_searches (config); i++) {
-		add_domain(domains, nm_ip4_config_get_search (config, i),
-				   nm_ip4_config_get_never_default (config));
+		add_domain (domains, nm_ip4_config_get_search (config, i),
+		            nm_ip4_config_get_never_default (config));
 	}
 
-	if (nm_ip4_config_get_num_searches(config) == 0)
+	if (nm_ip4_config_get_num_searches (config) == 0) {
 		for (i = 0; i < nm_ip4_config_get_num_domains (config); i++) {
-			add_domain(domains, nm_ip4_config_get_domain (config, i),
-					   nm_ip4_config_get_never_default (config));
+			add_domain (domains, nm_ip4_config_get_domain (config, i),
+			            nm_ip4_config_get_never_default (config));
 		}
+	}
 }
 
 static void
