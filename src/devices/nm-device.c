@@ -1897,10 +1897,8 @@ device_link_changed (NMDevice *self)
 	}
 
 	if (priv->ndisc && info.inet6_token.id) {
-		if (nm_ndisc_set_iid (priv->ndisc, info.inet6_token)) {
+		if (nm_ndisc_set_iid (priv->ndisc, info.inet6_token))
 			_LOGD (LOGD_DEVICE, "IPv6 tokenized identifier present on device %s", priv->iface);
-			nm_ndisc_start (priv->ndisc);
-		}
 	}
 
 	if (klass->link_changed)

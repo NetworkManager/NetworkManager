@@ -323,6 +323,9 @@ start (NMNDisc *ndisc)
 	NMLndpNDiscPrivate *priv = NM_LNDP_NDISC_GET_PRIVATE ((NMLndpNDisc *) ndisc);
 	int fd = ndp_get_eventfd (priv->ndp);
 
+	g_return_if_fail (!priv->event_channel);
+	g_return_if_fail (!priv->event_id);
+
 	priv->event_channel = g_io_channel_unix_new (fd);
 	priv->event_id = g_io_add_watch (priv->event_channel, G_IO_IN, (GIOFunc) event_ready, ndisc);
 

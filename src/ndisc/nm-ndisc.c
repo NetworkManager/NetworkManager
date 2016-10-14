@@ -531,6 +531,7 @@ nm_ndisc_set_iid (NMNDisc *ndisc, const NMUtilsIPv6IfaceId iid)
 			_LOGD ("IPv6 interface identifier changed, flushing addresses");
 			g_array_remove_range (rdata->addresses, 0, rdata->addresses->len);
 			_emit_config_change (ndisc, NM_NDISC_CONFIG_ADDRESSES);
+			solicit (ndisc);
 		}
 		return TRUE;
 	}
@@ -556,21 +557,20 @@ nm_ndisc_start (NMNDisc *ndisc)
 	NMNDiscClass *klass = NM_NDISC_GET_CLASS (ndisc);
 	gint64 ra_wait_secs;
 
-	g_assert (klass->start);
+	g_return_if_fail (klass->start);
+	g_return_if_fail (!priv->ra_timeout_id);
 
 	_LOGD ("starting neighbor discovery: %d", priv->ifindex);
 
 	if (!nm_ndisc_netns_push (ndisc, &netns))
 		return;
 
-	nm_clear_g_source (&priv->ra_timeout_id);
 	ra_wait_secs = (((gint64) priv->router_solicitations) * priv->router_solicitation_interval) + 1;
 	ra_wait_secs = CLAMP (ra_wait_secs, 30, 120);
 	priv->ra_timeout_id = g_timeout_add_seconds (ra_wait_secs, ndisc_ra_timeout_cb, ndisc);
 	_LOGD ("scheduling RA timeout in %d seconds", (int) ra_wait_secs);
 
-	if (klass->start)
-		klass->start (ndisc);
+	klass->start (ndisc);
 
 	solicit (ndisc);
 }
