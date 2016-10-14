@@ -42,7 +42,6 @@ typedef struct {
 
 	GIOChannel *event_channel;
 	guint event_id;
-	guint ra_timeout_id;  /* first RA timeout */
 } NMLndpNDiscPrivate;
 
 /*****************************************************************************/
