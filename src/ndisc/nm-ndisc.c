@@ -537,7 +537,8 @@ announce_router (NMNDisc *ndisc)
 		_LOGD ("will resend an initial router advertisement");
 
 		/* Schedule next initial announcement retransmit. */
-		priv->send_ra_id = g_timeout_add_seconds (g_random_int_range (0, NM_NDISC_ROUTER_ADVERT_INITIAL_INTERVAL),
+		priv->send_ra_id = g_timeout_add_seconds (g_random_int_range (NM_NDISC_ROUTER_ADVERT_DELAY,
+		                                                              NM_NDISC_ROUTER_ADVERT_INITIAL_INTERVAL),
 		                                          (GSourceFunc) announce_router, ndisc);
 	} else {
 		_LOGD ("will send an unsolicited router advertisement");
@@ -586,7 +587,7 @@ announce_router_solicited (NMNDisc *ndisc)
 		nm_clear_g_source (&priv->send_ra_id);
 
 	if (!priv->send_ra_id) {
-		priv->send_ra_id = g_timeout_add (g_random_int_range (0, 500),
+		priv->send_ra_id = g_timeout_add (g_random_int_range (0, NM_NDISC_ROUTER_ADVERT_DELAY_MS),
 		                                  (GSourceFunc) announce_router, ndisc);
 	}
 }

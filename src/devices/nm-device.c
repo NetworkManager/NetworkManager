@@ -6455,6 +6455,7 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 		                                 stable_type,
 		                                 stable_id,
 		                                 nm_setting_ip6_config_get_addr_gen_mode (s_ip6),
+		                                 NM_NDISC_NODE_TYPE_HOST,
 		                                 &error);
 	}
 	if (!priv->ndisc) {

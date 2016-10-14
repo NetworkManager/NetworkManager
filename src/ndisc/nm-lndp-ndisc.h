@@ -42,6 +42,7 @@ NMNDisc *nm_lndp_ndisc_new (NMPlatform *platform,
                             NMUtilsStableType stable_type,
                             const char *network_id,
                             NMSettingIP6ConfigAddrGenMode addr_gen_mode,
+                            NMNDiscNodeType node_type,
                             GError **error);
 
 #endif /* __NETWORKMANAGER_LNDP_NDISC_H__ */

@@ -504,7 +504,9 @@ main (int argc, char *argv[])
 		}
 		ndisc = nm_lndp_ndisc_new (NM_PLATFORM_GET, gl.ifindex, global_opt.ifname,
 		                           stable_type, stable_id,
-		                           global_opt.addr_gen_mode, NULL);
+		                           global_opt.addr_gen_mode,
+		                           NM_NDISC_NODE_TYPE_HOST,
+		                           NULL);
 		g_assert (ndisc);
 
 		if (iid)

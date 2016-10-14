@@ -24,6 +24,7 @@
 
 #include <string.h>
 #include <arpa/inet.h>
+#include <netinet/icmp6.h>
 /* stdarg.h included because of a bug in ndp.h */
 #include <stdarg.h>
 #include <ndp.h>
@@ -302,6 +303,176 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	return 0;
 }
 
+static void *
+_ndp_msg_add_option (struct ndp_msg *msg, int len)
+{
+	void *ret = (uint8_t *)msg + ndp_msg_payload_len (msg);
+
+	len += ndp_msg_payload_len (msg);
+	if (len > ndp_msg_payload_maxlen (msg))
+		return NULL;
+
+	ndp_msg_payload_len_set (msg, len);
+	return ret;
+}
+
+#define NM_ND_OPT_RDNSS 25
+typedef struct {
+	struct nd_opt_hdr header;
+	uint16_t reserved;
+	uint32_t lifetime;;
+	struct in6_addr addrs[0];
+} NMLndpRdnssOption;
+
+#define NM_ND_OPT_DNSSL 31
+typedef struct {
+	struct nd_opt_hdr header;
+	uint16_t reserved;
+	uint32_t lifetime;
+	char search_list[0];
+} NMLndpDnsslOption;
+
+static gboolean
+send_ra (NMNDisc *ndisc, GError **error)
+{
+	NMLndpNDiscPrivate *priv = NM_LNDP_NDISC_GET_PRIVATE ((NMLndpNDisc *) ndisc);
+	NMNDiscDataInternal *rdata = ndisc->rdata;
+	guint32 now = nm_utils_get_monotonic_timestamp_s ();
+	int errsv;
+	struct in6_addr *addr;
+	struct ndp_msg *msg;
+	struct nd_opt_prefix_info *prefix;
+	int i;
+
+	errsv = ndp_msg_new (&msg, NDP_MSG_RA);
+	if (errsv) {
+		errsv = errsv > 0 ? errsv : -errsv;
+		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		                     "cannot create a router advertisement");
+		return FALSE;
+	}
+
+	ndp_msg_ifindex_set (msg, nm_ndisc_get_ifindex (ndisc));
+
+	/* Multicast to all nodes. */
+	addr = ndp_msg_addrto (msg);
+	addr->s6_addr32[0] = htonl(0xff020000);
+	addr->s6_addr32[1] = 0;
+	addr->s6_addr32[2] = 0;
+	addr->s6_addr32[3] = htonl(0x1);
+
+	ndp_msgra_router_lifetime_set (ndp_msgra (msg), NM_NDISC_ROUTER_LIFETIME);
+
+	/* The device let us know about all addresses that the device got
+	 * whose prefixes are suitable for delegating. Let's announce them. */
+	for (i = 0; i < rdata->addresses->len; i++) {
+		NMNDiscAddress *address = &g_array_index (rdata->addresses, NMNDiscAddress, i);
+		guint32 age = now - address->timestamp;
+		guint32 lifetime = address->lifetime;
+		guint32 preferred = address->preferred;
+
+		/* Clamp the life times if they're not forever. */
+		if (lifetime != 0xffffffff)
+			lifetime = lifetime > age ? lifetime - age : 0;
+		if (preferred != 0xffffffff)
+			preferred = preferred > age ? preferred - age : 0;
+
+		prefix = _ndp_msg_add_option (msg, sizeof(*prefix));
+		if (!prefix) {
+			/* Maybe we could sent separate RAs, but why bother... */
+			_LOGW ("The RA is too big, had to omit some some prefixes.");
+			break;
+		}
+
+		prefix->nd_opt_pi_type = ND_OPT_PREFIX_INFORMATION;
+		prefix->nd_opt_pi_len = 4;
+		prefix->nd_opt_pi_prefix_len = 64;
+		prefix->nd_opt_pi_flags_reserved |= ND_OPT_PI_FLAG_ONLINK;
+		prefix->nd_opt_pi_flags_reserved |= ND_OPT_PI_FLAG_AUTO;
+		prefix->nd_opt_pi_valid_time = htonl(lifetime);
+		prefix->nd_opt_pi_preferred_time = htonl(preferred);
+		prefix->nd_opt_pi_prefix.s6_addr32[0] = address->address.s6_addr32[0];
+		prefix->nd_opt_pi_prefix.s6_addr32[1] = address->address.s6_addr32[1];
+		prefix->nd_opt_pi_prefix.s6_addr32[2] = 0;
+		prefix->nd_opt_pi_prefix.s6_addr32[3] = 0;
+	}
+
+	if (rdata->dns_servers->len) {
+		NMLndpRdnssOption *option;
+		int len = sizeof(*option) + sizeof(option->addrs[0]) * rdata->dns_servers->len;
+
+		option = _ndp_msg_add_option (msg, len);
+		if (option) {
+			option->header.nd_opt_type = NM_ND_OPT_RDNSS;
+			option->header.nd_opt_len = len / 8;
+			option->lifetime = htonl (900);
+
+			for (i = 0; i < rdata->dns_servers->len; i++) {
+				NMNDiscDNSServer *dns_server = &g_array_index (rdata->dns_servers, NMNDiscDNSServer, i);
+				option->addrs[i] = dns_server->address;
+			}
+		} else {
+			_LOGW ("The RA is too big, had to omit DNS information.");
+		}
+
+	}
+
+	if (rdata->dns_domains->len) {
+		NMLndpDnsslOption *option;
+		NMNDiscDNSDomain *dns_server;
+		int len = sizeof(*option);
+		char *search_list;
+
+		for (i = 0; i < rdata->dns_domains->len; i++) {
+			dns_server = &g_array_index (rdata->dns_domains, NMNDiscDNSDomain, i);
+			len += strlen (dns_server->domain) + 2;
+		}
+		len = (len + 8) & ~0x7;
+
+		option = _ndp_msg_add_option (msg, len);
+		if (option) {
+			option->header.nd_opt_type = NM_ND_OPT_DNSSL;
+			option->header.nd_opt_len = len / 8;
+			option->lifetime = htonl (900);
+
+			search_list = option->search_list;
+			for (i = 0; i < rdata->dns_domains->len; i++) {
+				NMNDiscDNSDomain *dns_domain = &g_array_index (rdata->dns_domains, NMNDiscDNSDomain, i);
+				uint8_t domain_len = strlen (dns_domain->domain);
+
+				*search_list++ = domain_len;
+				memcpy (search_list, dns_domain->domain, domain_len);
+				search_list += domain_len;
+				*search_list++ = '\0';
+			}
+		} else {
+			_LOGW ("The RA is too big, had to omit DNS search list.");
+		}
+	}
+
+	errsv = ndp_msg_send (priv->ndp, msg);
+
+	ndp_msg_destroy (msg);
+	if (errsv) {
+		errsv = errsv > 0 ? errsv : -errsv;
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		             "%s (%d)",
+		             g_strerror (errsv), errsv);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static int
+receive_rs (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
+{
+	NMNDisc *ndisc = user_data;
+
+	nm_ndisc_rs_received (ndisc);
+	return 0;
+}
+
 static gboolean
 event_ready (GIOChannel *source, GIOCondition condition, NMNDisc *ndisc)
 {
@@ -332,7 +503,16 @@ start (NMNDisc *ndisc)
 	/* Flush any pending messages to avoid using obsolete information */
 	event_ready (priv->event_channel, 0, ndisc);
 
-	ndp_msgrcv_handler_register (priv->ndp, receive_ra, NDP_MSG_RA, nm_ndisc_get_ifindex (ndisc), ndisc);
+	switch (nm_ndisc_get_node_type (ndisc)) {
+	case NM_NDISC_NODE_TYPE_HOST:
+		ndp_msgrcv_handler_register (priv->ndp, receive_ra, NDP_MSG_RA, nm_ndisc_get_ifindex (ndisc), ndisc);
+		break;
+	case NM_NDISC_NODE_TYPE_ROUTER:
+		ndp_msgrcv_handler_register (priv->ndp, receive_rs, NDP_MSG_RS, nm_ndisc_get_ifindex (ndisc), ndisc);
+		break;
+	default:
+		g_assert_not_reached ();
+	}
 }
 
 /*****************************************************************************/
@@ -360,6 +540,7 @@ nm_lndp_ndisc_new (NMPlatform *platform,
                    NMUtilsStableType stable_type,
                    const char *network_id,
                    NMSettingIP6ConfigAddrGenMode addr_gen_mode,
+                   NMNDiscNodeType node_type,
                    GError **error)
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
@@ -380,7 +561,7 @@ nm_lndp_ndisc_new (NMPlatform *platform,
 	                      NM_NDISC_IFNAME, ifname,
 	                      NM_NDISC_NETWORK_ID, network_id,
 	                      NM_NDISC_ADDR_GEN_MODE, (int) addr_gen_mode,
-	                      NM_NDISC_NODE_TYPE, (int) NM_NDISC_NODE_TYPE_HOST,
+	                      NM_NDISC_NODE_TYPE, (int) node_type,
 	                      NM_NDISC_MAX_ADDRESSES, ipv6_sysctl_get (platform, ifname,
 	                                                               "max_addresses",
 	                                                               0, G_MAXINT32, NM_NDISC_MAX_ADDRESSES_DEFAULT),
@@ -417,7 +598,16 @@ dispose (GObject *object)
 	g_clear_pointer (&priv->event_channel, g_io_channel_unref);
 
 	if (priv->ndp) {
-		ndp_msgrcv_handler_unregister (priv->ndp, receive_ra, NDP_MSG_RA, nm_ndisc_get_ifindex (ndisc), ndisc);
+		switch (nm_ndisc_get_node_type (ndisc)) {
+		case NM_NDISC_NODE_TYPE_HOST:
+			ndp_msgrcv_handler_unregister (priv->ndp, receive_rs, NDP_MSG_RA, nm_ndisc_get_ifindex (ndisc), ndisc);
+			break;
+		case NM_NDISC_NODE_TYPE_ROUTER:
+			ndp_msgrcv_handler_unregister (priv->ndp, receive_ra, NDP_MSG_RA, nm_ndisc_get_ifindex (ndisc), ndisc);
+			break;
+		default:
+			g_assert_not_reached ();
+		}
 		ndp_close (priv->ndp);
 		priv->ndp = NULL;
 	}
@@ -434,4 +624,5 @@ nm_lndp_ndisc_class_init (NMLndpNDiscClass *klass)
 	object_class->dispose = dispose;
 	ndisc_class->start = start;
 	ndisc_class->send_rs = send_rs;
+	ndisc_class->send_ra = send_ra;
 }
