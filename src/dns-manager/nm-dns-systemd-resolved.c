@@ -148,14 +148,25 @@ add_interface_configuration (NMDnsSystemdResolved *self,
 }
 
 static void
+add_domain (GVariantBuilder *domains,
+            const char *domain,
+            gboolean never_default)
+{
+	/* If this link is never the default (e.g. only used for resources on this
+	 * network) add a routing domain. */
+	g_variant_builder_add (domains, "(sb)", domain, never_default);
+}
+
+static void
 update_add_ip6_config (NMDnsSystemdResolved *self,
                        GVariantBuilder *dns,
                        GVariantBuilder *domains,
                        const NMIP6Config *config)
 {
-	int i;
+	guint i, n;
 
-	for (i = 0 ; i < nm_ip6_config_get_num_nameservers (config); i++) {
+	n = nm_ip6_config_get_num_nameservers (config);
+	for (i = 0 ; i < n; i++) {
 		const struct in6_addr *ip;
 
 		g_variant_builder_open (dns, G_VARIANT_TYPE ("(iay)"));
@@ -166,16 +177,18 @@ update_add_ip6_config (NMDnsSystemdResolved *self,
 		g_variant_builder_close (dns);
 	}
 
-	for (i = 0; i < nm_ip6_config_get_num_searches (config); i++) {
-		g_variant_builder_add (domains, "(sb)",
-		                       nm_ip6_config_get_search (config, i),
-		                       FALSE);
-	}
-
-	for (i = 0; i < nm_ip6_config_get_num_domains (config); i++) {
-		g_variant_builder_add (domains, "(sb)",
-		                       nm_ip6_config_get_domain (config, i),
-		                       TRUE);
+	n = nm_ip6_config_get_num_searches (config);
+	if (n > 0) {
+		for (i = 0; i < n; i++) {
+			add_domain (domains, nm_ip6_config_get_search (config, i),
+			            nm_ip6_config_get_never_default (config));
+		}
+	} else {
+		n = nm_ip6_config_get_num_domains (config);
+		for (i = 0; i < n; i++) {
+			add_domain (domains, nm_ip6_config_get_domain (config, i),
+			            nm_ip6_config_get_never_default (config));
+		}
 	}
 }
 
@@ -185,9 +198,10 @@ update_add_ip4_config (NMDnsSystemdResolved *self,
                        GVariantBuilder *domains,
                        const NMIP4Config *config)
 {
-	int i;
+	guint i, n;
 
-	for (i = 0 ; i < nm_ip4_config_get_num_nameservers (config); i++) {
+	n = nm_ip4_config_get_num_nameservers (config);
+	for (i = 0 ; i < n; i++) {
 		guint32 ns;
 
 		g_variant_builder_open (dns, G_VARIANT_TYPE ("(iay)"));
@@ -198,16 +212,18 @@ update_add_ip4_config (NMDnsSystemdResolved *self,
 		g_variant_builder_close (dns);
 	}
 
-	for (i = 0; i < nm_ip4_config_get_num_searches (config); i++) {
-		g_variant_builder_add (domains, "(sb)",
-		                       nm_ip4_config_get_search (config, i),
-		                       FALSE);
-	}
-
-	for (i = 0; i < nm_ip4_config_get_num_domains (config); i++) {
-		g_variant_builder_add (domains, "(sb)",
-		                       nm_ip4_config_get_domain (config, i),
-		                       TRUE);
+	n = nm_ip4_config_get_num_searches (config);
+	if (n  > 0) {
+		for (i = 0; i < n; i++) {
+			add_domain (domains, nm_ip4_config_get_search (config, i),
+			            nm_ip4_config_get_never_default (config));
+		}
+	} else {
+		n = nm_ip4_config_get_num_domains (config);
+		for (i = 0; i < n; i++) {
+			add_domain (domains, nm_ip4_config_get_domain (config, i),
+			            nm_ip4_config_get_never_default (config));
+		}
 	}
 }
 

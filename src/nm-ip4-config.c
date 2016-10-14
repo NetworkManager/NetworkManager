@@ -347,7 +347,6 @@ gboolean
 nm_ip4_config_commit (const NMIP4Config *config, int ifindex, gboolean routes_full_sync, gint64 default_route_metric)
 {
 	const NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	int i;
 	gs_unref_ptrarray GPtrArray *added_addresses = NULL;
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
@@ -359,7 +358,8 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex, gboolean routes_fu
 
 	/* Routes */
 	{
-		int count = nm_ip4_config_get_num_routes (config);
+		guint i;
+		guint count = nm_ip4_config_get_num_routes (config);
 		GArray *routes = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP4Route), count);
 		gboolean success;
 		gs_unref_array GArray *device_route_purge_list = NULL;
@@ -1366,7 +1366,7 @@ gboolean
 nm_ip4_config_destination_is_direct (const NMIP4Config *config, guint32 network, guint8 plen)
 {
 	guint naddresses = nm_ip4_config_get_num_addresses (config);
-	int i;
+	guint i;
 	in_addr_t peer_network;
 
 	for (i = 0; i < naddresses; i++) {
@@ -1725,7 +1725,7 @@ nm_ip4_config_del_nameserver (NMIP4Config *config, guint i)
 	_notify (config, PROP_NAMESERVERS);
 }
 
-guint32
+guint
 nm_ip4_config_get_num_nameservers (const NMIP4Config *config)
 {
 	const NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
@@ -1782,7 +1782,7 @@ nm_ip4_config_del_domain (NMIP4Config *config, guint i)
 	_notify (config, PROP_DOMAINS);
 }
 
-guint32
+guint
 nm_ip4_config_get_num_domains (const NMIP4Config *config)
 {
 	const NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
@@ -1854,7 +1854,7 @@ nm_ip4_config_del_search (NMIP4Config *config, guint i)
 	_notify (config, PROP_SEARCHES);
 }
 
-guint32
+guint
 nm_ip4_config_get_num_searches (const NMIP4Config *config)
 {
 	const NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
@@ -1911,7 +1911,7 @@ nm_ip4_config_del_dns_option(NMIP4Config *config, guint i)
 	_notify (config, PROP_DNS_OPTIONS);
 }
 
-guint32
+guint
 nm_ip4_config_get_num_dns_options (const NMIP4Config *config)
 {
 	const NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
@@ -1999,7 +1999,7 @@ nm_ip4_config_del_nis_server (NMIP4Config *config, guint i)
 	g_array_remove_index (priv->nis, i);
 }
 
-guint32
+guint
 nm_ip4_config_get_num_nis_servers (const NMIP4Config *config)
 {
 	const NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
@@ -2072,7 +2072,7 @@ nm_ip4_config_del_wins (NMIP4Config *config, guint i)
 	_notify (config, PROP_WINS_SERVERS);
 }
 
-guint32
+guint
 nm_ip4_config_get_num_wins (const NMIP4Config *config)
 {
 	const NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
@@ -2147,7 +2147,7 @@ hash_u32 (GChecksum *sum, guint32 n)
 void
 nm_ip4_config_hash (const NMIP4Config *config, GChecksum *sum, gboolean dns_only)
 {
-	guint32 i;
+	guint i;
 	const char *s;
 
 	g_return_if_fail (config);
@@ -2294,8 +2294,8 @@ get_property (GObject *object, guint prop_id,
 	case PROP_ADDRESS_DATA:
 		{
 			GVariantBuilder array_builder, addr_builder;
-			int naddr = nm_ip4_config_get_num_addresses (config);
-			int i;
+			guint naddr = nm_ip4_config_get_num_addresses (config);
+			guint i;
 
 			g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("aa{sv}"));
 			for (i = 0; i < naddr; i++) {
@@ -2329,8 +2329,8 @@ get_property (GObject *object, guint prop_id,
 	case PROP_ADDRESSES:
 		{
 			GVariantBuilder array_builder;
-			int naddr = nm_ip4_config_get_num_addresses (config);
-			int i;
+			guint naddr = nm_ip4_config_get_num_addresses (config);
+			guint i;
 
 			g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("aau"));
 			for (i = 0; i < naddr; i++) {
@@ -2353,7 +2353,7 @@ get_property (GObject *object, guint prop_id,
 		{
 			GVariantBuilder array_builder, route_builder;
 			guint nroutes = nm_ip4_config_get_num_routes (config);
-			int i;
+			guint i;
 
 			g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("aa{sv}"));
 			for (i = 0; i < nroutes; i++) {
@@ -2385,7 +2385,7 @@ get_property (GObject *object, guint prop_id,
 		{
 			GVariantBuilder array_builder;
 			guint nroutes = nm_ip4_config_get_num_routes (config);
-			int i;
+			guint i;
 
 			g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("aau"));
 			for (i = 0; i < nroutes; i++) {
