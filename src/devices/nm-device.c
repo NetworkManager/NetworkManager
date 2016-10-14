@@ -6984,12 +6984,16 @@ fw_change_zone_cb_ip_check (NMFirewallManager *firewall_manager,
                             gpointer user_data)
 {
 	NMDevice *self = user_data;
+	NMDevicePrivate *priv;
 
 	if (!fw_change_zone_handle (self, call_id, error))
 		return;
 
 	/* FIXME: fail the device on error? */
-	nm_device_start_ip_check (self);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	if (priv->ip4_state == IP_DONE || priv->ip6_state == IP_DONE)
+		nm_device_start_ip_check (self);
 }
 
 /*
