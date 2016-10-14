@@ -373,6 +373,7 @@ nm_fake_ndisc_new (int ifindex, const char *ifname)
 	return g_object_new (NM_TYPE_FAKE_NDISC,
 	                     NM_NDISC_IFINDEX, ifindex,
 	                     NM_NDISC_IFNAME, ifname,
+	                     NM_NDISC_NODE_TYPE, (int) NM_NDISC_NODE_TYPE_HOST,
 	                     NULL);
 }
 

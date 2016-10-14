@@ -40,6 +40,7 @@
 #define NM_NDISC_NETWORK_ID     "network-id"
 #define NM_NDISC_ADDR_GEN_MODE  "addr-gen-mode"
 #define NM_NDISC_STABLE_TYPE    "stable-type"
+#define NM_NDISC_NODE_TYPE      "node-type"
 #define NM_NDISC_MAX_ADDRESSES  "max-addresses"
 #define NM_NDISC_ROUTER_SOLICITATIONS "router-solicitations"
 #define NM_NDISC_ROUTER_SOLICITATION_INTERVAL "router-solicitation-interval"
@@ -108,9 +109,19 @@ typedef enum {
 	NM_NDISC_CONFIG_MTU                                 = 1 << 7,
 } NMNDiscConfigMap;
 
+typedef enum {
+	NM_NDISC_NODE_TYPE_INVALID,
+	NM_NDISC_NODE_TYPE_HOST,
+	NM_NDISC_NODE_TYPE_ROUTER,
+} NMNDiscNodeType;
+
 #define NM_NDISC_MAX_ADDRESSES_DEFAULT 16
 #define NM_NDISC_ROUTER_SOLICITATIONS_DEFAULT 3          /* RFC4861 MAX_RTR_SOLICITATIONS */
 #define NM_NDISC_ROUTER_SOLICITATION_INTERVAL_DEFAULT 4  /* RFC4861 RTR_SOLICITATION_INTERVAL */
+#define NM_NDISC_ROUTER_ADVERTISEMENTS_DEFAULT 3         /* RFC4861 MAX_INITIAL_RTR_ADVERTISEMENTS */
+#define NM_NDISC_ROUTER_ADVERT_DELAY 3                   /* RFC4861 MIN_DELAY_BETWEEN_RAS */
+#define NM_NDISC_ROUTER_ADVERT_INITIAL_INTERVAL 16       /* RFC4861 MAX_INITIAL_RTR_ADVERT_INTERVAL */
+#define NM_NDISC_ROUTER_ADVERT_MAX_INTERVAL 600          /* RFC4861 MaxRtrAdvInterval default */
 
 struct _NMNDiscPrivate;
 struct _NMNDiscDataInternal;
@@ -152,16 +163,22 @@ typedef struct {
 
 	void (*start) (NMNDisc *ndisc);
 	gboolean (*send_rs) (NMNDisc *ndisc, GError **error);
+	gboolean (*send_ra) (NMNDisc *ndisc, GError **error);
 } NMNDiscClass;
 
 GType nm_ndisc_get_type (void);
 
 int nm_ndisc_get_ifindex (NMNDisc *self);
 const char *nm_ndisc_get_ifname (NMNDisc *self);
+NMNDiscNodeType nm_ndisc_get_node_type (NMNDisc *self);
 
 gboolean nm_ndisc_set_iid (NMNDisc *ndisc, const NMUtilsIPv6IfaceId iid);
 void nm_ndisc_start (NMNDisc *ndisc);
 void nm_ndisc_dad_failed (NMNDisc *ndisc, struct in6_addr *address);
+void nm_ndisc_set_config (NMNDisc *ndisc,
+                          const GArray *addresses,
+                          const GArray *dns_servers,
+                          const GArray *dns_domains);
 
 NMPlatform *nm_ndisc_get_platform (NMNDisc *self);
 NMPNetns *nm_ndisc_netns_get (NMNDisc *self);

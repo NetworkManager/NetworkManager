@@ -37,6 +37,7 @@ struct _NMNDiscDataInternal {
 typedef struct _NMNDiscDataInternal NMNDiscDataInternal;
 
 void nm_ndisc_ra_received (NMNDisc *ndisc, guint32 now, NMNDiscConfigMap changed);
+void nm_ndisc_rs_received (NMNDisc *ndisc);
 
 gboolean nm_ndisc_add_gateway              (NMNDisc *ndisc, const NMNDiscGateway *new);
 gboolean nm_ndisc_complete_and_add_address (NMNDisc *ndisc, NMNDiscAddress *new);

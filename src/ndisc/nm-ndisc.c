@@ -41,9 +41,18 @@ struct _NMNDiscPrivate {
 	/* this *must* be the first field. */
 	NMNDiscDataInternal rdata;
 
-	gint32 solicitations_left;
-	guint send_rs_id;
-	gint32 last_rs;
+	union {
+		gint32 solicitations_left;
+		gint32 announcements_left;
+	};
+	union {
+		guint send_rs_id;
+		guint send_ra_id;
+	};
+	union {
+		gint32 last_rs;
+		gint32 last_ra;
+	};
 	guint ra_timeout_id;  /* first RA timeout */
 	guint timeout_id;   /* prefix/dns/etc lifetime timeout */
 	char *last_error;
@@ -58,6 +67,7 @@ struct _NMNDiscPrivate {
 	gint32 max_addresses;
 	gint32 router_solicitations;
 	gint32 router_solicitation_interval;
+	NMNDiscNodeType node_type;
 
 	NMPlatform *platform;
 	NMPNetns *netns;
@@ -75,6 +85,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_MAX_ADDRESSES,
 	PROP_ROUTER_SOLICITATIONS,
 	PROP_ROUTER_SOLICITATION_INTERVAL,
+	PROP_NODE_TYPE,
 );
 
 enum {
@@ -137,6 +148,14 @@ nm_ndisc_get_ifname (NMNDisc *self)
 	g_return_val_if_fail (NM_IS_NDISC (self), NULL);
 
 	return NM_NDISC_GET_PRIVATE (self)->ifname;
+}
+
+NMNDiscNodeType
+nm_ndisc_get_node_type (NMNDisc *self)
+{
+	g_return_val_if_fail (NM_IS_NDISC (self), NM_NDISC_NODE_TYPE_INVALID);
+
+	return NM_NDISC_GET_PRIVATE (self)->node_type;
 }
 
 /*****************************************************************************/
@@ -259,18 +278,12 @@ complete_address (NMNDisc *ndisc, NMNDiscAddress *addr)
 	return FALSE;
 }
 
-gboolean
-nm_ndisc_complete_and_add_address (NMNDisc *ndisc, NMNDiscAddress *new)
+static gboolean
+nm_ndisc_add_address (NMNDisc *ndisc, const NMNDiscAddress *new)
 {
-	NMNDiscPrivate *priv;
-	NMNDiscDataInternal *rdata;
+	NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE (ndisc);
+	NMNDiscDataInternal *rdata = &priv->rdata;
 	int i;
-
-	if (!complete_address (ndisc, new))
-		return FALSE;
-
-	priv = NM_NDISC_GET_PRIVATE (ndisc);
-	rdata = &priv->rdata;
 
 	for (i = 0; i < rdata->addresses->len; i++) {
 		NMNDiscAddress *item = &g_array_index (rdata->addresses, NMNDiscAddress, i);
@@ -300,6 +313,15 @@ nm_ndisc_complete_and_add_address (NMNDisc *ndisc, NMNDiscAddress *new)
 	if (new->lifetime)
 		g_array_insert_val (rdata->addresses, i, *new);
 	return !!new->lifetime;
+}
+
+gboolean
+nm_ndisc_complete_and_add_address (NMNDisc *ndisc, NMNDiscAddress *new)
+{
+	if (!complete_address (ndisc, new))
+		return FALSE;
+
+	return nm_ndisc_add_address (ndisc, new);
 }
 
 gboolean
@@ -473,7 +495,7 @@ send_rs_timeout (NMNDisc *ndisc)
 }
 
 static void
-solicit (NMNDisc *ndisc)
+solicit_routers (NMNDisc *ndisc)
 {
 	NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE (ndisc);
 	gint64 next, now;
@@ -482,7 +504,6 @@ solicit (NMNDisc *ndisc)
 		return;
 
 	now = nm_utils_get_monotonic_timestamp_s ();
-
 	priv->solicitations_left = priv->router_solicitations;
 
 	next = (((gint64) priv->last_rs) + priv->router_solicitation_interval) - now;
@@ -492,7 +513,113 @@ solicit (NMNDisc *ndisc)
 	priv->send_rs_id = g_timeout_add_seconds ((guint32) next, (GSourceFunc) send_rs_timeout, ndisc);
 }
 
+static gboolean
+announce_router (NMNDisc *ndisc)
+{
+	nm_auto_pop_netns NMPNetns *netns = NULL;
+	NMNDiscClass *klass = NM_NDISC_GET_CLASS (ndisc);
+	NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE (ndisc);
+	GError *error = NULL;
+
+	if (!nm_ndisc_netns_push (ndisc, &netns))
+		return G_SOURCE_REMOVE;
+
+	priv->last_ra = nm_utils_get_monotonic_timestamp_s ();
+	if (klass->send_ra (ndisc, &error)) {
+		_LOGD ("router advertisement sent");
+		g_clear_pointer (&priv->last_error, g_free);
+	} else {
+		_MAYBE_WARN ("failure sending router advertisement: %s", error->message);
+		g_clear_error (&error);
+	}
+
+	if (--priv->announcements_left) {
+		_LOGD ("will resend an initial router advertisement");
+
+		/* Schedule next initial announcement retransmit. */
+		priv->send_ra_id = g_timeout_add_seconds (g_random_int_range (0, NM_NDISC_ROUTER_ADVERT_INITIAL_INTERVAL),
+		                                          (GSourceFunc) announce_router, ndisc);
+	} else {
+		_LOGD ("will send an unsolicited router advertisement");
+
+		/* Schedule next unsolicited announcement. */
+		priv->announcements_left = 1;
+		priv->send_ra_id = g_timeout_add_seconds (NM_NDISC_ROUTER_ADVERT_MAX_INTERVAL,
+		                                          (GSourceFunc) announce_router,
+		                                          ndisc);
+	}
+
+	return G_SOURCE_REMOVE;
+}
+
+static void
+announce_router_initial (NMNDisc *ndisc)
+{
+	NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE (ndisc);
+
+	_LOGD ("will send an initial router advertisement");
+
+	/* Retry three more times. */
+	priv->announcements_left = NM_NDISC_ROUTER_ADVERTISEMENTS_DEFAULT;
+
+	/* Unschedule an unsolicited resend if we are allowed to send now. */
+	if (G_LIKELY (nm_utils_get_monotonic_timestamp_s () - priv->last_ra > NM_NDISC_ROUTER_ADVERT_DELAY))
+		nm_clear_g_source (&priv->send_ra_id);
+
+	/* Schedule the initial send rather early. Clamp the delay by minimal
+	 * delay and not the initial advert internal so that we start fast. */
+	if (G_LIKELY (!priv->send_ra_id)) {
+		priv->send_ra_id = g_timeout_add_seconds (g_random_int_range (0, NM_NDISC_ROUTER_ADVERT_DELAY),
+		                                          (GSourceFunc) announce_router, ndisc);
+	}
+}
+
+static void
+announce_router_solicited (NMNDisc *ndisc)
+{
+	NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE (ndisc);
+
+	_LOGD ("will send an solicited router advertisement");
+
+	/* Unschedule an unsolicited resend if we are allowed to send now. */
+	if (nm_utils_get_monotonic_timestamp_s () - priv->last_ra > NM_NDISC_ROUTER_ADVERT_DELAY)
+		nm_clear_g_source (&priv->send_ra_id);
+
+	if (!priv->send_ra_id) {
+		priv->send_ra_id = g_timeout_add (g_random_int_range (0, 500),
+		                                  (GSourceFunc) announce_router, ndisc);
+	}
+}
+
 /*****************************************************************************/
+
+void
+nm_ndisc_set_config (NMNDisc *ndisc,
+                     const GArray *addresses,
+                     const GArray *dns_servers,
+                     const GArray *dns_domains)
+{
+	int changed = FALSE;
+	guint i;
+
+	for (i = 0; i < addresses->len; i++) {
+		if (nm_ndisc_add_address (ndisc, &g_array_index (addresses, NMNDiscAddress, i)))
+			changed = TRUE;
+	}
+
+	for (i = 0; i < dns_servers->len; i++) {
+		if (nm_ndisc_add_dns_server (ndisc, &g_array_index (dns_servers, NMNDiscDNSServer, i)))
+			changed = TRUE;
+	}
+
+	for (i = 0; i < dns_domains->len; i++) {
+		if (nm_ndisc_add_dns_domain (ndisc, &g_array_index (dns_domains, NMNDiscDNSDomain, i)))
+			changed = TRUE;
+	}
+
+	if (changed)
+		announce_router_initial (ndisc);
+}
 
 /**
  * nm_ndisc_set_iid:
@@ -534,7 +661,7 @@ nm_ndisc_set_iid (NMNDisc *ndisc, const NMUtilsIPv6IfaceId iid)
 			_LOGD ("IPv6 interface identifier changed, flushing addresses");
 			g_array_remove_range (rdata->addresses, 0, rdata->addresses->len);
 			_emit_config_change (ndisc, NM_NDISC_CONFIG_ADDRESSES);
-			solicit (ndisc);
+			solicit_routers (ndisc);
 		}
 		return TRUE;
 	}
@@ -568,14 +695,22 @@ nm_ndisc_start (NMNDisc *ndisc)
 	if (!nm_ndisc_netns_push (ndisc, &netns))
 		return;
 
-	ra_wait_secs = (((gint64) priv->router_solicitations) * priv->router_solicitation_interval) + 1;
-	ra_wait_secs = CLAMP (ra_wait_secs, 30, 120);
-	priv->ra_timeout_id = g_timeout_add_seconds (ra_wait_secs, ndisc_ra_timeout_cb, ndisc);
-	_LOGD ("scheduling RA timeout in %d seconds", (int) ra_wait_secs);
-
 	klass->start (ndisc);
 
-	solicit (ndisc);
+	switch (priv->node_type) {
+	case NM_NDISC_NODE_TYPE_HOST:
+		ra_wait_secs = (((gint64) priv->router_solicitations) * priv->router_solicitation_interval) + 1;
+		ra_wait_secs = CLAMP (ra_wait_secs, 30, 120);
+		priv->ra_timeout_id = g_timeout_add_seconds (ra_wait_secs, ndisc_ra_timeout_cb, ndisc);
+		_LOGD ("scheduling RA timeout in %d seconds", (int) ra_wait_secs);
+		solicit_routers (ndisc);
+		break;
+	case NM_NDISC_NODE_TYPE_ROUTER:
+		announce_router_initial (ndisc);
+		break;
+	default:
+		g_assert_not_reached ();
+	}
 }
 
 void
@@ -780,7 +915,7 @@ clean_dns_servers (NMNDisc *ndisc, guint32 now, NMNDiscConfigMap *changed, guint
 			g_array_remove_index (rdata->dns_servers, i--);
 			*changed |= NM_NDISC_CONFIG_DNS_SERVERS;
 		} else if (now >= refresh)
-			solicit (ndisc);
+			solicit_routers (ndisc);
 		else if (*nextevent > refresh)
 			*nextevent = refresh;
 	}
@@ -806,7 +941,7 @@ clean_dns_domains (NMNDisc *ndisc, guint32 now, NMNDiscConfigMap *changed, guint
 			g_array_remove_index (rdata->dns_domains, i--);
 			*changed |= NM_NDISC_CONFIG_DNS_DOMAINS;
 		} else if (now >= refresh)
-			solicit (ndisc);
+			solicit_routers (ndisc);
 		else if (*nextevent > refresh)
 			*nextevent = refresh;
 	}
@@ -860,6 +995,15 @@ nm_ndisc_ra_received (NMNDisc *ndisc, guint32 now, NMNDiscConfigMap changed)
 	nm_clear_g_source (&priv->send_rs_id);
 	g_clear_pointer (&priv->last_error, g_free);
 	check_timestamps (ndisc, now, changed);
+}
+
+void
+nm_ndisc_rs_received (NMNDisc *ndisc)
+{
+	NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE (ndisc);
+
+	g_clear_pointer (&priv->last_error, g_free);
+	announce_router_solicited (ndisc);
 }
 
 /*****************************************************************************/
@@ -926,6 +1070,10 @@ set_property (GObject *object, guint prop_id,
 		/* construct-only */
 		priv->router_solicitation_interval = g_value_get_int (value);
 		break;
+	case PROP_NODE_TYPE:
+		/* construct-only */
+		priv->node_type = g_value_get_int (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -965,6 +1113,7 @@ dispose (GObject *object)
 
 	nm_clear_g_source (&priv->ra_timeout_id);
 	nm_clear_g_source (&priv->send_rs_id);
+	nm_clear_g_source (&priv->send_ra_id);
 	g_clear_pointer (&priv->last_error, g_free);
 
 	nm_clear_g_source (&priv->timeout_id);
@@ -1056,6 +1205,12 @@ nm_ndisc_class_init (NMNDiscClass *klass)
 	obj_properties[PROP_ROUTER_SOLICITATION_INTERVAL] =
 	    g_param_spec_int (NM_NDISC_ROUTER_SOLICITATION_INTERVAL, "", "",
 	                      1, G_MAXINT32, NM_NDISC_ROUTER_SOLICITATION_INTERVAL_DEFAULT,
+	                      G_PARAM_WRITABLE |
+	                      G_PARAM_CONSTRUCT_ONLY |
+	                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_NODE_TYPE] =
+	    g_param_spec_int (NM_NDISC_NODE_TYPE, "", "",
+	                      NM_NDISC_NODE_TYPE_INVALID, NM_NDISC_NODE_TYPE_ROUTER, NM_NDISC_NODE_TYPE_INVALID,
 	                      G_PARAM_WRITABLE |
 	                      G_PARAM_CONSTRUCT_ONLY |
 	                      G_PARAM_STATIC_STRINGS);
