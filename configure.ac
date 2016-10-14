@@ -808,6 +808,16 @@ else
 	AC_DEFINE(WITH_DHCPCD, 0, [Define if you have dhcpcd])
 fi
 
+AC_ARG_WITH(config-dhcp-default, AS_HELP_STRING([--with-config-dhcp-default=dhclient|dhcpcd|internal], [Default configuration option for main.dhcp setting, used as fallback if the configuration option is unset]), [config_dhcp_default="$withval"], [config_dhcp_default=""])
+if test "$config_dhcp_default" = yes -o "$config_dhcp_default" = no; then
+	config_dhcp_default=''
+fi
+test -z "$config_dhcp_default" -a "$with_dhclient" != "no" && config_dhcp_default='dhclient'
+test -z "$config_dhcp_default" -a "$with_dhcpcd"   != "no" && config_dhcp_default='dhcpcd'
+test -z "$config_dhcp_default"                             && config_dhcp_default='internal'
+AC_DEFINE_UNQUOTED(NM_CONFIG_DEFAULT_DHCP, "$config_dhcp_default", [Default configuration option for main.dhcp setting])
+AC_SUBST(NM_CONFIG_DEFAULT_DHCP, $config_dhcp_default)
+
 # resolvconf and netconfig support
 AC_ARG_WITH(resolvconf, AS_HELP_STRING([--with-resolvconf=yes|no|path], [Enable resolvconf support]))
 AC_ARG_WITH(netconfig, AS_HELP_STRING([--with-netconfig=yes|no], [Enable SUSE netconfig support]))
@@ -1213,7 +1223,7 @@ echo "  netconfig: ${with_netconfig}"
 echo "  config-dns-rc-manager-default: ${config_dns_rc_manager_default}"
 echo
 
-echo "DHCP clients:"
+echo "DHCP clients (default $config_dhcp_default):"
 echo "  dhclient: $with_dhclient"
 echo "  dhcpcd: $with_dhcpcd"
 echo "  dhcpcd-supports-ipv6: $with_dhcpcd_supports_ipv6"
