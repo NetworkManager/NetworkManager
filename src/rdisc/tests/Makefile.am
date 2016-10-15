@@ -31,6 +31,6 @@ test_rdisc_fake_SOURCES = \
 test_rdisc_fake_LDADD = \
 	$(top_builddir)/src/libNetworkManagerTest.la
 
-@VALGRIND_RULES@
+@NM_LOG_COMPILER@
 TESTS = test-rdisc-fake
 

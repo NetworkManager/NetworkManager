@@ -32,7 +32,7 @@ test_keyfile_SOURCES = \
 test_keyfile_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
-@VALGRIND_RULES@
+@NM_LOG_COMPILER@
 TESTS = test-keyfile
 
 endif

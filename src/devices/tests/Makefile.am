@@ -46,7 +46,7 @@ test_arping_CPPFLAGS = \
 
 test_arping_LDADD = $(DEVICES_LDADD)
 
-@VALGRIND_RULES@
+@NM_LOG_COMPILER@
 TESTS = \
 	test-lldp \
 	test-arping

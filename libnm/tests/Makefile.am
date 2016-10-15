@@ -18,7 +18,7 @@ LDADD = \
 noinst_PROGRAMS = $(TESTS)
 
 if WITH_VALGRIND
-@VALGRIND_RULES@ --launch-dbus
+@NM_LOG_COMPILER@ --launch-dbus
 else
 LOG_COMPILER = $(top_srcdir)/tools/run-test-dbus-session.sh
 endif

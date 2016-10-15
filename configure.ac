@@ -1070,8 +1070,8 @@ else
 	fi
 fi
 AS_IF([test "$with_valgrind" != "no"],
-	AC_SUBST(VALGRIND_RULES, 'LOG_COMPILER = "$(top_srcdir)/tools/run-test-valgrind.sh" --called-from-make "$(LIBTOOL)" "$(with_valgrind)" '"$with_valgrind_suppressions"),
-	AC_SUBST(VALGRIND_RULES, []))
+	AC_SUBST(NM_LOG_COMPILER, 'LOG_COMPILER = "$(top_srcdir)/tools/run-test-valgrind.sh" --called-from-make "$(LIBTOOL)" "$(with_valgrind)" '"$with_valgrind_suppressions"),
+	AC_SUBST(NM_LOG_COMPILER, []))
 AM_CONDITIONAL(WITH_VALGRIND, test "${with_valgrind}" != "no")
 
 GTK_DOC_CHECK(1.0)

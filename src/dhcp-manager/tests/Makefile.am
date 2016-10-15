@@ -37,7 +37,7 @@ test_dhcp_utils_LDADD = \
 
 #################################
 
-@VALGRIND_RULES@
+@NM_LOG_COMPILER@
 TESTS = test-dhcp-dhclient test-dhcp-utils
 
 EXTRA_DIST = \

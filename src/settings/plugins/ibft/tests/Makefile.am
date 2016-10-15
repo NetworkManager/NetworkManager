@@ -31,7 +31,7 @@ test_ibft_LDADD = \
 	$(top_builddir)/src/settings/plugins/ibft/libnms-ibft-core.la \
 	$(top_builddir)/src/libNetworkManager.la
 
-@VALGRIND_RULES@
+@NM_LOG_COMPILER@
 TESTS = test-ibft
 
 endif

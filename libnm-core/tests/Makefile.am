@@ -33,7 +33,7 @@ LDADD = \
 	$(top_builddir)/libnm-core/libnm-core.la \
 	$(GLIB_LIBS)
 
-@VALGRIND_RULES@
+@NM_LOG_COMPILER@
 TESTS = $(noinst_PROGRAMS)
 
 test_general_SOURCES = \

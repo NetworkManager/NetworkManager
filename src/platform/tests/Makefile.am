@@ -117,7 +117,7 @@ test_general_LDADD = \
 	$(top_builddir)/src/libNetworkManagerTest.la
 
 
-@VALGRIND_RULES@
+@NM_LOG_COMPILER@
 TESTS = \
 	test-address-fake \
 	test-address-linux \

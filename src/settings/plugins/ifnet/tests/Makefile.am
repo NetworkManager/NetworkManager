@@ -34,7 +34,7 @@ test_ifnet_LDADD = \
 	$(top_builddir)/src/settings/plugins/ifnet/libnms-ifnet-core.la \
 	$(top_builddir)/src/libNetworkManager.la
 
-@VALGRIND_RULES@
+@NM_LOG_COMPILER@
 TESTS = test-ifnet
 
 endif

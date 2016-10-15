@@ -26,7 +26,7 @@ test_dispatcher_envp_LDADD = \
 
 ###############################################################################
 
-@VALGRIND_RULES@
+@NM_LOG_COMPILER@
 TESTS = test-dispatcher-envp
 
 endif

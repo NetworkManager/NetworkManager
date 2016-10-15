@@ -19,6 +19,6 @@ test_dnsmasq_utils_SOURCES = \
 test_dnsmasq_utils_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
-@VALGRIND_RULES@
+@NM_LOG_COMPILER@
 TESTS = test-dnsmasq-utils
 

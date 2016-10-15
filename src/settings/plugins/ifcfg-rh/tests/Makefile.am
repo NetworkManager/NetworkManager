@@ -35,7 +35,7 @@ test_ifcfg_rh_LDADD = \
 	$(top_builddir)/src/settings/plugins/ifcfg-rh/libnms-ifcfg-rh-core.la \
 	$(top_builddir)/src/libNetworkManager.la
 
-@VALGRIND_RULES@
+@NM_LOG_COMPILER@
 TESTS = test-ifcfg-rh
 
 endif
