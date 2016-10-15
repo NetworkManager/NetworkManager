@@ -91,9 +91,9 @@ if [ "$NMTST_LAUNCH_DBUS" == "yes" ]; then
 fi
 
 if [ "$NMTST_NO_VALGRIND" != "" ]; then
-	"${NMTST_DBUS_RUN_SESSION[@]}" \
-	"$TEST" "$@"
-	exit $?
+    "${NMTST_DBUS_RUN_SESSION[@]}" \
+    "$TEST" "$@"
+    exit $?
 fi
 
 LOGFILE="${TEST}.valgrind-log"
@@ -102,56 +102,56 @@ export G_SLICE=always-malloc
 export G_DEBUG=gc-friendly
 "${NMTST_DBUS_RUN_SESSION[@]}" \
 "${NMTST_LIBTOOL[@]}" "$NMTST_VALGRIND" \
-	--quiet \
-	--error-exitcode=$VALGRIND_ERROR \
-	--leak-check=full \
-	--gen-suppressions=all \
-	--suppressions="$SUPPRESSIONS" \
-	--num-callers=100 \
-	--log-file="$LOGFILE" \
-	"$TEST" \
-	"$@"
+    --quiet \
+    --error-exitcode=$VALGRIND_ERROR \
+    --leak-check=full \
+    --gen-suppressions=all \
+    --suppressions="$SUPPRESSIONS" \
+    --num-callers=100 \
+    --log-file="$LOGFILE" \
+    "$TEST" \
+    "$@"
 RESULT=$?
 
 test -s "$LOGFILE"
 HAS_ERRORS=$?
 
 if [ $RESULT -ne 0 -a $RESULT -ne 77 ]; then
-	if [ $HAS_ERRORS -ne 0 ]; then
-		rm -f "$LOGFILE"
-	elif [ $RESULT -ne $VALGRIND_ERROR ]; then
-		# the test (probably) didn't fail due to valgrind.
-		echo "The test failed. Also check the valgrind log at '`realpath "$LOGFILE"`'" >&2
-	else
-		echo "valgrind failed! Check the log at '`realpath "$LOGFILE"`'" >&2
-		UNRESOLVED=$(awk -F: '/obj:\// {print $NF}' "$LOGFILE" | sort | uniq)
-		if [ -n "$UNRESOLVED" ]; then
-			echo Some addresses could not be resolved into symbols. >&2
-			echo The errors might get suppressed when you install the debuging symbols. >&2
-			if [ -x /usr/bin/dnf ]; then
-				echo Hint: dnf debuginfo-install $UNRESOLVED >&2
-			elif [ -x /usr/bin/debuginfo-install ]; then
-				echo Hint: debuginfo-install $UNRESOLVED >&2
-			else
-				echo Files without debugging symbols: $UNRESOLVED >&2
-			fi
-		fi
-	fi
-	exit $RESULT
+    if [ $HAS_ERRORS -ne 0 ]; then
+        rm -f "$LOGFILE"
+    elif [ $RESULT -ne $VALGRIND_ERROR ]; then
+        # the test (probably) didn't fail due to valgrind.
+        echo "The test failed. Also check the valgrind log at '`realpath "$LOGFILE"`'" >&2
+    else
+        echo "valgrind failed! Check the log at '`realpath "$LOGFILE"`'" >&2
+        UNRESOLVED=$(awk -F: '/obj:\// {print $NF}' "$LOGFILE" | sort | uniq)
+        if [ -n "$UNRESOLVED" ]; then
+            echo Some addresses could not be resolved into symbols. >&2
+            echo The errors might get suppressed when you install the debuging symbols. >&2
+            if [ -x /usr/bin/dnf ]; then
+                echo Hint: dnf debuginfo-install $UNRESOLVED >&2
+            elif [ -x /usr/bin/debuginfo-install ]; then
+                echo Hint: debuginfo-install $UNRESOLVED >&2
+            else
+                echo Files without debugging symbols: $UNRESOLVED >&2
+            fi
+        fi
+    fi
+    exit $RESULT
 fi
 
 if [ $HAS_ERRORS -eq 0 ]; then
-	# valgrind doesn't support setns syscall and spams the logfile.
-	# hack around it...
-	if [ "$(basename "$TEST")" = 'test-link-linux' -a -z "$(sed -e '/^--[0-9]\+-- WARNING: unhandled .* syscall: /,/^--[0-9]\+-- it at http.*\.$/d' "$LOGFILE")" ]; then
-		HAS_ERRORS=1
-	fi
+    # valgrind doesn't support setns syscall and spams the logfile.
+    # hack around it...
+    if [ "$(basename "$TEST")" = 'test-link-linux' -a -z "$(sed -e '/^--[0-9]\+-- WARNING: unhandled .* syscall: /,/^--[0-9]\+-- it at http.*\.$/d' "$LOGFILE")" ]; then
+        HAS_ERRORS=1
+    fi
 fi
 
 if [ $HAS_ERRORS -eq 0 ]; then
-	# shouldn't actually happen...
-	echo "valgrind succeeded, but log is not empty: '`realpath "$LOGFILE"`'" >&2
-	exit 1
+    # shouldn't actually happen...
+    echo "valgrind succeeded, but log is not empty: '`realpath "$LOGFILE"`'" >&2
+    exit 1
 fi
 
 rm -f "$LOGFILE"
