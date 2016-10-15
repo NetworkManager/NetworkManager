@@ -28,6 +28,7 @@ GLIB_GENERATED =
 check_programs =
 check_ltlibraries =
 check_local =
+dbusservice_DATA =
 
 INTROSPECTION_GIRS =
 INTROSPECTION_SCANNER_ARGS =
@@ -1721,6 +1722,103 @@ check_local += check-local-symbols-settings-ibft
 endif
 
 ###############################################################################
+# src/settings/plugins/ifcfg-rh
+###############################################################################
+
+if CONFIG_PLUGIN_IFCFG_RH
+
+pkglib_LTLIBRARIES += src/settings/plugins/ifcfg-rh/libnm-settings-plugin-ifcfg-rh.la
+
+noinst_LTLIBRARIES += \
+	src/settings/plugins/ifcfg-rh/libnmdbus-ifcfg-rh.la \
+	src/settings/plugins/ifcfg-rh/libnms-ifcfg-rh-core.la
+
+src_settings_plugins_ifcfg_rh_cppflags = \
+	-I$(top_srcdir)/src/ \
+	-I$(top_srcdir)/src/platform \
+	-I$(top_srcdir)/src/settings \
+	-I$(top_srcdir)/src/settings/plugins/ifcfg-rh \
+	-I$(top_builddir)/src/settings/plugins/ifcfg-rh \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	$(GLIB_CFLAGS) \
+	$(NSS_CFLAGS) \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
+	-DSBINDIR=\"$(sbindir)\"
+
+###############################################################################
+
+nodist_src_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_SOURCES = \
+	src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.c \
+	src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h
+
+src_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_CPPFLAGS = $(filter-out -DGLIB_VERSION_MAX_ALLOWED%,$(src_settings_plugins_ifcfg_rh_cppflags))
+
+BUILT_SOURCES += $(nodist_src_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_SOURCES)
+
+src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h: src/settings/plugins/ifcfg-rh/nm-ifcfg-rh.xml
+	$(AM_V_GEN) gdbus-codegen \
+		--generate-c-code $(basename $@) \
+		--c-namespace NMDBus \
+		--interface-prefix com.redhat \
+		$<
+
+src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.c: src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h
+	@true
+
+###############################################################################
+
+src_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_SOURCES = \
+	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-common.h \
+	src/settings/plugins/ifcfg-rh/shvar.c \
+	src/settings/plugins/ifcfg-rh/shvar.h \
+	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-utils.c \
+	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-utils.h \
+	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c \
+	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.h \
+	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-writer.c \
+	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-writer.h
+
+src_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_CPPFLAGS = $(src_settings_plugins_ifcfg_rh_cppflags)
+
+###############################################################################
+
+src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_SOURCES = \
+	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-connection.c \
+	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-connection.h \
+	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-plugin.c \
+	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-plugin.h
+
+src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_CPPFLAGS = $(src_settings_plugins_ifcfg_rh_cppflags)
+
+src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_LDFLAGS = \
+	-module -avoid-version \
+	-Wl,--version-script="$(top_srcdir)/linker-script-settings.ver"
+
+src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_LIBADD = \
+	src/settings/plugins/ifcfg-rh/libnms-ifcfg-rh-core.la \
+	src/settings/plugins/ifcfg-rh/libnmdbus-ifcfg-rh.la
+
+check-local-symbols-settings-ifcfg-rh: src/settings/plugins/ifcfg-rh/libnm-settings-plugin-ifcfg-rh.la
+	$(call check_so_symbols,$(builddir)/src/settings/plugins/ifcfg-rh/.libs/libnm-settings-plugin-ifcfg-rh.so)
+
+check_local += check-local-symbols-settings-ifcfg-rh
+
+endif
+
+###############################################################################
+
+dbusservice_DATA += src/settings/plugins/ifcfg-rh/nm-ifcfg-rh.conf
+
+EXTRA_DIST += \
+	src/settings/plugins/ifcfg-rh/nm-ifcfg-rh.conf \
+	src/settings/plugins/ifcfg-rh/nm-ifcfg-rh.xml
+
+###############################################################################
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)
@@ -1729,7 +1827,7 @@ typelibdir = $(libdir)/girepository-1.0
 typelib_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
 
 dbusservicedir = $(DBUS_SYS_DIR)
-dbusservice_DATA = src/org.freedesktop.NetworkManager.conf
+dbusservice_DATA += src/org.freedesktop.NetworkManager.conf
 
 ###############################################################################
 
