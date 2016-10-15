@@ -1579,6 +1579,79 @@ src_ppp_manager_nm_pppd_plugin_la_LIBADD = \
 endif
 
 ###############################################################################
+# src/settings/plugins/keyfile/tests
+###############################################################################
+
+if ENABLE_TESTS
+
+noinst_PROGRAMS += src/settings/plugins/keyfile/tests/test-keyfile
+
+src_settings_plugins_keyfile_tests_test_keyfile_CPPFLAGS = \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/settings \
+	-I$(top_srcdir)/src/settings/plugins/keyfile \
+	$(GLIB_CFLAGS) \
+	$(CODE_COVERAGE_CFLAGS) \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	-DTEST_KEYFILES_DIR=\"$(abs_srcdir)/src/settings/plugins/keyfile/tests/keyfiles\" \
+	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/src/settings/plugins/keyfile/tests/keyfiles\" \
+	-DNMCONFDIR=\"nonexistent\"
+
+src_settings_plugins_keyfile_tests_test_keyfile_LDFLAGS = \
+	$(GLIB_LIBS) \
+	$(CODE_COVERAGE_LDFLAGS)
+
+src_settings_plugins_keyfile_tests_test_keyfile_LDADD = \
+	src/libNetworkManager.la
+
+TESTS += src/settings/plugins/keyfile/tests/test-keyfile
+
+endif
+
+EXTRA_DIST += \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_Wired_Connection \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_GSM_Connection \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_Wireless_Connection \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_Wired_Connection_MAC_Case \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_MAC_Old_Format \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_MAC_IB_Old_Format \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_Wired_Connection_IP6 \
+	src/settings/plugins/keyfile/tests/keyfiles/ATT_Data_Connect_BT \
+	src/settings/plugins/keyfile/tests/keyfiles/ATT_Data_Connect_Plain \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_String_SSID \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_Intlist_SSID \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_Intlike_SSID \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_Intlike_SSID_2 \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_Wired_TLS_Old \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_Wired_TLS_New \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_Wired_TLS_Blob \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_Wired_TLS_Path_Missing \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_InfiniBand_Connection \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_Bridge_Main \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_Bridge_Component \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_New_Wired_Group_Name \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_New_Wireless_Group_Names \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_minimal_1 \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_minimal_2 \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_minimal_slave_1 \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_minimal_slave_2 \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_minimal_slave_3 \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_minimal_slave_4 \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_Missing_Vlan_Setting \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_Missing_Vlan_Flags \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_Missing_ID_UUID \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_Enum_Property \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_Flags_Property \
+	\
+	src/settings/plugins/keyfile/tests/keyfiles/test-ca-cert.pem \
+	src/settings/plugins/keyfile/tests/keyfiles/test-key-and-cert.pem
+
+###############################################################################
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)
