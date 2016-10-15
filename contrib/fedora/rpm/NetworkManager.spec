@@ -487,7 +487,7 @@ cp valgrind.suppressions %{buildroot}%{_prefix}/src/debug/NetworkManager-%{real_
 
 %check
 %if %{with test}
-make check
+make %{?_smp_mflags} check
 %endif
 
 
