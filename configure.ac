@@ -1140,7 +1140,6 @@ src/tests/config/Makefile
 src/dnsmasq-manager/tests/Makefile
 src/supplicant-manager/tests/Makefile
 src/supplicant-manager/tests/certs/Makefile
-src/ppp-manager/Makefile
 src/settings/plugins/Makefile
 src/settings/plugins/ifupdown/Makefile
 src/settings/plugins/ifupdown/tests/Makefile

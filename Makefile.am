@@ -37,6 +37,9 @@ libnminclude_HEADERS =
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA =
 
+pppd_plugindir = $(PPPD_PLUGIN_DIR)
+pppd_plugin_LTLIBRARIES =
+
 rundir=$(runstatedir)/NetworkManager
 statedir=$(localstatedir)/lib/NetworkManager
 
@@ -1542,6 +1545,38 @@ EXTRA_DIST += \
 	src/dhcp-manager/tests/leases/malformed1.leases \
 	src/dhcp-manager/tests/leases/malformed2.leases \
 	src/dhcp-manager/tests/leases/malformed3.leases
+
+###############################################################################
+# src/ppp-manager
+###############################################################################
+
+if WITH_PPP
+
+pppd_plugin_LTLIBRARIES += src/ppp-manager/nm-pppd-plugin.la
+
+src_ppp_manager_nm_pppd_plugin_la_CPPFLAGS = \
+	-I${top_srcdir}/shared \
+	-I${top_builddir}/shared \
+	-I${top_srcdir}/libnm-core \
+	-I${top_srcdir}/src \
+	-I${top_builddir}/libnm-core \
+	-DG_LOG_DOMAIN=\""nm-pppd-plugin"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	$(GLIB_CFLAGS)
+
+src_ppp_manager_nm_pppd_plugin_la_SOURCES = \
+	src/ppp-manager/nm-pppd-plugin.c \
+	src/ppp-manager/nm-pppd-plugin.h \
+	src/ppp-manager/nm-ppp-status.h
+
+src_ppp_manager_nm_pppd_plugin_la_LDFLAGS = \
+	-module -avoid-version
+
+src_ppp_manager_nm_pppd_plugin_la_LIBADD = \
+	$(GLIB_LIBS) \
+	$(DL_LIBS)
+
+endif
 
 ###############################################################################
 

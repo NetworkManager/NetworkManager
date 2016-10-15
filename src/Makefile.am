@@ -1,5 +1,4 @@
 SUBDIRS = \
-	ppp-manager \
 	settings/plugins \
 	devices/adsl
 
