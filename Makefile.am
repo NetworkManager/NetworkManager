@@ -2180,7 +2180,44 @@ check-local-symbols-settings-ifnet: src/settings/plugins/ifnet/libnm-settings-pl
 
 check_local += check-local-symbols-settings-ifnet
 
+###############################################################################
+
+check_programs += src/settings/plugins/ifnet/tests/test-ifnet
+
+src_settings_plugins_ifnet_tests_test_ifnet_CPPFLAGS = \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/settings \
+	-I$(top_srcdir)/src/platform \
+	-I$(top_srcdir)/src/settings/plugins/ifnet \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	$(GLIB_CFLAGS) \
+	$(CODE_COVERAGE_CFLAGS) \
+	-DTEST_IFNET_DIR=\"$(abs_srcdir)/src/settings/plugins/ifnet/tests\" \
+	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/src/settings/plugins/ifnet/tests/\" \
+	-DTEST_WPA_SUPPLICANT_CONF='"$(srcdir)/src/settings/plugins/ifnet/tests/wpa_supplicant.conf"' \
+	-DSYSCONFDIR=\"nonexistent\"
+
+src_settings_plugins_ifnet_tests_test_ifnet_LDFLAGS = \
+	$(GLIB_LDFLAGS)
+	$(CODE_COVERAGE_LDFLAGS)
+
+src_settings_plugins_ifnet_tests_test_ifnet_LDADD = \
+	src/settings/plugins/ifnet/libnms-ifnet-core.la \
+	src/libNetworkManager.la
+
 endif
+
+EXTRA_DIST += \
+	src/settings/plugins/ifnet/tests/net \
+	src/settings/plugins/ifnet/tests/net.all \
+	src/settings/plugins/ifnet/tests/nm-system-settings.conf \
+	src/settings/plugins/ifnet/tests/wpa_supplicant.conf \
+	src/settings/plugins/ifnet/tests/test_ca_cert.pem
 
 ###############################################################################
 
@@ -2244,6 +2281,8 @@ EXTRA_DIST += \
 	tools/test-networkmanager-service.py \
 	tools/test-sudo-wrapper.sh \
 	tools/enums-to-docbook.pl \
+	\
+	src/settings/plugins/README \
 	\
 	$(NULL)
 

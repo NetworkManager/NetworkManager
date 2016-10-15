@@ -1,5 +1,4 @@
 SUBDIRS = \
-	settings/plugins \
 	devices/adsl
 
 if WITH_MODEM_MANAGER_1
