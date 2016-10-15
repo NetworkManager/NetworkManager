@@ -13,7 +13,7 @@ AM_CPPFLAGS = \
 
 noinst_PROGRAMS = $(TESTS)
 
-@NM_LOG_COMPILER@ --launch-dbus
+@NM_LOG_COMPILER@
 TESTS = test-nm-client test-remote-settings-client
 
 ####### NMClient and non-settings tests #######

@@ -37,7 +37,6 @@ pkgconfig_DATA =
 
 SUBDIRS = \
 	. \
-	libnm \
 	src \
 	dispatcher \
 	clients \
@@ -788,6 +787,79 @@ endif
 EXTRA_DIST += \
 	libnm/generate-setting-docs.py \
 	libnm/generate-plugin-docs.pl
+
+###############################################################################
+
+if ENABLE_TESTS
+
+libnm_tests_programs = \
+	libnm/tests/test-nm-client \
+	libnm/tests/test-remote-settings-client \
+	libnm/tests/test-secret-agent
+
+noinst_PROGRAMS += $(libnm_tests_programs)
+
+libnm_tests_cppflags = \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
+	-I$(top_srcdir)/libnm \
+	-I$(top_builddir)/libnm \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB \
+	-DTEST_NM_SERVICE=\"$(abs_top_srcdir)/tools/test-networkmanager-service.py\" \
+	$(GLIB_CFLAGS)
+
+libnm_tests_ldadd = \
+	$(top_builddir)/libnm/libnm.la \
+	$(GLIB_LIBS)
+
+libnm_tests_test_nm_client_CPPFLAGS = $(libnm_tests_cppflags)
+libnm_tests_test_remote_settings_client_CPPFLAGS = $(libnm_tests_cppflags)
+libnm_tests_test_secret_agent_CPPFLAGS = $(libnm_tests_cppflags)
+
+libnm_tests_test_nm_client_SOURCES = \
+	shared/nm-test-utils-impl.c \
+	shared/nm-test-libnm-utils.h \
+	libnm/tests/test-nm-client.c
+
+libnm_tests_test_remote_settings_client_SOURCES = \
+	shared/nm-test-utils-impl.c \
+	shared/nm-test-libnm-utils.h \
+	libnm/tests/test-remote-settings-client.c
+
+libnm_tests_test_secret_agent_SOURCES = \
+	shared/nm-test-utils-impl.c \
+	shared/nm-test-libnm-utils.h \
+	libnm/tests/test-secret-agent.c
+
+libnm_tests_test_nm_client_LDADD = $(libnm_tests_ldadd)
+libnm_tests_test_remote_settings_client_LDADD = $(libnm_tests_ldadd)
+libnm_tests_test_secret_agent_LDADD = $(libnm_tests_ldadd)
+
+TESTS += $(libnm_tests_programs)
+
+endif
+
+###############################################################################
+
+# just test, that we can build "nm-vpn-plugin-utils.c"
+
+noinst_LTLIBRARIES += \
+    libnm/tests/libnm-vpn-plugin-utils-test.la
+
+libnm_tests_libnm_vpn_plugin_utils_test_la_SOURCES = \
+     shared/nm-utils/nm-vpn-plugin-utils.c \
+     shared/nm-utils/nm-vpn-plugin-utils.h
+
+libnm_tests_libnm_vpn_plugin_utils_test_la_CFLAGS = \
+    $(GLIB_CFLAGS) \
+    -I$(srcdir)/shared \
+    -I$(srcdir)/libnm-core \
+    -I$(srcdir)/libnm
+
+libnm_tests_libnm_vpn_plugin_utils_test_la_LIBADD = \
+    $(GLIB_LIBS)
 
 ###############################################################################
 

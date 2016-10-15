@@ -13,18 +13,22 @@ if [ "$1" == "--called-from-make" ]; then
     shift
     NMTST_LIBTOOL=($1 --mode=execute); shift
     NMTST_VALGRIND="$1"; shift
+    NMTST_CHANGE_DIRECTORY=
+    if [[ "$NMTST_VALGRIND" == no ]]; then
+        NMTST_VALGRIND=
+    fi
     SUPPRESSIONS="$1"; shift
     if [ "$1" = "--launch-dbus" ]; then
         NMTST_LAUNCH_DBUS=yes
+        shift
+    elif [ "$1" = "--launch-dbus=auto" ]; then
+        NMTST_LAUNCH_DBUS=
         shift
     else
         NMTST_LAUNCH_DBUS=no
     fi
     TEST="$1"; shift
 
-    if [[ "$NMTST_VALGRIND" == no ]]; then
-        NMTST_VALGRIND=
-    fi
 else
     if [ -n "${NMTST_LIBTOOL-:x}" ]; then
         NMTST_LIBTOOL=(sh "$SCRIPT_PATH/../libtool" --mode=execute)
@@ -74,25 +78,25 @@ else
         SUPPRESSIONS="$SCRIPT_PATH/../valgrind.suppressions"
     fi
 
-    [ -x "$TEST" ] || die "Test \"$TEST\" does not exist"
+fi
 
-    TEST_PATH="$(readlink -f "$(dirname "$TEST")")"
+[ -x "$TEST" ] || die "Test \"$TEST\" does not exist"
+TEST_PATH="$(readlink -f "$(dirname "$TEST")")"
 
-    if [ -n "${NMTST_LAUNCH_DBUS-x}" ]; then
-        # autodetect whether to launch D-Bus based on the test path.
-        if [[ $TEST_PATH == */libnm/tests || $TEST_PATH == */libnm-glib/tests ]]; then
-            NMTST_LAUNCH_DBUS=yes
-        else
-            NMTST_LAUNCH_DBUS=no
-        fi
+if [ -n "${NMTST_LAUNCH_DBUS:-x}" ]; then
+    # autodetect whether to launch D-Bus based on the test path.
+    if [[ $TEST_PATH == */libnm/tests || $TEST_PATH == */libnm-glib/tests ]]; then
+        NMTST_LAUNCH_DBUS=yes
+    else
+        NMTST_LAUNCH_DBUS=no
     fi
+fi
 
-    # some tests require you to cd into the base directory.
-    # do that.
-    if [ "$NMTST_VALGRIND_NO_CD" == "" ]; then
-        cd "$TEST_PATH"
-        TEST="./$(basename "$TEST")"
-    fi
+# some tests require you to cd into the base directory.
+# do that.
+if [ "$NMTST_CHANGE_DIRECTORY" != "" ]; then
+    cd "$TEST_PATH"
+    TEST="./$(basename "$TEST")"
 fi
 
 NMTST_DBUS_RUN_SESSION=()

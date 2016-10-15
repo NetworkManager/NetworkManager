@@ -1069,7 +1069,7 @@ else
 		with_valgrind_suppressions='$(top_srcdir)/valgrind.suppressions'
 	fi
 fi
-AC_SUBST(NM_LOG_COMPILER, 'LOG_COMPILER = "$(top_srcdir)/tools/run-nm-test.sh" --called-from-make "$(LIBTOOL)" "$(with_valgrind)" "'"$with_valgrind_suppressions"'"'),
+AC_SUBST(NM_LOG_COMPILER, 'LOG_COMPILER = "$(top_srcdir)/tools/run-nm-test.sh" --called-from-make "$(LIBTOOL)" "$(with_valgrind)" "'"$with_valgrind_suppressions"'" --launch-dbus=auto'),
 
 GTK_DOC_CHECK(1.0)
 
@@ -1169,8 +1169,6 @@ src/devices/wifi/Makefile
 src/devices/wifi/tests/Makefile
 src/devices/wwan/Makefile
 libnm/libnm.pc
-libnm/Makefile
-libnm/tests/Makefile
 libnm-util/libnm-util.pc
 libnm-util/Makefile
 libnm-util/tests/Makefile
