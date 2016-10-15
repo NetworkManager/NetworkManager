@@ -16,6 +16,7 @@ noinst_DATA =
 sbin_PROGRAMS =
 libexec_PROGRAMS =
 lib_LTLIBRARIES =
+pkglib_LTLIBRARIES =
 CLEANFILES =
 DISTCLEANFILES =
 EXTRA_DIST =
@@ -1650,6 +1651,101 @@ EXTRA_DIST += \
 	\
 	src/settings/plugins/keyfile/tests/keyfiles/test-ca-cert.pem \
 	src/settings/plugins/keyfile/tests/keyfiles/test-key-and-cert.pem
+
+###############################################################################
+# src/settings/plugins/ibft
+###############################################################################
+
+if CONFIG_PLUGIN_IBFT
+
+pkglib_LTLIBRARIES += src/settings/plugins/ibft/libnm-settings-plugin-ibft.la
+
+noinst_LTLIBRARIES += src/settings/plugins/ibft/libnms-ibft-core.la
+
+src_settings_plugins_ibft_cppflags = \
+	-I$(top_srcdir)/src/ \
+	-I$(top_srcdir)/src/platform \
+	-I$(top_srcdir)/src/settings \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	$(GLIB_CFLAGS) \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
+	-DSBINDIR=\"$(sbindir)\"
+
+src_settings_plugins_ibft_libnms_ibft_core_la_CPPFLAGS = $(src_settings_plugins_ibft_cppflags)
+
+src_settings_plugins_ibft_libnms_ibft_core_la_SOURCES = \
+	src/settings/plugins/ibft/nms-ibft-reader.c \
+	src/settings/plugins/ibft/nms-ibft-reader.h
+
+src_settings_plugins_ibft_libnm_settings_plugin_ibft_la_SOURCES = \
+	src/settings/plugins/ibft/nms-ibft-plugin.c \
+	src/settings/plugins/ibft/nms-ibft-plugin.h \
+	src/settings/plugins/ibft/nms-ibft-connection.c \
+	src/settings/plugins/ibft/nms-ibft-connection.h
+
+src_settings_plugins_ibft_libnm_settings_plugin_ibft_la_CPPFLAGS = $(src_settings_plugins_ibft_cppflags)
+
+src_settings_plugins_ibft_libnm_settings_plugin_ibft_la_LDFLAGS = \
+	-module -avoid-version \
+	-Wl,--version-script="$(srcdir)/linker-script-settings.ver"
+
+src_settings_plugins_ibft_libnm_settings_plugin_ibft_la_LIBADD = \
+	src/settings/plugins/ibft/libnms-ibft-core.la
+
+if ENABLE_TESTS
+
+noinst_PROGRAMS += src/settings/plugins/ibft/tests/test-ibft
+
+src_settings_plugins_ibft_tests_test_ibft_CPPFLAGS = \
+	$(GLIB_CFLAGS) \
+	$(CODE_COVERAGE_CFLAGS) \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-I$(top_srcdir)/src/ \
+	-I$(top_srcdir)/src/platform \
+	-I$(top_srcdir)/src/settings \
+	-I$(srcdir)/src/settings/plugins/ibft \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	-DTEST_IBFT_DIR=\"$(abs_srcdir)/src/settings/plugins/ibft/tests\" \
+	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/src/settings/plugins/ibft/tests\"
+
+src_settings_plugins_ibft_tests_test_ibft_LDFLAGS = \
+	$(GLIB_LIBS) \
+	$(CODE_COVERAGE_LDFLAGS)
+
+src_settings_plugins_ibft_tests_test_ibft_LDADD = \
+	src/settings/plugins/ibft/libnms-ibft-core.la \
+	src/libNetworkManager.la
+
+TESTS += src/settings/plugins/ibft/tests/test-ibft
+
+endif
+
+EXTRA_DIST += \
+	src/settings/plugins/ibft/tests/iscsiadm-test-dhcp \
+	src/settings/plugins/ibft/tests/iscsiadm-test-static \
+	src/settings/plugins/ibft/tests/iscsiadm-test-bad-ipaddr \
+	src/settings/plugins/ibft/tests/iscsiadm-test-bad-gateway \
+	src/settings/plugins/ibft/tests/iscsiadm-test-bad-dns1 \
+	src/settings/plugins/ibft/tests/iscsiadm-test-bad-dns2 \
+	src/settings/plugins/ibft/tests/iscsiadm-test-bad-entry \
+	src/settings/plugins/ibft/tests/iscsiadm-test-bad-record \
+	src/settings/plugins/ibft/tests/iscsiadm-test-vlan
+
+check-local-symbols-settings-ibft: src/settings/plugins/ibft/libnm-settings-plugin-ibft.la
+	$(call check_so_symbols,$(builddir)/src/settings/plugins/ibft/.libs/libnm-settings-plugin-ibft.so)
+
+check_local += check-local-symbols-settings-ibft
+
+endif
 
 ###############################################################################
 

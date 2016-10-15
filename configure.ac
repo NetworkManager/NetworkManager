@@ -1148,8 +1148,6 @@ src/settings/plugins/ifnet/tests/Makefile
 src/settings/plugins/ifcfg-rh/Makefile
 src/settings/plugins/ifcfg-rh/tests/Makefile
 src/settings/plugins/ifcfg-rh/tests/network-scripts/Makefile
-src/settings/plugins/ibft/Makefile
-src/settings/plugins/ibft/tests/Makefile
 src/platform/Makefile
 src/platform/tests/Makefile
 src/rdisc/Makefile
