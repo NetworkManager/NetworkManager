@@ -29,7 +29,7 @@
 #include "nm-utils.h"
 #include "nm-device.h"
 #include "NetworkManagerUtils.h"
-#include "nm-enum-types.h"
+#include "nm-src-enum-types.h"
 #include "nm-core-internal.h"
 #include "nm-keyfile-internal.h"
 

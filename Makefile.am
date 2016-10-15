@@ -13,6 +13,8 @@ AUTOMAKE_OPTIONS = subdir-objects
 noinst_LTLIBRARIES =
 noinst_PROGRAMS =
 noinst_DATA =
+sbin_PROGRAMS =
+libexec_PROGRAMS =
 lib_LTLIBRARIES =
 CLEANFILES =
 DISTCLEANFILES =
@@ -34,6 +36,9 @@ libnminclude_HEADERS =
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA =
+
+rundir=$(runstatedir)/NetworkManager
+statedir=$(localstatedir)/lib/NetworkManager
 
 SUBDIRS = \
 	. \
@@ -862,12 +867,621 @@ libnm_tests_libnm_vpn_plugin_utils_test_la_LIBADD = \
     $(GLIB_LIBS)
 
 ###############################################################################
+# src/
+###############################################################################
+
+src_cppflags = \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
+	-I$(top_builddir)/introspection \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src \
+	\
+	 $(foreach d,$(sort $(dir $(src_libNetworkManager_la_SOURCES))),-I$(srcdir)/$d) \
+	\
+	-DPREFIX=\"$(prefix)\"          \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	\
+	-DBINDIR=\"$(bindir)\" \
+	-DDATADIR=\"$(datadir)\" \
+	-DLIBEXECDIR=\"$(libexecdir)\" \
+	-DLOCALSTATEDIR=\"$(localstatedir)\" \
+	-DRUNSTATEDIR=\"$(runstatedir)\" \
+	-DSBINDIR=\"$(sbindir)\" \
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
+	-DRUNDIR=\"$(rundir)\" \
+	\
+	-DNMCONFDIR=\"$(nmconfdir)\" \
+	-DNMLOCALEDIR=\"$(datadir)/locale\" \
+	-DNMPLUGINDIR=\"$(pkglibdir)\" \
+	-DNMRUNDIR=\"$(nmrundir)\" \
+	-DNMSTATEDIR=\"$(nmstatedir)\" \
+	-DNMLIBDIR=\"$(nmlibdir)\" \
+	\
+	-DDHCLIENT_PATH=\"$(DHCLIENT_PATH)\" \
+	-DDHCPCD_PATH=\"$(DHCPCD_PATH)\" \
+	-DPPPD_PLUGIN_DIR=\"$(PPPD_PLUGIN_DIR)\" \
+	\
+	$(GLIB_CFLAGS) \
+	$(GUDEV_CFLAGS) \
+	$(LIBNL_CFLAGS) \
+	$(LIBNDP_CFLAGS) \
+	$(LIBSOUP_CFLAGS) \
+	$(SELINUX_CFLAGS) \
+	$(LIBAUDIT_CFLAGS) \
+	$(SYSTEMD_LOGIN_CFLAGS) \
+	$(SYSTEMD_JOURNAL_CFLAGS) \
+	$(CODE_COVERAGE_CFLAGS) \
+	\
+	$(NULL)
+
+src_ldflags = $(CODE_COVERAGE_LDFLAGS)
+
+sbin_PROGRAMS += \
+	src/NetworkManager
+
+libexec_PROGRAMS += \
+	src/nm-iface-helper
+
+noinst_LTLIBRARIES += \
+	src/libNetworkManagerBase.la \
+	src/libNetworkManager.la \
+	src/libNetworkManagerTest.la \
+	src/libsystemd-nm.la
+
+###############################################################################
+
+src_libsystemd_nm_la_SOURCES = \
+	src/systemd/nm-sd.c \
+	src/systemd/nm-sd.h \
+	src/systemd/sd-adapt/nm-sd-adapt.c \
+	src/systemd/sd-adapt/nm-sd-adapt.h \
+	src/systemd/sd-adapt/build.h \
+	src/systemd/sd-adapt/cgroup-util.h \
+	src/systemd/sd-adapt/condition.h \
+	src/systemd/sd-adapt/conf-parser.h \
+	src/systemd/sd-adapt/def.h \
+	src/systemd/sd-adapt/dirent-util.h \
+	src/systemd/sd-adapt/formats-util.h \
+	src/systemd/sd-adapt/gunicode.h \
+	src/systemd/sd-adapt/libudev.h \
+	src/systemd/sd-adapt/missing.h \
+	src/systemd/sd-adapt/mkdir.h \
+	src/systemd/sd-adapt/process-util.h \
+	src/systemd/sd-adapt/sd-daemon.h \
+	src/systemd/sd-adapt/stat-util.h \
+	src/systemd/sd-adapt/udev-util.h \
+	src/systemd/sd-adapt/udev.h \
+	src/systemd/sd-adapt/user-util.h \
+	src/systemd/sd-adapt/virt.h \
+	src/systemd/src/basic/alloc-util.c \
+	src/systemd/src/basic/alloc-util.h \
+	src/systemd/src/basic/async.h \
+	src/systemd/src/basic/escape.c \
+	src/systemd/src/basic/escape.h \
+	src/systemd/src/basic/ether-addr-util.c \
+	src/systemd/src/basic/ether-addr-util.h \
+	src/systemd/src/basic/extract-word.c \
+	src/systemd/src/basic/extract-word.h \
+	src/systemd/src/basic/fd-util.c \
+	src/systemd/src/basic/fd-util.h \
+	src/systemd/src/basic/fileio.c \
+	src/systemd/src/basic/fileio.h \
+	src/systemd/src/basic/fs-util.c \
+	src/systemd/src/basic/fs-util.h \
+	src/systemd/src/basic/hash-funcs.c \
+	src/systemd/src/basic/hash-funcs.h \
+	src/systemd/src/basic/hashmap.c \
+	src/systemd/src/basic/hashmap.h \
+	src/systemd/src/basic/hexdecoct.c \
+	src/systemd/src/basic/hexdecoct.h \
+	src/systemd/src/basic/hostname-util.c \
+	src/systemd/src/basic/hostname-util.h \
+	src/systemd/src/basic/in-addr-util.c \
+	src/systemd/src/basic/in-addr-util.h \
+	src/systemd/src/basic/io-util.c \
+	src/systemd/src/basic/io-util.h \
+	src/systemd/src/basic/list.h \
+	src/systemd/src/basic/log.h \
+	src/systemd/src/basic/macro.h \
+	src/systemd/src/basic/mempool.c \
+	src/systemd/src/basic/mempool.h \
+	src/systemd/src/basic/parse-util.c \
+	src/systemd/src/basic/parse-util.h \
+	src/systemd/src/basic/path-util.c \
+	src/systemd/src/basic/path-util.h \
+	src/systemd/src/basic/prioq.c \
+	src/systemd/src/basic/prioq.h \
+	src/systemd/src/basic/random-util.c \
+	src/systemd/src/basic/random-util.h \
+	src/systemd/src/basic/refcnt.h \
+	src/systemd/src/basic/set.h \
+	src/systemd/src/basic/signal-util.h \
+	src/systemd/src/basic/siphash24.c \
+	src/systemd/src/basic/siphash24.h \
+	src/systemd/src/basic/socket-util.c \
+	src/systemd/src/basic/socket-util.h \
+	src/systemd/src/basic/sparse-endian.h \
+	src/systemd/src/basic/stdio-util.h \
+	src/systemd/src/basic/string-table.c \
+	src/systemd/src/basic/string-table.h \
+	src/systemd/src/basic/string-util.c \
+	src/systemd/src/basic/string-util.h \
+	src/systemd/src/basic/strv.c \
+	src/systemd/src/basic/strv.h \
+	src/systemd/src/basic/time-util.c \
+	src/systemd/src/basic/time-util.h \
+	src/systemd/src/basic/umask-util.h \
+	src/systemd/src/basic/unaligned.h \
+	src/systemd/src/basic/utf8.c \
+	src/systemd/src/basic/utf8.h \
+	src/systemd/src/basic/util.c \
+	src/systemd/src/basic/util.h \
+	src/systemd/src/libsystemd-network/arp-util.c \
+	src/systemd/src/libsystemd-network/arp-util.h \
+	src/systemd/src/libsystemd-network/dhcp-identifier.c \
+	src/systemd/src/libsystemd-network/dhcp-identifier.h \
+	src/systemd/src/libsystemd-network/dhcp-internal.h \
+	src/systemd/src/libsystemd-network/dhcp-lease-internal.h \
+	src/systemd/src/libsystemd-network/dhcp-network.c \
+	src/systemd/src/libsystemd-network/dhcp-option.c \
+	src/systemd/src/libsystemd-network/dhcp-packet.c \
+	src/systemd/src/libsystemd-network/dhcp-protocol.h \
+	src/systemd/src/libsystemd-network/dhcp6-internal.h \
+	src/systemd/src/libsystemd-network/dhcp6-lease-internal.h \
+	src/systemd/src/libsystemd-network/dhcp6-network.c \
+	src/systemd/src/libsystemd-network/dhcp6-option.c \
+	src/systemd/src/libsystemd-network/dhcp6-protocol.h \
+	src/systemd/src/libsystemd-network/lldp-internal.h \
+	src/systemd/src/libsystemd-network/lldp-neighbor.c \
+	src/systemd/src/libsystemd-network/lldp-neighbor.h \
+	src/systemd/src/libsystemd-network/lldp-network.c \
+	src/systemd/src/libsystemd-network/lldp-network.h \
+	src/systemd/src/libsystemd-network/network-internal.c \
+	src/systemd/src/libsystemd-network/network-internal.h \
+	src/systemd/src/libsystemd-network/sd-dhcp-client.c \
+	src/systemd/src/libsystemd-network/sd-dhcp-lease.c \
+	src/systemd/src/libsystemd-network/sd-dhcp6-client.c \
+	src/systemd/src/libsystemd-network/sd-dhcp6-lease.c \
+	src/systemd/src/libsystemd-network/sd-ipv4acd.c \
+	src/systemd/src/libsystemd-network/sd-ipv4ll.c \
+	src/systemd/src/libsystemd-network/sd-lldp.c \
+	src/systemd/src/libsystemd/sd-event/sd-event.c \
+	src/systemd/src/libsystemd/sd-id128/id128-util.c \
+	src/systemd/src/libsystemd/sd-id128/id128-util.h \
+	src/systemd/src/libsystemd/sd-id128/sd-id128.c \
+	src/systemd/src/shared/dns-domain.c \
+	src/systemd/src/shared/dns-domain.h \
+	src/systemd/src/systemd/_sd-common.h \
+	src/systemd/src/systemd/sd-dhcp-client.h \
+	src/systemd/src/systemd/sd-dhcp-lease.h \
+	src/systemd/src/systemd/sd-dhcp6-client.h \
+	src/systemd/src/systemd/sd-dhcp6-lease.h \
+	src/systemd/src/systemd/sd-event.h \
+	src/systemd/src/systemd/sd-id128.h \
+	src/systemd/src/systemd/sd-ipv4acd.h \
+	src/systemd/src/systemd/sd-ipv4ll.h \
+	src/systemd/src/systemd/sd-lldp.h \
+	src/systemd/src/systemd/sd-ndisc.h
+
+src_libsystemd_nm_la_CPPFLAGS = \
+	-I$(top_srcdir)/shared/ \
+	-I$(top_builddir)/shared/ \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-I$(srcdir)/src \
+	-I$(top_srcdir)/src/systemd/sd-adapt/ \
+	-I$(top_srcdir)/src/systemd/src/systemd/ \
+	-I$(top_srcdir)/src/systemd/src/basic/ \
+	-I$(top_srcdir)/src/systemd/src/shared/ \
+	-I$(top_srcdir)/src/systemd/src/libsystemd-network/ \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD \
+	$(GLIB_CFLAGS)
+
+src_libsystemd_nm_la_LIBADD = \
+	$(GLIB_LIBS)
+
+###############################################################################
+
+src_libNetworkManagerBase_la_CPPFLAGS = $(src_cppflags)
+
+src_libNetworkManagerBase_la_SOURCES = \
+	src/nm-core-utils.c \
+	src/nm-core-utils.h \
+	src/nm-logging.c \
+	src/nm-logging.h
+
+src_libNetworkManagerBase_la_LIBADD = \
+	$(top_builddir)/libnm-core/libnm-core.la \
+	$(GLIB_LIBS) \
+	$(SYSTEMD_JOURNAL_LIBS) \
+	$(NULL)
+
+###############################################################################
+
+src_libNetworkManager_la_CPPFLAGS = $(src_cppflags)
+
+src_libNetworkManager_la_SOURCES = \
+	\
+	src/nm-checkpoint-manager.c \
+	src/nm-checkpoint-manager.h \
+	src/nm-checkpoint.c \
+	src/nm-checkpoint.h \
+	\
+	src/devices/nm-device.c \
+	src/devices/nm-device.h \
+	src/devices/nm-lldp-listener.c \
+	src/devices/nm-lldp-listener.h \
+	src/devices/nm-arping-manager.c \
+	src/devices/nm-arping-manager.h \
+	src/devices/nm-device-ethernet-utils.c \
+	src/devices/nm-device-ethernet-utils.h \
+	src/devices/nm-device-factory.c \
+	src/devices/nm-device-factory.h \
+	src/devices/nm-device-generic.c \
+	src/devices/nm-device-generic.h \
+	src/devices/nm-device-logging.h \
+	src/devices/nm-device-private.h \
+	\
+	src/devices/nm-device-bond.c \
+	src/devices/nm-device-bond.h \
+	src/devices/nm-device-bridge.c \
+	src/devices/nm-device-bridge.h \
+	src/devices/nm-device-ethernet.c \
+	src/devices/nm-device-ethernet.h \
+	src/devices/nm-device-infiniband.c \
+	src/devices/nm-device-infiniband.h \
+	src/devices/nm-device-ip-tunnel.c \
+	src/devices/nm-device-ip-tunnel.h \
+	src/devices/nm-device-macvlan.c \
+	src/devices/nm-device-macvlan.h \
+	src/devices/nm-device-tun.c \
+	src/devices/nm-device-tun.h \
+	src/devices/nm-device-veth.c \
+	src/devices/nm-device-veth.h \
+	src/devices/nm-device-vlan.c \
+	src/devices/nm-device-vlan.h \
+	src/devices/nm-device-vxlan.c \
+	src/devices/nm-device-vxlan.h \
+	\
+	src/dhcp-manager/nm-dhcp-client.c \
+	src/dhcp-manager/nm-dhcp-client.h \
+	src/dhcp-manager/nm-dhcp-client-logging.h \
+	src/dhcp-manager/nm-dhcp-utils.c \
+	src/dhcp-manager/nm-dhcp-manager.c \
+	src/dhcp-manager/nm-dhcp-manager.h \
+	src/dhcp-manager/nm-dhcp-utils.h \
+	src/dhcp-manager/nm-dhcp-dhclient.c \
+	src/dhcp-manager/nm-dhcp-dhcpcd.c \
+	src/dhcp-manager/nm-dhcp-systemd.c \
+	src/dhcp-manager/nm-dhcp-helper-api.h \
+	src/dhcp-manager/nm-dhcp-listener.c \
+	src/dhcp-manager/nm-dhcp-listener.h \
+	src/dhcp-manager/nm-dhcp-dhclient-utils.c \
+	src/dhcp-manager/nm-dhcp-dhclient-utils.h \
+	\
+	src/dns-manager/nm-dns-dnsmasq.c \
+	src/dns-manager/nm-dns-dnsmasq.h \
+	src/dns-manager/nm-dns-systemd-resolved.c \
+	src/dns-manager/nm-dns-systemd-resolved.h \
+	src/dns-manager/nm-dns-unbound.c \
+	src/dns-manager/nm-dns-unbound.h \
+	src/dns-manager/nm-dns-manager.c \
+	src/dns-manager/nm-dns-manager.h \
+	src/dns-manager/nm-dns-plugin.c \
+	src/dns-manager/nm-dns-plugin.h \
+	\
+	src/dnsmasq-manager/nm-dnsmasq-manager.c \
+	src/dnsmasq-manager/nm-dnsmasq-manager.h \
+	src/dnsmasq-manager/nm-dnsmasq-utils.c \
+	src/dnsmasq-manager/nm-dnsmasq-utils.h \
+	\
+	src/platform/nmp-netns.c \
+	src/platform/nmp-netns.h \
+	src/platform/nmp-object.c \
+	src/platform/nmp-object.h \
+	src/platform/nm-platform-utils.c \
+	src/platform/nm-platform-utils.h \
+	src/platform/nm-platform.c \
+	src/platform/nm-platform.h \
+	src/platform/nm-linux-platform.c \
+	src/platform/nm-linux-platform.h \
+	src/platform/wifi/wifi-utils-nl80211.c \
+	src/platform/wifi/wifi-utils-nl80211.h \
+	src/platform/wifi/wifi-utils-private.h \
+	src/platform/wifi/wifi-utils.c \
+	src/platform/wifi/wifi-utils.h \
+	\
+	src/rdisc/nm-lndp-rdisc.c \
+	src/rdisc/nm-lndp-rdisc.h \
+	src/rdisc/nm-rdisc.c \
+	src/rdisc/nm-rdisc.h \
+	src/rdisc/nm-rdisc-private.h \
+	\
+	src/ppp-manager/nm-ppp-manager.c \
+	src/ppp-manager/nm-ppp-manager.h \
+	src/ppp-manager/nm-ppp-status.h \
+	\
+	src/settings/nm-agent-manager.c \
+	src/settings/nm-agent-manager.h \
+	src/settings/nm-inotify-helper.c \
+	src/settings/nm-inotify-helper.h \
+	src/settings/nm-secret-agent.c \
+	src/settings/nm-secret-agent.h \
+	src/settings/nm-settings-connection.c \
+	src/settings/nm-settings-connection.h \
+	src/settings/nm-settings-plugin.c \
+	src/settings/nm-settings-plugin.h \
+	src/settings/nm-settings.c \
+	src/settings/nm-settings.h \
+	\
+	src/settings/plugins/keyfile/nms-keyfile-connection.c \
+	src/settings/plugins/keyfile/nms-keyfile-connection.h \
+	src/settings/plugins/keyfile/nms-keyfile-plugin.c \
+	src/settings/plugins/keyfile/nms-keyfile-plugin.h \
+	src/settings/plugins/keyfile/nms-keyfile-reader.c \
+	src/settings/plugins/keyfile/nms-keyfile-reader.h \
+	src/settings/plugins/keyfile/nms-keyfile-utils.c \
+	src/settings/plugins/keyfile/nms-keyfile-utils.h \
+	src/settings/plugins/keyfile/nms-keyfile-writer.c \
+	src/settings/plugins/keyfile/nms-keyfile-writer.h \
+	\
+	src/supplicant-manager/nm-supplicant-config.c \
+	src/supplicant-manager/nm-supplicant-config.h \
+	src/supplicant-manager/nm-supplicant-interface.c \
+	src/supplicant-manager/nm-supplicant-interface.h \
+	src/supplicant-manager/nm-supplicant-manager.c \
+	src/supplicant-manager/nm-supplicant-manager.h \
+	src/supplicant-manager/nm-supplicant-settings-verify.c \
+	src/supplicant-manager/nm-supplicant-settings-verify.h \
+	src/supplicant-manager/nm-supplicant-types.h \
+	\
+	src/vpn-manager/nm-vpn-connection.c \
+	src/vpn-manager/nm-vpn-connection.h \
+	src/vpn-manager/nm-vpn-manager.c \
+	src/vpn-manager/nm-vpn-manager.h \
+	\
+	src/nm-act-request.c \
+	src/nm-act-request.h \
+	src/nm-active-connection.c \
+	src/nm-active-connection.h \
+	src/nm-audit-manager.c \
+	src/nm-audit-manager.h \
+	src/nm-bus-manager.c \
+	src/nm-bus-manager.h \
+	src/nm-config.c \
+	src/nm-config.h \
+	src/nm-config-data.c \
+	src/nm-config-data.h \
+	src/nm-connectivity.c \
+	src/nm-connectivity.h \
+	src/nm-dcb.c \
+	src/nm-dcb.h \
+	src/nm-route-manager.c \
+	src/nm-route-manager.h \
+	src/nm-default-route-manager.c \
+	src/nm-default-route-manager.h \
+	src/nm-dhcp4-config.c \
+	src/nm-dhcp4-config.h \
+	src/nm-dhcp6-config.c \
+	src/nm-dhcp6-config.h \
+	src/nm-dispatcher.c \
+	src/nm-dispatcher.h \
+	src/nm-src-enum-types.c \
+	src/nm-src-enum-types.h \
+	src/nm-exported-object.c \
+	src/nm-exported-object.h \
+	src/nm-firewall-manager.c \
+	src/nm-firewall-manager.h \
+	src/nm-proxy-config.c \
+	src/nm-proxy-config.h \
+	src/nm-ip4-config.c \
+	src/nm-ip4-config.h \
+	src/nm-ip6-config.c \
+	src/nm-ip6-config.h \
+	src/nm-auth-manager.c \
+	src/nm-auth-manager.h \
+	src/nm-auth-subject.c \
+	src/nm-auth-subject.h \
+	src/nm-auth-utils.c \
+	src/nm-auth-utils.h \
+	src/nm-manager.c \
+	src/nm-manager.h \
+	src/nm-multi-index.c \
+	src/nm-multi-index.h \
+	src/nm-pacrunner-manager.c \
+	src/nm-pacrunner-manager.h \
+	src/nm-policy.c \
+	src/nm-policy.h \
+	src/nm-rfkill-manager.c \
+	src/nm-rfkill-manager.h \
+	src/nm-session-monitor.h \
+	src/nm-session-monitor.c \
+	src/nm-sleep-monitor.c \
+	src/nm-sleep-monitor.h \
+	src/nm-types.h \
+	src/NetworkManagerUtils.c \
+	src/NetworkManagerUtils.h \
+	$(NULL)
+
+if WITH_WEXT
+src_libNetworkManager_la_SOURCES += \
+	src/platform/wifi/wifi-utils-wext.c \
+	src/platform/wifi/wifi-utils-wext.h
+endif
+
+
+src_libNetworkManager_la_LIBADD = \
+	libnm-core/libnm-core.la \
+	introspection/libnmdbus.la \
+	src/libNetworkManagerBase.la \
+	src/libsystemd-nm.la \
+	$(GLIB_LIBS) \
+	$(GUDEV_LIBS) \
+	$(LIBNL_LIBS) \
+	$(SYSTEMD_LOGIN_LIBS) \
+	$(LIBNDP_LIBS) \
+	$(DL_LIBS) \
+	$(LIBM) \
+	$(SELINUX_LIBS) \
+	$(LIBAUDIT_LIBS)
+
+if WITH_LIBSOUP
+src_libNetworkManager_la_LIBADD += $(LIBSOUP_LIBS)
+endif
+
+###############################################################################
+
+src_libNetworkManagerTest_la_CPPFLAGS = $(src_cppflags)
+
+src_libNetworkManagerTest_la_SOURCES = \
+	src/rdisc/nm-fake-rdisc.c \
+	src/rdisc/nm-fake-rdisc.h \
+	src/platform/nm-fake-platform.c \
+	src/platform/nm-fake-platform.h
+
+src_libNetworkManagerTest_la_LIBADD = \
+	src/libNetworkManager.la
+
+###############################################################################
+
+EXTRA_src_NetworkManager_DEPENDENCIES = \
+	src/NetworkManager.ver
+
+src_NetworkManager_CPPFLAGS = $(src_cppflags)
+
+src_NetworkManager_SOURCES = \
+	src/main-utils.c \
+	src/main-utils.h \
+	src/main.c
+
+src_NetworkManager_LDADD = \
+	src/libNetworkManager.la
+
+src_NetworkManager_LDFLAGS = \
+	-rdynamic \
+	-Wl,--version-script="$(srcdir)/src/NetworkManager.ver"
+
+###############################################################################
+
+src_nm_iface_helper_CPPFLAGS = \
+	$(src_cppflags) \
+	-DNM_DHCP_INTERNAL_ONLY
+
+src_nm_iface_helper_SOURCES = \
+	\
+	src/dhcp-manager/nm-dhcp-client.c \
+	src/dhcp-manager/nm-dhcp-client.h \
+	src/dhcp-manager/nm-dhcp-client-logging.h \
+	src/dhcp-manager/nm-dhcp-utils.c \
+	src/dhcp-manager/nm-dhcp-utils.h \
+	src/dhcp-manager/nm-dhcp-manager.c \
+	src/dhcp-manager/nm-dhcp-manager.h \
+	src/dhcp-manager/nm-dhcp-systemd.c \
+	\
+	src/platform/nmp-netns.c \
+	src/platform/nmp-netns.h \
+	src/platform/nmp-object.c \
+	src/platform/nmp-object.h \
+	src/platform/nm-platform-utils.c \
+	src/platform/nm-platform-utils.h \
+	src/platform/nm-platform.c \
+	src/platform/nm-platform.h \
+	src/platform/nm-linux-platform.c \
+	src/platform/nm-linux-platform.h \
+	src/platform/wifi/wifi-utils-nl80211.c \
+	src/platform/wifi/wifi-utils-nl80211.h \
+	src/platform/wifi/wifi-utils-private.h \
+	src/platform/wifi/wifi-utils.c \
+	src/platform/wifi/wifi-utils.h \
+	\
+	src/nm-pacrunner-manager.c \
+	src/nm-pacrunner-manager.h \
+	\
+	src/rdisc/nm-lndp-rdisc.c \
+	src/rdisc/nm-lndp-rdisc.h \
+	src/rdisc/nm-rdisc.c \
+	src/rdisc/nm-rdisc.h \
+	\
+	src/nm-route-manager.c \
+	src/nm-route-manager.h \
+	\
+	src/nm-exported-object.c \
+	src/nm-exported-object.h \
+	src/nm-proxy-config.c \
+	src/nm-proxy-config.h \
+	src/nm-ip4-config.c \
+	src/nm-ip4-config.h \
+	src/nm-ip6-config.c \
+	src/nm-ip6-config.h \
+	\
+	src/nm-src-enum-types.c \
+	src/nm-src-enum-types.h \
+	src/nm-multi-index.c \
+	src/nm-multi-index.h \
+	src/NetworkManagerUtils.c \
+	src/NetworkManagerUtils.h \
+	\
+	src/nm-iface-helper.c \
+	src/main-utils.c \
+	src/main-utils.h
+
+if WITH_WEXT
+src_nm_iface_helper_SOURCES += \
+	src/platform/wifi/wifi-utils-wext.c \
+	src/platform/wifi/wifi-utils-wext.h
+endif
+
+src_nm_iface_helper_LDADD = \
+	libnm-core/libnm-core.la \
+	introspection/libnmdbus.la \
+	src/libNetworkManagerBase.la \
+	src/libsystemd-nm.la \
+	$(GLIB_LIBS) \
+	$(GUDEV_LIBS) \
+	$(LIBNL_LIBS) \
+	$(LIBNDP_LIBS) \
+	$(DL_LIBS) \
+	$(LIBM)
+
+src_nm_iface_helper_LDFLAGS = \
+	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
+
+###############################################################################
+
+GLIB_GENERATED += \
+	src/nm-src-enum-types.h \
+	src/nm-src-enum-types.c
+nm_src_enum_types_MKENUMS_H_FLAGS = --identifier-prefix NM --fhead '\#include <nm-core-enum-types.h>\n'
+nm_src_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\n'
+nm_src_enum_types_sources = $(filter-out \
+                              %/nm-device-private.h \
+                              %/nm-rdisc-private.h \
+                              %/wifi-utils-private.h \
+                              %/nm-dhcp-client-logging.h \
+                              %/nm-device-logging.h \
+                              , $(src_libNetworkManager_la_SOURCES))
+
+###############################################################################
+
+EXTRA_DIST += \
+	src/org.freedesktop.NetworkManager.conf \
+	src/nm-test-utils-core.h \
+	src/NetworkManager.ver
+
+###############################################################################
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)
 
 typelibdir = $(libdir)/girepository-1.0
 typelib_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
+
+dbusservicedir = $(DBUS_SYS_DIR)
+dbusservice_DATA = src/org.freedesktop.NetworkManager.conf
 
 ###############################################################################
 
@@ -925,6 +1539,13 @@ CLEANFILES += \
 ###############################################################################
 
 check-local: $(check_local)
+
+###############################################################################
+
+install-data-hook:
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(rundir)
+	$(mkinstalldirs) -m 0700 $(DESTDIR)$(statedir)
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(pkglibdir)
 
 ###############################################################################
 
