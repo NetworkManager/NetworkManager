@@ -2020,6 +2020,61 @@ EXTRA_DIST += \
 	src/settings/plugins/ifcfg-rh/nm-ifcfg-rh.xml
 
 ###############################################################################
+# src/settings/plugins/ifupdown
+###############################################################################
+
+if CONFIG_PLUGIN_IFUPDOWN
+
+pkglib_LTLIBRARIES += src/settings/plugins/ifupdown/libnm-settings-plugin-ifupdown.la
+
+noinst_LTLIBRARIES += src/settings/plugins/ifupdown/libnms-ifupdown-core.la
+
+src_settings_plugins_ifupdown_cppflags = \
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/settings \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	$(GLIB_CFLAGS) \
+	$(GUDEV_CFLAGS) \
+	-DSYSCONFDIR=\"$(sysconfdir)\"
+
+
+src_settings_plugins_ifupdown_libnms_ifupdown_core_la_SOURCES = \
+	src/settings/plugins/ifupdown/nms-ifupdown-interface-parser.c \
+	src/settings/plugins/ifupdown/nms-ifupdown-interface-parser.h \
+	src/settings/plugins/ifupdown/nms-ifupdown-parser.c \
+	src/settings/plugins/ifupdown/nms-ifupdown-parser.h
+
+src_settings_plugins_ifupdown_libnms_ifupdown_core_la_CPPFLAGS = $(src_settings_plugins_ifupdown_cppflags)
+
+
+src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_SOURCES = \
+	src/settings/plugins/ifupdown/nms-ifupdown-connection.c \
+	src/settings/plugins/ifupdown/nms-ifupdown-connection.h \
+	src/settings/plugins/ifupdown/nms-ifupdown-plugin.c \
+	src/settings/plugins/ifupdown/nms-ifupdown-plugin.h
+
+src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_CPPFLAGS = $(src_settings_plugins_ifupdown_cppflags)
+
+src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_LDFLAGS = \
+	-module -avoid-version \
+	-Wl,--version-script="$(top_srcdir)/linker-script-settings.ver"
+
+src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_LIBADD = \
+	src/settings/plugins/ifupdown/libnms-ifupdown-core.la
+
+check-local-symbols-settings-ifupdown: src/settings/plugins/ifupdown/libnm-settings-plugin-ifupdown.la
+	$(call check_so_symbols,$(builddir)/src/settings/plugins/ifupdown/.libs/libnm-settings-plugin-ifupdown.so)
+
+check_local += check-local-symbols-settings-ifupdown
+
+endif
+
+###############################################################################
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)
