@@ -17,11 +17,7 @@ LDADD = \
 
 noinst_PROGRAMS = $(TESTS)
 
-if WITH_VALGRIND
 @NM_LOG_COMPILER@ --launch-dbus
-else
-LOG_COMPILER = $(top_srcdir)/tools/run-test-dbus-session.sh
-endif
 TESTS = test-nm-client test-remote-settings-client test-secret-agent
 
 test_nm_client_SOURCES = \

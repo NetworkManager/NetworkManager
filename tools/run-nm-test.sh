@@ -8,6 +8,7 @@ die() {
 SCRIPT_PATH="${SCRIPT_PATH:-$(readlink -f "$(dirname "$0")")}"
 
 VALGRIND_ERROR=37
+
 if [ "$1" == "--called-from-make" ]; then
     shift
     NMTST_LIBTOOL=($1 --mode=execute); shift
@@ -20,6 +21,10 @@ if [ "$1" == "--called-from-make" ]; then
         NMTST_LAUNCH_DBUS=no
     fi
     TEST="$1"; shift
+
+    if [[ "$NMTST_VALGRIND" == no ]]; then
+        NMTST_VALGRIND=
+    fi
 else
     if [ -n "${NMTST_LIBTOOL-:x}" ]; then
         NMTST_LIBTOOL=(sh "$SCRIPT_PATH/../libtool" --mode=execute)
@@ -41,6 +46,16 @@ else
         "--no-libtool")
             NMTST_LIBTOOL=()
             shift
+            ;;
+        "--valgrind")
+            NMTST_NO_VALGRIND=
+            NMTST_VALGRIND=valgrind
+            shift;
+            ;;
+        "--no-valgrind")
+            NMTST_NO_VALGRIND=no
+            NMTST_VALGRIND=""
+            shift;
             ;;
         "--")
             shift
@@ -90,18 +105,23 @@ if [ "$NMTST_LAUNCH_DBUS" == "yes" ]; then
     fi
 fi
 
-if [ "$NMTST_NO_VALGRIND" != "" ]; then
+[ -x "$TEST" ] || die "Cannot execute test \"$TEST\""
+
+
+if [ "$NMTST_NO_VALGRIND" != "" -o "$NMTST_VALGRIND" == "" ]; then
     "${NMTST_DBUS_RUN_SESSION[@]}" \
     "$TEST" "$@"
     exit $?
 fi
+
 
 LOGFILE="${TEST}.valgrind-log"
 
 export G_SLICE=always-malloc
 export G_DEBUG=gc-friendly
 "${NMTST_DBUS_RUN_SESSION[@]}" \
-"${NMTST_LIBTOOL[@]}" "$NMTST_VALGRIND" \
+"${NMTST_LIBTOOL[@]}" \
+"$NMTST_VALGRIND" \
     --quiet \
     --error-exitcode=$VALGRIND_ERROR \
     --leak-check=full \
