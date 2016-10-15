@@ -1473,6 +1473,31 @@ EXTRA_DIST += \
 	src/NetworkManager.ver
 
 ###############################################################################
+# src/dhcp-manager
+###############################################################################
+
+libexec_PROGRAMS += src/dhcp-manager/nm-dhcp-helper
+
+src_dhcp_manager_nm_dhcp_helper_CPPFLAGS = \
+	$(GLIB_CFLAGS) \
+	-I$(top_srcdir)/shared \
+	-I${top_builddir}/shared \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-DG_LOG_DOMAIN=\""nm-dhcp-helper"\" \
+	-DNMRUNDIR=\"$(nmrundir)\"
+
+src_dhcp_manager_nm_dhcp_helper_SOURCES = \
+	src/dhcp-manager/nm-dhcp-helper.c \
+	src/dhcp-manager/nm-dhcp-helper-api.h \
+	$(NULL)
+
+src_dhcp_manager_nm_dhcp_helper_LDFLAGS = \
+	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
+
+src_dhcp_manager_nm_dhcp_helper_LDADD = $(GLIB_LIBS)
+
+###############################################################################
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)
