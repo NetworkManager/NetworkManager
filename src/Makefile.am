@@ -1,5 +1,4 @@
 SUBDIRS = \
-	dhcp-manager \
 	ppp-manager \
 	settings/plugins \
 	devices/adsl
@@ -18,7 +17,6 @@ endif
 
 if ENABLE_TESTS
 SUBDIRS += \
-	dhcp-manager/tests \
 	dnsmasq-manager/tests \
 	platform \
 	devices \

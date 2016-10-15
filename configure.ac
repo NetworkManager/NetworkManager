@@ -1137,8 +1137,6 @@ shared/nm-version-macros.h
 src/Makefile
 src/tests/Makefile
 src/tests/config/Makefile
-src/dhcp-manager/Makefile
-src/dhcp-manager/tests/Makefile
 src/dnsmasq-manager/tests/Makefile
 src/supplicant-manager/tests/Makefile
 src/supplicant-manager/tests/certs/Makefile

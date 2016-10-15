@@ -1498,6 +1498,52 @@ src_dhcp_manager_nm_dhcp_helper_LDFLAGS = \
 src_dhcp_manager_nm_dhcp_helper_LDADD = $(GLIB_LIBS)
 
 ###############################################################################
+# src/dhcp-manager/tests
+###############################################################################
+
+if ENABLE_TESTS
+
+src_dhcp_manager_tests_cppflags = \
+	-I$(top_srcdir)/shared \
+	-I${top_builddir}/shared \
+	-I${top_srcdir}/libnm-core \
+	-I${top_builddir}/libnm-core \
+	-I$(top_srcdir)/src/dhcp-manager \
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/platform \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	$(GLIB_CFLAGS) \
+	-DTESTDIR="\"$(abs_srcdir)/src/dhcp-manager/tests\""
+
+src_dhcp_manager_tests_ldadd = \
+	src/libNetworkManager.la
+
+src_dhcp_manager_tests_programs = \
+	src/dhcp-manager/tests/test-dhcp-dhclient \
+	src/dhcp-manager/tests/test-dhcp-utils
+
+noinst_PROGRAMS += $(src_dhcp_manager_tests_programs)
+
+src_dhcp_manager_tests_test_dhcp_dhclient_CPPFLAGS = $(src_dhcp_manager_tests_cppflags)
+src_dhcp_manager_tests_test_dhcp_utils_CPPFLAGS = $(src_dhcp_manager_tests_cppflags)
+
+src_dhcp_manager_tests_test_dhcp_dhclient_LDADD = $(src_dhcp_manager_tests_ldadd)
+src_dhcp_manager_tests_test_dhcp_utils_LDADD = $(src_dhcp_manager_tests_ldadd)
+
+TESTS += $(src_dhcp_manager_tests_programs)
+
+endif
+
+EXTRA_DIST += \
+	src/dhcp-manager/tests/test-dhclient-duid.leases \
+	src/dhcp-manager/tests/test-dhclient-commented-duid.leases \
+	src/dhcp-manager/tests/leases/basic.leases \
+	src/dhcp-manager/tests/leases/malformed1.leases \
+	src/dhcp-manager/tests/leases/malformed2.leases \
+	src/dhcp-manager/tests/leases/malformed3.leases
+
+###############################################################################
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)
