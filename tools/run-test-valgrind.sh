@@ -91,6 +91,7 @@ if [ "$NMTST_LAUNCH_DBUS" == "yes" ]; then
 fi
 
 if [ "$NMTST_NO_VALGRIND" != "" ]; then
+	"${NMTST_DBUS_RUN_SESSION[@]}" \
 	"$TEST" "$@"
 	exit $?
 fi
