@@ -2125,6 +2125,64 @@ EXTRA_DIST += \
 	src/settings/plugins/ifupdown/tests/test21-source-dir-stanza.d
 
 ###############################################################################
+# src/settings/plugins/ifnet
+###############################################################################
+
+if CONFIG_PLUGIN_IFNET
+
+pkglib_LTLIBRARIES += src/settings/plugins/ifnet/libnm-settings-plugin-ifnet.la
+
+noinst_LTLIBRARIES += src/settings/plugins/ifnet/libnms-ifnet-core.la
+
+src_settings_plugins_ifnet_cppflags = \
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/platform \
+	-I$(top_srcdir)/src/settings \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	$(GLIB_CFLAGS) \
+	-DSYSCONFDIR=\"$(sysconfdir)\"
+	-DSBINDIR=\"$(sbindir)\"
+
+src_settings_plugins_ifnet_libnms_ifnet_core_la_SOURCES = \
+	src/settings/plugins/ifnet/nms-ifnet-net-parser.c\
+	src/settings/plugins/ifnet/nms-ifnet-net-parser.h\
+	src/settings/plugins/ifnet/nms-ifnet-connection-parser.c \
+	src/settings/plugins/ifnet/nms-ifnet-connection-parser.h \
+	src/settings/plugins/ifnet/nms-ifnet-net-utils.h\
+	src/settings/plugins/ifnet/nms-ifnet-net-utils.c\
+	src/settings/plugins/ifnet/nms-ifnet-wpa-parser.h\
+	src/settings/plugins/ifnet/nms-ifnet-wpa-parser.c
+
+src_settings_plugins_ifnet_libnms_ifnet_core_la_CPPFLAGS = $(src_settings_plugins_ifnet_cppflags)
+
+src_settings_plugins_ifnet_libnm_settings_plugin_ifnet_la_SOURCES = \
+	src/settings/plugins/ifnet/nms-ifnet-connection.c \
+	src/settings/plugins/ifnet/nms-ifnet-connection.h \
+	src/settings/plugins/ifnet/nms-ifnet-plugin.c \
+	src/settings/plugins/ifnet/nms-ifnet-plugin.h
+
+src_settings_plugins_ifnet_libnm_settings_plugin_ifnet_la_CPPFLAGS = $(src_settings_plugins_ifnet_cppflags)
+
+src_settings_plugins_ifnet_libnm_settings_plugin_ifnet_la_LDFLAGS = \
+	-module -avoid-version \
+	-Wl,--version-script="$(top_srcdir)/linker-script-settings.ver"
+
+src_settings_plugins_ifnet_libnm_settings_plugin_ifnet_la_LIBADD = \
+	src/settings/plugins/ifnet/libnms-ifnet-core.la
+
+check-local-symbols-settings-ifnet: src/settings/plugins/ifnet/libnm-settings-plugin-ifnet.la
+	$(call check_so_symbols,$(builddir)/src/settings/plugins/ifnet/.libs/libnm-settings-plugin-ifnet.so)
+
+check_local += check-local-symbols-settings-ifnet
+
+endif
+
+###############################################################################
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)
