@@ -2220,6 +2220,45 @@ EXTRA_DIST += \
 	src/settings/plugins/ifnet/tests/test_ca_cert.pem
 
 ###############################################################################
+# src/devices/adsl
+###############################################################################
+
+pkglib_LTLIBRARIES += src/devices/adsl/libnm-device-plugin-adsl.la
+
+src_devices_adsl_libnm_device_plugin_adsl_la_SOURCES = \
+	src/devices/adsl/nm-atm-manager.c \
+	src/devices/adsl/nm-device-adsl.c \
+	src/devices/adsl/nm-device-adsl.h
+
+src_devices_adsl_libnm_device_plugin_adsl_la_CPPFLAGS = \
+	-I${top_srcdir}/src \
+	-I${top_builddir}/src \
+	-I${top_srcdir}/src/devices \
+	-I${top_srcdir}/src/platform \
+	-I${top_builddir}/introspection \
+	-I${top_srcdir}/shared \
+	-I$(top_builddir)/shared \
+	-I${top_builddir}/libnm-core \
+	-I${top_srcdir}/libnm-core \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	$(GUDEV_CFLAGS)
+
+src_devices_adsl_libnm_device_plugin_adsl_la_LDFLAGS = \
+	-module -avoid-version \
+	-Wl,--version-script="$(top_srcdir)/linker-script-devices.ver"
+
+src_devices_adsl_libnm_device_plugin_adsl_la_LIBADD = \
+	introspection/libnmdbus.la \
+	$(GUDEV_LIBS)
+
+check-local-devices-adsl: src/devices/adsl/libnm-device-plugin-adsl.la
+	$(top_srcdir)/tools/check-exports.sh $(builddir)/src/devices/adsl/.libs/libnm-device-plugin-adsl.so "$(top_srcdir)/linker-script-devices.ver"
+	$(call check_so_symbols,$(builddir)/src/devices/adsl/.libs/libnm-device-plugin-adsl.so)
+
+check_local += check-local-devices-adsl
+
+###############################################################################
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)

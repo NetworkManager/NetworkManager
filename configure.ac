@@ -1146,7 +1146,6 @@ src/rdisc/Makefile
 src/rdisc/tests/Makefile
 src/devices/Makefile
 src/devices/tests/Makefile
-src/devices/adsl/Makefile
 src/devices/bluetooth/Makefile
 src/devices/team/Makefile
 src/devices/wifi/Makefile

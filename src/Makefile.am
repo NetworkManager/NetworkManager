@@ -1,5 +1,4 @@
-SUBDIRS = \
-	devices/adsl
+SUBDIRS =
 
 if WITH_MODEM_MANAGER_1
 SUBDIRS += devices/wwan	devices/bluetooth
