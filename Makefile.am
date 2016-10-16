@@ -11,7 +11,9 @@ include nm.mk
 AUTOMAKE_OPTIONS = subdir-objects
 
 noinst_LTLIBRARIES =
+check_LTLIBRARIES =
 noinst_PROGRAMS =
+check_PROGRAMS =
 noinst_DATA =
 sbin_PROGRAMS =
 libexec_PROGRAMS =
@@ -23,6 +25,8 @@ EXTRA_DIST =
 TESTS =
 BUILT_SOURCES =
 GLIB_GENERATED =
+check_programs =
+check_ltlibraries =
 check_local =
 
 INTROSPECTION_GIRS =
@@ -464,8 +468,6 @@ BUILT_SOURCES += \
 
 ###############################################################################
 
-if ENABLE_TESTS
-
 libnm_core_tests_programs = \
 	libnm-core/tests/test-compare \
 	libnm-core/tests/test-crypto \
@@ -477,7 +479,7 @@ libnm_core_tests_programs = \
 	libnm-core/tests/test-setting-dcb \
 	libnm-core/tests/test-settings-defaults
 
-noinst_PROGRAMS += $(libnm_core_tests_programs)
+check_programs += $(libnm_core_tests_programs)
 
 GLIB_GENERATED += \
 	libnm-core/tests/nm-core-tests-enum-types.h \
@@ -526,10 +528,6 @@ libnm_core_tests_test_setting_8021x_LDADD = $(libnm_core_tests_ldadd)
 libnm_core_tests_test_setting_bond_LDADD = $(libnm_core_tests_ldadd)
 libnm_core_tests_test_setting_dcb_LDADD = $(libnm_core_tests_ldadd)
 libnm_core_tests_test_settings_defaults_LDADD = $(libnm_core_tests_ldadd)
-
-TESTS += $(libnm_core_tests_programs)
-
-endif
 
 # test-cert.p12 created with:
 #
@@ -799,14 +797,12 @@ EXTRA_DIST += \
 
 ###############################################################################
 
-if ENABLE_TESTS
-
 libnm_tests_programs = \
 	libnm/tests/test-nm-client \
 	libnm/tests/test-remote-settings-client \
 	libnm/tests/test-secret-agent
 
-noinst_PROGRAMS += $(libnm_tests_programs)
+check_programs += $(libnm_tests_programs)
 
 libnm_tests_cppflags = \
 	-I$(top_srcdir)/shared \
@@ -846,16 +842,11 @@ libnm_tests_test_nm_client_LDADD = $(libnm_tests_ldadd)
 libnm_tests_test_remote_settings_client_LDADD = $(libnm_tests_ldadd)
 libnm_tests_test_secret_agent_LDADD = $(libnm_tests_ldadd)
 
-TESTS += $(libnm_tests_programs)
-
-endif
-
 ###############################################################################
 
 # just test, that we can build "nm-vpn-plugin-utils.c"
 
-noinst_LTLIBRARIES += \
-    libnm/tests/libnm-vpn-plugin-utils-test.la
+check_ltlibraries += libnm/tests/libnm-vpn-plugin-utils-test.la
 
 libnm_tests_libnm_vpn_plugin_utils_test_la_SOURCES = \
      shared/nm-utils/nm-vpn-plugin-utils.c \
@@ -933,8 +924,9 @@ libexec_PROGRAMS += \
 noinst_LTLIBRARIES += \
 	src/libNetworkManagerBase.la \
 	src/libNetworkManager.la \
-	src/libNetworkManagerTest.la \
 	src/libsystemd-nm.la
+
+check_ltlibraries += src/libNetworkManagerTest.la
 
 ###############################################################################
 
@@ -1505,8 +1497,6 @@ src_dhcp_manager_nm_dhcp_helper_LDADD = $(GLIB_LIBS)
 # src/dhcp-manager/tests
 ###############################################################################
 
-if ENABLE_TESTS
-
 src_dhcp_manager_tests_cppflags = \
 	-I$(top_srcdir)/shared \
 	-I${top_builddir}/shared \
@@ -1527,17 +1517,13 @@ src_dhcp_manager_tests_programs = \
 	src/dhcp-manager/tests/test-dhcp-dhclient \
 	src/dhcp-manager/tests/test-dhcp-utils
 
-noinst_PROGRAMS += $(src_dhcp_manager_tests_programs)
+check_programs += $(src_dhcp_manager_tests_programs)
 
 src_dhcp_manager_tests_test_dhcp_dhclient_CPPFLAGS = $(src_dhcp_manager_tests_cppflags)
 src_dhcp_manager_tests_test_dhcp_utils_CPPFLAGS = $(src_dhcp_manager_tests_cppflags)
 
 src_dhcp_manager_tests_test_dhcp_dhclient_LDADD = $(src_dhcp_manager_tests_ldadd)
 src_dhcp_manager_tests_test_dhcp_utils_LDADD = $(src_dhcp_manager_tests_ldadd)
-
-TESTS += $(src_dhcp_manager_tests_programs)
-
-endif
 
 EXTRA_DIST += \
 	src/dhcp-manager/tests/test-dhclient-duid.leases \
@@ -1583,9 +1569,7 @@ endif
 # src/settings/plugins/keyfile/tests
 ###############################################################################
 
-if ENABLE_TESTS
-
-noinst_PROGRAMS += src/settings/plugins/keyfile/tests/test-keyfile
+check_programs += src/settings/plugins/keyfile/tests/test-keyfile
 
 src_settings_plugins_keyfile_tests_test_keyfile_CPPFLAGS = \
 	-I$(top_srcdir)/shared \
@@ -1609,10 +1593,6 @@ src_settings_plugins_keyfile_tests_test_keyfile_LDFLAGS = \
 
 src_settings_plugins_keyfile_tests_test_keyfile_LDADD = \
 	src/libNetworkManager.la
-
-TESTS += src/settings/plugins/keyfile/tests/test-keyfile
-
-endif
 
 EXTRA_DIST += \
 	src/settings/plugins/keyfile/tests/keyfiles/Test_Wired_Connection \
@@ -1697,9 +1677,7 @@ src_settings_plugins_ibft_libnm_settings_plugin_ibft_la_LDFLAGS = \
 src_settings_plugins_ibft_libnm_settings_plugin_ibft_la_LIBADD = \
 	src/settings/plugins/ibft/libnms-ibft-core.la
 
-if ENABLE_TESTS
-
-noinst_PROGRAMS += src/settings/plugins/ibft/tests/test-ibft
+check_programs += src/settings/plugins/ibft/tests/test-ibft
 
 src_settings_plugins_ibft_tests_test_ibft_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
@@ -1724,10 +1702,6 @@ src_settings_plugins_ibft_tests_test_ibft_LDFLAGS = \
 src_settings_plugins_ibft_tests_test_ibft_LDADD = \
 	src/settings/plugins/ibft/libnms-ibft-core.la \
 	src/libNetworkManager.la
-
-TESTS += src/settings/plugins/ibft/tests/test-ibft
-
-endif
 
 EXTRA_DIST += \
 	src/settings/plugins/ibft/tests/iscsiadm-test-dhcp \
@@ -1760,6 +1734,15 @@ dbusservice_DATA = src/org.freedesktop.NetworkManager.conf
 
 ###############################################################################
 
+if ENABLE_TESTS
+noinst_PROGRAMS += $(check_programs)
+noinst_LTLIBRARIES += $(check_ltlibraries)
+else
+check_PROGRAMS += $(check_programs)
+check_LTLIBRARIES += $(check_ltlibraries)
+endif
+
+TESTS += $(check_programs)
 
 EXTRA_DIST += \
 	CONTRIBUTING \
