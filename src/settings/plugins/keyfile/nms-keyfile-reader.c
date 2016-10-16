@@ -102,14 +102,14 @@ nms_keyfile_reader_from_file (const char *filename, GError **error)
 		return NULL;
 	}
 
-	if (statbuf.st_mode & 0077) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "File permissions (%o) were insecure",
-		             statbuf.st_mode);
-		return NULL;
-	}
-
 	if (!NM_FLAGS_HAS (nm_utils_get_testing (), NM_UTILS_TEST_NO_KEYFILE_OWNER_CHECK)) {
+		if (statbuf.st_mode & 0077) {
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "File permissions (%o) were insecure",
+			             statbuf.st_mode);
+			return NULL;
+		}
+
 		if (statbuf.st_uid != 0) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "File owner (%o) is insecure",

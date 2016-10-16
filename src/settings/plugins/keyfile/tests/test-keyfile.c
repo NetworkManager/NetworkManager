@@ -204,7 +204,8 @@ test_read_valid_wired_connection (void)
 	                       "*ipv6.routes*semicolon at the end*routes1*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*ipv6.route*semicolon at the end*route6*");
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Wired_Connection", NULL);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Wired_Connection", &error);
+	g_assert_no_error (error);
 	g_test_assert_expected_messages ();
 	g_assert (connection);
 

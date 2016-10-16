@@ -39,8 +39,3 @@ CERTS = \
 
 EXTRA_DIST = $(KEYFILES) $(CERTS)
 
-check-local:
-	@for f in $(KEYFILES); do \
-		chmod 0600 $(abs_srcdir)/$$f; \
-	done
-
