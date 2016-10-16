@@ -1201,17 +1201,18 @@ device_state_changed (NMDevice *device,
 		if (   connection
 		    && old_state >= NM_DEVICE_STATE_PREPARE
 		    && old_state <= NM_DEVICE_STATE_ACTIVATED) {
-			guint32 tries = nm_settings_connection_get_autoconnect_retries (connection);
+			int tries = nm_settings_connection_get_autoconnect_retries (connection);
 
 			if (reason == NM_DEVICE_STATE_REASON_NO_SECRETS) {
 				_LOGD (LOGD_DEVICE, "connection '%s' now blocked from autoconnect due to no secrets",
 				       nm_settings_connection_get_id (connection));
 
 				nm_settings_connection_set_autoconnect_blocked_reason (connection, NM_DEVICE_STATE_REASON_NO_SECRETS);
-			} else if (tries > 0) {
+			} else if (tries != 0) {
 				_LOGD (LOGD_DEVICE, "connection '%s' failed to autoconnect; %d tries left",
 				       nm_settings_connection_get_id (connection), tries);
-				nm_settings_connection_set_autoconnect_retries (connection, tries - 1);
+				if (tries > 0)
+					nm_settings_connection_set_autoconnect_retries (connection, tries - 1);
 			}
 
 			if (nm_settings_connection_get_autoconnect_retries (connection) == 0) {

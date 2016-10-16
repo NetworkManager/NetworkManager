@@ -72,6 +72,7 @@ typedef struct {
 	GSList *permissions; /* list of Permission structs */
 	gboolean autoconnect;
 	gint autoconnect_priority;
+	gint autoconnect_retries;
 	guint64 timestamp;
 	gboolean read_only;
 	char *zone;
@@ -90,6 +91,7 @@ enum {
 	PROP_PERMISSIONS,
 	PROP_AUTOCONNECT,
 	PROP_AUTOCONNECT_PRIORITY,
+	PROP_AUTOCONNECT_RETRIES,
 	PROP_TIMESTAMP,
 	PROP_READ_ONLY,
 	PROP_ZONE,
@@ -529,6 +531,25 @@ nm_setting_connection_get_autoconnect_priority (NMSettingConnection *setting)
 	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), 0);
 
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->autoconnect_priority;
+}
+
+/**
+ * nm_setting_connection_get_autoconnect_retries:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns the #NMSettingConnection:autoconnect-retries property of the connection.
+ * Zero means infinite, -1 means the global default value.
+ *
+ * Returns: the connection's autoconnect retries
+ *
+ * Since: 1.6
+ **/
+gint
+nm_setting_connection_get_autoconnect_retries (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), -1);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->autoconnect_retries;
 }
 
 /**
@@ -1210,6 +1231,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_AUTOCONNECT_PRIORITY:
 		priv->autoconnect_priority = g_value_get_int (value);
 		break;
+	case PROP_AUTOCONNECT_RETRIES:
+		priv->autoconnect_retries = g_value_get_int (value);
+		break;
 	case PROP_TIMESTAMP:
 		priv->timestamp = g_value_get_uint64 (value);
 		break;
@@ -1295,6 +1319,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_AUTOCONNECT_PRIORITY:
 		g_value_set_int (value, nm_setting_connection_get_autoconnect_priority (setting));
+		break;
+	case PROP_AUTOCONNECT_RETRIES:
+		g_value_set_int (value, nm_setting_connection_get_autoconnect_retries (setting));
 		break;
 	case PROP_TIMESTAMP:
 		g_value_set_uint64 (value, nm_setting_connection_get_timestamp (setting));
@@ -1566,6 +1593,32 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	                       NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MIN,
 	                       NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MAX,
 	                       NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_DEFAULT,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_FUZZY_IGNORE |
+	                       G_PARAM_STATIC_STRINGS));
+
+
+	/**
+	 * NMSettingConnection:autoconnect-retries:
+	 *
+	 * The number of times a connection should be tried when autoctivating before
+	 * giving up. Zero means forever, -1 means the global default (4 times if not
+	 * overridden).
+	 */
+	/* ---ifcfg-rh---
+	 * property: autoconnect-retries
+	 * variable: AUTOCONNECT_RETRIES(+)
+	 * description: The number of times a connection should be autoactivated
+	 * before giving up and switching to the next one.
+	 * values: -1 (use global default), 0 (forever) or a positive value
+	 * example: AUTOCONNECT_RETRIES=1
+	 * ---end---
+	 */
+	g_object_class_install_property
+	    (object_class, PROP_AUTOCONNECT_RETRIES,
+	     g_param_spec_int (NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES, "", "",
+	                       -1, G_MAXINT32, -1,
 	                       G_PARAM_READWRITE |
 	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |

@@ -273,6 +273,7 @@ test_read_basic (void)
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System test-minimal");
 	g_assert_cmpint (nm_setting_connection_get_timestamp (s_con), ==, 0);
 	g_assert (nm_setting_connection_get_autoconnect (s_con));
+	g_assert_cmpint (nm_setting_connection_get_autoconnect_retries (s_con), ==, -1);
 
 	/* UUID can't be tested if the ifcfg does not contain the UUID key, because
 	 * the UUID is generated on the full path of the ifcfg file, which can change
@@ -326,6 +327,7 @@ test_read_miscellaneous_variables (void)
 	g_assert (s_con);
 	g_assert_cmpint (nm_setting_connection_get_timestamp (s_con), ==, expected_timestamp);
 	g_assert (nm_setting_connection_get_autoconnect (s_con));
+	g_assert_cmpint (nm_setting_connection_get_autoconnect_retries (s_con), ==, 100);
 
 	/* ===== WIRED SETTING ===== */
 	s_wired = nm_connection_get_setting_wired (connection);
@@ -3535,6 +3537,7 @@ test_write_wired_static (void)
 	              NM_SETTING_CONNECTION_ID, "Test Write Wired Static",
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES, 1,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
 	              NULL);
 	g_free (uuid);

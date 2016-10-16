@@ -356,6 +356,21 @@ no-auto-default=*
         </listitem>
       </varlistentry>
 
+      <varlistentry>
+        <term><varname>autoconnect-retries-default</varname></term>
+        <listitem>
+          <para>
+            The number of times a connection activation should be
+            automatically tried before switching to another one. This
+            value applies only to connections that can auto-connect
+            and have a
+            <literal>connection.autoconnect-retries</literal> property
+            set to -1. If not specified, connections will be retried 4
+            times.
+          </para>
+        </listitem>
+      </varlistentry>
+
     </variablelist>
   </refsect1>
 
