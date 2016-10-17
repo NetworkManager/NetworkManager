@@ -22,6 +22,7 @@ pkglib_LTLIBRARIES =
 CLEANFILES =
 DISTCLEANFILES =
 EXTRA_DIST =
+dist_hook =
 TESTS =
 BUILT_SOURCES =
 GLIB_GENERATED =
@@ -1808,7 +1809,207 @@ check-local-symbols-settings-ifcfg-rh: src/settings/plugins/ifcfg-rh/libnm-setti
 
 check_local += check-local-symbols-settings-ifcfg-rh
 
+###############################################################################
+# src/settings/plugins/ifcfg-rh/tests
+###############################################################################
+
+check_programs += src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh
+
+src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_SOURCES = \
+	src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh.c
+
+src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_CPPFLAGS = \
+	$(GLIB_CFLAGS) \
+	$(CODE_COVERAGE_CFLAGS) \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-I$(top_srcdir)/src/ \
+	-I$(top_srcdir)/src/platform \
+	-I$(top_srcdir)/src/settings \
+	-I$(top_srcdir)/src/settings/plugins/ifcfg-rh \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	-DTEST_IFCFG_DIR=\"$(abs_srcdir)/src/settings/plugins/ifcfg-rh/tests\" \
+	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/src/settings/plugins/ifcfg-rh/tests\" \
+	-DSYSCONFDIR=\"nonexistent\" \
+	-DSBINDIR=\"nonexistent\"
+
+src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_LDFLAGS = \
+	$(GLIB_LIBS) \
+	$(CODE_COVERAGE_LDFLAGS)
+
+src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_LDADD = \
+	src/settings/plugins/ifcfg-rh/libnms-ifcfg-rh-core.la \
+	src/libNetworkManager.la
+
 endif
+
+EXTRA_DIST += \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-minimal \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-misc-variables \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-variables-corner-cases-1 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-nm-controlled \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-nm-controlled-unrecognized \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-unrecognized \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-static \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-static-bootproto \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-dhcp \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-dhcp-plus-ip \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-shared-plus-ip \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-dhcp-send-hostname \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-dhcp6-only \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-autoip \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-global-gateway \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/network-test-wired-global-gateway \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-global-gateway-ignore \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/network-test-wired-global-gateway-ignore \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-obsolete-gateway-n \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-never-default \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/network-test-wired-never-default \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-defroute-no \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-defroute-no-gatewaydev-yes \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/network-test-wired-defroute-no-gatewaydev-yes \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-8021x-peap-mschapv2 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wired-8021x-peap-mschapv2 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-8021x-tls-agent \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-8021x-tls-always \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-802-1X-subj-matches \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-802-1x-ttls-eapgtc \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-onboot-no \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-noip \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-auto \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-ssid-quoted \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-ssid-long-quoted \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-ssid-hex \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-ssid-long-hex \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-ssid-bad-hex \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wep \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep-adhoc \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wep-adhoc \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep-eap-ttls-chap \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wep-eap-ttls-chap \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-leap \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-leap \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-leap-agent \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-leap-always-ask \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-psk \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wpa-psk \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-psk-2 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wpa-psk-2 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-psk-unquoted \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wpa-psk-unquoted \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-psk-unquoted2 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wpa-psk-unquoted2 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-psk-adhoc \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wpa-psk-adhoc \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-psk-hex \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wpa-psk-hex \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-eap-tls \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wpa-eap-tls \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-eap-ttls-tls \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wpa-eap-ttls-tls \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-hidden \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-band-a \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-band-a-channel-mismatch \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-band-bg-channel-mismatch \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-mac-random-always \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-mac-random-never \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-mac-random-default \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-mac-random-missing \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/test_ca_cert.pem \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/test1_key_and_cert.pem \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-ibft \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-static-routes-legacy \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/route-test-static-routes-legacy \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-sit-ignore \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-static-routes \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/route-test-wired-static-routes \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-static-routes-legacy \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/route-test-wired-static-routes-legacy \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-ipv4-manual-1 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-ipv4-manual-2 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-ipv4-manual-3 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-ipv4-manual-4 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-ipv6-manual \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/route6-test-wired-ipv6-manual \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-static-no-prefix-8 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-static-no-prefix-16 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-static-no-prefix-24 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-ipv6-only \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep-passphrase \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wep-passphrase \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep-40-ascii \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wep-40-ascii \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep-104-ascii \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wep-104-ascii \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-qeth-static \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-ctc-static \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bridge-main \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bridge-component \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bridge-missing-stp \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-interface \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-only-vlanid \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-only-device \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-physdev \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-reorder-hdr-1 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-reorder-hdr-2 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-flags-1 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-flags-2 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep-no-keys \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-permissions \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep-agent-keys \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-dynamic-wep-leap \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-dynamic-wep-leap \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-infiniband \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-main \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-slave \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-slave-ib \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-mode-numeric \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb-default-app-priorities \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb-bad-booleans \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb-short-booleans \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb-bad-uints \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb-short-uints \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb-bad-percent \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb-short-percent \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb-pgpct-not-100 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-fcoe-fabric \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-fcoe-vn2vn \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-master-1 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-master-2 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-master-invalid \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-port-1 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-port-2 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-port-empty-config \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-trailing-spaces \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dns-options \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-wake-on-lan \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-ipv6-only-1
+
+# make target dependencies can't have colons in their names, which ends up
+# meaning that we can't add the alias files to EXTRA_DIST. They are instead
+# dist'ed via dist-hook-settings-ifcfg-rh below.
+src_settings_plugins_ifcfg_rh_tests_network_scripts_alias_files = \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem0 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem0:1 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem0:2 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem0:99 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem1 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem1:1 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem2 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem2:1
+
+dist-hook-settings-ifcfg-rh-alias-files:
+	@for f in $(src_settings_plugins_ifcfg_rh_tests_network_scripts_alias_files); do \
+		cp $(abs_srcdir)/$$f $(distdir)/src/settings/plugins/ifcfg-rh/tests/network-scripts/; \
+	done
+
+dist_hook += dist-hook-settings-ifcfg-rh-alias-files
 
 ###############################################################################
 
@@ -1903,6 +2104,8 @@ CLEANFILES += \
 
 check-local: $(check_local)
 
+dist-hook: $(dist_hook)
+
 ###############################################################################
 
 install-data-hook:
@@ -1917,4 +2120,4 @@ cscope:
 
 ###############################################################################
 
-.PHONY: cscope $(check_local)
+.PHONY: cscope $(check_local) $(dist_hook)

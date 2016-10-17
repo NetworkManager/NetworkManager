@@ -8982,6 +8982,9 @@ int main (int argc, char **argv)
 {
 	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
 
+	if (g_mkdir_with_parents (TEST_SCRATCH_DIR"/network-scripts/tmp", 0755) != 0)
+		g_error ("failure to create test directory \"%s\": %s", TEST_SCRATCH_DIR"/network-scripts/tmp", g_strerror (errno));
+
 	g_test_add_func (TPATH "svUnescape", test_svUnescape);
 	g_test_add_func (TPATH "vlan-trailing-spaces", test_read_vlan_trailing_spaces);
 

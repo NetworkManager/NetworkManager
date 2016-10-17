@@ -1145,9 +1145,6 @@ src/settings/plugins/ifupdown/Makefile
 src/settings/plugins/ifupdown/tests/Makefile
 src/settings/plugins/ifnet/Makefile
 src/settings/plugins/ifnet/tests/Makefile
-src/settings/plugins/ifcfg-rh/Makefile
-src/settings/plugins/ifcfg-rh/tests/Makefile
-src/settings/plugins/ifcfg-rh/tests/network-scripts/Makefile
 src/platform/Makefile
 src/platform/tests/Makefile
 src/rdisc/Makefile
