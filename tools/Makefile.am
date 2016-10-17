@@ -1,5 +1,6 @@
 EXTRA_DIST = \
 	check-exports.sh \
+	create-exports-NetworkManager.sh \
 	debug-helper.py \
 	run-test-valgrind.sh \
 	run-test-dbus-session.sh \
