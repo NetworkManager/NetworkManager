@@ -508,7 +508,7 @@ nmtstp_ip_address_check_lifetime (const NMPlatformIPAddress *addr,
 	g_assert (expected_preferred <= expected_lifetime);
 
 	if (   expected_lifetime == NM_PLATFORM_LIFETIME_PERMANENT
-	    && expected_lifetime == NM_PLATFORM_LIFETIME_PERMANENT) {
+	    && expected_preferred == NM_PLATFORM_LIFETIME_PERMANENT) {
 		return    addr->timestamp == 0
 		       && addr->lifetime == NM_PLATFORM_LIFETIME_PERMANENT
 		       && addr->preferred == NM_PLATFORM_LIFETIME_PERMANENT;
@@ -554,7 +554,7 @@ nmtstp_ip_address_assert_lifetime (const NMPlatformIPAddress *addr,
 	g_assert (expected_preferred <= expected_lifetime);
 
 	if (   expected_lifetime == NM_PLATFORM_LIFETIME_PERMANENT
-	    && expected_lifetime == NM_PLATFORM_LIFETIME_PERMANENT) {
+	    && expected_preferred == NM_PLATFORM_LIFETIME_PERMANENT) {
 		g_assert_cmpint (addr->timestamp, ==, 0);
 		g_assert_cmpint (addr->lifetime, ==, NM_PLATFORM_LIFETIME_PERMANENT);
 		g_assert_cmpint (addr->preferred, ==, NM_PLATFORM_LIFETIME_PERMANENT);
