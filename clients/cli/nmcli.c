@@ -282,7 +282,7 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 		} else if (matches (opt, "-mode") == 0) {
 			nmc->mode_specified = TRUE;
 			if (next_arg (&argc, &argv) != 0) {
-		 		g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
+				g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
@@ -293,13 +293,13 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 			else if (matches (argv[0], "multiline") == 0)
 				nmc->multiline_output = TRUE;
 			else {
-		 		g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[0], opt);
+				g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[0], opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
 		} else if (matches (opt, "-colors") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
-		 		g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
+				g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
@@ -312,13 +312,13 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 			else if (matches (argv[0], "no") == 0)
 				nmc->use_colors = NMC_USE_COLOR_NO;
 			else {
-		 		g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[0], opt);
+				g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[0], opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
 		} else if (matches (opt, "-escape") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
-		 		g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
+				g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
@@ -329,13 +329,13 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 			else if (matches (argv[0], "no") == 0)
 				nmc->escape_values = FALSE;
 			else {
-		 		g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[0], opt);
+				g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[0], opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
 		} else if (matches (opt, "-fields") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
-		 		g_string_printf (nmc->return_text, _("Error: fields for '%s' options are missing."), opt);
+				g_string_printf (nmc->return_text, _("Error: fields for '%s' options are missing."), opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
@@ -351,13 +351,13 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 		} else if (matches (opt, "-wait") == 0) {
 			unsigned long timeout;
 			if (next_arg (&argc, &argv) != 0) {
-		 		g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
+				g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
 			if (!nmc_string_to_uint (argv[0], TRUE, 0, G_MAXINT, &timeout)) {
-		 		g_string_printf (nmc->return_text, _("Error: '%s' is not a valid timeout for '%s' option."),
-				                 argv[0], opt);
+				g_string_printf (nmc->return_text, _("Error: '%s' is not a valid timeout for '%s' option."),
+						 argv[0], opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
