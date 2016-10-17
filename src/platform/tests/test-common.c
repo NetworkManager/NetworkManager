@@ -1620,32 +1620,46 @@ main (int argc, char **argv)
 			g_error ("unshare(CLONE_NEWNET|CLONE_NEWNS) failed with %s (%d)", strerror (errsv), errsv);
 		}
 
-		/* Mount our /sys instance, so that gudev sees only our devices.
-		 * Needs to be read-only, because we don't run udev. */
+		/* Below we need a read-only /sys (to signal that we're in an environment
+		 * we don't have udev and writable /sys/devices so that we still are able
+		 * to test device classes that modify the device attributes (such as bridges).
+		 *
+		 * We use two sysfs instances to achieve this, binding the /device subtree
+		 * of the writeable one to the read-only one.
+		 *
+		 * We abuse a /sys/kernel/debug for our temporary writable sysfs mount,
+		 * just because it's guarranteed to exist and mounts are allowed there even
+		 * after the sysfs mount point hardening [linux 0cbee99269]. It's just in
+		 * our mount namespace, we release it quickly and don't need debugfs anyway...
+		 * An alrernative would be to create a temporary directory, but that seems
+		 * like an overkill. */
+
+		/* Make the mounts below /sys private to our namespace. Other mounts
+		 * wouldn't be permitted for good reasons. */
 		mount (NULL, "/sys", "sysfs", MS_SLAVE, NULL);
+
+		/* Mount the read-only sysfs. */
 		if (mount ("sys", "/sys", "sysfs", MS_RDONLY, NULL) != 0) {
 			errsv = errno;
 			g_error ("mount(\"/sys\") failed with %s (%d)", strerror (errsv), errsv);
 		}
 
-		/* Create a writable /sys/devices tree. This makes it possible to run tests
-		 * that modify values via sysfs (such as bridge forward delay). */
-		if (mount ("sys", "/sys/devices", "sysfs", 0, NULL) != 0) {
+		/* Create the writable /sys/devices tree. */
+		if (mount ("sys", "/sys/kernel/debug", "sysfs", 0, NULL) != 0) {
 			errsv = errno;
-			g_error ("mount(\"/sys/devices\") failed with %s (%d)", strerror (errsv), errsv);
+			g_error ("mount(\"/sys/devices/k\") failed with %s (%d)", strerror (errsv), errsv);
 		}
-		if (mount (NULL, "/sys/devices", "sysfs", MS_REMOUNT, NULL) != 0) {
-			/* Read-write remount failed. Never mind, we're probably just a root in
-			 * our user NS. */
-			if (umount ("/sys/devices") != 0) {
-				errsv = errno;
-				g_error ("umount(\"/sys/devices\") failed with  %s (%d)", strerror (errsv), errsv);
-			}
-		} else {
-			if (mount ("/sys/devices/devices", "/sys/devices", "sysfs", MS_BIND, NULL) != 0) {
-				errsv = errno;
-				g_error ("mount(\"/sys\") failed with %s (%d)", strerror (errsv), errsv);
-			}
+
+		/* Bind mound the writable device tree to the read-only sysfs. */
+		if (mount ("/sys/kernel/debug/devices", "/sys/devices", "sysfs", MS_BIND, NULL) != 0) {
+			errsv = errno;
+			g_error ("mount(\"/sys\") failed with %s (%d)", strerror (errsv), errsv);
+		}
+
+		/* Release the temporary mount now that we bound the /devices subtree. */
+		if (umount ("/sys/kernel/debug") != 0) {
+			errsv = errno;
+			g_error ("umount(\"/sys/kernel/debug\") failed with  %s (%d)", strerror (errsv), errsv);
 		}
 	}
 
