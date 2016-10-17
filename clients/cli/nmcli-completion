@@ -25,10 +25,11 @@ _nmcli_list_nl()
             # [']bla'bla"bla\bla bla --> [']bla'\''bla"bla\bla bla
             COMPREPLY[$i]="${entry//\'/${escaped_single_quote}}"
         elif [[ "${cur:0:1}" == '"' ]]; then
-            # started with double quote, escaping all double quotes and all backslashes
+            # started with double quote, escaping all double quotes, backslashes and !
             # ["]bla'bla"bla\bla bla --> ["]bla'bla\"bla\\bla bla
             entry="${entry//\\/\\\\}"
             entry="${entry//\"/\\\"}"
+            entry="${entry//!/\"\\!\"}"
             COMPREPLY[$i]="$entry"
         else
             # no quotes in front, escaping _everything_
@@ -37,6 +38,10 @@ _nmcli_list_nl()
             entry="${entry//\'/\'}"
             entry="${entry//\"/\\\"}"
             entry="${entry// /\\ }"
+            entry="${entry//\(/\\(}"
+            entry="${entry//)/\\)}"
+            entry="${entry//!/\\!}"
+            entry="${entry//&/\\&}"
             COMPREPLY[$i]="$entry"
         fi
         (( i++ ))
