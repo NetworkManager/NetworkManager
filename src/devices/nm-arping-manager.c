@@ -193,7 +193,7 @@ arping_timeout_cb (gpointer user_data)
  * Start probing IP addresses for duplicates; when the probe terminates a
  * PROBE_TERMINATED signal is emitted.
  *
- * Returns: %TRUE on success, %FALSE on failure
+ * Returns: %TRUE if at least one probe could be started, %FALSE otherwise
  */
 gboolean
 nm_arping_manager_start_probe (NMArpingManager *self, guint timeout, GError **error)
@@ -203,6 +203,7 @@ nm_arping_manager_start_probe (NMArpingManager *self, guint timeout, GError **er
 	GHashTableIter iter;
 	AddressInfo *info;
 	gs_free char *timeout_str = NULL;
+	gboolean success = FALSE;
 
 	g_return_val_if_fail (NM_IS_ARPING_MANAGER (self), FALSE);
 	g_return_val_if_fail (!error || !*error, FALSE);
@@ -236,24 +237,29 @@ nm_arping_manager_start_probe (NMArpingManager *self, guint timeout, GError **er
 
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &info)) {
 		gs_free char *tmp_str = NULL;
-		gboolean success;
 
 		argv[9] = nm_utils_inet4_ntop (info->address, NULL);
 		_LOGD ("run %s", (tmp_str = g_strjoinv (" ", (char **) argv)));
 
-		success = g_spawn_async (NULL, (char **) argv, NULL,
-		                         G_SPAWN_STDOUT_TO_DEV_NULL |
-		                         G_SPAWN_STDERR_TO_DEV_NULL |
-		                         G_SPAWN_DO_NOT_REAP_CHILD,
-		                         NULL, NULL, &info->pid, NULL);
-
-		info->watch = g_child_watch_add (info->pid, arping_watch_cb, info);
+		if (g_spawn_async (NULL, (char **) argv, NULL,
+		                   G_SPAWN_STDOUT_TO_DEV_NULL |
+		                   G_SPAWN_STDERR_TO_DEV_NULL |
+		                   G_SPAWN_DO_NOT_REAP_CHILD,
+		                   NULL, NULL, &info->pid, NULL)) {
+			info->watch = g_child_watch_add (info->pid, arping_watch_cb, info);
+			success = TRUE;
+		}
 	}
 
-	priv->timer = g_timeout_add (timeout, arping_timeout_cb, self);
-	priv->state = STATE_PROBING;
+	if (success) {
+		priv->timer = g_timeout_add (timeout, arping_timeout_cb, self);
+		priv->state = STATE_PROBING;
+	} else {
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+		                     "could not spawn arping process");
+	}
 
-	return TRUE;
+	return success;
 }
 
 /**
