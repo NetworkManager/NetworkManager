@@ -1554,10 +1554,6 @@ unshare_user (void)
 	uid_t uid = geteuid ();
 	gid_t gid = getegid ();
 
-	/* Don't try to set up the namespaces if we're in a container. */
-	if (!nmtstp_is_sysfs_writable ())
-		return FALSE;
-
 	/* Already a root? */
 	if (gid == 0 && uid == 0)
 		return TRUE;
