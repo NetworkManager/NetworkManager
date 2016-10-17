@@ -2072,7 +2072,57 @@ check-local-symbols-settings-ifupdown: src/settings/plugins/ifupdown/libnm-setti
 
 check_local += check-local-symbols-settings-ifupdown
 
+###############################################################################
+
+check_programs += src/settings/plugins/ifupdown/tests/test-ifupdown
+
+src_settings_plugins_ifupdown_tests_test_ifupdown_CPPFLAGS = \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/settings \
+	-I$(srcdir)/src/settings/plugins/ifupdown \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	$(GLIB_CFLAGS) \
+	-DTEST_ENI_DIR=\"$(abs_srcdir)/src/settings/plugins/ifupdown/tests\"
+
+src_settings_plugins_ifupdown_tests_test_ifupdown_LDFLAGS = \
+	$(GLIB_LDFLAGS)
+	$(CODE_COVERAGE_LDFLAGS)
+
+src_settings_plugins_ifupdown_tests_test_ifupdown_LDADD = \
+	src/settings/plugins/ifupdown/libnms-ifupdown-core.la \
+	src/libNetworkManager.la
+
 endif
+
+EXTRA_DIST += \
+	src/settings/plugins/ifupdown/tests/test1 \
+	src/settings/plugins/ifupdown/tests/test2 \
+	src/settings/plugins/ifupdown/tests/test3 \
+	src/settings/plugins/ifupdown/tests/test4 \
+	src/settings/plugins/ifupdown/tests/test5 \
+	src/settings/plugins/ifupdown/tests/test6 \
+	src/settings/plugins/ifupdown/tests/test7 \
+	src/settings/plugins/ifupdown/tests/test8 \
+	src/settings/plugins/ifupdown/tests/test9 \
+	src/settings/plugins/ifupdown/tests/test11 \
+	src/settings/plugins/ifupdown/tests/test12 \
+	src/settings/plugins/ifupdown/tests/test13 \
+	src/settings/plugins/ifupdown/tests/test14 \
+	src/settings/plugins/ifupdown/tests/test15 \
+	src/settings/plugins/ifupdown/tests/test16 \
+	src/settings/plugins/ifupdown/tests/test17-wired-static-verify-ip4 \
+	src/settings/plugins/ifupdown/tests/test18-wired-static-verify-ip6 \
+	src/settings/plugins/ifupdown/tests/test19-wired-static-verify-ip4-plen \
+	src/settings/plugins/ifupdown/tests/test20-source-stanza \
+	src/settings/plugins/ifupdown/tests/test20-source-stanza.eth0 \
+	src/settings/plugins/ifupdown/tests/test20-source-stanza.eth1 \
+	src/settings/plugins/ifupdown/tests/test21-source-dir-stanza \
+	src/settings/plugins/ifupdown/tests/test21-source-dir-stanza.d
 
 ###############################################################################
 

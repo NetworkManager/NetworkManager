@@ -1141,8 +1141,6 @@ src/dnsmasq-manager/tests/Makefile
 src/supplicant-manager/tests/Makefile
 src/supplicant-manager/tests/certs/Makefile
 src/settings/plugins/Makefile
-src/settings/plugins/ifupdown/Makefile
-src/settings/plugins/ifupdown/tests/Makefile
 src/settings/plugins/ifnet/Makefile
 src/settings/plugins/ifnet/tests/Makefile
 src/platform/Makefile
