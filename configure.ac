@@ -1170,7 +1170,6 @@ libnm-glib/Makefile
 libnm-glib/tests/Makefile
 dispatcher/Makefile
 dispatcher/tests/Makefile
-tools/Makefile
 clients/Makefile
 clients/cli/Makefile
 clients/tui/Makefile

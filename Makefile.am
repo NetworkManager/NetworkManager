@@ -53,7 +53,6 @@ SUBDIRS = \
 	src \
 	dispatcher \
 	clients \
-	tools \
 	data \
 	po \
 	man \
@@ -1775,6 +1774,14 @@ EXTRA_DIST += \
 	shared/nm-utils/nm-vpn-plugin-utils.h \
 	shared/nm-utils/unaligned.h \
 	shared/nm-version-macros.h.in \
+	\
+	tools/check-exports.sh \
+	tools/create-exports-NetworkManager.sh \
+	tools/debug-helper.py \
+	tools/run-nm-test.sh \
+	tools/test-networkmanager-service.py \
+	tools/test-sudo-wrapper.sh \
+	tools/enums-to-docbook.pl \
 	\
 	$(NULL)
 
