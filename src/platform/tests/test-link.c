@@ -1883,8 +1883,7 @@ _test_netns_setup (gpointer fixture, gconstpointer test_data)
 static void
 _test_netns_teardown (gpointer fixture, gconstpointer test_data)
 {
-	/* re-create platform instance */
-	SETUP ();
+	nmtstp_setup_platform ();
 }
 
 static NMPlatform *
@@ -2322,6 +2321,8 @@ test_netns_bind_to_path (gpointer fixture, gconstpointer test_data)
 }
 
 /*****************************************************************************/
+
+NMTstpSetupFunc const _nmtstp_setup_platform_func = SETUP;
 
 void
 _nmtstp_init_tests (int *argc, char ***argv)

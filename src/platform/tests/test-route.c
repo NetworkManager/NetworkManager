@@ -328,6 +328,8 @@ test_ip4_zero_gateway (void)
 
 /*****************************************************************************/
 
+NMTstpSetupFunc const _nmtstp_setup_platform_func = SETUP;
+
 void
 _nmtstp_init_tests (int *argc, char ***argv)
 {

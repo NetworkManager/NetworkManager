@@ -1139,8 +1139,6 @@ src/tests/Makefile
 src/tests/config/Makefile
 src/supplicant-manager/tests/Makefile
 src/supplicant-manager/tests/certs/Makefile
-src/platform/Makefile
-src/platform/tests/Makefile
 src/rdisc/Makefile
 src/rdisc/tests/Makefile
 src/devices/Makefile

@@ -32,12 +32,18 @@
 
 /*****************************************************************************/
 
+void
+nmtstp_setup_platform (void)
+{
+	g_assert (_nmtstp_setup_platform_func);
+	_nmtstp_setup_platform_func ();
+}
+
 gboolean
 nmtstp_is_root_test (void)
 {
-	NM_PRAGMA_WARNING_DISABLE("-Wtautological-compare")
-	return (SETUP == nm_linux_platform_setup);
-	NM_PRAGMA_WARNING_REENABLE
+	g_assert (_nmtstp_setup_platform_func);
+	return _nmtstp_setup_platform_func == nm_linux_platform_setup;
 }
 
 gboolean
@@ -1663,7 +1669,7 @@ main (int argc, char **argv)
 		}
 	}
 
-	SETUP ();
+	nmtstp_setup_platform ();
 
 	_nmtstp_setup_tests ();
 

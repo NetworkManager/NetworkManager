@@ -432,6 +432,8 @@ _test_recv_fixture_teardown (TestRecvFixture *fixture, gconstpointer user_data)
 
 /*****************************************************************************/
 
+NMTstpSetupFunc const _nmtstp_setup_platform_func = SETUP;
+
 void
 _nmtstp_init_tests (int *argc, char ***argv)
 {
