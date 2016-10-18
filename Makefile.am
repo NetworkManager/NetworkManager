@@ -27,6 +27,7 @@ TESTS =
 BUILT_SOURCES =
 GLIB_GENERATED =
 check_programs =
+check_programs_norun =
 check_ltlibraries =
 check_local =
 dbusservice_DATA =
@@ -2732,6 +2733,43 @@ src_devices_tests_test_arping_LDADD = \
 	src/platform/tests/libnm-platform-tests.la
 
 ###############################################################################
+# src/rdisc/tests
+###############################################################################
+
+src_rdisc_tests_cppflags = \
+	-I${top_srcdir} \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
+	-I${top_srcdir}/src \
+	-I${top_srcdir}/src/platform \
+	-I${top_srcdir}/libnm-core \
+	-I${top_builddir}/libnm-core \
+	-I${srcdir}/src/rdisc \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	$(GLIB_CFLAGS) \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(LIBNDP_CFLAGS)
+
+src_rdisc_tests_ldflags = \
+	$(CODE_COVERAGE_LDFLAGS)
+
+src_rdisc_tests_ldadd = \
+	src/libNetworkManagerTest.la \
+	$(GLIB_LIBS)
+
+check_programs += src/rdisc/tests/test-rdisc-fake
+check_programs_norun += src/rdisc/tests/test-rdisc-linux
+
+src_rdisc_tests_test_rdisc_linux_CPPFLAGS = $(src_rdisc_tests_cppflags)
+src_rdisc_tests_test_rdisc_linux_LDFLAGS = $(src_rdisc_tests_flags)
+src_rdisc_tests_test_rdisc_linux_LDADD = $(src_rdisc_tests_ldadd)
+
+src_rdisc_tests_test_rdisc_fake_CPPFLAGS = $(src_rdisc_tests_cppflags)
+src_rdisc_tests_test_rdisc_fake_LDFLAGS = $(src_rdisc_tests_flags)
+src_rdisc_tests_test_rdisc_fake_LDADD = $(src_rdisc_tests_ldadd)
+
+###############################################################################
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)
@@ -2745,10 +2783,10 @@ dbusservice_DATA += src/org.freedesktop.NetworkManager.conf
 ###############################################################################
 
 if ENABLE_TESTS
-noinst_PROGRAMS += $(check_programs)
+noinst_PROGRAMS += $(check_programs) $(check_programs_norun)
 noinst_LTLIBRARIES += $(check_ltlibraries)
 else
-check_PROGRAMS += $(check_programs)
+check_PROGRAMS += $(check_programs) $(check_programs_norun)
 check_LTLIBRARIES += $(check_ltlibraries)
 endif
 
