@@ -2433,6 +2433,58 @@ check_local += check-local-devices-bluetooth
 endif
 
 ###############################################################################
+# src/devices/wifi
+###############################################################################
+
+if WITH_WIFI
+
+pkglib_LTLIBRARIES += src/devices/wifi/libnm-device-plugin-wifi.la
+
+src_devices_wifi_libnm_device_plugin_wifi_la_SOURCES = \
+	src/devices/wifi/nm-wifi-factory.c \
+	src/devices/wifi/nm-device-wifi.c \
+	src/devices/wifi/nm-device-wifi.h \
+	src/devices/wifi/nm-wifi-ap.c \
+	src/devices/wifi/nm-wifi-ap.h \
+	src/devices/wifi/nm-wifi-utils.c \
+	src/devices/wifi/nm-wifi-utils.h \
+	src/devices/wifi/nm-device-olpc-mesh.c \
+	src/devices/wifi/nm-device-olpc-mesh.h
+
+src_devices_wifi_libnm_device_plugin_wifi_la_CPPFLAGS = \
+	-I${top_srcdir}/src \
+	-I${top_builddir}/src \
+	-I${top_srcdir}/src/devices \
+	-I${top_srcdir}/src/settings \
+	-I${top_srcdir}/src/platform \
+	-I${top_srcdir}/src/supplicant-manager \
+	-I${top_builddir}/introspection \
+	-I${top_srcdir}/shared \
+	-I$(top_builddir)/shared \
+	-I${top_builddir}/libnm-core \
+	-I${top_srcdir}/libnm-core \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	$(GLIB_CFLAGS)
+
+src_devices_wifi_libnm_device_plugin_wifi_la_LDFLAGS = \
+	-module -avoid-version \
+	-Wl,--version-script="$(top_srcdir)/linker-script-devices.ver"
+
+src_devices_wifi_libnm_device_plugin_wifi_la_LIBADD = \
+	introspection/libnmdbus.la \
+	$(GLIB_LIBS) \
+	$(GUDEV_LIBS)
+
+check-local-devices-wifi: src/devices/wifi/libnm-device-plugin-wifi.la
+	$(top_srcdir)/tools/check-exports.sh $(builddir)/src/devices/wifi/.libs/libnm-device-plugin-wifi.so "$(top_srcdir)/linker-script-devices.ver"
+	$(call check_so_symbols,$(builddir)/src/devices/wifi/.libs/libnm-device-plugin-wifi.so)
+
+check_local += check-local-devices-wifi
+
+endif
+
+###############################################################################
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)
