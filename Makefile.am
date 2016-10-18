@@ -2795,6 +2795,44 @@ EXTRA_DIST += \
 	src/supplicant-manager/tests/certs/test-cert.p12
 
 ###############################################################################
+# src/tests/config
+###############################################################################
+
+check_programs += src/tests/config/test-config
+
+src_tests_config_test_config_SOURCES = \
+	src/tests/config/nm-test-device.c \
+	src/tests/config/nm-test-device.h \
+	src/tests/config/test-config.c
+
+src_tests_config_test_config_CPPFLAGS = \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-I$(top_srcdir)/src/ \
+	-I$(top_srcdir)/src/devices \
+	-I${top_srcdir}/src/platform \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	$(GLIB_CFLAGS) \
+	-DSRCDIR=\""$(abs_srcdir)/src/tests/config"\" \
+	-DBUILDDIR=\""$(abs_builddir)/src/tests/config"\"
+
+src_tests_config_test_config_LDADD = \
+	src/libNetworkManagerTest.la
+
+EXTRA_DIST += \
+	src/tests/config/NetworkManager.conf \
+	src/tests/config/NetworkManager.state \
+	src/tests/config/bad.conf \
+	src/tests/config/global-dns-invalid.conf \
+	src/tests/config/conf.d/00-overrides.conf \
+	src/tests/config/conf.d/10-more.conf \
+	src/tests/config/conf.d/20-config-enable-1.conf \
+	src/tests/config/conf.d/90-last.conf
+
+###############################################################################
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)
