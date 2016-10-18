@@ -1147,8 +1147,6 @@ src/rdisc/tests/Makefile
 src/devices/Makefile
 src/devices/tests/Makefile
 src/devices/team/Makefile
-src/devices/wifi/Makefile
-src/devices/wifi/tests/Makefile
 libnm/libnm.pc
 libnm-util/libnm-util.pc
 libnm-util/Makefile

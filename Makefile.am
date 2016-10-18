@@ -2482,6 +2482,31 @@ check-local-devices-wifi: src/devices/wifi/libnm-device-plugin-wifi.la
 
 check_local += check-local-devices-wifi
 
+check_programs += src/devices/wifi/tests/test-general
+
+src_devices_wifi_tests_test_general_SOURCES = \
+	src/devices/wifi/tests/test-general.c \
+	src/devices/wifi/nm-wifi-ap.c \
+	src/devices/wifi/nm-wifi-ap.h \
+	src/devices/wifi/nm-wifi-utils.c \
+	src/devices/wifi/nm-wifi-utils.h
+
+src_devices_wifi_tests_test_general_CPPFLAGS = \
+	-I$(top_builddir)/introspection \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-I${top_srcdir}/src/platform \
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/devices/wifi \
+	-I$(top_builddir)/src \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	$(GLIB_CFLAGS)
+
+src_devices_wifi_tests_test_general_LDADD = src/libNetworkManager.la
+
 endif
 
 ###############################################################################
