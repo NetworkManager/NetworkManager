@@ -16,6 +16,7 @@ noinst_PROGRAMS =
 check_PROGRAMS =
 noinst_DATA =
 sbin_PROGRAMS =
+bin_PROGRAMS =
 libexec_PROGRAMS =
 lib_LTLIBRARIES =
 pkglib_LTLIBRARIES =
@@ -3070,6 +3071,30 @@ EXTRA_DIST += \
 	dispatcher/tests/dispatcher-up \
 	dispatcher/tests/dispatcher-vpn-down \
 	dispatcher/tests/dispatcher-vpn-up
+
+###############################################################################
+# clients
+###############################################################################
+
+bin_PROGRAMS += clients/nm-online
+
+clients_nm_online_CPPFLAGS = \
+	-I${top_srcdir}/shared \
+	-I$(top_builddir)/shared \
+	-I${top_srcdir}/libnm-core \
+	-I${top_builddir}/libnm-core \
+	-I${top_srcdir}/libnm \
+	-I${top_builddir}/libnm \
+	$(GLIB_CFLAGS) \
+	-DG_LOG_DOMAIN=\""nm-online"\" \
+	-DNMLOCALEDIR=\"$(datadir)/locale\"
+
+clients_nm_online_LDFLAGS = \
+	-Wl,--version-script="$(top_srcdir)/linker-script-binary.ver"
+
+clients_nm_online_LDADD = \
+	libnm/libnm.la \
+	$(GLIB_LIBS)
 
 ###############################################################################
 
