@@ -22,6 +22,7 @@ libexec_PROGRAMS =
 lib_LTLIBRARIES =
 pkglib_LTLIBRARIES =
 service_DATA =
+man_MANS =
 examples_DATA =
 CLEANFILES =
 DISTCLEANFILES =
@@ -34,6 +35,8 @@ uninstall_hook =
 TESTS =
 BUILT_SOURCES =
 GLIB_GENERATED =
+man_pages =
+man_pages_autogen =
 check_programs =
 check_programs_norun =
 check_ltlibraries =
@@ -74,7 +77,6 @@ GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
 SUBDIRS = \
 	. \
 	po \
-	man \
 	examples \
 	docs \
 	vapi
@@ -3988,6 +3990,125 @@ libnm_glib_tests_test_remote_settings_client_LDADD = \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS)
 
+endif
+
+###############################################################################
+# man
+###############################################################################
+
+XSLTPROC_MAN_FLAGS = \
+	--xinclude --nonet \
+	--stringparam man.output.quietly 1 \
+	--stringparam funcsynopsis.style ansi \
+	--stringparam man.th.extra1.suppress 1 \
+	--stringparam man.authors.section.enabled 0 \
+	--stringparam man.copyright.section.enabled 0 \
+	http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl
+
+if ENABLE_GTK_DOC
+
+man/%.1: man/%.xml man/common.ent
+	$(AM_V_GEN) xsltproc --output $@ $(XSLTPROC_MAN_FLAGS) $<
+
+man/%.5: man/%.xml man/common.ent
+	$(AM_V_GEN) xsltproc --output $@ $(XSLTPROC_MAN_FLAGS) $<
+
+man/%.7: man/%.xml man/common.ent
+	$(AM_V_GEN) xsltproc --output $@ $(XSLTPROC_MAN_FLAGS) $<
+
+man/%.8: man/%.xml man/common.ent
+	$(AM_V_GEN) xsltproc --output $@ $(XSLTPROC_MAN_FLAGS) $<
+
+endif
+
+if BUILD_SETTING_DOCS
+
+man/nm-settings.xml: man/nm-settings.xsl libnm/nm-setting-docs.xml
+	$(AM_V_GEN) xsltproc --output $@ $^
+
+man/nm-settings-keyfile.xml: man/nm-settings-keyfile.xsl libnm/nm-keyfile-docs.xml
+	$(AM_V_GEN) xsltproc --output $@ $^
+
+man/nm-settings-ifcfg-rh.xml: man/nm-settings-ifcfg-rh.xsl libnm/nm-ifcfg-rh-docs.xml
+	$(AM_V_GEN) xsltproc --output $@ $^
+
+CLEANFILES += \
+	man/nm-settings.xml \
+	man/nm-settings-keyfile.xml \
+	man/nm-settings-ifcfg-rh.xml
+
+endif
+
+man_pages += \
+	man/nmcli.1 \
+	man/nmtui.1 \
+	man/nm-online.1 \
+	man/NetworkManager.conf.5 \
+	man/nmcli-examples.7 \
+	man/NetworkManager.8
+
+man_pages_autogen += \
+	man/nm-settings.5 \
+	man/nm-settings-keyfile.5
+
+if CONFIG_PLUGIN_IFCFG_RH
+man_pages_autogen += man/nm-settings-ifcfg-rh.5
+else
+EXTRA_DIST += man/nm-settings-ifcfg-rh.5
+endif
+
+EXTRA_DIST += \
+	man/nm-settings.xml \
+	man/nm-settings.xsl \
+	man/nm-settings-keyfile.xml \
+	man/nm-settings-keyfile.xsl \
+	man/nm-settings-ifcfg-rh.xml \
+	man/nm-settings-ifcfg-rh.xsl \
+	$(addsuffix .xml,$(basename $(man_pages))) \
+	$(man_pages) \
+	$(man_pages_autogen)
+
+if INSTALL_PREGEN_MANPAGES
+install_manpages = true
+else
+if ENABLE_GTK_DOC
+install_manpages = true
+endif
+endif
+
+install-data-hook-man:
+	if test -n "$(install_manpages)"; then \
+		for link in $(nmtui_links); do \
+			ln -f $(DESTDIR)$(mandir)/man1/nmtui.1 $(DESTDIR)$(mandir)/man1/$$link.1; \
+		done; \
+		ln -f $(DESTDIR)$(mandir)/man5/NetworkManager.conf.5 $(DESTDIR)$(mandir)/man5/nm-system-settings.conf.5; \
+	fi
+
+install_data_hook += install-data-hook-man
+
+uninstall-hook-man:
+	if test -n "$(install_manpages)"; then \
+		for link in $(nmtui_links); do \
+			rm -f $(DESTDIR)$(mandir)/man1/$$link.1; \
+		done; \
+		rm -f $(DESTDIR)$(mandir)/man5/nm-system-settings.conf.5; \
+	fi
+
+uninstall_hook += uninstall-hook-man
+
+if ENABLE_GTK_DOC
+man_MANS += $(man_pages)
+CLEANFILES += $(man_pages)
+if SETTING_DOCS_AVAILABLE
+man_MANS += $(man_pages_autogen)
+CLEANFILES += $(man_pages_autogen)
+endif
+else
+if INSTALL_PREGEN_MANPAGES
+man_MANS += \
+	$(man_pages) \
+	$(man_pages_autogen)
+endif
 endif
 
 ###############################################################################
