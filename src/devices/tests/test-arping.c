@@ -125,7 +125,7 @@ fixture_teardown (test_fixture *fixture, gconstpointer user_data)
 	nm_platform_link_delete (NM_PLATFORM_GET, fixture->ifindex1);
 }
 
-NMTstpSetupFunc const _nmtstp_setup_platform_func = SETUP;
+NMTstpSetupFunc const _nmtstp_setup_platform_func = nm_linux_platform_setup;
 
 void
 _nmtstp_init_tests (int *argc, char ***argv)

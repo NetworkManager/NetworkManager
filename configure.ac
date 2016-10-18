@@ -1141,8 +1141,6 @@ src/supplicant-manager/tests/Makefile
 src/supplicant-manager/tests/certs/Makefile
 src/rdisc/Makefile
 src/rdisc/tests/Makefile
-src/devices/Makefile
-src/devices/tests/Makefile
 libnm/libnm.pc
 libnm-util/libnm-util.pc
 libnm-util/Makefile

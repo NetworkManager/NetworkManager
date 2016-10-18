@@ -2696,6 +2696,42 @@ src_platform_tests_test_general_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_general_LDADD = src/libNetworkManagerTest.la
 
 ###############################################################################
+# src/devices/tests
+###############################################################################
+
+src_devices_tests_cppflags = \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-I$(top_srcdir)/src/platform \
+	-I$(top_srcdir)/src/devices \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src \
+	-I$(top_srcdir)/src/platform/tests \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(GLIB_CFLAGS)
+
+src_devices_tests_ldflags = \
+	$(CODE_COVERAGE_LDFLAGS)
+
+check_programs += \
+	src/devices/tests/test-lldp \
+	src/devices/tests/test-arping
+
+src_devices_tests_test_lldp_CPPFLAGS = $(src_devices_tests_cppflags)
+src_devices_tests_test_lldp_LDFLAGS = $(src_devices_tests_ldflags)
+src_devices_tests_test_lldp_LDADD = \
+	src/platform/tests/libnm-platform-tests.la
+
+src_devices_tests_test_arping_CPPFLAGS = $(src_devices_tests_cppflags)
+src_devices_tests_test_arping_LDFLAGS = $(src_devices_tests_ldflags)
+src_devices_tests_test_arping_LDADD = \
+	src/platform/tests/libnm-platform-tests.la
+
+###############################################################################
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)
