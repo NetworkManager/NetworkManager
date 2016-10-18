@@ -118,3 +118,62 @@ EXTRA_DIST += \
 	examples/C/qt/change-ipv4-addresses.cpp \
 	examples/C/qt/monitor-nm-running.cpp
 
+###############################################################################
+# examples
+###############################################################################
+
+EXTRA_DIST += \
+	examples/dispatcher/10-ifcfg-rh-routes.sh \
+	examples/dispatcher/70-wifi-wired-exclusive.sh \
+	\
+	examples/lua/lgi/add-connection.lua \
+	examples/lua/lgi/list-connections.lua \
+	examples/lua/lgi/list-devices.lua \
+	examples/lua/lgi/show-wifi-networks.lua \
+	examples/lua/lgi/get-basic-nm-info.lua \
+	examples/lua/lgi/get-ips.lua \
+	examples/lua/lgi/change-vpn-username.lua \
+	examples/lua/lgi/deactivate-all.lua \
+	\
+	examples/python/dbus/nm-state.py \
+	examples/python/dbus/add-connection.py \
+	examples/python/dbus/add-connection-compat.py \
+	examples/python/dbus/add-wifi-eap-connection.py \
+	examples/python/dbus/add-wifi-psk-connection.py \
+	examples/python/dbus/vpn.py \
+	examples/python/dbus/update-secrets.py \
+	examples/python/dbus/list-connections.py \
+	examples/python/dbus/show-bssids.py \
+	examples/python/dbus/disconnect-device.py \
+	examples/python/dbus/get-active-connection-uuids.py \
+	examples/python/dbus/list-devices.py \
+	examples/python/dbus/update-ip4-method.py \
+	examples/python/dbus/is-wwan-default.py \
+	examples/python/dbus/wifi-hotspot.py \
+	examples/python/dbus/create-bond.py \
+	examples/python/dbus/wifi-active-ap.py\
+	\
+	examples/python/gi/list-connections.py \
+	examples/python/gi/device-state-ip4config.py \
+	examples/python/gi/firewall-zone.py \
+	examples/python/gi/show-wifi-networks.py \
+	examples/python/gi/get_ips.py \
+	examples/python/gi/add_connection.py \
+	examples/python/gi/get-active-connections.py \
+	examples/python/gi/update-ip4-method.py \
+	examples/python/gi/deactivate-all.py \
+	examples/python/gi/README \
+	\
+	examples/python/python-networkmanager/README \
+	\
+	examples/ruby/add-connection.rb \
+	examples/ruby/get-basic-nm-info.rb \
+	examples/ruby/list-devices.rb \
+	\
+	examples/shell/nm-logging.sh \
+	examples/shell/get-hostname.sh \
+	examples/shell/list-devices.sh \
+	examples/shell/disconnect-device.sh \
+	examples/shell/active-wifi.sh \
+	\
+	$(NULL)

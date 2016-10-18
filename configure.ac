@@ -1151,16 +1151,6 @@ docs/libnm-util/version.xml
 docs/libnm/Makefile
 docs/libnm/version.xml
 NetworkManager.pc
-examples/Makefile
-examples/shell/Makefile
-examples/python/Makefile
-examples/python/dbus/Makefile
-examples/python/gi/Makefile
-examples/python/python-networkmanager/Makefile
-examples/ruby/Makefile
-examples/lua/Makefile
-examples/lua/lgi/Makefile
-examples/dispatcher/Makefile
 ])
 AC_CONFIG_SUBDIRS([libndp])
 AC_OUTPUT

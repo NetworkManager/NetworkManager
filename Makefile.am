@@ -81,7 +81,6 @@ GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
 SUBDIRS = \
 	. \
 	po \
-	examples \
 	docs/libnm \
 	docs/api
 
