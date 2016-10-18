@@ -736,29 +736,24 @@ EXTRA_DIST += \
 	libnm/libnm.ver
 
 
-INTROSPECTION_COMPILER_ARGS += \
-	--includedir=$(srcdir)/libnm-core \
-	--includedir=$(builddir)/libnm-core \
-	--includedir=$(srcdir)/libnm \
-	--includedir=$(builddir)/libnm
-
 if HAVE_INTROSPECTION
-introspection_sources = \
-	$(libnm_core_libnm_core_headers) \
-	$(libnminclude_headers) \
-	$(libnm_core_libnm_core_sources) \
-	$(libnm_libnm_la_sources)
-
 libnm/NM-1.0.gir: libnm/libnm.la
 libnm_NM_1_0_gir_INCLUDES = Gio-2.0
 libnm_NM_1_0_gir_PACKAGES = gio-2.0 gudev-1.0
 libnm_NM_1_0_gir_EXPORT_PACKAGES = libnm
 libnm_NM_1_0_gir_CFLAGS = $(libnm_libnm_la_CPPFLAGS)
 libnm_NM_1_0_gir_LIBS = libnm/libnm.la
-libnm_NM_1_0_gir_FILES = $(introspection_sources)
+libnm_NM_1_0_gir_FILES = \
+	$(libnm_core_libnm_core_headers) \
+	$(libnminclude_headers) \
+	$(libnm_core_libnm_core_sources) \
+	$(libnm_libnm_la_sources)
 libnm_NM_1_0_gir_SCANNERFLAGS = --warn-all --identifier-prefix=NM --symbol-prefix=nm
-INTROSPECTION_GIRS += libnm/NM-1.0.gir
 
+libnm/libnm.typelib: libnm/libnm.gir
+	$(INTROSPECTION_COMPILER) --includedir=$(srcdir)/libnm-core --includedir=$(builddir)/libnm-core --includedir=$(srcdir)/libnm --includedir=$(builddir)/libnm $< -o $@
+
+INTROSPECTION_GIRS += libnm/NM-1.0.gir
 endif
 
 if BUILD_SETTING_DOCS
@@ -891,7 +886,7 @@ src_cppflags = \
 	\
 	 $(foreach d,$(sort $(dir $(src_libNetworkManager_la_SOURCES))),-I$(srcdir)/$d) \
 	\
-	-DPREFIX=\"$(prefix)\"          \
+	-DPREFIX=\"$(prefix)\" \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	\
@@ -3470,6 +3465,206 @@ CLEANFILES += \
 	data/NetworkManager-dispatcher.service \
 	data/org.freedesktop.NetworkManager.service \
 	data/server.conf
+
+###############################################################################
+# libnm-util
+###############################################################################
+
+if WITH_LEGACY_LIBRARIES
+
+lib_LTLIBRARIES += libnm-util/libnm-util.la
+
+libnm_util_libnm_util_includedir=$(includedir)/NetworkManager
+
+libnm_util_cppflags = \
+	-I${top_srcdir}/libnm-util \
+	-I${top_builddir}/libnm-util \
+	-I${top_srcdir}/shared \
+	-I$(top_builddir)/shared \
+	-DG_LOG_DOMAIN=\""libnm-util"\" \
+	-DLOCALEDIR=\"$(datadir)/locale\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY \
+	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS) \
+	$(UUID_CFLAGS)
+
+libnm_util_libnm_util_include_HEADERS = \
+	shared/nm-version-macros.h \
+	libnm-util/NetworkManager.h \
+	libnm-util/NetworkManagerVPN.h \
+	libnm-util/nm-connection.h \
+	libnm-util/nm-setting.h \
+	libnm-util/nm-setting-8021x.h \
+	libnm-util/nm-setting-adsl.h \
+	libnm-util/nm-setting-bluetooth.h \
+	libnm-util/nm-setting-bond.h \
+	libnm-util/nm-setting-team.h \
+	libnm-util/nm-setting-team-port.h \
+	libnm-util/nm-setting-bridge.h \
+	libnm-util/nm-setting-bridge-port.h \
+	libnm-util/nm-setting-connection.h \
+	libnm-util/nm-setting-dcb.h \
+	libnm-util/nm-setting-infiniband.h \
+	libnm-util/nm-setting-ip4-config.h \
+	libnm-util/nm-setting-vlan.h \
+	libnm-util/nm-setting-ip6-config.h \
+	libnm-util/nm-setting-ppp.h \
+	libnm-util/nm-setting-pppoe.h \
+	libnm-util/nm-setting-serial.h \
+	libnm-util/nm-setting-generic.h \
+	libnm-util/nm-setting-gsm.h \
+	libnm-util/nm-setting-cdma.h \
+	libnm-util/nm-setting-olpc-mesh.h \
+	libnm-util/nm-setting-wimax.h \
+	libnm-util/nm-setting-wired.h \
+	libnm-util/nm-setting-wireless.h \
+	libnm-util/nm-setting-wireless-security.h \
+	libnm-util/nm-setting-vpn.h \
+	libnm-util/nm-utils.h \
+	libnm-util/nm-version.h
+
+nodist_libnm_util_libnm_util_include_HEADERS = \
+	libnm-util/nm-utils-enum-types.h
+
+libnm_util_libnm_util_la_private_headers = \
+	shared/nm-utils/nm-shared-utils.h \
+	libnm-util/crypto.h \
+	libnm-util/nm-dbus-glib-types.h \
+	libnm-util/nm-gvaluearray-compat.h \
+	libnm-util/nm-param-spec-specialized.h \
+	libnm-util/nm-setting-private.h \
+	libnm-util/nm-utils-private.h
+
+libnm_util_libnm_util_la_csources = \
+	shared/nm-utils/nm-shared-utils.c \
+	libnm-util/crypto.c \
+	libnm-util/nm-connection.c \
+	libnm-util/nm-param-spec-specialized.c \
+	libnm-util/nm-setting.c \
+	libnm-util/nm-setting-8021x.c \
+	libnm-util/nm-setting-adsl.c \
+	libnm-util/nm-setting-bluetooth.c \
+	libnm-util/nm-setting-bond.c \
+	libnm-util/nm-setting-team.c \
+	libnm-util/nm-setting-team-port.c \
+	libnm-util/nm-setting-bridge.c \
+	libnm-util/nm-setting-bridge-port.c \
+	libnm-util/nm-setting-connection.c \
+	libnm-util/nm-setting-dcb.c \
+	libnm-util/nm-setting-infiniband.c \
+	libnm-util/nm-setting-ip4-config.c \
+	libnm-util/nm-setting-vlan.c \
+	libnm-util/nm-setting-ip6-config.c \
+	libnm-util/nm-setting-ppp.c \
+	libnm-util/nm-setting-pppoe.c \
+	libnm-util/nm-setting-serial.c \
+	libnm-util/nm-setting-generic.c \
+	libnm-util/nm-setting-gsm.c \
+	libnm-util/nm-setting-cdma.c \
+	libnm-util/nm-setting-olpc-mesh.c \
+	libnm-util/nm-setting-wimax.c \
+	libnm-util/nm-setting-wired.c \
+	libnm-util/nm-setting-wireless.c \
+	libnm-util/nm-setting-wireless-security.c \
+	libnm-util/nm-setting-vpn.c \
+	libnm-util/nm-utils-enum-types.c \
+	libnm-util/nm-utils.c \
+	libnm-util/nm-value-transforms.c
+
+libnm_util_libnm_util_la_SOURCES = \
+	$(libnm_util_libnm_util_la_csources) \
+	$(libnm_util_libnm_util_la_private_headers)
+
+libnm_util_libnm_util_la_CPPFLAGS = $(libnm_util_cppflags)
+
+
+GLIB_GENERATED += \
+	libnm-util/nm-utils-enum-types.h \
+	libnm-util/nm-utils-enum-types.c
+nm_utils_enum_types_sources = $(filter-out libnm-util/NetworkManager%,$(libnm_util_libnm_util_include_HEADERS))
+nm_utils_enum_types_MKENUMS_H_FLAGS = --identifier-prefix NM
+nm_utils_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM
+
+libnm_util_libnm_util_la_LIBADD = \
+	$(GLIB_LIBS) \
+	$(DBUS_LIBS) \
+	$(UUID_LIBS)
+
+libnm_util_libnm_util_la_LDFLAGS = \
+	-Wl,--version-script=$(srcdir)/libnm-util/libnm-util.ver \
+	-version-info "9:0:7"
+
+if WITH_GNUTLS
+libnm_util_cppflags += $(GNUTLS_CFLAGS)
+libnm_util_libnm_util_la_SOURCES += libnm-util/crypto_gnutls.c
+libnm_util_libnm_util_la_LIBADD += $(GNUTLS_LIBS)
+endif
+
+if WITH_NSS
+libnm_util_cppflags += $(NSS_CFLAGS)
+libnm_util_libnm_util_la_SOURCES += libnm-util/crypto_nss.c
+libnm_util_libnm_util_la_LIBADD += $(NSS_LIBS)
+endif
+
+
+check_ltlibraries += libnm-util/libtest-crypto.la
+
+libnm_util_libtest_crypto_la_SOURCES = \
+	libnm-util/crypto.c
+libnm_util_libtest_crypto_la_CPPFLAGS = $(libnm_util_cppflags)
+libnm_util_libtest_crypto_la_LIBADD = \
+	$(GLIB_LIBS)
+
+if WITH_GNUTLS
+libnm_util_libtest_crypto_la_SOURCES += libnm-util/crypto_gnutls.c
+libnm_util_libtest_crypto_la_LIBADD += $(GNUTLS_LIBS)
+endif
+
+if WITH_NSS
+libnm_util_libtest_crypto_la_SOURCES += libnm-util/crypto_nss.c
+libnm_util_libtest_crypto_la_LIBADD += $(NSS_LIBS)
+endif
+
+
+pkgconfig_DATA += libnm-util/libnm-util.pc
+
+DISTCLEANFILES += libnm-util/libnm-util.pc
+
+EXTRA_DIST += \
+	libnm-util/COPYING \
+	libnm-util/libnm-util.pc.in \
+	libnm-util/libnm-util.ver
+
+if HAVE_INTROSPECTION
+libnm-util/NetworkManager-1.0.gir: libnm-util/libnm-util.la
+libnm_util_NetworkManager_1_0_gir_INCLUDES = GObject-2.0 DBusGLib-1.0
+libnm_util_NetworkManager_1_0_gir_PACKAGES = gobject-2.0 dbus-glib-1
+libnm_util_NetworkManager_1_0_gir_EXPORT_PACKAGES = libnm-util
+libnm_util_NetworkManager_1_0_gir_CFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/libnm-util
+libnm_util_NetworkManager_1_0_gir_LIBS = libnm-util/libnm-util.la
+libnm_util_NetworkManager_1_0_gir_FILES = \
+	$(libnm_util_libnm_util_include_HEADERS) \
+	$(nodist_libnm_util_libnm_util_include_HEADERS) \
+	$(libnm_util_libnm_util_la_csources)
+libnm_util_NetworkManager_1_0_gir_SCANNERFLAGS = \
+	"-I$(srcdir)/shared" \
+	"-I$(builddir)/shared" \
+	"-I$(srcdir)/libnm-util" \
+	"-I$(builddir)/libnm-util" \
+	--warn-all --identifier-prefix=NM --symbol-prefix=nm
+
+libnm-util/NetworkManager-1.0.typelib: libnm-util/NetworkManager-1.0.gir
+	$(INTROSPECTION_COMPILER) "--includedir=$(srcdir)/libnm-util" "--includedir=$(builddir)/libnm-util" $< -o $@
+
+INTROSPECTION_GIRS += libnm-util/NetworkManager-1.0.gir
+endif
+
+check-local-exports-libnm-util: libnm-util/libnm-util.la
+	$(srcdir)/tools/check-exports.sh "$(builddir)/libnm-util/.libs/libnm-util.so" "$(srcdir)/libnm-util/libnm-util.ver"
+
+check_local += check-local-exports-libnm-util
+
+endif
 
 ###############################################################################
 
