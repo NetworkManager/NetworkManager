@@ -1143,7 +1143,6 @@ libnm-glib/libnm-glib-vpn.pc
 libnm-glib/Makefile
 libnm-glib/tests/Makefile
 clients/Makefile
-clients/cli/Makefile
 clients/tui/Makefile
 clients/tui/newt/Makefile
 man/Makefile

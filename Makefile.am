@@ -25,6 +25,7 @@ DISTCLEANFILES =
 EXTRA_DIST =
 dist_hook =
 install_data_hook =
+uninstall_hook =
 TESTS =
 BUILT_SOURCES =
 GLIB_GENERATED =
@@ -55,6 +56,8 @@ rundir=$(runstatedir)/NetworkManager
 statedir=$(localstatedir)/lib/NetworkManager
 
 dbusactivationdir = $(datadir)/dbus-1/system-services
+
+completiondir = $(datadir)/bash-completion/completions
 
 SUBDIRS = \
 	. \
@@ -3097,6 +3100,98 @@ clients_nm_online_LDADD = \
 	$(GLIB_LIBS)
 
 ###############################################################################
+# clients/cli
+###############################################################################
+
+if BUILD_NMCLI
+
+bin_PROGRAMS += clients/cli/nmcli
+
+clients_cli_nmcli_SOURCES = \
+	clients/cli/agent.c \
+	clients/cli/agent.h \
+	clients/cli/common.c \
+	clients/cli/common.h \
+	clients/cli/connections.c \
+	clients/cli/connections.h \
+	clients/cli/devices.c \
+	clients/cli/devices.h \
+	clients/cli/general.c \
+	clients/cli/general.h \
+	clients/cli/settings.c \
+	clients/cli/settings.h \
+	clients/cli/nmcli.c \
+	clients/cli/nmcli.h \
+	clients/cli/utils.c \
+	clients/cli/utils.h \
+	clients/cli/polkit-agent.c \
+	clients/cli/polkit-agent.h \
+	\
+	clients/common/nm-secret-agent-simple.c \
+	clients/common/nm-secret-agent-simple.h \
+	clients/common/nm-vpn-helpers.c \
+	clients/common/nm-vpn-helpers.h \
+	$(NULL)
+
+clients_cli_nmcli_CPPFLAGS = \
+	-I${top_srcdir} \
+	-I${top_builddir} \
+	-I${top_srcdir}/shared \
+	-I$(top_builddir)/shared \
+	-I${top_srcdir}/libnm-core \
+	-I${top_builddir}/libnm-core \
+	-I${top_srcdir}/libnm \
+	-I${top_builddir}/libnm \
+	-I${top_srcdir}/clients/common \
+	$(GLIB_CFLAGS) \
+	-DG_LOG_DOMAIN=\""nmcli"\" \
+	-DNMCLI_LOCALEDIR=\"$(datadir)/locale\"
+
+clients_cli_nmcli_LDADD = \
+	$(GLIB_LIBS) \
+	$(READLINE_LIBS) \
+	libnm/libnm.la
+
+if WITH_POLKIT_AGENT
+clients_cli_nmcli_CPPFLAGS += $(POLKIT_CFLAGS)
+clients_cli_nmcli_SOURCES += \
+	clients/common/nm-polkit-listener.c \
+	clients/common/nm-polkit-listener.h
+clients_cli_nmcli_LDADD += $(POLKIT_LIBS)
+endif
+
+clients_cli_nmcli_LDFLAGS = \
+	-Wl,--version-script="$(top_srcdir)/linker-script-binary.ver"
+
+
+install-data-hook-nmcli:
+	$(mkinstalldirs) $(DESTDIR)$(completiondir)
+	$(INSTALL_DATA) $(srcdir)/clients/cli/nmcli-completion $(DESTDIR)$(completiondir)/nmcli
+
+install_data_hook += install-data-hook-nmcli
+
+uninstall-hook-nmcli:
+	rm -f $(DESTDIR)$(completiondir)/nmcli
+
+uninstall_hook += uninstall-hook-nmcli
+
+endif
+
+if BUILD_SETTING_DOCS
+
+clients/cli/settings-docs.c: clients/cli/settings-docs.xsl libnm/nm-property-docs.xml
+	$(AM_V_GEN) xsltproc --output $@ $^
+
+BUILT_SOURCES += clients/cli/settings-docs.c
+EXTRA_DIST += clients/cli/settings-docs.c
+
+endif
+
+EXTRA_DIST += \
+	clients/cli/nmcli-completion \
+	clients/cli/settings-docs.xsl
+
+###############################################################################
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)
@@ -3191,6 +3286,8 @@ install-data-hook: $(install_data_hook)
 	$(mkinstalldirs) -m 0755 $(DESTDIR)$(rundir)
 	$(mkinstalldirs) -m 0700 $(DESTDIR)$(statedir)
 	$(mkinstalldirs) -m 0755 $(DESTDIR)$(pkglibdir)
+
+uninstall-hook: $(uninstall_hook)
 
 ###############################################################################
 

@@ -1,1 +1,1 @@
-SUBDIRS = cli tui
+SUBDIRS = tui
