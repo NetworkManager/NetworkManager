@@ -1,4 +1,4 @@
-SUBDIRS= glib
+SUBDIRS =
 
 if WITH_QT
 SUBDIRS += qt

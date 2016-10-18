@@ -1,0 +1,62 @@
+###############################################################################
+# examples/C/glib
+###############################################################################
+
+examples_C_glib_cppflags = \
+	-I${top_srcdir}/shared \
+	-I${top_builddir}/shared \
+	-I${top_srcdir}/libnm-core \
+	-I${top_builddir}/libnm-core \
+	-I${top_srcdir}/libnm \
+	-I${top_builddir}/libnm \
+	$(GLIB_CFLAGS) \
+	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE
+
+examples_C_glib_cppflags_gdbus = $(examples_C_glib_cppflags)
+examples_C_glib_cppflags_libnm = $(examples_C_glib_cppflags)
+
+check_programs_norun += \
+	examples/C/glib/add-connection-gdbus \
+	examples/C/glib/add-connection-libnm \
+	examples/C/glib/get-active-connections-gdbus \
+	examples/C/glib/get-ap-info-libnm \
+	examples/C/glib/list-connections-gdbus \
+	examples/C/glib/list-connections-libnm \
+	examples/C/glib/monitor-nm-running-gdbus \
+	examples/C/glib/monitor-nm-state-gdbus
+
+examples_C_glib_add_connection_gdbus_CPPFLAGS = $(examples_C_glib_cppflags_gdbus)
+examples_C_glib_add_connection_gdbus_LDADD = \
+	$(GLIB_LIBS) \
+	$(UUID_LIBS)
+
+examples_C_glib_add_connection_libnm_CPPFLAGS = $(examples_C_glib_cppflags_libnm)
+examples_C_glib_add_connection_libnm_LDADD = \
+	libnm/libnm.la \
+	$(GLIB_LIBS)
+
+examples_C_glib_get_active_connections_gdbus_CPPFLAGS = $(examples_C_glib_cppflags_gdbus)
+examples_C_glib_get_active_connections_gdbus_LDADD = \
+	$(GLIB_LIBS)
+
+examples_C_glib_get_ap_info_libnm_CPPFLAGS = $(examples_C_glib_cppflags_libnm)
+examples_C_glib_get_ap_info_libnm_LDADD = \
+	libnm/libnm.la \
+	$(GLIB_LIBS)
+
+examples_C_glib_list_connections_gdbus_CPPFLAGS = $(examples_C_glib_cppflags_gdbus)
+examples_C_glib_list_connections_gdbus_LDADD = \
+	$(GLIB_LIBS)
+
+examples_C_glib_list_connections_libnm_CPPFLAGS = $(examples_C_glib_cppflags_libnm)
+examples_C_glib_list_connections_libnm_LDADD = \
+	libnm/libnm.la \
+	$(GLIB_LIBS)
+
+examples_C_glib_monitor_nm_running_gdbus_CPPFLAGS = $(examples_C_glib_cppflags_gdbus)
+examples_C_glib_monitor_nm_running_gdbus_LDADD = \
+	$(GLIB_LIBS)
+
+examples_C_glib_monitor_nm_state_gdbus_CPPFLAGS = $(examples_C_glib_cppflags_gdbus)
+examples_C_glib_monitor_nm_state_gdbus_LDADD = \
+	$(GLIB_LIBS)
