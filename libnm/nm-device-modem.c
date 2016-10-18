@@ -28,7 +28,6 @@
 #include "nm-setting-cdma.h"
 
 #include "nm-device-modem.h"
-#include "nm-device-private.h"
 #include "nm-object-private.h"
 #include "nm-enum-types.h"
 
@@ -158,7 +157,6 @@ get_setting_type (NMDevice *device)
 static void
 nm_device_modem_init (NMDeviceModem *device)
 {
-	_nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_MODEM);
 }
 
 static void
@@ -207,8 +205,6 @@ nm_device_modem_class_init (NMDeviceModemClass *modem_class)
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (modem_class);
 
 	g_type_class_add_private (modem_class, sizeof (NMDeviceModemPrivate));
-
-	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DEVICE_MODEM);
 
 	/* virtual methods */
 	object_class->get_property = get_property;

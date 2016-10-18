@@ -28,7 +28,6 @@
 #include "nm-object-private.h"
 #include "nm-core-internal.h"
 #include "nm-device.h"
-#include "nm-device-private.h"
 #include "nm-connection.h"
 #include "nm-vpn-connection.h"
 #include "nm-dbus-helpers.h"
@@ -38,14 +37,7 @@
 #include "nm-ip6-config.h"
 #include "nm-remote-connection.h"
 
-static GType _nm_active_connection_decide_type (GVariant *value);
-
-G_DEFINE_TYPE_WITH_CODE (NMActiveConnection, nm_active_connection, NM_TYPE_OBJECT,
-                         _nm_object_register_type_func (g_define_type_id,
-                                                        _nm_active_connection_decide_type,
-                                                        NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
-                                                        "Vpn");
-                         )
+G_DEFINE_TYPE (NMActiveConnection, nm_active_connection, NM_TYPE_OBJECT);
 
 #define NM_ACTIVE_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_ACTIVE_CONNECTION, NMActiveConnectionPrivate))
 
@@ -87,16 +79,6 @@ enum {
 
 	LAST_PROP
 };
-
-static GType
-_nm_active_connection_decide_type (GVariant *value)
-{
-	/* @value is the value of the o.fd.NM.ActiveConnection property "VPN" */
-	if (g_variant_get_boolean (value))
-		return NM_TYPE_VPN_CONNECTION;
-	else
-		return NM_TYPE_ACTIVE_CONNECTION;
-}
 
 /**
  * nm_active_connection_get_connection:
@@ -518,8 +500,6 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (ap_class);
 
 	g_type_class_add_private (ap_class, sizeof (NMActiveConnectionPrivate));
-
-	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_ACTIVE_CONNECTION);
 
 	/* virtual methods */
 	object_class->get_property = get_property;

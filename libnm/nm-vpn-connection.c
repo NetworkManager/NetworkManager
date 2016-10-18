@@ -185,10 +185,6 @@ nm_vpn_connection_class_init (NMVpnConnectionClass *connection_class)
 
 	g_type_class_add_private (connection_class, sizeof (NMVpnConnectionPrivate));
 
-	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_VPN_CONNECTION);
-	_nm_dbus_register_proxy_type (NM_DBUS_INTERFACE_VPN_CONNECTION,
-	                              NMDBUS_TYPE_VPN_CONNECTION_PROXY);
-
 	/* virtual methods */
 	object_class->get_property = get_property;
 	object_class->finalize = finalize;

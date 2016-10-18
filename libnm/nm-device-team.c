@@ -27,7 +27,6 @@
 #include "nm-utils.h"
 
 #include "nm-device-team.h"
-#include "nm-device-private.h"
 #include "nm-object-private.h"
 #include "nm-core-internal.h"
 
@@ -158,8 +157,6 @@ nm_device_team_init (NMDeviceTeam *device)
 {
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (device);
 
-	_nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_TEAM);
-
 	priv->slaves = g_ptr_array_new ();
 }
 
@@ -238,8 +235,6 @@ nm_device_team_class_init (NMDeviceTeamClass *team_class)
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (team_class);
 
 	g_type_class_add_private (team_class, sizeof (NMDeviceTeamPrivate));
-
-	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DEVICE_TEAM);
 
 	/* virtual methods */
 	object_class->dispose = dispose;

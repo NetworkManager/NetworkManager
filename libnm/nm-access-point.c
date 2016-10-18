@@ -485,8 +485,6 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 
 	g_type_class_add_private (ap_class, sizeof (NMAccessPointPrivate));
 
-	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_ACCESS_POINT);
-
 	/* virtual methods */
 	object_class->get_property = get_property;
 	object_class->finalize = finalize;

@@ -33,7 +33,4 @@ nm_dhcp4_config_init (NMDhcp4Config *config)
 static void
 nm_dhcp4_config_class_init (NMDhcp4ConfigClass *config_class)
 {
-	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (config_class);
-
-	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DHCP4_CONFIG);
 }

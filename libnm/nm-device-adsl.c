@@ -25,7 +25,6 @@
 
 #include <string.h>
 
-#include "nm-device-private.h"
 #include "nm-object-private.h"
 
 #include "nm-setting-adsl.h"
@@ -89,7 +88,6 @@ get_setting_type (NMDevice *device)
 static void
 nm_device_adsl_init (NMDeviceAdsl *device)
 {
-	_nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_ADSL);
 }
 
 static void
@@ -134,8 +132,6 @@ nm_device_adsl_class_init (NMDeviceAdslClass *adsl_class)
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (adsl_class);
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceAdslPrivate));
-
-	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DEVICE_ADSL);
 
 	/* virtual methods */
 	object_class->get_property = get_property;

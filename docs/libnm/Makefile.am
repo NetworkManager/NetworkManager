@@ -45,7 +45,6 @@ IGNORE_HFILES= \
 	nm-ip4-config.h \
 	nm-ip6-config.h \
 	nm-manager.h \
-	nm-object-cache.h \
 	nm-object-private.h \
 	nm-property-compare.h \
 	nm-remote-connection-private.h \

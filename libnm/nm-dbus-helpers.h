@@ -36,26 +36,7 @@ GDBusConnection *_nm_dbus_new_connection_finish (GAsyncResult *result,
 
 gboolean         _nm_dbus_is_connection_private (GDBusConnection *connection);
 
-void        _nm_dbus_register_proxy_type             (const char *interface,
-                                                      GType proxy_type);
-/* Guarantee that @interface is a static string */
-#define _nm_dbus_register_proxy_type(interface, proxy_type) \
-	_nm_dbus_register_proxy_type (interface "", proxy_type) \
-
-GDBusProxy *_nm_dbus_new_proxy_for_connection        (GDBusConnection *connection,
-                                                      const char *path,
-                                                      const char *interface,
-                                                      GCancellable *cancellable,
-                                                      GError **error);
-
-void        _nm_dbus_new_proxy_for_connection_async  (GDBusConnection *connection,
-                                                      const char *path,
-                                                      const char *interface,
-                                                      GCancellable *cancellable,
-                                                      GAsyncReadyCallback callback,
-                                                      gpointer user_data);
-GDBusProxy *_nm_dbus_new_proxy_for_connection_finish (GAsyncResult *result,
-                                                      GError **error);
+void             _nm_dbus_proxy_replace_match   (GDBusProxy *proxy);
 
 void _nm_dbus_bind_properties (gpointer object,
                                gpointer skeleton);

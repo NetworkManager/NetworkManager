@@ -28,7 +28,6 @@
 #include "nm-utils.h"
 
 #include "nm-device-macvlan.h"
-#include "nm-device-private.h"
 #include "nm-object-private.h"
 
 G_DEFINE_TYPE (NMDeviceMacvlan, nm_device_macvlan, NM_TYPE_DEVICE)
@@ -186,7 +185,6 @@ get_setting_type (NMDevice *device)
 static void
 nm_device_macvlan_init (NMDeviceMacvlan *device)
 {
-	_nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_MACVLAN);
 }
 
 static void
@@ -259,8 +257,6 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *gre_class)
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (gre_class);
 
 	g_type_class_add_private (gre_class, sizeof (NMDeviceMacvlanPrivate));
-
-	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DEVICE_MACVLAN);
 
 	/* virtual methods */
 	object_class->finalize = finalize;
