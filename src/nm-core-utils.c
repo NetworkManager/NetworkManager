@@ -3135,6 +3135,19 @@ _set_stable_privacy (guint8 stable_type,
 	return TRUE;
 }
 
+gboolean
+nm_utils_ipv6_addr_set_stable_privacy_impl (guint8 stable_type,
+                                            struct in6_addr *addr,
+                                            const char *ifname,
+                                            const char *network_id,
+                                            guint dad_counter,
+                                            guint8 *secret_key,
+                                            gsize key_len,
+                                            GError **error)
+{
+	return _set_stable_privacy (stable_type, addr, ifname, network_id, dad_counter, secret_key, key_len, error);
+}
+
 #define RFC7217_IDGEN_RETRIES 3
 /**
  * nm_utils_ipv6_addr_set_stable_privacy:
@@ -3285,6 +3298,18 @@ _hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
 	memcpy (&bin_addr, digest, ETH_ALEN);
 	_hw_addr_eth_complete (&bin_addr, current_mac_address, generate_mac_address_mask);
 	return nm_utils_hwaddr_ntoa (&bin_addr, ETH_ALEN);
+}
+
+char *
+nm_utils_hw_addr_gen_stable_eth_impl (NMUtilsStableType stable_type,
+                                      const char *stable_id,
+                                      const guint8 *secret_key,
+                                      gsize key_len,
+                                      const char *ifname,
+                                      const char *current_mac_address,
+                                      const char *generate_mac_address_mask)
+{
+	return _hw_addr_gen_stable_eth (stable_type, stable_id, secret_key, key_len, ifname, current_mac_address, generate_mac_address_mask);
 }
 
 char *

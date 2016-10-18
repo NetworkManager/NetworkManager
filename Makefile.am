@@ -53,7 +53,6 @@ statedir=$(localstatedir)/lib/NetworkManager
 
 SUBDIRS = \
 	. \
-	src \
 	dispatcher \
 	clients \
 	data \
@@ -932,6 +931,23 @@ check_ltlibraries += src/libNetworkManagerTest.la
 
 ###############################################################################
 
+src_libsystemd_nm_la_cppflags = \
+	-I$(top_srcdir)/shared/ \
+	-I$(top_builddir)/shared/ \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-I$(srcdir)/src \
+	-I$(top_srcdir)/src/systemd/sd-adapt/ \
+	-I$(top_srcdir)/src/systemd/src/systemd/ \
+	-I$(top_srcdir)/src/systemd/src/basic/ \
+	-I$(top_srcdir)/src/systemd/src/shared/ \
+	-I$(top_srcdir)/src/systemd/src/libsystemd-network/ \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD \
+	$(GLIB_CFLAGS)
+
+src_libsystemd_nm_la_libadd = \
+	$(GLIB_LIBS)
+
 src_libsystemd_nm_la_SOURCES = \
 	src/systemd/nm-sd.c \
 	src/systemd/nm-sd.h \
@@ -1065,22 +1081,8 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/src/systemd/sd-lldp.h \
 	src/systemd/src/systemd/sd-ndisc.h
 
-src_libsystemd_nm_la_CPPFLAGS = \
-	-I$(top_srcdir)/shared/ \
-	-I$(top_builddir)/shared/ \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
-	-I$(srcdir)/src \
-	-I$(top_srcdir)/src/systemd/sd-adapt/ \
-	-I$(top_srcdir)/src/systemd/src/systemd/ \
-	-I$(top_srcdir)/src/systemd/src/basic/ \
-	-I$(top_srcdir)/src/systemd/src/shared/ \
-	-I$(top_srcdir)/src/systemd/src/libsystemd-network/ \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD \
-	$(GLIB_CFLAGS)
-
-src_libsystemd_nm_la_LIBADD = \
-	$(GLIB_LIBS)
+src_libsystemd_nm_la_CPPFLAGS = $(src_libsystemd_nm_la_cppflags)
+src_libsystemd_nm_la_LIBADD = $(src_libsystemd_nm_la_libadd)
 
 ###############################################################################
 
@@ -2612,7 +2614,7 @@ endif
 src_platform_tests_libnm_platform_tests_la_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS)
 src_platform_tests_libnm_platform_tests_la_LIBADD = \
-	src/libNetworkManagerTest.la
+	src/libNetworkManagerTest.la \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS)
@@ -2624,7 +2626,7 @@ src_platform_tests_ldflags = \
 	$(CODE_COVERAGE_LDFLAGS)
 
 src_platform_tests_libadd = \
-	src/platform/tests/libnm-platform-tests.la
+	src/platform/tests/libnm-platform-tests.la \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS)
@@ -2831,6 +2833,113 @@ EXTRA_DIST += \
 	src/tests/config/conf.d/10-more.conf \
 	src/tests/config/conf.d/20-config-enable-1.conf \
 	src/tests/config/conf.d/90-last.conf
+
+###############################################################################
+# src/tests
+###############################################################################
+
+src_tests_cppflags = \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-I$(top_srcdir)/src/platform \
+	-I$(top_srcdir)/src/dhcp-manager \
+	-I$(top_srcdir)/src/devices \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	$(GLIB_CFLAGS) \
+	$(CODE_COVERAGE_CFLAGS)
+
+src_tests_ldflags = \
+	$(CODE_COVERAGE_LDFLAGS)
+
+src_tests_ldadd = \
+	src/libNetworkManager.la
+
+check_programs += \
+	src/tests/test-general \
+	src/tests/test-general-with-expect \
+	src/tests/test-ip4-config \
+	src/tests/test-ip6-config \
+	src/tests/test-route-manager-linux \
+	src/tests/test-route-manager-fake \
+	src/tests/test-dcb \
+	src/tests/test-systemd \
+	src/tests/test-resolvconf-capture \
+	src/tests/test-wired-defname \
+	src/tests/test-utils
+
+src_tests_test_ip4_config_CPPFLAGS = $(src_tests_cppflags)
+src_tests_test_ip4_config_LDFLAGS = $(src_tests_ldflags)
+src_tests_test_ip4_config_LDADD = $(src_tests_ldadd)
+
+src_tests_test_ip6_config_CPPFLAGS = $(src_tests_cppflags)
+src_tests_test_ip6_config_LDFLAGS = $(src_tests_ldflags)
+src_tests_test_ip6_config_LDADD = $(src_tests_ldadd)
+
+src_tests_test_dcb_CPPFLAGS = $(src_tests_cppflags)
+src_tests_test_dcb_LDFLAGS = $(src_tests_ldflags)
+src_tests_test_dcb_LDADD = $(src_tests_ldadd)
+
+src_tests_test_resolvconf_capture_CPPFLAGS = $(src_tests_cppflags)
+src_tests_test_resolvconf_capture_LDFLAGS = $(src_tests_ldflags)
+src_tests_test_resolvconf_capture_LDADD = $(src_tests_ldadd)
+
+src_tests_test_general_CPPFLAGS = $(src_tests_cppflags)
+src_tests_test_general_LDFLAGS = $(src_tests_ldflags)
+src_tests_test_general_LDADD = $(src_tests_ldadd)
+
+src_tests_test_general_with_expect_CPPFLAGS = $(src_tests_cppflags)
+src_tests_test_general_with_expect_LDFLAGS = $(src_tests_ldflags)
+src_tests_test_general_with_expect_LDADD = $(src_tests_ldadd)
+
+src_tests_test_wired_defname_CPPFLAGS = $(src_tests_cppflags)
+src_tests_test_wired_defname_LDFLAGS = $(src_tests_ldflags)
+src_tests_test_wired_defname_LDADD = $(src_tests_ldadd)
+
+src_tests_test_utils_CPPFLAGS = $(src_tests_cppflags)
+src_tests_test_utils_LDFLAGS = $(src_tests_ldflags)
+src_tests_test_utils_LDADD = $(src_tests_ldadd)
+
+
+src_tests_test_route_manager_cppflags = \
+	-I$(top_srcdir)/src/platform/tests \
+	$(src_tests_cppflags) \
+	$(GUDEV_CFLAGS)
+
+src_tests_test_route_manager_ldflags = \
+	$(CODE_COVERAGE_LDFLAGS)
+
+src_tests_test_route_manager_ldadd = \
+	src/platform/tests/libnm-platform-tests.la \
+	$(GLIB_LIBS) \
+	$(GUDEV_LIBS) \
+	$(LIBNL_LIBS)
+
+src_tests_test_route_manager_cppflags_fake = $(src_tests_test_route_manager_cppflags) -DSETUP=nm_fake_platform_setup
+src_tests_test_route_manager_cppflags_linux = $(src_tests_test_route_manager_cppflags) -DSETUP=nm_linux_platform_setup
+
+src_tests_test_route_manager_fake_SOURCES = src/tests/test-route-manager.c
+src_tests_test_route_manager_fake_CPPFLAGS = $(src_tests_test_route_manager_cppflags_fake)
+src_tests_test_route_manager_fake_LDFLAGS = $(src_tests_test_route_manager_ldflags)
+src_tests_test_route_manager_fake_LDADD = $(src_tests_test_route_manager_ldadd)
+
+src_tests_test_route_manager_linux_SOURCES = src/tests/test-route-manager.c
+src_tests_test_route_manager_linux_CPPFLAGS = $(src_tests_test_route_manager_cppflags_linux)
+src_tests_test_route_manager_linux_LDFLAGS = $(src_tests_test_route_manager_ldflags)
+src_tests_test_route_manager_linux_LDADD = $(src_tests_test_route_manager_ldadd)
+
+
+src_tests_test_systemd_CPPFLAGS = $(src_libsystemd_nm_la_cppflags)
+src_tests_test_systemd_LDADD = \
+	src/libsystemd-nm.la \
+	$(src_libsystemd_nm_la_libadd)
+
+EXTRA_DIST += \
+	src/tests/test-secret-agent.py
 
 ###############################################################################
 

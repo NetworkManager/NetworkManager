@@ -1134,8 +1134,6 @@ AM_CONDITIONAL(SETTING_DOCS_AVAILABLE, test "$build_setting_docs" = "yes" -o "$h
 AC_CONFIG_FILES([
 Makefile
 shared/nm-version-macros.h
-src/Makefile
-src/tests/Makefile
 libnm/libnm.pc
 libnm-util/libnm-util.pc
 libnm-util/Makefile
