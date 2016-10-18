@@ -76,7 +76,6 @@ SUBDIRS = \
 
 if WITH_LEGACY_LIBRARIES
 SUBDIRS += \
-	libnm-util \
 	libnm-glib
 endif
 
@@ -3663,6 +3662,62 @@ check-local-exports-libnm-util: libnm-util/libnm-util.la
 	$(srcdir)/tools/check-exports.sh "$(builddir)/libnm-util/.libs/libnm-util.so" "$(srcdir)/libnm-util/libnm-util.ver"
 
 check_local += check-local-exports-libnm-util
+
+###############################################################################
+# libnm-util/tests
+###############################################################################
+
+libnm_util_tests_cppflags = \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
+	-I$(top_srcdir)/libnm-util \
+	-I$(top_builddir)/libnm-util \
+	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS) \
+	-DBUILD_DIR=\"$(abs_builddir)/libnm-util/tests\" \
+	-DTEST_CERT_DIR=\"$(abs_srcdir)/libnm-core/tests/certs\"
+
+libnm_util_tests_ldadd = \
+	libnm-util/libnm-util.la \
+	$(GLIB_LIBS) \
+	$(DBUS_LIBS)
+
+check_programs += \
+	libnm-util/tests/test-settings-defaults \
+	libnm-util/tests/test-crypto \
+	libnm-util/tests/test-secrets \
+	libnm-util/tests/test-general \
+	libnm-util/tests/test-setting-8021x \
+	libnm-util/tests/test-setting-dcb
+
+check_programs_norun += \
+	libnm-util/tests/test-libnm-linking
+
+libnm_util_tests_test_settings_defaults_CPPFLAGS = $(libnm_util_tests_cppflags)
+libnm_util_tests_test_settings_defaults_LDADD = $(libnm_util_tests_ldadd)
+
+libnm_util_tests_test_crypto_CPPFLAGS = $(libnm_util_tests_cppflags)
+libnm_util_tests_test_crypto_LDADD = \
+	libnm-util/libtest-crypto.la \
+	$(libnm_util_tests_ldadd)
+
+libnm_util_tests_test_secrets_CPPFLAGS = $(libnm_util_tests_cppflags)
+libnm_util_tests_test_secrets_LDADD = $(libnm_util_tests_ldadd)
+
+libnm_util_tests_test_general_DEPENDENCIES = libnm-util/tests/test-libnm-linking
+libnm_util_tests_test_general_CPPFLAGS = $(libnm_util_tests_cppflags)
+libnm_util_tests_test_general_LDADD = $(libnm_util_tests_ldadd)
+
+libnm_util_tests_test_setting_8021x_CPPFLAGS = $(libnm_util_tests_cppflags)
+libnm_util_tests_test_setting_8021x_LDADD = $(libnm_util_tests_ldadd)
+
+libnm_util_tests_test_setting_dcb_CPPFLAGS = $(libnm_util_tests_cppflags)
+libnm_util_tests_test_setting_dcb_LDADD = $(libnm_util_tests_ldadd)
+
+libnm_util_tests_test_libnm_linking_CPPFLAGS = $(libnm_util_tests_cppflags)
+libnm_util_tests_test_libnm_linking_LDADD = \
+	$(top_builddir)/libnm/libnm.la \
+	$(libnm_util_tests_ldadd)
 
 endif
 

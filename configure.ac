@@ -1136,8 +1136,6 @@ Makefile
 shared/nm-version-macros.h
 libnm/libnm.pc
 libnm-util/libnm-util.pc
-libnm-util/Makefile
-libnm-util/tests/Makefile
 libnm-glib/libnm-glib.pc
 libnm-glib/libnm-glib-vpn.pc
 libnm-glib/Makefile
