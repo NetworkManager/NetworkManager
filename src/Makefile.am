@@ -1,7 +1,7 @@
 SUBDIRS =
 
 if WITH_MODEM_MANAGER_1
-SUBDIRS += devices/wwan	devices/bluetooth
+SUBDIRS += devices/bluetooth
 endif
 
 if WITH_WIFI

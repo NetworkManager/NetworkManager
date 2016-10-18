@@ -2259,6 +2259,99 @@ check-local-devices-adsl: src/devices/adsl/libnm-device-plugin-adsl.la
 check_local += check-local-devices-adsl
 
 ###############################################################################
+# src/devices/wwan
+###############################################################################
+
+if WITH_MODEM_MANAGER_1
+
+src_devices_wwan_cppflags = \
+	-I${top_srcdir}/src \
+	-I${top_builddir}/src \
+	-I${top_srcdir}/src/devices \
+	-I${top_srcdir}/src/settings \
+	-I${top_srcdir}/src/platform \
+	-I${top_builddir}/introspection \
+	-I${top_srcdir}/shared \
+	-I$(top_builddir)/shared \
+	-I${top_srcdir}/libnm-core \
+	-I${top_builddir}/libnm-core \
+	-I${top_srcdir}/src/devices/wwan \
+	-I${top_builddir}/src/devices/wwan \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	$(GLIB_CFLAGS) \
+	$(LIBSYSTEMD_CFLAGS) \
+	$(MM_GLIB_CFLAGS)
+
+pkglib_LTLIBRARIES += src/devices/wwan/libnm-wwan.la
+
+GLIB_GENERATED += \
+	src/devices/wwan/nm-modem-enum-types.h \
+	src/devices/wwan/nm-modem-enum-types.c
+nm_modem_enum_types_MKENUMS_H_FLAGS = --identifier-prefix NM
+nm_modem_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\n'
+nm_modem_enum_types_sources = src/devices/wwan/nm-modem.h
+
+src_devices_wwan_libnm_wwan_la_SOURCES = \
+	src/devices/wwan/nm-modem-enum-types.h \
+	src/devices/wwan/nm-modem-enum-types.c \
+	src/devices/wwan/nm-modem-broadband.c \
+	src/devices/wwan/nm-modem-broadband.h \
+	src/devices/wwan/nm-modem-manager.c \
+	src/devices/wwan/nm-modem-manager.h \
+	src/devices/wwan/nm-modem.c \
+	src/devices/wwan/nm-modem.h
+
+if WITH_OFONO
+src_devices_wwan_libnm_wwan_la_SOURCES += \
+	src/devices/wwan/nm-modem-ofono.c \
+	src/devices/wwan/nm-modem-ofono.h
+endif
+
+src_devices_wwan_libnm_wwan_la_CPPFLAGS = $(src_devices_wwan_cppflags)
+
+src_devices_wwan_libnm_wwan_la_LDFLAGS = \
+	-avoid-version \
+	-Wl,--version-script="$(srcdir)/src/devices/wwan/libnm-wwan.ver"
+
+src_devices_wwan_libnm_wwan_la_LIBADD = \
+	$(top_builddir)/introspection/libnmdbus.la \
+	$(GLIB_LIBS) \
+	$(LIBSYSTEMD_LIBS) \
+	$(MM_GLIB_LIBS)
+
+pkglib_LTLIBRARIES += src/devices/wwan/libnm-device-plugin-wwan.la
+
+src_devices_wwan_libnm_device_plugin_wwan_la_SOURCES = \
+	src/devices/wwan/nm-wwan-factory.c \
+	src/devices/wwan/nm-device-modem.c \
+	src/devices/wwan/nm-device-modem.h
+
+src_devices_wwan_libnm_device_plugin_wwan_la_CPPFLAGS = $(src_devices_wwan_cppflags)
+
+src_devices_wwan_libnm_device_plugin_wwan_la_LDFLAGS = \
+	-module -avoid-version \
+	-Wl,--version-script="$(top_srcdir)/linker-script-devices.ver"
+
+src_devices_wwan_libnm_device_plugin_wwan_la_LIBADD = \
+	introspection/libnmdbus.la \
+	src/devices/wwan/libnm-wwan.la \
+	$(GLIB_LIBS)
+
+check-local-devices-wwan: src/devices/wwan/libnm-device-plugin-wwan.la src/devices/wwan/libnm-wwan.la
+	$(top_srcdir)/tools/check-exports.sh $(builddir)/src/devices/wwan/.libs/libnm-device-plugin-wwan.so "$(top_srcdir)/linker-script-devices.ver"
+	$(call check_so_symbols,$(builddir)/src/devices/wwan/.libs/libnm-device-plugin-wwan.so)
+	$(top_srcdir)/tools/check-exports.sh $(builddir)/src/devices/wwan/.libs/libnm-wwan.so "$(srcdir)/src/devices/wwan/libnm-wwan.ver"
+	$(call check_so_symbols,$(builddir)/src/devices/wwan/.libs/libnm-wwan.so)
+
+check_local += check-local-devices-wwan
+
+endif
+
+EXTRA_DIST += \
+	src/devices/wwan/libnm-wwan.ver
+
+###############################################################################
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)

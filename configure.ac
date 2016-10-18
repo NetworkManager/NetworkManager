@@ -1150,7 +1150,6 @@ src/devices/bluetooth/Makefile
 src/devices/team/Makefile
 src/devices/wifi/Makefile
 src/devices/wifi/tests/Makefile
-src/devices/wwan/Makefile
 libnm/libnm.pc
 libnm-util/libnm-util.pc
 libnm-util/Makefile
