@@ -1138,8 +1138,6 @@ libnm/libnm.pc
 libnm-util/libnm-util.pc
 libnm-glib/libnm-glib.pc
 libnm-glib/libnm-glib-vpn.pc
-libnm-glib/Makefile
-libnm-glib/tests/Makefile
 man/Makefile
 man/common.ent
 po/Makefile.in

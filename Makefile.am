@@ -75,14 +75,7 @@ SUBDIRS = \
 	. \
 	po \
 	man \
-	examples
-
-if WITH_LEGACY_LIBRARIES
-SUBDIRS += \
-	libnm-glib
-endif
-
-SUBDIRS += \
+	examples \
 	docs \
 	vapi
 
@@ -3949,6 +3942,51 @@ check-local-exports-libnm-glib:
 	$(top_srcdir)/tools/check-exports.sh $(builddir)/libnm-glib/.libs/libnm-glib.so $(srcdir)/libnm-glib/libnm-glib.ver
 
 check_local += check-local-exports-libnm-glib
+
+###############################################################################
+# libnm-glib/tests
+###############################################################################
+
+libnm_glib_tests_cppflags = \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
+	-I$(top_srcdir)/libnm-util \
+	-I$(top_builddir)/libnm-util \
+	-I$(top_srcdir)/libnm-glib \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY \
+	-DTEST_NM_SERVICE=\"$(abs_top_srcdir)/tools/test-networkmanager-service.py\" \
+	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS)
+
+check_programs += \
+	libnm-glib/tests/test-nm-client \
+	libnm-glib/tests/test-remote-settings-client
+
+libnm_glib_tests_test_nm_client_CPPFLAGS = $(libnm_glib_tests_cppflags)
+
+libnm_glib_tests_test_nm_client_SOURCES = \
+	shared/nm-test-utils-impl.c \
+	shared/nm-test-libnm-utils.h \
+	libnm-glib/tests/test-nm-client.c
+
+libnm_glib_tests_test_nm_client_LDADD = \
+	libnm-util/libnm-util.la \
+	libnm-glib/libnm-glib.la \
+	$(GLIB_LIBS) \
+	$(DBUS_LIBS)
+
+libnm_glib_tests_test_remote_settings_client_CPPFLAGS = $(libnm_glib_tests_cppflags)
+
+libnm_glib_tests_test_remote_settings_client_SOURCES = \
+	shared/nm-test-utils-impl.c \
+	shared/nm-test-libnm-utils.h \
+	libnm-glib/tests/test-remote-settings-client.c
+
+libnm_glib_tests_test_remote_settings_client_LDADD = \
+	libnm-util/libnm-util.la \
+	libnm-glib/libnm-glib.la \
+	$(GLIB_LIBS) \
+	$(DBUS_LIBS)
 
 endif
 
