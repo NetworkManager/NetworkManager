@@ -77,7 +77,16 @@ SUBDIRS = \
 	. \
 	po \
 	examples \
-	docs \
+	docs/libnm \
+	docs/api
+
+if WITH_LEGACY_LIBRARIES
+SUBDIRS += \
+	docs/libnm-util \
+	docs/libnm-glib
+endif
+
+SUBDIRS += \
 	vapi
 
 ###############################################################################
