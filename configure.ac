@@ -1137,8 +1137,6 @@ shared/nm-version-macros.h
 src/Makefile
 src/tests/Makefile
 src/tests/config/Makefile
-src/supplicant-manager/tests/Makefile
-src/supplicant-manager/tests/certs/Makefile
 libnm/libnm.pc
 libnm-util/libnm-util.pc
 libnm-util/Makefile

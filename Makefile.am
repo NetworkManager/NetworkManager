@@ -2770,6 +2770,31 @@ src_rdisc_tests_test_rdisc_fake_LDFLAGS = $(src_rdisc_tests_flags)
 src_rdisc_tests_test_rdisc_fake_LDADD = $(src_rdisc_tests_ldadd)
 
 ###############################################################################
+# src/supplicant-manager/tests
+###############################################################################
+
+check_programs += src/supplicant-manager/tests/test-supplicant-config
+
+src_supplicant_manager_tests_test_supplicant_config_CPPFLAGS = \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/supplicant-manager \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	-DTEST_CERT_DIR=\"$(abs_srcdir)/src/supplicant-manager/tests/certs\" \
+	$(GLIB_CFLAGS)
+
+src_supplicant_manager_tests_test_supplicant_config_LDADD = \
+	src/libNetworkManager.la
+
+EXTRA_DIST += \
+	src/supplicant-manager/tests/certs/test-ca-cert.pem \
+	src/supplicant-manager/tests/certs/test-cert.p12
+
+###############################################################################
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)
