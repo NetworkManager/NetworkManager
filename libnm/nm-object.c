@@ -871,7 +871,7 @@ handle_object_property (NMObject *self, const char *property_name, GVariant *val
 	odata = g_slice_new (ObjectCreatedData);
 	odata->self = g_object_ref (self);
 	odata->pi = pi;
-	odata->objects = g_new (GObject *, 1);
+	odata->objects = g_new0 (GObject *, 1);
 	odata->length = odata->remaining = 1;
 	odata->array = FALSE;
 	odata->property_name = property_name;
