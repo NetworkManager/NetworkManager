@@ -1043,6 +1043,7 @@ dnl Vala bindings
 dnl -------------------------
 
 VAPIGEN_CHECK(0.17.1.24)
+AC_CONFIG_COMMANDS([vapi], [$MKDIR_P vapi])
 
 # Tests, utilities and documentation
 AC_ARG_ENABLE(tests, AS_HELP_STRING([--enable-tests=root|yes|no], [Build NetworkManager tests (default: yes)]))
@@ -1163,7 +1164,6 @@ examples/C/Makefile
 examples/C/glib/Makefile
 examples/C/qt/Makefile
 examples/dispatcher/Makefile
-vapi/Makefile
 ])
 AC_CONFIG_SUBDIRS([libndp])
 AC_OUTPUT

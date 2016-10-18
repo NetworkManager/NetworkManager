@@ -1,5 +1,6 @@
 include $(GLIB_MAKEFILE)
 -include $(INTROSPECTION_MAKEFILE)
+include Makefile.vapigen
 
 @GNOME_CODE_COVERAGE_RULES@
 
@@ -40,6 +41,7 @@ check_programs =
 check_programs_norun =
 check_ltlibraries =
 check_local =
+VAPIGEN_VAPIS =
 dbusservice_DATA =
 dbusactivation_DATA =
 
@@ -58,6 +60,9 @@ pkgconfig_DATA =
 
 pppd_plugindir = $(PPPD_PLUGIN_DIR)
 pppd_plugin_LTLIBRARIES =
+
+vapidir = $(datadir)/vala/vapi
+vapi_DATA =
 
 examplesdir = $(docdir)/examples
 
@@ -85,9 +90,6 @@ SUBDIRS += \
 	docs/libnm-util \
 	docs/libnm-glib
 endif
-
-SUBDIRS += \
-	vapi
 
 ###############################################################################
 
@@ -4130,6 +4132,44 @@ man_MANS += \
 	$(man_pages_autogen)
 endif
 endif
+
+###############################################################################
+# vapi
+###############################################################################
+
+if ENABLE_VAPIGEN
+
+if WITH_LEGACY_LIBRARIES
+VAPIGEN_VAPIS += \
+	vapi/libnm-util.vapi \
+	vapi/libnm-glib.vapi
+endif
+
+vapi/libnm-util.vapi: $(top_builddir)/libnm-util/NetworkManager-1.0.gir  vapi/libnm-util.deps vapi/NetworkManager-1.0.metadata
+vapi/libnm-glib.vapi: $(top_builddir)/libnm-glib/NMClient-1.0.gir        vapi/libnm-glib.deps vapi/NMClient-1.0.metadata       vapi/libnm-util.vapi
+
+vapi_libnm_util_vapi_METADATADIRS = $(srcdir)/vapi
+vapi_libnm_util_vapi_FILES = $(top_builddir)/libnm-util/NetworkManager-1.0.gir
+
+vapi_libnm_glib_vapi_METADATADIRS = $(srcdir)/vapi
+vapi_libnm_glib_vapi_FILES = $(top_builddir)/libnm-glib/NMClient-1.0.gir
+vapi_libnm_glib_vapi_VAPIDIRS = $(builddir)
+vapi_libnm_glib_vapi_GIRDIRS = $(top_builddir)/libnm-util
+vapi_libnm_glib_vapi_DEPS = gio-2.0
+
+vapi_DATA += \
+	$(VAPIGEN_VAPIS) \
+	$(VAPIGEN_VAPIS:.vapi=.deps)
+
+CLEANFILES += $(VAPIGEN_VAPIS)
+
+endif
+
+EXTRA_DIST += \
+	vapi/NetworkManager-1.0.metadata \
+	vapi/NMClient-1.0.metadata \
+	vapi/libnm-util.deps \
+	vapi/libnm-glib.deps
 
 ###############################################################################
 

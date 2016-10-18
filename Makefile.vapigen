@@ -43,8 +43,6 @@ _vapigen_silent_opts = $(_vapigen_silent_opts_$(V))
 _vapigen_silent_opts_ = $(_vapigen_silent_opts_$(AM_DEFAULT_VERBOSITY))
 _vapigen_silent_opts_0 = --quiet
 
-$(if $(VAPIGEN),,$(error You must define VAPIGEN))
-
 _vapi_name = $(subst /,_,$(subst -,_,$(subst .,_,$(1))))
 
 define vapigen
