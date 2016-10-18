@@ -2352,6 +2352,87 @@ EXTRA_DIST += \
 	src/devices/wwan/libnm-wwan.ver
 
 ###############################################################################
+# src/devices/bluetooth
+###############################################################################
+
+if WITH_MODEM_MANAGER_1
+
+GLIB_GENERATED += \
+	src/devices/bluetooth/nm-bt-enum-types.h \
+	src/devices/bluetooth/nm-bt-enum-types.c
+nm_bt_enum_types_MKENUMS_H_FLAGS = --identifier-prefix NM
+nm_bt_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM
+nm_bt_enum_types_sources = src/devices/bluetooth/nm-bt-error.h
+
+pkglib_LTLIBRARIES += src/devices/bluetooth/libnm-device-plugin-bluetooth.la
+
+src_devices_bluetooth_libnm_device_plugin_bluetooth_la_SOURCES = \
+	src/devices/bluetooth/nm-bt-enum-types.h \
+	src/devices/bluetooth/nm-bt-enum-types.c \
+	\
+	src/devices/bluetooth/nm-bluez-manager.c \
+	src/devices/bluetooth/nm-bluez-common.h \
+	src/devices/bluetooth/nm-bluez-device.c \
+	src/devices/bluetooth/nm-bluez-device.h \
+	src/devices/bluetooth/nm-bluez4-adapter.c \
+	src/devices/bluetooth/nm-bluez4-adapter.h \
+	src/devices/bluetooth/nm-bluez4-manager.c \
+	src/devices/bluetooth/nm-bluez4-manager.h \
+	src/devices/bluetooth/nm-bluez5-manager.c \
+	src/devices/bluetooth/nm-bluez5-manager.h \
+	src/devices/bluetooth/nm-bt-error.h \
+	src/devices/bluetooth/nm-bt-error.c \
+	\
+	src/devices/bluetooth/nm-device-bt.c \
+	src/devices/bluetooth/nm-device-bt.h
+
+src_devices_bluetooth_libnm_device_plugin_bluetooth_la_CPPFLAGS = \
+	-I${top_srcdir}/src \
+	-I${top_builddir}/src \
+	-I${top_srcdir}/src/devices \
+	-I${top_srcdir}/src/settings \
+	-I${top_srcdir}/src/platform \
+	-I${top_srcdir}/src/devices/wwan \
+	-I${top_builddir}/introspection \
+	-I${top_srcdir}/shared \
+	-I$(top_builddir)/shared \
+	-I${top_builddir}/libnm-core \
+	-I${top_srcdir}/libnm-core \
+	-I${top_srcdir}/src/devices/bluetooth \
+	-I${top_builddir}/src/devices/bluetooth \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	$(GLIB_CFLAGS)
+
+src_devices_bluetooth_libnm_device_plugin_bluetooth_la_LDFLAGS = \
+	-module -avoid-version \
+	-Wl,--version-script="$(top_srcdir)/linker-script-devices.ver"
+
+src_devices_bluetooth_libnm_device_plugin_bluetooth_la_LIBADD = \
+	introspection/libnmdbus.la \
+	src/devices/wwan/libnm-wwan.la \
+	$(GLIB_LIBS) \
+	$(GUDEV_LIBS)
+
+if WITH_BLUEZ5_DUN
+src_devices_bluetooth_libnm_device_plugin_bluetooth_la_CPPFLAGS += $(BLUEZ5_CFLAGS)
+
+src_devices_bluetooth_libnm_device_plugin_bluetooth_la_SOURCES += \
+	src/devices/bluetooth/nm-bluez5-dun.c \
+	src/devices/bluetooth/nm-bluez5-dun.h
+
+src_devices_bluetooth_libnm_device_plugin_bluetooth_la_LIBADD += $(BLUEZ5_LIBS)
+endif
+
+check-local-devices-bluetooth: src/devices/bluetooth/libnm-device-plugin-bluetooth.la
+	$(top_srcdir)/tools/check-exports.sh $(builddir)/src/devices/bluetooth/.libs/libnm-device-plugin-bluetooth.so "$(top_srcdir)/linker-script-devices.ver"
+	$(call check_so_symbols,$(builddir)/src/devices/bluetooth/.libs/libnm-device-plugin-bluetooth.so)
+
+check_local += check-local-devices-bluetooth
+
+endif
+
+###############################################################################
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)

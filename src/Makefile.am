@@ -1,9 +1,5 @@
 SUBDIRS =
 
-if WITH_MODEM_MANAGER_1
-SUBDIRS += devices/bluetooth
-endif
-
 if WITH_WIFI
 SUBDIRS += devices/wifi
 endif
