@@ -1160,8 +1160,6 @@ examples/python/python-networkmanager/Makefile
 examples/ruby/Makefile
 examples/lua/Makefile
 examples/lua/lgi/Makefile
-examples/C/Makefile
-examples/C/qt/Makefile
 examples/dispatcher/Makefile
 ])
 AC_CONFIG_SUBDIRS([libndp])

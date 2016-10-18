@@ -60,3 +60,61 @@ examples_C_glib_monitor_nm_running_gdbus_LDADD = \
 examples_C_glib_monitor_nm_state_gdbus_CPPFLAGS = $(examples_C_glib_cppflags_gdbus)
 examples_C_glib_monitor_nm_state_gdbus_LDADD = \
 	$(GLIB_LIBS)
+
+###############################################################################
+# examples/C/qt
+###############################################################################
+
+if WITH_QT
+
+examples_C_qt_cppflags = \
+	-I${top_srcdir}/libnm-core \
+	-I${top_builddir}/libnm-core \
+	-I${builddir}/examples/C/qt \
+	$(DBUS_CFLAGS) \
+	$(QT_CFLAGS)
+
+check_programs_norun += \
+	examples/C/qt/add-connection-wired \
+	examples/C/qt/list-connections \
+	examples/C/qt/change-ipv4-addresses \
+	examples/C/qt/monitor-nm-running
+
+examples_C_qt_add_connection_wired_SOURCES = examples/C/qt/add-connection-wired.cpp
+examples_C_qt_add_connection_wired_CPPFLAGS = $(examples_C_qt_cppflags)
+examples_C_qt_add_connection_wired_LDADD = \
+	$(DBUS_LIBS) \
+	$(QT_LIBS)
+
+examples_C_qt_list_connections_SOURCES = examples/C/qt/list-connections.cpp
+examples_C_qt_list_connections_CPPFLAGS = $(examples_C_qt_cppflags)
+examples_C_qt_list_connections_LDADD = \
+	$(DBUS_LIBS) \
+	$(QT_LIBS)
+
+examples_C_qt_change_ipv4_addresses_SOURCES = examples/C/qt/change-ipv4-addresses.cpp
+examples_C_qt_change_ipv4_addresses_CPPFLAGS = $(examples_C_qt_cppflags)
+examples_C_qt_change_ipv4_addresses_LDADD = \
+	$(DBUS_LIBS) \
+	$(QT_LIBS)
+
+examples_C_qt_monitor_nm_running_SOURCES = examples/C/qt/monitor-nm-running.cpp
+examples_C_qt_monitor_nm_running_CPPFLAGS = $(examples_C_qt_cppflags)
+examples_C_qt_monitor_nm_running_LDADD = \
+	$(DBUS_LIBS) \
+	$(QT_LIBS)
+
+examples/C/qt/monitor-nm-running.moc: examples/C/qt/monitor-nm-running.cpp
+	$(AM_V_GEN) $(MOC) -i $< -o $@
+
+BUILT_SOURCES += \
+	examples/C/qt/monitor-nm-running.moc
+
+endif
+
+EXTRA_DIST += \
+	examples/C/qt/add-connection-wired.cpp \
+	examples/C/qt/list-connections.cpp \
+	examples/C/qt/change-ipv4-addresses.cpp \
+	examples/C/qt/monitor-nm-running.cpp
+

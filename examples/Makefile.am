@@ -3,5 +3,4 @@ SUBDIRS= \
 	python \
 	ruby \
 	lua \
-	C \
 	dispatcher
