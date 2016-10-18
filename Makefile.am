@@ -13,6 +13,7 @@ AUTOMAKE_OPTIONS = subdir-objects
 noinst_LTLIBRARIES =
 check_LTLIBRARIES =
 noinst_PROGRAMS =
+noinst_LIBRARIES =
 check_PROGRAMS =
 noinst_DATA =
 sbin_PROGRAMS =
@@ -25,6 +26,7 @@ DISTCLEANFILES =
 EXTRA_DIST =
 dist_hook =
 install_data_hook =
+install_exec_hook =
 uninstall_hook =
 TESTS =
 BUILT_SOURCES =
@@ -61,7 +63,6 @@ completiondir = $(datadir)/bash-completion/completions
 
 SUBDIRS = \
 	. \
-	clients \
 	data \
 	po \
 	man \
@@ -3192,6 +3193,203 @@ EXTRA_DIST += \
 	clients/cli/settings-docs.xsl
 
 ###############################################################################
+# clients/tui
+###############################################################################
+
+if BUILD_NMTUI
+
+noinst_LIBRARIES += clients/tui/newt/libnmt-newt.a
+
+clients_tui_newt_libnmt_newt_a_SOURCES = \
+	clients/tui/newt/nmt-newt.h \
+	clients/tui/newt/nmt-newt-types.h \
+	clients/tui/newt/nmt-newt-button.c \
+	clients/tui/newt/nmt-newt-button.h \
+	clients/tui/newt/nmt-newt-button-box.c \
+	clients/tui/newt/nmt-newt-button-box.h \
+	clients/tui/newt/nmt-newt-checkbox.c \
+	clients/tui/newt/nmt-newt-checkbox.h \
+	clients/tui/newt/nmt-newt-component.c \
+	clients/tui/newt/nmt-newt-component.h \
+	clients/tui/newt/nmt-newt-container.c \
+	clients/tui/newt/nmt-newt-container.h \
+	clients/tui/newt/nmt-newt-entry.c \
+	clients/tui/newt/nmt-newt-entry.h \
+	clients/tui/newt/nmt-newt-entry-numeric.c \
+	clients/tui/newt/nmt-newt-entry-numeric.h \
+	clients/tui/newt/nmt-newt-form.c \
+	clients/tui/newt/nmt-newt-form.h \
+	clients/tui/newt/nmt-newt-grid.c \
+	clients/tui/newt/nmt-newt-grid.h \
+	clients/tui/newt/nmt-newt-hacks.c \
+	clients/tui/newt/nmt-newt-hacks.h \
+	clients/tui/newt/nmt-newt-label.c \
+	clients/tui/newt/nmt-newt-label.h \
+	clients/tui/newt/nmt-newt-listbox.c \
+	clients/tui/newt/nmt-newt-listbox.h \
+	clients/tui/newt/nmt-newt-popup.c \
+	clients/tui/newt/nmt-newt-popup.h \
+	clients/tui/newt/nmt-newt-section.c \
+	clients/tui/newt/nmt-newt-section.h \
+	clients/tui/newt/nmt-newt-separator.c \
+	clients/tui/newt/nmt-newt-separator.h \
+	clients/tui/newt/nmt-newt-stack.c \
+	clients/tui/newt/nmt-newt-stack.h \
+	clients/tui/newt/nmt-newt-textbox.c \
+	clients/tui/newt/nmt-newt-textbox.h \
+	clients/tui/newt/nmt-newt-toggle-button.c \
+	clients/tui/newt/nmt-newt-toggle-button.h \
+	clients/tui/newt/nmt-newt-utils.c \
+	clients/tui/newt/nmt-newt-utils.h \
+	clients/tui/newt/nmt-newt-widget.c \
+	clients/tui/newt/nmt-newt-widget.h \
+	$(NULL)
+
+clients_tui_newt_libnmt_newt_a_CPPFLAGS = \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-DG_LOG_DOMAIN=\""nmtui"\" \
+	$(GLIB_CFLAGS) \
+	$(NEWT_CFLAGS) \
+	$(NULL)
+
+bin_PROGRAMS += clients/tui/nmtui
+
+clients_tui_nmtui_SOURCES = \
+	clients/tui/nmtui.c \
+	clients/tui/nmtui.h \
+	clients/tui/nmtui-connect.c \
+	clients/tui/nmtui-connect.h \
+	clients/tui/nmtui-edit.c \
+	clients/tui/nmtui-edit.h \
+	clients/tui/nmtui-hostname.c \
+	clients/tui/nmtui-hostname.h \
+	\
+	clients/tui/nm-editor-bindings.c \
+	clients/tui/nm-editor-bindings.h \
+	clients/tui/nm-editor-utils.c \
+	clients/tui/nm-editor-utils.h \
+	\
+	clients/tui/nmt-address-list.c \
+	clients/tui/nmt-address-list.h \
+	clients/tui/nmt-connect-connection-list.c \
+	clients/tui/nmt-connect-connection-list.h \
+	clients/tui/nmt-device-entry.c \
+	clients/tui/nmt-device-entry.h \
+	clients/tui/nmt-edit-connection-list.c \
+	clients/tui/nmt-edit-connection-list.h \
+	clients/tui/nmt-editor-grid.c \
+	clients/tui/nmt-editor-grid.h \
+	clients/tui/nmt-editor-page.c \
+	clients/tui/nmt-editor-page.h \
+	clients/tui/nmt-editor-page-device.c \
+	clients/tui/nmt-editor-page-device.h \
+	clients/tui/nmt-editor-section.c \
+	clients/tui/nmt-editor-section.h \
+	clients/tui/nmt-editor.c \
+	clients/tui/nmt-editor.h \
+	clients/tui/nmt-ip-entry.c \
+	clients/tui/nmt-ip-entry.h \
+	clients/tui/nmt-mac-entry.c \
+	clients/tui/nmt-mac-entry.h \
+	clients/tui/nmt-mtu-entry.c \
+	clients/tui/nmt-mtu-entry.h \
+	clients/tui/nmt-page-bond.c \
+	clients/tui/nmt-page-bond.h \
+	clients/tui/nmt-page-bridge.c \
+	clients/tui/nmt-page-bridge.h \
+	clients/tui/nmt-page-bridge-port.c \
+	clients/tui/nmt-page-bridge-port.h \
+	clients/tui/nmt-page-dsl.c \
+	clients/tui/nmt-page-dsl.h \
+	clients/tui/nmt-page-ethernet.c \
+	clients/tui/nmt-page-ethernet.h \
+	clients/tui/nmt-page-infiniband.c \
+	clients/tui/nmt-page-infiniband.h \
+	clients/tui/nmt-page-ip4.c \
+	clients/tui/nmt-page-ip4.h \
+	clients/tui/nmt-page-ip6.c \
+	clients/tui/nmt-page-ip6.h \
+	clients/tui/nmt-page-ppp.c \
+	clients/tui/nmt-page-ppp.h \
+	clients/tui/nmt-page-team.c \
+	clients/tui/nmt-page-team.h \
+	clients/tui/nmt-page-team-port.c \
+	clients/tui/nmt-page-team-port.h \
+	clients/tui/nmt-page-vlan.c \
+	clients/tui/nmt-page-vlan.h \
+	clients/tui/nmt-page-wifi.c \
+	clients/tui/nmt-page-wifi.h \
+	clients/tui/nmt-password-dialog.c \
+	clients/tui/nmt-password-dialog.h \
+	clients/tui/nmt-password-fields.c \
+	clients/tui/nmt-password-fields.h \
+	clients/tui/nmt-route-editor.c \
+	clients/tui/nmt-route-editor.h \
+	clients/tui/nmt-route-entry.c \
+	clients/tui/nmt-route-entry.h \
+	clients/tui/nmt-route-table.c \
+	clients/tui/nmt-route-table.h \
+	clients/tui/nmt-slave-list.c \
+	clients/tui/nmt-slave-list.h \
+	clients/tui/nmt-utils.c \
+	clients/tui/nmt-utils.h \
+	clients/tui/nmt-widget-list.c \
+	clients/tui/nmt-widget-list.h \
+	clients/common/nm-secret-agent-simple.c \
+	clients/common/nm-secret-agent-simple.h \
+	clients/common/nm-vpn-helpers.c \
+	clients/common/nm-vpn-helpers.h \
+	$(NULL)
+
+clients_tui_nmtui_CPPFLAGS = \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-I$(top_srcdir)/libnm \
+	-I$(top_builddir)/libnm \
+	-I$(srcdir)/clients/tui/newt \
+	-I$(top_srcdir)/clients/common \
+	$(GLIB_CFLAGS) \
+	$(NEWT_CFLAGS) \
+	$(GUDEV_CFLAGS) \
+	-DG_LOG_DOMAIN=\""nmtui"\" \
+	-DLOCALEDIR=\""$(localedir)"\" \
+	$(NULL)
+
+clients_tui_nmtui_LDFLAGS = \
+	-Wl,--version-script="$(top_srcdir)/linker-script-binary.ver"
+
+clients_tui_nmtui_LDADD = \
+	libnm/libnm.la \
+	clients/tui/newt/libnmt-newt.a \
+	$(GUDEV_LIBS) \
+	$(NEWT_LIBS) \
+	$(GLIB_LIBS) \
+	$(NULL)
+
+nmtui_links = nmtui-edit nmtui-connect nmtui-hostname
+
+install-exec-hook-nmtui:
+	for link in $(nmtui_links); do \
+		$(LN_S) -f nmtui "$(DESTDIR)$(bindir)/$$link"; \
+	done
+
+install_exec_hook += install-exec-hook-nmtui
+
+uninstall-hook-nmtui:
+	for link in $(nmtui_links); do \
+		rm -f "$(DESTDIR)$(bindir)/$$link"; \
+	done
+
+uninstall_hook += uninstall-hook-nmtui
+
+endif
+
+###############################################################################
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)
@@ -3281,6 +3479,8 @@ check-local: $(check_local)
 dist-hook: $(dist_hook)
 
 ###############################################################################
+
+install-exec-hook: $(install_exec_hook)
 
 install-data-hook: $(install_data_hook)
 	$(mkinstalldirs) -m 0755 $(DESTDIR)$(rundir)
