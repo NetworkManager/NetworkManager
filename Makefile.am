@@ -2557,6 +2557,28 @@ check_local += check-local-devices-team
 endif
 
 ###############################################################################
+# src/dnsmasq-manager/tests
+###############################################################################
+
+check_programs += src/dnsmasq-manager/tests/test-dnsmasq-utils
+
+src_dnsmasq_manager_tests_test_dnsmasq_utils_CPPFLAGS = \
+	-I$(top_srcdir)/shared \
+	-I${top_builddir}/shared \
+	-I${top_srcdir}/libnm-core \
+	-I${top_builddir}/libnm-core \
+	-I$(top_srcdir)/src/dnsmasq-manager \
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/platform \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	$(GLIB_CFLAGS) \
+	-DTESTDIR="\"$(abs_srcdir)\""
+
+src_dnsmasq_manager_tests_test_dnsmasq_utils_LDADD = \
+	src/libNetworkManager.la
+
+###############################################################################
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)
