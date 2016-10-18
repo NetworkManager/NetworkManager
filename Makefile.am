@@ -57,7 +57,6 @@ dbusactivationdir = $(datadir)/dbus-1/system-services
 
 SUBDIRS = \
 	. \
-	dispatcher \
 	clients \
 	data \
 	po \
@@ -2952,8 +2951,7 @@ EXTRA_DIST += \
 libexec_PROGRAMS += dispatcher/nm-dispatcher
 
 noinst_LTLIBRARIES += \
-	dispatcher/libnm-dispatcher-core.la \
-	dispatcher/libnmdbus-dispatcher.la
+	dispatcher/libnm-dispatcher-core.la
 
 dispatcher_cppflags = \
 	-I${top_srcdir}/shared \
@@ -2968,11 +2966,9 @@ dispatcher_cppflags = \
 	-DLIBEXECDIR=\"$(libexecdir)\"
 
 
-nodist_dispatcher_libnmdbus_dispatcher_la_SOURCES = \
-	dispatcher/nmdbus-dispatcher.c \
-	dispatcher/nmdbus-dispatcher.h
-
-dispatcher_libnmdbus_dispatcher_la_CPPFLAGS = $(filter-out -DGLIB_VERSION_MAX_ALLOWED%,$(dispatcher_cppflags))
+dispatcher_nmdbus_dispatcher_sources = \
+	dispatcher/nmdbus-dispatcher.h \
+	dispatcher/nmdbus-dispatcher.c
 
 dispatcher/nmdbus-dispatcher.h: dispatcher/nm-dispatcher.xml
 	$(AM_V_GEN) gdbus-codegen \
@@ -2983,7 +2979,7 @@ dispatcher/nmdbus-dispatcher.h: dispatcher/nm-dispatcher.xml
 
 dispatcher/nmdbus-dispatcher.c: dispatcher/nmdbus-dispatcher.h
 
-BUILT_SOURCES += $(nodist_dispatcher_libnmdbus_dispatcher_la_SOURCES)
+BUILT_SOURCES += $(dispatcher_nmdbus_dispatcher_sources)
 
 
 dispatcher_libnm_dispatcher_core_la_SOURCES = \
@@ -2999,10 +2995,10 @@ dispatcher_libnm_dispatcher_core_la_LIBADD = \
 
 
 dispatcher_nm_dispatcher_SOURCES = \
-	dispatcher/nmdbus-dispatcher.h \
-	dispatcher/nmdbus-dispatcher.c \
 	shared/nm-dispatcher-api.h \
 	dispatcher/nm-dispatcher.c
+
+nodist_dispatcher_nm_dispatcher_SOURCES = $(dispatcher_nmdbus_dispatcher_sources)
 
 dispatcher_nm_dispatcher_CPPFLAGS = $(dispatcher_cppflags)
 
@@ -3012,7 +3008,6 @@ dispatcher_nm_dispatcher_LDFLAGS = \
 dispatcher_nm_dispatcher_LDADD = \
 	libnm/libnm.la \
 	dispatcher/libnm-dispatcher-core.la \
-	dispatcher/libnmdbus-dispatcher.la \
 	$(GLIB_LIBS)
 
 dispatcher/org.freedesktop.nm_dispatcher.service: $(srcdir)/dispatcher/org.freedesktop.nm_dispatcher.service.in
@@ -3042,9 +3037,39 @@ dbusservice_DATA += dispatcher/nm-dispatcher.conf
 
 EXTRA_DIST += \
 	dispatcher/nm-dispatcher.conf \
-	dispatcher/org.freedesktop.nm_dispatcher.service \
 	dispatcher/org.freedesktop.nm_dispatcher.service.in \
 	dispatcher/nm-dispatcher.xml
+
+###############################################################################
+# dispatcher/tests
+###############################################################################
+
+check_programs += dispatcher/tests/test-dispatcher-envp
+
+dispatcher_tests_test_dispatcher_envp_CPPFLAGS = \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-I$(top_srcdir)/dispatcher \
+	-I$(top_builddir)/dispatcher \
+	-DNETWORKMANAGER_COMPILATION \
+	-DSRCDIR=\"$(abs_srcdir)/dispatcher/tests\" \
+	$(GLIB_CFLAGS)
+
+dispatcher_tests_test_dispatcher_envp_LDADD = \
+	libnm/libnm.la \
+	dispatcher/libnm-dispatcher-core.la \
+	$(GLIB_LIBS)
+
+EXTRA_DIST += \
+	dispatcher/tests/dispatcher-connectivity-full \
+	dispatcher/tests/dispatcher-connectivity-unknown \
+	dispatcher/tests/dispatcher-down \
+	dispatcher/tests/dispatcher-external \
+	dispatcher/tests/dispatcher-up \
+	dispatcher/tests/dispatcher-vpn-down \
+	dispatcher/tests/dispatcher-vpn-up
 
 ###############################################################################
 
