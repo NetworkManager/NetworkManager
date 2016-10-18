@@ -2510,6 +2510,53 @@ src_devices_wifi_tests_test_general_LDADD = src/libNetworkManager.la
 endif
 
 ###############################################################################
+# src/devices/team
+###############################################################################
+
+if WITH_TEAMDCTL
+
+pkglib_LTLIBRARIES += src/devices/team/libnm-device-plugin-team.la
+
+src_devices_team_libnm_device_plugin_team_la_SOURCES = \
+	src/devices/team/nm-team-factory.c \
+	src/devices/team/nm-device-team.c \
+	src/devices/team/nm-device-team.h
+
+src_devices_team_libnm_device_plugin_team_la_CPPFLAGS = \
+	-I${top_srcdir}/src \
+	-I${top_builddir}/src \
+	-I${top_srcdir}/src/devices \
+	-I${top_srcdir}/src/platform \
+	-I${top_srcdir}/src/settings \
+	-I${top_builddir}/introspection \
+	-I${top_srcdir}/shared \
+	-I$(top_builddir)/shared \
+	-I${top_builddir}/libnm-core \
+	-I${top_srcdir}/libnm-core \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	${LIBTEAMDCTL_CFLAGS} \
+	$(GLIB_CFLAGS)
+
+src_devices_team_libnm_device_plugin_team_la_LDFLAGS = \
+	-module -avoid-version \
+	-Wl,--version-script="$(top_srcdir)/linker-script-devices.ver"
+
+src_devices_team_libnm_device_plugin_team_la_LIBADD = \
+	introspection/libnmdbus.la \
+	$(LIBTEAMDCTL_LIBS) \
+	$(GLIB_LIBS) \
+	$(GUDEV_LIBS)
+
+check-local-devices-team: src/devices/team/libnm-device-plugin-team.la
+	$(top_srcdir)/tools/check-exports.sh $(builddir)/src/devices/team/.libs/libnm-device-plugin-team.so "$(top_srcdir)/linker-script-devices.ver"
+	$(call check_so_symbols,$(builddir)/src/devices/team/.libs/libnm-device-plugin-team.so)
+
+check_local += check-local-devices-team
+
+endif
+
+###############################################################################
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)
