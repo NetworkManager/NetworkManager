@@ -21,12 +21,15 @@ bin_PROGRAMS =
 libexec_PROGRAMS =
 lib_LTLIBRARIES =
 pkglib_LTLIBRARIES =
+service_DATA =
+examples_DATA =
 CLEANFILES =
 DISTCLEANFILES =
 EXTRA_DIST =
 dist_hook =
 install_data_hook =
 install_exec_hook =
+install_exec_local =
 uninstall_hook =
 TESTS =
 BUILT_SOURCES =
@@ -54,16 +57,19 @@ pkgconfig_DATA =
 pppd_plugindir = $(PPPD_PLUGIN_DIR)
 pppd_plugin_LTLIBRARIES =
 
+examplesdir = $(docdir)/examples
+
 rundir=$(runstatedir)/NetworkManager
 statedir=$(localstatedir)/lib/NetworkManager
 
 dbusactivationdir = $(datadir)/dbus-1/system-services
 
+servicedir = $(datadir)/dbus-1/system-services
+
 completiondir = $(datadir)/bash-completion/completions
 
 SUBDIRS = \
 	. \
-	data \
 	po \
 	man \
 	examples
@@ -3390,6 +3396,82 @@ uninstall_hook += uninstall-hook-nmtui
 endif
 
 ###############################################################################
+# data
+###############################################################################
+
+data_edit = sed \
+	-e 's|@bindir[@]|$(bindir)|g' \
+	-e 's|@sbindir[@]|$(sbindir)|g' \
+	-e 's|@sysconfdir[@]|$(sysconfdir)|g' \
+	-e 's|@localstatedir[@]|$(localstatedir)|g' \
+	-e 's|@libexecdir[@]|$(libexecdir)|g' \
+	-e 's|@DISTRO_NETWORK_SERVICE[@]|$(DISTRO_NETWORK_SERVICE)|g'
+
+if HAVE_SYSTEMD
+
+systemdsystemunit_DATA = \
+	data/NetworkManager.service \
+	data/NetworkManager-wait-online.service \
+	data/NetworkManager-dispatcher.service
+
+data/NetworkManager.service: $(srcdir)/data/NetworkManager.service.in
+	$(data_edit) $< >$@
+
+if HAVE_SYSTEMD_200
+data/NetworkManager-wait-online.service: $(srcdir)/data/NetworkManager-wait-online.service.in
+	$(data_edit) $< >$@
+else
+data/NetworkManager-wait-online.service: $(srcdir)/data/NetworkManager-wait-online-systemd-pre200.service.in
+	$(data_edit) $< >$@
+endif
+
+data/NetworkManager-dispatcher.service: $(srcdir)/data/NetworkManager-dispatcher.service.in
+	$(data_edit) $< >$@
+
+data/org.freedesktop.NetworkManager.service: $(srcdir)/data/org.freedesktop.NetworkManager.service.in
+	$(data_edit) $< >$@
+
+service_DATA += data/org.freedesktop.NetworkManager.service
+
+install-exec-local-data:
+	install -d $(DESTDIR)$(systemdsystemunitdir)/network-online.target.wants
+	ln -sf $(systemdsystemunitdir)/NetworkManager-wait-online.service $(DESTDIR)$(systemdsystemunitdir)/network-online.target.wants
+
+install_exec_local += install-exec-local-data
+
+endif
+
+examples_DATA += data/server.conf
+
+if WITH_UDEV_DIR
+udevrulesdir = $(UDEV_DIR)/rules.d
+udevrules_DATA = \
+	data/84-nm-drivers.rules \
+	data/85-nm-unmanaged.rules
+endif
+
+data/server.conf: $(srcdir)/data/server.conf.in
+	mkdir -p data/
+	$(data_edit) $< >$@
+
+EXTRA_DIST += \
+	data/NetworkManager.service.in \
+	data/NetworkManager-wait-online.service.in \
+	data/NetworkManager-wait-online-systemd-pre200.service.in \
+	data/NetworkManager-dispatcher.service.in \
+	data/org.freedesktop.NetworkManager.service.in \
+	data/84-nm-drivers.rules \
+	data/85-nm-unmanaged.rules \
+	data/server.conf.in
+
+CLEANFILES += \
+	data/NetworkManager.service \
+	data/NetworkManager-wait-online.service \
+	data/NetworkManager-dispatcher.service \
+	data/org.freedesktop.NetworkManager.service \
+	data/server.conf
+
+###############################################################################
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)
@@ -3481,6 +3563,8 @@ dist-hook: $(dist_hook)
 ###############################################################################
 
 install-exec-hook: $(install_exec_hook)
+
+install-exec-local: $(install_exec_local)
 
 install-data-hook: $(install_data_hook)
 	$(mkinstalldirs) -m 0755 $(DESTDIR)$(rundir)

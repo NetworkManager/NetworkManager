@@ -1146,7 +1146,6 @@ man/Makefile
 man/common.ent
 po/Makefile.in
 policy/org.freedesktop.NetworkManager.policy.in
-data/Makefile
 docs/Makefile
 docs/api/Makefile
 docs/api/version.xml
