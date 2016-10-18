@@ -23,6 +23,7 @@ CLEANFILES =
 DISTCLEANFILES =
 EXTRA_DIST =
 dist_hook =
+install_data_hook =
 TESTS =
 BUILT_SOURCES =
 GLIB_GENERATED =
@@ -31,6 +32,7 @@ check_programs_norun =
 check_ltlibraries =
 check_local =
 dbusservice_DATA =
+dbusactivation_DATA =
 
 INTROSPECTION_GIRS =
 INTROSPECTION_SCANNER_ARGS =
@@ -50,6 +52,8 @@ pppd_plugin_LTLIBRARIES =
 
 rundir=$(runstatedir)/NetworkManager
 statedir=$(localstatedir)/lib/NetworkManager
+
+dbusactivationdir = $(datadir)/dbus-1/system-services
 
 SUBDIRS = \
 	. \
@@ -2942,6 +2946,107 @@ EXTRA_DIST += \
 	src/tests/test-secret-agent.py
 
 ###############################################################################
+# dispatcher
+###############################################################################
+
+libexec_PROGRAMS += dispatcher/nm-dispatcher
+
+noinst_LTLIBRARIES += \
+	dispatcher/libnm-dispatcher-core.la \
+	dispatcher/libnmdbus-dispatcher.la
+
+dispatcher_cppflags = \
+	-I${top_srcdir}/shared \
+	-I${top_builddir}/shared \
+	-I${top_srcdir}/libnm-core \
+	-I${top_builddir}/libnm-core \
+	-I${top_srcdir}/dispatcher \
+	$(GLIB_CFLAGS) \
+	-DNETWORKMANAGER_COMPILATION \
+	-DNMCONFDIR=\"$(nmconfdir)\" \
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
+	-DLIBEXECDIR=\"$(libexecdir)\"
+
+
+nodist_dispatcher_libnmdbus_dispatcher_la_SOURCES = \
+	dispatcher/nmdbus-dispatcher.c \
+	dispatcher/nmdbus-dispatcher.h
+
+dispatcher_libnmdbus_dispatcher_la_CPPFLAGS = $(filter-out -DGLIB_VERSION_MAX_ALLOWED%,$(dispatcher_cppflags))
+
+dispatcher/nmdbus-dispatcher.h: dispatcher/nm-dispatcher.xml
+	$(AM_V_GEN) gdbus-codegen \
+		--generate-c-code $(basename $@) \
+		--c-namespace NMDBus \
+		--interface-prefix org.freedesktop \
+		$<
+
+dispatcher/nmdbus-dispatcher.c: dispatcher/nmdbus-dispatcher.h
+
+BUILT_SOURCES += $(nodist_dispatcher_libnmdbus_dispatcher_la_SOURCES)
+
+
+dispatcher_libnm_dispatcher_core_la_SOURCES = \
+	shared/nm-dispatcher-api.h \
+	dispatcher/nm-dispatcher-utils.c \
+	dispatcher/nm-dispatcher-utils.h
+
+dispatcher_libnm_dispatcher_core_la_CPPFLAGS = $(dispatcher_cppflags)
+
+dispatcher_libnm_dispatcher_core_la_LIBADD = \
+	libnm/libnm.la \
+	$(GLIB_LIBS)
+
+
+dispatcher_nm_dispatcher_SOURCES = \
+	dispatcher/nmdbus-dispatcher.h \
+	dispatcher/nmdbus-dispatcher.c \
+	shared/nm-dispatcher-api.h \
+	dispatcher/nm-dispatcher.c
+
+dispatcher_nm_dispatcher_CPPFLAGS = $(dispatcher_cppflags)
+
+dispatcher_nm_dispatcher_LDFLAGS = \
+	-Wl,--version-script="$(top_srcdir)/linker-script-binary.ver"
+
+dispatcher_nm_dispatcher_LDADD = \
+	libnm/libnm.la \
+	dispatcher/libnm-dispatcher-core.la \
+	dispatcher/libnmdbus-dispatcher.la \
+	$(GLIB_LIBS)
+
+dispatcher/org.freedesktop.nm_dispatcher.service: $(srcdir)/dispatcher/org.freedesktop.nm_dispatcher.service.in
+	@sed \
+	-e 's|@sbindir[@]|$(sbindir)|g' \
+	-e 's|@sysconfdir[@]|$(sysconfdir)|g' \
+	-e 's|@localstatedir[@]|$(localstatedir)|g' \
+	-e 's|@libexecdir[@]|$(libexecdir)|g' \
+	$< >$@
+
+dbusactivation_DATA += dispatcher/org.freedesktop.nm_dispatcher.service
+CLEANFILES += dispatcher/org.freedesktop.nm_dispatcher.service
+
+
+dispatcherdir=$(sysconfdir)/NetworkManager/dispatcher.d
+
+install-data-hook-dispatcher:
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(dispatcherdir)
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(dispatcherdir)/pre-down.d
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(dispatcherdir)/pre-up.d
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(dispatcherdir)/no-wait.d
+
+install_data_hook += install-data-hook-dispatcher
+
+
+dbusservice_DATA += dispatcher/nm-dispatcher.conf
+
+EXTRA_DIST += \
+	dispatcher/nm-dispatcher.conf \
+	dispatcher/org.freedesktop.nm_dispatcher.service \
+	dispatcher/org.freedesktop.nm_dispatcher.service.in \
+	dispatcher/nm-dispatcher.xml
+
+###############################################################################
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)
@@ -3032,7 +3137,7 @@ dist-hook: $(dist_hook)
 
 ###############################################################################
 
-install-data-hook:
+install-data-hook: $(install_data_hook)
 	$(mkinstalldirs) -m 0755 $(DESTDIR)$(rundir)
 	$(mkinstalldirs) -m 0700 $(DESTDIR)$(statedir)
 	$(mkinstalldirs) -m 0755 $(DESTDIR)$(pkglibdir)
