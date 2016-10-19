@@ -298,6 +298,7 @@ typedef struct _NMDevicePrivate {
 	bool            ignore_carrier;
 	gulong          ignore_carrier_id;
 	guint32         mtu;
+	guint32         ip_mtu;
 	bool            up;   /* IFF_UP */
 
 	/* Generic DHCP stuff */
@@ -815,12 +816,16 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 		}
 	}
 
+
 	/* We don't care about any saved values from the old iface */
 	g_hash_table_remove_all (priv->ip6_saved_properties);
 
 	/* Emit change notification */
-	if (g_strcmp0 (old_ip_iface, priv->ip_iface))
+	if (g_strcmp0 (old_ip_iface, priv->ip_iface)) {
+		if (priv->ip_ifindex)
+			priv->ip_mtu = nm_platform_link_get_mtu (NM_PLATFORM_GET, priv->ip_ifindex);
 		_notify (self, PROP_IP_IFACE);
+	}
 	g_free (old_ip_iface);
 }
 
@@ -2066,6 +2071,9 @@ device_ip_link_changed (NMDevice *self)
 		return G_SOURCE_REMOVE;
 
 	_stats_update_counters_from_pllink (self, pllink);
+
+	if (priv->ip_mtu != pllink->mtu)
+		priv->ip_mtu = pllink->mtu;
 
 	if (pllink->name[0] && g_strcmp0 (priv->ip_iface, pllink->name)) {
 		_LOGI (LOGD_DEVICE, "interface index %d renamed ip_iface (%d) from '%s' to '%s'",
@@ -6367,35 +6375,60 @@ linklocal6_start (NMDevice *self)
 static void nm_device_ipv6_set_mtu (NMDevice *self, guint32 mtu);
 
 static void
+set_ip_mtu (NMDevice *self, guint32 mtu)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->ip_ifindex)
+		priv->ip_mtu = mtu;
+	else
+		priv->mtu = mtu;
+}
+
+static guint32
+get_ip_mtu (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->ip_ifindex)
+		return priv->ip_mtu;
+	else
+		return priv->mtu;
+}
+
+static void
 nm_device_set_mtu (NMDevice *self, guint32 mtu)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ifindex = nm_device_get_ip_ifindex (self);
+	guint32 ip_mtu;
 
 	if (mtu)
-		priv->mtu = mtu;
+		set_ip_mtu (self, mtu);
 
 	/* Ensure the IPv6 MTU is still alright. */
 	if (priv->ip6_mtu)
 		nm_device_ipv6_set_mtu (self, priv->ip6_mtu);
 
-	if (priv->mtu && priv->mtu != nm_platform_link_get_mtu (NM_PLATFORM_GET, ifindex))
-		nm_platform_link_set_mtu (NM_PLATFORM_GET, ifindex, priv->mtu);
+	ip_mtu = get_ip_mtu (self);
+	if (ip_mtu && ip_mtu != nm_platform_link_get_mtu (NM_PLATFORM_GET, ifindex))
+		nm_platform_link_set_mtu (NM_PLATFORM_GET, ifindex, ip_mtu);
 }
 
 static void
 nm_device_ipv6_set_mtu (NMDevice *self, guint32 mtu)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	guint32 plat_mtu = nm_device_ipv6_sysctl_get_int32 (self, "mtu", priv->mtu);
+	guint32 ip_mtu = get_ip_mtu (self);
+	guint32 plat_mtu = nm_device_ipv6_sysctl_get_int32 (self, "mtu", ip_mtu);
 	char val[16];
 
 	priv->ip6_mtu = mtu ?: plat_mtu;
 
-	if (priv->ip6_mtu && priv->mtu && priv->mtu < priv->ip6_mtu) {
+	if (priv->ip6_mtu && ip_mtu && ip_mtu < priv->ip6_mtu) {
 		_LOGI (LOGD_DEVICE | LOGD_IP6, "Lowering IPv6 MTU (%d) to match device MTU (%d)",
-		       priv->ip6_mtu, priv->mtu);
-		priv->ip6_mtu = priv->mtu;
+		       priv->ip6_mtu, ip_mtu);
+		priv->ip6_mtu = ip_mtu;
 	}
 
 	if (priv->ip6_mtu && priv->ip6_mtu < 1280) {
@@ -6404,9 +6437,9 @@ nm_device_ipv6_set_mtu (NMDevice *self, guint32 mtu)
 		priv->ip6_mtu = 1280;
 	}
 
-	if (priv->ip6_mtu && priv->mtu && priv->mtu < priv->ip6_mtu) {
+	if (priv->ip6_mtu && ip_mtu && ip_mtu < priv->ip6_mtu) {
 		_LOGI (LOGD_DEVICE | LOGD_IP6, "Raising device MTU (%d) to match IPv6 MTU (%d)",
-		       priv->mtu, priv->ip6_mtu);
+		       ip_mtu, priv->ip6_mtu);
 		nm_device_set_mtu (self, priv->ip6_mtu);
 	}
 
