@@ -143,7 +143,7 @@ software_add (NMLinkType link_type, const char *name)
 				/* when NM is running in the background, it will mess with addrgenmode which might cause additional signals. */
 				accept_signals (parent_changed, 0, 1);
 			} else
-				accept_signal (parent_changed);
+				accept_signals (parent_changed, 1, 2);
 			free_signal (parent_changed);
 
 			return nm_platform_link_vlan_add (NM_PLATFORM_GET, name, parent_ifindex, VLAN_ID, 0, NULL) == NM_PLATFORM_ERROR_SUCCESS;
