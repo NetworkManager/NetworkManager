@@ -60,12 +60,12 @@ my $start_tag = "---$plugin---\\s*\$";
 my $end_tag   = '---end---';
 
 # get source files to scan for documentation comments (nm-setting-<something>.c)
-my $file = "$srcdir/Makefile.libnm-core";
+my $file = "$srcdir/Makefile.am";
 open my $fh, '<', $file or die "Can't open $file: $!";
 while (my $line = <$fh>) {
-  chomp $line;
-  my @strings = $line =~ /\/(nm-setting-[^.]*\.c)(?:\s|$)/g;
-  push @source_files, @strings
+  if ($line =~ /^\t*(libnm-core\/nm-setting-[^.]*\.c)( \\)?$/g) {
+    push @source_files, $1;
+  }
 }
 close $fh;
 

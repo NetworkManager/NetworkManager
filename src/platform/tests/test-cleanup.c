@@ -106,6 +106,8 @@ test_cleanup_internal (void)
 	g_array_unref (routes6);
 }
 
+NMTstpSetupFunc const _nmtstp_setup_platform_func = SETUP;
+
 void
 _nmtstp_init_tests (int *argc, char ***argv)
 {

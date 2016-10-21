@@ -28,7 +28,7 @@
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
-#include "nm-enum-types.h"
+#include "nm-src-enum-types.h"
 #include "nm-settings.h"
 #include "nm-act-request.h"
 #include "nm-ip4-config.h"

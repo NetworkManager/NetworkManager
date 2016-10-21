@@ -37,7 +37,7 @@
 #include "nm-core-internal.h"
 
 #include "nm-core-utils.h"
-#include "nm-enum-types.h"
+#include "nm-src-enum-types.h"
 #include "nm-platform-utils.h"
 #include "nmp-object.h"
 #include "nmp-netns.h"

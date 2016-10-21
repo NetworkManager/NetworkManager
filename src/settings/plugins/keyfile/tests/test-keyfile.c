@@ -204,7 +204,8 @@ test_read_valid_wired_connection (void)
 	                       "*ipv6.routes*semicolon at the end*routes1*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*ipv6.route*semicolon at the end*route6*");
-	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Wired_Connection", NULL);
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_Wired_Connection", &error);
+	g_assert_no_error (error);
 	g_test_assert_expected_messages ();
 	g_assert (connection);
 
@@ -2577,6 +2578,9 @@ int main (int argc, char **argv)
 {
 	_nm_utils_set_testing (NM_UTILS_TEST_NO_KEYFILE_OWNER_CHECK);
 	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
+
+	if (g_mkdir_with_parents (TEST_SCRATCH_DIR, 0755) != 0)
+		g_error ("failure to create test directory \"%s\": %s", TEST_SCRATCH_DIR, g_strerror (errno));
 
 	/* The tests */
 	g_test_add_func ("/keyfile/test_read_valid_wired_connection", test_read_valid_wired_connection);

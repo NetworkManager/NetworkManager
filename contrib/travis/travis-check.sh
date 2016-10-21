@@ -8,7 +8,7 @@ print_test_logs() {
     echo ">>>> PRINT TEST LOGS $1 (done)"
 }
 
-if ! make check -k ; then
+if ! make check -j 4 -k ; then
 
     print_test_logs "first-test"
 

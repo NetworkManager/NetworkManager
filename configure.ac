@@ -1043,6 +1043,7 @@ dnl Vala bindings
 dnl -------------------------
 
 VAPIGEN_CHECK(0.17.1.24)
+AC_CONFIG_COMMANDS([vapi], [$MKDIR_P vapi])
 
 # Tests, utilities and documentation
 AC_ARG_ENABLE(tests, AS_HELP_STRING([--enable-tests=root|yes|no], [Build NetworkManager tests (default: yes)]))
@@ -1069,10 +1070,7 @@ else
 		with_valgrind_suppressions='$(top_srcdir)/valgrind.suppressions'
 	fi
 fi
-AS_IF([test "$with_valgrind" != "no"],
-	AC_SUBST(VALGRIND_RULES, 'LOG_COMPILER = "$(top_srcdir)/tools/run-test-valgrind.sh" --called-from-make "$(LIBTOOL)" "$(with_valgrind)" '"$with_valgrind_suppressions"),
-	AC_SUBST(VALGRIND_RULES, []))
-AM_CONDITIONAL(WITH_VALGRIND, test "${with_valgrind}" != "no")
+AC_SUBST(NM_LOG_COMPILER, 'LOG_COMPILER = "$(top_srcdir)/tools/run-nm-test.sh" --called-from-make "$(LIBTOOL)" "$(with_valgrind)" "'"$with_valgrind_suppressions"'" --launch-dbus=auto'),
 
 GTK_DOC_CHECK(1.0)
 
@@ -1137,66 +1135,13 @@ AM_CONDITIONAL(SETTING_DOCS_AVAILABLE, test "$build_setting_docs" = "yes" -o "$h
 AC_CONFIG_FILES([
 Makefile
 shared/nm-version-macros.h
-src/Makefile
-src/tests/Makefile
-src/tests/config/Makefile
-src/dhcp-manager/Makefile
-src/dhcp-manager/tests/Makefile
-src/dnsmasq-manager/tests/Makefile
-src/supplicant-manager/tests/Makefile
-src/supplicant-manager/tests/certs/Makefile
-src/ppp-manager/Makefile
-src/settings/plugins/Makefile
-src/settings/plugins/ifupdown/Makefile
-src/settings/plugins/ifupdown/tests/Makefile
-src/settings/plugins/ifnet/Makefile
-src/settings/plugins/ifnet/tests/Makefile
-src/settings/plugins/ifcfg-rh/Makefile
-src/settings/plugins/ifcfg-rh/tests/Makefile
-src/settings/plugins/ifcfg-rh/tests/network-scripts/Makefile
-src/settings/plugins/ibft/Makefile
-src/settings/plugins/ibft/tests/Makefile
-src/settings/plugins/keyfile/Makefile
-src/settings/plugins/keyfile/tests/Makefile
-src/settings/plugins/keyfile/tests/keyfiles/Makefile
-src/platform/Makefile
-src/platform/tests/Makefile
-src/rdisc/Makefile
-src/rdisc/tests/Makefile
-src/devices/Makefile
-src/devices/tests/Makefile
-src/devices/adsl/Makefile
-src/devices/bluetooth/Makefile
-src/devices/team/Makefile
-src/devices/wifi/Makefile
-src/devices/wifi/tests/Makefile
-src/devices/wwan/Makefile
-libnm-core/Makefile
-libnm-core/tests/Makefile
 libnm/libnm.pc
-libnm/Makefile
-libnm/tests/Makefile
 libnm-util/libnm-util.pc
-libnm-util/Makefile
-libnm-util/tests/Makefile
 libnm-glib/libnm-glib.pc
 libnm-glib/libnm-glib-vpn.pc
-libnm-glib/Makefile
-libnm-glib/tests/Makefile
-dispatcher/Makefile
-dispatcher/tests/Makefile
-tools/Makefile
-clients/Makefile
-clients/cli/Makefile
-clients/tui/Makefile
-clients/tui/newt/Makefile
-introspection/Makefile
-man/Makefile
 man/common.ent
 po/Makefile.in
 policy/org.freedesktop.NetworkManager.policy.in
-data/Makefile
-docs/Makefile
 docs/api/Makefile
 docs/api/version.xml
 docs/libnm-glib/Makefile
@@ -1206,20 +1151,6 @@ docs/libnm-util/version.xml
 docs/libnm/Makefile
 docs/libnm/version.xml
 NetworkManager.pc
-examples/Makefile
-examples/shell/Makefile
-examples/python/Makefile
-examples/python/dbus/Makefile
-examples/python/gi/Makefile
-examples/python/python-networkmanager/Makefile
-examples/ruby/Makefile
-examples/lua/Makefile
-examples/lua/lgi/Makefile
-examples/C/Makefile
-examples/C/glib/Makefile
-examples/C/qt/Makefile
-examples/dispatcher/Makefile
-vapi/Makefile
 ])
 AC_CONFIG_SUBDIRS([libndp])
 AC_OUTPUT

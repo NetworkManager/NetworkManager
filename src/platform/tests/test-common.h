@@ -207,8 +207,12 @@ void nmtstp_link_del (NMPlatform *platform,
                       int ifindex,
                       const char *name);
 
+typedef void (*NMTstpSetupFunc) (void);
+extern NMTstpSetupFunc const _nmtstp_setup_platform_func;
+
+void nmtstp_setup_platform (void);
+
 /*****************************************************************************/
 
 void _nmtstp_init_tests (int *argc, char ***argv);
 void _nmtstp_setup_tests (void);
-

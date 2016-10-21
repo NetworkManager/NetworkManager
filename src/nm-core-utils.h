@@ -363,6 +363,16 @@ typedef enum { /*< skip >*/
 	NM_UTILS_STABLE_TYPE_STABLE_ID = 1,
 } NMUtilsStableType;
 
+
+gboolean nm_utils_ipv6_addr_set_stable_privacy_impl (guint8 stable_type,
+                                                     struct in6_addr *addr,
+                                                     const char *ifname,
+                                                     const char *network_id,
+                                                     guint dad_counter,
+                                                     guint8 *secret_key,
+                                                     gsize key_len,
+                                                     GError **error);
+
 gboolean nm_utils_ipv6_addr_set_stable_privacy (NMUtilsStableType id_type,
                                                 struct in6_addr *addr,
                                                 const char *ifname,
@@ -372,6 +382,13 @@ gboolean nm_utils_ipv6_addr_set_stable_privacy (NMUtilsStableType id_type,
 
 char *nm_utils_hw_addr_gen_random_eth (const char *current_mac_address,
                                        const char *generate_mac_address_mask);
+char *nm_utils_hw_addr_gen_stable_eth_impl (NMUtilsStableType stable_type,
+                                            const char *stable_id,
+                                            const guint8 *secret_key,
+                                            gsize key_len,
+                                            const char *ifname,
+                                            const char *current_mac_address,
+                                            const char *generate_mac_address_mask);
 char *nm_utils_hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
                                        const char *stable_id,
                                        const char *ifname,

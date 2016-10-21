@@ -53,7 +53,7 @@
 #include "nm-dhcp6-config.h"
 #include "nm-rfkill-manager.h"
 #include "nm-firewall-manager.h"
-#include "nm-enum-types.h"
+#include "nm-src-enum-types.h"
 #include "nm-settings-connection.h"
 #include "nm-settings.h"
 #include "nm-auth-utils.h"
