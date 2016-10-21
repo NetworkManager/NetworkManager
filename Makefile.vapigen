@@ -55,7 +55,8 @@ $(1): $$($(_vapi_name)_GIR)
 	  $(foreach _vapi_dir_name,$(if $($(_vapi_name)_VAPIDIRS),$($(_vapi_name)_VAPIDIRS),$(VAPIGEN_VAPIDIRS)),--vapidir $(_vapi_dir_name)) \
 	  $(foreach _vapi_gir_dir,$(if $($(_vapi_name)_GIRDIRS),$($(_vapi_name)_GIRDIRS),$(VAPIGEN_GIRDIRS)),--girdir $(_vapi_gir_dir)) \
 	  $(foreach _vapi_dep_name,$(if $($(_vapi_name)_DEPS),$($(_vapi_name)_DEPS),$(VAPIGEN_DEPS)),--pkg $(_vapi_dep_name)) \
-	  $$($(_vapi_name)_FILES)
+	  $$($(_vapi_name)_FILES) && \
+	touch $(1)
 endef
 
 $(foreach vapi,$(VAPIGEN_VAPIS),$(eval $(call vapigen,$(vapi))))
