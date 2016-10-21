@@ -376,6 +376,8 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	/* Interface must be down to set bond options */
 	nm_device_take_down (dev, TRUE);
 	ret = apply_bonding_config (dev);
+	if (ret)
+		ret = nm_device_hw_addr_set_cloned (dev, nm_device_get_applied_connection (dev), FALSE);
 	nm_device_bring_up (dev, TRUE, &no_firmware);
 
 	return ret;
@@ -436,8 +438,14 @@ release_slave (NMDevice *device,
 {
 	NMDeviceBond *self = NM_DEVICE_BOND (device);
 	gboolean success, no_firmware = FALSE;
+	gs_free char *address = NULL;
 
 	if (configure) {
+		/* When the last slave is released the bond MAC will be set to a random
+		 * value by kernel; remember the current one and restore it afterwards.
+		 */
+		address = g_strdup (nm_device_get_hw_address (device));
+
 		success = nm_platform_link_release (NM_PLATFORM_GET,
 		                                    nm_device_get_ip_ifindex (device),
 		                                    nm_device_get_ip_ifindex (slave));
@@ -449,6 +457,10 @@ release_slave (NMDevice *device,
 			_LOGW (LOGD_BOND, "failed to release bond slave %s",
 			       nm_device_get_ip_iface (slave));
 		}
+
+		nm_platform_process_events (NM_PLATFORM_GET);
+		if (nm_device_update_hw_address (device))
+			nm_device_hw_addr_set (device, address, "restore", FALSE);
 
 		/* Kernel bonding code "closes" the slave when releasing it, (which clears
 		 * IFF_UP), so we must bring it back up here to ensure carrier changes and
