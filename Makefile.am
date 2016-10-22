@@ -1133,7 +1133,6 @@ src_libNetworkManagerBase_la_LIBADD = \
 src_libNetworkManager_la_CPPFLAGS = $(src_cppflags)
 
 src_libNetworkManager_la_SOURCES_enum = \
-	src/nm-auth-subject.h \
 	src/platform/nm-platform.h \
 	src/nm-types.h \
 	$(NULL)
@@ -1319,6 +1318,7 @@ src_libNetworkManager_la_SOURCES = \
 	src/nm-auth-manager.c \
 	src/nm-auth-manager.h \
 	src/nm-auth-subject.c \
+	src/nm-auth-subject.h \
 	src/nm-auth-utils.c \
 	src/nm-auth-utils.h \
 	src/nm-manager.c \
