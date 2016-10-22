@@ -439,6 +439,23 @@ libnminclude_HEADERS += $(libnm_core_libnm_core_headers)
 
 ###############################################################################
 
+dflt_cppflags_libnm_core = \
+	-I${srcdir}/shared \
+	-I${builddir}/shared \
+	-I${srcdir}/libnm-core \
+	-I${builddir}/libnm-core \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(JANSSON_CFLAGS)
+
+if WITH_GNUTLS
+dflt_cppflags_libnm_core += $(GNUTLS_CFLAGS)
+endif
+
+if WITH_NSS
+dflt_cppflags_libnm_core += $(NSS_CFLAGS)
+endif
+
 noinst_LTLIBRARIES += libnm-core/libnm-core.la
 
 GLIB_GENERATED += \
@@ -448,20 +465,14 @@ GLIB_GENERATED += \
 nm_core_enum_types_sources = $(filter-out %nm-core-enum-types.h,$(libnm_core_libnm_core_headers))
 
 libnm_core_libnm_core_la_CPPFLAGS = \
-	-I${srcdir}/shared \
-	-I${builddir}/shared \
-	-I${srcdir}/libnm-core \
-	-I${builddir}/libnm-core \
+	$(dflt_cppflags_libnm_core) \
 	-DG_LOG_DOMAIN=\""libnm"\" \
 	-DLOCALEDIR=\"$(datadir)/locale\" \
 	-DNMCONFDIR=\"$(nmconfdir)\" \
 	-DNMLIBDIR=\"$(nmlibdir)\" \
 	-DNMPLUGINDIR=\"$(pkglibdir)\" \
 	-DLIBEXECDIR=\"$(libexecdir)\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB \
-	$(GLIB_CFLAGS) \
-	$(CODE_COVERAGE_CFLAGS) \
-	$(JANSSON_CFLAGS)
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB
 
 libnm_core_libnm_core_la_SOURCES = \
 	$(libnm_core_libnm_core_sources) \
@@ -476,13 +487,11 @@ libnm_core_libnm_core_la_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS)
 
 if WITH_GNUTLS
-libnm_core_libnm_core_la_CPPFLAGS += $(GNUTLS_CFLAGS)
 libnm_core_libnm_core_la_SOURCES += libnm-core/crypto_gnutls.c
 libnm_core_libnm_core_la_LIBADD += $(GNUTLS_LIBS)
 endif
 
 if WITH_NSS
-libnm_core_libnm_core_la_CPPFLAGS += $(NSS_CFLAGS)
 libnm_core_libnm_core_la_SOURCES += libnm-core/crypto_nss.c
 libnm_core_libnm_core_la_LIBADD += $(NSS_LIBS)
 endif
@@ -519,14 +528,9 @@ GLIB_GENERATED += \
 nm_core_tests_enum_types_sources = libnm-core/tests/test-general-enums.h
 
 libnm_core_tests_cppflags = \
-	-I${srcdir}/shared \
-	-I${builddir}/shared \
-	-I$(srcdir)/libnm-core \
-	-I$(builddir)/libnm-core \
+	$(dflt_cppflags_libnm_core) \
 	-I$(srcdir)/libnm-core/tests \
 	-I$(builddir)/libnm-core/tests \
-	-DNETWORKMANAGER_COMPILATION \
-	$(GLIB_CFLAGS) \
 	-DTEST_CERT_DIR=\"$(abs_srcdir)/libnm-core/tests/certs\"
 
 libnm_core_tests_test_compare_CPPFLAGS = $(libnm_core_tests_cppflags)
@@ -647,19 +651,14 @@ nm_enum_types_MKENUMS_H_FLAGS = --identifier-prefix NM --fhead '\#include <nm-co
 nm_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\n'
 
 libnm_libnm_la_CPPFLAGS = \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
+	$(dflt_cppflags_libnm_core) \
 	-I$(builddir)/introspection \
-	-I$(srcdir)/libnm-core \
-	-I$(builddir)/libnm-core \
 	-I$(srcdir)/libnm \
 	-I$(builddir)/libnm \
+	$(GUDEV_CFLAGS) \
 	-DG_LOG_DOMAIN=\""libnm"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB \
-	$(GLIB_CFLAGS) \
-	$(GUDEV_CFLAGS) \
-	-DNMRUNDIR=\"$(nmrundir)\" \
-	$(CODE_COVERAGE_CFLAGS)
+	-DNMRUNDIR=\"$(nmrundir)\"
 
 libnm_libnm_la_private_headers = \
 	libnm/nm-dbus-helpers.h \
@@ -830,15 +829,11 @@ libnm_tests_programs = \
 check_programs += $(libnm_tests_programs)
 
 libnm_tests_cppflags = \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
+	$(dflt_cppflags_libnm_core) \
 	-I$(top_srcdir)/libnm \
 	-I$(top_builddir)/libnm \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB \
-	-DTEST_NM_SERVICE=\"$(abs_top_srcdir)/tools/test-networkmanager-service.py\" \
-	$(GLIB_CFLAGS)
+	-DTEST_NM_SERVICE=\"$(abs_top_srcdir)/tools/test-networkmanager-service.py\"
 
 libnm_tests_ldadd = \
 	$(top_builddir)/libnm/libnm.la \
@@ -894,15 +889,21 @@ libnm_tests_libnm_vpn_plugin_utils_test_la_LIBADD = \
 ###############################################################################
 
 src_cppflags = \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
+	$(dflt_cppflags_libnm_core) \
 	-I$(top_builddir)/introspection \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src \
-	\
-	 $(foreach d,$(sort $(dir $(src_libNetworkManager_la_SOURCES))),-I$(srcdir)/$d) \
+	-I$(top_srcdir)/src/devices \
+	-I$(top_srcdir)/src/dhcp-manager \
+	-I$(top_srcdir)/src/dns-manager \
+	-I$(top_srcdir)/src/dnsmasq-manager \
+	-I$(top_srcdir)/src/platform \
+	-I$(top_srcdir)/src/platform/wifi \
+	-I$(top_srcdir)/src/ppp-manager \
+	-I$(top_srcdir)/src/rdisc \
+	-I$(top_srcdir)/src/settings \
+	-I$(top_srcdir)/src/supplicant-manager \
+	-I$(top_srcdir)/src/vpn-manager \
 	\
 	-DPREFIX=\"$(prefix)\" \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
@@ -928,7 +929,6 @@ src_cppflags = \
 	-DDHCPCD_PATH=\"$(DHCPCD_PATH)\" \
 	-DPPPD_PLUGIN_DIR=\"$(PPPD_PLUGIN_DIR)\" \
 	\
-	$(GLIB_CFLAGS) \
 	$(GUDEV_CFLAGS) \
 	$(LIBNL_CFLAGS) \
 	$(LIBNDP_CFLAGS) \
@@ -937,7 +937,6 @@ src_cppflags = \
 	$(LIBAUDIT_CFLAGS) \
 	$(SYSTEMD_LOGIN_CFLAGS) \
 	$(SYSTEMD_JOURNAL_CFLAGS) \
-	$(CODE_COVERAGE_CFLAGS) \
 	\
 	$(NULL)
 
@@ -970,10 +969,12 @@ src_libsystemd_nm_la_cppflags = \
 	-I$(top_srcdir)/src/systemd/src/shared/ \
 	-I$(top_srcdir)/src/systemd/src/libsystemd-network/ \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD \
-	$(GLIB_CFLAGS)
+	$(GLIB_CFLAGS) \
+	$(CODE_COVERAGE_CFLAGS)
 
 src_libsystemd_nm_la_libadd = \
-	$(GLIB_LIBS)
+	$(GLIB_LIBS) \
+	$(CODE_COVERAGE_LDFLAGS)
 
 src_libsystemd_nm_la_SOURCES = \
 	src/systemd/nm-sd.c \
@@ -1131,7 +1132,14 @@ src_libNetworkManagerBase_la_LIBADD = \
 
 src_libNetworkManager_la_CPPFLAGS = $(src_cppflags)
 
+src_libNetworkManager_la_SOURCES_enum = \
+	src/nm-auth-subject.h \
+	src/platform/nm-platform.h \
+	src/nm-types.h \
+	$(NULL)
+
 src_libNetworkManager_la_SOURCES = \
+	$(src_libNetworkManager_la_SOURCES_enum) \
 	\
 	src/nm-checkpoint-manager.c \
 	src/nm-checkpoint-manager.h \
@@ -1213,7 +1221,6 @@ src_libNetworkManager_la_SOURCES = \
 	src/platform/nm-platform-utils.c \
 	src/platform/nm-platform-utils.h \
 	src/platform/nm-platform.c \
-	src/platform/nm-platform.h \
 	src/platform/nm-linux-platform.c \
 	src/platform/nm-linux-platform.h \
 	src/platform/wifi/wifi-utils-nl80211.c \
@@ -1312,7 +1319,6 @@ src_libNetworkManager_la_SOURCES = \
 	src/nm-auth-manager.c \
 	src/nm-auth-manager.h \
 	src/nm-auth-subject.c \
-	src/nm-auth-subject.h \
 	src/nm-auth-utils.c \
 	src/nm-auth-utils.h \
 	src/nm-manager.c \
@@ -1329,7 +1335,6 @@ src_libNetworkManager_la_SOURCES = \
 	src/nm-session-monitor.c \
 	src/nm-sleep-monitor.c \
 	src/nm-sleep-monitor.h \
-	src/nm-types.h \
 	src/NetworkManagerUtils.c \
 	src/NetworkManagerUtils.h \
 	$(NULL)
@@ -1354,11 +1359,8 @@ src_libNetworkManager_la_LIBADD = \
 	$(DL_LIBS) \
 	$(LIBM) \
 	$(SELINUX_LIBS) \
-	$(LIBAUDIT_LIBS)
-
-if WITH_LIBSOUP
-src_libNetworkManager_la_LIBADD += $(LIBSOUP_LIBS)
-endif
+	$(LIBAUDIT_LIBS) \
+	$(LIBSOUP_LIBS)
 
 ###############################################################################
 
@@ -1484,13 +1486,7 @@ GLIB_GENERATED += \
 	src/nm-src-enum-types.c
 nm_src_enum_types_MKENUMS_H_FLAGS = --identifier-prefix NM --fhead '\#include <nm-core-enum-types.h>\n'
 nm_src_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\n'
-nm_src_enum_types_sources = $(filter-out \
-                              %/nm-device-private.h \
-                              %/nm-rdisc-private.h \
-                              %/wifi-utils-private.h \
-                              %/nm-dhcp-client-logging.h \
-                              %/nm-device-logging.h \
-                              , $(src_libNetworkManager_la_SOURCES))
+nm_src_enum_types_sources = $(src_libNetworkManager_la_SOURCES_enum)
 
 ###############################################################################
 
@@ -2982,7 +2978,6 @@ dispatcher_cppflags = \
 	-I${top_srcdir}/dispatcher \
 	-I${top_builddir}/dispatcher \
 	$(GLIB_CFLAGS) \
-	-DNETWORKMANAGER_COMPILATION \
 	-DNMCONFDIR=\"$(nmconfdir)\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DLIBEXECDIR=\"$(libexecdir)\"
@@ -3075,7 +3070,6 @@ dispatcher_tests_test_dispatcher_envp_CPPFLAGS = \
 	-I$(top_builddir)/libnm-core \
 	-I$(top_srcdir)/dispatcher \
 	-I$(top_builddir)/dispatcher \
-	-DNETWORKMANAGER_COMPILATION \
 	-DSRCDIR=\"$(abs_srcdir)/dispatcher/tests\" \
 	$(GLIB_CFLAGS)
 
