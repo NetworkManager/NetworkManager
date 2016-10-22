@@ -106,7 +106,7 @@ devtimeout_ready (gpointer user_data)
 }
 
 static void
-link_changed (NMPlatform *platform, NMPObjectType *obj_type, int ifindex, const NMPlatformLink *link,
+link_changed (NMPlatform *platform, NMPObjectType obj_type, int ifindex, const NMPlatformLink *link,
               NMPlatformSignalChangeType change_type,
               NMConnection *self)
 {
@@ -117,7 +117,6 @@ link_changed (NMPlatform *platform, NMPObjectType *obj_type, int ifindex, const 
 	if (g_strcmp0 (link->name, ifname) != 0)
 		return;
 
-	/* Shouldn't happen, but... */
 	if (change_type == NM_PLATFORM_SIGNAL_REMOVED)
 		return;
 
