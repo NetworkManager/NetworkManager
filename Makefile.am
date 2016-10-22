@@ -877,10 +877,13 @@ libnm_tests_libnm_vpn_plugin_utils_test_la_SOURCES = \
      shared/nm-utils/nm-vpn-plugin-utils.h
 
 libnm_tests_libnm_vpn_plugin_utils_test_la_CFLAGS = \
-    $(GLIB_CFLAGS) \
     -I$(srcdir)/shared \
+    -I$(builddir)/shared \
     -I$(srcdir)/libnm-core \
-    -I$(srcdir)/libnm
+    -I$(builddir)/libnm-core \
+    -I$(srcdir)/libnm \
+    -I$(builddir)/libnm \
+    $(GLIB_CFLAGS)
 
 libnm_tests_libnm_vpn_plugin_utils_test_la_LIBADD = \
     $(GLIB_LIBS)
