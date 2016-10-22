@@ -116,10 +116,11 @@ devtimeout_ready (gpointer user_data)
 }
 
 static void
-link_changed (NMPlatform *platform, NMPObjectType obj_type, int ifindex, const NMPlatformLink *link,
-              NMPlatformSignalChangeType change_type,
+link_changed (NMPlatform *platform, int obj_type_i, int ifindex, const NMPlatformLink *link,
+              int change_type_i,
               NMConnection *self)
 {
+	const NMPlatformSignalChangeType change_type = change_type_i;
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE ((NMIfcfgConnection *) self);
 	const char *ifname;
 

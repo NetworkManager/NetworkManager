@@ -30,7 +30,6 @@
 #include "nm-setting-vpn.h"
 #include "nm-vpn-dbus-interface.h"
 #include "nm-core-internal.h"
-#include "nm-src-enum-types.h"
 
 typedef struct {
 	GSList *plugins;

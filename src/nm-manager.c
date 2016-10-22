@@ -43,7 +43,6 @@
 #include "nm-auth-manager.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-factory.h"
-#include "nm-src-enum-types.h"
 #include "nm-sleep-monitor.h"
 #include "nm-connectivity.h"
 #include "nm-policy.h"
@@ -2225,12 +2224,13 @@ out:
 
 static void
 platform_link_cb (NMPlatform *platform,
-                  NMPObjectType obj_type,
+                  int obj_type_i,
                   int ifindex,
                   NMPlatformLink *plink,
-                  NMPlatformSignalChangeType change_type,
+                  int change_type_i,
                   gpointer user_data)
 {
+	const NMPlatformSignalChangeType change_type = change_type_i;
 	PlatformLinkCbData *data;
 
 	switch (change_type) {

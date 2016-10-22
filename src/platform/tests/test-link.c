@@ -157,12 +157,15 @@ software_add (NMLinkType link_type, const char *name)
 
 static void
 test_link_changed_signal_cb (NMPlatform *platform,
-                             NMPObjectType obj_type,
+                             int obj_type_i,
                              int ifindex,
                              const NMPlatformIP4Route *route,
-                             NMPlatformSignalChangeType change_type,
+                             int change_type_i,
                              gboolean *p_test_link_changed_signal_arg)
 {
+	const NMPObjectType obj_type = obj_type_i;
+	const NMPlatformSignalChangeType change_type = change_type_i;
+
 	/* test invocation of platform signals with multiple listeners
 	 * connected to the signal. Platform signals have enum-typed
 	 * arguments and there seem to be an issue with invoking such

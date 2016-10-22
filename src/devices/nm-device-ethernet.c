@@ -40,7 +40,6 @@
 #include "nm-supplicant-config.h"
 #include "ppp-manager/nm-ppp-manager.h"
 #include "ppp-manager/nm-ppp-status.h"
-#include "nm-src-enum-types.h"
 #include "nm-platform.h"
 #include "nm-platform-utils.h"
 #include "nm-dcb.h"

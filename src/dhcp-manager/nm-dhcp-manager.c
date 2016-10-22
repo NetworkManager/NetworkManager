@@ -67,22 +67,6 @@ const char *nm_dhcp_helper_path = LIBEXECDIR "/nm-dhcp-helper";
 
 /*****************************************************************************/
 
-const NMDhcpClientFactory *const _factories[] = {
-
-	/* the order here matters, as we will try the plugins in this order to find
-	 * the first available plugin. */
-
-#ifndef NM_DHCP_INTERNAL_ONLY
-#if WITH_DHCLIENT
-	&_nm_dhcp_client_factory_dhclient,
-#endif
-#if WITH_DHCPCD
-	&_nm_dhcp_client_factory_dhcpcd,
-#endif
-#endif
-	&_nm_dhcp_client_factory_internal,
-};
-
 static const NMDhcpClientFactory *
 _client_factory_find_by_name (const char *name)
 {
@@ -90,10 +74,10 @@ _client_factory_find_by_name (const char *name)
 
 	g_return_val_if_fail (name, NULL);
 
-	for (i = 0; i < G_N_ELEMENTS (_factories); i++) {
-		const NMDhcpClientFactory *f = _factories[i];
+	for (i = 0; i < G_N_ELEMENTS (_nm_dhcp_manager_factories); i++) {
+		const NMDhcpClientFactory *f = _nm_dhcp_manager_factories[i];
 
-		if (nm_streq (f->name, name))
+		if (f && nm_streq (f->name, name))
 			return f;
 	}
 	return NULL;
@@ -349,8 +333,11 @@ nm_dhcp_manager_init (NMDhcpManager *self)
 	int i;
 	const NMDhcpClientFactory *client_factory = NULL;
 
-	for (i = 0; i < G_N_ELEMENTS (_factories); i++) {
-		const NMDhcpClientFactory *f = _factories[i];
+	for (i = 0; i < G_N_ELEMENTS (_nm_dhcp_manager_factories); i++) {
+		const NMDhcpClientFactory *f = _nm_dhcp_manager_factories[i];
+
+		if (!f)
+			continue;
 
 		nm_log_dbg (LOGD_DHCP, "dhcp-init: enabled DHCP client '%s' (%s)%s",
 		            f->name, g_type_name (f->get_type ()),
@@ -370,8 +357,8 @@ nm_dhcp_manager_init (NMDhcpManager *self)
 				nm_log_warn (LOGD_DHCP, "dhcp-init: DHCP client '%s' not available", client);
 		}
 		if (!client_factory) {
-			for (i = 0; i < G_N_ELEMENTS (_factories); i++) {
-				client_factory = _client_factory_available (_factories[i]);
+			for (i = 0; i < G_N_ELEMENTS (_nm_dhcp_manager_factories); i++) {
+				client_factory = _client_factory_available (_nm_dhcp_manager_factories[i]);
 				if (client_factory)
 					break;
 			}

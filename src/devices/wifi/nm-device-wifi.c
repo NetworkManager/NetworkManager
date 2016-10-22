@@ -48,7 +48,6 @@
 #include "nm-auth-utils.h"
 #include "nm-settings-connection.h"
 #include "nm-settings.h"
-#include "nm-src-enum-types.h"
 #include "nm-core-internal.h"
 #include "nm-config.h"
 

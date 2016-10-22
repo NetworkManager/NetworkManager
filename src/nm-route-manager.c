@@ -1027,12 +1027,13 @@ _ip4_device_routes_idle_cb (IP4DeviceRoutePurgeEntry *entry)
 
 static void
 _ip4_device_routes_ip4_route_changed (NMPlatform *platform,
-                                      NMPObjectType obj_type,
+                                      int obj_type_i,
                                       int ifindex,
                                       const NMPlatformIP4Route *route,
-                                      NMPlatformSignalChangeType change_type,
+                                      int change_type_i,
                                       NMRouteManager *self)
 {
+	const NMPlatformSignalChangeType change_type = change_type_i;
 	NMRouteManagerPrivate *priv;
 	NMPObject obj_needle;
 	IP4DeviceRoutePurgeEntry *entry;

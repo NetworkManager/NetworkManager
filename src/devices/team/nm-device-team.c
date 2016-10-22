@@ -32,7 +32,6 @@
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-platform.h"
-#include "nm-src-enum-types.h"
 #include "nm-core-internal.h"
 #include "nm-ip4-config.h"
 #include "nm-dbus-compat.h"

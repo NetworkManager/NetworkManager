@@ -439,6 +439,23 @@ libnminclude_HEADERS += $(libnm_core_libnm_core_headers)
 
 ###############################################################################
 
+dflt_cppflags_libnm_core = \
+	-I${srcdir}/shared \
+	-I${builddir}/shared \
+	-I${srcdir}/libnm-core \
+	-I${builddir}/libnm-core \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(JANSSON_CFLAGS)
+
+if WITH_GNUTLS
+dflt_cppflags_libnm_core += $(GNUTLS_CFLAGS)
+endif
+
+if WITH_NSS
+dflt_cppflags_libnm_core += $(NSS_CFLAGS)
+endif
+
 noinst_LTLIBRARIES += libnm-core/libnm-core.la
 
 GLIB_GENERATED += \
@@ -448,20 +465,14 @@ GLIB_GENERATED += \
 nm_core_enum_types_sources = $(filter-out %nm-core-enum-types.h,$(libnm_core_libnm_core_headers))
 
 libnm_core_libnm_core_la_CPPFLAGS = \
-	-I${srcdir}/shared \
-	-I${builddir}/shared \
-	-I${srcdir}/libnm-core \
-	-I${builddir}/libnm-core \
+	$(dflt_cppflags_libnm_core) \
 	-DG_LOG_DOMAIN=\""libnm"\" \
 	-DLOCALEDIR=\"$(datadir)/locale\" \
 	-DNMCONFDIR=\"$(nmconfdir)\" \
 	-DNMLIBDIR=\"$(nmlibdir)\" \
 	-DNMPLUGINDIR=\"$(pkglibdir)\" \
 	-DLIBEXECDIR=\"$(libexecdir)\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB \
-	$(GLIB_CFLAGS) \
-	$(CODE_COVERAGE_CFLAGS) \
-	$(JANSSON_CFLAGS)
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB
 
 libnm_core_libnm_core_la_SOURCES = \
 	$(libnm_core_libnm_core_sources) \
@@ -476,13 +487,11 @@ libnm_core_libnm_core_la_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS)
 
 if WITH_GNUTLS
-libnm_core_libnm_core_la_CPPFLAGS += $(GNUTLS_CFLAGS)
 libnm_core_libnm_core_la_SOURCES += libnm-core/crypto_gnutls.c
 libnm_core_libnm_core_la_LIBADD += $(GNUTLS_LIBS)
 endif
 
 if WITH_NSS
-libnm_core_libnm_core_la_CPPFLAGS += $(NSS_CFLAGS)
 libnm_core_libnm_core_la_SOURCES += libnm-core/crypto_nss.c
 libnm_core_libnm_core_la_LIBADD += $(NSS_LIBS)
 endif
@@ -519,14 +528,9 @@ GLIB_GENERATED += \
 nm_core_tests_enum_types_sources = libnm-core/tests/test-general-enums.h
 
 libnm_core_tests_cppflags = \
-	-I${srcdir}/shared \
-	-I${builddir}/shared \
-	-I$(srcdir)/libnm-core \
-	-I$(builddir)/libnm-core \
+	$(dflt_cppflags_libnm_core) \
 	-I$(srcdir)/libnm-core/tests \
 	-I$(builddir)/libnm-core/tests \
-	-DNETWORKMANAGER_COMPILATION \
-	$(GLIB_CFLAGS) \
 	-DTEST_CERT_DIR=\"$(abs_srcdir)/libnm-core/tests/certs\"
 
 libnm_core_tests_test_compare_CPPFLAGS = $(libnm_core_tests_cppflags)
@@ -647,19 +651,14 @@ nm_enum_types_MKENUMS_H_FLAGS = --identifier-prefix NM --fhead '\#include <nm-co
 nm_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\n'
 
 libnm_libnm_la_CPPFLAGS = \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
+	$(dflt_cppflags_libnm_core) \
 	-I$(builddir)/introspection \
-	-I$(srcdir)/libnm-core \
-	-I$(builddir)/libnm-core \
 	-I$(srcdir)/libnm \
 	-I$(builddir)/libnm \
+	$(GUDEV_CFLAGS) \
 	-DG_LOG_DOMAIN=\""libnm"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB \
-	$(GLIB_CFLAGS) \
-	$(GUDEV_CFLAGS) \
-	-DNMRUNDIR=\"$(nmrundir)\" \
-	$(CODE_COVERAGE_CFLAGS)
+	-DNMRUNDIR=\"$(nmrundir)\"
 
 libnm_libnm_la_private_headers = \
 	libnm/nm-dbus-helpers.h \
@@ -830,15 +829,11 @@ libnm_tests_programs = \
 check_programs += $(libnm_tests_programs)
 
 libnm_tests_cppflags = \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
+	$(dflt_cppflags_libnm_core) \
 	-I$(top_srcdir)/libnm \
 	-I$(top_builddir)/libnm \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB \
-	-DTEST_NM_SERVICE=\"$(abs_top_srcdir)/tools/test-networkmanager-service.py\" \
-	$(GLIB_CFLAGS)
+	-DTEST_NM_SERVICE=\"$(abs_top_srcdir)/tools/test-networkmanager-service.py\"
 
 libnm_tests_ldadd = \
 	$(top_builddir)/libnm/libnm.la \
@@ -894,15 +889,21 @@ libnm_tests_libnm_vpn_plugin_utils_test_la_LIBADD = \
 ###############################################################################
 
 src_cppflags = \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
+	$(dflt_cppflags_libnm_core) \
 	-I$(top_builddir)/introspection \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src \
-	\
-	 $(foreach d,$(sort $(dir $(src_libNetworkManager_la_SOURCES))),-I$(srcdir)/$d) \
+	-I$(top_srcdir)/src/devices \
+	-I$(top_srcdir)/src/dhcp-manager \
+	-I$(top_srcdir)/src/dns-manager \
+	-I$(top_srcdir)/src/dnsmasq-manager \
+	-I$(top_srcdir)/src/platform \
+	-I$(top_srcdir)/src/platform/wifi \
+	-I$(top_srcdir)/src/ppp-manager \
+	-I$(top_srcdir)/src/rdisc \
+	-I$(top_srcdir)/src/settings \
+	-I$(top_srcdir)/src/supplicant-manager \
+	-I$(top_srcdir)/src/vpn-manager \
 	\
 	-DPREFIX=\"$(prefix)\" \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
@@ -928,7 +929,6 @@ src_cppflags = \
 	-DDHCPCD_PATH=\"$(DHCPCD_PATH)\" \
 	-DPPPD_PLUGIN_DIR=\"$(PPPD_PLUGIN_DIR)\" \
 	\
-	$(GLIB_CFLAGS) \
 	$(GUDEV_CFLAGS) \
 	$(LIBNL_CFLAGS) \
 	$(LIBNDP_CFLAGS) \
@@ -937,7 +937,6 @@ src_cppflags = \
 	$(LIBAUDIT_CFLAGS) \
 	$(SYSTEMD_LOGIN_CFLAGS) \
 	$(SYSTEMD_JOURNAL_CFLAGS) \
-	$(CODE_COVERAGE_CFLAGS) \
 	\
 	$(NULL)
 
@@ -954,8 +953,6 @@ noinst_LTLIBRARIES += \
 	src/libNetworkManager.la \
 	src/libsystemd-nm.la
 
-check_ltlibraries += src/libNetworkManagerTest.la
-
 ###############################################################################
 
 src_libsystemd_nm_la_cppflags = \
@@ -970,10 +967,12 @@ src_libsystemd_nm_la_cppflags = \
 	-I$(top_srcdir)/src/systemd/src/shared/ \
 	-I$(top_srcdir)/src/systemd/src/libsystemd-network/ \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD \
-	$(GLIB_CFLAGS)
+	$(GLIB_CFLAGS) \
+	$(CODE_COVERAGE_CFLAGS)
 
 src_libsystemd_nm_la_libadd = \
-	$(GLIB_LIBS)
+	$(GLIB_LIBS) \
+	$(CODE_COVERAGE_LDFLAGS)
 
 src_libsystemd_nm_la_SOURCES = \
 	src/systemd/nm-sd.c \
@@ -1119,10 +1118,68 @@ src_libNetworkManagerBase_la_SOURCES = \
 	src/nm-core-utils.c \
 	src/nm-core-utils.h \
 	src/nm-logging.c \
-	src/nm-logging.h
+	src/nm-logging.h \
+	\
+	src/nm-multi-index.c \
+	src/nm-multi-index.h \
+	src/NetworkManagerUtils.c \
+	src/NetworkManagerUtils.h \
+	\
+	src/platform/nmp-netns.c \
+	src/platform/nmp-netns.h \
+	src/platform/nmp-object.c \
+	src/platform/nmp-object.h \
+	src/platform/nm-platform-utils.c \
+	src/platform/nm-platform-utils.h \
+	src/platform/nm-platform.c \
+	src/platform/nm-platform.h \
+	src/platform/nm-linux-platform.c \
+	src/platform/nm-linux-platform.h \
+	src/platform/wifi/wifi-utils-nl80211.c \
+	src/platform/wifi/wifi-utils-nl80211.h \
+	src/platform/wifi/wifi-utils-private.h \
+	src/platform/wifi/wifi-utils.c \
+	src/platform/wifi/wifi-utils.h \
+	\
+	src/rdisc/nm-lndp-rdisc.c \
+	src/rdisc/nm-lndp-rdisc.h \
+	src/rdisc/nm-rdisc.c \
+	src/rdisc/nm-rdisc.h \
+	src/rdisc/nm-rdisc-private.h \
+	\
+	src/nm-exported-object.c \
+	src/nm-exported-object.h \
+	src/nm-ip4-config.c \
+	src/nm-ip4-config.h \
+	src/nm-ip6-config.c \
+	src/nm-ip6-config.h \
+	\
+	src/nm-route-manager.c \
+	src/nm-route-manager.h \
+	\
+	src/dhcp-manager/nm-dhcp-client.c \
+	src/dhcp-manager/nm-dhcp-client.h \
+	src/dhcp-manager/nm-dhcp-client-logging.h \
+	src/dhcp-manager/nm-dhcp-utils.c \
+	src/dhcp-manager/nm-dhcp-utils.h \
+	src/dhcp-manager/nm-dhcp-systemd.c \
+	src/dhcp-manager/nm-dhcp-manager.c \
+	src/dhcp-manager/nm-dhcp-manager.h \
+	\
+	src/main-utils.c \
+	src/main-utils.h \
+	\
+	$(NULL)
+
+if WITH_WEXT
+src_libNetworkManagerBase_la_SOURCES += \
+	src/platform/wifi/wifi-utils-wext.c \
+	src/platform/wifi/wifi-utils-wext.h
+endif
 
 src_libNetworkManagerBase_la_LIBADD = \
-	$(top_builddir)/libnm-core/libnm-core.la \
+	libnm-core/libnm-core.la \
+	introspection/libnmdbus.la \
 	$(GLIB_LIBS) \
 	$(SYSTEMD_JOURNAL_LIBS) \
 	$(NULL)
@@ -1174,16 +1231,8 @@ src_libNetworkManager_la_SOURCES = \
 	src/devices/nm-device-vxlan.c \
 	src/devices/nm-device-vxlan.h \
 	\
-	src/dhcp-manager/nm-dhcp-client.c \
-	src/dhcp-manager/nm-dhcp-client.h \
-	src/dhcp-manager/nm-dhcp-client-logging.h \
-	src/dhcp-manager/nm-dhcp-utils.c \
-	src/dhcp-manager/nm-dhcp-manager.c \
-	src/dhcp-manager/nm-dhcp-manager.h \
-	src/dhcp-manager/nm-dhcp-utils.h \
 	src/dhcp-manager/nm-dhcp-dhclient.c \
 	src/dhcp-manager/nm-dhcp-dhcpcd.c \
-	src/dhcp-manager/nm-dhcp-systemd.c \
 	src/dhcp-manager/nm-dhcp-helper-api.h \
 	src/dhcp-manager/nm-dhcp-listener.c \
 	src/dhcp-manager/nm-dhcp-listener.h \
@@ -1205,28 +1254,6 @@ src_libNetworkManager_la_SOURCES = \
 	src/dnsmasq-manager/nm-dnsmasq-manager.h \
 	src/dnsmasq-manager/nm-dnsmasq-utils.c \
 	src/dnsmasq-manager/nm-dnsmasq-utils.h \
-	\
-	src/platform/nmp-netns.c \
-	src/platform/nmp-netns.h \
-	src/platform/nmp-object.c \
-	src/platform/nmp-object.h \
-	src/platform/nm-platform-utils.c \
-	src/platform/nm-platform-utils.h \
-	src/platform/nm-platform.c \
-	src/platform/nm-platform.h \
-	src/platform/nm-linux-platform.c \
-	src/platform/nm-linux-platform.h \
-	src/platform/wifi/wifi-utils-nl80211.c \
-	src/platform/wifi/wifi-utils-nl80211.h \
-	src/platform/wifi/wifi-utils-private.h \
-	src/platform/wifi/wifi-utils.c \
-	src/platform/wifi/wifi-utils.h \
-	\
-	src/rdisc/nm-lndp-rdisc.c \
-	src/rdisc/nm-lndp-rdisc.h \
-	src/rdisc/nm-rdisc.c \
-	src/rdisc/nm-rdisc.h \
-	src/rdisc/nm-rdisc-private.h \
 	\
 	src/ppp-manager/nm-ppp-manager.c \
 	src/ppp-manager/nm-ppp-manager.h \
@@ -1287,8 +1314,6 @@ src_libNetworkManager_la_SOURCES = \
 	src/nm-connectivity.h \
 	src/nm-dcb.c \
 	src/nm-dcb.h \
-	src/nm-route-manager.c \
-	src/nm-route-manager.h \
 	src/nm-default-route-manager.c \
 	src/nm-default-route-manager.h \
 	src/nm-dhcp4-config.c \
@@ -1297,18 +1322,10 @@ src_libNetworkManager_la_SOURCES = \
 	src/nm-dhcp6-config.h \
 	src/nm-dispatcher.c \
 	src/nm-dispatcher.h \
-	src/nm-src-enum-types.c \
-	src/nm-src-enum-types.h \
-	src/nm-exported-object.c \
-	src/nm-exported-object.h \
 	src/nm-firewall-manager.c \
 	src/nm-firewall-manager.h \
 	src/nm-proxy-config.c \
 	src/nm-proxy-config.h \
-	src/nm-ip4-config.c \
-	src/nm-ip4-config.h \
-	src/nm-ip6-config.c \
-	src/nm-ip6-config.h \
 	src/nm-auth-manager.c \
 	src/nm-auth-manager.h \
 	src/nm-auth-subject.c \
@@ -1317,8 +1334,6 @@ src_libNetworkManager_la_SOURCES = \
 	src/nm-auth-utils.h \
 	src/nm-manager.c \
 	src/nm-manager.h \
-	src/nm-multi-index.c \
-	src/nm-multi-index.h \
 	src/nm-pacrunner-manager.c \
 	src/nm-pacrunner-manager.h \
 	src/nm-policy.c \
@@ -1330,20 +1345,10 @@ src_libNetworkManager_la_SOURCES = \
 	src/nm-sleep-monitor.c \
 	src/nm-sleep-monitor.h \
 	src/nm-types.h \
-	src/NetworkManagerUtils.c \
-	src/NetworkManagerUtils.h \
+	\
 	$(NULL)
 
-if WITH_WEXT
-src_libNetworkManager_la_SOURCES += \
-	src/platform/wifi/wifi-utils-wext.c \
-	src/platform/wifi/wifi-utils-wext.h
-endif
-
-
 src_libNetworkManager_la_LIBADD = \
-	libnm-core/libnm-core.la \
-	introspection/libnmdbus.la \
 	src/libNetworkManagerBase.la \
 	src/libsystemd-nm.la \
 	$(GLIB_LIBS) \
@@ -1354,24 +1359,40 @@ src_libNetworkManager_la_LIBADD = \
 	$(DL_LIBS) \
 	$(LIBM) \
 	$(SELINUX_LIBS) \
-	$(LIBAUDIT_LIBS)
-
-if WITH_LIBSOUP
-src_libNetworkManager_la_LIBADD += $(LIBSOUP_LIBS)
-endif
+	$(LIBAUDIT_LIBS) \
+	$(LIBSOUP_LIBS)
 
 ###############################################################################
 
-src_libNetworkManagerTest_la_CPPFLAGS = $(src_cppflags)
+check_ltlibraries += src/libNetworkManagerTest.la
+
+src_tests_cppflags = \
+	$(src_cppflags) \
+	-I$(top_srcdir)/src/platform/tests
+
+if REQUIRE_ROOT_TESTS
+src_tests_cppflags += -DREQUIRE_ROOT_TESTS=1
+endif
+
+src_tests_cppflags_fake = $(src_tests_cppflags) -DSETUP=nm_fake_platform_setup
+src_tests_cppflags_linux = $(src_tests_cppflags) -DSETUP=nm_linux_platform_setup
+
+src_libNetworkManagerTest_la_CPPFLAGS = $(src_tests_cppflags)
 
 src_libNetworkManagerTest_la_SOURCES = \
 	src/rdisc/nm-fake-rdisc.c \
 	src/rdisc/nm-fake-rdisc.h \
 	src/platform/nm-fake-platform.c \
-	src/platform/nm-fake-platform.h
+	src/platform/nm-fake-platform.h \
+	src/platform/tests/test-common.c \
+	src/platform/tests/test-common.h
 
 src_libNetworkManagerTest_la_LIBADD = \
-	src/libNetworkManager.la
+	src/libNetworkManager.la \
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(GLIB_LIBS) \
+	$(GUDEV_LIBS) \
+	$(LIBNL_LIBS)
 
 ###############################################################################
 
@@ -1381,8 +1402,6 @@ EXTRA_src_NetworkManager_DEPENDENCIES = \
 src_NetworkManager_CPPFLAGS = $(src_cppflags)
 
 src_NetworkManager_SOURCES = \
-	src/main-utils.c \
-	src/main-utils.h \
 	src/main.c
 
 src_NetworkManager_LDADD = \
@@ -1394,77 +1413,12 @@ src_NetworkManager_LDFLAGS = \
 
 ###############################################################################
 
-src_nm_iface_helper_CPPFLAGS = \
-	$(src_cppflags) \
-	-DNM_DHCP_INTERNAL_ONLY
+src_nm_iface_helper_CPPFLAGS = $(src_cppflags)
 
 src_nm_iface_helper_SOURCES = \
-	\
-	src/dhcp-manager/nm-dhcp-client.c \
-	src/dhcp-manager/nm-dhcp-client.h \
-	src/dhcp-manager/nm-dhcp-client-logging.h \
-	src/dhcp-manager/nm-dhcp-utils.c \
-	src/dhcp-manager/nm-dhcp-utils.h \
-	src/dhcp-manager/nm-dhcp-manager.c \
-	src/dhcp-manager/nm-dhcp-manager.h \
-	src/dhcp-manager/nm-dhcp-systemd.c \
-	\
-	src/platform/nmp-netns.c \
-	src/platform/nmp-netns.h \
-	src/platform/nmp-object.c \
-	src/platform/nmp-object.h \
-	src/platform/nm-platform-utils.c \
-	src/platform/nm-platform-utils.h \
-	src/platform/nm-platform.c \
-	src/platform/nm-platform.h \
-	src/platform/nm-linux-platform.c \
-	src/platform/nm-linux-platform.h \
-	src/platform/wifi/wifi-utils-nl80211.c \
-	src/platform/wifi/wifi-utils-nl80211.h \
-	src/platform/wifi/wifi-utils-private.h \
-	src/platform/wifi/wifi-utils.c \
-	src/platform/wifi/wifi-utils.h \
-	\
-	src/nm-pacrunner-manager.c \
-	src/nm-pacrunner-manager.h \
-	\
-	src/rdisc/nm-lndp-rdisc.c \
-	src/rdisc/nm-lndp-rdisc.h \
-	src/rdisc/nm-rdisc.c \
-	src/rdisc/nm-rdisc.h \
-	\
-	src/nm-route-manager.c \
-	src/nm-route-manager.h \
-	\
-	src/nm-exported-object.c \
-	src/nm-exported-object.h \
-	src/nm-proxy-config.c \
-	src/nm-proxy-config.h \
-	src/nm-ip4-config.c \
-	src/nm-ip4-config.h \
-	src/nm-ip6-config.c \
-	src/nm-ip6-config.h \
-	\
-	src/nm-src-enum-types.c \
-	src/nm-src-enum-types.h \
-	src/nm-multi-index.c \
-	src/nm-multi-index.h \
-	src/NetworkManagerUtils.c \
-	src/NetworkManagerUtils.h \
-	\
-	src/nm-iface-helper.c \
-	src/main-utils.c \
-	src/main-utils.h
-
-if WITH_WEXT
-src_nm_iface_helper_SOURCES += \
-	src/platform/wifi/wifi-utils-wext.c \
-	src/platform/wifi/wifi-utils-wext.h
-endif
+	src/nm-iface-helper.c
 
 src_nm_iface_helper_LDADD = \
-	libnm-core/libnm-core.la \
-	introspection/libnmdbus.la \
 	src/libNetworkManagerBase.la \
 	src/libsystemd-nm.la \
 	$(GLIB_LIBS) \
@@ -1476,21 +1430,6 @@ src_nm_iface_helper_LDADD = \
 
 src_nm_iface_helper_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
-
-###############################################################################
-
-GLIB_GENERATED += \
-	src/nm-src-enum-types.h \
-	src/nm-src-enum-types.c
-nm_src_enum_types_MKENUMS_H_FLAGS = --identifier-prefix NM --fhead '\#include <nm-core-enum-types.h>\n'
-nm_src_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\n'
-nm_src_enum_types_sources = $(filter-out \
-                              %/nm-device-private.h \
-                              %/nm-rdisc-private.h \
-                              %/wifi-utils-private.h \
-                              %/nm-dhcp-client-logging.h \
-                              %/nm-device-logging.h \
-                              , $(src_libNetworkManager_la_SOURCES))
 
 ###############################################################################
 
@@ -1529,26 +1468,15 @@ src_dhcp_manager_nm_dhcp_helper_LDADD = $(GLIB_LIBS)
 ###############################################################################
 
 src_dhcp_manager_tests_cppflags = \
-	-I$(top_srcdir)/shared \
-	-I${top_builddir}/shared \
-	-I${top_srcdir}/libnm-core \
-	-I${top_builddir}/libnm-core \
-	-I$(top_srcdir)/src/dhcp-manager \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/platform \
-	-DG_LOG_DOMAIN=\""NetworkManager"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
-	$(GLIB_CFLAGS) \
+	$(src_tests_cppflags) \
 	-DTESTDIR="\"$(abs_srcdir)/src/dhcp-manager/tests\""
 
 src_dhcp_manager_tests_ldadd = \
-	src/libNetworkManager.la
+	src/libNetworkManagerTest.la
 
-src_dhcp_manager_tests_programs = \
+check_programs += \
 	src/dhcp-manager/tests/test-dhcp-dhclient \
 	src/dhcp-manager/tests/test-dhcp-utils
-
-check_programs += $(src_dhcp_manager_tests_programs)
 
 src_dhcp_manager_tests_test_dhcp_dhclient_CPPFLAGS = $(src_dhcp_manager_tests_cppflags)
 src_dhcp_manager_tests_test_dhcp_utils_CPPFLAGS = $(src_dhcp_manager_tests_cppflags)
@@ -1603,27 +1531,17 @@ endif
 check_programs += src/settings/plugins/keyfile/tests/test-keyfile
 
 src_settings_plugins_keyfile_tests_test_keyfile_CPPFLAGS = \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/settings \
+	$(src_tests_cppflags) \
 	-I$(top_srcdir)/src/settings/plugins/keyfile \
-	$(GLIB_CFLAGS) \
-	$(CODE_COVERAGE_CFLAGS) \
-	-DG_LOG_DOMAIN=\""NetworkManager"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	-DTEST_KEYFILES_DIR=\"$(abs_srcdir)/src/settings/plugins/keyfile/tests/keyfiles\" \
-	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/src/settings/plugins/keyfile/tests/keyfiles\" \
-	-DNMCONFDIR=\"nonexistent\"
+	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/src/settings/plugins/keyfile/tests/keyfiles\"
 
 src_settings_plugins_keyfile_tests_test_keyfile_LDFLAGS = \
 	$(GLIB_LIBS) \
 	$(CODE_COVERAGE_LDFLAGS)
 
 src_settings_plugins_keyfile_tests_test_keyfile_LDADD = \
-	src/libNetworkManager.la
+	src/libNetworkManagerTest.la
 
 EXTRA_DIST += \
 	src/settings/plugins/keyfile/tests/keyfiles/Test_Wired_Connection \
@@ -1732,7 +1650,7 @@ src_settings_plugins_ibft_tests_test_ibft_LDFLAGS = \
 
 src_settings_plugins_ibft_tests_test_ibft_LDADD = \
 	src/settings/plugins/ibft/libnms-ibft-core.la \
-	src/libNetworkManager.la
+	src/libNetworkManagerTest.la
 
 EXTRA_DIST += \
 	src/settings/plugins/ibft/tests/iscsiadm-test-dhcp \
@@ -1849,22 +1767,10 @@ src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_SOURCES = \
 	src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh.c
 
 src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
-	$(CODE_COVERAGE_CFLAGS) \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
-	-I$(top_srcdir)/src/ \
-	-I$(top_srcdir)/src/platform \
-	-I$(top_srcdir)/src/settings \
+	$(src_tests_cppflags) \
 	-I$(top_srcdir)/src/settings/plugins/ifcfg-rh \
-	-DG_LOG_DOMAIN=\""NetworkManager"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	-DTEST_IFCFG_DIR=\"$(abs_srcdir)/src/settings/plugins/ifcfg-rh/tests\" \
-	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/src/settings/plugins/ifcfg-rh/tests\" \
-	-DSYSCONFDIR=\"nonexistent\" \
-	-DSBINDIR=\"nonexistent\"
+	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/src/settings/plugins/ifcfg-rh/tests\"
 
 src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_LDFLAGS = \
 	$(GLIB_LIBS) \
@@ -1872,7 +1778,7 @@ src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_LDFLAGS = \
 
 src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_LDADD = \
 	src/settings/plugins/ifcfg-rh/libnms-ifcfg-rh-core.la \
-	src/libNetworkManager.la
+	src/libNetworkManagerTest.la
 
 endif
 
@@ -2125,7 +2031,7 @@ src_settings_plugins_ifupdown_tests_test_ifupdown_LDFLAGS = \
 
 src_settings_plugins_ifupdown_tests_test_ifupdown_LDADD = \
 	src/settings/plugins/ifupdown/libnms-ifupdown-core.la \
-	src/libNetworkManager.la
+	src/libNetworkManagerTest.la
 
 endif
 
@@ -2238,7 +2144,7 @@ src_settings_plugins_ifnet_tests_test_ifnet_LDFLAGS = \
 
 src_settings_plugins_ifnet_tests_test_ifnet_LDADD = \
 	src/settings/plugins/ifnet/libnms-ifnet-core.la \
-	src/libNetworkManager.la
+	src/libNetworkManagerTest.la
 
 endif
 
@@ -2345,7 +2251,6 @@ src_devices_wwan_libnm_wwan_la_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/src/devices/wwan/libnm-wwan.ver"
 
 src_devices_wwan_libnm_wwan_la_LIBADD = \
-	$(top_builddir)/introspection/libnmdbus.la \
 	$(GLIB_LIBS) \
 	$(LIBSYSTEMD_LIBS) \
 	$(MM_GLIB_LIBS)
@@ -2533,7 +2438,7 @@ src_devices_wifi_tests_test_general_CPPFLAGS = \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS)
 
-src_devices_wifi_tests_test_general_LDADD = src/libNetworkManager.la
+src_devices_wifi_tests_test_general_LDADD = src/libNetworkManagerTest.la
 
 endif
 
@@ -2591,67 +2496,21 @@ endif
 check_programs += src/dnsmasq-manager/tests/test-dnsmasq-utils
 
 src_dnsmasq_manager_tests_test_dnsmasq_utils_CPPFLAGS = \
-	-I$(top_srcdir)/shared \
-	-I${top_builddir}/shared \
-	-I${top_srcdir}/libnm-core \
-	-I${top_builddir}/libnm-core \
-	-I$(top_srcdir)/src/dnsmasq-manager \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/platform \
-	-DG_LOG_DOMAIN=\""NetworkManager"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
-	$(GLIB_CFLAGS) \
+	$(src_tests_cppflags) \
 	-DTESTDIR="\"$(abs_srcdir)\""
 
 src_dnsmasq_manager_tests_test_dnsmasq_utils_LDADD = \
-	src/libNetworkManager.la
+	src/libNetworkManagerTest.la
 
 ###############################################################################
 # src/platform/tests
 ###############################################################################
 
-src_platform_tests_cppflags = \
-	-I${top_srcdir} \
-	-I${top_srcdir}/shared \
-	-I${top_builddir}/shared \
-	-I${top_srcdir}/src \
-	-I${top_builddir}/src \
-	-I${top_srcdir}/libnm-core \
-	-I${top_builddir}/libnm-core \
-	-I${srcdir}/src/platform \
-	-DG_LOG_DOMAIN=\""NetworkManager"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
-	$(GLIB_CFLAGS) \
-	$(GUDEV_CFLAGS) \
-	$(CODE_COVERAGE_CFLAGS) \
-	$(LIBNL_CFLAGS)
-
-check_ltlibraries += \
-	src/platform/tests/libnm-platform-tests.la
-
-src_platform_tests_libnm_platform_tests_la_SOURCES = \
-	src/platform/tests/test-common.c \
-	src/platform/tests/test-common.h
-src_platform_tests_libnm_platform_tests_la_CPPFLAGS = $(src_platform_tests_cppflags)
-if REQUIRE_ROOT_TESTS
-src_platform_tests_libnm_platform_tests_la_CPPFLAGS += -DREQUIRE_ROOT_TESTS=1
-endif
-src_platform_tests_libnm_platform_tests_la_LDFLAGS = \
-	$(CODE_COVERAGE_LDFLAGS)
-src_platform_tests_libnm_platform_tests_la_LIBADD = \
-	src/libNetworkManagerTest.la \
-	$(GLIB_LIBS) \
-	$(GUDEV_LIBS) \
-	$(LIBNL_LIBS)
-
-src_platform_tests_cppflags_linux = $(src_platform_tests_cppflags) -DSETUP=nm_linux_platform_setup
-src_platform_tests_cppflags_fake = $(src_platform_tests_cppflags) -DSETUP=nm_fake_platform_setup
-
 src_platform_tests_ldflags = \
 	$(CODE_COVERAGE_LDFLAGS)
 
 src_platform_tests_libadd = \
-	src/platform/tests/libnm-platform-tests.la \
+	src/libNetworkManagerTest.la \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS)
@@ -2671,76 +2530,61 @@ check_programs += \
 	src/platform/tests/test-cleanup-fake \
 	src/platform/tests/test-cleanup-linux
 
-src_platform_tests_monitor_CPPFLAGS = $(src_platform_tests_cppflags)
+src_platform_tests_monitor_CPPFLAGS = $(src_tests_cppflags)
 src_platform_tests_monitor_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_monitor_LDADD = $(src_platform_tests_libadd)
 
 src_platform_tests_test_link_fake_SOURCES = src/platform/tests/test-link.c
-src_platform_tests_test_link_fake_CPPFLAGS = $(src_platform_tests_cppflags_fake)
+src_platform_tests_test_link_fake_CPPFLAGS = $(src_tests_cppflags_fake)
 src_platform_tests_test_link_fake_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_link_fake_LDADD = $(src_platform_tests_libadd)
 
 src_platform_tests_test_link_linux_SOURCES = src/platform/tests/test-link.c
-src_platform_tests_test_link_linux_CPPFLAGS = $(src_platform_tests_cppflags_linux)
+src_platform_tests_test_link_linux_CPPFLAGS = $(src_tests_cppflags_linux)
 src_platform_tests_test_link_linux_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_link_linux_LDADD = $(src_platform_tests_libadd)
 
 src_platform_tests_test_address_fake_SOURCES = src/platform/tests/test-address.c
-src_platform_tests_test_address_fake_CPPFLAGS = $(src_platform_tests_cppflags_fake)
+src_platform_tests_test_address_fake_CPPFLAGS = $(src_tests_cppflags_fake)
 src_platform_tests_test_address_fake_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_address_fake_LDADD = $(src_platform_tests_libadd)
 
 src_platform_tests_test_address_linux_SOURCES = src/platform/tests/test-address.c
-src_platform_tests_test_address_linux_CPPFLAGS = $(src_platform_tests_cppflags_linux)
+src_platform_tests_test_address_linux_CPPFLAGS = $(src_tests_cppflags_linux)
 src_platform_tests_test_address_linux_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_address_linux_LDADD = $(src_platform_tests_libadd)
 
 src_platform_tests_test_route_fake_SOURCES = src/platform/tests/test-route.c
-src_platform_tests_test_route_fake_CPPFLAGS = $(src_platform_tests_cppflags_fake)
+src_platform_tests_test_route_fake_CPPFLAGS = $(src_tests_cppflags_fake)
 src_platform_tests_test_route_fake_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_route_fake_LDADD = $(src_platform_tests_libadd)
 
 src_platform_tests_test_route_linux_SOURCES = src/platform/tests/test-route.c
-src_platform_tests_test_route_linux_CPPFLAGS = $(src_platform_tests_cppflags_linux)
+src_platform_tests_test_route_linux_CPPFLAGS = $(src_tests_cppflags_linux)
 src_platform_tests_test_route_linux_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_route_linux_LDADD = $(src_platform_tests_libadd)
 
 src_platform_tests_test_cleanup_fake_SOURCES = src/platform/tests/test-cleanup.c
-src_platform_tests_test_cleanup_fake_CPPFLAGS = $(src_platform_tests_cppflags_fake)
+src_platform_tests_test_cleanup_fake_CPPFLAGS = $(src_tests_cppflags_fake)
 src_platform_tests_test_cleanup_fake_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_cleanup_fake_LDADD = $(src_platform_tests_libadd)
 
 src_platform_tests_test_cleanup_linux_SOURCES = src/platform/tests/test-cleanup.c
-src_platform_tests_test_cleanup_linux_CPPFLAGS = $(src_platform_tests_cppflags_linux)
+src_platform_tests_test_cleanup_linux_CPPFLAGS = $(src_tests_cppflags_linux)
 src_platform_tests_test_cleanup_linux_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_cleanup_linux_LDADD = $(src_platform_tests_libadd)
 
-src_platform_tests_test_nmp_object_CPPFLAGS = $(src_platform_tests_cppflags)
+src_platform_tests_test_nmp_object_CPPFLAGS = $(src_tests_cppflags)
 src_platform_tests_test_nmp_object_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_nmp_object_LDADD = src/libNetworkManagerTest.la
 
-src_platform_tests_test_general_CPPFLAGS = $(src_platform_tests_cppflags)
+src_platform_tests_test_general_CPPFLAGS = $(src_tests_cppflags)
 src_platform_tests_test_general_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_general_LDADD = src/libNetworkManagerTest.la
 
 ###############################################################################
 # src/devices/tests
 ###############################################################################
-
-src_devices_tests_cppflags = \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
-	-I$(top_srcdir)/src/platform \
-	-I$(top_srcdir)/src/devices \
-	-I$(top_srcdir)/src \
-	-I$(top_builddir)/src \
-	-I$(top_srcdir)/src/platform/tests \
-	-DG_LOG_DOMAIN=\""NetworkManager"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
-	$(CODE_COVERAGE_CFLAGS) \
-	$(GLIB_CFLAGS)
 
 src_devices_tests_ldflags = \
 	$(CODE_COVERAGE_LDFLAGS)
@@ -2749,34 +2593,19 @@ check_programs += \
 	src/devices/tests/test-lldp \
 	src/devices/tests/test-arping
 
-src_devices_tests_test_lldp_CPPFLAGS = $(src_devices_tests_cppflags)
+src_devices_tests_test_lldp_CPPFLAGS = $(src_tests_cppflags)
 src_devices_tests_test_lldp_LDFLAGS = $(src_devices_tests_ldflags)
 src_devices_tests_test_lldp_LDADD = \
-	src/platform/tests/libnm-platform-tests.la
+	src/libNetworkManagerTest.la
 
-src_devices_tests_test_arping_CPPFLAGS = $(src_devices_tests_cppflags)
+src_devices_tests_test_arping_CPPFLAGS = $(src_tests_cppflags)
 src_devices_tests_test_arping_LDFLAGS = $(src_devices_tests_ldflags)
 src_devices_tests_test_arping_LDADD = \
-	src/platform/tests/libnm-platform-tests.la
+	src/libNetworkManagerTest.la
 
 ###############################################################################
 # src/rdisc/tests
 ###############################################################################
-
-src_rdisc_tests_cppflags = \
-	-I${top_srcdir} \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I${top_srcdir}/src \
-	-I${top_srcdir}/src/platform \
-	-I${top_srcdir}/libnm-core \
-	-I${top_builddir}/libnm-core \
-	-I${srcdir}/src/rdisc \
-	-DG_LOG_DOMAIN=\""NetworkManager"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
-	$(GLIB_CFLAGS) \
-	$(CODE_COVERAGE_CFLAGS) \
-	$(LIBNDP_CFLAGS)
 
 src_rdisc_tests_ldflags = \
 	$(CODE_COVERAGE_LDFLAGS)
@@ -2788,11 +2617,11 @@ src_rdisc_tests_ldadd = \
 check_programs += src/rdisc/tests/test-rdisc-fake
 check_programs_norun += src/rdisc/tests/test-rdisc-linux
 
-src_rdisc_tests_test_rdisc_linux_CPPFLAGS = $(src_rdisc_tests_cppflags)
+src_rdisc_tests_test_rdisc_linux_CPPFLAGS = $(src_tests_cppflags)
 src_rdisc_tests_test_rdisc_linux_LDFLAGS = $(src_rdisc_tests_flags)
 src_rdisc_tests_test_rdisc_linux_LDADD = $(src_rdisc_tests_ldadd)
 
-src_rdisc_tests_test_rdisc_fake_CPPFLAGS = $(src_rdisc_tests_cppflags)
+src_rdisc_tests_test_rdisc_fake_CPPFLAGS = $(src_tests_cppflags)
 src_rdisc_tests_test_rdisc_fake_LDFLAGS = $(src_rdisc_tests_flags)
 src_rdisc_tests_test_rdisc_fake_LDADD = $(src_rdisc_tests_ldadd)
 
@@ -2803,19 +2632,11 @@ src_rdisc_tests_test_rdisc_fake_LDADD = $(src_rdisc_tests_ldadd)
 check_programs += src/supplicant-manager/tests/test-supplicant-config
 
 src_supplicant_manager_tests_test_supplicant_config_CPPFLAGS = \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/supplicant-manager \
-	-DG_LOG_DOMAIN=\""NetworkManager"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
-	-DTEST_CERT_DIR=\"$(abs_srcdir)/src/supplicant-manager/tests/certs\" \
-	$(GLIB_CFLAGS)
+	$(src_tests_cppflags) \
+	-DTEST_CERT_DIR=\"$(abs_srcdir)/src/supplicant-manager/tests/certs\"
 
 src_supplicant_manager_tests_test_supplicant_config_LDADD = \
-	src/libNetworkManager.la
+	src/libNetworkManagerTest.la
 
 EXTRA_DIST += \
 	src/supplicant-manager/tests/certs/test-ca-cert.pem \
@@ -2833,16 +2654,7 @@ src_tests_config_test_config_SOURCES = \
 	src/tests/config/test-config.c
 
 src_tests_config_test_config_CPPFLAGS = \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
-	-I$(top_srcdir)/src/ \
-	-I$(top_srcdir)/src/devices \
-	-I${top_srcdir}/src/platform \
-	-DG_LOG_DOMAIN=\""NetworkManager"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
-	$(GLIB_CFLAGS) \
+	$(src_tests_cppflags) \
 	-DSRCDIR=\""$(abs_srcdir)/src/tests/config"\" \
 	-DBUILDDIR=\""$(abs_builddir)/src/tests/config"\"
 
@@ -2863,26 +2675,11 @@ EXTRA_DIST += \
 # src/tests
 ###############################################################################
 
-src_tests_cppflags = \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
-	-I$(top_srcdir)/src/platform \
-	-I$(top_srcdir)/src/dhcp-manager \
-	-I$(top_srcdir)/src/devices \
-	-I$(top_srcdir)/src \
-	-I$(top_builddir)/src \
-	-DG_LOG_DOMAIN=\""NetworkManager"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
-	$(GLIB_CFLAGS) \
-	$(CODE_COVERAGE_CFLAGS)
-
 src_tests_ldflags = \
 	$(CODE_COVERAGE_LDFLAGS)
 
 src_tests_ldadd = \
-	src/libNetworkManager.la
+	src/libNetworkManagerTest.la
 
 check_programs += \
 	src/tests/test-general \
@@ -2930,30 +2727,22 @@ src_tests_test_utils_LDFLAGS = $(src_tests_ldflags)
 src_tests_test_utils_LDADD = $(src_tests_ldadd)
 
 
-src_tests_test_route_manager_cppflags = \
-	-I$(top_srcdir)/src/platform/tests \
-	$(src_tests_cppflags) \
-	$(GUDEV_CFLAGS)
-
 src_tests_test_route_manager_ldflags = \
 	$(CODE_COVERAGE_LDFLAGS)
 
 src_tests_test_route_manager_ldadd = \
-	src/platform/tests/libnm-platform-tests.la \
+	src/libNetworkManagerTest.la \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS)
 
-src_tests_test_route_manager_cppflags_fake = $(src_tests_test_route_manager_cppflags) -DSETUP=nm_fake_platform_setup
-src_tests_test_route_manager_cppflags_linux = $(src_tests_test_route_manager_cppflags) -DSETUP=nm_linux_platform_setup
-
 src_tests_test_route_manager_fake_SOURCES = src/tests/test-route-manager.c
-src_tests_test_route_manager_fake_CPPFLAGS = $(src_tests_test_route_manager_cppflags_fake)
+src_tests_test_route_manager_fake_CPPFLAGS = $(src_tests_cppflags_fake)
 src_tests_test_route_manager_fake_LDFLAGS = $(src_tests_test_route_manager_ldflags)
 src_tests_test_route_manager_fake_LDADD = $(src_tests_test_route_manager_ldadd)
 
 src_tests_test_route_manager_linux_SOURCES = src/tests/test-route-manager.c
-src_tests_test_route_manager_linux_CPPFLAGS = $(src_tests_test_route_manager_cppflags_linux)
+src_tests_test_route_manager_linux_CPPFLAGS = $(src_tests_cppflags_linux)
 src_tests_test_route_manager_linux_LDFLAGS = $(src_tests_test_route_manager_ldflags)
 src_tests_test_route_manager_linux_LDADD = $(src_tests_test_route_manager_ldadd)
 
@@ -2983,7 +2772,6 @@ dispatcher_cppflags = \
 	-I${top_srcdir}/dispatcher \
 	-I${top_builddir}/dispatcher \
 	$(GLIB_CFLAGS) \
-	-DNETWORKMANAGER_COMPILATION \
 	-DNMCONFDIR=\"$(nmconfdir)\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DLIBEXECDIR=\"$(libexecdir)\"
@@ -3076,7 +2864,6 @@ dispatcher_tests_test_dispatcher_envp_CPPFLAGS = \
 	-I$(top_builddir)/libnm-core \
 	-I$(top_srcdir)/dispatcher \
 	-I$(top_builddir)/dispatcher \
-	-DNETWORKMANAGER_COMPILATION \
 	-DSRCDIR=\"$(abs_srcdir)/dispatcher/tests\" \
 	$(GLIB_CFLAGS)
 

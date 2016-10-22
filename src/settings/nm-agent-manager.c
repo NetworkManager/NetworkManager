@@ -30,7 +30,6 @@
 #include "nm-secret-agent.h"
 #include "nm-auth-utils.h"
 #include "nm-setting-vpn.h"
-#include "nm-src-enum-types.h"
 #include "nm-auth-manager.h"
 #include "nm-bus-manager.h"
 #include "nm-session-monitor.h"

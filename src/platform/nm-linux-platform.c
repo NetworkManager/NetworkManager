@@ -2807,10 +2807,10 @@ do_emit_signal (NMPlatform *platform, const NMPObject *obj, NMPCacheOpsType cach
 	g_signal_emit (platform,
 	               _nm_platform_signal_id_get (klass->signal_type_id),
 	               0,
-	               klass->obj_type,
+	               (int) klass->obj_type,
 	               obj_clone.object.ifindex,
 	               &obj_clone.object,
-	               (NMPlatformSignalChangeType) cache_op);
+	               (int) cache_op);
 }
 
 /*****************************************************************************/

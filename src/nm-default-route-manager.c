@@ -1364,12 +1364,14 @@ _platform_ipx_route_changed_cb (const VTableIP *vtable,
 
 static void
 _platform_changed_cb (NMPlatform *platform,
-                      NMPObjectType obj_type,
+                      int obj_type_i,
                       int ifindex,
                       gpointer platform_object,
-                      NMPlatformSignalChangeType change_type,
+                      int change_type_i,
                       NMDefaultRouteManager *self)
 {
+	const NMPObjectType obj_type = obj_type_i;
+
 	switch (obj_type) {
 	case NMP_OBJECT_TYPE_IP4_ADDRESS:
 		_platform_ipx_route_changed_cb (&vtable_ip4, self, NULL);

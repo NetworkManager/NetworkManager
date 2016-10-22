@@ -34,7 +34,6 @@
 #include <stdlib.h>
 
 #include "nm-bus-manager.h"
-#include "nm-src-enum-types.h"
 #include "NetworkManagerUtils.h"
 
 enum {
@@ -213,7 +212,7 @@ _new_unix_process (GDBusMethodInvocation *context,
 	g_return_val_if_fail (pid > 0 && pid <= MIN (G_MAXINT, G_MAXINT32), NULL);
 
 	self = NM_AUTH_SUBJECT (g_object_new (NM_TYPE_AUTH_SUBJECT,
-	                                      NM_AUTH_SUBJECT_SUBJECT_TYPE, NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS,
+	                                      NM_AUTH_SUBJECT_SUBJECT_TYPE, (int) NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS,
 	                                      NM_AUTH_SUBJECT_UNIX_PROCESS_DBUS_SENDER, dbus_sender,
 	                                      NM_AUTH_SUBJECT_UNIX_PROCESS_PID, (gulong) pid,
 	                                      NM_AUTH_SUBJECT_UNIX_PROCESS_UID, (gulong) uid,
@@ -252,7 +251,7 @@ NMAuthSubject *
 nm_auth_subject_new_internal (void)
 {
 	return NM_AUTH_SUBJECT (g_object_new (NM_TYPE_AUTH_SUBJECT,
-	                                      NM_AUTH_SUBJECT_SUBJECT_TYPE, NM_AUTH_SUBJECT_TYPE_INTERNAL,
+	                                      NM_AUTH_SUBJECT_SUBJECT_TYPE, (int) NM_AUTH_SUBJECT_TYPE_INTERNAL,
 	                                      NULL));
 }
 
@@ -265,7 +264,7 @@ get_property (GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 
 	switch (prop_id) {
 	case PROP_SUBJECT_TYPE:
-		g_value_set_enum (value, priv->subject_type);
+		g_value_set_int (value, priv->subject_type);
 		break;
 	case PROP_UNIX_PROCESS_DBUS_SENDER:
 		g_value_set_string (value, priv->unix_process.dbus_sender);
@@ -287,14 +286,16 @@ set_property (GObject *object, guint prop_id, const GValue *value, GParamSpec *p
 {
 	NMAuthSubjectPrivate *priv = NM_AUTH_SUBJECT_GET_PRIVATE ((NMAuthSubject *) object);
 	NMAuthSubjectType subject_type;
+	int i;
 	const char *str;
 	gulong id;
 
 	/* all properties are construct-only */
 	switch (prop_id) {
 	case PROP_SUBJECT_TYPE:
-		subject_type = g_value_get_enum (value);
-		g_return_if_fail (subject_type != NM_AUTH_SUBJECT_TYPE_INVALID);
+		i = g_value_get_int (value);
+		g_return_if_fail (NM_IN_SET (i, (int) NM_AUTH_SUBJECT_TYPE_INTERNAL, (int) NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS));
+		subject_type = i;
 		priv->subject_type |= subject_type;
 		g_return_if_fail (priv->subject_type == subject_type);
 		break;
@@ -414,12 +415,13 @@ nm_auth_subject_class_init (NMAuthSubjectClass *config_class)
 
 	g_object_class_install_property
 	    (object_class, PROP_SUBJECT_TYPE,
-	     g_param_spec_enum (NM_AUTH_SUBJECT_SUBJECT_TYPE, "", "",
-	                        NM_TYPE_AUTH_SUBJECT_TYPE,
-	                        NM_AUTH_SUBJECT_TYPE_INVALID,
-	                        G_PARAM_READWRITE |
-	                        G_PARAM_CONSTRUCT_ONLY |
-	                        G_PARAM_STATIC_STRINGS));
+	     g_param_spec_int (NM_AUTH_SUBJECT_SUBJECT_TYPE, "", "",
+	                       NM_AUTH_SUBJECT_TYPE_INVALID,
+	                       NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS,
+	                       NM_AUTH_SUBJECT_TYPE_INVALID,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT_ONLY |
+	                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 	    (object_class, PROP_UNIX_PROCESS_DBUS_SENDER,
