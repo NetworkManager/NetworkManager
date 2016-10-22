@@ -524,6 +524,7 @@ libnm_core_tests_cppflags = \
 	-I$(srcdir)/libnm-core \
 	-I$(builddir)/libnm-core \
 	-I$(srcdir)/libnm-core/tests \
+	-I$(builddir)/libnm-core/tests \
 	-DNETWORKMANAGER_COMPILATION \
 	$(GLIB_CFLAGS) \
 	-DTEST_CERT_DIR=\"$(abs_srcdir)/libnm-core/tests/certs\"
