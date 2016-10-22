@@ -2980,6 +2980,7 @@ dispatcher_cppflags = \
 	-I${top_srcdir}/libnm-core \
 	-I${top_builddir}/libnm-core \
 	-I${top_srcdir}/dispatcher \
+	-I${top_builddir}/dispatcher \
 	$(GLIB_CFLAGS) \
 	-DNETWORKMANAGER_COMPILATION \
 	-DNMCONFDIR=\"$(nmconfdir)\" \
