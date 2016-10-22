@@ -1132,12 +1132,7 @@ src_libNetworkManagerBase_la_LIBADD = \
 
 src_libNetworkManager_la_CPPFLAGS = $(src_cppflags)
 
-src_libNetworkManager_la_SOURCES_enum = \
-	src/nm-types.h \
-	$(NULL)
-
 src_libNetworkManager_la_SOURCES = \
-	$(src_libNetworkManager_la_SOURCES_enum) \
 	\
 	src/nm-checkpoint-manager.c \
 	src/nm-checkpoint-manager.h \
@@ -1303,8 +1298,6 @@ src_libNetworkManager_la_SOURCES = \
 	src/nm-dhcp6-config.h \
 	src/nm-dispatcher.c \
 	src/nm-dispatcher.h \
-	src/nm-src-enum-types.c \
-	src/nm-src-enum-types.h \
 	src/nm-exported-object.c \
 	src/nm-exported-object.h \
 	src/nm-firewall-manager.c \
@@ -1335,6 +1328,7 @@ src_libNetworkManager_la_SOURCES = \
 	src/nm-session-monitor.c \
 	src/nm-sleep-monitor.c \
 	src/nm-sleep-monitor.h \
+	src/nm-types.h \
 	src/NetworkManagerUtils.c \
 	src/NetworkManagerUtils.h \
 	$(NULL)
@@ -1447,8 +1441,6 @@ src_nm_iface_helper_SOURCES = \
 	src/nm-ip6-config.c \
 	src/nm-ip6-config.h \
 	\
-	src/nm-src-enum-types.c \
-	src/nm-src-enum-types.h \
 	src/nm-multi-index.c \
 	src/nm-multi-index.h \
 	src/NetworkManagerUtils.c \
@@ -1478,15 +1470,6 @@ src_nm_iface_helper_LDADD = \
 
 src_nm_iface_helper_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
-
-###############################################################################
-
-GLIB_GENERATED += \
-	src/nm-src-enum-types.h \
-	src/nm-src-enum-types.c
-nm_src_enum_types_MKENUMS_H_FLAGS = --identifier-prefix NM --fhead '\#include <nm-core-enum-types.h>\n'
-nm_src_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\n'
-nm_src_enum_types_sources = $(src_libNetworkManager_la_SOURCES_enum)
 
 ###############################################################################
 

@@ -33,7 +33,6 @@
 #include <string.h>
 
 #include "nm-device-private.h"
-#include "nm-src-enum-types.h"
 #include "nm-platform.h"
 #include "ppp-manager/nm-ppp-manager.h"
 #include "ppp-manager/nm-ppp-status.h"

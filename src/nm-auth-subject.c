@@ -34,7 +34,6 @@
 #include <stdlib.h>
 
 #include "nm-bus-manager.h"
-#include "nm-src-enum-types.h"
 #include "NetworkManagerUtils.h"
 
 enum {

@@ -23,7 +23,6 @@
 #include "nm-device-generic.h"
 
 #include "nm-device-private.h"
-#include "nm-src-enum-types.h"
 #include "nm-platform.h"
 #include "nm-core-internal.h"
 

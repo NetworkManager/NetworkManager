@@ -46,7 +46,6 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-olpc-mesh.h"
 #include "nm-manager.h"
-#include "nm-src-enum-types.h"
 #include "nm-platform.h"
 
 /* This is a bug; but we can't really change API now... */

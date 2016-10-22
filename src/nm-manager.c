@@ -43,7 +43,6 @@
 #include "nm-auth-manager.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-factory.h"
-#include "nm-src-enum-types.h"
 #include "nm-sleep-monitor.h"
 #include "nm-connectivity.h"
 #include "nm-policy.h"
