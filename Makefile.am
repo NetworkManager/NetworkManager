@@ -953,8 +953,6 @@ noinst_LTLIBRARIES += \
 	src/libNetworkManager.la \
 	src/libsystemd-nm.la
 
-check_ltlibraries += src/libNetworkManagerTest.la
-
 ###############################################################################
 
 src_libsystemd_nm_la_cppflags = \
@@ -1366,16 +1364,27 @@ src_libNetworkManager_la_LIBADD = \
 
 ###############################################################################
 
+check_ltlibraries += src/libNetworkManagerTest.la
+
 src_libNetworkManagerTest_la_CPPFLAGS = $(src_cppflags)
+if REQUIRE_ROOT_TESTS
+src_libNetworkManagerTest_la_CPPFLAGS += -DREQUIRE_ROOT_TESTS=1
+endif
 
 src_libNetworkManagerTest_la_SOURCES = \
 	src/rdisc/nm-fake-rdisc.c \
 	src/rdisc/nm-fake-rdisc.h \
 	src/platform/nm-fake-platform.c \
-	src/platform/nm-fake-platform.h
+	src/platform/nm-fake-platform.h \
+	src/platform/tests/test-common.c \
+	src/platform/tests/test-common.h
 
 src_libNetworkManagerTest_la_LIBADD = \
-	src/libNetworkManager.la
+	src/libNetworkManager.la \
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(GLIB_LIBS) \
+	$(GUDEV_LIBS) \
+	$(LIBNL_LIBS)
 
 ###############################################################################
 
@@ -2535,40 +2544,7 @@ src_dnsmasq_manager_tests_test_dnsmasq_utils_LDADD = \
 # src/platform/tests
 ###############################################################################
 
-src_platform_tests_cppflags = \
-	-I${top_srcdir} \
-	-I${top_srcdir}/shared \
-	-I${top_builddir}/shared \
-	-I${top_srcdir}/src \
-	-I${top_builddir}/src \
-	-I${top_srcdir}/libnm-core \
-	-I${top_builddir}/libnm-core \
-	-I${srcdir}/src/platform \
-	-DG_LOG_DOMAIN=\""NetworkManager"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
-	$(GLIB_CFLAGS) \
-	$(GUDEV_CFLAGS) \
-	$(CODE_COVERAGE_CFLAGS) \
-	$(LIBNL_CFLAGS)
-
-check_ltlibraries += \
-	src/platform/tests/libnm-platform-tests.la
-
-src_platform_tests_libnm_platform_tests_la_SOURCES = \
-	src/platform/tests/test-common.c \
-	src/platform/tests/test-common.h
-src_platform_tests_libnm_platform_tests_la_CPPFLAGS = $(src_platform_tests_cppflags)
-if REQUIRE_ROOT_TESTS
-src_platform_tests_libnm_platform_tests_la_CPPFLAGS += -DREQUIRE_ROOT_TESTS=1
-endif
-src_platform_tests_libnm_platform_tests_la_LDFLAGS = \
-	$(CODE_COVERAGE_LDFLAGS)
-src_platform_tests_libnm_platform_tests_la_LIBADD = \
-	src/libNetworkManagerTest.la \
-	$(GLIB_LIBS) \
-	$(GUDEV_LIBS) \
-	$(LIBNL_LIBS)
-
+src_platform_tests_cppflags = $(src_cppflags)
 src_platform_tests_cppflags_linux = $(src_platform_tests_cppflags) -DSETUP=nm_linux_platform_setup
 src_platform_tests_cppflags_fake = $(src_platform_tests_cppflags) -DSETUP=nm_fake_platform_setup
 
@@ -2576,7 +2552,7 @@ src_platform_tests_ldflags = \
 	$(CODE_COVERAGE_LDFLAGS)
 
 src_platform_tests_libadd = \
-	src/platform/tests/libnm-platform-tests.la \
+	src/libNetworkManagerTest.la \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS)
@@ -2677,12 +2653,12 @@ check_programs += \
 src_devices_tests_test_lldp_CPPFLAGS = $(src_devices_tests_cppflags)
 src_devices_tests_test_lldp_LDFLAGS = $(src_devices_tests_ldflags)
 src_devices_tests_test_lldp_LDADD = \
-	src/platform/tests/libnm-platform-tests.la
+	src/libNetworkManagerTest.la
 
 src_devices_tests_test_arping_CPPFLAGS = $(src_devices_tests_cppflags)
 src_devices_tests_test_arping_LDFLAGS = $(src_devices_tests_ldflags)
 src_devices_tests_test_arping_LDADD = \
-	src/platform/tests/libnm-platform-tests.la
+	src/libNetworkManagerTest.la
 
 ###############################################################################
 # src/rdisc/tests
@@ -2864,7 +2840,7 @@ src_tests_test_route_manager_ldflags = \
 	$(CODE_COVERAGE_LDFLAGS)
 
 src_tests_test_route_manager_ldadd = \
-	src/platform/tests/libnm-platform-tests.la \
+	src/libNetworkManagerTest.la \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS)
