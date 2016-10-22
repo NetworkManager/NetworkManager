@@ -1366,10 +1366,18 @@ src_libNetworkManager_la_LIBADD = \
 
 check_ltlibraries += src/libNetworkManagerTest.la
 
-src_libNetworkManagerTest_la_CPPFLAGS = $(src_cppflags)
+src_tests_cppflags = \
+	$(src_cppflags) \
+	-I$(top_srcdir)/src/platform/tests
+
 if REQUIRE_ROOT_TESTS
-src_libNetworkManagerTest_la_CPPFLAGS += -DREQUIRE_ROOT_TESTS=1
+src_tests_cppflags += -DREQUIRE_ROOT_TESTS=1
 endif
+
+src_tests_cppflags_fake = $(src_tests_cppflags) -DSETUP=nm_fake_platform_setup
+src_tests_cppflags_linux = $(src_tests_cppflags) -DSETUP=nm_linux_platform_setup
+
+src_libNetworkManagerTest_la_CPPFLAGS = $(src_tests_cppflags)
 
 src_libNetworkManagerTest_la_SOURCES = \
 	src/rdisc/nm-fake-rdisc.c \
@@ -1460,16 +1468,7 @@ src_dhcp_manager_nm_dhcp_helper_LDADD = $(GLIB_LIBS)
 ###############################################################################
 
 src_dhcp_manager_tests_cppflags = \
-	-I$(top_srcdir)/shared \
-	-I${top_builddir}/shared \
-	-I${top_srcdir}/libnm-core \
-	-I${top_builddir}/libnm-core \
-	-I$(top_srcdir)/src/dhcp-manager \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/platform \
-	-DG_LOG_DOMAIN=\""NetworkManager"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
-	$(GLIB_CFLAGS) \
+	$(src_tests_cppflags) \
 	-DTESTDIR="\"$(abs_srcdir)/src/dhcp-manager/tests\""
 
 src_dhcp_manager_tests_ldadd = \
@@ -1532,20 +1531,10 @@ endif
 check_programs += src/settings/plugins/keyfile/tests/test-keyfile
 
 src_settings_plugins_keyfile_tests_test_keyfile_CPPFLAGS = \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/settings \
+	$(src_tests_cppflags) \
 	-I$(top_srcdir)/src/settings/plugins/keyfile \
-	$(GLIB_CFLAGS) \
-	$(CODE_COVERAGE_CFLAGS) \
-	-DG_LOG_DOMAIN=\""NetworkManager"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	-DTEST_KEYFILES_DIR=\"$(abs_srcdir)/src/settings/plugins/keyfile/tests/keyfiles\" \
-	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/src/settings/plugins/keyfile/tests/keyfiles\" \
-	-DNMCONFDIR=\"nonexistent\"
+	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/src/settings/plugins/keyfile/tests/keyfiles\"
 
 src_settings_plugins_keyfile_tests_test_keyfile_LDFLAGS = \
 	$(GLIB_LIBS) \
@@ -1778,22 +1767,10 @@ src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_SOURCES = \
 	src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh.c
 
 src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
-	$(CODE_COVERAGE_CFLAGS) \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
-	-I$(top_srcdir)/src/ \
-	-I$(top_srcdir)/src/platform \
-	-I$(top_srcdir)/src/settings \
+	$(src_tests_cppflags) \
 	-I$(top_srcdir)/src/settings/plugins/ifcfg-rh \
-	-DG_LOG_DOMAIN=\""NetworkManager"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	-DTEST_IFCFG_DIR=\"$(abs_srcdir)/src/settings/plugins/ifcfg-rh/tests\" \
-	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/src/settings/plugins/ifcfg-rh/tests\" \
-	-DSYSCONFDIR=\"nonexistent\" \
-	-DSBINDIR=\"nonexistent\"
+	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/src/settings/plugins/ifcfg-rh/tests\"
 
 src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_LDFLAGS = \
 	$(GLIB_LIBS) \
@@ -2519,16 +2496,7 @@ endif
 check_programs += src/dnsmasq-manager/tests/test-dnsmasq-utils
 
 src_dnsmasq_manager_tests_test_dnsmasq_utils_CPPFLAGS = \
-	-I$(top_srcdir)/shared \
-	-I${top_builddir}/shared \
-	-I${top_srcdir}/libnm-core \
-	-I${top_builddir}/libnm-core \
-	-I$(top_srcdir)/src/dnsmasq-manager \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/platform \
-	-DG_LOG_DOMAIN=\""NetworkManager"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
-	$(GLIB_CFLAGS) \
+	$(src_tests_cppflags) \
 	-DTESTDIR="\"$(abs_srcdir)\""
 
 src_dnsmasq_manager_tests_test_dnsmasq_utils_LDADD = \
@@ -2537,10 +2505,6 @@ src_dnsmasq_manager_tests_test_dnsmasq_utils_LDADD = \
 ###############################################################################
 # src/platform/tests
 ###############################################################################
-
-src_platform_tests_cppflags = $(src_cppflags)
-src_platform_tests_cppflags_linux = $(src_platform_tests_cppflags) -DSETUP=nm_linux_platform_setup
-src_platform_tests_cppflags_fake = $(src_platform_tests_cppflags) -DSETUP=nm_fake_platform_setup
 
 src_platform_tests_ldflags = \
 	$(CODE_COVERAGE_LDFLAGS)
@@ -2566,76 +2530,61 @@ check_programs += \
 	src/platform/tests/test-cleanup-fake \
 	src/platform/tests/test-cleanup-linux
 
-src_platform_tests_monitor_CPPFLAGS = $(src_platform_tests_cppflags)
+src_platform_tests_monitor_CPPFLAGS = $(src_tests_cppflags)
 src_platform_tests_monitor_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_monitor_LDADD = $(src_platform_tests_libadd)
 
 src_platform_tests_test_link_fake_SOURCES = src/platform/tests/test-link.c
-src_platform_tests_test_link_fake_CPPFLAGS = $(src_platform_tests_cppflags_fake)
+src_platform_tests_test_link_fake_CPPFLAGS = $(src_tests_cppflags_fake)
 src_platform_tests_test_link_fake_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_link_fake_LDADD = $(src_platform_tests_libadd)
 
 src_platform_tests_test_link_linux_SOURCES = src/platform/tests/test-link.c
-src_platform_tests_test_link_linux_CPPFLAGS = $(src_platform_tests_cppflags_linux)
+src_platform_tests_test_link_linux_CPPFLAGS = $(src_tests_cppflags_linux)
 src_platform_tests_test_link_linux_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_link_linux_LDADD = $(src_platform_tests_libadd)
 
 src_platform_tests_test_address_fake_SOURCES = src/platform/tests/test-address.c
-src_platform_tests_test_address_fake_CPPFLAGS = $(src_platform_tests_cppflags_fake)
+src_platform_tests_test_address_fake_CPPFLAGS = $(src_tests_cppflags_fake)
 src_platform_tests_test_address_fake_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_address_fake_LDADD = $(src_platform_tests_libadd)
 
 src_platform_tests_test_address_linux_SOURCES = src/platform/tests/test-address.c
-src_platform_tests_test_address_linux_CPPFLAGS = $(src_platform_tests_cppflags_linux)
+src_platform_tests_test_address_linux_CPPFLAGS = $(src_tests_cppflags_linux)
 src_platform_tests_test_address_linux_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_address_linux_LDADD = $(src_platform_tests_libadd)
 
 src_platform_tests_test_route_fake_SOURCES = src/platform/tests/test-route.c
-src_platform_tests_test_route_fake_CPPFLAGS = $(src_platform_tests_cppflags_fake)
+src_platform_tests_test_route_fake_CPPFLAGS = $(src_tests_cppflags_fake)
 src_platform_tests_test_route_fake_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_route_fake_LDADD = $(src_platform_tests_libadd)
 
 src_platform_tests_test_route_linux_SOURCES = src/platform/tests/test-route.c
-src_platform_tests_test_route_linux_CPPFLAGS = $(src_platform_tests_cppflags_linux)
+src_platform_tests_test_route_linux_CPPFLAGS = $(src_tests_cppflags_linux)
 src_platform_tests_test_route_linux_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_route_linux_LDADD = $(src_platform_tests_libadd)
 
 src_platform_tests_test_cleanup_fake_SOURCES = src/platform/tests/test-cleanup.c
-src_platform_tests_test_cleanup_fake_CPPFLAGS = $(src_platform_tests_cppflags_fake)
+src_platform_tests_test_cleanup_fake_CPPFLAGS = $(src_tests_cppflags_fake)
 src_platform_tests_test_cleanup_fake_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_cleanup_fake_LDADD = $(src_platform_tests_libadd)
 
 src_platform_tests_test_cleanup_linux_SOURCES = src/platform/tests/test-cleanup.c
-src_platform_tests_test_cleanup_linux_CPPFLAGS = $(src_platform_tests_cppflags_linux)
+src_platform_tests_test_cleanup_linux_CPPFLAGS = $(src_tests_cppflags_linux)
 src_platform_tests_test_cleanup_linux_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_cleanup_linux_LDADD = $(src_platform_tests_libadd)
 
-src_platform_tests_test_nmp_object_CPPFLAGS = $(src_platform_tests_cppflags)
+src_platform_tests_test_nmp_object_CPPFLAGS = $(src_tests_cppflags)
 src_platform_tests_test_nmp_object_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_nmp_object_LDADD = src/libNetworkManagerTest.la
 
-src_platform_tests_test_general_CPPFLAGS = $(src_platform_tests_cppflags)
+src_platform_tests_test_general_CPPFLAGS = $(src_tests_cppflags)
 src_platform_tests_test_general_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_general_LDADD = src/libNetworkManagerTest.la
 
 ###############################################################################
 # src/devices/tests
 ###############################################################################
-
-src_devices_tests_cppflags = \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
-	-I$(top_srcdir)/src/platform \
-	-I$(top_srcdir)/src/devices \
-	-I$(top_srcdir)/src \
-	-I$(top_builddir)/src \
-	-I$(top_srcdir)/src/platform/tests \
-	-DG_LOG_DOMAIN=\""NetworkManager"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
-	$(CODE_COVERAGE_CFLAGS) \
-	$(GLIB_CFLAGS)
 
 src_devices_tests_ldflags = \
 	$(CODE_COVERAGE_LDFLAGS)
@@ -2644,12 +2593,12 @@ check_programs += \
 	src/devices/tests/test-lldp \
 	src/devices/tests/test-arping
 
-src_devices_tests_test_lldp_CPPFLAGS = $(src_devices_tests_cppflags)
+src_devices_tests_test_lldp_CPPFLAGS = $(src_tests_cppflags)
 src_devices_tests_test_lldp_LDFLAGS = $(src_devices_tests_ldflags)
 src_devices_tests_test_lldp_LDADD = \
 	src/libNetworkManagerTest.la
 
-src_devices_tests_test_arping_CPPFLAGS = $(src_devices_tests_cppflags)
+src_devices_tests_test_arping_CPPFLAGS = $(src_tests_cppflags)
 src_devices_tests_test_arping_LDFLAGS = $(src_devices_tests_ldflags)
 src_devices_tests_test_arping_LDADD = \
 	src/libNetworkManagerTest.la
@@ -2657,21 +2606,6 @@ src_devices_tests_test_arping_LDADD = \
 ###############################################################################
 # src/rdisc/tests
 ###############################################################################
-
-src_rdisc_tests_cppflags = \
-	-I${top_srcdir} \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I${top_srcdir}/src \
-	-I${top_srcdir}/src/platform \
-	-I${top_srcdir}/libnm-core \
-	-I${top_builddir}/libnm-core \
-	-I${srcdir}/src/rdisc \
-	-DG_LOG_DOMAIN=\""NetworkManager"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
-	$(GLIB_CFLAGS) \
-	$(CODE_COVERAGE_CFLAGS) \
-	$(LIBNDP_CFLAGS)
 
 src_rdisc_tests_ldflags = \
 	$(CODE_COVERAGE_LDFLAGS)
@@ -2683,11 +2617,11 @@ src_rdisc_tests_ldadd = \
 check_programs += src/rdisc/tests/test-rdisc-fake
 check_programs_norun += src/rdisc/tests/test-rdisc-linux
 
-src_rdisc_tests_test_rdisc_linux_CPPFLAGS = $(src_rdisc_tests_cppflags)
+src_rdisc_tests_test_rdisc_linux_CPPFLAGS = $(src_tests_cppflags)
 src_rdisc_tests_test_rdisc_linux_LDFLAGS = $(src_rdisc_tests_flags)
 src_rdisc_tests_test_rdisc_linux_LDADD = $(src_rdisc_tests_ldadd)
 
-src_rdisc_tests_test_rdisc_fake_CPPFLAGS = $(src_rdisc_tests_cppflags)
+src_rdisc_tests_test_rdisc_fake_CPPFLAGS = $(src_tests_cppflags)
 src_rdisc_tests_test_rdisc_fake_LDFLAGS = $(src_rdisc_tests_flags)
 src_rdisc_tests_test_rdisc_fake_LDADD = $(src_rdisc_tests_ldadd)
 
@@ -2698,16 +2632,8 @@ src_rdisc_tests_test_rdisc_fake_LDADD = $(src_rdisc_tests_ldadd)
 check_programs += src/supplicant-manager/tests/test-supplicant-config
 
 src_supplicant_manager_tests_test_supplicant_config_CPPFLAGS = \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/supplicant-manager \
-	-DG_LOG_DOMAIN=\""NetworkManager"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
-	-DTEST_CERT_DIR=\"$(abs_srcdir)/src/supplicant-manager/tests/certs\" \
-	$(GLIB_CFLAGS)
+	$(src_tests_cppflags) \
+	-DTEST_CERT_DIR=\"$(abs_srcdir)/src/supplicant-manager/tests/certs\"
 
 src_supplicant_manager_tests_test_supplicant_config_LDADD = \
 	src/libNetworkManagerTest.la
@@ -2728,16 +2654,7 @@ src_tests_config_test_config_SOURCES = \
 	src/tests/config/test-config.c
 
 src_tests_config_test_config_CPPFLAGS = \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
-	-I$(top_srcdir)/src/ \
-	-I$(top_srcdir)/src/devices \
-	-I${top_srcdir}/src/platform \
-	-DG_LOG_DOMAIN=\""NetworkManager"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
-	$(GLIB_CFLAGS) \
+	$(src_tests_cppflags) \
 	-DSRCDIR=\""$(abs_srcdir)/src/tests/config"\" \
 	-DBUILDDIR=\""$(abs_builddir)/src/tests/config"\"
 
@@ -2757,21 +2674,6 @@ EXTRA_DIST += \
 ###############################################################################
 # src/tests
 ###############################################################################
-
-src_tests_cppflags = \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
-	-I$(top_srcdir)/src/platform \
-	-I$(top_srcdir)/src/dhcp-manager \
-	-I$(top_srcdir)/src/devices \
-	-I$(top_srcdir)/src \
-	-I$(top_builddir)/src \
-	-DG_LOG_DOMAIN=\""NetworkManager"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
-	$(GLIB_CFLAGS) \
-	$(CODE_COVERAGE_CFLAGS)
 
 src_tests_ldflags = \
 	$(CODE_COVERAGE_LDFLAGS)
@@ -2825,11 +2727,6 @@ src_tests_test_utils_LDFLAGS = $(src_tests_ldflags)
 src_tests_test_utils_LDADD = $(src_tests_ldadd)
 
 
-src_tests_test_route_manager_cppflags = \
-	-I$(top_srcdir)/src/platform/tests \
-	$(src_tests_cppflags) \
-	$(GUDEV_CFLAGS)
-
 src_tests_test_route_manager_ldflags = \
 	$(CODE_COVERAGE_LDFLAGS)
 
@@ -2839,16 +2736,13 @@ src_tests_test_route_manager_ldadd = \
 	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS)
 
-src_tests_test_route_manager_cppflags_fake = $(src_tests_test_route_manager_cppflags) -DSETUP=nm_fake_platform_setup
-src_tests_test_route_manager_cppflags_linux = $(src_tests_test_route_manager_cppflags) -DSETUP=nm_linux_platform_setup
-
 src_tests_test_route_manager_fake_SOURCES = src/tests/test-route-manager.c
-src_tests_test_route_manager_fake_CPPFLAGS = $(src_tests_test_route_manager_cppflags_fake)
+src_tests_test_route_manager_fake_CPPFLAGS = $(src_tests_cppflags_fake)
 src_tests_test_route_manager_fake_LDFLAGS = $(src_tests_test_route_manager_ldflags)
 src_tests_test_route_manager_fake_LDADD = $(src_tests_test_route_manager_ldadd)
 
 src_tests_test_route_manager_linux_SOURCES = src/tests/test-route-manager.c
-src_tests_test_route_manager_linux_CPPFLAGS = $(src_tests_test_route_manager_cppflags_linux)
+src_tests_test_route_manager_linux_CPPFLAGS = $(src_tests_cppflags_linux)
 src_tests_test_route_manager_linux_LDFLAGS = $(src_tests_test_route_manager_ldflags)
 src_tests_test_route_manager_linux_LDADD = $(src_tests_test_route_manager_ldadd)
 
