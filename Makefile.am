@@ -2345,7 +2345,6 @@ src_devices_wwan_libnm_wwan_la_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/src/devices/wwan/libnm-wwan.ver"
 
 src_devices_wwan_libnm_wwan_la_LIBADD = \
-	$(top_builddir)/introspection/libnmdbus.la \
 	$(GLIB_LIBS) \
 	$(LIBSYSTEMD_LIBS) \
 	$(MM_GLIB_LIBS)
