@@ -30,12 +30,28 @@
 #include <unistd.h>
 
 #include "nm-dhcp-helper-api.h"
+#include "nm-dhcp-client.h"
 #include "nm-core-internal.h"
 #include "nm-bus-manager.h"
 #include "NetworkManagerUtils.h"
 
 #define PRIV_SOCK_PATH            NMRUNDIR "/private-dhcp"
 #define PRIV_SOCK_TAG             "dhcp"
+
+/*****************************************************************************/
+
+const NMDhcpClientFactory *const _nm_dhcp_manager_factories[3] = {
+	/* the order here matters, as we will try the plugins in this order to find
+	 * the first available plugin. */
+
+#if WITH_DHCLIENT
+	&_nm_dhcp_client_factory_dhclient,
+#endif
+#if WITH_DHCPCD
+	&_nm_dhcp_client_factory_dhcpcd,
+#endif
+	&_nm_dhcp_client_factory_internal,
+};
 
 /*****************************************************************************/
 

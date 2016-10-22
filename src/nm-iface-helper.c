@@ -547,6 +547,12 @@ main (int argc, char *argv[])
 }
 
 /*****************************************************************************/
+
+const NMDhcpClientFactory *const _nm_dhcp_manager_factories[3] = {
+	&_nm_dhcp_client_factory_internal,
+};
+
+/*****************************************************************************/
 /* Stub functions */
 
 void

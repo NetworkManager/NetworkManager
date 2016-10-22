@@ -1163,6 +1163,8 @@ src_libNetworkManagerBase_la_SOURCES = \
 	src/dhcp-manager/nm-dhcp-utils.c \
 	src/dhcp-manager/nm-dhcp-utils.h \
 	src/dhcp-manager/nm-dhcp-systemd.c \
+	src/dhcp-manager/nm-dhcp-manager.c \
+	src/dhcp-manager/nm-dhcp-manager.h \
 	\
 	src/main-utils.c \
 	src/main-utils.h \
@@ -1229,8 +1231,6 @@ src_libNetworkManager_la_SOURCES = \
 	src/devices/nm-device-vxlan.c \
 	src/devices/nm-device-vxlan.h \
 	\
-	src/dhcp-manager/nm-dhcp-manager.c \
-	src/dhcp-manager/nm-dhcp-manager.h \
 	src/dhcp-manager/nm-dhcp-dhclient.c \
 	src/dhcp-manager/nm-dhcp-dhcpcd.c \
 	src/dhcp-manager/nm-dhcp-helper-api.h \
@@ -1405,15 +1405,9 @@ src_NetworkManager_LDFLAGS = \
 
 ###############################################################################
 
-src_nm_iface_helper_CPPFLAGS = \
-	$(src_cppflags) \
-	-DNM_DHCP_INTERNAL_ONLY
+src_nm_iface_helper_CPPFLAGS = $(src_cppflags)
 
 src_nm_iface_helper_SOURCES = \
-	\
-	src/dhcp-manager/nm-dhcp-manager.c \
-	src/dhcp-manager/nm-dhcp-manager.h \
-	\
 	src/nm-iface-helper.c
 
 src_nm_iface_helper_LDADD = \
