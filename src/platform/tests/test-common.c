@@ -149,12 +149,15 @@ _free_signal (const char *file, int line, const char *func, SignalData *data)
 }
 
 void
-link_callback (NMPlatform *platform, NMPObjectType obj_type, int ifindex, NMPlatformLink *received, NMPlatformSignalChangeType change_type, SignalData *data)
+link_callback (NMPlatform *platform, int obj_type_i, int ifindex, NMPlatformLink *received, int change_type_i, SignalData *data)
 {
+	const NMPObjectType obj_type = obj_type_i;
+	const NMPlatformSignalChangeType change_type = change_type_i;
 	GArray *links;
 	NMPlatformLink *cached;
 	int i;
 
+	g_assert_cmpint (obj_type, ==, NMP_OBJECT_TYPE_LINK);
 	g_assert (received);
 	g_assert_cmpint (received->ifindex, ==, ifindex);
 	g_assert (data && data->name);
@@ -341,10 +344,10 @@ typedef struct {
 
 static void
 _wait_for_signal_cb (NMPlatform *platform,
-                     NMPObjectType obj_type,
+                     int obj_type_i,
                      int ifindex,
                      NMPlatformLink *plink,
-                     NMPlatformSignalChangeType change_type,
+                     int change_type_i,
                      gpointer user_data)
 {
 	WaitForSignalData *data = user_data;

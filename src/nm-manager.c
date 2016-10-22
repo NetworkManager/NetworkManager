@@ -2225,12 +2225,13 @@ out:
 
 static void
 platform_link_cb (NMPlatform *platform,
-                  NMPObjectType obj_type,
+                  int obj_type_i,
                   int ifindex,
                   NMPlatformLink *plink,
-                  NMPlatformSignalChangeType change_type,
+                  int change_type_i,
                   gpointer user_data)
 {
+	const NMPlatformSignalChangeType change_type = change_type_i;
 	PlatformLinkCbData *data;
 
 	switch (change_type) {

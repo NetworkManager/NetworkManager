@@ -235,12 +235,14 @@ error:
 
 static void
 link_changed_cb (NMPlatform *platform,
-                 NMPObjectType obj_type,
+                 int obj_type_i,
                  int ifindex,
                  NMPlatformLink *info,
-                 NMPlatformSignalChangeType change_type,
+                 int change_type_i,
                  NMDeviceAdsl *self)
 {
+	const NMPlatformSignalChangeType change_type = change_type_i;
+
 	if (change_type == NM_PLATFORM_SIGNAL_REMOVED) {
 		NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
 		NMDevice *device = NM_DEVICE (self);
@@ -248,11 +250,11 @@ link_changed_cb (NMPlatform *platform,
 		/* This only gets called for PPPoE connections and "nas" interfaces */
 
 		if (priv->nas_ifindex > 0 && ifindex == priv->nas_ifindex) {
-				/* NAS device went away for some reason; kill the connection */
-				_LOGD (LOGD_ADSL, "br2684 interface disappeared");
-				nm_device_state_changed (device,
-				                         NM_DEVICE_STATE_FAILED,
-				                         NM_DEVICE_STATE_REASON_BR2684_FAILED);
+			/* NAS device went away for some reason; kill the connection */
+			_LOGD (LOGD_ADSL, "br2684 interface disappeared");
+			nm_device_state_changed (device,
+			                         NM_DEVICE_STATE_FAILED,
+			                         NM_DEVICE_STATE_REASON_BR2684_FAILED);
 		}
 	}
 }

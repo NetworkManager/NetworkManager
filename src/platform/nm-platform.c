@@ -4295,7 +4295,12 @@ nm_platform_class_init (NMPlatformClass *platform_class)
 			                            G_SIGNAL_RUN_FIRST, \
 			                            G_CALLBACK (method), \
 			                            NULL, NULL, NULL, \
-			                            G_TYPE_NONE, 4, NM_TYPE_POBJECT_TYPE, G_TYPE_INT, G_TYPE_POINTER, NM_TYPE_PLATFORM_SIGNAL_CHANGE_TYPE); \
+			                            G_TYPE_NONE, 4, \
+			                            G_TYPE_INT, /* (int) NMPObjectType */ \
+			                            G_TYPE_INT, /* ifindex */ \
+			                            G_TYPE_POINTER /* const NMPObject * */, \
+			                            G_TYPE_INT /* (int) NMPlatformSignalChangeType */ \
+			                            ); \
 	} G_STMT_END
 
 	/* Signals */

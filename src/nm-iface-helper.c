@@ -333,12 +333,14 @@ do_early_setup (int *argc, char **argv[])
 
 static void
 ip6_address_changed (NMPlatform *platform,
-                     NMPObjectType obj_type,
+                     int obj_type_i,
                      int iface,
                      NMPlatformIP6Address *addr,
-                     NMPlatformSignalChangeType change_type,
+                     int change_type_i,
                      NMRDisc *rdisc)
 {
+	const NMPlatformSignalChangeType change_type = change_type_i;
+
 	if (   (change_type == NM_PLATFORM_SIGNAL_CHANGED && addr->n_ifa_flags & IFA_F_DADFAILED)
 	    || (change_type == NM_PLATFORM_SIGNAL_REMOVED && addr->n_ifa_flags & IFA_F_TENTATIVE))
 		nm_rdisc_dad_failed (rdisc, &addr->address);

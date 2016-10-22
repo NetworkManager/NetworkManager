@@ -80,7 +80,7 @@ void _free_signal (const char *file, int line, const char *func, SignalData *dat
 #define ensure_no_signal(data) _ensure_no_signal(__FILE__, __LINE__, G_STRFUNC, data)
 #define free_signal(data) _free_signal(__FILE__, __LINE__, G_STRFUNC, data)
 
-void link_callback (NMPlatform *platform, NMPObjectType obj_type, int ifindex, NMPlatformLink *received, NMPlatformSignalChangeType change_type, SignalData *data);
+void link_callback (NMPlatform *platform, int obj_type_i, int ifindex, NMPlatformLink *received, int change_type_i, SignalData *data);
 
 /*****************************************************************************/
 

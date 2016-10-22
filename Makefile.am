@@ -1133,7 +1133,6 @@ src_libNetworkManagerBase_la_LIBADD = \
 src_libNetworkManager_la_CPPFLAGS = $(src_cppflags)
 
 src_libNetworkManager_la_SOURCES_enum = \
-	src/platform/nm-platform.h \
 	src/nm-types.h \
 	$(NULL)
 
@@ -1220,6 +1219,7 @@ src_libNetworkManager_la_SOURCES = \
 	src/platform/nm-platform-utils.c \
 	src/platform/nm-platform-utils.h \
 	src/platform/nm-platform.c \
+	src/platform/nm-platform.h \
 	src/platform/nm-linux-platform.c \
 	src/platform/nm-linux-platform.h \
 	src/platform/wifi/wifi-utils-nl80211.c \

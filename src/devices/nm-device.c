@@ -2003,12 +2003,13 @@ device_ip_link_changed (NMDevice *self)
 
 static void
 link_changed_cb (NMPlatform *platform,
-                 NMPObjectType obj_type,
+                 int obj_type_i,
                  int ifindex,
                  NMPlatformLink *info,
-                 NMPlatformSignalChangeType change_type,
+                 int change_type_i,
                  NMDevice *self)
 {
+	const NMPlatformSignalChangeType change_type = change_type_i;
 	NMDevicePrivate *priv;
 
 	if (change_type != NM_PLATFORM_SIGNAL_CHANGED)
@@ -9719,12 +9720,14 @@ queued_ip6_config_change (gpointer user_data)
 
 static void
 device_ipx_changed (NMPlatform *platform,
-                    NMPObjectType obj_type,
+                    int obj_type_i,
                     int ifindex,
                     gpointer platform_object,
-                    NMPlatformSignalChangeType change_type,
+                    int change_type_i,
                     NMDevice *self)
 {
+	const NMPObjectType obj_type = obj_type_i;
+	const NMPlatformSignalChangeType change_type = change_type_i;
 	NMDevicePrivate *priv;
 	NMPlatformIP6Address *addr;
 
