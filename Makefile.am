@@ -1120,10 +1120,66 @@ src_libNetworkManagerBase_la_SOURCES = \
 	src/nm-core-utils.c \
 	src/nm-core-utils.h \
 	src/nm-logging.c \
-	src/nm-logging.h
+	src/nm-logging.h \
+	\
+	src/nm-multi-index.c \
+	src/nm-multi-index.h \
+	src/NetworkManagerUtils.c \
+	src/NetworkManagerUtils.h \
+	\
+	src/platform/nmp-netns.c \
+	src/platform/nmp-netns.h \
+	src/platform/nmp-object.c \
+	src/platform/nmp-object.h \
+	src/platform/nm-platform-utils.c \
+	src/platform/nm-platform-utils.h \
+	src/platform/nm-platform.c \
+	src/platform/nm-platform.h \
+	src/platform/nm-linux-platform.c \
+	src/platform/nm-linux-platform.h \
+	src/platform/wifi/wifi-utils-nl80211.c \
+	src/platform/wifi/wifi-utils-nl80211.h \
+	src/platform/wifi/wifi-utils-private.h \
+	src/platform/wifi/wifi-utils.c \
+	src/platform/wifi/wifi-utils.h \
+	\
+	src/rdisc/nm-lndp-rdisc.c \
+	src/rdisc/nm-lndp-rdisc.h \
+	src/rdisc/nm-rdisc.c \
+	src/rdisc/nm-rdisc.h \
+	src/rdisc/nm-rdisc-private.h \
+	\
+	src/nm-exported-object.c \
+	src/nm-exported-object.h \
+	src/nm-ip4-config.c \
+	src/nm-ip4-config.h \
+	src/nm-ip6-config.c \
+	src/nm-ip6-config.h \
+	\
+	src/nm-route-manager.c \
+	src/nm-route-manager.h \
+	\
+	src/dhcp-manager/nm-dhcp-client.c \
+	src/dhcp-manager/nm-dhcp-client.h \
+	src/dhcp-manager/nm-dhcp-client-logging.h \
+	src/dhcp-manager/nm-dhcp-utils.c \
+	src/dhcp-manager/nm-dhcp-utils.h \
+	src/dhcp-manager/nm-dhcp-systemd.c \
+	\
+	src/main-utils.c \
+	src/main-utils.h \
+	\
+	$(NULL)
+
+if WITH_WEXT
+src_libNetworkManagerBase_la_SOURCES += \
+	src/platform/wifi/wifi-utils-wext.c \
+	src/platform/wifi/wifi-utils-wext.h
+endif
 
 src_libNetworkManagerBase_la_LIBADD = \
-	$(top_builddir)/libnm-core/libnm-core.la \
+	libnm-core/libnm-core.la \
+	introspection/libnmdbus.la \
 	$(GLIB_LIBS) \
 	$(SYSTEMD_JOURNAL_LIBS) \
 	$(NULL)
@@ -1175,16 +1231,10 @@ src_libNetworkManager_la_SOURCES = \
 	src/devices/nm-device-vxlan.c \
 	src/devices/nm-device-vxlan.h \
 	\
-	src/dhcp-manager/nm-dhcp-client.c \
-	src/dhcp-manager/nm-dhcp-client.h \
-	src/dhcp-manager/nm-dhcp-client-logging.h \
-	src/dhcp-manager/nm-dhcp-utils.c \
 	src/dhcp-manager/nm-dhcp-manager.c \
 	src/dhcp-manager/nm-dhcp-manager.h \
-	src/dhcp-manager/nm-dhcp-utils.h \
 	src/dhcp-manager/nm-dhcp-dhclient.c \
 	src/dhcp-manager/nm-dhcp-dhcpcd.c \
-	src/dhcp-manager/nm-dhcp-systemd.c \
 	src/dhcp-manager/nm-dhcp-helper-api.h \
 	src/dhcp-manager/nm-dhcp-listener.c \
 	src/dhcp-manager/nm-dhcp-listener.h \
@@ -1206,28 +1256,6 @@ src_libNetworkManager_la_SOURCES = \
 	src/dnsmasq-manager/nm-dnsmasq-manager.h \
 	src/dnsmasq-manager/nm-dnsmasq-utils.c \
 	src/dnsmasq-manager/nm-dnsmasq-utils.h \
-	\
-	src/platform/nmp-netns.c \
-	src/platform/nmp-netns.h \
-	src/platform/nmp-object.c \
-	src/platform/nmp-object.h \
-	src/platform/nm-platform-utils.c \
-	src/platform/nm-platform-utils.h \
-	src/platform/nm-platform.c \
-	src/platform/nm-platform.h \
-	src/platform/nm-linux-platform.c \
-	src/platform/nm-linux-platform.h \
-	src/platform/wifi/wifi-utils-nl80211.c \
-	src/platform/wifi/wifi-utils-nl80211.h \
-	src/platform/wifi/wifi-utils-private.h \
-	src/platform/wifi/wifi-utils.c \
-	src/platform/wifi/wifi-utils.h \
-	\
-	src/rdisc/nm-lndp-rdisc.c \
-	src/rdisc/nm-lndp-rdisc.h \
-	src/rdisc/nm-rdisc.c \
-	src/rdisc/nm-rdisc.h \
-	src/rdisc/nm-rdisc-private.h \
 	\
 	src/ppp-manager/nm-ppp-manager.c \
 	src/ppp-manager/nm-ppp-manager.h \
@@ -1288,8 +1316,6 @@ src_libNetworkManager_la_SOURCES = \
 	src/nm-connectivity.h \
 	src/nm-dcb.c \
 	src/nm-dcb.h \
-	src/nm-route-manager.c \
-	src/nm-route-manager.h \
 	src/nm-default-route-manager.c \
 	src/nm-default-route-manager.h \
 	src/nm-dhcp4-config.c \
@@ -1298,16 +1324,10 @@ src_libNetworkManager_la_SOURCES = \
 	src/nm-dhcp6-config.h \
 	src/nm-dispatcher.c \
 	src/nm-dispatcher.h \
-	src/nm-exported-object.c \
-	src/nm-exported-object.h \
 	src/nm-firewall-manager.c \
 	src/nm-firewall-manager.h \
 	src/nm-proxy-config.c \
 	src/nm-proxy-config.h \
-	src/nm-ip4-config.c \
-	src/nm-ip4-config.h \
-	src/nm-ip6-config.c \
-	src/nm-ip6-config.h \
 	src/nm-auth-manager.c \
 	src/nm-auth-manager.h \
 	src/nm-auth-subject.c \
@@ -1316,8 +1336,6 @@ src_libNetworkManager_la_SOURCES = \
 	src/nm-auth-utils.h \
 	src/nm-manager.c \
 	src/nm-manager.h \
-	src/nm-multi-index.c \
-	src/nm-multi-index.h \
 	src/nm-pacrunner-manager.c \
 	src/nm-pacrunner-manager.h \
 	src/nm-policy.c \
@@ -1329,20 +1347,10 @@ src_libNetworkManager_la_SOURCES = \
 	src/nm-sleep-monitor.c \
 	src/nm-sleep-monitor.h \
 	src/nm-types.h \
-	src/NetworkManagerUtils.c \
-	src/NetworkManagerUtils.h \
+	\
 	$(NULL)
 
-if WITH_WEXT
-src_libNetworkManager_la_SOURCES += \
-	src/platform/wifi/wifi-utils-wext.c \
-	src/platform/wifi/wifi-utils-wext.h
-endif
-
-
 src_libNetworkManager_la_LIBADD = \
-	libnm-core/libnm-core.la \
-	introspection/libnmdbus.la \
 	src/libNetworkManagerBase.la \
 	src/libsystemd-nm.la \
 	$(GLIB_LIBS) \
@@ -1377,8 +1385,6 @@ EXTRA_src_NetworkManager_DEPENDENCIES = \
 src_NetworkManager_CPPFLAGS = $(src_cppflags)
 
 src_NetworkManager_SOURCES = \
-	src/main-utils.c \
-	src/main-utils.h \
 	src/main.c
 
 src_NetworkManager_LDADD = \
@@ -1396,69 +1402,12 @@ src_nm_iface_helper_CPPFLAGS = \
 
 src_nm_iface_helper_SOURCES = \
 	\
-	src/dhcp-manager/nm-dhcp-client.c \
-	src/dhcp-manager/nm-dhcp-client.h \
-	src/dhcp-manager/nm-dhcp-client-logging.h \
-	src/dhcp-manager/nm-dhcp-utils.c \
-	src/dhcp-manager/nm-dhcp-utils.h \
 	src/dhcp-manager/nm-dhcp-manager.c \
 	src/dhcp-manager/nm-dhcp-manager.h \
-	src/dhcp-manager/nm-dhcp-systemd.c \
 	\
-	src/platform/nmp-netns.c \
-	src/platform/nmp-netns.h \
-	src/platform/nmp-object.c \
-	src/platform/nmp-object.h \
-	src/platform/nm-platform-utils.c \
-	src/platform/nm-platform-utils.h \
-	src/platform/nm-platform.c \
-	src/platform/nm-platform.h \
-	src/platform/nm-linux-platform.c \
-	src/platform/nm-linux-platform.h \
-	src/platform/wifi/wifi-utils-nl80211.c \
-	src/platform/wifi/wifi-utils-nl80211.h \
-	src/platform/wifi/wifi-utils-private.h \
-	src/platform/wifi/wifi-utils.c \
-	src/platform/wifi/wifi-utils.h \
-	\
-	src/nm-pacrunner-manager.c \
-	src/nm-pacrunner-manager.h \
-	\
-	src/rdisc/nm-lndp-rdisc.c \
-	src/rdisc/nm-lndp-rdisc.h \
-	src/rdisc/nm-rdisc.c \
-	src/rdisc/nm-rdisc.h \
-	\
-	src/nm-route-manager.c \
-	src/nm-route-manager.h \
-	\
-	src/nm-exported-object.c \
-	src/nm-exported-object.h \
-	src/nm-proxy-config.c \
-	src/nm-proxy-config.h \
-	src/nm-ip4-config.c \
-	src/nm-ip4-config.h \
-	src/nm-ip6-config.c \
-	src/nm-ip6-config.h \
-	\
-	src/nm-multi-index.c \
-	src/nm-multi-index.h \
-	src/NetworkManagerUtils.c \
-	src/NetworkManagerUtils.h \
-	\
-	src/nm-iface-helper.c \
-	src/main-utils.c \
-	src/main-utils.h
-
-if WITH_WEXT
-src_nm_iface_helper_SOURCES += \
-	src/platform/wifi/wifi-utils-wext.c \
-	src/platform/wifi/wifi-utils-wext.h
-endif
+	src/nm-iface-helper.c
 
 src_nm_iface_helper_LDADD = \
-	libnm-core/libnm-core.la \
-	introspection/libnmdbus.la \
 	src/libNetworkManagerBase.la \
 	src/libsystemd-nm.la \
 	$(GLIB_LIBS) \
@@ -1521,13 +1470,11 @@ src_dhcp_manager_tests_cppflags = \
 	-DTESTDIR="\"$(abs_srcdir)/src/dhcp-manager/tests\""
 
 src_dhcp_manager_tests_ldadd = \
-	src/libNetworkManager.la
+	src/libNetworkManagerTest.la
 
-src_dhcp_manager_tests_programs = \
+check_programs += \
 	src/dhcp-manager/tests/test-dhcp-dhclient \
 	src/dhcp-manager/tests/test-dhcp-utils
-
-check_programs += $(src_dhcp_manager_tests_programs)
 
 src_dhcp_manager_tests_test_dhcp_dhclient_CPPFLAGS = $(src_dhcp_manager_tests_cppflags)
 src_dhcp_manager_tests_test_dhcp_utils_CPPFLAGS = $(src_dhcp_manager_tests_cppflags)
@@ -1602,7 +1549,7 @@ src_settings_plugins_keyfile_tests_test_keyfile_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS)
 
 src_settings_plugins_keyfile_tests_test_keyfile_LDADD = \
-	src/libNetworkManager.la
+	src/libNetworkManagerTest.la
 
 EXTRA_DIST += \
 	src/settings/plugins/keyfile/tests/keyfiles/Test_Wired_Connection \
@@ -1711,7 +1658,7 @@ src_settings_plugins_ibft_tests_test_ibft_LDFLAGS = \
 
 src_settings_plugins_ibft_tests_test_ibft_LDADD = \
 	src/settings/plugins/ibft/libnms-ibft-core.la \
-	src/libNetworkManager.la
+	src/libNetworkManagerTest.la
 
 EXTRA_DIST += \
 	src/settings/plugins/ibft/tests/iscsiadm-test-dhcp \
@@ -1851,7 +1798,7 @@ src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_LDFLAGS = \
 
 src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_LDADD = \
 	src/settings/plugins/ifcfg-rh/libnms-ifcfg-rh-core.la \
-	src/libNetworkManager.la
+	src/libNetworkManagerTest.la
 
 endif
 
@@ -2104,7 +2051,7 @@ src_settings_plugins_ifupdown_tests_test_ifupdown_LDFLAGS = \
 
 src_settings_plugins_ifupdown_tests_test_ifupdown_LDADD = \
 	src/settings/plugins/ifupdown/libnms-ifupdown-core.la \
-	src/libNetworkManager.la
+	src/libNetworkManagerTest.la
 
 endif
 
@@ -2217,7 +2164,7 @@ src_settings_plugins_ifnet_tests_test_ifnet_LDFLAGS = \
 
 src_settings_plugins_ifnet_tests_test_ifnet_LDADD = \
 	src/settings/plugins/ifnet/libnms-ifnet-core.la \
-	src/libNetworkManager.la
+	src/libNetworkManagerTest.la
 
 endif
 
@@ -2511,7 +2458,7 @@ src_devices_wifi_tests_test_general_CPPFLAGS = \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS)
 
-src_devices_wifi_tests_test_general_LDADD = src/libNetworkManager.la
+src_devices_wifi_tests_test_general_LDADD = src/libNetworkManagerTest.la
 
 endif
 
@@ -2582,7 +2529,7 @@ src_dnsmasq_manager_tests_test_dnsmasq_utils_CPPFLAGS = \
 	-DTESTDIR="\"$(abs_srcdir)\""
 
 src_dnsmasq_manager_tests_test_dnsmasq_utils_LDADD = \
-	src/libNetworkManager.la
+	src/libNetworkManagerTest.la
 
 ###############################################################################
 # src/platform/tests
@@ -2793,7 +2740,7 @@ src_supplicant_manager_tests_test_supplicant_config_CPPFLAGS = \
 	$(GLIB_CFLAGS)
 
 src_supplicant_manager_tests_test_supplicant_config_LDADD = \
-	src/libNetworkManager.la
+	src/libNetworkManagerTest.la
 
 EXTRA_DIST += \
 	src/supplicant-manager/tests/certs/test-ca-cert.pem \
@@ -2860,7 +2807,7 @@ src_tests_ldflags = \
 	$(CODE_COVERAGE_LDFLAGS)
 
 src_tests_ldadd = \
-	src/libNetworkManager.la
+	src/libNetworkManagerTest.la
 
 check_programs += \
 	src/tests/test-general \
