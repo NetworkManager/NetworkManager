@@ -927,6 +927,24 @@ _get_config_dir_files (const char *config_dir)
 	return confs;
 }
 
+static void
+_confs_to_description (GString *str, const GPtrArray *confs, const char *name)
+{
+	guint i;
+
+	if (!confs->len)
+		return;
+
+	for (i = 0; i < confs->len; i++) {
+		if (i == 0)
+			g_string_append_printf (str, " (%s: ", name);
+		else
+			g_string_append (str, ", ");
+		g_string_append (str, confs->pdata[i]);
+	}
+	g_string_append (str, ")");
+}
+
 static GKeyFile *
 read_entire_config (const NMConfigCmdLineOptions *cli,
                     const char *config_dir,
@@ -941,7 +959,6 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 	gs_unref_ptrarray GPtrArray *run_confs = NULL;
 	guint i;
 	gs_free char *o_config_main_file = NULL;
-	GString *str;
 
 	g_return_val_if_fail (config_dir, NULL);
 	g_return_val_if_fail (system_config_dir, NULL);
@@ -1020,38 +1037,16 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 	if (cli && cli->connectivity_response && cli->connectivity_response[0])
 		g_key_file_set_string (keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "response", cli->connectivity_response);
 
-	str = g_string_new (o_config_main_file);
-	if (system_confs->len > 0) {
-		for (i = 0; i < system_confs->len; i++) {
-			if (i == 0)
-				g_string_append (str, " (lib: ");
-			else
-				g_string_append (str, ", ");
-			g_string_append (str, system_confs->pdata[i]);
-		}
-		g_string_append (str, ")");
-	}
-	if (confs->len > 0) {
-		for (i = 0; i < confs->len; i++) {
-			if (i == 0)
-				g_string_append (str, " (etc: ");
-			else
-				g_string_append (str, ", ");
-			g_string_append (str, confs->pdata[i]);
-		}
-		g_string_append (str, ")");
-	}
+	if (out_config_description) {
+		GString *str;
 
-	if (out_config_main_file)
-		*out_config_main_file = o_config_main_file;
-	else
-		g_free (o_config_main_file);
-	if (out_config_description)
+		str = g_string_new (o_config_main_file);
+		_confs_to_description (str, system_confs, "lib");
+		_confs_to_description (str, run_confs, "run");
+		_confs_to_description (str, confs, "etc");
 		*out_config_description = g_string_free (str, FALSE);
-	else
-		g_string_free (str, TRUE);
-
-	o_config_main_file = NULL;
+	}
+	NM_SET_OUT (out_config_main_file, g_steal_pointer (&o_config_main_file));
 	return keyfile;
 }
 
