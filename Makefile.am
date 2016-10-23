@@ -2515,7 +2515,7 @@ src_platform_tests_libadd = \
 	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS)
 
-noinst_PROGRAMS += \
+check_programs_norun += \
 	src/platform/tests/monitor
 
 check_programs += \
