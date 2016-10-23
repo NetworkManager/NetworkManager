@@ -959,6 +959,7 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 	gs_unref_ptrarray GPtrArray *run_confs = NULL;
 	guint i;
 	gs_free char *o_config_main_file = NULL;
+	const char *run_config_dir = "";
 
 	g_return_val_if_fail (config_dir, NULL);
 	g_return_val_if_fail (system_config_dir, NULL);
@@ -966,17 +967,22 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 	g_return_val_if_fail (!out_config_description || !*out_config_description, NULL);
 	g_return_val_if_fail (!error || !*error, FALSE);
 
+	if (   (""RUN_CONFIG_DIR)[0] == '/'
+	    && !nm_streq (RUN_CONFIG_DIR, system_config_dir)
+	    && !nm_streq (RUN_CONFIG_DIR, config_dir))
+		run_config_dir = RUN_CONFIG_DIR;
+
 	/* create a default configuration file. */
 	keyfile = nm_config_create_keyfile ();
 
 	system_confs = _get_config_dir_files (system_config_dir);
 	confs = _get_config_dir_files (config_dir);
-	run_confs = _get_config_dir_files (RUN_CONFIG_DIR);
+	run_confs = _get_config_dir_files (run_config_dir);
 
 	for (i = 0; i < system_confs->len; ) {
 		const char *filename = system_confs->pdata[i];
 
-		/* if a same named file exists in config_dir or RUN_CONFIG_DIR, skip it. */
+		/* if a same named file exists in config_dir or run_config_dir, skip it. */
 		if (_nm_utils_strv_find_first ((char **) confs->pdata, confs->len, filename) >= 0 ||
 		    _nm_utils_strv_find_first ((char **) run_confs->pdata, run_confs->len, filename) >= 0) {
 			g_ptr_array_remove_index (system_confs, i);
@@ -997,7 +1003,7 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 			continue;
 		}
 
-		if (!read_config (keyfile, FALSE, RUN_CONFIG_DIR, filename, error))
+		if (!read_config (keyfile, FALSE, run_config_dir, filename, error))
 			return NULL;
 		i++;
 	}
@@ -2250,31 +2256,24 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	char *config_description = NULL;
 	gs_strfreev char **no_auto_default = NULL;
 	gboolean intern_config_needs_rewrite;
+	const char *s;
 
 	if (priv->config_dir) {
 		/* Object is already initialized. */
 		if (priv->config_data)
 			return TRUE;
 		g_set_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND, "unspecified error");
-		return FALSE;
+		g_return_val_if_reached (FALSE);
 	}
 
-	if (priv->cli.config_dir)
-		priv->config_dir = g_strdup (priv->cli.config_dir);
-	else
-		priv->config_dir = g_strdup (DEFAULT_CONFIG_DIR);
+	s = priv->cli.config_dir ?: ""DEFAULT_CONFIG_DIR;
+	priv->config_dir = g_strdup (s[0] == '/' ? s : "");
 
-	if (priv->cli.system_config_dir)
-		priv->system_config_dir = g_strdup (priv->cli.system_config_dir);
-	else
-		priv->system_config_dir = g_strdup (DEFAULT_SYSTEM_CONFIG_DIR);
-
-	if (strcmp (priv->config_dir, priv->system_config_dir) == 0) {
-		/* having the same directory twice makes no sense. In that case, clear
-		 * @system_config_dir. */
-		g_free (priv->system_config_dir);
-		priv->system_config_dir = g_strdup ("");
-	}
+	s = priv->cli.system_config_dir ?: ""DEFAULT_SYSTEM_CONFIG_DIR;
+	if (   s[0] != '/'
+	    || nm_streq (s, priv->config_dir))
+		s = "";
+	priv->system_config_dir = g_strdup (s);
 
 	if (priv->cli.intern_config_file)
 		priv->intern_config_file = g_strdup (priv->cli.intern_config_file);
