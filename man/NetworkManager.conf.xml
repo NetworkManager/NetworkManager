@@ -45,6 +45,7 @@
   <refsynopsisdiv>
     <para><filename>/etc/NetworkManager/NetworkManager.conf</filename>,
     <filename>/etc/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</filename>,
+    <filename>/var/run/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</filename>,
     <filename>/usr/lib/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</filename>,
     <filename>/var/lib/NetworkManager/NetworkManager-intern.conf</filename>
     </para>
@@ -67,10 +68,13 @@
     These will be read in order, with later files overriding earlier ones.
     Packages might install further configuration snippets to <literal>/usr/lib/NetworkManager/conf.d</literal>.
     This directory is parsed first, even before <literal>NetworkManager.conf</literal>.
-    The loading of a file <literal>/usr/lib/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</literal>
+    Scripts can also put per-boot configuration into <literal>/var/run/NetworkManager/conf.d</literal>.
+    This directory is parsed second, also before <literal>NetworkManager.conf</literal>.
+    The loading of a file <literal>/var/run/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</literal>
     can be prevented by adding a file <literal>/etc/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</literal>.
-    In this case, the file from the etc configuration shadows the file from the
-    system configuration directory.
+    Likewise, a file <literal>/usr/lib/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</literal>
+    can be shadowed by putting a file of the same name to either <literal>/etc/NetworkManager/conf.d</literal>
+    or <literal>/var/run/NetworkManager/conf.d</literal>.
     </para>
     <para>
     NetworkManager can overwrite certain user configuration options via D-Bus or other internal
