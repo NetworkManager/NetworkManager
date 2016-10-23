@@ -953,7 +953,7 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
                     char **out_config_description,
                     GError **error)
 {
-	GKeyFile *keyfile;
+	gs_unref_keyfile GKeyFile *keyfile = NULL;
 	gs_unref_ptrarray GPtrArray *system_confs = NULL;
 	gs_unref_ptrarray GPtrArray *confs = NULL;
 	gs_unref_ptrarray GPtrArray *run_confs = NULL;
@@ -983,10 +983,8 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 			continue;
 		}
 
-		if (!read_config (keyfile, FALSE, system_config_dir, filename, error)) {
-			g_key_file_free (keyfile);
+		if (!read_config (keyfile, FALSE, system_config_dir, filename, error))
 			return NULL;
-		}
 		i++;
 	}
 
@@ -999,26 +997,20 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 			continue;
 		}
 
-		if (!read_config (keyfile, FALSE, RUN_CONFIG_DIR, filename, error)) {
-			g_key_file_free (keyfile);
+		if (!read_config (keyfile, FALSE, RUN_CONFIG_DIR, filename, error))
 			return NULL;
-		}
 		i++;
 	}
 
 	/* First read the base config file */
-	if (!read_base_config (keyfile, cli ? cli->config_main_file : NULL, &o_config_main_file, error)) {
-		g_key_file_free (keyfile);
+	if (!read_base_config (keyfile, cli ? cli->config_main_file : NULL, &o_config_main_file, error))
 		return NULL;
-	}
 
 	g_assert (o_config_main_file);
 
 	for (i = 0; i < confs->len; i++) {
-		if (!read_config (keyfile, FALSE, config_dir, confs->pdata[i], error)) {
-			g_key_file_free (keyfile);
+		if (!read_config (keyfile, FALSE, config_dir, confs->pdata[i], error))
 			return NULL;
-		}
 	}
 
 	/* Merge settings from command line. They overwrite everything read from
@@ -1047,7 +1039,7 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 		*out_config_description = g_string_free (str, FALSE);
 	}
 	NM_SET_OUT (out_config_main_file, g_steal_pointer (&o_config_main_file));
-	return keyfile;
+	return g_steal_pointer (&keyfile);
 }
 
 static gboolean
