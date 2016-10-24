@@ -42,6 +42,8 @@
 #include "nm-ip6-config.h"
 #include "NetworkManagerUtils.h"
 #include "nm-config.h"
+#include "devices/nm-device.h"
+#include "nm-manager.h"
 
 #include "nm-dns-plugin.h"
 #include "nm-dns-dnsmasq.h"
@@ -87,6 +89,7 @@ enum {
 NM_GOBJECT_PROPERTIES_DEFINE (NMDnsManager,
 	PROP_MODE,
 	PROP_RC_MANAGER,
+	PROP_CONFIGURATION,
 );
 
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -123,6 +126,7 @@ typedef enum {
 
 typedef struct {
 	GPtrArray *configs;
+	GVariant *config_variant;
 	NMDnsIPConfigData *best_conf4, *best_conf6;
 	gboolean need_sort;
 
@@ -1204,6 +1208,9 @@ update_dns (NMDnsManager *self,
 	if (update && result == SR_SUCCESS)
 		g_signal_emit (self, signals[CONFIG_CHANGED], 0);
 
+	g_clear_pointer (&priv->config_variant, g_variant_unref);
+	_notify (self, PROP_CONFIGURATION);
+
 	if (searches)
 		g_strfreev (searches);
 	if (options)
@@ -1773,6 +1780,198 @@ config_changed_cb (NMConfig *config,
 	}
 }
 
+static GVariant *
+_get_global_config_variant (NMGlobalDnsConfig *global)
+{
+	NMGlobalDnsDomain *domain;
+	GVariantBuilder builder;
+	guint i, num;
+
+	g_variant_builder_init (&builder, G_VARIANT_TYPE ("aa{sv}"));
+	num = nm_global_dns_config_get_num_domains (global);
+	for (i = 0; i < num; i++) {
+		GVariantBuilder conf_builder;
+		GVariantBuilder item_builder;
+		const char *domain_name;
+		const char * const *servers;
+
+		g_variant_builder_init (&conf_builder, G_VARIANT_TYPE ("a{sv}"));
+
+		domain = nm_global_dns_config_get_domain (global, i);
+		domain_name = nm_global_dns_domain_get_name (domain);
+
+		if (domain_name && !nm_streq0 (domain_name, "*")) {
+			g_variant_builder_init (&item_builder, G_VARIANT_TYPE ("as"));
+			g_variant_builder_add (&item_builder,
+			                       "s",
+			                       domain_name);
+			g_variant_builder_add (&conf_builder,
+			                       "{sv}",
+			                       "domains",
+			                       g_variant_builder_end (&item_builder));
+		}
+
+		g_variant_builder_init (&item_builder, G_VARIANT_TYPE ("as"));
+		for (servers = nm_global_dns_domain_get_servers (domain); *servers; servers++) {
+			g_variant_builder_add (&item_builder,
+			                       "s",
+			                       *servers);
+		}
+		g_variant_builder_add (&conf_builder,
+		                       "{sv}",
+		                       "nameservers",
+		                       g_variant_builder_end (&item_builder));
+
+		g_variant_builder_add (&conf_builder,
+		                       "{sv}",
+		                       "priority",
+		                       g_variant_new_int32 (NM_DNS_PRIORITY_DEFAULT_NORMAL));
+
+		g_variant_builder_add (&builder, "a{sv}", &conf_builder);
+	}
+
+	return g_variant_ref_sink (g_variant_builder_end (&builder));
+}
+
+static GVariant *
+_get_config_variant (NMDnsManager *self)
+{
+	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	NMGlobalDnsConfig *global_config;
+	GVariantBuilder builder;
+	NMConfigData *data;
+	guint i, j;
+
+	if (priv->config_variant)
+		return priv->config_variant;
+
+	data = nm_config_get_data (priv->config);
+	global_config = nm_config_data_get_global_dns_config (data);
+	if (global_config) {
+		priv->config_variant = _get_global_config_variant (global_config);
+		_LOGT ("current configuration: %s", g_variant_print (priv->config_variant, TRUE));
+		return priv->config_variant;
+	}
+
+	g_variant_builder_init (&builder, G_VARIANT_TYPE ("aa{sv}"));
+
+	for (i = 0; i < priv->configs->len; i++) {
+		NMDnsIPConfigData *current = priv->configs->pdata[i];
+		GVariantBuilder entry_builder;
+		GVariantBuilder strv_builder;
+		gboolean v4 = NM_IS_IP4_CONFIG (current->config);
+		gint priority;
+
+		g_variant_builder_init (&entry_builder, G_VARIANT_TYPE ("a{sv}"));
+		g_variant_builder_init (&strv_builder, G_VARIANT_TYPE ("as"));
+
+		if (v4) {
+			NMIP4Config *config = NM_IP4_CONFIG (current->config);
+			guint num = nm_ip4_config_get_num_nameservers (config);
+			guint32 ns;
+
+			if (!num)
+				continue;
+
+			/* Add nameservers */
+			for (j = 0; j < num; j++) {
+				ns = nm_ip4_config_get_nameserver (config, j);
+				g_variant_builder_add (&strv_builder,
+				                       "s",
+				                       nm_utils_inet4_ntop (ns, NULL));
+			}
+
+			g_variant_builder_add (&entry_builder,
+			                       "{sv}",
+			                       "nameservers",
+			                       g_variant_builder_end (&strv_builder));
+
+			/* Add domains */
+			g_variant_builder_init (&strv_builder, G_VARIANT_TYPE ("as"));
+			num = nm_ip4_config_get_num_domains (config);
+			for (j = 0; j < num; j++) {
+				g_variant_builder_add (&strv_builder,
+				                       "s",
+				                       nm_ip4_config_get_domain (config, j));
+			}
+
+			if (num) {
+				g_variant_builder_add (&entry_builder,
+				                       "{sv}",
+				                       "domains",
+				                       g_variant_builder_end (&strv_builder));
+			}
+
+			priority = nm_ip4_config_get_dns_priority (config);
+		} else {
+			NMIP6Config *config = NM_IP6_CONFIG (current->config);
+			guint num = nm_ip6_config_get_num_nameservers (config);
+			const struct in6_addr *ns;
+
+			if (!num)
+				continue;
+
+			/* Add nameservers */
+			for (j = 0; j < num; j++) {
+				ns = nm_ip6_config_get_nameserver (config, j);
+				g_variant_builder_add (&strv_builder,
+				                       "s",
+				                       nm_utils_inet6_ntop (ns, NULL));
+			}
+
+			g_variant_builder_add (&entry_builder,
+			                       "{sv}",
+			                       "nameservers",
+			                       g_variant_builder_end (&strv_builder));
+
+			/* Add domains */
+			g_variant_builder_init (&strv_builder, G_VARIANT_TYPE ("as"));
+			num = nm_ip6_config_get_num_domains (config);
+			for (j = 0; j < num; j++) {
+				g_variant_builder_add (&strv_builder,
+				                       "s",
+				                       nm_ip6_config_get_domain (config, j));
+			}
+
+			if (num) {
+				g_variant_builder_add (&entry_builder,
+				                       "{sv}",
+				                       "domains",
+				                       g_variant_builder_end (&strv_builder));
+			}
+
+			priority = nm_ip6_config_get_dns_priority (config);
+		}
+
+		/* Add device */
+		if (current->iface) {
+			g_variant_builder_add (&entry_builder,
+			                       "{sv}",
+			                       "interface",
+			                       g_variant_new_string (current->iface));
+		}
+
+		/* Add priority */
+		g_variant_builder_add (&entry_builder,
+		                       "{sv}",
+		                       "priority",
+		                       g_variant_new_int32 (priority));
+
+		/* Add VPN */
+		g_variant_builder_add (&entry_builder,
+		                       "{sv}",
+		                       "vpn",
+		                       g_variant_new_boolean (current->type == NM_DNS_IP_CONFIG_TYPE_VPN));
+
+		g_variant_builder_add (&builder, "a{sv}", &entry_builder);
+	}
+
+	priv->config_variant = g_variant_ref_sink (g_variant_builder_end (&builder));
+	_LOGT ("current configuration: %s", g_variant_print (priv->config_variant, TRUE));
+
+	return priv->config_variant;
+}
+
 static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
@@ -1786,6 +1985,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_RC_MANAGER:
 		g_value_set_string (value, _rc_manager_to_string (priv->rc_manager));
+		break;
+	case PROP_CONFIGURATION:
+		g_value_set_variant (value, _get_config_variant (self));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1892,6 +2094,13 @@ nm_dns_manager_class_init (NMDnsManagerClass *klass)
 	                         NULL,
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_CONFIGURATION] =
+	    g_param_spec_variant (NM_DNS_MANAGER_CONFIGURATION, "", "",
+	                          G_VARIANT_TYPE ("aa{sv}"),
+	                          NULL,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

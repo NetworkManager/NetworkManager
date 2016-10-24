@@ -22,5 +22,18 @@
     -->
     <property name="RcManager" type="s" access="read"/>
 
+    <!--
+        Configuration:
+
+        The current DNS configuration represented as an array of
+        dictionaries.  Each dictionary has the "nameservers",
+        "priority" keys and, optionally, "interface" and "vpn".
+        "nameservers" is the list of DNS servers, "priority" their
+        relative priority, "interface" the interface on which these
+        servers are contacted, "vpn" a boolean telling whether the
+        configuration was obtained from a VPN connection.
+    -->
+    <property name="Configuration" type="aa{sv}" access="read"/>
+
   </interface>
 </node>

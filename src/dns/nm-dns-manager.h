@@ -54,6 +54,7 @@ typedef struct {
 /* properties */
 #define NM_DNS_MANAGER_MODE "mode"
 #define NM_DNS_MANAGER_RC_MANAGER "rc-manager"
+#define NM_DNS_MANAGER_CONFIGURATION "configuration"
 
 /* internal signals */
 #define NM_DNS_MANAGER_CONFIG_CHANGED "config-changed"
