@@ -318,7 +318,7 @@ test_slave (int master, int type, SignalData *master_changed)
 	g_assert_cmpint (nm_platform_link_get_master (NM_PLATFORM_GET, ifindex), ==, 0);
 	if (link_changed->received_count > 0) {
 		accept_signals (link_added, 0, 1);
-		accept_signals (link_changed, 1, 3);
+		accept_signals (link_changed, 1, 5);
 		accept_signals (link_removed, 0, 1);
 	} else {
 		/* Due to https://bugzilla.redhat.com/show_bug.cgi?id=1285719 , kernel might send a
