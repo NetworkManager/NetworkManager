@@ -614,8 +614,7 @@ char *strreplace(const char *text, const char *old_string, const char *new_strin
         return r;
 
 oom:
-        free(r);
-        return NULL;
+        return mfree(r);
 }
 
 char *strip_tab_ansi(char **ibuf, size_t *_isz) {
@@ -686,8 +685,7 @@ char *strip_tab_ansi(char **ibuf, size_t *_isz) {
 
         if (ferror(f)) {
                 fclose(f);
-                free(obuf);
-                return NULL;
+                return mfree(obuf);
         }
 
         fclose(f);
