@@ -111,7 +111,7 @@ nm_device_ip_tunnel_get_local (NMDeviceIPTunnel *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_IP_TUNNEL (device), NULL);
 
-	return NM_DEVICE_IP_TUNNEL_GET_PRIVATE (device)->local;
+	return nm_str_not_empty (NM_DEVICE_IP_TUNNEL_GET_PRIVATE (device)->local);
 }
 
 /**
@@ -127,7 +127,7 @@ nm_device_ip_tunnel_get_remote (NMDeviceIPTunnel *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_IP_TUNNEL (device), NULL);
 
-	return NM_DEVICE_IP_TUNNEL_GET_PRIVATE (device)->remote;
+	return nm_str_not_empty (NM_DEVICE_IP_TUNNEL_GET_PRIVATE (device)->remote);
 }
 
 /**
@@ -192,7 +192,7 @@ nm_device_ip_tunnel_get_input_key (NMDeviceIPTunnel *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_IP_TUNNEL (device), NULL);
 
-	return NM_DEVICE_IP_TUNNEL_GET_PRIVATE (device)->input_key;
+	return nm_str_not_empty (NM_DEVICE_IP_TUNNEL_GET_PRIVATE (device)->input_key);
 }
 
 /**
@@ -208,7 +208,7 @@ nm_device_ip_tunnel_get_output_key (NMDeviceIPTunnel *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_IP_TUNNEL (device), NULL);
 
-	return NM_DEVICE_IP_TUNNEL_GET_PRIVATE (device)->output_key;
+	return nm_str_not_empty (NM_DEVICE_IP_TUNNEL_GET_PRIVATE (device)->output_key);
 }
 
 /**

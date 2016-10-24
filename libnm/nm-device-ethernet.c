@@ -69,7 +69,7 @@ nm_device_ethernet_get_hw_address (NMDeviceEthernet *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_ETHERNET (device), NULL);
 
-	return NM_DEVICE_ETHERNET_GET_PRIVATE (device)->hw_address;
+	return nm_str_not_empty (NM_DEVICE_ETHERNET_GET_PRIVATE (device)->hw_address);
 }
 
 /**
@@ -86,7 +86,7 @@ nm_device_ethernet_get_permanent_hw_address (NMDeviceEthernet *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_ETHERNET (device), NULL);
 
-	return NM_DEVICE_ETHERNET_GET_PRIVATE (device)->perm_hw_address;
+	return nm_str_not_empty (NM_DEVICE_ETHERNET_GET_PRIVATE (device)->perm_hw_address);
 }
 
 /**

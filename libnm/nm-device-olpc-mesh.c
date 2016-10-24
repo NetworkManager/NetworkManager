@@ -63,7 +63,7 @@ nm_device_olpc_mesh_get_hw_address (NMDeviceOlpcMesh *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_OLPC_MESH (device), NULL);
 
-	return NM_DEVICE_OLPC_MESH_GET_PRIVATE (device)->hw_address;
+	return nm_str_not_empty (NM_DEVICE_OLPC_MESH_GET_PRIVATE (device)->hw_address);
 }
 
 /**

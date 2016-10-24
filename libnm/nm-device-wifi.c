@@ -100,7 +100,7 @@ nm_device_wifi_get_hw_address (NMDeviceWifi *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), NULL);
 
-	return NM_DEVICE_WIFI_GET_PRIVATE (device)->hw_address;
+	return nm_str_not_empty (NM_DEVICE_WIFI_GET_PRIVATE (device)->hw_address);
 }
 
 /**
@@ -117,7 +117,7 @@ nm_device_wifi_get_permanent_hw_address (NMDeviceWifi *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), NULL);
 
-	return NM_DEVICE_WIFI_GET_PRIVATE (device)->perm_hw_address;
+	return nm_str_not_empty (NM_DEVICE_WIFI_GET_PRIVATE (device)->perm_hw_address);
 }
 
 /**
@@ -520,10 +520,7 @@ clean_up_aps (NMDeviceWifi *self, gboolean in_dispose)
 
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	if (priv->active_ap) {
-		g_object_unref (priv->active_ap);
-		priv->active_ap = NULL;
-	}
+	g_clear_object (&priv->active_ap);
 
 	aps = priv->aps;
 
@@ -722,10 +719,7 @@ state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 	case NM_DEVICE_STATE_DISCONNECTED:
 	case NM_DEVICE_STATE_FAILED:
 		/* Just clear active AP; don't clear the AP list unless wireless is disabled completely */
-		if (priv->active_ap) {
-			g_object_unref (priv->active_ap);
-			priv->active_ap = NULL;
-		}
+		g_clear_object (&priv->active_ap);
 		_nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT);
 		priv->rate = 0;
 		_nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_WIFI_BITRATE);
@@ -764,8 +758,7 @@ access_point_removed (NMDeviceWifi *self, NMAccessPoint *ap)
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
 	if (ap == priv->active_ap) {
-		g_object_unref (priv->active_ap);
-		priv->active_ap = NULL;
+		g_clear_object (&priv->active_ap);
 		_nm_object_queue_notify (NM_OBJECT (self), NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT);
 
 		priv->rate = 0;

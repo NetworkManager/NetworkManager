@@ -79,7 +79,7 @@ nm_vpn_connection_get_banner (NMVpnConnection *vpn)
 	if (priv->vpn_state != NM_VPN_CONNECTION_STATE_ACTIVATED)
 		return NULL;
 
-	return priv->banner;
+	return nm_str_not_empty (priv->banner);
 }
 
 /**

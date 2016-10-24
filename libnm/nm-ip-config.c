@@ -395,7 +395,7 @@ nm_ip_config_get_gateway (NMIPConfig *config)
 {
 	g_return_val_if_fail (NM_IS_IP_CONFIG (config), NULL);
 
-	return NM_IP_CONFIG_GET_PRIVATE (config)->gateway;
+	return nm_str_not_empty (NM_IP_CONFIG_GET_PRIVATE (config)->gateway);
 }
 
 /**

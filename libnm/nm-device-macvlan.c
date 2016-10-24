@@ -86,7 +86,7 @@ nm_device_macvlan_get_mode (NMDeviceMacvlan *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_MACVLAN (device), NULL);
 
-	return NM_DEVICE_MACVLAN_GET_PRIVATE (device)->mode;
+	return nm_str_not_empty (NM_DEVICE_MACVLAN_GET_PRIVATE (device)->mode);
 }
 
 /**
@@ -141,7 +141,7 @@ nm_device_macvlan_get_hw_address (NMDeviceMacvlan *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_MACVLAN (device), NULL);
 
-	return NM_DEVICE_MACVLAN_GET_PRIVATE (device)->hw_address;
+	return nm_str_not_empty (NM_DEVICE_MACVLAN_GET_PRIVATE (device)->hw_address);
 }
 
 

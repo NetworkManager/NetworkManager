@@ -996,7 +996,7 @@ nm_device_get_iface (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	return NM_DEVICE_GET_PRIVATE (device)->iface;
+	return nm_str_not_empty (NM_DEVICE_GET_PRIVATE (device)->iface);
 }
 
 /**
@@ -1014,7 +1014,7 @@ nm_device_get_ip_iface (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	return NM_DEVICE_GET_PRIVATE (device)->ip_iface;
+	return nm_str_not_empty (NM_DEVICE_GET_PRIVATE (device)->ip_iface);
 }
 
 /**
@@ -1048,7 +1048,7 @@ nm_device_get_udi (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	return NM_DEVICE_GET_PRIVATE (device)->udi;
+	return nm_str_not_empty (NM_DEVICE_GET_PRIVATE (device)->udi);
 }
 
 /**
@@ -1065,7 +1065,7 @@ nm_device_get_driver (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	return NM_DEVICE_GET_PRIVATE (device)->driver;
+	return nm_str_not_empty (NM_DEVICE_GET_PRIVATE (device)->driver);
 }
 
 /**
@@ -1082,7 +1082,7 @@ nm_device_get_driver_version (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	return NM_DEVICE_GET_PRIVATE (device)->driver_version;
+	return nm_str_not_empty (NM_DEVICE_GET_PRIVATE (device)->driver_version);
 }
 
 /**
@@ -1099,7 +1099,7 @@ nm_device_get_firmware_version (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	return NM_DEVICE_GET_PRIVATE (device)->firmware_version;
+	return nm_str_not_empty (NM_DEVICE_GET_PRIVATE (device)->firmware_version);
 }
 
 /**
@@ -1124,7 +1124,7 @@ nm_device_get_type_description (NMDevice *device)
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
 	if (priv->type_description)
-		return priv->type_description;
+		return nm_str_not_empty (priv->type_description);
 
 	if (NM_DEVICE_GET_CLASS (device)->get_type_description) {
 		desc = NM_DEVICE_GET_CLASS (device)->get_type_description (device);
@@ -1137,7 +1137,7 @@ nm_device_get_type_description (NMDevice *device)
 		typename += 8;
 	priv->type_description = g_ascii_strdown (typename, -1);
 
-	return priv->type_description;
+	return nm_str_not_empty (priv->type_description);
 }
 
 /**
@@ -2084,16 +2084,9 @@ done:
 const char *
 nm_device_get_physical_port_id (NMDevice *device)
 {
-	NMDevicePrivate *priv;
-
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	priv = NM_DEVICE_GET_PRIVATE (device);
-
-	if (priv->physical_port_id && *priv->physical_port_id)
-		return priv->physical_port_id;
-	else
-		return NULL;
+	return nm_str_not_empty (NM_DEVICE_GET_PRIVATE (device)->physical_port_id);
 }
 
 /**

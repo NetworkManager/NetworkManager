@@ -91,7 +91,7 @@ nm_device_wimax_get_hw_address (NMDeviceWimax *wimax)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (wimax), NULL);
 
-	return NM_DEVICE_WIMAX_GET_PRIVATE (wimax)->hw_address;
+	return nm_str_not_empty (NM_DEVICE_WIMAX_GET_PRIVATE (wimax)->hw_address);
 }
 
 /**
@@ -300,7 +300,7 @@ nm_device_wimax_get_bsid (NMDeviceWimax *self)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), NULL);
 
-	return NM_DEVICE_WIMAX_GET_PRIVATE (self)->bsid;
+	return nm_str_not_empty (NM_DEVICE_WIMAX_GET_PRIVATE (self)->bsid);
 }
 
 static gboolean

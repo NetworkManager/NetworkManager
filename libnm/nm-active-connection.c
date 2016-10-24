@@ -129,7 +129,7 @@ nm_active_connection_get_id (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
 
-	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->id;
+	return nm_str_not_empty (NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->id);
 }
 
 /**
@@ -146,7 +146,7 @@ nm_active_connection_get_uuid (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
 
-	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->uuid;
+	return nm_str_not_empty (NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->uuid);
 }
 
 /**
@@ -163,7 +163,7 @@ nm_active_connection_get_connection_type (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
 
-	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->type;
+	return nm_str_not_empty (NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->type);
 }
 
 /**
@@ -461,6 +461,7 @@ get_property (GObject *object,
 static gboolean
 demarshal_specific_object_path (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
 {
+	const char *v;
 	char **param = (char **) field;
 
 	/* We have to demarshal this manually, because the D-Bus property name
@@ -471,8 +472,10 @@ demarshal_specific_object_path (NMObject *object, GParamSpec *pspec, GVariant *v
 	if (!g_variant_is_of_type (value, G_VARIANT_TYPE_OBJECT_PATH))
 		return FALSE;
 
+	v = g_variant_get_string (value, NULL);
+
 	g_free (*param);
-	*param = g_variant_dup_string (value, NULL);
+	*param = nm_streq0 (v, "/") ? NULL : g_strdup (v);
 	return TRUE;
 }
 
