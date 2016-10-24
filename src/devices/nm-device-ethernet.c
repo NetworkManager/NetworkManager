@@ -1374,7 +1374,7 @@ complete_connection (NMDevice *device,
 		nm_connection_add_setting (connection, NM_SETTING (s_wired));
 	}
 
-	perm_hw_addr = nm_device_get_permanent_hw_address_full (device, &perm_hw_addr_is_fake);
+	perm_hw_addr = nm_device_get_permanent_hw_address_full (device, TRUE, &perm_hw_addr_is_fake);
 	if (perm_hw_addr && !perm_hw_addr_is_fake) {
 		setting_mac = nm_setting_wired_get_mac_address (s_wired);
 		if (setting_mac) {
@@ -1491,7 +1491,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 	/* If the device reports a permanent address, use that for the MAC address
 	 * and the current MAC, if different, is the cloned MAC.
 	 */
-	perm_hw_addr = nm_device_get_permanent_hw_address_full (device, &perm_hw_addr_is_fake);
+	perm_hw_addr = nm_device_get_permanent_hw_address_full (device, TRUE, &perm_hw_addr_is_fake);
 	if (perm_hw_addr && !perm_hw_addr_is_fake) {
 		g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, perm_hw_addr, NULL);
 
