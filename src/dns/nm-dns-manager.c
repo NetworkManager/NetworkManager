@@ -48,6 +48,8 @@
 #include "nm-dns-systemd-resolved.h"
 #include "nm-dns-unbound.h"
 
+#include "introspection/org.freedesktop.NetworkManager.DnsManager.h"
+
 #if WITH_LIBSOUP
 #include <libsoup/soup.h>
 
@@ -81,6 +83,11 @@ enum {
 
 	LAST_SIGNAL
 };
+
+NM_GOBJECT_PROPERTIES_DEFINE (NMDnsManager,
+	PROP_MODE,
+	PROP_RC_MANAGER,
+);
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
@@ -126,6 +133,7 @@ typedef struct {
 	guint8 prev_hash[HASH_LEN];  /* Hash when begin_updates() was called */
 
 	NMDnsManagerResolvConfManager rc_manager;
+	char *mode;
 	NMDnsPlugin *plugin;
 
 	NMConfig *config;
@@ -140,15 +148,15 @@ typedef struct {
 } NMDnsManagerPrivate;
 
 struct _NMDnsManager {
-	GObject parent;
+	NMExportedObject parent;
 	NMDnsManagerPrivate _priv;
 };
 
 struct _NMDnsManagerClass {
-	GObjectClass parent;
+	NMExportedObjectClass parent;
 };
 
-G_DEFINE_TYPE (NMDnsManager, nm_dns_manager, G_TYPE_OBJECT)
+G_DEFINE_TYPE (NMDnsManager, nm_dns_manager, NM_TYPE_EXPORTED_OBJECT)
 
 NM_DEFINE_SINGLETON_INSTANCE (NMDnsManager);
 
@@ -1629,7 +1637,7 @@ init_resolv_conf_mode (NMDnsManager *self, gboolean force_reload_plugin)
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 	NMDnsManagerResolvConfManager rc_manager;
 	const char *mode;
-	gboolean plugin_changed = FALSE;
+	gboolean param_changed = FALSE, plugin_changed = FALSE;
 
 	mode = nm_config_data_get_dns_mode (nm_config_get_data (priv->config));
 
@@ -1704,13 +1712,29 @@ again:
 		g_signal_connect (priv->plugin, NM_DNS_PLUGIN_CHILD_QUIT, G_CALLBACK (plugin_child_quit), self);
 	}
 
-	if (   plugin_changed
-	    || priv->rc_manager != rc_manager) {
+	g_object_freeze_notify (G_OBJECT (self));
+
+	if (!nm_streq0 (priv->mode, mode)) {
+		g_free (priv->mode);
+		priv->mode = g_strdup (mode);
+		param_changed = TRUE;
+		_notify (self, PROP_MODE);
+	}
+
+	if (priv->rc_manager != rc_manager) {
 		priv->rc_manager = rc_manager;
+		param_changed = TRUE;
+		_notify (self, PROP_RC_MANAGER);
+	}
+
+	if (param_changed || plugin_changed) {
 		_LOGI ("init: dns=%s, rc-manager=%s%s%s%s",
 		       mode, _rc_manager_to_string (rc_manager),
-		       NM_PRINT_FMT_QUOTED (priv->plugin, ", plugin=", nm_dns_plugin_get_name (priv->plugin), "", ""));
+		       NM_PRINT_FMT_QUOTED (priv->plugin, ", plugin=",
+		                            nm_dns_plugin_get_name (priv->plugin), "", ""));
 	}
+
+	g_object_thaw_notify (G_OBJECT (self));
 }
 
 static void
@@ -1746,6 +1770,26 @@ config_changed_cb (NMConfig *config,
 			_LOGW ("could not commit DNS changes: %s", error->message);
 			g_clear_error (&error);
 		}
+	}
+}
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMDnsManager *self = NM_DNS_MANAGER (object);
+	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+
+	switch (prop_id) {
+	case PROP_MODE:
+		g_value_set_string (value, priv->mode);
+		break;
+	case PROP_RC_MANAGER:
+		g_value_set_string (value, _rc_manager_to_string (priv->rc_manager));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
 	}
 }
 
@@ -1819,6 +1863,7 @@ finalize (GObject *object)
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
 	g_free (priv->hostname);
+	g_free (priv->mode);
 
 	G_OBJECT_CLASS (nm_dns_manager_parent_class)->finalize (object);
 }
@@ -1827,12 +1872,29 @@ static void
 nm_dns_manager_class_init (NMDnsManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (klass);
 
-	/* virtual methods */
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
+	object_class->get_property = get_property;
 
-	/* signals */
+	exported_object_class->export_path = NM_DBUS_PATH "/DnsManager";
+	exported_object_class->export_on_construction = TRUE;
+
+	obj_properties[PROP_MODE] =
+	    g_param_spec_string (NM_DNS_MANAGER_MODE, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_RC_MANAGER] =
+	    g_param_spec_string (NM_DNS_MANAGER_RC_MANAGER, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+
 	signals[CONFIG_CHANGED] =
 	    g_signal_new (NM_DNS_MANAGER_CONFIG_CHANGED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
@@ -1840,5 +1902,9 @@ nm_dns_manager_class_init (NMDnsManagerClass *klass)
 	                  0, NULL, NULL,
 	                  g_cclosure_marshal_VOID__VOID,
 	                  G_TYPE_NONE, 0);
+
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
+	                                        NMDBUS_TYPE_DNS_MANAGER_SKELETON,
+	                                        NULL);
 }
 

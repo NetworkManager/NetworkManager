@@ -223,6 +223,8 @@ introspection_sources = \
 	introspection/org.freedesktop.NetworkManager.DHCP4Config.h \
 	introspection/org.freedesktop.NetworkManager.DHCP6Config.c \
 	introspection/org.freedesktop.NetworkManager.DHCP6Config.h \
+	introspection/org.freedesktop.NetworkManager.DnsManager.c \
+	introspection/org.freedesktop.NetworkManager.DnsManager.h \
 	introspection/org.freedesktop.NetworkManager.IP4Config.c \
 	introspection/org.freedesktop.NetworkManager.IP4Config.h \
 	introspection/org.freedesktop.NetworkManager.IP6Config.c \
@@ -324,6 +326,7 @@ dbusinterfaces_DATA = \
 	introspection/org.freedesktop.NetworkManager.Device.xml \
 	introspection/org.freedesktop.NetworkManager.DHCP4Config.xml \
 	introspection/org.freedesktop.NetworkManager.DHCP6Config.xml \
+	introspection/org.freedesktop.NetworkManager.DnsManager.xml \
 	introspection/org.freedesktop.NetworkManager.IP4Config.xml \
 	introspection/org.freedesktop.NetworkManager.IP6Config.xml \
 	introspection/org.freedesktop.NetworkManager.xml \
