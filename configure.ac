@@ -1152,7 +1152,6 @@ docs/libnm/Makefile
 docs/libnm/version.xml
 NetworkManager.pc
 ])
-AC_CONFIG_SUBDIRS([libndp])
 AC_OUTPUT
 
 # Print build configuration
