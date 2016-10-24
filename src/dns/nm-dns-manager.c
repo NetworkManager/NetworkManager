@@ -1044,13 +1044,16 @@ update_dns (NMDnsManager *self,
 
 			prev_prio = prio;
 
-			_LOGT ("config: %8d %-7s v%c %-16s %s: %s",
-			       prio,
-			       _config_type_to_string (current->type),
-			       v4 ? '4' : '6',
-			       current->iface,
-			       skip ? "<SKIP>" : "",
-			       get_nameserver_list (current->config, &tmp_gstring));
+			if (   ( v4 && nm_ip4_config_get_num_nameservers ((NMIP4Config *) current->config))
+			    || (!v4 && nm_ip6_config_get_num_nameservers ((NMIP6Config *) current->config))) {
+				_LOGT ("config: %8d %-7s v%c %-16s %s: %s",
+				       prio,
+				       _config_type_to_string (current->type),
+				       v4 ? '4' : '6',
+				       current->iface,
+				       skip ? "<SKIP>" : "",
+				       get_nameserver_list (current->config, &tmp_gstring));
+			}
 
 			if (!skip) {
 				merge_one_ip_config_data (self, &rc, current);
