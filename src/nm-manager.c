@@ -4695,7 +4695,7 @@ nm_manager_write_device_state (NMManager *self)
 				uuid = nm_connection_get_uuid (settings_connection);
 		}
 
-		perm_hw_addr_fake = nm_device_get_permanent_hw_address_full (device, &perm_hw_addr_is_fake);
+		perm_hw_addr_fake = nm_device_get_permanent_hw_address_full (device, FALSE, &perm_hw_addr_is_fake);
 		if (perm_hw_addr_fake && !perm_hw_addr_is_fake)
 			perm_hw_addr_fake = NULL;
 

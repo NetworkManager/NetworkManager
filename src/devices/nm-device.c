@@ -1862,7 +1862,7 @@ device_link_changed (NMDevice *self)
 	had_hw_addr = (priv->hw_addr != NULL);
 	nm_device_update_hw_address (self);
 	got_hw_addr = (!had_hw_addr && priv->hw_addr);
-	nm_device_update_permanent_hw_address (self);
+	nm_device_update_permanent_hw_address (self, FALSE);
 
 	if (info.name[0] && strcmp (priv->iface, info.name) != 0) {
 		_LOGI (LOGD_DEVICE, "interface index %d renamed iface from '%s' to '%s'",
@@ -2329,7 +2329,7 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 
 	nm_device_update_hw_address (self);
 	nm_device_update_initial_hw_address (self);
-	nm_device_update_permanent_hw_address (self);
+	nm_device_update_permanent_hw_address (self, FALSE);
 
 	/* Note: initial hardware address must be read before calling get_ignore_carrier() */
 	config = nm_config_get ();
@@ -11693,12 +11693,14 @@ nm_device_update_initial_hw_address (NMDevice *self)
 }
 
 void
-nm_device_update_permanent_hw_address (NMDevice *self)
+nm_device_update_permanent_hw_address (NMDevice *self, gboolean force_freeze)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
 	size_t len = 0;
 	gboolean success_read;
+	int ifindex;
+	const NMPlatformLink *pllink;
 
 	if (priv->hw_addr_perm) {
 		/* the permanent hardware address is only read once and not
@@ -11709,31 +11711,59 @@ nm_device_update_permanent_hw_address (NMDevice *self)
 		return;
 	}
 
-	if (priv->ifindex <= 0)
+	ifindex = priv->ifindex;
+	if (ifindex <= 0)
 		return;
 
-	if (!priv->hw_addr_len) {
-		nm_device_update_hw_address (self);
-		if (!priv->hw_addr_len)
+	/* the user is advised to configure stable MAC addresses for software devices via
+	 * UDEV. Thus, check whether the link is fully initialized. */
+	pllink = nm_platform_link_get (NM_PLATFORM_GET, ifindex);
+	if (   !pllink
+	    || !pllink->initialized) {
+		if (!force_freeze) {
+			/* we can afford to wait. Back off and leave the permanent MAC address
+			 * undecided for now. */
 			return;
+		}
+		/* try to refresh the link just to give UDEV a bit more time... */
+		nm_platform_link_refresh (NM_PLATFORM_GET, ifindex);
+		/* maybe the MAC address changed... */
+		nm_device_update_hw_address (self);
+	} else if (!priv->hw_addr_len)
+		nm_device_update_hw_address (self);
+
+	if (!priv->hw_addr_len) {
+		/* we need the current MAC address because we require the permanent MAC address
+		 * to have the same length as the current address.
+		 *
+		 * Abort if there is no current MAC address. */
+		return;
 	}
 
-	success_read = nm_platform_link_get_permanent_address (NM_PLATFORM_GET, priv->ifindex, buf, &len);
-	if (!success_read || len != priv->hw_addr_len) {
+	success_read = nm_platform_link_get_permanent_address (NM_PLATFORM_GET, ifindex, buf, &len);
+	if (success_read && priv->hw_addr_len == len) {
+		priv->hw_addr_perm_fake = FALSE;
+		priv->hw_addr_perm = nm_utils_hwaddr_ntoa (buf, len);
+		_LOGD (LOGD_DEVICE, "hw-addr: read permanent MAC address '%s'",
+		       priv->hw_addr_perm);
+		goto notify_and_out;
+	}
+
+	/* we failed to read a permanent MAC address, thus we use a fake address,
+	 * that is the current MAC address of the device.
+	 *
+	 * Note that the permanet MAC address of a NMDevice instance does not change
+	 * after being set once. Thus, we use now a fake address and stick to that
+	 * (until we unrealize the device). */
+	priv->hw_addr_perm_fake = TRUE;
+
+	/* We also persist our choice of the fake address to the device state
+	 * file to use the same address on restart of NetworkManager.
+	 * First, try to reload the address from the state file. */
+	{
 		gs_free NMConfigDeviceStateData *dev_state = NULL;
 
-		/* we failed to read a permanent MAC address, thus we use a fake address,
-		 * that is the current MAC address of the device.
-		 *
-		 * Note that the permanet MAC address of a NMDevice instance does not change
-		 * after being set once. Thus, we use now a fake address and stick to that
-		 * (until we unrealize the device). */
-		priv->hw_addr_perm_fake = TRUE;
-
-		/* We also persist our choice of the fake address to the device state
-		 * file to use the same address on restart of NetworkManager.
-		 * First, try to reload the address from the state file. */
-		dev_state = nm_config_device_state_load (nm_config_get (), priv->ifindex);
+		dev_state = nm_config_device_state_load (nm_config_get (), ifindex);
 		if (   dev_state
 		    && dev_state->perm_hw_addr_fake
 		    && nm_utils_hwaddr_aton (dev_state->perm_hw_addr_fake, buf, priv->hw_addr_len)
@@ -11745,24 +11775,18 @@ nm_device_update_permanent_hw_address (NMDevice *self)
 			       dev_state->perm_hw_addr_fake,
 			       priv->hw_addr);
 			priv->hw_addr_perm = nm_utils_hwaddr_ntoa (buf, priv->hw_addr_len);
-			goto out;
+			goto notify_and_out;
 		}
-
-		_LOGD (LOGD_PLATFORM | LOGD_ETHER, "hw-addr: %s (use current: %s)",
-		       success_read
-		           ? "read HW addr length of permanent MAC address differs"
-		           : "unable to read permanent MAC address",
-		       priv->hw_addr);
-		priv->hw_addr_perm = g_strdup (priv->hw_addr);
-		goto out;
 	}
 
-	priv->hw_addr_perm_fake = FALSE;
-	priv->hw_addr_perm = nm_utils_hwaddr_ntoa (buf, len);
-	_LOGD (LOGD_DEVICE, "hw-addr: read permanent MAC address '%s'",
-	       priv->hw_addr_perm);
+	_LOGD (LOGD_PLATFORM | LOGD_ETHER, "hw-addr: %s (use current: %s)",
+	       success_read
+	           ? "read HW addr length of permanent MAC address differs"
+	           : "unable to read permanent MAC address",
+	       priv->hw_addr);
+	priv->hw_addr_perm = g_strdup (priv->hw_addr);
 
-out:
+notify_and_out:
 	_notify (self, PROP_PERM_HW_ADDRESS);
 }
 
@@ -12097,13 +12121,22 @@ nm_device_hw_addr_reset (NMDevice *self, const char *detail)
 }
 
 const char *
-nm_device_get_permanent_hw_address_full (NMDevice *self, gboolean *out_is_fake)
+nm_device_get_permanent_hw_address_full (NMDevice *self, gboolean force_freeze, gboolean *out_is_fake)
 {
 	NMDevicePrivate *priv;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (   !priv->hw_addr_perm
+	    && force_freeze) {
+		/* somebody requests a permanent MAC address, but we don't have it set
+		 * yet. We cannot delay it any longer and try to get it without waiting
+		 * for UDEV. */
+		nm_device_update_permanent_hw_address (self, TRUE);
+	}
+
 	NM_SET_OUT (out_is_fake, priv->hw_addr_perm && priv->hw_addr_perm_fake);
 	return priv->hw_addr_perm;
 }
@@ -12111,9 +12144,7 @@ nm_device_get_permanent_hw_address_full (NMDevice *self, gboolean *out_is_fake)
 const char *
 nm_device_get_permanent_hw_address (NMDevice *self)
 {
-	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
-
-	return NM_DEVICE_GET_PRIVATE (self)->hw_addr_perm;
+	return nm_device_get_permanent_hw_address_full (self, TRUE, NULL);
 }
 
 const char *
@@ -12653,7 +12684,7 @@ get_property (GObject *object, guint prop_id,
 		const char *perm_hw_addr;
 		gboolean perm_hw_addr_is_fake;
 
-		perm_hw_addr = nm_device_get_permanent_hw_address_full (self, &perm_hw_addr_is_fake);
+		perm_hw_addr = nm_device_get_permanent_hw_address_full (self, FALSE, &perm_hw_addr_is_fake);
 		/* this property is exposed on D-Bus for NMDeviceEthernet and NMDeviceWifi. */
 		g_value_set_string (value, perm_hw_addr && !perm_hw_addr_is_fake ? perm_hw_addr : NULL);
 		break;

@@ -364,6 +364,7 @@ guint32         nm_device_get_ip6_route_metric  (NMDevice *dev);
 const char *    nm_device_get_hw_address        (NMDevice *dev);
 const char *    nm_device_get_permanent_hw_address (NMDevice *self);
 const char *    nm_device_get_permanent_hw_address_full (NMDevice *self,
+                                                         gboolean force_freeze,
                                                          gboolean *out_is_fake);
 const char *    nm_device_get_initial_hw_address (NMDevice *dev);
 
@@ -587,7 +588,7 @@ void nm_device_reactivate_ip6_config (NMDevice *device,
 
 gboolean nm_device_update_hw_address (NMDevice *self);
 void nm_device_update_initial_hw_address (NMDevice *self);
-void nm_device_update_permanent_hw_address (NMDevice *self);
+void nm_device_update_permanent_hw_address (NMDevice *self, gboolean force_freeze);
 void nm_device_update_dynamic_ip_setup (NMDevice *self);
 
 #endif /* __NETWORKMANAGER_DEVICE_H__ */
