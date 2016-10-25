@@ -1107,7 +1107,7 @@ _hw_addr_set_scanning (NMDeviceWifi *self, gboolean do_reset)
 		                                                      generate_mac_address_mask);
 	}
 
-	nm_device_hw_addr_set (device, priv->hw_addr_scan, "scanning");
+	nm_device_hw_addr_set (device, priv->hw_addr_scan, "scanning", TRUE);
 }
 
 static void
