@@ -1943,14 +1943,13 @@ nm_config_device_state_load (NMConfig *self,
 	NMConfigDeviceStateData *device_state;
 	char path[NM_STRLEN (NM_CONFIG_DEVICE_STATE_DIR) + 60];
 	gs_unref_keyfile GKeyFile *kf = NULL;
-	gs_free_error GError *error = NULL;
 
 	g_return_val_if_fail (ifindex > 0, NULL);
 
 	nm_sprintf_buf (path, "%s/%d", NM_CONFIG_DEVICE_STATE_DIR, ifindex);
 
 	kf = nm_config_create_keyfile ();
-	if (!g_key_file_load_from_file (kf, path, G_KEY_FILE_NONE, &error))
+	if (!g_key_file_load_from_file (kf, path, G_KEY_FILE_NONE, NULL))
 		g_clear_pointer (&kf, g_key_file_unref);
 
 	device_state = _config_device_state_data_new (ifindex, kf);
