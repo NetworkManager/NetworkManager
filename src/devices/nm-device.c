@@ -1874,7 +1874,7 @@ device_link_changed (NMDevice *self)
 		ip_ifname_changed = !priv->ip_iface;
 
 		if (nm_device_get_unmanaged_flags (self, NM_UNMANAGED_PLATFORM_INIT))
-			nm_device_set_unmanaged_by_user_settings (self, nm_settings_get_unmanaged_specs (priv->settings));
+			nm_device_set_unmanaged_by_user_settings (self);
 		else
 			update_unmanaged_specs = TRUE;
 
@@ -1953,7 +1953,7 @@ device_link_changed (NMDevice *self)
 	}
 
 	if (update_unmanaged_specs)
-		nm_device_set_unmanaged_by_user_settings (self, nm_settings_get_unmanaged_specs (priv->settings));
+		nm_device_set_unmanaged_by_user_settings (self);
 
 	if (   got_hw_addr
 	    && !priv->up
@@ -9938,6 +9938,21 @@ _set_unmanaged_flags (NMDevice *self,
 		allow_state_transition = FALSE;
 	was_managed = allow_state_transition && nm_device_get_managed (self, FALSE);
 
+	if (   NM_FLAGS_HAS (priv->unmanaged_flags, NM_UNMANAGED_PLATFORM_INIT)
+	    && NM_FLAGS_HAS (flags, NM_UNMANAGED_PLATFORM_INIT)
+	    && NM_IN_SET (set_op, NM_UNMAN_FLAG_OP_SET_MANAGED)) {
+		/* we are clearing the platform-init flags. This triggers additional actions. */
+		if (!NM_FLAGS_HAS (flags, NM_UNMANAGED_USER_SETTINGS)) {
+			gboolean unmanaged;
+
+			unmanaged = nm_device_spec_match_list (self,
+			                                       nm_settings_get_unmanaged_specs (NM_DEVICE_GET_PRIVATE (self)->settings));
+			nm_device_set_unmanaged_flags (self,
+			                               NM_UNMANAGED_USER_SETTINGS,
+			                               !!unmanaged);
+		}
+	}
+
 	old_flags = priv->unmanaged_flags;
 	old_mask = priv->unmanaged_mask;
 
@@ -10052,20 +10067,30 @@ nm_device_set_unmanaged_by_flags_queue (NMDevice *self,
 }
 
 void
-nm_device_set_unmanaged_by_user_settings (NMDevice *self, const GSList *unmanaged_specs)
+nm_device_set_unmanaged_by_user_settings (NMDevice *self)
 {
-	NMDevicePrivate *priv;
 	gboolean unmanaged;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
-	priv = NM_DEVICE_GET_PRIVATE (self);
+	if (nm_device_get_unmanaged_flags (self, NM_UNMANAGED_PLATFORM_INIT)) {
+		/* the device is already unmanaged due to platform-init.
+		 *
+		 * We want to delay evaluating the device spec, because it will freeze
+		 * the permanent MAC address. That should not be done, before the platform
+		 * link is fully initialized (via UDEV).
+		 *
+		 * Note that when clearing NM_UNMANAGED_PLATFORM_INIT, we will re-evaluate
+		 * whether the device is unmanaged by user-settings. */
+		return;
+	}
 
-	unmanaged = nm_device_spec_match_list (self, unmanaged_specs);
+	unmanaged = nm_device_spec_match_list (self,
+	                                       nm_settings_get_unmanaged_specs (NM_DEVICE_GET_PRIVATE (self)->settings));
 
 	nm_device_set_unmanaged_by_flags (self,
 	                                  NM_UNMANAGED_USER_SETTINGS,
-	                                  unmanaged,
+	                                  !!unmanaged,
 	                                  unmanaged
 	                                      ? NM_DEVICE_STATE_REASON_NOW_UNMANAGED
 	                                      : NM_DEVICE_STATE_REASON_NOW_MANAGED);

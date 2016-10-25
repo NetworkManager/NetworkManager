@@ -1331,11 +1331,10 @@ system_unmanaged_devices_changed_cb (NMSettings *settings,
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	const GSList *unmanaged_specs, *iter;
+	const GSList *iter;
 
-	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
 	for (iter = priv->devices; iter; iter = g_slist_next (iter))
-		nm_device_set_unmanaged_by_user_settings (NM_DEVICE (iter->data), unmanaged_specs);
+		nm_device_set_unmanaged_by_user_settings (NM_DEVICE (iter->data));
 }
 
 static void
@@ -2004,7 +2003,7 @@ add_device (NMManager *self, NMDevice *device, GError **error)
 	type_desc = nm_device_get_type_desc (device);
 	g_assert (type_desc);
 
-	nm_device_set_unmanaged_by_user_settings (device, nm_settings_get_unmanaged_specs (priv->settings));
+	nm_device_set_unmanaged_by_user_settings (device);
 
 	nm_device_set_unmanaged_flags (device,
 	                               NM_UNMANAGED_SLEEPING,
@@ -2880,15 +2879,15 @@ unmanaged_to_disconnected (NMDevice *device)
 
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_UNMANAGED) {
 		nm_device_state_changed (device,
-					 NM_DEVICE_STATE_UNAVAILABLE,
-					 NM_DEVICE_STATE_REASON_USER_REQUESTED);
+		                         NM_DEVICE_STATE_UNAVAILABLE,
+		                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
 	}
 
 	if (   nm_device_is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_FOR_USER_REQUEST)
 	    && (nm_device_get_state (device) == NM_DEVICE_STATE_UNAVAILABLE)) {
 		nm_device_state_changed (device,
-					 NM_DEVICE_STATE_DISCONNECTED,
-					 NM_DEVICE_STATE_REASON_USER_REQUESTED);
+		                         NM_DEVICE_STATE_DISCONNECTED,
+		                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
 	}
 }
 
