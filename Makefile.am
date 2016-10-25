@@ -2940,14 +2940,14 @@ clients_cli_nmcli_SOURCES = \
 	$(NULL)
 
 clients_cli_nmcli_CPPFLAGS = \
-	-I${top_srcdir} \
-	-I${top_builddir} \
 	-I${top_srcdir}/shared \
 	-I$(top_builddir)/shared \
 	-I${top_srcdir}/libnm-core \
 	-I${top_builddir}/libnm-core \
 	-I${top_srcdir}/libnm \
 	-I${top_builddir}/libnm \
+	-I${top_srcdir}/clients/cli \
+	-I${top_builddir}/clients/cli \
 	-I${top_srcdir}/clients/common \
 	$(GLIB_CFLAGS) \
 	-DG_LOG_DOMAIN=\""nmcli"\" \
