@@ -696,6 +696,7 @@ libnm_lib_h_priv = \
 	libnm/nm-device-private.h \
 	libnm/nm-dhcp4-config.h \
 	libnm/nm-dhcp6-config.h \
+	libnm/nm-dns-manager.h \
 	libnm/nm-ip4-config.h \
 	libnm/nm-ip6-config.h \
 	libnm/nm-manager.h \
@@ -728,6 +729,7 @@ libnm_lib_c_real = \
 	libnm/nm-dhcp-config.c \
 	libnm/nm-dhcp4-config.c \
 	libnm/nm-dhcp6-config.c \
+	libnm/nm-dns-manager.c \
 	libnm/nm-ip-config.c \
 	libnm/nm-ip4-config.c \
 	libnm/nm-ip6-config.c \
