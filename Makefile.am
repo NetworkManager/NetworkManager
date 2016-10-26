@@ -3945,7 +3945,7 @@ vapi_libnm_util_vapi_FILES = $(top_builddir)/libnm-util/NetworkManager-1.0.gir
 
 vapi_libnm_glib_vapi_METADATADIRS = $(srcdir)/vapi
 vapi_libnm_glib_vapi_FILES = $(top_builddir)/libnm-glib/NMClient-1.0.gir
-vapi_libnm_glib_vapi_VAPIDIRS = $(builddir)
+vapi_libnm_glib_vapi_VAPIDIRS = $(builddir)/vapi
 vapi_libnm_glib_vapi_GIRDIRS = $(top_builddir)/libnm-util
 vapi_libnm_glib_vapi_DEPS = gio-2.0
 
