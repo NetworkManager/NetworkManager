@@ -997,6 +997,7 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/sd-adapt/udev.h \
 	src/systemd/sd-adapt/user-util.h \
 	src/systemd/sd-adapt/virt.h \
+	src/systemd/sd-adapt/glob-util.h \
 	src/systemd/src/basic/alloc-util.c \
 	src/systemd/src/basic/alloc-util.h \
 	src/systemd/src/basic/async.h \
