@@ -48,6 +48,7 @@ typedef struct {
 	char *username;
 	char *password;
 	NMSettingSecretFlags password_flags;
+	guint32 mtu;
 } NMSettingCdmaPrivate;
 
 enum {
@@ -56,6 +57,7 @@ enum {
 	PROP_USERNAME,
 	PROP_PASSWORD,
 	PROP_PASSWORD_FLAGS,
+	PROP_MTU,
 
 	LAST_PROP
 };
@@ -127,6 +129,22 @@ nm_setting_cdma_get_password_flags (NMSettingCdma *setting)
 	g_return_val_if_fail (NM_IS_SETTING_CDMA (setting), NM_SETTING_SECRET_FLAG_NONE);
 
 	return NM_SETTING_CDMA_GET_PRIVATE (setting)->password_flags;
+}
+
+/**
+ * nm_setting_cdma_get_mtu:
+ * @setting: the #NMSettingCdma
+ *
+ * Returns: the #NMSettingCdma:mtu property of the setting
+ *
+ * Since: 1.8
+ **/
+guint32
+nm_setting_cdma_get_mtu (NMSettingCdma *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CDMA (setting), 0);
+
+	return NM_SETTING_CDMA_GET_PRIVATE (setting)->mtu;
 }
 
 static gboolean
@@ -229,6 +247,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_PASSWORD_FLAGS:
 		priv->password_flags = g_value_get_flags (value);
 		break;
+	case PROP_MTU:
+		priv->mtu = g_value_get_uint (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -253,6 +274,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PASSWORD_FLAGS:
 		g_value_set_flags (value, nm_setting_cdma_get_password_flags (setting));
+		break;
+	case PROP_MTU:
+		g_value_set_uint (value, nm_setting_cdma_get_mtu (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -333,4 +357,22 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *setting_class)
 		                     NM_SETTING_SECRET_FLAG_NONE,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingCdma:mtu:
+	 *
+	 * If non-zero, only transmit packets of the specified size or smaller,
+	 * breaking larger packets up into multiple frames.
+	 *
+	 * Since: 1.8
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_MTU,
+		 g_param_spec_uint (NM_SETTING_CDMA_MTU, "", "",
+		                    0, G_MAXUINT32, 0,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT |
+		                    NM_SETTING_PARAM_FUZZY_IGNORE |
+		                    G_PARAM_STATIC_STRINGS));
+
 }
