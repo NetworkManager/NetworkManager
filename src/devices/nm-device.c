@@ -227,7 +227,10 @@ typedef struct _NMDevicePrivate {
 	char *        iface;   /* may change, could be renamed by user */
 	int           ifindex;
 
-	guint         hw_addr_len;
+	union {
+		const guint8 hw_addr_len; /* read-only */
+		guint8 hw_addr_len_;
+	};
 	guint8 /*HwAddrType*/ hw_addr_type;
 
 	bool          real;
@@ -2516,11 +2519,6 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 		g_clear_pointer (&priv->udi, g_free);
 		_notify (self, PROP_UDI);
 	}
-	if (priv->hw_addr) {
-		priv->hw_addr_len = 0;
-		g_clear_pointer (&priv->hw_addr, g_free);
-		_notify (self, PROP_HW_ADDRESS);
-	}
 	if (priv->physical_port_id) {
 		g_clear_pointer (&priv->physical_port_id, g_free);
 		_notify (self, PROP_PHYSICAL_PORT_ID);
@@ -2529,9 +2527,12 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 	nm_clear_g_source (&priv->stats.timeout_id);
 	_stats_update_counters (self, 0, 0);
 
+	priv->hw_addr_len_ = 0;
+	if (nm_clear_g_free (&priv->hw_addr))
+		_notify (self, PROP_HW_ADDRESS);
 	priv->hw_addr_type = HW_ADDR_TYPE_UNSET;
-	g_clear_pointer (&priv->hw_addr_perm, g_free);
-	_notify (self, PROP_PERM_HW_ADDRESS);
+	if (nm_clear_g_free (&priv->hw_addr_perm))
+		_notify (self, PROP_PERM_HW_ADDRESS);
 	g_clear_pointer (&priv->hw_addr_initial, g_free);
 
 	priv->capabilities = NM_DEVICE_CAP_NM_SUPPORTED;
@@ -11587,11 +11588,17 @@ const char *
 nm_device_get_hw_address (NMDevice *self)
 {
 	NMDevicePrivate *priv;
+	char buf[NM_UTILS_HWADDR_LEN_MAX];
+	gsize l;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
+
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	nm_assert ((!priv->hw_addr) ^ (priv->hw_addr_len > 0));
+	nm_assert (   (!priv->hw_addr && priv->hw_addr_len == 0)
+	           || (   priv->hw_addr
+	               && _nm_utils_hwaddr_aton (priv->hw_addr, buf, sizeof (buf), &l)
+	               && l == priv->hw_addr_len));
 
 	return priv->hw_addr;
 }
@@ -11616,9 +11623,25 @@ nm_device_update_hw_address (NMDevice *self)
 		hwaddrlen = 0;
 
 	if (hwaddrlen) {
-		priv->hw_addr_len = hwaddrlen;
+		if (   priv->hw_addr_len
+		    && priv->hw_addr_len != hwaddrlen) {
+			char s_buf[NM_UTILS_HWADDR_LEN_MAX_STR];
+
+			/* we cannot change the address length of a device once it is set (except
+			 * unrealizing the device).
+			 *
+			 * The reason is that the permanent and initial MAC addresses also must have the
+			 * same address length, so it's unclear what it would mean that the length changes. */
+			_LOGD (LOGD_PLATFORM | LOGD_DEVICE,
+			       "hw-addr: read a MAC address with differing length (%s vs. %s)",
+			       priv->hw_addr,
+			       nm_utils_hwaddr_ntoa_buf (hwaddr, hwaddrlen, TRUE, s_buf, sizeof (s_buf)));
+			return FALSE;
+		}
+
 		if (!priv->hw_addr || !nm_utils_hwaddr_matches (priv->hw_addr, -1, hwaddr, hwaddrlen)) {
 			g_free (priv->hw_addr);
+			priv->hw_addr_len_ = hwaddrlen;
 			priv->hw_addr = nm_utils_hwaddr_ntoa (hwaddr, hwaddrlen);
 
 			_LOGD (LOGD_PLATFORM | LOGD_DEVICE, "hw-addr: hardware address now %s", priv->hw_addr);
@@ -11867,11 +11890,9 @@ _hw_addr_set (NMDevice *self,
 		return TRUE;
 	}
 
-	if (priv->hw_addr_len != addr_len) {
-		if (priv->hw_addr_len)
-			g_return_val_if_reached (FALSE);
-		priv->hw_addr_len = addr_len;
-	}
+	if (   priv->hw_addr_len
+	    && priv->hw_addr_len != addr_len)
+		g_return_val_if_reached (FALSE);
 
 	_LOGT (LOGD_DEVICE, "set-hw-addr: setting MAC address to '%s' (%s, %s)...", addr, operation, detail);
 
@@ -12255,7 +12276,7 @@ constructor (GType type,
 			g_return_val_if_reached (object);
 		}
 
-		priv->hw_addr_len = l;
+		priv->hw_addr_len_ = l;
 		priv->hw_addr = nm_utils_hwaddr_ntoa (buf, l);
 		_LOGT (LOGD_DEVICE, "hw-addr: has permanent hw-address '%s'", priv->hw_addr_perm);
 	}
