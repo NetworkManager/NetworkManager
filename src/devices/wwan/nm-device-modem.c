@@ -351,7 +351,7 @@ device_state_changed (NMDevice *device,
 {
 	NMDeviceModem *self = NM_DEVICE_MODEM (device);
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
-	NMConnection *connection = nm_device_get_applied_connection (device);
+	NMSettingsConnection *connection = nm_device_get_settings_connection (device);
 
 	g_assert (priv->modem);
 
@@ -378,7 +378,7 @@ device_state_changed (NMDevice *device,
 		 * where a retry attempt would just fail again.
 		 */
 		if (connection)
-			nm_settings_connection_set_autoconnect_blocked_reason (NM_SETTINGS_CONNECTION (connection), reason);
+			nm_settings_connection_set_autoconnect_blocked_reason (connection, reason);
 		break;
 	default:
 		break;
