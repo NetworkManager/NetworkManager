@@ -52,6 +52,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_GSM_DEVICE_ID       "device-id"
 #define NM_SETTING_GSM_SIM_ID          "sim-id"
 #define NM_SETTING_GSM_SIM_OPERATOR_ID "sim-operator-id"
+#define NM_SETTING_GSM_MTU             "mtu"
 
 /**
  * NMSettingGsm:
@@ -84,6 +85,8 @@ NM_AVAILABLE_IN_1_2
 const char *nm_setting_gsm_get_sim_id          (NMSettingGsm *setting);
 NM_AVAILABLE_IN_1_2
 const char *nm_setting_gsm_get_sim_operator_id (NMSettingGsm *setting);
+NM_AVAILABLE_IN_1_8
+guint32 nm_setting_gsm_get_mtu                 (NMSettingGsm *setting);
 
 NMSettingSecretFlags nm_setting_gsm_get_pin_flags      (NMSettingGsm *setting);
 NMSettingSecretFlags nm_setting_gsm_get_password_flags (NMSettingGsm *setting);
