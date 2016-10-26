@@ -232,7 +232,12 @@ typedef struct _NMDevicePrivate {
 	};
 	guint8 /*HwAddrType*/ hw_addr_type;
 
-	bool          real;
+	bool          real:1;
+
+	/* there was a IP config change, but no idle action was scheduled because device
+	 * is still not platform-init */
+	bool queued_ip4_config_pending:1;
+	bool queued_ip6_config_pending:1;
 
 	char *        ip_iface;
 	int           ip_ifindex;
@@ -2281,9 +2286,8 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 		_notify (self, PROP_UDI);
 	}
 
-	/* trigger initial ip config change to initialize ip-config */
-	priv->queued_ip4_config_id = g_idle_add (queued_ip4_config_change, self);
-	priv->queued_ip6_config_id = g_idle_add (queued_ip6_config_change, self);
+	priv->queued_ip4_config_pending = TRUE;
+	priv->queued_ip6_config_pending = TRUE;
 
 	nm_device_update_hw_address (self);
 	nm_device_update_initial_hw_address (self);
@@ -7626,6 +7630,7 @@ _cleanup_ip4_pre (NMDevice *self, CleanupType cleanup_type)
 
 	if (nm_clear_g_source (&priv->queued_ip4_config_id))
 		_LOGD (LOGD_DEVICE, "clearing queued IP4 config change");
+	priv->queued_ip4_config_pending = FALSE;
 
 	dhcp4_cleanup (self, cleanup_type, FALSE);
 	arp_cleanup (self);
@@ -7642,6 +7647,7 @@ _cleanup_ip6_pre (NMDevice *self, CleanupType cleanup_type)
 
 	if (nm_clear_g_source (&priv->queued_ip6_config_id))
 		_LOGD (LOGD_DEVICE, "clearing queued IP6 config change");
+	priv->queued_ip6_config_pending = FALSE;
 
 	g_clear_object (&priv->dad6_ip6_config);
 	dhcp6_cleanup (self, cleanup_type, FALSE);
@@ -9341,6 +9347,7 @@ update_ip4_config (NMDevice *self, gboolean initial)
 	    && activation_source_is_scheduled (self,
 	                                       activate_stage5_ip4_config_commit,
 	                                       AF_INET)) {
+		priv->queued_ip4_config_pending = FALSE;
 		priv->queued_ip4_config_id = g_idle_add (queued_ip4_config_change, self);
 		_LOGT (LOGD_DEVICE, "IP4 update was postponed");
 		return;
@@ -9431,6 +9438,7 @@ update_ip6_config (NMDevice *self, gboolean initial)
 	    && activation_source_is_scheduled (self,
 	                                       activate_stage5_ip6_config_commit,
 	                                       AF_INET6)) {
+		priv->queued_ip6_config_pending = FALSE;
 		priv->queued_ip6_config_id = g_idle_add (queued_ip6_config_change, self);
 		_LOGT (LOGD_DEVICE, "IP6 update was postponed");
 		return;
@@ -9508,6 +9516,8 @@ queued_ip4_config_change (gpointer user_data)
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
+	nm_assert (!priv->queued_ip4_config_pending);
+
 	/* Wait for any queued state changes */
 	if (priv->queued_state.id)
 		return TRUE;
@@ -9531,6 +9541,8 @@ queued_ip6_config_change (gpointer user_data)
 	g_return_val_if_fail (NM_IS_DEVICE (self), G_SOURCE_REMOVE);
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	nm_assert (!priv->queued_ip4_config_pending);
 
 	/* Wait for any queued state changes */
 	if (priv->queued_state.id)
@@ -9609,7 +9621,11 @@ device_ipx_changed (NMPlatform *platform,
 	switch (obj_type) {
 	case NMP_OBJECT_TYPE_IP4_ADDRESS:
 	case NMP_OBJECT_TYPE_IP4_ROUTE:
-		if (!priv->queued_ip4_config_id) {
+		if (nm_device_get_unmanaged_flags (self, NM_UNMANAGED_PLATFORM_INIT)) {
+			priv->queued_ip4_config_pending = TRUE;
+			nm_assert_se (!nm_clear_g_source (&priv->queued_ip4_config_id));
+		} else if (!priv->queued_ip4_config_id) {
+			priv->queued_ip4_config_pending = FALSE;
 			priv->queued_ip4_config_id = g_idle_add (queued_ip4_config_change, self);
 			_LOGD (LOGD_DEVICE, "queued IP4 config change");
 		}
@@ -9626,7 +9642,11 @@ device_ipx_changed (NMPlatform *platform,
 		}
 		/* fallthrough */
 	case NMP_OBJECT_TYPE_IP6_ROUTE:
-		if (!priv->queued_ip6_config_id) {
+		if (nm_device_get_unmanaged_flags (self, NM_UNMANAGED_PLATFORM_INIT)) {
+			priv->queued_ip6_config_pending = TRUE;
+			nm_assert_se (!nm_clear_g_source (&priv->queued_ip6_config_id));
+		} else if (!priv->queued_ip6_config_id) {
+			priv->queued_ip6_config_pending = FALSE;
 			priv->queued_ip6_config_id = g_idle_add (queued_ip6_config_change, self);
 			_LOGD (LOGD_DEVICE, "queued IP6 config change");
 		}
@@ -9880,6 +9900,18 @@ _set_unmanaged_flags (NMDevice *self,
 			nm_device_set_unmanaged_flags (self,
 			                               NM_UNMANAGED_USER_SETTINGS,
 			                               !!unmanaged);
+		}
+
+		if (priv->queued_ip4_config_pending) {
+			priv->queued_ip4_config_pending = FALSE;
+			nm_assert_se (!nm_clear_g_source (&priv->queued_ip4_config_id));
+			priv->queued_ip4_config_id = g_idle_add (queued_ip4_config_change, self);
+		}
+
+		if (priv->queued_ip6_config_pending) {
+			priv->queued_ip6_config_pending = FALSE;
+			nm_assert_se (!nm_clear_g_source (&priv->queued_ip6_config_id));
+			priv->queued_ip6_config_id = g_idle_add (queued_ip6_config_change, self);
 		}
 	}
 
