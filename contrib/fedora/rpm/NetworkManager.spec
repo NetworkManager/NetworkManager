@@ -25,6 +25,7 @@
 %global epoch_version 1
 
 %global obsoletes_device_plugins 1:0.9.9.95-1
+%global obsoletes_dhclient 1:1.5.0
 
 %global systemd_dir %{_prefix}/lib/systemd/system
 %global nmlibdir %{_prefix}/lib/%{name}
@@ -106,6 +107,7 @@ Source: __SOURCE1__
 Source1: NetworkManager.conf
 Source2: 00-server.conf
 Source3: 20-connectivity-fedora.conf
+Source4: 05-dhcp-dhclient.conf
 
 #Patch1: 0001-some.patch
 
@@ -116,7 +118,6 @@ Requires(postun): systemd
 Requires: dbus >= %{dbus_version}
 Requires: glib2 >= %{glib2_version}
 Requires: iproute
-Requires: dhclient >= 12:4.1.0
 Requires: libnl3 >= %{libnl3_version}
 Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: ppp = %{ppp_version}
@@ -333,6 +334,18 @@ ethernet devices with no carrier.
 This package is intended to be installed by default for server
 deployments.
 
+%package config-dhcp-dhclient
+Summary: NetworkManager config file to use dhclient as DHCP plugin
+Group: System Environment/Base
+BuildArch: noarch
+Requires: dhclient >= 12:4.1.0
+Provides: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
+Obsoletes: %{name} < %{obsoletes_dhclient}
+
+%description config-dhcp-dhclient
+This adds a NetworkManager configuration file to configure dhclient
+as DHCP plugin.
+
 %package dispatcher-routing-rules
 Summary: NetworkManager dispatcher file for advanced routing rules
 Group: System Environment/Base
@@ -426,6 +439,7 @@ intltoolize --automake --copy --force
 	--with-setting-plugins-default='ifcfg-rh,ibft' \
 	--with-config-dns-rc-manager-default=symlink \
 	--with-config-logging-backend-default=journal \
+	--with-config-dhcp-default=internal \
 	--enable-json-validation
 
 make %{?_smp_mflags}
@@ -446,6 +460,7 @@ mkdir -p %{buildroot}%{nmlibdir}/conf.d
 mkdir -p %{buildroot}%{nmlibdir}/VPN
 cp %{SOURCE2} %{buildroot}%{nmlibdir}/conf.d/
 cp %{SOURCE3} %{buildroot}%{nmlibdir}/conf.d/
+cp %{SOURCE4} %{buildroot}%{nmlibdir}/conf.d/
 
 # create a VPN directory
 mkdir -p %{buildroot}%{_sysconfdir}/NetworkManager/VPN
@@ -661,6 +676,11 @@ fi
 %dir %{nmlibdir}
 %dir %{nmlibdir}/conf.d
 %{nmlibdir}/conf.d/00-server.conf
+
+%files config-dhcp-dhclient
+%dir %{nmlibdir}
+%dir %{nmlibdir}/conf.d
+%{nmlibdir}/conf.d/05-dhcp-dhclient.conf
 
 %files dispatcher-routing-rules
 %{_sysconfdir}/%{name}/dispatcher.d/10-ifcfg-rh-routes.sh
