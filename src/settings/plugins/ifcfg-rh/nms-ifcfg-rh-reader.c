@@ -2358,15 +2358,9 @@ fill_wpa_ciphers (shvarFile *ifcfg,
 	char **list = NULL, **iter;
 	int i = 0;
 
-	p = value = svGetValue (ifcfg, group ? "CIPHER_GROUP" : "CIPHER_PAIRWISE", TRUE);
+	p = value = svGetValue (ifcfg, group ? "CIPHER_GROUP" : "CIPHER_PAIRWISE", FALSE);
 	if (!value)
 		return TRUE;
-
-	/* Strip quotes */
-	if (p[0] == '"')
-		p++;
-	if (p[strlen (p) - 1] == '"')
-		p[strlen (p) - 1] = '\0';
 
 	list = g_strsplit_set (p, " ", 0);
 	for (iter = list; iter && *iter; iter++, i++) {
