@@ -4291,33 +4291,26 @@ static char *
 read_team_config (shvarFile *ifcfg, const char *key, GError **error)
 {
 	gs_free_error GError *local_error = NULL;
-	char *value;
+	gs_free char *value = NULL;
 	size_t l;
 
-	/* FIXME: validate the JSON at some point */
-	value = svGetValue (ifcfg, key, TRUE);
+	value = svGetValue (ifcfg, key, FALSE);
 	if (!value)
 		return NULL;
 
-	/* No reason Team config should be over 20k.  The config is read
-	 * verbatim, length-checked, then unescaped.  svUnescape() does not
-	 * deal well with extremely long strings.
-	 */
 	l = strlen (value);
-	if (l > 20000) {
+	if (l > 1*1024*1024) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "%s too long (size %zd)", key, l);
-		g_free (value);
 		return NULL;
 	}
-	svUnescape (value);
 
-	if (value && value[0] && !nm_utils_is_json_object (value, &local_error)) {
+	if (!nm_utils_is_json_object (value, &local_error)) {
 		PARSE_WARNING ("ignoring invalid team configuration: %s", local_error->message);
-		g_clear_pointer (&value, g_free);
+		return NULL;
 	}
 
-	return value;
+	return g_steal_pointer (&value);
 }
 
 static NMSetting *
