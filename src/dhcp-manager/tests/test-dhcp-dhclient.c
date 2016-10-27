@@ -496,6 +496,44 @@ test_existing_alsoreq (void)
 
 /*****************************************************************************/
 
+static const char *existing_req_orig = \
+	"request something;\n"
+	"also request some-other-thing;\n"
+	"request another-thing;\n"
+	"also request yet-another-thing;\n"
+	;
+
+static const char *existing_req_expected = \
+	"# Created by NetworkManager\n"
+	"# Merged from /path/to/dhclient.conf\n"
+	"\n\n"
+	"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
+	"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
+	"option wpad code 252 = string;\n"
+	"\n"
+	"also request another-thing;\n"
+	"also request yet-another-thing;\n"
+	"also request rfc3442-classless-static-routes;\n"
+	"also request ms-classless-static-routes;\n"
+	"also request static-routes;\n"
+	"also request wpad;\n"
+	"also request ntp-servers;\n"
+	"\n";
+
+static void
+test_existing_req (void)
+{
+	test_config (existing_req_orig, existing_req_expected,
+	             FALSE, NULL,
+	             NULL,
+	             NULL,
+	             NULL,
+	             "eth0",
+	             NULL);
+}
+
+/*****************************************************************************/
+
 static const char *existing_multiline_alsoreq_orig = \
 	"also request something another-thing yet-another-thing\n"
 	"    foobar baz blah;\n"
@@ -848,6 +886,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/dhcp/dhclient/override_hostname", test_override_hostname);
 	g_test_add_func ("/dhcp/dhclient/override_hostname6", test_override_hostname6);
 	g_test_add_func ("/dhcp/dhclient/nonfqdn_hostname6", test_nonfqdn_hostname6);
+	g_test_add_func ("/dhcp/dhclient/existing_req", test_existing_req);
 	g_test_add_func ("/dhcp/dhclient/existing_alsoreq", test_existing_alsoreq);
 	g_test_add_func ("/dhcp/dhclient/existing_multiline_alsoreq", test_existing_multiline_alsoreq);
 	g_test_add_func ("/dhcp/dhclient/duids", test_duids);

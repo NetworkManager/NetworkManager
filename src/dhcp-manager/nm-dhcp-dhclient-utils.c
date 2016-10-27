@@ -44,7 +44,7 @@
 #define REQ_TAG "request "
 
 static void
-add_also_request (GPtrArray *array, const char *item)
+add_request (GPtrArray *array, const char *item)
 {
 	int i;
 
@@ -56,23 +56,12 @@ add_also_request (GPtrArray *array, const char *item)
 }
 
 static gboolean
-request_option_exists (GPtrArray *array, const char *item)
-{
-	int i;
-	for (i = 0; i < array->len; i++) {
-		if (!strcmp (g_ptr_array_index (array, i), item))
-			return TRUE;
-	}
-	return FALSE;
-}
-
-static gboolean
 grab_request_options (GPtrArray *store, const char* line)
 {
 	char **areq, **aiter;
 	gboolean end = FALSE;
 
-	/* Grab each 'also request'  option and save for later */
+	/* Grab each 'request' or 'also request'  option and save for later */
 	areq = g_strsplit_set (line, "\t ,", -1);
 	for (aiter = areq; aiter && *aiter; aiter++) {
 		if (!strlen (g_strstrip (*aiter)))
@@ -93,7 +82,7 @@ grab_request_options (GPtrArray *store, const char* line)
 			end = TRUE;
 		}
 
-		add_also_request (store, *aiter);
+		add_request (store, *aiter);
 	}
 
 	if (areq)
@@ -255,15 +244,14 @@ nm_dhcp_dhclient_create_config (const char *interface,
                                 GBytes **out_new_client_id)
 {
 	GString *new_contents;
-	GPtrArray *alsoreq, *fqdn_opts, *reqs;
+	GPtrArray *fqdn_opts, *reqs;
 	int i;
 
 	g_return_val_if_fail (!anycast_addr || nm_utils_hwaddr_valid (anycast_addr, ETH_ALEN), NULL);
 
 	new_contents = g_string_new (_("# Created by NetworkManager\n"));
-	alsoreq = g_ptr_array_sized_new (5);
 	fqdn_opts = g_ptr_array_sized_new (5);
-	reqs = g_ptr_array_sized_new (5);
+	reqs = g_ptr_array_new_full (5, g_free);
 
 	if (orig_contents) {
 		char **lines, **line;
@@ -313,10 +301,14 @@ nm_dhcp_dhclient_create_config (const char *interface,
 			if (!strncmp (p, REQ_TAG, strlen (REQ_TAG))) {
 				in_req = TRUE;
 				p += strlen (REQ_TAG);
+				g_ptr_array_set_size (reqs, 0);
 			}
 
 			/* Save all request options for later use */
-			in_req = in_req ? !grab_request_options (reqs, p) : in_req;
+			if (in_req) {
+				in_req = !grab_request_options (reqs, p);
+				continue;
+			}
 
 			/* Check for "also require" */
 			if (!strncmp (p, ALSOREQ_TAG, strlen (ALSOREQ_TAG))) {
@@ -325,7 +317,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
 			}
 
 			if (in_alsoreq) {
-				in_alsoreq = !grab_request_options (alsoreq, p);
+				in_alsoreq = !grab_request_options (reqs, p);
 				continue;
 			}
 
@@ -341,32 +333,21 @@ nm_dhcp_dhclient_create_config (const char *interface,
 
 	if (is_ip6) {
 		add_hostname6 (new_contents, hostname);
-		add_also_request (alsoreq, "dhcp6.name-servers");
-		add_also_request (alsoreq, "dhcp6.domain-search");
-		add_also_request (alsoreq, "dhcp6.client-id");
+		add_request (reqs, "dhcp6.name-servers");
+		add_request (reqs, "dhcp6.domain-search");
+		add_request (reqs, "dhcp6.client-id");
 	} else {
 		add_ip4_config (new_contents, client_id, hostname, fqdn);
-		add_also_request (alsoreq, "rfc3442-classless-static-routes");
-		add_also_request (alsoreq, "ms-classless-static-routes");
-		add_also_request (alsoreq, "static-routes");
-		add_also_request (alsoreq, "wpad");
-		add_also_request (alsoreq, "ntp-servers");
+		add_request (reqs, "rfc3442-classless-static-routes");
+		add_request (reqs, "ms-classless-static-routes");
+		add_request (reqs, "static-routes");
+		add_request (reqs, "wpad");
+		add_request (reqs, "ntp-servers");
 	}
 
 	/* And add it to the dhclient configuration */
-	for (i = 0; i < alsoreq->len; i++) {
-		char *t = g_ptr_array_index (alsoreq, i);
-
-		if (!request_option_exists (reqs, t))
-			g_string_append_printf (new_contents, "also request %s;\n", t);
-		g_free (t);
-	}
-	g_ptr_array_free (alsoreq, TRUE);
-
-	for (i = 0; i < reqs->len; i++) {
-		char *t = g_ptr_array_index (reqs, i);
-		g_free (t);
-	}
+	for (i = 0; i < reqs->len; i++)
+		g_string_append_printf (new_contents, "also request %s;\n", (char *) reqs->pdata[i]);
 	g_ptr_array_free (reqs, TRUE);
 
 	for (i = 0; i < fqdn_opts->len; i++) {
