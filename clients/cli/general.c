@@ -1193,6 +1193,7 @@ do_overview (NmCli *nmc, int argc, char **argv)
 	const GPtrArray *p;
 	NMActiveConnection *ac;
 	NmcTermColor color;
+	NMDnsEntry *dns;
 	char *tmp;
 	int i;
 
@@ -1247,6 +1248,39 @@ do_overview (NmCli *nmc, int argc, char **argv)
 		g_print ("\n");
 	}
 	g_free (devices);
+
+	p = nm_client_get_dns_configuration (nmc->client);
+	for (i = 0; p && i < p->len; i++) {
+		const char * const *strv;
+
+		dns = p->pdata[i];
+		strv = nm_dns_entry_get_nameservers (dns);
+		if (!strv || !strv[0]) {
+			/* Invalid entry */
+			continue;
+		}
+
+		if (i == 0)
+			g_print ("DNS configuration:\n");
+
+		tmp = g_strjoinv (" ", (char **) strv);
+		g_print ("\tservers: %s\n", tmp);
+		g_free (tmp);
+
+		strv = nm_dns_entry_get_domains (dns);
+		if (strv && strv[0]) {
+			tmp = g_strjoinv (" ", (char **) strv);
+			g_print ("\tdomains: %s\n", tmp);
+			g_free (tmp);
+		}
+
+		if (nm_dns_entry_get_interface (dns))
+			g_print ("\tinterface: %s\n", nm_dns_entry_get_interface (dns));
+
+		if (nm_dns_entry_get_vpn (dns))
+			g_print ("\ttype: vpn\n");
+		g_print ("\n");
+	}
 
 	g_print (_("Use \"nmcli device show\" to get complete information about known devices and\n"
 	           "\"nmcli connection show\" to get an overview on active connection profiles.\n"
