@@ -615,20 +615,12 @@ nm_dhcp_utils_ip6_config_from_options (int ifindex,
 	struct in6_addr tmp_addr;
 	NMPlatformIP6Address address;
 	char *str = NULL;
-	GHashTableIter iter;
-	gpointer key, value;
 
 	g_return_val_if_fail (options != NULL, NULL);
 
 	memset (&address, 0, sizeof (address));
 	address.plen = 128;
 	address.timestamp = nm_utils_get_monotonic_timestamp_s ();
-
-	g_hash_table_iter_init (&iter, options);
-	while (g_hash_table_iter_next (&iter, &key, &value)) {
-		_LOG2D (LOGD_DHCP6, iface, "(%s): option '%s'=>'%s'",
-		        iface, (const char *) key, (const char *) value);
-	}
 
 	ip6_config = nm_ip6_config_new (ifindex);
 

@@ -741,6 +741,15 @@ nm_dhcp_client_handle_event (gpointer unused,
 			g_variant_unref (value);
 		}
 
+		if (nm_logging_enabled (LOGL_DEBUG, LOGD_DHCP6)) {
+			GHashTableIter hash_iter;
+			gpointer key, val;
+
+			g_hash_table_iter_init (&hash_iter, str_options);
+			while (g_hash_table_iter_next (&hash_iter, &key, &val))
+				_LOGD ("option '%s'=>'%s'", (const char *) key, (const char *) val);
+		}
+
 		/* Create the IP config */
 		g_warn_if_fail (g_hash_table_size (str_options));
 		if (g_hash_table_size (str_options)) {
