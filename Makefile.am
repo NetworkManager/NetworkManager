@@ -3931,14 +3931,21 @@ endif
 
 if ENABLE_VAPIGEN
 
+VAPIGEN_VAPIS += \
+	vapi/libnm.vapi
+
 if WITH_LEGACY_LIBRARIES
 VAPIGEN_VAPIS += \
 	vapi/libnm-util.vapi \
 	vapi/libnm-glib.vapi
 endif
 
+vapi/libnm.vapi:      $(top_builddir)/libnm/NM-1.0.gir                   vapi/libnm.deps      vapi/NM-1.0.metadata
 vapi/libnm-util.vapi: $(top_builddir)/libnm-util/NetworkManager-1.0.gir  vapi/libnm-util.deps vapi/NetworkManager-1.0.metadata
 vapi/libnm-glib.vapi: $(top_builddir)/libnm-glib/NMClient-1.0.gir        vapi/libnm-glib.deps vapi/NMClient-1.0.metadata       vapi/libnm-util.vapi
+
+vapi_libnm_vapi_METADATADIRS = $(srcdir)/vapi
+vapi_libnm_vapi_FILES = $(top_builddir)/libnm/NM-1.0.gir
 
 vapi_libnm_util_vapi_METADATADIRS = $(srcdir)/vapi
 vapi_libnm_util_vapi_FILES = $(top_builddir)/libnm-util/NetworkManager-1.0.gir

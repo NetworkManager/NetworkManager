@@ -650,8 +650,8 @@ fi
 %{_datadir}/gtk-doc/html/libnm-util/*
 %dir %{_datadir}/gtk-doc/html/NetworkManager
 %{_datadir}/gtk-doc/html/NetworkManager/*
-%{_datadir}/vala/vapi/*.deps
-%{_datadir}/vala/vapi/*.vapi
+%{_datadir}/vala/vapi/libnm-*.deps
+%{_datadir}/vala/vapi/libnm-*.vapi
 
 %files libnm
 %{_libdir}/libnm.so.*
@@ -666,6 +666,8 @@ fi
 %{_datadir}/gir-1.0/NM-1.0.gir
 %dir %{_datadir}/gtk-doc/html/libnm
 %{_datadir}/gtk-doc/html/libnm/*
+%{_datadir}/vala/vapi/libnm.deps
+%{_datadir}/vala/vapi/libnm.vapi
 
 %files config-connectivity-fedora
 %dir %{nmlibdir}
