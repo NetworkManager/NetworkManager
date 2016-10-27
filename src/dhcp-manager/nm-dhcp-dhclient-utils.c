@@ -41,6 +41,7 @@
 #define FQDN_FORMAT      FQDN_TAG " \"%s\"; # added by NetworkManager"
 
 #define ALSOREQ_TAG "also request "
+#define REQ_TAG "request "
 
 static void
 add_also_request (GPtrArray *array, const char *item)
@@ -53,6 +54,54 @@ add_also_request (GPtrArray *array, const char *item)
 	}
 	g_ptr_array_add (array, g_strdup (item));
 }
+
+static gboolean
+request_option_exists (GPtrArray *array, const char *item)
+{
+	int i;
+	for (i = 0; i < array->len; i++) {
+		if (!strcmp (g_ptr_array_index (array, i), item))
+			return TRUE;
+	}
+	return FALSE;
+}
+
+static gboolean
+grab_request_options (GPtrArray *store, const char* line)
+{
+	char **areq, **aiter;
+	gboolean end = FALSE;
+
+	/* Grab each 'also request'  option and save for later */
+	areq = g_strsplit_set (line, "\t ,", -1);
+	for (aiter = areq; aiter && *aiter; aiter++) {
+		if (!strlen (g_strstrip (*aiter)))
+			continue;
+
+		if (*aiter[0] == ';') {
+			/* all done */
+			end = TRUE;
+			break;
+		}
+
+		if (!g_ascii_isalnum ((*aiter)[0]))
+			continue;
+
+		if ((*aiter)[strlen (*aiter) - 1] == ';') {
+			/* Remove the EOL marker */
+			(*aiter)[strlen (*aiter) - 1] = '\0';
+			end = TRUE;
+		}
+
+		add_also_request (store, *aiter);
+	}
+
+	if (areq)
+		g_strfreev (areq);
+
+	return end;
+}
+
 
 static void
 add_hostname4 (GString *str, const char *hostname, const char *fqdn)
@@ -206,7 +255,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
                                 GBytes **out_new_client_id)
 {
 	GString *new_contents;
-	GPtrArray *alsoreq, *fqdn_opts;
+	GPtrArray *alsoreq, *fqdn_opts, *reqs;
 	int i;
 
 	g_return_val_if_fail (!anycast_addr || nm_utils_hwaddr_valid (anycast_addr, ETH_ALEN), NULL);
@@ -214,10 +263,12 @@ nm_dhcp_dhclient_create_config (const char *interface,
 	new_contents = g_string_new (_("# Created by NetworkManager\n"));
 	alsoreq = g_ptr_array_sized_new (5);
 	fqdn_opts = g_ptr_array_sized_new (5);
+	reqs = g_ptr_array_sized_new (5);
 
 	if (orig_contents) {
 		char **lines, **line;
 		gboolean in_alsoreq = FALSE;
+		gboolean in_req = FALSE;
 
 		g_string_append_printf (new_contents, _("# Merged from %s\n\n"), orig_path);
 
@@ -258,6 +309,15 @@ nm_dhcp_dhclient_create_config (const char *interface,
 			if (g_str_has_prefix (p, "script "))
 				continue;
 
+			/* Check for "request" */
+			if (!strncmp (p, REQ_TAG, strlen (REQ_TAG))) {
+				in_req = TRUE;
+				p += strlen (REQ_TAG);
+			}
+
+			/* Save all request options for later use */
+			in_req = in_req ? !grab_request_options (reqs, p) : in_req;
+
 			/* Check for "also require" */
 			if (!strncmp (p, ALSOREQ_TAG, strlen (ALSOREQ_TAG))) {
 				in_alsoreq = TRUE;
@@ -265,35 +325,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
 			}
 
 			if (in_alsoreq) {
-				char **areq, **aiter;
-
-				/* Grab each 'also require' option and save for later */
-				areq = g_strsplit_set (p, "\t ,", -1);
-				for (aiter = areq; aiter && *aiter; aiter++) {
-					if (!strlen (g_strstrip (*aiter)))
-						continue;
-
-					if (*aiter[0] == ';') {
-						/* all done */
-						in_alsoreq = FALSE;
-						break;
-					}
-
-					if (!g_ascii_isalnum ((*aiter)[0]))
-						continue;
-
-					if ((*aiter)[strlen (*aiter) - 1] == ';') {
-						/* Remove the EOL marker */
-						(*aiter)[strlen (*aiter) - 1] = '\0';
-						in_alsoreq = FALSE;
-					}
-
-					add_also_request (alsoreq, *aiter);
-				}
-
-				if (areq)
-					g_strfreev (areq);
-
+				in_alsoreq = !grab_request_options (alsoreq, p);
 				continue;
 			}
 
@@ -325,10 +357,17 @@ nm_dhcp_dhclient_create_config (const char *interface,
 	for (i = 0; i < alsoreq->len; i++) {
 		char *t = g_ptr_array_index (alsoreq, i);
 
-		g_string_append_printf (new_contents, "also request %s;\n", t);
+		if (!request_option_exists (reqs, t))
+			g_string_append_printf (new_contents, "also request %s;\n", t);
 		g_free (t);
 	}
 	g_ptr_array_free (alsoreq, TRUE);
+
+	for (i = 0; i < reqs->len; i++) {
+		char *t = g_ptr_array_index (reqs, i);
+		g_free (t);
+	}
+	g_ptr_array_free (reqs, TRUE);
 
 	for (i = 0; i < fqdn_opts->len; i++) {
 		char *t = g_ptr_array_index (fqdn_opts, i);
