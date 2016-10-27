@@ -208,7 +208,7 @@ make_connection_setting (const char *file,
 	}
 
 
-	zone = svGetValue(ifcfg, "ZONE", FALSE);
+	zone = svGetValue (ifcfg, "ZONE", FALSE);
 	if (!zone || !strlen (zone)) {
 		g_free (zone);
 		zone = NULL;
