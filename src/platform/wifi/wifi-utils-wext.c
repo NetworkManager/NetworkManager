@@ -105,7 +105,7 @@ wifi_wext_get_mode (WifiData *data)
 
 	if (ioctl (wext->fd, SIOCGIWMODE, &wrq) < 0) {
 		if (errno != ENODEV) {
-			nm_log_warn (LOGD_HW | LOGD_WIFI,
+			nm_log_warn (LOGD_PLATFORM | LOGD_WIFI,
 			             "(%s): error %d getting card mode",
 			             wext->parent.iface, errno);
 		}
@@ -154,7 +154,7 @@ wifi_wext_set_mode (WifiData *data, const NM80211Mode mode)
 	nm_utils_ifname_cpy (wrq.ifr_name, wext->parent.iface);
 	if (ioctl (wext->fd, SIOCSIWMODE, &wrq) < 0) {
 		if (errno != ENODEV) {
-			nm_log_err (LOGD_HW | LOGD_WIFI, "(%s): error setting mode %d",
+			nm_log_err (LOGD_PLATFORM | LOGD_WIFI, "(%s): error setting mode %d",
 			            wext->parent.iface, mode);
 		}
 		return FALSE;
@@ -178,7 +178,7 @@ wifi_wext_set_powersave (WifiData *data, guint32 powersave)
 	nm_utils_ifname_cpy (wrq.ifr_name, wext->parent.iface);
 	if (ioctl (wext->fd, SIOCSIWPOWER, &wrq) < 0) {
 		if (errno != ENODEV) {
-			nm_log_err (LOGD_HW | LOGD_WIFI, "(%s): error setting powersave %" G_GUINT32_FORMAT,
+			nm_log_err (LOGD_PLATFORM | LOGD_WIFI, "(%s): error setting powersave %" G_GUINT32_FORMAT,
 			            wext->parent.iface, powersave);
 		}
 		return FALSE;
@@ -196,7 +196,7 @@ wifi_wext_get_freq (WifiData *data)
 	memset (&wrq, 0, sizeof (struct iwreq));
 	nm_utils_ifname_cpy (wrq.ifr_name, wext->parent.iface);
 	if (ioctl (wext->fd, SIOCGIWFREQ, &wrq) < 0) {
-		nm_log_warn (LOGD_HW | LOGD_WIFI,
+		nm_log_warn (LOGD_PLATFORM | LOGD_WIFI,
 		             "(%s): error getting frequency: %s",
 		             wext->parent.iface, strerror (errno));
 		return 0;
@@ -230,7 +230,7 @@ wifi_wext_get_bssid (WifiData *data, guint8 *out_bssid)
 	memset (&wrq, 0, sizeof (wrq));
 	nm_utils_ifname_cpy (wrq.ifr_name, wext->parent.iface);
 	if (ioctl (wext->fd, SIOCGIWAP, &wrq) < 0) {
-		nm_log_warn (LOGD_HW | LOGD_WIFI,
+		nm_log_warn (LOGD_PLATFORM | LOGD_WIFI,
 		             "(%s): error getting associated BSSID: %s",
 		             wext->parent.iface, strerror (errno));
 		return FALSE;
@@ -360,7 +360,7 @@ wifi_wext_get_qual (WifiData *data)
 	nm_utils_ifname_cpy (wrq.ifr_name, wext->parent.iface);
 
 	if (ioctl (wext->fd, SIOCGIWSTATS, &wrq) < 0) {
-		nm_log_warn (LOGD_HW | LOGD_WIFI,
+		nm_log_warn (LOGD_PLATFORM | LOGD_WIFI,
 		             "(%s): error getting signal strength: %s",
 		             wext->parent.iface, strerror (errno));
 		return -1;
@@ -403,7 +403,7 @@ wifi_wext_set_mesh_channel (WifiData *data, guint32 channel)
 	}
 
 	if (ioctl (wext->fd, SIOCSIWFREQ, &wrq) < 0) {
-		nm_log_err (LOGD_HW | LOGD_WIFI | LOGD_OLPC,
+		nm_log_err (LOGD_PLATFORM | LOGD_WIFI | LOGD_OLPC,
 		            "(%s): error setting channel to %d: %s",
 		            wext->parent.iface, channel, strerror (errno));
 		return FALSE;
@@ -431,7 +431,7 @@ wifi_wext_set_mesh_ssid (WifiData *data, const guint8 *ssid, gsize len)
 		return TRUE;
 
 	if (errno != ENODEV) {
-		nm_log_err (LOGD_HW | LOGD_WIFI | LOGD_OLPC,
+		nm_log_err (LOGD_PLATFORM | LOGD_WIFI | LOGD_OLPC,
 		            "(%s): error setting SSID to '%s': %s",
 		            wext->parent.iface,
 		            ssid ? nm_utils_escape_ssid (ssid, len) : "(null)",
@@ -482,7 +482,7 @@ wext_get_range (WifiDataWext *wext,
 			success = TRUE;
 			break;
 		} else if (errno != EAGAIN) {
-			nm_log_err (LOGD_HW | LOGD_WIFI,
+			nm_log_err (LOGD_PLATFORM | LOGD_WIFI,
 			            "(%s): couldn't get driver range information (%d).",
 			            wext->parent.iface, errno);
 			break;
@@ -492,7 +492,7 @@ wext_get_range (WifiDataWext *wext,
 	}
 
 	if (i <= 0) {
-		nm_log_warn (LOGD_HW | LOGD_WIFI,
+		nm_log_warn (LOGD_PLATFORM | LOGD_WIFI,
 		             "(%s): driver took too long to respond to IWRANGE query.",
 		             wext->parent.iface);
 	}
@@ -583,13 +583,13 @@ wifi_wext_init (const char *iface, int ifindex, gboolean check_scan)
 
 	memset (&range, 0, sizeof (struct iw_range));
 	if (wext_get_range (wext, &range, &response_len) == FALSE) {
-		nm_log_info (LOGD_HW | LOGD_WIFI, "(%s): driver WEXT range request failed",
+		nm_log_info (LOGD_PLATFORM | LOGD_WIFI, "(%s): driver WEXT range request failed",
 		             wext->parent.iface);
 		goto error;
 	}
 
 	if ((response_len < 300) || (range.we_version_compiled < 21)) {
-		nm_log_info (LOGD_HW | LOGD_WIFI,
+		nm_log_info (LOGD_PLATFORM | LOGD_WIFI,
 		             "(%s): driver WEXT version too old (got %d, expected >= 21)",
 		             wext->parent.iface,
 		             range.we_version_compiled);
@@ -613,7 +613,7 @@ wifi_wext_init (const char *iface, int ifindex, gboolean check_scan)
 
 	/* Check for scanning capability; cards that can't scan are not supported */
 	if (check_scan && (wext_can_scan (wext) == FALSE)) {
-		nm_log_info (LOGD_HW | LOGD_WIFI,
+		nm_log_info (LOGD_PLATFORM | LOGD_WIFI,
 		             "(%s): drivers that cannot scan are unsupported",
 		             wext->parent.iface);
 		goto error;
@@ -625,12 +625,12 @@ wifi_wext_init (const char *iface, int ifindex, gboolean check_scan)
 	 */
 	scan_capa_range = (struct iw_range_with_scan_capa *) &range;
 	if (scan_capa_range->scan_capa & NM_IW_SCAN_CAPA_ESSID) {
-		nm_log_info (LOGD_HW | LOGD_WIFI,
+		nm_log_info (LOGD_PLATFORM | LOGD_WIFI,
 		             "(%s): driver supports SSID scans (scan_capa 0x%02X).",
 		             wext->parent.iface,
 		             scan_capa_range->scan_capa);
 	} else {
-		nm_log_info (LOGD_HW | LOGD_WIFI,
+		nm_log_info (LOGD_PLATFORM | LOGD_WIFI,
 		             "(%s): driver does not support SSID scans (scan_capa 0x%02X).",
 		             wext->parent.iface,
 		             scan_capa_range->scan_capa);
@@ -644,7 +644,7 @@ wifi_wext_init (const char *iface, int ifindex, gboolean check_scan)
 	if (has_5ghz)
 		wext->parent.caps |= NM_WIFI_DEVICE_CAP_FREQ_5GHZ;
 
-	nm_log_info (LOGD_HW | LOGD_WIFI,
+	nm_log_info (LOGD_PLATFORM | LOGD_WIFI,
 	             "(%s): using WEXT for WiFi device control",
 	             wext->parent.iface);
 

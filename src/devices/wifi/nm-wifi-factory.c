@@ -76,7 +76,7 @@ create_device (NMDeviceFactory *factory,
 	if (!nm_platform_wifi_get_capabilities (NM_PLATFORM_GET,
 	                                        plink->ifindex,
 	                                        &capabilities)) {
-		nm_log_warn (LOGD_HW | LOGD_WIFI, "(%s) failed to initialize Wi-Fi driver for ifindex %d", iface, plink->ifindex);
+		nm_log_warn (LOGD_PLATFORM | LOGD_WIFI, "(%s) failed to initialize Wi-Fi driver for ifindex %d", iface, plink->ifindex);
 		return NULL;
 	}
 

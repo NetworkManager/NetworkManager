@@ -68,7 +68,7 @@ dev_get_attrs (GUdevDevice *udev_device,
 
 	path = g_udev_device_get_sysfs_path (udev_device);
 	if (!path) {
-		nm_log_warn (LOGD_HW, "couldn't determine device path; ignoring...");
+		nm_log_warn (LOGD_PLATFORM, "couldn't determine device path; ignoring...");
 		return FALSE;
 	}
 
@@ -110,11 +110,11 @@ adsl_add (NMAtmManager *self, GUdevDevice *udev_device)
 
 	ifname = g_udev_device_get_name (udev_device);
 	if (!ifname) {
-		nm_log_warn (LOGD_HW, "failed to get device's interface name");
+		nm_log_warn (LOGD_PLATFORM, "failed to get device's interface name");
 		return;
 	}
 
-	nm_log_dbg (LOGD_HW, "(%s): found ATM device", ifname);
+	nm_log_dbg (LOGD_PLATFORM, "(%s): found ATM device", ifname);
 
 	atm_index_path = g_strdup_printf ("/sys/class/atm/%s/atmindex",
 	                                  NM_ASSERT_VALID_PATH_COMPONENT (ifname));
@@ -123,12 +123,12 @@ adsl_add (NMAtmManager *self, GUdevDevice *udev_device)
 	                                                      10, 0, G_MAXINT,
 	                                                      -1);
 	if (atm_index < 0) {
-		nm_log_warn (LOGD_HW, "(%s): failed to get ATM index", ifname);
+		nm_log_warn (LOGD_PLATFORM, "(%s): failed to get ATM index", ifname);
 		return;
 	}
 
 	if (!dev_get_attrs (udev_device, &sysfs_path, &driver)) {
-		nm_log_warn (LOGD_HW, "(%s): failed to get ATM attributes", ifname);
+		nm_log_warn (LOGD_PLATFORM, "(%s): failed to get ATM attributes", ifname);
 		return;
 	}
 
@@ -153,7 +153,7 @@ adsl_remove (NMAtmManager *self, GUdevDevice *udev_device)
 	const char *iface = g_udev_device_get_name (udev_device);
 	GSList *iter;
 
-	nm_log_dbg (LOGD_HW, "(%s): removing ATM device", iface);
+	nm_log_dbg (LOGD_PLATFORM, "(%s): removing ATM device", iface);
 
 	for (iter = priv->devices; iter; iter = iter->next) {
 		NMDevice *device = iter->data;
@@ -210,7 +210,7 @@ handle_uevent (GUdevClient *client,
 
 	ifindex = g_udev_device_get_property (device, "IFINDEX");
 	seqnum = g_udev_device_get_seqnum (device);
-	nm_log_dbg (LOGD_HW, "UDEV event: action '%s' subsys '%s' device '%s' (%s); seqnum=%" G_GUINT64_FORMAT,
+	nm_log_dbg (LOGD_PLATFORM, "UDEV event: action '%s' subsys '%s' device '%s' (%s); seqnum=%" G_GUINT64_FORMAT,
 	            action, subsys, g_udev_device_get_name (device), ifindex ? ifindex : "unknown", seqnum);
 
 	if (!strcmp (action, "add"))

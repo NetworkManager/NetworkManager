@@ -364,8 +364,10 @@ guint32         nm_device_get_ip4_route_metric  (NMDevice *dev);
 guint32         nm_device_get_ip6_route_metric  (NMDevice *dev);
 
 const char *    nm_device_get_hw_address        (NMDevice *dev);
-const char *    nm_device_get_permanent_hw_address (NMDevice *dev,
-                                                    gboolean fallback_fake);
+const char *    nm_device_get_permanent_hw_address (NMDevice *self);
+const char *    nm_device_get_permanent_hw_address_full (NMDevice *self,
+                                                         gboolean force_freeze,
+                                                         gboolean *out_is_fake);
 const char *    nm_device_get_initial_hw_address (NMDevice *dev);
 
 NMDhcp4Config * nm_device_get_dhcp4_config      (NMDevice *dev);
@@ -507,7 +509,7 @@ void nm_device_set_unmanaged_by_flags_queue (NMDevice *self,
                                              NMUnmanagedFlags flags,
                                              NMUnmanFlagOp set_op,
                                              NMDeviceStateReason reason);
-void nm_device_set_unmanaged_by_user_settings (NMDevice *self, const GSList *unmanaged_specs);
+void nm_device_set_unmanaged_by_user_settings (NMDevice *self);
 void nm_device_set_unmanaged_by_user_udev (NMDevice *self);
 void nm_device_set_unmanaged_by_quitting (NMDevice *device);
 
@@ -590,7 +592,7 @@ void nm_device_reactivate_ip6_config (NMDevice *device,
 
 gboolean nm_device_update_hw_address (NMDevice *self);
 void nm_device_update_initial_hw_address (NMDevice *self);
-void nm_device_update_permanent_hw_address (NMDevice *self);
+void nm_device_update_permanent_hw_address (NMDevice *self, gboolean force_freeze);
 void nm_device_update_dynamic_ip_setup (NMDevice *self);
 
 #endif /* __NETWORKMANAGER_DEVICE_H__ */

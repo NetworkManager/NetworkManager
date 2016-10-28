@@ -1874,7 +1874,7 @@ have_connection_for_device (NMSettings *self, NMDevice *device)
 
 	g_return_val_if_fail (NM_IS_SETTINGS (self), FALSE);
 
-	perm_hw_addr = nm_device_get_permanent_hw_address (device, FALSE);
+	perm_hw_addr = nm_device_get_permanent_hw_address (device);
 
 	/* Find a wired connection locked to the given MAC address, if any */
 	g_hash_table_iter_init (&iter, priv->connections);

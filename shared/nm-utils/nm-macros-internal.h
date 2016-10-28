@@ -300,9 +300,11 @@ nm_strdup_not_empty (const char *str)
 
 #if NM_MORE_ASSERTS
 #define nm_assert(cond) G_STMT_START { g_assert (cond); } G_STMT_END
+#define nm_assert_se(cond) G_STMT_START { if (G_LIKELY (cond)) { ; } else { g_assert (FALSE && (cond)); } } G_STMT_END
 #define nm_assert_not_reached() G_STMT_START { g_assert_not_reached (); } G_STMT_END
 #else
 #define nm_assert(cond) G_STMT_START { if (FALSE) { if (cond) { } } } G_STMT_END
+#define nm_assert_se(cond) G_STMT_START { if (G_LIKELY (cond)) { ; } } G_STMT_END
 #define nm_assert_not_reached() G_STMT_START { ; } G_STMT_END
 #endif
 
@@ -365,6 +367,27 @@ nm_g_object_unref (gpointer obj)
 	if (obj)
 		g_object_unref (obj);
 }
+
+/* basically, replaces
+ *   g_clear_pointer (&location, g_free)
+ * with
+ *   nm_clear_g_free (&location)
+ *
+ * Another advantage is that by using a macro and typeof(), it is more
+ * typesafe and gives you for example a compiler warning when pp is a const
+ * pointer or points to a const-pointer.
+ */
+#define nm_clear_g_free(pp) \
+	({  \
+		typeof (*(pp)) *_pp = (pp); \
+		typeof (**_pp) *_p = *_pp; \
+		\
+		if (_p) { \
+			*_pp = NULL; \
+			g_free (_p); \
+		} \
+		!!_p; \
+	})
 
 static inline gboolean
 nm_clear_g_source (guint *id)
