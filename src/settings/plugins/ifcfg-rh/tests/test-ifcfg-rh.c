@@ -2547,7 +2547,7 @@ test_read_wifi_wpa_psk_2 (void)
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	g_assert (s_wsec);
-	g_assert_cmpstr (nm_setting_wireless_security_get_psk (s_wsec), ==, "They're really saying I love you. >>`<< \\");
+	g_assert_cmpstr (nm_setting_wireless_security_get_psk (s_wsec), ==, "They're really saying I love you. >>`<< '");
 
 	g_object_unref (connection);
 }
@@ -2586,12 +2586,10 @@ test_read_wifi_wpa_psk_unquoted (void)
 static void
 test_read_wifi_wpa_psk_unquoted2 (void)
 {
-	/* Ensure a quoted 64-character WPA passphrase will fail since passphrases
-	 * must be between 8 and 63 ASCII characters inclusive per the WPA spec.
-	 */
+	gs_unref_object NMConnection *connection = NULL;
 
-	_connection_from_file_fail (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wpa-psk-unquoted2",
-	                            NULL, TYPE_WIRELESS, NULL);
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wpa-psk-unquoted2",
+	                                    NULL, TYPE_WIRELESS, NULL);
 }
 
 static void

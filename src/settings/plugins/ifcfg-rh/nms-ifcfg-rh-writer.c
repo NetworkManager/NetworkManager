@@ -562,7 +562,8 @@ write_wireless_security_setting (NMConnection *connection,
                                  GError **error)
 {
 	NMSettingWirelessSecurity *s_wsec;
-	const char *key_mgmt, *auth_alg, *key, *proto, *cipher, *psk;
+	const char *key_mgmt, *auth_alg, *key, *proto, *cipher;
+	const char *psk = NULL;
 	gboolean wep = FALSE, wpa = FALSE, dynamic_wep = FALSE;
 	char *tmp;
 	guint32 i, num;
@@ -739,30 +740,15 @@ write_wireless_security_setting (NMConnection *connection,
 		svSetValue (ifcfg, "CIPHER_GROUP", str->str, FALSE);
 	g_string_free (str, TRUE);
 
-	/* WPA Passphrase */
-	if (wpa) {
-		char *quoted = NULL;
-
+	if (wpa)
 		psk = nm_setting_wireless_security_get_psk (s_wsec);
-		if (psk && (strlen (psk) != 64)) {
-			/* Quote the PSK since it's a passphrase */
-			quoted = utils_single_quote_string (psk);
-		}
-		set_secret (ifcfg,
-		            "WPA_PSK",
-		            quoted ? quoted : psk,
-		            "WPA_PSK_FLAGS",
-		            nm_setting_wireless_security_get_psk_flags (s_wsec),
-		            TRUE);
-		g_free (quoted);
-	} else {
-		set_secret (ifcfg,
-		            "WPA_PSK",
-		            NULL,
-		            "WPA_PSK_FLAGS",
-		            NM_SETTING_SECRET_FLAG_NONE,
-		            FALSE);
-	}
+
+	set_secret (ifcfg,
+	            "WPA_PSK",
+	            psk,
+	            "WPA_PSK_FLAGS",
+	            wpa ? nm_setting_wireless_security_get_psk_flags (s_wsec) : NM_SETTING_SECRET_FLAG_NONE,
+	            FALSE);
 
 	return TRUE;
 }

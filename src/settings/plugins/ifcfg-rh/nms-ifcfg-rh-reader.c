@@ -2416,9 +2416,8 @@ parse_wpa_psk (shvarFile *ifcfg,
                GError **error)
 {
 	shvarFile *keys_ifcfg;
-	char *psk = NULL, *p, *hashed = NULL;
+	gs_free char *psk = NULL;
 	size_t plen;
-	gboolean quoted = FALSE;
 
 	/* Passphrase must be between 10 and 66 characters in length because WPA
 	 * hex keys are exactly 64 characters (no quoting), and WPA passphrases
@@ -2429,64 +2428,36 @@ parse_wpa_psk (shvarFile *ifcfg,
 	/* Try to get keys from the "shadow" key file */
 	keys_ifcfg = utils_get_keys_ifcfg (file, FALSE);
 	if (keys_ifcfg) {
-		psk = svGetValue (keys_ifcfg, "WPA_PSK", TRUE);
+		psk = svGetValue (keys_ifcfg, "WPA_PSK", FALSE);
 		svCloseFile (keys_ifcfg);
 	}
 
 	/* Fall back to the original ifcfg */
 	if (!psk)
-		psk = svGetValue (ifcfg, "WPA_PSK", TRUE);
+		psk = svGetValue (ifcfg, "WPA_PSK", FALSE);
 
 	if (!psk)
 		return NULL;
 
-	p = psk;
-	plen = strlen (p);
+	plen = strlen (psk);
 
-	if (   (plen >= 2 && (p[0] == '"' || p[0] == '\'') && p[0] == p[plen - 1])
-	    || (plen >= 3 && p[0] == '$' && p[1] == '\'' && p[1] == p[plen - 1]))
-		quoted = TRUE;
-
-	if (!quoted && (strlen (psk) == 64)) {
+	if (plen == 64) {
 		/* Verify the hex PSK; 64 digits */
-		while (*p) {
-			if (!g_ascii_isxdigit (*p++)) {
-				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-				             "Invalid WPA_PSK (contains non-hexadecimal characters)");
-				goto out;
-			}
+		if (!NM_STRCHAR_ALL (psk, ch, g_ascii_isxdigit (ch))) {
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "Invalid WPA_PSK (contains non-hexadecimal characters)");
+			return NULL;
 		}
-		hashed = g_strdup (psk);
 	} else {
-		/* Prior to 4f6eef9e77265484555663cf666cde4fa8323469 and
-		 * 28e2e446868b94b92edc4a82aa0bf1e3eda8ec54 the writer may not have
-		 * properly quoted passphrases, so just handle anything that's unquoted
-		 * and between 8 and 63 characters as a passphrase.
-		 */
-
-		/* Get rid of the quotes */
-		hashed = utils_single_unquote_string (p);
-
-		/* Length check */
-		if (strlen (hashed) < 8 || strlen (hashed) > 63) {
+		if (plen < 8 || plen > 63) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid WPA_PSK (passphrases must be between "
 			             "8 and 63 characters long (inclusive))");
-			g_free (hashed);
-			hashed = NULL;
-			goto out;
+			return NULL;
 		}
 	}
 
-	if (!hashed) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Invalid WPA_PSK (doesn't look like a passphrase or hex key)");
-		goto out;
-	}
-
-out:
-	g_free (psk);
-	return hashed;
+	return g_steal_pointer (&psk);
 }
 
 static gboolean
