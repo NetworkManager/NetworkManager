@@ -11578,7 +11578,6 @@ nm_device_update_hw_address (NMDevice *self)
 	NMDevicePrivate *priv;
 	const guint8 *hwaddr;
 	gsize hwaddrlen = 0;
-	gboolean changed = FALSE;
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	if (priv->ifindex <= 0)
@@ -11591,54 +11590,46 @@ nm_device_update_hw_address (NMDevice *self)
 	    && nm_utils_hwaddr_matches (hwaddr, hwaddrlen, nm_ip_addr_zero.addr_eth, sizeof (nm_ip_addr_zero.addr_eth)))
 		hwaddrlen = 0;
 
-	if (hwaddrlen) {
-		if (   priv->hw_addr_len
-		    && priv->hw_addr_len != hwaddrlen) {
-			char s_buf[NM_UTILS_HWADDR_LEN_MAX_STR];
+	if (!hwaddrlen)
+		return FALSE;
 
-			/* we cannot change the address length of a device once it is set (except
-			 * unrealizing the device).
-			 *
-			 * The reason is that the permanent and initial MAC addresses also must have the
-			 * same address length, so it's unclear what it would mean that the length changes. */
-			_LOGD (LOGD_PLATFORM | LOGD_DEVICE,
-			       "hw-addr: read a MAC address with differing length (%s vs. %s)",
-			       priv->hw_addr,
-			       nm_utils_hwaddr_ntoa_buf (hwaddr, hwaddrlen, TRUE, s_buf, sizeof (s_buf)));
-			return FALSE;
-		}
+	if (   priv->hw_addr_len
+	    && priv->hw_addr_len != hwaddrlen) {
+		char s_buf[NM_UTILS_HWADDR_LEN_MAX_STR];
 
-		if (!priv->hw_addr || !nm_utils_hwaddr_matches (priv->hw_addr, -1, hwaddr, hwaddrlen)) {
-			g_free (priv->hw_addr);
-			priv->hw_addr_len_ = hwaddrlen;
-			priv->hw_addr = nm_utils_hwaddr_ntoa (hwaddr, hwaddrlen);
-
-			_LOGD (LOGD_PLATFORM | LOGD_DEVICE, "hw-addr: hardware address now %s", priv->hw_addr);
-			_notify (self, PROP_HW_ADDRESS);
-
-			if (   !priv->hw_addr_initial
-			    || (   priv->hw_addr_type == HW_ADDR_TYPE_UNSET
-			        && priv->state < NM_DEVICE_STATE_PREPARE
-			        && !nm_device_is_activating (self))) {
-				/* when we get a hw_addr the first time or while the device
-				 * is not activated (with no explict hw address set), always
-				 * update our inital hw-address as well. */
-				nm_device_update_initial_hw_address (self);
-			}
-			changed = TRUE;
-		}
-	} else {
-		/* Invalid or no hardware address */
-		if (priv->hw_addr_len != 0) {
-			_LOGD (LOGD_PLATFORM | LOGD_DEVICE,
-			       "hw-addr: failed reading current MAC address (stay with %s)",
-			       priv->hw_addr);
-		} else {
-			_LOGD (LOGD_PLATFORM | LOGD_DEVICE,
-			       "hw-addr: failed reading current MAC address");
-		}
+		/* we cannot change the address length of a device once it is set (except
+		 * unrealizing the device).
+		 *
+		 * The reason is that the permanent and initial MAC addresses also must have the
+		 * same address length, so it's unclear what it would mean that the length changes. */
+		_LOGD (LOGD_PLATFORM | LOGD_DEVICE,
+		       "hw-addr: read a MAC address with differing length (%s vs. %s)",
+		       priv->hw_addr,
+		       nm_utils_hwaddr_ntoa_buf (hwaddr, hwaddrlen, TRUE, s_buf, sizeof (s_buf)));
+		return FALSE;
 	}
-	return changed;
+
+	if (   priv->hw_addr
+	    && nm_utils_hwaddr_matches (priv->hw_addr, -1, hwaddr, hwaddrlen))
+		return FALSE;
+
+	g_free (priv->hw_addr);
+	priv->hw_addr_len_ = hwaddrlen;
+	priv->hw_addr = nm_utils_hwaddr_ntoa (hwaddr, hwaddrlen);
+
+	_LOGD (LOGD_PLATFORM | LOGD_DEVICE, "hw-addr: hardware address now %s", priv->hw_addr);
+	_notify (self, PROP_HW_ADDRESS);
+
+	if (   !priv->hw_addr_initial
+	    || (   priv->hw_addr_type == HW_ADDR_TYPE_UNSET
+	        && priv->state < NM_DEVICE_STATE_PREPARE
+	        && !nm_device_is_activating (self))) {
+		/* when we get a hw_addr the first time or while the device
+		 * is not activated (with no explict hw address set), always
+		 * update our inital hw-address as well. */
+		nm_device_update_initial_hw_address (self);
+	}
+	return TRUE;
 }
 
 void
