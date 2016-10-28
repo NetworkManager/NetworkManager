@@ -400,7 +400,7 @@ nm_config_set_no_auto_default_for_device (NMConfig *self, NMDevice *device)
 
 	priv = NM_CONFIG_GET_PRIVATE (self);
 
-	hw_address = nm_device_get_permanent_hw_address (device, TRUE);
+	hw_address = nm_device_get_permanent_hw_address (device);
 	if (!hw_address)
 		return;
 
@@ -1879,6 +1879,7 @@ _nm_config_state_set (NMConfig *self,
 
 #define DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE                   "device"
 #define DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_MANAGED             "managed"
+#define DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_PERM_HW_ADDR_FAKE   "perm-hw-addr-fake"
 #define DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_CONNECTION_UUID     "connection-uuid"
 
 static NMConfigDeviceStateData *
@@ -1887,7 +1888,10 @@ _config_device_state_data_new (int ifindex, GKeyFile *kf)
 	NMConfigDeviceStateData *device_state;
 	NMConfigDeviceStateManagedType managed_type = NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_UNKNOWN;
 	gs_free char *connection_uuid = NULL;
-	gsize len_plus_1;
+	gs_free char *perm_hw_addr_fake = NULL;
+	gsize connection_uuid_len;
+	gsize perm_hw_addr_fake_len;
+	char *p;
 
 	nm_assert (ifindex > 0);
 
@@ -1908,21 +1912,42 @@ _config_device_state_data_new (int ifindex, GKeyFile *kf)
 			                                               DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_CONNECTION_UUID,
 			                                               NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY);
 		}
+
+		perm_hw_addr_fake = nm_config_keyfile_get_value (kf,
+		                                                 DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
+		                                                 DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_PERM_HW_ADDR_FAKE,
+		                                                 NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY);
+		if (perm_hw_addr_fake) {
+			char *normalized;
+
+			normalized = nm_utils_hwaddr_canonical (perm_hw_addr_fake, -1);
+			g_free (perm_hw_addr_fake);
+			perm_hw_addr_fake = normalized;
+		}
 	}
 
-	len_plus_1 = connection_uuid ? strlen (connection_uuid) + 1 : 0;
+	connection_uuid_len = connection_uuid ? strlen (connection_uuid) + 1 : 0;
+	perm_hw_addr_fake_len = perm_hw_addr_fake ? strlen (perm_hw_addr_fake) + 1 : 0;
 
-	device_state = g_malloc (sizeof (NMConfigDeviceStateData) + len_plus_1);
+	device_state = g_malloc (sizeof (NMConfigDeviceStateData) +
+	                         connection_uuid_len +
+	                         perm_hw_addr_fake_len);
 
 	device_state->ifindex = ifindex;
 	device_state->managed = managed_type;
 	device_state->connection_uuid = NULL;
-	if (connection_uuid) {
-		char *device_state_data;
+	device_state->perm_hw_addr_fake = NULL;
 
-		device_state_data = (char *) (&device_state[1]);
-		memcpy (device_state_data, connection_uuid, len_plus_1);
-		device_state->connection_uuid = device_state_data;
+	p = (char *) (&device_state[1]);
+	if (connection_uuid) {
+		memcpy (p, connection_uuid, connection_uuid_len);
+		device_state->connection_uuid = p;
+		p += connection_uuid_len;
+	}
+	if (perm_hw_addr_fake) {
+		memcpy (p, perm_hw_addr_fake, perm_hw_addr_fake_len);
+		device_state->perm_hw_addr_fake = p;
+		p += perm_hw_addr_fake_len;
 	}
 
 	return device_state;
@@ -1943,23 +1968,23 @@ nm_config_device_state_load (NMConfig *self,
 	NMConfigDeviceStateData *device_state;
 	char path[NM_STRLEN (NM_CONFIG_DEVICE_STATE_DIR) + 60];
 	gs_unref_keyfile GKeyFile *kf = NULL;
-	gs_free_error GError *error = NULL;
 
 	g_return_val_if_fail (ifindex > 0, NULL);
 
 	nm_sprintf_buf (path, "%s/%d", NM_CONFIG_DEVICE_STATE_DIR, ifindex);
 
 	kf = nm_config_create_keyfile ();
-	if (!g_key_file_load_from_file (kf, path, G_KEY_FILE_NONE, &error))
+	if (!g_key_file_load_from_file (kf, path, G_KEY_FILE_NONE, NULL))
 		g_clear_pointer (&kf, g_key_file_unref);
 
 	device_state = _config_device_state_data_new (ifindex, kf);
 
 	if (kf) {
-		_LOGT ("device-state: read #%d (%s); managed=%d, connection-uuid=%s%s%s",
+		_LOGT ("device-state: read #%d (%s); managed=%d%s%s%s%s%s%s",
 		       ifindex, path,
 		       device_state->managed,
-		       NM_PRINT_FMT_QUOTE_STRING (device_state->connection_uuid));
+		       NM_PRINT_FMT_QUOTED (device_state->connection_uuid, ", connection-uuid=", device_state->connection_uuid, "", ""),
+		       NM_PRINT_FMT_QUOTED (device_state->perm_hw_addr_fake, ", perm-hw-addr-fake=", device_state->perm_hw_addr_fake, "", ""));
 	} else {
 		_LOGT ("device-state: read #%d (%s); no persistent state",
 		       ifindex, path);
@@ -1972,6 +1997,7 @@ gboolean
 nm_config_device_state_write (NMConfig *self,
                               int ifindex,
                               gboolean managed,
+                              const char *perm_hw_addr_fake,
                               const char *connection_uuid)
 {
 	char path[NM_STRLEN (NM_CONFIG_DEVICE_STATE_DIR) + 60];
@@ -1983,6 +2009,8 @@ nm_config_device_state_write (NMConfig *self,
 	g_return_val_if_fail (!connection_uuid || *connection_uuid, FALSE);
 	g_return_val_if_fail (managed || !connection_uuid, FALSE);
 
+	nm_assert (!perm_hw_addr_fake || nm_utils_hwaddr_valid (perm_hw_addr_fake, -1));
+
 	nm_sprintf_buf (path, "%s/%d", NM_CONFIG_DEVICE_STATE_DIR, ifindex);
 
 	kf = nm_config_create_keyfile ();
@@ -1990,6 +2018,12 @@ nm_config_device_state_write (NMConfig *self,
 	                        DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
 	                        DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_MANAGED,
 	                        !!managed);
+	if (perm_hw_addr_fake) {
+		g_key_file_set_string (kf,
+		                       DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
+		                       DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_PERM_HW_ADDR_FAKE,
+		                       perm_hw_addr_fake);
+	}
 	if (connection_uuid) {
 		g_key_file_set_string (kf,
 		                       DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
@@ -2002,10 +2036,11 @@ nm_config_device_state_write (NMConfig *self,
 		g_error_free (local);
 		return FALSE;
 	}
-	_LOGT ("device-state: write #%d (%s); managed=%d, connection-uuid=%s%s%s",
+	_LOGT ("device-state: write #%d (%s); managed=%d%s%s%s%s%s%s",
 	       ifindex, path,
 	       (bool) managed,
-	       NM_PRINT_FMT_QUOTE_STRING (connection_uuid));
+	       NM_PRINT_FMT_QUOTED (connection_uuid, ", connection-uuid=", connection_uuid, "", ""),
+	       NM_PRINT_FMT_QUOTED (perm_hw_addr_fake, ", perm-hw-addr-fake=", perm_hw_addr_fake, "", ""));
 	return TRUE;
 }
 

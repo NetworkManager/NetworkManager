@@ -305,9 +305,11 @@ nm_strdup_not_empty (const char *str)
 
 #if NM_MORE_ASSERTS
 #define nm_assert(cond) G_STMT_START { g_assert (cond); } G_STMT_END
+#define nm_assert_se(cond) G_STMT_START { if (G_LIKELY (cond)) { ; } else { g_assert (FALSE && (cond)); } } G_STMT_END
 #define nm_assert_not_reached() G_STMT_START { g_assert_not_reached (); } G_STMT_END
 #else
 #define nm_assert(cond) G_STMT_START { if (FALSE) { if (cond) { } } } G_STMT_END
+#define nm_assert_se(cond) G_STMT_START { if (G_LIKELY (cond)) { ; } } G_STMT_END
 #define nm_assert_not_reached() G_STMT_START { ; } G_STMT_END
 #endif
 

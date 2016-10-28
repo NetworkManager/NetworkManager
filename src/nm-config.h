@@ -199,6 +199,8 @@ struct _NMConfigDeviceStateData {
 	/* the UUID of the last settings-connection active
 	 * on the device. */
 	const char *connection_uuid;
+
+	const char *perm_hw_addr_fake;
 };
 
 NMConfigDeviceStateData *nm_config_device_state_load (NMConfig *self,
@@ -206,6 +208,7 @@ NMConfigDeviceStateData *nm_config_device_state_load (NMConfig *self,
 gboolean nm_config_device_state_write (NMConfig *self,
                                        int ifindex,
                                        gboolean managed,
+                                       const char *perm_hw_addr_fake,
                                        const char *connection_uuid);
 void nm_config_device_state_prune_unseen (NMConfig *self, GHashTable *seen_ifindexes);
 

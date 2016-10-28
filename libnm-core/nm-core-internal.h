@@ -124,7 +124,10 @@ guint32 _nm_setting_get_setting_priority (NMSetting *setting);
 
 gboolean _nm_setting_get_property (NMSetting *setting, const char *name, GValue *value);
 
-guint _nm_utils_hwaddr_length (const char *asc);
+#define NM_UTILS_HWADDR_LEN_MAX_STR (NM_UTILS_HWADDR_LEN_MAX * 3)
+
+guint8 *_nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize buffer_length, gsize *out_length);
+const char *nm_utils_hwaddr_ntoa_buf (gconstpointer addr, gsize addr_len, gboolean upper_case, char *buf, gsize buf_len);
 
 char *_nm_utils_bin2str (gconstpointer addr, gsize length, gboolean upper_case);
 
