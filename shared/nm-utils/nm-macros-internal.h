@@ -258,6 +258,52 @@ _NM_IN_STRSET_streq (const char *x, const char *s)
  * side-effects. */
 #define NM_IN_STRSET_SE(x, ...)            _NM_IN_STRSET_EVAL_N(|, x, NM_NARG (__VA_ARGS__), __VA_ARGS__)
 
+#define NM_STRCHAR_ALL(str, ch_iter, predicate) \
+	({ \
+		gboolean _val = TRUE; \
+		const char *_str = (str); \
+		\
+		if (_str) { \
+			for (;;) { \
+				const char ch_iter = _str[0]; \
+				\
+				if (ch_iter != '\0') { \
+					if (predicate) {\
+						_str++; \
+						continue; \
+					} \
+					_val = FALSE; \
+				} \
+				break; \
+			} \
+		} \
+		_val; \
+	})
+
+#define NM_STRCHAR_ANY(str, ch_iter, predicate) \
+	({ \
+		gboolean _val = FALSE; \
+		const char *_str = (str); \
+		\
+		if (_str) { \
+			for (;;) { \
+				const char ch_iter = _str[0]; \
+				\
+				if (ch_iter != '\0') { \
+					if (predicate) { \
+						; \
+					} else { \
+						_str++; \
+						continue; \
+					} \
+					_val = TRUE; \
+				} \
+				break; \
+			} \
+		} \
+		_val; \
+	})
+
 /*****************************************************************************/
 
 #define nm_streq(s1, s2)  (strcmp (s1, s2) == 0)
