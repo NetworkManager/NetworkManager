@@ -774,13 +774,12 @@ write_wireless_setting (NMConnection *connection,
                         GError **error)
 {
 	NMSettingWireless *s_wireless;
-	char *tmp, *tmp2;
+	char *tmp;
 	GBytes *ssid;
 	const guint8 *ssid_data;
 	gsize ssid_len;
 	const char *mode, *bssid;
 	const char *device_mac, *cloned_mac;
-	char buf[33];
 	guint32 mtu, chan, i;
 	gboolean adhoc = FALSE, hex_ssid = FALSE;
 	const char * const *macaddr_blacklist;
@@ -836,10 +835,23 @@ write_wireless_setting (NMConnection *connection,
 	/* If the SSID contains any non-printable characters, we need to use the
 	 * hex notation of the SSID instead.
 	 */
-	for (i = 0; i < ssid_len; i++) {
-		if (!g_ascii_isprint (ssid_data[i])) {
-			hex_ssid = TRUE;
-			break;
+	if (   ssid_len > 2
+	    && ssid_data[0] == '0'
+	    && ssid_data[1] == 'x') {
+		hex_ssid = TRUE;
+		for (i = 2; i < ssid_len; i++) {
+			if (!g_ascii_isxdigit (ssid_data[i])) {
+				hex_ssid = FALSE;
+				break;
+			}
+		}
+	}
+	if (!hex_ssid) {
+		for (i = 0; i < ssid_len; i++) {
+			if (!g_ascii_isprint (ssid_data[i])) {
+				hex_ssid = TRUE;
+				break;
+			}
 		}
 	}
 
@@ -851,26 +863,15 @@ write_wireless_setting (NMConnection *connection,
 		g_string_append (str, "0x");
 		for (i = 0; i < ssid_len; i++)
 			g_string_append_printf (str, "%02X", ssid_data[i]);
-		svSetValue (ifcfg, "ESSID", str->str, TRUE);
+		svSetValue (ifcfg, "ESSID", str->str, FALSE);
 		g_string_free (str, TRUE);
 	} else {
-		const char *tmp_escaped;
+		char buf[33];
 
-		/* Printable SSIDs always get quoted */
-		memset (buf, 0, sizeof (buf));
+		nm_assert (ssid_len <= 32);
 		memcpy (buf, ssid_data, ssid_len);
-		tmp_escaped = svEscape (buf, &tmp);
-
-		/* svEscape will usually quote the string, but just for consistency,
-		 * if svEscape doesn't quote the ESSID, we quote it ourselves.
-		 */
-		if (tmp_escaped[0] != '"' && tmp_escaped[strlen (tmp_escaped) - 1] != '"') {
-			tmp2 = g_strdup_printf ("\"%s\"", tmp_escaped);
-			svSetValue (ifcfg, "ESSID", tmp2, TRUE);
-			g_free (tmp2);
-		} else
-			svSetValue (ifcfg, "ESSID", tmp_escaped, TRUE);
-		g_free (tmp);
+		buf[ssid_len] = '\0';
+		svSetValue (ifcfg, "ESSID", buf, FALSE);
 	}
 
 	mode = nm_setting_wireless_get_mode (s_wireless);

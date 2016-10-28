@@ -2011,6 +2011,30 @@ test_read_wifi_open_ssid_hex (void)
 }
 
 static void
+test_read_wifi_open_ssid_hex_bad (void)
+{
+	gs_unref_object NMConnection *connection = NULL;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wireless;
+	GBytes *ssid;
+	const char *expected_ssid = "0x626cxx";
+
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-bad-hex",
+	                                    NULL, TYPE_WIRELESS, NULL);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System 0x626cxx (test-wifi-open-ssid-bad-hex)");
+
+	s_wireless = nm_connection_get_setting_wireless (connection);
+	g_assert (s_wireless);
+
+	ssid = nm_setting_wireless_get_ssid (s_wireless);
+	g_assert (ssid);
+	g_assert_cmpmem (g_bytes_get_data (ssid, NULL), g_bytes_get_size (ssid), expected_ssid, strlen (expected_ssid));
+}
+
+static void
 test_read_wifi_open_ssid_bad (gconstpointer data)
 {
 	_connection_from_file_fail ((const char *) data, NULL, TYPE_WIRELESS, NULL);
@@ -8946,7 +8970,6 @@ test_utils_ignore (void)
 
 #define TPATH "/settings/plugins/ifcfg-rh/"
 
-#define TEST_IFCFG_WIFI_OPEN_SSID_BAD_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-bad-hex"
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_QUOTED TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-quoted"
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-hex"
 
@@ -9023,7 +9046,7 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "wifi/read/open", test_read_wifi_open);
 	g_test_add_func (TPATH "wifi/read/open/auto", test_read_wifi_open_auto);
 	g_test_add_func (TPATH "wifi/read/open/hex-ssid", test_read_wifi_open_ssid_hex);
-	g_test_add_data_func (TPATH "wifi/read/open-ssid/bad-hex", TEST_IFCFG_WIFI_OPEN_SSID_BAD_HEX, test_read_wifi_open_ssid_bad);
+	g_test_add_func (TPATH "wifi/read/open-ssid/bad-hex", test_read_wifi_open_ssid_hex_bad);
 	g_test_add_data_func (TPATH "wifi/read/open-ssid/long-hex", TEST_IFCFG_WIFI_OPEN_SSID_LONG_HEX, test_read_wifi_open_ssid_bad);
 	g_test_add_data_func (TPATH "wifi/read/open-ssid/long-quoted", TEST_IFCFG_WIFI_OPEN_SSID_LONG_QUOTED, test_read_wifi_open_ssid_bad);
 	g_test_add_func (TPATH "wifi/read/open/quoted-ssid", test_read_wifi_open_ssid_quoted);

@@ -3437,39 +3437,19 @@ make_wireless_setting (shvarFile *ifcfg,
 		g_free (value);
 	}
 
-	value = svGetValue (ifcfg, "ESSID", TRUE);
+	value = svGetValue (ifcfg, "ESSID", FALSE);
 	if (value) {
-		GBytes *bytes = NULL;
+		gs_unref_bytes GBytes *bytes = NULL;
 		gsize ssid_len = 0;
 		gsize value_len = strlen (value);
 
-		if (   (value_len >= 2)
-		    && (value[0] == '"')
-		    && (value[value_len - 1] == '"')) {
-			/* Strip the quotes and unescape */
-			char *p = value + 1;
-
-			value[value_len - 1] = '\0';
-			svUnescape (p);
-			bytes = g_bytes_new (p, strlen (p));
-		} else if ((value_len > 2) && (strncmp (value, "0x", 2) == 0)) {
-			/* Hex representation */
-			if (value_len % 2) {
-				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-				             "Invalid SSID '%s' size (looks like hex but length not multiple of 2)",
-				             value);
-				g_free (value);
-				goto error;
-			}
-
-			bytes = nm_utils_hexstr2bin (value);
-			if (!bytes) {
-				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-				             "Invalid SSID '%s' (looks like hex SSID but isn't)",
-				             value);
-				g_free (value);
-				goto error;
-			}
+		if (   value_len > 2
+		    && (value_len % 2) == 0
+		    && g_str_has_prefix (value, "0x")
+		    && NM_STRCHAR_ALL (&value[2], ch, g_ascii_isxdigit (ch))) {
+			/* interpret the value as hex-digits iff value starts
+			 * with "0x" followed by pairs of hex digits */
+			bytes = nm_utils_hexstr2bin (&value[2]);
 		} else
 			bytes = g_bytes_new (value, value_len);
 
@@ -3478,13 +3458,11 @@ make_wireless_setting (shvarFile *ifcfg,
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid SSID '%s' (size %zu not between 1 and 32 inclusive)",
 			             value, ssid_len);
-			g_bytes_unref (bytes);
 			g_free (value);
 			goto error;
 		}
 
 		g_object_set (s_wireless, NM_SETTING_WIRELESS_SSID, bytes, NULL);
-		g_bytes_unref (bytes);
 		g_free (value);
 	}
 
