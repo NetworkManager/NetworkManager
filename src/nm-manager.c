@@ -767,7 +767,7 @@ checked_connectivity (GObject *object, GAsyncResult *result, gpointer user_data)
 }
 
 static NMState
-find_best_device_state (NMManager *manager)
+find_best_device_state (NMManager *manager, gboolean *force_connectivity_check)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	NMState best_state = NM_STATE_DISCONNECTED;
@@ -785,6 +785,7 @@ find_best_device_state (NMManager *manager)
 					return NM_STATE_CONNECTED_GLOBAL;
 
 				best_state = NM_STATE_CONNECTED_SITE;
+				NM_SET_OUT (force_connectivity_check, TRUE);
 			} else {
 				if (best_state < NM_STATE_CONNECTING)
 					best_state = NM_STATE_CONNECTED_LOCAL;
@@ -838,6 +839,7 @@ nm_manager_update_state (NMManager *manager)
 {
 	NMManagerPrivate *priv;
 	NMState new_state = NM_STATE_DISCONNECTED;
+	gboolean force_connectivity_check = FALSE;
 
 	g_return_if_fail (NM_IS_MANAGER (manager));
 
@@ -846,11 +848,11 @@ nm_manager_update_state (NMManager *manager)
 	if (manager_sleeping (manager))
 		new_state = NM_STATE_ASLEEP;
 	else
-		new_state = find_best_device_state (manager);
+		new_state = find_best_device_state (manager, &force_connectivity_check);
 
 	nm_connectivity_set_online (priv->connectivity, new_state >= NM_STATE_CONNECTED_LOCAL);
 
-	if (new_state == NM_STATE_CONNECTED_SITE) {
+	if (new_state == NM_STATE_CONNECTED_SITE || force_connectivity_check) {
 		nm_connectivity_check_async (priv->connectivity,
 		                             checked_connectivity,
 		                             g_object_ref (manager));
