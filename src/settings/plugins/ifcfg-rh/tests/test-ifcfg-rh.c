@@ -1789,7 +1789,7 @@ test_clear_master (void)
 	g_assert_no_error (error);
 	g_assert (f);
 
-	val = svGetValue (f, "BRIDGE", FALSE);
+	val = svGetValue (f, "BRIDGE");
 	g_assert (!val);
 	svCloseFile (f);
 }
@@ -3014,7 +3014,7 @@ test_write_wifi_hidden (void)
 	g_assert (f);
 
 	/* re-read the file to check that what key was written. */
-	val = svGetValue (f, "SSID_HIDDEN", FALSE);
+	val = svGetValue (f, "SSID_HIDDEN");
 	g_assert (val);
 	g_assert_cmpstr (val, ==, "yes");
 	g_free (val);
@@ -3113,7 +3113,7 @@ test_write_wifi_mac_random (gconstpointer user_data)
 	g_assert (f);
 
 	/* re-read the file to check that what key was written. */
-	val = svGetValue (f, "MAC_ADDRESS_RANDOMIZATION", FALSE);
+	val = svGetValue (f, "MAC_ADDRESS_RANDOMIZATION");
 	g_assert_cmpstr (val, ==, write_expected);
 	g_free (val);
 	svCloseFile (f);
@@ -3177,7 +3177,7 @@ test_write_wired_wake_on_lan (void)
 	g_assert (f);
 
 	/* re-read the file to check that the key was written. */
-	val = svGetValue (f, "ETHTOOL_OPTS", FALSE);
+	val = svGetValue (f, "ETHTOOL_OPTS");
 	g_assert (val);
 	g_assert (strstr (val, "wol"));
 	g_assert (strstr (val, "sopass 00:00:00:11:22:33"));
@@ -3266,7 +3266,7 @@ test_write_wifi_band_a (void)
 	g_assert (f);
 
 	/* re-read the file to check that what key was written. */
-	val = svGetValue (f, "BAND", FALSE);
+	val = svGetValue (f, "BAND");
 	g_assert (val);
 	g_assert_cmpstr (val, ==, "a");
 	g_free (val);
@@ -3975,7 +3975,7 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 
 		g_assert_no_error (error);
 		g_assert (ifcfg);
-		written_ifcfg_gateway = svGetValue (ifcfg, "IPV6_DEFAULTGW", FALSE);
+		written_ifcfg_gateway = svGetValue (ifcfg, "IPV6_DEFAULTGW");
 		svCloseFile (ifcfg);
 	}
 
@@ -4499,15 +4499,15 @@ test_write_wired_aliases (void)
 
 	/* Create some pre-existing alias files, to make sure they get overwritten / deleted. */
 	ifcfg = svCreateFile (TEST_SCRATCH_ALIAS_BASE ":2");
-	svSetValue (ifcfg, "DEVICE", "alias0:2", FALSE);
-	svSetValue (ifcfg, "IPADDR", "192.168.1.2", FALSE);
+	svSetValue (ifcfg, "DEVICE", "alias0:2");
+	svSetValue (ifcfg, "IPADDR", "192.168.1.2");
 	svWriteFile (ifcfg, 0644, NULL);
 	svCloseFile (ifcfg);
 	g_assert (g_file_test (TEST_SCRATCH_ALIAS_BASE ":2", G_FILE_TEST_EXISTS));
 
 	ifcfg = svCreateFile (TEST_SCRATCH_ALIAS_BASE ":5");
-	svSetValue (ifcfg, "DEVICE", "alias0:5", FALSE);
-	svSetValue (ifcfg, "IPADDR", "192.168.1.5", FALSE);
+	svSetValue (ifcfg, "DEVICE", "alias0:5");
+	svSetValue (ifcfg, "IPADDR", "192.168.1.5");
 	svWriteFile (ifcfg, 0644, NULL);
 	svCloseFile (ifcfg);
 	g_assert (g_file_test (TEST_SCRATCH_ALIAS_BASE ":5", G_FILE_TEST_EXISTS));
@@ -4628,41 +4628,41 @@ test_write_gateway (void)
 	g_assert (f);
 
 	/* re-read the file to check that the keys was written as IPADDR, GATEWAY and IPADDR1, GATEWAY1 */
-	val = svGetValue (f, "IPADDR", FALSE);
+	val = svGetValue (f, "IPADDR");
 	g_assert (val);
 	g_assert_cmpstr (val, ==, "1.1.1.3");
 	g_free (val);
 
-	val = svGetValue (f, "IPADDR1", FALSE);
+	val = svGetValue (f, "IPADDR1");
 	g_assert (val);
 	g_assert_cmpstr (val, ==, "2.2.2.5");
 	g_free (val);
 
-	val = svGetValue (f, "IPADDR0", FALSE);
+	val = svGetValue (f, "IPADDR0");
 	g_assert (val == NULL);
 
-	val = svGetValue (f, "PREFIX", FALSE);
+	val = svGetValue (f, "PREFIX");
 	g_assert (val);
 	g_assert_cmpstr (val, ==, "24");
 	g_free (val);
 
-	val = svGetValue (f, "PREFIX1", FALSE);
+	val = svGetValue (f, "PREFIX1");
 	g_assert (val);
 	g_assert_cmpstr (val, ==, "24");
 	g_free (val);
 
-	val = svGetValue (f, "PREFIX0", FALSE);
+	val = svGetValue (f, "PREFIX0");
 	g_assert (val == NULL);
 
-	val = svGetValue (f, "GATEWAY", FALSE);
+	val = svGetValue (f, "GATEWAY");
 	g_assert (val);
 	g_assert_cmpstr (val, ==, "1.1.1.254");
 	g_free (val);
 
-	val = svGetValue (f, "GATEWAY0", FALSE);
+	val = svGetValue (f, "GATEWAY0");
 	g_assert (val == NULL);
 
-	val = svGetValue (f, "GATEWAY1", FALSE);
+	val = svGetValue (f, "GATEWAY1");
 	g_assert (val == NULL);
 
 	svCloseFile (f);
@@ -4756,10 +4756,8 @@ test_write_wifi_open (void)
 	g_assert_no_error (error);
 	g_assert (ifcfg != NULL);
 
-	tmp = svGetValue (ifcfg, "ESSID", TRUE);
-	g_assert (tmp);
-
-	g_assert (strncmp (tmp, "\"\"", 2) != 0);
+	tmp = svGetValue (ifcfg, "ESSID");
+	g_assert_cmpstr (tmp, ==, "Test SSID");
 
 	g_free (tmp);
 	svCloseFile (ifcfg);
@@ -6508,11 +6506,11 @@ test_write_wifi_dynamic_wep_leap (void)
 	ifcfg = svOpenFile (testfile, &error);
 	g_assert_no_error (error);
 	g_assert (ifcfg);
-	tmp = svGetValue (ifcfg, "SECURITYMODE", FALSE);
+	tmp = svGetValue (ifcfg, "SECURITYMODE");
 	g_assert_cmpstr (tmp, ==, NULL);
 	g_free (tmp);
 
-	tmp = svGetValue (ifcfg, "IEEE_8021X_EAP_METHODS", FALSE);
+	tmp = svGetValue (ifcfg, "IEEE_8021X_EAP_METHODS");
 	g_assert_cmpstr (tmp, ==, "LEAP");
 	g_free (tmp);
 
@@ -6674,13 +6672,13 @@ test_write_wired_ctc_dhcp (void)
 	g_assert_no_error (error);
 	g_assert (ifcfg);
 
-	tmp = svGetValue (ifcfg, "CTCPROT", TRUE);
+	tmp = svGetValue (ifcfg, "CTCPROT");
 	g_assert (tmp);
 	g_assert_cmpstr (tmp, ==, "0");
 	g_free (tmp);
 
 	/* And that it's not in the generic OPTIONS string */
-	tmp = svGetValue (ifcfg, "OPTIONS", TRUE);
+	tmp = svGetValue (ifcfg, "OPTIONS");
 	g_assert (tmp == NULL);
 	g_free (tmp);
 
@@ -8423,7 +8421,7 @@ test_write_fcoe_mode (gconstpointer user_data)
 
 		g_assert_no_error (error);
 		g_assert (ifcfg);
-		written_mode = svGetValue (ifcfg, "DCB_APP_FCOE_MODE", FALSE);
+		written_mode = svGetValue (ifcfg, "DCB_APP_FCOE_MODE");
 		svCloseFile (ifcfg);
 		g_assert_cmpstr (written_mode, ==, expected_mode);
 		g_free (written_mode);
@@ -8500,7 +8498,6 @@ test_write_team_master (void)
 	char *uuid, *testfile = NULL, *val;
 	GError *error = NULL;
 	const char *expected_config = "{ \"device\": \"team0\", \"link_watch\": { \"name\": \"ethtool\" } }";
-	const char *escaped_expected_config = "\"{ \\\"device\\\": \\\"team0\\\", \\\"link_watch\\\": { \\\"name\\\": \\\"ethtool\\\" } }\"";
 	shvarFile *f;
 
 	connection = nm_simple_connection_new ();
@@ -8561,13 +8558,13 @@ test_write_team_master (void)
 	g_assert (f);
 
 	/* re-read the file to check that what key was written. */
-	val = svGetValue (f, "DEVICETYPE", FALSE);
+	val = svGetValue (f, "DEVICETYPE");
 	g_assert (val);
 	g_assert_cmpstr (val, ==, "Team");
 	g_free (val);
-	val = svGetValue (f, "TEAM_CONFIG", TRUE);
+	val = svGetValue (f, "TEAM_CONFIG");
 	g_assert (val);
-	g_assert_cmpstr (val, ==, escaped_expected_config);
+	g_assert_cmpstr (val, ==, expected_config);
 	g_free (val);
 	svCloseFile (f);
 
@@ -8617,7 +8614,6 @@ test_write_team_port (void)
 	char *uuid, *val;
 	GError *error = NULL;
 	const char *expected_config = "{ \"p4p1\": { \"prio\": -10, \"sticky\": true } }";
-	const char *escaped_expected_config = "\"{ \\\"p4p1\\\": { \\\"prio\\\": -10, \\\"sticky\\\": true } }\"";
 	shvarFile *f;
 
 	connection = nm_simple_connection_new ();
@@ -8656,18 +8652,16 @@ test_write_team_port (void)
 	g_assert (f);
 
 	/* re-read the file to check that what key was written. */
-	val = svGetValue (f, "TYPE", FALSE);
+	val = svGetValue (f, "TYPE");
 	g_assert (!val);
-	val = svGetValue (f, "DEVICETYPE", FALSE);
+	val = svGetValue (f, "DEVICETYPE");
 	g_assert (val);
 	g_assert_cmpstr (val, ==, "TeamPort");
 	g_free (val);
-	val = svGetValue (f, "TEAM_PORT_CONFIG", TRUE);
-	g_assert (val);
-	g_assert_cmpstr (val, ==, escaped_expected_config);
+	val = svGetValue (f, "TEAM_PORT_CONFIG");
+	g_assert_cmpstr (val, ==, expected_config);
 	g_free (val);
-	val = svGetValue (f, "TEAM_MASTER", TRUE);
-	g_assert (val);
+	val = svGetValue (f, "TEAM_MASTER");
 	g_assert_cmpstr (val, ==, "team0");
 	g_free (val);
 	svCloseFile (f);

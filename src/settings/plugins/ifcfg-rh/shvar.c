@@ -328,7 +328,7 @@ find_line (shvarFile *s, const char *key)
  * svGetValue() will never return an empty value (but %NULL instead).
  * svGetValueFull() will return empty values if that is the value for the @key. */
 char *
-svGetValueFull (shvarFile *s, const char *key, gboolean verbatim)
+svGetValueFull (shvarFile *s, const char *key)
 {
 	const char *line_val;
 	char *value;
@@ -341,8 +341,7 @@ svGetValueFull (shvarFile *s, const char *key, gboolean verbatim)
 		return NULL;
 
 	value = g_strchomp (g_strdup (line_val));
-	if (!verbatim)
-		svUnescape (value);
+	svUnescape (value);
 	return value;
 }
 
@@ -351,11 +350,11 @@ svGetValueFull (shvarFile *s, const char *key, gboolean verbatim)
  * be freed by the caller.
  */
 char *
-svGetValue (shvarFile *s, const char *key, gboolean verbatim)
+svGetValue (shvarFile *s, const char *key)
 {
 	char *value;
 
-	value = svGetValueFull (s, key, verbatim);
+	value = svGetValueFull (s, key);
 	if (value && !*value) {
 		g_free (value);
 		return NULL;
@@ -377,7 +376,7 @@ svGetValueBoolean (shvarFile *s, const char *key, gint fallback)
 {
 	gs_free char *tmp = NULL;
 
-	tmp = svGetValue (s, key, FALSE);
+	tmp = svGetValue (s, key);
 	return svParseBoolean (tmp, fallback);
 }
 
@@ -398,7 +397,7 @@ svGetValueInt64 (shvarFile *s, const char *key, guint base, gint64 min, gint64 m
 	gint64 result;
 	int errsv;
 
-	tmp = svGetValueFull (s, key, FALSE);
+	tmp = svGetValueFull (s, key);
 	if (!tmp) {
 		errno = 0;
 		return fallback;
@@ -418,23 +417,16 @@ svGetValueInt64 (shvarFile *s, const char *key, guint base, gint64 min, gint64 m
 /* Same as svSetValue() but it preserves empty @value -- contrary to
  * svSetValue() for which "" effectively means to remove the value. */
 void
-svSetValueFull (shvarFile *s, const char *key, const char *value, gboolean verbatim)
+svSetValueFull (shvarFile *s, const char *key, const char *value)
 {
 	gs_free char *newval_free = NULL;
 	gs_free char *oldval = NULL;
-	const char *newval;
 	char *keyValue;
 
 	g_return_if_fail (s != NULL);
 	g_return_if_fail (key != NULL);
-	/* value may be NULL */
 
-	if (!value || verbatim)
-		newval = value;
-	else
-		newval = svEscape (value, &newval_free);
-
-	if (!newval) {
+	if (!value) {
 		/* delete value */
 		if (find_line (s, key)) {
 			/* delete line */
@@ -446,9 +438,10 @@ svSetValueFull (shvarFile *s, const char *key, const char *value, gboolean verba
 		return;
 	}
 
-	oldval = svGetValueFull (s, key, FALSE);
+	value = svEscape (value, &newval_free);
+	oldval = svGetValueFull (s, key);
 
-	keyValue = g_strdup_printf ("%s=%s", key, newval);
+	keyValue = g_strdup_printf ("%s=%s", key, value);
 	if (!oldval) {
 		/* append line */
 		s->lineList = g_list_append (s->lineList, keyValue);
@@ -456,7 +449,7 @@ svSetValueFull (shvarFile *s, const char *key, const char *value, gboolean verba
 		return;
 	}
 
-	if (strcmp (oldval, newval) != 0) {
+	if (strcmp (oldval, value) != 0) {
 		/* change line */
 		if (s->current) {
 			g_free (s->current->data);
@@ -474,9 +467,9 @@ svSetValueFull (shvarFile *s, const char *key, const char *value, gboolean verba
  * to the bottom of the file.
  */
 void
-svSetValue (shvarFile *s, const char *key, const char *value, gboolean verbatim)
+svSetValue (shvarFile *s, const char *key, const char *value)
 {
-	svSetValueFull (s, key, value && value[0] ? value : NULL, verbatim);
+	svSetValueFull (s, key, value && value[0] ? value : NULL);
 }
 
 void
@@ -485,14 +478,13 @@ svSetValueInt64 (shvarFile *s, const char *key, gint64 value)
 	char buf[NM_DECIMAL_STR_MAX (value)];
 
 	svSetValueFull (s, key,
-	                nm_sprintf_buf (buf, "%"G_GINT64_FORMAT, value),
-	                TRUE);
+	                nm_sprintf_buf (buf, "%"G_GINT64_FORMAT, value));
 }
 
 void
 svUnsetValue (shvarFile *s, const char *key)
 {
-	svSetValueFull (s, key, NULL, FALSE);
+	svSetValueFull (s, key, NULL);
 }
 
 /*****************************************************************************/
