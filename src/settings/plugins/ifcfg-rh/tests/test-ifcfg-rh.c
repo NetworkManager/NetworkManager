@@ -8730,6 +8730,21 @@ do_svUnescape_assert (const char *str, const char *expected)
 
 	s = _svUnescape (str, &to_free);
 	g_assert_cmpstr (s, ==, expected);
+
+	/* check we can make a round-trip */
+	if (expected) {
+		gs_free char *s1_free = NULL;
+		gs_free char *s2_free = NULL;
+		const char *s1, *s2;
+
+		s1 = svEscape (expected, &s1_free);
+		g_assert (s1);
+
+		s2 = _svUnescape (s1, &s2_free);
+		g_assert (s2);
+
+		g_assert_cmpstr (s2, ==, expected);
+	}
 }
 
 static void

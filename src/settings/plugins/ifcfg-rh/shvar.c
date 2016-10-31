@@ -99,15 +99,88 @@ _shell_is_name (const char *key)
 
 /*****************************************************************************/
 
+/* like g_strescape(), except that it also escapes '\''' *sigh*.
+ *
+ * While at it, add $''. */
+static char *
+_escape_ansic (const char *source)
+{
+	const char *p;
+	gchar *dest;
+	gchar *q;
+
+	nm_assert (source);
+
+	p = (const char *) source;
+	/* Each source byte needs maximally four destination chars (\777) */
+	q = dest = g_malloc (strlen (source) * 4 + 1 + 3);
+
+	*q++ = '$';
+	*q++ = '\'';
+
+	while (*p) {
+		switch (*p) {
+		case '\b':
+			*q++ = '\\';
+			*q++ = 'b';
+			break;
+		case '\f':
+			*q++ = '\\';
+			*q++ = 'f';
+			break;
+		case '\n':
+			*q++ = '\\';
+			*q++ = 'n';
+			break;
+		case '\r':
+			*q++ = '\\';
+			*q++ = 'r';
+			break;
+		case '\t':
+			*q++ = '\\';
+			*q++ = 't';
+			break;
+		case '\v':
+			*q++ = '\\';
+			*q++ = 'v';
+			break;
+		case '\\':
+		case '"':
+		case '\'':
+			*q++ = '\\';
+			*q++ = *p;
+			break;
+		default:
+			if ((*p < ' ') || (*p >= 0177)) {
+				*q++ = '\\';
+				*q++ = '0' + (((*p) >> 6) & 07);
+				*q++ = '0' + (((*p) >> 3) & 07);
+				*q++ = '0' + ((*p) & 07);
+			} else
+				*q++ = *p;
+			break;
+		}
+		p++;
+	}
+	*q++ = '\'';
+	*q++ = '\0';
+
+	nm_assert (q - dest <= strlen (source) * 4 + 1 + 3);
+
+	return dest;
+}
+
+/*****************************************************************************/
+
 #define ESC_ESCAPEES        "\"'\\$~`"          /* must be escaped */
 #define ESC_SPACES          " \t|&;()<>"        /* only require "" */
-#define ESC_NEWLINES        "\n\r"              /* will be removed */
 
 const char *
 svEscape (const char *s, char **to_free)
 {
 	char *new;
-	int mangle = 0, space = 0, newline = 0;
+	gsize mangle = 0;
+	gboolean has_space = FALSE;
 	int newlen;
 	size_t i, j, slen;
 
@@ -117,23 +190,26 @@ svEscape (const char *s, char **to_free)
 		if (strchr (ESC_ESCAPEES, s[i]))
 			mangle++;
 		if (strchr (ESC_SPACES, s[i]))
-			space++;
-		if (strchr (ESC_NEWLINES, s[i]))
-			newline++;
+			has_space = TRUE;
+		if (s[i] < ' ') {
+			/* if the string contains newline we can only express it using ANSI C quotation
+			 * (as we don't support line continuation).
+			 * Additionally, ANSI control characters look odd with regular quotation, so handle
+			 * them too. */
+			return (*to_free = _escape_ansic (s));
+		}
 	}
-	if (!mangle && !space && !newline) {
+	if (!mangle && !has_space) {
 		*to_free = NULL;
 		return s;
 	}
 
-	newlen = slen + mangle - newline + 3; /* 3 is extra ""\0 */
+	newlen = slen + mangle + 3; /* 3 is extra ""\0 */
 	new = g_malloc (newlen);
 
 	j = 0;
 	new[j++] = '"';
 	for (i = 0; i < slen; i++) {
-		if (strchr (ESC_NEWLINES, s[i]))
-			continue;
 		if (strchr (ESC_ESCAPEES, s[i])) {
 			new[j++] = '\\';
 		}
@@ -142,7 +218,7 @@ svEscape (const char *s, char **to_free)
 	new[j++] = '"';
 	new[j++] = '\0';
 
-	nm_assert (j == slen + mangle - newline + 3);
+	nm_assert (j == slen + mangle + 3);
 
 	*to_free = new;
 	return new;
