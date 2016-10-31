@@ -85,6 +85,21 @@ svParseBoolean (const char *value, gint fallback)
 
 /*****************************************************************************/
 
+static gboolean
+_shell_is_name (const char *key)
+{
+	/* whether @key is a valid identifier (name). */
+	if (!key)
+		return FALSE;
+	if (   !g_ascii_isalpha (key[0])
+	    && key[0] != '_')
+		return FALSE;
+	return NM_STRCHAR_ALL (&key[1], ch,
+	                       g_ascii_isalnum (ch) || ch == '_');
+}
+
+/*****************************************************************************/
+
 #define ESC_ESCAPEES        "\"'\\$~`"          /* must be escaped */
 #define ESC_SPACES          " \t|&;()<>"        /* only require "" */
 #define ESC_NEWLINES        "\n\r"              /* will be removed */
@@ -311,6 +326,8 @@ find_line (shvarFile *s, const char *key)
 {
 	const char *line;
 	gsize len;
+
+	nm_assert (_shell_is_name (key));
 
 	len = strlen (key);
 
