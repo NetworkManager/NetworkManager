@@ -234,7 +234,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 		priv->tdc = NULL;
 	}
 
-	g_object_set (G_OBJECT (s_team), _get_config (self), NULL);
+	g_object_set (G_OBJECT (s_team), NM_SETTING_TEAM_CONFIG, _get_config (self), NULL);
 }
 
 /*****************************************************************************/
