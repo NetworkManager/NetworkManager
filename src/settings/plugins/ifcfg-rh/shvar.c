@@ -174,8 +174,8 @@ _escape_ansic (const char *source)
 
 #define _char_in_strset(ch, str) (!!strchr (""str"", (ch)))
 
-#define ESC_ESCAPEES        "\"'\\$~`"          /* must be escaped */
-#define ESC_SPACES          " \t|&;()<>"        /* only require "" */
+#define ESC_ESCAPEES        "\"\\$`"            /* must be escaped */
+#define ESC_SPACES          " '\t~|&;()<>"      /* only require "" */
 
 const char *
 svEscape (const char *s, char **to_free)
@@ -385,11 +385,8 @@ svUnescape (const char *value, char **to_free)
 						/* we don't support line continuation */
 						goto out_error;
 					}
-					if (!NM_IN_SET (value[i], '$', '`', '"', '\\')) {
-						/* TODO: svEscape() is not yet ready to handle properly treating
-						 *   double quotes. */
-						//g_string_append_c (str, '\\');
-					}
+					if (!NM_IN_SET (value[i], '$', '`', '"', '\\'))
+						g_string_append_c (str, '\\');
 				}
 				g_string_append_c (str, value[i]);
 				i++;
