@@ -369,6 +369,27 @@ shlist_delete (GList **head, GList *current)
 	*head = g_list_delete_link (*head, current);
 }
 
+static gboolean
+shlist_delete_all (GList **head, const char *key, gboolean including_last)
+{
+	GList *current, *last;
+	gboolean changed = FALSE;
+
+	last = (GList *) shlist_find (*head, key, NULL);
+	if (last) {
+		while ((current = (GList *) shlist_find (last->next, key, NULL))) {
+			shlist_delete (head, last);
+			changed = TRUE;
+			last = current;
+		}
+		if (including_last) {
+			shlist_delete (head, last);
+			changed = TRUE;
+		}
+	}
+	return changed;
+}
+
 static char *
 line_construct (const char *key, const char *value)
 {
@@ -389,16 +410,24 @@ line_construct (const char *key, const char *value)
 char *
 svGetValue (shvarFile *s, const char *key)
 {
+	const GList *current;
 	const char *line_val;
+	const char *last_val = NULL;
 	char *to_free;
 
 	g_return_val_if_fail (s != NULL, NULL);
 	g_return_val_if_fail (key != NULL, NULL);
 
-	if (!shlist_find (s->lineList, key, &line_val))
+	current = s->lineList;
+	while ((current = shlist_find (current, key, &line_val))) {
+		last_val = line_val;
+		current = current->next;
+	}
+
+	if (!last_val)
 		return NULL;
 
-	line_val = svUnescape (line_val, &to_free);
+	line_val = svUnescape (last_val, &to_free);
 	return to_free ?: g_strdup (line_val);
 }
 
@@ -477,8 +506,9 @@ void
 svSetValue (shvarFile *s, const char *key, const char *value)
 {
 	gs_free char *oldval_free = NULL;
-	const char *oldval;
-	GList *current;
+	const char *oldval, *oldval_tmp;
+	GList *current, *last;
+	gboolean has_multiple = FALSE;
 
 	g_return_if_fail (s != NULL);
 	g_return_if_fail (key != NULL);
@@ -486,10 +516,8 @@ svSetValue (shvarFile *s, const char *key, const char *value)
 	nm_assert (_shell_is_name (key));
 
 	if (!value) {
-		if ((current = (GList *) shlist_find (s->lineList, key, NULL))) {
+		if (shlist_delete_all (&s->lineList, key, TRUE))
 			s->modified = TRUE;
-			shlist_delete (&s->lineList, current);
-		}
 		return;
 	}
 
@@ -502,11 +530,24 @@ svSetValue (shvarFile *s, const char *key, const char *value)
 		return;
 	}
 
+	last = current;
+	while ((current = (GList *) shlist_find (current->next, key, &oldval_tmp))) {
+		last = current;
+		oldval = oldval_tmp;
+		has_multiple = TRUE;
+	}
+	current = last;
+
 	oldval = svUnescape (oldval, &oldval_free);
 	if (!nm_streq (oldval, value)) {
 		g_free (current->data);
 		current->data = line_construct (key, value);
 		s->modified = TRUE;
+	}
+
+	if (has_multiple) {
+		if (shlist_delete_all (&s->lineList, key, FALSE))
+			s->modified = TRUE;
 	}
 }
 
