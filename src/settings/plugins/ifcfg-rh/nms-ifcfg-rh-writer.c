@@ -934,17 +934,17 @@ write_wireless_setting (NMConnection *connection,
 		g_free (keys_path);
 	}
 
-	svSetValue (ifcfg, "SSID_HIDDEN", nm_setting_wireless_get_hidden (s_wireless) ? "yes" : NULL, TRUE);
+	svSetValue (ifcfg, "SSID_HIDDEN", nm_setting_wireless_get_hidden (s_wireless) ? "yes" : NULL, FALSE);
 
 	switch (nm_setting_wireless_get_powersave (s_wireless)) {
 	case NM_SETTING_WIRELESS_POWERSAVE_IGNORE:
-		svSetValue (ifcfg, "POWERSAVE", "ignore", TRUE);
+		svSetValue (ifcfg, "POWERSAVE", "ignore", FALSE);
 		break;
 	case NM_SETTING_WIRELESS_POWERSAVE_DISABLE:
-		svSetValue (ifcfg, "POWERSAVE", "disable", TRUE);
+		svSetValue (ifcfg, "POWERSAVE", "disable", FALSE);
 		break;
 	case NM_SETTING_WIRELESS_POWERSAVE_ENABLE:
-		svSetValue (ifcfg, "POWERSAVE", "enable", TRUE);
+		svSetValue (ifcfg, "POWERSAVE", "enable", FALSE);
 		break;
 	default:
 	case NM_SETTING_WIRELESS_POWERSAVE_DEFAULT:
@@ -955,14 +955,14 @@ write_wireless_setting (NMConnection *connection,
 	svUnsetValue (ifcfg, "MAC_ADDRESS_RANDOMIZATION");
 	switch (nm_setting_wireless_get_mac_address_randomization (s_wireless)) {
 	case NM_SETTING_MAC_RANDOMIZATION_DEFAULT:
-		svSetValue (ifcfg, "MAC_ADDRESS_RANDOMIZATION", "default", TRUE);
+		svSetValue (ifcfg, "MAC_ADDRESS_RANDOMIZATION", "default", FALSE);
 		break;
 	case NM_SETTING_MAC_RANDOMIZATION_ALWAYS:
-		svSetValue (ifcfg, "MAC_ADDRESS_RANDOMIZATION", "always", TRUE);
+		svSetValue (ifcfg, "MAC_ADDRESS_RANDOMIZATION", "always", FALSE);
 		break;
 	default:
 	case NM_SETTING_MAC_RANDOMIZATION_NEVER:
-		svSetValue (ifcfg, "MAC_ADDRESS_RANDOMIZATION", "never", TRUE);
+		svSetValue (ifcfg, "MAC_ADDRESS_RANDOMIZATION", "never", FALSE);
 		break;
 	}
 
