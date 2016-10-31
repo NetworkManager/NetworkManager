@@ -185,7 +185,8 @@ ip6_start (NMDhcpClient *client,
            const struct in6_addr *ll_addr,
            gboolean info_only,
            NMSettingIP6ConfigPrivacy privacy,
-           const GByteArray *duid)
+           const GByteArray *duid,
+           guint needed_prefixes)
 {
 	NMDhcpDhcpcd *self = NM_DHCP_DHCPCD (client);
 

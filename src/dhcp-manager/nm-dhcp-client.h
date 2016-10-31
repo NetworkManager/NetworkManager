@@ -40,6 +40,7 @@
 #define NM_DHCP_CLIENT_TIMEOUT   "timeout"
 
 #define NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED "state-changed"
+#define NM_DHCP_CLIENT_SIGNAL_PREFIX_DELEGATED "prefix-delegated"
 
 typedef enum {
 	NM_DHCP_STATE_UNKNOWN = 0,
@@ -73,7 +74,8 @@ typedef struct {
 	                           const struct in6_addr *ll_addr,
 	                           gboolean info_only,
 	                           NMSettingIP6ConfigPrivacy privacy,
-	                           const GByteArray *duid);
+	                           const GByteArray *duid,
+	                           guint needed_prefixes);
 
 	void (*stop)              (NMDhcpClient *self,
 	                           gboolean release,
@@ -133,7 +135,8 @@ gboolean nm_dhcp_client_start_ip6 (NMDhcpClient *self,
                                    const struct in6_addr *ll_addr,
                                    const char *hostname,
                                    gboolean info_only,
-                                   NMSettingIP6ConfigPrivacy privacy);
+                                   NMSettingIP6ConfigPrivacy privacy,
+                                   guint needed_prefixes);
 
 void nm_dhcp_client_stop (NMDhcpClient *self, gboolean release);
 

@@ -5992,7 +5992,8 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	                                                priv->dhcp_timeout,
 	                                                priv->dhcp_anycast_address,
 	                                                (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_OTHERCONF) ? TRUE : FALSE,
-	                                                nm_setting_ip6_config_get_ip6_privacy (NM_SETTING_IP6_CONFIG (s_ip6)));
+	                                                nm_setting_ip6_config_get_ip6_privacy (NM_SETTING_IP6_CONFIG (s_ip6)),
+	                                                0);
 	if (tmp)
 		g_byte_array_free (tmp, TRUE);
 

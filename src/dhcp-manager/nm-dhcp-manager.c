@@ -166,7 +166,8 @@ client_start (NMDhcpManager *self,
               const char *fqdn,
               gboolean info_only,
               NMSettingIP6ConfigPrivacy privacy,
-              const char *last_ip4_address)
+              const char *last_ip4_address,
+              guint needed_prefixes)
 {
 	NMDhcpManagerPrivate *priv;
 	NMDhcpClient *client;
@@ -206,7 +207,7 @@ client_start (NMDhcpManager *self,
 	g_signal_connect (client, NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED, G_CALLBACK (client_state_changed), self);
 
 	if (ipv6)
-		success = nm_dhcp_client_start_ip6 (client, dhcp_anycast_addr, ipv6_ll_addr, hostname, info_only, privacy);
+		success = nm_dhcp_client_start_ip6 (client, dhcp_anycast_addr, ipv6_ll_addr, hostname, info_only, privacy, needed_prefixes);
 	else
 		success = nm_dhcp_client_start_ip4 (client, dhcp_client_id, dhcp_anycast_addr, hostname, fqdn, last_ip4_address);
 
@@ -254,7 +255,7 @@ nm_dhcp_manager_start_ip4 (NMDhcpManager *self,
 	}
 	return client_start (self, iface, ifindex, hwaddr, uuid, priority, FALSE, NULL,
 	                     dhcp_client_id, timeout, dhcp_anycast_addr, hostname,
-	                     fqdn, FALSE, 0, last_ip_address);
+	                     fqdn, FALSE, 0, last_ip_address, 0);
 }
 
 /* Caller owns a reference to the NMDhcpClient on return */
@@ -271,7 +272,8 @@ nm_dhcp_manager_start_ip6 (NMDhcpManager *self,
                            guint32 timeout,
                            const char *dhcp_anycast_addr,
                            gboolean info_only,
-                           NMSettingIP6ConfigPrivacy privacy)
+                           NMSettingIP6ConfigPrivacy privacy,
+                           guint needed_prefixes)
 {
 	const char *hostname = NULL;
 
@@ -281,7 +283,7 @@ nm_dhcp_manager_start_ip6 (NMDhcpManager *self,
 		hostname = get_send_hostname (self, dhcp_hostname);
 	return client_start (self, iface, ifindex, hwaddr, uuid, priority, TRUE,
 	                     ll_addr, NULL, timeout, dhcp_anycast_addr, hostname, NULL, info_only,
-	                     privacy, NULL);
+	                     privacy, NULL, needed_prefixes);
 }
 
 void

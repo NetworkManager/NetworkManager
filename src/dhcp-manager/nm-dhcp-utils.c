@@ -604,6 +604,54 @@ ip6_add_domain_search (gpointer data, gpointer user_data)
 	nm_ip6_config_add_search (NM_IP6_CONFIG (user_data), (const char *) data);
 }
 
+NMPlatformIP6Address
+nm_dhcp_utils_ip6_prefix_from_options (GHashTable *options)
+{
+	gs_strfreev gchar **split_addr = NULL;
+	NMPlatformIP6Address address = { 0, };
+	struct in6_addr tmp_addr;
+	char *str = NULL;
+	int prefix;
+
+	g_return_val_if_fail (options != NULL, address);
+
+	str = g_hash_table_lookup (options, "ip6_prefix");
+	if (!str)
+		return address;
+
+	split_addr = g_strsplit (str, "/", 2);
+	if (split_addr[0] == NULL && split_addr[1] == NULL) {
+		nm_log_warn (LOGD_DHCP6, "DHCP returned prefix without length '%s'", str);
+		return address;
+	}
+
+	if (!inet_pton (AF_INET6, split_addr[0], &tmp_addr)) {
+		nm_log_warn (LOGD_DHCP6, "DHCP returned invalid prefix '%s'", str);
+		return address;
+	}
+
+	prefix = _nm_utils_ascii_str_to_int64 (split_addr[1], 10, 0, 128, -1);
+	if (prefix < 0) {
+		nm_log_warn (LOGD_DHCP6, "DHCP returned prefix with invalid length '%s'", str);
+		return address;
+	}
+
+	address.address = tmp_addr;
+	address.addr_source = NM_IP_CONFIG_SOURCE_DHCP;
+	address.plen = prefix;
+	address.timestamp = nm_utils_get_monotonic_timestamp_s ();
+
+	str = g_hash_table_lookup (options, "max_life");
+	if (str)
+		address.lifetime = strtoul (str, NULL, 10);
+
+	str = g_hash_table_lookup (options, "preferred_life");
+	if (str)
+		address.preferred = strtoul (str, NULL, 10);
+
+	return address;
+}
+
 NMIP6Config *
 nm_dhcp_utils_ip6_config_from_options (int ifindex,
                                        const char *iface,
