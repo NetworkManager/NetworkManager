@@ -85,28 +85,26 @@ svParseBoolean (const char *value, gint fallback)
 
 /*****************************************************************************/
 
-/* create a new string with all necessary characters escaped.
- * caller must free returned string
- */
-static const char escapees[] = "\"'\\$~`";		/* must be escaped */
-static const char spaces[] = " \t|&;()<>";		/* only require "" */
-static const char newlines[] = "\n\r";			/* will be removed */
+#define ESC_ESCAPEES        "\"'\\$~`"          /* must be escaped */
+#define ESC_SPACES          " \t|&;()<>"        /* only require "" */
+#define ESC_NEWLINES        "\n\r"              /* will be removed */
 
 const char *
 svEscape (const char *s, char **to_free)
 {
 	char *new;
-	int i, j, mangle = 0, space = 0, newline = 0;
-	int newlen, slen;
+	int mangle = 0, space = 0, newline = 0;
+	int newlen;
+	size_t i, j, slen;
 
 	slen = strlen (s);
 
 	for (i = 0; i < slen; i++) {
-		if (strchr (escapees, s[i]))
+		if (strchr (ESC_ESCAPEES, s[i]))
 			mangle++;
-		if (strchr (spaces, s[i]))
+		if (strchr (ESC_SPACES, s[i]))
 			space++;
-		if (strchr (newlines, s[i]))
+		if (strchr (ESC_NEWLINES, s[i]))
 			newline++;
 	}
 	if (!mangle && !space && !newline) {
@@ -114,22 +112,23 @@ svEscape (const char *s, char **to_free)
 		return s;
 	}
 
-	newlen = slen + mangle - newline + 3;	/* 3 is extra ""\0 */
+	newlen = slen + mangle - newline + 3; /* 3 is extra ""\0 */
 	new = g_malloc (newlen);
 
 	j = 0;
 	new[j++] = '"';
 	for (i = 0; i < slen; i++) {
-		if (strchr (newlines, s[i]))
+		if (strchr (ESC_NEWLINES, s[i]))
 			continue;
-		if (strchr (escapees, s[i])) {
+		if (strchr (ESC_ESCAPEES, s[i])) {
 			new[j++] = '\\';
 		}
 		new[j++] = s[i];
 	}
 	new[j++] = '"';
 	new[j++] = '\0';
-	g_assert (j == slen + mangle - newline + 3);
+
+	nm_assert (j == slen + mangle - newline + 3);
 
 	*to_free = new;
 	return new;
