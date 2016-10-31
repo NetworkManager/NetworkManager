@@ -983,8 +983,7 @@ write_infiniband_setting (NMConnection *connection, shvarFile *ifcfg, GError **e
 	}
 
 	transport_mode = nm_setting_infiniband_get_transport_mode (s_infiniband);
-	svSetValue (ifcfg, "CONNECTED_MODE",
-	            strcmp (transport_mode, "connected") == 0 ? "yes" : "no");
+	svSetValueBoolean (ifcfg, "CONNECTED_MODE", nm_streq (transport_mode, "connected"));
 
 	p_key = nm_setting_infiniband_get_p_key (s_infiniband);
 	if (p_key != -1) {
@@ -1230,12 +1229,8 @@ write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired,
 	g_free (tmp);
 
 	vlan_flags = nm_setting_vlan_get_flags (s_vlan);
-	if (vlan_flags & NM_VLAN_FLAG_REORDER_HEADERS)
-		svSetValue (ifcfg, "REORDER_HDR", "yes");
-	else
-		svSetValue (ifcfg, "REORDER_HDR", "no");
-
-	svSetValue (ifcfg, "GVRP", vlan_flags & NM_VLAN_FLAG_GVRP ? "yes" : "no");
+	svSetValueBoolean (ifcfg, "REORDER_HDR", NM_FLAGS_HAS (vlan_flags, NM_VLAN_FLAG_REORDER_HEADERS));
+	svSetValueBoolean (ifcfg, "GVRP", NM_FLAGS_HAS (vlan_flags, NM_VLAN_FLAG_GVRP));
 
 	nm_utils_strbuf_init (s_buf, &s_buf_ptr, &s_buf_len);
 
@@ -1246,7 +1241,7 @@ write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired,
 
 	svSetValue (ifcfg, "VLAN_FLAGS", s_buf);
 
-	svSetValue (ifcfg, "MVRP", vlan_flags & NM_VLAN_FLAG_MVRP ? "yes" : "no");
+	svSetValueBoolean (ifcfg, "MVRP", NM_FLAGS_HAS (vlan_flags, NM_VLAN_FLAG_MVRP));
 
 	tmp = vlan_priority_maplist_to_stringlist (s_vlan, NM_VLAN_INGRESS_MAP);
 	svSetValue (ifcfg, "VLAN_INGRESS_PRIORITY_MAP", tmp);
@@ -1410,7 +1405,7 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, GError **error
 
 	svSetValue (ifcfg, "DEVICE", iface);
 	svUnsetValue (ifcfg, "BRIDGING_OPTS");
-	svSetValue (ifcfg, "STP", "no");
+	svSetValueBoolean (ifcfg, "STP", FALSE);
 	svUnsetValue (ifcfg, "DELAY");
 
 	mac = nm_setting_bridge_get_mac_address (s_bridge);
@@ -1725,8 +1720,7 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	svSetValue (ifcfg, "UUID", nm_setting_connection_get_uuid (s_con));
 	svSetValue (ifcfg, "STABLE_ID", nm_setting_connection_get_stable_id (s_con));
 	svSetValue (ifcfg, "DEVICE", nm_setting_connection_get_interface_name (s_con));
-	svSetValue (ifcfg, "ONBOOT",
-	            nm_setting_connection_get_autoconnect (s_con) ? "yes" : "no");
+	svSetValueBoolean (ifcfg, "ONBOOT", nm_setting_connection_get_autoconnect (s_con));
 
 	i_int = nm_setting_connection_get_autoconnect_priority (s_con);
 	tmp = i_int != NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_DEFAULT
@@ -1740,7 +1734,6 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	g_free (tmp);
 
 	/* Only save the value for master connections */
-	svUnsetValue (ifcfg, "AUTOCONNECT_SLAVES");
 	type = nm_setting_connection_get_connection_type (s_con);
 	if (   !g_strcmp0 (type, NM_SETTING_BOND_SETTING_NAME)
 	    || !g_strcmp0 (type, NM_SETTING_TEAM_SETTING_NAME)
@@ -1750,7 +1743,8 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 		svSetValue (ifcfg, "AUTOCONNECT_SLAVES",
 		            autoconnect_slaves == NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_YES ? "yes" :
 		            autoconnect_slaves == NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_NO ? "no" : NULL);
-	}
+	} else
+		svUnsetValue (ifcfg, "AUTOCONNECT_SLAVES");
 
 	switch (nm_setting_connection_get_lldp (s_con)) {
 	case NM_SETTING_CONNECTION_LLDP_ENABLE_RX:
@@ -1915,7 +1909,6 @@ write_proxy_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	NMSettingProxy *s_proxy;
 	NMSettingProxyMethod method;
 	const char *pac_url, *pac_script;
-	gboolean browser_only;
 
 	s_proxy = nm_connection_get_setting_proxy (connection);
 	if (!s_proxy)
@@ -1944,11 +1937,7 @@ write_proxy_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		break;
 	}
 
-	browser_only = nm_setting_proxy_get_browser_only (s_proxy);
-	if (browser_only)
-		svSetValue (ifcfg, "BROWSER_ONLY", "yes");
-	else
-		svSetValue (ifcfg, "BROWSER_ONLY", "no");
+	svSetValueBoolean (ifcfg, "BROWSER_ONLY", nm_setting_proxy_get_browser_only (s_proxy));
 
 	return TRUE;
 }
@@ -2148,18 +2137,14 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		svUnsetValue (ifcfg, "DOMAIN");
 
 	/* DEFROUTE; remember that it has the opposite meaning from never-default */
-	svSetValue (ifcfg, "DEFROUTE",
-	            nm_setting_ip_config_get_never_default (s_ip4) ? "no" : "yes");
+	svSetValueBoolean (ifcfg, "DEFROUTE", !nm_setting_ip_config_get_never_default (s_ip4));
 
 	svUnsetValue (ifcfg, "PEERDNS");
 	svUnsetValue (ifcfg, "PEERROUTES");
 	svUnsetValue (ifcfg, "DHCP_CLIENT_ID");
 	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
-		svSetValue (ifcfg, "PEERDNS",
-		            nm_setting_ip_config_get_ignore_auto_dns (s_ip4) ? "no" : "yes");
-
-		svSetValue (ifcfg, "PEERROUTES",
-		            nm_setting_ip_config_get_ignore_auto_routes (s_ip4) ? "no" : "yes");
+		svSetValueBoolean (ifcfg, "PEERDNS", !nm_setting_ip_config_get_ignore_auto_dns (s_ip4));
+		svSetValueBoolean (ifcfg, "PEERROUTES", !nm_setting_ip_config_get_ignore_auto_routes (s_ip4));
 
 		value = nm_setting_ip_config_get_dhcp_hostname (s_ip4);
 		if (value)
@@ -2185,8 +2170,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		g_free (tmp);
 	}
 
-	svSetValue (ifcfg, "IPV4_FAILURE_FATAL",
-	            nm_setting_ip_config_get_may_fail (s_ip4) ? "no" : "yes");
+	svSetValueBoolean (ifcfg, "IPV4_FAILURE_FATAL", !nm_setting_ip_config_get_may_fail (s_ip4));
 
 	route_metric = nm_setting_ip_config_get_route_metric (s_ip4);
 	tmp = route_metric != -1 ? g_strdup_printf ("%"G_GINT64_FORMAT, route_metric) : NULL;

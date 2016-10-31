@@ -482,6 +482,12 @@ svSetValueInt64 (shvarFile *s, const char *key, gint64 value)
 }
 
 void
+svSetValueBoolean (shvarFile *s, const char *key, gboolean value)
+{
+	svSetValueFull (s, key, value ? "yes" : "no");
+}
+
+void
 svUnsetValue (shvarFile *s, const char *key)
 {
 	svSetValueFull (s, key, NULL);

@@ -65,6 +65,7 @@ gint64 svGetValueInt64 (shvarFile *s, const char *key, guint base, gint64 min, g
  */
 void svSetValue (shvarFile *s, const char *key, const char *value);
 void svSetValueFull (shvarFile *s, const char *key, const char *value);
+void svSetValueBoolean (shvarFile *s, const char *key, gboolean value);
 void svSetValueInt64 (shvarFile *s, const char *key, gint64 value);
 
 void svUnsetValue (shvarFile *s, const char *key);
