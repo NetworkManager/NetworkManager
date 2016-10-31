@@ -333,6 +333,11 @@ find_line (shvarFile *s, const char *key)
 
 	for (s->current = s->lineList; s->current; s->current = s->current->next) {
 		line = s->current->data;
+
+		/* skip over leading spaces */
+		while (g_ascii_isspace (line[0]))
+			line++;
+
 		if (!strncmp (key, line, len) && line[len] == '=')
 			return line + len + 1;
 	}
