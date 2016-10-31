@@ -148,73 +148,313 @@ svEscape (const char *s, char **to_free)
 	return new;
 }
 
-/* remove escaped characters in place */
+static gboolean
+_ch_octal_is (char ch)
+{
+	return ch >= '0' && ch < '8';
+}
+
+static guint8
+_ch_octal_get (char ch)
+{
+	nm_assert (_ch_octal_is (ch));
+	return (ch - '0');
+}
+
+static gboolean
+_ch_hex_is (char ch)
+{
+	return g_ascii_isxdigit (ch);
+}
+
+static guint8
+_ch_hex_get (char ch)
+{
+	nm_assert (_ch_hex_is (ch));
+	return ch <= '9' ? ch - '0' : (ch & 0x4F) - 'A' + 10;
+}
+
+static void
+_gstr_init (GString **str, const char *value, gsize i)
+{
+	nm_assert (str);
+	nm_assert (value);
+
+	if (!(*str)) {
+		/* if @str is not yet initialized, it allocates
+		 * a new GString and copies @i characters from
+		 * @value over.
+		 *
+		 * Unescaping usually does not extend the length of a string,
+		 * so we might be tempted to allocate a fixed buffer of length
+		 * (strlen(value)+CONST).
+		 * However, due to $'\Ux' escapes, the maxium length is some
+		 * (FACTOR*strlen(value) + CONST), which is non trivial to get
+		 * right in all cases. Also, we would have to provision for the
+		 * very unlikely extreme case.
+		 * Instead, use a GString buffer which can grow as needed. But for an
+		 * initial guess, strlen(value) is a good start */
+		*str = g_string_new_len (NULL, strlen (value) + 3);
+		if (i)
+			g_string_append_len (*str, value, i);
+	}
+}
+
 const char *
 svUnescape (const char *value, char **to_free)
 {
-	size_t len, idx_rd = 0, idx_wr = 0;
-	char c;
-	char *s;
+	gsize i, j;
+	nm_auto_free_gstring GString *str = NULL;
+
+	/* we handle bash syntax here (note that ifup has #!/bin/bash.
+	 * Thus, see https://www.gnu.org/software/bash/manual/html_node/Quoting.html#Quoting */
+
+	/* @value shall start with the first character after "FOO=" */
 
 	nm_assert (value);
 	nm_assert (to_free);
 
-	/* TODO: avoid copying the string if there is nothing to do. */
-	s = g_strchomp (g_strdup (value));
-	*to_free = s;
+	/* we don't expect any newlines. They must be filtered out before-hand.
+	 * We also don't support line continuation. */
+	nm_assert (!NM_STRCHAR_ANY (value, ch, ch == '\n'));
 
-	len = strlen (s);
-	if (len < 2) {
-		if (s[0] == '\\')
-			s[0] = '\0';
-		return s;
+	i = 0;
+	while (TRUE) {
+
+		if (value[i] == '\0')
+			goto out_value;
+
+		if (   g_ascii_isspace (value[i])
+		    || value[i] == ';') {
+			gboolean has_semicolon = (value[i] == ';');
+
+			/* starting with space is only allowed, if the entire
+			 * string consists of spaces (possibly terminated by a comment).
+			 * This disallows for example
+			 *   LANG=C ls -1
+			 *   LANG=  ls -1
+			 * but allows
+			 *   LANG= #comment
+			 *
+			 * As a special case, we also allow one trailing semicolon, as long
+			 * it is only followed by whitespace or a #-comment.
+			 *   FOO=;
+			 *   FOO=a;
+			 *   FOO=b ; #hallo
+			 */
+			j = i + 1;
+			while (   g_ascii_isspace (value[j])
+			       || (   !has_semicolon
+			           && (has_semicolon = (value[j] == ';'))))
+				j++;
+			if (!NM_IN_SET (value[j], '\0', '#'))
+				goto out_error;
+			goto out_value;
+		}
+
+		if (value[i] == '\\') {
+			/* backslash escape */
+			_gstr_init (&str, value, i);
+			i++;
+			if (G_UNLIKELY (value[i] == '\0')) {
+				/* we don't support line continuation */
+				goto out_error;
+			}
+			g_string_append_c (str, value[i]);
+			i++;
+			goto loop1_next;
+		}
+
+		if (value[i] == '\'') {
+			/* single quotes */
+			_gstr_init (&str, value, i);
+			i++;
+			j = i;
+			while (TRUE) {
+				if (value[j] == '\0') {
+					/* unterminated single quote. We don't support line continuation */
+					goto out_error;
+				}
+				if (value[j] == '\'')
+					break;
+				j++;
+			}
+			g_string_append_len (str, &value[i], j - i);
+			i = j + 1;
+			goto loop1_next;
+		}
+
+		if (value[i] == '"') {
+			/* double quotes */
+			_gstr_init (&str, value, i);
+			i++;
+			while (TRUE) {
+				if (value[i] == '"') {
+					i++;
+					break;
+				}
+				if (value[i] == '\0') {
+					/* unterminated double quote. We don't support line continuation. */
+					goto out_error;
+				}
+				if (NM_IN_SET (value[i], '`', '$')) {
+					/* we don't support shell expansion. */
+					goto out_error;
+				}
+				if (value[i] == '\\') {
+					i++;
+					if (value[i] == '\0') {
+						/* we don't support line continuation */
+						goto out_error;
+					}
+					if (!NM_IN_SET (value[i], '$', '`', '"', '\\')) {
+						/* TODO: svEscape() is not yet ready to handle properly treating
+						 *   double quotes. */
+						//g_string_append_c (str, '\\');
+					}
+				}
+				g_string_append_c (str, value[i]);
+				i++;
+			}
+			goto loop1_next;
+		}
+
+		if (   value[i] == '$'
+		    && value[i + 1] == '\'') {
+			/* ANSI-C Quoting */
+			_gstr_init (&str, value, i);
+			i += 2;
+			while (TRUE) {
+				char ch;
+
+				if (value[i] == '\'') {
+					i++;
+					break;
+				}
+				if (value[i] == '\0') {
+					/* unterminated double quote. We don't support line continuation. */
+					goto out_error;
+				}
+				if (value[i] == '\\') {
+
+					i++;
+					if (value[i] == '\0') {
+						/* we don't support line continuation */
+						goto out_error;
+					}
+					switch (value[i]) {
+					case 'a':  ch = '\a';  break;
+					case 'b':  ch = '\b';  break;
+					case 'e':  ch = '\e';  break;
+					case 'E':  ch = '\E';  break;
+					case 'f':  ch = '\f';  break;
+					case 'n':  ch = '\n';  break;
+					case 'r':  ch = '\r';  break;
+					case 't':  ch = '\t';  break;
+					case 'v':  ch = '\v';  break;
+					case '?':  ch = '\?';  break;
+					case '"':  ch = '"';   break;
+					case '\\': ch = '\\';  break;
+					case '\'': ch = '\'';  break;
+					default:
+						if (_ch_octal_is (value[i])) {
+							guint v;
+
+							v = _ch_octal_get (value[i]);
+							i++;
+							if (_ch_octal_is (value[i])) {
+								v = (v * 8) + _ch_octal_get (value[i]);
+								i++;
+								if (_ch_octal_is (value[i])) {
+									v = (v * 8) + _ch_octal_get (value[i]);
+									i++;
+								}
+							}
+							/* like bash, we cut too large numbers off. E.g. A=$'\772' becomes 0xfa  */
+							g_string_append_c (str, (guint8) v);
+						} else if (NM_IN_SET (value[i], 'x', 'u', 'U')) {
+							const char escape_type = value[i];
+							int max_digits = escape_type == 'x' ? 2 : escape_type == 'u' ? 4 : 8;
+							guint64 v;
+
+							i++;
+							if (!_ch_hex_is (value[i])) {
+								/* missing hex value after "\x" escape. This is treated like no escaping. */
+								g_string_append_c (str, '\\');
+								g_string_append_c (str, escape_type);
+							} else {
+								v = _ch_hex_get (value[i]);
+								i++;
+
+								while (--max_digits > 0) {
+									if (!_ch_hex_is (value[i]))
+										break;
+									v = v * 16 + _ch_hex_get (value[i]);
+									i++;
+								}
+								if (escape_type == 'x')
+									g_string_append_c (str, v);
+								else {
+									/* we treat the unicode escapes as utf-8 encoded values. */
+									g_string_append_unichar (str, v);
+								}
+							}
+						} else {
+							g_string_append_c (str, '\\');
+							g_string_append_c (str, value[i]);
+							i++;
+						}
+						goto loop_ansic_next;
+					}
+				} else
+					ch = value[i];
+				g_string_append_c (str, ch);
+				i++;
+loop_ansic_next: ;
+			}
+			goto loop1_next;
+		}
+
+		if (NM_IN_SET (value[i], '|', '&', '(', ')', '<', '>')) {
+			/* shell metacharacters are not supported without quoting.
+			 * Note that ';' is already handled above. */
+			goto out_error;
+		}
+
+		/* an unquoted, regular character. Just consume it directly. */
+		if (str)
+			g_string_append_c (str, value[i]);
+		i++;
+
+loop1_next: ;
 	}
 
-	if ((s[0] == '"' || s[0] == '\'') && s[0] == s[len-1]) {
-		if (len == 2) {
-			s[0] = '\0';
-			return s;
-		}
-		if (len == 3) {
-			if (s[1] == '\\') {
-				s[0] = '\0';
-			} else {
-				s[0] = s[1];
-				s[1] = '\0';
-			}
-			return s;
-		}
-		s[--len] = '\0';
-		idx_rd = 1;
+	nm_assert_not_reached ();
+
+out_value:
+	if (str) {
+		*to_free = g_string_free (str, FALSE);
+		str = NULL;
+		return *to_free;
+	} else if (i == 0) {
+		*to_free = NULL;
+		/* we could just return "", but I prefer returning a
+		 * pointer into @value for consistency. Thus, seek to the
+		 * end. */
+		while (value[0])
+			value++;
+		return value;
+	} else if (value[i] != '\0') {
+		*to_free = g_strndup (value, i);
+		return *to_free;
 	} else {
-		/* seek for the first escape... */
-		char *p = strchr (s, '\\');
-
-		if (!p)
-			return s;
-		if (p[1] == '\0') {
-			p[0] = '\0';
-			return s;
-		}
-		idx_wr = idx_rd = (p - s);
+		*to_free = NULL;
+		return value;
 	}
 
-	/* idx_rd points to the first escape. Walk the string and shift the
-	 * characters from idx_rd to idx_wr.
-	 */
-	while ((c = s[idx_rd++])) {
-		if (c == '\\') {
-			if (s[idx_rd] == '\0') {
-				s[idx_wr] = '\0';
-				return s;
-			}
-			s[idx_wr++] = s[idx_rd++];
-			continue;
-		}
-		s[idx_wr++] = c;
-	}
-	s[idx_wr] = '\0';
-	return s;
+out_error:
+	*to_free = NULL;
+	return NULL;
 }
 
 /*****************************************************************************/
@@ -539,7 +779,7 @@ svSetValue (shvarFile *s, const char *key, const char *value)
 	current = last;
 
 	oldval = svUnescape (oldval, &oldval_free);
-	if (!nm_streq (oldval, value)) {
+	if (!nm_streq0 (oldval, value)) {
 		g_free (current->data);
 		current->data = line_construct (key, value);
 		s->modified = TRUE;

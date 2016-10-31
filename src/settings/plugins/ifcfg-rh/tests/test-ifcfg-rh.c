@@ -365,8 +365,8 @@ test_read_variables_corner_cases (void)
 	/* ===== CONNECTION SETTING ===== */
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "\"");
-	g_assert_cmpstr (nm_setting_connection_get_zone (s_con), ==, "'");
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System test-variables-corner-cases-1");
+	g_assert_cmpstr (nm_setting_connection_get_zone (s_con), ==, NULL);
 	g_assert_cmpint (nm_setting_connection_get_timestamp (s_con), ==, 0);
 	g_assert (nm_setting_connection_get_autoconnect (s_con));
 
@@ -451,7 +451,7 @@ test_read_unrecognized (void)
 	/* ===== CONNECTION SETTING ===== */
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "U Can't Touch This");
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System test-unrecognized");
 	g_assert_cmpint (nm_setting_connection_get_timestamp (s_con), ==, expected_timestamp);
 
 	g_object_unref (connection);
@@ -8695,70 +8695,275 @@ test_read_team_port_empty_config (void)
 	g_object_unref (connection);
 }
 
+/*****************************************************************************/
+
+static const char *
+_svUnescape (const char *str, char **to_free)
+{
+	const char *s;
+
+	g_assert (str);
+	g_assert (to_free);
+
+	s = svUnescape (str, to_free);
+	if (*to_free)
+		g_assert (s == *to_free);
+	else {
+		g_assert (   s == NULL
+		          || (s >= str && s <= strchr (str, '\0')));
+	}
+	return s;
+}
+
+typedef struct {
+	const char *val;
+	const char *exp;
+	bool can_concat:1;
+	bool needs_ascii_separator:1;
+} UnescapeTestData;
+
 static void
-test_svUnescape_assert (const char *str)
+do_svUnescape_assert (const char *str, const char *expected)
 {
 	gs_free char *to_free = NULL;
 	const char *s;
 
-	s = svUnescape (str, &to_free);
+	s = _svUnescape (str, &to_free);
+	g_assert_cmpstr (s, ==, expected);
+}
+
+static void
+do_svUnescape_combine_ansi_append (GString *str_val, GString *str_exp, const UnescapeTestData *data, gboolean honor_needs_ascii_separator)
+{
+	g_string_append (str_val, data->val);
+	g_string_append (str_exp, data->exp);
+	if (honor_needs_ascii_separator && data->needs_ascii_separator) {
+		/* the string has an open escape sequence. We must ensure that when
+		 * combining it with another sequence, that they don't merge into
+		 * something diffent. for example "\xa" + "a" must not result in
+		 * "\xaa". Instead, we add a space in between to get "\xa a". */
+		g_string_append (str_val, " ");
+		g_string_append (str_exp, " ");
+	}
+}
+
+static void
+do_svUnescape_combine_ansi (GString *str_val, GString *str_exp, const UnescapeTestData *data_ansi, gsize data_len, gssize idx)
+{
+	gsize i, j;
+
+	g_string_set_size (str_val, 0);
+	g_string_set_size (str_exp, 0);
+	g_string_append (str_val, "$'");
+	if (idx < 0) {
+		for (i = -idx; i > 0; i--) {
+			j = nmtst_get_rand_int () % data_len;
+			if (!data_ansi[j].can_concat) {
+				i++;
+				continue;
+			}
+			do_svUnescape_combine_ansi_append (str_val, str_exp, &data_ansi[j], i > 1);
+		}
+	} else {
+		g_assert_cmpint (idx, <, data_len);
+		do_svUnescape_combine_ansi_append (str_val, str_exp, &data_ansi[idx], FALSE);
+	}
+	g_string_append (str_val, "'");
 }
 
 static void
 test_svUnescape (void)
 {
-	int len, repeat, i, k;
-	GRand *r = g_rand_new ();
-	guint32 seed = g_random_int ();
+#define V0(v_value, v_expected) { .val = ""v_value"", .exp = v_expected, .can_concat = FALSE, }
+#define V1(v_value, v_expected) { .val = ""v_value"", .exp = v_expected, .can_concat = !!v_expected, }
+#define V2(v_value, v_expected) { .val = ""v_value"", .exp = v_expected, .can_concat = TRUE, .needs_ascii_separator = TRUE, }
+	const UnescapeTestData data_full[] = {
+		V1 ("", ""),
+		V0 ("'", NULL),
+		V1 ("'x'", "x"),
+		V1 ("'  '", "  "),
+		V1 ("'x'", "x"),
+		V0 ("\"", NULL),
+		V0 ("\\", NULL),
+		V0 (" ", ""),
+		V0 ("   ", ""),
+		V0 ("a;   #", "a"),
+		V0 (" ;   #", ""),
+		V0 (";   ", ""),
+		V0 ("; ;", NULL),
+		V0 (" ; a #", NULL),
+		V0 (" ; a;;  #", NULL),
+		V0 ("a; ; #", NULL),
+		V0 ("\t  # ", ""),
+		V0 ("\t  #a", ""),
+		V0 ("\t  #a\r", ""),
+		V0 ("\r", ""),
+		V0 ("ab\r", "ab"),
+		V0 ("a'b'\r ", "ab"),
+		V0 ("a'b' \r", "ab"),
+		V0 ("a#b", "a#b"),
+		V0 ("#b", "#b"),
+		V1 ("\'some string\'", "some string"),
+		V0 ("Bob outside LAN", NULL),
+		V1 ("x", "x"),
+		V1 ("'{ \"device\": \"team0\", \"link_watch\": { \"name\": \"ethtool\" } }'",
+	       "{ \"device\": \"team0\", \"link_watch\": { \"name\": \"ethtool\" } }"),
+		V1 ("x\"\"b", "xb"),
+		V1 ("x\"c\"b", "xcb"),
+		V1 ("\"c\"b", "cb"),
+		V1 ("\"c\"\\'b", "c'b"),
+		V1 ("$''", ""),
+		V1 ("$'\\n'", "\n"),
+		V0 ("$'\\'", NULL),
+		V1 ("$'\\x'", "\\x"),
+		V1 ("$'\\xa'", "\xa"),
+		V0 ("$'\\x0'", ""),
+		V1 ("$'\\x12'", "\x12"),
+		V1 ("$'\\x12A'", "\x12""A"),
+		V1 ("$'\\x12t'", "\x12t"),
+		V1 ("\"aa\\\"\"", "aa\""),
+		V1 ("\"aa\\\"b\"c", "aa\"bc"),
+		V1 ("\"aa\\\"\"b", "aa\"b"),
+	};
+	const UnescapeTestData data_ansi[] = {
+		/* strings inside $''. They cannot be compared directly, but must
+		 * be wrapped by do_svUnescape_combine_ansi(). */
+		V1 ("", ""),
+		V1 ("a", "a"),
+		V1 ("b", "b"),
+		V1 ("x", "x"),
+		V1 (" ", " "),
+		V1 ("\\a", "\a"),
+		V1 ("\\b", "\b"),
+		V1 ("\\e", "\e"),
+		V1 ("\\E", "\E"),
+		V1 ("\\f", "\f"),
+		V1 ("\\n", "\n"),
+		V1 ("\\r", "\r"),
+		V1 ("\\t", "\t"),
+		V1 ("\\v", "\v"),
+		V1 ("\\\\", "\\"),
+		V1 ("\\'", "'"),
+		V1 ("\\\"", "\""),
+		V1 ("\\?", "\?"),
+		V1 ("\\?", "?"),
+		V2 ("\\8", "\\8"),
+		V2 ("\\1", "\1"),
+		V1 ("\\1A", "\1A"),
+		V1 ("\\18", "\18"),
+		V2 ("\\01", "\1"),
+		V1 ("\\001", "\1"),
+		V0 ("\\008", ""),
+		V1 ("\\018", "\0018"),
+		V0 ("\\08", ""),
+		V1 ("\\18", "\0018"),
+		V1 ("\\x", "\\x"),
+		V2 ("\\xa", "\xa"),
+		V1 ("\\x12", "\x12"),
+		V1 ("\\x12A", "\x12""A"),
+		V1 ("\\x12a", "\x12""a"),
+		V1 ("\\x12t", "\x12t"),
+		V1 ("\\x1a", "\x1a"),
+		V1 ("\\x1A", "\x1A"),
+		V1 ("\\ut", "\\ut"),
+		V2 ("\\ua", "\xa"),
+		V1 ("\\uat", "\xat"),
+		V2 ("\\uab", "\xc2\xab"),
+		V1 ("\\uabt", "\xc2\xabt"),
+		V2 ("\\uabc", "\xe0\xaa\xbc"),
+		V1 ("\\uabct", "\xe0\xaa\xbct"),
+		V2 ("\\uabcd", "\xea\xaf\x8d"),
+		V1 ("\\uabcdt", "\xea\xaf\x8dt"),
+		V2 ("\\uabcde", "\xea\xaf\x8d""e"),
+		V1 ("\\uabcdet", "\xea\xaf\x8d""et"),
+		V1 ("\\Ut", "\\Ut"),
+		V2 ("\\Ua", "\xa"),
+		V1 ("\\Uat", "\xat"),
+		V2 ("\\Uab", "\xc2\xab"),
+		V1 ("\\Uabt", "\xc2\xabt"),
+		V2 ("\\Uabc", "\xe0\xaa\xbc"),
+		V1 ("\\Uabct", "\xe0\xaa\xbct"),
+		V2 ("\\Uabcd", "\xea\xaf\x8d"),
+		V1 ("\\Uabcdt", "\xea\xaf\x8dt"),
+		V2 ("\\Uabcde", "\xf2\xab\xb3\x9e"),
+		V1 ("\\Uabcdet", "\xf2\xab\xb3\x9et"),
+		V2 ("\\Uabcde0", "\xf8\xaa\xbc\xb7\xa0"),
+		V1 ("\\Uabcde0t", "\xf8\xaa\xbc\xb7\xa0t"),
+		V2 ("\\Uabcde01", "\xfc\x8a\xaf\x8d\xb8\x81"),
+		V1 ("\\Uabcde01t", "\xfc\x8a\xaf\x8d\xb8\x81t"),
+		V2 ("\\U0abcde01", "\xfc\x8a\xaf\x8d\xb8\x81"),
+		V1 ("\\U0abcde01t", "\xfc\x8a\xaf\x8d\xb8\x81t"),
+		V1 ("\\U00abcde01", "\xf8\xaa\xbc\xb7\xa0""1"),
+		V1 ("\\U00abcde01t", "\xf8\xaa\xbc\xb7\xa0""1t"),
 
-	g_rand_set_seed (r, seed);
+		/* control-x sequence is not supported */
+		V1 ("\\c", "\\c"),
+		V1 ("\\c1", "\\c1"),
+	};
+#undef V0
+#undef V1
+#undef V2
+	gsize i;
+	nm_auto_free_gstring GString *str_val = g_string_new (NULL);
+	nm_auto_free_gstring GString *str_val2 = g_string_new (NULL);
+	nm_auto_free_gstring GString *str_exp = g_string_new (NULL);
+	nm_auto_free_gstring GString *str_exp2 = g_string_new (NULL);
 
-	test_svUnescape_assert ("");
-	test_svUnescape_assert ("'");
-	test_svUnescape_assert ("\"");
-	test_svUnescape_assert ("\\");
-	test_svUnescape_assert ("x");
-	test_svUnescape_assert (" ");
-	test_svUnescape_assert ("'  '");
-	test_svUnescape_assert ("'x'");
-	test_svUnescape_assert ("\'some string\'");
-	test_svUnescape_assert ("Bob outside LAN");
-	test_svUnescape_assert ("{ \"device\": \"team0\", \"link_watch\": { \"name\": \"ethtool\" } }");
+	do_svUnescape_assert ( "'  ''  '", "    ");
 
-	for (len = 1; len < 25; len++) {
-		char *s = g_new0 (char, len+1);
+	for (i = 0; i < G_N_ELEMENTS (data_full); i++)
+		do_svUnescape_assert (data_full[i].val, data_full[i].exp);
 
-		for (repeat = 0; repeat < MAX (4*len, 20); repeat++) {
-
-			/* fill the entire string with random. */
-			for (i = 0; i < len; i++)
-				s[i] = g_rand_int (r);
-
-			/* randomly place escape characters into the string */
-			k = g_rand_int (r) % (len);
-			while (k-- > 0)
-				s[g_rand_int (r) % len] = '\\';
-
-			if (len > 1) {
-				/* quote the string. */
-				k = g_rand_int (r) % (10);
-				if (k < 4) {
-					char quote = k < 2 ? '"' : '\'';
-
-					s[0] = quote;
-					s[len-1] = quote;
-				}
-			}
-
-			/*g_message (">>%s<<", s);*/
-			test_svUnescape_assert (s);
-		}
-
-		g_free (s);
+	for (i = 0; i < G_N_ELEMENTS (data_ansi); i++) {
+		do_svUnescape_combine_ansi (str_val, str_exp, data_ansi, G_N_ELEMENTS (data_ansi), i);
+		do_svUnescape_assert (str_val->str, str_exp->str);
 	}
 
-	g_rand_free (r);
+	/* different values can be just concatenated... */
+	for (i = 0; i < 200; i++) {
+		gsize num_concat = (nmtst_get_rand_int () % 5) + 2;
+
+		g_string_set_size (str_val, 0);
+		g_string_set_size (str_exp, 0);
+
+		while (num_concat > 0) {
+			gsize idx;
+
+			if ((nmtst_get_rand_int () % 3 == 0)) {
+				do_svUnescape_combine_ansi (str_val2, str_exp2, data_ansi, G_N_ELEMENTS (data_ansi), -((int) ((nmtst_get_rand_int () % 5) + 1)));
+				continue;
+			}
+
+			idx = nmtst_get_rand_int () % G_N_ELEMENTS (data_full);
+			if (!data_full[idx].can_concat)
+				continue;
+			g_string_append (str_val, data_full[idx].val);
+			g_string_append (str_exp, data_full[idx].exp);
+			num_concat--;
+		}
+
+		switch (nmtst_get_rand_int () % 3) {
+		case 0:
+			g_string_append (str_val, " ");
+			break;
+		case 1:
+			g_string_append (str_val, "    ");
+			break;
+		}
+		switch (nmtst_get_rand_int () % 3) {
+		case 0:
+			g_string_append (str_val, " #");
+			break;
+		case 1:
+			g_string_append (str_val, " #foo");
+			break;
+		}
+		do_svUnescape_assert (str_val->str, str_exp->str);
+	}
+
 }
+
+/*****************************************************************************/
 
 static void
 test_read_vlan_trailing_spaces (void)
