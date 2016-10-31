@@ -8695,50 +8695,13 @@ test_read_team_port_empty_config (void)
 	g_object_unref (connection);
 }
 
-/* Old algorithm for "remove escaped characters in place".
- *
- * This function is obsolete because it has O(n^2) runtime
- * complexity and got replaced. Keep it here for testing,
- * that both functions behave identical.
- **/
-static void
-svUnescape_On2 (char *s)
-{
-	int len, i;
-
-	len = strlen(s);
-	if (len >= 2 && (s[0] == '"' || s[0] == '\'') && s[0] == s[len-1]) {
-		i = len - 2;
-		if (i == 0)
-			s[0] = '\0';
-		else {
-			memmove(s, s+1, i);
-			s[i+1] = '\0';
-			len = i;
-		}
-	}
-	for (i = 0; i < len; i++) {
-		if (s[i] == '\\') {
-			memmove(s+i, s+i+1, len-(i+1));
-			len--;
-		}
-		s[len] = '\0';
-	}
-}
-
 static void
 test_svUnescape_assert (const char *str)
 {
-	char *s1 = g_strdup (str);
-	char *s2 = g_strdup (str);
+	gs_free char *to_free = NULL;
+	const char *s;
 
-	svUnescape (s1);
-	svUnescape_On2 (s2);
-
-	g_assert_cmpstr (s1, ==, s2);
-
-	g_free (s1);
-	g_free (s2);
+	s = svUnescape (str, &to_free);
 }
 
 static void

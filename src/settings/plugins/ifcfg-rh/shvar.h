@@ -81,10 +81,7 @@ gboolean svWriteFile (shvarFile *s, int mode, GError **error);
 /* Close the file descriptor (if open) and free the shvarFile. */
 void svCloseFile (shvarFile *s);
 
-/* Return @s unmodified or an escaped string */
 const char *svEscape (const char *s, char **to_free);
-
-/* Unescape a string in-place */
-void svUnescape (char *s);
+const char *svUnescape (const char *s, char **to_free);
 
 #endif /* _SHVAR_H */

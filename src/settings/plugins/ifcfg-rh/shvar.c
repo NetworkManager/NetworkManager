@@ -150,23 +150,31 @@ svEscape (const char *s, char **to_free)
 }
 
 /* remove escaped characters in place */
-void
-svUnescape (char *s)
+const char *
+svUnescape (const char *value, char **to_free)
 {
 	size_t len, idx_rd = 0, idx_wr = 0;
 	char c;
+	char *s;
+
+	nm_assert (value);
+	nm_assert (to_free);
+
+	/* TODO: avoid copying the string if there is nothing to do. */
+	s = g_strchomp (g_strdup (value));
+	*to_free = s;
 
 	len = strlen (s);
 	if (len < 2) {
 		if (s[0] == '\\')
 			s[0] = '\0';
-		return;
+		return s;
 	}
 
 	if ((s[0] == '"' || s[0] == '\'') && s[0] == s[len-1]) {
 		if (len == 2) {
 			s[0] = '\0';
-			return;
+			return s;
 		}
 		if (len == 3) {
 			if (s[1] == '\\') {
@@ -175,7 +183,7 @@ svUnescape (char *s)
 				s[0] = s[1];
 				s[1] = '\0';
 			}
-			return;
+			return s;
 		}
 		s[--len] = '\0';
 		idx_rd = 1;
@@ -184,10 +192,10 @@ svUnescape (char *s)
 		char *p = strchr (s, '\\');
 
 		if (!p)
-			return;
+			return s;
 		if (p[1] == '\0') {
 			p[0] = '\0';
-			return;
+			return s;
 		}
 		idx_wr = idx_rd = (p - s);
 	}
@@ -199,7 +207,7 @@ svUnescape (char *s)
 		if (c == '\\') {
 			if (s[idx_rd] == '\0') {
 				s[idx_wr] = '\0';
-				return;
+				return s;
 			}
 			s[idx_wr++] = s[idx_rd++];
 			continue;
@@ -207,6 +215,7 @@ svUnescape (char *s)
 		s[idx_wr++] = c;
 	}
 	s[idx_wr] = '\0';
+	return s;
 }
 
 /*****************************************************************************/
@@ -352,7 +361,7 @@ char *
 svGetValue (shvarFile *s, const char *key)
 {
 	const char *line_val;
-	char *value;
+	char *copied;
 
 	g_return_val_if_fail (s != NULL, NULL);
 	g_return_val_if_fail (key != NULL, NULL);
@@ -361,9 +370,8 @@ svGetValue (shvarFile *s, const char *key)
 	if (!line_val)
 		return NULL;
 
-	value = g_strchomp (g_strdup (line_val));
-	svUnescape (value);
-	return value;
+	line_val = svUnescape (line_val, &copied);
+	return copied ?: g_strdup (line_val);
 }
 
 /* Get the value associated with the key, and leave the current pointer
