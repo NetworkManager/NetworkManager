@@ -173,7 +173,6 @@ while [ $# -ne 0 ]; do
             LOCAL=1
             ;;
         --dist|-d)
-            LOCAL=1
             DIST="$1"
             shift
             if [ "x$DIST" = x ]; then
