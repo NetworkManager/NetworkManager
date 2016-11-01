@@ -1144,6 +1144,20 @@ nmtst_file_resolve_relative_path (const char *rel, const char *cwd)
 	return g_build_filename (cwd, rel, NULL);
 }
 
+inline static char *
+nmtst_file_get_contents (const char *filename)
+{
+	GError *error = NULL;
+	gboolean success;
+	char *contents = NULL;
+	gsize len;
+
+	success = g_file_get_contents (filename, &contents, &len, &error);
+	nmtst_assert_success (success && contents, error);
+	g_assert_cmpint (strlen (contents), ==, len);
+	return contents;
+}
+
 inline static void
 _nmtst_assert_resolve_relative_path_equals (const char *f1, const char *f2, const char *file, int line)
 {
