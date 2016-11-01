@@ -678,7 +678,7 @@ error:
 }
 
 static void
-parse_dns_options (NMSettingIPConfig *ip_config, char *value)
+parse_dns_options (NMSettingIPConfig *ip_config, const char *value)
 {
 	char **options = NULL;
 
@@ -969,7 +969,8 @@ make_ip4_setting (shvarFile *ifcfg,
 	char *value = NULL;
 	char *route_path = NULL;
 	char *method;
-	char *dns_options = NULL;
+	gs_free char *dns_options_free = NULL;
+	const char *dns_options = NULL;
 	gs_free char *gateway = NULL;
 	gint32 i;
 	shvarFile *network_ifcfg;
@@ -995,7 +996,7 @@ make_ip4_setting (shvarFile *ifcfg,
 		/* Get the connection ifcfg device name and the global gateway device */
 		value = svGetValueString (ifcfg, "DEVICE");
 		gatewaydev = svGetValueString (network_ifcfg, "GATEWAYDEV");
-		dns_options = svGetValue (network_ifcfg, "RES_OPTIONS");
+		dns_options = svGetValue (network_ifcfg, "RES_OPTIONS", &dns_options_free);
 
 		/* If there was a global gateway device specified, then only connections
 		 * for that device can be the default connection.
@@ -1192,12 +1193,9 @@ make_ip4_setting (shvarFile *ifcfg,
 	}
 
 	/* DNS options */
-	value = svGetValue (ifcfg, "RES_OPTIONS");
-	parse_dns_options (s_ip4, value);
+	parse_dns_options (s_ip4, svGetValue (ifcfg, "RES_OPTIONS", &value));
 	parse_dns_options (s_ip4, dns_options);
 	g_free (value);
-	g_free (dns_options);
-	dns_options = NULL;
 
 	/* DNS priority */
 	priority = svGetValueInt64 (ifcfg, "IPV4_DNS_PRIORITY", 10, G_MININT32, G_MAXINT32, 0);
@@ -1267,7 +1265,6 @@ make_ip4_setting (shvarFile *ifcfg,
 	return NM_SETTING (s_ip4);
 
 done:
-	g_free (dns_options);
 	g_free (route_path);
 	g_object_unref (s_ip4);
 	return NULL;
@@ -1382,7 +1379,8 @@ make_ip6_setting (shvarFile *ifcfg,
 	char *value = NULL;
 	char *str_value;
 	char *route6_path = NULL;
-	char *dns_options = NULL;
+	gs_free char *dns_options_free = NULL;
+	const char *dns_options = NULL;
 	gboolean ipv6init, ipv6forwarding, ipv6_autoconf, dhcp6 = FALSE;
 	char *method = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
 	char *ipv6addr, *ipv6addr_secondaries;
@@ -1418,7 +1416,7 @@ make_ip6_setting (shvarFile *ifcfg,
 		value = svGetValueString (ifcfg, "DEVICE");
 		ipv6_defaultgw = svGetValueString (network_ifcfg, "IPV6_DEFAULTGW");
 		ipv6_defaultdev = svGetValueString (network_ifcfg, "IPV6_DEFAULTDEV");
-		dns_options = svGetValue (network_ifcfg, "RES_OPTIONS");
+		dns_options = svGetValue (network_ifcfg, "RES_OPTIONS", &dns_options_free);
 
 		if (ipv6_defaultgw) {
 			default_dev = strchr (ipv6_defaultgw, '%');
@@ -1639,11 +1637,9 @@ make_ip6_setting (shvarFile *ifcfg,
 	}
 
 	/* DNS options */
-	value = svGetValue (ifcfg, "RES_OPTIONS");
-	parse_dns_options (s_ip6, value);
+	parse_dns_options (s_ip6, svGetValue (ifcfg, "RES_OPTIONS", &value));
 	parse_dns_options (s_ip6, dns_options);
 	g_free (value);
-	g_free (dns_options);
 
 	/* DNS priority */
 	priority = svGetValueInt64 (ifcfg, "IPV6_DNS_PRIORITY", 10, G_MININT32, G_MAXINT32, 0);
@@ -1655,7 +1651,6 @@ make_ip6_setting (shvarFile *ifcfg,
 	return NM_SETTING (s_ip6);
 
 error:
-	g_free (dns_options);
 	g_free (route6_path);
 	g_object_unref (s_ip6);
 	return NULL;
@@ -3373,6 +3368,7 @@ make_wireless_setting (shvarFile *ifcfg,
                        GError **error)
 {
 	NMSettingWireless *s_wireless;
+	const char *cvalue;
 	char *value = NULL;
 	gint64 chan = 0;
 	NMSettingMacRandomization mac_randomization = NM_SETTING_MAC_RANDOMIZATION_NEVER;
@@ -3535,19 +3531,19 @@ make_wireless_setting (shvarFile *ifcfg,
 	              svGetValueBoolean (ifcfg, "SSID_HIDDEN", FALSE),
 	              NULL);
 
-	value = svGetValue (ifcfg, "POWERSAVE");
-	if (value) {
-		if (!strcmp (value, "default"))
+	cvalue = svGetValue (ifcfg, "POWERSAVE", &value);
+	if (cvalue) {
+		if (!strcmp (cvalue, "default"))
 			powersave = NM_SETTING_WIRELESS_POWERSAVE_DEFAULT;
-		else if (!strcmp (value, "ignore"))
+		else if (!strcmp (cvalue, "ignore"))
 			powersave = NM_SETTING_WIRELESS_POWERSAVE_IGNORE;
-		else if (!strcmp (value, "disable") || !strcmp (value, "no"))
+		else if (!strcmp (cvalue, "disable") || !strcmp (cvalue, "no"))
 			powersave = NM_SETTING_WIRELESS_POWERSAVE_DISABLE;
-		else if (!strcmp (value, "enable") || !strcmp (value, "yes"))
+		else if (!strcmp (cvalue, "enable") || !strcmp (cvalue, "yes"))
 			powersave = NM_SETTING_WIRELESS_POWERSAVE_ENABLE;
 		else {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Invalid POWERSAVE value '%s'", value);
+			             "Invalid POWERSAVE value '%s'", cvalue);
 			g_free (value);
 			goto error;
 		}
@@ -3559,17 +3555,17 @@ make_wireless_setting (shvarFile *ifcfg,
 	              powersave,
 	              NULL);
 
-	value = svGetValue (ifcfg, "MAC_ADDRESS_RANDOMIZATION");
-	if (value) {
-		if (strcmp (value, "default") == 0)
+	cvalue = svGetValue (ifcfg, "MAC_ADDRESS_RANDOMIZATION", &value);
+	if (cvalue) {
+		if (strcmp (cvalue, "default") == 0)
 			mac_randomization = NM_SETTING_MAC_RANDOMIZATION_DEFAULT;
-		else if (strcmp (value, "never") == 0)
+		else if (strcmp (cvalue, "never") == 0)
 			mac_randomization = NM_SETTING_MAC_RANDOMIZATION_NEVER;
-		else if (strcmp (value, "always") == 0)
+		else if (strcmp (cvalue, "always") == 0)
 			mac_randomization = NM_SETTING_MAC_RANDOMIZATION_ALWAYS;
 		else {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Invalid MAC_ADDRESS_RANDOMIZATION value '%s'", value);
+			             "Invalid MAC_ADDRESS_RANDOMIZATION value '%s'", cvalue);
 			g_free (value);
 			goto error;
 		}
@@ -3918,8 +3914,8 @@ make_wired_setting (shvarFile *ifcfg,
 		g_free (value);
 	}
 
-	value = svGetValue (ifcfg, "ETHTOOL_OPTS");
-	parse_ethtool_options (ifcfg, s_wired, value);
+	parse_ethtool_options (ifcfg, s_wired,
+	                       svGetValue (ifcfg, "ETHTOOL_OPTS", &value));
 	g_free (value);
 
 	return (NMSetting *) s_wired;

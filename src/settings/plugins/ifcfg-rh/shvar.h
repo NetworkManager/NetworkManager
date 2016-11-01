@@ -48,8 +48,8 @@ shvarFile *svOpenFile (const char *name, GError **error);
  * pointing at the line containing the value.  The char* returned MUST
  * be freed by the caller.
  */
+const char *svGetValue (shvarFile *s, const char *key, char **to_free);
 char *svGetValueString (shvarFile *s, const char *key);
-char *svGetValue (shvarFile *s, const char *key);
 
 gint svParseBoolean (const char *value, gint def);
 

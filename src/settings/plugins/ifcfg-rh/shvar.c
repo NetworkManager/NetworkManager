@@ -776,20 +776,14 @@ _svGetValue (shvarFile *s, const char *key, char **to_free)
 	return svUnescape (last_val, to_free);
 }
 
-/* svGetValue() is identical to svGetValueString() except that
- * svGetValueString() will never return an empty value (but %NULL instead).
- * svGetValue() will return empty values if that is the value for the @key. */
-char *
-svGetValue (shvarFile *s, const char *key)
+const char *
+svGetValue (shvarFile *s, const char *key, char **to_free)
 {
-	const char *value;
-	char *to_free;
-
 	g_return_val_if_fail (s != NULL, NULL);
 	g_return_val_if_fail (key != NULL, NULL);
+	g_return_val_if_fail (to_free, NULL);
 
-	value = _svGetValue (s, key, &to_free);
-	return to_free ?: (value ? g_strdup (value) : NULL);
+	return _svGetValue (s, key, to_free);
 }
 
 /* Get the value associated with the key, and leave the current pointer
