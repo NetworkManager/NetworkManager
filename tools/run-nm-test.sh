@@ -21,8 +21,6 @@ if [[ -z "${NMTST_USE_VALGRIND+x}" ]]; then
 fi
 [[ "${NMTST_USE_VALGRIND}" != 1 ]] && NMTST_USE_VALGRIND=0
 
-DO_MAKE=0
-
 if [ "$1" == "--called-from-make" ]; then
     shift
     NMTST_LIBTOOL=($1 --mode=execute); shift
@@ -43,6 +41,7 @@ if [ "$1" == "--called-from-make" ]; then
         NMTST_LAUNCH_DBUS=no
     fi
     TEST="$1"; shift
+    NMTST_MAKE_FIRST=0
 
 else
     if [ -n "${NMTST_LIBTOOL-:x}" ]; then
@@ -66,8 +65,8 @@ else
             NMTST_LIBTOOL=()
             shift
             ;;
-        --make|-m)
-            DO_MAKE=1
+        --make-first|-m)
+            NMTST_MAKE_FIRST=1
             shift
             ;;
         "--valgrind"|-v)
@@ -98,6 +97,7 @@ fi
 
 [ -x "$TEST" ] || die "Test \"$TEST\" does not exist"
 TEST_PATH="$(readlink -f "$(dirname "$TEST")")"
+TEST_NAME="${TEST##*/}"
 
 if [ -n "${NMTST_LAUNCH_DBUS:-x}" ]; then
     # autodetect whether to launch D-Bus based on the test path.
@@ -108,14 +108,18 @@ if [ -n "${NMTST_LAUNCH_DBUS:-x}" ]; then
     fi
 fi
 
-if [[ "$DO_MAKE" == 1 ]]; then
-    make -j5 "$TEST" || die "make of $TEST failed"
+if [[ "$NMTST_MAKE_FIRST" == 1 ]]; then
+    git_dir="$(readlink -f "$(git rev-parse --show-toplevel)")"
+    rel_path="${TEST_PATH/#$(printf '%s/' "$git_dir")}/$TEST_NAME"
+    cd "$git_dir"
+    make -j5 "$rel_path" || die "make of $TEST failed ($git_dir / $rel_path)"
+    cd - 1>/dev/null
 fi
 
 # if the user wishes, chnage first into the directory of the test
 if [ "$NMTST_CHANGE_DIRECTORY" != "" ]; then
     cd "$TEST_PATH"
-    TEST="./$(basename "$TEST")"
+    TEST="./$TEST_NAME"
 fi
 
 NMTST_DBUS_RUN_SESSION=()
@@ -189,7 +193,7 @@ fi
 if [ $HAS_ERRORS -eq 0 ]; then
     # valgrind doesn't support setns syscall and spams the logfile.
     # hack around it...
-    if [ "$(basename "$TEST")" = 'test-link-linux' -a -z "$(sed -e '/^--[0-9]\+-- WARNING: unhandled .* syscall: /,/^--[0-9]\+-- it at http.*\.$/d' "$LOGFILE")" ]; then
+    if [ "$TEST_NAME" = 'test-link-linux' -a -z "$(sed -e '/^--[0-9]\+-- WARNING: unhandled .* syscall: /,/^--[0-9]\+-- it at http.*\.$/d' "$LOGFILE")" ]; then
         HAS_ERRORS=1
     fi
 fi
