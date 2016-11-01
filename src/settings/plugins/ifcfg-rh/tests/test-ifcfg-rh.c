@@ -9026,12 +9026,38 @@ test_write_unknown (gconstpointer test_data)
 	gboolean success;
 	gs_free char *file_contents_out = NULL;
 	gs_free char *file_contents_exp = NULL;
+	gs_free char *tmp = NULL;
 
 	sv = svOpenFile (testfile, &error);
 	nmtst_assert_success (sv, error);
 
 	svFileSetName (sv, filename_tmp_1);
 	svFileSetModified (sv);
+
+	if (g_str_has_suffix (testfile, "ifcfg-test-write-unknown-4")) {
+		g_assert_cmpstr (svGetValue (sv, "NAME", &tmp), ==, "l4x");
+		nm_clear_g_free (&tmp);
+
+		g_assert_cmpstr (svGetValue (sv, "NAME2", &tmp), ==, NULL);
+		nm_clear_g_free (&tmp);
+
+		g_assert_cmpstr (svGetValue (sv, "NAME3", &tmp), ==, "name3-value");
+		nm_clear_g_free (&tmp);
+
+		svSetValue (sv, "NAME", "set-by-test1");
+		svSetValue (sv, "NAME2", "set-by-test2");
+		svSetValue (sv, "NAME3", "set-by-test3");
+
+		g_assert_cmpstr (svGetValue (sv, "NAME", &tmp), ==, "set-by-test1");
+		nm_clear_g_free (&tmp);
+
+		g_assert_cmpstr (svGetValue (sv, "NAME2", &tmp), ==, "set-by-test2");
+		nm_clear_g_free (&tmp);
+
+		g_assert_cmpstr (svGetValue (sv, "NAME3", &tmp), ==, "set-by-test3");
+		nm_clear_g_free (&tmp);
+	}
+
 	success = svWriteFile (sv, 0644, &error);
 	nmtst_assert_success (success, error);
 
@@ -9229,6 +9255,7 @@ int main (int argc, char **argv)
 	g_test_add_data_func (TPATH "write-unknown/1", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-write-unknown-1", test_write_unknown);
 	g_test_add_data_func (TPATH "write-unknown/2", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-write-unknown-2", test_write_unknown);
 	g_test_add_data_func (TPATH "write-unknown/3", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-write-unknown-3", test_write_unknown);
+	g_test_add_data_func (TPATH "write-unknown/4", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-write-unknown-4", test_write_unknown);
 
 	g_test_add_func (TPATH "vlan-trailing-spaces", test_read_vlan_trailing_spaces);
 
