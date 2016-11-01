@@ -9,12 +9,25 @@ SCRIPT_PATH="${SCRIPT_PATH:-$(readlink -f "$(dirname "$0")")}"
 
 VALGRIND_ERROR=37
 
+
+if [[ -z "${NMTST_USE_VALGRIND+x}" ]]; then
+    if [[ -z "${NMTST_NO_VALGRIND+x}" ]]; then
+        NMTST_USE_VALGRIND=0
+    elif [[ -z "${NMTST_NO_VALGRIND}" ]]; then
+        NMTST_USE_VALGRIND=1
+    else
+        NMTST_USE_VALGRIND=0
+    fi
+fi
+[[ "${NMTST_USE_VALGRIND}" != 1 ]] && NMTST_USE_VALGRIND=0
+
 if [ "$1" == "--called-from-make" ]; then
     shift
     NMTST_LIBTOOL=($1 --mode=execute); shift
     NMTST_VALGRIND="$1"; shift
     NMTST_CHANGE_DIRECTORY=
     if [[ "$NMTST_VALGRIND" == no ]]; then
+        NMTST_USE_VALGRIND=0
         NMTST_VALGRIND=
     fi
     SUPPRESSIONS="$1"; shift
@@ -51,14 +64,12 @@ else
             NMTST_LIBTOOL=()
             shift
             ;;
-        "--valgrind")
-            NMTST_NO_VALGRIND=
-            NMTST_VALGRIND=valgrind
+        "--valgrind"|-v)
+            NMTST_USE_VALGRIND=1
             shift;
             ;;
-        "--no-valgrind")
-            NMTST_NO_VALGRIND=no
-            NMTST_VALGRIND=""
+        "--no-valgrind"|-V)
+            NMTST_USE_VALGRIND=0
             shift;
             ;;
         "--")
@@ -73,7 +84,6 @@ else
     # we support calling the script directly. In this case,
     # only pass the path to the test to run.
     TEST="$1"; shift
-    NMTST_VALGRIND="${NMTST_VALGRIND:-valgrind}"
     if [ "$SUPPRESSIONS" == "" ]; then
         SUPPRESSIONS="$SCRIPT_PATH/../valgrind.suppressions"
     fi
@@ -112,12 +122,15 @@ fi
 [ -x "$TEST" ] || die "Cannot execute test \"$TEST\""
 
 
-if [ "$NMTST_NO_VALGRIND" != "" -o "$NMTST_VALGRIND" == "" ]; then
+if [ "$NMTST_USE_VALGRIND" != "1" ]; then
     "${NMTST_DBUS_RUN_SESSION[@]}" \
     "$TEST" "$@"
     exit $?
 fi
 
+if [[ -z "${NMTST_VALGRIND}" ]]; then
+    NMTST_VALGRIND=`which valgrind` || die "cannot find valgrind binary. Set \$NMTST_VALGRIND"
+fi
 
 LOGFILE="${TEST}.valgrind-log"
 
