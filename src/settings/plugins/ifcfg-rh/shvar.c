@@ -629,10 +629,11 @@ svOpenFileInternal (const char *name, gboolean create, GError **error)
 
 		/* we'd use g_strsplit() here, but we want a list, not an array */
 		for (p = arena; (q = strchr (p, '\n')) != NULL; p = q + 1)
-			s->lineList = g_list_append (s->lineList, g_strndup (p, q - p));
+			s->lineList = g_list_prepend (s->lineList, g_strndup (p, q - p));
 		if (p[0])
-			s->lineList = g_list_append (s->lineList, g_strdup (p));
+			s->lineList = g_list_prepend (s->lineList, g_strdup (p));
 		g_free (arena);
+		s->lineList = g_list_reverse (s->lineList);
 
 		/* closefd is set if we opened the file read-only, so go ahead and
 		 * close it, because we can't write to it anyway
