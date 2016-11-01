@@ -31,10 +31,6 @@
 #define NM_IFCFG_CONNECTION_LOG_FMTD        "%s (%s,\"%s\",%p)"
 #define NM_IFCFG_CONNECTION_LOG_ARGD(con)   NM_IFCFG_CONNECTION_LOG_PATH (nm_settings_connection_get_filename ((NMSettingsConnection *) (con))), nm_connection_get_uuid ((NMConnection *) (con)), nm_connection_get_id ((NMConnection *) (con)), (con)
 
-char *utils_single_quote_string (const char *str);
-
-char *utils_single_unquote_string (const char *str);
-
 char *utils_cert_path (const char *parent, const char *suffix);
 
 const char *utils_get_ifcfg_name (const char *file, gboolean only_ifcfg);
