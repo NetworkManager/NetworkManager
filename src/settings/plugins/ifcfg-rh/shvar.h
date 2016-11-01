@@ -34,6 +34,9 @@
 typedef struct _shvarFile shvarFile;
 
 const char *svFileGetName (const shvarFile *s);
+void svFileSetName (shvarFile *s, const char *fileName);
+
+void svFileSetModified (shvarFile *s);
 
 /* Create the file <name>, return a shvarFile (never fails) */
 shvarFile *svCreateFile (const char *name);

@@ -97,6 +97,25 @@ _shell_is_name (const char *key)
 	                       g_ascii_isalnum (ch) || ch == '_');
 }
 
+static const char *
+_shell_is_name_assignment (const char *key)
+{
+	/* whether @key is a valid identifier (name). */
+	if (!key)
+		return NULL;
+	if (   !g_ascii_isalpha (key[0])
+	    && key[0] != '_')
+		return NULL;
+	while (TRUE) {
+		const char ch = (++key)[0];
+
+		if (ch == '=')
+			return &key[1];
+		if (!g_ascii_isalnum (ch) && ch != '_')
+			return NULL;
+	}
+}
+
 /*****************************************************************************/
 
 /* like g_strescape(), except that it also escapes '\''' *sigh*.
@@ -542,6 +561,19 @@ svFileGetName (const shvarFile *s)
 	return s->fileName;
 }
 
+void
+svFileSetName (shvarFile *s, const char *fileName)
+{
+	g_free (s->fileName);
+	s->fileName = g_strdup (fileName);
+}
+
+void
+svFileSetModified (shvarFile *s)
+{
+	s->modified = TRUE;
+}
+
 /*****************************************************************************/
 
 /* Open the file <name>, returning a shvarFile on success and NULL on failure.
@@ -943,8 +975,33 @@ svWriteFile (shvarFile *s, int mode, GError **error)
 		}
 		f = fdopen (tmpfd, "w");
 		fseek (f, 0, SEEK_SET);
-		for (current = s->lineList; current; current = current->next)
-			fprintf (f, "%s\n", (const char *) current->data);
+		for (current = s->lineList; current; current = current->next) {
+			const char *line = current->data;
+			const char *str;
+			const char *value;
+
+			str = line;
+			while (g_ascii_isspace (str[0]))
+				str++;
+			if (NM_IN_SET (str[0], '\0', '#'))
+				goto write_regular;
+
+			value = _shell_is_name_assignment (str);
+			if (value) {
+				gs_free char *s_tmp = NULL;
+
+				/* we check that the assignment can be properly unescaped. */
+				if (svUnescape (value, &s_tmp))
+					goto write_regular;
+				nm_clear_g_free (&s_tmp);
+				s_tmp = g_strndup (str, value - str);
+				fprintf (f, "%s\n", s_tmp);
+			}
+			fprintf (f, "#NM: %s\n", line);
+			continue;
+write_regular:
+			fprintf (f, "%s\n", line);
+		}
 		fclose (f);
 	}
 

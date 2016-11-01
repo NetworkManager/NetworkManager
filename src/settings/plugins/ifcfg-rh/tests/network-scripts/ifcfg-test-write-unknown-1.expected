@@ -1,0 +1,12 @@
+FOO=
+#NM: FOO='val
+bar=
+#NM:   bar=3'
+#NM: wrong line
+  F2=b
+F3=
+#NM:   F3='b
+XXX=
+#NM: XXX=adf'
+  XXX2=val2
+#NM: '

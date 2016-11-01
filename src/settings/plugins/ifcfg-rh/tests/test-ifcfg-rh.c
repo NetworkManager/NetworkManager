@@ -57,6 +57,8 @@
 
 #include "nm-test-utils-core.h"
 
+#define TEST_SCRATCH_DIR_TMP TEST_SCRATCH_DIR"/network-scripts/tmp"
+
 /*****************************************************************************/
 
 static NMConnection *
@@ -4048,7 +4050,7 @@ test_read_write_static_routes_legacy (void)
 	 * source tree and for 'make distcheck'.
 	 */
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/tmp",
+	                        TEST_SCRATCH_DIR_TMP,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
@@ -8993,7 +8995,36 @@ test_svUnescape (void)
 		}
 		do_svUnescape_assert (str_val->str, str_exp->str);
 	}
+}
 
+/*****************************************************************************/
+
+static void
+test_write_unknown (gconstpointer test_data)
+{
+	nmtst_auto_unlinkfile char *filename_tmp_1 = g_strdup (TEST_SCRATCH_DIR_TMP"/tmp-1");
+	const char *testfile = test_data;
+	gs_free char *testfile_expected = g_strconcat (testfile, ".expected", NULL);
+	shvarFile *sv;
+	gs_free_error GError *error = NULL;
+	gboolean success;
+	gs_free char *file_contents_out = NULL;
+	gs_free char *file_contents_exp = NULL;
+
+	sv = svOpenFile (testfile, &error);
+	nmtst_assert_success (sv, error);
+
+	svFileSetName (sv, filename_tmp_1);
+	svFileSetModified (sv);
+	success = svWriteFile (sv, 0644, &error);
+	nmtst_assert_success (success, error);
+
+	file_contents_out = nmtst_file_get_contents (filename_tmp_1);
+	file_contents_exp = nmtst_file_get_contents (testfile_expected);
+
+	g_assert_cmpstr (file_contents_out, ==, file_contents_exp);
+
+	svCloseFile (sv);
 }
 
 /*****************************************************************************/
@@ -9174,10 +9205,15 @@ int main (int argc, char **argv)
 {
 	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
 
-	if (g_mkdir_with_parents (TEST_SCRATCH_DIR"/network-scripts/tmp", 0755) != 0)
-		g_error ("failure to create test directory \"%s\": %s", TEST_SCRATCH_DIR"/network-scripts/tmp", g_strerror (errno));
+	if (g_mkdir_with_parents (TEST_SCRATCH_DIR_TMP, 0755) != 0)
+		g_error ("failure to create test directory \"%s\": %s", TEST_SCRATCH_DIR_TMP, g_strerror (errno));
 
 	g_test_add_func (TPATH "svUnescape", test_svUnescape);
+
+	g_test_add_data_func (TPATH "write-unknown/1", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-write-unknown-1", test_write_unknown);
+	g_test_add_data_func (TPATH "write-unknown/2", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-write-unknown-2", test_write_unknown);
+	g_test_add_data_func (TPATH "write-unknown/3", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-write-unknown-3", test_write_unknown);
+
 	g_test_add_func (TPATH "vlan-trailing-spaces", test_read_vlan_trailing_spaces);
 
 	g_test_add_func (TPATH "unmanaged", test_read_unmanaged);

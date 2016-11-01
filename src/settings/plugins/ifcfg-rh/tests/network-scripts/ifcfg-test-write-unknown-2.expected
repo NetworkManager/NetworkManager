@@ -1,0 +1,4 @@
+FOO=
+#NM: FOO='
+BAR=a
+#NM: '
