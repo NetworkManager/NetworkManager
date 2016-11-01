@@ -2401,6 +2401,22 @@ test_read_wifi_leap_secret_flags (gconstpointer test_data)
 }
 
 static void
+test_ifcfg_no_trailing_newline (void)
+{
+	gs_free_error GError *error = NULL;
+	shvarFile *sv;
+	gs_free char *value = NULL;
+
+	sv = svOpenFile (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wpa-psk", &error);
+	nmtst_assert_success (sv, error);
+
+	value = svGetValueString (sv, "LAST_ENTRY");
+	g_assert_cmpstr (value, ==, "no-newline");
+
+	svCloseFile (sv);
+}
+
+static void
 test_read_wifi_wpa_psk (void)
 {
 	NMConnection *connection;
@@ -9445,6 +9461,8 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "vpn/write", test_write_vpn);
 	g_test_add_data_func (TPATH "wwan/write-gsm", GUINT_TO_POINTER (TRUE), test_write_mobile_broadband);
 	g_test_add_data_func (TPATH "wwan/write-cdma", GUINT_TO_POINTER (FALSE), test_write_mobile_broadband);
+
+	g_test_add_func (TPATH "no-trailing-newline", test_ifcfg_no_trailing_newline);
 
 	g_test_add_func (TPATH "utils/name", test_utils_name);
 	g_test_add_func (TPATH "utils/path", test_utils_path);
