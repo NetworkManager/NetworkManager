@@ -5,6 +5,24 @@ die() {
     exit 5
 }
 
+_is_true() {
+    case "$1" in
+        y|Y|yes|YES|1)
+            return 0
+            ;;
+        n|N|no|NO|0)
+            return 1
+            ;;
+        *)
+            if test -n "$2"; then
+                _is_true "$2"
+                return $?
+            fi
+            return 2
+            ;;
+    esac
+}
+
 SCRIPT_PATH="${SCRIPT_PATH:-$(readlink -f "$(dirname "$0")")}"
 
 VALGRIND_ERROR=37
@@ -19,26 +37,24 @@ if [[ -z "${NMTST_USE_VALGRIND+x}" ]]; then
         NMTST_USE_VALGRIND=0
     fi
 fi
-[[ "${NMTST_USE_VALGRIND}" != 1 ]] && NMTST_USE_VALGRIND=0
 
 if [ "$1" == "--called-from-make" ]; then
     shift
     NMTST_LIBTOOL=($1 --mode=execute); shift
     NMTST_VALGRIND="$1"; shift
-    NMTST_CHANGE_DIRECTORY=
     if [[ "$NMTST_VALGRIND" == no ]]; then
         NMTST_USE_VALGRIND=0
         NMTST_VALGRIND=
     fi
     SUPPRESSIONS="$1"; shift
     if [ "$1" = "--launch-dbus" ]; then
-        NMTST_LAUNCH_DBUS=yes
+        NMTST_LAUNCH_DBUS=1
         shift
     elif [ "$1" = "--launch-dbus=auto" ]; then
         NMTST_LAUNCH_DBUS=
         shift
     else
-        NMTST_LAUNCH_DBUS=no
+        NMTST_LAUNCH_DBUS=0
     fi
     TEST="$1"; shift
     NMTST_MAKE_FIRST=0
@@ -54,11 +70,11 @@ else
     for a in "$@"; do
         case "$a" in
         "--launch-dbus")
-            NMTST_LAUNCH_DBUS=yes
+            NMTST_LAUNCH_DBUS=1
             shift
             ;;
         "--no-launch-dbus"|"-D")
-            NMTST_LAUNCH_DBUS=no
+            NMTST_LAUNCH_DBUS=0
             shift
             ;;
         "--no-libtool")
@@ -99,12 +115,12 @@ fi
 TEST_PATH="$(readlink -f "$(dirname "$TEST")")"
 TEST_NAME="${TEST##*/}"
 
-if [ -n "${NMTST_LAUNCH_DBUS:-x}" ]; then
+if [ -z "${NMTST_LAUNCH_DBUS}" ]; then
     # autodetect whether to launch D-Bus based on the test path.
     if [[ $TEST_PATH == */libnm/tests || $TEST_PATH == */libnm-glib/tests ]]; then
-        NMTST_LAUNCH_DBUS=yes
+        NMTST_LAUNCH_DBUS=1
     else
-        NMTST_LAUNCH_DBUS=no
+        NMTST_LAUNCH_DBUS=0
     fi
 fi
 
@@ -116,14 +132,14 @@ if [[ "$NMTST_MAKE_FIRST" == 1 ]]; then
     cd - 1>/dev/null
 fi
 
-# if the user wishes, chnage first into the directory of the test
-if [ "$NMTST_CHANGE_DIRECTORY" != "" ]; then
+# if the user wishes, change first into the directory of the test
+if _is_true "$NMTST_CHANGE_DIRECTORY" 0; then
     cd "$TEST_PATH"
     TEST="./$TEST_NAME"
 fi
 
 NMTST_DBUS_RUN_SESSION=()
-if [ "$NMTST_LAUNCH_DBUS" == "yes" ]; then
+if _is_true "$NMTST_LAUNCH_DBUS"; then
     if ! which dbus-run-session &>/dev/null ; then
         eval `dbus-launch --sh-syntax`
         trap "kill $DBUS_SESSION_BUS_PID" EXIT
@@ -135,7 +151,7 @@ fi
 [ -x "$TEST" ] || die "Cannot execute test \"$TEST\""
 
 
-if [ "$NMTST_USE_VALGRIND" != "1" ]; then
+if ! _is_true "$NMTST_USE_VALGRIND" 0; then
     "${NMTST_DBUS_RUN_SESSION[@]}" \
     "$TEST" "$@"
     exit $?
@@ -143,6 +159,8 @@ fi
 
 if [[ -z "${NMTST_VALGRIND}" ]]; then
     NMTST_VALGRIND=`which valgrind` || die "cannot find valgrind binary. Set \$NMTST_VALGRIND"
+else
+    test -e "${NMTST_VALGRIND}" || die "cannot find valgrind binary from NMTST_VALGRIND=\"${NMTST_VALGRIND}\""
 fi
 
 LOGFILE="${TEST}.valgrind-log"
