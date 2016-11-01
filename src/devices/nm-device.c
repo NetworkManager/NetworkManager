@@ -6328,10 +6328,10 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 
 	if (changed & NM_NDISC_CONFIG_DNS_DOMAINS) {
 		/* Rebuild domain list from neighbor discovery cache. */
-		nm_ip6_config_reset_domains (priv->ac_ip6_config);
+		nm_ip6_config_reset_searches (priv->ac_ip6_config);
 
 		for (i = 0; i < rdata->dns_domains_n; i++)
-			nm_ip6_config_add_domain (priv->ac_ip6_config, rdata->dns_domains[i].domain);
+			nm_ip6_config_add_search (priv->ac_ip6_config, rdata->dns_domains[i].domain);
 	}
 
 	if (changed & NM_NDISC_CONFIG_DHCP_LEVEL) {
