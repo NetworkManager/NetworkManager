@@ -751,19 +751,16 @@ line_construct (const char *key, const char *value)
 
 /*****************************************************************************/
 
-/* svGetValue() is identical to svGetValueString() except that
- * svGetValueString() will never return an empty value (but %NULL instead).
- * svGetValue() will return empty values if that is the value for the @key. */
-char *
-svGetValue (shvarFile *s, const char *key)
+static const char *
+_svGetValue (shvarFile *s, const char *key, char **to_free)
 {
 	const GList *current;
 	const char *line_val;
 	const char *last_val = NULL;
-	char *to_free;
 
-	g_return_val_if_fail (s != NULL, NULL);
-	g_return_val_if_fail (key != NULL, NULL);
+	nm_assert (s);
+	nm_assert (_shell_is_name (key));
+	nm_assert (to_free);
 
 	current = s->lineList;
 	while ((current = shlist_find (current, key, &line_val))) {
@@ -771,11 +768,28 @@ svGetValue (shvarFile *s, const char *key)
 		current = current->next;
 	}
 
-	if (!last_val)
+	if (!last_val) {
+		*to_free = NULL;
 		return NULL;
+	}
 
-	line_val = svUnescape (last_val, &to_free);
-	return to_free ?: g_strdup (line_val);
+	return svUnescape (last_val, to_free);
+}
+
+/* svGetValue() is identical to svGetValueString() except that
+ * svGetValueString() will never return an empty value (but %NULL instead).
+ * svGetValue() will return empty values if that is the value for the @key. */
+char *
+svGetValue (shvarFile *s, const char *key)
+{
+	const char *value;
+	char *to_free;
+
+	g_return_val_if_fail (s != NULL, NULL);
+	g_return_val_if_fail (key != NULL, NULL);
+
+	value = _svGetValue (s, key, &to_free);
+	return to_free ?: (value ? g_strdup (value) : NULL);
 }
 
 /* Get the value associated with the key, and leave the current pointer
@@ -785,14 +799,19 @@ svGetValue (shvarFile *s, const char *key)
 char *
 svGetValueString (shvarFile *s, const char *key)
 {
-	char *value;
+	char *to_free;
+	const char *value;
 
-	value = svGetValue (s, key);
-	if (value && !*value) {
-		g_free (value);
+	value = _svGetValue (s, key, &to_free);
+	if (!value) {
+		nm_assert (!to_free);
 		return NULL;
 	}
-	return value;
+	if (!value[0]) {
+		g_free (to_free);
+		return NULL;
+	}
+	return to_free ?: g_strdup (value);
 }
 
 /* svGetValueBoolean:
@@ -807,10 +826,11 @@ svGetValueString (shvarFile *s, const char *key)
 gint
 svGetValueBoolean (shvarFile *s, const char *key, gint fallback)
 {
-	gs_free char *tmp = NULL;
+	gs_free char *to_free = NULL;
+	const char *value;
 
-	tmp = svGetValueString (s, key);
-	return svParseBoolean (tmp, fallback);
+	value = _svGetValue (s, key, &to_free);
+	return svParseBoolean (value, fallback);
 }
 
 /* svGetValueInt64:
@@ -826,22 +846,24 @@ svGetValueBoolean (shvarFile *s, const char *key, gint fallback)
 gint64
 svGetValueInt64 (shvarFile *s, const char *key, guint base, gint64 min, gint64 max, gint64 fallback)
 {
-	char *tmp;
+	char *to_free;
+	const char *value;
 	gint64 result;
 	int errsv;
 
-	tmp = svGetValue (s, key);
-	if (!tmp) {
+	value = _svGetValue (s, key, &to_free);
+	if (!value) {
+		nm_assert (!to_free);
 		errno = 0;
 		return fallback;
 	}
 
-	result = _nm_utils_ascii_str_to_int64 (tmp, base, min, max, fallback);
-	errsv = errno;
-
-	g_free (tmp);
-
-	errno = errsv;
+	result = _nm_utils_ascii_str_to_int64 (value, base, min, max, fallback);
+	if (to_free) {
+		errsv = errno;
+		g_free (to_free);
+		errno = errsv;
+	}
 	return result;
 }
 
