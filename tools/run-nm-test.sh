@@ -21,6 +21,8 @@ if [[ -z "${NMTST_USE_VALGRIND+x}" ]]; then
 fi
 [[ "${NMTST_USE_VALGRIND}" != 1 ]] && NMTST_USE_VALGRIND=0
 
+DO_MAKE=0
+
 if [ "$1" == "--called-from-make" ]; then
     shift
     NMTST_LIBTOOL=($1 --mode=execute); shift
@@ -64,6 +66,10 @@ else
             NMTST_LIBTOOL=()
             shift
             ;;
+        --make|-m)
+            DO_MAKE=1
+            shift
+            ;;
         "--valgrind"|-v)
             NMTST_USE_VALGRIND=1
             shift;
@@ -102,8 +108,11 @@ if [ -n "${NMTST_LAUNCH_DBUS:-x}" ]; then
     fi
 fi
 
-# some tests require you to cd into the base directory.
-# do that.
+if [[ "$DO_MAKE" == 1 ]]; then
+    make -j5 "$TEST" || die "make of $TEST failed"
+fi
+
+# if the user wishes, chnage first into the directory of the test
 if [ "$NMTST_CHANGE_DIRECTORY" != "" ]; then
     cd "$TEST_PATH"
     TEST="./$(basename "$TEST")"
