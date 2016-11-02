@@ -1648,9 +1648,8 @@
 
     <para>Apart from the property-value pairs, <command>connection add</command>,
     <command>connection modify</command> and <command>device modify</command> also
-    accept short forms of some properties. They exist for convenience and compatiblity
-    with older versions of <command>nmcli</command> that could not accept the raw
-    properties.</para>
+    accept short forms of some properties. They exist for convenience. Some aliases can
+    affect multiple connection properties at once.</para>
 
    <para>The overview of the aliases is below. An actual connection type is used to
    disambiguate these options from the options of the same name that are valid for
@@ -1960,9 +1959,10 @@ It's equivalent of using the <literal>+bond.options 'option=value'</literal> syn
     <tbody>
       <row>
         <entry align="left">ip4</entry>
-        <entry align="left"><link linkend="nm-settings.property.ipv4.addresses">ipv4.addresses</link></entry>
+        <entry align="left"><link linkend="nm-settings.property.ipv4.addresses">ipv4.addresses</link>
+                            <link linkend="nm-settings.property.ipv4.method">ipv4.method</link></entry>
         <entry align="left" valign="top">This option can be specified multiple times.
-It's equivalent of using <literal>+ipv4.addresses</literal> syntax.</entry>
+It's equivalent of using <literal>+ipv4.addresses</literal> syntax and setting <literal>ipv4.method</literal> to <literal>manual</literal>.</entry>
       </row>
       <row><entry align="left">gw4</entry><entry align="left"><link linkend="nm-settings.property.ipv4.gateway">ipv4.gateway</link></entry><entry align="left" /></row>
     </tbody>
@@ -1975,9 +1975,10 @@ It's equivalent of using <literal>+ipv4.addresses</literal> syntax.</entry>
     <tbody>
       <row>
         <entry align="left">ip6</entry>
-        <entry align="left"><link linkend="nm-settings.property.ipv6.addresses">ipv6.addresses</link></entry>
+        <entry align="left"><link linkend="nm-settings.property.ipv6.addresses">ipv6.addresses</link>
+                            <link linkend="nm-settings.property.ipv6.method">ipv6.method</link></entry>
         <entry align="left" valign="top">This option can be specified multiple times.
-It's equivalent of using <literal>+ipv6.addresses</literal> syntax.</entry>
+It's equivalent of using <literal>+ipv6.addresses</literal> syntax and setting <literal>ipv6.method</literal> to <literal>manual</literal>.</entry>
       </row>
       <row><entry align="left">gw6</entry><entry align="left"><link linkend="nm-settings.property.ipv6.gateway">ipv6.gateway</link></entry><entry align="left" /></row>
     </tbody>
