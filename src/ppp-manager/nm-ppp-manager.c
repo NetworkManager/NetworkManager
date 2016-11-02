@@ -595,7 +595,7 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 
 	g_type_class_add_private (manager_class, sizeof (NMPPPManagerPrivate));
 
-	exported_object_class->export_path = NM_DBUS_PATH "/PPP";
+	exported_object_class->export_path = NM_DBUS_PATH "/PPP/%u";
 	exported_object_class->export_on_construction = TRUE;
 
 	object_class->dispose = dispose;
