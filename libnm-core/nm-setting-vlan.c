@@ -720,6 +720,8 @@ priority_strv_to_maplist (NMVlanPriorityMap map, char **strv)
 		if (item) {
 			if (!check_replace_duplicate_priority (list, item->from, item->to))
 				list = g_slist_prepend (list, item);
+			else
+				g_free (item);
 		}
 	}
 	return g_slist_sort (list, prio_map_compare);
