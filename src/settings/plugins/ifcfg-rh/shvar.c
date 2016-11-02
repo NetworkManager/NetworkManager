@@ -851,7 +851,9 @@ svGetValueInt64 (shvarFile *s, const char *key, guint base, gint64 min, gint64 m
 	value = _svGetValue (s, key, &to_free);
 	if (!value) {
 		nm_assert (!to_free);
-		errno = 0;
+		/* indicate that the key does not exist (or has a syntax error
+		 * and svUnescape() failed). */
+		errno = ENOKEY;
 		return fallback;
 	}
 
