@@ -147,13 +147,11 @@ priority_map_new_from_str (NMVlanPriorityMap map, const char *str)
 		to = g_ascii_strtoull (t[1], NULL, 10);
 
 		if ((from <= get_max_prio (map, TRUE)) && (to <= get_max_prio (map, FALSE))) {
-			p = g_malloc0 (sizeof (NMVlanQosMapping));
+			G_STATIC_ASSERT (sizeof (*p) == sizeof (p->from) + sizeof (p->to));
+			p = g_malloc (sizeof (NMVlanQosMapping));
 			p->from = from;
 			p->to = to;
 		}
-	} else {
-		/* Warn */
-		g_warn_if_fail (len == 2);
 	}
 
 	g_strfreev (t);
@@ -747,13 +745,11 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_INGRESS_PRIORITY_MAP:
 		g_slist_free_full (priv->ingress_priority_map, g_free);
-		priv->ingress_priority_map =
-			priority_strv_to_maplist (NM_VLAN_INGRESS_MAP, g_value_get_boxed (value));
+		priv->ingress_priority_map = priority_strv_to_maplist (NM_VLAN_INGRESS_MAP, g_value_get_boxed (value));
 		break;
 	case PROP_EGRESS_PRIORITY_MAP:
 		g_slist_free_full (priv->egress_priority_map, g_free);
-		priv->egress_priority_map =
-			priority_strv_to_maplist (NM_VLAN_EGRESS_MAP, g_value_get_boxed (value));
+		priv->egress_priority_map = priority_strv_to_maplist (NM_VLAN_EGRESS_MAP, g_value_get_boxed (value));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
