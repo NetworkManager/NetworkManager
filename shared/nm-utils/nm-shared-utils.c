@@ -45,7 +45,7 @@ gint64
 _nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max, gint64 fallback)
 {
 	gint64 v;
-	char *s = NULL;
+	const char *s = NULL;
 
 	if (str) {
 		while (g_ascii_isspace (str[0]))
@@ -57,7 +57,7 @@ _nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 ma
 	}
 
 	errno = 0;
-	v = g_ascii_strtoll (str, &s, base);
+	v = g_ascii_strtoll (str, (char **) &s, base);
 
 	if (errno != 0)
 		return fallback;
