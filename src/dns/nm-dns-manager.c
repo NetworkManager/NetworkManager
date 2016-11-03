@@ -401,8 +401,7 @@ merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src, const char *iface)
 }
 
 static void
-merge_one_ip_config_data (NMDnsManager *self,
-                          NMResolvConfData *rc,
+merge_one_ip_config_data (NMResolvConfData *rc,
                           NMDnsIPConfigData *data)
 {
 	if (NM_IS_IP4_CONFIG (data->config))
@@ -980,26 +979,136 @@ get_nameserver_list (void *config, GString **str)
 	return (*str)->str;
 }
 
+static char **
+_ptrarray_to_strv (GPtrArray *parray)
+{
+	if (parray->len > 0)
+		g_ptr_array_add (parray, NULL);
+	return (char **) g_ptr_array_free (parray, parray->len == 0);
+}
+
+static void
+_collect_resolv_conf_data (NMDnsManager *self, /* only for logging context, no other side-effects */
+                           NMGlobalDnsConfig *global_config,
+                           const GPtrArray *configs,
+                           const char *hostname,
+                           char ***out_searches,
+                           char ***out_options,
+                           char ***out_nameservers,
+                           char ***out_nis_servers,
+                           const char **out_nis_domain,
+                           NMDnsIPConfigData ***out_plugin_confs)
+{
+	NMDnsIPConfigData **plugin_confs = NULL;
+	guint i, num, len;
+	NMResolvConfData rc = {
+		.nameservers = g_ptr_array_new (),
+		.searches = g_ptr_array_new (),
+		.options = g_ptr_array_new (),
+		.nis_domain = NULL,
+		.nis_servers = g_ptr_array_new (),
+	};
+
+	if (global_config)
+		merge_global_dns_config (&rc, global_config);
+	else {
+		nm_auto_free_gstring GString *tmp_gstring = NULL;
+		int prio, prev_prio = 0;
+		NMDnsIPConfigData *current;
+		gboolean skip = FALSE, v4;
+
+		plugin_confs = g_new (NMDnsIPConfigData *, configs->len + 1);
+
+		for (i = 0; i < configs->len; i++) {
+			current = configs->pdata[i];
+			v4 = NM_IS_IP4_CONFIG (current->config);
+
+			prio = v4 ?
+				nm_ip4_config_get_dns_priority ((NMIP4Config *) current->config) :
+				nm_ip6_config_get_dns_priority ((NMIP6Config *) current->config);
+
+			if (prev_prio < 0 && prio != prev_prio) {
+				skip = TRUE;
+				plugin_confs[i] = NULL;
+			}
+
+			prev_prio = prio;
+
+			if (   ( v4 && nm_ip4_config_get_num_nameservers ((NMIP4Config *) current->config))
+			    || (!v4 && nm_ip6_config_get_num_nameservers ((NMIP6Config *) current->config))) {
+				_LOGT ("config: %8d %-7s v%c %-16s %s: %s",
+				       prio,
+				       _config_type_to_string (current->type),
+				       v4 ? '4' : '6',
+				       current->iface,
+				       skip ? "<SKIP>" : "",
+				       get_nameserver_list (current->config, &tmp_gstring));
+			}
+
+			if (!skip) {
+				merge_one_ip_config_data (&rc, current);
+				plugin_confs[i] = current;
+			}
+		}
+		plugin_confs[i] = NULL;
+	}
+
+	/* If the hostname is a FQDN ("dcbw.example.com"), then add the domain part of it
+	 * ("example.com") to the searches list, to ensure that we can still resolve its
+	 * non-FQ form ("dcbw") too. (Also, if there are no other search domains specified,
+	 * this makes a good default.) However, if the hostname is the top level of a domain
+	 * (eg, "example.com"), then use the hostname itself as the search (since the user is
+	 * unlikely to want "com" as a search domain).
+	 */
+	if (hostname) {
+		const char *hostdomain = strchr (hostname, '.');
+
+		if (   hostdomain
+		    && !nm_utils_ipaddr_valid (AF_UNSPEC, hostname)) {
+			hostdomain++;
+			if (DOMAIN_IS_VALID (hostdomain))
+				add_string_item (rc.searches, hostdomain);
+			else if (DOMAIN_IS_VALID (hostname))
+				add_string_item (rc.searches, hostname);
+		}
+	}
+
+	/* Per 'man resolv.conf', the search list is limited to 6 domains
+	 * totalling 256 characters.
+	 */
+	num = MIN (rc.searches->len, 6u);
+	for (i = 0, len = 0; i < num; i++) {
+		len += strlen (rc.searches->pdata[i]) + 1; /* +1 for spaces */
+		if (len > 256)
+			break;
+	}
+	g_ptr_array_set_size (rc.searches, i);
+
+	*out_plugin_confs = plugin_confs;
+	*out_searches = _ptrarray_to_strv (rc.searches);
+	*out_options = _ptrarray_to_strv (rc.options);
+	*out_nameservers = _ptrarray_to_strv (rc.nameservers);
+	*out_nis_servers = _ptrarray_to_strv (rc.nis_servers);
+	*out_nis_domain = rc.nis_domain;
+}
+
 static gboolean
 update_dns (NMDnsManager *self,
             gboolean no_caching,
             GError **error)
 {
 	NMDnsManagerPrivate *priv;
-	NMResolvConfData rc;
 	const char *nis_domain = NULL;
 	gs_strfreev char **searches = NULL;
 	gs_strfreev char **options = NULL;
 	gs_strfreev char **nameservers = NULL;
 	gs_strfreev char **nis_servers = NULL;
-	int num, i, len;
 	gboolean caching = FALSE, update = TRUE;
 	gboolean resolv_conf_updated = FALSE;
 	SpawnResult result = SR_ERROR;
 	NMConfigData *data;
 	NMGlobalDnsConfig *global_config;
 	gs_free NMDnsIPConfigData **plugin_confs = NULL;
-	nm_auto_free_gstring GString *tmp_gstring = NULL;
 
 	g_return_val_if_fail (!error || !*error, FALSE);
 
@@ -1027,111 +1136,9 @@ update_dns (NMDnsManager *self,
 	/* Update hash with config we're applying */
 	compute_hash (self, global_config, priv->hash);
 
-	rc.nameservers = g_ptr_array_new ();
-	rc.searches = g_ptr_array_new ();
-	rc.options = g_ptr_array_new ();
-	rc.nis_domain = NULL;
-	rc.nis_servers = g_ptr_array_new ();
-
-	if (global_config)
-		merge_global_dns_config (&rc, global_config);
-	else {
-		int prio, prev_prio = 0;
-		NMDnsIPConfigData *current;
-		gboolean skip = FALSE, v4;
-
-		plugin_confs = g_new (NMDnsIPConfigData *, priv->configs->len + 1);
-
-		for (i = 0; i < priv->configs->len; i++) {
-			current = priv->configs->pdata[i];
-			v4 = NM_IS_IP4_CONFIG (current->config);
-
-			prio = v4 ?
-				nm_ip4_config_get_dns_priority ((NMIP4Config *) current->config) :
-				nm_ip6_config_get_dns_priority ((NMIP6Config *) current->config);
-
-			if (prev_prio < 0 && prio != prev_prio) {
-				skip = TRUE;
-				plugin_confs[i] = NULL;
-			}
-
-			prev_prio = prio;
-
-			if (   ( v4 && nm_ip4_config_get_num_nameservers ((NMIP4Config *) current->config))
-			    || (!v4 && nm_ip6_config_get_num_nameservers ((NMIP6Config *) current->config))) {
-				_LOGT ("config: %8d %-7s v%c %-16s %s: %s",
-				       prio,
-				       _config_type_to_string (current->type),
-				       v4 ? '4' : '6',
-				       current->iface,
-				       skip ? "<SKIP>" : "",
-				       get_nameserver_list (current->config, &tmp_gstring));
-			}
-
-			if (!skip) {
-				merge_one_ip_config_data (self, &rc, current);
-				plugin_confs[i] = current;
-			}
-		}
-		plugin_confs[i] = NULL;
-	}
-
-	/* If the hostname is a FQDN ("dcbw.example.com"), then add the domain part of it
-	 * ("example.com") to the searches list, to ensure that we can still resolve its
-	 * non-FQ form ("dcbw") too. (Also, if there are no other search domains specified,
-	 * this makes a good default.) However, if the hostname is the top level of a domain
-	 * (eg, "example.com"), then use the hostname itself as the search (since the user is
-	 * unlikely to want "com" as a search domain).
-	 */
-	if (priv->hostname) {
-		const char *hostdomain = strchr (priv->hostname, '.');
-
-		if (   hostdomain
-		    && !nm_utils_ipaddr_valid (AF_UNSPEC, priv->hostname)) {
-			hostdomain++;
-			if (DOMAIN_IS_VALID (hostdomain))
-				add_string_item (rc.searches, hostdomain);
-			else if (DOMAIN_IS_VALID (priv->hostname))
-				add_string_item (rc.searches, priv->hostname);
-		}
-	}
-
-	/* Per 'man resolv.conf', the search list is limited to 6 domains
-	 * totalling 256 characters.
-	 */
-	num = MIN (rc.searches->len, 6);
-	for (i = 0, len = 0; i < num; i++) {
-		len += strlen (rc.searches->pdata[i]) + 1; /* +1 for spaces */
-		if (len > 256)
-			break;
-	}
-	g_ptr_array_set_size (rc.searches, i);
-
-	if (rc.searches->len) {
-		g_ptr_array_add (rc.searches, NULL);
-		searches = (char **) g_ptr_array_free (rc.searches, FALSE);
-	} else
-		g_ptr_array_free (rc.searches, TRUE);
-
-	if (rc.options->len) {
-		g_ptr_array_add (rc.options, NULL);
-		options = (char **) g_ptr_array_free (rc.options, FALSE);
-	} else
-		g_ptr_array_free (rc.options, TRUE);
-
-	if (rc.nameservers->len) {
-		g_ptr_array_add (rc.nameservers, NULL);
-		nameservers = (char **) g_ptr_array_free (rc.nameservers, FALSE);
-	} else
-		g_ptr_array_free (rc.nameservers, TRUE);
-
-	if (rc.nis_servers->len) {
-		g_ptr_array_add (rc.nis_servers, NULL);
-		nis_servers = (char **) g_ptr_array_free (rc.nis_servers, FALSE);
-	} else
-		g_ptr_array_free (rc.nis_servers, TRUE);
-
-	nis_domain = rc.nis_domain;
+	_collect_resolv_conf_data (self, global_config, priv->configs, priv->hostname,
+	                           &searches, &options, &nameservers, &nis_servers, &nis_domain,
+	                           &plugin_confs);
 
 	/* Let any plugins do their thing first */
 	if (priv->plugin) {
