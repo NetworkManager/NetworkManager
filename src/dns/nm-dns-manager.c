@@ -988,10 +988,10 @@ update_dns (NMDnsManager *self,
 	NMDnsManagerPrivate *priv;
 	NMResolvConfData rc;
 	const char *nis_domain = NULL;
-	char **searches = NULL;
-	char **options = NULL;
-	char **nameservers = NULL;
-	char **nis_servers = NULL;
+	gs_strfreev char **searches = NULL;
+	gs_strfreev char **options = NULL;
+	gs_strfreev char **nameservers = NULL;
+	gs_strfreev char **nis_servers = NULL;
 	int num, i, len;
 	gboolean caching = FALSE, update = TRUE;
 	gboolean resolv_conf_updated = FALSE;
@@ -1004,6 +1004,7 @@ update_dns (NMDnsManager *self,
 	g_return_val_if_fail (!error || !*error, FALSE);
 
 	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+
 	nm_clear_g_source (&priv->plugin_ratelimit.timer);
 
 	if (NM_IN_SET (priv->rc_manager, NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED,
@@ -1105,6 +1106,7 @@ update_dns (NMDnsManager *self,
 			break;
 	}
 	g_ptr_array_set_size (rc.searches, i);
+
 	if (rc.searches->len) {
 		g_ptr_array_add (rc.searches, NULL);
 		searches = (char **) g_ptr_array_free (rc.searches, FALSE);
@@ -1167,8 +1169,7 @@ update_dns (NMDnsManager *self,
 	 * but only uses the local caching nameserver.
 	 */
 	if (caching) {
-		if (nameservers)
-			g_strfreev (nameservers);
+		g_strfreev (nameservers);
 		nameservers = g_new0 (char*, 2);
 		nameservers[0] = g_strdup ("127.0.0.1");
 	}
@@ -1210,15 +1211,6 @@ update_dns (NMDnsManager *self,
 
 	g_clear_pointer (&priv->config_variant, g_variant_unref);
 	_notify (self, PROP_CONFIGURATION);
-
-	if (searches)
-		g_strfreev (searches);
-	if (options)
-		g_strfreev (options);
-	if (nameservers)
-		g_strfreev (nameservers);
-	if (nis_servers)
-		g_strfreev (nis_servers);
 
 	return !update || result == SR_SUCCESS;
 }
