@@ -3965,6 +3965,7 @@ CLEANFILES += $(VAPIGEN_VAPIS)
 endif
 
 EXTRA_DIST += \
+	vapi/NM-1.0.metadata \
 	vapi/NetworkManager-1.0.metadata \
 	vapi/NMClient-1.0.metadata \
 	vapi/libnm.deps \
