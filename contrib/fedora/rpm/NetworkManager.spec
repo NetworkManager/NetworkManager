@@ -123,7 +123,6 @@ Requires: ppp = %{ppp_version}
 Requires: dnsmasq
 Requires: udev
 Requires: iptables
-Requires: readline
 Obsoletes: dhcdbd
 Obsoletes: NetworkManager < %{obsoletes_device_plugins}
 Obsoletes: NetworkManager-wimax < 1.2
