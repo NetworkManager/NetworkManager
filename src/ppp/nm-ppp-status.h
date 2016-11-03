@@ -16,11 +16,11 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2008-2016 Red Hat, Inc.
  */
 
-#ifndef __NETWORKMANAGER_PPP_STATUS_H__
-#define __NETWORKMANAGER_PPP_STATUS_H__
+#ifndef __NM_PPP_STATUS_H__
+#define __NM_PPP_STATUS_H__
 
 typedef enum {
 	NM_PPP_STATUS_UNKNOWN,
@@ -40,4 +40,4 @@ typedef enum {
 	NM_PPP_STATUS_MASTER
 } NMPPPStatus;
 
-#endif /* __NETWORKMANAGER_PPP_STATUS_H__ */
+#endif /* __NM_PPP_STATUS_H__ */

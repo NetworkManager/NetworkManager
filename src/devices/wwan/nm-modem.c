@@ -36,6 +36,7 @@
 #include "nm-act-request.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
+#include "ppp/nm-ppp-manager-call.h"
 #include "ppp/nm-ppp-status.h"
 
 /*****************************************************************************/
@@ -558,8 +559,10 @@ ppp_stage3_ip_config_start (NMModem *self,
 	if (port_speed_is_zero (priv->data_port))
 		baud_override = 57600;
 
-	priv->ppp_manager = nm_ppp_manager_new (priv->data_port);
-	if (nm_ppp_manager_start (priv->ppp_manager, req, ppp_name, ip_timeout, baud_override, &error)) {
+	priv->ppp_manager = nm_ppp_manager_create (priv->data_port, &error);
+	if (   priv->ppp_manager
+	    && nm_ppp_manager_start (priv->ppp_manager, req, ppp_name,
+	                             ip_timeout, baud_override, &error)) {
 		g_signal_connect (priv->ppp_manager, NM_PPP_MANAGER_STATE_CHANGED,
 		                  G_CALLBACK (ppp_state_changed),
 		                  self);
@@ -580,7 +583,7 @@ ppp_stage3_ip_config_start (NMModem *self,
 		            error->message);
 		g_error_free (error);
 
-		nm_exported_object_clear_and_unexport (&priv->ppp_manager);
+		g_clear_object (&priv->ppp_manager);
 
 		*reason = NM_DEVICE_STATE_REASON_PPP_START_FAILED;
 		ret = NM_ACT_STAGE_RETURN_FAILURE;
@@ -1000,7 +1003,7 @@ deactivate_cleanup (NMModem *self, NMDevice *device)
 
 	priv->in_bytes = priv->out_bytes = 0;
 
-	nm_exported_object_clear_and_unexport (&priv->ppp_manager);
+	g_clear_object (&priv->ppp_manager);
 
 	if (device) {
 		g_return_if_fail (NM_IS_DEVICE (device));
@@ -1136,10 +1139,10 @@ deactivate_step (DeactivateContext *ctx)
 	case DEACTIVATE_CONTEXT_STEP_PPP_MANAGER_STOP:
 		/* If we have a PPP manager, stop it */
 		if (ctx->ppp_manager) {
-			nm_ppp_manager_stop (ctx->ppp_manager,
-			                     ctx->cancellable,
-			                     (GAsyncReadyCallback) ppp_manager_stop_ready,
-			                     ctx);
+			nm_ppp_manager_stop_async (ctx->ppp_manager,
+			                           ctx->cancellable,
+			                           (GAsyncReadyCallback) ppp_manager_stop_ready,
+			                           ctx);
 			return;
 		}
 		ctx->step++;

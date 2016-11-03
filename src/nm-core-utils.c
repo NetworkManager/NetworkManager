@@ -3904,3 +3904,4 @@ skip:
 	g_array_free (paths, TRUE);
 	return result;
 }
+

@@ -186,6 +186,8 @@ GQuark nm_device_error_quark (void);
  * @NM_MANAGER_ERROR_UNKNOWN_LOG_LEVEL: Unknown log level in SetLogging
  * @NM_MANAGER_ERROR_UNKNOWN_LOG_DOMAIN: Unknown log domain in SetLogging
  * @NM_MANAGER_ERROR_INVALID_ARGUMENTS: Invalid arguments for D-Bus request
+ * @NM_MANAGER_ERROR_MISSING_PLUGIN: A plug-in was needed to complete the
+ *   activation but is not available.
  *
  * Errors related to the main "network management" interface of NetworkManager.
  * These may be returned from #NMClient methods that invoke D-Bus operations on
@@ -206,6 +208,7 @@ typedef enum {
 	NM_MANAGER_ERROR_UNKNOWN_LOG_LEVEL,           /*< nick=UnknownLogLevel >*/
 	NM_MANAGER_ERROR_UNKNOWN_LOG_DOMAIN,          /*< nick=UnknownLogDomain >*/
 	NM_MANAGER_ERROR_INVALID_ARGUMENTS,           /*< nick=InvalidArguments >*/
+	NM_MANAGER_ERROR_MISSING_PLUGIN,              /*< nick=MissingPlugin >*/
 } NMManagerError;
 
 GQuark nm_manager_error_quark (void);

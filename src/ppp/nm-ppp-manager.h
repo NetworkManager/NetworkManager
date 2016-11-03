@@ -16,43 +16,15 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2008 - 2010 Red Hat, Inc.
+ * Copyright (C) 2008 - 2016 Red Hat, Inc.
  */
 
-#ifndef __NETWORKMANAGER_PPP_MANAGER_H__
-#define __NETWORKMANAGER_PPP_MANAGER_H__
-
-#define NM_TYPE_PPP_MANAGER            (nm_ppp_manager_get_type ())
-#define NM_PPP_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_PPP_MANAGER, NMPPPManager))
-#define NM_PPP_MANAGER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_PPP_MANAGER, NMPPPManagerClass))
-#define NM_IS_PPP_MANAGER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_PPP_MANAGER))
-#define NM_IS_PPP_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_PPP_MANAGER))
-#define NM_PPP_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_PPP_MANAGER, NMPPPManagerClass))
+#ifndef __NM_PPP_MANAGER_H__
+#define __NM_PPP_MANAGER_H__
 
 #define NM_PPP_MANAGER_PARENT_IFACE "parent-iface"
-
 #define NM_PPP_MANAGER_STATE_CHANGED "state-changed"
 
 typedef struct _NMPPPManager NMPPPManager;
-typedef struct _NMPPPManagerClass NMPPPManagerClass;
 
-GType nm_ppp_manager_get_type (void);
-
-NMPPPManager *nm_ppp_manager_new (const char *iface);
-
-gboolean nm_ppp_manager_start (NMPPPManager *manager,
-                               NMActRequest *req,
-                               const char *ppp_name,
-                               guint32 timeout_secs,
-                               guint baud_override,
-                               GError **err);
-
-void     nm_ppp_manager_stop        (NMPPPManager *manager,
-                                     GCancellable *cancellable,
-                                     GAsyncReadyCallback callback,
-                                     gpointer user_data);
-gboolean nm_ppp_manager_stop_finish (NMPPPManager *manager,
-                                     GAsyncResult *res,
-                                     GError **error);
-
-#endif /* __NETWORKMANAGER_PPP_MANAGER_H__ */
+#endif /* __NM_PPP_MANAGER_H__ */
