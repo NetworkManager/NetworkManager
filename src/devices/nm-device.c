@@ -1811,6 +1811,73 @@ device_recheck_slave_status (NMDevice *self, const NMPlatformLink *plink)
 	}
 }
 
+static void
+ndisc_set_router_config (NMNDisc *ndisc, NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	guint32 now = nm_utils_get_monotonic_timestamp_s ();
+	GArray *addresses, *dns_servers, *dns_domains;
+	guint len, i;
+
+	if (nm_ndisc_get_node_type (ndisc) != NM_NDISC_NODE_TYPE_ROUTER)
+		return;
+
+	/* Addresses whose prefixes we announce. */
+	len = nm_ip6_config_get_num_addresses (priv->ip6_config);
+	addresses = g_array_sized_new (FALSE, FALSE, sizeof (NMNDiscAddress), len);
+	for (i = 0; i < len; i++) {
+		const NMPlatformIP6Address *addr = nm_ip6_config_get_address (priv->ip6_config, i);
+		NMNDiscAddress *ndisc_addr;
+
+		if (IN6_IS_ADDR_LINKLOCAL (&addr->address))
+			continue;
+
+		if (   addr->n_ifa_flags & IFA_F_TENTATIVE
+		    || addr->n_ifa_flags & IFA_F_DADFAILED)
+			continue;
+
+		if (addr->plen != 64)
+			continue;
+
+		ndisc_addr = &g_array_index (addresses, NMNDiscAddress, addresses->len-1);
+		ndisc_addr->address = addr->address;
+		ndisc_addr->timestamp = addr->timestamp;
+		ndisc_addr->lifetime = addr->lifetime;
+		ndisc_addr->preferred = addr->preferred;
+	}
+
+	/* DNS servers. */
+	len = nm_ip6_config_get_num_nameservers (priv->ip6_config);
+	dns_servers = g_array_sized_new (FALSE, FALSE, sizeof (NMNDiscDNSServer), len);
+	for (i = 0; i < len; i++) {
+		const struct in6_addr *nameserver = nm_ip6_config_get_nameserver (priv->ip6_config, i);
+		NMNDiscDNSServer *ndisc_nameserver;
+
+		ndisc_nameserver = &g_array_index (dns_servers, NMNDiscDNSServer, dns_servers->len-1);
+		ndisc_nameserver->address = *nameserver;
+		ndisc_nameserver->timestamp = now;
+		ndisc_nameserver->lifetime = NM_NDISC_ROUTER_LIFETIME;
+	}
+
+	/* DNS domains. */
+	len = nm_ip6_config_get_num_searches (priv->ip6_config);
+	dns_domains = g_array_sized_new (FALSE, FALSE, sizeof (NMNDiscDNSDomain), len);
+	for (i = 0; i < len; i++) {
+		const char *search = nm_ip6_config_get_search (priv->ip6_config, i);
+		NMNDiscDNSDomain *ndisc_search;
+
+		ndisc_search = &g_array_index (dns_domains, NMNDiscDNSDomain, dns_domains->len-1);
+		ndisc_search->domain = g_strdup (search);
+		ndisc_search->timestamp = now;
+		ndisc_search->lifetime = NM_NDISC_ROUTER_LIFETIME;
+	}
+
+	nm_ndisc_set_config (ndisc, addresses, dns_servers, dns_domains);
+	g_array_free (addresses, TRUE);
+	g_array_free (dns_servers, TRUE);
+	g_array_free (dns_domains, TRUE);
+}
+
 static gboolean
 device_link_changed (NMDevice *self)
 {
@@ -5266,6 +5333,7 @@ connection_ip6_method_requires_carrier (NMConnection *connection,
 	static const char *ip6_carrier_methods[] = {
 		NM_SETTING_IP6_CONFIG_METHOD_AUTO,
 		NM_SETTING_IP6_CONFIG_METHOD_DHCP,
+		NM_SETTING_IP6_CONFIG_METHOD_SHARED,
 		NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
 		NULL
 	};
@@ -6043,7 +6111,8 @@ linklocal6_complete (NMDevice *self)
 
 	_LOGD (LOGD_DEVICE, "linklocal6: waiting for link-local addresses successful, continue with method %s", method);
 
-	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0) {
+	if (   strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0
+	    || strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_SHARED) == 0) {
 		if (!addrconf6_start_with_link_ready (self)) {
 			/* Time out IPv6 instead of failing the entire activation */
 			nm_device_activate_schedule_ip6_config_timeout (self);
@@ -6406,10 +6475,23 @@ addrconf6_start_with_link_ready (NMDevice *self)
 	if (!ip6_config_merge_and_apply (self, TRUE, NULL))
 		_LOGW (LOGD_IP6, "failed to apply manual IPv6 configuration");
 
-	nm_device_ipv6_sysctl_set (self, "accept_ra", "1");
-	nm_device_ipv6_sysctl_set (self, "accept_ra_defrtr", "0");
-	nm_device_ipv6_sysctl_set (self, "accept_ra_pinfo", "0");
-	nm_device_ipv6_sysctl_set (self, "accept_ra_rtr_pref", "0");
+	/* XXX: These sysctls would probably be better set by the lndp ndisc itself. */
+	switch (nm_ndisc_get_node_type (priv->ndisc)) {
+	case NM_NDISC_NODE_TYPE_HOST:
+		/* Accepting prefixes from discovered routers. */
+		nm_device_ipv6_sysctl_set (self, "accept_ra", "1");
+		nm_device_ipv6_sysctl_set (self, "accept_ra_defrtr", "0");
+		nm_device_ipv6_sysctl_set (self, "accept_ra_pinfo", "0");
+		nm_device_ipv6_sysctl_set (self, "accept_ra_rtr_pref", "0");
+		break;
+	case NM_NDISC_NODE_TYPE_ROUTER:
+		/* We're the router. */
+		nm_device_ipv6_sysctl_set (self, "forwarding", "1");
+		nm_device_activate_schedule_ip6_config_result (self);
+		break;
+	default:
+		g_assert_not_reached ();
+	}
 
 	priv->ndisc_changed_id = g_signal_connect (priv->ndisc,
 	                                           NM_NDISC_CONFIG_RECEIVED,
@@ -6420,8 +6502,24 @@ addrconf6_start_with_link_ready (NMDevice *self)
 	                                           G_CALLBACK (ndisc_ra_timeout),
 	                                           self);
 
+	ndisc_set_router_config (priv->ndisc, self);
 	nm_ndisc_start (priv->ndisc);
 	return TRUE;
+}
+
+static NMNDiscNodeType
+ndisc_node_type (NMDevice *self)
+{
+	NMConnection *connection;
+
+	connection = nm_device_get_applied_connection (self);
+	g_assert (connection);
+
+	if (strcmp (nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG),
+	            NM_SETTING_IP4_CONFIG_METHOD_SHARED) == 0)
+		return NM_NDISC_NODE_TYPE_ROUTER;
+	else
+		return NM_NDISC_NODE_TYPE_HOST;
 }
 
 static gboolean
@@ -6455,7 +6553,7 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 		                                 stable_type,
 		                                 stable_id,
 		                                 nm_setting_ip6_config_get_addr_gen_mode (s_ip6),
-		                                 NM_NDISC_NODE_TYPE_HOST,
+		                                 ndisc_node_type (self),
 		                                 &error);
 	}
 	if (!priv->ndisc) {
@@ -6508,6 +6606,7 @@ static const char *ip6_properties_to_save[] = {
 	"accept_ra_defrtr",
 	"accept_ra_pinfo",
 	"accept_ra_rtr_pref",
+	"forwarding",
 	"disable_ipv6",
 	"hop_limit",
 	"use_tempaddr",
@@ -6753,7 +6852,8 @@ act_stage3_ip6_config_start (NMDevice *self,
 
 	ip6_privacy = _ip6_privacy_get (self);
 
-	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0) {
+	if (   strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0
+	    || strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_SHARED) == 0) {
 		if (!addrconf6_start (self, ip6_privacy)) {
 			/* IPv6 might be disabled; allow IPv4 to proceed */
 			ret = NM_ACT_STAGE_RETURN_IP_FAIL;
@@ -6772,8 +6872,6 @@ act_stage3_ip6_config_start (NMDevice *self,
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	} else
 		_LOGW (LOGD_IP6, "unhandled IPv6 config method '%s'; will fail", method);
-
-	/* Other methods (shared) aren't implemented yet */
 
 	if (   ret != NM_ACT_STAGE_RETURN_FAILURE
 	    && !nm_device_uses_assumed_connection (self)) {
@@ -8800,6 +8898,9 @@ nm_device_set_ip6_config (NMDevice *self,
 		}
 
 		nm_device_queue_recheck_assume (self);
+
+		if (priv->ndisc)
+			ndisc_set_router_config (priv->ndisc, self);
 	}
 
 	if (reason)
@@ -11116,6 +11217,7 @@ ip6_managed_setup (NMDevice *self)
 	nm_device_ipv6_sysctl_set (self, "accept_ra_pinfo", "0");
 	nm_device_ipv6_sysctl_set (self, "accept_ra_rtr_pref", "0");
 	nm_device_ipv6_sysctl_set (self, "use_tempaddr", "0");
+	nm_device_ipv6_sysctl_set (self, "forwarding", "0");
 }
 
 static void
