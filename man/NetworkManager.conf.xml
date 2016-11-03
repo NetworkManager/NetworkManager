@@ -45,7 +45,7 @@
   <refsynopsisdiv>
     <para><filename>/etc/NetworkManager/NetworkManager.conf</filename>,
     <filename>/etc/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</filename>,
-    <filename>/var/run/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</filename>,
+    <filename>/run/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</filename>,
     <filename>/usr/lib/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</filename>,
     <filename>/var/lib/NetworkManager/NetworkManager-intern.conf</filename>
     </para>
@@ -68,13 +68,13 @@
     These will be read in order, with later files overriding earlier ones.
     Packages might install further configuration snippets to <literal>/usr/lib/NetworkManager/conf.d</literal>.
     This directory is parsed first, even before <literal>NetworkManager.conf</literal>.
-    Scripts can also put per-boot configuration into <literal>/var/run/NetworkManager/conf.d</literal>.
+    Scripts can also put per-boot configuration into <literal>/run/NetworkManager/conf.d</literal>.
     This directory is parsed second, also before <literal>NetworkManager.conf</literal>.
-    The loading of a file <literal>/var/run/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</literal>
+    The loading of a file <literal>/run/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</literal>
     can be prevented by adding a file <literal>/etc/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</literal>.
     Likewise, a file <literal>/usr/lib/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</literal>
     can be shadowed by putting a file of the same name to either <literal>/etc/NetworkManager/conf.d</literal>
-    or <literal>/var/run/NetworkManager/conf.d</literal>.
+    or <literal>/run/NetworkManager/conf.d</literal>.
     </para>
     <para>
     NetworkManager can overwrite certain user configuration options via D-Bus or other internal
@@ -207,7 +207,7 @@ plugins-=remove-me
         <para>When the default wired connection is deleted or saved
         to a new persistent connection by a plugin, the device is
         added to a list in the file
-        <filename>/var/run/NetworkManager/no-auto-default.state</filename>
+        <filename>/run/NetworkManager/no-auto-default.state</filename>
         to prevent creating the default connection for that device
         again.</para>
         <para>See <xref linkend="device-spec"/> for the syntax how to
