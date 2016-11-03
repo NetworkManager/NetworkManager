@@ -120,9 +120,7 @@ Requires: glib2 >= %{glib2_version}
 Requires: libnl3 >= %{libnl3_version}
 Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: ppp = %{ppp_version}
-Requires: dnsmasq
 Requires: udev
-Requires: iptables
 Obsoletes: dhcdbd
 Obsoletes: NetworkManager < %{obsoletes_device_plugins}
 Obsoletes: NetworkManager-wimax < 1.2
