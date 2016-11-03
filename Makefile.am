@@ -3967,6 +3967,7 @@ endif
 EXTRA_DIST += \
 	vapi/NetworkManager-1.0.metadata \
 	vapi/NMClient-1.0.metadata \
+	vapi/libnm.deps \
 	vapi/libnm-util.deps \
 	vapi/libnm-glib.deps
 
