@@ -3946,6 +3946,7 @@ vapi/libnm-glib.vapi: $(top_builddir)/libnm-glib/NMClient-1.0.gir        vapi/li
 
 vapi_libnm_vapi_METADATADIRS = $(srcdir)/vapi
 vapi_libnm_vapi_FILES = $(top_builddir)/libnm/NM-1.0.gir
+vapi_libnm_vapi_DEPS = gio-2.0
 
 vapi_libnm_util_vapi_METADATADIRS = $(srcdir)/vapi
 vapi_libnm_util_vapi_FILES = $(top_builddir)/libnm-util/NetworkManager-1.0.gir
