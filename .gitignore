@@ -67,6 +67,8 @@ test-*.trs
 /data/NetworkManager-dispatcher.service
 /data/org.freedesktop.NetworkManager.service
 /data/server.conf
+/data/org.freedesktop.NetworkManager.policy
+/data/org.freedesktop.NetworkManager.policy.in
 
 /docs/api/version.xml
 /docs/api/settings-spec.html
@@ -235,9 +237,6 @@ test-*.trs
 /po/quot.sed
 /po/remove-potcdate.sin
 
-/policy/org.freedesktop.NetworkManager.policy
-/policy/org.freedesktop.NetworkManager.policy.in
-
 /src/NetworkManager
 /src/devices/tests/test-arping
 /src/devices/tests/test-lldp
@@ -283,6 +282,8 @@ test-*.trs
 /callouts/org.freedesktop.nm_dispatcher.service
 /callouts/tests/test-dispatcher-envp
 /include/
+/policy/org.freedesktop.NetworkManager.policy
+/policy/org.freedesktop.NetworkManager.policy.in
 /initscript/Slackware/rc.networkmanager
 /initscript/*/[Nn]etwork[Mm]anager
 /src/devices/wifi/tests/test-wifi-ap-utils

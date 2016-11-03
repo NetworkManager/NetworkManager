@@ -136,7 +136,7 @@ pkgconfig_DATA += NetworkManager.pc
 polkit_policydir = $(datadir)/polkit-1/actions
 
 dist_polkit_policy_in_in_files = \
-	policy/org.freedesktop.NetworkManager.policy.in.in
+	data/org.freedesktop.NetworkManager.policy.in.in
 
 polkit_policy_DATA = $(dist_polkit_policy_in_in_files:.policy.in.in=.policy)
 
@@ -4051,8 +4051,6 @@ CLEANFILES += \
 	cscope.in.out \
 	cscope.out \
 	cscope.po.out \
-	\
-	policy/*~ \
 	\
 	$(NULL)
 

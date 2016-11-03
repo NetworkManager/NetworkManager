@@ -1151,7 +1151,7 @@ libnm-glib/libnm-glib.pc
 libnm-glib/libnm-glib-vpn.pc
 man/common.ent
 po/Makefile.in
-policy/org.freedesktop.NetworkManager.policy.in
+data/org.freedesktop.NetworkManager.policy.in
 docs/api/Makefile
 docs/api/version.xml
 docs/libnm-glib/Makefile
