@@ -117,7 +117,6 @@ Requires(postun): systemd
 
 Requires: dbus >= %{dbus_version}
 Requires: glib2 >= %{glib2_version}
-Requires: iproute
 Requires: libnl3 >= %{libnl3_version}
 Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: ppp = %{ppp_version}
