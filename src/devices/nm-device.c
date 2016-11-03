@@ -83,6 +83,8 @@ enum {
 	AUTH_REQUEST,
 	IP4_CONFIG_CHANGED,
 	IP6_CONFIG_CHANGED,
+	IP6_PREFIX_DELEGATED,
+	IP6_SUBNET_NEEDED,
 	REMOVED,
 	RECHECK_AUTO_ACTIVATE,
 	RECHECK_ASSUME,
@@ -389,6 +391,7 @@ typedef struct _NMDevicePrivate {
 		NMDhcpClient *   client;
 		NMNDiscDHCPLevel mode;
 		gulong           state_sigid;
+		gulong           prefix_sigid;
 		NMDhcp6Config *  config;
 		/* IP6 config from DHCP */
 		NMIP6Config *    ip6_config;
@@ -396,7 +399,10 @@ typedef struct _NMDevicePrivate {
 		char *           event_id;
 		guint            restart_id;
 		guint            num_tries_left;
+		guint            needed_prefixes;
 	} dhcp6;
+
+	gboolean needs_ip6_subnet;
 
 	/* allow autoconnect feature */
 	bool autoconnect;
@@ -5501,6 +5507,7 @@ dhcp6_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 
 	if (priv->dhcp6.client) {
 		nm_clear_g_signal_handler (priv->dhcp6.client, &priv->dhcp6.state_sigid);
+		nm_clear_g_signal_handler (priv->dhcp6.client, &priv->dhcp6.prefix_sigid);
 
 		if (   cleanup_type == CLEANUP_TYPE_DECONFIGURE
 		    || cleanup_type == CLEANUP_TYPE_REMOVED)
@@ -5955,6 +5962,19 @@ dhcp6_state_changed (NMDhcpClient *client,
 	}
 }
 
+static void
+dhcp6_prefix_delegated (NMDhcpClient *client,
+                        NMPlatformIP6Address *prefix,
+                        gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+
+	/* Just re-emit. The device just contributes the prefix to the
+	 * pool in NMPolicy, which decides about subnet allocation
+	 * on the shared devices. */
+	g_signal_emit (self, signals[IP6_PREFIX_DELEGATED], 0, prefix);
+}
+
 static gboolean
 dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 {
@@ -5993,7 +6013,7 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	                                                priv->dhcp_anycast_address,
 	                                                (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_OTHERCONF) ? TRUE : FALSE,
 	                                                nm_setting_ip6_config_get_ip6_privacy (NM_SETTING_IP6_CONFIG (s_ip6)),
-	                                                0);
+	                                                priv->dhcp6.needed_prefixes);
 	if (tmp)
 		g_byte_array_free (tmp, TRUE);
 
@@ -6002,6 +6022,10 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 		                                            NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED,
 		                                            G_CALLBACK (dhcp6_state_changed),
 		                                            self);
+		priv->dhcp6.prefix_sigid = g_signal_connect (priv->dhcp6.client,
+		                                             NM_DHCP_CLIENT_SIGNAL_PREFIX_DELEGATED,
+		                                             G_CALLBACK (dhcp6_prefix_delegated),
+		                                             self);
 	}
 
 	return !!priv->dhcp6.client;
@@ -6064,6 +6088,95 @@ nm_device_dhcp6_renew (NMDevice *self, gboolean release)
 
 	/* Start DHCP again on the interface */
 	return dhcp6_start (self, FALSE, NULL);
+}
+
+/*****************************************************************************/
+
+/*
+ * Called on the requesting interface when a subnet can't be obtained
+ * from known prefixes for a newly active shared connection.
+ */
+void
+nm_device_request_ip6_prefixes (NMDevice *self, int needed_prefixes)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	priv->dhcp6.needed_prefixes = needed_prefixes;
+
+	if (priv->dhcp6.client) {
+		_LOGD (LOGD_IP6, "ipv6-pd: asking DHCPv6 for %d prefixes", needed_prefixes);
+		nm_device_dhcp6_renew (self, FALSE);
+	} else {
+		_LOGI (LOGD_IP6, "ipv6-pd: device doesn't use DHCPv6, can't request prefixes");
+	}
+}
+
+gboolean
+nm_device_needs_ip6_subnet (NMDevice *self)
+{
+	return NM_DEVICE_GET_PRIVATE (self)->needs_ip6_subnet;
+}
+
+/*
+ * Called on the ipv6.method=shared interface when a new subnet is allocated
+ * or the prefix from which it is allocated is renewed.
+ */
+void
+nm_device_use_ip6_subnet (NMDevice *self, const NMPlatformIP6Address *subnet)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMPlatformIP6Address address = *subnet;
+
+	if (!priv->ac_ip6_config)
+		priv->ac_ip6_config = nm_ip6_config_new (nm_device_get_ip_ifindex (self));
+
+	/* Assign a ::1 address in the subnet for us. */
+	address.address.s6_addr32[3] |= htonl (1);
+	nm_ip6_config_add_address (priv->ac_ip6_config, &address);
+
+	_LOGD (LOGD_IP6, "ipv6-pd: using %s address (preferred for %u seconds)",
+	       nm_utils_inet6_ntop (&address.address, NULL),
+	       subnet->preferred);
+
+	/* This also updates the ndisc if there are actual changes. */
+	if (!ip6_config_merge_and_apply (self, TRUE, NULL))
+		_LOGW (LOGD_IP6, "ipv6-pd: failed applying IP6 config for connection sharing");
+}
+
+/*
+ * Called whenever the policy picks a default IPv6 device.
+ * The ipv6.method=shared devices just reuse its DNS configuration.
+ */
+void
+nm_device_copy_ip6_dns_config (NMDevice *self, NMDevice *from_device)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMIP6Config *from_config = NULL;
+	int i;
+
+	if (priv->ac_ip6_config) {
+		nm_ip6_config_reset_nameservers (priv->ac_ip6_config);
+		nm_ip6_config_reset_searches (priv->ac_ip6_config);
+	} else
+		priv->ac_ip6_config = nm_ip6_config_new (nm_device_get_ip_ifindex (self));
+
+	if (from_device)
+		from_config = nm_device_get_ip6_config (from_device);
+	if (!from_config)
+		return;
+
+	for (i = 0; i < nm_ip6_config_get_num_nameservers (from_config); i++) {
+		nm_ip6_config_add_nameserver (priv->ac_ip6_config,
+		                              nm_ip6_config_get_nameserver (from_config, i));
+	}
+
+	for (i = 0; i < nm_ip6_config_get_num_searches (from_config); i++) {
+		nm_ip6_config_add_search (priv->ac_ip6_config,
+		                              nm_ip6_config_get_search (from_config, i));
+	}
+
+	if (!ip6_config_merge_and_apply (self, TRUE, NULL))
+		_LOGW (LOGD_IP6, "ipv6-pd: failed applying DNS config for connection sharing");
 }
 
 /*****************************************************************************/
@@ -6489,6 +6602,8 @@ addrconf6_start_with_link_ready (NMDevice *self)
 		/* We're the router. */
 		nm_device_ipv6_sysctl_set (self, "forwarding", "1");
 		nm_device_activate_schedule_ip6_config_result (self);
+		priv->needs_ip6_subnet = TRUE;
+		g_signal_emit (self, signals[IP6_SUBNET_NEEDED], 0);
 		break;
 	default:
 		g_assert_not_reached ();
@@ -10924,6 +11039,8 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 	g_slist_free_full (priv->vpn6_configs, g_object_unref);
 	priv->vpn6_configs = NULL;
 
+	priv->needs_ip6_subnet = FALSE;
+
 	clear_act_request (self);
 
 	/* Clear legacy IPv4 address property */
@@ -13208,6 +13325,20 @@ nm_device_class_init (NMDeviceClass *klass)
 	                  G_SIGNAL_RUN_FIRST,
 	                  0, NULL, NULL, NULL,
 	                  G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_OBJECT);
+
+	signals[IP6_PREFIX_DELEGATED] =
+	    g_signal_new (NM_DEVICE_IP6_PREFIX_DELEGATED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1, G_TYPE_POINTER);
+
+	signals[IP6_SUBNET_NEEDED] =
+	    g_signal_new (NM_DEVICE_IP6_SUBNET_NEEDED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 0);
 
 	signals[REMOVED] =
 	    g_signal_new (NM_DEVICE_REMOVED,
