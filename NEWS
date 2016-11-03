@@ -1,10 +1,27 @@
 ============================================
-NetworkManager-1.6
+NetworkManager-1.5.2 (Development Snapshot)
 Overview of changes since NetworkManager-1.4
 ============================================
 
-This is a new stable release of NetworkManager.  Notable changes include:
+This is a snapshot of NetworkManager 1.6 development series.
+USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
+Notable changes included in this snapshot so far include:
+
+* Introduced Vala bindings for libnm.
+* NetworkManager would now keep most connections up on shutdown (except Wi-Fi
+    connections, VPN connections and other kinds that can't be assumed on
+    startup)
+* The checkpoint/restore connection can now also remove new connections and
+    disconnect devices that were activated since the checkpoint was taken.
+* The configuration is now read from /run/NetworkManager/conf.d as well.
+    This is useful for handing over configuration discovered on system
+    startup to NetworkManager.
+* New connection.autoconnect_retries property that allows fine-tuning
+    the autoconnect behavior.
+* Support for configuration and discovery of Web Proxy settings with
+    PacRunner service.
+* Support for systemd-resolved local DNS forwarder backend.
 * Fix emission of NM-style PropertiesChanged signals and deprecate them
     for PropertiesChanged on "org.freedesktop.DBus.Properties" interface.
 * Change the meaning of unset "cloned-mac-address" settings from "permanent" to
