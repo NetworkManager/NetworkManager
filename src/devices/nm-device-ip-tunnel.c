@@ -586,7 +586,7 @@ tunnel_mode_to_link_type (NMIPTunnelMode tunnel_mode)
 	case NM_IP_TUNNEL_MODE_SIT:
 		return NM_LINK_TYPE_SIT;
 	default:
-		g_return_val_if_reached (NM_LINK_TYPE_UNKNOWN);
+		return NM_LINK_TYPE_UNKNOWN;
 	}
 }
 
@@ -1004,7 +1004,7 @@ create_device (NMDeviceFactory *factory,
 		mode = platform_link_to_tunnel_mode (plink);
 	}
 
-	if (mode == NM_IP_TUNNEL_MODE_UNKNOWN)
+	if (mode == NM_IP_TUNNEL_MODE_UNKNOWN || link_type == NM_LINK_TYPE_UNKNOWN)
 		return NULL;
 
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_IP_TUNNEL,
