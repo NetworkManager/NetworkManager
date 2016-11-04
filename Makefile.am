@@ -3811,7 +3811,7 @@ endif
 ###############################################################################
 
 XSLTPROC_MAN_FLAGS = \
-	--xinclude --nonet \
+	--path man --xinclude --nonet \
 	--stringparam man.output.quietly 1 \
 	--stringparam funcsynopsis.style ansi \
 	--stringparam man.th.extra1.suppress 1 \
