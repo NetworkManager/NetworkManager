@@ -3122,6 +3122,8 @@ clients_tui_nmtui_SOURCES = \
 	clients/tui/nmt-page-ethernet.h \
 	clients/tui/nmt-page-infiniband.c \
 	clients/tui/nmt-page-infiniband.h \
+	clients/tui/nmt-page-ip-tunnel.c \
+	clients/tui/nmt-page-ip-tunnel.h \
 	clients/tui/nmt-page-ip4.c \
 	clients/tui/nmt-page-ip4.h \
 	clients/tui/nmt-page-ip6.c \

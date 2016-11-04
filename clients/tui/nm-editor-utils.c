@@ -221,6 +221,14 @@ nm_editor_utils_get_connection_type_list (void)
 	item->id_format = _("VLAN connection %d");
 	g_ptr_array_add (array, item);
 
+	item = g_new0 (NMEditorConnectionTypeDataReal, 1);
+	item->data.name = _("IP tunnel");
+	item->data.setting_type = NM_TYPE_SETTING_IP_TUNNEL;
+	item->data.device_type = NM_TYPE_DEVICE_IP_TUNNEL;
+	item->data.virtual = TRUE;
+	item->id_format = _("IP tunnel connection %d");
+	g_ptr_array_add (array, item);
+
 #if 0
 	/* Add "VPN" only if there are plugins */
 	vpn_plugins_hash = nm_vpn_get_plugin_infos ();
