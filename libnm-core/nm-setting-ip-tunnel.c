@@ -345,7 +345,16 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (priv->remote && !nm_utils_ipaddr_valid (family, priv->remote)) {
+	if (!priv->remote) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("property is missing"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP_TUNNEL_SETTING_NAME, NM_SETTING_IP_TUNNEL_REMOTE);
+		return FALSE;
+	}
+
+	if (!nm_utils_ipaddr_valid (family, priv->remote)) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
