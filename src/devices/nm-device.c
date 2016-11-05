@@ -7561,9 +7561,11 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActRequest *req;
+	const char *method;
 	NMConnection *connection;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 	int ip_ifindex;
+	int errsv;
 
 	req = nm_device_get_act_request (self);
 	g_assert (req);
@@ -7600,6 +7602,17 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 		nm_device_remove_pending_action (self, PENDING_ACTION_DHCP6, FALSE);
 		nm_device_remove_pending_action (self, PENDING_ACTION_AUTOCONF6, FALSE);
 
+		/* Start IPv6 forwarding if we need it */
+		method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
+	
+		if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_SHARED) == 0) {
+			if (!nm_platform_sysctl_set (NM_PLATFORM_GET, "/proc/sys/net/ipv6/conf/all/forwarding", "1")) {
+				errsv = errno;
+				_LOGE (LOGD_SHARING, "share: error enabling IPv6 forwarding: (%d) %s", errsv, strerror (errsv));
+				nm_device_ip_method_failed (self, AF_INET6, NM_DEVICE_STATE_REASON_SHARED_START_FAILED);
+			}
+		}
+		
 		/* Check if we have to wait for DAD */
 		if (priv->ip6_state == IP_CONF && !priv->dad6_ip6_config) {
 			priv->dad6_ip6_config = dad6_get_pending_addresses (self);
