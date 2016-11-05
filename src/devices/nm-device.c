@@ -7161,14 +7161,14 @@ share_init (void)
 
 	if (!nm_platform_sysctl_set (NM_PLATFORM_GET, "/proc/sys/net/ipv4/ip_forward", "1")) {
 		errsv = errno;
-		nm_log_err (LOGD_SHARING, "share: error starting IP forwarding: (%d) %s",
+		nm_log_err (LOGD_SHARING, "share: error enabling IPv4 forwarding: (%d) %s",
 		            errsv, strerror (errsv));
 		return FALSE;
 	}
 
 	if (!nm_platform_sysctl_set (NM_PLATFORM_GET, "/proc/sys/net/ipv4/ip_dynaddr", "1")) {
 		errsv = errno;
-		nm_log_err (LOGD_SHARING, "share: error starting IP forwarding: (%d) %s",
+		nm_log_err (LOGD_SHARING, "share: error enabling dynamic addresses: (%d) %s",
 		            errsv, strerror (errsv));
 	}
 
@@ -7340,7 +7340,7 @@ activate_stage5_ip4_config_commit (NMDevice *self)
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED) == 0) {
 		if (!start_sharing (self, priv->ip4_config)) {
 			_LOGW (LOGD_SHARING, "Activation: Stage 5 of 5 (IPv4 Commit) start sharing failed.");
-			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SHARED_START_FAILED);
+			nm_device_ip_method_failed (self, AF_INET, NM_DEVICE_STATE_REASON_SHARED_START_FAILED);
 			return;
 		}
 	}
