@@ -6666,12 +6666,10 @@ ip6_requires_slaves (NMConnection *connection)
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
 
 	/* SLAAC, DHCP, and Link-Local depend on connectivity (and thus slaves)
-	 * to complete addressing.  SLAAC and DHCP obviously need a peer to
-	 * provide a prefix, while Link-Local must perform DAD on the local link.
+	 * to complete addressing.  SLAAC and DHCP need a peer to provide a prefix.
 	 */
 	return    strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0
-	       || strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP) == 0
-	       || strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0;
+	       || strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP) == 0;
 }
 
 static NMActStageReturn
