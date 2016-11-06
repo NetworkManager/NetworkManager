@@ -777,7 +777,7 @@ crypto_md5_hash (const char *salt,
 	char digest[16];
 	char *p = buffer;
 
-	g_assert_cmpint (g_checksum_type_get_length (G_CHECKSUM_MD5), ==, sizeof (digest));
+	nm_assert (g_checksum_type_get_length (G_CHECKSUM_MD5) == sizeof (digest));
 
 	g_return_if_fail (password_len == 0 || password);
 	g_return_if_fail (buffer != NULL);
@@ -804,7 +804,7 @@ crypto_md5_hash (const char *salt,
 
 		digest_len = sizeof (digest);
 		g_checksum_get_digest (ctx, (guchar *) digest, &digest_len);
-		g_assert (digest_len == sizeof (digest));
+		nm_assert (digest_len == sizeof (digest));
 
 		while (nkey && (i < sizeof (digest))) {
 			*(p++) = digest[i++];
