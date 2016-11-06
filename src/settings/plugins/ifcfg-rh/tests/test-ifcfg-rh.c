@@ -1495,9 +1495,10 @@ test_read_wired_8021x_tls_secret_flags (gconstpointer test_data)
 static void
 test_read_write_802_1X_subj_matches (void)
 {
-	NMConnection *connection, *reread;
+	nmtst_auto_unlinkfile char *written = NULL;
+	gs_unref_object NMConnection *connection = NULL;
+	gs_unref_object NMConnection *reread = NULL;
 	NMSetting8021x *s_8021x;
-	char *written = NULL;
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
 	                       "*missing IEEE_8021X_CA_CERT*peap*");
@@ -1529,8 +1530,6 @@ test_read_write_802_1X_subj_matches (void)
 	                       "*missing IEEE_8021X_CA_CERT*peap*");
 	reread = _connection_from_file (written, NULL, TYPE_ETHERNET, NULL);
 	g_test_assert_expected_messages ();
-	unlink (written);
-	g_free (written);
 
 	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
@@ -1549,9 +1548,6 @@ test_read_write_802_1X_subj_matches (void)
 	g_assert_cmpint (nm_setting_802_1x_get_num_phase2_altsubject_matches (s_8021x), ==, 2);
 	g_assert_cmpstr (nm_setting_802_1x_get_phase2_altsubject_match (s_8021x, 0), ==, "x.yourdomain.tld");
 	g_assert_cmpstr (nm_setting_802_1x_get_phase2_altsubject_match (s_8021x, 1), ==, "y.yourdomain.tld");
-
-	g_object_unref (connection);
-	g_object_unref (reread);
 }
 
 static void
@@ -1743,10 +1739,11 @@ test_read_dns_options (void)
 static void
 test_clear_master (void)
 {
+	nmtst_auto_unlinkfile char *testfile = NULL;
+	gs_free char *keyfile = NULL;
+	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
-	NMConnection *connection;
 	char *unmanaged = NULL;
-	char *testfile = NULL, *keyfile;
 	GError *error = NULL;
 	gboolean success;
 	shvarFile *f;
@@ -1778,16 +1775,14 @@ test_clear_master (void)
 	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NULL);
 
 	/* 4. update the connection on disk */
-	keyfile = utils_get_keys_path (testfile);
 	success = writer_update_connection (connection,
 	                                    TEST_SCRATCH_DIR "/network-scripts/",
 	                                    testfile,
-	                                    keyfile,
+	                                    NULL,
 	                                    &error);
-	g_assert_no_error (error);
-	g_assert (success);
-	unlink (keyfile);
-	g_free (keyfile);
+	nmtst_assert_success (success, error);
+	keyfile = utils_get_keys_path (testfile);
+	g_assert (!g_file_test (keyfile, G_FILE_TEST_EXISTS));
 
 	/* 5. check that BRIDGE variable has been removed */
 	f = svOpenFile (testfile, &error);
@@ -1797,17 +1792,14 @@ test_clear_master (void)
 	val = svGetValue (f, "BRIDGE", FALSE);
 	g_assert (!val);
 	svCloseFile (f);
-
-	unlink (testfile);
-	g_free (testfile);
-	g_object_unref (connection);
 }
 
 static void
 test_write_dns_options (void)
 {
-	NMConnection *connection;
-	NMConnection *reread;
+	nmtst_auto_unlinkfile char *testfile = NULL;
+	gs_unref_object NMConnection *connection = NULL;
+	gs_unref_object NMConnection *reread = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
@@ -1818,7 +1810,6 @@ test_write_dns_options (void)
 	NMIPAddress *addr;
 	NMIPAddress *addr6;
 	GError *error = NULL;
-	char *testfile = NULL;
 
 	connection = nm_simple_connection_new ();
 
@@ -1884,7 +1875,6 @@ test_write_dns_options (void)
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
-	unlink (testfile);
 
 	/* RES_OPTIONS is copied to both IPv4 and IPv6 settings */
 	nm_setting_ip_config_clear_dns_options (s_ip4, TRUE);
@@ -1896,10 +1886,6 @@ test_write_dns_options (void)
 	nm_setting_ip_config_add_dns_option (s_ip6, "timeout:3");
 
 	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
-
-	g_free (testfile);
-	g_object_unref (connection);
-	g_object_unref (reread);
 }
 
 static void
@@ -4167,8 +4153,10 @@ test_write_wired_static_routes (void)
 static void
 test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 {
-	NMConnection *connection;
-	NMConnection *reread;
+	nmtst_auto_unlinkfile char *keyfile = NULL;
+	nmtst_auto_unlinkfile char *testfile = NULL;
+	gs_unref_object NMConnection *connection = NULL;
+	gs_unref_object NMConnection *reread = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
@@ -4177,8 +4165,6 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
-	char *testfile = NULL;
-	char *keyfile = NULL;
 
 	connection = nm_simple_connection_new ();
 
@@ -4243,17 +4229,10 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
-	unlink (testfile);
 
 	keyfile = utils_get_keys_path (testfile);
-	unlink (keyfile);
 
 	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
-
-	g_free (testfile);
-	g_free (keyfile);
-	g_object_unref (connection);
-	g_object_unref (reread);
 }
 
 static void
@@ -8607,11 +8586,13 @@ test_read_team_port (gconstpointer user_data)
 static void
 test_write_team_port (void)
 {
-	NMConnection *connection, *reread;
+	nmtst_auto_unlinkfile char *testfile = NULL;
+	gs_unref_object NMConnection *connection = NULL;
+	gs_unref_object NMConnection *reread = NULL;
 	NMSettingConnection *s_con;
 	NMSettingTeamPort *s_team_port;
 	NMSettingWired *s_wired;
-	char *uuid, *testfile = NULL, *val;
+	char *uuid, *val;
 	GError *error = NULL;
 	const char *expected_config = "{ \"p4p1\": { \"prio\": -10, \"sticky\": true } }";
 	const char *escaped_expected_config = "\"{ \\\"p4p1\\\": { \\\"prio\\\": -10, \\\"sticky\\\": true } }\"";
@@ -8671,13 +8652,8 @@ test_write_team_port (void)
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET,
 	                                NULL);
-	unlink (testfile);
 
 	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
-
-	g_free (testfile);
-	g_object_unref (connection);
-	g_object_unref (reread);
 }
 
 static void
