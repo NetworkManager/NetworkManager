@@ -1158,6 +1158,48 @@ nmtst_file_get_contents (const char *filename)
 	return contents;
 }
 
+/*****************************************************************************/
+
+inline static void
+nmtst_file_unlink_if_exists (const char *name)
+{
+	int errsv;
+
+	g_assert (name && name[0]);
+
+	if (unlink (name) != 0) {
+		errsv = errno;
+		if (errsv != ENOENT)
+			g_error ("nmtst_file_unlink_if_exists(%s): failed with %s", name, strerror (errsv));
+	}
+}
+
+inline static void
+nmtst_file_unlink (const char *name)
+{
+	int errsv;
+
+	g_assert (name && name[0]);
+
+	if (unlink (name) != 0) {
+		errsv = errno;
+		g_error ("nmtst_file_unlink(%s): failed with %s", name, strerror (errsv));
+	}
+}
+
+inline static void
+_nmtst_auto_unlinkfile (char **p_name)
+{
+	if (*p_name) {
+		nmtst_file_unlink (*p_name);
+		nm_clear_g_free (p_name);
+	}
+}
+
+#define nmtst_auto_unlinkfile nm_auto(_nmtst_auto_unlinkfile)
+
+/*****************************************************************************/
+
 inline static void
 _nmtst_assert_resolve_relative_path_equals (const char *f1, const char *f2, const char *file, int line)
 {
