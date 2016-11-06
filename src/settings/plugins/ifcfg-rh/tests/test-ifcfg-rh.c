@@ -1780,7 +1780,6 @@ test_clear_master (void)
 	success = writer_update_connection (connection,
 	                                    TEST_SCRATCH_DIR "/network-scripts/",
 	                                    testfile,
-	                                    NULL,
 	                                    &error);
 	nmtst_assert_success (success, error);
 	keyfile = utils_get_keys_path (testfile);
@@ -6244,7 +6243,6 @@ test_write_wifi_wpa_then_open (void)
 	success = writer_update_connection (connection,
 	                                    TEST_SCRATCH_DIR "/network-scripts/",
 	                                    testfile,
-	                                    keyfile,
 	                                    &error);
 	g_assert_no_error (error);
 	g_assert (success);
@@ -6392,7 +6390,6 @@ test_write_wifi_wpa_then_wep_with_perms (void)
 	success = writer_update_connection (connection,
 	                                    TEST_SCRATCH_DIR "/network-scripts/",
 	                                    testfile,
-	                                    keyfile,
 	                                    &error);
 	g_assert_no_error (error);
 	g_assert (success);

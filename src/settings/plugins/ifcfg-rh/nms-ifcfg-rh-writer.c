@@ -2700,7 +2700,6 @@ static gboolean
 write_connection (NMConnection *connection,
                   const char *ifcfg_dir,
                   const char *filename,
-                  const char *keyfile,
                   char **out_filename,
                   GError **error)
 {
@@ -2884,14 +2883,13 @@ writer_new_connection (NMConnection *connection,
                        char **out_filename,
                        GError **error)
 {
-	return write_connection (connection, ifcfg_dir, NULL, NULL, out_filename, error);
+	return write_connection (connection, ifcfg_dir, NULL, out_filename, error);
 }
 
 gboolean
 writer_update_connection (NMConnection *connection,
                           const char *ifcfg_dir,
                           const char *filename,
-                          const char *keyfile,
                           GError **error)
 {
 	if (utils_has_complex_routes (filename)) {
@@ -2900,6 +2898,6 @@ writer_update_connection (NMConnection *connection,
 		return FALSE;
 	}
 
-	return write_connection (connection, ifcfg_dir, filename, keyfile, NULL, error);
+	return write_connection (connection, ifcfg_dir, filename, NULL, error);
 }
 
