@@ -44,7 +44,7 @@
 #define NM_DEVICE_WIFI_ACCESS_POINT_REMOVED "access-point-removed"
 
 /* internal signals */
-#define NM_DEVICE_WIFI_SCANNING_ALLOWED    "scanning-allowed"
+#define NM_DEVICE_WIFI_SCANNING_PROHIBITED    "scanning-prohibited"
 
 typedef struct _NMDeviceWifi NMDeviceWifi;
 typedef struct _NMDeviceWifiClass NMDeviceWifiClass;
