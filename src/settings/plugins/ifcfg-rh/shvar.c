@@ -172,6 +172,8 @@ _escape_ansic (const char *source)
 
 /*****************************************************************************/
 
+#define _char_in_strset(ch, str) (!!strchr (""str"", (ch)))
+
 #define ESC_ESCAPEES        "\"'\\$~`"          /* must be escaped */
 #define ESC_SPACES          " \t|&;()<>"        /* only require "" */
 
@@ -187,11 +189,11 @@ svEscape (const char *s, char **to_free)
 	slen = strlen (s);
 
 	for (i = 0; i < slen; i++) {
-		if (strchr (ESC_ESCAPEES, s[i]))
+		if (_char_in_strset (s[i], ESC_ESCAPEES))
 			mangle++;
-		if (strchr (ESC_SPACES, s[i]))
+		else if (_char_in_strset (s[i], ESC_SPACES))
 			has_space = TRUE;
-		if (s[i] < ' ') {
+		else if (s[i] < ' ') {
 			/* if the string contains newline we can only express it using ANSI C quotation
 			 * (as we don't support line continuation).
 			 * Additionally, ANSI control characters look odd with regular quotation, so handle
@@ -210,7 +212,7 @@ svEscape (const char *s, char **to_free)
 	j = 0;
 	new[j++] = '"';
 	for (i = 0; i < slen; i++) {
-		if (strchr (ESC_ESCAPEES, s[i])) {
+		if (_char_in_strset (s[i], ESC_ESCAPEES)) {
 			new[j++] = '\\';
 		}
 		new[j++] = s[i];
