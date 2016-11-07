@@ -12049,7 +12049,10 @@ handle_fail:
 }
 
 gboolean
-nm_device_hw_addr_set (NMDevice *self, const char *addr, const char *detail)
+nm_device_hw_addr_set (NMDevice *self,
+                       const char *addr,
+                       const char *detail,
+                       gboolean set_permanent)
 {
 	NMDevicePrivate *priv;
 
@@ -12060,10 +12063,13 @@ nm_device_hw_addr_set (NMDevice *self, const char *addr, const char *detail)
 	if (!addr)
 		g_return_val_if_reached (FALSE);
 
-	/* this is called by NMDeviceVlan to take the MAC address from the parent
-	 * and by NMDeviceWifi to set a random MAC address during scanning.
-	 * In this case, it's like setting it to PERMANENT. */
-	priv->hw_addr_type = HW_ADDR_TYPE_PERMANENT;
+	if (set_permanent) {
+		/* The type is set to PERMANENT by NMDeviceVlan when taking the MAC
+		 * address from the parent and by NMDeviceWifi when setting a random MAC
+		 * address during scanning.
+		 */
+		priv->hw_addr_type = HW_ADDR_TYPE_PERMANENT;
+	}
 
 	return _hw_addr_set (self, addr, "set", detail);
 }

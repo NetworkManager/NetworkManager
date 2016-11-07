@@ -316,6 +316,9 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
 		return ret;
 
+	if (!nm_device_hw_addr_set_cloned (device, nm_device_get_applied_connection (device), FALSE))
+		return NM_ACT_STAGE_RETURN_FAILURE;
+
 	commit_master_options (device, nm_connection_get_setting_bridge (connection));
 
 	return NM_ACT_STAGE_RETURN_SUCCESS;

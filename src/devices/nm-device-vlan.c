@@ -117,7 +117,7 @@ parent_hwaddr_maybe_changed (NMDevice *parent,
 	_LOGD (LOGD_VLAN, "parent hardware address changed to %s%s%s",
 	       NM_PRINT_FMT_QUOTE_STRING (new_mac));
 	if (new_mac) {
-		nm_device_hw_addr_set ((NMDevice *) self, new_mac, "vlan-parent");
+		nm_device_hw_addr_set ((NMDevice *) self, new_mac, "vlan-parent", TRUE);
 		/* When changing the hw address the interface is taken down,
 		 * removing the IPv6 configuration; reapply it.
 		 */
