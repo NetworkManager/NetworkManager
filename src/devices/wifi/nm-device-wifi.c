@@ -1275,12 +1275,13 @@ scanning_prohibited (NMDeviceWifi *self, gboolean periodic)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMSupplicantInterfaceState supplicant_state;
-	NMConnection *connection;
 
 	g_return_val_if_fail (priv->sup_iface != NULL, TRUE);
 
-	/* Scanning not done in AP mode */
-	if (priv->mode == NM_802_11_MODE_AP)
+	/* Don't scan when a an AP or Ad-Hoc connection is active as it will
+	 * disrupt connected clients or peers.
+	 */
+	if (priv->mode == NM_802_11_MODE_ADHOC || priv->mode == NM_802_11_MODE_AP)
 		return TRUE;
 
 	switch (nm_device_get_state (NM_DEVICE (self))) {
@@ -1301,7 +1302,12 @@ scanning_prohibited (NMDeviceWifi *self, gboolean periodic)
 		/* Can always scan when disconnected */
 		return FALSE;
 	case NM_DEVICE_STATE_ACTIVATED:
-		/* Need to do further checks when activated */
+		/* Prohibit periodic scans when connected; we ask the supplicant to
+		 * background scan for us, unless the connection is locked to a specifc
+		 * BSSID.
+		 */
+		if (periodic)
+			return TRUE;
 		break;
 	}
 
@@ -1313,27 +1319,6 @@ scanning_prohibited (NMDeviceWifi *self, gboolean periodic)
 	    || supplicant_state == NM_SUPPLICANT_INTERFACE_STATE_GROUP_HANDSHAKE
 	    || nm_supplicant_interface_get_scanning (priv->sup_iface))
 		return TRUE;
-
-	connection = nm_device_get_applied_connection (NM_DEVICE (self));
-	if (connection) {
-		NMSettingWireless *s_wifi;
-		const char *ip4_method = NULL;
-
-		/* Don't scan when a shared connection is active; it makes drivers mad */
-		ip4_method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
-
-		if (!strcmp (ip4_method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
-			return TRUE;
-
-		/* Don't scan when the connection is locked to a specifc AP, since
-		 * intra-ESS roaming (which requires periodic scanning) isn't being
-		 * used due to the specific AP lock. (bgo #513820)
-		 */
-		s_wifi = nm_connection_get_setting_wireless (connection);
-		g_assert (s_wifi);
-		if (nm_setting_wireless_get_bssid (s_wifi))
-			return TRUE;
-	}
 
 	/* Allow the scan */
 	return FALSE;
@@ -2505,6 +2490,11 @@ build_supplicant_config (NMDeviceWifi *self,
 	                                                fixed_freq,
 	                                                error)) {
 		g_prefix_error (error, "802-11-wireless: ");
+		goto error;
+	}
+
+	if (!nm_supplicant_config_add_bgscan (config, connection, error)) {
+		g_prefix_error (error, "bgscan: ");
 		goto error;
 	}
 
