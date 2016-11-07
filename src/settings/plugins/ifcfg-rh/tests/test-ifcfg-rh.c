@@ -8233,8 +8233,6 @@ test_svUnescape (void)
 		V1 ("\"\\\\\"", "\\"),
 		V1 ("\"\\a\"", "\\a"),
 		V1 ("\"\\b\"", "\\b"),
-		V1 ("\"\\'\"", "\\'"),
-		V1 ("\"\\~\"", "\\~"),
 		V1 ("\"\\\t\"", "\\\t"),
 		V0 ("ab\r", "ab"),
 		V0 ("a'b'\r ", "ab"),
@@ -8262,6 +8260,23 @@ test_svUnescape (void)
 		V1 ("\"aa\\\"\"", "aa\""),
 		V1 ("\"aa\\\"b\"c", "aa\"bc"),
 		V1 ("\"aa\\\"\"b", "aa\"b"),
+
+		/* the following is not shell behavior, but kept for backward compatibility
+		 * with old svEscape(). */
+		V0 ("\"\\'\"", "'"),
+		V0 ("\"\\~\"", "~"),
+		V0 ("\"b\\~b\"", "b~b"),
+		V0 ("\"\\~\\~\"", "~~"),
+		V0 ("\"\\~\\'\"", "~'"),
+
+		/* the following is shell-behavior, because it doesn't look like written
+		 * by old svEscape(). */
+		V1 ("\"\\~~\"", "\\~~"),
+		V1 ("\"\\a\\'\"", "\\a\\'"),
+		V1 ("x\"\\~\"", "x\\~"),
+		V1 ("\"\\'\"''", "\\'"),
+		V0 ("\"b\\~b\" ", "b\\~b"),
+		V1 ("\"b\\~b\"x", "b\\~bx"),
 	};
 	const UnescapeTestData data_ansi[] = {
 		/* strings inside $''. They cannot be compared directly, but must

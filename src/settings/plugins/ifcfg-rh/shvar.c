@@ -246,6 +246,28 @@ svEscape (const char *s, char **to_free)
 }
 
 static gboolean
+_looks_like_old_svescaped (const char *value)
+{
+	gsize k;
+
+	if (value[0] != '"')
+		return FALSE;
+
+	for (k = 1; ; k++) {
+		if (value[k] == '\0')
+			return FALSE;
+		if (value[k] == '"')
+			return (value[k + 1] == '\0');
+		if (value[k] == '\\') {
+			k++;
+			if (!_char_in_strset (value[k], "\"'\\$~`"))
+				return FALSE;
+		} else if (_char_in_strset (value[k], "'\\$~`"))
+			return FALSE;
+	}
+}
+
+static gboolean
 _ch_octal_is (char ch)
 {
 	return ch >= '0' && ch < '8';
@@ -302,6 +324,7 @@ svUnescape (const char *value, char **to_free)
 {
 	gsize i, j;
 	nm_auto_free_gstring GString *str = NULL;
+	int looks_like_old_svescaped = -1;
 
 	/* we handle bash syntax here (note that ifup has #!/bin/bash.
 	 * Thus, see https://www.gnu.org/software/bash/manual/html_node/Quoting.html#Quoting */
@@ -404,7 +427,26 @@ svUnescape (const char *value, char **to_free)
 						/* we don't support line continuation */
 						goto out_error;
 					}
-					if (!NM_IN_SET (value[i], '$', '`', '"', '\\'))
+					if (NM_IN_SET (value[i], '$', '`', '"', '\\')) {
+						/* Drop the backslash. */
+					} else if (NM_IN_SET (value[i], '\'', '~')) {
+						/* '\'' and '~' in double qoutes are not handled special by shell.
+						 * However, old versions of svEscape() would wrongly use double-quoting
+						 * with backslash escaping for these characters (expecting svUnescape()
+						 * to remove the backslash).
+						 *
+						 * In order to preserve previous behavior, we continue to read such
+						 * strings different then shell does. */
+
+						/* Actually, we can relax this. Old svEscape() escaped the entire value
+						 * in a particular way with double quotes.
+						 * If the value doesn't exactly look like something as created by svEscape(),
+						 * don't do the compat hack and preserve the backslash. */
+						if (looks_like_old_svescaped < 0)
+							looks_like_old_svescaped = _looks_like_old_svescaped (value);
+						if (!looks_like_old_svescaped)
+							g_string_append_c (str, '\\');
+					} else
 						g_string_append_c (str, '\\');
 				}
 				g_string_append_c (str, value[i]);
