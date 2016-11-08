@@ -2147,6 +2147,22 @@ next:
 /*****************************************************************************/
 
 /**
+ * nm_utils_uuid_generate_buf_:
+ * @buf: input buffer, must contain at least 37 bytes
+ *
+ * Returns: generates a new random UUID, writes it to @buf and returns @buf.
+ **/
+char *
+nm_utils_uuid_generate_buf_ (char *buf)
+{
+	uuid_t uuid;
+
+	uuid_generate_random (uuid);
+	uuid_unparse_lower (uuid, buf);
+	return buf;
+}
+
+/**
  * nm_utils_uuid_generate:
  *
  * Returns: a newly allocated UUID suitable for use as the #NMSettingConnection
@@ -2155,13 +2171,7 @@ next:
 char *
 nm_utils_uuid_generate (void)
 {
-	uuid_t uuid;
-	char *buf;
-
-	buf = g_malloc0 (37);
-	uuid_generate_random (uuid);
-	uuid_unparse_lower (uuid, &buf[0]);
-	return buf;
+	return nm_utils_uuid_generate_buf_ (g_malloc (37));
 }
 
 /**
