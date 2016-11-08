@@ -291,7 +291,7 @@ static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingIPTunnelPrivate *priv = NM_SETTING_IP_TUNNEL_GET_PRIVATE (setting);
-	int family;
+	int family = AF_UNSPEC;
 
 	switch (priv->mode) {
 	case NM_IP_TUNNEL_MODE_IPIP:
@@ -307,8 +307,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	case NM_IP_TUNNEL_MODE_VTI6:
 		family = AF_INET6;
 		break;
-	default:
-		family = AF_UNSPEC;
+	case NM_IP_TUNNEL_MODE_UNKNOWN:
+		break;
 	}
 
 	if (family == AF_UNSPEC) {

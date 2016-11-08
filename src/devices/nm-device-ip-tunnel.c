@@ -585,9 +585,15 @@ tunnel_mode_to_link_type (NMIPTunnelMode tunnel_mode)
 		return NM_LINK_TYPE_IPIP;
 	case NM_IP_TUNNEL_MODE_SIT:
 		return NM_LINK_TYPE_SIT;
-	default:
+	case NM_IP_TUNNEL_MODE_VTI:
+	case NM_IP_TUNNEL_MODE_IP6GRE:
+	case NM_IP_TUNNEL_MODE_VTI6:
+	case NM_IP_TUNNEL_MODE_ISATAP:
 		return NM_LINK_TYPE_UNKNOWN;
+	case NM_IP_TUNNEL_MODE_UNKNOWN:
+		break;
 	}
+	g_return_val_if_reached (NM_LINK_TYPE_UNKNOWN);
 }
 
 /*****************************************************************************/
