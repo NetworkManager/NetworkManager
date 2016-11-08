@@ -510,7 +510,7 @@ fi
 %postun	libnm -p /sbin/ldconfig
 
 
-%files -f %{name}.lang
+%files
 %{_sysconfdir}/dbus-1/system.d/org.freedesktop.NetworkManager.conf
 %{_sysconfdir}/dbus-1/system.d/nm-dispatcher.conf
 %{_sysconfdir}/dbus-1/system.d/nm-ifcfg-rh.conf
@@ -589,7 +589,7 @@ fi
 %{_libdir}/%{name}/libnm-wwan.so
 %endif
 
-%files glib
+%files glib -f %{name}.lang
 %{_libdir}/libnm-glib.so.*
 %{_libdir}/libnm-glib-vpn.so.*
 %{_libdir}/libnm-util.so.*
@@ -627,7 +627,7 @@ fi
 %{_datadir}/vala/vapi/libnm-*.deps
 %{_datadir}/vala/vapi/libnm-*.vapi
 
-%files libnm
+%files libnm -f %{name}.lang
 %{_libdir}/libnm.so.*
 %{_libdir}/girepository-1.0/NM-1.0.typelib
 
