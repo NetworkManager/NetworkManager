@@ -72,7 +72,7 @@ typedef struct {
 	                            NMClientPermission permission,
 	                            NMClientPermissionResult result);
 
-	/* Beware: no more slots. Cannot extend struct without breaking ABI. */
+	/* nm-manager.h is internal API. We can add more slots without breaking ABI. */
 } NMManagerClass;
 
 GType nm_manager_get_type (void);
