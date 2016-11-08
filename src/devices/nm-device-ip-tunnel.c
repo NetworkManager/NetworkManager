@@ -557,12 +557,13 @@ platform_link_to_tunnel_mode (const NMPlatformLink *link)
 		return NM_IP_TUNNEL_MODE_GRE;
 	case NM_LINK_TYPE_IP6TNL:
 		lnk = nm_platform_link_get_lnk_ip6tnl (NM_PLATFORM_GET, link->ifindex, NULL);
-		if (lnk->proto == IPPROTO_IPIP)
-			return NM_IP_TUNNEL_MODE_IPIP6;
-		else if (lnk->proto == IPPROTO_IPV6)
-			return NM_IP_TUNNEL_MODE_IP6IP6;
-		else
-			return NM_IP_TUNNEL_MODE_UNKNOWN;
+		if (lnk) {
+			if (lnk->proto == IPPROTO_IPIP)
+				return NM_IP_TUNNEL_MODE_IPIP6;
+			if (lnk->proto == IPPROTO_IPV6)
+				return NM_IP_TUNNEL_MODE_IP6IP6;
+		}
+		return NM_IP_TUNNEL_MODE_UNKNOWN;
 	case NM_LINK_TYPE_IPIP:
 		return NM_IP_TUNNEL_MODE_IPIP;
 	case NM_LINK_TYPE_SIT:
