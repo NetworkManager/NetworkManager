@@ -178,8 +178,8 @@ expire_ip6_delegations (NMPolicy *self)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	guint32 now = nm_utils_get_monotonic_timestamp_s ();
-        IP6PrefixDelegation *delegation = NULL;
-	int i;
+	IP6PrefixDelegation *delegation = NULL;
+	guint i;
 
 	for (i = 0; i < priv->ip6_prefix_delegations->len; i++) {
 		delegation = &g_array_index (priv->ip6_prefix_delegations,
@@ -254,8 +254,8 @@ ip6_subnet_from_device (NMPolicy *self, NMDevice *from_device, NMDevice *device)
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	IP6PrefixDelegation *delegation = NULL;
 	gboolean got_subnet = FALSE;
-	int have_prefixes = 0;
-	int i;
+	guint have_prefixes = 0;
+	guint i;
 
 	expire_ip6_delegations (self);
 
@@ -272,7 +272,7 @@ ip6_subnet_from_device (NMPolicy *self, NMDevice *from_device, NMDevice *device)
 	}
 
 	if (!got_subnet) {
-		_LOGI (LOGD_IP6, "ipv6-pd: none of %d prefixes of %s can be shared on %s",
+		_LOGI (LOGD_IP6, "ipv6-pd: none of %u prefixes of %s can be shared on %s",
 		       have_prefixes, nm_device_get_iface (from_device),
 		       nm_device_get_iface (device));
 		nm_device_request_ip6_prefixes (from_device, have_prefixes + 1);
@@ -283,11 +283,11 @@ static void
 ip6_remove_device_prefix_delegations (NMPolicy *self, NMDevice *device)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-        IP6PrefixDelegation *delegation = NULL;
-	int i;
+	IP6PrefixDelegation *delegation = NULL;
+	guint i;
 
 	for (i = 0; i < priv->ip6_prefix_delegations->len; i++) {
-                delegation = &g_array_index (priv->ip6_prefix_delegations,
+		delegation = &g_array_index (priv->ip6_prefix_delegations,
 		                             IP6PrefixDelegation, i);
 		if (delegation->device == device)
 			g_array_remove_index_fast (priv->ip6_prefix_delegations, i);
@@ -301,9 +301,9 @@ device_ip6_prefix_delegated (NMDevice *device,
 {
 	NMPolicyPrivate *priv = user_data;
 	NMPolicy *self = _PRIV_TO_SELF (priv);
-        IP6PrefixDelegation *delegation = NULL;
+	IP6PrefixDelegation *delegation = NULL;
 	const GSList *connections, *iter;
-	int i;
+	guint i;
 
 	_LOGI (LOGD_IP6, "ipv6-pd: received a prefix %s/%d from %s",
 	       nm_utils_inet6_ntop (&prefix->address, NULL),
@@ -312,20 +312,20 @@ device_ip6_prefix_delegated (NMDevice *device,
 
 	expire_ip6_delegations (self);
 
-        for (i = 0; i < priv->ip6_prefix_delegations->len; i++) {
-                /* Look for an already known prefix to update. */
-                delegation = &g_array_index (priv->ip6_prefix_delegations, IP6PrefixDelegation, i);
-                if (IN6_ARE_ADDR_EQUAL (&delegation->prefix.address, &prefix->address))
-                        break;
-        }
+	for (i = 0; i < priv->ip6_prefix_delegations->len; i++) {
+		/* Look for an already known prefix to update. */
+		delegation = &g_array_index (priv->ip6_prefix_delegations, IP6PrefixDelegation, i);
+		if (IN6_ARE_ADDR_EQUAL (&delegation->prefix.address, &prefix->address))
+			break;
+	}
 
-        if (i == priv->ip6_prefix_delegations->len) {
-                /* Allocate a delegation delegation for new prefix. */
-                g_array_set_size (priv->ip6_prefix_delegations, i + 1);
-                delegation = &g_array_index (priv->ip6_prefix_delegations, IP6PrefixDelegation, i);
+	if (i == priv->ip6_prefix_delegations->len) {
+		/* Allocate a delegation delegation for new prefix. */
+		g_array_set_size (priv->ip6_prefix_delegations, i + 1);
+		delegation = &g_array_index (priv->ip6_prefix_delegations, IP6PrefixDelegation, i);
 		delegation->subnets = g_hash_table_new (NULL, NULL);
 		delegation->next_subnet = 0;
-        }
+	}
 
 	delegation->device = device;
 	delegation->prefix = *prefix;
@@ -2284,7 +2284,10 @@ dispose (GObject *object)
 		g_signal_handlers_disconnect_by_data (priv->manager, priv);
 	}
 
-	g_array_free (priv->ip6_prefix_delegations, TRUE);
+	if (priv->ip6_prefix_delegations) {
+		g_array_free (priv->ip6_prefix_delegations, TRUE);
+		priv->ip6_prefix_delegations = NULL;
+	}
 
 	nm_assert (NM_IS_MANAGER (priv->manager));
 
