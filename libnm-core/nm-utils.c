@@ -2212,7 +2212,7 @@ nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_type, g
 		g_return_val_if_reached (NULL);
 	}
 
-	buf = g_malloc0 (37);
+	buf = g_malloc (37);
 	uuid_unparse_lower (uuid, &buf[0]);
 
 	return buf;
