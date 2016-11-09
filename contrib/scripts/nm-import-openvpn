@@ -258,7 +258,8 @@ vpn2nm = {
   ["remote-cert-tls"]   = { nm_opt="remote-cert-tls",  func=handle_remote_cert_tls, tbl=g_vpn_data },
   ["tun-mtu"]           = { nm_opt="tunnel-mtu",       func=handle_generic,         tbl=g_vpn_data },
   ["tun-ipv6"]          = { nm_opt="tun-ipv6",         func=handle_yes,             tbl=g_vpn_data },
-  ["route"]             = { nm_opt="routes",           func=handle_routes,          tbl=g_ip4_data }
+  ["route"]             = { nm_opt="routes",           func=handle_routes,          tbl=g_ip4_data },
+  ["max-routes"]        = { nm_opt="max-routes",       func=handle_number,          tbl=g_vpn_data },
 }
 
 ------------------------------------------------------------
