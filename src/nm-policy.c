@@ -150,13 +150,12 @@ _clear_ip6_subnet (gpointer key, gpointer value, gpointer user_data)
 	NMDevice *device = nm_manager_get_device_by_ifindex (nm_manager_get (),
 	                                                     GPOINTER_TO_INT (key));
 
-	if (!device)
-		return;
-
-	/* We can not remove a subnet we already started announcing.
-	 * Just un-prefer it. */
-	subnet->preferred = 0;
-	nm_device_use_ip6_subnet (device, subnet);
+	if (device) {
+		/* We can not remove a subnet we already started announcing.
+		 * Just un-prefer it. */
+		subnet->preferred = 0;
+		nm_device_use_ip6_subnet (device, subnet);
+	}
 	g_slice_free (NMPlatformIP6Address, subnet);
 }
 
