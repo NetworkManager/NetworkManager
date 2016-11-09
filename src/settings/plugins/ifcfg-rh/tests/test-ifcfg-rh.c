@@ -8428,7 +8428,6 @@ test_write_unknown (gconstpointer test_data)
 	gboolean success;
 	gs_free char *file_contents_out = NULL;
 	gs_free char *file_contents_exp = NULL;
-	gs_free char *tmp = NULL;
 
 	sv = _svOpenFile (testfile);
 
