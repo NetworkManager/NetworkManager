@@ -6412,7 +6412,7 @@ addrconf6_start_with_link_ready (NMDevice *self)
 	nm_device_ipv6_sysctl_set (self, "accept_ra_rtr_pref", "0");
 
 	priv->ndisc_changed_id = g_signal_connect (priv->ndisc,
-	                                           NM_NDISC_CONFIG_CHANGED,
+	                                           NM_NDISC_CONFIG_RECEIVED,
 	                                           G_CALLBACK (ndisc_config_changed),
 	                                           self);
 	priv->ndisc_timeout_id = g_signal_connect (priv->ndisc,

@@ -520,7 +520,7 @@ main (int argc, char *argv[])
 		                  G_CALLBACK (ip6_address_changed),
 		                  ndisc);
 		g_signal_connect (ndisc,
-		                  NM_NDISC_CONFIG_CHANGED,
+		                  NM_NDISC_CONFIG_RECEIVED,
 		                  G_CALLBACK (ndisc_config_changed),
 		                  NULL);
 		g_signal_connect (ndisc,

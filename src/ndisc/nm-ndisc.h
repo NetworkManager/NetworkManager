@@ -45,8 +45,8 @@
 #define NM_NDISC_ROUTER_SOLICITATIONS "router-solicitations"
 #define NM_NDISC_ROUTER_SOLICITATION_INTERVAL "router-solicitation-interval"
 
-#define NM_NDISC_CONFIG_CHANGED "config-changed"
-#define NM_NDISC_RA_TIMEOUT     "ra-timeout"
+#define NM_NDISC_CONFIG_RECEIVED "config-received"
+#define NM_NDISC_RA_TIMEOUT      "ra-timeout"
 
 typedef enum {
 	NM_NDISC_DHCP_LEVEL_UNKNOWN,

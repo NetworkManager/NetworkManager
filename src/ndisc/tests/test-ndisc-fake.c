@@ -185,7 +185,7 @@ test_simple (void)
 	nm_fake_ndisc_add_dns_domain (ndisc, id, "foobar.com", now, 10);
 
 	g_signal_connect (ndisc,
-	                  NM_NDISC_CONFIG_CHANGED,
+	                  NM_NDISC_CONFIG_RECEIVED,
 	                  G_CALLBACK (test_simple_changed),
 	                  &data);
 
@@ -280,7 +280,7 @@ test_everything (void)
 	nm_fake_ndisc_add_dns_domain (ndisc, id, "foobar2.com", now, 10);
 
 	g_signal_connect (ndisc,
-	                  NM_NDISC_CONFIG_CHANGED,
+	                  NM_NDISC_CONFIG_RECEIVED,
 	                  G_CALLBACK (test_everything_changed),
 	                  &data);
 	g_signal_connect (ndisc,
@@ -366,7 +366,7 @@ test_preference (void)
 	nm_fake_ndisc_add_prefix (ndisc, id, "2001:db8:a:a::", 64, "fe80::1", now, 10, 10, 15);
 
 	g_signal_connect (ndisc,
-	                  NM_NDISC_CONFIG_CHANGED,
+	                  NM_NDISC_CONFIG_RECEIVED,
 	                  G_CALLBACK (test_preference_changed),
 	                  &data);
 
@@ -444,7 +444,7 @@ test_dns_solicit_loop (void)
 	nm_fake_ndisc_add_dns_server (ndisc, id, "2001:db8:c:c::1", now, 6);
 
 	g_signal_connect (ndisc,
-	                  NM_NDISC_CONFIG_CHANGED,
+	                  NM_NDISC_CONFIG_RECEIVED,
 	                  G_CALLBACK (test_dns_solicit_loop_changed),
 	                  &data);
 	g_signal_connect (ndisc,

@@ -1217,7 +1217,7 @@ nm_ndisc_class_init (NMNDiscClass *klass)
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	signals[CONFIG_CHANGED] =
-	    g_signal_new (NM_NDISC_CONFIG_CHANGED,
+	    g_signal_new (NM_NDISC_CONFIG_RECEIVED,
 	                  G_OBJECT_CLASS_TYPE (klass),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0,
