@@ -191,27 +191,26 @@ _escape_ansic (const char *source)
 
 /*****************************************************************************/
 
-#define _char_in_strset(ch, str) (!!strchr (""str"", (ch)))
-
-#define ESC_ESCAPEES        "\"\\$`"            /* must be escaped */
-#define ESC_SPACES          " '\t~|&;()<>"      /* only require "" */
+#define _char_req_escape(ch)        NM_IN_SET (ch,      '\"', '\\',       '$', '`')
+#define _char_req_escape_old(ch)    NM_IN_SET (ch,      '\"', '\\', '\'', '$', '`', '~')
+#define _char_req_quotes(ch)        NM_IN_SET (ch, ' ',             '\'',           '~', '\t', '|', '&', ';', '(', ')', '<', '>')
 
 const char *
 svEscape (const char *s, char **to_free)
 {
 	char *new;
 	gsize mangle = 0;
-	gboolean has_space = FALSE;
+	gboolean requires_quotes = FALSE;
 	int newlen;
 	size_t i, j, slen;
 
 	slen = strlen (s);
 
 	for (i = 0; i < slen; i++) {
-		if (_char_in_strset (s[i], ESC_ESCAPEES))
+		if (_char_req_escape (s[i]))
 			mangle++;
-		else if (_char_in_strset (s[i], ESC_SPACES))
-			has_space = TRUE;
+		else if (_char_req_quotes (s[i]))
+			requires_quotes = TRUE;
 		else if (s[i] < ' ') {
 			/* if the string contains newline we can only express it using ANSI C quotation
 			 * (as we don't support line continuation).
@@ -220,7 +219,7 @@ svEscape (const char *s, char **to_free)
 			return (*to_free = _escape_ansic (s));
 		}
 	}
-	if (!mangle && !has_space) {
+	if (!mangle && !requires_quotes) {
 		*to_free = NULL;
 		return s;
 	}
@@ -231,9 +230,8 @@ svEscape (const char *s, char **to_free)
 	j = 0;
 	new[j++] = '"';
 	for (i = 0; i < slen; i++) {
-		if (_char_in_strset (s[i], ESC_ESCAPEES)) {
+		if (_char_req_escape (s[i]))
 			new[j++] = '\\';
-		}
 		new[j++] = s[i];
 	}
 	new[j++] = '"';
@@ -256,13 +254,16 @@ _looks_like_old_svescaped (const char *value)
 	for (k = 1; ; k++) {
 		if (value[k] == '\0')
 			return FALSE;
+		if (!_char_req_escape_old (value[k]))
+			continue;
+
 		if (value[k] == '"')
 			return (value[k + 1] == '\0');
-		if (value[k] == '\\') {
+		else if (value[k] == '\\') {
 			k++;
-			if (!_char_in_strset (value[k], "\"'\\$~`"))
+			if (!_char_req_escape_old (value[k]))
 				return FALSE;
-		} else if (_char_in_strset (value[k], "'\\$~`"))
+		} else
 			return FALSE;
 	}
 }
