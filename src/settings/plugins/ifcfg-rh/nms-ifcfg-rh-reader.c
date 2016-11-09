@@ -1381,7 +1381,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	char *route6_path = NULL;
 	gs_free char *dns_options_free = NULL;
 	const char *dns_options = NULL;
-	gboolean ipv6init, ipv6forwarding, ipv6_autoconf, dhcp6 = FALSE;
+	gboolean ipv6init, ipv6forwarding, dhcp6 = FALSE;
 	char *method = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
 	char *ipv6addr, *ipv6addr_secondaries;
 	char **list = NULL, **iter;
@@ -1392,7 +1392,6 @@ make_ip6_setting (shvarFile *ifcfg,
 	gboolean ip6_privacy = FALSE, ip6_privacy_prefer_public_ip;
 	NMSettingIP6ConfigPrivacy ip6_privacy_val;
 	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
-	char *tmp;
 
 	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 
@@ -1455,10 +1454,12 @@ make_ip6_setting (shvarFile *ifcfg,
 		method = NM_SETTING_IP6_CONFIG_METHOD_IGNORE;  /* IPv6 is disabled */
 	else {
 		ipv6forwarding = svGetValueBoolean (ifcfg, "IPV6FORWARDING", FALSE);
-		ipv6_autoconf = svGetValueBoolean (ifcfg, "IPV6_AUTOCONF", !ipv6forwarding);
+		str_value = svGetValueString (ifcfg, "IPV6_AUTOCONF");
 		dhcp6 = svGetValueBoolean (ifcfg, "DHCPV6C", FALSE);
 
-		if (ipv6_autoconf)
+		if (!g_strcmp0 (str_value, "shared"))
+			method = NM_SETTING_IP6_CONFIG_METHOD_SHARED;
+		else if (svParseBoolean (str_value, !ipv6forwarding))
 			method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
 		else if (dhcp6)
 			method = NM_SETTING_IP6_CONFIG_METHOD_DHCP;
@@ -1476,20 +1477,20 @@ make_ip6_setting (shvarFile *ifcfg,
 	/* TODO - handle other methods */
 
 	/* Read IPv6 Privacy Extensions configuration */
-	tmp = svGetValueString (ifcfg, "IPV6_PRIVACY");
-	if (tmp) {
-		ip6_privacy = svGetValueBoolean (ifcfg, "IPV6_PRIVACY", FALSE);
+	str_value = svGetValueString (ifcfg, "IPV6_PRIVACY");
+	if (str_value) {
+		ip6_privacy = svParseBoolean (str_value, FALSE);
 		if (!ip6_privacy)
-			ip6_privacy = g_strcmp0 (tmp, "rfc4941") == 0 ||
-			              g_strcmp0 (tmp, "rfc3041") == 0;
+			ip6_privacy = (g_strcmp0 (str_value, "rfc4941") == 0) ||
+			              (g_strcmp0 (str_value, "rfc3041") == 0);
 	}
 	ip6_privacy_prefer_public_ip = svGetValueBoolean (ifcfg, "IPV6_PRIVACY_PREFER_PUBLIC_IP", FALSE);
-	ip6_privacy_val = tmp ?
+	ip6_privacy_val = str_value ?
 	                      (ip6_privacy ?
 	                          (ip6_privacy_prefer_public_ip ? NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR : NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR) :
 	                          NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED) :
 	                      NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
-	g_free (tmp);
+	g_free (str_value);
 
 	g_object_set (s_ip6,
 	              NM_SETTING_IP_CONFIG_METHOD, method,
@@ -1574,14 +1575,14 @@ make_ip6_setting (shvarFile *ifcfg,
 	}
 
 	/* IPv6 addressing mode configuration */
-	tmp = svGetValueString (ifcfg, "IPV6_ADDR_GEN_MODE");
-	if (tmp) {
-		if (nm_utils_enum_from_str (nm_setting_ip6_config_addr_gen_mode_get_type (), tmp,
+	str_value = svGetValueString (ifcfg, "IPV6_ADDR_GEN_MODE");
+	if (str_value) {
+		if (nm_utils_enum_from_str (nm_setting_ip6_config_addr_gen_mode_get_type (), str_value,
 		                            (int *) &addr_gen_mode, NULL))
 			g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE, addr_gen_mode, NULL);
 		else
 			PARSE_WARNING ("Invalid IPV6_ADDR_GEN_MODE");
-		g_free (tmp);
+		g_free (str_value);
 	} else {
 		g_object_set (s_ip6,
 		              NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
@@ -1590,10 +1591,10 @@ make_ip6_setting (shvarFile *ifcfg,
 	}
 
 	/* IPv6 tokenized interface identifier */
-	tmp = svGetValueString (ifcfg, "IPV6_TOKEN");
-	if (tmp) {
-		g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_TOKEN, tmp, NULL);
-		g_free (tmp);
+	str_value = svGetValueString (ifcfg, "IPV6_TOKEN");
+	if (str_value) {
+		g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_TOKEN, str_value, NULL);
+		g_free (str_value);
 	}
 
 	/* DNS servers

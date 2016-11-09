@@ -82,6 +82,8 @@
 #define NM_DEVICE_AUTH_REQUEST          "auth-request"
 #define NM_DEVICE_IP4_CONFIG_CHANGED    "ip4-config-changed"
 #define NM_DEVICE_IP6_CONFIG_CHANGED    "ip6-config-changed"
+#define NM_DEVICE_IP6_PREFIX_DELEGATED  "ip6-prefix-delegated"
+#define NM_DEVICE_IP6_SUBNET_NEEDED     "ip6-subnet-needed"
 #define NM_DEVICE_REMOVED               "removed"
 #define NM_DEVICE_RECHECK_AUTO_ACTIVATE "recheck-auto-activate"
 #define NM_DEVICE_RECHECK_ASSUME        "recheck-assume"
@@ -438,6 +440,16 @@ gboolean nm_device_get_enabled (NMDevice *device);
 void nm_device_set_enabled (NMDevice *device, gboolean enabled);
 
 RfKillType nm_device_get_rfkill_type (NMDevice *device);
+
+/* IPv6 prefix delegation */
+
+void nm_device_request_ip6_prefixes (NMDevice *self, int needed_prefixes);
+
+gboolean nm_device_needs_ip6_subnet (NMDevice *self);
+
+void nm_device_use_ip6_subnet (NMDevice *self, const NMPlatformIP6Address *subnet);
+
+void nm_device_copy_ip6_dns_config (NMDevice *self, NMDevice *from_device);
 
 /**
  * NMUnmanagedFlags:

@@ -3511,14 +3511,15 @@ nm_utils_lifetime_get (guint32 timestamp,
 
 	nm_assert (now >= 0);
 
-	if (lifetime == 0) {
+	if (timestamp == 0 && lifetime == 0) {
+		/* We treat lifetime==0 && timestamp == 0 addresses as permanent addresses to allow easy
+		 * creation of such addresses (without requiring to set the lifetime fields to
+		 * NM_PLATFORM_LIFETIME_PERMANENT). The real lifetime==0 addresses (E.g. DHCP6 telling us
+		 * to drop an address will have timestamp set.
+		 */
 		*out_lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
 		*out_preferred = NM_PLATFORM_LIFETIME_PERMANENT;
-
-		/* We treat lifetime==0 as permanent addresses to allow easy creation of such addresses
-		 * (without requiring to set the lifetime fields to NM_PLATFORM_LIFETIME_PERMANENT).
-		 * In that case we also expect that the other fields (timestamp and preferred) are left unset. */
-		g_return_val_if_fail (timestamp == 0 && preferred == 0, TRUE);
+		g_return_val_if_fail (preferred == 0, TRUE);
 	} else {
 		if (now <= 0)
 			now = nm_utils_get_monotonic_timestamp_s ();

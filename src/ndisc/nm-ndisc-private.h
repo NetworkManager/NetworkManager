@@ -1,5 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-/* nm-rdisc.h - Perform IPv6 router discovery
+/* nm-ndisc.h - Perform IPv6 neighbor discovery
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,15 +18,15 @@
  * Copyright 2015 Red Hat, Inc.
  */
 
-#ifndef __NETWORKMANAGER_RDISC_PRIVATE_H__
-#define __NETWORKMANAGER_RDISC_PRIVATE_H__
+#ifndef __NETWORKMANAGER_NDISC_PRIVATE_H__
+#define __NETWORKMANAGER_NDISC_PRIVATE_H__
 
-#include "nm-rdisc.h"
+#include "nm-ndisc.h"
 
-/* Functions only used by rdisc implementations */
+/* Functions only used by ndisc implementations */
 
-struct _NMRDiscDataInternal {
-	NMRDiscData public;
+struct _NMNDiscDataInternal {
+	NMNDiscData public;
 	GArray *gateways;
 	GArray *addresses;
 	GArray *routes;
@@ -34,20 +34,21 @@ struct _NMRDiscDataInternal {
 	GArray *dns_domains;
 };
 
-typedef struct _NMRDiscDataInternal NMRDiscDataInternal;
+typedef struct _NMNDiscDataInternal NMNDiscDataInternal;
 
-void nm_rdisc_ra_received (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap changed);
+void nm_ndisc_ra_received (NMNDisc *ndisc, guint32 now, NMNDiscConfigMap changed);
+void nm_ndisc_rs_received (NMNDisc *ndisc);
 
-gboolean nm_rdisc_add_gateway              (NMRDisc *rdisc, const NMRDiscGateway *new);
-gboolean nm_rdisc_complete_and_add_address (NMRDisc *rdisc, NMRDiscAddress *new);
-gboolean nm_rdisc_add_route                (NMRDisc *rdisc, const NMRDiscRoute *new);
-gboolean nm_rdisc_add_dns_server           (NMRDisc *rdisc, const NMRDiscDNSServer *new);
-gboolean nm_rdisc_add_dns_domain           (NMRDisc *rdisc, const NMRDiscDNSDomain *new);
+gboolean nm_ndisc_add_gateway              (NMNDisc *ndisc, const NMNDiscGateway *new);
+gboolean nm_ndisc_complete_and_add_address (NMNDisc *ndisc, NMNDiscAddress *new);
+gboolean nm_ndisc_add_route                (NMNDisc *ndisc, const NMNDiscRoute *new);
+gboolean nm_ndisc_add_dns_server           (NMNDisc *ndisc, const NMNDiscDNSServer *new);
+gboolean nm_ndisc_add_dns_domain           (NMNDisc *ndisc, const NMNDiscDNSDomain *new);
 
 /*****************************************************************************/
 
 #define _NMLOG_DOMAIN                     LOGD_IP6
-#define _NMLOG(level, ...)                _LOG(level, _NMLOG_DOMAIN,  rdisc, __VA_ARGS__)
+#define _NMLOG(level, ...)                _LOG(level, _NMLOG_DOMAIN,  ndisc, __VA_ARGS__)
 
 #define _LOG(level, domain, self, ...) \
     G_STMT_START { \
@@ -55,14 +56,14 @@ gboolean nm_rdisc_add_dns_domain           (NMRDisc *rdisc, const NMRDiscDNSDoma
         const NMLogDomain __domain = (domain); \
         \
         if (nm_logging_enabled (__level, __domain)) { \
-            NMRDisc *const __self = (self); \
+            NMNDisc *const __self = (self); \
             char __prefix[64]; \
             \
             _nm_log (__level, __domain, 0, \
                      "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
                      (__self \
                         ? ({ \
-                            const char *__ifname = nm_rdisc_get_ifname (__self); \
+                            const char *__ifname = nm_ndisc_get_ifname (__self); \
                             nm_sprintf_buf (__prefix, "%s[%p,%s%s%s]", \
                                             _NMLOG_PREFIX_NAME, __self, \
                                             NM_PRINT_FMT_QUOTE_STRING (__ifname)); \
@@ -74,4 +75,4 @@ gboolean nm_rdisc_add_dns_domain           (NMRDisc *rdisc, const NMRDiscDNSDoma
 
 /*****************************************************************************/
 
-#endif /* __NETWORKMANAGER_RDISC_PRIVATE_H__ */
+#endif /* __NETWORKMANAGER_NDISC_PRIVATE_H__ */

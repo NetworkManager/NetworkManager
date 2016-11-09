@@ -1,5 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-/* rdisc.c - test program
+/* ndisc.c - test program
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,8 +23,8 @@
 #include <string.h>
 #include <syslog.h>
 
-#include "nm-rdisc.h"
-#include "nm-lndp-rdisc.h"
+#include "nm-ndisc.h"
+#include "nm-lndp-ndisc.h"
 
 #include "nm-linux-platform.h"
 
@@ -36,7 +36,7 @@ int
 main (int argc, char **argv)
 {
 	GMainLoop *loop;
-	NMRDisc *rdisc;
+	NMNDisc *ndisc;
 	int ifindex = 1;
 	const char *ifname;
 	NMUtilsIPv6IfaceId iid = { };
@@ -61,25 +61,26 @@ main (int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	rdisc = nm_lndp_rdisc_new (NM_PLATFORM_GET,
+	ndisc = nm_lndp_ndisc_new (NM_PLATFORM_GET,
 	                           ifindex,
 	                           ifname,
 	                           NM_UTILS_STABLE_TYPE_UUID,
 	                           "8ce666e8-d34d-4fb1-b858-f15a7al28086",
 	                           NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
+	                           NM_NDISC_NODE_TYPE_HOST,
 	                           &error);
-	if (!rdisc) {
-		g_print ("Failed to create NMRDisc instance: %s\n", error->message);
+	if (!ndisc) {
+		g_print ("Failed to create NMNDisc instance: %s\n", error->message);
 		g_error_free (error);
 		return EXIT_FAILURE;
 	}
 
 	iid.id_u8[7] = 1;
-	nm_rdisc_set_iid (rdisc, iid);
-	nm_rdisc_start (rdisc);
+	nm_ndisc_set_iid (ndisc, iid);
+	nm_ndisc_start (ndisc);
 	g_main_loop_run (loop);
 
-	g_clear_object (&rdisc);
+	g_clear_object (&ndisc);
 
 	return EXIT_SUCCESS;
 }

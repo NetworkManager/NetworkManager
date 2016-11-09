@@ -469,7 +469,7 @@ nmp_utils_ip_config_source_coerce_to_rtprot (NMIPConfigSource source)
 		return RTPROT_KERNEL;
 	case NM_IP_CONFIG_SOURCE_DHCP:
 		return RTPROT_DHCP;
-	case NM_IP_CONFIG_SOURCE_RDISC:
+	case NM_IP_CONFIG_SOURCE_NDISC:
 		return RTPROT_RA;
 
 	default:
@@ -501,7 +501,7 @@ nmp_utils_ip_config_source_coerce_from_rtprot (NMIPConfigSource source)
 		return NM_IP_CONFIG_SOURCE_KERNEL;
 
 	case NM_IP_CONFIG_SOURCE_RTPROT_RA:
-		return NM_IP_CONFIG_SOURCE_RDISC;
+		return NM_IP_CONFIG_SOURCE_NDISC;
 
 	case NM_IP_CONFIG_SOURCE_RTPROT_DHCP:
 		return NM_IP_CONFIG_SOURCE_DHCP;
@@ -538,7 +538,7 @@ nmp_utils_ip_config_source_to_string (NMIPConfigSource source, char *buf, gsize 
 	case NM_IP_CONFIG_SOURCE_WWAN:            s = "wwan"; break;
 	case NM_IP_CONFIG_SOURCE_VPN:             s = "vpn"; break;
 	case NM_IP_CONFIG_SOURCE_DHCP:            s = "dhcp"; break;
-	case NM_IP_CONFIG_SOURCE_RDISC:           s = "rdisc"; break;
+	case NM_IP_CONFIG_SOURCE_NDISC:           s = "ndisc"; break;
 	case NM_IP_CONFIG_SOURCE_USER:            s = "user"; break;
 	default:
 		break;

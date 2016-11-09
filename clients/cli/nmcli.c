@@ -520,7 +520,7 @@ nmc_get_client (NmCli *nmc)
 	if (!nmc->client) {
 		nmc->client = nm_client_new (NULL, &error);
 		if (!nmc->client) {
-			g_critical (_("Error: Could not create NMClient object: %s."), error->message);
+			g_printerr ("%s\n", error->message);
 			g_clear_error (&error);
 			exit (NMC_RESULT_ERROR_UNKNOWN);
 		}

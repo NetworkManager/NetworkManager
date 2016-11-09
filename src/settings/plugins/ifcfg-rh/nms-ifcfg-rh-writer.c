@@ -2477,8 +2477,8 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		svUnsetValue (ifcfg, "DHCPV6C");
 	} else if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_SHARED)) {
 		svSetValueString (ifcfg, "IPV6INIT", "yes");
+		svSetValueString (ifcfg, "IPV6_AUTOCONF", "shared");
 		svUnsetValue (ifcfg, "DHCPV6C");
-		/* TODO */
 	}
 
 	/* Write out IP addresses */

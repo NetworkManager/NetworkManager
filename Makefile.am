@@ -900,7 +900,7 @@ src_cppflags = \
 	-I$(top_srcdir)/src/platform \
 	-I$(top_srcdir)/src/platform/wifi \
 	-I$(top_srcdir)/src/ppp-manager \
-	-I$(top_srcdir)/src/rdisc \
+	-I$(top_srcdir)/src/ndisc \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/src/supplicant-manager \
 	-I$(top_srcdir)/src/vpn-manager \
@@ -1142,11 +1142,11 @@ src_libNetworkManagerBase_la_SOURCES = \
 	src/platform/wifi/wifi-utils.c \
 	src/platform/wifi/wifi-utils.h \
 	\
-	src/rdisc/nm-lndp-rdisc.c \
-	src/rdisc/nm-lndp-rdisc.h \
-	src/rdisc/nm-rdisc.c \
-	src/rdisc/nm-rdisc.h \
-	src/rdisc/nm-rdisc-private.h \
+	src/ndisc/nm-lndp-ndisc.c \
+	src/ndisc/nm-lndp-ndisc.h \
+	src/ndisc/nm-ndisc.c \
+	src/ndisc/nm-ndisc.h \
+	src/ndisc/nm-ndisc-private.h \
 	\
 	src/nm-exported-object.c \
 	src/nm-exported-object.h \
@@ -1381,8 +1381,8 @@ src_tests_cppflags_linux = $(src_tests_cppflags) -DSETUP=nm_linux_platform_setup
 src_libNetworkManagerTest_la_CPPFLAGS = $(src_tests_cppflags)
 
 src_libNetworkManagerTest_la_SOURCES = \
-	src/rdisc/nm-fake-rdisc.c \
-	src/rdisc/nm-fake-rdisc.h \
+	src/ndisc/nm-fake-ndisc.c \
+	src/ndisc/nm-fake-ndisc.h \
 	src/platform/nm-fake-platform.c \
 	src/platform/nm-fake-platform.h \
 	src/platform/tests/test-common.c \
@@ -2613,26 +2613,26 @@ src_devices_tests_test_arping_LDADD = \
 	src/libNetworkManagerTest.la
 
 ###############################################################################
-# src/rdisc/tests
+# src/ndisc/tests
 ###############################################################################
 
-src_rdisc_tests_ldflags = \
+src_ndisc_tests_ldflags = \
 	$(CODE_COVERAGE_LDFLAGS)
 
-src_rdisc_tests_ldadd = \
+src_ndisc_tests_ldadd = \
 	src/libNetworkManagerTest.la \
 	$(GLIB_LIBS)
 
-check_programs += src/rdisc/tests/test-rdisc-fake
-check_programs_norun += src/rdisc/tests/test-rdisc-linux
+check_programs += src/ndisc/tests/test-ndisc-fake
+check_programs_norun += src/ndisc/tests/test-ndisc-linux
 
-src_rdisc_tests_test_rdisc_linux_CPPFLAGS = $(src_tests_cppflags)
-src_rdisc_tests_test_rdisc_linux_LDFLAGS = $(src_rdisc_tests_flags)
-src_rdisc_tests_test_rdisc_linux_LDADD = $(src_rdisc_tests_ldadd)
+src_ndisc_tests_test_ndisc_linux_CPPFLAGS = $(src_tests_cppflags)
+src_ndisc_tests_test_ndisc_linux_LDFLAGS = $(src_ndisc_tests_flags)
+src_ndisc_tests_test_ndisc_linux_LDADD = $(src_ndisc_tests_ldadd)
 
-src_rdisc_tests_test_rdisc_fake_CPPFLAGS = $(src_tests_cppflags)
-src_rdisc_tests_test_rdisc_fake_LDFLAGS = $(src_rdisc_tests_flags)
-src_rdisc_tests_test_rdisc_fake_LDADD = $(src_rdisc_tests_ldadd)
+src_ndisc_tests_test_ndisc_fake_CPPFLAGS = $(src_tests_cppflags)
+src_ndisc_tests_test_ndisc_fake_LDFLAGS = $(src_ndisc_tests_flags)
+src_ndisc_tests_test_ndisc_fake_LDADD = $(src_ndisc_tests_ldadd)
 
 ###############################################################################
 # src/supplicant-manager/tests

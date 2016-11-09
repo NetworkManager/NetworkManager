@@ -894,7 +894,8 @@ ip6_start (NMDhcpClient *client,
            const struct in6_addr *ll_addr,
            gboolean info_only,
            NMSettingIP6ConfigPrivacy privacy,
-           const GByteArray *duid)
+           const GByteArray *duid,
+           guint needed_prefixes)
 {
 	NMDhcpSystemd *self = NM_DHCP_SYSTEMD (client);
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
@@ -916,7 +917,12 @@ ip6_start (NMDhcpClient *client,
 		return FALSE;
 	}
 
-	_LOGT ("dhcp-client6: set %p", priv->client4);
+	if (needed_prefixes > 0) {
+		_LOGW ("dhcp-client6: prefix delegation not yet supported, won't supply %d prefixes\n",
+		       needed_prefixes);
+	}
+
+	_LOGT ("dhcp-client6: set %p", priv->client6);
 
 	if (info_only)
 	    sd_dhcp6_client_set_information_request (priv->client6, 1);

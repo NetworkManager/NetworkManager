@@ -1,5 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-/* nm-fake-rdisc.h - Fake implementation of router discovery
+/* nm-fake-ndisc.h - Fake implementation of neighbor discovery
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,41 +18,41 @@
  * Copyright (C) 2013 Red Hat, Inc.
  */
 
-#ifndef __NETWORKMANAGER_FAKE_RDISC_H__
-#define __NETWORKMANAGER_FAKE_RDISC_H__
+#ifndef __NETWORKMANAGER_FAKE_NDISC_H__
+#define __NETWORKMANAGER_FAKE_NDISC_H__
 
-#include "nm-rdisc.h"
+#include "nm-ndisc.h"
 
-#define NM_TYPE_FAKE_RDISC            (nm_fake_rdisc_get_type ())
-#define NM_FAKE_RDISC(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_FAKE_RDISC, NMFakeRDisc))
-#define NM_FAKE_RDISC_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_FAKE_RDISC, NMFakeRDiscClass))
-#define NM_IS_FAKE_RDISC(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_FAKE_RDISC))
-#define NM_IS_FAKE_RDISC_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_FAKE_RDISC))
-#define NM_FAKE_RDISC_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_FAKE_RDISC, NMFakeRDiscClass))
+#define NM_TYPE_FAKE_NDISC            (nm_fake_ndisc_get_type ())
+#define NM_FAKE_NDISC(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_FAKE_NDISC, NMFakeNDisc))
+#define NM_FAKE_NDISC_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_FAKE_NDISC, NMFakeNDiscClass))
+#define NM_IS_FAKE_NDISC(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_FAKE_NDISC))
+#define NM_IS_FAKE_NDISC_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_FAKE_NDISC))
+#define NM_FAKE_NDISC_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_FAKE_NDISC, NMFakeNDiscClass))
 
-#define NM_FAKE_RDISC_RS_SENT "rs-sent"
+#define NM_FAKE_NDISC_RS_SENT "rs-sent"
 
-typedef struct _NMFakeRRDisc NMFakeRDisc;
-typedef struct _NMFakeRRDiscClass NMFakeRDiscClass;
+typedef struct _NMFakeRNDisc NMFakeNDisc;
+typedef struct _NMFakeRNDiscClass NMFakeNDiscClass;
 
-GType nm_fake_rdisc_get_type (void);
+GType nm_fake_ndisc_get_type (void);
 
-NMRDisc *nm_fake_rdisc_new (int ifindex, const char *ifname);
+NMNDisc *nm_fake_ndisc_new (int ifindex, const char *ifname);
 
-guint nm_fake_rdisc_add_ra (NMFakeRDisc *self,
+guint nm_fake_ndisc_add_ra (NMFakeNDisc *self,
                             guint seconds,
-                            NMRDiscDHCPLevel dhcp_level,
+                            NMNDiscDHCPLevel dhcp_level,
                             int hop_limit,
                             guint32 mtu);
 
-void nm_fake_rdisc_add_gateway    (NMFakeRDisc *self,
+void nm_fake_ndisc_add_gateway    (NMFakeNDisc *self,
                                    guint ra_id,
                                    const char *addr,
                                    guint32 timestamp,
                                    guint32 lifetime,
-                                   NMRDiscPreference preference);
+                                   NMNDiscPreference preference);
 
-void nm_fake_rdisc_add_prefix     (NMFakeRDisc *self,
+void nm_fake_ndisc_add_prefix     (NMFakeNDisc *self,
                                    guint ra_id,
                                    const char *network,
                                    guint plen,
@@ -60,22 +60,22 @@ void nm_fake_rdisc_add_prefix     (NMFakeRDisc *self,
                                    guint32 timestamp,
                                    guint32 lifetime,
                                    guint32 preferred,
-                                   NMRDiscPreference preference);
+                                   NMNDiscPreference preference);
 
-void nm_fake_rdisc_add_dns_server (NMFakeRDisc *self,
+void nm_fake_ndisc_add_dns_server (NMFakeNDisc *self,
                                    guint ra_id,
                                    const char *address,
                                    guint32 timestamp,
                                    guint32 lifetime);
 
-void nm_fake_rdisc_add_dns_domain (NMFakeRDisc *self,
+void nm_fake_ndisc_add_dns_domain (NMFakeNDisc *self,
                                    guint ra_id,
                                    const char *domain,
                                    guint32 timestamp,
                                    guint32 lifetime);
 
-void nm_fake_rdisc_emit_new_ras (NMFakeRDisc *self);
+void nm_fake_ndisc_emit_new_ras (NMFakeNDisc *self);
 
-gboolean nm_fake_rdisc_done (NMFakeRDisc *self);
+gboolean nm_fake_ndisc_done (NMFakeNDisc *self);
 
-#endif /* __NETWORKMANAGER_FAKE_RDISC_H__ */
+#endif /* __NETWORKMANAGER_FAKE_NDISC_H__ */

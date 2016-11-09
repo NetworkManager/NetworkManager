@@ -868,14 +868,17 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			return FALSE;
 		}
 
-		if (g_slist_length (priv->addresses)) {
-			g_set_error (error,
-			             NM_SETTING_IP6_CONFIG_ERROR,
-			             NM_SETTING_IP6_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD,
-			             _("this property is not allowed for '%s=%s'"),
-			             NM_SETTING_IP6_CONFIG_METHOD, priv->method);
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_ADDRESSES);
-			return FALSE;
+		/* Shared allows IP addresses; link-local and disabled do not */
+		if (strcmp (priv->method, NM_SETTING_IP6_CONFIG_METHOD_SHARED) != 0) {
+			if (g_slist_length (priv->addresses)) {
+				g_set_error (error,
+				             NM_SETTING_IP6_CONFIG_ERROR,
+				             NM_SETTING_IP6_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD,
+				             _("this property is not allowed for '%s=%s'"),
+				             NM_SETTING_IP6_CONFIG_METHOD, priv->method);
+				g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_ADDRESSES);
+				return FALSE;
+			}
 		}
 	} else if (   !strcmp (priv->method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)
 	           || !strcmp (priv->method, NM_SETTING_IP6_CONFIG_METHOD_DHCP)) {

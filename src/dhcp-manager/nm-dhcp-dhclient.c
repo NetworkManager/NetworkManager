@@ -330,7 +330,8 @@ dhclient_start (NMDhcpClient *client,
                 const char *mode_opt,
                 const GByteArray *duid,
                 gboolean release,
-                pid_t *out_pid)
+                pid_t *out_pid,
+                int prefixes)
 {
 	NMDhcpDhclient *self = NM_DHCP_DHCLIENT (client);
 	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (self);
@@ -424,6 +425,8 @@ dhclient_start (NMDhcpClient *client,
 		g_ptr_array_add (argv, (gpointer) "-6");
 		if (mode_opt)
 			g_ptr_array_add (argv, (gpointer) mode_opt);
+		while (prefixes--)
+			g_ptr_array_add (argv, (gpointer) "-P");
 	}
 	g_ptr_array_add (argv, (gpointer) "-sf");	/* Set script file */
 	g_ptr_array_add (argv, (gpointer) nm_dhcp_helper_path);
@@ -503,7 +506,7 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 	if (priv->conf_file) {
 		if (new_client_id)
 			nm_dhcp_client_set_client_id (client, new_client_id);
-		success = dhclient_start (client, NULL, NULL, FALSE, NULL);
+		success = dhclient_start (client, NULL, NULL, FALSE, NULL, 0);
 	} else
 		_LOGW ("error creating dhclient configuration file");
 
@@ -516,7 +519,8 @@ ip6_start (NMDhcpClient *client,
            const struct in6_addr *ll_addr,
            gboolean info_only,
            NMSettingIP6ConfigPrivacy privacy,
-           const GByteArray *duid)
+           const GByteArray *duid,
+           guint needed_prefixes)
 {
 	NMDhcpDhclient *self = NM_DHCP_DHCLIENT (client);
 	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (self);
@@ -532,7 +536,7 @@ ip6_start (NMDhcpClient *client,
 		return FALSE;
 	}
 
-	return dhclient_start (client, info_only ? "-S" : "-N", duid, FALSE, NULL);
+	return dhclient_start (client, info_only ? "-S" : "-N", duid, FALSE, NULL, needed_prefixes);
 }
 
 static void
@@ -557,7 +561,7 @@ stop (NMDhcpClient *client, gboolean release, const GByteArray *duid)
 	if (release) {
 		pid_t rpid = -1;
 
-		if (dhclient_start (client, NULL, duid, TRUE, &rpid)) {
+		if (dhclient_start (client, NULL, duid, TRUE, &rpid, 0)) {
 			/* Wait a few seconds for the release to happen */
 			nm_dhcp_client_stop_pid (rpid, nm_dhcp_client_get_iface (client));
 		}

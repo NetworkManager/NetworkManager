@@ -2579,7 +2579,7 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 
 	/* Try to write the entire value three times if a partial write occurs */
 	errsv = 0;
-	for (tries = 0, nwrote = 0; tries < 3 && nwrote != len; tries++) {
+	for (tries = 0, nwrote = 0; tries < 3 && nwrote < len - 1; tries++) {
 		nwrote = write (fd, actual, len);
 		if (nwrote == -1) {
 			errsv = errno;
@@ -2593,12 +2593,12 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 	if (nwrote == -1 && errsv != EEXIST) {
 		_LOGE ("sysctl: failed to set '%s' to '%s': (%d) %s",
 		       path, value, errsv, strerror (errsv));
-	} else if (nwrote < len) {
+	} else if (nwrote < len - 1) {
 		_LOGE ("sysctl: failed to set '%s' to '%s' after three attempts",
 		       path, value);
 	}
 
-	if (nwrote != len) {
+	if (nwrote < len - 1) {
 		if (close (fd) != 0) {
 			if (errsv != 0)
 				errno = errsv;

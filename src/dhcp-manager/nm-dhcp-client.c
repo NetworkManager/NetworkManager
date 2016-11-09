@@ -41,6 +41,7 @@
 
 enum {
 	SIGNAL_STATE_CHANGED,
+	SIGNAL_PREFIX_DELEGATED,
 	LAST_SIGNAL
 };
 
@@ -511,7 +512,8 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
                           const struct in6_addr *ll_addr,
                           const char *hostname,
                           gboolean info_only,
-                          NMSettingIP6ConfigPrivacy privacy)
+                          NMSettingIP6ConfigPrivacy privacy,
+                          guint needed_prefixes)
 {
 	NMDhcpClientPrivate *priv;
 	gs_free char *str = NULL;
@@ -544,7 +546,8 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
 	                                                   ll_addr,
 	                                                   info_only,
 	                                                   privacy,
-	                                                   priv->duid);
+	                                                   priv->duid,
+	                                                   needed_prefixes);
 }
 
 void
@@ -709,6 +712,7 @@ nm_dhcp_client_handle_event (gpointer unused,
 	guint32 new_state;
 	GHashTable *str_options = NULL;
 	GObject *ip_config = NULL;
+	NMPlatformIP6Address prefix = { 0, };
 
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
 	g_return_val_if_fail (iface != NULL, FALSE);
@@ -741,10 +745,20 @@ nm_dhcp_client_handle_event (gpointer unused,
 			g_variant_unref (value);
 		}
 
+		if (nm_logging_enabled (LOGL_DEBUG, LOGD_DHCP6)) {
+			GHashTableIter hash_iter;
+			gpointer key, val;
+
+			g_hash_table_iter_init (&hash_iter, str_options);
+			while (g_hash_table_iter_next (&hash_iter, &key, &val))
+				_LOGD ("option '%s'=>'%s'", (const char *) key, (const char *) val);
+		}
+
 		/* Create the IP config */
 		g_warn_if_fail (g_hash_table_size (str_options));
 		if (g_hash_table_size (str_options)) {
 			if (priv->ipv6) {
+				prefix = nm_dhcp_utils_ip6_prefix_from_options (str_options);
 				ip_config = (GObject *) nm_dhcp_utils_ip6_config_from_options (priv->ifindex,
 				                                                               priv->iface,
 				                                                               str_options,
@@ -756,17 +770,26 @@ nm_dhcp_client_handle_event (gpointer unused,
 				                                                               str_options,
 				                                                               priv->priority);
 			}
-
-			/* Fail if no valid IP config was received */
-			if (ip_config == NULL) {
-				_LOGW ("client bound but IP config not received");
-				new_state = NM_DHCP_STATE_FAIL;
-				g_clear_pointer (&str_options, g_hash_table_unref);
-			}
 		}
 	}
 
-	nm_dhcp_client_set_state (self, new_state, ip_config, str_options);
+	if (!IN6_IS_ADDR_UNSPECIFIED (&prefix.address)) {
+		/* If we got an IPv6 prefix to delegate, we don't change the state
+		 * of the DHCP client instance. Instead, we just signal the prefix
+		 * to the device. */
+		g_signal_emit (G_OBJECT (self),
+		               signals[SIGNAL_PREFIX_DELEGATED], 0,
+		               &prefix);
+	} else {
+		/* Fail if no valid IP config was received */
+		if (new_state == NM_DHCP_STATE_BOUND && ip_config == NULL) {
+			_LOGW ("client bound but IP config not received");
+			new_state = NM_DHCP_STATE_FAIL;
+			g_clear_pointer (&str_options, g_hash_table_unref);
+		}
+
+		nm_dhcp_client_set_state (self, new_state, ip_config, str_options);
+	}
 
 	if (str_options)
 		g_hash_table_destroy (str_options);
@@ -963,5 +986,12 @@ nm_dhcp_client_class_init (NMDhcpClientClass *client_class)
 	                  G_STRUCT_OFFSET (NMDhcpClientClass, state_changed),
 	                  NULL, NULL, NULL,
 	                  G_TYPE_NONE, 4, G_TYPE_UINT, G_TYPE_OBJECT, G_TYPE_HASH_TABLE, G_TYPE_STRING);
-}
 
+	signals[SIGNAL_PREFIX_DELEGATED] =
+	    g_signal_new (NM_DHCP_CLIENT_SIGNAL_PREFIX_DELEGATED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMDhcpClientClass, state_changed),
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1, G_TYPE_POINTER);
+}

@@ -40,8 +40,8 @@
 #include "NetworkManagerUtils.h"
 #include "nm-manager.h"
 #include "nm-platform.h"
-#include "nm-rdisc.h"
-#include "nm-lndp-rdisc.h"
+#include "nm-ndisc.h"
+#include "nm-lndp-ndisc.h"
 #include "nm-dhcp-manager.h"
 #include "nm-act-request.h"
 #include "nm-proxy-config.h"
@@ -83,6 +83,8 @@ enum {
 	AUTH_REQUEST,
 	IP4_CONFIG_CHANGED,
 	IP6_CONFIG_CHANGED,
+	IP6_PREFIX_DELEGATED,
+	IP6_SUBNET_NEEDED,
 	REMOVED,
 	RECHECK_AUTO_ACTIVATE,
 	RECHECK_ASSUME,
@@ -373,10 +375,10 @@ typedef struct _NMDevicePrivate {
 	guint32        ip6_mtu;
 	NMIP6Config *  dad6_ip6_config;
 
-	NMRDisc *      rdisc;
-	gulong         rdisc_changed_id;
-	gulong         rdisc_timeout_id;
-	NMSettingIP6ConfigPrivacy rdisc_use_tempaddr;
+	NMNDisc *      ndisc;
+	gulong         ndisc_changed_id;
+	gulong         ndisc_timeout_id;
+	NMSettingIP6ConfigPrivacy ndisc_use_tempaddr;
 	/* IP6 config from autoconf */
 	NMIP6Config *  ac_ip6_config;
 
@@ -387,8 +389,9 @@ typedef struct _NMDevicePrivate {
 
 	struct {
 		NMDhcpClient *   client;
-		NMRDiscDHCPLevel mode;
+		NMNDiscDHCPLevel mode;
 		gulong           state_sigid;
+		gulong           prefix_sigid;
 		NMDhcp6Config *  config;
 		/* IP6 config from DHCP */
 		NMIP6Config *    ip6_config;
@@ -396,7 +399,10 @@ typedef struct _NMDevicePrivate {
 		char *           event_id;
 		guint            restart_id;
 		guint            num_tries_left;
+		guint            needed_prefixes;
 	} dhcp6;
+
+	gboolean needs_ip6_subnet;
 
 	/* allow autoconnect feature */
 	bool autoconnect;
@@ -1626,7 +1632,7 @@ nm_device_update_dynamic_ip_setup (NMDevice *self)
 			return;
 		}
 	}
-	if (priv->rdisc) {
+	if (priv->ndisc) {
 		/* FIXME: todo */
 	}
 	if (priv->dnsmasq_manager) {
@@ -1811,6 +1817,73 @@ device_recheck_slave_status (NMDevice *self, const NMPlatformLink *plink)
 	}
 }
 
+static void
+ndisc_set_router_config (NMNDisc *ndisc, NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	guint32 now = nm_utils_get_monotonic_timestamp_s ();
+	GArray *addresses, *dns_servers, *dns_domains;
+	guint len, i;
+
+	if (nm_ndisc_get_node_type (ndisc) != NM_NDISC_NODE_TYPE_ROUTER)
+		return;
+
+	/* Addresses whose prefixes we announce. */
+	len = nm_ip6_config_get_num_addresses (priv->ip6_config);
+	addresses = g_array_sized_new (FALSE, FALSE, sizeof (NMNDiscAddress), len);
+	for (i = 0; i < len; i++) {
+		const NMPlatformIP6Address *addr = nm_ip6_config_get_address (priv->ip6_config, i);
+		NMNDiscAddress *ndisc_addr;
+
+		if (IN6_IS_ADDR_LINKLOCAL (&addr->address))
+			continue;
+
+		if (   addr->n_ifa_flags & IFA_F_TENTATIVE
+		    || addr->n_ifa_flags & IFA_F_DADFAILED)
+			continue;
+
+		if (addr->plen != 64)
+			continue;
+
+		ndisc_addr = &g_array_index (addresses, NMNDiscAddress, addresses->len-1);
+		ndisc_addr->address = addr->address;
+		ndisc_addr->timestamp = addr->timestamp;
+		ndisc_addr->lifetime = addr->lifetime;
+		ndisc_addr->preferred = addr->preferred;
+	}
+
+	/* DNS servers. */
+	len = nm_ip6_config_get_num_nameservers (priv->ip6_config);
+	dns_servers = g_array_sized_new (FALSE, FALSE, sizeof (NMNDiscDNSServer), len);
+	for (i = 0; i < len; i++) {
+		const struct in6_addr *nameserver = nm_ip6_config_get_nameserver (priv->ip6_config, i);
+		NMNDiscDNSServer *ndisc_nameserver;
+
+		ndisc_nameserver = &g_array_index (dns_servers, NMNDiscDNSServer, dns_servers->len-1);
+		ndisc_nameserver->address = *nameserver;
+		ndisc_nameserver->timestamp = now;
+		ndisc_nameserver->lifetime = NM_NDISC_ROUTER_LIFETIME;
+	}
+
+	/* DNS domains. */
+	len = nm_ip6_config_get_num_searches (priv->ip6_config);
+	dns_domains = g_array_sized_new (FALSE, FALSE, sizeof (NMNDiscDNSDomain), len);
+	for (i = 0; i < len; i++) {
+		const char *search = nm_ip6_config_get_search (priv->ip6_config, i);
+		NMNDiscDNSDomain *ndisc_search;
+
+		ndisc_search = &g_array_index (dns_domains, NMNDiscDNSDomain, dns_domains->len-1);
+		ndisc_search->domain = g_strdup (search);
+		ndisc_search->timestamp = now;
+		ndisc_search->lifetime = NM_NDISC_ROUTER_LIFETIME;
+	}
+
+	nm_ndisc_set_config (ndisc, addresses, dns_servers, dns_domains);
+	g_array_free (addresses, TRUE);
+	g_array_free (dns_servers, TRUE);
+	g_array_free (dns_domains, TRUE);
+}
+
 static gboolean
 device_link_changed (NMDevice *self)
 {
@@ -1896,11 +1969,9 @@ device_link_changed (NMDevice *self)
 		nm_device_emit_recheck_auto_activate (self);
 	}
 
-	if (priv->rdisc && info.inet6_token.id) {
-		if (nm_rdisc_set_iid (priv->rdisc, info.inet6_token)) {
+	if (priv->ndisc && info.inet6_token.id) {
+		if (nm_ndisc_set_iid (priv->ndisc, info.inet6_token))
 			_LOGD (LOGD_DEVICE, "IPv6 tokenized identifier present on device %s", priv->iface);
-			nm_rdisc_start (priv->rdisc);
-		}
 	}
 
 	if (klass->link_changed)
@@ -5268,6 +5339,7 @@ connection_ip6_method_requires_carrier (NMConnection *connection,
 	static const char *ip6_carrier_methods[] = {
 		NM_SETTING_IP6_CONFIG_METHOD_AUTO,
 		NM_SETTING_IP6_CONFIG_METHOD_DHCP,
+		NM_SETTING_IP6_CONFIG_METHOD_SHARED,
 		NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
 		NULL
 	};
@@ -5428,13 +5500,14 @@ dhcp6_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	priv->dhcp6.mode = NM_RDISC_DHCP_LEVEL_NONE;
+	priv->dhcp6.mode = NM_NDISC_DHCP_LEVEL_NONE;
 	g_clear_object (&priv->dhcp6.ip6_config);
 	g_clear_pointer (&priv->dhcp6.event_id, g_free);
 	nm_clear_g_source (&priv->dhcp6.restart_id);
 
 	if (priv->dhcp6.client) {
 		nm_clear_g_signal_handler (priv->dhcp6.client, &priv->dhcp6.state_sigid);
+		nm_clear_g_signal_handler (priv->dhcp6.client, &priv->dhcp6.prefix_sigid);
 
 		if (   cleanup_type == CLEANUP_TYPE_DECONFIGURE
 		    || cleanup_type == CLEANUP_TYPE_REMOVED)
@@ -5635,7 +5708,7 @@ END_ADD_DEFAULT_ROUTE:
 	}
 
 	nm_ip6_config_addresses_sort (composite,
-	    priv->rdisc ? priv->rdisc_use_tempaddr : NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
+	    priv->ndisc ? priv->ndisc_use_tempaddr : NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
 
 	/* Allow setting MTU etc */
 	if (commit) {
@@ -5755,7 +5828,7 @@ dhcp6_fail (NMDevice *self, gboolean timeout)
 
 	dhcp6_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
 
-	if (priv->dhcp6.mode == NM_RDISC_DHCP_LEVEL_MANAGED) {
+	if (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_MANAGED) {
 		/* Don't fail if there are static addresses configured on
 		 * the device, instead retry after some time.
 		 */
@@ -5801,7 +5874,7 @@ dhcp6_timeout (NMDevice *self, NMDhcpClient *client)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->dhcp6.mode == NM_RDISC_DHCP_LEVEL_MANAGED)
+	if (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_MANAGED)
 		dhcp6_fail (self, TRUE);
 	else {
 		/* not a hard failure; just live with the RA info */
@@ -5878,7 +5951,7 @@ dhcp6_state_changed (NMDhcpClient *client,
 		 * may exit right after getting a response from the server.  That's
 		 * normal.  In that case we just ignore the exit.
 		 */
-		if (priv->dhcp6.mode == NM_RDISC_DHCP_LEVEL_OTHERCONF)
+		if (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_OTHERCONF)
 			break;
 		/* Otherwise, fall through */
 	case NM_DHCP_STATE_FAIL:
@@ -5887,6 +5960,19 @@ dhcp6_state_changed (NMDhcpClient *client,
 	default:
 		break;
 	}
+}
+
+static void
+dhcp6_prefix_delegated (NMDhcpClient *client,
+                        NMPlatformIP6Address *prefix,
+                        gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+
+	/* Just re-emit. The device just contributes the prefix to the
+	 * pool in NMPolicy, which decides about subnet allocation
+	 * on the shared devices. */
+	g_signal_emit (self, signals[IP6_PREFIX_DELEGATED], 0, prefix);
 }
 
 static gboolean
@@ -5925,8 +6011,9 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	                                                nm_setting_ip_config_get_dhcp_hostname (s_ip6),
 	                                                priv->dhcp_timeout,
 	                                                priv->dhcp_anycast_address,
-	                                                (priv->dhcp6.mode == NM_RDISC_DHCP_LEVEL_OTHERCONF) ? TRUE : FALSE,
-	                                                nm_setting_ip6_config_get_ip6_privacy (NM_SETTING_IP6_CONFIG (s_ip6)));
+	                                                (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_OTHERCONF) ? TRUE : FALSE,
+	                                                nm_setting_ip6_config_get_ip6_privacy (NM_SETTING_IP6_CONFIG (s_ip6)),
+	                                                priv->dhcp6.needed_prefixes);
 	if (tmp)
 		g_byte_array_free (tmp, TRUE);
 
@@ -5935,6 +6022,10 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 		                                            NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED,
 		                                            G_CALLBACK (dhcp6_state_changed),
 		                                            self);
+		priv->dhcp6.prefix_sigid = g_signal_connect (priv->dhcp6.client,
+		                                             NM_DHCP_CLIENT_SIGNAL_PREFIX_DELEGATED,
+		                                             G_CALLBACK (dhcp6_prefix_delegated),
+		                                             self);
 	}
 
 	return !!priv->dhcp6.client;
@@ -6001,6 +6092,95 @@ nm_device_dhcp6_renew (NMDevice *self, gboolean release)
 
 /*****************************************************************************/
 
+/*
+ * Called on the requesting interface when a subnet can't be obtained
+ * from known prefixes for a newly active shared connection.
+ */
+void
+nm_device_request_ip6_prefixes (NMDevice *self, int needed_prefixes)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	priv->dhcp6.needed_prefixes = needed_prefixes;
+
+	if (priv->dhcp6.client) {
+		_LOGD (LOGD_IP6, "ipv6-pd: asking DHCPv6 for %d prefixes", needed_prefixes);
+		nm_device_dhcp6_renew (self, FALSE);
+	} else {
+		_LOGI (LOGD_IP6, "ipv6-pd: device doesn't use DHCPv6, can't request prefixes");
+	}
+}
+
+gboolean
+nm_device_needs_ip6_subnet (NMDevice *self)
+{
+	return NM_DEVICE_GET_PRIVATE (self)->needs_ip6_subnet;
+}
+
+/*
+ * Called on the ipv6.method=shared interface when a new subnet is allocated
+ * or the prefix from which it is allocated is renewed.
+ */
+void
+nm_device_use_ip6_subnet (NMDevice *self, const NMPlatformIP6Address *subnet)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMPlatformIP6Address address = *subnet;
+
+	if (!priv->ac_ip6_config)
+		priv->ac_ip6_config = nm_ip6_config_new (nm_device_get_ip_ifindex (self));
+
+	/* Assign a ::1 address in the subnet for us. */
+	address.address.s6_addr32[3] |= htonl (1);
+	nm_ip6_config_add_address (priv->ac_ip6_config, &address);
+
+	_LOGD (LOGD_IP6, "ipv6-pd: using %s address (preferred for %u seconds)",
+	       nm_utils_inet6_ntop (&address.address, NULL),
+	       subnet->preferred);
+
+	/* This also updates the ndisc if there are actual changes. */
+	if (!ip6_config_merge_and_apply (self, TRUE, NULL))
+		_LOGW (LOGD_IP6, "ipv6-pd: failed applying IP6 config for connection sharing");
+}
+
+/*
+ * Called whenever the policy picks a default IPv6 device.
+ * The ipv6.method=shared devices just reuse its DNS configuration.
+ */
+void
+nm_device_copy_ip6_dns_config (NMDevice *self, NMDevice *from_device)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMIP6Config *from_config = NULL;
+	int i;
+
+	if (priv->ac_ip6_config) {
+		nm_ip6_config_reset_nameservers (priv->ac_ip6_config);
+		nm_ip6_config_reset_searches (priv->ac_ip6_config);
+	} else
+		priv->ac_ip6_config = nm_ip6_config_new (nm_device_get_ip_ifindex (self));
+
+	if (from_device)
+		from_config = nm_device_get_ip6_config (from_device);
+	if (!from_config)
+		return;
+
+	for (i = 0; i < nm_ip6_config_get_num_nameservers (from_config); i++) {
+		nm_ip6_config_add_nameserver (priv->ac_ip6_config,
+		                              nm_ip6_config_get_nameserver (from_config, i));
+	}
+
+	for (i = 0; i < nm_ip6_config_get_num_searches (from_config); i++) {
+		nm_ip6_config_add_search (priv->ac_ip6_config,
+		                              nm_ip6_config_get_search (from_config, i));
+	}
+
+	if (!ip6_config_merge_and_apply (self, TRUE, NULL))
+		_LOGW (LOGD_IP6, "ipv6-pd: failed applying DNS config for connection sharing");
+}
+
+/*****************************************************************************/
+
 static void
 linklocal6_cleanup (NMDevice *self)
 {
@@ -6045,7 +6225,8 @@ linklocal6_complete (NMDevice *self)
 
 	_LOGD (LOGD_DEVICE, "linklocal6: waiting for link-local addresses successful, continue with method %s", method);
 
-	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0) {
+	if (   strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0
+	    || strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_SHARED) == 0) {
 		if (!addrconf6_start_with_link_ready (self)) {
 			/* Time out IPv6 instead of failing the entire activation */
 			nm_device_activate_schedule_ip6_config_timeout (self);
@@ -6234,9 +6415,9 @@ nm_device_ipv6_set_mtu (NMDevice *self, guint32 mtu)
 }
 
 static void
-rdisc_config_changed (NMRDisc *rdisc, const NMRDiscData *rdata, guint changed_int, NMDevice *self)
+ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_int, NMDevice *self)
 {
-	NMRDiscConfigMap changed = changed_int;
+	NMNDiscConfigMap changed = changed_int;
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int i;
 	int system_support;
@@ -6252,8 +6433,8 @@ rdisc_config_changed (NMRDisc *rdisc, const NMRDiscData *rdata, guint changed_in
 
 	if (system_support)
 		ifa_flags = IFA_F_NOPREFIXROUTE;
-	if (   priv->rdisc_use_tempaddr == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR
-	    || priv->rdisc_use_tempaddr == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR)
+	if (   priv->ndisc_use_tempaddr == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR
+	    || priv->ndisc_use_tempaddr == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR)
 	{
 		/* without system_support, this flag will be ignored. Still set it, doesn't seem to do any harm. */
 		ifa_flags |= IFA_F_MANAGETEMPADDR;
@@ -6264,25 +6445,25 @@ rdisc_config_changed (NMRDisc *rdisc, const NMRDiscData *rdata, guint changed_in
 	if (!priv->ac_ip6_config)
 		priv->ac_ip6_config = nm_ip6_config_new (nm_device_get_ip_ifindex (self));
 
-	if (changed & NM_RDISC_CONFIG_GATEWAYS) {
-		/* Use the first gateway as ordered in router discovery cache. */
+	if (changed & NM_NDISC_CONFIG_GATEWAYS) {
+		/* Use the first gateway as ordered in neighbor discovery cache. */
 		if (rdata->gateways_n)
 			nm_ip6_config_set_gateway (priv->ac_ip6_config, &rdata->gateways[0].address);
 		else
 			nm_ip6_config_set_gateway (priv->ac_ip6_config, NULL);
 	}
 
-	if (changed & NM_RDISC_CONFIG_ADDRESSES) {
-		/* Rebuild address list from router discovery cache. */
+	if (changed & NM_NDISC_CONFIG_ADDRESSES) {
+		/* Rebuild address list from neighbor discovery cache. */
 		nm_ip6_config_reset_addresses (priv->ac_ip6_config);
 
-		/* rdisc->addresses contains at most max_addresses entries.
+		/* ndisc->addresses contains at most max_addresses entries.
 		 * This is different from what the kernel does, which
 		 * also counts static and temporary addresses when checking
 		 * max_addresses.
 		 **/
 		for (i = 0; i < rdata->addresses_n; i++) {
-			const NMRDiscAddress *discovered_address = &rdata->addresses[i];
+			const NMNDiscAddress *discovered_address = &rdata->addresses[i];
 			NMPlatformIP6Address address;
 
 			memset (&address, 0, sizeof (address));
@@ -6293,24 +6474,24 @@ rdisc_config_changed (NMRDisc *rdisc, const NMRDiscData *rdata, guint changed_in
 			address.preferred = discovered_address->preferred;
 			if (address.preferred > address.lifetime)
 				address.preferred = address.lifetime;
-			address.addr_source = NM_IP_CONFIG_SOURCE_RDISC;
+			address.addr_source = NM_IP_CONFIG_SOURCE_NDISC;
 			address.n_ifa_flags = ifa_flags;
 
 			nm_ip6_config_add_address (priv->ac_ip6_config, &address);
 		}
 	}
 
-	if (changed & NM_RDISC_CONFIG_ROUTES) {
-		/* Rebuild route list from router discovery cache. */
+	if (changed & NM_NDISC_CONFIG_ROUTES) {
+		/* Rebuild route list from neighbor discovery cache. */
 		nm_ip6_config_reset_routes (priv->ac_ip6_config);
 
 		for (i = 0; i < rdata->routes_n; i++) {
-			const NMRDiscRoute *discovered_route = &rdata->routes[i];
+			const NMNDiscRoute *discovered_route = &rdata->routes[i];
 			const NMPlatformIP6Route route = {
 				.network    = discovered_route->network,
 				.plen       = discovered_route->plen,
 				.gateway    = discovered_route->gateway,
-				.rt_source  = NM_IP_CONFIG_SOURCE_RDISC,
+				.rt_source  = NM_IP_CONFIG_SOURCE_NDISC,
 				.metric     = nm_device_get_ip6_route_metric (self),
 			};
 
@@ -6318,34 +6499,34 @@ rdisc_config_changed (NMRDisc *rdisc, const NMRDiscData *rdata, guint changed_in
 		}
 	}
 
-	if (changed & NM_RDISC_CONFIG_DNS_SERVERS) {
-		/* Rebuild DNS server list from router discovery cache. */
+	if (changed & NM_NDISC_CONFIG_DNS_SERVERS) {
+		/* Rebuild DNS server list from neighbor discovery cache. */
 		nm_ip6_config_reset_nameservers (priv->ac_ip6_config);
 
 		for (i = 0; i < rdata->dns_servers_n; i++)
 			nm_ip6_config_add_nameserver (priv->ac_ip6_config, &rdata->dns_servers[i].address);
 	}
 
-	if (changed & NM_RDISC_CONFIG_DNS_DOMAINS) {
-		/* Rebuild domain list from router discovery cache. */
-		nm_ip6_config_reset_domains (priv->ac_ip6_config);
+	if (changed & NM_NDISC_CONFIG_DNS_DOMAINS) {
+		/* Rebuild domain list from neighbor discovery cache. */
+		nm_ip6_config_reset_searches (priv->ac_ip6_config);
 
 		for (i = 0; i < rdata->dns_domains_n; i++)
-			nm_ip6_config_add_domain (priv->ac_ip6_config, rdata->dns_domains[i].domain);
+			nm_ip6_config_add_search (priv->ac_ip6_config, rdata->dns_domains[i].domain);
 	}
 
-	if (changed & NM_RDISC_CONFIG_DHCP_LEVEL) {
+	if (changed & NM_NDISC_CONFIG_DHCP_LEVEL) {
 		dhcp6_cleanup (self, CLEANUP_TYPE_DECONFIGURE, TRUE);
 
 		priv->dhcp6.mode = rdata->dhcp_level;
-		if (priv->dhcp6.mode != NM_RDISC_DHCP_LEVEL_NONE) {
+		if (priv->dhcp6.mode != NM_NDISC_DHCP_LEVEL_NONE) {
 			NMDeviceStateReason reason;
 
 			_LOGD (LOGD_DEVICE | LOGD_DHCP6,
 			       "Activation: Stage 3 of 5 (IP Configure Start) starting DHCPv6"
 			       " as requested by IPv6 router...");
 			if (!dhcp6_start (self, FALSE, &reason)) {
-				if (priv->dhcp6.mode == NM_RDISC_DHCP_LEVEL_MANAGED) {
+				if (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_MANAGED) {
 					nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 					return;
 				}
@@ -6353,17 +6534,17 @@ rdisc_config_changed (NMRDisc *rdisc, const NMRDiscData *rdata, guint changed_in
 		}
 	}
 
-	if (changed & NM_RDISC_CONFIG_HOP_LIMIT)
+	if (changed & NM_NDISC_CONFIG_HOP_LIMIT)
 		nm_platform_sysctl_set_ip6_hop_limit_safe (NM_PLATFORM_GET, nm_device_get_ip_iface (self), rdata->hop_limit);
 
-	if (changed & NM_RDISC_CONFIG_MTU)
+	if (changed & NM_NDISC_CONFIG_MTU)
 		priv->ip6_mtu = rdata->mtu;
 
 	nm_device_activate_schedule_ip6_config_result (self);
 }
 
 static void
-rdisc_ra_timeout (NMRDisc *rdisc, NMDevice *self)
+ndisc_ra_timeout (NMNDisc *ndisc, NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
@@ -6393,13 +6574,13 @@ addrconf6_start_with_link_ready (NMDevice *self)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMUtilsIPv6IfaceId iid;
 
-	g_assert (priv->rdisc);
+	g_assert (priv->ndisc);
 
 	if (nm_device_get_ip_iface_identifier (self, &iid, FALSE)) {
 		_LOGD (LOGD_IP6, "addrconf6: using the device EUI-64 identifier");
-		nm_rdisc_set_iid (priv->rdisc, iid);
+		nm_ndisc_set_iid (priv->ndisc, iid);
 	} else {
-		/* Don't abort the addrconf at this point -- if rdisc needs the iid
+		/* Don't abort the addrconf at this point -- if ndisc needs the iid
 		 * it will notice this itself. */
 		_LOGI (LOGD_IP6, "addrconf6: no interface identifier; IPv6 adddress creation may fail");
 	}
@@ -6408,22 +6589,53 @@ addrconf6_start_with_link_ready (NMDevice *self)
 	if (!ip6_config_merge_and_apply (self, TRUE, NULL))
 		_LOGW (LOGD_IP6, "failed to apply manual IPv6 configuration");
 
-	nm_device_ipv6_sysctl_set (self, "accept_ra", "1");
-	nm_device_ipv6_sysctl_set (self, "accept_ra_defrtr", "0");
-	nm_device_ipv6_sysctl_set (self, "accept_ra_pinfo", "0");
-	nm_device_ipv6_sysctl_set (self, "accept_ra_rtr_pref", "0");
+	/* XXX: These sysctls would probably be better set by the lndp ndisc itself. */
+	switch (nm_ndisc_get_node_type (priv->ndisc)) {
+	case NM_NDISC_NODE_TYPE_HOST:
+		/* Accepting prefixes from discovered routers. */
+		nm_device_ipv6_sysctl_set (self, "accept_ra", "1");
+		nm_device_ipv6_sysctl_set (self, "accept_ra_defrtr", "0");
+		nm_device_ipv6_sysctl_set (self, "accept_ra_pinfo", "0");
+		nm_device_ipv6_sysctl_set (self, "accept_ra_rtr_pref", "0");
+		break;
+	case NM_NDISC_NODE_TYPE_ROUTER:
+		/* We're the router. */
+		nm_device_ipv6_sysctl_set (self, "forwarding", "1");
+		nm_device_activate_schedule_ip6_config_result (self);
+		priv->needs_ip6_subnet = TRUE;
+		g_signal_emit (self, signals[IP6_SUBNET_NEEDED], 0);
+		break;
+	default:
+		g_assert_not_reached ();
+	}
 
-	priv->rdisc_changed_id = g_signal_connect (priv->rdisc,
-	                                           NM_RDISC_CONFIG_CHANGED,
-	                                           G_CALLBACK (rdisc_config_changed),
+	priv->ndisc_changed_id = g_signal_connect (priv->ndisc,
+	                                           NM_NDISC_CONFIG_RECEIVED,
+	                                           G_CALLBACK (ndisc_config_changed),
 	                                           self);
-	priv->rdisc_timeout_id = g_signal_connect (priv->rdisc,
-	                                           NM_RDISC_RA_TIMEOUT,
-	                                           G_CALLBACK (rdisc_ra_timeout),
+	priv->ndisc_timeout_id = g_signal_connect (priv->ndisc,
+	                                           NM_NDISC_RA_TIMEOUT,
+	                                           G_CALLBACK (ndisc_ra_timeout),
 	                                           self);
 
-	nm_rdisc_start (priv->rdisc);
+	ndisc_set_router_config (priv->ndisc, self);
+	nm_ndisc_start (priv->ndisc);
 	return TRUE;
+}
+
+static NMNDiscNodeType
+ndisc_node_type (NMDevice *self)
+{
+	NMConnection *connection;
+
+	connection = nm_device_get_applied_connection (self);
+	g_assert (connection);
+
+	if (strcmp (nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG),
+	            NM_SETTING_IP4_CONFIG_METHOD_SHARED) == 0)
+		return NM_NDISC_NODE_TYPE_ROUTER;
+	else
+		return NM_NDISC_NODE_TYPE_HOST;
 }
 
 static gboolean
@@ -6451,21 +6663,22 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 
 	stable_id = _get_stable_id (connection, &stable_type);
 	if (stable_id) {
-		priv->rdisc = nm_lndp_rdisc_new (NM_PLATFORM_GET,
+		priv->ndisc = nm_lndp_ndisc_new (NM_PLATFORM_GET,
 		                                 nm_device_get_ip_ifindex (self),
 		                                 nm_device_get_ip_iface (self),
 		                                 stable_type,
 		                                 stable_id,
 		                                 nm_setting_ip6_config_get_addr_gen_mode (s_ip6),
+		                                 ndisc_node_type (self),
 		                                 &error);
 	}
-	if (!priv->rdisc) {
-		_LOGE (LOGD_IP6, "addrconf6: failed to start router discovery: %s", error->message);
+	if (!priv->ndisc) {
+		_LOGE (LOGD_IP6, "addrconf6: failed to start neighbor discovery: %s", error->message);
 		g_error_free (error);
 		return FALSE;
 	}
 
-	priv->rdisc_use_tempaddr = use_tempaddr;
+	priv->ndisc_use_tempaddr = use_tempaddr;
 
 	if (   NM_IN_SET (use_tempaddr, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR)
 	    && !nm_platform_check_support_kernel_extended_ifa_flags (NM_PLATFORM_GET)) {
@@ -6483,7 +6696,7 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 		return TRUE;
 	}
 
-	/* success; already have the LL address; kick off router discovery */
+	/* success; already have the LL address; kick off neighbor discovery */
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
 	return addrconf6_start_with_link_ready (self);
 }
@@ -6493,13 +6706,13 @@ addrconf6_cleanup (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	nm_clear_g_signal_handler (priv->rdisc, &priv->rdisc_changed_id);
-	nm_clear_g_signal_handler (priv->rdisc, &priv->rdisc_timeout_id);
+	nm_clear_g_signal_handler (priv->ndisc, &priv->ndisc_changed_id);
+	nm_clear_g_signal_handler (priv->ndisc, &priv->ndisc_timeout_id);
 
 	nm_device_remove_pending_action (self, PENDING_ACTION_AUTOCONF6, FALSE);
 
 	g_clear_object (&priv->ac_ip6_config);
-	g_clear_object (&priv->rdisc);
+	g_clear_object (&priv->ndisc);
 }
 
 /*****************************************************************************/
@@ -6509,6 +6722,7 @@ static const char *ip6_properties_to_save[] = {
 	"accept_ra_defrtr",
 	"accept_ra_pinfo",
 	"accept_ra_rtr_pref",
+	"forwarding",
 	"disable_ipv6",
 	"hop_limit",
 	"use_tempaddr",
@@ -6666,12 +6880,10 @@ ip6_requires_slaves (NMConnection *connection)
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
 
 	/* SLAAC, DHCP, and Link-Local depend on connectivity (and thus slaves)
-	 * to complete addressing.  SLAAC and DHCP obviously need a peer to
-	 * provide a prefix, while Link-Local must perform DAD on the local link.
+	 * to complete addressing.  SLAAC and DHCP need a peer to provide a prefix.
 	 */
 	return    strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0
-	       || strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP) == 0
-	       || strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0;
+	       || strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP) == 0;
 }
 
 static NMActStageReturn
@@ -6716,7 +6928,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 		}
 	}
 
-	priv->dhcp6.mode = NM_RDISC_DHCP_LEVEL_NONE;
+	priv->dhcp6.mode = NM_NDISC_DHCP_LEVEL_NONE;
 	priv->dhcp6.num_tries_left = DHCP_NUM_TRIES_MAX;
 
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
@@ -6756,7 +6968,8 @@ act_stage3_ip6_config_start (NMDevice *self,
 
 	ip6_privacy = _ip6_privacy_get (self);
 
-	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0) {
+	if (   strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0
+	    || strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_SHARED) == 0) {
 		if (!addrconf6_start (self, ip6_privacy)) {
 			/* IPv6 might be disabled; allow IPv4 to proceed */
 			ret = NM_ACT_STAGE_RETURN_IP_FAIL;
@@ -6765,7 +6978,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0) {
 		ret = linklocal6_start (self);
 	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP) == 0) {
-		priv->dhcp6.mode = NM_RDISC_DHCP_LEVEL_MANAGED;
+		priv->dhcp6.mode = NM_NDISC_DHCP_LEVEL_MANAGED;
 		if (!dhcp6_start (self, TRUE, reason)) {
 			/* IPv6 might be disabled; allow IPv4 to proceed */
 			ret = NM_ACT_STAGE_RETURN_IP_FAIL;
@@ -6775,8 +6988,6 @@ act_stage3_ip6_config_start (NMDevice *self,
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	} else
 		_LOGW (LOGD_IP6, "unhandled IPv6 config method '%s'; will fail", method);
-
-	/* Other methods (shared) aren't implemented yet */
 
 	if (   ret != NM_ACT_STAGE_RETURN_FAILURE
 	    && !nm_device_uses_assumed_connection (self)) {
@@ -6986,12 +7197,16 @@ fw_change_zone_cb_ip_check (NMFirewallManager *firewall_manager,
                             gpointer user_data)
 {
 	NMDevice *self = user_data;
+	NMDevicePrivate *priv;
 
 	if (!fw_change_zone_handle (self, call_id, error))
 		return;
 
 	/* FIXME: fail the device on error? */
-	nm_device_start_ip_check (self);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	if (priv->ip4_state == IP_DONE || priv->ip6_state == IP_DONE)
+		nm_device_start_ip_check (self);
 }
 
 /*
@@ -7161,14 +7376,14 @@ share_init (void)
 
 	if (!nm_platform_sysctl_set (NM_PLATFORM_GET, "/proc/sys/net/ipv4/ip_forward", "1")) {
 		errsv = errno;
-		nm_log_err (LOGD_SHARING, "share: error starting IP forwarding: (%d) %s",
+		nm_log_err (LOGD_SHARING, "share: error enabling IPv4 forwarding: (%d) %s",
 		            errsv, strerror (errsv));
 		return FALSE;
 	}
 
 	if (!nm_platform_sysctl_set (NM_PLATFORM_GET, "/proc/sys/net/ipv4/ip_dynaddr", "1")) {
 		errsv = errno;
-		nm_log_err (LOGD_SHARING, "share: error starting IP forwarding: (%d) %s",
+		nm_log_err (LOGD_SHARING, "share: error enabling dynamic addresses: (%d) %s",
 		            errsv, strerror (errsv));
 	}
 
@@ -7340,7 +7555,7 @@ activate_stage5_ip4_config_commit (NMDevice *self)
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED) == 0) {
 		if (!start_sharing (self, priv->ip4_config)) {
 			_LOGW (LOGD_SHARING, "Activation: Stage 5 of 5 (IPv4 Commit) start sharing failed.");
-			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SHARED_START_FAILED);
+			nm_device_ip_method_failed (self, AF_INET, NM_DEVICE_STATE_REASON_SHARED_START_FAILED);
 			return;
 		}
 	}
@@ -7462,9 +7677,11 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActRequest *req;
+	const char *method;
 	NMConnection *connection;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 	int ip_ifindex;
+	int errsv;
 
 	req = nm_device_get_act_request (self);
 	g_assert (req);
@@ -7480,7 +7697,7 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 	}
 
 	if (ip6_config_merge_and_apply (self, TRUE, &reason)) {
-		if (   priv->dhcp6.mode != NM_RDISC_DHCP_LEVEL_NONE
+		if (   priv->dhcp6.mode != NM_NDISC_DHCP_LEVEL_NONE
 		    && priv->ip6_state == IP_CONF) {
 			if (priv->dhcp6.ip6_config) {
 				/* If IPv6 wasn't the first IP to complete, and DHCP was used,
@@ -7501,6 +7718,17 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 		nm_device_remove_pending_action (self, PENDING_ACTION_DHCP6, FALSE);
 		nm_device_remove_pending_action (self, PENDING_ACTION_AUTOCONF6, FALSE);
 
+		/* Start IPv6 forwarding if we need it */
+		method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
+	
+		if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_SHARED) == 0) {
+			if (!nm_platform_sysctl_set (NM_PLATFORM_GET, "/proc/sys/net/ipv6/conf/all/forwarding", "1")) {
+				errsv = errno;
+				_LOGE (LOGD_SHARING, "share: error enabling IPv6 forwarding: (%d) %s", errsv, strerror (errsv));
+				nm_device_ip_method_failed (self, AF_INET6, NM_DEVICE_STATE_REASON_SHARED_START_FAILED);
+			}
+		}
+		
 		/* Check if we have to wait for DAD */
 		if (priv->ip6_state == IP_CONF && !priv->dad6_ip6_config) {
 			priv->dad6_ip6_config = dad6_get_pending_addresses (self);
@@ -8799,6 +9027,9 @@ nm_device_set_ip6_config (NMDevice *self,
 		}
 
 		nm_device_queue_recheck_assume (self);
+
+		if (priv->ndisc)
+			ndisc_set_router_config (priv->ndisc, self);
 	}
 
 	if (reason)
@@ -9069,10 +9300,10 @@ nm_device_start_ip_check (NMDevice *self)
 	 * first IP method completes.  Any subsequently completing IP method doesn't
 	 * get checked.
 	 */
-	g_assert (!priv->gw_ping.watch);
-	g_assert (!priv->gw_ping.timeout);
-	g_assert (!priv->gw_ping.pid);
-	g_assert (priv->ip4_state == IP_DONE || priv->ip6_state == IP_DONE);
+	g_return_if_fail (!priv->gw_ping.watch);
+	g_return_if_fail (!priv->gw_ping.timeout);
+	g_return_if_fail (!priv->gw_ping.pid);
+	g_return_if_fail (priv->ip4_state == IP_DONE || priv->ip6_state == IP_DONE);
 
 	connection = nm_device_get_applied_connection (self);
 	g_assert (connection);
@@ -9633,8 +9864,8 @@ queued_ip6_config_change (gpointer user_data)
 
 			if (IN6_IS_ADDR_LINKLOCAL (&addr->address))
 				need_ipv6ll = TRUE;
-			else if (priv->rdisc)
-				nm_rdisc_dad_failed (priv->rdisc, &addr->address);
+			else if (priv->ndisc)
+				nm_ndisc_dad_failed (priv->ndisc, &addr->address);
 		}
 
 		/* If no IPv6 link-local address exists but other addresses do then we
@@ -10808,6 +11039,8 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 	g_slist_free_full (priv->vpn6_configs, g_object_unref);
 	priv->vpn6_configs = NULL;
 
+	priv->needs_ip6_subnet = FALSE;
+
 	clear_act_request (self);
 
 	/* Clear legacy IPv4 address property */
@@ -11045,7 +11278,7 @@ nm_device_spawn_iface_helper (NMDevice *self)
 			g_ptr_array_add (argv, g_strdup ("--slaac-required"));
 
 		g_ptr_array_add (argv, g_strdup ("--slaac-tempaddr"));
-		g_ptr_array_add (argv, g_strdup_printf ("%d", priv->rdisc_use_tempaddr));
+		g_ptr_array_add (argv, g_strdup_printf ("%d", priv->ndisc_use_tempaddr));
 
 		if (nm_device_get_ip_iface_identifier (self, &iid, FALSE)) {
 			g_ptr_array_add (argv, g_strdup ("--iid"));
@@ -11115,6 +11348,7 @@ ip6_managed_setup (NMDevice *self)
 	nm_device_ipv6_sysctl_set (self, "accept_ra_pinfo", "0");
 	nm_device_ipv6_sysctl_set (self, "accept_ra_rtr_pref", "0");
 	nm_device_ipv6_sysctl_set (self, "use_tempaddr", "0");
+	nm_device_ipv6_sysctl_set (self, "forwarding", "0");
 }
 
 static void
@@ -13091,6 +13325,20 @@ nm_device_class_init (NMDeviceClass *klass)
 	                  G_SIGNAL_RUN_FIRST,
 	                  0, NULL, NULL, NULL,
 	                  G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_OBJECT);
+
+	signals[IP6_PREFIX_DELEGATED] =
+	    g_signal_new (NM_DEVICE_IP6_PREFIX_DELEGATED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1, G_TYPE_POINTER);
+
+	signals[IP6_SUBNET_NEEDED] =
+	    g_signal_new (NM_DEVICE_IP6_SUBNET_NEEDED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 0);
 
 	signals[REMOVED] =
 	    g_signal_new (NM_DEVICE_REMOVED,
