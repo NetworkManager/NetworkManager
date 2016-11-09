@@ -2550,14 +2550,10 @@ eap_tls_reader (const char *eap_method,
 	NMSettingSecretFlags flags;
 
 	value = svGetValueString (ifcfg, "IEEE_8021X_IDENTITY");
-	if (!value) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Missing IEEE_8021X_IDENTITY for EAP method '%s'.",
-		             eap_method);
-		return FALSE;
+	if (value) {
+		g_object_set (s_8021x, NM_SETTING_802_1X_IDENTITY, value, NULL);
+		g_free (value);
 	}
-	g_object_set (s_8021x, NM_SETTING_802_1X_IDENTITY, value, NULL);
-	g_free (value);
 
 	ca_cert = svGetValueString (ifcfg, ca_cert_key);
 	if (ca_cert) {
