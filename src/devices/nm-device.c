@@ -9069,10 +9069,10 @@ nm_device_start_ip_check (NMDevice *self)
 	 * first IP method completes.  Any subsequently completing IP method doesn't
 	 * get checked.
 	 */
-	g_assert (!priv->gw_ping.watch);
-	g_assert (!priv->gw_ping.timeout);
-	g_assert (!priv->gw_ping.pid);
-	g_assert (priv->ip4_state == IP_DONE || priv->ip6_state == IP_DONE);
+	g_return_if_fail (!priv->gw_ping.watch);
+	g_return_if_fail (!priv->gw_ping.timeout);
+	g_return_if_fail (!priv->gw_ping.pid);
+	g_return_if_fail (priv->ip4_state == IP_DONE || priv->ip6_state == IP_DONE);
 
 	connection = nm_device_get_applied_connection (self);
 	g_assert (connection);
