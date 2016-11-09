@@ -1465,14 +1465,15 @@ make_ip6_setting (shvarFile *ifcfg,
 			method = NM_SETTING_IP6_CONFIG_METHOD_DHCP;
 		else {
 			/* IPV6_AUTOCONF=no and no IPv6 address -> method 'link-local' */
+			g_free (str_value);
 			str_value = svGetValueString (ifcfg, "IPV6ADDR");
 			if (!str_value)
 				str_value = svGetValueString (ifcfg, "IPV6ADDR_SECONDARIES");
 
 			if (!str_value)
 				method = NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL;
-			g_free (str_value);
 		}
+		g_free (str_value);
 	}
 	/* TODO - handle other methods */
 
