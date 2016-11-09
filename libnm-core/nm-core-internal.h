@@ -194,6 +194,14 @@ char *nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_t
 
 char *_nm_utils_uuid_generate_from_strings (const char *string1, ...) G_GNUC_NULL_TERMINATED;
 
+char *nm_utils_uuid_generate_buf_ (char *buf);
+#define nm_utils_uuid_generate_buf(buf) \
+	({ \
+		G_STATIC_ASSERT (sizeof (buf) == G_N_ELEMENTS (buf) && sizeof (buf) >= 37); \
+		nm_utils_uuid_generate_buf_ (buf); \
+	})
+#define nm_utils_uuid_generate_a() (nm_utils_uuid_generate_buf_ (g_alloca (37)))
+
 void _nm_dbus_errors_init (void);
 
 extern gboolean _nm_utils_is_manager_process;

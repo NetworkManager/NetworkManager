@@ -1144,6 +1144,62 @@ nmtst_file_resolve_relative_path (const char *rel, const char *cwd)
 	return g_build_filename (cwd, rel, NULL);
 }
 
+inline static char *
+nmtst_file_get_contents (const char *filename)
+{
+	GError *error = NULL;
+	gboolean success;
+	char *contents = NULL;
+	gsize len;
+
+	success = g_file_get_contents (filename, &contents, &len, &error);
+	nmtst_assert_success (success && contents, error);
+	g_assert_cmpint (strlen (contents), ==, len);
+	return contents;
+}
+
+/*****************************************************************************/
+
+inline static void
+nmtst_file_unlink_if_exists (const char *name)
+{
+	int errsv;
+
+	g_assert (name && name[0]);
+
+	if (unlink (name) != 0) {
+		errsv = errno;
+		if (errsv != ENOENT)
+			g_error ("nmtst_file_unlink_if_exists(%s): failed with %s", name, strerror (errsv));
+	}
+}
+
+inline static void
+nmtst_file_unlink (const char *name)
+{
+	int errsv;
+
+	g_assert (name && name[0]);
+
+	if (unlink (name) != 0) {
+		errsv = errno;
+		g_error ("nmtst_file_unlink(%s): failed with %s", name, strerror (errsv));
+	}
+}
+
+inline static void
+_nmtst_auto_unlinkfile (char **p_name)
+{
+	if (*p_name) {
+		nmtst_file_unlink (*p_name);
+		nm_clear_g_free (p_name);
+	}
+}
+
+#define nmtst_auto_unlinkfile nm_auto(_nmtst_auto_unlinkfile)
+
+/*****************************************************************************/
+
 inline static void
 _nmtst_assert_resolve_relative_path_equals (const char *f1, const char *f2, const char *file, int line)
 {

@@ -335,7 +335,6 @@ commit_changes (NMSettingsConnection *connection,
                 NMSettingsConnectionCommitFunc callback,
                 gpointer user_data)
 {
-	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE ((NMIfcfgConnection *) connection);
 	GError *error = NULL;
 	NMConnection *reread;
 	gboolean same = FALSE, success = FALSE;
@@ -369,7 +368,6 @@ commit_changes (NMSettingsConnection *connection,
 		success = writer_update_connection (NM_CONNECTION (connection),
 		                                    IFCFG_DIR,
 		                                    filename,
-		                                    priv->keyfile,
 		                                    &error);
 	} else {
 		success = writer_new_connection (NM_CONNECTION (connection),

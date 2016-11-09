@@ -1,0 +1,27 @@
+# test what happens with multiple defines of a name.
+#
+# Note that svGetValue() will return "l4x", which
+# isn't correct in terms of shell-parsing. But we
+# don't consider only line-by-line, thus this is
+# expected.
+#
+# Also note that setting NAME will replace the last
+# occurance, and delete all previous once.
+
+#L1
+
+#L2
+
+#L4
+NAME=set-by-test1
+#NM: '
+
+#Lx-1
+#Lx-2
+NAME2=set-by-test2
+#Lx-3
+
+#Ly-1
+#Ly-2
+NAME3=set-by-test3
+#Ly-3

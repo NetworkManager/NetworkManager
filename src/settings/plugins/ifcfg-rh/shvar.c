@@ -44,7 +44,6 @@ struct _shvarFile {
 	char      *fileName;    /* read-only */
 	int        fd;          /* read-only */
 	GList     *lineList;    /* read-only */
-	GList     *current;     /* set implicitly or explicitly, points to element of lineList */
 	gboolean   modified;    /* ignore */
 };
 
@@ -85,114 +84,514 @@ svParseBoolean (const char *value, gint fallback)
 
 /*****************************************************************************/
 
-/* create a new string with all necessary characters escaped.
- * caller must free returned string
- */
-static const char escapees[] = "\"'\\$~`";		/* must be escaped */
-static const char spaces[] = " \t|&;()<>";		/* only require "" */
-static const char newlines[] = "\n\r";			/* will be removed */
+static gboolean
+_shell_is_name (const char *key)
+{
+	/* whether @key is a valid identifier (name). */
+	if (!key)
+		return FALSE;
+	if (   !g_ascii_isalpha (key[0])
+	    && key[0] != '_')
+		return FALSE;
+	return NM_STRCHAR_ALL (&key[1], ch,
+	                       g_ascii_isalnum (ch) || ch == '_');
+}
+
+static const char *
+_shell_is_name_assignment (const char *key)
+{
+	/* whether @key is a valid identifier (name). */
+	if (!key)
+		return NULL;
+	if (   !g_ascii_isalpha (key[0])
+	    && key[0] != '_')
+		return NULL;
+	while (TRUE) {
+		const char ch = (++key)[0];
+
+		if (ch == '=')
+			return &key[1];
+		if (!g_ascii_isalnum (ch) && ch != '_')
+			return NULL;
+	}
+}
+
+/*****************************************************************************/
+
+/* like g_strescape(), except that it also escapes '\''' *sigh*.
+ *
+ * While at it, add $''. */
+static char *
+_escape_ansic (const char *source)
+{
+	const char *p;
+	gchar *dest;
+	gchar *q;
+
+	nm_assert (source);
+
+	p = (const char *) source;
+	/* Each source byte needs maximally four destination chars (\777) */
+	q = dest = g_malloc (strlen (source) * 4 + 1 + 3);
+
+	*q++ = '$';
+	*q++ = '\'';
+
+	while (*p) {
+		switch (*p) {
+		case '\b':
+			*q++ = '\\';
+			*q++ = 'b';
+			break;
+		case '\f':
+			*q++ = '\\';
+			*q++ = 'f';
+			break;
+		case '\n':
+			*q++ = '\\';
+			*q++ = 'n';
+			break;
+		case '\r':
+			*q++ = '\\';
+			*q++ = 'r';
+			break;
+		case '\t':
+			*q++ = '\\';
+			*q++ = 't';
+			break;
+		case '\v':
+			*q++ = '\\';
+			*q++ = 'v';
+			break;
+		case '\\':
+		case '"':
+		case '\'':
+			*q++ = '\\';
+			*q++ = *p;
+			break;
+		default:
+			if ((*p < ' ') || (*p >= 0177)) {
+				*q++ = '\\';
+				*q++ = '0' + (((*p) >> 6) & 07);
+				*q++ = '0' + (((*p) >> 3) & 07);
+				*q++ = '0' + ((*p) & 07);
+			} else
+				*q++ = *p;
+			break;
+		}
+		p++;
+	}
+	*q++ = '\'';
+	*q++ = '\0';
+
+	nm_assert (q - dest <= strlen (source) * 4 + 1 + 3);
+
+	return dest;
+}
+
+/*****************************************************************************/
+
+#define _char_req_escape(ch)        NM_IN_SET (ch,      '\"', '\\',       '$', '`')
+#define _char_req_escape_old(ch)    NM_IN_SET (ch,      '\"', '\\', '\'', '$', '`', '~')
+#define _char_req_quotes(ch)        NM_IN_SET (ch, ' ',             '\'',           '~', '\t', '|', '&', ';', '(', ')', '<', '>')
 
 const char *
 svEscape (const char *s, char **to_free)
 {
 	char *new;
-	int i, j, mangle = 0, space = 0, newline = 0;
-	int newlen, slen;
+	gsize mangle = 0;
+	gboolean requires_quotes = FALSE;
+	int newlen;
+	size_t i, j, slen;
 
 	slen = strlen (s);
 
 	for (i = 0; i < slen; i++) {
-		if (strchr (escapees, s[i]))
+		if (_char_req_escape (s[i]))
 			mangle++;
-		if (strchr (spaces, s[i]))
-			space++;
-		if (strchr (newlines, s[i]))
-			newline++;
+		else if (_char_req_quotes (s[i]))
+			requires_quotes = TRUE;
+		else if (s[i] < ' ') {
+			/* if the string contains newline we can only express it using ANSI C quotation
+			 * (as we don't support line continuation).
+			 * Additionally, ANSI control characters look odd with regular quotation, so handle
+			 * them too. */
+			return (*to_free = _escape_ansic (s));
+		}
 	}
-	if (!mangle && !space && !newline) {
+	if (!mangle && !requires_quotes) {
 		*to_free = NULL;
 		return s;
 	}
 
-	newlen = slen + mangle - newline + 3;	/* 3 is extra ""\0 */
+	newlen = slen + mangle + 3; /* 3 is extra ""\0 */
 	new = g_malloc (newlen);
 
 	j = 0;
 	new[j++] = '"';
 	for (i = 0; i < slen; i++) {
-		if (strchr (newlines, s[i]))
-			continue;
-		if (strchr (escapees, s[i])) {
+		if (_char_req_escape (s[i]))
 			new[j++] = '\\';
-		}
 		new[j++] = s[i];
 	}
 	new[j++] = '"';
 	new[j++] = '\0';
-	g_assert (j == slen + mangle - newline + 3);
+
+	nm_assert (j == slen + mangle + 3);
 
 	*to_free = new;
 	return new;
 }
 
-/* remove escaped characters in place */
-void
-svUnescape (char *s)
+static gboolean
+_looks_like_old_svescaped (const char *value)
 {
-	size_t len, idx_rd = 0, idx_wr = 0;
-	char c;
+	gsize k;
 
-	len = strlen (s);
-	if (len < 2) {
-		if (s[0] == '\\')
-			s[0] = '\0';
-		return;
-	}
+	if (value[0] != '"')
+		return FALSE;
 
-	if ((s[0] == '"' || s[0] == '\'') && s[0] == s[len-1]) {
-		if (len == 2) {
-			s[0] = '\0';
-			return;
-		}
-		if (len == 3) {
-			if (s[1] == '\\') {
-				s[0] = '\0';
-			} else {
-				s[0] = s[1];
-				s[1] = '\0';
-			}
-			return;
-		}
-		s[--len] = '\0';
-		idx_rd = 1;
-	} else {
-		/* seek for the first escape... */
-		char *p = strchr (s, '\\');
-
-		if (!p)
-			return;
-		if (p[1] == '\0') {
-			p[0] = '\0';
-			return;
-		}
-		idx_wr = idx_rd = (p - s);
-	}
-
-	/* idx_rd points to the first escape. Walk the string and shift the
-	 * characters from idx_rd to idx_wr.
-	 */
-	while ((c = s[idx_rd++])) {
-		if (c == '\\') {
-			if (s[idx_rd] == '\0') {
-				s[idx_wr] = '\0';
-				return;
-			}
-			s[idx_wr++] = s[idx_rd++];
+	for (k = 1; ; k++) {
+		if (value[k] == '\0')
+			return FALSE;
+		if (!_char_req_escape_old (value[k]))
 			continue;
-		}
-		s[idx_wr++] = c;
+
+		if (value[k] == '"')
+			return (value[k + 1] == '\0');
+		else if (value[k] == '\\') {
+			k++;
+			if (!_char_req_escape_old (value[k]))
+				return FALSE;
+		} else
+			return FALSE;
 	}
-	s[idx_wr] = '\0';
+}
+
+static gboolean
+_ch_octal_is (char ch)
+{
+	return ch >= '0' && ch < '8';
+}
+
+static guint8
+_ch_octal_get (char ch)
+{
+	nm_assert (_ch_octal_is (ch));
+	return (ch - '0');
+}
+
+static gboolean
+_ch_hex_is (char ch)
+{
+	return g_ascii_isxdigit (ch);
+}
+
+static guint8
+_ch_hex_get (char ch)
+{
+	nm_assert (_ch_hex_is (ch));
+	return ch <= '9' ? ch - '0' : (ch & 0x4F) - 'A' + 10;
+}
+
+static void
+_gstr_init (GString **str, const char *value, gsize i)
+{
+	nm_assert (str);
+	nm_assert (value);
+
+	if (!(*str)) {
+		/* if @str is not yet initialized, it allocates
+		 * a new GString and copies @i characters from
+		 * @value over.
+		 *
+		 * Unescaping usually does not extend the length of a string,
+		 * so we might be tempted to allocate a fixed buffer of length
+		 * (strlen(value)+CONST).
+		 * However, due to $'\Ux' escapes, the maxium length is some
+		 * (FACTOR*strlen(value) + CONST), which is non trivial to get
+		 * right in all cases. Also, we would have to provision for the
+		 * very unlikely extreme case.
+		 * Instead, use a GString buffer which can grow as needed. But for an
+		 * initial guess, strlen(value) is a good start */
+		*str = g_string_new_len (NULL, strlen (value) + 3);
+		if (i)
+			g_string_append_len (*str, value, i);
+	}
+}
+
+const char *
+svUnescape (const char *value, char **to_free)
+{
+	gsize i, j;
+	nm_auto_free_gstring GString *str = NULL;
+	int looks_like_old_svescaped = -1;
+
+	/* we handle bash syntax here (note that ifup has #!/bin/bash.
+	 * Thus, see https://www.gnu.org/software/bash/manual/html_node/Quoting.html#Quoting */
+
+	/* @value shall start with the first character after "FOO=" */
+
+	nm_assert (value);
+	nm_assert (to_free);
+
+	/* we don't expect any newlines. They must be filtered out before-hand.
+	 * We also don't support line continuation. */
+	nm_assert (!NM_STRCHAR_ANY (value, ch, ch == '\n'));
+
+	i = 0;
+	while (TRUE) {
+
+		if (value[i] == '\0')
+			goto out_value;
+
+		if (   g_ascii_isspace (value[i])
+		    || value[i] == ';') {
+			gboolean has_semicolon = (value[i] == ';');
+
+			/* starting with space is only allowed, if the entire
+			 * string consists of spaces (possibly terminated by a comment).
+			 * This disallows for example
+			 *   LANG=C ls -1
+			 *   LANG=  ls -1
+			 * but allows
+			 *   LANG= #comment
+			 *
+			 * As a special case, we also allow one trailing semicolon, as long
+			 * it is only followed by whitespace or a #-comment.
+			 *   FOO=;
+			 *   FOO=a;
+			 *   FOO=b ; #hallo
+			 */
+			j = i + 1;
+			while (   g_ascii_isspace (value[j])
+			       || (   !has_semicolon
+			           && (has_semicolon = (value[j] == ';'))))
+				j++;
+			if (!NM_IN_SET (value[j], '\0', '#'))
+				goto out_error;
+			goto out_value;
+		}
+
+		if (value[i] == '\\') {
+			/* backslash escape */
+			_gstr_init (&str, value, i);
+			i++;
+			if (G_UNLIKELY (value[i] == '\0')) {
+				/* we don't support line continuation */
+				goto out_error;
+			}
+			g_string_append_c (str, value[i]);
+			i++;
+			goto loop1_next;
+		}
+
+		if (value[i] == '\'') {
+			/* single quotes */
+			_gstr_init (&str, value, i);
+			i++;
+			j = i;
+			while (TRUE) {
+				if (value[j] == '\0') {
+					/* unterminated single quote. We don't support line continuation */
+					goto out_error;
+				}
+				if (value[j] == '\'')
+					break;
+				j++;
+			}
+			g_string_append_len (str, &value[i], j - i);
+			i = j + 1;
+			goto loop1_next;
+		}
+
+		if (value[i] == '"') {
+			/* double quotes */
+			_gstr_init (&str, value, i);
+			i++;
+			while (TRUE) {
+				if (value[i] == '"') {
+					i++;
+					break;
+				}
+				if (value[i] == '\0') {
+					/* unterminated double quote. We don't support line continuation. */
+					goto out_error;
+				}
+				if (NM_IN_SET (value[i], '`', '$')) {
+					/* we don't support shell expansion. */
+					goto out_error;
+				}
+				if (value[i] == '\\') {
+					i++;
+					if (value[i] == '\0') {
+						/* we don't support line continuation */
+						goto out_error;
+					}
+					if (NM_IN_SET (value[i], '$', '`', '"', '\\')) {
+						/* Drop the backslash. */
+					} else if (NM_IN_SET (value[i], '\'', '~')) {
+						/* '\'' and '~' in double qoutes are not handled special by shell.
+						 * However, old versions of svEscape() would wrongly use double-quoting
+						 * with backslash escaping for these characters (expecting svUnescape()
+						 * to remove the backslash).
+						 *
+						 * In order to preserve previous behavior, we continue to read such
+						 * strings different then shell does. */
+
+						/* Actually, we can relax this. Old svEscape() escaped the entire value
+						 * in a particular way with double quotes.
+						 * If the value doesn't exactly look like something as created by svEscape(),
+						 * don't do the compat hack and preserve the backslash. */
+						if (looks_like_old_svescaped < 0)
+							looks_like_old_svescaped = _looks_like_old_svescaped (value);
+						if (!looks_like_old_svescaped)
+							g_string_append_c (str, '\\');
+					} else
+						g_string_append_c (str, '\\');
+				}
+				g_string_append_c (str, value[i]);
+				i++;
+			}
+			goto loop1_next;
+		}
+
+		if (   value[i] == '$'
+		    && value[i + 1] == '\'') {
+			/* ANSI-C Quoting */
+			_gstr_init (&str, value, i);
+			i += 2;
+			while (TRUE) {
+				char ch;
+
+				if (value[i] == '\'') {
+					i++;
+					break;
+				}
+				if (value[i] == '\0') {
+					/* unterminated double quote. We don't support line continuation. */
+					goto out_error;
+				}
+				if (value[i] == '\\') {
+
+					i++;
+					if (value[i] == '\0') {
+						/* we don't support line continuation */
+						goto out_error;
+					}
+					switch (value[i]) {
+					case 'a':  ch = '\a';  break;
+					case 'b':  ch = '\b';  break;
+					case 'e':  ch = '\e';  break;
+					case 'E':  ch = '\E';  break;
+					case 'f':  ch = '\f';  break;
+					case 'n':  ch = '\n';  break;
+					case 'r':  ch = '\r';  break;
+					case 't':  ch = '\t';  break;
+					case 'v':  ch = '\v';  break;
+					case '?':  ch = '\?';  break;
+					case '"':  ch = '"';   break;
+					case '\\': ch = '\\';  break;
+					case '\'': ch = '\'';  break;
+					default:
+						if (_ch_octal_is (value[i])) {
+							guint v;
+
+							v = _ch_octal_get (value[i]);
+							i++;
+							if (_ch_octal_is (value[i])) {
+								v = (v * 8) + _ch_octal_get (value[i]);
+								i++;
+								if (_ch_octal_is (value[i])) {
+									v = (v * 8) + _ch_octal_get (value[i]);
+									i++;
+								}
+							}
+							/* like bash, we cut too large numbers off. E.g. A=$'\772' becomes 0xfa  */
+							g_string_append_c (str, (guint8) v);
+						} else if (NM_IN_SET (value[i], 'x', 'u', 'U')) {
+							const char escape_type = value[i];
+							int max_digits = escape_type == 'x' ? 2 : escape_type == 'u' ? 4 : 8;
+							guint64 v;
+
+							i++;
+							if (!_ch_hex_is (value[i])) {
+								/* missing hex value after "\x" escape. This is treated like no escaping. */
+								g_string_append_c (str, '\\');
+								g_string_append_c (str, escape_type);
+							} else {
+								v = _ch_hex_get (value[i]);
+								i++;
+
+								while (--max_digits > 0) {
+									if (!_ch_hex_is (value[i]))
+										break;
+									v = v * 16 + _ch_hex_get (value[i]);
+									i++;
+								}
+								if (escape_type == 'x')
+									g_string_append_c (str, v);
+								else {
+									/* we treat the unicode escapes as utf-8 encoded values. */
+									g_string_append_unichar (str, v);
+								}
+							}
+						} else {
+							g_string_append_c (str, '\\');
+							g_string_append_c (str, value[i]);
+							i++;
+						}
+						goto loop_ansic_next;
+					}
+				} else
+					ch = value[i];
+				g_string_append_c (str, ch);
+				i++;
+loop_ansic_next: ;
+			}
+			goto loop1_next;
+		}
+
+		if (NM_IN_SET (value[i], '|', '&', '(', ')', '<', '>')) {
+			/* shell metacharacters are not supported without quoting.
+			 * Note that ';' is already handled above. */
+			goto out_error;
+		}
+
+		/* an unquoted, regular character. Just consume it directly. */
+		if (str)
+			g_string_append_c (str, value[i]);
+		i++;
+
+loop1_next: ;
+	}
+
+	nm_assert_not_reached ();
+
+out_value:
+	if (str) {
+		*to_free = g_string_free (str, FALSE);
+		str = NULL;
+		return *to_free;
+	} else if (i == 0) {
+		*to_free = NULL;
+		/* we could just return "", but I prefer returning a
+		 * pointer into @value for consistency. Thus, seek to the
+		 * end. */
+		while (value[0])
+			value++;
+		return value;
+	} else if (value[i] != '\0') {
+		*to_free = g_strndup (value, i);
+		return *to_free;
+	} else {
+		*to_free = NULL;
+		return value;
+	}
+
+out_error:
+	*to_free = NULL;
+	return NULL;
 }
 
 /*****************************************************************************/
@@ -203,6 +602,19 @@ svFileGetName (const shvarFile *s)
 	nm_assert (s);
 
 	return s->fileName;
+}
+
+void
+svFileSetName (shvarFile *s, const char *fileName)
+{
+	g_free (s->fileName);
+	s->fileName = g_strdup (fileName);
+}
+
+void
+svFileSetModified (shvarFile *s)
+{
+	s->modified = TRUE;
 }
 
 /*****************************************************************************/
@@ -260,8 +672,11 @@ svOpenFileInternal (const char *name, gboolean create, GError **error)
 
 		/* we'd use g_strsplit() here, but we want a list, not an array */
 		for (p = arena; (q = strchr (p, '\n')) != NULL; p = q + 1)
-			s->lineList = g_list_append (s->lineList, g_strndup (p, q - p));
+			s->lineList = g_list_prepend (s->lineList, g_strndup (p, q - p));
+		if (p[0])
+			s->lineList = g_list_prepend (s->lineList, g_strdup (p));
 		g_free (arena);
+		s->lineList = g_list_reverse (s->lineList);
 
 		/* closefd is set if we opened the file read-only, so go ahead and
 		 * close it, because we can't write to it anyway
@@ -307,43 +722,114 @@ svCreateFile (const char *name)
 
 /*****************************************************************************/
 
-static const char *
-find_line (shvarFile *s, const char *key)
+static const GList *
+shlist_find (const GList *current, const char *key, const char **out_value)
 {
-	const char *line;
 	gsize len;
 
-	len = strlen (key);
+	nm_assert (_shell_is_name (key));
 
-	for (s->current = s->lineList; s->current; s->current = s->current->next) {
-		line = s->current->data;
-		if (!strncmp (key, line, len) && line[len] == '=')
-			return line + len + 1;
+	if (current) {
+		len = strlen (key);
+		do {
+			const char *line = current->data;
+
+			/* skip over leading spaces */
+			while (g_ascii_isspace (line[0]))
+				line++;
+
+			if (!strncmp (key, line, len) && line[len] == '=') {
+				NM_SET_OUT (out_value, line + len + 1);
+				return current;
+			}
+			current = current->next;
+		} while (current);
 	}
 
+	NM_SET_OUT (out_value, NULL);
 	return NULL;
 }
 
-/* svGetValueFull() is identical to svGetValue() except that
- * svGetValue() will never return an empty value (but %NULL instead).
- * svGetValueFull() will return empty values if that is the value for the @key. */
-char *
-svGetValueFull (shvarFile *s, const char *key, gboolean verbatim)
+static void
+shlist_delete (GList **head, GList *current)
 {
-	const char *line_val;
-	char *value;
+	nm_assert (head && *head);
+	nm_assert (current);
+	nm_assert (current->data);
+	nm_assert (g_list_position (*head, current) >= 0);
 
+	g_free (current->data);
+	*head = g_list_delete_link (*head, current);
+}
+
+static gboolean
+shlist_delete_all (GList **head, const char *key, gboolean including_last)
+{
+	GList *current, *last;
+	gboolean changed = FALSE;
+
+	last = (GList *) shlist_find (*head, key, NULL);
+	if (last) {
+		while ((current = (GList *) shlist_find (last->next, key, NULL))) {
+			shlist_delete (head, last);
+			changed = TRUE;
+			last = current;
+		}
+		if (including_last) {
+			shlist_delete (head, last);
+			changed = TRUE;
+		}
+	}
+	return changed;
+}
+
+static char *
+line_construct (const char *key, const char *value)
+{
+	gs_free char *newval_free = NULL;
+
+	nm_assert (_shell_is_name (key));
+	nm_assert (value);
+
+	return g_strdup_printf ("%s=%s", key,
+	                        svEscape (value, &newval_free));
+}
+
+/*****************************************************************************/
+
+static const char *
+_svGetValue (shvarFile *s, const char *key, char **to_free)
+{
+	const GList *current;
+	const char *line_val;
+	const char *last_val = NULL;
+
+	nm_assert (s);
+	nm_assert (_shell_is_name (key));
+	nm_assert (to_free);
+
+	current = s->lineList;
+	while ((current = shlist_find (current, key, &line_val))) {
+		last_val = line_val;
+		current = current->next;
+	}
+
+	if (!last_val) {
+		*to_free = NULL;
+		return NULL;
+	}
+
+	return svUnescape (last_val, to_free);
+}
+
+const char *
+svGetValue (shvarFile *s, const char *key, char **to_free)
+{
 	g_return_val_if_fail (s != NULL, NULL);
 	g_return_val_if_fail (key != NULL, NULL);
+	g_return_val_if_fail (to_free, NULL);
 
-	line_val = find_line (s, key);
-	if (!line_val)
-		return NULL;
-
-	value = g_strchomp (g_strdup (line_val));
-	if (!verbatim)
-		svUnescape (value);
-	return value;
+	return _svGetValue (s, key, to_free);
 }
 
 /* Get the value associated with the key, and leave the current pointer
@@ -351,16 +837,21 @@ svGetValueFull (shvarFile *s, const char *key, gboolean verbatim)
  * be freed by the caller.
  */
 char *
-svGetValue (shvarFile *s, const char *key, gboolean verbatim)
+svGetValueString (shvarFile *s, const char *key)
 {
-	char *value;
+	char *to_free;
+	const char *value;
 
-	value = svGetValueFull (s, key, verbatim);
-	if (value && !*value) {
-		g_free (value);
+	value = _svGetValue (s, key, &to_free);
+	if (!value) {
+		nm_assert (!to_free);
 		return NULL;
 	}
-	return value;
+	if (!value[0]) {
+		g_free (to_free);
+		return NULL;
+	}
+	return to_free ?: g_strdup (value);
 }
 
 /* svGetValueBoolean:
@@ -375,10 +866,11 @@ svGetValue (shvarFile *s, const char *key, gboolean verbatim)
 gint
 svGetValueBoolean (shvarFile *s, const char *key, gint fallback)
 {
-	gs_free char *tmp = NULL;
+	gs_free char *to_free = NULL;
+	const char *value;
 
-	tmp = svGetValue (s, key, FALSE);
-	return svParseBoolean (tmp, fallback);
+	value = _svGetValue (s, key, &to_free);
+	return svParseBoolean (value, fallback);
 }
 
 /* svGetValueInt64:
@@ -394,78 +886,80 @@ svGetValueBoolean (shvarFile *s, const char *key, gint fallback)
 gint64
 svGetValueInt64 (shvarFile *s, const char *key, guint base, gint64 min, gint64 max, gint64 fallback)
 {
-	char *tmp;
+	char *to_free;
+	const char *value;
 	gint64 result;
 	int errsv;
 
-	tmp = svGetValueFull (s, key, FALSE);
-	if (!tmp) {
-		errno = 0;
+	value = _svGetValue (s, key, &to_free);
+	if (!value) {
+		nm_assert (!to_free);
+		/* indicate that the key does not exist (or has a syntax error
+		 * and svUnescape() failed). */
+		errno = ENOKEY;
 		return fallback;
 	}
 
-	result = _nm_utils_ascii_str_to_int64 (tmp, base, min, max, fallback);
-	errsv = errno;
-
-	g_free (tmp);
-
-	errno = errsv;
+	result = _nm_utils_ascii_str_to_int64 (value, base, min, max, fallback);
+	if (to_free) {
+		errsv = errno;
+		g_free (to_free);
+		errno = errsv;
+	}
 	return result;
 }
 
 /*****************************************************************************/
 
-/* Same as svSetValue() but it preserves empty @value -- contrary to
- * svSetValue() for which "" effectively means to remove the value. */
+/* Same as svSetValueString() but it preserves empty @value -- contrary to
+ * svSetValueString() for which "" effectively means to remove the value. */
 void
-svSetValueFull (shvarFile *s, const char *key, const char *value, gboolean verbatim)
+svSetValue (shvarFile *s, const char *key, const char *value)
 {
-	gs_free char *newval_free = NULL;
-	gs_free char *oldval = NULL;
-	const char *newval;
-	char *keyValue;
+	gs_free char *oldval_free = NULL;
+	const char *oldval, *oldval_tmp;
+	GList *current, *last;
+	gboolean has_multiple = FALSE;
 
 	g_return_if_fail (s != NULL);
 	g_return_if_fail (key != NULL);
-	/* value may be NULL */
 
-	if (!value || verbatim)
-		newval = value;
-	else
-		newval = svEscape (value, &newval_free);
+	nm_assert (_shell_is_name (key));
 
-	if (!newval) {
-		/* delete value */
-		if (find_line (s, key)) {
-			/* delete line */
-			s->lineList = g_list_remove_link (s->lineList, s->current);
-			g_free (s->current->data);
-			g_list_free_1 (s->current);
+	if (!value) {
+		if (shlist_delete_all (&s->lineList, key, TRUE))
 			s->modified = TRUE;
-		}
 		return;
 	}
 
-	oldval = svGetValueFull (s, key, FALSE);
+	current = (GList *) shlist_find (s->lineList, key, &oldval);
 
-	keyValue = g_strdup_printf ("%s=%s", key, newval);
-	if (!oldval) {
-		/* append line */
-		s->lineList = g_list_append (s->lineList, keyValue);
+	if (!current) {
+		s->lineList = g_list_append (s->lineList,
+		                             line_construct (key, value));
 		s->modified = TRUE;
 		return;
 	}
 
-	if (strcmp (oldval, newval) != 0) {
-		/* change line */
-		if (s->current) {
-			g_free (s->current->data);
-			s->current->data = keyValue;
-		} else
-			s->lineList = g_list_append (s->lineList, keyValue);
+	last = current;
+	while ((current = (GList *) shlist_find (current->next, key, &oldval_tmp))) {
+		last = current;
+		oldval = oldval_tmp;
+		has_multiple = TRUE;
+	}
+	current = last;
+
+	oldval = svUnescape (oldval, &oldval_free);
+	if (!nm_streq0 (oldval, value)) {
+		g_free (current->data);
+		current->data = line_construct (key, value);
 		s->modified = TRUE;
-	} else
-		g_free (keyValue);
+	}
+
+	if (has_multiple) {
+		if (shlist_delete_all (&s->lineList, key, FALSE))
+			s->modified = TRUE;
+	}
 }
 
 /* Set the variable <key> equal to the value <value>.
@@ -474,9 +968,9 @@ svSetValueFull (shvarFile *s, const char *key, const char *value, gboolean verba
  * to the bottom of the file.
  */
 void
-svSetValue (shvarFile *s, const char *key, const char *value, gboolean verbatim)
+svSetValueString (shvarFile *s, const char *key, const char *value)
 {
-	svSetValueFull (s, key, value && value[0] ? value : NULL, verbatim);
+	svSetValue (s, key, value && value[0] ? value : NULL);
 }
 
 void
@@ -484,15 +978,19 @@ svSetValueInt64 (shvarFile *s, const char *key, gint64 value)
 {
 	char buf[NM_DECIMAL_STR_MAX (value)];
 
-	svSetValueFull (s, key,
-	                nm_sprintf_buf (buf, "%"G_GINT64_FORMAT, value),
-	                TRUE);
+	svSetValue (s, key, nm_sprintf_buf (buf, "%"G_GINT64_FORMAT, value));
+}
+
+void
+svSetValueBoolean (shvarFile *s, const char *key, gboolean value)
+{
+	svSetValue (s, key, value ? "yes" : "no");
 }
 
 void
 svUnsetValue (shvarFile *s, const char *key)
 {
-	svSetValueFull (s, key, NULL, FALSE);
+	svSetValue (s, key, NULL);
 }
 
 /*****************************************************************************/
@@ -508,6 +1006,7 @@ svWriteFile (shvarFile *s, int mode, GError **error)
 {
 	FILE *f;
 	int tmpfd;
+	const GList *current;
 
 	if (s->modified) {
 		if (s->fd == -1)
@@ -540,8 +1039,31 @@ svWriteFile (shvarFile *s, int mode, GError **error)
 		}
 		f = fdopen (tmpfd, "w");
 		fseek (f, 0, SEEK_SET);
-		for (s->current = s->lineList; s->current; s->current = s->current->next) {
-			char *line = s->current->data;
+		for (current = s->lineList; current; current = current->next) {
+			const char *line = current->data;
+			const char *str;
+			const char *value;
+
+			str = line;
+			while (g_ascii_isspace (str[0]))
+				str++;
+			if (NM_IN_SET (str[0], '\0', '#'))
+				goto write_regular;
+
+			value = _shell_is_name_assignment (str);
+			if (value) {
+				gs_free char *s_tmp = NULL;
+
+				/* we check that the assignment can be properly unescaped. */
+				if (svUnescape (value, &s_tmp))
+					goto write_regular;
+				nm_clear_g_free (&s_tmp);
+				s_tmp = g_strndup (str, value - str);
+				fprintf (f, "%s\n", s_tmp);
+			}
+			fprintf (f, "#NM: %s\n", line);
+			continue;
+write_regular:
 			fprintf (f, "%s\n", line);
 		}
 		fclose (f);
@@ -561,6 +1083,6 @@ svCloseFile (shvarFile *s)
 		close (s->fd);
 
 	g_free (s->fileName);
-	g_list_free_full (s->lineList, g_free); /* implicitly frees s->current */
+	g_list_free_full (s->lineList, g_free);
 	g_slice_free (shvarFile, s);
 }

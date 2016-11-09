@@ -771,13 +771,12 @@ crypto_md5_hash (const char *salt,
                  gsize buflen)
 {
 	GChecksum *ctx;
-	int nkey = buflen;
 	gsize digest_len;
-	int count = 0;
 	char digest[16];
-	char *p = buffer;
+	gsize bufidx = 0;
+	int i;
 
-	g_assert_cmpint (g_checksum_type_get_length (G_CHECKSUM_MD5), ==, sizeof (digest));
+	nm_assert (g_checksum_type_get_length (G_CHECKSUM_MD5) == sizeof (digest));
 
 	g_return_if_fail (password_len == 0 || password);
 	g_return_if_fail (buffer != NULL);
@@ -791,12 +790,7 @@ crypto_md5_hash (const char *salt,
 	if (password_len < 0)
 		password_len = strlen (password);
 
-	while (nkey > 0) {
-		int i = 0;
-
-		g_checksum_reset (ctx);
-		if (count++)
-			g_checksum_update (ctx, (const guchar *) digest, sizeof (digest));
+	for (;;) {
 		if (password_len > 0)
 			g_checksum_update (ctx, (const guchar *) password, password_len);
 		if (salt_len > 0)
@@ -804,14 +798,19 @@ crypto_md5_hash (const char *salt,
 
 		digest_len = sizeof (digest);
 		g_checksum_get_digest (ctx, (guchar *) digest, &digest_len);
-		g_assert (digest_len == sizeof (digest));
+		nm_assert (digest_len == sizeof (digest));
 
-		while (nkey && (i < sizeof (digest))) {
-			*(p++) = digest[i++];
-			nkey--;
+		for (i = 0; i < sizeof (digest); i++) {
+			if (bufidx >= buflen)
+				goto done;
+			buffer[bufidx++] = digest[i];
 		}
+
+		g_checksum_reset (ctx);
+		g_checksum_update (ctx, (const guchar *) digest, sizeof (digest));
 	}
 
+done:
 	memset (digest, 0, sizeof (digest));
 	g_checksum_free (ctx);
 }

@@ -34,6 +34,9 @@
 typedef struct _shvarFile shvarFile;
 
 const char *svFileGetName (const shvarFile *s);
+void svFileSetName (shvarFile *s, const char *fileName);
+
+void svFileSetModified (shvarFile *s);
 
 /* Create the file <name>, return a shvarFile (never fails) */
 shvarFile *svCreateFile (const char *name);
@@ -45,8 +48,8 @@ shvarFile *svOpenFile (const char *name, GError **error);
  * pointing at the line containing the value.  The char* returned MUST
  * be freed by the caller.
  */
-char *svGetValue (shvarFile *s, const char *key, gboolean verbatim);
-char *svGetValueFull (shvarFile *s, const char *key, gboolean verbatim);
+const char *svGetValue (shvarFile *s, const char *key, char **to_free);
+char *svGetValueString (shvarFile *s, const char *key);
 
 gint svParseBoolean (const char *value, gint def);
 
@@ -63,8 +66,9 @@ gint64 svGetValueInt64 (shvarFile *s, const char *key, guint base, gint64 min, g
  * the key=value pair after that line.  Otherwise, prepend the pair
  * to the top of the file.
  */
-void svSetValue (shvarFile *s, const char *key, const char *value, gboolean verbatim);
-void svSetValueFull (shvarFile *s, const char *key, const char *value, gboolean verbatim);
+void svSetValueString (shvarFile *s, const char *key, const char *value);
+void svSetValue (shvarFile *s, const char *key, const char *value);
+void svSetValueBoolean (shvarFile *s, const char *key, gboolean value);
 void svSetValueInt64 (shvarFile *s, const char *key, gint64 value);
 
 void svUnsetValue (shvarFile *s, const char *key);
@@ -80,10 +84,7 @@ gboolean svWriteFile (shvarFile *s, int mode, GError **error);
 /* Close the file descriptor (if open) and free the shvarFile. */
 void svCloseFile (shvarFile *s);
 
-/* Return @s unmodified or an escaped string */
 const char *svEscape (const char *s, char **to_free);
-
-/* Unescape a string in-place */
-void svUnescape (char *s);
+const char *svUnescape (const char *s, char **to_free);
 
 #endif /* _SHVAR_H */
