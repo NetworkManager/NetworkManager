@@ -1480,8 +1480,8 @@ make_ip6_setting (shvarFile *ifcfg,
 	if (tmp) {
 		ip6_privacy = svGetValueBoolean (ifcfg, "IPV6_PRIVACY", FALSE);
 		if (!ip6_privacy)
-			ip6_privacy = g_strcmp0 (tmp, "rfc4941") == 0 ||
-			              g_strcmp0 (tmp, "rfc3041") == 0;
+			ip6_privacy = (g_strcmp0 (tmp, "rfc4941") == 0) ||
+			              (g_strcmp0 (tmp, "rfc3041") == 0);
 	}
 	ip6_privacy_prefer_public_ip = svGetValueBoolean (ifcfg, "IPV6_PRIVACY_PREFER_PUBLIC_IP", FALSE);
 	ip6_privacy_val = tmp ?
