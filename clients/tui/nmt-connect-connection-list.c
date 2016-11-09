@@ -107,6 +107,7 @@ static const char *device_sort_order[] = {
 	NM_SETTING_BOND_SETTING_NAME,
 	NM_SETTING_TEAM_SETTING_NAME,
 	NM_SETTING_BRIDGE_SETTING_NAME,
+	NM_SETTING_IP_TUNNEL_SETTING_NAME,
 	"NMDeviceModem",
 	"NMDeviceBt"
 };

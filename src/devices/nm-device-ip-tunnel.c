@@ -557,12 +557,13 @@ platform_link_to_tunnel_mode (const NMPlatformLink *link)
 		return NM_IP_TUNNEL_MODE_GRE;
 	case NM_LINK_TYPE_IP6TNL:
 		lnk = nm_platform_link_get_lnk_ip6tnl (NM_PLATFORM_GET, link->ifindex, NULL);
-		if (lnk->proto == IPPROTO_IPIP)
-			return NM_IP_TUNNEL_MODE_IPIP6;
-		else if (lnk->proto == IPPROTO_IPV6)
-			return NM_IP_TUNNEL_MODE_IP6IP6;
-		else
-			return NM_IP_TUNNEL_MODE_UNKNOWN;
+		if (lnk) {
+			if (lnk->proto == IPPROTO_IPIP)
+				return NM_IP_TUNNEL_MODE_IPIP6;
+			if (lnk->proto == IPPROTO_IPV6)
+				return NM_IP_TUNNEL_MODE_IP6IP6;
+		}
+		return NM_IP_TUNNEL_MODE_UNKNOWN;
 	case NM_LINK_TYPE_IPIP:
 		return NM_IP_TUNNEL_MODE_IPIP;
 	case NM_LINK_TYPE_SIT:
@@ -585,9 +586,15 @@ tunnel_mode_to_link_type (NMIPTunnelMode tunnel_mode)
 		return NM_LINK_TYPE_IPIP;
 	case NM_IP_TUNNEL_MODE_SIT:
 		return NM_LINK_TYPE_SIT;
-	default:
-		g_return_val_if_reached (NM_LINK_TYPE_UNKNOWN);
+	case NM_IP_TUNNEL_MODE_VTI:
+	case NM_IP_TUNNEL_MODE_IP6GRE:
+	case NM_IP_TUNNEL_MODE_VTI6:
+	case NM_IP_TUNNEL_MODE_ISATAP:
+		return NM_LINK_TYPE_UNKNOWN;
+	case NM_IP_TUNNEL_MODE_UNKNOWN:
+		break;
 	}
+	g_return_val_if_reached (NM_LINK_TYPE_UNKNOWN);
 }
 
 /*****************************************************************************/
@@ -1004,7 +1011,7 @@ create_device (NMDeviceFactory *factory,
 		mode = platform_link_to_tunnel_mode (plink);
 	}
 
-	if (mode == NM_IP_TUNNEL_MODE_UNKNOWN)
+	if (mode == NM_IP_TUNNEL_MODE_UNKNOWN || link_type == NM_LINK_TYPE_UNKNOWN)
 		return NULL;
 
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_IP_TUNNEL,

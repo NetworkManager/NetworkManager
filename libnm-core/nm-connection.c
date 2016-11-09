@@ -1871,7 +1871,8 @@ nm_connection_get_virtual_device_description (NMConnection *connection)
 	else if (!strcmp (type, NM_SETTING_INFINIBAND_SETTING_NAME)) {
 		display_type = _("InfiniBand");
 		iface = nm_setting_infiniband_get_virtual_interface_name (nm_connection_get_setting_infiniband (connection));
-	}
+	} else if (!strcmp (type, NM_SETTING_IP_TUNNEL_SETTING_NAME))
+		display_type = _("IP Tunnel");
 
 	if (!iface || !display_type)
 		return NULL;

@@ -44,6 +44,7 @@
 #include "nmt-page-dsl.h"
 #include "nmt-page-ethernet.h"
 #include "nmt-page-infiniband.h"
+#include "nmt-page-ip-tunnel.h"
 #include "nmt-page-ip4.h"
 #include "nmt-page-ip6.h"
 #include "nmt-page-ppp.h"
@@ -359,6 +360,8 @@ nmt_editor_constructed (GObject *object)
 		page = nmt_page_ethernet_new (priv->edit_connection, deventry);
 	else if (nm_connection_is_type (priv->edit_connection, NM_SETTING_WIRELESS_SETTING_NAME))
 		page = nmt_page_wifi_new (priv->edit_connection, deventry);
+	else if (nm_connection_is_type (priv->edit_connection, NM_SETTING_IP_TUNNEL_SETTING_NAME))
+		page = nmt_page_ip_tunnel_new (priv->edit_connection, deventry);
 	else
 		g_assert_not_reached ();
 
