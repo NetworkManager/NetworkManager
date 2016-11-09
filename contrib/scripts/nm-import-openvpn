@@ -111,6 +111,10 @@ function handle_generic(t, option, value)
   if not value[2] then io.stderr:write(string.format("Warning: ignoring invalid option '%s'\n", value[1])) return end
   t[option] = value[2]
 end
+function handle_generic_unquote(t, option, value)
+  if not value[2] then io.stderr:write(string.format("Warning: ignoring invalid option '%s'\n", value[1])) return end
+  t[option] = unquote(value[2])
+end
 function handle_number(t, option, value)
   if not value[2] then io.stderr:write(string.format("Warning: ignoring invalid option '%s'\n", value[1])) return end
   if not tonumber(value[2]) then 
@@ -195,9 +199,6 @@ function handle_secret(t, option, value)
   t[option[2]] = value[3]
   g_switches[value[1]]= true
 end
-function handle_tls_remote(t, option, value)
-  t[option] = unquote(value[2])
-end
 function handle_remote_cert_tls(t, option, value)
   if value[2] ~= "client" and value[2] ~= "server" then
     io.stderr:write(string.format("Warning: ignoring invalid option '%s'\n", value[1]))
@@ -254,12 +255,13 @@ vpn2nm = {
   ["secret"]            = { nm_opt={"static-key", "static-key-direction"}, func=handle_secret, tbl=g_vpn_data },
   ["tls-auth"]          = { nm_opt={"ta", "ta-dir"},   func=handle_secret,          tbl=g_vpn_data },
   ["tls-client"]        = { nm_opt="client",           func=set_bool,               tbl={} },
-  ["tls-remote"]        = { nm_opt="tls-remote",       func=handle_tls_remote,      tbl=g_vpn_data },
+  ["tls-remote"]        = { nm_opt="tls-remote",       func=handle_generic_unquote, tbl=g_vpn_data },
   ["remote-cert-tls"]   = { nm_opt="remote-cert-tls",  func=handle_remote_cert_tls, tbl=g_vpn_data },
   ["tun-mtu"]           = { nm_opt="tunnel-mtu",       func=handle_generic,         tbl=g_vpn_data },
   ["tun-ipv6"]          = { nm_opt="tun-ipv6",         func=handle_yes,             tbl=g_vpn_data },
   ["route"]             = { nm_opt="routes",           func=handle_routes,          tbl=g_ip4_data },
   ["max-routes"]        = { nm_opt="max-routes",       func=handle_number,          tbl=g_vpn_data },
+  ["tls-cipher"]        = { nm_opt="tls-cipher",       func=handle_generic_unquote, tbl=g_vpn_data },
 }
 
 ------------------------------------------------------------
