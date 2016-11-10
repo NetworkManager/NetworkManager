@@ -49,13 +49,27 @@ function unquote(str)
   return (string.gsub(str, "^([\"\'])(.*)%1$", "%2"))
 end
 
-function ip_mask_to_prefix(mask)
-  local b, prefix
-  local b1,b2,b3,b4 = mask:match("(%d%d?%d?)%.(%d%d?%d?)%.(%d%d?%d?)%.(%d%d?%d?)")
+function parse_ipv4_to_bytes(ip_addr)
+  local b1,b2,b3,b4 = ip_addr:match("^(%d%d?%d?)%.(%d%d?%d?)%.(%d%d?%d?)%.(%d%d?%d?)$")
   b1 = tonumber(b1)
   b2 = tonumber(b2)
   b3 = tonumber(b3)
   b4 = tonumber(b4)
+  return b1, b2, b3, b4
+end
+
+function is_ipv4(ip_addr)
+  local b1,b2,b3,b4 = parse_ipv4_to_bytes(ip_addr)
+  if not b1 or (b1 > 255) then return false end
+  if not b2 or (b2 > 255) then return false end
+  if not b3 or (b3 > 255) then return false end
+  if not b4 or (b4 > 255) then return false end
+  return true
+end
+
+function ip_mask_to_prefix(mask)
+  local b, prefix
+  local b1,b2,b3,b4 = parse_ipv4_to_bytes(mask)
 
   if b4 ~= 0 then
     prefix = 24
@@ -111,6 +125,10 @@ function handle_generic(t, option, value)
   if not value[2] then io.stderr:write(string.format("Warning: ignoring invalid option '%s'\n", value[1])) return end
   t[option] = value[2]
 end
+function handle_generic_unquote(t, option, value)
+  if not value[2] then io.stderr:write(string.format("Warning: ignoring invalid option '%s'\n", value[1])) return end
+  t[option] = unquote(value[2])
+end
 function handle_number(t, option, value)
   if not value[2] then io.stderr:write(string.format("Warning: ignoring invalid option '%s'\n", value[1])) return end
   if not tonumber(value[2]) then 
@@ -125,14 +143,16 @@ function handle_proto(t, option, value)
     t[option] = "yes"
   end
 end
---[[
-function handle_dev_old(t, option, value)
-  if not value[2] then io.stderr:write(string.format("Warning: ignoring invalid option '%s'\n", value[1])) end
-  if value[2] == "tap" then
-    t[option] = "yes"
+function handle_comp_lzo(t, option, value)
+  value[2] = value[2] or "adaptive"
+  if value[2] == "no" then
+    value[2] = "no-by-default"
+  elseif value[2] ~= "yes" and value[2] ~= "adaptive" then
+    io.stderr:write(string.format("Warning: ignoring invalid argument '%s' in option 'comp-lzo'\n", value[2]))
+    return
   end
+  t[option] = value[2]
 end
---]]
 function handle_dev_type(t, option, value)
   if value[2] ~= "tun" and value[2] ~= "tap" then
     io.stderr:write(string.format("Warning: ignoring invalid option '%s'\n", value[1]))
@@ -195,9 +215,6 @@ function handle_secret(t, option, value)
   t[option[2]] = value[3]
   g_switches[value[1]]= true
 end
-function handle_tls_remote(t, option, value)
-  t[option] = unquote(value[2])
-end
 function handle_remote_cert_tls(t, option, value)
   if value[2] ~= "client" and value[2] ~= "server" then
     io.stderr:write(string.format("Warning: ignoring invalid option '%s'\n", value[1]))
@@ -207,11 +224,49 @@ function handle_remote_cert_tls(t, option, value)
 end
 function handle_routes(t, option, value)
   if not value[2] then io.stderr:write("Warning: invalid option 'route'\n") return end
-  value[3] = value[3] or "255.255.255.255"
-  value[4] = value[4] or "0.0.0.0"
-  value[5] = value[5] or "0"
+  netmask = (value[3] and value[3] ~= "default") and value[3] or "255.255.255.255"
+  gateway = (value[4] and value[4] ~= "default") and value[4] or "0.0.0.0"
+  metric  = (value[5] and value[5] ~= "default") and value[5] or "0"
+
+  if not is_ipv4(value[2]) then
+    if value[2] == "vpn_gateway" or value[2] == "net_gateway" or value[2] == "remote_host" then
+      io.stderr:write(string.format("Warning: sorry, the '%s' keyword is not supported by NetworkManager in option '%s'\n",
+                      value[2], value[1]))
+    else
+      io.stderr:write(string.format("Warning: '%s' is not a valid IPv4 address in option '%s'\n", value[2], value[1]))
+    end
+    return
+  end
+  if not is_ipv4(netmask) then
+    io.stderr:write(string.format("Warning: '%s' is not a valid IPv4 netmask in option '%s'\n", netmask, value[1]))
+    return
+  end
+  if not is_ipv4(gateway) then
+    if gateway == "vpn_gateway" or gateway == "net_gateway" or gateway == "remote_host" then
+      io.stderr:write(string.format("Warning: sorry, the '%s' keyword is not supported by NetworkManager in option '%s'\n",
+                      gateway, value[1]))
+    else
+      io.stderr:write(string.format("Warning: '%s' is not a valid IPv4 gateway in option '%s'\n", gateway, value[1]))
+    end
+    return
+  end
+  if not tonumber(metric) then
+    io.stderr:write(string.format("Warning: '%s' is not a valid metric in option '%s'\n", metric, value[1]))
+    return
+  end
+
   if not t[option] then t[option] = {} end
-  t[option][#t[option]+1] = {value[2], value[3], value[4], value[5]}
+  t[option][#t[option]+1] = {value[2], netmask, gateway, metric}
+end
+function handle_verify_x509_name(t, option, value)
+  if not value[2] then io.stderr:write("Warning: missing argument in option 'verify-x509-name'\n") return end
+  value[2] = unquote(value[2])
+  value[3] = value[3] or "subject"
+  if value[3] ~= "subject" and value[3] ~= "name" and value[3] ~= "name-prefix" then
+    io.stderr:write(string.format("Warning: ignoring invalid value '%s' for type in option '%s'\n", value[3], value[1]))
+    return
+  end
+  t[option] = value[3] .. ":" .. value[2]
 end
 
 -- global variables
@@ -225,49 +280,70 @@ vpn2nm = {
   ["ca"]                = { nm_opt="ca",               func=handle_path,            tbl=g_vpn_data },
   ["cert"]              = { nm_opt="cert",             func=handle_path,            tbl=g_vpn_data },
   ["cipher"]            = { nm_opt="cipher",           func=handle_generic,         tbl=g_vpn_data },
-  ["keysize"]           = { nm_opt="keysize",          func=handle_generic,         tbl=g_vpn_data },
-  ["keepalive"]         = { nm_opt={"ping", "ping-restart"}, func=handle_keepalive, tbl=g_vpn_data },
   ["client"]            = { nm_opt="client",           func=set_bool,               tbl={} },
-  ["comp-lzo"]          = { nm_opt="comp-lzo",         func=handle_yes,             tbl=g_vpn_data },
-  ["float"]             = { nm_opt="float",            func=handle_yes,             tbl=g_vpn_data },
---  ["dev"]               = { nm_opt="tap-dev",        func=handle_dev_old },
+  ["comp-lzo"]          = { nm_opt="comp-lzo",         func=handle_comp_lzo,        tbl=g_vpn_data },
   ["dev"]               = { nm_opt="dev",              func=handle_generic,         tbl=g_vpn_data },
   ["dev-type"]          = { nm_opt="dev-type",         func=handle_dev_type,        tbl=g_vpn_data },
+  ["float"]             = { nm_opt="float",            func=handle_yes,             tbl=g_vpn_data },
   ["fragment"]          = { nm_opt="fragment-size",    func=handle_generic,         tbl=g_vpn_data },
+  ["http-proxy"]        = { nm_opt={"proxy-type", "proxy-server", "proxy-port"}, func=handle_proxy, tbl=g_vpn_data },
+  ["http-proxy-retry"]  = { nm_opt="proxy-retry",      func=handle_yes,             tbl=g_vpn_data },
   ["ifconfig"]          = { nm_opt={"local-ip", "remote-ip"}, func=handle_ifconfig, tbl=g_vpn_data },
+  ["keepalive"]         = { nm_opt={"ping", "ping-restart"}, func=handle_keepalive, tbl=g_vpn_data },
   ["key"]               = { nm_opt="key",              func=handle_path,            tbl=g_vpn_data },
+  ["keysize"]           = { nm_opt="keysize",          func=handle_generic,         tbl=g_vpn_data },
+  ["max-routes"]        = { nm_opt="max-routes",       func=handle_number,          tbl=g_vpn_data },
   ["mssfix"]            = { nm_opt="mssfix",           func=handle_yes,             tbl=g_vpn_data },
+  ["ns-cert-type"]      = { nm_opt="ns-cert-type",     func=handle_remote_cert_tls, tbl=g_vpn_data },
   ["ping"]              = { nm_opt="ping",             func=handle_number,          tbl=g_vpn_data },
   ["ping-exit"]         = { nm_opt="ping-exit",        func=handle_number,          tbl=g_vpn_data },
   ["ping-restart"]      = { nm_opt="ping-restart",     func=handle_number,          tbl=g_vpn_data },
   ["pkcs12"]            = { nm_opt="client",           func=handle_path,            tbl=g_vpn_data },
   ["port"]              = { nm_opt="port",             func=handle_port,            tbl=g_vpn_data },
-  ["rport"]             = { nm_opt="port",             func=handle_port,            tbl=g_vpn_data },
   ["proto"]             = { nm_opt="proto-tcp",        func=handle_proto,           tbl=g_vpn_data },
-  ["http-proxy"]        = { nm_opt={"proxy-type", "proxy-server", "proxy-port"}, func=handle_proxy, tbl=g_vpn_data },
-  ["http-proxy-retry"]  = { nm_opt="proxy-retry",      func=handle_yes,             tbl=g_vpn_data },
-  ["socks-proxy"]       = { nm_opt={"proxy-type", "proxy-server", "proxy-port"}, func=handle_proxy, tbl=g_vpn_data },
-  ["socks-proxy-retry"] = { nm_opt="proxy-retry",      func=handle_yes,             tbl=g_vpn_data },
   ["remote"]            = { nm_opt="remote",           func=handle_remote,          tbl=g_vpn_data },
+  ["remote-cert-tls"]   = { nm_opt="remote-cert-tls",  func=handle_remote_cert_tls, tbl=g_vpn_data },
   ["remote-random"]     = { nm_opt="remote-random",    func=handle_yes,             tbl=g_vpn_data },
   ["reneg-sec"]         = { nm_opt="reneg-seconds",    func=handle_generic,         tbl=g_vpn_data },
+  ["route"]             = { nm_opt="routes",           func=handle_routes,          tbl=g_ip4_data },
+  ["rport"]             = { nm_opt="port",             func=handle_port,            tbl=g_vpn_data },
   ["secret"]            = { nm_opt={"static-key", "static-key-direction"}, func=handle_secret, tbl=g_vpn_data },
+  ["socks-proxy"]       = { nm_opt={"proxy-type", "proxy-server", "proxy-port"}, func=handle_proxy, tbl=g_vpn_data },
+  ["socks-proxy-retry"] = { nm_opt="proxy-retry",      func=handle_yes,             tbl=g_vpn_data },
   ["tls-auth"]          = { nm_opt={"ta", "ta-dir"},   func=handle_secret,          tbl=g_vpn_data },
+  ["tls-cipher"]        = { nm_opt="tls-cipher",       func=handle_generic_unquote, tbl=g_vpn_data },
   ["tls-client"]        = { nm_opt="client",           func=set_bool,               tbl={} },
-  ["tls-remote"]        = { nm_opt="tls-remote",       func=handle_tls_remote,      tbl=g_vpn_data },
-  ["remote-cert-tls"]   = { nm_opt="remote-cert-tls",  func=handle_remote_cert_tls, tbl=g_vpn_data },
+  ["tls-remote"]        = { nm_opt="tls-remote",       func=handle_generic_unquote, tbl=g_vpn_data },
+  ["tun-ipv6"]          = { nm_opt="tun-ipv6",         func=handle_yes,             tbl=g_vpn_data },
   ["tun-mtu"]           = { nm_opt="tunnel-mtu",       func=handle_generic,         tbl=g_vpn_data },
-  ["route"]             = { nm_opt="routes",           func=handle_routes,          tbl=g_ip4_data }
+  ["verify-x509-name"]  = { nm_opt="verify-x509-name", func=handle_verify_x509_name,tbl=g_vpn_data },
 }
 
 ------------------------------------------------------------
 -- Read and convert the config into the global g_vpn_data --
 -----------------------------------------------------------
 function read_and_convert(in_file)
-  local function line_split(str)
-    t={}; i = 1
-    for str in str:gmatch("%S+") do
-      t[i] = str
+  local function line_split(line)
+    local t={}
+    local i, idx = 1, 1
+    local delim = "\""
+    while true do
+      local a,b = line:find("%S+", idx)
+      if not a then break end
+
+      local str = line:sub(a,b)
+      local quote = nil
+      if str:sub(1,1) == delim and str:sub(#str,#str) ~= delim then
+        quote = (line.." "):find(delim.."%s", b + 1)
+      end
+
+      if quote then
+        t[i] = line:sub(a, quote)
+        idx = quote + 1
+      else
+        t[i] = str
+        idx = b + 1
+      end
       i = i + 1
     end
     return t
