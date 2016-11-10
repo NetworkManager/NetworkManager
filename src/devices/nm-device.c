@@ -1821,16 +1821,17 @@ static void
 ndisc_set_router_config (NMNDisc *ndisc, NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	guint32 now = nm_utils_get_monotonic_timestamp_s ();
+	gint32 now;
 	GArray *addresses, *dns_servers, *dns_domains;
 	guint len, i;
 
 	if (nm_ndisc_get_node_type (ndisc) != NM_NDISC_NODE_TYPE_ROUTER)
 		return;
 
-	/* Addresses whose prefixes we announce. */
+	now = nm_utils_get_monotonic_timestamp_s ();
+
 	len = nm_ip6_config_get_num_addresses (priv->ip6_config);
-	addresses = g_array_sized_new (FALSE, FALSE, sizeof (NMNDiscAddress), len);
+	addresses = g_array_sized_new (FALSE, TRUE, sizeof (NMNDiscAddress), len);
 	for (i = 0; i < len; i++) {
 		const NMPlatformIP6Address *addr = nm_ip6_config_get_address (priv->ip6_config, i);
 		NMNDiscAddress *ndisc_addr;
@@ -1853,28 +1854,26 @@ ndisc_set_router_config (NMNDisc *ndisc, NMDevice *self)
 		ndisc_addr->preferred = addr->preferred;
 	}
 
-	/* DNS servers. */
 	len = nm_ip6_config_get_num_nameservers (priv->ip6_config);
-	dns_servers = g_array_sized_new (FALSE, FALSE, sizeof (NMNDiscDNSServer), len);
+	dns_servers = g_array_sized_new (FALSE, TRUE, sizeof (NMNDiscDNSServer), len);
+	g_array_set_size (dns_servers, len);
 	for (i = 0; i < len; i++) {
 		const struct in6_addr *nameserver = nm_ip6_config_get_nameserver (priv->ip6_config, i);
 		NMNDiscDNSServer *ndisc_nameserver;
 
-		g_array_set_size (dns_servers, dns_servers->len+1);
 		ndisc_nameserver = &g_array_index (dns_servers, NMNDiscDNSServer, dns_servers->len-1);
 		ndisc_nameserver->address = *nameserver;
 		ndisc_nameserver->timestamp = now;
 		ndisc_nameserver->lifetime = NM_NDISC_ROUTER_LIFETIME;
 	}
 
-	/* DNS domains. */
 	len = nm_ip6_config_get_num_searches (priv->ip6_config);
-	dns_domains = g_array_sized_new (FALSE, FALSE, sizeof (NMNDiscDNSDomain), len);
+	dns_domains = g_array_sized_new (FALSE, TRUE, sizeof (NMNDiscDNSDomain), len);
+	g_array_set_size (dns_domains, len);
 	for (i = 0; i < len; i++) {
 		const char *search = nm_ip6_config_get_search (priv->ip6_config, i);
 		NMNDiscDNSDomain *ndisc_search;
 
-		g_array_set_size (dns_domains, dns_domains->len+1);
 		ndisc_search = &g_array_index (dns_domains, NMNDiscDNSDomain, dns_domains->len-1);
 		ndisc_search->domain = g_strdup (search);
 		ndisc_search->timestamp = now;
@@ -1882,9 +1881,9 @@ ndisc_set_router_config (NMNDisc *ndisc, NMDevice *self)
 	}
 
 	nm_ndisc_set_config (ndisc, addresses, dns_servers, dns_domains);
-	g_array_free (addresses, TRUE);
-	g_array_free (dns_servers, TRUE);
-	g_array_free (dns_domains, TRUE);
+	g_array_unref (addresses);
+	g_array_unref (dns_servers);
+	g_array_unref (dns_domains);
 }
 
 static gboolean
