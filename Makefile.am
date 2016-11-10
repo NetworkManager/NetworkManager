@@ -21,6 +21,7 @@ bin_PROGRAMS =
 libexec_PROGRAMS =
 lib_LTLIBRARIES =
 pkglib_LTLIBRARIES =
+core_plugins =
 service_DATA =
 man_MANS =
 examples_DATA =
@@ -1395,6 +1396,11 @@ src_libNetworkManagerTest_la_LIBADD = \
 
 ###############################################################################
 
+src/NetworkManager.ver: src/NetworkManager.ver-orig src/libNetworkManager.la $(core_plugins)
+	"$(top_srcdir)/tools/create-exports-NetworkManager.sh" --called-from-make "$(top_srcdir)"
+
+CLEANFILES += src/NetworkManager.ver
+
 EXTRA_src_NetworkManager_DEPENDENCIES = \
 	src/NetworkManager.ver
 
@@ -1408,7 +1414,7 @@ src_NetworkManager_LDADD = \
 
 src_NetworkManager_LDFLAGS = \
 	-rdynamic \
-	-Wl,--version-script="$(srcdir)/src/NetworkManager.ver"
+	-Wl,--version-script="src/NetworkManager.ver"
 
 ###############################################################################
 
@@ -1435,7 +1441,7 @@ src_nm_iface_helper_LDFLAGS = \
 EXTRA_DIST += \
 	src/org.freedesktop.NetworkManager.conf \
 	src/nm-test-utils-core.h \
-	src/NetworkManager.ver
+	src/NetworkManager.ver-orig
 
 ###############################################################################
 # src/dhcp-manager
@@ -1586,7 +1592,7 @@ EXTRA_DIST += \
 
 if CONFIG_PLUGIN_IBFT
 
-pkglib_LTLIBRARIES += src/settings/plugins/ibft/libnm-settings-plugin-ibft.la
+core_plugins += src/settings/plugins/ibft/libnm-settings-plugin-ibft.la
 
 noinst_LTLIBRARIES += src/settings/plugins/ibft/libnms-ibft-core.la
 
@@ -1675,7 +1681,7 @@ endif
 
 if CONFIG_PLUGIN_IFCFG_RH
 
-pkglib_LTLIBRARIES += src/settings/plugins/ifcfg-rh/libnm-settings-plugin-ifcfg-rh.la
+core_plugins += src/settings/plugins/ifcfg-rh/libnm-settings-plugin-ifcfg-rh.la
 
 noinst_LTLIBRARIES += \
 	src/settings/plugins/ifcfg-rh/libnmdbus-ifcfg-rh.la \
@@ -1968,7 +1974,7 @@ EXTRA_DIST += \
 
 if CONFIG_PLUGIN_IFUPDOWN
 
-pkglib_LTLIBRARIES += src/settings/plugins/ifupdown/libnm-settings-plugin-ifupdown.la
+core_plugins += src/settings/plugins/ifupdown/libnm-settings-plugin-ifupdown.la
 
 noinst_LTLIBRARIES += src/settings/plugins/ifupdown/libnms-ifupdown-core.la
 
@@ -2073,7 +2079,7 @@ EXTRA_DIST += \
 
 if CONFIG_PLUGIN_IFNET
 
-pkglib_LTLIBRARIES += src/settings/plugins/ifnet/libnm-settings-plugin-ifnet.la
+core_plugins += src/settings/plugins/ifnet/libnm-settings-plugin-ifnet.la
 
 noinst_LTLIBRARIES += src/settings/plugins/ifnet/libnms-ifnet-core.la
 
@@ -2166,7 +2172,7 @@ EXTRA_DIST += \
 # src/devices/adsl
 ###############################################################################
 
-pkglib_LTLIBRARIES += src/devices/adsl/libnm-device-plugin-adsl.la
+core_plugins += src/devices/adsl/libnm-device-plugin-adsl.la
 
 src_devices_adsl_libnm_device_plugin_adsl_la_SOURCES = \
 	src/devices/adsl/nm-atm-manager.c \
@@ -2226,7 +2232,7 @@ src_devices_wwan_cppflags = \
 	$(LIBSYSTEMD_CFLAGS) \
 	$(MM_GLIB_CFLAGS)
 
-pkglib_LTLIBRARIES += src/devices/wwan/libnm-wwan.la
+core_plugins += src/devices/wwan/libnm-wwan.la
 
 GLIB_GENERATED += \
 	src/devices/wwan/nm-modem-enum-types.h \
@@ -2262,7 +2268,7 @@ src_devices_wwan_libnm_wwan_la_LIBADD = \
 	$(LIBSYSTEMD_LIBS) \
 	$(MM_GLIB_LIBS)
 
-pkglib_LTLIBRARIES += src/devices/wwan/libnm-device-plugin-wwan.la
+core_plugins += src/devices/wwan/libnm-device-plugin-wwan.la
 
 src_devices_wwan_libnm_device_plugin_wwan_la_SOURCES = \
 	src/devices/wwan/nm-wwan-factory.c \
@@ -2304,7 +2310,7 @@ GLIB_GENERATED += \
 	src/devices/bluetooth/nm-bt-enum-types.c
 nm_bt_enum_types_sources = src/devices/bluetooth/nm-bt-error.h
 
-pkglib_LTLIBRARIES += src/devices/bluetooth/libnm-device-plugin-bluetooth.la
+core_plugins += src/devices/bluetooth/libnm-device-plugin-bluetooth.la
 
 src_devices_bluetooth_libnm_device_plugin_bluetooth_la_SOURCES = \
 	src/devices/bluetooth/nm-bt-enum-types.h \
@@ -2378,7 +2384,7 @@ endif
 
 if WITH_WIFI
 
-pkglib_LTLIBRARIES += src/devices/wifi/libnm-device-plugin-wifi.la
+core_plugins += src/devices/wifi/libnm-device-plugin-wifi.la
 
 src_devices_wifi_libnm_device_plugin_wifi_la_SOURCES = \
 	src/devices/wifi/nm-wifi-factory.c \
@@ -2455,7 +2461,7 @@ endif
 
 if WITH_TEAMDCTL
 
-pkglib_LTLIBRARIES += src/devices/team/libnm-device-plugin-team.la
+core_plugins += src/devices/team/libnm-device-plugin-team.la
 
 src_devices_team_libnm_device_plugin_team_la_SOURCES = \
 	src/devices/team/nm-team-factory.c \
@@ -4001,6 +4007,8 @@ else
 check_PROGRAMS += $(check_programs) $(check_programs_norun)
 check_LTLIBRARIES += $(check_ltlibraries)
 endif
+
+pkglib_LTLIBRARIES += $(core_plugins)
 
 TESTS += $(check_programs)
 

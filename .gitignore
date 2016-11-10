@@ -238,6 +238,7 @@ test-*.trs
 /po/remove-potcdate.sin
 
 /src/NetworkManager
+/src/NetworkManager.ver
 /src/devices/tests/test-arping
 /src/devices/tests/test-lldp
 /src/devices/wifi/tests/test-general

@@ -414,10 +414,9 @@ intltoolize --automake --copy --force
 	--with-tests=yes \
 	--with-valgrind=no \
 	--enable-ifcfg-rh=yes \
-	--with-system-libndp=yes \
 	--with-pppd-plugin-dir=%{_libdir}/pppd/%{ppp_version} \
 	--with-dist-version=%{version}-%{release} \
-	--with-setting-plugins-default='ifcfg-rh,ibft' \
+	--with-config-plugins-default='ifcfg-rh,ibft' \
 	--with-config-dns-rc-manager-default=symlink \
 	--with-config-logging-backend-default=journal \
 	--enable-json-validation

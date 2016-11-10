@@ -37,7 +37,7 @@ fi
 # Whether to use valgrind can be controlled via command line
 # variables $NMTST_USE_VALGRIND set to true/false
 #
-# When --called-from-makefile, the variable has only
+# When --called-from-make, the variable has only
 # effect when `./configure --with-valgrind`. Otherwise,
 # valgrind is never used during `make check`.
 # When `./configure --with-valgrind`, valgrind is used
