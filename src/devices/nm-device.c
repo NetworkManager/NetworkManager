@@ -1875,7 +1875,7 @@ ndisc_set_router_config (NMNDisc *ndisc, NMDevice *self)
 		NMNDiscDNSDomain *ndisc_search;
 
 		ndisc_search = &g_array_index (dns_domains, NMNDiscDNSDomain, i);
-		ndisc_search->domain = g_strdup (search);
+		ndisc_search->domain = (char *) search;
 		ndisc_search->timestamp = now;
 		ndisc_search->lifetime = NM_NDISC_ROUTER_LIFETIME;
 	}
