@@ -49,13 +49,27 @@ function unquote(str)
   return (string.gsub(str, "^([\"\'])(.*)%1$", "%2"))
 end
 
-function ip_mask_to_prefix(mask)
-  local b, prefix
-  local b1,b2,b3,b4 = mask:match("(%d%d?%d?)%.(%d%d?%d?)%.(%d%d?%d?)%.(%d%d?%d?)")
+function parse_ipv4_to_bytes(ip_addr)
+  local b1,b2,b3,b4 = ip_addr:match("^(%d%d?%d?)%.(%d%d?%d?)%.(%d%d?%d?)%.(%d%d?%d?)$")
   b1 = tonumber(b1)
   b2 = tonumber(b2)
   b3 = tonumber(b3)
   b4 = tonumber(b4)
+  return b1, b2, b3, b4
+end
+
+function is_ipv4(ip_addr)
+  local b1,b2,b3,b4 = parse_ipv4_to_bytes(ip_addr)
+  if not b1 or (b1 > 255) then return false end
+  if not b2 or (b2 > 255) then return false end
+  if not b3 or (b3 > 255) then return false end
+  if not b4 or (b4 > 255) then return false end
+  return true
+end
+
+function ip_mask_to_prefix(mask)
+  local b, prefix
+  local b1,b2,b3,b4 = parse_ipv4_to_bytes(mask)
 
   if b4 ~= 0 then
     prefix = 24
@@ -208,11 +222,39 @@ function handle_remote_cert_tls(t, option, value)
 end
 function handle_routes(t, option, value)
   if not value[2] then io.stderr:write("Warning: invalid option 'route'\n") return end
-  value[3] = value[3] or "255.255.255.255"
-  value[4] = value[4] or "0.0.0.0"
-  value[5] = value[5] or "0"
+  netmask = (value[3] and value[3] ~= "default") and value[3] or "255.255.255.255"
+  gateway = (value[4] and value[4] ~= "default") and value[4] or "0.0.0.0"
+  metric  = (value[5] and value[5] ~= "default") and value[5] or "0"
+
+  if not is_ipv4(value[2]) then
+    if value[2] == "vpn_gateway" or value[2] == "net_gateway" or value[2] == "remote_host" then
+      io.stderr:write(string.format("Warning: sorry, the '%s' keyword is not supported by NetworkManager in option '%s'\n",
+                      value[2], value[1]))
+    else
+      io.stderr:write(string.format("Warning: '%s' is not a valid IPv4 address in option '%s'\n", value[2], value[1]))
+    end
+    return
+  end
+  if not is_ipv4(netmask) then
+    io.stderr:write(string.format("Warning: '%s' is not a valid IPv4 netmask in option '%s'\n", netmask, value[1]))
+    return
+  end
+  if not is_ipv4(gateway) then
+    if gateway == "vpn_gateway" or gateway == "net_gateway" or gateway == "remote_host" then
+      io.stderr:write(string.format("Warning: sorry, the '%s' keyword is not supported by NetworkManager in option '%s'\n",
+                      gateway, value[1]))
+    else
+      io.stderr:write(string.format("Warning: '%s' is not a valid IPv4 gateway in option '%s'\n", gateway, value[1]))
+    end
+    return
+  end
+  if not tonumber(metric) then
+    io.stderr:write(string.format("Warning: '%s' is not a valid metric in option '%s'\n", metric, value[1]))
+    return
+  end
+
   if not t[option] then t[option] = {} end
-  t[option][#t[option]+1] = {value[2], value[3], value[4], value[5]}
+  t[option][#t[option]+1] = {value[2], netmask, gateway, metric}
 end
 
 -- global variables
