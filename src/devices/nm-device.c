@@ -1861,7 +1861,7 @@ ndisc_set_router_config (NMNDisc *ndisc, NMDevice *self)
 		const struct in6_addr *nameserver = nm_ip6_config_get_nameserver (priv->ip6_config, i);
 		NMNDiscDNSServer *ndisc_nameserver;
 
-		ndisc_nameserver = &g_array_index (dns_servers, NMNDiscDNSServer, dns_servers->len-1);
+		ndisc_nameserver = &g_array_index (dns_servers, NMNDiscDNSServer, i);
 		ndisc_nameserver->address = *nameserver;
 		ndisc_nameserver->timestamp = now;
 		ndisc_nameserver->lifetime = NM_NDISC_ROUTER_LIFETIME;
@@ -1874,7 +1874,7 @@ ndisc_set_router_config (NMNDisc *ndisc, NMDevice *self)
 		const char *search = nm_ip6_config_get_search (priv->ip6_config, i);
 		NMNDiscDNSDomain *ndisc_search;
 
-		ndisc_search = &g_array_index (dns_domains, NMNDiscDNSDomain, dns_domains->len-1);
+		ndisc_search = &g_array_index (dns_domains, NMNDiscDNSDomain, i);
 		ndisc_search->domain = g_strdup (search);
 		ndisc_search->timestamp = now;
 		ndisc_search->lifetime = NM_NDISC_ROUTER_LIFETIME;
