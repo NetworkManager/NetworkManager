@@ -96,6 +96,17 @@ case "$1" in
     build)
         do_build
         ;;
+    '--called-from-make')
+        if test -z "${NM_BUILD_NO_CREATE_EXPORTS+x}"; then
+            do_update
+        else
+            if test -f "./src/NetworkManager.ver"; then
+                touch ./src/NetworkManager.ver
+            else
+                cp "$2/src/NetworkManager.ver-orig" ./src/NetworkManager.ver
+            fi
+        fi
+        ;;
     update)
         do_update
         ;;
