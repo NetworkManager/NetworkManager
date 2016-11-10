@@ -228,9 +228,7 @@ nodist_introspection_libnmdbus_la_SOURCES = \
 	introspection/nmdbus-vpn-connection.c \
 	introspection/nmdbus-vpn-connection.h \
 	introspection/nmdbus-vpn-plugin.c \
-	introspection/nmdbus-vpn-plugin.h \
-	introspection/nmdbus-wimax-nsp.c \
-	introspection/nmdbus-wimax-nsp.h
+	introspection/nmdbus-vpn-plugin.h
 
 DBUS_INTERFACE_DOCS = \
 	introspection/nmdbus-access-point-org.freedesktop.NetworkManager.AccessPoint.xml \
