@@ -7,10 +7,10 @@ die() {
 
 _is_true() {
     case "$1" in
-        y|Y|yes|YES|1)
+        y|Y|yes|YES|1|true|TRUE)
             return 0
             ;;
-        n|N|no|NO|0)
+        n|N|no|NO|0|false|FALSE)
             return 1
             ;;
         *)
@@ -27,19 +27,35 @@ SCRIPT_PATH="${SCRIPT_PATH:-$(readlink -f "$(dirname "$0")")}"
 
 VALGRIND_ERROR=37
 
+if [ "$1" == "--called-from-make" ]; then
+    shift
+    CALLED_FROM_MAKE=1
+else
+    CALLED_FROM_MAKE=0
+fi
 
+# Whether to use valgrind can be controlled via command line
+# variables $NMTST_USE_VALGRIND set to true/false
+#
+# When --called-from-makefile, the variable has only
+# effect when `./configure --with-valgrind`. Otherwise,
+# valgrind is never used during `make check`.
+# When `./configure --with-valgrind`, valgrind is used
+# unless it's disabled via environment variable.
+#
+# When called directly, the arguments -v|-V overwrite the
+# setting from the environment variable.
+# When neither specified via command line or environemt
+# variable, default to "false".
 if [[ -z "${NMTST_USE_VALGRIND+x}" ]]; then
-    if [[ -z "${NMTST_NO_VALGRIND+x}" ]]; then
-        NMTST_USE_VALGRIND=0
-    elif [[ -z "${NMTST_NO_VALGRIND}" ]]; then
+    if [ "$CALLED_FROM_MAKE" == 1 ]; then
         NMTST_USE_VALGRIND=1
     else
         NMTST_USE_VALGRIND=0
     fi
 fi
 
-if [ "$1" == "--called-from-make" ]; then
-    shift
+if [ "$CALLED_FROM_MAKE" == 1 ]; then
     NMTST_LIBTOOL=($1 --mode=execute); shift
     NMTST_VALGRIND="$1"; shift
     if [[ "$NMTST_VALGRIND" == no ]]; then
@@ -124,7 +140,7 @@ if [ -z "${NMTST_LAUNCH_DBUS}" ]; then
     fi
 fi
 
-if [[ "$NMTST_MAKE_FIRST" == 1 ]]; then
+if _is_true "$NMTST_MAKE_FIRST" 0; then
     git_dir="$(readlink -f "$(git rev-parse --show-toplevel)")"
     rel_path="${TEST_PATH/#$(printf '%s/' "$git_dir")}/$TEST_NAME"
     cd "$git_dir"
