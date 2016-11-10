@@ -143,6 +143,16 @@ function handle_proto(t, option, value)
     t[option] = "yes"
   end
 end
+function handle_comp_lzo(t, option, value)
+  value[2] = value[2] or "adaptive"
+  if value[2] == "no" then
+    value[2] = "no-by-default"
+  elseif value[2] ~= "yes" and value[2] ~= "adaptive" then
+    io.stderr:write(string.format("Warning: ignoring invalid argument '%s' in option 'comp-lzo'\n", value[2]))
+    return
+  end
+  t[option] = value[2]
+end
 --[[
 function handle_dev_old(t, option, value)
   if not value[2] then io.stderr:write(string.format("Warning: ignoring invalid option '%s'\n", value[1])) end
@@ -271,7 +281,7 @@ vpn2nm = {
   ["keysize"]           = { nm_opt="keysize",          func=handle_generic,         tbl=g_vpn_data },
   ["keepalive"]         = { nm_opt={"ping", "ping-restart"}, func=handle_keepalive, tbl=g_vpn_data },
   ["client"]            = { nm_opt="client",           func=set_bool,               tbl={} },
-  ["comp-lzo"]          = { nm_opt="comp-lzo",         func=handle_yes,             tbl=g_vpn_data },
+  ["comp-lzo"]          = { nm_opt="comp-lzo",         func=handle_comp_lzo,        tbl=g_vpn_data },
   ["float"]             = { nm_opt="float",            func=handle_yes,             tbl=g_vpn_data },
 --  ["dev"]               = { nm_opt="tap-dev",        func=handle_dev_old },
   ["dev"]               = { nm_opt="dev",              func=handle_generic,         tbl=g_vpn_data },
