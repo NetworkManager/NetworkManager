@@ -406,7 +406,10 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 	 * property: mac-address
 	 * variable: HWADDR
 	 * description: IBoIP 20-byte hardware address of the device (in traditional
-	 *   hex-digits-and-colons notation).
+	 *    hex-digits-and-colons notation).
+	 *    Note that for initscripts this is the current MAC address of the device as found
+	 *    during ifup. For NetworkManager this is the permanent MAC address. Or in case no
+	 *    permanent MAC address exists, the MAC address initially configured on the device.
 	 * example: HWADDR=01:02:03:04:05:06:07:08:09:0A:01:02:03:04:05:06:07:08:09:11
 	 * ---end---
 	 */

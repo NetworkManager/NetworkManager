@@ -1321,6 +1321,9 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_wireless_class)
 	 * variable: HWADDR
 	 * description: Hardware address of the device in traditional hex-digits-and-colons
 	 *    notation (e.g. 00:22:68:14:5A:05).
+	 *    Note that for initscripts this is the current MAC address of the device as found
+	 *    during ifup. For NetworkManager this is the permanent MAC address. Or in case no
+	 *    permanent MAC address exists, the MAC address initially configured on the device.
 	 * ---end---
 	 */
 	g_object_class_install_property
