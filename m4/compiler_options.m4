@@ -55,7 +55,7 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 	dnl attach it to the CFLAGS.
 	NM_COMPILER_WARNING([unknown-warning-option], [])
 
-	CFLAGS_MORE_WARNINGS="-Wall -std=gnu89"
+	CFLAGS_MORE_WARNINGS="-Wall -std=gnu99"
 
 	if test "x$set_more_warnings" = xerror; then
 		CFLAGS_MORE_WARNINGS="$CFLAGS_MORE_WARNINGS -Werror"
