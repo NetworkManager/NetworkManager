@@ -2,6 +2,11 @@
 
 set -e
 
+die() {
+    echo "$@"
+    exit 1
+}
+
 # generates the linker version script src/NetworkManager.ver
 # by looking at the symbols needed by the device and settings
 # plugins. Note that this depends on how NetworkManager and
@@ -82,8 +87,8 @@ local:
 EOF
 }
 
+test -f ./src/.libs/libNetworkManager.a || die "must be called from NetworkManager \$(top_builddir) after building the tree"
 
-cd "$(realpath $(dirname "$0"))/.."
 case "$1" in
     rebuild)
         do_rebuild
