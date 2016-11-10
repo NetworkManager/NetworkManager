@@ -266,6 +266,16 @@ function handle_routes(t, option, value)
   if not t[option] then t[option] = {} end
   t[option][#t[option]+1] = {value[2], netmask, gateway, metric}
 end
+function handle_verify_x509_name(t, option, value)
+  if not value[2] then io.stderr:write("Warning: missing argument in option 'verify-x509-name'\n") return end
+  value[2] = unquote(value[2])
+  value[3] = value[3] or "subject"
+  if value[3] ~= "subject" and value[3] ~= "name" and value[3] ~= "name-prefix" then
+    io.stderr:write(string.format("Warning: ignoring invalid value '%s' for type in option '%s'\n", value[3], value[1]))
+    return
+  end
+  t[option] = value[3] .. ":" .. value[2]
+end
 
 -- global variables
 g_vpn_data = {}
@@ -315,6 +325,7 @@ vpn2nm = {
   ["route"]             = { nm_opt="routes",           func=handle_routes,          tbl=g_ip4_data },
   ["max-routes"]        = { nm_opt="max-routes",       func=handle_number,          tbl=g_vpn_data },
   ["tls-cipher"]        = { nm_opt="tls-cipher",       func=handle_generic_unquote, tbl=g_vpn_data },
+  ["verify-x509-name"]  = { nm_opt="verify-x509-name", func=handle_verify_x509_name,tbl=g_vpn_data },
 }
 
 ------------------------------------------------------------
