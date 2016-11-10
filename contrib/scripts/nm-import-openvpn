@@ -332,10 +332,27 @@ vpn2nm = {
 -- Read and convert the config into the global g_vpn_data --
 -----------------------------------------------------------
 function read_and_convert(in_file)
-  local function line_split(str)
-    t={}; i = 1
-    for str in str:gmatch("%S+") do
-      t[i] = str
+  local function line_split(line)
+    local t={}
+    local i, idx = 1, 1
+    local delim = "\""
+    while true do
+      local a,b = line:find("%S+", idx)
+      if not a then break end
+
+      local str = line:sub(a,b)
+      local quote = nil
+      if str:sub(1,1) == delim and str:sub(#str,#str) ~= delim then
+        quote = (line.." "):find(delim.."%s", b + 1)
+      end
+
+      if quote then
+        t[i] = line:sub(a, quote)
+        idx = quote + 1
+      else
+        t[i] = str
+        idx = b + 1
+      end
       i = i + 1
     end
     return t
