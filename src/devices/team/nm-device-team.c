@@ -464,7 +464,7 @@ teamd_process_watch_cb (GPid pid, gint status, gpointer user_data)
 
 	g_return_if_fail (priv->teamd_process_watch);
 
-	_LOGD (LOGD_TEAM, "teamd died with status %d", status);
+	_LOGD (LOGD_TEAM, "teamd %lld died with status %d", (long long) pid, status);
 	priv->teamd_pid = 0;
 	priv->teamd_process_watch = 0;
 
@@ -474,7 +474,7 @@ teamd_process_watch_cb (GPid pid, gint status, gpointer user_data)
 	if (priv->teamd_timeout &&
 	    (state >= NM_DEVICE_STATE_PREPARE) &&
 	    (state <= NM_DEVICE_STATE_ACTIVATED)) {
-		_LOGW (LOGD_TEAM, "teamd process quit unexpectedly; failing activation");
+		_LOGW (LOGD_TEAM, "teamd process %lld quit unexpectedly; failing activation", (long long) pid);
 		teamd_cleanup (device, TRUE);
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
 	}
