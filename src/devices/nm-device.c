@@ -1845,6 +1845,7 @@ ndisc_set_router_config (NMNDisc *ndisc, NMDevice *self)
 		if (addr->plen != 64)
 			continue;
 
+		g_array_set_size (addresses, addresses->len+1);
 		ndisc_addr = &g_array_index (addresses, NMNDiscAddress, addresses->len-1);
 		ndisc_addr->address = addr->address;
 		ndisc_addr->timestamp = addr->timestamp;
@@ -1859,6 +1860,7 @@ ndisc_set_router_config (NMNDisc *ndisc, NMDevice *self)
 		const struct in6_addr *nameserver = nm_ip6_config_get_nameserver (priv->ip6_config, i);
 		NMNDiscDNSServer *ndisc_nameserver;
 
+		g_array_set_size (dns_servers, dns_servers->len+1);
 		ndisc_nameserver = &g_array_index (dns_servers, NMNDiscDNSServer, dns_servers->len-1);
 		ndisc_nameserver->address = *nameserver;
 		ndisc_nameserver->timestamp = now;
@@ -1872,6 +1874,7 @@ ndisc_set_router_config (NMNDisc *ndisc, NMDevice *self)
 		const char *search = nm_ip6_config_get_search (priv->ip6_config, i);
 		NMNDiscDNSDomain *ndisc_search;
 
+		g_array_set_size (dns_domains, dns_domains->len+1);
 		ndisc_search = &g_array_index (dns_domains, NMNDiscDNSDomain, dns_domains->len-1);
 		ndisc_search->domain = g_strdup (search);
 		ndisc_search->timestamp = now;
