@@ -228,7 +228,9 @@ nodist_introspection_libnmdbus_la_SOURCES = \
 	introspection/nmdbus-vpn-connection.c \
 	introspection/nmdbus-vpn-connection.h \
 	introspection/nmdbus-vpn-plugin.c \
-	introspection/nmdbus-vpn-plugin.h
+	introspection/nmdbus-vpn-plugin.h \
+	introspection/nmdbus-wimax-nsp.c \
+	introspection/nmdbus-wimax-nsp.h
 
 DBUS_INTERFACE_DOCS = \
 	introspection/nmdbus-access-point-org.freedesktop.NetworkManager.AccessPoint.xml \
@@ -668,7 +670,6 @@ libnm_libnm_la_private_headers = \
 	libnm/nm-ip4-config.h \
 	libnm/nm-ip6-config.h \
 	libnm/nm-manager.h \
-	libnm/nm-object-cache.h \
 	libnm/nm-object-private.h \
 	libnm/nm-remote-connection-private.h \
 	libnm/nm-remote-settings.h
@@ -704,7 +705,6 @@ libnm_libnm_la_sources = \
 	libnm/nm-ip4-config.c \
 	libnm/nm-ip6-config.c \
 	libnm/nm-manager.c \
-	libnm/nm-object-cache.c \
 	libnm/nm-object.c \
 	libnm/nm-remote-connection.c \
 	libnm/nm-remote-settings.c \

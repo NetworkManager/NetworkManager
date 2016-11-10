@@ -239,8 +239,6 @@ nm_wimax_nsp_class_init (NMWimaxNspClass *nsp_class)
 
 	g_type_class_add_private (nsp_class, sizeof (NMWimaxNspPrivate));
 
-	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_WIMAX_NSP);
-
 	/* virtual methods */
 	object_class->get_property = get_property;
 	object_class->finalize = finalize;

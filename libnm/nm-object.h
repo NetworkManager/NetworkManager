@@ -39,6 +39,8 @@ G_BEGIN_DECLS
 
 #define NM_OBJECT_PATH "path"
 #define NM_OBJECT_DBUS_CONNECTION "dbus-connection"
+#define NM_OBJECT_DBUS_OBJECT "dbus-object"
+#define NM_OBJECT_DBUS_OBJECT_MANAGER "dbus-object-manager"
 
 /**
  * NMObject:

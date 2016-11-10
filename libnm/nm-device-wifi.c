@@ -31,9 +31,7 @@
 #include "nm-utils.h"
 
 #include "nm-access-point.h"
-#include "nm-device-private.h"
 #include "nm-object-private.h"
-#include "nm-object-cache.h"
 #include "nm-core-internal.h"
 #include "nm-dbus-helpers.h"
 
@@ -660,8 +658,6 @@ nm_device_wifi_init (NMDeviceWifi *device)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
 
-	_nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_WIFI);
-
 	g_signal_connect (device,
 	                  "notify::" NM_DEVICE_STATE,
 	                  G_CALLBACK (state_changed_cb),
@@ -796,10 +792,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (wifi_class);
 
 	g_type_class_add_private (wifi_class, sizeof (NMDeviceWifiPrivate));
-
-	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DEVICE_WIRELESS);
-	_nm_dbus_register_proxy_type (NM_DBUS_INTERFACE_DEVICE_WIRELESS,
-	                              NMDBUS_TYPE_DEVICE_WIFI_PROXY);
 
 	/* virtual methods */
 	object_class->get_property = get_property;

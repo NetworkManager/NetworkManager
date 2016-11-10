@@ -28,7 +28,6 @@
 #include "nm-utils.h"
 
 #include "nm-device-tun.h"
-#include "nm-device-private.h"
 #include "nm-object-private.h"
 
 G_DEFINE_TYPE (NMDeviceTun, nm_device_tun, NM_TYPE_DEVICE)
@@ -239,7 +238,6 @@ get_hw_address (NMDevice *device)
 static void
 nm_device_tun_init (NMDeviceTun *device)
 {
-	_nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_TUN);
 }
 
 static void
@@ -319,8 +317,6 @@ nm_device_tun_class_init (NMDeviceTunClass *gre_class)
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (gre_class);
 
 	g_type_class_add_private (gre_class, sizeof (NMDeviceTunPrivate));
-
-	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DEVICE_TUN);
 
 	/* virtual methods */
 	object_class->finalize = finalize;

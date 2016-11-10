@@ -29,7 +29,6 @@
 #include "nm-utils.h"
 
 #include "nm-device-ethernet.h"
-#include "nm-device-private.h"
 #include "nm-object-private.h"
 
 G_DEFINE_TYPE (NMDeviceEthernet, nm_device_ethernet, NM_TYPE_DEVICE)
@@ -282,7 +281,6 @@ get_hw_address (NMDevice *device)
 static void
 nm_device_ethernet_init (NMDeviceEthernet *device)
 {
-	_nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_ETHERNET);
 }
 
 static void
@@ -356,8 +354,6 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *eth_class)
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (eth_class);
 
 	g_type_class_add_private (eth_class, sizeof (NMDeviceEthernetPrivate));
-
-	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DEVICE_WIRED);
 
 	/* virtual methods */
 	object_class->finalize = finalize;

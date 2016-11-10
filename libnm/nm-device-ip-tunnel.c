@@ -27,7 +27,6 @@
 #include "nm-utils.h"
 
 #include "nm-device-ip-tunnel.h"
-#include "nm-device-private.h"
 #include "nm-object-private.h"
 #include "nm-core-internal.h"
 
@@ -269,7 +268,6 @@ get_setting_type (NMDevice *device)
 static void
 nm_device_ip_tunnel_init (NMDeviceIPTunnel *device)
 {
-	_nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_IP_TUNNEL);
 }
 
 static void
@@ -368,8 +366,6 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *bond_class)
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (bond_class);
 
 	g_type_class_add_private (bond_class, sizeof (NMDeviceIPTunnelPrivate));
-
-	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DEVICE_IP_TUNNEL);
 
 	/* virtual methods */
 	object_class->finalize = finalize;

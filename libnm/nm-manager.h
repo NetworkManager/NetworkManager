@@ -37,7 +37,6 @@ G_BEGIN_DECLS
 #define NM_MANAGER_VERSION "version"
 #define NM_MANAGER_STATE "state"
 #define NM_MANAGER_STARTUP "startup"
-#define NM_MANAGER_NM_RUNNING "nm-running"
 #define NM_MANAGER_NETWORKING_ENABLED "networking-enabled"
 #define NM_MANAGER_WIRELESS_ENABLED "wireless-enabled"
 #define NM_MANAGER_WIRELESS_HARDWARE_ENABLED "wireless-hardware-enabled"
@@ -80,7 +79,6 @@ GType nm_manager_get_type (void);
 const char *nm_manager_get_version        (NMManager *manager);
 NMState   nm_manager_get_state            (NMManager *manager);
 gboolean  nm_manager_get_startup          (NMManager *manager);
-gboolean  nm_manager_get_nm_running       (NMManager *manager);
 
 gboolean  nm_manager_networking_get_enabled (NMManager *manager);
 gboolean  nm_manager_networking_set_enabled (NMManager *manager,

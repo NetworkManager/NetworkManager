@@ -33,7 +33,4 @@ nm_dhcp6_config_init (NMDhcp6Config *config)
 static void
 nm_dhcp6_config_class_init (NMDhcp6ConfigClass *config_class)
 {
-	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (config_class);
-
-	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DHCP6_CONFIG);
 }

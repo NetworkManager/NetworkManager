@@ -23,7 +23,6 @@
 #include <string.h>
 
 #include "nm-device-generic.h"
-#include "nm-device-private.h"
 #include "nm-object-private.h"
 #include "nm-setting-generic.h"
 #include "nm-setting-connection.h"
@@ -113,7 +112,6 @@ get_setting_type (NMDevice *device)
 static void
 nm_device_generic_init (NMDeviceGeneric *device)
 {
-	_nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_GENERIC);
 }
 
 static void
@@ -174,8 +172,6 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	g_type_class_add_private (klass, sizeof (NMDeviceGenericPrivate));
-
-	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DEVICE_GENERIC);
 
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;

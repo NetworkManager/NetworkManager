@@ -27,7 +27,6 @@
 #include "nm-utils.h"
 
 #include "nm-device-bridge.h"
-#include "nm-device-private.h"
 #include "nm-object-private.h"
 #include "nm-core-internal.h"
 
@@ -137,8 +136,6 @@ nm_device_bridge_init (NMDeviceBridge *device)
 {
 	NMDeviceBridgePrivate *priv = NM_DEVICE_BRIDGE_GET_PRIVATE (device);
 
-	_nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_BRIDGE);
-
 	priv->slaves = g_ptr_array_new ();
 }
 
@@ -212,8 +209,6 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *bridge_class)
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (bridge_class);
 
 	g_type_class_add_private (bridge_class, sizeof (NMDeviceBridgePrivate));
-
-	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DEVICE_BRIDGE);
 
 	/* virtual methods */
 	object_class->dispose = dispose;
