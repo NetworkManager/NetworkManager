@@ -286,7 +286,7 @@ no-auto-default=*
         nameserver.</para>
         <para><literal>unbound</literal>: NetworkManager will talk
         to unbound and dnssec-triggerd, providing a "split DNS"
-        configuration with DNSSEC support. The /etc/resolv.conf
+        configuration with DNSSEC support. The <filename>/etc/resolv.conf</filename>
         will be managed by dnssec-trigger daemon.</para>
         <para><literal>none</literal>: NetworkManager will not
         modify resolv.conf. This implies
@@ -358,8 +358,8 @@ no-auto-default=*
         <varlistentry>
           <term><varname>hostname</varname></term>
           <listitem><para>This key is deprecated and has no effect
-          since the hostname is now stored in /etc/hostname or other
-          system configuration files according to build options.
+          since the hostname is now stored in <filename>/etc/hostname</filename>
+          or other system configuration files according to build options.
           </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -986,7 +986,7 @@ enable=nm-version-min:1.3,nm-version-min:1.2.6,nm-version-min:1.0.16
             plugin that supports all the connection types and
             capabilities that NetworkManager has. It writes files out
             in an .ini-style format in
-            /etc/NetworkManager/system-connections.
+            <filename>/etc/NetworkManager/system-connections</filename>.
           </para>
           <para>
             The stored connection file may contain passwords and
@@ -1051,15 +1051,16 @@ enable=nm-version-min:1.3,nm-version-min:1.2.6,nm-version-min:1.0.16
         <listitem>
           <para>
             This plugin allows to read iBFT configuration (iSCSI Boot Firmware Table).
-            The configuration is read using /sbin/iscsiadm. Users are expected to
-            configure iBFT connections via the firmware interfaces.
+            The configuration is read using <filename>/sbin/iscsiadm</filename>. Users are
+            expected to configure iBFT connections via the firmware interfaces.
             If ibft support is available, it is automatically enabled after
             <literal>ifcfg-rh</literal>. This can be disabled by <literal>no-ibft</literal>.
             You can also explicitly specify <literal>ibft</literal> to load the
             plugin without <literal>ifcfg-rh</literal> or to change the plugin order.
           </para>
           <para>
-            Note that ibft plugin uses /sbin/iscsiadm and thus requires CAP_SYS_ADMIN capability.
+            Note that ibft plugin uses <filename>/sbin/iscsiadm</filename> and thus requires
+            CAP_SYS_ADMIN capability.
           </para>
         </listitem>
       </varlistentry>

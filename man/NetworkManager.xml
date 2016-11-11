@@ -69,7 +69,8 @@
     <title>Dispatcher scripts</title>
     <para>
       NetworkManager will execute scripts in the
-      /etc/NetworkManager/dispatcher.d directory or subdirectories in
+      <filename>/etc/NetworkManager/dispatcher.d</filename>
+      directory or subdirectories in
       alphabetical order in response to network events.  Each script should
       be a regular executable file owned by root.  Furthermore, it must not be
       writable by group or other, and not setuid.
@@ -88,8 +89,8 @@
         <term><varname>pre-up</varname></term>
         <listitem><para>The interface is connected to the network but is not
         yet fully activated.  Scripts acting on this event must be placed or
-        symlinked into the /etc/NetworkManager/dispatcher.d/pre-up.d directory,
-        and NetworkManager will wait for script execution to complete before
+        symlinked into the <filename>/etc/NetworkManager/dispatcher.d/pre-up.d</filename>
+        directory, and NetworkManager will wait for script execution to complete before
         indicating to applications that the interface is fully activated.
         </para></listitem>
       </varlistentry>
@@ -101,7 +102,7 @@
         <term><varname>pre-down</varname></term>
         <listitem><para>The interface will be deactivated but has not yet been
         disconnected from the network.  Scripts acting on this event must be
-        placed or symlinked into the /etc/NetworkManager/dispatcher.d/pre-down.d
+        placed or symlinked into the <filename>/etc/NetworkManager/dispatcher.d/pre-down.d</filename>
         directory, and NetworkManager will wait for script execution to complete
         before disconnecting the interface from its network.  Note that this
         event is not emitted for forced disconnections, like when carrier is
@@ -119,8 +120,8 @@
         <term><varname>vpn-pre-up</varname></term>
         <listitem><para>The VPN is connected to the network but is not yet
         fully activated.  Scripts acting on this event must be placed or
-        symlinked into the /etc/NetworkManager/dispatcher.d/pre-up.d directory,
-        and NetworkManager will wait for script execution to complete before
+        symlinked into the <filename>/etc/NetworkManager/dispatcher.d/pre-up.d</filename>
+        directory, and NetworkManager will wait for script execution to complete before
         indicating to applications that the VPN is fully activated.
         </para></listitem>
       </varlistentry>
@@ -134,7 +135,7 @@
         <term><varname>vpn-pre-down</varname></term>
         <listitem><para>The VPN will be deactivated but has not yet been
         disconnected from the network.  Scripts acting on this event must be
-        placed or symlinked into the /etc/NetworkManager/dispatcher.d/pre-down.d
+        placed or symlinked into the <filename>/etc/NetworkManager/dispatcher.d/pre-down.d</filename>
         directory, and NetworkManager will wait for script execution to complete
         before disconnecting the VPN from its network.  Note that this
         event is not emitted for forced disconnections, like when the VPN
@@ -308,7 +309,8 @@
       NetworkManager process, and will be killed if they run for too long. If your script
       might take arbitrarily long to complete, you should spawn a child process and have the
       parent return immediately. Scripts that are symbolic links pointing inside the
-      /etc/NetworkManager/dispatcher.d/no-wait.d/ directory are run immediately, without
+      <filename>/etc/NetworkManager/dispatcher.d/no-wait.d/</filename>
+      directory are run immediately, without
       waiting for the termination of previous scripts, and in parallel. Also beware that
       once a script is queued, it will always be run, even if a later event renders it
       obsolete. (Eg, if an interface goes up, and then back down again quickly, it is
@@ -354,14 +356,16 @@
         <term><option>--state-file</option></term>
         <listitem><para>Specify file for storing state of the
         NetworkManager persistently.  If not specified, the default
-        value of /var/lib/NetworkManager/NetworkManager.state is used.
+        value of <filename>/var/lib/NetworkManager/NetworkManager.state</filename>
+        is used.
         </para></listitem>
       </varlistentry>
       <varlistentry>
         <term><option>--config</option></term>
         <listitem><para> Specify configuration file to set up various
         settings for NetworkManager.  If not specified, the default
-        value of /etc/NetworkManager/NetworkManager.conf is used with
+        value of <filename>/etc/NetworkManager/NetworkManager.conf</filename>
+        is used with
         a fallback to the older 'nm-system-settings.conf' if located
         in the same directory.  See
         <link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>
@@ -448,8 +452,8 @@
           A SIGHUP also involves further reloading actions, like doing
           a DNS update and restarting the DNS plugin. The latter can be
           useful for example when using the dnsmasq plugin and changing
-          its configuration in /etc/NetworkManager/dnsmasq.d. However,
-          it also means this will shortly interrupt name resolution.
+          its configuration in <filename>/etc/NetworkManager/dnsmasq.d</filename>.
+          However, it also means this will shortly interrupt name resolution.
           In the future, there may be further actions added.
           A SIGHUP means to update NetworkManager configuration and reload
           everything that is supported. Note that this does not reload
