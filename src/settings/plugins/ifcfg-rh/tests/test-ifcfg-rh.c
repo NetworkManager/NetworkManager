@@ -73,11 +73,19 @@
 		_f; \
 	})
 
-#define _svGetValue_check(sv, key, expected_value) \
+#define _svGetValue_check(f, key, expected_value) \
 	G_STMT_START { \
+		const char *_val; \
 		gs_free char *_to_free = NULL; \
+		gs_free char *_val_string = NULL; \
+		shvarFile *const _f = (f); \
+		const char *const _key = (key); \
 		\
-		g_assert_cmpstr (svGetValue (sv, key, &_to_free), ==, expected_value); \
+		_val_string = svGetValueString (_f, _key); \
+		_val = svGetValue (_f, _key, &_to_free); \
+		g_assert_cmpstr (_val, ==, (expected_value)); \
+		g_assert (   (!_val_string && (!_val || !_val[0])) \
+		          || ( _val_string && nm_streq0 (_val, _val_string))); \
 	} G_STMT_END
 
 #define _writer_update_connection(connection, ifcfg_dir, filename) \
@@ -8106,16 +8114,24 @@ static const char *
 _svUnescape (const char *str, char **to_free)
 {
 	const char *s;
+	gs_free char *str_free = NULL;
 
 	g_assert (str);
 	g_assert (to_free);
 
+	if (str[0] == '\0') {
+		/* avoid static string "" */
+		str = (str_free = g_strdup (str));
+	}
+
 	s = svUnescape (str, to_free);
-	if (*to_free)
+	if (*to_free) {
 		g_assert (s == *to_free);
-	else {
+		g_assert (s[0]);
+	} else {
 		g_assert (   s == NULL
-		          || (s >= str && s <= strchr (str, '\0')));
+		          || (!s[0] && (s <  str || s >  strchr (str, '\0')))
+		          || ( s[0] &&  s >= str && s <= strchr (str, '\0') ));
 	}
 	return s;
 }
@@ -8442,6 +8458,11 @@ test_write_unknown (gconstpointer test_data)
 		svSetValue (sv, "NAME", "set-by-test1");
 		svSetValue (sv, "NAME2", "set-by-test2");
 		svSetValue (sv, "NAME3", "set-by-test3");
+
+		_svGetValue_check (sv, "some_key", NULL);
+		_svGetValue_check (sv, "some_key1", "");
+		_svGetValue_check (sv, "some_key2", "");
+		_svGetValue_check (sv, "some_key3", "x");
 
 		_svGetValue_check (sv, "NAME", "set-by-test1");
 		_svGetValue_check (sv, "NAME2", "set-by-test2");

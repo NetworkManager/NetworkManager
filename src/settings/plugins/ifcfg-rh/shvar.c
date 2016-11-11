@@ -324,7 +324,7 @@ const char *
 svUnescape (const char *value, char **to_free)
 {
 	gsize i, j;
-	nm_auto_free_gstring GString *str = NULL;
+	GString *str = NULL;
 	int looks_like_old_svescaped = -1;
 
 	/* we handle bash syntax here (note that ifup has #!/bin/bash.
@@ -569,27 +569,34 @@ loop1_next: ;
 	nm_assert_not_reached ();
 
 out_value:
-	if (str) {
-		*to_free = g_string_free (str, FALSE);
-		str = NULL;
-		return *to_free;
-	} else if (i == 0) {
+	if (i == 0) {
+		nm_assert (!str);
 		*to_free = NULL;
-		/* we could just return "", but I prefer returning a
-		 * pointer into @value for consistency. Thus, seek to the
-		 * end. */
-		while (value[0])
-			value++;
-		return value;
-	} else if (value[i] != '\0') {
-		*to_free = g_strndup (value, i);
-		return *to_free;
-	} else {
-		*to_free = NULL;
-		return value;
+		return "";
 	}
 
+	if (str) {
+		if (str->len == 0 || str->str[0] == '\0') {
+			g_string_free (str, TRUE);
+			*to_free = NULL;
+			return "";
+		} else {
+			*to_free = g_string_free (str, FALSE);
+			return *to_free;
+		}
+	}
+
+	if (value[i] != '\0') {
+		*to_free = g_strndup (value, i);
+		return *to_free;
+	}
+
+	*to_free = NULL;
+	return value;
+
 out_error:
+	if (str)
+		g_string_free (str, TRUE);
 	*to_free = NULL;
 	return NULL;
 }
@@ -848,7 +855,7 @@ svGetValueString (shvarFile *s, const char *key)
 		return NULL;
 	}
 	if (!value[0]) {
-		g_free (to_free);
+		nm_assert (!to_free);
 		return NULL;
 	}
 	return to_free ?: g_strdup (value);

@@ -12,6 +12,10 @@
 
 #L2
 
+some_key1=''
+some_key2=$'\U0x'
+some_key3=$'x\U0'
+
 #L4
 NAME=set-by-test1
 #NM: '

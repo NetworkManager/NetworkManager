@@ -14,6 +14,10 @@ NAME=l2
 #L2
 NAME=l3
 
+some_key1=''
+some_key2=$'\U0x'
+some_key3=$'x\U0'
+
 #L4
 NAME='
 NAME=l4x
