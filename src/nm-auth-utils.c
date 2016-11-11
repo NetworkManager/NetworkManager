@@ -320,6 +320,7 @@ pk_call_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	AuthCall *call = user_data;
 	GError *error = NULL;
 	gboolean is_authorized, is_challenge;
+	guint call_result = NM_AUTH_CALL_RESULT_UNKNOWN;
 
 	nm_auth_manager_polkit_authority_check_authorization_finish (NM_AUTH_MANAGER (object),
 	                                                             result,
@@ -336,17 +337,11 @@ pk_call_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	}
 
 	if (error) {
+		/* Don't ruin the chain. Just leave the result unknown. */
 		nm_log_warn (LOGD_CORE, "error requesting auth for %s: %s",
 		             call->permission, error->message);
-
-		if (!call->chain->error) {
-			call->chain->error = error;
-			error = NULL;
-		} else
-			g_clear_error (&error);
+		g_clear_error (&error);
 	} else {
-		guint call_result = NM_AUTH_CALL_RESULT_UNKNOWN;
-
 		if (is_authorized) {
 			/* Caller has the permission */
 			call_result = NM_AUTH_CALL_RESULT_YES;
@@ -355,9 +350,9 @@ pk_call_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 			call_result = NM_AUTH_CALL_RESULT_AUTH;
 		} else
 			call_result = NM_AUTH_CALL_RESULT_NO;
-
-		nm_auth_chain_set_data (call->chain, call->permission, GUINT_TO_POINTER (call_result), NULL);
 	}
+
+	nm_auth_chain_set_data (call->chain, call->permission, GUINT_TO_POINTER (call_result), NULL);
 
 	auth_call_complete (call);
 }
