@@ -407,7 +407,7 @@
   </refsect1>
 
   <refsect1>
-    <title>UDEV PROPERTIES</title>
+    <title>Udev Properties</title>
 
     <para>
       <citerefentry><refentrytitle>udev</refentrytitle><manvolnum>7</manvolnum></citerefentry>
@@ -486,7 +486,7 @@
   </refsect1>
 
   <refsect1>
-    <title>DEBUGGING</title>
+    <title>Debugging</title>
     <para>
       The following environment variables are supported to help
       debugging.  When used in conjunction with the
