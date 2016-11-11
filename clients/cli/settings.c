@@ -4996,10 +4996,10 @@ DEFINE_REMOVER_OPTION (nmc_property_vpn_remove_option_secret,
 
 /* --- NM_SETTING_WIRED_SETTING_NAME property setter functions --- */
 #if 0
-/*
- * Do not allow setting 'port' and 'duplex' for now. They are not implemented in
- * NM core, nor in ifcfg-rh plugin. Enable this when it gets done.
- */
+-/*
+- * Do not allow setting 'port' for now. It is not implemented in
+- * NM core, nor in ifcfg-rh plugin. Enable this when it gets done.
+- */
 /* 'port' */
 static const char *wired_valid_ports[] = { "tp", "aui", "bnc", "mii", NULL };
 
@@ -5010,6 +5010,7 @@ nmc_property_wired_set_port (NMSetting *setting, const char *prop, const char *v
 }
 
 DEFINE_ALLOWED_VAL_FUNC (nmc_property_wired_allowed_port, wired_valid_ports)
+#endif
 
 /* 'duplex' */
 static const char *wired_valid_duplexes[] = { "half", "full", NULL };
@@ -5021,7 +5022,7 @@ nmc_property_wired_set_duplex (NMSetting *setting, const char *prop, const char 
 }
 
 DEFINE_ALLOWED_VAL_FUNC (nmc_property_wired_allowed_duplex, wired_valid_duplexes)
-#endif
+
 
 /* 'mac-address-blacklist' */
 DEFINE_SETTER_MAC_BLACKLIST (nmc_property_wired_set_mac_address_blacklist,
@@ -7310,28 +7311,28 @@ nmc_properties_init (void)
 	/* Add editable properties for NM_SETTING_WIRED_SETTING_NAME */
 	nmc_add_prop_funcs (GLUE (WIRED, PORT),
 	                    nmc_property_wired_get_port,
-	                    NULL, /*nmc_property_wired_set_port,*/
+	                    NULL, /* nmc_property_wired_set_port, */
 	                    NULL,
 	                    NULL,
-	                    NULL, /*nmc_property_wired_allowed_port,*/
+	                    NULL, /* nmc_property_wired_allowed_port, */
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRED, SPEED),
 	                    nmc_property_wired_get_speed,
-	                    NULL,
+	                    nmc_property_set_uint,
 	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRED, DUPLEX),
 	                    nmc_property_wired_get_duplex,
-	                    NULL, /*nmc_property_wired_set_duplex,*/
+	                    nmc_property_wired_set_duplex,
 	                    NULL,
 	                    NULL,
-	                    NULL,
-	                    NULL); /*nmc_property_wired_allowed_duplex);*/
+	                    nmc_property_wired_allowed_duplex,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRED, AUTO_NEGOTIATE),
 	                    nmc_property_wired_get_auto_negotiate,
-	                    NULL,
+	                    nmc_property_set_bool,
 	                    NULL,
 	                    NULL,
 	                    NULL,
