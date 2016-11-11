@@ -1171,12 +1171,17 @@ static gboolean
 init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 {
 	NMManager *manager = NM_MANAGER (initable);
+	GError *local_error = NULL;
 
-	if (!nm_manager_parent_initable_iface->init (initable, cancellable, error))
-		return FALSE;
+	if (!nm_manager_parent_initable_iface->init (initable, cancellable, error)) {
+		/* Never happens. */
+		g_return_val_if_reached (FALSE);
+	}
 
-	if (!get_permissions_sync (manager, error))
-		return FALSE;
+	if (!get_permissions_sync (manager, &local_error)) {
+		g_warning ("Unable to get permissions: %s\n", local_error->message);
+		g_error_free (local_error);
+	}
 
 	return TRUE;
 }
