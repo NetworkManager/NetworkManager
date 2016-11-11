@@ -132,14 +132,11 @@ typedef enum {
 /* NmCli - main structure */
 typedef struct _NmCli {
 	NMClient *client;                                 /* Pointer to NMClient of libnm */
-	NMClient *(*get_client) (struct _NmCli *nmc);     /* Pointer to function for creating NMClient */
 
 	NMCResultCode return_value;                       /* Return code of nmcli */
 	GString *return_text;                             /* Reason text */
 
 	int timeout;                                      /* Operation timeout */
-
-	const GPtrArray *connections;                     /* List of connections */
 
 	NMSecretAgentOld *secret_agent;                   /* Secret agent */
 	GHashTable *pwds_hash;                            /* Hash table with passwords in passwd-file */

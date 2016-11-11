@@ -1217,6 +1217,7 @@ nmc_secrets_requested (NMSecretAgentSimple *agent,
 	NMConnection *connection = NULL;
 	char *path, *p;
 	gboolean success = FALSE;
+	const GPtrArray *connections;
 
 	if (nmc->print_output == NMC_PRINT_PRETTY)
 		nmc_terminal_erase_line ();
@@ -1227,7 +1228,8 @@ nmc_secrets_requested (NMSecretAgentSimple *agent,
 		p = strrchr (path, '/');
 		if (p)
 			*p = '\0';
-		connection = nmc_find_connection (nmc->connections, "path", path, NULL, FALSE);
+		connections = nm_client_get_connections (nmc->client);
+		connection = nmc_find_connection (connections, "path", path, NULL, FALSE);
 		g_free (path);
 	}
 
@@ -1485,7 +1487,6 @@ nmc_rl_gen_func_ifnames (const char *text, int state)
 	const char **ifnames;
 	char *ret;
 
-	nm_cli.get_client (&nm_cli);
 	devices = nm_client_get_devices (nm_cli.client);
 	if (devices->len == 0)
 		return NULL;
@@ -1563,13 +1564,92 @@ nmc_parse_lldp_capabilities (guint value)
 	return g_string_free (str, FALSE);
 }
 
+extern GMainLoop *loop;
+
+static void
+command_done (GObject *object, GAsyncResult *res, gpointer user_data)
+{
+	GSimpleAsyncResult *simple = (GSimpleAsyncResult *)res;
+	NmCli *nmc = user_data;
+	GError *error = NULL;
+
+	if (g_simple_async_result_propagate_error (simple, &error)) {
+		nmc->return_value = error->code;
+		g_string_assign (nmc->return_text, error->message);
+		g_error_free (error);
+	}
+
+	if (!nmc->should_wait)
+		g_main_loop_quit (loop);
+}
+
+typedef struct {
+	NmCli *nmc;
+	const NMCCommand *cmd;
+	int argc;
+	char **argv;
+	GSimpleAsyncResult *simple;
+} CmdCall;
+
+static void
+call_cmd (NmCli *nmc, GSimpleAsyncResult *simple, const NMCCommand *cmd, int argc, char **argv);
+
+static void
+got_client (GObject *source_object, GAsyncResult *res, gpointer user_data)
+{
+	GError *error = NULL;
+	CmdCall *call = user_data;
+	NmCli *nmc = call->nmc;
+
+	nmc->should_wait--;
+	nmc->client = nm_client_new_finish (res, &error);
+
+	if (!nmc->client) {
+		g_simple_async_result_set_error (call->simple, NMCLI_ERROR, NMC_RESULT_ERROR_UNKNOWN,
+		                                 _("Error: Could not create NMClient object: %s."), error->message);
+		g_error_free (error);
+		g_simple_async_result_complete (call->simple);
+	} else {
+		call_cmd (nmc, call->simple, call->cmd, call->argc, call->argv);
+	}
+
+	g_slice_free (CmdCall, call);
+}
+
+static void
+call_cmd (NmCli *nmc, GSimpleAsyncResult *simple, const NMCCommand *cmd, int argc, char **argv)
+{
+	CmdCall *call;
+
+	if (nmc->client || !cmd->needs_client) {
+
+		/* Check whether NetworkManager is running */
+		if (cmd->needs_nm_running && !nm_client_get_nm_running (nmc->client)) {
+			g_simple_async_result_set_error (simple, NMCLI_ERROR, NMC_RESULT_ERROR_NM_NOT_RUNNING,
+			                                 _("Error: NetworkManager is not running."));
+		} else
+			nmc->return_value = cmd->func (nmc, argc, argv);
+		g_simple_async_result_complete_in_idle (simple);
+		g_object_unref (simple);
+	} else {
+		nmc->should_wait++;
+		call = g_slice_new0 (CmdCall);
+		call->nmc = nmc;
+		call->cmd = cmd;
+		call->argc = argc;
+		call->argv = argv;
+		call->simple = simple;
+		nm_client_new_async (NULL, got_client, call);
+	}
+}
+
 /**
  * nmc_do_cmd:
  * @nmc: Client instance
  * @cmds: Command table
  * @cmd: Command
  * @argc: Argument count
- * @argv: Arguments vector
+ * @argv: Arguments vector. Must be a global variable.
  *
  * Picks the right callback to handle command from the command table.
  * If --help argument follows and the usage callback is specified for the command
@@ -1578,22 +1658,35 @@ nmc_parse_lldp_capabilities (guint value)
  * The command table is terminated with a %NULL command. The terminating
  * entry's handlers are called if the command is empty.
  *
- * Returns: a nmcli return code
+ * The argument vector needs to be a pointer to the global arguments vector that is
+ * never freed, since the command handler will be called asynchronously and there's
+ * no callback to free the memory in (for simplicity).
  */
-NMCResultCode
+void
 nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, char **argv)
 {
 	const NMCCommand *c;
+	GSimpleAsyncResult *simple;
 
-	if (argc == 0 && nmc->complete)
-		return nmc->return_value;
+	simple = g_simple_async_result_new (NULL,
+	                                    command_done,
+	                                    nmc,
+	                                    nmc_do_cmd);
+
+	if (argc == 0 && nmc->complete) {
+		g_simple_async_result_complete_in_idle (simple);
+		g_object_unref (simple);
+		return;
+	}
 
 	if (argc == 1 && nmc->complete) {
 		for (c = cmds; c->cmd; ++c) {
 			if (!*cmd || matches (cmd, c->cmd) == 0)
 				g_print ("%s\n", c->cmd);
 		}
-		return nmc->return_value;
+		g_simple_async_result_complete_in_idle (simple);
+		g_object_unref (simple);
+		return;
 	}
 
 	for (c = cmds; c->cmd; ++c) {
@@ -1603,28 +1696,34 @@ nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, char
 
 	if (c->cmd) {
 		/* A valid command was specified. */
-		if (c->usage && nmc_arg_is_help (*(argv+1)))
+		if (c->usage && nmc_arg_is_help (*(argv+1))) {
 			c->usage ();
-		else
-			nmc->return_value = c->func (nmc, argc-1, argv+1);
+			g_simple_async_result_complete_in_idle (simple);
+			g_object_unref (simple);
+		} else
+			call_cmd (nmc, simple, c, argc-1, argv+1);
 	} else if (cmd) {
 		/* Not a known command. */
 		if (nmc_arg_is_help (cmd) && c->usage) {
 			c->usage ();
+			g_simple_async_result_complete_in_idle (simple);
+			g_object_unref (simple);
 		} else {
-			g_string_printf (nmc->return_text, _("Error: argument '%s' not understood. Try passing --help instead."), cmd);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			g_simple_async_result_set_error (simple, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			                                 _("Error: argument '%s' not understood. Try passing --help instead."), cmd);
+			g_simple_async_result_complete_in_idle (simple);
+			g_object_unref (simple);
 		}
 	} else if (c->func) {
 		/* No command, run the default handler. */
-		nmc->return_value = c->func (nmc, argc, argv);
+		call_cmd (nmc, simple, c, argc, argv);
 	} else {
 		/* No command and no default handler. */
-		g_string_printf (nmc->return_text, _("Error: missing argument. Try passing --help."));
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		g_simple_async_result_set_error (simple, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+		                                 _("Error: missing argument. Try passing --help."));
+		g_simple_async_result_complete_in_idle (simple);
+		g_object_unref (simple);
 	}
-
-	return nmc->return_value;
 }
 
 /**
