@@ -639,19 +639,16 @@ handle_object_array_property (NMObject *self, const char *property_name, GVarian
 	while (g_variant_iter_next (&iter, "&o", &path)) {
 		gs_unref_object GDBusObject *object = NULL;
 
-		if (!strcmp (path, "/")) {
-			/* FIXME: can't happen? */
-			continue;
-		}
-
 		object = g_dbus_object_manager_get_object (priv->object_manager, path);
-		if (!object) {
+		if (object) {
+			obj = g_object_get_qdata (G_OBJECT (object), _nm_object_obj_nm_quark ());
+			object_created (obj, path, odata);
+		} else {
 			g_warning ("no object known for %s\n", path);
-			return FALSE;
+			odata->remaining--;
+			odata->length--;
+			object_property_maybe_complete (self);
 		}
-
-		obj = g_object_get_qdata (G_OBJECT (object), _nm_object_obj_nm_quark ());
-		object_created (obj, path, odata);
 	}
 
 	return TRUE;
