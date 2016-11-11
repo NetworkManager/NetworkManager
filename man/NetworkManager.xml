@@ -504,8 +504,17 @@
   </refsect1>
 
   <refsect1>
+    <title>Bugs</title>
+    <para>
+      Please report any bugs you find in NetworkManager at the
+      <ulink url="https://bugzilla.gnome.org/enter_bug.cgi?product=NetworkManager">NetworkManager bug tracker</ulink>.
+    </para>
+  </refsect1>
+
+  <refsect1>
     <title>See Also</title>
     <para>
+      <ulink url="https://wiki.gnome.org/Projects/NetworkManager">NetworkManager home page</ulink>,
       <link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
       <link linkend='nmcli'><citerefentry><refentrytitle>nmcli</refentrytitle><manvolnum>1</manvolnum></citerefentry></link>,
       <link linkend='nmcli-examples'><citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry></link>,
