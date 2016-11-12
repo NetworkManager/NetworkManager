@@ -199,6 +199,7 @@ init_dbus (NMObject *object)
 	const NMPropertiesInfo property_info[] = {
 		{ NM_DEVICE_UDI,               &priv->udi },
 		{ NM_DEVICE_INTERFACE,         &priv->iface },
+		{ NM_DEVICE_DEVICE_TYPE,       &priv->device_type },
 		{ NM_DEVICE_IP_INTERFACE,      &priv->ip_iface },
 		{ NM_DEVICE_DRIVER,            &priv->driver },
 		{ NM_DEVICE_DRIVER_VERSION,    &priv->driver_version },
@@ -224,7 +225,6 @@ init_dbus (NMObject *object)
 
 		/* Properties that exist in D-Bus but that we don't track */
 		{ "ip4-address", NULL },
-		{ "device-type", NULL },
 
 		{ NULL },
 	};
@@ -249,6 +249,36 @@ device_state_reason_changed (GObject *object, GParamSpec *pspec, gpointer user_d
 	g_signal_emit (self, signals[STATE_CHANGED], 0,
 	               priv->state, priv->last_seen_state, priv->reason);
 	priv->last_seen_state = priv->state;
+}
+
+static NMDeviceType
+coerce_type (NMDeviceType type)
+{
+	switch (type) {
+	case NM_DEVICE_TYPE_ETHERNET:
+	case NM_DEVICE_TYPE_WIFI:
+	case NM_DEVICE_TYPE_BT:
+	case NM_DEVICE_TYPE_OLPC_MESH:
+	case NM_DEVICE_TYPE_WIMAX:
+	case NM_DEVICE_TYPE_MODEM:
+	case NM_DEVICE_TYPE_INFINIBAND:
+	case NM_DEVICE_TYPE_BOND:
+	case NM_DEVICE_TYPE_TEAM:
+	case NM_DEVICE_TYPE_BRIDGE:
+	case NM_DEVICE_TYPE_VLAN:
+	case NM_DEVICE_TYPE_ADSL:
+	case NM_DEVICE_TYPE_MACVLAN:
+	case NM_DEVICE_TYPE_VXLAN:
+	case NM_DEVICE_TYPE_IP_TUNNEL:
+	case NM_DEVICE_TYPE_TUN:
+	case NM_DEVICE_TYPE_VETH:
+	case NM_DEVICE_TYPE_GENERIC:
+	case NM_DEVICE_TYPE_UNUSED1:
+	case NM_DEVICE_TYPE_UNUSED2:
+	case NM_DEVICE_TYPE_UNKNOWN:
+		return type;
+	}
+	return NM_DEVICE_TYPE_UNKNOWN;
 }
 
 static void
@@ -302,7 +332,7 @@ get_property (GObject *object,
 
 	switch (prop_id) {
 	case PROP_DEVICE_TYPE:
-		g_value_set_enum (value, nm_device_get_device_type (device));
+		g_value_set_enum (value, coerce_type (nm_device_get_device_type (device)));
 		break;
 	case PROP_UDI:
 		g_value_set_string (value, nm_device_get_udi (device));
@@ -399,10 +429,6 @@ set_property (GObject *object,
 	gboolean b;
 
 	switch (prop_id) {
-	case PROP_DEVICE_TYPE:
-		/* Construct only */
-		priv->device_type = g_value_get_enum (value);
-		break;
 	case PROP_MANAGED:
 		b = g_value_get_boolean (value);
 		if (priv->managed != b)
