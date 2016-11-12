@@ -600,10 +600,10 @@ dispose (GObject *object)
 	if (priv->ndp) {
 		switch (nm_ndisc_get_node_type (ndisc)) {
 		case NM_NDISC_NODE_TYPE_HOST:
-			ndp_msgrcv_handler_unregister (priv->ndp, receive_rs, NDP_MSG_RA, nm_ndisc_get_ifindex (ndisc), ndisc);
+			ndp_msgrcv_handler_unregister (priv->ndp, receive_ra, NDP_MSG_RA, nm_ndisc_get_ifindex (ndisc), ndisc);
 			break;
 		case NM_NDISC_NODE_TYPE_ROUTER:
-			ndp_msgrcv_handler_unregister (priv->ndp, receive_ra, NDP_MSG_RA, nm_ndisc_get_ifindex (ndisc), ndisc);
+			ndp_msgrcv_handler_unregister (priv->ndp, receive_rs, NDP_MSG_RS, nm_ndisc_get_ifindex (ndisc), ndisc);
 			break;
 		default:
 			g_assert_not_reached ();
