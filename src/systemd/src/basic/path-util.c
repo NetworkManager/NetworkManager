@@ -83,7 +83,7 @@ char *path_make_absolute(const char *p, const char *prefix) {
         if (path_is_absolute(p) || !prefix)
                 return strdup(p);
 
-        return strjoin(prefix, "/", p, NULL);
+        return strjoin(prefix, "/", p);
 }
 
 int path_make_absolute_cwd(const char *p, char **ret) {
@@ -104,7 +104,7 @@ int path_make_absolute_cwd(const char *p, char **ret) {
                 if (!cwd)
                         return negative_errno();
 
-                c = strjoin(cwd, "/", p, NULL);
+                c = strjoin(cwd, "/", p);
         }
         if (!c)
                 return -ENOMEM;
@@ -354,6 +354,16 @@ char* path_startswith(const char *path, const char *prefix) {
         assert(path);
         assert(prefix);
 
+        /* Returns a pointer to the start of the first component after the parts matched by
+         * the prefix, iff
+         * - both paths are absolute or both paths are relative,
+         * and
+         * - each component in prefix in turn matches a component in path at the same position.
+         * An empty string will be returned when the prefix and path are equivalent.
+         *
+         * Returns NULL otherwise.
+         */
+
         if ((path[0] == '/') != (prefix[0] == '/'))
                 return NULL;
 
@@ -444,13 +454,11 @@ char* path_join(const char *root, const char *path, const char *rest) {
                 return strjoin(root, endswith(root, "/") ? "" : "/",
                                path[0] == '/' ? path+1 : path,
                                rest ? (endswith(path, "/") ? "" : "/") : NULL,
-                               rest && rest[0] == '/' ? rest+1 : rest,
-                               NULL);
+                               rest && rest[0] == '/' ? rest+1 : rest);
         else
                 return strjoin(path,
                                rest ? (endswith(path, "/") ? "" : "/") : NULL,
-                               rest && rest[0] == '/' ? rest+1 : rest,
-                               NULL);
+                               rest && rest[0] == '/' ? rest+1 : rest);
 }
 
 int find_binary(const char *name, char **ret) {
@@ -494,7 +502,7 @@ int find_binary(const char *name, char **ret) {
                 if (!path_is_absolute(element))
                         continue;
 
-                j = strjoin(element, "/", name, NULL);
+                j = strjoin(element, "/", name);
                 if (!j)
                         return -ENOMEM;
 
