@@ -60,7 +60,7 @@ typedef struct {
 	 */
 	void (*get_supported_types) (NMDeviceFactory *factory,
 	                             const NMLinkType **out_link_types,
-	                             const char ***out_setting_types);
+	                             const char *const**out_setting_types);
 
 	/**
 	 * start:
@@ -176,7 +176,7 @@ typedef NMDeviceFactory * (*NMDeviceFactoryCreateFunc) (GError **error);
 
 void       nm_device_factory_get_supported_types (NMDeviceFactory *factory,
                                                   const NMLinkType **out_link_types,
-                                                  const char ***out_setting_types);
+                                                  const char *const**out_setting_types);
 
 const char *nm_device_factory_get_connection_parent (NMDeviceFactory *factory,
                                                      NMConnection *connection);
@@ -200,25 +200,27 @@ gboolean   nm_device_factory_emit_component_added (NMDeviceFactory *factory,
                                                    GObject *component);
 
 #define NM_DEVICE_FACTORY_DECLARE_LINK_TYPES(...) \
-	{ static const NMLinkType _df_links[] = { __VA_ARGS__, NM_LINK_TYPE_NONE }; *out_link_types = _df_links; }
+	{ static NMLinkType const _link_types_declared[] = { __VA_ARGS__, NM_LINK_TYPE_NONE }; _link_types = _link_types_declared; }
 #define NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES(...) \
-	{ static const char *_df_settings[] = { __VA_ARGS__, NULL }; *out_setting_types = _df_settings; }
-
-extern const NMLinkType _nm_device_factory_no_default_links[];
-extern const char *_nm_device_factory_no_default_settings[];
+	{ static const char *const _setting_types_declared[] = { __VA_ARGS__, NULL }; _setting_types = _setting_types_declared; }
 
 #define NM_DEVICE_FACTORY_DECLARE_TYPES(...) \
 	static void \
 	get_supported_types (NMDeviceFactory *factory, \
 	                     const NMLinkType **out_link_types, \
-	                     const char ***out_setting_types) \
+	                     const char *const**out_setting_types) \
 	{ \
-		*out_link_types = _nm_device_factory_no_default_links; \
-		*out_setting_types = _nm_device_factory_no_default_settings; \
- \
+		static NMLinkType const _link_types_null[1] = { NM_LINK_TYPE_NONE }; \
+		static const char *const _setting_types_null[1] = { NULL }; \
+		\
+		const NMLinkType *_link_types = _link_types_null; \
+		const char *const*_setting_types = _setting_types_null; \
+		\
 		{ __VA_ARGS__; } \
-	} \
- \
+		\
+		NM_SET_OUT (out_link_types, _link_types); \
+		NM_SET_OUT (out_setting_types, _setting_types); \
+	}
 
 /**************************************************************************
  * INTERNAL DEVICE FACTORY FUNCTIONS - devices provided by plugins should

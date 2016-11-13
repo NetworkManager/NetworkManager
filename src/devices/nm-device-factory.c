@@ -33,11 +33,6 @@
 
 /*****************************************************************************/
 
-const NMLinkType _nm_device_factory_no_default_links[] = { NM_LINK_TYPE_NONE };
-const char *_nm_device_factory_no_default_settings[] = { NULL };
-
-/*****************************************************************************/
-
 enum {
 	DEVICE_ADDED,
 	COMPONENT_ADDED,
@@ -65,17 +60,9 @@ nm_device_factory_emit_component_added (NMDeviceFactory *factory, GObject *compo
 void
 nm_device_factory_get_supported_types (NMDeviceFactory *factory,
                                        const NMLinkType **out_link_types,
-                                       const char ***out_setting_types)
+                                       const char *const**out_setting_types)
 {
-	const NMLinkType *link_types_fallback;
-	const char **setting_types_fallback;
-
 	g_return_if_fail (NM_IS_DEVICE_FACTORY (factory));
-
-	if (!out_link_types)
-		out_link_types = &link_types_fallback;
-	if (!out_setting_types)
-		out_setting_types = &setting_types_fallback;
 
 	NM_DEVICE_FACTORY_GET_CLASS (factory)->get_supported_types (factory,
 	                                                            out_link_types,
@@ -101,7 +88,7 @@ nm_device_factory_create_device (NMDeviceFactory *factory,
 {
 	NMDeviceFactoryClass *klass;
 	const NMLinkType *link_types = NULL;
-	const char **setting_types = NULL;
+	const char *const*setting_types = NULL;
 	int i;
 	NMDevice *device;
 	gboolean ignore = FALSE;
@@ -266,7 +253,7 @@ _cleanup (void)
 
 static NMDeviceFactory *
 find_factory (const NMLinkType *needle_link_types,
-              const char **needle_setting_types)
+              const char *const*needle_setting_types)
 {
 	NMDeviceFactory *found;
 	guint i;
@@ -305,7 +292,7 @@ nm_device_factory_manager_find_factory_for_link_type (NMLinkType link_type)
 NMDeviceFactory *
 nm_device_factory_manager_find_factory_for_connection (NMConnection *connection)
 {
-	const char *stypes[2] = { nm_connection_get_connection_type (connection), NULL };
+	const char *const stypes[2] = { nm_connection_get_connection_type (connection), NULL };
 
 	g_assert (stypes[0]);
 	return find_factory (NULL, stypes);
@@ -442,7 +429,7 @@ _add_factory (NMDeviceFactory *factory,
 {
 	NMDeviceFactory *found = NULL;
 	const NMLinkType *link_types = NULL;
-	const char **setting_types = NULL;
+	const char *const*setting_types = NULL;
 	int i;
 
 	g_return_val_if_fail (factories_by_link, FALSE);

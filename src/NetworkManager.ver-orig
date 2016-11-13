@@ -5,8 +5,6 @@ global:
 	_nm_dbus_error_has_name;
 	_nm_dbus_proxy_call_finish;
 	_nm_dbus_signal_connect_data;
-	_nm_device_factory_no_default_links;
-	_nm_device_factory_no_default_settings;
 	_nm_exported_object_clear_and_unexport;
 	_nm_log_impl;
 	_nm_logging_enabled_state;
