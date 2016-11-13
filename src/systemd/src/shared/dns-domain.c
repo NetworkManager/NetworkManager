@@ -1081,7 +1081,7 @@ int dns_service_split(const char *joined, char **_name, char **_type, char **_do
                                 if (!name)
                                         return -ENOMEM;
 
-                                type = strjoin(b, ".", c, NULL);
+                                type = strjoin(b, ".", c);
                                 if (!type)
                                         return -ENOMEM;
 
@@ -1095,7 +1095,7 @@ int dns_service_split(const char *joined, char **_name, char **_type, char **_do
 
                         name = NULL;
 
-                        type = strjoin(a, ".", b, NULL);
+                        type = strjoin(a, ".", b);
                         if (!type)
                                 return -ENOMEM;
 

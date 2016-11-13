@@ -984,7 +984,7 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/sd-adapt/conf-parser.h \
 	src/systemd/sd-adapt/def.h \
 	src/systemd/sd-adapt/dirent-util.h \
-	src/systemd/sd-adapt/formats-util.h \
+	src/systemd/sd-adapt/format-util.h \
 	src/systemd/sd-adapt/gunicode.h \
 	src/systemd/sd-adapt/libudev.h \
 	src/systemd/sd-adapt/missing.h \

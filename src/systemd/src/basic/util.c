@@ -43,7 +43,7 @@
 #include "dirent-util.h"
 #include "fd-util.h"
 #include "fileio.h"
-#include "formats-util.h"
+#include "format-util.h"
 #include "hashmap.h"
 #include "hostname-util.h"
 #include "log.h"
@@ -136,7 +136,7 @@ static int do_execute(char **directories, usec_t timeout, char *argv[]) {
                         if (r < 0)
                                 return log_oom();
 
-                        path = strjoin(*directory, "/", de->d_name, NULL);
+                        path = strjoin(*directory, "/", de->d_name);
                         if (!path)
                                 return log_oom();
 
