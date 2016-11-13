@@ -3013,6 +3013,62 @@ nm_utils_hwaddr_len (int type)
 	g_return_val_if_reached (0);
 }
 
+/**
+ * nm_utils_hexstr2bin:
+ * @hex: a string of hexadecimal characters with optional ':' separators
+ *
+ * Converts a hexadecimal string @hex into an array of bytes.  The optional
+ * separator ':' may be used between single or pairs of hexadecimal characters,
+ * eg "00:11" or "0:1".  Any "0x" at the beginning of @hex is ignored.  @hex
+ * may not start or end with ':'.
+ *
+ * Return value: (transfer full): the converted bytes, or %NULL on error
+ */
+GBytes *
+nm_utils_hexstr2bin (const char *hex)
+{
+	guint i = 0, x = 0;
+	gs_free guint8 *c = NULL;
+	int a, b;
+	gboolean found_colon = FALSE;
+
+	g_return_val_if_fail (hex != NULL, NULL);
+
+	if (strncasecmp (hex, "0x", 2) == 0)
+		hex += 2;
+	found_colon = !!strchr (hex, ':');
+
+	c = g_malloc (strlen (hex) / 2 + 1);
+	for (;;) {
+		a = g_ascii_xdigit_value (hex[i++]);
+		if (a < 0)
+			return NULL;
+
+		if (hex[i] && hex[i] != ':') {
+			b = g_ascii_xdigit_value (hex[i++]);
+			if (b < 0)
+				return NULL;
+			c[x++] = ((guint) a << 4) | ((guint) b);
+		} else
+			c[x++] = (guint) a;
+
+		if (!hex[i])
+			break;
+		if (hex[i] == ':') {
+			if (!hex[i + 1]) {
+				/* trailing ':' is invalid */
+				return NULL;
+			}
+			i++;
+		} else if (found_colon) {
+			/* If colons exist, they must delimit 1 or 2 hex chars */
+			return NULL;
+		}
+	}
+
+	return g_bytes_new (c, x);
+}
+
 static guint8 *
 hwaddr_aton (const char *asc, guint8 *buffer, gsize buffer_length, gsize *out_len)
 {
@@ -3154,6 +3210,51 @@ nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize length)
 	if (length != l)
 		return NULL;
 	return buffer;
+}
+
+/**
+ * nm_utils_bin2hexstr:
+ * @src: (type guint8) (array length=len): an array of bytes
+ * @len: the length of the @src array
+ * @final_len: an index where to cut off the returned string, or -1
+ *
+ * Converts the byte array @src into a hexadecimal string. If @final_len is
+ * greater than -1, the returned string is terminated at that index
+ * (returned_string[final_len] == '\0'),
+ *
+ * Return value: (transfer full): the textual form of @bytes
+ */
+/*
+ * Code originally by Alex Larsson <alexl@redhat.com> and
+ *  copyright Red Hat, Inc. under terms of the LGPL.
+ */
+char *
+nm_utils_bin2hexstr (gconstpointer src, gsize len, int final_len)
+{
+	static char hex_digits[] = "0123456789abcdef";
+	const guint8 *bytes = src;
+	char *result;
+	int i;
+	gsize buflen = (len * 2) + 1;
+
+	g_return_val_if_fail (bytes != NULL, NULL);
+	g_return_val_if_fail (len > 0, NULL);
+	g_return_val_if_fail (len < 4096, NULL);   /* Arbitrary limit */
+	if (final_len > -1)
+		g_return_val_if_fail (final_len < buflen, NULL);
+
+	result = g_malloc0 (buflen);
+	for (i = 0; i < len; i++) {
+		result[2*i] = hex_digits[(bytes[i] >> 4) & 0xf];
+		result[2*i+1] = hex_digits[bytes[i] & 0xf];
+	}
+	/* Cut converted key off at the correct length for this cipher type */
+	if (final_len > -1)
+		result[final_len] = '\0';
+	else
+		result[buflen - 1] = '\0';
+
+	return result;
 }
 
 static void
@@ -3648,107 +3749,6 @@ _nm_utils_generate_mac_address_mask_parse (const char *value,
 }
 
 /*****************************************************************************/
-
-/**
- * nm_utils_bin2hexstr:
- * @src: (type guint8) (array length=len): an array of bytes
- * @len: the length of the @src array
- * @final_len: an index where to cut off the returned string, or -1
- *
- * Converts the byte array @src into a hexadecimal string. If @final_len is
- * greater than -1, the returned string is terminated at that index
- * (returned_string[final_len] == '\0'),
- *
- * Return value: (transfer full): the textual form of @bytes
- */
-/*
- * Code originally by Alex Larsson <alexl@redhat.com> and
- *  copyright Red Hat, Inc. under terms of the LGPL.
- */
-char *
-nm_utils_bin2hexstr (gconstpointer src, gsize len, int final_len)
-{
-	static char hex_digits[] = "0123456789abcdef";
-	const guint8 *bytes = src;
-	char *result;
-	int i;
-	gsize buflen = (len * 2) + 1;
-
-	g_return_val_if_fail (bytes != NULL, NULL);
-	g_return_val_if_fail (len > 0, NULL);
-	g_return_val_if_fail (len < 4096, NULL);   /* Arbitrary limit */
-	if (final_len > -1)
-		g_return_val_if_fail (final_len < buflen, NULL);
-
-	result = g_malloc0 (buflen);
-	for (i = 0; i < len; i++) {
-		result[2*i] = hex_digits[(bytes[i] >> 4) & 0xf];
-		result[2*i+1] = hex_digits[bytes[i] & 0xf];
-	}
-	/* Cut converted key off at the correct length for this cipher type */
-	if (final_len > -1)
-		result[final_len] = '\0';
-	else
-		result[buflen - 1] = '\0';
-
-	return result;
-}
-
-/**
- * nm_utils_hexstr2bin:
- * @hex: a string of hexadecimal characters with optional ':' separators
- *
- * Converts a hexadecimal string @hex into an array of bytes.  The optional
- * separator ':' may be used between single or pairs of hexadecimal characters,
- * eg "00:11" or "0:1".  Any "0x" at the beginning of @hex is ignored.  @hex
- * may not start or end with ':'.
- *
- * Return value: (transfer full): the converted bytes, or %NULL on error
- */
-GBytes *
-nm_utils_hexstr2bin (const char *hex)
-{
-	guint i = 0, x = 0;
-	gs_free guint8 *c = NULL;
-	int a, b;
-	gboolean found_colon = FALSE;
-
-	g_return_val_if_fail (hex != NULL, NULL);
-
-	if (strncasecmp (hex, "0x", 2) == 0)
-		hex += 2;
-	found_colon = !!strchr (hex, ':');
-
-	c = g_malloc (strlen (hex) / 2 + 1);
-	for (;;) {
-		a = g_ascii_xdigit_value (hex[i++]);
-		if (a < 0)
-			return NULL;
-
-		if (hex[i] && hex[i] != ':') {
-			b = g_ascii_xdigit_value (hex[i++]);
-			if (b < 0)
-				return NULL;
-			c[x++] = ((guint) a << 4) | ((guint) b);
-		} else
-			c[x++] = (guint) a;
-
-		if (!hex[i])
-			break;
-		if (hex[i] == ':') {
-			if (!hex[i + 1]) {
-				/* trailing ':' is invalid */
-				return NULL;
-			}
-			i++;
-		} else if (found_colon) {
-			/* If colons exist, they must delimit 1 or 2 hex chars */
-			return NULL;
-		}
-	}
-
-	return g_bytes_new (c, x);
-}
 
 /**
  * nm_utils_iface_valid_name:
