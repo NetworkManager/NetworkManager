@@ -433,7 +433,7 @@
    ...
    fun:g_main_dispatch
    fun:g_main_context_dispatch
-   fun:g_main_context_iterate.isra.29
+   fun:g_main_context_iterate.isra.*
    fun:g_main_loop_run
    fun:gdbus_shared_thread_func
    fun:g_thread_proxy
