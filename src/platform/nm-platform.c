@@ -2662,14 +2662,14 @@ nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr addr
 	return klass->ip6_address_get (self, ifindex, address, plen);
 }
 
-static gboolean
+static const NMPlatformIP4Address *
 array_contains_ip4_address (const GArray *addresses, const NMPlatformIP4Address *address, gint32 now)
 {
 	guint len = addresses ? addresses->len : 0;
 	guint i;
 
 	for (i = 0; i < len; i++) {
-		NMPlatformIP4Address *candidate = &g_array_index (addresses, NMPlatformIP4Address, i);
+		const NMPlatformIP4Address *candidate = &g_array_index (addresses, NMPlatformIP4Address, i);
 
 		if (   candidate->address == address->address
 		    && candidate->plen == address->plen
@@ -2678,11 +2678,11 @@ array_contains_ip4_address (const GArray *addresses, const NMPlatformIP4Address 
 
 			if (nm_utils_lifetime_get (candidate->timestamp, candidate->lifetime, candidate->preferred,
 			                           now, &lifetime, &preferred))
-				return TRUE;
+				return candidate;
 		}
 	}
 
-	return FALSE;
+	return NULL;
 }
 
 static gboolean
@@ -2703,6 +2703,97 @@ array_contains_ip6_address (const GArray *addresses, const NMPlatformIP6Address 
 		}
 	}
 
+	return FALSE;
+}
+
+static gboolean
+_ptr_inside_ip4_addr_array (const GArray *array, gconstpointer needle)
+{
+	return    needle >= (gconstpointer) &g_array_index (array, const NMPlatformIP4Address, 0)
+	       && needle <  (gconstpointer) &g_array_index (array, const NMPlatformIP4Address, array->len);
+}
+
+static void
+ip4_addr_subnets_destroy_index (GHashTable *ht, const GArray *addresses)
+{
+	GHashTableIter iter;
+	gpointer p;
+
+	g_hash_table_iter_init (&iter, ht);
+
+	while (g_hash_table_iter_next (&iter, NULL, &p)) {
+		if (!_ptr_inside_ip4_addr_array (addresses, p)) {
+			g_ptr_array_free ((GPtrArray *) p, TRUE);
+		}
+	}
+
+	g_hash_table_unref (ht);
+}
+
+static GHashTable *
+ip4_addr_subnets_build_index (const GArray *addresses, gboolean consider_flags)
+{
+	const NMPlatformIP4Address *address;
+	gpointer p;
+	GHashTable *subnets;
+	GPtrArray *ptr;
+	guint32 net;
+	guint i;
+	gint position;
+
+	if (!addresses)
+		return NULL;
+
+	subnets = g_hash_table_new_full (g_direct_hash,
+	                                 g_direct_equal,
+	                                 NULL,
+	                                 NULL);
+
+	/* Build a hash table of all addresses per subnet */
+	for (i = 0; i < addresses->len; i++) {
+		address = &g_array_index (addresses, const NMPlatformIP4Address, i);
+		net = address->address & nm_utils_ip4_prefix_to_netmask (address->plen);
+		if (!g_hash_table_lookup_extended (subnets, GUINT_TO_POINTER (net), NULL, &p)) {
+			g_hash_table_insert (subnets, GUINT_TO_POINTER (net), (gpointer) address);
+			continue;
+		}
+		if (_ptr_inside_ip4_addr_array (addresses, p)) {
+			ptr = g_ptr_array_new ();
+			g_hash_table_insert (subnets, GUINT_TO_POINTER (net), ptr);
+			g_ptr_array_add (ptr, p);
+		} else
+			ptr = p;
+
+		if (!consider_flags || NM_FLAGS_HAS (address->n_ifa_flags, IFA_F_SECONDARY))
+			position = -1; /* append */
+		else
+			position = 0; /* prepend */
+
+		g_ptr_array_insert (ptr, position, (gpointer) address);
+	}
+
+	return subnets;
+}
+
+static gboolean
+ip4_addr_subnets_is_secondary (const NMPlatformIP4Address *address, GHashTable *subnets, const GArray *addresses, GPtrArray **out_addr_list)
+{
+	GPtrArray *addr_list;
+	gpointer p;
+	guint32 net;
+
+	net = address->address & nm_utils_ip4_prefix_to_netmask (address->plen);
+	p = g_hash_table_lookup (subnets, GUINT_TO_POINTER (net));
+	nm_assert (p);
+	if (!_ptr_inside_ip4_addr_array (addresses, p)) {
+		addr_list = p;
+		if (addr_list->pdata[0] != address) {
+			NM_SET_OUT (out_addr_list, addr_list);
+			return TRUE;
+		}
+	} else
+		nm_assert ((gconstpointer) address == p);
+	NM_SET_OUT (out_addr_list, NULL);
 	return FALSE;
 }
 
@@ -2727,19 +2818,64 @@ nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, const GArray *known
 {
 	GArray *addresses;
 	NMPlatformIP4Address *address;
+	const NMPlatformIP4Address *known_address;
 	gint32 now = nm_utils_get_monotonic_timestamp_s ();
-	int i;
+	GHashTable *plat_subnets;
+	GHashTable *known_subnets;
+	GPtrArray *ptr;
+	int i, j;
 
 	_CHECK_SELF (self, klass, FALSE);
 
-	/* Delete unknown addresses */
 	addresses = nm_platform_ip4_address_get_all (self, ifindex);
+	plat_subnets = ip4_addr_subnets_build_index (addresses, TRUE);
+	known_subnets = ip4_addr_subnets_build_index (known_addresses, FALSE);
+
+	/* Delete unknown addresses */
 	for (i = 0; i < addresses->len; i++) {
 		address = &g_array_index (addresses, NMPlatformIP4Address, i);
 
-		if (!array_contains_ip4_address (known_addresses, address, now))
-			nm_platform_ip4_address_delete (self, ifindex, address->address, address->plen, address->peer_address);
+		if (!address->ifindex) {
+			/* Already deleted */
+			continue;
+		}
+
+		known_address = array_contains_ip4_address (known_addresses, address, now);
+		if (known_address) {
+			gboolean secondary;
+
+			secondary = ip4_addr_subnets_is_secondary (known_address, known_subnets, known_addresses, NULL);
+			/* Ignore the matching address if it has a different primary/slave
+			 * role. */
+			if (secondary != NM_FLAGS_HAS (address->n_ifa_flags, IFA_F_SECONDARY))
+				known_address = NULL;
+		}
+
+		if (!known_address) {
+			nm_platform_ip4_address_delete (self, ifindex,
+			                                address->address,
+			                                address->plen,
+			                                address->peer_address);
+			if (   !ip4_addr_subnets_is_secondary (address, plat_subnets, addresses, &ptr)
+			    && ptr) {
+				/* If we just deleted a primary addresses and there were
+				 * secondary ones the kernel can do two things, depending on
+				 * version and sysctl setting: delete also secondary addresses
+				 * or promote a secondary to primary. Ensure that secondary
+				 * addresses are deleted, so that we can start with a clean
+				 * slate and add addresses in the right order. */
+				for (j = 1; j < ptr->len; j++) {
+					address = ptr->pdata[j];
+					nm_platform_ip4_address_delete (self, ifindex,
+					                                address->address,
+					                                address->plen,
+					                                address->peer_address);
+					address->ifindex = 0;
+				}
+			}
+		}
 	}
+	ip4_addr_subnets_destroy_index (plat_subnets, addresses);
 	g_array_free (addresses, TRUE);
 
 	if (out_added_addresses)
@@ -2750,8 +2886,9 @@ nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, const GArray *known
 
 	/* Add missing addresses */
 	for (i = 0; i < known_addresses->len; i++) {
-		const NMPlatformIP4Address *known_address = &g_array_index (known_addresses, NMPlatformIP4Address, i);
 		guint32 lifetime, preferred;
+
+		known_address = &g_array_index (known_addresses, NMPlatformIP4Address, i);
 
 		if (!nm_utils_lifetime_get (known_address->timestamp, known_address->lifetime, known_address->preferred,
 		                            now, &lifetime, &preferred))
@@ -2759,8 +2896,10 @@ nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, const GArray *known
 
 		if (!nm_platform_ip4_address_add (self, ifindex, known_address->address, known_address->plen,
 		                                  known_address->peer_address, lifetime, preferred,
-		                                  0, known_address->label))
+		                                  0, known_address->label)) {
+			ip4_addr_subnets_destroy_index (known_subnets, known_addresses);
 			return FALSE;
+		}
 
 		if (out_added_addresses) {
 			if (!*out_added_addresses)
@@ -2768,6 +2907,8 @@ nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, const GArray *known
 			g_ptr_array_add (*out_added_addresses, (gpointer) known_address);
 		}
 	}
+
+	ip4_addr_subnets_destroy_index (known_subnets, known_addresses);
 
 	return TRUE;
 }
