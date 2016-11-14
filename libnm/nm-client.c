@@ -2416,6 +2416,14 @@ dispose (GObject *object)
 	}
 
 	if (priv->object_manager) {
+		GList *objects, *iter;
+
+		/* Unhook the NM objects. */
+		objects = g_dbus_object_manager_get_objects (priv->object_manager);
+		for (iter = objects; iter; iter = iter->next)
+			g_object_set_qdata (G_OBJECT (iter->data), _nm_object_obj_nm_quark (), NULL);
+		g_list_free_full (objects, g_object_unref);
+
 		g_signal_handlers_disconnect_by_data (priv->object_manager, object);
 		g_clear_object (&priv->object_manager);
 	}
