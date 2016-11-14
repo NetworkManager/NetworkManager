@@ -1346,7 +1346,7 @@ test_connection_invalid (void)
 	                               &path3);
 
 
-	nmtst_main_loop_run (loop, 100);
+	nmtst_main_loop_run (loop, 1000);
 
 
 	connections = nm_client_get_connections (client);
