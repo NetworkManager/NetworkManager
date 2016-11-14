@@ -620,6 +620,7 @@ init_dbus (NMObject *object)
 
 	NM_OBJECT_CLASS (nm_remote_settings_parent_class)->init_dbus (object);
 
+	priv->proxy = NMDBUS_SETTINGS (_nm_object_get_proxy (object, NM_DBUS_INTERFACE_SETTINGS));
 	_nm_object_register_properties (object,
 	                                NM_DBUS_INTERFACE_SETTINGS,
 	                                property_info);
@@ -670,6 +671,7 @@ dispose (GObject *object)
 
 	g_clear_pointer (&priv->visible_connections, g_ptr_array_unref);
 	g_clear_pointer (&priv->hostname, g_free);
+	g_clear_object (&priv->proxy);
 
 	G_OBJECT_CLASS (nm_remote_settings_parent_class)->dispose (object);
 }
