@@ -144,6 +144,7 @@ init_dbus (NMObject *object)
 	proxy = _nm_object_get_proxy (object, NM_DBUS_INTERFACE_VPN_CONNECTION);
 	g_signal_connect (proxy, "vpn-state-changed",
 	                  G_CALLBACK (vpn_state_changed_proxy), object);
+	g_object_unref (proxy);
 }
 
 static void

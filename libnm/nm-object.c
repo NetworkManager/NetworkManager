@@ -928,6 +928,7 @@ _nm_object_register_properties (NMObject *object,
 	proxy = _nm_object_get_proxy (object, interface);
 	g_signal_connect (proxy, "g-properties-changed",
 		          G_CALLBACK (properties_changed), object);
+	g_object_unref (proxy);
 
 	instance = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 	priv->property_tables = g_slist_prepend (priv->property_tables, instance);
@@ -957,6 +958,7 @@ _nm_object_set_property (NMObject *object,
                          ...)
 {
 	GVariant *val, *ret;
+	GDBusProxy *proxy;
 	va_list ap;
 
 	g_return_if_fail (NM_IS_OBJECT (object));
@@ -969,7 +971,8 @@ _nm_object_set_property (NMObject *object,
 	va_end (ap);
 	g_return_if_fail (val != NULL);
 
-	ret = g_dbus_proxy_call_sync (_nm_object_get_proxy (object, interface),
+	proxy = _nm_object_get_proxy (object, interface);
+	ret = g_dbus_proxy_call_sync (proxy,
 	                              DBUS_INTERFACE_PROPERTIES ".Set",
 	                              g_variant_new ("(ssv)", interface, prop_name, val),
 	                              G_DBUS_CALL_FLAGS_NONE, 2000,
@@ -977,6 +980,7 @@ _nm_object_set_property (NMObject *object,
 	/* Ignore errors. */
 	if (ret)
 		g_variant_unref (ret);
+	g_object_unref (proxy);
 }
 
 static void

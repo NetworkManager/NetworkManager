@@ -768,6 +768,16 @@ constructed (GObject *object)
 }
 
 static void
+dispose (GObject *object)
+{
+	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (object);
+
+	g_clear_object (&priv->proxy);
+
+	G_OBJECT_CLASS (nm_remote_connection_parent_class)->dispose (object);
+}
+
+static void
 nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (remote_class);
@@ -778,6 +788,7 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 	/* virtual methods */
 	object_class->constructed = constructed;
 	object_class->get_property = get_property;
+	object_class->dispose = dispose;
 
 	nm_object_class->init_dbus = init_dbus;
 

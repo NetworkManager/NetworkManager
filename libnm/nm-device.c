@@ -296,6 +296,8 @@ dispose (GObject *object)
 	g_clear_pointer (&priv->available_connections, g_ptr_array_unref);
 	g_clear_pointer (&priv->lldp_neighbors, g_ptr_array_unref);
 
+	g_clear_object (&priv->proxy);
+
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
 }
 

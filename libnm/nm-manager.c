@@ -52,7 +52,7 @@ G_DEFINE_TYPE_WITH_CODE (NMManager, nm_manager, NM_TYPE_OBJECT,
 #define NM_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_MANAGER, NMManagerPrivate))
 
 typedef struct {
-	NMDBusManager *manager_proxy;
+	NMDBusManager *proxy;
 	GCancellable *props_cancellable;
 	char *version;
 	NMState state;
@@ -186,13 +186,13 @@ init_dbus (NMObject *object)
 
 	NM_OBJECT_CLASS (nm_manager_parent_class)->init_dbus (object);
 
-	priv->manager_proxy = NMDBUS_MANAGER (_nm_object_get_proxy (object, NM_DBUS_INTERFACE));
+	priv->proxy = NMDBUS_MANAGER (_nm_object_get_proxy (object, NM_DBUS_INTERFACE));
 	_nm_object_register_properties (object,
 	                                NM_DBUS_INTERFACE,
 	                                property_info);
 
 	/* Permissions */
-	g_signal_connect (priv->manager_proxy, "check-permissions",
+	g_signal_connect (priv->proxy, "check-permissions",
 	                  G_CALLBACK (manager_recheck_permissions), object);
 }
 
@@ -307,7 +307,7 @@ get_permissions_sync (NMManager *self, GError **error)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GVariant *permissions;
 
-	if (nmdbus_manager_call_get_permissions_sync (priv->manager_proxy,
+	if (nmdbus_manager_call_get_permissions_sync (priv->proxy,
 	                                              &permissions,
 	                                              NULL, error)) {
 		update_permissions (self, permissions);
@@ -364,7 +364,7 @@ manager_recheck_permissions (NMDBusManager *proxy, gpointer user_data)
 		return;
 
 	priv->perm_call_cancellable = g_cancellable_new ();
-	nmdbus_manager_call_get_permissions (priv->manager_proxy,
+	nmdbus_manager_call_get_permissions (priv->proxy,
 	                                     priv->perm_call_cancellable,
 	                                     get_permissions_reply,
 	                                     self);
@@ -409,7 +409,7 @@ nm_manager_networking_set_enabled (NMManager *manager, gboolean enable, GError *
 
 	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
 
-	ret = nmdbus_manager_call_enable_sync (NM_MANAGER_GET_PRIVATE (manager)->manager_proxy,
+	ret = nmdbus_manager_call_enable_sync (NM_MANAGER_GET_PRIVATE (manager)->proxy,
 	                                       enable,
 	                                       NULL, error);
 	if (error && *error)
@@ -511,7 +511,7 @@ nm_manager_get_logging (NMManager *manager, char **level, char **domains, GError
 	if (!level && !domains)
 		return TRUE;
 
-	ret = nmdbus_manager_call_get_logging_sync (NM_MANAGER_GET_PRIVATE (manager)->manager_proxy,
+	ret = nmdbus_manager_call_get_logging_sync (NM_MANAGER_GET_PRIVATE (manager)->proxy,
 	                                            level, domains,
 	                                            NULL, error);
 	if (error && *error)
@@ -535,7 +535,7 @@ nm_manager_set_logging (NMManager *manager, const char *level, const char *domai
 	if (!domains)
 		domains = "";
 
-	ret = nmdbus_manager_call_set_logging_sync (NM_MANAGER_GET_PRIVATE (manager)->manager_proxy,
+	ret = nmdbus_manager_call_set_logging_sync (NM_MANAGER_GET_PRIVATE (manager)->proxy,
 	                                            level, domains,
 	                                            NULL, error);
 	if (error && *error)
@@ -574,7 +574,7 @@ nm_manager_check_connectivity (NMManager *manager,
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NM_CONNECTIVITY_UNKNOWN);
 	priv = NM_MANAGER_GET_PRIVATE (manager);
 
-	if (nmdbus_manager_call_check_connectivity_sync (priv->manager_proxy,
+	if (nmdbus_manager_call_check_connectivity_sync (priv->proxy,
 	                                                 &connectivity,
 	                                                 cancellable, error))
 		return connectivity;
@@ -621,7 +621,7 @@ nm_manager_check_connectivity_async (NMManager *manager,
 
 	simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
 	                                    nm_manager_check_connectivity_async);
-	nmdbus_manager_call_check_connectivity (priv->manager_proxy,
+	nmdbus_manager_call_check_connectivity (priv->proxy,
 	                                        cancellable,
 	                                        check_connectivity_cb, simple);
 }
@@ -910,7 +910,7 @@ nm_manager_activate_connection_async (NMManager *manager,
 	priv = NM_MANAGER_GET_PRIVATE (manager);
 	priv->pending_activations = g_slist_prepend (priv->pending_activations, info);
 
-	nmdbus_manager_call_activate_connection (priv->manager_proxy,
+	nmdbus_manager_call_activate_connection (priv->proxy,
 	                                         connection ? nm_connection_get_path (connection) : "/",
 	                                         device ? nm_object_get_path (NM_OBJECT (device)) : "/",
 	                                         specific_object ? specific_object : "/",
@@ -991,7 +991,7 @@ nm_manager_add_and_activate_connection_async (NMManager *manager,
 	if (!dict)
 		dict = g_variant_new_array (G_VARIANT_TYPE ("{sa{sv}}"), NULL, 0);
 
-	nmdbus_manager_call_add_and_activate_connection (priv->manager_proxy,
+	nmdbus_manager_call_add_and_activate_connection (priv->proxy,
 	                                                 dict,
 	                                                 nm_object_get_path (NM_OBJECT (device)),
 	                                                 specific_object ? specific_object : "/",
@@ -1072,7 +1072,7 @@ nm_manager_deactivate_connection (NMManager *manager,
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (active), FALSE);
 
 	path = nm_object_get_path (NM_OBJECT (active));
-	ret = nmdbus_manager_call_deactivate_connection_sync (NM_MANAGER_GET_PRIVATE (manager)->manager_proxy,
+	ret = nmdbus_manager_call_deactivate_connection_sync (NM_MANAGER_GET_PRIVATE (manager)->proxy,
 	                                                      path,
 	                                                      cancellable, error);
 	if (error && *error)
@@ -1116,7 +1116,7 @@ nm_manager_deactivate_connection_async (NMManager *manager,
 	                                    nm_manager_deactivate_connection_async);
 
 	path = nm_object_get_path (NM_OBJECT (active));
-	nmdbus_manager_call_deactivate_connection (NM_MANAGER_GET_PRIVATE (manager)->manager_proxy,
+	nmdbus_manager_call_deactivate_connection (NM_MANAGER_GET_PRIVATE (manager)->proxy,
 	                                           path,
 	                                           cancellable,
 	                                           deactivated_cb, simple);
@@ -1231,7 +1231,7 @@ init_async_parent_inited (GObject *source, GAsyncResult *result, gpointer user_d
 		return;
 	}
 
-	nmdbus_manager_call_get_permissions (priv->manager_proxy,
+	nmdbus_manager_call_get_permissions (priv->proxy,
 	                                     init_data->cancellable,
 	                                     init_async_got_permissions,
 	                                     g_object_ref (init_data->manager));
@@ -1292,6 +1292,8 @@ dispose (GObject *object)
 	free_active_connections (manager);
 	g_clear_object (&priv->primary_connection);
 	g_clear_object (&priv->activating_connection);
+
+	g_clear_object (&priv->proxy);
 
 	/* Each activation should hold a ref on @manager, so if we're being disposed,
 	 * there shouldn't be any pending.

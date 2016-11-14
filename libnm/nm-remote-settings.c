@@ -620,7 +620,6 @@ init_dbus (NMObject *object)
 
 	NM_OBJECT_CLASS (nm_remote_settings_parent_class)->init_dbus (object);
 
-	priv->proxy = NMDBUS_SETTINGS (_nm_object_get_proxy (object, NM_DBUS_INTERFACE_SETTINGS));
 	_nm_object_register_properties (object,
 	                                NM_DBUS_INTERFACE_SETTINGS,
 	                                property_info);

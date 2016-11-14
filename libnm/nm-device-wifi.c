@@ -770,6 +770,8 @@ dispose (GObject *object)
 	if (priv->aps)
 		clean_up_aps (NM_DEVICE_WIFI (object), TRUE);
 
+	g_clear_object (&priv->proxy);
+
 	G_OBJECT_CLASS (nm_device_wifi_parent_class)->dispose (object);
 }
 
