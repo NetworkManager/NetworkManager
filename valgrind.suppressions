@@ -461,6 +461,39 @@
    fun:g_bus_get_sync
 }
 {
+   _gdbus_f25_2
+   Memcheck:Leak
+   match-leak-kinds: definite
+   ...
+   fun:g_dbus_proxy_new_sync
+   fun:initable_init
+   fun:async_init_thread
+   fun:g_task_thread_pool_thread
+   fun:g_thread_pool_thread_proxy
+   fun:g_thread_proxy
+   fun:start_thread
+   fun:clone
+}
+{
+   _gdbusobjectmanager_f25_1
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:g_malloc
+   fun:g_slice_alloc
+   fun:g_slice_alloc0
+   fun:g_system_thread_new
+   fun:g_thread_new_internal
+   fun:g_thread_pool_start_thread.part.1
+   fun:g_thread_pool_start_thread
+   fun:g_thread_pool_push
+   fun:g_task_run_in_thread
+   fun:g_async_initable_real_init_async
+   fun:g_async_initable_new_valist_async
+   fun:g_async_initable_new_async
+   fun:g_dbus_object_manager_client_new_for_bus
+}
+{
    _btrfs_io_clone
    Memcheck:Param
    ioctl(generic)
