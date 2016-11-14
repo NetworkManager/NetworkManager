@@ -441,6 +441,26 @@
    fun:clone
 }
 {
+   _gdbus_f25_1
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:g_malloc
+   fun:g_slice_alloc
+   fun:g_slice_alloc0
+   fun:g_system_thread_new
+   fun:g_thread_new_internal
+   fun:g_thread_new
+   fun:g_get_worker_context
+   fun:g_task_thread_pool_init
+   fun:g_task_get_type
+   fun:ensure_required_types
+   fun:_g_dbus_shared_thread_ref
+   fun:_g_dbus_worker_new
+   fun:initable_init
+   fun:g_bus_get_sync
+}
+{
    _btrfs_io_clone
    Memcheck:Param
    ioctl(generic)
