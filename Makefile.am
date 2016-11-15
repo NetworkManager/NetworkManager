@@ -578,10 +578,12 @@ libnm_core_tests_test_setting_dcb_CPPFLAGS = $(libnm_core_tests_cppflags)
 libnm_core_tests_test_settings_defaults_CPPFLAGS = $(libnm_core_tests_cppflags)
 
 libnm_core_tests_test_general_SOURCES = \
-	libnm-core/tests/nm-core-tests-enum-types.c \
-	libnm-core/tests/nm-core-tests-enum-types.h \
 	libnm-core/tests/test-general-enums.h \
 	libnm-core/tests/test-general.c
+
+nodist_libnm_core_tests_test_general_SOURCES = \
+	libnm-core/tests/nm-core-tests-enum-types.c \
+	libnm-core/tests/nm-core-tests-enum-types.h
 
 libnm_core_tests_ldadd = \
 	libnm-core/libnm-core.la \
