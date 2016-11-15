@@ -3577,7 +3577,7 @@ lib_LTLIBRARIES += libnm-glib/libnm-glib.la
 libnm_glib_libnmincludedir = $(includedir)/libnm-glib
 libnm_glib_libnmvpndir = $(includedir)/libnm-glib
 
-libnm_glib_libnminclude_HEADERS = \
+libnm_glib_lib_h_pub_real = \
 	libnm-glib/nm-object.h \
 	libnm-glib/nm-client.h \
 	libnm-glib/nm-device.h \
@@ -3605,16 +3605,33 @@ libnm_glib_libnminclude_HEADERS = \
 	libnm-glib/nm-remote-settings.h \
 	libnm-glib/nm-secret-agent.h \
 	libnm-glib/nm-device-wimax.h \
-	libnm-glib/nm-wimax-nsp.h \
+	libnm-glib/nm-wimax-nsp.h
+libnm_glib_lib_h_pub_gen = \
 	libnm-glib/nm-glib-enum-types.h
+libnm_glib_lib_h_priv = \
+	libnm-glib/nm-object-private.h \
+	libnm-glib/nm-device-private.h \
+	libnm-glib/nm-types-private.h \
+	libnm-glib/nm-object-cache.h \
+	libnm-glib/nm-remote-connection-private.h \
+	libnm-glib/nm-dbus-helpers-private.h
 
-libnm_glib_libnmvpn_HEADERS = \
+libnm_glib_libnminclude_HEADERS = \
+	$(libnm_glib_lib_h_pub_gen) \
+	$(libnm_glib_lib_h_pub_real)
+
+libnm_glib_vpn_h_real = \
 	libnm-glib/nm-vpn-plugin.h \
 	libnm-glib/nm-vpn-plugin-ui-interface.h \
-	libnm-glib/nm-vpn-plugin-utils.h \
+	libnm-glib/nm-vpn-plugin-utils.h
+libnm_glib_vpn_h_gen = \
 	libnm-glib/nm-vpn-enum-types.h
 
-libnm_glib_libnm_glib_la_csources = \
+libnm_glib_libnmvpn_HEADERS = \
+	$(libnm_glib_vpn_h_gen) \
+	$(libnm_glib_vpn_h_real)
+
+libnm_glib_lib_c_real = \
 	libnm-glib/nm-object.c \
 	libnm-glib/nm-dbus-helpers.c \
 	libnm-glib/nm-client.c \
@@ -3644,20 +3661,16 @@ libnm_glib_libnm_glib_la_csources = \
 	libnm-glib/nm-remote-settings.c \
 	libnm-glib/nm-secret-agent.c \
 	libnm-glib/nm-device-wimax.c \
-	libnm-glib/nm-wimax-nsp.c \
+	libnm-glib/nm-wimax-nsp.c
+libnm_glib_lib_c_gen = \
 	libnm-glib/nm-glib-enum-types.c
 
-libnm_glib_libnm_glib_la_private_headers = \
-	libnm-glib/nm-object-private.h \
-	libnm-glib/nm-device-private.h \
-	libnm-glib/nm-types-private.h \
-	libnm-glib/nm-object-cache.h \
-	libnm-glib/nm-remote-connection-private.h \
-	libnm-glib/nm-dbus-helpers-private.h
-
 libnm_glib_libnm_glib_la_SOURCES = \
-	$(libnm_glib_libnm_glib_la_csources) \
-	$(libnm_glib_libnm_glib_la_private_headers)
+	$(libnm_glib_lib_c_gen) \
+	$(libnm_glib_lib_c_real) \
+	$(libnm_glib_lib_h_pub_gen) \
+	$(libnm_glib_lib_h_pub_real) \
+	$(libnm_glib_lib_h_priv)
 
 libnm_glib_libnm_glib_la_CPPFLAGS = \
 	$(libnm_glib_cppflags) \
@@ -3677,9 +3690,9 @@ libnm_glib_libnm_glib_la_LIBADD = \
 
 
 GLIB_GENERATED += \
-	libnm-glib/nm-glib-enum-types.h \
-	libnm-glib/nm-glib-enum-types.c
-nm_glib_enum_types_sources = $(libnm_glib_libnminclude_HEADERS)
+	$(libnm_glib_lib_h_pub_gen) \
+	$(libnm_glib_lib_c_gen)
+nm_glib_enum_types_sources = $(libnm_glib_lib_h_pub_real)
 
 
 check_programs_norun += libnm-glib/libnm-glib-test
@@ -3694,11 +3707,15 @@ libnm_glib_libnm_glib_test_LDADD = \
 
 lib_LTLIBRARIES += libnm-glib/libnm-glib-vpn.la
 
-libnm_glib_libnm_glib_vpn_la_SOURCES = \
+libnm_glib_vpn_c_real = \
 	libnm-glib/nm-vpn-plugin.c \
 	libnm-glib/nm-vpn-plugin-ui-interface.c \
-	libnm-glib/nm-vpn-plugin-utils.c \
+	libnm-glib/nm-vpn-plugin-utils.c
+libnm_glib_vpn_c_gen = \
 	libnm-glib/nm-vpn-enum-types.c
+libnm_glib_libnm_glib_vpn_la_SOURCES = \
+	$(libnm_glib_vpn_c_gen) \
+	$(libnm_glib_vpn_c_real)
 libnm_glib_libnm_glib_vpn_la_CPPFLAGS = $(libnm_glib_cppflags)
 libnm_glib_libnm_glib_vpn_la_LIBADD = \
 	libnm-util/libnm-util.la \
@@ -3710,9 +3727,9 @@ libnm_glib_libnm_glib_vpn_la_LDFLAGS = \
 
 
 GLIB_GENERATED += \
-	libnm-glib/nm-vpn-enum-types.h \
-	libnm-glib/nm-vpn-enum-types.c
-nm_vpn_enum_types_sources = $(libnm_glib_libnmvpn_HEADERS)
+	$(libnm_glib_vpn_h_gen) \
+	$(libnm_glib_vpn_c_gen)
+nm_vpn_enum_types_sources = $(libnm_glib_vpn_h_real)
 
 
 libnm-glib/nm-vpn-plugin-glue.h: $(srcdir)/introspection/nm-vpn-plugin.xml
@@ -3724,7 +3741,6 @@ libnm-glib/nm-secret-agent-glue.h: $(srcdir)/introspection/nm-secret-agent.xml
 BUILT_SOURCES += \
 	libnm-glib/nm-vpn-plugin-glue.h \
 	libnm-glib/nm-secret-agent-glue.h
-
 
 pkgconfig_DATA += \
 	libnm-glib/libnm-glib.pc \
@@ -3750,8 +3766,11 @@ libnm_glib_NMClient_1_0_gir_LIBS = \
 	libnm-glib/libnm-glib.la \
 	libnm-util/libnm-util.la
 libnm_glib_NMClient_1_0_gir_FILES = \
-	$(libnm_glib_libnminclude_HEADERS) \
-	$(libnm_glib_libnm_glib_la_csources)
+	$(libnm_glib_lib_h_pub_gen) \
+	$(libnm_glib_lib_h_pub_real) \
+	$(libnm_glib_lib_h_priv) \
+	$(libnm_glib_lib_c_gen) \
+	$(libnm_glib_lib_c_real)
 libnm_glib_NMClient_1_0_gir_SCANNERFLAGS = \
 	"-I$(srcdir)/libnm-util" \
 	"-I$(builddir)/libnm-util" \
