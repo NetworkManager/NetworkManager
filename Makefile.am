@@ -3617,8 +3617,9 @@ libnm_glib_lib_h_priv = \
 	libnm-glib/nm-dbus-helpers-private.h
 
 libnm_glib_libnminclude_HEADERS = \
-	$(libnm_glib_lib_h_pub_gen) \
 	$(libnm_glib_lib_h_pub_real)
+nodist_libnm_glib_libnminclude_HEADERS = \
+	$(libnm_glib_lib_h_pub_gen)
 
 libnm_glib_vpn_h_real = \
 	libnm-glib/nm-vpn-plugin.h \
@@ -3628,8 +3629,10 @@ libnm_glib_vpn_h_gen = \
 	libnm-glib/nm-vpn-enum-types.h
 
 libnm_glib_libnmvpn_HEADERS = \
-	$(libnm_glib_vpn_h_gen) \
 	$(libnm_glib_vpn_h_real)
+
+nodist_libnm_glib_libnmvpn_HEADERS = \
+	$(libnm_glib_vpn_h_gen)
 
 libnm_glib_lib_c_real = \
 	libnm-glib/nm-object.c \
@@ -3666,11 +3669,13 @@ libnm_glib_lib_c_gen = \
 	libnm-glib/nm-glib-enum-types.c
 
 libnm_glib_libnm_glib_la_SOURCES = \
-	$(libnm_glib_lib_c_gen) \
 	$(libnm_glib_lib_c_real) \
-	$(libnm_glib_lib_h_pub_gen) \
 	$(libnm_glib_lib_h_pub_real) \
 	$(libnm_glib_lib_h_priv)
+
+nodist_libnm_glib_libnm_glib_la_SOURCES = \
+	$(libnm_glib_lib_c_gen) \
+	$(libnm_glib_lib_h_pub_gen)
 
 libnm_glib_libnm_glib_la_CPPFLAGS = \
 	$(libnm_glib_cppflags) \
@@ -3714,8 +3719,9 @@ libnm_glib_vpn_c_real = \
 libnm_glib_vpn_c_gen = \
 	libnm-glib/nm-vpn-enum-types.c
 libnm_glib_libnm_glib_vpn_la_SOURCES = \
-	$(libnm_glib_vpn_c_gen) \
 	$(libnm_glib_vpn_c_real)
+nodist_libnm_glib_libnm_glib_vpn_la_SOURCES = \
+	$(libnm_glib_vpn_c_gen)
 libnm_glib_libnm_glib_vpn_la_CPPFLAGS = $(libnm_glib_cppflags)
 libnm_glib_libnm_glib_vpn_la_LIBADD = \
 	libnm-util/libnm-util.la \
