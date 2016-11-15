@@ -29,6 +29,8 @@ CLEANFILES =
 DISTCLEANFILES =
 EXTRA_DIST =
 dist_hook =
+dist_dependencies =
+dist_configure_check =
 install_data_hook =
 install_exec_hook =
 install_exec_local =
@@ -122,15 +124,21 @@ DISTCHECK_CONFIGURE_FLAGS = \
 	--enable-ifupdown \
 	--enable-ifnet
 
-if BUILD_SETTING_DOCS
-dist-check-setting-docs:
-else
-dist-check-setting-docs:
-	@echo "*** gobject-introspection and pygobject are needed to run 'make dist'. ***"
+dist-configure-check:
+	@echo "*** 'make dist' requires '--enable-gtk-doc --with-introspection --with-libnm-glib'. ***"
 	@false
+
+if !BUILD_SETTING_DOCS
+dist_configure_check += dist-configure-check
+endif
+if !ENABLE_GTK_DOC
+dist_configure_check += dist-configure-check
+endif
+if !WITH_LEGACY_LIBRARIES
+dist_configure_check += dist-configure-check
 endif
 
-dist: dist-check-setting-docs
+dist: $(dist_configure_check) $(dist_dependencies)
 
 DISTCLEANFILES += intltool-extract intltool-merge intltool-update
 
@@ -512,6 +520,10 @@ libnm-core/nm-dbus-types.xml: libnm-core/nm-dbus-interface.h tools/enums-to-docb
 	$(AM_V_GEN) @PERL@ $(srcdir)/tools/enums-to-docbook.pl 'nm-dbus-types' 'NetworkManager D-Bus API Types' $^ >$@
 
 BUILT_SOURCES += \
+	libnm-core/nm-vpn-dbus-types.xml \
+	libnm-core/nm-dbus-types.xml
+
+dist_dependencies += \
 	libnm-core/nm-vpn-dbus-types.xml \
 	libnm-core/nm-dbus-types.xml
 
@@ -3494,6 +3506,8 @@ check-local-exports-libnm-util: libnm-util/libnm-util.la
 
 check_local += check-local-exports-libnm-util
 
+dist_dependencies += libnm-util/libnm-util.la
+
 ###############################################################################
 # libnm-util/tests
 ###############################################################################
@@ -3816,6 +3830,8 @@ check-local-exports-libnm-glib:
 
 check_local += check-local-exports-libnm-glib
 
+dist_dependencies += libnm-glib/libnm-glib.la
+
 ###############################################################################
 # libnm-glib/tests
 ###############################################################################
@@ -3926,6 +3942,7 @@ if CONFIG_PLUGIN_IFCFG_RH
 man_pages_autogen += man/nm-settings-ifcfg-rh.5
 else
 EXTRA_DIST += man/nm-settings-ifcfg-rh.5
+dist_dependencies += man/nm-settings-ifcfg-rh.5
 endif
 
 EXTRA_DIST += \
@@ -3981,6 +3998,9 @@ man_MANS += \
 	$(man_pages_autogen)
 endif
 endif
+
+dist_dependencies += $(man_pages)
+dist_dependencies += $(man_pages_autogen)
 
 ###############################################################################
 # vapi
@@ -4143,4 +4163,4 @@ cscope:
 
 ###############################################################################
 
-.PHONY: cscope $(check_local) $(dist_hook)
+.PHONY: cscope dist-configure-check $(check_local) $(dist_hook)
