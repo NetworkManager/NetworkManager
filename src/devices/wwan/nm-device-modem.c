@@ -287,10 +287,12 @@ ids_changed_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
 
 static void
 modem_state_cb (NMModem *modem,
-                NMModemState new_state,
-                NMModemState old_state,
+                int new_state_i,
+                int old_state_i,
                 gpointer user_data)
 {
+	NMModemState new_state = new_state_i;
+	NMModemState old_state = old_state_i;
 	NMDevice *device = NM_DEVICE (user_data);
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) device);
 	NMDeviceState dev_state = nm_device_get_state (device);

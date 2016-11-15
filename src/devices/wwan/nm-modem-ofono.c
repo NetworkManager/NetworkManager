@@ -1153,7 +1153,7 @@ nm_modem_ofono_new (const char *path)
 	                                 NM_MODEM_DEVICE_ID, basename,
 	                                 NM_MODEM_CONTROL_PORT, "ofono", /* mandatory */
 	                                 NM_MODEM_DRIVER, "ofono",
-	                                 NM_MODEM_STATE, NM_MODEM_STATE_INITIALIZING,
+	                                 NM_MODEM_STATE, (int) NM_MODEM_STATE_INITIALIZING,
 	                                 NULL);
 }
 

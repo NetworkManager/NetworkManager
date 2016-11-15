@@ -98,6 +98,9 @@ typedef enum {  /*< underscore_name=nm_modem_state >*/
 	NM_MODEM_STATE_DISCONNECTING = 10,
 	NM_MODEM_STATE_CONNECTING    = 11,
 	NM_MODEM_STATE_CONNECTED     = 12,
+
+	_NM_MODEM_STATE_LAST0,
+	_NM_MODEM_STATE_LAST = _NM_MODEM_STATE_LAST0 -1,
 } NMModemState;
 
 struct _NMModemPrivate;

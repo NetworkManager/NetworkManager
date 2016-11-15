@@ -1396,7 +1396,7 @@ nm_modem_broadband_new (GObject *object, GError **error)
 	                      NM_MODEM_CONTROL_PORT, mm_modem_get_primary_port (modem_iface),
 	                      NM_MODEM_DATA_PORT, NULL, /* We don't know it until bearer created */
 	                      NM_MODEM_IP_TYPES, mm_ip_family_to_nm (mm_modem_get_supported_ip_families (modem_iface)),
-	                      NM_MODEM_STATE, mm_state_to_nm (mm_modem_get_state (modem_iface)),
+	                      NM_MODEM_STATE, (int) mm_state_to_nm (mm_modem_get_state (modem_iface)),
 	                      NM_MODEM_DEVICE_ID, mm_modem_get_device_identifier (modem_iface),
 	                      NM_MODEM_BROADBAND_MODEM, modem_object,
 	                      NM_MODEM_DRIVER, drivers,

@@ -582,10 +582,12 @@ modem_cleanup (NMDeviceBt *self)
 
 static void
 modem_state_cb (NMModem *modem,
-                NMModemState new_state,
-                NMModemState old_state,
+                int new_state_i,
+                int old_state_i,
                 gpointer user_data)
 {
+	NMModemState new_state = new_state_i;
+	NMModemState old_state = old_state_i;
 	NMDevice *device = NM_DEVICE (user_data);
 	NMDeviceState dev_state = nm_device_get_state (device);
 
