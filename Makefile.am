@@ -3305,7 +3305,7 @@ libnm_util_cppflags = \
 	$(DBUS_CFLAGS) \
 	$(UUID_CFLAGS)
 
-libnm_util_libnm_util_include_HEADERS = \
+libnm_util_lib_h_pub_real = \
 	shared/nm-version-macros.h \
 	libnm-util/NetworkManager.h \
 	libnm-util/NetworkManagerVPN.h \
@@ -3339,11 +3339,9 @@ libnm_util_libnm_util_include_HEADERS = \
 	libnm-util/nm-setting-vpn.h \
 	libnm-util/nm-utils.h \
 	libnm-util/nm-version.h
-
-nodist_libnm_util_libnm_util_include_HEADERS = \
+libnm_util_lib_h_pub_gen = \
 	libnm-util/nm-utils-enum-types.h
-
-libnm_util_libnm_util_la_private_headers = \
+libnm_util_lib_h_priv = \
 	shared/nm-utils/nm-shared-utils.h \
 	libnm-util/crypto.h \
 	libnm-util/nm-dbus-glib-types.h \
@@ -3352,7 +3350,13 @@ libnm_util_libnm_util_la_private_headers = \
 	libnm-util/nm-setting-private.h \
 	libnm-util/nm-utils-private.h
 
-libnm_util_libnm_util_la_csources = \
+libnm_util_libnm_util_include_HEADERS = \
+	$(libnm_util_lib_h_pub_real)
+
+nodist_libnm_util_libnm_util_include_HEADERS = \
+	$(libnm_util_lib_h_pub_gen)
+
+libnm_util_lib_c_real = \
 	shared/nm-utils/nm-shared-utils.c \
 	libnm-util/crypto.c \
 	libnm-util/nm-connection.c \
@@ -3384,21 +3388,27 @@ libnm_util_libnm_util_la_csources = \
 	libnm-util/nm-setting-wireless.c \
 	libnm-util/nm-setting-wireless-security.c \
 	libnm-util/nm-setting-vpn.c \
-	libnm-util/nm-utils-enum-types.c \
 	libnm-util/nm-utils.c \
 	libnm-util/nm-value-transforms.c
+libnm_util_lib_c_gen = \
+	libnm-util/nm-utils-enum-types.c
 
 libnm_util_libnm_util_la_SOURCES = \
-	$(libnm_util_libnm_util_la_csources) \
-	$(libnm_util_libnm_util_la_private_headers)
+	$(libnm_util_lib_c_real) \
+	$(libnm_util_lib_h_pub_real) \
+	$(libnm_util_lib_h_priv)
+
+nodist_libnm_util_libnm_util_la_SOURCES = \
+	$(libnm_util_lib_h_pub_gen) \
+	$(libnm_util_lib_c_gen)
 
 libnm_util_libnm_util_la_CPPFLAGS = $(libnm_util_cppflags)
 
 
 GLIB_GENERATED += \
-	libnm-util/nm-utils-enum-types.h \
-	libnm-util/nm-utils-enum-types.c
-nm_utils_enum_types_sources = $(filter-out libnm-util/NetworkManager%,$(libnm_util_libnm_util_include_HEADERS))
+	$(libnm_util_lib_h_pub_gen) \
+	$(libnm_util_lib_c_gen)
+nm_utils_enum_types_sources = $(filter-out libnm-util/NetworkManager%,$(libnm_util_lib_h_pub_real))
 
 libnm_util_libnm_util_la_LIBADD = \
 	$(GLIB_LIBS) \
@@ -3411,16 +3421,19 @@ libnm_util_libnm_util_la_LDFLAGS = \
 
 if WITH_GNUTLS
 libnm_util_cppflags += $(GNUTLS_CFLAGS)
-libnm_util_libnm_util_la_SOURCES += libnm-util/crypto_gnutls.c
+libnm_util_lib_c_real += libnm-util/crypto_gnutls.c
 libnm_util_libnm_util_la_LIBADD += $(GNUTLS_LIBS)
 endif
 
 if WITH_NSS
 libnm_util_cppflags += $(NSS_CFLAGS)
-libnm_util_libnm_util_la_SOURCES += libnm-util/crypto_nss.c
+libnm_util_lib_c_real += libnm-util/crypto_nss.c
 libnm_util_libnm_util_la_LIBADD += $(NSS_LIBS)
 endif
 
+EXTRA_DIST += \
+	libnm-util/crypto_gnutls.c \
+	libnm-util/crypto_nss.c
 
 check_ltlibraries += libnm-util/libtest-crypto.la
 
@@ -3440,6 +3453,7 @@ libnm_util_libtest_crypto_la_SOURCES += libnm-util/crypto_nss.c
 libnm_util_libtest_crypto_la_LIBADD += $(NSS_LIBS)
 endif
 
+$(libnm_util_lib_c_real): $(libnm_util_lib_h_pub_gen)
 
 pkgconfig_DATA += libnm-util/libnm-util.pc
 
@@ -3458,9 +3472,10 @@ libnm_util_NetworkManager_1_0_gir_EXPORT_PACKAGES = libnm-util
 libnm_util_NetworkManager_1_0_gir_CFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/libnm-util
 libnm_util_NetworkManager_1_0_gir_LIBS = libnm-util/libnm-util.la
 libnm_util_NetworkManager_1_0_gir_FILES = \
-	$(libnm_util_libnm_util_include_HEADERS) \
-	$(nodist_libnm_util_libnm_util_include_HEADERS) \
-	$(libnm_util_libnm_util_la_csources)
+	$(libnm_util_lib_h_pub_gen) \
+	$(libnm_util_lib_h_pub_real) \
+	$(libnm_util_lib_c_gen) \
+	$(libnm_util_lib_c_real)
 libnm_util_NetworkManager_1_0_gir_SCANNERFLAGS = \
 	"-I$(srcdir)/shared" \
 	"-I$(builddir)/shared" \
