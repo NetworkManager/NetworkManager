@@ -165,7 +165,7 @@ noinst_LTLIBRARIES += \
 # away when we depend on that.
 introspection_libnmdbus_la_CPPFLAGS = $(filter-out -DGLIB_VERSION_MAX_ALLOWED%,$(GLIB_CFLAGS))
 
-nodist_introspection_libnmdbus_la_SOURCES = \
+introspection_sources = \
 	introspection/nmdbus-access-point.c \
 	introspection/nmdbus-access-point.h \
 	introspection/nmdbus-active-connection.c \
@@ -237,6 +237,8 @@ nodist_introspection_libnmdbus_la_SOURCES = \
 	introspection/nmdbus-vpn-plugin.c \
 	introspection/nmdbus-vpn-plugin.h
 
+nodist_introspection_libnmdbus_la_SOURCES = $(introspection_sources)
+
 DBUS_INTERFACE_DOCS = \
 	introspection/nmdbus-access-point-org.freedesktop.NetworkManager.AccessPoint.xml \
 	introspection/nmdbus-active-connection-org.freedesktop.NetworkManager.Connection.Active.xml \
@@ -290,9 +292,9 @@ $(basename $(1)).h: $(1)
 	@true
 endef
 
-$(foreach f,$(filter %.c,$(nodist_introspection_libnmdbus_la_SOURCES)),$(eval $(call _make_nmdbus_rule,$f)))
+$(foreach f,$(filter %.c,$(introspection_sources)),$(eval $(call _make_nmdbus_rule,$f)))
 
-BUILT_SOURCES += $(nodist_introspection_libnmdbus_la_SOURCES) $(DBUS_INTERFACE_DOCS)
+BUILT_SOURCES += $(introspection_sources) $(DBUS_INTERFACE_DOCS)
 
 EXTRA_DIST += \
 	introspection/nm-access-point.xml \
@@ -723,6 +725,8 @@ libnm_libnm_la_sources = \
 libnm_libnm_la_SOURCES = \
 	$(libnm_libnm_la_sources) \
 	$(libnm_libnm_la_private_headers)
+
+$(libnm_libnm_la_sources): $(introspection_sources)
 
 EXTRA_libnm_libnm_la_DEPENDENCIES = \
 	libnm/libnm.ver
@@ -1183,6 +1187,8 @@ src_libNetworkManagerBase_la_SOURCES += \
 	src/platform/wifi/wifi-utils-wext.h
 endif
 
+$(src_libNetworkManagerBase_la_SOURCES): $(introspection_sources)
+
 src_libNetworkManagerBase_la_LIBADD = \
 	libnm-core/libnm-core.la \
 	introspection/libnmdbus.la \
@@ -1353,6 +1359,8 @@ src_libNetworkManager_la_SOURCES = \
 	src/nm-types.h \
 	\
 	$(NULL)
+
+$(src_libNetworkManager_la_SOURCES): $(introspection_sources)
 
 src_libNetworkManager_la_LIBADD = \
 	src/libNetworkManagerBase.la \
@@ -2806,6 +2814,7 @@ dispatcher_libnm_dispatcher_core_la_LIBADD = \
 	libnm/libnm.la \
 	$(GLIB_LIBS)
 
+dispatcher/nm-dispatcher.c: $(introspection_sources)
 
 dispatcher_nm_dispatcher_SOURCES = \
 	shared/nm-dispatcher-api.h \
