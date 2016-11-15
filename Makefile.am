@@ -3742,6 +3742,11 @@ BUILT_SOURCES += \
 	libnm-glib/nm-vpn-plugin-glue.h \
 	libnm-glib/nm-secret-agent-glue.h
 
+libnm-glib/nm-vpn-plugin.c:   libnm-glib/nm-vpn-plugin-glue.h
+libnm-glib/nm-secret-agent.c: libnm-glib/nm-secret-agent-glue.h
+
+$(libnm_glib_lib_c_real): $(libnm_glib_lib_h_pub_gen)
+
 pkgconfig_DATA += \
 	libnm-glib/libnm-glib.pc \
 	libnm-glib/libnm-glib-vpn.pc
