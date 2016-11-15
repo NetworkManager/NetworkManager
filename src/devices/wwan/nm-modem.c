@@ -32,7 +32,6 @@
 #include "nm-setting-connection.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
-#include "nm-modem-enum-types.h"
 #include "nm-route-manager.h"
 #include "nm-act-request.h"
 #include "nm-ip4-config.h"

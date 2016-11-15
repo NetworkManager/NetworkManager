@@ -2234,16 +2234,7 @@ src_devices_wwan_cppflags = \
 
 core_plugins += src/devices/wwan/libnm-wwan.la
 
-GLIB_GENERATED += \
-	src/devices/wwan/nm-modem-enum-types.h \
-	src/devices/wwan/nm-modem-enum-types.c
-nm_modem_enum_types_MKENUMS_H_FLAGS = --identifier-prefix NM
-nm_modem_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\n'
-nm_modem_enum_types_sources = src/devices/wwan/nm-modem.h
-
 src_devices_wwan_libnm_wwan_la_SOURCES = \
-	src/devices/wwan/nm-modem-enum-types.h \
-	src/devices/wwan/nm-modem-enum-types.c \
 	src/devices/wwan/nm-modem-broadband.c \
 	src/devices/wwan/nm-modem-broadband.h \
 	src/devices/wwan/nm-modem-manager.c \
