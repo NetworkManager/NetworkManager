@@ -36,10 +36,8 @@
 #include "nm-setting-serial.h"
 #include "nm-setting-ppp.h"
 #include "NetworkManagerUtils.h"
-#include "nm-bt-enum-types.h"
 #include "nm-utils.h"
 #include "nm-bt-error.h"
-#include "nm-bt-enum-types.h"
 #include "nm-platform.h"
 
 #include "nmdbus-device-bt.h"

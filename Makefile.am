@@ -2296,17 +2296,9 @@ EXTRA_DIST += \
 
 if WITH_MODEM_MANAGER_1
 
-GLIB_GENERATED += \
-	src/devices/bluetooth/nm-bt-enum-types.h \
-	src/devices/bluetooth/nm-bt-enum-types.c
-nm_bt_enum_types_sources = src/devices/bluetooth/nm-bt-error.h
-
 core_plugins += src/devices/bluetooth/libnm-device-plugin-bluetooth.la
 
 src_devices_bluetooth_libnm_device_plugin_bluetooth_la_SOURCES = \
-	src/devices/bluetooth/nm-bt-enum-types.h \
-	src/devices/bluetooth/nm-bt-enum-types.c \
-	\
 	src/devices/bluetooth/nm-bluez-manager.c \
 	src/devices/bluetooth/nm-bluez-common.h \
 	src/devices/bluetooth/nm-bluez-device.c \
