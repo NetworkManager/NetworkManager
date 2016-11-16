@@ -839,12 +839,13 @@ noinst_DATA += $(libnm_noinst_data)
 libnm_docs_sources = $(libnm_core_lib_c_real)
 
 libnm/nm-setting-docs-overrides.xml: libnm/generate-plugin-docs.pl $(libnm_docs_sources)
-	$(srcdir)/libnm/generate-plugin-docs.pl dbus "$(top_srcdir)" $@
+	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl dbus "$(top_srcdir)" $@
 
 # When the python scripts loads libnm and the address sanitizers is
 # enabled, we must LD_PRELOAD libasan otherwise it will complain that
 # it was not loaded as initial library.
 libnm/nm-property-docs.xml: libnm/generate-setting-docs.py $(libnm_docs_sources) | libnm/NM-1.0.gir libnm/NM-1.0.typelib libnm/libnm.la
+	$(AM_V_GEN) \
 	export GI_TYPELIB_PATH=$(abs_builddir)/libnm$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}; \
 	export LD_LIBRARY_PATH=$(abs_builddir)/libnm/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}; \
 	$(call set_sanitizer_env,$(abs_builddir)/libnm/.libs/libnm.so); \
@@ -853,6 +854,7 @@ libnm/nm-property-docs.xml: libnm/generate-setting-docs.py $(libnm_docs_sources)
 		--output $@
 
 libnm/nm-setting-docs.xml: libnm/generate-setting-docs.py $(libnm_docs_sources) libnm/nm-setting-docs-overrides.xml | libnm/NM-1.0.gir libnm/NM-1.0.typelib libnm/libnm.la
+	$(AM_V_GEN) \
 	export GI_TYPELIB_PATH=$(abs_builddir)/libnm$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}; \
 	export LD_LIBRARY_PATH=$(abs_builddir)/libnm/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}; \
 	$(call set_sanitizer_env,$(abs_builddir)/libnm/.libs/libnm.so); \
@@ -1457,7 +1459,7 @@ src_libNetworkManagerTest_la_LIBADD = \
 ###############################################################################
 
 src/NetworkManager.ver: src/NetworkManager.ver-orig src/libNetworkManager.la $(core_plugins)
-	"$(top_srcdir)/tools/create-exports-NetworkManager.sh" --called-from-make "$(top_srcdir)"
+	$(AM_V_GEN) "$(top_srcdir)/tools/create-exports-NetworkManager.sh" --called-from-make "$(top_srcdir)"
 
 CLEANFILES += src/NetworkManager.ver
 
@@ -3273,21 +3275,21 @@ systemdsystemunit_DATA = \
 	data/NetworkManager-dispatcher.service
 
 data/NetworkManager.service: $(srcdir)/data/NetworkManager.service.in
-	$(data_edit) $< >$@
+	$(AM_V_GEN) $(data_edit) $< >$@
 
 if HAVE_SYSTEMD_200
 data/NetworkManager-wait-online.service: $(srcdir)/data/NetworkManager-wait-online.service.in
-	$(data_edit) $< >$@
+	$(AM_V_GEN) $(data_edit) $< >$@
 else
 data/NetworkManager-wait-online.service: $(srcdir)/data/NetworkManager-wait-online-systemd-pre200.service.in
-	$(data_edit) $< >$@
+	$(AM_V_GEN) $(data_edit) $< >$@
 endif
 
 data/NetworkManager-dispatcher.service: $(srcdir)/data/NetworkManager-dispatcher.service.in
-	$(data_edit) $< >$@
+	$(AM_V_GEN) $(data_edit) $< >$@
 
 data/org.freedesktop.NetworkManager.service: $(srcdir)/data/org.freedesktop.NetworkManager.service.in
-	$(data_edit) $< >$@
+	$(AM_V_GEN) $(data_edit) $< >$@
 
 service_DATA += data/org.freedesktop.NetworkManager.service
 
@@ -3309,8 +3311,8 @@ udevrules_DATA = \
 endif
 
 data/server.conf: $(srcdir)/data/server.conf.in
-	mkdir -p data/
-	$(data_edit) $< >$@
+	@mkdir -p data/
+	$(AM_V_GEN) $(data_edit) $< >$@
 
 EXTRA_DIST += \
 	data/NetworkManager.service.in \
