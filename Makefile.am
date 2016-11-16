@@ -81,7 +81,11 @@ GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
 
 SUBDIRS = \
 	. \
-	po \
+	po
+
+if BUILD_SETTING_DOCS
+
+SUBDIRS += \
 	docs/libnm \
 	docs/api
 
@@ -89,6 +93,8 @@ if WITH_LEGACY_LIBRARIES
 SUBDIRS += \
 	docs/libnm-util \
 	docs/libnm-glib
+endif
+
 endif
 
 ###############################################################################
