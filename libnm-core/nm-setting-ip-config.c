@@ -2762,7 +2762,6 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 		 g_param_spec_string (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, "", "",
 		                      NULL,
 		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
