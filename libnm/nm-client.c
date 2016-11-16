@@ -2142,7 +2142,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	gchar *name_owner;
 
 	priv->object_manager = g_dbus_object_manager_client_new_for_bus_sync (_nm_dbus_bus_type (),
-	                                                                      G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_NONE,
+	                                                                      G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
 	                                                                      "org.freedesktop.NetworkManager",
 	                                                                      "/org/freedesktop",
 	                                                                      proxy_type, NULL, NULL,
@@ -2344,7 +2344,7 @@ prepare_object_manager (NMClient *client,
 	g_simple_async_result_set_op_res_gboolean (init_data->result, TRUE);
 
 	g_dbus_object_manager_client_new_for_bus (_nm_dbus_bus_type (),
-	                                          G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_NONE,
+	                                          G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
 	                                          "org.freedesktop.NetworkManager",
 	                                          "/org/freedesktop",
 	                                          proxy_type, NULL, NULL,
