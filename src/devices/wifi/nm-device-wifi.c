@@ -468,13 +468,14 @@ ap_add_remove (NMDeviceWifi *self,
 	}
 
 	g_signal_emit (self, signals[signum], 0, ap);
-	_notify (self, PROP_ACCESS_POINTS);
 
 	if (signum == ACCESS_POINT_REMOVED) {
 		g_hash_table_remove (priv->aps, nm_exported_object_get_path ((NMExportedObject *) ap));
 		nm_exported_object_unexport ((NMExportedObject *) ap);
 		g_object_unref (ap);
 	}
+
+	_notify (self, PROP_ACCESS_POINTS);
 
 	nm_device_emit_recheck_auto_activate (NM_DEVICE (self));
 	if (recheck_available_connections)
