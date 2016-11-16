@@ -21,6 +21,8 @@
 
 # This example lists all devices, both real and placeholder ones
 
+import gi
+gi.require_version('NM', '1.0')
 from gi.repository import GLib, NM
 
 if __name__ == "__main__":
