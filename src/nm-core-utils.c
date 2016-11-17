@@ -3804,6 +3804,37 @@ read_device_factory_paths_sort_fcn (gconstpointer a, gconstpointer b)
 	return 0;
 }
 
+gboolean
+nm_utils_validate_plugin (const char *path, struct stat *st, GError **error)
+{
+	g_return_val_if_fail (path, FALSE);
+	g_return_val_if_fail (st, FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
+
+	if (!S_ISREG (st->st_mode)) {
+		g_set_error_literal (error,
+		                     NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		                     "not a regular file");
+		return FALSE;
+	}
+
+	if (st->st_uid != 0) {
+		g_set_error_literal (error,
+		                     NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		                     "file has invalid owner (should be root)");
+		return FALSE;
+	}
+
+	if (st->st_mode & (S_IWGRP | S_IWOTH | S_ISUID)) {
+		g_set_error_literal (error,
+		                     NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		                     "file has invalid permissions");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 char **
 nm_utils_read_plugin_paths (const char *dirname, const char *prefix)
 {
@@ -3846,18 +3877,12 @@ nm_utils_read_plugin_paths (const char *dirname, const char *prefix)
 			             data.path, strerror (errsv));
 			goto skip;
 		}
-		if (!S_ISREG (data.st.st_mode))
-			goto skip;
-		if (data.st.st_uid != 0) {
+
+		if (!nm_utils_validate_plugin (data.path, &data.st, &error)) {
 			nm_log_warn (LOGD_CORE,
-			             "plugin: skip invalid file %s (file must be owned by root)",
-			             data.path);
-			goto skip;
-		}
-		if (data.st.st_mode & (S_IWGRP | S_IWOTH | S_ISUID)) {
-			nm_log_warn (LOGD_CORE,
-			             "plugin: skip invalid file %s (invalid file permissions)",
-			             data.path);
+			             "plugin: skip invalid file %s: %s",
+			             data.path, error->message);
+			g_clear_error (&error);
 			goto skip;
 		}
 

@@ -451,6 +451,9 @@ gboolean nm_utils_file_set_contents (const gchar *filename,
                                      mode_t mode,
                                      GError **error);
 
+struct stat;
+
+gboolean nm_utils_validate_plugin (const char *path, struct stat *stat, GError **error);
 char **nm_utils_read_plugin_paths (const char *dirname, const char *prefix);
 
 #endif /* __NM_CORE_UTILS_H__ */
