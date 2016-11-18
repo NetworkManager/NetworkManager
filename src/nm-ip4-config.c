@@ -238,36 +238,6 @@ _addresses_sort_cmp (gconstpointer a, gconstpointer b)
 	return memcmp (&n1, &n2, sizeof (guint32));
 }
 
-gboolean
-nm_ip4_config_addresses_sort (NMIP4Config *self)
-{
-	NMIP4ConfigPrivate *priv;
-	size_t data_len = 0;
-	char *data_pre = NULL;
-	gboolean changed;
-
-	g_return_val_if_fail (NM_IS_IP4_CONFIG (self), FALSE);
-
-	priv = NM_IP4_CONFIG_GET_PRIVATE (self);
-	if (priv->addresses->len > 1) {
-		data_len = priv->addresses->len * g_array_get_element_size (priv->addresses);
-		data_pre = g_new (char, data_len);
-		memcpy (data_pre, priv->addresses->data, data_len);
-
-		g_array_sort (priv->addresses, _addresses_sort_cmp);
-
-		changed = memcmp (data_pre, priv->addresses->data, data_len) != 0;
-		g_free (data_pre);
-
-		if (changed) {
-			_notify (self, PROP_ADDRESS_DATA);
-			_notify (self, PROP_ADDRESSES);
-			return TRUE;
-		}
-	}
-	return FALSE;
-}
-
 /*****************************************************************************/
 
 static void
@@ -2315,6 +2285,7 @@ get_property (GObject *object, guint prop_id,
 	case PROP_ADDRESSES:
 		{
 			GVariantBuilder array_builder, addr_builder;
+			gs_unref_array GArray *new = NULL;
 			guint naddr, i;
 
 			g_return_if_fail (!!priv->address_data_variant == !!priv->addresses_variant);
@@ -2323,11 +2294,14 @@ get_property (GObject *object, guint prop_id,
 				goto return_cached;
 
 			naddr = nm_ip4_config_get_num_addresses (config);
+			new = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP4Address), naddr);
+			g_array_append_vals (new, priv->addresses->data, priv->addresses->len);
+			g_array_sort (new, _addresses_sort_cmp);
 
 			/* Build address data variant */
 			g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("aa{sv}"));
 			for (i = 0; i < naddr; i++) {
-				const NMPlatformIP4Address *address = nm_ip4_config_get_address (config, i);
+				const NMPlatformIP4Address *address = &g_array_index (new, NMPlatformIP4Address, i);
 
 				g_variant_builder_init (&addr_builder, G_VARIANT_TYPE ("a{sv}"));
 				g_variant_builder_add (&addr_builder, "{sv}",
@@ -2355,7 +2329,7 @@ get_property (GObject *object, guint prop_id,
 			/* Build addresses variant */
 			g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("aau"));
 			for (i = 0; i < naddr; i++) {
-				const NMPlatformIP4Address *address = nm_ip4_config_get_address (config, i);
+				const NMPlatformIP4Address *address = &g_array_index (new, NMPlatformIP4Address, i);
 				guint32 dbus_addr[3];
 
 				dbus_addr[0] = address->address;
