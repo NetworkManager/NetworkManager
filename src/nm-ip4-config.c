@@ -55,6 +55,8 @@ typedef struct {
 	gint64 route_metric;
 	gboolean metered;
 	gint dns_priority;
+	GVariant *address_data_variant;
+	GVariant *addresses_variant;
 } NMIP4ConfigPrivate;
 
 struct _NMIP4Config {
@@ -267,6 +269,17 @@ nm_ip4_config_addresses_sort (NMIP4Config *self)
 }
 
 /*****************************************************************************/
+
+static void
+notify_addresses (NMIP4Config *self)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
+
+	nm_clear_g_variant (&priv->address_data_variant);
+	nm_clear_g_variant (&priv->addresses_variant);
+	_notify (self, PROP_ADDRESS_DATA);
+	_notify (self, PROP_ADDRESSES);
+}
 
 NMIP4Config *
 nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf)
@@ -1480,8 +1493,7 @@ nm_ip4_config_reset_addresses (NMIP4Config *config)
 
 	if (priv->addresses->len != 0) {
 		g_array_set_size (priv->addresses, 0);
-		_notify (config, PROP_ADDRESS_DATA);
-		_notify (config, PROP_ADDRESSES);
+		notify_addresses (config);
 	}
 }
 
@@ -1538,8 +1550,7 @@ nm_ip4_config_add_address (NMIP4Config *config, const NMPlatformIP4Address *new)
 
 	g_array_append_val (priv->addresses, *new);
 NOTIFY:
-	_notify (config, PROP_ADDRESS_DATA);
-	_notify (config, PROP_ADDRESSES);
+	notify_addresses (config);
 }
 
 void
@@ -1550,8 +1561,8 @@ nm_ip4_config_del_address (NMIP4Config *config, guint i)
 	g_return_if_fail (i < priv->addresses->len);
 
 	g_array_remove_index (priv->addresses, i);
-	_notify (config, PROP_ADDRESS_DATA);
-	_notify (config, PROP_ADDRESSES);
+
+	notify_addresses (config);
 }
 
 guint
@@ -2274,6 +2285,8 @@ finalize (GObject *object)
 	NMIP4Config *self = NM_IP4_CONFIG (object);
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
 
+	nm_clear_g_variant (&priv->address_data_variant);
+	nm_clear_g_variant (&priv->addresses_variant);
 	g_array_unref (priv->addresses);
 	g_array_unref (priv->routes);
 	g_array_unref (priv->nameservers);
@@ -2299,11 +2312,19 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_int (value, priv->ifindex);
 		break;
 	case PROP_ADDRESS_DATA:
+	case PROP_ADDRESSES:
 		{
 			GVariantBuilder array_builder, addr_builder;
-			guint naddr = nm_ip4_config_get_num_addresses (config);
-			guint i;
+			guint naddr, i;
 
+			g_return_if_fail (!!priv->address_data_variant == !!priv->addresses_variant);
+
+			if (priv->address_data_variant)
+				goto return_cached;
+
+			naddr = nm_ip4_config_get_num_addresses (config);
+
+			/* Build address data variant */
 			g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("aa{sv}"));
 			for (i = 0; i < naddr; i++) {
 				const NMPlatformIP4Address *address = nm_ip4_config_get_address (config, i);
@@ -2329,16 +2350,9 @@ get_property (GObject *object, guint prop_id,
 
 				g_variant_builder_add (&array_builder, "a{sv}", &addr_builder);
 			}
+			priv->address_data_variant = g_variant_ref_sink (g_variant_builder_end (&array_builder));
 
-			g_value_take_variant (value, g_variant_builder_end (&array_builder));
-		}
-		break;
-	case PROP_ADDRESSES:
-		{
-			GVariantBuilder array_builder;
-			guint naddr = nm_ip4_config_get_num_addresses (config);
-			guint i;
-
+			/* Build addresses variant */
 			g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("aau"));
 			for (i = 0; i < naddr; i++) {
 				const NMPlatformIP4Address *address = nm_ip4_config_get_address (config, i);
@@ -2352,8 +2366,13 @@ get_property (GObject *object, guint prop_id,
 				                       g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
 				                                                  dbus_addr, 3, sizeof (guint32)));
 			}
+			priv->addresses_variant = g_variant_ref_sink (g_variant_builder_end (&array_builder));
 
-			g_value_take_variant (value, g_variant_builder_end (&array_builder));
+return_cached:
+			g_value_set_variant (value,
+			                     prop_id == PROP_ADDRESS_DATA ?
+			                     priv->address_data_variant :
+			                     priv->addresses_variant);
 		}
 		break;
 	case PROP_ROUTE_DATA:
