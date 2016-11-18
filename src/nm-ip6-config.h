@@ -88,7 +88,7 @@ guint nm_ip6_config_get_num_addresses (const NMIP6Config *config);
 const NMPlatformIP6Address *nm_ip6_config_get_address (const NMIP6Config *config, guint i);
 const NMPlatformIP6Address *nm_ip6_config_get_address_first_nontentative (const NMIP6Config *config, gboolean linklocal);
 gboolean nm_ip6_config_address_exists (const NMIP6Config *config, const NMPlatformIP6Address *address);
-gboolean nm_ip6_config_addresses_sort (NMIP6Config *config, NMSettingIP6ConfigPrivacy use_temporary);
+gboolean nm_ip6_config_addresses_sort (NMIP6Config *config);
 gboolean nm_ip6_config_has_any_dad_pending (const NMIP6Config *self,
                                             const NMIP6Config *candidates);
 
@@ -134,7 +134,8 @@ guint32 nm_ip6_config_get_mss (const NMIP6Config *config);
 void nm_ip6_config_hash (const NMIP6Config *config, GChecksum *sum, gboolean dns_only);
 gboolean nm_ip6_config_equal (const NMIP6Config *a, const NMIP6Config *b);
 
-/******************************************************/
+void nm_ip6_config_set_privacy (NMIP6Config *config, NMSettingIP6ConfigPrivacy privacy);
+
 /* Testing-only functions */
 
 gboolean nm_ip6_config_capture_resolv_conf (GArray *nameservers,

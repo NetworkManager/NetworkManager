@@ -50,6 +50,7 @@ typedef struct {
 	gint dns_priority;
 	GVariant *address_data_variant;
 	GVariant *addresses_variant;
+	NMSettingIP6ConfigPrivacy privacy;
 } NMIP6ConfigPrivate;
 
 struct _NMIP6Config {
@@ -106,7 +107,15 @@ nm_ip6_config_get_ifindex (const NMIP6Config *config)
 	return NM_IP6_CONFIG_GET_PRIVATE (config)->ifindex;
 }
 
-/******************************************************************/
+void
+nm_ip6_config_set_privacy (NMIP6Config *config, NMSettingIP6ConfigPrivacy privacy)
+{
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+
+	priv->privacy = privacy;
+}
+
+/*****************************************************************************/
 
 static void
 notify_addresses (NMIP6Config *self)
@@ -279,7 +288,7 @@ _addresses_sort_cmp (gconstpointer a, gconstpointer b, gpointer user_data)
 }
 
 gboolean
-nm_ip6_config_addresses_sort (NMIP6Config *self, NMSettingIP6ConfigPrivacy use_temporary)
+nm_ip6_config_addresses_sort (NMIP6Config *self)
 {
 	NMIP6ConfigPrivate *priv;
 	size_t data_len = 0;
@@ -294,7 +303,8 @@ nm_ip6_config_addresses_sort (NMIP6Config *self, NMSettingIP6ConfigPrivacy use_t
 		data_pre = g_new (char, data_len);
 		memcpy (data_pre, priv->addresses->data, data_len);
 
-		g_array_sort_with_data (priv->addresses, _addresses_sort_cmp, GINT_TO_POINTER (use_temporary));
+		g_array_sort_with_data (priv->addresses, _addresses_sort_cmp,
+		                        GINT_TO_POINTER (priv->privacy));
 
 		changed = memcmp (data_pre, priv->addresses->data, data_len) != 0;
 		g_free (data_pre);
@@ -1165,6 +1175,11 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 	/* DNS priority */
 	if (src_priv->dns_priority != dst_priv->dns_priority) {
 		nm_ip6_config_set_dns_priority (dst, src_priv->dns_priority);
+		has_minor_changes = TRUE;
+	}
+
+	if (src_priv->privacy != dst_priv->privacy) {
+		nm_ip6_config_set_privacy (dst, src_priv->privacy);
 		has_minor_changes = TRUE;
 	}
 
