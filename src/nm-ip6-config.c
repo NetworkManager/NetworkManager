@@ -48,6 +48,8 @@ typedef struct {
 	int ifindex;
 	gint64 route_metric;
 	gint dns_priority;
+	GVariant *address_data_variant;
+	GVariant *addresses_variant;
 } NMIP6ConfigPrivate;
 
 struct _NMIP6Config {
@@ -105,6 +107,17 @@ nm_ip6_config_get_ifindex (const NMIP6Config *config)
 }
 
 /*****************************************************************************/
+
+static void
+notify_addresses (NMIP6Config *self)
+{
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
+
+	nm_clear_g_variant (&priv->address_data_variant);
+	nm_clear_g_variant (&priv->addresses_variant);
+	_notify (self, PROP_ADDRESS_DATA);
+	_notify (self, PROP_ADDRESSES);
+}
 
 /**
  * nm_ip6_config_capture_resolv_conf():
@@ -287,8 +300,7 @@ nm_ip6_config_addresses_sort (NMIP6Config *self, NMSettingIP6ConfigPrivacy use_t
 		g_free (data_pre);
 
 		if (changed) {
-			_notify (self, PROP_ADDRESS_DATA);
-			_notify (self, PROP_ADDRESSES);
+			notify_addresses (self);
 			return TRUE;
 		}
 	}
@@ -1282,8 +1294,7 @@ nm_ip6_config_reset_addresses (NMIP6Config *config)
 
 	if (priv->addresses->len != 0) {
 		g_array_set_size (priv->addresses, 0);
-		_notify (config, PROP_ADDRESS_DATA);
-		_notify (config, PROP_ADDRESSES);
+		notify_addresses (config);
 	}
 }
 
@@ -1340,8 +1351,7 @@ nm_ip6_config_add_address (NMIP6Config *config, const NMPlatformIP6Address *new)
 
 	g_array_append_val (priv->addresses, *new);
 NOTIFY:
-	_notify (config, PROP_ADDRESS_DATA);
-	_notify (config, PROP_ADDRESSES);
+notify_addresses (config);
 }
 
 void
@@ -1352,8 +1362,8 @@ nm_ip6_config_del_address (NMIP6Config *config, guint i)
 	g_return_if_fail (i < priv->addresses->len);
 
 	g_array_remove_index (priv->addresses, i);
-	_notify (config, PROP_ADDRESS_DATA);
-	_notify (config, PROP_ADDRESSES);
+
+	notify_addresses (config);
 }
 
 guint
@@ -2000,6 +2010,8 @@ finalize (GObject *object)
 	g_ptr_array_unref (priv->domains);
 	g_ptr_array_unref (priv->searches);
 	g_ptr_array_unref (priv->dns_options);
+	nm_clear_g_variant (&priv->address_data_variant);
+	nm_clear_g_variant (&priv->addresses_variant);
 
 	G_OBJECT_CLASS (nm_ip6_config_parent_class)->finalize (object);
 }
@@ -2036,10 +2048,19 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_int (value, priv->ifindex);
 		break;
 	case PROP_ADDRESS_DATA:
+	case PROP_ADDRESSES:
 		{
 			GVariantBuilder array_builder, addr_builder;
-			guint naddr = nm_ip6_config_get_num_addresses (config);
-			guint i;
+			const struct in6_addr *gateway;
+			guint naddr, i;
+
+			g_return_if_fail (!!priv->address_data_variant == !!priv->addresses_variant);
+
+			if (priv->address_data_variant)
+				goto return_cached;
+
+			naddr = nm_ip6_config_get_num_addresses (config);
+			gateway = nm_ip6_config_get_gateway (config);
 
 			g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("aa{sv}"));
 			for (i = 0; i < naddr; i++) {
@@ -2061,16 +2082,7 @@ get_property (GObject *object, guint prop_id,
 
 				g_variant_builder_add (&array_builder, "a{sv}", &addr_builder);
 			}
-
-			g_value_take_variant (value, g_variant_builder_end (&array_builder));
-		}
-		break;
-	case PROP_ADDRESSES:
-		{
-			GVariantBuilder array_builder;
-			const struct in6_addr *gateway = nm_ip6_config_get_gateway (config);
-			guint naddr = nm_ip6_config_get_num_addresses (config);
-			guint i;
+			priv->address_data_variant = g_variant_ref_sink (g_variant_builder_end (&array_builder));
 
 			g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("a(ayuay)"));
 			for (i = 0; i < naddr; i++) {
@@ -2085,7 +2097,12 @@ get_property (GObject *object, guint prop_id,
 				                                                  16, 1));
 			}
 
-			g_value_take_variant (value, g_variant_builder_end (&array_builder));
+			priv->addresses_variant = g_variant_ref_sink (g_variant_builder_end (&array_builder));
+return_cached:
+			g_value_set_variant (value,
+			                     prop_id == PROP_ADDRESS_DATA ?
+			                     priv->address_data_variant :
+			                     priv->addresses_variant);
 		}
 		break;
 	case PROP_ROUTE_DATA:
