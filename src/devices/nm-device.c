@@ -5717,8 +5717,6 @@ END_ADD_DEFAULT_ROUTE:
 		priv->default_route.v6_has = _device_get_default_route_from_platform (self, AF_INET6, (NMPlatformIPRoute *) &priv->default_route.v6);
 	}
 
-	nm_ip6_config_addresses_sort (composite);
-
 	/* Allow setting MTU etc */
 	if (commit) {
 		NMUtilsIPv6IfaceId iid;
