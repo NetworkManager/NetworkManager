@@ -207,8 +207,9 @@ _addresses_sort_cmp_get_prio (in_addr_t addr)
 static gint
 _addresses_sort_cmp (gconstpointer a, gconstpointer b)
 {
-	gint p1, p2, c;
+	gint p1, p2;
 	const NMPlatformIP4Address *a1 = a, *a2 = b;
+	guint32 n1, n2;
 
 	/* Sort by address type. For example link local will
 	 * be sorted *after* a global address. */
@@ -224,9 +225,15 @@ _addresses_sort_cmp (gconstpointer a, gconstpointer b)
 	if ((a1->label[0] == '\0') != (a2->label[0] == '\0'))
 		return (a1->label[0] == '\0') ? -1 : 1;
 
-	/* finally sort addresses lexically */
-	c = memcmp (&a1->address, &a2->address, sizeof (a2->address));
-	return c != 0 ? c : memcmp (a1, a2, sizeof (*a1));
+	/* Finally, sort addresses lexically. We compare only the
+	 * network part so that the order of addresses in the same
+	 * subnet (and thus also the primary/secondary role) is
+	 * preserved.
+	 */
+	n1 = a1->address & nm_utils_ip4_prefix_to_netmask (a1->plen);
+	n2 = a2->address & nm_utils_ip4_prefix_to_netmask (a2->plen);
+
+	return memcmp (&n1, &n2, sizeof (guint32));
 }
 
 gboolean
