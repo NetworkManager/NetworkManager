@@ -2066,6 +2066,7 @@ get_property (GObject *object, guint prop_id,
 	case PROP_ADDRESSES:
 		{
 			GVariantBuilder array_builder, addr_builder;
+			gs_unref_array GArray *new = NULL;
 			const struct in6_addr *gateway;
 			guint naddr, i;
 
@@ -2076,10 +2077,14 @@ get_property (GObject *object, guint prop_id,
 
 			naddr = nm_ip6_config_get_num_addresses (config);
 			gateway = nm_ip6_config_get_gateway (config);
+			new = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP6Address), naddr);
+			g_array_append_vals (new, priv->addresses->data, naddr);
+			g_array_sort_with_data (new, _addresses_sort_cmp,
+			                        GINT_TO_POINTER (priv->privacy));
 
 			g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("aa{sv}"));
 			for (i = 0; i < naddr; i++) {
-				const NMPlatformIP6Address *address = nm_ip6_config_get_address (config, i);
+				const NMPlatformIP6Address *address = &g_array_index (new, NMPlatformIP6Address, i);
 
 				g_variant_builder_init (&addr_builder, G_VARIANT_TYPE ("a{sv}"));
 				g_variant_builder_add (&addr_builder, "{sv}",
@@ -2101,7 +2106,7 @@ get_property (GObject *object, guint prop_id,
 
 			g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("a(ayuay)"));
 			for (i = 0; i < naddr; i++) {
-				const NMPlatformIP6Address *address = nm_ip6_config_get_address (config, i);
+				const NMPlatformIP6Address *address = &g_array_index (new, NMPlatformIP6Address, i);
 
 				g_variant_builder_add (&array_builder, "(@ayu@ay)",
 				                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
