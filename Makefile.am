@@ -513,12 +513,12 @@ libnm_core_libnm_core_la_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS)
 
 if WITH_GNUTLS
-libnm_core_lib_h_pub_real += libnm-core/crypto_gnutls.c
+libnm_core_lib_c_real += libnm-core/crypto_gnutls.c
 libnm_core_libnm_core_la_LIBADD += $(GNUTLS_LIBS)
 endif
 
 if WITH_NSS
-libnm_core_lib_h_pub_real += libnm-core/crypto_nss.c
+libnm_core_lib_c_real += libnm-core/crypto_nss.c
 libnm_core_libnm_core_la_LIBADD += $(NSS_LIBS)
 endif
 
