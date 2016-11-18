@@ -4813,8 +4813,6 @@ END_ADD_DEFAULT_ROUTE:
 		priv->default_route.v4_has = _device_get_default_route_from_platform (self, AF_INET, (NMPlatformIPRoute *) &priv->default_route.v4);
 	}
 
-	nm_ip4_config_addresses_sort (composite);
-
 	/* Allow setting MTU etc */
 	if (commit) {
 		if (NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit)
