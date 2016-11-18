@@ -32,7 +32,6 @@
 #include "nm-setting-connection.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
-#include "nm-modem-enum-types.h"
 #include "nm-route-manager.h"
 #include "nm-act-request.h"
 #include "nm-ip4-config.h"
@@ -158,7 +157,7 @@ nm_modem_set_state (NMModem *self,
 
 		priv->state = new_state;
 		_notify (self, PROP_STATE);
-		g_signal_emit (self, signals[STATE_CHANGED], 0, new_state, old_state, reason);
+		g_signal_emit (self, signals[STATE_CHANGED], 0, (int) new_state, (int) old_state, reason);
 	}
 }
 
@@ -1366,7 +1365,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->mm_ip_timeout);
 		break;
 	case PROP_STATE:
-		g_value_set_enum (value, priv->state);
+		g_value_set_int (value, priv->state);
 		break;
 	case PROP_DEVICE_ID:
 		g_value_set_string (value, priv->device_id);
@@ -1424,10 +1423,11 @@ set_property (GObject *object, guint prop_id,
 		priv->mm_ip_timeout = g_value_get_uint (value);
 		break;
 	case PROP_STATE:
-		priv->state = g_value_get_enum (value);
+		/* construct-only */
+		priv->state = g_value_get_int (value);
 		break;
 	case PROP_DEVICE_ID:
-		/* construct only */
+		/* construct-only */
 		priv->device_id = g_value_dup_string (value);
 		break;
 	case PROP_SIM_ID:
@@ -1592,11 +1592,10 @@ nm_modem_class_init (NMModemClass *klass)
 	                        G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_STATE] =
-	     g_param_spec_enum (NM_MODEM_STATE, "", "",
-	                        NM_TYPE_MODEM_STATE,
-	                        NM_MODEM_STATE_UNKNOWN,
-	                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-	                        G_PARAM_STATIC_STRINGS);
+	     g_param_spec_int (NM_MODEM_STATE, "", "",
+	                       NM_MODEM_STATE_UNKNOWN, _NM_MODEM_STATE_LAST, NM_MODEM_STATE_UNKNOWN,
+	                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                       G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_DEVICE_ID] =
 	     g_param_spec_string (NM_MODEM_DEVICE_ID, "", "",
@@ -1701,5 +1700,5 @@ nm_modem_class_init (NMModemClass *klass)
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0, NULL, NULL, NULL,
-	                  G_TYPE_NONE, 2, NM_TYPE_MODEM_STATE, NM_TYPE_MODEM_STATE);
+	                  G_TYPE_NONE, 2, G_TYPE_INT, G_TYPE_INT);
 }

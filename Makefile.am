@@ -29,6 +29,8 @@ CLEANFILES =
 DISTCLEANFILES =
 EXTRA_DIST =
 dist_hook =
+dist_dependencies =
+dist_configure_check =
 install_data_hook =
 install_exec_hook =
 install_exec_local =
@@ -55,6 +57,7 @@ INTROSPECTION_SCANNER_ENV = $(SANITIZER_ENV)
 
 libnmincludedir = $(includedir)/libnm
 libnminclude_HEADERS =
+nodist_libnminclude_HEADERS =
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA =
@@ -81,7 +84,11 @@ GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
 
 SUBDIRS = \
 	. \
-	po \
+	po
+
+if BUILD_SETTING_DOCS
+
+SUBDIRS += \
 	docs/libnm \
 	docs/api
 
@@ -89,6 +96,8 @@ if WITH_LEGACY_LIBRARIES
 SUBDIRS += \
 	docs/libnm-util \
 	docs/libnm-glib
+endif
+
 endif
 
 ###############################################################################
@@ -116,15 +125,21 @@ DISTCHECK_CONFIGURE_FLAGS = \
 	--enable-ifupdown \
 	--enable-ifnet
 
-if BUILD_SETTING_DOCS
-dist-check-setting-docs:
-else
-dist-check-setting-docs:
-	@echo "*** gobject-introspection and pygobject are needed to run 'make dist'. ***"
+dist-configure-check:
+	@echo "*** 'make dist' requires '--enable-gtk-doc --with-introspection --with-libnm-glib'. ***"
 	@false
+
+if !BUILD_SETTING_DOCS
+dist_configure_check += dist-configure-check
+endif
+if !ENABLE_GTK_DOC
+dist_configure_check += dist-configure-check
+endif
+if !WITH_LEGACY_LIBRARIES
+dist_configure_check += dist-configure-check
 endif
 
-dist: dist-check-setting-docs
+dist: $(dist_configure_check) $(dist_dependencies)
 
 DISTCLEANFILES += intltool-extract intltool-merge intltool-update
 
@@ -159,7 +174,7 @@ noinst_LTLIBRARIES += \
 # away when we depend on that.
 introspection_libnmdbus_la_CPPFLAGS = $(filter-out -DGLIB_VERSION_MAX_ALLOWED%,$(GLIB_CFLAGS))
 
-nodist_introspection_libnmdbus_la_SOURCES = \
+introspection_sources = \
 	introspection/nmdbus-access-point.c \
 	introspection/nmdbus-access-point.h \
 	introspection/nmdbus-active-connection.c \
@@ -231,6 +246,8 @@ nodist_introspection_libnmdbus_la_SOURCES = \
 	introspection/nmdbus-vpn-plugin.c \
 	introspection/nmdbus-vpn-plugin.h
 
+nodist_introspection_libnmdbus_la_SOURCES = $(introspection_sources)
+
 DBUS_INTERFACE_DOCS = \
 	introspection/nmdbus-access-point-org.freedesktop.NetworkManager.AccessPoint.xml \
 	introspection/nmdbus-active-connection-org.freedesktop.NetworkManager.Connection.Active.xml \
@@ -284,9 +301,9 @@ $(basename $(1)).h: $(1)
 	@true
 endef
 
-$(foreach f,$(filter %.c,$(nodist_introspection_libnmdbus_la_SOURCES)),$(eval $(call _make_nmdbus_rule,$f)))
+$(foreach f,$(filter %.c,$(introspection_sources)),$(eval $(call _make_nmdbus_rule,$f)))
 
-BUILT_SOURCES += $(nodist_introspection_libnmdbus_la_SOURCES) $(DBUS_INTERFACE_DOCS)
+BUILT_SOURCES += $(introspection_sources) $(DBUS_INTERFACE_DOCS)
 
 EXTRA_DIST += \
 	introspection/nm-access-point.xml \
@@ -328,9 +345,8 @@ EXTRA_DIST += \
 
 ###############################################################################
 
-libnm_core_libnm_core_headers = \
+libnm_core_lib_h_pub_real = \
 	shared/nm-version-macros.h \
-	libnm-core/nm-core-enum-types.h \
 	libnm-core/nm-connection.h \
 	libnm-core/nm-core-types.h \
 	libnm-core/nm-dbus-interface.h \
@@ -374,8 +390,9 @@ libnm_core_libnm_core_headers = \
 	libnm-core/nm-vpn-dbus-interface.h \
 	libnm-core/nm-vpn-editor-plugin.h \
 	libnm-core/nm-vpn-plugin-info.h
-
-libnm_core_libnm_core_private_headers = \
+libnm_core_lib_h_pub_gen = \
+	libnm-core/nm-core-enum-types.h
+libnm_core_lib_h_priv = \
 	shared/nm-utils/nm-shared-utils.h \
 	libnm-core/crypto.h \
 	libnm-core/nm-connection-private.h \
@@ -386,10 +403,8 @@ libnm_core_libnm_core_private_headers = \
 	libnm-core/nm-property-compare.h \
 	libnm-core/nm-setting-private.h \
 	libnm-core/nm-utils-private.h
-
-libnm_core_libnm_core_sources = \
+libnm_core_lib_c_real = \
 	shared/nm-utils/nm-shared-utils.c \
-	libnm-core/nm-core-enum-types.c \
 	libnm-core/crypto.c \
 	libnm-core/nm-connection.c \
 	libnm-core/nm-dbus-utils.c \
@@ -435,8 +450,14 @@ libnm_core_libnm_core_sources = \
 	libnm-core/nm-utils.c \
 	libnm-core/nm-vpn-editor-plugin.c \
 	libnm-core/nm-vpn-plugin-info.c
+libnm_core_lib_c_gen = \
+	libnm-core/nm-core-enum-types.c
 
-libnminclude_HEADERS += $(libnm_core_libnm_core_headers)
+libnminclude_HEADERS += \
+	$(libnm_core_lib_h_pub_real)
+
+nodist_libnminclude_HEADERS += \
+	$(libnm_core_lib_h_pub_gen)
 
 ###############################################################################
 
@@ -460,10 +481,9 @@ endif
 noinst_LTLIBRARIES += libnm-core/libnm-core.la
 
 GLIB_GENERATED += \
-	libnm-core/nm-core-enum-types.h \
-	libnm-core/nm-core-enum-types.c
-
-nm_core_enum_types_sources = $(filter-out %nm-core-enum-types.h,$(libnm_core_libnm_core_headers))
+	$(libnm_core_lib_h_pub_gen) \
+	$(libnm_core_lib_c_gen)
+nm_core_enum_types_sources = $(libnm_core_lib_h_pub_real)
 
 libnm_core_libnm_core_la_CPPFLAGS = \
 	$(dflt_cppflags_libnm_core) \
@@ -476,8 +496,13 @@ libnm_core_libnm_core_la_CPPFLAGS = \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB
 
 libnm_core_libnm_core_la_SOURCES = \
-	$(libnm_core_libnm_core_sources) \
-	$(libnm_core_libnm_core_private_headers)
+	$(libnm_core_lib_h_pub_real) \
+	$(libnm_core_lib_h_priv) \
+	$(libnm_core_lib_c_real)
+
+nodist_libnm_core_libnm_core_la_SOURCES = \
+	$(libnm_core_lib_h_pub_gen) \
+	$(libnm_core_lib_c_gen)
 
 libnm_core_libnm_core_la_LIBADD = \
 	$(GLIB_LIBS) \
@@ -488,14 +513,18 @@ libnm_core_libnm_core_la_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS)
 
 if WITH_GNUTLS
-libnm_core_libnm_core_la_SOURCES += libnm-core/crypto_gnutls.c
+libnm_core_lib_h_pub_real += libnm-core/crypto_gnutls.c
 libnm_core_libnm_core_la_LIBADD += $(GNUTLS_LIBS)
 endif
 
 if WITH_NSS
-libnm_core_libnm_core_la_SOURCES += libnm-core/crypto_nss.c
+libnm_core_lib_h_pub_real += libnm-core/crypto_nss.c
 libnm_core_libnm_core_la_LIBADD += $(NSS_LIBS)
 endif
+
+EXTRA_DIST += \
+	libnm-core/crypto_gnutls.c \
+	libnm-core/crypto_nss.c
 
 libnm-core/nm-vpn-dbus-types.xml: libnm-core/nm-vpn-dbus-interface.h tools/enums-to-docbook.pl
 	$(AM_V_GEN) @PERL@ $(srcdir)/tools/enums-to-docbook.pl 'nm-vpn-dbus-types' 'VPN Plugin D-Bus API Types' $^ >$@
@@ -504,6 +533,10 @@ libnm-core/nm-dbus-types.xml: libnm-core/nm-dbus-interface.h tools/enums-to-docb
 	$(AM_V_GEN) @PERL@ $(srcdir)/tools/enums-to-docbook.pl 'nm-dbus-types' 'NetworkManager D-Bus API Types' $^ >$@
 
 BUILT_SOURCES += \
+	libnm-core/nm-vpn-dbus-types.xml \
+	libnm-core/nm-dbus-types.xml
+
+dist_dependencies += \
 	libnm-core/nm-vpn-dbus-types.xml \
 	libnm-core/nm-dbus-types.xml
 
@@ -545,10 +578,12 @@ libnm_core_tests_test_setting_dcb_CPPFLAGS = $(libnm_core_tests_cppflags)
 libnm_core_tests_test_settings_defaults_CPPFLAGS = $(libnm_core_tests_cppflags)
 
 libnm_core_tests_test_general_SOURCES = \
-	libnm-core/tests/nm-core-tests-enum-types.c \
-	libnm-core/tests/nm-core-tests-enum-types.h \
 	libnm-core/tests/test-general-enums.h \
 	libnm-core/tests/test-general.c
+
+nodist_libnm_core_tests_test_general_SOURCES = \
+	libnm-core/tests/nm-core-tests-enum-types.c \
+	libnm-core/tests/nm-core-tests-enum-types.h
 
 libnm_core_tests_ldadd = \
 	libnm-core/libnm-core.la \
@@ -594,7 +629,7 @@ EXTRA_DIST += \
 
 ###############################################################################
 
-libnminclude_headers = \
+libnm_lib_h_pub_real = \
 	shared/nm-version-macros.h \
 	libnm/NetworkManager.h \
 	libnm/nm-access-point.h \
@@ -619,7 +654,6 @@ libnminclude_headers = \
 	libnm/nm-device-wimax.h \
 	libnm/nm-device.h \
 	libnm/nm-dhcp-config.h \
-	libnm/nm-enum-types.h \
 	libnm/nm-ip-config.h \
 	libnm/nm-object.h \
 	libnm/nm-remote-connection.h \
@@ -627,41 +661,13 @@ libnminclude_headers = \
 	libnm/nm-vpn-connection.h \
 	libnm/nm-vpn-editor.h \
 	libnm/nm-wimax-nsp.h
-
-libnminclude_nointrospect_headers = \
+libnm_lib_h_pub_nointrospect = \
 	libnm/nm-secret-agent-old.h \
 	libnm/nm-vpn-plugin-old.h \
 	libnm/nm-vpn-service-plugin.h
-
-libnminclude_HEADERS += \
-	$(libnminclude_headers) \
-	$(libnminclude_nointrospect_headers)
-
-###############################################################################
-
-lib_LTLIBRARIES += libnm/libnm.la
-
-GLIB_GENERATED += \
-	libnm/nm-enum-types.h \
-	libnm/nm-enum-types.c
-
-nm_enum_types_sources = \
-	$(libnminclude_headers) \
-	$(libnminclude_nointrospect_headers)
-nm_enum_types_MKENUMS_H_FLAGS = --identifier-prefix NM --fhead '\#include <nm-core-enum-types.h>\n'
-nm_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\n'
-
-libnm_libnm_la_CPPFLAGS = \
-	$(dflt_cppflags_libnm_core) \
-	-I$(builddir)/introspection \
-	-I$(srcdir)/libnm \
-	-I$(builddir)/libnm \
-	$(GUDEV_CFLAGS) \
-	-DG_LOG_DOMAIN=\""libnm"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB \
-	-DNMRUNDIR=\"$(nmrundir)\"
-
-libnm_libnm_la_private_headers = \
+libnm_lib_h_pub_gen = \
+	libnm/nm-enum-types.h
+libnm_lib_h_priv = \
 	libnm/nm-dbus-helpers.h \
 	libnm/nm-device-private.h \
 	libnm/nm-dhcp4-config.h \
@@ -672,8 +678,7 @@ libnm_libnm_la_private_headers = \
 	libnm/nm-object-private.h \
 	libnm/nm-remote-connection-private.h \
 	libnm/nm-remote-settings.h
-
-libnm_libnm_la_sources = \
+libnm_lib_c_real = \
 	libnm/nm-access-point.c \
 	libnm/nm-active-connection.c \
 	libnm/nm-client.c \
@@ -699,7 +704,6 @@ libnm_libnm_la_sources = \
 	libnm/nm-dhcp-config.c \
 	libnm/nm-dhcp4-config.c \
 	libnm/nm-dhcp6-config.c \
-	libnm/nm-enum-types.c \
 	libnm/nm-ip-config.c \
 	libnm/nm-ip4-config.c \
 	libnm/nm-ip6-config.c \
@@ -713,10 +717,52 @@ libnm_libnm_la_sources = \
 	libnm/nm-vpn-editor.c \
 	libnm/nm-vpn-service-plugin.c \
 	libnm/nm-wimax-nsp.c
+libnm_lib_c_gen = \
+	libnm/nm-enum-types.c
+
+libnminclude_HEADERS += \
+	$(libnm_lib_h_pub_real) \
+	$(libnm_lib_h_pub_nointrospect)
+
+nodist_libnminclude_HEADERS += \
+	$(libnm_lib_h_pub_gen)
+
+###############################################################################
+
+lib_LTLIBRARIES += libnm/libnm.la
+
+GLIB_GENERATED += \
+	libnm/nm-enum-types.h \
+	libnm/nm-enum-types.c
+
+nm_enum_types_sources = \
+	$(libnm_lib_h_pub_gen) \
+	$(libnm_lib_h_pub_real) \
+	$(libnm_lib_h_pub_nointrospect)
+nm_enum_types_MKENUMS_H_FLAGS = --identifier-prefix NM --fhead '\#include <nm-core-enum-types.h>\n'
+nm_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\n'
+
+libnm_libnm_la_CPPFLAGS = \
+	$(dflt_cppflags_libnm_core) \
+	-I$(builddir)/introspection \
+	-I$(srcdir)/libnm \
+	-I$(builddir)/libnm \
+	$(GUDEV_CFLAGS) \
+	-DG_LOG_DOMAIN=\""libnm"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB \
+	-DNMRUNDIR=\"$(nmrundir)\"
 
 libnm_libnm_la_SOURCES = \
-	$(libnm_libnm_la_sources) \
-	$(libnm_libnm_la_private_headers)
+	$(libnm_lib_h_pub_real) \
+	$(libnm_lib_h_pub_nointrospect) \
+	$(libnm_lib_h_priv) \
+	$(libnm_lib_c_real)
+
+nodist_libnm_libnm_la_SOURCES = \
+	$(libnm_lib_h_pub_gen) \
+	$(libnm_lib_c_gen)
+
+$(libnm_lib_c_real): $(introspection_sources) $(libnm_lib_h_pub_gen)
 
 EXTRA_libnm_libnm_la_DEPENDENCIES = \
 	libnm/libnm.ver
@@ -757,10 +803,15 @@ libnm_NM_1_0_gir_EXPORT_PACKAGES = libnm
 libnm_NM_1_0_gir_CFLAGS = $(libnm_libnm_la_CPPFLAGS)
 libnm_NM_1_0_gir_LIBS = libnm/libnm.la
 libnm_NM_1_0_gir_FILES = \
-	$(libnm_core_libnm_core_headers) \
-	$(libnminclude_headers) \
-	$(libnm_core_libnm_core_sources) \
-	$(libnm_libnm_la_sources)
+	$(libnm_core_lib_h_pub_gen) \
+	$(libnm_core_lib_h_pub_real) \
+	$(libnm_core_lib_c_gen) \
+	$(libnm_core_lib_c_real) \
+	$(libnm_lib_h_pub_gen) \
+	$(libnm_lib_h_pub_real) \
+	$(libnm_lib_h_pub_nointrospect) \
+	$(libnm_lib_c_gen) \
+	$(libnm_lib_c_real)
 libnm_NM_1_0_gir_SCANNERFLAGS = --warn-all --identifier-prefix=NM --symbol-prefix=nm
 
 libnm/libnm.typelib: libnm/libnm.gir
@@ -780,7 +831,7 @@ libnm_noinst_data = \
 
 noinst_DATA += $(libnm_noinst_data)
 
-libnm_docs_sources = $(filter-out %/nm-core-enum-types.c,$(libnm_core_libnm_core_sources))
+libnm_docs_sources = $(libnm_core_lib_c_real)
 
 libnm/nm-setting-docs-overrides.xml: libnm/generate-plugin-docs.pl $(libnm_docs_sources)
 	$(srcdir)/libnm/generate-plugin-docs.pl dbus "$(top_srcdir)" $@
@@ -1177,6 +1228,8 @@ src_libNetworkManagerBase_la_SOURCES += \
 	src/platform/wifi/wifi-utils-wext.h
 endif
 
+$(src_libNetworkManagerBase_la_SOURCES): $(introspection_sources)
+
 src_libNetworkManagerBase_la_LIBADD = \
 	libnm-core/libnm-core.la \
 	introspection/libnmdbus.la \
@@ -1347,6 +1400,8 @@ src_libNetworkManager_la_SOURCES = \
 	src/nm-types.h \
 	\
 	$(NULL)
+
+$(src_libNetworkManager_la_SOURCES): $(introspection_sources)
 
 src_libNetworkManager_la_LIBADD = \
 	src/libNetworkManagerBase.la \
@@ -2234,16 +2289,7 @@ src_devices_wwan_cppflags = \
 
 core_plugins += src/devices/wwan/libnm-wwan.la
 
-GLIB_GENERATED += \
-	src/devices/wwan/nm-modem-enum-types.h \
-	src/devices/wwan/nm-modem-enum-types.c
-nm_modem_enum_types_MKENUMS_H_FLAGS = --identifier-prefix NM
-nm_modem_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\n'
-nm_modem_enum_types_sources = src/devices/wwan/nm-modem.h
-
 src_devices_wwan_libnm_wwan_la_SOURCES = \
-	src/devices/wwan/nm-modem-enum-types.h \
-	src/devices/wwan/nm-modem-enum-types.c \
 	src/devices/wwan/nm-modem-broadband.c \
 	src/devices/wwan/nm-modem-broadband.h \
 	src/devices/wwan/nm-modem-manager.c \
@@ -2305,17 +2351,9 @@ EXTRA_DIST += \
 
 if WITH_MODEM_MANAGER_1
 
-GLIB_GENERATED += \
-	src/devices/bluetooth/nm-bt-enum-types.h \
-	src/devices/bluetooth/nm-bt-enum-types.c
-nm_bt_enum_types_sources = src/devices/bluetooth/nm-bt-error.h
-
 core_plugins += src/devices/bluetooth/libnm-device-plugin-bluetooth.la
 
 src_devices_bluetooth_libnm_device_plugin_bluetooth_la_SOURCES = \
-	src/devices/bluetooth/nm-bt-enum-types.h \
-	src/devices/bluetooth/nm-bt-enum-types.c \
-	\
 	src/devices/bluetooth/nm-bluez-manager.c \
 	src/devices/bluetooth/nm-bluez-common.h \
 	src/devices/bluetooth/nm-bluez-device.c \
@@ -2817,6 +2855,7 @@ dispatcher_libnm_dispatcher_core_la_LIBADD = \
 	libnm/libnm.la \
 	$(GLIB_LIBS)
 
+dispatcher/nm-dispatcher.c: $(introspection_sources)
 
 dispatcher_nm_dispatcher_SOURCES = \
 	shared/nm-dispatcher-api.h \
@@ -3307,7 +3346,7 @@ libnm_util_cppflags = \
 	$(DBUS_CFLAGS) \
 	$(UUID_CFLAGS)
 
-libnm_util_libnm_util_include_HEADERS = \
+libnm_util_lib_h_pub_real = \
 	shared/nm-version-macros.h \
 	libnm-util/NetworkManager.h \
 	libnm-util/NetworkManagerVPN.h \
@@ -3341,11 +3380,9 @@ libnm_util_libnm_util_include_HEADERS = \
 	libnm-util/nm-setting-vpn.h \
 	libnm-util/nm-utils.h \
 	libnm-util/nm-version.h
-
-nodist_libnm_util_libnm_util_include_HEADERS = \
+libnm_util_lib_h_pub_gen = \
 	libnm-util/nm-utils-enum-types.h
-
-libnm_util_libnm_util_la_private_headers = \
+libnm_util_lib_h_priv = \
 	shared/nm-utils/nm-shared-utils.h \
 	libnm-util/crypto.h \
 	libnm-util/nm-dbus-glib-types.h \
@@ -3354,7 +3391,13 @@ libnm_util_libnm_util_la_private_headers = \
 	libnm-util/nm-setting-private.h \
 	libnm-util/nm-utils-private.h
 
-libnm_util_libnm_util_la_csources = \
+libnm_util_libnm_util_include_HEADERS = \
+	$(libnm_util_lib_h_pub_real)
+
+nodist_libnm_util_libnm_util_include_HEADERS = \
+	$(libnm_util_lib_h_pub_gen)
+
+libnm_util_lib_c_real = \
 	shared/nm-utils/nm-shared-utils.c \
 	libnm-util/crypto.c \
 	libnm-util/nm-connection.c \
@@ -3386,21 +3429,27 @@ libnm_util_libnm_util_la_csources = \
 	libnm-util/nm-setting-wireless.c \
 	libnm-util/nm-setting-wireless-security.c \
 	libnm-util/nm-setting-vpn.c \
-	libnm-util/nm-utils-enum-types.c \
 	libnm-util/nm-utils.c \
 	libnm-util/nm-value-transforms.c
+libnm_util_lib_c_gen = \
+	libnm-util/nm-utils-enum-types.c
 
 libnm_util_libnm_util_la_SOURCES = \
-	$(libnm_util_libnm_util_la_csources) \
-	$(libnm_util_libnm_util_la_private_headers)
+	$(libnm_util_lib_c_real) \
+	$(libnm_util_lib_h_pub_real) \
+	$(libnm_util_lib_h_priv)
+
+nodist_libnm_util_libnm_util_la_SOURCES = \
+	$(libnm_util_lib_h_pub_gen) \
+	$(libnm_util_lib_c_gen)
 
 libnm_util_libnm_util_la_CPPFLAGS = $(libnm_util_cppflags)
 
 
 GLIB_GENERATED += \
-	libnm-util/nm-utils-enum-types.h \
-	libnm-util/nm-utils-enum-types.c
-nm_utils_enum_types_sources = $(filter-out libnm-util/NetworkManager%,$(libnm_util_libnm_util_include_HEADERS))
+	$(libnm_util_lib_h_pub_gen) \
+	$(libnm_util_lib_c_gen)
+nm_utils_enum_types_sources = $(filter-out libnm-util/NetworkManager%,$(libnm_util_lib_h_pub_real))
 
 libnm_util_libnm_util_la_LIBADD = \
 	$(GLIB_LIBS) \
@@ -3413,16 +3462,19 @@ libnm_util_libnm_util_la_LDFLAGS = \
 
 if WITH_GNUTLS
 libnm_util_cppflags += $(GNUTLS_CFLAGS)
-libnm_util_libnm_util_la_SOURCES += libnm-util/crypto_gnutls.c
+libnm_util_lib_c_real += libnm-util/crypto_gnutls.c
 libnm_util_libnm_util_la_LIBADD += $(GNUTLS_LIBS)
 endif
 
 if WITH_NSS
 libnm_util_cppflags += $(NSS_CFLAGS)
-libnm_util_libnm_util_la_SOURCES += libnm-util/crypto_nss.c
+libnm_util_lib_c_real += libnm-util/crypto_nss.c
 libnm_util_libnm_util_la_LIBADD += $(NSS_LIBS)
 endif
 
+EXTRA_DIST += \
+	libnm-util/crypto_gnutls.c \
+	libnm-util/crypto_nss.c
 
 check_ltlibraries += libnm-util/libtest-crypto.la
 
@@ -3442,6 +3494,7 @@ libnm_util_libtest_crypto_la_SOURCES += libnm-util/crypto_nss.c
 libnm_util_libtest_crypto_la_LIBADD += $(NSS_LIBS)
 endif
 
+$(libnm_util_lib_c_real): $(libnm_util_lib_h_pub_gen)
 
 pkgconfig_DATA += libnm-util/libnm-util.pc
 
@@ -3460,9 +3513,10 @@ libnm_util_NetworkManager_1_0_gir_EXPORT_PACKAGES = libnm-util
 libnm_util_NetworkManager_1_0_gir_CFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/libnm-util
 libnm_util_NetworkManager_1_0_gir_LIBS = libnm-util/libnm-util.la
 libnm_util_NetworkManager_1_0_gir_FILES = \
-	$(libnm_util_libnm_util_include_HEADERS) \
-	$(nodist_libnm_util_libnm_util_include_HEADERS) \
-	$(libnm_util_libnm_util_la_csources)
+	$(libnm_util_lib_h_pub_gen) \
+	$(libnm_util_lib_h_pub_real) \
+	$(libnm_util_lib_c_gen) \
+	$(libnm_util_lib_c_real)
 libnm_util_NetworkManager_1_0_gir_SCANNERFLAGS = \
 	"-I$(srcdir)/shared" \
 	"-I$(builddir)/shared" \
@@ -3480,6 +3534,8 @@ check-local-exports-libnm-util: libnm-util/libnm-util.la
 	$(srcdir)/tools/check-exports.sh "$(builddir)/libnm-util/.libs/libnm-util.so" "$(srcdir)/libnm-util/libnm-util.ver"
 
 check_local += check-local-exports-libnm-util
+
+dist_dependencies += libnm-util/libnm-util.la
 
 ###############################################################################
 # libnm-util/tests
@@ -3579,7 +3635,7 @@ lib_LTLIBRARIES += libnm-glib/libnm-glib.la
 libnm_glib_libnmincludedir = $(includedir)/libnm-glib
 libnm_glib_libnmvpndir = $(includedir)/libnm-glib
 
-libnm_glib_libnminclude_HEADERS = \
+libnm_glib_lib_h_pub_real = \
 	libnm-glib/nm-object.h \
 	libnm-glib/nm-client.h \
 	libnm-glib/nm-device.h \
@@ -3607,16 +3663,36 @@ libnm_glib_libnminclude_HEADERS = \
 	libnm-glib/nm-remote-settings.h \
 	libnm-glib/nm-secret-agent.h \
 	libnm-glib/nm-device-wimax.h \
-	libnm-glib/nm-wimax-nsp.h \
+	libnm-glib/nm-wimax-nsp.h
+libnm_glib_lib_h_pub_gen = \
 	libnm-glib/nm-glib-enum-types.h
+libnm_glib_lib_h_priv = \
+	libnm-glib/nm-object-private.h \
+	libnm-glib/nm-device-private.h \
+	libnm-glib/nm-types-private.h \
+	libnm-glib/nm-object-cache.h \
+	libnm-glib/nm-remote-connection-private.h \
+	libnm-glib/nm-dbus-helpers-private.h
 
-libnm_glib_libnmvpn_HEADERS = \
+libnm_glib_libnminclude_HEADERS = \
+	$(libnm_glib_lib_h_pub_real)
+nodist_libnm_glib_libnminclude_HEADERS = \
+	$(libnm_glib_lib_h_pub_gen)
+
+libnm_glib_vpn_h_real = \
 	libnm-glib/nm-vpn-plugin.h \
 	libnm-glib/nm-vpn-plugin-ui-interface.h \
-	libnm-glib/nm-vpn-plugin-utils.h \
+	libnm-glib/nm-vpn-plugin-utils.h
+libnm_glib_vpn_h_gen = \
 	libnm-glib/nm-vpn-enum-types.h
 
-libnm_glib_libnm_glib_la_csources = \
+libnm_glib_libnmvpn_HEADERS = \
+	$(libnm_glib_vpn_h_real)
+
+nodist_libnm_glib_libnmvpn_HEADERS = \
+	$(libnm_glib_vpn_h_gen)
+
+libnm_glib_lib_c_real = \
 	libnm-glib/nm-object.c \
 	libnm-glib/nm-dbus-helpers.c \
 	libnm-glib/nm-client.c \
@@ -3646,20 +3722,18 @@ libnm_glib_libnm_glib_la_csources = \
 	libnm-glib/nm-remote-settings.c \
 	libnm-glib/nm-secret-agent.c \
 	libnm-glib/nm-device-wimax.c \
-	libnm-glib/nm-wimax-nsp.c \
+	libnm-glib/nm-wimax-nsp.c
+libnm_glib_lib_c_gen = \
 	libnm-glib/nm-glib-enum-types.c
 
-libnm_glib_libnm_glib_la_private_headers = \
-	libnm-glib/nm-object-private.h \
-	libnm-glib/nm-device-private.h \
-	libnm-glib/nm-types-private.h \
-	libnm-glib/nm-object-cache.h \
-	libnm-glib/nm-remote-connection-private.h \
-	libnm-glib/nm-dbus-helpers-private.h
-
 libnm_glib_libnm_glib_la_SOURCES = \
-	$(libnm_glib_libnm_glib_la_csources) \
-	$(libnm_glib_libnm_glib_la_private_headers)
+	$(libnm_glib_lib_c_real) \
+	$(libnm_glib_lib_h_pub_real) \
+	$(libnm_glib_lib_h_priv)
+
+nodist_libnm_glib_libnm_glib_la_SOURCES = \
+	$(libnm_glib_lib_c_gen) \
+	$(libnm_glib_lib_h_pub_gen)
 
 libnm_glib_libnm_glib_la_CPPFLAGS = \
 	$(libnm_glib_cppflags) \
@@ -3679,9 +3753,9 @@ libnm_glib_libnm_glib_la_LIBADD = \
 
 
 GLIB_GENERATED += \
-	libnm-glib/nm-glib-enum-types.h \
-	libnm-glib/nm-glib-enum-types.c
-nm_glib_enum_types_sources = $(libnm_glib_libnminclude_HEADERS)
+	$(libnm_glib_lib_h_pub_gen) \
+	$(libnm_glib_lib_c_gen)
+nm_glib_enum_types_sources = $(libnm_glib_lib_h_pub_real)
 
 
 check_programs_norun += libnm-glib/libnm-glib-test
@@ -3696,11 +3770,16 @@ libnm_glib_libnm_glib_test_LDADD = \
 
 lib_LTLIBRARIES += libnm-glib/libnm-glib-vpn.la
 
-libnm_glib_libnm_glib_vpn_la_SOURCES = \
+libnm_glib_vpn_c_real = \
 	libnm-glib/nm-vpn-plugin.c \
 	libnm-glib/nm-vpn-plugin-ui-interface.c \
-	libnm-glib/nm-vpn-plugin-utils.c \
+	libnm-glib/nm-vpn-plugin-utils.c
+libnm_glib_vpn_c_gen = \
 	libnm-glib/nm-vpn-enum-types.c
+libnm_glib_libnm_glib_vpn_la_SOURCES = \
+	$(libnm_glib_vpn_c_real)
+nodist_libnm_glib_libnm_glib_vpn_la_SOURCES = \
+	$(libnm_glib_vpn_c_gen)
 libnm_glib_libnm_glib_vpn_la_CPPFLAGS = $(libnm_glib_cppflags)
 libnm_glib_libnm_glib_vpn_la_LIBADD = \
 	libnm-util/libnm-util.la \
@@ -3712,9 +3791,9 @@ libnm_glib_libnm_glib_vpn_la_LDFLAGS = \
 
 
 GLIB_GENERATED += \
-	libnm-glib/nm-vpn-enum-types.h \
-	libnm-glib/nm-vpn-enum-types.c
-nm_vpn_enum_types_sources = $(libnm_glib_libnmvpn_HEADERS)
+	$(libnm_glib_vpn_h_gen) \
+	$(libnm_glib_vpn_c_gen)
+nm_vpn_enum_types_sources = $(libnm_glib_vpn_h_real)
 
 
 libnm-glib/nm-vpn-plugin-glue.h: $(srcdir)/introspection/nm-vpn-plugin.xml
@@ -3727,6 +3806,10 @@ BUILT_SOURCES += \
 	libnm-glib/nm-vpn-plugin-glue.h \
 	libnm-glib/nm-secret-agent-glue.h
 
+libnm-glib/nm-vpn-plugin.c:   libnm-glib/nm-vpn-plugin-glue.h
+libnm-glib/nm-secret-agent.c: libnm-glib/nm-secret-agent-glue.h
+
+$(libnm_glib_lib_c_real): $(libnm_glib_lib_h_pub_gen)
 
 pkgconfig_DATA += \
 	libnm-glib/libnm-glib.pc \
@@ -3752,8 +3835,11 @@ libnm_glib_NMClient_1_0_gir_LIBS = \
 	libnm-glib/libnm-glib.la \
 	libnm-util/libnm-util.la
 libnm_glib_NMClient_1_0_gir_FILES = \
-	$(libnm_glib_libnminclude_HEADERS) \
-	$(libnm_glib_libnm_glib_la_csources)
+	$(libnm_glib_lib_h_pub_gen) \
+	$(libnm_glib_lib_h_pub_real) \
+	$(libnm_glib_lib_h_priv) \
+	$(libnm_glib_lib_c_gen) \
+	$(libnm_glib_lib_c_real)
 libnm_glib_NMClient_1_0_gir_SCANNERFLAGS = \
 	"-I$(srcdir)/libnm-util" \
 	"-I$(builddir)/libnm-util" \
@@ -3772,6 +3858,8 @@ check-local-exports-libnm-glib:
 	$(top_srcdir)/tools/check-exports.sh $(builddir)/libnm-glib/.libs/libnm-glib.so $(srcdir)/libnm-glib/libnm-glib.ver
 
 check_local += check-local-exports-libnm-glib
+
+dist_dependencies += libnm-glib/libnm-glib.la
 
 ###############################################################################
 # libnm-glib/tests
@@ -3883,6 +3971,7 @@ if CONFIG_PLUGIN_IFCFG_RH
 man_pages_autogen += man/nm-settings-ifcfg-rh.5
 else
 EXTRA_DIST += man/nm-settings-ifcfg-rh.5
+dist_dependencies += man/nm-settings-ifcfg-rh.5
 endif
 
 EXTRA_DIST += \
@@ -3938,6 +4027,9 @@ man_MANS += \
 	$(man_pages_autogen)
 endif
 endif
+
+dist_dependencies += $(man_pages)
+dist_dependencies += $(man_pages_autogen)
 
 ###############################################################################
 # vapi
@@ -4100,4 +4192,4 @@ cscope:
 
 ###############################################################################
 
-.PHONY: cscope $(check_local) $(dist_hook)
+.PHONY: cscope dist-configure-check $(check_local) $(dist_hook)
