@@ -1408,6 +1408,11 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 	if (priv->vpn_state == STATE_CONNECT)
 		_set_vpn_state (self, STATE_IP_CONFIG_GET, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
 
+	if (priv->vpn_state > STATE_ACTIVATED) {
+		_LOGI ("VPN connection: (IP4 Config Get) ignoring, the connection is no longer active");
+		return;
+	}
+
 	if (priv->has_ip4) {
 		_LOGI ("VPN connection: (IP4 Config Get) reply received");
 
@@ -1576,6 +1581,11 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 
 	if (priv->vpn_state == STATE_CONNECT)
 		_set_vpn_state (self, STATE_IP_CONFIG_GET, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
+
+	if (priv->vpn_state > STATE_ACTIVATED) {
+		_LOGI ("VPN connection: (IP6 Config Get) ignoring, the connection is no longer active");
+		return;
+	}
 
 	if (g_variant_n_children (dict) == 0) {
 		priv->has_ip6 = FALSE;
