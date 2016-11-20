@@ -952,7 +952,7 @@ src_cppflags = \
 	-I$(top_builddir)/src \
 	-I$(top_srcdir)/src/devices \
 	-I$(top_srcdir)/src/dhcp \
-	-I$(top_srcdir)/src/dns-manager \
+	-I$(top_srcdir)/src/dns \
 	-I$(top_srcdir)/src/dnsmasq-manager \
 	-I$(top_srcdir)/src/platform \
 	-I$(top_srcdir)/src/platform/wifi \
@@ -1299,16 +1299,16 @@ src_libNetworkManager_la_SOURCES = \
 	src/dhcp/nm-dhcp-dhclient-utils.c \
 	src/dhcp/nm-dhcp-dhclient-utils.h \
 	\
-	src/dns-manager/nm-dns-dnsmasq.c \
-	src/dns-manager/nm-dns-dnsmasq.h \
-	src/dns-manager/nm-dns-systemd-resolved.c \
-	src/dns-manager/nm-dns-systemd-resolved.h \
-	src/dns-manager/nm-dns-unbound.c \
-	src/dns-manager/nm-dns-unbound.h \
-	src/dns-manager/nm-dns-manager.c \
-	src/dns-manager/nm-dns-manager.h \
-	src/dns-manager/nm-dns-plugin.c \
-	src/dns-manager/nm-dns-plugin.h \
+	src/dns/nm-dns-dnsmasq.c \
+	src/dns/nm-dns-dnsmasq.h \
+	src/dns/nm-dns-systemd-resolved.c \
+	src/dns/nm-dns-systemd-resolved.h \
+	src/dns/nm-dns-unbound.c \
+	src/dns/nm-dns-unbound.h \
+	src/dns/nm-dns-manager.c \
+	src/dns/nm-dns-manager.h \
+	src/dns/nm-dns-plugin.c \
+	src/dns/nm-dns-plugin.h \
 	\
 	src/dnsmasq-manager/nm-dnsmasq-manager.c \
 	src/dnsmasq-manager/nm-dnsmasq-manager.h \
