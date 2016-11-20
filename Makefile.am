@@ -3864,7 +3864,9 @@ check-local-exports-libnm-glib:
 
 check_local += check-local-exports-libnm-glib
 
-dist_dependencies += libnm-glib/libnm-glib.la
+dist_dependencies += \
+	libnm-glib/libnm-glib.la \
+	libnm-glib/libnm-glib-vpn.la
 
 ###############################################################################
 # libnm-glib/tests
