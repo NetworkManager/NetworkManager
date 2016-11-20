@@ -732,8 +732,8 @@ nodist_libnminclude_HEADERS += \
 lib_LTLIBRARIES += libnm/libnm.la
 
 GLIB_GENERATED += \
-	libnm/nm-enum-types.h \
-	libnm/nm-enum-types.c
+	$(libnm_lib_h_pub_gen) \
+	$(libnm_lib_c_gen)
 
 nm_enum_types_sources = \
 	$(libnm_lib_h_pub_gen) \
