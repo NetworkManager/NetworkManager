@@ -101,6 +101,7 @@ typedef struct _NMVpnEditorPluginVT NMVpnEditorPluginVT;
  * @get_suggested_filename: For a given connection, return a suggested file
  *   name.  Returned value will be %NULL or a suggested file name to be freed by
  *   the caller.
+ * @notify_plugin_info_set: A callback to be called when the plugin info is set.
  * @get_vt: return a virtual function table to implement further functions in
  *   the plugin, without requiring to update libnm. Used by nm_vpn_editor_plugin_get_vt().
  *
