@@ -27,8 +27,6 @@ void _nm_object_ensure_inited (NMObject *object);
 
 typedef gboolean (*PropertyMarshalFunc) (NMObject *, GParamSpec *, GValue *, gpointer);
 
-typedef GObject * (*NMObjectCreatorFunc) (DBusGConnection *, const char *);
-
 typedef struct {
 	const char *name;
 	gpointer field;
