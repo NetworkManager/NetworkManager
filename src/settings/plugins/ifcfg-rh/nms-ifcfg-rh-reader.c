@@ -53,7 +53,7 @@
 #include "nm-core-internal.h"
 #include "nm-utils.h"
 
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 #include "NetworkManagerUtils.h"
 
 #include "nms-ifcfg-rh-common.h"

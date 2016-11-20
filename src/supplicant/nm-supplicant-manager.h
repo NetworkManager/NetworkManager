@@ -23,7 +23,7 @@
 #define __NETWORKMANAGER_SUPPLICANT_MANAGER_H__
 
 #include "nm-supplicant-types.h"
-#include "nm-device.h"
+#include "devices/nm-device.h"
 
 #define NM_TYPE_SUPPLICANT_MANAGER              (nm_supplicant_manager_get_type ())
 #define NM_SUPPLICANT_MANAGER(obj)              (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SUPPLICANT_MANAGER, NMSupplicantManager))

@@ -50,10 +50,10 @@
 
 #include "NetworkManagerUtils.h"
 
-#include "nms-ifcfg-rh-common.h"
-#include "nms-ifcfg-rh-reader.h"
-#include "nms-ifcfg-rh-writer.h"
-#include "nms-ifcfg-rh-utils.h"
+#include "settings/plugins/ifcfg-rh/nms-ifcfg-rh-common.h"
+#include "settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.h"
+#include "settings/plugins/ifcfg-rh/nms-ifcfg-rh-writer.h"
+#include "settings/plugins/ifcfg-rh/nms-ifcfg-rh-utils.h"
 
 #include "nm-test-utils-core.h"
 

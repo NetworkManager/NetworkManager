@@ -21,7 +21,7 @@
 #ifndef __NETWORKMANAGER_DEVICE_MODEM_H__
 #define __NETWORKMANAGER_DEVICE_MODEM_H__
 
-#include "nm-device.h"
+#include "devices/nm-device.h"
 #include "nm-modem.h"
 
 #define NM_TYPE_DEVICE_MODEM            (nm_device_modem_get_type ())

@@ -62,7 +62,7 @@
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 
-#include "nm-device-ethernet.h"
+#include "devices/nm-device-ethernet.h"
 #include "nm-settings-connection.h"
 #include "nm-settings-plugin.h"
 #include "nm-bus-manager.h"

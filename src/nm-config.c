@@ -27,7 +27,7 @@
 #include <stdio.h>
 
 #include "nm-utils.h"
-#include "nm-device.h"
+#include "devices/nm-device.h"
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
 #include "nm-keyfile-internal.h"

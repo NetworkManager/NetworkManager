@@ -23,11 +23,11 @@
 #include <arpa/inet.h>
 #include <linux/rtnetlink.h>
 
-#include "nm-platform.h"
-#include "nm-platform-utils.h"
+#include "platform/nm-platform.h"
+#include "platform/nm-platform-utils.h"
 #include "nm-route-manager.h"
 
-#include "test-common.h"
+#include "platform/tests/test-common.h"
 
 typedef struct {
 	int ifindex0, ifindex1;

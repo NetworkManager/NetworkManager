@@ -22,7 +22,7 @@
 #ifndef __NETWORKMANAGER_IFNET_CONNECTION_H__
 #define __NETWORKMANAGER_IFNET_CONNECTION_H__
 
-#include <nm-settings-connection.h>
+#include "settings/nm-settings-connection.h"
 
 #include "nms-ifnet-net-parser.h"
 

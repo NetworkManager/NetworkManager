@@ -35,8 +35,8 @@
 #include "nm-setting-pppoe.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-8021x.h"
-#include "nm-platform.h"
-#include "nm-inotify-helper.h"
+#include "platform/nm-platform.h"
+#include "settings/nm-inotify-helper.h"
 #include "nm-config.h"
 
 #include "nms-ifcfg-rh-common.h"

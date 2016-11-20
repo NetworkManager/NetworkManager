@@ -44,7 +44,7 @@
 #include <linux/if_ppp.h>
 
 #include "NetworkManagerUtils.h"
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 #include "nm-core-internal.h"
 #include "nm-act-request.h"
 #include "nm-ip4-config.h"

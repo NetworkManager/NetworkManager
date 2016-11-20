@@ -21,7 +21,7 @@
 #ifndef __NETWORKMANAGER_TEST_DEVICE_H__
 #define __NETWORKMANAGER_TEST_DEVICE_H__
 
-#include "nm-device.h"
+#include "devices/nm-device.h"
 
 #define NM_TYPE_TEST_DEVICE            (nm_test_device_get_type ())
 #define NM_TEST_DEVICE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_TEST_DEVICE, NMTestDevice))

@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include "nm-settings-plugin.h"
+#include "settings/nm-settings-plugin.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 

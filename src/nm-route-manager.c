@@ -24,8 +24,8 @@
 
 #include <string.h>
 
-#include "nm-platform.h"
-#include "nmp-object.h"
+#include "platform/nm-platform.h"
+#include "platform/nmp-object.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 

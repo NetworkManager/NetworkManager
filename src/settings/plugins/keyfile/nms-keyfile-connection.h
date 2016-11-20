@@ -22,7 +22,7 @@
 #ifndef __NMS_KEYFILE_CONNECTION_H__
 #define __NMS_KEYFILE_CONNECTION_H__
 
-#include <nm-settings-connection.h>
+#include "settings/nm-settings-connection.h"
 
 #define NMS_TYPE_KEYFILE_CONNECTION            (nms_keyfile_connection_get_type ())
 #define NMS_KEYFILE_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMS_TYPE_KEYFILE_CONNECTION, NMSKeyfileConnection))

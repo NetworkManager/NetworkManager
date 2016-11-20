@@ -23,7 +23,7 @@
 #define __NETWORKMANAGER_MANAGER_H__
 
 #include "nm-exported-object.h"
-#include "nm-settings-connection.h"
+#include "settings/nm-settings-connection.h"
 
 #define NM_TYPE_MANAGER            (nm_manager_get_type ())
 #define NM_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MANAGER, NMManager))

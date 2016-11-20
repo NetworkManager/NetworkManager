@@ -23,7 +23,7 @@
 #include <linux/rtnetlink.h>
 
 #include "nm-core-utils.h"
-#include "nm-platform-utils.h"
+#include "platform/nm-platform-utils.h"
 
 #include "test-common.h"
 

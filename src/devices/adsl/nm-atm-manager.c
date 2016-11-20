@@ -26,8 +26,8 @@
 
 #include "nm-setting-adsl.h"
 #include "nm-device-adsl.h"
-#include "nm-device-factory.h"
-#include "nm-platform.h"
+#include "devices/nm-device-factory.h"
+#include "platform/nm-platform.h"
 
 /*****************************************************************************/
 

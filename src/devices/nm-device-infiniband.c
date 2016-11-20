@@ -28,7 +28,7 @@
 #include "nm-device-private.h"
 #include "nm-act-request.h"
 #include "nm-ip4-config.h"
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 #include "nm-device-factory.h"
 #include "nm-core-internal.h"
 

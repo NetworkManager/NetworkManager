@@ -27,7 +27,7 @@
 
 #include "nm-bus-manager.h"
 
-#include "nm-device.h"
+#include "devices/nm-device.h"
 #include "nm-active-connection.h"
 #include "nmdbus-device-statistics.h"
 

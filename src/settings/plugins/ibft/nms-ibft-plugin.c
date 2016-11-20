@@ -28,7 +28,7 @@
 #include <gmodule.h>
 
 #include "nm-setting-connection.h"
-#include "nm-settings-plugin.h"
+#include "settings/nm-settings-plugin.h"
 #include "NetworkManagerUtils.h"
 
 #include "nms-ibft-reader.h"

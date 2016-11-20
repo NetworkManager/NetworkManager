@@ -27,8 +27,8 @@
 #include <arpa/inet.h>
 
 #include "nm-utils.h"
-#include "nm-platform.h"
-#include "nm-platform-utils.h"
+#include "platform/nm-platform.h"
+#include "platform/nm-platform-utils.h"
 #include "nm-route-manager.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"

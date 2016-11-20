@@ -25,7 +25,7 @@
 #include "nm-checkpoint.h"
 #include "nm-connection.h"
 #include "nm-core-utils.h"
-#include "nm-device.h"
+#include "devices/nm-device.h"
 #include "nm-exported-object.h"
 #include "nm-manager.h"
 #include "nm-utils.h"

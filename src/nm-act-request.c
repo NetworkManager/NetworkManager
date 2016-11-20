@@ -30,9 +30,9 @@
 
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-8021x.h"
-#include "nm-device.h"
+#include "devices/nm-device.h"
 #include "nm-active-connection.h"
-#include "nm-settings-connection.h"
+#include "settings/nm-settings-connection.h"
 #include "nm-auth-subject.h"
 
 typedef struct {

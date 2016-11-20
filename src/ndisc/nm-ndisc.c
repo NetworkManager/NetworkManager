@@ -30,8 +30,8 @@
 
 #include "nm-ndisc-private.h"
 #include "nm-utils.h"
-#include "nm-platform.h"
-#include "nmp-netns.h"
+#include "platform/nm-platform.h"
+#include "platform/nmp-netns.h"
 
 #define _NMLOG_PREFIX_NAME                "ndisc"
 

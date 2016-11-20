@@ -28,7 +28,7 @@
 #ifndef __NETWORKMANAGER_DEVICE_OLPC_MESH_H__
 #define __NETWORKMANAGER_DEVICE_OLPC_MESH_H__
 
-#include "nm-device.h"
+#include "devices/nm-device.h"
 
 #define NM_TYPE_DEVICE_OLPC_MESH            (nm_device_olpc_mesh_get_type ())
 #define NM_DEVICE_OLPC_MESH(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE_OLPC_MESH, NMDeviceOlpcMesh))

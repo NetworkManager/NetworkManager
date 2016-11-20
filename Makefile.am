@@ -950,17 +950,6 @@ src_cppflags = \
 	-I$(top_builddir)/introspection \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src \
-	-I$(top_srcdir)/src/devices \
-	-I$(top_srcdir)/src/dhcp \
-	-I$(top_srcdir)/src/dns \
-	-I$(top_srcdir)/src/dnsmasq \
-	-I$(top_srcdir)/src/platform \
-	-I$(top_srcdir)/src/platform/wifi \
-	-I$(top_srcdir)/src/ppp \
-	-I$(top_srcdir)/src/ndisc \
-	-I$(top_srcdir)/src/settings \
-	-I$(top_srcdir)/src/supplicant \
-	-I$(top_srcdir)/src/vpn \
 	\
 	-DPREFIX=\"$(prefix)\" \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
@@ -1429,8 +1418,7 @@ src_libNetworkManager_la_LIBADD = \
 check_ltlibraries += src/libNetworkManagerTest.la
 
 src_tests_cppflags = \
-	$(src_cppflags) \
-	-I$(top_srcdir)/src/platform/tests
+	$(src_cppflags)
 
 if REQUIRE_ROOT_TESTS
 src_tests_cppflags += -DREQUIRE_ROOT_TESTS=1
@@ -1599,7 +1587,6 @@ check_programs += src/settings/plugins/keyfile/tests/test-keyfile
 
 src_settings_plugins_keyfile_tests_test_keyfile_CPPFLAGS = \
 	$(src_tests_cppflags) \
-	-I$(top_srcdir)/src/settings/plugins/keyfile \
 	-DTEST_KEYFILES_DIR=\"$(abs_srcdir)/src/settings/plugins/keyfile/tests/keyfiles\" \
 	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/src/settings/plugins/keyfile/tests/keyfiles\"
 
@@ -1660,8 +1647,6 @@ noinst_LTLIBRARIES += src/settings/plugins/ibft/libnms-ibft-core.la
 
 src_settings_plugins_ibft_cppflags = \
 	-I$(top_srcdir)/src/ \
-	-I$(top_srcdir)/src/platform \
-	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/shared \
 	-I$(top_builddir)/shared \
 	-I$(top_srcdir)/libnm-core \
@@ -1703,9 +1688,6 @@ src_settings_plugins_ibft_tests_test_ibft_CPPFLAGS = \
 	-I$(top_srcdir)/libnm-core \
 	-I$(top_builddir)/libnm-core \
 	-I$(top_srcdir)/src/ \
-	-I$(top_srcdir)/src/platform \
-	-I$(top_srcdir)/src/settings \
-	-I$(srcdir)/src/settings/plugins/ibft \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	-DTEST_IBFT_DIR=\"$(abs_srcdir)/src/settings/plugins/ibft/tests\" \
@@ -1751,10 +1733,7 @@ noinst_LTLIBRARIES += \
 
 src_settings_plugins_ifcfg_rh_cppflags = \
 	-I$(top_srcdir)/src/ \
-	-I$(top_srcdir)/src/platform \
-	-I$(top_srcdir)/src/settings \
-	-I$(top_srcdir)/src/settings/plugins/ifcfg-rh \
-	-I$(top_builddir)/src/settings/plugins/ifcfg-rh \
+	-I$(top_builddir)/src/ \
 	-I$(top_srcdir)/shared \
 	-I$(top_builddir)/shared \
 	-I$(top_srcdir)/libnm-core \
@@ -1840,7 +1819,6 @@ src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_SOURCES = \
 
 src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_CPPFLAGS = \
 	$(src_tests_cppflags) \
-	-I$(top_srcdir)/src/settings/plugins/ifcfg-rh \
 	-DTEST_IFCFG_DIR=\"$(abs_srcdir)/src/settings/plugins/ifcfg-rh/tests\" \
 	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/src/settings/plugins/ifcfg-rh/tests\"
 
@@ -2047,7 +2025,6 @@ noinst_LTLIBRARIES += src/settings/plugins/ifupdown/libnms-ifupdown-core.la
 
 src_settings_plugins_ifupdown_cppflags = \
 	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/shared \
 	-I$(top_builddir)/shared \
 	-I$(top_srcdir)/libnm-core \
@@ -2098,8 +2075,6 @@ src_settings_plugins_ifupdown_tests_test_ifupdown_CPPFLAGS = \
 	-I$(top_srcdir)/libnm-core \
 	-I$(top_builddir)/libnm-core \
 	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/settings \
-	-I$(srcdir)/src/settings/plugins/ifupdown \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS) \
@@ -2152,8 +2127,6 @@ noinst_LTLIBRARIES += src/settings/plugins/ifnet/libnms-ifnet-core.la
 
 src_settings_plugins_ifnet_cppflags = \
 	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/platform \
-	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/shared \
 	-I$(top_builddir)/shared \
 	-I$(top_srcdir)/libnm-core \
@@ -2206,9 +2179,6 @@ src_settings_plugins_ifnet_tests_test_ifnet_CPPFLAGS = \
 	-I$(top_srcdir)/libnm-core \
 	-I$(top_builddir)/libnm-core \
 	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/settings \
-	-I$(top_srcdir)/src/platform \
-	-I$(top_srcdir)/src/settings/plugins/ifnet \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS) \
@@ -2249,8 +2219,6 @@ src_devices_adsl_libnm_device_plugin_adsl_la_SOURCES = \
 src_devices_adsl_libnm_device_plugin_adsl_la_CPPFLAGS = \
 	-I${top_srcdir}/src \
 	-I${top_builddir}/src \
-	-I${top_srcdir}/src/devices \
-	-I${top_srcdir}/src/platform \
 	-I${top_builddir}/introspection \
 	-I${top_srcdir}/shared \
 	-I$(top_builddir)/shared \
@@ -2283,16 +2251,11 @@ if WITH_MODEM_MANAGER_1
 src_devices_wwan_cppflags = \
 	-I${top_srcdir}/src \
 	-I${top_builddir}/src \
-	-I${top_srcdir}/src/devices \
-	-I${top_srcdir}/src/settings \
-	-I${top_srcdir}/src/platform \
 	-I${top_builddir}/introspection \
 	-I${top_srcdir}/shared \
 	-I$(top_builddir)/shared \
 	-I${top_srcdir}/libnm-core \
 	-I${top_builddir}/libnm-core \
-	-I${top_srcdir}/src/devices/wwan \
-	-I${top_builddir}/src/devices/wwan \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS) \
@@ -2385,17 +2348,11 @@ src_devices_bluetooth_libnm_device_plugin_bluetooth_la_SOURCES = \
 src_devices_bluetooth_libnm_device_plugin_bluetooth_la_CPPFLAGS = \
 	-I${top_srcdir}/src \
 	-I${top_builddir}/src \
-	-I${top_srcdir}/src/devices \
-	-I${top_srcdir}/src/settings \
-	-I${top_srcdir}/src/platform \
-	-I${top_srcdir}/src/devices/wwan \
 	-I${top_builddir}/introspection \
 	-I${top_srcdir}/shared \
 	-I$(top_builddir)/shared \
 	-I${top_builddir}/libnm-core \
 	-I${top_srcdir}/libnm-core \
-	-I${top_srcdir}/src/devices/bluetooth \
-	-I${top_builddir}/src/devices/bluetooth \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS)
@@ -2450,10 +2407,6 @@ src_devices_wifi_libnm_device_plugin_wifi_la_SOURCES = \
 src_devices_wifi_libnm_device_plugin_wifi_la_CPPFLAGS = \
 	-I${top_srcdir}/src \
 	-I${top_builddir}/src \
-	-I${top_srcdir}/src/devices \
-	-I${top_srcdir}/src/settings \
-	-I${top_srcdir}/src/platform \
-	-I${top_srcdir}/src/supplicant \
 	-I${top_builddir}/introspection \
 	-I${top_srcdir}/shared \
 	-I$(top_builddir)/shared \
@@ -2493,9 +2446,7 @@ src_devices_wifi_tests_test_general_CPPFLAGS = \
 	-I$(top_builddir)/shared \
 	-I$(top_srcdir)/libnm-core \
 	-I$(top_builddir)/libnm-core \
-	-I${top_srcdir}/src/platform \
 	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/devices/wifi \
 	-I$(top_builddir)/src \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
@@ -2521,9 +2472,6 @@ src_devices_team_libnm_device_plugin_team_la_SOURCES = \
 src_devices_team_libnm_device_plugin_team_la_CPPFLAGS = \
 	-I${top_srcdir}/src \
 	-I${top_builddir}/src \
-	-I${top_srcdir}/src/devices \
-	-I${top_srcdir}/src/platform \
-	-I${top_srcdir}/src/settings \
 	-I${top_builddir}/introspection \
 	-I${top_srcdir}/shared \
 	-I$(top_builddir)/shared \

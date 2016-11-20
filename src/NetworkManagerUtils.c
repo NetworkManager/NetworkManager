@@ -30,7 +30,7 @@
 #include "nm-setting-ip6-config.h"
 #include "nm-core-internal.h"
 
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 #include "nm-exported-object.h"
 #include "nm-auth-utils.h"
 

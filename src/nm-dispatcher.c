@@ -29,15 +29,15 @@
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-connectivity.h"
-#include "nm-device.h"
+#include "devices/nm-device.h"
 #include "nm-dhcp4-config.h"
 #include "nm-dhcp6-config.h"
 #include "nm-proxy-config.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 #include "nm-manager.h"
-#include "nm-settings-connection.h"
-#include "nm-platform.h"
+#include "settings/nm-settings-connection.h"
+#include "platform/nm-platform.h"
 #include "nm-core-internal.h"
 
 #define CALL_TIMEOUT (1000 * 60 * 10)  /* 10 minutes for all scripts */

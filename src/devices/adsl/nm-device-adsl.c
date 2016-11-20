@@ -32,8 +32,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "nm-device-private.h"
-#include "nm-platform.h"
+#include "devices/nm-device-private.h"
+#include "platform/nm-platform.h"
 #include "ppp/nm-ppp-manager.h"
 #include "ppp/nm-ppp-status.h"
 #include "nm-setting-adsl.h"
@@ -41,7 +41,7 @@
 
 #include "nmdbus-device-adsl.h"
 
-#include "nm-device-logging.h"
+#include "devices/nm-device-logging.h"
 _LOG_DECLARE_SELF (NMDeviceAdsl);
 
 /*****************************************************************************/

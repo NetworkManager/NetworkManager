@@ -30,7 +30,7 @@
 #include "nm-utils.h"
 #include "nm-setting-connection.h"
 #include "nm-dbus-interface.h"
-#include "nm-settings-plugin.h"
+#include "settings/nm-settings-plugin.h"
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"
 

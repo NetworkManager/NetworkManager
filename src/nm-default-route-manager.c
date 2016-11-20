@@ -25,9 +25,9 @@
 
 #include <string.h>
 
-#include "nm-device.h"
-#include "nm-vpn-connection.h"
-#include "nm-platform.h"
+#include "devices/nm-device.h"
+#include "vpn/nm-vpn-connection.h"
+#include "platform/nm-platform.h"
 #include "nm-manager.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"

@@ -25,7 +25,7 @@
 #include <net/ethernet.h>
 #include <errno.h>
 
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 #include "nm-utils.h"
 
 #include "systemd/nm-sd.h"

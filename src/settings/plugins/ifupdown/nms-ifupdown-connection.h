@@ -24,7 +24,7 @@
 #ifndef __NETWORKMANAGER_IFUPDOWN_CONNECTION_H__
 #define __NETWORKMANAGER_IFUPDOWN_CONNECTION_H__
 
-#include <nm-settings-connection.h>
+#include "settings/nm-settings-connection.h"
 
 #include "nms-ifupdown-interface-parser.h"
 

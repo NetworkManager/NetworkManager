@@ -27,7 +27,7 @@
 
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 #include "nm-device-factory.h"
 #include "nm-core-internal.h"
 #include "nm-ip4-config.h"

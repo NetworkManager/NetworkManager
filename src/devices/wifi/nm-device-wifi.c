@@ -29,14 +29,14 @@
 #include <errno.h>
 
 #include "nm-common-macros.h"
-#include "nm-device.h"
-#include "nm-device-private.h"
+#include "devices/nm-device.h"
+#include "devices/nm-device-private.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-act-request.h"
-#include "nm-supplicant-manager.h"
-#include "nm-supplicant-interface.h"
-#include "nm-supplicant-config.h"
+#include "supplicant/nm-supplicant-manager.h"
+#include "supplicant/nm-supplicant-interface.h"
+#include "supplicant/nm-supplicant-config.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
@@ -44,16 +44,16 @@
 #include "nm-setting-ip4-config.h"
 #include "nm-ip4-config.h"
 #include "nm-setting-ip6-config.h"
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 #include "nm-auth-utils.h"
-#include "nm-settings-connection.h"
-#include "nm-settings.h"
+#include "settings/nm-settings-connection.h"
+#include "settings/nm-settings.h"
 #include "nm-core-internal.h"
 #include "nm-config.h"
 
 #include "nmdbus-device-wifi.h"
 
-#include "nm-device-logging.h"
+#include "devices/nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceWifi);
 
 /* All of these are in seconds */

@@ -27,7 +27,7 @@
 
 #include "nm-bluez-common.h"
 #include "nm-bluez-device.h"
-#include "nm-device-private.h"
+#include "devices/nm-device-private.h"
 #include "ppp/nm-ppp-manager.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-bluetooth.h"
@@ -38,11 +38,11 @@
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-bt-error.h"
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 
 #include "nmdbus-device-bt.h"
 
-#include "nm-device-logging.h"
+#include "devices/nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceBt);
 
 #define MM_DBUS_SERVICE   "org.freedesktop.ModemManager1"

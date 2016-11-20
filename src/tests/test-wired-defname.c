@@ -22,7 +22,7 @@
 
 #include "nm-simple-connection.h"
 #include "nm-setting-connection.h"
-#include "nm-device-ethernet-utils.h"
+#include "devices/nm-device-ethernet-utils.h"
 
 #include "nm-test-utils-core.h"
 

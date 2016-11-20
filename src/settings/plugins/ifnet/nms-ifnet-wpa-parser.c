@@ -26,7 +26,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "nm-settings-plugin.h"
+#include "settings/nm-settings-plugin.h"
 
 #include "nms-ifnet-net-parser.h"
 #include "nms-ifnet-net-utils.h"

@@ -31,7 +31,7 @@
 #include "nm-utils.h"
 #include "nm-dhcp-utils.h"
 #include "NetworkManagerUtils.h"
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 #include "nm-dhcp-client-logging.h"
 #include "systemd/nm-sd.h"
 

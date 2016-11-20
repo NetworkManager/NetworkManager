@@ -32,7 +32,7 @@
 
 #include "nm-bluez-device.h"
 #include "nm-bluez-common.h"
-#include "nm-settings.h"
+#include "settings/nm-settings.h"
 
 /*****************************************************************************/
 

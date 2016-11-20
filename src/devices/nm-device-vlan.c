@@ -28,14 +28,14 @@
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
-#include "nm-settings.h"
+#include "settings/nm-settings.h"
 #include "nm-act-request.h"
 #include "nm-ip4-config.h"
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 #include "nm-device-factory.h"
 #include "nm-manager.h"
 #include "nm-core-internal.h"
-#include "nmp-object.h"
+#include "platform/nmp-object.h"
 
 #include "nmdbus-device-vlan.h"
 

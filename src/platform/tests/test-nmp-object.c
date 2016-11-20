@@ -20,7 +20,7 @@
 
 #include "nm-default.h"
 
-#include "nmp-object.h"
+#include "platform/nmp-object.h"
 
 #include "nm-test-utils-core.h"
 

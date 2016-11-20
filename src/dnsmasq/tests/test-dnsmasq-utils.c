@@ -22,7 +22,7 @@
 
 #include <arpa/inet.h>
 
-#include "nm-dnsmasq-utils.h"
+#include "dnsmasq/nm-dnsmasq-utils.h"
 
 #include "nm-test-utils-core.h"
 

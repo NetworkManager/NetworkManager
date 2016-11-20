@@ -24,7 +24,7 @@
 
 #include <string.h>
 
-#include "nm-device-private.h"
+#include "devices/nm-device-private.h"
 #include "nm-utils.h"
 
 /*****************************************************************************/

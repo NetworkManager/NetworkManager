@@ -22,13 +22,13 @@
 
 #include <gmodule.h>
 
-#include "nm-device-factory.h"
+#include "devices/nm-device-factory.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-olpc-mesh.h"
 #include "nm-device-wifi.h"
 #include "nm-device-olpc-mesh.h"
-#include "nm-settings-connection.h"
-#include "nm-platform.h"
+#include "settings/nm-settings-connection.h"
+#include "platform/nm-platform.h"
 
 /*****************************************************************************/
 

@@ -31,12 +31,12 @@
 #include "nm-utils.h"
 
 #include "nm-config.h"
-#include "nm-linux-platform.h"
+#include "platform/nm-linux-platform.h"
 
-#include "nms-ifnet-net-parser.h"
-#include "nms-ifnet-net-utils.h"
-#include "nms-ifnet-wpa-parser.h"
-#include "nms-ifnet-connection-parser.h"
+#include "settings/plugins/ifnet/nms-ifnet-net-parser.h"
+#include "settings/plugins/ifnet/nms-ifnet-net-utils.h"
+#include "settings/plugins/ifnet/nms-ifnet-wpa-parser.h"
+#include "settings/plugins/ifnet/nms-ifnet-connection-parser.h"
 
 #include "nm-test-utils-core.h"
 

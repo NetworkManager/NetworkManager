@@ -25,16 +25,16 @@
 #include <stdlib.h>
 #include <gmodule.h>
 
-#include "nm-device-factory.h"
+#include "devices/nm-device-factory.h"
 #include "nm-setting-bluetooth.h"
-#include "nm-settings.h"
+#include "settings/nm-settings.h"
 #include "nm-bluez4-manager.h"
 #include "nm-bluez5-manager.h"
 #include "nm-bluez-device.h"
 #include "nm-bluez-common.h"
 #include "nm-device-bt.h"
 #include "nm-core-internal.h"
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 #include "nm-dbus-compat.h"
 
 /*****************************************************************************/

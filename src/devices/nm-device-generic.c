@@ -23,7 +23,7 @@
 #include "nm-device-generic.h"
 
 #include "nm-device-private.h"
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 #include "nm-core-internal.h"
 
 #include "nmdbus-device-generic.h"

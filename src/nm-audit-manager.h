@@ -22,7 +22,7 @@
 #define __NM_AUDIT_MANAGER_H__
 
 #include "nm-connection.h"
-#include "nm-device.h"
+#include "devices/nm-device.h"
 #include "nm-types.h"
 
 #define NM_TYPE_AUDIT_MANAGER            (nm_audit_manager_get_type ())

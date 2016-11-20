@@ -25,10 +25,10 @@
 #include <string.h>
 
 #include "nm-device-private.h"
-#include "nm-settings.h"
+#include "settings/nm-settings.h"
 #include "nm-act-request.h"
 #include "nm-manager.h"
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 #include "nm-device-factory.h"
 #include "nm-setting-macvlan.h"
 #include "nm-setting-wired.h"

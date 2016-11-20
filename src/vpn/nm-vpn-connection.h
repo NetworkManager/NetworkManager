@@ -23,7 +23,7 @@
 #define __NM_VPN_CONNECTION_H__
 
 #include "nm-vpn-dbus-interface.h"
-#include "nm-device.h"
+#include "devices/nm-device.h"
 #include "nm-auth-subject.h"
 #include "nm-active-connection.h"
 #include "nm-vpn-plugin-info.h"

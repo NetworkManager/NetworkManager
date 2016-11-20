@@ -33,7 +33,7 @@
 
 #include "nm-setting-connection.h"
 #include "nm-dbus-interface.h"
-#include "nm-settings-plugin.h"
+#include "settings/nm-settings-plugin.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-wired.h"
