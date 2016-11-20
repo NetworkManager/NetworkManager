@@ -951,7 +951,7 @@ src_cppflags = \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src \
 	-I$(top_srcdir)/src/devices \
-	-I$(top_srcdir)/src/dhcp-manager \
+	-I$(top_srcdir)/src/dhcp \
 	-I$(top_srcdir)/src/dns-manager \
 	-I$(top_srcdir)/src/dnsmasq-manager \
 	-I$(top_srcdir)/src/platform \
@@ -1215,14 +1215,14 @@ src_libNetworkManagerBase_la_SOURCES = \
 	src/nm-route-manager.c \
 	src/nm-route-manager.h \
 	\
-	src/dhcp-manager/nm-dhcp-client.c \
-	src/dhcp-manager/nm-dhcp-client.h \
-	src/dhcp-manager/nm-dhcp-client-logging.h \
-	src/dhcp-manager/nm-dhcp-utils.c \
-	src/dhcp-manager/nm-dhcp-utils.h \
-	src/dhcp-manager/nm-dhcp-systemd.c \
-	src/dhcp-manager/nm-dhcp-manager.c \
-	src/dhcp-manager/nm-dhcp-manager.h \
+	src/dhcp/nm-dhcp-client.c \
+	src/dhcp/nm-dhcp-client.h \
+	src/dhcp/nm-dhcp-client-logging.h \
+	src/dhcp/nm-dhcp-utils.c \
+	src/dhcp/nm-dhcp-utils.h \
+	src/dhcp/nm-dhcp-systemd.c \
+	src/dhcp/nm-dhcp-manager.c \
+	src/dhcp/nm-dhcp-manager.h \
 	\
 	src/main-utils.c \
 	src/main-utils.h \
@@ -1291,13 +1291,13 @@ src_libNetworkManager_la_SOURCES = \
 	src/devices/nm-device-vxlan.c \
 	src/devices/nm-device-vxlan.h \
 	\
-	src/dhcp-manager/nm-dhcp-dhclient.c \
-	src/dhcp-manager/nm-dhcp-dhcpcd.c \
-	src/dhcp-manager/nm-dhcp-helper-api.h \
-	src/dhcp-manager/nm-dhcp-listener.c \
-	src/dhcp-manager/nm-dhcp-listener.h \
-	src/dhcp-manager/nm-dhcp-dhclient-utils.c \
-	src/dhcp-manager/nm-dhcp-dhclient-utils.h \
+	src/dhcp/nm-dhcp-dhclient.c \
+	src/dhcp/nm-dhcp-dhcpcd.c \
+	src/dhcp/nm-dhcp-helper-api.h \
+	src/dhcp/nm-dhcp-listener.c \
+	src/dhcp/nm-dhcp-listener.h \
+	src/dhcp/nm-dhcp-dhclient-utils.c \
+	src/dhcp/nm-dhcp-dhclient-utils.h \
 	\
 	src/dns-manager/nm-dns-dnsmasq.c \
 	src/dns-manager/nm-dns-dnsmasq.h \
@@ -1506,12 +1506,12 @@ EXTRA_DIST += \
 	src/NetworkManager.ver-orig
 
 ###############################################################################
-# src/dhcp-manager
+# src/dhcp
 ###############################################################################
 
-libexec_PROGRAMS += src/dhcp-manager/nm-dhcp-helper
+libexec_PROGRAMS += src/dhcp/nm-dhcp-helper
 
-src_dhcp_manager_nm_dhcp_helper_CPPFLAGS = \
+src_dhcp_nm_dhcp_helper_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	-I$(top_srcdir)/shared \
 	-I${top_builddir}/shared \
@@ -1520,44 +1520,44 @@ src_dhcp_manager_nm_dhcp_helper_CPPFLAGS = \
 	-DG_LOG_DOMAIN=\""nm-dhcp-helper"\" \
 	-DNMRUNDIR=\"$(nmrundir)\"
 
-src_dhcp_manager_nm_dhcp_helper_SOURCES = \
-	src/dhcp-manager/nm-dhcp-helper.c \
-	src/dhcp-manager/nm-dhcp-helper-api.h \
+src_dhcp_nm_dhcp_helper_SOURCES = \
+	src/dhcp/nm-dhcp-helper.c \
+	src/dhcp/nm-dhcp-helper-api.h \
 	$(NULL)
 
-src_dhcp_manager_nm_dhcp_helper_LDFLAGS = \
+src_dhcp_nm_dhcp_helper_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
 
-src_dhcp_manager_nm_dhcp_helper_LDADD = $(GLIB_LIBS)
+src_dhcp_nm_dhcp_helper_LDADD = $(GLIB_LIBS)
 
 ###############################################################################
-# src/dhcp-manager/tests
+# src/dhcp/tests
 ###############################################################################
 
-src_dhcp_manager_tests_cppflags = \
+src_dhcp_tests_cppflags = \
 	$(src_tests_cppflags) \
-	-DTESTDIR="\"$(abs_srcdir)/src/dhcp-manager/tests\""
+	-DTESTDIR="\"$(abs_srcdir)/src/dhcp/tests\""
 
-src_dhcp_manager_tests_ldadd = \
+src_dhcp_tests_ldadd = \
 	src/libNetworkManagerTest.la
 
 check_programs += \
-	src/dhcp-manager/tests/test-dhcp-dhclient \
-	src/dhcp-manager/tests/test-dhcp-utils
+	src/dhcp/tests/test-dhcp-dhclient \
+	src/dhcp/tests/test-dhcp-utils
 
-src_dhcp_manager_tests_test_dhcp_dhclient_CPPFLAGS = $(src_dhcp_manager_tests_cppflags)
-src_dhcp_manager_tests_test_dhcp_utils_CPPFLAGS = $(src_dhcp_manager_tests_cppflags)
+src_dhcp_tests_test_dhcp_dhclient_CPPFLAGS = $(src_dhcp_tests_cppflags)
+src_dhcp_tests_test_dhcp_utils_CPPFLAGS = $(src_dhcp_tests_cppflags)
 
-src_dhcp_manager_tests_test_dhcp_dhclient_LDADD = $(src_dhcp_manager_tests_ldadd)
-src_dhcp_manager_tests_test_dhcp_utils_LDADD = $(src_dhcp_manager_tests_ldadd)
+src_dhcp_tests_test_dhcp_dhclient_LDADD = $(src_dhcp_tests_ldadd)
+src_dhcp_tests_test_dhcp_utils_LDADD = $(src_dhcp_tests_ldadd)
 
 EXTRA_DIST += \
-	src/dhcp-manager/tests/test-dhclient-duid.leases \
-	src/dhcp-manager/tests/test-dhclient-commented-duid.leases \
-	src/dhcp-manager/tests/leases/basic.leases \
-	src/dhcp-manager/tests/leases/malformed1.leases \
-	src/dhcp-manager/tests/leases/malformed2.leases \
-	src/dhcp-manager/tests/leases/malformed3.leases
+	src/dhcp/tests/test-dhclient-duid.leases \
+	src/dhcp/tests/test-dhclient-commented-duid.leases \
+	src/dhcp/tests/leases/basic.leases \
+	src/dhcp/tests/leases/malformed1.leases \
+	src/dhcp/tests/leases/malformed2.leases \
+	src/dhcp/tests/leases/malformed3.leases
 
 ###############################################################################
 # src/ppp-manager

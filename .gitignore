@@ -242,10 +242,10 @@ test-*.trs
 /src/devices/tests/test-arping
 /src/devices/tests/test-lldp
 /src/devices/wifi/tests/test-general
-/src/dhcp-manager/nm-dhcp-helper
-/src/dhcp-manager/tests/test-dhcp-dhclient
-/src/dhcp-manager/tests/test-dhcp-options
-/src/dhcp-manager/tests/test-dhcp-utils
+/src/dhcp/nm-dhcp-helper
+/src/dhcp/tests/test-dhcp-dhclient
+/src/dhcp/tests/test-dhcp-options
+/src/dhcp/tests/test-dhcp-utils
 /src/dnsmasq-manager/tests/test-dnsmasq-utils
 /src/nm-iface-helper
 /src/ndisc/tests/test-ndisc-fake
@@ -288,6 +288,10 @@ test-*.trs
 /initscript/Slackware/rc.networkmanager
 /initscript/*/[Nn]etwork[Mm]anager
 /src/devices/wifi/tests/test-wifi-ap-utils
+/src/dhcp-manager/nm-dhcp-helper
+/src/dhcp-manager/tests/test-dhcp-dhclient
+/src/dhcp-manager/tests/test-dhcp-options
+/src/dhcp-manager/tests/test-dhcp-utils
 /src/rdisc/
 /src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh-utils
 /src/settings/plugins/ifnet/tests/check_ifnet

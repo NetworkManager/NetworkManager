@@ -272,7 +272,7 @@ main (int argc, char *argv[])
 
 		/* don't free these strings, we need them for the entire
 		 * process lifetime */
-		nm_dhcp_helper_path = g_strdup_printf ("%s/src/dhcp-manager/nm-dhcp-helper", path);
+		nm_dhcp_helper_path = g_strdup_printf ("%s/src/dhcp/nm-dhcp-helper", path);
 
 		g_free (path);
 	}
