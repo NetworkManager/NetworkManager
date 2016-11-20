@@ -959,7 +959,7 @@ src_cppflags = \
 	-I$(top_srcdir)/src/ppp-manager \
 	-I$(top_srcdir)/src/ndisc \
 	-I$(top_srcdir)/src/settings \
-	-I$(top_srcdir)/src/supplicant-manager \
+	-I$(top_srcdir)/src/supplicant \
 	-I$(top_srcdir)/src/vpn-manager \
 	\
 	-DPREFIX=\"$(prefix)\" \
@@ -1343,15 +1343,15 @@ src_libNetworkManager_la_SOURCES = \
 	src/settings/plugins/keyfile/nms-keyfile-writer.c \
 	src/settings/plugins/keyfile/nms-keyfile-writer.h \
 	\
-	src/supplicant-manager/nm-supplicant-config.c \
-	src/supplicant-manager/nm-supplicant-config.h \
-	src/supplicant-manager/nm-supplicant-interface.c \
-	src/supplicant-manager/nm-supplicant-interface.h \
-	src/supplicant-manager/nm-supplicant-manager.c \
-	src/supplicant-manager/nm-supplicant-manager.h \
-	src/supplicant-manager/nm-supplicant-settings-verify.c \
-	src/supplicant-manager/nm-supplicant-settings-verify.h \
-	src/supplicant-manager/nm-supplicant-types.h \
+	src/supplicant/nm-supplicant-config.c \
+	src/supplicant/nm-supplicant-config.h \
+	src/supplicant/nm-supplicant-interface.c \
+	src/supplicant/nm-supplicant-interface.h \
+	src/supplicant/nm-supplicant-manager.c \
+	src/supplicant/nm-supplicant-manager.h \
+	src/supplicant/nm-supplicant-settings-verify.c \
+	src/supplicant/nm-supplicant-settings-verify.h \
+	src/supplicant/nm-supplicant-types.h \
 	\
 	src/vpn-manager/nm-vpn-connection.c \
 	src/vpn-manager/nm-vpn-connection.h \
@@ -2453,7 +2453,7 @@ src_devices_wifi_libnm_device_plugin_wifi_la_CPPFLAGS = \
 	-I${top_srcdir}/src/devices \
 	-I${top_srcdir}/src/settings \
 	-I${top_srcdir}/src/platform \
-	-I${top_srcdir}/src/supplicant-manager \
+	-I${top_srcdir}/src/supplicant \
 	-I${top_builddir}/introspection \
 	-I${top_srcdir}/shared \
 	-I$(top_builddir)/shared \
@@ -2689,21 +2689,21 @@ src_ndisc_tests_test_ndisc_fake_LDFLAGS = $(src_ndisc_tests_flags)
 src_ndisc_tests_test_ndisc_fake_LDADD = $(src_ndisc_tests_ldadd)
 
 ###############################################################################
-# src/supplicant-manager/tests
+# src/supplicant/tests
 ###############################################################################
 
-check_programs += src/supplicant-manager/tests/test-supplicant-config
+check_programs += src/supplicant/tests/test-supplicant-config
 
-src_supplicant_manager_tests_test_supplicant_config_CPPFLAGS = \
+src_supplicant_tests_test_supplicant_config_CPPFLAGS = \
 	$(src_tests_cppflags) \
-	-DTEST_CERT_DIR=\"$(abs_srcdir)/src/supplicant-manager/tests/certs\"
+	-DTEST_CERT_DIR=\"$(abs_srcdir)/src/supplicant/tests/certs\"
 
-src_supplicant_manager_tests_test_supplicant_config_LDADD = \
+src_supplicant_tests_test_supplicant_config_LDADD = \
 	src/libNetworkManagerTest.la
 
 EXTRA_DIST += \
-	src/supplicant-manager/tests/certs/test-ca-cert.pem \
-	src/supplicant-manager/tests/certs/test-cert.p12
+	src/supplicant/tests/certs/test-ca-cert.pem \
+	src/supplicant/tests/certs/test-cert.p12
 
 ###############################################################################
 # src/tests/config
