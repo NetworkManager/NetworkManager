@@ -953,7 +953,7 @@ src_cppflags = \
 	-I$(top_srcdir)/src/devices \
 	-I$(top_srcdir)/src/dhcp \
 	-I$(top_srcdir)/src/dns \
-	-I$(top_srcdir)/src/dnsmasq-manager \
+	-I$(top_srcdir)/src/dnsmasq \
 	-I$(top_srcdir)/src/platform \
 	-I$(top_srcdir)/src/platform/wifi \
 	-I$(top_srcdir)/src/ppp-manager \
@@ -1310,10 +1310,10 @@ src_libNetworkManager_la_SOURCES = \
 	src/dns/nm-dns-plugin.c \
 	src/dns/nm-dns-plugin.h \
 	\
-	src/dnsmasq-manager/nm-dnsmasq-manager.c \
-	src/dnsmasq-manager/nm-dnsmasq-manager.h \
-	src/dnsmasq-manager/nm-dnsmasq-utils.c \
-	src/dnsmasq-manager/nm-dnsmasq-utils.h \
+	src/dnsmasq/nm-dnsmasq-manager.c \
+	src/dnsmasq/nm-dnsmasq-manager.h \
+	src/dnsmasq/nm-dnsmasq-utils.c \
+	src/dnsmasq/nm-dnsmasq-utils.h \
 	\
 	src/ppp-manager/nm-ppp-manager.c \
 	src/ppp-manager/nm-ppp-manager.h \
@@ -2553,16 +2553,16 @@ check_local += check-local-devices-team
 endif
 
 ###############################################################################
-# src/dnsmasq-manager/tests
+# src/dnsmasq/tests
 ###############################################################################
 
-check_programs += src/dnsmasq-manager/tests/test-dnsmasq-utils
+check_programs += src/dnsmasq/tests/test-dnsmasq-utils
 
-src_dnsmasq_manager_tests_test_dnsmasq_utils_CPPFLAGS = \
+src_dnsmasq_tests_test_dnsmasq_utils_CPPFLAGS = \
 	$(src_tests_cppflags) \
 	-DTESTDIR="\"$(abs_srcdir)\""
 
-src_dnsmasq_manager_tests_test_dnsmasq_utils_LDADD = \
+src_dnsmasq_tests_test_dnsmasq_utils_LDADD = \
 	src/libNetworkManagerTest.la
 
 ###############################################################################

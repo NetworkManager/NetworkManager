@@ -246,7 +246,7 @@ test-*.trs
 /src/dhcp/tests/test-dhcp-dhclient
 /src/dhcp/tests/test-dhcp-options
 /src/dhcp/tests/test-dhcp-utils
-/src/dnsmasq-manager/tests/test-dnsmasq-utils
+/src/dnsmasq/tests/test-dnsmasq-utils
 /src/nm-iface-helper
 /src/ndisc/tests/test-ndisc-fake
 /src/ndisc/tests/test-ndisc-linux
@@ -292,6 +292,7 @@ test-*.trs
 /src/dhcp-manager/tests/test-dhcp-dhclient
 /src/dhcp-manager/tests/test-dhcp-options
 /src/dhcp-manager/tests/test-dhcp-utils
+/src/dnsmasq-manager/tests/test-dnsmasq-utils
 /src/rdisc/
 /src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh-utils
 /src/settings/plugins/ifnet/tests/check_ifnet
