@@ -34,8 +34,8 @@
 
 #include "nm-device-private.h"
 #include "nm-platform.h"
-#include "ppp-manager/nm-ppp-manager.h"
-#include "ppp-manager/nm-ppp-status.h"
+#include "ppp/nm-ppp-manager.h"
+#include "ppp/nm-ppp-status.h"
 #include "nm-setting-adsl.h"
 #include "nm-utils.h"
 

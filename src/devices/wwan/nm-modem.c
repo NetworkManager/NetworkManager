@@ -36,7 +36,7 @@
 #include "nm-act-request.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
-#include "ppp-manager/nm-ppp-status.h"
+#include "ppp/nm-ppp-status.h"
 
 /*****************************************************************************/
 

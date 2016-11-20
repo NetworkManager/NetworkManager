@@ -956,7 +956,7 @@ src_cppflags = \
 	-I$(top_srcdir)/src/dnsmasq \
 	-I$(top_srcdir)/src/platform \
 	-I$(top_srcdir)/src/platform/wifi \
-	-I$(top_srcdir)/src/ppp-manager \
+	-I$(top_srcdir)/src/ppp \
 	-I$(top_srcdir)/src/ndisc \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/src/supplicant \
@@ -1315,9 +1315,9 @@ src_libNetworkManager_la_SOURCES = \
 	src/dnsmasq/nm-dnsmasq-utils.c \
 	src/dnsmasq/nm-dnsmasq-utils.h \
 	\
-	src/ppp-manager/nm-ppp-manager.c \
-	src/ppp-manager/nm-ppp-manager.h \
-	src/ppp-manager/nm-ppp-status.h \
+	src/ppp/nm-ppp-manager.c \
+	src/ppp/nm-ppp-manager.h \
+	src/ppp/nm-ppp-status.h \
 	\
 	src/settings/nm-agent-manager.c \
 	src/settings/nm-agent-manager.h \
@@ -1560,14 +1560,14 @@ EXTRA_DIST += \
 	src/dhcp/tests/leases/malformed3.leases
 
 ###############################################################################
-# src/ppp-manager
+# src/ppp
 ###############################################################################
 
 if WITH_PPP
 
-pppd_plugin_LTLIBRARIES += src/ppp-manager/nm-pppd-plugin.la
+pppd_plugin_LTLIBRARIES += src/ppp/nm-pppd-plugin.la
 
-src_ppp_manager_nm_pppd_plugin_la_CPPFLAGS = \
+src_ppp_nm_pppd_plugin_la_CPPFLAGS = \
 	-I${top_srcdir}/shared \
 	-I${top_builddir}/shared \
 	-I${top_srcdir}/libnm-core \
@@ -1577,15 +1577,15 @@ src_ppp_manager_nm_pppd_plugin_la_CPPFLAGS = \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS)
 
-src_ppp_manager_nm_pppd_plugin_la_SOURCES = \
-	src/ppp-manager/nm-pppd-plugin.c \
-	src/ppp-manager/nm-pppd-plugin.h \
-	src/ppp-manager/nm-ppp-status.h
+src_ppp_nm_pppd_plugin_la_SOURCES = \
+	src/ppp/nm-pppd-plugin.c \
+	src/ppp/nm-pppd-plugin.h \
+	src/ppp/nm-ppp-status.h
 
-src_ppp_manager_nm_pppd_plugin_la_LDFLAGS = \
+src_ppp_nm_pppd_plugin_la_LDFLAGS = \
 	-module -avoid-version
 
-src_ppp_manager_nm_pppd_plugin_la_LIBADD = \
+src_ppp_nm_pppd_plugin_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(DL_LIBS)
 
