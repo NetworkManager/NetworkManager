@@ -960,7 +960,7 @@ src_cppflags = \
 	-I$(top_srcdir)/src/ndisc \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/src/supplicant \
-	-I$(top_srcdir)/src/vpn-manager \
+	-I$(top_srcdir)/src/vpn \
 	\
 	-DPREFIX=\"$(prefix)\" \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
@@ -1353,10 +1353,10 @@ src_libNetworkManager_la_SOURCES = \
 	src/supplicant/nm-supplicant-settings-verify.h \
 	src/supplicant/nm-supplicant-types.h \
 	\
-	src/vpn-manager/nm-vpn-connection.c \
-	src/vpn-manager/nm-vpn-connection.h \
-	src/vpn-manager/nm-vpn-manager.c \
-	src/vpn-manager/nm-vpn-manager.h \
+	src/vpn/nm-vpn-connection.c \
+	src/vpn/nm-vpn-connection.h \
+	src/vpn/nm-vpn-manager.c \
+	src/vpn/nm-vpn-manager.h \
 	\
 	src/nm-act-request.c \
 	src/nm-act-request.h \
