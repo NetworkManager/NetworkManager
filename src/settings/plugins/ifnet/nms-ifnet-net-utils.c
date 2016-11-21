@@ -30,7 +30,7 @@
 
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
-#include "nm-settings-plugin.h"
+#include "settings/nm-settings-plugin.h"
 #include "nm-config.h"
 
 #include "nms-ifnet-wpa-parser.h"

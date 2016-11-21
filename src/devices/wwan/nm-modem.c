@@ -28,15 +28,15 @@
 #include <termios.h>
 
 #include "nm-core-internal.h"
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 #include "nm-setting-connection.h"
 #include "NetworkManagerUtils.h"
-#include "nm-device-private.h"
+#include "devices/nm-device-private.h"
 #include "nm-route-manager.h"
 #include "nm-act-request.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
-#include "ppp-manager/nm-ppp-status.h"
+#include "ppp/nm-ppp-status.h"
 
 /*****************************************************************************/
 

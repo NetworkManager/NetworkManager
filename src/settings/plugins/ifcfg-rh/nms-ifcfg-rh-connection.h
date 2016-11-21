@@ -22,7 +22,7 @@
 #define __NETWORKMANAGER_IFCFG_CONNECTION_H__
 
 #include "nm-dbus-interface.h"
-#include "nm-settings-connection.h"
+#include "settings/nm-settings-connection.h"
 
 #define NM_TYPE_IFCFG_CONNECTION            (nm_ifcfg_connection_get_type ())
 #define NM_IFCFG_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_IFCFG_CONNECTION, NMIfcfgConnection))

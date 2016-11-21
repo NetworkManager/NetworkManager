@@ -21,9 +21,10 @@
 #ifndef __NETWORKMANAGER_DEVICE_BT_H__
 #define __NETWORKMANAGER_DEVICE_BT_H__
 
-#include "nm-device.h"
+#include "devices/nm-device.h"
 #include "nm-bluez-device.h"
-#include "nm-modem.h"
+
+#include "devices/wwan/nm-modem.h"
 
 #define NM_TYPE_DEVICE_BT                   (nm_device_bt_get_type ())
 #define NM_DEVICE_BT(obj)                   (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE_BT, NMDeviceBt))

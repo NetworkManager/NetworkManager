@@ -34,7 +34,7 @@
 
 #include "wifi-utils-private.h"
 #include "wifi-utils-nl80211.h"
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 #include "nm-utils.h"
 
 

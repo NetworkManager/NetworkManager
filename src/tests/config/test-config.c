@@ -24,7 +24,7 @@
 
 #include "nm-config.h"
 #include "nm-test-device.h"
-#include "nm-fake-platform.h"
+#include "platform/nm-fake-platform.h"
 #include "nm-bus-manager.h"
 
 #include "nm-test-utils-core.h"

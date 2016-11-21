@@ -24,9 +24,9 @@
 #include <gmodule.h>
 
 #include "nm-manager.h"
-#include "nm-device-factory.h"
+#include "devices/nm-device-factory.h"
 #include "nm-device-team.h"
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 #include "nm-core-internal.h"
 
 /*****************************************************************************/

@@ -31,7 +31,7 @@
 #include <linux/if.h>
 
 #include "nm-core-internal.h"
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 #include "nm-utils.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"

@@ -25,16 +25,16 @@
 #include <string.h>
 
 #include "nm-modem.h"
-#include "nm-device-private.h"
+#include "devices/nm-device-private.h"
 #include "nm-rfkill-manager.h"
-#include "nm-settings-connection.h"
+#include "settings/nm-settings-connection.h"
 #include "nm-modem-broadband.h"
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
 
 #include "nmdbus-device-modem.h"
 
-#include "nm-device-logging.h"
+#include "devices/nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceModem);
 
 /*****************************************************************************/

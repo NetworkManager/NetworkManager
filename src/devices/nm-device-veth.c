@@ -30,7 +30,7 @@
 #include "nm-device-veth.h"
 #include "nm-device-private.h"
 #include "nm-manager.h"
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 #include "nm-device-factory.h"
 
 #include "nmdbus-device-veth.h"

@@ -24,7 +24,7 @@
 #include <arpa/inet.h>
 
 #include "nm-dnsmasq-utils.h"
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 #include "nm-utils.h"
 
 gboolean

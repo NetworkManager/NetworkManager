@@ -22,7 +22,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 

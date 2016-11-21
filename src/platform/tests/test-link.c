@@ -25,9 +25,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "nmp-object.h"
-#include "nmp-netns.h"
-#include "nm-platform-utils.h"
+#include "platform/nmp-object.h"
+#include "platform/nmp-netns.h"
+#include "platform/nm-platform-utils.h"
 
 #include "test-common.h"
 #include "nm-test-utils-core.h"

@@ -38,14 +38,14 @@
 #include "nm-dbus-interface.h"
 #include "NetworkManagerUtils.h"
 #include "nm-manager.h"
-#include "nm-linux-platform.h"
+#include "platform/nm-linux-platform.h"
 #include "nm-bus-manager.h"
-#include "nm-device.h"
-#include "nm-dhcp-manager.h"
+#include "devices/nm-device.h"
+#include "dhcp/nm-dhcp-manager.h"
 #include "nm-config.h"
 #include "nm-session-monitor.h"
 #include "nm-dispatcher.h"
-#include "nm-settings.h"
+#include "settings/nm-settings.h"
 #include "nm-auth-manager.h"
 #include "nm-core-internal.h"
 #include "nm-exported-object.h"
@@ -272,7 +272,7 @@ main (int argc, char *argv[])
 
 		/* don't free these strings, we need them for the entire
 		 * process lifetime */
-		nm_dhcp_helper_path = g_strdup_printf ("%s/src/dhcp-manager/nm-dhcp-helper", path);
+		nm_dhcp_helper_path = g_strdup_printf ("%s/src/dhcp/nm-dhcp-helper", path);
 
 		g_free (path);
 	}

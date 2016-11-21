@@ -28,8 +28,8 @@
 #include "nm-core-internal.h"
 #include "nm-bt-error.h"
 #include "nm-bluez-common.h"
-#include "nm-settings.h"
-#include "nm-settings-connection.h"
+#include "settings/nm-settings.h"
+#include "settings/nm-settings-connection.h"
 #include "NetworkManagerUtils.h"
 
 #if WITH_BLUEZ5_DUN

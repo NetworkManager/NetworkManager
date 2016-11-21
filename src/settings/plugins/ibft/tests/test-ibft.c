@@ -32,7 +32,7 @@
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 
-#include "nms-ibft-reader.h"
+#include "settings/plugins/ibft/nms-ibft-reader.h"
 
 #include "nm-test-utils-core.h"
 

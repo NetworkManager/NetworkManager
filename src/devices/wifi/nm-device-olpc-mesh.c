@@ -37,23 +37,23 @@
 #include <sys/ioctl.h>
 #include <errno.h>
 
-#include "nm-device.h"
+#include "devices/nm-device.h"
 #include "nm-device-wifi.h"
-#include "nm-device-private.h"
+#include "devices/nm-device-private.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-act-request.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-olpc-mesh.h"
 #include "nm-manager.h"
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 
 /* This is a bug; but we can't really change API now... */
 #include "nm-vpn-dbus-interface.h"
 
 #include "nmdbus-device-olpc-mesh.h"
 
-#include "nm-device-logging.h"
+#include "devices/nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceOlpcMesh);
 
 /*****************************************************************************/

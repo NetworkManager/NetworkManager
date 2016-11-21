@@ -26,7 +26,7 @@
 #include <string.h>
 
 #include "nm-config.h"
-#include "nm-device.h"
+#include "devices/nm-device.h"
 #include "nm-core-internal.h"
 #include "nm-keyfile-internal.h"
 

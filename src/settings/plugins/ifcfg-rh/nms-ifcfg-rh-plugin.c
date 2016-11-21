@@ -34,7 +34,7 @@
 
 #include "nm-dbus-compat.h"
 #include "nm-setting-connection.h"
-#include "nm-settings-plugin.h"
+#include "settings/nm-settings-plugin.h"
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"
 #include "nm-exported-object.h"
@@ -46,7 +46,7 @@
 #include "nms-ifcfg-rh-utils.h"
 #include "shvar.h"
 
-#include "nmdbus-ifcfg-rh.h"
+#include "settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h"
 
 #define IFCFGRH1_DBUS_SERVICE_NAME "com.redhat.ifcfgrh1"
 #define IFCFGRH1_DBUS_OBJECT_PATH "/com/redhat/ifcfgrh1"

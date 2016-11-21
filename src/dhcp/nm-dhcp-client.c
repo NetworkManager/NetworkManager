@@ -33,7 +33,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-dhcp-utils.h"
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 
 #include "nm-dhcp-client-logging.h"
 

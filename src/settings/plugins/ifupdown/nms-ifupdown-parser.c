@@ -32,7 +32,7 @@
 #include <ctype.h>
 
 #include "nm-core-internal.h"
-#include "nm-settings-plugin.h"
+#include "settings/nm-settings-plugin.h"
 
 #include "nms-ifupdown-plugin.h"
 #include "nms-ifupdown-parser.h"

@@ -26,7 +26,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 
 #include "nm-test-utils-core.h"
 

@@ -25,9 +25,9 @@
 #include <string.h>
 
 #include "nm-core-internal.h"
-#include "nm-device-private.h"
+#include "devices/nm-device-private.h"
 #include "nm-modem.h"
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 #include "nm-ip4-config.h"
 
 #define VARIANT_IS_OF_TYPE_BOOLEAN(v)      ((v) != NULL && ( g_variant_is_of_type ((v), G_VARIANT_TYPE_BOOLEAN) ))

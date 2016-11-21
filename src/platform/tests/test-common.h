@@ -4,9 +4,9 @@
 #include <string.h>
 #include <arpa/inet.h>
 
-#include "nm-platform.h"
-#include "nm-fake-platform.h"
-#include "nm-linux-platform.h"
+#include "platform/nm-platform.h"
+#include "platform/nm-fake-platform.h"
+#include "platform/nm-linux-platform.h"
 
 #include "nm-test-utils-core.h"
 

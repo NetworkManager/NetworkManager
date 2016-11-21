@@ -22,7 +22,7 @@
 
 #include <arpa/inet.h>
 
-#include "nm-dnsmasq-utils.h"
+#include "dnsmasq/nm-dnsmasq-utils.h"
 
 #include "nm-test-utils-core.h"
 
@@ -92,7 +92,7 @@ main (int argc, char **argv)
 {
 	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
 
-	g_test_add_func ("/dnsmasq-manager/address-ranges", test_address_ranges);
+	g_test_add_func ("/dnsmasq/address-ranges", test_address_ranges);
 
 	return g_test_run ();
 }

@@ -23,10 +23,10 @@
 #include <string.h>
 #include <syslog.h>
 
-#include "nm-ndisc.h"
-#include "nm-lndp-ndisc.h"
+#include "ndisc/nm-ndisc.h"
+#include "ndisc/nm-lndp-ndisc.h"
 
-#include "nm-linux-platform.h"
+#include "platform/nm-linux-platform.h"
 
 #include "nm-test-utils-core.h"
 

@@ -22,7 +22,7 @@
 #ifndef __NETWORKMANAGER_DEVICE_WIFI_H__
 #define __NETWORKMANAGER_DEVICE_WIFI_H__
 
-#include "nm-device.h"
+#include "devices/nm-device.h"
 #include "nm-wifi-ap.h"
 
 #define NM_TYPE_DEVICE_WIFI             (nm_device_wifi_get_type ())

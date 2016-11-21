@@ -23,12 +23,12 @@
 #include <string.h>
 #include <gmodule.h>
 
-#include "nm-device-factory.h"
+#include "devices/nm-device-factory.h"
 #include "nm-setting-gsm.h"
 #include "nm-setting-cdma.h"
 #include "nm-modem-manager.h"
 #include "nm-device-modem.h"
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 
 /*****************************************************************************/
 

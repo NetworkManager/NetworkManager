@@ -20,8 +20,8 @@
 
 #include "nm-default.h"
 
-#include "nm-arping-manager.h"
-#include "test-common.h"
+#include "devices/nm-arping-manager.h"
+#include "platform/tests/test-common.h"
 
 #define IFACE_VETH0 "nm-test-veth0"
 #define IFACE_VETH1 "nm-test-veth1"

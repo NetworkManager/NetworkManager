@@ -30,9 +30,9 @@
 
 #include "nm-core-internal.h"
 
-#include "nms-keyfile-reader.h"
-#include "nms-keyfile-writer.h"
-#include "nms-keyfile-utils.h"
+#include "settings/plugins/keyfile/nms-keyfile-reader.h"
+#include "settings/plugins/keyfile/nms-keyfile-writer.h"
+#include "settings/plugins/keyfile/nms-keyfile-utils.h"
 
 #include "nm-test-utils-core.h"
 

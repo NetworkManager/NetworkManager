@@ -21,7 +21,7 @@
 #ifndef __NMS_IBFT_CONNECTION_H__
 #define __NMS_IBFT_CONNECTION_H__
 
-#include <nm-settings-connection.h>
+#include "settings/nm-settings-connection.h"
 
 #define NMS_TYPE_IBFT_CONNECTION            (nms_ibft_connection_get_type ())
 #define NMS_IBFT_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMS_TYPE_IBFT_CONNECTION, NMSIbftConnection))

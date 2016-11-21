@@ -34,7 +34,7 @@
 #include <unistd.h>
 
 #include "nm-core-internal.h"
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 #include "NetworkManagerUtils.h"
 
 /*****************************************************************************/

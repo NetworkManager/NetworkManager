@@ -31,7 +31,7 @@
 #include "wifi-utils-private.h"
 #include "wifi-utils-wext.h"
 #include "nm-utils.h"
-#include "nm-platform-utils.h"
+#include "platform/nm-platform-utils.h"
 
 /* Hacks necessary to #include wireless.h; yay for WEXT */
 #ifndef __user

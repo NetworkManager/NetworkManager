@@ -32,8 +32,8 @@
 
 #include "nm-core-internal.h"
 
-#include "nm-supplicant-config.h"
-#include "nm-supplicant-settings-verify.h"
+#include "supplicant/nm-supplicant-config.h"
+#include "supplicant/nm-supplicant-settings-verify.h"
 
 #include "nm-test-utils-core.h"
 

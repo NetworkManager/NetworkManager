@@ -22,7 +22,7 @@
 
 #include <string.h>
 
-#include "nm-wifi-utils.h"
+#include "devices/wifi/nm-wifi-utils.h"
 
 #include "nm-core-internal.h"
 

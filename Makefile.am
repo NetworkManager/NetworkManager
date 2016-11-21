@@ -464,10 +464,10 @@ nodist_libnminclude_HEADERS += \
 ###############################################################################
 
 dflt_cppflags_libnm_core = \
-	-I${srcdir}/shared \
-	-I${builddir}/shared \
-	-I${srcdir}/libnm-core \
-	-I${builddir}/libnm-core \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-core \
+	-I$(builddir)/libnm-core \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(JANSSON_CFLAGS)
@@ -887,8 +887,8 @@ check_programs += $(libnm_tests_programs)
 
 libnm_tests_cppflags = \
 	$(dflt_cppflags_libnm_core) \
-	-I$(top_srcdir)/libnm \
-	-I$(top_builddir)/libnm \
+	-I$(srcdir)/libnm \
+	-I$(builddir)/libnm \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB \
 	-DTEST_NM_SERVICE=\"$(abs_top_srcdir)/tools/test-networkmanager-service.py\"
 
@@ -926,20 +926,20 @@ libnm_tests_test_secret_agent_LDADD = $(libnm_tests_ldadd)
 check_ltlibraries += libnm/tests/libnm-vpn-plugin-utils-test.la
 
 libnm_tests_libnm_vpn_plugin_utils_test_la_SOURCES = \
-     shared/nm-utils/nm-vpn-plugin-utils.c \
-     shared/nm-utils/nm-vpn-plugin-utils.h
+	shared/nm-utils/nm-vpn-plugin-utils.c \
+	shared/nm-utils/nm-vpn-plugin-utils.h
 
 libnm_tests_libnm_vpn_plugin_utils_test_la_CFLAGS = \
-    -I$(srcdir)/shared \
-    -I$(builddir)/shared \
-    -I$(srcdir)/libnm-core \
-    -I$(builddir)/libnm-core \
-    -I$(srcdir)/libnm \
-    -I$(builddir)/libnm \
-    $(GLIB_CFLAGS)
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-core \
+	-I$(builddir)/libnm-core \
+	-I$(srcdir)/libnm \
+	-I$(builddir)/libnm \
+	$(GLIB_CFLAGS)
 
 libnm_tests_libnm_vpn_plugin_utils_test_la_LIBADD = \
-    $(GLIB_LIBS)
+	$(GLIB_LIBS)
 
 ###############################################################################
 # src/
@@ -947,20 +947,9 @@ libnm_tests_libnm_vpn_plugin_utils_test_la_LIBADD = \
 
 src_cppflags = \
 	$(dflt_cppflags_libnm_core) \
-	-I$(top_builddir)/introspection \
-	-I$(top_srcdir)/src \
-	-I$(top_builddir)/src \
-	-I$(top_srcdir)/src/devices \
-	-I$(top_srcdir)/src/dhcp-manager \
-	-I$(top_srcdir)/src/dns-manager \
-	-I$(top_srcdir)/src/dnsmasq-manager \
-	-I$(top_srcdir)/src/platform \
-	-I$(top_srcdir)/src/platform/wifi \
-	-I$(top_srcdir)/src/ppp-manager \
-	-I$(top_srcdir)/src/ndisc \
-	-I$(top_srcdir)/src/settings \
-	-I$(top_srcdir)/src/supplicant-manager \
-	-I$(top_srcdir)/src/vpn-manager \
+	-I$(builddir)/introspection \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
 	\
 	-DPREFIX=\"$(prefix)\" \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
@@ -1013,16 +1002,16 @@ noinst_LTLIBRARIES += \
 ###############################################################################
 
 src_libsystemd_nm_la_cppflags = \
-	-I$(top_srcdir)/shared/ \
-	-I$(top_builddir)/shared/ \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-core \
+	-I$(builddir)/libnm-core \
 	-I$(srcdir)/src \
-	-I$(top_srcdir)/src/systemd/sd-adapt/ \
-	-I$(top_srcdir)/src/systemd/src/systemd/ \
-	-I$(top_srcdir)/src/systemd/src/basic/ \
-	-I$(top_srcdir)/src/systemd/src/shared/ \
-	-I$(top_srcdir)/src/systemd/src/libsystemd-network/ \
+	-I$(srcdir)/src/systemd/sd-adapt \
+	-I$(srcdir)/src/systemd/src/systemd \
+	-I$(srcdir)/src/systemd/src/basic \
+	-I$(srcdir)/src/systemd/src/shared \
+	-I$(srcdir)/src/systemd/src/libsystemd-network \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD \
 	$(GLIB_CFLAGS) \
 	$(CODE_COVERAGE_CFLAGS)
@@ -1215,14 +1204,14 @@ src_libNetworkManagerBase_la_SOURCES = \
 	src/nm-route-manager.c \
 	src/nm-route-manager.h \
 	\
-	src/dhcp-manager/nm-dhcp-client.c \
-	src/dhcp-manager/nm-dhcp-client.h \
-	src/dhcp-manager/nm-dhcp-client-logging.h \
-	src/dhcp-manager/nm-dhcp-utils.c \
-	src/dhcp-manager/nm-dhcp-utils.h \
-	src/dhcp-manager/nm-dhcp-systemd.c \
-	src/dhcp-manager/nm-dhcp-manager.c \
-	src/dhcp-manager/nm-dhcp-manager.h \
+	src/dhcp/nm-dhcp-client.c \
+	src/dhcp/nm-dhcp-client.h \
+	src/dhcp/nm-dhcp-client-logging.h \
+	src/dhcp/nm-dhcp-utils.c \
+	src/dhcp/nm-dhcp-utils.h \
+	src/dhcp/nm-dhcp-systemd.c \
+	src/dhcp/nm-dhcp-manager.c \
+	src/dhcp/nm-dhcp-manager.h \
 	\
 	src/main-utils.c \
 	src/main-utils.h \
@@ -1291,33 +1280,33 @@ src_libNetworkManager_la_SOURCES = \
 	src/devices/nm-device-vxlan.c \
 	src/devices/nm-device-vxlan.h \
 	\
-	src/dhcp-manager/nm-dhcp-dhclient.c \
-	src/dhcp-manager/nm-dhcp-dhcpcd.c \
-	src/dhcp-manager/nm-dhcp-helper-api.h \
-	src/dhcp-manager/nm-dhcp-listener.c \
-	src/dhcp-manager/nm-dhcp-listener.h \
-	src/dhcp-manager/nm-dhcp-dhclient-utils.c \
-	src/dhcp-manager/nm-dhcp-dhclient-utils.h \
+	src/dhcp/nm-dhcp-dhclient.c \
+	src/dhcp/nm-dhcp-dhcpcd.c \
+	src/dhcp/nm-dhcp-helper-api.h \
+	src/dhcp/nm-dhcp-listener.c \
+	src/dhcp/nm-dhcp-listener.h \
+	src/dhcp/nm-dhcp-dhclient-utils.c \
+	src/dhcp/nm-dhcp-dhclient-utils.h \
 	\
-	src/dns-manager/nm-dns-dnsmasq.c \
-	src/dns-manager/nm-dns-dnsmasq.h \
-	src/dns-manager/nm-dns-systemd-resolved.c \
-	src/dns-manager/nm-dns-systemd-resolved.h \
-	src/dns-manager/nm-dns-unbound.c \
-	src/dns-manager/nm-dns-unbound.h \
-	src/dns-manager/nm-dns-manager.c \
-	src/dns-manager/nm-dns-manager.h \
-	src/dns-manager/nm-dns-plugin.c \
-	src/dns-manager/nm-dns-plugin.h \
+	src/dns/nm-dns-dnsmasq.c \
+	src/dns/nm-dns-dnsmasq.h \
+	src/dns/nm-dns-systemd-resolved.c \
+	src/dns/nm-dns-systemd-resolved.h \
+	src/dns/nm-dns-unbound.c \
+	src/dns/nm-dns-unbound.h \
+	src/dns/nm-dns-manager.c \
+	src/dns/nm-dns-manager.h \
+	src/dns/nm-dns-plugin.c \
+	src/dns/nm-dns-plugin.h \
 	\
-	src/dnsmasq-manager/nm-dnsmasq-manager.c \
-	src/dnsmasq-manager/nm-dnsmasq-manager.h \
-	src/dnsmasq-manager/nm-dnsmasq-utils.c \
-	src/dnsmasq-manager/nm-dnsmasq-utils.h \
+	src/dnsmasq/nm-dnsmasq-manager.c \
+	src/dnsmasq/nm-dnsmasq-manager.h \
+	src/dnsmasq/nm-dnsmasq-utils.c \
+	src/dnsmasq/nm-dnsmasq-utils.h \
 	\
-	src/ppp-manager/nm-ppp-manager.c \
-	src/ppp-manager/nm-ppp-manager.h \
-	src/ppp-manager/nm-ppp-status.h \
+	src/ppp/nm-ppp-manager.c \
+	src/ppp/nm-ppp-manager.h \
+	src/ppp/nm-ppp-status.h \
 	\
 	src/settings/nm-agent-manager.c \
 	src/settings/nm-agent-manager.h \
@@ -1343,20 +1332,20 @@ src_libNetworkManager_la_SOURCES = \
 	src/settings/plugins/keyfile/nms-keyfile-writer.c \
 	src/settings/plugins/keyfile/nms-keyfile-writer.h \
 	\
-	src/supplicant-manager/nm-supplicant-config.c \
-	src/supplicant-manager/nm-supplicant-config.h \
-	src/supplicant-manager/nm-supplicant-interface.c \
-	src/supplicant-manager/nm-supplicant-interface.h \
-	src/supplicant-manager/nm-supplicant-manager.c \
-	src/supplicant-manager/nm-supplicant-manager.h \
-	src/supplicant-manager/nm-supplicant-settings-verify.c \
-	src/supplicant-manager/nm-supplicant-settings-verify.h \
-	src/supplicant-manager/nm-supplicant-types.h \
+	src/supplicant/nm-supplicant-config.c \
+	src/supplicant/nm-supplicant-config.h \
+	src/supplicant/nm-supplicant-interface.c \
+	src/supplicant/nm-supplicant-interface.h \
+	src/supplicant/nm-supplicant-manager.c \
+	src/supplicant/nm-supplicant-manager.h \
+	src/supplicant/nm-supplicant-settings-verify.c \
+	src/supplicant/nm-supplicant-settings-verify.h \
+	src/supplicant/nm-supplicant-types.h \
 	\
-	src/vpn-manager/nm-vpn-connection.c \
-	src/vpn-manager/nm-vpn-connection.h \
-	src/vpn-manager/nm-vpn-manager.c \
-	src/vpn-manager/nm-vpn-manager.h \
+	src/vpn/nm-vpn-connection.c \
+	src/vpn/nm-vpn-connection.h \
+	src/vpn/nm-vpn-manager.c \
+	src/vpn/nm-vpn-manager.h \
 	\
 	src/nm-act-request.c \
 	src/nm-act-request.h \
@@ -1429,8 +1418,7 @@ src_libNetworkManager_la_LIBADD = \
 check_ltlibraries += src/libNetworkManagerTest.la
 
 src_tests_cppflags = \
-	$(src_cppflags) \
-	-I$(top_srcdir)/src/platform/tests
+	$(src_cppflags)
 
 if REQUIRE_ROOT_TESTS
 src_tests_cppflags += -DREQUIRE_ROOT_TESTS=1
@@ -1506,86 +1494,86 @@ EXTRA_DIST += \
 	src/NetworkManager.ver-orig
 
 ###############################################################################
-# src/dhcp-manager
+# src/dhcp
 ###############################################################################
 
-libexec_PROGRAMS += src/dhcp-manager/nm-dhcp-helper
+libexec_PROGRAMS += src/dhcp/nm-dhcp-helper
 
-src_dhcp_manager_nm_dhcp_helper_CPPFLAGS = \
+src_dhcp_nm_dhcp_helper_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
-	-I$(top_srcdir)/shared \
-	-I${top_builddir}/shared \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-core \
+	-I$(builddir)/libnm-core \
 	-DG_LOG_DOMAIN=\""nm-dhcp-helper"\" \
 	-DNMRUNDIR=\"$(nmrundir)\"
 
-src_dhcp_manager_nm_dhcp_helper_SOURCES = \
-	src/dhcp-manager/nm-dhcp-helper.c \
-	src/dhcp-manager/nm-dhcp-helper-api.h \
+src_dhcp_nm_dhcp_helper_SOURCES = \
+	src/dhcp/nm-dhcp-helper.c \
+	src/dhcp/nm-dhcp-helper-api.h \
 	$(NULL)
 
-src_dhcp_manager_nm_dhcp_helper_LDFLAGS = \
+src_dhcp_nm_dhcp_helper_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
 
-src_dhcp_manager_nm_dhcp_helper_LDADD = $(GLIB_LIBS)
+src_dhcp_nm_dhcp_helper_LDADD = $(GLIB_LIBS)
 
 ###############################################################################
-# src/dhcp-manager/tests
+# src/dhcp/tests
 ###############################################################################
 
-src_dhcp_manager_tests_cppflags = \
+src_dhcp_tests_cppflags = \
 	$(src_tests_cppflags) \
-	-DTESTDIR="\"$(abs_srcdir)/src/dhcp-manager/tests\""
+	-DTESTDIR="\"$(abs_srcdir)/src/dhcp/tests\""
 
-src_dhcp_manager_tests_ldadd = \
+src_dhcp_tests_ldadd = \
 	src/libNetworkManagerTest.la
 
 check_programs += \
-	src/dhcp-manager/tests/test-dhcp-dhclient \
-	src/dhcp-manager/tests/test-dhcp-utils
+	src/dhcp/tests/test-dhcp-dhclient \
+	src/dhcp/tests/test-dhcp-utils
 
-src_dhcp_manager_tests_test_dhcp_dhclient_CPPFLAGS = $(src_dhcp_manager_tests_cppflags)
-src_dhcp_manager_tests_test_dhcp_utils_CPPFLAGS = $(src_dhcp_manager_tests_cppflags)
+src_dhcp_tests_test_dhcp_dhclient_CPPFLAGS = $(src_dhcp_tests_cppflags)
+src_dhcp_tests_test_dhcp_utils_CPPFLAGS = $(src_dhcp_tests_cppflags)
 
-src_dhcp_manager_tests_test_dhcp_dhclient_LDADD = $(src_dhcp_manager_tests_ldadd)
-src_dhcp_manager_tests_test_dhcp_utils_LDADD = $(src_dhcp_manager_tests_ldadd)
+src_dhcp_tests_test_dhcp_dhclient_LDADD = $(src_dhcp_tests_ldadd)
+src_dhcp_tests_test_dhcp_utils_LDADD = $(src_dhcp_tests_ldadd)
 
 EXTRA_DIST += \
-	src/dhcp-manager/tests/test-dhclient-duid.leases \
-	src/dhcp-manager/tests/test-dhclient-commented-duid.leases \
-	src/dhcp-manager/tests/leases/basic.leases \
-	src/dhcp-manager/tests/leases/malformed1.leases \
-	src/dhcp-manager/tests/leases/malformed2.leases \
-	src/dhcp-manager/tests/leases/malformed3.leases
+	src/dhcp/tests/test-dhclient-duid.leases \
+	src/dhcp/tests/test-dhclient-commented-duid.leases \
+	src/dhcp/tests/leases/basic.leases \
+	src/dhcp/tests/leases/malformed1.leases \
+	src/dhcp/tests/leases/malformed2.leases \
+	src/dhcp/tests/leases/malformed3.leases
 
 ###############################################################################
-# src/ppp-manager
+# src/ppp
 ###############################################################################
 
 if WITH_PPP
 
-pppd_plugin_LTLIBRARIES += src/ppp-manager/nm-pppd-plugin.la
+pppd_plugin_LTLIBRARIES += src/ppp/nm-pppd-plugin.la
 
-src_ppp_manager_nm_pppd_plugin_la_CPPFLAGS = \
-	-I${top_srcdir}/shared \
-	-I${top_builddir}/shared \
-	-I${top_srcdir}/libnm-core \
-	-I${top_srcdir}/src \
-	-I${top_builddir}/libnm-core \
+src_ppp_nm_pppd_plugin_la_CPPFLAGS = \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-core \
+	-I$(srcdir)/src \
+	-I$(builddir)/libnm-core \
 	-DG_LOG_DOMAIN=\""nm-pppd-plugin"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS)
 
-src_ppp_manager_nm_pppd_plugin_la_SOURCES = \
-	src/ppp-manager/nm-pppd-plugin.c \
-	src/ppp-manager/nm-pppd-plugin.h \
-	src/ppp-manager/nm-ppp-status.h
+src_ppp_nm_pppd_plugin_la_SOURCES = \
+	src/ppp/nm-pppd-plugin.c \
+	src/ppp/nm-pppd-plugin.h \
+	src/ppp/nm-ppp-status.h
 
-src_ppp_manager_nm_pppd_plugin_la_LDFLAGS = \
+src_ppp_nm_pppd_plugin_la_LDFLAGS = \
 	-module -avoid-version
 
-src_ppp_manager_nm_pppd_plugin_la_LIBADD = \
+src_ppp_nm_pppd_plugin_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(DL_LIBS)
 
@@ -1599,7 +1587,6 @@ check_programs += src/settings/plugins/keyfile/tests/test-keyfile
 
 src_settings_plugins_keyfile_tests_test_keyfile_CPPFLAGS = \
 	$(src_tests_cppflags) \
-	-I$(top_srcdir)/src/settings/plugins/keyfile \
 	-DTEST_KEYFILES_DIR=\"$(abs_srcdir)/src/settings/plugins/keyfile/tests/keyfiles\" \
 	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/src/settings/plugins/keyfile/tests/keyfiles\"
 
@@ -1659,13 +1646,11 @@ core_plugins += src/settings/plugins/ibft/libnm-settings-plugin-ibft.la
 noinst_LTLIBRARIES += src/settings/plugins/ibft/libnms-ibft-core.la
 
 src_settings_plugins_ibft_cppflags = \
-	-I$(top_srcdir)/src/ \
-	-I$(top_srcdir)/src/platform \
-	-I$(top_srcdir)/src/settings \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
+	-I$(srcdir)/src \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-core \
+	-I$(builddir)/libnm-core \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS) \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
@@ -1698,14 +1683,11 @@ check_programs += src/settings/plugins/ibft/tests/test-ibft
 src_settings_plugins_ibft_tests_test_ibft_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(CODE_COVERAGE_CFLAGS) \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
-	-I$(top_srcdir)/src/ \
-	-I$(top_srcdir)/src/platform \
-	-I$(top_srcdir)/src/settings \
-	-I$(srcdir)/src/settings/plugins/ibft \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-core \
+	-I$(builddir)/libnm-core \
+	-I$(srcdir)/src \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	-DTEST_IBFT_DIR=\"$(abs_srcdir)/src/settings/plugins/ibft/tests\" \
@@ -1750,15 +1732,12 @@ noinst_LTLIBRARIES += \
 	src/settings/plugins/ifcfg-rh/libnms-ifcfg-rh-core.la
 
 src_settings_plugins_ifcfg_rh_cppflags = \
-	-I$(top_srcdir)/src/ \
-	-I$(top_srcdir)/src/platform \
-	-I$(top_srcdir)/src/settings \
-	-I$(top_srcdir)/src/settings/plugins/ifcfg-rh \
-	-I$(top_builddir)/src/settings/plugins/ifcfg-rh \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-core \
+	-I$(builddir)/libnm-core \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS) \
 	$(NSS_CFLAGS) \
@@ -1801,6 +1780,8 @@ src_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_SOURCES = \
 
 src_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_CPPFLAGS = $(src_settings_plugins_ifcfg_rh_cppflags)
 
+$(src_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
 ###############################################################################
 
 src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_SOURCES = \
@@ -1819,6 +1800,9 @@ src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_LIBADD = \
 	src/settings/plugins/ifcfg-rh/libnms-ifcfg-rh-core.la \
 	src/settings/plugins/ifcfg-rh/libnmdbus-ifcfg-rh.la
 
+$(src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_OBJECTS): src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h
+
 check-local-symbols-settings-ifcfg-rh: src/settings/plugins/ifcfg-rh/libnm-settings-plugin-ifcfg-rh.la
 	$(call check_so_symbols,$(builddir)/src/settings/plugins/ifcfg-rh/.libs/libnm-settings-plugin-ifcfg-rh.so)
 
@@ -1835,7 +1819,6 @@ src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_SOURCES = \
 
 src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_CPPFLAGS = \
 	$(src_tests_cppflags) \
-	-I$(top_srcdir)/src/settings/plugins/ifcfg-rh \
 	-DTEST_IFCFG_DIR=\"$(abs_srcdir)/src/settings/plugins/ifcfg-rh/tests\" \
 	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/src/settings/plugins/ifcfg-rh/tests\"
 
@@ -2041,12 +2024,11 @@ core_plugins += src/settings/plugins/ifupdown/libnm-settings-plugin-ifupdown.la
 noinst_LTLIBRARIES += src/settings/plugins/ifupdown/libnms-ifupdown-core.la
 
 src_settings_plugins_ifupdown_cppflags = \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/settings \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
+	-I$(srcdir)/src \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-core \
+	-I$(builddir)/libnm-core \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS) \
@@ -2088,13 +2070,11 @@ check_local += check-local-symbols-settings-ifupdown
 check_programs += src/settings/plugins/ifupdown/tests/test-ifupdown
 
 src_settings_plugins_ifupdown_tests_test_ifupdown_CPPFLAGS = \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/settings \
-	-I$(srcdir)/src/settings/plugins/ifupdown \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-core \
+	-I$(builddir)/libnm-core \
+	-I$(srcdir)/src \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS) \
@@ -2146,13 +2126,11 @@ core_plugins += src/settings/plugins/ifnet/libnm-settings-plugin-ifnet.la
 noinst_LTLIBRARIES += src/settings/plugins/ifnet/libnms-ifnet-core.la
 
 src_settings_plugins_ifnet_cppflags = \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/platform \
-	-I$(top_srcdir)/src/settings \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
+	-I$(srcdir)/src \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-core \
+	-I$(builddir)/libnm-core \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS) \
@@ -2196,14 +2174,11 @@ check_local += check-local-symbols-settings-ifnet
 check_programs += src/settings/plugins/ifnet/tests/test-ifnet
 
 src_settings_plugins_ifnet_tests_test_ifnet_CPPFLAGS = \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/settings \
-	-I$(top_srcdir)/src/platform \
-	-I$(top_srcdir)/src/settings/plugins/ifnet \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-core \
+	-I$(builddir)/libnm-core \
+	-I$(srcdir)/src \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS) \
@@ -2242,15 +2217,13 @@ src_devices_adsl_libnm_device_plugin_adsl_la_SOURCES = \
 	src/devices/adsl/nm-device-adsl.h
 
 src_devices_adsl_libnm_device_plugin_adsl_la_CPPFLAGS = \
-	-I${top_srcdir}/src \
-	-I${top_builddir}/src \
-	-I${top_srcdir}/src/devices \
-	-I${top_srcdir}/src/platform \
-	-I${top_builddir}/introspection \
-	-I${top_srcdir}/shared \
-	-I$(top_builddir)/shared \
-	-I${top_builddir}/libnm-core \
-	-I${top_srcdir}/libnm-core \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
+	-I$(builddir)/introspection \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(builddir)/libnm-core \
+	-I$(srcdir)/libnm-core \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GUDEV_CFLAGS)
@@ -2276,18 +2249,13 @@ check_local += check-local-devices-adsl
 if WITH_MODEM_MANAGER_1
 
 src_devices_wwan_cppflags = \
-	-I${top_srcdir}/src \
-	-I${top_builddir}/src \
-	-I${top_srcdir}/src/devices \
-	-I${top_srcdir}/src/settings \
-	-I${top_srcdir}/src/platform \
-	-I${top_builddir}/introspection \
-	-I${top_srcdir}/shared \
-	-I$(top_builddir)/shared \
-	-I${top_srcdir}/libnm-core \
-	-I${top_builddir}/libnm-core \
-	-I${top_srcdir}/src/devices/wwan \
-	-I${top_builddir}/src/devices/wwan \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
+	-I$(builddir)/introspection \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-core \
+	-I$(builddir)/libnm-core \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS) \
@@ -2378,19 +2346,13 @@ src_devices_bluetooth_libnm_device_plugin_bluetooth_la_SOURCES = \
 	src/devices/bluetooth/nm-device-bt.h
 
 src_devices_bluetooth_libnm_device_plugin_bluetooth_la_CPPFLAGS = \
-	-I${top_srcdir}/src \
-	-I${top_builddir}/src \
-	-I${top_srcdir}/src/devices \
-	-I${top_srcdir}/src/settings \
-	-I${top_srcdir}/src/platform \
-	-I${top_srcdir}/src/devices/wwan \
-	-I${top_builddir}/introspection \
-	-I${top_srcdir}/shared \
-	-I$(top_builddir)/shared \
-	-I${top_builddir}/libnm-core \
-	-I${top_srcdir}/libnm-core \
-	-I${top_srcdir}/src/devices/bluetooth \
-	-I${top_builddir}/src/devices/bluetooth \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
+	-I$(builddir)/introspection \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(builddir)/libnm-core \
+	-I$(srcdir)/libnm-core \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS)
@@ -2443,17 +2405,13 @@ src_devices_wifi_libnm_device_plugin_wifi_la_SOURCES = \
 	src/devices/wifi/nm-device-olpc-mesh.h
 
 src_devices_wifi_libnm_device_plugin_wifi_la_CPPFLAGS = \
-	-I${top_srcdir}/src \
-	-I${top_builddir}/src \
-	-I${top_srcdir}/src/devices \
-	-I${top_srcdir}/src/settings \
-	-I${top_srcdir}/src/platform \
-	-I${top_srcdir}/src/supplicant-manager \
-	-I${top_builddir}/introspection \
-	-I${top_srcdir}/shared \
-	-I$(top_builddir)/shared \
-	-I${top_builddir}/libnm-core \
-	-I${top_srcdir}/libnm-core \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
+	-I$(builddir)/introspection \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(builddir)/libnm-core \
+	-I$(srcdir)/libnm-core \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS)
@@ -2483,15 +2441,13 @@ src_devices_wifi_tests_test_general_SOURCES = \
 	src/devices/wifi/nm-wifi-utils.h
 
 src_devices_wifi_tests_test_general_CPPFLAGS = \
-	-I$(top_builddir)/introspection \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
-	-I${top_srcdir}/src/platform \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/devices/wifi \
-	-I$(top_builddir)/src \
+	-I$(builddir)/introspection \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-core \
+	-I$(builddir)/libnm-core \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS)
@@ -2514,16 +2470,13 @@ src_devices_team_libnm_device_plugin_team_la_SOURCES = \
 	src/devices/team/nm-device-team.h
 
 src_devices_team_libnm_device_plugin_team_la_CPPFLAGS = \
-	-I${top_srcdir}/src \
-	-I${top_builddir}/src \
-	-I${top_srcdir}/src/devices \
-	-I${top_srcdir}/src/platform \
-	-I${top_srcdir}/src/settings \
-	-I${top_builddir}/introspection \
-	-I${top_srcdir}/shared \
-	-I$(top_builddir)/shared \
-	-I${top_builddir}/libnm-core \
-	-I${top_srcdir}/libnm-core \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
+	-I$(builddir)/introspection \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(builddir)/libnm-core \
+	-I$(srcdir)/libnm-core \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	${LIBTEAMDCTL_CFLAGS} \
@@ -2548,16 +2501,16 @@ check_local += check-local-devices-team
 endif
 
 ###############################################################################
-# src/dnsmasq-manager/tests
+# src/dnsmasq/tests
 ###############################################################################
 
-check_programs += src/dnsmasq-manager/tests/test-dnsmasq-utils
+check_programs += src/dnsmasq/tests/test-dnsmasq-utils
 
-src_dnsmasq_manager_tests_test_dnsmasq_utils_CPPFLAGS = \
+src_dnsmasq_tests_test_dnsmasq_utils_CPPFLAGS = \
 	$(src_tests_cppflags) \
 	-DTESTDIR="\"$(abs_srcdir)\""
 
-src_dnsmasq_manager_tests_test_dnsmasq_utils_LDADD = \
+src_dnsmasq_tests_test_dnsmasq_utils_LDADD = \
 	src/libNetworkManagerTest.la
 
 ###############################################################################
@@ -2684,21 +2637,21 @@ src_ndisc_tests_test_ndisc_fake_LDFLAGS = $(src_ndisc_tests_flags)
 src_ndisc_tests_test_ndisc_fake_LDADD = $(src_ndisc_tests_ldadd)
 
 ###############################################################################
-# src/supplicant-manager/tests
+# src/supplicant/tests
 ###############################################################################
 
-check_programs += src/supplicant-manager/tests/test-supplicant-config
+check_programs += src/supplicant/tests/test-supplicant-config
 
-src_supplicant_manager_tests_test_supplicant_config_CPPFLAGS = \
+src_supplicant_tests_test_supplicant_config_CPPFLAGS = \
 	$(src_tests_cppflags) \
-	-DTEST_CERT_DIR=\"$(abs_srcdir)/src/supplicant-manager/tests/certs\"
+	-DTEST_CERT_DIR=\"$(abs_srcdir)/src/supplicant/tests/certs\"
 
-src_supplicant_manager_tests_test_supplicant_config_LDADD = \
+src_supplicant_tests_test_supplicant_config_LDADD = \
 	src/libNetworkManagerTest.la
 
 EXTRA_DIST += \
-	src/supplicant-manager/tests/certs/test-ca-cert.pem \
-	src/supplicant-manager/tests/certs/test-cert.p12
+	src/supplicant/tests/certs/test-ca-cert.pem \
+	src/supplicant/tests/certs/test-cert.p12
 
 ###############################################################################
 # src/tests/config
@@ -2823,12 +2776,12 @@ noinst_LTLIBRARIES += \
 	dispatcher/libnm-dispatcher-core.la
 
 dispatcher_cppflags = \
-	-I${top_srcdir}/shared \
-	-I${top_builddir}/shared \
-	-I${top_srcdir}/libnm-core \
-	-I${top_builddir}/libnm-core \
-	-I${top_srcdir}/dispatcher \
-	-I${top_builddir}/dispatcher \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-core \
+	-I$(builddir)/libnm-core \
+	-I$(srcdir)/dispatcher \
+	-I$(builddir)/dispatcher \
 	$(GLIB_CFLAGS) \
 	-DNMCONFDIR=\"$(nmconfdir)\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
@@ -2917,12 +2870,12 @@ EXTRA_DIST += \
 check_programs += dispatcher/tests/test-dispatcher-envp
 
 dispatcher_tests_test_dispatcher_envp_CPPFLAGS = \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
-	-I$(top_srcdir)/dispatcher \
-	-I$(top_builddir)/dispatcher \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-core \
+	-I$(builddir)/libnm-core \
+	-I$(srcdir)/dispatcher \
+	-I$(builddir)/dispatcher \
 	-DSRCDIR=\"$(abs_srcdir)/dispatcher/tests\" \
 	$(GLIB_CFLAGS)
 
@@ -2947,12 +2900,12 @@ EXTRA_DIST += \
 bin_PROGRAMS += clients/nm-online
 
 clients_nm_online_CPPFLAGS = \
-	-I${top_srcdir}/shared \
-	-I$(top_builddir)/shared \
-	-I${top_srcdir}/libnm-core \
-	-I${top_builddir}/libnm-core \
-	-I${top_srcdir}/libnm \
-	-I${top_builddir}/libnm \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-core \
+	-I$(builddir)/libnm-core \
+	-I$(srcdir)/libnm \
+	-I$(builddir)/libnm \
 	$(GLIB_CFLAGS) \
 	-DG_LOG_DOMAIN=\""nm-online"\" \
 	-DNMLOCALEDIR=\"$(datadir)/locale\"
@@ -2999,15 +2952,15 @@ clients_cli_nmcli_SOURCES = \
 	$(NULL)
 
 clients_cli_nmcli_CPPFLAGS = \
-	-I${top_srcdir}/shared \
-	-I$(top_builddir)/shared \
-	-I${top_srcdir}/libnm-core \
-	-I${top_builddir}/libnm-core \
-	-I${top_srcdir}/libnm \
-	-I${top_builddir}/libnm \
-	-I${top_srcdir}/clients/cli \
-	-I${top_builddir}/clients/cli \
-	-I${top_srcdir}/clients/common \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-core \
+	-I$(builddir)/libnm-core \
+	-I$(srcdir)/libnm \
+	-I$(builddir)/libnm \
+	-I$(srcdir)/clients/cli \
+	-I$(builddir)/clients/cli \
+	-I$(srcdir)/clients/common \
 	$(GLIB_CFLAGS) \
 	-DG_LOG_DOMAIN=\""nmcli"\" \
 	-DNMCLI_LOCALEDIR=\"$(datadir)/locale\"
@@ -3110,10 +3063,10 @@ clients_tui_newt_libnmt_newt_a_SOURCES = \
 	$(NULL)
 
 clients_tui_newt_libnmt_newt_a_CPPFLAGS = \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-core \
+	-I$(builddir)/libnm-core \
 	-DG_LOG_DOMAIN=\""nmtui"\" \
 	$(GLIB_CFLAGS) \
 	$(NEWT_CFLAGS) \
@@ -3211,14 +3164,14 @@ clients_tui_nmtui_SOURCES = \
 	$(NULL)
 
 clients_tui_nmtui_CPPFLAGS = \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
-	-I$(top_srcdir)/libnm \
-	-I$(top_builddir)/libnm \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-core \
+	-I$(builddir)/libnm-core \
+	-I$(srcdir)/libnm \
+	-I$(builddir)/libnm \
 	-I$(srcdir)/clients/tui/newt \
-	-I$(top_srcdir)/clients/common \
+	-I$(srcdir)/clients/common \
 	$(GLIB_CFLAGS) \
 	$(NEWT_CFLAGS) \
 	$(GUDEV_CFLAGS) \
@@ -3342,10 +3295,10 @@ lib_LTLIBRARIES += libnm-util/libnm-util.la
 libnm_util_libnm_util_includedir=$(includedir)/NetworkManager
 
 libnm_util_cppflags = \
-	-I${top_srcdir}/libnm-util \
-	-I${top_builddir}/libnm-util \
-	-I${top_srcdir}/shared \
-	-I$(top_builddir)/shared \
+	-I$(srcdir)/libnm-util \
+	-I$(builddir)/libnm-util \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
 	-DG_LOG_DOMAIN=\""libnm-util"\" \
 	-DLOCALEDIR=\"$(datadir)/locale\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY \
@@ -3517,7 +3470,7 @@ libnm-util/NetworkManager-1.0.gir: libnm-util/libnm-util.la
 libnm_util_NetworkManager_1_0_gir_INCLUDES = GObject-2.0 DBusGLib-1.0
 libnm_util_NetworkManager_1_0_gir_PACKAGES = gobject-2.0 dbus-glib-1
 libnm_util_NetworkManager_1_0_gir_EXPORT_PACKAGES = libnm-util
-libnm_util_NetworkManager_1_0_gir_CFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/libnm-util
+libnm_util_NetworkManager_1_0_gir_CFLAGS = $(AM_CPPFLAGS) -I$(srcdir)/libnm-util
 libnm_util_NetworkManager_1_0_gir_LIBS = libnm-util/libnm-util.la
 libnm_util_NetworkManager_1_0_gir_FILES = \
 	$(libnm_util_lib_h_pub_mkenums) \
@@ -3525,10 +3478,10 @@ libnm_util_NetworkManager_1_0_gir_FILES = \
 	$(libnm_util_lib_c_mkenums) \
 	$(libnm_util_lib_c_real)
 libnm_util_NetworkManager_1_0_gir_SCANNERFLAGS = \
-	"-I$(srcdir)/shared" \
-	"-I$(builddir)/shared" \
-	"-I$(srcdir)/libnm-util" \
-	"-I$(builddir)/libnm-util" \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-util \
+	-I$(builddir)/libnm-util \
 	--warn-all --identifier-prefix=NM --symbol-prefix=nm
 
 libnm-util/NetworkManager-1.0.typelib: libnm-util/NetworkManager-1.0.gir
@@ -3549,10 +3502,10 @@ dist_dependencies += libnm-util/libnm-util.la
 ###############################################################################
 
 libnm_util_tests_cppflags = \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-util \
-	-I$(top_builddir)/libnm-util \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-util \
+	-I$(builddir)/libnm-util \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	-DBUILD_DIR=\"$(abs_builddir)/libnm-util/tests\" \
@@ -3605,12 +3558,12 @@ libnm_util_tests_test_libnm_linking_LDADD = \
 ###############################################################################
 
 libnm_glib_cppflags = \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-util \
-	-I$(top_builddir)/libnm-util \
-	-I$(top_srcdir)/libnm-glib \
-	-I$(top_builddir)/libnm-glib \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-util \
+	-I$(builddir)/libnm-util \
+	-I$(srcdir)/libnm-glib \
+	-I$(builddir)/libnm-glib \
 	-DG_LOG_DOMAIN=\""libnm-glib"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY \
 	$(DBUS_CFLAGS) \
@@ -3848,10 +3801,10 @@ libnm_glib_NMClient_1_0_gir_FILES = \
 	$(libnm_glib_lib_c_mkenums) \
 	$(libnm_glib_lib_c_real)
 libnm_glib_NMClient_1_0_gir_SCANNERFLAGS = \
-	"-I$(srcdir)/libnm-util" \
-	"-I$(builddir)/libnm-util" \
-	"-I$(srcdir)/libnm-glib" \
-	"-I$(builddir)/libnm-glib" \
+	-I$(srcdir)/libnm-util \
+	-I$(builddir)/libnm-util \
+	-I$(srcdir)/libnm-glib \
+	-I$(builddir)/libnm-glib \
 	--warn-all --identifier-prefix=NM --symbol-prefix=nm \
 	--include-uninstalled=$(builddir)/libnm-util/NetworkManager-1.0.gir
 
@@ -3875,11 +3828,11 @@ dist_dependencies += \
 ###############################################################################
 
 libnm_glib_tests_cppflags = \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-util \
-	-I$(top_builddir)/libnm-util \
-	-I$(top_srcdir)/libnm-glib \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-util \
+	-I$(builddir)/libnm-util \
+	-I$(srcdir)/libnm-glib \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY \
 	-DTEST_NM_SERVICE=\"$(abs_top_srcdir)/tools/test-networkmanager-service.py\" \
 	$(GLIB_CFLAGS) \

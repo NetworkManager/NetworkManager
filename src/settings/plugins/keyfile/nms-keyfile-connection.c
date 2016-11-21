@@ -30,7 +30,7 @@
 #include "nm-setting-connection.h"
 #include "nm-utils.h"
 
-#include "nm-settings-plugin.h"
+#include "settings/nm-settings-plugin.h"
 
 #include "nms-keyfile-reader.h"
 #include "nms-keyfile-writer.h"

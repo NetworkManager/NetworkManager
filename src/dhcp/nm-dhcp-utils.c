@@ -27,7 +27,7 @@
 #include "nm-dhcp-utils.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 #include "nm-dhcp-client-logging.h"
 #include "nm-core-internal.h"
 

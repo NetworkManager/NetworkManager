@@ -30,7 +30,7 @@
 
 #include "nm-auth-subject.h"
 #include "nm-config.h"
-#include "nm-settings-connection.h"
+#include "settings/nm-settings-connection.h"
 
 /*****************************************************************************/
 

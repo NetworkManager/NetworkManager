@@ -35,12 +35,12 @@
 #include "nm-proxy-config.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 #include "nm-active-connection.h"
 #include "NetworkManagerUtils.h"
 #include "settings/nm-settings-connection.h"
 #include "nm-dispatcher.h"
-#include "nm-agent-manager.h"
+#include "settings/nm-agent-manager.h"
 #include "nm-core-internal.h"
 #include "nm-pacrunner-manager.h"
 #include "nm-default-route-manager.h"
@@ -49,7 +49,7 @@
 #include "nm-config.h"
 #include "nm-vpn-plugin-info.h"
 #include "nm-vpn-manager.h"
-#include "nm-dns-manager.h"
+#include "dns/nm-dns-manager.h"
 
 #include "nmdbus-vpn-connection.h"
 

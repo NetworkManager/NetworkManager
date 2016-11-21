@@ -28,7 +28,7 @@
 #include <string.h>
 #include <gmodule.h>
 
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 #include "nm-utils.h"
 
 /*****************************************************************************/

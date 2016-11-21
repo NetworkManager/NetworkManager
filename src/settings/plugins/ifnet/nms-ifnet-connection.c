@@ -29,8 +29,8 @@
 #include "nm-dbus-interface.h"
 #include "nm-utils.h"
 #include "nm-setting-wireless-security.h"
-#include "nm-settings-connection.h"
-#include "nm-settings-plugin.h"
+#include "settings/nm-settings-connection.h"
+#include "settings/nm-settings-plugin.h"
 
 #include "nms-ifnet-connection-parser.h"
 #include "nms-ifnet-net-parser.h"

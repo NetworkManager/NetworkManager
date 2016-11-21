@@ -26,10 +26,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "nm-lldp-listener.h"
+#include "devices/nm-lldp-listener.h"
 #include "systemd/nm-sd.h"
 
-#include "test-common.h"
+#include "platform/tests/test-common.h"
 
 #include "nm-test-utils-core.h"
 

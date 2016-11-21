@@ -24,8 +24,8 @@
 
 #include "nm-common-macros.h"
 #include "nm-dbus-interface.h"
-#include "nm-device.h"
-#include "nm-settings-connection.h"
+#include "devices/nm-device.h"
+#include "settings/nm-settings-connection.h"
 #include "nm-simple-connection.h"
 #include "nm-auth-utils.h"
 #include "nm-auth-subject.h"

@@ -24,7 +24,7 @@
 #include <string.h>
 
 #include "nm-dcb.h"
-#include "nm-platform.h"
+#include "platform/nm-platform.h"
 #include "NetworkManagerUtils.h"
 
 static const char *helper_names[] = { "dcbtool", "fcoeadm" };
