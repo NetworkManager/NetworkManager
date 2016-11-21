@@ -864,9 +864,9 @@ libnm/nm-setting-docs.xml: libnm/generate-setting-docs.py $(libnm_docs_sources) 
 		--output $@
 
 libnm/nm-keyfile-docs.xml: libnm/generate-plugin-docs.pl $(libnm_docs_sources)
-	$(srcdir)/libnm/generate-plugin-docs.pl keyfile "$(top_srcdir)" $@
+	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl keyfile "$(top_srcdir)" $@
 libnm/nm-ifcfg-rh-docs.xml: libnm/generate-plugin-docs.pl $(libnm_docs_sources)
-	$(srcdir)/libnm/generate-plugin-docs.pl ifcfg-rh "$(top_srcdir)" $@
+	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl ifcfg-rh "$(top_srcdir)" $@
 
 EXTRA_DIST += $(libnm_noinst_data)
 
