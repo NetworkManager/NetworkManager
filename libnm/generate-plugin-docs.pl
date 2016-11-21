@@ -133,7 +133,7 @@ sub process_data {
       $parsed_data{$this_key} = "$2\n";
     } elsif (/^\s*\**\s+(.*?)\s*$/) {
       die "Extra mess in a comment: $_" unless $this_key;
-      $parsed_data{$this_key} .= $1 ? "$1\n" : " ";
+      $parsed_data{$this_key} .= "$1\n";
     }
   }
 
