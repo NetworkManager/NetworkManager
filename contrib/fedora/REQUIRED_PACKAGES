@@ -39,8 +39,6 @@ yum install \
     readline-devel \
     teamd-devel \
     rpm-build \
-    perl-YAML-LibYAML \
-    perl-YAML \
     audit-libs-devel \
     bluez-libs-devel \
     dbus-python \

@@ -41,7 +41,6 @@ PACKAGES="kernel passwd git autoconf automake libtool intltool gtk-doc libnl3-de
     bash-completion man-db man-pages vim-minimal
     firewalld
     vim
-    perl-YAML
     wget
     gdb valgrind lsof strace nmap-ncat tcpdump
     net-tools bridge-utils vconfig

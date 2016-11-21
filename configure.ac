@@ -1109,20 +1109,8 @@ if test -n "$INTROSPECTION_MAKEFILE" -a "$enable_gtk_doc" = "yes"; then
 
     # gtk-doc depends on perl, but we can check for it anyway
     AC_PATH_PROG(PERL, perl, no)
-    # check for needed perl modules (use YAML; YAML::XS is better, but may not be so widespread)
-    required_perl_modules="YAML"
-    for module in $required_perl_modules; do
-      AC_MSG_CHECKING([checking for perl module '$module'])
-      if ${PERL} -e 'use '$module 2>/dev/null ; then
-          AC_MSG_RESULT([Ok])
-          have_perl_modules=yes
-      else
-          AC_MSG_RESULT([Failed])
-          AC_MSG_ERROR([You must have Perl modules to build settings plugin docs: $required_perl_modules.])
-      fi
-    done
 
-    if test "$have_pyobject" = "yes" -a "$have_perl_modules" = "yes"; then
+    if test "$have_pyobject" = "yes"; then
         AC_DEFINE(BUILD_SETTING_DOCS, [1], [Define if you we can build nm-setting-docs.xml, nm-keyfile-docs.xml and nm-ifcfg-rh-docs.xml])
         build_setting_docs=yes
     fi
