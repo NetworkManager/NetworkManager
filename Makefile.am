@@ -2981,6 +2981,7 @@ endif
 clients_cli_nmcli_LDFLAGS = \
 	-Wl,--version-script="$(top_srcdir)/linker-script-binary.ver"
 
+$(clients_cli_nmcli_OBJECTS): $(clients_cli_settings_doc_c)
 
 install-data-hook-nmcli:
 	$(mkinstalldirs) $(DESTDIR)$(completiondir)
@@ -2995,15 +2996,20 @@ uninstall_hook += uninstall-hook-nmcli
 
 endif
 
+
+clients_cli_settings_doc_c = clients/cli/settings-docs.c
 if BUILD_SETTING_DOCS
-
-clients/cli/settings-docs.c: clients/cli/settings-docs.xsl libnm/nm-property-docs.xml
+$(clients_cli_settings_doc_c): clients/cli/settings-docs.xsl libnm/nm-property-docs.xml
 	$(AM_V_GEN) xsltproc --output $@ $^
-
-BUILT_SOURCES += clients/cli/settings-docs.c
-EXTRA_DIST += clients/cli/settings-docs.c
-
+DISTCLEANFILES += $(clients_cli_settings_doc_c)
+else
+$(clients_cli_settings_doc_c):
+	@echo "to generate $(clients_cli_settings_doc_c), configure with --enable-gtk-doc"
+	@echo "alternatively, build --without-nmcli"
+	@false
 endif
+EXTRA_DIST += $(clients_cli_settings_doc_c)
+
 
 EXTRA_DIST += \
 	clients/cli/nmcli-completion \
