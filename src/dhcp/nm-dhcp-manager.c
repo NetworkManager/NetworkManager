@@ -411,7 +411,7 @@ dispose (GObject *object)
 
 	if (priv->clients) {
 		values = g_hash_table_get_values (priv->clients);
-	for (iter = values; iter; iter = g_list_next (iter))
+		for (iter = values; iter; iter = g_list_next (iter))
 			remove_client (NM_DHCP_MANAGER (object), NM_DHCP_CLIENT (iter->data));
 		g_list_free (values);
 	}
