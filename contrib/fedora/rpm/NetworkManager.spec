@@ -138,7 +138,6 @@ BuildRequires: gobject-introspection-devel >= 0.10.3
 BuildRequires: gettext-devel
 BuildRequires: pkgconfig
 BuildRequires: libnl3-devel >= %{libnl3_version}
-BuildRequires: perl(XML::Parser)
 BuildRequires: automake autoconf intltool libtool
 BuildRequires: ppp-devel >= 2.4.5
 BuildRequires: nss-devel >= 3.11.7
