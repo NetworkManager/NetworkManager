@@ -3949,13 +3949,6 @@ EXTRA_DIST += \
 	$(man_pages) \
 	$(man_pages_autogen)
 
-if INSTALL_PREGEN_MANPAGES
-install_manpages = true
-else
-if ENABLE_GTK_DOC
-install_manpages = true
-endif
-endif
 
 install-data-hook-man:
 	if test -n "$(install_manpages)"; then \
@@ -3978,6 +3971,7 @@ uninstall-hook-man:
 uninstall_hook += uninstall-hook-man
 
 if ENABLE_GTK_DOC
+install_manpages = true
 man_MANS += $(man_pages)
 CLEANFILES += $(man_pages)
 if SETTING_DOCS_AVAILABLE
@@ -3986,6 +3980,7 @@ CLEANFILES += $(man_pages_autogen)
 endif
 else
 if INSTALL_PREGEN_MANPAGES
+install_manpages = true
 man_MANS += \
 	$(man_pages) \
 	$(man_pages_autogen)
