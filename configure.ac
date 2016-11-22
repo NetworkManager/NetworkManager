@@ -1115,6 +1115,12 @@ else
     build_setting_docs=no
 fi
 
+if test -n "$INTROSPECTION_MAKEFILE"; then
+	have_introspection=yes
+else
+	have_introspection=no
+fi
+
 # check for pre-built setting docs
 if test "$build_setting_docs" != "yes" \
 	-a -f man/nm-settings.xml \
@@ -1218,6 +1224,7 @@ echo
 echo "Miscellaneous:"
 echo "  documentation: $enable_gtk_doc"
 echo "  documentation-settings: $build_setting_docs"
+echo "  introspection: $have_introspection"
 echo "  tests: $enable_tests"
 echo "  more-asserts: $more_asserts"
 echo "  valgrind: $with_valgrind   $with_valgrind_suppressions"
