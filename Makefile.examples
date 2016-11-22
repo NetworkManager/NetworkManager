@@ -107,7 +107,9 @@ examples_C_qt_monitor_nm_running_LDADD = \
 examples/C/qt/monitor-nm-running.moc: examples/C/qt/monitor-nm-running.cpp
 	$(AM_V_GEN) $(MOC) -i $< -o $@
 
-BUILT_SOURCES += \
+$(examples_C_qt_monitor_nm_running_OBJECTS): examples/C/qt/monitor-nm-running.moc
+
+CLEANFILES += \
 	examples/C/qt/monitor-nm-running.moc
 
 endif

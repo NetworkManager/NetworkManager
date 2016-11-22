@@ -335,9 +335,8 @@ dbusinterfaces_DATA = \
 	introspection/org.freedesktop.NetworkManager.VPN.Plugin.xml \
 	introspection/org.freedesktop.NetworkManager.WiMax.Nsp.xml
 
-BUILT_SOURCES += \
-	$(introspection_sources) \
-	$(DBUS_INTERFACE_DOCS)
+CLEANFILES += $(introspection_sources)
+CLEANFILES += $(DBUS_INTERFACE_DOCS)
 
 $(dispatcher_libnm_dispatcher_core_la_OBJECTS): $(introspection_sources)
 $(dispatcher_nm_dispatcher_OBJECTS):            $(introspection_sources)
@@ -565,7 +564,7 @@ dist_dependencies += \
 
 ###############################################################################
 
-libnm_core_tests_programs = \
+check_programs += \
 	libnm-core/tests/test-compare \
 	libnm-core/tests/test-crypto \
 	libnm-core/tests/test-general \
@@ -576,13 +575,12 @@ libnm_core_tests_programs = \
 	libnm-core/tests/test-setting-dcb \
 	libnm-core/tests/test-settings-defaults
 
-check_programs += $(libnm_core_tests_programs)
-
 GLIB_GENERATED += \
 	libnm-core/tests/nm-core-tests-enum-types.h \
 	libnm-core/tests/nm-core-tests-enum-types.c
-
 nm_core_tests_enum_types_sources = libnm-core/tests/test-general-enums.h
+
+$(libnm_core_tests_test_general_OBJECTS): libnm-core/tests/nm-core-tests-enum-types.h
 
 libnm_core_tests_cppflags = \
 	$(dflt_cppflags_libnm_core) \
@@ -1767,7 +1765,7 @@ nodist_src_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_SOURCES = \
 
 src_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_CPPFLAGS = $(filter-out -DGLIB_VERSION_MAX_ALLOWED%,$(src_settings_plugins_ifcfg_rh_cppflags))
 
-BUILT_SOURCES += $(nodist_src_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_SOURCES)
+CLEANFILES += $(nodist_src_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_SOURCES)
 
 src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h: src/settings/plugins/ifcfg-rh/nm-ifcfg-rh.xml
 	$(AM_V_GEN) gdbus-codegen \
@@ -2808,8 +2806,9 @@ dispatcher/nmdbus-dispatcher.h: dispatcher/nm-dispatcher.xml
 
 dispatcher/nmdbus-dispatcher.c: dispatcher/nmdbus-dispatcher.h
 
-BUILT_SOURCES += $(dispatcher_nmdbus_dispatcher_sources)
+$(dispatcher_nm_dispatcher_OBJECTS): $(dispatcher_nmdbus_dispatcher_sources)
 
+CLEANFILES += $(dispatcher_nmdbus_dispatcher_sources)
 
 dispatcher_libnm_dispatcher_core_la_SOURCES = \
 	shared/nm-dispatcher-api.h \
@@ -3769,18 +3768,19 @@ nm_vpn_enum_types_sources = $(libnm_glib_vpn_h_real)
 
 $(libnm_glib_libnm_glib_vpn_la_OBJECTS): $(libnm_glib_vpn_h_mkenums)
 
-libnm-glib/nm-vpn-plugin-glue.h: $(srcdir)/introspection/org.freedesktop.NetworkManager.VPN.Plugin.xml
+libnm-glib/nm-vpn-plugin-glue.h: introspection/org.freedesktop.NetworkManager.VPN.Plugin.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_vpn_plugin --mode=glib-server --output=$@ $<
 
-libnm-glib/nm-secret-agent-glue.h: $(srcdir)/introspection/org.freedesktop.NetworkManager.SecretAgent.xml
+libnm-glib/nm-secret-agent-glue.h: introspection/org.freedesktop.NetworkManager.SecretAgent.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_secret_agent --mode=glib-server --output=$@ $<
 
-BUILT_SOURCES += \
+CLEANFILES += \
 	libnm-glib/nm-vpn-plugin-glue.h \
 	libnm-glib/nm-secret-agent-glue.h
 
-libnm-glib/nm-vpn-plugin.c:   libnm-glib/nm-vpn-plugin-glue.h
-libnm-glib/nm-secret-agent.c: libnm-glib/nm-secret-agent-glue.h
+$(libnm_glib_libnm_glib_vpn_la_OBJECTS): libnm-glib/nm-vpn-plugin-glue.h
+$(libnm_glib_libnm_glib_la_OBJECTS):     libnm-glib/nm-secret-agent-glue.h
+
 
 pkgconfig_DATA += \
 	libnm-glib/libnm-glib.pc \
@@ -4051,9 +4051,11 @@ EXTRA_DIST += \
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)
+BUILT_SOURCES += $(gir_DATA)
 
 typelibdir = $(libdir)/girepository-1.0
 typelib_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
+BUILT_SOURCES += $(typelib_DATA)
 
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA += src/org.freedesktop.NetworkManager.conf
@@ -4116,13 +4118,10 @@ EXTRA_DIST += \
 	\
 	$(NULL)
 
-BUILT_SOURCES += \
-	$(GLIB_GENERATED) \
-	$(gir_DATA) \
-	$(typelib_DATA)
-
 CLEANFILES += \
-	$(BUILT_SOURCES) \
+	$(GLIB_GENERATED) \
+	$(INTROSPECTION_GIRS) \
+	$(typelib_DATA) \
 	\
 	cscope.in.out \
 	cscope.out \
