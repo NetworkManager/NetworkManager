@@ -110,7 +110,7 @@ set_sanitizer_env = \
 
 check_so_symbols = \
 	$(call set_sanitizer_env,$(1)); \
-	LD_BIND_NOW=1 LD_PRELOAD=$${LD_PRELOAD}:$(1) $(top_builddir)/src/NetworkManager --version >/dev/null
+	LD_BIND_NOW=1 LD_PRELOAD=$${LD_PRELOAD}:$(1) $(builddir)/src/NetworkManager --version >/dev/null
 
 ###############################################################################
 
@@ -835,7 +835,7 @@ noinst_DATA += $(libnm_noinst_data)
 libnm_docs_sources = $(libnm_core_lib_c_real)
 
 libnm/nm-setting-docs-overrides.xml: libnm/generate-plugin-docs.pl $(libnm_docs_sources)
-	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl dbus "$(top_srcdir)" $@
+	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl dbus "$(srcdir)" $@
 
 # When the python scripts loads libnm and the address sanitizers is
 # enabled, we must LD_PRELOAD libasan otherwise it will complain that
@@ -860,9 +860,9 @@ libnm/nm-setting-docs.xml: libnm/generate-setting-docs.py $(libnm_docs_sources) 
 		--output $@
 
 libnm/nm-keyfile-docs.xml: libnm/generate-plugin-docs.pl $(libnm_docs_sources)
-	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl keyfile "$(top_srcdir)" $@
+	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl keyfile "$(srcdir)" $@
 libnm/nm-ifcfg-rh-docs.xml: libnm/generate-plugin-docs.pl $(libnm_docs_sources)
-	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl ifcfg-rh "$(top_srcdir)" $@
+	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl ifcfg-rh "$(srcdir)" $@
 
 EXTRA_DIST += $(libnm_noinst_data)
 
@@ -886,7 +886,7 @@ libnm_tests_cppflags = \
 	-I$(srcdir)/libnm \
 	-I$(builddir)/libnm \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB \
-	-DTEST_NM_SERVICE=\"$(abs_top_srcdir)/tools/test-networkmanager-service.py\"
+	-DTEST_NM_SERVICE=\"$(abs_srcdir)/tools/test-networkmanager-service.py\"
 
 libnm_tests_ldadd = \
 	libnm/libnm.la \
@@ -1442,7 +1442,7 @@ src_libNetworkManagerTest_la_LIBADD = \
 ###############################################################################
 
 src/NetworkManager.ver: src/NetworkManager.ver-orig src/libNetworkManager.la $(core_plugins)
-	$(AM_V_GEN) "$(top_srcdir)/tools/create-exports-NetworkManager.sh" --called-from-make "$(top_srcdir)"
+	$(AM_V_GEN) "$(srcdir)/tools/create-exports-NetworkManager.sh" --called-from-make "$(srcdir)"
 
 CLEANFILES += src/NetworkManager.ver
 
@@ -1789,7 +1789,7 @@ src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_CPPFLAGS = $(src
 
 src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_LDFLAGS = \
 	-module -avoid-version \
-	-Wl,--version-script="$(top_srcdir)/linker-script-settings.ver"
+	-Wl,--version-script="$(srcdir)/linker-script-settings.ver"
 
 src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_LIBADD = \
 	src/settings/plugins/ifcfg-rh/libnms-ifcfg-rh-core.la \
@@ -2052,7 +2052,7 @@ src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_CPPFLAGS = $(src
 
 src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_LDFLAGS = \
 	-module -avoid-version \
-	-Wl,--version-script="$(top_srcdir)/linker-script-settings.ver"
+	-Wl,--version-script="$(srcdir)/linker-script-settings.ver"
 
 src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_LIBADD = \
 	src/settings/plugins/ifupdown/libnms-ifupdown-core.la
@@ -2156,7 +2156,7 @@ src_settings_plugins_ifnet_libnm_settings_plugin_ifnet_la_CPPFLAGS = $(src_setti
 
 src_settings_plugins_ifnet_libnm_settings_plugin_ifnet_la_LDFLAGS = \
 	-module -avoid-version \
-	-Wl,--version-script="$(top_srcdir)/linker-script-settings.ver"
+	-Wl,--version-script="$(srcdir)/linker-script-settings.ver"
 
 src_settings_plugins_ifnet_libnm_settings_plugin_ifnet_la_LIBADD = \
 	src/settings/plugins/ifnet/libnms-ifnet-core.la
@@ -2226,14 +2226,14 @@ src_devices_adsl_libnm_device_plugin_adsl_la_CPPFLAGS = \
 
 src_devices_adsl_libnm_device_plugin_adsl_la_LDFLAGS = \
 	-module -avoid-version \
-	-Wl,--version-script="$(top_srcdir)/linker-script-devices.ver"
+	-Wl,--version-script="$(srcdir)/linker-script-devices.ver"
 
 src_devices_adsl_libnm_device_plugin_adsl_la_LIBADD = \
 	introspection/libnmdbus.la \
 	$(GUDEV_LIBS)
 
 check-local-devices-adsl: src/devices/adsl/libnm-device-plugin-adsl.la
-	$(top_srcdir)/tools/check-exports.sh $(builddir)/src/devices/adsl/.libs/libnm-device-plugin-adsl.so "$(top_srcdir)/linker-script-devices.ver"
+	$(srcdir)/tools/check-exports.sh $(builddir)/src/devices/adsl/.libs/libnm-device-plugin-adsl.so "$(srcdir)/linker-script-devices.ver"
 	$(call check_so_symbols,$(builddir)/src/devices/adsl/.libs/libnm-device-plugin-adsl.so)
 
 check_local += check-local-devices-adsl
@@ -2295,7 +2295,7 @@ src_devices_wwan_libnm_device_plugin_wwan_la_CPPFLAGS = $(src_devices_wwan_cppfl
 
 src_devices_wwan_libnm_device_plugin_wwan_la_LDFLAGS = \
 	-module -avoid-version \
-	-Wl,--version-script="$(top_srcdir)/linker-script-devices.ver"
+	-Wl,--version-script="$(srcdir)/linker-script-devices.ver"
 
 src_devices_wwan_libnm_device_plugin_wwan_la_LIBADD = \
 	introspection/libnmdbus.la \
@@ -2303,9 +2303,9 @@ src_devices_wwan_libnm_device_plugin_wwan_la_LIBADD = \
 	$(GLIB_LIBS)
 
 check-local-devices-wwan: src/devices/wwan/libnm-device-plugin-wwan.la src/devices/wwan/libnm-wwan.la
-	$(top_srcdir)/tools/check-exports.sh $(builddir)/src/devices/wwan/.libs/libnm-device-plugin-wwan.so "$(top_srcdir)/linker-script-devices.ver"
+	$(srcdir)/tools/check-exports.sh $(builddir)/src/devices/wwan/.libs/libnm-device-plugin-wwan.so "$(srcdir)/linker-script-devices.ver"
 	$(call check_so_symbols,$(builddir)/src/devices/wwan/.libs/libnm-device-plugin-wwan.so)
-	$(top_srcdir)/tools/check-exports.sh $(builddir)/src/devices/wwan/.libs/libnm-wwan.so "$(srcdir)/src/devices/wwan/libnm-wwan.ver"
+	$(srcdir)/tools/check-exports.sh $(builddir)/src/devices/wwan/.libs/libnm-wwan.so "$(srcdir)/src/devices/wwan/libnm-wwan.ver"
 	$(call check_so_symbols,$(builddir)/src/devices/wwan/.libs/libnm-wwan.so)
 
 check_local += check-local-devices-wwan
@@ -2353,7 +2353,7 @@ src_devices_bluetooth_libnm_device_plugin_bluetooth_la_CPPFLAGS = \
 
 src_devices_bluetooth_libnm_device_plugin_bluetooth_la_LDFLAGS = \
 	-module -avoid-version \
-	-Wl,--version-script="$(top_srcdir)/linker-script-devices.ver"
+	-Wl,--version-script="$(srcdir)/linker-script-devices.ver"
 
 src_devices_bluetooth_libnm_device_plugin_bluetooth_la_LIBADD = \
 	introspection/libnmdbus.la \
@@ -2372,7 +2372,7 @@ src_devices_bluetooth_libnm_device_plugin_bluetooth_la_LIBADD += $(BLUEZ5_LIBS)
 endif
 
 check-local-devices-bluetooth: src/devices/bluetooth/libnm-device-plugin-bluetooth.la
-	$(top_srcdir)/tools/check-exports.sh $(builddir)/src/devices/bluetooth/.libs/libnm-device-plugin-bluetooth.so "$(top_srcdir)/linker-script-devices.ver"
+	$(srcdir)/tools/check-exports.sh $(builddir)/src/devices/bluetooth/.libs/libnm-device-plugin-bluetooth.so "$(srcdir)/linker-script-devices.ver"
 	$(call check_so_symbols,$(builddir)/src/devices/bluetooth/.libs/libnm-device-plugin-bluetooth.so)
 
 check_local += check-local-devices-bluetooth
@@ -2411,7 +2411,7 @@ src_devices_wifi_libnm_device_plugin_wifi_la_CPPFLAGS = \
 
 src_devices_wifi_libnm_device_plugin_wifi_la_LDFLAGS = \
 	-module -avoid-version \
-	-Wl,--version-script="$(top_srcdir)/linker-script-devices.ver"
+	-Wl,--version-script="$(srcdir)/linker-script-devices.ver"
 
 src_devices_wifi_libnm_device_plugin_wifi_la_LIBADD = \
 	introspection/libnmdbus.la \
@@ -2419,7 +2419,7 @@ src_devices_wifi_libnm_device_plugin_wifi_la_LIBADD = \
 	$(GUDEV_LIBS)
 
 check-local-devices-wifi: src/devices/wifi/libnm-device-plugin-wifi.la
-	$(top_srcdir)/tools/check-exports.sh $(builddir)/src/devices/wifi/.libs/libnm-device-plugin-wifi.so "$(top_srcdir)/linker-script-devices.ver"
+	$(srcdir)/tools/check-exports.sh $(builddir)/src/devices/wifi/.libs/libnm-device-plugin-wifi.so "$(srcdir)/linker-script-devices.ver"
 	$(call check_so_symbols,$(builddir)/src/devices/wifi/.libs/libnm-device-plugin-wifi.so)
 
 check_local += check-local-devices-wifi
@@ -2475,7 +2475,7 @@ src_devices_team_libnm_device_plugin_team_la_CPPFLAGS = \
 
 src_devices_team_libnm_device_plugin_team_la_LDFLAGS = \
 	-module -avoid-version \
-	-Wl,--version-script="$(top_srcdir)/linker-script-devices.ver"
+	-Wl,--version-script="$(srcdir)/linker-script-devices.ver"
 
 src_devices_team_libnm_device_plugin_team_la_LIBADD = \
 	introspection/libnmdbus.la \
@@ -2484,7 +2484,7 @@ src_devices_team_libnm_device_plugin_team_la_LIBADD = \
 	$(GUDEV_LIBS)
 
 check-local-devices-team: src/devices/team/libnm-device-plugin-team.la
-	$(top_srcdir)/tools/check-exports.sh $(builddir)/src/devices/team/.libs/libnm-device-plugin-team.so "$(top_srcdir)/linker-script-devices.ver"
+	$(srcdir)/tools/check-exports.sh $(builddir)/src/devices/team/.libs/libnm-device-plugin-team.so "$(srcdir)/linker-script-devices.ver"
 	$(call check_so_symbols,$(builddir)/src/devices/team/.libs/libnm-device-plugin-team.so)
 
 check_local += check-local-devices-team
@@ -2817,7 +2817,7 @@ nodist_dispatcher_nm_dispatcher_SOURCES = $(dispatcher_nmdbus_dispatcher_sources
 dispatcher_nm_dispatcher_CPPFLAGS = $(dispatcher_cppflags)
 
 dispatcher_nm_dispatcher_LDFLAGS = \
-	-Wl,--version-script="$(top_srcdir)/linker-script-binary.ver"
+	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
 
 dispatcher_nm_dispatcher_LDADD = \
 	libnm/libnm.la \
@@ -2902,7 +2902,7 @@ clients_nm_online_CPPFLAGS = \
 	-DNMLOCALEDIR=\"$(datadir)/locale\"
 
 clients_nm_online_LDFLAGS = \
-	-Wl,--version-script="$(top_srcdir)/linker-script-binary.ver"
+	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
 
 clients_nm_online_LDADD = \
 	libnm/libnm.la \
@@ -2970,7 +2970,7 @@ clients_cli_nmcli_LDADD += $(POLKIT_LIBS)
 endif
 
 clients_cli_nmcli_LDFLAGS = \
-	-Wl,--version-script="$(top_srcdir)/linker-script-binary.ver"
+	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
 
 $(clients_cli_nmcli_OBJECTS): $(clients_cli_settings_doc_c)
 
@@ -3177,7 +3177,7 @@ clients_tui_nmtui_CPPFLAGS = \
 	$(NULL)
 
 clients_tui_nmtui_LDFLAGS = \
-	-Wl,--version-script="$(top_srcdir)/linker-script-binary.ver"
+	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
 
 clients_tui_nmtui_LDADD = \
 	libnm/libnm.la \
@@ -3812,7 +3812,7 @@ INTROSPECTION_GIRS += libnm-glib/NMClient-1.0.gir
 endif
 
 check-local-exports-libnm-glib:
-	$(top_srcdir)/tools/check-exports.sh $(builddir)/libnm-glib/.libs/libnm-glib.so $(srcdir)/libnm-glib/libnm-glib.ver
+	$(srcdir)/tools/check-exports.sh $(builddir)/libnm-glib/.libs/libnm-glib.so $(srcdir)/libnm-glib/libnm-glib.ver
 
 check_local += check-local-exports-libnm-glib
 
@@ -3831,7 +3831,7 @@ libnm_glib_tests_cppflags = \
 	-I$(builddir)/libnm-util \
 	-I$(srcdir)/libnm-glib \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY \
-	-DTEST_NM_SERVICE=\"$(abs_top_srcdir)/tools/test-networkmanager-service.py\" \
+	-DTEST_NM_SERVICE=\"$(abs_srcdir)/tools/test-networkmanager-service.py\" \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS)
 
@@ -4000,21 +4000,21 @@ VAPIGEN_VAPIS += \
 	vapi/libnm-glib.vapi
 endif
 
-vapi/libnm.vapi:      $(top_builddir)/libnm/NM-1.0.gir                   vapi/libnm.deps      vapi/NM-1.0.metadata
-vapi/libnm-util.vapi: $(top_builddir)/libnm-util/NetworkManager-1.0.gir  vapi/libnm-util.deps vapi/NetworkManager-1.0.metadata
-vapi/libnm-glib.vapi: $(top_builddir)/libnm-glib/NMClient-1.0.gir        vapi/libnm-glib.deps vapi/NMClient-1.0.metadata       vapi/libnm-util.vapi
+vapi/libnm.vapi:      $(builddir)/libnm/NM-1.0.gir                   vapi/libnm.deps      vapi/NM-1.0.metadata
+vapi/libnm-util.vapi: $(builddir)/libnm-util/NetworkManager-1.0.gir  vapi/libnm-util.deps vapi/NetworkManager-1.0.metadata
+vapi/libnm-glib.vapi: $(builddir)/libnm-glib/NMClient-1.0.gir        vapi/libnm-glib.deps vapi/NMClient-1.0.metadata       vapi/libnm-util.vapi
 
 vapi_libnm_vapi_METADATADIRS = $(srcdir)/vapi
-vapi_libnm_vapi_FILES = $(top_builddir)/libnm/NM-1.0.gir
+vapi_libnm_vapi_FILES = $(builddir)/libnm/NM-1.0.gir
 vapi_libnm_vapi_DEPS = gio-2.0
 
 vapi_libnm_util_vapi_METADATADIRS = $(srcdir)/vapi
-vapi_libnm_util_vapi_FILES = $(top_builddir)/libnm-util/NetworkManager-1.0.gir
+vapi_libnm_util_vapi_FILES = $(builddir)/libnm-util/NetworkManager-1.0.gir
 
 vapi_libnm_glib_vapi_METADATADIRS = $(srcdir)/vapi
-vapi_libnm_glib_vapi_FILES = $(top_builddir)/libnm-glib/NMClient-1.0.gir
+vapi_libnm_glib_vapi_FILES = $(builddir)/libnm-glib/NMClient-1.0.gir
 vapi_libnm_glib_vapi_VAPIDIRS = $(builddir)/vapi
-vapi_libnm_glib_vapi_GIRDIRS = $(top_builddir)/libnm-util
+vapi_libnm_glib_vapi_GIRDIRS = $(builddir)/libnm-util
 vapi_libnm_glib_vapi_DEPS = gio-2.0
 
 vapi_DATA += \
