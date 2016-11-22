@@ -128,11 +128,7 @@ DISTCHECK_CONFIGURE_FLAGS = \
 dist-configure-check:
 	@echo "*** 'make dist' requires '--enable-gtk-doc --with-introspection --with-libnm-glib'. ***"
 	@false
-
 if !BUILD_SETTING_DOCS
-dist_configure_check += dist-configure-check
-endif
-if !ENABLE_GTK_DOC
 dist_configure_check += dist-configure-check
 endif
 if !WITH_LEGACY_LIBRARIES
