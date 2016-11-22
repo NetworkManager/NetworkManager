@@ -339,8 +339,10 @@ nmp_utils_ethtool_set_link_settings (const char *ifname, gboolean autoneg, guint
 		case NM_PLATFORM_LINK_DUPLEX_FULL:
 			edata.duplex = DUPLEX_FULL;
 			break;
-		default: /* NM_PLATFORM_LINK_DUPLEX_UNSET */
+		case NM_PLATFORM_LINK_DUPLEX_UNKNOWN:
 			break;
+		default:
+			g_return_val_if_reached (FALSE);
 		}
 	}
 

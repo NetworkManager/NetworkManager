@@ -482,10 +482,9 @@ typedef struct {
 } NMPlatformTunProperties;
 
 typedef enum {
-	NM_PLATFORM_LINK_DUPLEX_UNSET = 0,
+	NM_PLATFORM_LINK_DUPLEX_UNKNOWN,
 	NM_PLATFORM_LINK_DUPLEX_HALF,
 	NM_PLATFORM_LINK_DUPLEX_FULL,
-	NM_PLATFORM_LINK_DUPLEX_UNKNOWN,
 } NMPlatformLinkDuplexType;
 
 /*****************************************************************************/
