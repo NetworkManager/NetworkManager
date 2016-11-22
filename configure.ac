@@ -1126,8 +1126,7 @@ if test "$build_setting_docs" != "yes" \
 	-a -f man/nm-settings.xml \
 	-a -f man/nm-settings-keyfile.xml \
 	-a -f man/nm-settings-ifcfg-rh.xml \
-	-a -f docs/api/settings-spec.xml \
-	-a -f clients/cli/settings-docs.c; then
+	-a -f docs/api/settings-spec.xml; then
     have_setting_docs=yes
 fi
 
