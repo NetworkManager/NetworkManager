@@ -1111,7 +1111,6 @@ if test -n "$INTROSPECTION_MAKEFILE" -a "$enable_gtk_doc" = "yes"; then
     AC_PATH_PROG(PERL, perl, no)
 
     if test "$have_pyobject" = "yes"; then
-        AC_DEFINE(BUILD_SETTING_DOCS, [1], [Define if you we can build nm-setting-docs.xml, nm-keyfile-docs.xml and nm-ifcfg-rh-docs.xml])
         build_setting_docs=yes
     fi
 fi
@@ -1123,7 +1122,6 @@ if test "$build_setting_docs" != "yes" \
 	-a -f man/nm-settings-ifcfg-rh.xml \
 	-a -f docs/api/settings-spec.xml \
 	-a -f clients/cli/settings-docs.c; then
-    AC_DEFINE(HAVE_SETTING_DOCS, [1], [Define if you have pre-built settings docs])
     have_setting_docs=yes
 fi
 
