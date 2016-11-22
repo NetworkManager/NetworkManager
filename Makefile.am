@@ -339,6 +339,12 @@ BUILT_SOURCES += \
 	$(introspection_sources) \
 	$(DBUS_INTERFACE_DOCS)
 
+$(dispatcher_libnm_dispatcher_core_la_OBJECTS): $(introspection_sources)
+$(dispatcher_nm_dispatcher_OBJECTS):            $(introspection_sources)
+$(libnm_libnm_la_OBJECTS):                      $(introspection_sources)
+$(src_libNetworkManager_la_OBJECTS):            $(introspection_sources)
+$(src_libNetworkManagerBase_la_OBJECTS):        $(introspection_sources)
+
 EXTRA_DIST += \
 	$(dbusinterfaces_DATA)
 
@@ -484,7 +490,23 @@ GLIB_GENERATED += \
 	$(libnm_core_lib_c_mkenums)
 nm_core_enum_types_sources = $(libnm_core_lib_h_pub_real)
 
-$(libnm_core_libnm_core_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(dispatcher_libnm_dispatcher_core_la_OBJECTS):                             $(libnm_core_lib_h_pub_mkenums)
+$(dispatcher_nm_dispatcher_OBJECTS):                                        $(libnm_core_lib_h_pub_mkenums)
+$(libnm_core_libnm_core_la_OBJECTS):                                        $(libnm_core_lib_h_pub_mkenums)
+$(libnm_libnm_la_OBJECTS):                                                  $(libnm_core_lib_h_pub_mkenums)
+$(libnm_tests_libnm_vpn_plugin_utils_test_la_OBJECTS):                      $(libnm_core_lib_h_pub_mkenums)
+$(src_NetworkManager_OBJECTS):                                              $(libnm_core_lib_h_pub_mkenums)
+$(src_settings_plugins_ibft_libnms_ibft_core_la_OBJECTS):                   $(libnm_core_lib_h_pub_mkenums)
+$(src_settings_plugins_ibft_libnm_settings_plugin_ibft_la_OBJECTS):         $(libnm_core_lib_h_pub_mkenums)
+$(src_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_OBJECTS):           $(libnm_core_lib_h_pub_mkenums)
+if CONFIG_PLUGIN_IFCFG_RH
+$(src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+endif
+$(src_devices_adsl_libnm_device_plugin_adsl_la_OBJECTS):                    $(libnm_core_lib_h_pub_mkenums)
+$(src_devices_bluetooth_libnm_device_plugin_bluetooth_la_OBJECTS):          $(libnm_core_lib_h_pub_mkenums)
+$(src_devices_team_libnm_device_plugin_team_la_OBJECTS):                    $(libnm_core_lib_h_pub_mkenums)
+$(src_devices_wifi_libnm_device_plugin_wifi_la_OBJECTS):                    $(libnm_core_lib_h_pub_mkenums)
+$(src_devices_wwan_libnm_device_plugin_wwan_la_OBJECTS):                    $(libnm_core_lib_h_pub_mkenums)
 
 libnm_core_libnm_core_la_CPPFLAGS = \
 	$(dflt_cppflags_libnm_core) \
@@ -742,7 +764,10 @@ nm_enum_types_sources = \
 nm_enum_types_MKENUMS_H_FLAGS = --identifier-prefix NM --fhead '\#include <nm-core-enum-types.h>\n'
 nm_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\n'
 
-$(libnm_libnm_la_OBJECTS): $(libnm_lib_h_pub_mkenums)
+$(dispatcher_nm_dispatcher_OBJECTS):                    $(libnm_lib_h_pub_mkenums)
+$(dispatcher_libnm_dispatcher_core_la_OBJECTS):         $(libnm_lib_h_pub_mkenums)
+$(libnm_libnm_la_OBJECTS):                              $(libnm_lib_h_pub_mkenums)
+$(libnm_tests_libnm_vpn_plugin_utils_test_la_OBJECTS):  $(libnm_core_lib_h_pub_mkenums)
 
 libnm_libnm_la_CPPFLAGS = \
 	$(dflt_cppflags_libnm_core) \
@@ -762,8 +787,6 @@ libnm_libnm_la_SOURCES = \
 nodist_libnm_libnm_la_SOURCES = \
 	$(libnm_lib_h_pub_mkenums) \
 	$(libnm_lib_c_mkenums)
-
-$(libnm_libnm_la_OBJECTS): $(introspection_sources)
 
 EXTRA_libnm_libnm_la_DEPENDENCIES = \
 	libnm/libnm.ver
@@ -1219,8 +1242,6 @@ src_libNetworkManagerBase_la_SOURCES += \
 	src/platform/wifi/wifi-utils-wext.h
 endif
 
-$(src_libNetworkManagerBase_la_OBJECTS): $(introspection_sources)
-
 src_libNetworkManagerBase_la_LIBADD = \
 	libnm-core/libnm-core.la \
 	introspection/libnmdbus.la \
@@ -1391,8 +1412,6 @@ src_libNetworkManager_la_SOURCES = \
 	src/nm-types.h \
 	\
 	$(NULL)
-
-$(src_libNetworkManager_la_OBJECTS): $(introspection_sources)
 
 src_libNetworkManager_la_LIBADD = \
 	src/libNetworkManagerBase.la \
@@ -1760,6 +1779,8 @@ src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h: src/settings/plugins/ifcfg-rh/n
 src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.c: src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h
 	@true
 
+$(src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_OBJECTS): src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h
+
 ###############################################################################
 
 src_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_SOURCES = \
@@ -1774,8 +1795,6 @@ src_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_SOURCES = \
 	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-writer.h
 
 src_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_CPPFLAGS = $(src_settings_plugins_ifcfg_rh_cppflags)
-
-$(src_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 ###############################################################################
 
@@ -1794,9 +1813,6 @@ src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_LDFLAGS = \
 src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_LIBADD = \
 	src/settings/plugins/ifcfg-rh/libnms-ifcfg-rh-core.la \
 	src/settings/plugins/ifcfg-rh/libnmdbus-ifcfg-rh.la
-
-$(src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_OBJECTS): src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h
 
 check-local-symbols-settings-ifcfg-rh: src/settings/plugins/ifcfg-rh/libnm-settings-plugin-ifcfg-rh.la
 	$(call check_so_symbols,$(builddir)/src/settings/plugins/ifcfg-rh/.libs/libnm-settings-plugin-ifcfg-rh.so)
@@ -2805,8 +2821,6 @@ dispatcher_libnm_dispatcher_core_la_CPPFLAGS = $(dispatcher_cppflags)
 dispatcher_libnm_dispatcher_core_la_LIBADD = \
 	libnm/libnm.la \
 	$(GLIB_LIBS)
-
-$(dispatcher_nm_dispatcher_OBJECTS): $(introspection_sources)
 
 dispatcher_nm_dispatcher_SOURCES = \
 	shared/nm-dispatcher-api.h \
