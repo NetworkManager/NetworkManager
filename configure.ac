@@ -1103,17 +1103,22 @@ AM_CONDITIONAL(INSTALL_PREGEN_MANPAGES, test "x${install_pregen_manpages}" = "xy
 # check if we can build setting property documentation
 if test -n "$INTROSPECTION_MAKEFILE" -a "$enable_gtk_doc" = "yes"; then
     # If g-i is installed we know we have python, but we might not have pygobject
-    if python -c 'from gi.repository import GObject' >& /dev/null; then
-        have_pyobject=yes
+    if ! python -c 'from gi.repository import GObject' >& /dev/null; then
+        AC_MSG_ERROR(["--enable-gtk-doc --with-introspection" aims to build the settings documentation. This requires GObject introspection for python (pygobject)])
     fi
 
     # gtk-doc depends on perl, but we can check for it anyway
     AC_PATH_PROG(PERL, perl, no)
 
-    if test "$have_pyobject" = "yes"; then
-        AC_DEFINE(BUILD_SETTING_DOCS, [1], [Define if you we can build nm-setting-docs.xml, nm-keyfile-docs.xml and nm-ifcfg-rh-docs.xml])
-        build_setting_docs=yes
-    fi
+    build_setting_docs=yes
+else
+    build_setting_docs=no
+fi
+
+if test -n "$INTROSPECTION_MAKEFILE"; then
+	have_introspection=yes
+else
+	have_introspection=no
 fi
 
 # check for pre-built setting docs
@@ -1121,9 +1126,7 @@ if test "$build_setting_docs" != "yes" \
 	-a -f man/nm-settings.xml \
 	-a -f man/nm-settings-keyfile.xml \
 	-a -f man/nm-settings-ifcfg-rh.xml \
-	-a -f docs/api/settings-spec.xml \
-	-a -f clients/cli/settings-docs.c; then
-    AC_DEFINE(HAVE_SETTING_DOCS, [1], [Define if you have pre-built settings docs])
+	-a -f docs/api/settings-spec.xml; then
     have_setting_docs=yes
 fi
 
@@ -1219,6 +1222,8 @@ echo
 
 echo "Miscellaneous:"
 echo "  documentation: $enable_gtk_doc"
+echo "  documentation-settings: $build_setting_docs"
+echo "  introspection: $have_introspection"
 echo "  tests: $enable_tests"
 echo "  more-asserts: $more_asserts"
 echo "  valgrind: $with_valgrind   $with_valgrind_suppressions"
