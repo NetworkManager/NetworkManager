@@ -782,6 +782,84 @@ supplicant_interface_init (NMDeviceEthernet *self)
 	return TRUE;
 }
 
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (link_duplex_to_string, NMPlatformLinkDuplexType,
+	NM_UTILS_LOOKUP_DEFAULT_WARN (NULL),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_LINK_DUPLEX_UNKNOWN, "unknown"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_LINK_DUPLEX_FULL,     "full"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_LINK_DUPLEX_HALF,     "half"),
+);
+
+static NMPlatformLinkDuplexType
+link_duplex_to_platform (const char *duplex)
+{
+	if (!duplex)
+		return NM_PLATFORM_LINK_DUPLEX_UNKNOWN;
+	if (nm_streq (duplex, "full"))
+		return NM_PLATFORM_LINK_DUPLEX_FULL;
+	if (nm_streq (duplex, "half"))
+		return NM_PLATFORM_LINK_DUPLEX_HALF;
+	g_return_val_if_reached (NM_PLATFORM_LINK_DUPLEX_UNKNOWN);
+}
+
+static void
+link_negotiation_set (NMDevice *device)
+{
+	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
+	NMSettingWired *s_wired;
+	gboolean autoneg = TRUE;
+	gboolean link_autoneg;
+	NMPlatformLinkDuplexType duplex = NM_PLATFORM_LINK_DUPLEX_UNKNOWN;
+	NMPlatformLinkDuplexType link_duplex;
+	guint32 speed = 0;
+	guint32 link_speed;
+
+	s_wired = (NMSettingWired *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRED);
+	if (s_wired) {
+		autoneg = nm_setting_wired_get_auto_negotiate (s_wired);
+		if (!autoneg) {
+			speed = nm_setting_wired_get_speed (s_wired);
+			duplex = link_duplex_to_platform (nm_setting_wired_get_duplex (s_wired));
+			if (!speed && !duplex) {
+				_LOGD (LOGD_DEVICE, "set-link: ignore link negotiation");
+				return;
+			}
+		}
+	}
+
+	if (!nm_platform_ethtool_get_link_settings (NM_PLATFORM_GET, nm_device_get_iface (device),
+	                                            &link_autoneg, &link_speed, &link_duplex)) {
+		_LOGW (LOGD_DEVICE, "set-link: unable to retrieve link negotiation");
+		return;
+	}
+
+	/* If link negotiation setting are already in place do nothing and return with success */
+	if (   (!!autoneg == !!link_autoneg)
+	    && (!speed || (speed == link_speed))
+	    && (!duplex || (duplex == link_duplex))) {
+		_LOGD (LOGD_DEVICE, "set-link: link negotiation is already configured");
+		return;
+	}
+
+	if (autoneg)
+		_LOGD (LOGD_DEVICE, "set-link: configure autonegotiation");
+	else {
+		_LOGD (LOGD_DEVICE, "set-link: configure static negotiation (%u Mbit%s - %s duplex%s)",
+		       speed ?: link_speed,
+		       speed ? "" : "*",
+		       duplex ? link_duplex_to_string (duplex) : link_duplex_to_string (link_duplex),
+		       duplex ? "" : "*");
+	}
+
+	if (!nm_platform_ethtool_set_link_settings (NM_PLATFORM_GET,
+	                                            nm_device_get_iface (device),
+	                                            autoneg,
+	                                            speed,
+	                                            duplex)) {
+		_LOGW (LOGD_DEVICE, "set-link: failure to set link negotiation");
+		return;
+	}
+}
+
 static gboolean
 pppoe_reconnect_delay (gpointer user_data)
 {
@@ -799,40 +877,41 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (dev);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
+	NMActStageReturn ret;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
 	ret = NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->act_stage1_prepare (dev, reason);
-	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
-		if (!nm_device_hw_addr_set_cloned (dev, nm_device_get_applied_connection (dev), FALSE))
-			ret = NM_ACT_STAGE_RETURN_FAILURE;
-	}
+	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
+		return ret;
 
-	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
-		/* If we're re-activating a PPPoE connection a short while after
-		 * a previous PPPoE connection was torn down, wait a bit to allow the
-		 * remote side to handle the disconnection.  Otherwise the peer may
-		 * get confused and fail to negotiate the new connection. (rh #1023503)
-		 */
-		if (priv->last_pppoe_time) {
-			gint32 delay = nm_utils_get_monotonic_timestamp_s () - priv->last_pppoe_time;
+	link_negotiation_set (dev);
 
-			if (   delay < PPPOE_RECONNECT_DELAY
-			    && nm_device_get_applied_setting (dev, NM_TYPE_SETTING_PPPOE)) {
-				_LOGI (LOGD_DEVICE, "delaying PPPoE reconnect for %d seconds to ensure peer is ready...",
-				       delay);
-				g_assert (!priv->pppoe_wait_id);
-				priv->pppoe_wait_id = g_timeout_add_seconds (delay,
-				                                             pppoe_reconnect_delay,
-				                                             self);
-				ret = NM_ACT_STAGE_RETURN_POSTPONE;
-			} else
-				priv->last_pppoe_time = 0;
+	if (!nm_device_hw_addr_set_cloned (dev, nm_device_get_applied_connection (dev), FALSE))
+		return NM_ACT_STAGE_RETURN_FAILURE;
+
+	/* If we're re-activating a PPPoE connection a short while after
+	 * a previous PPPoE connection was torn down, wait a bit to allow the
+	 * remote side to handle the disconnection.  Otherwise the peer may
+	 * get confused and fail to negotiate the new connection. (rh #1023503)
+	 */
+	if (priv->last_pppoe_time) {
+		gint32 delay = nm_utils_get_monotonic_timestamp_s () - priv->last_pppoe_time;
+
+		if (   delay < PPPOE_RECONNECT_DELAY
+		    && nm_device_get_applied_setting (dev, NM_TYPE_SETTING_PPPOE)) {
+			_LOGI (LOGD_DEVICE, "delaying PPPoE reconnect for %d seconds to ensure peer is ready...",
+			       delay);
+			g_assert (!priv->pppoe_wait_id);
+			priv->pppoe_wait_id = g_timeout_add_seconds (delay,
+								     pppoe_reconnect_delay,
+								     self);
+			return NM_ACT_STAGE_RETURN_POSTPONE;
 		}
+		priv->last_pppoe_time = 0;
 	}
 
-	return ret;
+	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
 static NMActStageReturn
@@ -1522,7 +1601,7 @@ get_link_speed (NMDevice *device)
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	guint32 speed;
 
-	if (!nm_platform_ethtool_get_link_speed (NM_PLATFORM_GET, nm_device_get_iface (device), &speed))
+	if (!nm_platform_ethtool_get_link_settings (NM_PLATFORM_GET, nm_device_get_iface (device), NULL, &speed, NULL))
 		return;
 	if (priv->speed == speed)
 		return;

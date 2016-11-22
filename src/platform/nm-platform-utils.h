@@ -35,7 +35,8 @@ gboolean nmp_utils_ethtool_get_wake_on_lan (const char *ifname);
 gboolean nmp_utils_ethtool_set_wake_on_lan (const char *ifname, NMSettingWiredWakeOnLan wol,
                                             const char *wol_password);
 
-gboolean nmp_utils_ethtool_get_link_speed (const char *ifname, guint32 *out_speed);
+gboolean nmp_utils_ethtool_get_link_settings (const char *ifname, gboolean *out_autoneg, guint32 *out_speed, NMPlatformLinkDuplexType *out_duplex);
+gboolean nmp_utils_ethtool_set_link_settings (const char *ifname, gboolean autoneg, guint32 speed, NMPlatformLinkDuplexType duplex);
 
 gboolean nmp_utils_ethtool_get_driver_info (const char *ifname,
                                             char **out_driver_name,

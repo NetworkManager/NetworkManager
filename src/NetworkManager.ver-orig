@@ -425,7 +425,9 @@ global:
 	nm_setting_vlan_get_type;
 	nm_setting_vlan_new;
 	nm_setting_wired_add_s390_option;
+	nm_setting_wired_get_auto_negotiate;
 	nm_setting_wired_get_cloned_mac_address;
+	nm_setting_wired_get_duplex;
 	nm_setting_wired_get_generate_mac_address_mask;
 	nm_setting_wired_get_mac_address;
 	nm_setting_wired_get_mac_address_blacklist;
@@ -435,6 +437,7 @@ global:
 	nm_setting_wired_get_s390_option;
 	nm_setting_wired_get_s390_option_by_key;
 	nm_setting_wired_get_s390_subchannels;
+	nm_setting_wired_get_speed;
 	nm_setting_wired_get_type;
 	nm_setting_wired_get_wake_on_lan;
 	nm_setting_wired_get_wake_on_lan_password;

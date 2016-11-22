@@ -618,15 +618,12 @@ static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
-	const char *valid_ports[] = { "tp", "aui", "bnc", "mii", NULL };
-	const char *valid_duplex[] = { "half", "full", NULL };
-	const char *valid_nettype[] = { "qeth", "lcs", "ctc", NULL };
 	GHashTableIter iter;
 	const char *key, *value;
 	int i;
 	GError *local = NULL;
 
-	if (priv->port && !g_strv_contains (valid_ports, priv->port)) {
+	if (!NM_IN_STRSET (priv->port, NULL, "tp", "aui", "bnc", "mii")) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -636,7 +633,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (priv->duplex && !g_strv_contains (valid_duplex, priv->duplex)) {
+	if (!NM_IN_STRSET (priv->duplex, NULL, "half", "full")) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -682,7 +679,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
-	if (priv->s390_nettype && !g_strv_contains (valid_nettype, priv->s390_nettype)) {
+	if (!NM_IN_STRSET (priv->s390_nettype, NULL, "qeth", "lcs", "ctc")) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -759,6 +756,27 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
+	/* Normalizable errors */
+
+	if (priv->auto_negotiate) {
+		if (priv->duplex) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("when link autonegotiation is enabled no duplex value is accepted"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_DUPLEX);
+			return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+		}
+		if (priv->speed) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("when link autonegotiation is enabled speed should be 0"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_SPEED);
+			return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+		}
+	}
+
 	return TRUE;
 }
 
@@ -777,6 +795,12 @@ compare_property (NMSetting *setting,
 
 	parent_class = NM_SETTING_CLASS (nm_setting_wired_parent_class);
 	return parent_class->compare_property (setting, other, prop_spec, flags);
+}
+
+static GVariant *
+_override_autoneg_get (NMSetting *setting, const char *property)
+{
+	return g_variant_new_boolean (nm_setting_wired_get_auto_negotiate ((NMSettingWired *) setting));
 }
 
 /*****************************************************************************/
@@ -1001,8 +1025,9 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_wired_class)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: speed
-	 * variable: (none)
-	 * description: The property is not saved by the plugin.
+	 * variable: ETHTOOL_OPTS
+	 * description: Fixed speed for the ethernet link. It is added as "speed"
+	 *    parameter in the ETHTOOL_OPTS variable.
 	 * ---end---
 	 */
 	g_object_class_install_property
@@ -1021,8 +1046,9 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_wired_class)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: duplex
-	 * variable: (none)
-	 * description: The property is not saved by the plugin.
+	 * variable: ETHTOOL_OPTS
+	 * description: Fixed duplex mode for the ethernet link. It is added as
+	 *    "duplex" parameter in the ETHOOL_OPTS variable.
 	 * ---end---
 	 */
 	g_object_class_install_property
@@ -1041,17 +1067,25 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_wired_class)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: auto-negotiate
-	 * variable: (none)
-	 * description: The property is not saved by the plugin.
+	 * variable: ETHTOOL_OPTS
+	 * description: Whether link speed and duplex autonegotiation is enabled.
+	 *    It is not saved only if disabled and no values are provided for the
+	 *    "speed" and "duplex" parameters (skips link configuration).
 	 * ---end---
 	 */
 	g_object_class_install_property
 		(object_class, PROP_AUTO_NEGOTIATE,
 		 g_param_spec_boolean (NM_SETTING_WIRED_AUTO_NEGOTIATE, "", "",
-		                       TRUE,
+		                       FALSE,
 		                       G_PARAM_READWRITE |
 		                       G_PARAM_CONSTRUCT |
 		                       G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_override_property (setting_class,
+	                                     NM_SETTING_WIRED_AUTO_NEGOTIATE,
+	                                     G_VARIANT_TYPE_BOOLEAN,
+	                                     _override_autoneg_get,
+	                                     NULL,
+	                                     NULL);
 
 	/**
 	 * NMSettingWired:mac-address:

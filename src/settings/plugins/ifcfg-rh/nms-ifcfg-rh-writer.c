@@ -1008,11 +1008,12 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	NMSettingWired *s_wired;
 	const char *device_mac, *cloned_mac;
 	char *tmp;
-	const char *nettype, *portname, *ctcprot, *s390_key, *s390_val;
-	guint32 mtu, num_opts, i;
+	const char *nettype, *portname, *ctcprot, *s390_key, *s390_val, *duplex;
+	guint32 mtu, num_opts, speed, i;
 	const char *const *s390_subchannels;
-	GString *str;
+	GString *str = NULL;
 	const char * const *macaddr_blacklist;
+	gboolean auto_negotiate;
 	NMSettingWiredWakeOnLan wol;
 	const char *wol_password;
 
@@ -1101,14 +1102,44 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		g_string_free (str, TRUE);
 	}
 
+	/* Stuff ETHTOOL_OPT with required options */
+	str = NULL;
+	auto_negotiate = nm_setting_wired_get_auto_negotiate (s_wired);
+	/* autoneg off + speed 0 + duplex NULL, means we want NM
+	 * to skip link configuration which is default. So write
+	 * down link config only if we have auto-negotiate true or
+	 * a valid value for one among speed and duplex.
+	 */
+	if (auto_negotiate) {
+		str = g_string_sized_new (64);
+		g_string_printf (str, "autoneg on");
+	} else {
+		speed = nm_setting_wired_get_speed (s_wired);
+		duplex = nm_setting_wired_get_duplex (s_wired);
+		if (speed || duplex) {
+			str = g_string_sized_new (64);
+			g_string_printf (str, "autoneg off");
+			if (speed)
+				g_string_append_printf (str, " speed %u", speed);
+			if (duplex)
+				g_string_append_printf (str, " duplex %s", duplex);
+		}
+	}
+
 	wol = nm_setting_wired_get_wake_on_lan (s_wired);
 	wol_password = nm_setting_wired_get_wake_on_lan_password (s_wired);
+
 	if (wol == NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE)
-		svSetValue (ifcfg, "ETHTOOL_OPTS", "");
-	else if (wol == NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT)
-		svUnsetValue (ifcfg, "ETHTOOL_OPTS");
-	else {
-		str = g_string_sized_new (30);
+		svSetValue (ifcfg, "ETHTOOL_WAKE_ON_LAN", "ignore");
+	else if (wol == NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT) {
+		if (!str)
+			svUnsetValue (ifcfg, "ETHTOOL_OPTS");
+	} else {
+		if (!str)
+			str = g_string_sized_new (30);
+		else
+			g_string_append (str, " ");
+
 		g_string_append (str, "wol ");
 
 		if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_PHY))
@@ -1129,10 +1160,12 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 
 		if (wol_password && NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC))
 			g_string_append_printf (str, "s sopass %s", wol_password);
-
+	}
+	if (str) {
 		svSetValueString (ifcfg, "ETHTOOL_OPTS", str->str);
 		g_string_free (str, TRUE);
 	}
+	/* End ETHTOOL_OPT stuffing */
 
 	svSetValueString (ifcfg, "TYPE", TYPE_ETHERNET);
 

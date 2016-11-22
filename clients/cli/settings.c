@@ -1800,8 +1800,6 @@ DEFINE_GETTER (nmc_property_wimax_get_mac_address, NM_SETTING_WIMAX_MAC_ADDRESS)
 
 /* --- NM_SETTING_WIRED_SETTING_NAME property get functions --- */
 DEFINE_GETTER (nmc_property_wired_get_port, NM_SETTING_WIRED_PORT)
-DEFINE_GETTER (nmc_property_wired_get_speed, NM_SETTING_WIRED_SPEED)
-DEFINE_GETTER (nmc_property_wired_get_duplex, NM_SETTING_WIRED_DUPLEX)
 DEFINE_GETTER (nmc_property_wired_get_auto_negotiate, NM_SETTING_WIRED_AUTO_NEGOTIATE)
 DEFINE_GETTER (nmc_property_wired_get_mac_address, NM_SETTING_WIRED_MAC_ADDRESS)
 DEFINE_GETTER (nmc_property_wired_get_cloned_mac_address, NM_SETTING_WIRED_CLONED_MAC_ADDRESS)
@@ -1811,6 +1809,30 @@ DEFINE_GETTER (nmc_property_wired_get_s390_subchannels, NM_SETTING_WIRED_S390_SU
 DEFINE_GETTER (nmc_property_wired_get_s390_nettype, NM_SETTING_WIRED_S390_NETTYPE)
 DEFINE_GETTER (nmc_property_wired_get_s390_options, NM_SETTING_WIRED_S390_OPTIONS)
 DEFINE_GETTER (nmc_property_wired_get_wake_on_lan_password, NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD)
+
+static char *
+nmc_property_wired_get_speed (NMSetting *setting, NmcPropertyGetType get_type)
+{
+	NMSettingWired *s_wired = NM_SETTING_WIRED (setting);
+	guint32 speed;
+
+	speed = nm_setting_wired_get_speed (s_wired);
+	return g_strdup_printf ("%d", speed);
+}
+
+static char *
+nmc_property_wired_get_duplex (NMSetting *setting, NmcPropertyGetType get_type)
+{
+	NMSettingWired *s_wired = NM_SETTING_WIRED (setting);
+	const char *str;
+
+	str = nm_setting_wired_get_duplex (s_wired);
+	if (!str)
+		return NULL;
+	else
+		return g_strdup (str);
+
+}
 
 static char *
 nmc_property_wired_get_mtu (NMSetting *setting, NmcPropertyGetType get_type)
@@ -4996,10 +5018,10 @@ DEFINE_REMOVER_OPTION (nmc_property_vpn_remove_option_secret,
 
 /* --- NM_SETTING_WIRED_SETTING_NAME property setter functions --- */
 #if 0
-/*
- * Do not allow setting 'port' and 'duplex' for now. They are not implemented in
- * NM core, nor in ifcfg-rh plugin. Enable this when it gets done.
- */
+-/*
+- * Do not allow setting 'port' for now. It is not implemented in
+- * NM core, nor in ifcfg-rh plugin. Enable this when it gets done.
+- */
 /* 'port' */
 static const char *wired_valid_ports[] = { "tp", "aui", "bnc", "mii", NULL };
 
@@ -5010,6 +5032,7 @@ nmc_property_wired_set_port (NMSetting *setting, const char *prop, const char *v
 }
 
 DEFINE_ALLOWED_VAL_FUNC (nmc_property_wired_allowed_port, wired_valid_ports)
+#endif
 
 /* 'duplex' */
 static const char *wired_valid_duplexes[] = { "half", "full", NULL };
@@ -5021,7 +5044,7 @@ nmc_property_wired_set_duplex (NMSetting *setting, const char *prop, const char 
 }
 
 DEFINE_ALLOWED_VAL_FUNC (nmc_property_wired_allowed_duplex, wired_valid_duplexes)
-#endif
+
 
 /* 'mac-address-blacklist' */
 DEFINE_SETTER_MAC_BLACKLIST (nmc_property_wired_set_mac_address_blacklist,
@@ -7310,28 +7333,28 @@ nmc_properties_init (void)
 	/* Add editable properties for NM_SETTING_WIRED_SETTING_NAME */
 	nmc_add_prop_funcs (GLUE (WIRED, PORT),
 	                    nmc_property_wired_get_port,
-	                    NULL, /*nmc_property_wired_set_port,*/
+	                    NULL, /* nmc_property_wired_set_port, */
 	                    NULL,
 	                    NULL,
-	                    NULL, /*nmc_property_wired_allowed_port,*/
+	                    NULL, /* nmc_property_wired_allowed_port, */
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRED, SPEED),
 	                    nmc_property_wired_get_speed,
-	                    NULL,
+	                    nmc_property_set_uint,
 	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRED, DUPLEX),
 	                    nmc_property_wired_get_duplex,
-	                    NULL, /*nmc_property_wired_set_duplex,*/
+	                    nmc_property_wired_set_duplex,
 	                    NULL,
 	                    NULL,
-	                    NULL,
-	                    NULL); /*nmc_property_wired_allowed_duplex);*/
+	                    nmc_property_wired_allowed_duplex,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRED, AUTO_NEGOTIATE),
 	                    nmc_property_wired_get_auto_negotiate,
-	                    NULL,
+	                    nmc_property_set_bool,
 	                    NULL,
 	                    NULL,
 	                    NULL,
