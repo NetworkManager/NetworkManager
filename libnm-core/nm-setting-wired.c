@@ -618,15 +618,12 @@ static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
-	const char *valid_ports[] = { "tp", "aui", "bnc", "mii", NULL };
-	const char *valid_duplex[] = { "half", "full", NULL };
-	const char *valid_nettype[] = { "qeth", "lcs", "ctc", NULL };
 	GHashTableIter iter;
 	const char *key, *value;
 	int i;
 	GError *local = NULL;
 
-	if (priv->port && !g_strv_contains (valid_ports, priv->port)) {
+	if (!NM_IN_STRSET (priv->port, NULL, "tp", "aui", "bnc", "mii")) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -636,7 +633,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (priv->duplex && !g_strv_contains (valid_duplex, priv->duplex)) {
+	if (!NM_IN_STRSET (priv->duplex, NULL, "half", "full")) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -682,7 +679,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
-	if (priv->s390_nettype && !g_strv_contains (valid_nettype, priv->s390_nettype)) {
+	if (!NM_IN_STRSET (priv->s390_nettype, NULL, "qeth", "lcs", "ctc")) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
