@@ -889,7 +889,7 @@ libnm_tests_cppflags = \
 	-DTEST_NM_SERVICE=\"$(abs_top_srcdir)/tools/test-networkmanager-service.py\"
 
 libnm_tests_ldadd = \
-	$(top_builddir)/libnm/libnm.la \
+	libnm/libnm.la \
 	$(GLIB_LIBS)
 
 libnm_tests_test_nm_client_CPPFLAGS = $(libnm_tests_cppflags)
@@ -3547,7 +3547,7 @@ libnm_util_tests_test_setting_dcb_LDADD = $(libnm_util_tests_ldadd)
 
 libnm_util_tests_test_libnm_linking_CPPFLAGS = $(libnm_util_tests_cppflags)
 libnm_util_tests_test_libnm_linking_LDADD = \
-	$(top_builddir)/libnm/libnm.la \
+	libnm/libnm.la \
 	$(libnm_util_tests_ldadd)
 
 ###############################################################################
