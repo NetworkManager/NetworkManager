@@ -32,7 +32,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
 
-#include "nmdbus-device-modem.h"
+#include "introspection/org.freedesktop.NetworkManager.Device.Modem.h"
 
 #include "devices/nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceModem);

@@ -51,7 +51,7 @@
 #include "nm-core-internal.h"
 #include "nm-config.h"
 
-#include "nmdbus-device-wifi.h"
+#include "introspection/org.freedesktop.NetworkManager.Device.Wireless.h"
 
 #include "devices/nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceWifi);

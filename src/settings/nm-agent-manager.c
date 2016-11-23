@@ -37,7 +37,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
 
-#include "nmdbus-agent-manager.h"
+#include "introspection/org.freedesktop.NetworkManager.AgentManager.h"
 
 /*****************************************************************************/
 

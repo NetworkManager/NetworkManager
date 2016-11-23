@@ -33,7 +33,7 @@
 #include "platform/nm-platform.h"
 #include "nm-device-factory.h"
 
-#include "nmdbus-device-veth.h"
+#include "introspection/org.freedesktop.NetworkManager.Device.Veth.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceVeth);

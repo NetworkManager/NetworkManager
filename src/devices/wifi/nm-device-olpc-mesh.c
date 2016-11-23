@@ -51,7 +51,7 @@
 /* This is a bug; but we can't really change API now... */
 #include "nm-vpn-dbus-interface.h"
 
-#include "nmdbus-device-olpc-mesh.h"
+#include "introspection/org.freedesktop.NetworkManager.Device.OlpcMesh.h"
 
 #include "devices/nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceOlpcMesh);

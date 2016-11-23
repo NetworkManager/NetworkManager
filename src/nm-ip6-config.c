@@ -33,7 +33,7 @@
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 
-#include "nmdbus-ip6-config.h"
+#include "introspection/org.freedesktop.NetworkManager.IP6Config.h"
 
 typedef struct {
 	gboolean never_default;

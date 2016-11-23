@@ -36,7 +36,7 @@
 #include "nm-ip4-config.h"
 #include "nm-dbus-compat.h"
 
-#include "nmdbus-device-team.h"
+#include "introspection/org.freedesktop.NetworkManager.Device.Team.h"
 
 #include "devices/nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceTeam);

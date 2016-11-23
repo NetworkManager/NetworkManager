@@ -51,7 +51,7 @@
 #include "nm-vpn-manager.h"
 #include "dns/nm-dns-manager.h"
 
-#include "nmdbus-vpn-connection.h"
+#include "introspection/org.freedesktop.NetworkManager.VPN.Connection.h"
 
 typedef enum {
 	/* Only system secrets */

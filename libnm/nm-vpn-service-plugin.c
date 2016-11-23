@@ -34,7 +34,7 @@
 #include "nm-core-internal.h"
 #include "nm-simple-connection.h"
 
-#include "nmdbus-vpn-plugin.h"
+#include "introspection/org.freedesktop.NetworkManager.VPN.Plugin.h"
 
 #define NM_VPN_SERVICE_PLUGIN_QUIT_TIMER    180
 

@@ -31,7 +31,7 @@
 #include "nm-simple-connection.h"
 #include "NetworkManagerUtils.h"
 
-#include "nmdbus-secret-agent.h"
+#include "introspection/org.freedesktop.NetworkManager.SecretAgent.h"
 
 /*****************************************************************************/
 

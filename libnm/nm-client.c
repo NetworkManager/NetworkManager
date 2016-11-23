@@ -37,12 +37,12 @@
 #include "nm-wimax-nsp.h"
 #include "nm-object-private.h"
 
-#include "nmdbus-manager.h"
-#include "nmdbus-device-wifi.h"
-#include "nmdbus-device.h"
-#include "nmdbus-settings.h"
-#include "nmdbus-settings-connection.h"
-#include "nmdbus-vpn-connection.h"
+#include "introspection/org.freedesktop.NetworkManager.h"
+#include "introspection/org.freedesktop.NetworkManager.Device.Wireless.h"
+#include "introspection/org.freedesktop.NetworkManager.Device.h"
+#include "introspection/org.freedesktop.NetworkManager.Settings.h"
+#include "introspection/org.freedesktop.NetworkManager.Settings.Connection.h"
+#include "introspection/org.freedesktop.NetworkManager.VPN.Connection.h"
 
 #include "nm-access-point.h"
 #include "nm-active-connection.h"

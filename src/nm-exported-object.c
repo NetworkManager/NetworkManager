@@ -29,7 +29,7 @@
 
 #include "devices/nm-device.h"
 #include "nm-active-connection.h"
-#include "nmdbus-device-statistics.h"
+#include "introspection/org.freedesktop.NetworkManager.Device.Statistics.h"
 
 #if NM_MORE_ASSERTS >= 2
 #define _ASSERT_NO_EARLY_EXPORT

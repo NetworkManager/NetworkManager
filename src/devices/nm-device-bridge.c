@@ -30,7 +30,7 @@
 #include "nm-device-factory.h"
 #include "nm-core-internal.h"
 
-#include "nmdbus-device-bridge.h"
+#include "introspection/org.freedesktop.NetworkManager.Device.Bridge.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceBridge);

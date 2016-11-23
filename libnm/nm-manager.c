@@ -35,7 +35,7 @@
 #include "nm-vpn-connection.h"
 #include "nm-dbus-helpers.h"
 
-#include "nmdbus-manager.h"
+#include "introspection/org.freedesktop.NetworkManager.h"
 
 void _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device, gboolean enabled);
 

@@ -70,8 +70,8 @@
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF (NMDevice);
 
-#include "nmdbus-device.h"
-#include "nmdbus-device-statistics.h"
+#include "introspection/org.freedesktop.NetworkManager.Device.h"
+#include "introspection/org.freedesktop.NetworkManager.Device.Statistics.h"
 
 G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, NM_TYPE_EXPORTED_OBJECT)
 

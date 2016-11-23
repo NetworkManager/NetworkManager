@@ -32,7 +32,7 @@
 #include "nm-core-internal.h"
 #include "nm-ip4-config.h"
 
-#include "nmdbus-device-bond.h"
+#include "introspection/org.freedesktop.NetworkManager.Device.Bond.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceBond);

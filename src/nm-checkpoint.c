@@ -33,7 +33,7 @@
 #include "settings/nm-settings-connection.h"
 #include "nm-simple-connection.h"
 #include "nm-utils.h"
-#include "nmdbus-checkpoint.h"
+#include "introspection/org.freedesktop.NetworkManager.Checkpoint.h"
 
 /*****************************************************************************/
 

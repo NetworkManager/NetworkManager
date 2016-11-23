@@ -40,7 +40,7 @@
 #include "nm-bt-error.h"
 #include "platform/nm-platform.h"
 
-#include "nmdbus-device-bt.h"
+#include "introspection/org.freedesktop.NetworkManager.Device.Bluetooth.h"
 
 #include "devices/nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceBt);

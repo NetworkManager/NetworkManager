@@ -171,175 +171,171 @@ noinst_LTLIBRARIES += \
 introspection_libnmdbus_la_CPPFLAGS = $(filter-out -DGLIB_VERSION_MAX_ALLOWED%,$(GLIB_CFLAGS))
 
 introspection_sources = \
-	introspection/nmdbus-access-point.c \
-	introspection/nmdbus-access-point.h \
-	introspection/nmdbus-active-connection.c \
-	introspection/nmdbus-active-connection.h \
-	introspection/nmdbus-agent-manager.c \
-	introspection/nmdbus-agent-manager.h \
-	introspection/nmdbus-checkpoint.c \
-	introspection/nmdbus-checkpoint.h \
-	introspection/nmdbus-device-adsl.c \
-	introspection/nmdbus-device-adsl.h \
-	introspection/nmdbus-device-bond.c \
-	introspection/nmdbus-device-bond.h \
-	introspection/nmdbus-device-bridge.c \
-	introspection/nmdbus-device-bridge.h \
-	introspection/nmdbus-device-bt.c \
-	introspection/nmdbus-device-bt.h \
-	introspection/nmdbus-device-ethernet.c \
-	introspection/nmdbus-device-ethernet.h \
-	introspection/nmdbus-device.c \
-	introspection/nmdbus-device.h \
-	introspection/nmdbus-device-generic.c \
-	introspection/nmdbus-device-generic.h \
-	introspection/nmdbus-device-infiniband.c \
-	introspection/nmdbus-device-infiniband.h \
-	introspection/nmdbus-device-ip-tunnel.c \
-	introspection/nmdbus-device-ip-tunnel.h \
-	introspection/nmdbus-device-macvlan.c \
-	introspection/nmdbus-device-macvlan.h \
-	introspection/nmdbus-device-modem.c \
-	introspection/nmdbus-device-modem.h \
-	introspection/nmdbus-device-olpc-mesh.c \
-	introspection/nmdbus-device-olpc-mesh.h \
-	introspection/nmdbus-device-statistics.c \
-	introspection/nmdbus-device-statistics.h \
-	introspection/nmdbus-device-team.c \
-	introspection/nmdbus-device-team.h \
-	introspection/nmdbus-device-tun.c \
-	introspection/nmdbus-device-tun.h \
-	introspection/nmdbus-device-veth.c \
-	introspection/nmdbus-device-veth.h \
-	introspection/nmdbus-device-vlan.c \
-	introspection/nmdbus-device-vlan.h \
-	introspection/nmdbus-device-vxlan.c \
-	introspection/nmdbus-device-vxlan.h \
-	introspection/nmdbus-device-wifi.c \
-	introspection/nmdbus-device-wifi.h \
-	introspection/nmdbus-device-wimax.c \
-	introspection/nmdbus-device-wimax.h \
-	introspection/nmdbus-dhcp4-config.c \
-	introspection/nmdbus-dhcp4-config.h \
-	introspection/nmdbus-dhcp6-config.c \
-	introspection/nmdbus-dhcp6-config.h \
-	introspection/nmdbus-ip4-config.c \
-	introspection/nmdbus-ip4-config.h \
-	introspection/nmdbus-ip6-config.c \
-	introspection/nmdbus-ip6-config.h \
-	introspection/nmdbus-manager.c \
-	introspection/nmdbus-manager.h \
-	introspection/nmdbus-ppp-manager.c \
-	introspection/nmdbus-ppp-manager.h \
-	introspection/nmdbus-secret-agent.c \
-	introspection/nmdbus-secret-agent.h \
-	introspection/nmdbus-settings-connection.c \
-	introspection/nmdbus-settings-connection.h \
-	introspection/nmdbus-settings.c \
-	introspection/nmdbus-settings.h \
-	introspection/nmdbus-vpn-connection.c \
-	introspection/nmdbus-vpn-connection.h \
-	introspection/nmdbus-vpn-plugin.c \
-	introspection/nmdbus-vpn-plugin.h
+	introspection/org.freedesktop.NetworkManager.AccessPoint.c \
+	introspection/org.freedesktop.NetworkManager.AccessPoint.h \
+	introspection/org.freedesktop.NetworkManager.Connection.Active.c \
+	introspection/org.freedesktop.NetworkManager.Connection.Active.h \
+	introspection/org.freedesktop.NetworkManager.AgentManager.c \
+	introspection/org.freedesktop.NetworkManager.AgentManager.h \
+	introspection/org.freedesktop.NetworkManager.Checkpoint.c \
+	introspection/org.freedesktop.NetworkManager.Checkpoint.h \
+	introspection/org.freedesktop.NetworkManager.Device.Adsl.c \
+	introspection/org.freedesktop.NetworkManager.Device.Adsl.h \
+	introspection/org.freedesktop.NetworkManager.Device.Bond.c \
+	introspection/org.freedesktop.NetworkManager.Device.Bond.h \
+	introspection/org.freedesktop.NetworkManager.Device.Bridge.c \
+	introspection/org.freedesktop.NetworkManager.Device.Bridge.h \
+	introspection/org.freedesktop.NetworkManager.Device.Bluetooth.c \
+	introspection/org.freedesktop.NetworkManager.Device.Bluetooth.h \
+	introspection/org.freedesktop.NetworkManager.Device.Wired.c \
+	introspection/org.freedesktop.NetworkManager.Device.Wired.h \
+	introspection/org.freedesktop.NetworkManager.Device.Generic.c \
+	introspection/org.freedesktop.NetworkManager.Device.Generic.h \
+	introspection/org.freedesktop.NetworkManager.Device.Infiniband.c \
+	introspection/org.freedesktop.NetworkManager.Device.Infiniband.h \
+	introspection/org.freedesktop.NetworkManager.Device.IPTunnel.c \
+	introspection/org.freedesktop.NetworkManager.Device.IPTunnel.h \
+	introspection/org.freedesktop.NetworkManager.Device.Macvlan.c \
+	introspection/org.freedesktop.NetworkManager.Device.Macvlan.h \
+	introspection/org.freedesktop.NetworkManager.Device.Modem.c \
+	introspection/org.freedesktop.NetworkManager.Device.Modem.h \
+	introspection/org.freedesktop.NetworkManager.Device.OlpcMesh.c \
+	introspection/org.freedesktop.NetworkManager.Device.OlpcMesh.h \
+	introspection/org.freedesktop.NetworkManager.Device.Statistics.c \
+	introspection/org.freedesktop.NetworkManager.Device.Statistics.h \
+	introspection/org.freedesktop.NetworkManager.Device.Team.c \
+	introspection/org.freedesktop.NetworkManager.Device.Team.h \
+	introspection/org.freedesktop.NetworkManager.Device.Tun.c \
+	introspection/org.freedesktop.NetworkManager.Device.Tun.h \
+	introspection/org.freedesktop.NetworkManager.Device.Veth.c \
+	introspection/org.freedesktop.NetworkManager.Device.Veth.h \
+	introspection/org.freedesktop.NetworkManager.Device.Vlan.c \
+	introspection/org.freedesktop.NetworkManager.Device.Vlan.h \
+	introspection/org.freedesktop.NetworkManager.Device.Vxlan.c \
+	introspection/org.freedesktop.NetworkManager.Device.Vxlan.h \
+	introspection/org.freedesktop.NetworkManager.Device.Wireless.c \
+	introspection/org.freedesktop.NetworkManager.Device.Wireless.h \
+	introspection/org.freedesktop.NetworkManager.Device.WiMax.c \
+	introspection/org.freedesktop.NetworkManager.Device.WiMax.h \
+	introspection/org.freedesktop.NetworkManager.Device.c \
+	introspection/org.freedesktop.NetworkManager.Device.h \
+	introspection/org.freedesktop.NetworkManager.DHCP4Config.c \
+	introspection/org.freedesktop.NetworkManager.DHCP4Config.h \
+	introspection/org.freedesktop.NetworkManager.DHCP6Config.c \
+	introspection/org.freedesktop.NetworkManager.DHCP6Config.h \
+	introspection/org.freedesktop.NetworkManager.IP4Config.c \
+	introspection/org.freedesktop.NetworkManager.IP4Config.h \
+	introspection/org.freedesktop.NetworkManager.IP6Config.c \
+	introspection/org.freedesktop.NetworkManager.IP6Config.h \
+	introspection/org.freedesktop.NetworkManager.c \
+	introspection/org.freedesktop.NetworkManager.h \
+	introspection/org.freedesktop.NetworkManager.PPP.c \
+	introspection/org.freedesktop.NetworkManager.PPP.h \
+	introspection/org.freedesktop.NetworkManager.SecretAgent.c \
+	introspection/org.freedesktop.NetworkManager.SecretAgent.h \
+	introspection/org.freedesktop.NetworkManager.Settings.Connection.c \
+	introspection/org.freedesktop.NetworkManager.Settings.Connection.h \
+	introspection/org.freedesktop.NetworkManager.Settings.c \
+	introspection/org.freedesktop.NetworkManager.Settings.h \
+	introspection/org.freedesktop.NetworkManager.VPN.Connection.c \
+	introspection/org.freedesktop.NetworkManager.VPN.Connection.h \
+	introspection/org.freedesktop.NetworkManager.VPN.Plugin.c \
+	introspection/org.freedesktop.NetworkManager.VPN.Plugin.h
 
 nodist_introspection_libnmdbus_la_SOURCES = $(introspection_sources)
 
 DBUS_INTERFACE_DOCS = \
-	introspection/nmdbus-access-point-org.freedesktop.NetworkManager.AccessPoint.xml \
-	introspection/nmdbus-active-connection-org.freedesktop.NetworkManager.Connection.Active.xml \
-	introspection/nmdbus-checkpoint-org.freedesktop.NetworkManager.Checkpoint.xml \
-	introspection/nmdbus-device-team-org.freedesktop.NetworkManager.Device.Team.xml \
-	introspection/nmdbus-dhcp6-config-org.freedesktop.NetworkManager.DHCP6Config.xml \
-	introspection/nmdbus-device-wifi-org.freedesktop.NetworkManager.Device.Wireless.xml \
-	introspection/nmdbus-manager-org.freedesktop.NetworkManager.xml \
-	introspection/nmdbus-vpn-connection-org.freedesktop.NetworkManager.VPN.Connection.xml \
-	introspection/nmdbus-secret-agent-org.freedesktop.NetworkManager.SecretAgent.xml \
-	introspection/nmdbus-device-org.freedesktop.NetworkManager.Device.xml \
-	introspection/nmdbus-vpn-plugin-org.freedesktop.NetworkManager.VPN.Plugin.xml \
-	introspection/nmdbus-device-bt-org.freedesktop.NetworkManager.Device.Bluetooth.xml \
-	introspection/nmdbus-device-vxlan-org.freedesktop.NetworkManager.Device.Vxlan.xml \
-	introspection/nmdbus-settings-connection-org.freedesktop.NetworkManager.Settings.Connection.xml \
-	introspection/nmdbus-device-bond-org.freedesktop.NetworkManager.Device.Bond.xml \
-	introspection/nmdbus-device-macvlan-org.freedesktop.NetworkManager.Device.Macvlan.xml \
-	introspection/nmdbus-ppp-manager-org.freedesktop.NetworkManager.PPP.xml \
-	introspection/nmdbus-device-vlan-org.freedesktop.NetworkManager.Device.Vlan.xml \
-	introspection/nmdbus-device-adsl-org.freedesktop.NetworkManager.Device.Adsl.xml \
-	introspection/nmdbus-agent-manager-org.freedesktop.NetworkManager.AgentManager.xml \
-	introspection/nmdbus-device-wimax-org.freedesktop.NetworkManager.Device.WiMax.xml \
-	introspection/nmdbus-device-ip-tunnel-org.freedesktop.NetworkManager.Device.IPTunnel.xml \
-	introspection/nmdbus-device-tun-org.freedesktop.NetworkManager.Device.Tun.xml \
-	introspection/nmdbus-device-bridge-org.freedesktop.NetworkManager.Device.Bridge.xml \
-	introspection/nmdbus-device-olpc-mesh-org.freedesktop.NetworkManager.Device.OlpcMesh.xml \
-	introspection/nmdbus-dhcp4-config-org.freedesktop.NetworkManager.DHCP4Config.xml \
-	introspection/nmdbus-device-generic-org.freedesktop.NetworkManager.Device.Generic.xml \
-	introspection/nmdbus-device-infiniband-org.freedesktop.NetworkManager.Device.Infiniband.xml \
-	introspection/nmdbus-device-modem-org.freedesktop.NetworkManager.Device.Modem.xml \
-	introspection/nmdbus-ip6-config-org.freedesktop.NetworkManager.IP6Config.xml \
-	introspection/nmdbus-device-veth-org.freedesktop.NetworkManager.Device.Veth.xml \
-	introspection/nmdbus-settings-org.freedesktop.NetworkManager.Settings.xml \
-	introspection/nmdbus-device-ethernet-org.freedesktop.NetworkManager.Device.Wired.xml \
-	introspection/nmdbus-ip4-config-org.freedesktop.NetworkManager.IP4Config.xml \
-	introspection/nmdbus-device-statistics-org.freedesktop.NetworkManager.Device.Statistics.xml
+	docs/api/dbus-org.freedesktop.NetworkManager.AccessPoint.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Connection.Active.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Checkpoint.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Team.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.DHCP6Config.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Wireless.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.VPN.Connection.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.SecretAgent.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.VPN.Plugin.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Bluetooth.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Vxlan.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Settings.Connection.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Bond.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Macvlan.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.PPP.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Vlan.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Adsl.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.AgentManager.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.WiMax.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.IPTunnel.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Tun.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Bridge.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.OlpcMesh.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.DHCP4Config.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Generic.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Infiniband.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Modem.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.IP6Config.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Veth.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Settings.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Wired.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.IP4Config.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Statistics.xml
 
-define _make_nmdbus_rule
-$(1): $(patsubst introspection/nmdbus-%.c,introspection/nm-%.xml,$(1))
-	$$(AM_V_GEN) gdbus-codegen \
-		--generate-c-code $$(basename $$@) \
-		--generate-docbook $$(basename $$@) \
+introspection/%.c: introspection/%.xml
+	$(AM_V_GEN) gdbus-codegen \
+		--generate-c-code $(basename $@) \
+		--generate-docbook docs/api/dbus \
 		--c-namespace NMDBus \
 		--interface-prefix org.freedesktop.NetworkManager \
-		$$<
+		$<
 
-$(filter $(basename $(1))-org.freedesktop.NetworkManager.%,$(DBUS_INTERFACE_DOCS)): $(1)
-	@true
+introspection/%.h: introspection/%.c
+	$()
 
-$(basename $(1)).h: $(1)
-	@true
-endef
-
-$(foreach f,$(filter %.c,$(introspection_sources)),$(eval $(call _make_nmdbus_rule,$f)))
+docs/api/dbus-%.xml: introspection/%.c
+	$()
 
 BUILT_SOURCES += \
 	$(introspection_sources) \
 	$(DBUS_INTERFACE_DOCS)
 
 EXTRA_DIST += \
-	introspection/nm-access-point.xml \
-	introspection/nm-active-connection.xml \
-	introspection/nm-agent-manager.xml \
-	introspection/nm-checkpoint.xml \
-	introspection/nm-device-adsl.xml \
-	introspection/nm-device-bond.xml \
-	introspection/nm-device-bridge.xml \
-	introspection/nm-device-bt.xml \
-	introspection/nm-device-ethernet.xml \
-	introspection/nm-device-generic.xml \
-	introspection/nm-device-infiniband.xml \
-	introspection/nm-device-ip-tunnel.xml \
-	introspection/nm-device-macvlan.xml \
-	introspection/nm-device-modem.xml \
-	introspection/nm-device-olpc-mesh.xml \
-	introspection/nm-device-statistics.xml \
-	introspection/nm-device-team.xml \
-	introspection/nm-device-tun.xml \
-	introspection/nm-device-veth.xml \
-	introspection/nm-device-vlan.xml \
-	introspection/nm-device-vxlan.xml \
-	introspection/nm-device-wifi.xml \
-	introspection/nm-device-wimax.xml \
-	introspection/nm-device.xml \
-	introspection/nm-dhcp4-config.xml \
-	introspection/nm-dhcp6-config.xml \
-	introspection/nm-ip4-config.xml \
-	introspection/nm-ip6-config.xml \
-	introspection/nm-manager.xml \
-	introspection/nm-ppp-manager.xml \
-	introspection/nm-secret-agent.xml \
-	introspection/nm-settings-connection.xml \
-	introspection/nm-settings.xml \
-	introspection/nm-vpn-connection.xml \
-	introspection/nm-vpn-plugin.xml \
-	introspection/nm-wimax-nsp.xml
+	introspection/org.freedesktop.NetworkManager.AccessPoint.xml \
+	introspection/org.freedesktop.NetworkManager.Connection.Active.xml \
+	introspection/org.freedesktop.NetworkManager.AgentManager.xml \
+	introspection/org.freedesktop.NetworkManager.Checkpoint.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Adsl.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Bond.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Bridge.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Bluetooth.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Wired.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Generic.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Infiniband.xml \
+	introspection/org.freedesktop.NetworkManager.Device.IPTunnel.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Macvlan.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Modem.xml \
+	introspection/org.freedesktop.NetworkManager.Device.OlpcMesh.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Statistics.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Team.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Tun.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Veth.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Vlan.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Vxlan.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Wireless.xml \
+	introspection/org.freedesktop.NetworkManager.Device.WiMax.xml \
+	introspection/org.freedesktop.NetworkManager.Device.xml \
+	introspection/org.freedesktop.NetworkManager.DHCP4Config.xml \
+	introspection/org.freedesktop.NetworkManager.DHCP6Config.xml \
+	introspection/org.freedesktop.NetworkManager.IP4Config.xml \
+	introspection/org.freedesktop.NetworkManager.IP6Config.xml \
+	introspection/org.freedesktop.NetworkManager.xml \
+	introspection/org.freedesktop.NetworkManager.PPP.xml \
+	introspection/org.freedesktop.NetworkManager.SecretAgent.xml \
+	introspection/org.freedesktop.NetworkManager.Settings.Connection.xml \
+	introspection/org.freedesktop.NetworkManager.Settings.xml \
+	introspection/org.freedesktop.NetworkManager.VPN.Connection.xml \
+	introspection/org.freedesktop.NetworkManager.VPN.Plugin.xml \
+	introspection/org.freedesktop.NetworkManager.WiMax.Nsp.xml
 
 ###############################################################################
 
@@ -745,7 +741,6 @@ $(libnm_libnm_la_OBJECTS): $(libnm_lib_h_pub_mkenums)
 
 libnm_libnm_la_CPPFLAGS = \
 	$(dflt_cppflags_libnm_core) \
-	-I$(builddir)/introspection \
 	-I$(srcdir)/libnm \
 	-I$(builddir)/libnm \
 	$(GUDEV_CFLAGS) \
@@ -943,7 +938,6 @@ libnm_tests_libnm_vpn_plugin_utils_test_la_LIBADD = \
 
 src_cppflags = \
 	$(dflt_cppflags_libnm_core) \
-	-I$(builddir)/introspection \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
 	\
@@ -2217,7 +2211,6 @@ src_devices_adsl_libnm_device_plugin_adsl_la_SOURCES = \
 src_devices_adsl_libnm_device_plugin_adsl_la_CPPFLAGS = \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
-	-I$(builddir)/introspection \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
 	-I$(builddir)/libnm-core \
@@ -2249,7 +2242,6 @@ if WITH_MODEM_MANAGER_1
 src_devices_wwan_cppflags = \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
-	-I$(builddir)/introspection \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
 	-I$(srcdir)/libnm-core \
@@ -2346,7 +2338,6 @@ src_devices_bluetooth_libnm_device_plugin_bluetooth_la_SOURCES = \
 src_devices_bluetooth_libnm_device_plugin_bluetooth_la_CPPFLAGS = \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
-	-I$(builddir)/introspection \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
 	-I$(builddir)/libnm-core \
@@ -2405,7 +2396,6 @@ src_devices_wifi_libnm_device_plugin_wifi_la_SOURCES = \
 src_devices_wifi_libnm_device_plugin_wifi_la_CPPFLAGS = \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
-	-I$(builddir)/introspection \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
 	-I$(builddir)/libnm-core \
@@ -2439,7 +2429,6 @@ src_devices_wifi_tests_test_general_SOURCES = \
 	src/devices/wifi/nm-wifi-utils.h
 
 src_devices_wifi_tests_test_general_CPPFLAGS = \
-	-I$(builddir)/introspection \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
 	-I$(srcdir)/libnm-core \
@@ -2470,7 +2459,6 @@ src_devices_team_libnm_device_plugin_team_la_SOURCES = \
 src_devices_team_libnm_device_plugin_team_la_CPPFLAGS = \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
-	-I$(builddir)/introspection \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
 	-I$(builddir)/libnm-core \
@@ -3762,10 +3750,10 @@ nm_vpn_enum_types_sources = $(libnm_glib_vpn_h_real)
 
 $(libnm_glib_libnm_glib_vpn_la_OBJECTS): $(libnm_glib_vpn_h_mkenums)
 
-libnm-glib/nm-vpn-plugin-glue.h: $(srcdir)/introspection/nm-vpn-plugin.xml
+libnm-glib/nm-vpn-plugin-glue.h: $(srcdir)/introspection/org.freedesktop.NetworkManager.VPN.Plugin.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_vpn_plugin --mode=glib-server --output=$@ $<
 
-libnm-glib/nm-secret-agent-glue.h: $(srcdir)/introspection/nm-secret-agent.xml
+libnm-glib/nm-secret-agent-glue.h: $(srcdir)/introspection/org.freedesktop.NetworkManager.SecretAgent.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_secret_agent --mode=glib-server --output=$@ $<
 
 BUILT_SOURCES += \

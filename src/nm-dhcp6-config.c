@@ -28,7 +28,7 @@
 #include "nm-utils.h"
 #include "nm-exported-object.h"
 
-#include "nmdbus-dhcp6-config.h"
+#include "introspection/org.freedesktop.NetworkManager.DHCP6Config.h"
 
 /*****************************************************************************/
 

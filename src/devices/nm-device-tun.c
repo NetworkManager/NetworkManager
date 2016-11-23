@@ -34,7 +34,7 @@
 #include "nm-setting-tun.h"
 #include "nm-core-internal.h"
 
-#include "nmdbus-device-tun.h"
+#include "introspection/org.freedesktop.NetworkManager.Device.Tun.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceTun);

@@ -29,8 +29,8 @@
 #include "nm-simple-connection.h"
 #include "nm-core-internal.h"
 
-#include "nmdbus-secret-agent.h"
-#include "nmdbus-agent-manager.h"
+#include "introspection/org.freedesktop.NetworkManager.SecretAgent.h"
+#include "introspection/org.freedesktop.NetworkManager.AgentManager.h"
 
 static void nm_secret_agent_old_initable_iface_init (GInitableIface *iface);
 static void nm_secret_agent_old_async_initable_iface_init (GAsyncInitableIface *iface);

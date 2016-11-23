@@ -39,7 +39,7 @@
 #include "nm-setting-adsl.h"
 #include "nm-utils.h"
 
-#include "nmdbus-device-adsl.h"
+#include "introspection/org.freedesktop.NetworkManager.Device.Adsl.h"
 
 #include "devices/nm-device-logging.h"
 _LOG_DECLARE_SELF (NMDeviceAdsl);

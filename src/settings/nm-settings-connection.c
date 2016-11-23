@@ -37,7 +37,7 @@
 #include "nm-core-internal.h"
 #include "nm-audit-manager.h"
 
-#include "nmdbus-settings-connection.h"
+#include "introspection/org.freedesktop.NetworkManager.Settings.Connection.h"
 
 #define SETTINGS_TIMESTAMPS_FILE  NMSTATEDIR "/timestamps"
 #define SETTINGS_SEEN_BSSIDS_FILE NMSTATEDIR "/seen-bssids"

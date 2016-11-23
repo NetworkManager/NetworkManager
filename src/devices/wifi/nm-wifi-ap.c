@@ -32,7 +32,7 @@
 
 #include "nm-setting-wireless.h"
 
-#include "nmdbus-access-point.h"
+#include "introspection/org.freedesktop.NetworkManager.AccessPoint.h"
 
 #define PROTO_WPA "wpa"
 #define PROTO_RSN "rsn"

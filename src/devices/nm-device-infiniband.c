@@ -32,7 +32,7 @@
 #include "nm-device-factory.h"
 #include "nm-core-internal.h"
 
-#include "nmdbus-device-infiniband.h"
+#include "introspection/org.freedesktop.NetworkManager.Device.Infiniband.h"
 
 #define NM_DEVICE_INFINIBAND_IS_PARTITION "is-partition"
 

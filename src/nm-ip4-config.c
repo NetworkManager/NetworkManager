@@ -33,7 +33,7 @@
 #include "nm-route-manager.h"
 #include "nm-core-internal.h"
 
-#include "nmdbus-ip4-config.h"
+#include "introspection/org.freedesktop.NetworkManager.IP4Config.h"
 
 typedef struct {
 	gboolean never_default;

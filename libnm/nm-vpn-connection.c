@@ -30,7 +30,7 @@
 #include "nm-active-connection.h"
 #include "nm-dbus-helpers.h"
 
-#include "nmdbus-vpn-connection.h"
+#include "introspection/org.freedesktop.NetworkManager.VPN.Connection.h"
 
 G_DEFINE_TYPE (NMVpnConnection, nm_vpn_connection, NM_TYPE_ACTIVE_CONNECTION)
 

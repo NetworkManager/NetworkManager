@@ -35,7 +35,7 @@
 #include "nm-act-request.h"
 #include "nm-ip4-config.h"
 
-#include "nmdbus-device-vxlan.h"
+#include "introspection/org.freedesktop.NetworkManager.Device.Vxlan.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceVxlan);

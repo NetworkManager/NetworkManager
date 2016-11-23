@@ -36,7 +36,7 @@
 #include "nm-ip4-config.h"
 #include "nm-utils.h"
 
-#include "nmdbus-device-macvlan.h"
+#include "introspection/org.freedesktop.NetworkManager.Device.Macvlan.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceMacvlan);

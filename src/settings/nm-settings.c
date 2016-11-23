@@ -77,7 +77,7 @@
 #include "nm-dispatcher.h"
 #include "nm-inotify-helper.h"
 
-#include "nmdbus-settings.h"
+#include "introspection/org.freedesktop.NetworkManager.Settings.h"
 
 /*****************************************************************************/
 

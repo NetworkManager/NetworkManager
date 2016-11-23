@@ -32,7 +32,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
 
-#include "nmdbus-active-connection.h"
+#include "introspection/org.freedesktop.NetworkManager.Connection.Active.h"
 
 typedef struct _NMActiveConnectionPrivate {
 	NMSettingsConnection *settings_connection;

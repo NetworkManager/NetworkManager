@@ -37,7 +37,7 @@
 #include "nm-core-internal.h"
 #include "platform/nmp-object.h"
 
-#include "nmdbus-device-vlan.h"
+#include "introspection/org.freedesktop.NetworkManager.Device.Vlan.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceVlan);

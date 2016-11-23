@@ -26,7 +26,7 @@
 #include "platform/nm-platform.h"
 #include "nm-core-internal.h"
 
-#include "nmdbus-device-generic.h"
+#include "introspection/org.freedesktop.NetworkManager.Device.Generic.h"
 
 /*****************************************************************************/
 

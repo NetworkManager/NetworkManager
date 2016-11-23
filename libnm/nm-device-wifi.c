@@ -35,7 +35,7 @@
 #include "nm-core-internal.h"
 #include "nm-dbus-helpers.h"
 
-#include "nmdbus-device-wifi.h"
+#include "introspection/org.freedesktop.NetworkManager.Device.Wireless.h"
 
 G_DEFINE_TYPE (NMDeviceWifi, nm_device_wifi, NM_TYPE_DEVICE)
 

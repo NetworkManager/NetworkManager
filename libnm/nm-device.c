@@ -41,7 +41,7 @@
 #include "nm-device-tun.h"
 #include "nm-setting-connection.h"
 
-#include "nmdbus-device.h"
+#include "introspection/org.freedesktop.NetworkManager.Device.h"
 
 static gboolean connection_compatible (NMDevice *device, NMConnection *connection, GError **error);
 static NMLldpNeighbor *nm_lldp_neighbor_dup (NMLldpNeighbor *neighbor);

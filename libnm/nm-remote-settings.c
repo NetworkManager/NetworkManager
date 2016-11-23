@@ -35,7 +35,7 @@
 #include "nm-dbus-helpers.h"
 #include "nm-core-internal.h"
 
-#include "nmdbus-settings.h"
+#include "introspection/org.freedesktop.NetworkManager.Settings.h"
 
 G_DEFINE_TYPE (NMRemoteSettings, nm_remote_settings, NM_TYPE_OBJECT)
 

@@ -87,6 +87,8 @@ test-*.trs
 /docs/api/NetworkManager.signals
 /docs/api/NetworkManager.types
 
+/docs/api/dbus-org.freedesktop.NetworkManager*.xml
+
 /docs/libnm-glib/*.stamp
 /docs/libnm-glib/html/
 /docs/libnm-glib/tmpl/
@@ -141,9 +143,7 @@ test-*.trs
 
 /shared/nm-version-macros.h
 
-/introspection/nmdbus-*.c
-/introspection/nmdbus-*.h
-/introspection/nmdbus-*.xml
+/introspection/org.freedesktop.NetworkManager*.[ch]
 
 /libgsystem/
 
@@ -272,7 +272,6 @@ test-*.trs
 
 /vapi/*.vapi
 
-
 # The following names are no longer present on this branch,
 # but they were on older versions. Thus keep ignoring them
 # otherwise when switching branches these untracked files show
@@ -297,3 +296,6 @@ test-*.trs
 /src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh-utils
 /src/settings/plugins/ifnet/tests/check_ifnet
 /src/supplicant-manager/tests/test-supplicant-config
+/introspection/nmdbus-*.c
+/introspection/nmdbus-*.h
+/introspection/nmdbus-*.xml

@@ -33,7 +33,7 @@
 #include "nm-object-private.h"
 #include "nm-dbus-helpers.h"
 
-#include "nmdbus-settings-connection.h"
+#include "introspection/org.freedesktop.NetworkManager.Settings.Connection.h"
 
 static void nm_remote_connection_connection_iface_init (NMConnectionInterface *iface);
 static void nm_remote_connection_initable_iface_init (GInitableIface *iface);

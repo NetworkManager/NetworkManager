@@ -56,8 +56,8 @@
 #include "nm-checkpoint-manager.h"
 #include "NetworkManagerUtils.h"
 
-#include "nmdbus-manager.h"
-#include "nmdbus-device.h"
+#include "introspection/org.freedesktop.NetworkManager.h"
+#include "introspection/org.freedesktop.NetworkManager.Device.h"
 
 static gboolean add_device (NMManager *self, NMDevice *device, GError **error);
 

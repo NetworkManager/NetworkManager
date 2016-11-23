@@ -51,7 +51,7 @@
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 
-#include "nmdbus-device-ethernet.h"
+#include "introspection/org.freedesktop.NetworkManager.Device.Wired.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceEthernet);

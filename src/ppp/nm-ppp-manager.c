@@ -52,7 +52,7 @@
 #include "nm-pppd-plugin.h"
 #include "nm-ppp-status.h"
 
-#include "nmdbus-ppp-manager.h"
+#include "introspection/org.freedesktop.NetworkManager.PPP.h"
 
 #define NM_PPPD_PLUGIN PPPD_PLUGIN_DIR "/nm-pppd-plugin.so"
 #define PPP_MANAGER_SECRET_TRIES "ppp-manager-secret-tries"
