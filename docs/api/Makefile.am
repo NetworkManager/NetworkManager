@@ -7,7 +7,7 @@ GENERATED_FILES =
 
 if SETTING_DOCS_AVAILABLE
 
-settings-spec.xml: settings-spec.xsl $(top_builddir)/libnm/nm-setting-docs.xml
+settings-spec.xml: settings-spec.xsl $(top_builddir)/libnm/nm-settings-docs.xml
 	$(AM_V_GEN) xsltproc --output $@ $^
 
 # Top-level SGML file includes (depends on) settings-spec.xml

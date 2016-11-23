@@ -176,11 +176,11 @@ test-*.trs
 /libnm-util/tests/test-setting-8021x
 /libnm-util/tests/test-setting-dcb
 
-/libnm/nm-ifcfg-rh-docs.xml
-/libnm/nm-keyfile-docs.xml
+/libnm/nm-settings-ifcfg-rh-docs.xml
 /libnm/nm-property-docs.xml
-/libnm/nm-setting-docs.xml
-/libnm/nm-setting-docs-overrides.xml
+/libnm/nm-settings-docs.xml
+/libnm/nm-settings-docs-overrides.xml
+/libnm/nm-settings-keyfile-docs.xml
 /libnm/tests/test-nm-client
 /libnm/tests/test-remote-settings-client
 /libnm/tests/test-secret-agent
@@ -299,3 +299,7 @@ test-*.trs
 /introspection/nmdbus-*.c
 /introspection/nmdbus-*.h
 /introspection/nmdbus-*.xml
+/libnm/nm-ifcfg-rh-docs.xml
+/libnm/nm-keyfile-docs.xml
+/libnm/nm-setting-docs.xml
+/libnm/nm-setting-docs-overrides.xml

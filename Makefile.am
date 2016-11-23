@@ -846,16 +846,16 @@ if BUILD_SETTING_DOCS
 
 libnm_noinst_data = \
 	libnm/nm-property-docs.xml \
-	libnm/nm-setting-docs-overrides.xml \
-	libnm/nm-setting-docs.xml \
-	libnm/nm-keyfile-docs.xml \
-	libnm/nm-ifcfg-rh-docs.xml
+	libnm/nm-settings-docs-overrides.xml \
+	libnm/nm-settings-docs.xml \
+	libnm/nm-settings-keyfile-docs.xml \
+	libnm/nm-settings-ifcfg-rh-docs.xml
 
 noinst_DATA += $(libnm_noinst_data)
 
 libnm_docs_sources = $(libnm_core_lib_c_real)
 
-libnm/nm-setting-docs-overrides.xml: libnm/generate-plugin-docs.pl $(libnm_docs_sources)
+libnm/nm-settings-docs-overrides.xml: libnm/generate-plugin-docs.pl $(libnm_docs_sources)
 	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl dbus "$(srcdir)" $@
 
 # When the python scripts loads libnm and the address sanitizers is
@@ -870,19 +870,19 @@ libnm/nm-property-docs.xml: libnm/generate-setting-docs.py $(libnm_docs_sources)
 		--gir $(builddir)/libnm/NM-1.0.gir \
 		--output $@
 
-libnm/nm-setting-docs.xml: libnm/generate-setting-docs.py $(libnm_docs_sources) libnm/nm-setting-docs-overrides.xml | libnm/NM-1.0.gir libnm/NM-1.0.typelib libnm/libnm.la
+libnm/nm-settings-docs.xml: libnm/generate-setting-docs.py $(libnm_docs_sources) libnm/nm-settings-docs-overrides.xml | libnm/NM-1.0.gir libnm/NM-1.0.typelib libnm/libnm.la
 	$(AM_V_GEN) \
 	export GI_TYPELIB_PATH=$(abs_builddir)/libnm$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}; \
 	export LD_LIBRARY_PATH=$(abs_builddir)/libnm/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}; \
 	$(call set_sanitizer_env,$(abs_builddir)/libnm/.libs/libnm.so); \
 	$(srcdir)/libnm/generate-setting-docs.py \
 		--gir $(builddir)/libnm/NM-1.0.gir \
-		--overrides $(builddir)/libnm/nm-setting-docs-overrides.xml \
+		--overrides $(builddir)/libnm/nm-settings-docs-overrides.xml \
 		--output $@
 
-libnm/nm-keyfile-docs.xml: libnm/generate-plugin-docs.pl $(libnm_docs_sources)
+libnm/nm-settings-keyfile-docs.xml: libnm/generate-plugin-docs.pl $(libnm_docs_sources)
 	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl keyfile "$(srcdir)" $@
-libnm/nm-ifcfg-rh-docs.xml: libnm/generate-plugin-docs.pl $(libnm_docs_sources)
+libnm/nm-settings-ifcfg-rh-docs.xml: libnm/generate-plugin-docs.pl $(libnm_docs_sources)
 	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl ifcfg-rh "$(srcdir)" $@
 
 EXTRA_DIST += $(libnm_noinst_data)
@@ -3912,13 +3912,13 @@ endif
 
 if BUILD_SETTING_DOCS
 
-man/nm-settings.xml: man/nm-settings.xsl libnm/nm-setting-docs.xml
+man/nm-settings.xml: man/nm-settings.xsl libnm/nm-settings-docs.xml
 	$(AM_V_GEN) xsltproc --output $@ $^
 
-man/nm-settings-keyfile.xml: man/nm-settings-keyfile.xsl libnm/nm-keyfile-docs.xml
+man/nm-settings-keyfile.xml: man/nm-settings-keyfile.xsl libnm/nm-settings-keyfile-docs.xml
 	$(AM_V_GEN) xsltproc --output $@ $^
 
-man/nm-settings-ifcfg-rh.xml: man/nm-settings-ifcfg-rh.xsl libnm/nm-ifcfg-rh-docs.xml
+man/nm-settings-ifcfg-rh.xml: man/nm-settings-ifcfg-rh.xsl libnm/nm-settings-ifcfg-rh-docs.xml
 	$(AM_V_GEN) xsltproc --output $@ $^
 
 CLEANFILES += \
