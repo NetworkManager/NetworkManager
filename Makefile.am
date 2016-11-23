@@ -3902,6 +3902,11 @@ man/%.1 man/%.5 man/%.7 man/%.8: man/%.xml man/common.ent
 
 endif
 
+man_nm_settings_xml = \
+	man/nm-settings.xml \
+	man/nm-settings-keyfile.xml \
+	man/nm-settings-ifcfg-rh.xml
+
 if BUILD_SETTING_DOCS
 
 man/nm-settings.xml: man/nm-settings.xsl libnm/nm-settings-docs.xml
@@ -3913,10 +3918,7 @@ man/nm-settings-keyfile.xml: man/nm-settings-keyfile.xsl libnm/nm-settings-keyfi
 man/nm-settings-ifcfg-rh.xml: man/nm-settings-ifcfg-rh.xsl libnm/nm-settings-ifcfg-rh-docs.xml
 	$(AM_V_GEN) xsltproc --output $@ $^
 
-CLEANFILES += \
-	man/nm-settings.xml \
-	man/nm-settings-keyfile.xml \
-	man/nm-settings-ifcfg-rh.xml
+CLEANFILES += $(man_nm_settings_xml)
 
 endif
 
@@ -3940,14 +3942,10 @@ dist_dependencies += man/nm-settings-ifcfg-rh.5
 endif
 
 EXTRA_DIST += \
-	man/nm-settings.xml \
-	man/nm-settings.xsl \
-	man/nm-settings-keyfile.xml \
-	man/nm-settings-keyfile.xsl \
-	man/nm-settings-ifcfg-rh.xml \
-	man/nm-settings-ifcfg-rh.xsl \
-	$(addsuffix .xml,$(basename $(man_pages))) \
+	$(man_nm_settings_xml) \
+	$(addsuffix .xsl,$(basename $(man_nm_settings_xml))) \
 	$(man_pages) \
+	$(addsuffix .xml,$(basename $(man_pages))) \
 	$(man_pages_autogen)
 
 
