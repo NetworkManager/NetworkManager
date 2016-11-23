@@ -870,14 +870,14 @@ libnm/nm-property-docs.xml: libnm/generate-setting-docs.py $(libnm_docs_sources)
 		--gir $(builddir)/libnm/NM-1.0.gir \
 		--output $@
 
-libnm/nm-settings-docs.xml: libnm/generate-setting-docs.py $(libnm_docs_sources) libnm/nm-settings-docs-overrides.xml | libnm/NM-1.0.gir libnm/NM-1.0.typelib libnm/libnm.la
+libnm/nm-settings-docs.xml: libnm/generate-setting-docs.py libnm/nm-settings-docs-overrides.xml $(libnm_docs_sources) | libnm/NM-1.0.gir libnm/NM-1.0.typelib libnm/libnm.la
 	$(AM_V_GEN) \
 	export GI_TYPELIB_PATH=$(abs_builddir)/libnm$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}; \
 	export LD_LIBRARY_PATH=$(abs_builddir)/libnm/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}; \
 	$(call set_sanitizer_env,$(abs_builddir)/libnm/.libs/libnm.so); \
 	$(srcdir)/libnm/generate-setting-docs.py \
 		--gir $(builddir)/libnm/NM-1.0.gir \
-		--overrides $(builddir)/libnm/nm-settings-docs-overrides.xml \
+		--overrides $(word 2,$^) \
 		--output $@
 
 libnm/nm-settings-keyfile-docs.xml: libnm/generate-plugin-docs.pl $(libnm_docs_sources)
