@@ -3885,28 +3885,20 @@ endif
 # man
 ###############################################################################
 
-XSLTPROC_MAN_FLAGS = \
-	--path man --xinclude --nonet \
+xsltproc_flags = \
+	--path man \
+	--xinclude \
+	--nonet \
 	--stringparam man.output.quietly 1 \
 	--stringparam funcsynopsis.style ansi \
 	--stringparam man.th.extra1.suppress 1 \
 	--stringparam man.authors.section.enabled 0 \
-	--stringparam man.copyright.section.enabled 0 \
-	http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl
+	--stringparam man.copyright.section.enabled 0
 
 if ENABLE_GTK_DOC
 
-man/%.1: man/%.xml man/common.ent
-	$(AM_V_GEN) xsltproc --output $@ $(XSLTPROC_MAN_FLAGS) $<
-
-man/%.5: man/%.xml man/common.ent
-	$(AM_V_GEN) xsltproc --output $@ $(XSLTPROC_MAN_FLAGS) $<
-
-man/%.7: man/%.xml man/common.ent
-	$(AM_V_GEN) xsltproc --output $@ $(XSLTPROC_MAN_FLAGS) $<
-
-man/%.8: man/%.xml man/common.ent
-	$(AM_V_GEN) xsltproc --output $@ $(XSLTPROC_MAN_FLAGS) $<
+man/%.1 man/%.5 man/%.7 man/%.8: man/%.xml man/common.ent
+	$(AM_V_GEN) xsltproc --output $@ $(xsltproc_flags) http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl $<
 
 endif
 
