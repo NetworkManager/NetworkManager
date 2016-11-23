@@ -295,11 +295,9 @@ introspection/%.h: introspection/%.c
 docs/api/dbus-%.xml: introspection/%.c
 	$()
 
-BUILT_SOURCES += \
-	$(introspection_sources) \
-	$(DBUS_INTERFACE_DOCS)
+dbusinterfacesdir = $(datadir)/dbus-1/interfaces
 
-EXTRA_DIST += \
+dbusinterfaces_DATA = \
 	introspection/org.freedesktop.NetworkManager.AccessPoint.xml \
 	introspection/org.freedesktop.NetworkManager.Connection.Active.xml \
 	introspection/org.freedesktop.NetworkManager.AgentManager.xml \
@@ -336,6 +334,13 @@ EXTRA_DIST += \
 	introspection/org.freedesktop.NetworkManager.VPN.Connection.xml \
 	introspection/org.freedesktop.NetworkManager.VPN.Plugin.xml \
 	introspection/org.freedesktop.NetworkManager.WiMax.Nsp.xml
+
+BUILT_SOURCES += \
+	$(introspection_sources) \
+	$(DBUS_INTERFACE_DOCS)
+
+EXTRA_DIST += \
+	$(dbusinterfaces_DATA)
 
 ###############################################################################
 

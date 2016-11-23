@@ -639,6 +639,7 @@ fi
 %{_datadir}/gtk-doc/html/libnm/*
 %{_datadir}/vala/vapi/libnm.deps
 %{_datadir}/vala/vapi/libnm.vapi
+%{_datadir}/dbus-1/interfaces/*.xml
 
 %files config-connectivity-fedora
 %dir %{nmlibdir}
