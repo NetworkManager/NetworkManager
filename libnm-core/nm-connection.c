@@ -727,7 +727,9 @@ _normalize_ethernet_link_neg (NMConnection *self)
 		guint32 speed = nm_setting_wired_get_speed (s_wired);
 		const char *duplex = nm_setting_wired_get_duplex (s_wired);
 
-		if (autoneg && (speed || duplex)) {
+		if (   (autoneg && (speed || duplex))
+		    || (!autoneg && (   (speed && !duplex)
+		                     || (!speed && duplex)))) {
 			speed = 0;
 			duplex = NULL;
 			g_object_set (s_wired,

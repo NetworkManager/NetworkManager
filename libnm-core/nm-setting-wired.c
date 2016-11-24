@@ -775,6 +775,15 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_SPEED);
 			return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
 		}
+	} else {
+		if (   ((priv->speed) && (!priv->duplex))
+		    || ((!priv->speed) && (priv->duplex))) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("both speed and duplex are required for static link configuration"));
+			return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+		}
 	}
 
 	return TRUE;
@@ -1020,8 +1029,10 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_wired_class)
 	/**
 	 * NMSettingWired:speed:
 	 *
-	 * If non-zero, request that the device use only the specified speed.  In
-	 * Mbit/s, ie 100 == 100Mbit/s.
+	 * Can be set to a value grater than zero only when "auto-negotiate" is "off".
+	 * In that case, statically configures the device to use that specified speed.
+	 * In Mbit/s, ie 100 == 100Mbit/s.
+	 * Must be set together with the "duplex" property when non-zero.
 	 **/
 	/* ---ifcfg-rh---
 	 * property: speed
@@ -1041,8 +1052,9 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_wired_class)
 	/**
 	 * NMSettingWired:duplex:
 	 *
-	 * If specified, request that the device only use the specified duplex mode.
-	 * Either "half" or "full".
+	 * Can be specified only when "auto-negotiate" is "off". In that case, statically
+	 * configures the device to use that specified duplex mode, either "half" or "full".
+	 * Must be set together with the "speed" property if specified.
 	 **/
 	/* ---ifcfg-rh---
 	 * property: duplex
@@ -1061,9 +1073,9 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_wired_class)
 	/**
 	 * NMSettingWired:auto-negotiate:
 	 *
-	 * If %TRUE, allow auto-negotiation of port speed and duplex mode.  If
-	 * %FALSE, do not allow auto-negotiation, in which case the "speed" and
-	 * "duplex" properties should be set.
+	 * If %TRUE, enforce auto-negotiation of port speed and duplex mode.  If
+	 * %FALSE, "speed" and "duplex" properties should be both set or link configuration
+	 * will be skipped.
 	 **/
 	/* ---ifcfg-rh---
 	 * property: auto-negotiate
