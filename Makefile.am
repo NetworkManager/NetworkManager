@@ -3004,7 +3004,7 @@ endif
 clients_cli_settings_doc_c = clients/cli/settings-docs.c
 if BUILD_SETTING_DOCS
 $(clients_cli_settings_doc_c): clients/cli/settings-docs.xsl libnm/nm-property-docs.xml
-	$(AM_V_GEN) xsltproc --output $@ $^
+	$(AM_V_GEN) $(XSLTPROC) --output $@ $^
 DISTCLEANFILES += $(clients_cli_settings_doc_c)
 else
 $(clients_cli_settings_doc_c):
@@ -3898,7 +3898,7 @@ xsltproc_flags = \
 if ENABLE_GTK_DOC
 
 man/%.1 man/%.5 man/%.7 man/%.8: man/%.xml man/common.ent
-	$(AM_V_GEN) xsltproc --output $@ $(xsltproc_flags) http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl $<
+	$(AM_V_GEN) $(XSLTPROC) --output $@ $(xsltproc_flags) http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl $<
 
 endif
 
@@ -3910,7 +3910,7 @@ man_nm_settings_xml = \
 if BUILD_SETTING_DOCS
 
 man/nm-setting%.xml: man/nm-setting%.xsl libnm/nm-setting%-docs.xml
-	$(AM_V_GEN) xsltproc --output $@ $(xsltproc_flags) $^
+	$(AM_V_GEN) $(XSLTPROC) --output $@ $(xsltproc_flags) $^
 
 CLEANFILES += $(man_nm_settings_xml)
 
