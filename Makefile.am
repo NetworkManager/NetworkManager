@@ -3909,13 +3909,7 @@ man_nm_settings_xml = \
 
 if BUILD_SETTING_DOCS
 
-man/nm-settings.xml: man/nm-settings.xsl libnm/nm-settings-docs.xml
-	$(AM_V_GEN) xsltproc --output $@ $(xsltproc_flags) $^
-
-man/nm-settings-keyfile.xml: man/nm-settings-keyfile.xsl libnm/nm-settings-keyfile-docs.xml
-	$(AM_V_GEN) xsltproc --output $@ $(xsltproc_flags) $^
-
-man/nm-settings-ifcfg-rh.xml: man/nm-settings-ifcfg-rh.xsl libnm/nm-settings-ifcfg-rh-docs.xml
+man/nm-setting%.xml: man/nm-setting%.xsl libnm/nm-setting%-docs.xml
 	$(AM_V_GEN) xsltproc --output $@ $(xsltproc_flags) $^
 
 CLEANFILES += $(man_nm_settings_xml)
