@@ -210,7 +210,7 @@ string_to_gpointerint(const gchar* data)
 	gint result = (gint) strtol (data, NULL, 10);
 	return GINT_TO_POINTER(result);
 }
-	
+
 static gpointer
 string_to_glist_of_strings(const gchar* data)
 {
@@ -338,7 +338,7 @@ update_wireless_security_setting_from_if_block(NMConnection *connection,
 				if(errno)
 					goto wireless_next;
 			}
-		    
+
 			g_object_set(wireless_security_setting,
 					   newkey, typed_property_value ? typed_property_value : property_value,
 					   NULL);
@@ -386,7 +386,7 @@ update_wireless_security_setting_from_if_block(NMConnection *connection,
 				if(errno)
 					goto wpa_next;
 			}
-		    
+
 			g_object_set(wireless_security_setting,
 					   newkey, typed_property_value ? typed_property_value : property_value,
 					   NULL);
