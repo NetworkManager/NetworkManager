@@ -3532,6 +3532,10 @@ nmc_property_connection_describe_metered (NMSetting *setting, const char *prop)
 	         "'unknown' to let NetworkManager choose a value using some heuristics\n");
 }
 
+
+static const char *metered_valid_values[] = { "yes", "no", "unknown", NULL };
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_connection_allowed_metered, metered_valid_values)
+
 /* 'lldp' */
 static char *
 nmc_property_connection_get_lldp (NMSetting *setting, NmcPropertyGetType get_type)
@@ -6493,7 +6497,7 @@ nmc_properties_init (void)
 	                    nmc_property_connection_set_metered,
 	                    NULL,
 	                    nmc_property_connection_describe_metered,
-	                    NULL,
+	                    nmc_property_connection_allowed_metered,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, LLDP),
 	                    nmc_property_connection_get_lldp,
