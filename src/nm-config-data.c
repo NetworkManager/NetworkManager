@@ -232,7 +232,7 @@ nm_config_data_get_plugins (const NMConfigData *self, gboolean allow_default)
 		gs_unref_keyfile GKeyFile *kf = nm_config_create_keyfile ();
 
 		/* let keyfile split the default string according to it's own escaping rules. */
-		g_key_file_set_value (kf, NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins", NM_CONFIG_PLUGINS_DEFAULT);
+		g_key_file_set_value (kf, NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins", NM_CONFIG_DEFAULT_MAIN_PLUGINS);
 		list = g_key_file_get_string_list (kf, NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins", NULL, NULL);
 	}
 	return _nm_utils_strv_cleanup (list, TRUE, TRUE, TRUE);
@@ -566,11 +566,11 @@ static struct {
 	const char *key;
 	const char *value;
 } default_values[] = {
-	{ NM_CONFIG_KEYFILE_GROUP_MAIN,     "plugins",      NM_CONFIG_PLUGINS_DEFAULT },
-	{ NM_CONFIG_KEYFILE_GROUP_MAIN,     "rc-manager",   NM_CONFIG_DEFAULT_DNS_RC_MANAGER },
-	{ NM_CONFIG_KEYFILE_GROUP_MAIN,     "auth-polkit",  NM_CONFIG_DEFAULT_AUTH_POLKIT },
-	{ NM_CONFIG_KEYFILE_GROUP_MAIN,     "dhcp",         NM_CONFIG_DEFAULT_DHCP },
-	{ NM_CONFIG_KEYFILE_GROUP_LOGGING,  "backend",      NM_CONFIG_LOGGING_BACKEND_DEFAULT },
+	{ NM_CONFIG_KEYFILE_GROUP_MAIN,     "plugins",      NM_CONFIG_DEFAULT_MAIN_PLUGINS },
+	{ NM_CONFIG_KEYFILE_GROUP_MAIN,     "rc-manager",   NM_CONFIG_DEFAULT_MAIN_RC_MANAGER },
+	{ NM_CONFIG_KEYFILE_GROUP_MAIN,     "auth-polkit",  NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT },
+	{ NM_CONFIG_KEYFILE_GROUP_MAIN,     "dhcp",         NM_CONFIG_DEFAULT_MAIN_DHCP },
+	{ NM_CONFIG_KEYFILE_GROUP_LOGGING,  "backend",      NM_CONFIG_DEFAULT_LOGGING_BACKEND },
 	{ NM_CONFIG_KEYFILE_GROUP_LOGGING,  "audit",        NM_CONFIG_DEFAULT_LOGGING_AUDIT },
 };
 

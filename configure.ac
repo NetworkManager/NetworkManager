@@ -134,7 +134,7 @@ test "$enable_ifupdown" = "yes"           && distro_plugins="$distro_plugins,ifu
 test "$enable_ifnet" = "yes"              && distro_plugins="$distro_plugins,ifnet"
 distro_plugins="${distro_plugins#,}"
 
-AC_DEFINE_UNQUOTED(NM_CONFIG_PLUGINS_DEFAULT, "$config_plugins_default", [Default configuration option for main.plugins setting])
+AC_DEFINE_UNQUOTED(NM_CONFIG_DEFAULT_MAIN_PLUGINS, "$config_plugins_default", [Default configuration option for main.plugins setting])
 if test "${enable_config_plugin_ibft}" = yes; then
 	AC_DEFINE(WITH_SETTINGS_PLUGIN_IBFT, 1, [Whether compilation of ibft setting plugin is enabled])
 else
@@ -417,9 +417,9 @@ if test "$nm_config_logging_backend_default" = ""; then
 		nm_config_logging_backend_default='syslog'
 	fi
 fi
-AC_DEFINE_UNQUOTED(NM_CONFIG_LOGGING_BACKEND_DEFAULT, "$nm_config_logging_backend_default", [Default configuration option for logging.backend])
-NM_CONFIG_LOGGING_BACKEND_DEFAULT_TEXT="$nm_config_logging_backend_default"
-AC_SUBST(NM_CONFIG_LOGGING_BACKEND_DEFAULT_TEXT)
+AC_DEFINE_UNQUOTED(NM_CONFIG_DEFAULT_LOGGING_BACKEND, "$nm_config_logging_backend_default", [Default configuration option for logging.backend])
+NM_CONFIG_DEFAULT_LOGGING_BACKEND_TEXT="$nm_config_logging_backend_default"
+AC_SUBST(NM_CONFIG_DEFAULT_LOGGING_BACKEND_TEXT)
 
 # Session tracking support
 AC_ARG_WITH(systemd-logind, AS_HELP_STRING([--with-systemd-logind=yes|no],
@@ -579,11 +579,11 @@ AC_ARG_ENABLE(polkit, AS_HELP_STRING([--enable-polkit=yes|no|disabled], [set def
                      [enable_polkit=${enableval}], [enable_polkit=yes])
 if (test "${enable_polkit}" != "no" -a "${enable_polkit}" != "disabled"); then
 	enable_polkit=yes
-	AC_DEFINE(NM_CONFIG_DEFAULT_AUTH_POLKIT, "true", [The default value of the auth-polkit configuration option])
-	AC_SUBST(NM_CONFIG_DEFAULT_AUTH_POLKIT_TEXT, true)
+	AC_DEFINE(NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT, "true", [The default value of the auth-polkit configuration option])
+	AC_SUBST(NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_TEXT, true)
 else
-	AC_DEFINE(NM_CONFIG_DEFAULT_AUTH_POLKIT, "false", [The default value of the auth-polkit configuration option])
-	AC_SUBST(NM_CONFIG_DEFAULT_AUTH_POLKIT_TEXT, false)
+	AC_DEFINE(NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT, "false", [The default value of the auth-polkit configuration option])
+	AC_SUBST(NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_TEXT, false)
 fi
 if (test "${enable_polkit}" != "disabled"); then
 	AC_DEFINE(WITH_POLKIT, 1, [whether to compile polkit support])
@@ -815,8 +815,8 @@ fi
 test -z "$config_dhcp_default" -a "$with_dhclient" != "no" && config_dhcp_default='dhclient'
 test -z "$config_dhcp_default" -a "$with_dhcpcd"   != "no" && config_dhcp_default='dhcpcd'
 test -z "$config_dhcp_default"                             && config_dhcp_default='internal'
-AC_DEFINE_UNQUOTED(NM_CONFIG_DEFAULT_DHCP, "$config_dhcp_default", [Default configuration option for main.dhcp setting])
-AC_SUBST(NM_CONFIG_DEFAULT_DHCP, $config_dhcp_default)
+AC_DEFINE_UNQUOTED(NM_CONFIG_DEFAULT_MAIN_DHCP, "$config_dhcp_default", [Default configuration option for main.dhcp setting])
+AC_SUBST(NM_CONFIG_DEFAULT_MAIN_DHCP, $config_dhcp_default)
 
 # resolvconf and netconfig support
 AC_ARG_WITH(resolvconf, AS_HELP_STRING([--with-resolvconf=yes|no|path], [Enable resolvconf support]))
@@ -856,8 +856,8 @@ fi
 if test "$with_netconfig" != "no"; then
 	AC_DEFINE_UNQUOTED(NETCONFIG_PATH, "$with_netconfig", [Path to netconfig])
 fi
-AC_DEFINE_UNQUOTED(NM_CONFIG_DEFAULT_DNS_RC_MANAGER, "$config_dns_rc_manager_default", [Default value for main.rc-manager setting (--with-config-dns-rc-manager-default)])
-AC_SUBST(NM_CONFIG_DEFAULT_DNS_RC_MANAGER, $config_dns_rc_manager_default)
+AC_DEFINE_UNQUOTED(NM_CONFIG_DEFAULT_MAIN_RC_MANAGER, "$config_dns_rc_manager_default", [Default value for main.rc-manager setting (--with-config-dns-rc-manager-default)])
+AC_SUBST(NM_CONFIG_DEFAULT_MAIN_RC_MANAGER, $config_dns_rc_manager_default)
 
 # iptables path
 AC_ARG_WITH(iptables, AS_HELP_STRING([--with-iptables=/path/to/iptables], [path to iptables]))

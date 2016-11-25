@@ -359,13 +359,13 @@ nm_dhcp_manager_init (NMDhcpManager *self)
 				nm_log_warn (LOGD_DHCP, "dhcp-init: DHCP client '%s' not available", client);
 		}
 		if (!client_factory) {
-			client_factory = _client_factory_find_by_name (""NM_CONFIG_DEFAULT_DHCP);
+			client_factory = _client_factory_find_by_name (""NM_CONFIG_DEFAULT_MAIN_DHCP);
 			if (!client_factory)
-				nm_log_err (LOGD_DHCP, "dhcp-init: default DHCP client '%s' is not installed", NM_CONFIG_DEFAULT_DHCP);
+				nm_log_err (LOGD_DHCP, "dhcp-init: default DHCP client '%s' is not installed", NM_CONFIG_DEFAULT_MAIN_DHCP);
 			else {
 				client_factory = _client_factory_available (client_factory);
 				if (!client_factory)
-					nm_log_info (LOGD_DHCP, "dhcp-init: default DHCP client '%s' is not available", NM_CONFIG_DEFAULT_DHCP);
+					nm_log_info (LOGD_DHCP, "dhcp-init: default DHCP client '%s' is not available", NM_CONFIG_DEFAULT_MAIN_DHCP);
 			}
 		}
 		if (!client_factory) {

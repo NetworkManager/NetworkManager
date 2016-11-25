@@ -818,7 +818,7 @@ nm_logging_syslog_openlog (const char *logging_backend)
 		g_return_if_reached ();
 
 	if (!logging_backend)
-		logging_backend = ""NM_CONFIG_LOGGING_BACKEND_DEFAULT;
+		logging_backend = ""NM_CONFIG_DEFAULT_LOGGING_BACKEND;
 
 	if (strcmp (logging_backend, "debug") == 0) {
 		global.log_backend = LOG_BACKEND_SYSLOG;

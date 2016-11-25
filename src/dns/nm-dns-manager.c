@@ -1655,9 +1655,9 @@ again:
 		if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN) {
 			if (man) {
 				_LOGW ("init: unknown resolv.conf manager \"%s\", fallback to \"%s\"",
-				       man, ""NM_CONFIG_DEFAULT_DNS_RC_MANAGER);
+				       man, ""NM_CONFIG_DEFAULT_MAIN_RC_MANAGER);
 			}
-			man = ""NM_CONFIG_DEFAULT_DNS_RC_MANAGER;
+			man = ""NM_CONFIG_DEFAULT_MAIN_RC_MANAGER;
 			rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK;
 			goto again;
 		}
