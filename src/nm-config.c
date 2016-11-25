@@ -96,8 +96,6 @@ typedef struct {
 	char *log_level;
 	char *log_domains;
 
-	char *debug;
-
 	gboolean configure_and_quit;
 
 	char **atomic_section_prefixes;
@@ -279,14 +277,6 @@ nm_config_get_log_domains (NMConfig *config)
 	g_return_val_if_fail (config != NULL, NULL);
 
 	return NM_CONFIG_GET_PRIVATE (config)->log_domains;
-}
-
-const char *
-nm_config_get_debug (NMConfig *config)
-{
-	g_return_val_if_fail (config != NULL, NULL);
-
-	return NM_CONFIG_GET_PRIVATE (config)->debug;
 }
 
 gboolean
@@ -625,7 +615,7 @@ static gboolean
 _setting_is_string_list (const char *group, const char *key)
 {
 	return    _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins")
-	       || _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, "debug")
+	       || _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, NM_CONFIG_KEYFILE_KEY_MAIN_DEBUG)
 	       || _IS (NM_CONFIG_KEYFILE_GROUP_LOGGING, "domains")
 	       || g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_TEST_APPEND_STRINGLIST);
 #undef _IS
@@ -2316,8 +2306,6 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	priv->log_level = nm_strstrip (g_key_file_get_string (keyfile, NM_CONFIG_KEYFILE_GROUP_LOGGING, "level", NULL));
 	priv->log_domains = nm_strstrip (g_key_file_get_string (keyfile, NM_CONFIG_KEYFILE_GROUP_LOGGING, "domains", NULL));
 
-	priv->debug = g_key_file_get_string (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "debug", NULL);
-
 	priv->configure_and_quit = nm_config_keyfile_get_boolean (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "configure-and-quit", FALSE);
 
 	no_auto_default = no_auto_default_from_file (priv->no_auto_default_file);
@@ -2374,7 +2362,6 @@ finalize (GObject *gobject)
 	g_free (priv->intern_config_file);
 	g_free (priv->log_level);
 	g_free (priv->log_domains);
-	g_free (priv->debug);
 	g_strfreev (priv->atomic_section_prefixes);
 
 	_nm_config_cmd_line_options_clear (&priv->cli);

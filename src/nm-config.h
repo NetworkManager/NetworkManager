@@ -61,6 +61,7 @@
 
 #define NM_CONFIG_KEYFILE_KEY_MAIN_AUTH_POLKIT              "auth-polkit"
 #define NM_CONFIG_KEYFILE_KEY_MAIN_DHCP                     "dhcp"
+#define NM_CONFIG_KEYFILE_KEY_MAIN_DEBUG                    "debug"
 #define NM_CONFIG_KEYFILE_KEY_LOGGING_BACKEND               "backend"
 #define NM_CONFIG_KEYFILE_KEY_CONFIG_ENABLE                 "enable"
 #define NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS            ".was"
@@ -119,7 +120,6 @@ NMConfigData *nm_config_get_data_orig (NMConfig *config);
 gboolean nm_config_get_monitor_connection_files (NMConfig *config);
 const char *nm_config_get_log_level (NMConfig *config);
 const char *nm_config_get_log_domains (NMConfig *config);
-const char *nm_config_get_debug (NMConfig *config);
 gboolean nm_config_get_configure_and_quit (NMConfig *config);
 gboolean nm_config_get_is_debug (NMConfig *config);
 
