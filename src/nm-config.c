@@ -755,6 +755,13 @@ read_config (GKeyFile *keyfile, gboolean is_base_config, const char *dirname, co
 					if (is_string_list) {
 						old_val = g_key_file_get_string_list (keyfile, group, base_key, NULL, NULL);
 						new_val = g_key_file_get_string_list (kf, group, key, NULL, NULL);
+						if (!old_val && !g_key_file_has_key (keyfile, group, base_key, NULL)) {
+							/* we must fill the unspecified value with the compile-time default. */
+							if (nm_streq (group, NM_CONFIG_KEYFILE_GROUP_MAIN) && nm_streq (base_key, "plugins")) {
+								g_key_file_set_value (keyfile, group, base_key, NM_CONFIG_PLUGINS_DEFAULT);
+								old_val = g_key_file_get_string_list (keyfile, group, base_key, NULL, NULL);
+							}
+						}
 					} else {
 						gs_free char *old_sval = nm_config_keyfile_get_value (keyfile, group, base_key, NM_CONFIG_GET_VALUE_TYPE_SPEC);
 						gs_free char *new_sval = nm_config_keyfile_get_value (kf, group, key, NM_CONFIG_GET_VALUE_TYPE_SPEC);
