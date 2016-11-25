@@ -613,7 +613,6 @@ reg_request_cb (GObject *proxy,
 	if (!nmdbus_agent_manager_call_register_finish (NMDBUS_AGENT_MANAGER (proxy), result, &error))
 		g_dbus_error_strip_remote_error (error);
 	reg_result (self, simple, error);
-	g_clear_error (&error);
 }
 
 static void
