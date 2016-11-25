@@ -756,7 +756,9 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	/* Normalizable errors */
+	/* Normalizable properties - just return NM_SETTING_VERIFY_NORMALIZABLE for compatibility
+	 * with legacy nm-connection-editor which used to save "full" duplex connection as default
+	 */
 
 	if (priv->auto_negotiate) {
 		if (priv->duplex) {
@@ -765,7 +767,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			                     _("when link autonegotiation is enabled no duplex value is accepted"));
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_DUPLEX);
-			return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+			return NM_SETTING_VERIFY_NORMALIZABLE;
 		}
 		if (priv->speed) {
 			g_set_error_literal (error,
@@ -773,7 +775,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			                     _("when link autonegotiation is enabled speed should be 0"));
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_SPEED);
-			return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+			return NM_SETTING_VERIFY_NORMALIZABLE;
 		}
 	} else {
 		if (   ((priv->speed) && (!priv->duplex))
@@ -782,7 +784,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			                     NM_CONNECTION_ERROR,
 			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			                     _("both speed and duplex are required for static link configuration"));
-			return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+			return NM_SETTING_VERIFY_NORMALIZABLE;
 		}
 	}
 
