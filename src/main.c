@@ -87,6 +87,7 @@ _set_g_fatal_warnings (void)
 static void
 _init_nm_debug (NMConfig *config)
 {
+	gs_free char *debug = NULL;
 	const guint D_RLIMIT_CORE = 1;
 	const guint D_FATAL_WARNINGS = 2;
 	GDebugKey keys[] = {
@@ -95,7 +96,6 @@ _init_nm_debug (NMConfig *config)
 	};
 	guint flags;
 	const char *env = getenv ("NM_DEBUG");
-	gs_free char *debug;
 
 	debug = nm_config_data_get_value (nm_config_get_data_orig (config),
 	                                  NM_CONFIG_KEYFILE_GROUP_MAIN,
