@@ -130,10 +130,11 @@ NmcOutputField nmc_fields_con_show[] = {
 	{"DEVICE",               N_("DEVICE")},                /* 10 */
 	{"STATE",                N_("STATE")},                 /* 11 */
 	{"ACTIVE-PATH",          N_("ACTIVE-PATH")},           /* 12 */
+	{"SLAVE",                N_("SLAVE")},                 /* 13 */
 	{NULL, NULL}
 };
 #define NMC_FIELDS_CON_SHOW_ALL     "NAME,UUID,TYPE,TIMESTAMP,TIMESTAMP-REAL,AUTOCONNECT,AUTOCONNECT-PRIORITY,READONLY,DBUS-PATH,"\
-                                    "ACTIVE,DEVICE,STATE,ACTIVE-PATH"
+                                    "ACTIVE,DEVICE,STATE,ACTIVE-PATH,SLAVE"
 #define NMC_FIELDS_CON_SHOW_COMMON  "NAME,UUID,TYPE,DEVICE"
 
 /* Helper macro to define fields */
@@ -948,6 +949,7 @@ fill_output_connection (NMConnection *connection, NmCli *nmc, gboolean active_on
 	set_val_str  (arr, 10, ac_dev);
 	set_val_strc (arr, 11, ac_state);
 	set_val_strc (arr, 12, ac_path);
+	set_val_strc (arr, 13, nm_setting_connection_get_slave_type (s_con));
 
 	g_ptr_array_add (nmc->output_data, arr);
 }
@@ -982,6 +984,7 @@ fill_output_connection_for_invisible (NMActiveConnection *ac, NmCli *nmc)
 	set_val_str  (arr, 10, ac_dev);
 	set_val_strc (arr, 11, ac_state);
 	set_val_strc (arr, 12, ac_path);
+	set_val_strc (arr, 13, NULL);
 
 	set_val_color_fmt_all (arr, NMC_TERM_FORMAT_DIM);
 
@@ -995,7 +998,7 @@ fill_output_active_connection (NMActiveConnection *active,
                                guint32 o_flags)
 {
 	NMRemoteConnection *con;
-	NMSettingConnection *s_con;
+	NMSettingConnection *s_con = NULL;
 	const GPtrArray *devices;
 	GString *dev_str;
 	NMActiveConnectionState state;
@@ -1055,6 +1058,7 @@ fill_output_active_connection (NMActiveConnection *active,
 	set_val_strc (arr, 10-idx_start, con_path);
 	set_val_strc (arr, 11-idx_start, con_zone);
 	set_val_strc (arr, 12-idx_start, master ? nm_object_get_path (NM_OBJECT (master)) : NULL);
+	set_val_strc (arr, 13-idx_start, s_con ? nm_setting_connection_get_slave_type (s_con) : NULL);
 
 	g_ptr_array_add (nmc->output_data, arr);
 
