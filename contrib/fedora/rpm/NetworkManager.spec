@@ -306,6 +306,7 @@ is the new NetworkManager API. See also NetworkManager-glib-devel.
 %package config-connectivity-fedora
 Summary: NetworkManager config file for connectivity checking via Fedora servers
 Group: System Environment/Base
+BuildArch: noarch
 
 %description config-connectivity-fedora
 This adds a NetworkManager configuration file to enable connectivity checking
@@ -314,6 +315,7 @@ via Fedora infrastructure.
 %package config-server
 Summary: NetworkManager config file for "server-like" defaults
 Group: System Environment/Base
+BuildArch: noarch
 
 %description config-server
 This adds a NetworkManager configuration file to make it behave more
