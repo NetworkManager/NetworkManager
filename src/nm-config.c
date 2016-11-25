@@ -92,7 +92,6 @@ typedef struct {
 	char *intern_config_file;
 
 	gboolean monitor_connection_files;
-	char *dhcp_client;
 
 	char *log_level;
 	char *log_domains;
@@ -264,14 +263,6 @@ nm_config_get_monitor_connection_files (NMConfig *config)
 	g_return_val_if_fail (config != NULL, FALSE);
 
 	return NM_CONFIG_GET_PRIVATE (config)->monitor_connection_files;
-}
-
-const char *
-nm_config_get_dhcp_client (NMConfig *config)
-{
-	g_return_val_if_fail (config != NULL, NULL);
-
-	return NM_CONFIG_GET_PRIVATE (config)->dhcp_client;
 }
 
 const char *
@@ -2322,8 +2313,6 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 
 	priv->monitor_connection_files = nm_config_keyfile_get_boolean (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "monitor-connection-files", FALSE);
 
-	priv->dhcp_client = nm_strstrip (g_key_file_get_string (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "dhcp", NULL));
-
 	priv->log_level = nm_strstrip (g_key_file_get_string (keyfile, NM_CONFIG_KEYFILE_GROUP_LOGGING, "level", NULL));
 	priv->log_domains = nm_strstrip (g_key_file_get_string (keyfile, NM_CONFIG_KEYFILE_GROUP_LOGGING, "domains", NULL));
 
@@ -2383,7 +2372,6 @@ finalize (GObject *gobject)
 	g_free (priv->system_config_dir);
 	g_free (priv->no_auto_default_file);
 	g_free (priv->intern_config_file);
-	g_free (priv->dhcp_client);
 	g_free (priv->log_level);
 	g_free (priv->log_domains);
 	g_free (priv->debug);

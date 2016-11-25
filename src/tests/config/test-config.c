@@ -46,6 +46,17 @@ _assert_config_value (const NMConfigData *config_data, const char *group, const 
 }
 #define assert_config_value(config_data, group, key, expected_value) _assert_config_value (config_data, group, key, expected_value, __FILE__, __LINE__)
 
+#define _config_get_dhcp_client_a(config) \
+	({ \
+		gs_free char *_s = NULL; \
+		\
+		_s = nm_config_data_get_value (nm_config_get_data_orig (config), \
+		                               NM_CONFIG_KEYFILE_GROUP_MAIN, \
+		                               NM_CONFIG_KEYFILE_KEY_MAIN_DHCP, \
+		                               NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY); \
+		_s ? nm_sprintf_bufa (100, "%s", _s) : NULL; \
+	})
+
 /*****************************************************************************/
 
 static NMConfig *
@@ -124,7 +135,7 @@ test_config_simple (void)
 	config = setup_config (NULL, SRCDIR "/NetworkManager.conf", "", NULL, "/no/such/dir", "", NULL);
 
 	g_assert_cmpstr (nm_config_data_get_config_main_file (nm_config_get_data_orig (config)), ==, SRCDIR "/NetworkManager.conf");
-	g_assert_cmpstr (nm_config_get_dhcp_client (config), ==, "dhclient");
+	g_assert_cmpstr (_config_get_dhcp_client_a (config), ==, "dhclient");
 	g_assert_cmpstr (nm_config_get_log_level (config), ==, "INFO");
 	g_assert_cmpint (nm_config_data_get_connectivity_interval (nm_config_get_data_orig (config)), ==, 100);
 
@@ -224,7 +235,7 @@ test_config_override (void)
 	                       NULL);
 
 	g_assert_cmpstr (nm_config_data_get_config_main_file (nm_config_get_data_orig (config)), ==, SRCDIR "/NetworkManager.conf");
-	g_assert_cmpstr (nm_config_get_dhcp_client (config), ==, "dhclient");
+	g_assert_cmpstr (_config_get_dhcp_client_a (config), ==, "dhclient");
 	g_assert_cmpstr (nm_config_get_log_level (config), ==, "INFO");
 	g_assert_cmpint (nm_config_data_get_connectivity_interval (nm_config_get_data_orig (config)), ==, 12);
 
@@ -377,7 +388,7 @@ test_config_confdir (void)
 	config = setup_config (NULL, SRCDIR "/NetworkManager.conf", "", NULL, SRCDIR "/conf.d", "", NULL);
 
 	g_assert_cmpstr (nm_config_data_get_config_main_file (nm_config_get_data_orig (config)), ==, SRCDIR "/NetworkManager.conf");
-	g_assert_cmpstr (nm_config_get_dhcp_client (config), ==, "dhcpcd");
+	g_assert_cmpstr (_config_get_dhcp_client_a (config), ==, "dhcpcd");
 	g_assert_cmpstr (nm_config_get_log_level (config), ==, "INFO");
 	g_assert_cmpstr (nm_config_get_log_domains (config), ==, "PLATFORM,DNS,WIFI");
 	g_assert_cmpstr (nm_config_data_get_connectivity_uri (nm_config_get_data_orig (config)), ==, "http://example.net");

@@ -30,8 +30,8 @@
 
 #include "nm-utils.h"
 
-#include "nm-config.h"
 #include "platform/nm-linux-platform.h"
+#include "dhcp/nm-dhcp-manager.h"
 
 #include "settings/plugins/ifnet/nms-ifnet-net-parser.h"
 #include "settings/plugins/ifnet/nms-ifnet-net-utils.h"
@@ -40,17 +40,17 @@
 
 #include "nm-test-utils-core.h"
 
-/* Fake NMConfig handling; the values it returns don't matter, so this
+/* Fake config handling; the values it returns don't matter, so this
  * is easier than forcing it to read our own config file, etc.
  */
-NMConfig *
-nm_config_get (void)
+NMDhcpManager *
+nm_dhcp_manager_get (void)
 {
 	return NULL;
 }
 
 const char *
-nm_config_get_dhcp_client (NMConfig *config)
+nm_dhcp_manager_get_config (NMDhcpManager *dhcp_manager)
 {
 	return "dhclient";
 }

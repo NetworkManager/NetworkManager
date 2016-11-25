@@ -31,7 +31,6 @@ global:
 	nm_config_get;
 	nm_config_get_data;
 	nm_config_get_data_orig;
-	nm_config_get_dhcp_client;
 	nm_config_get_monitor_connection_files;
 	nm_connection_add_setting;
 	nm_connection_compare;
@@ -127,6 +126,8 @@ global:
 	nm_device_state_changed;
 	nm_device_take_down;
 	nm_device_uses_assumed_connection;
+	nm_dhcp_manager_get;
+	nm_dhcp_manager_get_config;
 	nm_ethernet_address_is_valid;
 	nm_exported_object_class_add_interface;
 	nm_exported_object_export;
