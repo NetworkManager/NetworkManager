@@ -46,6 +46,17 @@ _assert_config_value (const NMConfigData *config_data, const char *group, const 
 }
 #define assert_config_value(config_data, group, key, expected_value) _assert_config_value (config_data, group, key, expected_value, __FILE__, __LINE__)
 
+#define _config_get_dhcp_client_a(config) \
+	({ \
+		gs_free char *_s = NULL; \
+		\
+		_s = nm_config_data_get_value (nm_config_get_data_orig (config), \
+		                               NM_CONFIG_KEYFILE_GROUP_MAIN, \
+		                               NM_CONFIG_KEYFILE_KEY_MAIN_DHCP, \
+		                               NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY); \
+		_s ? nm_sprintf_bufa (100, "%s", _s) : NULL; \
+	})
+
 /*****************************************************************************/
 
 static NMConfig *
@@ -114,8 +125,8 @@ setup_config (GError **error, const char *config_file, const char *intern_config
 static void
 test_config_simple (void)
 {
-	NMConfig *config;
-	const char **plugins;
+	gs_unref_object NMConfig *config = NULL;
+	gs_strfreev char **plugins = NULL;
 	char *value;
 	gs_unref_object NMDevice *dev50 = nm_test_device_new ("00:00:00:00:00:50");
 	gs_unref_object NMDevice *dev51 = nm_test_device_new ("00:00:00:00:00:51");
@@ -124,11 +135,11 @@ test_config_simple (void)
 	config = setup_config (NULL, SRCDIR "/NetworkManager.conf", "", NULL, "/no/such/dir", "", NULL);
 
 	g_assert_cmpstr (nm_config_data_get_config_main_file (nm_config_get_data_orig (config)), ==, SRCDIR "/NetworkManager.conf");
-	g_assert_cmpstr (nm_config_get_dhcp_client (config), ==, "dhclient");
+	g_assert_cmpstr (_config_get_dhcp_client_a (config), ==, "dhclient");
 	g_assert_cmpstr (nm_config_get_log_level (config), ==, "INFO");
 	g_assert_cmpint (nm_config_data_get_connectivity_interval (nm_config_get_data_orig (config)), ==, 100);
 
-	plugins = nm_config_get_plugins (config);
+	plugins = nm_config_data_get_plugins (nm_config_get_data_orig (config), FALSE);
 	g_assert_cmpint (g_strv_length ((char **)plugins), ==, 3);
 	g_assert_cmpstr (plugins[0], ==, "foo");
 	g_assert_cmpstr (plugins[1], ==, "bar");
@@ -190,9 +201,6 @@ test_config_simple (void)
 	value = nm_config_data_get_connection_default (nm_config_get_data_orig (config), "dummy.test2", dev50);
 	g_assert_cmpstr (value, ==, "no");
 	g_free (value);
-
-
-	g_object_unref (config);
 }
 
 static void
@@ -218,8 +226,8 @@ test_config_parse_error (void)
 static void
 test_config_override (void)
 {
-	NMConfig *config;
-	const char **plugins;
+	gs_unref_object NMConfig *config = NULL;
+	gs_strfreev char **plugins = NULL;
 
 	config = setup_config (NULL, SRCDIR "/NetworkManager.conf", "", NULL, "/no/such/dir", "",
 	                       "--plugins", "alpha,beta,gamma,delta",
@@ -227,18 +235,16 @@ test_config_override (void)
 	                       NULL);
 
 	g_assert_cmpstr (nm_config_data_get_config_main_file (nm_config_get_data_orig (config)), ==, SRCDIR "/NetworkManager.conf");
-	g_assert_cmpstr (nm_config_get_dhcp_client (config), ==, "dhclient");
+	g_assert_cmpstr (_config_get_dhcp_client_a (config), ==, "dhclient");
 	g_assert_cmpstr (nm_config_get_log_level (config), ==, "INFO");
 	g_assert_cmpint (nm_config_data_get_connectivity_interval (nm_config_get_data_orig (config)), ==, 12);
 
-	plugins = nm_config_get_plugins (config);
+	plugins = nm_config_data_get_plugins (nm_config_get_data_orig (config), FALSE);
 	g_assert_cmpint (g_strv_length ((char **)plugins), ==, 4);
 	g_assert_cmpstr (plugins[0], ==, "alpha");
 	g_assert_cmpstr (plugins[1], ==, "beta");
 	g_assert_cmpstr (plugins[2], ==, "gamma");
 	g_assert_cmpstr (plugins[3], ==, "delta");
-
-	g_object_unref (config);
 }
 
 static void
@@ -374,21 +380,21 @@ test_config_no_auto_default (void)
 static void
 test_config_confdir (void)
 {
-	NMConfig *config;
-	const char **plugins;
+	gs_unref_object NMConfig *config = NULL;
+	gs_strfreev char **plugins = NULL;
 	char *value;
 	GSList *specs;
 
 	config = setup_config (NULL, SRCDIR "/NetworkManager.conf", "", NULL, SRCDIR "/conf.d", "", NULL);
 
 	g_assert_cmpstr (nm_config_data_get_config_main_file (nm_config_get_data_orig (config)), ==, SRCDIR "/NetworkManager.conf");
-	g_assert_cmpstr (nm_config_get_dhcp_client (config), ==, "dhcpcd");
+	g_assert_cmpstr (_config_get_dhcp_client_a (config), ==, "dhcpcd");
 	g_assert_cmpstr (nm_config_get_log_level (config), ==, "INFO");
 	g_assert_cmpstr (nm_config_get_log_domains (config), ==, "PLATFORM,DNS,WIFI");
 	g_assert_cmpstr (nm_config_data_get_connectivity_uri (nm_config_get_data_orig (config)), ==, "http://example.net");
 	g_assert_cmpint (nm_config_data_get_connectivity_interval (nm_config_get_data_orig (config)), ==, 100);
 
-	plugins = nm_config_get_plugins (config);
+	plugins = nm_config_data_get_plugins (nm_config_get_data_orig (config), FALSE);
 	g_assert_cmpint (g_strv_length ((char **)plugins), ==, 5);
 	g_assert_cmpstr (plugins[0], ==, "foo");
 	g_assert_cmpstr (plugins[1], ==, "bar");
@@ -475,8 +481,6 @@ test_config_confdir (void)
 	g_free (value);
 
 	nm_config_data_log (nm_config_get_data_orig (config), ">>> TEST: ", " ", NULL);
-
-	g_object_unref (config);
 }
 
 static void

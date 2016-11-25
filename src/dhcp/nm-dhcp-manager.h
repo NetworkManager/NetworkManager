@@ -40,6 +40,8 @@ GType nm_dhcp_manager_get_type (void);
 
 NMDhcpManager *nm_dhcp_manager_get (void);
 
+const char *nm_dhcp_manager_get_config (NMDhcpManager *self);
+
 void           nm_dhcp_manager_set_default_hostname (NMDhcpManager *manager,
                                                      const char *hostname);
 

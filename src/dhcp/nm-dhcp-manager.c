@@ -322,6 +322,17 @@ nm_dhcp_manager_get_lease_ip_configs (NMDhcpManager *self,
 	return NULL;
 }
 
+const char *
+nm_dhcp_manager_get_config (NMDhcpManager *self)
+{
+	const NMDhcpClientFactory *factory;
+
+	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
+
+	factory = NM_DHCP_MANAGER_GET_PRIVATE (self)->client_factory;
+	return factory ? factory->name : NULL;
+}
+
 /*****************************************************************************/
 
 NM_DEFINE_SINGLETON_GETTER (NMDhcpManager, nm_dhcp_manager_get, NM_TYPE_DHCP_MANAGER);
@@ -331,6 +342,7 @@ nm_dhcp_manager_init (NMDhcpManager *self)
 {
 	NMDhcpManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 	NMConfig *config = nm_config_get ();
+	gs_free char *client_free = NULL;
 	const char *client;
 	int i;
 	const NMDhcpClientFactory *client_factory = NULL;
@@ -347,7 +359,11 @@ nm_dhcp_manager_init (NMDhcpManager *self)
 	}
 
 	/* Client-specific setup */
-	client = nm_config_get_dhcp_client (config);
+	client_free = nm_config_data_get_value (nm_config_get_data_orig (config),
+	                                        NM_CONFIG_KEYFILE_GROUP_MAIN,
+	                                        NM_CONFIG_KEYFILE_KEY_MAIN_DHCP,
+	                                        NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY);
+	client = client_free;
 	if (nm_config_get_configure_and_quit (config)) {
 		client_factory = &_nm_dhcp_client_factory_internal;
 		if (client && !nm_streq (client, client_factory->name))
@@ -359,13 +375,13 @@ nm_dhcp_manager_init (NMDhcpManager *self)
 				nm_log_warn (LOGD_DHCP, "dhcp-init: DHCP client '%s' not available", client);
 		}
 		if (!client_factory) {
-			client_factory = _client_factory_find_by_name (""NM_CONFIG_DEFAULT_DHCP);
+			client_factory = _client_factory_find_by_name (""NM_CONFIG_DEFAULT_MAIN_DHCP);
 			if (!client_factory)
-				nm_log_err (LOGD_DHCP, "dhcp-init: default DHCP client '%s' is not installed", NM_CONFIG_DEFAULT_DHCP);
+				nm_log_err (LOGD_DHCP, "dhcp-init: default DHCP client '%s' is not installed", NM_CONFIG_DEFAULT_MAIN_DHCP);
 			else {
 				client_factory = _client_factory_available (client_factory);
 				if (!client_factory)
-					nm_log_info (LOGD_DHCP, "dhcp-init: default DHCP client '%s' is not available", NM_CONFIG_DEFAULT_DHCP);
+					nm_log_info (LOGD_DHCP, "dhcp-init: default DHCP client '%s' is not available", NM_CONFIG_DEFAULT_MAIN_DHCP);
 			}
 		}
 		if (!client_factory) {

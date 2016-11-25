@@ -32,6 +32,7 @@
 #include "NetworkManagerUtils.h"
 #include "settings/nm-settings-plugin.h"
 #include "nm-config.h"
+#include "dhcp/nm-dhcp-manager.h"
 
 #include "nms-ifnet-wpa-parser.h"
 #include "nms-ifnet-net-parser.h"
@@ -729,24 +730,25 @@ get_dhcp_hostname_and_client_id (char **hostname, char **client_id)
 
 	*hostname = NULL;
 	*client_id = NULL;
-	dhcp_client = nm_config_get_dhcp_client (nm_config_get ());
+	dhcp_client = nm_dhcp_manager_get_config (nm_dhcp_manager_get ());
 	if (dhcp_client) {
 		if (!strcmp (dhcp_client, "dhclient")) {
 			g_file_get_contents (dhclient_conf, &contents, NULL,
-					     NULL);
+			                     NULL);
 			use_dhclient = TRUE;
-		} else if (!strcmp (dhcp_client, "dhcpcd"))
+		} else if (!strcmp (dhcp_client, "dhcpcd")) {
 			g_file_get_contents (dhcpcd_conf, &contents, NULL,
-					     NULL);
+			                     NULL);
+		}
 	} else {
 		if (g_file_test (dhclient_conf, G_FILE_TEST_IS_REGULAR)) {
 			g_file_get_contents (dhclient_conf, &contents, NULL,
-					     NULL);
+			                     NULL);
 			use_dhclient = TRUE;
-		}
-		else if (g_file_test (dhcpcd_conf, G_FILE_TEST_IS_REGULAR))
+		} else if (g_file_test (dhcpcd_conf, G_FILE_TEST_IS_REGULAR)) {
 			g_file_get_contents (dhcpcd_conf, &contents, NULL,
-					     NULL);
+			                     NULL);
+		}
 	}
 	if (!contents)
 		return;

@@ -557,52 +557,56 @@ const NMDhcpClientFactory *const _nm_dhcp_manager_factories[3] = {
 /*****************************************************************************/
 /* Stub functions */
 
+#include "nm-config.h"
+#include "devices/nm-device.h"
+#include "nm-active-connection.h"
+#include "nm-bus-manager.h"
+
 void
 nm_main_config_reload (int signal)
 {
 	_LOGI (LOGD_CORE, "reloading configuration not supported");
 }
 
-gconstpointer nm_config_get (void);
-const char *nm_config_get_dhcp_client (gpointer unused);
-gboolean nm_config_get_configure_and_quit (gpointer unused);
-gconstpointer nm_bus_manager_get (void);
-void nm_bus_manager_register_object (gpointer unused, gpointer object);
-void nm_bus_manager_unregister_object (gpointer unused, gpointer object);
-GType nm_device_get_type (void);
-GType nm_active_connection_get_type (void);
-
-gconstpointer
+NMConfig *
 nm_config_get (void)
 {
 	return GUINT_TO_POINTER (1);
 }
 
-const char *
-nm_config_get_dhcp_client (gpointer unused)
+NMConfigData *
+nm_config_get_data_orig (NMConfig *config)
 {
-	return "internal";
+	return GUINT_TO_POINTER (1);
+}
+
+char *
+nm_config_data_get_value (const NMConfigData *config_data, const char *group, const char *key, NMConfigGetValueFlags flags)
+{
+	return NULL;
 }
 
 gboolean
-nm_config_get_configure_and_quit (gpointer unused)
+nm_config_get_configure_and_quit (NMConfig *config)
 {
 	return TRUE;
 }
 
-gconstpointer
+NMBusManager *
 nm_bus_manager_get (void)
 {
 	return GUINT_TO_POINTER (1);
 }
 
 void
-nm_bus_manager_register_object (gpointer unused, gpointer object)
+nm_bus_manager_register_object (NMBusManager *bus_manager,
+                                GDBusObjectSkeleton *object)
 {
 }
 
 void
-nm_bus_manager_unregister_object (gpointer unused, gpointer object)
+nm_bus_manager_unregister_object (NMBusManager *bus_manager,
+                                  GDBusObjectSkeleton *object)
 {
 }
 

@@ -91,15 +91,10 @@ typedef struct {
 	char *no_auto_default_file;
 	char *intern_config_file;
 
-	char **plugins;
 	gboolean monitor_connection_files;
-	gboolean auth_polkit;
-	char *dhcp_client;
 
 	char *log_level;
 	char *log_domains;
-
-	char *debug;
 
 	gboolean configure_and_quit;
 
@@ -260,36 +255,12 @@ nm_config_get_data_orig (NMConfig *config)
 	return NM_CONFIG_GET_PRIVATE (config)->config_data_orig;
 }
 
-const char **
-nm_config_get_plugins (NMConfig *config)
-{
-	g_return_val_if_fail (config != NULL, NULL);
-
-	return (const char **) NM_CONFIG_GET_PRIVATE (config)->plugins;
-}
-
 gboolean
 nm_config_get_monitor_connection_files (NMConfig *config)
 {
 	g_return_val_if_fail (config != NULL, FALSE);
 
 	return NM_CONFIG_GET_PRIVATE (config)->monitor_connection_files;
-}
-
-gboolean
-nm_config_get_auth_polkit (NMConfig *config)
-{
-	g_return_val_if_fail (NM_IS_CONFIG (config), NM_CONFIG_DEFAULT_AUTH_POLKIT_BOOL);
-
-	return NM_CONFIG_GET_PRIVATE (config)->auth_polkit;
-}
-
-const char *
-nm_config_get_dhcp_client (NMConfig *config)
-{
-	g_return_val_if_fail (config != NULL, NULL);
-
-	return NM_CONFIG_GET_PRIVATE (config)->dhcp_client;
 }
 
 const char *
@@ -306,14 +277,6 @@ nm_config_get_log_domains (NMConfig *config)
 	g_return_val_if_fail (config != NULL, NULL);
 
 	return NM_CONFIG_GET_PRIVATE (config)->log_domains;
-}
-
-const char *
-nm_config_get_debug (NMConfig *config)
-{
-	g_return_val_if_fail (config != NULL, NULL);
-
-	return NM_CONFIG_GET_PRIVATE (config)->debug;
 }
 
 gboolean
@@ -506,7 +469,7 @@ nm_config_cmd_line_options_add_to_entries (NMConfigCmdLineOptions *cli,
 			{ "intern-config", 0, 0, G_OPTION_ARG_FILENAME, &cli->intern_config_file, N_("Internal config file location"), N_(DEFAULT_INTERN_CONFIG_FILE) },
 			{ "state-file", 0, 0, G_OPTION_ARG_FILENAME, &cli->state_file, N_("State file location"), N_(DEFAULT_STATE_FILE) },
 			{ "no-auto-default", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_FILENAME, &cli->no_auto_default_file, N_("State file for no-auto-default devices"), N_(DEFAULT_NO_AUTO_DEFAULT_FILE) },
-			{ "plugins", 0, 0, G_OPTION_ARG_STRING, &cli->plugins, N_("List of plugins separated by ','"), N_(NM_CONFIG_PLUGINS_DEFAULT) },
+			{ "plugins", 0, 0, G_OPTION_ARG_STRING, &cli->plugins, N_("List of plugins separated by ','"), N_(NM_CONFIG_DEFAULT_MAIN_PLUGINS) },
 			{ "configure-and-quit", 0, 0, G_OPTION_ARG_NONE, &cli->configure_and_quit, N_("Quit after initial configuration"), NULL },
 			{ "debug", 'd', 0, G_OPTION_ARG_NONE, &cli->is_debug, N_("Don't become a daemon, and log to stderr"), NULL },
 
@@ -652,7 +615,7 @@ static gboolean
 _setting_is_string_list (const char *group, const char *key)
 {
 	return    _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins")
-	       || _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, "debug")
+	       || _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, NM_CONFIG_KEYFILE_KEY_MAIN_DEBUG)
 	       || _IS (NM_CONFIG_KEYFILE_GROUP_LOGGING, "domains")
 	       || g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_TEST_APPEND_STRINGLIST);
 #undef _IS
@@ -764,6 +727,13 @@ read_config (GKeyFile *keyfile, gboolean is_base_config, const char *dirname, co
 					if (is_string_list) {
 						old_val = g_key_file_get_string_list (keyfile, group, base_key, NULL, NULL);
 						new_val = g_key_file_get_string_list (kf, group, key, NULL, NULL);
+						if (!old_val && !g_key_file_has_key (keyfile, group, base_key, NULL)) {
+							/* we must fill the unspecified value with the compile-time default. */
+							if (nm_streq (group, NM_CONFIG_KEYFILE_GROUP_MAIN) && nm_streq (base_key, "plugins")) {
+								g_key_file_set_value (keyfile, group, base_key, NM_CONFIG_DEFAULT_MAIN_PLUGINS);
+								old_val = g_key_file_get_string_list (keyfile, group, base_key, NULL, NULL);
+							}
+						}
 					} else {
 						gs_free char *old_sval = nm_config_keyfile_get_value (keyfile, group, base_key, NM_CONFIG_GET_VALUE_TYPE_SPEC);
 						gs_free char *new_sval = nm_config_keyfile_get_value (kf, group, key, NM_CONFIG_GET_VALUE_TYPE_SPEC);
@@ -2331,19 +2301,10 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	else
 		priv->no_auto_default_file = g_strdup (DEFAULT_NO_AUTO_DEFAULT_FILE);
 
-	priv->plugins = _nm_utils_strv_cleanup (g_key_file_get_string_list (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins", NULL, NULL),
-	                                        TRUE, TRUE, TRUE);
-
 	priv->monitor_connection_files = nm_config_keyfile_get_boolean (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "monitor-connection-files", FALSE);
-
-	priv->auth_polkit = nm_config_keyfile_get_boolean (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "auth-polkit", NM_CONFIG_DEFAULT_AUTH_POLKIT_BOOL);
-
-	priv->dhcp_client = nm_strstrip (g_key_file_get_string (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "dhcp", NULL));
 
 	priv->log_level = nm_strstrip (g_key_file_get_string (keyfile, NM_CONFIG_KEYFILE_GROUP_LOGGING, "level", NULL));
 	priv->log_domains = nm_strstrip (g_key_file_get_string (keyfile, NM_CONFIG_KEYFILE_GROUP_LOGGING, "domains", NULL));
-
-	priv->debug = g_key_file_get_string (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "debug", NULL);
 
 	priv->configure_and_quit = nm_config_keyfile_get_boolean (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "configure-and-quit", FALSE);
 
@@ -2375,9 +2336,6 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 static void
 nm_config_init (NMConfig *config)
 {
-	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
-
-	priv->auth_polkit = NM_CONFIG_DEFAULT_AUTH_POLKIT_BOOL;
 }
 
 NMConfig *
@@ -2402,11 +2360,8 @@ finalize (GObject *gobject)
 	g_free (priv->system_config_dir);
 	g_free (priv->no_auto_default_file);
 	g_free (priv->intern_config_file);
-	g_strfreev (priv->plugins);
-	g_free (priv->dhcp_client);
 	g_free (priv->log_level);
 	g_free (priv->log_domains);
-	g_free (priv->debug);
 	g_strfreev (priv->atomic_section_prefixes);
 
 	_nm_config_cmd_line_options_clear (&priv->cli);

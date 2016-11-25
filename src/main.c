@@ -85,7 +85,7 @@ _set_g_fatal_warnings (void)
 }
 
 static void
-_init_nm_debug (const char *debug)
+_init_nm_debug (NMConfig *config)
 {
 	const guint D_RLIMIT_CORE = 1;
 	const guint D_FATAL_WARNINGS = 2;
@@ -95,6 +95,12 @@ _init_nm_debug (const char *debug)
 	};
 	guint flags;
 	const char *env = getenv ("NM_DEBUG");
+	gs_free char *debug;
+
+	debug = nm_config_data_get_value (nm_config_get_data_orig (config),
+	                                  NM_CONFIG_KEYFILE_GROUP_MAIN,
+	                                  NM_CONFIG_KEYFILE_KEY_MAIN_DEBUG,
+	                                  NM_MANAGER_RELOAD_FLAGS_NONE);
 
 	flags  = nm_utils_parse_debug_string (env, keys, G_N_ELEMENTS (keys));
 	flags |= nm_utils_parse_debug_string (debug, keys, G_N_ELEMENTS (keys));
@@ -302,7 +308,7 @@ main (int argc, char *argv[])
 		exit (1);
 	}
 
-	_init_nm_debug (nm_config_get_debug (config));
+	_init_nm_debug (config);
 
 	/* Initialize logging from config file *only* if not explicitly
 	 * specified by commandline.
@@ -362,7 +368,10 @@ main (int argc, char *argv[])
 #endif
 	             );
 
-	nm_auth_manager_setup (nm_config_get_auth_polkit (config));
+	nm_auth_manager_setup (nm_config_data_get_value_boolean (nm_config_get_data_orig (config),
+	                                                         NM_CONFIG_KEYFILE_GROUP_MAIN,
+	                                                         NM_CONFIG_KEYFILE_KEY_MAIN_AUTH_POLKIT,
+	                                                         NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_BOOL));
 
 	nm_manager_setup ();
 
