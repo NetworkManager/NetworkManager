@@ -92,7 +92,6 @@ typedef struct {
 	char *intern_config_file;
 
 	gboolean monitor_connection_files;
-	gboolean auth_polkit;
 	char *dhcp_client;
 
 	char *log_level;
@@ -265,14 +264,6 @@ nm_config_get_monitor_connection_files (NMConfig *config)
 	g_return_val_if_fail (config != NULL, FALSE);
 
 	return NM_CONFIG_GET_PRIVATE (config)->monitor_connection_files;
-}
-
-gboolean
-nm_config_get_auth_polkit (NMConfig *config)
-{
-	g_return_val_if_fail (NM_IS_CONFIG (config), NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_BOOL);
-
-	return NM_CONFIG_GET_PRIVATE (config)->auth_polkit;
 }
 
 const char *
@@ -2331,8 +2322,6 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 
 	priv->monitor_connection_files = nm_config_keyfile_get_boolean (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "monitor-connection-files", FALSE);
 
-	priv->auth_polkit = nm_config_keyfile_get_boolean (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "auth-polkit", NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_BOOL);
-
 	priv->dhcp_client = nm_strstrip (g_key_file_get_string (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "dhcp", NULL));
 
 	priv->log_level = nm_strstrip (g_key_file_get_string (keyfile, NM_CONFIG_KEYFILE_GROUP_LOGGING, "level", NULL));
@@ -2370,9 +2359,6 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 static void
 nm_config_init (NMConfig *config)
 {
-	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
-
-	priv->auth_polkit = NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_BOOL;
 }
 
 NMConfig *

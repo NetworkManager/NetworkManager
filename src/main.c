@@ -362,7 +362,10 @@ main (int argc, char *argv[])
 #endif
 	             );
 
-	nm_auth_manager_setup (nm_config_get_auth_polkit (config));
+	nm_auth_manager_setup (nm_config_data_get_value_boolean (nm_config_get_data_orig (config),
+	                                                         NM_CONFIG_KEYFILE_GROUP_MAIN,
+	                                                         NM_CONFIG_KEYFILE_KEY_MAIN_AUTH_POLKIT,
+	                                                         NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_BOOL));
 
 	nm_manager_setup ();
 

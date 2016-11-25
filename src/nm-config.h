@@ -59,6 +59,7 @@
 #define NM_CONFIG_KEYFILE_GROUP_IFUPDOWN                    "ifupdown"
 #define NM_CONFIG_KEYFILE_GROUP_IFNET                       "ifnet"
 
+#define NM_CONFIG_KEYFILE_KEY_MAIN_AUTH_POLKIT              "auth-polkit"
 #define NM_CONFIG_KEYFILE_KEY_LOGGING_BACKEND               "backend"
 #define NM_CONFIG_KEYFILE_KEY_CONFIG_ENABLE                 "enable"
 #define NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS            ".was"
@@ -115,7 +116,6 @@ NMConfigData *nm_config_get_data_orig (NMConfig *config);
 #define NM_CONFIG_GET_DATA_ORIG (nm_config_get_data_orig (nm_config_get ()))
 
 gboolean nm_config_get_monitor_connection_files (NMConfig *config);
-gboolean nm_config_get_auth_polkit (NMConfig *config);
 const char *nm_config_get_dhcp_client (NMConfig *config);
 const char *nm_config_get_log_level (NMConfig *config);
 const char *nm_config_get_log_domains (NMConfig *config);
