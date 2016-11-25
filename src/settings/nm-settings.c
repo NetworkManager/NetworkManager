@@ -2284,19 +2284,14 @@ nm_settings_start (NMSettings *self, GError **error)
 	GDBusProxy *proxy;
 	GVariant *variant;
 	GError *local_error = NULL;
-	const char **plugins;
-	gs_strfreev char **plugins_default = NULL;
+	gs_strfreev char **plugins = NULL;
 
 	priv = NM_SETTINGS_GET_PRIVATE (self);
 
 	/* Load the plugins; fail if a plugin is not found. */
-	plugins = nm_config_get_plugins (priv->config);
-	if (!plugins) {
-		plugins_default = g_strsplit (NM_CONFIG_PLUGINS_DEFAULT, ",", -1);
-		plugins = (const char **) plugins_default;
-	}
+	plugins = nm_config_data_get_plugins (nm_config_get_data_orig (priv->config), TRUE);
 
-	if (!load_plugins (self, plugins, error)) {
+	if (!load_plugins (self, (const char **) plugins, error)) {
 		g_object_unref (self);
 		return FALSE;
 	}

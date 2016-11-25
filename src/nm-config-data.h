@@ -158,6 +158,7 @@ char *nm_config_data_get_value (const NMConfigData *config_data, const char *gro
 const char *nm_config_data_get_value_cached (const NMConfigData *config_data, const char *group, const char *key, NMConfigGetValueFlags flags);
 gint nm_config_data_get_value_boolean (const NMConfigData *self, const char *group, const char *key, gint default_value);
 
+char **nm_config_data_get_plugins (const NMConfigData *config_data, gboolean allow_default);
 const char *nm_config_data_get_connectivity_uri (const NMConfigData *config_data);
 const guint nm_config_data_get_connectivity_interval (const NMConfigData *config_data);
 const char *nm_config_data_get_connectivity_response (const NMConfigData *config_data);

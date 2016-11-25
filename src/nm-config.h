@@ -114,7 +114,6 @@ NMConfigData *nm_config_get_data_orig (NMConfig *config);
 #define NM_CONFIG_GET_DATA      (nm_config_get_data (nm_config_get ()))
 #define NM_CONFIG_GET_DATA_ORIG (nm_config_get_data_orig (nm_config_get ()))
 
-const char **nm_config_get_plugins (NMConfig *config);
 gboolean nm_config_get_monitor_connection_files (NMConfig *config);
 gboolean nm_config_get_auth_polkit (NMConfig *config);
 const char *nm_config_get_dhcp_client (NMConfig *config);

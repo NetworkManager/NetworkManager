@@ -91,7 +91,6 @@ typedef struct {
 	char *no_auto_default_file;
 	char *intern_config_file;
 
-	char **plugins;
 	gboolean monitor_connection_files;
 	gboolean auth_polkit;
 	char *dhcp_client;
@@ -258,14 +257,6 @@ nm_config_get_data_orig (NMConfig *config)
 	g_return_val_if_fail (config != NULL, NULL);
 
 	return NM_CONFIG_GET_PRIVATE (config)->config_data_orig;
-}
-
-const char **
-nm_config_get_plugins (NMConfig *config)
-{
-	g_return_val_if_fail (config != NULL, NULL);
-
-	return (const char **) NM_CONFIG_GET_PRIVATE (config)->plugins;
 }
 
 gboolean
@@ -2331,9 +2322,6 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	else
 		priv->no_auto_default_file = g_strdup (DEFAULT_NO_AUTO_DEFAULT_FILE);
 
-	priv->plugins = _nm_utils_strv_cleanup (g_key_file_get_string_list (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins", NULL, NULL),
-	                                        TRUE, TRUE, TRUE);
-
 	priv->monitor_connection_files = nm_config_keyfile_get_boolean (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "monitor-connection-files", FALSE);
 
 	priv->auth_polkit = nm_config_keyfile_get_boolean (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "auth-polkit", NM_CONFIG_DEFAULT_AUTH_POLKIT_BOOL);
@@ -2402,7 +2390,6 @@ finalize (GObject *gobject)
 	g_free (priv->system_config_dir);
 	g_free (priv->no_auto_default_file);
 	g_free (priv->intern_config_file);
-	g_strfreev (priv->plugins);
 	g_free (priv->dhcp_client);
 	g_free (priv->log_level);
 	g_free (priv->log_domains);
