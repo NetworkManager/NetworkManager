@@ -3213,7 +3213,7 @@ nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize length)
 }
 
 static void
-_bin2str_buf (gconstpointer addr, gsize length, gboolean upper_case, char *out)
+_bin2str_buf (gconstpointer addr, gsize length, const char delimiter, gboolean upper_case, char *out)
 {
 	const guint8 *in = addr;
 	const char *LOOKUP = upper_case ? "0123456789ABCDEF" : "0123456789abcdef";
@@ -3222,7 +3222,8 @@ _bin2str_buf (gconstpointer addr, gsize length, gboolean upper_case, char *out)
 	nm_assert (out);
 	nm_assert (length > 0);
 
-	/* @out must contain at least @length*3 bytes */
+	/* @out must contain at least @length*3 bytes if @delimiter is set,
+	 * otherwise, @length*2+1. */
 
 	for (;;) {
 		const guint8 v = *in++;
@@ -3232,7 +3233,8 @@ _bin2str_buf (gconstpointer addr, gsize length, gboolean upper_case, char *out)
 		length--;
 		if (!length)
 			break;
-		*out++ = ':';
+		if (delimiter)
+			*out++ = delimiter;
 	}
 
 	*out = 0;
@@ -3250,35 +3252,22 @@ _bin2str_buf (gconstpointer addr, gsize length, gboolean upper_case, char *out)
  *
  * Return value: (transfer full): the textual form of @bytes
  */
-/*
- * Code originally by Alex Larsson <alexl@redhat.com> and
- *  copyright Red Hat, Inc. under terms of the LGPL.
- */
 char *
 nm_utils_bin2hexstr (gconstpointer src, gsize len, int final_len)
 {
-	static char hex_digits[] = "0123456789abcdef";
-	const guint8 *bytes = src;
 	char *result;
-	int i;
 	gsize buflen = (len * 2) + 1;
 
-	g_return_val_if_fail (bytes != NULL, NULL);
-	g_return_val_if_fail (len > 0, NULL);
-	g_return_val_if_fail (len < 4096, NULL);   /* Arbitrary limit */
-	if (final_len > -1)
-		g_return_val_if_fail (final_len < buflen, NULL);
+	g_return_val_if_fail (src != NULL, NULL);
+	g_return_val_if_fail (len > 0 && (buflen - 1) / 2 == len, NULL);
+	g_return_val_if_fail (final_len < 0 || (gsize) final_len < buflen, NULL);
 
-	result = g_malloc0 (buflen);
-	for (i = 0; i < len; i++) {
-		result[2*i] = hex_digits[(bytes[i] >> 4) & 0xf];
-		result[2*i+1] = hex_digits[bytes[i] & 0xf];
-	}
+	result = g_malloc (buflen);
+	_bin2str_buf (src, len, '\0', FALSE, result);
+
 	/* Cut converted key off at the correct length for this cipher type */
-	if (final_len > -1)
+	if (final_len >= 0 && final_len < buflen)
 		result[final_len] = '\0';
-	else
-		result[buflen - 1] = '\0';
 
 	return result;
 }
@@ -3292,7 +3281,7 @@ _bin2str (gconstpointer addr, gsize length, gboolean upper_case)
 	nm_assert (length > 0);
 
 	result = g_malloc (length * 3);
-	_bin2str_buf (addr, length, upper_case, result);
+	_bin2str_buf (addr, length, ':', upper_case, result);
 	return result;
 }
 
@@ -3323,7 +3312,7 @@ nm_utils_hwaddr_ntoa_buf (gconstpointer addr, gsize addr_len, gboolean upper_cas
 	if (buf_len < addr_len * 3)
 		g_return_val_if_reached (NULL);
 
-	_bin2str_buf (addr, addr_len, TRUE, buf);
+	_bin2str_buf (addr, addr_len, ':', TRUE, buf);
 	return buf;
 }
 
