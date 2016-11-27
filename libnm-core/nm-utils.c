@@ -3013,6 +3013,57 @@ nm_utils_hwaddr_len (int type)
 	g_return_val_if_reached (0);
 }
 
+static guint8 *
+hwaddr_aton (const char *asc, guint8 *buffer, gsize buffer_length, gsize *out_len)
+{
+	const char *in = asc;
+	guint8 *out = buffer;
+	guint8 delimiter = '\0';
+
+	nm_assert (asc);
+	nm_assert (buffer);
+	nm_assert (buffer_length);
+	nm_assert (out_len);
+
+	while (TRUE) {
+		const guint8 d1 = in[0];
+		guint8 d2;
+
+		if (!g_ascii_isxdigit (d1))
+			return NULL;
+
+#define HEXVAL(c) ((c) <= '9' ? (c) - '0' : ((c) & 0x4F) - ('A' - 10))
+
+		/* If there's no leading zero (ie "aa:b:cc") then fake it */
+		d2 = in[1];
+		if (d2 && g_ascii_isxdigit (d2)) {
+			*out++ = (HEXVAL (d1) << 4) + HEXVAL (d2);
+			d2 = in[2];
+			in += 3;
+		} else {
+			/* Fake leading zero */
+			*out++ = HEXVAL (d1);
+			in += 2;
+		}
+
+		if (!d2)
+			break;
+		if (--buffer_length == 0)
+			return NULL;
+
+		if (d2 != delimiter) {
+			if (   delimiter == '\0'
+			    && (d2 == ':' || d2 == '-'))
+				delimiter = d2;
+			else
+				return NULL;
+		}
+	}
+
+	*out_len = out - buffer;
+	return buffer;
+}
+
 /**
  * nm_utils_hexstr2bin:
  * @hex: a string of hexadecimal characters with optional ':' separators
@@ -3067,57 +3118,6 @@ nm_utils_hexstr2bin (const char *hex)
 	}
 
 	return g_bytes_new (c, x);
-}
-
-static guint8 *
-hwaddr_aton (const char *asc, guint8 *buffer, gsize buffer_length, gsize *out_len)
-{
-	const char *in = asc;
-	guint8 *out = buffer;
-	guint8 delimiter = '\0';
-
-	nm_assert (asc);
-	nm_assert (buffer);
-	nm_assert (buffer_length);
-	nm_assert (out_len);
-
-	while (TRUE) {
-		const guint8 d1 = in[0];
-		guint8 d2;
-
-		if (!g_ascii_isxdigit (d1))
-			return NULL;
-
-#define HEXVAL(c) ((c) <= '9' ? (c) - '0' : ((c) & 0x4F) - ('A' - 10))
-
-		/* If there's no leading zero (ie "aa:b:cc") then fake it */
-		d2 = in[1];
-		if (d2 && g_ascii_isxdigit (d2)) {
-			*out++ = (HEXVAL (d1) << 4) + HEXVAL (d2);
-			d2 = in[2];
-			in += 3;
-		} else {
-			/* Fake leading zero */
-			*out++ = HEXVAL (d1);
-			in += 2;
-		}
-
-		if (!d2)
-			break;
-		if (--buffer_length == 0)
-			return NULL;
-
-		if (d2 != delimiter) {
-			if (   delimiter == '\0'
-			    && (d2 == ':' || d2 == '-'))
-				delimiter = d2;
-			else
-				return NULL;
-		}
-	}
-
-	*out_len = out - buffer;
-	return buffer;
 }
 
 /**
@@ -3212,6 +3212,32 @@ nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize length)
 	return buffer;
 }
 
+static void
+_bin2str_buf (gconstpointer addr, gsize length, gboolean upper_case, char *out)
+{
+	const guint8 *in = addr;
+	const char *LOOKUP = upper_case ? "0123456789ABCDEF" : "0123456789abcdef";
+
+	nm_assert (addr);
+	nm_assert (out);
+	nm_assert (length > 0);
+
+	/* @out must contain at least @length*3 bytes */
+
+	for (;;) {
+		const guint8 v = *in++;
+
+		*out++ = LOOKUP[v >> 4];
+		*out++ = LOOKUP[v & 0x0F];
+		length--;
+		if (!length)
+			break;
+		*out++ = ':';
+	}
+
+	*out = 0;
+}
+
 /**
  * nm_utils_bin2hexstr:
  * @src: (type guint8) (array length=len): an array of bytes
@@ -3255,32 +3281,6 @@ nm_utils_bin2hexstr (gconstpointer src, gsize len, int final_len)
 		result[buflen - 1] = '\0';
 
 	return result;
-}
-
-static void
-_bin2str_buf (gconstpointer addr, gsize length, gboolean upper_case, char *out)
-{
-	const guint8 *in = addr;
-	const char *LOOKUP = upper_case ? "0123456789ABCDEF" : "0123456789abcdef";
-
-	nm_assert (addr);
-	nm_assert (out);
-	nm_assert (length > 0);
-
-	/* @out must contain at least @length*3 bytes */
-
-	for (;;) {
-		const guint8 v = *in++;
-
-		*out++ = LOOKUP[v >> 4];
-		*out++ = LOOKUP[v & 0x0F];
-		length--;
-		if (!length)
-			break;
-		*out++ = ':';
-	}
-
-	*out = 0;
 }
 
 static char *
