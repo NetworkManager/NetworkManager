@@ -3272,19 +3272,6 @@ nm_utils_bin2hexstr (gconstpointer src, gsize len, int final_len)
 	return result;
 }
 
-static char *
-_bin2str (gconstpointer addr, gsize length, gboolean upper_case)
-{
-	char *result;
-
-	nm_assert (addr);
-	nm_assert (length > 0);
-
-	result = g_malloc (length * 3);
-	_bin2str_buf (addr, length, ':', upper_case, result);
-	return result;
-}
-
 /**
  * nm_utils_hwaddr_ntoa:
  * @addr: (type guint8) (array length=length): a binary hardware address
@@ -3297,10 +3284,14 @@ _bin2str (gconstpointer addr, gsize length, gboolean upper_case)
 char *
 nm_utils_hwaddr_ntoa (gconstpointer addr, gsize length)
 {
+	char *result;
+
 	g_return_val_if_fail (addr, g_strdup (""));
 	g_return_val_if_fail (length > 0, g_strdup (""));
 
-	return _bin2str (addr, length, TRUE);
+	result = g_malloc (length * 3);
+	_bin2str_buf (addr, length, ':', TRUE, result);
+	return result;
 }
 
 const char *
@@ -3329,10 +3320,14 @@ nm_utils_hwaddr_ntoa_buf (gconstpointer addr, gsize addr_len, gboolean upper_cas
 char *
 _nm_utils_bin2str (gconstpointer addr, gsize length, gboolean upper_case)
 {
+	char *result;
+
 	g_return_val_if_fail (addr, g_strdup (""));
 	g_return_val_if_fail (length > 0, g_strdup (""));
 
-	return _bin2str (addr, length, upper_case);
+	result = g_malloc (length * 3);
+	_bin2str_buf (addr, length, ':', upper_case, result);
+	return result;
 }
 
 /**
