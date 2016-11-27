@@ -3014,10 +3014,16 @@ nm_utils_hwaddr_len (int type)
 }
 
 static guint8 *
-hwaddr_aton (const char *asc, guint8 *buffer, gsize buffer_length, gsize *out_len)
+_str2bin (const char *asc,
+          gboolean delimiter_required,
+          const char *delimiter_candidates,
+          guint8 *buffer,
+          gsize buffer_length,
+          gsize *out_len)
 {
 	const char *in = asc;
 	guint8 *out = buffer;
+	gboolean delimiter_has = TRUE;
 	guint8 delimiter = '\0';
 
 	nm_assert (asc);
@@ -3039,30 +3045,51 @@ hwaddr_aton (const char *asc, guint8 *buffer, gsize buffer_length, gsize *out_le
 		if (d2 && g_ascii_isxdigit (d2)) {
 			*out++ = (HEXVAL (d1) << 4) + HEXVAL (d2);
 			d2 = in[2];
-			in += 3;
+			if (!d2)
+				break;
+			in += 2;
 		} else {
 			/* Fake leading zero */
 			*out++ = HEXVAL (d1);
-			in += 2;
+			if (!d2) {
+				if (!delimiter_has) {
+					/* when using no delimiter, there must be pairs of hex chars */
+					return NULL;
+				}
+				break;
+			}
+			in += 1;
 		}
 
-		if (!d2)
-			break;
 		if (--buffer_length == 0)
 			return NULL;
 
-		if (d2 != delimiter) {
-			if (   delimiter == '\0'
-			    && (d2 == ':' || d2 == '-'))
-				delimiter = d2;
-			else
-				return NULL;
+		if (delimiter_has) {
+			if (d2 != delimiter) {
+				if (delimiter)
+					return NULL;
+				if (delimiter_candidates) {
+					while (delimiter_candidates[0]) {
+						if (delimiter_candidates++[0] == d2)
+							delimiter = d2;
+					}
+				}
+				if (!delimiter) {
+					if (delimiter_required)
+						return NULL;
+					delimiter_has = FALSE;
+					continue;
+				}
+			}
+			in++;
 		}
 	}
 
 	*out_len = out - buffer;
 	return buffer;
 }
+
+#define hwaddr_aton(asc, buffer, buffer_length, out_len) _str2bin ((asc), TRUE, ":-", (buffer), (buffer_length), (out_len))
 
 /**
  * nm_utils_hexstr2bin:
@@ -3078,46 +3105,22 @@ hwaddr_aton (const char *asc, guint8 *buffer, gsize buffer_length, gsize *out_le
 GBytes *
 nm_utils_hexstr2bin (const char *hex)
 {
-	guint i = 0, x = 0;
-	gs_free guint8 *c = NULL;
-	int a, b;
-	gboolean found_colon = FALSE;
+	guint8 *buffer;
+	gsize buffer_length, len;
 
 	g_return_val_if_fail (hex != NULL, NULL);
 
-	if (strncasecmp (hex, "0x", 2) == 0)
+	if (hex[0] == '0' && hex[1] == 'x')
 		hex += 2;
-	found_colon = !!strchr (hex, ':');
 
-	c = g_malloc (strlen (hex) / 2 + 1);
-	for (;;) {
-		a = g_ascii_xdigit_value (hex[i++]);
-		if (a < 0)
-			return NULL;
-
-		if (hex[i] && hex[i] != ':') {
-			b = g_ascii_xdigit_value (hex[i++]);
-			if (b < 0)
-				return NULL;
-			c[x++] = ((guint) a << 4) | ((guint) b);
-		} else
-			c[x++] = (guint) a;
-
-		if (!hex[i])
-			break;
-		if (hex[i] == ':') {
-			if (!hex[i + 1]) {
-				/* trailing ':' is invalid */
-				return NULL;
-			}
-			i++;
-		} else if (found_colon) {
-			/* If colons exist, they must delimit 1 or 2 hex chars */
-			return NULL;
-		}
+	buffer_length = strlen (hex) / 2 + 3;
+	buffer = g_malloc (buffer_length);
+	if (!_str2bin (hex, FALSE, ":", buffer, buffer_length, &len)) {
+		g_free (buffer);
+		return NULL;
 	}
-
-	return g_bytes_new (c, x);
+	buffer = g_realloc (buffer, len);
+	return g_bytes_new_take (buffer, len);
 }
 
 /**
