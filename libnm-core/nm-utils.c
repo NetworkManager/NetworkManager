@@ -3013,67 +3013,17 @@ nm_utils_hwaddr_len (int type)
 	g_return_val_if_reached (0);
 }
 
-/**
- * nm_utils_hexstr2bin:
- * @hex: a string of hexadecimal characters with optional ':' separators
- *
- * Converts a hexadecimal string @hex into an array of bytes.  The optional
- * separator ':' may be used between single or pairs of hexadecimal characters,
- * eg "00:11" or "0:1".  Any "0x" at the beginning of @hex is ignored.  @hex
- * may not start or end with ':'.
- *
- * Return value: (transfer full): the converted bytes, or %NULL on error
- */
-GBytes *
-nm_utils_hexstr2bin (const char *hex)
-{
-	guint i = 0, x = 0;
-	gs_free guint8 *c = NULL;
-	int a, b;
-	gboolean found_colon = FALSE;
-
-	g_return_val_if_fail (hex != NULL, NULL);
-
-	if (strncasecmp (hex, "0x", 2) == 0)
-		hex += 2;
-	found_colon = !!strchr (hex, ':');
-
-	c = g_malloc (strlen (hex) / 2 + 1);
-	for (;;) {
-		a = g_ascii_xdigit_value (hex[i++]);
-		if (a < 0)
-			return NULL;
-
-		if (hex[i] && hex[i] != ':') {
-			b = g_ascii_xdigit_value (hex[i++]);
-			if (b < 0)
-				return NULL;
-			c[x++] = ((guint) a << 4) | ((guint) b);
-		} else
-			c[x++] = (guint) a;
-
-		if (!hex[i])
-			break;
-		if (hex[i] == ':') {
-			if (!hex[i + 1]) {
-				/* trailing ':' is invalid */
-				return NULL;
-			}
-			i++;
-		} else if (found_colon) {
-			/* If colons exist, they must delimit 1 or 2 hex chars */
-			return NULL;
-		}
-	}
-
-	return g_bytes_new (c, x);
-}
-
 static guint8 *
-hwaddr_aton (const char *asc, guint8 *buffer, gsize buffer_length, gsize *out_len)
+_str2bin (const char *asc,
+          gboolean delimiter_required,
+          const char *delimiter_candidates,
+          guint8 *buffer,
+          gsize buffer_length,
+          gsize *out_len)
 {
 	const char *in = asc;
 	guint8 *out = buffer;
+	gboolean delimiter_has = TRUE;
 	guint8 delimiter = '\0';
 
 	nm_assert (asc);
@@ -3095,29 +3045,82 @@ hwaddr_aton (const char *asc, guint8 *buffer, gsize buffer_length, gsize *out_le
 		if (d2 && g_ascii_isxdigit (d2)) {
 			*out++ = (HEXVAL (d1) << 4) + HEXVAL (d2);
 			d2 = in[2];
-			in += 3;
+			if (!d2)
+				break;
+			in += 2;
 		} else {
 			/* Fake leading zero */
 			*out++ = HEXVAL (d1);
-			in += 2;
+			if (!d2) {
+				if (!delimiter_has) {
+					/* when using no delimiter, there must be pairs of hex chars */
+					return NULL;
+				}
+				break;
+			}
+			in += 1;
 		}
 
-		if (!d2)
-			break;
 		if (--buffer_length == 0)
 			return NULL;
 
-		if (d2 != delimiter) {
-			if (   delimiter == '\0'
-			    && (d2 == ':' || d2 == '-'))
-				delimiter = d2;
-			else
-				return NULL;
+		if (delimiter_has) {
+			if (d2 != delimiter) {
+				if (delimiter)
+					return NULL;
+				if (delimiter_candidates) {
+					while (delimiter_candidates[0]) {
+						if (delimiter_candidates++[0] == d2)
+							delimiter = d2;
+					}
+				}
+				if (!delimiter) {
+					if (delimiter_required)
+						return NULL;
+					delimiter_has = FALSE;
+					continue;
+				}
+			}
+			in++;
 		}
 	}
 
 	*out_len = out - buffer;
 	return buffer;
+}
+
+#define hwaddr_aton(asc, buffer, buffer_length, out_len) _str2bin ((asc), TRUE, ":-", (buffer), (buffer_length), (out_len))
+
+/**
+ * nm_utils_hexstr2bin:
+ * @hex: a string of hexadecimal characters with optional ':' separators
+ *
+ * Converts a hexadecimal string @hex into an array of bytes.  The optional
+ * separator ':' may be used between single or pairs of hexadecimal characters,
+ * eg "00:11" or "0:1".  Any "0x" at the beginning of @hex is ignored.  @hex
+ * may not start or end with ':'.
+ *
+ * Return value: (transfer full): the converted bytes, or %NULL on error
+ */
+GBytes *
+nm_utils_hexstr2bin (const char *hex)
+{
+	guint8 *buffer;
+	gsize buffer_length, len;
+
+	g_return_val_if_fail (hex != NULL, NULL);
+
+	if (hex[0] == '0' && hex[1] == 'x')
+		hex += 2;
+
+	buffer_length = strlen (hex) / 2 + 3;
+	buffer = g_malloc (buffer_length);
+	if (!_str2bin (hex, FALSE, ":", buffer, buffer_length, &len)) {
+		g_free (buffer);
+		return NULL;
+	}
+	buffer = g_realloc (buffer, len);
+	return g_bytes_new_take (buffer, len);
 }
 
 /**
@@ -3212,6 +3215,34 @@ nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize length)
 	return buffer;
 }
 
+static void
+_bin2str (gconstpointer addr, gsize length, const char delimiter, gboolean upper_case, char *out)
+{
+	const guint8 *in = addr;
+	const char *LOOKUP = upper_case ? "0123456789ABCDEF" : "0123456789abcdef";
+
+	nm_assert (addr);
+	nm_assert (out);
+	nm_assert (length > 0);
+
+	/* @out must contain at least @length*3 bytes if @delimiter is set,
+	 * otherwise, @length*2+1. */
+
+	for (;;) {
+		const guint8 v = *in++;
+
+		*out++ = LOOKUP[v >> 4];
+		*out++ = LOOKUP[v & 0x0F];
+		length--;
+		if (!length)
+			break;
+		if (delimiter)
+			*out++ = delimiter;
+	}
+
+	*out = 0;
+}
+
 /**
  * nm_utils_bin2hexstr:
  * @src: (type guint8) (array length=len): an array of bytes
@@ -3224,75 +3255,23 @@ nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize length)
  *
  * Return value: (transfer full): the textual form of @bytes
  */
-/*
- * Code originally by Alex Larsson <alexl@redhat.com> and
- *  copyright Red Hat, Inc. under terms of the LGPL.
- */
 char *
 nm_utils_bin2hexstr (gconstpointer src, gsize len, int final_len)
 {
-	static char hex_digits[] = "0123456789abcdef";
-	const guint8 *bytes = src;
 	char *result;
-	int i;
 	gsize buflen = (len * 2) + 1;
 
-	g_return_val_if_fail (bytes != NULL, NULL);
-	g_return_val_if_fail (len > 0, NULL);
-	g_return_val_if_fail (len < 4096, NULL);   /* Arbitrary limit */
-	if (final_len > -1)
-		g_return_val_if_fail (final_len < buflen, NULL);
+	g_return_val_if_fail (src != NULL, NULL);
+	g_return_val_if_fail (len > 0 && (buflen - 1) / 2 == len, NULL);
+	g_return_val_if_fail (final_len < 0 || (gsize) final_len < buflen, NULL);
 
-	result = g_malloc0 (buflen);
-	for (i = 0; i < len; i++) {
-		result[2*i] = hex_digits[(bytes[i] >> 4) & 0xf];
-		result[2*i+1] = hex_digits[bytes[i] & 0xf];
-	}
+	result = g_malloc (buflen);
+	_bin2str (src, len, '\0', FALSE, result);
+
 	/* Cut converted key off at the correct length for this cipher type */
-	if (final_len > -1)
+	if (final_len >= 0 && final_len < buflen)
 		result[final_len] = '\0';
-	else
-		result[buflen - 1] = '\0';
 
-	return result;
-}
-
-static void
-_bin2str_buf (gconstpointer addr, gsize length, gboolean upper_case, char *out)
-{
-	const guint8 *in = addr;
-	const char *LOOKUP = upper_case ? "0123456789ABCDEF" : "0123456789abcdef";
-
-	nm_assert (addr);
-	nm_assert (out);
-	nm_assert (length > 0);
-
-	/* @out must contain at least @length*3 bytes */
-
-	for (;;) {
-		const guint8 v = *in++;
-
-		*out++ = LOOKUP[v >> 4];
-		*out++ = LOOKUP[v & 0x0F];
-		length--;
-		if (!length)
-			break;
-		*out++ = ':';
-	}
-
-	*out = 0;
-}
-
-static char *
-_bin2str (gconstpointer addr, gsize length, gboolean upper_case)
-{
-	char *result;
-
-	nm_assert (addr);
-	nm_assert (length > 0);
-
-	result = g_malloc (length * 3);
-	_bin2str_buf (addr, length, upper_case, result);
 	return result;
 }
 
@@ -3308,10 +3287,14 @@ _bin2str (gconstpointer addr, gsize length, gboolean upper_case)
 char *
 nm_utils_hwaddr_ntoa (gconstpointer addr, gsize length)
 {
+	char *result;
+
 	g_return_val_if_fail (addr, g_strdup (""));
 	g_return_val_if_fail (length > 0, g_strdup (""));
 
-	return _bin2str (addr, length, TRUE);
+	result = g_malloc (length * 3);
+	_bin2str (addr, length, ':', TRUE, result);
+	return result;
 }
 
 const char *
@@ -3323,7 +3306,7 @@ nm_utils_hwaddr_ntoa_buf (gconstpointer addr, gsize addr_len, gboolean upper_cas
 	if (buf_len < addr_len * 3)
 		g_return_val_if_reached (NULL);
 
-	_bin2str_buf (addr, addr_len, TRUE, buf);
+	_bin2str (addr, addr_len, ':', TRUE, buf);
 	return buf;
 }
 
@@ -3340,10 +3323,14 @@ nm_utils_hwaddr_ntoa_buf (gconstpointer addr, gsize addr_len, gboolean upper_cas
 char *
 _nm_utils_bin2str (gconstpointer addr, gsize length, gboolean upper_case)
 {
+	char *result;
+
 	g_return_val_if_fail (addr, g_strdup (""));
 	g_return_val_if_fail (length > 0, g_strdup (""));
 
-	return _bin2str (addr, length, upper_case);
+	result = g_malloc (length * 3);
+	_bin2str (addr, length, ':', upper_case, result);
+	return result;
 }
 
 /**
