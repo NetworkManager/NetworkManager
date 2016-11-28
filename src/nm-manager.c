@@ -1135,6 +1135,30 @@ nm_manager_get_connection_iface (NMManager *self,
 }
 
 /**
+ * nm_manager_iface_for_uuid:
+ * @self: the #NMManager
+ * @uuid: the connection uuid
+ *
+ * Gets a link name for the given UUID. Useful for the settings plugins that
+ * wish to write configuration files compatible with tooling that can't
+ * interpret our UUIDs.
+ *
+ * Returns: An interface name; %NULL if none matches
+ */
+const char *
+nm_manager_iface_for_uuid (NMManager *self, const char *uuid)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMSettingsConnection *connection;
+
+	connection = nm_settings_get_connection_by_uuid (priv->settings, uuid);
+	if (!connection)
+		return NULL;
+
+	return nm_connection_get_interface_name (NM_CONNECTION (connection));
+}
+
+/**
  * system_create_virtual_device:
  * @self: the #NMManager
  * @connection: the connection which might require a virtual device

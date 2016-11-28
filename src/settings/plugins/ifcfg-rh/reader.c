@@ -227,7 +227,9 @@ make_connection_setting (const char *file,
 		g_strfreev (items);
 	}
 
-	value = svGetValue (ifcfg, "BRIDGE", FALSE);
+	value = svGetValue (ifcfg, "BRIDGE_UUID", FALSE);
+	if (!value)
+		value = svGetValue (ifcfg, "BRIDGE", FALSE);
 	if (value) {
 		const char *old_value;
 
@@ -1607,7 +1609,10 @@ check_if_bond_slave (shvarFile *ifcfg,
 {
 	char *value;
 
-	value = svGetValue (ifcfg, "MASTER", FALSE);
+	value = svGetValue (ifcfg, "MASTER_UUID", FALSE);
+	if (!value)
+		value = svGetValue (ifcfg, "MASTER", FALSE);
+
 	if (value) {
 		g_object_set (s_con, NM_SETTING_CONNECTION_MASTER, value, NULL);
 		g_object_set (s_con,
@@ -1627,9 +1632,12 @@ check_if_team_slave (shvarFile *ifcfg,
 {
 	gs_free char *value = NULL;
 
-	value = svGetValue (ifcfg, "TEAM_MASTER", FALSE);
+	value = svGetValue (ifcfg, "TEAM_MASTER_UUID", FALSE);
+	if (!value)
+		value = svGetValue (ifcfg, "TEAM_MASTER", FALSE);
 	if (!value)
 		return FALSE;
+
 	g_object_set (s_con, NM_SETTING_CONNECTION_MASTER, value, NULL);
 	g_object_set (s_con, NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_TEAM_SETTING_NAME, NULL);
 	return TRUE;
@@ -4563,7 +4571,9 @@ make_bridge_port_setting (shvarFile *ifcfg)
 
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
 
-	value = svGetValue (ifcfg, "BRIDGE", FALSE);
+	value = svGetValue (ifcfg, "BRIDGE_UUID", FALSE);
+	if (!value)
+		value = svGetValue (ifcfg, "BRIDGE", FALSE);
 	if (value) {
 		g_free (value);
 

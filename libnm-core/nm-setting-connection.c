@@ -1650,9 +1650,11 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: master
-	 * variable: MASTER, TEAM_MASTER, BRIDGE
+	 * variable: MASTER, MASTER_UUID, TEAM_MASTER, TEAM_MASTER_UUID, BRIDGE, BRIDGE_UUID
 	 * description: Reference to master connection. The variable used depends on
-	 *   the connection type.
+	 *   the connection type and the value. In general, if the *_UUID variant is present,
+	 *   the variant without *_UUID is ignored. NetworkManager attempts to write both
+	 *   for compatibility with legacy tooling.
 	 * ---end---
 	 */
 	g_object_class_install_property
@@ -1673,10 +1675,12 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: slave-type
-	 * variable: MASTER, TEAM_MASTER, DEVICETYPE, BRIDGE
+	 * variable: MASTER, MASTER_UUID, TEAM_MASTER, TEAM_MASTER_UUID, DEVICETYPE,
+	 *   BRIDGE, BRIDGE_UUID
 	 * description: Slave type doesn't map directly to a variable, but it is
-	 *   recognized using different variables.  MASTER for bonding,
-	 *   TEAM_MASTER and DEVICETYPE for teaming, BRIDGE for bridging.
+	 *   recognized using different variables.  MASTER and MASTER_UUID for bonding,
+	 *   TEAM_MASTER, TEAM_MASTER_UUID and DEVICETYPE for teaming, BRIDGE
+	 *   and BRIDGE_UUID for bridging.
 	 * ---end---
 	 */
 	g_object_class_install_property

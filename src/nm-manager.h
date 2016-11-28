@@ -99,6 +99,9 @@ char *              nm_manager_get_connection_iface (NMManager *self,
                                                      NMDevice **out_parent,
                                                      GError **error);
 
+const char *        nm_manager_iface_for_uuid          (NMManager *self,
+                                                        const char *uuid);
+
 NMActiveConnection *nm_manager_activate_connection     (NMManager *manager,
                                                         NMSettingsConnection *connection,
                                                         const char *specific_object,

@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
+#include "nm-manager.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless.h"
@@ -1804,13 +1805,13 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 {
 	guint32 n, i;
 	GString *str;
-	const char *master, *type;
+	const char *master, *master_iface = NULL, *type;
 	char *tmp;
 	gint i_int;
-	const char *v_master = NULL;
+	const char *v_master = NULL, *v_master_uuid = NULL;
+	const char *v_bridge = NULL, *v_bridge_uuid = NULL;
+	const char *v_team_master = NULL, *v_team_master_uuid = NULL;
 	const char *v_slave = NULL;
-	const char *v_bridge = NULL;
-	const char *v_team_master = NULL;
 
 	svSetValue (ifcfg, "NAME", nm_setting_connection_get_id (s_con), FALSE);
 	svSetValue (ifcfg, "UUID", nm_setting_connection_get_uuid (s_con), FALSE);
@@ -1878,25 +1879,43 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 
 	master = nm_setting_connection_get_master (s_con);
 	if (master) {
+		/* The reader prefers the *_UUID variants, however we still try to resolve
+		 * it into an interface name, so that legacy tooling is not confused. */
+		if (!nm_utils_get_testing ()) {
+			/* This is conditional for easier testing. */
+			master_iface = nm_manager_iface_for_uuid (nm_manager_get (), master);
+		}
+		if (!master_iface) {
+			master_iface = master;
+			master = NULL;
+
+		}
+
 		if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_BOND_SETTING_NAME)) {
-			v_master = master;
+			v_master_uuid = master;
+			v_master = master_iface;
 			v_slave = "yes";
-		} else if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_BRIDGE_SETTING_NAME))
-			v_bridge = master;
-		else if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_TEAM_SETTING_NAME)) {
-			v_team_master = master;
+		} else if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_BRIDGE_SETTING_NAME)) {
+			v_bridge_uuid = master;
+			v_bridge = master_iface;
+		} else if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_TEAM_SETTING_NAME)) {
+			v_team_master_uuid = master;
+			v_team_master = master_iface;
 			svSetValue (ifcfg, "TYPE", NULL, FALSE);
 		}
 	}
 
+	svSetValue (ifcfg, "MASTER_UUID", v_master_uuid, FALSE);
 	svSetValue (ifcfg, "MASTER", v_master, FALSE);
 	svSetValue (ifcfg, "SLAVE", v_slave, FALSE);
+	svSetValue (ifcfg, "BRIDGE_UUID", v_bridge_uuid, FALSE);
 	svSetValue (ifcfg, "BRIDGE", v_bridge, FALSE);
+	svSetValue (ifcfg, "TEAM_MASTER_UUID", v_team_master_uuid, FALSE);
 	svSetValue (ifcfg, "TEAM_MASTER", v_team_master, FALSE);
 
 	if (nm_streq0 (type, NM_SETTING_TEAM_SETTING_NAME))
 		svSetValue (ifcfg, "DEVICETYPE", TYPE_TEAM, FALSE);
-	else if (master && nm_setting_connection_is_slave_type (s_con, NM_SETTING_TEAM_SETTING_NAME))
+	else if (master_iface && nm_setting_connection_is_slave_type (s_con, NM_SETTING_TEAM_SETTING_NAME))
 		svSetValue (ifcfg, "DEVICETYPE", TYPE_TEAM_PORT, FALSE);
 	else
 		svSetValue (ifcfg, "DEVICETYPE", NULL, FALSE);
