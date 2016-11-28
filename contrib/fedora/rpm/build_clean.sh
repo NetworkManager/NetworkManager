@@ -110,7 +110,7 @@ if [[ $IGNORE_DIRTY != 1 ]]; then
 fi
 
 if [[ $NO_DIST != 1 ]]; then
-    ./autogen.sh --enable-gtk-doc --with-introspection --with-libnm-glib || die "Error autogen.sh"
+    ./autogen.sh --enable-gtk-doc --enable-introspection --with-libnm-glib || die "Error autogen.sh"
     if [[ $QUICK == 1 ]]; then
         make dist -j 7 || die "Error make dist"
     else

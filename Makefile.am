@@ -126,7 +126,7 @@ DISTCHECK_CONFIGURE_FLAGS = \
 	--enable-ifnet
 
 dist-configure-check:
-	@echo "*** 'make dist' requires '--enable-gtk-doc --with-introspection --with-libnm-glib'. ***"
+	@echo "*** 'make dist' requires '--enable-gtk-doc --enable-introspection --with-libnm-glib'. ***"
 	@false
 if !BUILD_SETTING_DOCS
 dist_configure_check += dist-configure-check
@@ -842,7 +842,7 @@ libnm/libnm.typelib: libnm/libnm.gir
 INTROSPECTION_GIRS += libnm/NM-1.0.gir
 endif
 
-if BUILD_SETTING_DOCS
+if HAVE_INTROSPECTION
 
 libnm_noinst_data = \
 	libnm/nm-property-docs.xml \
@@ -3002,13 +3002,13 @@ endif
 
 
 clients_cli_settings_doc_c = clients/cli/settings-docs.c
-if BUILD_SETTING_DOCS
+if HAVE_INTROSPECTION
 $(clients_cli_settings_doc_c): clients/cli/settings-docs.xsl libnm/nm-property-docs.xml
-	$(AM_V_GEN) xsltproc --output $@ $^
+	$(AM_V_GEN) $(XSLTPROC) --output $@ $^
 DISTCLEANFILES += $(clients_cli_settings_doc_c)
 else
 $(clients_cli_settings_doc_c):
-	@echo "to generate $(clients_cli_settings_doc_c), configure with --enable-gtk-doc"
+	@echo "to generate $(clients_cli_settings_doc_c), configure with --enable-introspection"
 	@echo "alternatively, build --without-nmcli"
 	@false
 endif
@@ -3895,10 +3895,10 @@ xsltproc_flags = \
 	--stringparam man.authors.section.enabled 0 \
 	--stringparam man.copyright.section.enabled 0
 
-if ENABLE_GTK_DOC
+if HAVE_INTROSPECTION
 
 man/%.1 man/%.5 man/%.7 man/%.8: man/%.xml man/common.ent
-	$(AM_V_GEN) xsltproc --output $@ $(xsltproc_flags) http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl $<
+	$(AM_V_GEN) $(XSLTPROC) --output $@ $(xsltproc_flags) http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl $<
 
 endif
 
@@ -3907,10 +3907,10 @@ man_nm_settings_xml = \
 	man/nm-settings-keyfile.xml \
 	man/nm-settings-ifcfg-rh.xml
 
-if BUILD_SETTING_DOCS
+if HAVE_INTROSPECTION
 
 man/nm-setting%.xml: man/nm-setting%.xsl libnm/nm-setting%-docs.xml
-	$(AM_V_GEN) xsltproc --output $@ $(xsltproc_flags) $^
+	$(AM_V_GEN) $(XSLTPROC) --output $@ $(xsltproc_flags) $^
 
 CLEANFILES += $(man_nm_settings_xml)
 
@@ -3963,7 +3963,7 @@ uninstall-hook-man:
 
 uninstall_hook += uninstall-hook-man
 
-if ENABLE_GTK_DOC
+if HAVE_INTROSPECTION
 install_manpages = true
 man_MANS += $(man_pages)
 CLEANFILES += $(man_pages)
