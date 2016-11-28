@@ -3213,7 +3213,7 @@ nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize length)
 }
 
 static void
-_bin2str_buf (gconstpointer addr, gsize length, const char delimiter, gboolean upper_case, char *out)
+_bin2str (gconstpointer addr, gsize length, const char delimiter, gboolean upper_case, char *out)
 {
 	const guint8 *in = addr;
 	const char *LOOKUP = upper_case ? "0123456789ABCDEF" : "0123456789abcdef";
@@ -3263,7 +3263,7 @@ nm_utils_bin2hexstr (gconstpointer src, gsize len, int final_len)
 	g_return_val_if_fail (final_len < 0 || (gsize) final_len < buflen, NULL);
 
 	result = g_malloc (buflen);
-	_bin2str_buf (src, len, '\0', FALSE, result);
+	_bin2str (src, len, '\0', FALSE, result);
 
 	/* Cut converted key off at the correct length for this cipher type */
 	if (final_len >= 0 && final_len < buflen)
@@ -3290,7 +3290,7 @@ nm_utils_hwaddr_ntoa (gconstpointer addr, gsize length)
 	g_return_val_if_fail (length > 0, g_strdup (""));
 
 	result = g_malloc (length * 3);
-	_bin2str_buf (addr, length, ':', TRUE, result);
+	_bin2str (addr, length, ':', TRUE, result);
 	return result;
 }
 
@@ -3303,7 +3303,7 @@ nm_utils_hwaddr_ntoa_buf (gconstpointer addr, gsize addr_len, gboolean upper_cas
 	if (buf_len < addr_len * 3)
 		g_return_val_if_reached (NULL);
 
-	_bin2str_buf (addr, addr_len, ':', TRUE, buf);
+	_bin2str (addr, addr_len, ':', TRUE, buf);
 	return buf;
 }
 
@@ -3326,7 +3326,7 @@ _nm_utils_bin2str (gconstpointer addr, gsize length, gboolean upper_case)
 	g_return_val_if_fail (length > 0, g_strdup (""));
 
 	result = g_malloc (length * 3);
-	_bin2str_buf (addr, length, ':', upper_case, result);
+	_bin2str (addr, length, ':', upper_case, result);
 	return result;
 }
 
