@@ -3269,7 +3269,7 @@ nm_utils_bin2hexstr (gconstpointer src, gsize len, int final_len)
 	_bin2str (src, len, '\0', FALSE, result);
 
 	/* Cut converted key off at the correct length for this cipher type */
-	if (final_len >= 0 && final_len < buflen)
+	if (final_len >= 0 && (gsize) final_len < buflen)
 		result[final_len] = '\0';
 
 	return result;
