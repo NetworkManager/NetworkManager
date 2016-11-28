@@ -101,6 +101,4 @@ CLEANFILES += html/* tmpl/* xml/* \
 	NetworkManager-sections.txt \
 	NetworkManager-overrides.txt
 
-if BUILD_SETTING_DOCS
 CLEANFILES += settings-spec.xml
-endif

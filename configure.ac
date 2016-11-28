@@ -1101,6 +1101,7 @@ fi
 AM_CONDITIONAL(INSTALL_PREGEN_MANPAGES, test "x${install_pregen_manpages}" = "xyes")
 
 # check if we can build setting property documentation
+build_setting_docs=no
 if test -n "$INTROSPECTION_MAKEFILE"; then
     # If g-i is installed we know we have python, but we might not have pygobject
     if ! python -c 'from gi.repository import GObject' >& /dev/null; then
@@ -1111,10 +1112,16 @@ if test -n "$INTROSPECTION_MAKEFILE"; then
     AC_PATH_PROG(XSLTPROC, xsltproc, no)
 
     have_introspection=yes
-    build_setting_docs=yes
+    if test "$enable_gtk_doc" = "yes"; then
+        build_setting_docs=yes
+    fi
 else
+    if test "$enable_gtk_doc" = "yes"; then
+        # large parts of the documentation require introspection/pygobject to extract
+        # the documentation out of the source files. You cannot enable gtk-doc without alone.
+        AC_MSG_ERROR(["--with-gtk-doc requires --enable-introspection"])
+    fi
     have_introspection=no
-    build_setting_docs=no
 fi
 
 # check for pre-built setting docs
