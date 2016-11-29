@@ -4,7 +4,7 @@ set -ev
 
 print_test_logs() {
     echo ">>>> PRINT TEST LOGS $1 (start)"
-    find -regex '.*/tests/[^/]+.log$' -exec sh -c 'echo ">>>>> LOGFILE $1"; cat "$1"' '--' '{}' ';'
+    cat test-suite.log
     echo ">>>> PRINT TEST LOGS $1 (done)"
 }
 
