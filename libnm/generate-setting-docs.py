@@ -82,7 +82,7 @@ def init_constants(girxml, settings):
     for setting in settings:
         setting_type_name = 'NM' + setting.attrib['name'];
         setting_name_symbol = 'NM_' + setting.attrib[symbol_prefix_key].upper() + '_SETTING_NAME'
-        if constants.has_key(setting_name_symbol):
+        if setting_name_symbol in constants:
             setting_name = constants[setting_name_symbol]
             setting_names[setting_type_name] = setting_name
 
@@ -184,7 +184,7 @@ outfile.write("""<?xml version=\"1.0\"?>
 """)
 
 for settingxml in settings:
-    if settingxml.attrib.has_key('abstract'):
+    if 'abstract' in settingxml.attrib:
         continue
 
     new_func = NM.__getattr__(settingxml.attrib['name'])
