@@ -368,25 +368,6 @@ add_ip_config_data (NMDnsDnsmasq *self, GVariantBuilder *servers, const NMDnsIPC
 }
 
 static void
-dnsmasq_clear_cache_done (GDBusProxy *proxy, GAsyncResult *res, gpointer user_data)
-{
-	NMDnsDnsmasq *self;
-	gs_free_error GError *error = NULL;
-	gs_unref_variant GVariant *response = NULL;
-
-	response = g_dbus_proxy_call_finish (proxy, res, &error);
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-		return;
-
-	self = NM_DNS_DNSMASQ (user_data);
-
-	if (!response)
-		_LOGW ("dnsmasq cache clear failed: %s", error->message);
-	else
-		_LOGD ("dnsmasq update successful, cache cleared");
-}
-
-static void
 dnsmasq_update_done (GDBusProxy *proxy, GAsyncResult *res, gpointer user_data)
 {
 	NMDnsDnsmasq *self;
@@ -403,16 +384,8 @@ dnsmasq_update_done (GDBusProxy *proxy, GAsyncResult *res, gpointer user_data)
 
 	if (!response)
 		_LOGW ("dnsmasq update failed: %s", error->message);
-	else {
-		g_dbus_proxy_call (priv->dnsmasq,
-		                   "ClearCache",
-		                   NULL,
-		                   G_DBUS_CALL_FLAGS_NONE,
-		                   -1,
-		                   priv->update_cancellable,
-		                   (GAsyncReadyCallback) dnsmasq_clear_cache_done,
-		                   self);
-	}
+	else
+		_LOGD ("dnsmasq update successful");
 }
 
 static void
