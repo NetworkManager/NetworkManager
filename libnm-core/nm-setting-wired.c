@@ -1035,6 +1035,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_wired_class)
 	 * In that case, statically configures the device to use that specified speed.
 	 * In Mbit/s, ie 100 == 100Mbit/s.
 	 * Must be set together with the "duplex" property when non-zero.
+	 * Before specifying a speed value be sure your device supports it.
 	 **/
 	/* ---ifcfg-rh---
 	 * property: speed
@@ -1057,6 +1058,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_wired_class)
 	 * Can be specified only when "auto-negotiate" is "off". In that case, statically
 	 * configures the device to use that specified duplex mode, either "half" or "full".
 	 * Must be set together with the "speed" property if specified.
+	 * Before specifying a duplex mode be sure your device supports it.
 	 **/
 	/* ---ifcfg-rh---
 	 * property: duplex
