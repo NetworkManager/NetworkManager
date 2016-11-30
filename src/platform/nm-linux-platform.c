@@ -57,6 +57,7 @@
 
 /* nm-internal error codes for libnl. Make sure they don't overlap. */
 #define _NLE_NM_NOBUFS 500
+#define _NLE_MSG_TRUNC 501
 
 /*********************************************************************************************/
 
@@ -5969,6 +5970,23 @@ continue_reading:
 			n = -NLE_AGAIN;
 		}
 		break;
+	case -NLE_MSG_TRUNC: {
+		int buf_size;
+
+		/* the message receive buffer was too small. We lost one message, which
+		 * is unfortunate. Try to double the buffer size for the next time. */
+		buf_size = nl_socket_get_msg_buf_size (sk);
+		if (buf_size < 512*1024) {
+			buf_size *= 2;
+			_LOGT ("netlink: recvmsg: increase message buffer size for recvmsg() to %d bytes", buf_size);
+			if (nl_socket_set_msg_buf_size (sk, buf_size) < 0)
+				nm_assert_not_reached ();
+			if (!handle_events)
+				goto continue_reading;
+		}
+		n = -_NLE_MSG_TRUNC;
+		break;
+	}
 	case -NLE_NOMEM:
 		if (errno == ENOBUFS) {
 			/* we are very much interested in a overrun of the receive buffer.
@@ -6157,8 +6175,17 @@ event_handler_read_netlink (NMPlatform *platform, gboolean wait_for_acks)
 				case -NLE_DUMP_INTR:
 					_LOGD ("netlink: read: uncritical failure to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
 					break;
+				case -_NLE_MSG_TRUNC:
 				case -_NLE_NM_NOBUFS:
-					_LOGI ("netlink: read: too many netlink events. Need to resynchronize platform cache");
+					_LOGI ("netlink: read: %s. Need to resynchronize platform cache",
+					       ({
+					            const char *_reason = "unknown";
+					            switch (nle) {
+					            case -_NLE_MSG_TRUNC: _reason = "message truncated";       break;
+					            case -_NLE_NM_NOBUFS: _reason = "too many netlink events"; break;
+					            }
+					            _reason;
+					       }));
 					event_handler_recvmsgs (platform, FALSE);
 					delayed_action_wait_for_nl_response_complete_all (platform, WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC);
 					delayed_action_schedule (platform,
@@ -6413,6 +6440,12 @@ constructed (GObject *_object)
 
 	/* use 8 MB for receive socket kernel queue. */
 	nle = nl_socket_set_buffer_size (priv->nlh, 8*1024*1024, 0);
+	g_assert (!nle);
+
+	/* explicitly set the msg buffer size and disable MSG_PEEK.
+	 * If we later encounter NLE_MSG_TRUNC, we will adjust the buffer size. */
+	nl_socket_disable_msg_peek (priv->nlh);
+	nle = nl_socket_set_msg_buf_size (priv->nlh, 4 * getpagesize ());
 	g_assert (!nle);
 
 	nle = nl_socket_add_memberships (priv->nlh,
