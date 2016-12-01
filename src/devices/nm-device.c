@@ -8192,6 +8192,7 @@ reapply_connection (NMDevice *self,
 	                               error,
 	                               NM_SETTING_CONNECTION_ID,
 	                               NM_SETTING_CONNECTION_UUID,
+	                               NM_SETTING_CONNECTION_AUTOCONNECT,
 	                               NM_SETTING_CONNECTION_ZONE,
 	                               NM_SETTING_CONNECTION_METERED))
 		return FALSE;
