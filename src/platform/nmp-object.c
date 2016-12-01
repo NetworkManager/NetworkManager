@@ -1024,8 +1024,6 @@ nmp_cache_id_destroy (NMPCacheId *id)
 
 /*****************************************************************************/
 
-NMPCacheId _nmp_cache_id_static;
-
 static void
 _nmp_cache_id_init (NMPCacheId *id, NMPCacheIdType id_type)
 {
@@ -1364,7 +1362,9 @@ nmp_cache_link_connected_needs_toggle (const NMPCache *cache, const NMPObject *m
 	    && potential_slave->link.connected) {
 		is_lower_up = TRUE;
 	} else {
-		links = (const NMPlatformLink *const *) nmp_cache_lookup_multi (cache, nmp_cache_id_init_object_type (NMP_CACHE_ID_STATIC, NMP_OBJECT_TYPE_LINK, FALSE), &len);
+		NMPCacheId cache_id;
+
+		links = (const NMPlatformLink *const *) nmp_cache_lookup_multi (cache, nmp_cache_id_init_object_type (&cache_id, NMP_OBJECT_TYPE_LINK, FALSE), &len);
 		for (i = 0; i < len; i++) {
 			const NMPlatformLink *link = links[i];
 			const NMPObject *obj = NMP_OBJECT_UP_CAST ((NMPlatformObject *) link);

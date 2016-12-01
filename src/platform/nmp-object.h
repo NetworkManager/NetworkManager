@@ -137,9 +137,6 @@ struct _NMPCacheId {
 	};
 };
 
-extern NMPCacheId _nmp_cache_id_static;
-#define NMP_CACHE_ID_STATIC  (&_nmp_cache_id_static)
-
 typedef struct {
 	NMPObjectType obj_type;
 	int addr_family;

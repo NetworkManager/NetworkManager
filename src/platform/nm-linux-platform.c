@@ -2740,9 +2740,13 @@ process_events (NMPlatform *platform)
 /*****************************************************************************/
 
 #define cache_lookup_all_objects(type, platform, obj_type, visible_only) \
-	((const type *const*) nmp_cache_lookup_multi (NM_LINUX_PLATFORM_GET_PRIVATE ((platform))->cache, \
-	                                              nmp_cache_id_init_object_type (NMP_CACHE_ID_STATIC, (obj_type), (visible_only)), \
-	                                              NULL))
+	({ \
+		NMPCacheId _cache_id; \
+		\
+		((const type *const*) nmp_cache_lookup_multi (NM_LINUX_PLATFORM_GET_PRIVATE ((platform))->cache, \
+		                                              nmp_cache_id_init_object_type (&_cache_id, (obj_type), (visible_only)), \
+		                                              NULL)); \
+	})
 
 /*****************************************************************************/
 
@@ -3179,9 +3183,10 @@ static void
 cache_prune_candidates_record_all (NMPlatform *platform, NMPObjectType obj_type)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	NMPCacheId cache_id;
 
 	priv->prune_candidates = nmp_cache_lookup_all_to_hash (priv->cache,
-	                                                       nmp_cache_id_init_object_type (NMP_CACHE_ID_STATIC, obj_type, FALSE),
+	                                                       nmp_cache_id_init_object_type (&cache_id, obj_type, FALSE),
 	                                                       priv->prune_candidates);
 	_LOGt ("cache-prune: record %s (now %u candidates)", nmp_class_from_type (obj_type)->obj_type_name,
 	       priv->prune_candidates ? g_hash_table_size (priv->prune_candidates) : 0);
@@ -3809,10 +3814,11 @@ static GArray *
 link_get_all (NMPlatform *platform)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	NMPCacheId cache_id;
 
 	return nmp_cache_lookup_multi_to_array (priv->cache,
 	                                        NMP_OBJECT_TYPE_LINK,
-	                                        nmp_cache_id_init_object_type (NMP_CACHE_ID_STATIC, NMP_OBJECT_TYPE_LINK, TRUE));
+	                                        nmp_cache_id_init_object_type (&cache_id, NMP_OBJECT_TYPE_LINK, TRUE));
 }
 
 static const NMPlatformLink *
@@ -5545,12 +5551,13 @@ static GArray *
 ipx_address_get_all (NMPlatform *platform, int ifindex, NMPObjectType obj_type)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	NMPCacheId cache_id;
 
 	nm_assert (NM_IN_SET (obj_type, NMP_OBJECT_TYPE_IP4_ADDRESS, NMP_OBJECT_TYPE_IP6_ADDRESS));
 
 	return nmp_cache_lookup_multi_to_array (priv->cache,
 	                                        obj_type,
-	                                        nmp_cache_id_init_addrroute_visible_by_ifindex (NMP_CACHE_ID_STATIC,
+	                                        nmp_cache_id_init_addrroute_visible_by_ifindex (&cache_id,
 	                                                                                        obj_type,
 	                                                                                        ifindex));
 }
