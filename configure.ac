@@ -3,7 +3,7 @@ AC_PREREQ([2.63])
 dnl The NM version number
 m4_define([nm_major_version], [1])
 m4_define([nm_minor_version], [2])
-m4_define([nm_micro_version], [6])
+m4_define([nm_micro_version], [7])
 m4_define([nm_version],
           [nm_major_version.nm_minor_version.nm_micro_version])
 m4_define([nm_git_sha], [m4_esyscmd([ ( [ -d ./.git/ ] && [ "$(readlink -f ./.git/)" = "$(readlink -f "$(git rev-parse --git-dir 2>/dev/null)" 2>/dev/null)" ] && git rev-parse --verify -q HEAD 2>/dev/null ) || true ])])
