@@ -6445,7 +6445,7 @@ constructed (GObject *_object)
 	/* explicitly set the msg buffer size and disable MSG_PEEK.
 	 * If we later encounter NLE_MSG_TRUNC, we will adjust the buffer size. */
 	nl_socket_disable_msg_peek (priv->nlh);
-	nle = nl_socket_set_msg_buf_size (priv->nlh, 4 * getpagesize ());
+	nle = nl_socket_set_msg_buf_size (priv->nlh, 32 * 1024);
 	g_assert (!nle);
 
 	nle = nl_socket_add_memberships (priv->nlh,
