@@ -87,7 +87,6 @@ void nm_ip4_config_del_address (NMIP4Config *config, guint i);
 guint nm_ip4_config_get_num_addresses (const NMIP4Config *config);
 const NMPlatformIP4Address *nm_ip4_config_get_address (const NMIP4Config *config, guint i);
 gboolean nm_ip4_config_address_exists (const NMIP4Config *config, const NMPlatformIP4Address *address);
-gboolean nm_ip4_config_addresses_sort (NMIP4Config *config);
 
 void nm_ip4_config_reset_routes (NMIP4Config *config);
 void nm_ip4_config_add_route (NMIP4Config *config, const NMPlatformIP4Route *route);
