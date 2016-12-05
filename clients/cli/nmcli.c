@@ -207,7 +207,7 @@ usage (void)
 static const NMCCommand nmcli_cmds[] = {
 	{ "general",     do_general,      NULL,   FALSE,  FALSE },
 	{ "monitor",     do_monitor,      NULL,   TRUE,   FALSE },
-	{ "networking",  do_networking,   NULL,   FALSE,  FALSE },
+	{ "networking",  do_networking,   NULL,   TRUE,   TRUE },
 	{ "radio",       do_radio,        NULL,   FALSE,  FALSE },
 	{ "connection",  do_connections,  NULL,   FALSE,  FALSE },
 	{ "device",      do_devices,      NULL,   FALSE,  FALSE },
