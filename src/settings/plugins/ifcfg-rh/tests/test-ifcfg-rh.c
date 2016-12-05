@@ -3891,7 +3891,7 @@ test_read_write_wired_dhcp_send_hostname (void)
 	g_assert (s_ip6);
 	g_assert (nm_setting_ip_config_get_dhcp_send_hostname (s_ip4) == TRUE);
 	g_assert_cmpstr (nm_setting_ip_config_get_dhcp_hostname (s_ip4), ==, "svata-pulec");
-	g_assert_cmpstr (nm_setting_ip_config_get_dhcp_hostname (s_ip6), ==, "svata-pulec");
+	g_assert_null (nm_setting_ip_config_get_dhcp_hostname (s_ip6));
 
 	/* Set dhcp-send-hostname=false dhcp-hostname="kamil-patka" and write the connection. */
 	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, FALSE, NULL);

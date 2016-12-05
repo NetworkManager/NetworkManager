@@ -1506,10 +1506,22 @@ make_ip6_setting (shvarFile *ifcfg,
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0)
 		return NM_SETTING (s_ip6);
 
-	value = svGetValueString (ifcfg, "DHCP_HOSTNAME");
-	if (value && value[0])
+	value = svGetValueString (ifcfg, "DHCPV6_HOSTNAME");
+	/* Use DHCP_HOSTNAME as fallback if it is in FQDN format and ipv6.method is
+	 * auto or dhcp: this is required to support old ifcfg files
+	 */
+	if (!value && (   !strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)
+		       || !strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP))) {
+		value = svGetValueString (ifcfg, "DHCP_HOSTNAME");
+		if (value && !strchr (value, '.'))
+			g_clear_pointer (&value, g_free);
+	}
+	if (value)
 		g_object_set (s_ip6, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, value, NULL);
 	g_free (value);
+
+	g_object_set (s_ip6, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME,
+		      svGetValueBoolean (ifcfg, "DHCPV6_SEND_HOSTNAME", TRUE), NULL);
 
 	/* Read static IP addresses.
 	 * Read them even for AUTO and DHCP methods - in this case the addresses are
