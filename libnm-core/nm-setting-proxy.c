@@ -185,13 +185,31 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
-	if (priv->pac_script && strlen (priv->pac_script) > 1*1024*1024) {
-		g_set_error (error,
-		             NM_CONNECTION_ERROR,
-		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("the script is too large"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_PROXY_SETTING_NAME, NM_SETTING_PROXY_PAC_SCRIPT);
-		return FALSE;
+	if (priv->pac_script) {
+		if (strlen (priv->pac_script) > 1*1024*1024) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("the script is too large"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_PROXY_SETTING_NAME, NM_SETTING_PROXY_PAC_SCRIPT);
+			return FALSE;
+		}
+		if (!g_utf8_validate (priv->pac_script, -1, NULL)) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("the script is not valid utf8"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_PROXY_SETTING_NAME, NM_SETTING_PROXY_PAC_SCRIPT);
+			return FALSE;
+		}
+		if (!strstr (priv->pac_script, "FindProxyForURL")) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("the script lacks FindProxyForURL function"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_PROXY_SETTING_NAME, NM_SETTING_PROXY_PAC_SCRIPT);
+			return FALSE;
+		}
 	}
 
 	return TRUE;
