@@ -25,6 +25,7 @@
 %global epoch_version 1
 
 %global obsoletes_device_plugins 1:0.9.9.95-1
+%global obsoletes_ppp_plugin     1:1.5.2
 
 %global systemd_dir %{_prefix}/lib/systemd/system
 %global nmlibdir %{_prefix}/lib/%{name}
@@ -77,6 +78,7 @@
 %endif
 
 %bcond_without wifi
+%bcond_without ppp
 
 %bcond_without nmtui
 %bcond_without regen_docs
@@ -117,7 +119,6 @@ Requires: dbus >= %{dbus_version}
 Requires: glib2 >= %{glib2_version}
 Requires: libnl3 >= %{libnl3_version}
 Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
-Requires: ppp = %{ppp_version}
 Obsoletes: dhcdbd
 Obsoletes: NetworkManager < %{obsoletes_device_plugins}
 Obsoletes: NetworkManager-wimax < 1.2
@@ -139,7 +140,6 @@ BuildRequires: gettext-devel
 BuildRequires: pkgconfig
 BuildRequires: libnl3-devel >= %{libnl3_version}
 BuildRequires: automake autoconf intltool libtool
-BuildRequires: ppp-devel >= 2.4.5
 BuildRequires: nss-devel >= 3.11.7
 BuildRequires: dhclient
 BuildRequires: readline-devel
@@ -247,6 +247,20 @@ Obsoletes: NetworkManager < %{obsoletes_device_plugins}
 %description wwan
 This package contains NetworkManager support for mobile broadband (WWAN)
 devices.
+%endif
+
+%if %{with ppp}
+%package ppp
+Summary: PPP plugin for NetworkManager
+Group: System Environment/Base
+Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
+Requires: ppp = %{ppp_version}
+BuildRequires: ppp-devel >= 2.4.5
+Provides: NetworkManager = %{epoch}:%{version}-%{release}
+Obsoletes: NetworkManager < %{obsoletes_ppp_plugin}
+
+%description ppp
+This package contains NetworkManager support for PPP.
 %endif
 
 
@@ -374,7 +388,6 @@ intltoolize --automake --copy --force
 	--with-more-asserts=10000 \
 %endif
 	--enable-ld-gc \
-	--enable-ppp=yes \
 	--with-libaudit=yes-disabled-by-default \
 %if 0%{?with_modem_manager_1}
 	--with-modem-manager-1=yes \
@@ -414,7 +427,10 @@ intltoolize --automake --copy --force
 	--with-tests=yes \
 	--with-valgrind=no \
 	--enable-ifcfg-rh=yes \
+%if %{with ppp}
 	--with-pppd-plugin-dir=%{_libdir}/pppd/%{ppp_version} \
+	--enable-ppp=yes \
+%endif
 	--with-dist-version=%{version}-%{release} \
 	--with-config-plugins-default='ifcfg-rh,ibft' \
 	--with-config-dns-rc-manager-default=symlink \
@@ -547,7 +563,6 @@ fi
 %dir %{_sysconfdir}/NetworkManager/system-connections
 %{_datadir}/dbus-1/system-services/org.freedesktop.NetworkManager.service
 %{_datadir}/dbus-1/system-services/org.freedesktop.nm_dispatcher.service
-%{_libdir}/pppd/%{ppp_version}/nm-pppd-plugin.so
 %{_datadir}/polkit-1/actions/*.policy
 %{_prefix}/lib/udev/rules.d/*.rules
 # systemd stuff
@@ -587,6 +602,12 @@ fi
 %files wwan
 %{_libdir}/%{name}/libnm-device-plugin-wwan.so
 %{_libdir}/%{name}/libnm-wwan.so
+%endif
+
+%if %{with ppp}
+%files ppp
+%{_libdir}/pppd/%{ppp_version}/nm-pppd-plugin.so
+%{_libdir}/%{name}/libnm-ppp-plugin.so
 %endif
 
 %files glib -f %{name}.lang

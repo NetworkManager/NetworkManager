@@ -31,6 +31,9 @@
 #include "platform/nm-platform.h"
 #include "nm-utils.h"
 
+#define PLUGIN_PREFIX "libnm-device-plugin-"
+#define PLUGIN_PATH_TAG "NMManager-plugin-path"
+
 /*****************************************************************************/
 
 enum {
@@ -328,98 +331,6 @@ nm_device_factory_manager_for_each_factory (NMDeviceFactoryManagerFactoryFunc ca
 	g_slist_free (list);
 }
 
-#define PLUGIN_PREFIX "libnm-device-plugin-"
-#define PLUGIN_PATH_TAG "NMManager-plugin-path"
-
-struct read_device_factory_paths_data {
-	char *path;
-	struct stat st;
-};
-
-static gint
-read_device_factory_paths_sort_fcn (gconstpointer a, gconstpointer b)
-{
-	const struct read_device_factory_paths_data *da = a;
-	const struct read_device_factory_paths_data *db = b;
-	time_t ta, tb;
-
-	ta = MAX (da->st.st_mtime, da->st.st_ctime);
-	tb = MAX (db->st.st_mtime, db->st.st_ctime);
-
-	if (ta < tb)
-		return 1;
-	if (ta > tb)
-		return -1;
-	return 0;
-}
-
-static char**
-read_device_factory_paths (void)
-{
-	GDir *dir;
-	GError *error = NULL;
-	const char *item;
-	GArray *paths;
-	char **result;
-	guint i;
-
-	dir = g_dir_open (NMPLUGINDIR, 0, &error);
-	if (!dir) {
-		nm_log_warn (LOGD_PLATFORM, "device plugin: failed to open directory %s: %s",
-		             NMPLUGINDIR,
-		             error->message);
-		g_clear_error (&error);
-		return NULL;
-	}
-
-	paths = g_array_new (FALSE, FALSE, sizeof (struct read_device_factory_paths_data));
-
-	while ((item = g_dir_read_name (dir))) {
-		int errsv;
-		struct read_device_factory_paths_data data;
-
-		if (!g_str_has_prefix (item, PLUGIN_PREFIX))
-			continue;
-		if (g_str_has_suffix (item, ".la"))
-			continue;
-
-		data.path = g_build_filename (NMPLUGINDIR, item, NULL);
-
-		if (stat (data.path, &data.st) != 0) {
-			errsv = errno;
-			nm_log_warn (LOGD_PLATFORM, "device plugin: skip invalid file %s (error during stat: %s)", data.path, strerror (errsv));
-			goto NEXT;
-		}
-		if (!S_ISREG (data.st.st_mode))
-			goto NEXT;
-		if (data.st.st_uid != 0) {
-			nm_log_warn (LOGD_PLATFORM, "device plugin: skip invalid file %s (file must be owned by root)", data.path);
-			goto NEXT;
-		}
-		if (data.st.st_mode & (S_IWGRP | S_IWOTH | S_ISUID)) {
-			nm_log_warn (LOGD_PLATFORM, "device plugin: skip invalid file %s (invalid file permissions)", data.path);
-			goto NEXT;
-		}
-
-		g_array_append_val (paths, data);
-		continue;
-NEXT:
-		g_free (data.path);
-	}
-	g_dir_close (dir);
-
-	/* sort filenames by modification time. */
-	g_array_sort (paths, read_device_factory_paths_sort_fcn);
-
-	result = g_new (char *, paths->len + 1);
-	for (i = 0; i < paths->len; i++)
-		result[i] = g_array_index (paths, struct read_device_factory_paths_data, i).path;
-	result[i] = NULL;
-
-	g_array_free (paths, TRUE);
-	return result;
-}
-
 static gboolean
 _add_factory (NMDeviceFactory *factory,
               gboolean check_duplicates,
@@ -502,7 +413,7 @@ nm_device_factory_manager_load_factories (NMDeviceFactoryManagerFactoryFunc call
 	_ADD_INTERNAL (nm_vlan_device_factory_get_type);
 	_ADD_INTERNAL (nm_vxlan_device_factory_get_type);
 
-	paths = read_device_factory_paths ();
+	paths = nm_utils_read_plugin_paths (NMPLUGINDIR, PLUGIN_PREFIX);
 	if (!paths)
 		return;
 

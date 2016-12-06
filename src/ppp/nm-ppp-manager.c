@@ -49,13 +49,26 @@
 #include "nm-act-request.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
+
 #include "nm-pppd-plugin.h"
+#include "nm-ppp-plugin-api.h"
 #include "nm-ppp-status.h"
 
 #include "introspection/org.freedesktop.NetworkManager.PPP.h"
 
 #define NM_PPPD_PLUGIN PPPD_PLUGIN_DIR "/nm-pppd-plugin.so"
 #define PPP_MANAGER_SECRET_TRIES "ppp-manager-secret-tries"
+
+/*****************************************************************************/
+
+#define NM_TYPE_PPP_MANAGER            (nm_ppp_manager_get_type ())
+#define NM_PPP_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_PPP_MANAGER, NMPPPManager))
+#define NM_PPP_MANAGER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_PPP_MANAGER, NMPPPManagerClass))
+#define NM_IS_PPP_MANAGER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_PPP_MANAGER))
+#define NM_IS_PPP_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_PPP_MANAGER))
+#define NM_PPP_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_PPP_MANAGER, NMPPPManagerClass))
+
+GType nm_ppp_manager_get_type (void);
 
 /*****************************************************************************/
 
@@ -98,9 +111,9 @@ struct _NMPPPManager {
 	NMPPPManagerPrivate _priv;
 };
 
-struct _NMPPPManagerClass {
+typedef struct {
 	NMExportedObjectClass parent;
-};
+} NMPPPManagerClass;
 
 G_DEFINE_TYPE (NMPPPManager, nm_ppp_manager, NM_TYPE_EXPORTED_OBJECT)
 
@@ -887,13 +900,13 @@ pppoe_fill_defaults (NMSettingPpp *setting)
 #endif
 }
 
-gboolean
-nm_ppp_manager_start (NMPPPManager *manager,
-                      NMActRequest *req,
-                      const char *ppp_name,
-                      guint32 timeout_secs,
-                      guint baud_override,
-                      GError **err)
+static gboolean
+_ppp_manager_start (NMPPPManager *manager,
+                    NMActRequest *req,
+                    const char *ppp_name,
+                    guint32 timeout_secs,
+                    guint baud_override,
+                    GError **err)
 {
 	NMPPPManagerPrivate *priv;
 	NMConnection *connection;
@@ -918,6 +931,8 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	                     "PPP support is not enabled.");
 	return FALSE;
 #endif
+
+	nm_exported_object_export (NM_EXPORTED_OBJECT (manager));
 
 	priv->pid = 0;
 
@@ -975,6 +990,9 @@ nm_ppp_manager_start (NMPPPManager *manager,
 out:
 	if (ppp_cmd)
 		nm_cmd_line_destroy (ppp_cmd);
+
+	if (priv->pid <= 0)
+		nm_exported_object_unexport (NM_EXPORTED_OBJECT (manager));
 
 	return priv->pid > 0;
 }
@@ -1050,10 +1068,10 @@ stop_context_complete_if_cancelled (StopContext *ctx)
 	return FALSE;
 }
 
-gboolean
-nm_ppp_manager_stop_finish (NMPPPManager *manager,
-                            GAsyncResult *res,
-                            GError **error)
+static gboolean
+_ppp_manager_stop_finish (NMPPPManager *manager,
+                          GAsyncResult *res,
+                          GError **error)
 {
 	return !g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (res), error);
 }
@@ -1069,21 +1087,23 @@ kill_child_ready  (pid_t pid,
 	stop_context_complete (ctx);
 }
 
-void
-nm_ppp_manager_stop (NMPPPManager *manager,
-                     GCancellable *cancellable,
-                     GAsyncReadyCallback callback,
-                     gpointer user_data)
+static void
+_ppp_manager_stop_async (NMPPPManager *manager,
+                         GCancellable *cancellable,
+                         GAsyncReadyCallback callback,
+                         gpointer user_data)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
 	StopContext *ctx;
+
+	nm_exported_object_unexport (NM_EXPORTED_OBJECT (manager));
 
 	ctx = g_slice_new0 (StopContext);
 	ctx->manager = g_object_ref (manager);
 	ctx->result = g_simple_async_result_new (G_OBJECT (manager),
 	                                         callback,
 	                                         user_data,
-	                                         nm_ppp_manager_stop);
+	                                         _ppp_manager_stop_async);
 
 	/* Setup cancellable */
 	ctx->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
@@ -1108,6 +1128,18 @@ nm_ppp_manager_stop (NMPPPManager *manager,
 	                           (NMUtilsKillChildAsyncCb) kill_child_ready,
 	                           ctx);
 	priv->pid = 0;
+}
+
+static void
+_ppp_manager_stop_sync (NMPPPManager *manager)
+{
+	NMExportedObject *exported = NM_EXPORTED_OBJECT (manager);
+
+	if (nm_exported_object_is_exported (exported))
+		nm_exported_object_unexport (exported);
+
+	_ppp_cleanup (manager);
+	_ppp_kill (manager);
 }
 
 /*****************************************************************************/
@@ -1153,8 +1185,8 @@ nm_ppp_manager_init (NMPPPManager *manager)
 	NM_PPP_MANAGER_GET_PRIVATE (manager)->monitor_fd = -1;
 }
 
-NMPPPManager *
-nm_ppp_manager_new (const char *iface)
+static NMPPPManager *
+_ppp_manager_new (const char *iface)
 {
 	g_return_val_if_fail (iface != NULL, NULL);
 
@@ -1200,7 +1232,6 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 	object_class->set_property = set_property;
 
 	exported_object_class->export_path = NM_DBUS_PATH "/PPP/%u";
-	exported_object_class->export_on_construction = TRUE;
 
 	obj_properties[PROP_PARENT_IFACE] =
 	     g_param_spec_string (NM_PPP_MANAGER_PARENT_IFACE, "", "",
@@ -1255,3 +1286,10 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 	                                        NULL);
 }
 
+NMPPPOps ppp_ops = {
+	.create       = _ppp_manager_new,
+	.start        = _ppp_manager_start,
+	.stop_async   = _ppp_manager_stop_async,
+	.stop_finish  = _ppp_manager_stop_finish,
+	.stop_sync    = _ppp_manager_stop_sync,
+};

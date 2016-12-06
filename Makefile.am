@@ -989,7 +989,6 @@ src_cppflags = \
 	\
 	-DDHCLIENT_PATH=\"$(DHCLIENT_PATH)\" \
 	-DDHCPCD_PATH=\"$(DHCPCD_PATH)\" \
-	-DPPPD_PLUGIN_DIR=\"$(PPPD_PLUGIN_DIR)\" \
 	\
 	$(GUDEV_CFLAGS) \
 	$(LIBNL_CFLAGS) \
@@ -1318,7 +1317,8 @@ src_libNetworkManager_la_SOURCES = \
 	src/dnsmasq/nm-dnsmasq-utils.c \
 	src/dnsmasq/nm-dnsmasq-utils.h \
 	\
-	src/ppp/nm-ppp-manager.c \
+	src/ppp/nm-ppp-manager-call.c \
+	src/ppp/nm-ppp-manager-call.h \
 	src/ppp/nm-ppp-manager.h \
 	src/ppp/nm-ppp-status.h \
 	\
@@ -1566,6 +1566,7 @@ EXTRA_DIST += \
 if WITH_PPP
 
 pppd_plugin_LTLIBRARIES += src/ppp/nm-pppd-plugin.la
+pkglib_LTLIBRARIES += src/ppp/libnm-ppp-plugin.la
 
 src_ppp_nm_pppd_plugin_la_CPPFLAGS = \
 	-I$(srcdir)/shared \
@@ -1588,6 +1589,36 @@ src_ppp_nm_pppd_plugin_la_LDFLAGS = \
 src_ppp_nm_pppd_plugin_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(DL_LIBS)
+
+src_ppp_libnm_ppp_plugin_la_SOURCES = \
+	src/ppp/nm-pppd-plugin.h \
+	src/ppp/nm-ppp-manager.c \
+	src/ppp/nm-ppp-manager.h \
+	src/ppp/nm-ppp-plugin-api.h \
+	src/ppp/nm-ppp-status.h
+
+EXTRA_src_ppp_libnm_ppp_plugin_la_DEPENDENCIES = \
+	src/ppp/nm-ppp-plugin.ver
+
+src_ppp_libnm_ppp_plugin_la_CPPFLAGS = \
+	-I${top_srcdir}/src \
+	-I${top_builddir}/src \
+	-I${top_srcdir}/shared \
+	-I$(top_builddir)/shared \
+	-I${top_builddir}/libnm-core \
+	-I${top_srcdir}/libnm-core \
+	-DPPPD_PLUGIN_DIR=\"$(PPPD_PLUGIN_DIR)\" \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	$(GLIB_CFLAGS)
+
+src_ppp_libnm_ppp_plugin_la_LDFLAGS = \
+	-module -avoid-version \
+	-Wl,--version-script="$(top_srcdir)/src/ppp/nm-ppp-plugin.ver"
+
+src_ppp_libnm_ppp_plugin_la_LIBADD = \
+	introspection/libnmdbus.la \
+	$(GLIB_LIBS)
 
 endif
 
@@ -4067,6 +4098,7 @@ EXTRA_DIST += \
 	linker-script-binary.ver \
 	linker-script-devices.ver \
 	linker-script-settings.ver \
+	src/ppp/nm-ppp-plugin.ver \
 	Makefile.glib \
 	autogen.sh \
 	valgrind.suppressions \

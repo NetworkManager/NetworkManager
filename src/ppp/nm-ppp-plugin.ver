@@ -1,0 +1,6 @@
+{
+global:
+	ppp_ops;
+local:
+	*;
+};
