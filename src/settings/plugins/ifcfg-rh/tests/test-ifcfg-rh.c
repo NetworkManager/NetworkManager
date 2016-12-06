@@ -3917,6 +3917,21 @@ test_read_write_wired_dhcp_send_hostname (void)
 }
 
 static void
+test_read_wired_dhcpv6_hostname_fallback (void)
+{
+	gs_unref_object NMConnection *connection = NULL;
+	NMSettingIPConfig *s_ip6;
+
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcpv6-hostname-fallback",
+	                                    NULL, TYPE_ETHERNET, NULL);
+
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	g_assert (s_ip6);
+	g_assert (nm_setting_ip_config_get_dhcp_send_hostname (s_ip6) == TRUE);
+	g_assert_cmpstr (nm_setting_ip_config_get_dhcp_hostname (s_ip6), ==, "fully.qualified.domain");
+}
+
+static void
 test_write_wired_static_ip6_only (void)
 {
 	nmtst_auto_unlinkfile char *testfile = NULL;
@@ -8838,6 +8853,7 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "read-dhcp-plus-ip", test_read_wired_dhcp_plus_ip);
 	g_test_add_func (TPATH "read-shared-plus-ip", test_read_wired_shared_plus_ip);
 	g_test_add_func (TPATH "read-dhcp-send-hostname", test_read_write_wired_dhcp_send_hostname);
+	g_test_add_func (TPATH "read-dhcpv6-hostname-fallback", test_read_wired_dhcpv6_hostname_fallback);
 	g_test_add_func (TPATH "read-global-gateway", test_read_wired_global_gateway);
 	g_test_add_func (TPATH "read-global-gateway-ignore", test_read_wired_global_gateway_ignore);
 	g_test_add_func (TPATH "read-obsolete-gateway-n", test_read_wired_obsolete_gateway_n);
