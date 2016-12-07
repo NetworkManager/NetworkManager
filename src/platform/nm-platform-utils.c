@@ -31,6 +31,7 @@
 #include <linux/mii.h>
 #include <linux/version.h>
 #include <linux/rtnetlink.h>
+#include <fcntl.h>
 
 #include "nm-utils.h"
 #include "nm-setting-wired.h"
@@ -47,6 +48,7 @@
 	G_STMT_START { (pedata)->speed = (guint16) (speed); } G_STMT_END
 #endif
 
+extern char *if_indextoname (unsigned int __ifindex, char *__ifname);
 
 static gboolean
 ethtool_get (const char *name, gpointer edata)
@@ -623,3 +625,51 @@ nmp_utils_ip_config_source_to_string (NMIPConfigSource source, char *buf, gsize 
 	return buf;
 }
 
+int
+nmp_utils_open_sysctl(int ifindex, const char *ifname)
+{
+	#define SYS_CLASS_NET "/sys/class/net/"
+	char ifname_buf[IFNAMSIZ];
+	guint try_count = 0;
+	char sysdir[NM_STRLEN (SYS_CLASS_NET) + IFNAMSIZ + 1] = SYS_CLASS_NET;
+	char fd_buf[256];
+	int fd;
+	int fd_ifindex;
+	ssize_t nn;
+
+	while (++try_count < 4) {
+		if (!ifname) {
+			ifname = if_indextoname (ifindex, ifname_buf);
+			if (!ifname)
+				return -1;
+		}
+
+		nm_utils_ifname_cpy (&sysdir[NM_STRLEN (SYS_CLASS_NET)], ifname);
+		fd = open (sysdir, O_DIRECTORY);
+		if (fd < 0)
+			goto next;
+		fd_ifindex = openat (fd, "ifindex", 0);
+		if (fd_ifindex < 0) {
+			close (fd);
+			goto next;
+		}
+		/* read ifindex file, and compare it to @ifindex. If match, return fd. */
+		nn = nm_utils_fd_read_loop (fd_ifindex, fd_buf, sizeof (fd_buf) - 1, FALSE);
+		if (nn < 0) {
+			close (fd);
+			close (fd_ifindex);
+			goto next;
+		}
+		fd_buf[sizeof (fd_buf) - 1] = '\0';
+
+		if (ifindex != _nm_utils_ascii_str_to_int64 (fd_buf, 10, 1, G_MAXINT, -1)) {
+			close (fd);
+			close (fd_ifindex);
+			goto next;
+		}
+		return fd;
+next:
+		ifname = NULL;
+	}
+	return -1;
+}
