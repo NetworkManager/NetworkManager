@@ -721,7 +721,7 @@ _linktype_get_type (NMPlatform *platform,
 		}
 
 		/* Fallback for drivers that don't call SET_NETDEV_DEVTYPE() */
-		if (wifi_utils_is_wifi (ifname))
+		if (wifi_utils_is_wifi (ifindex, ifname))
 			return NM_LINK_TYPE_WIFI;
 
 		if (arptype == ARPHRD_ETHER) {
