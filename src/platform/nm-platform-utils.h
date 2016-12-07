@@ -60,4 +60,6 @@ NMIPConfigSource nmp_utils_ip_config_source_coerce_from_rtprot (NMIPConfigSource
 NMIPConfigSource nmp_utils_ip_config_source_round_trip_rtprot  (NMIPConfigSource source) _nm_const;
 const char *     nmp_utils_ip_config_source_to_string (NMIPConfigSource source, char *buf, gsize len);
 
+int nmp_utils_open_sysctl(int ifindex, const char *ifname);
+
 #endif /* __NM_PLATFORM_UTILS_H__ */
