@@ -77,10 +77,11 @@ get_generic_capabilities (NMDevice *device)
 static NMActStageReturn
 act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 {
+	nm_auto_close int dirfd = -1;
 	NMActStageReturn ret;
 	NMSettingInfiniband *s_infiniband;
+	char ifname_verified[IFNAMSIZ];
 	const char *transport_mode;
-	char *mode_path;
 	gboolean ok, no_firmware = FALSE;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
@@ -94,11 +95,8 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 
 	transport_mode = nm_setting_infiniband_get_transport_mode (s_infiniband);
 
-	mode_path = g_strdup_printf ("/sys/class/net/%s/mode",
-	                             NM_ASSERT_VALID_PATH_COMPONENT (nm_device_get_iface (dev)));
-	if (!g_file_test (mode_path, G_FILE_TEST_EXISTS)) {
-		g_free (mode_path);
-
+	dirfd = nm_platform_sysctl_open_netdir (NM_PLATFORM_GET, nm_device_get_ifindex (dev), ifname_verified);
+	if (dirfd < 0) {
 		if (!strcmp (transport_mode, "datagram"))
 			return NM_ACT_STAGE_RETURN_SUCCESS;
 		else {
@@ -109,8 +107,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 
 	/* With some drivers the interface must be down to set transport mode */
 	nm_device_take_down (dev, TRUE);
-	ok = nm_platform_sysctl_set (NM_PLATFORM_GET, NMP_SYSCTL_PATHID_ABSOLUTE (mode_path), transport_mode);
-	g_free (mode_path);
+	ok = nm_platform_sysctl_set (NM_PLATFORM_GET, NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname_verified, "mode"), transport_mode);
 	nm_device_bring_up (dev, TRUE, &no_firmware);
 
 	if (!ok) {
