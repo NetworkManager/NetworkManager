@@ -2013,10 +2013,11 @@ nm_platform_link_infiniband_get_properties (NMPlatform *self,
                                             int *out_p_key,
                                             const char **out_mode)
 {
+	nm_auto_close int dirfd = -1;
+	char ifname_verified[IFNAMSIZ];
 	const NMPlatformLnkInfiniband *plnk;
 	const NMPlatformLink *plink;
-	const char *iface;
-	char *path, *contents;
+	char *contents;
 	const char *mode;
 	int p_key = 0;
 
@@ -2040,15 +2041,13 @@ nm_platform_link_infiniband_get_properties (NMPlatform *self,
 	/* Could not get the link information via netlink. To support older kernels,
 	 * fallback to reading sysfs. */
 
-	iface = NM_ASSERT_VALID_PATH_COMPONENT (plink->name);
-
-	/* Fall back to reading sysfs */
-	path = g_strdup_printf ("/sys/class/net/%s/mode", iface);
-	contents = nm_platform_sysctl_get (self, NMP_SYSCTL_PATHID_ABSOLUTE (path));
-	g_free (path);
-	if (!contents)
+	dirfd = nm_platform_sysctl_open_netdir (self, ifindex, ifname_verified);
+	if (dirfd < 0)
 		return FALSE;
 
+	contents = nm_platform_sysctl_get (self, NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname_verified, "mode"));
+	if (!contents)
+		return FALSE;
 	if (strstr (contents, "datagram"))
 		mode = "datagram";
 	else if (strstr (contents, "connected"))
@@ -2057,13 +2056,7 @@ nm_platform_link_infiniband_get_properties (NMPlatform *self,
 		mode = NULL;
 	g_free (contents);
 
-	path = g_strdup_printf ("/sys/class/net/%s/pkey", iface);
-	contents = nm_platform_sysctl_get (self, NMP_SYSCTL_PATHID_ABSOLUTE (path));
-	g_free (path);
-	if (!contents)
-		return FALSE;
-	p_key = (int) _nm_utils_ascii_str_to_int64 (contents, 16, 0, 0xFFFF, -1);
-	g_free (contents);
+	p_key = nm_platform_sysctl_get_int_checked (self, NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname_verified, "pkey"), 16, 0, 0xFFFF, -1);
 	if (p_key < 0)
 		return FALSE;
 
