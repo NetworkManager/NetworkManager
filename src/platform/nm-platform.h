@@ -500,8 +500,8 @@ struct _NMPlatform {
 typedef struct {
 	GObjectClass parent;
 
-	gboolean (*sysctl_set) (NMPlatform *, const char *path, const char *value);
-	char * (*sysctl_get) (NMPlatform *, const char *path);
+	gboolean (*sysctl_set) (NMPlatform *, const char *pathid, int dirfd, const char *path, const char *value);
+	char * (*sysctl_get) (NMPlatform *, const char *pathid, int dirfd, const char *path);
 
 	const NMPlatformLink *(*link_get) (NMPlatform *platform, int ifindex);
 	const NMPlatformLink *(*link_get_by_ifname) (NMPlatform *platform, const char *ifname);
@@ -717,10 +717,13 @@ const char *nm_link_type_to_string (NMLinkType link_type);
 const char *_nm_platform_error_to_string (NMPlatformError error);
 #define nm_platform_error_to_string(error) NM_UTILS_LOOKUP_STR (_nm_platform_error_to_string, error)
 
-gboolean nm_platform_sysctl_set (NMPlatform *self, const char *path, const char *value);
-char *nm_platform_sysctl_get (NMPlatform *self, const char *path);
-gint32 nm_platform_sysctl_get_int32 (NMPlatform *self, const char *path, gint32 fallback);
-gint64 nm_platform_sysctl_get_int_checked (NMPlatform *self, const char *path, guint base, gint64 min, gint64 max, gint64 fallback);
+#define NMP_SYSCTL_PATHID_ABSOLUTE(path) \
+	((const char *) NULL), -1, (path)
+
+gboolean nm_platform_sysctl_set (NMPlatform *self, const char *pathid, int dirfd, const char *path, const char *value);
+char *nm_platform_sysctl_get (NMPlatform *self, const char *pathid, int dirfd, const char *path);
+gint32 nm_platform_sysctl_get_int32 (NMPlatform *self, const char *pathid, int dirfd, const char *path, gint32 fallback);
+gint64 nm_platform_sysctl_get_int_checked (NMPlatform *self, const char *pathid, int dirfd, const char *path, guint base, gint64 min, gint64 max, gint64 fallback);
 
 gboolean nm_platform_sysctl_set_ip6_hop_limit_safe (NMPlatform *self, const char *iface, int value);
 

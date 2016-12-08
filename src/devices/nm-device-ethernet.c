@@ -208,7 +208,7 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 			gs_free char *path = NULL, *value = NULL;
 
 			path = g_strdup_printf ("%s/%s", parent_path, item);
-			value = nm_platform_sysctl_get (NM_PLATFORM_GET, path);
+			value = nm_platform_sysctl_get (NM_PLATFORM_GET, NMP_SYSCTL_PATHID_ABSOLUTE (path));
 
 			if (   !strcmp (item, "portname")
 			    && !g_strcmp0 (value, "no portname required")) {

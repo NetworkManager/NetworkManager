@@ -109,7 +109,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 
 	/* With some drivers the interface must be down to set transport mode */
 	nm_device_take_down (dev, TRUE);
-	ok = nm_platform_sysctl_set (NM_PLATFORM_GET, mode_path, transport_mode);
+	ok = nm_platform_sysctl_set (NM_PLATFORM_GET, NMP_SYSCTL_PATHID_ABSOLUTE (mode_path), transport_mode);
 	g_free (mode_path);
 	nm_device_bring_up (dev, TRUE, &no_firmware);
 

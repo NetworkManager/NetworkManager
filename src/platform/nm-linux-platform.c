@@ -2490,6 +2490,25 @@ ASSERT_NETNS_CURRENT (NMPlatform *platform)
 
 /*****************************************************************************/
 
+#define ASSERT_SYSCTL_ARGS(pathid, dirfd, path) \
+	G_STMT_START { \
+		const char *const _pathid = (pathid); \
+		const int _dirfd = (dirfd); \
+		const char *const _path = (path); \
+		\
+		nm_assert (_path && _path[0]); \
+		g_assert (!strstr (_path, "/../")); \
+		if (_dirfd < 0) { \
+			nm_assert (!_pathid); \
+			nm_assert (_path[0] == '/'); \
+			nm_assert (   g_str_has_prefix (_path, "/proc/sys/") \
+			           || g_str_has_prefix (_path, "/sys/")); \
+		} else { \
+			nm_assert (_pathid && _pathid[0] && _pathid[0] != '/'); \
+			nm_assert (_path[0] != '/'); \
+		} \
+	} G_STMT_END
+
 static void
 _log_dbg_sysctl_set_impl (NMPlatform *platform, const char *path, const char *value)
 {
@@ -2521,7 +2540,7 @@ _log_dbg_sysctl_set_impl (NMPlatform *platform, const char *path, const char *va
 	} G_STMT_END
 
 static gboolean
-sysctl_set (NMPlatform *platform, const char *path, const char *value)
+sysctl_set (NMPlatform *platform, const char *pathid, int dirfd, const char *path, const char *value)
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
 	int fd, tries;
@@ -2534,11 +2553,7 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 	g_return_val_if_fail (path != NULL, FALSE);
 	g_return_val_if_fail (value != NULL, FALSE);
 
-	/* Don't write outside known locations */
-	g_assert (g_str_has_prefix (path, "/proc/sys/")
-	          || g_str_has_prefix (path, "/sys/"));
-	/* Don't write to suspicious locations */
-	g_assert (!strstr (path, "/../"));
+	ASSERT_SYSCTL_ARGS (pathid, dirfd, path);
 
 	if (!nm_platform_netns_push (platform, &netns)) {
 		errno = ENETDOWN;
@@ -2676,17 +2691,13 @@ _log_dbg_sysctl_get_impl (NMPlatform *platform, const char *path, const char *co
 	} G_STMT_END
 
 static char *
-sysctl_get (NMPlatform *platform, const char *path)
+sysctl_get (NMPlatform *platform, const char *pathid, int dirfd, const char *path)
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
 	GError *error = NULL;
 	char *contents;
 
-	/* Don't write outside known locations */
-	g_assert (g_str_has_prefix (path, "/proc/sys/")
-	          || g_str_has_prefix (path, "/sys/"));
-	/* Don't write to suspicious locations */
-	g_assert (!strstr (path, "/../"));
+	ASSERT_SYSCTL_ARGS (pathid, dirfd, path);
 
 	if (!nm_platform_netns_push (platform, &netns))
 		return NULL;
@@ -4561,7 +4572,7 @@ link_get_physical_port_id (NMPlatform *platform, int ifindex)
 	ifname = NM_ASSERT_VALID_PATH_COMPONENT (ifname);
 
 	path = g_strdup_printf ("/sys/class/net/%s/phys_port_id", ifname);
-	id = sysctl_get (platform, path);
+	id = sysctl_get (platform, NMP_SYSCTL_PATHID_ABSOLUTE (path));
 	g_free (path);
 
 	return id;
@@ -4581,7 +4592,7 @@ link_get_dev_id (NMPlatform *platform, int ifindex)
 	ifname = NM_ASSERT_VALID_PATH_COMPONENT (ifname);
 
 	path = g_strdup_printf ("/sys/class/net/%s/dev_id", ifname);
-	id = sysctl_get (platform, path);
+	id = sysctl_get (platform, NMP_SYSCTL_PATHID_ABSOLUTE (path));
 	if (!id || !*id)
 		return 0;
 
@@ -5269,7 +5280,7 @@ _infiniband_partition_action (NMPlatform *platform,
 	                     ? "create_child"
 	                     : "delete_child"));
 	nm_sprintf_buf (id, "0x%04x", p_key);
-	success = nm_platform_sysctl_set (platform, path, id);
+	success = nm_platform_sysctl_set (platform, NMP_SYSCTL_PATHID_ABSOLUTE (path), id);
 	if (!success) {
 		if (   action == INFINIBAND_ACTION_DELETE_CHILD
 		    && errno == ENODEV)

@@ -137,7 +137,7 @@ adsl_add (NMAtmManager *self, GUdevDevice *udev_device)
 	atm_index_path = g_strdup_printf ("/sys/class/atm/%s/atmindex",
 	                                  NM_ASSERT_VALID_PATH_COMPONENT (ifname));
 	atm_index = (int) nm_platform_sysctl_get_int_checked (NM_PLATFORM_GET,
-	                                                      atm_index_path,
+	                                                      NMP_SYSCTL_PATHID_ABSOLUTE (atm_index_path),
 	                                                      10, 0, G_MAXINT,
 	                                                      -1);
 	if (atm_index < 0) {

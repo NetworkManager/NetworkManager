@@ -118,10 +118,30 @@ _ip4_address_equal_peer_net (in_addr_t peer1, in_addr_t peer2, guint8 plen)
 
 /*****************************************************************************/
 
+#define ASSERT_SYSCTL_ARGS(pathid, dirfd, path) \
+	G_STMT_START { \
+		const char *const _pathid = (pathid); \
+		const int _dirfd = (dirfd); \
+		const char *const _path = (path); \
+		\
+		g_assert (_path && _path[0]); \
+		g_assert (!strstr (_path, "/../")); \
+		if (_dirfd < 0) { \
+			g_assert (!_pathid); \
+			g_assert (_path[0] == '/'); \
+			g_assert (   g_str_has_prefix (_path, "/proc/sys/") \
+			          || g_str_has_prefix (_path, "/sys/")); \
+		} else { \
+			g_assert_not_reached (); \
+		} \
+	} G_STMT_END
+
 static gboolean
-sysctl_set (NMPlatform *platform, const char *path, const char *value)
+sysctl_set (NMPlatform *platform, const char *pathid, int dirfd, const char *path, const char *value)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
+
+	ASSERT_SYSCTL_ARGS (pathid, dirfd, path);
 
 	g_hash_table_insert (priv->options, g_strdup (path), g_strdup (value));
 
@@ -129,9 +149,11 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 }
 
 static char *
-sysctl_get (NMPlatform *platform, const char *path)
+sysctl_get (NMPlatform *platform, const char *pathid, int dirfd, const char *path)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
+
+	ASSERT_SYSCTL_ARGS (pathid, dirfd, path);
 
 	return g_strdup (g_hash_table_lookup (priv->options, path));
 }

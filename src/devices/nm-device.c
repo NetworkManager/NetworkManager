@@ -629,13 +629,13 @@ init_ip6_config_dns_priority (NMDevice *self, NMIP6Config *config)
 gboolean
 nm_device_ipv6_sysctl_set (NMDevice *self, const char *property, const char *value)
 {
-	return nm_platform_sysctl_set (NM_PLATFORM_GET, nm_utils_ip6_property_path (nm_device_get_ip_iface (self), property), value);
+	return nm_platform_sysctl_set (NM_PLATFORM_GET, NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_ip6_property_path (nm_device_get_ip_iface (self), property)), value);
 }
 
 static guint32
 nm_device_ipv6_sysctl_get_int32 (NMDevice *self, const char *property, gint32 fallback)
 {
-	return nm_platform_sysctl_get_int32 (NM_PLATFORM_GET, nm_utils_ip6_property_path (nm_device_get_ip_iface (self), property), fallback);
+	return nm_platform_sysctl_get_int32 (NM_PLATFORM_GET, NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_ip6_property_path (nm_device_get_ip_iface (self), property)), fallback);
 }
 
 gboolean
@@ -6771,7 +6771,7 @@ save_ip6_properties (NMDevice *self)
 	g_hash_table_remove_all (priv->ip6_saved_properties);
 
 	for (i = 0; i < G_N_ELEMENTS (ip6_properties_to_save); i++) {
-		value = nm_platform_sysctl_get (NM_PLATFORM_GET, nm_utils_ip6_property_path (ifname, ip6_properties_to_save[i]));
+		value = nm_platform_sysctl_get (NM_PLATFORM_GET, NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_ip6_property_path (ifname, ip6_properties_to_save[i])));
 		if (value) {
 			g_hash_table_insert (priv->ip6_saved_properties,
 			                     (char *) ip6_properties_to_save[i],
@@ -6832,7 +6832,7 @@ set_nm_ipv6ll (NMDevice *self, gboolean enable)
 		if (enable) {
 			/* Bounce IPv6 to ensure the kernel stops IPv6LL address generation */
 			value = nm_platform_sysctl_get (NM_PLATFORM_GET,
-			                                nm_utils_ip6_property_path (nm_device_get_ip_iface (self), "disable_ipv6"));
+			                                NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_ip6_property_path (nm_device_get_ip_iface (self), "disable_ipv6")));
 			if (g_strcmp0 (value, "0") == 0)
 				nm_device_ipv6_sysctl_set (self, "disable_ipv6", "1");
 			g_free (value);
@@ -6898,7 +6898,7 @@ _ip6_privacy_get (NMDevice *self)
 	 * Instead of reading static config files in /etc, just read the current sysctl value.
 	 * This works as NM only writes to "/proc/sys/net/ipv6/conf/IFNAME/use_tempaddr", but leaves
 	 * the "default" entry untouched. */
-	ip6_privacy = nm_platform_sysctl_get_int32 (NM_PLATFORM_GET, "/proc/sys/net/ipv6/conf/default/use_tempaddr", NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
+	ip6_privacy = nm_platform_sysctl_get_int32 (NM_PLATFORM_GET, NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv6/conf/default/use_tempaddr"), NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
 	return _ip6_privacy_clamp (ip6_privacy);
 }
 
@@ -7406,14 +7406,14 @@ share_init (void)
 	char **iter;
 	int errsv;
 
-	if (!nm_platform_sysctl_set (NM_PLATFORM_GET, "/proc/sys/net/ipv4/ip_forward", "1")) {
+	if (!nm_platform_sysctl_set (NM_PLATFORM_GET, NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv4/ip_forward"), "1")) {
 		errsv = errno;
 		nm_log_err (LOGD_SHARING, "share: error enabling IPv4 forwarding: (%d) %s",
 		            errsv, strerror (errsv));
 		return FALSE;
 	}
 
-	if (!nm_platform_sysctl_set (NM_PLATFORM_GET, "/proc/sys/net/ipv4/ip_dynaddr", "1")) {
+	if (!nm_platform_sysctl_set (NM_PLATFORM_GET, NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv4/ip_dynaddr"), "1")) {
 		errsv = errno;
 		nm_log_err (LOGD_SHARING, "share: error enabling dynamic addresses: (%d) %s",
 		            errsv, strerror (errsv));
@@ -7754,7 +7754,7 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 		method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
 
 		if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_SHARED) == 0) {
-			if (!nm_platform_sysctl_set (NM_PLATFORM_GET, "/proc/sys/net/ipv6/conf/all/forwarding", "1")) {
+			if (!nm_platform_sysctl_set (NM_PLATFORM_GET, NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv6/conf/all/forwarding"), "1")) {
 				errsv = errno;
 				_LOGE (LOGD_SHARING, "share: error enabling IPv6 forwarding: (%d) %s", errsv, strerror (errsv));
 				nm_device_ip_method_failed (self, AF_INET6, NM_DEVICE_STATE_REASON_SHARED_START_FAILED);

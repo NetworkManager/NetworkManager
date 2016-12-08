@@ -268,6 +268,9 @@ nm_platform_process_events (NMPlatform *self)
 /**
  * nm_platform_sysctl_set:
  * @self: platform instance
+ * @pathid: if @dirfd is present, this must be the full path that is looked up.
+ *   It is required for logging.
+ * @dirfd: optional file descriptor for parent directory for openat()
  * @path: Absolute option path
  * @value: Value to write
  *
@@ -278,14 +281,14 @@ nm_platform_process_events (NMPlatform *self)
  * Returns: %TRUE on success.
  */
 gboolean
-nm_platform_sysctl_set (NMPlatform *self, const char *path, const char *value)
+nm_platform_sysctl_set (NMPlatform *self, const char *pathid, int dirfd, const char *path, const char *value)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (path, FALSE);
 	g_return_val_if_fail (value, FALSE);
 
-	return klass->sysctl_set (self, path, value);
+	return klass->sysctl_set (self, pathid, dirfd, path, value);
 }
 
 gboolean
@@ -305,7 +308,7 @@ nm_platform_sysctl_set_ip6_hop_limit_safe (NMPlatform *self, const char *iface, 
 		return FALSE;
 
 	path = nm_utils_ip6_property_path (iface, "hop_limit");
-	cur = nm_platform_sysctl_get_int_checked (self, path, 10, 1, G_MAXINT32, -1);
+	cur = nm_platform_sysctl_get_int_checked (self, NMP_SYSCTL_PATHID_ABSOLUTE (path), 10, 1, G_MAXINT32, -1);
 
 	/* only allow increasing the hop-limit to avoid DOS by an attacker
 	 * setting a low hop-limit (CVE-2015-2924, rh#1209902) */
@@ -316,7 +319,7 @@ nm_platform_sysctl_set_ip6_hop_limit_safe (NMPlatform *self, const char *iface, 
 		char svalue[20];
 
 		sprintf (svalue, "%d", value);
-		nm_platform_sysctl_set (self, path, svalue);
+		nm_platform_sysctl_set (self, NMP_SYSCTL_PATHID_ABSOLUTE (path), svalue);
 	}
 
 	return TRUE;
@@ -325,23 +328,29 @@ nm_platform_sysctl_set_ip6_hop_limit_safe (NMPlatform *self, const char *iface, 
 /**
  * nm_platform_sysctl_get:
  * @self: platform instance
+ * @dirfd: if non-negative, used to lookup the path via openat().
+ * @pathid: if @dirfd is present, this must be the full path that is looked up.
+ *   It is required for logging.
  * @path: Absolute path to sysctl
  *
  * Returns: (transfer full): Contents of the virtual sysctl file.
  */
 char *
-nm_platform_sysctl_get (NMPlatform *self, const char *path)
+nm_platform_sysctl_get (NMPlatform *self, const char *pathid, int dirfd, const char *path)
 {
 	_CHECK_SELF (self, klass, NULL);
 
 	g_return_val_if_fail (path, NULL);
 
-	return klass->sysctl_get (self, path);
+	return klass->sysctl_get (self, pathid, dirfd, path);
 }
 
 /**
  * nm_platform_sysctl_get_int32:
  * @self: platform instance
+ * @pathid: if @dirfd is present, this must be the full path that is looked up.
+ *   It is required for logging.
+ * @dirfd: if non-negative, used to lookup the path via openat().
  * @path: Absolute path to sysctl
  * @fallback: default value, if the content of path could not be read
  * as decimal integer.
@@ -351,14 +360,17 @@ nm_platform_sysctl_get (NMPlatform *self, const char *path)
  * value, on success %errno will be set to zero.
  */
 gint32
-nm_platform_sysctl_get_int32 (NMPlatform *self, const char *path, gint32 fallback)
+nm_platform_sysctl_get_int32 (NMPlatform *self, const char *pathid, int dirfd, const char *path, gint32 fallback)
 {
-	return nm_platform_sysctl_get_int_checked (self, path, 10, G_MININT32, G_MAXINT32, fallback);
+	return nm_platform_sysctl_get_int_checked (self, pathid, dirfd, path, 10, G_MININT32, G_MAXINT32, fallback);
 }
 
 /**
  * nm_platform_sysctl_get_int_checked:
  * @self: platform instance
+ * @pathid: if @dirfd is present, this must be the full path that is looked up.
+ *   It is required for logging.
+ * @dirfd: if non-negative, used to lookup the path via openat().
  * @path: Absolute path to sysctl
  * @base: base of numeric conversion
  * @min: minimal value that is still valid
@@ -373,7 +385,7 @@ nm_platform_sysctl_get_int32 (NMPlatform *self, const char *path, gint32 fallbac
  * (inclusive) or @fallback.
  */
 gint64
-nm_platform_sysctl_get_int_checked (NMPlatform *self, const char *path, guint base, gint64 min, gint64 max, gint64 fallback)
+nm_platform_sysctl_get_int_checked (NMPlatform *self, const char *pathid, int dirfd, const char *path, guint base, gint64 min, gint64 max, gint64 fallback)
 {
 	char *value = NULL;
 	gint32 ret;
@@ -383,7 +395,7 @@ nm_platform_sysctl_get_int_checked (NMPlatform *self, const char *path, guint ba
 	g_return_val_if_fail (path, fallback);
 
 	if (path)
-		value = nm_platform_sysctl_get (self, path);
+		value = nm_platform_sysctl_get (self, pathid, dirfd, path);
 
 	if (!value) {
 		errno = EINVAL;
@@ -1687,7 +1699,7 @@ link_set_option (NMPlatform *self, int master, const char *category, const char 
 {
 	gs_free char *path = link_option_path (self, master, category, option);
 
-	return path && nm_platform_sysctl_set (self, path, value);
+	return path && nm_platform_sysctl_set (self, NMP_SYSCTL_PATHID_ABSOLUTE (path), value);
 }
 
 static char *
@@ -1695,7 +1707,7 @@ link_get_option (NMPlatform *self, int master, const char *category, const char 
 {
 	gs_free char *path = link_option_path (self, master, category, option);
 
-	return path ? nm_platform_sysctl_get (self, path) : NULL;
+	return path ? nm_platform_sysctl_get (self, NMP_SYSCTL_PATHID_ABSOLUTE (path)) : NULL;
 }
 
 static const char *
@@ -2004,7 +2016,7 @@ nm_platform_link_infiniband_get_properties (NMPlatform *self,
 
 	/* Fall back to reading sysfs */
 	path = g_strdup_printf ("/sys/class/net/%s/mode", iface);
-	contents = nm_platform_sysctl_get (self, path);
+	contents = nm_platform_sysctl_get (self, NMP_SYSCTL_PATHID_ABSOLUTE (path));
 	g_free (path);
 	if (!contents)
 		return FALSE;
@@ -2018,7 +2030,7 @@ nm_platform_link_infiniband_get_properties (NMPlatform *self,
 	g_free (contents);
 
 	path = g_strdup_printf ("/sys/class/net/%s/pkey", iface);
-	contents = nm_platform_sysctl_get (self, path);
+	contents = nm_platform_sysctl_get (self, NMP_SYSCTL_PATHID_ABSOLUTE (path));
 	g_free (path);
 	if (!contents)
 		return FALSE;
@@ -2244,7 +2256,7 @@ nm_platform_link_tun_get_properties_ifname (NMPlatform *self, const char *ifname
 		return FALSE;
 
 	nm_sprintf_buf (path, "/sys/class/net/%s/owner", ifname);
-	val = nm_platform_sysctl_get (self, path);
+	val = nm_platform_sysctl_get (self, NMP_SYSCTL_PATHID_ABSOLUTE (path));
 	if (val) {
 		props->owner = _nm_utils_ascii_str_to_int64 (val, 10, -1, G_MAXINT64, -1);
 		if (errno)
@@ -2254,7 +2266,7 @@ nm_platform_link_tun_get_properties_ifname (NMPlatform *self, const char *ifname
 		success = FALSE;
 
 	nm_sprintf_buf (path, "/sys/class/net/%s/group", ifname);
-	val = nm_platform_sysctl_get (self, path);
+	val = nm_platform_sysctl_get (self, NMP_SYSCTL_PATHID_ABSOLUTE (path));
 	if (val) {
 		props->group = _nm_utils_ascii_str_to_int64 (val, 10, -1, G_MAXINT64, -1);
 		if (errno)
@@ -2264,7 +2276,7 @@ nm_platform_link_tun_get_properties_ifname (NMPlatform *self, const char *ifname
 		success = FALSE;
 
 	nm_sprintf_buf (path, "/sys/class/net/%s/tun_flags", ifname);
-	val = nm_platform_sysctl_get (self, path);
+	val = nm_platform_sysctl_get (self, NMP_SYSCTL_PATHID_ABSOLUTE (path));
 	if (val) {
 		gint64 flags;
 

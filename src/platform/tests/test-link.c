@@ -1941,7 +1941,7 @@ _test_netns_check_skip (void)
 	G_STMT_START { \
 		gs_free char *_val = NULL; \
 		\
-		_val = nm_platform_sysctl_get (plat, path); \
+		_val = nm_platform_sysctl_get (plat, NMP_SYSCTL_PATHID_ABSOLUTE (path)); \
 		g_assert_cmpstr (_val, ==, value); \
 	} G_STMT_END
 
@@ -2013,7 +2013,7 @@ test_netns_general (gpointer fixture, gconstpointer test_data)
 			else
 				path = "/proc/sys/net/ipv6/conf/dummy2b/disable_ipv6";
 		}
-		g_assert (nm_platform_sysctl_set (pl, path, nm_sprintf_buf (sbuf, "%d", j)));
+		g_assert (nm_platform_sysctl_set (pl, NMP_SYSCTL_PATHID_ABSOLUTE (path), nm_sprintf_buf (sbuf, "%d", j)));
 		_sysctl_assert_eq (pl, path, nm_sprintf_buf (sbuf, "%d", j));
 	}
 
@@ -2187,7 +2187,7 @@ test_netns_push (gpointer fixture, gconstpointer test_data)
 
 		_ADD_DUMMY (pl[i].platform, pl[i].device_name);
 
-		g_assert (nm_platform_sysctl_set (pl[i].platform, pl[i].sysctl_path, pl[i].sysctl_value));
+		g_assert (nm_platform_sysctl_set (pl[i].platform, NMP_SYSCTL_PATHID_ABSOLUTE (pl[i].sysctl_path), pl[i].sysctl_value));
 
 		tmp = _get_current_namespace_id (CLONE_NEWNET);
 		g_ptr_array_add (device_names, tmp);
