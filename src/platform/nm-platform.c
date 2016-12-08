@@ -266,6 +266,34 @@ nm_platform_process_events (NMPlatform *self)
 /*****************************************************************************/
 
 /**
+ * nm_platform_sysctl_open_netdir:
+ * @self: platform instance
+ * @ifindex: the ifindex for which to open /sys/class/net/%s
+ * @out_ifname: optional output argument of the found ifname.
+ *
+ * Wraps nmp_utils_sysctl_open_netdir() by first changing into the right
+ * network-namespace.
+ *
+ * Returns: on success, the open file descriptor to the /sys/class/net/%s
+ *   directory.
+ */
+int
+nm_platform_sysctl_open_netdir (NMPlatform *self, int ifindex, char *out_ifname)
+{
+	const char*ifname_guess;
+	_CHECK_SELF_NETNS (self, klass, netns, -1);
+
+	g_return_val_if_fail (ifindex > 0, -1);
+
+	/* we don't have an @ifname_guess argument to make the API nicer.
+	 * But still do a cache-lookup first. Chances are good that we have
+	 * the right ifname cached and save if_indextoname() */
+	ifname_guess = nm_platform_link_get_name (self, ifindex);
+
+	return nmp_utils_sysctl_open_netdir (ifindex, ifname_guess, out_ifname);
+}
+
+/**
  * nm_platform_sysctl_set:
  * @self: platform instance
  * @pathid: if @dirfd is present, this must be the full path that is looked up.

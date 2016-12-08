@@ -720,6 +720,17 @@ const char *_nm_platform_error_to_string (NMPlatformError error);
 #define NMP_SYSCTL_PATHID_ABSOLUTE(path) \
 	((const char *) NULL), -1, (path)
 
+#define NMP_SYSCTL_PATHID_NETDIR_unsafe(dirfd, ifname, path) \
+	nm_sprintf_bufa (NM_STRLEN ("net:/sys/class/net//\0") + IFNAMSIZ + strlen (path), \
+	                 "net:/sys/class/net/%s/%s", (ifname), (path)), \
+	(dirfd), (path)
+
+#define NMP_SYSCTL_PATHID_NETDIR(dirfd, ifname, path) \
+	nm_sprintf_bufa (NM_STRLEN ("net:/sys/class/net//"path"/\0") + IFNAMSIZ, \
+	                 "net:/sys/class/net/%s/%s", (ifname), path), \
+	(dirfd), (""path"")
+
+int nm_platform_sysctl_open_netdir (NMPlatform *self, int ifindex, char *out_ifname);
 gboolean nm_platform_sysctl_set (NMPlatform *self, const char *pathid, int dirfd, const char *path, const char *value);
 char *nm_platform_sysctl_get (NMPlatform *self, const char *pathid, int dirfd, const char *path);
 gint32 nm_platform_sysctl_get_int32 (NMPlatform *self, const char *pathid, int dirfd, const char *path, gint32 fallback);
