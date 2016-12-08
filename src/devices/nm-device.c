@@ -3441,7 +3441,7 @@ activation_source_schedule (NMDevice *self, ActivationHandleFunc func, int famil
 
 	act_data = activation_source_get_by_family (self, family, &source_func);
 
-	if (act_data->id && act_data->func != func) {
+	if (act_data->id && act_data->func == func) {
 		/* Don't bother rescheduling the same function that's about to
 		 * run anyway.  Fixes issues with crappy wireless drivers sending
 		 * streams of associate events before NM has had a chance to process
