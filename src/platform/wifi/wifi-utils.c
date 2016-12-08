@@ -187,28 +187,25 @@ wifi_utils_is_wifi (int ifindex, const char *ifname)
 {
 	int fd_sysnet;
 	int fd_phy80211;
-	struct stat s;
+	char ifname_verified[IFNAMSIZ];
 
-	g_return_val_if_fail (ifname != NULL, FALSE);
+	g_return_val_if_fail (ifindex > 0, FALSE);
 
-	fd_sysnet = nmp_utils_open_sysctl (ifindex, ifname);
+	fd_sysnet = nmp_utils_sysctl_open_netdir (ifindex, ifname, ifname_verified);
 	if (fd_sysnet < 0)
 		return FALSE;
 
-	fd_phy80211 = openat (fd_sysnet, "phy80211", 0);
-	if (fd_phy80211 < 0) {
-		close (fd_sysnet);
-		return FALSE;
-	}
+	/* there might have been a race and ifname might be wrong. Below for checking
+	 * wext, use the possibly improved name that we just verified. */
+	ifname = ifname_verified;
 
-	if ((fstat (fd_phy80211, &s) == 0 && (s.st_mode & S_IFDIR))) {
-		close (fd_sysnet);
+	fd_phy80211 = openat (fd_sysnet, "phy80211", O_CLOEXEC);
+	close (fd_sysnet);
+
+	if (fd_phy80211 >= 0) {
 		close (fd_phy80211);
 		return TRUE;
 	}
-
-	close (fd_sysnet);
-	close (fd_phy80211);
 
 #if HAVE_WEXT
 	if (wifi_wext_is_wifi (ifname))
