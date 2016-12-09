@@ -2322,6 +2322,173 @@ test_netns_bind_to_path (gpointer fixture, gconstpointer test_data)
 
 /*****************************************************************************/
 
+static void
+test_sysctl_rename (void)
+{
+	NMPlatform *const PL = NM_PLATFORM_GET;
+	const char *const IFNAME[3] = {
+		"nm-dummy-0",
+		"nm-dummy-1",
+		"nm-dummy-2",
+	};
+	int ifindex[G_N_ELEMENTS (IFNAME)] = { 0 };
+	nm_auto_close int dirfd = -1;
+	int i;
+	char ifname_buf[IFNAMSIZ];
+	char *s;
+	const NMPlatformLink *pllink;
+
+	ifindex[0] = nmtstp_link_dummy_add (PL, -1, IFNAME[0])->ifindex;
+	ifindex[1] = nmtstp_link_dummy_add (PL, -1, IFNAME[1])->ifindex;
+
+	s = (nmtst_get_rand_int () % 2) ? NULL : ifname_buf;
+
+	if (nmtst_get_rand_int () % 2) {
+		/* bring the platform cache out of sync */
+		nmtstp_run_command_check ("ip link set %s name %s", IFNAME[0], IFNAME[2]);
+		nm_platform_process_events (PL);
+		nmtstp_run_command_check ("ip link set %s name %s", IFNAME[2], IFNAME[0]);
+
+		pllink = nm_platform_link_get_by_ifname (PL, IFNAME[2]);
+		g_assert (pllink && pllink->ifindex == ifindex[0]);
+		pllink = nm_platform_link_get_by_ifname (PL, IFNAME[0]);
+		g_assert (!pllink);
+	}
+
+	/* open dirfd for IFNAME[0] */
+	i = nmtst_get_rand_int () % (2 + G_N_ELEMENTS (IFNAME));
+	if (i == 0) {
+		dirfd = nm_platform_sysctl_open_netdir (PL,
+		                                        ifindex[0],
+		                                        s);
+	} else {
+		const char *ifname_guess;
+
+		/* provide a wrong or no guess. */
+		ifname_guess = i == 1 ? NULL : IFNAME[i - 2];
+		dirfd = nmp_utils_sysctl_open_netdir (ifindex[0],
+		                                       ifname_guess,
+		                                       s);
+	}
+	g_assert (dirfd >= 0);
+	if (s)
+		g_assert_cmpstr (s, ==, IFNAME[0]);
+
+	/* possibly rename the interfaces. */
+	switch (nmtst_get_rand_int () % 4) {
+	case 0:
+		break;
+	case 1:
+		nmtstp_run_command_check ("ip link set %s name %s", IFNAME[0], IFNAME[2]);
+		break;
+	case 2:
+		nmtstp_run_command_check ("ip link set %s name %s", IFNAME[0], IFNAME[2]);
+		nmtstp_run_command_check ("ip link set %s name %s", IFNAME[1], IFNAME[0]);
+		break;
+	}
+
+	/* possibly, resync platform cache (should make no difference). */
+	if (nmtst_get_rand_int () % 2)
+		nm_platform_process_events (PL);
+
+	/* check that we still read the same file. */
+	switch (nmtst_get_rand_int () % 2) {
+	case 0: {
+		gs_free char *c = NULL;
+
+		if (nm_utils_file_get_contents (dirfd, "ifindex", 1*1024*1024, &c, NULL, NULL) < 0)
+			g_assert_not_reached();
+		g_assert_cmpint (ifindex[0], ==, (int) _nm_utils_ascii_str_to_int64 (c, 10, 0, G_MAXINT, -1));
+		break;
+	}
+	case 1: {
+		g_assert_cmpint (ifindex[0], ==, (gint32) nm_platform_sysctl_get_int32 (PL, NMP_SYSCTL_PATHID_NETDIR (dirfd, s ?: "<unknown>", "ifindex"), -1));
+		break;
+	}
+	default:
+		g_assert_not_reached ();
+	}
+
+	nm_platform_process_events (PL);
+	nmtstp_link_del (PL, -1, ifindex[0], NULL);
+	nmtstp_link_del (PL, -1, ifindex[1], NULL);
+}
+
+/*****************************************************************************/
+
+static void
+test_sysctl_netns_switch (void)
+{
+	const char *const IFNAME = "nm-dummy-0";
+	int ifindex, ifindex_tmp;
+	nm_auto_close int dirfd = -1;
+	char ifname_buf[IFNAMSIZ];
+	char *s;
+	gs_unref_object NMPlatform *platform_0 = NULL;
+	gs_unref_object NMPlatform *platform_1 = NULL;
+	gs_unref_object NMPlatform *platform_2 = NULL;
+	nm_auto_pop_netns NMPNetns *netns_pop_1 = NULL;
+	nm_auto_pop_netns NMPNetns *netns_pop_2 = NULL;
+	nm_auto_pop_netns NMPNetns *netns_pop_3 = NULL;
+	NMPlatform *PL;
+	NMPlatform *platforms[3];
+
+	if (_test_netns_check_skip ())
+		return;
+
+	platforms[0] = platform_0 = nm_linux_platform_new (TRUE);
+	platforms[1] = platform_1 = _test_netns_create_platform ();
+	platforms[2] = platform_2 = _test_netns_create_platform ();
+	PL = platforms[nmtst_get_rand_int () % 3];
+
+	nmtstp_netns_select_random (platforms, G_N_ELEMENTS (platforms), &netns_pop_1);
+
+	ifindex = nmtstp_link_dummy_add (PL, FALSE, IFNAME)->ifindex;
+
+	nmtstp_netns_select_random (platforms, G_N_ELEMENTS (platforms), &netns_pop_2);
+
+	s = (nmtst_get_rand_int () % 2) ? NULL : ifname_buf;
+	dirfd = nm_platform_sysctl_open_netdir (PL,
+	                                        ifindex,
+	                                        s);
+	g_assert (dirfd >= 0);
+	if (s)
+		g_assert_cmpstr (s, ==, IFNAME);
+
+	nmtstp_netns_select_random (platforms, G_N_ELEMENTS (platforms), &netns_pop_3);
+
+	/* even if we switch to other namespaces, we can still lookup the path correctly,
+	 * either using dirfd or via the platform instance (which switches namespace as needed). */
+	{
+		gs_free char *c = NULL;
+
+		if (nm_utils_file_get_contents (dirfd, "ifindex", 0, &c, NULL, NULL) < 0)
+			g_assert_not_reached();
+		g_assert_cmpint (ifindex, ==, (int) _nm_utils_ascii_str_to_int64 (c, 10, 0, G_MAXINT, -1));
+	}
+	g_assert_cmpint (ifindex, ==, (gint32) nm_platform_sysctl_get_int32 (PL, NMP_SYSCTL_PATHID_NETDIR (dirfd, s ?: "<unknown>", "ifindex"), -1));
+	g_assert_cmpint (ifindex, ==, (gint32) nm_platform_sysctl_get_int32 (PL, NMP_SYSCTL_PATHID_ABSOLUTE (nm_sprintf_bufa (100, "/sys/class/net/%s/ifindex", IFNAME)), -1));
+
+	/* accessing the path directly, only succeeds iff the current namespace happens to be the namespace
+	 * in which we created the link. */
+	{
+		gs_free char *c = NULL;
+
+		if (nm_utils_file_get_contents (-1, nm_sprintf_bufa (100, "/sys/class/net/%s/ifindex", IFNAME), 0, &c, NULL, NULL) < 0)
+			ifindex_tmp = -1;
+		else
+			ifindex_tmp = _nm_utils_ascii_str_to_int64 (c, 10, 0, G_MAXINT, -2);
+	}
+	if (nmp_netns_get_current () == nm_platform_netns_get (PL))
+		g_assert_cmpint (ifindex_tmp, ==, ifindex);
+	else
+		g_assert_cmpint (ifindex_tmp, ==, -1);
+
+	nmtstp_link_del (PL, FALSE, ifindex, NULL);
+}
+
+/*****************************************************************************/
+
 NMTstpSetupFunc const _nmtstp_setup_platform_func = SETUP;
 
 void
@@ -2375,5 +2542,8 @@ _nmtstp_setup_tests (void)
 		g_test_add_vtable ("/general/netns/set-netns", 0, NULL, _test_netns_setup, test_netns_set_netns, _test_netns_teardown);
 		g_test_add_vtable ("/general/netns/push", 0, NULL, _test_netns_setup, test_netns_push, _test_netns_teardown);
 		g_test_add_vtable ("/general/netns/bind-to-path", 0, NULL, _test_netns_setup, test_netns_bind_to_path, _test_netns_teardown);
+
+		g_test_add_func ("/general/sysctl/rename", test_sysctl_rename);
+		g_test_add_func ("/general/sysctl/netns-switch", test_sysctl_netns_switch);
 	}
 }
