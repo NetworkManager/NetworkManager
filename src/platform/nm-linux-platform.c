@@ -573,18 +573,14 @@ _lookup_cached_link (const NMPCache *cache, int ifindex, gboolean *completed_fro
 #define DEVTYPE_PREFIX "DEVTYPE="
 
 static char *
-_linktype_read_devtype (const char *ifname)
+_linktype_read_devtype (int dirfd)
 {
-	char uevent[NM_STRLEN ("/sys/class/net/123456789012345/uevent\0") + 100 /*safety*/];
 	char *contents = NULL;
 	char *cont, *end;
 
-	nm_sprintf_buf (uevent,
-	                "/sys/class/net/%s/uevent",
-	                NM_ASSERT_VALID_PATH_COMPONENT (ifname));
-	nm_assert (strlen (uevent) < sizeof (uevent) - 1);
+	nm_assert (dirfd >= 0);
 
-	if (!g_file_get_contents (uevent, &contents, NULL, NULL))
+	if (nm_utils_file_get_contents (dirfd, "uevent", 1*1024*1024, &contents, NULL, NULL) < 0)
 		return NULL;
 	for (cont = contents; cont; cont = end) {
 		end = strpbrk (cont, "\r\n");
@@ -680,9 +676,10 @@ _linktype_get_type (NMPlatform *platform,
 		return NM_LINK_TYPE_IP6TNL;
 
 	if (ifname) {
-		char anycast_mask[NM_STRLEN ("/sys/class/net/123456789012345/anycast_mask\0") + 100 /*safety*/];
+		nm_auto_close int dirfd = -1;
 		gs_free char *driver = NULL;
 		gs_free char *devtype = NULL;
+		char ifname_verified[IFNAMSIZ];
 
 		/* Fallback OVS detection for kernel <= 3.16 */
 		if (nmp_utils_ethtool_get_driver_info (ifname, &driver, NULL, NULL)) {
@@ -698,31 +695,29 @@ _linktype_get_type (NMPlatform *platform,
 			}
 		}
 
-		nm_sprintf_buf (anycast_mask,
-		                "/sys/class/net/%s/anycast_mask",
-		                NM_ASSERT_VALID_PATH_COMPONENT (ifname));
-		nm_assert (strlen (anycast_mask) < sizeof (anycast_mask) - 1);
+		dirfd = nmp_utils_sysctl_open_netdir (ifindex, ifname, ifname_verified);
+		if (dirfd >= 0) {
+			if (faccessat (dirfd, "anycast_mask", F_OK, 0) == 0)
+				return NM_LINK_TYPE_OLPC_MESH;
 
-		if (g_file_test (anycast_mask, G_FILE_TEST_EXISTS))
-			return NM_LINK_TYPE_OLPC_MESH;
-
-		devtype = _linktype_read_devtype (ifname);
-		for (i = 0; devtype && i < G_N_ELEMENTS (linktypes); i++) {
-			if (g_strcmp0 (devtype, linktypes[i].devtype) == 0) {
-				if (linktypes[i].nm_type == NM_LINK_TYPE_BNEP) {
-					/* Both BNEP and 6lowpan use DEVTYPE=bluetooth, so we must
-					 * use arptype to distinguish between them.
-					 */
-					if (arptype != ARPHRD_ETHER)
-						continue;
+			devtype = _linktype_read_devtype (dirfd);
+			for (i = 0; devtype && i < G_N_ELEMENTS (linktypes); i++) {
+				if (g_strcmp0 (devtype, linktypes[i].devtype) == 0) {
+					if (linktypes[i].nm_type == NM_LINK_TYPE_BNEP) {
+						/* Both BNEP and 6lowpan use DEVTYPE=bluetooth, so we must
+						 * use arptype to distinguish between them.
+						 */
+						if (arptype != ARPHRD_ETHER)
+							continue;
+					}
+					return linktypes[i].nm_type;
 				}
-				return linktypes[i].nm_type;
 			}
-		}
 
-		/* Fallback for drivers that don't call SET_NETDEV_DEVTYPE() */
-		if (wifi_utils_is_wifi (ifindex, ifname))
-			return NM_LINK_TYPE_WIFI;
+			/* Fallback for drivers that don't call SET_NETDEV_DEVTYPE() */
+			if (wifi_utils_is_wifi (dirfd, ifname_verified))
+				return NM_LINK_TYPE_WIFI;
+		}
 
 		if (arptype == ARPHRD_ETHER) {
 			/* Misc non-upstream WWAN drivers.  rmnet is Qualcomm's proprietary
