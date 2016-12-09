@@ -3586,6 +3586,9 @@ nmc_property_connection_set_lldp (NMSetting *setting, const char *prop,
 	return TRUE;
 }
 
+static const char *lldp_valid_values[] = { "default", "disable", "enable-rx", NULL };
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_connection_allowed_lldp, lldp_valid_values)
+
 /* --- NM_SETTING_802_1X_SETTING_NAME property setter functions --- */
 #define DEFINE_SETTER_STR_LIST(def_func, set_func) \
 	static gboolean \
@@ -6504,7 +6507,7 @@ nmc_properties_init (void)
 	                    nmc_property_connection_set_lldp,
 	                    NULL,
 	                    NULL,
-	                    NULL,
+	                    nmc_property_connection_allowed_lldp,
 	                    NULL);
 
 	/* Add editable properties for NM_SETTING_DCB_SETTING_NAME */
