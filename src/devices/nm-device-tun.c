@@ -80,7 +80,7 @@ reload_tun_properties (NMDeviceTun *self)
 
 	ifindex = nm_device_get_ifindex (NM_DEVICE (self));
 	if (ifindex > 0) {
-		if (!nm_platform_link_tun_get_properties (NM_PLATFORM_GET, ifindex, &props)) {
+		if (!nm_platform_link_tun_get_properties (NM_PLATFORM_GET, ifindex, NULL, &props)) {
 			_LOGD (LOGD_DEVICE, "tun-properties: cannot loading tun properties from platform for ifindex %d", ifindex);
 			ifindex = 0;
 		} else if (g_strcmp0 (priv->mode, props.mode) != 0) {
@@ -181,7 +181,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 		nm_connection_add_setting (connection, (NMSetting *) s_tun);
 	}
 
-	if (!nm_platform_link_tun_get_properties (NM_PLATFORM_GET, nm_device_get_ifindex (device), &props)) {
+	if (!nm_platform_link_tun_get_properties (NM_PLATFORM_GET, nm_device_get_ifindex (device), NULL, &props)) {
 		_LOGW (LOGD_PLATFORM, "failed to get TUN interface info while updating connection.");
 		return;
 	}

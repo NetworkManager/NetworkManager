@@ -2259,72 +2259,57 @@ nm_platform_link_veth_get_properties (NMPlatform *self, int ifindex, int *out_pe
 }
 
 gboolean
-nm_platform_link_tun_get_properties_ifname (NMPlatform *self, const char *ifname, NMPlatformTunProperties *props)
+nm_platform_link_tun_get_properties (NMPlatform *self, int ifindex, const char *ifname_guess, NMPlatformTunProperties *props)
 {
-	char path[256];
-	char *val;
+	nm_auto_close int dirfd = -1;
+	const char *ifname;
+	char ifname_verified[IFNAMSIZ];
+	gint64 flags;
 	gboolean success = TRUE;
-
 	_CHECK_SELF (self, klass, FALSE);
 
+	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (props, FALSE);
+
+	/* ifname_guess is an optional argument to find a guess for the ifname corresponding to
+	 * ifindex. */
+	if (!ifname_guess) {
+		/* if NULL, obtain the guess from the platform cache. */
+		ifname = nm_platform_link_get_name (self, ifindex);
+	} else if (!ifname_guess[0]) {
+		/* if empty, don't use a guess. That means to use if_indextoname(). */
+		ifname = NULL;
+	} else
+		ifname = ifname_guess;
 
 	memset (props, 0, sizeof (*props));
 	props->owner = -1;
 	props->group = -1;
 
-	if (!ifname || !nm_utils_iface_valid_name (ifname))
+	dirfd = nm_platform_sysctl_open_netdir (self, ifindex, ifname_verified);
+	if (dirfd < 0)
 		return FALSE;
 
-	nm_sprintf_buf (path, "/sys/class/net/%s/owner", ifname);
-	val = nm_platform_sysctl_get (self, NMP_SYSCTL_PATHID_ABSOLUTE (path));
-	if (val) {
-		props->owner = _nm_utils_ascii_str_to_int64 (val, 10, -1, G_MAXINT64, -1);
-		if (errno)
-			success = FALSE;
-		g_free (val);
-	} else
+	ifname = ifname_verified;
+
+	props->owner = nm_platform_sysctl_get_int_checked (self, NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname, "owner"), 10, -1, G_MAXINT64, -1);
+	if (errno)
 		success = FALSE;
 
-	nm_sprintf_buf (path, "/sys/class/net/%s/group", ifname);
-	val = nm_platform_sysctl_get (self, NMP_SYSCTL_PATHID_ABSOLUTE (path));
-	if (val) {
-		props->group = _nm_utils_ascii_str_to_int64 (val, 10, -1, G_MAXINT64, -1);
-		if (errno)
-			success = FALSE;
-		g_free (val);
-	} else
+	props->group = nm_platform_sysctl_get_int_checked (self, NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname, "group"), 10, -1, G_MAXINT64, -1);
+	if (errno)
 		success = FALSE;
 
-	nm_sprintf_buf (path, "/sys/class/net/%s/tun_flags", ifname);
-	val = nm_platform_sysctl_get (self, NMP_SYSCTL_PATHID_ABSOLUTE (path));
-	if (val) {
-		gint64 flags;
-
-		flags = _nm_utils_ascii_str_to_int64 (val, 16, 0, G_MAXINT64, 0);
-		if (!errno) {
-			props->mode = ((flags & (IFF_TUN | IFF_TAP)) == IFF_TUN) ? "tun" : "tap";
-			props->no_pi = !!(flags & IFF_NO_PI);
-			props->vnet_hdr = !!(flags & IFF_VNET_HDR);
-			props->multi_queue = !!(flags & NM_IFF_MULTI_QUEUE);
-		} else
-			success = FALSE;
-		g_free (val);
+	flags = nm_platform_sysctl_get_int_checked (self, NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname, "tun_flags"), 16, 0, G_MAXINT64, -1);
+	if (flags >= 0) {
+		props->mode = ((flags & (IFF_TUN | IFF_TAP)) == IFF_TUN) ? "tun" : "tap";
+		props->no_pi = !!(flags & IFF_NO_PI);
+		props->vnet_hdr = !!(flags & IFF_VNET_HDR);
+		props->multi_queue = !!(flags & NM_IFF_MULTI_QUEUE);
 	} else
 		success = FALSE;
 
 	return success;
-}
-
-gboolean
-nm_platform_link_tun_get_properties (NMPlatform *self, int ifindex, NMPlatformTunProperties *props)
-{
-	_CHECK_SELF (self, klass, FALSE);
-
-	g_return_val_if_fail (ifindex > 0, FALSE);
-	g_return_val_if_fail (props != NULL, FALSE);
-
-	return nm_platform_link_tun_get_properties_ifname (self, nm_platform_link_get_name (self, ifindex), props);
 }
 
 gboolean
