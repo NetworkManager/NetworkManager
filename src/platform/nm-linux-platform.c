@@ -4578,44 +4578,27 @@ nla_put_failure:
 static char *
 link_get_physical_port_id (NMPlatform *platform, int ifindex)
 {
-	const char *ifname;
-	char *path, *id;
+	nm_auto_close int dirfd = -1;
+	char ifname_verified[IFNAMSIZ];
 
-	ifname = nm_platform_link_get_name (platform, ifindex);
-	if (!ifname)
+	dirfd = nm_platform_sysctl_open_netdir (platform, ifindex, ifname_verified);
+	if (dirfd < 0)
 		return NULL;
-
-	ifname = NM_ASSERT_VALID_PATH_COMPONENT (ifname);
-
-	path = g_strdup_printf ("/sys/class/net/%s/phys_port_id", ifname);
-	id = sysctl_get (platform, NMP_SYSCTL_PATHID_ABSOLUTE (path));
-	g_free (path);
-
-	return id;
+	return sysctl_get (platform, NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname_verified, "phys_port_id"));
 }
 
 static guint
 link_get_dev_id (NMPlatform *platform, int ifindex)
 {
-	const char *ifname;
-	gs_free char *path = NULL, *id = NULL;
-	gint64 int_val;
+	nm_auto_close int dirfd = -1;
+	char ifname_verified[IFNAMSIZ];
 
-	ifname = nm_platform_link_get_name (platform, ifindex);
-	if (!ifname)
+	dirfd = nm_platform_sysctl_open_netdir (platform, ifindex, ifname_verified);
+	if (dirfd < 0)
 		return 0;
-
-	ifname = NM_ASSERT_VALID_PATH_COMPONENT (ifname);
-
-	path = g_strdup_printf ("/sys/class/net/%s/dev_id", ifname);
-	id = sysctl_get (platform, NMP_SYSCTL_PATHID_ABSOLUTE (path));
-	if (!id || !*id)
-		return 0;
-
-	/* Value is reported as hex */
-	int_val = _nm_utils_ascii_str_to_int64 (id, 16, 0, G_MAXUINT16, 0);
-
-	return errno ? 0 : (int) int_val;
+	return nm_platform_sysctl_get_int_checked (platform,
+	                                           NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname_verified, "dev_id"),
+	                                           16, 0, G_MAXUINT16, 0);
 }
 
 static int
@@ -5273,9 +5256,9 @@ _infiniband_partition_action (NMPlatform *platform,
                               const NMPlatformLink **out_link)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	const NMPObject *obj_parent;
+	nm_auto_close int dirfd = -1;
+	char ifname_parent[IFNAMSIZ];
 	const NMPObject *obj;
-	char path[NM_STRLEN ("/sys/class/net/%s/%s") + IFNAMSIZ + 100];
 	char id[20];
 	char name[IFNAMSIZ];
 	gboolean success;
@@ -5283,20 +5266,18 @@ _infiniband_partition_action (NMPlatform *platform,
 	nm_assert (NM_IN_SET (action, INFINIBAND_ACTION_CREATE_CHILD, INFINIBAND_ACTION_DELETE_CHILD));
 	nm_assert (p_key > 0 && p_key <= 0xffff && p_key != 0x8000);
 
-	obj_parent = nmp_cache_lookup_link (priv->cache, parent);
-	if (!obj_parent || !obj_parent->link.name[0]) {
+	dirfd = nm_platform_sysctl_open_netdir (platform, parent, ifname_parent);
+	if (dirfd < 0) {
 		errno = ENOENT;
 		return FALSE;
 	}
 
-	nm_sprintf_buf (path,
-	                "/sys/class/net/%s/%s",
-	                NM_ASSERT_VALID_PATH_COMPONENT (obj_parent->link.name),
-	                (action == INFINIBAND_ACTION_CREATE_CHILD
-	                     ? "create_child"
-	                     : "delete_child"));
 	nm_sprintf_buf (id, "0x%04x", p_key);
-	success = nm_platform_sysctl_set (platform, NMP_SYSCTL_PATHID_ABSOLUTE (path), id);
+	if (action == INFINIBAND_ACTION_CREATE_CHILD)
+		success = nm_platform_sysctl_set (platform, NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname_parent, "create_child"), id);
+	else
+		success = nm_platform_sysctl_set (platform, NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname_parent, "delete_child"), id);
+
 	if (!success) {
 		if (   action == INFINIBAND_ACTION_DELETE_CHILD
 		    && errno == ENODEV)
@@ -5304,7 +5285,7 @@ _infiniband_partition_action (NMPlatform *platform,
 		return FALSE;
 	}
 
-	nm_utils_new_infiniband_name (name, obj_parent->link.name, p_key);
+	nm_utils_new_infiniband_name (name, ifname_parent, p_key);
 	do_request_link (platform, 0, name);
 
 	if (action == INFINIBAND_ACTION_DELETE_CHILD)
