@@ -4813,8 +4813,6 @@ END_ADD_DEFAULT_ROUTE:
 		priv->default_route.v4_has = _device_get_default_route_from_platform (self, AF_INET, (NMPlatformIPRoute *) &priv->default_route.v4);
 	}
 
-	nm_ip4_config_addresses_sort (composite);
-
 	/* Allow setting MTU etc */
 	if (commit) {
 		if (NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit)
@@ -5434,12 +5432,14 @@ ip6_config_merge_and_apply (NMDevice *self,
 
 	/* If no config was passed in, create a new one */
 	composite = nm_ip6_config_new (nm_device_get_ip_ifindex (self));
+	nm_ip6_config_set_privacy (composite,
+	                           priv->rdisc ?
+	                           priv->rdisc_use_tempaddr :
+	                           NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
 	init_ip6_config_dns_priority (self, composite);
 
 	if (commit)
 		ensure_con_ip6_config (self);
-
-	g_assert (composite);
 
 	/* Merge all the IP configs into the composite config */
 	if (priv->ac_ip6_config) {
@@ -5566,9 +5566,6 @@ END_ADD_DEFAULT_ROUTE:
 		 */
 		priv->default_route.v6_has = _device_get_default_route_from_platform (self, AF_INET6, (NMPlatformIPRoute *) &priv->default_route.v6);
 	}
-
-	nm_ip6_config_addresses_sort (composite,
-	    priv->rdisc ? priv->rdisc_use_tempaddr : NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
 
 	/* Allow setting MTU etc */
 	if (commit) {
