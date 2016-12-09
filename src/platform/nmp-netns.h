@@ -53,8 +53,12 @@ int nmp_netns_get_fd_mnt (NMPNetns *self);
 static inline void
 _nm_auto_pop_netns (NMPNetns **p)
 {
-	if (*p)
+	if (*p) {
+		int errsv = errno;
+
 		nmp_netns_pop (*p);
+		errno = errsv;
+	}
 }
 
 #define nm_auto_pop_netns __attribute__((cleanup(_nm_auto_pop_netns)))
