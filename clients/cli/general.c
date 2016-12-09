@@ -783,90 +783,93 @@ nmc_switch_parse_on_off (NmCli *nmc, const char *arg1, const char *arg2, gboolea
 	return TRUE;
 }
 
-static gboolean
-show_networking_connectivity (NmCli *nmc)
+static NMCResultCode
+do_networking_on_off (NmCli *nmc, int argc, char **argv, gboolean enable)
 {
-	return nmc_switch_show (nmc, NMC_FIELDS_NM_CONNECTIVITY, _("Connectivity"));
-}
-
-/*
- * Entry point function for 'nmcli networking'
- */
-NMCResultCode
-do_networking (NmCli *nmc, int argc, char **argv)
-{
-	gboolean enable_flag;
+	if (nmc->complete)
+		return nmc->return_value;
 
 	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
 
-	if (argc == 0) {
-		if (nmc->complete)
-			return nmc->return_value;
-		nmc_switch_show (nmc, NMC_FIELDS_NM_NETWORKING, _("Networking"));
-	} else if (argc > 0) {
+	nm_client_networking_set_enabled (nmc->client, enable, NULL);
 
-		if (argc == 1 && nmc->complete) {
-			nmc_complete_strings (*argv, "connectivity", NULL);
-			nmc_complete_bool (*argv);
-			return nmc->return_value;
-		}
+	return nmc->return_value;
+}
 
-		if (nmc_arg_is_help (*argv)) {
-			if (nmc->complete)
-				return nmc->return_value;
-			usage_networking ();
-		} else if (matches (*argv, "connectivity") == 0) {
-			if (nmc->complete) {
-				if (argc == 2)
-					nmc_complete_strings (*(argv+1), "check", NULL);
-				return nmc->return_value;
-			}
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_networking_connectivity ();
-				goto finish;
-			}
-			if (next_arg (&argc, &argv) != 0) {
-				/* no arguments -> get current state */
-				show_networking_connectivity (nmc);
-			} else if (matches (*argv, "check") == 0) {
-				GError *error = NULL;
+static NMCResultCode
+do_networking_on (NmCli *nmc, int argc, char **argv)
+{
+	return do_networking_on_off (nmc, argc, argv, TRUE);
+}
 
-				nm_client_check_connectivity (nmc->client, NULL, &error);
-				if (error) {
-					g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-					nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-					g_clear_error (&error);
-				} else
-					show_networking_connectivity (nmc);
-			} else {
-				usage_networking ();
-				g_string_printf (nmc->return_text, _("Error: 'networking connectivity' command '%s' is not valid."), *argv);
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			}
-		} else if (nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag)) {
-			if (nmc->complete)
-				return nmc->return_value;
-			if (nmc_arg_is_help (*(argv+1))) {
-				if (enable_flag)
-					usage_networking_on ();
-				else
-					usage_networking_off ();
-				goto finish;
-			}
+static NMCResultCode
+do_networking_off (NmCli *nmc, int argc, char **argv)
+{
+	return do_networking_on_off (nmc, argc, argv, FALSE);
+}
 
-			nm_client_networking_set_enabled (nmc->client, enable_flag, NULL);
-		} else {
-			if (nmc->complete)
-				return nmc->return_value;
-			usage_networking ();
-			g_string_printf (nmc->return_text, _("Error: 'networking' command '%s' is not valid."), *argv);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		}
+static NMCResultCode
+do_networking_connectivity (NmCli *nmc, int argc, char **argv)
+{
+	if (nmc->complete) {
+		if (argc == 1)
+			nmc_complete_strings (*argv, "check", NULL);
+		return nmc->return_value;
 	}
 
-finish:
-	quit ();
+	if (!argc) {
+		/* no arguments -> get current state */
+		nmc_switch_show (nmc, NMC_FIELDS_NM_CONNECTIVITY, _("Connectivity"));
+	} else if (matches (*argv, "check") == 0) {
+		gs_free_error GError *error = NULL;
+
+		/* Register polkit agent */
+		nmc_start_polkit_agent_start_try (nmc);
+
+		nm_client_check_connectivity (nmc->client, NULL, &error);
+		if (error) {
+			g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		} else
+			nmc_switch_show (nmc, NMC_FIELDS_NM_CONNECTIVITY, _("Connectivity"));
+	} else {
+		if (nmc->complete)
+			return nmc->return_value;
+		usage_networking ();
+		g_string_printf (nmc->return_text, _("Error: 'networking' command '%s' is not valid."), *argv);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+	}
+
+	return nmc->return_value;
+}
+
+static NMCResultCode
+do_networking_show (NmCli *nmc, int argc, char **argv)
+{
+	if (nmc->complete)
+		return nmc->return_value;
+
+	nmc_switch_show (nmc, NMC_FIELDS_NM_NETWORKING, _("Networking"));
+
+	return nmc->return_value;
+}
+
+static const NMCCommand networking_cmds[] = {
+	{ "on",           do_networking_on,           usage_networking_on,           TRUE,   TRUE },
+	{ "off",          do_networking_off,          usage_networking_off,          TRUE,   TRUE },
+	{ "connectivity", do_networking_connectivity, usage_networking_connectivity, TRUE,   TRUE },
+	{ NULL,           do_networking_show,         usage_networking,              TRUE,   TRUE },
+};
+
+/*
+ * Entry point function for networking commands 'nmcli networking'
+ */
+NMCResultCode
+do_networking (NmCli *nmc, int argc, char **argv)
+{
+	nmc_do_cmd (nmc, networking_cmds, *argv, argc, argv);
+
 	return nmc->return_value;
 }
 
