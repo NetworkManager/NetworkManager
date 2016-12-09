@@ -239,7 +239,7 @@ static void do_request_all_no_delayed_actions (NMPlatform *platform, DelayedActi
 static void cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMPCacheOpsType ops_type, gpointer user_data);
 static void cache_prune_candidates_prune (NMPlatform *platform);
 static gboolean event_handler_read_netlink (NMPlatform *platform, gboolean wait_for_acks);
-static void _assert_netns_current (NMPlatform *platform);
+static void ASSERT_NETNS_CURRENT (NMPlatform *platform);
 
 /*****************************************************************************/
 
@@ -614,7 +614,7 @@ _linktype_get_type (NMPlatform *platform,
 {
 	guint i;
 
-	_assert_netns_current (platform);
+	ASSERT_NETNS_CURRENT (platform);
 
 	if (completed_from_cache) {
 		const NMPObject *obj;
@@ -2481,17 +2481,14 @@ nm_linux_platform_setup (void)
 	              NULL);
 }
 
-/*****************************************************************************/
-
 static void
-_assert_netns_current (NMPlatform *platform)
+ASSERT_NETNS_CURRENT (NMPlatform *platform)
 {
-#if NM_MORE_ASSERTS
 	nm_assert (NM_IS_LINUX_PLATFORM (platform));
-
 	nm_assert (NM_IN_SET (nm_platform_netns_get (platform), NULL, nmp_netns_get_current ()));
-#endif
 }
+
+/*****************************************************************************/
 
 static void
 _log_dbg_sysctl_set_impl (NMPlatform *platform, const char *path, const char *value)
@@ -2763,8 +2760,7 @@ do_emit_signal (NMPlatform *platform, const NMPObject *obj, NMPCacheOpsType cach
 	nm_assert (!obj || cache_op == NMP_CACHE_OPS_REMOVED || obj == nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, obj));
 	nm_assert (!obj || cache_op != NMP_CACHE_OPS_REMOVED || obj != nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, obj));
 
-	/* we raise the signals inside the namespace of the NMPlatform instance. */
-	_assert_netns_current (platform);
+	ASSERT_NETNS_CURRENT (platform);
 
 	switch (cache_op) {
 	case NMP_CACHE_OPS_ADDED:
