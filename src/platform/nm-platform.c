@@ -1708,34 +1708,44 @@ nm_platform_link_tun_add (NMPlatform *self,
 
 /*****************************************************************************/
 
-static char *
-link_option_path (NMPlatform *self, int master, const char *category, const char *option)
+static gboolean
+link_set_option (NMPlatform *self, int ifindex, const char *category, const char *option, const char *value)
 {
-	const char *name = nm_platform_link_get_name (self, master);
+	nm_auto_close int dirfd = -1;
+	char ifname_verified[IFNAMSIZ];
+	const char *path;
 
-	if (!name || !category || !option)
+	if (!category || !option)
+		return FALSE;
+
+	dirfd = nm_platform_sysctl_open_netdir (self, ifindex, ifname_verified);
+	if (dirfd < 0)
+		return FALSE;
+
+	path = nm_sprintf_bufa (strlen (category) + strlen (option) + 2,
+	                        "%s/%s",
+	                        category, option);
+	return nm_platform_sysctl_set (self, NMP_SYSCTL_PATHID_NETDIR_unsafe (dirfd, ifname_verified, path), value);
+}
+
+static char *
+link_get_option (NMPlatform *self, int ifindex, const char *category, const char *option)
+{
+	nm_auto_close int dirfd = -1;
+	char ifname_verified[IFNAMSIZ];
+	const char *path;
+
+	if (!category || !option)
 		return NULL;
 
-	return g_strdup_printf ("/sys/class/net/%s/%s/%s",
-	                        NM_ASSERT_VALID_PATH_COMPONENT (name),
-	                        NM_ASSERT_VALID_PATH_COMPONENT (category),
-	                        NM_ASSERT_VALID_PATH_COMPONENT (option));
-}
+	dirfd = nm_platform_sysctl_open_netdir (self, ifindex, ifname_verified);
+	if (dirfd < 0)
+		return NULL;
 
-static gboolean
-link_set_option (NMPlatform *self, int master, const char *category, const char *option, const char *value)
-{
-	gs_free char *path = link_option_path (self, master, category, option);
-
-	return path && nm_platform_sysctl_set (self, NMP_SYSCTL_PATHID_ABSOLUTE (path), value);
-}
-
-static char *
-link_get_option (NMPlatform *self, int master, const char *category, const char *option)
-{
-	gs_free char *path = link_option_path (self, master, category, option);
-
-	return path ? nm_platform_sysctl_get (self, NMP_SYSCTL_PATHID_ABSOLUTE (path)) : NULL;
+	path = nm_sprintf_bufa (strlen (category) + strlen (option) + 2,
+	                        "%s/%s",
+	                        category, option);
+	return nm_platform_sysctl_get (self, NMP_SYSCTL_PATHID_NETDIR_unsafe (dirfd, ifname_verified, path));
 }
 
 static const char *
