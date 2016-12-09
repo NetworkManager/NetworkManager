@@ -1247,7 +1247,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_wired_class)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: generate-mac-address-mask
-	 * variable: GENERATE_MAC_ADDRESS_MASK
+	 * variable: GENERATE_MAC_ADDRESS_MASK(+)
 	 * description: the MAC address mask for generating randomized and stable
 	 *   cloned-mac-address.
 	 * ---end---

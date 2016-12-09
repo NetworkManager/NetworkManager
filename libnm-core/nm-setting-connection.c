@@ -1826,7 +1826,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: metered
-	 * variable: CONNECTION_METERED
+	 * variable: CONNECTION_METERED(+)
 	 * values: yes,no,unknown
 	 * description: Whether the device is metered
 	 * example: CONNECTION_METERED=yes
@@ -1850,7 +1850,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: lldp
-	 * variable: LLDP
+	 * variable: LLDP(+)
 	 * values: boolean value or 'rx'
 	 * default: missing variable means global default
 	 * description: whether LLDP is enabled for the connection
