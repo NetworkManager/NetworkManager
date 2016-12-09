@@ -2802,6 +2802,246 @@ nm_utils_fd_read_loop_exact (int fd, void *buf, size_t nbytes, bool do_poll)
 	return 0;
 }
 
+_nm_printf (3, 4)
+static int
+_get_contents_error (GError **error, int errsv, const char *format, ...)
+{
+	if (errsv < 0)
+		errsv = -errsv;
+	else if (!errsv)
+		errsv = errno;
+
+	if (error) {
+		char *msg;
+		va_list args;
+
+		va_start (args, format);
+		msg = g_strdup_vprintf (format, args);
+		va_end (args);
+		g_set_error (error,
+		             G_FILE_ERROR,
+		             g_file_error_from_errno (errsv),
+		             "%s: %s",
+		             msg, g_strerror (errsv));
+		g_free (msg);
+	}
+	return -errsv;
+}
+
+/**
+ * nm_utils_fd_get_contents:
+ * @fd: open file descriptor to read. The fd will not be closed,
+ *   but don't rely on it's state afterwards.
+ * @max_length: allocate at most @max_length bytes. If the
+ *   file is larger, reading will fail. Set to zero to use
+ *   a very large default.
+ *
+ *   WARNING: @max_length is here to avoid a crash for huge/unlimited files.
+ *   For example, stat(/sys/class/net/enp0s25/ifindex) gives a filesize of
+ *   4K, although the actual real is small. @max_length is the memory
+ *   allocated in the process of reading the file, thus it must be at least
+ *   the size reported by fstat.
+ *   If you set it to 1K, read will fail because fstat() claims the
+ *   file is larger.
+ *
+ * @contents: the output buffer with the file read. It is always
+ *   NUL terminated. The buffer is at most @max_length long, including
+ *  the NUL byte. That is, it reads only files up to a length of
+ *  @max_length - 1 bytes.
+ * @length: optional output argument of the read file size.
+ *
+ * A reimplementation of g_file_get_contents() with a few differences:
+ *   - accepts an open fd, instead of a path name. This allows you to
+ *     use openat().
+ *   - limits the maxium filesize to max_length.
+ *
+ * Returns: a negative error code on failure.
+ */
+int
+nm_utils_fd_get_contents (int fd,
+                          gsize max_length,
+                          char **contents,
+                          gsize *length,
+                          GError **error)
+{
+	struct stat stat_buf;
+	gs_free char *str = NULL;
+
+	g_return_val_if_fail (fd >= 0, -EINVAL);
+	g_return_val_if_fail (contents, -EINVAL);
+	g_return_val_if_fail (!error || !*error, -EINVAL);
+
+	if (fstat (fd, &stat_buf) < 0)
+		return _get_contents_error (error, 0, "failure during fstat");
+
+	if (!max_length) {
+		/* default to a very large size, but not extreme */
+		max_length = 2 * 1024 * 1024;
+	}
+
+	if (   stat_buf.st_size > 0
+	    && S_ISREG (stat_buf.st_mode)) {
+		const gsize n_stat = stat_buf.st_size;
+		ssize_t n_read;
+
+		if (n_stat > max_length - 1)
+			return _get_contents_error (error, EMSGSIZE, "file too large (%zu+1 bytes with maximum %zu bytes)", n_stat, max_length);
+
+		str = g_try_malloc (n_stat + 1);
+		if (!str)
+			return _get_contents_error (error, ENOMEM, "failure to allocate buffer of %zu+1 bytes", n_stat);
+
+		n_read = nm_utils_fd_read_loop (fd, str, n_stat, TRUE);
+		if (n_read < 0)
+			return _get_contents_error (error, n_read, "error reading %zu bytes from file descriptor", n_stat);
+		str[n_read] = '\0';
+
+		if (n_read < n_stat) {
+			char *tmp;
+
+			tmp = g_try_realloc (str, n_read + 1);
+			if (!tmp)
+				return _get_contents_error (error, ENOMEM, "failure to reallocate buffer with %zu bytes", n_read + 1);
+			str = tmp;
+		}
+		NM_SET_OUT (length, n_read);
+	} else {
+		nm_auto_fclose FILE *f = NULL;
+		char buf[4096];
+		gsize n_have, n_alloc;
+
+		if (!(f = fdopen (fd, "r")))
+			return _get_contents_error (error, 0, "failure during fdopen");
+
+		n_have = 0;
+		n_alloc = 0;
+
+		while (!feof (f)) {
+			int errsv;
+			gsize n_read;
+
+			n_read = fread (buf, 1, sizeof (buf), f);
+			errsv = errno;
+			if (ferror (f))
+				return _get_contents_error (error, errsv, "error during fread");
+
+			if (   n_have > G_MAXSIZE - 1 - n_read
+			    || n_have + n_read + 1 > max_length) {
+				return _get_contents_error (error, EMSGSIZE, "file stream too large (%zu+1 bytes with maximum %zu bytes)",
+				                            (n_have > G_MAXSIZE - 1 - n_read) ? G_MAXSIZE : n_have + n_read,
+				                            max_length);
+			}
+
+			if (n_have + n_read + 1 >= n_alloc) {
+				char *tmp;
+
+				if (str) {
+					if (n_alloc >= max_length / 2)
+						n_alloc = max_length;
+					else
+						n_alloc *= 2;
+				} else
+					n_alloc = NM_MIN (n_read + 1, sizeof (buf));
+
+				tmp = g_try_realloc (str, n_alloc);
+				if (!tmp)
+					return _get_contents_error (error, ENOMEM, "failure to allocate buffer of %zu bytes", n_alloc);
+				str = tmp;
+			}
+
+			memcpy (str + n_have, buf, n_read);
+			n_have += n_read;
+		}
+
+		if (n_alloc == 0)
+			str = g_new0 (gchar, 1);
+		else {
+			str[n_have] = '\0';
+			if (n_have + 1 < n_alloc) {
+				char *tmp;
+
+				tmp = g_try_realloc (str, n_have + 1);
+				if (!tmp)
+					return _get_contents_error (error, ENOMEM, "failure to truncate buffer to %zu bytes", n_have + 1);
+				str = tmp;
+			}
+		}
+
+		NM_SET_OUT (length, n_have);
+	}
+
+	*contents = g_steal_pointer (&str);
+	return 0;
+}
+
+/**
+ * nm_utils_file_get_contents:
+ * @dirfd: optional file descriptor to use openat(). If negative, use plain open().
+ * @filename: the filename to open. Possibly relative to @dirfd.
+ * @max_length: allocate at most @max_length bytes.
+ *   WARNING: see nm_utils_fd_get_contents() hint about @max_length.
+ * @contents: the output buffer with the file read. It is always
+ *   NUL terminated. The buffer is at most @max_length long, including
+ *  the NUL byte. That is, it reads only files up to a length of
+ *  @max_length - 1 bytes.
+ * @length: optional output argument of the read file size.
+ *
+ * A reimplementation of g_file_get_contents() with a few differences:
+ *   - accepts an @dirfd to open @filename relative to that path via openat().
+ *   - limits the maxium filesize to max_length.
+ *   - uses O_CLOEXEC on internal file descriptor
+ *
+ * Returns: a negative error code on failure.
+ */
+int
+nm_utils_file_get_contents (int dirfd,
+                            const char *filename,
+                            gsize max_length,
+                            char **contents,
+                            gsize *length,
+                            GError **error)
+{
+	nm_auto_close int fd = -1;
+	int errsv;
+
+	g_return_val_if_fail (filename && filename[0], -EINVAL);
+
+	if (dirfd >= 0) {
+		fd = openat (dirfd, filename, O_RDONLY | O_CLOEXEC);
+		if (fd < 0) {
+			errsv = errno;
+
+			g_set_error (error,
+			             G_FILE_ERROR,
+			             g_file_error_from_errno (errsv),
+			             "Failed to open file \"%s\" with openat: %s",
+			             filename,
+			             g_strerror (errsv));
+			return -errsv;
+		}
+	} else {
+		fd = open (filename, O_RDONLY | O_CLOEXEC);
+		if (fd < 0) {
+			errsv = errno;
+
+			g_set_error (error,
+			             G_FILE_ERROR,
+			             g_file_error_from_errno (errsv),
+			             "Failed to open file \"%s\": %s",
+			             filename,
+			             g_strerror (errsv));
+			return -errsv;
+		}
+	}
+	return nm_utils_fd_get_contents (fd,
+	                                 max_length,
+	                                 contents,
+	                                 length,
+	                                 error);
+}
+
+/*****************************************************************************/
+
 /* taken from systemd's dev_urandom(). */
 int
 nm_utils_read_urandom (void *p, size_t nbytes)
