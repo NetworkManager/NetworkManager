@@ -2058,7 +2058,6 @@ test_netns_set_netns (gpointer fixture, gconstpointer test_data)
 	gs_unref_object NMPlatform *platform_1 = NULL;
 	gs_unref_object NMPlatform *platform_2 = NULL;
 	nm_auto_pop_netns NMPNetns *netns_pop = NULL;
-	int i;
 
 	if (_test_netns_check_skip ())
 		return;
@@ -2067,9 +2066,7 @@ test_netns_set_netns (gpointer fixture, gconstpointer test_data)
 	platforms[1] = platform_1 = _test_netns_create_platform ();
 	platforms[2] = platform_2 = _test_netns_create_platform ();
 
-	i = nmtst_get_rand_int () % 4;
-	if (i != 3)
-		g_assert (nm_platform_netns_push (platforms[i], &netns_pop));
+	nmtstp_netns_select_random (platforms, G_N_ELEMENTS (platforms), &netns_pop);
 
 #define LINK_MOVE_NAME "link-move"
 	g_assert (!nm_platform_link_get_by_ifname (platform_1, LINK_MOVE_NAME));
@@ -2296,9 +2293,7 @@ test_netns_bind_to_path (gpointer fixture, gconstpointer test_data)
 	platforms[1] = platform_1 = _test_netns_create_platform ();
 	platforms[2] = platform_2 = _test_netns_create_platform ();
 
-	i = nmtst_get_rand_int () % 4;
-	if (i != 3)
-		g_assert (nm_platform_netns_push (platforms[i], &netns_pop));
+	nmtstp_netns_select_random (platforms, G_N_ELEMENTS (platforms), &netns_pop);
 
 	g_assert_cmpint (mount ("tmpfs", P_VAR_RUN, "tmpfs", MS_NOATIME | MS_NODEV | MS_NOSUID, "mode=0755,size=32K"), ==, 0);
 	g_assert_cmpint (mkdir (P_VAR_RUN_NETNS, 755), ==, 0);
