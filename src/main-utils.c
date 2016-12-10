@@ -94,7 +94,7 @@ nm_main_utils_write_pidfile (const char *pidfile)
 	int fd;
 	gboolean success = FALSE;
 
-	if ((fd = open (pidfile, O_CREAT|O_WRONLY|O_TRUNC, 00644)) < 0) {
+	if ((fd = open (pidfile, O_CREAT | O_WRONLY | O_TRUNC | O_CLOEXEC, 00644)) < 0) {
 		fprintf (stderr, _("Opening %s failed: %s\n"), pidfile, strerror (errno));
 		return FALSE;
 	}

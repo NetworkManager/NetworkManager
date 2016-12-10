@@ -63,7 +63,7 @@ ethtool_get (const char *name, gpointer edata)
 	nm_utils_ifname_cpy (ifr.ifr_name, name);
 	ifr.ifr_data = edata;
 
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	fd = socket (PF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
 	if (fd < 0) {
 		nm_log_err (LOGD_PLATFORM, "ethtool: Could not open socket.");
 		return FALSE;
@@ -345,7 +345,7 @@ nmp_utils_mii_supports_carrier_detect (const char *ifname)
 	if (!nmp_utils_device_exists (ifname))
 		return FALSE;
 
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	fd = socket (PF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
 	if (fd < 0) {
 		nm_log_err (LOGD_PLATFORM, "mii: couldn't open control socket (%s)", ifname);
 		return FALSE;

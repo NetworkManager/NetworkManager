@@ -154,7 +154,7 @@ br2684_assign_vcc (NMDeviceAdsl *self, NMSettingAdsl *s_adsl)
 	g_return_val_if_fail (priv->brfd == -1, FALSE);
 	g_return_val_if_fail (priv->nas_ifname != NULL, FALSE);
 
-	priv->brfd = socket (PF_ATMPVC, SOCK_DGRAM, ATM_AAL5);
+	priv->brfd = socket (PF_ATMPVC, SOCK_DGRAM | SOCK_CLOEXEC, ATM_AAL5);
 	if (priv->brfd < 0) {
 		errsv = errno;
 		_LOGE (LOGD_ADSL, "failed to open ATM control socket (%d)", errsv);
@@ -338,7 +338,7 @@ br2684_create_iface (NMDeviceAdsl *self,
 		nm_clear_g_source (&priv->nas_update_id);
 	}
 
-	fd = socket (PF_ATMPVC, SOCK_DGRAM, ATM_AAL5);
+	fd = socket (PF_ATMPVC, SOCK_DGRAM | SOCK_CLOEXEC, ATM_AAL5);
 	if (fd < 0) {
 		errsv = errno;
 		_LOGE (LOGD_ADSL, "failed to open ATM control socket (%d)", errsv);

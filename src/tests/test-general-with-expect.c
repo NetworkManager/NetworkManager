@@ -26,6 +26,7 @@
 #include <netinet/ether.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 
 #include "NetworkManagerUtils.h"
 #include "nm-multi-index.h"
@@ -173,7 +174,7 @@ test_nm_utils_kill_child_create_and_join_pgroup (void)
 	int pipefd[2];
 	pid_t pgid;
 
-	err = pipe (pipefd);
+	err = pipe2 (pipefd, O_CLOEXEC);
 	g_assert (err == 0);
 
 	pgid = fork();

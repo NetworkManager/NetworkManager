@@ -53,11 +53,11 @@ svOpenFileInternal (const char *name, gboolean create, GError **error)
 
 	s->fd = -1;
 	if (create)
-		s->fd = open (name, O_RDWR); /* NOT O_CREAT */
+		s->fd = open (name, O_RDWR | O_CLOEXEC); /* NOT O_CREAT */
 
 	if (!create || s->fd == -1) {
 		/* try read-only */
-		s->fd = open (name, O_RDONLY); /* NOT O_CREAT */
+		s->fd = open (name, O_RDONLY | O_CLOEXEC); /* NOT O_CREAT */
 		if (s->fd == -1)
 			errsv = errno;
 		else
@@ -461,7 +461,7 @@ svWriteFile (shvarFile *s, int mode, GError **error)
 
 	if (s->modified) {
 		if (s->fd == -1)
-			s->fd = open (s->fileName, O_WRONLY | O_CREAT, mode);
+			s->fd = open (s->fileName, O_WRONLY | O_CREAT | O_CLOEXEC, mode);
 		if (s->fd == -1) {
 			int errsv = errno;
 

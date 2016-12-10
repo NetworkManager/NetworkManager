@@ -499,7 +499,7 @@ port_speed_is_zero (const char *port)
 	struct termios options;
 	nm_auto_close int fd = -1;
 
-	fd = open (port, O_RDWR | O_NONBLOCK | O_NOCTTY);
+	fd = open (port, O_RDWR | O_NONBLOCK | O_NOCTTY | O_CLOEXEC);
 	if (fd < 0)
 		return FALSE;
 

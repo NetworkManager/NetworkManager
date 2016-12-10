@@ -277,7 +277,7 @@ _netns_new (GError **error)
 	int fd_net, fd_mnt;
 	int errsv;
 
-	fd_net = open (PROC_SELF_NS_NET, O_RDONLY);
+	fd_net = open (PROC_SELF_NS_NET, O_RDONLY | O_CLOEXEC);
 	if (fd_net == -1) {
 		errsv = errno;
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
@@ -286,7 +286,7 @@ _netns_new (GError **error)
 		return NULL;
 	}
 
-	fd_mnt = open (PROC_SELF_NS_MNT, O_RDONLY);
+	fd_mnt = open (PROC_SELF_NS_MNT, O_RDONLY | O_CLOEXEC);
 	if (fd_mnt == -1) {
 		errsv = errno;
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
@@ -623,7 +623,7 @@ nmp_netns_bind_to_path (NMPNetns *self, const char *filename, int *out_fd)
 	}
 
 	if (out_fd) {
-		if ((fd = open (filename, O_RDONLY)) == -1) {
+		if ((fd = open (filename, O_RDONLY | O_CLOEXEC)) == -1) {
 			errsv = errno;
 			_LOGE (self, "bind: failed to open %s: %s", filename, g_strerror (errsv));
 			umount2 (filename, MNT_DETACH);

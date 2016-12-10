@@ -64,7 +64,7 @@ dun_connect (NMBluez5DunContext *context)
 		.channel = context->rfcomm_channel
 	};
 
-	context->rfcomm_fd = socket (AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
+	context->rfcomm_fd = socket (AF_BLUETOOTH, SOCK_STREAM | SOCK_CLOEXEC, BTPROTO_RFCOMM);
 	if (context->rfcomm_fd < 0) {
 		int errsv = errno;
 		error = g_error_new (NM_BT_ERROR, NM_BT_ERROR_DUN_CONNECT_FAILED,
@@ -112,7 +112,7 @@ dun_connect (NMBluez5DunContext *context)
 	context->rfcomm_id = devid;
 
 	snprintf (tty, ttylen, "/dev/rfcomm%d", devid);
-	while ((context->rfcomm_tty_fd = open (tty, O_RDONLY | O_NOCTTY)) < 0 && try--) {
+	while ((context->rfcomm_tty_fd = open (tty, O_RDONLY | O_NOCTTY | O_CLOEXEC)) < 0 && try--) {
 		if (try) {
 			g_usleep (100 * 1000);
 			continue;

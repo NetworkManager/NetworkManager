@@ -352,7 +352,7 @@ _test_recv_fixture_setup (TestRecvFixture *fixture, gconstpointer user_data)
 	struct ifreq ifr = { };
 	int fd, s;
 
-	fd = open ("/dev/net/tun", O_RDWR);
+	fd = open ("/dev/net/tun", O_RDWR | O_CLOEXEC);
 	g_assert (fd >= 0);
 
 	ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
@@ -360,7 +360,7 @@ _test_recv_fixture_setup (TestRecvFixture *fixture, gconstpointer user_data)
 	g_assert (ioctl (fd, TUNSETIFF, &ifr) >= 0);
 
 	/* Bring the interface up */
-	s = socket (AF_INET, SOCK_DGRAM, 0);
+	s = socket (AF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
 	g_assert (s >= 0);
 	ifr.ifr_flags |= IFF_UP;
 	g_assert (ioctl (s, SIOCSIFFLAGS, &ifr) >= 0);
