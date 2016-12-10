@@ -719,7 +719,7 @@ update_resolv_conf (NMDnsManager *self,
 		}
 	}
 
-	if ((f = fopen (MY_RESOLV_CONF_TMP, "w")) == NULL) {
+	if ((f = fopen (MY_RESOLV_CONF_TMP, "we")) == NULL) {
 		errsv = errno;
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
@@ -1594,7 +1594,7 @@ _check_resconf_immutable (NMDnsManagerResolvConfManager rc_manager)
 			}
 		}
 
-		fd = open (_PATH_RESCONF, O_RDONLY);
+		fd = open (_PATH_RESCONF, O_RDONLY | O_CLOEXEC);
 		if (fd != -1) {
 			if (ioctl (fd, FS_IOC_GETFLAGS, &flags) != -1)
 				immutable = NM_FLAGS_HAS (flags, FS_IMMUTABLE_FL);

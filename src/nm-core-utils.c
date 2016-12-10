@@ -3050,7 +3050,7 @@ nm_utils_read_urandom (void *p, size_t nbytes)
 	int r;
 
 again:
-	fd = open ("/dev/urandom", O_RDONLY|O_CLOEXEC|O_NOCTTY);
+	fd = open ("/dev/urandom", O_RDONLY | O_CLOEXEC | O_NOCTTY);
 	if (fd < 0) {
 		r = errno;
 		if (r == EINTR)

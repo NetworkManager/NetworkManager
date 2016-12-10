@@ -5450,7 +5450,7 @@ rfkill_change (NMManager *self, const char *desc, RfKillType rtype, gboolean ena
 	g_return_if_fail (rtype == RFKILL_TYPE_WLAN || rtype == RFKILL_TYPE_WWAN);
 
 	errno = 0;
-	fd = open ("/dev/rfkill", O_RDWR);
+	fd = open ("/dev/rfkill", O_RDWR | O_CLOEXEC);
 	if (fd < 0) {
 		if (errno == EACCES)
 			_LOGW (LOGD_RFKILL, "(%s): failed to open killswitch device", desc);

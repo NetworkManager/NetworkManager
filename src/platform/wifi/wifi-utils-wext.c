@@ -577,7 +577,7 @@ wifi_wext_init (const char *iface, int ifindex, gboolean check_scan)
 	wext->parent.set_mesh_channel = wifi_wext_set_mesh_channel;
 	wext->parent.set_mesh_ssid = wifi_wext_set_mesh_ssid;
 
-	wext->fd = socket (PF_INET, SOCK_DGRAM, 0);
+	wext->fd = socket (PF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
 	if (wext->fd < 0)
 		goto error;
 
@@ -665,7 +665,7 @@ wifi_wext_is_wifi (const char *iface)
 	if (!nmp_utils_device_exists (iface))
 		return FALSE;
 
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	fd = socket (PF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
 	if (fd >= 0) {
 		nm_utils_ifname_cpy (iwr.ifr_ifrn.ifrn_name, iface);
 		if (ioctl (fd, SIOCGIWNAME, &iwr) == 0)

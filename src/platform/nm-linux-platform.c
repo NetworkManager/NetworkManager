@@ -5167,7 +5167,7 @@ tun_add (NMPlatform *platform, const char *name, gboolean tap,
 	_LOGD ("link: add %s '%s' owner %" G_GINT64_FORMAT " group %" G_GINT64_FORMAT,
 	       tap ? "tap" : "tun", name, owner, group);
 
-	fd = open ("/dev/net/tun", O_RDWR);
+	fd = open ("/dev/net/tun", O_RDWR | O_CLOEXEC);
 	if (fd < 0)
 		return FALSE;
 

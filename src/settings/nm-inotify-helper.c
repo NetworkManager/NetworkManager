@@ -144,7 +144,7 @@ init_inotify (NMInotifyHelper *self)
 	GIOChannel *channel;
 	guint source_id;
 
-	priv->ifd = inotify_init ();
+	priv->ifd = inotify_init1 (IN_CLOEXEC);
 	if (priv->ifd == -1) {
 		int errsv = errno;
 

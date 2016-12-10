@@ -117,7 +117,7 @@ _recursive_ifparser (const char *eni_file, int quiet)
 			nm_log_warn (LOGD_SETTINGS, "interfaces file %s doesn't exist\n", eni_file);
 		return;
 	}
-	inp = fopen (eni_file, "r");
+	inp = fopen (eni_file, "re");
 	if (inp == NULL) {
 		if (!quiet)
 			nm_log_warn (LOGD_SETTINGS, "Can't open %s\n", eni_file);

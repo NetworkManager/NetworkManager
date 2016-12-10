@@ -148,7 +148,7 @@ monitor_cb (gpointer user_data)
 		if (errno != ENODEV)
 			_LOGW ("could not read ppp stats: %s", strerror (errno));
 	} else {
-		g_signal_emit (manager, signals[STATS], 0, 
+		g_signal_emit (manager, signals[STATS], 0,
 		               stats.p.ppp_ibytes,
 		               stats.p.ppp_obytes);
 	}
@@ -165,7 +165,7 @@ monitor_stats (NMPPPManager *manager)
 	if (priv->monitor_fd >= 0)
 		return;
 
-	priv->monitor_fd = socket (AF_INET, SOCK_DGRAM, 0);
+	priv->monitor_fd = socket (AF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
 	if (priv->monitor_fd >= 0) {
 		g_warn_if_fail (priv->monitor_id == 0);
 		if (priv->monitor_id)
