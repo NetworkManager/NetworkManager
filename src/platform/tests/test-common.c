@@ -1554,6 +1554,25 @@ nmtstp_namespace_get_fd_for_process (pid_t pid, const char *ns_name)
 
 /*****************************************************************************/
 
+void
+nmtstp_netns_select_random (NMPlatform **platforms, gsize n_platforms, NMPNetns **netns)
+{
+	int i;
+
+	g_assert (platforms);
+	g_assert (n_platforms && n_platforms <= G_MAXINT32);
+	g_assert (netns && !*netns);
+	for (i = 0; i < n_platforms; i++)
+		g_assert (NM_IS_PLATFORM (platforms[i]));
+
+	i = nmtst_get_rand_int () % (n_platforms + 1);
+	if (i == 0)
+		return;
+	g_assert (nm_platform_netns_push (platforms[i - 1], netns));
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 static gboolean
