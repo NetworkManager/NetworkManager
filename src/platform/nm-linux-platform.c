@@ -682,7 +682,7 @@ _linktype_get_type (NMPlatform *platform,
 		char ifname_verified[IFNAMSIZ];
 
 		/* Fallback OVS detection for kernel <= 3.16 */
-		if (nmp_utils_ethtool_get_driver_info (ifname, &driver, NULL, NULL)) {
+		if (nmp_utils_ethtool_get_driver_info (ifindex, &driver, NULL, NULL)) {
 			if (!g_strcmp0 (driver, "openvswitch"))
 				return NM_LINK_TYPE_OPENVSWITCH;
 
@@ -4451,10 +4451,6 @@ static gboolean
 link_supports_carrier_detect (NMPlatform *platform, int ifindex)
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
-	const char *name = nm_platform_link_get_name (platform, ifindex);
-
-	if (!name)
-		return FALSE;
 
 	if (!nm_platform_netns_push (platform, &netns))
 		return FALSE;
@@ -4463,7 +4459,7 @@ link_supports_carrier_detect (NMPlatform *platform, int ifindex)
 	 * us whether the device actually supports carrier detection in the first
 	 * place. We assume any device that does implements one of these two APIs.
 	 */
-	return nmp_utils_ethtool_supports_carrier_detect (name) || nmp_utils_mii_supports_carrier_detect (name);
+	return nmp_utils_ethtool_supports_carrier_detect (ifindex) || nmp_utils_mii_supports_carrier_detect (ifindex);
 }
 
 static gboolean
@@ -4481,7 +4477,7 @@ link_supports_vlans (NMPlatform *platform, int ifindex)
 	if (!nm_platform_netns_push (platform, &netns))
 		return FALSE;
 
-	return nmp_utils_ethtool_supports_vlans (obj->link.name);
+	return nmp_utils_ethtool_supports_vlans (ifindex);
 }
 
 static NMPlatformError
@@ -4549,7 +4545,7 @@ link_get_permanent_address (NMPlatform *platform,
 	if (!nm_platform_netns_push (platform, &netns))
 		return FALSE;
 
-	return nmp_utils_ethtool_get_permanent_address (nm_platform_link_get_name (platform, ifindex), buf, length);
+	return nmp_utils_ethtool_get_permanent_address (ifindex, buf, length);
 }
 
 static gboolean
@@ -5519,7 +5515,7 @@ link_get_wake_on_lan (NMPlatform *platform, int ifindex)
 		return FALSE;
 
 	if (type == NM_LINK_TYPE_ETHERNET)
-		return nmp_utils_ethtool_get_wake_on_lan (nm_platform_link_get_name (platform, ifindex));
+		return nmp_utils_ethtool_get_wake_on_lan (ifindex);
 	else if (type == NM_LINK_TYPE_WIFI) {
 		WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
 
@@ -5543,7 +5539,7 @@ link_get_driver_info (NMPlatform *platform,
 	if (!nm_platform_netns_push (platform, &netns))
 		return FALSE;
 
-	return nmp_utils_ethtool_get_driver_info (nm_platform_link_get_name (platform, ifindex),
+	return nmp_utils_ethtool_get_driver_info (ifindex,
 	                                          out_driver_name,
 	                                          out_driver_version,
 	                                          out_fw_version);

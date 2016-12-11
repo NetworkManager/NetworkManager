@@ -125,7 +125,7 @@ _vlan_xgress_qos_mappings_cpy (guint *dst_n_map,
 /*****************************************************************************/
 
 static const char *
-_link_get_driver (GUdevDevice *udev_device, const char *kind, const char *ifname)
+_link_get_driver (GUdevDevice *udev_device, const char *kind, int ifindex)
 {
 	const char *driver = NULL;
 
@@ -140,10 +140,10 @@ _link_get_driver (GUdevDevice *udev_device, const char *kind, const char *ifname
 	if (kind)
 		return kind;
 
-	if (ifname) {
+	if (ifindex > 0) {
 		char *d;
 
-		if (nmp_utils_ethtool_get_driver_info (ifname, &d, NULL, NULL)) {
+		if (nmp_utils_ethtool_get_driver_info (ifindex, &d, NULL, NULL)) {
 			driver = d && d[0] ? g_intern_string (d) : NULL;
 			g_free (d);
 			if (driver)
@@ -169,7 +169,7 @@ _nmp_object_fixup_link_udev_fields (NMPObject *obj, gboolean use_udev)
 	if (obj->_link.netlink.is_in_netlink) {
 		driver = _link_get_driver (obj->_link.udev.device,
 		                           obj->link.kind,
-		                           obj->link.name);
+		                           obj->link.ifindex);
 		if (obj->_link.udev.device)
 			initialized = TRUE;
 		else if (!use_udev) {

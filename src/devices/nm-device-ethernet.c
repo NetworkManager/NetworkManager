@@ -827,7 +827,7 @@ link_negotiation_set (NMDevice *device)
 		}
 	}
 
-	if (!nm_platform_ethtool_get_link_settings (NM_PLATFORM_GET, nm_device_get_iface (device),
+	if (!nm_platform_ethtool_get_link_settings (NM_PLATFORM_GET, nm_device_get_ifindex (device),
 	                                            &link_autoneg, &link_speed, &link_duplex)) {
 		_LOGW (LOGD_DEVICE, "set-link: unable to retrieve link negotiation");
 		return;
@@ -852,7 +852,7 @@ link_negotiation_set (NMDevice *device)
 	}
 
 	if (!nm_platform_ethtool_set_link_settings (NM_PLATFORM_GET,
-	                                            nm_device_get_iface (device),
+	                                            nm_device_get_ifindex (device),
 	                                            autoneg,
 	                                            speed,
 	                                            duplex)) {
@@ -1243,7 +1243,7 @@ wake_on_lan_enable (NMDevice *device)
 	}
 	wol = NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE;
 found:
-	return nm_platform_ethtool_set_wake_on_lan (NM_PLATFORM_GET, nm_device_get_iface (device), wol, password);
+	return nm_platform_ethtool_set_wake_on_lan (NM_PLATFORM_GET, nm_device_get_ifindex (device), wol, password);
 }
 
 /*****************************************************************************/
@@ -1609,7 +1609,7 @@ get_link_speed (NMDevice *device)
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	guint32 speed;
 
-	if (!nm_platform_ethtool_get_link_settings (NM_PLATFORM_GET, nm_device_get_iface (device), NULL, &speed, NULL))
+	if (!nm_platform_ethtool_get_link_settings (NM_PLATFORM_GET, nm_device_get_ifindex (device), NULL, &speed, NULL))
 		return;
 	if (priv->speed == speed)
 		return;

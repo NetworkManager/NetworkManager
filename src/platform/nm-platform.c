@@ -2259,7 +2259,7 @@ nm_platform_link_veth_get_properties (NMPlatform *self, int ifindex, int *out_pe
 
 		if (!nm_platform_netns_push (self, &netns))
 			return FALSE;
-		peer_ifindex = nmp_utils_ethtool_get_peer_ifindex (plink->name);
+		peer_ifindex = nmp_utils_ethtool_get_peer_ifindex (plink->ifindex);
 		if (peer_ifindex <= 0)
 			return FALSE;
 
@@ -2507,27 +2507,33 @@ _to_string_ifa_flags (guint32 ifa_flags, char *buf, gsize size)
 /*****************************************************************************/
 
 gboolean
-nm_platform_ethtool_set_wake_on_lan (NMPlatform *self, const char *ifname, NMSettingWiredWakeOnLan wol, const char *wol_password)
+nm_platform_ethtool_set_wake_on_lan (NMPlatform *self, int ifindex, NMSettingWiredWakeOnLan wol, const char *wol_password)
 {
 	_CHECK_SELF_NETNS (self, klass, netns, FALSE);
 
-	return nmp_utils_ethtool_set_wake_on_lan (ifname, wol, wol_password);
+	g_return_val_if_fail (ifindex > 0, FALSE);
+
+	return nmp_utils_ethtool_set_wake_on_lan (ifindex, wol, wol_password);
 }
 
 gboolean
-nm_platform_ethtool_set_link_settings (NMPlatform *self, const char *ifname, gboolean autoneg, guint32 speed, NMPlatformLinkDuplexType duplex)
+nm_platform_ethtool_set_link_settings (NMPlatform *self, int ifindex, gboolean autoneg, guint32 speed, NMPlatformLinkDuplexType duplex)
 {
 	_CHECK_SELF_NETNS (self, klass, netns, FALSE);
 
-	return nmp_utils_ethtool_set_link_settings (ifname, autoneg, speed, duplex);
+	g_return_val_if_fail (ifindex > 0, FALSE);
+
+	return nmp_utils_ethtool_set_link_settings (ifindex, autoneg, speed, duplex);
 }
 
 gboolean
-nm_platform_ethtool_get_link_settings (NMPlatform *self, const char *ifname, gboolean *out_autoneg, guint32 *out_speed,  NMPlatformLinkDuplexType *out_duplex)
+nm_platform_ethtool_get_link_settings (NMPlatform *self, int ifindex, gboolean *out_autoneg, guint32 *out_speed,  NMPlatformLinkDuplexType *out_duplex)
 {
 	_CHECK_SELF_NETNS (self, klass, netns, FALSE);
 
-	return nmp_utils_ethtool_get_link_settings (ifname, out_autoneg, out_speed, out_duplex);
+	g_return_val_if_fail (ifindex > 0, FALSE);
+
+	return nmp_utils_ethtool_get_link_settings (ifindex, out_autoneg, out_speed, out_duplex);
 }
 
 /*****************************************************************************/

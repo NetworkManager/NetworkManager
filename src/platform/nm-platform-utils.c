@@ -44,6 +44,26 @@ extern char *if_indextoname (unsigned int __ifindex, char *__ifname);
  * ethtool
  ******************************************************************/
 
+NM_UTILS_ENUM2STR_DEFINE_STATIC (_ethtool_cmd_to_string, guint32,
+	NM_UTILS_ENUM2STR (ETHTOOL_GDRVINFO,   "ETHTOOL_GDRVINFO"),
+	NM_UTILS_ENUM2STR (ETHTOOL_GFEATURES,  "ETHTOOL_GFEATURES"),
+	NM_UTILS_ENUM2STR (ETHTOOL_GLINK,      "ETHTOOL_GLINK"),
+	NM_UTILS_ENUM2STR (ETHTOOL_GPERMADDR,  "ETHTOOL_GPERMADDR"),
+	NM_UTILS_ENUM2STR (ETHTOOL_GSET,       "ETHTOOL_GSET"),
+	NM_UTILS_ENUM2STR (ETHTOOL_GSSET_INFO, "ETHTOOL_GSSET_INFO"),
+	NM_UTILS_ENUM2STR (ETHTOOL_GSTATS,     "ETHTOOL_GSTATS"),
+	NM_UTILS_ENUM2STR (ETHTOOL_GSTRINGS,   "ETHTOOL_GSTRINGS"),
+	NM_UTILS_ENUM2STR (ETHTOOL_GWOL,       "ETHTOOL_GWOL"),
+	NM_UTILS_ENUM2STR (ETHTOOL_SSET,       "ETHTOOL_SSET"),
+	NM_UTILS_ENUM2STR (ETHTOOL_SWOL,       "ETHTOOL_SWOL"),
+);
+
+static const char *
+_ethtool_data_to_string (gconstpointer edata, char *buf, gsize len)
+{
+	return _ethtool_cmd_to_string (*((guint32 *) edata), buf, len);
+}
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
 #define ethtool_cmd_speed(pedata) ((pedata)->speed)
 
@@ -52,53 +72,83 @@ extern char *if_indextoname (unsigned int __ifindex, char *__ifname);
 #endif
 
 static gboolean
-ethtool_get (const char *name, gpointer edata)
+ethtool_get (int ifindex, gpointer edata)
 {
-	struct ifreq ifr;
-	int fd;
+	char ifname[IFNAMSIZ];
+	char sbuf[50];
 
-	if (!name || !*name)
-		return FALSE;
+	nm_assert (ifindex > 0);
 
-	if (!nmp_utils_device_exists (name))
-		return FALSE;
+	/* ethtool ioctl API uses the ifname to refer to an interface. That is racy
+	 * as interfaces can be renamed *sigh*.
+	 *
+	 * Note that we anyway have to verify whether the interface exists, before
+	 * calling ioctl for a non-existing ifname. This is to prevent autoloading
+	 * of kernel modules *sigh*.
+	 * Thus, as we anyway verify the existence of ifname before doing the call,
+	 * go one step further and lookup the ifname everytime anew.
+	 *
+	 * This does not solve the renaming race, but it minimizes the time for
+	 * the race to happen as much as possible. */
 
-	/* nmp_utils_device_exists() already errors out if @name is invalid. */
-	nm_assert (strlen (name) < IFNAMSIZ);
-
-	memset (&ifr, 0, sizeof (ifr));
-	nm_utils_ifname_cpy (ifr.ifr_name, name);
-	ifr.ifr_data = edata;
-
-	fd = socket (PF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
-	if (fd < 0) {
-		nm_log_err (LOGD_PLATFORM, "ethtool: Could not open socket.");
-		return FALSE;
-	}
-
-	if (ioctl (fd, SIOCETHTOOL, &ifr) < 0) {
-		nm_log_dbg (LOGD_PLATFORM, "ethtool: Request failed: %s", strerror (errno));
-		close (fd);
+	if (!if_indextoname (ifindex, ifname)) {
+		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: request fails resolving ifindex: %s",
+		              ifindex,
+		              _ethtool_data_to_string (edata, sbuf, sizeof (sbuf)),
+		              g_strerror (errno));
 		return FALSE;
 	}
 
-	close (fd);
-	return TRUE;
+	{
+		nm_auto_close int fd = -1;
+		struct ifreq ifr = {
+			.ifr_data = edata,
+		};
+
+		memcpy (ifr.ifr_name, ifname, sizeof (ifname));
+
+		fd = socket (PF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
+		if (fd < 0) {
+			nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s, %s: failed creating socket for ioctl: %s",
+			              ifindex,
+			              _ethtool_data_to_string (edata, sbuf, sizeof (sbuf)),
+			              ifname,
+			              g_strerror (errno));
+			return FALSE;
+		}
+
+		if (ioctl (fd, SIOCETHTOOL, &ifr) < 0) {
+			nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s, %s: failed: %s",
+			              ifindex,
+			              _ethtool_data_to_string (edata, sbuf, sizeof (sbuf)),
+			              ifname,
+			              strerror (errno));
+			return FALSE;
+		}
+
+		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s, %s: success",
+		              ifindex,
+		              _ethtool_data_to_string (edata, sbuf, sizeof (sbuf)),
+		              ifname);
+		return TRUE;
+	}
 }
 
 static int
-ethtool_get_stringset_index (const char *ifname, int stringset_id, const char *string)
+ethtool_get_stringset_index (int ifindex, int stringset_id, const char *string)
 {
 	gs_free struct ethtool_sset_info *info = NULL;
 	gs_free struct ethtool_gstrings *strings = NULL;
 	guint32 len, i;
+
+	g_return_val_if_fail (ifindex > 0, -1);
 
 	info = g_malloc0 (sizeof (*info) + sizeof (guint32));
 	info->cmd = ETHTOOL_GSSET_INFO;
 	info->reserved = 0;
 	info->sset_mask = 1ULL << stringset_id;
 
-	if (!ethtool_get (ifname, info))
+	if (!ethtool_get (ifindex, info))
 		return -1;
 	if (!info->sset_mask)
 		return -1;
@@ -109,7 +159,7 @@ ethtool_get_stringset_index (const char *ifname, int stringset_id, const char *s
 	strings->cmd = ETHTOOL_GSTRINGS;
 	strings->string_set = stringset_id;
 	strings->len = len;
-	if (!ethtool_get (ifname, strings))
+	if (!ethtool_get (ifindex, strings))
 		return -1;
 
 	for (i = 0; i < len; i++) {
@@ -121,18 +171,17 @@ ethtool_get_stringset_index (const char *ifname, int stringset_id, const char *s
 }
 
 gboolean
-nmp_utils_ethtool_get_driver_info (const char *ifname,
+nmp_utils_ethtool_get_driver_info (int ifindex,
                                    char **out_driver_name,
                                    char **out_driver_version,
                                    char **out_fw_version)
 {
 	struct ethtool_drvinfo drvinfo = { 0 };
 
-	if (!ifname)
-		return FALSE;
+	g_return_val_if_fail (ifindex > 0, FALSE);
 
 	drvinfo.cmd = ETHTOOL_GDRVINFO;
-	if (!ethtool_get (ifname, &drvinfo))
+	if (!ethtool_get (ifindex, &drvinfo))
 		return FALSE;
 
 	if (out_driver_name)
@@ -146,7 +195,7 @@ nmp_utils_ethtool_get_driver_info (const char *ifname,
 }
 
 gboolean
-nmp_utils_ethtool_get_permanent_address (const char *ifname,
+nmp_utils_ethtool_get_permanent_address (int ifindex,
                                          guint8 *buf,
                                          size_t *length)
 {
@@ -156,14 +205,13 @@ nmp_utils_ethtool_get_permanent_address (const char *ifname,
 	} edata;
 	guint i;
 
-	if (!ifname)
-		return FALSE;
+	g_return_val_if_fail (ifindex > 0, FALSE);
 
 	memset (&edata, 0, sizeof (edata));
 	edata.e.cmd = ETHTOOL_GPERMADDR;
 	edata.e.size = NM_UTILS_HWADDR_LEN_MAX;
 
-	if (!ethtool_get (ifname, &edata.e))
+	if (!ethtool_get (ifindex, &edata.e))
 		return FALSE;
 
 	if (edata.e.size > NM_UTILS_HWADDR_LEN_MAX)
@@ -190,29 +238,30 @@ not_all_0or1:
 }
 
 gboolean
-nmp_utils_ethtool_supports_carrier_detect (const char *ifname)
+nmp_utils_ethtool_supports_carrier_detect (int ifindex)
 {
 	struct ethtool_cmd edata = { .cmd = ETHTOOL_GLINK };
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
 
 	/* We ignore the result. If the ETHTOOL_GLINK call succeeded, then we
 	 * assume the device supports carrier-detect, otherwise we assume it
 	 * doesn't.
 	 */
-	return ethtool_get (ifname, &edata);
+	return ethtool_get (ifindex, &edata);
 }
 
 gboolean
-nmp_utils_ethtool_supports_vlans (const char *ifname)
+nmp_utils_ethtool_supports_vlans (int ifindex)
 {
 	gs_free struct ethtool_gfeatures *features = NULL;
 	int idx, block, bit, size;
 
-	if (!ifname)
-		return FALSE;
+	g_return_val_if_fail (ifindex > 0, FALSE);
 
-	idx = ethtool_get_stringset_index (ifname, ETH_SS_FEATURES, "vlan-challenged");
+	idx = ethtool_get_stringset_index (ifindex, ETH_SS_FEATURES, "vlan-challenged");
 	if (idx == -1) {
-		nm_log_dbg (LOGD_PLATFORM, "ethtool: vlan-challenged ethtool feature does not exist for %s?", ifname);
+		nm_log_dbg (LOGD_PLATFORM, "ethtool: vlan-challenged ethtool feature does not exist for %d?", ifindex);
 		return FALSE;
 	}
 
@@ -224,54 +273,52 @@ nmp_utils_ethtool_supports_vlans (const char *ifname)
 	features->cmd = ETHTOOL_GFEATURES;
 	features->size = size;
 
-	if (!ethtool_get (ifname, features))
+	if (!ethtool_get (ifindex, features))
 		return FALSE;
 
 	return !(features->features[block].active & (1 << bit));
 }
 
 int
-nmp_utils_ethtool_get_peer_ifindex (const char *ifname)
+nmp_utils_ethtool_get_peer_ifindex (int ifindex)
 {
 	gs_free struct ethtool_stats *stats = NULL;
 	int peer_ifindex_stat;
 
-	if (!ifname)
-		return 0;
+	g_return_val_if_fail (ifindex > 0, 0);
 
-	peer_ifindex_stat = ethtool_get_stringset_index (ifname, ETH_SS_STATS, "peer_ifindex");
+	peer_ifindex_stat = ethtool_get_stringset_index (ifindex, ETH_SS_STATS, "peer_ifindex");
 	if (peer_ifindex_stat == -1) {
-		nm_log_dbg (LOGD_PLATFORM, "ethtool: peer_ifindex stat for %s does not exist?", ifname);
+		nm_log_dbg (LOGD_PLATFORM, "ethtool: peer_ifindex stat for %d does not exist?", ifindex);
 		return FALSE;
 	}
 
 	stats = g_malloc0 (sizeof (*stats) + (peer_ifindex_stat + 1) * sizeof (guint64));
 	stats->cmd = ETHTOOL_GSTATS;
 	stats->n_stats = peer_ifindex_stat + 1;
-	if (!ethtool_get (ifname, stats))
+	if (!ethtool_get (ifindex, stats))
 		return 0;
 
 	return stats->data[peer_ifindex_stat];
 }
 
 gboolean
-nmp_utils_ethtool_get_wake_on_lan (const char *ifname)
+nmp_utils_ethtool_get_wake_on_lan (int ifindex)
 {
 	struct ethtool_wolinfo wol;
 
-	if (!ifname)
-		return FALSE;
+	g_return_val_if_fail (ifindex > 0, FALSE);
 
 	memset (&wol, 0, sizeof (wol));
 	wol.cmd = ETHTOOL_GWOL;
-	if (!ethtool_get (ifname, &wol))
+	if (!ethtool_get (ifindex, &wol))
 		return FALSE;
 
 	return wol.wolopts != 0;
 }
 
 gboolean
-nmp_utils_ethtool_get_link_settings (const char *ifname,
+nmp_utils_ethtool_get_link_settings (int ifindex,
                                      gboolean *out_autoneg,
                                      guint32 *out_speed,
                                      NMPlatformLinkDuplexType *out_duplex)
@@ -280,7 +327,9 @@ nmp_utils_ethtool_get_link_settings (const char *ifname,
 		.cmd = ETHTOOL_GSET,
 	};
 
-	if (!ethtool_get (ifname, &edata))
+	g_return_val_if_fail (ifindex > 0, FALSE);
+
+	if (!ethtool_get (ifindex, &edata))
 		return FALSE;
 
 	if (out_autoneg)
@@ -314,14 +363,19 @@ nmp_utils_ethtool_get_link_settings (const char *ifname,
 }
 
 gboolean
-nmp_utils_ethtool_set_link_settings (const char *ifname, gboolean autoneg, guint32 speed, NMPlatformLinkDuplexType duplex)
+nmp_utils_ethtool_set_link_settings (int ifindex,
+                                     gboolean autoneg,
+                                     guint32 speed,
+                                     NMPlatformLinkDuplexType duplex)
 {
 	struct ethtool_cmd edata = {
 		.cmd = ETHTOOL_GSET,
 	};
 
+	g_return_val_if_fail (ifindex > 0, FALSE);
+
 	/* retrieve first current settings */
-	if (!ethtool_get (ifname, &edata))
+	if (!ethtool_get (ifindex, &edata))
 		return FALSE;
 
 	/* then change the needed ones */
@@ -349,15 +403,17 @@ nmp_utils_ethtool_set_link_settings (const char *ifname, gboolean autoneg, guint
 		}
 	}
 
-	return ethtool_get (ifname, &edata);
+	return ethtool_get (ifindex, &edata);
 }
 
 gboolean
-nmp_utils_ethtool_set_wake_on_lan (const char *ifname,
+nmp_utils_ethtool_set_wake_on_lan (int ifindex,
                                    NMSettingWiredWakeOnLan wol,
                                    const char *wol_password)
 {
 	struct ethtool_wolinfo wol_info = { };
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
 
 	if (wol == NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE)
 		return TRUE;
@@ -389,7 +445,7 @@ nmp_utils_ethtool_set_wake_on_lan (const char *ifname,
 		wol_info.wolopts |= WAKE_MAGICSECURE;
 	}
 
-	return ethtool_get (ifname, &wol_info);
+	return ethtool_get (ifindex, &wol_info);
 }
 
 /******************************************************************
@@ -397,51 +453,45 @@ nmp_utils_ethtool_set_wake_on_lan (const char *ifname,
  ******************************************************************/
 
 gboolean
-nmp_utils_mii_supports_carrier_detect (const char *ifname)
+nmp_utils_mii_supports_carrier_detect (int ifindex)
 {
-	int fd, errsv;
+	char ifname[IFNAMSIZ];
+	nm_auto_close int fd = -1;
 	struct ifreq ifr;
 	struct mii_ioctl_data *mii;
-	gboolean supports_mii = FALSE;
 
-	if (!ifname)
-		return FALSE;
+	g_return_val_if_fail (ifindex > 0, FALSE);
 
-	if (!nmp_utils_device_exists (ifname))
+	if (!if_indextoname (ifindex, ifname)) {
+		nm_log_trace (LOGD_PLATFORM, "mii[%d]: carrier-detect no: request fails resolving ifindex: %s", ifindex, g_strerror (errno));
 		return FALSE;
+	}
 
 	fd = socket (PF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
 	if (fd < 0) {
-		nm_log_err (LOGD_PLATFORM, "mii: couldn't open control socket (%s)", ifname);
+		nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect no: couldn't open control socket: %s", ifindex, ifname, g_strerror (errno));
 		return FALSE;
 	}
 
 	memset (&ifr, 0, sizeof (struct ifreq));
-	nm_utils_ifname_cpy (ifr.ifr_name, ifname);
+	memcpy (ifr.ifr_name, ifname, IFNAMSIZ);
 
-	errno = 0;
 	if (ioctl (fd, SIOCGMIIPHY, &ifr) < 0) {
-		errsv = errno;
-		nm_log_dbg (LOGD_PLATFORM, "mii: SIOCGMIIPHY failed: %s (%d) (%s)", strerror (errsv), errsv, ifname);
-		goto out;
+		nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect no: SIOCGMIIPHY failed: %s", ifindex, ifname, strerror (errno));
+		return FALSE;
 	}
 
 	/* If we can read the BMSR register, we assume that the card supports MII link detection */
 	mii = (struct mii_ioctl_data *) &ifr.ifr_ifru;
 	mii->reg_num = MII_BMSR;
 
-	if (ioctl (fd, SIOCGMIIREG, &ifr) == 0) {
-		nm_log_dbg (LOGD_PLATFORM, "mii: SIOCGMIIREG result 0x%X (%s)", mii->val_out, ifname);
-		supports_mii = TRUE;
-	} else {
-		errsv = errno;
-		nm_log_dbg (LOGD_PLATFORM, "mii: SIOCGMIIREG failed: %s (%d) (%s)", strerror (errsv), errsv, ifname);
+	if (ioctl (fd, SIOCGMIIREG, &ifr) != 0) {
+		nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect no: SIOCGMIIREG failed: %s", ifindex, ifname, strerror (errno));
+		return FALSE;
 	}
 
-out:
-	close (fd);
-	nm_log_dbg (LOGD_PLATFORM, "mii: MII %s supported (%s)", supports_mii ? "is" : "not", ifname);
-	return supports_mii;
+	nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect yes: SIOCGMIIREG result 0x%X", ifindex, ifname, mii->val_out);
+	return TRUE;
 }
 
 /******************************************************************

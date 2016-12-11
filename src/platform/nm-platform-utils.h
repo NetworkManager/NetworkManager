@@ -27,28 +27,28 @@
 #include "nm-setting-wired.h"
 
 
-const char *nmp_utils_ethtool_get_driver (const char *ifname);
-gboolean nmp_utils_ethtool_supports_carrier_detect (const char *ifname);
-gboolean nmp_utils_ethtool_supports_vlans (const char *ifname);
-int nmp_utils_ethtool_get_peer_ifindex (const char *ifname);
-gboolean nmp_utils_ethtool_get_wake_on_lan (const char *ifname);
-gboolean nmp_utils_ethtool_set_wake_on_lan (const char *ifname, NMSettingWiredWakeOnLan wol,
+const char *nmp_utils_ethtool_get_driver (int ifindex);
+gboolean nmp_utils_ethtool_supports_carrier_detect (int ifindex);
+gboolean nmp_utils_ethtool_supports_vlans (int ifindex);
+int nmp_utils_ethtool_get_peer_ifindex (int ifindex);
+gboolean nmp_utils_ethtool_get_wake_on_lan (int ifindex);
+gboolean nmp_utils_ethtool_set_wake_on_lan (int ifindex, NMSettingWiredWakeOnLan wol,
                                             const char *wol_password);
 
-gboolean nmp_utils_ethtool_get_link_settings (const char *ifname, gboolean *out_autoneg, guint32 *out_speed, NMPlatformLinkDuplexType *out_duplex);
-gboolean nmp_utils_ethtool_set_link_settings (const char *ifname, gboolean autoneg, guint32 speed, NMPlatformLinkDuplexType duplex);
+gboolean nmp_utils_ethtool_get_link_settings (int ifindex, gboolean *out_autoneg, guint32 *out_speed, NMPlatformLinkDuplexType *out_duplex);
+gboolean nmp_utils_ethtool_set_link_settings (int ifindex, gboolean autoneg, guint32 speed, NMPlatformLinkDuplexType duplex);
 
-gboolean nmp_utils_ethtool_get_driver_info (const char *ifname,
+gboolean nmp_utils_ethtool_get_driver_info (int ifindex,
                                             char **out_driver_name,
                                             char **out_driver_version,
                                             char **out_fw_version);
 
-gboolean  nmp_utils_ethtool_get_permanent_address (const char *ifname,
+gboolean  nmp_utils_ethtool_get_permanent_address (int ifindex,
                                                    guint8 *buf,
                                                    size_t *length);
 
 
-gboolean nmp_utils_mii_supports_carrier_detect (const char *ifname);
+gboolean nmp_utils_mii_supports_carrier_detect (int ifindex);
 
 
 const char *nmp_utils_udev_get_driver (GUdevDevice *device);
