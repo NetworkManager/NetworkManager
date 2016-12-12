@@ -757,9 +757,7 @@ checked_connectivity (GObject *object, GAsyncResult *result, gpointer user_data)
 
 		if (connectivity == NM_CONNECTIVITY_FULL)
 			set_state (manager, NM_STATE_CONNECTED_GLOBAL);
-		else if (   connectivity == NM_CONNECTIVITY_PORTAL
-		         || connectivity == NM_CONNECTIVITY_LIMITED)
-			set_state (manager, NM_STATE_CONNECTED_SITE);
+
 		_notify (manager, PROP_CONNECTIVITY);
 	}
 
