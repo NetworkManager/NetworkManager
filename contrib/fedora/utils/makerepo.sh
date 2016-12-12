@@ -230,7 +230,7 @@ detect_dirname() {
     local SOURCES
     local D suffix T
 
-    SOURCES=$(sed 's/.* //' ./sources 2>/dev/null)
+    SOURCES="$(sed 's/^\(SHA512 (\(.*\)) = [0-9a-f]\{128\}\|\([0-9a-f]\{32\} \+\(.*\)\)\)$/\2\4/' ./sources 2>/dev/null)"
 
     for suffix in .tar.gz .tar.bz .tar.xz .tgz .tar.bz2 ; do
         for T in ${SOURCES[@]}; do
