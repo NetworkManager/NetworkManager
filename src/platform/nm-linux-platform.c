@@ -611,6 +611,7 @@ _linktype_get_type (NMPlatform *platform,
 	guint i;
 
 	ASSERT_NETNS_CURRENT (platform);
+	nm_assert (ifname);
 
 	if (completed_from_cache) {
 		const NMPObject *obj;
@@ -631,7 +632,7 @@ _linktype_get_type (NMPlatform *platform,
 		 * of messing stuff up. */
 		if (   obj
 		    && !NM_IN_SET (obj->link.type, NM_LINK_TYPE_UNKNOWN, NM_LINK_TYPE_NONE)
-		    && !g_strcmp0 (ifname, obj->link.name)
+		    && nm_streq (ifname, obj->link.name)
 		    && (   !kind
 		        || !g_strcmp0 (kind, obj->link.kind))) {
 			nm_assert (obj->link.kind == g_intern_string (obj->link.kind));
@@ -652,7 +653,7 @@ _linktype_get_type (NMPlatform *platform,
 			NMPlatformTunProperties props;
 
 			if (   platform
-			    && nm_platform_link_tun_get_properties (platform, ifindex, ifname ?: "", &props)) {
+			    && nm_platform_link_tun_get_properties (platform, ifindex, ifname, &props)) {
 				if (!g_strcmp0 (props.mode, "tap"))
 					return NM_LINK_TYPE_TAP;
 				if (!g_strcmp0 (props.mode, "tun"))
@@ -675,11 +676,8 @@ _linktype_get_type (NMPlatform *platform,
 	else if (arptype == ARPHRD_TUNNEL6)
 		return NM_LINK_TYPE_IP6TNL;
 
-	if (ifname) {
+	{
 		NMPUtilsEthtoolDriverInfo driver_info;
-		nm_auto_close int dirfd = -1;
-		gs_free char *devtype = NULL;
-		char ifname_verified[IFNAMSIZ];
 
 		/* Fallback OVS detection for kernel <= 3.16 */
 		if (nmp_utils_ethtool_get_driver_info (ifindex, &driver_info)) {
@@ -694,6 +692,12 @@ _linktype_get_type (NMPlatform *platform,
 					return NM_LINK_TYPE_ETHERNET;
 			}
 		}
+	}
+
+	{
+		nm_auto_close int dirfd = -1;
+		gs_free char *devtype = NULL;
+		char ifname_verified[IFNAMSIZ];
 
 		dirfd = nmp_utils_sysctl_open_netdir (ifindex, ifname, ifname_verified);
 		if (dirfd >= 0) {
