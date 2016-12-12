@@ -172,26 +172,25 @@ ethtool_get_stringset_index (int ifindex, int stringset_id, const char *string)
 
 gboolean
 nmp_utils_ethtool_get_driver_info (int ifindex,
-                                   char **out_driver_name,
-                                   char **out_driver_version,
-                                   char **out_fw_version)
+                                   NMPUtilsEthtoolDriverInfo *data)
 {
-	struct ethtool_drvinfo drvinfo = { 0 };
+	struct ethtool_drvinfo *drvinfo;
+	G_STATIC_ASSERT (sizeof (*data) == sizeof (*drvinfo));
+	G_STATIC_ASSERT (offsetof (NMPUtilsEthtoolDriverInfo, driver)     == offsetof (struct ethtool_drvinfo, driver));
+	G_STATIC_ASSERT (offsetof (NMPUtilsEthtoolDriverInfo, version)    == offsetof (struct ethtool_drvinfo, version));
+	G_STATIC_ASSERT (offsetof (NMPUtilsEthtoolDriverInfo, fw_version) == offsetof (struct ethtool_drvinfo, fw_version));
+	G_STATIC_ASSERT (sizeof (data->driver)     == sizeof (drvinfo->driver));
+	G_STATIC_ASSERT (sizeof (data->version)    == sizeof (drvinfo->version));
+	G_STATIC_ASSERT (sizeof (data->fw_version) == sizeof (drvinfo->fw_version));
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (data, FALSE);
 
-	drvinfo.cmd = ETHTOOL_GDRVINFO;
-	if (!ethtool_get (ifindex, &drvinfo))
-		return FALSE;
+	drvinfo = (struct ethtool_drvinfo *) data;
 
-	if (out_driver_name)
-		*out_driver_name = g_strdup (drvinfo.driver);
-	if (out_driver_version)
-		*out_driver_version = g_strdup (drvinfo.version);
-	if (out_fw_version)
-		*out_fw_version = g_strdup (drvinfo.fw_version);
-
-	return TRUE;
+	memset (drvinfo, 0, sizeof (*drvinfo));
+	drvinfo->cmd = ETHTOOL_GDRVINFO;
+	return ethtool_get (ifindex, drvinfo);
 }
 
 gboolean

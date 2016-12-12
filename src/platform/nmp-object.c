@@ -141,13 +141,11 @@ _link_get_driver (GUdevDevice *udev_device, const char *kind, int ifindex)
 		return kind;
 
 	if (ifindex > 0) {
-		char *d;
+		NMPUtilsEthtoolDriverInfo driver_info;
 
-		if (nmp_utils_ethtool_get_driver_info (ifindex, &d, NULL, NULL)) {
-			driver = d && d[0] ? g_intern_string (d) : NULL;
-			g_free (d);
-			if (driver)
-				return driver;
+		if (nmp_utils_ethtool_get_driver_info (ifindex, &driver_info)) {
+			if (driver_info.driver[0])
+				return g_intern_string (driver_info.driver);
 		}
 	}
 

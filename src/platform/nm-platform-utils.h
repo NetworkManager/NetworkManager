@@ -38,10 +38,25 @@ gboolean nmp_utils_ethtool_set_wake_on_lan (int ifindex, NMSettingWiredWakeOnLan
 gboolean nmp_utils_ethtool_get_link_settings (int ifindex, gboolean *out_autoneg, guint32 *out_speed, NMPlatformLinkDuplexType *out_duplex);
 gboolean nmp_utils_ethtool_set_link_settings (int ifindex, gboolean autoneg, guint32 speed, NMPlatformLinkDuplexType duplex);
 
+typedef struct {
+	/* We don't want to include <linux/ethtool.h> in header files,
+	 * thus create a ABI compatible version of struct ethtool_drvinfo.*/
+	guint32 _private_cmd;
+	char    driver[32];
+	char    version[32];
+	char    fw_version[32];
+	char    _private_bus_info[32];
+	char    _private_erom_version[32];
+	char    _private_reserved2[12];
+	guint32 _private_n_priv_flags;
+	guint32 _private_n_stats;
+	guint32 _private_testinfo_len;
+	guint32 _private_eedump_len;
+	guint32 _private_regdump_len;
+} NMPUtilsEthtoolDriverInfo;
+
 gboolean nmp_utils_ethtool_get_driver_info (int ifindex,
-                                            char **out_driver_name,
-                                            char **out_driver_version,
-                                            char **out_fw_version);
+                                            NMPUtilsEthtoolDriverInfo *data);
 
 gboolean  nmp_utils_ethtool_get_permanent_address (int ifindex,
                                                    guint8 *buf,

@@ -676,21 +676,21 @@ _linktype_get_type (NMPlatform *platform,
 		return NM_LINK_TYPE_IP6TNL;
 
 	if (ifname) {
+		NMPUtilsEthtoolDriverInfo driver_info;
 		nm_auto_close int dirfd = -1;
-		gs_free char *driver = NULL;
 		gs_free char *devtype = NULL;
 		char ifname_verified[IFNAMSIZ];
 
 		/* Fallback OVS detection for kernel <= 3.16 */
-		if (nmp_utils_ethtool_get_driver_info (ifindex, &driver, NULL, NULL)) {
-			if (!g_strcmp0 (driver, "openvswitch"))
+		if (nmp_utils_ethtool_get_driver_info (ifindex, &driver_info)) {
+			if (nm_streq (driver_info.driver, "openvswitch"))
 				return NM_LINK_TYPE_OPENVSWITCH;
 
 			if (arptype == 256) {
 				/* Some s390 CTC-type devices report 256 for the encapsulation type
 				 * for some reason, but we need to call them Ethernet.
 				 */
-				if (!g_strcmp0 (driver, "ctcm"))
+				if (nm_streq (driver_info.driver, "ctcm"))
 					return NM_LINK_TYPE_ETHERNET;
 			}
 		}
@@ -5535,14 +5535,17 @@ link_get_driver_info (NMPlatform *platform,
                       char **out_fw_version)
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
+	NMPUtilsEthtoolDriverInfo driver_info;
 
 	if (!nm_platform_netns_push (platform, &netns))
 		return FALSE;
 
-	return nmp_utils_ethtool_get_driver_info (ifindex,
-	                                          out_driver_name,
-	                                          out_driver_version,
-	                                          out_fw_version);
+	if (!nmp_utils_ethtool_get_driver_info (ifindex, &driver_info))
+		return FALSE;
+	NM_SET_OUT (out_driver_name,    g_strdup (driver_info.driver));
+	NM_SET_OUT (out_driver_version, g_strdup (driver_info.version));
+	NM_SET_OUT (out_fw_version,     g_strdup (driver_info.fw_version));
+	return TRUE;
 }
 
 /*****************************************************************************/

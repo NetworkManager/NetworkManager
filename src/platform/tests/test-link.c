@@ -1956,6 +1956,7 @@ test_netns_general (gpointer fixture, gconstpointer test_data)
 	char sbuf[100];
 	int i, j, k;
 	gboolean ethtool_support;
+	NMPUtilsEthtoolDriverInfo driver_info;
 
 	if (_test_netns_check_skip ())
 		return;
@@ -2026,8 +2027,8 @@ test_netns_general (gpointer fixture, gconstpointer test_data)
 	 * skip asserts that are known to fail. */
 	ethtool_support = nmtstp_run_command ("ethtool -i dummy1_ > /dev/null") == 0;
 	if (ethtool_support) {
-		g_assert (nmp_utils_ethtool_get_driver_info (nmtstp_link_get_typed (platform_1, 0, "dummy1_", NM_LINK_TYPE_DUMMY)->ifindex, NULL, NULL, NULL));
-		g_assert (nmp_utils_ethtool_get_driver_info (nmtstp_link_get_typed (platform_1, 0, "dummy2a", NM_LINK_TYPE_DUMMY)->ifindex, NULL, NULL, NULL));
+		g_assert (nmp_utils_ethtool_get_driver_info (nmtstp_link_get_typed (platform_1, 0, "dummy1_", NM_LINK_TYPE_DUMMY)->ifindex, &driver_info));
+		g_assert (nmp_utils_ethtool_get_driver_info (nmtstp_link_get_typed (platform_1, 0, "dummy2a", NM_LINK_TYPE_DUMMY)->ifindex, &driver_info));
 		g_assert_cmpint (nmtstp_run_command ("ethtool -i dummy1_ > /dev/null"), ==, 0);
 		g_assert_cmpint (nmtstp_run_command ("ethtool -i dummy2a > /dev/null"), ==, 0);
 		g_assert_cmpint (nmtstp_run_command ("ethtool -i dummy2b 2> /dev/null"), !=, 0);
@@ -2036,8 +2037,8 @@ test_netns_general (gpointer fixture, gconstpointer test_data)
 	g_assert (nm_platform_netns_push (platform_2, &netns_tmp));
 
 	if (ethtool_support) {
-		g_assert (nmp_utils_ethtool_get_driver_info (nmtstp_link_get_typed (platform_2, 0, "dummy1_", NM_LINK_TYPE_DUMMY)->ifindex, NULL, NULL, NULL));
-		g_assert (nmp_utils_ethtool_get_driver_info (nmtstp_link_get_typed (platform_2, 0, "dummy2b", NM_LINK_TYPE_DUMMY)->ifindex, NULL, NULL, NULL));
+		g_assert (nmp_utils_ethtool_get_driver_info (nmtstp_link_get_typed (platform_2, 0, "dummy1_", NM_LINK_TYPE_DUMMY)->ifindex, &driver_info));
+		g_assert (nmp_utils_ethtool_get_driver_info (nmtstp_link_get_typed (platform_2, 0, "dummy2b", NM_LINK_TYPE_DUMMY)->ifindex, &driver_info));
 		g_assert_cmpint (nmtstp_run_command ("ethtool -i dummy1_ > /dev/null"), ==, 0);
 		g_assert_cmpint (nmtstp_run_command ("ethtool -i dummy2a 2> /dev/null"), !=, 0);
 		g_assert_cmpint (nmtstp_run_command ("ethtool -i dummy2b > /dev/null"), ==, 0);
