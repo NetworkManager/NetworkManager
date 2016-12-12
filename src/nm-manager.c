@@ -5815,7 +5815,6 @@ get_property (GObject *object, guint prop_id,
 		                                                       sizeof (guint32)));
 		break;
 	case PROP_STATE:
-		nm_manager_update_state (self);
 		g_value_set_uint (value, priv->state);
 		break;
 	case PROP_STARTUP:
