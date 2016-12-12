@@ -1565,8 +1565,9 @@ EXTRA_DIST += \
 
 if WITH_PPP
 
+core_plugins += src/ppp/libnm-ppp-plugin.la
+
 pppd_plugin_LTLIBRARIES += src/ppp/nm-pppd-plugin.la
-pkglib_LTLIBRARIES += src/ppp/libnm-ppp-plugin.la
 
 src_ppp_nm_pppd_plugin_la_CPPFLAGS = \
 	-I$(srcdir)/shared \
