@@ -53,8 +53,6 @@ gboolean nmp_utils_mii_supports_carrier_detect (int ifindex);
 
 const char *nmp_utils_udev_get_driver (GUdevDevice *device);
 
-gboolean nmp_utils_device_exists (const char *name);
-
 NMIPConfigSource nmp_utils_ip_config_source_from_rtprot (guint8 rtprot) _nm_const;
 guint8           nmp_utils_ip_config_source_coerce_to_rtprot   (NMIPConfigSource source) _nm_const;
 NMIPConfigSource nmp_utils_ip_config_source_coerce_from_rtprot (NMIPConfigSource source) _nm_const;

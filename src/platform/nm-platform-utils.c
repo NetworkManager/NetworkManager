@@ -539,22 +539,6 @@ out:
  * utils
  *****************************************************************************/
 
-gboolean
-nmp_utils_device_exists (const char *name)
-{
-#define SYS_CLASS_NET "/sys/class/net/"
-	char sysdir[NM_STRLEN (SYS_CLASS_NET) + IFNAMSIZ];
-
-	if (   !name
-	    || strlen (name) >= IFNAMSIZ
-	    || !nm_utils_is_valid_path_component (name))
-		g_return_val_if_reached (FALSE);
-
-	memcpy (sysdir, SYS_CLASS_NET, NM_STRLEN (SYS_CLASS_NET));
-	nm_utils_ifname_cpy (&sysdir[NM_STRLEN (SYS_CLASS_NET)], name);
-	return g_file_test (sysdir, G_FILE_TEST_EXISTS);
-}
-
 NMIPConfigSource
 nmp_utils_ip_config_source_from_rtprot (guint8 rtprot)
 {
