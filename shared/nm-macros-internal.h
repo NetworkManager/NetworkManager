@@ -335,6 +335,24 @@ _notify (obj_type *obj, _PropertyEnums prop) \
 
 /*****************************************************************************/
 
+#define __NM_GET_PRIVATE(self, type, is_check, result_cmd) \
+	({ \
+		/* preserve the const-ness of self. Unfortunately, that
+		 * way, @self cannot be a void pointer */ \
+		typeof (self) _self = (self); \
+		\
+		/* Get compiler error if variable is of wrong type */ \
+		_nm_unused const type *_self2 = (_self); \
+		\
+		nm_assert (is_check (_self)); \
+		( result_cmd ); \
+	})
+
+#define _NM_GET_PRIVATE(self, type, is_check)     __NM_GET_PRIVATE(self, type, is_check, &_self->_priv)
+#define _NM_GET_PRIVATE_PTR(self, type, is_check) __NM_GET_PRIVATE(self, type, is_check,  _self->_priv)
+
+/*****************************************************************************/
+
 static inline gpointer
 nm_g_object_ref (gpointer obj)
 {
@@ -472,6 +490,50 @@ nm_strstrip (char *str)
 	/* g_strstrip doesn't like NULL. */
 	return str ? g_strstrip (str) : NULL;
 }
+
+/*****************************************************************************/
+
+/* Taken from systemd's UNIQ_T and UNIQ macros. */
+
+#define NM_UNIQ_T(x, uniq) G_PASTE(__unique_prefix_, G_PASTE(x, uniq))
+#define NM_UNIQ __COUNTER__
+
+/*****************************************************************************/
+
+/* glib's MIN()/MAX() macros don't have function-like behavior, in that they evaluate
+ * the argument possibly twice.
+ *
+ * Taken from systemd's MIN()/MAX() macros. */
+
+#define NM_MIN(a, b) __NM_MIN(NM_UNIQ, a, NM_UNIQ, b)
+#define __NM_MIN(aq, a, bq, b) \
+	({ \
+		typeof (a) NM_UNIQ_T(A, aq) = (a); \
+		typeof (b) NM_UNIQ_T(B, bq) = (b); \
+		((NM_UNIQ_T(A, aq) < NM_UNIQ_T(B, bq)) ? NM_UNIQ_T(A, aq) : NM_UNIQ_T(B, bq)); \
+	})
+
+#define NM_MAX(a, b) __NM_MAX(NM_UNIQ, a, NM_UNIQ, b)
+#define __NM_MAX(aq, a, bq, b) \
+	({ \
+		typeof (a) NM_UNIQ_T(A, aq) = (a); \
+		typeof (b) NM_UNIQ_T(B, bq) = (b); \
+		((NM_UNIQ_T(A, aq) > NM_UNIQ_T(B, bq)) ? NM_UNIQ_T(A, aq) : NM_UNIQ_T(B, bq)); \
+	})
+
+#define NM_CLAMP(x, low, high) __NM_CLAMP(NM_UNIQ, x, NM_UNIQ, low, NM_UNIQ, high)
+#define __NM_CLAMP(xq, x, lowq, low, highq, high) \
+	({ \
+		typeof(x)NM_UNIQ_T(X,xq) = (x); \
+		typeof(low) NM_UNIQ_T(LOW,lowq) = (low); \
+		typeof(high) NM_UNIQ_T(HIGH,highq) = (high); \
+		\
+		( (NM_UNIQ_T(X,xq) > NM_UNIQ_T(HIGH,highq)) \
+		  ? NM_UNIQ_T(HIGH,highq) \
+		  : (NM_UNIQ_T(X,xq) < NM_UNIQ_T(LOW,lowq)) \
+		     ? NM_UNIQ_T(LOW,lowq) \
+		     : NM_UNIQ_T(X,xq)); \
+	})
 
 /*****************************************************************************/
 

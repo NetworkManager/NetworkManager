@@ -28,8 +28,8 @@
 
 #define NM_DHCP_LISTENER_EVENT "event"
 
-typedef GObject NMDhcpListener;
-typedef GObjectClass NMDhcpListenerClass;
+typedef struct _NMDhcpListener NMDhcpListener;
+typedef struct _NMDhcpListenerClass NMDhcpListenerClass;
 
 GType nm_dhcp_listener_get_type (void);
 

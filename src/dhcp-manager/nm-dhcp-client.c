@@ -448,6 +448,7 @@ generate_duid_from_machine_id (void)
 	GRand *generator;
 	guint i;
 	gs_free char *machine_id_s = NULL;
+	gs_free char *str = NULL;
 
 	machine_id_s = nm_utils_machine_id_read ();
 	if (nm_utils_machine_id_parse (machine_id_s, uuid)) {
@@ -457,7 +458,7 @@ generate_duid_from_machine_id (void)
 		g_checksum_get_digest (sum, buffer, &sumlen);
 		g_checksum_free (sum);
 	} else {
-		nm_log_warn (LOGD_DHCP6, "dhcp6: failed to read " SYSCONFDIR "/machine-id "
+		nm_log_warn (LOGD_DHCP, "dhcp: failed to read " SYSCONFDIR "/machine-id "
 		             "or " LOCALSTATEDIR "/lib/dbus/machine-id to generate "
 		             "DHCPv6 DUID; creating non-persistent random DUID.");
 
@@ -481,6 +482,8 @@ generate_duid_from_machine_id (void)
 	 */
 	g_byte_array_append (duid, buffer, 16);
 
+	nm_log_dbg (LOGD_DHCP, "dhcp: generated DUID %s",
+	            (str = nm_dhcp_utils_duid_to_string (duid)));
 	return duid;
 }
 
@@ -489,17 +492,12 @@ get_duid (NMDhcpClient *self)
 {
 	static GByteArray *duid = NULL;
 	GByteArray *copy = NULL;
-	char *str;
 
 	if (G_UNLIKELY (duid == NULL)) {
+		gs_free char *str = NULL;
+
 		duid = generate_duid_from_machine_id ();
 		g_assert (duid);
-
-		if (nm_logging_enabled (LOGL_DEBUG, LOGD_DHCP6)) {
-			str = nm_dhcp_utils_duid_to_string (duid);
-			_LOGD ("generated DUID %s", str);
-			g_free (str);
-		}
 	}
 
 	if (G_LIKELY (duid)) {
@@ -519,7 +517,7 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
                           NMSettingIP6ConfigPrivacy privacy)
 {
 	NMDhcpClientPrivate *priv;
-	char *str;
+	gs_free char *str = NULL;
 
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
 
@@ -534,11 +532,7 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
 	if (!priv->duid)
 		priv->duid = NM_DHCP_CLIENT_GET_CLASS (self)->get_duid (self);
 
-	if (nm_logging_enabled (LOGL_DEBUG, LOGD_DHCP6)) {
-		str = nm_dhcp_utils_duid_to_string (priv->duid);
-		_LOGD ("DUID is '%s'", str);
-		g_free (str);
-	}
+	_LOGD ("DUID is '%s'", (str = nm_dhcp_utils_duid_to_string (priv->duid)));
 
 	g_clear_pointer (&priv->hostname, g_free);
 	priv->hostname = g_strdup (hostname);
@@ -631,7 +625,7 @@ nm_dhcp_client_stop (NMDhcpClient *self, gboolean release)
 /********************************************/
 
 static char *
-bytearray_variant_to_string (GVariant *value, const char *key)
+bytearray_variant_to_string (NMDhcpClient *self, GVariant *value, const char *key)
 {
 	const guint8 *array;
 	gsize length;
@@ -662,7 +656,7 @@ bytearray_variant_to_string (GVariant *value, const char *key)
 
 	converted = str->str;
 	if (!g_utf8_validate (converted, -1, NULL))
-		nm_log_warn (LOGD_DHCP, "dhcp: option '%s' couldn't be converted to UTF-8", key);
+		_LOGW ("option '%s' couldn't be converted to UTF-8", key);
 	g_string_free (str, FALSE);
 	return converted;
 }
@@ -671,7 +665,8 @@ bytearray_variant_to_string (GVariant *value, const char *key)
 #define NEW_TAG "new_"
 
 static void
-maybe_add_option (GHashTable *hash,
+maybe_add_option (NMDhcpClient *self,
+                  GHashTable *hash,
                   const char *key,
                   GVariant *value)
 {
@@ -701,7 +696,7 @@ maybe_add_option (GHashTable *hash,
 	if (!key[0])
 		return;
 
-	str_value = bytearray_variant_to_string (value, key);
+	str_value = bytearray_variant_to_string (self, value, key);
 	if (str_value)
 		g_hash_table_insert (hash, g_strdup (key), str_value);
 }
@@ -747,7 +742,7 @@ nm_dhcp_client_handle_event (gpointer unused,
 		str_options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 		g_variant_iter_init (&iter, options);
 		while (g_variant_iter_next (&iter, "{&sv}", &name, &value)) {
-			maybe_add_option (str_options, name, value);
+			maybe_add_option (self, str_options, name, value);
 			g_variant_unref (value);
 		}
 

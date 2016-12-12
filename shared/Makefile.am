@@ -10,6 +10,7 @@ EXTRA_DIST = \
      nm-test-libnm-utils.h \
      nm-test-utils.h \
      nm-test-utils-impl.c \
-     nm-version-macros.h.in
+     nm-version-macros.h.in \
+     nm-vpn-plugin-macros.h
 
 CLEANFILES=nm-version.h
