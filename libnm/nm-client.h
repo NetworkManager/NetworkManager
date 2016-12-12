@@ -58,6 +58,9 @@ G_BEGIN_DECLS
 #define NM_CLIENT_HOSTNAME "hostname"
 #define NM_CLIENT_CAN_MODIFY "can-modify"
 #define NM_CLIENT_METERED "metered"
+#define NM_CLIENT_DNS_MODE "dns-mode"
+#define NM_CLIENT_DNS_RC_MANAGER "dns-rc-manager"
+#define NM_CLIENT_DNS_CONFIGURATION "dns-configuration"
 
 #define NM_CLIENT_DEVICE_ADDED "device-added"
 #define NM_CLIENT_DEVICE_REMOVED "device-removed"
@@ -168,6 +171,25 @@ typedef enum {
 
 #define NM_CLIENT_ERROR nm_client_error_quark ()
 GQuark nm_client_error_quark (void);
+
+/* DNS stuff */
+
+typedef struct NMDnsEntry NMDnsEntry;
+
+NM_AVAILABLE_IN_1_6
+GType              nm_dns_entry_get_type (void);
+NM_AVAILABLE_IN_1_6
+void                nm_dns_entry_unref (NMDnsEntry *entry);
+NM_AVAILABLE_IN_1_6
+const char *        nm_dns_entry_get_interface (NMDnsEntry *entry);
+NM_AVAILABLE_IN_1_6
+const char * const *nm_dns_entry_get_nameservers (NMDnsEntry *entry);
+NM_AVAILABLE_IN_1_6
+const char * const *nm_dns_entry_get_domains (NMDnsEntry *entry);
+NM_AVAILABLE_IN_1_6
+int                 nm_dns_entry_get_priority (NMDnsEntry *entry);
+NM_AVAILABLE_IN_1_6
+gboolean            nm_dns_entry_get_vpn (NMDnsEntry *entry);
 
 /**
  * NMClient:
@@ -358,6 +380,13 @@ void     nm_client_reload_connections_async  (NMClient *client,
 gboolean nm_client_reload_connections_finish (NMClient *client,
                                               GAsyncResult *result,
                                               GError **error);
+
+NM_AVAILABLE_IN_1_6
+const char *nm_client_get_dns_mode            (NMClient *client);
+NM_AVAILABLE_IN_1_6
+const char *nm_client_get_dns_rc_manager      (NMClient *client);
+NM_AVAILABLE_IN_1_6
+const GPtrArray  *nm_client_get_dns_configuration (NMClient *client);
 
 G_END_DECLS
 

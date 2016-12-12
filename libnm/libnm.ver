@@ -1087,7 +1087,17 @@ global:
 libnm_1_6_0 {
 global:
 	nm_capability_get_type;
+	nm_client_get_dns_configuration;
+	nm_client_get_dns_mode;
+	nm_client_get_dns_rc_manager;
 	nm_connection_get_setting_proxy;
+	nm_dns_entry_get_domains;
+	nm_dns_entry_get_interface;
+	nm_dns_entry_get_nameservers;
+	nm_dns_entry_get_priority;
+	nm_dns_entry_get_type;
+	nm_dns_entry_get_vpn;
+	nm_dns_entry_unref;
 	nm_setting_connection_get_autoconnect_retries;
 	nm_setting_proxy_get_type;
 	nm_setting_proxy_new;

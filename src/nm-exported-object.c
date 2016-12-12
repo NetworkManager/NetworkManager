@@ -947,8 +947,7 @@ vtype_found:
 		g_hash_table_insert (ifdata->pending_notifies,
 		                     (gpointer) dbus_property_name,
 		                     value_variant);
-	} else
-		nm_assert_not_reached ();
+	}
 
 	if (!priv->notify_idle_id)
 		priv->notify_idle_id = g_idle_add (idle_emit_properties_changed, self);

@@ -83,6 +83,9 @@
 #define NM_DBUS_INTERFACE_SECRET_AGENT    NM_DBUS_INTERFACE ".SecretAgent"
 #define NM_DBUS_PATH_SECRET_AGENT         "/org/freedesktop/NetworkManager/SecretAgent"
 
+#define NM_DBUS_INTERFACE_DNS_MANAGER     "org.freedesktop.NetworkManager.DnsManager"
+#define NM_DBUS_PATH_DNS_MANAGER          "/org/freedesktop/NetworkManager/DnsManager"
+
 /**
  * NMCapability:
  * @NM_CAPABILITY_TEAM: Teams can be managed

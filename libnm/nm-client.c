@@ -26,6 +26,7 @@
 #include "nm-utils.h"
 #include "nm-client.h"
 #include "nm-manager.h"
+#include "nm-dns-manager.h"
 #include "nm-remote-settings.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
@@ -40,6 +41,7 @@
 #include "introspection/org.freedesktop.NetworkManager.h"
 #include "introspection/org.freedesktop.NetworkManager.Device.Wireless.h"
 #include "introspection/org.freedesktop.NetworkManager.Device.h"
+#include "introspection/org.freedesktop.NetworkManager.DnsManager.h"
 #include "introspection/org.freedesktop.NetworkManager.Settings.h"
 #include "introspection/org.freedesktop.NetworkManager.Settings.Connection.h"
 #include "introspection/org.freedesktop.NetworkManager.VPN.Connection.h"
@@ -88,6 +90,7 @@ G_DEFINE_TYPE_WITH_CODE (NMClient, nm_client, G_TYPE_OBJECT,
 typedef struct {
 	NMManager *manager;
 	NMRemoteSettings *settings;
+	NMDnsManager *dns_manager;
 	GDBusObjectManager *object_manager;
 	GCancellable *new_object_manager_cancellable;
 } NMClientPrivate;
@@ -115,6 +118,9 @@ enum {
 	PROP_HOSTNAME,
 	PROP_CAN_MODIFY,
 	PROP_METERED,
+	PROP_DNS_MODE,
+	PROP_DNS_RC_MANAGER,
+	PROP_DNS_CONFIGURATION,
 
 	LAST_PROP
 };
@@ -1717,6 +1723,85 @@ nm_client_reload_connections_finish (NMClient *client,
 /*****************************************************************************/
 
 /**
+ * nm_client_get_dns_mode:
+ * @client: the #NMClient
+ *
+ * Gets the current DNS processing mode.
+ *
+ * Return value: the DNS processing mode, or %NULL in case the
+ *   value is not available.
+ *
+ * Since: 1.6
+ **/
+const char *
+nm_client_get_dns_mode (NMClient *client)
+{
+	NMClientPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+	priv = NM_CLIENT_GET_PRIVATE (client);
+
+	if (priv->dns_manager)
+		return nm_dns_manager_get_mode (priv->dns_manager);
+	else
+		return NULL;
+}
+
+/**
+ * nm_client_get_dns_rc_manager:
+ * @client: the #NMClient
+ *
+ * Gets the current DNS resolv.conf manager.
+ *
+ * Return value: the resolv.conf manager or %NULL in case the
+ *   value is not available.
+ *
+ * Since: 1.6
+ **/
+const char *
+nm_client_get_dns_rc_manager (NMClient *client)
+{
+	NMClientPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+	priv = NM_CLIENT_GET_PRIVATE (client);
+
+	if (priv->dns_manager)
+		return nm_dns_manager_get_rc_manager (priv->dns_manager);
+	else
+		return NULL;
+}
+
+/**
+ * nm_client_get_dns_configuration:
+ * @client: a #NMClient
+ *
+ * Gets the current DNS configuration
+ *
+ * Returns: (transfer none) (element-type NMDnsEntry): a #GPtrArray
+ * containing #NMDnsEntry elements or %NULL in case the value is not
+ * available.  The returned array is owned by the #NMClient object
+ * and should not be modified.
+ *
+ * Since: 1.6
+ **/
+const GPtrArray *
+nm_client_get_dns_configuration (NMClient *client)
+{
+	NMClientPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+	priv = NM_CLIENT_GET_PRIVATE (client);
+
+	if (priv->dns_manager)
+		return nm_dns_manager_get_configuration (priv->dns_manager);
+	else
+		return NULL;
+}
+
+/*****************************************************************************/
+
+/**
  * nm_client_new:
  * @cancellable: a #GCancellable, or %NULL
  * @error: location for a #GError, or %NULL
@@ -1881,6 +1966,22 @@ manager_active_connection_removed (NMManager *manager,
 	g_signal_emit (client, signals[ACTIVE_CONNECTION_REMOVED], 0, active_connection);
 }
 
+static void
+dns_notify (GObject *object,
+            GParamSpec *pspec,
+            gpointer client)
+{
+	char pname[128];
+
+	if (NM_IN_STRSET (pspec->name,
+	                  NM_DNS_MANAGER_MODE,
+	                  NM_DNS_MANAGER_RC_MANAGER,
+	                  NM_DNS_MANAGER_CONFIGURATION)) {
+		nm_sprintf_buf (pname, "dns-%s", pspec->name);
+		g_object_notify (client, pname);
+	}
+}
+
 /****************************************************************/
 /* Object Initialization                                        */
 /****************************************************************/
@@ -1909,6 +2010,8 @@ proxy_type (GDBusObjectManagerClient *manager,
 		return NMDBUS_TYPE_SETTINGS_CONNECTION_PROXY;
 	else if (strcmp (interface_name, NM_DBUS_INTERFACE_SETTINGS) == 0)
 		return NMDBUS_TYPE_SETTINGS_PROXY;
+	else if (strcmp (interface_name, NM_DBUS_INTERFACE_DNS_MANAGER) == 0)
+		return NMDBUS_TYPE_DNS_MANAGER_PROXY;
 	else if (strcmp (interface_name, NM_DBUS_INTERFACE_VPN_CONNECTION) == 0)
 		return NMDBUS_TYPE_VPN_CONNECTION_PROXY;
 
@@ -1988,6 +2091,8 @@ obj_nm_for_gdbus_object (GDBusObject *object, GDBusObjectManager *object_manager
 			type = NM_TYPE_REMOTE_CONNECTION;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_SETTINGS) == 0)
 			type = NM_TYPE_REMOTE_SETTINGS;
+		else if (strcmp (ifname, NM_DBUS_INTERFACE_DNS_MANAGER) == 0)
+			type = NM_TYPE_DNS_MANAGER;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_VPN_CONNECTION) == 0)
 			type = NM_TYPE_VPN_CONNECTION;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_WIMAX_NSP) == 0)
@@ -2046,6 +2151,7 @@ objects_created (NMClient *client, GDBusObjectManager *object_manager, GError **
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
 	gs_unref_object GDBusObject *manager = NULL;
 	gs_unref_object GDBusObject *settings = NULL;
+	gs_unref_object GDBusObject *dns_manager = NULL;
 	NMObject *obj_nm;
 	GList *objects, *iter;
 
@@ -2118,6 +2224,23 @@ objects_created (NMClient *client, GDBusObjectManager *object_manager, GError **
 	                  G_CALLBACK (settings_connection_added), client);
 	g_signal_connect (priv->settings, "connection-removed",
 	                  G_CALLBACK (settings_connection_removed), client);
+
+	dns_manager = g_dbus_object_manager_get_object (object_manager, NM_DBUS_PATH_DNS_MANAGER);
+	if (dns_manager) {
+		obj_nm = g_object_get_qdata (G_OBJECT (dns_manager), _nm_object_obj_nm_quark ());
+		if (!obj_nm) {
+			g_set_error_literal (error,
+			                     NM_CLIENT_ERROR,
+			                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
+			                     "DNS manager object lacks the proper interface");
+			return FALSE;
+		}
+		priv->dns_manager = NM_DNS_MANAGER (g_object_ref (obj_nm));
+
+		g_signal_connect (priv->dns_manager, "notify",
+		                  G_CALLBACK (dns_notify), client);
+	}
+
 
 	/* The handlers don't really use the client instance. However
 	 * it makes it convenient to unhook them by data. */
@@ -2256,6 +2379,10 @@ unhook_om (NMClient *self)
 		g_object_notify (G_OBJECT (self), NM_CLIENT_CONNECTIONS);
 		g_object_notify (G_OBJECT (self), NM_CLIENT_HOSTNAME);
 		g_object_notify (G_OBJECT (self), NM_CLIENT_CAN_MODIFY);
+	}
+	if (priv->dns_manager) {
+		g_signal_handlers_disconnect_by_data (priv->dns_manager, self);
+		g_clear_object (&priv->dns_manager);
 	}
 
 	objects = g_dbus_object_manager_get_objects (priv->object_manager);
@@ -2415,6 +2542,11 @@ dispose (GObject *object)
 		g_clear_object (&priv->settings);
 	}
 
+	if (priv->dns_manager) {
+		g_signal_handlers_disconnect_by_data (priv->dns_manager, object);
+		g_clear_object (&priv->dns_manager);
+	}
+
 	if (priv->object_manager) {
 		GList *objects, *iter;
 
@@ -2546,6 +2678,25 @@ get_property (GObject *object, guint prop_id,
 			g_object_get_property (G_OBJECT (priv->settings), pspec->name, value);
 		else
 			g_value_set_boolean (value, FALSE);
+		break;
+
+	/* DNS properties */
+	case PROP_DNS_MODE:
+	case PROP_DNS_RC_MANAGER:
+		g_return_if_fail (pspec->name && strlen (pspec->name) > NM_STRLEN ("dns-"));
+		if (priv->dns_manager)
+			g_object_get_property (G_OBJECT (priv->dns_manager),
+			                       &pspec->name[NM_STRLEN ("dns-")], value);
+		else
+			g_value_set_string (value, NULL);
+		break;
+	case PROP_DNS_CONFIGURATION:
+		if (priv->dns_manager) {
+			g_object_get_property (G_OBJECT (priv->dns_manager),
+			                       NM_DNS_MANAGER_CONFIGURATION,
+			                       value);
+		} else
+			g_value_take_boxed (value, NULL);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -2837,6 +2988,54 @@ nm_client_class_init (NMClientClass *client_class)
 		                    0, G_MAXUINT32, NM_METERED_UNKNOWN,
 		                    G_PARAM_READABLE |
 		                    G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMClient:dns-mode:
+	 *
+	 * The current DNS processing mode.
+	 *
+	 * Since: 1.6
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_DNS_MODE,
+		 g_param_spec_string (NM_CLIENT_DNS_MODE, "", "",
+		                      "",
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMClient:dns-rc-manager:
+	 *
+	 * The current resolv.conf management mode.
+	 *
+	 * Since: 1.6
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_DNS_RC_MANAGER,
+		 g_param_spec_string (NM_CLIENT_DNS_RC_MANAGER, "", "",
+		                      "",
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMClient:dns-configuration:
+	 *
+	 * The current DNS configuration represented as an array of
+	 * dictionaries.  Each dictionary has the "nameservers",
+	 * "priority" keys and, optionally, "interface" and "vpn".
+	 * "nameservers" is the list of DNS servers, "priority" their
+	 * relative priority, "interface" the interface on which these
+	 * servers are contacted, "vpn" a boolean telling whether the
+	 * configuration was obtained from a VPN connection.
+	 *
+	 * Since: 1.6
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_DNS_CONFIGURATION,
+		 g_param_spec_boxed (NM_CLIENT_DNS_CONFIGURATION, "", "",
+		                     G_TYPE_PTR_ARRAY,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/* signals */
 
