@@ -3488,7 +3488,6 @@ nm_utils_hwaddr_matches (gconstpointer hwaddr1,
 		if (l != hwaddr1_len)
 			return FALSE;
 		hwaddr2 = buf2;
-		hwaddr2_len = hwaddr1_len;
 	} else {
 		g_return_val_if_fail (hwaddr2_len > 0 && hwaddr2_len <= NM_UTILS_HWADDR_LEN_MAX, FALSE);
 
@@ -3504,7 +3503,7 @@ nm_utils_hwaddr_matches (gconstpointer hwaddr1,
 	if (hwaddr1_len == INFINIBAND_ALEN) {
 		hwaddr1 = (guint8 *)hwaddr1 + INFINIBAND_ALEN - 8;
 		hwaddr2 = (guint8 *)hwaddr2 + INFINIBAND_ALEN - 8;
-		hwaddr1_len = hwaddr2_len = 8;
+		hwaddr1_len = 8;
 	}
 
 	return !memcmp (hwaddr1, hwaddr2, hwaddr1_len);
