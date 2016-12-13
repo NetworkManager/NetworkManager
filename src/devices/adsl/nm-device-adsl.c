@@ -158,7 +158,7 @@ br2684_assign_vcc (NMDeviceAdsl *self, NMSettingAdsl *s_adsl)
 	g_return_val_if_fail (priv->brfd == -1, FALSE);
 	g_return_val_if_fail (priv->nas_ifname != NULL, FALSE);
 
-	priv->brfd = socket (PF_ATMPVC, SOCK_DGRAM, ATM_AAL5);
+	priv->brfd = socket (PF_ATMPVC, SOCK_DGRAM | SOCK_CLOEXEC, ATM_AAL5);
 	if (priv->brfd < 0) {
 		errsv = errno;
 		_LOGE (LOGD_ADSL, "failed to open ATM control socket (%d)", errsv);
@@ -344,7 +344,7 @@ br2684_create_iface (NMDeviceAdsl *self,
 		nm_clear_g_source (&priv->nas_update_id);
 	}
 
-	fd = socket (PF_ATMPVC, SOCK_DGRAM, ATM_AAL5);
+	fd = socket (PF_ATMPVC, SOCK_DGRAM | SOCK_CLOEXEC, ATM_AAL5);
 	if (fd < 0) {
 		errsv = errno;
 		_LOGE (LOGD_ADSL, "failed to open ATM control socket (%d)", errsv);
@@ -547,7 +547,7 @@ carrier_update_cb (gpointer user_data)
 
 	path  = g_strdup_printf ("/sys/class/atm/%s/carrier",
 	                         NM_ASSERT_VALID_PATH_COMPONENT (nm_device_get_iface (NM_DEVICE (self))));
-	carrier = (int) nm_platform_sysctl_get_int_checked (NM_PLATFORM_GET, path, 10, 0, 1, -1);
+	carrier = (int) nm_platform_sysctl_get_int_checked (NM_PLATFORM_GET, NMP_SYSCTL_PATHID_ABSOLUTE (path), 10, 0, 1, -1);
 	g_free (path);
 
 	if (carrier != -1)

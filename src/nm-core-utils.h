@@ -313,6 +313,25 @@ int nm_utils_fd_wait_for_event (int fd, int event, gint64 timeout_ns);
 ssize_t nm_utils_fd_read_loop (int fd, void *buf, size_t nbytes, bool do_poll);
 int nm_utils_fd_read_loop_exact (int fd, void *buf, size_t nbytes, bool do_poll);
 
+int nm_utils_fd_get_contents (int fd,
+                              gsize max_length,
+                              char **contents,
+                              gsize *length,
+                              GError **error);
+
+int nm_utils_file_get_contents (int dirfd,
+                                const char *filename,
+                                gsize max_length,
+                                char **contents,
+                                gsize *length,
+                                GError **error);
+
+gboolean nm_utils_file_set_contents (const gchar *filename,
+                                     const gchar *contents,
+                                     gssize length,
+                                     mode_t mode,
+                                     GError **error);
+
 int nm_utils_read_urandom (void *p, size_t n);
 
 char *nm_utils_machine_id_read (void);
@@ -444,12 +463,6 @@ const char *nm_utils_dnsmasq_status_to_string (int status, char *dest, gsize siz
 
 void nm_utils_get_reverse_dns_domains_ip4 (guint32 ip, guint8 plen, GPtrArray *domains);
 void nm_utils_get_reverse_dns_domains_ip6 (const struct in6_addr *ip, guint8 plen, GPtrArray *domains);
-
-gboolean nm_utils_file_set_contents (const gchar *filename,
-                                     const gchar *contents,
-                                     gssize length,
-                                     mode_t mode,
-                                     GError **error);
 
 struct stat;
 

@@ -266,8 +266,39 @@ nm_platform_process_events (NMPlatform *self)
 /*****************************************************************************/
 
 /**
+ * nm_platform_sysctl_open_netdir:
+ * @self: platform instance
+ * @ifindex: the ifindex for which to open /sys/class/net/%s
+ * @out_ifname: optional output argument of the found ifname.
+ *
+ * Wraps nmp_utils_sysctl_open_netdir() by first changing into the right
+ * network-namespace.
+ *
+ * Returns: on success, the open file descriptor to the /sys/class/net/%s
+ *   directory.
+ */
+int
+nm_platform_sysctl_open_netdir (NMPlatform *self, int ifindex, char *out_ifname)
+{
+	const char*ifname_guess;
+	_CHECK_SELF_NETNS (self, klass, netns, -1);
+
+	g_return_val_if_fail (ifindex > 0, -1);
+
+	/* we don't have an @ifname_guess argument to make the API nicer.
+	 * But still do a cache-lookup first. Chances are good that we have
+	 * the right ifname cached and save if_indextoname() */
+	ifname_guess = nm_platform_link_get_name (self, ifindex);
+
+	return nmp_utils_sysctl_open_netdir (ifindex, ifname_guess, out_ifname);
+}
+
+/**
  * nm_platform_sysctl_set:
  * @self: platform instance
+ * @pathid: if @dirfd is present, this must be the full path that is looked up.
+ *   It is required for logging.
+ * @dirfd: optional file descriptor for parent directory for openat()
  * @path: Absolute option path
  * @value: Value to write
  *
@@ -278,14 +309,14 @@ nm_platform_process_events (NMPlatform *self)
  * Returns: %TRUE on success.
  */
 gboolean
-nm_platform_sysctl_set (NMPlatform *self, const char *path, const char *value)
+nm_platform_sysctl_set (NMPlatform *self, const char *pathid, int dirfd, const char *path, const char *value)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (path, FALSE);
 	g_return_val_if_fail (value, FALSE);
 
-	return klass->sysctl_set (self, path, value);
+	return klass->sysctl_set (self, pathid, dirfd, path, value);
 }
 
 gboolean
@@ -305,7 +336,7 @@ nm_platform_sysctl_set_ip6_hop_limit_safe (NMPlatform *self, const char *iface, 
 		return FALSE;
 
 	path = nm_utils_ip6_property_path (iface, "hop_limit");
-	cur = nm_platform_sysctl_get_int_checked (self, path, 10, 1, G_MAXINT32, -1);
+	cur = nm_platform_sysctl_get_int_checked (self, NMP_SYSCTL_PATHID_ABSOLUTE (path), 10, 1, G_MAXINT32, -1);
 
 	/* only allow increasing the hop-limit to avoid DOS by an attacker
 	 * setting a low hop-limit (CVE-2015-2924, rh#1209902) */
@@ -316,7 +347,7 @@ nm_platform_sysctl_set_ip6_hop_limit_safe (NMPlatform *self, const char *iface, 
 		char svalue[20];
 
 		sprintf (svalue, "%d", value);
-		nm_platform_sysctl_set (self, path, svalue);
+		nm_platform_sysctl_set (self, NMP_SYSCTL_PATHID_ABSOLUTE (path), svalue);
 	}
 
 	return TRUE;
@@ -325,23 +356,29 @@ nm_platform_sysctl_set_ip6_hop_limit_safe (NMPlatform *self, const char *iface, 
 /**
  * nm_platform_sysctl_get:
  * @self: platform instance
+ * @dirfd: if non-negative, used to lookup the path via openat().
+ * @pathid: if @dirfd is present, this must be the full path that is looked up.
+ *   It is required for logging.
  * @path: Absolute path to sysctl
  *
  * Returns: (transfer full): Contents of the virtual sysctl file.
  */
 char *
-nm_platform_sysctl_get (NMPlatform *self, const char *path)
+nm_platform_sysctl_get (NMPlatform *self, const char *pathid, int dirfd, const char *path)
 {
 	_CHECK_SELF (self, klass, NULL);
 
 	g_return_val_if_fail (path, NULL);
 
-	return klass->sysctl_get (self, path);
+	return klass->sysctl_get (self, pathid, dirfd, path);
 }
 
 /**
  * nm_platform_sysctl_get_int32:
  * @self: platform instance
+ * @pathid: if @dirfd is present, this must be the full path that is looked up.
+ *   It is required for logging.
+ * @dirfd: if non-negative, used to lookup the path via openat().
  * @path: Absolute path to sysctl
  * @fallback: default value, if the content of path could not be read
  * as decimal integer.
@@ -351,14 +388,17 @@ nm_platform_sysctl_get (NMPlatform *self, const char *path)
  * value, on success %errno will be set to zero.
  */
 gint32
-nm_platform_sysctl_get_int32 (NMPlatform *self, const char *path, gint32 fallback)
+nm_platform_sysctl_get_int32 (NMPlatform *self, const char *pathid, int dirfd, const char *path, gint32 fallback)
 {
-	return nm_platform_sysctl_get_int_checked (self, path, 10, G_MININT32, G_MAXINT32, fallback);
+	return nm_platform_sysctl_get_int_checked (self, pathid, dirfd, path, 10, G_MININT32, G_MAXINT32, fallback);
 }
 
 /**
  * nm_platform_sysctl_get_int_checked:
  * @self: platform instance
+ * @pathid: if @dirfd is present, this must be the full path that is looked up.
+ *   It is required for logging.
+ * @dirfd: if non-negative, used to lookup the path via openat().
  * @path: Absolute path to sysctl
  * @base: base of numeric conversion
  * @min: minimal value that is still valid
@@ -373,7 +413,7 @@ nm_platform_sysctl_get_int32 (NMPlatform *self, const char *path, gint32 fallbac
  * (inclusive) or @fallback.
  */
 gint64
-nm_platform_sysctl_get_int_checked (NMPlatform *self, const char *path, guint base, gint64 min, gint64 max, gint64 fallback)
+nm_platform_sysctl_get_int_checked (NMPlatform *self, const char *pathid, int dirfd, const char *path, guint base, gint64 min, gint64 max, gint64 fallback)
 {
 	char *value = NULL;
 	gint32 ret;
@@ -383,7 +423,7 @@ nm_platform_sysctl_get_int_checked (NMPlatform *self, const char *path, guint ba
 	g_return_val_if_fail (path, fallback);
 
 	if (path)
-		value = nm_platform_sysctl_get (self, path);
+		value = nm_platform_sysctl_get (self, pathid, dirfd, path);
 
 	if (!value) {
 		errno = EINVAL;
@@ -1668,34 +1708,44 @@ nm_platform_link_tun_add (NMPlatform *self,
 
 /*****************************************************************************/
 
-static char *
-link_option_path (NMPlatform *self, int master, const char *category, const char *option)
+static gboolean
+link_set_option (NMPlatform *self, int ifindex, const char *category, const char *option, const char *value)
 {
-	const char *name = nm_platform_link_get_name (self, master);
+	nm_auto_close int dirfd = -1;
+	char ifname_verified[IFNAMSIZ];
+	const char *path;
 
-	if (!name || !category || !option)
+	if (!category || !option)
+		return FALSE;
+
+	dirfd = nm_platform_sysctl_open_netdir (self, ifindex, ifname_verified);
+	if (dirfd < 0)
+		return FALSE;
+
+	path = nm_sprintf_bufa (strlen (category) + strlen (option) + 2,
+	                        "%s/%s",
+	                        category, option);
+	return nm_platform_sysctl_set (self, NMP_SYSCTL_PATHID_NETDIR_unsafe (dirfd, ifname_verified, path), value);
+}
+
+static char *
+link_get_option (NMPlatform *self, int ifindex, const char *category, const char *option)
+{
+	nm_auto_close int dirfd = -1;
+	char ifname_verified[IFNAMSIZ];
+	const char *path;
+
+	if (!category || !option)
 		return NULL;
 
-	return g_strdup_printf ("/sys/class/net/%s/%s/%s",
-	                        NM_ASSERT_VALID_PATH_COMPONENT (name),
-	                        NM_ASSERT_VALID_PATH_COMPONENT (category),
-	                        NM_ASSERT_VALID_PATH_COMPONENT (option));
-}
+	dirfd = nm_platform_sysctl_open_netdir (self, ifindex, ifname_verified);
+	if (dirfd < 0)
+		return NULL;
 
-static gboolean
-link_set_option (NMPlatform *self, int master, const char *category, const char *option, const char *value)
-{
-	gs_free char *path = link_option_path (self, master, category, option);
-
-	return path && nm_platform_sysctl_set (self, path, value);
-}
-
-static char *
-link_get_option (NMPlatform *self, int master, const char *category, const char *option)
-{
-	gs_free char *path = link_option_path (self, master, category, option);
-
-	return path ? nm_platform_sysctl_get (self, path) : NULL;
+	path = nm_sprintf_bufa (strlen (category) + strlen (option) + 2,
+	                        "%s/%s",
+	                        category, option);
+	return nm_platform_sysctl_get (self, NMP_SYSCTL_PATHID_NETDIR_unsafe (dirfd, ifname_verified, path));
 }
 
 static const char *
@@ -1973,10 +2023,11 @@ nm_platform_link_infiniband_get_properties (NMPlatform *self,
                                             int *out_p_key,
                                             const char **out_mode)
 {
+	nm_auto_close int dirfd = -1;
+	char ifname_verified[IFNAMSIZ];
 	const NMPlatformLnkInfiniband *plnk;
 	const NMPlatformLink *plink;
-	const char *iface;
-	char *path, *contents;
+	char *contents;
 	const char *mode;
 	int p_key = 0;
 
@@ -2000,15 +2051,13 @@ nm_platform_link_infiniband_get_properties (NMPlatform *self,
 	/* Could not get the link information via netlink. To support older kernels,
 	 * fallback to reading sysfs. */
 
-	iface = NM_ASSERT_VALID_PATH_COMPONENT (plink->name);
-
-	/* Fall back to reading sysfs */
-	path = g_strdup_printf ("/sys/class/net/%s/mode", iface);
-	contents = nm_platform_sysctl_get (self, path);
-	g_free (path);
-	if (!contents)
+	dirfd = nm_platform_sysctl_open_netdir (self, ifindex, ifname_verified);
+	if (dirfd < 0)
 		return FALSE;
 
+	contents = nm_platform_sysctl_get (self, NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname_verified, "mode"));
+	if (!contents)
+		return FALSE;
 	if (strstr (contents, "datagram"))
 		mode = "datagram";
 	else if (strstr (contents, "connected"))
@@ -2017,13 +2066,7 @@ nm_platform_link_infiniband_get_properties (NMPlatform *self,
 		mode = NULL;
 	g_free (contents);
 
-	path = g_strdup_printf ("/sys/class/net/%s/pkey", iface);
-	contents = nm_platform_sysctl_get (self, path);
-	g_free (path);
-	if (!contents)
-		return FALSE;
-	p_key = (int) _nm_utils_ascii_str_to_int64 (contents, 16, 0, 0xFFFF, -1);
-	g_free (contents);
+	p_key = nm_platform_sysctl_get_int_checked (self, NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname_verified, "pkey"), 16, 0, 0xFFFF, -1);
 	if (p_key < 0)
 		return FALSE;
 
@@ -2216,7 +2259,7 @@ nm_platform_link_veth_get_properties (NMPlatform *self, int ifindex, int *out_pe
 
 		if (!nm_platform_netns_push (self, &netns))
 			return FALSE;
-		peer_ifindex = nmp_utils_ethtool_get_peer_ifindex (plink->name);
+		peer_ifindex = nmp_utils_ethtool_get_peer_ifindex (plink->ifindex);
 		if (peer_ifindex <= 0)
 			return FALSE;
 
@@ -2226,72 +2269,57 @@ nm_platform_link_veth_get_properties (NMPlatform *self, int ifindex, int *out_pe
 }
 
 gboolean
-nm_platform_link_tun_get_properties_ifname (NMPlatform *self, const char *ifname, NMPlatformTunProperties *props)
+nm_platform_link_tun_get_properties (NMPlatform *self, int ifindex, const char *ifname_guess, NMPlatformTunProperties *props)
 {
-	char path[256];
-	char *val;
+	nm_auto_close int dirfd = -1;
+	const char *ifname;
+	char ifname_verified[IFNAMSIZ];
+	gint64 flags;
 	gboolean success = TRUE;
-
 	_CHECK_SELF (self, klass, FALSE);
 
+	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (props, FALSE);
+
+	/* ifname_guess is an optional argument to find a guess for the ifname corresponding to
+	 * ifindex. */
+	if (!ifname_guess) {
+		/* if NULL, obtain the guess from the platform cache. */
+		ifname = nm_platform_link_get_name (self, ifindex);
+	} else if (!ifname_guess[0]) {
+		/* if empty, don't use a guess. That means to use if_indextoname(). */
+		ifname = NULL;
+	} else
+		ifname = ifname_guess;
 
 	memset (props, 0, sizeof (*props));
 	props->owner = -1;
 	props->group = -1;
 
-	if (!ifname || !nm_utils_iface_valid_name (ifname))
+	dirfd = nm_platform_sysctl_open_netdir (self, ifindex, ifname_verified);
+	if (dirfd < 0)
 		return FALSE;
 
-	nm_sprintf_buf (path, "/sys/class/net/%s/owner", ifname);
-	val = nm_platform_sysctl_get (self, path);
-	if (val) {
-		props->owner = _nm_utils_ascii_str_to_int64 (val, 10, -1, G_MAXINT64, -1);
-		if (errno)
-			success = FALSE;
-		g_free (val);
-	} else
+	ifname = ifname_verified;
+
+	props->owner = nm_platform_sysctl_get_int_checked (self, NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname, "owner"), 10, -1, G_MAXINT64, -1);
+	if (errno)
 		success = FALSE;
 
-	nm_sprintf_buf (path, "/sys/class/net/%s/group", ifname);
-	val = nm_platform_sysctl_get (self, path);
-	if (val) {
-		props->group = _nm_utils_ascii_str_to_int64 (val, 10, -1, G_MAXINT64, -1);
-		if (errno)
-			success = FALSE;
-		g_free (val);
-	} else
+	props->group = nm_platform_sysctl_get_int_checked (self, NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname, "group"), 10, -1, G_MAXINT64, -1);
+	if (errno)
 		success = FALSE;
 
-	nm_sprintf_buf (path, "/sys/class/net/%s/tun_flags", ifname);
-	val = nm_platform_sysctl_get (self, path);
-	if (val) {
-		gint64 flags;
-
-		flags = _nm_utils_ascii_str_to_int64 (val, 16, 0, G_MAXINT64, 0);
-		if (!errno) {
-			props->mode = ((flags & (IFF_TUN | IFF_TAP)) == IFF_TUN) ? "tun" : "tap";
-			props->no_pi = !!(flags & IFF_NO_PI);
-			props->vnet_hdr = !!(flags & IFF_VNET_HDR);
-			props->multi_queue = !!(flags & NM_IFF_MULTI_QUEUE);
-		} else
-			success = FALSE;
-		g_free (val);
+	flags = nm_platform_sysctl_get_int_checked (self, NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname, "tun_flags"), 16, 0, G_MAXINT64, -1);
+	if (flags >= 0) {
+		props->mode = ((flags & (IFF_TUN | IFF_TAP)) == IFF_TUN) ? "tun" : "tap";
+		props->no_pi = !!(flags & IFF_NO_PI);
+		props->vnet_hdr = !!(flags & IFF_VNET_HDR);
+		props->multi_queue = !!(flags & NM_IFF_MULTI_QUEUE);
 	} else
 		success = FALSE;
 
 	return success;
-}
-
-gboolean
-nm_platform_link_tun_get_properties (NMPlatform *self, int ifindex, NMPlatformTunProperties *props)
-{
-	_CHECK_SELF (self, klass, FALSE);
-
-	g_return_val_if_fail (ifindex > 0, FALSE);
-	g_return_val_if_fail (props != NULL, FALSE);
-
-	return nm_platform_link_tun_get_properties_ifname (self, nm_platform_link_get_name (self, ifindex), props);
 }
 
 gboolean
@@ -2479,27 +2507,33 @@ _to_string_ifa_flags (guint32 ifa_flags, char *buf, gsize size)
 /*****************************************************************************/
 
 gboolean
-nm_platform_ethtool_set_wake_on_lan (NMPlatform *self, const char *ifname, NMSettingWiredWakeOnLan wol, const char *wol_password)
+nm_platform_ethtool_set_wake_on_lan (NMPlatform *self, int ifindex, NMSettingWiredWakeOnLan wol, const char *wol_password)
 {
 	_CHECK_SELF_NETNS (self, klass, netns, FALSE);
 
-	return nmp_utils_ethtool_set_wake_on_lan (ifname, wol, wol_password);
+	g_return_val_if_fail (ifindex > 0, FALSE);
+
+	return nmp_utils_ethtool_set_wake_on_lan (ifindex, wol, wol_password);
 }
 
 gboolean
-nm_platform_ethtool_set_link_settings (NMPlatform *self, const char *ifname, gboolean autoneg, guint32 speed, NMPlatformLinkDuplexType duplex)
+nm_platform_ethtool_set_link_settings (NMPlatform *self, int ifindex, gboolean autoneg, guint32 speed, NMPlatformLinkDuplexType duplex)
 {
 	_CHECK_SELF_NETNS (self, klass, netns, FALSE);
 
-	return nmp_utils_ethtool_set_link_settings (ifname, autoneg, speed, duplex);
+	g_return_val_if_fail (ifindex > 0, FALSE);
+
+	return nmp_utils_ethtool_set_link_settings (ifindex, autoneg, speed, duplex);
 }
 
 gboolean
-nm_platform_ethtool_get_link_settings (NMPlatform *self, const char *ifname, gboolean *out_autoneg, guint32 *out_speed,  NMPlatformLinkDuplexType *out_duplex)
+nm_platform_ethtool_get_link_settings (NMPlatform *self, int ifindex, gboolean *out_autoneg, guint32 *out_speed,  NMPlatformLinkDuplexType *out_duplex)
 {
 	_CHECK_SELF_NETNS (self, klass, netns, FALSE);
 
-	return nmp_utils_ethtool_get_link_settings (ifname, out_autoneg, out_speed, out_duplex);
+	g_return_val_if_fail (ifindex > 0, FALSE);
+
+	return nmp_utils_ethtool_get_link_settings (ifindex, out_autoneg, out_speed, out_duplex);
 }
 
 /*****************************************************************************/

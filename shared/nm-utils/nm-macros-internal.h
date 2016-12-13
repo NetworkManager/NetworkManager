@@ -22,7 +22,9 @@
 #ifndef __NM_MACROS_INTERNAL_H__
 #define __NM_MACROS_INTERNAL_H__
 
+#include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #include "nm-glib.h"
 
@@ -58,6 +60,37 @@ _nm_auto_free_gstring_impl (GString **str)
 		g_string_free (*str, TRUE);
 }
 #define nm_auto_free_gstring nm_auto(_nm_auto_free_gstring_impl)
+
+static inline void
+_nm_auto_close_impl (int *pfd)
+{
+	if (*pfd >= 0) {
+		int errsv = errno;
+
+		(void) close (*pfd);
+		errno = errsv;
+	}
+}
+#define nm_auto_close nm_auto(_nm_auto_close_impl)
+
+static inline void
+_nm_auto_fclose_impl (FILE **pfd)
+{
+	if (*pfd) {
+		int errsv = errno;
+
+		(void) fclose (*pfd);
+		errno = errsv;
+	}
+}
+#define nm_auto_fclose nm_auto(_nm_auto_fclose_impl)
+
+static inline void
+_nm_auto_protect_errno (int *p_saved_errno)
+{
+	errno = *p_saved_errno;
+}
+#define NM_AUTO_PROTECT_ERRNO(errsv_saved) nm_auto(_nm_auto_protect_errno) _nm_unused const int errsv_saved = (errno)
 
 /*****************************************************************************/
 

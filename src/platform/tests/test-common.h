@@ -53,6 +53,10 @@ int nmtstp_namespace_get_fd_for_process (pid_t pid, const char *ns_name);
 
 /*****************************************************************************/
 
+void nmtstp_netns_select_random (NMPlatform **platforms, gsize n_platforms, NMPNetns **netns);
+
+/*****************************************************************************/
+
 typedef struct {
 	gulong handler_id;
 	const char *name;

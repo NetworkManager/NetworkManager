@@ -599,12 +599,15 @@ _nm_log_impl (const char *file,
 	va_list args;
 	char *msg;
 	GTimeVal tv;
+	int errno_saved;
 
 	if ((guint) level >= G_N_ELEMENTS (_nm_logging_enabled_state))
 		g_return_if_reached ();
 
 	if (!(_nm_logging_enabled_state[level] & domain))
 		return;
+
+	errno_saved = errno;
 
 	/* Make sure that %m maps to the specified error */
 	if (error != 0) {
@@ -719,6 +722,8 @@ _nm_log_impl (const char *file,
 	}
 
 	g_free (msg);
+
+	errno = errno_saved;
 }
 
 /*****************************************************************************/

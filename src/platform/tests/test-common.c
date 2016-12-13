@@ -1407,7 +1407,7 @@ nmtstp_namespace_create (int unshare_flags, GError **error)
 	int pipefd_p2c[2];
 	ssize_t r;
 
-	e = pipe (pipefd_c2p);
+	e = pipe2 (pipefd_c2p, O_CLOEXEC);
 	if (e != 0) {
 		errsv = errno;
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
@@ -1415,7 +1415,7 @@ nmtstp_namespace_create (int unshare_flags, GError **error)
 		return FALSE;
 	}
 
-	e = pipe (pipefd_p2c);
+	e = pipe2 (pipefd_p2c, O_CLOEXEC);
 	if (e != 0) {
 		errsv = errno;
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
@@ -1549,7 +1549,26 @@ nmtstp_namespace_get_fd_for_process (pid_t pid, const char *ns_name)
 
 	nm_sprintf_buf (p, "/proc/%lu/ns/%s", (long unsigned) pid, ns_name);
 
-	return open(p, O_RDONLY);
+	return open(p, O_RDONLY | O_CLOEXEC);
+}
+
+/*****************************************************************************/
+
+void
+nmtstp_netns_select_random (NMPlatform **platforms, gsize n_platforms, NMPNetns **netns)
+{
+	int i;
+
+	g_assert (platforms);
+	g_assert (n_platforms && n_platforms <= G_MAXINT32);
+	g_assert (netns && !*netns);
+	for (i = 0; i < n_platforms; i++)
+		g_assert (NM_IS_PLATFORM (platforms[i]));
+
+	i = nmtst_get_rand_int () % (n_platforms + 1);
+	if (i == 0)
+		return;
+	g_assert (nm_platform_netns_push (platforms[i - 1], netns));
 }
 
 /*****************************************************************************/
@@ -1573,21 +1592,21 @@ unshare_user (void)
 
 	/* Since Linux 3.19 we have to disable setgroups() in order to map users.
 	 * Just proceed if the file is not there. */
-	f = fopen ("/proc/self/setgroups", "w");
+	f = fopen ("/proc/self/setgroups", "we");
 	if (f) {
 		fprintf (f, "deny");
 		fclose (f);
 	}
 
 	/* Map current UID to root in NS to be created. */
-	f = fopen ("/proc/self/uid_map", "w");
+	f = fopen ("/proc/self/uid_map", "we");
 	if (!f)
 		return FALSE;
 	fprintf (f, "0 %d 1", uid);
 	fclose (f);
 
 	/* Map current GID to root in NS to be created. */
-	f = fopen ("/proc/self/gid_map", "w");
+	f = fopen ("/proc/self/gid_map", "we");
 	if (!f)
 		return FALSE;
 	fprintf (f, "0 %d 1", gid);

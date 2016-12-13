@@ -500,8 +500,8 @@ struct _NMPlatform {
 typedef struct {
 	GObjectClass parent;
 
-	gboolean (*sysctl_set) (NMPlatform *, const char *path, const char *value);
-	char * (*sysctl_get) (NMPlatform *, const char *path);
+	gboolean (*sysctl_set) (NMPlatform *, const char *pathid, int dirfd, const char *path, const char *value);
+	char * (*sysctl_get) (NMPlatform *, const char *pathid, int dirfd, const char *path);
 
 	const NMPlatformLink *(*link_get) (NMPlatform *platform, int ifindex);
 	const NMPlatformLink *(*link_get_by_ifname) (NMPlatform *platform, const char *ifname);
@@ -717,10 +717,24 @@ const char *nm_link_type_to_string (NMLinkType link_type);
 const char *_nm_platform_error_to_string (NMPlatformError error);
 #define nm_platform_error_to_string(error) NM_UTILS_LOOKUP_STR (_nm_platform_error_to_string, error)
 
-gboolean nm_platform_sysctl_set (NMPlatform *self, const char *path, const char *value);
-char *nm_platform_sysctl_get (NMPlatform *self, const char *path);
-gint32 nm_platform_sysctl_get_int32 (NMPlatform *self, const char *path, gint32 fallback);
-gint64 nm_platform_sysctl_get_int_checked (NMPlatform *self, const char *path, guint base, gint64 min, gint64 max, gint64 fallback);
+#define NMP_SYSCTL_PATHID_ABSOLUTE(path) \
+	((const char *) NULL), -1, (path)
+
+#define NMP_SYSCTL_PATHID_NETDIR_unsafe(dirfd, ifname, path) \
+	nm_sprintf_bufa (NM_STRLEN ("net:/sys/class/net//\0") + IFNAMSIZ + strlen (path), \
+	                 "net:/sys/class/net/%s/%s", (ifname), (path)), \
+	(dirfd), (path)
+
+#define NMP_SYSCTL_PATHID_NETDIR(dirfd, ifname, path) \
+	nm_sprintf_bufa (NM_STRLEN ("net:/sys/class/net//"path"/\0") + IFNAMSIZ, \
+	                 "net:/sys/class/net/%s/%s", (ifname), path), \
+	(dirfd), (""path"")
+
+int nm_platform_sysctl_open_netdir (NMPlatform *self, int ifindex, char *out_ifname);
+gboolean nm_platform_sysctl_set (NMPlatform *self, const char *pathid, int dirfd, const char *path, const char *value);
+char *nm_platform_sysctl_get (NMPlatform *self, const char *pathid, int dirfd, const char *path);
+gint32 nm_platform_sysctl_get_int32 (NMPlatform *self, const char *pathid, int dirfd, const char *path, gint32 fallback);
+gint64 nm_platform_sysctl_get_int_checked (NMPlatform *self, const char *pathid, int dirfd, const char *path, guint base, gint64 min, gint64 max, gint64 fallback);
 
 gboolean nm_platform_sysctl_set_ip6_hop_limit_safe (NMPlatform *self, const char *iface, int value);
 
@@ -851,9 +865,7 @@ NMPlatformError nm_platform_link_infiniband_delete (NMPlatform *self,
 gboolean nm_platform_link_infiniband_get_properties (NMPlatform *self, int ifindex, int *parent, int *p_key, const char **mode);
 
 gboolean nm_platform_link_veth_get_properties   (NMPlatform *self, int ifindex, int *out_peer_ifindex);
-gboolean nm_platform_link_tun_get_properties    (NMPlatform *self, int ifindex, NMPlatformTunProperties *properties);
-
-gboolean nm_platform_link_tun_get_properties_ifname (NMPlatform *platform, const char *ifname, NMPlatformTunProperties *props);
+gboolean nm_platform_link_tun_get_properties    (NMPlatform *self, int ifindex, const char *ifname_guess, NMPlatformTunProperties *properties);
 
 gboolean    nm_platform_wifi_get_capabilities (NMPlatform *self, int ifindex, NMDeviceWifiCapabilities *caps);
 gboolean    nm_platform_wifi_get_bssid        (NMPlatform *self, int ifindex, guint8 *bssid);
@@ -980,8 +992,8 @@ const char *nm_platform_route_scope2str (int scope, char *buf, gsize len);
 
 int nm_platform_ip_address_cmp_expiry (const NMPlatformIPAddress *a, const NMPlatformIPAddress *b);
 
-gboolean nm_platform_ethtool_set_wake_on_lan (NMPlatform *self, const char *ifname, NMSettingWiredWakeOnLan wol, const char *wol_password);
-gboolean nm_platform_ethtool_set_link_settings (NMPlatform *self, const char *ifname, gboolean autoneg, guint32 speed, NMPlatformLinkDuplexType duplex);
-gboolean nm_platform_ethtool_get_link_settings (NMPlatform *self, const char *ifname, gboolean *out_autoneg, guint32 *out_speed, NMPlatformLinkDuplexType *out_duplex);
+gboolean nm_platform_ethtool_set_wake_on_lan (NMPlatform *self, int ifindex, NMSettingWiredWakeOnLan wol, const char *wol_password);
+gboolean nm_platform_ethtool_set_link_settings (NMPlatform *self, int ifindex, gboolean autoneg, guint32 speed, NMPlatformLinkDuplexType duplex);
+gboolean nm_platform_ethtool_get_link_settings (NMPlatform *self, int ifindex, gboolean *out_autoneg, guint32 *out_speed, NMPlatformLinkDuplexType *out_duplex);
 
 #endif /* __NETWORKMANAGER_PLATFORM_H__ */

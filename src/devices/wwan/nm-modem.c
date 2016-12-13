@@ -497,18 +497,18 @@ ppp_stats (NMPPPManager *ppp_manager,
 static gboolean
 port_speed_is_zero (const char *port)
 {
-    struct termios options;
-    gs_fd_close int fd = -1;
+	struct termios options;
+	nm_auto_close int fd = -1;
 
-    fd = open (port, O_RDWR | O_NONBLOCK | O_NOCTTY);
-    if (fd < 0)
+	fd = open (port, O_RDWR | O_NONBLOCK | O_NOCTTY | O_CLOEXEC);
+	if (fd < 0)
 		return FALSE;
 
-    memset (&options, 0, sizeof (struct termios));
-    if (tcgetattr (fd, &options) != 0)
-        return FALSE;
+	memset (&options, 0, sizeof (struct termios));
+	if (tcgetattr (fd, &options) != 0)
+		return FALSE;
 
-    return cfgetospeed (&options) == B0;
+	return cfgetospeed (&options) == B0;
 }
 
 static NMActStageReturn

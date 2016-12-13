@@ -239,7 +239,7 @@ static void do_request_all_no_delayed_actions (NMPlatform *platform, DelayedActi
 static void cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMPCacheOpsType ops_type, gpointer user_data);
 static void cache_prune_candidates_prune (NMPlatform *platform);
 static gboolean event_handler_read_netlink (NMPlatform *platform, gboolean wait_for_acks);
-static void _assert_netns_current (NMPlatform *platform);
+static void ASSERT_NETNS_CURRENT (NMPlatform *platform);
 
 /*****************************************************************************/
 
@@ -573,18 +573,14 @@ _lookup_cached_link (const NMPCache *cache, int ifindex, gboolean *completed_fro
 #define DEVTYPE_PREFIX "DEVTYPE="
 
 static char *
-_linktype_read_devtype (const char *ifname)
+_linktype_read_devtype (int dirfd)
 {
-	char uevent[NM_STRLEN ("/sys/class/net/123456789012345/uevent\0") + 100 /*safety*/];
 	char *contents = NULL;
 	char *cont, *end;
 
-	nm_sprintf_buf (uevent,
-	                "/sys/class/net/%s/uevent",
-	                NM_ASSERT_VALID_PATH_COMPONENT (ifname));
-	nm_assert (strlen (uevent) < sizeof (uevent) - 1);
+	nm_assert (dirfd >= 0);
 
-	if (!g_file_get_contents (uevent, &contents, NULL, NULL))
+	if (nm_utils_file_get_contents (dirfd, "uevent", 1*1024*1024, &contents, NULL, NULL) < 0)
 		return NULL;
 	for (cont = contents; cont; cont = end) {
 		end = strpbrk (cont, "\r\n");
@@ -614,7 +610,8 @@ _linktype_get_type (NMPlatform *platform,
 {
 	guint i;
 
-	_assert_netns_current (platform);
+	ASSERT_NETNS_CURRENT (platform);
+	nm_assert (ifname);
 
 	if (completed_from_cache) {
 		const NMPObject *obj;
@@ -635,7 +632,7 @@ _linktype_get_type (NMPlatform *platform,
 		 * of messing stuff up. */
 		if (   obj
 		    && !NM_IN_SET (obj->link.type, NM_LINK_TYPE_UNKNOWN, NM_LINK_TYPE_NONE)
-		    && !g_strcmp0 (ifname, obj->link.name)
+		    && nm_streq (ifname, obj->link.name)
 		    && (   !kind
 		        || !g_strcmp0 (kind, obj->link.kind))) {
 			nm_assert (obj->link.kind == g_intern_string (obj->link.kind));
@@ -656,7 +653,7 @@ _linktype_get_type (NMPlatform *platform,
 			NMPlatformTunProperties props;
 
 			if (   platform
-			    && nm_platform_link_tun_get_properties_ifname (platform, ifname, &props)) {
+			    && nm_platform_link_tun_get_properties (platform, ifindex, ifname, &props)) {
 				if (!g_strcmp0 (props.mode, "tap"))
 					return NM_LINK_TYPE_TAP;
 				if (!g_strcmp0 (props.mode, "tun"))
@@ -679,50 +676,52 @@ _linktype_get_type (NMPlatform *platform,
 	else if (arptype == ARPHRD_TUNNEL6)
 		return NM_LINK_TYPE_IP6TNL;
 
-	if (ifname) {
-		char anycast_mask[NM_STRLEN ("/sys/class/net/123456789012345/anycast_mask\0") + 100 /*safety*/];
-		gs_free char *driver = NULL;
-		gs_free char *devtype = NULL;
+	{
+		NMPUtilsEthtoolDriverInfo driver_info;
 
 		/* Fallback OVS detection for kernel <= 3.16 */
-		if (nmp_utils_ethtool_get_driver_info (ifname, &driver, NULL, NULL)) {
-			if (!g_strcmp0 (driver, "openvswitch"))
+		if (nmp_utils_ethtool_get_driver_info (ifindex, &driver_info)) {
+			if (nm_streq (driver_info.driver, "openvswitch"))
 				return NM_LINK_TYPE_OPENVSWITCH;
 
 			if (arptype == 256) {
 				/* Some s390 CTC-type devices report 256 for the encapsulation type
 				 * for some reason, but we need to call them Ethernet.
 				 */
-				if (!g_strcmp0 (driver, "ctcm"))
+				if (nm_streq (driver_info.driver, "ctcm"))
 					return NM_LINK_TYPE_ETHERNET;
 			}
 		}
+	}
 
-		nm_sprintf_buf (anycast_mask,
-		                "/sys/class/net/%s/anycast_mask",
-		                NM_ASSERT_VALID_PATH_COMPONENT (ifname));
-		nm_assert (strlen (anycast_mask) < sizeof (anycast_mask) - 1);
+	{
+		nm_auto_close int dirfd = -1;
+		gs_free char *devtype = NULL;
+		char ifname_verified[IFNAMSIZ];
 
-		if (g_file_test (anycast_mask, G_FILE_TEST_EXISTS))
-			return NM_LINK_TYPE_OLPC_MESH;
+		dirfd = nmp_utils_sysctl_open_netdir (ifindex, ifname, ifname_verified);
+		if (dirfd >= 0) {
+			if (faccessat (dirfd, "anycast_mask", F_OK, 0) == 0)
+				return NM_LINK_TYPE_OLPC_MESH;
 
-		devtype = _linktype_read_devtype (ifname);
-		for (i = 0; devtype && i < G_N_ELEMENTS (linktypes); i++) {
-			if (g_strcmp0 (devtype, linktypes[i].devtype) == 0) {
-				if (linktypes[i].nm_type == NM_LINK_TYPE_BNEP) {
-					/* Both BNEP and 6lowpan use DEVTYPE=bluetooth, so we must
-					 * use arptype to distinguish between them.
-					 */
-					if (arptype != ARPHRD_ETHER)
-						continue;
+			devtype = _linktype_read_devtype (dirfd);
+			for (i = 0; devtype && i < G_N_ELEMENTS (linktypes); i++) {
+				if (g_strcmp0 (devtype, linktypes[i].devtype) == 0) {
+					if (linktypes[i].nm_type == NM_LINK_TYPE_BNEP) {
+						/* Both BNEP and 6lowpan use DEVTYPE=bluetooth, so we must
+						 * use arptype to distinguish between them.
+						 */
+						if (arptype != ARPHRD_ETHER)
+							continue;
+					}
+					return linktypes[i].nm_type;
 				}
-				return linktypes[i].nm_type;
 			}
-		}
 
-		/* Fallback for drivers that don't call SET_NETDEV_DEVTYPE() */
-		if (wifi_utils_is_wifi (ifname))
-			return NM_LINK_TYPE_WIFI;
+			/* Fallback for drivers that don't call SET_NETDEV_DEVTYPE() */
+			if (wifi_utils_is_wifi (dirfd, ifname_verified))
+				return NM_LINK_TYPE_WIFI;
+		}
 
 		if (arptype == ARPHRD_ETHER) {
 			/* Misc non-upstream WWAN drivers.  rmnet is Qualcomm's proprietary
@@ -2481,50 +2480,66 @@ nm_linux_platform_setup (void)
 	              NULL);
 }
 
-/*****************************************************************************/
-
 static void
-_assert_netns_current (NMPlatform *platform)
+ASSERT_NETNS_CURRENT (NMPlatform *platform)
 {
-#if NM_MORE_ASSERTS
 	nm_assert (NM_IS_LINUX_PLATFORM (platform));
-
 	nm_assert (NM_IN_SET (nm_platform_netns_get (platform), NULL, nmp_netns_get_current ()));
-#endif
 }
 
+/*****************************************************************************/
+
+#define ASSERT_SYSCTL_ARGS(pathid, dirfd, path) \
+	G_STMT_START { \
+		const char *const _pathid = (pathid); \
+		const int _dirfd = (dirfd); \
+		const char *const _path = (path); \
+		\
+		nm_assert (_path && _path[0]); \
+		g_assert (!strstr (_path, "/../")); \
+		if (_dirfd < 0) { \
+			nm_assert (!_pathid); \
+			nm_assert (_path[0] == '/'); \
+			nm_assert (   g_str_has_prefix (_path, "/proc/sys/") \
+			           || g_str_has_prefix (_path, "/sys/")); \
+		} else { \
+			nm_assert (_pathid && _pathid[0] && _pathid[0] != '/'); \
+			nm_assert (_path[0] != '/'); \
+		} \
+	} G_STMT_END
+
 static void
-_log_dbg_sysctl_set_impl (NMPlatform *platform, const char *path, const char *value)
+_log_dbg_sysctl_set_impl (NMPlatform *platform, const char *pathid, int dirfd, const char *path, const char *value)
 {
 	GError *error = NULL;
 	char *contents, *contents_escaped;
 	char *value_escaped = g_strescape (value, NULL);
 
-	if (!g_file_get_contents (path, &contents, NULL, &error)) {
-		_LOGD ("sysctl: setting '%s' to '%s' (current value cannot be read: %s)", path, value_escaped, error->message);
+	if (nm_utils_file_get_contents (dirfd, path, 1*1024*1024, &contents, NULL, &error) < 0) {
+		_LOGD ("sysctl: setting '%s' to '%s' (current value cannot be read: %s)", pathid, value_escaped, error->message);
 		g_clear_error (&error);
 	} else {
 		g_strstrip (contents);
 		contents_escaped = g_strescape (contents, NULL);
 		if (strcmp (contents, value) == 0)
-			_LOGD ("sysctl: setting '%s' to '%s' (current value is identical)", path, value_escaped);
+			_LOGD ("sysctl: setting '%s' to '%s' (current value is identical)", pathid, value_escaped);
 		else
-			_LOGD ("sysctl: setting '%s' to '%s' (current value is '%s')", path, value_escaped, contents_escaped);
+			_LOGD ("sysctl: setting '%s' to '%s' (current value is '%s')", pathid, value_escaped, contents_escaped);
 		g_free (contents);
 		g_free (contents_escaped);
 	}
 	g_free (value_escaped);
 }
 
-#define _log_dbg_sysctl_set(platform, path, value) \
+#define _log_dbg_sysctl_set(platform, pathid, dirfd, path, value) \
 	G_STMT_START { \
 		if (_LOGD_ENABLED ()) { \
-			_log_dbg_sysctl_set_impl (platform, path, value); \
+			_log_dbg_sysctl_set_impl (platform, pathid, dirfd, path, value); \
 		} \
 	} G_STMT_END
 
 static gboolean
-sysctl_set (NMPlatform *platform, const char *path, const char *value)
+sysctl_set (NMPlatform *platform, const char *pathid, int dirfd, const char *path, const char *value)
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
 	int fd, tries;
@@ -2537,32 +2552,46 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 	g_return_val_if_fail (path != NULL, FALSE);
 	g_return_val_if_fail (value != NULL, FALSE);
 
-	/* Don't write outside known locations */
-	g_assert (g_str_has_prefix (path, "/proc/sys/")
-	          || g_str_has_prefix (path, "/sys/"));
-	/* Don't write to suspicious locations */
-	g_assert (!strstr (path, "/../"));
+	ASSERT_SYSCTL_ARGS (pathid, dirfd, path);
 
-	if (!nm_platform_netns_push (platform, &netns)) {
-		errno = ENETDOWN;
-		return FALSE;
-	}
-
-	fd = open (path, O_WRONLY | O_TRUNC);
-	if (fd == -1) {
-		errsv = errno;
-		if (errsv == ENOENT) {
-			_LOGD ("sysctl: failed to open '%s': (%d) %s",
-			       path, errsv, strerror (errsv));
-		} else {
-			_LOGE ("sysctl: failed to open '%s': (%d) %s",
-			       path, errsv, strerror (errsv));
+	if (dirfd < 0) {
+		if (!nm_platform_netns_push (platform, &netns)) {
+			errno = ENETDOWN;
+			return FALSE;
 		}
-		errno = errsv;
-		return FALSE;
+
+		pathid = path;
+
+		fd = open (path, O_WRONLY | O_TRUNC | O_CLOEXEC);
+		if (fd == -1) {
+			errsv = errno;
+			if (errsv == ENOENT) {
+				_LOGD ("sysctl: failed to open '%s': (%d) %s",
+				       pathid, errsv, strerror (errsv));
+			} else {
+				_LOGE ("sysctl: failed to open '%s': (%d) %s",
+				       pathid, errsv, strerror (errsv));
+			}
+			errno = errsv;
+			return FALSE;
+		}
+	} else {
+		fd = openat (dirfd, path, O_WRONLY | O_TRUNC | O_CLOEXEC);
+		if (fd == -1) {
+			errsv = errno;
+			if (errsv == ENOENT) {
+				_LOGD ("sysctl: failed to openat '%s': (%d) %s",
+				       pathid, errsv, strerror (errsv));
+			} else {
+				_LOGE ("sysctl: failed to openat '%s': (%d) %s",
+				       pathid, errsv, strerror (errsv));
+			}
+			errno = errsv;
+			return FALSE;
+		}
 	}
 
-	_log_dbg_sysctl_set (platform, path, value);
+	_log_dbg_sysctl_set (platform, pathid, dirfd, path, value);
 
 	/* Most sysfs and sysctl options don't care about a trailing LF, while some
 	 * (like infiniband) do.  So always add the LF.  Also, neither sysfs nor
@@ -2635,7 +2664,7 @@ _nm_logging_clear_platform_logging_cache_impl (void)
 }
 
 static void
-_log_dbg_sysctl_get_impl (NMPlatform *platform, const char *path, const char *contents)
+_log_dbg_sysctl_get_impl (NMPlatform *platform, const char *pathid, const char *contents)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	const char *prev_value = NULL;
@@ -2645,24 +2674,24 @@ _log_dbg_sysctl_get_impl (NMPlatform *platform, const char *path, const char *co
 		sysctl_clear_cache_list = g_slist_prepend (sysctl_clear_cache_list, platform);
 		priv->sysctl_get_prev_values = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 	} else
-		prev_value = g_hash_table_lookup (priv->sysctl_get_prev_values, path);
+		prev_value = g_hash_table_lookup (priv->sysctl_get_prev_values, pathid);
 
 	if (prev_value) {
 		if (strcmp (prev_value, contents) != 0) {
 			char *contents_escaped = g_strescape (contents, NULL);
 			char *prev_value_escaped = g_strescape (prev_value, NULL);
 
-			_LOGD ("sysctl: reading '%s': '%s' (changed from '%s' on last read)", path, contents_escaped, prev_value_escaped);
+			_LOGD ("sysctl: reading '%s': '%s' (changed from '%s' on last read)", pathid, contents_escaped, prev_value_escaped);
 			g_free (contents_escaped);
 			g_free (prev_value_escaped);
-			g_hash_table_insert (priv->sysctl_get_prev_values, g_strdup (path), g_strdup (contents));
+			g_hash_table_insert (priv->sysctl_get_prev_values, g_strdup (pathid), g_strdup (contents));
 		}
 	} else {
 		char *contents_escaped = g_strescape (contents, NULL);
 
-		_LOGD ("sysctl: reading '%s': '%s'", path, contents_escaped);
+		_LOGD ("sysctl: reading '%s': '%s'", pathid, contents_escaped);
 		g_free (contents_escaped);
-		g_hash_table_insert (priv->sysctl_get_prev_values, g_strdup (path), g_strdup (contents));
+		g_hash_table_insert (priv->sysctl_get_prev_values, g_strdup (pathid), g_strdup (contents));
 	}
 
 	if (   !priv->sysctl_get_warned
@@ -2672,43 +2701,42 @@ _log_dbg_sysctl_get_impl (NMPlatform *platform, const char *path, const char *co
 	}
 }
 
-#define _log_dbg_sysctl_get(platform, path, contents) \
+#define _log_dbg_sysctl_get(platform, pathid, contents) \
 	G_STMT_START { \
 		if (_LOGD_ENABLED ()) \
-			_log_dbg_sysctl_get_impl (platform, path, contents); \
+			_log_dbg_sysctl_get_impl (platform, pathid, contents); \
 	} G_STMT_END
 
 static char *
-sysctl_get (NMPlatform *platform, const char *path)
+sysctl_get (NMPlatform *platform, const char *pathid, int dirfd, const char *path)
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
 	GError *error = NULL;
 	char *contents;
 
-	/* Don't write outside known locations */
-	g_assert (g_str_has_prefix (path, "/proc/sys/")
-	          || g_str_has_prefix (path, "/sys/"));
-	/* Don't write to suspicious locations */
-	g_assert (!strstr (path, "/../"));
+	ASSERT_SYSCTL_ARGS (pathid, dirfd, path);
 
-	if (!nm_platform_netns_push (platform, &netns))
-		return NULL;
+	if (dirfd < 0) {
+		if (!nm_platform_netns_push (platform, &netns))
+			return NULL;
+		pathid = path;
+	}
 
-	if (!g_file_get_contents (path, &contents, NULL, &error)) {
+	if (nm_utils_file_get_contents (dirfd, path, 1*1024*1024, &contents, NULL, &error) < 0) {
 		/* We assume FAILED means EOPNOTSUP */
 		if (   g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT)
 		    || g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NODEV)
 		    || g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_FAILED))
-			_LOGD ("error reading %s: %s", path, error->message);
+			_LOGD ("error reading %s: %s", pathid, error->message);
 		else
-			_LOGE ("error reading %s: %s", path, error->message);
+			_LOGE ("error reading %s: %s", pathid, error->message);
 		g_clear_error (&error);
 		return NULL;
 	}
 
 	g_strstrip (contents);
 
-	_log_dbg_sysctl_get (platform, path, contents);
+	_log_dbg_sysctl_get (platform, pathid, contents);
 
 	return contents;
 }
@@ -2763,8 +2791,7 @@ do_emit_signal (NMPlatform *platform, const NMPObject *obj, NMPCacheOpsType cach
 	nm_assert (!obj || cache_op == NMP_CACHE_OPS_REMOVED || obj == nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, obj));
 	nm_assert (!obj || cache_op != NMP_CACHE_OPS_REMOVED || obj != nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, obj));
 
-	/* we raise the signals inside the namespace of the NMPlatform instance. */
-	_assert_netns_current (platform);
+	ASSERT_NETNS_CURRENT (platform);
 
 	switch (cache_op) {
 	case NMP_CACHE_OPS_ADDED:
@@ -4428,10 +4455,6 @@ static gboolean
 link_supports_carrier_detect (NMPlatform *platform, int ifindex)
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
-	const char *name = nm_platform_link_get_name (platform, ifindex);
-
-	if (!name)
-		return FALSE;
 
 	if (!nm_platform_netns_push (platform, &netns))
 		return FALSE;
@@ -4440,7 +4463,7 @@ link_supports_carrier_detect (NMPlatform *platform, int ifindex)
 	 * us whether the device actually supports carrier detection in the first
 	 * place. We assume any device that does implements one of these two APIs.
 	 */
-	return nmp_utils_ethtool_supports_carrier_detect (name) || nmp_utils_mii_supports_carrier_detect (name);
+	return nmp_utils_ethtool_supports_carrier_detect (ifindex) || nmp_utils_mii_supports_carrier_detect (ifindex);
 }
 
 static gboolean
@@ -4458,7 +4481,7 @@ link_supports_vlans (NMPlatform *platform, int ifindex)
 	if (!nm_platform_netns_push (platform, &netns))
 		return FALSE;
 
-	return nmp_utils_ethtool_supports_vlans (obj->link.name);
+	return nmp_utils_ethtool_supports_vlans (ifindex);
 }
 
 static NMPlatformError
@@ -4526,7 +4549,7 @@ link_get_permanent_address (NMPlatform *platform,
 	if (!nm_platform_netns_push (platform, &netns))
 		return FALSE;
 
-	return nmp_utils_ethtool_get_permanent_address (nm_platform_link_get_name (platform, ifindex), buf, length);
+	return nmp_utils_ethtool_get_permanent_address (ifindex, buf, length);
 }
 
 static gboolean
@@ -4555,44 +4578,27 @@ nla_put_failure:
 static char *
 link_get_physical_port_id (NMPlatform *platform, int ifindex)
 {
-	const char *ifname;
-	char *path, *id;
+	nm_auto_close int dirfd = -1;
+	char ifname_verified[IFNAMSIZ];
 
-	ifname = nm_platform_link_get_name (platform, ifindex);
-	if (!ifname)
+	dirfd = nm_platform_sysctl_open_netdir (platform, ifindex, ifname_verified);
+	if (dirfd < 0)
 		return NULL;
-
-	ifname = NM_ASSERT_VALID_PATH_COMPONENT (ifname);
-
-	path = g_strdup_printf ("/sys/class/net/%s/phys_port_id", ifname);
-	id = sysctl_get (platform, path);
-	g_free (path);
-
-	return id;
+	return sysctl_get (platform, NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname_verified, "phys_port_id"));
 }
 
 static guint
 link_get_dev_id (NMPlatform *platform, int ifindex)
 {
-	const char *ifname;
-	gs_free char *path = NULL, *id = NULL;
-	gint64 int_val;
+	nm_auto_close int dirfd = -1;
+	char ifname_verified[IFNAMSIZ];
 
-	ifname = nm_platform_link_get_name (platform, ifindex);
-	if (!ifname)
+	dirfd = nm_platform_sysctl_open_netdir (platform, ifindex, ifname_verified);
+	if (dirfd < 0)
 		return 0;
-
-	ifname = NM_ASSERT_VALID_PATH_COMPONENT (ifname);
-
-	path = g_strdup_printf ("/sys/class/net/%s/dev_id", ifname);
-	id = sysctl_get (platform, path);
-	if (!id || !*id)
-		return 0;
-
-	/* Value is reported as hex */
-	int_val = _nm_utils_ascii_str_to_int64 (id, 16, 0, G_MAXUINT16, 0);
-
-	return errno ? 0 : (int) int_val;
+	return nm_platform_sysctl_get_int_checked (platform,
+	                                           NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname_verified, "dev_id"),
+	                                           16, 0, G_MAXUINT16, 0);
 }
 
 static int
@@ -5161,7 +5167,7 @@ tun_add (NMPlatform *platform, const char *name, gboolean tap,
 	_LOGD ("link: add %s '%s' owner %" G_GINT64_FORMAT " group %" G_GINT64_FORMAT,
 	       tap ? "tap" : "tun", name, owner, group);
 
-	fd = open ("/dev/net/tun", O_RDWR);
+	fd = open ("/dev/net/tun", O_RDWR | O_CLOEXEC);
 	if (fd < 0)
 		return FALSE;
 
@@ -5250,9 +5256,9 @@ _infiniband_partition_action (NMPlatform *platform,
                               const NMPlatformLink **out_link)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	const NMPObject *obj_parent;
+	nm_auto_close int dirfd = -1;
+	char ifname_parent[IFNAMSIZ];
 	const NMPObject *obj;
-	char path[NM_STRLEN ("/sys/class/net/%s/%s") + IFNAMSIZ + 100];
 	char id[20];
 	char name[IFNAMSIZ];
 	gboolean success;
@@ -5260,20 +5266,18 @@ _infiniband_partition_action (NMPlatform *platform,
 	nm_assert (NM_IN_SET (action, INFINIBAND_ACTION_CREATE_CHILD, INFINIBAND_ACTION_DELETE_CHILD));
 	nm_assert (p_key > 0 && p_key <= 0xffff && p_key != 0x8000);
 
-	obj_parent = nmp_cache_lookup_link (priv->cache, parent);
-	if (!obj_parent || !obj_parent->link.name[0]) {
+	dirfd = nm_platform_sysctl_open_netdir (platform, parent, ifname_parent);
+	if (dirfd < 0) {
 		errno = ENOENT;
 		return FALSE;
 	}
 
-	nm_sprintf_buf (path,
-	                "/sys/class/net/%s/%s",
-	                NM_ASSERT_VALID_PATH_COMPONENT (obj_parent->link.name),
-	                (action == INFINIBAND_ACTION_CREATE_CHILD
-	                     ? "create_child"
-	                     : "delete_child"));
 	nm_sprintf_buf (id, "0x%04x", p_key);
-	success = nm_platform_sysctl_set (platform, path, id);
+	if (action == INFINIBAND_ACTION_CREATE_CHILD)
+		success = nm_platform_sysctl_set (platform, NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname_parent, "create_child"), id);
+	else
+		success = nm_platform_sysctl_set (platform, NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname_parent, "delete_child"), id);
+
 	if (!success) {
 		if (   action == INFINIBAND_ACTION_DELETE_CHILD
 		    && errno == ENODEV)
@@ -5281,7 +5285,7 @@ _infiniband_partition_action (NMPlatform *platform,
 		return FALSE;
 	}
 
-	nm_utils_new_infiniband_name (name, obj_parent->link.name, p_key);
+	nm_utils_new_infiniband_name (name, ifname_parent, p_key);
 	do_request_link (platform, 0, name);
 
 	if (action == INFINIBAND_ACTION_DELETE_CHILD)
@@ -5515,7 +5519,7 @@ link_get_wake_on_lan (NMPlatform *platform, int ifindex)
 		return FALSE;
 
 	if (type == NM_LINK_TYPE_ETHERNET)
-		return nmp_utils_ethtool_get_wake_on_lan (nm_platform_link_get_name (platform, ifindex));
+		return nmp_utils_ethtool_get_wake_on_lan (ifindex);
 	else if (type == NM_LINK_TYPE_WIFI) {
 		WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
 
@@ -5535,14 +5539,17 @@ link_get_driver_info (NMPlatform *platform,
                       char **out_fw_version)
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
+	NMPUtilsEthtoolDriverInfo driver_info;
 
 	if (!nm_platform_netns_push (platform, &netns))
 		return FALSE;
 
-	return nmp_utils_ethtool_get_driver_info (nm_platform_link_get_name (platform, ifindex),
-	                                          out_driver_name,
-	                                          out_driver_version,
-	                                          out_fw_version);
+	if (!nmp_utils_ethtool_get_driver_info (ifindex, &driver_info))
+		return FALSE;
+	NM_SET_OUT (out_driver_name,    g_strdup (driver_info.driver));
+	NM_SET_OUT (out_driver_version, g_strdup (driver_info.version));
+	NM_SET_OUT (out_fw_version,     g_strdup (driver_info.fw_version));
+	return TRUE;
 }
 
 /*****************************************************************************/
