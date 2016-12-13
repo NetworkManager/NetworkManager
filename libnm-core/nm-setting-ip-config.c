@@ -2710,7 +2710,7 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 	/**
 	 * NMSettingIPConfig:dns-options:
 	 *
-	 * Array of DNS options.
+	 * Array of DNS options as described in man 5 resolv.conf.
 	 *
 	 * %NULL means that the options are unset and left at the default.
 	 * In this case NetworkManager will use default options. This is
