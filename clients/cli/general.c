@@ -834,8 +834,6 @@ do_networking_connectivity (NmCli *nmc, int argc, char **argv)
 		} else
 			nmc_switch_show (nmc, NMC_FIELDS_NM_CONNECTIVITY, _("Connectivity"));
 	} else {
-		if (nmc->complete)
-			return nmc->return_value;
 		usage_networking ();
 		g_string_printf (nmc->return_text, _("Error: 'networking' command '%s' is not valid."), *argv);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
