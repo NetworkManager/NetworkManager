@@ -34,35 +34,41 @@ else
     CALLED_FROM_MAKE=0
 fi
 
-# Whether to use valgrind can be controlled via command line
-# variables $NMTST_USE_VALGRIND set to true/false
-#
-# When --called-from-make, the variable has only
-# effect when `./configure --with-valgrind`. Otherwise,
-# valgrind is never used during `make check`.
-# When `./configure --with-valgrind`, valgrind is used
-# unless it's disabled via environment variable.
-#
-# When called directly, the arguments -v|-V overwrite the
-# setting from the environment variable.
-# When neither specified via command line or environemt
-# variable, default to "false".
-if [[ -z "${NMTST_USE_VALGRIND+x}" ]]; then
-    if [ "$CALLED_FROM_MAKE" == 1 ]; then
-        NMTST_USE_VALGRIND=1
-    else
-        NMTST_USE_VALGRIND=0
-    fi
-fi
-
 if [ "$CALLED_FROM_MAKE" == 1 ]; then
     NMTST_LIBTOOL=($1 --mode=execute); shift
-    NMTST_VALGRIND="$1"; shift
-    if [[ "$NMTST_VALGRIND" == no ]]; then
-        NMTST_USE_VALGRIND=0
-        NMTST_VALGRIND=
+    NMTST_VALGRIND_ARG="$1"; shift
+    if [[ "$NMTST_VALGRIND_ARG" == no ]]; then
+        NMTST_VALGRIND_ARG=
     fi
-    SUPPRESSIONS="$1"; shift
+
+    if [[ -z "${NMTST_VALGRIND}" ]]; then
+        # the valgrind path can be specified via $NMTST_VALGRIND.
+        # Otherwise, it can be determined by the configure scripts.
+        # Otherwise, it is found in the current $PATH (below).
+        if [[ "$NMTST_VALGRIND_ARG" != "" ]]; then
+            NMTST_VALGRIND="${NMTST_VALGRIND_ARG}"
+        fi
+    fi
+    if [[ -z "${NMTST_USE_VALGRIND+x}" ]]; then
+        # whether to use valgrind can be specified via $NMTST_USE_VALGRIND.
+        # Otherwise, it depends on the configure option.
+        if [ "$NMTST_VALGRIND_ARG" == "" ]; then
+            NMTST_USE_VALGRIND=0
+        else
+            NMTST_USE_VALGRIND=1
+        fi
+    fi
+
+    NMTST_SUPPRESSIONS_ARGS="$1"; shift
+    if [[ -z "${NMTST_SUPPRESSIONS+x}" ]]; then
+        if [[ "$NMTST_SUPPRESSIONS_ARGS" == "" ]]; then
+            NMTST_SUPPRESSIONS="$SCRIPT_PATH/../valgrind.suppressions"
+        else
+            NMTST_SUPPRESSIONS="${NMTST_SUPPRESSIONS_ARGS}"
+        fi
+    fi
+
+
     if [ "$1" = "--launch-dbus" ]; then
         NMTST_LAUNCH_DBUS=1
         shift
@@ -76,6 +82,11 @@ if [ "$CALLED_FROM_MAKE" == 1 ]; then
     NMTST_MAKE_FIRST=0
 
 else
+    if [[ -z "${NMTST_USE_VALGRIND+x}" ]]; then
+        # by default, disable valgrind checks.
+        NMTST_USE_VALGRIND=0
+    fi
+
     if [ -n "${NMTST_LIBTOOL-:x}" ]; then
         NMTST_LIBTOOL=(sh "$SCRIPT_PATH/../libtool" --mode=execute)
     elif [ -n "${NMTST_LIBTOOL-x}" ]; then
@@ -121,8 +132,8 @@ else
     # we support calling the script directly. In this case,
     # only pass the path to the test to run.
     TEST="$1"; shift
-    if [ "$SUPPRESSIONS" == "" ]; then
-        SUPPRESSIONS="$SCRIPT_PATH/../valgrind.suppressions"
+    if [[ -z "${NMTST_SUPPRESSIONS+x}" ]]; then
+        NMTST_SUPPRESSIONS="$SCRIPT_PATH/../valgrind.suppressions"
     fi
 
 fi
@@ -179,6 +190,12 @@ else
     test -e "${NMTST_VALGRIND}" || die "cannot find valgrind binary from NMTST_VALGRIND=\"${NMTST_VALGRIND}\""
 fi
 
+if [[ "${NMTST_SUPPRESSIONS}" != "" ]]; then
+    NMTST_SUPPRESSIONS=("--suppressions=$NMTST_SUPPRESSIONS")
+else
+    NMTST_SUPPRESSIONS=()
+fi
+
 LOGFILE="${TEST}.valgrind-log"
 
 export G_SLICE=always-malloc
@@ -190,7 +207,7 @@ export G_DEBUG=gc-friendly
     --error-exitcode=$VALGRIND_ERROR \
     --leak-check=full \
     --gen-suppressions=all \
-    --suppressions="$SUPPRESSIONS" \
+    "${NMTST_SUPPRESSIONS[@]}" \
     --num-callers=100 \
     --log-file="$LOGFILE" \
     "$TEST" \
