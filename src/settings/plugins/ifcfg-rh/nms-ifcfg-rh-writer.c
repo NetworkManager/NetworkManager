@@ -2174,34 +2174,28 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 
 	svUnsetValue (ifcfg, "PEERDNS");
 	svUnsetValue (ifcfg, "PEERROUTES");
-	svUnsetValue (ifcfg, "DHCP_CLIENT_ID");
-	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
-		svSetValueBoolean (ifcfg, "PEERDNS", !nm_setting_ip_config_get_ignore_auto_dns (s_ip4));
-		svSetValueBoolean (ifcfg, "PEERROUTES", !nm_setting_ip_config_get_ignore_auto_routes (s_ip4));
+	svSetValueBoolean (ifcfg, "PEERDNS", !nm_setting_ip_config_get_ignore_auto_dns (s_ip4));
+	svSetValueBoolean (ifcfg, "PEERROUTES", !nm_setting_ip_config_get_ignore_auto_routes (s_ip4));
 
-		value = nm_setting_ip_config_get_dhcp_hostname (s_ip4);
-		if (value)
-			svSetValueString (ifcfg, "DHCP_HOSTNAME", value);
+	value = nm_setting_ip_config_get_dhcp_hostname (s_ip4);
+	svSetValueString (ifcfg, "DHCP_HOSTNAME", value);
 
-		value = nm_setting_ip4_config_get_dhcp_fqdn (NM_SETTING_IP4_CONFIG (s_ip4));
-		if (value)
-			svSetValueString (ifcfg, "DHCP_FQDN", value);
+	value = nm_setting_ip4_config_get_dhcp_fqdn (NM_SETTING_IP4_CONFIG (s_ip4));
+	svSetValueString (ifcfg, "DHCP_FQDN", value);
 
-		/* Missing DHCP_SEND_HOSTNAME means TRUE, and we prefer not write it explicitly
-		 * in that case, because it is NM-specific variable
-		 */
-		svSetValueString (ifcfg, "DHCP_SEND_HOSTNAME",
-		                  nm_setting_ip_config_get_dhcp_send_hostname (s_ip4) ? NULL : "no");
+	/* Missing DHCP_SEND_HOSTNAME means TRUE, and we prefer not write it explicitly
+	 * in that case, because it is NM-specific variable
+	 */
+	svSetValueString (ifcfg, "DHCP_SEND_HOSTNAME",
+			  nm_setting_ip_config_get_dhcp_send_hostname (s_ip4) ? NULL : "no");
 
-		value = nm_setting_ip4_config_get_dhcp_client_id (NM_SETTING_IP4_CONFIG (s_ip4));
-		if (value)
-			svSetValueString (ifcfg, "DHCP_CLIENT_ID", value);
+	value = nm_setting_ip4_config_get_dhcp_client_id (NM_SETTING_IP4_CONFIG (s_ip4));
+	svSetValueString (ifcfg, "DHCP_CLIENT_ID", value);
 
-		timeout = nm_setting_ip_config_get_dhcp_timeout (s_ip4);
-		tmp = timeout ? g_strdup_printf ("%d", timeout) : NULL;
-		svSetValueString (ifcfg, "IPV4_DHCP_TIMEOUT", tmp);
-		g_free (tmp);
-	}
+	timeout = nm_setting_ip_config_get_dhcp_timeout (s_ip4);
+	tmp = timeout ? g_strdup_printf ("%d", timeout) : NULL;
+	svSetValueString (ifcfg, "IPV4_DHCP_TIMEOUT", tmp);
+	g_free (tmp);
 
 	svSetValueBoolean (ifcfg, "IPV4_FAILURE_FATAL", !nm_setting_ip_config_get_may_fail (s_ip4));
 
@@ -2493,13 +2487,9 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		svSetValueString (ifcfg, "IPV6_AUTOCONF", "yes");
 		svUnsetValue (ifcfg, "DHCPV6C");
 	} else if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_DHCP)) {
-		const char *hostname;
 		svSetValueString (ifcfg, "IPV6INIT", "yes");
 		svSetValueString (ifcfg, "IPV6_AUTOCONF", "no");
 		svSetValueString (ifcfg, "DHCPV6C", "yes");
-		hostname = nm_setting_ip_config_get_dhcp_hostname (s_ip6);
-		if (hostname)
-			svSetValueString (ifcfg, "DHCP_HOSTNAME", hostname);
 	} else if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
 		svSetValueString (ifcfg, "IPV6INIT", "yes");
 		svSetValueString (ifcfg, "IPV6_AUTOCONF", "no");
@@ -2513,6 +2503,10 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		svSetValueString (ifcfg, "IPV6_AUTOCONF", "shared");
 		svUnsetValue (ifcfg, "DHCPV6C");
 	}
+
+	hostname = nm_setting_ip_config_get_dhcp_hostname (s_ip6);
+	if (hostname)
+		svSetValueString (ifcfg, "DHCP_HOSTNAME", hostname);
 
 	/* Write out IP addresses */
 	num = nm_setting_ip_config_get_num_addresses (s_ip6);
@@ -2577,15 +2571,11 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	else
 		svSetValueString (ifcfg, "IPV6_DEFROUTE", "yes");
 
-	svUnsetValue (ifcfg, "IPV6_PEERDNS");
-	svUnsetValue (ifcfg, "IPV6_PEERROUTES");
-	if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
-		svSetValueString (ifcfg, "IPV6_PEERDNS",
-		                  nm_setting_ip_config_get_ignore_auto_dns (s_ip6) ? "no" : "yes");
+	svSetValueString (ifcfg, "IPV6_PEERDNS",
+	                  nm_setting_ip_config_get_ignore_auto_dns (s_ip6) ? "no" : "yes");
 
-		svSetValueString (ifcfg, "IPV6_PEERROUTES",
-		                  nm_setting_ip_config_get_ignore_auto_routes (s_ip6) ? "no" : "yes");
-	}
+	svSetValueString (ifcfg, "IPV6_PEERROUTES",
+	                  nm_setting_ip_config_get_ignore_auto_routes (s_ip6) ? "no" : "yes");
 
 	svSetValueString (ifcfg, "IPV6_FAILURE_FATAL",
 	                  nm_setting_ip_config_get_may_fail (s_ip6) ? "no" : "yes");

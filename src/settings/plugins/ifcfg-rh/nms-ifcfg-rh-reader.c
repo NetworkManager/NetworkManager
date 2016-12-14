@@ -1070,31 +1070,29 @@ make_ip4_setting (shvarFile *ifcfg,
 		return NM_SETTING (s_ip4);
 
 	/* Handle DHCP settings */
-	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
-		value = svGetValueString (ifcfg, "DHCP_HOSTNAME");
-		if (value && *value)
-			g_object_set (s_ip4, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, value, NULL);
-		g_free (value);
+	value = svGetValueString (ifcfg, "DHCP_HOSTNAME");
+	if (value && *value)
+		g_object_set (s_ip4, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, value, NULL);
+	g_free (value);
 
-		value = svGetValueString (ifcfg, "DHCP_FQDN");
-		if (value && *value) {
-			g_object_set (s_ip4,
-			              NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, NULL,
-			              NM_SETTING_IP4_CONFIG_DHCP_FQDN, value,
-			              NULL);
-		}
-		g_free (value);
-
+	value = svGetValueString (ifcfg, "DHCP_FQDN");
+	if (value && *value) {
 		g_object_set (s_ip4,
-		              NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, svGetValueBoolean (ifcfg, "DHCP_SEND_HOSTNAME", TRUE),
-		              NM_SETTING_IP_CONFIG_DHCP_TIMEOUT, svGetValueInt64 (ifcfg, "IPV4_DHCP_TIMEOUT", 10, 0, G_MAXINT32, 0),
-		              NULL);
-
-		value = svGetValueString (ifcfg, "DHCP_CLIENT_ID");
-		if (value && strlen (value))
-			g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID, value, NULL);
-		g_free (value);
+			      NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, NULL,
+			      NM_SETTING_IP4_CONFIG_DHCP_FQDN, value,
+			      NULL);
 	}
+	g_free (value);
+
+	g_object_set (s_ip4,
+		      NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, svGetValueBoolean (ifcfg, "DHCP_SEND_HOSTNAME", TRUE),
+		      NM_SETTING_IP_CONFIG_DHCP_TIMEOUT, svGetValueInt64 (ifcfg, "IPV4_DHCP_TIMEOUT", 10, 0, G_MAXINT32, 0),
+		      NULL);
+
+	value = svGetValueString (ifcfg, "DHCP_CLIENT_ID");
+	if (value && strlen (value))
+		g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID, value, NULL);
+	g_free (value);
 
 	/* Read static IP addresses.
 	 * Read them even for AUTO method - in this case the addresses are
@@ -1508,14 +1506,10 @@ make_ip6_setting (shvarFile *ifcfg,
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0)
 		return NM_SETTING (s_ip6);
 
-	if (   !strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)
-	    || !strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP)) {
-		/* METHOD_AUTO may trigger DHCPv6, so save the hostname to send to DHCP */
-		value = svGetValueString (ifcfg, "DHCP_HOSTNAME");
-		if (value && value[0])
-			g_object_set (s_ip6, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, value, NULL);
-		g_free (value);
-	}
+	value = svGetValueString (ifcfg, "DHCP_HOSTNAME");
+	if (value && value[0])
+		g_object_set (s_ip6, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, value, NULL);
+	g_free (value);
 
 	/* Read static IP addresses.
 	 * Read them even for AUTO and DHCP methods - in this case the addresses are
