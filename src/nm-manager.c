@@ -757,9 +757,7 @@ checked_connectivity (GObject *object, GAsyncResult *result, gpointer user_data)
 
 		if (connectivity == NM_CONNECTIVITY_FULL)
 			set_state (manager, NM_STATE_CONNECTED_GLOBAL);
-		else if (   connectivity == NM_CONNECTIVITY_PORTAL
-		         || connectivity == NM_CONNECTIVITY_LIMITED)
-			set_state (manager, NM_STATE_CONNECTED_SITE);
+
 		_notify (manager, PROP_CONNECTIVITY);
 	}
 
@@ -5815,7 +5813,6 @@ get_property (GObject *object, guint prop_id,
 		                                                       sizeof (guint32)));
 		break;
 	case PROP_STATE:
-		nm_manager_update_state (self);
 		g_value_set_uint (value, priv->state);
 		break;
 	case PROP_STARTUP:
