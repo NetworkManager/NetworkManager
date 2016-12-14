@@ -2172,10 +2172,12 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	/* DEFROUTE; remember that it has the opposite meaning from never-default */
 	svSetValueBoolean (ifcfg, "DEFROUTE", !nm_setting_ip_config_get_never_default (s_ip4));
 
-	svUnsetValue (ifcfg, "PEERDNS");
-	svUnsetValue (ifcfg, "PEERROUTES");
-	svSetValueBoolean (ifcfg, "PEERDNS", !nm_setting_ip_config_get_ignore_auto_dns (s_ip4));
-	svSetValueBoolean (ifcfg, "PEERROUTES", !nm_setting_ip_config_get_ignore_auto_routes (s_ip4));
+	/* Missing PEERDNS means TRUE, so write it only when is FALSE */
+	svSetValueString (ifcfg, "PEERDNS",
+		nm_setting_ip_config_get_ignore_auto_dns (s_ip4) ? "no" : NULL);
+	/* Missing PEERROUTES means TRUE, so write it only when is FALSE */
+	svSetValueString (ifcfg, "PEERROUTES",
+		nm_setting_ip_config_get_ignore_auto_routes (s_ip4) ? "no" : NULL);
 
 	value = nm_setting_ip_config_get_dhcp_hostname (s_ip4);
 	svSetValueString (ifcfg, "DHCP_HOSTNAME", value);
@@ -2572,10 +2574,10 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		svSetValueString (ifcfg, "IPV6_DEFROUTE", "yes");
 
 	svSetValueString (ifcfg, "IPV6_PEERDNS",
-	                  nm_setting_ip_config_get_ignore_auto_dns (s_ip6) ? "no" : "yes");
+	                  nm_setting_ip_config_get_ignore_auto_dns (s_ip6) ? "no" : NULL);
 
 	svSetValueString (ifcfg, "IPV6_PEERROUTES",
-	                  nm_setting_ip_config_get_ignore_auto_routes (s_ip6) ? "no" : "yes");
+	                  nm_setting_ip_config_get_ignore_auto_routes (s_ip6) ? "no" : NULL);
 
 	svSetValueString (ifcfg, "IPV6_FAILURE_FATAL",
 	                  nm_setting_ip_config_get_may_fail (s_ip6) ? "no" : "yes");
