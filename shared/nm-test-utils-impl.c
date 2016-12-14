@@ -82,7 +82,7 @@ NMTstcServiceInfo *
 nmtstc_service_init (void)
 {
 	NMTstcServiceInfo *info;
-	const char *args[2] = { TEST_NM_SERVICE, NULL };
+	const char *args[] = { TEST_NM_PYTHON, TEST_NM_SERVICE, NULL };
 	GError *error = NULL;
 	int i;
 
@@ -95,7 +95,9 @@ nmtstc_service_init (void)
 	 * stdin; if it closes, the service will exit immediately. We use this to
 	 * make sure the service exits if the test program crashes.
 	 */
-	g_spawn_async_with_pipes (NULL, (char **) args, NULL, 0, NULL, NULL,
+	g_spawn_async_with_pipes (NULL, (char **) args, NULL,
+	                          G_SPAWN_SEARCH_PATH,
+	                          NULL, NULL,
 	                          &info->pid, &info->keepalive_fd, NULL, NULL, &error);
 	g_assert_no_error (error);
 
