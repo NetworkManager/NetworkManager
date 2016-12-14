@@ -311,6 +311,8 @@ demarshal_dns_configuration (NMObject *object, GParamSpec *pspec, GVariant *valu
 		                          (const char * const *) domains,
 		                          priority,
 		                          vpn);
+		g_free (domains);
+		g_free (nameservers);
 		if (!entry) {
 			g_warning ("Ignoring invalid DNS entry");
 			g_variant_unref (entry_var);
