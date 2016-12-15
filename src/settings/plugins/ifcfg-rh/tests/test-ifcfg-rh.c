@@ -3891,7 +3891,7 @@ test_read_write_wired_dhcp_send_hostname (void)
 	g_assert (s_ip6);
 	g_assert (nm_setting_ip_config_get_dhcp_send_hostname (s_ip4) == TRUE);
 	g_assert_cmpstr (nm_setting_ip_config_get_dhcp_hostname (s_ip4), ==, "svata-pulec");
-	g_assert_cmpstr (nm_setting_ip_config_get_dhcp_hostname (s_ip6), ==, "svata-pulec");
+	g_assert_null (nm_setting_ip_config_get_dhcp_hostname (s_ip6));
 
 	/* Set dhcp-send-hostname=false dhcp-hostname="kamil-patka" and write the connection. */
 	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, FALSE, NULL);
@@ -3914,6 +3914,21 @@ test_read_write_wired_dhcp_send_hostname (void)
 	g_assert (nm_setting_ip_config_get_dhcp_send_hostname (s_ip4) == FALSE);
 	g_assert_cmpstr (nm_setting_ip_config_get_dhcp_hostname (s_ip4), ==, dhcp_hostname);
 	g_assert_cmpstr (nm_setting_ip_config_get_dhcp_hostname (s_ip6), ==, dhcp_hostname);
+}
+
+static void
+test_read_wired_dhcpv6_hostname_fallback (void)
+{
+	gs_unref_object NMConnection *connection = NULL;
+	NMSettingIPConfig *s_ip6;
+
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcpv6-hostname-fallback",
+	                                    NULL, TYPE_ETHERNET, NULL);
+
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	g_assert (s_ip6);
+	g_assert (nm_setting_ip_config_get_dhcp_send_hostname (s_ip6) == TRUE);
+	g_assert_cmpstr (nm_setting_ip_config_get_dhcp_hostname (s_ip6), ==, "fully.qualified.domain");
 }
 
 static void
@@ -8838,6 +8853,7 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "read-dhcp-plus-ip", test_read_wired_dhcp_plus_ip);
 	g_test_add_func (TPATH "read-shared-plus-ip", test_read_wired_shared_plus_ip);
 	g_test_add_func (TPATH "read-dhcp-send-hostname", test_read_write_wired_dhcp_send_hostname);
+	g_test_add_func (TPATH "read-dhcpv6-hostname-fallback", test_read_wired_dhcpv6_hostname_fallback);
 	g_test_add_func (TPATH "read-global-gateway", test_read_wired_global_gateway);
 	g_test_add_func (TPATH "read-global-gateway-ignore", test_read_wired_global_gateway_ignore);
 	g_test_add_func (TPATH "read-obsolete-gateway-n", test_read_wired_obsolete_gateway_n);
