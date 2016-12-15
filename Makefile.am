@@ -882,6 +882,7 @@ libnm/nm-settings-docs.xml: libnm/generate-setting-docs.py libnm/nm-settings-doc
 	export GI_TYPELIB_PATH=$(abs_builddir)/libnm$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}; \
 	export LD_LIBRARY_PATH=$(abs_builddir)/libnm/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}; \
 	$(call set_sanitizer_env,$(abs_builddir)/libnm/.libs/libnm.so); \
+	"$(PYTHON)" \
 	$(srcdir)/libnm/generate-setting-docs.py \
 		--gir $(builddir)/libnm/NM-1.0.gir \
 		--overrides $(word 2,$^) \
