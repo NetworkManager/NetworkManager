@@ -121,6 +121,7 @@ Requires: libnl3 >= %{libnl3_version}
 Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
 Obsoletes: dhcdbd
 Obsoletes: NetworkManager < %{obsoletes_device_plugins}
+Obsoletes: NetworkManager < %{obsoletes_ppp_plugin}
 Obsoletes: NetworkManager-wimax < 1.2
 
 Conflicts: NetworkManager-vpnc < 1:0.7.0.99-1
@@ -140,6 +141,7 @@ BuildRequires: gettext-devel
 BuildRequires: pkgconfig
 BuildRequires: libnl3-devel >= %{libnl3_version}
 BuildRequires: automake autoconf intltool libtool
+BuildRequires: ppp-devel >= 2.4.5
 BuildRequires: nss-devel >= 3.11.7
 BuildRequires: dhclient
 BuildRequires: readline-devel
@@ -255,7 +257,6 @@ Summary: PPP plugin for NetworkManager
 Group: System Environment/Base
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: ppp = %{ppp_version}
-BuildRequires: ppp-devel >= 2.4.5
 Provides: NetworkManager = %{epoch}:%{version}-%{release}
 Obsoletes: NetworkManager < %{obsoletes_ppp_plugin}
 
