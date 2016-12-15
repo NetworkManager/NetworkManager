@@ -64,9 +64,9 @@
                   A group of related key/value pairs describing a specific piece of a
                   <emphasis>Connection (profile)</emphasis>. Settings keys and allowed values are
                   described in the tables below. Keys are also referred to as properties.
-                  Developers can find the setting objects and their properties in the libnm-util
-                  sources. Look for the <function>class_init</function> functions near the bottom of
-                  each setting source file.
+                  Developers can find the setting objects and their properties in the libnm-core
+                  sources. Look for the <function>*_class_init</function> functions near the bottom
+                  of each setting source file.
                 </para>
               </listitem>
             </varlistentry>
