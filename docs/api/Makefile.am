@@ -74,6 +74,7 @@ content_files = \
 	dbus-org.freedesktop.NetworkManager.Device.Wired.xml \
 	dbus-org.freedesktop.NetworkManager.IP4Config.xml \
 	dbus-org.freedesktop.NetworkManager.Device.Statistics.xml \
+	dbus-org.freedesktop.NetworkManager.DnsManager.xml \
 	$(top_builddir)/libnm-core/nm-dbus-types.xml \
 	$(top_builddir)/libnm-core/nm-vpn-dbus-types.xml \
 	$(top_builddir)/man/nmcli.xml \

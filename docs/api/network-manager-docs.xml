@@ -99,6 +99,7 @@
       <xi:include href="dbus-org.freedesktop.NetworkManager.VPN.Plugin.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.SecretAgent.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Statistics.xml"/>
+      <xi:include href="dbus-org.freedesktop.NetworkManager.DnsManager.xml"/>
     </section>
     <section id="dbus-types">
       <title>Types</title>

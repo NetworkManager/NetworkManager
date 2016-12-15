@@ -281,7 +281,8 @@ DBUS_INTERFACE_DOCS = \
 	docs/api/dbus-org.freedesktop.NetworkManager.Settings.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Wired.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.IP4Config.xml \
-	docs/api/dbus-org.freedesktop.NetworkManager.Device.Statistics.xml
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Statistics.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.DnsManager.xml
 
 introspection/%.c: introspection/%.xml
 	$(AM_V_GEN) gdbus-codegen \
