@@ -1,4 +1,23 @@
 ==============================================
+NetworkManager-1.4.4
+Overview of changes since NetworkManager-1.4.2
+==============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Order in which IP addresses are configured is now preserved so that
+    primary address is selected correctly
+* Don't deconfigure devices we can take over on shutdown. Makes it
+    possible to restart without connection disruption for most device
+    types
+* Fixed a race condition that could cause Wi-Fi device do be identified
+    as Ethernet while it's being removed
+* Fixed a race condition in libnm that could cause a client hang if a last
+    value from a property of object array type disappeared
+* Fixed a possible nmcli hang on D-Bus object fetch failure
+* Other fixes and improvements
+
+==============================================
 NetworkManager-1.4.2
 Overview of changes since NetworkManager-1.4.0
 ==============================================
