@@ -3605,7 +3605,7 @@ _nm_utils_hwaddr_cloned_data_synth (NMSetting *setting,
 	 * to "" and it just worked as the value was not serialized in
 	 * an ill form.
 	 *
-	 * To preserve that behavior, seralize "" as NULL.
+	 * To preserve that behavior, serialize "" as NULL.
 	 */
 
 	return addr && addr[0] ? g_variant_new_string (addr) : NULL;
