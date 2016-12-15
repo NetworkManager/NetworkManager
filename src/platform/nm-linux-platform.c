@@ -721,7 +721,7 @@ _linktype_get_type (NMPlatform *platform,
 		}
 
 		/* Fallback for drivers that don't call SET_NETDEV_DEVTYPE() */
-		if (wifi_utils_is_wifi (ifname))
+		if (wifi_utils_is_wifi (ifindex, ifname))
 			return NM_LINK_TYPE_WIFI;
 
 		if (arptype == ARPHRD_ETHER) {
@@ -5147,7 +5147,7 @@ tun_add (NMPlatform *platform, const char *name, gboolean tap,
 	_LOGD ("link: add %s '%s' owner %" G_GINT64_FORMAT " group %" G_GINT64_FORMAT,
 	       tap ? "tap" : "tun", name, owner, group);
 
-	fd = open ("/dev/net/tun", O_RDWR);
+	fd = open ("/dev/net/tun", O_RDWR | O_CLOEXEC);
 	if (fd < 0)
 		return FALSE;
 

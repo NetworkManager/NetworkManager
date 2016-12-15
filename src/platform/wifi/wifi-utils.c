@@ -26,6 +26,7 @@
 #include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
+#include <fcntl.h>
 
 #include "wifi-utils-private.h"
 #include "wifi-utils-nl80211.h"
@@ -33,6 +34,8 @@
 #include "wifi-utils-wext.h"
 #endif
 #include "nm-core-utils.h"
+
+#include "platform/nm-platform-utils.h"
 
 gpointer
 wifi_data_new (const char *iface, int ifindex, gsize len)
@@ -180,23 +183,32 @@ wifi_utils_deinit (WifiData *data)
 }
 
 gboolean
-wifi_utils_is_wifi (const char *iface)
+wifi_utils_is_wifi (int ifindex, const char *ifname)
 {
-	char phy80211_path[NM_STRLEN ("/sys/class/net/123456789012345/phy80211\0") + 100 /*safety*/];
-	struct stat s;
+	int fd_sysnet;
+	int fd_phy80211;
+	char ifname_verified[IFNAMSIZ];
 
-	g_return_val_if_fail (iface != NULL, FALSE);
+	g_return_val_if_fail (ifindex > 0, FALSE);
 
-	nm_sprintf_buf (phy80211_path,
-	                "/sys/class/net/%s/phy80211",
-	                NM_ASSERT_VALID_PATH_COMPONENT (iface));
-	nm_assert (strlen (phy80211_path) < sizeof (phy80211_path) - 1);
+	fd_sysnet = nmp_utils_sysctl_open_netdir (ifindex, ifname, ifname_verified);
+	if (fd_sysnet < 0)
+		return FALSE;
 
-	if ((stat (phy80211_path, &s) == 0 && (s.st_mode & S_IFDIR)))
+	/* there might have been a race and ifname might be wrong. Below for checking
+	 * wext, use the possibly improved name that we just verified. */
+	ifname = ifname_verified;
+
+	fd_phy80211 = openat (fd_sysnet, "phy80211", O_CLOEXEC);
+	close (fd_sysnet);
+
+	if (fd_phy80211 >= 0) {
+		close (fd_phy80211);
 		return TRUE;
+	}
 
 #if HAVE_WEXT
-	if (wifi_wext_is_wifi (iface))
+	if (wifi_wext_is_wifi (ifname))
 		return TRUE;
 #endif
 

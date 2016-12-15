@@ -31,11 +31,14 @@
 #include <linux/mii.h>
 #include <linux/version.h>
 #include <linux/rtnetlink.h>
+#include <fcntl.h>
 
 #include "nm-utils.h"
 #include "nm-setting-wired.h"
 
 #include "nm-core-utils.h"
+
+extern char *if_indextoname (unsigned int __ifindex, char *__ifname);
 
 /******************************************************************
  * ethtool
@@ -60,7 +63,7 @@ ethtool_get (const char *name, gpointer edata)
 	nm_utils_ifname_cpy (ifr.ifr_name, name);
 	ifr.ifr_data = edata;
 
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	fd = socket (PF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
 	if (fd < 0) {
 		nm_log_err (LOGD_PLATFORM, "ethtool: Could not open socket.");
 		return FALSE;
@@ -342,7 +345,7 @@ nmp_utils_mii_supports_carrier_detect (const char *ifname)
 	if (!nmp_utils_device_exists (ifname))
 		return FALSE;
 
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	fd = socket (PF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
 	if (fd < 0) {
 		nm_log_err (LOGD_PLATFORM, "mii: couldn't open control socket (%s)", ifname);
 		return FALSE;
@@ -558,3 +561,83 @@ nmp_utils_ip_config_source_to_string (NMIPConfigSource source, char *buf, gsize 
 	return buf;
 }
 
+/**
+ * nmp_utils_sysctl_open_netdir:
+ * @ifindex: the ifindex for which to open "/sys/class/net/%s"
+ * @ifname_guess: (allow-none): optional argument, if present used as initial
+ *   guess as the current name for @ifindex. If guessed right,
+ *   it saves an addtional if_indextoname() call.
+ * @out_ifname: (allow-none): if present, must be at least IFNAMSIZ
+ *   characters. On success, this will contain the actual ifname
+ *   found while opening the directory.
+ *
+ * Returns: a negative value on failure, on success returns the open fd
+ *   to the "/sys/class/net/%s" directory for @ifindex.
+ */
+int
+nmp_utils_sysctl_open_netdir (int ifindex,
+                              const char *ifname_guess,
+                              char *out_ifname)
+{
+	#define SYS_CLASS_NET "/sys/class/net/"
+	const char *ifname = ifname_guess;
+	char ifname_buf_last_try[IFNAMSIZ];
+	char ifname_buf[IFNAMSIZ];
+	guint try_count = 0;
+	char sysdir[NM_STRLEN (SYS_CLASS_NET) + IFNAMSIZ] = SYS_CLASS_NET;
+	char fd_buf[256];
+	ssize_t nn;
+
+	g_return_val_if_fail (ifindex >= 0, -1);
+
+	ifname_buf_last_try[0] = '\0';
+
+	for (try_count = 0; try_count < 10; try_count++, ifname = NULL) {
+		nm_auto_close int fd_dir = -1;
+		nm_auto_close int fd_ifindex = -1;
+		int fd;
+
+		if (!ifname) {
+			ifname = if_indextoname (ifindex, ifname_buf);
+			if (!ifname)
+				return -1;
+		}
+
+		nm_assert (nm_utils_iface_valid_name (ifname));
+
+		if (g_strlcpy (&sysdir[NM_STRLEN (SYS_CLASS_NET)], ifname, IFNAMSIZ) >= IFNAMSIZ)
+			g_return_val_if_reached (-1);
+
+		/* we only retry, if the name changed since previous attempt.
+		 * Hence, it is extremely unlikely that this loop runes until the
+		 * end of the @try_count. */
+		if (nm_streq (ifname, ifname_buf_last_try))
+			return -1;
+		strcpy (ifname_buf_last_try, ifname);
+
+		fd_dir = open (sysdir, O_DIRECTORY | O_CLOEXEC);
+		if (fd_dir < 0)
+			continue;
+
+		fd_ifindex = openat (fd_dir, "ifindex", O_CLOEXEC);
+		if (fd_ifindex < 0)
+			continue;
+
+		nn = nm_utils_fd_read_loop (fd_ifindex, fd_buf, sizeof (fd_buf) - 2, FALSE);
+		if (nn <= 0)
+			continue;
+		fd_buf[nn] = '\0';
+
+		if (ifindex != _nm_utils_ascii_str_to_int64 (fd_buf, 10, 1, G_MAXINT, -1))
+			continue;
+
+		if (out_ifname)
+			strcpy (out_ifname, ifname);
+
+		fd = fd_dir;
+		fd_dir = -1;
+		return fd;
+	}
+
+	return -1;
+}
