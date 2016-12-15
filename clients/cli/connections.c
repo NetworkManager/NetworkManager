@@ -3072,7 +3072,7 @@ static const NameItem nmc_valid_connection_types[] = {
 };
 
 /*
- * Return the most approopriate name for the connection of a type 'name' possibly with given 'slave_type'
+ * Return the most appropriate name for the connection of a type 'name' possibly with given 'slave_type'
  * if exists, else return the 'name'. The returned string must not be freed.
  */
 static const char *
