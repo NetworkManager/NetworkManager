@@ -1,5 +1,5 @@
 ============================================
-NetworkManager-1.5.2 (Development Snapshot)
+NetworkManager-1.5.3 (Development Snapshot)
 Overview of changes since NetworkManager-1.4
 ============================================
 
@@ -29,6 +29,27 @@ Notable changes included in this snapshot so far include:
     during upgrade that did not explicitly configure cloned-mac-address. This
     has the effect that externally configured MAC addresses are preserved
     by default instead of setting the permanent address (bgo#770611).
+* The cloned.mac-address property can now be used with Bond and Bridge
+    devices.
+* The ifcfg parsing code has been reworked for better compatibility with
+    actual shell variable files.
+* The ipv6.method=shared is now supported, utilizing DHCPv6 Prefix
+    Delegation option to obtain prefixes for the interface.
+* nmtui now supports creating and editing IP tunnel connections.
+* The libnm client library now uses the D-Bus ObjectManager API that allows
+    for quicker initialization of the clients.
+* nmtui now utilizes the asynchronous libnm client API to paralellize
+    communication with the daemon, reducing the client startup time.
+* Ethernet devices now use "802-3.speed" and "802-3.duplex" properties to
+    allow controlling overriding the negotiated link parameters.
+* Order in which IP addresses are configured is now preserved so that
+    primary address is selected correctly.
+* The PPP manager can now be split into a separate package.
+* Details of the DNS information obtained from the connections is now
+    exposed on the D-Bus and can be inspected with nmcli.
+* Added the support for DHCPV6_HOSTNAME and DHCPV6_SEND_HOSTNAME keys in
+    ifcfg files that control "dhcp-hostname" and "dhcp-send-hostname"
+    properties of the "ipv6" setting.
 
 ============================================
 NetworkManager-1.4
