@@ -651,6 +651,26 @@ line_free (shvarLine *line)
 	g_slice_free (shvarLine, line);
 }
 
+static const char *
+line_value (const shvarLine *line, const char *key)
+{
+#if NM_MORE_ASSERTS > 5
+	const char *v;
+
+	nm_assert (line);
+	nm_assert (line->value);
+	nm_assert (key && _shell_is_name (key));
+
+	v = line->value;
+	while (g_ascii_isspace (v[0]))
+		v++;
+	nm_assert (g_str_has_prefix (v, key));
+	nm_assert (v[strlen (key)] == '=');
+	nm_assert (&v[strlen (key)] == strchr (line->value, '='));
+#endif
+	return strchr (line->value, '=') + 1;
+}
+
 /*****************************************************************************/
 
 /* Open the file <name>, returning a shvarFile on success and NULL on failure.
@@ -757,7 +777,7 @@ svCreateFile (const char *name)
 /*****************************************************************************/
 
 static const GList *
-shlist_find (const GList *current, const char *key, const char **out_value)
+shlist_find (const GList *current, const char *key)
 {
 	gsize len;
 
@@ -773,62 +793,12 @@ shlist_find (const GList *current, const char *key, const char **out_value)
 			while (g_ascii_isspace (original[0]))
 				original++;
 
-			if (!strncmp (key, original, len) && original[len] == '=') {
-				if (out_value) {
-					const char *value = line->value;
-
-					if (value) {
-						while (g_ascii_isspace (value[0]))
-							value++;
-						nm_assert (!strncmp (key, value, len) && value[len] == '=');
-						value += len + 1;
-					}
-					*out_value = value;
-				}
+			if (!strncmp (key, original, len) && original[len] == '=')
 				return current;
-			}
 			current = current->next;
 		} while (current);
 	}
-
-	NM_SET_OUT (out_value, NULL);
 	return NULL;
-}
-
-static void
-shlist_delete (GList *head, GList *current)
-{
-	shvarLine *line = current->data;
-
-	nm_assert (head);
-	nm_assert (current);
-	nm_assert (current->data);
-	nm_assert (g_list_position (head, current) >= 0);
-
-	if (line->value != line->original)
-		g_free (line->value);
-	line->value = NULL;
-}
-
-static gboolean
-shlist_delete_all (GList *head, const char *key, gboolean including_last)
-{
-	GList *current, *last;
-	gboolean changed = FALSE;
-
-	last = (GList *) shlist_find (head, key, NULL);
-	if (last) {
-		while ((current = (GList *) shlist_find (last->next, key, NULL))) {
-			shlist_delete (head, last);
-			changed = TRUE;
-			last = current;
-		}
-		if (including_last) {
-			shlist_delete (head, last);
-			changed = TRUE;
-		}
-	}
-	return changed;
 }
 
 /*****************************************************************************/
@@ -836,26 +806,28 @@ shlist_delete_all (GList *head, const char *key, gboolean including_last)
 static const char *
 _svGetValue (shvarFile *s, const char *key, char **to_free)
 {
-	const GList *current;
-	const char *line_val;
-	const char *last_val = NULL;
+	const GList *current, *last;
 
 	nm_assert (s);
 	nm_assert (_shell_is_name (key));
 	nm_assert (to_free);
 
+	last = NULL;
 	current = s->lineList;
-	while ((current = shlist_find (current, key, &line_val))) {
-		last_val = line_val;
+	while ((current = shlist_find (current, key))) {
+		last = current;
 		current = current->next;
 	}
 
-	if (!last_val) {
-		*to_free = NULL;
-		return NULL;
+	if (last) {
+		const shvarLine *line = last->data;
+
+		if (line->value)
+			return svUnescape (line_value (line, key), to_free);
 	}
 
-	return svUnescape (last_val, to_free);
+	*to_free = NULL;
+	return NULL;
 }
 
 const char *
@@ -953,42 +925,60 @@ void
 svSetValue (shvarFile *s, const char *key, const char *value)
 {
 	GList *current, *last;
-	shvarLine *line;
-	gchar *new_value;
-	gs_free char *newval_free = NULL;
 
 	g_return_if_fail (s != NULL);
 	g_return_if_fail (key != NULL);
 
 	nm_assert (_shell_is_name (key));
 
-	if (shlist_delete_all (s->lineList, key, TRUE))
-		s->modified = TRUE;
-
-	if (!value)
-		return;
-
-	new_value = g_strdup_printf ("%s=%s", key, svEscape (value, &newval_free));
-
-	current = (GList *) shlist_find (s->lineList, key, NULL);
-	if (!current) {
-		s->lineList = g_list_append (s->lineList, line_new (new_value));
-		s->modified = TRUE;
-		return;
+	last = NULL;
+	current = s->lineList;
+	while ((current = (GList *) shlist_find (current, key))) {
+		if (last) {
+			/* if we find multiple entries for the same key, we can
+			 * delete all but the last. */
+			line_free (last->data);
+			s->lineList = g_list_delete_link (s->lineList, last);
+			s->modified = TRUE;
+		}
+		last = current;
+		current = current->next;
 	}
 
-	last = current;
-	while ((current = (GList *) shlist_find (current->next, key, NULL)))
-		last = current;
-	current = last;
+	if (!value) {
+		if (last) {
+			shvarLine *line = last->data;
 
-	line = current->data;
-	if (line->value != line->original)
-		g_free (line->value);
-	line->value = new_value;
+			if (line->value) {
+				if (line->value != line->original)
+					g_free (line->value);
+				line->value = NULL;
+				s->modified = TRUE;
+			}
+		}
+	} else {
+		gs_free char *newval_free = NULL;
+		shvarLine *line;
+		char *new_value;
 
-	if (!nm_streq0 (line->original, line->value))
+		value = svEscape (value, &newval_free);
+
+		if (!last) {
+			new_value = g_strdup_printf ("%s=%s", key, value);
+			s->lineList = g_list_append (s->lineList, line_new (new_value));
+		} else {
+			line = last->data;
+			if (line->value) {
+				if (nm_streq (line_value (line, key), value))
+					return;
+				if (line->value != line->original)
+					g_free (line->value);
+			}
+			new_value = g_strdup_printf ("%s=%s", key, value);
+			line->value = new_value;
+		}
 		s->modified = TRUE;
+	}
 }
 
 /* Set the variable <key> equal to the value <value>.
