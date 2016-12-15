@@ -41,8 +41,9 @@
 /*****************************************************************************/
 
 typedef struct {
-	gchar *original;
-	gchar *value;
+	char *line;
+	const char *key;
+	char *key_with_prefix;
 } shvarLine;
 
 struct _shvarFile {
@@ -90,34 +91,27 @@ svParseBoolean (const char *value, gint fallback)
 /*****************************************************************************/
 
 static gboolean
-_shell_is_name (const char *key)
+_shell_is_name (const char *key, gssize len)
 {
+	gssize i;
+
 	/* whether @key is a valid identifier (name). */
-	if (!key)
+	if (!key || len == 0)
 		return FALSE;
 	if (   !g_ascii_isalpha (key[0])
 	    && key[0] != '_')
 		return FALSE;
-	return NM_STRCHAR_ALL (&key[1], ch,
-	                       g_ascii_isalnum (ch) || ch == '_');
-}
-
-static const char *
-_shell_is_name_assignment (const char *key)
-{
-	/* whether @key is a valid identifier (name). */
-	if (!key)
-		return NULL;
-	if (   !g_ascii_isalpha (key[0])
-	    && key[0] != '_')
-		return NULL;
-	while (TRUE) {
-		const char ch = (++key)[0];
-
-		if (ch == '=')
-			return &key[1];
-		if (!g_ascii_isalnum (ch) && ch != '_')
-			return NULL;
+	for (i = 1; TRUE; i++) {
+		if (len < 0) {
+			if (!key[i])
+				return TRUE;
+		} else {
+			if (i >= len)
+				return TRUE;
+		}
+		if (   !g_ascii_isalnum (key[i])
+		    && key[i] != '_')
+			return FALSE;
 	}
 }
 
@@ -632,43 +626,89 @@ svFileSetModified (shvarFile *s)
 /*****************************************************************************/
 
 static shvarLine *
-line_new (char *value)
+line_new_parse (const char *value, gsize len)
 {
 	shvarLine *line;
+	gsize k, e;
+
+	nm_assert (value);
 
 	line = g_slice_new0 (shvarLine);
-	line->original = line->value = value;
 
+	for (k = 0; k < len; k++) {
+		if (g_ascii_isspace (value[k]))
+			continue;
+
+		if (   g_ascii_isalpha (value[k])
+		    || value[k] == '_') {
+			for (e = k + 1; e < len; e++) {
+				if (value[e] == '=') {
+					nm_assert (_shell_is_name (&value[k], e - k));
+					line->line = g_strndup (&value[e + 1], len - e - 1);
+					line->key_with_prefix = g_strndup (value, e);
+					line->key = &line->key_with_prefix[k];
+					return line;
+				}
+				if (   !g_ascii_isalnum (value[e])
+				    && value[e] != '_')
+					break;
+			}
+		}
+		break;
+	}
+	line->line = g_strndup (value, len);
 	return line;
+}
+
+static shvarLine *
+line_new_build (const char *key, const char *value)
+{
+	char *value_escaped = NULL;
+	shvarLine *line;
+
+	value = svEscape (value, &value_escaped);
+
+	line = g_slice_new (shvarLine);
+	line->line = value_escaped ?: g_strdup (value);
+	line->key_with_prefix = g_strdup (key);
+	line->key = line->key_with_prefix;
+	return line;
+}
+
+static gboolean
+line_set (shvarLine *line, const char *value)
+{
+	char *value_escaped = NULL;
+	gboolean changed = FALSE;
+
+	nm_assert (line->key);
+
+	if (line->key != line->key_with_prefix) {
+		memmove (line->key_with_prefix, line->key, strlen (line->key) + 1);
+		line->key = line->key_with_prefix;
+		changed = TRUE;
+	}
+
+	value = svEscape (value, &value_escaped);
+
+	if (line->line) {
+		if (nm_streq (value, line->line)) {
+			g_free (value_escaped);
+			return changed;
+		}
+		g_free (line->line);
+	}
+
+	line->line = value_escaped ?: g_strdup (value);
+	return TRUE;
 }
 
 static void
 line_free (shvarLine *line)
 {
-	g_free (line->value);
-	if (line->original != line->value)
-		g_free (line->original);
+	g_free (line->line);
+	g_free (line->key_with_prefix);
 	g_slice_free (shvarLine, line);
-}
-
-static const char *
-line_value (const shvarLine *line, const char *key)
-{
-#if NM_MORE_ASSERTS > 5
-	const char *v;
-
-	nm_assert (line);
-	nm_assert (line->value);
-	nm_assert (key && _shell_is_name (key));
-
-	v = line->value;
-	while (g_ascii_isspace (v[0]))
-		v++;
-	nm_assert (g_str_has_prefix (v, key));
-	nm_assert (v[strlen (key)] == '=');
-	nm_assert (&v[strlen (key)] == strchr (line->value, '='));
-#endif
-	return strchr (line->value, '=') + 1;
 }
 
 /*****************************************************************************/
@@ -726,9 +766,9 @@ svOpenFileInternal (const char *name, gboolean create, GError **error)
 
 		/* we'd use g_strsplit() here, but we want a list, not an array */
 		for (p = arena; (q = strchr (p, '\n')) != NULL; p = q + 1)
-			s->lineList = g_list_prepend (s->lineList, line_new (g_strndup (p, q - p)));
+			s->lineList = g_list_prepend (s->lineList, line_new_parse (p, q - p));
 		if (p[0])
-			s->lineList = g_list_prepend (s->lineList, line_new (g_strdup (p)));
+			s->lineList = g_list_prepend (s->lineList, line_new_parse (p, strlen (p)));
 		g_free (arena);
 		s->lineList = g_list_reverse (s->lineList);
 
@@ -779,21 +819,13 @@ svCreateFile (const char *name)
 static const GList *
 shlist_find (const GList *current, const char *key)
 {
-	gsize len;
-
-	nm_assert (_shell_is_name (key));
+	nm_assert (_shell_is_name (key, -1));
 
 	if (current) {
-		len = strlen (key);
 		do {
 			shvarLine *line = current->data;
-			const char *original = line->original;
 
-			/* skip over leading spaces */
-			while (g_ascii_isspace (original[0]))
-				original++;
-
-			if (!strncmp (key, original, len) && original[len] == '=')
+			if (line->key && nm_streq (line->key, key))
 				return current;
 			current = current->next;
 		} while (current);
@@ -807,9 +839,10 @@ static const char *
 _svGetValue (shvarFile *s, const char *key, char **to_free)
 {
 	const GList *current, *last;
+	const shvarLine *line;
 
 	nm_assert (s);
-	nm_assert (_shell_is_name (key));
+	nm_assert (_shell_is_name (key, -1));
 	nm_assert (to_free);
 
 	last = NULL;
@@ -818,14 +851,11 @@ _svGetValue (shvarFile *s, const char *key, char **to_free)
 		last = current;
 		current = current->next;
 	}
-
 	if (last) {
-		const shvarLine *line = last->data;
-
-		if (line->value)
-			return svUnescape (line_value (line, key), to_free);
+		line = last->data;
+		if (line->line)
+			return svUnescape (line->line, to_free);
 	}
-
 	*to_free = NULL;
 	return NULL;
 }
@@ -929,7 +959,7 @@ svSetValue (shvarFile *s, const char *key, const char *value)
 	g_return_if_fail (s != NULL);
 	g_return_if_fail (key != NULL);
 
-	nm_assert (_shell_is_name (key));
+	nm_assert (_shell_is_name (key, -1));
 
 	last = NULL;
 	current = s->lineList;
@@ -949,35 +979,17 @@ svSetValue (shvarFile *s, const char *key, const char *value)
 		if (last) {
 			shvarLine *line = last->data;
 
-			if (line->value) {
-				if (line->value != line->original)
-					g_free (line->value);
-				line->value = NULL;
+			if (nm_clear_g_free (&line->line))
 				s->modified = TRUE;
-			}
 		}
 	} else {
-		gs_free char *newval_free = NULL;
-		shvarLine *line;
-		char *new_value;
-
-		value = svEscape (value, &newval_free);
-
 		if (!last) {
-			new_value = g_strdup_printf ("%s=%s", key, value);
-			s->lineList = g_list_append (s->lineList, line_new (new_value));
+			s->lineList = g_list_append (s->lineList, line_new_build (key, value));
+			s->modified = TRUE;
 		} else {
-			line = last->data;
-			if (line->value) {
-				if (nm_streq (line_value (line, key), value))
-					return;
-				if (line->value != line->original)
-					g_free (line->value);
-			}
-			new_value = g_strdup_printf ("%s=%s", key, value);
-			line->value = new_value;
+			if (line_set (last->data, value))
+				s->modified = TRUE;
 		}
-		s->modified = TRUE;
 	}
 }
 
@@ -1059,34 +1071,33 @@ svWriteFile (shvarFile *s, int mode, GError **error)
 		f = fdopen (tmpfd, "w");
 		fseek (f, 0, SEEK_SET);
 		for (current = s->lineList; current; current = current->next) {
-			shvarLine *line = current->data;
+			const shvarLine *line = current->data;
 			const char *str;
-			const char *value;
+			char *s_tmp;
+			gboolean valid_value;
 
-			str = line->value;
-			if (!str)
+			if (!line->key) {
+				str = nm_str_skip_leading_spaces (line->line);
+				if (NM_IN_SET (str[0], '\0', '#'))
+					fprintf (f, "%s\n", line->line);
+				else
+					fprintf (f, "#NM: %s\n", line->line);
+				continue;
+			}
+
+			if (!line->line)
 				continue;
 
-			while (g_ascii_isspace (str[0]))
-				str++;
-			if (NM_IN_SET (str[0], '\0', '#'))
-				goto write_regular;
+			/* we check that the assignment can be properly unescaped. */
+			valid_value = !!svUnescape (line->line, &s_tmp);
+			g_free (s_tmp);
 
-			value = _shell_is_name_assignment (str);
-			if (value) {
-				gs_free char *s_tmp = NULL;
-
-				/* we check that the assignment can be properly unescaped. */
-				if (svUnescape (value, &s_tmp))
-					goto write_regular;
-				nm_clear_g_free (&s_tmp);
-				s_tmp = g_strndup (str, value - str);
-				fprintf (f, "%s\n", s_tmp);
+			if (valid_value)
+				fprintf (f, "%s=%s\n", line->key_with_prefix, line->line);
+			else {
+				fprintf (f, "%s=\n", line->key);
+				fprintf (f, "#NM: %s=%s\n", line->key_with_prefix, line->line);
 			}
-			fprintf (f, "#NM: %s\n", line->value);
-			continue;
-write_regular:
-			fprintf (f, "%s\n", line->value);
 		}
 		fclose (f);
 	}
