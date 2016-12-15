@@ -8616,6 +8616,7 @@ test_write_unknown (gconstpointer test_data)
 		_svGetValue_check (sv, "NAME3", "name3-value");
 
 		svSetValue (sv, "NAME", "set-by-test1");
+		svSetValue (sv, "NAME2", NULL);
 		svSetValue (sv, "NAME2", "set-by-test2");
 		svSetValue (sv, "NAME3", "set-by-test3");
 
