@@ -328,7 +328,7 @@ DEVICETYPE=TeamPort
 
   <xsl:template match="setting">
     <xsl:variable name="setting_name" select="../@name"/>
-    <xsl:variable name="unsupported" select="'adsl, bluetooth, ppp, pppoe, serial, generic, gsm, cdma, 802-11-olpc-mesh, wimax, vpn'"/>
+    <xsl:variable name="unsupported" select="'adsl, bluetooth, ppp, pppoe, serial, generic, gsm, cdma, 802-11-olpc-mesh, wimax, vpn, macvlan, vxlan, tun, ip-tunnel'"/>
       <xsl:if test="not (contains($unsupported, @name))">
         <table>
           <title><xsl:value-of select="@name"/> setting</title>
