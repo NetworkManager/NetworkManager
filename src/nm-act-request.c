@@ -180,7 +180,7 @@ nm_act_request_get_secrets (NMActRequest *self,
 	NMConnection *applied_connection;
 	const char *hints[2] = { hint, NULL };
 
-	g_return_val_if_fail (NM_IS_ACT_REQUEST (self), 0);
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (self), NULL);
 
 	priv = NM_ACT_REQUEST_GET_PRIVATE (self);
 
