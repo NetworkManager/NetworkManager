@@ -94,17 +94,19 @@ struct _NMActRequestGetSecretsCallId {
 	NMActRequestSecretsFunc callback;
 	gpointer callback_data;
 	NMSettingsConnectionCallId call_id;
+	bool has_ref;
 };
 
 typedef struct _NMActRequestGetSecretsCallId GetSecretsInfo;
 
 static GetSecretsInfo *
-_get_secrets_info_new (NMActRequest *self, NMActRequestSecretsFunc callback, gpointer callback_data)
+_get_secrets_info_new (NMActRequest *self, gboolean ref_self, NMActRequestSecretsFunc callback, gpointer callback_data)
 {
 	GetSecretsInfo *info;
 
 	info = g_slice_new0 (GetSecretsInfo);
-	info->self = self;
+	info->has_ref = ref_self;
+	info->self = ref_self ? g_object_ref (self) : self;
 	info->callback = callback;
 	info->callback_data = callback_data;
 
@@ -114,6 +116,8 @@ _get_secrets_info_new (NMActRequest *self, NMActRequestSecretsFunc callback, gpo
 static void
 _get_secrets_info_free (GetSecretsInfo *info)
 {
+	if (info->has_ref)
+		g_object_unref (info->self);
 	g_slice_free (GetSecretsInfo, info);
 }
 
@@ -149,6 +153,8 @@ get_secrets_cb (NMSettingsConnection *connection,
 /**
  * nm_act_request_get_secrets:
  * @self:
+ * @ref_self: if %TRUE, the pending call take a reference on @self.
+ *   It also allows you to omit the @self argument in nm_act_request_cancel_secrets().
  * @setting_name:
  * @flags:
  * @hint:
@@ -167,6 +173,7 @@ get_secrets_cb (NMSettingsConnection *connection,
  */
 NMActRequestGetSecretsCallId
 nm_act_request_get_secrets (NMActRequest *self,
+                            gboolean ref_self,
                             const char *setting_name,
                             NMSecretAgentGetSecretsFlags flags,
                             const char *hint,
@@ -187,7 +194,7 @@ nm_act_request_get_secrets (NMActRequest *self,
 	settings_connection = nm_act_request_get_settings_connection (self);
 	applied_connection = nm_act_request_get_applied_connection (self);
 
-	info = _get_secrets_info_new (self, callback, callback_data);
+	info = _get_secrets_info_new (self, ref_self, callback, callback_data);
 
 	priv->secrets_calls = g_slist_append (priv->secrets_calls, info);
 
@@ -229,13 +236,31 @@ _do_cancel_secrets (NMActRequest *self, GetSecretsInfo *info, gboolean is_dispos
 	_get_secrets_info_free (info);
 }
 
+/**
+ * nm_act_request_cancel_secrets:
+ * @self: The #NMActRequest. Note that this argument can be %NULL if, and only if
+ *   the call_id was created with @take_ref.
+ * @call_id:
+ *
+ * You are only allowed to cancel the call once, and only before the callback
+ * is already invoked. Note that cancelling causes the callback to be invoked
+ * synchronously.
+ */
 void
 nm_act_request_cancel_secrets (NMActRequest *self, NMActRequestGetSecretsCallId call_id)
 {
 	NMActRequestPrivate *priv;
 
-	g_return_if_fail (NM_IS_ACT_REQUEST (self));
 	g_return_if_fail (call_id);
+
+	if (self) {
+		g_return_if_fail (NM_IS_ACT_REQUEST (self));
+		g_return_if_fail (self == call_id->self);
+	} else {
+		g_return_if_fail (call_id->has_ref);
+		g_return_if_fail (NM_IS_ACT_REQUEST (call_id->self));
+		self = call_id->self;
+	}
 
 	priv = NM_ACT_REQUEST_GET_PRIVATE (self);
 

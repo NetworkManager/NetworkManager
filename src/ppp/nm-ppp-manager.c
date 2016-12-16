@@ -346,6 +346,7 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 		flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
 
 	priv->secrets_id = nm_act_request_get_secrets (priv->act_req,
+	                                               FALSE,
 	                                               priv->secrets_setting_name,
 	                                               flags,
 	                                               hints ? g_ptr_array_index (hints, 0) : NULL,
