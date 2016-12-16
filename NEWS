@@ -29,6 +29,9 @@ Notable changes included in this snapshot so far include:
     during upgrade that did not explicitly configure cloned-mac-address. This
     has the effect that externally configured MAC addresses are preserved
     by default instead of setting the permanent address (bgo#770611).
+* Avoid reading the permanent MAC address before the device is initialized
+    by UDEV. This avoids a race where NetworkManager might detect the MAC
+    address of the wrong interface.
 * The cloned.mac-address property can now be used with Bond and Bridge
     devices.
 * The ifcfg parsing code has been reworked for better compatibility with
