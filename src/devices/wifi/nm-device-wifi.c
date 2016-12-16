@@ -1856,6 +1856,7 @@ need_new_8021x_secrets (NMDeviceWifi *self,
 static gboolean
 need_new_wpa_psk (NMDeviceWifi *self,
                   guint32 old_state,
+                  gint disconnect_reason,
                   const char **setting_name)
 {
 	NMSettingWirelessSecurity *s_wsec;
@@ -1876,6 +1877,15 @@ need_new_wpa_psk (NMDeviceWifi *self,
 		key_mgmt = nm_setting_wireless_security_get_key_mgmt (s_wsec);
 
 	if (g_strcmp0 (key_mgmt, "wpa-psk") == 0) {
+		/* -4 (locally-generated WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY) usually
+		 * means the driver missed beacons from the AP.  This usually happens
+		 * due to driver bugs or faulty power-save management.  It doesn't
+		 * indicate that the PSK is wrong.
+		 */
+		#define LOCAL_WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY -4
+		if (disconnect_reason == LOCAL_WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY)
+			return FALSE;
+
 		*setting_name = NM_SETTING_WIRELESS_SECURITY_SETTING_NAME;
 		return TRUE;
 	}
@@ -1901,7 +1911,7 @@ handle_8021x_or_psk_auth_fail (NMDeviceWifi *self,
 	g_return_val_if_fail (req != NULL, FALSE);
 
 	if (   need_new_8021x_secrets (self, old_state, &setting_name)
-	    || need_new_wpa_psk (self, old_state, &setting_name)) {
+	    || need_new_wpa_psk (self, old_state, disconnect_reason, &setting_name)) {
 
 		nm_act_request_clear_secrets (req);
 
