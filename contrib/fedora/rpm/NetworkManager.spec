@@ -25,7 +25,7 @@
 %global epoch_version 1
 
 %global obsoletes_device_plugins 1:0.9.9.95-1
-%global obsoletes_ppp_plugin     1:1.5.2
+%global obsoletes_ppp_plugin     1:1.5.3
 
 %global systemd_dir %{_prefix}/lib/systemd/system
 %global nmlibdir %{_prefix}/lib/%{name}
@@ -141,7 +141,9 @@ BuildRequires: gettext-devel
 BuildRequires: pkgconfig
 BuildRequires: libnl3-devel >= %{libnl3_version}
 BuildRequires: automake autoconf intltool libtool
+%if %{with ppp}
 BuildRequires: ppp-devel >= 2.4.5
+%endif
 BuildRequires: nss-devel >= 3.11.7
 BuildRequires: dhclient
 BuildRequires: readline-devel
