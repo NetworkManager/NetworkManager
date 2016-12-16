@@ -10,8 +10,12 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Don't deconfigure devices we can take over on shutdown. Makes it
     possible to restart without connection disruption for most device
     types
-* Fixed a race condition that could cause Wi-Fi device do be identified
-    as Ethernet while it's being removed
+* Avoid reading the permanent MAC address before the device is initialized
+    by UDEV. This avoids a race where NetworkManager might detect the MAC
+    address of the wrong interface.
+* Fixed race condition when renaming interfaces, for example as done
+    by UDEV for persistent interface naming. This could cause detecting
+    a Wi-Fi interface as ethernet.
 * Fixed a race condition in libnm that could cause a client hang if a last
     value from a property of object array type disappeared
 * Fixed a possible nmcli hang on D-Bus object fetch failure
