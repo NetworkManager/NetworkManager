@@ -47,6 +47,9 @@ Notable changes included in this snapshot so far include:
 * The PPP manager can now be split into a separate package.
 * Details of the DNS information obtained from the connections is now
     exposed on the D-Bus and can be inspected with nmcli.
+* Fixed race conditions when renaming interfaces, for example as done
+    by UDEV for persistent interface naming. This could cause detecting
+    devices as the wrong hardware type.
 * Added the support for DHCPV6_HOSTNAME and DHCPV6_SEND_HOSTNAME keys in
     ifcfg files that control "dhcp-hostname" and "dhcp-send-hostname"
     properties of the "ipv6" setting.
