@@ -104,8 +104,6 @@ case "$1" in
         else
             if test -f "./src/NetworkManager.ver"; then
                 touch ./src/NetworkManager.ver
-            else
-                cp "$2/src/NetworkManager.ver-orig" ./src/NetworkManager.ver
             fi
         fi
         ;;

@@ -1466,7 +1466,7 @@ src_libNetworkManagerTest_la_LIBADD = \
 
 ###############################################################################
 
-src/NetworkManager.ver: src/NetworkManager.ver-orig src/libNetworkManager.la $(core_plugins)
+src/NetworkManager.ver: src/libNetworkManager.la $(core_plugins)
 	$(AM_V_GEN) "$(srcdir)/tools/create-exports-NetworkManager.sh" --called-from-make "$(srcdir)"
 
 CLEANFILES += src/NetworkManager.ver
@@ -1510,8 +1510,7 @@ src_nm_iface_helper_LDFLAGS = \
 
 EXTRA_DIST += \
 	src/org.freedesktop.NetworkManager.conf \
-	src/nm-test-utils-core.h \
-	src/NetworkManager.ver-orig
+	src/nm-test-utils-core.h
 
 ###############################################################################
 # src/dhcp
