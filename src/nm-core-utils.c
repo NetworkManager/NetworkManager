@@ -3268,7 +3268,7 @@ nm_utils_inet6_interface_identifier_to_token (NMUtilsIPv6IfaceId iid, char *buf)
 /*****************************************************************************/
 
 static gboolean
-_set_stable_privacy (guint8 stable_type,
+_set_stable_privacy (NMUtilsStableType stable_type,
                      struct in6_addr *addr,
                      const char *ifname,
                      const char *network_id,
@@ -3282,7 +3282,8 @@ _set_stable_privacy (guint8 stable_type,
 	guint32 tmp[2];
 	gsize len = sizeof (digest);
 
-	g_return_val_if_fail (key_len, FALSE);
+	nm_assert (key_len);
+	nm_assert (network_id);
 
 	/* Documentation suggests that this can fail.
 	 * Maybe in case of a missing algorithm in crypto library? */
@@ -3296,6 +3297,11 @@ _set_stable_privacy (guint8 stable_type,
 	key_len = MIN (key_len, G_MAXUINT32);
 
 	if (stable_type != NM_UTILS_STABLE_TYPE_UUID) {
+		guint8 stable_type_uint8;
+
+		nm_assert (stable_type < (NMUtilsStableType) 255);
+		stable_type_uint8 = (guint8) stable_type;
+
 		/* Preferably, we would always like to include the stable-type,
 		 * but for backward compatibility reasons, we cannot for UUID.
 		 *
@@ -3305,13 +3311,11 @@ _set_stable_privacy (guint8 stable_type,
 		 * and the terminating '\0' of @network_id, it is unambigiously
 		 * possible to revert the process and deduce the @stable_type.
 		 */
-		g_checksum_update (sum, &stable_type, sizeof (stable_type));
+		g_checksum_update (sum, &stable_type_uint8, sizeof (stable_type_uint8));
 	}
 
 	g_checksum_update (sum, addr->s6_addr, 8);
 	g_checksum_update (sum, (const guchar *) ifname, strlen (ifname) + 1);
-	if (!network_id)
-		network_id = "";
 	g_checksum_update (sum, (const guchar *) network_id, strlen (network_id) + 1);
 	tmp[0] = htonl (dad_counter);
 	tmp[1] = htonl (key_len);
@@ -3329,7 +3333,7 @@ _set_stable_privacy (guint8 stable_type,
 }
 
 gboolean
-nm_utils_ipv6_addr_set_stable_privacy_impl (guint8 stable_type,
+nm_utils_ipv6_addr_set_stable_privacy_impl (NMUtilsStableType stable_type,
                                             struct in6_addr *addr,
                                             const char *ifname,
                                             const char *network_id,
@@ -3361,9 +3365,7 @@ nm_utils_ipv6_addr_set_stable_privacy (NMUtilsStableType stable_type,
 	gs_free guint8 *secret_key = NULL;
 	gsize key_len = 0;
 
-	nm_assert (NM_IN_SET (stable_type,
-	                      NM_UTILS_STABLE_TYPE_UUID,
-	                      NM_UTILS_STABLE_TYPE_STABLE_ID));
+	g_return_val_if_fail (network_id, FALSE);
 
 	if (dad_counter >= RFC7217_IDGEN_RETRIES) {
 		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
@@ -3463,9 +3465,6 @@ _hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
 	guint8 stable_type_uint8;
 
 	nm_assert (stable_id);
-	nm_assert (NM_IN_SET (stable_type,
-	                      NM_UTILS_STABLE_TYPE_UUID,
-	                      NM_UTILS_STABLE_TYPE_STABLE_ID));
 	nm_assert (secret_key);
 
 	sum = g_checksum_new (G_CHECKSUM_SHA256);
@@ -3474,6 +3473,7 @@ _hw_addr_gen_stable_eth (NMUtilsStableType stable_type,
 
 	key_len = MIN (key_len, G_MAXUINT32);
 
+	nm_assert (stable_type < (NMUtilsStableType) 255);
 	stable_type_uint8 = stable_type;
 	g_checksum_update (sum, (const guchar *) &stable_type_uint8, sizeof (stable_type_uint8));
 

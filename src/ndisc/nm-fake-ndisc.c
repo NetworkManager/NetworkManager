@@ -374,6 +374,8 @@ nm_fake_ndisc_new (int ifindex, const char *ifname)
 	                     NM_NDISC_IFINDEX, ifindex,
 	                     NM_NDISC_IFNAME, ifname,
 	                     NM_NDISC_NODE_TYPE, (int) NM_NDISC_NODE_TYPE_HOST,
+	                     NM_NDISC_STABLE_TYPE, (int) NM_UTILS_STABLE_TYPE_UUID,
+	                     NM_NDISC_NETWORK_ID, "fake",
 	                     NULL);
 }
 

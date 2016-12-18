@@ -362,13 +362,19 @@ gboolean nm_utils_get_ipv6_interface_identifier (NMLinkType link_type,
                                                  guint dev_id,
                                                  NMUtilsIPv6IfaceId *out_iid);
 
-typedef enum { /*< skip >*/
+typedef enum {
+	/* The stable type. Note that this value is encoded in the
+	 * generated addresses, thus the numbers MUST not change.
+	 *
+	 * Also note, if we ever allocate ID 255, we must take care
+	 * that nm_utils_ipv6_addr_set_stable_privacy() extends the
+	 * uint8 encoding of this value. */
 	NM_UTILS_STABLE_TYPE_UUID = 0,
 	NM_UTILS_STABLE_TYPE_STABLE_ID = 1,
 } NMUtilsStableType;
 
 
-gboolean nm_utils_ipv6_addr_set_stable_privacy_impl (guint8 stable_type,
+gboolean nm_utils_ipv6_addr_set_stable_privacy_impl (NMUtilsStableType stable_type,
                                                      struct in6_addr *addr,
                                                      const char *ifname,
                                                      const char *network_id,

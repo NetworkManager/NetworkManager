@@ -1054,6 +1054,7 @@ set_property (GObject *object, guint prop_id,
 	case PROP_NETWORK_ID:
 		/* construct-only */
 		priv->network_id = g_value_dup_string (value);
+		g_return_if_fail (priv->network_id);
 		break;
 	case PROP_ADDR_GEN_MODE:
 		/* construct-only */
