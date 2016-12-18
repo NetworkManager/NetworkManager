@@ -322,6 +322,8 @@ gboolean nm_utils_machine_id_parse (const char *id_str, /*uuid_t*/ guchar *out_u
 
 guint8 *nm_utils_secret_key_read (gsize *out_key_len, GError **error);
 
+const char *nm_utils_get_boot_id (void);
+
 /* IPv6 Interface Identifer helpers */
 
 /**

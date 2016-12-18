@@ -3040,6 +3040,39 @@ out:
 	return NULL;
 }
 
+/*****************************************************************************/
+
+const char *
+nm_utils_get_boot_id (void)
+{
+	static const char *boot_id;
+
+	if (G_UNLIKELY (!boot_id)) {
+		gs_free char *contents = NULL;
+
+		nm_utils_file_get_contents (-1, "/proc/sys/kernel/random/boot_id", 0,
+		                            &contents, NULL, NULL);
+		if (contents) {
+			g_strstrip (contents);
+			if (contents[0]) {
+				/* clone @contents because we keep @boot_id until the program
+				 * ends.
+				 * nm_utils_file_get_contents() likely allocated a larger
+				 * buffer chunk initially and (although using realloc to shrink
+				 * the buffer) it might not be best to keep this memory
+				 * around. */
+				boot_id = g_strdup (contents);
+			}
+		}
+		if (!boot_id)
+			boot_id = nm_utils_uuid_generate ();
+	}
+
+	return boot_id;
+}
+
+/*****************************************************************************/
+
 /* Returns the "u" (universal/local) bit value for a Modified EUI-64 */
 static gboolean
 get_gre_eui64_u_bit (guint32 addr)
