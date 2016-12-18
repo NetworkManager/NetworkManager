@@ -369,10 +369,19 @@ typedef enum {
 	 * Also note, if we ever allocate ID 255, we must take care
 	 * that nm_utils_ipv6_addr_set_stable_privacy() extends the
 	 * uint8 encoding of this value. */
-	NM_UTILS_STABLE_TYPE_UUID = 0,
+	NM_UTILS_STABLE_TYPE_UUID      = 0,
 	NM_UTILS_STABLE_TYPE_STABLE_ID = 1,
+	NM_UTILS_STABLE_TYPE_GENERATED = 2,
+	NM_UTILS_STABLE_TYPE_RANDOM    = 3,
 } NMUtilsStableType;
 
+NMUtilsStableType nm_utils_stable_id_parse (const char *stable_id,
+                                            const char *uuid,
+                                            const char *bootid,
+                                            char **out_generated);
+
+char *nm_utils_stable_id_random (void);
+char *nm_utils_stable_id_generated_complete (const char *msg);
 
 gboolean nm_utils_ipv6_addr_set_stable_privacy_impl (NMUtilsStableType stable_type,
                                                      struct in6_addr *addr,

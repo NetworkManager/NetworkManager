@@ -1481,6 +1481,89 @@ test_reverse_dns_ip6 (void)
 
 /*****************************************************************************/
 
+static void
+do_test_stable_id_parse (const char *stable_id,
+                         NMUtilsStableType expected_stable_type,
+                         const char *expected_generated)
+{
+	gs_free char *generated = NULL;
+	NMUtilsStableType stable_type;
+
+	if (expected_stable_type == NM_UTILS_STABLE_TYPE_GENERATED)
+		g_assert (expected_generated);
+	else
+		g_assert (!expected_generated);
+
+	if (expected_stable_type == NM_UTILS_STABLE_TYPE_UUID)
+		g_assert (!stable_id);
+	else
+		g_assert (stable_id);
+
+	stable_type = nm_utils_stable_id_parse (stable_id, "_CONNECTION", "_BOOT", &generated);
+
+	g_assert_cmpint (expected_stable_type, ==, stable_type);
+
+	if (stable_type == NM_UTILS_STABLE_TYPE_GENERATED) {
+		g_assert_cmpstr (expected_generated, ==, generated);
+		g_assert (generated);
+	} else
+		g_assert (!generated);
+}
+
+static void
+test_stable_id_parse (void)
+{
+#define _parse_stable_id(stable_id)                     do_test_stable_id_parse (""stable_id"", NM_UTILS_STABLE_TYPE_STABLE_ID, NULL)
+#define _parse_generated(stable_id, expected_generated) do_test_stable_id_parse (""stable_id"", NM_UTILS_STABLE_TYPE_GENERATED, ""expected_generated"")
+#define _parse_random(stable_id)                        do_test_stable_id_parse (""stable_id"", NM_UTILS_STABLE_TYPE_RANDOM, NULL)
+	do_test_stable_id_parse (NULL, NM_UTILS_STABLE_TYPE_UUID, NULL);
+	_parse_stable_id ("");
+	_parse_stable_id ("a");
+	_parse_stable_id ("a$");
+	_parse_stable_id ("a$x");
+	_parse_stable_id (" ${a$x");
+	_parse_stable_id ("${");
+	_parse_stable_id ("${=");
+	_parse_stable_id ("${a");
+	_parse_stable_id ("${a$x");
+	_parse_stable_id ("a$$");
+	_parse_stable_id ("a$$x");
+	_parse_stable_id ("a$${CONNECTION}");
+	_parse_stable_id ("a$${CONNECTION}x");
+	_parse_generated ("${CONNECTION}", "${CONNECTION}=11{_CONNECTION}");
+	_parse_generated ("${${CONNECTION}", "${${CONNECTION}=11{_CONNECTION}");
+	_parse_generated ("${CONNECTION}x", "${CONNECTION}=11{_CONNECTION}x");
+	_parse_generated ("x${CONNECTION}", "x${CONNECTION}=11{_CONNECTION}");
+	_parse_generated ("${BOOT}x", "${BOOT}=5{_BOOT}x");
+	_parse_generated ("x${BOOT}", "x${BOOT}=5{_BOOT}");
+	_parse_generated ("x${BOOT}${CONNECTION}", "x${BOOT}=5{_BOOT}${CONNECTION}=11{_CONNECTION}");
+	_parse_generated ("xX${BOOT}yY${CONNECTION}zZ", "xX${BOOT}=5{_BOOT}yY${CONNECTION}=11{_CONNECTION}zZ");
+	_parse_random ("${RANDOM}");
+	_parse_random (" ${RANDOM}");
+	_parse_random ("${BOOT}${RANDOM}");
+}
+
+/*****************************************************************************/
+
+static void
+test_stable_id_generated_complete (void)
+{
+#define ASSERT(str, expected) \
+	G_STMT_START { \
+		gs_free char *_s = NULL; \
+		\
+		_s = nm_utils_stable_id_generated_complete ((str)); \
+		g_assert_cmpstr ((expected), ==, _s); \
+	} G_STMT_END
+
+	ASSERT ("", "2jmj7l5rSw0yVb/vlWAYkK/YBwk");
+	ASSERT ("a", "hvfkN/qlp/zhXR3cuerq6jd2Z7g");
+	ASSERT ("password", "W6ph5Mm5Pz8GgiULbPgzG37mj9g");
+#undef ASSERT
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -1517,6 +1600,9 @@ main (int argc, char **argv)
 
 	g_test_add_func ("/general/reverse_dns/ip4", test_reverse_dns_ip4);
 	g_test_add_func ("/general/reverse_dns/ip6", test_reverse_dns_ip6);
+
+	g_test_add_func ("/general/stable-id/parse", test_stable_id_parse);
+	g_test_add_func ("/general/stable-id/generated-complete", test_stable_id_generated_complete);
 
 	return g_test_run ();
 }

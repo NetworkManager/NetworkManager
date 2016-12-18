@@ -1348,8 +1348,8 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_wireless_class)
 	 * "preserve" means not to touch the MAC address on activation.
 	 * "permanent" means to use the permanent hardware address of the device.
 	 * "random" creates a random MAC address on each connect.
-	 * "stable" creates a hashed MAC address based on connection.stable-id (or
-	 * the connection's UUID) and a machine dependent key.
+	 * "stable" creates a hashed MAC address based on connection.stable-id and a
+	 * machine dependent key.
 	 *
 	 * If unspecified, the value can be overwritten via global defaults, see manual
 	 * of NetworkManager.conf. If still unspecified, it defaults to "preserve"
