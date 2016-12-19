@@ -1058,14 +1058,21 @@ static char *
 nmc_property_802_1X_get_ca_cert (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
-	NMSetting8021xCKScheme scheme;
 	char *ca_cert_str = NULL;
 
-	scheme = nm_setting_802_1x_get_ca_cert_scheme (s_8021X);
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
+	switch (nm_setting_802_1x_get_ca_cert_scheme (s_8021X)) {
+	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		ca_cert_str = bytes_to_string (nm_setting_802_1x_get_ca_cert_blob (s_8021X));
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		ca_cert_str = g_strdup (nm_setting_802_1x_get_ca_cert_path (s_8021X));
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+		ca_cert_str = g_strdup (nm_setting_802_1x_get_ca_cert_uri (s_8021X));
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_UNKNOWN:
+		break;
+	}
 
 	return ca_cert_str;
 }
@@ -1076,17 +1083,24 @@ nmc_property_802_1X_get_client_cert (NMSetting *setting,
                                      gboolean show_secrets)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
-	NMSetting8021xCKScheme scheme;
 	char *cert_str = NULL;
 
-	scheme = nm_setting_802_1x_get_client_cert_scheme (s_8021X);
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+	switch (nm_setting_802_1x_get_client_cert_scheme (s_8021X)) {
+	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		if (show_secrets)
 			cert_str = bytes_to_string (nm_setting_802_1x_get_client_cert_blob (s_8021X));
 		else
 			cert_str = g_strdup (_("<hidden>"));
-	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		cert_str = g_strdup (nm_setting_802_1x_get_client_cert_path (s_8021X));
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+		cert_str = g_strdup (nm_setting_802_1x_get_client_cert_uri (s_8021X));
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_UNKNOWN:
+		break;
+	}
 
 	return cert_str;
 }
@@ -1101,14 +1115,21 @@ static char *
 nmc_property_802_1X_get_phase2_ca_cert (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
-	NMSetting8021xCKScheme scheme;
 	char *phase2_ca_cert_str = NULL;
 
-	scheme = nm_setting_802_1x_get_phase2_ca_cert_scheme (s_8021X);
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
+	switch (nm_setting_802_1x_get_phase2_ca_cert_scheme (s_8021X)) {
+	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		phase2_ca_cert_str = bytes_to_string (nm_setting_802_1x_get_phase2_ca_cert_blob (s_8021X));
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		phase2_ca_cert_str = g_strdup (nm_setting_802_1x_get_phase2_ca_cert_path (s_8021X));
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+		phase2_ca_cert_str = g_strdup (nm_setting_802_1x_get_phase2_ca_cert_uri (s_8021X));
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_UNKNOWN:
+		break;
+	}
 
 	return phase2_ca_cert_str;
 }
@@ -1119,17 +1140,24 @@ nmc_property_802_1X_get_phase2_client_cert (NMSetting *setting,
                                             gboolean show_secrets)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
-	NMSetting8021xCKScheme scheme;
 	char *cert_str = NULL;
 
-	scheme = nm_setting_802_1x_get_phase2_client_cert_scheme (s_8021X);
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+	switch (nm_setting_802_1x_get_phase2_client_cert_scheme (s_8021X)) {
+	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		if (show_secrets)
 			cert_str = bytes_to_string (nm_setting_802_1x_get_phase2_client_cert_blob (s_8021X));
 		else
 			cert_str = g_strdup (_("<hidden>"));
-	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		cert_str = g_strdup (nm_setting_802_1x_get_phase2_client_cert_path (s_8021X));
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+		cert_str = g_strdup (nm_setting_802_1x_get_phase2_client_cert_uri (s_8021X));
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_UNKNOWN:
+		break;
+	}
 
 	return cert_str;
 }
@@ -1153,17 +1181,24 @@ nmc_property_802_1X_get_private_key (NMSetting *setting,
                                      gboolean show_secrets)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
-	NMSetting8021xCKScheme scheme;
 	char *key_str = NULL;
 
-	scheme = nm_setting_802_1x_get_private_key_scheme (s_8021X);
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+	switch (nm_setting_802_1x_get_private_key_scheme (s_8021X)) {
+	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		if (show_secrets)
 			key_str = bytes_to_string (nm_setting_802_1x_get_private_key_blob (s_8021X));
 		else
 			key_str = g_strdup (_("<hidden>"));
-	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		key_str = g_strdup (nm_setting_802_1x_get_private_key_path (s_8021X));
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+		key_str = g_strdup (nm_setting_802_1x_get_private_key_uri (s_8021X));
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_UNKNOWN:
+		break;
+	}
 
 	return key_str;
 }
@@ -1180,17 +1215,24 @@ nmc_property_802_1X_get_phase2_private_key (NMSetting *setting,
                                             gboolean show_secrets)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
-	NMSetting8021xCKScheme scheme;
 	char *key_str = NULL;
 
-	scheme = nm_setting_802_1x_get_phase2_private_key_scheme (s_8021X);
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+	switch (nm_setting_802_1x_get_phase2_private_key_scheme (s_8021X)) {
+	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		if (show_secrets)
 			key_str = bytes_to_string (nm_setting_802_1x_get_phase2_private_key_blob (s_8021X));
 		else
 			key_str = g_strdup (_("<hidden>"));
-	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		key_str = g_strdup (nm_setting_802_1x_get_phase2_private_key_path (s_8021X));
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+		key_str = g_strdup (nm_setting_802_1x_get_phase2_private_key_uri (s_8021X));
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_UNKNOWN:
+		break;
+	}
 
 	return key_str;
 }
