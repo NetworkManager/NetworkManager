@@ -955,6 +955,11 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 			if (!add_string_val (self, path, "ca_cert", FALSE, FALSE, error))
 				return FALSE;
 			break;
+		case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+			path = nm_setting_802_1x_get_ca_cert_uri (setting);
+			if (!add_string_val (self, path, "ca_cert", FALSE, FALSE, error))
+				return FALSE;
+			break;
 		default:
 			break;
 		}
@@ -973,6 +978,11 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 			break;
 		case NM_SETTING_802_1X_CK_SCHEME_PATH:
 			path = nm_setting_802_1x_get_phase2_ca_cert_path (setting);
+			if (!add_string_val (self, path, "ca_cert2", FALSE, FALSE, error))
+				return FALSE;
+			break;
+		case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+			path = nm_setting_802_1x_get_phase2_ca_cert_uri (setting);
 			if (!add_string_val (self, path, "ca_cert2", FALSE, FALSE, error))
 				return FALSE;
 			break;
@@ -1018,6 +1028,12 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 			return FALSE;
 		added = TRUE;
 		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+		path = nm_setting_802_1x_get_private_key_uri (setting);
+		if (!add_string_val (self, path, "private_key", FALSE, FALSE, error))
+			return FALSE;
+		added = TRUE;
+		break;
 	default:
 		break;
 	}
@@ -1055,6 +1071,11 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 				if (!add_string_val (self, path, "client_cert", FALSE, FALSE, error))
 					return FALSE;
 				break;
+			case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+				path = nm_setting_802_1x_get_client_cert_uri (setting);
+				if (!add_string_val (self, path, "client_cert", FALSE, FALSE, error))
+					return FALSE;
+				break;
 			default:
 				break;
 			}
@@ -1072,6 +1093,12 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		path = nm_setting_802_1x_get_phase2_private_key_path (setting);
+		if (!add_string_val (self, path, "private_key2", FALSE, FALSE, error))
+			return FALSE;
+		added = TRUE;
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+		path = nm_setting_802_1x_get_phase2_private_key_uri (setting);
 		if (!add_string_val (self, path, "private_key2", FALSE, FALSE, error))
 			return FALSE;
 		added = TRUE;
@@ -1110,6 +1137,11 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 				break;
 			case NM_SETTING_802_1X_CK_SCHEME_PATH:
 				path = nm_setting_802_1x_get_phase2_client_cert_path (setting);
+				if (!add_string_val (self, path, "client_cert2", FALSE, FALSE, error))
+					return FALSE;
+				break;
+			case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+				path = nm_setting_802_1x_get_phase2_client_cert_uri (setting);
 				if (!add_string_val (self, path, "client_cert2", FALSE, FALSE, error))
 					return FALSE;
 				break;
