@@ -1607,7 +1607,7 @@ device_ip4_config_changed (NMDevice *device,
 	 * catch all the changes when the device moves to ACTIVATED state.
 	 * Prevents unecessary changes to DNS information.
 	 */
-	if (!nm_device_is_activating (device)) {
+	if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
 		if (old_config != new_config) {
 			if (old_config)
 				nm_dns_manager_remove_ip4_config (priv->dns_manager, old_config);
