@@ -29,8 +29,9 @@
 
 /*****************************************************************************/
 
-#define NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB "data:;base64,"
 #define NM_KEYFILE_CERT_SCHEME_PREFIX_PATH "file://"
+#define NM_KEYFILE_CERT_SCHEME_PREFIX_PKCS11 "pkcs11:"
+#define NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB "data:;base64,"
 
 char *nm_keyfile_detect_unqualified_path_scheme (const char *base_dir,
                                                  gconstpointer pdata,
@@ -147,6 +148,7 @@ typedef struct {
 	NMSetting8021xCKFormat (*format_func) (NMSetting8021x *setting);
 	const char *           (*path_func)   (NMSetting8021x *setting);
 	GBytes *               (*blob_func)   (NMSetting8021x *setting);
+	const char *           (*uri_func)    (NMSetting8021x *setting);
 } NMKeyfileWriteTypeDataCert;
 
 

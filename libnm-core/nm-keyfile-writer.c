@@ -380,6 +380,7 @@ typedef struct ObjectType {
 	NMSetting8021xCKFormat (*format_func) (NMSetting8021x *setting);
 	const char *           (*path_func)   (NMSetting8021x *setting);
 	GBytes *               (*blob_func)   (NMSetting8021x *setting);
+	const char *           (*uri_func)    (NMSetting8021x *setting);
 } ObjectType;
 
 static const ObjectType objtypes[10] = {
@@ -388,42 +389,48 @@ static const ObjectType objtypes[10] = {
 	  nm_setting_802_1x_get_ca_cert_scheme,
 	  NULL,
 	  nm_setting_802_1x_get_ca_cert_path,
-	  nm_setting_802_1x_get_ca_cert_blob },
+	  nm_setting_802_1x_get_ca_cert_blob,
+	  nm_setting_802_1x_get_ca_cert_uri },
 
 	{ NM_SETTING_802_1X_PHASE2_CA_CERT,
 	  "inner-ca-cert",
 	  nm_setting_802_1x_get_phase2_ca_cert_scheme,
 	  NULL,
 	  nm_setting_802_1x_get_phase2_ca_cert_path,
-	  nm_setting_802_1x_get_phase2_ca_cert_blob },
+	  nm_setting_802_1x_get_phase2_ca_cert_blob,
+	  nm_setting_802_1x_get_phase2_ca_cert_uri },
 
 	{ NM_SETTING_802_1X_CLIENT_CERT,
 	  "client-cert",
 	  nm_setting_802_1x_get_client_cert_scheme,
 	  NULL,
 	  nm_setting_802_1x_get_client_cert_path,
-	  nm_setting_802_1x_get_client_cert_blob },
+	  nm_setting_802_1x_get_client_cert_blob,
+	  nm_setting_802_1x_get_client_cert_uri },
 
 	{ NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
 	  "inner-client-cert",
 	  nm_setting_802_1x_get_phase2_client_cert_scheme,
 	  NULL,
 	  nm_setting_802_1x_get_phase2_client_cert_path,
-	  nm_setting_802_1x_get_phase2_client_cert_blob },
+	  nm_setting_802_1x_get_phase2_client_cert_blob,
+	  nm_setting_802_1x_get_phase2_client_cert_uri },
 
 	{ NM_SETTING_802_1X_PRIVATE_KEY,
 	  "private-key",
 	  nm_setting_802_1x_get_private_key_scheme,
 	  nm_setting_802_1x_get_private_key_format,
 	  nm_setting_802_1x_get_private_key_path,
-	  nm_setting_802_1x_get_private_key_blob },
+	  nm_setting_802_1x_get_private_key_blob,
+	  nm_setting_802_1x_get_private_key_uri },
 
 	{ NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
 	  "inner-private-key",
 	  nm_setting_802_1x_get_phase2_private_key_scheme,
 	  nm_setting_802_1x_get_phase2_private_key_format,
 	  nm_setting_802_1x_get_phase2_private_key_path,
-	  nm_setting_802_1x_get_phase2_private_key_blob },
+	  nm_setting_802_1x_get_phase2_private_key_blob,
+	  nm_setting_802_1x_get_phase2_private_key_uri },
 
 	{ NULL },
 };
@@ -487,6 +494,9 @@ cert_writer_default (NMConnection *connection,
 		nm_keyfile_plugin_kf_set_string (file, setting_name, cert_data->property_name, val);
 		g_free (val);
 		g_free (blob_base64);
+	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
+		nm_keyfile_plugin_kf_set_string (file, setting_name, cert_data->property_name,
+		                                 cert_data->uri_func (cert_data->setting));
 	} else {
 		/* scheme_func() returns UNKNOWN in all other cases. The only valid case
 		 * where a scheme is allowed to be UNKNOWN, is unsetting the value. In this
@@ -524,6 +534,7 @@ cert_writer (KeyfileWriterInfo *info,
 	type_data.format_func = objtype->format_func;
 	type_data.path_func = objtype->path_func;
 	type_data.blob_func = objtype->blob_func;
+	type_data.uri_func = objtype->uri_func;
 
 	if (info->handler) {
 		if (info->handler (info->connection,

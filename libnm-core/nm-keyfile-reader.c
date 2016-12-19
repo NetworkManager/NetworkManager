@@ -961,6 +961,16 @@ handle_as_scheme (KeyfileReaderInfo *info, GBytes *bytes, NMSetting *setting, co
 		}
 		return TRUE;
 	}
+	if (   data_len >= NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PKCS11)
+	    && g_str_has_prefix (data, NM_KEYFILE_CERT_SCHEME_PREFIX_PKCS11)) {
+		if (nm_setting_802_1x_check_cert_scheme (data, data_len + 1, NULL) == NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
+			g_object_set (setting, key, bytes, NULL);
+		} else {
+			handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
+			             _("invalid PKCS#11 URI \"%s\""), data);
+		}
+		return TRUE;
+	}
 	if (   data_len > NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB)
 	    && g_str_has_prefix (data, NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB)) {
 		const char *cdata = data + NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB);

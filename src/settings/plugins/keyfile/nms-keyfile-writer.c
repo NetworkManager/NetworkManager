@@ -94,6 +94,9 @@ cert_writer (NMConnection *connection,
 			accepted_path = tmp = g_strconcat (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH, path, NULL);
 		nm_keyfile_plugin_kf_set_string (file, setting_name, cert_data->property_name, accepted_path);
 		g_free (tmp);
+	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
+		nm_keyfile_plugin_kf_set_string (file, setting_name, cert_data->property_name,
+		                                 cert_data->uri_func (cert_data->setting));
 	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
 		GBytes *blob;
 		const guint8 *blob_data;
