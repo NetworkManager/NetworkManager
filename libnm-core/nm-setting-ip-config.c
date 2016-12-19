@@ -2728,19 +2728,23 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 	/**
 	 * NMSettingIPConfig:dns-priority:
 	 *
-	 * DNS priority.
+	 * Intra-connection DNS priority.
 	 *
 	 * The relative priority to be used when determining the order of DNS
 	 * servers in resolv.conf.  A lower value means that servers will be on top
 	 * of the file.  Zero selects the default value, which is 50 for VPNs and
-	 * 100 for other connections.  When multiple devices have configurations
-	 * with the same priority, the one with an active default route will be
-	 * preferred.  Note that when using dns=dnsmasq the order is meaningless
+	 * 100 for other connections.  Note that the priority is to order DNS
+	 * settings for multiple active connections. It does not disambiguate
+	 * multiple DNS servers within the same connection profile. For that,
+	 * just specify the DNS servers in the desired order.
+	 * When multiple devices have configurations with the same priority, the
+	 * one with an active default route will be preferred.
+	 * Note that when using dns=dnsmasq the order is meaningless
 	 * since dnsmasq forwards queries to all known servers at the same time.
 	 *
 	 * Negative values have the special effect of excluding other configurations
 	 * with a greater priority value; so in presence of at least a negative
-	 * priority, only DNS servers from configurations with the lowest priority
+	 * priority, only DNS servers from connections with the lowest priority
 	 * value will be used.
 	 *
 	 * Since: 1.4
