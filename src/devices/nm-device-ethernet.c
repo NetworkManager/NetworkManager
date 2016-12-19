@@ -306,14 +306,18 @@ static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *device)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
+	int ifindex = nm_device_get_ifindex (device);
 
-	if (nm_platform_link_supports_carrier_detect (NM_PLATFORM_GET, nm_device_get_ifindex (device)))
-	    return NM_DEVICE_CAP_CARRIER_DETECT;
-	else {
-		_LOGI (LOGD_PLATFORM, "driver '%s' does not support carrier detection.",
-		       nm_device_get_driver (device));
-		return NM_DEVICE_CAP_NONE;
+	if (ifindex > 0) {
+		if (nm_platform_link_supports_carrier_detect (NM_PLATFORM_GET, ifindex))
+			return NM_DEVICE_CAP_CARRIER_DETECT;
+		else {
+			_LOGI (LOGD_PLATFORM, "driver '%s' does not support carrier detection.",
+			       nm_device_get_driver (device));
+		}
 	}
+
+	return NM_DEVICE_CAP_NONE;
 }
 
 static guint32

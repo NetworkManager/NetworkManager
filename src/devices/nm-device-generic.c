@@ -56,7 +56,9 @@ G_DEFINE_TYPE (NMDeviceGeneric, nm_device_generic, NM_TYPE_DEVICE)
 static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *dev)
 {
-	if (nm_platform_link_supports_carrier_detect (NM_PLATFORM_GET, nm_device_get_ifindex (dev)))
+	int ifindex = nm_device_get_ifindex (dev);
+
+	if (ifindex > 0 && nm_platform_link_supports_carrier_detect (NM_PLATFORM_GET, ifindex))
 		return NM_DEVICE_CAP_CARRIER_DETECT;
 	else
 		return NM_DEVICE_CAP_NONE;
