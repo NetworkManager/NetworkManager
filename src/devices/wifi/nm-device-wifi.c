@@ -108,6 +108,8 @@ typedef struct {
 
 	NM80211Mode       mode;
 
+	NMActRequestGetSecretsCallId wifi_secrets_id;
+
 	guint             periodic_source_id;
 	guint             link_timeout_id;
 	guint32           failed_iface_count;
@@ -1738,12 +1740,23 @@ wifi_secrets_cb (NMActRequest *req,
                  GError *error,
                  gpointer user_data)
 {
-	NMDevice *device = NM_DEVICE (user_data);
-	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
+	NMDevice *device = user_data;
+	NMDeviceWifi *self = user_data;
+	NMDeviceWifiPrivate *priv;
 
-	if (req != nm_device_get_act_request (device))
+	g_return_if_fail (NM_IS_DEVICE_WIFI (self));
+	g_return_if_fail (NM_IS_ACT_REQUEST (req));
+
+	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+
+	g_return_if_fail (priv->wifi_secrets_id == call_id);
+
+	priv->wifi_secrets_id = NULL;
+
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
 
+	g_return_if_fail (req == nm_device_get_act_request (device));
 	g_return_if_fail (nm_device_get_state (device) == NM_DEVICE_STATE_NEED_AUTH);
 	g_return_if_fail (nm_act_request_get_settings_connection (req) == connection);
 
@@ -1754,6 +1767,39 @@ wifi_secrets_cb (NMActRequest *req,
 		                         NM_DEVICE_STATE_REASON_NO_SECRETS);
 	} else
 		nm_device_activate_schedule_stage1_device_prepare (device);
+}
+
+static void
+wifi_secrets_cancel (NMDeviceWifi *self)
+{
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+
+	if (priv->wifi_secrets_id)
+		nm_act_request_cancel_secrets (NULL, priv->wifi_secrets_id);
+	nm_assert (!priv->wifi_secrets_id);
+}
+
+static void
+wifi_secrets_get_secrets (NMDeviceWifi *self,
+                          const char *setting_name,
+                          NMSecretAgentGetSecretsFlags flags)
+{
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	NMActRequest *req;
+
+	wifi_secrets_cancel (self);
+
+	req = nm_device_get_act_request (NM_DEVICE (self));
+	g_return_if_fail (NM_IS_ACT_REQUEST (req));
+
+	priv->wifi_secrets_id = nm_act_request_get_secrets (req,
+	                                                    TRUE,
+	                                                    setting_name,
+	                                                    flags,
+	                                                    NULL,
+	                                                    wifi_secrets_cb,
+	                                                    self);
+	g_return_if_fail (priv->wifi_secrets_id);
 }
 
 /*
@@ -1900,13 +1946,10 @@ handle_8021x_or_psk_auth_fail (NMDeviceWifi *self,
 
 		cleanup_association_attempt (self, TRUE);
 		nm_device_state_changed (device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
-		nm_act_request_get_secrets (req,
-		                            setting_name,
-		                            NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
-		                              | NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW,
-		                            NULL,
-		                            wifi_secrets_cb,
-		                            self);
+		wifi_secrets_get_secrets (self,
+		                          setting_name,
+		                          NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
+		                            | NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW);
 		handled = TRUE;
 	}
 
@@ -2171,7 +2214,7 @@ handle_auth_or_fail (NMDeviceWifi *self,
 
 	if (!req) {
 		req = nm_device_get_act_request (NM_DEVICE (self));
-		g_assert (req);
+		g_return_val_if_fail (req, NM_ACT_STAGE_RETURN_FAILURE);
 	}
 
 	applied_connection = nm_act_request_get_applied_connection (req);
@@ -2185,12 +2228,9 @@ handle_auth_or_fail (NMDeviceWifi *self,
 	nm_act_request_clear_secrets (req);
 	setting_name = nm_connection_need_secrets (applied_connection, NULL);
 	if (setting_name) {
-		NMSecretAgentGetSecretsFlags flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
-
-		if (new_secrets)
-			flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
-		nm_act_request_get_secrets (req, setting_name, flags, NULL, wifi_secrets_cb, self);
-
+		wifi_secrets_get_secrets (self, setting_name,
+		                          NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
+		                          | (new_secrets ? NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW : 0));
 		g_object_set_data (G_OBJECT (applied_connection), WIRELESS_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else
@@ -2878,6 +2918,9 @@ device_state_changed (NMDevice *device,
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	gboolean clear_aps = FALSE;
 
+	if (new_state > NM_DEVICE_STATE_ACTIVATED)
+		wifi_secrets_cancel (self);
+
 	if (new_state <= NM_DEVICE_STATE_UNAVAILABLE) {
 		/* Clean up the supplicant interface because in these states the
 		 * device cannot be used.
@@ -3028,6 +3071,8 @@ dispose (GObject *object)
 
 	nm_clear_g_source (&priv->periodic_source_id);
 
+	wifi_secrets_cancel (self);
+
 	cleanup_association_attempt (self, TRUE);
 	supplicant_interface_release (self);
 	cleanup_supplicant_failures (self);
@@ -3150,7 +3195,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 
 	klass->scanning_allowed = scanning_allowed;
 
-	/* Properties */
 	obj_properties[PROP_MODE] =
 	    g_param_spec_uint (NM_DEVICE_WIFI_MODE, "", "",
 	                       NM_802_11_MODE_UNKNOWN,
@@ -3192,7 +3236,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-	/* Signals */
 	signals[ACCESS_POINT_ADDED] =
 	    g_signal_new (NM_DEVICE_WIFI_ACCESS_POINT_ADDED,
 	                  G_OBJECT_CLASS_TYPE (object_class),

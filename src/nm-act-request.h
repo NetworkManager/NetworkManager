@@ -63,6 +63,7 @@ typedef void (*NMActRequestSecretsFunc) (NMActRequest *req,
                                          gpointer user_data);
 
 NMActRequestGetSecretsCallId nm_act_request_get_secrets (NMActRequest *req,
+                                                         gboolean take_ref,
                                                          const char *setting_name,
                                                          NMSecretAgentGetSecretsFlags flags,
                                                          const char *hint,

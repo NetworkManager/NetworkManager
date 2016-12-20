@@ -108,6 +108,8 @@ typedef struct _NMDeviceEthernetPrivate {
 	char *              s390_nettype;
 	GHashTable *        s390_options;
 
+	NMActRequestGetSecretsCallId wired_secrets_id;
+
 	/* PPPoE */
 	NMPPPManager *ppp_manager;
 	NMIP4Config  *pending_ip4_config;
@@ -130,6 +132,10 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceEthernet,
 G_DEFINE_TYPE (NMDeviceEthernet, nm_device_ethernet, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_ETHERNET_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR(self, NMDeviceEthernet, NM_IS_DEVICE_ETHERNET)
+
+/*****************************************************************************/
+
+static void wired_secrets_cancel (NMDeviceEthernet *self);
 
 /*****************************************************************************/
 
@@ -285,6 +291,9 @@ device_state_changed (NMDevice *device,
                       NMDeviceState old_state,
                       NMDeviceStateReason reason)
 {
+	if (new_state > NM_DEVICE_STATE_ACTIVATED)
+		wired_secrets_cancel (NM_DEVICE_ETHERNET (device));
+
 	if (   new_state == NM_DEVICE_STATE_ACTIVATED
 	    || new_state == NM_DEVICE_STATE_FAILED
 	    || new_state == NM_DEVICE_STATE_DISCONNECTED)
@@ -459,22 +468,66 @@ wired_secrets_cb (NMActRequest *req,
                   GError *error,
                   gpointer user_data)
 {
-	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (user_data);
-	NMDevice *dev = NM_DEVICE (self);
+	NMDeviceEthernet *self = user_data;
+	NMDevice *device = user_data;
+	NMDeviceEthernetPrivate *priv;
 
-	if (req != nm_device_get_act_request (dev))
+	g_return_if_fail (NM_IS_DEVICE_ETHERNET (self));
+	g_return_if_fail (NM_IS_ACT_REQUEST (req));
+
+	priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+
+	g_return_if_fail (priv->wired_secrets_id == call_id);
+
+	priv->wired_secrets_id = NULL;
+
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
 
-	g_return_if_fail (nm_device_get_state (dev) == NM_DEVICE_STATE_NEED_AUTH);
+	g_return_if_fail (req == nm_device_get_act_request (device));
+	g_return_if_fail (nm_device_get_state (device) == NM_DEVICE_STATE_NEED_AUTH);
 	g_return_if_fail (nm_act_request_get_settings_connection (req) == connection);
 
 	if (error) {
 		_LOGW (LOGD_ETHER, "%s", error->message);
-		nm_device_state_changed (dev,
+		nm_device_state_changed (device,
 		                         NM_DEVICE_STATE_FAILED,
 		                         NM_DEVICE_STATE_REASON_NO_SECRETS);
 	} else
-		nm_device_activate_schedule_stage1_device_prepare (dev);
+		nm_device_activate_schedule_stage1_device_prepare (device);
+}
+
+static void
+wired_secrets_cancel (NMDeviceEthernet *self)
+{
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+
+	if (priv->wired_secrets_id)
+		nm_act_request_cancel_secrets (NULL, priv->wired_secrets_id);
+	nm_assert (!priv->wired_secrets_id);
+}
+
+static void
+wired_secrets_get_secrets (NMDeviceEthernet *self,
+                           const char *setting_name,
+                           NMSecretAgentGetSecretsFlags flags)
+{
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+	NMActRequest *req;
+
+	wired_secrets_cancel (self);
+
+	req = nm_device_get_act_request (NM_DEVICE (self));
+	g_return_if_fail (NM_IS_ACT_REQUEST (req));
+
+	priv->wired_secrets_id = nm_act_request_get_secrets (req,
+	                                                     TRUE,
+	                                                     setting_name,
+	                                                     flags,
+	                                                     NULL,
+	                                                     wired_secrets_cb,
+	                                                     self);
+	g_return_if_fail (priv->wired_secrets_id);
 }
 
 static gboolean
@@ -517,12 +570,7 @@ link_timeout_cb (gpointer user_data)
 	supplicant_interface_release (self);
 
 	nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
-	nm_act_request_get_secrets (req,
-	                            setting_name,
-	                            NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW,
-	                            NULL,
-	                            wired_secrets_cb,
-	                            self);
+	wired_secrets_get_secrets (self, setting_name, NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW);
 
 	return FALSE;
 
@@ -698,12 +746,9 @@ handle_auth_or_fail (NMDeviceEthernet *self,
 
 	setting_name = nm_connection_need_secrets (applied_connection, NULL);
 	if (setting_name) {
-		NMSecretAgentGetSecretsFlags flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
-
-		if (new_secrets)
-			flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
-		nm_act_request_get_secrets (req, setting_name, flags, NULL, wired_secrets_cb, self);
-
+		wired_secrets_get_secrets (self, setting_name,
+		                           NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
+		                             | (new_secrets ? NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW : 0));
 		g_object_set_data (G_OBJECT (applied_connection), WIRED_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
 	} else
 		_LOGI (LOGD_DEVICE, "Cleared secrets, but setting didn't need any secrets.");
@@ -1656,6 +1701,8 @@ dispose (GObject *object)
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (object);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
+	wired_secrets_cancel (self);
+
 	supplicant_interface_release (self);
 
 	nm_clear_g_source (&priv->pppoe_wait_id);
@@ -1706,7 +1753,7 @@ get_property (GObject *object, guint prop_id,
 
 static void
 set_property (GObject *object, guint prop_id,
-			  const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	switch (prop_id) {
 	default:
