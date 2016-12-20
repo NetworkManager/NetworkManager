@@ -209,6 +209,9 @@ gboolean nm_utils_enum_from_str (GType type, const char *str, int *out_value, ch
 NM_AVAILABLE_IN_1_2
 const char **nm_utils_enum_get_values (GType type, gint from, gint to);
 
+NM_AVAILABLE_IN_1_6
+guint nm_utils_version (void);
+
 G_END_DECLS
 
 #endif /* __NM_UTILS_H__ */

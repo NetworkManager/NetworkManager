@@ -4626,3 +4626,20 @@ _nm_utils_team_config_equal (const char *conf1,
 	return nm_streq0 (conf1, conf2);
 }
 #endif
+
+/*****************************************************************************/
+
+/**
+ * nm_utils_version:
+ *
+ * Returns: the version ID of the libnm version. That is, the %NM_VERSION
+ *   at runtime.
+ *
+ * Since: 1.6.0
+ */
+guint
+nm_utils_version (void)
+{
+	return NM_VERSION;
+}
+

@@ -1107,4 +1107,5 @@ global:
 	nm_setting_proxy_get_pac_url;
 	nm_setting_proxy_get_pac_script;
 	nm_utils_is_json_object;
+	nm_utils_version;
 } libnm_1_4_0;
