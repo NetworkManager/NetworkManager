@@ -1835,6 +1835,7 @@ _get_config_variant (NMDnsManager *self)
 {
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 	NMGlobalDnsConfig *global_config;
+	gs_free char *str = NULL;
 	GVariantBuilder builder;
 	NMConfigData *data;
 	guint i, j;
@@ -1846,7 +1847,7 @@ _get_config_variant (NMDnsManager *self)
 	global_config = nm_config_data_get_global_dns_config (data);
 	if (global_config) {
 		priv->config_variant = _get_global_config_variant (global_config);
-		_LOGT ("current configuration: %s", g_variant_print (priv->config_variant, TRUE));
+		_LOGT ("current configuration: %s", (str = g_variant_print (priv->config_variant, TRUE)));
 		return priv->config_variant;
 	}
 
@@ -1964,7 +1965,7 @@ _get_config_variant (NMDnsManager *self)
 	}
 
 	priv->config_variant = g_variant_ref_sink (g_variant_builder_end (&builder));
-	_LOGT ("current configuration: %s", g_variant_print (priv->config_variant, TRUE));
+	_LOGT ("current configuration: %s", (str = g_variant_print (priv->config_variant, TRUE)));
 
 	return priv->config_variant;
 }
