@@ -692,6 +692,7 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro) {
 	*minor = (version & 0x0000FF00u) >>  8;
 	*micro = (version & 0x000000FFu);
 }
+
 /*****************************************************************************/
 
 /* taken from systemd's DECIMAL_STR_MAX()
