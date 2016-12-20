@@ -3848,7 +3848,6 @@ libnm_glib_NMClient_1_0_gir_LIBS = \
 libnm_glib_NMClient_1_0_gir_FILES = \
 	$(libnm_glib_lib_h_pub_mkenums) \
 	$(libnm_glib_lib_h_pub_real) \
-	$(libnm_glib_lib_h_priv) \
 	$(libnm_glib_lib_c_mkenums) \
 	$(libnm_glib_lib_c_real)
 libnm_glib_NMClient_1_0_gir_SCANNERFLAGS = \
