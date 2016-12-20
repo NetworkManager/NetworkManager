@@ -100,6 +100,8 @@ typedef enum {
 	SR_ERROR
 } SpawnResult;
 
+NM_DEFINE_SINGLETON_GETTER (NMDnsManager, nm_dns_manager_get, NM_TYPE_DNS_MANAGER);
+
 /*****************************************************************************/
 
 #define _NMLOG_PREFIX_NAME                "dns-mgr"
@@ -161,8 +163,6 @@ struct _NMDnsManagerClass {
 };
 
 G_DEFINE_TYPE (NMDnsManager, nm_dns_manager, NM_TYPE_EXPORTED_OBJECT)
-
-NM_DEFINE_SINGLETON_INSTANCE (NMDnsManager);
 
 #define NM_DNS_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDnsManager, NM_IS_DNS_MANAGER)
 
@@ -1603,8 +1603,6 @@ _check_resconf_immutable (NMDnsManagerResolvConfManager rc_manager)
 		return immutable ? NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE : rc_manager;
 	}
 }
-
-NM_DEFINE_SINGLETON_GETTER (NMDnsManager, nm_dns_manager_get, NM_TYPE_DNS_MANAGER);
 
 static gboolean
 _resolvconf_resolved_managed (void)
