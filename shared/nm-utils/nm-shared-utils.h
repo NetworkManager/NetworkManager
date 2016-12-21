@@ -24,6 +24,25 @@
 
 /*****************************************************************************/
 
+static inline void
+_nm_utils_strbuf_init (char *buf, gsize len, char **p_buf_ptr, gsize *p_buf_len)
+{
+	NM_SET_OUT (p_buf_len, len);
+	NM_SET_OUT (p_buf_ptr, buf);
+	buf[0] = '\0';
+}
+
+#define nm_utils_strbuf_init(buf, p_buf_ptr, p_buf_len) \
+	G_STMT_START { \
+		G_STATIC_ASSERT (G_N_ELEMENTS (buf) == sizeof (buf) && sizeof (buf) > sizeof (char *)); \
+		_nm_utils_strbuf_init ((buf), sizeof (buf), (p_buf_ptr), (p_buf_len)); \
+	} G_STMT_END
+void nm_utils_strbuf_append (char **buf, gsize *len, const char *format, ...) _nm_printf (3, 4);
+void nm_utils_strbuf_append_c (char **buf, gsize *len, char c);
+void nm_utils_strbuf_append_str (char **buf, gsize *len, const char *str);
+
+/*****************************************************************************/
+
 gint64 _nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max, gint64 fallback);
 
 gint _nm_utils_ascii_str_to_bool (const char *str,
