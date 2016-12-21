@@ -115,7 +115,7 @@ read_array_of_uint (GKeyFile *file,
 	GArray *array = NULL;
 	gsize length;
 	int i;
-	gint *tmp;
+	gs_free int *tmp = NULL;
 
 	tmp = nm_keyfile_plugin_kf_get_integer_list (file, nm_setting_get_name (setting), key, &length, NULL);
 	array = g_array_sized_new (FALSE, FALSE, sizeof (guint32), length);
