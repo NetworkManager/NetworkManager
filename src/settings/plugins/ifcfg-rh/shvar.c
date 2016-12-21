@@ -41,6 +41,22 @@
 /*****************************************************************************/
 
 typedef struct {
+	/* There are three cases:
+	 *
+	 * 1) the line is not a valid variable assignment (that is, it doesn't
+	 *   start with a "FOO=" with possible whitespace prefix).
+	 *   In that case, @key and @key_with_prefix are %NULL, and the entire
+	 *   original line is in @line. Such entries are ignored for the most part.
+	 *
+	 * 2) if the line can be parsed with a "FOO=" assignment, then @line contains
+	 *   the part after '=', @key_with_prefix contains the key "FOO" with possible
+	 *   whitespace prefix, and @key points into @key_with_prefix skipping over the
+	 *   whitespace.
+	 *
+	 * 3) like 2, but if the value was deleted via svSetValue(), the entry is not removed,
+	 *   but only marked for deletion. That is done by clearing @line but preserving
+	 *   @key/@key_with_prefix.
+	 * */
 	char *line;
 	const char *key;
 	char *key_with_prefix;
@@ -625,6 +641,27 @@ svFileSetModified (shvarFile *s)
 
 /*****************************************************************************/
 
+static void
+ASSERT_shvarLine (const shvarLine *line)
+{
+#if NM_MORE_ASSERTS > 5
+	const char *s, *s2;
+
+	nm_assert (line);
+	if (!line->key) {
+		nm_assert (line->line);
+		nm_assert (!line->key_with_prefix);
+		s = nm_str_skip_leading_spaces (line->line);
+		s2 = strchr (s, '=');
+		nm_assert (!s2 || !_shell_is_name (s, s2 - s));
+	} else {
+		nm_assert (line->key_with_prefix);
+		nm_assert (line->key == nm_str_skip_leading_spaces (line->key_with_prefix));
+		nm_assert (_shell_is_name (line->key, -1));
+	}
+#endif
+}
+
 static shvarLine *
 line_new_parse (const char *value, gsize len)
 {
@@ -647,6 +684,7 @@ line_new_parse (const char *value, gsize len)
 					line->line = g_strndup (&value[e + 1], len - e - 1);
 					line->key_with_prefix = g_strndup (value, e);
 					line->key = &line->key_with_prefix[k];
+					ASSERT_shvarLine (line);
 					return line;
 				}
 				if (   !g_ascii_isalnum (value[e])
@@ -657,6 +695,7 @@ line_new_parse (const char *value, gsize len)
 		break;
 	}
 	line->line = g_strndup (value, len);
+	ASSERT_shvarLine (line);
 	return line;
 }
 
@@ -672,6 +711,7 @@ line_new_build (const char *key, const char *value)
 	line->line = value_escaped ?: g_strdup (value);
 	line->key_with_prefix = g_strdup (key);
 	line->key = line->key_with_prefix;
+	ASSERT_shvarLine (line);
 	return line;
 }
 
@@ -681,12 +721,14 @@ line_set (shvarLine *line, const char *value)
 	char *value_escaped = NULL;
 	gboolean changed = FALSE;
 
+	ASSERT_shvarLine (line);
 	nm_assert (line->key);
 
 	if (line->key != line->key_with_prefix) {
 		memmove (line->key_with_prefix, line->key, strlen (line->key) + 1);
 		line->key = line->key_with_prefix;
 		changed = TRUE;
+		ASSERT_shvarLine (line);
 	}
 
 	value = svEscape (value, &value_escaped);
@@ -700,12 +742,14 @@ line_set (shvarLine *line, const char *value)
 	}
 
 	line->line = value_escaped ?: g_strdup (value);
+	ASSERT_shvarLine (line);
 	return TRUE;
 }
 
 static void
 line_free (shvarLine *line)
 {
+	ASSERT_shvarLine (line);
 	g_free (line->line);
 	g_free (line->key_with_prefix);
 	g_slice_free (shvarLine, line);
@@ -825,6 +869,7 @@ shlist_find (const GList *current, const char *key)
 		do {
 			shvarLine *line = current->data;
 
+			ASSERT_shvarLine (line);
 			if (line->key && nm_streq (line->key, key))
 				return current;
 			current = current->next;
@@ -1075,6 +1120,8 @@ svWriteFile (shvarFile *s, int mode, GError **error)
 			const char *str;
 			char *s_tmp;
 			gboolean valid_value;
+
+			ASSERT_shvarLine (line);
 
 			if (!line->key) {
 				str = nm_str_skip_leading_spaces (line->line);
