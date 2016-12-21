@@ -108,19 +108,24 @@ read_array_of_uint (GKeyFile *file,
                     NMSetting *setting,
                     const char *key)
 {
-	GArray *array = NULL;
+	gs_unref_array GArray *array = NULL;
 	gsize length;
-	int i;
+	gsize i;
 	gs_free int *tmp = NULL;
 
 	tmp = nm_keyfile_plugin_kf_get_integer_list (file, nm_setting_get_name (setting), key, &length, NULL);
-	array = g_array_sized_new (FALSE, FALSE, sizeof (guint32), length);
+	if (length > G_MAXUINT)
+		return;
 
-	for (i = 0; i < length; i++)
+	array = g_array_sized_new (FALSE, FALSE, sizeof (guint), length);
+
+	for (i = 0; i < length; i++) {
+		if (tmp[i] < 0)
+			return;
 		g_array_append_val (array, tmp[i]);
+	}
 
 	g_object_set (setting, key, array, NULL);
-	g_array_unref (array);
 }
 
 static gboolean
