@@ -37,6 +37,7 @@
 #include <unistd.h>
 
 #include "nm-core-internal.h"
+#include "nm-core-utils.h"
 
 /*****************************************************************************/
 
@@ -63,10 +64,10 @@ typedef struct {
 } shvarLine;
 
 struct _shvarFile {
-	char      *fileName;    /* read-only */
-	int        fd;          /* read-only */
-	GList     *lineList;    /* read-only */
-	gboolean   modified;    /* ignore */
+	char      *fileName;
+	int        fd;
+	GList     *lineList;
+	gboolean   modified;
 };
 
 /*****************************************************************************/
@@ -618,6 +619,17 @@ out_error:
 
 /*****************************************************************************/
 
+static shvarFile *
+svFile_new (const char *name)
+{
+	shvarFile *s;
+
+	s = g_slice_new0 (shvarFile);
+	s->fd = -1;
+	s->fileName = g_strdup (name);
+	return s;
+}
+
 const char *
 svFileGetName (const shvarFile *s)
 {
@@ -764,82 +776,67 @@ line_free (shvarLine *line)
 static shvarFile *
 svOpenFileInternal (const char *name, gboolean create, GError **error)
 {
-	shvarFile *s = NULL;
+	shvarFile *s;
 	gboolean closefd = FALSE;
 	int errsv = 0;
+	char *arena;
+	const char *p, *q;
+	GError *local = NULL;
+	nm_auto_close int fd = -1;
+	GList *lineList = NULL;
 
-	s = g_slice_new0 (shvarFile);
-
-	s->fd = -1;
 	if (create)
-		s->fd = open (name, O_RDWR | O_CLOEXEC); /* NOT O_CREAT */
-
-	if (!create || s->fd == -1) {
+		fd = open (name, O_RDWR | O_CLOEXEC); /* NOT O_CREAT */
+	if (fd < 0) {
 		/* try read-only */
-		s->fd = open (name, O_RDONLY | O_CLOEXEC); /* NOT O_CREAT */
-		if (s->fd == -1)
+		fd = open (name, O_RDONLY | O_CLOEXEC); /* NOT O_CREAT */
+		if (fd < 0)
 			errsv = errno;
 		else
 			closefd = TRUE;
 	}
-	s->fileName = g_strdup (name);
 
-	if (s->fd != -1) {
-		struct stat buf;
-		char *arena, *p, *q;
-		ssize_t nread, total = 0;
+	if (fd < 0) {
+		if (create)
+			return svFile_new (name);
 
-		if (fstat (s->fd, &buf) < 0) {
-			errsv = errno;
-			goto bail;
-		}
-		arena = g_malloc (buf.st_size + 1);
-		arena[buf.st_size] = '\0';
-
-		while (total < buf.st_size) {
-			nread = read (s->fd, arena + total, buf.st_size - total);
-			if (nread == -1 && errno == EINTR)
-				continue;
-			if (nread <= 0) {
-				errsv = errno;
-				g_free (arena);
-				goto bail;
-			}
-			total += nread;
-		}
-
-		/* we'd use g_strsplit() here, but we want a list, not an array */
-		for (p = arena; (q = strchr (p, '\n')) != NULL; p = q + 1)
-			s->lineList = g_list_prepend (s->lineList, line_new_parse (p, q - p));
-		if (p[0])
-			s->lineList = g_list_prepend (s->lineList, line_new_parse (p, strlen (p)));
-		g_free (arena);
-		s->lineList = g_list_reverse (s->lineList);
-
-		/* closefd is set if we opened the file read-only, so go ahead and
-		 * close it, because we can't write to it anyway
-		 */
-		if (closefd) {
-			close (s->fd);
-			s->fd = -1;
-		}
-
-		return s;
+		g_set_error (error, G_FILE_ERROR, g_file_error_from_errno (errsv),
+		             "Could not read file '%s': %s",
+		             name, strerror (errsv));
+		return NULL;
 	}
 
-	if (create)
-		return s;
+	if (nm_utils_fd_get_contents (fd,
+	                              10 * 1024 * 1024,
+	                              &arena,
+	                              NULL,
+	                              &local) < 0) {
+		g_set_error (error, G_FILE_ERROR,
+		             local->domain == G_FILE_ERROR ? local->code : G_FILE_ERROR_FAILED,
+		             "Could not read file '%s': %s",
+		             name, local->message);
+		g_error_free (local);
+		return NULL;
+	}
 
- bail:
-	if (s->fd != -1)
-		close (s->fd);
-	g_free (s->fileName);
-	g_slice_free (shvarFile, s);
+	for (p = arena; (q = strchr (p, '\n')) != NULL; p = q + 1)
+		lineList = g_list_prepend (lineList, line_new_parse (p, q - p));
+	if (p[0])
+		lineList = g_list_prepend (lineList, line_new_parse (p, strlen (p)));
+	g_free (arena);
+	lineList = g_list_reverse (lineList);
 
-	g_set_error (error, G_FILE_ERROR, g_file_error_from_errno (errsv),
-	             "Could not read file '%s': %s",
-	             name, errsv ? strerror (errsv) : "Unknown error");
-	return NULL;
+	s = svFile_new (name);
+	s->lineList = lineList;
+
+	/* closefd is set if we opened the file read-only, so go ahead and
+	 * close it, because we can't write to it anyway */
+	if (!closefd) {
+		s->fd = fd;
+		fd = -1;
+	}
+
+	return s;
 }
 
 /* Open the file <name>, return shvarFile on success, NULL on failure */
@@ -1152,8 +1149,6 @@ svWriteFile (shvarFile *s, int mode, GError **error)
 	return TRUE;
 }
 
-
-/* Close the file descriptor (if open) and free the shvarFile. */
 void
 svCloseFile (shvarFile *s)
 {
@@ -1161,7 +1156,6 @@ svCloseFile (shvarFile *s)
 
 	if (s->fd != -1)
 		close (s->fd);
-
 	g_free (s->fileName);
 	g_list_free_full (s->lineList, (GDestroyNotify) line_free);
 	g_slice_free (shvarFile, s);
