@@ -295,7 +295,7 @@ ssid_writer (KeyfileWriterInfo *info,
 	const char *setting_name = nm_setting_get_name (setting);
 	gboolean new_format = TRUE;
 	unsigned int semicolons = 0;
-	int i, *tmp_array;
+	gsize i;
 	char *ssid;
 
 	g_return_if_fail (G_VALUE_HOLDS (value, G_TYPE_BYTES));
@@ -327,7 +327,8 @@ ssid_writer (KeyfileWriterInfo *info,
 		else {
 			/* Escape semicolons with backslashes to make strings
 			 * containing ';', such as '16;17;' unambiguous */
-			int j = 0;
+			gsize j = 0;
+
 			for (i = 0; i < ssid_len; i++) {
 				if (ssid_data[i] == ';')
 					ssid[j++] = '\\';
@@ -336,13 +337,8 @@ ssid_writer (KeyfileWriterInfo *info,
 		}
 		nm_keyfile_plugin_kf_set_string (info->keyfile, setting_name, key, ssid);
 		g_free (ssid);
-	} else {
-		tmp_array = g_new (gint, ssid_len);
-		for (i = 0; i < ssid_len; i++)
-			tmp_array[i] = (int) ssid_data[i];
-		nm_keyfile_plugin_kf_set_integer_list (info->keyfile, setting_name, key, tmp_array, ssid_len);
-		g_free (tmp_array);
-	}
+	} else
+		nm_keyfile_plugin_kf_set_integer_list_uint8 (info->keyfile, setting_name, key, ssid_data, ssid_len);
 }
 
 static void
@@ -353,9 +349,8 @@ password_raw_writer (KeyfileWriterInfo *info,
 {
 	const char *setting_name = nm_setting_get_name (setting);
 	GBytes *array;
-	int *tmp_array;
-	gsize i, len;
-	const char *data;
+	gsize len;
+	const guint8 *data;
 
 	g_return_if_fail (G_VALUE_HOLDS (value, G_TYPE_BYTES));
 
@@ -365,12 +360,7 @@ password_raw_writer (KeyfileWriterInfo *info,
 	data = g_bytes_get_data (array, &len);
 	if (!data || !len)
 		return;
-
-	tmp_array = g_new (gint, len);
-	for (i = 0; i < len; i++)
-		tmp_array[i] = (int) data[i];
-	nm_keyfile_plugin_kf_set_integer_list (info->keyfile, setting_name, key, tmp_array, len);
-	g_free (tmp_array);
+	nm_keyfile_plugin_kf_set_integer_list_uint8 (info->keyfile, setting_name, key, data, len);
 }
 
 typedef struct ObjectType {
@@ -729,17 +719,8 @@ write_setting_value (NMSetting *setting,
 		bytes = g_value_get_boxed (value);
 		data = bytes ? g_bytes_get_data (bytes, &len) : NULL;
 
-		if (data != NULL && len > 0) {
-			int *tmp_array;
-			int i;
-
-			tmp_array = g_new (gint, len);
-			for (i = 0; i < len; i++)
-				tmp_array[i] = (int) data[i];
-
-			nm_keyfile_plugin_kf_set_integer_list (info->keyfile, setting_name, key, tmp_array, len);
-			g_free (tmp_array);
-		}
+		if (data != NULL && len > 0)
+			nm_keyfile_plugin_kf_set_integer_list_uint8 (info->keyfile, setting_name, key, data, len);
 	} else if (type == G_TYPE_STRV) {
 		char **array;
 
