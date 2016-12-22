@@ -3652,16 +3652,15 @@ DEFINE_ALLOWED_VAL_FUNC (nmc_property_connection_allowed_lldp, lldp_valid_values
 	{ \
 		char *val_strip = g_strstrip (g_strdup (val)); \
 		char *p = val_strip; \
+		NMSetting8021xCKScheme scheme = NM_SETTING_802_1X_CK_SCHEME_PATH; \
 		gboolean success; \
 		\
-		if (strncmp (val_strip, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)) == 0) \
+		if (strncmp (val_strip, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11)) == 0) \
+			scheme = NM_SETTING_802_1X_CK_SCHEME_PKCS11; \
+		else if (strncmp (val_strip, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)) == 0) \
 			p += NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH); \
 		\
-		success = set_func (NM_SETTING_802_1X (setting), \
-		                    p, \
-		                    NM_SETTING_802_1X_CK_SCHEME_PATH, \
-		                    NULL, \
-		                    error); \
+		success = set_func (NM_SETTING_802_1X (setting), p, scheme, NULL, error); \
 		g_free (val_strip); \
 		return success; \
 	}
@@ -3674,9 +3673,12 @@ DEFINE_ALLOWED_VAL_FUNC (nmc_property_connection_allowed_lldp, lldp_valid_values
 		char *val_strip = g_strstrip (g_strdup (val)); \
 		char *p = val_strip; \
 		const char *path, *password; \
+		NMSetting8021xCKScheme scheme = NM_SETTING_802_1X_CK_SCHEME_PATH; \
 		gboolean success; \
 		\
-		if (strncmp (val_strip, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)) == 0) \
+		if (strncmp (val_strip, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11)) == 0) \
+			scheme = NM_SETTING_802_1X_CK_SCHEME_PKCS11; \
+		else if (strncmp (val_strip, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)) == 0) \
 			p += NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH); \
 		\
 		strv = nmc_strsplit_set (p, " \t,", 2); \
@@ -3685,12 +3687,7 @@ DEFINE_ALLOWED_VAL_FUNC (nmc_property_connection_allowed_lldp, lldp_valid_values
 			password = strv[1]; \
 		else \
 			password = pwd_func (NM_SETTING_802_1X (setting)); \
-		success = set_func (NM_SETTING_802_1X (setting), \
-		                    path, \
-		                    password, \
-		                    NM_SETTING_802_1X_CK_SCHEME_PATH, \
-		                    NULL, \
-		                    error); \
+		success = set_func (NM_SETTING_802_1X (setting), path, password, scheme, NULL, error); \
 		g_free (val_strip); \
 		g_strfreev (strv); \
 		return success; \
