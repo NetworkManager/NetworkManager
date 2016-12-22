@@ -3643,19 +3643,12 @@ DEFINE_ALLOWED_VAL_FUNC (nmc_property_connection_allowed_lldp, lldp_valid_values
 			password = strv[1]; \
 		else \
 			password = pwd_func (NM_SETTING_802_1X (setting)); \
-		if (password) { \
-			char *tmp_pwd = g_strdup (password); \
-			success = set_func (NM_SETTING_802_1X (setting), \
-			                    path, \
-			                    tmp_pwd, \
-			                    NM_SETTING_802_1X_CK_SCHEME_PATH, \
-			                    NULL, \
-			                    error); \
-			g_free (tmp_pwd); \
-		} else { \
-			success = FALSE; \
-			g_set_error_literal  (error, 1, 0, _("private key password not provided")); \
-		} \
+		success = set_func (NM_SETTING_802_1X (setting), \
+		                    path, \
+		                    password, \
+		                    NM_SETTING_802_1X_CK_SCHEME_PATH, \
+		                    NULL, \
+		                    error); \
 		g_free (val_strip); \
 		g_strfreev (strv); \
 		return success; \
