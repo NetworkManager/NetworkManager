@@ -28,6 +28,7 @@
 
 #include "nm-supplicant-settings-verify.h"
 #include "nm-setting.h"
+#include "nm-auth-subject.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 
@@ -828,6 +829,53 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 	return TRUE;
 }
 
+static gboolean
+add_pkcs11_uri_with_pin (NMSupplicantConfig *self,
+                         const char *name,
+                         const char *uri,
+                         const char *pin,
+                         const NMSettingSecretFlags pin_flags,
+                         GError **error)
+{
+	gs_strfreev gchar **split = NULL;
+	gs_free char *tmp = NULL;
+	gs_free char *tmp_log = NULL;
+	gs_free char *pin_qattr = NULL;
+	char *escaped = NULL;
+
+	if (uri == NULL)
+		return TRUE;
+
+	/* We ignore the attributes -- RFC 7512 suggests that some of them
+	 * might be unsafe and we want to be on the safe side. Also, we're
+	 * installing our attributes, so this makes things a bit easier for us. */
+	split = g_strsplit (uri, "&", 2);
+	if (split[1])
+		nm_log_info (LOGD_SUPPLICANT, "URI attributes ignored");
+
+	/* Fill in the PIN if required. */
+	if (pin) {
+		escaped = g_uri_escape_string (pin, NULL, TRUE);
+		pin_qattr = g_strdup_printf ("pin-value=%s", escaped);
+		g_free (escaped);
+	} else if (!(pin_flags & NM_SETTING_SECRET_FLAG_NOT_REQUIRED)) {
+		/* Include an empty PIN to indicate the login is still needed.
+		 * Probably a token that has a PIN path and the actual PIN will
+		 * be entered using a protected path. */
+		pin_qattr = g_strdup ("pin-value=");
+	}
+
+	tmp = g_strdup_printf ("%s%s%s", split[0],
+	                       (pin_qattr ? "&" : ""),
+	                       (pin_qattr ? pin_qattr : ""));
+
+	tmp_log = g_strdup_printf ("%s%s%s", split[0],
+	                           (pin_qattr ? "&" : ""),
+	                           (pin_qattr ? "pin-value=<hidden>" : ""));
+
+	return add_string_val (self, tmp, name, FALSE, tmp_log, error);
+}
+
 gboolean
 nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
                                         NMSetting8021x *setting,
@@ -1033,9 +1081,13 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 				return FALSE;
 			break;
 		case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
-			path = nm_setting_802_1x_get_ca_cert_uri (setting);
-			if (!add_string_val (self, path, "ca_cert", FALSE, NULL, error))
+			if (!add_pkcs11_uri_with_pin (self, "ca_cert",
+			                              nm_setting_802_1x_get_ca_cert_uri (setting),
+			                              nm_setting_802_1x_get_ca_cert_password (setting),
+			                              nm_setting_802_1x_get_ca_cert_password_flags (setting),
+			                              error)) {
 				return FALSE;
+			}
 			break;
 		default:
 			break;
@@ -1059,9 +1111,13 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 				return FALSE;
 			break;
 		case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
-			path = nm_setting_802_1x_get_phase2_ca_cert_uri (setting);
-			if (!add_string_val (self, path, "ca_cert2", FALSE, NULL, error))
+			if (!add_pkcs11_uri_with_pin (self, "ca_cert2",
+			                              nm_setting_802_1x_get_phase2_ca_cert_uri (setting),
+			                              nm_setting_802_1x_get_phase2_ca_cert_password (setting),
+			                              nm_setting_802_1x_get_phase2_ca_cert_password_flags (setting),
+			                              error)) {
 				return FALSE;
+			}
 			break;
 		default:
 			break;
@@ -1106,9 +1162,13 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 		added = TRUE;
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
-		path = nm_setting_802_1x_get_private_key_uri (setting);
-		if (!add_string_val (self, path, "private_key", FALSE, NULL, error))
+		if (!add_pkcs11_uri_with_pin (self, "private_key",
+		                              nm_setting_802_1x_get_private_key_uri (setting),
+		                              nm_setting_802_1x_get_private_key_password (setting),
+		                              nm_setting_802_1x_get_private_key_password_flags (setting),
+		                              error)) {
 			return FALSE;
+		}
 		added = TRUE;
 		break;
 	default:
@@ -1149,9 +1209,13 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 					return FALSE;
 				break;
 			case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
-				path = nm_setting_802_1x_get_client_cert_uri (setting);
-				if (!add_string_val (self, path, "client_cert", FALSE, NULL, error))
+				if (!add_pkcs11_uri_with_pin (self, "client_cert",
+				                              nm_setting_802_1x_get_client_cert_uri (setting),
+				                              nm_setting_802_1x_get_client_cert_password (setting),
+				                              nm_setting_802_1x_get_client_cert_password_flags (setting),
+				                              error)) {
 					return FALSE;
+				}
 				break;
 			default:
 				break;
@@ -1175,9 +1239,13 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 		added = TRUE;
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
-		path = nm_setting_802_1x_get_phase2_private_key_uri (setting);
-		if (!add_string_val (self, path, "private_key2", FALSE, NULL, error))
+		if (!add_pkcs11_uri_with_pin (self, "private_key2",
+		                              nm_setting_802_1x_get_phase2_private_key_uri (setting),
+		                              nm_setting_802_1x_get_phase2_private_key_password (setting),
+		                              nm_setting_802_1x_get_phase2_private_key_password_flags (setting),
+		                              error)) {
 			return FALSE;
+		}
 		added = TRUE;
 		break;
 	default:
@@ -1218,9 +1286,13 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 					return FALSE;
 				break;
 			case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
-				path = nm_setting_802_1x_get_phase2_client_cert_uri (setting);
-				if (!add_string_val (self, path, "client_cert2", FALSE, NULL, error))
+				if (!add_pkcs11_uri_with_pin (self, "client_cert2",
+				                              nm_setting_802_1x_get_phase2_client_cert_uri (setting),
+				                              nm_setting_802_1x_get_phase2_client_cert_password (setting),
+				                              nm_setting_802_1x_get_phase2_client_cert_password_flags (setting),
+				                              error)) {
 					return FALSE;
+				}
 				break;
 			default:
 				break;
