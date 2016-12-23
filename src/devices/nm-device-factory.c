@@ -202,12 +202,10 @@ nm_device_factory_get_connection_iface (NMDeviceFactory *factory,
 		return NULL;
 	}
 
-	if (!nm_utils_iface_valid_name (ifname)) {
-		g_set_error (error,
-		             NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_FAILED,
-		             "failed to determine interface name: name \"%s\" is invalid",
-		             ifname);
+	if (!nm_utils_is_valid_iface_name (ifname, error)) {
+		g_prefix_error (error,
+		                "failed to determine interface name: name \"%s\" is invalid",
+		                ifname);
 		g_free (ifname);
 		return NULL;
 	}

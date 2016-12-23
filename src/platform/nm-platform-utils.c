@@ -723,7 +723,7 @@ nmp_utils_sysctl_open_netdir (int ifindex,
 				return -1;
 		}
 
-		nm_assert (nm_utils_iface_valid_name (ifname));
+		nm_assert (nm_utils_is_valid_iface_name (ifname, NULL));
 
 		if (g_strlcpy (&sysdir[NM_STRLEN (SYS_CLASS_NET)], ifname, IFNAMSIZ) >= IFNAMSIZ)
 			g_return_val_if_reached (-1);

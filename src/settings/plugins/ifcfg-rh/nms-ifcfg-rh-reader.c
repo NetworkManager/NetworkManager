@@ -159,12 +159,16 @@ make_connection_setting (const char *file,
 
 	value = svGetValueString (ifcfg, "DEVICE");
 	if (value) {
-		if (nm_utils_iface_valid_name (value)) {
+		GError *error = NULL;
+
+		if (nm_utils_is_valid_iface_name (value, &error)) {
 			g_object_set (s_con,
 			              NM_SETTING_CONNECTION_INTERFACE_NAME, value,
 			              NULL);
-		} else
-			PARSE_WARNING ("invalid DEVICE name '%s'", value);
+		} else {
+			PARSE_WARNING ("invalid DEVICE name '%s': %s", value, error->message);
+			g_error_free (error);
+		}
 		g_free (value);
 	}
 
