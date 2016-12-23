@@ -3673,7 +3673,8 @@ activation_add_done (NMSettings *settings,
 
 	g_assert (error);
 	_internal_activation_failed (self, active, error->message);
-	nm_settings_connection_delete (new_connection, NULL, NULL);
+	if (new_connection)
+		nm_settings_connection_delete (new_connection, NULL, NULL);
 	g_dbus_method_invocation_return_gerror (context, error);
 	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE,
 	                            NULL,
