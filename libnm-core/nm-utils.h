@@ -177,7 +177,9 @@ gboolean    nm_utils_hwaddr_matches   (gconstpointer hwaddr1,
 char *nm_utils_bin2hexstr (gconstpointer src, gsize len, int final_len);
 GBytes *nm_utils_hexstr2bin (const char *hex);
 
-gboolean    nm_utils_iface_valid_name(const char *name);
+gboolean    nm_utils_iface_valid_name (const char *name);
+NM_AVAILABLE_IN_1_6
+gboolean    nm_utils_is_valid_iface_name (const char *name, GError **error);
 
 gboolean nm_utils_is_uuid (const char *str);
 

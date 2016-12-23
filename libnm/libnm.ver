@@ -1108,4 +1108,5 @@ global:
 	nm_setting_proxy_get_pac_script;
 	nm_utils_is_json_object;
 	nm_utils_version;
+	nm_utils_is_valid_iface_name;
 } libnm_1_4_0;
