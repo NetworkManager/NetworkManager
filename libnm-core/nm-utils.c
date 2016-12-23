@@ -3789,6 +3789,8 @@ nm_utils_is_valid_iface_name (const char *name, GError **error)
  *
  * Validate the network interface name.
  *
+ * Deprecated: 1.6: use nm_utils_is_valid_iface_name() insteead, with better error reporting.
+ *
  * Returns: %TRUE if interface name is valid, otherwise %FALSE is returned.
  */
 gboolean
