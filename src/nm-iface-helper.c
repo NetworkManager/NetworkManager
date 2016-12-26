@@ -32,13 +32,10 @@
 #include <sys/stat.h>
 #include <signal.h>
 
-/* Cannot include <net/if.h> due to conflict with <linux/if.h>.
- * Forward declare if_nametoindex. */
-extern unsigned int if_nametoindex (const char *__ifname);
-
 #include "main-utils.h"
 #include "NetworkManagerUtils.h"
 #include "platform/nm-linux-platform.h"
+#include "platform/nm-platform-utils.h"
 #include "dhcp/nm-dhcp-manager.h"
 #include "ndisc/nm-ndisc.h"
 #include "ndisc/nm-lndp-ndisc.h"
@@ -394,7 +391,7 @@ main (int argc, char *argv[])
 		return 1;
 	}
 
-	gl.ifindex = if_nametoindex (global_opt.ifname);
+	gl.ifindex = nmp_utils_if_nametoindex (global_opt.ifname);
 	if (gl.ifindex <= 0) {
 		fprintf (stderr, _("Failed to find interface index for %s (%s)\n"), global_opt.ifname, strerror (errno));
 		return 1;
