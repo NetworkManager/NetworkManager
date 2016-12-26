@@ -74,6 +74,9 @@ NMIPConfigSource nmp_utils_ip_config_source_coerce_from_rtprot (NMIPConfigSource
 NMIPConfigSource nmp_utils_ip_config_source_round_trip_rtprot  (NMIPConfigSource source) _nm_const;
 const char *     nmp_utils_ip_config_source_to_string (NMIPConfigSource source, char *buf, gsize len);
 
+const char *nmp_utils_if_indextoname (int ifindex, char *out_ifname/*IFNAMSIZ*/);
+int nmp_utils_if_nametoindex (const char *ifname);
+
 int nmp_utils_sysctl_open_netdir (int ifindex,
                                   const char *ifname_guess,
                                   char *out_ifname);

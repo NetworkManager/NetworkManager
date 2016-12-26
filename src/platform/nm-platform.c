@@ -770,6 +770,22 @@ nm_platform_link_get_ifindex (NMPlatform *self, const char *name)
 	return pllink ? pllink->ifindex : 0;
 }
 
+const char *
+nm_platform_if_indextoname (NMPlatform *self, int ifindex, char *out_ifname/* of size IFNAMSIZ */)
+{
+	_CHECK_SELF_NETNS (self, klass, netns, FALSE);
+
+	return nmp_utils_if_indextoname (ifindex, out_ifname);
+}
+
+int
+nm_platform_if_nametoindex (NMPlatform *self, const char *ifname)
+{
+	_CHECK_SELF_NETNS (self, klass, netns, FALSE);
+
+	return nmp_utils_if_nametoindex (ifname);
+}
+
 /**
  * nm_platform_link_get_name:
  * @self: platform instance

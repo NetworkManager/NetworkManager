@@ -38,7 +38,29 @@
 
 #include "nm-core-utils.h"
 
+/******************************************************************
+ * utils
+ ******************************************************************/
+
 extern char *if_indextoname (unsigned int __ifindex, char *__ifname);
+unsigned int if_nametoindex (const char *__ifname);
+
+const char *
+nmp_utils_if_indextoname (int ifindex, char *out_ifname/*IFNAMSIZ*/)
+{
+	g_return_val_if_fail (ifindex > 0, NULL);
+	g_return_val_if_fail (out_ifname, NULL);
+
+	return if_indextoname (ifindex, out_ifname);
+}
+
+int
+nmp_utils_if_nametoindex (const char *ifname)
+{
+	g_return_val_if_fail (ifname, 0);
+
+	return if_nametoindex (ifname);
+}
 
 /******************************************************************
  * ethtool
