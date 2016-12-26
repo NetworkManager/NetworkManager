@@ -742,39 +742,86 @@ void
 nm_device_set_ip_iface (NMDevice *self, const char *iface)
 {
 	NMDevicePrivate *priv;
-	char *old_ip_iface;
+	int ifindex;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
-	if (!g_strcmp0 (iface, priv->ip_iface))
-		return;
+	if (nm_streq0 (iface, priv->ip_iface)) {
+		if (!iface)
+			return;
+		ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, iface);
+		if (   ifindex <= 0
+		    || priv->ip_ifindex == ifindex)
+			return;
 
-	old_ip_iface = priv->ip_iface;
-	priv->ip_ifindex = 0;
+		priv->ip_ifindex = ifindex;
+		_LOGD (LOGD_DEVICE, "ip-ifname: update ifindex for ifname '%s': %d", iface, priv->ip_ifindex);
+	} else {
+		g_free (priv->ip_iface);
+		priv->ip_iface = g_strdup (iface);
 
-	priv->ip_iface = g_strdup (iface);
-	if (priv->ip_iface) {
-		priv->ip_ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, priv->ip_iface);
-		if (priv->ip_ifindex > 0) {
-			if (nm_platform_check_support_user_ipv6ll (NM_PLATFORM_GET))
-				nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, priv->ip_ifindex, TRUE);
-
-			if (!nm_platform_link_is_up (NM_PLATFORM_GET, priv->ip_ifindex))
-				nm_platform_link_set_up (NM_PLATFORM_GET, priv->ip_ifindex, NULL);
+		if (iface) {
+			/* The @iface name is not in sync with the platform cache.
+			 * So, there is no point asking the platform cache to resolve
+			 * the ifindex. Instead, we can only hope that the interface
+			 * with this name still exists and we resolve the ifindex
+			 * anew.
+			 *
+			 * Backport: on master, we resolve the ifname anew via if_nametoindex().
+			 *   For the backport, don't bother and look into the platform cache.
+			 */
+			priv->ip_ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, iface);
+			if (priv->ip_ifindex > 0)
+				_LOGD (LOGD_DEVICE, "ip-ifname: set ifname '%s', ifindex %d", iface, priv->ip_ifindex);
+			else
+				_LOGW (LOGD_DEVICE, "ip-ifname: set ifname '%s', unknown ifindex", iface);
 		} else {
-			/* Device IP interface must always be a kernel network interface */
-			_LOGW (LOGD_PLATFORM, "failed to look up interface index");
+			priv->ip_ifindex = 0;
+			_LOGD (LOGD_DEVICE, "ip-ifname: clear ifname");
 		}
+	}
+
+	if (priv->ip_ifindex > 0) {
+		if (nm_platform_check_support_user_ipv6ll (NM_PLATFORM_GET))
+			nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, priv->ip_ifindex, TRUE);
+
+		if (!nm_platform_link_is_up (NM_PLATFORM_GET, priv->ip_ifindex))
+			nm_platform_link_set_up (NM_PLATFORM_GET, priv->ip_ifindex, NULL);
 	}
 
 	/* We don't care about any saved values from the old iface */
 	g_hash_table_remove_all (priv->ip6_saved_properties);
 
-	/* Emit change notification */
-	if (g_strcmp0 (old_ip_iface, priv->ip_iface))
-		_notify (self, PROP_IP_IFACE);
-	g_free (old_ip_iface);
+	_notify (self, PROP_IP_IFACE);
+}
+
+static gboolean
+_ip_iface_update (NMDevice *self, const char *ip_iface)
+{
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	g_return_val_if_fail (priv->ip_iface, FALSE);
+	g_return_val_if_fail (priv->ip_ifindex > 0, FALSE);
+	g_return_val_if_fail (ip_iface, FALSE);
+
+	if (!ip_iface[0])
+		return FALSE;
+
+	if (nm_streq (priv->ip_iface, ip_iface))
+		return FALSE;
+
+	_LOGI (LOGD_DEVICE, "ip-ifname: interface index %d renamed ip_iface (%d) from '%s' to '%s'",
+	       priv->ifindex, priv->ip_ifindex,
+	       priv->ip_iface, ip_iface);
+	g_free (priv->ip_iface);
+	priv->ip_iface = g_strdup (ip_iface);
+	_notify (self, PROP_IP_IFACE);
+	return TRUE;
 }
 
 /*****************************************************************************/
@@ -1953,16 +2000,8 @@ device_ip_link_changed (NMDevice *self)
 
 	_stats_update_counters_from_pllink (self, pllink);
 
-	if (pllink->name[0] && g_strcmp0 (priv->ip_iface, pllink->name)) {
-		_LOGI (LOGD_DEVICE, "interface index %d renamed ip_iface (%d) from '%s' to '%s'",
-		       priv->ifindex, nm_device_get_ip_ifindex (self),
-		       priv->ip_iface, pllink->name);
-		g_free (priv->ip_iface);
-		priv->ip_iface = g_strdup (pllink->name);
-
-		_notify (self, PROP_IP_IFACE);
+	if (_ip_iface_update (self, pllink->name))
 		nm_device_update_dynamic_ip_setup (self);
-	}
 
 	return G_SOURCE_REMOVE;
 }
@@ -2465,10 +2504,9 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 		_notify (self, PROP_IFINDEX);
 	}
 	priv->ip_ifindex = 0;
-	if (priv->ip_iface) {
-		g_clear_pointer (&priv->ip_iface, g_free);
+	if (nm_clear_g_free (&priv->ip_iface))
 		_notify (self, PROP_IP_IFACE);
-	}
+
 	if (priv->driver_version) {
 		g_clear_pointer (&priv->driver_version, g_free);
 		_notify (self, PROP_DRIVER_VERSION);
