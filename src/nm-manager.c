@@ -950,6 +950,26 @@ settings_startup_complete_changed (NMSettings *settings,
 }
 
 static void
+_parent_notify_changed (NMManager *self,
+                        NMDevice *device,
+                        gboolean device_removed)
+{
+	GSList *iter;
+
+	nm_assert (NM_IS_DEVICE (device));
+	nm_assert (NM_IS_MANAGER (self));
+
+	for (iter = NM_MANAGER_GET_PRIVATE (self)->devices; iter; ) {
+		if (nm_device_parent_notify_changed (iter->data, device, device_removed)) {
+			/* in the unlikely event that this changes anything, we start iterating
+			 * again, to be sure that the device list is up-to-date. */
+			iter = NM_MANAGER_GET_PRIVATE (self)->devices;
+		} else
+			iter = iter->next;
+	}
+}
+
+static void
 remove_device (NMManager *self,
                NMDevice *device,
                gboolean quitting,
@@ -984,6 +1004,8 @@ remove_device (NMManager *self,
 
 	nm_settings_device_removed (priv->settings, device, quitting);
 	priv->devices = g_slist_remove (priv->devices, device);
+
+	_parent_notify_changed (self, device, TRUE);
 
 	if (nm_device_is_real (device)) {
 		gboolean unconfigure_ip_config = !quitting || unmanage;
@@ -1861,6 +1883,14 @@ recheck_assume_connection_cb (NMDevice *device, gpointer user_data)
 }
 
 static void
+device_ifindex_changed (NMDevice *device,
+                        GParamSpec *pspec,
+                        NMManager *self)
+{
+	_parent_notify_changed (self, device, FALSE);
+}
+
+static void
 device_ip_iface_changed (NMDevice *device,
                          GParamSpec *pspec,
                          NMManager *self)
@@ -1998,6 +2028,10 @@ add_device (NMManager *self, NMDevice *device, GError **error)
 	                  G_CALLBACK (device_ip_iface_changed),
 	                  self);
 
+	g_signal_connect (device, "notify::" NM_DEVICE_IFINDEX,
+	                  G_CALLBACK (device_ifindex_changed),
+	                  self);
+
 	g_signal_connect (device, "notify::" NM_DEVICE_IFACE,
 	                  G_CALLBACK (device_iface_changed),
 	                  self);
@@ -2046,6 +2080,8 @@ add_device (NMManager *self, NMDevice *device, GError **error)
 		if (d != device)
 			nm_device_notify_new_device_added (d, device);
 	}
+
+	_parent_notify_changed (self, device, FALSE);
 
 	/* Virtual connections may refer to the new device as
 	 * parent device, retry to activate them.

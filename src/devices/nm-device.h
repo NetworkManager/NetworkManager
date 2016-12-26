@@ -66,6 +66,9 @@
 #define NM_DEVICE_LLDP_NEIGHBORS  "lldp-neighbors"
 #define NM_DEVICE_REAL             "real"
 
+/* "parent" will later be exposed by some subclasses */
+#define NM_DEVICE_PARENT           "parent"
+
 /* the "slaves" property is internal in the parent class, but exposed
  * by the derived classes NMDeviceBond, NMDeviceBridge and NMDeviceTeam.
  * It is thus important that the property name matches. */
@@ -316,6 +319,12 @@ typedef struct {
 
 	void            (* notify_new_device_added) (NMDevice *self, NMDevice *new_device);
 
+	void            (* parent_changed_notify) (NMDevice *self,
+	                                           int old_ifindex,
+	                                           NMDevice *old_parent,
+	                                           int new_ifindex,
+	                                           NMDevice *new_parent);
+
 	/**
 	 * component_added:
 	 * @self: the #NMDevice
@@ -389,6 +398,14 @@ void            nm_device_replace_vpn6_config   (NMDevice *dev,
                                                  NMIP6Config *config);
 
 void            nm_device_capture_initial_config (NMDevice *dev);
+
+int             nm_device_parent_get_ifindex    (NMDevice *dev);
+NMDevice       *nm_device_parent_get_device     (NMDevice *dev);
+void            nm_device_parent_set_ifindex    (NMDevice *self,
+                                                 int parent_ifindex);
+gboolean        nm_device_parent_notify_changed (NMDevice *self,
+                                                 NMDevice *change_candidate,
+                                                 gboolean device_removed);
 
 /* Master */
 gboolean        nm_device_is_master             (NMDevice *dev);

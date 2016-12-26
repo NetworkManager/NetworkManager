@@ -123,6 +123,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDevice,
 	PROP_PHYSICAL_PORT_ID,
 	PROP_IS_MASTER,
 	PROP_MASTER,
+	PROP_PARENT,
 	PROP_HW_ADDRESS,
 	PROP_PERM_HW_ADDRESS,
 	PROP_HAS_PENDING_ACTION,
@@ -225,9 +226,13 @@ typedef struct _NMDevicePrivate {
 	GSList *pending_actions;
 	GSList *dad6_failed_addrs;
 
+	NMDevice *parent_device;
+
 	char *        udi;
 	char *        iface;   /* may change, could be renamed by user */
 	int           ifindex;
+
+	int parent_ifindex;
 
 	union {
 		const guint8 hw_addr_len; /* read-only */
@@ -870,6 +875,132 @@ _ip_iface_update (NMDevice *self, const char *ip_iface)
 	priv->ip_iface = g_strdup (ip_iface);
 	_notify (self, PROP_IP_IFACE);
 	return TRUE;
+}
+
+/*****************************************************************************/
+
+int
+nm_device_parent_get_ifindex (NMDevice *self)
+{
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), 0);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	return priv->parent_ifindex;
+}
+
+NMDevice *
+nm_device_parent_get_device (NMDevice *self)
+{
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	return priv->parent_device;
+}
+
+static void
+parent_changed_notify (NMDevice *self,
+                       int old_ifindex,
+                       NMDevice *old_parent,
+                       int new_ifindex,
+                       NMDevice *new_parent)
+{
+	/* empty handler to allow subclasses to always chain up the virtual function. */
+}
+
+static gboolean
+_parent_set_ifindex (NMDevice *self,
+                     int parent_ifindex,
+                     gboolean force_check)
+{
+	NMDevicePrivate *priv;
+	NMDevice *parent_device;
+	gboolean changed = FALSE;
+	int old_ifindex;
+	NMDevice *old_device;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (parent_ifindex <= 0)
+		parent_ifindex = 0;
+
+	old_ifindex = priv->parent_ifindex;
+	old_device = priv->parent_device;
+
+	if (priv->parent_ifindex == parent_ifindex) {
+		if (parent_ifindex > 0) {
+			if (   !force_check
+			    && priv->parent_device
+			    && nm_device_get_ifindex (priv->parent_device) == parent_ifindex)
+				return FALSE;
+		} else {
+			if (!priv->parent_device)
+				return FALSE;
+		}
+	} else {
+		priv->parent_ifindex = parent_ifindex;
+		changed = TRUE;
+	}
+
+	if (parent_ifindex > 0) {
+		parent_device = nm_manager_get_device_by_ifindex (nm_manager_get (), parent_ifindex);
+		if (parent_device == self)
+			parent_device = NULL;
+	} else
+		parent_device = NULL;
+
+	if (parent_device != priv->parent_device) {
+		priv->parent_device = parent_device;
+		changed = TRUE;
+	}
+
+	if (changed) {
+		if (priv->parent_ifindex <= 0)
+			_LOGD (LOGD_DEVICE, "parent: clear");
+		else if (!priv->parent_device)
+			_LOGD (LOGD_DEVICE, "parent: ifindex %d, no device", priv->parent_ifindex);
+		else {
+			_LOGD (LOGD_DEVICE, "parent: ifindex %d, device %p, %s", priv->parent_ifindex,
+			       priv->parent_device, nm_device_get_iface (priv->parent_device));
+		}
+
+		NM_DEVICE_GET_CLASS (self)->parent_changed_notify (self, old_ifindex, old_device, priv->parent_ifindex, priv->parent_device);
+
+		_notify (self, PROP_PARENT);
+	}
+	return changed;
+}
+
+void
+nm_device_parent_set_ifindex (NMDevice *self,
+                              int parent_ifindex)
+{
+	_parent_set_ifindex (self, parent_ifindex, FALSE);
+}
+
+gboolean
+nm_device_parent_notify_changed (NMDevice *self,
+                                 NMDevice *change_candidate,
+                                 gboolean device_removed)
+{
+	NMDevicePrivate *priv;
+
+	nm_assert (NM_IS_DEVICE (self));
+	nm_assert (NM_IS_DEVICE (change_candidate));
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->parent_ifindex > 0) {
+		if (   priv->parent_device == change_candidate
+		    || priv->parent_ifindex == nm_device_get_ifindex (change_candidate))
+			return _parent_set_ifindex (self, priv->parent_ifindex, device_removed);
+	}
+	return FALSE;
 }
 
 /*****************************************************************************/
@@ -2621,6 +2752,8 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 	}
 
 	NM_DEVICE_GET_CLASS (self)->unrealize_notify (self);
+
+	_parent_set_ifindex (self, 0, FALSE);
 
 	if (priv->ifindex > 0) {
 		priv->ifindex = 0;
@@ -12722,6 +12855,8 @@ dispose (GObject *object)
 
 	_LOGD (LOGD_DEVICE, "disposing");
 
+	_parent_set_ifindex (self, 0, FALSE);
+
 	platform = NM_PLATFORM_GET;
 	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (device_ipx_changed), self);
 	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (link_changed_cb), self);
@@ -12757,6 +12892,11 @@ dispose (GObject *object)
 	nm_clear_g_source (&priv->stats.timeout_id);
 
 	link_disconnect_action_cancel (self);
+
+	if (priv->ifindex > 0) {
+		priv->ifindex = 0;
+		_notify (self, PROP_IFINDEX);
+	}
 
 	if (priv->settings) {
 		g_signal_handlers_disconnect_by_func (priv->settings, cp_connection_added, self);
@@ -13036,6 +13176,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_MASTER:
 		g_value_set_object (value, nm_device_get_master (self));
 		break;
+	case PROP_PARENT:
+		nm_utils_g_value_set_object_path (value, priv->parent_device);
+		break;
 	case PROP_HW_ADDRESS:
 		g_value_set_string (value, priv->hw_addr);
 		break;
@@ -13140,6 +13283,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->get_ip_iface_identifier = get_ip_iface_identifier;
 	klass->unmanaged_on_quit = unmanaged_on_quit;
 	klass->deactivate_reset_hw_addr = deactivate_reset_hw_addr;
+	klass->parent_changed_notify = parent_changed_notify;
 
 	obj_properties[PROP_UDI] =
 	    g_param_spec_string (NM_DEVICE_UDI, "", "",
@@ -13292,6 +13436,11 @@ nm_device_class_init (NMDeviceClass *klass)
 	obj_properties[PROP_MASTER] =
 	    g_param_spec_object (NM_DEVICE_MASTER, "", "",
 	                         NM_TYPE_DEVICE,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_PARENT] =
+	    g_param_spec_string (NM_DEVICE_PARENT, "", "",
+	                         NULL,
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_HW_ADDRESS] =
