@@ -2320,8 +2320,10 @@ update_device_from_platform_link (NMDevice *self, const NMPlatformLink *plink)
 		_notify (self, PROP_IFACE);
 	}
 
-	priv->ifindex = plink->ifindex;
-	_notify (self, PROP_IFINDEX);
+	if (priv->ifindex != plink->ifindex) {
+		priv->ifindex = plink->ifindex;
+		_notify (self, PROP_IFINDEX);
+	}
 
 	priv->up = NM_FLAGS_HAS (plink->n_ifi_flags, IFF_UP);
 	if (plink->driver && g_strcmp0 (plink->driver, priv->driver) != 0) {
