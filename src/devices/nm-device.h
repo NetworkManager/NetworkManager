@@ -66,7 +66,7 @@
 #define NM_DEVICE_LLDP_NEIGHBORS  "lldp-neighbors"
 #define NM_DEVICE_REAL             "real"
 
-/* "parent" will later be exposed by some subclasses */
+/* "parent" is exposed on D-Bus by subclasses like NMDeviceIPTunnel */
 #define NM_DEVICE_PARENT           "parent"
 
 /* the "slaves" property is internal in the parent class, but exposed
