@@ -584,6 +584,18 @@ _NM_BACKPORT_SYMBOL_IMPL(VERSION, RETURN_TYPE, FUNC, _##FUNC##_##VERSION, ARGS_T
 
 /*****************************************************************************/
 
+#define nm_str_skip_leading_spaces(str) \
+	({ \
+		typeof (*(str)) *_str = (str); \
+		_nm_unused const char *_str_type_check = _str; \
+		\
+		if (_str) { \
+			while (g_ascii_isspace (_str[0])) \
+				_str++; \
+		} \
+		_str; \
+	})
+
 static inline char *
 nm_strstrip (char *str)
 {
