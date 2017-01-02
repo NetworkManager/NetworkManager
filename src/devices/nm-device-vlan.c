@@ -202,10 +202,18 @@ update_properties (NMDevice *device)
 }
 
 static void
-realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
+link_changed (NMDevice *device,
+              const NMPlatformLink *pllink)
 {
-	NM_DEVICE_CLASS (nm_device_vlan_parent_class)->realize_start_notify (device, plink);
+	NM_DEVICE_CLASS (nm_device_vlan_parent_class)->link_changed (device, pllink);
+	update_properties (device);
+}
 
+static void
+realize_start_notify (NMDevice *device,
+                      const NMPlatformLink *pllink)
+{
+	NM_DEVICE_CLASS (nm_device_vlan_parent_class)->realize_start_notify (device, pllink);
 	update_properties (device);
 }
 
@@ -654,6 +662,7 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	object_class->dispose = dispose;
 
 	parent_class->create_and_realize = create_and_realize;
+	parent_class->link_changed = link_changed;
 	parent_class->realize_start_notify = realize_start_notify;
 	parent_class->unrealize_notify = unrealize_notify;
 	parent_class->get_generic_capabilities = get_generic_capabilities;
