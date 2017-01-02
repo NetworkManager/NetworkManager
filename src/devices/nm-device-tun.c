@@ -251,13 +251,6 @@ create_and_realize (NMDevice *device,
 	return TRUE;
 }
 
-static void
-realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
-{
-	NM_DEVICE_CLASS (nm_device_tun_parent_class)->realize_start_notify (device, plink);
-	reload_tun_properties ((NMDeviceTun *) device);
-}
-
 static gboolean
 check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
@@ -438,7 +431,6 @@ nm_device_tun_class_init (NMDeviceTunClass *klass)
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->create_and_realize = create_and_realize;
 	device_class->get_generic_capabilities = get_generic_capabilities;
-	device_class->realize_start_notify = realize_start_notify;
 	device_class->unrealize_notify = unrealize_notify;
 	device_class->update_connection = update_connection;
 	device_class->act_stage1_prepare = act_stage1_prepare;

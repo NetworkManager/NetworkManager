@@ -761,14 +761,6 @@ create_and_realize (NMDevice *device,
 }
 
 static void
-realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
-{
-	NM_DEVICE_CLASS (nm_device_ip_tunnel_parent_class)->realize_start_notify (device, plink);
-
-	update_properties (device);
-}
-
-static void
 ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 {
 	NMConnection *connection;
@@ -903,7 +895,6 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 	device_class->create_and_realize = create_and_realize;
 	device_class->get_generic_capabilities = get_generic_capabilities;
 	device_class->ip4_config_pre_commit = ip4_config_pre_commit;
-	device_class->realize_start_notify = realize_start_notify;
 	device_class->unrealize_notify = unrealize_notify;
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass,

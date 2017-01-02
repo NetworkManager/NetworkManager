@@ -182,12 +182,15 @@ typedef struct {
 	/**
 	 * realize_start_notify():
 	 * @self: the #NMDevice
-	 * @plink: the #NMPlatformLink if backed by a kernel netdevice
+	 * @pllink: the #NMPlatformLink if backed by a kernel netdevice
 	 *
 	 * Hook for derived classes to be notfied during realize_start_setup()
 	 * and perform additional setup.
+	 *
+	 * The default implemention of NMDevice calls link_changed().
 	 */
-	void        (*realize_start_notify) (NMDevice *self, const NMPlatformLink *plink);
+	void        (*realize_start_notify) (NMDevice *self,
+	                                     const NMPlatformLink *pllink);
 
 	/**
 	 * unrealize():

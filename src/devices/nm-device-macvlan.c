@@ -530,14 +530,6 @@ ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 	}
 }
 
-static void
-realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
-{
-	NM_DEVICE_CLASS (nm_device_macvlan_parent_class)->realize_start_notify (device, plink);
-
-	update_properties (device);
-}
-
 /*****************************************************************************/
 
 static void
@@ -622,7 +614,6 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *klass)
 	device_class->is_available = is_available;
 	device_class->link_changed = link_changed;
 	device_class->notify_new_device_added = notify_new_device_added;
-	device_class->realize_start_notify = realize_start_notify;
 	device_class->update_connection = update_connection;
 
 	obj_properties[PROP_PARENT] =

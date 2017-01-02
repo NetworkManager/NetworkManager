@@ -1675,15 +1675,6 @@ link_changed (NMDevice *device,
 		_update_s390_subchannels ((NMDeviceEthernet *) device);
 }
 
-static void
-realize_start_notify (NMDevice *device,
-                      const NMPlatformLink *pllink)
-{
-	NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->realize_start_notify (device, pllink);
-	if (pllink->initialized)
-		_update_s390_subchannels ((NMDeviceEthernet *) device);
-}
-
 static gboolean
 is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 {
@@ -1789,7 +1780,6 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->update_connection = update_connection;
 	parent_class->carrier_changed = carrier_changed;
 	parent_class->link_changed = link_changed;
-	parent_class->realize_start_notify = realize_start_notify;
 	parent_class->is_available = is_available;
 
 	parent_class->state_changed = device_state_changed;

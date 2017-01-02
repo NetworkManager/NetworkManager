@@ -209,14 +209,6 @@ link_changed (NMDevice *device,
 	update_properties (device);
 }
 
-static void
-realize_start_notify (NMDevice *device,
-                      const NMPlatformLink *pllink)
-{
-	NM_DEVICE_CLASS (nm_device_vlan_parent_class)->realize_start_notify (device, pllink);
-	update_properties (device);
-}
-
 static gboolean
 create_and_realize (NMDevice *device,
                     NMConnection *connection,
@@ -663,7 +655,6 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 
 	parent_class->create_and_realize = create_and_realize;
 	parent_class->link_changed = link_changed;
-	parent_class->realize_start_notify = realize_start_notify;
 	parent_class->unrealize_notify = unrealize_notify;
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->act_stage1_prepare = act_stage1_prepare;

@@ -2320,11 +2320,12 @@ check_carrier (NMDevice *self)
 }
 
 static void
-realize_start_notify (NMDevice *self, const NMPlatformLink *plink)
+realize_start_notify (NMDevice *self,
+                      const NMPlatformLink *pllink)
 {
-	/* Stub implementation for realize_start_notify(). It does nothing,
-	 * but allows derived classes to uniformly invoke the parent
-	 * implementation. */
+	/* the default implementation of realize_start_notify() just calls
+	 * link_changed() -- which by default does nothing. */
+	NM_DEVICE_GET_CLASS (self)->link_changed (self, pllink);
 }
 
 /**

@@ -160,14 +160,6 @@ link_changed (NMDevice *device,
 }
 
 static void
-realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
-{
-	g_return_if_fail (plink->type == NM_LINK_TYPE_VXLAN);
-	NM_DEVICE_CLASS (nm_device_vxlan_parent_class)->realize_start_notify (device, plink);
-	update_properties (device);
-}
-
-static void
 unrealize_notify (NMDevice *device)
 {
 	NMDeviceVxlan *self = NM_DEVICE_VXLAN (device);
@@ -646,7 +638,6 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 	object_class->dispose = dispose;
 
 	device_class->link_changed = link_changed;
-	device_class->realize_start_notify = realize_start_notify;
 	device_class->unrealize_notify = unrealize_notify;
 	device_class->connection_type = NM_SETTING_VXLAN_SETTING_NAME;
 	device_class->create_and_realize = create_and_realize;
