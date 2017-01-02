@@ -71,7 +71,7 @@ G_DEFINE_TYPE (NMDeviceTun, nm_device_tun, NM_TYPE_DEVICE)
 /*****************************************************************************/
 
 static void
-reload_tun_properties (NMDeviceTun *self)
+update_properties (NMDeviceTun *self)
 {
 	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (self);
 	GObject *object = G_OBJECT (self);
@@ -126,7 +126,7 @@ link_changed (NMDevice *device,
               const NMPlatformLink *pllink)
 {
 	NM_DEVICE_CLASS (nm_device_tun_parent_class)->link_changed (device, pllink);
-	reload_tun_properties (NM_DEVICE_TUN (device));
+	update_properties (NM_DEVICE_TUN (device));
 }
 
 static gboolean
