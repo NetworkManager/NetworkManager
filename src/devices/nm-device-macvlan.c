@@ -212,9 +212,10 @@ update_properties (NMDevice *device)
 }
 
 static void
-link_changed (NMDevice *device, NMPlatformLink *info)
+link_changed (NMDevice *device,
+              const NMPlatformLink *pllink)
 {
-	NM_DEVICE_CLASS (nm_device_macvlan_parent_class)->link_changed (device, info);
+	NM_DEVICE_CLASS (nm_device_macvlan_parent_class)->link_changed (device, pllink);
 	update_properties (device);
 }
 

@@ -153,7 +153,8 @@ typedef struct {
 	                       NMDeviceState old_state,
 	                       NMDeviceStateReason reason);
 
-	void            (* link_changed) (NMDevice *self, NMPlatformLink *info);
+	void            (* link_changed) (NMDevice *self,
+	                                  const NMPlatformLink *pllink);
 
 	/**
 	 * create_and_realize():

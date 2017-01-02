@@ -1679,10 +1679,10 @@ carrier_changed (NMDevice *device, gboolean carrier)
 }
 
 static void
-link_changed (NMDevice *device, NMPlatformLink *info)
+link_changed (NMDevice *device, const NMPlatformLink *pllink)
 {
-	NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->link_changed (device, info);
-	if (info->initialized)
+	NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->link_changed (device, pllink);
+	if (pllink->initialized)
 		_update_s390_subchannels ((NMDeviceEthernet *) device);
 }
 

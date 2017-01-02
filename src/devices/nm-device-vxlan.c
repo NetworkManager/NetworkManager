@@ -152,19 +152,18 @@ get_generic_capabilities (NMDevice *dev)
 }
 
 static void
-link_changed (NMDevice *device, NMPlatformLink *info)
+link_changed (NMDevice *device,
+              const NMPlatformLink *pllink)
 {
-	NM_DEVICE_CLASS (nm_device_vxlan_parent_class)->link_changed (device, info);
+	NM_DEVICE_CLASS (nm_device_vxlan_parent_class)->link_changed (device, pllink);
 	update_properties (device);
 }
 
 static void
 realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
 {
-	g_assert (plink->type == NM_LINK_TYPE_VXLAN);
-
+	g_return_if_fail (plink->type == NM_LINK_TYPE_VXLAN);
 	NM_DEVICE_CLASS (nm_device_vxlan_parent_class)->realize_start_notify (device, plink);
-
 	update_properties (device);
 }
 

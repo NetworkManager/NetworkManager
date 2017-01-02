@@ -122,10 +122,10 @@ get_generic_capabilities (NMDevice *dev)
 }
 
 static void
-link_changed (NMDevice *device, NMPlatformLink *info)
+link_changed (NMDevice *device,
+              const NMPlatformLink *pllink)
 {
-	NM_DEVICE_CLASS (nm_device_tun_parent_class)->link_changed (device, info);
-
+	NM_DEVICE_CLASS (nm_device_tun_parent_class)->link_changed (device, pllink);
 	reload_tun_properties (NM_DEVICE_TUN (device));
 }
 

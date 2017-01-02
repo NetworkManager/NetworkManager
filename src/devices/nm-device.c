@@ -2119,12 +2119,12 @@ link_changed_cb (NMPlatform *platform,
 }
 
 static void
-link_changed (NMDevice *self, NMPlatformLink *info)
+link_changed (NMDevice *self, const NMPlatformLink *pllink)
 {
 	/* Update carrier from link event if applicable. */
 	if (   nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)
 	    && !nm_device_has_capability (self, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
-		nm_device_set_carrier (self, info->connected);
+		nm_device_set_carrier (self, pllink->connected);
 }
 
 static gboolean
