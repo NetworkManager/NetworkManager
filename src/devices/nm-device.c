@@ -1981,8 +1981,12 @@ device_link_changed (NMDevice *self)
 			_LOGD (LOGD_DEVICE, "IPv6 tokenized identifier present on device %s", priv->iface);
 	}
 
-	if (klass->link_changed)
-		klass->link_changed (self, &info);
+	/* Update carrier from link event if applicable. */
+	if (   nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)
+	    && !nm_device_has_capability (self, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
+		nm_device_set_carrier (self, pllink->connected);
+
+	klass->link_changed (self, &info);
 
 	/* Update DHCP, etc, if needed */
 	if (ip_ifname_changed)
@@ -2121,10 +2125,7 @@ link_changed_cb (NMPlatform *platform,
 static void
 link_changed (NMDevice *self, const NMPlatformLink *pllink)
 {
-	/* Update carrier from link event if applicable. */
-	if (   nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)
-	    && !nm_device_has_capability (self, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
-		nm_device_set_carrier (self, pllink->connected);
+	/* stub implementation of virtual function to allow subclasses to chain up. */
 }
 
 static gboolean
