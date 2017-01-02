@@ -43,7 +43,6 @@ _LOG_DECLARE_SELF(NMDeviceVxlan);
 /*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceVxlan,
-	PROP_PARENT,
 	PROP_ID,
 	PROP_LOCAL,
 	PROP_GROUP,
@@ -62,7 +61,6 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceVxlan,
 );
 
 typedef struct {
-	NMDevice *parent;
 	NMPlatformLnkVxlan props;
 } NMDeviceVxlanPrivate;
 
@@ -88,7 +86,6 @@ update_properties (NMDevice *device)
 	NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE (self);
 	GObject *object = G_OBJECT (device);
 	const NMPlatformLnkVxlan *props;
-	NMDevice *parent;
 
 	props = nm_platform_link_get_lnk_vxlan (NM_PLATFORM_GET, nm_device_get_ifindex (device), NULL);
 	if (!props) {
@@ -98,13 +95,8 @@ update_properties (NMDevice *device)
 
 	g_object_freeze_notify (object);
 
-	if (priv->props.parent_ifindex != props->parent_ifindex) {
-		g_clear_object (&priv->parent);
-		parent = nm_manager_get_device_by_ifindex (nm_manager_get (), props->parent_ifindex);
-		if (parent)
-			priv->parent = g_object_ref (parent);
-		_notify (self, PROP_PARENT);
-	}
+	if (priv->props.parent_ifindex != props->parent_ifindex)
+		nm_device_parent_set_ifindex (device, props->parent_ifindex);
 	if (priv->props.id != props->id)
 		_notify (self, PROP_ID);
 	if (priv->props.local != props->local)
@@ -241,11 +233,12 @@ create_and_realize (NMDevice *device,
 static gboolean
 match_parent (NMDeviceVxlan *self, const char *parent)
 {
-	NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE (self);
+	NMDevice *parent_device;
 
 	g_return_val_if_fail (parent != NULL, FALSE);
 
-	if (!priv->parent)
+	parent_device = nm_device_parent_get_device (NM_DEVICE (self));
+	if (!parent_device)
 		return FALSE;
 
 	if (nm_utils_is_uuid (parent)) {
@@ -255,7 +248,7 @@ match_parent (NMDeviceVxlan *self, const char *parent)
 		/* If the parent is a UUID, the connection matches if our parent
 		 * device has that connection activated.
 		 */
-		parent_req = nm_device_get_act_request (priv->parent);
+		parent_req = nm_device_get_act_request (parent_device);
 		if (!parent_req)
 			return FALSE;
 
@@ -267,7 +260,7 @@ match_parent (NMDeviceVxlan *self, const char *parent)
 			return FALSE;
 	} else {
 		/* interface name */
-		if (g_strcmp0 (parent, nm_device_get_ip_iface (priv->parent)) != 0)
+		if (g_strcmp0 (parent, nm_device_get_ip_iface (parent_device)) != 0)
 			return FALSE;
 	}
 
@@ -392,8 +385,9 @@ update_connection (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE ((NMDeviceVxlan *) device);
 	NMSettingVxlan *s_vxlan = nm_connection_get_setting_vxlan (connection);
-	NMDevice *parent = NULL;
-	const char *setting_parent, *new_parent;
+	NMDevice *parent_device;
+	const char *setting_parent;
+	const char *new_parent = NULL;
 
 	if (!s_vxlan) {
 		s_vxlan = (NMSettingVxlan *) nm_setting_vxlan_new ();
@@ -403,12 +397,11 @@ update_connection (NMDevice *device, NMConnection *connection)
 	if (priv->props.id != nm_setting_vxlan_get_id (s_vxlan))
 		g_object_set (G_OBJECT (s_vxlan), NM_SETTING_VXLAN_ID, priv->props.id, NULL);
 
-	if (priv->props.parent_ifindex != NM_PLATFORM_LINK_OTHER_NETNS)
-		parent = nm_manager_get_device_by_ifindex (nm_manager_get (), priv->props.parent_ifindex);
+	parent_device = nm_device_parent_get_device (device);
 
 	/* Update parent in the connection; default to parent's interface name */
-	if (parent) {
-		new_parent = nm_device_get_iface (parent);
+	if (parent_device) {
+		new_parent = nm_device_get_iface (parent_device);
 		setting_parent = nm_setting_vxlan_get_parent (s_vxlan);
 		if (setting_parent && nm_utils_is_uuid (setting_parent)) {
 			NMConnection *parent_connection;
@@ -416,13 +409,11 @@ update_connection (NMDevice *device, NMConnection *connection)
 			/* Don't change a parent specified by UUID if it's still valid */
 			parent_connection = (NMConnection *) nm_settings_get_connection_by_uuid (nm_device_get_settings (device),
 			                                                                         setting_parent);
-			if (parent_connection && nm_device_check_connection_compatible (parent, parent_connection))
+			if (parent_connection && nm_device_check_connection_compatible (parent_device, parent_connection))
 				new_parent = NULL;
 		}
-		if (new_parent)
-			g_object_set (s_vxlan, NM_SETTING_VXLAN_PARENT, new_parent, NULL);
-	} else
-		g_object_set (s_vxlan, NM_SETTING_VXLAN_PARENT, NULL, NULL);
+	}
+	g_object_set (s_vxlan, NM_SETTING_VXLAN_PARENT, new_parent, NULL);
 
 	if (!address_matches (nm_setting_vxlan_get_remote (s_vxlan), priv->props.group, &priv->props.group6)) {
 		if (priv->props.group) {
@@ -546,13 +537,8 @@ get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
 	NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE ((NMDeviceVxlan *) object);
-	NMDevice *parent;
 
 	switch (prop_id) {
-	case PROP_PARENT:
-		parent = nm_manager_get_device_by_ifindex (nm_manager_get (), priv->props.parent_ifindex);
-		nm_utils_g_value_set_object_path (value, parent);
-		break;
 	case PROP_ID:
 		g_value_set_uint (value, priv->props.id);
 		break;
@@ -618,15 +604,6 @@ nm_device_vxlan_init (NMDeviceVxlan *self)
 }
 
 static void
-dispose (GObject *object)
-{
-	NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE ((NMDeviceVxlan *) object);
-
-	g_clear_object (&priv->parent);
-	G_OBJECT_CLASS (nm_device_vxlan_parent_class)->dispose (object);
-}
-
-static void
 nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -635,7 +612,6 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NULL, NM_LINK_TYPE_VXLAN)
 
 	object_class->get_property = get_property;
-	object_class->dispose = dispose;
 
 	device_class->link_changed = link_changed;
 	device_class->unrealize_notify = unrealize_notify;
@@ -647,12 +623,6 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 	device_class->update_connection = update_connection;
 	device_class->act_stage1_prepare = act_stage1_prepare;
 	device_class->ip4_config_pre_commit = ip4_config_pre_commit;
-
-	obj_properties[PROP_PARENT] =
-	     g_param_spec_string (NM_DEVICE_VXLAN_PARENT, "", "",
-	                          NULL,
-	                          G_PARAM_READABLE |
-	                          G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_ID] =
 	     g_param_spec_uint (NM_DEVICE_VXLAN_ID, "", "",
