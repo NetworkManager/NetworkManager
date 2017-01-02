@@ -44,16 +44,13 @@ _LOG_DECLARE_SELF(NMDeviceMacvlan);
 /*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceMacvlan,
-	PROP_PARENT,
 	PROP_MODE,
 	PROP_NO_PROMISC,
 	PROP_TAP,
 );
 
 typedef struct {
-	int parent_ifindex;
 	gulong parent_state_id;
-	NMDevice *parent;
 	NMPlatformLnkMacvlan props;
 } NMDeviceMacvlanPrivate;
 
@@ -141,21 +138,24 @@ parent_state_changed (NMDevice *parent,
 }
 
 static void
-nm_device_macvlan_set_parent (NMDeviceMacvlan *self, NMDevice *parent)
-	{
+parent_changed_notify (NMDevice *device,
+                       int old_ifindex,
+                       NMDevice *old_parent,
+                       int new_ifindex,
+                       NMDevice *new_parent)
+{
+	NMDeviceMacvlan *self = NM_DEVICE_MACVLAN (device);
 	NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE (self);
-	NMDevice *device = NM_DEVICE (self);
 
-	if (parent == priv->parent)
-		return;
+	NM_DEVICE_CLASS (nm_device_macvlan_parent_class)->parent_changed_notify (device, old_ifindex, old_parent, new_ifindex, new_parent);
 
-	nm_clear_g_signal_handler (priv->parent, &priv->parent_state_id);
+	/*  note that @self doesn't have to clear @parent_state_id on dispose,
+	 *  because NMDevice's dispose() will unset the parent, which in turn calls
+	 *  parent_changed_notify(). */
+	nm_clear_g_signal_handler (old_parent, &priv->parent_state_id);
 
-	g_clear_object (&priv->parent);
-
-	if (parent) {
-		priv->parent = g_object_ref (parent);
-		priv->parent_state_id = g_signal_connect (priv->parent,
+	if (new_parent) {
+		priv->parent_state_id = g_signal_connect (new_parent,
 		                                          "state-changed",
 		                                          G_CALLBACK (parent_state_changed),
 		                                          device);
@@ -163,15 +163,16 @@ nm_device_macvlan_set_parent (NMDeviceMacvlan *self, NMDevice *parent)
 		/* Set parent-dependent unmanaged flag */
 		nm_device_set_unmanaged_by_flags (device,
 		                                  NM_UNMANAGED_PARENT,
-		                                  !nm_device_get_managed (parent, FALSE),
+		                                  !nm_device_get_managed (new_parent, FALSE),
 		                                  NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED);
 	}
 
-	/* Recheck availability now that the parent has changed */
-	nm_device_queue_recheck_available (device,
-	                                   NM_DEVICE_STATE_REASON_PARENT_CHANGED,
-	                                   NM_DEVICE_STATE_REASON_PARENT_CHANGED);
-	_notify (self, PROP_PARENT);
+	if (new_ifindex > 0) {
+		/* Recheck availability now that the parent has changed */
+		nm_device_queue_recheck_available (device,
+		                                   NM_DEVICE_STATE_REASON_PARENT_CHANGED,
+		                                   NM_DEVICE_STATE_REASON_PARENT_CHANGED);
+	}
 }
 
 static void
@@ -182,7 +183,6 @@ update_properties (NMDevice *device)
 	GObject *object = G_OBJECT (device);
 	const NMPlatformLnkMacvlan *props;
 	const NMPlatformLink *plink;
-	NMDevice *parent = NULL;
 
 	if (priv->props.tap)
 		props = nm_platform_link_get_lnk_macvtap (NM_PLATFORM_GET, nm_device_get_ifindex (device), &plink);
@@ -196,16 +196,12 @@ update_properties (NMDevice *device)
 
 	g_object_freeze_notify (object);
 
-	if (priv->parent_ifindex != plink->parent) {
-		parent = nm_manager_get_device_by_ifindex (nm_manager_get (), plink->parent);
-		nm_device_macvlan_set_parent (self, parent);
-	}
+	nm_device_parent_set_ifindex (device, plink->parent);
 	if (priv->props.mode != props->mode)
 		_notify (self, PROP_MODE);
 	if (priv->props.no_promisc != props->no_promisc)
 		_notify (self, PROP_NO_PROMISC);
 
-	priv->parent_ifindex = plink->parent;
 	priv->props = *props;
 
 	g_object_thaw_notify (object);
@@ -233,16 +229,16 @@ create_and_realize (NMDevice *device,
 	int parent_ifindex;
 
 	s_macvlan = nm_connection_get_setting_macvlan (connection);
-	g_assert (s_macvlan);
+	g_return_val_if_fail (s_macvlan, FALSE);
 
-	if (!parent) {
+	parent_ifindex = parent ? nm_device_get_ifindex (parent) : 0;
+
+	if (parent_ifindex <= 0) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
 		             "MACVLAN devices can not be created without a parent interface");
+		g_return_val_if_fail (!parent, FALSE);
 		return FALSE;
 	}
-
-	parent_ifindex = nm_device_get_ifindex (parent);
-	g_warn_if_fail (parent_ifindex > 0);
 
 	lnk.mode = setting_mode_to_platform (nm_setting_macvlan_get_mode (s_macvlan));
 	if (!lnk.mode) {
@@ -283,32 +279,9 @@ get_generic_capabilities (NMDevice *dev)
 static gboolean
 is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 {
-	if (!NM_DEVICE_MACVLAN_GET_PRIVATE ((NMDeviceMacvlan *) device)->parent)
+	if (!nm_device_parent_get_device (device))
 		return FALSE;
-
 	return NM_DEVICE_CLASS (nm_device_macvlan_parent_class)->is_available (device, flags);
-}
-
-static void
-notify_new_device_added (NMDevice *device, NMDevice *new_device)
-{
-	NMDeviceMacvlan *self = NM_DEVICE_MACVLAN (device);
-	NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE (self);
-
-	if (priv->parent)
-		return;
-
-	if (!nm_device_is_real (device))
-		return;
-
-	update_properties (device);
-
-	if (   priv->parent_ifindex <= 0
-	    || nm_device_get_ifindex (new_device) != priv->parent_ifindex)
-		return;
-
-	priv->parent_ifindex = nm_device_get_ifindex (new_device);
-	nm_device_macvlan_set_parent (self, new_device);
 }
 
 /*****************************************************************************/
@@ -317,11 +290,12 @@ notify_new_device_added (NMDevice *device, NMDevice *new_device)
 static gboolean
 match_parent (NMDeviceMacvlan *self, const char *parent)
 {
-	NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE (self);
+	NMDevice *parent_device;
 
 	g_return_val_if_fail (parent != NULL, FALSE);
 
-	if (!priv->parent)
+	parent_device = nm_device_parent_get_device (NM_DEVICE (self));
+	if (!parent_device)
 		return FALSE;
 
 	if (nm_utils_is_uuid (parent)) {
@@ -332,7 +306,7 @@ match_parent (NMDeviceMacvlan *self, const char *parent)
 		 * device has that connection activated.
 		 */
 
-		parent_req = nm_device_get_act_request (priv->parent);
+		parent_req = nm_device_get_act_request (parent_device);
 		if (!parent_req)
 			return FALSE;
 
@@ -344,7 +318,7 @@ match_parent (NMDeviceMacvlan *self, const char *parent)
 			return FALSE;
 	} else {
 		/* interface name */
-		if (g_strcmp0 (parent, nm_device_get_ip_iface (priv->parent)) != 0)
+		if (g_strcmp0 (parent, nm_device_get_ip_iface (parent_device)) != 0)
 			return FALSE;
 	}
 
@@ -354,8 +328,8 @@ match_parent (NMDeviceMacvlan *self, const char *parent)
 static gboolean
 match_hwaddr (NMDevice *device, NMConnection *connection, gboolean fail_if_no_hwaddr)
 {
-	NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE ((NMDeviceMacvlan *) device);
 	NMSettingWired *s_wired;
+	NMDevice *parent_device;
 	const char *setting_mac;
 	const char *parent_mac;
 
@@ -367,10 +341,11 @@ match_hwaddr (NMDevice *device, NMConnection *connection, gboolean fail_if_no_hw
 	if (!setting_mac)
 		return !fail_if_no_hwaddr;
 
-	if (!priv->parent)
+	parent_device = nm_device_parent_get_device (device);
+	if (!parent_device)
 		return !fail_if_no_hwaddr;
 
-	parent_mac = nm_device_get_permanent_hw_address (priv->parent);
+	parent_mac = nm_device_get_permanent_hw_address (parent_device);
 	return parent_mac && nm_utils_hwaddr_matches (setting_mac, -1, parent_mac, -1);
 }
 
@@ -458,6 +433,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE ((NMDeviceMacvlan *) device);
 	NMSettingMacvlan *s_macvlan = nm_connection_get_setting_macvlan (connection);
+	NMDevice *parent_device;
 	const char *setting_parent, *new_parent;
 	int new_mode;
 
@@ -478,15 +454,16 @@ update_connection (NMDevice *device, NMConnection *connection)
 		g_object_set (s_macvlan, NM_SETTING_MACVLAN_TAP, !!priv->props.tap, NULL);
 
 	/* Update parent in the connection; default to parent's interface name */
-	if (priv->parent) {
-		new_parent = nm_device_get_iface (priv->parent);
+	parent_device = nm_device_parent_get_device (device);
+	if (parent_device) {
+		new_parent = nm_device_get_iface (parent_device);
 		setting_parent = nm_setting_macvlan_get_parent (s_macvlan);
 		if (setting_parent && nm_utils_is_uuid (setting_parent)) {
 			NMConnection *parent_connection;
 
 			/* Don't change a parent specified by UUID if it's still valid */
 			parent_connection = (NMConnection *) nm_settings_get_connection_by_uuid (nm_device_get_settings (device), setting_parent);
-			if (parent_connection && nm_device_check_connection_compatible (priv->parent, parent_connection))
+			if (parent_connection && nm_device_check_connection_compatible (parent_device, parent_connection))
 				new_parent = NULL;
 		}
 		if (new_parent)
@@ -537,16 +514,8 @@ get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
 	NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE ((NMDeviceMacvlan *) object);
-	NMDevice *parent;
 
 	switch (prop_id) {
-	case PROP_PARENT:
-		if (priv->parent_ifindex > 0)
-			parent = nm_manager_get_device_by_ifindex (nm_manager_get (), priv->parent_ifindex);
-		else
-			parent = NULL;
-		nm_utils_g_value_set_object_path (value, parent);
-		break;
 	case PROP_MODE:
 		g_value_set_string (value, platform_mode_to_string (priv->props.mode));
 		break;
@@ -585,14 +554,6 @@ nm_device_macvlan_init (NMDeviceMacvlan *self)
 }
 
 static void
-dispose (GObject *object)
-{
-	nm_device_macvlan_set_parent (NM_DEVICE_MACVLAN (object), NULL);
-
-	G_OBJECT_CLASS (nm_device_macvlan_parent_class)->dispose (object);
-}
-
-static void
 nm_device_macvlan_class_init (NMDeviceMacvlanClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -600,7 +561,6 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *klass)
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NULL, NM_LINK_TYPE_MACVLAN, NM_LINK_TYPE_MACVTAP)
 
-	object_class->dispose = dispose;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 
@@ -613,14 +573,8 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *klass)
 	device_class->ip4_config_pre_commit = ip4_config_pre_commit;
 	device_class->is_available = is_available;
 	device_class->link_changed = link_changed;
-	device_class->notify_new_device_added = notify_new_device_added;
+	device_class->parent_changed_notify = parent_changed_notify;
 	device_class->update_connection = update_connection;
-
-	obj_properties[PROP_PARENT] =
-	     g_param_spec_string (NM_DEVICE_MACVLAN_PARENT, "", "",
-	                          NULL,
-	                          G_PARAM_READABLE |
-	                          G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_MODE] =
 	     g_param_spec_string (NM_DEVICE_MACVLAN_MODE, "", "",
