@@ -317,8 +317,6 @@ typedef struct {
 	gboolean        (* have_any_ready_slaves) (NMDevice *self,
 	                                           const GSList *slaves);
 
-	void            (* notify_new_device_added) (NMDevice *self, NMDevice *new_device);
-
 	void            (* parent_changed_notify) (NMDevice *self,
 	                                           int old_ifindex,
 	                                           NMDevice *old_parent,
@@ -596,7 +594,6 @@ gboolean   nm_device_check_connection_available (NMDevice *device,
                                                  NMDeviceCheckConAvailableFlags flags,
                                                  const char *specific_object);
 
-void     nm_device_notify_new_device_added (NMDevice *self, NMDevice *new_device);
 gboolean nm_device_notify_component_added (NMDevice *device, GObject *component);
 
 gboolean nm_device_owns_iface (NMDevice *device, const char *iface);

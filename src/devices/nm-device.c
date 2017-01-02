@@ -2830,27 +2830,6 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 }
 
 /**
- * nm_device_notify_new_device_added():
- * @self: the #NMDevice
- * @device: the newly added device
- *
- * Called by the manager to notify the device that a new device has
- * been found and added.
- */
-void
-nm_device_notify_new_device_added (NMDevice *self, NMDevice *device)
-{
-	NMDeviceClass *klass;
-
-	g_return_if_fail (NM_IS_DEVICE (self));
-	g_return_if_fail (NM_IS_DEVICE (device));
-
-	klass = NM_DEVICE_GET_CLASS (self);
-	if (klass->notify_new_device_added)
-		klass->notify_new_device_added (self, device);
-}
-
-/**
  * nm_device_notify_component_added():
  * @self: the #NMDevice
  * @component: the component being added by a plugin

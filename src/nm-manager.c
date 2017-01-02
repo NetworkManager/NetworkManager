@@ -2074,13 +2074,6 @@ add_device (NMManager *self, NMDevice *device, GError **error)
 	g_signal_emit (self, signals[INTERNAL_DEVICE_ADDED], 0, device);
 	_notify (self, PROP_ALL_DEVICES);
 
-	for (iter = priv->devices; iter; iter = iter->next) {
-		NMDevice *d = iter->data;
-
-		if (d != device)
-			nm_device_notify_new_device_added (d, device);
-	}
-
 	_parent_notify_changed (self, device, FALSE);
 
 	/* Virtual connections may refer to the new device as
