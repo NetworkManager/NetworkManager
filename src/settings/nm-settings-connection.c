@@ -752,7 +752,7 @@ do_delete (NMSettingsConnection *self,
 	/* Remove connection from seen-bssids database file */
 	remove_entry_from_db (self, "seen-bssids");
 
-	nm_settings_connection_signal_remove (self);
+	nm_settings_connection_signal_remove (self, FALSE);
 
 	callback (self, NULL, user_data);
 
@@ -2087,13 +2087,15 @@ impl_settings_connection_clear_secrets (NMSettingsConnection *self,
 /**************************************************************/
 
 void
-nm_settings_connection_signal_remove (NMSettingsConnection *self)
+nm_settings_connection_signal_remove (NMSettingsConnection *self, gboolean allow_reuse)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
-	if (priv->removed)
-		g_return_if_reached ();
-	priv->removed = TRUE;
+	if (!allow_reuse) {
+		if (priv->removed)
+			g_return_if_reached ();
+		priv->removed = TRUE;
+	}
 	g_signal_emit_by_name (self, NM_SETTINGS_CONNECTION_REMOVED);
 }
 

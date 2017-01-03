@@ -240,7 +240,7 @@ reload_connections (NMSettingsPlugin *config)
 				                              NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)) {
 					nm_log_info (LOGD_SETTINGS, "Auto refreshing %s", conn_name);
 
-					nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (old));
+					nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (old), FALSE);
 					track_new_connection (self, new);
 					if (is_managed_plugin () && is_managed (conn_name))
 						g_signal_emit_by_name (self, NM_SETTINGS_PLUGIN_CONNECTION_ADDED, new);
@@ -282,7 +282,7 @@ reload_connections (NMSettingsPlugin *config)
 		 */
 		if (   nm_ifnet_connection_get_conn_name (NM_IFNET_CONNECTION (candidate))
 		    && !g_hash_table_lookup (new_connections, uuid)) {
-			nm_settings_connection_signal_remove (candidate);
+			nm_settings_connection_signal_remove (candidate, FALSE);
 			g_hash_table_iter_remove (&iter);
 		}
 	}

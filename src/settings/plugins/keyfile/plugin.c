@@ -82,7 +82,7 @@ remove_connection (SettingsPluginKeyfile *self, NMKeyfileConnection *connection)
 	g_signal_handlers_disconnect_by_func (connection, connection_removed_cb, self);
 	removed = g_hash_table_remove (SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (self)->connections,
 	                               nm_connection_get_uuid (NM_CONNECTION (connection)));
-	nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (connection));
+	nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (connection), FALSE);
 	g_object_unref (connection);
 
 	g_return_if_fail (removed);
