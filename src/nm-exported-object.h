@@ -23,6 +23,8 @@
 
 /*****************************************************************************/
 
+#define NM_EXPORT_PATH_NUMBERED(basepath) ""basepath"/%u"
+
 char *nm_exported_object_skeletonify_method_name (const char *dbus_method_name);
 
 typedef struct {
