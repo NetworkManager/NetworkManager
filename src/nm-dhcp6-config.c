@@ -154,7 +154,7 @@ nm_dhcp6_config_class_init (NMDhcp6ConfigClass *config_class)
 	object_class->get_property = get_property;
 	object_class->finalize = finalize;
 
-	exported_object_class->export_path = NM_DBUS_PATH "/DHCP6Config/%u";
+	exported_object_class->export_path = NM_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/DHCP6Config");
 	exported_object_class->export_on_construction = TRUE;
 
 	obj_properties[PROP_OPTIONS] =

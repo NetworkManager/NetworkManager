@@ -969,7 +969,7 @@ nm_wifi_ap_class_init (NMWifiAPClass *ap_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (ap_class);
 	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (ap_class);
 
-	exported_object_class->export_path = NM_DBUS_PATH_ACCESS_POINT "/%u";
+	exported_object_class->export_path = NM_EXPORT_PATH_NUMBERED (NM_DBUS_PATH_ACCESS_POINT);
 
 	object_class->get_property = get_property;
 	object_class->finalize = finalize;

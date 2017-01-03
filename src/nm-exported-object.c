@@ -564,7 +564,7 @@ _create_export_path (NMExportedObjectClass *klass)
 {
 	const char *class_export_path, *p;
 	static GHashTable *prefix_counters;
-	guint *counter;
+	guint64 *counter;
 
 	class_export_path = klass->export_path;
 
@@ -575,17 +575,19 @@ _create_export_path (NMExportedObjectClass *klass)
 		if (G_UNLIKELY (!prefix_counters))
 			prefix_counters = g_hash_table_new (g_str_hash, g_str_equal);
 
-		g_assert (p[1] == 'u');
-		g_assert (strchr (p + 1, '%') == NULL);
+		nm_assert (p[1] == 'l');
+		nm_assert (p[2] == 'l');
+		nm_assert (p[3] == 'u');
+		nm_assert (p[4] == '\0');
 
 		counter = g_hash_table_lookup (prefix_counters, class_export_path);
 		if (!counter) {
-			counter = g_slice_new0 (guint);
-			g_hash_table_insert (prefix_counters, g_strdup (class_export_path), counter);
+			counter = g_slice_new0 (guint64);
+			g_hash_table_insert (prefix_counters, (char *) class_export_path, counter);
 		}
 
 		NM_PRAGMA_WARNING_DISABLE("-Wformat-nonliteral")
-		return g_strdup_printf (class_export_path, (*counter)++);
+		return g_strdup_printf (class_export_path, (long long unsigned) (++(*counter)));
 		NM_PRAGMA_WARNING_REENABLE
 	}
 

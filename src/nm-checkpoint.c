@@ -455,7 +455,7 @@ nm_checkpoint_class_init (NMCheckpointClass *checkpoint_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (checkpoint_class);
 	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (checkpoint_class);
 
-	exported_object_class->export_path = NM_DBUS_PATH "/Checkpoint/%u";
+	exported_object_class->export_path = NM_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/Checkpoint");
 	exported_object_class->export_on_construction = FALSE;
 
 	object_class->dispose = dispose;

@@ -2473,7 +2473,7 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
 	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (config_class);
 
-	exported_object_class->export_path = NM_DBUS_PATH "/IP4Config/%u";
+	exported_object_class->export_path = NM_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/IP4Config");
 
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;

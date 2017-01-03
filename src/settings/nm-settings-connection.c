@@ -2793,7 +2793,7 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 
 	g_type_class_add_private (class, sizeof (NMSettingsConnectionPrivate));
 
-	exported_object_class->export_path = NM_DBUS_PATH_SETTINGS "/%u";
+	exported_object_class->export_path = NM_EXPORT_PATH_NUMBERED (NM_DBUS_PATH_SETTINGS);
 
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
