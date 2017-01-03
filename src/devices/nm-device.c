@@ -13070,7 +13070,7 @@ nm_device_class_init (NMDeviceClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMDevicePrivate));
 
-	exported_object_class->export_path = NM_DBUS_PATH "/Devices/%u";
+	exported_object_class->export_path = NM_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/Devices");
 
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;

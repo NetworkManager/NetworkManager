@@ -1168,7 +1168,7 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 
 	g_type_class_add_private (ac_class, sizeof (NMActiveConnectionPrivate));
 
-	exported_object_class->export_path = NM_DBUS_PATH "/ActiveConnection/%u";
+	exported_object_class->export_path = NM_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/ActiveConnection");
 
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
