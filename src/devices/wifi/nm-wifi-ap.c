@@ -96,13 +96,23 @@ nm_wifi_ap_get_supplicant_path (NMWifiAP *ap)
 	return NM_WIFI_AP_GET_PRIVATE (ap)->supplicant_path;
 }
 
-guint32
+guint64
 nm_wifi_ap_get_id (NMWifiAP *ap)
 {
-	g_return_val_if_fail (NM_IS_WIFI_AP (ap), 0);
-	g_return_val_if_fail (nm_exported_object_is_exported (NM_EXPORTED_OBJECT (ap)), 0);
+	const char *path;
+	guint64 i;
 
-	return atoi (strrchr (nm_exported_object_get_path (NM_EXPORTED_OBJECT (ap)), '/') + 1);
+	g_return_val_if_fail (NM_IS_WIFI_AP (ap), 0);
+
+	path = nm_exported_object_get_path (NM_EXPORTED_OBJECT (ap));
+	g_return_val_if_fail (path, 0);
+
+	nm_assert (g_str_has_prefix (path, NM_DBUS_PATH_ACCESS_POINT"/"));
+
+	i = _nm_utils_ascii_str_to_int64 (&path[NM_STRLEN (NM_DBUS_PATH_ACCESS_POINT"/")], 10, 1, G_MAXINT64, 0);
+
+	nm_assert (i);
+	return i;
 }
 
 const GByteArray * nm_wifi_ap_get_ssid (const NMWifiAP *ap)

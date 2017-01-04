@@ -1000,8 +1000,8 @@ can_auto_connect (NMDevice *device,
 static int
 ap_id_compare (gconstpointer p_a, gconstpointer p_b, gpointer user_data)
 {
-	guint32 a_id = nm_wifi_ap_get_id (*((NMWifiAP **) p_a));
-	guint32 b_id = nm_wifi_ap_get_id (*((NMWifiAP **) p_b));
+	guint64 a_id = nm_wifi_ap_get_id (*((NMWifiAP **) p_a));
+	guint64 b_id = nm_wifi_ap_get_id (*((NMWifiAP **) p_b));
 
 	return a_id < b_id ? -1 : (a_id == b_id ? 0 : 1);
 }
