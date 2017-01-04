@@ -1416,4 +1416,23 @@ int read_nul_string(FILE *f, char **ret) {
 
         return 0;
 }
+
+int mkdtemp_malloc(const char *template, char **ret) {
+        char *p;
+
+        assert(template);
+        assert(ret);
+
+        p = strdup(template);
+        if (!p)
+                return -ENOMEM;
+
+        if (!mkdtemp(p)) {
+                free(p);
+                return -errno;
+        }
+
+        *ret = p;
+        return 0;
+}
 #endif /* NM_IGNORED */

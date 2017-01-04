@@ -888,6 +888,7 @@ static char* extract_multiplier(char *p, usec_t *multiplier) {
                 { "y",       USEC_PER_YEAR   },
                 { "usec",    1ULL            },
                 { "us",      1ULL            },
+                { "µs",      1ULL            },
         };
         unsigned i;
 
@@ -1021,6 +1022,7 @@ int parse_nsec(const char *t, nsec_t *nsec) {
                 { "y", NSEC_PER_YEAR },
                 { "usec", NSEC_PER_USEC },
                 { "us", NSEC_PER_USEC },
+                { "µs", NSEC_PER_USEC },
                 { "nsec", 1ULL },
                 { "ns", 1ULL },
                 { "", 1ULL }, /* default is nsec */

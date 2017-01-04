@@ -26,6 +26,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "dirent-util.h"
 #include "fd-util.h"
 #include "fs-util.h"
 #include "macro.h"
@@ -237,11 +238,8 @@ int close_all_fds(const int except[], unsigned n_except) {
                 return r;
         }
 
-        while ((de = readdir(d))) {
+        FOREACH_DIRENT(de, d, return -errno) {
                 int fd = -1;
-
-                if (hidden_or_backup_file(de->d_name))
-                        continue;
 
                 if (safe_atoi(de->d_name, &fd) < 0)
                         /* Let's better ignore this, just in case */
