@@ -997,66 +997,92 @@ can_auto_connect (NMDevice *device,
 	return FALSE;
 }
 
-static gint
-ap_id_compare (NMWifiAP *a, NMWifiAP *b)
+static int
+ap_id_compare (gconstpointer p_a, gconstpointer p_b, gpointer user_data)
 {
-	guint32 a_id = nm_wifi_ap_get_id (a);
-	guint32 b_id = nm_wifi_ap_get_id (b);
+	guint32 a_id = nm_wifi_ap_get_id (*((NMWifiAP **) p_a));
+	guint32 b_id = nm_wifi_ap_get_id (*((NMWifiAP **) p_b));
 
 	return a_id < b_id ? -1 : (a_id == b_id ? 0 : 1);
 }
 
-static GSList *
-get_sorted_ap_list (NMDeviceWifi *self)
+static NMWifiAP **
+ap_list_get_sorted (NMDeviceWifi *self, gboolean include_without_ssid)
 {
-	GSList *sorted = NULL;
+	NMDeviceWifiPrivate *priv;
+	NMWifiAP **list;
 	GHashTableIter iter;
 	NMWifiAP *ap;
+	gsize i, n;
 
-	g_hash_table_iter_init (&iter, NM_DEVICE_WIFI_GET_PRIVATE (self)->aps);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &ap))
-		sorted = g_slist_prepend (sorted, ap);
-	return g_slist_sort (sorted, (GCompareFunc) ap_id_compare);
+	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+
+	n = g_hash_table_size (priv->aps);
+	list = g_new (NMWifiAP *, n + 1);
+
+	i = 0;
+	if (n > 0) {
+		g_hash_table_iter_init (&iter, priv->aps);
+		while (g_hash_table_iter_next (&iter, NULL, (gpointer) &ap)) {
+			nm_assert (i < n);
+			if (   include_without_ssid
+			    || nm_wifi_ap_get_ssid (ap))
+				list[i++] = ap;
+		}
+		nm_assert (i <= n);
+		nm_assert (!include_without_ssid || i == n);
+
+		g_qsort_with_data (list,
+		                   i,
+		                   sizeof (gpointer),
+		                   ap_id_compare,
+		                   NULL);
+	}
+	list[i] = NULL;
+	return list;
+}
+
+static const char **
+ap_list_get_sorted_paths (NMDeviceWifi *self, gboolean include_without_ssid)
+{
+	gpointer *list;
+	gsize i, j;
+
+	list = (gpointer *) ap_list_get_sorted (self, include_without_ssid);
+	for (i = 0, j = 0; list[i]; i++) {
+		NMWifiAP *ap = list[i];
+		const char *path;
+
+		/* update @list inplace to hold instead the export-path. */
+		path = nm_exported_object_get_path (NM_EXPORTED_OBJECT (ap));
+		nm_assert (path);
+		list[j++] = (gpointer) path;
+	}
+	return (const char **) list;
 }
 
 static void
 impl_device_wifi_get_access_points (NMDeviceWifi *self,
                                     GDBusMethodInvocation *context)
 {
-	GSList *sorted, *iter;
-	GPtrArray *paths;
+	gs_free const char **list = NULL;
+	GVariant *v;
 
-	paths = g_ptr_array_new ();
-	sorted = get_sorted_ap_list (self);
-	for (iter = sorted; iter; iter = iter->next) {
-		NMWifiAP *ap = NM_WIFI_AP (iter->data);
-
-		if (nm_wifi_ap_get_ssid (ap))
-			g_ptr_array_add (paths, g_strdup (nm_exported_object_get_path (NM_EXPORTED_OBJECT (ap))));
-	}
-	g_ptr_array_add (paths, NULL);
-	g_slist_free (sorted);
-
-	g_dbus_method_invocation_return_value (context, g_variant_new ("(^ao)", (char **) paths->pdata));
-	g_ptr_array_unref (paths);
+	list = ap_list_get_sorted_paths (self, FALSE);
+	v = g_variant_new_objv (list, -1);
+	g_dbus_method_invocation_return_value (context, g_variant_new_tuple (&v, 1));
 }
 
 static void
 impl_device_wifi_get_all_access_points (NMDeviceWifi *self,
                                         GDBusMethodInvocation *context)
 {
-	GSList *sorted, *iter;
-	GPtrArray *paths;
+	gs_free const char **list = NULL;
+	GVariant *v;
 
-	paths = g_ptr_array_new ();
-	sorted = get_sorted_ap_list (self);
-	for (iter = sorted; iter; iter = iter->next)
-		g_ptr_array_add (paths, g_strdup (nm_exported_object_get_path (NM_EXPORTED_OBJECT (iter->data))));
-	g_ptr_array_add (paths, NULL);
-	g_slist_free (sorted);
-
-	g_dbus_method_invocation_return_value (context, g_variant_new ("(^ao)", (char **) paths->pdata));
-	g_ptr_array_unref (paths);
+	list = ap_list_get_sorted_paths (self, TRUE);
+	v = g_variant_new_objv (list, -1);
+	g_dbus_method_invocation_return_value (context, g_variant_new_tuple (&v, 1));
 }
 
 static void
@@ -1523,17 +1549,17 @@ ap_list_dump (gpointer user_data)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (user_data);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	GSList *sorted, *iter;
+	gs_free NMWifiAP **list = NULL;
+	gsize i;
 
 	priv->ap_dump_id = 0;
 	_LOGD (LOGD_WIFI_SCAN, "APs: [now:%u last:%u next:%u]",
 	       nm_utils_get_monotonic_timestamp_s (),
 	       priv->last_scan,
 	       priv->scheduled_scan_time);
-	sorted = get_sorted_ap_list (self);
-	for (iter = sorted; iter; iter = iter->next)
-		nm_wifi_ap_dump (NM_WIFI_AP (iter->data), "dump    ", nm_device_get_iface (NM_DEVICE (self)));
-	g_slist_free (sorted);
+	list = ap_list_get_sorted (self, TRUE);
+	for (i = 0; list[i]; i++)
+		nm_wifi_ap_dump (list[i], "dump    ", nm_device_get_iface (NM_DEVICE (self)));
 	return G_SOURCE_REMOVE;
 }
 
