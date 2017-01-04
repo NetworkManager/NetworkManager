@@ -1787,6 +1787,14 @@ test_write_wired_8021x_tls_connection_blob (void)
 }
 
 static void
+test_read_dcb_connection (void)
+{
+	gs_unref_object NMConnection *connection = NULL;
+
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR"/Test_dcb_connection");
+}
+
+static void
 test_read_infiniband_connection (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
@@ -2621,6 +2629,8 @@ int main (int argc, char **argv)
 	g_test_add_func ("/keyfile/test_read_wired_8021x_tls_new_connection", test_read_wired_8021x_tls_new_connection);
 	g_test_add_func ("/keyfile/test_write_wired_8021x_tls_connection_path", test_write_wired_8021x_tls_connection_path);
 	g_test_add_func ("/keyfile/test_write_wired_8021x_tls_connection_blob", test_write_wired_8021x_tls_connection_blob);
+
+	g_test_add_func ("/keyfile/test_read_dcb_connection", test_read_dcb_connection);
 
 	g_test_add_func ("/keyfile/test_read_infiniband_connection", test_read_infiniband_connection);
 	g_test_add_func ("/keyfile/test_write_infiniband_connection", test_write_infiniband_connection);
