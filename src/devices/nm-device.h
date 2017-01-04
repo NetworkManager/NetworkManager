@@ -66,6 +66,9 @@
 #define NM_DEVICE_LLDP_NEIGHBORS  "lldp-neighbors"
 #define NM_DEVICE_REAL             "real"
 
+/* "parent" is exposed on D-Bus by subclasses like NMDeviceIPTunnel */
+#define NM_DEVICE_PARENT           "parent"
+
 /* the "slaves" property is internal in the parent class, but exposed
  * by the derived classes NMDeviceBond, NMDeviceBridge and NMDeviceTeam.
  * It is thus important that the property name matches. */
@@ -153,7 +156,8 @@ typedef struct {
 	                       NMDeviceState old_state,
 	                       NMDeviceStateReason reason);
 
-	void            (* link_changed) (NMDevice *self, NMPlatformLink *info);
+	void            (* link_changed) (NMDevice *self,
+	                                  const NMPlatformLink *pllink);
 
 	/**
 	 * create_and_realize():
@@ -181,12 +185,15 @@ typedef struct {
 	/**
 	 * realize_start_notify():
 	 * @self: the #NMDevice
-	 * @plink: the #NMPlatformLink if backed by a kernel netdevice
+	 * @pllink: the #NMPlatformLink if backed by a kernel netdevice
 	 *
 	 * Hook for derived classes to be notfied during realize_start_setup()
 	 * and perform additional setup.
+	 *
+	 * The default implemention of NMDevice calls link_changed().
 	 */
-	void        (*realize_start_notify) (NMDevice *self, const NMPlatformLink *plink);
+	void        (*realize_start_notify) (NMDevice *self,
+	                                     const NMPlatformLink *pllink);
 
 	/**
 	 * unrealize():
@@ -310,7 +317,11 @@ typedef struct {
 	gboolean        (* have_any_ready_slaves) (NMDevice *self,
 	                                           const GSList *slaves);
 
-	void            (* notify_new_device_added) (NMDevice *self, NMDevice *new_device);
+	void            (* parent_changed_notify) (NMDevice *self,
+	                                           int old_ifindex,
+	                                           NMDevice *old_parent,
+	                                           int new_ifindex,
+	                                           NMDevice *new_parent);
 
 	/**
 	 * component_added:
@@ -385,6 +396,14 @@ void            nm_device_replace_vpn6_config   (NMDevice *dev,
                                                  NMIP6Config *config);
 
 void            nm_device_capture_initial_config (NMDevice *dev);
+
+int             nm_device_parent_get_ifindex    (NMDevice *dev);
+NMDevice       *nm_device_parent_get_device     (NMDevice *dev);
+void            nm_device_parent_set_ifindex    (NMDevice *self,
+                                                 int parent_ifindex);
+gboolean        nm_device_parent_notify_changed (NMDevice *self,
+                                                 NMDevice *change_candidate,
+                                                 gboolean device_removed);
 
 /* Master */
 gboolean        nm_device_is_master             (NMDevice *dev);
@@ -575,7 +594,6 @@ gboolean   nm_device_check_connection_available (NMDevice *device,
                                                  NMDeviceCheckConAvailableFlags flags,
                                                  const char *specific_object);
 
-void     nm_device_notify_new_device_added (NMDevice *self, NMDevice *new_device);
 gboolean nm_device_notify_component_added (NMDevice *device, GObject *component);
 
 gboolean nm_device_owns_iface (NMDevice *device, const char *iface);

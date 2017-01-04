@@ -197,8 +197,8 @@ nm_ifcfg_connection_check_devtimeout (NMIfcfgConnection *self)
 	             devtimeout, ifname, nm_connection_get_id (NM_CONNECTION (self)));
 
 	priv->devtimeout_link_changed_handler =
-		g_signal_connect (NM_PLATFORM_GET, NM_PLATFORM_SIGNAL_LINK_CHANGED,
-		                  G_CALLBACK (link_changed), self);
+	    g_signal_connect (NM_PLATFORM_GET, NM_PLATFORM_SIGNAL_LINK_CHANGED,
+	                      G_CALLBACK (link_changed), self);
 	priv->devtimeout_timeout_id = g_timeout_add_seconds (devtimeout, devtimeout_expired, self);
 }
 

@@ -123,6 +123,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDevice,
 	PROP_PHYSICAL_PORT_ID,
 	PROP_IS_MASTER,
 	PROP_MASTER,
+	PROP_PARENT,
 	PROP_HW_ADDRESS,
 	PROP_PERM_HW_ADDRESS,
 	PROP_HAS_PENDING_ACTION,
@@ -225,9 +226,13 @@ typedef struct _NMDevicePrivate {
 	GSList *pending_actions;
 	GSList *dad6_failed_addrs;
 
+	NMDevice *parent_device;
+
 	char *        udi;
 	char *        iface;   /* may change, could be renamed by user */
 	int           ifindex;
+
+	int parent_ifindex;
 
 	union {
 		const guint8 hw_addr_len; /* read-only */
@@ -790,43 +795,212 @@ void
 nm_device_set_ip_iface (NMDevice *self, const char *iface)
 {
 	NMDevicePrivate *priv;
-	char *old_ip_iface;
+	int ifindex;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
-	if (!g_strcmp0 (iface, priv->ip_iface))
-		return;
+	if (nm_streq0 (iface, priv->ip_iface)) {
+		if (!iface)
+			return;
+		ifindex = nm_platform_if_nametoindex (NM_PLATFORM_GET, iface);
+		if (   ifindex <= 0
+		    || priv->ip_ifindex == ifindex)
+			return;
 
-	old_ip_iface = priv->ip_iface;
-	priv->ip_ifindex = 0;
+		priv->ip_ifindex = ifindex;
+		_LOGD (LOGD_DEVICE, "ip-ifname: update ifindex for ifname '%s': %d", iface, priv->ip_ifindex);
+	} else {
+		g_free (priv->ip_iface);
+		priv->ip_iface = g_strdup (iface);
 
-	priv->ip_iface = g_strdup (iface);
-	if (priv->ip_iface) {
-		priv->ip_ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, priv->ip_iface);
-		if (priv->ip_ifindex > 0) {
-			if (nm_platform_check_support_user_ipv6ll (NM_PLATFORM_GET))
-				nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, priv->ip_ifindex, TRUE);
-
-			if (!nm_platform_link_is_up (NM_PLATFORM_GET, priv->ip_ifindex))
-				nm_platform_link_set_up (NM_PLATFORM_GET, priv->ip_ifindex, NULL);
+		if (iface) {
+			/* The @iface name is not in sync with the platform cache.
+			 * So, there is no point asking the platform cache to resolve
+			 * the ifindex. Instead, we can only hope that the interface
+			 * with this name still exists and we resolve the ifindex
+			 * anew.
+			 */
+			priv->ip_ifindex = nm_platform_if_nametoindex (NM_PLATFORM_GET, iface);
+			if (priv->ip_ifindex > 0)
+				_LOGD (LOGD_DEVICE, "ip-ifname: set ifname '%s', ifindex %d", iface, priv->ip_ifindex);
+			else
+				_LOGW (LOGD_DEVICE, "ip-ifname: set ifname '%s', unknown ifindex", iface);
 		} else {
-			/* Device IP interface must always be a kernel network interface */
-			_LOGW (LOGD_PLATFORM, "failed to look up interface index");
+			priv->ip_ifindex = 0;
+			_LOGD (LOGD_DEVICE, "ip-ifname: clear ifname");
 		}
 	}
 
+	if (priv->ip_ifindex > 0) {
+		if (nm_platform_check_support_user_ipv6ll (NM_PLATFORM_GET))
+			nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, priv->ip_ifindex, TRUE);
+
+		if (!nm_platform_link_is_up (NM_PLATFORM_GET, priv->ip_ifindex))
+			nm_platform_link_set_up (NM_PLATFORM_GET, priv->ip_ifindex, NULL);
+	}
 
 	/* We don't care about any saved values from the old iface */
 	g_hash_table_remove_all (priv->ip6_saved_properties);
 
-	/* Emit change notification */
-	if (g_strcmp0 (old_ip_iface, priv->ip_iface)) {
-		if (priv->ip_ifindex)
-			priv->ip_mtu = nm_platform_link_get_mtu (NM_PLATFORM_GET, priv->ip_ifindex);
-		_notify (self, PROP_IP_IFACE);
+	if (priv->ip_ifindex)
+		priv->ip_mtu = nm_platform_link_get_mtu (NM_PLATFORM_GET, priv->ip_ifindex);
+
+	_notify (self, PROP_IP_IFACE);
+}
+
+static gboolean
+_ip_iface_update (NMDevice *self, const char *ip_iface)
+{
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	g_return_val_if_fail (priv->ip_iface, FALSE);
+	g_return_val_if_fail (priv->ip_ifindex > 0, FALSE);
+	g_return_val_if_fail (ip_iface, FALSE);
+
+	if (!ip_iface[0])
+		return FALSE;
+
+	if (nm_streq (priv->ip_iface, ip_iface))
+		return FALSE;
+
+	_LOGI (LOGD_DEVICE, "ip-ifname: interface index %d renamed ip_iface (%d) from '%s' to '%s'",
+	       priv->ifindex, priv->ip_ifindex,
+	       priv->ip_iface, ip_iface);
+	g_free (priv->ip_iface);
+	priv->ip_iface = g_strdup (ip_iface);
+	_notify (self, PROP_IP_IFACE);
+	return TRUE;
+}
+
+/*****************************************************************************/
+
+int
+nm_device_parent_get_ifindex (NMDevice *self)
+{
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), 0);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	return priv->parent_ifindex;
+}
+
+NMDevice *
+nm_device_parent_get_device (NMDevice *self)
+{
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	return priv->parent_device;
+}
+
+static void
+parent_changed_notify (NMDevice *self,
+                       int old_ifindex,
+                       NMDevice *old_parent,
+                       int new_ifindex,
+                       NMDevice *new_parent)
+{
+	/* empty handler to allow subclasses to always chain up the virtual function. */
+}
+
+static gboolean
+_parent_set_ifindex (NMDevice *self,
+                     int parent_ifindex,
+                     gboolean force_check)
+{
+	NMDevicePrivate *priv;
+	NMDevice *parent_device;
+	gboolean changed = FALSE;
+	int old_ifindex;
+	NMDevice *old_device;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (parent_ifindex <= 0)
+		parent_ifindex = 0;
+
+	old_ifindex = priv->parent_ifindex;
+	old_device = priv->parent_device;
+
+	if (priv->parent_ifindex == parent_ifindex) {
+		if (parent_ifindex > 0) {
+			if (   !force_check
+			    && priv->parent_device
+			    && nm_device_get_ifindex (priv->parent_device) == parent_ifindex)
+				return FALSE;
+		} else {
+			if (!priv->parent_device)
+				return FALSE;
+		}
+	} else {
+		priv->parent_ifindex = parent_ifindex;
+		changed = TRUE;
 	}
-	g_free (old_ip_iface);
+
+	if (parent_ifindex > 0) {
+		parent_device = nm_manager_get_device_by_ifindex (nm_manager_get (), parent_ifindex);
+		if (parent_device == self)
+			parent_device = NULL;
+	} else
+		parent_device = NULL;
+
+	if (parent_device != priv->parent_device) {
+		priv->parent_device = parent_device;
+		changed = TRUE;
+	}
+
+	if (changed) {
+		if (priv->parent_ifindex <= 0)
+			_LOGD (LOGD_DEVICE, "parent: clear");
+		else if (!priv->parent_device)
+			_LOGD (LOGD_DEVICE, "parent: ifindex %d, no device", priv->parent_ifindex);
+		else {
+			_LOGD (LOGD_DEVICE, "parent: ifindex %d, device %p, %s", priv->parent_ifindex,
+			       priv->parent_device, nm_device_get_iface (priv->parent_device));
+		}
+
+		NM_DEVICE_GET_CLASS (self)->parent_changed_notify (self, old_ifindex, old_device, priv->parent_ifindex, priv->parent_device);
+
+		_notify (self, PROP_PARENT);
+	}
+	return changed;
+}
+
+void
+nm_device_parent_set_ifindex (NMDevice *self,
+                              int parent_ifindex)
+{
+	_parent_set_ifindex (self, parent_ifindex, FALSE);
+}
+
+gboolean
+nm_device_parent_notify_changed (NMDevice *self,
+                                 NMDevice *change_candidate,
+                                 gboolean device_removed)
+{
+	NMDevicePrivate *priv;
+
+	nm_assert (NM_IS_DEVICE (self));
+	nm_assert (NM_IS_DEVICE (change_candidate));
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->parent_ifindex > 0) {
+		if (   priv->parent_device == change_candidate
+		    || priv->parent_ifindex == nm_device_get_ifindex (change_candidate))
+			return _parent_set_ifindex (self, priv->parent_ifindex, device_removed);
+	}
+	return FALSE;
 }
 
 /*****************************************************************************/
@@ -1981,8 +2155,12 @@ device_link_changed (NMDevice *self)
 			_LOGD (LOGD_DEVICE, "IPv6 tokenized identifier present on device %s", priv->iface);
 	}
 
-	if (klass->link_changed)
-		klass->link_changed (self, &info);
+	/* Update carrier from link event if applicable. */
+	if (   nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)
+	    && !nm_device_has_capability (self, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
+		nm_device_set_carrier (self, pllink->connected);
+
+	klass->link_changed (self, &info);
 
 	/* Update DHCP, etc, if needed */
 	if (ip_ifname_changed)
@@ -2075,16 +2253,8 @@ device_ip_link_changed (NMDevice *self)
 	if (priv->ip_mtu != pllink->mtu)
 		priv->ip_mtu = pllink->mtu;
 
-	if (pllink->name[0] && g_strcmp0 (priv->ip_iface, pllink->name)) {
-		_LOGI (LOGD_DEVICE, "interface index %d renamed ip_iface (%d) from '%s' to '%s'",
-		       priv->ifindex, nm_device_get_ip_ifindex (self),
-		       priv->ip_iface, pllink->name);
-		g_free (priv->ip_iface);
-		priv->ip_iface = g_strdup (pllink->name);
-
-		_notify (self, PROP_IP_IFACE);
+	if (_ip_iface_update (self, pllink->name))
 		nm_device_update_dynamic_ip_setup (self);
-	}
 
 	return G_SOURCE_REMOVE;
 }
@@ -2119,12 +2289,9 @@ link_changed_cb (NMPlatform *platform,
 }
 
 static void
-link_changed (NMDevice *self, NMPlatformLink *info)
+link_changed (NMDevice *self, const NMPlatformLink *pllink)
 {
-	/* Update carrier from link event if applicable. */
-	if (   nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)
-	    && !nm_device_has_capability (self, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
-		nm_device_set_carrier (self, info->connected);
+	/* stub implementation of virtual function to allow subclasses to chain up. */
 }
 
 static gboolean
@@ -2284,8 +2451,10 @@ update_device_from_platform_link (NMDevice *self, const NMPlatformLink *plink)
 		_notify (self, PROP_IFACE);
 	}
 
-	priv->ifindex = plink->ifindex;
-	_notify (self, PROP_IFINDEX);
+	if (priv->ifindex != plink->ifindex) {
+		priv->ifindex = plink->ifindex;
+		_notify (self, PROP_IFINDEX);
+	}
 
 	priv->up = NM_FLAGS_HAS (plink->n_ifi_flags, IFF_UP);
 	if (plink->driver && g_strcmp0 (plink->driver, priv->driver) != 0) {
@@ -2319,11 +2488,12 @@ check_carrier (NMDevice *self)
 }
 
 static void
-realize_start_notify (NMDevice *self, const NMPlatformLink *plink)
+realize_start_notify (NMDevice *self,
+                      const NMPlatformLink *pllink)
 {
-	/* Stub implementation for realize_start_notify(). It does nothing,
-	 * but allows derived classes to uniformly invoke the parent
-	 * implementation. */
+	/* the default implementation of realize_start_notify() just calls
+	 * link_changed() -- which by default does nothing. */
+	NM_DEVICE_GET_CLASS (self)->link_changed (self, pllink);
 }
 
 /**
@@ -2583,15 +2753,16 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 
 	NM_DEVICE_GET_CLASS (self)->unrealize_notify (self);
 
+	_parent_set_ifindex (self, 0, FALSE);
+
 	if (priv->ifindex > 0) {
 		priv->ifindex = 0;
 		_notify (self, PROP_IFINDEX);
 	}
 	priv->ip_ifindex = 0;
-	if (priv->ip_iface) {
-		g_clear_pointer (&priv->ip_iface, g_free);
+	if (nm_clear_g_free (&priv->ip_iface))
 		_notify (self, PROP_IP_IFACE);
-	}
+
 	if (priv->driver_version) {
 		g_clear_pointer (&priv->driver_version, g_free);
 		_notify (self, PROP_DRIVER_VERSION);
@@ -2656,27 +2827,6 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 	nm_device_recheck_available_connections (self);
 
 	return TRUE;
-}
-
-/**
- * nm_device_notify_new_device_added():
- * @self: the #NMDevice
- * @device: the newly added device
- *
- * Called by the manager to notify the device that a new device has
- * been found and added.
- */
-void
-nm_device_notify_new_device_added (NMDevice *self, NMDevice *device)
-{
-	NMDeviceClass *klass;
-
-	g_return_if_fail (NM_IS_DEVICE (self));
-	g_return_if_fail (NM_IS_DEVICE (device));
-
-	klass = NM_DEVICE_GET_CLASS (self);
-	if (klass->notify_new_device_added)
-		klass->notify_new_device_added (self, device);
 }
 
 /**
@@ -3710,9 +3860,9 @@ recheck_available (gpointer user_data)
 
 	if (new_state > NM_DEVICE_STATE_UNKNOWN) {
 		_LOGD (LOGD_DEVICE, "is %savailable, %s %s",
-			   now_available ? "" : "not ",
-			   new_state == NM_DEVICE_STATE_UNAVAILABLE ? "no change required for" : "will transition to",
-			   state_to_string (new_state == NM_DEVICE_STATE_UNAVAILABLE ? state : new_state));
+		       now_available ? "" : "not ",
+		       new_state == NM_DEVICE_STATE_UNAVAILABLE ? "no change required for" : "will transition to",
+		       state_to_string (new_state == NM_DEVICE_STATE_UNAVAILABLE ? state : new_state));
 
 		priv->recheck_available.available_reason = NM_DEVICE_STATE_REASON_NONE;
 		priv->recheck_available.unavailable_reason = NM_DEVICE_STATE_REASON_NONE;
@@ -12684,6 +12834,8 @@ dispose (GObject *object)
 
 	_LOGD (LOGD_DEVICE, "disposing");
 
+	_parent_set_ifindex (self, 0, FALSE);
+
 	platform = NM_PLATFORM_GET;
 	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (device_ipx_changed), self);
 	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (link_changed_cb), self);
@@ -12719,6 +12871,11 @@ dispose (GObject *object)
 	nm_clear_g_source (&priv->stats.timeout_id);
 
 	link_disconnect_action_cancel (self);
+
+	if (priv->ifindex > 0) {
+		priv->ifindex = 0;
+		_notify (self, PROP_IFINDEX);
+	}
 
 	if (priv->settings) {
 		g_signal_handlers_disconnect_by_func (priv->settings, cp_connection_added, self);
@@ -12998,6 +13155,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_MASTER:
 		g_value_set_object (value, nm_device_get_master (self));
 		break;
+	case PROP_PARENT:
+		nm_utils_g_value_set_object_path (value, priv->parent_device);
+		break;
 	case PROP_HW_ADDRESS:
 		g_value_set_string (value, priv->hw_addr);
 		break;
@@ -13102,6 +13262,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->get_ip_iface_identifier = get_ip_iface_identifier;
 	klass->unmanaged_on_quit = unmanaged_on_quit;
 	klass->deactivate_reset_hw_addr = deactivate_reset_hw_addr;
+	klass->parent_changed_notify = parent_changed_notify;
 
 	obj_properties[PROP_UDI] =
 	    g_param_spec_string (NM_DEVICE_UDI, "", "",
@@ -13254,6 +13415,11 @@ nm_device_class_init (NMDeviceClass *klass)
 	obj_properties[PROP_MASTER] =
 	    g_param_spec_object (NM_DEVICE_MASTER, "", "",
 	                         NM_TYPE_DEVICE,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_PARENT] =
+	    g_param_spec_string (NM_DEVICE_PARENT, "", "",
+	                         NULL,
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_HW_ADDRESS] =

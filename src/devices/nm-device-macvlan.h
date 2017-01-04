@@ -30,10 +30,12 @@
 #define NM_IS_DEVICE_MACVLAN_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_DEVICE_MACVLAN))
 #define NM_DEVICE_MACVLAN_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_DEVICE_MACVLAN, NMDeviceMacvlanClass))
 
-#define NM_DEVICE_MACVLAN_PARENT     "parent"
 #define NM_DEVICE_MACVLAN_MODE       "mode"
 #define NM_DEVICE_MACVLAN_NO_PROMISC "no-promisc"
 #define NM_DEVICE_MACVLAN_TAP        "tap"
+
+/* defined in the parent class, but exposed on D-Bus by the subclass. */
+#define NM_DEVICE_MACVLAN_PARENT     NM_DEVICE_PARENT
 
 typedef struct _NMDeviceMacvlan NMDeviceMacvlan;
 typedef struct _NMDeviceMacvlanClass NMDeviceMacvlanClass;

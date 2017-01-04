@@ -71,7 +71,7 @@ G_DEFINE_TYPE (NMDeviceTun, nm_device_tun, NM_TYPE_DEVICE)
 /*****************************************************************************/
 
 static void
-reload_tun_properties (NMDeviceTun *self)
+update_properties (NMDeviceTun *self)
 {
 	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (self);
 	GObject *object = G_OBJECT (self);
@@ -122,11 +122,11 @@ get_generic_capabilities (NMDevice *dev)
 }
 
 static void
-link_changed (NMDevice *device, NMPlatformLink *info)
+link_changed (NMDevice *device,
+              const NMPlatformLink *pllink)
 {
-	NM_DEVICE_CLASS (nm_device_tun_parent_class)->link_changed (device, info);
-
-	reload_tun_properties (NM_DEVICE_TUN (device));
+	NM_DEVICE_CLASS (nm_device_tun_parent_class)->link_changed (device, pllink);
+	update_properties (NM_DEVICE_TUN (device));
 }
 
 static gboolean
@@ -249,13 +249,6 @@ create_and_realize (NMDevice *device,
 	}
 
 	return TRUE;
-}
-
-static void
-realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
-{
-	NM_DEVICE_CLASS (nm_device_tun_parent_class)->realize_start_notify (device, plink);
-	reload_tun_properties ((NMDeviceTun *) device);
 }
 
 static gboolean
@@ -438,7 +431,6 @@ nm_device_tun_class_init (NMDeviceTunClass *klass)
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->create_and_realize = create_and_realize;
 	device_class->get_generic_capabilities = get_generic_capabilities;
-	device_class->realize_start_notify = realize_start_notify;
 	device_class->unrealize_notify = unrealize_notify;
 	device_class->update_connection = update_connection;
 	device_class->act_stage1_prepare = act_stage1_prepare;

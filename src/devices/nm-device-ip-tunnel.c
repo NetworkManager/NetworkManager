@@ -46,7 +46,6 @@ _LOG_DECLARE_SELF(NMDeviceIPTunnel);
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceIPTunnel,
 	PROP_MODE,
-	PROP_PARENT,
 	PROP_LOCAL,
 	PROP_REMOTE,
 	PROP_TTL,
@@ -60,8 +59,6 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceIPTunnel,
 
 typedef struct {
 	NMIPTunnelMode mode;
-	NMDevice *parent;
-	int parent_ifindex;
 	char *local;
 	char *remote;
 	guint8 ttl;
@@ -126,8 +123,7 @@ update_properties_from_ifindex (NMDevice *device, int ifindex)
 {
 	NMDeviceIPTunnel *self = NM_DEVICE_IP_TUNNEL (device);
 	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE (self);
-	NMDevice *parent;
-	int parent_ifindex;
+	int parent_ifindex = 0;
 	in_addr_t local4, remote4;
 	struct in6_addr local6, remote6;
 	guint8 ttl = 0, tos = 0, encap_limit = 0;
@@ -137,11 +133,7 @@ update_properties_from_ifindex (NMDevice *device, int ifindex)
 
 	if (ifindex <= 0) {
 clear:
-		if (priv->parent || priv->parent_ifindex) {
-			g_clear_object (&priv->parent);
-			priv->parent_ifindex = 0;
-			_notify (self, PROP_PARENT);
-		}
+		nm_device_parent_set_ifindex (device, 0);
 		if (priv->local) {
 			g_clear_pointer (&priv->local, g_free);
 			_notify (self, PROP_LOCAL);
@@ -257,14 +249,7 @@ clear:
 	} else
 		g_return_if_reached ();
 
-	if (priv->parent_ifindex != parent_ifindex) {
-		g_clear_object (&priv->parent);
-		priv->parent_ifindex = parent_ifindex;
-		parent = nm_manager_get_device_by_ifindex (nm_manager_get (), parent_ifindex);
-		if (parent)
-			priv->parent = g_object_ref (parent);
-		_notify (self, PROP_PARENT);
-	}
+	nm_device_parent_set_ifindex (device, parent_ifindex);
 
 	if (priv->addr_family == AF_INET) {
 		if (!address_equal_pn (AF_INET, priv->local, &local4)) {
@@ -331,9 +316,10 @@ update_properties (NMDevice *device)
 }
 
 static void
-link_changed (NMDevice *device, NMPlatformLink *info)
+link_changed (NMDevice *device,
+              const NMPlatformLink *pllink)
 {
-	NM_DEVICE_CLASS (nm_device_ip_tunnel_parent_class)->link_changed (device, info);
+	NM_DEVICE_CLASS (nm_device_ip_tunnel_parent_class)->link_changed (device, pllink);
 	update_properties (device);
 }
 
@@ -382,8 +368,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 	if (nm_setting_ip_tunnel_get_mode (s_ip_tunnel) != priv->mode)
 		g_object_set (G_OBJECT (s_ip_tunnel), NM_SETTING_IP_TUNNEL_MODE, priv->mode, NULL);
 
-	if (priv->parent_ifindex > 0)
-		parent = nm_manager_get_device_by_ifindex (nm_manager_get (), priv->parent_ifindex);
+	parent = nm_device_parent_get_device (device);
 
 	/* Update parent in the connection; default to parent's interface name */
 	if (parent) {
@@ -512,7 +497,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 		/* Check parent interface; could be an interface name or a UUID */
 		parent = nm_setting_ip_tunnel_get_parent (s_ip_tunnel);
 		if (parent) {
-			if (!match_parent (priv->parent, parent))
+			if (!match_parent (nm_device_parent_get_device (device), parent))
 				return FALSE;
 		}
 
@@ -760,14 +745,6 @@ create_and_realize (NMDevice *device,
 }
 
 static void
-realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
-{
-	NM_DEVICE_CLASS (nm_device_ip_tunnel_parent_class)->realize_start_notify (device, plink);
-
-	update_properties (device);
-}
-
-static void
 ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 {
 	NMConnection *connection;
@@ -806,15 +783,10 @@ get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
 	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE ((NMDeviceIPTunnel *) object);
-	NMDevice *parent;
 
 	switch (prop_id) {
 	case PROP_MODE:
 		g_value_set_uint (value, priv->mode);
-		break;
-	case PROP_PARENT:
-		parent = nm_manager_get_device_by_ifindex (nm_manager_get (), priv->parent_ifindex);
-		nm_utils_g_value_set_object_path (value, parent);
 		break;
 	case PROP_LOCAL:
 		g_value_set_string (value, priv->local);
@@ -902,7 +874,6 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 	device_class->create_and_realize = create_and_realize;
 	device_class->get_generic_capabilities = get_generic_capabilities;
 	device_class->ip4_config_pre_commit = ip4_config_pre_commit;
-	device_class->realize_start_notify = realize_start_notify;
 	device_class->unrealize_notify = unrealize_notify;
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass,
@@ -918,12 +889,6 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 	                        G_PARAM_READWRITE |
 	                        G_PARAM_CONSTRUCT_ONLY |
 	                        G_PARAM_STATIC_STRINGS);
-
-	obj_properties[PROP_PARENT] =
-	     g_param_spec_string (NM_DEVICE_IP_TUNNEL_PARENT, "", "",
-	                          NULL,
-	                          G_PARAM_READABLE |
-	                          G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_LOCAL] =
 	     g_param_spec_string (NM_DEVICE_IP_TUNNEL_LOCAL, "", "",

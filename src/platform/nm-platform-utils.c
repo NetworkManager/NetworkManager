@@ -38,7 +38,29 @@
 
 #include "nm-core-utils.h"
 
+/******************************************************************
+ * utils
+ ******************************************************************/
+
 extern char *if_indextoname (unsigned int __ifindex, char *__ifname);
+unsigned int if_nametoindex (const char *__ifname);
+
+const char *
+nmp_utils_if_indextoname (int ifindex, char *out_ifname/*IFNAMSIZ*/)
+{
+	g_return_val_if_fail (ifindex > 0, NULL);
+	g_return_val_if_fail (out_ifname, NULL);
+
+	return if_indextoname (ifindex, out_ifname);
+}
+
+int
+nmp_utils_if_nametoindex (const char *ifname)
+{
+	g_return_val_if_fail (ifname, 0);
+
+	return if_nametoindex (ifname);
+}
 
 /******************************************************************
  * ethtool
@@ -91,7 +113,7 @@ ethtool_get (int ifindex, gpointer edata)
 	 * This does not solve the renaming race, but it minimizes the time for
 	 * the race to happen as much as possible. */
 
-	if (!if_indextoname (ifindex, ifname)) {
+	if (!nmp_utils_if_indextoname (ifindex, ifname)) {
 		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: request fails resolving ifindex: %s",
 		              ifindex,
 		              _ethtool_data_to_string (edata, sbuf, sizeof (sbuf)),
@@ -461,7 +483,7 @@ nmp_utils_mii_supports_carrier_detect (int ifindex)
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 
-	if (!if_indextoname (ifindex, ifname)) {
+	if (!nmp_utils_if_indextoname (ifindex, ifname)) {
 		nm_log_trace (LOGD_PLATFORM, "mii[%d]: carrier-detect no: request fails resolving ifindex: %s", ifindex, g_strerror (errno));
 		return FALSE;
 	}
@@ -696,7 +718,7 @@ nmp_utils_sysctl_open_netdir (int ifindex,
 		int fd;
 
 		if (!ifname) {
-			ifname = if_indextoname (ifindex, ifname_buf);
+			ifname = nmp_utils_if_indextoname (ifindex, ifname_buf);
 			if (!ifname)
 				return -1;
 		}

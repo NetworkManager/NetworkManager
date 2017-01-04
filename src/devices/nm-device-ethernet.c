@@ -260,18 +260,6 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 }
 
 static void
-constructed (GObject *object)
-{
-	const NMPlatformLink *pllink;
-
-	G_OBJECT_CLASS (nm_device_ethernet_parent_class)->constructed (object);
-
-	pllink = nm_platform_link_get (NM_PLATFORM_GET, nm_device_get_ifindex ((NMDevice *) object));
-	if (pllink && pllink->initialized)
-		_update_s390_subchannels ((NMDeviceEthernet *) object);
-}
-
-static void
 clear_secrets_tries (NMDevice *device)
 {
 	NMActRequest *req;
@@ -1679,10 +1667,11 @@ carrier_changed (NMDevice *device, gboolean carrier)
 }
 
 static void
-link_changed (NMDevice *device, NMPlatformLink *info)
+link_changed (NMDevice *device,
+              const NMPlatformLink *pllink)
 {
-	NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->link_changed (device, info);
-	if (info->initialized)
+	NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->link_changed (device, pllink);
+	if (pllink->initialized)
 		_update_s390_subchannels ((NMDeviceEthernet *) device);
 }
 
@@ -1772,7 +1761,6 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_WIRED_SETTING_NAME, NM_LINK_TYPE_ETHERNET)
 
-	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
