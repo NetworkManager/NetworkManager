@@ -62,8 +62,11 @@ sub inc
 {
 	my $val = shift;
 
-	if ($val =~ /^\d+$/) {
+	if ($val =~ /^-?\d+$/) {
 		my $len = length $val;
+		if ($val =~ /^-/ && ($val + 1 == 0)) {
+			$len = $len - 1
+		}
 		return sprintf "%0${len}d", $val + 1;
 	} elsif ($val =~ /^0x(.+)$/) {
 		my $len = length $1;
@@ -117,7 +120,7 @@ if (/^\/\*\*$/) {
 	$choice = undef;
 } elsif (/^typedef enum/) {
 	# Start of an enum
-	$val = 0;
+	$val = -1;
 } elsif (/^\s+(\S+)\s+=\s+([^,\s]+)/) {
 	# A choice with a literal value
 	next unless @choices;
