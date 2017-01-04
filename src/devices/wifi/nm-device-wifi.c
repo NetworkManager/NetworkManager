@@ -3139,11 +3139,10 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	NMDeviceWifi *device = NM_DEVICE_WIFI (object);
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
-	GHashTableIter iter;
-	const char *dbus_path;
-	GPtrArray *array;
+	NMDeviceWifi *self = NM_DEVICE_WIFI (object);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	gsize i;
+	char **list;
 
 	switch (prop_id) {
 	case PROP_MODE:
@@ -3156,12 +3155,10 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->capabilities);
 		break;
 	case PROP_ACCESS_POINTS:
-		array = g_ptr_array_sized_new (g_hash_table_size (priv->aps) + 1);
-		g_hash_table_iter_init (&iter, priv->aps);
-		while (g_hash_table_iter_next (&iter, (gpointer) &dbus_path, NULL))
-			g_ptr_array_add (array, g_strdup (dbus_path));
-		g_ptr_array_add (array, NULL);
-		g_value_take_boxed (value, (char **) g_ptr_array_free (array, FALSE));
+		list = (char **) ap_list_get_sorted_paths (self, TRUE);
+		for (i = 0; list[i]; i++)
+			list[i] = g_strdup (list[i]);
+		g_value_take_boxed (value, list);
 		break;
 	case PROP_ACTIVE_ACCESS_POINT:
 		nm_utils_g_value_set_object_path (value, priv->current_ap);
