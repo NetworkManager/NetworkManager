@@ -1860,9 +1860,6 @@ _get_config_variant (NMDnsManager *self)
 		gboolean v4 = NM_IS_IP4_CONFIG (current->config);
 		gint priority;
 
-		g_variant_builder_init (&entry_builder, G_VARIANT_TYPE ("a{sv}"));
-		g_variant_builder_init (&strv_builder, G_VARIANT_TYPE ("as"));
-
 		if (v4) {
 			NMIP4Config *config = NM_IP4_CONFIG (current->config);
 			guint num = nm_ip4_config_get_num_nameservers (config);
@@ -1871,29 +1868,30 @@ _get_config_variant (NMDnsManager *self)
 			if (!num)
 				continue;
 
+			g_variant_builder_init (&entry_builder, G_VARIANT_TYPE ("a{sv}"));
+
 			/* Add nameservers */
+			g_variant_builder_init (&strv_builder, G_VARIANT_TYPE ("as"));
 			for (j = 0; j < num; j++) {
 				ns = nm_ip4_config_get_nameserver (config, j);
 				g_variant_builder_add (&strv_builder,
 				                       "s",
 				                       nm_utils_inet4_ntop (ns, NULL));
 			}
-
 			g_variant_builder_add (&entry_builder,
 			                       "{sv}",
 			                       "nameservers",
 			                       g_variant_builder_end (&strv_builder));
 
 			/* Add domains */
-			g_variant_builder_init (&strv_builder, G_VARIANT_TYPE ("as"));
 			num = nm_ip4_config_get_num_domains (config);
-			for (j = 0; j < num; j++) {
-				g_variant_builder_add (&strv_builder,
-				                       "s",
-				                       nm_ip4_config_get_domain (config, j));
-			}
-
-			if (num) {
+			if (num > 0) {
+				g_variant_builder_init (&strv_builder, G_VARIANT_TYPE ("as"));
+				for (j = 0; j < num; j++) {
+					g_variant_builder_add (&strv_builder,
+					                       "s",
+					                       nm_ip4_config_get_domain (config, j));
+				}
 				g_variant_builder_add (&entry_builder,
 				                       "{sv}",
 				                       "domains",
@@ -1909,29 +1907,30 @@ _get_config_variant (NMDnsManager *self)
 			if (!num)
 				continue;
 
+			g_variant_builder_init (&entry_builder, G_VARIANT_TYPE ("a{sv}"));
+
 			/* Add nameservers */
+			g_variant_builder_init (&strv_builder, G_VARIANT_TYPE ("as"));
 			for (j = 0; j < num; j++) {
 				ns = nm_ip6_config_get_nameserver (config, j);
 				g_variant_builder_add (&strv_builder,
 				                       "s",
 				                       nm_utils_inet6_ntop (ns, NULL));
 			}
-
 			g_variant_builder_add (&entry_builder,
 			                       "{sv}",
 			                       "nameservers",
 			                       g_variant_builder_end (&strv_builder));
 
 			/* Add domains */
-			g_variant_builder_init (&strv_builder, G_VARIANT_TYPE ("as"));
 			num = nm_ip6_config_get_num_domains (config);
-			for (j = 0; j < num; j++) {
-				g_variant_builder_add (&strv_builder,
-				                       "s",
-				                       nm_ip6_config_get_domain (config, j));
-			}
-
-			if (num) {
+			if (num > 0) {
+				g_variant_builder_init (&strv_builder, G_VARIANT_TYPE ("as"));
+				for (j = 0; j < num; j++) {
+					g_variant_builder_add (&strv_builder,
+					                       "s",
+					                       nm_ip6_config_get_domain (config, j));
+				}
 				g_variant_builder_add (&entry_builder,
 				                       "{sv}",
 				                       "domains",

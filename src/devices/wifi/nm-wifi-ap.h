@@ -66,7 +66,7 @@ gboolean          nm_wifi_ap_complete_connection      (NMWifiAP *self,
                                                        GError **error);
 
 const char *      nm_wifi_ap_get_supplicant_path      (NMWifiAP *ap);
-guint32           nm_wifi_ap_get_id                   (NMWifiAP *ap);
+guint64           nm_wifi_ap_get_id                   (NMWifiAP *ap);
 const GByteArray *nm_wifi_ap_get_ssid                 (const NMWifiAP *ap);
 void              nm_wifi_ap_set_ssid                 (NMWifiAP *ap,
                                                        const guint8 *ssid,
