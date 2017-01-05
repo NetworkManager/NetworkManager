@@ -300,9 +300,8 @@ ssid_writer (KeyfileWriterInfo *info,
 	gsize ssid_len;
 	const char *setting_name = nm_setting_get_name (setting);
 	gboolean new_format = TRUE;
-	unsigned int semicolons = 0;
+	gsize semicolons = 0;
 	gsize i;
-	char *ssid;
 
 	g_return_if_fail (G_VALUE_HOLDS (value, G_TYPE_BYTES));
 
@@ -310,14 +309,17 @@ ssid_writer (KeyfileWriterInfo *info,
 	if (!bytes)
 		return;
 	ssid_data = g_bytes_get_data (bytes, &ssid_len);
-	if (ssid_len == 0)
+	if (!ssid_data || !ssid_len) {
+		nm_keyfile_plugin_kf_set_string (info->keyfile, setting_name, key, "");
 		return;
+	}
 
 	/* Check whether each byte is printable.  If not, we have to use an
 	 * integer list, otherwise we can just use a string.
 	 */
 	for (i = 0; i < ssid_len; i++) {
-		char c = ssid_data[i] & 0xFF;
+		const char c = ssid_data[i];
+
 		if (!g_ascii_isprint (c)) {
 			new_format = FALSE;
 			break;
@@ -327,22 +329,24 @@ ssid_writer (KeyfileWriterInfo *info,
 	}
 
 	if (new_format) {
-		ssid = g_malloc0 (ssid_len + semicolons + 1);
+		gs_free char *ssid = NULL;
+
 		if (semicolons == 0)
-			memcpy (ssid, ssid_data, ssid_len);
+			ssid = g_strndup ((char *) ssid_data, ssid_len);
 		else {
 			/* Escape semicolons with backslashes to make strings
 			 * containing ';', such as '16;17;' unambiguous */
 			gsize j = 0;
 
+			ssid = g_malloc (ssid_len + semicolons + 1);
 			for (i = 0; i < ssid_len; i++) {
 				if (ssid_data[i] == ';')
 					ssid[j++] = '\\';
 				ssid[j++] = ssid_data[i];
 			}
+			ssid[j] = '\0';
 		}
 		nm_keyfile_plugin_kf_set_string (info->keyfile, setting_name, key, ssid);
-		g_free (ssid);
 	} else
 		nm_keyfile_plugin_kf_set_integer_list_uint8 (info->keyfile, setting_name, key, ssid_data, ssid_len);
 }
@@ -364,8 +368,8 @@ password_raw_writer (KeyfileWriterInfo *info,
 	if (!array)
 		return;
 	data = g_bytes_get_data (array, &len);
-	if (!data || !len)
-		return;
+	if (!data)
+		len = 0;
 	nm_keyfile_plugin_kf_set_integer_list_uint8 (info->keyfile, setting_name, key, data, len);
 }
 
