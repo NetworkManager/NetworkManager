@@ -27,6 +27,85 @@
 
 /*****************************************************************************/
 
+void
+nm_utils_strbuf_append_c (char **buf, gsize *len, char c)
+{
+	switch (*len) {
+	case 0:
+		return;
+	case 1:
+		(*buf)[0] = '\0';
+		*len = 0;
+		(*buf)++;
+		return;
+	default:
+		(*buf)[0] = c;
+		(*buf)[1] = '\0';
+		(*len)--;
+		(*buf)++;
+		return;
+	}
+}
+
+void
+nm_utils_strbuf_append_str (char **buf, gsize *len, const char *str)
+{
+	gsize src_len;
+
+	switch (*len) {
+	case 0:
+		return;
+	case 1:
+		if (!str || !*str) {
+			(*buf)[0] = '\0';
+			return;
+		}
+		(*buf)[0] = '\0';
+		*len = 0;
+		(*buf)++;
+		return;
+	default:
+		if (!str || !*str) {
+			(*buf)[0] = '\0';
+			return;
+		}
+		src_len = g_strlcpy (*buf, str, *len);
+		if (src_len >= *len) {
+			*buf = &(*buf)[*len];
+			*len = 0;
+		} else {
+			*buf = &(*buf)[src_len];
+			*len -= src_len;
+		}
+		return;
+	}
+}
+
+void
+nm_utils_strbuf_append (char **buf, gsize *len, const char *format, ...)
+{
+	char *p = *buf;
+	va_list args;
+	gint retval;
+
+	if (*len == 0)
+		return;
+
+	va_start (args, format);
+	retval = g_vsnprintf (p, *len, format, args);
+	va_end (args);
+
+	if (retval >= *len) {
+		*buf = &p[*len];
+		*len = 0;
+	} else {
+		*buf = &p[retval];
+		*len -= retval;
+	}
+}
+
+/*****************************************************************************/
+
 /* _nm_utils_ascii_str_to_int64:
  *
  * A wrapper for g_ascii_strtoll, that checks whether the whole string

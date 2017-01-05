@@ -108,19 +108,24 @@ read_array_of_uint (GKeyFile *file,
                     NMSetting *setting,
                     const char *key)
 {
-	GArray *array = NULL;
+	gs_unref_array GArray *array = NULL;
 	gsize length;
-	int i;
-	gint *tmp;
+	gsize i;
+	gs_free int *tmp = NULL;
 
 	tmp = nm_keyfile_plugin_kf_get_integer_list (file, nm_setting_get_name (setting), key, &length, NULL);
-	array = g_array_sized_new (FALSE, FALSE, sizeof (guint32), length);
+	if (length > G_MAXUINT)
+		return;
 
-	for (i = 0; i < length; i++)
+	array = g_array_sized_new (FALSE, FALSE, sizeof (guint), length);
+
+	for (i = 0; i < length; i++) {
+		if (tmp[i] < 0)
+			return;
 		g_array_append_val (array, tmp[i]);
+	}
 
 	g_object_set (setting, key, array, NULL);
-	g_array_unref (array);
 }
 
 static gboolean
@@ -706,19 +711,18 @@ read_hash_of_string (GKeyFile *file, NMSetting *setting, const char *key)
 	g_strfreev (keys);
 }
 
-static void
+static gsize
 unescape_semicolons (char *str)
 {
-	int i;
-	gsize len = strlen (str);
+	gsize i, j;
 
-	for (i = 0; i < len; i++) {
-		if (str[i] == '\\' && str[i+1] == ';') {
-			memmove(str + i, str + i + 1, len - (i + 1));
-			len--;
-		}
-		str[len] = '\0';
+	for (i = 0, j = 0; str[i]; ) {
+		if (str[i] == '\\' && str[i+1] == ';')
+			i++;
+		str[j++] = str[i++];;
 	}
+	str[j] = '\0';
+	return j;
 }
 
 static GBytes *
@@ -728,77 +732,121 @@ get_bytes (KeyfileReaderInfo *info,
            gboolean zero_terminate,
            gboolean unescape_semicolon)
 {
-	GByteArray *array = NULL;
-	char *tmp_string;
-	gint *tmp_list;
+	gs_free char *tmp_string = NULL;
+	gboolean may_be_int_list = TRUE;
 	gsize length;
-	int i;
-
-	if (!nm_keyfile_plugin_kf_has_key (info->keyfile, setting_name, key, NULL))
-		return NULL;
 
 	/* New format: just a string
 	 * Old format: integer list; e.g. 11;25;38;
 	 */
 	tmp_string = nm_keyfile_plugin_kf_get_string (info->keyfile, setting_name, key, NULL);
-	if (tmp_string) {
-		GRegex *regex;
-		GMatchInfo *match_info;
-		const char *pattern = "^[[:space:]]*[[:digit:]]{1,3}[[:space:]]*;([[:space:]]*[[:digit:]]{1,3}[[:space:]]*;)*([[:space:]]*)?$";
-
-		regex = g_regex_new (pattern, 0, 0, NULL);
-		g_regex_match (regex, tmp_string, 0, &match_info);
-		if (!g_match_info_matches (match_info)) {
-			/* Handle as a simple string (ie, new format) */
-			if (unescape_semicolon)
-				unescape_semicolons (tmp_string);
-			length = strlen (tmp_string);
-			if (zero_terminate)
-				length++;
-			array = g_byte_array_sized_new (length);
-			g_byte_array_append (array, (guint8 *) tmp_string, length);
-		}
-		g_match_info_free (match_info);
-		g_regex_unref (regex);
-		g_free (tmp_string);
-	}
-
-	if (!array) {
-		gboolean already_warned = FALSE;
-
-		/* Old format; list of ints */
-		tmp_list = nm_keyfile_plugin_kf_get_integer_list (info->keyfile, setting_name, key, &length, NULL);
-		if (!tmp_list) {
-			handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
-			             _("ignoring invalid binary property"));
-			return NULL;
-		}
-		array = g_byte_array_sized_new (length);
-		for (i = 0; i < length; i++) {
-			int val = tmp_list[i];
-			unsigned char v = (unsigned char) (val & 0xFF);
-
-			if (val < 0 || val > 255) {
-				if (   !already_warned
-				    && !handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
-				                     _("ignoring invalid byte element '%d' (not between 0 and 255 inclusive)"),
-				                     val)) {
-					g_free (tmp_list);
-					g_byte_array_free (array, TRUE);
-					return NULL;
-				}
-				already_warned = TRUE;
-			} else
-				g_byte_array_append (array, (const unsigned char *) &v, sizeof (v));
-		}
-		g_free (tmp_list);
-	}
-
-	if (array->len == 0) {
-		g_byte_array_free (array, TRUE);
+	if (!tmp_string)
 		return NULL;
-	} else
-		return g_byte_array_free_to_bytes (array);
+
+	/* if the string is empty, we return an empty GBytes array.
+	 * Note that for NM_SETTING_802_1X_PASSWORD_RAW both %NULL and
+	 * an empty GBytes are valid, and shall be destinguished. */
+	if (!tmp_string[0]) {
+		/* note that even if @zero_terminate is TRUE, we return an empty
+		 * byte-array. The reason is that zero_terminate is there to terminate
+		 * *valid* strings. It's not there to terminated invalid (empty) strings.
+		 */
+		return g_bytes_new_take (tmp_string, 0);
+	}
+
+	for (length = 0; tmp_string[length]; length++) {
+		const char ch = tmp_string[length];
+
+		if (   !g_ascii_isspace (ch)
+		    && !g_ascii_isdigit (ch)
+		    && ch != ';') {
+			may_be_int_list = FALSE;
+			length += strlen (&tmp_string[length]);
+			break;
+		}
+	}
+
+	/* Try to parse the string as a integer list. */
+	if (may_be_int_list && length > 0) {
+		gs_free guint8 *bin_data = NULL;
+		const char *const s = tmp_string;
+		gsize i, d;
+		const gsize BIN_DATA_LEN = (length / 2 + 3);
+
+		bin_data = g_malloc (BIN_DATA_LEN);
+
+#define DIGIT(c) ((c) - '0')
+		i = 0;
+		d = 0;
+		while (TRUE) {
+			int n;
+
+			/* leading whitespace */
+			while (g_ascii_isspace (s[i]))
+				i++;
+			if (s[i] == '\0')
+				break;
+			/* then expect 1 to 3 digits */
+			if (!g_ascii_isdigit (s[i])) {
+				d = 0;
+				break;
+			}
+			n = DIGIT (s[i]);
+			i++;
+			if (g_ascii_isdigit (s[i])) {
+				n = 10 * n + DIGIT (s[i]);
+				i++;
+				if (g_ascii_isdigit (s[i])) {
+					n = 10 * n + DIGIT (s[i]);
+					i++;
+				}
+			}
+			if (n > 255) {
+				d = 0;
+				break;
+			}
+
+			bin_data[d++] = n;
+			nm_assert (d < BIN_DATA_LEN);
+
+			/* allow whitespace after the digit. */
+			while (g_ascii_isspace (s[i]))
+				i++;
+			/* need a semicolon as separator. */
+			if (s[i] != ';') {
+				d = 0;
+				break;
+			}
+			i++;
+		}
+#undef DIGIT
+
+		/* Old format; list of ints. We already did a strict validation of the
+		 * string format before. We expect that this conversion cannot fail. */
+		if (d > 0) {
+			/* note that @zero_terminate does not add a terminating '\0' to
+			 * binary data as an integer list.
+			 *
+			 * But we add a '\0' to the bin_data pointer, just to avoid somebody
+			 * (erronously!) reading the binary data as C-string.
+			 *
+			 * @d itself does not entail the '\0'. */
+			nm_assert (d + 1 <= BIN_DATA_LEN);
+			bin_data = g_realloc (bin_data, d + 1);
+			bin_data[d] = '\0';
+			return g_bytes_new_take (g_steal_pointer (&bin_data), d);
+		}
+	}
+
+	/* Handle as a simple string (ie, new format) */
+	if (unescape_semicolon)
+		length = unescape_semicolons (tmp_string);
+	if (zero_terminate)
+		length++;
+	if (length == 0)
+		return NULL;
+	tmp_string = g_realloc (tmp_string, length + (zero_terminate ? 0 : 1));
+	return g_bytes_new_take (g_steal_pointer (&tmp_string), length);
 }
 
 static void

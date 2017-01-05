@@ -112,6 +112,30 @@ nm_keyfile_plugin_kf_set_##stype##_list (GKeyFile *kf, \
 DEFINE_KF_LIST_WRAPPER(integer, gint*, gint);
 DEFINE_KF_LIST_WRAPPER(string, gchar **, const gchar* const);
 
+void
+nm_keyfile_plugin_kf_set_integer_list_uint8 (GKeyFile *kf,
+                                             const char *group,
+                                             const char *key,
+                                             const guint8 *data,
+                                             gsize length)
+{
+	gsize i;
+	gsize l = length * 4 + 2;
+	gs_free char *value = g_malloc (l);
+	char *s = value;
+
+	g_return_if_fail (kf);
+	g_return_if_fail (!length || data);
+	g_return_if_fail (group && group[0]);
+	g_return_if_fail (key && key[0]);
+
+	value[0] = '\0';
+	for (i = 0; i < length; i++)
+		nm_utils_strbuf_append (&s, &l, "%d;", (int) data[i]);
+	nm_assert (l > 0);
+	nm_keyfile_plugin_kf_set_value (kf, group, key, value);
+}
+
 /* Single value helpers */
 #define DEFINE_KF_WRAPPER(stype, get_ctype, set_ctype) \
 get_ctype \
