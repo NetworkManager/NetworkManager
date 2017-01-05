@@ -683,12 +683,9 @@ add_ip4_vpn_gateway_route (NMIP4Config *config, NMDevice *parent_device, guint32
 	/* Set up a route to the VPN gateway's public IP address through the default
 	 * network device if the VPN gateway is on a different subnet.
 	 */
-
 	parent_config = nm_device_get_ip4_config (parent_device);
 	g_return_if_fail (parent_config != NULL);
 	parent_gw = nm_ip4_config_get_gateway (parent_config);
-	if (!parent_gw)
-		return;
 
 	route_metric = nm_device_get_ip4_route_metric (parent_device);
 
@@ -696,6 +693,9 @@ add_ip4_vpn_gateway_route (NMIP4Config *config, NMDevice *parent_device, guint32
 	route.network = vpn_gw;
 	route.plen = 32;
 	route.gateway = parent_gw;
+	/* Set up a device route if the parent device has no gateway */
+	if (!parent_gw)
+		route.ifindex = nm_device_get_ip_ifindex (parent_device);
 
 	/* If the VPN gateway is in the same subnet as one of the parent device's
 	 * IP addresses, don't add the host route to it, but a route through the
@@ -708,18 +708,20 @@ add_ip4_vpn_gateway_route (NMIP4Config *config, NMDevice *parent_device, guint32
 	route.metric = route_metric;
 	nm_ip4_config_add_route (config, &route);
 
-	/* Ensure there's a route to the parent device's gateway through the
-	 * parent device, since if the VPN claims the default route and the VPN
-	 * routes include a subnet that matches the parent device's subnet,
-	 * the parent device's gateway would get routed through the VPN and fail.
-	 */
-	memset (&route, 0, sizeof (route));
-	route.network = parent_gw;
-	route.plen = 32;
-	route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
-	route.metric = route_metric;
+	if (parent_gw) {
+		/* Ensure there's a route to the parent device's gateway through the
+		 * parent device, since if the VPN claims the default route and the VPN
+		 * routes include a subnet that matches the parent device's subnet,
+		 * the parent device's gateway would get routed through the VPN and fail.
+		 */
+		memset (&route, 0, sizeof (route));
+		route.network = parent_gw;
+		route.plen = 32;
+		route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
+		route.metric = route_metric;
 
-	nm_ip4_config_add_route (config, &route);
+		nm_ip4_config_add_route (config, &route);
+	}
 }
 
 static void
