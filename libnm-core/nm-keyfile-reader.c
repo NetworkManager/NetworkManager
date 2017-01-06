@@ -1318,11 +1318,6 @@ static void
 set_default_for_missing_key (NMSetting *setting, const char *property)
 {
 	/* Set a value different from the default value of the property's spec */
-
-	if (NM_IS_SETTING_WIRELESS (setting)) {
-		if (!strcmp (property, NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION))
-			g_object_set (setting, property, (NMSettingMacRandomization) NM_SETTING_MAC_RANDOMIZATION_NEVER, NULL);
-	}
 }
 
 static void
