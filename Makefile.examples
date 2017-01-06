@@ -137,6 +137,8 @@ EXTRA_DIST += \
 	examples/lua/lgi/change-vpn-username.lua \
 	examples/lua/lgi/deactivate-all.lua \
 	\
+	examples/nm-conf.d/30-anon.conf \
+	\
 	examples/python/dbus/nm-state.py \
 	examples/python/dbus/add-connection.py \
 	examples/python/dbus/add-connection-compat.py \
