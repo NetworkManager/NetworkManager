@@ -3737,8 +3737,11 @@ _nm_utils_generate_mac_address_mask_parse (const char *value,
 /*****************************************************************************/
 
 /**
- * nm_utils_iface_valid_name:
+ * nm_utils_is_valid_iface_name:
  * @name: Name of interface
+ * @error: location to store the error occurring, or %NULL to ignore
+ *
+ * Validate the network interface name.
  *
  * This function is a 1:1 copy of the kernel's interface validation
  * function in net/core/dev.c.
@@ -3746,26 +3749,54 @@ _nm_utils_generate_mac_address_mask_parse (const char *value,
  * Returns: %TRUE if interface name is valid, otherwise %FALSE is returned.
  */
 gboolean
-nm_utils_iface_valid_name (const char *name)
+nm_utils_is_valid_iface_name (const char *name, GError **error)
 {
 	g_return_val_if_fail (name != NULL, FALSE);
 
-	if (*name == '\0')
+	if (*name == '\0') {
+		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		                     _("interface name is too short"));
 		return FALSE;
+	}
 
-	if (strlen (name) >= 16)
+	if (strlen (name) >= 16) {
+		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		                     _("interface name is longer than 15 characters"));
 		return FALSE;
+	}
 
-	if (!strcmp (name, ".") || !strcmp (name, ".."))
+	if (!strcmp (name, ".") || !strcmp (name, "..")) {
+		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		                     _("interface name is reserved"));
 		return FALSE;
+	}
 
 	while (*name) {
-		if (*name == '/' || g_ascii_isspace (*name))
+		if (*name == '/' || g_ascii_isspace (*name)) {
+			g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+			                     _("interface name contains an invalid character"));
 			return FALSE;
+		}
 		name++;
 	}
 
 	return TRUE;
+}
+
+/**
+ * nm_utils_iface_valid_name:
+ * @name: Name of interface
+ *
+ * Validate the network interface name.
+ *
+ * Deprecated: 1.6: use nm_utils_is_valid_iface_name() insteead, with better error reporting.
+ *
+ * Returns: %TRUE if interface name is valid, otherwise %FALSE is returned.
+ */
+gboolean
+nm_utils_iface_valid_name (const char *name)
+{
+	return nm_utils_is_valid_iface_name (name, NULL);
 }
 
 /**

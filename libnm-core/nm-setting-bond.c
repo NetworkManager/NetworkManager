@@ -245,7 +245,7 @@ validate_ifname (const char *name, const char *value)
 	if (!value || !value[0])
 		return FALSE;
 
-	return nm_utils_iface_valid_name (value);
+	return nm_utils_is_valid_iface_name (value, NULL);
 }
 
 /**
@@ -618,13 +618,16 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 
 	primary = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_PRIMARY);
 	if (strcmp (mode_new, "active-backup") == 0) {
-		if (primary && !nm_utils_iface_valid_name (primary)) {
+		GError *tmp_error = NULL;
+
+		if (primary && !nm_utils_is_valid_iface_name (primary, &tmp_error)) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("'%s' is not a valid interface name for '%s' option"),
-			             primary, NM_SETTING_BOND_OPTION_PRIMARY);
+			             _("'%s' is not a valid for '%s' option: %s"),
+			             primary, NM_SETTING_BOND_OPTION_PRIMARY, tmp_error->message);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
+			g_error_free (tmp_error);
 			return FALSE;
 		}
 	} else {

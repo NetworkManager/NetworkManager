@@ -891,13 +891,15 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	}
 
 	if (priv->interface_name) {
-		if (!nm_utils_iface_valid_name (priv->interface_name)) {
+		GError *tmp_error = NULL;
+
+		if (!nm_utils_is_valid_iface_name (priv->interface_name, &tmp_error)) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("'%s' is not a valid interface name"),
-			             priv->interface_name);
+			             "'%s': %s", priv->interface_name, tmp_error->message);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
+			g_error_free (tmp_error);
 			return FALSE;
 		}
 	}
@@ -1104,7 +1106,7 @@ nm_setting_connection_set_interface_name (NMSetting *setting,
 	 * overridden by a valid connection.interface-name.
 	 */
 	interface_name = find_virtual_interface_name (connection_dict);
-	if (!interface_name || nm_utils_iface_valid_name (interface_name))
+	if (!interface_name || nm_utils_is_valid_iface_name (interface_name, NULL))
 		interface_name = g_variant_get_string (value, NULL);
 
 	g_object_set (G_OBJECT (setting),

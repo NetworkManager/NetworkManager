@@ -3991,16 +3991,18 @@ set_connection_type (NmCli *nmc, NMConnection *con, OptionInfo *option, const ch
 static gboolean
 set_connection_iface (NmCli *nmc, NMConnection *con, OptionInfo *option, const char *value, GError **error)
 {
+	GError *tmp_error = NULL;
+
 	if (value) {
-		if (!nm_utils_iface_valid_name (value) && strcmp (value, "*") != 0) {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("Error: '%s' is not a valid interface nor '*'."),
-			             value);
-			return FALSE;
-		}
 		/* Special value of '*' means no specific interface name */
 		if (strcmp (value, "*") == 0)
 			value = NULL;
+		else if (!nm_utils_is_valid_iface_name (value, &tmp_error)) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("Error: '%s': %s"), value, tmp_error->message);
+			g_error_free (tmp_error);
+			return FALSE;
+		}
 	}
 
 	return set_property (con, option->setting_name, option->property, value, '\0', error);

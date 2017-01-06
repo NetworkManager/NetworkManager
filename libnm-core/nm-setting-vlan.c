@@ -637,7 +637,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 					return FALSE;
 				}
 			}
-		} else if (!nm_utils_iface_valid_name (priv->parent)) {
+		} else if (!nm_utils_is_valid_iface_name (priv->parent, NULL)) {
 			/* parent must be either a UUID or an interface name */
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,

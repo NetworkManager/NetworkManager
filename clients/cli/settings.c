@@ -3080,10 +3080,8 @@ nmc_property_set_ifname (NMSetting *setting, const char *prop, const char *val, 
 {
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	if (!nm_utils_iface_valid_name (val)) {
-		g_set_error (error, 1, 0, _("'%s' is not a valid interface name"), val);
+	if (!nm_utils_is_valid_iface_name (val, error))
 		return FALSE;
-	}
 	g_object_set (setting, prop, val, NULL);
 	return TRUE;
 }
@@ -3345,7 +3343,7 @@ nmc_property_con_set_master (NMSetting *setting, const char *prop, const char *v
 		;
 	else if (!*val)
 		val = NULL;
-	else if (   !nm_utils_iface_valid_name (val)
+	else if (   !nm_utils_is_valid_iface_name (val, NULL)
 	         && !nm_utils_is_uuid (val)) {
 		g_set_error (error, 1, 0,
 		             _("'%s' is not valid master; use ifname or connection UUID"),
