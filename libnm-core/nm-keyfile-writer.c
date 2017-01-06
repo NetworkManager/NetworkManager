@@ -638,9 +638,6 @@ can_omit_default_value (NMSetting *setting, const char *property)
 	} else if (NM_IS_SETTING_IP6_CONFIG (setting)) {
 		if (!strcmp (property, NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE))
 			return FALSE;
-	} else if (NM_IS_SETTING_WIRELESS (setting)) {
-		if (!strcmp (property, NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION))
-			return FALSE;
 	}
 
 	return TRUE;
