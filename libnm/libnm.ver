@@ -1106,6 +1106,12 @@ global:
 	nm_setting_proxy_get_browser_only;
 	nm_setting_proxy_get_pac_url;
 	nm_setting_proxy_get_pac_script;
+	nm_setting_802_1x_get_ca_cert_uri;
+	nm_setting_802_1x_get_phase2_ca_cert_uri;
+	nm_setting_802_1x_get_client_cert_uri;
+	nm_setting_802_1x_get_phase2_client_cert_uri;
+	nm_setting_802_1x_get_private_key_uri;
+	nm_setting_802_1x_get_phase2_private_key_uri;
 	nm_utils_is_json_object;
 	nm_utils_version;
 	nm_utils_is_valid_iface_name;

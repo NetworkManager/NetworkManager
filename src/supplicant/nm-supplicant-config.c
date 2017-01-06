@@ -104,7 +104,7 @@ nm_supplicant_config_add_option_with_type (NMSupplicantConfig *self,
                                            const char *value,
                                            gint32 len,
                                            OptType opt_type,
-                                           gboolean secret,
+                                           const char *hidden,
                                            GError **error)
 {
 	NMSupplicantConfigPrivate *priv;
@@ -131,7 +131,7 @@ nm_supplicant_config_add_option_with_type (NMSupplicantConfig *self,
 			memset (&buf[0], 0, sizeof (buf));
 			memcpy (&buf[0], value, len > 254 ? 254 : len);
 			g_set_error (error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG,
-			             "key '%s' and/or value '%s' invalid", key, secret ? "<omitted>" : buf);
+			             "key '%s' and/or value '%s' invalid", key, hidden ? hidden : buf);
 			return FALSE;
 		}
 	}
@@ -155,7 +155,7 @@ nm_supplicant_config_add_option_with_type (NMSupplicantConfig *self,
 		char buf[255];
 		memset (&buf[0], 0, sizeof (buf));
 		memcpy (&buf[0], opt->value, opt->len > 254 ? 254 : opt->len);
-		nm_log_info (LOGD_SUPPLICANT, "Config: added '%s' value '%s'", key, secret ? "<omitted>" : &buf[0]);
+		nm_log_info (LOGD_SUPPLICANT, "Config: added '%s' value '%s'", key, hidden ? hidden : &buf[0]);
 	}
 
 	g_hash_table_insert (priv->config, g_strdup (key), opt);
@@ -168,10 +168,10 @@ nm_supplicant_config_add_option (NMSupplicantConfig *self,
                                  const char *key,
                                  const char *value,
                                  gint32 len,
-                                 gboolean secret,
+                                 const char *hidden,
                                  GError **error)
 {
-	return nm_supplicant_config_add_option_with_type (self, key, value, len, TYPE_INVALID, secret, error);
+	return nm_supplicant_config_add_option_with_type (self, key, value, len, TYPE_INVALID, hidden, error);
 }
 
 static gboolean
@@ -393,17 +393,17 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 	if (!nm_supplicant_config_add_option (self, "ssid",
 	                                      (char *) g_bytes_get_data (ssid, NULL),
 	                                      g_bytes_get_size (ssid),
-	                                      FALSE,
+	                                      NULL,
 	                                      error))
 		return FALSE;
 
 	if (is_adhoc) {
-		if (!nm_supplicant_config_add_option (self, "mode", "1", -1, FALSE, error))
+		if (!nm_supplicant_config_add_option (self, "mode", "1", -1, NULL, error))
 			return FALSE;
 	}
 
 	if (is_ap) {
-		if (!nm_supplicant_config_add_option (self, "mode", "2", -1, FALSE, error))
+		if (!nm_supplicant_config_add_option (self, "mode", "2", -1, NULL, error))
 			return FALSE;
 	}
 
@@ -411,7 +411,7 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 		gs_free char *str_freq = NULL;
 
 		str_freq = g_strdup_printf ("%u", fixed_freq);
-		if (!nm_supplicant_config_add_option (self, "frequency", str_freq, -1, FALSE, error))
+		if (!nm_supplicant_config_add_option (self, "frequency", str_freq, -1, NULL, error))
 			return FALSE;
 	}
 
@@ -419,7 +419,7 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 	 * specific SSID we want to associate with.
 	 */
 	if (!(is_adhoc || is_ap)) {
-		if (!nm_supplicant_config_add_option (self, "scan_ssid", "1", -1, FALSE, error))
+		if (!nm_supplicant_config_add_option (self, "scan_ssid", "1", -1, NULL, error))
 			return FALSE;
 	}
 
@@ -427,7 +427,7 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 	if (bssid) {
 		if (!nm_supplicant_config_add_option (self, "bssid",
 		                                      bssid, strlen (bssid),
-		                                      FALSE,
+		                                      NULL,
 		                                      error))
 			return FALSE;
 	}
@@ -441,7 +441,7 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 
 			freq = nm_utils_wifi_channel_to_freq (channel, band);
 			str_freq = g_strdup_printf ("%u", freq);
-			if (!nm_supplicant_config_add_option (self, "freq_list", str_freq, -1, FALSE, error))
+			if (!nm_supplicant_config_add_option (self, "freq_list", str_freq, -1, NULL, error))
 				return FALSE;
 		} else {
 			const char *freqs = NULL;
@@ -451,7 +451,7 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 			else if (!strcmp (band, "bg"))
 				freqs = wifi_freqs_to_string (TRUE);
 
-			if (freqs && !nm_supplicant_config_add_option (self, "freq_list", freqs, strlen (freqs), FALSE, error))
+			if (freqs && !nm_supplicant_config_add_option (self, "freq_list", freqs, strlen (freqs), NULL, error))
 				return FALSE;
 		}
 	}
@@ -464,7 +464,7 @@ add_string_val (NMSupplicantConfig *self,
                 const char *field,
                 const char *name,
                 gboolean ucase,
-                gboolean secret,
+                const char *hidden,
                 GError **error)
 {
 
@@ -475,12 +475,12 @@ add_string_val (NMSupplicantConfig *self,
 			value = g_ascii_strup (field, -1);
 			field = value;
 		}
-		return nm_supplicant_config_add_option (self, name, field, strlen (field), secret, error);
+		return nm_supplicant_config_add_option (self, name, field, strlen (field), hidden, error);
 	}
 	return TRUE;
 }
 
-#define ADD_STRING_LIST_VAL(self, setting, setting_name, field, field_plural, name, separator, ucase, secret, error) \
+#define ADD_STRING_LIST_VAL(self, setting, setting_name, field, field_plural, name, separator, ucase, hidden, error) \
 	({ \
 		typeof (*(setting)) *_setting = (setting); \
 		gboolean _success = TRUE; \
@@ -504,7 +504,7 @@ add_string_val (NMSupplicantConfig *self,
 			if ((ucase)) \
 				g_string_ascii_up (_str); \
 			if (_str->len) { \
-				if (!nm_supplicant_config_add_option ((self), (name), _str->str, -1, (secret), (error))) \
+				if (!nm_supplicant_config_add_option ((self), (name), _str->str, -1, (hidden), (error))) \
 					_success = FALSE; \
 			} \
 			g_string_free (_str, TRUE); \
@@ -576,11 +576,11 @@ add_wep_key (NMSupplicantConfig *self,
 			                                      name,
 			                                      g_bytes_get_data (bytes, NULL),
 			                                      g_bytes_get_size (bytes),
-			                                      TRUE,
+			                                      "<hidden>",
 			                                      error))
 				return FALSE;
 		} else if ((key_len == 5) || (key_len == 13)) {
-			if (!nm_supplicant_config_add_option (self, name, key, key_len, TRUE, error))
+			if (!nm_supplicant_config_add_option (self, name, key, key_len, "<hidden>", error))
 				return FALSE;
 		} else {
 			g_set_error (error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG,
@@ -593,7 +593,7 @@ add_wep_key (NMSupplicantConfig *self,
 		size_t digest_len = sizeof (digest);
 
 		wep128_passphrase_hash (key, key_len, digest, &digest_len);
-		if (!nm_supplicant_config_add_option (self, name, (const char *) digest, digest_len, TRUE, error))
+		if (!nm_supplicant_config_add_option (self, name, (const char *) digest, digest_len, "<hidden>", error))
 			return FALSE;
 	}
 
@@ -643,7 +643,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 			                                      "psk",
 			                                      g_bytes_get_data (bytes, NULL),
 			                                      g_bytes_get_size (bytes),
-			                                      TRUE,
+			                                      "<hidden>",
 			                                      error))
 				return FALSE;
 		} else if (psk_len >= 8 && psk_len <= 63) {
@@ -652,7 +652,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 			 * and therefore the supplicant will interpret it as a
 			 * passphrase and not a hex key.
 			 */
-			if (!nm_supplicant_config_add_option_with_type (self, "psk", psk, -1, TYPE_STRING, TRUE, error))
+			if (!nm_supplicant_config_add_option_with_type (self, "psk", psk, -1, TYPE_STRING, "<hidden>", error))
 				return FALSE;
 		} else {
 			g_set_error (error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG,
@@ -666,11 +666,11 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 	if (   !strcmp (key_mgmt, "wpa-none")
 	    || !strcmp (key_mgmt, "wpa-psk")
 	    || !strcmp (key_mgmt, "wpa-eap")) {
-		if (!ADD_STRING_LIST_VAL (self, setting, wireless_security, proto, protos, "proto", ' ', TRUE, FALSE, error))
+		if (!ADD_STRING_LIST_VAL (self, setting, wireless_security, proto, protos, "proto", ' ', TRUE, NULL, error))
 			return FALSE;
-		if (!ADD_STRING_LIST_VAL (self, setting, wireless_security, pairwise, pairwise, "pairwise", ' ', TRUE, FALSE, error))
+		if (!ADD_STRING_LIST_VAL (self, setting, wireless_security, pairwise, pairwise, "pairwise", ' ', TRUE, NULL, error))
 			return FALSE;
-		if (!ADD_STRING_LIST_VAL (self, setting, wireless_security, group, groups, "group", ' ', TRUE, FALSE, error))
+		if (!ADD_STRING_LIST_VAL (self, setting, wireless_security, group, groups, "group", ' ', TRUE, NULL, error))
 			return FALSE;
 	}
 
@@ -695,7 +695,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 			gs_free char *value = NULL;
 
 			value = g_strdup_printf ("%d", nm_setting_wireless_security_get_wep_tx_keyidx (setting));
-			if (!nm_supplicant_config_add_option (self, "wep_tx_keyidx", value, -1, FALSE, error))
+			if (!nm_supplicant_config_add_option (self, "wep_tx_keyidx", value, -1, NULL, error))
 				return FALSE;
 		}
 	}
@@ -706,14 +706,14 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 			const char *tmp;
 
 			tmp = nm_setting_wireless_security_get_leap_username (setting);
-			if (!add_string_val (self, tmp, "identity", FALSE, FALSE, error))
+			if (!add_string_val (self, tmp, "identity", FALSE, NULL, error))
 				return FALSE;
 
 			tmp = nm_setting_wireless_security_get_leap_password (setting);
-			if (!add_string_val (self, tmp, "password", FALSE, TRUE, error))
+			if (!add_string_val (self, tmp, "password", FALSE, "<hidden>", error))
 				return FALSE;
 
-			if (!add_string_val (self, "leap", "eap", TRUE, FALSE, error))
+			if (!add_string_val (self, "leap", "eap", TRUE, NULL, error))
 				return FALSE;
 		} else {
 			g_set_error (error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG,
@@ -736,14 +736,14 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 			/* If using WPA Enterprise, enable optimized background scanning
 			 * to ensure roaming within an ESS works well.
 			 */
-			if (!nm_supplicant_config_add_option (self, "bgscan", "simple:30:-65:300", -1, FALSE, error))
+			if (!nm_supplicant_config_add_option (self, "bgscan", "simple:30:-65:300", -1, NULL, error))
 				return FALSE;
 
 			/* When using WPA-Enterprise, we want to use Proactive Key Caching (also
 			 * called Opportunistic Key Caching) to avoid full EAP exchanges when
 			 * roaming between access points in the same mobility group.
 			 */
-			if (!nm_supplicant_config_add_option (self, "proactive_key_caching", "1", -1, FALSE, error))
+			if (!nm_supplicant_config_add_option (self, "proactive_key_caching", "1", -1, NULL, error))
 				return FALSE;
 		}
 	}
@@ -780,7 +780,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 
 	value = nm_setting_802_1x_get_password (setting);
 	if (value) {
-		if (!add_string_val (self, value, "password", FALSE, TRUE, error))
+		if (!add_string_val (self, value, "password", FALSE, "<hidden>", error))
 			return FALSE;
 	} else {
 		bytes = nm_setting_802_1x_get_password_raw (setting);
@@ -789,20 +789,20 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 			                                      "password",
 			                                      (const char *) g_bytes_get_data (bytes, NULL),
 			                                      g_bytes_get_size (bytes),
-			                                      TRUE,
+			                                      "<hidden>",
 			                                      error))
 				return FALSE;
 		}
 	}
 	value = nm_setting_802_1x_get_pin (setting);
-	if (!add_string_val (self, value, "pin", FALSE, TRUE, error))
+	if (!add_string_val (self, value, "pin", FALSE, "<hidden>", error))
 		return FALSE;
 
 	if (wired) {
-		if (!add_string_val (self, "IEEE8021X", "key_mgmt", FALSE, FALSE, error))
+		if (!add_string_val (self, "IEEE8021X", "key_mgmt", FALSE, NULL, error))
 			return FALSE;
 		/* Wired 802.1x must always use eapol_flags=0 */
-		if (!add_string_val (self, "0", "eapol_flags", FALSE, FALSE, error))
+		if (!add_string_val (self, "0", "eapol_flags", FALSE, NULL, error))
 			return FALSE;
 		priv->ap_scan = 0;
 	}
@@ -829,7 +829,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 		frag = CLAMP (mtu - hdrs, 100, frag);
 	frag_str = g_strdup_printf ("%u", frag);
 
-	if (!nm_supplicant_config_add_option (self, "fragment_size", frag_str, -1, FALSE, error))
+	if (!nm_supplicant_config_add_option (self, "fragment_size", frag_str, -1, NULL, error))
 		return FALSE;
 
 	phase1 = g_string_new (NULL);
@@ -955,6 +955,11 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 			if (!add_string_val (self, path, "ca_cert", FALSE, FALSE, error))
 				return FALSE;
 			break;
+		case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+			path = nm_setting_802_1x_get_ca_cert_uri (setting);
+			if (!add_string_val (self, path, "ca_cert", FALSE, FALSE, error))
+				return FALSE;
+			break;
 		default:
 			break;
 		}
@@ -973,6 +978,11 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 			break;
 		case NM_SETTING_802_1X_CK_SCHEME_PATH:
 			path = nm_setting_802_1x_get_phase2_ca_cert_path (setting);
+			if (!add_string_val (self, path, "ca_cert2", FALSE, FALSE, error))
+				return FALSE;
+			break;
+		case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+			path = nm_setting_802_1x_get_phase2_ca_cert_uri (setting);
 			if (!add_string_val (self, path, "ca_cert2", FALSE, FALSE, error))
 				return FALSE;
 			break;
@@ -1018,6 +1028,12 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 			return FALSE;
 		added = TRUE;
 		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+		path = nm_setting_802_1x_get_private_key_uri (setting);
+		if (!add_string_val (self, path, "private_key", FALSE, FALSE, error))
+			return FALSE;
+		added = TRUE;
+		break;
 	default:
 		break;
 	}
@@ -1036,7 +1052,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 			 * isn't decrypted at all.
 			 */
 			value = nm_setting_802_1x_get_private_key_password (setting);
-			if (!add_string_val (self, value, "private_key_passwd", FALSE, TRUE, error))
+			if (!add_string_val (self, value, "private_key_passwd", FALSE, "<hidden>", error))
 				return FALSE;
 		}
 
@@ -1052,6 +1068,11 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 				break;
 			case NM_SETTING_802_1X_CK_SCHEME_PATH:
 				path = nm_setting_802_1x_get_client_cert_path (setting);
+				if (!add_string_val (self, path, "client_cert", FALSE, FALSE, error))
+					return FALSE;
+				break;
+			case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+				path = nm_setting_802_1x_get_client_cert_uri (setting);
 				if (!add_string_val (self, path, "client_cert", FALSE, FALSE, error))
 					return FALSE;
 				break;
@@ -1076,6 +1097,12 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 			return FALSE;
 		added = TRUE;
 		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+		path = nm_setting_802_1x_get_phase2_private_key_uri (setting);
+		if (!add_string_val (self, path, "private_key2", FALSE, FALSE, error))
+			return FALSE;
+		added = TRUE;
+		break;
 	default:
 		break;
 	}
@@ -1094,7 +1121,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 			 * isn't decrypted at all.
 			 */
 			value = nm_setting_802_1x_get_phase2_private_key_password (setting);
-			if (!add_string_val (self, value, "private_key2_passwd", FALSE, TRUE, error))
+			if (!add_string_val (self, value, "private_key2_passwd", FALSE, "<hidden>", error))
 				return FALSE;
 		}
 
@@ -1110,6 +1137,11 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 				break;
 			case NM_SETTING_802_1X_CK_SCHEME_PATH:
 				path = nm_setting_802_1x_get_phase2_client_cert_path (setting);
+				if (!add_string_val (self, path, "client_cert2", FALSE, FALSE, error))
+					return FALSE;
+				break;
+			case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+				path = nm_setting_802_1x_get_phase2_client_cert_uri (setting);
 				if (!add_string_val (self, path, "client_cert2", FALSE, FALSE, error))
 					return FALSE;
 				break;
@@ -1132,6 +1164,6 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 gboolean
 nm_supplicant_config_add_no_security (NMSupplicantConfig *self, GError **error)
 {
-	return nm_supplicant_config_add_option (self, "key_mgmt", "NONE", -1, FALSE, error);
+	return nm_supplicant_config_add_option (self, "key_mgmt", "NONE", -1, NULL, error);
 }
 

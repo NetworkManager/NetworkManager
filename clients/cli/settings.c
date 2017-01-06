@@ -1058,14 +1058,21 @@ static char *
 nmc_property_802_1X_get_ca_cert (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
-	NMSetting8021xCKScheme scheme;
 	char *ca_cert_str = NULL;
 
-	scheme = nm_setting_802_1x_get_ca_cert_scheme (s_8021X);
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
+	switch (nm_setting_802_1x_get_ca_cert_scheme (s_8021X)) {
+	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		ca_cert_str = bytes_to_string (nm_setting_802_1x_get_ca_cert_blob (s_8021X));
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		ca_cert_str = g_strdup (nm_setting_802_1x_get_ca_cert_path (s_8021X));
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+		ca_cert_str = g_strdup (nm_setting_802_1x_get_ca_cert_uri (s_8021X));
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_UNKNOWN:
+		break;
+	}
 
 	return ca_cert_str;
 }
@@ -1076,17 +1083,24 @@ nmc_property_802_1X_get_client_cert (NMSetting *setting,
                                      gboolean show_secrets)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
-	NMSetting8021xCKScheme scheme;
 	char *cert_str = NULL;
 
-	scheme = nm_setting_802_1x_get_client_cert_scheme (s_8021X);
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+	switch (nm_setting_802_1x_get_client_cert_scheme (s_8021X)) {
+	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		if (show_secrets)
 			cert_str = bytes_to_string (nm_setting_802_1x_get_client_cert_blob (s_8021X));
 		else
 			cert_str = g_strdup (_("<hidden>"));
-	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		cert_str = g_strdup (nm_setting_802_1x_get_client_cert_path (s_8021X));
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+		cert_str = g_strdup (nm_setting_802_1x_get_client_cert_uri (s_8021X));
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_UNKNOWN:
+		break;
+	}
 
 	return cert_str;
 }
@@ -1101,14 +1115,21 @@ static char *
 nmc_property_802_1X_get_phase2_ca_cert (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
-	NMSetting8021xCKScheme scheme;
 	char *phase2_ca_cert_str = NULL;
 
-	scheme = nm_setting_802_1x_get_phase2_ca_cert_scheme (s_8021X);
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
+	switch (nm_setting_802_1x_get_phase2_ca_cert_scheme (s_8021X)) {
+	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		phase2_ca_cert_str = bytes_to_string (nm_setting_802_1x_get_phase2_ca_cert_blob (s_8021X));
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		phase2_ca_cert_str = g_strdup (nm_setting_802_1x_get_phase2_ca_cert_path (s_8021X));
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+		phase2_ca_cert_str = g_strdup (nm_setting_802_1x_get_phase2_ca_cert_uri (s_8021X));
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_UNKNOWN:
+		break;
+	}
 
 	return phase2_ca_cert_str;
 }
@@ -1119,17 +1140,24 @@ nmc_property_802_1X_get_phase2_client_cert (NMSetting *setting,
                                             gboolean show_secrets)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
-	NMSetting8021xCKScheme scheme;
 	char *cert_str = NULL;
 
-	scheme = nm_setting_802_1x_get_phase2_client_cert_scheme (s_8021X);
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+	switch (nm_setting_802_1x_get_phase2_client_cert_scheme (s_8021X)) {
+	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		if (show_secrets)
 			cert_str = bytes_to_string (nm_setting_802_1x_get_phase2_client_cert_blob (s_8021X));
 		else
 			cert_str = g_strdup (_("<hidden>"));
-	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		cert_str = g_strdup (nm_setting_802_1x_get_phase2_client_cert_path (s_8021X));
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+		cert_str = g_strdup (nm_setting_802_1x_get_phase2_client_cert_uri (s_8021X));
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_UNKNOWN:
+		break;
+	}
 
 	return cert_str;
 }
@@ -1153,17 +1181,24 @@ nmc_property_802_1X_get_private_key (NMSetting *setting,
                                      gboolean show_secrets)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
-	NMSetting8021xCKScheme scheme;
 	char *key_str = NULL;
 
-	scheme = nm_setting_802_1x_get_private_key_scheme (s_8021X);
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+	switch (nm_setting_802_1x_get_private_key_scheme (s_8021X)) {
+	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		if (show_secrets)
 			key_str = bytes_to_string (nm_setting_802_1x_get_private_key_blob (s_8021X));
 		else
 			key_str = g_strdup (_("<hidden>"));
-	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		key_str = g_strdup (nm_setting_802_1x_get_private_key_path (s_8021X));
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+		key_str = g_strdup (nm_setting_802_1x_get_private_key_uri (s_8021X));
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_UNKNOWN:
+		break;
+	}
 
 	return key_str;
 }
@@ -1180,17 +1215,24 @@ nmc_property_802_1X_get_phase2_private_key (NMSetting *setting,
                                             gboolean show_secrets)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
-	NMSetting8021xCKScheme scheme;
 	char *key_str = NULL;
 
-	scheme = nm_setting_802_1x_get_phase2_private_key_scheme (s_8021X);
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+	switch (nm_setting_802_1x_get_phase2_private_key_scheme (s_8021X)) {
+	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		if (show_secrets)
 			key_str = bytes_to_string (nm_setting_802_1x_get_phase2_private_key_blob (s_8021X));
 		else
 			key_str = g_strdup (_("<hidden>"));
-	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		key_str = g_strdup (nm_setting_802_1x_get_phase2_private_key_path (s_8021X));
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+		key_str = g_strdup (nm_setting_802_1x_get_phase2_private_key_uri (s_8021X));
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_UNKNOWN:
+		break;
+	}
 
 	return key_str;
 }
@@ -3610,16 +3652,15 @@ DEFINE_ALLOWED_VAL_FUNC (nmc_property_connection_allowed_lldp, lldp_valid_values
 	{ \
 		char *val_strip = g_strstrip (g_strdup (val)); \
 		char *p = val_strip; \
+		NMSetting8021xCKScheme scheme = NM_SETTING_802_1X_CK_SCHEME_PATH; \
 		gboolean success; \
 		\
-		if (strncmp (val_strip, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)) == 0) \
+		if (strncmp (val_strip, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11)) == 0) \
+			scheme = NM_SETTING_802_1X_CK_SCHEME_PKCS11; \
+		else if (strncmp (val_strip, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)) == 0) \
 			p += NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH); \
 		\
-		success = set_func (NM_SETTING_802_1X (setting), \
-		                    p, \
-		                    NM_SETTING_802_1X_CK_SCHEME_PATH, \
-		                    NULL, \
-		                    error); \
+		success = set_func (NM_SETTING_802_1X (setting), p, scheme, NULL, error); \
 		g_free (val_strip); \
 		return success; \
 	}
@@ -3632,9 +3673,12 @@ DEFINE_ALLOWED_VAL_FUNC (nmc_property_connection_allowed_lldp, lldp_valid_values
 		char *val_strip = g_strstrip (g_strdup (val)); \
 		char *p = val_strip; \
 		const char *path, *password; \
+		NMSetting8021xCKScheme scheme = NM_SETTING_802_1X_CK_SCHEME_PATH; \
 		gboolean success; \
 		\
-		if (strncmp (val_strip, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)) == 0) \
+		if (strncmp (val_strip, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11)) == 0) \
+			scheme = NM_SETTING_802_1X_CK_SCHEME_PKCS11; \
+		else if (strncmp (val_strip, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)) == 0) \
 			p += NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH); \
 		\
 		strv = nmc_strsplit_set (p, " \t,", 2); \
@@ -3643,19 +3687,7 @@ DEFINE_ALLOWED_VAL_FUNC (nmc_property_connection_allowed_lldp, lldp_valid_values
 			password = strv[1]; \
 		else \
 			password = pwd_func (NM_SETTING_802_1X (setting)); \
-		if (password) { \
-			char *tmp_pwd = g_strdup (password); \
-			success = set_func (NM_SETTING_802_1X (setting), \
-			                    path, \
-			                    tmp_pwd, \
-			                    NM_SETTING_802_1X_CK_SCHEME_PATH, \
-			                    NULL, \
-			                    error); \
-			g_free (tmp_pwd); \
-		} else { \
-			success = FALSE; \
-			g_set_error_literal  (error, 1, 0, _("private key password not provided")); \
-		} \
+		success = set_func (NM_SETTING_802_1X (setting), path, password, scheme, NULL, error); \
 		g_free (val_strip); \
 		g_strfreev (strv); \
 		return success; \
