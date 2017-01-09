@@ -714,9 +714,10 @@ _get_stable_id (NMDevice *self,
 		                                        &generated);
 
 		/* current_stable_id_type is a bitfield! */
-		nm_assert (stable_type <= (NMUtilsStableType) 0x2);
-		nm_assert (stable_type + (NMUtilsStableType) 1 > (NMUtilsStableType) 0);
 		priv->current_stable_id_type = stable_type;
+		nm_assert (stable_type <= (NMUtilsStableType) 0x3);
+		nm_assert (stable_type + (NMUtilsStableType) 1 > (NMUtilsStableType) 0);
+		nm_assert (priv->current_stable_id_type == stable_type);
 
 		if (stable_type == NM_UTILS_STABLE_TYPE_UUID)
 			priv->current_stable_id = g_strdup (uuid);
