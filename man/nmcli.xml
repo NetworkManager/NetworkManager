@@ -415,7 +415,7 @@
         <term><command>off</command></term>
 
         <listitem>
-          <para>Enable enable or disable networking control by NetworkManager.
+          <para>Enable or disable networking control by NetworkManager.
           All interfaces managed by NetworkManager are deactivated when networking
           is disabled.</para>
         </listitem>
