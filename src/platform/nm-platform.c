@@ -3016,6 +3016,11 @@ nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, const GArray *known
 		const NMPlatformIP6Address *known_address = &g_array_index (known_addresses, NMPlatformIP6Address, i);
 		guint32 lifetime, preferred;
 
+		if (NM_FLAGS_HAS (known_address->n_ifa_flags, IFA_F_TEMPORARY)) {
+			/* Kernel manages these */
+			continue;
+		}
+
 		if (!nm_utils_lifetime_get (known_address->timestamp, known_address->lifetime, known_address->preferred,
 		                            now, &lifetime, &preferred))
 			continue;
