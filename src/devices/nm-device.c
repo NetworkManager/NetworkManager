@@ -261,6 +261,9 @@ typedef struct _NMDevicePrivate {
 	bool          firmware_missing:1;
 	bool          nm_plugin_missing:1;
 	bool          hw_addr_perm_fake:1; /* whether the permanent HW address could not be read and is a fake */
+
+	NMUtilsStableType current_stable_id_type:3;
+
 	GHashTable *  available_connections;
 	char *        hw_addr;
 	char *        hw_addr_perm;
@@ -309,6 +312,8 @@ typedef struct _NMDevicePrivate {
 	/* Generic DHCP stuff */
 	guint32         dhcp_timeout;
 	char *          dhcp_anycast_address;
+
+	char *          current_stable_id;
 
 	/* Proxy Configuration */
 	NMProxyConfig *proxy_config;
@@ -663,25 +668,76 @@ _add_capabilities (NMDevice *self, NMDeviceCapabilities capabilities)
 /*****************************************************************************/
 
 static const char *
-_get_stable_id (NMConnection *connection, NMUtilsStableType *out_stable_type)
+_get_stable_id (NMDevice *self,
+                NMConnection *connection,
+                NMUtilsStableType *out_stable_type)
 {
-	NMSettingConnection *s_con;
-	const char *stable_id;
+	NMDevicePrivate *priv;
 
+	nm_assert (NM_IS_DEVICE (self));
 	nm_assert (NM_IS_CONNECTION (connection));
 	nm_assert (out_stable_type);
 
-	s_con = nm_connection_get_setting_connection (connection);
-	g_return_val_if_fail (s_con, NULL);
+	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	stable_id = nm_setting_connection_get_stable_id (s_con);
-	if (!stable_id) {
-		*out_stable_type = NM_UTILS_STABLE_TYPE_UUID;
-		return nm_connection_get_uuid (connection);
+	/* we cache the generated stable ID for the time of an activation.
+	 *
+	 * The reason is, that we don't want the stable-id to change as long
+	 * as the device is active.
+	 *
+	 * Especially with ${RANDOM} stable-id we want to generate *one* configuration
+	 * for each activation. */
+	if (G_UNLIKELY (!priv->current_stable_id)) {
+		gs_free char *default_id = NULL;
+		gs_free char *generated = NULL;
+		NMUtilsStableType stable_type;
+		NMSettingConnection *s_con;
+		const char *stable_id;
+		const char *uuid;
+
+		s_con = nm_connection_get_setting_connection (connection);
+
+		stable_id = nm_setting_connection_get_stable_id (s_con);
+
+		if (!stable_id) {
+			default_id = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+			                                                    "connection.stable-id",
+			                                                    self);
+			stable_id = default_id;
+		}
+
+		uuid = nm_connection_get_uuid (connection);
+
+		stable_type = nm_utils_stable_id_parse (stable_id,
+		                                        uuid,
+		                                        NULL,
+		                                        &generated);
+
+		/* current_stable_id_type is a bitfield! */
+		nm_assert (stable_type <= (NMUtilsStableType) 0x2);
+		nm_assert (stable_type + (NMUtilsStableType) 1 > (NMUtilsStableType) 0);
+		priv->current_stable_id_type = stable_type;
+
+		if (stable_type == NM_UTILS_STABLE_TYPE_UUID)
+			priv->current_stable_id = g_strdup (uuid);
+		else if (stable_type == NM_UTILS_STABLE_TYPE_STABLE_ID)
+			priv->current_stable_id = g_strdup (stable_id);
+		else if (stable_type == NM_UTILS_STABLE_TYPE_GENERATED)
+			priv->current_stable_id = nm_str_realloc (nm_utils_stable_id_generated_complete (generated));
+		else {
+			nm_assert (stable_type == NM_UTILS_STABLE_TYPE_RANDOM);
+			priv->current_stable_id = nm_str_realloc (nm_utils_stable_id_random ());
+		}
+		_LOGT (LOGD_DEVICE,
+		       "stable-id: type=%d, \"%s\""
+		       "%s%s%s",
+		       (int) priv->current_stable_id_type,
+		       priv->current_stable_id,
+		       NM_PRINT_FMT_QUOTED (stable_type == NM_UTILS_STABLE_TYPE_GENERATED, " from \"", generated, "\"", ""));
 	}
 
-	*out_stable_type = NM_UTILS_STABLE_TYPE_STABLE_ID;
-	return stable_id;
+	*out_stable_type = priv->current_stable_id_type;
+	return priv->current_stable_id;
 }
 
 /*****************************************************************************/
@@ -6438,7 +6494,7 @@ check_and_add_ipv6ll_addr (NMDevice *self)
 		NMUtilsStableType stable_type;
 		const char *stable_id;
 
-		stable_id = _get_stable_id (connection, &stable_type);
+		stable_id = _get_stable_id (self, connection, &stable_type);
 		if (   !stable_id
 		    || !nm_utils_ipv6_addr_set_stable_privacy (stable_type,
 		                                               &lladdr,
@@ -6843,7 +6899,7 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 	s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting_ip6_config (connection));
 	g_assert (s_ip6);
 
-	stable_id = _get_stable_id (connection, &stable_type);
+	stable_id = _get_stable_id (self, connection, &stable_type);
 	if (stable_id) {
 		priv->ndisc = nm_lndp_ndisc_new (NM_PLATFORM_GET,
 		                                 nm_device_get_ip_ifindex (self),
@@ -11375,7 +11431,7 @@ nm_device_spawn_iface_helper (NMDevice *self)
 	g_ptr_array_add (argv, g_strdup ("--uuid"));
 	g_ptr_array_add (argv, g_strdup (nm_connection_get_uuid (connection)));
 
-	stable_id = _get_stable_id (connection, &stable_type);
+	stable_id = _get_stable_id (self, connection, &stable_type);
 	if (stable_id && stable_type != NM_UTILS_STABLE_TYPE_UUID) {
 		g_ptr_array_add (argv, g_strdup ("--stable-id"));
 		g_ptr_array_add (argv, g_strdup_printf ("%d %s", (int) stable_type, stable_id));
@@ -11669,6 +11725,11 @@ _set_state_full (NMDevice *self,
 	/* Update the available connections list when a device first becomes available */
 	if (state >= NM_DEVICE_STATE_DISCONNECTED && old_state < NM_DEVICE_STATE_DISCONNECTED)
 		nm_device_recheck_available_connections (self);
+
+	if (state <= NM_DEVICE_STATE_DISCONNECTED || state > NM_DEVICE_STATE_DEACTIVATING) {
+		if (nm_clear_g_free (&priv->current_stable_id))
+			_LOGT (LOGD_DEVICE, "stable-id: clear");
+	}
 
 	/* Handle the new state here; but anything that could trigger
 	 * another state change should be done below.
@@ -12544,7 +12605,7 @@ nm_device_hw_addr_set_cloned (NMDevice *self, NMConnection *connection, gboolean
 			return TRUE;
 		}
 
-		stable_id = _get_stable_id (connection, &stable_type);
+		stable_id = _get_stable_id (self, connection, &stable_type);
 		if (stable_id) {
 			hw_addr_generated = nm_utils_hw_addr_gen_stable_eth (stable_type, stable_id,
 			                                                     nm_device_get_ip_iface (self),
@@ -12933,6 +12994,7 @@ finalize (GObject *object)
 	g_free (priv->type_desc);
 	g_free (priv->type_description);
 	g_free (priv->dhcp_anycast_address);
+	g_free (priv->current_stable_id);
 
 	g_hash_table_unref (priv->ip6_saved_properties);
 	g_hash_table_unref (priv->available_connections);

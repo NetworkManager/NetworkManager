@@ -1432,13 +1432,32 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	/**
 	 * NMSettingConnection:stable-id:
 	 *
-	 * This token to generate stable IDs for the connection. If unset,
-	 * the UUID will be used instead.
+	 * Token to generate stable IDs for the connection.
 	 *
-	 * The stable-id is used instead of the connection UUID for generating
-	 * IPv6 stable private addresses with ipv6.addr-gen-mode=stable-privacy.
-	 * It is also used to seed the generated cloned MAC address for
-	 * ethernet.cloned-mac-address=stable and wifi.cloned-mac-address=stable.
+	 * The stable-id is used for generating IPv6 stable private addresses
+	 * with ipv6.addr-gen-mode=stable-privacy. It is also used to seed the
+	 * generated cloned MAC address for ethernet.cloned-mac-address=stable
+	 * and wifi.cloned-mac-address=stable. Note that also the interface name
+	 * of the activating connection and a per-host secret key is included
+	 * into the address generation so that the same stable-id on different
+	 * hosts/devices yields different addresses.
+	 *
+	 * If the value is unset, an ID unique for the connection is used.
+	 * Specifing a stable-id allows multiple connections to generate the
+	 * same addresses. Another use is to generate IDs at runtime via
+	 * dynamic substitutions.
+	 *
+	 * The '$' character is treated special to perform dynamic substitutions
+	 * at runtime. Currently supported are "${CONNECTION}", "${BOOT}", "${RANDOM}".
+	 * These effectively create unique IDs per-connection, per-boot, or every time.
+	 * Any unrecognized patterns following '$' are treated verbatim, however
+	 * are reserved for future use. You are thus advised to avoid '$' or
+	 * escape it as "$$".
+	 * For example, set it to "${CONNECTION}/${BOOT}" to create a unique id for
+	 * this connection that changes with every reboot.
+	 *
+	 * Note that two connections only use the same effective id if
+	 * their stable-id is also identical before performing dynamic substitutions.
 	 *
 	 * Since: 1.4
 	 **/

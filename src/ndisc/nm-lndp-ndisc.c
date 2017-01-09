@@ -550,6 +550,7 @@ nm_lndp_ndisc_new (NMPlatform *platform,
 
 	g_return_val_if_fail (NM_IS_PLATFORM (platform), NULL);
 	g_return_val_if_fail (!error || !*error, NULL);
+	g_return_val_if_fail (network_id, NULL);
 
 	if (!nm_platform_netns_push (platform, &netns))
 		return NULL;

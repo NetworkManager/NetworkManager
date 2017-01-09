@@ -356,6 +356,25 @@ nm_strdup_not_empty (const char *str)
 	return str && str[0] ? g_strdup (str) : NULL;
 }
 
+static inline char *
+nm_str_realloc (char *str)
+{
+	gs_free char *s = str;
+
+	/* Returns a new clone of @str and frees @str. The point is that @str
+	 * possibly points to a larger chunck of memory. We want to freshly allocate
+	 * a buffer.
+	 *
+	 * We could use realloc(), but that might not do anything or leave
+	 * @str in its memory pool for chunks of a different size (bad for
+	 * fragmentation).
+	 *
+	 * This is only useful when we want to keep the buffer around for a long
+	 * time and want to re-allocate a more optimal buffer. */
+
+	return g_strdup (s);
+}
+
 /*****************************************************************************/
 
 #define NM_PRINT_FMT_QUOTED(cond, prefix, str, suffix, str_else) \

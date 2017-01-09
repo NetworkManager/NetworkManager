@@ -322,6 +322,8 @@ gboolean nm_utils_machine_id_parse (const char *id_str, /*uuid_t*/ guchar *out_u
 
 guint8 *nm_utils_secret_key_read (gsize *out_key_len, GError **error);
 
+const char *nm_utils_get_boot_id (void);
+
 /* IPv6 Interface Identifer helpers */
 
 /**
@@ -360,13 +362,28 @@ gboolean nm_utils_get_ipv6_interface_identifier (NMLinkType link_type,
                                                  guint dev_id,
                                                  NMUtilsIPv6IfaceId *out_iid);
 
-typedef enum { /*< skip >*/
-	NM_UTILS_STABLE_TYPE_UUID = 0,
+typedef enum {
+	/* The stable type. Note that this value is encoded in the
+	 * generated addresses, thus the numbers MUST not change.
+	 *
+	 * Also note, if we ever allocate ID 255, we must take care
+	 * that nm_utils_ipv6_addr_set_stable_privacy() extends the
+	 * uint8 encoding of this value. */
+	NM_UTILS_STABLE_TYPE_UUID      = 0,
 	NM_UTILS_STABLE_TYPE_STABLE_ID = 1,
+	NM_UTILS_STABLE_TYPE_GENERATED = 2,
+	NM_UTILS_STABLE_TYPE_RANDOM    = 3,
 } NMUtilsStableType;
 
+NMUtilsStableType nm_utils_stable_id_parse (const char *stable_id,
+                                            const char *uuid,
+                                            const char *bootid,
+                                            char **out_generated);
 
-gboolean nm_utils_ipv6_addr_set_stable_privacy_impl (guint8 stable_type,
+char *nm_utils_stable_id_random (void);
+char *nm_utils_stable_id_generated_complete (const char *msg);
+
+gboolean nm_utils_ipv6_addr_set_stable_privacy_impl (NMUtilsStableType stable_type,
                                                      struct in6_addr *addr,
                                                      const char *ifname,
                                                      const char *network_id,

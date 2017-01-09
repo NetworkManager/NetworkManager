@@ -717,8 +717,8 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 	 * when the interface hardware is replaced.
 	 *
 	 * The value of "stable-privacy" enables use of cryptographically
-	 * secure hash of a secret host-specific key along with the connection
-	 * identification and the network address as specified by RFC7217.
+	 * secure hash of a secret host-specific key along with the connection's
+	 * stable-id and the network address as specified by RFC7217.
 	 * This makes it impossible to use the address track host's presence,
 	 * and makes the address stable when the network interface hardware is
 	 * replaced.

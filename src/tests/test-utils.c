@@ -37,12 +37,12 @@ test_stable_privacy (void)
 
 	/* We get an address without the UUID. */
 	inet_pton (AF_INET6, "1::", &addr1);
-	nm_utils_ipv6_addr_set_stable_privacy_impl (NM_UTILS_STABLE_TYPE_UUID, &addr1, "eth666", NULL, 384, (guint8 *) "key", 3, NULL);
+	nm_utils_ipv6_addr_set_stable_privacy_impl (NM_UTILS_STABLE_TYPE_UUID, &addr1, "eth666", "", 384, (guint8 *) "key", 3, NULL);
 	nmtst_assert_ip6_address (&addr1, "1::11aa:2530:9144:dafa");
 
 	/* We get a different address in a different network. */
 	inet_pton (AF_INET6, "2::", &addr1);
-	nm_utils_ipv6_addr_set_stable_privacy_impl (NM_UTILS_STABLE_TYPE_UUID, &addr1, "eth666", NULL, 384, (guint8 *) "key", 3, NULL);
+	nm_utils_ipv6_addr_set_stable_privacy_impl (NM_UTILS_STABLE_TYPE_UUID, &addr1, "eth666", "", 384, (guint8 *) "key", 3, NULL);
 	nmtst_assert_ip6_address (&addr1, "2::338e:8d:c11:8726");
 
 	inet_pton (AF_INET6, "1234::", &addr1);

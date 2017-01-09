@@ -1054,6 +1054,7 @@ set_property (GObject *object, guint prop_id,
 	case PROP_NETWORK_ID:
 		/* construct-only */
 		priv->network_id = g_value_dup_string (value);
+		g_return_if_fail (priv->network_id);
 		break;
 	case PROP_ADDR_GEN_MODE:
 		/* construct-only */
@@ -1175,7 +1176,7 @@ nm_ndisc_class_init (NMNDiscClass *klass)
 	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_STABLE_TYPE] =
 	    g_param_spec_int (NM_NDISC_STABLE_TYPE, "", "",
-	                      NM_UTILS_STABLE_TYPE_UUID, NM_UTILS_STABLE_TYPE_STABLE_ID, NM_UTILS_STABLE_TYPE_UUID,
+	                      NM_UTILS_STABLE_TYPE_UUID, NM_UTILS_STABLE_TYPE_RANDOM, NM_UTILS_STABLE_TYPE_UUID,
 	                      G_PARAM_WRITABLE |
 	                      G_PARAM_CONSTRUCT_ONLY |
 	                      G_PARAM_STATIC_STRINGS);
