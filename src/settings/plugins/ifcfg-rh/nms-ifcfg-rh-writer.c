@@ -249,7 +249,9 @@ write_object (NMSetting8021x *s_8021x,
 		path = (*(objtype->path_func))(s_8021x);
 		break;
 	default:
-		break;
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+		             "Unhandled certificate object scheme");
+		return FALSE;
 	}
 
 	/* If certificate/private key wasn't sent, the connection may no longer be
