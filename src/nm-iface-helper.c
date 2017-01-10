@@ -148,20 +148,18 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 	NMNDiscConfigMap changed = changed_int;
 	static NMIP6Config *ndisc_config = NULL;
 	NMIP6Config *existing;
-	static int system_support = -1;
+	int system_support;
 	guint32 ifa_flags = 0x00;
 	int i;
 
-	if (system_support == -1) {
-		/*
-		 * Check, whether kernel is recent enough, to help user space handling RA.
-		 * If it's not supported, we have no ipv6-privacy and must add autoconf
-		 * addresses as /128.
-		 * The reason for the /128 is to prevent the kernel
-		 * from adding a prefix route for this address.
-		 **/
-		system_support = nm_platform_check_support_kernel_extended_ifa_flags (NM_PLATFORM_GET);
-	}
+	/*
+	 * Check, whether kernel is recent enough, to help user space handling RA.
+	 * If it's not supported, we have no ipv6-privacy and must add autoconf
+	 * addresses as /128.
+	 * The reason for the /128 is to prevent the kernel
+	 * from adding a prefix route for this address.
+	 **/
+	system_support = nm_platform_check_support_kernel_extended_ifa_flags (NM_PLATFORM_GET);
 
 	if (system_support)
 		ifa_flags = IFA_F_NOPREFIXROUTE;
