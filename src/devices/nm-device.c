@@ -8423,9 +8423,37 @@ reapply_connection (NMDevice *self,
 	       diffs ? "" : " (unmodified)");
 
 	if (diffs) {
+		NMConnection *connection_clean = connection;
+		gs_free NMConnection *connection_clean_free = NULL;
+
+		{
+			NMSettingConnection *s_con_a, *s_con_n;
+
+			/* we allow re-applying a connection with differing ID, UUID, STABLE_ID and AUTOCONNECT.
+			 * This is for convenience but these values are not actually changable. So, check
+			 * if they changed, and if the did revert to the original values. */
+			s_con_a = nm_connection_get_setting_connection (applied);
+			s_con_n = nm_connection_get_setting_connection (connection);
+
+			if (   !nm_streq (nm_setting_connection_get_id (s_con_a), nm_setting_connection_get_id (s_con_n))
+			    || !nm_streq (nm_setting_connection_get_uuid (s_con_a), nm_setting_connection_get_uuid (s_con_n))
+			    || nm_setting_connection_get_autoconnect (s_con_a) != nm_setting_connection_get_autoconnect (s_con_n)
+			    || !nm_streq0 (nm_setting_connection_get_stable_id (s_con_a), nm_setting_connection_get_stable_id (s_con_n))) {
+				connection_clean_free = nm_simple_connection_new_clone (connection);
+				connection_clean = connection_clean_free;
+				s_con_n = nm_connection_get_setting_connection (connection);
+				g_object_set (s_con_n,
+				              NM_SETTING_CONNECTION_ID, nm_setting_connection_get_id (s_con_a),
+				              NM_SETTING_CONNECTION_UUID, nm_setting_connection_get_uuid (s_con_a),
+				              NM_SETTING_CONNECTION_AUTOCONNECT, nm_setting_connection_get_autoconnect (s_con_a),
+				              NM_SETTING_CONNECTION_STABLE_ID, nm_setting_connection_get_stable_id (s_con_a),
+				              NULL);
+			}
+		}
+
 		con_old = applied_clone  = nm_simple_connection_new_clone (applied);
 		con_new = applied;
-		nm_connection_replace_settings_from_connection (applied, connection);
+		nm_connection_replace_settings_from_connection (applied, connection_clean);
 		nm_connection_clear_secrets (applied);
 	} else
 		con_old = con_new = applied;
