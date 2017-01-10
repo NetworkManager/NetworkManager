@@ -634,7 +634,7 @@ nm_setting_802_1x_get_ca_cert_uri (NMSetting8021x *setting)
 }
 
 static GBytes *
-value_with_scheme (const char *path, const char *scheme)
+path_to_scheme_value (const char *path)
 {
 	GByteArray *array;
 	gsize len;
@@ -644,8 +644,8 @@ value_with_scheme (const char *path, const char *scheme)
 	len = strlen (path);
 
 	/* Add the path scheme tag to the front, then the filename */
-	array = g_byte_array_sized_new (len + strlen (scheme) + 1);
-	g_byte_array_append (array, (const guint8 *) scheme, strlen (scheme));
+	array = g_byte_array_sized_new (len + strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH) + 1);
+	g_byte_array_append (array, (const guint8 *) NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH));
 	g_byte_array_append (array, (const guint8 *) path, len);
 	g_byte_array_append (array, (const guint8 *) "\0", 1);
 
@@ -705,7 +705,7 @@ nm_setting_802_1x_set_ca_cert (NMSetting8021x *setting,
 	}
 
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
-		priv->ca_cert = value_with_scheme (value, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11);
+		priv->ca_cert = g_bytes_new (value, strlen (value) + 1);
 		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_CA_CERT);
 		return TRUE;
 	}
@@ -721,7 +721,7 @@ nm_setting_802_1x_set_ca_cert (NMSetting8021x *setting,
 				priv->ca_cert = g_byte_array_free_to_bytes (data);
 				data = NULL;
 			} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
-				priv->ca_cert = value_with_scheme (value, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
+				priv->ca_cert = path_to_scheme_value (value);
 			else
 				g_assert_not_reached ();
 		} else {
@@ -1074,7 +1074,7 @@ nm_setting_802_1x_set_client_cert (NMSetting8021x *setting,
 	}
 
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
-		priv->client_cert = value_with_scheme (value, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11);
+		priv->client_cert = g_bytes_new (value, strlen (value) + 1);
 		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_CLIENT_CERT);
 		return TRUE;
 	}
@@ -1108,7 +1108,7 @@ nm_setting_802_1x_set_client_cert (NMSetting8021x *setting,
 				priv->client_cert = g_byte_array_free_to_bytes (data);
 				data = NULL;
 			} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
-				priv->client_cert = value_with_scheme (value, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
+				priv->client_cert = path_to_scheme_value (value);
 			else
 				g_assert_not_reached ();
 		}
@@ -1379,7 +1379,7 @@ nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *setting,
 
 	data = load_and_verify_certificate (value, scheme, &format, error);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
-		priv->phase2_ca_cert = value_with_scheme (value, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11);
+		priv->phase2_ca_cert = g_bytes_new (value, strlen (value) + 1);
 		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_CA_CERT);
 		return TRUE;
 	}
@@ -1395,7 +1395,7 @@ nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *setting,
 				priv->phase2_ca_cert = g_byte_array_free_to_bytes (data);
 				data = NULL;
 			} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
-				priv->phase2_ca_cert = value_with_scheme (value, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
+				priv->phase2_ca_cert = path_to_scheme_value (value);
 			else
 				g_assert_not_reached ();
 		} else {
@@ -1753,7 +1753,7 @@ nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *setting,
 	}
 
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
-		priv->phase2_client_cert = value_with_scheme (value, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11);
+		priv->phase2_client_cert = g_bytes_new (value, strlen (value) + 1);
 		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
 		return TRUE;
 	}
@@ -1788,7 +1788,7 @@ nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *setting,
 				priv->phase2_client_cert = g_byte_array_free_to_bytes (data);
 				data = NULL;
 			} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
-				priv->phase2_client_cert = value_with_scheme (value, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
+				priv->phase2_client_cert = path_to_scheme_value (value);
 			else
 				g_assert_not_reached ();
 		}
@@ -2132,9 +2132,9 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *setting,
 		priv->private_key = file_to_secure_bytes (value);
 		g_assert (priv->private_key);
 	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
-		priv->private_key = value_with_scheme (value, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
+		priv->private_key = path_to_scheme_value (value);
 	else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11)
-		priv->private_key = value_with_scheme (value, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11);
+		priv->private_key = g_bytes_new (value, strlen (value) + 1);
 	else
 		g_assert_not_reached ();
 
@@ -2479,9 +2479,9 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *setting,
 		priv->phase2_private_key = file_to_secure_bytes (value);
 		g_assert (priv->phase2_private_key);
 	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
-		priv->phase2_private_key = value_with_scheme (value, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
+		priv->phase2_private_key = path_to_scheme_value (value);
 	else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11)
-		priv->phase2_private_key = value_with_scheme (value, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11);
+		priv->phase2_private_key = g_bytes_new (value, strlen (value) + 1);
 	else
 		g_assert_not_reached ();
 
