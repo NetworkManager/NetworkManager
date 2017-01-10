@@ -1072,11 +1072,16 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 	gboolean section_prefix = field_values[0].flags & NMC_OF_FLAG_SECTION_PREFIX;
 	gboolean main_header = main_header_add || main_header_only;
 
-	/* No headers are printed in terse mode:
-	 * - neither main header nor field (column) names
-	 */
-	if ((main_header_only || field_names) && terse)
-		return;
+	if (terse) {
+		/* No headers are printed in terse mode:
+		 * - neither main header nor field (column) names
+		 */
+		if (main_header_only || field_names)
+			return;
+
+		/* Don't substitute empty strings in terse mode */
+		not_set_str = "";
+	}
 
 	if (multiline) {
 	/* --- Multiline mode --- */
