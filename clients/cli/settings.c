@@ -900,9 +900,12 @@ bytes_to_string (GBytes *bytes)
 }
 
 static char *
-vlan_flags_to_string (guint32 flags)
+vlan_flags_to_string (guint32 flags, NmcPropertyGetType get_type)
 {
 	GString *flag_str;
+
+	if (get_type == NMC_PROPERTY_GET_PARSABLE)
+		return g_strdup_printf ("%u", flags);
 
 	if (flags == 0)
 		return g_strdup (_("0 (NONE)"));
@@ -4724,7 +4727,7 @@ static char *
 nmc_property_vlan_get_flags (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSettingVlan *s_vlan = NM_SETTING_VLAN (setting);
-	return vlan_flags_to_string (nm_setting_vlan_get_flags (s_vlan));
+	return vlan_flags_to_string (nm_setting_vlan_get_flags (s_vlan), get_type);
 }
 
 static char *
