@@ -242,6 +242,8 @@ write_object (NMSetting8021x *s_8021x,
 
 	scheme = (*(objtype->scheme_func))(s_8021x);
 	switch (scheme) {
+	case NM_SETTING_802_1X_CK_SCHEME_UNKNOWN:
+		break;
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		blob = (*(objtype->blob_func))(s_8021x);
 		break;
