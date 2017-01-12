@@ -260,16 +260,11 @@ static void
 data_port_changed_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
-	const char *old = nm_device_get_ip_iface (self);
-	const char *new = nm_modem_get_data_port (modem);
-	gboolean changed = FALSE;
-
-	if (new && g_strcmp0 (new, old))
-		changed = TRUE;
+	gboolean changed;
 
 	/* We set the IP iface in the device as soon as we know it, so that we
 	 * properly ifup it if needed */
-	nm_device_set_ip_iface (self, new);
+	changed = nm_device_set_ip_iface (self, nm_modem_get_data_port (modem));
 
 	/* Disable IPv6 immediately on the interface since NM handles IPv6
 	 * internally, and leaving it enabled could allow the kernel's IPv6

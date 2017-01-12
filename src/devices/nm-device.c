@@ -848,22 +848,32 @@ nm_device_get_ip_ifindex (NMDevice *self)
 	return priv->ip_iface ? priv->ip_ifindex : priv->ifindex;
 }
 
-void
+/**
+ * nm_device_set_ip_iface:
+ * @self: the #NMDevice
+ * @iface: the new IP interface name
+ *
+ * Updates the IP interface name and possibly the ifindex.
+ *
+ * Returns: %TRUE if the anything (name or ifindex) changed, %FALSE if nothing
+ * changed.
+ */
+gboolean
 nm_device_set_ip_iface (NMDevice *self, const char *iface)
 {
 	NMDevicePrivate *priv;
 	int ifindex;
 
-	g_return_if_fail (NM_IS_DEVICE (self));
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	if (nm_streq0 (iface, priv->ip_iface)) {
 		if (!iface)
-			return;
+			return FALSE;
 		ifindex = nm_platform_if_nametoindex (NM_PLATFORM_GET, iface);
 		if (   ifindex <= 0
 		    || priv->ip_ifindex == ifindex)
-			return;
+			return FALSE;
 
 		priv->ip_ifindex = ifindex;
 		_LOGD (LOGD_DEVICE, "ip-ifname: update ifindex for ifname '%s': %d", iface, priv->ip_ifindex);
@@ -904,6 +914,7 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 		priv->ip_mtu = nm_platform_link_get_mtu (NM_PLATFORM_GET, priv->ip_ifindex);
 
 	_notify (self, PROP_IP_IFACE);
+	return TRUE;
 }
 
 static gboolean
