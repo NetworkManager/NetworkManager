@@ -617,11 +617,11 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 	g_return_val_if_fail (!error || !*error, FALSE);
 
 	key_mgmt = nm_setting_wireless_security_get_key_mgmt (setting);
-	if (!add_string_val (self, key_mgmt, "key_mgmt", TRUE, FALSE, error))
+	if (!add_string_val (self, key_mgmt, "key_mgmt", TRUE, NULL, error))
 		return FALSE;
 
 	auth_alg = nm_setting_wireless_security_get_auth_alg (setting);
-	if (!add_string_val (self, auth_alg, "auth_alg", TRUE, FALSE, error))
+	if (!add_string_val (self, auth_alg, "auth_alg", TRUE, NULL, error))
 		return FALSE;
 
 	psk = nm_setting_wireless_security_get_psk (setting);
@@ -807,7 +807,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 		priv->ap_scan = 0;
 	}
 
-	if (!ADD_STRING_LIST_VAL (self, setting, 802_1x, eap_method, eap_methods, "eap", ' ', TRUE, FALSE, error))
+	if (!ADD_STRING_LIST_VAL (self, setting, 802_1x, eap_method, eap_methods, "eap", ' ', TRUE, NULL, error))
 		return FALSE;
 
 	/* Check EAP method for special handling: PEAP + GTC, FAST */
@@ -858,7 +858,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	}
 
 	if (phase1->len) {
-		if (!add_string_val (self, phase1->str, "phase1", FALSE, FALSE, error)) {
+		if (!add_string_val (self, phase1->str, "phase1", FALSE, NULL, error)) {
 			g_string_free (phase1, TRUE);
 			return FALSE;
 		}
@@ -881,7 +881,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	}
 
 	if (phase2->len) {
-		if (!add_string_val (self, phase2->str, "phase2", FALSE, FALSE, error)) {
+		if (!add_string_val (self, phase2->str, "phase2", FALSE, NULL, error)) {
 			g_string_free (phase2, TRUE);
 			return FALSE;
 		}
@@ -891,7 +891,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	/* PAC file */
 	path = nm_setting_802_1x_get_pac_file (setting);
 	if (path) {
-		if (!add_string_val (self, path, "pac_file", FALSE, FALSE, error))
+		if (!add_string_val (self, path, "pac_file", FALSE, NULL, error))
 			return FALSE;
 	} else {
 		/* PAC file is not specified.
@@ -901,7 +901,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 			gs_free char *blob_name = NULL;
 
 			blob_name = g_strdup_printf ("blob://pac-blob-%s", con_uuid);
-			if (!add_string_val (self, blob_name, "pac_file", FALSE, FALSE, error))
+			if (!add_string_val (self, blob_name, "pac_file", FALSE, NULL, error))
 				return FALSE;
 		} else {
 			/* This is only error for EAP-FAST; don't disturb other methods. */
@@ -927,7 +927,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	path = nm_setting_802_1x_get_ca_path (setting);
 	path = ca_path_override ? ca_path_override : path;
 	if (path) {
-		if (!add_string_val (self, path, "ca_path", FALSE, FALSE, error))
+		if (!add_string_val (self, path, "ca_path", FALSE, NULL, error))
 			return FALSE;
 	}
 
@@ -935,13 +935,13 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	path = nm_setting_802_1x_get_phase2_ca_path (setting);
 	path = ca_path_override ? ca_path_override : path;
 	if (path) {
-		if (!add_string_val (self, path, "ca_path2", FALSE, FALSE, error))
+		if (!add_string_val (self, path, "ca_path2", FALSE, NULL, error))
 			return FALSE;
 	}
 
 	/* CA certificate */
 	if (ca_cert_override) {
-		if (!add_string_val (self, ca_cert_override, "ca_cert", FALSE, FALSE, error))
+		if (!add_string_val (self, ca_cert_override, "ca_cert", FALSE, NULL, error))
 			return FALSE;
 	} else {
 		switch (nm_setting_802_1x_get_ca_cert_scheme (setting)) {
@@ -952,12 +952,12 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 			break;
 		case NM_SETTING_802_1X_CK_SCHEME_PATH:
 			path = nm_setting_802_1x_get_ca_cert_path (setting);
-			if (!add_string_val (self, path, "ca_cert", FALSE, FALSE, error))
+			if (!add_string_val (self, path, "ca_cert", FALSE, NULL, error))
 				return FALSE;
 			break;
 		case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
 			path = nm_setting_802_1x_get_ca_cert_uri (setting);
-			if (!add_string_val (self, path, "ca_cert", FALSE, FALSE, error))
+			if (!add_string_val (self, path, "ca_cert", FALSE, NULL, error))
 				return FALSE;
 			break;
 		default:
@@ -967,7 +967,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 
 	/* Phase 2 CA certificate */
 	if (ca_cert_override) {
-		if (!add_string_val (self, ca_cert_override, "ca_cert2", FALSE, FALSE, error))
+		if (!add_string_val (self, ca_cert_override, "ca_cert2", FALSE, NULL, error))
 			return FALSE;
 	} else {
 		switch (nm_setting_802_1x_get_phase2_ca_cert_scheme (setting)) {
@@ -978,12 +978,12 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 			break;
 		case NM_SETTING_802_1X_CK_SCHEME_PATH:
 			path = nm_setting_802_1x_get_phase2_ca_cert_path (setting);
-			if (!add_string_val (self, path, "ca_cert2", FALSE, FALSE, error))
+			if (!add_string_val (self, path, "ca_cert2", FALSE, NULL, error))
 				return FALSE;
 			break;
 		case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
 			path = nm_setting_802_1x_get_phase2_ca_cert_uri (setting);
-			if (!add_string_val (self, path, "ca_cert2", FALSE, FALSE, error))
+			if (!add_string_val (self, path, "ca_cert2", FALSE, NULL, error))
 				return FALSE;
 			break;
 		default:
@@ -993,24 +993,24 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 
 	/* Subject match */
 	value = nm_setting_802_1x_get_subject_match (setting);
-	if (!add_string_val (self, value, "subject_match", FALSE, FALSE, error))
+	if (!add_string_val (self, value, "subject_match", FALSE, NULL, error))
 		return FALSE;
 	value = nm_setting_802_1x_get_phase2_subject_match (setting);
-	if (!add_string_val (self, value, "subject_match2", FALSE, FALSE, error))
+	if (!add_string_val (self, value, "subject_match2", FALSE, NULL, error))
 		return FALSE;
 
 	/* altSubjectName match */
-	if (!ADD_STRING_LIST_VAL (self, setting, 802_1x, altsubject_match, altsubject_matches, "altsubject_match", ';', FALSE, FALSE, error))
+	if (!ADD_STRING_LIST_VAL (self, setting, 802_1x, altsubject_match, altsubject_matches, "altsubject_match", ';', FALSE, NULL, error))
 		return FALSE;
-	if (!ADD_STRING_LIST_VAL (self, setting, 802_1x, phase2_altsubject_match, phase2_altsubject_matches, "altsubject_match2", ';', FALSE, FALSE, error))
+	if (!ADD_STRING_LIST_VAL (self, setting, 802_1x, phase2_altsubject_match, phase2_altsubject_matches, "altsubject_match2", ';', FALSE, NULL, error))
 		return FALSE;
 
 	/* Domain suffix match */
 	value = nm_setting_802_1x_get_domain_suffix_match (setting);
-	if (!add_string_val (self, value, "domain_suffix_match", FALSE, FALSE, error))
+	if (!add_string_val (self, value, "domain_suffix_match", FALSE, NULL, error))
 		return FALSE;
 	value = nm_setting_802_1x_get_phase2_domain_suffix_match (setting);
-	if (!add_string_val (self, value, "domain_suffix_match2", FALSE, FALSE, error))
+	if (!add_string_val (self, value, "domain_suffix_match2", FALSE, NULL, error))
 		return FALSE;
 
 	/* Private key */
@@ -1024,13 +1024,13 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		path = nm_setting_802_1x_get_private_key_path (setting);
-		if (!add_string_val (self, path, "private_key", FALSE, FALSE, error))
+		if (!add_string_val (self, path, "private_key", FALSE, NULL, error))
 			return FALSE;
 		added = TRUE;
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
 		path = nm_setting_802_1x_get_private_key_uri (setting);
-		if (!add_string_val (self, path, "private_key", FALSE, FALSE, error))
+		if (!add_string_val (self, path, "private_key", FALSE, NULL, error))
 			return FALSE;
 		added = TRUE;
 		break;
@@ -1068,12 +1068,12 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 				break;
 			case NM_SETTING_802_1X_CK_SCHEME_PATH:
 				path = nm_setting_802_1x_get_client_cert_path (setting);
-				if (!add_string_val (self, path, "client_cert", FALSE, FALSE, error))
+				if (!add_string_val (self, path, "client_cert", FALSE, NULL, error))
 					return FALSE;
 				break;
 			case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
 				path = nm_setting_802_1x_get_client_cert_uri (setting);
-				if (!add_string_val (self, path, "client_cert", FALSE, FALSE, error))
+				if (!add_string_val (self, path, "client_cert", FALSE, NULL, error))
 					return FALSE;
 				break;
 			default:
@@ -1093,13 +1093,13 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		path = nm_setting_802_1x_get_phase2_private_key_path (setting);
-		if (!add_string_val (self, path, "private_key2", FALSE, FALSE, error))
+		if (!add_string_val (self, path, "private_key2", FALSE, NULL, error))
 			return FALSE;
 		added = TRUE;
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
 		path = nm_setting_802_1x_get_phase2_private_key_uri (setting);
-		if (!add_string_val (self, path, "private_key2", FALSE, FALSE, error))
+		if (!add_string_val (self, path, "private_key2", FALSE, NULL, error))
 			return FALSE;
 		added = TRUE;
 		break;
@@ -1137,12 +1137,12 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 				break;
 			case NM_SETTING_802_1X_CK_SCHEME_PATH:
 				path = nm_setting_802_1x_get_phase2_client_cert_path (setting);
-				if (!add_string_val (self, path, "client_cert2", FALSE, FALSE, error))
+				if (!add_string_val (self, path, "client_cert2", FALSE, NULL, error))
 					return FALSE;
 				break;
 			case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
 				path = nm_setting_802_1x_get_phase2_client_cert_uri (setting);
-				if (!add_string_val (self, path, "client_cert2", FALSE, FALSE, error))
+				if (!add_string_val (self, path, "client_cert2", FALSE, NULL, error))
 					return FALSE;
 				break;
 			default:
@@ -1152,10 +1152,10 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	}
 
 	value = nm_setting_802_1x_get_identity (setting);
-	if (!add_string_val (self, value, "identity", FALSE, FALSE, error))
+	if (!add_string_val (self, value, "identity", FALSE, NULL, error))
 		return FALSE;
 	value = nm_setting_802_1x_get_anonymous_identity (setting);
-	if (!add_string_val (self, value, "anonymous_identity", FALSE, FALSE, error))
+	if (!add_string_val (self, value, "anonymous_identity", FALSE, NULL, error))
 		return FALSE;
 
 	return TRUE;
