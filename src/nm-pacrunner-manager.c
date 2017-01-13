@@ -119,7 +119,7 @@ add_ip4_config (NMPacrunnerManager *self, GVariantBuilder *proxy_data, NMIP4Conf
 	int i;
 	char *cidr = NULL;
 
-	/* Extract Searches */
+	/* Extract searches */
 	for (i = 0; i < nm_ip4_config_get_num_searches (ip4); i++)
 		g_ptr_array_add (priv->domains, g_strdup (nm_ip4_config_get_search (ip4, i)));
 
@@ -127,7 +127,7 @@ add_ip4_config (NMPacrunnerManager *self, GVariantBuilder *proxy_data, NMIP4Conf
 	for (i = 0; i < nm_ip4_config_get_num_domains (ip4); i++)
 		g_ptr_array_add (priv->domains, g_strdup (nm_ip4_config_get_domain (ip4, i)));
 
-	/* Add Addresses and routes in CIDR form */
+	/* Add addresses and routes in CIDR form */
 	for (i = 0; i < nm_ip4_config_get_num_addresses (ip4); i++) {
 		const NMPlatformIP4Address *address = nm_ip4_config_get_address (ip4, i);
 
@@ -164,7 +164,7 @@ add_ip6_config (NMPacrunnerManager *self, GVariantBuilder *proxy_data, NMIP6Conf
 	for (i = 0; i < nm_ip6_config_get_num_domains (ip6); i++)
 		g_ptr_array_add (priv->domains, g_strdup (nm_ip6_config_get_domain (ip6, i)));
 
-	/* Add Addresses and routes in CIDR form */
+	/* Add addresses and routes in CIDR form */
 	for (i = 0; i < nm_ip6_config_get_num_addresses (ip6); i++) {
 		const NMPlatformIP6Address *address = nm_ip6_config_get_address (ip6, i);
 
@@ -205,7 +205,7 @@ pacrunner_send_done (GObject *source, GAsyncResult *res, gpointer user_data)
 		g_variant_get (variant, "(&o)", &path);
 
 		/* Replace the old path (if any) of proxy config with the new one returned
-		 * from CreateProxyConfiguration() DBus method on PacRunner.
+		 * from CreateProxyConfiguration() DBus method on pacrunner.
 		 */
 		for (iter = g_list_first (priv->remove); iter; iter = g_list_next (iter)) {
 			struct remove_data *r = iter->data;
@@ -258,12 +258,12 @@ name_owner_changed (GObject *object,
 
 	owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (object));
 	if (owner) {
-		_LOGD ("PacRunner appeared as %s", owner);
+		_LOGD ("pacrunner appeared as %s", owner);
 		for (iter = g_list_first(priv->args); iter; iter = g_list_next(iter)) {
 			send_pacrunner_proxy_data (self, iter->data);
 		}
 	} else {
-		_LOGD ("PacRunner disappeared");
+		_LOGD ("pacrunner disappeared");
 	}
 }
 
@@ -293,12 +293,12 @@ pacrunner_proxy_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 }
 
 /**
- * nm_pacrunner_manager_send():
+ * nm_pacrunner_manager_send:
  * @self: the #NMPacrunnerManager
  * @iface: the iface for the connection or %NULL
- * @proxy_config: Proxy config of the connection
- * @ip4_conifg: IP4 Cofig of the connection
- * @ip6_config: IP6 Config of the connection
+ * @proxy_config: proxy config of the connection
+ * @ip4_config: IP4 config of the connection
+ * @ip6_config: IP6 config of the connection
  */
 void
 nm_pacrunner_manager_send (NMPacrunnerManager *self,
@@ -345,7 +345,7 @@ nm_pacrunner_manager_send (NMPacrunnerManager *self,
 
 	priv->domains = g_ptr_array_new_with_free_func (g_free);
 
-	/* Extract stuff from Configs */
+	/* Extract stuff from configs */
 	add_proxy_config (self, &proxy_data, proxy_config);
 
 	if (ip4_config)
@@ -366,9 +366,9 @@ nm_pacrunner_manager_send (NMPacrunnerManager *self,
 	pacrunner_manager_args = g_variant_ref_sink (g_variant_new ("(a{sv})", &proxy_data));
 	priv->args = g_list_append (priv->args, pacrunner_manager_args);
 
-	/* Send if PacRunner is available on Bus, otherwise
+	/* Send if pacrunner is available on Bus, otherwise
 	 * argument has already been appended above to be
-	 * sent when PacRunner appears.
+	 * sent when pacrunner appears.
 	 */
 	send_pacrunner_proxy_data (self, pacrunner_manager_args);
 }
@@ -387,14 +387,14 @@ pacrunner_remove_done (GObject *source, GAsyncResult *res, gpointer user_data)
 	if (!ret)
 		_LOGD ("Couldn't remove proxy config from pacrunner: %s", error->message);
 	else
-		_LOGD ("Sucessfully removed proxy config from pacrunner");
+		_LOGD ("Successfully removed proxy config from pacrunner");
 }
 
 /**
- * nm_pacrunner_manager_remove():
+ * nm_pacrunner_manager_remove:
  * @self: the #NMPacrunnerManager
  * @iface: the iface for the connection to be removed
- * from PacRunner
+ * from pacrunner
  */
 void
 nm_pacrunner_manager_remove (NMPacrunnerManager *self, const char *iface)
