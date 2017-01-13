@@ -1648,14 +1648,13 @@ apply_mtu_from_config (NMDevice *self)
 	 * stage, so it is an error to call this function if the IPv4 method is not
 	 * 'disabled'.
 	 */
-	s_ip4 = (NMSettingIPConfig *)
-		nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP4_CONFIG);
+	s_ip4 = (NMSettingIPConfig *) nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP4_CONFIG);
 	if (s_ip4)
 		method = nm_setting_ip_config_get_method (s_ip4);
-	g_return_if_fail (nm_streq (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED));
 
-	s_wired  = (NMSettingWired *)
-		nm_device_get_applied_setting (self, NM_TYPE_SETTING_WIRED);
+	g_return_if_fail (nm_streq0 (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED));
+
+	s_wired  = (NMSettingWired *) nm_device_get_applied_setting (self, NM_TYPE_SETTING_WIRED);
 
 	if (s_wired) {
 		mtu = nm_setting_wired_get_mtu (s_wired);
