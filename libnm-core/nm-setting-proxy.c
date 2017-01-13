@@ -27,15 +27,15 @@
 
 /**
  * SECTION:nm-setting-proxy
- * @short_description: Describes Proxy Url, Script and other related properties
+ * @short_description: Describes proxy URL, script and other related properties
  *
  * The #NMSettingProxy object is a #NMSetting subclass that describes properties
- * related to Proxy settings like Pac Url, Pac Script etc.
+ * related to Proxy settings like PAC URL, PAC script etc.
  *
  * NetworkManager support 2 values for the #NMSettingProxy:method property for
- * proxy. If "auto" is specified then WPAD takes places and the appropriate details
- * are pushed into PacRunner or user can override this URL with a new PAC url or a
- * PAC Script. If "none" is selected then no proxy configuration is given to PacRunner
+ * proxy. If "auto" is specified then WPAD takes place and the appropriate details
+ * are pushed into PacRunner or user can override this URL with a new PAC URL or a
+ * PAC script. If "none" is selected then no proxy configuration is given to PacRunner
  * to fulfill client queries.
  **/
 
@@ -81,8 +81,8 @@ nm_setting_proxy_new (void)
  * nm_setting_proxy_get_method:
  * @setting: the #NMSettingProxy
  *
- * Returns the proxy configuration method. By default the value is "NONE".
- * "NONE" should be selected for a connection intended for direct network
+ * Returns the proxy configuration method. By default the value is %NM_SETTING_PROXY_METHOD_NONE.
+ * %NM_SETTING_PROXY_METHOD_NONE should be selected for a connection intended for direct network
  * access.
  *
  * Returns: the proxy configuration method
@@ -101,8 +101,8 @@ nm_setting_proxy_get_method (NMSettingProxy *setting)
  * nm_setting_proxy_get_browser_only:
  * @setting: the #NMSettingProxy
  *
- * Returns: TRUE if this proxy configuration is only for Browser
- * clients/schemes otherwise FALSE.
+ * Returns: %TRUE if this proxy configuration is only for browser
+ * clients/schemes, %FALSE otherwise.
  *
  * Since: 1.6
  **/
@@ -118,7 +118,7 @@ nm_setting_proxy_get_browser_only (NMSettingProxy *setting)
  * nm_setting_proxy_get_pac_url:
  * @setting: the #NMSettingProxy
  *
- * Returns: the PAC url for obtaining PAC file
+ * Returns: the PAC URL for obtaining PAC file
  *
  * Since: 1.6
  **/
@@ -134,7 +134,7 @@ nm_setting_proxy_get_pac_url (NMSettingProxy *setting)
  * nm_setting_proxy_get_pac_script:
  * @setting: the #NMSettingProxy
  *
- * Returns: the PAC Script
+ * Returns: the PAC script
  *
  * Since: 1.6
  **/
@@ -301,7 +301,7 @@ nm_setting_proxy_class_init (NMSettingProxyClass *setting_class)
 	/**
 	 * NMSettingProxy:method:
 	 *
-	 * Method for proxy configuration, Default is "NONE"
+	 * Method for proxy configuration, Default is %NM_SETTING_PROXY_METHOD_NONE
 	 *
 	 * Since: 1.6
 	 **/
@@ -316,7 +316,7 @@ nm_setting_proxy_class_init (NMSettingProxyClass *setting_class)
 	/**
 	 * NMSettingProxy:browser-only:
 	 *
-	 * TRUE if Proxy is for Browser Stuff.
+	 * Whether the proxy configuration is for browser only.
 	 *
 	 * Since: 1.6
 	 **/
@@ -330,7 +330,7 @@ nm_setting_proxy_class_init (NMSettingProxyClass *setting_class)
 	/**
 	 * NMSettingProxy:pac-url:
 	 *
-	 * PAC Url for obtaining PAC File.
+	 * PAC URL for obtaining PAC file.
 	 *
 	 * Since: 1.6
 	 **/
@@ -344,7 +344,7 @@ nm_setting_proxy_class_init (NMSettingProxyClass *setting_class)
 	/**
 	 * NMSettingProxy:pac-script:
 	 *
-	 * PAC Script For the connection.
+	 * PAC script for the connection.
 	 *
 	 * Since: 1.6
 	 **/
