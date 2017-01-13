@@ -6636,7 +6636,6 @@ nm_device_ipv6_set_mtu (NMDevice *self, guint32 mtu)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	guint32 ip_mtu = get_ip_mtu (self);
 	guint32 plat_mtu = nm_device_ipv6_sysctl_get_int32 (self, "mtu", ip_mtu);
-	char val[16];
 
 	priv->ip6_mtu = mtu ?: plat_mtu;
 
@@ -6659,8 +6658,10 @@ nm_device_ipv6_set_mtu (NMDevice *self, guint32 mtu)
 	}
 
 	if (priv->ip6_mtu != plat_mtu) {
-		g_snprintf (val, sizeof (val), "%d", mtu);
-		nm_device_ipv6_sysctl_set (self, "mtu", val);
+		char val[64];
+
+		nm_device_ipv6_sysctl_set (self, "mtu",
+		                           nm_sprintf_buf (val, "%u", (unsigned) mtu));
 	}
 }
 
