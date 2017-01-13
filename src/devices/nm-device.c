@@ -307,6 +307,7 @@ typedef struct _NMDevicePrivate {
 	gulong          ignore_carrier_id;
 	guint32         mtu;
 	guint32         ip_mtu;
+	guint32         ip6_mtu;
 	bool            up;   /* IFF_UP */
 
 	/* Generic DHCP stuff */
@@ -383,7 +384,6 @@ typedef struct _NMDevicePrivate {
 	NMIP6Config *  ext_ip6_config_captured; /* Configuration captured from platform. */
 	GSList *       vpn6_configs;   /* VPNs which use this device */
 	bool           nm_ipv6ll; /* TRUE if NM handles the device's IPv6LL address */
-	guint32        ip6_mtu;
 	NMIP6Config *  dad6_ip6_config;
 
 	NMNDisc *      ndisc;
@@ -2175,7 +2175,6 @@ device_link_changed (NMDevice *self)
 		_notify (self, PROP_DRIVER);
 	}
 
-	/* Update MTU if it has changed. */
 	if (priv->mtu != info.mtu) {
 		priv->mtu = info.mtu;
 		_notify (self, PROP_MTU);
@@ -2322,8 +2321,7 @@ device_ip_link_changed (NMDevice *self)
 
 	_stats_update_counters_from_pllink (self, pllink);
 
-	if (priv->ip_mtu != pllink->mtu)
-		priv->ip_mtu = pllink->mtu;
+	priv->ip_mtu = pllink->mtu;
 
 	if (_ip_iface_update (self, pllink->name))
 		nm_device_update_dynamic_ip_setup (self);
@@ -2588,6 +2586,7 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 	NMDeviceCapabilities capabilities = 0;
 	NMConfig *config;
 	guint real_rate;
+	guint32 mtu;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -2608,6 +2607,13 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 	/* Balanced by a thaw in nm_device_realize_finish() */
 	g_object_freeze_notify (G_OBJECT (self));
 
+	priv->ip6_mtu = 0;
+	priv->ip_mtu = 0;
+	if (priv->mtu) {
+		priv->mtu = 0;
+		_notify (self, PROP_MTU);
+	}
+
 	if (plink) {
 		g_return_if_fail (link_type_compatible (self, plink->type, NULL, NULL));
 		update_device_from_platform_link (self, plink);
@@ -2623,8 +2629,11 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 		if (nm_platform_link_is_software (NM_PLATFORM_GET, priv->ifindex))
 			capabilities |= NM_DEVICE_CAP_IS_SOFTWARE;
 
-		priv->mtu = nm_platform_link_get_mtu (NM_PLATFORM_GET, priv->ifindex);
-		_notify (self, PROP_MTU);
+		mtu = nm_platform_link_get_mtu (NM_PLATFORM_GET, priv->ifindex);
+		if (priv->mtu != mtu) {
+			priv->mtu = mtu;
+			_notify (self, PROP_MTU);
+		}
 
 		nm_platform_link_get_driver_info (NM_PLATFORM_GET,
 		                                  priv->ifindex,
@@ -2834,6 +2843,11 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 	priv->ip_ifindex = 0;
 	if (nm_clear_g_free (&priv->ip_iface))
 		_notify (self, PROP_IP_IFACE);
+
+	if (priv->mtu != 0) {
+		priv->mtu = 0;
+		_notify (self, PROP_MTU);
+	}
 
 	if (priv->driver_version) {
 		g_clear_pointer (&priv->driver_version, g_free);
@@ -6590,23 +6604,12 @@ linklocal6_start (NMDevice *self)
 
 static void nm_device_ipv6_set_mtu (NMDevice *self, guint32 mtu);
 
-static void
-set_ip_mtu (NMDevice *self, guint32 mtu)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	if (priv->ip_ifindex)
-		priv->ip_mtu = mtu;
-	else
-		priv->mtu = mtu;
-}
-
 static guint32
 get_ip_mtu (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->ip_ifindex)
+	if (priv->ip_ifindex > 0)
 		return priv->ip_mtu;
 	else
 		return priv->mtu;
@@ -6619,8 +6622,16 @@ nm_device_set_mtu (NMDevice *self, guint32 mtu)
 	int ifindex = nm_device_get_ip_ifindex (self);
 	guint32 ip_mtu;
 
-	if (mtu)
-		set_ip_mtu (self, mtu);
+	if (mtu) {
+		if (priv->ip_ifindex > 0)
+			priv->ip_mtu = mtu;
+		else {
+			if (priv->mtu != mtu) {
+				priv->mtu = mtu;
+				_notify (self, PROP_MTU);
+			}
+		}
+	}
 
 	/* Ensure the IPv6 MTU is still alright. */
 	if (priv->ip6_mtu)
@@ -13082,9 +13093,6 @@ set_property (GObject *object, guint prop_id,
 	case PROP_FIRMWARE_VERSION:
 		g_free (priv->firmware_version);
 		priv->firmware_version = g_value_dup_string (value);
-		break;
-	case PROP_MTU:
-		priv->mtu = g_value_get_uint (value);
 		break;
 	case PROP_IP4_ADDRESS:
 		priv->ip4_address = g_value_get_uint (value);
