@@ -156,7 +156,7 @@ parent_changed_notify (NMDevice *device,
 
 	if (new_parent) {
 		priv->parent_state_id = g_signal_connect (new_parent,
-		                                          "state-changed",
+		                                          NM_DEVICE_STATE_CHANGED,
 		                                          G_CALLBACK (parent_state_changed),
 		                                          device);
 

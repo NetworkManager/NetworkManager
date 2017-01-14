@@ -563,16 +563,16 @@ ppp_stage3_ip_config_start (NMModem *self,
 	if (   priv->ppp_manager
 	    && nm_ppp_manager_start (priv->ppp_manager, req, ppp_name,
 	                             ip_timeout, baud_override, &error)) {
-		g_signal_connect (priv->ppp_manager, NM_PPP_MANAGER_STATE_CHANGED,
+		g_signal_connect (priv->ppp_manager, NM_PPP_MANAGER_SIGNAL_STATE_CHANGED,
 		                  G_CALLBACK (ppp_state_changed),
 		                  self);
-		g_signal_connect (priv->ppp_manager, "ip4-config",
+		g_signal_connect (priv->ppp_manager, NM_PPP_MANAGER_SIGNAL_IP4_CONFIG,
 		                  G_CALLBACK (ppp_ip4_config),
 		                  self);
-		g_signal_connect (priv->ppp_manager, "ip6-config",
+		g_signal_connect (priv->ppp_manager, NM_PPP_MANAGER_SIGNAL_IP6_CONFIG,
 		                  G_CALLBACK (ppp_ip6_config),
 		                  self);
-		g_signal_connect (priv->ppp_manager, "stats",
+		g_signal_connect (priv->ppp_manager, NM_PPP_MANAGER_SIGNAL_STATS,
 		                  G_CALLBACK (ppp_stats),
 		                  self);
 
