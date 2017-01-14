@@ -643,9 +643,14 @@ nm_device_ipv6_sysctl_set (NMDevice *self, const char *property, const char *val
 }
 
 static guint32
-nm_device_ipv6_sysctl_get_int32 (NMDevice *self, const char *property, gint32 fallback)
+nm_device_ipv6_sysctl_get_uint32 (NMDevice *self, const char *property, guint32 fallback)
 {
-	return nm_platform_sysctl_get_int32 (NM_PLATFORM_GET, NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_ip6_property_path (nm_device_get_ip_iface (self), property)), fallback);
+	return nm_platform_sysctl_get_int_checked (NM_PLATFORM_GET,
+	                                           NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_ip6_property_path (nm_device_get_ip_iface (self), property)),
+	                                           10,
+	                                           0,
+	                                           G_MAXUINT32,
+	                                           fallback);
 }
 
 gboolean
@@ -6635,7 +6640,7 @@ nm_device_ipv6_set_mtu (NMDevice *self, guint32 mtu)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	guint32 ip_mtu = get_ip_mtu (self);
-	guint32 plat_mtu = nm_device_ipv6_sysctl_get_int32 (self, "mtu", ip_mtu);
+	guint32 plat_mtu = nm_device_ipv6_sysctl_get_uint32 (self, "mtu", ip_mtu);
 
 	priv->ip6_mtu = mtu ?: plat_mtu;
 
