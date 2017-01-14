@@ -5948,9 +5948,6 @@ END_ADD_DEFAULT_ROUTE:
 			                                 nm_device_get_ip_ifindex (self),
 			                                 iid);
 		}
-
-		if (NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit)
-			NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit (self, composite);
 	}
 
 	routes_full_sync =    commit

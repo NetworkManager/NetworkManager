@@ -277,7 +277,6 @@ typedef struct {
 
 	/* Called right before IP config is set; use for setting MTU etc */
 	void                (* ip4_config_pre_commit) (NMDevice *self, NMIP4Config *config);
-	void                (* ip6_config_pre_commit) (NMDevice *self, NMIP6Config *config);
 
 	/* Async deactivating (in the DEACTIVATING phase) */
 	void            (* deactivate_async)        (NMDevice *self,
