@@ -1391,26 +1391,14 @@ act_stage3_ip4_config_start (NMDevice *device,
 	return NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->act_stage3_ip4_config_start (device, out_config, reason);
 }
 
-static void
-ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
+static guint32
+get_configured_mtu (NMDevice *device, gboolean *out_is_user_config)
 {
-	NMConnection *connection;
-	NMSettingWired *s_wired;
-	guint32 mtu;
-
 	/* MTU only set for plain ethernet */
 	if (NM_DEVICE_ETHERNET_GET_PRIVATE ((NMDeviceEthernet *) device)->ppp_manager)
-		return;
+		return 0;
 
-	connection = nm_device_get_applied_connection (device);
-	g_assert (connection);
-	s_wired = nm_connection_get_setting_wired (connection);
-	g_assert (s_wired);
-
-	/* MTU override */
-	mtu = nm_setting_wired_get_mtu (s_wired);
-	if (mtu)
-		nm_ip4_config_set_mtu (config, mtu, NM_IP_CONFIG_SOURCE_USER);
+	return nm_device_get_configured_mtu_for_wired (device, out_is_user_config);
 }
 
 static void
@@ -1774,7 +1762,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->act_stage2_config = act_stage2_config;
 	parent_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
-	parent_class->ip4_config_pre_commit = ip4_config_pre_commit;
+	parent_class->get_configured_mtu = get_configured_mtu;
 	parent_class->deactivate = deactivate;
 	parent_class->spec_match_list = spec_match_list;
 	parent_class->update_connection = update_connection;

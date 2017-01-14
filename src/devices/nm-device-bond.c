@@ -383,25 +383,6 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	return ret;
 }
 
-static void
-ip4_config_pre_commit (NMDevice *self, NMIP4Config *config)
-{
-	NMConnection *connection;
-	NMSettingWired *s_wired;
-	guint32 mtu;
-
-	connection = nm_device_get_applied_connection (self);
-	g_assert (connection);
-	s_wired = nm_connection_get_setting_wired (connection);
-
-	if (s_wired) {
-		/* MTU override */
-		mtu = nm_setting_wired_get_mtu (s_wired);
-		if (mtu)
-			nm_ip4_config_set_mtu (config, mtu, NM_IP_CONFIG_SOURCE_USER);
-	}
-}
-
 static gboolean
 enslave_slave (NMDevice *device,
                NMDevice *slave,
@@ -523,7 +504,7 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 
 	parent_class->create_and_realize = create_and_realize;
 	parent_class->act_stage1_prepare = act_stage1_prepare;
-	parent_class->ip4_config_pre_commit = ip4_config_pre_commit;
+	parent_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
 	parent_class->enslave_slave = enslave_slave;
 	parent_class->release_slave = release_slave;
 

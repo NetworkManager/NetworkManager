@@ -314,24 +314,6 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 }
 
 static void
-ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
-{
-	NMConnection *connection;
-	NMSettingWired *s_wired;
-	guint32 mtu;
-
-	connection = nm_device_get_applied_connection (device);
-	g_assert (connection);
-
-	s_wired = nm_connection_get_setting_wired (connection);
-	if (s_wired) {
-		mtu = nm_setting_wired_get_mtu (s_wired);
-		if (mtu)
-			nm_ip4_config_set_mtu (config, mtu, NM_IP_CONFIG_SOURCE_USER);
-	}
-}
-
-static void
 unrealize_notify (NMDevice *device)
 {
 	NMDeviceTun *self = NM_DEVICE_TUN (device);
@@ -434,7 +416,7 @@ nm_device_tun_class_init (NMDeviceTunClass *klass)
 	device_class->unrealize_notify = unrealize_notify;
 	device_class->update_connection = update_connection;
 	device_class->act_stage1_prepare = act_stage1_prepare;
-	device_class->ip4_config_pre_commit = ip4_config_pre_commit;
+	device_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
 
 	obj_properties[PROP_OWNER] =
 	     g_param_spec_int64 (NM_DEVICE_TUN_OWNER, "", "",

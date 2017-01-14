@@ -5182,6 +5182,16 @@ END_ADD_DEFAULT_ROUTE:
 
 	/* Allow setting MTU etc */
 	if (commit) {
+		gboolean mtu_is_user_config = FALSE;
+		guint32 mtu;
+
+		if (NM_DEVICE_GET_CLASS (self)->get_configured_mtu)
+			mtu = NM_DEVICE_GET_CLASS (self)->get_configured_mtu (self, &mtu_is_user_config);
+		else
+			mtu = 0;
+		if (mtu && mtu_is_user_config)
+			nm_ip4_config_set_mtu (composite, mtu, NM_IP_CONFIG_SOURCE_USER);
+
 		if (NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit)
 			NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit (self, composite);
 	}
@@ -6585,6 +6595,35 @@ linklocal6_start (NMDevice *self)
 	priv->linklocal6_timeout_id = g_timeout_add_seconds (15, linklocal6_timeout_cb, self);
 
 	return NM_ACT_STAGE_RETURN_POSTPONE;
+}
+
+/*****************************************************************************/
+
+guint32
+nm_device_get_configured_mtu_for_wired (NMDevice *self, gboolean *out_is_user_config)
+{
+	NMConnection *connection;
+	NMSettingWired *setting;
+	guint32 mtu;
+
+	nm_assert (NM_IS_DEVICE (self));
+	nm_assert (out_is_user_config);
+
+	connection = nm_device_get_applied_connection (self);
+	if (!connection)
+		g_return_val_if_reached (0);
+
+	setting = nm_connection_get_setting_wired (connection);
+
+	if (setting) {
+		mtu = nm_setting_wired_get_mtu (setting);
+		if (mtu) {
+			*out_is_user_config = TRUE;
+			return mtu;
+		}
+	}
+	*out_is_user_config = FALSE;
+	return NM_DEVICE_DEFAULT_MTU_WIRED;
 }
 
 /*****************************************************************************/
