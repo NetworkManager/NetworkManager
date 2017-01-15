@@ -38,7 +38,12 @@
 /*****************************************************************************/
 
 typedef struct {
-	gboolean never_default;
+	bool never_default:1;
+	guint32 mss;
+	int ifindex;
+	int dns_priority;
+	NMSettingIP6ConfigPrivacy privacy;
+	gint64 route_metric;
 	struct in6_addr gateway;
 	GArray *addresses;
 	GArray *routes;
@@ -46,13 +51,8 @@ typedef struct {
 	GPtrArray *domains;
 	GPtrArray *searches;
 	GPtrArray *dns_options;
-	guint32 mss;
-	int ifindex;
-	gint64 route_metric;
-	gint dns_priority;
 	GVariant *address_data_variant;
 	GVariant *addresses_variant;
-	NMSettingIP6ConfigPrivacy privacy;
 } NMIP6ConfigPrivate;
 
 struct _NMIP6Config {
@@ -1239,7 +1239,7 @@ nm_ip6_config_set_never_default (NMIP6Config *config, gboolean never_default)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
-	priv->never_default = !!never_default;
+	priv->never_default = never_default;
 }
 
 gboolean

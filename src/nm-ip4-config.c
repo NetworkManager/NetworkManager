@@ -59,25 +59,25 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMIP4Config,
 );
 
 typedef struct {
-	gboolean never_default;
+	bool never_default:1;
+	bool metered:1;
+	bool has_gateway:1;
 	guint32 gateway;
-	gboolean has_gateway;
+	guint32 mss;
+	guint32 mtu;
+	int ifindex;
+	NMIPConfigSource mtu_source;
+	gint dns_priority;
+	gint64 route_metric;
 	GArray *addresses;
 	GArray *routes;
 	GArray *nameservers;
 	GPtrArray *domains;
 	GPtrArray *searches;
 	GPtrArray *dns_options;
-	guint32 mss;
 	GArray *nis;
 	char *nis_domain;
 	GArray *wins;
-	guint32 mtu;
-	NMIPConfigSource mtu_source;
-	int ifindex;
-	gint64 route_metric;
-	gboolean metered;
-	gint dns_priority;
 	GVariant *address_data_variant;
 	GVariant *addresses_variant;
 } NMIP4ConfigPrivate;
@@ -1382,7 +1382,7 @@ nm_ip4_config_set_never_default (NMIP4Config *config, gboolean never_default)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
-	priv->never_default = !!never_default;
+	priv->never_default = never_default;
 }
 
 gboolean
@@ -2110,7 +2110,7 @@ nm_ip4_config_set_metered (NMIP4Config *config, gboolean metered)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
-	priv->metered = !!metered;
+	priv->metered = metered;
 }
 
 gboolean
