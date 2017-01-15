@@ -35,6 +35,29 @@
 
 #include "introspection/org.freedesktop.NetworkManager.IP4Config.h"
 
+/*****************************************************************************/
+
+/* internal guint32 are assigned to gobject properties of type uint. Ensure, that uint is large enough */
+G_STATIC_ASSERT (sizeof (uint) >= sizeof (guint32));
+G_STATIC_ASSERT (G_MAXUINT >= 0xFFFFFFFF);
+
+/*****************************************************************************/
+
+NM_GOBJECT_PROPERTIES_DEFINE (NMIP4Config,
+	PROP_IFINDEX,
+	PROP_ADDRESS_DATA,
+	PROP_ADDRESSES,
+	PROP_ROUTE_DATA,
+	PROP_ROUTES,
+	PROP_GATEWAY,
+	PROP_NAMESERVERS,
+	PROP_DOMAINS,
+	PROP_SEARCHES,
+	PROP_DNS_OPTIONS,
+	PROP_WINS_SERVERS,
+	PROP_DNS_PRIORITY,
+);
+
 typedef struct {
 	gboolean never_default;
 	guint32 gateway;
@@ -72,33 +95,7 @@ G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, NM_TYPE_EXPORTED_OBJECT)
 
 #define NM_IP4_CONFIG_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMIP4Config, NM_IS_IP4_CONFIG)
 
-/* internal guint32 are assigned to gobject properties of type uint. Ensure, that uint is large enough */
-G_STATIC_ASSERT (sizeof (uint) >= sizeof (guint32));
-G_STATIC_ASSERT (G_MAXUINT >= 0xFFFFFFFF);
-
-NM_GOBJECT_PROPERTIES_DEFINE (NMIP4Config,
-	PROP_IFINDEX,
-	PROP_ADDRESS_DATA,
-	PROP_ADDRESSES,
-	PROP_ROUTE_DATA,
-	PROP_ROUTES,
-	PROP_GATEWAY,
-	PROP_NAMESERVERS,
-	PROP_DOMAINS,
-	PROP_SEARCHES,
-	PROP_DNS_OPTIONS,
-	PROP_WINS_SERVERS,
-	PROP_DNS_PRIORITY,
-);
-
-NMIP4Config *
-nm_ip4_config_new (int ifindex)
-{
-	g_return_val_if_fail (ifindex >= -1, NULL);
-	return (NMIP4Config *) g_object_new (NM_TYPE_IP4_CONFIG,
-	                                     NM_IP4_CONFIG_IFINDEX, ifindex,
-	                                     NULL);
-}
+/*****************************************************************************/
 
 int
 nm_ip4_config_get_ifindex (const NMIP4Config *config)
@@ -2234,43 +2231,6 @@ nm_ip4_config_equal (const NMIP4Config *a, const NMIP4Config *b)
 /*****************************************************************************/
 
 static void
-nm_ip4_config_init (NMIP4Config *config)
-{
-	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-
-	priv->addresses = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Address));
-	priv->routes = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Route));
-	priv->nameservers = g_array_new (FALSE, FALSE, sizeof (guint32));
-	priv->domains = g_ptr_array_new_with_free_func (g_free);
-	priv->searches = g_ptr_array_new_with_free_func (g_free);
-	priv->dns_options = g_ptr_array_new_with_free_func (g_free);
-	priv->nis = g_array_new (FALSE, TRUE, sizeof (guint32));
-	priv->wins = g_array_new (FALSE, TRUE, sizeof (guint32));
-	priv->route_metric = -1;
-}
-
-static void
-finalize (GObject *object)
-{
-	NMIP4Config *self = NM_IP4_CONFIG (object);
-	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
-
-	nm_clear_g_variant (&priv->address_data_variant);
-	nm_clear_g_variant (&priv->addresses_variant);
-	g_array_unref (priv->addresses);
-	g_array_unref (priv->routes);
-	g_array_unref (priv->nameservers);
-	g_ptr_array_unref (priv->domains);
-	g_ptr_array_unref (priv->searches);
-	g_ptr_array_unref (priv->dns_options);
-	g_array_unref (priv->nis);
-	g_free (priv->nis_domain);
-	g_array_unref (priv->wins);
-
-	G_OBJECT_CLASS (nm_ip4_config_parent_class)->finalize (object);
-}
-
-static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
@@ -2459,12 +2419,61 @@ set_property (GObject *object,
 
 	switch (prop_id) {
 	case PROP_IFINDEX:
+		/* construct-only */
 		priv->ifindex = g_value_get_int (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
 	}
+}
+
+/*****************************************************************************/
+
+static void
+nm_ip4_config_init (NMIP4Config *config)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+
+	priv->addresses = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Address));
+	priv->routes = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Route));
+	priv->nameservers = g_array_new (FALSE, FALSE, sizeof (guint32));
+	priv->domains = g_ptr_array_new_with_free_func (g_free);
+	priv->searches = g_ptr_array_new_with_free_func (g_free);
+	priv->dns_options = g_ptr_array_new_with_free_func (g_free);
+	priv->nis = g_array_new (FALSE, TRUE, sizeof (guint32));
+	priv->wins = g_array_new (FALSE, TRUE, sizeof (guint32));
+	priv->route_metric = -1;
+}
+
+NMIP4Config *
+nm_ip4_config_new (int ifindex)
+{
+	g_return_val_if_fail (ifindex >= -1, NULL);
+	return (NMIP4Config *) g_object_new (NM_TYPE_IP4_CONFIG,
+	                                     NM_IP4_CONFIG_IFINDEX, ifindex,
+	                                     NULL);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMIP4Config *self = NM_IP4_CONFIG (object);
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
+
+	nm_clear_g_variant (&priv->address_data_variant);
+	nm_clear_g_variant (&priv->addresses_variant);
+	g_array_unref (priv->addresses);
+	g_array_unref (priv->routes);
+	g_array_unref (priv->nameservers);
+	g_ptr_array_unref (priv->domains);
+	g_ptr_array_unref (priv->searches);
+	g_ptr_array_unref (priv->dns_options);
+	g_array_unref (priv->nis);
+	g_free (priv->nis_domain);
+	g_array_unref (priv->wins);
+
+	G_OBJECT_CLASS (nm_ip4_config_parent_class)->finalize (object);
 }
 
 static void

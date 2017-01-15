@@ -509,7 +509,7 @@ set_property (GObject *object, guint prop_id, const GValue *value, GParamSpec *p
 
 	switch (prop_id) {
 	case PROP_POLKIT_ENABLED:
-		/* construct only */
+		/* construct-only */
 		priv->polkit_enabled = !!g_value_get_boolean (value);
 		break;
 	default:

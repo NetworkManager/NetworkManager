@@ -851,7 +851,7 @@ set_property (GObject *object, guint prop_id,
 		g_warn_if_fail (priv->ifindex > 0);
 		break;
 	case PROP_HWADDR:
-		/* construct only */
+		/* construct-only */
 		priv->hwaddr = g_value_dup_boxed (value);
 		break;
 	case PROP_IPV6:

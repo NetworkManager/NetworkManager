@@ -577,7 +577,7 @@ set_property (GObject *object, guint prop_id,
 {
 	switch (prop_id) {
 	case PROP_ATM_INDEX:
-		/* construct only */
+		/* construct-only */
 		NM_DEVICE_ADSL_GET_PRIVATE ((NMDeviceAdsl *) object)->atm_index = g_value_get_int (value);
 		break;
 	default:

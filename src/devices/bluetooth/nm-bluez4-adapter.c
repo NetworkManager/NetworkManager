@@ -281,7 +281,7 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_PATH:
-		/* construct only */
+		/* construct-only */
 		priv->path = g_value_dup_string (value);
 		break;
 	default:
