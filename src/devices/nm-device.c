@@ -307,7 +307,6 @@ typedef struct _NMDevicePrivate {
 	gulong          ignore_carrier_id;
 	guint32         mtu;
 	guint32         ip6_mtu;
-	guint32         mtu_desired;
 	bool            up;   /* IFF_UP */
 
 	/* Generic DHCP stuff */
@@ -492,7 +491,7 @@ static NMActStageReturn dhcp4_start (NMDevice *self, NMConnection *connection, N
 static gboolean dhcp6_start (NMDevice *self, gboolean wait_for_ll, NMDeviceStateReason *reason);
 static void nm_device_start_ip_check (NMDevice *self);
 static void realize_start_setup (NMDevice *self, const NMPlatformLink *plink);
-static void nm_device_set_mtu (NMDevice *self, guint32 mtu);
+static void _commit_mtu (NMDevice *self, const NMIP4Config *config);
 static void dhcp_schedule_restart (NMDevice *self, int family, const char *reason);
 static void _cancel_activation (NMDevice *self);
 
@@ -1633,29 +1632,6 @@ find_slave_info (NMDevice *self, NMDevice *slave)
 	return NULL;
 }
 
-static void
-apply_mtu_from_config (NMDevice *self)
-{
-	const char *method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
-	NMSettingIPConfig *s_ip4;
-	NMSettingWired *s_wired;
-
-	/* Devices having an IPv4 configuration will set MTU during the commit
-	 * stage, so it is an error to call this function if the IPv4 method is not
-	 * 'disabled'.
-	 */
-	s_ip4 = (NMSettingIPConfig *) nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP4_CONFIG);
-	if (s_ip4)
-		method = nm_setting_ip_config_get_method (s_ip4);
-
-	g_return_if_fail (nm_streq0 (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED));
-
-	s_wired  = (NMSettingWired *) nm_device_get_applied_setting (self, NM_TYPE_SETTING_WIRED);
-
-	if (s_wired)
-		nm_device_set_mtu (self, nm_setting_wired_get_mtu (s_wired));
-}
-
 /**
  * nm_device_master_enslave_slave:
  * @self: the master device
@@ -1716,7 +1692,7 @@ nm_device_master_enslave_slave (NMDevice *self, NMDevice *slave, NMConnection *c
 	/* Since slave devices don't have their own IP configuration,
 	 * set the MTU here.
 	 */
-	apply_mtu_from_config (slave);
+	_commit_mtu (slave, NM_DEVICE_GET_PRIVATE (slave)->ip4_config);
 
 	return success;
 }
@@ -2595,7 +2571,6 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 	g_object_freeze_notify (G_OBJECT (self));
 
 	priv->ip6_mtu = 0;
-	priv->mtu_desired = 0;
 	if (priv->mtu) {
 		priv->mtu = 0;
 		_notify (self, PROP_MTU);
@@ -5180,18 +5155,7 @@ END_ADD_DEFAULT_ROUTE:
 		priv->default_route.v4_has = _device_get_default_route_from_platform (self, AF_INET, (NMPlatformIPRoute *) &priv->default_route.v4);
 	}
 
-	/* Allow setting MTU etc */
 	if (commit) {
-		gboolean mtu_is_user_config = FALSE;
-		guint32 mtu;
-
-		if (NM_DEVICE_GET_CLASS (self)->get_configured_mtu)
-			mtu = NM_DEVICE_GET_CLASS (self)->get_configured_mtu (self, &mtu_is_user_config);
-		else
-			mtu = 0;
-		if (mtu && mtu_is_user_config)
-			nm_ip4_config_set_mtu (composite, mtu, NM_IP_CONFIG_SOURCE_USER);
-
 		if (NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit)
 			NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit (self, composite);
 	}
@@ -5725,7 +5689,7 @@ act_stage3_ip4_config_start (NMDevice *self,
 		} else
 			g_return_val_if_reached (NM_ACT_STAGE_RETURN_FAILURE);
 	} else if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0) {
-		apply_mtu_from_config (self);
+		_commit_mtu (self, priv->ip4_config);
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	} else
 		_LOGW (LOGD_IP4, "unhandled IPv4 config method '%s'; will fail", method);
@@ -6629,24 +6593,54 @@ nm_device_get_configured_mtu_for_wired (NMDevice *self, gboolean *out_is_user_co
 /*****************************************************************************/
 
 static void
-_set_mtu (NMDevice *self)
+_commit_mtu (NMDevice *self, const NMIP4Config *config)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	guint32 ip6_mtu;
-	guint32 mtu_desired;
+	guint32 ip6_mtu, ip6_mtu_orig;
+	guint32 mtu_desired, mtu_desired_orig;
 	guint32 mtu_plat;
 	int ifindex;
-	char sbuf[64];
+	char sbuf[64], sbuf1[64], sbuf2[64];
 
 	ifindex = nm_device_get_ip_ifindex (self);
 	if (ifindex <= 0)
 		return;
 
+	if (nm_device_uses_assumed_connection (self)) {
+		/* for assumed connections we don't tamper with the MTU. This is
+		 * a bug and supposed to be fixed by the unmanaged/assumed rework. */
+		return;
+	}
+
+	{
+		gboolean mtu_is_user_config = FALSE;
+		guint32 mtu = 0;
+
+		/* preferably, get the MTU from explict user-configuration. If that fails,
+		 * look at the current @config (which contains MTUs from DHCP/PPP.
+		 *
+		 * Finally, assume no MTU change. */
+
+		if (NM_DEVICE_GET_CLASS (self)->get_configured_mtu)
+			mtu = NM_DEVICE_GET_CLASS (self)->get_configured_mtu (self, &mtu_is_user_config);
+
+		if (mtu && mtu_is_user_config)
+			mtu_desired = mtu;
+		else {
+			if (config)
+				mtu_desired = nm_ip4_config_get_mtu (config);
+			else
+				mtu_desired = 0;
+		}
+	}
+
 	ip6_mtu = priv->ip6_mtu;
-	mtu_desired = priv->mtu_desired;
 
 	if (!ip6_mtu && !mtu_desired)
 		return;
+
+	mtu_desired_orig = mtu_desired;
+	ip6_mtu_orig = ip6_mtu;
 
 	mtu_plat = nm_platform_link_get_mtu (NM_PLATFORM_GET, ifindex);
 
@@ -6664,6 +6658,12 @@ _set_mtu (NMDevice *self)
 		}
 	}
 
+	_LOGT (LOGD_DEVICE, "mtu: device-mtu: %u%s, ipv6-mtu: %u%s",
+	       (guint) mtu_desired,
+	       mtu_desired == mtu_desired_orig ? "" : nm_sprintf_buf (sbuf1, " (was %u)", (guint) mtu_desired_orig),
+	       (guint) ip6_mtu,
+	       ip6_mtu == ip6_mtu_orig ? "" : nm_sprintf_buf (sbuf2, " (was %u)", (guint) ip6_mtu_orig));
+
 	if (mtu_desired) {
 		if (mtu_desired != mtu_plat)
 			nm_platform_link_set_mtu (NM_PLATFORM_GET, ifindex, mtu_desired);
@@ -6675,18 +6675,6 @@ _set_mtu (NMDevice *self)
 			                           nm_sprintf_buf (sbuf, "%u", (unsigned) ip6_mtu));
 		}
 	}
-}
-
-static void
-nm_device_set_mtu (NMDevice *self, guint32 mtu)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	if (priv->mtu_desired != mtu) {
-		_LOGD (LOGD_DEVICE, "mtu: set MTU to %u", (unsigned) mtu);
-		priv->mtu_desired = mtu;
-	}
-	_set_mtu (self);
 }
 
 static void
@@ -7232,8 +7220,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 	 * expose any ipv6 sysctls or allow presence of any addresses on the interface,
 	 * including LL, which * would make it impossible to autoconfigure MTU to a
 	 * correct value. */
-	if (!nm_device_uses_assumed_connection (self))
-		_set_mtu (self);
+	_commit_mtu (self, priv->ip4_config);
 
 	/* Any method past this point requires an IPv6LL address. Use NM-controlled
 	 * IPv6LL if this is not an assumed connection, since assumed connections
@@ -9109,8 +9096,7 @@ nm_device_set_ip4_config (NMDevice *self,
 	if (commit && new_config) {
 		gboolean assumed = nm_device_uses_assumed_connection (self);
 
-		nm_device_set_mtu (self, nm_ip4_config_get_mtu (new_config));
-
+		_commit_mtu (self, new_config);
 		/* For assumed devices we must not touch the kernel-routes, such as the device-route.
 		 * FIXME: this is wrong in case where "assumed" means "take-over-seamlessly". In this
 		 * case, we should manage the device route, for example on new DHCP lease. */
@@ -9278,7 +9264,7 @@ nm_device_set_ip6_config (NMDevice *self,
 
 	/* Always commit to nm-platform to update lifetimes */
 	if (commit && new_config) {
-		_set_mtu (self);
+		_commit_mtu (self, priv->ip4_config);
 		success = nm_ip6_config_commit (new_config,
 		                                ip_ifindex,
 		                                routes_full_sync);
