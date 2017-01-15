@@ -702,9 +702,11 @@ nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src, NMIPConfigMergeFl
 		nm_ip4_config_set_mss (dst, nm_ip4_config_get_mss (src));
 
 	/* MTU */
-	if (nm_ip4_config_get_mtu (src))
-		nm_ip4_config_set_mtu (dst, nm_ip4_config_get_mtu (src),
-		                       nm_ip4_config_get_mtu_source (src));
+	if (   src_priv->mtu_source > dst_priv->mtu_source
+	    || (   src_priv->mtu_source == dst_priv->mtu_source
+	        && (   (!dst_priv->mtu && src_priv->mtu)
+	            || (dst_priv->mtu && src_priv->mtu < dst_priv->mtu))))
+		nm_ip4_config_set_mtu (dst, src_priv->mtu, src_priv->mtu_source);
 
 	/* NIS */
 	if (!NM_FLAGS_HAS (merge_flags, NM_IP_CONFIG_MERGE_NO_DNS)) {
@@ -932,7 +934,8 @@ nm_ip4_config_subtract (NMIP4Config *dst, const NMIP4Config *src)
 		nm_ip4_config_set_mss (dst, 0);
 
 	/* MTU */
-	if (nm_ip4_config_get_mtu (src) == nm_ip4_config_get_mtu (dst))
+	if (   nm_ip4_config_get_mtu (src) == nm_ip4_config_get_mtu (dst)
+	    && nm_ip4_config_get_mtu_source (src) == nm_ip4_config_get_mtu_source (dst))
 		nm_ip4_config_set_mtu (dst, 0, NM_IP_CONFIG_SOURCE_UNKNOWN);
 
 	/* NIS */
@@ -1252,7 +1255,8 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 	}
 
 	/* mtu */
-	if (src_priv->mtu != dst_priv->mtu) {
+	if (   src_priv->mtu != dst_priv->mtu
+	    || src_priv->mtu_source != dst_priv->mtu_source) {
 		nm_ip4_config_set_mtu (dst, src_priv->mtu, src_priv->mtu_source);
 		has_minor_changes = TRUE;
 	}
@@ -1329,7 +1333,7 @@ nm_ip4_config_dump (const NMIP4Config *config, const char *detail)
 	g_message (" dnspri: %d", nm_ip4_config_get_dns_priority (config));
 
 	g_message ("    mss: %"G_GUINT32_FORMAT, nm_ip4_config_get_mss (config));
-	g_message ("    mtu: %"G_GUINT32_FORMAT, nm_ip4_config_get_mtu (config));
+	g_message ("    mtu: %"G_GUINT32_FORMAT" (source: %d)", nm_ip4_config_get_mtu (config), (int) nm_ip4_config_get_mtu_source (config));
 
 	/* NIS */
 	for (i = 0; i < nm_ip4_config_get_num_nis_servers (config); i++) {
@@ -2080,11 +2084,11 @@ nm_ip4_config_set_mtu (NMIP4Config *config, guint32 mtu, NMIPConfigSource source
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
-	if (source > priv->mtu_source) {
-		priv->mtu = mtu;
-		priv->mtu_source = source;
-	} else if (source == priv->mtu_source && (!priv->mtu || priv->mtu > mtu))
-		priv->mtu = mtu;
+	if (!mtu)
+		source = NM_IP_CONFIG_SOURCE_UNKNOWN;
+
+	priv->mtu = mtu;
+	priv->mtu_source = source;
 }
 
 guint32
