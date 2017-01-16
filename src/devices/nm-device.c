@@ -306,8 +306,13 @@ typedef struct _NMDevicePrivate {
 	bool            ignore_carrier;
 	gulong          ignore_carrier_id;
 	guint32         mtu;
-	guint32         ip_mtu;
-	bool            up;   /* IFF_UP */
+	guint32         ip6_mtu;
+	guint32 mtu_initial;
+	guint32 ip6_mtu_initial;
+
+	bool mtu_initialized:1;
+
+	bool            up:1;   /* IFF_UP */
 
 	/* Generic DHCP stuff */
 	guint32         dhcp_timeout;
@@ -383,7 +388,6 @@ typedef struct _NMDevicePrivate {
 	NMIP6Config *  ext_ip6_config_captured; /* Configuration captured from platform. */
 	GSList *       vpn6_configs;   /* VPNs which use this device */
 	bool           nm_ipv6ll; /* TRUE if NM handles the device's IPv6LL address */
-	guint32        ip6_mtu;
 	NMIP6Config *  dad6_ip6_config;
 
 	NMNDisc *      ndisc;
@@ -492,7 +496,7 @@ static NMActStageReturn dhcp4_start (NMDevice *self, NMConnection *connection, N
 static gboolean dhcp6_start (NMDevice *self, gboolean wait_for_ll, NMDeviceStateReason *reason);
 static void nm_device_start_ip_check (NMDevice *self);
 static void realize_start_setup (NMDevice *self, const NMPlatformLink *plink);
-static void nm_device_set_mtu (NMDevice *self, guint32 mtu);
+static void _commit_mtu (NMDevice *self, const NMIP4Config *config);
 static void dhcp_schedule_restart (NMDevice *self, int family, const char *reason);
 static void _cancel_activation (NMDevice *self);
 
@@ -643,9 +647,14 @@ nm_device_ipv6_sysctl_set (NMDevice *self, const char *property, const char *val
 }
 
 static guint32
-nm_device_ipv6_sysctl_get_int32 (NMDevice *self, const char *property, gint32 fallback)
+nm_device_ipv6_sysctl_get_uint32 (NMDevice *self, const char *property, guint32 fallback)
 {
-	return nm_platform_sysctl_get_int32 (NM_PLATFORM_GET, NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_ip6_property_path (nm_device_get_ip_iface (self), property)), fallback);
+	return nm_platform_sysctl_get_int_checked (NM_PLATFORM_GET,
+	                                           NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_ip6_property_path (nm_device_get_ip_iface (self), property)),
+	                                           10,
+	                                           0,
+	                                           G_MAXUINT32,
+	                                           fallback);
 }
 
 gboolean
@@ -909,9 +918,6 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 
 	/* We don't care about any saved values from the old iface */
 	g_hash_table_remove_all (priv->ip6_saved_properties);
-
-	if (priv->ip_ifindex)
-		priv->ip_mtu = nm_platform_link_get_mtu (NM_PLATFORM_GET, priv->ip_ifindex);
 
 	_notify (self, PROP_IP_IFACE);
 	return TRUE;
@@ -1631,38 +1637,6 @@ find_slave_info (NMDevice *self, NMDevice *slave)
 	return NULL;
 }
 
-static void
-apply_mtu_from_config (NMDevice *self)
-{
-	const char *method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
-	NMSettingIPConfig *s_ip4;
-	NMSettingWired *s_wired;
-	guint32 mtu;
-
-	/* Devices having an IPv4 configuration will set MTU during the commit
-	 * stage, so it is an error to call this function if the IPv4 method is not
-	 * 'disabled'.
-	 */
-	s_ip4 = (NMSettingIPConfig *)
-		nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP4_CONFIG);
-	if (s_ip4)
-		method = nm_setting_ip_config_get_method (s_ip4);
-	g_return_if_fail (nm_streq (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED));
-
-	s_wired  = (NMSettingWired *)
-		nm_device_get_applied_setting (self, NM_TYPE_SETTING_WIRED);
-
-	if (s_wired) {
-		mtu = nm_setting_wired_get_mtu (s_wired);
-		if (mtu) {
-			_LOGD (LOGD_DEVICE | LOGD_IP,
-			       "setting MTU of device without IP4 config to %u",
-			       mtu);
-			nm_device_set_mtu (self, mtu);
-		}
-	}
-}
-
 /**
  * nm_device_master_enslave_slave:
  * @self: the master device
@@ -1723,7 +1697,7 @@ nm_device_master_enslave_slave (NMDevice *self, NMDevice *slave, NMConnection *c
 	/* Since slave devices don't have their own IP configuration,
 	 * set the MTU here.
 	 */
-	apply_mtu_from_config (slave);
+	_commit_mtu (slave, NM_DEVICE_GET_PRIVATE (slave)->ip4_config);
 
 	return success;
 }
@@ -2171,7 +2145,6 @@ device_link_changed (NMDevice *self)
 		_notify (self, PROP_DRIVER);
 	}
 
-	/* Update MTU if it has changed. */
 	if (priv->mtu != info.mtu) {
 		priv->mtu = info.mtu;
 		_notify (self, PROP_MTU);
@@ -2317,9 +2290,6 @@ device_ip_link_changed (NMDevice *self)
 		return G_SOURCE_REMOVE;
 
 	_stats_update_counters_from_pllink (self, pllink);
-
-	if (priv->ip_mtu != pllink->mtu)
-		priv->ip_mtu = pllink->mtu;
 
 	if (_ip_iface_update (self, pllink->name))
 		nm_device_update_dynamic_ip_setup (self);
@@ -2584,6 +2554,7 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 	NMDeviceCapabilities capabilities = 0;
 	NMConfig *config;
 	guint real_rate;
+	guint32 mtu;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -2604,6 +2575,15 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 	/* Balanced by a thaw in nm_device_realize_finish() */
 	g_object_freeze_notify (G_OBJECT (self));
 
+	priv->mtu_initialized = FALSE;
+	priv->mtu_initial = 0;
+	priv->ip6_mtu_initial = 0;
+	priv->ip6_mtu = 0;
+	if (priv->mtu) {
+		priv->mtu = 0;
+		_notify (self, PROP_MTU);
+	}
+
 	if (plink) {
 		g_return_if_fail (link_type_compatible (self, plink->type, NULL, NULL));
 		update_device_from_platform_link (self, plink);
@@ -2619,8 +2599,11 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 		if (nm_platform_link_is_software (NM_PLATFORM_GET, priv->ifindex))
 			capabilities |= NM_DEVICE_CAP_IS_SOFTWARE;
 
-		priv->mtu = nm_platform_link_get_mtu (NM_PLATFORM_GET, priv->ifindex);
-		_notify (self, PROP_MTU);
+		mtu = nm_platform_link_get_mtu (NM_PLATFORM_GET, priv->ifindex);
+		if (priv->mtu != mtu) {
+			priv->mtu = mtu;
+			_notify (self, PROP_MTU);
+		}
 
 		nm_platform_link_get_driver_info (NM_PLATFORM_GET,
 		                                  priv->ifindex,
@@ -2830,6 +2813,11 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 	priv->ip_ifindex = 0;
 	if (nm_clear_g_free (&priv->ip_iface))
 		_notify (self, PROP_IP_IFACE);
+
+	if (priv->mtu != 0) {
+		priv->mtu = 0;
+		_notify (self, PROP_MTU);
+	}
 
 	if (priv->driver_version) {
 		g_clear_pointer (&priv->driver_version, g_free);
@@ -5175,7 +5163,6 @@ END_ADD_DEFAULT_ROUTE:
 		priv->default_route.v4_has = _device_get_default_route_from_platform (self, AF_INET, (NMPlatformIPRoute *) &priv->default_route.v4);
 	}
 
-	/* Allow setting MTU etc */
 	if (commit) {
 		if (NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit)
 			NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit (self, composite);
@@ -5710,7 +5697,7 @@ act_stage3_ip4_config_start (NMDevice *self,
 		} else
 			g_return_val_if_reached (NM_ACT_STAGE_RETURN_FAILURE);
 	} else if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0) {
-		apply_mtu_from_config (self);
+		_commit_mtu (self, priv->ip4_config);
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	} else
 		_LOGW (LOGD_IP4, "unhandled IPv4 config method '%s'; will fail", method);
@@ -5944,9 +5931,6 @@ END_ADD_DEFAULT_ROUTE:
 			                                 nm_device_get_ip_ifindex (self),
 			                                 iid);
 		}
-
-		if (NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit)
-			NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit (self, composite);
 	}
 
 	routes_full_sync =    commit
@@ -6587,82 +6571,172 @@ linklocal6_start (NMDevice *self)
 
 /*****************************************************************************/
 
-static void nm_device_ipv6_set_mtu (NMDevice *self, guint32 mtu);
-
-static void
-set_ip_mtu (NMDevice *self, guint32 mtu)
+guint32
+nm_device_get_configured_mtu_for_wired (NMDevice *self, gboolean *out_is_user_config)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMConnection *connection;
+	NMSettingWired *setting;
+	guint32 mtu;
 
-	if (priv->ip_ifindex)
-		priv->ip_mtu = mtu;
-	else
-		priv->mtu = mtu;
+	nm_assert (NM_IS_DEVICE (self));
+	nm_assert (out_is_user_config);
+
+	connection = nm_device_get_applied_connection (self);
+	if (!connection)
+		g_return_val_if_reached (0);
+
+	setting = nm_connection_get_setting_wired (connection);
+
+	if (setting) {
+		mtu = nm_setting_wired_get_mtu (setting);
+		if (mtu) {
+			*out_is_user_config = TRUE;
+			return mtu;
+		}
+	}
+	*out_is_user_config = FALSE;
+	return NM_DEVICE_DEFAULT_MTU_WIRED;
 }
 
-static guint32
-get_ip_mtu (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	if (priv->ip_ifindex)
-		return priv->ip_mtu;
-	else
-		return priv->mtu;
-}
+/*****************************************************************************/
 
 static void
-nm_device_set_mtu (NMDevice *self, guint32 mtu)
+_commit_mtu (NMDevice *self, const NMIP4Config *config)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	int ifindex = nm_device_get_ip_ifindex (self);
-	guint32 ip_mtu;
+	guint32 ip6_mtu, ip6_mtu_orig;
+	guint32 mtu_desired, mtu_desired_orig;
+	guint32 mtu_plat;
+	struct {
+		gboolean initialized;
+		guint32 value;
+	} ip6_mtu_sysctl;
+	int ifindex;
+	char sbuf[64], sbuf1[64], sbuf2[64];
 
-	if (mtu)
-		set_ip_mtu (self, mtu);
+	ifindex = nm_device_get_ip_ifindex (self);
+	if (ifindex <= 0)
+		return;
 
-	/* Ensure the IPv6 MTU is still alright. */
-	if (priv->ip6_mtu)
-		nm_device_ipv6_set_mtu (self, priv->ip6_mtu);
-
-	ip_mtu = get_ip_mtu (self);
-	if (ip_mtu && ip_mtu != nm_platform_link_get_mtu (NM_PLATFORM_GET, ifindex))
-		nm_platform_link_set_mtu (NM_PLATFORM_GET, ifindex, ip_mtu);
-}
-
-static void
-nm_device_ipv6_set_mtu (NMDevice *self, guint32 mtu)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	guint32 ip_mtu = get_ip_mtu (self);
-	guint32 plat_mtu = nm_device_ipv6_sysctl_get_int32 (self, "mtu", ip_mtu);
-
-	priv->ip6_mtu = mtu ?: plat_mtu;
-
-	if (priv->ip6_mtu && ip_mtu && ip_mtu < priv->ip6_mtu) {
-		_LOGI (LOGD_DEVICE | LOGD_IP6, "Lowering IPv6 MTU (%d) to match device MTU (%d)",
-		       priv->ip6_mtu, ip_mtu);
-		priv->ip6_mtu = ip_mtu;
+	if (nm_device_uses_assumed_connection (self)) {
+		/* for assumed connections we don't tamper with the MTU. This is
+		 * a bug and supposed to be fixed by the unmanaged/assumed rework. */
+		return;
 	}
 
-	if (priv->ip6_mtu && priv->ip6_mtu < 1280) {
-		_LOGI (LOGD_DEVICE | LOGD_IP6, "IPv6 MTU (%d) smaller than 1280, adjusting",
-		       priv->ip6_mtu);
-		priv->ip6_mtu = 1280;
+	{
+		gboolean mtu_is_user_config = FALSE;
+		guint32 mtu = 0;
+
+		/* preferably, get the MTU from explict user-configuration.
+		 * Only if that fails, look at the current @config (which contains
+		 * MTUs from DHCP/PPP) or maybe fallback to a device-specific MTU. */
+
+		if (NM_DEVICE_GET_CLASS (self)->get_configured_mtu)
+			mtu = NM_DEVICE_GET_CLASS (self)->get_configured_mtu (self, &mtu_is_user_config);
+
+		if (mtu && mtu_is_user_config)
+			mtu_desired = mtu;
+		else {
+			if (config)
+				mtu_desired = nm_ip4_config_get_mtu (config);
+			else
+				mtu_desired = 0;
+			if (!mtu_desired && !priv->mtu_initialized) {
+				/* there is no MTU specified, and this is the first commit of the MTU.
+				 * Reset a per-device MTU default, as returned from get_configured_mtu().
+				 *
+				 * The device might choose not to return a default MTU via get_configured_mtu()
+				 * to suppress this behavior. */
+				mtu_desired = mtu;
+			}
+		}
 	}
 
-	if (priv->ip6_mtu && ip_mtu && ip_mtu < priv->ip6_mtu) {
-		_LOGI (LOGD_DEVICE | LOGD_IP6, "Raising device MTU (%d) to match IPv6 MTU (%d)",
-		       ip_mtu, priv->ip6_mtu);
-		nm_device_set_mtu (self, priv->ip6_mtu);
+	if (mtu_desired && mtu_desired < 1280) {
+		NMSettingIPConfig *s_ip6;
+
+		s_ip6 = (NMSettingIPConfig *) nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP6_CONFIG);
+		if (s_ip6 && nm_streq0 (nm_setting_ip_config_get_method (s_ip6),
+		                        NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
+			/* the interface has IPv6 enabled. The MTU with IPv6 cannot be smaller
+			 * then 1280.
+			 *
+			 * For slave-devices (that don't have @s_ip6 we) don't do this fixup because
+			 * it's anyway an unsolved problem when the slave configures a conflicting
+			 * MTU. */
+			mtu_desired = 1280;
+		}
 	}
 
-	if (priv->ip6_mtu != plat_mtu) {
-		char val[64];
-
-		nm_device_ipv6_sysctl_set (self, "mtu",
-		                           nm_sprintf_buf (val, "%u", (unsigned) mtu));
+	ip6_mtu = priv->ip6_mtu;
+	if (!ip6_mtu && !priv->mtu_initialized) {
+		/* initially, if the IPv6 MTU is not specified, grow it as large as the
+		 * link MTU @mtu_desired. Only exception is, if @mtu_desired is so small
+		 * to disable IPv6. */
+		if (mtu_desired >= 1280)
+			ip6_mtu = mtu_desired;
 	}
+
+	priv->mtu_initialized = TRUE;
+
+	if (!ip6_mtu && !mtu_desired)
+		return;
+
+	mtu_desired_orig = mtu_desired;
+	ip6_mtu_orig = ip6_mtu;
+
+	mtu_plat = nm_platform_link_get_mtu (NM_PLATFORM_GET, ifindex);
+
+	if (ip6_mtu) {
+		ip6_mtu = NM_MAX (1280, ip6_mtu);
+
+		if (!mtu_desired)
+			mtu_desired = mtu_plat;
+
+		if (mtu_desired) {
+			mtu_desired = NM_MAX (1280, mtu_desired);
+
+			if (mtu_desired < ip6_mtu)
+				ip6_mtu = mtu_desired;
+		}
+	}
+
+	_LOGT (LOGD_DEVICE, "mtu: device-mtu: %u%s, ipv6-mtu: %u%s, ifindex: %d",
+	       (guint) mtu_desired,
+	       mtu_desired == mtu_desired_orig ? "" : nm_sprintf_buf (sbuf1, " (was %u)", (guint) mtu_desired_orig),
+	       (guint) ip6_mtu,
+	       ip6_mtu == ip6_mtu_orig ? "" : nm_sprintf_buf (sbuf2, " (was %u)", (guint) ip6_mtu_orig),
+	       ifindex);
+
+	ip6_mtu_sysctl.initialized = FALSE;
+#define _IP6_MTU_SYS() \
+	({ \
+		if (!ip6_mtu_sysctl.initialized) { \
+			ip6_mtu_sysctl.value = nm_device_ipv6_sysctl_get_uint32 (self, "mtu", 0); \
+			ip6_mtu_sysctl.initialized = TRUE; \
+		} \
+		ip6_mtu_sysctl.value; \
+	})
+	if (   (mtu_desired && mtu_desired != mtu_plat)
+	    || (ip6_mtu && ip6_mtu != _IP6_MTU_SYS ())) {
+
+		if (!priv->mtu_initial && !priv->ip6_mtu_initial) {
+			/* before touching any of the MTU paramters, record the
+			 * original setting to restore on deactivation. */
+			priv->mtu_initial = mtu_plat;
+			priv->ip6_mtu_initial = _IP6_MTU_SYS ();
+		}
+
+		if (mtu_desired && mtu_desired != mtu_plat)
+			nm_platform_link_set_mtu (NM_PLATFORM_GET, ifindex, mtu_desired);
+
+		if (ip6_mtu && ip6_mtu != _IP6_MTU_SYS ()) {
+			nm_device_ipv6_sysctl_set (self, "mtu",
+			                           nm_sprintf_buf (sbuf, "%u", (unsigned) ip6_mtu));
+		}
+	}
+#undef _IP6_MTU_SYS
 }
 
 static void
@@ -6788,8 +6862,12 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 	if (changed & NM_NDISC_CONFIG_HOP_LIMIT)
 		nm_platform_sysctl_set_ip6_hop_limit_safe (NM_PLATFORM_GET, nm_device_get_ip_iface (self), rdata->hop_limit);
 
-	if (changed & NM_NDISC_CONFIG_MTU)
-		priv->ip6_mtu = rdata->mtu;
+	if (changed & NM_NDISC_CONFIG_MTU) {
+		if (priv->ip6_mtu != rdata->mtu) {
+			_LOGD (LOGD_DEVICE, "mtu: set IPv6 MTU to %u", (guint) rdata->mtu);
+			priv->ip6_mtu = rdata->mtu;
+		}
+	}
 
 	nm_device_activate_schedule_ip6_config_result (self);
 }
@@ -7204,8 +7282,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 	 * expose any ipv6 sysctls or allow presence of any addresses on the interface,
 	 * including LL, which * would make it impossible to autoconfigure MTU to a
 	 * correct value. */
-	if (!nm_device_uses_assumed_connection (self))
-		nm_device_ipv6_set_mtu (self, priv->ip6_mtu);
+	_commit_mtu (self, priv->ip4_config);
 
 	/* Any method past this point requires an IPv6LL address. Use NM-controlled
 	 * IPv6LL if this is not an assumed connection, since assumed connections
@@ -9081,8 +9158,7 @@ nm_device_set_ip4_config (NMDevice *self,
 	if (commit && new_config) {
 		gboolean assumed = nm_device_uses_assumed_connection (self);
 
-		nm_device_set_mtu (self, nm_ip4_config_get_mtu (new_config));
-
+		_commit_mtu (self, new_config);
 		/* For assumed devices we must not touch the kernel-routes, such as the device-route.
 		 * FIXME: this is wrong in case where "assumed" means "take-over-seamlessly". In this
 		 * case, we should manage the device route, for example on new DHCP lease. */
@@ -9250,7 +9326,7 @@ nm_device_set_ip6_config (NMDevice *self,
 
 	/* Always commit to nm-platform to update lifetimes */
 	if (commit && new_config) {
-		nm_device_ipv6_set_mtu (self, priv->ip6_mtu);
+		_commit_mtu (self, priv->ip4_config);
 		success = nm_ip6_config_commit (new_config,
 		                                ip_ifindex,
 		                                routes_full_sync);
@@ -11414,6 +11490,27 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 		NM_DEVICE_GET_CLASS (self)->deactivate_reset_hw_addr (self);
 	}
 
+	priv->mtu_initialized = FALSE;
+	if (priv->mtu_initial || priv->ip6_mtu_initial) {
+		ifindex = nm_device_get_ip_ifindex (self);
+
+		if (   ifindex > 0
+		    && cleanup_type == CLEANUP_TYPE_DECONFIGURE) {
+			_LOGT (LOGD_DEVICE, "mtu: reset device-mtu: %u, ipv6-mtu: %u, ifindex: %d",
+			       (guint) priv->mtu_initial, (guint) priv->ip6_mtu_initial, ifindex);
+			if (priv->mtu_initial)
+				nm_platform_link_set_mtu (NM_PLATFORM_GET, ifindex, priv->mtu_initial);
+			if (priv->ip6_mtu_initial) {
+				char sbuf[64];
+
+				nm_device_ipv6_sysctl_set (self, "mtu",
+				                           nm_sprintf_buf (sbuf, "%u", (unsigned) priv->ip6_mtu_initial));
+			}
+		}
+		priv->mtu_initial = 0;
+		priv->ip6_mtu_initial = 0;
+	}
+
 	_cleanup_generic_post (self, cleanup_type);
 }
 
@@ -13081,9 +13178,6 @@ set_property (GObject *object, guint prop_id,
 	case PROP_FIRMWARE_VERSION:
 		g_free (priv->firmware_version);
 		priv->firmware_version = g_value_dup_string (value);
-		break;
-	case PROP_MTU:
-		priv->mtu = g_value_get_uint (value);
 		break;
 	case PROP_IP4_ADDRESS:
 		priv->ip4_address = g_value_get_uint (value);

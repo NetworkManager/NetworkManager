@@ -2232,7 +2232,7 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_CMD_LINE_OPTIONS:
-		/* construct only */
+		/* construct-only */
 		cli = g_value_get_pointer (value);
 		if (!cli)
 			_nm_config_cmd_line_options_clear (&priv->cli);
@@ -2240,7 +2240,7 @@ set_property (GObject *object, guint prop_id,
 			_nm_config_cmd_line_options_copy (cli, &priv->cli);
 		break;
 	case PROP_ATOMIC_SECTION_PREFIXES:
-		/* construct only */
+		/* construct-only */
 		priv->atomic_section_prefixes = g_strdupv (g_value_get_boxed (value));
 		break;
 	default:

@@ -232,6 +232,8 @@ typedef struct {
 	                                  NMConnection *connection,
 	                                  char **specific_object);
 
+	guint32     (*get_configured_mtu) (NMDevice *self, gboolean *out_is_user_config);
+
 	/* Checks whether the connection is compatible with the device using
 	 * only the devices type and characteristics.  Does not use any live
 	 * network information like WiFi scan lists etc.
@@ -275,9 +277,7 @@ typedef struct {
 	NMActStageReturn    (* act_stage4_ip6_config_timeout)   (NMDevice *self,
 	                                                         NMDeviceStateReason *reason);
 
-	/* Called right before IP config is set; use for setting MTU etc */
 	void                (* ip4_config_pre_commit) (NMDevice *self, NMIP4Config *config);
-	void                (* ip6_config_pre_commit) (NMDevice *self, NMIP6Config *config);
 
 	/* Async deactivating (in the DEACTIVATING phase) */
 	void            (* deactivate_async)        (NMDevice *self,

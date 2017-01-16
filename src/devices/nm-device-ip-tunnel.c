@@ -744,22 +744,22 @@ create_and_realize (NMDevice *device,
 	return TRUE;
 }
 
-static void
-ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
+static guint32
+get_configured_mtu (NMDevice *self, gboolean *out_is_user_config)
 {
-	NMConnection *connection;
-	NMSettingIPTunnel *s_ip_tunnel;
+	NMSettingIPTunnel *setting;
 	guint32 mtu;
 
-	connection = nm_device_get_applied_connection (device);
-	g_assert (connection);
-	s_ip_tunnel = nm_connection_get_setting_ip_tunnel (connection);
-	g_assert (s_ip_tunnel);
+	nm_assert (NM_IS_DEVICE (self));
+	nm_assert (out_is_user_config);
 
-	/* MTU override */
-	mtu = nm_setting_ip_tunnel_get_mtu (s_ip_tunnel);
-	if (mtu)
-		nm_ip4_config_set_mtu (config, mtu, NM_IP_CONFIG_SOURCE_USER);
+	setting = NM_SETTING_IP_TUNNEL (nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP_TUNNEL));
+	if (!setting)
+		g_return_val_if_reached (0);
+
+	mtu = nm_setting_ip_tunnel_get_mtu (setting);
+	*out_is_user_config = (mtu != 0);
+	return mtu ?: NM_DEVICE_DEFAULT_MTU_WIRED;
 }
 
 static NMDeviceCapabilities
@@ -873,7 +873,7 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->create_and_realize = create_and_realize;
 	device_class->get_generic_capabilities = get_generic_capabilities;
-	device_class->ip4_config_pre_commit = ip4_config_pre_commit;
+	device_class->get_configured_mtu = get_configured_mtu;
 	device_class->unrealize_notify = unrealize_notify;
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass,

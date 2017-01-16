@@ -1243,7 +1243,7 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	signals[STATE_CHANGED] =
-	    g_signal_new (NM_PPP_MANAGER_STATE_CHANGED,
+	    g_signal_new (NM_PPP_MANAGER_SIGNAL_STATE_CHANGED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0,
@@ -1252,7 +1252,7 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 	                  G_TYPE_UINT);
 
 	signals[IP4_CONFIG] =
-	    g_signal_new ("ip4-config",
+	    g_signal_new (NM_PPP_MANAGER_SIGNAL_IP4_CONFIG,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0,
@@ -1262,7 +1262,7 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 	                  G_TYPE_OBJECT);
 
 	signals[IP6_CONFIG] =
-	    g_signal_new ("ip6-config",
+	    g_signal_new (NM_PPP_MANAGER_SIGNAL_IP6_CONFIG,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0,
@@ -1270,7 +1270,7 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 	                  G_TYPE_NONE, 3, G_TYPE_STRING, G_TYPE_POINTER, G_TYPE_OBJECT);
 
 	signals[STATS] =
-	    g_signal_new ("stats",
+	    g_signal_new (NM_PPP_MANAGER_SIGNAL_STATS,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0,

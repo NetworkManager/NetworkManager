@@ -445,6 +445,7 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->enslave_slave = enslave_slave;
 	parent_class->release_slave = release_slave;
+	parent_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        NMDBUS_TYPE_DEVICE_BRIDGE_SKELETON,

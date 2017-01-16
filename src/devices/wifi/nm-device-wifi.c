@@ -2741,22 +2741,22 @@ act_stage3_ip6_config_start (NMDevice *device,
 	return NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage3_ip6_config_start (device, out_config, reason);
 }
 
-static void
-ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
+static guint32
+get_configured_mtu (NMDevice *device, gboolean *out_is_user_config)
 {
-	NMConnection *connection;
-	NMSettingWireless *s_wifi;
+	NMSettingWireless *setting;
 	guint32 mtu;
 
-	connection = nm_device_get_applied_connection (device);
-	g_assert (connection);
-	s_wifi = nm_connection_get_setting_wireless (connection);
-	g_assert (s_wifi);
+	nm_assert (NM_IS_DEVICE (device));
+	nm_assert (out_is_user_config);
 
-	/* MTU override */
-	mtu = nm_setting_wireless_get_mtu (s_wifi);
-	if (mtu)
-		nm_ip4_config_set_mtu (config, mtu, NM_IP_CONFIG_SOURCE_USER);
+	setting = NM_SETTING_WIRELESS (nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRELESS));
+	if (!setting)
+		g_return_val_if_reached (0);
+
+	mtu = nm_setting_wireless_get_mtu (setting);
+	*out_is_user_config = (mtu != 0);
+	return mtu ?: NM_DEVICE_DEFAULT_MTU_WIRELESS;
 }
 
 static gboolean
@@ -3215,7 +3215,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->act_stage2_config = act_stage2_config;
-	parent_class->ip4_config_pre_commit = ip4_config_pre_commit;
+	parent_class->get_configured_mtu = get_configured_mtu;
 	parent_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
 	parent_class->act_stage3_ip6_config_start = act_stage3_ip6_config_start;
 	parent_class->act_stage4_ip4_config_timeout = act_stage4_ip4_config_timeout;

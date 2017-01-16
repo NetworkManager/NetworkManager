@@ -482,10 +482,10 @@ act_stage3_ip4_config_start (NMDevice *device,
 	    && nm_ppp_manager_start (priv->ppp_manager, req,
 	                             nm_setting_adsl_get_username (s_adsl),
 	                             30, 0, &err)) {
-		g_signal_connect (priv->ppp_manager, NM_PPP_MANAGER_STATE_CHANGED,
+		g_signal_connect (priv->ppp_manager, NM_PPP_MANAGER_SIGNAL_STATE_CHANGED,
 		                  G_CALLBACK (ppp_state_changed),
 		                  self);
-		g_signal_connect (priv->ppp_manager, "ip4-config",
+		g_signal_connect (priv->ppp_manager, NM_PPP_MANAGER_SIGNAL_IP4_CONFIG,
 		                  G_CALLBACK (ppp_ip4_config),
 		                  self);
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
@@ -577,7 +577,7 @@ set_property (GObject *object, guint prop_id,
 {
 	switch (prop_id) {
 	case PROP_ATM_INDEX:
-		/* construct only */
+		/* construct-only */
 		NM_DEVICE_ADSL_GET_PRIVATE ((NMDeviceAdsl *) object)->atm_index = g_value_get_int (value);
 		break;
 	default:

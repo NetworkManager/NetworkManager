@@ -35,8 +35,15 @@
 
 #include "introspection/org.freedesktop.NetworkManager.IP6Config.h"
 
+/*****************************************************************************/
+
 typedef struct {
-	gboolean never_default;
+	bool never_default:1;
+	guint32 mss;
+	int ifindex;
+	int dns_priority;
+	NMSettingIP6ConfigPrivacy privacy;
+	gint64 route_metric;
 	struct in6_addr gateway;
 	GArray *addresses;
 	GArray *routes;
@@ -44,13 +51,8 @@ typedef struct {
 	GPtrArray *domains;
 	GPtrArray *searches;
 	GPtrArray *dns_options;
-	guint32 mss;
-	int ifindex;
-	gint64 route_metric;
-	gint dns_priority;
 	GVariant *address_data_variant;
 	GVariant *addresses_variant;
-	NMSettingIP6ConfigPrivacy privacy;
 } NMIP6ConfigPrivate;
 
 struct _NMIP6Config {
@@ -80,26 +82,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMIP6Config,
 	PROP_DNS_PRIORITY,
 );
 
-NMIP6Config *
-nm_ip6_config_new (int ifindex)
-{
-	g_return_val_if_fail (ifindex >= -1, NULL);
-	return (NMIP6Config *) g_object_new (NM_TYPE_IP6_CONFIG,
-	                                     NM_IP6_CONFIG_IFINDEX, ifindex,
-	                                     NULL);
-}
-
-NMIP6Config *
-nm_ip6_config_new_cloned (const NMIP6Config *src)
-{
-	NMIP6Config *new;
-
-	g_return_val_if_fail (NM_IS_IP6_CONFIG (src), NULL);
-
-	new = nm_ip6_config_new (nm_ip6_config_get_ifindex (src));
-	nm_ip6_config_replace (new, src, NULL);
-	return new;
-}
+/*****************************************************************************/
 
 int
 nm_ip6_config_get_ifindex (const NMIP6Config *config)
@@ -1256,7 +1239,7 @@ nm_ip6_config_set_never_default (NMIP6Config *config, gboolean never_default)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
-	priv->never_default = !!never_default;
+	priv->never_default = never_default;
 }
 
 gboolean
@@ -2000,38 +1983,6 @@ nm_ip6_config_equal (const NMIP6Config *a, const NMIP6Config *b)
 /*****************************************************************************/
 
 static void
-nm_ip6_config_init (NMIP6Config *config)
-{
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
-
-	priv->addresses = g_array_new (FALSE, TRUE, sizeof (NMPlatformIP6Address));
-	priv->routes = g_array_new (FALSE, TRUE, sizeof (NMPlatformIP6Route));
-	priv->nameservers = g_array_new (FALSE, TRUE, sizeof (struct in6_addr));
-	priv->domains = g_ptr_array_new_with_free_func (g_free);
-	priv->searches = g_ptr_array_new_with_free_func (g_free);
-	priv->dns_options = g_ptr_array_new_with_free_func (g_free);
-	priv->route_metric = -1;
-}
-
-static void
-finalize (GObject *object)
-{
-	NMIP6Config *self = NM_IP6_CONFIG (object);
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
-
-	g_array_unref (priv->addresses);
-	g_array_unref (priv->routes);
-	g_array_unref (priv->nameservers);
-	g_ptr_array_unref (priv->domains);
-	g_ptr_array_unref (priv->searches);
-	g_ptr_array_unref (priv->dns_options);
-	nm_clear_g_variant (&priv->address_data_variant);
-	nm_clear_g_variant (&priv->addresses_variant);
-
-	G_OBJECT_CLASS (nm_ip6_config_parent_class)->finalize (object);
-}
-
-static void
 nameservers_to_gvalue (GArray *array, GValue *value)
 {
 	GVariantBuilder builder;
@@ -2223,12 +2174,68 @@ set_property (GObject *object,
 
 	switch (prop_id) {
 	case PROP_IFINDEX:
+		/* construct-only */
 		priv->ifindex = g_value_get_int (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
 	}
+}
+
+/*****************************************************************************/
+
+static void
+nm_ip6_config_init (NMIP6Config *config)
+{
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+
+	priv->addresses = g_array_new (FALSE, TRUE, sizeof (NMPlatformIP6Address));
+	priv->routes = g_array_new (FALSE, TRUE, sizeof (NMPlatformIP6Route));
+	priv->nameservers = g_array_new (FALSE, TRUE, sizeof (struct in6_addr));
+	priv->domains = g_ptr_array_new_with_free_func (g_free);
+	priv->searches = g_ptr_array_new_with_free_func (g_free);
+	priv->dns_options = g_ptr_array_new_with_free_func (g_free);
+	priv->route_metric = -1;
+}
+
+NMIP6Config *
+nm_ip6_config_new (int ifindex)
+{
+	g_return_val_if_fail (ifindex >= -1, NULL);
+	return (NMIP6Config *) g_object_new (NM_TYPE_IP6_CONFIG,
+	                                     NM_IP6_CONFIG_IFINDEX, ifindex,
+	                                     NULL);
+}
+
+NMIP6Config *
+nm_ip6_config_new_cloned (const NMIP6Config *src)
+{
+	NMIP6Config *new;
+
+	g_return_val_if_fail (NM_IS_IP6_CONFIG (src), NULL);
+
+	new = nm_ip6_config_new (nm_ip6_config_get_ifindex (src));
+	nm_ip6_config_replace (new, src, NULL);
+	return new;
+}
+
+static void
+finalize (GObject *object)
+{
+	NMIP6Config *self = NM_IP6_CONFIG (object);
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
+
+	g_array_unref (priv->addresses);
+	g_array_unref (priv->routes);
+	g_array_unref (priv->nameservers);
+	g_ptr_array_unref (priv->domains);
+	g_ptr_array_unref (priv->searches);
+	g_ptr_array_unref (priv->dns_options);
+	nm_clear_g_variant (&priv->address_data_variant);
+	nm_clear_g_variant (&priv->addresses_variant);
+
+	G_OBJECT_CLASS (nm_ip6_config_parent_class)->finalize (object);
 }
 
 static void
@@ -2239,12 +2246,10 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 
 	exported_object_class->export_path = NM_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/IP6Config");
 
-	/* virtual methods */
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 	object_class->finalize = finalize;
 
-	/* properties */
 	obj_properties[PROP_IFINDEX] =
 	    g_param_spec_int (NM_IP6_CONFIG_IFINDEX, "", "",
 	                      -1, G_MAXINT, -1,

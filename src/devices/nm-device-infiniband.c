@@ -118,22 +118,22 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
-static void
-ip4_config_pre_commit (NMDevice *self, NMIP4Config *config)
+static guint32
+get_configured_mtu (NMDevice *device, gboolean *out_is_user_config)
 {
-	NMConnection *connection;
-	NMSettingInfiniband *s_infiniband;
+	NMSettingInfiniband *setting;
 	guint32 mtu;
 
-	connection = nm_device_get_applied_connection (self);
-	g_assert (connection);
-	s_infiniband = nm_connection_get_setting_infiniband (connection);
-	g_assert (s_infiniband);
+	nm_assert (NM_IS_DEVICE (device));
+	nm_assert (out_is_user_config);
 
-	/* MTU override */
-	mtu = nm_setting_infiniband_get_mtu (s_infiniband);
-	if (mtu)
-		nm_ip4_config_set_mtu (config, mtu, NM_IP_CONFIG_SOURCE_USER);
+	setting = NM_SETTING_INFINIBAND (nm_device_get_applied_setting (device, NM_TYPE_SETTING_INFINIBAND));
+	if (!setting)
+		g_return_val_if_reached (0);
+
+	mtu = nm_setting_infiniband_get_mtu (setting);
+	*out_is_user_config = (mtu != 0);
+	return mtu ?: NM_DEVICE_DEFAULT_MTU_INFINIBAND;
 }
 
 static gboolean
@@ -381,7 +381,7 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 	parent_class->update_connection = update_connection;
 
 	parent_class->act_stage1_prepare = act_stage1_prepare;
-	parent_class->ip4_config_pre_commit = ip4_config_pre_commit;
+	parent_class->get_configured_mtu = get_configured_mtu;
 
 	obj_properties[PROP_IS_PARTITION] =
 	     g_param_spec_boolean (NM_DEVICE_INFINIBAND_IS_PARTITION, "", "",

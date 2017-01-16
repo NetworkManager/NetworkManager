@@ -676,12 +676,12 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_FD_NET:
-		/* construct only */
+		/* construct-only */
 		priv->fd_net = g_value_get_int (value);
 		g_return_if_fail (priv->fd_net > 0);
 		break;
 	case PROP_FD_MNT:
-		/* construct only */
+		/* construct-only */
 		priv->fd_mnt = g_value_get_int (value);
 		g_return_if_fail (priv->fd_mnt > 0);
 		break;
