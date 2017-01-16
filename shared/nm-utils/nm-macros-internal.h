@@ -36,6 +36,8 @@
 #define _nm_const  __attribute__ ((const))
 #define _nm_printf(a,b) __attribute__ ((__format__ (__printf__, a, b)))
 
+#define nm_offsetofend(t,m) (G_STRUCT_OFFSET (t,m) + sizeof (((t *) NULL)->m))
+
 #define nm_auto(fcn) __attribute__ ((cleanup(fcn)))
 
 /**
