@@ -1377,7 +1377,6 @@ nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *setting,
 		return TRUE;
 	}
 
-	data = load_and_verify_certificate (value, scheme, &format, error);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
 		priv->phase2_ca_cert = g_bytes_new (value, strlen (value) + 1);
 		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_CA_CERT);
