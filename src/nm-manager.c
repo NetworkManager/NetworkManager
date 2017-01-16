@@ -5490,7 +5490,7 @@ struct rfkill_event {
 	__u8  type;
 	__u8  op;
 	__u8  soft, hard;
-} __attribute__((packed));
+} _nm_packed;
 
 static void
 rfkill_change (NMManager *self, const char *desc, RfKillType rtype, gboolean enabled)
