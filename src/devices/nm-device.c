@@ -6653,6 +6653,22 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 		}
 	}
 
+	if (mtu_desired && mtu_desired < 1280) {
+		NMSettingIPConfig *s_ip6;
+
+		s_ip6 = (NMSettingIPConfig *) nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP6_CONFIG);
+		if (s_ip6 && nm_streq0 (nm_setting_ip_config_get_method (s_ip6),
+		                        NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
+			/* the interface has IPv6 enabled. The MTU with IPv6 cannot be smaller
+			 * then 1280.
+			 *
+			 * For slave-devices (that don't have @s_ip6 we) don't do this fixup because
+			 * it's anyway an unsolved problem when the slave configures a conflicting
+			 * MTU. */
+			mtu_desired = 1280;
+		}
+	}
+
 	ip6_mtu = priv->ip6_mtu;
 	if (!ip6_mtu && !priv->mtu_initialized) {
 		/* initially, if the IPv6 MTU is not specified, grow it as large as the
