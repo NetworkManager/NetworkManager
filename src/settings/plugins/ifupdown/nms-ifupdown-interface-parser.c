@@ -232,15 +232,6 @@ _recursive_ifparser (const char *eni_file, int quiet)
 			char *en_dir;
 
 			skip_to_block = 0;
-
-			if (toknum == 1) {
-				if (!quiet) {
-					nm_log_warn (LOGD_SETTINGS, "Invalid %s line without parameters\n",
-					             token[0]);
-				}
-				continue;
-			}
-
 			en_dir = g_path_get_dirname (eni_file);
 			for (i = 1; i < toknum; ++i) {
 				if (strcmp (token[0], "source-directory") == 0)
