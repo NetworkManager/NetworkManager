@@ -956,7 +956,7 @@ _vt_cmd_obj_is_visible_link (const NMPObject *obj)
 /*****************************************************************************/
 
 _NM_UTILS_LOOKUP_DEFINE (static, _nmp_cache_id_size_by_type, NMPCacheIdType, guint,
-	NM_UTILS_LOOKUP_DEFAULT (({ nm_assert_not_reached (); sizeof (NMPCacheId); })),
+	NM_UTILS_LOOKUP_DEFAULT (({ nm_assert_not_reached (); (guint) 0; })),
 	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_OBJECT_TYPE,                            nm_offsetofend (NMPCacheId, object_type)),
 	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY,               nm_offsetofend (NMPCacheId, object_type)),
 	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_NO_DEFAULT,              nm_offsetofend (NMPCacheId, object_type)),
@@ -1022,19 +1022,18 @@ nmp_cache_id_destroy (NMPCacheId *id)
 static void
 _nmp_cache_id_init (NMPCacheId *id, NMPCacheIdType id_type)
 {
-	memset (id, 0, sizeof (NMPCacheId));
+	/* there is no need to set the entire @id to zero when
+	 * initializing the ID.
+	 *
+	 * First, depending on the @id_type only part of the
+	 * @id is actually used (_nmp_cache_id_size_by_type).
+	 *
+	 * Second, the nmp_cache_id_init_*() *MUST* anyway make sure
+	 * that all relevant fields are set. Since it happens that
+	 * all structs have the packed attribute, there are no holes
+	 * due to alignment, and it becomes simple for nmp_cache_id_init_*()
+	 * to ensure that all fields are set. */
 	id->_id_type = id_type;
-}
-
-NMPCacheId *
-nmp_cache_id_copy (NMPCacheId *id, const NMPCacheId *src)
-{
-	guint n;
-
-	memset (id, 0, sizeof (NMPCacheId));
-	n = _nmp_cache_id_size_by_type (src->_id_type);
-	memcpy (id, src, n);
-	return id;
 }
 
 NMPCacheId *
@@ -1074,15 +1073,14 @@ nmp_cache_id_init_routes_visible (NMPCacheId *id,
 {
 	g_return_val_if_fail (NM_IN_SET (obj_type, NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE), NULL);
 
-	if (with_default && with_non_default) {
-		if (ifindex <= 0)
-			return nmp_cache_id_init_object_type (id, obj_type, TRUE);
-		return nmp_cache_id_init_addrroute_visible_by_ifindex (id, obj_type, ifindex);
-	}
-
-	if (with_default)
+	if (with_default) {
+		if (with_non_default) {
+			if (ifindex <= 0)
+				return nmp_cache_id_init_object_type (id, obj_type, TRUE);
+			return nmp_cache_id_init_addrroute_visible_by_ifindex (id, obj_type, ifindex);
+		}
 		_nmp_cache_id_init (id, NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_ONLY_DEFAULT);
-	else if (with_non_default)
+	} else if (with_non_default)
 		_nmp_cache_id_init (id, NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_NO_DEFAULT);
 	else
 		g_return_val_if_reached (NULL);
@@ -1098,12 +1096,13 @@ nmp_cache_id_init_link_by_ifname (NMPCacheId *id,
 {
 	gsize l;
 
-	_nmp_cache_id_init (id, NMP_CACHE_ID_TYPE_LINK_BY_IFNAME);
-
 	if (   !ifname
 	    || (l = strlen (ifname)) > sizeof (id->link_by_ifname.ifname_short))
 		g_return_val_if_reached (id);
 
+	_nmp_cache_id_init (id, NMP_CACHE_ID_TYPE_LINK_BY_IFNAME);
+
+	memset (id->link_by_ifname.ifname_short, 0, sizeof (id->link_by_ifname.ifname_short));
 	/* the trailing NUL is dropped!! */
 	memcpy (id->link_by_ifname.ifname_short, ifname, l);
 
@@ -1132,8 +1131,7 @@ nmp_cache_id_init_routes_by_destination_ip6 (NMPCacheId *id,
 	_nmp_cache_id_init (id, NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP6);
 	id->routes_by_destination_ip4.plen = plen;
 	memcpy (&id->routes_by_destination_ip6._misaligned_metric,  &metric, sizeof (guint32));
-	if (network)
-		memcpy (&id->routes_by_destination_ip6._misaligned_network, network, sizeof (struct in6_addr));
+	memcpy (&id->routes_by_destination_ip6._misaligned_network, network ?: &nm_ip_addr_zero.addr6, sizeof (struct in6_addr));
 	return id;
 }
 
