@@ -307,6 +307,9 @@ typedef struct _NMDevicePrivate {
 	gulong          ignore_carrier_id;
 	guint32         mtu;
 	guint32         ip6_mtu;
+	guint32 mtu_initial;
+	guint32 ip6_mtu_initial;
+
 	bool            up;   /* IFF_UP */
 
 	/* Generic DHCP stuff */
@@ -2570,6 +2573,8 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 	/* Balanced by a thaw in nm_device_realize_finish() */
 	g_object_freeze_notify (G_OBJECT (self));
 
+	priv->mtu_initial = 0;
+	priv->ip6_mtu_initial = 0;
 	priv->ip6_mtu = 0;
 	if (priv->mtu) {
 		priv->mtu = 0;
@@ -6599,6 +6604,10 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 	guint32 ip6_mtu, ip6_mtu_orig;
 	guint32 mtu_desired, mtu_desired_orig;
 	guint32 mtu_plat;
+	struct {
+		gboolean initialized;
+		guint32 value;
+	} ip6_mtu_sysctl;
 	int ifindex;
 	char sbuf[64], sbuf1[64], sbuf2[64];
 
@@ -6658,23 +6667,41 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 		}
 	}
 
-	_LOGT (LOGD_DEVICE, "mtu: device-mtu: %u%s, ipv6-mtu: %u%s",
+	_LOGT (LOGD_DEVICE, "mtu: device-mtu: %u%s, ipv6-mtu: %u%s, ifindex: %d",
 	       (guint) mtu_desired,
 	       mtu_desired == mtu_desired_orig ? "" : nm_sprintf_buf (sbuf1, " (was %u)", (guint) mtu_desired_orig),
 	       (guint) ip6_mtu,
-	       ip6_mtu == ip6_mtu_orig ? "" : nm_sprintf_buf (sbuf2, " (was %u)", (guint) ip6_mtu_orig));
+	       ip6_mtu == ip6_mtu_orig ? "" : nm_sprintf_buf (sbuf2, " (was %u)", (guint) ip6_mtu_orig),
+	       ifindex);
 
-	if (mtu_desired) {
-		if (mtu_desired != mtu_plat)
+	ip6_mtu_sysctl.initialized = FALSE;
+#define _IP6_MTU_SYS() \
+	({ \
+		if (!ip6_mtu_sysctl.initialized) { \
+			ip6_mtu_sysctl.value = nm_device_ipv6_sysctl_get_uint32 (self, "mtu", 0); \
+			ip6_mtu_sysctl.initialized = TRUE; \
+		} \
+		ip6_mtu_sysctl.value; \
+	})
+	if (   (mtu_desired && mtu_desired != mtu_plat)
+	    || (ip6_mtu && ip6_mtu != _IP6_MTU_SYS ())) {
+
+		if (!priv->mtu_initial && !priv->ip6_mtu_initial) {
+			/* before touching any of the MTU paramters, record the
+			 * original setting to restore on deactivation. */
+			priv->mtu_initial = mtu_plat;
+			priv->ip6_mtu_initial = _IP6_MTU_SYS ();
+		}
+
+		if (mtu_desired && mtu_desired != mtu_plat)
 			nm_platform_link_set_mtu (NM_PLATFORM_GET, ifindex, mtu_desired);
-	}
 
-	if (ip6_mtu) {
-		if (ip6_mtu != nm_device_ipv6_sysctl_get_uint32 (self, "mtu", 0)) {
+		if (ip6_mtu && ip6_mtu != _IP6_MTU_SYS ()) {
 			nm_device_ipv6_sysctl_set (self, "mtu",
 			                           nm_sprintf_buf (sbuf, "%u", (unsigned) ip6_mtu));
 		}
 	}
+#undef _IP6_MTU_SYS
 }
 
 static void
@@ -11426,6 +11453,26 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 		 * device to overwrite the reset behavior, so that Wi-Fi can set
 		 * a randomized MAC address used during scanning. */
 		NM_DEVICE_GET_CLASS (self)->deactivate_reset_hw_addr (self);
+	}
+
+	if (priv->mtu_initial || priv->ip6_mtu_initial) {
+		ifindex = nm_device_get_ip_ifindex (self);
+
+		if (   ifindex > 0
+		    && cleanup_type == CLEANUP_TYPE_DECONFIGURE) {
+			_LOGT (LOGD_DEVICE, "mtu: reset device-mtu: %u, ipv6-mtu: %u, ifindex: %d",
+			       (guint) priv->mtu_initial, (guint) priv->ip6_mtu_initial, ifindex);
+			if (priv->mtu_initial)
+				nm_platform_link_set_mtu (NM_PLATFORM_GET, ifindex, priv->mtu_initial);
+			if (priv->ip6_mtu_initial) {
+				char sbuf[64];
+
+				nm_device_ipv6_sysctl_set (self, "mtu",
+				                           nm_sprintf_buf (sbuf, "%u", (unsigned) priv->ip6_mtu_initial));
+			}
+		}
+		priv->mtu_initial = 0;
+		priv->ip6_mtu_initial = 0;
 	}
 
 	_cleanup_generic_post (self, cleanup_type);
