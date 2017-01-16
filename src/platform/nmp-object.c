@@ -955,21 +955,18 @@ _vt_cmd_obj_is_visible_link (const NMPObject *obj)
 
 /*****************************************************************************/
 
-#define _STRUCT_SIZE(struct_type, field) \
-	(G_STRUCT_OFFSET (struct_type, field) + sizeof (((struct_type *) NULL)->field))
-
 _NM_UTILS_LOOKUP_DEFINE (static, _nmp_cache_id_size_by_type, NMPCacheIdType, guint,
 	NM_UTILS_LOOKUP_DEFAULT (({ nm_assert_not_reached (); sizeof (NMPCacheId); })),
-	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_OBJECT_TYPE,                            _STRUCT_SIZE (NMPCacheId, object_type)),
-	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY,               _STRUCT_SIZE (NMPCacheId, object_type)),
-	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_NO_DEFAULT,              _STRUCT_SIZE (NMPCacheId, object_type)),
-	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_ONLY_DEFAULT,            _STRUCT_SIZE (NMPCacheId, object_type)),
-	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX,           _STRUCT_SIZE (NMPCacheId, object_type_by_ifindex)),
-	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_NO_DEFAULT,   _STRUCT_SIZE (NMPCacheId, object_type_by_ifindex)),
-	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_ONLY_DEFAULT, _STRUCT_SIZE (NMPCacheId, object_type_by_ifindex)),
-	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_LINK_BY_IFNAME,                         _STRUCT_SIZE (NMPCacheId, link_by_ifname)),
-	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP4,              _STRUCT_SIZE (NMPCacheId, routes_by_destination_ip4)),
-	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP6,              _STRUCT_SIZE (NMPCacheId, routes_by_destination_ip6)),
+	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_OBJECT_TYPE,                            nm_offsetofend (NMPCacheId, object_type)),
+	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY,               nm_offsetofend (NMPCacheId, object_type)),
+	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_NO_DEFAULT,              nm_offsetofend (NMPCacheId, object_type)),
+	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_ONLY_DEFAULT,            nm_offsetofend (NMPCacheId, object_type)),
+	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX,           nm_offsetofend (NMPCacheId, object_type_by_ifindex)),
+	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_NO_DEFAULT,   nm_offsetofend (NMPCacheId, object_type_by_ifindex)),
+	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_ONLY_DEFAULT, nm_offsetofend (NMPCacheId, object_type_by_ifindex)),
+	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_LINK_BY_IFNAME,                         nm_offsetofend (NMPCacheId, link_by_ifname)),
+	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP4,              nm_offsetofend (NMPCacheId, routes_by_destination_ip4)),
+	NM_UTILS_LOOKUP_ITEM (NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP6,              nm_offsetofend (NMPCacheId, routes_by_destination_ip6)),
 	NM_UTILS_LOOKUP_ITEM_IGNORE (NMP_CACHE_ID_TYPE_NONE),
 	NM_UTILS_LOOKUP_ITEM_IGNORE (__NMP_CACHE_ID_TYPE_MAX),
 );
