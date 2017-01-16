@@ -323,9 +323,9 @@ nm_setting_proxy_class_init (NMSettingProxyClass *setting_class)
 	g_object_class_install_property
 	    (object_class, PROP_BROWSER_ONLY,
 	     g_param_spec_boolean (NM_SETTING_PROXY_BROWSER_ONLY, "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_STATIC_STRINGS));
+	                           FALSE,
+	                           G_PARAM_READWRITE |
+	                           G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingProxy:pac-url:
