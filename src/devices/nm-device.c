@@ -310,7 +310,9 @@ typedef struct _NMDevicePrivate {
 	guint32 mtu_initial;
 	guint32 ip6_mtu_initial;
 
-	bool            up;   /* IFF_UP */
+	bool mtu_initialized:1;
+
+	bool            up:1;   /* IFF_UP */
 
 	/* Generic DHCP stuff */
 	guint32         dhcp_timeout;
@@ -2573,6 +2575,7 @@ realize_start_setup (NMDevice *self, const NMPlatformLink *plink)
 	/* Balanced by a thaw in nm_device_realize_finish() */
 	g_object_freeze_notify (G_OBJECT (self));
 
+	priv->mtu_initialized = FALSE;
 	priv->mtu_initial = 0;
 	priv->ip6_mtu_initial = 0;
 	priv->ip6_mtu = 0;
@@ -6625,10 +6628,9 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 		gboolean mtu_is_user_config = FALSE;
 		guint32 mtu = 0;
 
-		/* preferably, get the MTU from explict user-configuration. If that fails,
-		 * look at the current @config (which contains MTUs from DHCP/PPP.
-		 *
-		 * Finally, assume no MTU change. */
+		/* preferably, get the MTU from explict user-configuration.
+		 * Only if that fails, look at the current @config (which contains
+		 * MTUs from DHCP/PPP) or maybe fallback to a device-specific MTU. */
 
 		if (NM_DEVICE_GET_CLASS (self)->get_configured_mtu)
 			mtu = NM_DEVICE_GET_CLASS (self)->get_configured_mtu (self, &mtu_is_user_config);
@@ -6640,10 +6642,27 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 				mtu_desired = nm_ip4_config_get_mtu (config);
 			else
 				mtu_desired = 0;
+			if (!mtu_desired && !priv->mtu_initialized) {
+				/* there is no MTU specified, and this is the first commit of the MTU.
+				 * Reset a per-device MTU default, as returned from get_configured_mtu().
+				 *
+				 * The device might choose not to return a default MTU via get_configured_mtu()
+				 * to suppress this behavior. */
+				mtu_desired = mtu;
+			}
 		}
 	}
 
 	ip6_mtu = priv->ip6_mtu;
+	if (!ip6_mtu && !priv->mtu_initialized) {
+		/* initially, if the IPv6 MTU is not specified, grow it as large as the
+		 * link MTU @mtu_desired. Only exception is, if @mtu_desired is so small
+		 * to disable IPv6. */
+		if (mtu_desired >= 1280)
+			ip6_mtu = mtu_desired;
+	}
+
+	priv->mtu_initialized = TRUE;
 
 	if (!ip6_mtu && !mtu_desired)
 		return;
@@ -11455,6 +11474,7 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 		NM_DEVICE_GET_CLASS (self)->deactivate_reset_hw_addr (self);
 	}
 
+	priv->mtu_initialized = FALSE;
 	if (priv->mtu_initial || priv->ip6_mtu_initial) {
 		ifindex = nm_device_get_ip_ifindex (self);
 
