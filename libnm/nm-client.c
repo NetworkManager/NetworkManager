@@ -56,6 +56,7 @@
 #include "nm-device-generic.h"
 #include "nm-device-infiniband.h"
 #include "nm-device-ip-tunnel.h"
+#include "nm-device-macsec.h"
 #include "nm-device-macvlan.h"
 #include "nm-device-modem.h"
 #include "nm-device-olpc-mesh.h"
@@ -2061,6 +2062,8 @@ obj_nm_for_gdbus_object (GDBusObject *object, GDBusObjectManager *object_manager
 			type = NM_TYPE_DEVICE_INFINIBAND;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_IP_TUNNEL) == 0)
 			type = NM_TYPE_DEVICE_IP_TUNNEL;
+		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_MACSEC) == 0)
+			type = NM_TYPE_DEVICE_MACSEC;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_MACVLAN) == 0)
 			type = NM_TYPE_DEVICE_MACVLAN;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_MODEM) == 0)

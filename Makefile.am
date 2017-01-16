@@ -195,6 +195,8 @@ introspection_sources = \
 	introspection/org.freedesktop.NetworkManager.Device.Infiniband.h \
 	introspection/org.freedesktop.NetworkManager.Device.IPTunnel.c \
 	introspection/org.freedesktop.NetworkManager.Device.IPTunnel.h \
+	introspection/org.freedesktop.NetworkManager.Device.Macsec.c \
+	introspection/org.freedesktop.NetworkManager.Device.Macsec.h \
 	introspection/org.freedesktop.NetworkManager.Device.Macvlan.c \
 	introspection/org.freedesktop.NetworkManager.Device.Macvlan.h \
 	introspection/org.freedesktop.NetworkManager.Device.Modem.c \
@@ -262,6 +264,7 @@ DBUS_INTERFACE_DOCS = \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Vxlan.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Settings.Connection.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Bond.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Macsec.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Macvlan.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.PPP.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Vlan.xml \
@@ -313,6 +316,7 @@ dbusinterfaces_DATA = \
 	introspection/org.freedesktop.NetworkManager.Device.Generic.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Infiniband.xml \
 	introspection/org.freedesktop.NetworkManager.Device.IPTunnel.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Macsec.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Macvlan.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Modem.xml \
 	introspection/org.freedesktop.NetworkManager.Device.OlpcMesh.xml \
@@ -375,6 +379,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-setting-ip-tunnel.h \
 	libnm-core/nm-setting-ip4-config.h \
 	libnm-core/nm-setting-ip6-config.h \
+	libnm-core/nm-setting-macsec.h \
 	libnm-core/nm-setting-macvlan.h \
 	libnm-core/nm-setting-olpc-mesh.h \
 	libnm-core/nm-setting-ppp.h \
@@ -437,6 +442,7 @@ libnm_core_lib_c_real = \
 	libnm-core/nm-setting-ip-tunnel.c \
 	libnm-core/nm-setting-ip4-config.c \
 	libnm-core/nm-setting-ip6-config.c \
+	libnm-core/nm-setting-macsec.c \
 	libnm-core/nm-setting-macvlan.c \
 	libnm-core/nm-setting-olpc-mesh.c \
 	libnm-core/nm-setting-ppp.c \
@@ -668,6 +674,7 @@ libnm_lib_h_pub_real = \
 	libnm/nm-device-generic.h \
 	libnm/nm-device-infiniband.h \
 	libnm/nm-device-ip-tunnel.h \
+	libnm/nm-device-macsec.h \
 	libnm/nm-device-macvlan.h \
 	libnm/nm-device-modem.h \
 	libnm/nm-device-olpc-mesh.h \
@@ -717,6 +724,7 @@ libnm_lib_c_real = \
 	libnm/nm-device-generic.c \
 	libnm/nm-device-infiniband.c \
 	libnm/nm-device-ip-tunnel.c \
+	libnm/nm-device-macsec.c \
 	libnm/nm-device-macvlan.c \
 	libnm/nm-device-modem.c \
 	libnm/nm-device-olpc-mesh.c \
@@ -1291,6 +1299,8 @@ src_libNetworkManager_la_SOURCES = \
 	src/devices/nm-device-infiniband.h \
 	src/devices/nm-device-ip-tunnel.c \
 	src/devices/nm-device-ip-tunnel.h \
+	src/devices/nm-device-macsec.c \
+	src/devices/nm-device-macsec.h \
 	src/devices/nm-device-macvlan.c \
 	src/devices/nm-device-macvlan.h \
 	src/devices/nm-device-tun.c \

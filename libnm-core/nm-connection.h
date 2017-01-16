@@ -206,6 +206,8 @@ NM_AVAILABLE_IN_1_2
 NMSettingIPTunnel *        nm_connection_get_setting_ip_tunnel         (NMConnection *connection);
 NMSettingIPConfig *        nm_connection_get_setting_ip4_config        (NMConnection *connection);
 NMSettingIPConfig *        nm_connection_get_setting_ip6_config        (NMConnection *connection);
+NM_AVAILABLE_IN_1_6
+NMSettingMacsec *          nm_connection_get_setting_macsec            (NMConnection *connection);
 NM_AVAILABLE_IN_1_2
 NMSettingMacvlan *         nm_connection_get_setting_macvlan           (NMConnection *connection);
 NMSettingOlpcMesh *        nm_connection_get_setting_olpc_mesh         (NMConnection *connection);

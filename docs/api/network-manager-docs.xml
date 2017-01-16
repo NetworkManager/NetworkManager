@@ -82,6 +82,7 @@
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Generic.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Infiniband.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.IPTunnel.xml"/>
+      <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Macsec.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Macvlan.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Modem.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.OlpcMesh.xml"/>

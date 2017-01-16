@@ -75,7 +75,6 @@ typedef struct Supplicant {
 	gulong iface_state_id;
 
 	/* Timeouts and idles */
-	guint iface_con_error_cb_id;
 	guint con_timeout_id;
 } Supplicant;
 
@@ -430,7 +429,6 @@ supplicant_interface_clear_handlers (NMDeviceEthernet *self)
 
 	nm_clear_g_source (&priv->supplicant_timeout_id);
 	nm_clear_g_source (&priv->supplicant.con_timeout_id);
-	nm_clear_g_source (&priv->supplicant.iface_con_error_cb_id);
 	nm_clear_g_signal_handler (priv->supplicant.iface, &priv->supplicant.iface_error_id);
 }
 
@@ -679,19 +677,6 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 	}
 }
 
-static gboolean
-supplicant_iface_connection_error_cb_handler (gpointer user_data)
-{
-	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (user_data);
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-
-	supplicant_interface_release (self);
-	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED);
-
-	priv->supplicant.iface_con_error_cb_id = 0;
-	return FALSE;
-}
-
 static void
 supplicant_iface_connection_error_cb (NMSupplicantInterface *iface,
                                       const char *name,
@@ -699,18 +684,15 @@ supplicant_iface_connection_error_cb (NMSupplicantInterface *iface,
                                       gpointer user_data)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (user_data);
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-	guint id;
 
 	_LOGW (LOGD_DEVICE | LOGD_ETHER,
 	       "Activation: (ethernet) association request to the supplicant failed: %s - %s",
 	       name, message);
 
-	if (priv->supplicant.iface_con_error_cb_id)
-		g_source_remove (priv->supplicant.iface_con_error_cb_id);
-
-	id = g_idle_add (supplicant_iface_connection_error_cb_handler, self);
-	priv->supplicant.iface_con_error_cb_id = id;
+	supplicant_interface_release (self);
+	nm_device_queue_state (NM_DEVICE (self),
+	                       NM_DEVICE_STATE_FAILED,
+	                       NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED);
 }
 
 static NMActStageReturn
@@ -794,7 +776,7 @@ supplicant_interface_init (NMDeviceEthernet *self)
 
 	priv->supplicant.iface = nm_supplicant_manager_create_interface (priv->supplicant.mgr,
 	                                                                 nm_device_get_iface (NM_DEVICE (self)),
-	                                                                 FALSE);
+	                                                                 NM_SUPPLICANT_DRIVER_WIRED);
 
 	if (!priv->supplicant.iface) {
 		_LOGE (LOGD_DEVICE | LOGD_ETHER,
@@ -810,7 +792,7 @@ supplicant_interface_init (NMDeviceEthernet *self)
 
 	/* Hook up error signal handler to capture association errors */
 	priv->supplicant.iface_error_id = g_signal_connect (priv->supplicant.iface,
-	                                                    "connection-error",
+	                                                    NM_SUPPLICANT_INTERFACE_CONNECTION_ERROR,
 	                                                    G_CALLBACK (supplicant_iface_connection_error_cb),
 	                                                    self);
 

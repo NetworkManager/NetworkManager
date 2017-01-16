@@ -1527,6 +1527,12 @@ nm_platform_link_get_lnk_ipip (NMPlatform *self, int ifindex, const NMPlatformLi
 	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_IPIP, out_link);
 }
 
+const NMPlatformLnkMacsec *
+nm_platform_link_get_lnk_macsec (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
+{
+	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_MACSEC, out_link);
+}
+
 const NMPlatformLnkMacvlan *
 nm_platform_link_get_lnk_macvlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
@@ -2166,6 +2172,43 @@ nm_platform_link_ipip_add (NMPlatform *self,
 	       nm_utils_inet4_ntop (props->remote, buffer));
 
 	if (!klass->link_ipip_add (self, name, props, out_link))
+		return NM_PLATFORM_ERROR_UNSPECIFIED;
+	return NM_PLATFORM_ERROR_SUCCESS;
+}
+
+/**
+ * nm_platform_macsec_add:
+ * @self: platform instance
+ * @name: name of the new interface
+ * @props: interface properties
+ * @out_link: on success, the link object
+ *
+ * Create a MACsec interface.
+ */
+NMPlatformError
+nm_platform_link_macsec_add (NMPlatform *self,
+                             const char *name,
+                             int parent,
+                             const NMPlatformLnkMacsec *props,
+                             const NMPlatformLink **out_link)
+{
+	NMPlatformError plerr;
+
+	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
+
+	g_return_val_if_fail (props, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (name, NM_PLATFORM_ERROR_BUG);
+
+	plerr = _link_add_check_existing (self, name, NM_LINK_TYPE_MACSEC, out_link);
+	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
+		return plerr;
+
+	_LOGD ("adding macsec '%s' parent %u sci %llx",
+	       name,
+	       parent,
+	       (unsigned long long) props->sci);
+
+	if (!klass->link_macsec_add (self, name, parent, props, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
 	return NM_PLATFORM_ERROR_SUCCESS;
 }
@@ -3484,6 +3527,39 @@ nm_platform_lnk_ipip_to_string (const NMPlatformLnkIpIp *lnk, char *buf, gsize l
 }
 
 const char *
+nm_platform_lnk_macsec_to_string (const NMPlatformLnkMacsec *lnk, char *buf, gsize len)
+{
+	if (!nm_utils_to_string_buffer_init_null (lnk, &buf, &len))
+		return buf;
+
+	g_snprintf (buf, len,
+	            "macsec "
+	            "sci %016llx "
+	            "protect %s "
+	            "cipher %016llx "
+	            "icvlen %u "
+	            "encodingsa %u "
+	            "validate %u "
+	            "encrypt %s "
+	            "send_sci %s "
+	            "end_station %s "
+	            "scb %s "
+	            "replay %s",
+	            (unsigned long long) lnk->sci,
+	            lnk->protect ? "on" : "off",
+	            (unsigned long long) lnk->cipher_suite,
+	            lnk->icv_length,
+	            lnk->encoding_sa,
+	            lnk->validation,
+	            lnk->encrypt ? "on" : "off",
+	            lnk->include_sci ? "on" : "off",
+	            lnk->es ? "on" : "off",
+	            lnk->scb ? "on" : "off",
+	            lnk->replay_protect ? "on" : "off");
+	return buf;
+}
+
+const char *
 nm_platform_lnk_macvlan_to_string (const NMPlatformLnkMacvlan *lnk, char *buf, gsize len)
 {
 	if (!nm_utils_to_string_buffer_init_null (lnk, &buf, &len))
@@ -4061,6 +4137,25 @@ nm_platform_lnk_ipip_cmp (const NMPlatformLnkIpIp *a, const NMPlatformLnkIpIp *b
 	_CMP_FIELD (a, b, ttl);
 	_CMP_FIELD (a, b, tos);
 	_CMP_FIELD_BOOL (a, b, path_mtu_discovery);
+	return 0;
+}
+
+int
+nm_platform_lnk_macsec_cmp (const NMPlatformLnkMacsec *a, const NMPlatformLnkMacsec *b)
+{
+	_CMP_SELF (a, b);
+	_CMP_FIELD (a, b, sci);
+	_CMP_FIELD (a, b, icv_length);
+	_CMP_FIELD (a, b, cipher_suite);
+	_CMP_FIELD (a, b, window);
+	_CMP_FIELD (a, b, encoding_sa);
+	_CMP_FIELD (a, b, validation);
+	_CMP_FIELD (a, b, encrypt);
+	_CMP_FIELD (a, b, protect);
+	_CMP_FIELD (a, b, include_sci);
+	_CMP_FIELD (a, b, es);
+	_CMP_FIELD (a, b, scb);
+	_CMP_FIELD (a, b, replay_protect);
 	return 0;
 }
 

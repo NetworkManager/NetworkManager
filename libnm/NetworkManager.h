@@ -68,6 +68,7 @@
 #include <nm-setting-ip6-config.h>
 #include <nm-setting-ip-config.h>
 #include <nm-setting-ip-tunnel.h>
+#include <nm-setting-macsec.h>
 #include <nm-setting-macvlan.h>
 #include <nm-setting-olpc-mesh.h>
 #include <nm-setting-ppp.h>

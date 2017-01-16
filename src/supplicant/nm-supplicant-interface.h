@@ -57,7 +57,7 @@ enum {
 #define NM_SUPPLICANT_INTERFACE_IFACE            "iface"
 #define NM_SUPPLICANT_INTERFACE_SCANNING         "scanning"
 #define NM_SUPPLICANT_INTERFACE_CURRENT_BSS      "current-bss"
-#define NM_SUPPLICANT_INTERFACE_IS_WIRELESS      "is-wireless"
+#define NM_SUPPLICANT_INTERFACE_DRIVER           "driver"
 #define NM_SUPPLICANT_INTERFACE_FAST_SUPPORTED   "fast-supported"
 #define NM_SUPPLICANT_INTERFACE_AP_SUPPORT       "ap-support"
 
@@ -76,7 +76,7 @@ typedef struct _NMSupplicantInterfaceClass NMSupplicantInterfaceClass;
 GType nm_supplicant_interface_get_type (void);
 
 NMSupplicantInterface * nm_supplicant_interface_new (const char *ifname,
-                                                     gboolean is_wireless,
+                                                     NMSupplicantDriver driver,
                                                      gboolean fast_supported,
                                                      NMSupplicantFeature ap_support);
 

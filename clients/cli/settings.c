@@ -743,6 +743,29 @@ NmcOutputField nmc_fields_setting_ip_tunnel[] = {
                                               NM_SETTING_IP_TUNNEL_FLOW_LABEL","\
                                               NM_SETTING_IP_TUNNEL_MTU
 
+/* Available fields for NM_SETTING_MACSEC_SETTING_NAME */
+NmcOutputField nmc_fields_setting_macsec[] = {
+	SETTING_FIELD ("name"),                                 /* 0 */
+	SETTING_FIELD (NM_SETTING_MACSEC_PARENT),               /* 1 */
+	SETTING_FIELD (NM_SETTING_MACSEC_MODE),                 /* 2 */
+	SETTING_FIELD (NM_SETTING_MACSEC_ENCRYPT),              /* 3 */
+	SETTING_FIELD (NM_SETTING_MACSEC_MKA_CAK),              /* 4 */
+	SETTING_FIELD (NM_SETTING_MACSEC_MKA_CAK_FLAGS),        /* 5 */
+	SETTING_FIELD (NM_SETTING_MACSEC_MKA_CKN),              /* 6 */
+	SETTING_FIELD (NM_SETTING_MACSEC_PORT),                 /* 7 */
+	SETTING_FIELD (NM_SETTING_MACSEC_VALIDATION),           /* 8 */
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
+};
+#define NMC_FIELDS_SETTING_MACSEC_ALL     "name"","\
+                                           NM_SETTING_MACSEC_PARENT","\
+                                           NM_SETTING_MACSEC_MODE","\
+                                           NM_SETTING_MACSEC_ENCRYPT","\
+                                           NM_SETTING_MACSEC_MKA_CAK","\
+                                           NM_SETTING_MACSEC_MKA_CAK_FLAGS","\
+                                           NM_SETTING_MACSEC_MKA_CKN","\
+                                           NM_SETTING_MACSEC_PORT","\
+                                           NM_SETTING_MACSEC_VALIDATION
+
 /* Available fields for NM_SETTING_MACVLAN_SETTING_NAME */
 NmcOutputField nmc_fields_setting_macvlan[] = {
 	SETTING_FIELD ("name"),                                 /* 0 */
@@ -2113,6 +2136,94 @@ nmc_property_wifi_sec_get_wep_key_type (NMSetting *setting, NmcPropertyGetType g
 {
 	NMSettingWirelessSecurity *s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (setting);
 	return wep_key_type_to_string (nm_setting_wireless_security_get_wep_key_type (s_wireless_sec));
+}
+
+/* --- NM_SETTING_MACSEC_SETTING_NAME property get functions --- */
+DEFINE_GETTER (nmc_property_macsec_get_parent, NM_SETTING_MACSEC_PARENT)
+DEFINE_GETTER (nmc_property_macsec_get_encrypt, NM_SETTING_MACSEC_ENCRYPT)
+DEFINE_GETTER (nmc_property_macsec_get_mka_cak, NM_SETTING_MACSEC_MKA_CAK)
+DEFINE_SECRET_FLAGS_GETTER (nmc_property_macsec_get_mka_cak_flags, NM_SETTING_MACSEC_MKA_CAK_FLAGS)
+DEFINE_GETTER (nmc_property_macsec_get_mka_ckn, NM_SETTING_MACSEC_MKA_CKN)
+DEFINE_GETTER (nmc_property_macsec_get_port, NM_SETTING_MACSEC_PORT)
+
+/* 'mode' */
+static char *
+nmc_property_macsec_get_mode (NMSetting *setting, NmcPropertyGetType get_type)
+{
+	NMSettingMacsec *s_macsec = NM_SETTING_MACSEC (setting);
+	NMSettingMacsecMode mode;
+
+	mode = nm_setting_macsec_get_mode (s_macsec);
+	return nm_utils_enum_to_str (nm_setting_macsec_mode_get_type (), mode);
+}
+
+
+static gboolean
+nmc_property_macsec_set_mode (NMSetting *setting, const char *prop,
+                              const char *val, GError **error)
+{
+	NMSettingMacsecMode mode;
+	gs_free char *options = NULL;
+
+	if (!nm_utils_enum_from_str (nm_setting_macsec_mode_get_type (), val,
+	                             (int *) &mode, NULL)) {
+		options = g_strjoinv (",",
+		                      (char **) nm_utils_enum_get_values (nm_setting_macsec_mode_get_type (),
+		                                                          G_MININT,
+		                                                          G_MAXINT));
+		g_set_error (error, 1, 0, _("invalid option '%s', use one of [%s]"),
+		             val, options);
+			return FALSE;
+	}
+
+	g_object_set (setting, prop, mode, NULL);
+	return TRUE;
+}
+
+/* 'mode' */
+static char *
+nmc_property_macsec_get_validation (NMSetting *setting, NmcPropertyGetType get_type)
+{
+	NMSettingMacsec *s_macsec = NM_SETTING_MACSEC (setting);
+	NMSettingMacsecValidation validation;
+
+	validation = nm_setting_macsec_get_validation (s_macsec);
+	return nm_utils_enum_to_str (nm_setting_macsec_validation_get_type (), validation);
+}
+
+
+static gboolean
+nmc_property_macsec_set_validation (NMSetting *setting, const char *prop,
+                                    const char *val, GError **error)
+{
+	NMSettingMacsecMode validation;
+	gs_free char *options = NULL;
+
+	if (!nm_utils_enum_from_str (nm_setting_macsec_validation_get_type (), val,
+	                             (int *) &validation, NULL)) {
+		options = g_strjoinv (",",
+		                      (char **) nm_utils_enum_get_values (nm_setting_macsec_validation_get_type (),
+		                                                          G_MININT,
+		                                                          G_MAXINT));
+		g_set_error (error, 1, 0, _("invalid option '%s', use one of [%s]"),
+		             val, options);
+			return FALSE;
+	}
+
+	g_object_set (setting, prop, validation, NULL);
+	return TRUE;
+}
+
+static const char **
+nmc_property_macsec_allowed_validation (NMSetting *setting, const char *prop)
+{
+	static const char **words = NULL;
+
+	if (!words)
+		words = nm_utils_enum_get_values (nm_setting_macsec_validation_get_type(),
+		                                  G_MININT,
+		                                  G_MAXINT);
+	return words;
 }
 
 /* --- NM_SETTING_MACVLAN_SETTING_NAME property get functions --- */
@@ -7836,6 +7947,64 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL);
 
+	/* Add editable properties for NM_SETTING_MACSEC_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (MACSEC, PARENT),
+	                    nmc_property_macsec_get_parent,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (MACSEC, MODE),
+	                    nmc_property_macsec_get_mode,
+	                    nmc_property_macsec_set_mode,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (MACSEC, ENCRYPT),
+	                    nmc_property_macsec_get_encrypt,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (MACSEC, MKA_CAK),
+	                    nmc_property_macsec_get_mka_cak,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (MACSEC, MKA_CAK_FLAGS),
+	                    nmc_property_macsec_get_mka_cak_flags,
+	                    nmc_property_set_secret_flags,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (MACSEC, MKA_CKN),
+	                    nmc_property_macsec_get_mka_ckn,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (MACSEC, PORT),
+	                    nmc_property_macsec_get_port,
+	                    nmc_property_set_int,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (MACSEC, VALIDATION),
+	                    nmc_property_macsec_get_validation,
+	                    nmc_property_macsec_set_validation,
+	                    NULL,
+	                    NULL,
+	                    nmc_property_macsec_allowed_validation,
+	                    NULL);
+
 	/* Add editable properties for NM_SETTING_MACVLAN_SETTING_NAME */
 	nmc_add_prop_funcs (GLUE (MACVLAN, PARENT),
 	                    nmc_property_macvlan_get_parent,
@@ -9233,6 +9402,39 @@ setting_ip_tunnel_details (NMSetting *setting, NmCli *nmc,  const char *one_prop
 }
 
 static gboolean
+setting_macsec_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+{
+	NMSettingMacsec *s_macsec = NM_SETTING_MACSEC (setting);
+	NmcOutputField *tmpl, *arr;
+	size_t tmpl_len;
+
+	g_return_val_if_fail (NM_IS_SETTING_MACSEC (s_macsec), FALSE);
+
+	tmpl = nmc_fields_setting_macsec;
+	tmpl_len = sizeof (nmc_fields_setting_macsec);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_MACSEC_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
+	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+	g_ptr_array_add (nmc->output_data, arr);
+
+	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
+	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (arr, 1, nmc_property_macsec_get_parent (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 2, nmc_property_macsec_get_mode (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 3, nmc_property_macsec_get_encrypt (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 4, GET_SECRET (secrets, setting, nmc_property_macsec_get_mka_cak));
+	set_val_str (arr, 5, nmc_property_macsec_get_mka_cak_flags (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 6, nmc_property_macsec_get_mka_ckn (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 7, nmc_property_macsec_get_port (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 8, nmc_property_macsec_get_validation (setting, NMC_PROPERTY_GET_PRETTY));
+	g_ptr_array_add (nmc->output_data, arr);
+
+	print_data (nmc);  /* Print all data */
+
+	return TRUE;
+}
+
+static gboolean
 setting_macvlan_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	NMSettingMacvlan *s_macvlan = NM_SETTING_MACVLAN (setting);
@@ -9364,6 +9566,7 @@ static const SettingDetails detail_printers[] = {
 	{ NM_SETTING_DCB_SETTING_NAME,               setting_dcb_details },
 	{ NM_SETTING_TUN_SETTING_NAME,               setting_tun_details },
 	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,         setting_ip_tunnel_details },
+	{ NM_SETTING_MACSEC_SETTING_NAME,            setting_macsec_details },
 	{ NM_SETTING_MACVLAN_SETTING_NAME,           setting_macvlan_details },
 	{ NM_SETTING_VXLAN_SETTING_NAME,             setting_vxlan_details },
 	{ NM_SETTING_PROXY_SETTING_NAME,             setting_proxy_details },

@@ -1330,6 +1330,8 @@ nm_device_get_priority (NMDevice *self)
 	case NM_DEVICE_TYPE_ETHERNET:
 	case NM_DEVICE_TYPE_VETH:
 		return 100;
+	case NM_DEVICE_TYPE_MACSEC:
+		return 125;
 	case NM_DEVICE_TYPE_INFINIBAND:
 		return 150;
 	case NM_DEVICE_TYPE_ADSL:

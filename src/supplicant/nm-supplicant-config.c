@@ -363,6 +363,83 @@ wifi_freqs_to_string (gboolean bg_band)
 }
 
 gboolean
+nm_supplicant_config_add_setting_macsec (NMSupplicantConfig * self,
+                                         NMSettingMacsec * setting,
+                                         GError **error)
+{
+	NMSupplicantConfigPrivate *priv;
+	gs_unref_bytes GBytes *bytes = NULL;
+	const char *value;
+	char buf[32];
+	int port;
+
+	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
+	g_return_val_if_fail (setting != NULL, FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
+
+	priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
+
+	if (!nm_supplicant_config_add_option (self, "macsec_policy", "1", -1, NULL, error))
+		return FALSE;
+
+	value = nm_setting_macsec_get_encrypt (setting) ? "0" : "1";
+	if (!nm_supplicant_config_add_option (self, "macsec_integ_only", value, -1, NULL, error))
+		return FALSE;
+
+	port = nm_setting_macsec_get_port (setting);
+	if (port > 0 && port < 65534) {
+		snprintf (buf, sizeof (buf), "%d", port);
+		if (!nm_supplicant_config_add_option (self, "macsec_port", buf, -1, NULL, error))
+			return FALSE;
+	}
+
+	if (nm_setting_macsec_get_mode (setting) == NM_SETTING_MACSEC_MODE_PSK) {
+		if (!nm_supplicant_config_add_option (self, "key_mgmt", "NONE", -1, NULL, error))
+			return FALSE;
+
+		/* CAK */
+		value = nm_setting_macsec_get_mka_cak (setting);
+		if (!value) {
+			g_set_error_literal (error,
+			                     NM_SUPPLICANT_ERROR,
+			                     NM_SUPPLICANT_ERROR_CONFIG,
+			                     "missing MKA CAK");
+			return FALSE;
+		}
+
+		bytes = nm_utils_hexstr2bin (value);
+		if (!nm_supplicant_config_add_option (self,
+		                                      "mka_cak",
+		                                      g_bytes_get_data (bytes, NULL),
+		                                      g_bytes_get_size (bytes),
+		                                      "<hidden>",
+		                                      error))
+			return FALSE;
+
+		/* CKN */
+		value = nm_setting_macsec_get_mka_ckn (setting);
+		if (!value) {
+			g_set_error_literal (error,
+			                     NM_SUPPLICANT_ERROR,
+			                     NM_SUPPLICANT_ERROR_CONFIG,
+			                     "missing MKA CKN");
+			return FALSE;
+		}
+
+		bytes = nm_utils_hexstr2bin (value);
+		if (!nm_supplicant_config_add_option (self,
+		                                      "mka_ckn",
+		                                      g_bytes_get_data (bytes, NULL),
+		                                      g_bytes_get_size (bytes),
+		                                      NULL,
+		                                      error))
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+gboolean
 nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
                                            NMSettingWireless * setting,
                                            guint32 fixed_freq,

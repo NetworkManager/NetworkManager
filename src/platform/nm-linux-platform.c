@@ -21,6 +21,7 @@
 
 #include "nm-linux-platform.h"
 
+#include <endian.h>
 #include <errno.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -108,6 +109,25 @@
 #define IP6_FLOWINFO_TCLASS_MASK        0x0FF00000
 #define IP6_FLOWINFO_TCLASS_SHIFT       20
 #define IP6_FLOWINFO_FLOWLABEL_MASK     0x000FFFFF
+
+/*****************************************************************************/
+
+#define IFLA_MACSEC_UNSPEC              0
+#define IFLA_MACSEC_SCI                 1
+#define IFLA_MACSEC_PORT                2
+#define IFLA_MACSEC_ICV_LEN             3
+#define IFLA_MACSEC_CIPHER_SUITE        4
+#define IFLA_MACSEC_WINDOW              5
+#define IFLA_MACSEC_ENCODING_SA         6
+#define IFLA_MACSEC_ENCRYPT             7
+#define IFLA_MACSEC_PROTECT             8
+#define IFLA_MACSEC_INC_SCI             9
+#define IFLA_MACSEC_ES                  10
+#define IFLA_MACSEC_SCB                 11
+#define IFLA_MACSEC_REPLAY_PROTECT      12
+#define IFLA_MACSEC_VALIDATION          13
+#define IFLA_MACSEC_PAD                 14
+#define __IFLA_MACSEC_MAX               15
 
 /*****************************************************************************/
 
@@ -365,6 +385,7 @@ static const LinkDesc linktypes[] = {
 	{ NM_LINK_TYPE_IP6TNL,        "ip6tnl",      "ip6tnl",      NULL },
 	{ NM_LINK_TYPE_IPIP,          "ipip",        "ipip",        NULL },
 	{ NM_LINK_TYPE_LOOPBACK,      "loopback",    NULL,          NULL },
+	{ NM_LINK_TYPE_MACSEC,        "macsec",      "macsec",      NULL },
 	{ NM_LINK_TYPE_MACVLAN,       "macvlan",     "macvlan",     NULL },
 	{ NM_LINK_TYPE_MACVTAP,       "macvtap",     "macvtap",     NULL },
 	{ NM_LINK_TYPE_OPENVSWITCH,   "openvswitch", "openvswitch", NULL },
@@ -1110,6 +1131,56 @@ _parse_lnk_macvlan (const char *kind, struct nlattr *info_data)
 /*****************************************************************************/
 
 static NMPObject *
+_parse_lnk_macsec (const char *kind, struct nlattr *info_data)
+{
+	static struct nla_policy policy[__IFLA_MACSEC_MAX] = {
+		[IFLA_MACSEC_SCI]            = { .type = NLA_U64 },
+		[IFLA_MACSEC_ICV_LEN]        = { .type = NLA_U8 },
+		[IFLA_MACSEC_CIPHER_SUITE]   = { .type = NLA_U64 },
+		[IFLA_MACSEC_WINDOW]         = { .type = NLA_U32 },
+		[IFLA_MACSEC_ENCODING_SA]    = { .type = NLA_U8 },
+		[IFLA_MACSEC_ENCRYPT]        = { .type = NLA_U8 },
+		[IFLA_MACSEC_PROTECT]        = { .type = NLA_U8 },
+		[IFLA_MACSEC_INC_SCI]        = { .type = NLA_U8 },
+		[IFLA_MACSEC_ES]             = { .type = NLA_U8 },
+		[IFLA_MACSEC_SCB]            = { .type = NLA_U8 },
+		[IFLA_MACSEC_REPLAY_PROTECT] = { .type = NLA_U8 },
+		[IFLA_MACSEC_VALIDATION]     = { .type = NLA_U8 },
+	};
+	struct nlattr *tb[__IFLA_MACSEC_MAX];
+	int err;
+	NMPObject *obj;
+	NMPlatformLnkMacsec *props;
+
+	if (!info_data || !nm_streq0 (kind, "macsec"))
+		return NULL;
+
+	err = nla_parse_nested (tb, __IFLA_MACSEC_MAX - 1, info_data, policy);
+	if (err < 0)
+		return NULL;
+
+	obj = nmp_object_new (NMP_OBJECT_TYPE_LNK_MACSEC, NULL);
+	props = &obj->lnk_macsec;
+
+	props->sci = tb[IFLA_MACSEC_SCI] ? be64toh (nla_get_u64 (tb[IFLA_MACSEC_SCI])) : 0;
+	props->icv_length = tb[IFLA_MACSEC_ICV_LEN] ? nla_get_u8 (tb[IFLA_MACSEC_ICV_LEN]) : 0;
+	props->cipher_suite = tb [IFLA_MACSEC_CIPHER_SUITE] ? nla_get_u64 (tb[IFLA_MACSEC_CIPHER_SUITE]) : 0;
+	props->window = tb [IFLA_MACSEC_WINDOW] ? nla_get_u32 (tb[IFLA_MACSEC_WINDOW]) : 0;
+	props->encoding_sa = tb[IFLA_MACSEC_ENCODING_SA] ? !!nla_get_u8 (tb[IFLA_MACSEC_ENCODING_SA]) : 0;
+	props->encrypt = tb[IFLA_MACSEC_ENCRYPT] ? !!nla_get_u8 (tb[IFLA_MACSEC_ENCRYPT]) : 0;
+	props->protect = tb[IFLA_MACSEC_PROTECT] ? !!nla_get_u8 (tb[IFLA_MACSEC_PROTECT]) : 0;
+	props->include_sci = tb[IFLA_MACSEC_INC_SCI] ? !!nla_get_u8 (tb[IFLA_MACSEC_INC_SCI]) : 0;
+	props->es = tb[IFLA_MACSEC_ES] ? !!nla_get_u8 (tb[IFLA_MACSEC_ES]) : 0;
+	props->scb = tb[IFLA_MACSEC_SCB] ? !!nla_get_u8 (tb[IFLA_MACSEC_SCB]) : 0;
+	props->replay_protect = tb[IFLA_MACSEC_REPLAY_PROTECT] ? !!nla_get_u8 (tb[IFLA_MACSEC_REPLAY_PROTECT]) : 0;
+	props->validation = tb[IFLA_MACSEC_VALIDATION] ? nla_get_u8 (tb[IFLA_MACSEC_VALIDATION]) : 0;
+
+	return obj;
+}
+
+/*****************************************************************************/
+
+static NMPObject *
 _parse_lnk_sit (const char *kind, struct nlattr *info_data)
 {
 	static struct nla_policy policy[IFLA_IPTUN_MAX + 1] = {
@@ -1554,6 +1625,9 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 		break;
 	case NM_LINK_TYPE_IPIP:
 		lnk_data = _parse_lnk_ipip (nl_info_kind, nl_info_data);
+		break;
+	case NM_LINK_TYPE_MACSEC:
+		lnk_data = _parse_lnk_macsec (nl_info_kind, nl_info_data);
 		break;
 	case NM_LINK_TYPE_MACVLAN:
 	case NM_LINK_TYPE_MACVTAP:
@@ -4813,6 +4887,68 @@ nla_put_failure:
 }
 
 static int
+link_macsec_add (NMPlatform *platform,
+                 const char *name,
+                 int parent,
+                 const NMPlatformLnkMacsec *props,
+                 const NMPlatformLink **out_link)
+{
+	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+	struct nlattr *info;
+	struct nlattr *data;
+
+	_LOGD ("adding macsec '%s' parent %u sci %llx",
+	       name,
+	       parent,
+	       (unsigned long long) props->sci);
+
+	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
+	                          NLM_F_CREATE | NLM_F_EXCL,
+	                          0,
+	                          name,
+	                          0,
+	                          0);
+	if (!nlmsg)
+		return FALSE;
+
+	NLA_PUT_U32 (nlmsg, IFLA_LINK, parent);
+
+	if (!(info = nla_nest_start (nlmsg, IFLA_LINKINFO)))
+		goto nla_put_failure;
+
+	NLA_PUT_STRING (nlmsg, IFLA_INFO_KIND, "macsec");
+
+	if (!(data = nla_nest_start (nlmsg, IFLA_INFO_DATA)))
+		goto nla_put_failure;
+
+	if (props->icv_length)
+		NLA_PUT_U8 (nlmsg, IFLA_MACSEC_ICV_LEN, 16);
+	if (props->cipher_suite)
+		NLA_PUT_U64 (nlmsg, IFLA_MACSEC_CIPHER_SUITE, props->cipher_suite);
+	if (props->replay_protect)
+		NLA_PUT_U32 (nlmsg, IFLA_MACSEC_WINDOW, props->window);
+
+	NLA_PUT_U64 (nlmsg, IFLA_MACSEC_SCI, htobe64 (props->sci));
+	NLA_PUT_U8 (nlmsg, IFLA_MACSEC_ENCODING_SA, props->encoding_sa);
+	NLA_PUT_U8 (nlmsg, IFLA_MACSEC_ENCRYPT, props->encrypt);
+	NLA_PUT_U8 (nlmsg, IFLA_MACSEC_PROTECT, props->protect);
+	NLA_PUT_U8 (nlmsg, IFLA_MACSEC_INC_SCI, props->include_sci);
+	NLA_PUT_U8 (nlmsg, IFLA_MACSEC_ES, props->es);
+	NLA_PUT_U8 (nlmsg, IFLA_MACSEC_SCB, props->scb);
+	NLA_PUT_U8 (nlmsg, IFLA_MACSEC_REPLAY_PROTECT, props->replay_protect);
+	NLA_PUT_U8 (nlmsg, IFLA_MACSEC_VALIDATION, props->validation);
+
+	nla_nest_end (nlmsg, data);
+	nla_nest_end (nlmsg, info);
+
+	return do_add_link_with_lookup (platform,
+	                               NM_LINK_TYPE_MACSEC,
+	                                name, nlmsg, out_link);
+nla_put_failure:
+	g_return_val_if_reached (FALSE);
+}
+
+static int
 link_macvlan_add (NMPlatform *platform,
                   const char *name,
                   int parent,
@@ -6654,6 +6790,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	platform_class->link_gre_add = link_gre_add;
 	platform_class->link_ip6tnl_add = link_ip6tnl_add;
+	platform_class->link_macsec_add = link_macsec_add;
 	platform_class->link_macvlan_add = link_macvlan_add;
 	platform_class->link_ipip_add = link_ipip_add;
 	platform_class->link_sit_add = link_sit_add;

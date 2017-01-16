@@ -405,6 +405,7 @@ nm_device_factory_manager_load_factories (NMDeviceFactoryManagerFactoryFunc call
 	_ADD_INTERNAL (nm_ethernet_device_factory_get_type);
 	_ADD_INTERNAL (nm_infiniband_device_factory_get_type);
 	_ADD_INTERNAL (nm_ip_tunnel_device_factory_get_type);
+	_ADD_INTERNAL (nm_macsec_device_factory_get_type);
 	_ADD_INTERNAL (nm_macvlan_device_factory_get_type);
 	_ADD_INTERNAL (nm_tun_device_factory_get_type);
 	_ADD_INTERNAL (nm_veth_device_factory_get_type);

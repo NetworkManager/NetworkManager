@@ -137,7 +137,7 @@ _sup_iface_last_ref (gpointer data,
 NMSupplicantInterface *
 nm_supplicant_manager_create_interface (NMSupplicantManager *self,
                                         const char *ifname,
-                                        gboolean is_wireless)
+                                        NMSupplicantDriver driver)
 {
 	NMSupplicantManagerPrivate *priv;
 	NMSupplicantInterface *iface;
@@ -157,7 +157,7 @@ nm_supplicant_manager_create_interface (NMSupplicantManager *self,
 	}
 
 	iface = nm_supplicant_interface_new (ifname,
-	                                     is_wireless,
+	                                     driver,
 	                                     priv->fast_supported,
 	                                     priv->ap_support);
 

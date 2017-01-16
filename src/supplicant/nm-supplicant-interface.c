@@ -56,14 +56,14 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSupplicantInterface,
 	PROP_IFACE,
 	PROP_SCANNING,
 	PROP_CURRENT_BSS,
-	PROP_IS_WIRELESS,
+	PROP_DRIVER,
 	PROP_FAST_SUPPORTED,
 	PROP_AP_SUPPORT,
 );
 
 typedef struct {
 	char *         dev;
-	bool           is_wireless;
+	NMSupplicantDriver driver;
 	bool           fast_supported;
 	gboolean       has_credreq;  /* Whether querying 802.1x credentials is supported */
 	NMSupplicantFeature ap_support;   /* Lightweight AP mode support */
@@ -918,6 +918,7 @@ on_wpas_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 	gs_free_error GError *error = NULL;
 	GDBusProxy *wpas_proxy;
 	GVariantBuilder props;
+	const char *driver_name = NULL;
 
 	wpas_proxy = g_dbus_proxy_new_for_bus_finish (result, &error);
 	if (!wpas_proxy) {
@@ -939,10 +940,24 @@ on_wpas_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 	 * when the supplicant has started.
 	 */
 
+	switch (priv->driver) {
+	case NM_SUPPLICANT_DRIVER_WIRELESS:
+		driver_name = DEFAULT_WIFI_DRIVER;
+		break;
+	case NM_SUPPLICANT_DRIVER_WIRED:
+		driver_name = "wired";
+		break;
+	case NM_SUPPLICANT_DRIVER_MACSEC:
+		driver_name = "macsec_linux";
+		break;
+	}
+
+	g_return_if_fail (driver_name);
+
 	g_variant_builder_init (&props, G_VARIANT_TYPE_VARDICT);
 	g_variant_builder_add (&props, "{sv}",
 	                       "Driver",
-	                       g_variant_new_string (priv->is_wireless ? DEFAULT_WIFI_DRIVER : "wired"));
+	                       g_variant_new_string (driver_name));
 	g_variant_builder_add (&props, "{sv}",
 	                       "Ifname",
 	                       g_variant_new_string (priv->dev));
@@ -1448,7 +1463,7 @@ nm_supplicant_interface_get_max_scan_ssids (NMSupplicantInterface *self)
 
 NMSupplicantInterface *
 nm_supplicant_interface_new (const char *ifname,
-                             gboolean is_wireless,
+                             NMSupplicantDriver driver,
                              gboolean fast_supported,
                              NMSupplicantFeature ap_support)
 {
@@ -1456,7 +1471,7 @@ nm_supplicant_interface_new (const char *ifname,
 
 	return g_object_new (NM_TYPE_SUPPLICANT_INTERFACE,
 	                     NM_SUPPLICANT_INTERFACE_IFACE, ifname,
-	                     NM_SUPPLICANT_INTERFACE_IS_WIRELESS, is_wireless,
+	                     NM_SUPPLICANT_INTERFACE_DRIVER, (guint) driver,
 	                     NM_SUPPLICANT_INTERFACE_FAST_SUPPORTED, fast_supported,
 	                     NM_SUPPLICANT_INTERFACE_AP_SUPPORT, (int) ap_support,
 	                     NULL);
@@ -1485,9 +1500,9 @@ set_property (GObject *object,
 		priv->dev = g_value_dup_string (value);
 		g_return_if_fail (priv->dev);
 		break;
-	case PROP_IS_WIRELESS:
+	case PROP_DRIVER:
 		/* construct-only */
-		priv->is_wireless = g_value_get_boolean (value);
+		priv->driver = g_value_get_uint (value);
 		break;
 	case PROP_FAST_SUPPORTED:
 		/* construct-only */
@@ -1576,12 +1591,12 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 	                         G_PARAM_WRITABLE |
 	                         G_PARAM_CONSTRUCT_ONLY |
 	                         G_PARAM_STATIC_STRINGS);
-	obj_properties[PROP_IS_WIRELESS] =
-	    g_param_spec_boolean (NM_SUPPLICANT_INTERFACE_IS_WIRELESS, "", "",
-	                          TRUE,
-	                          G_PARAM_WRITABLE |
-	                          G_PARAM_CONSTRUCT_ONLY |
-	                          G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_DRIVER] =
+	    g_param_spec_uint (NM_SUPPLICANT_INTERFACE_DRIVER, "", "",
+	                       0, G_MAXUINT, NM_SUPPLICANT_DRIVER_WIRELESS,
+	                       G_PARAM_WRITABLE |
+	                       G_PARAM_CONSTRUCT_ONLY |
+	                       G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_FAST_SUPPORTED] =
 	    g_param_spec_boolean (NM_SUPPLICANT_INTERFACE_FAST_SUPPORTED, "", "",
 	                          TRUE,

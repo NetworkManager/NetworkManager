@@ -64,6 +64,7 @@
 #define NM_DBUS_INTERFACE_DEVICE_GENERIC    NM_DBUS_INTERFACE_DEVICE ".Generic"
 #define NM_DBUS_INTERFACE_DEVICE_VETH       NM_DBUS_INTERFACE_DEVICE ".Veth"
 #define NM_DBUS_INTERFACE_DEVICE_TUN        NM_DBUS_INTERFACE_DEVICE ".Tun"
+#define NM_DBUS_INTERFACE_DEVICE_MACSEC     NM_DBUS_INTERFACE_DEVICE ".Macsec"
 #define NM_DBUS_INTERFACE_DEVICE_MACVLAN    NM_DBUS_INTERFACE_DEVICE ".Macvlan"
 #define NM_DBUS_INTERFACE_DEVICE_VXLAN      NM_DBUS_INTERFACE_DEVICE ".Vxlan"
 #define NM_DBUS_INTERFACE_DEVICE_GRE        NM_DBUS_INTERFACE_DEVICE ".Gre"
@@ -169,6 +170,7 @@ typedef enum {
  * @NM_DEVICE_TYPE_MACVLAN: a MACVLAN interface
  * @NM_DEVICE_TYPE_VXLAN: a VXLAN interface
  * @NM_DEVICE_TYPE_VETH: a VETH interface
+ * @NM_DEVICE_TYPE_MACSEC: a MACsec interface
  *
  * #NMDeviceType values indicate the type of hardware represented by a
  * device object.
@@ -195,6 +197,7 @@ typedef enum {
 	NM_DEVICE_TYPE_MACVLAN    = 18,
 	NM_DEVICE_TYPE_VXLAN      = 19,
 	NM_DEVICE_TYPE_VETH       = 20,
+	NM_DEVICE_TYPE_MACSEC     = 21,
 } NMDeviceType;
 
 /**

@@ -46,6 +46,7 @@ typedef struct _NMSettingIPTunnel         NMSettingIPTunnel;
 typedef struct _NMSettingProxy            NMSettingProxy;
 typedef struct _NMSettingIP4Config        NMSettingIP4Config;
 typedef struct _NMSettingIP6Config        NMSettingIP6Config;
+typedef struct _NMSettingMacsec           NMSettingMacsec;
 typedef struct _NMSettingMacvlan          NMSettingMacvlan;
 typedef struct _NMSettingOlpcMesh         NMSettingOlpcMesh;
 typedef struct _NMSettingPpp              NMSettingPpp;

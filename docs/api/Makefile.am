@@ -55,6 +55,7 @@ content_files = \
 	dbus-org.freedesktop.NetworkManager.Settings.Connection.xml \
 	dbus-org.freedesktop.NetworkManager.Device.Bond.xml \
 	dbus-org.freedesktop.NetworkManager.Device.Macvlan.xml \
+	dbus-org.freedesktop.NetworkManager.Device.Macsec.xml \
 	dbus-org.freedesktop.NetworkManager.PPP.xml \
 	dbus-org.freedesktop.NetworkManager.Device.Vlan.xml \
 	dbus-org.freedesktop.NetworkManager.Device.Adsl.xml \
