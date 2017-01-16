@@ -2328,11 +2328,10 @@ nm_platform_link_veth_get_properties (NMPlatform *self, int ifindex, int *out_pe
 }
 
 gboolean
-nm_platform_link_tun_get_properties (NMPlatform *self, int ifindex, const char *ifname_guess, NMPlatformTunProperties *props)
+nm_platform_link_tun_get_properties (NMPlatform *self, int ifindex, NMPlatformTunProperties *props)
 {
 	nm_auto_close int dirfd = -1;
-	const char *ifname;
-	char ifname_verified[IFNAMSIZ];
+	char ifname[IFNAMSIZ];
 	gint64 flags;
 	gboolean success = TRUE;
 	_CHECK_SELF (self, klass, FALSE);
@@ -2340,26 +2339,13 @@ nm_platform_link_tun_get_properties (NMPlatform *self, int ifindex, const char *
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (props, FALSE);
 
-	/* ifname_guess is an optional argument to find a guess for the ifname corresponding to
-	 * ifindex. */
-	if (!ifname_guess) {
-		/* if NULL, obtain the guess from the platform cache. */
-		ifname = nm_platform_link_get_name (self, ifindex);
-	} else if (!ifname_guess[0]) {
-		/* if empty, don't use a guess. That means to use if_indextoname(). */
-		ifname = NULL;
-	} else
-		ifname = ifname_guess;
-
 	memset (props, 0, sizeof (*props));
 	props->owner = -1;
 	props->group = -1;
 
-	dirfd = nm_platform_sysctl_open_netdir (self, ifindex, ifname_verified);
+	dirfd = nm_platform_sysctl_open_netdir (self, ifindex, ifname);
 	if (dirfd < 0)
 		return FALSE;
-
-	ifname = ifname_verified;
 
 	props->owner = nm_platform_sysctl_get_int_checked (self, NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname, "owner"), 10, -1, G_MAXINT64, -1);
 	if (errno)
