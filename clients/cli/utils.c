@@ -941,24 +941,6 @@ nmc_get_allowed_fields (const NmcOutputField fields_array[], int group_idx)
 	return g_string_free (allowed_fields, FALSE);
 }
 
-gboolean
-nmc_terse_option_check (NMCPrintOutput print_output, const char *fields, GError **error)
-{
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if (print_output == NMC_PRINT_TERSE) {
-		if (!fields) {
-			g_set_error_literal (error, NMCLI_ERROR, 0, _("Option '--terse' requires specifying '--fields'"));
-			return FALSE;
-		} else if (   !strcasecmp (fields, "all")
-		           || !strcasecmp (fields, "common")) {
-			g_set_error (error, NMCLI_ERROR, 0, _("Option '--terse' requires specific '--fields' option values , not '%s'"), fields);
-			return FALSE;
-		}
-	}
-	return TRUE;
-}
-
 NmcOutputField *
 nmc_dup_fields_array (NmcOutputField fields[], size_t size, guint32 flags)
 {

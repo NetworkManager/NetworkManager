@@ -385,13 +385,6 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 static NMCResultCode
 do_general_status (NmCli *nmc, int argc, char **argv)
 {
-	gs_free_error GError *error = NULL;
-
-        if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
-                g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-                return NMC_RESULT_ERROR_USER_INPUT;
-	}
-
 	if (nmc->complete)
 		return nmc->return_value;
 
@@ -566,13 +559,6 @@ show_nm_permissions (NmCli *nmc)
 static NMCResultCode
 do_general_permissions (NmCli *nmc, int argc, char **argv)
 {
-	gs_free_error GError *error = NULL;
-
-        if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
-                g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-                return NMC_RESULT_ERROR_USER_INPUT;
-	}
-
 	if (nmc->complete)
 		return nmc->return_value;
 
@@ -655,12 +641,6 @@ do_general_logging (NmCli *nmc, int argc, char **argv)
 	gs_free_error GError *error = NULL;
 
 	if (argc == 0) {
-		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
-			g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-			g_error_free (error);
-			return NMC_RESULT_ERROR_USER_INPUT;
-		}
-
 		if (nmc->complete)
 			return nmc->return_value;
 
@@ -918,17 +898,12 @@ static NMCResultCode
 do_radio_all (NmCli *nmc, int argc, char **argv)
 {
 	gboolean enable_flag;
-	gs_free_error GError *error = NULL;
 
 	if (argc == 0) {
 		if (nmc->complete)
 			return nmc->return_value;
 
 		/* no argument, show all radio switches */
-		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
-			g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-			return NMC_RESULT_ERROR_USER_INPUT;
-		}
 		show_nm_status (nmc, _("Radio switches"), NMC_FIELDS_NM_STATUS_RADIO);
 	} else {
 		if (nmc->complete) {

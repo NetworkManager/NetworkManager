@@ -1494,12 +1494,6 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 	if (nmc->complete)
 		return nmc->return_value;
 
-	if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
-		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-		g_error_free (error);
-		return NMC_RESULT_ERROR_USER_INPUT;
-	}
-
 	while (argc > 0) {
 		g_printerr (_("Unknown parameter: %s\n"), *argv);
 		argc--;
@@ -3619,14 +3613,6 @@ static NMCCommand device_wifi_cmds[] = {
 static NMCResultCode
 do_device_wifi (NmCli *nmc, int argc, char **argv)
 {
-	GError *error = NULL;
-
-	if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
-		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-		g_error_free (error);
-		return NMC_RESULT_ERROR_USER_INPUT;
-	}
-
 	nmc_do_cmd (nmc, device_wifi_cmds, *argv, argc, argv);
 
 	return nmc->return_value;
@@ -3791,14 +3777,6 @@ static NMCCommand device_lldp_cmds[] = {
 static NMCResultCode
 do_device_lldp (NmCli *nmc, int argc, char **argv)
 {
-	GError *error = NULL;
-
-	if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
-		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-		g_error_free (error);
-		return NMC_RESULT_ERROR_USER_INPUT;
-	}
-
 	if (!nmc->mode_specified)
 		nmc->multiline_output = TRUE;  /* multiline mode is default for 'device lldp' */
 
