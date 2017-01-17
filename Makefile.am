@@ -2071,7 +2071,9 @@ dist_hook += dist-hook-settings-ifcfg-rh-alias-files
 
 ###############################################################################
 
+if CONFIG_PLUGIN_IFCFG_RH
 dbusservice_DATA += src/settings/plugins/ifcfg-rh/nm-ifcfg-rh.conf
+endif
 
 EXTRA_DIST += \
 	src/settings/plugins/ifcfg-rh/nm-ifcfg-rh.conf \
