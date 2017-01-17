@@ -122,6 +122,7 @@ static guint32
 get_configured_mtu (NMDevice *device, gboolean *out_is_user_config)
 {
 	NMSettingInfiniband *setting;
+	gint64 mtu_default;
 	guint32 mtu;
 
 	nm_assert (NM_IS_DEVICE (device));
@@ -132,6 +133,13 @@ get_configured_mtu (NMDevice *device, gboolean *out_is_user_config)
 		g_return_val_if_reached (0);
 
 	mtu = nm_setting_infiniband_get_mtu (setting);
+	if (mtu == 0) {
+		mtu_default = nm_device_get_configured_mtu_from_connection_default (device, "infiniband.mtu");
+		if (mtu_default >= 0) {
+			*out_is_user_config = TRUE;
+			return (guint32) mtu_default;
+		}
+	}
 	*out_is_user_config = (mtu != 0);
 	return mtu ?: NM_DEVICE_DEFAULT_MTU_INFINIBAND;
 }

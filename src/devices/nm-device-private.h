@@ -124,6 +124,9 @@ gboolean nm_device_ipv6_sysctl_set (NMDevice *self, const char *property, const 
 #define NM_DEVICE_DEFAULT_MTU_WIRELESS       ((guint32) 1500)
 #define NM_DEVICE_DEFAULT_MTU_INFINIBAND     ((guint32) 0)
 
+gint64 nm_device_get_configured_mtu_from_connection_default (NMDevice *self,
+                                                             const char *property_name);
+
 guint32 nm_device_get_configured_mtu_for_wired (NMDevice *self, gboolean *out_is_user_config);
 
 /*****************************************************************************/

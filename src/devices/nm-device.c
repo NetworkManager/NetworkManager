@@ -6573,11 +6573,22 @@ linklocal6_start (NMDevice *self)
 
 /*****************************************************************************/
 
+gint64
+nm_device_get_configured_mtu_from_connection_default (NMDevice *self,
+                                                      const char *property_name)
+{
+	gs_free char *str = NULL;
+
+	str = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA, property_name, self);
+	return _nm_utils_ascii_str_to_int64 (str, 10, 0, G_MAXUINT32, -1);
+}
+
 guint32
 nm_device_get_configured_mtu_for_wired (NMDevice *self, gboolean *out_is_user_config)
 {
 	NMConnection *connection;
 	NMSettingWired *setting;
+	gint64 mtu_default;
 	guint32 mtu;
 
 	nm_assert (NM_IS_DEVICE (self));
@@ -6596,6 +6607,13 @@ nm_device_get_configured_mtu_for_wired (NMDevice *self, gboolean *out_is_user_co
 			return mtu;
 		}
 	}
+
+	mtu_default = nm_device_get_configured_mtu_from_connection_default (self, "ethernet.mtu");
+	if (mtu_default >= 0) {
+		*out_is_user_config = TRUE;
+		return (guint32) mtu_default;
+	}
+
 	*out_is_user_config = FALSE;
 	return NM_DEVICE_DEFAULT_MTU_WIRED;
 }
@@ -6637,7 +6655,7 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 		if (NM_DEVICE_GET_CLASS (self)->get_configured_mtu)
 			mtu = NM_DEVICE_GET_CLASS (self)->get_configured_mtu (self, &mtu_is_user_config);
 
-		if (mtu && mtu_is_user_config)
+		if (mtu_is_user_config)
 			mtu_desired = mtu;
 		else {
 			if (config)

@@ -611,7 +611,19 @@ ipv6.ip6-privacy=0
           <term><varname>ethernet.generate-mac-address-mask</varname></term>
         </varlistentry>
         <varlistentry>
+          <term><varname>ethernet.mtu</varname></term>
+          <listitem><para>If configured explicitly to 0, the MTU is not reconfigured during device activation unless it is required due to IPv6 constraints. If left unspecified, a DHCP/IPv6 SLAAC provided value is used or a default of 1500.</para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>ethernet.wake-on-lan</varname></term>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>infiniband.mtu</varname></term>
+          <listitem><para>If configured explicitly to 0, the MTU is not reconfigured during device activation unless it is required due to IPv6 constraints. If left unspecified, a DHCP/IPv6 SLAAC provided value is used or the MTU is left unspecified on activation.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>ip-tunnel.mtu</varname></term>
+          <listitem><para>If configured explicitly to 0, the MTU is not reconfigured during device activation unless it is required due to IPv6 constraints. If left unspecified, a DHCP/IPv6 SLAAC provided value is used or a default of 1500.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>ipv4.dad-timeout</varname></term>
@@ -649,6 +661,10 @@ ipv6.ip6-privacy=0
           <listitem><para>If left unspecified, MAC address randomization is disabled.
             This setting is deprecated for <literal>wifi.cloned-mac-address</literal>.
           </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>wifi.mtu</varname></term>
+          <listitem><para>If configured explicitly to 0, the MTU is not reconfigured during device activation unless it is required due to IPv6 constraints. If left unspecified, a DHCP/IPv6 SLAAC provided value is used or a default of 1500.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>wifi.powersave</varname></term>
