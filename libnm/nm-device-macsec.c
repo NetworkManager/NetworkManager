@@ -142,7 +142,7 @@ nm_device_macsec_get_icv_length (NMDeviceMacsec *device)
  *
  * Gets the set of cryptographic algorithms in use
  *
- * Returns:
+ * Returns: the set of cryptographic algorithms in use
  *
  * Since: 1.6
  **/
