@@ -4708,7 +4708,9 @@ test_nm_utils_check_valid_json (void)
 #else
 	/* Without JSON library everything except empty string is considered valid */
 	_json_config_check_valid ("{ }", TRUE);
-	_json_config_check_valid ("{'%!-a1", TRUE);
+	_json_config_check_valid ("{'%!-a1} ", TRUE);
+	_json_config_check_valid (" {'%!-a1}", TRUE);
+	_json_config_check_valid ("{'%!-a1", FALSE);
 #endif
 }
 
