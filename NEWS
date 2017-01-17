@@ -1,5 +1,5 @@
 ============================================
-NetworkManager-1.5.3 (Development Snapshot)
+NetworkManager-1.5.90 (1.6-rc1)
 Overview of changes since NetworkManager-1.4
 ============================================
 
@@ -56,6 +56,21 @@ Notable changes included in this snapshot so far include:
 * Added the support for DHCPV6_HOSTNAME and DHCPV6_SEND_HOSTNAME keys in
     ifcfg files that control "dhcp-hostname" and "dhcp-send-hostname"
     properties of the "ipv6" setting.
+* Added initial support for PKCS#11 tokens with 802.1x authentication.
+* The stable-addressing for MAC address randomization and RFC7217 IPv6 stable
+    privacy addressing can now be more flexibly configured using dynamic
+    randomization seeds in "connection.stable-id".
+    See "examples/nm-conf.d/30-anon.conf" for example use.
+* Added support for managing the MACsec links. Requires support in
+    wpa_supplicant (version newer than 2.6).
+* When the master of Team, Bridge and Bond devices is specified as a connection
+    UUID, the ifcfg-rh plugin now writes the master connection's interface name
+    into the ifcfg file for improved compatibility with the legacy network service.
+* Improve handling of MTU by resetting the previous MTU when the device deactivates
+    and reset the MTU to a defined value on activation.
+* Improve tracking of parent devices for dependend devices like ip-tunnels, MACVLAN,
+    VETH, VLAN, and VXLAN.
+* Many bug fixes and improvements
 
 ============================================
 NetworkManager-1.4
