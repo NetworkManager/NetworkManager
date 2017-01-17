@@ -2033,6 +2033,7 @@ EXTRA_DIST += \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-port-1 \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-port-2 \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-port-empty-config \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-read-proxy-basic \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-trailing-spaces \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dns-options \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-wake-on-lan \
