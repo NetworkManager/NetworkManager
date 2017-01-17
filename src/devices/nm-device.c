@@ -6630,7 +6630,7 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 	struct {
 		gboolean initialized;
 		guint32 value;
-	} ip6_mtu_sysctl;
+	} ip6_mtu_sysctl = { 0, };
 	int ifindex;
 	char sbuf[64], sbuf1[64], sbuf2[64];
 
@@ -6729,7 +6729,6 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 	       ip6_mtu == ip6_mtu_orig ? "" : nm_sprintf_buf (sbuf2, " (was %u)", (guint) ip6_mtu_orig),
 	       ifindex);
 
-	ip6_mtu_sysctl.initialized = FALSE;
 #define _IP6_MTU_SYS() \
 	({ \
 		if (!ip6_mtu_sysctl.initialized) { \
