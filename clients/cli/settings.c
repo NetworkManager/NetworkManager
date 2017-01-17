@@ -2503,10 +2503,13 @@ nmc_property_connection_get_permissions (NMSetting *setting, NmcPropertyGetType 
 		if (nm_setting_connection_get_permission (s_con, i, &perm_type, &perm_item, NULL))
 			g_string_append_printf (perm, "%s:%s,", perm_type, perm_item);
 	}
-	if (perm->len > 0)
+	if (perm->len > 0) {
 		g_string_truncate (perm, perm->len-1); /* remove trailing , */
+		return g_string_free (perm, FALSE);
+	}
 
-	return g_string_free (perm, FALSE);
+	/* No value from get_permission */
+	return g_string_free (perm, TRUE);
 }
 
 DEFINE_GETTER (nmc_property_connection_get_zone, NM_SETTING_CONNECTION_ZONE)

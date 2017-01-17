@@ -1026,10 +1026,13 @@ get_value_to_print (NmCli *nmc,
 	if (field_name)
 		value = _(field->name_l10n);
 	else
-		value = field->value ?
-		          (is_array ? g_strjoinv (" | ", (char **) field->value) :
-		                      (char *) field->value) :
-		          (char *) not_set_str;
+		value = field->value
+		            ? (is_array
+		                  ? g_strjoinv (" | ", (char **) field->value)
+		                  : (*((char *) field->value)
+		                        ? (char *) field->value
+		                        : (char *) not_set_str))
+		            : (char *) not_set_str;
 	free_value = field->value && is_array && !field_name;
 
 	/* colorize the value */
@@ -1143,7 +1146,7 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 					const char *val = (const char*) field_values[idx].value;
 					char *print_val;
 
-					val = val ? val : not_set_str;
+					val = val && *val ? val : not_set_str;
 					print_val = colorize_string (nmc, field_values[idx].color, field_values[idx].color_fmt,
 					                             val, &free_print_val);
 					tmp = g_strdup_printf ("%s%s%s:",
@@ -1192,7 +1195,7 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 		} else {
 			width1 = strlen (value);
 			width2 = nmc_string_screen_width (value, NULL);  /* Width of the string (in screen colums) */
-			g_string_append_printf (str, "%-*s", field_values[idx].width + width1 - width2, strlen (value) > 0 ? value : "--");
+			g_string_append_printf (str, "%-*s", field_values[idx].width + width1 - width2, strlen (value) > 0 ? value : not_set_str);
 			g_string_append_c (str, ' ');  /* Column separator */
 			table_width += field_values[idx].width + width1 - width2 + 1;
 		}
