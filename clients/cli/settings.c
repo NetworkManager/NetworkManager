@@ -2354,6 +2354,18 @@ nmc_property_proxy_set_method (NMSetting *setting, const char *prop,
 	return TRUE;
 }
 
+static const char **
+nmc_property_proxy_allowed_method (NMSetting *setting, const char *prop)
+{
+	static const char **words = NULL;
+
+	if (!words)
+		words = nm_utils_enum_get_values (nm_setting_proxy_method_get_type(),
+		                                  NM_SETTING_PROXY_METHOD_NONE,
+		                                  G_MAXINT);
+	return words;
+}
+
 static gboolean
 nmc_property_proxy_set_pac_script (NMSetting *setting, const char *prop,
                                    const char *val, GError **error)
@@ -8155,7 +8167,7 @@ nmc_properties_init (void)
 	                    nmc_property_proxy_set_method,
 	                    NULL,
 	                    NULL,
-	                    NULL,
+	                    nmc_property_proxy_allowed_method,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (PROXY, BROWSER_ONLY),
 	                    nmc_property_proxy_get_browser_only,
