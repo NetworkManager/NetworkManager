@@ -254,6 +254,25 @@ B,DISPATCH</screen>
       </para>
     </example>
 
+    <example><title>Convenient field values retrieval for scripting</title>
+<screen><prompt>$ </prompt><userinput>nmcli -g ip4.address connection show my-con-eth0</userinput>
+192.168.1.12/24</screen>
+<screen><prompt>$ </prompt><userinput>nmcli -g ip4.address,ip4.dns connection show my-con-eth0</userinput>
+192.168.1.12/24
+192.168.1.1</screen>
+<screen><prompt>$ </prompt><userinput>nmcli -g ip4 connection show my-con-eth0</userinput>
+IP4:192.168.1.12/24:192.168.1.1::192.168.1.1::</screen>
+      <para>
+        This example shows retrieval of ip4 connection field values via the --get-values
+        option. Multiple comma separated fields can be provided: they will be printed one
+        per line. If a whole section is provided instead of a single field, the name of the
+        section will be printed followed by all the related field values on the same line.
+        See also --terse, --mode, --fields and --escape options in <link linkend='nmcli'><citerefentry><refentrytitle>nmcli</refentrytitle><manvolnum>1</manvolnum></citerefentry></link>
+        manual page for more customized output.
+      </para>
+    </example>
+
+
     <example><title>Escaping colon characters in tabular mode</title>
 <screen><prompt>$ </prompt><userinput>nmcli -t -f general -e yes -m tab dev show eth0</userinput>
 GENERAL:eth0:ethernet:Intel Corporation:82567LM Gigabit Network Connection:

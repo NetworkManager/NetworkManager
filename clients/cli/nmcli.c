@@ -171,17 +171,18 @@ usage (void)
 	g_printerr (_("Usage: nmcli [OPTIONS] OBJECT { COMMAND | help }\n"
 	              "\n"
 	              "OPTIONS\n"
-	              "  -t[erse]                                   terse output\n"
-	              "  -p[retty]                                  pretty output\n"
-	              "  -m[ode] tabular|multiline                  output mode\n"
-	              "  -c[olors] auto|yes|no                      whether to use colors in output\n"
-	              "  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
-	              "  -e[scape] yes|no                           escape columns separators in values\n"
-	              "  -a[sk]                                     ask for missing parameters\n"
-	              "  -s[how-secrets]                            allow displaying passwords\n"
-	              "  -w[ait] <seconds>                          set timeout waiting for finishing operations\n"
-	              "  -v[ersion]                                 show program version\n"
-	              "  -h[elp]                                    print this help\n"
+	              "  -t[erse]                                       terse output\n"
+	              "  -p[retty]                                      pretty output\n"
+	              "  -m[ode] tabular|multiline                      output mode\n"
+	              "  -c[olors] auto|yes|no                          whether to use colors in output\n"
+	              "  -f[ields] <field1,field2,...>|all|common       specify fields to output\n"
+	              "  -g[et-values] <field1,field2,...>|all|common   shortcut for -m tabular -t -f\n"
+	              "  -e[scape] yes|no                               escape columns separators in values\n"
+	              "  -a[sk]                                         ask for missing parameters\n"
+	              "  -s[how-secrets]                                allow displaying passwords\n"
+	              "  -w[ait] <seconds>                              set timeout waiting for finishing operations\n"
+	              "  -v[ersion]                                     show program version\n"
+	              "  -h[elp]                                        print this help\n"
 	              "\n"
 	              "OBJECT\n"
 	              "  g[eneral]       NetworkManager's general status and operations\n"
@@ -231,7 +232,7 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 		if (argc == 1 && nmc->complete) {
 			nmc_complete_strings (opt, "--terse", "--pretty", "--mode", "--colors", "--escape",
 			                           "--fields", "--nocheck", "--ask", "--show-secrets",
-			                           "--wait", "--version", "--help", NULL);
+			                           "--get-values", "--wait", "--version", "--help", NULL);
 		}
 
 		if (opt[1] == '-') {
@@ -332,6 +333,21 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 			if (argc == 1 && nmc->complete)
 				complete_fields (argv[0]);
 			nmc->required_fields = g_strdup (argv[0]);
+		} else if (matches (opt, "-get-values")) {
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: fields for '%s' options are missing."), opt);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return FALSE;
+			}
+			if (argc == 1 && nmc->complete)
+				complete_fields (argv[0]);
+			nmc->required_fields = g_strdup (argv[0]);
+			nmc->print_output = NMC_PRINT_TERSE;
+			/* We want fixed tabular mode here, but just set the mode specified and rely on the initialization
+			 * in nmc_init: in this way we allow use of "-m multiline" to swap the output mode also if placed
+			 * before the "-g <field>" option (-g may be still more practical and easy to remember than -t -f).
+			*/
+			nmc->mode_specified = TRUE;
 		} else if (matches (opt, "-nocheck")) {
 			/* ignore for backward compatibility */
 		} else if (matches (opt, "-ask")) {

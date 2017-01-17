@@ -205,10 +205,30 @@
           command. <literal>common</literal> is used to print common field values of
           the command.</para>
 
-          <para>If omitted, default is <literal>common</literal>. The option is
-          mandatory when <option>--terse</option> is used. In this case, generic values
-          <literal>all</literal> and <literal>common</literal> cannot be used. This
-          is to maintain compatibility when new fields are added in the future.</para>
+          <para>If omitted, default is <literal>common</literal>.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><group choice='plain'>
+          <arg choice='plain'><option>-g</option></arg>
+          <arg choice='plain'><option>--get-values</option></arg>
+          <group choice='req'>
+            <arg choice='plain' rep='repeat'><replaceable>field1</replaceable>,<replaceable>field2</replaceable></arg>
+            <arg choice='plain'>all</arg>
+            <arg choice='plain'>common</arg>
+          </group>
+        </group></term>
+
+        <listitem>
+          <para>This option is used to print values from specific fields. It is basically
+          a shortcut for <literal>--mode tabular --terse --fields</literal> and is a convenient
+          way to retrieve values for particular fields. The values are printed one per line
+          without headers.</para>
+
+          <para>If a section is specified instead of a field, the section name will be printed
+          followed by colon separated values of the fields belonging to that section, all on
+          the same line.</para>
         </listitem>
       </varlistentry>
 
