@@ -5657,6 +5657,8 @@ should_complete_files (const char *prompt, const char *line)
 		"phase2-private-key",
 		/* 'team' and 'team-port' properties */
 		"config",
+		/* 'proxy' properties */
+		"pac-script",
 		NULL
 	};
 	return _get_and_check_property (prompt, line, file_properties, NULL, NULL);

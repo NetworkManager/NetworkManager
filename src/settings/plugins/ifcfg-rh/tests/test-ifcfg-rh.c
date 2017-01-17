@@ -8268,6 +8268,81 @@ test_read_team_port_empty_config (void)
 	g_object_unref (connection);
 }
 
+static void
+test_read_proxy_basic (void)
+{
+	NMConnection *connection;
+	NMSettingProxy *s_proxy;
+
+	/* Test basic proxy configuration */
+
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-read-proxy-basic",
+	                                    NULL, TYPE_ETHERNET, NULL);
+
+	/* ===== Proxy setting ===== */
+	s_proxy = nm_connection_get_setting_proxy (connection);
+	g_assert (s_proxy);
+
+	/* Proxy method */
+	g_assert_cmpint (nm_setting_proxy_get_method (s_proxy), ==, NM_SETTING_PROXY_METHOD_AUTO);
+	g_assert (nm_setting_proxy_get_browser_only (s_proxy));
+	g_assert_cmpstr (nm_setting_proxy_get_pac_url (s_proxy), ==, "http://wpad.mycompany.com/wpad.dat");
+
+	g_object_unref (connection);
+}
+
+static void
+test_write_proxy_basic (void)
+{
+	nmtst_auto_unlinkfile char *testfile = NULL;
+	gs_unref_object NMConnection *connection = NULL;
+	gs_unref_object NMConnection *reread = NULL;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingProxy *s_proxy;
+	const char *expected_url = "https://wpad.neverland.org/wpad.dat";
+	shvarFile *f;
+
+	connection = nm_simple_connection_new ();
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Proxy Basic",
+	              NM_SETTING_CONNECTION_UUID, nm_utils_uuid_generate_a (),
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NULL);
+
+	/* Proxy setting */
+	s_proxy = (NMSettingProxy *) nm_setting_proxy_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_proxy));
+	g_object_set (s_proxy, NM_SETTING_PROXY_METHOD, NM_SETTING_PROXY_METHOD_AUTO, NULL);
+	g_object_set (s_proxy, NM_SETTING_PROXY_PAC_URL, expected_url, NULL);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	nmtst_assert_connection_verifies (connection);
+
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
+
+	f = _svOpenFile (testfile);
+	_svGetValue_check (f, "TYPE", "Ethernet");
+	_svGetValue_check (f, "PROXY_METHOD", "auto");
+	_svGetValue_check (f, "PAC_URL", expected_url);
+	svCloseFile (f);
+
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET,
+	                                NULL);
+
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
+}
+
 /*****************************************************************************/
 
 static const char *
@@ -9058,6 +9133,9 @@ int main (int argc, char **argv)
 	g_test_add_data_func (TPATH "team/read-port-2", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-port-2", test_read_team_port);
 	g_test_add_func (TPATH "team/write-port", test_write_team_port);
 	g_test_add_func (TPATH "team/read-port-empty-config", test_read_team_port_empty_config);
+
+	g_test_add_func (TPATH "proxy/read-proxy-basic", test_read_proxy_basic);
+	g_test_add_func (TPATH "proxy/write-proxy-basic", test_write_proxy_basic);
 
 	g_test_add_func (TPATH "sit/read/ignore", test_sit_read_ignore);
 
