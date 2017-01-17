@@ -305,6 +305,15 @@ nm_setting_proxy_class_init (NMSettingProxyClass *setting_class)
 	 *
 	 * Since: 1.6
 	 **/
+	/* ---ifcfg-rh---
+	 * property: method
+	 * variable: PROXY_METHOD(+)
+	 * default: none
+	 * description: Method for proxy configuration. For "auto", WPAD is used for
+	 *   proxy configuration, or set the PAC file via PAC_URL or PAC_SCRIPT.
+	 * values: none, auto
+	 * ---end---
+	 */
 	g_object_class_install_property
 	    (object_class, PROP_METHOD,
 	     g_param_spec_int (NM_SETTING_PROXY_METHOD, "", "",
@@ -320,6 +329,13 @@ nm_setting_proxy_class_init (NMSettingProxyClass *setting_class)
 	 *
 	 * Since: 1.6
 	 **/
+	/* ---ifcfg-rh---
+	 * property: browser-only
+	 * variable: BROWSER_ONLY(+)
+	 * default: no
+	 * description: Whether the proxy configuration is for browser only.
+	 * ---end---
+	 */
 	g_object_class_install_property
 	    (object_class, PROP_BROWSER_ONLY,
 	     g_param_spec_boolean (NM_SETTING_PROXY_BROWSER_ONLY, "", "",
@@ -334,6 +350,13 @@ nm_setting_proxy_class_init (NMSettingProxyClass *setting_class)
 	 *
 	 * Since: 1.6
 	 **/
+	/* ---ifcfg-rh---
+	 * property: pac-url
+	 * variable: PAC_URL(+)
+	 * description: URL for PAC file.
+	 * example: PAC_URL=http://wpad.mycompany.com/wpad.dat
+	 * ---end---
+	 */
 	g_object_class_install_property
 	    (object_class, PROP_PAC_URL,
 	     g_param_spec_string (NM_SETTING_PROXY_PAC_URL, "", "",
@@ -348,6 +371,13 @@ nm_setting_proxy_class_init (NMSettingProxyClass *setting_class)
 	 *
 	 * Since: 1.6
 	 **/
+	/* ---ifcfg-rh---
+	 * property: pac-script
+	 * variable: PAC_SCRIPT(+)
+	 * description: Path of the PAC script.
+	 * example: PAC_SCRIPT=/home/joe/proxy.pac
+	 * ---end---
+	 */
 	g_object_class_install_property
 	    (object_class, PROP_PAC_SCRIPT,
 	     g_param_spec_string (NM_SETTING_PROXY_PAC_SCRIPT, "", "",
