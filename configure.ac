@@ -960,8 +960,19 @@ if test "$with_nmtui" = yes -a "$build_nmtui" = no; then
 fi
 AM_CONDITIONAL(BUILD_NMTUI, test "$build_nmtui" = yes)
 
+if test $(( ${NM_MINOR_VERSION} % 2 )) = "1"; then
+    # A development version
+    more_warnings_default=error
+    more_asserts_default=100
+    more_logging_default=yes
+else
+    # A release version
+    more_warnings_default=yes
+    more_asserts_default=0
+    more_logging_default=no
+fi
 
-NM_COMPILER_WARNINGS([yes])
+NM_COMPILER_WARNINGS(${more_warnings_default})
 
 CC_CHECK_FLAGS_APPEND([with_cflags], [CFLAGS], [\
 	-fno-strict-aliasing \
@@ -969,13 +980,12 @@ CC_CHECK_FLAGS_APPEND([with_cflags], [CFLAGS], [\
 CFLAGS="$CFLAGS $with_cflags"
 
 AC_ARG_ENABLE(more-asserts,
-              AS_HELP_STRING([--enable-more-asserts], [Enable more assertions for debugging (default: no). Deprecated option. Use --with-more-asserts=level]))
-more_asserts=0
+              AS_HELP_STRING([--enable-more-asserts], [Enable more assertions for debugging (default: auto). Deprecated option. Use --with-more-asserts=level]))
 if test "${enable_more_asserts}" = "yes"; then
     more_asserts=100
 fi
 AC_ARG_WITH(more-asserts,
-            AS_HELP_STRING([--with-more-asserts=level], [Enable more assertions for debugging (default: 0)]),
+            AS_HELP_STRING([--with-more-asserts=level], [Enable more assertions for debugging (0 = none, 100 = all, default: auto)]),
             [more_asserts=${with_more_asserts}],
             [])
 if test "${more_asserts}" = "no"; then
@@ -985,10 +995,16 @@ else
         more_asserts=100
     fi
 fi
+if test "${more_asserts}" = ""; then
+    more_asserts=${more_asserts_default}
+fi
 AC_DEFINE_UNQUOTED(NM_MORE_ASSERTS, $more_asserts, [Define if more asserts are enabled])
 
 AC_ARG_ENABLE(more-logging,
-              AS_HELP_STRING([--enable-more-logging], [Enable more debug logging (default: no)]))
+              AS_HELP_STRING([--enable-more-logging], [Enable more debug logging (default: auto)]))
+if test "${enable_more_logging}" = ""; then
+    enable_more_logging=${more_logging_default}
+fi
 if test "${enable_more_logging}" = "yes"; then
     AC_DEFINE(NM_MORE_LOGGING, [1], [Define if more debug logging is enabled])
 fi
@@ -1233,6 +1249,8 @@ echo "  documentation-settings: $build_setting_docs"
 echo "  introspection: $have_introspection"
 echo "  tests: $enable_tests"
 echo "  more-asserts: $more_asserts"
+echo "  more-logging: $enable_more_logging"
+echo "  more-warnings: $set_more_warnings"
 echo "  valgrind: $with_valgrind   $with_valgrind_suppressions"
 echo "  code coverage: $enable_code_coverage"
 echo "  LTO: $enable_lto"
