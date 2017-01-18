@@ -37,7 +37,7 @@ typedef struct {
 	gboolean         running;
 
 	GSList          *ifaces;
-	gboolean          fast_supported;
+	NMSupplicantFeature fast_support;
 	NMSupplicantFeature ap_support;
 	guint             die_count_reset_id;
 	guint             die_count;
@@ -158,7 +158,7 @@ nm_supplicant_manager_create_interface (NMSupplicantManager *self,
 
 	iface = nm_supplicant_interface_new (ifname,
 	                                     driver,
-	                                     priv->fast_supported,
+	                                     priv->fast_support,
 	                                     priv->ap_support);
 
 	priv->ifaces = g_slist_prepend (priv->ifaces, iface);
@@ -217,7 +217,7 @@ update_capabilities (NMSupplicantManager *self)
 	           (priv->ap_support == NM_SUPPLICANT_FEATURE_NO) ? "not " : "possibly ");
 
 	/* EAP-FAST */
-	priv->fast_supported = FALSE;
+	priv->fast_support = NM_SUPPLICANT_FEATURE_NO;
 	value = g_dbus_proxy_get_cached_property (priv->proxy, "EapMethods");
 	if (value) {
 		if (g_variant_is_of_type (value, G_VARIANT_TYPE_STRING_ARRAY)) {
@@ -227,7 +227,7 @@ update_capabilities (NMSupplicantManager *self)
 
 				for (a = array; *a; a++) {
 					if (g_ascii_strcasecmp (*a, "FAST") == 0) {
-						priv->fast_supported = TRUE;
+						priv->fast_support = NM_SUPPLICANT_FEATURE_YES;
 						break;
 					}
 				}
@@ -237,7 +237,12 @@ update_capabilities (NMSupplicantManager *self)
 		g_variant_unref (value);
 	}
 
-	_LOGD ("EAP-FAST is %ssupported", priv->fast_supported ? "" : "not ");
+	for (ifaces = priv->ifaces; ifaces; ifaces = ifaces->next)
+		nm_supplicant_interface_set_fast_support (ifaces->data, priv->fast_support);
+
+	_LOGD ("EAP-FAST is %ssupported",
+	       (priv->fast_support == NM_SUPPLICANT_FEATURE_YES) ? "" :
+	           (priv->fast_support == NM_SUPPLICANT_FEATURE_NO) ? "not " : "possibly ");
 }
 
 static void
@@ -332,7 +337,8 @@ name_owner_cb (GDBusProxy *proxy, GParamSpec *pspec, gpointer user_data)
 
 		set_running (self, FALSE);
 
-		priv->fast_supported = FALSE;
+		priv->ap_support = NM_SUPPLICANT_FEATURE_UNKNOWN;
+		priv->fast_support = NM_SUPPLICANT_FEATURE_UNKNOWN;
 	}
 
 	g_free (owner);
