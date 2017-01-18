@@ -8316,7 +8316,7 @@ _hash_check_invalid_keys_impl (GHashTable *hash, const char *setting_name, GErro
 		gs_unref_hashtable GHashTable *check_dups = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, NULL);
 
 		for (i = 0; argv[i]; i++) {
-			if (!g_hash_table_add (check_dups, (char *) argv[i]))
+			if (!nm_g_hash_table_add (check_dups, (char *) argv[i]))
 				nm_assert (FALSE);
 		}
 		nm_assert (g_hash_table_size (check_dups) > 0);
