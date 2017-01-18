@@ -215,9 +215,17 @@ update_capabilities (NMSupplicantManager *self)
 	if (value) {
 		if (g_variant_is_of_type (value, G_VARIANT_TYPE_STRING_ARRAY)) {
 			array = g_variant_get_strv (value, NULL);
-			if (_nm_utils_string_in_list ("fast", array))
-				priv->fast_supported = TRUE;
-			g_free (array);
+			if (array) {
+				const char **a;
+
+				for (a = array; *a; a++) {
+					if (g_ascii_strcasecmp (*a, "FAST") == 0) {
+						priv->fast_supported = TRUE;
+						break;
+					}
+				}
+				g_free (array);
+			}
 		}
 		g_variant_unref (value);
 	}
