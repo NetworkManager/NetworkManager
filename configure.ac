@@ -961,7 +961,7 @@ fi
 AM_CONDITIONAL(BUILD_NMTUI, test "$build_nmtui" = yes)
 
 
-NM_COMPILER_WARNINGS
+NM_COMPILER_WARNINGS([yes])
 
 CC_CHECK_FLAGS_APPEND([with_cflags], [CFLAGS], [\
 	-fno-strict-aliasing \
