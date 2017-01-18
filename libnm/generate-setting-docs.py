@@ -18,11 +18,23 @@
 
 from __future__ import print_function
 
+import os
 import gi
-gi.require_version('NM', '1.0')
-from gi.repository import NM, GObject
+gi.require_version('GIRepository', '2.0')
+from gi.repository import GIRepository
 import argparse, datetime, re, sys
 import xml.etree.ElementTree as ET
+
+try:
+    libs = os.environ['LD_LIBRARY_PATH'].split(':')
+    libs.reverse()
+    for lib in libs:
+        GIRepository.Repository.prepend_library_path(lib)
+except KeyError:
+        pass
+
+gi.require_version('NM', '1.0')
+from gi.repository import NM, GObject
 
 dbus_type_name_map = {
     'b': 'boolean',
