@@ -317,8 +317,8 @@ name_owner_cb (GDBusProxy *proxy, GParamSpec *pspec, gpointer user_data)
 	_LOGI ("wpa_supplicant %s", owner ? "running" : "stopped");
 
 	if (owner) {
-		set_running (self, TRUE);
 		update_capabilities (self);
+		set_running (self, TRUE);
 	} else if (priv->running) {
 		/* Reschedule the die count reset timeout.  Every time the supplicant
 		 * dies we wait 10 seconds before resetting the counter.  If the
@@ -335,10 +335,10 @@ name_owner_cb (GDBusProxy *proxy, GParamSpec *pspec, gpointer user_data)
 			       priv->die_count);
 		}
 
-		set_running (self, FALSE);
-
 		priv->ap_support = NM_SUPPLICANT_FEATURE_UNKNOWN;
 		priv->fast_support = NM_SUPPLICANT_FEATURE_UNKNOWN;
+
+		set_running (self, FALSE);
 	}
 
 	g_free (owner);
