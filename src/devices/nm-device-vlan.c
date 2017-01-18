@@ -572,6 +572,24 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	return ret;
 }
 
+static guint32
+get_configured_mtu (NMDevice *self, gboolean *out_is_user_config)
+{
+	guint32 mtu = 0;
+	int ifindex;
+
+	mtu = nm_device_get_configured_mtu_for_wired (self, out_is_user_config);
+	if (*out_is_user_config)
+		return mtu;
+
+	/* Inherit the MTU from parent device, if any */
+	ifindex = nm_device_parent_get_ifindex (self);
+	if (ifindex > 0)
+		mtu = nm_platform_link_get_mtu (NM_PLATFORM_GET, ifindex);
+
+	return mtu ?: NM_DEVICE_DEFAULT_MTU_WIRED;
+}
+
 /*****************************************************************************/
 
 static void
@@ -612,7 +630,7 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	parent_class->unrealize_notify = unrealize_notify;
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->act_stage1_prepare = act_stage1_prepare;
-	parent_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
+	parent_class->get_configured_mtu = get_configured_mtu;
 	parent_class->is_available = is_available;
 	parent_class->parent_changed_notify = parent_changed_notify;
 
