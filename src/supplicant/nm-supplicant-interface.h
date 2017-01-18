@@ -19,8 +19,8 @@
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
-#ifndef __NETWORKMANAGER_SUPPLICANT_INTERFACE_H__
-#define __NETWORKMANAGER_SUPPLICANT_INTERFACE_H__
+#ifndef __NM_SUPPLICANT_INTERFACE_H__
+#define __NM_SUPPLICANT_INTERFACE_H__
 
 #include "nm-supplicant-types.h"
 
@@ -58,7 +58,7 @@ enum {
 #define NM_SUPPLICANT_INTERFACE_SCANNING         "scanning"
 #define NM_SUPPLICANT_INTERFACE_CURRENT_BSS      "current-bss"
 #define NM_SUPPLICANT_INTERFACE_DRIVER           "driver"
-#define NM_SUPPLICANT_INTERFACE_FAST_SUPPORTED   "fast-supported"
+#define NM_SUPPLICANT_INTERFACE_FAST_SUPPORT     "fast-support"
 #define NM_SUPPLICANT_INTERFACE_AP_SUPPORT       "ap-support"
 
 /* Signals */
@@ -77,7 +77,7 @@ GType nm_supplicant_interface_get_type (void);
 
 NMSupplicantInterface * nm_supplicant_interface_new (const char *ifname,
                                                      NMSupplicantDriver driver,
-                                                     gboolean fast_supported,
+                                                     NMSupplicantFeature fast_support,
                                                      NMSupplicantFeature ap_support);
 
 void nm_supplicant_interface_set_supplicant_available (NMSupplicantInterface *self,
@@ -119,4 +119,7 @@ NMSupplicantFeature nm_supplicant_interface_get_ap_support (NMSupplicantInterfac
 void nm_supplicant_interface_set_ap_support (NMSupplicantInterface *self,
                                              NMSupplicantFeature apmode);
 
-#endif	/* NM_SUPPLICANT_INTERFACE_H */
+void nm_supplicant_interface_set_fast_support (NMSupplicantInterface *self,
+                                               NMSupplicantFeature fast_support);
+
+#endif /* __NM_SUPPLICANT_INTERFACE_H__ */
