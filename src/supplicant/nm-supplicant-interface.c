@@ -57,15 +57,15 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSupplicantInterface,
 	PROP_SCANNING,
 	PROP_CURRENT_BSS,
 	PROP_DRIVER,
-	PROP_FAST_SUPPORTED,
+	PROP_FAST_SUPPORT,
 	PROP_AP_SUPPORT,
 );
 
 typedef struct {
 	char *         dev;
 	NMSupplicantDriver driver;
-	bool           fast_supported;
 	gboolean       has_credreq;  /* Whether querying 802.1x credentials is supported */
+	NMSupplicantFeature fast_support;
 	NMSupplicantFeature ap_support;   /* Lightweight AP mode support */
 	NMSupplicantFeature mac_randomization_support;
 	guint32        max_scan_ssids;
@@ -508,6 +508,15 @@ nm_supplicant_interface_set_ap_support (NMSupplicantInterface *self,
 	 */
 	if (ap_support > priv->ap_support)
 		priv->ap_support = ap_support;
+}
+
+void
+nm_supplicant_interface_set_fast_support (NMSupplicantInterface *self,
+                                          NMSupplicantFeature fast_support)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	priv->fast_support = fast_support;
 }
 
 static void
@@ -1302,7 +1311,8 @@ nm_supplicant_interface_set_config (NMSupplicantInterface *self,
 	/* Make sure the supplicant supports EAP-FAST before trying to send
 	 * it an EAP-FAST configuration.
 	 */
-	if (nm_supplicant_config_fast_required (cfg) && !priv->fast_supported) {
+	if (   priv->fast_support == NM_SUPPLICANT_FEATURE_NO
+	    && nm_supplicant_config_fast_required (cfg)) {
 		g_set_error (error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG,
 		             "EAP-FAST is not supported by the supplicant");
 		return FALSE;
@@ -1464,7 +1474,7 @@ nm_supplicant_interface_get_max_scan_ssids (NMSupplicantInterface *self)
 NMSupplicantInterface *
 nm_supplicant_interface_new (const char *ifname,
                              NMSupplicantDriver driver,
-                             gboolean fast_supported,
+                             NMSupplicantFeature fast_support,
                              NMSupplicantFeature ap_support)
 {
 	g_return_val_if_fail (ifname != NULL, NULL);
@@ -1472,7 +1482,7 @@ nm_supplicant_interface_new (const char *ifname,
 	return g_object_new (NM_TYPE_SUPPLICANT_INTERFACE,
 	                     NM_SUPPLICANT_INTERFACE_IFACE, ifname,
 	                     NM_SUPPLICANT_INTERFACE_DRIVER, (guint) driver,
-	                     NM_SUPPLICANT_INTERFACE_FAST_SUPPORTED, fast_supported,
+	                     NM_SUPPLICANT_INTERFACE_FAST_SUPPORT, (int) fast_support,
 	                     NM_SUPPLICANT_INTERFACE_AP_SUPPORT, (int) ap_support,
 	                     NULL);
 }
@@ -1504,9 +1514,9 @@ set_property (GObject *object,
 		/* construct-only */
 		priv->driver = g_value_get_uint (value);
 		break;
-	case PROP_FAST_SUPPORTED:
+	case PROP_FAST_SUPPORT:
 		/* construct-only */
-		priv->fast_supported = g_value_get_boolean (value);
+		priv->fast_support = g_value_get_int (value);
 		break;
 	case PROP_AP_SUPPORT:
 		/* construct-only */
@@ -1597,12 +1607,14 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 	                       G_PARAM_WRITABLE |
 	                       G_PARAM_CONSTRUCT_ONLY |
 	                       G_PARAM_STATIC_STRINGS);
-	obj_properties[PROP_FAST_SUPPORTED] =
-	    g_param_spec_boolean (NM_SUPPLICANT_INTERFACE_FAST_SUPPORTED, "", "",
-	                          TRUE,
-	                          G_PARAM_WRITABLE |
-	                          G_PARAM_CONSTRUCT_ONLY |
-	                          G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_FAST_SUPPORT] =
+	    g_param_spec_int (NM_SUPPLICANT_INTERFACE_FAST_SUPPORT, "", "",
+	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
+	                      NM_SUPPLICANT_FEATURE_YES,
+	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
+	                      G_PARAM_WRITABLE |
+	                      G_PARAM_CONSTRUCT_ONLY |
+	                      G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_AP_SUPPORT] =
 	    g_param_spec_int (NM_SUPPLICANT_INTERFACE_AP_SUPPORT, "", "",
 	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
