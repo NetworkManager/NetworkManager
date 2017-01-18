@@ -596,7 +596,18 @@ handle_object_property (NMObject *self, const char *property_name, GVariant *val
 	if (!object) {
 		/* This is a server bug -- a dangling object path for an object
 		 * that does not exist. */
-		g_warning ("No object known for %s", path);
+		/* XXX: We've ignored this before and the server hits the condition
+		 * more often that it should. Given we're able to recover from
+		 * ther error, let's lower the severity of the log message to
+		 * avoid unnecessarily bothering the user. This can be removed
+		 * once the issue is fixed on the server. */
+#if NM_MORE_ASSERTS
+#define __nm_log_debug g_warning
+#else
+#define __nm_log_debug g_debug
+#endif
+		__nm_log_debug ("No object known for %s", path);
+#undef __nm_log_debug
 		return FALSE;
 	}
 
