@@ -4799,6 +4799,13 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 *
 	 * Since: 1.8
 	 **/
+	/* ---ifcfg-rh---
+	 * property: auth-timeout
+	 * variable: IEEE_8021X_AUTH_TIMEOUT(+)
+	 * default: 0
+	 * description: Timeout in seconds for the 802.1X authentication. Zero means the global default or 25.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_AUTH_TIMEOUT,
 		 g_param_spec_int (NM_SETTING_802_1X_AUTH_TIMEOUT, "", "",
