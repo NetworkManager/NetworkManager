@@ -30,6 +30,11 @@ try:
     libs.reverse()
     for lib in libs:
         GIRepository.Repository.prepend_library_path(lib)
+except AttributeError:
+        # An old GI version, that has no prepend_library_path
+        # It's alright, it probably interprets LD_LIBRARY_PATH
+        # correctly.
+        pass
 except KeyError:
         pass
 
