@@ -751,6 +751,7 @@ static gboolean
 supplicant_interface_init (NMDeviceEthernet *self)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+	guint timeout;
 
 	supplicant_interface_release (self);
 
@@ -770,8 +771,11 @@ supplicant_interface_init (NMDeviceEthernet *self)
 	                                                    G_CALLBACK (supplicant_iface_state_cb),
 	                                                    self);
 
-	/* Set up a timeout on the connection attempt to fail it after 25 seconds */
-	priv->supplicant.con_timeout_id = g_timeout_add_seconds (25, supplicant_connection_timeout_cb, self);
+	/* Set up a timeout on the connection attempt */
+	timeout = nm_device_get_supplicant_timeout (NM_DEVICE (self));
+	priv->supplicant.con_timeout_id = g_timeout_add_seconds (timeout,
+	                                                         supplicant_connection_timeout_cb,
+	                                                         self);
 
 	return TRUE;
 }

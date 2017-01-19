@@ -551,6 +551,7 @@ supplicant_interface_init (NMDeviceMacsec *self)
 {
 	NMDeviceMacsecPrivate *priv = NM_DEVICE_MACSEC_GET_PRIVATE (self);
 	NMDevice *parent;
+	guint timeout;
 
 	parent = nm_device_parent_get_device (NM_DEVICE (self));
 	g_return_val_if_fail (parent, FALSE);
@@ -573,9 +574,11 @@ supplicant_interface_init (NMDeviceMacsec *self)
 	                                                    G_CALLBACK (supplicant_iface_state_cb),
 	                                                    self);
 
-	/* Set up a timeout on the connection attempt to fail it after 25 seconds */
-	priv->supplicant.con_timeout_id = g_timeout_add_seconds (25, supplicant_connection_timeout_cb, self);
-
+	/* Set up a timeout on the connection attempt  */
+	timeout = nm_device_get_supplicant_timeout (NM_DEVICE (self));
+	priv->supplicant.con_timeout_id = g_timeout_add_seconds (timeout,
+	                                                         supplicant_connection_timeout_cb,
+	                                                         self);
 	return TRUE;
 }
 

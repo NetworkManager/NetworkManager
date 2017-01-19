@@ -12946,6 +12946,33 @@ nm_device_spec_match_list (NMDevice *self, const GSList *specs)
 	return m == NM_MATCH_SPEC_MATCH;
 }
 
+guint
+nm_device_get_supplicant_timeout (NMDevice *self)
+{
+	NMConnection *connection;
+	NMSetting8021x *s_8021x;
+	gs_free char *value = NULL;
+	gint timeout;
+#define SUPPLICANT_DEFAULT_TIMEOUT 25
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), SUPPLICANT_DEFAULT_TIMEOUT);
+
+	connection = nm_device_get_applied_connection (self);
+	g_return_val_if_fail (connection, SUPPLICANT_DEFAULT_TIMEOUT);
+	s_8021x = nm_connection_get_setting_802_1x (connection);
+	g_return_val_if_fail (s_8021x, SUPPLICANT_DEFAULT_TIMEOUT);
+
+	timeout = nm_setting_802_1x_get_auth_timeout (s_8021x);
+	if (timeout > 0)
+		return timeout;
+
+	value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+	                                               "802-1x.auth-timeout",
+	                                               self);
+	return _nm_utils_ascii_str_to_int64 (value, 10, 1, G_MAXINT32,
+	                                     SUPPLICANT_DEFAULT_TIMEOUT);
+}
+
 /*****************************************************************************/
 
 static const char *

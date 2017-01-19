@@ -2575,6 +2575,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	const char *setting_name;
 	NMSettingWireless *s_wireless;
 	GError *error = NULL;
+	guint timeout;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
@@ -2646,8 +2647,11 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	nm_supplicant_interface_assoc (priv->sup_iface, config,
 	                               supplicant_iface_assoc_cb, self);
 
-	/* Set up a timeout on the association attempt to fail after 25 seconds */
-	priv->sup_timeout_id = g_timeout_add_seconds (25, supplicant_connection_timeout_cb, self);
+	/* Set up a timeout on the association attempt */
+	timeout = nm_device_get_supplicant_timeout (NM_DEVICE (self));
+	priv->sup_timeout_id = g_timeout_add_seconds (timeout,
+	                                              supplicant_connection_timeout_cb,
+	                                              self);
 
 	if (!priv->periodic_source_id)
 		priv->periodic_source_id = g_timeout_add_seconds (6, periodic_update_cb, self);
