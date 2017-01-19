@@ -115,6 +115,7 @@ typedef struct {
 	char *phase2_private_key_password;
 	NMSettingSecretFlags phase2_private_key_password_flags;
 	gboolean system_ca_certs;
+	gint auth_timeout;
 } NMSetting8021xPrivate;
 
 enum {
@@ -162,6 +163,7 @@ enum {
 	PROP_PIN,
 	PROP_PIN_FLAGS,
 	PROP_SYSTEM_CA_CERTS,
+	PROP_AUTH_TIMEOUT,
 
 	LAST_PROP
 };
@@ -2724,6 +2726,25 @@ nm_setting_802_1x_get_phase2_private_key_format (NMSetting8021x *setting)
 	return NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
 }
 
+/**
+ * nm_setting_802_1x_get_auth_timeout:
+ * @setting: the #NMSetting8021x
+ *
+ * Returns the value contained in the #NMSetting8021x:auth-timeout property.
+ *
+ * Returns: the configured authentication timeout in seconds. Zero means the
+ * global default value.
+ *
+ * Since: 1.8
+ **/
+gint
+nm_setting_802_1x_get_auth_timeout (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), 0);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->auth_timeout;
+}
+
 static void
 need_secrets_password (NMSetting8021x *self,
                        GPtrArray *secrets,
@@ -3590,6 +3611,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_SYSTEM_CA_CERTS:
 		priv->system_ca_certs = g_value_get_boolean (value);
 		break;
+	case PROP_AUTH_TIMEOUT:
+		priv->auth_timeout = g_value_get_int (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -3732,6 +3756,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_SYSTEM_CA_CERTS:
 		g_value_set_boolean (value, priv->system_ca_certs);
+		break;
+	case PROP_AUTH_TIMEOUT:
+		g_value_set_int (value, priv->auth_timeout);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -4763,4 +4790,21 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		                       G_PARAM_READWRITE |
 		                       G_PARAM_CONSTRUCT |
 		                       G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSetting8021x:auth-timeout:
+	 *
+	 * A timeout for the authentication. Zero means the global default; if the
+	 * global default is not set, the authentication timeout is 25 seconds.
+	 *
+	 * Since: 1.8
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_AUTH_TIMEOUT,
+		 g_param_spec_int (NM_SETTING_802_1X_AUTH_TIMEOUT, "", "",
+		                   0, G_MAXINT32, 0,
+		                   G_PARAM_READWRITE |
+		                   NM_SETTING_PARAM_FUZZY_IGNORE |
+		                   G_PARAM_STATIC_STRINGS));
+
 }
