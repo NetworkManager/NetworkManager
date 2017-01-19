@@ -59,8 +59,6 @@ _LOG_DECLARE_SELF(NMDeviceEthernet);
 
 /*****************************************************************************/
 
-static NM_CACHED_QUARK_FCN ("wired-secrets-tries", wired_secret_tries_quark)
-
 #define PPPOE_RECONNECT_DELAY 7
 #define PPPOE_ENCAP_OVERHEAD  8 /* 2 bytes for PPP, 6 for PPPoE */
 
@@ -258,16 +256,17 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 }
 
 static void
-clear_secrets_tries (NMDevice *device)
+reset_autoconnect_retries (NMDevice *device)
 {
 	NMActRequest *req;
-	NMConnection *connection;
+	NMSettingsConnection *connection;
 
 	req = nm_device_get_act_request (device);
 	if (req) {
-		connection = nm_act_request_get_applied_connection (req);
-		/* Clear wired secrets tries on success, failure, or when deactivating */
-		g_object_set_qdata (G_OBJECT (connection), wired_secret_tries_quark (), NULL);
+		connection = nm_act_request_get_settings_connection (req);
+		g_return_if_fail (connection);
+		/* Reset autoconnect retries on success, failure, or when deactivating */
+		nm_settings_connection_reset_autoconnect_retries (connection);
 	}
 }
 
@@ -283,7 +282,7 @@ device_state_changed (NMDevice *device,
 	if (   new_state == NM_DEVICE_STATE_ACTIVATED
 	    || new_state == NM_DEVICE_STATE_FAILED
 	    || new_state == NM_DEVICE_STATE_DISCONNECTED)
-		clear_secrets_tries (device);
+		reset_autoconnect_retries (device);
 }
 
 static void
@@ -681,14 +680,19 @@ handle_auth_or_fail (NMDeviceEthernet *self,
                      gboolean new_secrets)
 {
 	const char *setting_name;
-	guint32 tries;
 	NMConnection *applied_connection;
+	NMSettingsConnection *settings_connection;
+	int tries_left;
 
 	applied_connection = nm_act_request_get_applied_connection (req);
+	settings_connection = nm_act_request_get_settings_connection (req);
 
-	tries = GPOINTER_TO_UINT (g_object_get_qdata (G_OBJECT (applied_connection), wired_secret_tries_quark ()));
-	if (tries > 3)
+	tries_left = nm_settings_connection_get_autoconnect_retries (settings_connection);
+	if (tries_left == 0)
 		return NM_ACT_STAGE_RETURN_FAILURE;
+
+	if (tries_left > 0)
+		nm_settings_connection_set_autoconnect_retries (settings_connection, tries_left - 1);
 
 	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
 
@@ -699,7 +703,6 @@ handle_auth_or_fail (NMDeviceEthernet *self,
 		wired_secrets_get_secrets (self, setting_name,
 		                           NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
 		                             | (new_secrets ? NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW : 0));
-		g_object_set_qdata (G_OBJECT (applied_connection), wired_secret_tries_quark (), GUINT_TO_POINTER (++tries));
 	} else
 		_LOGI (LOGD_DEVICE, "Cleared secrets, but setting didn't need any secrets.");
 
@@ -1370,7 +1373,7 @@ deactivate (NMDevice *device)
 	GError *error = NULL;
 
 	/* Clear wired secrets tries when deactivating */
-	clear_secrets_tries (device);
+	reset_autoconnect_retries (device);
 
 	nm_clear_g_source (&priv->pppoe_wait_id);
 
