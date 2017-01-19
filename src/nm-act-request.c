@@ -495,31 +495,39 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
+	NMActiveConnection *active;
 	NMDevice *device;
+	char *name;
 
-	device = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (object));
-	if (!device) {
+	switch (prop_id) {
+	case PROP_IP4_CONFIG:
+		name = NM_DEVICE_IP4_CONFIG;
+		break;
+	case PROP_DHCP4_CONFIG:
+		name = NM_DEVICE_DHCP4_CONFIG;
+		break;
+	case PROP_IP6_CONFIG:
+		name = NM_DEVICE_IP6_CONFIG;
+		break;
+	case PROP_DHCP6_CONFIG:
+		name = NM_DEVICE_DHCP6_CONFIG;
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		return;
+	}
+
+	active = NM_ACTIVE_CONNECTION (object);
+	device = nm_active_connection_get_device (active);
+	if (   !device
+	    || !NM_IN_SET (nm_active_connection_get_state (active),
+	                   NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
+	                   NM_ACTIVE_CONNECTION_STATE_DEACTIVATING)) {
 		g_value_set_string (value, "/");
 		return;
 	}
 
-	switch (prop_id) {
-	case PROP_IP4_CONFIG:
-		g_object_get_property (G_OBJECT (device), NM_DEVICE_IP4_CONFIG, value);
-		break;
-	case PROP_DHCP4_CONFIG:
-		g_object_get_property (G_OBJECT (device), NM_DEVICE_DHCP4_CONFIG, value);
-		break;
-	case PROP_IP6_CONFIG:
-		g_object_get_property (G_OBJECT (device), NM_DEVICE_IP6_CONFIG, value);
-		break;
-	case PROP_DHCP6_CONFIG:
-		g_object_get_property (G_OBJECT (device), NM_DEVICE_DHCP6_CONFIG, value);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+	g_object_get_property (G_OBJECT (device), name, value);
 }
 
 static void
