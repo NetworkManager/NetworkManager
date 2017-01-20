@@ -295,7 +295,7 @@ typedef struct {
 
 	const char *(*get_type_description) (NMDevice *self);
 
-	NMMatchSpecMatchType (* spec_match_list)   (NMDevice *self, const GSList *specs);
+	const char *(*get_s390_subchannels) (NMDevice *self);
 
 	/* Update the connection with currently configured L2 settings */
 	void            (* update_connection) (NMDevice *device, NMConnection *connection);

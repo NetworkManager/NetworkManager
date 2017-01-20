@@ -12861,42 +12861,19 @@ nm_device_get_initial_hw_address (NMDevice *self)
 gboolean
 nm_device_spec_match_list (NMDevice *self, const GSList *specs)
 {
+	NMDeviceClass *klass;
+	NMMatchSpecMatchType m;
+
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
-	if (!specs)
-		return FALSE;
+	klass = NM_DEVICE_GET_CLASS (self);
 
-	return NM_DEVICE_GET_CLASS (self)->spec_match_list (self, specs) == NM_MATCH_SPEC_MATCH;
-}
-
-static NMMatchSpecMatchType
-spec_match_list (NMDevice *self, const GSList *specs)
-{
-	NMMatchSpecMatchType matched = NM_MATCH_SPEC_NO_MATCH, m;
-	const GSList *iter;
-	const char *hw_addr_perm;
-
-	for (iter = specs; iter; iter = g_slist_next (iter)) {
-		if (!strcmp ((const char *) iter->data, "*")) {
-			matched = NM_MATCH_SPEC_MATCH;
-			break;
-		}
-	}
-
-	hw_addr_perm = nm_device_get_permanent_hw_address (self);
-	if (hw_addr_perm) {
-		m = nm_match_spec_hwaddr (specs, hw_addr_perm);
-		matched = MAX (matched, m);
-	}
-	if (matched != NM_MATCH_SPEC_NEG_MATCH) {
-		m = nm_match_spec_interface_name (specs, nm_device_get_iface (self));
-		matched = MAX (matched, m);
-	}
-	if (matched != NM_MATCH_SPEC_NEG_MATCH) {
-		m = nm_match_spec_device_type (specs, nm_device_get_type_description (self));
-		matched = MAX (matched, m);
-	}
-	return matched;
+	m = nm_match_spec_device (specs,
+	                          nm_device_get_iface (self),
+	                          nm_device_get_type_description (self),
+	                          nm_device_get_permanent_hw_address (self),
+	                          klass->get_s390_subchannels ? klass->get_s390_subchannels (self) : NULL);
+	return m == NM_MATCH_SPEC_MATCH;
 }
 
 /*****************************************************************************/
@@ -13461,7 +13438,6 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->have_any_ready_slaves = have_any_ready_slaves;
 
 	klass->get_type_description = get_type_description;
-	klass->spec_match_list = spec_match_list;
 	klass->can_auto_connect = can_auto_connect;
 	klass->check_connection_compatible = check_connection_compatible;
 	klass->check_connection_available = check_connection_available;
