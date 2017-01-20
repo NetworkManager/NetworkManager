@@ -4932,6 +4932,17 @@ nmc_property_ipv6_set_addr_gen_mode (NMSetting *setting, const char *prop,
 	return TRUE;
 }
 
+static const char **
+nmc_property_ipv6_allowed_addr_gen_mode (NMSetting *setting, const char *prop)
+{
+	static const char **words = NULL;
+
+	if (!words)
+		words = nm_utils_enum_get_values (nm_setting_ip6_config_addr_gen_mode_get_type(),
+		                                  G_MININT,
+		                                  G_MAXINT);
+	return words;
+}
 
 /* --- NM_SETTING_OLPC_MESH_SETTING_NAME property setter functions --- */
 static gboolean
@@ -7132,7 +7143,7 @@ nmc_properties_init (void)
 	                    nmc_property_ipv6_set_addr_gen_mode,
 	                    NULL,
 	                    NULL,
-	                    NULL,
+	                    nmc_property_ipv6_allowed_addr_gen_mode,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE_IP (6, DHCP_SEND_HOSTNAME),
 	                    nmc_property_ipv6_get_dhcp_send_hostname,
