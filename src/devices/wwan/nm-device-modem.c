@@ -800,6 +800,7 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	device_class->owns_iface = owns_iface;
 	device_class->is_available = is_available;
 	device_class->get_ip_iface_identifier = get_ip_iface_identifier;
+	device_class->get_configured_mtu = nm_modem_get_configured_mtu;
 
 	device_class->state_changed = device_state_changed;
 
