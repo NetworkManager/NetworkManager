@@ -2180,7 +2180,19 @@ nmc_property_macsec_set_mode (NMSetting *setting, const char *prop,
 	return TRUE;
 }
 
-/* 'mode' */
+static const char **
+nmc_property_macsec_allowed_mode (NMSetting *setting, const char *prop)
+{
+	static const char **words = NULL;
+
+	if (!words)
+		words = nm_utils_enum_get_values (nm_setting_macsec_mode_get_type(),
+		                                  G_MININT,
+		                                  G_MAXINT);
+	return words;
+}
+
+/* 'validation' */
 static char *
 nmc_property_macsec_get_validation (NMSetting *setting, NmcPropertyGetType get_type)
 {
@@ -7983,7 +7995,7 @@ nmc_properties_init (void)
 	                    nmc_property_macsec_set_mode,
 	                    NULL,
 	                    NULL,
-	                    NULL,
+	                    nmc_property_macsec_allowed_mode,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (MACSEC, ENCRYPT),
 	                    nmc_property_macsec_get_encrypt,
