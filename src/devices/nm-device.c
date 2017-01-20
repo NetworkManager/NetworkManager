@@ -13178,17 +13178,15 @@ set_property (GObject *object, guint prop_id,
 		priv->iface = g_value_dup_string (value);
 		break;
 	case PROP_DRIVER:
-		if (g_value_get_string (value)) {
-			g_free (priv->driver);
-			priv->driver = g_value_dup_string (value);
-		}
+		/* construct-only */
+		priv->driver = g_value_dup_string (value);
 		break;
 	case PROP_DRIVER_VERSION:
-		g_free (priv->driver_version);
+		/* construct-only */
 		priv->driver_version = g_value_dup_string (value);
 		break;
 	case PROP_FIRMWARE_VERSION:
-		g_free (priv->firmware_version);
+		/* construct-only */
 		priv->firmware_version = g_value_dup_string (value);
 		break;
 	case PROP_IP4_ADDRESS:
@@ -13222,22 +13220,25 @@ set_property (GObject *object, guint prop_id,
 		priv->nm_plugin_missing = g_value_get_boolean (value);
 		break;
 	case PROP_DEVICE_TYPE:
-		g_return_if_fail (priv->type == NM_DEVICE_TYPE_UNKNOWN);
+		/* construct-only */
+		nm_assert (priv->type == NM_DEVICE_TYPE_UNKNOWN);
 		priv->type = g_value_get_uint (value);
 		break;
 	case PROP_LINK_TYPE:
 		/* construct-only */
-		g_return_if_fail (priv->link_type == NM_LINK_TYPE_NONE);
+		nm_assert (priv->link_type == NM_LINK_TYPE_NONE);
 		priv->link_type = g_value_get_uint (value);
 		break;
 	case PROP_TYPE_DESC:
-		g_free (priv->type_desc);
+		/* construct-only */
 		priv->type_desc = g_value_dup_string (value);
 		break;
 	case PROP_RFKILL_TYPE:
+		/* construct-only */
 		priv->rfkill_type = g_value_get_uint (value);
 		break;
 	case PROP_IS_MASTER:
+		/* construct-only */
 		priv->is_master = g_value_get_boolean (value);
 		break;
 	case PROP_PERM_HW_ADDRESS:
