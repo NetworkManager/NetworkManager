@@ -111,6 +111,7 @@ notify (GObject *object, GParamSpec *pspec)
 {
 	if (nm_streq (pspec->name, NM_DEVICE_PARENT))
 		_notify (NM_DEVICE_VETH (object), PROP_PEER);
+	G_OBJECT_CLASS (nm_device_veth_parent_class)->notify (object, pspec);
 }
 
 static void
