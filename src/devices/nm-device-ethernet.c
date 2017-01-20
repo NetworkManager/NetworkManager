@@ -1543,19 +1543,12 @@ new_default_connection (NMDevice *self)
 	return connection;
 }
 
-static NMMatchSpecMatchType
-spec_match_list (NMDevice *device, const GSList *specs)
+static const char *
+get_s390_subchannels (NMDevice *device)
 {
-	NMMatchSpecMatchType matched = NM_MATCH_SPEC_NO_MATCH, m;
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE ((NMDeviceEthernet *) device);
+	nm_assert (NM_IS_DEVICE_ETHERNET (device));
 
-	if (priv->subchannels)
-		matched = nm_match_spec_s390_subchannels (specs, priv->subchannels);
-	if (matched != NM_MATCH_SPEC_NEG_MATCH) {
-		m = NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->spec_match_list (device, specs);
-		matched = MAX (matched, m);
-	}
-	return matched;
+	return NM_DEVICE_ETHERNET_GET_PRIVATE ((NMDeviceEthernet *) device)->subchannels;
 }
 
 static void
@@ -1746,7 +1739,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
 	parent_class->get_configured_mtu = get_configured_mtu;
 	parent_class->deactivate = deactivate;
-	parent_class->spec_match_list = spec_match_list;
+	parent_class->get_s390_subchannels = get_s390_subchannels;
 	parent_class->update_connection = update_connection;
 	parent_class->carrier_changed = carrier_changed;
 	parent_class->link_changed = link_changed;

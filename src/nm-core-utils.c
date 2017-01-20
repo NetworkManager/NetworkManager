@@ -1213,169 +1213,26 @@ nm_utils_read_link_absolute (const char *link_file, GError **error)
 #define MATCH_TAG_CONFIG_NM_VERSION_MAX         "nm-version-max:"
 #define MATCH_TAG_CONFIG_ENV                    "env:"
 
-#define _spec_has_prefix(pspec, tag) \
-	({ \
-		const char **_spec = (pspec); \
-		gboolean _has = FALSE; \
-		\
-		if (!g_ascii_strncasecmp (*_spec, (""tag), NM_STRLEN (tag))) { \
-			*_spec += NM_STRLEN (tag); \
-			_has = TRUE; \
-		} \
-		_has; \
-	})
-
-static const char *
-_match_except (const char *spec_str, gboolean *out_except)
-{
-	if (!g_ascii_strncasecmp (spec_str, EXCEPT_TAG, NM_STRLEN (EXCEPT_TAG))) {
-		spec_str += NM_STRLEN (EXCEPT_TAG);
-		*out_except = TRUE;
-	} else
-		*out_except = FALSE;
-	return spec_str;
-}
-
-NMMatchSpecMatchType
-nm_match_spec_device_type (const GSList *specs, const char *device_type)
-{
-	const GSList *iter;
-	NMMatchSpecMatchType match = NM_MATCH_SPEC_NO_MATCH;
-
-	if (!device_type || !*device_type)
-		return NM_MATCH_SPEC_NO_MATCH;
-
-	for (iter = specs; iter; iter = g_slist_next (iter)) {
-		const char *spec_str = iter->data;
-		gboolean except;
-
-		if (!spec_str || !*spec_str)
-			continue;
-
-		spec_str = _match_except (spec_str, &except);
-
-		if (g_ascii_strncasecmp (spec_str, DEVICE_TYPE_TAG, NM_STRLEN (DEVICE_TYPE_TAG)) != 0)
-			continue;
-
-		spec_str += NM_STRLEN (DEVICE_TYPE_TAG);
-		if (strcmp (spec_str, device_type) == 0) {
-			if (except)
-				return NM_MATCH_SPEC_NEG_MATCH;
-			match = NM_MATCH_SPEC_MATCH;
-		}
-	}
-	return match;
-}
-
-NMMatchSpecMatchType
-nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr)
-{
-	const GSList *iter;
-	NMMatchSpecMatchType match = NM_MATCH_SPEC_NO_MATCH;
-	gsize hwaddr_len = 0;
-	guint8 hwaddr_bin[NM_UTILS_HWADDR_LEN_MAX];
-
-	nm_assert (nm_utils_hwaddr_valid (hwaddr, -1));
-
-	for (iter = specs; iter; iter = g_slist_next (iter)) {
-		const char *spec_str = iter->data;
-		gboolean except;
-
-		if (!spec_str || !*spec_str)
-			continue;
-
-		spec_str = _match_except (spec_str, &except);
-
-		if (   !g_ascii_strncasecmp (spec_str, INTERFACE_NAME_TAG, NM_STRLEN (INTERFACE_NAME_TAG))
-		    || !g_ascii_strncasecmp (spec_str, SUBCHAN_TAG, NM_STRLEN (SUBCHAN_TAG))
-		    || !g_ascii_strncasecmp (spec_str, DEVICE_TYPE_TAG, NM_STRLEN (DEVICE_TYPE_TAG)))
-			continue;
-
-		if (!g_ascii_strncasecmp (spec_str, MAC_TAG, NM_STRLEN (MAC_TAG)))
-			spec_str += NM_STRLEN (MAC_TAG);
-		else if (except)
-			continue;
-
-		if (G_UNLIKELY (hwaddr_len == 0)) {
-			if (!_nm_utils_hwaddr_aton (hwaddr, hwaddr_bin, sizeof (hwaddr_bin), &hwaddr_len))
-				g_return_val_if_reached (NM_MATCH_SPEC_NO_MATCH);
-		}
-
-		if (nm_utils_hwaddr_matches (spec_str, -1, hwaddr_bin, hwaddr_len)) {
-			if (except)
-				return NM_MATCH_SPEC_NEG_MATCH;
-			match = NM_MATCH_SPEC_MATCH;
-		}
-	}
-	return match;
-}
-
-NMMatchSpecMatchType
-nm_match_spec_interface_name (const GSList *specs, const char *interface_name)
-{
-	const GSList *iter;
-	NMMatchSpecMatchType match = NM_MATCH_SPEC_NO_MATCH;
-
-	g_return_val_if_fail (interface_name != NULL, NM_MATCH_SPEC_NO_MATCH);
-
-	for (iter = specs; iter; iter = g_slist_next (iter)) {
-		const char *spec_str = iter->data;
-		gboolean use_pattern = FALSE;
-		gboolean except;
-
-		if (!spec_str || !*spec_str)
-			continue;
-
-		spec_str = _match_except (spec_str, &except);
-
-		if (   !g_ascii_strncasecmp (spec_str, MAC_TAG, NM_STRLEN (MAC_TAG))
-		    || !g_ascii_strncasecmp (spec_str, SUBCHAN_TAG, NM_STRLEN (SUBCHAN_TAG))
-		    || !g_ascii_strncasecmp (spec_str, DEVICE_TYPE_TAG, NM_STRLEN (DEVICE_TYPE_TAG)))
-			continue;
-
-		if (!g_ascii_strncasecmp (spec_str, INTERFACE_NAME_TAG, NM_STRLEN (INTERFACE_NAME_TAG))) {
-			spec_str += NM_STRLEN (INTERFACE_NAME_TAG);
-			if (spec_str[0] == '=')
-				spec_str += 1;
-			else {
-				if (spec_str[0] == '~')
-					spec_str += 1;
-				use_pattern=TRUE;
-			}
-		} else if (except)
-			continue;
-
-		if (   !strcmp (spec_str, interface_name)
-		    || (use_pattern && g_pattern_match_simple (spec_str, interface_name))) {
-			if (except)
-				return NM_MATCH_SPEC_NEG_MATCH;
-			match = NM_MATCH_SPEC_MATCH;
-		}
-	}
-	return match;
-}
-
-#define BUFSIZE 10
-
 static gboolean
-parse_subchannels (const char *subchannels, guint32 *a, guint32 *b, guint32 *c)
+match_s390_subchannels_parse (const char *s390_subchannels, guint32 *a, guint32 *b, guint32 *c)
 {
+	const int BUFSIZE = 10;
 	long unsigned int tmp;
 	char buf[BUFSIZE + 1];
-	const char *p = subchannels;
+	const char *p = s390_subchannels;
 	int i = 0;
 	char *pa = NULL, *pb = NULL, *pc = NULL;
 
-	g_return_val_if_fail (subchannels != NULL, FALSE);
-	g_return_val_if_fail (a != NULL, FALSE);
-	g_return_val_if_fail (*a == 0, FALSE);
-	g_return_val_if_fail (b != NULL, FALSE);
-	g_return_val_if_fail (*b == 0, FALSE);
-	g_return_val_if_fail (c != NULL, FALSE);
-	g_return_val_if_fail (*c == 0, FALSE);
+	nm_assert (s390_subchannels);
+	nm_assert (a != NULL);
+	nm_assert (*a == 0);
+	nm_assert (b != NULL);
+	nm_assert (*b == 0);
+	nm_assert (c != NULL);
+	nm_assert (*c == 0);
 
 	/* sanity check */
-	if (!g_ascii_isxdigit (subchannels[0]))
+	if (!g_ascii_isxdigit (s390_subchannels[0]))
 		return FALSE;
 
 	/* Get the first channel */
@@ -1421,47 +1278,225 @@ parse_subchannels (const char *subchannels, guint32 *a, guint32 *b, guint32 *c)
 	return TRUE;
 }
 
+typedef struct {
+	const char *s390_subchannels;
+	gboolean is_parsed;
+	guint32 a;
+	guint32 b;
+	guint32 c;
+} MatchS390SubchannelsData;
+
+static gboolean
+match_s390_subchannels_ensure (MatchS390SubchannelsData *data)
+{
+	nm_assert (data);
+
+	if (data->is_parsed)
+		return !!data->s390_subchannels;
+
+	data->is_parsed = TRUE;
+	if (!match_s390_subchannels_parse (data->s390_subchannels,
+	                                   &data->a, &data->b, &data->c)) {
+		data->s390_subchannels = NULL;
+		return FALSE;
+	}
+	return TRUE;
+}
+
+static gboolean
+match_s390_subchannels_eval (const char *spec_str,
+                             MatchS390SubchannelsData *data)
+{
+	guint32 a, b, c;
+
+	if (!match_s390_subchannels_ensure (data))
+		return FALSE;
+	if (!match_s390_subchannels_parse (spec_str, &a, &b, &c))
+		return FALSE;
+	return data->a == a && data->b == b && data->c == c;
+}
+
+#define _MATCH_CHECK(spec_str, tag) \
+	({ \
+		gboolean _has = FALSE; \
+		\
+		if (!g_ascii_strncasecmp (spec_str, (""tag""), NM_STRLEN (tag))) { \
+			spec_str += NM_STRLEN (tag); \
+			_has = TRUE; \
+		} \
+		_has; \
+	})
+
+static const char *
+match_except (const char *spec_str, gboolean *out_except)
+{
+	if (_MATCH_CHECK (spec_str, EXCEPT_TAG))
+		*out_except = TRUE;
+	else
+		*out_except = FALSE;
+	return spec_str;
+}
+
+static gboolean
+match_device_eval (const char *spec_str,
+                   gboolean allow_fuzzy,
+                   const char *interface_name,
+                   const char *device_type,
+                   const guint8 *hwaddr_bin,
+                   guint hwaddr_len,
+                   MatchS390SubchannelsData *s390_subchannels_data)
+{
+	nm_assert (!device_type || device_type[0]);
+	nm_assert (s390_subchannels_data);
+
+	if (_MATCH_CHECK (spec_str, DEVICE_TYPE_TAG)) {
+		return    device_type
+		       && nm_streq (spec_str, device_type);
+	}
+
+	if (_MATCH_CHECK (spec_str, MAC_TAG)) {
+		return    hwaddr_bin
+		       && nm_utils_hwaddr_matches (spec_str, -1, hwaddr_bin, hwaddr_len);
+	}
+
+	if (_MATCH_CHECK (spec_str, INTERFACE_NAME_TAG)) {
+		gboolean use_pattern = FALSE;
+
+		if (spec_str[0] == '=')
+			spec_str += 1;
+		else {
+			if (spec_str[0] == '~')
+				spec_str += 1;
+			use_pattern = TRUE;
+		}
+
+		if (interface_name) {
+			if (nm_streq (spec_str, interface_name))
+				return TRUE;
+			if (use_pattern && g_pattern_match_simple (spec_str, interface_name))
+				return TRUE;
+		}
+		return FALSE;
+	}
+
+	if (_MATCH_CHECK (spec_str, SUBCHAN_TAG))
+		return match_s390_subchannels_eval (spec_str, s390_subchannels_data);
+
+	if (allow_fuzzy) {
+		if (   hwaddr_bin
+		    && nm_utils_hwaddr_matches (spec_str, -1, hwaddr_bin, hwaddr_len))
+			return TRUE;
+		if (   interface_name
+		    && nm_streq (spec_str, interface_name))
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
 NMMatchSpecMatchType
-nm_match_spec_s390_subchannels (const GSList *specs, const char *subchannels)
+nm_match_spec_device (const GSList *specs,
+                      const char *interface_name,
+                      const char *device_type,
+                      const char *hwaddr,
+                      const char *s390_subchannels)
 {
 	const GSList *iter;
-	guint32 a = 0, b = 0, c = 0;
-	guint32 spec_a = 0, spec_b = 0, spec_c = 0;
-	NMMatchSpecMatchType match = NM_MATCH_SPEC_NO_MATCH;
+	NMMatchSpecMatchType match;
+	const char *spec_str;
+	gboolean except;
+	guint hwaddr_len = 0;
+	const guint8 *hwaddr_bin = NULL;
+	guint8 hwaddr_bin_data[NM_UTILS_HWADDR_LEN_MAX];
+	MatchS390SubchannelsData s390_subchannels_data = {
+	    .s390_subchannels = s390_subchannels,
+	};
 
-	g_return_val_if_fail (subchannels != NULL, NM_MATCH_SPEC_NO_MATCH);
+	nm_assert (!hwaddr || nm_utils_hwaddr_valid (hwaddr, -1));
 
 	if (!specs)
 		return NM_MATCH_SPEC_NO_MATCH;
 
-	if (!parse_subchannels (subchannels, &a, &b, &c))
-		return NM_MATCH_SPEC_NO_MATCH;
+	if (device_type && !*device_type)
+		device_type = NULL;
 
-	for (iter = specs; iter; iter = g_slist_next (iter)) {
-		const char *spec_str = iter->data;
-		gboolean except;
+	if (hwaddr) {
+		gsize l;
+
+		if (!_nm_utils_hwaddr_aton (hwaddr, hwaddr_bin_data, sizeof (hwaddr_bin_data), &l))
+			g_return_val_if_reached (NM_MATCH_SPEC_NO_MATCH);
+		hwaddr_bin = hwaddr_bin_data;
+		hwaddr_len = l;
+	}
+
+	/* first see if there is an all-match "*" */
+	for (iter = specs; iter; iter = iter->next) {
+		spec_str = iter->data;
+
+		if (!spec_str || spec_str[0] != '*' || spec_str[1] != '\0')
+			continue;
+
+		/* we have a match-all. See if there is a matching except
+		 * which can still change the outcome... */
+		for (iter = specs; iter; iter = iter->next) {
+			spec_str = iter->data;
+
+			if (!spec_str || !*spec_str)
+				continue;
+
+			spec_str = match_except (spec_str, &except);
+			if (!except)
+				continue;
+			if (!match_device_eval (spec_str,
+			                        FALSE,
+			                        interface_name,
+			                        device_type,
+			                        hwaddr_bin,
+			                        hwaddr_len,
+			                        &s390_subchannels_data))
+				continue;
+			return NM_MATCH_SPEC_NEG_MATCH;
+		}
+
+		return NM_MATCH_SPEC_MATCH;
+	}
+
+	match = NM_MATCH_SPEC_NO_MATCH;
+
+	for (iter = specs; iter; iter = iter->next) {
+		spec_str = iter->data;
 
 		if (!spec_str || !*spec_str)
 			continue;
 
-		spec_str = _match_except (spec_str, &except);
+		spec_str = match_except (spec_str, &except);
 
-		if (!g_ascii_strncasecmp (spec_str, SUBCHAN_TAG, NM_STRLEN (SUBCHAN_TAG))) {
-			spec_str += NM_STRLEN (SUBCHAN_TAG);
-			if (parse_subchannels (spec_str, &spec_a, &spec_b, &spec_c)) {
-				if (a == spec_a && b == spec_b && c == spec_c) {
-					if (except)
-						return NM_MATCH_SPEC_NEG_MATCH;
-					match = NM_MATCH_SPEC_MATCH;
-				}
-			}
+		if (   !except
+		    && match == NM_MATCH_SPEC_MATCH) {
+			/* we have no "except-match" but already match. No need to evaluate
+			 * the match, we cannot match stronger. */
+			continue;
 		}
+
+		if (!match_device_eval (spec_str,
+		                        !except,
+		                        interface_name,
+		                        device_type,
+		                        hwaddr_bin,
+		                        hwaddr_len,
+		                        &s390_subchannels_data))
+			continue;
+
+		if (except)
+			return NM_MATCH_SPEC_NEG_MATCH;
+		match = NM_MATCH_SPEC_MATCH;
 	}
+
 	return match;
 }
 
 static gboolean
-_match_config_nm_version (const char *str, const char *tag, guint cur_nm_version)
+match_config_eval (const char *str, const char *tag, guint cur_nm_version)
 {
 	gs_free char *s_ver = NULL;
 	gs_strfreev char **s_ver_tokens = NULL;
@@ -1524,7 +1559,7 @@ _match_config_nm_version (const char *str, const char *tag, guint cur_nm_version
 }
 
 NMMatchSpecMatchType
-nm_match_spec_match_config (const GSList *specs, guint cur_nm_version, const char *env)
+nm_match_spec_config (const GSList *specs, guint cur_nm_version, const char *env)
 {
 	const GSList *iter;
 	NMMatchSpecMatchType match = NM_MATCH_SPEC_NO_MATCH;
@@ -1540,15 +1575,15 @@ nm_match_spec_match_config (const GSList *specs, guint cur_nm_version, const cha
 		if (!spec_str || !*spec_str)
 			continue;
 
-		spec_str = _match_except (spec_str, &except);
+		spec_str = match_except (spec_str, &except);
 
-		if (_spec_has_prefix (&spec_str, MATCH_TAG_CONFIG_NM_VERSION))
-			v_match = _match_config_nm_version (spec_str, MATCH_TAG_CONFIG_NM_VERSION, cur_nm_version);
-		else if (_spec_has_prefix (&spec_str, MATCH_TAG_CONFIG_NM_VERSION_MIN))
-			v_match = _match_config_nm_version (spec_str, MATCH_TAG_CONFIG_NM_VERSION_MIN, cur_nm_version);
-		else if (_spec_has_prefix (&spec_str, MATCH_TAG_CONFIG_NM_VERSION_MAX))
-			v_match = _match_config_nm_version (spec_str, MATCH_TAG_CONFIG_NM_VERSION_MAX, cur_nm_version);
-		else if (_spec_has_prefix (&spec_str, MATCH_TAG_CONFIG_ENV))
+		if (_MATCH_CHECK (spec_str, MATCH_TAG_CONFIG_NM_VERSION))
+			v_match = match_config_eval (spec_str, MATCH_TAG_CONFIG_NM_VERSION, cur_nm_version);
+		else if (_MATCH_CHECK (spec_str, MATCH_TAG_CONFIG_NM_VERSION_MIN))
+			v_match = match_config_eval (spec_str, MATCH_TAG_CONFIG_NM_VERSION_MIN, cur_nm_version);
+		else if (_MATCH_CHECK (spec_str, MATCH_TAG_CONFIG_NM_VERSION_MAX))
+			v_match = match_config_eval (spec_str, MATCH_TAG_CONFIG_NM_VERSION_MAX, cur_nm_version);
+		else if (_MATCH_CHECK (spec_str, MATCH_TAG_CONFIG_ENV))
 			v_match = env && env[0] && !strcmp (spec_str, env);
 		else
 			continue;
@@ -1561,6 +1596,8 @@ nm_match_spec_match_config (const GSList *specs, guint cur_nm_version, const cha
 	}
 	return match;
 }
+
+#undef _MATCH_CHECK
 
 /**
  * nm_match_spec_split:
