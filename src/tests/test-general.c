@@ -993,7 +993,7 @@ static void
 _do_test_match_spec_device (const char *spec_str, const char **matches, const char **neg_matches)
 {
 	const char *m;
-	GSList *specs, *specs_reverse = NULL, *specs_resplit, *specs_i, *specs_j;
+	GSList *specs, *specs_randperm = NULL, *specs_resplit, *specs_i, *specs_j;
 	guint i;
 	gs_free char *specs_joined = NULL;
 
@@ -1014,17 +1014,17 @@ _do_test_match_spec_device (const char *spec_str, const char **matches, const ch
 	g_assert (!specs_j);
 	g_slist_free_full (specs_resplit, g_free);
 
-	/* also check the matches in the reverse order. They must yield the same result because
+	/* also check the matches in the random order. They must yield the same result because
 	 * matches are inclusive -- except "except:" which always wins. */
-	specs_reverse = g_slist_reverse (g_slist_copy (specs));
+	specs_randperm = nmtst_rand_perm_gslist (NULL, g_slist_copy (specs));
 
 	for (i = 0; matches && matches[i]; i++) {
 		g_assert (_test_match_device_interface (specs, matches[i]) == NM_MATCH_SPEC_MATCH);
-		g_assert (_test_match_device_interface (specs_reverse, matches[i]) == NM_MATCH_SPEC_MATCH);
+		g_assert (_test_match_device_interface (specs_randperm, matches[i]) == NM_MATCH_SPEC_MATCH);
 	}
 	for (i = 0; neg_matches && neg_matches[i]; i++) {
 		g_assert (_test_match_device_interface (specs, neg_matches[i]) == NM_MATCH_SPEC_NEG_MATCH);
-		g_assert (_test_match_device_interface (specs_reverse, neg_matches[i]) == NM_MATCH_SPEC_NEG_MATCH);
+		g_assert (_test_match_device_interface (specs_randperm, neg_matches[i]) == NM_MATCH_SPEC_NEG_MATCH);
 	}
 	for (i = 0; (m = _test_match_spec_all[i]); i++) {
 		if (_test_match_spec_contains (matches, m))
@@ -1032,10 +1032,10 @@ _do_test_match_spec_device (const char *spec_str, const char **matches, const ch
 		if (_test_match_spec_contains (neg_matches, m))
 			continue;
 		g_assert (_test_match_device_interface (specs, m) == NM_MATCH_SPEC_NO_MATCH);
-		g_assert (_test_match_device_interface (specs_reverse, m) == NM_MATCH_SPEC_NO_MATCH);
+		g_assert (_test_match_device_interface (specs_randperm, m) == NM_MATCH_SPEC_NO_MATCH);
 	}
 
-	g_slist_free (specs_reverse);
+	g_slist_free (specs_randperm);
 	g_slist_free_full (specs, g_free);
 }
 
