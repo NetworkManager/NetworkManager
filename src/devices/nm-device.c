@@ -2140,8 +2140,7 @@ device_link_changed (NMDevice *self)
 		_notify (self, PROP_UDI);
 	}
 
-	if (g_strcmp0 (info.driver, priv->driver)) {
-		/* Update driver to what udev gives us */
+	if (!nm_streq0 (info.driver, priv->driver)) {
 		g_free (priv->driver);
 		priv->driver = g_strdup (info.driver);
 		_notify (self, PROP_DRIVER);
@@ -2150,12 +2149,6 @@ device_link_changed (NMDevice *self)
 	if (priv->mtu != info.mtu) {
 		priv->mtu = info.mtu;
 		_notify (self, PROP_MTU);
-	}
-
-	if (info.driver && g_strcmp0 (priv->driver, info.driver) != 0) {
-		g_free (priv->driver);
-		priv->driver = g_strdup (info.driver);
-		_notify (self, PROP_DRIVER);
 	}
 
 	if (ifindex == nm_device_get_ip_ifindex (self))
