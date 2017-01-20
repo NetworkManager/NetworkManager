@@ -5691,10 +5691,9 @@ act_stage3_ip4_config_start (NMDevice *self,
 				ret = NM_ACT_STAGE_RETURN_FAILURE;
 		} else
 			g_return_val_if_reached (NM_ACT_STAGE_RETURN_FAILURE);
-	} else if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0) {
-		_commit_mtu (self, priv->ip4_config);
+	} else if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0)
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
-	} else
+	else
 		_LOGW (LOGD_IP4, "unhandled IPv4 config method '%s'; will fail", method);
 
 	return ret;
