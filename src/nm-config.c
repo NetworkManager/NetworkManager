@@ -529,9 +529,9 @@ ignore_config_snippet (GKeyFile *keyfile, gboolean is_base_config)
 
 	/* second, interpret the value as match-spec. */
 	specs = nm_config_get_match_spec (keyfile, NM_CONFIG_KEYFILE_GROUP_CONFIG, NM_CONFIG_KEYFILE_KEY_CONFIG_ENABLE, NULL);
-	match_type = nm_match_spec_match_config (specs,
-	                                         _nm_config_match_nm_version,
-	                                         _nm_config_match_env);
+	match_type = nm_match_spec_config (specs,
+	                                   _nm_config_match_nm_version,
+	                                   _nm_config_match_env);
 	g_slist_free_full (specs, g_free);
 
 	return match_type != NM_MATCH_SPEC_MATCH;
