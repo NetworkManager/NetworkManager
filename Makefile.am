@@ -2353,6 +2353,9 @@ src_devices_wwan_libnm_wwan_la_LIBADD = \
 	$(LIBSYSTEMD_LIBS) \
 	$(MM_GLIB_LIBS)
 
+EXTRA_src_devices_wwan_libnm_wwan_la_DEPENDENCIES = \
+	src/devices/wwan/libnm-wwan.ver
+
 core_plugins += src/devices/wwan/libnm-device-plugin-wwan.la
 
 src_devices_wwan_libnm_device_plugin_wwan_la_SOURCES = \
