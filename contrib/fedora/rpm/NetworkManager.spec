@@ -272,6 +272,7 @@ Summary: Libraries for adding NetworkManager support to applications (old API).
 Group: Development/Libraries
 Requires: dbus >= %{dbus_version}
 Requires: dbus-glib >= %{dbus_glib_version}
+Conflicts: NetworkManager-libnm < %{epoch}:%{version}-%{release}
 
 %description glib
 This package contains the libraries that make it easier to use some
@@ -300,6 +301,7 @@ This is the older NetworkManager API.  See also NetworkManager-libnm-devel.
 %package libnm
 Summary: Libraries for adding NetworkManager support to applications (new API).
 Group: Development/Libraries
+Conflicts: NetworkManager-glib < %{epoch}:%{version}-%{release}
 
 %description libnm
 This package contains the libraries that make it easier to use some
