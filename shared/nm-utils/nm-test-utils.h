@@ -832,6 +832,31 @@ nmtst_rand_perm (GRand *rand, void *dst, const void *src, gsize elmt_size, gsize
 	return dst;
 }
 
+inline static GSList *
+nmtst_rand_perm_gslist (GRand *rand, GSList *list)
+{
+	GSList *result;
+	guint l;
+
+	if (!rand)
+		rand = nmtst_get_rand ();
+
+	/* no need for an efficient implementation :) */
+
+	result = 0;
+	for (l = g_slist_length (list); l > 0; l--) {
+		GSList *tmp;
+
+		tmp = g_slist_nth (list, g_rand_int (rand) % l);
+		g_assert (tmp);
+
+		list = g_slist_remove_link (list, tmp);
+		result = g_slist_concat (tmp, result);
+	}
+	g_assert (!list);
+	return result;
+}
+
 /*****************************************************************************/
 
 inline static gboolean
