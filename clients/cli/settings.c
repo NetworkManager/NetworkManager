@@ -1048,6 +1048,17 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 		return secret_flags_to_string (v, get_type); \
 	}
 
+#define DEFINE_ALLOWED_FOR_ENUMS(def_func, get_type_func, min, max) \
+	static const char ** \
+	def_func (NMSetting *setting, const char *prop) \
+	{ \
+		static const char **words = NULL; \
+		if (G_UNLIKELY (!words)) \
+			words = nm_utils_enum_get_values (get_type_func(), min, max); \
+		return words; \
+	}
+
+
 /* --- NM_SETTING_802_1X_SETTING_NAME property get functions --- */
 DEFINE_GETTER (nmc_property_802_1X_get_eap, NM_SETTING_802_1X_EAP)
 DEFINE_GETTER (nmc_property_802_1X_get_identity, NM_SETTING_802_1X_IDENTITY)
@@ -1559,17 +1570,9 @@ DEFINE_GETTER (nmc_property_ip_tunnel_get_encapsulation_limit, NM_SETTING_IP_TUN
 DEFINE_GETTER (nmc_property_ip_tunnel_get_flow_label, NM_SETTING_IP_TUNNEL_FLOW_LABEL);
 DEFINE_GETTER (nmc_property_ip_tunnel_get_mtu, NM_SETTING_IP_TUNNEL_MTU);
 
-static const char **
-nmc_property_ip_tunnel_allowed_mode (NMSetting *setting, const char *prop)
-{
-	static const char **words = NULL;
-
-	if (!words)
-		words = nm_utils_enum_get_values (nm_ip_tunnel_mode_get_type (),
-		                                  NM_IP_TUNNEL_MODE_UNKNOWN + 1,
-		                                  G_MAXINT);
-	return words;
-}
+DEFINE_ALLOWED_FOR_ENUMS (nmc_property_ip_tunnel_allowed_mode,
+                          nm_ip_tunnel_mode_get_type,
+                          NM_IP_TUNNEL_MODE_UNKNOWN + 1, G_MAXINT)
 
 static char *
 nmc_property_ib_get_mtu (NMSetting *setting, NmcPropertyGetType get_type)
@@ -2180,17 +2183,9 @@ nmc_property_macsec_set_mode (NMSetting *setting, const char *prop,
 	return TRUE;
 }
 
-static const char **
-nmc_property_macsec_allowed_mode (NMSetting *setting, const char *prop)
-{
-	static const char **words = NULL;
-
-	if (!words)
-		words = nm_utils_enum_get_values (nm_setting_macsec_mode_get_type(),
-		                                  G_MININT,
-		                                  G_MAXINT);
-	return words;
-}
+DEFINE_ALLOWED_FOR_ENUMS (nmc_property_macsec_allowed_mode,
+                          nm_setting_macsec_mode_get_type,
+                          G_MININT, G_MAXINT)
 
 /* 'validation' */
 static char *
@@ -2226,17 +2221,9 @@ nmc_property_macsec_set_validation (NMSetting *setting, const char *prop,
 	return TRUE;
 }
 
-static const char **
-nmc_property_macsec_allowed_validation (NMSetting *setting, const char *prop)
-{
-	static const char **words = NULL;
-
-	if (!words)
-		words = nm_utils_enum_get_values (nm_setting_macsec_validation_get_type(),
-		                                  G_MININT,
-		                                  G_MAXINT);
-	return words;
-}
+DEFINE_ALLOWED_FOR_ENUMS (nmc_property_macsec_allowed_validation,
+                          nm_setting_macsec_validation_get_type,
+                          G_MININT, G_MAXINT)
 
 /* --- NM_SETTING_MACVLAN_SETTING_NAME property get functions --- */
 DEFINE_GETTER (nmc_property_macvlan_get_parent, NM_SETTING_MACVLAN_PARENT)
@@ -2293,17 +2280,9 @@ nmc_property_macvlan_set_mode (NMSetting *setting, const char *prop,
 	return TRUE;
 }
 
-static const char **
-nmc_property_macvlan_allowed_mode (NMSetting *setting, const char *prop)
-{
-	static const char **words = NULL;
-
-	if (!words)
-		words = nm_utils_enum_get_values (nm_setting_macvlan_mode_get_type(),
-		                                  NM_SETTING_MACVLAN_MODE_UNKNOWN + 1,
-		                                  G_MAXINT);
-	return words;
-}
+DEFINE_ALLOWED_FOR_ENUMS (nmc_property_macvlan_allowed_mode,
+                          nm_setting_macvlan_mode_get_type,
+                          NM_SETTING_MACVLAN_MODE_UNKNOWN + 1, G_MAXINT)
 
 /* --- NM_SETTING_VXLAN_SETTING_NAME property get functions --- */
 DEFINE_GETTER (nmc_property_vxlan_get_parent, NM_SETTING_VXLAN_PARENT)
@@ -2366,17 +2345,9 @@ nmc_property_proxy_set_method (NMSetting *setting, const char *prop,
 	return TRUE;
 }
 
-static const char **
-nmc_property_proxy_allowed_method (NMSetting *setting, const char *prop)
-{
-	static const char **words = NULL;
-
-	if (!words)
-		words = nm_utils_enum_get_values (nm_setting_proxy_method_get_type(),
-		                                  NM_SETTING_PROXY_METHOD_NONE,
-		                                  G_MAXINT);
-	return words;
-}
+DEFINE_ALLOWED_FOR_ENUMS (nmc_property_proxy_allowed_method,
+                          nm_setting_proxy_method_get_type,
+                          NM_SETTING_PROXY_METHOD_NONE, G_MAXINT)
 
 static gboolean
 nmc_property_proxy_set_pac_script (NMSetting *setting, const char *prop,
@@ -3077,6 +3048,7 @@ check_and_set_string (NMSetting *setting,
 	{ \
 		return valid_values; \
 	}
+
 
 /* --- generic property setter functions --- */
 static gboolean
@@ -4944,17 +4916,9 @@ nmc_property_ipv6_set_addr_gen_mode (NMSetting *setting, const char *prop,
 	return TRUE;
 }
 
-static const char **
-nmc_property_ipv6_allowed_addr_gen_mode (NMSetting *setting, const char *prop)
-{
-	static const char **words = NULL;
-
-	if (!words)
-		words = nm_utils_enum_get_values (nm_setting_ip6_config_addr_gen_mode_get_type(),
-		                                  G_MININT,
-		                                  G_MAXINT);
-	return words;
-}
+DEFINE_ALLOWED_FOR_ENUMS (nmc_property_ipv6_allowed_addr_gen_mode,
+                          nm_setting_ip6_config_addr_gen_mode_get_type,
+                          G_MININT, G_MAXINT)
 
 /* --- NM_SETTING_OLPC_MESH_SETTING_NAME property setter functions --- */
 static gboolean
