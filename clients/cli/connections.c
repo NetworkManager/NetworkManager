@@ -108,6 +108,16 @@ struct _OptionInfo {
 
 #define PROMPT_MACVLAN_MODE N_("MACVLAN mode")
 
+#define PROMPT_MACSEC_MODE N_("MACsec mode")
+#define WORD_PSK "psk"
+#define WORD_EAP "eap"
+#define PROMPT_MACSEC_MODE_CHOICES "(" WORD_PSK "/" WORD_EAP ")"
+
+#define PROMPT_PROXY_METHOD N_("Proxy method")
+#define WORD_NONE "none"
+#define WORD_AUTO "auto"
+#define PROMPT_PROXY_METHOD_CHOICES "(" WORD_NONE "/" WORD_AUTO ") [" WORD_NONE "]"
+
 #define PROMPT_CONNECTION  _("Connection (name, UUID, or path)")
 #define PROMPT_VPN_CONNECTION  _("VPN connection (name, UUID, or path)")
 #define PROMPT_CONNECTIONS _("Connection(s) (name, UUID, or path)")
@@ -3916,6 +3926,17 @@ gen_func_macvlan_mode (const char *text, int state)
 }
 
 static char *
+gen_func_proxy_method (const char *text, int state)
+{
+	gs_free const char **words = NULL;
+
+	words = nm_utils_enum_get_values (nm_setting_proxy_method_get_type (),
+	                                  G_MININT,
+	                                  G_MAXINT);
+	return nmc_rl_gen_func_basic (text, state, words);
+}
+
+static char *
 gen_func_master_ifnames (const char *text, int state)
 {
 	int i;
@@ -4320,7 +4341,7 @@ static OptionInfo option_info[] = {
 	{ NM_SETTING_ADSL_SETTING_NAME,         NM_SETTING_ADSL_ENCAPSULATION,          "encapsulation", OPTION_NONE, PROMPT_ADSL_ENCAP, PROMPT_ADSL_ENCAP_CHOICES,
                                                                                                         NULL, gen_func_adsl_encap },
 	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_PARENT,               "dev",          OPTION_REQD, N_("MACsec parent device or connection UUID"), NULL, NULL, NULL },
-	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_MODE,                 "mode",         OPTION_REQD, N_("Mode"), NULL, NULL, gen_func_macsec_mode },
+	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_MODE,                 "mode",         OPTION_REQD, PROMPT_MACSEC_MODE, PROMPT_MACSEC_MODE_CHOICES, NULL, gen_func_macsec_mode },
 	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_ENCRYPT,              "encrypt",      OPTION_NONE, N_("Enable encryption [yes]"), NULL, set_yes_no, gen_func_bool_values_l10n },
 	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_MKA_CAK,              "cak",          OPTION_NONE, N_("MKA CAK"), NULL, NULL, NULL },
 	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_MKA_CKN,              "ckn",          OPTION_NONE, N_("MKA_CKN"), NULL, NULL, NULL },
@@ -4361,10 +4382,11 @@ static OptionInfo option_info[] = {
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,   NM_SETTING_IP_CONFIG_ADDRESSES,         "ip6",          OPTION_MULTI, N_("IPv6 address (IP[/plen]) [none]"), NULL,
 	                                                                                                set_ip6_address, NULL },
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,   NM_SETTING_IP_CONFIG_GATEWAY,           "gw6",          OPTION_NONE, N_("IPv6 gateway [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_METHOD,                "method",       OPTION_NONE, N_("Proxy method"), NULL, NULL, NULL },
-	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_BROWSER_ONLY,          "browser-only", OPTION_NONE, N_("Browser Only"), NULL, NULL, NULL },
-	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_PAC_URL,               "pac-url",      OPTION_NONE, N_("PAC Url"), NULL, NULL, NULL },
-	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_PAC_SCRIPT,            "pac-script",   OPTION_NONE, N_("PAC Script"), NULL, NULL, NULL },
+	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_METHOD,                "method",       OPTION_NONE, PROMPT_PROXY_METHOD, PROMPT_PROXY_METHOD_CHOICES, NULL, gen_func_proxy_method },
+	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_BROWSER_ONLY,          "browser-only", OPTION_NONE, N_("Browser only [no]"), NULL,
+                                                                                                        set_yes_no, gen_func_bool_values_l10n },
+	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_PAC_URL,               "pac-url",      OPTION_NONE, N_("PAC URL"), NULL, NULL, NULL },
+	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_PAC_SCRIPT,            "pac-script",   OPTION_NONE, N_("PAC script"), NULL, NULL, NULL },
 	{ NULL, NULL, NULL, OPTION_NONE, NULL, NULL, NULL, NULL },
 };
 
@@ -4743,6 +4765,10 @@ nmcli_con_add_tab_completion (const char *text, int start, int end)
 		generator_func = gen_func_ip_tunnel_mode;
 	else if (g_str_has_prefix (rl_prompt, PROMPT_MACVLAN_MODE))
 		generator_func = gen_func_macvlan_mode;
+	else if (g_str_has_prefix (rl_prompt, PROMPT_MACSEC_MODE))
+		generator_func = gen_func_macsec_mode;
+	else if (g_str_has_prefix (rl_prompt, PROMPT_PROXY_METHOD))
+		generator_func = gen_func_proxy_method;
 	else if (   g_str_has_suffix (rl_prompt, yes)
 	         || g_str_has_suffix (rl_prompt, no))
 		generator_func = gen_func_bool_values_l10n;
