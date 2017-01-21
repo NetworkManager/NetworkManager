@@ -1213,8 +1213,26 @@ nm_utils_read_link_absolute (const char *link_file, GError **error)
 #define MATCH_TAG_CONFIG_NM_VERSION_MAX         "nm-version-max:"
 #define MATCH_TAG_CONFIG_ENV                    "env:"
 
+typedef struct {
+	const char *interface_name;
+	const char *device_type;
+	struct {
+		const char *value;
+		gboolean is_parsed;
+		guint len;
+		guint8 bin[NM_UTILS_HWADDR_LEN_MAX];
+	} hwaddr;
+	struct {
+		const char *value;
+		gboolean is_parsed;
+		guint32 a;
+		guint32 b;
+		guint32 c;
+	} s390_subchannels;
+} MatchDeviceData;
+
 static gboolean
-match_s390_subchannels_parse (const char *s390_subchannels, guint32 *a, guint32 *b, guint32 *c)
+match_device_s390_subchannels_parse (const char *s390_subchannels, guint32 *a, guint32 *b, guint32 *c)
 {
 	const int BUFSIZE = 10;
 	long unsigned int tmp;
@@ -1278,42 +1296,52 @@ match_s390_subchannels_parse (const char *s390_subchannels, guint32 *a, guint32 
 	return TRUE;
 }
 
-typedef struct {
-	const char *s390_subchannels;
-	gboolean is_parsed;
-	guint32 a;
-	guint32 b;
-	guint32 c;
-} MatchS390SubchannelsData;
-
 static gboolean
-match_s390_subchannels_ensure (MatchS390SubchannelsData *data)
-{
-	nm_assert (data);
-
-	if (data->is_parsed)
-		return !!data->s390_subchannels;
-
-	data->is_parsed = TRUE;
-	if (!match_s390_subchannels_parse (data->s390_subchannels,
-	                                   &data->a, &data->b, &data->c)) {
-		data->s390_subchannels = NULL;
-		return FALSE;
-	}
-	return TRUE;
-}
-
-static gboolean
-match_s390_subchannels_eval (const char *spec_str,
-                             MatchS390SubchannelsData *data)
+match_data_s390_subchannels_eval (const char *spec_str,
+                                  MatchDeviceData *match_data)
 {
 	guint32 a, b, c;
 
-	if (!match_s390_subchannels_ensure (data))
+	if (G_UNLIKELY (!match_data->s390_subchannels.is_parsed)) {
+		match_data->s390_subchannels.is_parsed = TRUE;
+
+		if (   !match_data->s390_subchannels.value
+		    || !match_device_s390_subchannels_parse (match_data->s390_subchannels.value,
+		                                             &match_data->s390_subchannels.a,
+		                                             &match_data->s390_subchannels.b,
+		                                             &match_data->s390_subchannels.c)) {
+			match_data->s390_subchannels.value = NULL;
+			return FALSE;
+		}
+	} else if (!match_data->s390_subchannels.value)
 		return FALSE;
-	if (!match_s390_subchannels_parse (spec_str, &a, &b, &c))
+
+	if (!match_device_s390_subchannels_parse (spec_str, &a, &b, &c))
 		return FALSE;
-	return data->a == a && data->b == b && data->c == c;
+	return    match_data->s390_subchannels.a == a
+	       && match_data->s390_subchannels.b == b
+	       && match_data->s390_subchannels.c == c;
+}
+
+static gboolean
+match_device_hwaddr_eval (const char *spec_str,
+                          MatchDeviceData *match_data)
+{
+	if (G_UNLIKELY (!match_data->hwaddr.is_parsed)) {
+		match_data->hwaddr.is_parsed = TRUE;
+
+		if (match_data->hwaddr.value) {
+			gsize l;
+
+			if (!_nm_utils_hwaddr_aton (match_data->hwaddr.value, match_data->hwaddr.bin, sizeof (match_data->hwaddr.bin), &l))
+				g_return_val_if_reached (FALSE);
+			match_data->hwaddr.len = l;
+		} else
+			return FALSE;
+	} else if (!match_data->hwaddr.len)
+		return FALSE;
+
+	return nm_utils_hwaddr_matches (spec_str, -1, match_data->hwaddr.bin, match_data->hwaddr.len);
 }
 
 #define _MATCH_CHECK(spec_str, tag) \
@@ -1340,24 +1368,15 @@ match_except (const char *spec_str, gboolean *out_except)
 static gboolean
 match_device_eval (const char *spec_str,
                    gboolean allow_fuzzy,
-                   const char *interface_name,
-                   const char *device_type,
-                   const guint8 *hwaddr_bin,
-                   guint hwaddr_len,
-                   MatchS390SubchannelsData *s390_subchannels_data)
+                   MatchDeviceData *match_data)
 {
-	nm_assert (!device_type || device_type[0]);
-	nm_assert (s390_subchannels_data);
-
 	if (_MATCH_CHECK (spec_str, DEVICE_TYPE_TAG)) {
-		return    device_type
-		       && nm_streq (spec_str, device_type);
+		return    match_data->device_type
+		       && nm_streq (spec_str, match_data->device_type);
 	}
 
-	if (_MATCH_CHECK (spec_str, MAC_TAG)) {
-		return    hwaddr_bin
-		       && nm_utils_hwaddr_matches (spec_str, -1, hwaddr_bin, hwaddr_len);
-	}
+	if (_MATCH_CHECK (spec_str, MAC_TAG))
+		return match_device_hwaddr_eval (spec_str, match_data);
 
 	if (_MATCH_CHECK (spec_str, INTERFACE_NAME_TAG)) {
 		gboolean use_pattern = FALSE;
@@ -1370,24 +1389,23 @@ match_device_eval (const char *spec_str,
 			use_pattern = TRUE;
 		}
 
-		if (interface_name) {
-			if (nm_streq (spec_str, interface_name))
+		if (match_data->interface_name) {
+			if (nm_streq (spec_str, match_data->interface_name))
 				return TRUE;
-			if (use_pattern && g_pattern_match_simple (spec_str, interface_name))
+			if (use_pattern && g_pattern_match_simple (spec_str, match_data->interface_name))
 				return TRUE;
 		}
 		return FALSE;
 	}
 
 	if (_MATCH_CHECK (spec_str, SUBCHAN_TAG))
-		return match_s390_subchannels_eval (spec_str, s390_subchannels_data);
+		return match_data_s390_subchannels_eval (spec_str, match_data);
 
 	if (allow_fuzzy) {
-		if (   hwaddr_bin
-		    && nm_utils_hwaddr_matches (spec_str, -1, hwaddr_bin, hwaddr_len))
+		if (match_device_hwaddr_eval (spec_str, match_data))
 			return TRUE;
-		if (   interface_name
-		    && nm_streq (spec_str, interface_name))
+		if (   match_data->interface_name
+		    && nm_streq (spec_str, match_data->interface_name))
 			return TRUE;
 	}
 
@@ -1405,29 +1423,21 @@ nm_match_spec_device (const GSList *specs,
 	NMMatchSpecMatchType match;
 	const char *spec_str;
 	gboolean except;
-	guint hwaddr_len = 0;
-	const guint8 *hwaddr_bin = NULL;
-	guint8 hwaddr_bin_data[NM_UTILS_HWADDR_LEN_MAX];
-	MatchS390SubchannelsData s390_subchannels_data = {
-	    .s390_subchannels = s390_subchannels,
+	MatchDeviceData match_data = {
+	    .interface_name = interface_name,
+	    .device_type = nm_str_not_empty (device_type),
+	    .hwaddr = {
+	        .value = hwaddr,
+	    },
+	    .s390_subchannels = {
+	        .value = s390_subchannels,
+	    },
 	};
 
 	nm_assert (!hwaddr || nm_utils_hwaddr_valid (hwaddr, -1));
 
 	if (!specs)
 		return NM_MATCH_SPEC_NO_MATCH;
-
-	if (device_type && !*device_type)
-		device_type = NULL;
-
-	if (hwaddr) {
-		gsize l;
-
-		if (!_nm_utils_hwaddr_aton (hwaddr, hwaddr_bin_data, sizeof (hwaddr_bin_data), &l))
-			g_return_val_if_reached (NM_MATCH_SPEC_NO_MATCH);
-		hwaddr_bin = hwaddr_bin_data;
-		hwaddr_len = l;
-	}
 
 	/* first see if there is an all-match "*" */
 	for (iter = specs; iter; iter = iter->next) {
@@ -1449,11 +1459,7 @@ nm_match_spec_device (const GSList *specs,
 				continue;
 			if (!match_device_eval (spec_str,
 			                        FALSE,
-			                        interface_name,
-			                        device_type,
-			                        hwaddr_bin,
-			                        hwaddr_len,
-			                        &s390_subchannels_data))
+			                        &match_data))
 				continue;
 			return NM_MATCH_SPEC_NEG_MATCH;
 		}
@@ -1480,11 +1486,7 @@ nm_match_spec_device (const GSList *specs,
 
 		if (!match_device_eval (spec_str,
 		                        !except,
-		                        interface_name,
-		                        device_type,
-		                        hwaddr_bin,
-		                        hwaddr_len,
-		                        &s390_subchannels_data))
+		                        &match_data))
 			continue;
 
 		if (except)
