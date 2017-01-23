@@ -1370,6 +1370,9 @@ match_device_eval (const char *spec_str,
                    gboolean allow_fuzzy,
                    MatchDeviceData *match_data)
 {
+	if (spec_str[0] == '*' && spec_str[1] == '\0')
+		return TRUE;
+
 	if (_MATCH_CHECK (spec_str, DEVICE_TYPE_TAG)) {
 		return    match_data->device_type
 		       && nm_streq (spec_str, match_data->device_type);
@@ -1439,35 +1442,17 @@ nm_match_spec_device (const GSList *specs,
 	if (!specs)
 		return NM_MATCH_SPEC_NO_MATCH;
 
-	/* first see if there is an all-match "*" */
+	match = NM_MATCH_SPEC_NO_MATCH;
+
+	/* pre-search for "*" */
 	for (iter = specs; iter; iter = iter->next) {
 		spec_str = iter->data;
 
-		if (!spec_str || spec_str[0] != '*' || spec_str[1] != '\0')
-			continue;
-
-		/* we have a match-all. See if there is a matching except
-		 * which can still change the outcome... */
-		for (iter = specs; iter; iter = iter->next) {
-			spec_str = iter->data;
-
-			if (!spec_str || !*spec_str)
-				continue;
-
-			spec_str = match_except (spec_str, &except);
-			if (!except)
-				continue;
-			if (!match_device_eval (spec_str,
-			                        FALSE,
-			                        &match_data))
-				continue;
-			return NM_MATCH_SPEC_NEG_MATCH;
+		if (spec_str && spec_str[0] == '*' && spec_str[1] == '\0') {
+			match = NM_MATCH_SPEC_MATCH;
+			break;
 		}
-
-		return NM_MATCH_SPEC_MATCH;
 	}
-
-	match = NM_MATCH_SPEC_NO_MATCH;
 
 	for (iter = specs; iter; iter = iter->next) {
 		spec_str = iter->data;
