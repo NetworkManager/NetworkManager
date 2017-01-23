@@ -8,20 +8,26 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 Notable changes included in this snapshot so far include:
 
+* Added support for managing the MACsec links. Requires support in
+    wpa_supplicant (version newer than 2.6).
+* Support for configuration and discovery of Web Proxy settings with
+    PacRunner service.
+* The ipv6.method=shared is now supported, utilizing DHCPv6 Prefix
+    Delegation option to obtain prefixes for the interface.
+* Support for systemd-resolved local DNS forwarder backend.
+* The configuration is now read from /run/NetworkManager/conf.d as well.
+    This is useful for handing over configuration discovered on system
+    startup to NetworkManager.
+* The PPP manager can now be split into a separate package.
+* Added initial support for PKCS#11 tokens with 802.1x authentication.
 * Introduced Vala bindings for libnm.
 * NetworkManager would now keep most connections up on shutdown (except Wi-Fi
     connections, VPN connections and other kinds that can't be assumed on
     startup)
 * The checkpoint/restore connection can now also remove new connections and
     disconnect devices that were activated since the checkpoint was taken.
-* The configuration is now read from /run/NetworkManager/conf.d as well.
-    This is useful for handing over configuration discovered on system
-    startup to NetworkManager.
 * New connection.autoconnect_retries property that allows fine-tuning
     the autoconnect behavior.
-* Support for configuration and discovery of Web Proxy settings with
-    PacRunner service.
-* Support for systemd-resolved local DNS forwarder backend.
 * Fix emission of NM-style PropertiesChanged signals and deprecate them
     for PropertiesChanged on "org.freedesktop.DBus.Properties" interface.
 * Change the meaning of unset "cloned-mac-address" settings from "permanent" to
@@ -36,8 +42,6 @@ Notable changes included in this snapshot so far include:
     devices.
 * The ifcfg parsing code has been reworked for better compatibility with
     actual shell variable files.
-* The ipv6.method=shared is now supported, utilizing DHCPv6 Prefix
-    Delegation option to obtain prefixes for the interface.
 * nmtui now supports creating and editing IP tunnel connections.
 * The libnm client library now uses the D-Bus ObjectManager API that allows
     for quicker initialization of the clients.
@@ -47,7 +51,6 @@ Notable changes included in this snapshot so far include:
     allow controlling overriding the negotiated link parameters.
 * Order in which IP addresses are configured is now preserved so that
     primary address is selected correctly.
-* The PPP manager can now be split into a separate package.
 * Details of the DNS information obtained from the connections is now
     exposed on the D-Bus and can be inspected with nmcli.
 * Fixed race conditions when renaming interfaces, for example as done
@@ -56,13 +59,10 @@ Notable changes included in this snapshot so far include:
 * Added the support for DHCPV6_HOSTNAME and DHCPV6_SEND_HOSTNAME keys in
     ifcfg files that control "dhcp-hostname" and "dhcp-send-hostname"
     properties of the "ipv6" setting.
-* Added initial support for PKCS#11 tokens with 802.1x authentication.
 * The stable-addressing for MAC address randomization and RFC7217 IPv6 stable
     privacy addressing can now be more flexibly configured using dynamic
     randomization seeds in "connection.stable-id".
     See "examples/nm-conf.d/30-anon.conf" for example use.
-* Added support for managing the MACsec links. Requires support in
-    wpa_supplicant (version newer than 2.6).
 * When the master of Team, Bridge and Bond devices is specified as a connection
     UUID, the ifcfg-rh plugin now writes the master connection's interface name
     into the ifcfg file for improved compatibility with the legacy network service.
