@@ -819,6 +819,8 @@ _nm_utils_slist_to_strv (GSList *slist, gboolean deep_copy)
 	int len, i;
 
 	len = g_slist_length (slist);
+	if (!len)
+		return NULL;
 	strv = g_new (char *, len + 1);
 
 	if (deep_copy) {
