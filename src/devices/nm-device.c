@@ -281,8 +281,10 @@ typedef struct _NMDevicePrivate {
 	guint32         ip4_address;
 
 	NMActRequest *  queued_act_request;
-	bool            queued_act_request_is_waiting_for_carrier;
-	NMActRequest *  act_request;
+	bool            queued_act_request_is_waiting_for_carrier:1;
+	bool            act_request_public:1;
+	NMActRequest   *act_request;
+	gulong          act_request_id;
 	ActivationHandleData act_handle4; /* for layer2 and IPv4. */
 	ActivationHandleData act_handle6;
 	guint           recheck_assume_id;
@@ -4207,6 +4209,7 @@ activate_stage1_device_prepare (NMDevice *self)
 	_set_ip_state (self, AF_INET6, IP_NONE);
 
 	/* Notify the new ActiveConnection along with the state change */
+	priv->act_request_public = TRUE;
 	_notify (self, PROP_ACTIVE_CONNECTION);
 
 	nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE, NM_DEVICE_STATE_REASON_NONE);
@@ -8123,20 +8126,46 @@ nm_device_activate_ip6_state_done (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->ip6_state == IP_DONE;
 }
 
-static void
-clear_act_request (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+/*****************************************************************************/
 
-	if (!priv->act_request)
+static void
+act_request_set_cb (NMActRequest *act_request,
+                    GParamSpec *pspec,
+                    NMDevice *self)
+{
+	_notify (self, PROP_ACTIVE_CONNECTION);
+}
+
+static void
+act_request_set (NMDevice *self, NMActRequest *act_request)
+{
+	NMDevicePrivate *priv;
+	gs_unref_object NMActRequest *old_act_requst = NULL;
+
+	nm_assert (NM_IS_DEVICE (self));
+	nm_assert (!act_request || NM_IS_ACT_REQUEST (act_request));
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (   !priv->act_request_public
+	    && priv->act_request == act_request)
 		return;
 
-	nm_active_connection_set_default (NM_ACTIVE_CONNECTION (priv->act_request), FALSE);
+	/* always clear the public flag. The few callers that set a new @act_request
+	 * don't want that the property is public yet.  */
+	priv->act_request_public = FALSE;
 
-	priv->master_ready_handled = FALSE;
-	nm_clear_g_signal_handler (priv->act_request, &priv->master_ready_id);
+	nm_clear_g_signal_handler (priv->act_request, &priv->act_request_id);
 
-	g_clear_object (&priv->act_request);
+	old_act_requst = priv->act_request;
+	priv->act_request = nm_g_object_ref (act_request);
+
+	if (act_request) {
+		priv->act_request_id = g_signal_connect (act_request,
+		                                         "notify::"NM_EXPORTED_OBJECT_PATH,
+		                                         G_CALLBACK (act_request_set_cb),
+		                                         self);
+	}
 	_notify (self, PROP_ACTIVE_CONNECTION);
 }
 
@@ -8923,10 +8952,7 @@ _device_activate (NMDevice *self, NMActRequest *req)
 
 	delete_on_deactivate_unschedule (self);
 
-	/* note: don't notify D-Bus of the new AC here, but do it later when
-	 * changing state to PREPARE so that the two properties change together.
-	 */
-	priv->act_request = g_object_ref (req);
+	act_request_set (self, req);
 
 	nm_device_activate_schedule_stage1_device_prepare (self);
 	return TRUE;
@@ -11410,7 +11436,14 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 
 	priv->needs_ip6_subnet = FALSE;
 
-	clear_act_request (self);
+	if (priv->act_request) {
+		nm_active_connection_set_default (NM_ACTIVE_CONNECTION (priv->act_request), FALSE);
+
+		priv->master_ready_handled = FALSE;
+		nm_clear_g_signal_handler (priv->act_request, &priv->master_ready_id);
+
+		act_request_set (self, NULL);
+	}
 
 	/* Clear legacy IPv4 address property */
 	if (priv->ip4_address) {
@@ -11864,7 +11897,7 @@ _set_state_full (NMDevice *self,
 		g_cancellable_cancel (priv->deactivating_cancellable);
 
 	/* Cache the activation request for the dispatcher */
-	req = priv->act_request ? g_object_ref (priv->act_request) : NULL;
+	req = nm_g_object_ref (priv->act_request);
 
 	if (state <= NM_DEVICE_STATE_UNAVAILABLE) {
 		if (available_connections_del_all (self))
@@ -13299,7 +13332,7 @@ get_property (GObject *object, guint prop_id,
 		                      g_variant_new ("(uu)", priv->state, priv->state_reason));
 		break;
 	case PROP_ACTIVE_CONNECTION:
-		nm_utils_g_value_set_object_path (value, priv->act_request);
+		nm_utils_g_value_set_object_path (value, priv->act_request_public ? priv->act_request : NULL);
 		break;
 	case PROP_DEVICE_TYPE:
 		g_value_set_uint (value, priv->type);
