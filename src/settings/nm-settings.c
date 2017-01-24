@@ -1112,8 +1112,10 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 	openconnect_migrate_hack (NM_CONNECTION (connection));
 
 	g_object_ref (self);
-	g_signal_connect (connection, NM_SETTINGS_CONNECTION_REMOVED,
-	                  G_CALLBACK (connection_removed), self);
+	/* This one unexports the connection, it needs to run late to give the active
+	 * connection a chance to deal with its reference to this settings connection. */
+	g_signal_connect_after (connection, NM_SETTINGS_CONNECTION_REMOVED,
+	                        G_CALLBACK (connection_removed), self);
 	g_signal_connect (connection, NM_SETTINGS_CONNECTION_UPDATED_INTERNAL,
 	                  G_CALLBACK (connection_updated), self);
 	g_signal_connect (connection, "notify::" NM_SETTINGS_CONNECTION_VISIBLE,

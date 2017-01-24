@@ -157,6 +157,20 @@ _settings_connection_updated (NMSettingsConnection *connection,
 }
 
 static void
+_settings_connection_removed (NMSettingsConnection *connection,
+                              gpointer user_data)
+{
+	NMActiveConnection *self = user_data;
+
+	/* Our settings connection is about to drop off. The next active connection
+	 * cleanup is going to tear us down (at least until we grow the capability to
+	 * re-link; in that case we'd just clean the references to the old connection here).
+	 * Let's remove ourselves from the bus so that we're not exposed with a dangling
+	 * reference to the setting connection once it's gone. */
+	nm_exported_object_unexport (NM_EXPORTED_OBJECT (self));
+}
+
+static void
 _set_settings_connection (NMActiveConnection *self, NMSettingsConnection *connection)
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
@@ -170,6 +184,7 @@ _set_settings_connection (NMActiveConnection *self, NMSettingsConnection *connec
 	if (connection) {
 		priv->settings_connection = g_object_ref (connection);
 		g_signal_connect (connection, NM_SETTINGS_CONNECTION_UPDATED_INTERNAL, (GCallback) _settings_connection_updated, self);
+		g_signal_connect (connection, NM_SETTINGS_CONNECTION_REMOVED, (GCallback) _settings_connection_removed, self);
 	}
 }
 
