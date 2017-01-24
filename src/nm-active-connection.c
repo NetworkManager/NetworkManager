@@ -167,7 +167,8 @@ _settings_connection_removed (NMSettingsConnection *connection,
 	 * re-link; in that case we'd just clean the references to the old connection here).
 	 * Let's remove ourselves from the bus so that we're not exposed with a dangling
 	 * reference to the setting connection once it's gone. */
-	nm_exported_object_unexport (NM_EXPORTED_OBJECT (self));
+	if (nm_exported_object_is_exported (NM_EXPORTED_OBJECT (self)))
+		nm_exported_object_unexport (NM_EXPORTED_OBJECT (self));
 }
 
 static void
