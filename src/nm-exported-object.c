@@ -35,7 +35,15 @@
 #define _ASSERT_NO_EARLY_EXPORT
 #endif
 
+/*****************************************************************************/
+
 static gboolean quitting = FALSE;
+
+/*****************************************************************************/
+
+NM_GOBJECT_PROPERTIES_DEFINE (NMExportedObject,
+	PROP_PATH,
+);
 
 typedef struct {
 	GDBusInterfaceSkeleton *interface;
@@ -677,6 +685,8 @@ nm_exported_object_export (NMExportedObject *self)
 
 	nm_bus_manager_register_object (priv->bus_mgr, (GDBusObjectSkeleton *) self);
 
+	_notify (self, PROP_PATH);
+
 	return priv->path;
 }
 
@@ -715,6 +725,8 @@ nm_exported_object_unexport (NMExportedObject *self)
 	g_clear_pointer (&priv->path, g_free);
 
 	nm_clear_g_source (&priv->notify_idle_id);
+
+	_notify (self, PROP_PATH);
 }
 
 /*****************************************************************************/
@@ -987,7 +999,8 @@ constructed (GObject *object)
 static void
 dispose (GObject *object)
 {
-	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (NM_EXPORTED_OBJECT (object));
+	NMExportedObject *self = NM_EXPORTED_OBJECT (object);
+	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
 
 	/* Objects should have already been unexported by their owner, unless
 	 * we are quitting, where many objects stick around until exit.
@@ -997,8 +1010,8 @@ dispose (GObject *object)
 			g_warn_if_reached ();
 			nm_exported_object_unexport (NM_EXPORTED_OBJECT (object));
 		}
-	} else
-		g_clear_pointer (&priv->path, g_free);
+	} else if (nm_clear_g_free (&priv->path))
+		_notify (self, PROP_PATH);
 
 	nm_clear_g_source (&priv->notify_idle_id);
 
@@ -1015,4 +1028,12 @@ nm_exported_object_class_init (NMExportedObjectClass *klass)
 	object_class->constructed = constructed;
 	object_class->notify = nm_exported_object_notify;
 	object_class->dispose = dispose;
+
+	obj_properties[PROP_PATH] =
+	    g_param_spec_string (NM_EXPORTED_OBJECT_PATH, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }
