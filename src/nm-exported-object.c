@@ -971,6 +971,23 @@ vtype_found:
 /*****************************************************************************/
 
 static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMExportedObject *self = NM_EXPORTED_OBJECT (object);
+	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
+
+	switch (prop_id) {
+	case PROP_PATH:
+		g_value_set_string (value, priv->path);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
 nm_exported_object_init (NMExportedObject *self)
 {
 	NMExportedObjectPrivate *priv;
@@ -1008,7 +1025,7 @@ dispose (GObject *object)
 	if (!quitting) {
 		if (priv->path) {
 			g_warn_if_reached ();
-			nm_exported_object_unexport (NM_EXPORTED_OBJECT (object));
+			nm_exported_object_unexport (self);
 		}
 	} else if (nm_clear_g_free (&priv->path))
 		_notify (self, PROP_PATH);
@@ -1028,6 +1045,7 @@ nm_exported_object_class_init (NMExportedObjectClass *klass)
 	object_class->constructed = constructed;
 	object_class->notify = nm_exported_object_notify;
 	object_class->dispose = dispose;
+	object_class->get_property = get_property;
 
 	obj_properties[PROP_PATH] =
 	    g_param_spec_string (NM_EXPORTED_OBJECT_PATH, "", "",
