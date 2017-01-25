@@ -1232,67 +1232,64 @@ typedef struct {
 } MatchDeviceData;
 
 static gboolean
-match_device_s390_subchannels_parse (const char *s390_subchannels, guint32 *a, guint32 *b, guint32 *c)
+match_device_s390_subchannels_parse (const char *s390_subchannels, guint32 *out_a, guint32 *out_b, guint32 *out_c)
 {
-	const int BUFSIZE = 10;
-	long unsigned int tmp;
+	const int BUFSIZE = 30;
 	char buf[BUFSIZE + 1];
-	const char *p = s390_subchannels;
-	int i = 0;
+	guint i = 0;
 	char *pa = NULL, *pb = NULL, *pc = NULL;
+	gint64 a, b, c;
 
 	nm_assert (s390_subchannels);
-	nm_assert (a != NULL);
-	nm_assert (*a == 0);
-	nm_assert (b != NULL);
-	nm_assert (*b == 0);
-	nm_assert (c != NULL);
-	nm_assert (*c == 0);
+	nm_assert (out_a);
+	nm_assert (out_b);
+	nm_assert (out_c);
 
-	/* sanity check */
 	if (!g_ascii_isxdigit (s390_subchannels[0]))
 		return FALSE;
 
 	/* Get the first channel */
-	while (*p && (*p != ',')) {
-		if (!g_ascii_isxdigit (*p) && (*p != '.'))
+	for (i = 0; s390_subchannels[i]; i++) {
+		char ch = s390_subchannels[i];
+
+		if (!g_ascii_isxdigit (ch) && ch != '.') {
+			if (ch == ',') {
+				/* FIXME: currently we consider the first channel and ignore
+				 * everything after the first ',' separator. Maybe we should
+				 * validate all present channels? */
+				break;
+			}
 			return FALSE;  /* Invalid chars */
+		}
 		if (i >= BUFSIZE)
 			return FALSE;  /* Too long to be a subchannel */
-		buf[i++] = *p++;
+		buf[i] = ch;
 	}
 	buf[i] = '\0';
 
 	/* and grab each of its elements, there should be 3 */
 	pa = &buf[0];
-	pb = strchr (buf, '.');
+	pb = strchr (pa, '.');
 	if (pb)
 		pc = strchr (pb + 1, '.');
-	if (!pa || !pb || !pc)
+	if (!pb || !pc)
 		return FALSE;
-
-	/* Split the string */
 	*pb++ = '\0';
 	*pc++ = '\0';
 
-	errno = 0;
-	tmp = strtoul (pa, NULL, 16);
-	if (errno)
+	a = _nm_utils_ascii_str_to_int64 (pa, 16, 0, G_MAXUINT32, -1);
+	if (a == -1)
 		return FALSE;
-	*a = (guint32) tmp;
-
-	errno = 0;
-	tmp = strtoul (pb, NULL, 16);
-	if (errno)
+	b = _nm_utils_ascii_str_to_int64 (pb, 16, 0, G_MAXUINT32, -1);
+	if (b == -1)
 		return FALSE;
-	*b = (guint32) tmp;
-
-	errno = 0;
-	tmp = strtoul (pc, NULL, 16);
-	if (errno)
+	c = _nm_utils_ascii_str_to_int64 (pc, 16, 0, G_MAXUINT32, -1);
+	if (c == -1)
 		return FALSE;
-	*c = (guint32) tmp;
 
+	*out_a = (guint32) a;
+	*out_b = (guint32) b;
+	*out_c = (guint32) c;
 	return TRUE;
 }
 
@@ -1300,7 +1297,7 @@ static gboolean
 match_data_s390_subchannels_eval (const char *spec_str,
                                   MatchDeviceData *match_data)
 {
-	guint32 a = 0, b = 0, c = 0;
+	guint32 a, b, c;
 
 	if (G_UNLIKELY (!match_data->s390_subchannels.is_parsed)) {
 		match_data->s390_subchannels.is_parsed = TRUE;
