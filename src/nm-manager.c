@@ -3122,6 +3122,13 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 			}
 		}
 
+		/* Now that we're activating a slave for that master, make sure the master just
+		 * decides to go unmanaged while we're activating (perhaps because other slaves
+		 * go away leaving him with no kids).
+		 */
+		nm_device_set_unmanaged_by_flags (master_device, NM_UNMANAGED_EXTERNAL_DOWN,
+		                                  NM_UNMAN_FLAG_OP_FORGET, NM_DEVICE_STATE_REASON_USER_REQUESTED);
+
 		nm_active_connection_set_master (active, master_ac);
 		_LOGD (LOGD_CORE, "Activation of '%s' depends on active connection %p %s",
 		       nm_settings_connection_get_id (connection),
