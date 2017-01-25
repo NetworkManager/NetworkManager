@@ -1300,7 +1300,7 @@ static gboolean
 match_data_s390_subchannels_eval (const char *spec_str,
                                   MatchDeviceData *match_data)
 {
-	guint32 a, b, c;
+	guint32 a = 0, b = 0, c = 0;
 
 	if (G_UNLIKELY (!match_data->s390_subchannels.is_parsed)) {
 		match_data->s390_subchannels.is_parsed = TRUE;
