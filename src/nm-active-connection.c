@@ -180,6 +180,7 @@ _set_settings_connection (NMActiveConnection *self, NMSettingsConnection *connec
 		return;
 	if (priv->settings_connection) {
 		g_signal_handlers_disconnect_by_func (priv->settings_connection, _settings_connection_updated, self);
+		g_signal_handlers_disconnect_by_func (priv->settings_connection, _settings_connection_removed, self);
 		g_clear_object (&priv->settings_connection);
 	}
 	if (connection) {
