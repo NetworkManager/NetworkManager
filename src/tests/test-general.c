@@ -955,47 +955,38 @@ test_connection_sort_autoconnect_priority (void)
 
 /*****************************************************************************/
 
+#define MATCH_S390 "S390:"
+
 static NMMatchSpecMatchType
-_test_match_device_interface (const GSList *specs, const char *interface_name)
+_test_match_spec_device (const GSList *specs, const char *match_str)
 {
-	return nm_match_spec_device (specs, interface_name, NULL, NULL, NULL);
-}
-
-static const char *_test_match_spec_all[] = {
-	"e",
-	"em",
-	"em*",
-	"em\\",
-	"em\\*",
-	"em\\1",
-	"em\\11",
-	"em\\2",
-	"em1",
-	"em11",
-	"em2",
-	"=em*",
-	NULL
-};
-
-static gboolean
-_test_match_spec_contains (const char **matches, const char *match)
-{
-	guint i;
-
-	for (i = 0; matches && matches[i]; i++) {
-		if (strcmp (match, matches[i]) == 0)
-			return TRUE;
-	}
-	return FALSE;
+	if (match_str && g_str_has_prefix (match_str, MATCH_S390))
+		return nm_match_spec_device (specs, NULL, NULL, NULL, &match_str[NM_STRLEN (MATCH_S390)]);
+	return nm_match_spec_device (specs, match_str, NULL, NULL, NULL);
 }
 
 static void
-_do_test_match_spec_device (const char *spec_str, const char **matches, const char **neg_matches)
+_do_test_match_spec_device (const char *spec_str, const char **matches, const char **no_matches, const char **neg_matches)
 {
-	const char *m;
 	GSList *specs, *specs_randperm = NULL, *specs_resplit, *specs_i, *specs_j;
 	guint i;
 	gs_free char *specs_joined = NULL;
+	const char *s;
+	static const char *no_matches_default[] = {
+		"e",
+		"em",
+		"em*",
+		"em\\",
+		"em\\*",
+		"em\\1",
+		"em\\11",
+		"em\\2",
+		"em1",
+		"em11",
+		"em2",
+		"=em*",
+		NULL
+	};
 
 	g_assert (spec_str);
 
@@ -1019,20 +1010,25 @@ _do_test_match_spec_device (const char *spec_str, const char **matches, const ch
 	specs_randperm = nmtst_rand_perm_gslist (NULL, g_slist_copy (specs));
 
 	for (i = 0; matches && matches[i]; i++) {
-		g_assert (_test_match_device_interface (specs, matches[i]) == NM_MATCH_SPEC_MATCH);
-		g_assert (_test_match_device_interface (specs_randperm, matches[i]) == NM_MATCH_SPEC_MATCH);
+		g_assert (_test_match_spec_device (specs, matches[i]) == NM_MATCH_SPEC_MATCH);
+		g_assert (_test_match_spec_device (specs_randperm, matches[i]) == NM_MATCH_SPEC_MATCH);
 	}
 	for (i = 0; neg_matches && neg_matches[i]; i++) {
-		g_assert (_test_match_device_interface (specs, neg_matches[i]) == NM_MATCH_SPEC_NEG_MATCH);
-		g_assert (_test_match_device_interface (specs_randperm, neg_matches[i]) == NM_MATCH_SPEC_NEG_MATCH);
+		g_assert (_test_match_spec_device (specs, neg_matches[i]) == NM_MATCH_SPEC_NEG_MATCH);
+		g_assert (_test_match_spec_device (specs_randperm, neg_matches[i]) == NM_MATCH_SPEC_NEG_MATCH);
 	}
-	for (i = 0; (m = _test_match_spec_all[i]); i++) {
-		if (_test_match_spec_contains (matches, m))
-			continue;
-		if (_test_match_spec_contains (neg_matches, m))
-			continue;
-		g_assert (_test_match_device_interface (specs, m) == NM_MATCH_SPEC_NO_MATCH);
-		g_assert (_test_match_device_interface (specs_randperm, m) == NM_MATCH_SPEC_NO_MATCH);
+	for (i = 0; no_matches && no_matches[i]; i++) {
+		g_assert (_test_match_spec_device (specs, no_matches[i]) == NM_MATCH_SPEC_NO_MATCH);
+		g_assert (_test_match_spec_device (specs_randperm, no_matches[i]) == NM_MATCH_SPEC_NO_MATCH);
+	}
+	if (!no_matches) {
+		for (i = 0; (s = no_matches_default[i]); i++) {
+			if (   (matches && g_strv_contains (matches, s))
+			    || (neg_matches && g_strv_contains (neg_matches, s)))
+				continue;
+			g_assert (_test_match_spec_device (specs, s) == NM_MATCH_SPEC_NO_MATCH);
+			g_assert (_test_match_spec_device (specs_randperm, s) == NM_MATCH_SPEC_NO_MATCH);
+		}
 	}
 
 	g_slist_free (specs_randperm);
@@ -1045,49 +1041,73 @@ test_match_spec_device (void)
 #define S(...) ((const char *[]) { __VA_ARGS__, NULL } )
 	_do_test_match_spec_device ("em1",
 	                            S ("em1"),
+	                            NULL,
 	                            NULL);
 	_do_test_match_spec_device ("em1,em2",
 	                            S ("em1", "em2"),
+	                            NULL,
 	                            NULL);
 	_do_test_match_spec_device ("em1,em2,interface-name:em2",
 	                            S ("em1", "em2"),
+	                            NULL,
 	                            NULL);
 	_do_test_match_spec_device ("interface-name:em1",
 	                            S ("em1"),
+	                            NULL,
 	                            NULL);
 	_do_test_match_spec_device ("interface-name:em*",
 	                            S ("em", "em*", "em\\", "em\\*", "em\\1", "em\\11", "em\\2", "em1", "em11", "em2", "em3"),
+	                            NULL,
 	                            NULL);
 	_do_test_match_spec_device ("interface-name:em\\*",
 	                            S ("em\\", "em\\*", "em\\1", "em\\11", "em\\2"),
+	                            NULL,
 	                            NULL);
 	_do_test_match_spec_device ("interface-name:~em\\*",
 	                            S ("em\\", "em\\*", "em\\1", "em\\11", "em\\2"),
+	                            NULL,
 	                            NULL);
 	_do_test_match_spec_device ("interface-name:=em*",
 	                            S ("em*"),
+	                            NULL,
 	                            NULL);
 	_do_test_match_spec_device ("interface-name:em*,except:interface-name:em1*",
 	                            S ("em", "em*", "em\\", "em\\*", "em\\1", "em\\11", "em\\2", "em2", "em3"),
+	                            NULL,
 	                            S ("em1", "em11"));
 	_do_test_match_spec_device ("interface-name:em*,except:interface-name:=em*",
 	                            S ("em", "em\\", "em\\*", "em\\1", "em\\11", "em\\2", "em1", "em11", "em2", "em3"),
+	                            NULL,
 	                            S ("em*"));
 	_do_test_match_spec_device ("aa,bb,cc\\,dd,e,,",
 	                            S ("aa", "bb", "cc,dd", "e"),
+	                            NULL,
 	                            NULL);
 	_do_test_match_spec_device ("aa;bb;cc\\;dd;e,;",
 	                            S ("aa", "bb", "cc;dd", "e"),
+	                            NULL,
 	                            NULL);
 	_do_test_match_spec_device ("interface-name:em\\;1,em\\,2,\\,,\\\\,,em\\\\x",
 	                            S ("em;1", "em,2", ",", "\\", "em\\x"),
+	                            NULL,
 	                            NULL);
 	_do_test_match_spec_device ("\\s\\s,\\sinterface-name:a,\\s,",
 	                            S ("  ", " ", " interface-name:a"),
+	                            NULL,
 	                            NULL);
 	_do_test_match_spec_device (" aa ;  bb   ; cc\\;dd  ;e , ; \t\\t  , ",
 	                            S ("aa", "bb", "cc;dd", "e", "\t"),
+	                            NULL,
 	                            NULL);
+
+	_do_test_match_spec_device ("s390-subchannels:0.0.1000\\,0.0.1001",
+	                            S (MATCH_S390"0.0.1000", MATCH_S390"0.0.1000,deadbeef", MATCH_S390"0.0.1000,0.0.1001", MATCH_S390"0.0.1000,0.0.1002"),
+	                            S (MATCH_S390"0.0.1001"),
+	                            NULL);
+	_do_test_match_spec_device ("*,except:s390-subchannels:0.0.1000\\,0.0.1001",
+	                            NULL,
+	                            S (NULL),
+	                            S (MATCH_S390"0.0.1000", MATCH_S390"0.0.1000,deadbeef", MATCH_S390"0.0.1000,0.0.1001", MATCH_S390"0.0.1000,0.0.1002"));
 #undef S
 }
 
