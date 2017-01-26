@@ -2024,7 +2024,7 @@ _deactivate_if_active (NMManager *manager, NMSettingsConnection *connection)
 		if (nm_active_connection_get_settings_connection (ac) == connection &&
 		    (state <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED)) {
 			if (!nm_manager_deactivate_connection (manager,
-			                                       nm_exported_object_get_path (NM_EXPORTED_OBJECT (ac)),
+			                                       ac,
 			                                       NM_DEVICE_STATE_REASON_CONNECTION_REMOVED,
 			                                       &error)) {
 				_LOGW (LOGD_DEVICE, "connection '%s' disappeared, but error deactivating it: (%d) %s",

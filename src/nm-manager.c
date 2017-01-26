@@ -3879,19 +3879,11 @@ error:
 
 gboolean
 nm_manager_deactivate_connection (NMManager *manager,
-                                  const char *connection_path,
+                                  NMActiveConnection *active,
                                   NMDeviceStateReason reason,
                                   GError **error)
 {
-	NMActiveConnection *active;
 	gboolean success = FALSE;
-
-	active = active_connection_get_by_path (manager, connection_path);
-	if (!active) {
-		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
-		                     "The connection was not active.");
-		return FALSE;
-	}
 
 	if (NM_IS_VPN_CONNECTION (active)) {
 		NMVpnConnectionStateReason vpn_reason = NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED;
@@ -3936,6 +3928,7 @@ deactivate_net_auth_done_cb (NMAuthChain *chain,
 
 	path = nm_auth_chain_get_data (chain, "path");
 	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL);
+	active = active_connection_get_by_path (self, path);
 
 	if (auth_error) {
 		_LOGD (LOGD_CORE, "Disconnect request failed: %s", auth_error->message);
@@ -3947,16 +3940,19 @@ deactivate_net_auth_done_cb (NMAuthChain *chain,
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             "Not authorized to deactivate connections");
+	} else if (!active) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
+		                             "The connection was not active.");
 	} else {
 		/* success; deactivation allowed */
 		if (!nm_manager_deactivate_connection (self,
-		                                       path,
+		                                       active,
 		                                       NM_DEVICE_STATE_REASON_USER_REQUESTED,
 		                                       &error))
 			nm_assert (error);
 	}
 
-	active = active_connection_get_by_path (self, path);
 	if (active) {
 		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_DEACTIVATE,
 		                            nm_active_connection_get_settings_connection (active),
