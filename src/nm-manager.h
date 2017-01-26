@@ -115,7 +115,7 @@ NMActiveConnection *nm_manager_activate_connection     (NMManager *manager,
                                                         GError **error);
 
 gboolean            nm_manager_deactivate_connection   (NMManager *manager,
-                                                        const char *connection_path,
+                                                        NMActiveConnection *active,
                                                         NMDeviceStateReason reason,
                                                         GError **error);
 
