@@ -2704,6 +2704,7 @@ typedef struct {
 	NmCli *nmc;
 	GSList *queue;
 	guint timeout_id;
+	GCancellable *cancellable;
 } ConnectionCbInfo;
 
 static void connection_cb_info_finish (ConnectionCbInfo *info,
@@ -2773,6 +2774,8 @@ connection_cb_info_finish (ConnectionCbInfo *info, gpointer connection)
 
 	if (info->timeout_id)
 		g_source_remove (info->timeout_id);
+	g_cancellable_cancel (info->cancellable);
+	g_object_unref (info->cancellable);
 	g_signal_handlers_disconnect_by_func (info->nmc->client, connection_removed_cb, info);
 	g_slice_free (ConnectionCbInfo, info);
 	quit ();
@@ -8280,6 +8283,8 @@ delete_cb (GObject *con, GAsyncResult *result, gpointer user_data)
 	GError *error = NULL;
 
 	if (!nm_remote_connection_delete_finish (NM_REMOTE_CONNECTION (con), result, &error)) {
+		if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+			return;
 		g_string_printf (info->nmc->return_text, _("Error: not all connections deleted."));
 		g_printerr (_("Error: Connection deletion failed: %s"),
 		            error->message);
@@ -8366,6 +8371,7 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 	info->nmc = nmc;
 	info->queue = queue;
 	info->timeout_id = g_timeout_add_seconds (nmc->timeout, connection_op_timeout_cb, info);
+	info->cancellable = g_cancellable_new ();
 
 	nmc->nowait_flag = (nmc->timeout == 0);
 	nmc->should_wait++;
@@ -8376,7 +8382,7 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 	/* Now delete the connections */
 	for (iter = queue; iter; iter = g_slist_next (iter))
 		nm_remote_connection_delete_async (NM_REMOTE_CONNECTION (iter->data),
-		                                   NULL, delete_cb, info);
+		                                   info->cancellable, delete_cb, info);
 
 finish:
 	if (invalid_cons) {
