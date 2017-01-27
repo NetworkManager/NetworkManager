@@ -143,6 +143,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDevice,
 #define PENDING_ACTION_DHCP4 "dhcp4"
 #define PENDING_ACTION_DHCP6 "dhcp6"
 #define PENDING_ACTION_AUTOCONF6 "autoconf6"
+#define PENDING_ACTION_RECHECK_AVAILABLE "recheck-available"
 
 #define DHCP_RESTART_TIMEOUT   120
 #define DHCP_NUM_TRIES_MAX     3
@@ -3921,6 +3922,9 @@ recheck_available (gpointer user_data)
 		priv->recheck_available.unavailable_reason = NM_DEVICE_STATE_REASON_NONE;
 	}
 
+	if (priv->recheck_available.call_id == 0)
+		nm_device_remove_pending_action (self, PENDING_ACTION_RECHECK_AVAILABLE, TRUE);
+
 	return G_SOURCE_REMOVE;
 }
 
@@ -3933,8 +3937,12 @@ nm_device_queue_recheck_available (NMDevice *self,
 
 	priv->recheck_available.available_reason = available_reason;
 	priv->recheck_available.unavailable_reason = unavailable_reason;
-	if (!priv->recheck_available.call_id)
+	if (!priv->recheck_available.call_id) {
 		priv->recheck_available.call_id = g_idle_add (recheck_available, self);
+		nm_device_add_pending_action (self, PENDING_ACTION_RECHECK_AVAILABLE,
+		                              FALSE /* cannot assert, because of how recheck_available() first clears
+		                                       the call-id and postpones removing the pending-action. */);
+	}
 }
 
 void
