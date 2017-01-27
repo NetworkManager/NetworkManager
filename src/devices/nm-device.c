@@ -140,11 +140,6 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDevice,
 
 /*****************************************************************************/
 
-#define PENDING_ACTION_DHCP4 "dhcp4"
-#define PENDING_ACTION_DHCP6 "dhcp6"
-#define PENDING_ACTION_AUTOCONF6 "autoconf6"
-#define PENDING_ACTION_RECHECK_AVAILABLE "recheck-available"
-
 #define DHCP_RESTART_TIMEOUT   120
 #define DHCP_NUM_TRIES_MAX     3
 
@@ -505,22 +500,20 @@ static void _cancel_activation (NMDevice *self);
 
 /*****************************************************************************/
 
-#define QUEUED_PREFIX "queued state change to "
-
 static const char *state_table[] = {
-	[NM_DEVICE_STATE_UNKNOWN]      = QUEUED_PREFIX "unknown",
-	[NM_DEVICE_STATE_UNMANAGED]    = QUEUED_PREFIX "unmanaged",
-	[NM_DEVICE_STATE_UNAVAILABLE]  = QUEUED_PREFIX "unavailable",
-	[NM_DEVICE_STATE_DISCONNECTED] = QUEUED_PREFIX "disconnected",
-	[NM_DEVICE_STATE_PREPARE]      = QUEUED_PREFIX "prepare",
-	[NM_DEVICE_STATE_CONFIG]       = QUEUED_PREFIX "config",
-	[NM_DEVICE_STATE_NEED_AUTH]    = QUEUED_PREFIX "need-auth",
-	[NM_DEVICE_STATE_IP_CONFIG]    = QUEUED_PREFIX "ip-config",
-	[NM_DEVICE_STATE_IP_CHECK]     = QUEUED_PREFIX "ip-check",
-	[NM_DEVICE_STATE_SECONDARIES]  = QUEUED_PREFIX "secondaries",
-	[NM_DEVICE_STATE_ACTIVATED]    = QUEUED_PREFIX "activated",
-	[NM_DEVICE_STATE_DEACTIVATING] = QUEUED_PREFIX "deactivating",
-	[NM_DEVICE_STATE_FAILED]       = QUEUED_PREFIX "failed",
+	[NM_DEVICE_STATE_UNKNOWN]      = NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "unknown",
+	[NM_DEVICE_STATE_UNMANAGED]    = NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "unmanaged",
+	[NM_DEVICE_STATE_UNAVAILABLE]  = NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "unavailable",
+	[NM_DEVICE_STATE_DISCONNECTED] = NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "disconnected",
+	[NM_DEVICE_STATE_PREPARE]      = NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "prepare",
+	[NM_DEVICE_STATE_CONFIG]       = NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "config",
+	[NM_DEVICE_STATE_NEED_AUTH]    = NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "need-auth",
+	[NM_DEVICE_STATE_IP_CONFIG]    = NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "ip-config",
+	[NM_DEVICE_STATE_IP_CHECK]     = NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "ip-check",
+	[NM_DEVICE_STATE_SECONDARIES]  = NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "secondaries",
+	[NM_DEVICE_STATE_ACTIVATED]    = NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "activated",
+	[NM_DEVICE_STATE_DEACTIVATING] = NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "deactivating",
+	[NM_DEVICE_STATE_FAILED]       = NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "failed",
 };
 
 static const char *
@@ -534,7 +527,7 @@ queued_state_to_string (NMDeviceState state)
 static const char *
 state_to_string (NMDeviceState state)
 {
-	return queued_state_to_string (state) + strlen (QUEUED_PREFIX);
+	return queued_state_to_string (state) + NM_STRLEN (NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE);
 }
 
 NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_reason_to_string, NMDeviceStateReason,
@@ -1990,7 +1983,7 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 		klass->carrier_changed (self, TRUE);
 
 		if (nm_clear_g_source (&priv->carrier_wait_id)) {
-			nm_device_remove_pending_action (self, "carrier wait", TRUE);
+			nm_device_remove_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, TRUE);
 			_carrier_wait_check_queued_act_request (self);
 		}
 	} else if (   state <= NM_DEVICE_STATE_DISCONNECTED
@@ -3923,7 +3916,7 @@ recheck_available (gpointer user_data)
 	}
 
 	if (priv->recheck_available.call_id == 0)
-		nm_device_remove_pending_action (self, PENDING_ACTION_RECHECK_AVAILABLE, TRUE);
+		nm_device_remove_pending_action (self, NM_PENDING_ACTION_RECHECK_AVAILABLE, TRUE);
 
 	return G_SOURCE_REMOVE;
 }
@@ -3939,7 +3932,7 @@ nm_device_queue_recheck_available (NMDevice *self,
 	priv->recheck_available.unavailable_reason = unavailable_reason;
 	if (!priv->recheck_available.call_id) {
 		priv->recheck_available.call_id = g_idle_add (recheck_available, self);
-		nm_device_add_pending_action (self, PENDING_ACTION_RECHECK_AVAILABLE,
+		nm_device_add_pending_action (self, NM_PENDING_ACTION_RECHECK_AVAILABLE,
 		                              FALSE /* cannot assert, because of how recheck_available() first clears
 		                                       the call-id and postpones removing the pending-action. */);
 	}
@@ -4979,7 +4972,7 @@ dhcp4_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 		/* Stop any ongoing DHCP transaction on this device */
 		nm_clear_g_signal_handler (priv->dhcp4.client, &priv->dhcp4.state_sigid);
 
-		nm_device_remove_pending_action (self, PENDING_ACTION_DHCP4, FALSE);
+		nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP4, FALSE);
 
 		if (   cleanup_type == CLEANUP_TYPE_DECONFIGURE
 		    || cleanup_type == CLEANUP_TYPE_REMOVED)
@@ -5207,7 +5200,7 @@ dhcp4_lease_change (NMDevice *self, NMIP4Config *config)
 	                    NULL,
 	                    NULL);
 
-	nm_device_remove_pending_action (self, PENDING_ACTION_DHCP4, FALSE);
+	nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP4, FALSE);
 
 	return TRUE;
 }
@@ -5432,7 +5425,7 @@ dhcp4_start (NMDevice *self,
 	                                            G_CALLBACK (dhcp4_state_changed),
 	                                            self);
 
-	nm_device_add_pending_action (self, PENDING_ACTION_DHCP4, TRUE);
+	nm_device_add_pending_action (self, NM_PENDING_ACTION_DHCP4, TRUE);
 
 	/* DHCP devices will be notified by the DHCP manager when stuff happens */
 	return NM_ACT_STAGE_RETURN_POSTPONE;
@@ -5734,7 +5727,7 @@ dhcp6_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 		g_clear_object (&priv->dhcp6.client);
 	}
 
-	nm_device_remove_pending_action (self, PENDING_ACTION_DHCP6, FALSE);
+	nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP6, FALSE);
 
 	if (priv->dhcp6.config) {
 		nm_exported_object_clear_and_unexport (&priv->dhcp6.config);
@@ -5978,7 +5971,7 @@ dhcp6_lease_change (NMDevice *self)
 	                    nm_device_get_applied_connection (self),
 	                    self, NULL, NULL, NULL);
 
-	nm_device_remove_pending_action (self, PENDING_ACTION_DHCP6, FALSE);
+	nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP6, FALSE);
 
 	return TRUE;
 }
@@ -6264,7 +6257,7 @@ dhcp6_start (NMDevice *self, gboolean wait_for_ll, NMDeviceStateReason *reason)
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	if (!nm_setting_ip_config_get_may_fail (s_ip6) ||
 	    !strcmp (nm_setting_ip_config_get_method (s_ip6), NM_SETTING_IP6_CONFIG_METHOD_DHCP))
-		nm_device_add_pending_action (self, PENDING_ACTION_DHCP6, TRUE);
+		nm_device_add_pending_action (self, NM_PENDING_ACTION_DHCP6, TRUE);
 
 	if (wait_for_ll) {
 		NMActStageReturn ret;
@@ -7039,7 +7032,7 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 	}
 
 	if (!nm_setting_ip_config_get_may_fail (nm_connection_get_setting_ip6_config (connection)))
-		nm_device_add_pending_action (self, PENDING_ACTION_AUTOCONF6, TRUE);
+		nm_device_add_pending_action (self, NM_PENDING_ACTION_AUTOCONF6, TRUE);
 
 	/* ensure link local is ready... */
 	ret = linklocal6_start (self);
@@ -7061,7 +7054,7 @@ addrconf6_cleanup (NMDevice *self)
 	nm_clear_g_signal_handler (priv->ndisc, &priv->ndisc_changed_id);
 	nm_clear_g_signal_handler (priv->ndisc, &priv->ndisc_timeout_id);
 
-	nm_device_remove_pending_action (self, PENDING_ACTION_AUTOCONF6, FALSE);
+	nm_device_remove_pending_action (self, NM_PENDING_ACTION_AUTOCONF6, FALSE);
 
 	g_clear_object (&priv->ac_ip6_config);
 	g_clear_object (&priv->ndisc);
@@ -7929,7 +7922,7 @@ activate_stage5_ip4_config_commit (NMDevice *self)
 
 	arp_announce (self);
 
-	nm_device_remove_pending_action (self, PENDING_ACTION_DHCP4, FALSE);
+	nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP4, FALSE);
 
 	/* Enter the IP_CHECK state if this is the first method to complete */
 	_set_ip_state (self, AF_INET, IP_DONE);
@@ -8066,8 +8059,8 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 				return;
 			}
 		}
-		nm_device_remove_pending_action (self, PENDING_ACTION_DHCP6, FALSE);
-		nm_device_remove_pending_action (self, PENDING_ACTION_AUTOCONF6, FALSE);
+		nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP6, FALSE);
+		nm_device_remove_pending_action (self, NM_PENDING_ACTION_AUTOCONF6, FALSE);
 
 		/* Start IPv6 forwarding if we need it */
 		method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
@@ -9753,7 +9746,7 @@ carrier_wait_timeout (gpointer user_data)
 	NMDevice *self = NM_DEVICE (user_data);
 
 	NM_DEVICE_GET_PRIVATE (self)->carrier_wait_id = 0;
-	nm_device_remove_pending_action (self, "carrier wait", TRUE);
+	nm_device_remove_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, TRUE);
 
 	_carrier_wait_check_queued_act_request (self);
 
@@ -9835,7 +9828,7 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 	 */
 	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
 		if (!nm_clear_g_source (&priv->carrier_wait_id))
-			nm_device_add_pending_action (self, "carrier wait", TRUE);
+			nm_device_add_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, TRUE);
 		priv->carrier_wait_id = g_timeout_add_seconds (5, carrier_wait_timeout, self);
 	}
 
