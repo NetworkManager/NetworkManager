@@ -11235,7 +11235,9 @@ nm_device_supports_vlans (NMDevice *self)
 /**
  * nm_device_add_pending_action():
  * @self: the #NMDevice to add the pending action to
- * @action: a static string that identifies the action
+ * @action: a static string that identifies the action. The string instance must
+ *   stay valid until the pending action is removed (that is, the string is
+ *   not cloned, but ownership stays with the caller).
  * @assert_not_yet_pending: if %TRUE, assert that the @action is currently not yet pending.
  * Otherwise, ignore duplicate scheduling of the same action silently.
  *
@@ -11270,7 +11272,7 @@ nm_device_add_pending_action (NMDevice *self, const char *action, gboolean asser
 		count++;
 	}
 
-	priv->pending_actions = g_slist_append (priv->pending_actions, g_strdup (action));
+	priv->pending_actions = g_slist_append (priv->pending_actions, (char *) action);
 	count++;
 
 	_LOGD (LOGD_DEVICE, "add_pending_action (%d): '%s'", count, action);
@@ -11284,7 +11286,7 @@ nm_device_add_pending_action (NMDevice *self, const char *action, gboolean asser
 /**
  * nm_device_remove_pending_action():
  * @self: the #NMDevice to remove the pending action from
- * @action: a static string that identifies the action
+ * @action: a string that identifies the action.
  * @assert_is_pending: if %TRUE, assert that the @action is pending.
  * If %FALSE, don't do anything if the current action is not pending and
  * return %FALSE.
@@ -11311,7 +11313,6 @@ nm_device_remove_pending_action (NMDevice *self, const char *action, gboolean as
 			_LOGD (LOGD_DEVICE, "remove_pending_action (%d): '%s'",
 			       count + g_slist_length (iter->next), /* length excluding 'iter' */
 			       action);
-			g_free (iter->data);
 			priv->pending_actions = g_slist_delete_link (priv->pending_actions, iter);
 			if (priv->pending_actions == NULL)
 				_notify (self, PROP_HAS_PENDING_ACTION);
@@ -13137,7 +13138,7 @@ finalize (GObject *object)
 	g_free (priv->hw_addr);
 	g_free (priv->hw_addr_perm);
 	g_free (priv->hw_addr_initial);
-	g_slist_free_full (priv->pending_actions, g_free);
+	g_slist_free (priv->pending_actions);
 	g_slist_free_full (priv->dad6_failed_addrs, g_free);
 	g_clear_pointer (&priv->physical_port_id, g_free);
 	g_free (priv->udi);
