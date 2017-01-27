@@ -66,11 +66,13 @@ quit_if_connected (OnlineData *data)
 		if (data->exit_no_nm) {
 			data->retval = 1;
 			g_main_loop_quit (data->loop);
+			return;
 		}
 	} else if (data->wait_startup) {
 		if (!nm_client_get_startup (data->client)) {
 			data->retval = 0;
 			g_main_loop_quit (data->loop);
+			return;
 		}
 	} else {
 		if (   state == NM_STATE_CONNECTED_LOCAL
@@ -78,11 +80,13 @@ quit_if_connected (OnlineData *data)
 		    || state == NM_STATE_CONNECTED_GLOBAL) {
 			data->retval = 0;
 			g_main_loop_quit (data->loop);
+			return;
 		}
 	}
 	if (data->exit_no_nm && (state != NM_STATE_CONNECTING)) {
 		data->retval = 1;
 		g_main_loop_quit (data->loop);
+		return;
 	}
 }
 
