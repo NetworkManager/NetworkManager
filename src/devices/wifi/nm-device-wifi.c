@@ -2022,7 +2022,6 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 	NMDevice *device = NM_DEVICE (self);
 	NMDeviceState devstate;
 	gboolean scanning;
-	gboolean recheck_available = FALSE;
 
 	if (new_state == old_state)
 		return;
@@ -2043,7 +2042,9 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 	switch (new_state) {
 	case NM_SUPPLICANT_INTERFACE_STATE_READY:
 		_LOGD (LOGD_WIFI_SCAN, "supplicant ready");
-		recheck_available = TRUE;
+		nm_device_queue_recheck_available (NM_DEVICE (device),
+		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
+		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
 		priv->scan_interval = SCAN_INTERVAL_MIN;
 		if (old_state < NM_SUPPLICANT_INTERFACE_STATE_READY)
 			nm_device_remove_pending_action (device, "waiting for supplicant", TRUE);
@@ -2104,7 +2105,9 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 		}
 		break;
 	case NM_SUPPLICANT_INTERFACE_STATE_DOWN:
-		recheck_available = TRUE;
+		nm_device_queue_recheck_available (NM_DEVICE (device),
+		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
+		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
 		cleanup_association_attempt (self, FALSE);
 
 		if (old_state < NM_SUPPLICANT_INTERFACE_STATE_READY)
@@ -2127,12 +2130,6 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 		break;
 	default:
 		break;
-	}
-
-	if (recheck_available) {
-		nm_device_queue_recheck_available (NM_DEVICE (device),
-		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
-		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
 	}
 
 	/* Signal scanning state changes */
