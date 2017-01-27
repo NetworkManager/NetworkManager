@@ -239,7 +239,7 @@ supplicant_interface_acquire (NMDeviceWifi *self)
 	}
 
 	if (nm_supplicant_interface_get_state (priv->sup_iface) < NM_SUPPLICANT_INTERFACE_STATE_READY)
-		nm_device_add_pending_action (NM_DEVICE (self), "waiting for supplicant", FALSE);
+		nm_device_add_pending_action (NM_DEVICE (self), NM_PENDING_ACTION_WAITING_FOR_SUPPLICANT, FALSE);
 
 	g_signal_connect (priv->sup_iface,
 	                  NM_SUPPLICANT_INTERFACE_STATE,
@@ -286,9 +286,9 @@ _requested_scan_set (NMDeviceWifi *self, gboolean value)
 
 	priv->requested_scan = value;
 	if (value)
-		nm_device_add_pending_action ((NMDevice *) self, "scan", TRUE);
+		nm_device_add_pending_action ((NMDevice *) self, NM_PENDING_ACTION_WIFI_SCAN, TRUE);
 	else
-		nm_device_remove_pending_action ((NMDevice *) self, "scan", TRUE);
+		nm_device_remove_pending_action ((NMDevice *) self, NM_PENDING_ACTION_WIFI_SCAN, TRUE);
 }
 
 static void
@@ -2047,7 +2047,7 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
 		priv->scan_interval = SCAN_INTERVAL_MIN;
 		if (old_state < NM_SUPPLICANT_INTERFACE_STATE_READY)
-			nm_device_remove_pending_action (device, "waiting for supplicant", TRUE);
+			nm_device_remove_pending_action (device, NM_PENDING_ACTION_WAITING_FOR_SUPPLICANT, TRUE);
 		break;
 	case NM_SUPPLICANT_INTERFACE_STATE_COMPLETED:
 		remove_supplicant_interface_error_handler (self);
@@ -2111,7 +2111,7 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 		cleanup_association_attempt (self, FALSE);
 
 		if (old_state < NM_SUPPLICANT_INTERFACE_STATE_READY)
-			nm_device_remove_pending_action (device, "waiting for supplicant", TRUE);
+			nm_device_remove_pending_action (device, NM_PENDING_ACTION_WAITING_FOR_SUPPLICANT, TRUE);
 
 		/* If the device is already in UNAVAILABLE state then the state change
 		 * is a NOP and the interface won't be re-acquired in the device state
