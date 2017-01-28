@@ -941,17 +941,16 @@ write_wireless_setting (NMConnection *connection,
 		break;
 	}
 
-	svUnsetValue (ifcfg, "MAC_ADDRESS_RANDOMIZATION");
 	switch (nm_setting_wireless_get_mac_address_randomization (s_wireless)) {
-	case NM_SETTING_MAC_RANDOMIZATION_DEFAULT:
-		svSetValueString (ifcfg, "MAC_ADDRESS_RANDOMIZATION", "default");
+	case NM_SETTING_MAC_RANDOMIZATION_NEVER:
+		svSetValueString (ifcfg, "MAC_ADDRESS_RANDOMIZATION", "never");
 		break;
 	case NM_SETTING_MAC_RANDOMIZATION_ALWAYS:
 		svSetValueString (ifcfg, "MAC_ADDRESS_RANDOMIZATION", "always");
 		break;
+	case NM_SETTING_MAC_RANDOMIZATION_DEFAULT:
 	default:
-	case NM_SETTING_MAC_RANDOMIZATION_NEVER:
-		svSetValueString (ifcfg, "MAC_ADDRESS_RANDOMIZATION", "never");
+		svSetValueString (ifcfg, "MAC_ADDRESS_RANDOMIZATION", "default");
 		break;
 	}
 
