@@ -982,6 +982,7 @@ set_property (GObject *object, guint prop_id,
 	NMSettingWirelessPrivate *priv = NM_SETTING_WIRELESS_GET_PRIVATE (object);
 	const char * const *blacklist;
 	const char *mac;
+	gboolean bool_val;
 	int i;
 
 	switch (prop_id) {
@@ -1017,9 +1018,18 @@ set_property (GObject *object, guint prop_id,
 		                                                                  ETH_ALEN);
 		break;
 	case PROP_CLONED_MAC_ADDRESS:
+		bool_val = !!priv->cloned_mac_address;
 		g_free (priv->cloned_mac_address);
 		priv->cloned_mac_address = _nm_utils_hwaddr_canonical_or_invalid (g_value_get_string (value),
 		                                                                  ETH_ALEN);
+		if (bool_val && !priv->cloned_mac_address) {
+			/* cloned-mac-address was set before but was now explicitly cleared.
+			 * In this case, we also clear mac-address-randomization flag */
+			if (priv->mac_address_randomization != NM_SETTING_MAC_RANDOMIZATION_DEFAULT) {
+				priv->mac_address_randomization = NM_SETTING_MAC_RANDOMIZATION_DEFAULT;
+				g_object_notify (object, NM_SETTING_WIRELESS_MAC_ADDRESS);
+			}
+		}
 		break;
 	case PROP_GENERATE_MAC_ADDRESS_MASK:
 		g_free (priv->generate_mac_address_mask);
