@@ -8951,7 +8951,7 @@ int main (int argc, char **argv)
 	nmtst_add_test_func (TPATH "wifi/read-mac-random-always",   test_read_wifi_mac_random,  "always",  GINT_TO_POINTER (NM_SETTING_MAC_RANDOMIZATION_ALWAYS));
 	nmtst_add_test_func (TPATH "wifi/read-mac-random-never",    test_read_wifi_mac_random,  "never",   GINT_TO_POINTER (NM_SETTING_MAC_RANDOMIZATION_NEVER));
 	nmtst_add_test_func (TPATH "wifi/read-mac-random-default",  test_read_wifi_mac_random,  "default", GINT_TO_POINTER (NM_SETTING_MAC_RANDOMIZATION_DEFAULT));
-	nmtst_add_test_func (TPATH "wifi/read-mac-random-missing",  test_read_wifi_mac_random,  "missing", GINT_TO_POINTER (NM_SETTING_MAC_RANDOMIZATION_NEVER));
+	nmtst_add_test_func (TPATH "wifi/read-mac-random-missing",  test_read_wifi_mac_random,  "missing", GINT_TO_POINTER (NM_SETTING_MAC_RANDOMIZATION_DEFAULT));
 
 	nmtst_add_test_func (TPATH "wifi/write-mac-random-always",  test_write_wifi_mac_random, "always",  GINT_TO_POINTER (NM_SETTING_MAC_RANDOMIZATION_ALWAYS),  "always");
 	nmtst_add_test_func (TPATH "wifi/write-mac-random-never",   test_write_wifi_mac_random, "never",   GINT_TO_POINTER (NM_SETTING_MAC_RANDOMIZATION_NEVER),   "never");

@@ -3358,7 +3358,7 @@ make_wireless_setting (shvarFile *ifcfg,
 	NMSettingWireless *s_wireless;
 	char *value = NULL;
 	gint64 chan = 0;
-	NMSettingMacRandomization mac_randomization = NM_SETTING_MAC_RANDOMIZATION_NEVER;
+	NMSettingMacRandomization mac_randomization;
 	NMSettingWirelessPowersave powersave = NM_SETTING_WIRELESS_POWERSAVE_DEFAULT;
 
 	s_wireless = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
@@ -3580,7 +3580,7 @@ make_wireless_setting (shvarFile *ifcfg,
 		}
 		g_free (value);
 	} else
-		mac_randomization = NM_SETTING_MAC_RANDOMIZATION_NEVER;
+		mac_randomization = NM_SETTING_MAC_RANDOMIZATION_DEFAULT;
 
 	g_object_set (s_wireless,
 	              NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION,
