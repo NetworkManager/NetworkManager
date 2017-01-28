@@ -309,16 +309,17 @@ nm_access_point_connection_valid (NMAccessPoint *ap, NMConnection *connection)
 	const GByteArray *setting_ssid;
 	const GByteArray *ap_ssid;
 	const GByteArray *setting_bssid;
-	struct ether_addr *ap_bssid;
 	const char *setting_mode;
 	NM80211Mode ap_mode;
 	const char *setting_band;
 	guint32 ap_freq, setting_chan, ap_chan;
 
 	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
+	if (!s_con)
+		return FALSE;
+
 	ctype = nm_setting_connection_get_connection_type (s_con);
-	if (strcmp (ctype, NM_SETTING_WIRELESS_SETTING_NAME) != 0)
+	if (!ctype || !nm_streq (ctype, NM_SETTING_WIRELESS_SETTING_NAME))
 		return FALSE;
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
@@ -327,30 +328,34 @@ nm_access_point_connection_valid (NMAccessPoint *ap, NMConnection *connection)
 
 	/* SSID checks */
 	ap_ssid = nm_access_point_get_ssid (ap);
-	g_warn_if_fail (ap_ssid != NULL);
-	setting_ssid = nm_setting_wireless_get_ssid (s_wifi);
-	if (!setting_ssid || !ap_ssid || (setting_ssid->len != ap_ssid->len))
+	if (!ap_ssid)
 		return FALSE;
-	if (memcmp (setting_ssid->data, ap_ssid->data, ap_ssid->len) != 0)
+	setting_ssid = nm_setting_wireless_get_ssid (s_wifi);
+	if (   !setting_ssid
+	    || setting_ssid->len != ap_ssid->len
+	    || memcmp (setting_ssid->data, ap_ssid->data, ap_ssid->len) != 0)
 		return FALSE;
 
 	/* BSSID checks */
 	ap_bssid_str = nm_access_point_get_bssid (ap);
-	g_warn_if_fail (ap_bssid_str);
+	if (!ap_bssid_str)
+		return FALSE;
 	setting_bssid = nm_setting_wireless_get_bssid (s_wifi);
-	if (setting_bssid && ap_bssid_str) {
-		g_assert (setting_bssid->len == ETH_ALEN);
-		ap_bssid = ether_aton (ap_bssid_str);
-		g_warn_if_fail (ap_bssid);
-		if (ap_bssid) {
-			if (memcmp (ap_bssid->ether_addr_octet, setting_bssid->data, ETH_ALEN) != 0)
-				return FALSE;
-		}
+	if (setting_bssid) {
+		struct ether_addr addr;
+
+		g_return_val_if_fail (setting_bssid->len == ETH_ALEN, FALSE);
+
+		if (!ether_aton_r (ap_bssid_str, &addr))
+			return FALSE;
+		if (memcmp (addr.ether_addr_octet, setting_bssid->data, ETH_ALEN) != 0)
+			return FALSE;
 	}
 
 	/* Mode */
 	ap_mode = nm_access_point_get_mode (ap);
-	g_warn_if_fail (ap_mode != NM_802_11_MODE_UNKNOWN);
+	if (ap_mode == NM_802_11_MODE_UNKNOWN)
+		return FALSE;
 	setting_mode = nm_setting_wireless_get_mode (s_wifi);
 	if (setting_mode && ap_mode) {
 		if (!strcmp (setting_mode, "infrastructure") && (ap_mode != NM_802_11_MODE_INFRA))
