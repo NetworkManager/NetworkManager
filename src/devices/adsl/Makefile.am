@@ -14,6 +14,7 @@ AM_CPPFLAGS = \
 	-I${top_srcdir}/libnm-core \
 	-DG_LOG_DOMAIN=\""NetworkManager-adsl"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	$(GLIB_CFLAGS) \
 	$(GUDEV_CFLAGS)
 
 pkglib_LTLIBRARIES = libnm-device-plugin-adsl.la
