@@ -2291,6 +2291,7 @@ src_devices_adsl_libnm_device_plugin_adsl_la_CPPFLAGS = \
 	-I$(srcdir)/libnm-core \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	$(GLIB_CFLAGS) \
 	$(GUDEV_CFLAGS)
 
 src_devices_adsl_libnm_device_plugin_adsl_la_LDFLAGS = \
