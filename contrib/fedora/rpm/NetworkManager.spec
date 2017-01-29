@@ -456,9 +456,6 @@ mkdir -p %{buildroot}%{nmlibdir}/VPN
 cp %{SOURCE2} %{buildroot}%{nmlibdir}/conf.d/
 cp %{SOURCE3} %{buildroot}%{nmlibdir}/conf.d/
 
-# create a VPN directory
-mkdir -p %{buildroot}%{_sysconfdir}/NetworkManager/VPN
-
 # create a keyfile plugin system settings directory
 mkdir -p %{buildroot}%{_sysconfdir}/NetworkManager/system-connections
 
@@ -544,7 +541,6 @@ fi
 %dir %{_sysconfdir}/%{name}/dispatcher.d/no-wait.d
 %dir %{_sysconfdir}/%{name}/dnsmasq.d
 %dir %{_sysconfdir}/%{name}/dnsmasq-shared.d
-%dir %{_sysconfdir}/%{name}/VPN
 %config(noreplace) %{_sysconfdir}/%{name}/NetworkManager.conf
 %{_bindir}/nm-online
 %{_libexecdir}/nm-dhcp-helper
