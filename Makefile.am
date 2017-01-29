@@ -4189,7 +4189,13 @@ install-exec-hook: $(install_exec_hook)
 install-exec-local: $(install_exec_local)
 
 install-data-hook: $(install_data_hook)
-	$(mkinstalldirs) -m 0700 $(DESTDIR)$(statedir)
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/conf.d
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/system-connections
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/dnsmasq.d
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/dnsmasq-shared.d
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmlibdir)/conf.d
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmlibdir)/VPN
+	$(mkinstalldirs) -m 0700 $(DESTDIR)$(nmstatedir)
 	$(mkinstalldirs) -m 0755 $(DESTDIR)$(pkglibdir)
 
 uninstall-hook: $(uninstall_hook)
