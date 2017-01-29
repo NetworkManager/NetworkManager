@@ -2774,8 +2774,9 @@ connection_cb_info_finish (ConnectionCbInfo *info, gpointer connection)
 
 	if (info->timeout_id)
 		g_source_remove (info->timeout_id);
-	g_cancellable_cancel (info->cancellable);
-	g_object_unref (info->cancellable);
+
+	nm_clear_g_cancellable (&info->cancellable);
+
 	g_signal_handlers_disconnect_by_func (info->nmc->client, connection_removed_cb, info);
 	g_slice_free (ConnectionCbInfo, info);
 	quit ();
