@@ -227,7 +227,7 @@ main (int argc, char *argv[])
 
 	remaining_ms = t_secs * 1000;
 	data.end_timestamp_ms = data.start_timestamp_ms + remaining_ms;
-	data.progress_step_duration = (data.end_timestamp_ms - data.start_timestamp_ms + PROGRESS_STEPS/2) / PROGRESS_STEPS;
+	data.progress_step_duration = NM_MAX (1, (data.end_timestamp_ms - data.start_timestamp_ms + PROGRESS_STEPS/2) / PROGRESS_STEPS);
 
 	g_timeout_add (data.quiet ? remaining_ms : 0, handle_timeout, &data);
 	nm_client_new_async (NULL, got_client, &data);
