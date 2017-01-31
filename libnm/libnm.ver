@@ -1146,6 +1146,7 @@ global:
 
 libnm_1_8_0 {
 global:
+	nm_connection_get_setting_dummy;
 	nm_setting_802_1x_auth_flags_get_type;
 	nm_setting_802_1x_get_auth_timeout;
 	nm_setting_802_1x_get_ca_cert_password;
@@ -1158,5 +1159,7 @@ global:
 	nm_setting_802_1x_get_phase2_client_cert_password;
 	nm_setting_802_1x_get_phase2_client_cert_password_flags;
 	nm_setting_cdma_get_mtu;
+	nm_setting_dummy_get_type;
+	nm_setting_dummy_new;
 	nm_setting_gsm_get_mtu;
 } libnm_1_6_0;

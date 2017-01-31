@@ -374,6 +374,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-setting-cdma.h \
 	libnm-core/nm-setting-connection.h \
 	libnm-core/nm-setting-dcb.h \
+	libnm-core/nm-setting-dummy.h \
 	libnm-core/nm-setting-generic.h \
 	libnm-core/nm-setting-gsm.h \
 	libnm-core/nm-setting-infiniband.h \
@@ -439,6 +440,7 @@ libnm_core_lib_c_real = \
 	libnm-core/nm-setting-cdma.c \
 	libnm-core/nm-setting-connection.c \
 	libnm-core/nm-setting-dcb.c \
+	libnm-core/nm-setting-dummy.c \
 	libnm-core/nm-setting-generic.c \
 	libnm-core/nm-setting-gsm.c \
 	libnm-core/nm-setting-infiniband.c \

@@ -1845,6 +1845,7 @@ nm_connection_is_virtual (NMConnection *connection)
 	g_return_val_if_fail (type != NULL, FALSE);
 
 	if (   !strcmp (type, NM_SETTING_BOND_SETTING_NAME)
+	    || !strcmp (type, NM_SETTING_DUMMY_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_TEAM_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_BRIDGE_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_VLAN_SETTING_NAME)
@@ -2052,6 +2053,24 @@ nm_connection_get_setting_dcb (NMConnection *connection)
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingDcb *) nm_connection_get_setting (connection, NM_TYPE_SETTING_DCB);
+}
+
+/**
+ * nm_connection_get_setting_dummy:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingDummy the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingDummy if the connection contains one, otherwise %NULL
+ *
+ * Since: 1.8
+ **/
+NMSettingDummy *
+nm_connection_get_setting_dummy (NMConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingDummy *) nm_connection_get_setting (connection, NM_TYPE_SETTING_DUMMY);
 }
 
 /**

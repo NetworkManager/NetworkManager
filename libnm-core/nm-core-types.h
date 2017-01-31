@@ -38,6 +38,7 @@ typedef struct _NMSettingBridgePort       NMSettingBridgePort;
 typedef struct _NMSettingCdma             NMSettingCdma;
 typedef struct _NMSettingConnection       NMSettingConnection;
 typedef struct _NMSettingDcb              NMSettingDcb;
+typedef struct _NMSettingDummy            NMSettingDummy;
 typedef struct _NMSettingGeneric          NMSettingGeneric;
 typedef struct _NMSettingGsm              NMSettingGsm;
 typedef struct _NMSettingInfiniband       NMSettingInfiniband;

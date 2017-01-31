@@ -61,6 +61,7 @@
 #include <nm-setting-cdma.h>
 #include <nm-setting-connection.h>
 #include <nm-setting-dcb.h>
+#include <nm-setting-dummy.h>
 #include <nm-setting-generic.h>
 #include <nm-setting-gsm.h>
 #include <nm-setting-infiniband.h>
