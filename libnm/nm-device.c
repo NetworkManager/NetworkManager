@@ -277,6 +277,7 @@ coerce_type (NMDeviceType type)
 	case NM_DEVICE_TYPE_UNUSED1:
 	case NM_DEVICE_TYPE_UNUSED2:
 	case NM_DEVICE_TYPE_UNKNOWN:
+	case NM_DEVICE_TYPE_DUMMY:
 		return type;
 	}
 	return NM_DEVICE_TYPE_UNKNOWN;
@@ -1696,6 +1697,8 @@ get_type_name (NMDevice *device)
 		return _("Veth");
 	case NM_DEVICE_TYPE_MACSEC:
 		return _("MACsec");
+	case NM_DEVICE_TYPE_DUMMY:
+		return _("Dummy");
 	case NM_DEVICE_TYPE_GENERIC:
 	case NM_DEVICE_TYPE_UNUSED1:
 	case NM_DEVICE_TYPE_UNUSED2:

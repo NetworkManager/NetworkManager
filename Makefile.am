@@ -188,6 +188,8 @@ introspection_sources = \
 	introspection/org.freedesktop.NetworkManager.Device.Bridge.h \
 	introspection/org.freedesktop.NetworkManager.Device.Bluetooth.c \
 	introspection/org.freedesktop.NetworkManager.Device.Bluetooth.h \
+	introspection/org.freedesktop.NetworkManager.Device.Dummy.c \
+	introspection/org.freedesktop.NetworkManager.Device.Dummy.h \
 	introspection/org.freedesktop.NetworkManager.Device.Wired.c \
 	introspection/org.freedesktop.NetworkManager.Device.Wired.h \
 	introspection/org.freedesktop.NetworkManager.Device.Generic.c \
@@ -262,6 +264,7 @@ DBUS_INTERFACE_DOCS = \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.VPN.Plugin.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Bluetooth.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Dummy.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Vxlan.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Settings.Connection.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Bond.xml \
@@ -314,6 +317,7 @@ dbusinterfaces_DATA = \
 	introspection/org.freedesktop.NetworkManager.Device.Bond.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Bridge.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Bluetooth.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Dummy.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Wired.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Generic.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Infiniband.xml \
@@ -681,6 +685,7 @@ libnm_lib_h_pub_real = \
 	libnm/nm-device-bond.h \
 	libnm/nm-device-bridge.h \
 	libnm/nm-device-bt.h \
+	libnm/nm-device-dummy.h \
 	libnm/nm-device-ethernet.h \
 	libnm/nm-device-generic.h \
 	libnm/nm-device-infiniband.h \
@@ -731,6 +736,7 @@ libnm_lib_c_real = \
 	libnm/nm-device-bond.c \
 	libnm/nm-device-bridge.c \
 	libnm/nm-device-bt.c \
+	libnm/nm-device-dummy.c \
 	libnm/nm-device-ethernet.c \
 	libnm/nm-device-generic.c \
 	libnm/nm-device-infiniband.c \
@@ -1304,6 +1310,8 @@ src_libNetworkManager_la_SOURCES = \
 	src/devices/nm-device-bond.h \
 	src/devices/nm-device-bridge.c \
 	src/devices/nm-device-bridge.h \
+	src/devices/nm-device-dummy.c \
+	src/devices/nm-device-dummy.h \
 	src/devices/nm-device-ethernet.c \
 	src/devices/nm-device-ethernet.h \
 	src/devices/nm-device-infiniband.c \

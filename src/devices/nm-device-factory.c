@@ -403,6 +403,7 @@ nm_device_factory_manager_load_factories (NMDeviceFactoryManagerFactoryFunc call
 
 	_ADD_INTERNAL (nm_bond_device_factory_get_type);
 	_ADD_INTERNAL (nm_bridge_device_factory_get_type);
+	_ADD_INTERNAL (nm_dummy_device_factory_get_type);
 	_ADD_INTERNAL (nm_ethernet_device_factory_get_type);
 	_ADD_INTERNAL (nm_infiniband_device_factory_get_type);
 	_ADD_INTERNAL (nm_ip_tunnel_device_factory_get_type);

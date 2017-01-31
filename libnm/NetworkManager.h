@@ -33,6 +33,7 @@
 #include <nm-device-bond.h>
 #include <nm-device-bridge.h>
 #include <nm-device-bt.h>
+#include <nm-device-dummy.h>
 #include <nm-device-ethernet.h>
 #include <nm-device-generic.h>
 #include <nm-device-infiniband.h>
