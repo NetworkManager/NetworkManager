@@ -24,9 +24,9 @@
  *
  * Return values:
  *
- * 	0	: already online or connection established within given timeout
- *	1	: offline or not online within given timeout
- *	2	: unspecified error
+ * 0: already online or connection established within given timeout
+ * 1: offline or not online within given timeout
+ * 2: unspecified error
  *
  * Robert Love <rml@novell.com>
  */
@@ -41,22 +41,62 @@
 #include "NetworkManager.h"
 
 #define PROGRESS_STEPS 15
-#define WAIT_STARTUP_TAG "wait-startup"
+
+#define EXIT_FAILURE_OFFLINE     1
+#define EXIT_FAILURE_ERROR       2
+#define EXIT_FAILURE_LIBNM_BUG   42
+#define EXIT_FAILURE_UNSPECIFIED 43
 
 typedef struct
 {
 	GMainLoop *loop;
 	NMClient *client;
+	GCancellable *client_new_cancellable;
+	guint client_new_timeout_id;
+	guint handle_timeout_id;
+	gulong client_notify_id;
 	gboolean exit_no_nm;
 	gboolean wait_startup;
+	gboolean quiet;
 	gint64 start_timestamp_ms;
 	gint64 end_timestamp_ms;
 	gint64 progress_step_duration;
-	gboolean quiet;
-	guint retval;
+	int retval;
 } OnlineData;
 
+static gint64
+_now_ms (void)
+{
+	return g_get_monotonic_time () / (G_USEC_PER_SEC / 1000);
+}
+
 static void
+_return (OnlineData *data, int retval)
+{
+	nm_assert (data);
+	nm_assert (data->retval == EXIT_FAILURE_UNSPECIFIED);
+
+	data->retval = retval;
+	g_main_loop_quit (data->loop);
+}
+
+static void
+_print_progress (int progress_next_step_i, gint64 remaining_ms, int success)
+{
+	int i, j;
+
+	j = progress_next_step_i < 0 ? PROGRESS_STEPS : progress_next_step_i;
+
+	g_print ("\r%s", _("Connecting"));
+	for (i = 0; i < PROGRESS_STEPS; i++)
+		putchar (i < j ? '.' : ' ');
+	g_print (" %4lds", (long) (MAX (0, remaining_ms) / 1000));
+	if (success >= 0)
+		g_print (" [%sline]\n", success ? "on" : "off");
+	fflush (stdout);
+}
+
+static gboolean
 quit_if_connected (OnlineData *data)
 {
 	NMState state;
@@ -64,30 +104,28 @@ quit_if_connected (OnlineData *data)
 	state = nm_client_get_state (data->client);
 	if (!nm_client_get_nm_running (data->client)) {
 		if (data->exit_no_nm) {
-			data->retval = 1;
-			g_main_loop_quit (data->loop);
-			return;
+			_return (data, EXIT_FAILURE_OFFLINE);
+			return TRUE;
 		}
 	} else if (data->wait_startup) {
 		if (!nm_client_get_startup (data->client)) {
-			data->retval = 0;
-			g_main_loop_quit (data->loop);
-			return;
+			_return (data, EXIT_SUCCESS);
+			return TRUE;
 		}
 	} else {
 		if (   state == NM_STATE_CONNECTED_LOCAL
 		    || state == NM_STATE_CONNECTED_SITE
 		    || state == NM_STATE_CONNECTED_GLOBAL) {
-			data->retval = 0;
-			g_main_loop_quit (data->loop);
-			return;
+			_return (data, EXIT_SUCCESS);
+			return TRUE;
 		}
 	}
 	if (data->exit_no_nm && (state != NM_STATE_CONNECTING)) {
-		data->retval = 1;
-		g_main_loop_quit (data->loop);
-		return;
+		_return (data, EXIT_FAILURE_OFFLINE);
+		return TRUE;
 	}
+
+	return FALSE;
 }
 
 static void
@@ -95,60 +133,60 @@ client_properties_changed (GObject *object,
                            GParamSpec *pspec,
                            gpointer user_data)
 {
-	OnlineData *data = user_data;
-	quit_if_connected (data);
+	quit_if_connected (user_data);
 }
 
 static gboolean
 handle_timeout (gpointer user_data)
 {
-	const OnlineData *data = user_data;
-	const gint64 now = g_get_monotonic_time () / (G_USEC_PER_SEC / 1000);
+	OnlineData *data = user_data;
+	const gint64 now = _now_ms ();
 	gint64 remaining_ms = data->end_timestamp_ms - now;
 	const gint64 elapsed_ms = now - data->start_timestamp_ms;
 	int progress_next_step_i = 0;
 
-	if (!data->quiet) {
-		int i;
-
-		/* calculate the next step (not the current): floor()+1 */
-		progress_next_step_i = (elapsed_ms / data->progress_step_duration) + 1;
-		progress_next_step_i = MIN (progress_next_step_i, PROGRESS_STEPS);
-
-		g_print ("\r%s", _("Connecting"));
-		for (i = 0; i < PROGRESS_STEPS; i++)
-			putchar (i < progress_next_step_i ? '.' : ' ');
-		g_print (" %4lds", (long) (MAX (0, remaining_ms) / 1000));
-		fflush (stdout);
-	}
+	data->handle_timeout_id = 0;
 
 	if (remaining_ms <= 3) {
-		if (!data->quiet)
-			g_print ("\n");
-		exit (1);
+		_return (data, EXIT_FAILURE_OFFLINE);
+		return G_SOURCE_REMOVE;
 	}
 
 	if (!data->quiet) {
 		gint64 rem;
 
+		/* calculate the next step (not the current): floor()+1 */
+		progress_next_step_i = NM_MIN ((elapsed_ms / data->progress_step_duration) + 1, PROGRESS_STEPS);
+		_print_progress (progress_next_step_i, remaining_ms, -1);
+
 		/* synchronize the timeout with the ticking of the seconds. */
 		rem = remaining_ms % 1000;
 		if (rem <= 3)
 			rem = rem + G_USEC_PER_SEC;
-		rem = rem + 10; /* add small offset to awake a bit after the second ticks */
-		if (remaining_ms > rem)
-			remaining_ms = rem;
+		/* add small offset to awake a bit after the second ticks */
+		remaining_ms = NM_MIN (remaining_ms, rem + 10);
 
 		/* synchronize the timeout with the steps of the progress bar. */
 		rem = (progress_next_step_i * data->progress_step_duration) - elapsed_ms;
 		if (rem <= 3)
 			rem = rem + data->progress_step_duration;
-		rem = rem + 10; /* add small offset to awake a bit after the time out */
-		if (remaining_ms > rem)
-			remaining_ms = rem;
+		/* add small offset to awake a bit after the second ticks */
+		remaining_ms = NM_MIN (remaining_ms, rem + 10);
 	}
 
-	g_timeout_add (remaining_ms, handle_timeout, user_data);
+	data->handle_timeout_id = g_timeout_add (remaining_ms, handle_timeout, data);
+	return G_SOURCE_REMOVE;
+}
+
+static gboolean
+got_client_timeout (gpointer user_data)
+{
+	OnlineData *data = user_data;
+
+	data->client_new_timeout_id = 0;
+	data->quiet = TRUE;
+	g_printerr (_("Error: timeout creating NMClient object\n"));
+	_return (data, EXIT_FAILURE_LIBNM_BUG);
 	return G_SOURCE_REMOVE;
 }
 
@@ -156,40 +194,49 @@ static void
 got_client (GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
 	OnlineData *data = user_data;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
+	NMClient *client;
 
-	data->client = nm_client_new_finish (res, &error);
-	if (!data->client) {
-		g_printerr (_("Error: Could not create NMClient object: %s."),
+	nm_clear_g_source (&data->client_new_timeout_id);
+	g_clear_object (&data->client_new_cancellable);
+
+	client = nm_client_new_finish (res, &error);
+	if (!client) {
+		if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+			return;
+		data->quiet = TRUE;
+		g_printerr (_("Error: Could not create NMClient object: %s\n"),
 		            error->message);
-		g_error_free (error);
-		data->retval = 1;
-		g_main_loop_quit (data->loop);
+		_return (data, EXIT_FAILURE_ERROR);
+		return;
 	}
 
-	g_signal_connect (data->client, "notify",
-	                  G_CALLBACK (client_properties_changed), user_data);
-	quit_if_connected (data);
+	data->client = client;
+
+	if (quit_if_connected (data))
+		return;
+
+	data->client_notify_id = g_signal_connect (data->client, "notify",
+	                                           G_CALLBACK (client_properties_changed), data);
+	data->handle_timeout_id = g_timeout_add (data->quiet ? NM_MAX (0, data->end_timestamp_ms - _now_ms ()) : 0, handle_timeout, data);
 }
 
 int
 main (int argc, char *argv[])
 {
-	OnlineData data = { 0, };
+	OnlineData data = {
+		.retval = EXIT_FAILURE_UNSPECIFIED,
+	};
 	int t_secs = 30;
 	GOptionContext *opt_ctx = NULL;
 	gboolean success;
-	gint64 remaining_ms;
-
 	GOptionEntry options[] = {
 		{"timeout", 't', 0, G_OPTION_ARG_INT, &t_secs, N_("Time to wait for a connection, in seconds (without the option, default value is 30)"), "<timeout>"},
 		{"exit", 'x', 0, G_OPTION_ARG_NONE, &data.exit_no_nm, N_("Exit immediately if NetworkManager is not running or connecting"), NULL},
 		{"quiet", 'q', 0, G_OPTION_ARG_NONE, &data.quiet, N_("Don't print anything"), NULL},
 		{"wait-for-startup", 's', 0, G_OPTION_ARG_NONE, &data.wait_startup, N_("Wait for NetworkManager startup instead of a connection"), NULL},
-		{NULL}
+		{ NULL },
 	};
-
-	data.start_timestamp_ms = g_get_monotonic_time () / (G_USEC_PER_SEC / 1000);
 
 	/* Set locale to be able to use environment variables */
 	setlocale (LC_ALL, "");
@@ -197,6 +244,10 @@ main (int argc, char *argv[])
 	bindtextdomain (GETTEXT_PACKAGE, NMLOCALEDIR);
 	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 	textdomain (GETTEXT_PACKAGE);
+
+	nm_g_type_init ();
+
+	data.start_timestamp_ms = _now_ms ();
 
 	opt_ctx = g_option_context_new (NULL);
 	g_option_context_set_translation_domain (opt_ctx, GETTEXT_PACKAGE);
@@ -213,29 +264,40 @@ main (int argc, char *argv[])
 	if (!success) {
 		g_printerr ("%s: %s\n", argv[0],
 		            _("Invalid option.  Please use --help to see a list of valid options."));
-		return 2;
+		return EXIT_FAILURE_ERROR;
 	}
 
 	if (t_secs < 0 || t_secs > 3600)  {
 		g_printerr ("%s: %s\n", argv[0],
 		            _("Invalid option.  Please use --help to see a list of valid options."));
-		return 2;
+		return EXIT_FAILURE_ERROR;
 	}
-	nm_g_type_init ();
+
+	if (t_secs == 0)
+		data.quiet = TRUE;
 
 	data.loop = g_main_loop_new (NULL, FALSE);
 
-	remaining_ms = t_secs * 1000;
-	data.end_timestamp_ms = data.start_timestamp_ms + remaining_ms;
+	data.end_timestamp_ms = data.start_timestamp_ms + (t_secs * 1000);
 	data.progress_step_duration = NM_MAX (1, (data.end_timestamp_ms - data.start_timestamp_ms + PROGRESS_STEPS/2) / PROGRESS_STEPS);
 
-	g_timeout_add (data.quiet ? remaining_ms : 0, handle_timeout, &data);
-	nm_client_new_async (NULL, got_client, &data);
+	data.client_new_cancellable = g_cancellable_new ();
+
+	data.client_new_timeout_id = g_timeout_add_seconds (30, got_client_timeout, &data);
+	nm_client_new_async (data.client_new_cancellable, got_client, &data);
 
 	g_main_loop_run (data.loop);
-	g_main_loop_unref (data.loop);
-	if (data.client)
-		g_object_unref (data.client);
+
+	nm_clear_g_cancellable (&data.client_new_cancellable);
+	nm_clear_g_source (&data.client_new_timeout_id);
+	nm_clear_g_source (&data.handle_timeout_id);
+	nm_clear_g_signal_handler (data.client, &data.client_notify_id);
+	g_clear_object (&data.client);
+
+	g_clear_pointer (&data.loop, g_main_loop_unref);
+
+	if (!data.quiet)
+		_print_progress (-1, NM_MAX (0, data.end_timestamp_ms - _now_ms ()), data.retval == 0);
 
 	return data.retval;
 }
