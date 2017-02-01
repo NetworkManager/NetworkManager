@@ -90,22 +90,30 @@ typedef enum { /*< underscore_name=nm_setting_802_1x_ck_scheme >*/
 #define NM_SETTING_802_1X_ANONYMOUS_IDENTITY "anonymous-identity"
 #define NM_SETTING_802_1X_PAC_FILE "pac-file"
 #define NM_SETTING_802_1X_CA_CERT "ca-cert"
+#define NM_SETTING_802_1X_CA_CERT_PASSWORD "ca-cert-password"
+#define NM_SETTING_802_1X_CA_CERT_PASSWORD_FLAGS "ca-cert-password-flags"
 #define NM_SETTING_802_1X_CA_PATH "ca-path"
 #define NM_SETTING_802_1X_SUBJECT_MATCH "subject-match"
 #define NM_SETTING_802_1X_ALTSUBJECT_MATCHES "altsubject-matches"
 #define NM_SETTING_802_1X_DOMAIN_SUFFIX_MATCH "domain-suffix-match"
 #define NM_SETTING_802_1X_CLIENT_CERT "client-cert"
+#define NM_SETTING_802_1X_CLIENT_CERT_PASSWORD "client-cert-password"
+#define NM_SETTING_802_1X_CLIENT_CERT_PASSWORD_FLAGS "client-cert-password-flags"
 #define NM_SETTING_802_1X_PHASE1_PEAPVER "phase1-peapver"
 #define NM_SETTING_802_1X_PHASE1_PEAPLABEL "phase1-peaplabel"
 #define NM_SETTING_802_1X_PHASE1_FAST_PROVISIONING "phase1-fast-provisioning"
 #define NM_SETTING_802_1X_PHASE2_AUTH "phase2-auth"
 #define NM_SETTING_802_1X_PHASE2_AUTHEAP "phase2-autheap"
 #define NM_SETTING_802_1X_PHASE2_CA_CERT "phase2-ca-cert"
+#define NM_SETTING_802_1X_PHASE2_CA_CERT_PASSWORD "phase2-ca-cert-password"
+#define NM_SETTING_802_1X_PHASE2_CA_CERT_PASSWORD_FLAGS "phase2-ca-cert-password-flags"
 #define NM_SETTING_802_1X_PHASE2_CA_PATH "phase2-ca-path"
 #define NM_SETTING_802_1X_PHASE2_SUBJECT_MATCH "phase2-subject-match"
 #define NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES "phase2-altsubject-matches"
 #define NM_SETTING_802_1X_PHASE2_DOMAIN_SUFFIX_MATCH "phase2-domain-suffix-match"
 #define NM_SETTING_802_1X_PHASE2_CLIENT_CERT "phase2-client-cert"
+#define NM_SETTING_802_1X_PHASE2_CLIENT_CERT_PASSWORD "phase2-client-cert-password"
+#define NM_SETTING_802_1X_PHASE2_CLIENT_CERT_PASSWORD_FLAGS "phase2-client-cert-password-flags"
 #define NM_SETTING_802_1X_PASSWORD "password"
 #define NM_SETTING_802_1X_PASSWORD_FLAGS "password-flags"
 #define NM_SETTING_802_1X_PASSWORD_RAW "password-raw"
@@ -189,6 +197,11 @@ gboolean               nm_setting_802_1x_set_ca_cert                 (NMSetting8
                                                                       NMSetting8021xCKFormat *out_format,
                                                                       GError **error);
 
+NM_AVAILABLE_IN_1_8
+const char *           nm_setting_802_1x_get_ca_cert_password        (NMSetting8021x *setting);
+NM_AVAILABLE_IN_1_8
+NMSettingSecretFlags   nm_setting_802_1x_get_ca_cert_password_flags  (NMSetting8021x *setting);
+
 const char *      nm_setting_802_1x_get_subject_match                (NMSetting8021x *setting);
 
 guint32           nm_setting_802_1x_get_num_altsubject_matches       (NMSetting8021x *setting);
@@ -215,6 +228,11 @@ gboolean               nm_setting_802_1x_set_client_cert             (NMSetting8
                                                                       NMSetting8021xCKFormat *out_format,
                                                                       GError **error);
 
+NM_AVAILABLE_IN_1_8
+const char *           nm_setting_802_1x_get_client_cert_password    (NMSetting8021x *setting);
+NM_AVAILABLE_IN_1_8
+NMSettingSecretFlags   nm_setting_802_1x_get_client_cert_password_flags (NMSetting8021x *setting);
+
 const char *      nm_setting_802_1x_get_phase1_peapver               (NMSetting8021x *setting);
 
 const char *      nm_setting_802_1x_get_phase1_peaplabel             (NMSetting8021x *setting);
@@ -235,6 +253,12 @@ gboolean               nm_setting_802_1x_set_phase2_ca_cert          (NMSetting8
                                                                       NMSetting8021xCKScheme scheme,
                                                                       NMSetting8021xCKFormat *out_format,
                                                                       GError **error);
+
+
+NM_AVAILABLE_IN_1_8
+const char *           nm_setting_802_1x_get_phase2_ca_cert_password        (NMSetting8021x *setting);
+NM_AVAILABLE_IN_1_8
+NMSettingSecretFlags   nm_setting_802_1x_get_phase2_ca_cert_password_flags  (NMSetting8021x *setting);
 
 const char *      nm_setting_802_1x_get_phase2_subject_match         (NMSetting8021x *setting);
 
@@ -261,6 +285,11 @@ gboolean               nm_setting_802_1x_set_phase2_client_cert          (NMSett
                                                                           NMSetting8021xCKScheme scheme,
                                                                           NMSetting8021xCKFormat *out_format,
                                                                           GError **error);
+
+NM_AVAILABLE_IN_1_8
+const char *           nm_setting_802_1x_get_phase2_client_cert_password (NMSetting8021x *setting);
+NM_AVAILABLE_IN_1_8
+NMSettingSecretFlags   nm_setting_802_1x_get_phase2_client_cert_password_flags (NMSetting8021x *setting);
 
 const char *      nm_setting_802_1x_get_password                     (NMSetting8021x *setting);
 NMSettingSecretFlags nm_setting_802_1x_get_password_flags            (NMSetting8021x *setting);
