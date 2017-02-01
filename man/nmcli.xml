@@ -925,6 +925,7 @@
             <listitem><para><literal>ip-tunnel</literal></para></listitem>
             <listitem><para><literal>macvlan</literal></para></listitem>
             <listitem><para><literal>vxlan</literal></para></listitem>
+            <listitem><para><literal>dummy</literal></para></listitem>
           </itemizedlist>
 
           <para>The most typical uses are described in the <link linkend='examples' endterm='examples.title' /> section.</para>

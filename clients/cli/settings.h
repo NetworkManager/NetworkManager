@@ -95,5 +95,6 @@ extern NmcOutputField nmc_fields_setting_macvlan[];
 extern NmcOutputField nmc_fields_setting_macsec[];
 extern NmcOutputField nmc_fields_setting_vxlan[];
 extern NmcOutputField nmc_fields_setting_proxy[];
+extern NmcOutputField nmc_fields_setting_dummy[];
 
 #endif /* NMC_SETTINGS_H */
