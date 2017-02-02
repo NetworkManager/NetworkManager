@@ -95,6 +95,7 @@ typedef struct {
 	bool              enabled:1; /* rfkilled or not */
 	bool              requested_scan:1;
 	bool              ssid_found:1;
+	bool              is_scanning:1;
 
 	gint32            last_scan;
 	gint32            scheduled_scan_time;
@@ -209,6 +210,23 @@ _ap_dump (NMDeviceWifi *self,
 	       nm_wifi_ap_to_string (ap, buf, sizeof (buf), now_s));
 }
 
+static void
+_notify_scanning (NMDeviceWifi *self)
+{
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	gboolean scanning;
+
+	scanning =    priv->sup_iface
+	           && nm_supplicant_interface_get_scanning (priv->sup_iface);
+
+	if (scanning == priv->is_scanning)
+		return;
+
+	_LOGD (LOGD_WIFI, "wifi-scan: scanning-state: %s", scanning ? "scanning" : "idle");
+	priv->is_scanning = scanning;
+	_notify (self, PROP_SCANNING);
+}
+
 static gboolean
 unmanaged_on_quit (NMDevice *self)
 {
@@ -269,6 +287,8 @@ supplicant_interface_acquire (NMDeviceWifi *self)
 	                  G_CALLBACK (supplicant_iface_notify_current_bss),
 	                  self);
 
+	_notify_scanning (self);
+
 	return TRUE;
 }
 
@@ -319,6 +339,8 @@ supplicant_interface_release (NMDeviceWifi *self)
 
 		g_clear_object (&priv->sup_iface);
 	}
+
+	_notify_scanning (self);
 }
 
 static NMWifiAP *
@@ -1530,7 +1552,7 @@ supplicant_iface_scan_done_cb (NMSupplicantInterface *iface,
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	_LOGD (LOGD_WIFI, "wifi-scan: done [%s]", success ? "successful" : "failed");
+	_LOGD (LOGD_WIFI, "wifi-scan: scan-done callback: %s", success ? "successful" : "failed");
 
 	priv->last_scan = nm_utils_get_monotonic_timestamp_s ();
 	schedule_scan (self, success);
@@ -2138,7 +2160,7 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 	/* Signal scanning state changes */
 	if (   new_state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING
 	    || old_state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING)
-		_notify (self, PROP_SCANNING);
+		_notify_scanning (self);
 }
 
 static void
@@ -2176,17 +2198,11 @@ supplicant_iface_notify_scanning_cb (NMSupplicantInterface *iface,
                                      GParamSpec *pspec,
                                      NMDeviceWifi *self)
 {
-	NMDeviceState state;
-	gboolean scanning;
-
-	scanning = nm_supplicant_interface_get_scanning (iface);
-	_LOGD (LOGD_WIFI, "wifi-scan: now %s", scanning ? "scanning" : "idle");
-
-	_notify (self, PROP_SCANNING);
+	_notify_scanning (self);
 
 	/* Run a quick update of current AP when coming out of a scan */
-	state = nm_device_get_state (NM_DEVICE (self));
-	if (!scanning && state == NM_DEVICE_STATE_ACTIVATED)
+	if (   !NM_DEVICE_WIFI_GET_PRIVATE (self)->is_scanning
+	    && nm_device_get_state (NM_DEVICE (self)) == NM_DEVICE_STATE_ACTIVATED)
 		periodic_update (self);
 }
 
@@ -3114,7 +3130,7 @@ get_property (GObject *object, guint prop_id,
 		nm_utils_g_value_set_object_path (value, priv->current_ap);
 		break;
 	case PROP_SCANNING:
-		g_value_set_boolean (value, nm_supplicant_interface_get_scanning (priv->sup_iface));
+		g_value_set_boolean (value, priv->is_scanning);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
