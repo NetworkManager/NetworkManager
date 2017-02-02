@@ -319,7 +319,7 @@ supplicant_interface_release (NMDeviceWifi *self)
 
 	/* Reset the scan interval to be pretty frequent when disconnected */
 	priv->scan_interval = SCAN_INTERVAL_MIN + SCAN_INTERVAL_STEP;
-	_LOGD (LOGD_WIFI_SCAN, "reset scanning interval to %d seconds",
+	_LOGD (LOGD_WIFI, "reset scanning interval to %d seconds",
 	       priv->scan_interval);
 
 	nm_clear_g_source (&priv->ap_dump_id);
@@ -1427,7 +1427,7 @@ request_wireless_scan (NMDeviceWifi *self, GVariant *scan_options)
 	}
 
 	if (check_scanning_allowed (self)) {
-		_LOGD (LOGD_WIFI_SCAN, "scanning requested");
+		_LOGD (LOGD_WIFI, "scanning requested");
 
 		if (scan_options) {
 			GVariant *val = g_variant_lookup_value (scan_options, "ssids", NULL);
@@ -1436,14 +1436,14 @@ request_wireless_scan (NMDeviceWifi *self, GVariant *scan_options)
 				if (g_variant_is_of_type (val, G_VARIANT_TYPE ("aay")))
 					ssids = ssids_options_to_ptrarray (val);
 				else
-					_LOGD (LOGD_WIFI_SCAN, "ignoring invalid 'ssids' scan option");
+					_LOGD (LOGD_WIFI, "ignoring invalid 'ssids' scan option");
 				g_variant_unref (val);
 			}
 		}
 		if (!ssids)
 			ssids = build_hidden_probe_list (self);
 
-		if (nm_logging_enabled (LOGL_DEBUG, LOGD_WIFI_SCAN)) {
+		if (_LOGD_ENABLED (LOGD_WIFI)) {
 			if (ssids) {
 				const GByteArray *ssid;
 				guint i;
@@ -1454,12 +1454,12 @@ request_wireless_scan (NMDeviceWifi *self, GVariant *scan_options)
 					foo = ssid->len > 0
 					      ? nm_utils_ssid_to_utf8 (ssid->data, ssid->len)
 					      : NULL;
-					_LOGD (LOGD_WIFI_SCAN, "(%d) probe scanning SSID '%s'",
+					_LOGD (LOGD_WIFI, "(%d) probe scanning SSID '%s'",
 					            i, foo ? foo : "<hidden>");
 					g_free (foo);
 				}
 			} else
-				_LOGD (LOGD_WIFI_SCAN, "no SSIDs to probe scan");
+				_LOGD (LOGD_WIFI, "no SSIDs to probe scan");
 		}
 
 		_hw_addr_set_scanning (self, FALSE);
@@ -1473,7 +1473,7 @@ request_wireless_scan (NMDeviceWifi *self, GVariant *scan_options)
 		if (ssids)
 			g_ptr_array_unref (ssids);
 	} else
-		_LOGD (LOGD_WIFI_SCAN, "scan requested but not allowed at this time");
+		_LOGD (LOGD_WIFI, "scan requested but not allowed at this time");
 
 	schedule_scan (self, backoff);
 }
@@ -1532,7 +1532,7 @@ schedule_scan (NMDeviceWifi *self, gboolean backoff)
 			priv->scan_interval = 5;
 		}
 
-		_LOGD (LOGD_WIFI_SCAN, "scheduled scan in %d seconds (interval now %d seconds)",
+		_LOGD (LOGD_WIFI, "scheduled scan in %d seconds (interval now %d seconds)",
 		       next_scan, priv->scan_interval);
 	}
 }
@@ -1544,7 +1544,7 @@ supplicant_iface_scan_done_cb (NMSupplicantInterface *iface,
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	_LOGD (LOGD_WIFI_SCAN, "scan %s", success ? "successful" : "failed");
+	_LOGD (LOGD_WIFI, "scan %s", success ? "successful" : "failed");
 
 	priv->last_scan = nm_utils_get_monotonic_timestamp_s ();
 	schedule_scan (self, success);
@@ -1562,17 +1562,21 @@ ap_list_dump (gpointer user_data)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (user_data);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	gs_free NMWifiAP **list = NULL;
-	gsize i;
 
 	priv->ap_dump_id = 0;
-	_LOGD (LOGD_WIFI_SCAN, "APs: [now:%u last:%u next:%u]",
-	       nm_utils_get_monotonic_timestamp_s (),
-	       priv->last_scan,
-	       priv->scheduled_scan_time);
-	list = ap_list_get_sorted (self, TRUE);
-	for (i = 0; list[i]; i++)
-		_ap_dump (self, list[i], "dump");
+
+	if (_LOGD_ENABLED (LOGD_WIFI_SCAN)) {
+		gs_free NMWifiAP **list = NULL;
+		gsize i;
+
+		_LOGD (LOGD_WIFI_SCAN, "APs: [now:%u last:%u next:%u]",
+		       nm_utils_get_monotonic_timestamp_s (),
+		       priv->last_scan,
+		       priv->scheduled_scan_time);
+		list = ap_list_get_sorted (self, TRUE);
+		for (i = 0; list[i]; i++)
+			_ap_dump (self, list[i], "dump");
+	}
 	return G_SOURCE_REMOVE;
 }
 
@@ -1581,10 +1585,9 @@ schedule_ap_list_dump (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	if (!nm_logging_enabled (LOGL_DEBUG, LOGD_WIFI_SCAN))
-		return;
 	nm_clear_g_source (&priv->ap_dump_id);
-	priv->ap_dump_id = g_timeout_add_seconds (1, ap_list_dump, self);
+	if (_LOGD_ENABLED (LOGD_WIFI_SCAN))
+		priv->ap_dump_id = g_timeout_add_seconds (1, ap_list_dump, self);
 }
 
 static void
@@ -1646,7 +1649,7 @@ supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
 
 	ap = nm_wifi_ap_new_from_properties (object_path, properties);
 	if (!ap) {
-		_LOGD (LOGD_WIFI_SCAN, "invalid AP properties received for %s", object_path);
+		_LOGD (LOGD_WIFI, "invalid AP properties received for %s", object_path);
 		return;
 	}
 
@@ -1659,11 +1662,11 @@ supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
 		ssid = nm_wifi_ap_get_ssid (ap);
 		if (ssid && (nm_utils_is_empty_ssid (ssid->data, ssid->len) == FALSE)) {
 			/* Yay, matched it, no longer treat as hidden */
-			_LOGD (LOGD_WIFI_SCAN, "matched hidden AP %s => '%s'",
+			_LOGD (LOGD_WIFI, "matched hidden AP %s => '%s'",
 			       nm_wifi_ap_get_address (ap), nm_utils_escape_ssid (ssid->data, ssid->len));
 		} else {
 			/* Didn't have an entry for this AP in the database */
-			_LOGD (LOGD_WIFI_SCAN, "failed to match hidden AP %s",
+			_LOGD (LOGD_WIFI, "failed to match hidden AP %s",
 			       nm_wifi_ap_get_address (ap));
 		}
 	}
@@ -2054,7 +2057,7 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 
 	switch (new_state) {
 	case NM_SUPPLICANT_INTERFACE_STATE_READY:
-		_LOGD (LOGD_WIFI_SCAN, "supplicant ready");
+		_LOGD (LOGD_WIFI, "supplicant ready");
 		nm_device_queue_recheck_available (NM_DEVICE (device),
 		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
 		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
@@ -2190,7 +2193,7 @@ supplicant_iface_notify_scanning_cb (NMSupplicantInterface *iface,
 	gboolean scanning;
 
 	scanning = nm_supplicant_interface_get_scanning (iface);
-	_LOGD (LOGD_WIFI_SCAN, "now %s", scanning ? "scanning" : "idle");
+	_LOGD (LOGD_WIFI, "now %s", scanning ? "scanning" : "idle");
 
 	_notify (self, PROP_SCANNING);
 
