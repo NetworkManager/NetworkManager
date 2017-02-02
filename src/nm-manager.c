@@ -233,8 +233,7 @@ NM_DEFINE_SINGLETON_INSTANCE (NMManager);
 
 /*****************************************************************************/
 
-GQuark autoconnect_root_quark (void);
-G_DEFINE_QUARK (autoconnect-root, autoconnect_root);
+static NM_CACHED_QUARK_FCN ("autoconnect-root", autoconnect_root_quark)
 
 static void active_connection_state_changed (NMActiveConnection *active,
                                              GParamSpec *pspec,

@@ -77,8 +77,7 @@ typedef struct {
 	GArray *methods;
 } NMExportedObjectClassInfo;
 
-GQuark nm_exported_object_class_info_quark (void);
-G_DEFINE_QUARK (NMExportedObjectClassInfo, nm_exported_object_class_info)
+static NM_CACHED_QUARK_FCN ("NMExportedObjectClassInfo", nm_exported_object_class_info_quark)
 
 /*****************************************************************************/
 
@@ -388,8 +387,7 @@ nm_exported_object_meta_marshal (GClosure *closure, GValue *return_value,
 	g_free (local_param_values);
 }
 
-GQuark _skeleton_data_quark (void);
-G_DEFINE_QUARK (skeleton-data, _skeleton_data);
+static NM_CACHED_QUARK_FCN ("skeleton-data", _skeleton_data_quark)
 
 typedef struct {
 	GBinding **prop_bindings;

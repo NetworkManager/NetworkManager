@@ -26,14 +26,14 @@
 #include "nm-vpn-dbus-interface.h"
 #include "nm-core-internal.h"
 
-G_DEFINE_QUARK (nm-agent-manager-error-quark, nm_agent_manager_error)
-G_DEFINE_QUARK (nm-connection-error-quark, nm_connection_error)
-G_DEFINE_QUARK (nm-crypto-error-quark, nm_crypto_error)
-G_DEFINE_QUARK (nm-device-error-quark, nm_device_error)
-G_DEFINE_QUARK (nm-manager-error-quark, nm_manager_error)
-G_DEFINE_QUARK (nm-secret-agent-error-quark, nm_secret_agent_error)
-G_DEFINE_QUARK (nm-settings-error-quark, nm_settings_error)
-G_DEFINE_QUARK (nm-vpn-plugin-error-quark, nm_vpn_plugin_error)
+NM_CACHED_QUARK_FCN ("nm-agent-manager-error-quark", nm_agent_manager_error_quark)
+NM_CACHED_QUARK_FCN ("nm-connection-error-quark", nm_connection_error_quark)
+NM_CACHED_QUARK_FCN ("nm-crypto-error-quark", nm_crypto_error_quark)
+NM_CACHED_QUARK_FCN ("nm-device-error-quark", nm_device_error_quark)
+NM_CACHED_QUARK_FCN ("nm-manager-error-quark", nm_manager_error_quark)
+NM_CACHED_QUARK_FCN ("nm-secret-agent-error-quark", nm_secret_agent_error_quark)
+NM_CACHED_QUARK_FCN ("nm-settings-error-quark", nm_settings_error_quark)
+NM_CACHED_QUARK_FCN ("nm-vpn-plugin-error-quark", nm_vpn_plugin_error_quark)
 
 static void
 register_error_domain (GQuark domain,

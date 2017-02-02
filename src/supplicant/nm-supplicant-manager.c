@@ -63,7 +63,7 @@ G_DEFINE_TYPE (NMSupplicantManager, nm_supplicant_manager, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
-G_DEFINE_QUARK (nm-supplicant-error-quark, nm_supplicant_error);
+NM_CACHED_QUARK_FCN ("nm-supplicant-error-quark", nm_supplicant_error_quark)
 
 /*****************************************************************************/
 
