@@ -73,9 +73,64 @@ _LOG_DECLARE_SELF (NMDevice);
 #include "introspection/org.freedesktop.NetworkManager.Device.h"
 #include "introspection/org.freedesktop.NetworkManager.Device.Statistics.h"
 
-G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, NM_TYPE_EXPORTED_OBJECT)
+/*****************************************************************************/
 
-#define NM_DEVICE_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR(self, NMDevice, NM_IS_DEVICE)
+#define DHCP_RESTART_TIMEOUT   120
+#define DHCP_NUM_TRIES_MAX     3
+#define DEFAULT_AUTOCONNECT    TRUE
+
+/*****************************************************************************/
+
+typedef void (*ActivationHandleFunc) (NMDevice *self);
+
+typedef struct {
+	ActivationHandleFunc func;
+	guint id;
+} ActivationHandleData;
+
+typedef enum {
+	CLEANUP_TYPE_KEEP,
+	CLEANUP_TYPE_REMOVED,
+	CLEANUP_TYPE_DECONFIGURE,
+} CleanupType;
+
+typedef enum {
+	IP_NONE = 0,
+	IP_WAIT,
+	IP_CONF,
+	IP_DONE,
+	IP_FAIL
+} IpState;
+
+typedef struct {
+	NMDevice *slave;
+	gulong watch_id;
+	bool slave_is_enslaved;
+	bool configure;
+} SlaveInfo;
+
+typedef struct {
+	NMDevice *device;
+	guint idle_add_id;
+	int ifindex;
+} DeleteOnDeactivateData;
+
+typedef void (*ArpingCallback) (NMDevice *, NMIP4Config **, gboolean);
+
+typedef struct {
+	ArpingCallback callback;
+	NMDevice *device;
+	NMIP4Config **configs;
+} ArpingData;
+
+typedef enum {
+	HW_ADDR_TYPE_UNSET = 0,
+	HW_ADDR_TYPE_PERMANENT,
+	HW_ADDR_TYPE_EXPLICIT,
+	HW_ADDR_TYPE_GENERATED,
+} HwAddrType;
+
+/*****************************************************************************/
 
 enum {
 	STATE_CHANGED,
@@ -135,62 +190,6 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDevice,
 	PROP_TX_BYTES,
 	PROP_RX_BYTES,
 );
-
-#define DEFAULT_AUTOCONNECT TRUE
-
-/*****************************************************************************/
-
-#define DHCP_RESTART_TIMEOUT   120
-#define DHCP_NUM_TRIES_MAX     3
-
-typedef void (*ActivationHandleFunc) (NMDevice *self);
-
-typedef struct {
-	ActivationHandleFunc func;
-	guint id;
-} ActivationHandleData;
-
-typedef enum {
-	CLEANUP_TYPE_KEEP,
-	CLEANUP_TYPE_REMOVED,
-	CLEANUP_TYPE_DECONFIGURE,
-} CleanupType;
-
-typedef enum {
-	IP_NONE = 0,
-	IP_WAIT,
-	IP_CONF,
-	IP_DONE,
-	IP_FAIL
-} IpState;
-
-typedef struct {
-	NMDevice *slave;
-	gulong watch_id;
-	bool slave_is_enslaved;
-	bool configure;
-} SlaveInfo;
-
-typedef struct {
-	NMDevice *device;
-	guint idle_add_id;
-	int ifindex;
-} DeleteOnDeactivateData;
-
-typedef void (*ArpingCallback) (NMDevice *, NMIP4Config **, gboolean);
-
-typedef struct {
-	ArpingCallback callback;
-	NMDevice *device;
-	NMIP4Config **configs;
-} ArpingData;
-
-typedef enum {
-	HW_ADDR_TYPE_UNSET = 0,
-	HW_ADDR_TYPE_PERMANENT,
-	HW_ADDR_TYPE_EXPLICIT,
-	HW_ADDR_TYPE_GENERATED,
-} HwAddrType;
 
 typedef struct _NMDevicePrivate {
 	bool in_state_changed;
@@ -443,6 +442,12 @@ typedef struct _NMDevicePrivate {
 	} stats;
 
 } NMDevicePrivate;
+
+G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, NM_TYPE_EXPORTED_OBJECT)
+
+#define NM_DEVICE_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR(self, NMDevice, NM_IS_DEVICE)
+
+/*****************************************************************************/
 
 static void nm_device_set_proxy_config (NMDevice *self, GHashTable *options);
 
