@@ -165,27 +165,11 @@ typedef enum {
 } IpState;
 
 typedef struct {
-	NMDeviceState state;
-	NMDeviceStateReason reason;
-	guint id;
-} QueuedState;
-
-typedef struct {
 	NMDevice *slave;
 	gulong watch_id;
 	bool slave_is_enslaved;
 	bool configure;
 } SlaveInfo;
-
-typedef struct {
-	NMLogDomain log_domain;
-	guint timeout;
-	guint watch;
-	GPid pid;
-	const char *binary;
-	const char *address;
-	guint deadline;
-} PingInfo;
 
 typedef struct {
 	NMDevice *device;
@@ -216,7 +200,11 @@ typedef struct _NMDevicePrivate {
 
 	NMDeviceState state;
 	NMDeviceStateReason state_reason;
-	QueuedState   queued_state;
+	struct {
+		NMDeviceState state;
+		NMDeviceStateReason reason;
+		guint id;
+	} queued_state;
 	guint queued_ip4_config_id;
 	guint queued_ip6_config_id;
 	GSList *pending_actions;
@@ -354,7 +342,15 @@ typedef struct _NMDevicePrivate {
 		guint           num_tries_left;
 	} dhcp4;
 
-	PingInfo        gw_ping;
+	struct {
+		NMLogDomain log_domain;
+		guint timeout;
+		guint watch;
+		GPid pid;
+		const char *binary;
+		const char *address;
+		guint deadline;
+	} gw_ping;
 
 	/* dnsmasq stuff for shared connections */
 	NMDnsMasqManager *dnsmasq_manager;
