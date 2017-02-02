@@ -59,7 +59,7 @@ _LOG_DECLARE_SELF(NMDeviceEthernet);
 
 /*****************************************************************************/
 
-#define WIRED_SECRETS_TRIES "wired-secrets-tries"
+static NM_CACHED_QUARK_FCN ("wired-secrets-tries", wired_secret_tries_quark)
 
 #define PPPOE_RECONNECT_DELAY 7
 #define PPPOE_ENCAP_OVERHEAD  8 /* 2 bytes for PPP, 6 for PPPoE */
@@ -268,7 +268,7 @@ clear_secrets_tries (NMDevice *device)
 	if (req) {
 		connection = nm_act_request_get_applied_connection (req);
 		/* Clear wired secrets tries on success, failure, or when deactivating */
-		g_object_set_data (G_OBJECT (connection), WIRED_SECRETS_TRIES, NULL);
+		g_object_set_qdata (G_OBJECT (connection), wired_secret_tries_quark (), NULL);
 	}
 }
 
@@ -706,7 +706,7 @@ handle_auth_or_fail (NMDeviceEthernet *self,
 
 	applied_connection = nm_act_request_get_applied_connection (req);
 
-	tries = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (applied_connection), WIRED_SECRETS_TRIES));
+	tries = GPOINTER_TO_UINT (g_object_get_qdata (G_OBJECT (applied_connection), wired_secret_tries_quark ()));
 	if (tries > 3)
 		return NM_ACT_STAGE_RETURN_FAILURE;
 
@@ -719,7 +719,7 @@ handle_auth_or_fail (NMDeviceEthernet *self,
 		wired_secrets_get_secrets (self, setting_name,
 		                           NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
 		                             | (new_secrets ? NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW : 0));
-		g_object_set_data (G_OBJECT (applied_connection), WIRED_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
+		g_object_set_qdata (G_OBJECT (applied_connection), wired_secret_tries_quark (), GUINT_TO_POINTER (++tries));
 	} else
 		_LOGI (LOGD_DEVICE, "Cleared secrets, but setting didn't need any secrets.");
 

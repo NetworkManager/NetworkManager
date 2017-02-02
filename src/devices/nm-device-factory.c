@@ -32,7 +32,8 @@
 #include "nm-utils.h"
 
 #define PLUGIN_PREFIX "libnm-device-plugin-"
-#define PLUGIN_PATH_TAG "NMManager-plugin-path"
+
+static NM_CACHED_QUARK_FCN ("NMManager-plugin-path", plugin_path_quark)
 
 /*****************************************************************************/
 
@@ -350,13 +351,13 @@ _add_factory (NMDeviceFactory *factory,
 		if (found) {
 			nm_log_warn (LOGD_PLATFORM, "Loading device plugin failed: multiple plugins "
 			             "for same type (using '%s' instead of '%s')",
-			             (char *) g_object_get_data (G_OBJECT (found), PLUGIN_PATH_TAG),
+			             (char *) g_object_get_qdata (G_OBJECT (found), plugin_path_quark ()),
 			             path);
 			return FALSE;
 		}
 	}
 
-	g_object_set_data_full (G_OBJECT (factory), PLUGIN_PATH_TAG, g_strdup (path), g_free);
+	g_object_set_qdata_full (G_OBJECT (factory), plugin_path_quark (), g_strdup (path), g_free);
 	for (i = 0; link_types && link_types[i] > NM_LINK_TYPE_UNKNOWN; i++)
 		g_hash_table_insert (factories_by_link, GUINT_TO_POINTER (link_types[i]), g_object_ref (factory));
 	for (i = 0; setting_types && setting_types[i]; i++)

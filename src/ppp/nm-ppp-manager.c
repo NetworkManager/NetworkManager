@@ -57,7 +57,8 @@
 #include "introspection/org.freedesktop.NetworkManager.PPP.h"
 
 #define NM_PPPD_PLUGIN PPPD_PLUGIN_DIR "/nm-pppd-plugin.so"
-#define PPP_MANAGER_SECRET_TRIES "ppp-manager-secret-tries"
+
+static NM_CACHED_QUARK_FCN ("ppp-manager-secret-tries", ppp_manager_secret_tries_quark)
 
 /*****************************************************************************/
 
@@ -341,7 +342,7 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 	 * appear to ask a few times when they actually don't even care what you
 	 * pass back.
 	 */
-	tries = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (applied_connection), PPP_MANAGER_SECRET_TRIES));
+	tries = GPOINTER_TO_UINT (g_object_get_qdata (G_OBJECT (applied_connection), ppp_manager_secret_tries_quark()));
 	if (tries > 1)
 		flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
 
@@ -352,7 +353,7 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 	                                               hints ? g_ptr_array_index (hints, 0) : NULL,
 	                                               ppp_secrets_cb,
 	                                               manager);
-	g_object_set_data (G_OBJECT (applied_connection), PPP_MANAGER_SECRET_TRIES, GUINT_TO_POINTER (++tries));
+	g_object_set_qdata (G_OBJECT (applied_connection), ppp_manager_secret_tries_quark (), GUINT_TO_POINTER (++tries));
 	priv->pending_secrets_context = context;
 
 	if (hints)
@@ -389,7 +390,7 @@ set_ip_config_common (NMPPPManager *self,
 
 	/* Got successful IP config; obviously the secrets worked */
 	applied_connection = nm_act_request_get_applied_connection (priv->act_req);
-	g_object_set_data (G_OBJECT (applied_connection), PPP_MANAGER_SECRET_TRIES, NULL);
+	g_object_set_qdata (G_OBJECT (applied_connection), ppp_manager_secret_tries_quark (), NULL);
 
 	if (out_mtu) {
 		/* Get any custom MTU */

@@ -5517,7 +5517,7 @@ shared4_new_config (NMDevice *self, NMConnection *connection, NMDeviceStateReaso
 	nm_ip4_config_add_address (config, &address);
 
 	/* Remove the address lock when the object gets disposed */
-	g_object_set_data_full (G_OBJECT (config), "shared-ip",
+	g_object_set_qdata_full (G_OBJECT (config), NM_CACHED_QUARK ("shared-ip"),
 	                        GUINT_TO_POINTER (address.address),
 	                        release_shared_ip);
 

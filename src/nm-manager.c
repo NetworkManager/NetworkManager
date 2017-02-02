@@ -86,7 +86,7 @@ static void device_sleep_cb (NMDevice *device,
                              GParamSpec *pspec,
                              NMManager *self);
 
-#define TAG_ACTIVE_CONNETION_ADD_AND_ACTIVATE "act-con-add-and-activate"
+static NM_CACHED_QUARK_FCN ("active-connection-add-and-activate", active_connection_add_and_activate_quark)
 
 typedef struct {
 	gboolean user_enabled;
@@ -3739,8 +3739,8 @@ _add_and_activate_auth_done (NMActiveConnection *active,
 	if (success) {
 		NMConnection *connection;
 
-		connection = g_object_steal_data (G_OBJECT (active),
-		                                  TAG_ACTIVE_CONNETION_ADD_AND_ACTIVATE);
+		connection = g_object_steal_qdata (G_OBJECT (active),
+		                                   active_connection_add_and_activate_quark ());
 
 		info = g_slice_new (AddAndActivateInfo);
 		info->manager = self;
@@ -3855,10 +3855,10 @@ impl_manager_add_and_activate_connection (NMManager *self,
 	if (!active)
 		goto error;
 
-	g_object_set_data_full (G_OBJECT (active),
-	                        TAG_ACTIVE_CONNETION_ADD_AND_ACTIVATE,
-	                        connection,
-	                        g_object_unref);
+	g_object_set_qdata_full (G_OBJECT (active),
+	                         active_connection_add_and_activate_quark (),
+	                         connection,
+	                         g_object_unref);
 
 	nm_active_connection_authorize (active, connection, _add_and_activate_auth_done, self, context);
 	g_object_unref (subject);
