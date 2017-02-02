@@ -206,16 +206,19 @@ void
 nm_wifi_ap_set_address (NMWifiAP *ap, const char *addr)
 {
 	NMWifiAPPrivate *priv;
+	guint8 addr_buf[ETH_ALEN];
 
 	g_return_if_fail (NM_IS_WIFI_AP (ap));
-	g_return_if_fail (addr != NULL);
-	g_return_if_fail (nm_utils_hwaddr_valid (addr, ETH_ALEN));
+	if (   !addr
+	    || !nm_utils_hwaddr_aton (addr, addr_buf, sizeof (addr_buf)))
+		g_return_if_reached ();
 
 	priv = NM_WIFI_AP_GET_PRIVATE (ap);
 
-	if (!priv->address || !nm_utils_hwaddr_matches (addr, -1, priv->address, -1)) {
+	if (   !priv->address
+	    || !nm_utils_hwaddr_matches (addr_buf, sizeof (addr_buf), priv->address, -1)) {
 		g_free (priv->address);
-		priv->address = g_strdup (addr);
+		priv->address = nm_utils_hwaddr_ntoa (addr_buf, sizeof (addr_buf));
 		_notify (ap, PROP_HW_ADDRESS);
 	}
 }
@@ -572,50 +575,43 @@ add_group_ciphers (NMWifiAP *ap, NMSettingWirelessSecurity *sec)
 		nm_wifi_ap_set_rsn_flags (ap, priv->rsn_flags | flags);
 }
 
-static char
-mode_to_char (NMWifiAP *self)
+const char *
+nm_wifi_ap_to_string (const NMWifiAP *self,
+                      char *str_buf,
+                      gulong buf_len)
 {
-	NMWifiAPPrivate *priv = NM_WIFI_AP_GET_PRIVATE (self);
-
-	if (priv->mode == NM_802_11_MODE_ADHOC)
-		return '*';
-	if (priv->hotspot)
-		return '#';
-	if (priv->fake)
-		return '-';
-	return ' ';
-}
-
-void
-nm_wifi_ap_dump (NMWifiAP *self,
-                 const char *prefix,
-                 const char *ifname)
-{
-	NMWifiAPPrivate *priv;
+	const NMWifiAPPrivate *priv;
 	const char *supplicant_id = "-";
 	guint32 chan;
+	char b1[200];
 
-	g_return_if_fail (NM_IS_WIFI_AP (self));
+	g_return_val_if_fail (NM_IS_WIFI_AP (self), NULL);
 
 	priv = NM_WIFI_AP_GET_PRIVATE (self);
 	chan = nm_utils_wifi_freq_to_channel (priv->freq);
 	if (priv->supplicant_path)
 		supplicant_id = strrchr (priv->supplicant_path, '/');
 
-	nm_log_dbg (LOGD_WIFI_SCAN, "%s[%s%c] %-32s[%s%u %3u%% %c W:%04X R:%04X] [%3u] %s%s",
-	            prefix,
+	g_snprintf (str_buf, buf_len,
+	            "%17s %-32s [ %c %3u %3u%% %c W:%04X R:%04X ] %3us %s",
 	            priv->address ?: "(none)",
-	            mode_to_char (self),
-	            priv->ssid ? nm_utils_escape_ssid (priv->ssid->data, priv->ssid->len) : "(none)",
-	            chan > 99 ? "" : (chan > 9 ? " " : "  "),
+	            nm_sprintf_buf (b1, "%s%s%s",
+	                            NM_PRINT_FMT_QUOTED (priv->ssid, "\"", nm_utils_escape_ssid (priv->ssid->data, priv->ssid->len), "\"", "(none)")),
+	            (priv->mode == NM_802_11_MODE_ADHOC
+	                 ? '*'
+	                 : (priv->hotspot
+	                        ? '#'
+	                        : (priv->fake
+	                               ? 'f'
+	                               : 'a'))),
 	            chan,
 	            priv->strength,
-	            priv->flags & NM_802_11_AP_FLAGS_PRIVACY ? 'P' : ' ',
+	            priv->flags & NM_802_11_AP_FLAGS_PRIVACY ? 'P' : '_',
 	            priv->wpa_flags & 0xFFFF,
 	            priv->rsn_flags & 0xFFFF,
 	            priv->last_seen > 0 ? (nm_utils_get_monotonic_timestamp_s () - priv->last_seen) : -1,
-	            ifname,
 	            supplicant_id);
+	return str_buf;
 }
 
 static guint
