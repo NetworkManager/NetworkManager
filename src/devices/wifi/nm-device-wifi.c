@@ -320,8 +320,8 @@ supplicant_interface_release (NMDeviceWifi *self)
 
 	/* Reset the scan interval to be pretty frequent when disconnected */
 	priv->scan_interval = SCAN_INTERVAL_MIN + SCAN_INTERVAL_STEP;
-	_LOGD (LOGD_WIFI, "reset scanning interval to %d seconds",
-	       priv->scan_interval);
+	_LOGD (LOGD_WIFI, "wifi-scan: reset interval to %u seconds",
+	       (unsigned) priv->scan_interval);
 
 	nm_clear_g_source (&priv->ap_dump_id);
 
@@ -1428,7 +1428,7 @@ request_wireless_scan (NMDeviceWifi *self, GVariant *scan_options)
 	}
 
 	if (check_scanning_allowed (self)) {
-		_LOGD (LOGD_WIFI, "scanning requested");
+		_LOGD (LOGD_WIFI, "wifi-scan: scanning requested");
 
 		if (scan_options) {
 			GVariant *val = g_variant_lookup_value (scan_options, "ssids", NULL);
@@ -1437,7 +1437,7 @@ request_wireless_scan (NMDeviceWifi *self, GVariant *scan_options)
 				if (g_variant_is_of_type (val, G_VARIANT_TYPE ("aay")))
 					ssids = ssids_options_to_ptrarray (val);
 				else
-					_LOGD (LOGD_WIFI, "ignoring invalid 'ssids' scan option");
+					_LOGD (LOGD_WIFI, "wifi-scan: ignoring invalid 'ssids' scan option");
 				g_variant_unref (val);
 			}
 		}
@@ -1455,12 +1455,12 @@ request_wireless_scan (NMDeviceWifi *self, GVariant *scan_options)
 					foo = ssid->len > 0
 					      ? nm_utils_ssid_to_utf8 (ssid->data, ssid->len)
 					      : NULL;
-					_LOGD (LOGD_WIFI, "(%d) probe scanning SSID '%s'",
-					            i, foo ? foo : "<hidden>");
+					_LOGD (LOGD_WIFI, "wifi-scan: (%u) probe scanning SSID %s%s%s",
+					       i, NM_PRINT_FMT_QUOTED (foo, "\"", foo, "\"", "<hidden>"));
 					g_free (foo);
 				}
 			} else
-				_LOGD (LOGD_WIFI, "no SSIDs to probe scan");
+				_LOGD (LOGD_WIFI, "wifi-scan: no SSIDs to probe scan");
 		}
 
 		_hw_addr_set_scanning (self, FALSE);
@@ -1474,7 +1474,7 @@ request_wireless_scan (NMDeviceWifi *self, GVariant *scan_options)
 		if (ssids)
 			g_ptr_array_unref (ssids);
 	} else
-		_LOGD (LOGD_WIFI, "scan requested but not allowed at this time");
+		_LOGD (LOGD_WIFI, "wifi-scan: scanning requested but not allowed at this time");
 
 	schedule_scan (self, backoff);
 }
@@ -1533,7 +1533,7 @@ schedule_scan (NMDeviceWifi *self, gboolean backoff)
 			priv->scan_interval = 5;
 		}
 
-		_LOGD (LOGD_WIFI, "scheduled scan in %d seconds (interval now %d seconds)",
+		_LOGD (LOGD_WIFI, "wifi-scan: scheduled in %d seconds (interval now %d seconds)",
 		       next_scan, priv->scan_interval);
 	}
 }
@@ -1545,7 +1545,7 @@ supplicant_iface_scan_done_cb (NMSupplicantInterface *iface,
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	_LOGD (LOGD_WIFI, "scan %s", success ? "successful" : "failed");
+	_LOGD (LOGD_WIFI, "wifi-scan: done [%s]", success ? "successful" : "failed");
 
 	priv->last_scan = nm_utils_get_monotonic_timestamp_s ();
 	schedule_scan (self, success);
@@ -2195,7 +2195,7 @@ supplicant_iface_notify_scanning_cb (NMSupplicantInterface *iface,
 	gboolean scanning;
 
 	scanning = nm_supplicant_interface_get_scanning (iface);
-	_LOGD (LOGD_WIFI, "now %s", scanning ? "scanning" : "idle");
+	_LOGD (LOGD_WIFI, "wifi-scan: now %s", scanning ? "scanning" : "idle");
 
 	_notify (self, PROP_SCANNING);
 
