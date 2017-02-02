@@ -200,9 +200,11 @@ typedef struct _NMDevicePrivate {
 	NMDeviceState state;
 	NMDeviceStateReason state_reason;
 	struct {
+		guint id;
+
+		/* The @state/@reason is only valid, when @id is set. */
 		NMDeviceState state;
 		NMDeviceStateReason reason;
-		guint id;
 	} queued_state;
 	guint queued_ip4_config_id;
 	guint queued_ip6_config_id;
@@ -487,7 +489,7 @@ static void _set_state_full (NMDevice *self,
                              NMDeviceState state,
                              NMDeviceStateReason reason,
                              gboolean quitting);
-
+static void queued_state_clear (NMDevice *device);
 static gboolean queued_ip4_config_change (gpointer user_data);
 static gboolean queued_ip6_config_change (gpointer user_data);
 static void ip_check_ping_watch_cb (GPid pid, gint status, gpointer user_data);
@@ -1921,8 +1923,9 @@ carrier_changed (NMDevice *self, gboolean carrier)
 		}
 	} else {
 		if (priv->state == NM_DEVICE_STATE_UNAVAILABLE) {
-			if (nm_device_queued_state_peek (self) >= NM_DEVICE_STATE_DISCONNECTED)
-				nm_device_queued_state_clear (self);
+			if (   priv->queued_state.id
+			    && priv->queued_state.state >= NM_DEVICE_STATE_DISCONNECTED)
+				queued_state_clear (self);
 		} else {
 			nm_device_queue_state (self, NM_DEVICE_STATE_UNAVAILABLE,
 			                       NM_DEVICE_STATE_REASON_CARRIER);
@@ -11380,8 +11383,7 @@ _cleanup_generic_pre (NMDevice *self, CleanupType cleanup_type)
 		                                      NULL);
 	}
 
-	/* Clear any queued transitions */
-	nm_device_queued_state_clear (self);
+	queued_state_clear (self);
 
 	_cleanup_ip4_pre (self, cleanup_type);
 	_cleanup_ip6_pre (self, cleanup_type);
@@ -11886,8 +11888,7 @@ _set_state_full (NMDevice *self,
 	priv->state = state;
 	priv->state_reason = reason;
 
-	/* Clear any queued transitions */
-	nm_device_queued_state_clear (self);
+	queued_state_clear (self);
 
 	dispatcher_cleanup (self);
 	if (priv->deactivating_cancellable)
@@ -12199,33 +12200,32 @@ nm_device_state_changed (NMDevice *self,
 }
 
 static gboolean
-queued_set_state (gpointer user_data)
+queued_state_set (gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMDeviceState new_state;
 	NMDeviceStateReason new_reason;
 
-	if (priv->queued_state.id) {
-		_LOGD (LOGD_DEVICE, "running queued state change to %s (id %d)",
-		       state_to_string (priv->queued_state.state),
-		       priv->queued_state.id);
+	nm_assert (priv->queued_state.id);
 
-		/* Clear queued state struct before triggering state change, since
-		 * the state change may queue another state.
-		 */
-		priv->queued_state.id = 0;
-		new_state = priv->queued_state.state;
-		new_reason = priv->queued_state.reason;
-		nm_device_queued_state_clear (self);
+	_LOGD (LOGD_DEVICE, "queue-state[%s, reason:%s, id:%u]: %s",
+	       state_to_string (priv->queued_state.state),
+	       reason_to_string (priv->queued_state.reason),
+	       priv->queued_state.id,
+	       "change state");
 
-		nm_device_state_changed (self, new_state, new_reason);
-		nm_device_remove_pending_action (self, queued_state_to_string (new_state), TRUE);
-	} else {
-		g_warn_if_fail (priv->queued_state.state == NM_DEVICE_STATE_UNKNOWN);
-		g_warn_if_fail (priv->queued_state.reason == NM_DEVICE_STATE_REASON_NONE);
-	}
-	return FALSE;
+	/* Clear queued state struct before triggering state change, since
+	 * the state change may queue another state.
+	 */
+	priv->queued_state.id = 0;
+	new_state = priv->queued_state.state;
+	new_reason = priv->queued_state.reason;
+
+	nm_device_state_changed (self, new_state, new_reason);
+	nm_device_remove_pending_action (self, queued_state_to_string (new_state), TRUE);
+
+	return G_SOURCE_REMOVE;
 }
 
 void
@@ -12239,8 +12239,16 @@ nm_device_queue_state (NMDevice *self,
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->queued_state.id && priv->queued_state.state == state)
+	if (priv->queued_state.id && priv->queued_state.state == state) {
+		_LOGD (LOGD_DEVICE, "queue-state[%s, reason:%s, id:%u]: %s%s%s%s",
+		       state_to_string (priv->queued_state.state),
+		       reason_to_string (priv->queued_state.reason),
+		       priv->queued_state.id,
+		       "ignore queuing same state change",
+		       NM_PRINT_FMT_QUOTED (priv->queued_state.reason != reason,
+		                            " (reason differs: ", reason_to_string (reason), ")", ""));
 		return;
+	}
 
 	/* Add pending action for the new state before clearing the queued states, so
 	 * that we don't accidently pop all pending states and reach 'startup complete'  */
@@ -12248,45 +12256,41 @@ nm_device_queue_state (NMDevice *self,
 
 	/* We should only ever have one delayed state transition at a time */
 	if (priv->queued_state.id) {
-		_LOGW (LOGD_DEVICE, "overwriting previously queued state change to %s (%s)",
+		_LOGW (LOGD_DEVICE, "queue-state[%s, reason:%s, id:%u]: %s",
 		       state_to_string (priv->queued_state.state),
-		       reason_to_string (priv->queued_state.reason));
-		nm_device_queued_state_clear (self);
+		       reason_to_string (priv->queued_state.reason),
+		       priv->queued_state.id,
+		       "replace previously queued state change");
+		nm_clear_g_source (&priv->queued_state.id);
+		nm_device_remove_pending_action (self, queued_state_to_string (priv->queued_state.state), TRUE);
 	}
 
 	priv->queued_state.state = state;
 	priv->queued_state.reason = reason;
-	priv->queued_state.id = g_idle_add (queued_set_state, self);
+	priv->queued_state.id = g_idle_add (queued_state_set, self);
 
-	_LOGD (LOGD_DEVICE, "queued state change to %s due to %s (id %d)",
-	       state_to_string (state), reason_to_string (reason),
-	       priv->queued_state.id);
+	_LOGD (LOGD_DEVICE, "queue-state[%s, reason:%s, id:%u]: %s",
+	       state_to_string (state),
+	       reason_to_string (reason),
+	       priv->queued_state.id,
+	       "queue state change");
 }
 
-NMDeviceState
-nm_device_queued_state_peek (NMDevice *self)
-{
-	NMDevicePrivate *priv;
-
-	g_return_val_if_fail (NM_IS_DEVICE (self), NM_DEVICE_STATE_UNKNOWN);
-
-	priv = NM_DEVICE_GET_PRIVATE (self);
-
-	return priv->queued_state.id ? priv->queued_state.state : NM_DEVICE_STATE_UNKNOWN;
-}
-
-void
-nm_device_queued_state_clear (NMDevice *self)
+static void
+queued_state_clear (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->queued_state.id) {
-		_LOGD (LOGD_DEVICE, "clearing queued state transition (id %d)",
-		       priv->queued_state.id);
-		nm_clear_g_source (&priv->queued_state.id);
-		nm_device_remove_pending_action (self, queued_state_to_string (priv->queued_state.state), TRUE);
-	}
-	memset (&priv->queued_state, 0, sizeof (priv->queued_state));
+	if (!priv->queued_state.id)
+		return;
+
+	_LOGD (LOGD_DEVICE, "queue-state[%s, reason:%s, id:%u]: %s",
+	       state_to_string (priv->queued_state.state),
+	       reason_to_string (priv->queued_state.reason),
+	       priv->queued_state.id,
+	       "clear queued state change");
+	nm_clear_g_source (&priv->queued_state.id);
+	nm_device_remove_pending_action (self, queued_state_to_string (priv->queued_state.state), TRUE);
 }
 
 NMDeviceState
