@@ -11272,7 +11272,7 @@ nm_device_add_pending_action (NMDevice *self, const char *action, gboolean asser
 		count++;
 	}
 
-	priv->pending_actions = g_slist_append (priv->pending_actions, (char *) action);
+	priv->pending_actions = g_slist_prepend (priv->pending_actions, (char *) action);
 	count++;
 
 	_LOGD (LOGD_DEVICE, "add_pending_action (%d): '%s'", count, action);
