@@ -90,7 +90,7 @@ _print_progress (int progress_next_step_i, gint64 remaining_ms, int success)
 	g_print ("\r%s", _("Connecting"));
 	for (i = 0; i < PROGRESS_STEPS; i++)
 		putchar (i < j ? '.' : ' ');
-	g_print (" %4lds", (long) (MAX (0, remaining_ms) / 1000));
+	g_print (" %4lds", (long) (MAX (0, remaining_ms + 999) / 1000));
 	if (success >= 0)
 		g_print (" [%sline]\n", success ? "on" : "off");
 	fflush (stdout);
