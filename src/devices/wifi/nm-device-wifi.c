@@ -209,21 +209,6 @@ _ap_dump (NMDeviceWifi *self,
 	       nm_wifi_ap_to_string (ap, buf, sizeof (buf), now_s));
 }
 
-static void
-constructed (GObject *object)
-{
-	NMDeviceWifi *self = NM_DEVICE_WIFI (object);
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-
-	G_OBJECT_CLASS (nm_device_wifi_parent_class)->constructed (object);
-
-	if (priv->capabilities & NM_WIFI_DEVICE_CAP_AP)
-		_LOGI (LOGD_PLATFORM | LOGD_WIFI, "driver supports Access Point (AP) mode");
-
-	/* Connect to the supplicant manager */
-	priv->sup_mgr = g_object_ref (nm_supplicant_manager_get ());
-}
-
 static gboolean
 unmanaged_on_quit (NMDevice *self)
 {
@@ -3100,64 +3085,6 @@ set_enabled (NMDevice *device, gboolean enabled)
 
 /*****************************************************************************/
 
-NMDevice *
-nm_device_wifi_new (const char *iface, NMDeviceWifiCapabilities capabilities)
-{
-	return g_object_new (NM_TYPE_DEVICE_WIFI,
-	                     NM_DEVICE_IFACE, iface,
-	                     NM_DEVICE_TYPE_DESC, "802.11 WiFi",
-	                     NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_WIFI,
-	                     NM_DEVICE_LINK_TYPE, NM_LINK_TYPE_WIFI,
-	                     NM_DEVICE_RFKILL_TYPE, RFKILL_TYPE_WLAN,
-	                     NM_DEVICE_WIFI_CAPABILITIES, (guint) capabilities,
-	                     NULL);
-}
-
-static void
-nm_device_wifi_init (NMDeviceWifi *self)
-{
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-
-	priv->mode = NM_802_11_MODE_INFRA;
-	priv->aps = g_hash_table_new (g_str_hash, g_str_equal);
-}
-
-static void
-dispose (GObject *object)
-{
-	NMDeviceWifi *self = NM_DEVICE_WIFI (object);
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-
-	nm_clear_g_source (&priv->periodic_source_id);
-
-	wifi_secrets_cancel (self);
-
-	cleanup_association_attempt (self, TRUE);
-	supplicant_interface_release (self);
-	cleanup_supplicant_failures (self);
-
-	g_clear_object (&priv->sup_mgr);
-
-	remove_all_aps (self);
-
-	G_OBJECT_CLASS (nm_device_wifi_parent_class)->dispose (object);
-}
-
-static void
-finalize (GObject *object)
-{
-	NMDeviceWifi *self = NM_DEVICE_WIFI (object);
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-
-	nm_assert (g_hash_table_size (priv->aps) == 0);
-
-	g_hash_table_unref (priv->aps);
-
-	g_free (priv->hw_addr_scan);
-
-	G_OBJECT_CLASS (nm_device_wifi_parent_class)->finalize (object);
-}
-
 static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
@@ -3213,6 +3140,80 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
+/*****************************************************************************/
+
+static void
+nm_device_wifi_init (NMDeviceWifi *self)
+{
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+
+	priv->mode = NM_802_11_MODE_INFRA;
+	priv->aps = g_hash_table_new (g_str_hash, g_str_equal);
+}
+
+static void
+constructed (GObject *object)
+{
+	NMDeviceWifi *self = NM_DEVICE_WIFI (object);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+
+	G_OBJECT_CLASS (nm_device_wifi_parent_class)->constructed (object);
+
+	if (priv->capabilities & NM_WIFI_DEVICE_CAP_AP)
+		_LOGI (LOGD_PLATFORM | LOGD_WIFI, "driver supports Access Point (AP) mode");
+
+	/* Connect to the supplicant manager */
+	priv->sup_mgr = g_object_ref (nm_supplicant_manager_get ());
+}
+
+NMDevice *
+nm_device_wifi_new (const char *iface, NMDeviceWifiCapabilities capabilities)
+{
+	return g_object_new (NM_TYPE_DEVICE_WIFI,
+	                     NM_DEVICE_IFACE, iface,
+	                     NM_DEVICE_TYPE_DESC, "802.11 WiFi",
+	                     NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_WIFI,
+	                     NM_DEVICE_LINK_TYPE, NM_LINK_TYPE_WIFI,
+	                     NM_DEVICE_RFKILL_TYPE, RFKILL_TYPE_WLAN,
+	                     NM_DEVICE_WIFI_CAPABILITIES, (guint) capabilities,
+	                     NULL);
+}
+
+static void
+dispose (GObject *object)
+{
+	NMDeviceWifi *self = NM_DEVICE_WIFI (object);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+
+	nm_clear_g_source (&priv->periodic_source_id);
+
+	wifi_secrets_cancel (self);
+
+	cleanup_association_attempt (self, TRUE);
+	supplicant_interface_release (self);
+	cleanup_supplicant_failures (self);
+
+	g_clear_object (&priv->sup_mgr);
+
+	remove_all_aps (self);
+
+	G_OBJECT_CLASS (nm_device_wifi_parent_class)->dispose (object);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMDeviceWifi *self = NM_DEVICE_WIFI (object);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+
+	nm_assert (g_hash_table_size (priv->aps) == 0);
+
+	g_hash_table_unref (priv->aps);
+
+	g_free (priv->hw_addr_scan);
+
+	G_OBJECT_CLASS (nm_device_wifi_parent_class)->finalize (object);
+}
 
 static void
 nm_device_wifi_class_init (NMDeviceWifiClass *klass)
