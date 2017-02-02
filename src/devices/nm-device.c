@@ -222,7 +222,8 @@ typedef struct _NMDevicePrivate {
 		const guint8 hw_addr_len; /* read-only */
 		guint8 hw_addr_len_;
 	};
-	guint8 /*HwAddrType*/ hw_addr_type;
+
+	HwAddrType hw_addr_type:5;
 
 	bool          real:1;
 
@@ -12575,7 +12576,9 @@ nm_device_hw_addr_is_explict (NMDevice *self)
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
-	return !NM_IN_SET (priv->hw_addr_type, HW_ADDR_TYPE_PERMANENT, HW_ADDR_TYPE_UNSET);
+	return !NM_IN_SET ((HwAddrType) priv->hw_addr_type,
+	                   HW_ADDR_TYPE_PERMANENT,
+	                   HW_ADDR_TYPE_UNSET);
 }
 
 static gboolean
