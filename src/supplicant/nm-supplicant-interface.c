@@ -352,7 +352,7 @@ nm_supplicant_interface_get_scanning (NMSupplicantInterface *self)
 {
 	NMSupplicantInterfacePrivate *priv;
 
-	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (self, FALSE);
 
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 	if (priv->scanning)
