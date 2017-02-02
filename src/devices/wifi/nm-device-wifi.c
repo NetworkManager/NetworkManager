@@ -262,7 +262,7 @@ supplicant_interface_acquire (NMDeviceWifi *self)
 	                  G_CALLBACK (supplicant_iface_scan_done_cb),
 	                  self);
 	g_signal_connect (priv->sup_iface,
-	                  "notify::scanning",
+	                  "notify::"NM_SUPPLICANT_INTERFACE_SCANNING,
 	                  G_CALLBACK (supplicant_iface_notify_scanning_cb),
 	                  self);
 	g_signal_connect (priv->sup_iface,
