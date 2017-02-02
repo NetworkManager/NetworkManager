@@ -198,14 +198,15 @@ static void _hw_addr_set_scanning (NMDeviceWifi *self, gboolean do_reset);
 static void
 _ap_dump (NMDeviceWifi *self,
           const NMWifiAP *ap,
-          const char *prefix)
+          const char *prefix,
+          gint32 now_s)
 {
 	char buf[1024];
 
 	buf[0] = '\0';
 	_LOGD (LOGD_WIFI_SCAN, "wifi-ap: %-7s %s",
 	       prefix,
-	       nm_wifi_ap_to_string (ap, buf, sizeof (buf)));
+	       nm_wifi_ap_to_string (ap, buf, sizeof (buf), now_s));
 }
 
 static void
@@ -1568,14 +1569,15 @@ ap_list_dump (gpointer user_data)
 	if (_LOGD_ENABLED (LOGD_WIFI_SCAN)) {
 		gs_free NMWifiAP **list = NULL;
 		gsize i;
+		gint32 now_s = nm_utils_get_monotonic_timestamp_s ();
 
 		_LOGD (LOGD_WIFI_SCAN, "APs: [now:%u last:%u next:%u]",
-		       nm_utils_get_monotonic_timestamp_s (),
+		       now_s,
 		       priv->last_scan,
 		       priv->scheduled_scan_time);
 		list = ap_list_get_sorted (self, TRUE);
 		for (i = 0; list[i]; i++)
-			_ap_dump (self, list[i], "dump");
+			_ap_dump (self, list[i], "dump", now_s);
 	}
 	return G_SOURCE_REMOVE;
 }
@@ -1673,10 +1675,10 @@ supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
 
 	found_ap = get_ap_by_supplicant_path (self, object_path);
 	if (found_ap) {
-		_ap_dump (self, ap, "updated");
+		_ap_dump (self, ap, "updated", 0);
 		nm_wifi_ap_update_from_properties (found_ap, object_path, properties);
 	} else {
-		_ap_dump (self, ap, "added");
+		_ap_dump (self, ap, "added", 0);
 		ap_add_remove (self, ACCESS_POINT_ADDED, ap, TRUE);
 	}
 
@@ -1711,7 +1713,7 @@ supplicant_iface_bss_updated_cb (NMSupplicantInterface *iface,
 
 	ap = get_ap_by_supplicant_path (self, object_path);
 	if (ap) {
-		_ap_dump (self, ap, "updated");
+		_ap_dump (self, ap, "updated", 0);
 		nm_wifi_ap_update_from_properties (ap, object_path, properties);
 		schedule_ap_list_dump (self);
 	}
@@ -1739,7 +1741,7 @@ supplicant_iface_bss_removed_cb (NMSupplicantInterface *iface,
 			 */
 			nm_wifi_ap_set_fake (ap, TRUE);
 		} else {
-			_ap_dump (self, ap, "removed");
+			_ap_dump (self, ap, "removed", 0);
 			ap_add_remove (self, ACCESS_POINT_REMOVED, ap, TRUE);
 			schedule_ap_list_dump (self);
 		}

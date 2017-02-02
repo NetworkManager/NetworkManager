@@ -91,6 +91,7 @@ void              nm_wifi_ap_set_fake                 (NMWifiAP *ap,
 
 const char       *nm_wifi_ap_to_string                (const NMWifiAP *self,
                                                        char *str_buf,
-                                                       gulong buf_len);
+                                                       gulong buf_len,
+                                                       gint32 now_s);
 
 #endif /* __NM_WIFI_AP_H__ */

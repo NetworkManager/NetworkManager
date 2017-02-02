@@ -578,7 +578,8 @@ add_group_ciphers (NMWifiAP *ap, NMSettingWirelessSecurity *sec)
 const char *
 nm_wifi_ap_to_string (const NMWifiAP *self,
                       char *str_buf,
-                      gulong buf_len)
+                      gulong buf_len,
+                      gint32 now_s)
 {
 	const NMWifiAPPrivate *priv;
 	const char *supplicant_id = "-";
@@ -609,7 +610,7 @@ nm_wifi_ap_to_string (const NMWifiAP *self,
 	            priv->flags & NM_802_11_AP_FLAGS_PRIVACY ? 'P' : '_',
 	            priv->wpa_flags & 0xFFFF,
 	            priv->rsn_flags & 0xFFFF,
-	            priv->last_seen > 0 ? (nm_utils_get_monotonic_timestamp_s () - priv->last_seen) : -1,
+	            priv->last_seen > 0 ? ((now_s > 0 ? now_s : nm_utils_get_monotonic_timestamp_s ()) - priv->last_seen) : -1,
 	            supplicant_id);
 	return str_buf;
 }
