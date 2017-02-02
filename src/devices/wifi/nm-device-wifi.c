@@ -1594,8 +1594,8 @@ schedule_ap_list_dump (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	nm_clear_g_source (&priv->ap_dump_id);
-	if (_LOGD_ENABLED (LOGD_WIFI_SCAN))
+	if (   !priv->ap_dump_id
+	    && _LOGD_ENABLED (LOGD_WIFI_SCAN))
 		priv->ap_dump_id = g_timeout_add_seconds (1, ap_list_dump, self);
 }
 
