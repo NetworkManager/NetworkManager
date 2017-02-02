@@ -196,6 +196,19 @@ static void _hw_addr_set_scanning (NMDeviceWifi *self, gboolean do_reset);
 /*****************************************************************************/
 
 static void
+_ap_dump (NMDeviceWifi *self,
+          const NMWifiAP *ap,
+          const char *prefix)
+{
+	char buf[1024];
+
+	buf[0] = '\0';
+	_LOGD (LOGD_WIFI_SCAN, "wifi-ap: %-7s %s",
+	       prefix,
+	       nm_wifi_ap_to_string (ap, buf, sizeof (buf)));
+}
+
+static void
 constructed (GObject *object)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (object);
@@ -1559,7 +1572,7 @@ ap_list_dump (gpointer user_data)
 	       priv->scheduled_scan_time);
 	list = ap_list_get_sorted (self, TRUE);
 	for (i = 0; list[i]; i++)
-		nm_wifi_ap_dump (list[i], "dump    ", nm_device_get_iface (NM_DEVICE (self)));
+		_ap_dump (self, list[i], "dump");
 	return G_SOURCE_REMOVE;
 }
 
@@ -1657,10 +1670,10 @@ supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
 
 	found_ap = get_ap_by_supplicant_path (self, object_path);
 	if (found_ap) {
-		nm_wifi_ap_dump (ap, "updated ", nm_device_get_iface (NM_DEVICE (self)));
+		_ap_dump (self, ap, "updated");
 		nm_wifi_ap_update_from_properties (found_ap, object_path, properties);
 	} else {
-		nm_wifi_ap_dump (ap, "added   ", nm_device_get_iface (NM_DEVICE (self)));
+		_ap_dump (self, ap, "added");
 		ap_add_remove (self, ACCESS_POINT_ADDED, ap, TRUE);
 	}
 
@@ -1695,7 +1708,7 @@ supplicant_iface_bss_updated_cb (NMSupplicantInterface *iface,
 
 	ap = get_ap_by_supplicant_path (self, object_path);
 	if (ap) {
-		nm_wifi_ap_dump (ap, "updated ", nm_device_get_iface (NM_DEVICE (self)));
+		_ap_dump (self, ap, "updated");
 		nm_wifi_ap_update_from_properties (ap, object_path, properties);
 		schedule_ap_list_dump (self);
 	}
@@ -1723,7 +1736,7 @@ supplicant_iface_bss_removed_cb (NMSupplicantInterface *iface,
 			 */
 			nm_wifi_ap_set_fake (ap, TRUE);
 		} else {
-			nm_wifi_ap_dump (ap, "removed ", nm_device_get_iface (NM_DEVICE (self)));
+			_ap_dump (self, ap, "removed");
 			ap_add_remove (self, ACCESS_POINT_REMOVED, ap, TRUE);
 			schedule_ap_list_dump (self);
 		}
