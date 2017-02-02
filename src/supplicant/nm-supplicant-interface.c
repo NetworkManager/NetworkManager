@@ -562,8 +562,6 @@ wpas_iface_scan_done (GDBusProxy *proxy,
 	/* Cache last scan completed time */
 	priv->last_scan = nm_utils_get_monotonic_timestamp_s ();
 
-	g_signal_emit (self, signals[SCAN_DONE], 0, success);
-
 	/* Emit NEW_BSS so that wifi device has the APs (in case it removed them) */
 	g_hash_table_iter_init (&iter, priv->bss_proxies);
 	while (g_hash_table_iter_next (&iter, (gpointer) &bss_path, (gpointer) &bss_proxy)) {
@@ -577,6 +575,8 @@ wpas_iface_scan_done (GDBusProxy *proxy,
 			}
 		}
 	}
+
+	g_signal_emit (self, signals[SCAN_DONE], 0, success);
 }
 
 static void
