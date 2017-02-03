@@ -619,8 +619,16 @@ dispatch_resolvconf (NMDnsManager *self,
 		_LOGI ("Removing DNS information from %s", RESOLVCONF_PATH);
 
 		cmd = g_strconcat (RESOLVCONF_PATH, " -d ", "NetworkManager", NULL);
-		if (nm_spawn_process (cmd, error) != 0)
+		if (nm_spawn_process (cmd, error) != 0) {
+			if (error && !*error) {
+				g_set_error (error,
+				             NM_MANAGER_ERROR,
+				             NM_MANAGER_ERROR_FAILED,
+				             "%s returned error code",
+				             RESOLVCONF_PATH);
+			}
 			return SR_ERROR;
+		}
 
 		return SR_SUCCESS;
 	}
