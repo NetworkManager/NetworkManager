@@ -1097,8 +1097,10 @@ show_device_info (NMDevice *device, NmCli *nmc)
 		return FALSE;
 	}
 
-	/* Main header */
+	/* Main header (pretty only) */
 	nmc->print_fields.header_name = (char *) construct_header_name (base_hdr, nm_device_get_iface (device));
+
+	/* Lazy way to retrieve sorted array from 0 to the number of dev fields */
 	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_SHOW_GENERAL_ALL,
 	                                                 nmc_fields_dev_show_general, FALSE, NULL, NULL);
 
