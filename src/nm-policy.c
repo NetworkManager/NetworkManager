@@ -953,6 +953,19 @@ activate_data_free (ActivateData *data)
 	g_slice_free (ActivateData, data);
 }
 
+static int
+_auto_activate_device_cmp (gconstpointer pa, gconstpointer pb, gpointer user_data)
+{
+	NMSettingsConnection *a = NM_SETTINGS_CONNECTION (*((NMSettingsConnection **) pa));
+	NMSettingsConnection *b = NM_SETTINGS_CONNECTION (*((NMSettingsConnection **) pb));
+	int i;
+
+	i = nm_utils_cmp_connection_by_autoconnect_priority (NM_CONNECTION (a), NM_CONNECTION (b));
+	if (i != 0)
+		return i;
+	return nm_settings_connection_cmp_default (a, b);
+}
+
 static void
 auto_activate_device (NMPolicy *self,
                       NMDevice *device)
@@ -960,9 +973,8 @@ auto_activate_device (NMPolicy *self,
 	NMPolicyPrivate *priv;
 	NMSettingsConnection *best_connection;
 	gs_free char *specific_object = NULL;
-	GPtrArray *connections;
-	GSList *connection_list;
-	guint i;
+	gs_free NMSettingsConnection **connections = NULL;
+	guint i, len;
 
 	nm_assert (NM_IS_POLICY (self));
 	nm_assert (NM_IS_DEVICE (device));
@@ -976,21 +988,16 @@ auto_activate_device (NMPolicy *self,
 	if (nm_device_get_act_request (device))
 		return;
 
-	connection_list = nm_manager_get_activatable_connections (priv->manager);
-	if (!connection_list)
+	connections = nm_manager_get_activatable_connections (priv->manager, &len, FALSE);
+	if (!connections[0])
 		return;
 
-	connections = _nm_utils_copy_slist_to_array (connection_list, NULL, NULL);
-	g_slist_free (connection_list);
-
-	/* sort is stable (which is important at this point) so that connections
-	 * with same priority are still sorted by last-connected-timestamp. */
-	g_ptr_array_sort_with_data (connections, nm_utils_cmp_connection_by_autoconnect_priority_p_with_data, NULL);
+	g_qsort_with_data (connections, len, sizeof (connections[0]), _auto_activate_device_cmp, NULL);
 
 	/* Find the first connection that should be auto-activated */
 	best_connection = NULL;
-	for (i = 0; i < connections->len; i++) {
-		NMSettingsConnection *candidate = NM_SETTINGS_CONNECTION (connections->pdata[i]);
+	for (i = 0; i < len; i++) {
+		NMSettingsConnection *candidate = NM_SETTINGS_CONNECTION (connections[i]);
 
 		if (!nm_settings_connection_can_autoconnect (candidate))
 			continue;
@@ -999,7 +1006,6 @@ auto_activate_device (NMPolicy *self,
 			break;
 		}
 	}
-	g_ptr_array_free (connections, TRUE);
 
 	if (best_connection) {
 		GError *error = NULL;
