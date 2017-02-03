@@ -985,7 +985,7 @@ auto_activate_device (NMPolicy *self,
 
 	/* sort is stable (which is important at this point) so that connections
 	 * with same priority are still sorted by last-connected-timestamp. */
-	g_ptr_array_sort (connections, (GCompareFunc) nm_utils_cmp_connection_by_autoconnect_priority);
+	g_ptr_array_sort_with_data (connections, nm_utils_cmp_connection_by_autoconnect_priority_p_with_data, NULL);
 
 	/* Find the first connection that should be auto-activated */
 	best_connection = NULL;

@@ -1976,14 +1976,14 @@ nm_utils_read_resolv_conf_dns_options (const char *rc_contents)
 }
 
 int
-nm_utils_cmp_connection_by_autoconnect_priority (NMConnection **a, NMConnection **b)
+nm_utils_cmp_connection_by_autoconnect_priority (NMConnection *a, NMConnection *b)
 {
 	NMSettingConnection *a_s_con, *b_s_con;
 	gboolean a_ac, b_ac;
 	gint a_ap, b_ap;
 
-	a_s_con = nm_connection_get_setting_connection (*a);
-	b_s_con = nm_connection_get_setting_connection (*b);
+	a_s_con = nm_connection_get_setting_connection (a);
+	b_s_con = nm_connection_get_setting_connection (b);
 
 	a_ac = !!nm_setting_connection_get_autoconnect (a_s_con);
 	b_ac = !!nm_setting_connection_get_autoconnect (b_s_con);
@@ -1998,6 +1998,15 @@ nm_utils_cmp_connection_by_autoconnect_priority (NMConnection **a, NMConnection 
 		return (a_ap > b_ap) ? -1 : 1;
 
 	return 0;
+}
+
+int
+nm_utils_cmp_connection_by_autoconnect_priority_p_with_data (gconstpointer pa, gconstpointer pb, gpointer user_data)
+{
+	nm_assert (pa);
+	nm_assert (pb);
+	return nm_utils_cmp_connection_by_autoconnect_priority (*((NMConnection **) pa),
+	                                                        *((NMConnection **) pb));
 }
 
 /*****************************************************************************/
