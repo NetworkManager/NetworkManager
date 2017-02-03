@@ -2197,6 +2197,38 @@ nm_settings_connection_cmp_timestamp_p_with_data (gconstpointer pa, gconstpointe
 	                                             *((NMSettingsConnection **) pb));
 }
 
+int
+nm_settings_connection_cmp_default (NMSettingsConnection *a, NMSettingsConnection *b)
+{
+	NMSettingConnection *con_a;
+	NMSettingConnection *con_b;
+	guint64 ts_a = 0, ts_b = 0;
+	gboolean can_ac_a, can_ac_b;
+
+	con_a = nm_connection_get_setting_connection (NM_CONNECTION (a));
+	con_b = nm_connection_get_setting_connection (NM_CONNECTION (b));
+
+	can_ac_a = !!nm_setting_connection_get_autoconnect (con_a);
+	can_ac_b = !!nm_setting_connection_get_autoconnect (con_b);
+	if (can_ac_a != can_ac_b)
+		return can_ac_a ? -1 : 1;
+
+	nm_settings_connection_get_timestamp (a, &ts_a);
+	nm_settings_connection_get_timestamp (b, &ts_b);
+	if (ts_a > ts_b)
+		return -1;
+	else if (ts_a == ts_b)
+		return 0;
+	return 1;
+}
+
+int
+nm_settings_connection_cmp_default_p_with_data (gconstpointer pa, gconstpointer pb, gpointer user_data)
+{
+	return nm_settings_connection_cmp_default (*((NMSettingsConnection **) pa),
+	                                           *((NMSettingsConnection **) pb));
+}
+
 /*****************************************************************************/
 
 /**

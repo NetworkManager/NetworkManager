@@ -393,35 +393,6 @@ error:
 	g_clear_object (&subject);
 }
 
-static int
-connection_sort (gconstpointer pa, gconstpointer pb)
-{
-	NMConnection *a = NM_CONNECTION (pa);
-	NMSettingConnection *con_a;
-	NMConnection *b = NM_CONNECTION (pb);
-	NMSettingConnection *con_b;
-	guint64 ts_a = 0, ts_b = 0;
-	gboolean can_ac_a, can_ac_b;
-
-	con_a = nm_connection_get_setting_connection (a);
-	g_assert (con_a);
-	con_b = nm_connection_get_setting_connection (b);
-	g_assert (con_b);
-
-	can_ac_a = !!nm_setting_connection_get_autoconnect (con_a);
-	can_ac_b = !!nm_setting_connection_get_autoconnect (con_b);
-	if (can_ac_a != can_ac_b)
-		return can_ac_a ? -1 : 1;
-
-	nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (pa), &ts_a);
-	nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (pb), &ts_b);
-	if (ts_a > ts_b)
-		return -1;
-	else if (ts_a == ts_b)
-		return 0;
-	return 1;
-}
-
 /**
  * nm_settings_get_connections:
  * @self: the #NMSettings
@@ -485,7 +456,7 @@ nm_settings_get_connections_sorted (NMSettings *self)
 
 	g_hash_table_iter_init (&iter, NM_SETTINGS_GET_PRIVATE (self)->connections);
 	while (g_hash_table_iter_next (&iter, NULL, &data))
-		list = g_slist_insert_sorted (list, data, connection_sort);
+		list = g_slist_insert_sorted (list, data, (GCompareFunc) nm_settings_connection_cmp_default);
 	return list;
 }
 
