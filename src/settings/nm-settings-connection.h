@@ -184,6 +184,9 @@ NMSettingsConnectionFlags nm_settings_connection_get_flags (NMSettingsConnection
 NMSettingsConnectionFlags nm_settings_connection_set_flags (NMSettingsConnection *self, NMSettingsConnectionFlags flags, gboolean set);
 NMSettingsConnectionFlags nm_settings_connection_set_flags_all (NMSettingsConnection *self, NMSettingsConnectionFlags flags);
 
+int nm_settings_connection_cmp_timestamp (NMSettingsConnection *ac, NMSettingsConnection *ab);
+int nm_settings_connection_cmp_timestamp_p_with_data (gconstpointer pa, gconstpointer pb, gpointer user_data);
+
 gboolean nm_settings_connection_get_timestamp (NMSettingsConnection *self,
                                                guint64 *out_timestamp);
 

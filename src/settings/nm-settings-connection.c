@@ -2162,6 +2162,43 @@ nm_settings_connection_set_flags_all (NMSettingsConnection *self, NMSettingsConn
 
 /*****************************************************************************/
 
+/* sorting for "best" connections.
+ * The function sorts connections in ascending timestamp order.
+ * That means an older connection (lower timestamp) goes before
+ * a newer one.
+ */
+int
+nm_settings_connection_cmp_timestamp (NMSettingsConnection *ac, NMSettingsConnection *bc)
+{
+	guint64 ats = 0, bts = 0;
+
+	if (ac == bc)
+		return 0;
+	if (!ac)
+		return -1;
+	if (!bc)
+		return 1;
+
+	/* In the future we may use connection priorities in addition to timestamps */
+	nm_settings_connection_get_timestamp (ac, &ats);
+	nm_settings_connection_get_timestamp (bc, &bts);
+
+	if (ats < bts)
+		return -1;
+	else if (ats > bts)
+		return 1;
+	return 0;
+}
+
+int
+nm_settings_connection_cmp_timestamp_p_with_data (gconstpointer pa, gconstpointer pb, gpointer user_data)
+{
+	return nm_settings_connection_cmp_timestamp (*((NMSettingsConnection **) pa),
+	                                             *((NMSettingsConnection **) pb));
+}
+
+/*****************************************************************************/
+
 /**
  * nm_settings_connection_get_timestamp:
  * @self: the #NMSettingsConnection
