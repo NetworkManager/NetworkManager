@@ -43,6 +43,9 @@ update (NMDnsPlugin *plugin,
         const NMGlobalDnsConfig *global_config,
         const char *hostname)
 {
+	char *argv[] = { DNSSEC_TRIGGER_SCRIPT, "--async", "--update", NULL };
+	int status;
+
 	/* TODO: We currently call a script installed with the dnssec-trigger
 	 * package that queries all information itself. Later, the dependency
 	 * on that package will be optional and the only hard dependency will
@@ -52,7 +55,9 @@ update (NMDnsPlugin *plugin,
 	 * without calling custom scripts. The dnssec-trigger functionality
 	 * may be eventually merged into NetworkManager.
 	 */
-	return nm_spawn_process (DNSSEC_TRIGGER_SCRIPT " --async --update", NULL) == 0;
+	if (!g_spawn_sync ("/", argv, NULL, 0, NULL, NULL, NULL, NULL, &status, NULL))
+		return FALSE;
+	return (status == 0);
 }
 
 static gboolean
