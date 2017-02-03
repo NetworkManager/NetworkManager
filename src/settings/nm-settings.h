@@ -102,7 +102,8 @@ NMSettingsConnection **nm_settings_get_connections_clone (NMSettings *self,
                                                           NMSettingsConnectionFilterFunc func,
                                                           gpointer func_data);
 
-GSList *nm_settings_get_connections_sorted (NMSettings *settings);
+NMSettingsConnection **nm_settings_get_connections_sorted (NMSettings *self,
+                                                           guint *out_len);
 
 NMSettingsConnection *nm_settings_add_connection (NMSettings *settings,
                                                   NMConnection *connection,

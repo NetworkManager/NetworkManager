@@ -494,21 +494,22 @@ nm_settings_get_connections_clone (NMSettings *self,
 /* Returns a list of NMSettingsConnections.
  * The list is sorted in the order suitable for auto-connecting, i.e.
  * first go connections with autoconnect=yes and most recent timestamp.
- * Caller must free the list with g_slist_free().
+ * Caller must free the list with g_free(), but not the list items.
  */
-GSList *
-nm_settings_get_connections_sorted (NMSettings *self)
+NMSettingsConnection **
+nm_settings_get_connections_sorted (NMSettings *self, guint *out_len)
 {
-	GHashTableIter iter;
-	gpointer data = NULL;
-	GSList *list = NULL;
+	NMSettingsConnection **connections;
+	guint len;
 
 	g_return_val_if_fail (NM_IS_SETTINGS (self), NULL);
 
-	g_hash_table_iter_init (&iter, NM_SETTINGS_GET_PRIVATE (self)->connections);
-	while (g_hash_table_iter_next (&iter, NULL, &data))
-		list = g_slist_insert_sorted (list, data, (GCompareFunc) nm_settings_connection_cmp_default);
-	return list;
+	connections = nm_settings_get_connections_clone (self, &len, NULL, NULL);
+	if (len > 1)
+		g_qsort_with_data (connections, len, sizeof (NMSettingsConnection *), nm_settings_connection_cmp_default_p_with_data, NULL);
+
+	NM_SET_OUT (out_len, len);
+	return connections;
 }
 
 NMSettingsConnection *

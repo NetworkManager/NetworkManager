@@ -1149,7 +1149,8 @@ static void
 reset_autoconnect_all (NMPolicy *self, NMDevice *device)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	GSList *connections, *iter;
+	gs_free NMSettingsConnection **connections = NULL;
+	guint i;
 
 	if (device) {
 		_LOGD (LOGD_DEVICE, "re-enabling autoconnect for all connections on %s",
@@ -1157,41 +1158,43 @@ reset_autoconnect_all (NMPolicy *self, NMDevice *device)
 	} else
 		_LOGD (LOGD_DEVICE, "re-enabling autoconnect for all connections");
 
-	connections = nm_settings_get_connections_sorted (priv->settings);
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		if (!device || nm_device_check_connection_compatible (device, iter->data)) {
-			nm_settings_connection_reset_autoconnect_retries (iter->data);
-			nm_settings_connection_set_autoconnect_blocked_reason (iter->data, NM_DEVICE_STATE_REASON_NONE);
+	connections = nm_settings_get_connections_sorted (priv->settings, NULL);
+	for (i = 0; connections[i]; i++) {
+		NMSettingsConnection *connection = connections[i];
+
+		if (!device || nm_device_check_connection_compatible (device, NM_CONNECTION (connection))) {
+			nm_settings_connection_reset_autoconnect_retries (connection);
+			nm_settings_connection_set_autoconnect_blocked_reason (connection, NM_DEVICE_STATE_REASON_NONE);
 		}
 	}
-	g_slist_free (connections);
 }
 
 static void
 reset_autoconnect_for_failed_secrets (NMPolicy *self)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	GSList *connections, *iter;
+	gs_free NMSettingsConnection **connections = NULL;
+	guint i;
 
 	_LOGD (LOGD_DEVICE, "re-enabling autoconnect for all connections with failed secrets");
 
-	connections = nm_settings_get_connections_sorted (priv->settings);
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMSettingsConnection *connection = NM_SETTINGS_CONNECTION (iter->data);
+	connections = nm_settings_get_connections_sorted (priv->settings, NULL);
+	for (i = 0; connections[i]; i++) {
+		NMSettingsConnection *connection = connections[i];
 
 		if (nm_settings_connection_get_autoconnect_blocked_reason (connection) == NM_DEVICE_STATE_REASON_NO_SECRETS) {
 			nm_settings_connection_reset_autoconnect_retries (connection);
 			nm_settings_connection_set_autoconnect_blocked_reason (connection, NM_DEVICE_STATE_REASON_NONE);
 		}
 	}
-	g_slist_free (connections);
 }
 
 static void
 block_autoconnect_for_device (NMPolicy *self, NMDevice *device)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	GSList *connections, *iter;
+	gs_free NMSettingsConnection **connections = NULL;
+	guint i;
 
 	_LOGD (LOGD_DEVICE, "blocking autoconnect for all connections on %s",
 	       nm_device_get_iface (device));
@@ -1203,14 +1206,15 @@ block_autoconnect_for_device (NMPolicy *self, NMDevice *device)
 	if (!nm_device_is_software (device))
 		return;
 
-	connections = nm_settings_get_connections_sorted (priv->settings);
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		if (nm_device_check_connection_compatible (device, iter->data)) {
-			nm_settings_connection_set_autoconnect_blocked_reason (NM_SETTINGS_CONNECTION (iter->data),
+	connections = nm_settings_get_connections_sorted (priv->settings, NULL);
+	for (i = 0; connections[i]; i++) {
+		NMSettingsConnection *connection = connections[i];
+
+		if (nm_device_check_connection_compatible (device, NM_CONNECTION (connection))) {
+			nm_settings_connection_set_autoconnect_blocked_reason (connection,
 			                                                       NM_DEVICE_STATE_REASON_USER_REQUESTED);
 		}
 	}
-	g_slist_free (connections);
 }
 
 static void
@@ -1278,7 +1282,8 @@ reset_connections_retries (gpointer user_data)
 {
 	NMPolicy *self = (NMPolicy *) user_data;
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	GSList *connections, *iter;
+	gs_free NMSettingsConnection **connections = NULL;
+	guint i;
 	gint32 con_stamp, min_stamp, now;
 	gboolean changed = FALSE;
 
@@ -1286,9 +1291,9 @@ reset_connections_retries (gpointer user_data)
 
 	min_stamp = 0;
 	now = nm_utils_get_monotonic_timestamp_s ();
-	connections = nm_settings_get_connections_sorted (priv->settings);
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMSettingsConnection *connection = NM_SETTINGS_CONNECTION (iter->data);
+	connections = nm_settings_get_connections_sorted (priv->settings, NULL);
+	for (i = 0; connections[i]; i++) {
+		NMSettingsConnection *connection = connections[i];
 
 		con_stamp = nm_settings_connection_get_autoconnect_retry_time (connection);
 		if (con_stamp == 0)
@@ -1300,7 +1305,6 @@ reset_connections_retries (gpointer user_data)
 		} else if (min_stamp == 0 || min_stamp > con_stamp)
 			min_stamp = con_stamp;
 	}
-	g_slist_free (connections);
 
 	/* Schedule the handler again if there are some stamps left */
 	if (min_stamp != 0)
@@ -1318,8 +1322,7 @@ activate_slave_connections (NMPolicy *self, NMDevice *device)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	const char *master_device, *master_uuid_settings = NULL, *master_uuid_applied = NULL;
-	gs_free_slist GSList *connections = NULL;
-	GSList *iter;
+	guint i;
 	NMActRequest *req;
 	gboolean internal_activation = FALSE;
 
@@ -1345,27 +1348,29 @@ activate_slave_connections (NMPolicy *self, NMDevice *device)
 		internal_activation = subject && nm_auth_subject_is_internal (subject);
 	}
 
-	if (!internal_activation)
-		connections = nm_settings_get_connections_sorted (priv->settings);
+	if (!internal_activation) {
+		gs_free NMSettingsConnection **connections = NULL;
 
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *slave;
-		NMSettingConnection *s_slave_con;
-		const char *slave_master;
+		connections = nm_settings_get_connections_sorted (priv->settings, NULL);
 
-		slave = NM_CONNECTION (iter->data);
-		g_assert (slave);
+		for (i = 0; connections[i]; i++) {
+			NMConnection *slave;
+			NMSettingConnection *s_slave_con;
+			const char *slave_master;
 
-		s_slave_con = nm_connection_get_setting_connection (slave);
-		g_assert (s_slave_con);
-		slave_master = nm_setting_connection_get_master (s_slave_con);
-		if (!slave_master)
-			continue;
+			slave = NM_CONNECTION (connections[i]);
 
-		if (   !g_strcmp0 (slave_master, master_device)
-		    || !g_strcmp0 (slave_master, master_uuid_applied)
-		    || !g_strcmp0 (slave_master, master_uuid_settings))
-			nm_settings_connection_reset_autoconnect_retries (NM_SETTINGS_CONNECTION (slave));
+			s_slave_con = nm_connection_get_setting_connection (slave);
+			g_assert (s_slave_con);
+			slave_master = nm_setting_connection_get_master (s_slave_con);
+			if (!slave_master)
+				continue;
+
+			if (   !g_strcmp0 (slave_master, master_device)
+			    || !g_strcmp0 (slave_master, master_uuid_applied)
+			    || !g_strcmp0 (slave_master, master_uuid_settings))
+				nm_settings_connection_reset_autoconnect_retries (NM_SETTINGS_CONNECTION (slave));
+		}
 	}
 
 	schedule_activate_all (self);
