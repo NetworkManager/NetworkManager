@@ -112,8 +112,6 @@ nm_utils_ip6_route_metric_normalize (guint32 metric)
 	return metric ? metric : 1024 /*NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6*/;
 }
 
-int nm_spawn_process (const char *args, GError **error);
-
 int nm_utils_modprobe (GError **error, gboolean suppress_error_loggin, const char *arg1, ...) G_GNUC_NULL_TERMINATED;
 
 guint64 nm_utils_get_start_time_for_pid (pid_t pid, char *out_state, pid_t *out_ppid);

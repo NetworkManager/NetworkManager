@@ -367,30 +367,6 @@ nm_utils_array_remove_at_indexes (GArray *array, const guint *indexes_to_delete,
 	g_array_set_size (array, res_length);
 }
 
-int
-nm_spawn_process (const char *args, GError **error)
-{
-	GError *local = NULL;
-	gint num_args;
-	char **argv = NULL;
-	int status = -1;
-
-	g_return_val_if_fail (args != NULL, -1);
-	g_return_val_if_fail (!error || !*error, -1);
-
-	if (g_shell_parse_argv (args, &num_args, &argv, &local)) {
-		g_spawn_sync ("/", argv, NULL, 0, NULL, NULL, NULL, NULL, &status, &local);
-		g_strfreev (argv);
-	}
-
-	if (local) {
-		nm_log_warn (LOGD_CORE, "could not spawn process '%s': %s", args, local->message);
-		g_propagate_error (error, local);
-	}
-
-	return status;
-}
-
 static const char *
 _trunk_first_line (char *str)
 {
