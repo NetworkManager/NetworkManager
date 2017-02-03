@@ -606,6 +606,8 @@ dispatch_resolvconf (NMDnsManager *self,
 	FILE *f;
 	gboolean success = FALSE;
 	int errnosv, err;
+	char *argv[] = { RESOLVCONF_PATH, "-d", "NetworkManager", NULL };
+	int status;
 
 	if (!g_file_test (RESOLVCONF_PATH, G_FILE_TEST_IS_EXECUTABLE)) {
 		g_set_error_literal (error,
@@ -618,15 +620,15 @@ dispatch_resolvconf (NMDnsManager *self,
 	if (!searches && !nameservers) {
 		_LOGI ("Removing DNS information from %s", RESOLVCONF_PATH);
 
-		cmd = g_strconcat (RESOLVCONF_PATH, " -d ", "NetworkManager", NULL);
-		if (nm_spawn_process (cmd, error) != 0) {
-			if (error && !*error) {
-				g_set_error (error,
-				             NM_MANAGER_ERROR,
-				             NM_MANAGER_ERROR_FAILED,
-				             "%s returned error code",
-				             RESOLVCONF_PATH);
-			}
+		if (!g_spawn_sync ("/", argv, NULL, 0, NULL, NULL, NULL, NULL, &status, error))
+			return SR_ERROR;
+
+		if (status != 0) {
+			g_set_error (error,
+			             NM_MANAGER_ERROR,
+			             NM_MANAGER_ERROR_FAILED,
+			             "%s returned error code",
+			             RESOLVCONF_PATH);
 			return SR_ERROR;
 		}
 
