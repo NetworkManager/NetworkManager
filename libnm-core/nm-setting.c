@@ -304,8 +304,8 @@ typedef struct {
 	NMSettingPropertyTransformFromFunc from_dbus;
 } NMSettingProperty;
 
-static GQuark setting_property_overrides_quark;
-static GQuark setting_properties_quark;
+static NM_CACHED_QUARK_FCN ("nm-setting-property-overrides", setting_property_overrides_quark)
+static NM_CACHED_QUARK_FCN ("nm-setting-properties", setting_properties_quark)
 
 static NMSettingProperty *
 find_property (GArray *properties, const char *name)
@@ -341,7 +341,7 @@ add_property_override (NMSettingClass *setting_class,
 	GArray *overrides;
 	NMSettingProperty override;
 
-	g_return_if_fail (g_type_get_qdata (setting_type, setting_properties_quark) == NULL);
+	g_return_if_fail (g_type_get_qdata (setting_type, setting_properties_quark ()) == NULL);
 
 	memset (&override, 0, sizeof (override));
 	override.name = property_name;
@@ -354,10 +354,10 @@ add_property_override (NMSettingClass *setting_class,
 	override.to_dbus = to_dbus;
 	override.from_dbus = from_dbus;
 
-	overrides = g_type_get_qdata (setting_type, setting_property_overrides_quark);
+	overrides = g_type_get_qdata (setting_type, setting_property_overrides_quark ());
 	if (!overrides) {
 		overrides = g_array_new (FALSE, FALSE, sizeof (NMSettingProperty));
-		g_type_set_qdata (setting_type, setting_property_overrides_quark, overrides);
+		g_type_set_qdata (setting_type, setting_property_overrides_quark (), overrides);
 	}
 	g_return_if_fail (find_property (overrides, property_name) == NULL);
 
@@ -530,14 +530,14 @@ nm_setting_class_ensure_properties (NMSettingClass *setting_class)
 	GParamSpec **property_specs;
 	guint n_property_specs, i;
 
-	properties = g_type_get_qdata (type, setting_properties_quark);
+	properties = g_type_get_qdata (type, setting_properties_quark ());
 	if (properties)
 		return properties;
 
 	/* Build overrides array from @setting_class and its superclasses */
 	overrides = g_array_new (FALSE, FALSE, sizeof (NMSettingProperty));
 	for (otype = type; otype != G_TYPE_OBJECT; otype = g_type_parent (otype)) {
-		type_overrides = g_type_get_qdata (otype, setting_property_overrides_quark);
+		type_overrides = g_type_get_qdata (otype, setting_property_overrides_quark ());
 		if (type_overrides)
 			g_array_append_vals (overrides, (NMSettingProperty *)type_overrides->data, type_overrides->len);
 	}
@@ -568,7 +568,7 @@ nm_setting_class_ensure_properties (NMSettingClass *setting_class)
 	}
 	g_array_unref (overrides);
 
-	g_type_set_qdata (type, setting_properties_quark, properties);
+	g_type_set_qdata (type, setting_properties_quark (), properties);
 	return properties;
 }
 
@@ -1994,11 +1994,6 @@ static void
 nm_setting_class_init (NMSettingClass *setting_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-
-	if (!setting_property_overrides_quark)
-		setting_property_overrides_quark = g_quark_from_static_string ("nm-setting-property-overrides");
-	if (!setting_properties_quark)
-		setting_properties_quark = g_quark_from_static_string ("nm-setting-properties");
 
 	g_type_class_add_private (setting_class, sizeof (NMSettingPrivate));
 

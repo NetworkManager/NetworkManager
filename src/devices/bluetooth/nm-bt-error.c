@@ -22,13 +22,5 @@
 
 #include "nm-bt-error.h"
 
-GQuark
-nm_bt_error_quark (void)
-{
-	static GQuark quark = 0;
-	if (!quark)
-		quark = g_quark_from_static_string ("nm-bt-error");
-	return quark;
-}
-
+NM_CACHED_QUARK_FCN ("nm-bt-error", nm_bt_error_quark)
 
