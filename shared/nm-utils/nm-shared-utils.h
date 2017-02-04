@@ -43,6 +43,10 @@ void nm_utils_strbuf_append_str (char **buf, gsize *len, const char *str);
 
 /*****************************************************************************/
 
+gssize nm_utils_strv_find_first (char **list, gssize len, const char *needle);
+
+/*****************************************************************************/
+
 gint64 _nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max, gint64 fallback);
 
 gint _nm_utils_ascii_str_to_bool (const char *str,
