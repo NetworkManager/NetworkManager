@@ -130,7 +130,10 @@ typedef struct {
 	GPtrArray *configs;
 	GVariant *config_variant;
 	NMDnsIPConfigData *best_conf4, *best_conf6;
-	gboolean need_sort;
+
+	bool need_sort:1;
+	bool dns_touched:1;
+	bool is_stopped:1;
 
 	char *hostname;
 	guint updates_queue;
@@ -143,8 +146,6 @@ typedef struct {
 	NMDnsPlugin *plugin;
 
 	NMConfig *config;
-
-	gboolean dns_touched;
 
 	struct {
 		guint64 ts;
@@ -1124,6 +1125,11 @@ update_dns (NMDnsManager *self,
 
 	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
+	if (priv->is_stopped) {
+		_LOGD ("update-dns: not updating resolv.conf (is stopped)");
+		return TRUE;
+	}
+
 	nm_clear_g_source (&priv->plugin_ratelimit.timer);
 
 	if (NM_IN_SET (priv->rc_manager, NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED,
@@ -1544,6 +1550,35 @@ nm_dns_manager_end_updates (NMDnsManager *self, const char *func)
 	}
 
 	memset (priv->prev_hash, 0, sizeof (priv->prev_hash));
+}
+
+void
+nm_dns_manager_stop (NMDnsManager *self)
+{
+	NMDnsManagerPrivate *priv;
+	GError *error = NULL;
+
+	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+
+	if (priv->is_stopped)
+		g_return_if_reached ();
+
+	_LOGT ("stopping...");
+
+	/* If we're quitting, leave a valid resolv.conf in place, not one
+	 * pointing to 127.0.0.1 if any plugins were active.  Thus update
+	 * DNS after disposing of all plugins.  But if we haven't done any
+	 * DNS updates yet, there's no reason to touch resolv.conf on shutdown.
+	 */
+	if (priv->dns_touched) {
+		if (!update_dns (self, TRUE, &error)) {
+			_LOGW ("could not commit DNS changes on shutdown: %s", error->message);
+			g_clear_error (&error);
+		}
+		priv->dns_touched = FALSE;
+	}
+
+	priv->is_stopped = TRUE;
 }
 
 /*****************************************************************************/
@@ -2028,23 +2063,14 @@ dispose (GObject *object)
 	NMDnsManager *self = NM_DNS_MANAGER (object);
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 	NMDnsIPConfigData *data;
-	GError *error = NULL;
 	guint i;
 
 	_LOGT ("disposing");
 
-	_clear_plugin (self);
+	if (!priv->is_stopped)
+		nm_dns_manager_stop (self);
 
-	/* If we're quitting, leave a valid resolv.conf in place, not one
-	 * pointing to 127.0.0.1 if any plugins were active.  Thus update
-	 * DNS after disposing of all plugins.  But if we haven't done any
-	 * DNS updates yet, there's no reason to touch resolv.conf on shutdown.
-	 */
-	if (priv->dns_touched && !update_dns (self, TRUE, &error)) {
-		_LOGW ("could not commit DNS changes on shutdown: %s", error->message);
-		g_clear_error (&error);
-		priv->dns_touched = FALSE;
-	}
+	_clear_plugin (self);
 
 	if (priv->config) {
 		g_signal_handlers_disconnect_by_func (priv->config, config_changed_cb, self);

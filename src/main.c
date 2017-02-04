@@ -49,6 +49,7 @@
 #include "nm-auth-manager.h"
 #include "nm-core-internal.h"
 #include "nm-exported-object.h"
+#include "dns/nm-dns-manager.h"
 #include "systemd/nm-sd.h"
 
 #if !defined(NM_DIST_VERSION)
@@ -433,6 +434,8 @@ done:
 	nm_manager_stop (nm_manager_get ());
 
 	nm_config_state_set (config, TRUE, TRUE);
+
+	nm_dns_manager_stop (nm_dns_manager_get ());
 
 	if (global_opt.pidfile && wrote_pidfile)
 		unlink (global_opt.pidfile);
