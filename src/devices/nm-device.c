@@ -8363,7 +8363,7 @@ _hash_check_invalid_keys_impl (GHashTable *hash, const char *setting_name, GErro
 
 		g_hash_table_iter_init (&iter, hash);
 		while (g_hash_table_iter_next (&iter, (gpointer *) &k, NULL)) {
-			if (_nm_utils_strv_find_first ((char **) argv, -1, k) < 0) {
+			if (nm_utils_strv_find_first ((char **) argv, -1, k) < 0) {
 				first_invalid_key = k;
 				break;
 			}

@@ -339,7 +339,7 @@ nm_vpn_plugin_info_list_load ()
 
 	for (i = 0; i < G_N_ELEMENTS (dir); i++) {
 		if (   !dir[i]
-		    || _nm_utils_strv_find_first ((char **) dir, i, dir[i]) >= 0)
+		    || nm_utils_strv_find_first ((char **) dir, i, dir[i]) >= 0)
 			continue;
 
 		infos = _nm_vpn_plugin_info_list_load_dir (dir[i], TRUE, uid, NULL, NULL);
@@ -384,7 +384,7 @@ nm_vpn_plugin_info_new_search_file (const char *name, const char *service)
 
 	for (i = 0; !plugin_info && i < G_N_ELEMENTS (dir); i++) {
 		if (   !dir[i]
-		    || _nm_utils_strv_find_first ((char **) dir, i, dir[i]) >= 0)
+		    || nm_utils_strv_find_first ((char **) dir, i, dir[i]) >= 0)
 			continue;
 
 		/* We still must load the entire directory while searching for the matching
@@ -400,8 +400,8 @@ nm_vpn_plugin_info_new_search_file (const char *name, const char *service)
 				continue;
 			if (   service
 			    && !nm_streq (nm_vpn_plugin_info_get_service (p), service)
-			    && (_nm_utils_strv_find_first (NM_VPN_PLUGIN_INFO_GET_PRIVATE (p)->aliases,
-			                                   -1, service) < 0))
+			    && (nm_utils_strv_find_first (NM_VPN_PLUGIN_INFO_GET_PRIVATE (p)->aliases,
+			                                  -1, service) < 0))
 				continue;
 			plugin_info = g_object_ref (p);
 			break;
@@ -580,7 +580,7 @@ _list_find_by_service (GSList *list, const char *service)
 		NMVpnPluginInfoPrivate *priv = NM_VPN_PLUGIN_INFO_GET_PRIVATE (list->data);
 
 		if (   nm_streq (priv->service, service)
-		    || _nm_utils_strv_find_first (priv->aliases, -1, service) >= 0)
+		    || nm_utils_strv_find_first (priv->aliases, -1, service) >= 0)
 			return list->data;
 	}
 	return NULL;
@@ -667,7 +667,7 @@ nm_vpn_plugin_info_list_find_service_type (GSList *list, const char *name)
 
 	/* check the hard-coded list of short-names. They all have have the same
 	 * well-known prefix org.freedesktop.NetworkManager and the name. */
-	if (_nm_utils_strv_find_first ((char **) known_names, G_N_ELEMENTS (known_names), name) >= 0)
+	if (nm_utils_strv_find_first ((char **) known_names, G_N_ELEMENTS (known_names), name) >= 0)
 		return g_strdup_printf ("%s.%s", NM_DBUS_INTERFACE, name);
 
 	/* try, if there exists a plugin with @name under org.freedesktop.NetworkManager.

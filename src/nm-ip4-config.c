@@ -1822,7 +1822,7 @@ nm_ip4_config_add_search (NMIP4Config *config, const char *new)
 		return;
 	}
 
-	if (_nm_utils_strv_find_first ((char **) priv->searches->pdata,
+	if (nm_utils_strv_find_first ((char **) priv->searches->pdata,
 	                               priv->searches->len, search) >= 0) {
 		g_free (search);
 		return;

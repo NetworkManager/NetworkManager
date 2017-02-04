@@ -1472,7 +1472,7 @@ set_property (GObject *object,
 			for (i = 0; value_arr && value_arr[i]; i++) {
 				if (   *value_arr[i]
 				    && nm_utils_hwaddr_valid (value_arr[i], -1)
-				    && _nm_utils_strv_find_first (value_arr, i, value_arr[i]) < 0) {
+				    && nm_utils_strv_find_first (value_arr, i, value_arr[i]) < 0) {
 					priv->no_auto_default.arr[j++] = g_strdup (value_arr[i]);
 					priv->no_auto_default.specs = g_slist_prepend (priv->no_auto_default.specs, g_strdup_printf ("mac:%s", value_arr[i]));
 				}

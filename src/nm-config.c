@@ -309,7 +309,7 @@ no_auto_default_from_file (const char *no_auto_default_file)
 		for (i = 0; list[i]; i++) {
 			if (   *list[i]
 			    && nm_utils_hwaddr_valid (list[i], -1)
-			    && _nm_utils_strv_find_first (list, i, list[i]) < 0)
+			    && nm_utils_strv_find_first (list, i, list[i]) < 0)
 				g_ptr_array_add (no_auto_default_new, list[i]);
 			else
 				g_free (list[i]);
@@ -369,7 +369,7 @@ nm_config_set_no_auto_default_for_device (NMConfig *self, NMDevice *device)
 
 	no_auto_default_current = nm_config_data_get_no_auto_default (priv->config_data);
 
-	if (_nm_utils_strv_find_first ((char **) no_auto_default_current, -1, hw_address) >= 0) {
+	if (nm_utils_strv_find_first ((char **) no_auto_default_current, -1, hw_address) >= 0) {
 		/* @hw_address is already blocked. We don't have to update our in-memory representation.
 		 * Maybe we should write to no_auto_default_file anew, but let's save that too. */
 		return;
@@ -750,13 +750,13 @@ read_config (GKeyFile *keyfile, gboolean is_base_config, const char *dirname, co
 
 					for (iter_val = old_val; iter_val && *iter_val; iter_val++) {
 						if (   last_char != '-'
-						    || _nm_utils_strv_find_first (new_val, -1, *iter_val) < 0)
+						    || nm_utils_strv_find_first (new_val, -1, *iter_val) < 0)
 							g_ptr_array_add (new, g_strdup (*iter_val));
 					}
 					for (iter_val = new_val; iter_val && *iter_val; iter_val++) {
 						/* don't add duplicates. That means an "option=a,b"; "option+=a,c" results in "option=a,b,c" */
 						if (   last_char == '+'
-						    && _nm_utils_strv_find_first (old_val, -1, *iter_val) < 0)
+						    && nm_utils_strv_find_first (old_val, -1, *iter_val) < 0)
 							g_ptr_array_add (new, *iter_val);
 						else
 							g_free (*iter_val);
@@ -953,8 +953,8 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 		const char *filename = system_confs->pdata[i];
 
 		/* if a same named file exists in config_dir or run_config_dir, skip it. */
-		if (_nm_utils_strv_find_first ((char **) confs->pdata, confs->len, filename) >= 0 ||
-		    _nm_utils_strv_find_first ((char **) run_confs->pdata, run_confs->len, filename) >= 0) {
+		if (nm_utils_strv_find_first ((char **) confs->pdata, confs->len, filename) >= 0 ||
+		    nm_utils_strv_find_first ((char **) run_confs->pdata, run_confs->len, filename) >= 0) {
 			g_ptr_array_remove_index (system_confs, i);
 			continue;
 		}
@@ -968,7 +968,7 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 		const char *filename = run_confs->pdata[i];
 
 		/* if a same named file exists in config_dir, skip it. */
-		if (_nm_utils_strv_find_first ((char **) confs->pdata, confs->len, filename) >= 0) {
+		if (nm_utils_strv_find_first ((char **) confs->pdata, confs->len, filename) >= 0) {
 			g_ptr_array_remove_index (run_confs, i);
 			continue;
 		}

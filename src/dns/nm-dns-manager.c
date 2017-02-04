@@ -1634,9 +1634,9 @@ _resolvconf_resolved_managed (void)
 	                          NULL, NULL);
 
 	if (info && g_file_info_get_is_symlink (info)) {
-		ret = _nm_utils_strv_find_first ((gchar **) resolved_paths,
-		                                 G_N_ELEMENTS (resolved_paths),
-		                                 g_file_info_get_symlink_target (info)) >= 0;
+		ret = nm_utils_strv_find_first ((gchar **) resolved_paths,
+		                                G_N_ELEMENTS (resolved_paths),
+		                                g_file_info_get_symlink_target (info)) >= 0;
 	}
 
 	g_clear_object(&info);
