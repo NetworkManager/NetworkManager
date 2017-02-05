@@ -183,7 +183,7 @@ static void supplicant_iface_notify_current_bss (NMSupplicantInterface *iface,
                                                  GParamSpec *pspec,
                                                  NMDeviceWifi *self);
 
-static void request_wireless_scan (NMDeviceWifi *self, GVariant *scan_options);
+static void request_wireless_scan (NMDeviceWifi *self, gboolean force_if_scanning, GVariant *scan_options);
 
 static void ap_add_remove (NMDeviceWifi *self,
                            guint signum,
@@ -562,7 +562,7 @@ deactivate (NMDevice *device)
 
 	/* Ensure we trigger a scan after deactivating a Hotspot */
 	if (old_mode == NM_802_11_MODE_AP)
-		request_wireless_scan (self, NULL);
+		request_wireless_scan (self, FALSE, NULL);
 }
 
 static void
@@ -1186,7 +1186,7 @@ request_scan_cb (NMDevice *device,
 
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	request_wireless_scan (self, new_scan_options);
+	request_wireless_scan (self, FALSE, new_scan_options);
 	g_dbus_method_invocation_return_value (context, NULL);
 }
 
@@ -1421,15 +1421,16 @@ ssids_options_to_ptrarray (GVariant *value)
 }
 
 static void
-request_wireless_scan (NMDeviceWifi *self, GVariant *scan_options)
+request_wireless_scan (NMDeviceWifi *self, gboolean force_if_scanning, GVariant *scan_options)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	gboolean backoff = FALSE;
 	GPtrArray *ssids = NULL;
+	gboolean new_scan_requested = FALSE;
 
 	nm_clear_g_source (&priv->pending_scan_id);
 
-	if (priv->requested_scan) {
+	if (!force_if_scanning && priv->requested_scan) {
 		/* There's already a scan in progress */
 		return;
 	}
@@ -1476,12 +1477,16 @@ request_wireless_scan (NMDeviceWifi *self, GVariant *scan_options)
 			/* success */
 			backoff = TRUE;
 			_requested_scan_set (self, TRUE);
+			new_scan_requested = TRUE;
 		}
 
 		if (ssids)
 			g_ptr_array_unref (ssids);
 	} else
 		_LOGD (LOGD_WIFI, "wifi-scan: scanning requested but not allowed at this time");
+
+	if (!new_scan_requested)
+		_requested_scan_set (self, FALSE);
 
 	schedule_scan (self, backoff);
 }
@@ -1493,7 +1498,7 @@ request_wireless_scan_periodic (gpointer user_data)
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
 	priv->pending_scan_id = 0;
-	request_wireless_scan (self, NULL);
+	request_wireless_scan (self, FALSE, NULL);
 	return G_SOURCE_REMOVE;
 }
 
@@ -2150,8 +2155,10 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 			_LOGI (LOGD_DEVICE | LOGD_WIFI, "supplicant interface keeps failing, giving up");
 		break;
 	case NM_SUPPLICANT_INTERFACE_STATE_INACTIVE:
-		_requested_scan_set (self, FALSE);
-		request_wireless_scan (self, NULL);
+		/* we would clear _requested_scan_set() and trigger a new scan.
+		 * However, we don't want to cancel the current pending action, so force
+		 * a new scan request. */
+		request_wireless_scan (self, TRUE, NULL);
 		break;
 	default:
 		break;
@@ -3027,7 +3034,7 @@ device_state_changed (NMDevice *device,
 	case NM_DEVICE_STATE_DISCONNECTED:
 		/* Kick off a scan to get latest results */
 		priv->scan_interval = SCAN_INTERVAL_MIN;
-		request_wireless_scan (self, NULL);
+		request_wireless_scan (self, FALSE, NULL);
 		break;
 	default:
 		break;
