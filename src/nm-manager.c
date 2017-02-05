@@ -1749,7 +1749,7 @@ get_existing_connection (NMManager *self, NMDevice *device, gboolean *out_genera
 
 		/* XXX: this code will go away soon. Copy the array over to a GSList
 		 * and don't bother for now. */
-		cons = nm_manager_get_activatable_connections (self, &len, TRUE);
+		cons = nm_manager_get_activatable_connections (self, &len, FALSE);
 		for (i = len; i > 0; )
 			connections = g_slist_prepend (connections, cons[--i]);
 		connections = g_slist_sort (connections, (GCompareFunc) nm_settings_connection_cmp_timestamp);
