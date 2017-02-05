@@ -67,7 +67,6 @@ typedef struct {
 	gboolean       has_credreq;  /* Whether querying 802.1x credentials is supported */
 	NMSupplicantFeature fast_support;
 	NMSupplicantFeature ap_support;   /* Lightweight AP mode support */
-	NMSupplicantFeature mac_randomization_support;
 	guint32        max_scan_ssids;
 	guint32        ready_count;
 
@@ -520,25 +519,6 @@ nm_supplicant_interface_set_fast_support (NMSupplicantInterface *self,
 }
 
 static void
-set_preassoc_scan_mac_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
-{
-	NMSupplicantInterface *self;
-	gs_unref_variant GVariant *variant = NULL;
-	gs_free_error GError *error = NULL;
-
-	variant = _nm_dbus_proxy_call_finish (proxy, result,
-	                                      G_VARIANT_TYPE ("()"),
-	                                      &error);
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-		return;
-
-	self = NM_SUPPLICANT_INTERFACE (user_data);
-	if (error)
-		_LOGW ("failed to enable scan MAC address randomization (%s)", error->message);
-	iface_check_ready (self);
-}
-
-static void
 iface_introspect_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
 	NMSupplicantInterface *self;
@@ -562,24 +542,6 @@ iface_introspect_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data
 		/* The ProbeRequest method only exists if AP mode has been enabled */
 		if (strstr (data, "ProbeRequest"))
 			priv->ap_support = NM_SUPPLICANT_FEATURE_YES;
-
-		if (strstr (data, "PreassocMacAddr")) {
-			priv->mac_randomization_support = NM_SUPPLICANT_FEATURE_YES;
-
-			/* Turn on MAC randomization during scans by default */
-			priv->ready_count++;
-			g_dbus_proxy_call (priv->iface_proxy,
-			                   DBUS_INTERFACE_PROPERTIES ".Set",
-			                   g_variant_new ("(ssv)",
-			                                  WPAS_DBUS_IFACE_INTERFACE,
-			                                  "PreassocMacAddr",
-			                                  g_variant_new_string ("0")),
-			                   G_DBUS_CALL_FLAGS_NONE,
-			                   -1,
-			                   priv->init_cancellable,
-			                   (GAsyncReadyCallback) set_preassoc_scan_mac_cb,
-			                   self);
-		}
 	}
 
 	iface_check_ready (self);
@@ -790,8 +752,7 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	                   (GAsyncReadyCallback) iface_check_netreply_cb,
 	                   self);
 
-	if (priv->ap_support == NM_SUPPLICANT_FEATURE_UNKNOWN ||
-	    priv->mac_randomization_support == NM_SUPPLICANT_FEATURE_UNKNOWN) {
+	if (priv->ap_support == NM_SUPPLICANT_FEATURE_UNKNOWN) {
 		/* If the global supplicant capabilities property is not present, we can
 		 * fall back to checking whether the ProbeRequest method is supported.  If
 		 * neither of these works we have no way of determining if AP mode is
@@ -1226,33 +1187,6 @@ add_network (NMSupplicantInterface *self)
 }
 
 static void
-set_mac_randomization_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
-{
-	NMSupplicantInterface *self;
-	NMSupplicantInterfacePrivate *priv;
-	gs_unref_variant GVariant *reply = NULL;
-	gs_free_error GError *error = NULL;
-
-	reply = g_dbus_proxy_call_finish (proxy, result, &error);
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-		return;
-
-	self = NM_SUPPLICANT_INTERFACE (user_data);
-	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	if (!reply) {
-		g_dbus_error_strip_remote_error (error);
-		_LOGW ("couldn't send MAC randomization mode to the supplicant interface: %s",
-		       error->message);
-		emit_error_helper (self, error);
-		return;
-	}
-
-	_LOGT ("config: set MAC randomization to 0");
-	add_network (self);
-}
-
-static void
 set_ap_scan_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
 	NMSupplicantInterface *self;
@@ -1278,21 +1212,7 @@ set_ap_scan_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	_LOGI ("config: set interface ap_scan to %d",
 	       nm_supplicant_config_get_ap_scan (priv->cfg));
 
-	if (priv->mac_randomization_support == NM_SUPPLICANT_FEATURE_YES) {
-		/* Enable/disable association MAC address randomization */
-		g_dbus_proxy_call (priv->iface_proxy,
-		                   DBUS_INTERFACE_PROPERTIES ".Set",
-		                   g_variant_new ("(ssv)",
-		                                  WPAS_DBUS_IFACE_INTERFACE,
-		                                  "MacAddr",
-		                                  g_variant_new_string ("0")),
-		                   G_DBUS_CALL_FLAGS_NONE,
-		                   -1,
-		                   priv->assoc_cancellable,
-		                   (GAsyncReadyCallback) set_mac_randomization_cb,
-		                   self);
-	} else
-		add_network (self);
+	add_network (self);
 }
 
 gboolean
