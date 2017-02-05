@@ -870,6 +870,12 @@ _create_connection_autoconnect (const char *id, gboolean autoconnect, int autoco
 	return c;
 }
 
+static int
+_cmp_autoconnect_priority_p_with_data (gconstpointer pa, gconstpointer pb, gpointer user_data)
+{
+	return nm_utils_cmp_connection_by_autoconnect_priority (*((NMConnection **) pa), *((NMConnection **) pb));
+}
+
 static void
 _test_connection_sort_autoconnect_priority_one (NMConnection **list, gboolean shuffle)
 {
@@ -892,7 +898,7 @@ _test_connection_sort_autoconnect_priority_one (NMConnection **list, gboolean sh
 	}
 
 	/* sort it... */
-	g_ptr_array_sort_with_data (connections, nm_utils_cmp_connection_by_autoconnect_priority_p_with_data, NULL);
+	g_ptr_array_sort_with_data (connections, _cmp_autoconnect_priority_p_with_data, NULL);
 
 	for (i = 0; i < count; i++) {
 		if (list[i] == connections->pdata[i])

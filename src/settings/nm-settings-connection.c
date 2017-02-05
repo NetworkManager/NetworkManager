@@ -2179,14 +2179,11 @@ nm_settings_connection_cmp_timestamp (NMSettingsConnection *ac, NMSettingsConnec
 	if (!bc)
 		return -1;
 
-	/* In the future we may use connection priorities in addition to timestamps */
 	nm_settings_connection_get_timestamp (ac, &ats);
 	nm_settings_connection_get_timestamp (bc, &bts);
+	if (ats != bts)
+		return (ats > bts) ? -1 : 1;
 
-	if (ats < bts)
-		return 1;
-	else if (ats > bts)
-		return -1;
 	return 0;
 }
 
@@ -2198,35 +2195,41 @@ nm_settings_connection_cmp_timestamp_p_with_data (gconstpointer pa, gconstpointe
 }
 
 int
-nm_settings_connection_cmp_default (NMSettingsConnection *a, NMSettingsConnection *b)
+nm_settings_connection_cmp_autoconnect_priority (NMSettingsConnection *a, NMSettingsConnection *b)
 {
-	NMSettingConnection *con_a;
-	NMSettingConnection *con_b;
-	guint64 ts_a = 0, ts_b = 0;
-	gboolean can_ac_a, can_ac_b;
+	guint64 ats = 0, bts = 0;
+	int c;
 
-	con_a = nm_connection_get_setting_connection (NM_CONNECTION (a));
-	con_b = nm_connection_get_setting_connection (NM_CONNECTION (b));
-
-	can_ac_a = !!nm_setting_connection_get_autoconnect (con_a);
-	can_ac_b = !!nm_setting_connection_get_autoconnect (con_b);
-	if (can_ac_a != can_ac_b)
-		return can_ac_a ? -1 : 1;
-
-	nm_settings_connection_get_timestamp (a, &ts_a);
-	nm_settings_connection_get_timestamp (b, &ts_b);
-	if (ts_a > ts_b)
-		return -1;
-	else if (ts_a == ts_b)
+	if (a == b)
 		return 0;
-	return 1;
+
+	/* first we compare them by their autoconnect priority. */
+	c = nm_utils_cmp_connection_by_autoconnect_priority (NM_CONNECTION (a), NM_CONNECTION (b));
+	if (c)
+		return c;
+
+	/* then by their last activation timestamp (with the more recently connected one first) */
+	nm_settings_connection_get_timestamp (a, &ats);
+	nm_settings_connection_get_timestamp (b, &bts);
+	if (ats != bts)
+		return (ats > bts) ? -1 : 1;
+
+	/* if they are still equal, sort them by their UUID to give them an arbitrary, but stable
+	 * order. */
+	c = g_strcmp0 (nm_connection_get_uuid (NM_CONNECTION (a)),
+	               nm_connection_get_uuid (NM_CONNECTION (b)));
+	if (c)
+		return c;
+
+	/* hm, still the same. Use their pointer value. */
+	return (a > b) ? -1 : 1;
 }
 
 int
-nm_settings_connection_cmp_default_p_with_data (gconstpointer pa, gconstpointer pb, gpointer user_data)
+nm_settings_connection_cmp_autoconnect_priority_p_with_data (gconstpointer pa, gconstpointer pb, gpointer user_data)
 {
-	return nm_settings_connection_cmp_default (*((NMSettingsConnection **) pa),
-	                                           *((NMSettingsConnection **) pb));
+	return nm_settings_connection_cmp_autoconnect_priority (*((NMSettingsConnection **) pa),
+	                                                        *((NMSettingsConnection **) pb));
 }
 
 /*****************************************************************************/

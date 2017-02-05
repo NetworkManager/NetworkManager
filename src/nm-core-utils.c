@@ -2030,15 +2030,6 @@ nm_utils_cmp_connection_by_autoconnect_priority (NMConnection *a, NMConnection *
 	return 0;
 }
 
-int
-nm_utils_cmp_connection_by_autoconnect_priority_p_with_data (gconstpointer pa, gconstpointer pb, gpointer user_data)
-{
-	nm_assert (pa);
-	nm_assert (pb);
-	return nm_utils_cmp_connection_by_autoconnect_priority (*((NMConnection **) pa),
-	                                                        *((NMConnection **) pb));
-}
-
 /*****************************************************************************/
 
 static gint64 monotonic_timestamp_offset_sec;

@@ -448,7 +448,7 @@ nm_manager_get_activatable_connections (NMManager *manager, guint *out_len, gboo
 	                                                 _get_activatable_connections_filter,
 	                                                 manager);
 	if (sort && len > 1)
-		g_qsort_with_data (connections, len, sizeof (connections[0]), nm_settings_connection_cmp_default_p_with_data, NULL);
+		g_qsort_with_data (connections, len, sizeof (connections[0]), nm_settings_connection_cmp_autoconnect_priority_p_with_data, NULL);
 	NM_SET_OUT (out_len, len);
 	return connections;
 }

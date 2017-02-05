@@ -186,8 +186,8 @@ NMSettingsConnectionFlags nm_settings_connection_set_flags_all (NMSettingsConnec
 
 int nm_settings_connection_cmp_timestamp (NMSettingsConnection *ac, NMSettingsConnection *ab);
 int nm_settings_connection_cmp_timestamp_p_with_data (gconstpointer pa, gconstpointer pb, gpointer user_data);
-int nm_settings_connection_cmp_default (NMSettingsConnection *a, NMSettingsConnection *b);
-int nm_settings_connection_cmp_default_p_with_data (gconstpointer pa, gconstpointer pb, gpointer user_data);
+int nm_settings_connection_cmp_autoconnect_priority (NMSettingsConnection *a, NMSettingsConnection *b);
+int nm_settings_connection_cmp_autoconnect_priority_p_with_data (gconstpointer pa, gconstpointer pb, gpointer user_data);
 
 gboolean nm_settings_connection_get_timestamp (NMSettingsConnection *self,
                                                guint64 *out_timestamp);

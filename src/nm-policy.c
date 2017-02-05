@@ -953,19 +953,6 @@ activate_data_free (ActivateData *data)
 	g_slice_free (ActivateData, data);
 }
 
-static int
-_auto_activate_device_cmp (gconstpointer pa, gconstpointer pb, gpointer user_data)
-{
-	NMSettingsConnection *a = NM_SETTINGS_CONNECTION (*((NMSettingsConnection **) pa));
-	NMSettingsConnection *b = NM_SETTINGS_CONNECTION (*((NMSettingsConnection **) pb));
-	int i;
-
-	i = nm_utils_cmp_connection_by_autoconnect_priority (NM_CONNECTION (a), NM_CONNECTION (b));
-	if (i != 0)
-		return i;
-	return nm_settings_connection_cmp_default (a, b);
-}
-
 static void
 auto_activate_device (NMPolicy *self,
                       NMDevice *device)
@@ -988,11 +975,9 @@ auto_activate_device (NMPolicy *self,
 	if (nm_device_get_act_request (device))
 		return;
 
-	connections = nm_manager_get_activatable_connections (priv->manager, &len, FALSE);
+	connections = nm_manager_get_activatable_connections (priv->manager, &len, TRUE);
 	if (!connections[0])
 		return;
-
-	g_qsort_with_data (connections, len, sizeof (connections[0]), _auto_activate_device_cmp, NULL);
 
 	/* Find the first connection that should be auto-activated */
 	best_connection = NULL;

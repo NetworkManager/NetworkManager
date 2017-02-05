@@ -506,7 +506,7 @@ nm_settings_get_connections_sorted (NMSettings *self, guint *out_len)
 
 	connections = nm_settings_get_connections_clone (self, &len, NULL, NULL);
 	if (len > 1)
-		g_qsort_with_data (connections, len, sizeof (NMSettingsConnection *), nm_settings_connection_cmp_default_p_with_data, NULL);
+		g_qsort_with_data (connections, len, sizeof (NMSettingsConnection *), nm_settings_connection_cmp_autoconnect_priority_p_with_data, NULL);
 
 	NM_SET_OUT (out_len, len);
 	return connections;
