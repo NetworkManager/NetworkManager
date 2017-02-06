@@ -21,10 +21,10 @@
 
 #include <NetworkManager.h>
 
-struct {
+typedef struct {
 	const char *name;
 	const char *ui_name;
-} typedef VpnPasswordName;
+} VpnPasswordName;
 
 GSList *nm_vpn_get_plugin_infos (void);
 
