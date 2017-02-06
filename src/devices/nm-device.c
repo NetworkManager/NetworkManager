@@ -5340,7 +5340,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 		/* Ignore expiry before we even have a lease (NAK, old lease, etc) */
 		if (priv->ip4_state == IP_CONF)
 			break;
-		/* Fall through */
+		/* fall through */
 	case NM_DHCP_STATE_DONE:
 	case NM_DHCP_STATE_FAIL:
 		dhcp4_fail (self, FALSE);
@@ -6159,7 +6159,7 @@ dhcp6_state_changed (NMDhcpClient *client,
 		 */
 		if (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_OTHERCONF)
 			break;
-		/* Otherwise, fall through */
+		/* fall through */
 	case NM_DHCP_STATE_FAIL:
 		dhcp6_fail (self, FALSE);
 		break;
@@ -10336,7 +10336,7 @@ device_ipx_changed (NMPlatform *platform,
 			priv->dad6_failed_addrs = g_slist_append (priv->dad6_failed_addrs,
 			                                          g_memdup (addr, sizeof (NMPlatformIP6Address)));
 		}
-		/* fallthrough */
+		/* fall through */
 	case NMP_OBJECT_TYPE_IP6_ROUTE:
 		if (nm_device_get_unmanaged_flags (self, NM_UNMANAGED_PLATFORM_INIT)) {
 			priv->queued_ip6_config_pending = TRUE;

@@ -489,7 +489,6 @@ connect_context_step (NMModemBroadband *self)
 		}
 		ctx->step++;
 		/* fall through */
-
 	case CONNECT_STEP_WAIT_FOR_READY: {
 		GError *error = NULL;
 
@@ -527,9 +526,8 @@ connect_context_step (NMModemBroadband *self)
 		}
 
 		ctx->step++;
-		/* fall through */
 	}
-
+		/* fall through */
 	case CONNECT_STEP_CONNECT:
 		if (ctx->ip_types_i < ctx->ip_types->len) {
 			NMModemIPType current;

@@ -1046,6 +1046,7 @@ _string_append_val (GString *str, const char *value)
 		case '#':
 		case ':':
 			g_string_append_c (str, '+');
+			/* fall through */
 		default:
 			g_string_append_c (str, *value);
 		}
