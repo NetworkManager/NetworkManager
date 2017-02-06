@@ -499,7 +499,7 @@ _nm_setting_bond_mode_from_string (const char *str)
 
 #define BIT(x) (1 << (x))
 
-const static struct {
+static const struct {
 	const char *option;
 	NMBondMode unsupp_modes;
 } bond_unsupp_modes[] = {
