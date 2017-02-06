@@ -115,33 +115,6 @@ nm_setting_bridge_port_get_hairpin_mode (NMSettingBridgePort *setting)
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
-	NMSettingBridgePortPrivate *priv = NM_SETTING_BRIDGE_PORT_GET_PRIVATE (setting);
-
-	if (priv->priority > BR_MAX_PORT_PRIORITY) {
-		g_set_error (error,
-		             NM_CONNECTION_ERROR,
-		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("'%d' is not a valid value for the property (should be <= %d)"),
-		             priv->priority, BR_MAX_PORT_PRIORITY);
-		g_prefix_error (error, "%s.%s: ",
-		                NM_SETTING_BRIDGE_PORT_SETTING_NAME,
-		                NM_SETTING_BRIDGE_PORT_PRIORITY);
-		return FALSE;
-	}
-
-	if (priv->path_cost > BR_MAX_PATH_COST) {
-		g_set_error (error,
-		             NM_CONNECTION_ERROR,
-		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("'%d' is not a valid value for the property (should be <= %d)"),
-		             priv->path_cost, BR_MAX_PATH_COST);
-		g_prefix_error (error, "%s.%s: ",
-		                NM_SETTING_BRIDGE_PORT_SETTING_NAME,
-		                NM_SETTING_BRIDGE_PORT_PATH_COST);
-		return FALSE;
-	}
-
-
 	if (connection) {
 		NMSettingConnection *s_con;
 		const char *slave_type;
@@ -202,10 +175,10 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_PRIORITY:
-		priv->priority = (guint16) (g_value_get_uint (value) & 0xFFFF);
+		priv->priority = g_value_get_uint (value);
 		break;
 	case PROP_PATH_COST:
-		priv->path_cost = (guint16) (g_value_get_uint (value) & 0xFFFF);
+		priv->path_cost = g_value_get_uint (value);
 		break;
 	case PROP_HAIRPIN_MODE:
 		priv->hairpin_mode = g_value_get_boolean (value);
