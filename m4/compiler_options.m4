@@ -62,27 +62,29 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 	fi
 
 	for option in \
-		      -Wimplicit-fallthrough \
-		      -Wshadow \
-		      -Wmissing-declarations \
-		      -Wmissing-prototypes \
+		      -Wextra \
 		      -Wdeclaration-after-statement \
-		      -Wformat-security \
 		      -Wfloat-equal \
-		      -Wno-unused-parameter \
-		      -Wno-sign-compare \
-		      -Wno-duplicate-decl-specifier \
-		      -Wstrict-prototypes \
-		      -Wno-unused-but-set-variable \
-		      -Wno-format-y2k \
-		      -Wundef \
-		      -Wimplicit-function-declaration \
-		      -Wpointer-arith \
-		      -Winit-self \
 		      -Wformat-nonliteral \
+		      -Wformat-security \
+		      -Wimplicit-fallthrough \
+		      -Wimplicit-function-declaration \
+		      -Winit-self \
+		      -Wmissing-declarations \
 		      -Wmissing-include-dirs \
-		      -Wno-pragmas \
+		      -Wmissing-prototypes \
+		      -Wpointer-arith \
+		      -Wshadow \
+		      -Wstrict-prototypes \
+		      -Wundef \
+		      -Wno-duplicate-decl-specifier \
 		      -Wno-format-truncation \
+		      -Wno-format-y2k \
+		      -Wno-missing-field-initializers \
+		      -Wno-pragmas \
+		      -Wno-sign-compare \
+		      -Wno-unused-but-set-variable \
+		      -Wno-unused-parameter \
 		      ; do
 		dnl GCC 4.4 does not warn when checking for -Wno-* flags (https://gcc.gnu.org/wiki/FAQ#wnowarning)
                 _NM_COMPILER_FLAG([$(printf '%s' "$option" | sed 's/^-Wno-/-W/')], [],
