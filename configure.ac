@@ -59,6 +59,7 @@ dnl Checks for typedefs, structures, and compiler characteristics.
 dnl
 AC_TYPE_PID_T
 AC_CHECK_SIZEOF(dev_t)
+AC_CHECK_SIZEOF(time_t)
 
 dnl
 dnl translation support
