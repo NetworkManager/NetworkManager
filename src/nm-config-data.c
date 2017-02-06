@@ -246,7 +246,7 @@ nm_config_data_get_connectivity_uri (const NMConfigData *self)
 	return NM_CONFIG_DATA_GET_PRIVATE (self)->connectivity.uri;
 }
 
-const guint
+guint
 nm_config_data_get_connectivity_interval (const NMConfigData *self)
 {
 	g_return_val_if_fail (self, 0);

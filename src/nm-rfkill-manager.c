@@ -262,7 +262,7 @@ killswitch_find_by_name (NMRfkillManager *self, const char *name)
 	return NULL;
 }
 
-static const RfKillType
+static RfKillType
 rfkill_type_to_enum (const char *str)
 {
 	g_return_val_if_fail (str != NULL, RFKILL_TYPE_UNKNOWN);

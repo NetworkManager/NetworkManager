@@ -160,7 +160,7 @@ gint nm_config_data_get_value_boolean (const NMConfigData *self, const char *gro
 
 char **nm_config_data_get_plugins (const NMConfigData *config_data, gboolean allow_default);
 const char *nm_config_data_get_connectivity_uri (const NMConfigData *config_data);
-const guint nm_config_data_get_connectivity_interval (const NMConfigData *config_data);
+guint nm_config_data_get_connectivity_interval (const NMConfigData *config_data);
 const char *nm_config_data_get_connectivity_response (const NMConfigData *config_data);
 
 const char *const*nm_config_data_get_no_auto_default (const NMConfigData *config_data);
