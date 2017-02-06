@@ -637,7 +637,7 @@ _set_vpn_state (NMVpnConnection *self,
 		/* Tear down and clean up the connection */
 		call_plugin_disconnect (self);
 		vpn_cleanup (self, parent_dev);
-		/* Fall through */
+		/* fall through */
 	default:
 		priv->secrets_idx = SECRETS_REQ_SYSTEM;
 		break;
@@ -1514,7 +1514,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 			switch (g_variant_n_children (v)) {
 			case 5:
 				g_variant_get_child (v, 4, "u", &route.pref_src);
-				/* fallthrough */
+				/* fall through */
 			case 4:
 				g_variant_get_child (v, 0, "u", &route.network);
 				g_variant_get_child (v, 1, "u", &plen);
