@@ -62,6 +62,8 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 	fi
 
 	for option in \
+		      -Wextra \
+		      -Wno-missing-field-initializers \
 		      -Wimplicit-fallthrough \
 		      -Wshadow \
 		      -Wmissing-declarations \
