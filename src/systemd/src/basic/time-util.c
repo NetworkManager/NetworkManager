@@ -1277,7 +1277,7 @@ bool clock_supported(clockid_t clock) {
                 if (!clock_boottime_supported())
                         return false;
 
-                /* fall through, after checking the cached value for CLOCK_BOOTTIME. */
+                /* fall through */
 
         default:
                 /* For everything else, check properly */
