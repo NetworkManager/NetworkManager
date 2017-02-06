@@ -1127,8 +1127,7 @@ deactivate_step (DeactivateContext *ctx)
 	switch (ctx->step) {
 	case DEACTIVATE_CONTEXT_STEP_FIRST:
 		ctx->step++;
-		/* Fall down */
-
+		/* fall through */
 	case DEACTIVATE_CONTEXT_STEP_CLEANUP:
 		/* Make sure we keep a ref to the PPP manager if there is one */
 		if (priv->ppp_manager)
@@ -1136,8 +1135,7 @@ deactivate_step (DeactivateContext *ctx)
 		/* Run cleanup */
 		NM_MODEM_GET_CLASS (ctx->self)->deactivate_cleanup (ctx->self, ctx->device);
 		ctx->step++;
-		/* Fall down */
-
+		/* fall through */
 	case DEACTIVATE_CONTEXT_STEP_PPP_MANAGER_STOP:
 		/* If we have a PPP manager, stop it */
 		if (ctx->ppp_manager) {
@@ -1148,8 +1146,7 @@ deactivate_step (DeactivateContext *ctx)
 			return;
 		}
 		ctx->step++;
-		/* Fall down */
-
+		/* fall through */
 	case DEACTIVATE_CONTEXT_STEP_MM_DISCONNECT:
 		/* Disconnect asynchronously */
 		NM_MODEM_GET_CLASS (ctx->self)->disconnect (ctx->self,

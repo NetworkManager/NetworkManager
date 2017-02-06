@@ -1171,7 +1171,7 @@ dcb_state (NMDevice *device, gboolean timeout)
 			break;
 		}
 		_LOGD (LOGD_DCB, "dcb_state() preconfig down falling through");
-		/* carrier never went down? fall through */
+		/* fall through */
 	case DCB_WAIT_CARRIER_PRECONFIG_UP:
 		if (timeout || carrier) {
 			_LOGD (LOGD_DCB, "dcb_state() preconfig up configuring DCB");
@@ -1195,7 +1195,7 @@ dcb_state (NMDevice *device, gboolean timeout)
 			break;
 		}
 		_LOGD (LOGD_DCB, "dcb_state() postconfig down falling through");
-		/* carrier never went down? fall through */
+		/* fall through */
 	case DCB_WAIT_CARRIER_POSTCONFIG_UP:
 		if (timeout || carrier) {
 			_LOGD (LOGD_DCB, "dcb_state() postconfig up starting IP");

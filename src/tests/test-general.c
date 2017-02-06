@@ -1291,7 +1291,7 @@ test_nm_utils_strbuf_append (void)
 					nm_utils_strbuf_append_c (&t_buf, &t_len, str[0]);
 					break;
 				}
-				/* fall-through */
+				/* fall through */
 			case 1:
 				nm_utils_strbuf_append_str (&t_buf, &t_len, str);
 				break;
@@ -1300,7 +1300,7 @@ test_nm_utils_strbuf_append (void)
 					nm_utils_strbuf_append (&t_buf, &t_len, "%c", str[0]);
 					break;
 				}
-				/* fall-through */
+				/* fall through */
 			case 3:
 				nm_utils_strbuf_append (&t_buf, &t_len, "%s", str);
 				break;
