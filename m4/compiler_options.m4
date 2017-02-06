@@ -81,6 +81,7 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 		      -Wformat-nonliteral \
 		      -Wmissing-include-dirs \
 		      -Wno-pragmas \
+		      -Wno-format-truncation \
 		      ; do
 		dnl GCC 4.4 does not warn when checking for -Wno-* flags (https://gcc.gnu.org/wiki/FAQ#wnowarning)
                 _NM_COMPILER_FLAG([$(printf '%s' "$option" | sed 's/^-Wno-/-W/')], [],
