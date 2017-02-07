@@ -77,6 +77,7 @@ _return (OnlineData *data, int retval)
 	nm_assert (data->retval == EXIT_FAILURE_UNSPECIFIED);
 
 	data->retval = retval;
+	nm_clear_g_signal_handler (data->client, &data->client_notify_id);
 	g_main_loop_quit (data->loop);
 }
 
@@ -297,7 +298,7 @@ main (int argc, char *argv[])
 	g_clear_pointer (&data.loop, g_main_loop_unref);
 
 	if (!data.quiet)
-		_print_progress (-1, NM_MAX (0, data.end_timestamp_ms - _now_ms ()), data.retval == 0);
+		_print_progress (-1, NM_MAX (0, data.end_timestamp_ms - _now_ms ()), data.retval == EXIT_SUCCESS);
 
 	return data.retval;
 }
