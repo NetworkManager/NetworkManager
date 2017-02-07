@@ -165,7 +165,8 @@ update_connection (NMDevice *device, NMConnection *connection)
 		const char *defvalue = nm_setting_bond_get_option_default (s_bond, *options);
 		char *p;
 
-		if (_nm_setting_bond_get_option_type (s_bond, *options) == NM_BOND_OPTION_TYPE_BOTH) {
+		if (   value
+		    && _nm_setting_bond_get_option_type (s_bond, *options) == NM_BOND_OPTION_TYPE_BOTH) {
 			p = strchr (value, ' ');
 			if (p)
 				*p = '\0';
