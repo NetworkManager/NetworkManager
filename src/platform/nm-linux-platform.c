@@ -2584,23 +2584,24 @@ static void
 _log_dbg_sysctl_set_impl (NMPlatform *platform, const char *pathid, int dirfd, const char *path, const char *value)
 {
 	GError *error = NULL;
-	char *contents, *contents_escaped;
-	char *value_escaped = g_strescape (value, NULL);
+	char *contents;
+	gs_free char *value_escaped = g_strescape (value, NULL);
 
 	if (nm_utils_file_get_contents (dirfd, path, 1*1024*1024, &contents, NULL, &error) < 0) {
 		_LOGD ("sysctl: setting '%s' to '%s' (current value cannot be read: %s)", pathid, value_escaped, error->message);
 		g_clear_error (&error);
-	} else {
-		g_strstrip (contents);
-		contents_escaped = g_strescape (contents, NULL);
-		if (strcmp (contents, value) == 0)
-			_LOGD ("sysctl: setting '%s' to '%s' (current value is identical)", pathid, value_escaped);
-		else
-			_LOGD ("sysctl: setting '%s' to '%s' (current value is '%s')", pathid, value_escaped, contents_escaped);
-		g_free (contents);
-		g_free (contents_escaped);
+		return;
 	}
-	g_free (value_escaped);
+
+	g_strstrip (contents);
+	if (nm_streq (contents, value))
+		_LOGD ("sysctl: setting '%s' to '%s' (current value is identical)", pathid, value_escaped);
+	else {
+		gs_free char *contents_escaped = g_strescape (contents, NULL);
+
+		_LOGD ("sysctl: setting '%s' to '%s' (current value is '%s')", pathid, value_escaped, contents_escaped);
+	}
+	g_free (contents);
 }
 
 #define _log_dbg_sysctl_set(platform, pathid, dirfd, path, value) \
@@ -2750,26 +2751,23 @@ _log_dbg_sysctl_get_impl (NMPlatform *platform, const char *pathid, const char *
 
 	if (prev_value) {
 		if (strcmp (prev_value, contents) != 0) {
-			char *contents_escaped = g_strescape (contents, NULL);
-			char *prev_value_escaped = g_strescape (prev_value, NULL);
+			gs_free char *contents_escaped = g_strescape (contents, NULL);
+			gs_free char *prev_value_escaped = g_strescape (prev_value, NULL);
 
 			_LOGD ("sysctl: reading '%s': '%s' (changed from '%s' on last read)", pathid, contents_escaped, prev_value_escaped);
-			g_free (contents_escaped);
-			g_free (prev_value_escaped);
 			g_hash_table_insert (priv->sysctl_get_prev_values, g_strdup (pathid), g_strdup (contents));
 		}
 	} else {
-		char *contents_escaped = g_strescape (contents, NULL);
+		gs_free char *contents_escaped = g_strescape (contents, NULL);
 
 		_LOGD ("sysctl: reading '%s': '%s'", pathid, contents_escaped);
-		g_free (contents_escaped);
 		g_hash_table_insert (priv->sysctl_get_prev_values, g_strdup (pathid), g_strdup (contents));
-	}
 
-	if (   !priv->sysctl_get_warned
-	    && g_hash_table_size (priv->sysctl_get_prev_values) > 50000) {
-		_LOGW ("sysctl: the internal cache for debug-logging of sysctl values grew pretty large. You can clear it by disabling debug-logging: `nmcli general logging level KEEP domains PLATFORM:INFO`.");
-		priv->sysctl_get_warned = TRUE;
+		if (   !priv->sysctl_get_warned
+		    && g_hash_table_size (priv->sysctl_get_prev_values) > 50000) {
+			_LOGW ("sysctl: the internal cache for debug-logging of sysctl values grew pretty large. You can clear it by disabling debug-logging: `nmcli general logging level KEEP domains PLATFORM:INFO`.");
+			priv->sysctl_get_warned = TRUE;
+		}
 	}
 }
 
