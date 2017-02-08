@@ -2775,6 +2775,18 @@ ip4_addr_subnets_build_index (const GArray *addresses, gboolean consider_flags)
 	return subnets;
 }
 
+/**
+ * ip4_addr_subnets_is_secondary:
+ * @address: an address
+ * @subnets: the hash table mapping subnets to addresses
+ * @addresses: array of addresses in the hash table
+ * @out_addr_list: array of addresses belonging to the same subnet
+ *
+ * Checks whether @address is secondary and returns in @out_addr_list the list of addresses
+ * belonging to the same subnet, if it contains other elements.
+ *
+ * Returns: %TRUE if the address is secondary, %FALSE otherwise
+ */
 static gboolean
 ip4_addr_subnets_is_secondary (const NMPlatformIP4Address *address, GHashTable *subnets, const GArray *addresses, GPtrArray **out_addr_list)
 {
@@ -2787,13 +2799,13 @@ ip4_addr_subnets_is_secondary (const NMPlatformIP4Address *address, GHashTable *
 	nm_assert (p);
 	if (!_ptr_inside_ip4_addr_array (addresses, p)) {
 		addr_list = p;
-		if (addr_list->pdata[0] != address) {
-			NM_SET_OUT (out_addr_list, addr_list);
+		NM_SET_OUT (out_addr_list, addr_list);
+		if (addr_list->pdata[0] != address)
 			return TRUE;
-		}
-	} else
+	} else {
 		nm_assert ((gconstpointer) address == p);
-	NM_SET_OUT (out_addr_list, NULL);
+		NM_SET_OUT (out_addr_list, NULL);
+	}
 	return FALSE;
 }
 
