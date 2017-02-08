@@ -896,6 +896,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	const char *ca_path_override = NULL, *ca_cert_override = NULL;
 	guint32 frag, hdrs;
 	gs_free char *frag_str = NULL;
+	NMSetting8021xAuthFlags phase1_auth_flags;
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
 	g_return_val_if_fail (setting != NULL, FALSE);
@@ -980,6 +981,21 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 
 		if (strcmp (value, "0") != 0)
 			fast_provisoning_allowed = TRUE;
+	}
+
+	phase1_auth_flags = nm_setting_802_1x_get_phase1_auth_flags (setting);
+	if (phase1_auth_flags != NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_DEFAULT) {
+		if (phase1->len)
+			g_string_append_c (phase1, ' ');
+		g_string_append_printf (phase1, "tls_disable_tlsv1_0=%d",
+		                        (NM_FLAGS_HAS (phase1_auth_flags,
+		                                       NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_1_0)) ? 1 : 0);
+		g_string_append_printf (phase1, " tls_disable_tlsv1_1=%d",
+		                        (NM_FLAGS_HAS (phase1_auth_flags,
+		                                       NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_1_1)) ? 1 : 0);
+		g_string_append_printf (phase1, " tls_disable_tlsv1_2=%d",
+		                        (NM_FLAGS_HAS (phase1_auth_flags,
+		                                       NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_1_2)) ? 1 : 0);
 	}
 
 	if (phase1->len) {
