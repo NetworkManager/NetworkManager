@@ -4100,6 +4100,9 @@ nm_utils_file_set_contents (const gchar *filename,
 	g_return_val_if_fail (!error || !*error, FALSE);
 	g_return_val_if_fail (length >= -1, FALSE);
 
+	if (length == -1)
+		length = strlen (contents);
+
 	tmp_name = g_strdup_printf ("%s.XXXXXX", filename);
 	fd = g_mkstemp_full (tmp_name, O_RDWR, mode);
 	if (fd < 0) {
