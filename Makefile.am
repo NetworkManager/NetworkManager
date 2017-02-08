@@ -1478,7 +1478,7 @@ src_libNetworkManagerTest_la_LIBADD = \
 ###############################################################################
 
 src/NetworkManager.ver: src/libNetworkManager.la $(core_plugins)
-	$(AM_V_GEN) "$(srcdir)/tools/create-exports-NetworkManager.sh" --called-from-make "$(srcdir)"
+	$(AM_V_GEN) BINUTILS_NM="$(BINUTILS_NM)" "$(srcdir)/tools/create-exports-NetworkManager.sh" --called-from-make "$(srcdir)"
 
 CLEANFILES += src/NetworkManager.ver
 
