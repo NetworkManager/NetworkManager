@@ -1120,6 +1120,8 @@ AM_PATH_PYTHON([], [], [PYTHON=python])
 AC_SUBST(PYTHON, [$PYTHON])
 AC_DEFINE_UNQUOTED(TEST_NM_PYTHON, "$PYTHON", [Define python path for test binary])
 
+AC_PATH_TOOL(BINUTILS_NM, nm, nm)
+
 # check if we can build setting property documentation
 build_setting_docs=no
 if test -n "$INTROSPECTION_MAKEFILE"; then
