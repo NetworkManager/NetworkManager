@@ -89,6 +89,7 @@ typedef struct {
 	char *phase1_peapver;
 	char *phase1_peaplabel;
 	char *phase1_fast_provisioning;
+	NMSetting8021xAuthFlags phase1_auth_flags;
 	char *phase2_auth;
 	char *phase2_autheap;
 	GBytes *phase2_ca_cert;
@@ -135,6 +136,7 @@ enum {
 	PROP_PHASE1_PEAPVER,
 	PROP_PHASE1_PEAPLABEL,
 	PROP_PHASE1_FAST_PROVISIONING,
+	PROP_PHASE1_AUTH_FLAGS,
 	PROP_PHASE2_AUTH,
 	PROP_PHASE2_AUTHEAP,
 	PROP_PHASE2_CA_CERT,
@@ -1256,6 +1258,22 @@ nm_setting_802_1x_get_phase1_fast_provisioning (NMSetting8021x *setting)
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
 
 	return NM_SETTING_802_1X_GET_PRIVATE (setting)->phase1_fast_provisioning;
+}
+
+/**
+ * nm_setting_802_1x_get_phase1_auth_flags:
+ * @setting: the #NMSetting8021x
+ *
+ * Returns: the authentication flags for "phase 1".
+ *
+ * Since: 1.8
+ */
+NMSetting8021xAuthFlags
+nm_setting_802_1x_get_phase1_auth_flags (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), 0);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->phase1_auth_flags;
 }
 
 /**
@@ -3244,6 +3262,16 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
+	if (NM_FLAGS_ANY (priv->phase1_auth_flags, NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_DEFAULT) &&
+	    !nm_utils_is_power_of_two (priv->phase1_auth_flags)) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("exclusive flags are used"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_PHASE1_AUTH_FLAGS);
+		return FALSE;
+	}
+
 	if (priv->phase2_auth && !g_strv_contains (valid_phase2_auth, priv->phase2_auth)) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
@@ -3446,6 +3474,9 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->phase1_fast_provisioning);
 		priv->phase1_fast_provisioning = g_value_dup_string (value);
 		break;
+	case PROP_PHASE1_AUTH_FLAGS:
+		priv->phase1_auth_flags = g_value_get_uint (value);
+		break;
 	case PROP_PHASE2_AUTH:
 		g_free (priv->phase2_auth);
 		priv->phase2_auth = g_value_dup_string (value);
@@ -3624,6 +3655,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PHASE1_FAST_PROVISIONING:
 		g_value_set_string (value, priv->phase1_fast_provisioning);
+		break;
+	case PROP_PHASE1_AUTH_FLAGS:
+		g_value_set_uint (value, priv->phase1_auth_flags);
 		break;
 	case PROP_PHASE2_AUTH:
 		g_value_set_string (value, priv->phase2_auth);
@@ -4104,6 +4138,29 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		                      NULL,
 		                      G_PARAM_READWRITE |
 		                      G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSetting8021x:phase1-auth-flags:
+	 *
+	 * Specifies authentication flags to use in "phase 1" outer
+	 * authentication using #NMSetting8021xAuthFlags options.
+	 * May be any combination of %NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_1_0,
+	 * %NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_1_1,
+	 * %NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_1_2 or the special values
+	 * %NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_DEFAULT (to use default settings)
+	 * and %NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_NONE (to forcefully
+	 * enable use of all TLS versions). See the wpa_supplicant documentation for
+	 * more details.
+	 *
+	 * Since: 1.8
+	 */
+	g_object_class_install_property
+		(object_class, PROP_PHASE1_AUTH_FLAGS,
+		 g_param_spec_uint (NM_SETTING_802_1X_PHASE1_AUTH_FLAGS, "", "",
+		                    0, G_MAXUINT32, NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_DEFAULT,
+		                    G_PARAM_CONSTRUCT |
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:phase2-auth:
