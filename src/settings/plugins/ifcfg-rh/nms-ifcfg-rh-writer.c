@@ -151,6 +151,7 @@ typedef struct ObjectType {
 	NMSetting8021xCKScheme (*scheme_func)(NMSetting8021x *setting);
 	const char *           (*path_func)  (NMSetting8021x *setting);
 	GBytes *               (*blob_func)  (NMSetting8021x *setting);
+	const char *           (*uri_func)   (NMSetting8021x *setting);
 	const char *ifcfg_key;
 	const char *suffix;
 } ObjectType;
@@ -160,6 +161,7 @@ static const ObjectType ca_type = {
 	nm_setting_802_1x_get_ca_cert_scheme,
 	nm_setting_802_1x_get_ca_cert_path,
 	nm_setting_802_1x_get_ca_cert_blob,
+	nm_setting_802_1x_get_ca_cert_uri,
 	"IEEE_8021X_CA_CERT",
 	"ca-cert.der"
 };
@@ -169,6 +171,7 @@ static const ObjectType phase2_ca_type = {
 	nm_setting_802_1x_get_phase2_ca_cert_scheme,
 	nm_setting_802_1x_get_phase2_ca_cert_path,
 	nm_setting_802_1x_get_phase2_ca_cert_blob,
+	nm_setting_802_1x_get_phase2_ca_cert_uri,
 	"IEEE_8021X_INNER_CA_CERT",
 	"inner-ca-cert.der"
 };
@@ -178,6 +181,7 @@ static const ObjectType client_type = {
 	nm_setting_802_1x_get_client_cert_scheme,
 	nm_setting_802_1x_get_client_cert_path,
 	nm_setting_802_1x_get_client_cert_blob,
+	nm_setting_802_1x_get_client_cert_uri,
 	"IEEE_8021X_CLIENT_CERT",
 	"client-cert.der"
 };
@@ -187,6 +191,7 @@ static const ObjectType phase2_client_type = {
 	nm_setting_802_1x_get_phase2_client_cert_scheme,
 	nm_setting_802_1x_get_phase2_client_cert_path,
 	nm_setting_802_1x_get_phase2_client_cert_blob,
+	nm_setting_802_1x_get_phase2_client_cert_uri,
 	"IEEE_8021X_INNER_CLIENT_CERT",
 	"inner-client-cert.der"
 };
@@ -196,6 +201,7 @@ static const ObjectType pk_type = {
 	nm_setting_802_1x_get_private_key_scheme,
 	nm_setting_802_1x_get_private_key_path,
 	nm_setting_802_1x_get_private_key_blob,
+	nm_setting_802_1x_get_private_key_uri,
 	"IEEE_8021X_PRIVATE_KEY",
 	"private-key.pem"
 };
@@ -205,6 +211,7 @@ static const ObjectType phase2_pk_type = {
 	nm_setting_802_1x_get_phase2_private_key_scheme,
 	nm_setting_802_1x_get_phase2_private_key_path,
 	nm_setting_802_1x_get_phase2_private_key_blob,
+	nm_setting_802_1x_get_phase2_private_key_uri,
 	"IEEE_8021X_INNER_PRIVATE_KEY",
 	"inner-private-key.pem"
 };
@@ -214,6 +221,7 @@ static const ObjectType p12_type = {
 	nm_setting_802_1x_get_private_key_scheme,
 	nm_setting_802_1x_get_private_key_path,
 	nm_setting_802_1x_get_private_key_blob,
+	nm_setting_802_1x_get_private_key_uri,
 	"IEEE_8021X_PRIVATE_KEY",
 	"private-key.p12"
 };
@@ -223,6 +231,7 @@ static const ObjectType phase2_p12_type = {
 	nm_setting_802_1x_get_phase2_private_key_scheme,
 	nm_setting_802_1x_get_phase2_private_key_path,
 	nm_setting_802_1x_get_phase2_private_key_blob,
+	nm_setting_802_1x_get_phase2_private_key_uri,
 	"IEEE_8021X_INNER_PRIVATE_KEY",
 	"inner-private-key.p12"
 };
@@ -234,7 +243,7 @@ write_object (NMSetting8021x *s_8021x,
               GError **error)
 {
 	NMSetting8021xCKScheme scheme;
-	const char *path = NULL;
+	const char *value = NULL;
 	GBytes *blob = NULL;
 
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
@@ -248,7 +257,10 @@ write_object (NMSetting8021x *s_8021x,
 		blob = (*(objtype->blob_func))(s_8021x);
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
-		path = (*(objtype->path_func))(s_8021x);
+		value = (*(objtype->path_func))(s_8021x);
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+		value = (*(objtype->uri_func))(s_8021x);
 		break;
 	default:
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
@@ -259,7 +271,7 @@ write_object (NMSetting8021x *s_8021x,
 	/* If certificate/private key wasn't sent, the connection may no longer be
 	 * 802.1x and thus we clear out the paths and certs.
 	 */
-	if (!path && !blob) {
+	if (!value && !blob) {
 		char *standard_file;
 		int ignored;
 
@@ -281,8 +293,8 @@ write_object (NMSetting8021x *s_8021x,
 	/* If the object path was specified, prefer that over any raw cert data that
 	 * may have been sent.
 	 */
-	if (path) {
-		svSetValueString (ifcfg, objtype->ifcfg_key, path);
+	if (value) {
+		svSetValueString (ifcfg, objtype->ifcfg_key, value);
 		return TRUE;
 	}
 
