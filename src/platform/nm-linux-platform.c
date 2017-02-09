@@ -1980,9 +1980,11 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 	if (is_v4)
 		obj->ip4_route.scope_inv = nm_platform_route_scope_inv (rtm->rtm_scope);
 
-	if (is_v4) {
-		if (_check_addr_or_errout (tb, RTA_PREFSRC, addr_len))
+	if (_check_addr_or_errout (tb, RTA_PREFSRC, addr_len)) {
+		if (is_v4)
 			memcpy (&obj->ip4_route.pref_src, nla_data (tb[RTA_PREFSRC]), addr_len);
+		else
+			memcpy (&obj->ip6_route.pref_src, nla_data (tb[RTA_PREFSRC]), addr_len);
 	}
 
 	obj->ip_route.mss = mss;
@@ -5929,7 +5931,7 @@ ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 static gboolean
 ip6_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
                struct in6_addr network, guint8 plen, struct in6_addr gateway,
-               guint32 metric, guint32 mss)
+               struct in6_addr pref_src, guint32 metric, guint32 mss)
 {
 	NMPObject obj_id;
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
@@ -5945,7 +5947,7 @@ ip6_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 	                           &gateway,
 	                           metric,
 	                           mss,
-	                           NULL);
+	                           !IN6_IS_ADDR_UNSPECIFIED (&pref_src) ? &pref_src : NULL);
 
 	nmp_object_stackinit_id_ip6_route (&obj_id, ifindex, &network, plen, metric);
 	return do_add_addrroute (platform, &obj_id, nlmsg);

@@ -358,6 +358,7 @@ struct _NMPlatformIP6Route {
 	__NMPlatformIPRoute_COMMON;
 	struct in6_addr network;
 	struct in6_addr gateway;
+	struct in6_addr pref_src;
 };
 
 typedef union {
@@ -672,7 +673,7 @@ typedef struct {
 	                           in_addr_t pref_src, guint32 metric, guint32 mss);
 	gboolean (*ip6_route_add) (NMPlatform *, int ifindex, NMIPConfigSource source,
 	                           struct in6_addr network, guint8 plen, struct in6_addr gateway,
-	                           guint32 metric, guint32 mss);
+	                           struct in6_addr pref_src, guint32 metric, guint32 mss);
 	gboolean (*ip4_route_delete) (NMPlatform *, int ifindex, in_addr_t network, guint8 plen, guint32 metric);
 	gboolean (*ip6_route_delete) (NMPlatform *, int ifindex, struct in6_addr network, guint8 plen, guint32 metric);
 	const NMPlatformIP4Route *(*ip4_route_get) (NMPlatform *, int ifindex, in_addr_t network, guint8 plen, guint32 metric);
@@ -974,7 +975,7 @@ gboolean nm_platform_ip4_route_add (NMPlatform *self, int ifindex, NMIPConfigSou
                                     in_addr_t pref_src, guint32 metric, guint32 mss);
 gboolean nm_platform_ip6_route_add (NMPlatform *self, int ifindex, NMIPConfigSource source,
                                     struct in6_addr network, guint8 plen, struct in6_addr gateway,
-                                    guint32 metric, guint32 mss);
+                                    struct in6_addr pref_src, guint32 metric, guint32 mss);
 gboolean nm_platform_ip4_route_delete (NMPlatform *self, int ifindex, in_addr_t network, guint8 plen, guint32 metric);
 gboolean nm_platform_ip6_route_delete (NMPlatform *self, int ifindex, struct in6_addr network, guint8 plen, guint32 metric);
 

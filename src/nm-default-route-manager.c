@@ -317,6 +317,7 @@ _platform_route_sync_add (const VTableIP *vtable, NMDefaultRouteManager *self, g
 		                                     in6addr_any,
 		                                     0,
 		                                     entry->route.r6.gateway,
+		                                     entry->route.r6.pref_src,
 		                                     entry->effective_metric,
 		                                     entry->route.rx.mss);
 	}

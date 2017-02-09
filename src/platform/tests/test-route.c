@@ -238,36 +238,41 @@ test_ip6_route (void)
 	NMPlatformIP6Route rts[3];
 	struct in6_addr network;
 	guint8 plen = 64;
-	struct in6_addr gateway;
+	struct in6_addr gateway, pref_src;
 	/* Choose a high metric so that we hopefully don't conflict. */
 	int metric = 22987;
 	int mss = 1000;
 
 	inet_pton (AF_INET6, "2001:db8:a:b:0:0:0:0", &network);
 	inet_pton (AF_INET6, "2001:db8:c:d:1:2:3:4", &gateway);
+	inet_pton (AF_INET6, "::42", &pref_src);
+
+	g_assert (nm_platform_ip6_address_add (NM_PLATFORM_GET, ifindex, pref_src, 128, in6addr_any,
+	                                       NM_PLATFORM_LIFETIME_PERMANENT, NM_PLATFORM_LIFETIME_PERMANENT, 0));
+	accept_signals (route_added, 0, 1);
 
 	/* Add route to gateway */
-	g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, gateway, 128, in6addr_any, metric, mss));
+	g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, gateway, 128, in6addr_any, in6addr_any, metric, mss));
 	accept_signal (route_added);
 
 	/* Add route */
 	g_assert (!nm_platform_ip6_route_get (NM_PLATFORM_GET, ifindex, network, plen, metric));
-	g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, metric, mss));
+	g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, pref_src, metric, mss));
 	g_assert (nm_platform_ip6_route_get (NM_PLATFORM_GET, ifindex, network, plen, metric));
 	accept_signal (route_added);
 
 	/* Add route again */
-	g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, metric, mss));
+	g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, pref_src, metric, mss));
 	accept_signals (route_changed, 0, 1);
 
 	/* Add default route */
 	g_assert (!nm_platform_ip6_route_get (NM_PLATFORM_GET, ifindex, in6addr_any, 0, metric));
-	g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, in6addr_any, 0, gateway, metric, mss));
+	g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, in6addr_any, 0, gateway, in6addr_any, metric, mss));
 	g_assert (nm_platform_ip6_route_get (NM_PLATFORM_GET, ifindex, in6addr_any, 0, metric));
 	accept_signal (route_added);
 
 	/* Add default route again */
-	g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, in6addr_any, 0, gateway, metric, mss));
+	g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, in6addr_any, 0, gateway, in6addr_any, metric, mss));
 	accept_signals (route_changed, 0, 1);
 
 	/* Test route listing */
@@ -278,6 +283,7 @@ test_ip6_route (void)
 	rts[0].plen = 128;
 	rts[0].ifindex = ifindex;
 	rts[0].gateway = in6addr_any;
+	rts[0].pref_src = in6addr_any;
 	rts[0].metric = nm_utils_ip6_route_metric_normalize (metric);
 	rts[0].mss = mss;
 	rts[1].rt_source = nmp_utils_ip_config_source_round_trip_rtprot (NM_IP_CONFIG_SOURCE_USER);
@@ -285,6 +291,7 @@ test_ip6_route (void)
 	rts[1].plen = plen;
 	rts[1].ifindex = ifindex;
 	rts[1].gateway = gateway;
+	rts[1].pref_src = pref_src;
 	rts[1].metric = nm_utils_ip6_route_metric_normalize (metric);
 	rts[1].mss = mss;
 	rts[2].rt_source = nmp_utils_ip_config_source_round_trip_rtprot (NM_IP_CONFIG_SOURCE_USER);
@@ -292,6 +299,7 @@ test_ip6_route (void)
 	rts[2].plen = 0;
 	rts[2].ifindex = ifindex;
 	rts[2].gateway = gateway;
+	rts[2].pref_src = in6addr_any;
 	rts[2].metric = nm_utils_ip6_route_metric_normalize (metric);
 	rts[2].mss = mss;
 	g_assert_cmpint (routes->len, ==, 3);

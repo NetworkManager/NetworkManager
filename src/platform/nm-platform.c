@@ -3168,7 +3168,7 @@ gboolean
 nm_platform_ip6_route_add (NMPlatform *self,
                            int ifindex, NMIPConfigSource source,
                            struct in6_addr network, guint8 plen, struct in6_addr gateway,
-                           guint32 metric, guint32 mss)
+                           struct in6_addr pref_src, guint32 metric, guint32 mss)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
@@ -3182,12 +3182,13 @@ nm_platform_ip6_route_add (NMPlatform *self,
 		route.network = network;
 		route.plen = plen;
 		route.gateway = gateway;
+		route.pref_src = pref_src;
 		route.metric = metric;
 		route.mss = mss;
 
 		_LOGD ("route: adding or updating IPv6 route: %s", nm_platform_ip6_route_to_string (&route, NULL, 0));
 	}
-	return klass->ip6_route_add (self, ifindex, source, network, plen, gateway, metric, mss);
+	return klass->ip6_route_add (self, ifindex, source, network, plen, gateway, pref_src, metric, mss);
 }
 
 gboolean
@@ -3950,14 +3951,19 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsi
 const char *
 nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsize len)
 {
-	char s_network[INET6_ADDRSTRLEN], s_gateway[INET6_ADDRSTRLEN];
+	char s_network[INET6_ADDRSTRLEN], s_gateway[INET6_ADDRSTRLEN], s_pref_src[INET6_ADDRSTRLEN];
 	char str_dev[TO_STRING_DEV_BUF_SIZE], s_source[50];
 
 	if (!nm_utils_to_string_buffer_init_null (route, &buf, &len))
 		return buf;
 
-	inet_ntop (AF_INET6, &route->network, s_network, sizeof(s_network));
-	inet_ntop (AF_INET6, &route->gateway, s_gateway, sizeof(s_gateway));
+	inet_ntop (AF_INET6, &route->network, s_network, sizeof (s_network));
+	inet_ntop (AF_INET6, &route->gateway, s_gateway, sizeof (s_gateway));
+
+	if (IN6_IS_ADDR_UNSPECIFIED (&route->pref_src))
+		s_pref_src[0] = 0;
+	else
+		inet_ntop (AF_INET6, &route->pref_src, s_pref_src, sizeof (s_pref_src));
 
 	_to_string_dev (NULL, route->ifindex, str_dev, sizeof (str_dev));
 
@@ -3969,6 +3975,7 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	            " mss %"G_GUINT32_FORMAT
 	            " src %s" /* source */
 	            "%s" /* cloned */
+	            "%s%s" /* pref-src */
 	            "",
 	            s_network,
 	            route->plen,
@@ -3977,7 +3984,9 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	            route->metric,
 	            route->mss,
 	            nmp_utils_ip_config_source_to_string (route->rt_source, s_source, sizeof (s_source)),
-	            route->rt_cloned ? " cloned" : "");
+	            route->rt_cloned ? " cloned" : "",
+	            s_pref_src[0] ? " pref-src " : "",
+	            s_pref_src[0] ? s_pref_src : "");
 	return buf;
 }
 
@@ -4278,6 +4287,7 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 	_CMP_FIELD (a, b, plen);
 	_CMP_FIELD (a, b, metric);
 	_CMP_FIELD_MEMCMP (a, b, gateway);
+	_CMP_FIELD_MEMCMP (a, b, pref_src);
 	_CMP_FIELD (a, b, rt_source);
 	_CMP_FIELD (a, b, mss);
 	_CMP_FIELD (a, b, rt_cloned);
@@ -4431,6 +4441,7 @@ _vtr_v6_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *rout
 	                                  route->r6.network,
 	                                  route->rx.plen,
 	                                  route->r6.gateway,
+	                                  route->r6.pref_src,
 	                                  metric >= 0 ? (guint32) metric : route->rx.metric,
 	                                  route->rx.mss);
 }

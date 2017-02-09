@@ -427,6 +427,7 @@ setup_dev1_ip6 (int ifindex)
 	                                *nmtst_inet6_from_string ("2001:db8:8088::"),
 	                                48,
 	                                in6addr_any,
+	                                in6addr_any,
 	                                10,
 	                                0))
 		g_assert_not_reached ();

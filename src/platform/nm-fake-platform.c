@@ -1295,7 +1295,7 @@ ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 static gboolean
 ip6_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
                struct in6_addr network, guint8 plen, struct in6_addr gateway,
-               guint32 metric, guint32 mss)
+               struct in6_addr pref_src, guint32 metric, guint32 mss)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
 	NMPlatformIP6Route route;
@@ -1311,6 +1311,7 @@ ip6_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 	route.gateway = gateway;
 	route.metric = metric;
 	route.mss = mss;
+	route.pref_src = pref_src;
 
 	if (!IN6_IS_ADDR_UNSPECIFIED(&gateway)) {
 		for (i = 0; i < priv->ip6_routes->len; i++) {
