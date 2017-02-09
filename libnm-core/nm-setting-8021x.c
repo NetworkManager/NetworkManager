@@ -2732,9 +2732,13 @@ need_secrets_sim (NMSetting8021x *self,
 static gboolean
 need_private_key_password (GBytes *blob,
                            const char *path,
-                           const char *password)
+                           const char *password,
+                           NMSettingSecretFlags flags)
 {
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+
+	if (flags & NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
+		return FALSE;
 
 	/* Private key password is required */
 	if (password) {
@@ -2745,7 +2749,7 @@ need_private_key_password (GBytes *blob,
 			                                         g_bytes_get_size (blob),
 			                                         password, NULL, NULL);
 		else
-			g_warning ("%s: unknown private key password scheme", __func__);
+			return FALSE;
 	}
 
 	return (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN);
@@ -2765,34 +2769,52 @@ need_secrets_tls (NMSetting8021x *self,
 		scheme = nm_setting_802_1x_get_phase2_private_key_scheme (self);
 		if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 			path = nm_setting_802_1x_get_phase2_private_key_path (self);
-		else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11)
-			return;
 		else if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
 			blob = nm_setting_802_1x_get_phase2_private_key_blob (self);
-		else {
+		else if (scheme != NM_SETTING_802_1X_CK_SCHEME_PKCS11)
 			g_warning ("%s: unknown phase2 private key scheme %d", __func__, scheme);
-			g_ptr_array_add (secrets, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
-			return;
-		}
 
-		if (need_private_key_password (blob, path, priv->phase2_private_key_password))
+		if (need_private_key_password (blob, path,
+		                               priv->phase2_private_key_password,
+		                               priv->phase2_private_key_password_flags))
 			g_ptr_array_add (secrets, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD);
+
+		scheme = nm_setting_802_1x_get_phase2_ca_cert_scheme (self);
+		if (    scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11
+		    && !(priv->phase2_ca_cert_password_flags & NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
+		    && !priv->phase2_ca_cert_password)
+			g_ptr_array_add (secrets, NM_SETTING_802_1X_PHASE2_CA_CERT_PASSWORD);
+
+		scheme = nm_setting_802_1x_get_phase2_client_cert_scheme (self);
+		if (    scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11
+		    && !(priv->phase2_client_cert_password_flags & NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
+		    && !priv->phase2_client_cert_password)
+			g_ptr_array_add (secrets, NM_SETTING_802_1X_PHASE2_CLIENT_CERT_PASSWORD);
 	} else {
 		scheme = nm_setting_802_1x_get_private_key_scheme (self);
 		if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 			path = nm_setting_802_1x_get_private_key_path (self);
-		else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11)
-			return;
 		else if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
 			blob = nm_setting_802_1x_get_private_key_blob (self);
-		else {
+		else if (scheme != NM_SETTING_802_1X_CK_SCHEME_PKCS11)
 			g_warning ("%s: unknown private key scheme %d", __func__, scheme);
-			g_ptr_array_add (secrets, NM_SETTING_802_1X_PRIVATE_KEY);
-			return;
-		}
 
-		if (need_private_key_password (blob, path, priv->private_key_password))
+		if (need_private_key_password (blob, path,
+		                               priv->private_key_password,
+		                               priv->private_key_password_flags))
 			g_ptr_array_add (secrets, NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD);
+
+		scheme = nm_setting_802_1x_get_ca_cert_scheme (self);
+		if (    scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11
+		    && !(priv->ca_cert_password_flags & NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
+		    && !priv->ca_cert_password)
+			g_ptr_array_add (secrets, NM_SETTING_802_1X_CA_CERT_PASSWORD);
+
+		scheme = nm_setting_802_1x_get_client_cert_scheme (self);
+		if (    scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11
+		    && !(priv->client_cert_password_flags & NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
+		    && !priv->client_cert_password)
+			g_ptr_array_add (secrets, NM_SETTING_802_1X_CLIENT_CERT_PASSWORD);
 	}
 }
 
