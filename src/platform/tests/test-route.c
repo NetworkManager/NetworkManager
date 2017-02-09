@@ -94,7 +94,7 @@ test_ip4_route_metric0 (void)
 	nmtstp_assert_ip4_route_exists (NULL, FALSE, DEVICE_NAME, network, plen, metric);
 
 	/* add the first route */
-	g_assert (nm_platform_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, INADDR_ANY, 0, metric, mss));
+	nmtstp_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, INADDR_ANY, 0, metric, mss);
 	accept_signal (route_added);
 
 	nmtstp_assert_ip4_route_exists (NULL, FALSE, DEVICE_NAME, network, plen, 0);
@@ -108,7 +108,7 @@ test_ip4_route_metric0 (void)
 	nmtstp_assert_ip4_route_exists (NULL, TRUE,  DEVICE_NAME, network, plen, metric);
 
 	/* add the second route */
-	g_assert (nm_platform_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, INADDR_ANY, 0, 0, mss));
+	nmtstp_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, INADDR_ANY, 0, 0, mss);
 	accept_signal (route_added);
 
 	nmtstp_assert_ip4_route_exists (NULL, TRUE,  DEVICE_NAME, network, plen, 0);
@@ -160,27 +160,27 @@ test_ip4_route (void)
 	inet_pton (AF_INET, "198.51.100.1", &gateway);
 
 	/* Add route to gateway */
-	g_assert (nm_platform_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, gateway, 32, INADDR_ANY, 0, metric, mss));
+	nmtstp_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, gateway, 32, INADDR_ANY, 0, metric, mss);
 	accept_signal (route_added);
 
 	/* Add route */
 	nmtstp_assert_ip4_route_exists (NULL, FALSE, DEVICE_NAME, network, plen, metric);
-	g_assert (nm_platform_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, 0, metric, mss));
+	nmtstp_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, 0, metric, mss);
 	nmtstp_assert_ip4_route_exists (NULL, TRUE, DEVICE_NAME, network, plen, metric);
 	accept_signal (route_added);
 
 	/* Add route again */
-	g_assert (nm_platform_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, 0, metric, mss));
+	nmtstp_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, 0, metric, mss);
 	accept_signals (route_changed, 0, 1);
 
 	/* Add default route */
 	nmtstp_assert_ip4_route_exists (NULL, FALSE, DEVICE_NAME, 0, 0, metric);
-	g_assert (nm_platform_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, 0, 0, gateway, 0, metric, mss));
+	nmtstp_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, 0, 0, gateway, 0, metric, mss);
 	nmtstp_assert_ip4_route_exists (NULL, TRUE, DEVICE_NAME, 0, 0, metric);
 	accept_signal (route_added);
 
 	/* Add default route again */
-	g_assert (nm_platform_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, 0, 0, gateway, 0, metric, mss));
+	nmtstp_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, 0, 0, gateway, 0, metric, mss);
 	accept_signals (route_changed, 0, 1);
 
 	/* Test route listing */
@@ -252,27 +252,27 @@ test_ip6_route (void)
 	accept_signals (route_added, 0, 1);
 
 	/* Add route to gateway */
-	g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, gateway, 128, in6addr_any, in6addr_any, metric, mss));
+	nmtstp_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, gateway, 128, in6addr_any, in6addr_any, metric, mss);
 	accept_signal (route_added);
 
 	/* Add route */
 	g_assert (!nm_platform_ip6_route_get (NM_PLATFORM_GET, ifindex, network, plen, metric));
-	g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, pref_src, metric, mss));
+	nmtstp_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, pref_src, metric, mss);
 	g_assert (nm_platform_ip6_route_get (NM_PLATFORM_GET, ifindex, network, plen, metric));
 	accept_signal (route_added);
 
 	/* Add route again */
-	g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, pref_src, metric, mss));
+	nmtstp_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, pref_src, metric, mss);
 	accept_signals (route_changed, 0, 1);
 
 	/* Add default route */
 	g_assert (!nm_platform_ip6_route_get (NM_PLATFORM_GET, ifindex, in6addr_any, 0, metric));
-	g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, in6addr_any, 0, gateway, in6addr_any, metric, mss));
+	nmtstp_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, in6addr_any, 0, gateway, in6addr_any, metric, mss);
 	g_assert (nm_platform_ip6_route_get (NM_PLATFORM_GET, ifindex, in6addr_any, 0, metric));
 	accept_signal (route_added);
 
 	/* Add default route again */
-	g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, in6addr_any, 0, gateway, in6addr_any, metric, mss));
+	nmtstp_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, in6addr_any, 0, gateway, in6addr_any, metric, mss);
 	accept_signals (route_changed, 0, 1);
 
 	/* Test route listing */

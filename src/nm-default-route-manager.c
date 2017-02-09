@@ -301,25 +301,21 @@ _platform_route_sync_add (const VTableIP *vtable, NMDefaultRouteManager *self, g
 		return FALSE;
 
 	if (vtable->vt->is_ip4) {
-		success = nm_platform_ip4_route_add (priv->platform,
-		                                     entry->route.rx.ifindex,
-		                                     entry->route.rx.rt_source,
-		                                     0,
-		                                     0,
-		                                     entry->route.r4.gateway,
-		                                     0,
-		                                     entry->effective_metric,
-		                                     entry->route.rx.mss);
+		NMPlatformIP4Route rt = entry->route.r4;
+
+		rt.network = 0;
+		rt.plen = 0;
+		rt.metric = entry->effective_metric;
+
+		success = nm_platform_ip4_route_add (priv->platform, &rt);
 	} else {
-		success = nm_platform_ip6_route_add (priv->platform,
-		                                     entry->route.rx.ifindex,
-		                                     entry->route.rx.rt_source,
-		                                     in6addr_any,
-		                                     0,
-		                                     entry->route.r6.gateway,
-		                                     entry->route.r6.pref_src,
-		                                     entry->effective_metric,
-		                                     entry->route.rx.mss);
+		NMPlatformIP6Route rt = entry->route.r6;
+
+		rt.network = in6addr_any;
+		rt.plen = 0;
+		rt.metric = entry->effective_metric;
+
+		success = nm_platform_ip6_route_add (priv->platform, &rt);
 	}
 	if (!success) {
 		_LOGW (vtable->vt->addr_family, "failed to add default route %s with effective metric %u",

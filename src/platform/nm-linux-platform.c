@@ -5904,52 +5904,56 @@ ip6_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteFlags fl
 }
 
 static gboolean
-ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
-               in_addr_t network, guint8 plen, in_addr_t gateway,
-               in_addr_t pref_src, guint32 metric, guint32 mss)
+ip4_route_add (NMPlatform *platform, const NMPlatformIP4Route *route)
 {
 	NMPObject obj_id;
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+	in_addr_t network;
 
+	network = nm_utils_ip4_address_clear_host_address (route->network, route->plen);
+
+	/* FIXME: take the scope from route into account */
 	nlmsg = _nl_msg_new_route (RTM_NEWROUTE,
 	                           NLM_F_CREATE | NLM_F_REPLACE,
 	                           AF_INET,
-	                           ifindex,
-	                           source,
-	                           gateway ? RT_SCOPE_UNIVERSE : RT_SCOPE_LINK,
+	                           route->ifindex,
+	                           route->rt_source,
+	                           route->gateway ? RT_SCOPE_UNIVERSE : RT_SCOPE_LINK,
 	                           &network,
-	                           plen,
-	                           &gateway,
-	                           metric,
-	                           mss,
-	                           pref_src ? &pref_src : NULL);
+	                           route->plen,
+	                           &route->gateway,
+	                           route->metric,
+	                           route->mss,
+	                           route->pref_src ? &route->pref_src : NULL);
 
-	nmp_object_stackinit_id_ip4_route (&obj_id, ifindex, network, plen, metric);
+	nmp_object_stackinit_id_ip4_route (&obj_id, route->ifindex, network, route->plen, route->metric);
 	return do_add_addrroute (platform, &obj_id, nlmsg);
 }
 
 static gboolean
-ip6_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
-               struct in6_addr network, guint8 plen, struct in6_addr gateway,
-               struct in6_addr pref_src, guint32 metric, guint32 mss)
+ip6_route_add (NMPlatform *platform, const NMPlatformIP6Route *route)
 {
 	NMPObject obj_id;
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+	struct in6_addr network;
 
+	nm_utils_ip6_address_clear_host_address (&network, &route->network, route->plen);
+
+	/* FIXME: take the scope from route into account */
 	nlmsg = _nl_msg_new_route (RTM_NEWROUTE,
 	                           NLM_F_CREATE | NLM_F_REPLACE,
 	                           AF_INET6,
-	                           ifindex,
-	                           source,
-	                           !IN6_IS_ADDR_UNSPECIFIED (&gateway) ? RT_SCOPE_UNIVERSE : RT_SCOPE_LINK,
+	                           route->ifindex,
+	                           route->rt_source,
+	                           IN6_IS_ADDR_UNSPECIFIED (&route->gateway) ? RT_SCOPE_LINK : RT_SCOPE_UNIVERSE,
 	                           &network,
-	                           plen,
-	                           &gateway,
-	                           metric,
-	                           mss,
-	                           !IN6_IS_ADDR_UNSPECIFIED (&pref_src) ? &pref_src : NULL);
+	                           route->plen,
+	                           &route->gateway,
+	                           route->metric,
+	                           route->mss,
+	                           !IN6_IS_ADDR_UNSPECIFIED (&route->pref_src) ? &route->pref_src : NULL);
 
-	nmp_object_stackinit_id_ip6_route (&obj_id, ifindex, &network, plen, metric);
+	nmp_object_stackinit_id_ip6_route (&obj_id, route->ifindex, &network, route->plen, route->metric);
 	return do_add_addrroute (platform, &obj_id, nlmsg);
 }
 

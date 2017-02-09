@@ -3109,14 +3109,7 @@ nm_platform_ip6_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRoute
 /**
  * nm_platform_ip4_route_add:
  * @self:
- * @ifindex:
- * @source:
- * network:
- * plen:
- * gateway:
- * pref_src:
- * metric:
- * mss:
+ * @route:
  *
  * For kernel, a gateway can be either explicitly set or left
  * at zero (0.0.0.0). In addition, there is the scope of the IPv4
@@ -3137,58 +3130,29 @@ nm_platform_ip6_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRoute
  * Returns: %TRUE in case of success.
  */
 gboolean
-nm_platform_ip4_route_add (NMPlatform *self,
-                           int ifindex, NMIPConfigSource source,
-                           in_addr_t network, guint8 plen,
-                           in_addr_t gateway, in_addr_t pref_src,
-                           guint32 metric, guint32 mss)
+nm_platform_ip4_route_add (NMPlatform *self, const NMPlatformIP4Route *route)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
-	g_return_val_if_fail (plen <= 32, FALSE);
+	g_return_val_if_fail (route, FALSE);
+	g_return_val_if_fail (route->plen <= 32, FALSE);
 
-	if (_LOGD_ENABLED ()) {
-		NMPlatformIP4Route route = { 0 };
+	_LOGD ("route: adding or updating IPv4 route: %s", nm_platform_ip4_route_to_string (route, NULL, 0));
 
-		route.ifindex = ifindex;
-		route.rt_source = source;
-		route.network = network;
-		route.plen = plen;
-		route.gateway = gateway;
-		route.metric = metric;
-		route.mss = mss;
-		route.pref_src = pref_src;
-
-		_LOGD ("route: adding or updating IPv4 route: %s", nm_platform_ip4_route_to_string (&route, NULL, 0));
-	}
-	return klass->ip4_route_add (self, ifindex, source, network, plen, gateway, pref_src, metric, mss);
+	return klass->ip4_route_add (self, route);
 }
 
 gboolean
-nm_platform_ip6_route_add (NMPlatform *self,
-                           int ifindex, NMIPConfigSource source,
-                           struct in6_addr network, guint8 plen, struct in6_addr gateway,
-                           struct in6_addr pref_src, guint32 metric, guint32 mss)
+nm_platform_ip6_route_add (NMPlatform *self, const NMPlatformIP6Route *route)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
-	g_return_val_if_fail (plen <= 128, FALSE);
+	g_return_val_if_fail (route, FALSE);
+	g_return_val_if_fail (route->plen <= 128, FALSE);
 
-	if (_LOGD_ENABLED ()) {
-		NMPlatformIP6Route route = { 0 };
+	_LOGD ("route: adding or updating IPv6 route: %s", nm_platform_ip6_route_to_string (route, NULL, 0));
 
-		route.ifindex = ifindex;
-		route.rt_source = source;
-		route.network = network;
-		route.plen = plen;
-		route.gateway = gateway;
-		route.pref_src = pref_src;
-		route.metric = metric;
-		route.mss = mss;
-
-		_LOGD ("route: adding or updating IPv6 route: %s", nm_platform_ip6_route_to_string (&route, NULL, 0));
-	}
-	return klass->ip6_route_add (self, ifindex, source, network, plen, gateway, pref_src, metric, mss);
+	return klass->ip6_route_add (self, route);
 }
 
 gboolean
@@ -4421,29 +4385,27 @@ nm_platform_netns_push (NMPlatform *platform, NMPNetns **netns)
 static gboolean
 _vtr_v4_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route, gint64 metric)
 {
-	return nm_platform_ip4_route_add (self,
-	                                  ifindex > 0 ? ifindex : route->rx.ifindex,
-	                                  route->rx.rt_source,
-	                                  route->r4.network,
-	                                  route->rx.plen,
-	                                  route->r4.gateway,
-	                                  route->r4.pref_src,
-	                                  metric >= 0 ? (guint32) metric : route->rx.metric,
-	                                  route->rx.mss);
+	NMPlatformIP4Route rt = route->r4;
+
+	if (ifindex > 0)
+		rt.ifindex = ifindex;
+	if (metric >= 0)
+		rt.metric = metric;
+
+	return nm_platform_ip4_route_add (self, &rt);
 }
 
 static gboolean
 _vtr_v6_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route, gint64 metric)
 {
-	return nm_platform_ip6_route_add (self,
-	                                  ifindex > 0 ? ifindex : route->rx.ifindex,
-	                                  route->rx.rt_source,
-	                                  route->r6.network,
-	                                  route->rx.plen,
-	                                  route->r6.gateway,
-	                                  route->r6.pref_src,
-	                                  metric >= 0 ? (guint32) metric : route->rx.metric,
-	                                  route->rx.mss);
+	NMPlatformIP6Route rt = route->r6;
+
+	if (ifindex > 0)
+		rt.ifindex = ifindex;
+	if (metric >= 0)
+		rt.metric = metric;
+
+	return nm_platform_ip6_route_add (self, &rt);
 }
 
 static gboolean
