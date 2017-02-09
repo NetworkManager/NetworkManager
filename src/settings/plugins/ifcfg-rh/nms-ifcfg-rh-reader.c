@@ -2568,16 +2568,26 @@ eap_tls_reader (const char *eap_method,
 {
 	char *value;
 	char *ca_cert = NULL;
+	char *ca_cert_password = NULL;
 	char *real_cert_value = NULL;
 	char *client_cert = NULL;
+	char *client_cert_password = NULL;
 	char *privkey = NULL;
 	char *privkey_password = NULL;
 	gboolean success = FALSE;
 	NMSetting8021xCKFormat privkey_format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
 	const char *ca_cert_key = phase2 ? "IEEE_8021X_INNER_CA_CERT" : "IEEE_8021X_CA_CERT";
-	const char *pk_pw_key = phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD": "IEEE_8021X_PRIVATE_KEY_PASSWORD";
-	const char *pk_key = phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY" : "IEEE_8021X_PRIVATE_KEY";
+	const char *ca_cert_pw_key = phase2 ? "IEEE_8021X_INNER_CA_CERT_PASSWORD" : "IEEE_8021X_CA_CERT_PASSWORD";
+	const char *ca_cert_pw_prop = phase2 ? NM_SETTING_802_1X_PHASE2_CA_CERT_PASSWORD : NM_SETTING_802_1X_CA_CERT_PASSWORD;
+	const char *ca_cert_pw_flags_key = phase2 ? "IEEE_8021X_INNER_CA_CERT_PASSWORD_FLAGS" : "IEEE_8021X_CA_CERT_PASSWORD_FLAGS";
+	const char *ca_cert_pw_flags_prop = phase2 ? NM_SETTING_802_1X_PHASE2_CA_CERT_PASSWORD_FLAGS : NM_SETTING_802_1X_CA_CERT_PASSWORD_FLAGS;
 	const char *cli_cert_key = phase2 ? "IEEE_8021X_INNER_CLIENT_CERT" : "IEEE_8021X_CLIENT_CERT";
+	const char *cli_cert_pw_key = phase2 ? "IEEE_8021X_INNER_CLIENT_CERT_PASSWORD" : "IEEE_8021X_CLIENT_CERT_PASSWORD";
+	const char *cli_cert_pw_prop = phase2 ? NM_SETTING_802_1X_PHASE2_CLIENT_CERT_PASSWORD : NM_SETTING_802_1X_CLIENT_CERT_PASSWORD;
+	const char *cli_cert_pw_flags_key = phase2 ? "IEEE_8021X_INNER_CLIENT_CERT_PASSWORD_FLAGS" : "IEEE_8021X_CLIENT_CERT_PASSWORD_FLAGS";
+	const char *cli_cert_pw_flags_prop = phase2 ? NM_SETTING_802_1X_PHASE2_CLIENT_CERT_PASSWORD_FLAGS : NM_SETTING_802_1X_CLIENT_CERT_PASSWORD_FLAGS;
+	const char *pk_key = phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY" : "IEEE_8021X_PRIVATE_KEY";
+	const char *pk_pw_key = phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD": "IEEE_8021X_PRIVATE_KEY_PASSWORD";
 	const char *pk_pw_flags_key = phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD_FLAGS": "IEEE_8021X_PRIVATE_KEY_PASSWORD_FLAGS";
 	const char *pk_pw_flags_prop = phase2 ? NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS : NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS;
 	NMSettingSecretFlags flags;
@@ -2601,6 +2611,16 @@ eap_tls_reader (const char *eap_method,
 		}
 		g_free (real_cert_value);
 		real_cert_value = NULL;
+
+		if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
+			flags = read_secret_flags (ifcfg, ca_cert_pw_flags_key);
+			g_object_set (s_8021x, ca_cert_pw_flags_prop, flags, NULL);
+
+			if (flags == NM_SETTING_SECRET_FLAG_NONE) {
+				ca_cert_password = svGetValueString (ifcfg, ca_cert_pw_key);
+				g_object_set (s_8021x, ca_cert_pw_prop, ca_cert_password, NULL);
+			}
+		}
 	} else {
 		PARSE_WARNING ("missing %s for EAP method '%s'; this is insecure!",
 		               ca_cert_key, eap_method);
@@ -2685,6 +2705,16 @@ eap_tls_reader (const char *eap_method,
 		}
 		g_free (real_cert_value);
 		real_cert_value = NULL;
+
+		if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
+			flags = read_secret_flags (ifcfg, cli_cert_pw_flags_key);
+			g_object_set (s_8021x, cli_cert_pw_flags_prop, flags, NULL);
+
+			if (flags == NM_SETTING_SECRET_FLAG_NONE) {
+				client_cert_password = svGetValueString (ifcfg, cli_cert_pw_key);
+				g_object_set (s_8021x, cli_cert_pw_prop, client_cert_password, NULL);
+			}
+		}
 	}
 
 	success = TRUE;

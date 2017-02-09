@@ -152,6 +152,8 @@ typedef struct ObjectType {
 	const char *           (*path_func)  (NMSetting8021x *setting);
 	GBytes *               (*blob_func)  (NMSetting8021x *setting);
 	const char *           (*uri_func)   (NMSetting8021x *setting);
+	const char *           (*passwd_func)(NMSetting8021x *setting);
+	NMSettingSecretFlags   (*pwflag_func)(NMSetting8021x *setting);
 	const char *ifcfg_key;
 	const char *suffix;
 } ObjectType;
@@ -162,6 +164,8 @@ static const ObjectType ca_type = {
 	nm_setting_802_1x_get_ca_cert_path,
 	nm_setting_802_1x_get_ca_cert_blob,
 	nm_setting_802_1x_get_ca_cert_uri,
+	nm_setting_802_1x_get_ca_cert_password,
+	nm_setting_802_1x_get_ca_cert_password_flags,
 	"IEEE_8021X_CA_CERT",
 	"ca-cert.der"
 };
@@ -172,6 +176,8 @@ static const ObjectType phase2_ca_type = {
 	nm_setting_802_1x_get_phase2_ca_cert_path,
 	nm_setting_802_1x_get_phase2_ca_cert_blob,
 	nm_setting_802_1x_get_phase2_ca_cert_uri,
+	nm_setting_802_1x_get_phase2_ca_cert_password,
+	nm_setting_802_1x_get_phase2_ca_cert_password_flags,
 	"IEEE_8021X_INNER_CA_CERT",
 	"inner-ca-cert.der"
 };
@@ -182,6 +188,8 @@ static const ObjectType client_type = {
 	nm_setting_802_1x_get_client_cert_path,
 	nm_setting_802_1x_get_client_cert_blob,
 	nm_setting_802_1x_get_client_cert_uri,
+	nm_setting_802_1x_get_client_cert_password,
+	nm_setting_802_1x_get_client_cert_password_flags,
 	"IEEE_8021X_CLIENT_CERT",
 	"client-cert.der"
 };
@@ -192,6 +200,8 @@ static const ObjectType phase2_client_type = {
 	nm_setting_802_1x_get_phase2_client_cert_path,
 	nm_setting_802_1x_get_phase2_client_cert_blob,
 	nm_setting_802_1x_get_phase2_client_cert_uri,
+	nm_setting_802_1x_get_phase2_client_cert_password,
+	nm_setting_802_1x_get_phase2_client_cert_password_flags,
 	"IEEE_8021X_INNER_CLIENT_CERT",
 	"inner-client-cert.der"
 };
@@ -202,6 +212,8 @@ static const ObjectType pk_type = {
 	nm_setting_802_1x_get_private_key_path,
 	nm_setting_802_1x_get_private_key_blob,
 	nm_setting_802_1x_get_private_key_uri,
+	nm_setting_802_1x_get_private_key_password,
+	nm_setting_802_1x_get_private_key_password_flags,
 	"IEEE_8021X_PRIVATE_KEY",
 	"private-key.pem"
 };
@@ -212,6 +224,8 @@ static const ObjectType phase2_pk_type = {
 	nm_setting_802_1x_get_phase2_private_key_path,
 	nm_setting_802_1x_get_phase2_private_key_blob,
 	nm_setting_802_1x_get_phase2_private_key_uri,
+	nm_setting_802_1x_get_phase2_private_key_password,
+	nm_setting_802_1x_get_phase2_private_key_password_flags,
 	"IEEE_8021X_INNER_PRIVATE_KEY",
 	"inner-private-key.pem"
 };
@@ -222,6 +236,8 @@ static const ObjectType p12_type = {
 	nm_setting_802_1x_get_private_key_path,
 	nm_setting_802_1x_get_private_key_blob,
 	nm_setting_802_1x_get_private_key_uri,
+	nm_setting_802_1x_get_private_key_password,
+	nm_setting_802_1x_get_private_key_password_flags,
 	"IEEE_8021X_PRIVATE_KEY",
 	"private-key.p12"
 };
@@ -232,6 +248,8 @@ static const ObjectType phase2_p12_type = {
 	nm_setting_802_1x_get_phase2_private_key_path,
 	nm_setting_802_1x_get_phase2_private_key_blob,
 	nm_setting_802_1x_get_phase2_private_key_uri,
+	nm_setting_802_1x_get_phase2_private_key_password,
+	nm_setting_802_1x_get_phase2_private_key_password_flags,
 	"IEEE_8021X_INNER_PRIVATE_KEY",
 	"inner-private-key.p12"
 };
@@ -245,6 +263,9 @@ write_object (NMSetting8021x *s_8021x,
 	NMSetting8021xCKScheme scheme;
 	const char *value = NULL;
 	GBytes *blob = NULL;
+	const char *password = NULL;
+	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
+	char *secret_name, *secret_flags;
 
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
 	g_return_val_if_fail (objtype != NULL, FALSE);
@@ -267,6 +288,15 @@ write_object (NMSetting8021x *s_8021x,
 		             "Unhandled certificate object scheme");
 		return FALSE;
 	}
+
+	/* Set the password for certificate/private key. */
+	secret_name = g_strdup_printf ("%s_PASSWORD", objtype->ifcfg_key);
+	secret_flags = g_strdup_printf ("%s_PASSWORD_FLAGS", objtype->ifcfg_key);
+	password = (*(objtype->passwd_func))(s_8021x);
+	flags = (*(objtype->pwflag_func))(s_8021x);
+	set_secret (ifcfg, secret_name, password, secret_flags, flags);
+	g_free (secret_name);
+	g_free (secret_flags);
 
 	/* If certificate/private key wasn't sent, the connection may no longer be
 	 * 802.1x and thus we clear out the paths and certs.
@@ -344,10 +374,8 @@ write_8021x_certs (NMSetting8021x *s_8021x,
                    shvarFile *ifcfg,
                    GError **error)
 {
-	const char *password = NULL;
 	gboolean success = FALSE, is_pkcs12 = FALSE;
 	const ObjectType *otype = NULL;
-	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
 
 	/* CA certificate */
 	if (!write_object (s_8021x, ifcfg, phase2 ? &phase2_ca_type : &ca_type, error))
@@ -360,36 +388,17 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 			otype = &phase2_p12_type;
 			is_pkcs12 = TRUE;
 		}
-		password = nm_setting_802_1x_get_phase2_private_key_password (s_8021x);
-		flags = nm_setting_802_1x_get_phase2_private_key_password_flags (s_8021x);
 	} else {
 		otype = &pk_type;
 		if (nm_setting_802_1x_get_private_key_format (s_8021x) == NM_SETTING_802_1X_CK_FORMAT_PKCS12) {
 			otype = &p12_type;
 			is_pkcs12 = TRUE;
 		}
-		password = nm_setting_802_1x_get_private_key_password (s_8021x);
-		flags = nm_setting_802_1x_get_private_key_password_flags (s_8021x);
 	}
 
 	/* Save the private key */
 	if (!write_object (s_8021x, ifcfg, otype, error))
 		goto out;
-
-	/* Private key password */
-	if (phase2) {
-		set_secret (ifcfg,
-		            "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD",
-		            password,
-		            "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD_FLAGS",
-		            flags);
-	} else {
-		set_secret (ifcfg,
-		            "IEEE_8021X_PRIVATE_KEY_PASSWORD",
-		            password,
-		            "IEEE_8021X_PRIVATE_KEY_PASSWORD_FLAGS",
-		            flags);
-	}
 
 	/* Client certificate */
 	if (is_pkcs12) {
