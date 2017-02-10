@@ -423,29 +423,34 @@ find_ac_for_connection (NMManager *manager, NMConnection *connection)
 	return NULL;
 }
 
+static gboolean
+_get_activatable_connections_filter (NMSettings *settings,
+                                     NMSettingsConnection *connection,
+                                     gpointer user_data)
+{
+	return !find_ac_for_connection (user_data, NM_CONNECTION (connection));
+}
+
 /* Filter out connections that are already active.
  * nm_settings_get_connections_sorted() returns sorted list. We need to preserve the
  * order so that we didn't change auto-activation order (recent timestamps
  * are first).
  * Caller is responsible for freeing the returned list with g_slist_free().
  */
-GSList *
-nm_manager_get_activatable_connections (NMManager *manager)
+NMSettingsConnection **
+nm_manager_get_activatable_connections (NMManager *manager, guint *out_len, gboolean sort)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	GSList *all_connections = nm_settings_get_connections_sorted (priv->settings);
-	GSList *connections = NULL, *iter;
-	NMSettingsConnection *connection;
+	NMSettingsConnection **connections;
+	guint len;
 
-	for (iter = all_connections; iter; iter = iter->next) {
-		connection = iter->data;
-
-		if (!find_ac_for_connection (manager, NM_CONNECTION (connection)))
-			connections = g_slist_prepend (connections, connection);
-	}
-
-	g_slist_free (all_connections);
-	return g_slist_reverse (connections);
+	connections = nm_settings_get_connections_clone (priv->settings, &len,
+	                                                 _get_activatable_connections_filter,
+	                                                 manager);
+	if (sort && len > 1)
+		g_qsort_with_data (connections, len, sizeof (connections[0]), nm_settings_connection_cmp_autoconnect_priority_p_with_data, NULL);
+	NM_SET_OUT (out_len, len);
+	return connections;
 }
 
 static NMActiveConnection *
@@ -1205,7 +1210,8 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDeviceFactory *factory;
-	gs_free_slist GSList *connections = NULL;
+	gs_free NMSettingsConnection **connections = NULL;
+	guint i;
 	GSList *iter;
 	gs_free char *iface = NULL;
 	NMDevice *device = NULL, *parent = NULL;
@@ -1276,9 +1282,9 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	}
 
 	/* Create backing resources if the device has any autoconnect connections */
-	connections = nm_settings_get_connections_sorted (priv->settings);
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *candidate = iter->data;
+	connections = nm_settings_get_connections_sorted (priv->settings, NULL);
+	for (i = 0; connections[i]; i++) {
+		NMConnection *candidate = NM_CONNECTION (connections[i]);
 		NMSettingConnection *s_con;
 
 		if (!nm_device_check_connection_compatible (device, candidate))
@@ -1307,13 +1313,14 @@ static void
 retry_connections_for_parent_device (NMManager *self, NMDevice *device)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *connections, *iter;
+	gs_free NMSettingsConnection **connections = NULL;
+	guint i;
 
 	g_return_if_fail (device);
 
-	connections = nm_settings_get_connections_sorted (priv->settings);
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *candidate = iter->data;
+	connections = nm_settings_get_connections_sorted (priv->settings, NULL);
+	for (i = 0; connections[i]; i++) {
+		NMConnection *candidate = NM_CONNECTION (connections[i]);
 		gs_free_error GError *error = NULL;
 		gs_free char *ifname = NULL;
 		NMDevice *parent;
@@ -1328,8 +1335,6 @@ retry_connections_for_parent_device (NMManager *self, NMDevice *device)
 			}
 		}
 	}
-
-	g_slist_free (connections);
 }
 
 static void
@@ -1688,7 +1693,7 @@ static NMSettingsConnection *
 get_existing_connection (NMManager *self, NMDevice *device, gboolean *out_generated)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	gs_free_slist GSList *connections = nm_manager_get_activatable_connections (self);
+	gs_free_slist GSList *connections = NULL;
 	NMConnection *connection = NULL;
 	NMSettingsConnection *matched;
 	NMSettingsConnection *added = NULL;
@@ -1738,7 +1743,17 @@ get_existing_connection (NMManager *self, NMDevice *device, gboolean *out_genera
 	 * When no configured connection matches the generated connection, we keep
 	 * the generated connection instead.
 	 */
-	connections = g_slist_reverse (g_slist_sort (connections, nm_settings_sort_connections));
+	{
+		gs_free NMSettingsConnection **cons = NULL;
+		guint i, len;
+
+		/* XXX: this code will go away soon. Copy the array over to a GSList
+		 * and don't bother for now. */
+		cons = nm_manager_get_activatable_connections (self, &len, FALSE);
+		for (i = len; i > 0; )
+			connections = g_slist_prepend (connections, cons[--i]);
+		connections = g_slist_sort (connections, (GCompareFunc) nm_settings_connection_cmp_timestamp);
+	}
 	matched = NM_SETTINGS_CONNECTION (nm_utils_match_connection (connections,
 	                                                             connection,
 	                                                             nm_device_has_carrier (device),
@@ -2675,14 +2690,15 @@ ensure_master_active_connection (NMManager *self,
 		 * activate it on the device.
 		 */
 		if (master_state == NM_DEVICE_STATE_DISCONNECTED || !nm_device_is_real (master_device)) {
-			GSList *connections;
+			gs_free NMSettingsConnection **connections = NULL;
+			guint i;
 
 			g_assert (master_connection == NULL);
 
 			/* Find a compatible connection and activate this device using it */
-			connections = nm_manager_get_activatable_connections (self);
-			for (iter = connections; iter; iter = g_slist_next (iter)) {
-				NMSettingsConnection *candidate = NM_SETTINGS_CONNECTION (iter->data);
+			connections = nm_manager_get_activatable_connections (self, NULL, TRUE);
+			for (i = 0; connections[i]; i++) {
+				NMSettingsConnection *candidate = connections[i];
 
 				/* Ensure eg bond/team slave and the candidate master is a
 				 * bond/team master
@@ -2698,11 +2714,9 @@ ensure_master_active_connection (NMManager *self,
 					                                            master_device,
 					                                            subject,
 					                                            error);
-					g_slist_free (connections);
 					return master_ac;
 				}
 			}
-			g_slist_free (connections);
 
 			g_set_error (error,
 			             NM_MANAGER_ERROR,
@@ -2775,7 +2789,8 @@ find_slaves (NMManager *manager,
              NMDevice *device)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	GSList *all_connections, *iter;
+	gs_free NMSettingsConnection **all_connections = NULL;
+	guint i;
 	GSList *slaves = NULL;
 	NMSettingConnection *s_con;
 
@@ -2786,11 +2801,11 @@ find_slaves (NMManager *manager,
 	 * even if a slave was already active, it might be deactivated during
 	 * master reactivation.
 	 */
-	all_connections = nm_settings_get_connections_sorted (priv->settings);
-	for (iter = all_connections; iter; iter = iter->next) {
+	all_connections = nm_settings_get_connections_sorted (priv->settings, NULL);
+	for (i = 0; all_connections[i]; i++) {
 		NMSettingsConnection *master_connection = NULL;
 		NMDevice *master_device = NULL;
-		NMConnection *candidate = iter->data;
+		NMConnection *candidate = NM_CONNECTION (all_connections[i]);
 
 		find_master (manager, candidate, NULL, &master_connection, &master_device, NULL, NULL);
 		if (   (master_connection && master_connection == connection)
@@ -2798,7 +2813,6 @@ find_slaves (NMManager *manager,
 			slaves = g_slist_prepend (slaves, candidate);
 		}
 	}
-	g_slist_free (all_connections);
 
 	return g_slist_reverse (slaves);
 }
@@ -3813,7 +3827,17 @@ impl_manager_add_and_activate_connection (NMManager *self,
 	if (!subject)
 		goto error;
 
-	all_connections = nm_settings_get_connections_sorted (priv->settings);
+	{
+		gs_free NMSettingsConnection **connections = NULL;
+		guint i, len;
+
+		connections = nm_settings_get_connections_sorted (priv->settings, &len);
+		all_connections = NULL;
+		for (i = len; i > 0; ) {
+			i--;
+			all_connections = g_slist_prepend (all_connections, connections[i]);
+		}
+	}
 	if (vpn) {
 		/* Try to fill the VPN's connection setting and name at least */
 		if (!nm_connection_get_setting_vpn (connection)) {
@@ -4770,7 +4794,7 @@ gboolean
 nm_manager_start (NMManager *self, GError **error)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *iter, *connections;
+	gs_free NMSettingsConnection **connections = NULL;
 	guint i;
 
 	if (!nm_settings_start (priv->settings, error))
@@ -4822,10 +4846,9 @@ nm_manager_start (NMManager *self, GError **error)
 	 * connection-added signals thus devices have to be created manually.
 	 */
 	_LOGD (LOGD_CORE, "creating virtual devices...");
-	connections = nm_settings_get_connections_sorted (priv->settings);
-	for (iter = connections; iter; iter = iter->next)
-		connection_changed (self, NM_CONNECTION (iter->data));
-	g_slist_free (connections);
+	connections = nm_settings_get_connections_sorted (priv->settings, NULL);
+	for (i = 0; connections[i]; i++)
+		connection_changed (self, NM_CONNECTION (connections[i]));
 
 	priv->devices_inited = TRUE;
 

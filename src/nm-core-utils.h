@@ -272,7 +272,7 @@ const char *nm_utils_new_infiniband_name (char *name, const char *parent_name, i
 GPtrArray *nm_utils_read_resolv_conf_nameservers (const char *rc_contents);
 GPtrArray *nm_utils_read_resolv_conf_dns_options (const char *rc_contents);
 
-int nm_utils_cmp_connection_by_autoconnect_priority (NMConnection **a, NMConnection **b);
+int nm_utils_cmp_connection_by_autoconnect_priority (NMConnection *a, NMConnection *b);
 
 void nm_utils_log_connection_diff (NMConnection *connection, NMConnection *diff_base, guint32 level, guint64 domain, const char *name, const char *prefix);
 

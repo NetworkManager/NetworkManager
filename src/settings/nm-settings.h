@@ -57,9 +57,9 @@
  *
  * Returns: %TRUE to allow the connection, %FALSE to ignore it
  */
-typedef gboolean (*NMConnectionFilterFunc) (NMSettings *settings,
-                                            NMConnection *connection,
-                                            gpointer func_data);
+typedef gboolean (*NMSettingsConnectionFilterFunc) (NMSettings *settings,
+                                                    NMSettingsConnection *connection,
+                                                    gpointer func_data);
 
 typedef struct _NMSettingsClass NMSettingsClass;
 
@@ -97,14 +97,13 @@ void nm_settings_add_connection_dbus (NMSettings *self,
 
 NMSettingsConnection *const* nm_settings_get_connections (NMSettings *settings, guint *out_len);
 
-GSList *nm_settings_get_connections_sorted (NMSettings *settings);
+NMSettingsConnection **nm_settings_get_connections_clone (NMSettings *self,
+                                                          guint *out_len,
+                                                          NMSettingsConnectionFilterFunc func,
+                                                          gpointer func_data);
 
-GSList *nm_settings_get_best_connections (NMSettings *self,
-                                          guint max_requested,
-                                          const char *ctype1,
-                                          const char *ctype2,
-                                          NMConnectionFilterFunc func,
-                                          gpointer func_data);
+NMSettingsConnection **nm_settings_get_connections_sorted (NMSettings *self,
+                                                           guint *out_len);
 
 NMSettingsConnection *nm_settings_add_connection (NMSettings *settings,
                                                   NMConnection *connection,
@@ -125,8 +124,6 @@ char *nm_settings_get_hostname (NMSettings *self);
 void nm_settings_device_added (NMSettings *self, NMDevice *device);
 
 void nm_settings_device_removed (NMSettings *self, NMDevice *device, gboolean quitting);
-
-gint nm_settings_sort_connections (gconstpointer a, gconstpointer b);
 
 gboolean nm_settings_get_startup_complete (NMSettings *self);
 

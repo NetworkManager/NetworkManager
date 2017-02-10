@@ -2162,6 +2162,96 @@ nm_settings_connection_set_flags_all (NMSettingsConnection *self, NMSettingsConn
 
 /*****************************************************************************/
 
+static int
+_cmp_timestamp (NMSettingsConnection *a, NMSettingsConnection *b)
+{
+	gboolean a_has_ts, b_has_ts;
+	guint64 ats = 0, bts = 0;
+
+	nm_assert (NM_IS_SETTINGS_CONNECTION (a));
+	nm_assert (NM_IS_SETTINGS_CONNECTION (b));
+
+	a_has_ts = !!nm_settings_connection_get_timestamp (a, &ats);
+	b_has_ts = !!nm_settings_connection_get_timestamp (b, &bts);
+	if (a_has_ts != b_has_ts)
+		return a_has_ts ? -1 : 1;
+	if (a_has_ts && ats != bts)
+		return (ats > bts) ? -1 : 1;
+	return 0;
+}
+
+static int
+_cmp_last_resort (NMSettingsConnection *a, NMSettingsConnection *b)
+{
+	int c;
+
+	nm_assert (NM_IS_SETTINGS_CONNECTION (a));
+	nm_assert (NM_IS_SETTINGS_CONNECTION (b));
+
+	c = g_strcmp0 (nm_connection_get_uuid (NM_CONNECTION (a)),
+	               nm_connection_get_uuid (NM_CONNECTION (b)));
+	if (c)
+		return c;
+
+	/* hm, same UUID. Use their pointer value to give them a stable
+	 * order. */
+	return (a > b) ? -1 : 1;
+}
+
+/* sorting for "best" connections.
+ * The function sorts connections in descending timestamp order.
+ * That means an older connection (lower timestamp) goes after
+ * a newer one.
+ */
+int
+nm_settings_connection_cmp_timestamp (NMSettingsConnection *a, NMSettingsConnection *b)
+{
+	int c;
+
+	if (a == b)
+		return 0;
+	if (!a)
+		return 1;
+	if (!b)
+		return -1;
+
+	if ((c = _cmp_timestamp (a, b)))
+		return c;
+	if ((c = nm_utils_cmp_connection_by_autoconnect_priority (NM_CONNECTION (a), NM_CONNECTION (b))))
+		return c;
+	return _cmp_last_resort (a, b);
+}
+
+int
+nm_settings_connection_cmp_timestamp_p_with_data (gconstpointer pa, gconstpointer pb, gpointer user_data)
+{
+	return nm_settings_connection_cmp_timestamp (*((NMSettingsConnection **) pa),
+	                                             *((NMSettingsConnection **) pb));
+}
+
+int
+nm_settings_connection_cmp_autoconnect_priority (NMSettingsConnection *a, NMSettingsConnection *b)
+{
+	int c;
+
+	if (a == b)
+		return 0;
+	if ((c = nm_utils_cmp_connection_by_autoconnect_priority (NM_CONNECTION (a), NM_CONNECTION (b))))
+		return c;
+	if ((c = _cmp_timestamp (a, b)))
+		return c;
+	return _cmp_last_resort (a, b);
+}
+
+int
+nm_settings_connection_cmp_autoconnect_priority_p_with_data (gconstpointer pa, gconstpointer pb, gpointer user_data)
+{
+	return nm_settings_connection_cmp_autoconnect_priority (*((NMSettingsConnection **) pa),
+	                                                        *((NMSettingsConnection **) pb));
+}
+
+/*****************************************************************************/
+
 /**
  * nm_settings_connection_get_timestamp:
  * @self: the #NMSettingsConnection

@@ -249,14 +249,14 @@ next_dev:
 
 	if (NM_FLAGS_HAS (priv->flags, NM_CHECKPOINT_CREATE_FLAG_DELETE_NEW_CONNECTIONS)) {
 		NMSettingsConnection *con;
-		gs_free_slist GSList *list = NULL;
-		GSList *item;
+		gs_free NMSettingsConnection **list = NULL;
+		guint i;
 
 		g_return_val_if_fail (priv->connection_uuids, NULL);
-		list = nm_settings_get_connections_sorted (nm_settings_get ());
+		list = nm_settings_get_connections_sorted (nm_settings_get (), NULL);
 
-		for (item = list; item; item = g_slist_next (item)) {
-			con = item->data;
+		for (i = 0; list[i]; i++) {
+			con = list[i];
 			if (!g_hash_table_contains (priv->connection_uuids,
 			                            nm_settings_connection_get_uuid (con))) {
 				_LOGD ("rollback: deleting new connection %s (%s)",

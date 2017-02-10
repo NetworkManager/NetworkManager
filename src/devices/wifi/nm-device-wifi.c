@@ -1338,12 +1338,14 @@ check_scanning_allowed (NMDeviceWifi *self)
 
 static gboolean
 hidden_filter_func (NMSettings *settings,
-                    NMConnection *connection,
+                    NMSettingsConnection *connection,
                     gpointer user_data)
 {
 	NMSettingWireless *s_wifi;
 
-	s_wifi = (NMSettingWireless *) nm_connection_get_setting_wireless (connection);
+	if (!nm_connection_is_type (NM_CONNECTION (connection), NM_SETTING_WIRELESS_SETTING_NAME))
+		return FALSE;
+	s_wifi = (NMSettingWireless *) nm_connection_get_setting_wireless (NM_CONNECTION (connection));
 	return s_wifi ? nm_setting_wireless_get_hidden (s_wifi) : FALSE;
 }
 
@@ -1352,7 +1354,8 @@ build_hidden_probe_list (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	guint max_scan_ssids = nm_supplicant_interface_get_max_scan_ssids (priv->sup_iface);
-	GSList *connections, *iter;
+	gs_free NMSettingsConnection **connections = NULL;
+	guint i, len;
 	GPtrArray *ssids = NULL;
 	static GByteArray *nullssid = NULL;
 
@@ -1360,28 +1363,31 @@ build_hidden_probe_list (NMDeviceWifi *self)
 	if (max_scan_ssids < 2)
 		return NULL;
 
-	/* Static wildcard SSID used for every scan */
+	connections = nm_settings_get_connections_clone (nm_device_get_settings ((NMDevice *) self),
+	                                                 &len,
+	                                                 hidden_filter_func,
+	                                                 NULL);
+	if (!connections[0])
+		return NULL;
+
+	g_qsort_with_data (connections, len, sizeof (NMSettingsConnection *), nm_settings_connection_cmp_timestamp_p_with_data, NULL);
+
+	ssids = g_ptr_array_new_full (max_scan_ssids, (GDestroyNotify) g_byte_array_unref);
+
+	/* Add wildcard SSID using a static wildcard SSID used for every scan */
 	if (G_UNLIKELY (nullssid == NULL))
 		nullssid = g_byte_array_new ();
+	g_ptr_array_add (ssids, g_byte_array_ref (nullssid));
 
-	connections = nm_settings_get_best_connections (nm_device_get_settings ((NMDevice *) self),
-	                                                max_scan_ssids - 1,
-	                                                NM_SETTING_WIRELESS_SETTING_NAME,
-	                                                NULL,
-	                                                hidden_filter_func,
-	                                                NULL);
-	if (connections && connections->data) {
-		ssids = g_ptr_array_new_full (max_scan_ssids - 1, (GDestroyNotify) g_byte_array_unref);
-		g_ptr_array_add (ssids, g_byte_array_ref (nullssid));  /* Add wildcard SSID */
-	}
-
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *connection = iter->data;
+	for (i = 0; connections[i]; i++) {
 		NMSettingWireless *s_wifi;
 		GBytes *ssid;
 		GByteArray *ssid_array;
 
-		s_wifi = (NMSettingWireless *) nm_connection_get_setting_wireless (connection);
+		if (i >= max_scan_ssids - 1)
+			break;
+
+		s_wifi = (NMSettingWireless *) nm_connection_get_setting_wireless (NM_CONNECTION (connections[i]));
 		g_assert (s_wifi);
 		ssid = nm_setting_wireless_get_ssid (s_wifi);
 		g_assert (ssid);
@@ -1391,7 +1397,6 @@ build_hidden_probe_list (NMDeviceWifi *self)
 		                     g_bytes_get_size (ssid));
 		g_ptr_array_add (ssids, ssid_array);
 	}
-	g_slist_free (connections);
 
 	return ssids;
 }
