@@ -63,6 +63,8 @@ typedef struct {
 GMainLoop *loop = NULL;
 struct termios termios_orig;
 
+NM_CACHED_QUARK_FCN ("nmcli-error-quark", nmcli_error_quark)
+
 static void
 complete_field (GHashTable *h, const char *setting, NmcOutputField field[])
 {
@@ -162,18 +164,6 @@ complete_fields (const char *prefix)
 	g_hash_table_destroy (h);
 }
 
-
-/* Get an error quark for use with GError */
-GQuark
-nmcli_error_quark (void)
-{
-	static GQuark error_quark = 0;
-
-	if (G_UNLIKELY (error_quark == 0))
-		error_quark = g_quark_from_static_string ("nmcli-error-quark");
-
-	return error_quark;
-}
 
 static void
 usage (void)

@@ -37,6 +37,8 @@
 #define WPAS_ERROR_INVALID_IFACE    WPAS_DBUS_INTERFACE ".InvalidInterface"
 #define WPAS_ERROR_EXISTS_ERROR     WPAS_DBUS_INTERFACE ".InterfaceExists"
 
+static NM_CACHED_QUARK_FCN ("bss-proxy-inited", bss_proxy_inited_quark)
+
 /*****************************************************************************/
 
 enum {
@@ -177,8 +179,6 @@ _get_bss_proxy_properties (NMSupplicantInterface *self, GDBusProxy *proxy)
 	return g_variant_builder_end (&builder);
 }
 
-#define BSS_PROXY_INITED "bss-proxy-inited"
-
 static void
 on_bss_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
@@ -201,7 +201,7 @@ on_bss_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_da
 	if (!props)
 		return;
 
-	g_object_set_data (G_OBJECT (proxy), BSS_PROXY_INITED, GUINT_TO_POINTER (TRUE));
+	g_object_set_qdata (G_OBJECT (proxy), bss_proxy_inited_quark (), GUINT_TO_POINTER (TRUE));
 
 	g_signal_emit (self, signals[NEW_BSS], 0,
 	               g_dbus_proxy_get_object_path (proxy),
@@ -567,7 +567,7 @@ wpas_iface_scan_done (GDBusProxy *proxy,
 	/* Emit NEW_BSS so that wifi device has the APs (in case it removed them) */
 	g_hash_table_iter_init (&iter, priv->bss_proxies);
 	while (g_hash_table_iter_next (&iter, (gpointer) &bss_path, (gpointer) &bss_proxy)) {
-		if (g_object_get_data (G_OBJECT (bss_proxy), BSS_PROXY_INITED)) {
+		if (g_object_get_qdata (G_OBJECT (bss_proxy), bss_proxy_inited_quark ())) {
 			props = _get_bss_proxy_properties (self, bss_proxy);
 			if (props) {
 				g_signal_emit (self, signals[NEW_BSS], 0,

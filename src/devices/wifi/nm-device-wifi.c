@@ -63,7 +63,7 @@ _LOG_DECLARE_SELF(NMDeviceWifi);
 
 #define SCAN_RAND_MAC_ADDRESS_EXPIRE_MIN 5
 
-#define WIRELESS_SECRETS_TRIES "wireless-secrets-tries"
+static NM_CACHED_QUARK_FCN ("wireless-secrets-tries", wireless_secrets_tries_quark)
 
 /*****************************************************************************/
 
@@ -2255,7 +2255,7 @@ handle_auth_or_fail (NMDeviceWifi *self,
 
 	applied_connection = nm_act_request_get_applied_connection (req);
 
-	tries = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (applied_connection), WIRELESS_SECRETS_TRIES));
+	tries = GPOINTER_TO_UINT (g_object_get_qdata (G_OBJECT (applied_connection), wireless_secrets_tries_quark ()));
 	if (tries > 3)
 		return NM_ACT_STAGE_RETURN_FAILURE;
 
@@ -2267,7 +2267,7 @@ handle_auth_or_fail (NMDeviceWifi *self,
 		wifi_secrets_get_secrets (self, setting_name,
 		                          NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
 		                          | (new_secrets ? NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW : 0));
-		g_object_set_data (G_OBJECT (applied_connection), WIRELESS_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
+		g_object_set_qdata (G_OBJECT (applied_connection), wireless_secrets_tries_quark (), GUINT_TO_POINTER (++tries));
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else
 		_LOGW (LOGD_DEVICE, "Cleared secrets, but setting didn't need any secrets.");
@@ -2895,7 +2895,7 @@ activation_success_handler (NMDevice *device)
 	nm_platform_wifi_indicate_addressing_running (NM_PLATFORM_GET, ifindex, FALSE);
 
 	/* Clear wireless secrets tries on success */
-	g_object_set_data (G_OBJECT (applied_connection), WIRELESS_SECRETS_TRIES, NULL);
+	g_object_set_qdata (G_OBJECT (applied_connection), wireless_secrets_tries_quark (), NULL);
 
 	/* There should always be a current AP, either a fake one because we haven't
 	 * seen a scan result for the activated AP yet, or a real one from the
@@ -2946,7 +2946,7 @@ activation_failure_handler (NMDevice *device)
 	g_assert (applied_connection);
 
 	/* Clear wireless secrets tries on failure */
-	g_object_set_data (G_OBJECT (applied_connection), WIRELESS_SECRETS_TRIES, NULL);
+	g_object_set_qdata (G_OBJECT (applied_connection), wireless_secrets_tries_quark (), NULL);
 
 	/* Clear any critical protocol notification in the wifi stack */
 	nm_platform_wifi_indicate_addressing_running (NM_PLATFORM_GET, nm_device_get_ifindex (device), FALSE);

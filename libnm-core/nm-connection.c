@@ -2461,13 +2461,12 @@ nm_connection_private_free (NMConnectionPrivate *priv)
 static NMConnectionPrivate *
 nm_connection_get_private (NMConnection *connection)
 {
-	static GQuark key = 0;
+	GQuark key;
 	NMConnectionPrivate *priv;
 
 	nm_assert (NM_IS_CONNECTION (connection));
 
-	if (G_UNLIKELY (key == 0))
-		key = g_quark_from_static_string ("NMConnectionPrivate");
+	key = NM_CACHED_QUARK ("NMConnectionPrivate");
 
 	priv = g_object_get_qdata ((GObject *) connection, key);
 	if (!priv) {

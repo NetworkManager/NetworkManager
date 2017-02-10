@@ -90,7 +90,7 @@ G_DEFINE_TYPE (NMDeviceMacsec, nm_device_macsec, NM_TYPE_DEVICE)
 
 /******************************************************************/
 
-#define MACSEC_SECRETS_TRIES "macsec-secrets-tries"
+static NM_CACHED_QUARK_FCN ("macsec-secrets-tries", macsec_secrets_tries_quark)
 
 static void macsec_secrets_cancel (NMDeviceMacsec *self);
 
@@ -505,7 +505,7 @@ handle_auth_or_fail (NMDeviceMacsec *self,
 
 	applied_connection = nm_act_request_get_applied_connection (req);
 
-	tries = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (applied_connection), MACSEC_SECRETS_TRIES));
+	tries = GPOINTER_TO_UINT (g_object_get_qdata (G_OBJECT (applied_connection), macsec_secrets_tries_quark ()));
 	if (tries > 3)
 		return NM_ACT_STAGE_RETURN_FAILURE;
 
@@ -518,7 +518,7 @@ handle_auth_or_fail (NMDeviceMacsec *self,
 		macsec_secrets_get_secrets (self, setting_name,
 		                            NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
 		                             | (new_secrets ? NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW : 0));
-		g_object_set_data (G_OBJECT (applied_connection), MACSEC_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
+		g_object_set_qdata (G_OBJECT (applied_connection), macsec_secrets_tries_quark (), GUINT_TO_POINTER (++tries));
 	} else
 		_LOGI (LOGD_DEVICE, "Cleared secrets, but setting didn't need any secrets.");
 
@@ -768,7 +768,7 @@ clear_secrets_tries (NMDevice *device)
 	if (req) {
 		connection = nm_act_request_get_applied_connection (req);
 		/* Clear macsec secrets tries on success, failure, or when deactivating */
-		g_object_set_data (G_OBJECT (connection), MACSEC_SECRETS_TRIES, NULL);
+		g_object_set_qdata (G_OBJECT (connection), macsec_secrets_tries_quark (), NULL);
 	}
 }
 

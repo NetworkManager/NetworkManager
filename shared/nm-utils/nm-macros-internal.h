@@ -341,6 +341,40 @@ _NM_IN_STRSET_streq (const char *x, const char *s)
 
 /*****************************************************************************/
 
+/* NM_CACHED_QUARK() returns the GQuark for @string, but caches
+ * it in a static variable to speed up future lookups.
+ *
+ * @string must be a string literal.
+ */
+#define NM_CACHED_QUARK(string) \
+	({ \
+		static GQuark _nm_cached_quark = 0; \
+		\
+		(G_LIKELY (_nm_cached_quark != 0) \
+			? _nm_cached_quark \
+			: (_nm_cached_quark = g_quark_from_static_string (""string""))); \
+	})
+
+/* NM_CACHED_QUARK_FCN() is essentially the same as G_DEFINE_QUARK
+ * with two differences:
+ * - @string must be a quited string-literal
+ * - @fcn must be the full function name, while G_DEFINE_QUARK() appends
+ *   "_quark" to the function name.
+ * Both properties of G_DEFINE_QUARK() are non favorable, because you can no
+ * longer grep for string/fcn -- unless you are aware that you are searching
+ * for G_DEFINE_QUARK() and omit quotes / append _quark(). With NM_CACHED_QUARK_FCN(),
+ * ctags/cscope can locate the use of @fcn (though it doesn't recognize that
+ * NM_CACHED_QUARK_FCN() defines it).
+ */
+#define NM_CACHED_QUARK_FCN(string, fcn) \
+GQuark \
+fcn (void) \
+{ \
+	return NM_CACHED_QUARK (string); \
+}
+
+/*****************************************************************************/
+
 #define nm_streq(s1, s2)  (strcmp (s1, s2) == 0)
 #define nm_streq0(s1, s2) (g_strcmp0 (s1, s2) == 0)
 

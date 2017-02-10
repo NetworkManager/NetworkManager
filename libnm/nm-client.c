@@ -153,15 +153,7 @@ static const GPtrArray empty = { 0, };
  *
  * Returns: the error quark used for #NMClient errors.
  **/
-GQuark
-nm_client_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-client-error-quark");
-	return quark;
-}
+NM_CACHED_QUARK_FCN ("nm-client-error-quark", nm_client_error_quark)
 
 /*****************************************************************************/
 

@@ -37,7 +37,7 @@
 static gboolean debug = FALSE;
 #define dbgmsg(f,...) if (G_UNLIKELY (debug)) { g_message (f, ## __VA_ARGS__ ); }
 
-G_DEFINE_QUARK (nm-obj-nm, _nm_object_obj_nm);
+NM_CACHED_QUARK_FCN ("nm-obj-nm", _nm_object_obj_nm_quark)
 
 static void nm_object_initable_iface_init (GInitableIface *iface);
 static void nm_object_async_initable_iface_init (GAsyncInitableIface *iface);

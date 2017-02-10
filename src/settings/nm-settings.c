@@ -104,7 +104,7 @@ EXPORT(nm_settings_connection_replace_and_commit)
 #define IFCFG_DIR                    SYSCONFDIR "/sysconfig/network"
 #define CONF_DHCP                    IFCFG_DIR "/dhcp"
 
-#define PLUGIN_MODULE_PATH      "plugin-module-path"
+static NM_CACHED_QUARK_FCN ("plugin-module-path", plugin_module_path_quark)
 
 #if (defined(HOSTNAME_PERSIST_SUSE) + defined(HOSTNAME_PERSIST_SLACKWARE) + defined(HOSTNAME_PERSIST_GENTOO)) > 1
 #error "Can only define one of HOSTNAME_PERSIST_*"
@@ -119,6 +119,9 @@ EXPORT(nm_settings_connection_replace_and_commit)
 #else
 #define HOSTNAME_FILE           HOSTNAME_FILE_DEFAULT
 #endif
+
+static NM_CACHED_QUARK_FCN ("default-wired-connection", _default_wired_connection_quark)
+static NM_CACHED_QUARK_FCN ("default-wired-device", _default_wired_device_quark)
 
 /*****************************************************************************/
 
@@ -753,7 +756,7 @@ add_plugin (NMSettings *self, NMSettingsPlugin *plugin)
 	              NM_SETTINGS_PLUGIN_INFO, &pinfo,
 	              NULL);
 
-	path = g_object_get_data (G_OBJECT (plugin), PLUGIN_MODULE_PATH);
+	path = g_object_get_qdata (G_OBJECT (plugin), plugin_module_path_quark ());
 
 	_LOGI ("loaded plugin %s: %s%s%s%s", pname, pinfo,
 	       NM_PRINT_FMT_QUOTED (path, " (", path, ")", ""));
@@ -916,7 +919,7 @@ load_plugin:
 				break;
 			}
 
-			g_object_set_data_full (obj, PLUGIN_MODULE_PATH, path, g_free);
+			g_object_set_qdata_full (obj, plugin_module_path_quark (), path, g_free);
 			path = NULL;
 			if (add_plugin (self, NM_SETTINGS_PLUGIN (obj)))
 				list = g_slist_append (list, obj);
@@ -1935,9 +1938,6 @@ have_connection_for_device (NMSettings *self, NMDevice *device)
 	return FALSE;
 }
 
-#define DEFAULT_WIRED_CONNECTION_TAG "default-wired-connection"
-#define DEFAULT_WIRED_DEVICE_TAG     "default-wired-device"
-
 static void default_wired_clear_tag (NMSettings *self,
                                      NMDevice *device,
                                      NMSettingsConnection *connection,
@@ -1953,7 +1953,7 @@ default_wired_connection_removed_cb (NMSettingsConnection *connection, NMSetting
 	 * wired device to the config file and don't create a new default wired
 	 * connection for that device again.
 	 */
-	device = g_object_get_data (G_OBJECT (connection), DEFAULT_WIRED_DEVICE_TAG);
+	device = g_object_get_qdata (G_OBJECT (connection), _default_wired_device_quark ());
 	if (device)
 		default_wired_clear_tag (self, device, connection, TRUE);
 }
@@ -1970,7 +1970,7 @@ default_wired_connection_updated_by_user_cb (NMSettingsConnection *connection, g
 	 * considered a default wired connection, and should no longer affect
 	 * the no-auto-default configuration option.
 	 */
-	device = g_object_get_data (G_OBJECT (connection), DEFAULT_WIRED_DEVICE_TAG);
+	device = g_object_get_qdata (G_OBJECT (connection), _default_wired_device_quark ());
 	if (device)
 		default_wired_clear_tag (self, device, connection, FALSE);
 }
@@ -1984,11 +1984,11 @@ default_wired_clear_tag (NMSettings *self,
 	g_return_if_fail (NM_IS_SETTINGS (self));
 	g_return_if_fail (NM_IS_DEVICE (device));
 	g_return_if_fail (NM_IS_CONNECTION (connection));
-	g_return_if_fail (device == g_object_get_data (G_OBJECT (connection), DEFAULT_WIRED_DEVICE_TAG));
-	g_return_if_fail (connection == g_object_get_data (G_OBJECT (device), DEFAULT_WIRED_CONNECTION_TAG));
+	g_return_if_fail (device == g_object_get_qdata (G_OBJECT (connection), _default_wired_device_quark ()));
+	g_return_if_fail (connection == g_object_get_qdata (G_OBJECT (device), _default_wired_connection_quark ()));
 
-	g_object_set_data (G_OBJECT (connection), DEFAULT_WIRED_DEVICE_TAG, NULL);
-	g_object_set_data (G_OBJECT (device), DEFAULT_WIRED_CONNECTION_TAG, NULL);
+	g_object_set_qdata (G_OBJECT (connection), _default_wired_device_quark (), NULL);
+	g_object_set_qdata (G_OBJECT (device), _default_wired_connection_quark (), NULL);
 
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (default_wired_connection_removed_cb), self);
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (default_wired_connection_updated_by_user_cb), self);
@@ -2015,7 +2015,7 @@ device_realized (NMDevice *device, GParamSpec *pspec, NMSettings *self)
 	 * ignore it.
 	 */
 	if (   !nm_device_get_managed (device, FALSE)
-	    || g_object_get_data (G_OBJECT (device), DEFAULT_WIRED_CONNECTION_TAG)
+	    || g_object_get_qdata (G_OBJECT (device), _default_wired_connection_quark ())
 	    || have_connection_for_device (self, device))
 		return;
 
@@ -2037,8 +2037,8 @@ device_realized (NMDevice *device, GParamSpec *pspec, NMSettings *self)
 		return;
 	}
 
-	g_object_set_data (G_OBJECT (added), DEFAULT_WIRED_DEVICE_TAG, device);
-	g_object_set_data (G_OBJECT (device), DEFAULT_WIRED_CONNECTION_TAG, added);
+	g_object_set_qdata (G_OBJECT (added), _default_wired_device_quark (), device);
+	g_object_set_qdata (G_OBJECT (device), _default_wired_connection_quark (), added);
 
 	g_signal_connect (added, NM_SETTINGS_CONNECTION_UPDATED_INTERNAL,
 	                  G_CALLBACK (default_wired_connection_updated_by_user_cb), self);
@@ -2071,7 +2071,7 @@ nm_settings_device_removed (NMSettings *self, NMDevice *device, gboolean quittin
 	                                      G_CALLBACK (device_realized),
 	                                      self);
 
-	connection = g_object_get_data (G_OBJECT (device), DEFAULT_WIRED_CONNECTION_TAG);
+	connection = g_object_get_qdata (G_OBJECT (device), _default_wired_connection_quark ());
 	if (connection) {
 		default_wired_clear_tag (self, device, connection, FALSE);
 
