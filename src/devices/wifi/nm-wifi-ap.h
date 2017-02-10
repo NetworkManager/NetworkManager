@@ -89,8 +89,9 @@ gboolean          nm_wifi_ap_get_fake                 (const NMWifiAP *ap);
 void              nm_wifi_ap_set_fake                 (NMWifiAP *ap,
                                                        gboolean fake);
 
-void              nm_wifi_ap_dump                     (NMWifiAP *self,
-                                                       const char *prefix,
-                                                       const char *ifname);
+const char       *nm_wifi_ap_to_string                (const NMWifiAP *self,
+                                                       char *str_buf,
+                                                       gulong buf_len,
+                                                       gint32 now_s);
 
 #endif /* __NM_WIFI_AP_H__ */

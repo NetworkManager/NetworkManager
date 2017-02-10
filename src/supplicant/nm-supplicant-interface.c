@@ -352,7 +352,7 @@ nm_supplicant_interface_get_scanning (NMSupplicantInterface *self)
 {
 	NMSupplicantInterfacePrivate *priv;
 
-	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (self, FALSE);
 
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 	if (priv->scanning)
@@ -562,8 +562,6 @@ wpas_iface_scan_done (GDBusProxy *proxy,
 	/* Cache last scan completed time */
 	priv->last_scan = nm_utils_get_monotonic_timestamp_s ();
 
-	g_signal_emit (self, signals[SCAN_DONE], 0, success);
-
 	/* Emit NEW_BSS so that wifi device has the APs (in case it removed them) */
 	g_hash_table_iter_init (&iter, priv->bss_proxies);
 	while (g_hash_table_iter_next (&iter, (gpointer) &bss_path, (gpointer) &bss_proxy)) {
@@ -577,6 +575,8 @@ wpas_iface_scan_done (GDBusProxy *proxy,
 			}
 		}
 	}
+
+	g_signal_emit (self, signals[SCAN_DONE], 0, success);
 }
 
 static void
@@ -1269,7 +1269,6 @@ scan_request_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 		return;
 
 	self = NM_SUPPLICANT_INTERFACE (user_data);
-
 	if (error) {
 		if (_nm_dbus_error_has_name (error, "fi.w1.wpa_supplicant1.Interface.ScanError"))
 			_LOGD ("could not get scan request result: %s", error->message);
@@ -1278,7 +1277,6 @@ scan_request_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 			_LOGW ("could not get scan request result: %s", error->message);
 		}
 	}
-	g_signal_emit (self, signals[SCAN_DONE], 0, error ? FALSE : TRUE);
 }
 
 gboolean
