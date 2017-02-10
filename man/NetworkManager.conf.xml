@@ -321,15 +321,17 @@ no-auto-default=*
         options, and this version of NetworkManager was build with a default of
         "<literal>&NM_CONFIG_DEFAULT_MAIN_RC_MANAGER;</literal>".
         Regardless of this setting, NetworkManager will
-        always write resolv.conf to its runtime state directory.</para>
-        <para><literal>symlink</literal>: NetworkManager will symlink
-        <filename>/etc/resolv.conf</filename> to its private
-        resolv.conf file in the runtime state directory. If
-        <filename>/etc/resolv.conf</filename>
-        already is a symlink pointing to a different location, the file
-        will not be modified. This allows the user to disable managing
-        by pointing the link <filename>/etc/resolv.conf</filename> to
-        somewhere else.</para>
+        always write resolv.conf to its runtime state directory
+        <filename>&nmrundir;/resolv.conf</filename>.</para>
+        <para><literal>symlink</literal>: If <filename>/etc/resolv.conf</filename> is
+        a regular file, NetworkManager will replace the file on update. If
+        <filename>/etc/resolv.conf</filename> is instead a symlink, NetworkManager
+        will leave it alone. Unless the symlink points to the internal file
+        <filename>&nmrundir;/resolv.conf</filename>,
+        in which case the symlink will be updated to emit an inotify notification.
+        This allows the user to conveniently instruct NetworkManager not
+        to manage <filename>/etc/resolv.conf</filename> by replacing it with
+        a symlink.</para>
         <para><literal>file</literal>: NetworkManager will write
         <filename>/etc/resolv.conf</filename> as file. If it finds
         a symlink, it will follow the symlink and update the target

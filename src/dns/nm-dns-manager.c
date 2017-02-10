@@ -668,6 +668,20 @@ dispatch_resolvconf (NMDnsManager *self,
 	return success ? SR_SUCCESS : SR_ERROR;
 }
 
+static const char *
+_read_link_cached (const char *path, gboolean *is_cached, char **cached)
+{
+	nm_assert (is_cached);
+	nm_assert (cached);
+
+	if (*is_cached)
+		return *cached;
+
+	nm_assert (!*cached);
+	*is_cached = TRUE;
+	return (*cached = g_file_read_link (path, NULL));
+}
+
 #define MY_RESOLV_CONF NMRUNDIR "/resolv.conf"
 #define MY_RESOLV_CONF_TMP MY_RESOLV_CONF ".tmp"
 #define RESOLV_CONF_TMP "/etc/.resolv.conf.NetworkManager"
@@ -681,13 +695,14 @@ update_resolv_conf (NMDnsManager *self,
                     NMDnsManagerResolvConfManager rc_manager)
 {
 	FILE *f;
-	struct stat st;
 	gboolean success;
 	gs_free char *content = NULL;
 	SpawnResult write_file_result = SR_SUCCESS;
 	int errsv;
 	const char *rc_path = _PATH_RESCONF;
 	nm_auto_free char *rc_path_real = NULL;
+	gboolean resconf_link_cached = FALSE;
+	gs_free char *resconf_link = NULL;
 
 	/* If we are not managing /etc/resolv.conf and it points to
 	 * MY_RESOLV_CONF, don't write the private DNS configuration to
@@ -697,9 +712,8 @@ update_resolv_conf (NMDnsManager *self,
 	 * This is the only situation, where we don't try to update our
 	 * internal resolv.conf file. */
 	if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED) {
-		gs_free char *path = g_file_read_link (_PATH_RESCONF, NULL);
-
-		if (g_strcmp0 (path, MY_RESOLV_CONF) == 0) {
+		if (nm_streq0 (_read_link_cached (_PATH_RESCONF, &resconf_link_cached, &resconf_link),
+		               MY_RESOLV_CONF)) {
 			_LOGD ("update-resolv-conf: not updating " _PATH_RESCONF
 			       " since it points to " MY_RESOLV_CONF);
 			return SR_SUCCESS;
@@ -708,12 +722,16 @@ update_resolv_conf (NMDnsManager *self,
 
 	content = create_resolv_conf (searches, nameservers, options);
 
-	if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE) {
+	if (   rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE
+	    || (   rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK
+	        && !_read_link_cached (_PATH_RESCONF, &resconf_link_cached, &resconf_link))) {
 		GError *local = NULL;
 
-		rc_path_real = realpath (rc_path, NULL);
-		if (rc_path_real)
-			rc_path = rc_path_real;
+		if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE) {
+			rc_path_real = realpath (rc_path, NULL);
+			if (rc_path_real)
+				rc_path = rc_path_real;
+		}
 
 		/* we first write to /etc/resolv.conf directly. If that fails,
 		 * we still continue to write to runstatedir but remember the
@@ -788,60 +806,23 @@ update_resolv_conf (NMDnsManager *self,
 		return write_file_result;
 	}
 
-	if (rc_manager != NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK) {
+	if (   rc_manager != NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK
+	    || !_read_link_cached (_PATH_RESCONF, &resconf_link_cached, &resconf_link)) {
 		_LOGT ("update-resolv-conf: write internal file %s succeeded", MY_RESOLV_CONF);
 		return SR_SUCCESS;
 	}
 
-	/* A symlink pointing to NM's own resolv.conf (MY_RESOLV_CONF) is always
-	 * overwritten to ensure that changes are indicated with inotify.  Symlinks
-	 * pointing to any other file are never overwritten.
-	 */
-	if (lstat (_PATH_RESCONF, &st) != 0) {
-		errsv = errno;
-		if (errsv != ENOENT) {
-			/* NM cannot read /etc/resolv.conf */
-			_LOGT ("update-resolv-conf: write internal file %s succeeded but lstat(%s) failed (%s)",
-			       MY_RESOLV_CONF, _PATH_RESCONF, g_strerror (errsv));
-			g_set_error (error,
-			             NM_MANAGER_ERROR,
-			             NM_MANAGER_ERROR_FAILED,
-			             "Could not lstat %s: %s",
-			             _PATH_RESCONF,
-			             g_strerror (errsv));
-			return SR_ERROR;
-		}
-	} else {
-		if (S_ISLNK (st.st_mode)) {
-			if (stat (_PATH_RESCONF, &st) != -1) {
-				gs_free char *path = g_file_read_link (_PATH_RESCONF, NULL);
-
-				if (!path || !nm_streq (path, MY_RESOLV_CONF)) {
-					/* It's not NM's symlink; do nothing */
-					_LOGT ("update-resolv-conf: write internal file %s succeeded "
-					       "but don't update %s as it points to %s",
-					       MY_RESOLV_CONF, _PATH_RESCONF, path ?: "");
-					return SR_SUCCESS;
-				}
-
-				/* resolv.conf is a symlink owned by NM and the target is accessible
-				 */
-			} else {
-				/* resolv.conf is a symlink but the target is not accessible;
-				 * some other program is probably managing resolv.conf and
-				 * NM should not touch it.
-				 */
-				_LOGT ("update-resolv-conf: write internal file %s succeeded "
-				       "but don't update %s as the symlinks points somewhere else",
-				       MY_RESOLV_CONF, _PATH_RESCONF);
-				return SR_SUCCESS;
-			}
-		}
+	if (!nm_streq0 (_read_link_cached (_PATH_RESCONF, &resconf_link_cached, &resconf_link),
+	                MY_RESOLV_CONF)) {
+		_LOGT ("update-resolv-conf: write internal file %s succeeded (don't touch symlink %s linking to %s)",
+		       MY_RESOLV_CONF, _PATH_RESCONF,
+		       _read_link_cached (_PATH_RESCONF, &resconf_link_cached, &resconf_link));
+		return SR_SUCCESS;
 	}
 
-	/* By this point, either /etc/resolv.conf does not exist, is a regular
-	 * file, or is a symlink already owned by NM.  In all cases /etc/resolv.conf
-	 * is replaced with a symlink pointing to NM's resolv.conf in /var/run/.
+	/* By this point, /etc/resolv.conf exists and is a symlink to our internal
+	 * resolv.conf. We update the symlink so that applications get an inotify
+	 * notification.
 	 */
 	if (   unlink (RESOLV_CONF_TMP) != 0
 	    && ((errsv = errno) != ENOENT)) {
