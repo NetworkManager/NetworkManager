@@ -777,32 +777,29 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro) {
 /*****************************************************************************/
 
 /* if @str is NULL, return "(null)". Otherwise, allocate a buffer using
- * alloca() of size @bufsize and fill it with @str. @str will be quoted with
- * single quote, and in case @str is too long, the final quote will be '^'. */
-#define nm_strquote_a(bufsize, str) \
+ * alloca() of and fill it with @str. @str will be quoted with double quote.
+ * If @str is longer then @trunc_at, the string is truncated and the closing
+ * quote is instead '^' to indicate truncation.
+ *
+ * Thus, the maximum stack allocated buffer will be @trunc_at+3. */
+#define nm_strquote_a(trunc_at, str) \
 	({ \
-		G_STATIC_ASSERT ((bufsize) >= 6); \
-		const gsize _BUFSIZE = (bufsize); \
-		const char *const _s = (str); \
-		char *_r; \
-		gsize _l; \
-		gboolean _truncated; \
+		const char *const _str = (str); \
 		\
-		nm_assert (_BUFSIZE >= 6); \
-		\
-		if (_s) { \
-			_l = strlen (_s) + 3; \
-			if ((_truncated = (_BUFSIZE < _l))) \
-				_l = _BUFSIZE; \
-			\
-			_r = g_alloca (_l); \
-			_r[0] = '\''; \
-			memcpy (&_r[1], _s, _l - 3); \
-			_r[_l - 2] = _truncated ? '^' : '\''; \
-			_r[_l - 1] = '\0'; \
-		} else \
-			_r = "(null)"; \
-		_r; \
+		(_str \
+			? ({ \
+				const gsize _trunc_at = (trunc_at); \
+				const gsize _strlen_trunc = NM_MIN (strlen (_str), _trunc_at); \
+				char *_buf; \
+				\
+				_buf = g_alloca (_strlen_trunc + 3); \
+				_buf[0] = '"'; \
+				memcpy (&_buf[1], _str, _strlen_trunc); \
+				_buf[_strlen_trunc + 1] = _str[_strlen_trunc] ? '^' : '"'; \
+				_buf[_strlen_trunc + 2] = '\0'; \
+				_buf; \
+			}) \
+			: "(null)"); \
 	})
 
 #define nm_sprintf_buf(buf, format, ...) ({ \
@@ -822,12 +819,12 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro) {
 	({ \
 		char *_buf; \
 		int _buf_len; \
+		typeof (n_elements) _n_elements = (n_elements); \
 		\
-		G_STATIC_ASSERT (sizeof (char[MAX ((n_elements), 1)]) == (n_elements)); \
-		_buf = g_alloca (n_elements); \
-		_buf_len = g_snprintf (_buf, (n_elements), \
+		_buf = g_alloca (_n_elements); \
+		_buf_len = g_snprintf (_buf, _n_elements, \
 		                       ""format"", ##__VA_ARGS__); \
-		nm_assert (_buf_len < (n_elements)); \
+		nm_assert (_buf_len < _n_elements); \
 		_buf; \
 	})
 
