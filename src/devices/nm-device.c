@@ -73,9 +73,64 @@ _LOG_DECLARE_SELF (NMDevice);
 #include "introspection/org.freedesktop.NetworkManager.Device.h"
 #include "introspection/org.freedesktop.NetworkManager.Device.Statistics.h"
 
-G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, NM_TYPE_EXPORTED_OBJECT)
+/*****************************************************************************/
 
-#define NM_DEVICE_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR(self, NMDevice, NM_IS_DEVICE)
+#define DHCP_RESTART_TIMEOUT   120
+#define DHCP_NUM_TRIES_MAX     3
+#define DEFAULT_AUTOCONNECT    TRUE
+
+/*****************************************************************************/
+
+typedef void (*ActivationHandleFunc) (NMDevice *self);
+
+typedef struct {
+	ActivationHandleFunc func;
+	guint id;
+} ActivationHandleData;
+
+typedef enum {
+	CLEANUP_TYPE_KEEP,
+	CLEANUP_TYPE_REMOVED,
+	CLEANUP_TYPE_DECONFIGURE,
+} CleanupType;
+
+typedef enum {
+	IP_NONE = 0,
+	IP_WAIT,
+	IP_CONF,
+	IP_DONE,
+	IP_FAIL
+} IpState;
+
+typedef struct {
+	NMDevice *slave;
+	gulong watch_id;
+	bool slave_is_enslaved;
+	bool configure;
+} SlaveInfo;
+
+typedef struct {
+	NMDevice *device;
+	guint idle_add_id;
+	int ifindex;
+} DeleteOnDeactivateData;
+
+typedef void (*ArpingCallback) (NMDevice *, NMIP4Config **, gboolean);
+
+typedef struct {
+	ArpingCallback callback;
+	NMDevice *device;
+	NMIP4Config **configs;
+} ArpingData;
+
+typedef enum {
+	HW_ADDR_TYPE_UNSET = 0,
+	HW_ADDR_TYPE_PERMANENT,
+	HW_ADDR_TYPE_EXPLICIT,
+	HW_ADDR_TYPE_GENERATED,
+} HwAddrType;
+
+/*****************************************************************************/
 
 enum {
 	STATE_CHANGED,
@@ -136,82 +191,6 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDevice,
 	PROP_RX_BYTES,
 );
 
-#define DEFAULT_AUTOCONNECT TRUE
-
-/*****************************************************************************/
-
-#define PENDING_ACTION_DHCP4 "dhcp4"
-#define PENDING_ACTION_DHCP6 "dhcp6"
-#define PENDING_ACTION_AUTOCONF6 "autoconf6"
-
-#define DHCP_RESTART_TIMEOUT   120
-#define DHCP_NUM_TRIES_MAX     3
-
-typedef void (*ActivationHandleFunc) (NMDevice *self);
-
-typedef struct {
-	ActivationHandleFunc func;
-	guint id;
-} ActivationHandleData;
-
-typedef enum {
-	CLEANUP_TYPE_KEEP,
-	CLEANUP_TYPE_REMOVED,
-	CLEANUP_TYPE_DECONFIGURE,
-} CleanupType;
-
-typedef enum {
-	IP_NONE = 0,
-	IP_WAIT,
-	IP_CONF,
-	IP_DONE,
-	IP_FAIL
-} IpState;
-
-typedef struct {
-	NMDeviceState state;
-	NMDeviceStateReason reason;
-	guint id;
-} QueuedState;
-
-typedef struct {
-	NMDevice *slave;
-	gulong watch_id;
-	bool slave_is_enslaved;
-	bool configure;
-} SlaveInfo;
-
-typedef struct {
-	NMLogDomain log_domain;
-	guint timeout;
-	guint watch;
-	GPid pid;
-	const char *binary;
-	const char *address;
-	guint deadline;
-} PingInfo;
-
-typedef struct {
-	NMDevice *device;
-	guint idle_add_id;
-	int ifindex;
-} DeleteOnDeactivateData;
-
-typedef void (*ArpingCallback) (NMDevice *, NMIP4Config **, gboolean);
-
-typedef struct {
-	ArpingCallback callback;
-	NMDevice *device;
-	NMIP4Config **configs;
-} ArpingData;
-
-typedef enum {
-	HW_ADDR_TYPE_UNSET = 0,
-	HW_ADDR_TYPE_PERMANENT,
-	HW_ADDR_TYPE_EXPLICIT,
-	HW_ADDR_TYPE_GENERATED,
-} HwAddrType;
-
 typedef struct _NMDevicePrivate {
 	bool in_state_changed;
 
@@ -220,7 +199,13 @@ typedef struct _NMDevicePrivate {
 
 	NMDeviceState state;
 	NMDeviceStateReason state_reason;
-	QueuedState   queued_state;
+	struct {
+		guint id;
+
+		/* The @state/@reason is only valid, when @id is set. */
+		NMDeviceState state;
+		NMDeviceStateReason reason;
+	} queued_state;
 	guint queued_ip4_config_id;
 	guint queued_ip6_config_id;
 	GSList *pending_actions;
@@ -238,7 +223,8 @@ typedef struct _NMDevicePrivate {
 		const guint8 hw_addr_len; /* read-only */
 		guint8 hw_addr_len_;
 	};
-	guint8 /*HwAddrType*/ hw_addr_type;
+
+	HwAddrType hw_addr_type:5;
 
 	bool          real:1;
 
@@ -358,7 +344,15 @@ typedef struct _NMDevicePrivate {
 		guint           num_tries_left;
 	} dhcp4;
 
-	PingInfo        gw_ping;
+	struct {
+		NMLogDomain log_domain;
+		guint timeout;
+		guint watch;
+		GPid pid;
+		const char *binary;
+		const char *address;
+		guint deadline;
+	} gw_ping;
 
 	/* dnsmasq stuff for shared connections */
 	NMDnsMasqManager *dnsmasq_manager;
@@ -451,6 +445,12 @@ typedef struct _NMDevicePrivate {
 
 } NMDevicePrivate;
 
+G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, NM_TYPE_EXPORTED_OBJECT)
+
+#define NM_DEVICE_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR(self, NMDevice, NM_IS_DEVICE)
+
+/*****************************************************************************/
+
 static void nm_device_set_proxy_config (NMDevice *self, GHashTable *options);
 
 static gboolean nm_device_set_ip4_config (NMDevice *self,
@@ -489,7 +489,7 @@ static void _set_state_full (NMDevice *self,
                              NMDeviceState state,
                              NMDeviceStateReason reason,
                              gboolean quitting);
-
+static void queued_state_clear (NMDevice *device);
 static gboolean queued_ip4_config_change (gpointer user_data);
 static gboolean queued_ip6_config_change (gpointer user_data);
 static void ip_check_ping_watch_cb (GPid pid, gint status, gpointer user_data);
@@ -504,36 +504,27 @@ static void _cancel_activation (NMDevice *self);
 
 /*****************************************************************************/
 
-#define QUEUED_PREFIX "queued state change to "
-
-static const char *state_table[] = {
-	[NM_DEVICE_STATE_UNKNOWN]      = QUEUED_PREFIX "unknown",
-	[NM_DEVICE_STATE_UNMANAGED]    = QUEUED_PREFIX "unmanaged",
-	[NM_DEVICE_STATE_UNAVAILABLE]  = QUEUED_PREFIX "unavailable",
-	[NM_DEVICE_STATE_DISCONNECTED] = QUEUED_PREFIX "disconnected",
-	[NM_DEVICE_STATE_PREPARE]      = QUEUED_PREFIX "prepare",
-	[NM_DEVICE_STATE_CONFIG]       = QUEUED_PREFIX "config",
-	[NM_DEVICE_STATE_NEED_AUTH]    = QUEUED_PREFIX "need-auth",
-	[NM_DEVICE_STATE_IP_CONFIG]    = QUEUED_PREFIX "ip-config",
-	[NM_DEVICE_STATE_IP_CHECK]     = QUEUED_PREFIX "ip-check",
-	[NM_DEVICE_STATE_SECONDARIES]  = QUEUED_PREFIX "secondaries",
-	[NM_DEVICE_STATE_ACTIVATED]    = QUEUED_PREFIX "activated",
-	[NM_DEVICE_STATE_DEACTIVATING] = QUEUED_PREFIX "deactivating",
-	[NM_DEVICE_STATE_FAILED]       = QUEUED_PREFIX "failed",
-};
-
-static const char *
-queued_state_to_string (NMDeviceState state)
-{
-	if ((gsize) state < G_N_ELEMENTS (state_table))
-		return state_table[state];
-	return state_table[NM_DEVICE_STATE_UNKNOWN];
-}
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (queued_state_to_string, NMDeviceState,
+	NM_UTILS_LOOKUP_DEFAULT  (                              NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "???"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_UNKNOWN,      NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "unknown"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_UNMANAGED,    NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "unmanaged"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_UNAVAILABLE,  NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "unavailable"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_DISCONNECTED, NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "disconnected"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_PREPARE,      NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "prepare"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_CONFIG,       NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "config"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_NEED_AUTH,    NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "need-auth"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_IP_CONFIG,    NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "ip-config"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_IP_CHECK,     NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "ip-check"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_SECONDARIES,  NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "secondaries"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_ACTIVATED,    NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "activated"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_DEACTIVATING, NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "deactivating"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_FAILED,       NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "failed"),
+);
 
 static const char *
 state_to_string (NMDeviceState state)
 {
-	return queued_state_to_string (state) + strlen (QUEUED_PREFIX);
+	return queued_state_to_string (state) + NM_STRLEN (NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE);
 }
 
 NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_reason_to_string, NMDeviceStateReason,
@@ -1932,8 +1923,9 @@ carrier_changed (NMDevice *self, gboolean carrier)
 		}
 	} else {
 		if (priv->state == NM_DEVICE_STATE_UNAVAILABLE) {
-			if (nm_device_queued_state_peek (self) >= NM_DEVICE_STATE_DISCONNECTED)
-				nm_device_queued_state_clear (self);
+			if (   priv->queued_state.id
+			    && priv->queued_state.state >= NM_DEVICE_STATE_DISCONNECTED)
+				queued_state_clear (self);
 		} else {
 			nm_device_queue_state (self, NM_DEVICE_STATE_UNAVAILABLE,
 			                       NM_DEVICE_STATE_REASON_CARRIER);
@@ -1989,7 +1981,7 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 		klass->carrier_changed (self, TRUE);
 
 		if (nm_clear_g_source (&priv->carrier_wait_id)) {
-			nm_device_remove_pending_action (self, "carrier wait", TRUE);
+			nm_device_remove_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, TRUE);
 			_carrier_wait_check_queued_act_request (self);
 		}
 	} else if (   state <= NM_DEVICE_STATE_DISCONNECTED
@@ -3921,6 +3913,9 @@ recheck_available (gpointer user_data)
 		priv->recheck_available.unavailable_reason = NM_DEVICE_STATE_REASON_NONE;
 	}
 
+	if (priv->recheck_available.call_id == 0)
+		nm_device_remove_pending_action (self, NM_PENDING_ACTION_RECHECK_AVAILABLE, TRUE);
+
 	return G_SOURCE_REMOVE;
 }
 
@@ -3933,8 +3928,12 @@ nm_device_queue_recheck_available (NMDevice *self,
 
 	priv->recheck_available.available_reason = available_reason;
 	priv->recheck_available.unavailable_reason = unavailable_reason;
-	if (!priv->recheck_available.call_id)
+	if (!priv->recheck_available.call_id) {
 		priv->recheck_available.call_id = g_idle_add (recheck_available, self);
+		nm_device_add_pending_action (self, NM_PENDING_ACTION_RECHECK_AVAILABLE,
+		                              FALSE /* cannot assert, because of how recheck_available() first clears
+		                                       the call-id and postpones removing the pending-action. */);
+	}
 }
 
 void
@@ -4971,7 +4970,7 @@ dhcp4_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 		/* Stop any ongoing DHCP transaction on this device */
 		nm_clear_g_signal_handler (priv->dhcp4.client, &priv->dhcp4.state_sigid);
 
-		nm_device_remove_pending_action (self, PENDING_ACTION_DHCP4, FALSE);
+		nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP4, FALSE);
 
 		if (   cleanup_type == CLEANUP_TYPE_DECONFIGURE
 		    || cleanup_type == CLEANUP_TYPE_REMOVED)
@@ -5199,7 +5198,7 @@ dhcp4_lease_change (NMDevice *self, NMIP4Config *config)
 	                    NULL,
 	                    NULL);
 
-	nm_device_remove_pending_action (self, PENDING_ACTION_DHCP4, FALSE);
+	nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP4, FALSE);
 
 	return TRUE;
 }
@@ -5424,7 +5423,7 @@ dhcp4_start (NMDevice *self,
 	                                            G_CALLBACK (dhcp4_state_changed),
 	                                            self);
 
-	nm_device_add_pending_action (self, PENDING_ACTION_DHCP4, TRUE);
+	nm_device_add_pending_action (self, NM_PENDING_ACTION_DHCP4, TRUE);
 
 	/* DHCP devices will be notified by the DHCP manager when stuff happens */
 	return NM_ACT_STAGE_RETURN_POSTPONE;
@@ -5726,7 +5725,7 @@ dhcp6_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 		g_clear_object (&priv->dhcp6.client);
 	}
 
-	nm_device_remove_pending_action (self, PENDING_ACTION_DHCP6, FALSE);
+	nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP6, FALSE);
 
 	if (priv->dhcp6.config) {
 		nm_exported_object_clear_and_unexport (&priv->dhcp6.config);
@@ -5970,7 +5969,7 @@ dhcp6_lease_change (NMDevice *self)
 	                    nm_device_get_applied_connection (self),
 	                    self, NULL, NULL, NULL);
 
-	nm_device_remove_pending_action (self, PENDING_ACTION_DHCP6, FALSE);
+	nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP6, FALSE);
 
 	return TRUE;
 }
@@ -6256,7 +6255,7 @@ dhcp6_start (NMDevice *self, gboolean wait_for_ll, NMDeviceStateReason *reason)
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	if (!nm_setting_ip_config_get_may_fail (s_ip6) ||
 	    !strcmp (nm_setting_ip_config_get_method (s_ip6), NM_SETTING_IP6_CONFIG_METHOD_DHCP))
-		nm_device_add_pending_action (self, PENDING_ACTION_DHCP6, TRUE);
+		nm_device_add_pending_action (self, NM_PENDING_ACTION_DHCP6, TRUE);
 
 	if (wait_for_ll) {
 		NMActStageReturn ret;
@@ -7031,7 +7030,7 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 	}
 
 	if (!nm_setting_ip_config_get_may_fail (nm_connection_get_setting_ip6_config (connection)))
-		nm_device_add_pending_action (self, PENDING_ACTION_AUTOCONF6, TRUE);
+		nm_device_add_pending_action (self, NM_PENDING_ACTION_AUTOCONF6, TRUE);
 
 	/* ensure link local is ready... */
 	ret = linklocal6_start (self);
@@ -7053,7 +7052,7 @@ addrconf6_cleanup (NMDevice *self)
 	nm_clear_g_signal_handler (priv->ndisc, &priv->ndisc_changed_id);
 	nm_clear_g_signal_handler (priv->ndisc, &priv->ndisc_timeout_id);
 
-	nm_device_remove_pending_action (self, PENDING_ACTION_AUTOCONF6, FALSE);
+	nm_device_remove_pending_action (self, NM_PENDING_ACTION_AUTOCONF6, FALSE);
 
 	g_clear_object (&priv->ac_ip6_config);
 	g_clear_object (&priv->ndisc);
@@ -7921,7 +7920,7 @@ activate_stage5_ip4_config_commit (NMDevice *self)
 
 	arp_announce (self);
 
-	nm_device_remove_pending_action (self, PENDING_ACTION_DHCP4, FALSE);
+	nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP4, FALSE);
 
 	/* Enter the IP_CHECK state if this is the first method to complete */
 	_set_ip_state (self, AF_INET, IP_DONE);
@@ -8058,8 +8057,8 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 				return;
 			}
 		}
-		nm_device_remove_pending_action (self, PENDING_ACTION_DHCP6, FALSE);
-		nm_device_remove_pending_action (self, PENDING_ACTION_AUTOCONF6, FALSE);
+		nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP6, FALSE);
+		nm_device_remove_pending_action (self, NM_PENDING_ACTION_AUTOCONF6, FALSE);
 
 		/* Start IPv6 forwarding if we need it */
 		method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
@@ -9745,7 +9744,7 @@ carrier_wait_timeout (gpointer user_data)
 	NMDevice *self = NM_DEVICE (user_data);
 
 	NM_DEVICE_GET_PRIVATE (self)->carrier_wait_id = 0;
-	nm_device_remove_pending_action (self, "carrier wait", TRUE);
+	nm_device_remove_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, TRUE);
 
 	_carrier_wait_check_queued_act_request (self);
 
@@ -9827,7 +9826,7 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 	 */
 	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
 		if (!nm_clear_g_source (&priv->carrier_wait_id))
-			nm_device_add_pending_action (self, "carrier wait", TRUE);
+			nm_device_add_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, TRUE);
 		priv->carrier_wait_id = g_timeout_add_seconds (5, carrier_wait_timeout, self);
 	}
 
@@ -11241,7 +11240,9 @@ nm_device_supports_vlans (NMDevice *self)
 /**
  * nm_device_add_pending_action():
  * @self: the #NMDevice to add the pending action to
- * @action: a static string that identifies the action
+ * @action: a static string that identifies the action. The string instance must
+ *   stay valid until the pending action is removed (that is, the string is
+ *   not cloned, but ownership stays with the caller).
  * @assert_not_yet_pending: if %TRUE, assert that the @action is currently not yet pending.
  * Otherwise, ignore duplicate scheduling of the same action silently.
  *
@@ -11276,7 +11277,7 @@ nm_device_add_pending_action (NMDevice *self, const char *action, gboolean asser
 		count++;
 	}
 
-	priv->pending_actions = g_slist_append (priv->pending_actions, g_strdup (action));
+	priv->pending_actions = g_slist_prepend (priv->pending_actions, (char *) action);
 	count++;
 
 	_LOGD (LOGD_DEVICE, "add_pending_action (%d): '%s'", count, action);
@@ -11290,7 +11291,7 @@ nm_device_add_pending_action (NMDevice *self, const char *action, gboolean asser
 /**
  * nm_device_remove_pending_action():
  * @self: the #NMDevice to remove the pending action from
- * @action: a static string that identifies the action
+ * @action: a string that identifies the action.
  * @assert_is_pending: if %TRUE, assert that the @action is pending.
  * If %FALSE, don't do anything if the current action is not pending and
  * return %FALSE.
@@ -11317,7 +11318,6 @@ nm_device_remove_pending_action (NMDevice *self, const char *action, gboolean as
 			_LOGD (LOGD_DEVICE, "remove_pending_action (%d): '%s'",
 			       count + g_slist_length (iter->next), /* length excluding 'iter' */
 			       action);
-			g_free (iter->data);
 			priv->pending_actions = g_slist_delete_link (priv->pending_actions, iter);
 			if (priv->pending_actions == NULL)
 				_notify (self, PROP_HAS_PENDING_ACTION);
@@ -11383,8 +11383,7 @@ _cleanup_generic_pre (NMDevice *self, CleanupType cleanup_type)
 		                                      NULL);
 	}
 
-	/* Clear any queued transitions */
-	nm_device_queued_state_clear (self);
+	queued_state_clear (self);
 
 	_cleanup_ip4_pre (self, cleanup_type);
 	_cleanup_ip6_pre (self, cleanup_type);
@@ -11889,8 +11888,7 @@ _set_state_full (NMDevice *self,
 	priv->state = state;
 	priv->state_reason = reason;
 
-	/* Clear any queued transitions */
-	nm_device_queued_state_clear (self);
+	queued_state_clear (self);
 
 	dispatcher_cleanup (self);
 	if (priv->deactivating_cancellable)
@@ -12202,33 +12200,32 @@ nm_device_state_changed (NMDevice *self,
 }
 
 static gboolean
-queued_set_state (gpointer user_data)
+queued_state_set (gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMDeviceState new_state;
 	NMDeviceStateReason new_reason;
 
-	if (priv->queued_state.id) {
-		_LOGD (LOGD_DEVICE, "running queued state change to %s (id %d)",
-		       state_to_string (priv->queued_state.state),
-		       priv->queued_state.id);
+	nm_assert (priv->queued_state.id);
 
-		/* Clear queued state struct before triggering state change, since
-		 * the state change may queue another state.
-		 */
-		priv->queued_state.id = 0;
-		new_state = priv->queued_state.state;
-		new_reason = priv->queued_state.reason;
-		nm_device_queued_state_clear (self);
+	_LOGD (LOGD_DEVICE, "queue-state[%s, reason:%s, id:%u]: %s",
+	       state_to_string (priv->queued_state.state),
+	       reason_to_string (priv->queued_state.reason),
+	       priv->queued_state.id,
+	       "change state");
 
-		nm_device_state_changed (self, new_state, new_reason);
-		nm_device_remove_pending_action (self, queued_state_to_string (new_state), TRUE);
-	} else {
-		g_warn_if_fail (priv->queued_state.state == NM_DEVICE_STATE_UNKNOWN);
-		g_warn_if_fail (priv->queued_state.reason == NM_DEVICE_STATE_REASON_NONE);
-	}
-	return FALSE;
+	/* Clear queued state struct before triggering state change, since
+	 * the state change may queue another state.
+	 */
+	priv->queued_state.id = 0;
+	new_state = priv->queued_state.state;
+	new_reason = priv->queued_state.reason;
+
+	nm_device_state_changed (self, new_state, new_reason);
+	nm_device_remove_pending_action (self, queued_state_to_string (new_state), TRUE);
+
+	return G_SOURCE_REMOVE;
 }
 
 void
@@ -12242,8 +12239,16 @@ nm_device_queue_state (NMDevice *self,
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->queued_state.id && priv->queued_state.state == state)
+	if (priv->queued_state.id && priv->queued_state.state == state) {
+		_LOGD (LOGD_DEVICE, "queue-state[%s, reason:%s, id:%u]: %s%s%s%s",
+		       state_to_string (priv->queued_state.state),
+		       reason_to_string (priv->queued_state.reason),
+		       priv->queued_state.id,
+		       "ignore queuing same state change",
+		       NM_PRINT_FMT_QUOTED (priv->queued_state.reason != reason,
+		                            " (reason differs: ", reason_to_string (reason), ")", ""));
 		return;
+	}
 
 	/* Add pending action for the new state before clearing the queued states, so
 	 * that we don't accidently pop all pending states and reach 'startup complete'  */
@@ -12251,45 +12256,41 @@ nm_device_queue_state (NMDevice *self,
 
 	/* We should only ever have one delayed state transition at a time */
 	if (priv->queued_state.id) {
-		_LOGW (LOGD_DEVICE, "overwriting previously queued state change to %s (%s)",
+		_LOGW (LOGD_DEVICE, "queue-state[%s, reason:%s, id:%u]: %s",
 		       state_to_string (priv->queued_state.state),
-		       reason_to_string (priv->queued_state.reason));
-		nm_device_queued_state_clear (self);
+		       reason_to_string (priv->queued_state.reason),
+		       priv->queued_state.id,
+		       "replace previously queued state change");
+		nm_clear_g_source (&priv->queued_state.id);
+		nm_device_remove_pending_action (self, queued_state_to_string (priv->queued_state.state), TRUE);
 	}
 
 	priv->queued_state.state = state;
 	priv->queued_state.reason = reason;
-	priv->queued_state.id = g_idle_add (queued_set_state, self);
+	priv->queued_state.id = g_idle_add (queued_state_set, self);
 
-	_LOGD (LOGD_DEVICE, "queued state change to %s due to %s (id %d)",
-	       state_to_string (state), reason_to_string (reason),
-	       priv->queued_state.id);
+	_LOGD (LOGD_DEVICE, "queue-state[%s, reason:%s, id:%u]: %s",
+	       state_to_string (state),
+	       reason_to_string (reason),
+	       priv->queued_state.id,
+	       "queue state change");
 }
 
-NMDeviceState
-nm_device_queued_state_peek (NMDevice *self)
-{
-	NMDevicePrivate *priv;
-
-	g_return_val_if_fail (NM_IS_DEVICE (self), NM_DEVICE_STATE_UNKNOWN);
-
-	priv = NM_DEVICE_GET_PRIVATE (self);
-
-	return priv->queued_state.id ? priv->queued_state.state : NM_DEVICE_STATE_UNKNOWN;
-}
-
-void
-nm_device_queued_state_clear (NMDevice *self)
+static void
+queued_state_clear (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->queued_state.id) {
-		_LOGD (LOGD_DEVICE, "clearing queued state transition (id %d)",
-		       priv->queued_state.id);
-		nm_clear_g_source (&priv->queued_state.id);
-		nm_device_remove_pending_action (self, queued_state_to_string (priv->queued_state.state), TRUE);
-	}
-	memset (&priv->queued_state, 0, sizeof (priv->queued_state));
+	if (!priv->queued_state.id)
+		return;
+
+	_LOGD (LOGD_DEVICE, "queue-state[%s, reason:%s, id:%u]: %s",
+	       state_to_string (priv->queued_state.state),
+	       reason_to_string (priv->queued_state.reason),
+	       priv->queued_state.id,
+	       "clear queued state change");
+	nm_clear_g_source (&priv->queued_state.id);
+	nm_device_remove_pending_action (self, queued_state_to_string (priv->queued_state.state), TRUE);
 }
 
 NMDeviceState
@@ -12584,7 +12585,9 @@ nm_device_hw_addr_is_explict (NMDevice *self)
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
-	return !NM_IN_SET (priv->hw_addr_type, HW_ADDR_TYPE_PERMANENT, HW_ADDR_TYPE_UNSET);
+	return !NM_IN_SET ((HwAddrType) priv->hw_addr_type,
+	                   HW_ADDR_TYPE_PERMANENT,
+	                   HW_ADDR_TYPE_UNSET);
 }
 
 static gboolean
@@ -13143,7 +13146,7 @@ finalize (GObject *object)
 	g_free (priv->hw_addr);
 	g_free (priv->hw_addr_perm);
 	g_free (priv->hw_addr_initial);
-	g_slist_free_full (priv->pending_actions, g_free);
+	g_slist_free (priv->pending_actions);
 	g_slist_free_full (priv->dad6_failed_addrs, g_free);
 	g_clear_pointer (&priv->physical_port_id, g_free);
 	g_free (priv->udi);

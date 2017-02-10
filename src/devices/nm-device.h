@@ -30,6 +30,21 @@
 #include "nm-rfkill-manager.h"
 #include "NetworkManagerUtils.h"
 
+
+#define NM_PENDING_ACTION_AUTOACTIVATE              "autoactivate"
+#define NM_PENDING_ACTION_DHCP4                     "dhcp4"
+#define NM_PENDING_ACTION_DHCP6                     "dhcp6"
+#define NM_PENDING_ACTION_AUTOCONF6                 "autoconf6"
+#define NM_PENDING_ACTION_RECHECK_AVAILABLE         "recheck-available"
+#define NM_PENDING_ACTION_CARRIER_WAIT              "carrier-wait"
+#define NM_PENDING_ACTION_WAITING_FOR_SUPPLICANT    "waiting-for-supplicant"
+#define NM_PENDING_ACTION_WIFI_SCAN                 "wifi-scan"
+#define NM_PENDING_ACTION_WAITING_FOR_COMPANION     "waiting-for-companion"
+
+#define NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "queued-state-change-"
+#define NM_PENDING_ACTIONPREFIX_ACTIVATION          "activation-"
+
+
 /* Properties */
 #define NM_DEVICE_UDI              "udi"
 #define NM_DEVICE_IFACE            "interface"

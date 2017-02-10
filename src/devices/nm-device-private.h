@@ -91,10 +91,6 @@ gboolean nm_device_dhcp6_renew (NMDevice *device, gboolean release);
 
 void nm_device_recheck_available_connections (NMDevice *device);
 
-void nm_device_queued_state_clear (NMDevice *device);
-
-NMDeviceState nm_device_queued_state_peek (NMDevice *device);
-
 gboolean nm_device_get_enslaved (NMDevice *device);
 
 NMDevice *nm_device_master_get_slave_by_ifindex (NMDevice *dev, int ifindex);
