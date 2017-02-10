@@ -2450,7 +2450,7 @@ _support_kernel_extended_ifa_flags_detect (struct nl_msg *msg)
 	 * we assume, that the kernel supports extended flags, IFA_F_MANAGETEMPADDR
 	 * and IFA_F_NOPREFIXROUTE (they were added together).
 	 **/
-	_support_kernel_extended_ifa_flags = !!nlmsg_find_attr (msg_hdr, sizeof (struct ifaddrmsg), 8 /* IFA_FLAGS */);
+	_support_kernel_extended_ifa_flags = !!nlmsg_find_attr (msg_hdr, sizeof (struct ifaddrmsg), IFA_FLAGS);
 	_LOG2D ("kernel-support: extended-ifa-flags: %s", _support_kernel_extended_ifa_flags ? "detected" : "not detected");
 }
 
