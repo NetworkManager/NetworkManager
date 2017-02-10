@@ -298,7 +298,7 @@ _support_user_ipv6ll_get (void)
 {
 	if (_support_user_ipv6ll_still_undecided ()) {
 		_support_user_ipv6ll = -1;
-		_LOG2W ("kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "failed to detect; assume no support");
+		_LOG2D ("kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "failed to detect; assume no support");
 		return FALSE;
 	}
 	return _support_user_ipv6ll > 0;
@@ -2460,7 +2460,7 @@ static gboolean
 _support_kernel_extended_ifa_flags_get (void)
 {
 	if (_support_kernel_extended_ifa_flags_still_undecided ()) {
-		_LOG2W ("support: kernel-extended-ifa-flags: unable to detect kernel support for handling IPv6 temporary addresses. Assume support");
+		_LOG2D ("support: kernel-extended-ifa-flags: unable to detect kernel support for handling IPv6 temporary addresses. Assume support");
 		_support_kernel_extended_ifa_flags = 1;
 	}
 	return _support_kernel_extended_ifa_flags;
