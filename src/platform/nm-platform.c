@@ -1184,7 +1184,7 @@ nm_platform_link_set_up (NMPlatform *self, int ifindex, gboolean *out_no_firmwar
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 
-	_LOGD ("link: setting up '%s' (%d)", nm_platform_link_get_name (self, ifindex), ifindex);
+	_LOGD ("link: setting up %s (%d)", nm_strquote_a (25, nm_platform_link_get_name (self, ifindex)), ifindex);
 	return klass->link_set_up (self, ifindex, out_no_firmware);
 }
 
@@ -1202,7 +1202,7 @@ nm_platform_link_set_down (NMPlatform *self, int ifindex)
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 
-	_LOGD ("link: setting down '%s' (%d)", nm_platform_link_get_name (self, ifindex), ifindex);
+	_LOGD ("link: setting down %s (%d)", nm_strquote_a (25, nm_platform_link_get_name (self, ifindex)), ifindex);
 	return klass->link_set_down (self, ifindex);
 }
 
@@ -1220,7 +1220,7 @@ nm_platform_link_set_arp (NMPlatform *self, int ifindex)
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
 
-	_LOGD ("link: setting arp '%s' (%d)", nm_platform_link_get_name (self, ifindex), ifindex);
+	_LOGD ("link: setting arp %s (%d)", nm_strquote_a (25, nm_platform_link_get_name (self, ifindex)), ifindex);
 	return klass->link_set_arp (self, ifindex);
 }
 
