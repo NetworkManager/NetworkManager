@@ -298,7 +298,7 @@ _support_user_ipv6ll_get (void)
 {
 	if (_support_user_ipv6ll_still_undecided ()) {
 		_support_user_ipv6ll = -1;
-		_LOG2D ("kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "failed to detect; assume no support");
+		_LOG2D ("kernel-support: IFLA_INET6_ADDR_GEN_MODE: %s", "failed to detect; assume no support");
 		return FALSE;
 	}
 	return _support_user_ipv6ll > 0;
@@ -309,13 +309,11 @@ static void
 _support_user_ipv6ll_detect (struct nlattr **tb)
 {
 	if (_support_user_ipv6ll_still_undecided ()) {
-		if (tb[IFLA_INET6_ADDR_GEN_MODE]) {
-			_support_user_ipv6ll = 1;
-			_LOG2D ("kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "detected");
-		} else {
-			_support_user_ipv6ll = -1;
-			_LOG2D ("kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "not detected");
-		}
+		gboolean supported = !!tb[IFLA_INET6_ADDR_GEN_MODE];
+
+		_support_user_ipv6ll = supported ? 1 : -1;
+		_LOG2D ("kernel-support: IFLA_INET6_ADDR_GEN_MODE: %s",
+		        supported ? "detected" : "not detected");
 	}
 }
 
@@ -2453,14 +2451,14 @@ _support_kernel_extended_ifa_flags_detect (struct nl_msg *msg)
 	 * and IFA_F_NOPREFIXROUTE (they were added together).
 	 **/
 	_support_kernel_extended_ifa_flags = !!nlmsg_find_attr (msg_hdr, sizeof (struct ifaddrmsg), 8 /* IFA_FLAGS */);
-	_LOG2D ("support: kernel-extended-ifa-flags: %ssupported", _support_kernel_extended_ifa_flags ? "" : "not ");
+	_LOG2D ("kernel-support: extended-ifa-flags: %s", _support_kernel_extended_ifa_flags ? "detected" : "not detected");
 }
 
 static gboolean
 _support_kernel_extended_ifa_flags_get (void)
 {
 	if (_support_kernel_extended_ifa_flags_still_undecided ()) {
-		_LOG2D ("support: kernel-extended-ifa-flags: unable to detect kernel support for handling IPv6 temporary addresses. Assume support");
+		_LOG2D ("kernel-support: extended-ifa-flags: %s", "unable to detect kernel support for handling IPv6 temporary addresses. Assume support");
 		_support_kernel_extended_ifa_flags = 1;
 	}
 	return _support_kernel_extended_ifa_flags;
