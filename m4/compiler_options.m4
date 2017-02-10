@@ -124,3 +124,30 @@ else
 	AC_MSG_RESULT(no)
 fi
 ])
+
+AC_DEFUN([NM_LTO],
+[AC_ARG_ENABLE(lto, AS_HELP_STRING([--enable-lto], [Enable Link Time Optimization for smaller size (default: no)]))
+if (test "${enable_lto}" = "yes"); then
+    CFLAGS="-flto $CFLAGS"
+else
+    enable_lto='no'
+fi
+])
+
+AC_DEFUN([NM_LD_GC],
+[AC_ARG_ENABLE(ld-gc, AS_HELP_STRING([--enable-ld-gc], [Enable garbage collection of unused symbols on linking (default: auto)]))
+if (test "${enable_ld_gc}" != "no"); then
+	CC_CHECK_FLAG_APPEND([ld_gc_flags], [CFLAGS], [-fdata-sections -ffunction-sections -Wl,--gc-sections])
+	if (test -n "${ld_gc_flags}"); then
+		enable_ld_gc="yes"
+		CFLAGS="$CFLAGS $ld_gc_flags"
+	else
+		if (test "${enable_ld_gc}" = "yes"); then
+			AC_MSG_ERROR([Unused symbol eviction requested but not supported.])
+		else
+			enable_ld_gc="no"
+		fi
+	fi
+fi
+])
+
