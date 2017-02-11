@@ -245,6 +245,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
 {
 	GString *new_contents;
 	GPtrArray *fqdn_opts, *reqs;
+	gboolean reset_reqlist = FALSE;
 	int i;
 
 	g_return_val_if_fail (!anycast_addr || nm_utils_hwaddr_valid (anycast_addr, ETH_ALEN), NULL);
@@ -302,6 +303,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
 				in_req = TRUE;
 				p += strlen (REQ_TAG);
 				g_ptr_array_set_size (reqs, 0);
+				reset_reqlist = TRUE;
 			}
 
 			/* Save all request options for later use */
@@ -345,6 +347,8 @@ nm_dhcp_dhclient_create_config (const char *interface,
 		add_request (reqs, "ntp-servers");
 	}
 
+	if (reset_reqlist)
+		g_string_append (new_contents, "request; # override dhclient defaults\n");
 	/* And add it to the dhclient configuration */
 	for (i = 0; i < reqs->len; i++)
 		g_string_append_printf (new_contents, "also request %s;\n", (char *) reqs->pdata[i]);

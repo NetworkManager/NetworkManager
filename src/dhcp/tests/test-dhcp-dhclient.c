@@ -511,6 +511,7 @@ static const char *existing_req_expected = \
 	"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
 	"option wpad code 252 = string;\n"
 	"\n"
+	"request; # override dhclient defaults\n"
 	"also request another-thing;\n"
 	"also request yet-another-thing;\n"
 	"also request rfc3442-classless-static-routes;\n"
