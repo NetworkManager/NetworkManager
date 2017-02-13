@@ -1080,29 +1080,13 @@ else
 fi
 AC_SUBST(NM_LOG_COMPILER, 'LOG_COMPILER = "$(top_srcdir)/tools/run-nm-test.sh" --called-from-make "$(LIBTOOL)" "$(with_valgrind)" "'"$with_valgrind_suppressions"'" --launch-dbus=auto')
 
-GTK_DOC_CHECK(1.0)
-
-# check for pregenerated manpages to be installed
-install_pregen_manpages=no
-if test "$enable_gtk_doc" != "yes" \
-	-a -f man/nmcli.1 \
-	-a -f man/nmtui.1 \
-	-a -f man/nm-online.1 \
-	-a -f man/NetworkManager.conf.5 \
-	-a -f man/nm-settings.5 \
-	-a -f man/nm-settings-keyfile.5 \
-	-a -f man/nm-settings-ifcfg-rh.5 \
-	-a -f man/nmcli-examples.7 \
-	-a -f man/NetworkManager.8; then
-	install_pregen_manpages=yes
-fi
-AM_CONDITIONAL(INSTALL_PREGEN_MANPAGES, test "x${install_pregen_manpages}" = "xyes")
+AC_PATH_TOOL(BINUTILS_NM, nm, nm)
 
 AM_PATH_PYTHON([], [], [PYTHON=python])
 AC_SUBST(PYTHON, [$PYTHON])
 AC_DEFINE_UNQUOTED(TEST_NM_PYTHON, "$PYTHON", [Define python path for test binary])
 
-AC_PATH_TOOL(BINUTILS_NM, nm, nm)
+GTK_DOC_CHECK(1.0)
 
 # check if we can build setting property documentation
 build_setting_docs=no
@@ -1130,15 +1114,35 @@ fi
 
 # check for pre-built setting docs
 if test "$build_setting_docs" != "yes" \
-	-a -f man/nm-settings.xml \
-	-a -f man/nm-settings-keyfile.xml \
-	-a -f man/nm-settings-ifcfg-rh.xml \
-	-a -f docs/api/settings-spec.xml; then
+    -a -f man/nm-settings.xml \
+    -a -f man/nm-settings-keyfile.xml \
+    -a -f man/nm-settings-ifcfg-rh.xml \
+    \
+    -a -f docs/api/settings-spec.xml \
+    ; then
     have_setting_docs=yes
+fi
+
+# check for pregenerated manpages to be installed
+install_pregen_manpages=no
+if test "$enable_gtk_doc" != "yes" \
+    -a -f man/NetworkManager.8 \
+    -a -f man/NetworkManager.conf.5 \
+    -a -f man/nm-online.1 \
+    -a -f man/nmcli-examples.7 \
+    -a -f man/nmcli.1 \
+    -a -f man/nmtui.1 \
+    \
+    -a -f man/nm-settings-ifcfg-rh.5 \
+    -a -f man/nm-settings-keyfile.5 \
+    -a -f man/nm-settings.5 \
+    ; then
+	install_pregen_manpages=yes
 fi
 
 AM_CONDITIONAL(BUILD_SETTING_DOCS, test "$build_setting_docs" = "yes")
 AM_CONDITIONAL(SETTING_DOCS_AVAILABLE, test "$build_setting_docs" = "yes" -o "$have_setting_docs" = "yes")
+AM_CONDITIONAL(INSTALL_PREGEN_MANPAGES, test "$install_pregen_manpages" = "yes")
 
 AC_CONFIG_FILES([
 Makefile

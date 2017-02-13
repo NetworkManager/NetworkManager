@@ -3975,16 +3975,16 @@ CLEANFILES += $(man_nm_settings_xml)
 endif
 
 man_pages += \
-	man/nmcli.1 \
-	man/nmtui.1 \
-	man/nm-online.1 \
+	man/NetworkManager.8 \
 	man/NetworkManager.conf.5 \
+	man/nm-online.1 \
 	man/nmcli-examples.7 \
-	man/NetworkManager.8
+	man/nmcli.1 \
+	man/nmtui.1
 
 man_pages_autogen += \
-	man/nm-settings.5 \
-	man/nm-settings-keyfile.5
+	man/nm-settings-keyfile.5 \
+	man/nm-settings.5
 
 if CONFIG_PLUGIN_IFCFG_RH
 man_pages_autogen += man/nm-settings-ifcfg-rh.5
