@@ -1916,6 +1916,7 @@ nmc_property_802_1X_get_phase2_private_key_full (NMSetting *setting, NmcProperty
 		char *val_strip = g_strstrip (g_strdup (val)); \
 		char *p = val_strip; \
 		const char *path, *password; \
+		gs_free char *password_free = NULL; \
 		NMSetting8021xCKScheme scheme = NM_SETTING_802_1X_CK_SCHEME_PATH; \
 		gboolean success; \
 		\
@@ -1929,7 +1930,7 @@ nmc_property_802_1X_get_phase2_private_key_full (NMSetting *setting, NmcProperty
 		if (g_strv_length (strv) == 2) \
 			password = strv[1]; \
 		else \
-			password = pwd_func (NM_SETTING_802_1X (setting)); \
+			password = password_free = g_strdup (pwd_func (NM_SETTING_802_1X (setting))); \
 		success = set_func (NM_SETTING_802_1X (setting), path, password, scheme, NULL, error); \
 		g_free (val_strip); \
 		g_strfreev (strv); \
