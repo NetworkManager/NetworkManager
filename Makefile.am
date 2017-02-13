@@ -4001,30 +4001,27 @@ EXTRA_DIST += \
 	$(man_pages_autogen)
 
 
+if HAVE_DOCS
+
 install-data-hook-man:
-	if test -n "$(install_manpages)"; then \
-		for link in $(nmtui_links); do \
-			ln -f $(DESTDIR)$(mandir)/man1/nmtui.1 $(DESTDIR)$(mandir)/man1/$$link.1; \
-		done; \
-		ln -f $(DESTDIR)$(mandir)/man5/NetworkManager.conf.5 $(DESTDIR)$(mandir)/man5/nm-system-settings.conf.5; \
-	fi
+	for link in $(nmtui_links); do \
+		ln -f $(DESTDIR)$(mandir)/man1/nmtui.1 $(DESTDIR)$(mandir)/man1/$$link.1; \
+	done; \
+	ln -f $(DESTDIR)$(mandir)/man5/NetworkManager.conf.5 $(DESTDIR)$(mandir)/man5/nm-system-settings.conf.5;
 
 install_data_hook += install-data-hook-man
 
 uninstall-hook-man:
-	if test -n "$(install_manpages)"; then \
-		for link in $(nmtui_links); do \
-			rm -f $(DESTDIR)$(mandir)/man1/$$link.1; \
-		done; \
-		rm -f $(DESTDIR)$(mandir)/man5/nm-system-settings.conf.5; \
-	fi
+	for link in $(nmtui_links); do \
+		rm -f $(DESTDIR)$(mandir)/man1/$$link.1; \
+	done; \
+	rm -f $(DESTDIR)$(mandir)/man5/nm-system-settings.conf.5;
 
 uninstall_hook += uninstall-hook-man
 
-if HAVE_DOCS
-install_manpages = true
 man_MANS += $(man_pages)
 man_MANS += $(man_pages_autogen)
+
 endif
 
 if BUILD_DOCS
