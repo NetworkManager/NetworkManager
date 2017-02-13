@@ -1089,7 +1089,7 @@ AC_DEFINE_UNQUOTED(TEST_NM_PYTHON, "$PYTHON", [Define python path for test binar
 GTK_DOC_CHECK(1.0)
 
 # check if we can build setting property documentation
-build_setting_docs=no
+build_docs=no
 if test -n "$INTROSPECTION_MAKEFILE"; then
     # If g-i is installed we know we have python, but we might not have pygobject
     if ! "$PYTHON" -c 'from gi.repository import GObject' >& /dev/null; then
@@ -1101,7 +1101,7 @@ if test -n "$INTROSPECTION_MAKEFILE"; then
 
     have_introspection=yes
     if test "$enable_gtk_doc" = "yes"; then
-        build_setting_docs=yes
+        build_docs=yes
     fi
 else
     if test "$enable_gtk_doc" = "yes"; then
@@ -1112,20 +1112,9 @@ else
     have_introspection=no
 fi
 
-# check for pre-built setting docs
-if test "$build_setting_docs" != "yes" \
-    -a -f man/nm-settings.xml \
-    -a -f man/nm-settings-keyfile.xml \
-    -a -f man/nm-settings-ifcfg-rh.xml \
-    \
-    -a -f docs/api/settings-spec.xml \
-    ; then
-    have_setting_docs=yes
-fi
-
-# check for pregenerated manpages to be installed
-install_pregen_manpages=no
-if test "$enable_gtk_doc" != "yes" \
+# check for pregenerated manpages and documentation to be installed
+use_pregen_docs=no
+if test "$build_docs" != "yes" \
     -a -f man/NetworkManager.8 \
     -a -f man/NetworkManager.conf.5 \
     -a -f man/nm-online.1 \
@@ -1136,13 +1125,18 @@ if test "$enable_gtk_doc" != "yes" \
     -a -f man/nm-settings-ifcfg-rh.5 \
     -a -f man/nm-settings-keyfile.5 \
     -a -f man/nm-settings.5 \
+    \
+    -a -f man/nm-settings.xml \
+    -a -f man/nm-settings-keyfile.xml \
+    -a -f man/nm-settings-ifcfg-rh.xml \
+    \
+    -a -f docs/api/settings-spec.xml \
     ; then
-	install_pregen_manpages=yes
+	use_pregen_docs=yes
 fi
 
-AM_CONDITIONAL(BUILD_SETTING_DOCS, test "$build_setting_docs" = "yes")
-AM_CONDITIONAL(SETTING_DOCS_AVAILABLE, test "$build_setting_docs" = "yes" -o "$have_setting_docs" = "yes")
-AM_CONDITIONAL(INSTALL_PREGEN_MANPAGES, test "$install_pregen_manpages" = "yes")
+AM_CONDITIONAL(BUILD_DOCS, test "$build_docs" = "yes")
+AM_CONDITIONAL(HAVE_DOCS, test "$build_docs" = "yes" -o "$use_pregen_docs" = "yes")
 
 AC_CONFIG_FILES([
 Makefile
@@ -1232,9 +1226,9 @@ echo "  dhcpcd-supports-ipv6: $with_dhcpcd_supports_ipv6"
 echo
 
 echo "Miscellaneous:"
-echo "  documentation: $enable_gtk_doc"
-echo "  documentation-settings: $build_setting_docs"
-echo "  introspection: $have_introspection"
+echo "  have introspection: $have_introspection"
+echo "  build documentation and manpages: $build_docs"
+echo "  install pregenerated documentation and manpages: $use_pregen_docs"
 echo "  tests: $enable_tests"
 echo "  more-asserts: $more_asserts"
 echo "  more-logging: $enable_more_logging"

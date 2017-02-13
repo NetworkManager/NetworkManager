@@ -5,7 +5,7 @@ XMLS = $(wildcard $(top_srcdir)/introspection/nm-*.xml)
 
 GENERATED_FILES =
 
-if SETTING_DOCS_AVAILABLE
+if BUILD_DOCS
 
 settings-spec.xml: settings-spec.xsl $(top_builddir)/libnm/nm-settings-docs.xml
 	$(AM_V_GEN) xsltproc --output $@ $^

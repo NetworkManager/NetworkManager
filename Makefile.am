@@ -86,7 +86,7 @@ SUBDIRS = \
 	. \
 	po
 
-if BUILD_SETTING_DOCS
+if HAVE_DOCS
 
 SUBDIRS += \
 	docs/libnm \
@@ -128,7 +128,7 @@ DISTCHECK_CONFIGURE_FLAGS = \
 dist-configure-check:
 	@echo "*** 'make dist' requires '--enable-gtk-doc --enable-introspection --with-libnm-glib'. ***"
 	@false
-if !BUILD_SETTING_DOCS
+if !BUILD_DOCS
 dist_configure_check += dist-configure-check
 endif
 if !WITH_LEGACY_LIBRARIES
@@ -3953,7 +3953,7 @@ xsltproc_flags = \
 	--stringparam man.authors.section.enabled 0 \
 	--stringparam man.copyright.section.enabled 0
 
-if HAVE_INTROSPECTION
+if BUILD_DOCS
 
 man/%.1 man/%.5 man/%.7 man/%.8: man/%.xml man/common.ent
 	$(AM_V_GEN) $(XSLTPROC) --output $@ $(xsltproc_flags) http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl $<
@@ -4021,21 +4021,15 @@ uninstall-hook-man:
 
 uninstall_hook += uninstall-hook-man
 
-if HAVE_INTROSPECTION
+if HAVE_DOCS
 install_manpages = true
 man_MANS += $(man_pages)
-CLEANFILES += $(man_pages)
-if SETTING_DOCS_AVAILABLE
 man_MANS += $(man_pages_autogen)
+endif
+
+if BUILD_DOCS
+CLEANFILES += $(man_pages)
 CLEANFILES += $(man_pages_autogen)
-endif
-else
-if INSTALL_PREGEN_MANPAGES
-install_manpages = true
-man_MANS += \
-	$(man_pages) \
-	$(man_pages_autogen)
-endif
 endif
 
 dist_dependencies += $(man_pages)
