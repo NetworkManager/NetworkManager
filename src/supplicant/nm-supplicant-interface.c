@@ -271,20 +271,11 @@ set_state (NMSupplicantInterface *self, NMSupplicantInterfaceState new_state)
 		g_return_if_fail (new_state > NM_SUPPLICANT_INTERFACE_STATE_READY);
 
 	if (new_state == NM_SUPPLICANT_INTERFACE_STATE_READY) {
-		if (priv->other_cancellable) {
-			g_warn_if_fail (priv->other_cancellable == NULL);
-			g_cancellable_cancel (priv->other_cancellable);
-			g_clear_object (&priv->other_cancellable);
-		}
+		nm_clear_g_cancellable (&priv->other_cancellable);
 		priv->other_cancellable = g_cancellable_new ();
 	} else if (new_state == NM_SUPPLICANT_INTERFACE_STATE_DOWN) {
-		if (priv->init_cancellable)
-			g_cancellable_cancel (priv->init_cancellable);
-		g_clear_object (&priv->init_cancellable);
-
-		if (priv->other_cancellable)
-			g_cancellable_cancel (priv->other_cancellable);
-		g_clear_object (&priv->other_cancellable);
+		nm_clear_g_cancellable (&priv->init_cancellable);
+		nm_clear_g_cancellable (&priv->other_cancellable);
 
 		if (priv->iface_proxy)
 			g_signal_handlers_disconnect_by_data (priv->iface_proxy, self);
@@ -970,8 +961,7 @@ interface_add (NMSupplicantInterface *self)
 	/* Move to starting to prevent double-calls of interface_add() */
 	set_state (self, NM_SUPPLICANT_INTERFACE_STATE_STARTING);
 
-	g_warn_if_fail (priv->init_cancellable == NULL);
-	g_clear_object (&priv->init_cancellable);
+	nm_clear_g_cancellable (&priv->init_cancellable);
 	priv->init_cancellable = g_cancellable_new ();
 
 	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
