@@ -1427,9 +1427,7 @@ static void
 request_wireless_scan (NMDeviceWifi *self, gboolean force_if_scanning, GVariant *scan_options)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	gboolean backoff = FALSE;
-	GPtrArray *ssids = NULL;
-	gboolean new_scan_requested = FALSE;
+	gboolean request_started = FALSE;
 
 	nm_clear_g_source (&priv->pending_scan_id);
 
@@ -1439,6 +1437,8 @@ request_wireless_scan (NMDeviceWifi *self, gboolean force_if_scanning, GVariant 
 	}
 
 	if (check_scanning_allowed (self)) {
+		gs_unref_ptrarray GPtrArray *ssids = NULL;
+
 		_LOGD (LOGD_WIFI, "wifi-scan: scanning requested");
 
 		if (scan_options) {
@@ -1476,22 +1476,14 @@ request_wireless_scan (NMDeviceWifi *self, gboolean force_if_scanning, GVariant 
 
 		_hw_addr_set_scanning (self, FALSE);
 
-		if (nm_supplicant_interface_request_scan (priv->sup_iface, ssids)) {
-			/* success */
-			backoff = TRUE;
-			_requested_scan_set (self, TRUE);
-			new_scan_requested = TRUE;
-		}
-
-		if (ssids)
-			g_ptr_array_unref (ssids);
+		nm_supplicant_interface_request_scan (priv->sup_iface, ssids);
+		request_started = TRUE;
 	} else
 		_LOGD (LOGD_WIFI, "wifi-scan: scanning requested but not allowed at this time");
 
-	if (!new_scan_requested)
-		_requested_scan_set (self, FALSE);
+	_requested_scan_set (self, request_started);
 
-	schedule_scan (self, backoff);
+	schedule_scan (self, request_started);
 }
 
 static gboolean

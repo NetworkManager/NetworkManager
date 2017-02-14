@@ -1340,14 +1340,14 @@ scan_request_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	}
 }
 
-gboolean
+void
 nm_supplicant_interface_request_scan (NMSupplicantInterface *self, const GPtrArray *ssids)
 {
 	NMSupplicantInterfacePrivate *priv;
 	GVariantBuilder builder;
 	guint i;
 
-	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), FALSE);
+	g_return_if_fail (NM_IS_SUPPLICANT_INTERFACE (self));
 
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
@@ -1375,7 +1375,6 @@ nm_supplicant_interface_request_scan (NMSupplicantInterface *self, const GPtrArr
 	                   priv->other_cancellable,
 	                   (GAsyncReadyCallback) scan_request_cb,
 	                   self);
-	return TRUE;
 }
 
 /*****************************************************************************/
