@@ -295,8 +295,10 @@ _requested_scan_set (NMDeviceWifi *self, gboolean value)
 	priv->requested_scan = value;
 	if (value)
 		nm_device_add_pending_action ((NMDevice *) self, NM_PENDING_ACTION_WIFI_SCAN, TRUE);
-	else
+	else {
+		nm_device_emit_recheck_auto_activate (NM_DEVICE (self));
 		nm_device_remove_pending_action ((NMDevice *) self, NM_PENDING_ACTION_WIFI_SCAN, TRUE);
+	}
 }
 
 static void
@@ -961,6 +963,18 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 		return FALSE;
 
 	return TRUE;
+}
+
+static gboolean
+get_autoconnect_allowed (NMDevice *device)
+{
+	NMDeviceWifiPrivate *priv;
+
+	if (!NM_DEVICE_CLASS (nm_device_wifi_parent_class)->get_autoconnect_allowed (device))
+		return FALSE;
+
+	priv = NM_DEVICE_WIFI_GET_PRIVATE (NM_DEVICE_WIFI (device));
+	return !priv->requested_scan;
 }
 
 static gboolean
@@ -3184,6 +3198,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	object_class->finalize = finalize;
 
 	parent_class->can_auto_connect = can_auto_connect;
+	parent_class->get_autoconnect_allowed = get_autoconnect_allowed;
 	parent_class->is_available = is_available;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->check_connection_available = check_connection_available;
