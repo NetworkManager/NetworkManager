@@ -600,7 +600,7 @@ fi
 %{_libdir}/girepository-1.0/NMClient-1.0.typelib
 
 %files glib-devel
-%doc ChangeLog docs/api/html/*
+%doc docs/api/html/*
 %dir %{_includedir}/libnm-glib
 %dir %{_includedir}/%{name}
 %{_includedir}/libnm-glib/*.h
@@ -635,7 +635,7 @@ fi
 %{_libdir}/girepository-1.0/NM-1.0.typelib
 
 %files libnm-devel
-%doc ChangeLog docs/api/html/*
+%doc docs/api/html/*
 %dir %{_includedir}/libnm
 %{_includedir}/libnm/*.h
 %{_libdir}/pkgconfig/libnm.pc
