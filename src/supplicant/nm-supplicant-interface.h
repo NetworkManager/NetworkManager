@@ -68,7 +68,6 @@ typedef enum {
 #define NM_SUPPLICANT_INTERFACE_BSS_UPDATED      "bss-updated"
 #define NM_SUPPLICANT_INTERFACE_BSS_REMOVED      "bss-removed"
 #define NM_SUPPLICANT_INTERFACE_SCAN_DONE        "scan-done"
-#define NM_SUPPLICANT_INTERFACE_CONNECTION_ERROR "connection-error"
 #define NM_SUPPLICANT_INTERFACE_CREDENTIALS_REQUEST "credentials-request"
 
 typedef struct _NMSupplicantInterfaceClass NMSupplicantInterfaceClass;
@@ -83,9 +82,15 @@ NMSupplicantInterface * nm_supplicant_interface_new (const char *ifname,
 void nm_supplicant_interface_set_supplicant_available (NMSupplicantInterface *self,
                                                        gboolean available);
 
-gboolean nm_supplicant_interface_set_config (NMSupplicantInterface * iface,
-                                             NMSupplicantConfig * cfg,
-                                             GError **error);
+typedef void (*NMSupplicantInterfaceAssocCb) (NMSupplicantInterface *iface,
+                                              GError *error,
+                                              gpointer user_data);
+
+void
+nm_supplicant_interface_assoc (NMSupplicantInterface *self,
+                               NMSupplicantConfig *cfg,
+                               NMSupplicantInterfaceAssocCb callback,
+                               gpointer user_data);
 
 void nm_supplicant_interface_disconnect (NMSupplicantInterface * iface);
 

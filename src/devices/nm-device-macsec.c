@@ -45,7 +45,6 @@ typedef struct Supplicant {
 	NMSupplicantInterface *iface;
 
 	/* signal handler ids */
-	gulong iface_error_id;
 	gulong iface_state_id;
 
 	/* Timeouts and idles */
@@ -248,22 +247,12 @@ build_supplicant_config (NMDeviceMacsec *self, GError **error)
 }
 
 static void
-supplicant_interface_clear_handlers (NMDeviceMacsec *self)
+supplicant_interface_release (NMDeviceMacsec *self)
 {
 	NMDeviceMacsecPrivate *priv = NM_DEVICE_MACSEC_GET_PRIVATE (self);
 
 	nm_clear_g_source (&priv->supplicant_timeout_id);
 	nm_clear_g_source (&priv->supplicant.con_timeout_id);
-	nm_clear_g_signal_handler (priv->supplicant.iface, &priv->supplicant.iface_error_id);
-}
-
-static void
-supplicant_interface_release (NMDeviceMacsec *self)
-{
-	NMDeviceMacsecPrivate *priv = NM_DEVICE_MACSEC_GET_PRIVATE (self);
-
-	supplicant_interface_clear_handlers (self);
-
 	nm_clear_g_signal_handler (priv->supplicant.iface, &priv->supplicant.iface_state_id);
 
 	if (priv->supplicant.iface) {
@@ -273,21 +262,18 @@ supplicant_interface_release (NMDeviceMacsec *self)
 }
 
 static void
-supplicant_iface_connection_error_cb (NMSupplicantInterface *iface,
-                                      const char *name,
-                                      const char *message,
-                                      gpointer user_data)
+supplicant_iface_assoc_cb (NMSupplicantInterface *iface,
+                           GError *error,
+                           gpointer user_data)
 {
 	NMDeviceMacsec *self = NM_DEVICE_MACSEC (user_data);
 
-	_LOGW (LOGD_DEVICE,
-	       "Activation: association request to the supplicant failed: %s - %s",
-	       name, message);
-
-	supplicant_interface_release (self);
-	nm_device_queue_state (NM_DEVICE (self),
-	                       NM_DEVICE_STATE_FAILED,
-	                       NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED);
+	if (error && !nm_utils_error_is_cancelled (error, TRUE)) {
+		supplicant_interface_release (self);
+		nm_device_queue_state (NM_DEVICE (self),
+		                       NM_DEVICE_STATE_FAILED,
+		                       NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED);
+	}
 }
 
 static void
@@ -421,7 +407,6 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 	NMDeviceMacsecPrivate *priv = NM_DEVICE_MACSEC_GET_PRIVATE (self);
 	NMDevice *device = NM_DEVICE (self);
 	NMSupplicantConfig *config;
-	gboolean success = FALSE;
 	NMDeviceState devstate;
 	GError *error = NULL;
 	NMSupplicantInterfaceState new_state = new_state_i;
@@ -440,30 +425,23 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 	case NM_SUPPLICANT_INTERFACE_STATE_READY:
 		config = build_supplicant_config (self, &error);
 		if (config) {
-			success = nm_supplicant_interface_set_config (priv->supplicant.iface, config, &error);
+			nm_supplicant_interface_assoc (priv->supplicant.iface, config,
+			                               supplicant_iface_assoc_cb, self);
 			g_object_unref (config);
-
-			if (!success) {
-				_LOGE (LOGD_DEVICE,
-				       "Activation: couldn't send security configuration to the supplicant: %s",
-				       error->message);
-				g_clear_error (&error);
-			}
 		} else {
 			_LOGE (LOGD_DEVICE,
 			       "Activation: couldn't build security configuration: %s",
 			       error->message);
 			g_clear_error (&error);
-		}
 
-		if (!success) {
 			nm_device_state_changed (device,
 			                         NM_DEVICE_STATE_FAILED,
 			                         NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED);
 		}
 		break;
 	case NM_SUPPLICANT_INTERFACE_STATE_COMPLETED:
-		supplicant_interface_clear_handlers (self);
+		nm_clear_g_source (&priv->supplicant_timeout_id);
+		nm_clear_g_source (&priv->supplicant.con_timeout_id);
 		nm_device_bring_up (device, TRUE, NULL);
 
 		/* If this is the initial association during device activation,
@@ -593,12 +571,6 @@ supplicant_interface_init (NMDeviceMacsec *self)
 	priv->supplicant.iface_state_id = g_signal_connect (priv->supplicant.iface,
 	                                                    NM_SUPPLICANT_INTERFACE_STATE,
 	                                                    G_CALLBACK (supplicant_iface_state_cb),
-	                                                    self);
-
-	/* Hook up error signal handler to capture association errors */
-	priv->supplicant.iface_error_id = g_signal_connect (priv->supplicant.iface,
-	                                                    NM_SUPPLICANT_INTERFACE_CONNECTION_ERROR,
-	                                                    G_CALLBACK (supplicant_iface_connection_error_cb),
 	                                                    self);
 
 	/* Set up a timeout on the connection attempt to fail it after 25 seconds */
