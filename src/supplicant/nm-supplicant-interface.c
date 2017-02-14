@@ -134,6 +134,27 @@ G_DEFINE_TYPE (NMSupplicantInterface, nm_supplicant_interface, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
+NM_UTILS_LOOKUP_STR_DEFINE (nm_supplicant_interface_state_to_string, NMSupplicantInterfaceState,
+	NM_UTILS_LOOKUP_DEFAULT_WARN ("unknown"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_INVALID,         "invalid"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_INIT,            "init"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_STARTING,        "starting"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_READY,           "ready"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_DISABLED,        "disabled"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED,    "disconnected"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_INACTIVE,        "inactive"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_SCANNING,        "scanning"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_AUTHENTICATING,  "authenticating"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATING,     "associating"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATED,      "associated"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_4WAY_HANDSHAKE,  "4-way handshake"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_GROUP_HANDSHAKE, "group handshake"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_COMPLETED,       "completed"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_DOWN,            "down"),
+);
+
+/*****************************************************************************/
+
 static void
 bss_props_changed_cb (GDBusProxy *proxy,
                       GVariant *changed_properties,
@@ -1367,6 +1388,8 @@ nm_supplicant_interface_request_scan (NMSupplicantInterface *self, const GPtrArr
 	return TRUE;
 }
 
+/*****************************************************************************/
+
 NMSupplicantInterfaceState
 nm_supplicant_interface_get_state (NMSupplicantInterface * self)
 {
@@ -1374,25 +1397,6 @@ nm_supplicant_interface_get_state (NMSupplicantInterface * self)
 
 	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->state;
 }
-
-NM_UTILS_LOOKUP_STR_DEFINE (nm_supplicant_interface_state_to_string, NMSupplicantInterfaceState,
-	NM_UTILS_LOOKUP_DEFAULT_WARN ("unknown"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_INVALID,         "invalid"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_INIT,            "init"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_STARTING,        "starting"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_READY,           "ready"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_DISABLED,        "disabled"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED,    "disconnected"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_INACTIVE,        "inactive"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_SCANNING,        "scanning"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_AUTHENTICATING,  "authenticating"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATING,     "associating"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATED,      "associated"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_4WAY_HANDSHAKE,  "4-way handshake"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_GROUP_HANDSHAKE, "group handshake"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_COMPLETED,       "completed"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_DOWN,            "down"),
-);
 
 const char *
 nm_supplicant_interface_get_object_path (NMSupplicantInterface *self)
@@ -1420,29 +1424,25 @@ nm_supplicant_interface_get_max_scan_ssids (NMSupplicantInterface *self)
 
 /*****************************************************************************/
 
-NMSupplicantInterface *
-nm_supplicant_interface_new (const char *ifname,
-                             NMSupplicantDriver driver,
-                             NMSupplicantFeature fast_support,
-                             NMSupplicantFeature ap_support)
-{
-	g_return_val_if_fail (ifname != NULL, NULL);
-
-	return g_object_new (NM_TYPE_SUPPLICANT_INTERFACE,
-	                     NM_SUPPLICANT_INTERFACE_IFACE, ifname,
-	                     NM_SUPPLICANT_INTERFACE_DRIVER, (guint) driver,
-	                     NM_SUPPLICANT_INTERFACE_FAST_SUPPORT, (int) fast_support,
-	                     NM_SUPPLICANT_INTERFACE_AP_SUPPORT, (int) ap_support,
-	                     NULL);
-}
-
 static void
-nm_supplicant_interface_init (NMSupplicantInterface * self)
+get_property (GObject *object,
+              guint prop_id,
+              GValue *value,
+              GParamSpec *pspec)
 {
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE ((NMSupplicantInterface *) object);
 
-	priv->state = NM_SUPPLICANT_INTERFACE_STATE_INIT;
-	priv->bss_proxies = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
+	switch (prop_id) {
+	case PROP_SCANNING:
+		g_value_set_boolean (value, priv->scanning);
+		break;
+	case PROP_CURRENT_BSS:
+		g_value_set_string (value, priv->current_bss);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -1478,24 +1478,28 @@ set_property (GObject *object,
 }
 
 static void
-get_property (GObject *object,
-              guint prop_id,
-              GValue *value,
-              GParamSpec *pspec)
+nm_supplicant_interface_init (NMSupplicantInterface * self)
 {
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE ((NMSupplicantInterface *) object);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-	switch (prop_id) {
-	case PROP_SCANNING:
-		g_value_set_boolean (value, priv->scanning);
-		break;
-	case PROP_CURRENT_BSS:
-		g_value_set_string (value, priv->current_bss);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+	priv->state = NM_SUPPLICANT_INTERFACE_STATE_INIT;
+	priv->bss_proxies = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
+}
+
+NMSupplicantInterface *
+nm_supplicant_interface_new (const char *ifname,
+                             NMSupplicantDriver driver,
+                             NMSupplicantFeature fast_support,
+                             NMSupplicantFeature ap_support)
+{
+	g_return_val_if_fail (ifname != NULL, NULL);
+
+	return g_object_new (NM_TYPE_SUPPLICANT_INTERFACE,
+	                     NM_SUPPLICANT_INTERFACE_IFACE, ifname,
+	                     NM_SUPPLICANT_INTERFACE_DRIVER, (guint) driver,
+	                     NM_SUPPLICANT_INTERFACE_FAST_SUPPORT, (int) fast_support,
+	                     NM_SUPPLICANT_INTERFACE_AP_SUPPORT, (int) ap_support,
+	                     NULL);
 }
 
 static void
