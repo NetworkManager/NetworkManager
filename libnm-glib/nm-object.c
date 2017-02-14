@@ -175,7 +175,22 @@ constructor (GType type,
 
 	priv = NM_OBJECT_GET_PRIVATE (object);
 
-	if (priv->connection == NULL || priv->path == NULL) {
+	if (priv->connection == NULL) {
+		GError *error = NULL;
+
+		priv->connection = _nm_dbus_new_connection (&error);
+
+		if (priv->connection == NULL) {
+			g_warning ("Error connecting to system bus: %s", error->message);
+			g_clear_error (&error);
+			g_object_unref (object);
+			return NULL;
+		}
+	}
+
+	g_assert (priv->connection != NULL);
+
+	if (priv->path == NULL) {
 		g_warn_if_reached ();
 		g_object_unref (object);
 		return NULL;
@@ -356,8 +371,6 @@ set_property (GObject *object, guint prop_id,
 	case PROP_DBUS_CONNECTION:
 		/* Construct only */
 		priv->connection = g_value_dup_boxed (value);
-		if (!priv->connection)
-			priv->connection = _nm_dbus_new_connection (NULL);
 		break;
 	case PROP_DBUS_PATH:
 		/* Construct only */
