@@ -632,6 +632,23 @@ show_general_logging (NmCli *nmc)
 	return TRUE;
 }
 
+static void
+nmc_complete_strings_nocase (const char *prefix, ...)
+{
+	va_list args;
+	const char *candidate;
+	int len;
+
+	len = strlen (prefix);
+
+	va_start (args, prefix);
+	while ((candidate = va_arg (args, const char *))) {
+		if (strncasecmp (prefix, candidate, len) == 0)
+			g_print ("%s\n", candidate);
+	}
+	va_end (args);
+}
+
 static NMCResultCode
 do_general_logging (NmCli *nmc, int argc, char **argv)
 {
@@ -652,18 +669,44 @@ do_general_logging (NmCli *nmc, int argc, char **argv)
 		/* arguments provided -> set logging level and domains */
 		const char *level = NULL;
 		const char *domains = NULL;
-		nmc_arg_t exp_args[] = { {"level",   TRUE, &level,   TRUE},
-		                         {"domains", TRUE, &domains, TRUE},
-		                         {NULL} };
 
-		/* TODO: nmc_parse_args needs completion */
+		do {
+			if (argc == 1 && nmc->complete)
+				nmc_complete_strings (*argv, "level", "domains", NULL);
+
+			if (matches (*argv, "level") == 0) {
+				if (next_arg (&argc, &argv) != 0) {
+					g_string_printf (nmc->return_text, _("Error: '%s' argument is missing."), *(argv-1));
+					return NMC_RESULT_ERROR_USER_INPUT;
+				}
+				if (argc == 1 && nmc->complete) {
+					nmc_complete_strings_nocase (*argv, "TRACE", "DEBUG", "INFO", "WARN",
+					                             "ERR", "OFF", "KEEP", NULL);
+				}
+				level = *argv;
+			} else if (matches (*argv, "domains") == 0) {
+				if (next_arg (&argc, &argv) != 0) {
+					g_string_printf (nmc->return_text, _("Error: '%s' argument is missing."), *(argv-1));
+					return NMC_RESULT_ERROR_USER_INPUT;
+				}
+				if (argc == 1 && nmc->complete) {
+					nmc_complete_strings_nocase (*argv, "PLATFORM", "RFKILL", "ETHER", "WIFI", "BT",
+					                             "MB", "DHCP4", "DHCP6", "PPP", "WIFI_SCAN", "IP4",
+					                             "IP6", "AUTOIP4", "DNS", "VPN", "SHARING", "SUPPLICANT",
+					                             "AGENTS", "SETTINGS", "SUSPEND", "CORE", "DEVICE", "OLPC",
+					                             "INFINIBAND", "FIREWALL", "ADSL", "BOND", "VLAN", "BRIDGE",
+					                             "DBUS_PROPS", "TEAM", "CONCHECK", "DCB", "DISPATCH", "AUDIT",
+					                             "SYSTEMD", "VPN_PLUGIN", "PROXY", NULL);
+				}
+				domains = *argv;
+			} else {
+				g_string_printf (nmc->return_text, _("Error: property '%s' is not known."), *argv);
+				return NMC_RESULT_ERROR_USER_INPUT;
+			}
+		} while (next_arg (&argc, &argv) == 0);
+
 		if (nmc->complete)
 			return nmc->return_value;
-
-		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, &error)) {
-			g_string_assign (nmc->return_text, error->message);
-			return error->code;
-		}
 
 		nm_client_set_logging (nmc->client, level, domains, &error);
 		if (error) {
