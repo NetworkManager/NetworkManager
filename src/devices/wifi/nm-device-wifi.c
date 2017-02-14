@@ -190,8 +190,6 @@ static void ap_add_remove (NMDeviceWifi *self,
                            NMWifiAP *ap,
                            gboolean recheck_available_connections);
 
-static void remove_supplicant_interface_error_handler (NMDeviceWifi *self);
-
 static void _hw_addr_set_scanning (NMDeviceWifi *self, gboolean do_reset);
 
 /*****************************************************************************/
@@ -1761,21 +1759,12 @@ supplicant_iface_bss_removed_cb (NMSupplicantInterface *iface,
 }
 
 static void
-remove_supplicant_timeouts (NMDeviceWifi *self)
+cleanup_association_attempt (NMDeviceWifi *self, gboolean disconnect)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
 	nm_clear_g_source (&priv->sup_timeout_id);
 	nm_clear_g_source (&priv->link_timeout_id);
-}
-
-static void
-cleanup_association_attempt (NMDeviceWifi *self, gboolean disconnect)
-{
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-
-	remove_supplicant_interface_error_handler (self);
-	remove_supplicant_timeouts (self);
 	if (disconnect && priv->sup_iface)
 		nm_supplicant_interface_disconnect (priv->sup_iface);
 }
@@ -2082,8 +2071,8 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 			nm_device_remove_pending_action (device, NM_PENDING_ACTION_WAITING_FOR_SUPPLICANT, TRUE);
 		break;
 	case NM_SUPPLICANT_INTERFACE_STATE_COMPLETED:
-		remove_supplicant_interface_error_handler (self);
-		remove_supplicant_timeouts (self);
+		nm_clear_g_source (&priv->sup_timeout_id);
+		nm_clear_g_source (&priv->link_timeout_id);
 
 		/* If this is the initial association during device activation,
 		 * schedule the next activation stage.
@@ -2173,32 +2162,17 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 }
 
 static void
-supplicant_iface_connection_error_cb (NMSupplicantInterface *iface,
-                                      const char *name,
-                                      const char *message,
-                                      NMDeviceWifi *self)
+supplicant_iface_assoc_cb (NMSupplicantInterface *iface,
+                           GError *error,
+                           gpointer user_data)
 {
+	NMDeviceWifi *self = NM_DEVICE_WIFI (user_data);
 	NMDevice *device = NM_DEVICE (self);
 
-	if (nm_device_is_activating (device)) {
-		_LOGW (LOGD_DEVICE | LOGD_WIFI,
-		       "Activation: (wifi) supplicant association failed: %s - %s",
-		       name, message);
-
+	if (   error && !nm_utils_error_is_cancelled (error, TRUE)
+	    && nm_device_is_activating (device)) {
 		cleanup_association_attempt (self, TRUE);
 		nm_device_queue_state (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
-	}
-}
-
-static void
-remove_supplicant_interface_error_handler (NMDeviceWifi *self)
-{
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-
-	if (priv->sup_iface) {
-		g_signal_handlers_disconnect_by_func (priv->sup_iface,
-		                                      supplicant_iface_connection_error_cb,
-		                                      self);
 	}
 }
 
@@ -2620,7 +2594,8 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-	remove_supplicant_timeouts (self);
+	nm_clear_g_source (&priv->sup_timeout_id);
+	nm_clear_g_source (&priv->link_timeout_id);
 
 	req = nm_device_get_act_request (device);
 	g_assert (req);
@@ -2684,20 +2659,8 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 		goto out;
 	}
 
-	/* Hook up error signal handler to capture association errors */
-	g_signal_connect (priv->sup_iface,
-	                  NM_SUPPLICANT_INTERFACE_CONNECTION_ERROR,
-	                  G_CALLBACK (supplicant_iface_connection_error_cb),
-	                  self);
-
-	if (!nm_supplicant_interface_set_config (priv->sup_iface, config, &error)) {
-		_LOGE (LOGD_DEVICE | LOGD_WIFI,
-		       "Activation: (wifi) couldn't send wireless configuration to the supplicant: %s",
-		       error->message);
-		g_clear_error (&error);
-		*reason = NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED;
-		goto out;
-	}
+	nm_supplicant_interface_assoc (priv->sup_iface, config,
+	                               supplicant_iface_assoc_cb, self);
 
 	/* Set up a timeout on the association attempt to fail after 25 seconds */
 	priv->sup_timeout_id = g_timeout_add_seconds (25, supplicant_connection_timeout_cb, self);
