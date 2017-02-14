@@ -8547,6 +8547,22 @@ do_connection_load (NmCli *nmc, int argc, char **argv)
 #define PROMPT_IMPORT_TYPE PROMPT_VPN_TYPE
 #define PROMPT_IMPORT_FILE N_("File to import: ")
 
+static void
+nmc_complete_vpn_service (const char *prefix)
+{
+	char **services;
+	char **candidate;
+
+	services = nm_vpn_plugin_info_list_get_service_types (NULL, FALSE, TRUE);
+	for (candidate = services; *candidate; candidate++) {
+		if (!*prefix && g_str_has_prefix (*candidate, NM_DBUS_INTERFACE))
+			continue;
+		if (!*prefix || matches (prefix, *candidate) == 0)
+			g_print ("%s\n", *candidate);
+	}
+	g_strfreev (services);
+}
+
 static NMCResultCode
 do_connection_import (NmCli *nmc, int argc, char **argv)
 {
@@ -8589,6 +8605,10 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto finish;
 			}
+
+			if (argc == 1 && nmc->complete)
+				nmc_complete_vpn_service (*argv);
+
 			if (!type)
 				type = *argv;
 			else
