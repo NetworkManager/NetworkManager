@@ -1,4 +1,18 @@
 ============================================
+NetworkManager-1.7 (development version)
+Overview of changes since NetworkManager-1.6
+============================================
+
+This is a snapshot of NetworkManager 1.8 development series.
+USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
+
+Notable changes included in this snapshot so far include:
+
+* With DNS mode "rc-manager=symlink", don't write /etc/resolv.conf as a
+    symlink if it already exists as a regular file.
+* Many bug fixes and improvements
+
+============================================
 NetworkManager-1.6
 Overview of changes since NetworkManager-1.4
 ============================================
