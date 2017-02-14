@@ -152,8 +152,8 @@ static void cleanup_association_attempt (NMDeviceWifi * self,
                                          gboolean disconnect);
 
 static void supplicant_iface_state_cb (NMSupplicantInterface *iface,
-                                       guint32 new_state,
-                                       guint32 old_state,
+                                       int new_state_i,
+                                       int old_state_i,
                                        int disconnect_reason,
                                        gpointer user_data);
 
@@ -428,7 +428,7 @@ periodic_update (NMDeviceWifi *self)
 	guint32 new_rate;
 	int percent;
 	NMDeviceState state;
-	guint32 supplicant_state;
+	NMSupplicantInterfaceState supplicant_state;
 
 	/* BSSID and signal strength have meaningful values only if the device
 	 * is activated and not scanning.
@@ -955,7 +955,7 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	guint32 state;
+	NMSupplicantInterfaceState supplicant_state;
 
 	if (!priv->enabled)
 		return FALSE;
@@ -963,9 +963,9 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 	if (!priv->sup_iface)
 		return FALSE;
 
-	state = nm_supplicant_interface_get_state (priv->sup_iface);
-	if (   state < NM_SUPPLICANT_INTERFACE_STATE_READY
-	    || state > NM_SUPPLICANT_INTERFACE_STATE_COMPLETED)
+	supplicant_state = nm_supplicant_interface_get_state (priv->sup_iface);
+	if (   supplicant_state < NM_SUPPLICANT_INTERFACE_STATE_READY
+	    || supplicant_state > NM_SUPPLICANT_INTERFACE_STATE_COMPLETED)
 		return FALSE;
 
 	return TRUE;
@@ -1242,7 +1242,7 @@ static gboolean
 scanning_allowed (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	guint32 sup_state;
+	NMSupplicantInterfaceState supplicant_state;
 	NMConnection *connection;
 
 	g_return_val_if_fail (priv->sup_iface != NULL, FALSE);
@@ -1274,11 +1274,11 @@ scanning_allowed (NMDeviceWifi *self)
 	}
 
 	/* Don't scan if the supplicant is busy */
-	sup_state = nm_supplicant_interface_get_state (priv->sup_iface);
-	if (   sup_state == NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATING
-	    || sup_state == NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATED
-	    || sup_state == NM_SUPPLICANT_INTERFACE_STATE_4WAY_HANDSHAKE
-	    || sup_state == NM_SUPPLICANT_INTERFACE_STATE_GROUP_HANDSHAKE
+	supplicant_state = nm_supplicant_interface_get_state (priv->sup_iface);
+	if (   supplicant_state == NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATING
+	    || supplicant_state == NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATED
+	    || supplicant_state == NM_SUPPLICANT_INTERFACE_STATE_4WAY_HANDSHAKE
+	    || supplicant_state == NM_SUPPLICANT_INTERFACE_STATE_GROUP_HANDSHAKE
 	    || nm_supplicant_interface_get_scanning (priv->sup_iface))
 		return FALSE;
 
@@ -1893,7 +1893,7 @@ link_timeout_cb (gpointer user_data)
 
 static gboolean
 need_new_8021x_secrets (NMDeviceWifi *self,
-                        guint32 old_state,
+                        NMSupplicantInterfaceState old_state,
                         const char **setting_name)
 {
 	NMSetting8021x *s_8021x;
@@ -1947,7 +1947,7 @@ need_new_8021x_secrets (NMDeviceWifi *self,
 
 static gboolean
 need_new_wpa_psk (NMDeviceWifi *self,
-                  guint32 old_state,
+                  NMSupplicantInterfaceState old_state,
                   gint disconnect_reason,
                   const char **setting_name)
 {
@@ -1988,8 +1988,8 @@ need_new_wpa_psk (NMDeviceWifi *self,
 
 static gboolean
 handle_8021x_or_psk_auth_fail (NMDeviceWifi *self,
-                               guint32 new_state,
-                               guint32 old_state,
+                               NMSupplicantInterfaceState new_state,
+                               NMSupplicantInterfaceState old_state,
                                int disconnect_reason)
 {
 	NMDevice *device = NM_DEVICE (self);
@@ -2042,8 +2042,8 @@ reacquire_interface_cb (gpointer user_data)
 
 static void
 supplicant_iface_state_cb (NMSupplicantInterface *iface,
-                           guint32 new_state,
-                           guint32 old_state,
+                           int new_state_i,
+                           int old_state_i,
                            int disconnect_reason,
                            gpointer user_data)
 {
@@ -2052,6 +2052,8 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 	NMDevice *device = NM_DEVICE (self);
 	NMDeviceState devstate;
 	gboolean scanning;
+	NMSupplicantInterfaceState new_state = new_state_i;
+	NMSupplicantInterfaceState old_state = old_state_i;
 
 	if (new_state == old_state)
 		return;
