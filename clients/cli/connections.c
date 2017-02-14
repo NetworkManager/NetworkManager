@@ -7876,6 +7876,18 @@ editor_init_existing_connection (NMConnection *connection)
 		nmc_setting_connection_connect_handlers (s_con, connection);
 }
 
+static void
+nmc_complete_connection_type (const char *prefix, const NameItem *types)
+{
+	while (types->name) {
+		if (!*prefix || matches (prefix, types->name) == 0)
+			g_print ("%s\n", types->name);
+		if (types->alias && (!*prefix || matches (prefix, types->alias) == 0))
+			g_print ("%s\n", types->alias);
+		types++;
+	}
+}
+
 static NMCResultCode
 do_connection_edit (NmCli *nmc, int argc, char **argv)
 {
@@ -7903,9 +7915,8 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 	                         {"path",     TRUE, &con_path, FALSE},
 	                         {NULL} };
 
-	/* TODO: complete uuid, path or id */
-	if (nmc->complete)
-		return nmc->return_value;
+	if (argc == 1 && nmc->complete)
+		nmc_complete_strings (*argv, "type", "con-name", "id", "uuid", "path", NULL);
 
 	nmc->return_value = NMC_RESULT_SUCCESS;
 
@@ -7952,7 +7963,10 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 		/* Existing connection */
 		NMConnection *found_con;
 
-		found_con = nmc_find_connection (connections, selector, con, NULL, FALSE);
+		found_con = nmc_find_connection (connections, selector, con, NULL, nmc->complete);
+		if (nmc->complete)
+			goto error;
+
 		if (!found_con) {
 			g_string_printf (nmc->return_text, _("Error: Unknown connection '%s'."), con);
 			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
@@ -7984,6 +7998,12 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 		editor_init_existing_connection (connection);
 	} else {
 		/* New connection */
+		if (nmc->complete) {
+			if (type && argc == 0)
+				nmc_complete_connection_type (type, nmc_valid_connection_types);
+			goto error;
+		}
+
 		connection_type = check_valid_name (type, nmc_valid_connection_types, NULL, &err1);
 		tmp_str = get_valid_options_string (nmc_valid_connection_types, NULL);
 
