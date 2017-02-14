@@ -5,7 +5,7 @@ set -xv
 
 BUILD_DIR="${BUILD_DIR:-/tmp/nm-build}"
 BUILD_ID="${BUILD_ID:-master}"
-BUILD_REPO="${BUILD_REPO-git://anongit.freedesktop.org/NetworkManager/NetworkManager}"
+BUILD_REPO="${BUILD_REPO-https://github.com/NetworkManager/NetworkManager.git}"
 ARCH="${ARCH:-`arch`}"
 WITH_DEBUG="$WITH_DEBUG"
 DO_TEST_BUILD="${DO_TEST_BUILD:-yes}"
