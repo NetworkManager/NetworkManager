@@ -577,7 +577,7 @@ gboolean nm_device_unrealize          (NMDevice *device,
                                        GError **error);
 
 gboolean nm_device_get_autoconnect (NMDevice *device);
-void nm_device_set_autoconnect (NMDevice *device, gboolean autoconnect);
+void nm_device_set_autoconnect_intern (NMDevice *device, gboolean autoconnect);
 void nm_device_emit_recheck_auto_activate (NMDevice *device);
 
 void nm_device_state_changed (NMDevice *device,
