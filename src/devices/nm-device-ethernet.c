@@ -596,8 +596,8 @@ build_supplicant_config (NMDeviceEthernet *self,
 
 static void
 supplicant_iface_state_cb (NMSupplicantInterface *iface,
-                           guint32 new_state,
-                           guint32 old_state,
+                           int new_state_i,
+                           int old_state_i,
                            int disconnect_reason,
                            gpointer user_data)
 {
@@ -608,6 +608,8 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 	gboolean success = FALSE;
 	NMDeviceState devstate;
 	GError *error = NULL;
+	NMSupplicantInterfaceState new_state = new_state_i;
+	NMSupplicantInterfaceState old_state = old_state_i;
 
 	if (new_state == old_state)
 		return;

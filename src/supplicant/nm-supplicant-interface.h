@@ -28,7 +28,8 @@
  * Supplicant interface states
  *   A mix of wpa_supplicant interface states and internal states.
  */
-enum {
+typedef enum {
+	NM_SUPPLICANT_INTERFACE_STATE_INVALID = -1,
 	NM_SUPPLICANT_INTERFACE_STATE_INIT = 0,
 	NM_SUPPLICANT_INTERFACE_STATE_STARTING,
 	NM_SUPPLICANT_INTERFACE_STATE_READY,
@@ -43,8 +44,7 @@ enum {
 	NM_SUPPLICANT_INTERFACE_STATE_GROUP_HANDSHAKE,
 	NM_SUPPLICANT_INTERFACE_STATE_COMPLETED,
 	NM_SUPPLICANT_INTERFACE_STATE_DOWN,
-	NM_SUPPLICANT_INTERFACE_STATE_LAST
-};
+} NMSupplicantInterfaceState;
 
 #define NM_TYPE_SUPPLICANT_INTERFACE            (nm_supplicant_interface_get_type ())
 #define NM_SUPPLICANT_INTERFACE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SUPPLICANT_INTERFACE, NMSupplicantInterface))
@@ -93,9 +93,9 @@ const char *nm_supplicant_interface_get_object_path (NMSupplicantInterface * ifa
 
 gboolean nm_supplicant_interface_request_scan (NMSupplicantInterface * self, const GPtrArray *ssids);
 
-guint32 nm_supplicant_interface_get_state (NMSupplicantInterface * self);
+NMSupplicantInterfaceState nm_supplicant_interface_get_state (NMSupplicantInterface * self);
 
-const char *nm_supplicant_interface_state_to_string (guint32 state);
+const char *nm_supplicant_interface_state_to_string (NMSupplicantInterfaceState state);
 
 gboolean nm_supplicant_interface_get_scanning (NMSupplicantInterface *self);
 

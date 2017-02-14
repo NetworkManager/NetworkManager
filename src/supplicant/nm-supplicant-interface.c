@@ -73,7 +73,7 @@ typedef struct {
 	guint32        ready_count;
 
 	char *         object_path;
-	guint32        state;
+	NMSupplicantInterfaceState state;
 	int            disconnect_reason;
 
 	gboolean       scanning;
@@ -238,12 +238,10 @@ handle_new_bss (NMSupplicantInterface *self, const char *object_path)
 }
 
 static void
-set_state (NMSupplicantInterface *self, guint32 new_state)
+set_state (NMSupplicantInterface *self, NMSupplicantInterfaceState new_state)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	guint32 old_state = priv->state;
-
-	g_return_if_fail (new_state < NM_SUPPLICANT_INTERFACE_STATE_LAST);
+	NMSupplicantInterfaceState old_state = priv->state;
 
 	if (new_state == priv->state)
 		return;
@@ -286,12 +284,12 @@ set_state (NMSupplicantInterface *self, guint32 new_state)
 		priv->disconnect_reason = 0;
 
 	g_signal_emit (self, signals[STATE], 0,
-	               priv->state,
-	               old_state,
-	               priv->disconnect_reason);
+	               (int) priv->state,
+	               (int) old_state,
+	               (int) priv->disconnect_reason);
 }
 
-static int
+static NMSupplicantInterfaceState
 wpas_state_string_to_enum (const char *str_state)
 {
 	if (!strcmp (str_state, "interface_disabled"))
@@ -315,20 +313,20 @@ wpas_state_string_to_enum (const char *str_state)
 	else if (!strcmp (str_state, "completed"))
 		return NM_SUPPLICANT_INTERFACE_STATE_COMPLETED;
 
-	return -1;
+	return NM_SUPPLICANT_INTERFACE_STATE_INVALID;
 }
 
 static void
 set_state_from_string (NMSupplicantInterface *self, const char *new_state)
 {
-	int state;
+	NMSupplicantInterfaceState state;
 
 	state = wpas_state_string_to_enum (new_state);
-	if (state == -1) {
+	if (state == NM_SUPPLICANT_INTERFACE_STATE_INVALID) {
 		_LOGW ("unknown supplicant state '%s'", new_state);
 		return;
 	}
-	set_state (self, (guint32) state);
+	set_state (self, state);
 }
 
 static void
@@ -1317,7 +1315,7 @@ nm_supplicant_interface_request_scan (NMSupplicantInterface *self, const GPtrArr
 	return TRUE;
 }
 
-guint32
+NMSupplicantInterfaceState
 nm_supplicant_interface_get_state (NMSupplicantInterface * self)
 {
 	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), NM_SUPPLICANT_INTERFACE_STATE_DOWN);
@@ -1325,43 +1323,24 @@ nm_supplicant_interface_get_state (NMSupplicantInterface * self)
 	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->state;
 }
 
-const char *
-nm_supplicant_interface_state_to_string (guint32 state)
-{
-	switch (state) {
-	case NM_SUPPLICANT_INTERFACE_STATE_INIT:
-		return "init";
-	case NM_SUPPLICANT_INTERFACE_STATE_STARTING:
-		return "starting";
-	case NM_SUPPLICANT_INTERFACE_STATE_READY:
-		return "ready";
-	case NM_SUPPLICANT_INTERFACE_STATE_DISABLED:
-		return "disabled";
-	case NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED:
-		return "disconnected";
-	case NM_SUPPLICANT_INTERFACE_STATE_INACTIVE:
-		return "inactive";
-	case NM_SUPPLICANT_INTERFACE_STATE_SCANNING:
-		return "scanning";
-	case NM_SUPPLICANT_INTERFACE_STATE_AUTHENTICATING:
-		return "authenticating";
-	case NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATING:
-		return "associating";
-	case NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATED:
-		return "associated";
-	case NM_SUPPLICANT_INTERFACE_STATE_4WAY_HANDSHAKE:
-		return "4-way handshake";
-	case NM_SUPPLICANT_INTERFACE_STATE_GROUP_HANDSHAKE:
-		return "group handshake";
-	case NM_SUPPLICANT_INTERFACE_STATE_COMPLETED:
-		return "completed";
-	case NM_SUPPLICANT_INTERFACE_STATE_DOWN:
-		return "down";
-	default:
-		break;
-	}
-	return "unknown";
-}
+NM_UTILS_LOOKUP_STR_DEFINE (nm_supplicant_interface_state_to_string, NMSupplicantInterfaceState,
+	NM_UTILS_LOOKUP_DEFAULT_WARN ("unknown"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_INVALID,         "invalid"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_INIT,            "init"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_STARTING,        "starting"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_READY,           "ready"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_DISABLED,        "disabled"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED,    "disconnected"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_INACTIVE,        "inactive"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_SCANNING,        "scanning"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_AUTHENTICATING,  "authenticating"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATING,     "associating"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATED,      "associated"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_4WAY_HANDSHAKE,  "4-way handshake"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_GROUP_HANDSHAKE, "group handshake"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_COMPLETED,       "completed"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_DOWN,            "down"),
+);
 
 const char *
 nm_supplicant_interface_get_object_path (NMSupplicantInterface *self)
@@ -1550,7 +1529,7 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 	                  G_SIGNAL_RUN_LAST,
 	                  0,
 	                  NULL, NULL, NULL,
-	                  G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_INT);
+	                  G_TYPE_NONE, 3, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT);
 
 	signals[REMOVED] =
 	    g_signal_new (NM_SUPPLICANT_INTERFACE_REMOVED,
