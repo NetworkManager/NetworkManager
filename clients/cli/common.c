@@ -1643,6 +1643,14 @@ call_cmd (NmCli *nmc, GSimpleAsyncResult *simple, const NMCCommand *cmd, int arg
 	}
 }
 
+static void
+nmc_complete_help (const char *prefix)
+{
+	nmc_complete_strings (prefix, "help", NULL);
+	if (*prefix == '-')
+		nmc_complete_strings (prefix, "-help", "--help", NULL);
+}
+
 /**
  * nmc_do_cmd:
  * @nmc: Client instance
@@ -1684,6 +1692,7 @@ nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, char
 			if (!*cmd || matches (cmd, c->cmd) == 0)
 				g_print ("%s\n", c->cmd);
 		}
+		nmc_complete_help (cmd);
 		g_simple_async_result_complete_in_idle (simple);
 		g_object_unref (simple);
 		return;
@@ -1696,8 +1705,11 @@ nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, char
 
 	if (c->cmd) {
 		/* A valid command was specified. */
+		if (c->usage && argc == 2 && nmc->complete)
+			nmc_complete_help (*(argv+1));
 		if (c->usage && nmc_arg_is_help (*(argv+1))) {
-			c->usage ();
+			if (!nmc->complete)
+				c->usage ();
 			g_simple_async_result_complete_in_idle (simple);
 			g_object_unref (simple);
 		} else
