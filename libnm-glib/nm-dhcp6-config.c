@@ -174,6 +174,9 @@ nm_dhcp6_config_class_init (NMDHCP6ConfigClass *config_class)
 GObject *
 nm_dhcp6_config_new (DBusGConnection *connection, const char *object_path)
 {
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (object_path != NULL, NULL);
+
 	return (GObject *) g_object_new (NM_TYPE_DHCP6_CONFIG,
 	                                 NM_OBJECT_DBUS_CONNECTION, connection,
 	                                 NM_OBJECT_DBUS_PATH, object_path,
