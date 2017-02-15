@@ -31,6 +31,9 @@
 struct _NMVariantAttributeSpec {
 	char *name;
 	const GVariantType *type;
+	bool v4:1;
+	bool v6:1;
+	char str_type;
 };
 
 gboolean    _nm_utils_string_slist_validate (GSList *list,

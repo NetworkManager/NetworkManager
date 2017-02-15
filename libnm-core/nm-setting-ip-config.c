@@ -1182,6 +1182,157 @@ nm_ip_route_set_attribute (NMIPRoute *route, const char *name, GVariant *value)
 		g_hash_table_remove (route->attributes, name);
 }
 
+#define ATTR_SPEC_PTR(name, type, v4, v6, str_type) \
+	&(NMVariantAttributeSpec) { name, type, v4, v6, str_type }
+
+static const NMVariantAttributeSpec * const ip_route_attribute_spec[] = {
+	ATTR_SPEC_PTR (NM_IP_ROUTE_ATTRIBUTE_PREF_SRC,        G_VARIANT_TYPE_STRING,   TRUE,  TRUE, 'a'),
+	ATTR_SPEC_PTR (NM_IP_ROUTE_ATTRIBUTE_SRC,             G_VARIANT_TYPE_STRING,   FALSE, TRUE, 'p'),
+	ATTR_SPEC_PTR (NM_IP_ROUTE_ATTRIBUTE_TOS,             G_VARIANT_TYPE_BYTE,     TRUE,  TRUE,  0 ),
+	ATTR_SPEC_PTR (NM_IP_ROUTE_ATTRIBUTE_WINDOW,          G_VARIANT_TYPE_UINT32,   TRUE,  TRUE,  0 ),
+	ATTR_SPEC_PTR (NM_IP_ROUTE_ATTRIBUTE_CWND,            G_VARIANT_TYPE_UINT32,   TRUE,  TRUE,  0 ),
+	ATTR_SPEC_PTR (NM_IP_ROUTE_ATTRIBUTE_INITCWND,        G_VARIANT_TYPE_UINT32,   TRUE,  TRUE,  0 ),
+	ATTR_SPEC_PTR (NM_IP_ROUTE_ATTRIBUTE_INITRWND,        G_VARIANT_TYPE_UINT32,   TRUE,  TRUE,  0 ),
+	ATTR_SPEC_PTR (NM_IP_ROUTE_ATTRIBUTE_MTU,             G_VARIANT_TYPE_UINT32,   TRUE,  TRUE,  0 ),
+	ATTR_SPEC_PTR (NM_IP_ROUTE_ATTRIBUTE_LOCK_WINDOW,     G_VARIANT_TYPE_BOOLEAN,  TRUE,  TRUE,  0 ),
+	ATTR_SPEC_PTR (NM_IP_ROUTE_ATTRIBUTE_LOCK_CWND,       G_VARIANT_TYPE_BOOLEAN,  TRUE,  TRUE,  0 ),
+	ATTR_SPEC_PTR (NM_IP_ROUTE_ATTRIBUTE_LOCK_INITCWND,   G_VARIANT_TYPE_BOOLEAN,  TRUE,  TRUE,  0 ),
+	ATTR_SPEC_PTR (NM_IP_ROUTE_ATTRIBUTE_LOCK_INITRWND,   G_VARIANT_TYPE_BOOLEAN,  TRUE,  TRUE,  0 ),
+	ATTR_SPEC_PTR (NM_IP_ROUTE_ATTRIBUTE_LOCK_MTU,        G_VARIANT_TYPE_BOOLEAN,  TRUE,  TRUE,  0 ),
+	NULL,
+};
+
+/**
+ * nm_ip_route_get_variant_attribute_spec:
+ *
+ * Returns: the specifiers for route attributes
+ *
+ * Since: 1.8
+ */
+const NMVariantAttributeSpec *const *
+nm_ip_route_get_variant_attribute_spec (void)
+{
+	return ip_route_attribute_spec;
+}
+
+/**
+ * nm_ip_route_attribute_validate:
+ * @name: the attribute name
+ * @value: the attribute value
+ * @family: IP address family of the route
+ * @known: (out): on return, whether the attribute name is a known one
+ * @error: (allow-none): return location for a #GError, or %NULL
+ *
+ * Validates a route attribute, i.e. checks that the attribute is a known one
+ * and the value is of the correct type and well-formed.
+ *
+ * Returns: %TRUE if the attribute is valid, %FALSE otherwise
+ *
+ * Since: 1.8
+ */
+gboolean
+nm_ip_route_attribute_validate  (const char *name,
+                                 GVariant *value,
+                                 int family,
+                                 gboolean *known,
+                                 GError **error)
+{
+	const NMVariantAttributeSpec *const *iter;
+	const NMVariantAttributeSpec *spec = NULL;
+
+	g_return_val_if_fail (name, FALSE);
+	g_return_val_if_fail (value, FALSE);
+	g_return_val_if_fail (family == AF_INET || family == AF_INET6, FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
+
+	for (iter = ip_route_attribute_spec; *iter; iter++) {
+		if (nm_streq (name, (*iter)->name)) {
+			spec = *iter;
+			break;
+		}
+	}
+
+	if (!spec) {
+		NM_SET_OUT (known, FALSE);
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_FAILED,
+		                     _("unknown attribute"));
+		return FALSE;
+	}
+
+	NM_SET_OUT (known, TRUE);
+
+	if (!g_variant_is_of_type (value, spec->type)) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_FAILED,
+		             _("invalid attribute type'%s'"),
+		             g_variant_get_type_string (value));
+		return FALSE;
+	}
+
+	if (   (family == AF_INET && !spec->v4)
+	    || (family == AF_INET6 && !spec->v6)) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_FAILED,
+		             family == AF_INET ?
+		                 _("attribute is not valid for a IPv4 route") :
+		                 _("attribute is not valid for a IPv6 route"));
+		return FALSE;
+	}
+
+	if (spec->type == G_VARIANT_TYPE_STRING) {
+		const char *string = g_variant_get_string (value, NULL);
+		gs_free char *string_free = NULL;
+		char *sep;
+
+		switch (spec->str_type) {
+		case 'a':	/* IP address */
+			if (!nm_utils_ipaddr_valid (family, string)) {
+				g_set_error (error,
+				             NM_CONNECTION_ERROR,
+				             NM_CONNECTION_ERROR_FAILED,
+				             family == AF_INET ?
+				                 _("'%s' is not a valid IPv4 address") :
+				                 _("'%s' is not a valid IPv6 address"),
+				             string);
+				return FALSE;
+			}
+			break;
+		case 'p':	/* IP address + optional prefix */
+			string_free = g_strdup (string);
+			sep = strchr (string_free, '/');
+			if (sep) {
+				*sep = 0;
+				if (_nm_utils_ascii_str_to_int64 (sep + 1, 10, 1, family == AF_INET ? 32 : 128, -1) < 0) {
+					g_set_error (error,
+					             NM_CONNECTION_ERROR,
+					             NM_CONNECTION_ERROR_FAILED,
+					             _("invalid prefix %s"), sep + 1);
+					return FALSE;
+				}
+			}
+			if (!nm_utils_ipaddr_valid (family, string_free)) {
+				g_set_error (error,
+				             NM_CONNECTION_ERROR,
+				             NM_CONNECTION_ERROR_FAILED,
+				             family == AF_INET ?
+				                 _("'%s' is not a valid IPv4 address") :
+				                 _("'%s' is not a valid IPv6 address"),
+				             string_free);
+				return FALSE;
+			}
+			break;
+		default:
+			break;
+		}
+	}
+
+	return TRUE;
+}
+
 /*****************************************************************************/
 
 G_DEFINE_ABSTRACT_TYPE (NMSettingIPConfig, nm_setting_ip_config, NM_TYPE_SETTING)

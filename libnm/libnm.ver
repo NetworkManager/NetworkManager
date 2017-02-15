@@ -1148,6 +1148,8 @@ libnm_1_8_0 {
 global:
 	nm_connection_get_setting_dummy;
 	nm_device_dummy_get_type;
+	nm_ip_route_get_variant_attribute_spec;
+	nm_ip_route_attribute_validate;
 	nm_setting_802_1x_auth_flags_get_type;
 	nm_setting_802_1x_get_auth_timeout;
 	nm_setting_802_1x_get_ca_cert_password;
