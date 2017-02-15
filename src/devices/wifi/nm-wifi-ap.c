@@ -622,6 +622,7 @@ nm_wifi_ap_to_string (const NMWifiAP *self,
 {
 	const NMWifiAPPrivate *priv;
 	const char *supplicant_id = "-";
+	const char *export_path;
 	guint32 chan;
 	char b1[200];
 
@@ -630,10 +631,16 @@ nm_wifi_ap_to_string (const NMWifiAP *self,
 	priv = NM_WIFI_AP_GET_PRIVATE (self);
 	chan = nm_utils_wifi_freq_to_channel (priv->freq);
 	if (priv->supplicant_path)
-		supplicant_id = strrchr (priv->supplicant_path, '/');
+		supplicant_id = strrchr (priv->supplicant_path, '/') ?: supplicant_id;
+
+	export_path = nm_exported_object_get_path (NM_EXPORTED_OBJECT (self));
+	if (export_path)
+		export_path = strrchr (export_path, '/') ?: export_path;
+	else
+		export_path = "/";
 
 	g_snprintf (str_buf, buf_len,
-	            "%17s %-32s [ %c %3u %3u%% %c W:%04X R:%04X ] %3us %s",
+	            "%17s %-32s [ %c %3u %3u%% %c W:%04X R:%04X ] %3us sup:%s [nm:%s]",
 	            priv->address ?: "(none)",
 	            nm_sprintf_buf (b1, "%s%s%s",
 	                            NM_PRINT_FMT_QUOTED (priv->ssid, "\"", nm_utils_escape_ssid (priv->ssid->data, priv->ssid->len), "\"", "(none)")),
@@ -650,7 +657,8 @@ nm_wifi_ap_to_string (const NMWifiAP *self,
 	            priv->wpa_flags & 0xFFFF,
 	            priv->rsn_flags & 0xFFFF,
 	            priv->last_seen > 0 ? ((now_s > 0 ? now_s : nm_utils_get_monotonic_timestamp_s ()) - priv->last_seen) : -1,
-	            supplicant_id);
+	            supplicant_id,
+	            export_path);
 	return str_buf;
 }
 
