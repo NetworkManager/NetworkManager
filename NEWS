@@ -1,3 +1,14 @@
+==============================================
+NetworkManager-1.6.2
+Overview of changes since NetworkManager-1.6.0
+==============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Fixed build warnings with GCC 7
+* Multiple bug fixes in NetworkManager, nmcli and nm-online including
+    several crashes.
+
 ============================================
 NetworkManager-1.6
 Overview of changes since NetworkManager-1.4
