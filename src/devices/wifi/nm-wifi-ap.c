@@ -29,6 +29,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-core-internal.h"
+#include "platform/nm-platform.h"
 
 #include "nm-setting-wireless.h"
 
@@ -202,10 +203,24 @@ nm_wifi_ap_get_address (const NMWifiAP *ap)
 	return NM_WIFI_AP_GET_PRIVATE (ap)->address;
 }
 
+static void
+nm_wifi_ap_set_address_bin (NMWifiAP *ap, const guint8 *addr /* ETH_ALEN bytes */)
+{
+	NMWifiAPPrivate *priv;
+
+	priv = NM_WIFI_AP_GET_PRIVATE (ap);
+
+	if (   !priv->address
+	    || !nm_utils_hwaddr_matches (addr, ETH_ALEN, priv->address, -1)) {
+		g_free (priv->address);
+		priv->address = nm_utils_hwaddr_ntoa (addr, ETH_ALEN);
+		_notify (ap, PROP_HW_ADDRESS);
+	}
+}
+
 void
 nm_wifi_ap_set_address (NMWifiAP *ap, const char *addr)
 {
-	NMWifiAPPrivate *priv;
 	guint8 addr_buf[ETH_ALEN];
 
 	g_return_if_fail (NM_IS_WIFI_AP (ap));
@@ -213,14 +228,7 @@ nm_wifi_ap_set_address (NMWifiAP *ap, const char *addr)
 	    || !nm_utils_hwaddr_aton (addr, addr_buf, sizeof (addr_buf)))
 		g_return_if_reached ();
 
-	priv = NM_WIFI_AP_GET_PRIVATE (ap);
-
-	if (   !priv->address
-	    || !nm_utils_hwaddr_matches (addr_buf, sizeof (addr_buf), priv->address, -1)) {
-		g_free (priv->address);
-		priv->address = nm_utils_hwaddr_ntoa (addr_buf, sizeof (addr_buf));
-		_notify (ap, PROP_HW_ADDRESS);
-	}
+	nm_wifi_ap_set_address_bin (ap, addr_buf);
 }
 
 NM80211Mode
@@ -406,7 +414,6 @@ nm_wifi_ap_update_from_properties (NMWifiAP *ap,
                                    GVariant *properties)
 {
 	NMWifiAPPrivate *priv;
-	char *addr;
 	const guint8 *bytes;
 	GVariant *v;
 	gsize len;
@@ -454,11 +461,10 @@ nm_wifi_ap_update_from_properties (NMWifiAP *ap,
 	v = g_variant_lookup_value (properties, "BSSID", G_VARIANT_TYPE_BYTESTRING);
 	if (v) {
 		bytes = g_variant_get_fixed_array (v, &len, 1);
-		if (len == ETH_ALEN) {
-			addr = nm_utils_hwaddr_ntoa (bytes, len);
-			nm_wifi_ap_set_address (ap, addr);
-			g_free (addr);
-		}
+		if (   len == ETH_ALEN
+		    && memcmp (bytes, nm_ip_addr_zero.addr_eth, ETH_ALEN) != 0
+		    && memcmp (bytes, (char[ETH_ALEN]) { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }, ETH_ALEN) != 0)
+			nm_wifi_ap_set_address_bin (ap, bytes);
 		g_variant_unref (v);
 	}
 
@@ -793,10 +799,7 @@ nm_wifi_ap_init (NMWifiAP *ap)
 NMWifiAP *
 nm_wifi_ap_new_from_properties (const char *supplicant_path, GVariant *properties)
 {
-	const char bad_bssid1[ETH_ALEN] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-	const char bad_bssid2[ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 	NMWifiAP *ap;
-	const char *addr;
 
 	g_return_val_if_fail (supplicant_path != NULL, NULL);
 	g_return_val_if_fail (properties != NULL, NULL);
@@ -805,10 +808,7 @@ nm_wifi_ap_new_from_properties (const char *supplicant_path, GVariant *propertie
 	nm_wifi_ap_update_from_properties (ap, supplicant_path, properties);
 
 	/* ignore APs with invalid or missing BSSIDs */
-	addr = nm_wifi_ap_get_address (ap);
-	if (   !addr
-	    || nm_utils_hwaddr_matches (addr, -1, bad_bssid1, ETH_ALEN)
-	    || nm_utils_hwaddr_matches (addr, -1, bad_bssid2, ETH_ALEN)) {
+	if (!nm_wifi_ap_get_address (ap)) {
 		g_object_unref (ap);
 		return NULL;
 	}
