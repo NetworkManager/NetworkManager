@@ -39,6 +39,11 @@
 
 /*****************************************************************************/
 
+typedef struct {
+	GDBusProxy *proxy;
+	gulong change_id;
+} BssData;
+
 struct _AddNetworkData;
 
 typedef struct {
@@ -90,7 +95,10 @@ typedef struct {
 	NMSupplicantInterfaceState state;
 	int            disconnect_reason;
 
-	gboolean       scanning;
+	gboolean       scanning:1;
+
+	bool           scan_done_pending:1;
+	bool           scan_done_success:1;
 
 	GDBusProxy *   wpas_proxy;
 	GCancellable * init_cancellable;
@@ -142,6 +150,10 @@ G_DEFINE_TYPE (NMSupplicantInterface, nm_supplicant_interface, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
+static void scan_done_emit_signal (NMSupplicantInterface *self);
+
+/*****************************************************************************/
+
 NM_UTILS_LOOKUP_STR_DEFINE (nm_supplicant_interface_state_to_string, NMSupplicantInterfaceState,
 	NM_UTILS_LOOKUP_DEFAULT_WARN ("unknown"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_SUPPLICANT_INTERFACE_STATE_INVALID,         "invalid"),
@@ -164,10 +176,20 @@ NM_UTILS_LOOKUP_STR_DEFINE (nm_supplicant_interface_state_to_string, NMSupplican
 /*****************************************************************************/
 
 static void
-bss_props_changed_cb (GDBusProxy *proxy,
-                      GVariant *changed_properties,
-                      char **invalidated_properties,
-                      gpointer user_data)
+bss_data_destroy (gpointer user_data)
+{
+	BssData *bss_data = user_data;
+
+	nm_clear_g_signal_handler (bss_data->proxy, &bss_data->change_id);
+	g_object_unref (bss_data->proxy);
+	g_slice_free (BssData, bss_data);
+}
+
+static void
+bss_proxy_properties_changed_cb (GDBusProxy *proxy,
+                                 GVariant *changed_properties,
+                                 char **invalidated_properties,
+                                 gpointer user_data)
 {
 	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
@@ -181,63 +203,75 @@ bss_props_changed_cb (GDBusProxy *proxy,
 }
 
 static GVariant *
-_get_bss_proxy_properties (NMSupplicantInterface *self, GDBusProxy *proxy)
+bss_proxy_get_properties (NMSupplicantInterface *self, GDBusProxy *proxy)
 {
 	gs_strfreev char **properties = NULL;
 	GVariantBuilder builder;
 	char **iter;
 
 	iter = properties = g_dbus_proxy_get_cached_property_names (proxy);
-	if (!iter)
-		return NULL;
 
 	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
-	while (*iter) {
-		GVariant *copy = g_dbus_proxy_get_cached_property (proxy, *iter);
+	if (iter) {
+		while (*iter) {
+			GVariant *copy = g_dbus_proxy_get_cached_property (proxy, *iter);
 
-		g_variant_builder_add (&builder, "{sv}", *iter++, copy);
-		g_variant_unref (copy);
+			g_variant_builder_add (&builder, "{sv}", *iter++, copy);
+			g_variant_unref (copy);
+		}
 	}
-
 	return g_variant_builder_end (&builder);
 }
 
 #define BSS_PROXY_INITED "bss-proxy-inited"
 
 static void
-on_bss_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
+bss_proxy_acquired_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
 	NMSupplicantInterface *self;
+	NMSupplicantInterfacePrivate *priv;
 	gs_free_error GError *error = NULL;
-	gs_unref_variant GVariant *props = NULL;
+	GVariant *props = NULL;
+	const char *object_path;
+	BssData *bss_data;
 
-	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (proxy), result, &error)) {
-		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
-			self = NM_SUPPLICANT_INTERFACE (user_data);
-			_LOGD ("failed to acquire BSS proxy: (%s)", error->message);
-			g_hash_table_remove (NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->bss_proxies,
-			                     g_dbus_proxy_get_object_path (proxy));
-		}
+	g_async_initable_init_finish (G_ASYNC_INITABLE (proxy), result, &error);
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	self = NM_SUPPLICANT_INTERFACE (user_data);
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	if (error) {
+		_LOGD ("failed to acquire BSS proxy: (%s)", error->message);
+		g_hash_table_remove (priv->bss_proxies,
+		                     g_dbus_proxy_get_object_path (proxy));
 		return;
 	}
 
-	self = NM_SUPPLICANT_INTERFACE (user_data);
-	props = _get_bss_proxy_properties (self, proxy);
-	if (!props)
+	object_path = g_dbus_proxy_get_object_path (proxy);
+	bss_data = g_hash_table_lookup (priv->bss_proxies, object_path);
+	if (!bss_data)
 		return;
 
-	g_object_set_data (G_OBJECT (proxy), BSS_PROXY_INITED, GUINT_TO_POINTER (TRUE));
+	bss_data->change_id = g_signal_connect (proxy, "g-properties-changed", G_CALLBACK (bss_proxy_properties_changed_cb), self);
 
+	props = bss_proxy_get_properties (self, proxy);
 	g_signal_emit (self, signals[BSS_UPDATED], 0,
 	               g_dbus_proxy_get_object_path (proxy),
 	               g_variant_ref_sink (props));
+	g_variant_unref (props);
+
+	if (priv->scan_done_pending)
+		scan_done_emit_signal (self);
 }
 
 static void
-handle_new_bss (NMSupplicantInterface *self, const char *object_path)
+bss_add_new (NMSupplicantInterface *self, const char *object_path)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 	GDBusProxy *bss_proxy;
+	BssData *bss_data;
 
 	g_return_if_fail (object_path != NULL);
 
@@ -251,16 +285,19 @@ handle_new_bss (NMSupplicantInterface *self, const char *object_path)
 	                          "g-object-path", object_path,
 	                          "g-interface-name", WPAS_DBUS_IFACE_BSS,
 	                          NULL);
+	bss_data = g_slice_new0 (BssData);
+	bss_data->proxy = bss_proxy;
 	g_hash_table_insert (priv->bss_proxies,
 	                     (char *) g_dbus_proxy_get_object_path (bss_proxy),
-	                     bss_proxy);
-	g_signal_connect (bss_proxy, "g-properties-changed", G_CALLBACK (bss_props_changed_cb), self);
+	                     bss_data);
 	g_async_initable_init_async (G_ASYNC_INITABLE (bss_proxy),
 	                             G_PRIORITY_DEFAULT,
 	                             priv->other_cancellable,
-	                             (GAsyncReadyCallback) on_bss_proxy_acquired,
+	                             (GAsyncReadyCallback) bss_proxy_acquired_cb,
 	                             self);
 }
+
+/*****************************************************************************/
 
 static void
 set_state (NMSupplicantInterface *self, NMSupplicantInterfaceState new_state)
@@ -562,35 +599,53 @@ iface_introspect_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data
 }
 
 static void
+scan_done_emit_signal (NMSupplicantInterface *self)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	const char *object_path;
+	BssData *bss_data;
+	gboolean success;
+	GHashTableIter iter;
+
+	g_hash_table_iter_init (&iter, priv->bss_proxies);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &bss_data)) {
+		/* we have some BSS' that need to be initialized first. Delay
+		 * emitting signal. */
+		if (!bss_data->change_id) {
+			priv->scan_done_pending = TRUE;
+			return;
+		}
+	}
+
+	/* Emit BSS_UPDATED so that wifi device has the APs (in case it removed them) */
+	g_hash_table_iter_init (&iter, priv->bss_proxies);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &object_path, (gpointer *) &bss_data)) {
+		gs_unref_variant GVariant *props = NULL;
+
+		props = bss_proxy_get_properties (self, bss_data->proxy);
+		g_signal_emit (self, signals[BSS_UPDATED], 0,
+		               object_path,
+		               g_variant_ref_sink (props));
+	}
+
+	success = priv->scan_done_success;
+	priv->scan_done_success = FALSE;
+	priv->scan_done_pending = FALSE;
+	g_signal_emit (self, signals[SCAN_DONE], 0, success);
+}
+
+static void
 wpas_iface_scan_done (GDBusProxy *proxy,
                       gboolean success,
                       gpointer user_data)
 {
 	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	GVariant *props;
-	GHashTableIter iter;
-	char *bss_path;
-	GDBusProxy *bss_proxy;
 
 	/* Cache last scan completed time */
 	priv->last_scan = nm_utils_get_monotonic_timestamp_s ();
-
-	/* Emit BSS_UPDATED so that wifi device has the APs (in case it removed them) */
-	g_hash_table_iter_init (&iter, priv->bss_proxies);
-	while (g_hash_table_iter_next (&iter, (gpointer) &bss_path, (gpointer) &bss_proxy)) {
-		if (g_object_get_data (G_OBJECT (bss_proxy), BSS_PROXY_INITED)) {
-			props = _get_bss_proxy_properties (self, bss_proxy);
-			if (props) {
-				g_signal_emit (self, signals[BSS_UPDATED], 0,
-				               bss_path,
-				               g_variant_ref_sink (props));
-				g_variant_unref (props);
-			}
-		}
-	}
-
-	g_signal_emit (self, signals[SCAN_DONE], 0, success);
+	priv->scan_done_success |= success;
+	scan_done_emit_signal (self);
 }
 
 static void
@@ -605,7 +660,7 @@ wpas_iface_bss_added (GDBusProxy *proxy,
 	if (priv->scanning)
 		priv->last_scan = nm_utils_get_monotonic_timestamp_s ();
 
-	handle_new_bss (self, path);
+	bss_add_new (self, path);
 }
 
 static void
@@ -615,9 +670,14 @@ wpas_iface_bss_removed (GDBusProxy *proxy,
 {
 	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	BssData *bss_data;
 
+	bss_data = g_hash_table_lookup (priv->bss_proxies, path);
+	if (!bss_data)
+		return;
+	g_hash_table_steal (priv->bss_proxies, path);
 	g_signal_emit (self, signals[BSS_REMOVED], 0, path);
-	g_hash_table_remove (priv->bss_proxies, path);
+	bss_data_destroy (bss_data);
 }
 
 static void
@@ -665,7 +725,7 @@ props_changed_cb (GDBusProxy *proxy,
 	if (g_variant_lookup (changed_properties, "BSSs", "^a&o", &array)) {
 		iter = array;
 		while (*iter)
-			handle_new_bss (self, *iter++);
+			bss_add_new (self, *iter++);
 		g_free (array);
 	}
 
@@ -1517,7 +1577,7 @@ nm_supplicant_interface_init (NMSupplicantInterface * self)
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
 	priv->state = NM_SUPPLICANT_INTERFACE_STATE_INIT;
-	priv->bss_proxies = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
+	priv->bss_proxies = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, bss_data_destroy);
 }
 
 NMSupplicantInterface *
