@@ -3533,7 +3533,7 @@ static gboolean
 nmc_property_ipv4_set_method (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
 	/* Silently accept "static" and convert to "manual" */
-	if (val && strlen (val) > 1 && matches (val, "static") == 0)
+	if (val && strlen (val) > 1 && matches (val, "static"))
 		val = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
 
 	return check_and_set_string (setting, prop, val, ipv4_valid_methods, error);
@@ -3871,7 +3871,7 @@ static gboolean
 nmc_property_ipv6_set_method (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
 	/* Silently accept "static" and convert to "manual" */
-	if (val && strlen (val) > 1 && matches (val, "static") == 0)
+	if (val && strlen (val) > 1 && matches (val, "static"))
 		val = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
 
 	return check_and_set_string (setting, prop, val, ipv6_valid_methods, error);
@@ -5726,7 +5726,7 @@ get_answer (const char *prop, const char *value)
 	else
 		question = g_strdup_printf (_("Do you also want to clear '%s'? [yes]: "), prop);
 	tmp_str = nmc_get_user_input (question);
-	if (!tmp_str || matches (tmp_str, "yes") == 0)
+	if (!tmp_str || matches (tmp_str, "yes"))
 		answer = TRUE;
 	g_free (tmp_str);
 	g_free (question);
@@ -5922,7 +5922,7 @@ connection_master_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_
 			g_print (_("Warning: setting %s.%s requires removing ipv4 and ipv6 settings\n"),
 			         nm_setting_get_name (NM_SETTING (s_con)), g_param_spec_get_name (pspec));
 			tmp_str = nmc_get_user_input (_("Do you want to remove them? [yes] "));
-			if (!tmp_str || matches (tmp_str, "yes") == 0) {
+			if (!tmp_str || matches (tmp_str, "yes")) {
 				if (s_ipv4)
 					nm_connection_remove_setting (connection, G_OBJECT_TYPE (s_ipv4));
 				if (s_ipv6)

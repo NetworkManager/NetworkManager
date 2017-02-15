@@ -1658,13 +1658,13 @@ parse_preferred_connection_order (const char *order, GError **error)
 		if (str[0] == '+' || str[0] == '-')
 			str++;
 
-		if (matches (str, "active") == 0)
+		if (matches (str, "active"))
 			val = inverse ? NMC_SORT_ACTIVE_INV : NMC_SORT_ACTIVE;
-		else if (matches (str, "name") == 0)
+		else if (matches (str, "name"))
 			val = inverse ? NMC_SORT_NAME_INV : NMC_SORT_NAME;
-		else if (matches (str, "type") == 0)
+		else if (matches (str, "type"))
 			val = inverse ? NMC_SORT_TYPE_INV : NMC_SORT_TYPE;
-		else if (matches (str, "path") == 0)
+		else if (matches (str, "path"))
 			val = inverse ? NMC_SORT_PATH_INV : NMC_SORT_PATH;
 		else {
 			g_array_unref (order_arr);
@@ -4156,9 +4156,9 @@ set_bond_monitoring_mode (NmCli *nmc, NMConnection *con, OptionInfo *option, con
 		monitor_mode = g_strdup (WORD_MIIMON);
 	}
 
-	if (matches (monitor_mode, WORD_MIIMON) == 0)
+	if (matches (monitor_mode, WORD_MIIMON))
 		enable_options (NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS, miimon_opts);
-	else if (matches (monitor_mode, WORD_ARP) == 0)
+	else if (matches (monitor_mode, WORD_ARP))
 		enable_options (NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS, arp_opts);
 	else {
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
@@ -4844,7 +4844,7 @@ want_provide_opt_args (const char *type, int num)
 	                                 "Do you want to provide them? %s", num),
 	                       prompt_yes_no (TRUE, NULL));
 	answer = answer ? g_strstrip (answer) : NULL;
-	if (answer && matches (answer, WORD_LOC_YES) != 0)
+	if (answer && !matches (answer, WORD_LOC_YES))
 		ret = FALSE;
 	g_free (answer);
 	return ret;
@@ -5441,13 +5441,13 @@ get_gen_func_cmd_nmcli (const char *str)
 {
 	if (!str)
 		return NULL;
-	if (matches (str, "status-line") == 0)
+	if (matches (str, "status-line"))
 		return gen_func_bool_values;
-	if (matches (str, "save-confirmation") == 0)
+	if (matches (str, "save-confirmation"))
 		return gen_func_bool_values;
-	if (matches (str, "show-secrets") == 0)
+	if (matches (str, "show-secrets"))
 		return gen_func_bool_values;
-	if (matches (str, "prompt-color") == 0)
+	if (matches (str, "prompt-color"))
 		return gen_cmd_nmcli_prompt_color;
 	return NULL;
 }
@@ -5524,7 +5524,7 @@ should_complete_cmd (const char *line, int end, const char *cmd,
 			*prev_word = g_strdup (word3);
 	}
 
-	if (word1 && matches (word1, cmd) == 0)
+	if (word1 && matches (word1, cmd))
 		ret = TRUE;
 
 	g_free (tmp);
@@ -6075,29 +6075,29 @@ parse_editor_main_cmd (const char *cmd, char **cmd_arg)
 		return NMC_EDITOR_MAIN_CMD_UNKNOWN;
 	}
 
-	if (matches (vec[0], "goto") == 0)
+	if (matches (vec[0], "goto"))
 		editor_cmd = NMC_EDITOR_MAIN_CMD_GOTO;
-	else if (matches (vec[0], "remove") == 0)
+	else if (matches (vec[0], "remove"))
 		editor_cmd = NMC_EDITOR_MAIN_CMD_REMOVE;
-	else if (matches (vec[0], "set") == 0)
+	else if (matches (vec[0], "set"))
 		editor_cmd = NMC_EDITOR_MAIN_CMD_SET;
-	else if (matches (vec[0], "describe") == 0)
+	else if (matches (vec[0], "describe"))
 		editor_cmd = NMC_EDITOR_MAIN_CMD_DESCRIBE;
-	else if (matches (vec[0], "print") == 0)
+	else if (matches (vec[0], "print"))
 		editor_cmd = NMC_EDITOR_MAIN_CMD_PRINT;
-	else if (matches (vec[0], "verify") == 0)
+	else if (matches (vec[0], "verify"))
 		editor_cmd = NMC_EDITOR_MAIN_CMD_VERIFY;
-	else if (matches (vec[0], "save") == 0)
+	else if (matches (vec[0], "save"))
 		editor_cmd = NMC_EDITOR_MAIN_CMD_SAVE;
-	else if (matches (vec[0], "activate") == 0)
+	else if (matches (vec[0], "activate"))
 		editor_cmd = NMC_EDITOR_MAIN_CMD_ACTIVATE;
-	else if (matches (vec[0], "back") == 0)
+	else if (matches (vec[0], "back"))
 		editor_cmd = NMC_EDITOR_MAIN_CMD_BACK;
-	else if (matches (vec[0], "help") == 0 || strcmp (vec[0], "?") == 0)
+	else if (matches (vec[0], "help") || strcmp (vec[0], "?") == 0)
 		editor_cmd = NMC_EDITOR_MAIN_CMD_HELP;
-	else if (matches (vec[0], "quit") == 0)
+	else if (matches (vec[0], "quit"))
 		editor_cmd = NMC_EDITOR_MAIN_CMD_QUIT;
-	else if (matches (vec[0], "nmcli") == 0)
+	else if (matches (vec[0], "nmcli"))
 		editor_cmd = NMC_EDITOR_MAIN_CMD_NMCLI;
 
 	/* set pointer to command argument */
@@ -6263,23 +6263,23 @@ parse_editor_sub_cmd (const char *cmd, char **cmd_arg)
 		return NMC_EDITOR_SUB_CMD_UNKNOWN;
 	}
 
-	if (matches (vec[0], "set") == 0)
+	if (matches (vec[0], "set"))
 		editor_cmd = NMC_EDITOR_SUB_CMD_SET;
-	else if (matches (vec[0], "add") == 0)
+	else if (matches (vec[0], "add"))
 		editor_cmd = NMC_EDITOR_SUB_CMD_ADD;
-	else if (matches (vec[0], "change") == 0)
+	else if (matches (vec[0], "change"))
 		editor_cmd = NMC_EDITOR_SUB_CMD_CHANGE;
-	else if (matches (vec[0], "remove") == 0)
+	else if (matches (vec[0], "remove"))
 		editor_cmd = NMC_EDITOR_SUB_CMD_REMOVE;
-	else if (matches (vec[0], "describe") == 0)
+	else if (matches (vec[0], "describe"))
 		editor_cmd = NMC_EDITOR_SUB_CMD_DESCRIBE;
-	else if (matches (vec[0], "print") == 0)
+	else if (matches (vec[0], "print"))
 		editor_cmd = NMC_EDITOR_SUB_CMD_PRINT;
-	else if (matches (vec[0], "back") == 0)
+	else if (matches (vec[0], "back"))
 		editor_cmd = NMC_EDITOR_SUB_CMD_BACK;
-	else if (matches (vec[0], "help") == 0 || strcmp (vec[0], "?") == 0)
+	else if (matches (vec[0], "help") || strcmp (vec[0], "?") == 0)
 		editor_cmd = NMC_EDITOR_SUB_CMD_HELP;
-	else if (matches (vec[0], "quit") == 0)
+	else if (matches (vec[0], "quit"))
 		editor_cmd = NMC_EDITOR_SUB_CMD_QUIT;
 
 	/* set pointer to command argument */
@@ -6595,7 +6595,7 @@ confirm_quit (void)
 	                         "Do you really want to quit? %s"),
 	                       prompt_yes_no (FALSE, NULL));
 	answer = answer ? g_strstrip (answer) : NULL;
-	if (answer && matches (answer, WORD_LOC_YES) == 0)
+	if (answer && matches (answer, WORD_LOC_YES))
 		want_quit = TRUE;
 
 	g_free (answer);
@@ -6750,10 +6750,10 @@ property_edit_submenu (NmCli *nmc,
 		case NMC_EDITOR_SUB_CMD_PRINT:
 			/* Print current connection settings/properties */
 			if (cmd_property_arg) {
-				if (matches (cmd_property_arg, "setting") == 0)
+				if (matches (cmd_property_arg, "setting"))
 					editor_show_setting (curr_setting, nmc);
-				else if (   matches (cmd_property_arg, "connection") == 0
-				         || matches (cmd_property_arg, "all") == 0)
+				else if (   matches (cmd_property_arg, "connection")
+				         || matches (cmd_property_arg, "all"))
 					editor_show_connection (connection, nmc);
 				else
 					g_print (_("Unknown command argument: '%s'\n"), cmd_property_arg);
@@ -6943,7 +6943,7 @@ confirm_connection_saving (NMConnection *local, NMConnection *remote)
 		                         "That might result in an immediate activation of the connection.\n"
 		                         "Do you still want to save? %s"), prompt_yes_no (TRUE, NULL));
 		answer = answer ? g_strstrip (answer) : NULL;
-		if (!answer || matches (answer, WORD_LOC_YES) == 0)
+		if (!answer || matches (answer, WORD_LOC_YES))
 			confirmed = TRUE;
 		else
 			confirmed = FALSE;
@@ -7510,9 +7510,9 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 				/* parse argument */
 				if (cmd_arg) {
-					if (matches (cmd_arg, "temporary") == 0)
+					if (matches (cmd_arg, "temporary"))
 						persistent = FALSE;
-					else if (matches (cmd_arg, "persistent") == 0)
+					else if (matches (cmd_arg, "persistent"))
 						persistent = TRUE;
 					else {
 						g_print (_("Error: invalid argument '%s'\n"), cmd_arg);
@@ -7672,7 +7672,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 			break;
 
 		case NMC_EDITOR_MAIN_CMD_NMCLI:
-			if (cmd_arg_p && matches (cmd_arg_p, "status-line") == 0) {
+			if (cmd_arg_p && matches (cmd_arg_p, "status-line")) {
 				GError *tmp_err = NULL;
 				gboolean bb;
 				if (!nmc_string_to_bool (cmd_arg_v ? g_strstrip (cmd_arg_v) : "", &bb, &tmp_err)) {
@@ -7680,7 +7680,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					g_clear_error (&tmp_err);
 				} else
 					nmc->editor_status_line = bb;
-			} else if (cmd_arg_p && matches (cmd_arg_p, "save-confirmation") == 0) {
+			} else if (cmd_arg_p && matches (cmd_arg_p, "save-confirmation")) {
 				GError *tmp_err = NULL;
 				gboolean bb;
 				if (!nmc_string_to_bool (cmd_arg_v ? g_strstrip (cmd_arg_v) : "", &bb, &tmp_err)) {
@@ -7688,7 +7688,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					g_clear_error (&tmp_err);
 				} else
 					nmc->editor_save_confirmation = bb;
-			} else if (cmd_arg_p && matches (cmd_arg_p, "show-secrets") == 0) {
+			} else if (cmd_arg_p && matches (cmd_arg_p, "show-secrets")) {
 				GError *tmp_err = NULL;
 				gboolean bb;
 				if (!nmc_string_to_bool (cmd_arg_v ? g_strstrip (cmd_arg_v) : "", &bb, &tmp_err)) {
@@ -7696,7 +7696,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					g_clear_error (&tmp_err);
 				} else
 					nmc->editor_show_secrets = bb;
-			} else if (cmd_arg_p && matches (cmd_arg_p, "prompt-color") == 0) {
+			} else if (cmd_arg_p && matches (cmd_arg_p, "prompt-color")) {
 				GError *tmp_err = NULL;
 				NmcTermColor color;
 				color = nmc_term_color_parse_string (cmd_arg_v ? g_strstrip (cmd_arg_v) : " ", &tmp_err);
@@ -7880,9 +7880,9 @@ static void
 nmc_complete_connection_type (const char *prefix, const NameItem *types)
 {
 	while (types->name) {
-		if (!*prefix || matches (prefix, types->name) == 0)
+		if (!*prefix || matches (prefix, types->name))
 			g_print ("%s\n", types->name);
-		if (types->alias && (!*prefix || matches (prefix, types->alias) == 0))
+		if (types->alias && (!*prefix || matches (prefix, types->alias)))
 			g_print ("%s\n", types->alias);
 		types++;
 	}
@@ -8577,7 +8577,7 @@ nmc_complete_vpn_service (const char *prefix)
 	for (candidate = services; *candidate; candidate++) {
 		if (!*prefix && g_str_has_prefix (*candidate, NM_DBUS_INTERFACE))
 			continue;
-		if (!*prefix || matches (prefix, *candidate) == 0)
+		if (!*prefix || matches (prefix, *candidate))
 			g_print ("%s\n", *candidate);
 	}
 	g_strfreev (services);

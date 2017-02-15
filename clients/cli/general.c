@@ -674,7 +674,7 @@ do_general_logging (NmCli *nmc, int argc, char **argv)
 			if (argc == 1 && nmc->complete)
 				nmc_complete_strings (*argv, "level", "domains", NULL);
 
-			if (matches (*argv, "level") == 0) {
+			if (matches (*argv, "level")) {
 				if (next_arg (&argc, &argv) != 0) {
 					g_string_printf (nmc->return_text, _("Error: '%s' argument is missing."), *(argv-1));
 					return NMC_RESULT_ERROR_USER_INPUT;
@@ -684,7 +684,7 @@ do_general_logging (NmCli *nmc, int argc, char **argv)
 					                             "ERR", "OFF", "KEEP", NULL);
 				}
 				level = *argv;
-			} else if (matches (*argv, "domains") == 0) {
+			} else if (matches (*argv, "domains")) {
 				if (next_arg (&argc, &argv) != 0) {
 					g_string_printf (nmc->return_text, _("Error: '%s' argument is missing."), *(argv-1));
 					return NMC_RESULT_ERROR_USER_INPUT;
@@ -864,7 +864,7 @@ do_networking_connectivity (NmCli *nmc, int argc, char **argv)
 	if (!argc) {
 		/* no arguments -> get current state */
 		nmc_switch_show (nmc, NMC_FIELDS_NM_CONNECTIVITY, _("Connectivity"));
-	} else if (matches (*argv, "check") == 0) {
+	} else if (matches (*argv, "check")) {
 		gs_free_error GError *error = NULL;
 
 		/* Register polkit agent */

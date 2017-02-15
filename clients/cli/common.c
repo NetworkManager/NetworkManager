@@ -1689,7 +1689,7 @@ nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, char
 
 	if (argc == 1 && nmc->complete) {
 		for (c = cmds; c->cmd; ++c) {
-			if (!*cmd || matches (cmd, c->cmd) == 0)
+			if (!*cmd || matches (cmd, c->cmd))
 				g_print ("%s\n", c->cmd);
 		}
 		nmc_complete_help (cmd);
@@ -1699,7 +1699,7 @@ nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, char
 	}
 
 	for (c = cmds; c->cmd; ++c) {
-		if (cmd && matches (cmd, c->cmd) == 0)
+		if (cmd && matches (cmd, c->cmd))
 			break;
 	}
 
@@ -1754,7 +1754,7 @@ nmc_complete_strings (const char *prefix, ...)
 
 	va_start (args, prefix);
 	while ((candidate = va_arg (args, const char *))) {
-		if (!*prefix || matches (prefix, candidate) == 0)
+		if (!*prefix || matches (prefix, candidate))
 			g_print ("%s\n", candidate);
 	}
 	va_end (args);

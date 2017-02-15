@@ -29,13 +29,13 @@
 
 #include "utils.h"
 
-int
+gboolean
 matches (const char *cmd, const char *pattern)
 {
 	size_t len = strlen (cmd);
 	if (!len || len > strlen (pattern))
 		return -1;
-	return memcmp (pattern, cmd, len);
+	return memcmp (pattern, cmd, len) == 0;
 }
 
 int
@@ -58,9 +58,9 @@ nmc_arg_is_help (const char *arg)
 {
 	if (!arg)
 		return FALSE;
-	if (   matches (arg, "help") == 0
-	    || (g_str_has_prefix (arg, "-")  && matches (arg+1, "help") == 0)
-	    || (g_str_has_prefix (arg, "--") && matches (arg+2, "help") == 0)) {
+	if (   matches (arg, "help")
+	    || (g_str_has_prefix (arg, "-")  && matches (arg + 1, "help"))
+	    || (g_str_has_prefix (arg, "--") && matches (arg + 2, "help"))) {
 		return TRUE;
 	}
 	return FALSE;
@@ -79,7 +79,7 @@ nmc_arg_is_option (const char *str, const char *opt_name)
 
 	p = (str[1] == '-') ? str + 2 : str + 1;
 
-	return (*p ? (matches (p, opt_name) == 0) : FALSE);
+	return (*p ? matches (p, opt_name) : FALSE);
 }
 
 
