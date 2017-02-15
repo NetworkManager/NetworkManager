@@ -444,7 +444,8 @@ periodic_update (NMDeviceWifi *self)
 		/* Smooth out the strength to work around crappy drivers */
 		percent = nm_platform_wifi_get_quality (NM_PLATFORM_GET, ifindex);
 		if (percent >= 0 || ++priv->invalid_strength_counter > 3) {
-			nm_wifi_ap_set_strength (priv->current_ap, (gint8) percent);
+			if (nm_wifi_ap_set_strength (priv->current_ap, (gint8) percent))
+				_ap_dump (self, priv->current_ap, "updated", 0);
 			priv->invalid_strength_counter = 0;
 		}
 	}
@@ -477,7 +478,9 @@ ap_add_remove (NMDeviceWifi *self,
 		g_hash_table_insert (priv->aps,
 		                     (gpointer) nm_exported_object_export ((NMExportedObject *) ap),
 		                     g_object_ref (ap));
-	}
+		_ap_dump (self, ap, "added", 0);
+	} else
+		_ap_dump (self, ap, "removed", 0);
 
 	g_signal_emit (self, signals[signum], 0, ap);
 
@@ -1643,7 +1646,8 @@ supplicant_iface_bss_updated_cb (NMSupplicantInterface *iface,
 
 	found_ap = get_ap_by_supplicant_path (self, object_path);
 	if (found_ap) {
-		nm_wifi_ap_update_from_properties (found_ap, object_path, properties);
+		if (!nm_wifi_ap_update_from_properties (found_ap, object_path, properties))
+			return;
 		_ap_dump (self, found_ap, "updated", 0);
 	} else {
 		gs_unref_object NMWifiAP *ap = NULL;
@@ -1673,7 +1677,6 @@ supplicant_iface_bss_updated_cb (NMSupplicantInterface *iface,
 		}
 
 		ap_add_remove (self, ACCESS_POINT_ADDED, ap, TRUE);
-		_ap_dump (self, ap, "added", 0);
 	}
 
 	/* Update the current AP if the supplicant notified a current BSS change
@@ -1707,9 +1710,9 @@ supplicant_iface_bss_removed_cb (NMSupplicantInterface *iface,
 		 * when the current AP is changed or cleared.  Set 'fake' to
 		 * indicate that this AP is now unknown to the supplicant.
 		 */
-		nm_wifi_ap_set_fake (ap, TRUE);
+		if (nm_wifi_ap_set_fake (ap, TRUE))
+			_ap_dump (self, ap, "updated", 0);
 	} else {
-		_ap_dump (self, ap, "removed", 0);
 		ap_add_remove (self, ACCESS_POINT_REMOVED, ap, TRUE);
 		schedule_ap_list_dump (self);
 	}
@@ -2500,7 +2503,8 @@ ensure_hotspot_frequency (NMDeviceWifi *self,
 	if (!freq)
 		freq = (g_strcmp0 (band, "a") == 0) ? 5180 : 2462;
 
-	nm_wifi_ap_set_freq (ap, freq);
+	if (nm_wifi_ap_set_freq (ap, freq))
+		_ap_dump (self, ap, "updated", 0);
 }
 
 static void
@@ -2849,6 +2853,8 @@ activation_success_handler (NMDevice *device)
 	g_warn_if_fail (priv->current_ap);
 	if (priv->current_ap) {
 		if (nm_wifi_ap_get_fake (priv->current_ap)) {
+			gboolean ap_changed = FALSE;
+
 			/* If the activation AP hasn't been seen by the supplicant in a scan
 			 * yet, it will be "fake".  This usually happens for Ad-Hoc and
 			 * AP-mode connections.  Fill in the details from the device itself
@@ -2861,13 +2867,16 @@ activation_success_handler (NMDevice *device)
 				if (   nm_platform_wifi_get_bssid (NM_PLATFORM_GET, ifindex, bssid)
 				    && nm_ethernet_address_is_valid (bssid, ETH_ALEN)) {
 					bssid_str = nm_utils_hwaddr_ntoa (bssid, ETH_ALEN);
-					nm_wifi_ap_set_address (priv->current_ap, bssid_str);
+					ap_changed |= nm_wifi_ap_set_address (priv->current_ap, bssid_str);
 				}
 			}
 			if (!nm_wifi_ap_get_freq (priv->current_ap))
-				nm_wifi_ap_set_freq (priv->current_ap, nm_platform_wifi_get_frequency (NM_PLATFORM_GET, ifindex));
+				ap_changed |= nm_wifi_ap_set_freq (priv->current_ap, nm_platform_wifi_get_frequency (NM_PLATFORM_GET, ifindex));
 			if (!nm_wifi_ap_get_max_bitrate (priv->current_ap))
-				nm_wifi_ap_set_max_bitrate (priv->current_ap, nm_platform_wifi_get_rate (NM_PLATFORM_GET, ifindex));
+				ap_changed |= nm_wifi_ap_set_max_bitrate (priv->current_ap, nm_platform_wifi_get_rate (NM_PLATFORM_GET, ifindex));
+
+			if (ap_changed)
+				_ap_dump (self, priv->current_ap, "updated", 0);
 		}
 
 		nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req),
