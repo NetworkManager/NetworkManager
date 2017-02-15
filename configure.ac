@@ -89,7 +89,6 @@ AC_SUBST(nmlibdir, '${prefix}'/lib/$PACKAGE, [NetworkManager library directory])
 AC_SUBST(nmdatadir, '${datadir}'/$PACKAGE, [NetworkManager shared data directory])
 AC_SUBST(nmstatedir, '${localstatedir}'/lib/$PACKAGE, [NetworkManager persistent state directory])
 AC_SUBST(nmrundir, '${runstatedir}'/$PACKAGE, [NetworkManager runtime state directory])
-AC_SUBST(nmrundir_, "${runstatedir}/$PACKAGE", [NetworkManager runtime state directory (expanded)])
 
 AC_GNU_SOURCE
 AC_CHECK_FUNCS([__secure_getenv secure_getenv])
@@ -1146,7 +1145,6 @@ libnm/libnm.pc
 libnm-util/libnm-util.pc
 libnm-glib/libnm-glib.pc
 libnm-glib/libnm-glib-vpn.pc
-man/common.ent
 po/Makefile.in
 data/org.freedesktop.NetworkManager.policy.in
 docs/api/Makefile
