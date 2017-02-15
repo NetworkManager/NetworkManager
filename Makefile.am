@@ -3951,6 +3951,7 @@ endif
 ###############################################################################
 
 man/common.ent: man/common.ent.in
+	@mkdir -p man/
 	$(AM_V_GEN) $(data_edit) $< >$@
 
 xsltproc_flags = \
@@ -4002,6 +4003,9 @@ else
 EXTRA_DIST += man/nm-settings-ifcfg-rh.5
 dist_dependencies += man/nm-settings-ifcfg-rh.5
 endif
+
+CLEANFILES += \
+	man/common.ent
 
 EXTRA_DIST += \
 	$(man_nm_settings_xml) \
