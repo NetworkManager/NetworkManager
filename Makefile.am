@@ -4008,6 +4008,7 @@ CLEANFILES += \
 	man/common.ent
 
 EXTRA_DIST += \
+	man/common.ent.in \
 	$(man_nm_settings_xml) \
 	$(addsuffix .xsl,$(basename $(man_nm_settings_xml))) \
 	$(man_pages) \
