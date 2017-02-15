@@ -138,7 +138,7 @@ write_ip_values (GKeyFile *file,
 	int family, i;
 	const char *addr, *gw;
 	guint32 plen, metric;
-	char key_name[30], *key_name_idx;
+	char key_name[64], *key_name_idx;
 
 	if (!array->len)
 		return;
@@ -188,6 +188,23 @@ write_ip_values (GKeyFile *file,
 
 		sprintf (key_name_idx, "%d", i + 1);
 		nm_keyfile_plugin_kf_set_string (file, setting_name, key_name, output->str);
+
+		if (is_route) {
+			gs_free char *attributes = NULL;
+			gs_strfreev char **names = NULL;
+			gs_unref_hashtable GHashTable *hash = g_hash_table_new (g_str_hash, g_str_equal);
+			int j;
+
+			names = nm_ip_route_get_attribute_names (array->pdata[i]);
+			for (j = 0; names && names[j]; j++)
+				g_hash_table_insert (hash, names[j], nm_ip_route_get_attribute (array->pdata[i], names[j]));
+
+			attributes = nm_utils_format_variant_attributes (hash, ',', '=');
+			if (attributes) {
+				g_strlcat (key_name, "_options", sizeof (key_name));
+				nm_keyfile_plugin_kf_set_string (file, setting_name, key_name, attributes);
+			}
+		}
 	}
 	g_string_free (output, TRUE);
 }

@@ -429,6 +429,31 @@ read_one_ip_address_or_route (KeyfileReaderInfo *info,
 }
 
 static void
+fill_route_attributes (GKeyFile *kf, NMIPRoute *route, const char *setting, const char *key, int family)
+{
+	gs_free char *value = NULL;
+	gs_unref_hashtable GHashTable *hash = NULL;
+	GHashTableIter iter;
+	char *name;
+	GVariant *variant;
+
+	value = nm_keyfile_plugin_kf_get_string (kf, setting, key, NULL);
+	if (!value || !value[0])
+		return;
+
+	hash = nm_utils_parse_variant_attributes (value, ',', '=', TRUE,
+	                                          nm_ip_route_get_variant_attribute_spec (),
+	                                          NULL);
+	if (hash) {
+		g_hash_table_iter_init (&iter, hash);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &name, (gpointer *) &variant)) {
+			if (nm_ip_route_attribute_validate (name, variant, family, NULL, NULL))
+				nm_ip_route_set_attribute (route, name, g_variant_ref (variant));
+		}
+	}
+}
+
+static void
 ip_address_or_route_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
 	const char *setting_name = nm_setting_get_name (setting);
@@ -454,6 +479,7 @@ ip_address_or_route_parser (KeyfileReaderInfo *info, NMSetting *setting, const c
 		for (key_basename = key_names; *key_basename; key_basename++) {
 			char *key_name;
 			gpointer item;
+			char options_key[128];
 
 			/* -1 means no suffix */
 			if (i >= 0)
@@ -463,6 +489,11 @@ ip_address_or_route_parser (KeyfileReaderInfo *info, NMSetting *setting, const c
 
 			item = read_one_ip_address_or_route (info, key, setting_name, key_name, ipv6, routes,
 			                                     gateway ? NULL : &gateway, setting);
+			if (item && routes) {
+				nm_sprintf_buf (options_key, "%s_options", key_name);
+				fill_route_attributes (info->keyfile, item, setting_name, options_key, ipv6 ? AF_INET6 : AF_INET);
+			}
+
 			g_free (key_name);
 
 			if (info->error) {
