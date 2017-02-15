@@ -1833,6 +1833,7 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 		NMIPAddr gateway;
 	} nh;
 	guint32 mss;
+	guint32 window = 0, cwnd = 0, initcwnd = 0, initrwnd = 0, mtu = 0, lock = 0;
 	guint32 table;
 
 	if (!nlmsg_valid_hdr (nlh, sizeof (*rtm)))
@@ -1846,8 +1847,7 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 	if (!NM_IN_SET (rtm->rtm_family, AF_INET, AF_INET6))
 		goto errout;
 
-	if (   rtm->rtm_type != RTN_UNICAST
-	    || rtm->rtm_tos != 0)
+	if (rtm->rtm_type != RTN_UNICAST)
 		goto errout;
 
 	err = nlmsg_parse (nlh, sizeof (struct rtmsg), tb, RTA_MAX, policy);
@@ -1941,21 +1941,34 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 	mss = 0;
 	if (tb[RTA_METRICS]) {
 		struct nlattr *mtb[RTAX_MAX + 1];
-		int i;
+		static struct nla_policy rtax_policy[RTAX_MAX + 1] = {
+			[RTAX_LOCK]        = { .type = NLA_U32 },
+			[RTAX_ADVMSS]      = { .type = NLA_U32 },
+			[RTAX_WINDOW]      = { .type = NLA_U32 },
+			[RTAX_CWND]        = { .type = NLA_U32 },
+			[RTAX_INITCWND]    = { .type = NLA_U32 },
+			[RTAX_INITRWND]    = { .type = NLA_U32 },
+			[RTAX_MTU]         = { .type = NLA_U32 },
+		};
 
-		err = nla_parse_nested(mtb, RTAX_MAX, tb[RTA_METRICS], NULL);
+		err = nla_parse_nested (mtb, RTAX_MAX, tb[RTA_METRICS], rtax_policy);
 		if (err < 0)
 			goto errout;
 
-		for (i = 1; i <= RTAX_MAX; i++) {
-			if (mtb[i]) {
-				if (i == RTAX_ADVMSS) {
-					if (nla_len (mtb[i]) >= sizeof (uint32_t))
-						mss = nla_get_u32(mtb[i]);
-					break;
-				}
-			}
-		}
+		if (mtb[RTAX_LOCK])
+			lock = nla_get_u32 (mtb[RTAX_LOCK]);
+		if (mtb[RTAX_ADVMSS])
+			mss = nla_get_u32 (mtb[RTAX_ADVMSS]);
+		if (mtb[RTAX_WINDOW])
+			window = nla_get_u32 (mtb[RTAX_WINDOW]);
+		if (mtb[RTAX_CWND])
+			cwnd = nla_get_u32 (mtb[RTAX_CWND]);
+		if (mtb[RTAX_INITCWND])
+			initcwnd = nla_get_u32 (mtb[RTAX_INITCWND]);
+		if (mtb[RTAX_INITRWND])
+			initrwnd = nla_get_u32 (mtb[RTAX_INITRWND]);
+		if (mtb[RTAX_MTU])
+			mtu = nla_get_u32 (mtb[RTAX_MTU]);
 	}
 
 	/*****************************************************************/
@@ -1987,7 +2000,24 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 			memcpy (&obj->ip6_route.pref_src, nla_data (tb[RTA_PREFSRC]), addr_len);
 	}
 
+	if (!is_v4 && tb[RTA_SRC]) {
+		_check_addr_or_errout (tb, RTA_SRC, addr_len);
+		memcpy (&obj->ip6_route.src, nla_data (tb[RTA_SRC]), addr_len);
+		obj->ip6_route.src_plen = rtm->rtm_src_len;
+	}
+
 	obj->ip_route.mss = mss;
+	obj->ip_route.window = window;
+	obj->ip_route.cwnd = cwnd;
+	obj->ip_route.initcwnd = initcwnd;
+	obj->ip_route.initrwnd = initrwnd;
+	obj->ip_route.mtu = mtu;
+	obj->ip_route.tos = rtm->rtm_tos;
+	obj->ip_route.lock_window = NM_FLAGS_HAS (lock, 1 << RTAX_WINDOW);
+	obj->ip_route.lock_cwnd = NM_FLAGS_HAS (lock, 1 << RTAX_CWND);
+	obj->ip_route.lock_initcwnd = NM_FLAGS_HAS (lock, 1 << RTAX_INITCWND);
+	obj->ip_route.lock_initrwnd = NM_FLAGS_HAS (lock, 1 << RTAX_INITRWND);
+	obj->ip_route.lock_mtu  = NM_FLAGS_HAS (lock, 1 << RTAX_MTU);
 
 	if (NM_FLAGS_HAS (rtm->rtm_flags, RTM_F_CLONED)) {
 		/* we must not straight way reject cloned routes, because we might have cached
@@ -2362,19 +2392,28 @@ _nl_msg_new_route (int nlmsg_type,
                    gconstpointer gateway,
                    guint32 metric,
                    guint32 mss,
-                   gconstpointer pref_src)
+                   gconstpointer pref_src,
+                   gconstpointer src,
+                   guint8 src_plen,
+                   guint8 tos,
+                   guint32 window,
+                   guint32 cwnd,
+                   guint32 initcwnd,
+                   guint32 initrwnd,
+                   guint32 mtu,
+                   guint32 lock)
 {
 	struct nl_msg *msg;
 	struct rtmsg rtmsg = {
 		.rtm_family = family,
-		.rtm_tos = 0,
+		.rtm_tos = tos,
 		.rtm_table = RT_TABLE_MAIN, /* omit setting RTA_TABLE attribute */
 		.rtm_protocol = nmp_utils_ip_config_source_coerce_to_rtprot (source),
 		.rtm_scope = scope,
 		.rtm_type = RTN_UNICAST,
 		.rtm_flags = 0,
 		.rtm_dst_len = plen,
-		.rtm_src_len = 0,
+		.rtm_src_len = src ? src_plen : 0,
 	};
 	NMIPAddr network_clean;
 
@@ -2396,19 +2435,35 @@ _nl_msg_new_route (int nlmsg_type,
 	nm_utils_ipx_address_clear_host_address (family, &network_clean, network, plen);
 	NLA_PUT (msg, RTA_DST, addr_len, &network_clean);
 
+	if (src)
+		NLA_PUT (msg, RTA_SRC, addr_len, src);
+
 	NLA_PUT_U32 (msg, RTA_PRIORITY, metric);
 
 	if (pref_src)
 		NLA_PUT (msg, RTA_PREFSRC, addr_len, pref_src);
 
-	if (mss > 0) {
+	if (mss || window || cwnd || initcwnd || initrwnd || mtu || lock) {
 		struct nlattr *metrics;
 
 		metrics = nla_nest_start (msg, RTA_METRICS);
 		if (!metrics)
 			goto nla_put_failure;
 
-		NLA_PUT_U32 (msg, RTAX_ADVMSS, mss);
+		if (mss)
+			NLA_PUT_U32 (msg, RTAX_ADVMSS, mss);
+		if (window)
+			NLA_PUT_U32 (msg, RTAX_WINDOW, window);
+		if (cwnd)
+			NLA_PUT_U32 (msg, RTAX_CWND, cwnd);
+		if (initcwnd)
+			NLA_PUT_U32 (msg, RTAX_INITCWND, initcwnd);
+		if (initrwnd)
+			NLA_PUT_U32 (msg, RTAX_INITRWND, initrwnd);
+		if (mtu)
+			NLA_PUT_U32 (msg, RTAX_MTU, mtu);
+		if (lock)
+			NLA_PUT_U32 (msg, RTAX_LOCK, lock);
 
 		nla_nest_end(msg, metrics);
 	}
@@ -5903,6 +5958,16 @@ ip6_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteFlags fl
 	return ipx_route_get_all (platform, ifindex, NMP_OBJECT_TYPE_IP6_ROUTE, flags);
 }
 
+static guint32
+ip_route_get_lock_flag (NMPlatformIPRoute *route)
+{
+	return   (((guint32) route->lock_window) << RTAX_WINDOW)
+	       | (((guint32) route->lock_cwnd) << RTAX_CWND)
+	       | (((guint32) route->lock_initcwnd) << RTAX_INITCWND)
+	       | (((guint32) route->lock_initrwnd) << RTAX_INITRWND)
+	       | (((guint32) route->lock_mtu) << RTAX_MTU);
+}
+
 static gboolean
 ip4_route_add (NMPlatform *platform, const NMPlatformIP4Route *route)
 {
@@ -5924,7 +5989,16 @@ ip4_route_add (NMPlatform *platform, const NMPlatformIP4Route *route)
 	                           &route->gateway,
 	                           route->metric,
 	                           route->mss,
-	                           route->pref_src ? &route->pref_src : NULL);
+	                           route->pref_src ? &route->pref_src : NULL,
+	                           NULL,
+	                           0,
+	                           route->tos,
+	                           route->window,
+	                           route->cwnd,
+	                           route->initcwnd,
+	                           route->initrwnd,
+	                           route->mtu,
+	                           ip_route_get_lock_flag ((NMPlatformIPRoute *) route));
 
 	nmp_object_stackinit_id_ip4_route (&obj_id, route->ifindex, network, route->plen, route->metric);
 	return do_add_addrroute (platform, &obj_id, nlmsg);
@@ -5951,7 +6025,16 @@ ip6_route_add (NMPlatform *platform, const NMPlatformIP6Route *route)
 	                           &route->gateway,
 	                           route->metric,
 	                           route->mss,
-	                           !IN6_IS_ADDR_UNSPECIFIED (&route->pref_src) ? &route->pref_src : NULL);
+	                           !IN6_IS_ADDR_UNSPECIFIED (&route->pref_src) ? &route->pref_src : NULL,
+	                           !IN6_IS_ADDR_UNSPECIFIED (&route->src) ? &route->src : NULL,
+	                           route->src_plen,
+	                           route->tos,
+	                           route->window,
+	                           route->cwnd,
+	                           route->initcwnd,
+	                           route->initrwnd,
+	                           route->mtu,
+	                           ip_route_get_lock_flag ((NMPlatformIPRoute *) route));
 
 	nmp_object_stackinit_id_ip6_route (&obj_id, route->ifindex, &network, route->plen, route->metric);
 	return do_add_addrroute (platform, &obj_id, nlmsg);
@@ -6006,7 +6089,16 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, guint8 p
 	                           NULL,
 	                           metric,
 	                           0,
-	                           NULL);
+	                           NULL,
+	                           NULL,
+	                           0,
+	                           0,
+	                           0,
+	                           0,
+	                           0,
+	                           0,
+	                           0,
+	                           0);
 	if (!nlmsg)
 		return FALSE;
 
@@ -6032,7 +6124,16 @@ ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, gu
 	                           NULL,
 	                           metric,
 	                           0,
-	                           NULL);
+	                           NULL,
+	                           NULL,
+	                           0,
+	                           0,
+	                           0,
+	                           0,
+	                           0,
+	                           0,
+	                           0,
+	                           0);
 	if (!nlmsg)
 		return FALSE;
 
