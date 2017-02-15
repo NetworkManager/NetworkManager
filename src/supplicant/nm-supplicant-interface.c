@@ -41,14 +41,23 @@ static NM_CACHED_QUARK_FCN ("bss-proxy-inited", bss_proxy_inited_quark)
 
 /*****************************************************************************/
 
+struct _AddNetworkData;
+
 typedef struct {
+	NMSupplicantInterface *self;
 	NMSupplicantConfig *cfg;
 	GCancellable *cancellable;
 	NMSupplicantInterfaceAssocCb callback;
 	gpointer user_data;
 	guint fail_on_idle_id;
 	guint blobs_left;
+	struct _AddNetworkData *add_network_data;
 } AssocData;
+
+typedef struct _AddNetworkData {
+	/* the assoc_data at the time when doing the call. */
+	AssocData *assoc_data;
+} AddNetworkData;
 
 enum {
 	STATE,               /* change in the interface's state */
@@ -1032,6 +1041,11 @@ assoc_return (NMSupplicantInterface *self, GError *error, const char *message)
 	} else
 		_LOGD ("assoc[%p]: association request successful", assoc_data);
 
+	if (assoc_data->add_network_data) {
+		/* signal that this request already completed */
+		assoc_data->add_network_data->assoc_data = NULL;
+	}
+
 	nm_clear_g_source (&assoc_data->fail_on_idle_id);
 	nm_clear_g_cancellable (&assoc_data->cancellable);
 
@@ -1153,6 +1167,8 @@ assoc_add_blob_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 static void
 assoc_add_network_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
+	AddNetworkData *add_network_data = user_data;
+	AssocData *assoc_data;
 	NMSupplicantInterface *self;
 	NMSupplicantInterfacePrivate *priv;
 	gs_unref_variant GVariant *reply = NULL;
@@ -1162,16 +1178,39 @@ assoc_add_network_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_dat
 	const char *blob_name;
 	GByteArray *blob_data;
 
+	assoc_data = add_network_data->assoc_data;
+	if (assoc_data)
+		assoc_data->add_network_data = NULL;
+	g_slice_free (AddNetworkData, add_network_data);
+
 	reply = _nm_dbus_proxy_call_finish (proxy, result,
 	                                    G_VARIANT_TYPE ("(o)"),
 	                                    &error);
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+
+	if (!assoc_data) {
+		if (!error) {
+			gs_free char *net_path = NULL;
+
+			/* the assoc-request was already cancelled, but the AddNetwork request succeeded.
+			 * Cleanup the created network.
+			 *
+			 * This cleanup action does not work when NetworkManager is about to exit
+			 * and leaves the mainloop. During program shutdown, we may orphan networks. */
+			g_variant_get (reply, "(o)", &net_path);
+			g_dbus_proxy_call (proxy,
+			                   "RemoveNetwork",
+			                   g_variant_new ("(o)", net_path),
+			                   G_DBUS_CALL_FLAGS_NONE,
+			                   -1,
+			                   NULL,
+			                   NULL,
+			                   NULL);
+		}
 		return;
+	}
 
-	self = NM_SUPPLICANT_INTERFACE (user_data);
+	self = NM_SUPPLICANT_INTERFACE (assoc_data->self);
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	nm_clear_g_free (&priv->net_path);
 
 	if (error) {
 		assoc_return (self, error, "failure to add network");
@@ -1213,6 +1252,7 @@ assoc_set_ap_scan_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_dat
 	NMSupplicantInterfacePrivate *priv;
 	gs_unref_variant GVariant *reply = NULL;
 	gs_free_error GError *error = NULL;
+	AddNetworkData *add_network_data;
 
 	reply = g_dbus_proxy_call_finish (proxy, result, &error);
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
@@ -1230,14 +1270,19 @@ assoc_set_ap_scan_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_dat
 	       priv->assoc_data,
 	       nm_supplicant_config_get_ap_scan (priv->assoc_data->cfg));
 
+	add_network_data = g_slice_new0 (AddNetworkData);
+	priv->assoc_data->add_network_data = add_network_data;
+
+	add_network_data->assoc_data = priv->assoc_data;
+
 	g_dbus_proxy_call (priv->iface_proxy,
 	                   "AddNetwork",
 	                   g_variant_new ("(@a{sv})", nm_supplicant_config_to_variant (priv->assoc_data->cfg)),
 	                   G_DBUS_CALL_FLAGS_NONE,
 	                   -1,
-	                   priv->assoc_data->cancellable,
+	                   NULL,
 	                   (GAsyncReadyCallback) assoc_add_network_cb,
-	                   self);
+	                   add_network_data);
 }
 
 static gboolean
@@ -1287,6 +1332,7 @@ nm_supplicant_interface_assoc (NMSupplicantInterface *self,
 	assoc_data = g_slice_new0 (AssocData);
 	priv->assoc_data = assoc_data;
 
+	assoc_data->self = self;
 	assoc_data->cfg = g_object_ref (cfg);
 	assoc_data->callback = callback;
 	assoc_data->user_data = user_data;
