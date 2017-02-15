@@ -110,7 +110,20 @@ if [[ $IGNORE_DIRTY != 1 ]]; then
 fi
 
 if [[ $NO_DIST != 1 ]]; then
-    ./autogen.sh --enable-gtk-doc --enable-introspection --with-libnm-glib || die "Error autogen.sh"
+    ./autogen.sh \
+        --enable-gtk-doc \
+        --enable-introspection \
+        --with-libnm-glib \
+        --enable-ifcfg-rh \
+        --enable-ifupdown \
+        --enable-ibft \
+        --enable-ifnet \
+        --with-config-logging-backend-default=syslog \
+        --with-libaudit=yes-disabled-by-default \
+        --enable-polkit=yes \
+        --with-config-dhcp-default=internal \
+        --with-config-dns-rc-manager-default=symlink \
+        || die "Error autogen.sh"
     if [[ $QUICK == 1 ]]; then
         make dist -j 7 || die "Error make dist"
     else
