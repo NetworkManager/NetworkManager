@@ -64,7 +64,6 @@ typedef enum {
 /* Signals */
 #define NM_SUPPLICANT_INTERFACE_STATE            "state"
 #define NM_SUPPLICANT_INTERFACE_REMOVED          "removed"
-#define NM_SUPPLICANT_INTERFACE_NEW_BSS          "new-bss"
 #define NM_SUPPLICANT_INTERFACE_BSS_UPDATED      "bss-updated"
 #define NM_SUPPLICANT_INTERFACE_BSS_REMOVED      "bss-removed"
 #define NM_SUPPLICANT_INTERFACE_SCAN_DONE        "scan-done"

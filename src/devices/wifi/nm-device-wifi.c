@@ -157,11 +157,6 @@ static void supplicant_iface_state_cb (NMSupplicantInterface *iface,
                                        int disconnect_reason,
                                        gpointer user_data);
 
-static void supplicant_iface_new_bss_cb (NMSupplicantInterface * iface,
-                                         const char *object_path,
-                                         GVariant *properties,
-                                         NMDeviceWifi * self);
-
 static void supplicant_iface_bss_updated_cb (NMSupplicantInterface *iface,
                                              const char *object_path,
                                              GVariant *properties,
@@ -259,10 +254,6 @@ supplicant_interface_acquire (NMDeviceWifi *self)
 	g_signal_connect (priv->sup_iface,
 	                  NM_SUPPLICANT_INTERFACE_STATE,
 	                  G_CALLBACK (supplicant_iface_state_cb),
-	                  self);
-	g_signal_connect (priv->sup_iface,
-	                  NM_SUPPLICANT_INTERFACE_NEW_BSS,
-	                  G_CALLBACK (supplicant_iface_new_bss_cb),
 	                  self);
 	g_signal_connect (priv->sup_iface,
 	                  NM_SUPPLICANT_INTERFACE_BSS_UPDATED,
@@ -1629,14 +1620,13 @@ try_fill_ssid_for_hidden_ap (NMDeviceWifi *self,
 }
 
 static void
-supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
-                             const char *object_path,
-                             GVariant *properties,
-                             NMDeviceWifi *self)
+supplicant_iface_bss_updated_cb (NMSupplicantInterface *iface,
+                                 const char *object_path,
+                                 GVariant *properties,
+                                 NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMDeviceState state;
-	NMWifiAP *ap;
 	NMWifiAP *found_ap = NULL;
 	const GByteArray *ssid;
 
@@ -1651,40 +1641,40 @@ supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
 	if (NM_DEVICE_WIFI_GET_PRIVATE (self)->mode == NM_802_11_MODE_AP)
 		return;
 
-	ap = nm_wifi_ap_new_from_properties (object_path, properties);
-	if (!ap) {
-		_LOGD (LOGD_WIFI, "invalid AP properties received for %s", object_path);
-		return;
-	}
-
-	/* Let the manager try to fill in the SSID from seen-bssids lists */
-	ssid = nm_wifi_ap_get_ssid (ap);
-	if (!ssid || nm_utils_is_empty_ssid (ssid->data, ssid->len)) {
-		/* Try to fill the SSID from the AP database */
-		try_fill_ssid_for_hidden_ap (self, ap);
-
-		ssid = nm_wifi_ap_get_ssid (ap);
-		if (ssid && (nm_utils_is_empty_ssid (ssid->data, ssid->len) == FALSE)) {
-			/* Yay, matched it, no longer treat as hidden */
-			_LOGD (LOGD_WIFI, "matched hidden AP %s => '%s'",
-			       nm_wifi_ap_get_address (ap), nm_utils_escape_ssid (ssid->data, ssid->len));
-		} else {
-			/* Didn't have an entry for this AP in the database */
-			_LOGD (LOGD_WIFI, "failed to match hidden AP %s",
-			       nm_wifi_ap_get_address (ap));
-		}
-	}
-
 	found_ap = get_ap_by_supplicant_path (self, object_path);
 	if (found_ap) {
-		_ap_dump (self, ap, "updated", 0);
 		nm_wifi_ap_update_from_properties (found_ap, object_path, properties);
+		_ap_dump (self, found_ap, "updated", 0);
 	} else {
-		_ap_dump (self, ap, "added", 0);
-		ap_add_remove (self, ACCESS_POINT_ADDED, ap, TRUE);
-	}
+		gs_unref_object NMWifiAP *ap = NULL;
 
-	g_object_unref (ap);
+		ap = nm_wifi_ap_new_from_properties (object_path, properties);
+		if (!ap) {
+			_LOGD (LOGD_WIFI, "invalid AP properties received for %s", object_path);
+			return;
+		}
+
+		/* Let the manager try to fill in the SSID from seen-bssids lists */
+		ssid = nm_wifi_ap_get_ssid (ap);
+		if (!ssid || nm_utils_is_empty_ssid (ssid->data, ssid->len)) {
+			/* Try to fill the SSID from the AP database */
+			try_fill_ssid_for_hidden_ap (self, ap);
+
+			ssid = nm_wifi_ap_get_ssid (ap);
+			if (ssid && (nm_utils_is_empty_ssid (ssid->data, ssid->len) == FALSE)) {
+				/* Yay, matched it, no longer treat as hidden */
+				_LOGD (LOGD_WIFI, "matched hidden AP %s => '%s'",
+				       nm_wifi_ap_get_address (ap), nm_utils_escape_ssid (ssid->data, ssid->len));
+			} else {
+				/* Didn't have an entry for this AP in the database */
+				_LOGD (LOGD_WIFI, "failed to match hidden AP %s",
+				       nm_wifi_ap_get_address (ap));
+			}
+		}
+
+		ap_add_remove (self, ACCESS_POINT_ADDED, ap, TRUE);
+		_ap_dump (self, ap, "added", 0);
+	}
 
 	/* Update the current AP if the supplicant notified a current BSS change
 	 * before it sent the current BSS's scan result.
@@ -1693,32 +1683,6 @@ supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
 		supplicant_iface_notify_current_bss (priv->sup_iface, NULL, self);
 
 	schedule_ap_list_dump (self);
-}
-
-static void
-supplicant_iface_bss_updated_cb (NMSupplicantInterface *iface,
-                                 const char *object_path,
-                                 GVariant *properties,
-                                 NMDeviceWifi *self)
-{
-	NMDeviceState state;
-	NMWifiAP *ap;
-
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (object_path != NULL);
-	g_return_if_fail (properties != NULL);
-
-	/* Ignore new APs when unavailable or unmanaged */
-	state = nm_device_get_state (NM_DEVICE (self));
-	if (state <= NM_DEVICE_STATE_UNAVAILABLE)
-		return;
-
-	ap = get_ap_by_supplicant_path (self, object_path);
-	if (ap) {
-		_ap_dump (self, ap, "updated", 0);
-		nm_wifi_ap_update_from_properties (ap, object_path, properties);
-		schedule_ap_list_dump (self);
-	}
 }
 
 static void
@@ -1734,19 +1698,20 @@ supplicant_iface_bss_removed_cb (NMSupplicantInterface *iface,
 
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	ap = get_ap_by_supplicant_path (self, object_path);
-	if (ap) {
-		if (ap == priv->current_ap) {
-			/* The current AP cannot be removed (to prevent NM indicating that
-			 * it is connected, but to nothing), but it must be removed later
-			 * when the current AP is changed or cleared.  Set 'fake' to
-			 * indicate that this AP is now unknown to the supplicant.
-			 */
-			nm_wifi_ap_set_fake (ap, TRUE);
-		} else {
-			_ap_dump (self, ap, "removed", 0);
-			ap_add_remove (self, ACCESS_POINT_REMOVED, ap, TRUE);
-			schedule_ap_list_dump (self);
-		}
+	if (!ap)
+		return;
+
+	if (ap == priv->current_ap) {
+		/* The current AP cannot be removed (to prevent NM indicating that
+		 * it is connected, but to nothing), but it must be removed later
+		 * when the current AP is changed or cleared.  Set 'fake' to
+		 * indicate that this AP is now unknown to the supplicant.
+		 */
+		nm_wifi_ap_set_fake (ap, TRUE);
+	} else {
+		_ap_dump (self, ap, "removed", 0);
+		ap_add_remove (self, ACCESS_POINT_REMOVED, ap, TRUE);
+		schedule_ap_list_dump (self);
 	}
 }
 

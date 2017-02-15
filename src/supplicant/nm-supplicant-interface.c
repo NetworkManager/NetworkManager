@@ -60,8 +60,7 @@ typedef struct _AddNetworkData {
 enum {
 	STATE,               /* change in the interface's state */
 	REMOVED,             /* interface was removed by the supplicant */
-	NEW_BSS,             /* interface saw a new access point from a scan */
-	BSS_UPDATED,         /* a BSS property changed */
+	BSS_UPDATED,         /* a new BSS appeared or an existing had properties changed */
 	BSS_REMOVED,         /* supplicant removed BSS from its scan list */
 	SCAN_DONE,           /* wifi scan is complete */
 	CREDENTIALS_REQUEST, /* 802.1x identity or password requested */
@@ -229,7 +228,7 @@ on_bss_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_da
 
 	g_object_set_data (G_OBJECT (proxy), BSS_PROXY_INITED, GUINT_TO_POINTER (TRUE));
 
-	g_signal_emit (self, signals[NEW_BSS], 0,
+	g_signal_emit (self, signals[BSS_UPDATED], 0,
 	               g_dbus_proxy_get_object_path (proxy),
 	               g_variant_ref_sink (props));
 }
@@ -577,13 +576,13 @@ wpas_iface_scan_done (GDBusProxy *proxy,
 	/* Cache last scan completed time */
 	priv->last_scan = nm_utils_get_monotonic_timestamp_s ();
 
-	/* Emit NEW_BSS so that wifi device has the APs (in case it removed them) */
+	/* Emit BSS_UPDATED so that wifi device has the APs (in case it removed them) */
 	g_hash_table_iter_init (&iter, priv->bss_proxies);
 	while (g_hash_table_iter_next (&iter, (gpointer) &bss_path, (gpointer) &bss_proxy)) {
 		if (g_object_get_data (G_OBJECT (bss_proxy), BSS_PROXY_INITED)) {
 			props = _get_bss_proxy_properties (self, bss_proxy);
 			if (props) {
-				g_signal_emit (self, signals[NEW_BSS], 0,
+				g_signal_emit (self, signals[BSS_UPDATED], 0,
 				               bss_path,
 				               g_variant_ref_sink (props));
 				g_variant_unref (props);
@@ -1633,14 +1632,6 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 	                  0,
 	                  NULL, NULL, NULL,
 	                  G_TYPE_NONE, 0);
-
-	signals[NEW_BSS] =
-	    g_signal_new (NM_SUPPLICANT_INTERFACE_NEW_BSS,
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_LAST,
-	                  0,
-	                  NULL, NULL, NULL,
-	                  G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_VARIANT);
 
 	signals[BSS_UPDATED] =
 	    g_signal_new (NM_SUPPLICANT_INTERFACE_BSS_UPDATED,
