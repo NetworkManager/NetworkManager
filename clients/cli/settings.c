@@ -3470,29 +3470,6 @@ _parse_ip_address (int family, const char *address, GError **error)
 	return ipaddr;
 }
 
-static NMIPRoute *
-_parse_ip_route (int family, const char *route, GError **error)
-{
-	char *value = g_strdup (route);
-	char **routev;
-	guint len;
-	NMIPRoute *iproute = NULL;
-
-	routev = nmc_strsplit_set (g_strstrip (value), " \t", 0);
-	len = g_strv_length (routev);
-	if (len < 1 || len > 3) {
-		g_set_error (error, 1, 0, _("'%s' is not valid (the format is: ip[/prefix] [next-hop] [metric])"),
-		             route);
-		goto finish;
-	}
-	iproute = nmc_parse_and_build_route (family, routev[0], routev[1], len >= 2 ? routev[2] : NULL, error);
-
-finish:
-	g_free (value);
-	g_strfreev (routev);
-	return iproute;
-}
-
 DEFINE_GETTER (nmc_property_ipv4_get_method, NM_SETTING_IP_CONFIG_METHOD)
 DEFINE_GETTER (nmc_property_ipv4_get_dns, NM_SETTING_IP_CONFIG_DNS)
 DEFINE_GETTER (nmc_property_ipv4_get_dns_search, NM_SETTING_IP_CONFIG_DNS_SEARCH)
@@ -3536,7 +3513,20 @@ nmc_property_ipvx_get_routes (NMSetting *setting, NmcPropertyGetType get_type)
 
 	num_routes = nm_setting_ip_config_get_num_routes (s_ip);
 	for (i = 0; i < num_routes; i++) {
+		gs_free char *attr_str = NULL;
+		gs_strfreev char **attr_names = NULL;
+		gs_unref_hashtable GHashTable *hash = g_hash_table_new (g_str_hash, g_str_equal);
+		int j;
+
 		route = nm_setting_ip_config_get_route (s_ip, i);
+
+		attr_names = nm_ip_route_get_attribute_names (route);
+		for (j = 0; attr_names && attr_names[j]; j++) {
+			g_hash_table_insert (hash, attr_names[j],
+			                     nm_ip_route_get_attribute (route, attr_names[j]));
+		}
+
+		attr_str = nm_utils_format_variant_attributes (hash, ' ', '=');
 
 		if (get_type == NMC_PROPERTY_GET_PARSABLE) {
 			if (printable->len > 0)
@@ -3550,7 +3540,10 @@ nmc_property_ipvx_get_routes (NMSetting *setting, NmcPropertyGetType get_type)
 				g_string_append_printf (printable, " %s", nm_ip_route_get_next_hop (route));
 			if (nm_ip_route_get_metric (route) != -1)
 				g_string_append_printf (printable, " %u", (guint32) nm_ip_route_get_metric (route));
+			if (attr_str)
+				g_string_append_printf (printable, " %s", attr_str);
 		} else {
+
 			if (printable->len > 0)
 				g_string_append (printable, "; ");
 
@@ -3567,6 +3560,8 @@ nmc_property_ipvx_get_routes (NMSetting *setting, NmcPropertyGetType get_type)
 
 			if (nm_ip_route_get_metric (route) != -1)
 				g_string_append_printf (printable, ", mt = %u", (guint32) nm_ip_route_get_metric (route));
+			if (attr_str)
+				g_string_append_printf (printable, " %s", attr_str);
 
 			g_string_append (printable, " }");
 		}
@@ -3858,7 +3853,7 @@ nmc_property_ipv4_set_gateway (NMSetting *setting, const char *prop, const char 
 static NMIPRoute *
 _parse_ipv4_route (const char *route, GError **error)
 {
-	return _parse_ip_route (AF_INET, route, error);
+	return nmc_parse_and_build_route (AF_INET, route, error);
 }
 
 static gboolean
@@ -4201,7 +4196,7 @@ nmc_property_ipv6_set_gateway (NMSetting *setting, const char *prop, const char 
 static NMIPRoute *
 _parse_ipv6_route (const char *route, GError **error)
 {
-	return _parse_ip_route (AF_INET6, route, error);
+	return nmc_parse_and_build_route (AF_INET6, route, error);
 }
 
 static gboolean

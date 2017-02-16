@@ -31,7 +31,7 @@ gboolean print_dhcp4_config (NMDhcpConfig *dhcp4, NmCli *nmc, const char *group_
 gboolean print_dhcp6_config (NMDhcpConfig *dhcp6, NmCli *nmc, const char *group_prefix, const char *one_field);
 
 NMIPAddress *nmc_parse_and_build_address (int family, const char *ip_str, GError **error);
-NMIPRoute *nmc_parse_and_build_route (int family, const char *first, const char *second, const char *third, GError **error);
+NMIPRoute *nmc_parse_and_build_route (int family, const char *str, GError **error);
 
 const char * nmc_device_state_to_string (NMDeviceState state);
 const char * nmc_device_reason_to_string (NMDeviceStateReason reason);
