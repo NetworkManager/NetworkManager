@@ -51,12 +51,12 @@ cert_writer (NMConnection *connection,
 	NMSetting8021xCKFormat format;
 	const char *path = NULL, *ext = "pem";
 
-	scheme = cert_data->scheme_func (cert_data->setting);
+	scheme = cert_data->vtable->scheme_func (cert_data->setting);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
 		char *tmp = NULL;
 		const char *accepted_path = NULL;
 
-		path = cert_data->path_func (cert_data->setting);
+		path = cert_data->vtable->path_func (cert_data->setting);
 		g_assert (path);
 
 		if (g_str_has_prefix (path, info->keyfile_dir)) {
@@ -92,11 +92,11 @@ cert_writer (NMConnection *connection,
 
 		if (!accepted_path)
 			accepted_path = tmp = g_strconcat (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH, path, NULL);
-		nm_keyfile_plugin_kf_set_string (file, setting_name, cert_data->property_name, accepted_path);
+		nm_keyfile_plugin_kf_set_string (file, setting_name, cert_data->vtable->setting_key, accepted_path);
 		g_free (tmp);
 	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
-		nm_keyfile_plugin_kf_set_string (file, setting_name, cert_data->property_name,
-		                                 cert_data->uri_func (cert_data->setting));
+		nm_keyfile_plugin_kf_set_string (file, setting_name, cert_data->vtable->setting_key,
+		                                 cert_data->vtable->uri_func (cert_data->setting));
 	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
 		GBytes *blob;
 		const guint8 *blob_data;
@@ -105,13 +105,13 @@ cert_writer (NMConnection *connection,
 		GError *local = NULL;
 		char *new_path;
 
-		blob = cert_data->blob_func (cert_data->setting);
+		blob = cert_data->vtable->blob_func (cert_data->setting);
 		g_assert (blob);
 		blob_data = g_bytes_get_data (blob, &blob_len);
 
-		if (cert_data->format_func) {
+		if (cert_data->vtable->format_func) {
 			/* Get the extension for a private key */
-			format = cert_data->format_func (cert_data->setting);
+			format = cert_data->vtable->format_func (cert_data->setting);
 			if (format == NM_SETTING_802_1X_CK_FORMAT_PKCS12)
 				ext = "p12";
 		} else {
@@ -124,17 +124,17 @@ cert_writer (NMConnection *connection,
 		 * from now on instead of pushing around the certificate data.
 		 */
 		new_path = g_strdup_printf ("%s/%s-%s.%s", info->keyfile_dir, nm_connection_get_uuid (connection),
-		                            cert_data->suffix, ext);
+		                            cert_data->vtable->keyfile_suffix, ext);
 
 		success = nm_utils_file_set_contents (new_path, (const gchar *) blob_data,
 		                                      blob_len, 0600, &local);
 		if (success) {
 			/* Write the path value to the keyfile.
 			 * We know, that basename(new_path) starts with a UUID, hence no conflict with "data:;base64,"  */
-			nm_keyfile_plugin_kf_set_string (file, setting_name, cert_data->property_name, strrchr (new_path, '/') + 1);
+			nm_keyfile_plugin_kf_set_string (file, setting_name, cert_data->vtable->setting_key, strrchr (new_path, '/') + 1);
 		} else {
 			nm_log_warn (LOGD_SETTINGS, "keyfile: %s.%s: failed to write certificate to file %s: %s",
-			             setting_name, cert_data->property_name, new_path, local->message);
+			             setting_name, cert_data->vtable->setting_key, new_path, local->message);
 			g_error_free (local);
 		}
 		g_free (new_path);
