@@ -124,7 +124,8 @@ TEMP="$(mktemp -d "$SCRIPTDIR/NetworkManager.$DATE.XXXXXX")"
 TEMPBASE="$(basename "$TEMP")"
 
 if [[ "$SOURCE_FROM_GIT" == "1" ]]; then
-    SOURCE="$TEMP/NetworkManager-${VERSION}.tar.xz"
+    mkdir -p "$TEMP/SOURCES"
+    SOURCE="$TEMP/SOURCES/NetworkManager-${VERSION}.tar.xz"
     (cd "$GITDIR" && git archive --prefix="NetworkManager-$VERSION"/ "$COMMIT_FULL") | xz > "$SOURCE"
 fi
 
@@ -152,7 +153,9 @@ rm -f "$BUILDLOG"
 TEMPSPEC="$TEMP/SPECS/NetworkManager.spec"
 mkdir -p "$TEMP/SOURCES/" "$TEMP/SPECS/" || die "error creating SPECS directoy"
 
-cp "$SOURCE" "$TEMP/SOURCES/" || die "Could not copy source $SOURCE to $TEMP/SOURCES"
+if [[ "$(dirname "$SOURCE")" != "$TEMP/SOURCES" ]]; then
+    cp "$SOURCE" "$TEMP/SOURCES/" || die "Could not copy source $SOURCE to $TEMP/SOURCES"
+fi
 cp "$SOURCE_NETWORKMANAGER_CONF" "$TEMP/SOURCES/NetworkManager.conf" || die "Could not copy source $SOURCE_NETWORKMANAGER_CONF to $TEMP/SOURCES"
 cp "$SOURCE_CONFIG_SERVER" "$TEMP/SOURCES/00-server.conf" || die "Could not copy source $SOURCE_CONFIG_SERVER to $TEMP/SOURCES"
 cp "$SOURCE_CONFIG_CONNECTIVITY_FEDORA" "$TEMP/SOURCES/20-connectivity-fedora.conf" || die "Could not copy source $SOURCE_CONFIG_CONNECTIVITY_FEDORA to $TEMP/SOURCES"
