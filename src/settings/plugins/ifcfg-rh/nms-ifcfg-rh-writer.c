@@ -149,42 +149,32 @@ error:
 typedef struct {
 	const NMSetting8021xSchemeVtable *vtable;
 	const char *ifcfg_rh_key;
-	const char *ifcfg_rh_suffix;
-	const char *ifcfg_rh_suffix_p12;
 } Setting8021xSchemeVtable;
 
 static const Setting8021xSchemeVtable setting_8021x_scheme_vtable[] = {
 	[NM_SETTING_802_1X_SCHEME_TYPE_CA_CERT] = {
 		.vtable                 = &nm_setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_CA_CERT],
 		.ifcfg_rh_key           = "IEEE_8021X_CA_CERT",
-		.ifcfg_rh_suffix        = "ca-cert.der",
 	},
 	[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CA_CERT] = {
 		.vtable                 = &nm_setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CA_CERT],
 		.ifcfg_rh_key           = "IEEE_8021X_INNER_CA_CERT",
-		.ifcfg_rh_suffix        = "inner-ca-cert.der",
 	},
 	[NM_SETTING_802_1X_SCHEME_TYPE_CLIENT_CERT] = {
 		.vtable                 = &nm_setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_CLIENT_CERT],
 		.ifcfg_rh_key           = "IEEE_8021X_CLIENT_CERT",
-		.ifcfg_rh_suffix        = "client-cert.der",
 	},
 	[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CLIENT_CERT] = {
 		.vtable                 = &nm_setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CLIENT_CERT],
 		.ifcfg_rh_key           = "IEEE_8021X_INNER_CLIENT_CERT",
-		.ifcfg_rh_suffix        = "inner-client-cert.der",
 	},
 	[NM_SETTING_802_1X_SCHEME_TYPE_PRIVATE_KEY] = {
 		.vtable                 = &nm_setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PRIVATE_KEY],
 		.ifcfg_rh_key           = "IEEE_8021X_PRIVATE_KEY",
-		.ifcfg_rh_suffix        = "private-key.pem",
-		.ifcfg_rh_suffix_p12    = "private-key.p12",
 	},
 	[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_PRIVATE_KEY] = {
 		.vtable                 = &nm_setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_PRIVATE_KEY],
 		.ifcfg_rh_key           = "IEEE_8021X_INNER_PRIVATE_KEY",
-		.ifcfg_rh_suffix        = "inner-private-key.pem",
-		.ifcfg_rh_suffix_p12    = "inner-private-key.p12",
 	},
 };
 
@@ -200,7 +190,7 @@ write_object (NMSetting8021x *s_8021x,
 	const char *password = NULL;
 	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
 	char *secret_name, *secret_flags;
-	const char *suffix;
+	const char *extension;
 
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
 	g_return_val_if_fail (objtype != NULL, FALSE);
@@ -233,10 +223,12 @@ write_object (NMSetting8021x *s_8021x,
 	g_free (secret_name);
 	g_free (secret_flags);
 
-	suffix = objtype->ifcfg_rh_suffix;
-	if (   objtype->vtable->format_func
-	    && objtype->vtable->format_func (s_8021x) == NM_SETTING_802_1X_CK_FORMAT_PKCS12)
-		suffix = objtype->ifcfg_rh_suffix_p12;
+	if (!objtype->vtable->format_func)
+		extension = "der";
+	else if (objtype->vtable->format_func (s_8021x) == NM_SETTING_802_1X_CK_FORMAT_PKCS12)
+		extension = "p12";
+	else
+		extension = "pem";
 
 	/* If certificate/private key wasn't sent, the connection may no longer be
 	 * 802.1x and thus we clear out the paths and certs.
@@ -251,7 +243,7 @@ write_object (NMSetting8021x *s_8021x,
 		 * /etc/sysconfig/network-scripts/ca-cert-Test_Write_Wifi_WPA_EAP-TLS.der
 		 * will be deleted, but /etc/pki/tls/cert.pem will not.
 		 */
-		standard_file = utils_cert_path (svFileGetName (ifcfg), suffix);
+		standard_file = utils_cert_path (svFileGetName (ifcfg), objtype->vtable->file_suffix, extension);
 		if (g_file_test (standard_file, G_FILE_TEST_EXISTS))
 			ignored = unlink (standard_file);
 		g_free (standard_file);
@@ -274,7 +266,7 @@ write_object (NMSetting8021x *s_8021x,
 		char *new_file;
 		GError *write_error = NULL;
 
-		new_file = utils_cert_path (svFileGetName (ifcfg), suffix);
+		new_file = utils_cert_path (svFileGetName (ifcfg), objtype->vtable->file_suffix, extension);
 		if (!new_file) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 			             "Could not create file path for %s / %s",

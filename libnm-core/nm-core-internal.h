@@ -353,7 +353,7 @@ typedef struct {
 	const char *           (*uri_func)    (NMSetting8021x *setting);
 	const char *           (*passwd_func) (NMSetting8021x *setting);
 	NMSettingSecretFlags   (*pwflag_func) (NMSetting8021x *setting);
-	const char *keyfile_suffix;
+	const char *file_suffix;
 } NMSetting8021xSchemeVtable;
 
 enum {

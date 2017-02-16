@@ -100,19 +100,20 @@ utils_should_ignore_file (const char *filename, gboolean only_ifcfg)
 }
 
 char *
-utils_cert_path (const char *parent, const char *suffix)
+utils_cert_path (const char *parent, const char *suffix, const char *extension)
 {
+	gs_free char *dir = NULL;
 	const char *name;
-	char *dir, *path;
 
-	g_return_val_if_fail (parent != NULL, NULL);
-	g_return_val_if_fail (suffix != NULL, NULL);
+	g_return_val_if_fail (parent, NULL);
+	g_return_val_if_fail (suffix, NULL);
+	g_return_val_if_fail (extension, NULL);
 
 	name = utils_get_ifcfg_name (parent, FALSE);
+	g_return_val_if_fail (name, NULL);
+
 	dir = g_path_get_dirname (parent);
-	path = g_strdup_printf ("%s/%s-%s", dir, name, suffix);
-	g_free (dir);
-	return path;
+	return g_strdup_printf ("%s/%s-%s.%s", dir, name, suffix, extension);
 }
 
 const char *
