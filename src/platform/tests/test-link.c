@@ -2404,8 +2404,6 @@ test_sysctl_rename (void)
 		g_assert_cmpint (ifindex[0], ==, (gint32) nm_platform_sysctl_get_int32 (PL, NMP_SYSCTL_PATHID_NETDIR (dirfd, s ?: "<unknown>", "ifindex"), -1));
 		break;
 	}
-	default:
-		g_assert_not_reached ();
 	}
 
 	nm_platform_process_events (PL);
