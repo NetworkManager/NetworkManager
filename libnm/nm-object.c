@@ -85,6 +85,7 @@ typedef struct {
 	GError *reload_error;
 
 	GSList *pending;        /* ordered list of pending property updates. */
+	GPtrArray *proxies;
 } NMObjectPrivate;
 
 enum {
@@ -939,7 +940,7 @@ _nm_object_register_properties (NMObject *object,
 	proxy = _nm_object_get_proxy (object, interface);
 	g_signal_connect (proxy, "g-properties-changed",
 		          G_CALLBACK (properties_changed), object);
-	g_object_unref (proxy);
+	g_ptr_array_add (priv->proxies, proxy);
 
 	instance = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 	priv->property_tables = g_slist_prepend (priv->property_tables, instance);
@@ -1188,6 +1189,7 @@ nm_object_async_initable_iface_init (GAsyncInitableIface *iface)
 static void
 nm_object_init (NMObject *object)
 {
+	NM_OBJECT_GET_PRIVATE (object)->proxies = g_ptr_array_new ();
 }
 
 static void
@@ -1240,6 +1242,7 @@ static void
 dispose (GObject *object)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+	guint i;
 
 	nm_clear_g_source (&priv->notify_id);
 
@@ -1250,6 +1253,17 @@ dispose (GObject *object)
 
 	g_clear_object (&priv->object);
 	g_clear_object (&priv->object_manager);
+
+	if (priv->proxies) {
+		for (i = 0; i < priv->proxies->len; i++) {
+			g_signal_handlers_disconnect_by_func (priv->proxies->pdata[i],
+			                                      properties_changed,
+			                                      object);
+			g_object_unref (priv->proxies->pdata[i]);
+		}
+		g_ptr_array_free (priv->proxies, TRUE);
+		priv->proxies = NULL;
+	}
 
 	G_OBJECT_CLASS (nm_object_parent_class)->dispose (object);
 }
