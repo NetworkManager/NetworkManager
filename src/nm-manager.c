@@ -854,7 +854,20 @@ nm_manager_update_state (NMManager *manager)
 
 	nm_connectivity_set_online (priv->connectivity, new_state >= NM_STATE_CONNECTED_LOCAL);
 
-	if (new_state == NM_STATE_CONNECTED_SITE || force_connectivity_check) {
+	if (new_state == NM_STATE_CONNECTED_SITE) {
+		/* We have a default route, let's see if we can reach the Internet or a
+		 * captive portal. */
+		force_connectivity_check = TRUE;
+	}
+
+	if (new_state == NM_STATE_CONNECTED_LOCAL) {
+		/* If we just lost a default route, let's retrigger the connectivity check
+		 * so that the connectivity property would be updated to indicate we can't
+		 * reach the Internet anymore. */
+		force_connectivity_check = TRUE;
+	}
+
+	if (force_connectivity_check) {
 		nm_connectivity_check_async (priv->connectivity,
 		                             checked_connectivity,
 		                             g_object_ref (manager));
