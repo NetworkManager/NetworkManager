@@ -33,6 +33,7 @@ AM_PROG_CC_C_O
 AC_PROG_CXX
 
 AC_PROG_LN_S
+AC_PROG_MKDIR_P
 
 # Prefer gcc-* variants; the ones libtool would choose don't work with LTO
 AC_CHECK_TOOLS(AR, [gcc-ar ar], false)
