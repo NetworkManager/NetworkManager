@@ -1867,6 +1867,61 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	}
 }
 
+static char *
+get_route_attributes_string (NMIPRoute *route, int family)
+{
+	gs_strfreev char **names = NULL;
+	GVariant *attr, *lock;
+	GString *str;
+	int i;
+
+	names = nm_ip_route_get_attribute_names (route);
+	if (!names || !names[0])
+		return NULL;
+
+	str = g_string_new ("");
+
+	for (i = 0; names[i]; i++) {
+		attr = nm_ip_route_get_attribute (route, names[i]);
+
+		if (!nm_ip_route_attribute_validate (names[i], attr, family, NULL, NULL))
+			continue;
+
+		if (NM_IN_STRSET (names[i], NM_IP_ROUTE_ATTRIBUTE_WINDOW,
+		                            NM_IP_ROUTE_ATTRIBUTE_CWND,
+		                            NM_IP_ROUTE_ATTRIBUTE_INITCWND,
+		                            NM_IP_ROUTE_ATTRIBUTE_INITRWND,
+		                            NM_IP_ROUTE_ATTRIBUTE_MTU)) {
+			char lock_name[256];
+
+			nm_sprintf_buf (lock_name, "lock-%s", names[i]);
+			lock = nm_ip_route_get_attribute (route, lock_name);
+
+			g_string_append_printf (str,
+			                        "%s %s%u",
+			                        names[i],
+			                        (lock && g_variant_get_boolean (lock)) ? "lock " : "",
+			                        g_variant_get_uint32 (attr));
+		} else if (strstr (names[i], "lock-")) {
+			/* handled above */
+		} else if (nm_streq (names[i], NM_IP_ROUTE_ATTRIBUTE_TOS)) {
+			g_string_append_printf (str, "%s %u", names[i], (unsigned) g_variant_get_byte (attr));
+		} else if (   nm_streq (names[i], NM_IP_ROUTE_ATTRIBUTE_PREF_SRC)
+		           || nm_streq (names[i], NM_IP_ROUTE_ATTRIBUTE_SRC)) {
+			char *arg = nm_streq (names[i], NM_IP_ROUTE_ATTRIBUTE_PREF_SRC) ? "src" : "from";
+
+			g_string_append_printf (str, "%s %s", arg, g_variant_get_string (attr, NULL));
+		} else {
+			_LOGW ("unknown route option '%s'", names[i]);
+			continue;
+		}
+		if (names[i + 1])
+			g_string_append_c (str, ' ');
+	}
+
+	return g_string_free (str, FALSE);
+}
+
 static gboolean
 write_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError **error)
 {
@@ -1891,6 +1946,8 @@ write_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError 
 
 	route_items = g_malloc0 (sizeof (char*) * (num + 1));
 	for (i = 0; i < num; i++) {
+		gs_free char *options = NULL;
+
 		route = nm_setting_ip_config_get_route (s_ip4, i);
 
 		dest = nm_ip_route_get_dest (route);
@@ -1898,10 +1955,19 @@ write_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError 
 		next_hop = nm_ip_route_get_next_hop (route);
 		metric = nm_ip_route_get_metric (route);
 
-		if (metric == -1)
-			route_items[i] = g_strdup_printf ("%s/%u via %s\n", dest, prefix, next_hop);
-		else
-			route_items[i] = g_strdup_printf ("%s/%u via %s metric %u\n", dest, prefix, next_hop, (guint32) metric);
+		options = get_route_attributes_string (route, AF_INET);
+
+		if (metric == -1) {
+			route_items[i] = g_strdup_printf ("%s/%u via %s%s%s\n",
+			                                  dest, prefix, next_hop,
+			                                  options ? " " : "",
+			                                  options ?: "");
+		} else {
+			route_items[i] = g_strdup_printf ("%s/%u via %s metric %u%s%s\n",
+			                                  dest, prefix, next_hop, (guint32) metric,
+			                                  options ? " " : "",
+			                                  options ?: "");
+		}
 	}
 	route_items[num] = NULL;
 	route_contents = g_strjoinv (NULL, route_items);
@@ -1960,7 +2026,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 {
 	NMSettingIPConfig *s_ip4;
 	const char *value;
-	char *addr_key, *prefix_key, *netmask_key, *gw_key, *metric_key, *tmp;
+	char *addr_key, *prefix_key, *netmask_key, *gw_key, *metric_key, *options_key, *tmp;
 	char *route_path = NULL;
 	gint32 j;
 	guint32 i, n, num;
@@ -2217,13 +2283,17 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 			netmask_key = g_strdup_printf ("NETMASK%d", i);
 			gw_key = g_strdup_printf ("GATEWAY%d", i);
 			metric_key = g_strdup_printf ("METRIC%d", i);
+			options_key = g_strdup_printf ("OPTIONS%d", i);
 
 			if (i >= num) {
 				svUnsetValue (routefile, addr_key);
 				svUnsetValue (routefile, netmask_key);
 				svUnsetValue (routefile, gw_key);
 				svUnsetValue (routefile, metric_key);
+				svUnsetValue (routefile, options_key);
 			} else {
+				gs_free char *options = NULL;
+
 				route = nm_setting_ip_config_get_route (s_ip4, i);
 
 				svSetValueStr (routefile, addr_key, nm_ip_route_get_dest (route));
@@ -2244,12 +2314,17 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 					svSetValueStr (routefile, metric_key, tmp);
 					g_free (tmp);
 				}
+
+				options = get_route_attributes_string (route, AF_INET);
+				if (options)
+					svSetValueStr (routefile, options_key, options);
 			}
 
 			g_free (addr_key);
 			g_free (netmask_key);
 			g_free (gw_key);
 			g_free (metric_key);
+			g_free (options_key);
 		}
 		if (!svWriteFile (routefile, 0644, error)) {
 			svCloseFile (routefile);
@@ -2371,15 +2446,13 @@ write_ip4_aliases (NMConnection *connection, char *base_ifcfg_path)
 static gboolean
 write_route6_file (const char *filename, NMSettingIPConfig *s_ip6, GError **error)
 {
-	char **route_items;
-	gs_free char *route_contents = NULL;
+	nm_auto_free_gstring GString *contents = NULL;
 	NMIPRoute *route;
 	guint32 i, num;
 
-	g_return_val_if_fail (filename != NULL, FALSE);
-	g_return_val_if_fail (s_ip6 != NULL, FALSE);
-	g_return_val_if_fail (error != NULL, FALSE);
-	g_return_val_if_fail (*error == NULL, FALSE);
+	g_return_val_if_fail (filename, FALSE);
+	g_return_val_if_fail (s_ip6, FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
 
 	num = nm_setting_ip_config_get_num_routes (s_ip6);
 	if (num == 0) {
@@ -2387,28 +2460,33 @@ write_route6_file (const char *filename, NMSettingIPConfig *s_ip6, GError **erro
 		return TRUE;
 	}
 
-	route_items = g_malloc0 (sizeof (char*) * (num + 1));
+	contents = g_string_new ("");
 	for (i = 0; i < num; i++) {
+		gs_free char *options = NULL;
+
 		route = nm_setting_ip_config_get_route (s_ip6, i);
+		options = get_route_attributes_string (route, AF_INET6);
 
 		if (nm_ip_route_get_metric (route) == -1) {
-			route_items[i] = g_strdup_printf ("%s/%u via %s\n",
-			                                  nm_ip_route_get_dest (route),
-			                                  nm_ip_route_get_prefix (route),
-			                                  nm_ip_route_get_next_hop (route));
-		} else {
-			route_items[i] = g_strdup_printf ("%s/%u via %s metric %u\n",
+			g_string_append_printf (contents, "%s/%u via %s%s%s",
 			                                  nm_ip_route_get_dest (route),
 			                                  nm_ip_route_get_prefix (route),
 			                                  nm_ip_route_get_next_hop (route),
-			                                  (guint32) nm_ip_route_get_metric (route));
+			                                  options ? " " : "",
+			                                  options ?: "");
+		} else {
+			g_string_append_printf (contents, "%s/%u via %s metric %u%s%s",
+			                                  nm_ip_route_get_dest (route),
+			                                  nm_ip_route_get_prefix (route),
+			                                  nm_ip_route_get_next_hop (route),
+			                                  (unsigned) nm_ip_route_get_metric (route),
+			                                  options ? " " : "",
+			                                  options ?: "");
 		}
+		g_string_append (contents, "\n");
 	}
-	route_items[num] = NULL;
-	route_contents = g_strjoinv (NULL, route_items);
-	g_strfreev (route_items);
 
-	if (!g_file_set_contents (filename, route_contents, -1, NULL)) {
+	if (!g_file_set_contents (filename, contents->str, -1, NULL)) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "Writing route6 file '%s' failed", filename);
 		return FALSE;

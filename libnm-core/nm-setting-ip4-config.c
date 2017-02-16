@@ -615,7 +615,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *ip4_class)
 	 * ---end---
 	 * ---ifcfg-rh---
 	 * property: routes
-	 * variable: ADDRESS1, NETMASK1, GATEWAY1, METRIC1, ...
+	 * variable: ADDRESS1, NETMASK1, GATEWAY1, METRIC1, OPTIONS1, ...
 	 * description: List of static routes. They are not stored in ifcfg-* file,
 	 *   but in route-* file instead.
 	 * ---end---
