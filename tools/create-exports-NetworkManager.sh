@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+set -o pipefail
 
 die() {
     echo "$@"
@@ -46,9 +47,9 @@ EOF
 }
 
 get_symbols_missing() {
-    (for f in ./src/settings/plugins/*/.libs/*.so \
-              ./src/devices/*/.libs/*.so \
-              ./src/ppp/.libs/libnm-ppp-plugin.so; do
+    (for f in $(find ./src/settings/plugins/*/.libs/ \
+              ./src/devices/*/.libs/ \
+              ./src/ppp/.libs/ -name '*.so'); do
         call_nm "$f" |
             sed -n 's/^\([U]\) \(\(nm_\|nmp_\|_nm\|NM\|_NM\).*\)$/\2/p'
     done) |
