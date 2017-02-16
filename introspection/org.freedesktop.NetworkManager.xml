@@ -395,6 +395,15 @@
 
         The overall state of the NetworkManager daemon.
 
+        This takes state of all active connections and the connectivity state into account
+        to produce a single indicator of the network accessibility status.
+
+        The graphical shells may use this property to provide network connection status
+        indication and applications may use this to check if Internet connection is
+        accessible. Shell that is able to cope with captive portals should use the
+        "Connectivity" property to decide whether to present a captive portal authentication
+        dialog.
+
         Returns: <link linkend="NMState">NMState</link>
     -->
     <property name="State" type="u" access="read"/>
@@ -412,7 +421,19 @@
     <!--
         Connectivity:
 
-        The network connectivity state.
+        The result of the last connectivity check. The connectivity check is triggered
+        automatically when a default connection becomes available, periodically and by
+        calling a CheckConnectivity() method.
+
+        This property is in general useful for the graphical shell to determine whether
+        the Internet access is being hijacked by an authentication gateway (a "captive
+        portal"). In such case it would typically present a web browser window to give
+        the user a chance to authenticate and call CheckConnectivity() when the user
+        submits a form or dismisses the window.
+
+        To determine the whether the user is able to access the Internet without dealing
+        with captive portals (e.g. to provide a network connection indicator or disable
+        controls that require Internet access), the "State" property is more suitable.
 
         Returns: <link linkend="NMConnectivityState">NMConnectivityState</link>
     -->

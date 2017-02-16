@@ -105,14 +105,32 @@ typedef enum {
 
 /**
  * NMState:
- * @NM_STATE_UNKNOWN: networking state is unknown
- * @NM_STATE_ASLEEP: networking is not enabled
- * @NM_STATE_DISCONNECTED: there is no active network connection
- * @NM_STATE_DISCONNECTING: network connections are being cleaned up
- * @NM_STATE_CONNECTING: a network connection is being started
- * @NM_STATE_CONNECTED_LOCAL: there is only local IPv4 and/or IPv6 connectivity
- * @NM_STATE_CONNECTED_SITE: there is only site-wide IPv4 and/or IPv6 connectivity
- * @NM_STATE_CONNECTED_GLOBAL: there is global IPv4 and/or IPv6 Internet connectivity
+ * @NM_STATE_UNKNOWN: Networking state is unknown. This indicates a daemon error
+ *    that makes it unable to reasonably assess the state. In such event the
+ *    applications are expected to assume Internet connectivity might be present
+ *    and not disable controls that require network access.
+ *    The graphical shells may hide the network accessibility indicator altogether
+ *    since no meaningful status indication can be provided.
+ * @NM_STATE_ASLEEP: Networking is not enabled, the system is being suspended or
+ *    resumed from suspend.
+ * @NM_STATE_DISCONNECTED: There is no active network connection.
+ *    The graphical shell should indicate  no network connectivity and the
+ *    applications should not attempt to access the network.
+ * @NM_STATE_DISCONNECTING: Network connections are being cleaned up.
+ *    The applications should tear down their network sessions.
+ * @NM_STATE_CONNECTING: A network connection is being started
+ *    The graphical shell should indicate the network is being connected while
+ *    the applications should still make no attempts to connect the network.
+ * @NM_STATE_CONNECTED_LOCAL: There is only local IPv4 and/or IPv6 connectivity,
+ *    but no default route to access the Internet. The graphical shell should
+ *    indicate no network connectivity.
+ * @NM_STATE_CONNECTED_SITE: There is only site-wide IPv4 and/or IPv6 connectivity.
+ *    This means a default route is available, but the Internet connectivity check
+ *    (see "Connectivity" property) did not succeed. The graphical shell should
+ *    indicate limited network connectivity.
+ * @NM_STATE_CONNECTED_GLOBAL: There is global IPv4 and/or IPv6 Internet connectivity
+ *    This means the Internet connectivity check succeeded, the graphical shell should
+ *    indicate full network connectivity.
  *
  * #NMState values indicate the current overall networking state.
  **/
@@ -129,12 +147,23 @@ typedef enum {
 
 /**
  * NMConnectivityState:
- * @NM_CONNECTIVITY_UNKNOWN: Network connectivity is unknown.
- * @NM_CONNECTIVITY_NONE: The host is not connected to any network.
- * @NM_CONNECTIVITY_PORTAL: The host is behind a captive portal and
- *   cannot reach the full Internet.
- * @NM_CONNECTIVITY_LIMITED: The host is connected to a network, but
- *   does not appear to be able to reach the full Internet.
+ * @NM_CONNECTIVITY_UNKNOWN: Network connectivity is unknown. This means the
+ *   connectivity checks are disabled (e.g. on server installations) or has
+ *   not run yet. The graphical shell should assume the Internet connection
+ *   might be available and not present a captive portal window.
+ * @NM_CONNECTIVITY_NONE: The host is not connected to any network. There's
+ *   no active connection that contains a default route to the internet and
+ *   thus it makes no sense to even attempt a connectivity check. The graphical
+ *   shell should use this state to indicate the network connection is unavailable.
+ * @NM_CONNECTIVITY_PORTAL: The Internet connection is hijacked by a captive
+ *   portal gateway. The graphical shell may open a sandboxed web browser window
+ *   (because the captive portals typically attempt a man-in-the-middle attacks
+ *   agains the https connections) for the purpose of authenticating to a gateway
+ *   and retrigger the connectivity check with CheckConnectivity() when the
+ *   browser window is dismissed.
+ * @NM_CONNECTIVITY_LIMITED: The host is connected to a network, does not appear
+ *   to be able to reach the full Internet, but a captive portal has not been
+ *   detected.
  * @NM_CONNECTIVITY_FULL: The host is connected to a network, and
  *   appears to be able to reach the full Internet.
  */
