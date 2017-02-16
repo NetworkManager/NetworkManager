@@ -154,104 +154,104 @@ typedef struct ObjectType {
 	const char *           (*uri_func)   (NMSetting8021x *setting);
 	const char *           (*passwd_func)(NMSetting8021x *setting);
 	NMSettingSecretFlags   (*pwflag_func)(NMSetting8021x *setting);
-	const char *ifcfg_key;
-	const char *suffix;
+	const char *ifcfg_rh_key;
+	const char *ifcfg_rh_suffix;
 } ObjectType;
 
 static const ObjectType ca_type = {
-	NM_SETTING_802_1X_CA_CERT,
-	nm_setting_802_1x_get_ca_cert_scheme,
-	nm_setting_802_1x_get_ca_cert_path,
-	nm_setting_802_1x_get_ca_cert_blob,
-	nm_setting_802_1x_get_ca_cert_uri,
-	nm_setting_802_1x_get_ca_cert_password,
-	nm_setting_802_1x_get_ca_cert_password_flags,
-	"IEEE_8021X_CA_CERT",
-	"ca-cert.der"
+	.setting_key            = NM_SETTING_802_1X_CA_CERT,
+	.scheme_func            = nm_setting_802_1x_get_ca_cert_scheme,
+	.path_func              = nm_setting_802_1x_get_ca_cert_path,
+	.blob_func              = nm_setting_802_1x_get_ca_cert_blob,
+	.uri_func               = nm_setting_802_1x_get_ca_cert_uri,
+	.passwd_func            = nm_setting_802_1x_get_ca_cert_password,
+	.pwflag_func            = nm_setting_802_1x_get_ca_cert_password_flags,
+	.ifcfg_rh_key           = "IEEE_8021X_CA_CERT",
+	.ifcfg_rh_suffix        = "ca-cert.der",
 };
 
 static const ObjectType phase2_ca_type = {
-	NM_SETTING_802_1X_PHASE2_CA_CERT,
-	nm_setting_802_1x_get_phase2_ca_cert_scheme,
-	nm_setting_802_1x_get_phase2_ca_cert_path,
-	nm_setting_802_1x_get_phase2_ca_cert_blob,
-	nm_setting_802_1x_get_phase2_ca_cert_uri,
-	nm_setting_802_1x_get_phase2_ca_cert_password,
-	nm_setting_802_1x_get_phase2_ca_cert_password_flags,
-	"IEEE_8021X_INNER_CA_CERT",
-	"inner-ca-cert.der"
+	.setting_key            = NM_SETTING_802_1X_PHASE2_CA_CERT,
+	.scheme_func            = nm_setting_802_1x_get_phase2_ca_cert_scheme,
+	.path_func              = nm_setting_802_1x_get_phase2_ca_cert_path,
+	.blob_func              = nm_setting_802_1x_get_phase2_ca_cert_blob,
+	.uri_func               = nm_setting_802_1x_get_phase2_ca_cert_uri,
+	.passwd_func            = nm_setting_802_1x_get_phase2_ca_cert_password,
+	.pwflag_func            = nm_setting_802_1x_get_phase2_ca_cert_password_flags,
+	.ifcfg_rh_key           = "IEEE_8021X_INNER_CA_CERT",
+	.ifcfg_rh_suffix        = "inner-ca-cert.der",
 };
 
 static const ObjectType client_type = {
-	NM_SETTING_802_1X_CLIENT_CERT,
-	nm_setting_802_1x_get_client_cert_scheme,
-	nm_setting_802_1x_get_client_cert_path,
-	nm_setting_802_1x_get_client_cert_blob,
-	nm_setting_802_1x_get_client_cert_uri,
-	nm_setting_802_1x_get_client_cert_password,
-	nm_setting_802_1x_get_client_cert_password_flags,
-	"IEEE_8021X_CLIENT_CERT",
-	"client-cert.der"
+	.setting_key            = NM_SETTING_802_1X_CLIENT_CERT,
+	.scheme_func            = nm_setting_802_1x_get_client_cert_scheme,
+	.path_func              = nm_setting_802_1x_get_client_cert_path,
+	.blob_func              = nm_setting_802_1x_get_client_cert_blob,
+	.uri_func               = nm_setting_802_1x_get_client_cert_uri,
+	.passwd_func            = nm_setting_802_1x_get_client_cert_password,
+	.pwflag_func            = nm_setting_802_1x_get_client_cert_password_flags,
+	.ifcfg_rh_key           = "IEEE_8021X_CLIENT_CERT",
+	.ifcfg_rh_suffix        = "client-cert.der",
 };
 
 static const ObjectType phase2_client_type = {
-	NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
-	nm_setting_802_1x_get_phase2_client_cert_scheme,
-	nm_setting_802_1x_get_phase2_client_cert_path,
-	nm_setting_802_1x_get_phase2_client_cert_blob,
-	nm_setting_802_1x_get_phase2_client_cert_uri,
-	nm_setting_802_1x_get_phase2_client_cert_password,
-	nm_setting_802_1x_get_phase2_client_cert_password_flags,
-	"IEEE_8021X_INNER_CLIENT_CERT",
-	"inner-client-cert.der"
+	.setting_key            = NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
+	.scheme_func            = nm_setting_802_1x_get_phase2_client_cert_scheme,
+	.path_func              = nm_setting_802_1x_get_phase2_client_cert_path,
+	.blob_func              = nm_setting_802_1x_get_phase2_client_cert_blob,
+	.uri_func               = nm_setting_802_1x_get_phase2_client_cert_uri,
+	.passwd_func            = nm_setting_802_1x_get_phase2_client_cert_password,
+	.pwflag_func            = nm_setting_802_1x_get_phase2_client_cert_password_flags,
+	.ifcfg_rh_key           = "IEEE_8021X_INNER_CLIENT_CERT",
+	.ifcfg_rh_suffix        = "inner-client-cert.der",
 };
 
 static const ObjectType pk_type = {
-	NM_SETTING_802_1X_PRIVATE_KEY,
-	nm_setting_802_1x_get_private_key_scheme,
-	nm_setting_802_1x_get_private_key_path,
-	nm_setting_802_1x_get_private_key_blob,
-	nm_setting_802_1x_get_private_key_uri,
-	nm_setting_802_1x_get_private_key_password,
-	nm_setting_802_1x_get_private_key_password_flags,
-	"IEEE_8021X_PRIVATE_KEY",
-	"private-key.pem"
+	.setting_key            = NM_SETTING_802_1X_PRIVATE_KEY,
+	.scheme_func            = nm_setting_802_1x_get_private_key_scheme,
+	.path_func              = nm_setting_802_1x_get_private_key_path,
+	.blob_func              = nm_setting_802_1x_get_private_key_blob,
+	.uri_func               = nm_setting_802_1x_get_private_key_uri,
+	.passwd_func            = nm_setting_802_1x_get_private_key_password,
+	.pwflag_func            = nm_setting_802_1x_get_private_key_password_flags,
+	.ifcfg_rh_key           = "IEEE_8021X_PRIVATE_KEY",
+	.ifcfg_rh_suffix        = "private-key.pem",
 };
 
 static const ObjectType phase2_pk_type = {
-	NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
-	nm_setting_802_1x_get_phase2_private_key_scheme,
-	nm_setting_802_1x_get_phase2_private_key_path,
-	nm_setting_802_1x_get_phase2_private_key_blob,
-	nm_setting_802_1x_get_phase2_private_key_uri,
-	nm_setting_802_1x_get_phase2_private_key_password,
-	nm_setting_802_1x_get_phase2_private_key_password_flags,
-	"IEEE_8021X_INNER_PRIVATE_KEY",
-	"inner-private-key.pem"
+	.setting_key            = NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
+	.scheme_func            = nm_setting_802_1x_get_phase2_private_key_scheme,
+	.path_func              = nm_setting_802_1x_get_phase2_private_key_path,
+	.blob_func              = nm_setting_802_1x_get_phase2_private_key_blob,
+	.uri_func               = nm_setting_802_1x_get_phase2_private_key_uri,
+	.passwd_func            = nm_setting_802_1x_get_phase2_private_key_password,
+	.pwflag_func            = nm_setting_802_1x_get_phase2_private_key_password_flags,
+	.ifcfg_rh_key           = "IEEE_8021X_INNER_PRIVATE_KEY",
+	.ifcfg_rh_suffix        = "inner-private-key.pem",
 };
 
 static const ObjectType p12_type = {
-	NM_SETTING_802_1X_PRIVATE_KEY,
-	nm_setting_802_1x_get_private_key_scheme,
-	nm_setting_802_1x_get_private_key_path,
-	nm_setting_802_1x_get_private_key_blob,
-	nm_setting_802_1x_get_private_key_uri,
-	nm_setting_802_1x_get_private_key_password,
-	nm_setting_802_1x_get_private_key_password_flags,
-	"IEEE_8021X_PRIVATE_KEY",
-	"private-key.p12"
+	.setting_key            = NM_SETTING_802_1X_PRIVATE_KEY,
+	.scheme_func            = nm_setting_802_1x_get_private_key_scheme,
+	.path_func              = nm_setting_802_1x_get_private_key_path,
+	.blob_func              = nm_setting_802_1x_get_private_key_blob,
+	.uri_func               = nm_setting_802_1x_get_private_key_uri,
+	.passwd_func            = nm_setting_802_1x_get_private_key_password,
+	.pwflag_func            = nm_setting_802_1x_get_private_key_password_flags,
+	.ifcfg_rh_key           = "IEEE_8021X_PRIVATE_KEY",
+	.ifcfg_rh_suffix        = "private-key.p12",
 };
 
 static const ObjectType phase2_p12_type = {
-	NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
-	nm_setting_802_1x_get_phase2_private_key_scheme,
-	nm_setting_802_1x_get_phase2_private_key_path,
-	nm_setting_802_1x_get_phase2_private_key_blob,
-	nm_setting_802_1x_get_phase2_private_key_uri,
-	nm_setting_802_1x_get_phase2_private_key_password,
-	nm_setting_802_1x_get_phase2_private_key_password_flags,
-	"IEEE_8021X_INNER_PRIVATE_KEY",
-	"inner-private-key.p12"
+	.setting_key            = NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
+	.scheme_func            = nm_setting_802_1x_get_phase2_private_key_scheme,
+	.path_func              = nm_setting_802_1x_get_phase2_private_key_path,
+	.blob_func              = nm_setting_802_1x_get_phase2_private_key_blob,
+	.uri_func               = nm_setting_802_1x_get_phase2_private_key_uri,
+	.passwd_func            = nm_setting_802_1x_get_phase2_private_key_password,
+	.pwflag_func            = nm_setting_802_1x_get_phase2_private_key_password_flags,
+	.ifcfg_rh_key           = "IEEE_8021X_INNER_PRIVATE_KEY",
+	.ifcfg_rh_suffix        = "inner-private-key.p12",
 };
 
 static gboolean
@@ -290,8 +290,8 @@ write_object (NMSetting8021x *s_8021x,
 	}
 
 	/* Set the password for certificate/private key. */
-	secret_name = g_strdup_printf ("%s_PASSWORD", objtype->ifcfg_key);
-	secret_flags = g_strdup_printf ("%s_PASSWORD_FLAGS", objtype->ifcfg_key);
+	secret_name = g_strdup_printf ("%s_PASSWORD", objtype->ifcfg_rh_key);
+	secret_flags = g_strdup_printf ("%s_PASSWORD_FLAGS", objtype->ifcfg_rh_key);
 	password = (*(objtype->passwd_func))(s_8021x);
 	flags = (*(objtype->pwflag_func))(s_8021x);
 	set_secret (ifcfg, secret_name, password, secret_flags, flags);
@@ -311,12 +311,12 @@ write_object (NMSetting8021x *s_8021x,
 		 * /etc/sysconfig/network-scripts/ca-cert-Test_Write_Wifi_WPA_EAP-TLS.der
 		 * will be deleted, but /etc/pki/tls/cert.pem will not.
 		 */
-		standard_file = utils_cert_path (svFileGetName (ifcfg), objtype->suffix);
+		standard_file = utils_cert_path (svFileGetName (ifcfg), objtype->ifcfg_rh_suffix);
 		if (g_file_test (standard_file, G_FILE_TEST_EXISTS))
 			ignored = unlink (standard_file);
 		g_free (standard_file);
 
-		svUnsetValue (ifcfg, objtype->ifcfg_key);
+		svUnsetValue (ifcfg, objtype->ifcfg_rh_key);
 		return TRUE;
 	}
 
@@ -324,7 +324,7 @@ write_object (NMSetting8021x *s_8021x,
 	 * may have been sent.
 	 */
 	if (value) {
-		svSetValueString (ifcfg, objtype->ifcfg_key, value);
+		svSetValueString (ifcfg, objtype->ifcfg_rh_key, value);
 		return TRUE;
 	}
 
@@ -334,7 +334,7 @@ write_object (NMSetting8021x *s_8021x,
 		char *new_file;
 		GError *write_error = NULL;
 
-		new_file = utils_cert_path (svFileGetName (ifcfg), objtype->suffix);
+		new_file = utils_cert_path (svFileGetName (ifcfg), objtype->ifcfg_rh_suffix);
 		if (!new_file) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 			             "Could not create file path for %s / %s",
@@ -352,7 +352,7 @@ write_object (NMSetting8021x *s_8021x,
 		                                      0600,
 		                                      &write_error);
 		if (success) {
-			svSetValueString (ifcfg, objtype->ifcfg_key, new_file);
+			svSetValueString (ifcfg, objtype->ifcfg_rh_key, new_file);
 			g_free (new_file);
 			return TRUE;
 		} else {
