@@ -268,7 +268,7 @@ next_dev:
 	}
 
 	if (NM_FLAGS_HAS (priv->flags, NM_CHECKPOINT_CREATE_FLAG_DISCONNECT_NEW_DEVICES)) {
-		const GSList *list = nm_manager_get_devices (priv->manager);
+		const GSList *list;
 		NMDeviceState state;
 		NMDevice *dev;
 
