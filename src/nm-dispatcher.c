@@ -575,7 +575,7 @@ _dispatcher_call (NMDispatcherAction action,
 			                       NMD_CONNECTION_PROPS_FILENAME,
 			                       g_variant_new_string (filename));
 		}
-		if (nm_settings_connection_get_nm_generated_assumed (settings_connection)) {
+		if (nm_settings_connection_get_volatile (settings_connection)) {
 			g_variant_builder_add (&connection_props, "{sv}",
 			                       NMD_CONNECTION_PROPS_EXTERNAL,
 			                       g_variant_new_boolean (TRUE));

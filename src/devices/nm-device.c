@@ -1606,7 +1606,7 @@ nm_device_uses_generated_assumed_connection (NMDevice *self)
 	    && nm_active_connection_get_assumed (NM_ACTIVE_CONNECTION (priv->act_request))) {
 		connection = nm_act_request_get_settings_connection (priv->act_request);
 		if (   connection
-		    && nm_settings_connection_get_nm_generated_assumed (connection))
+		    && nm_settings_connection_get_volatile (connection))
 			return TRUE;
 	}
 	return FALSE;
