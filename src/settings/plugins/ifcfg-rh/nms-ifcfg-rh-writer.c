@@ -149,6 +149,7 @@ error:
 typedef struct ObjectType {
 	const char *setting_key;
 	NMSetting8021xCKScheme (*scheme_func)(NMSetting8021x *setting);
+	NMSetting8021xCKFormat (*format_func) (NMSetting8021x *setting);
 	const char *           (*path_func)  (NMSetting8021x *setting);
 	GBytes *               (*blob_func)  (NMSetting8021x *setting);
 	const char *           (*uri_func)   (NMSetting8021x *setting);
@@ -156,11 +157,13 @@ typedef struct ObjectType {
 	NMSettingSecretFlags   (*pwflag_func)(NMSetting8021x *setting);
 	const char *ifcfg_rh_key;
 	const char *ifcfg_rh_suffix;
+	const char *ifcfg_rh_suffix_p12;
 } ObjectType;
 
 static const ObjectType ca_type = {
 	.setting_key            = NM_SETTING_802_1X_CA_CERT,
 	.scheme_func            = nm_setting_802_1x_get_ca_cert_scheme,
+	.format_func            = NULL,
 	.path_func              = nm_setting_802_1x_get_ca_cert_path,
 	.blob_func              = nm_setting_802_1x_get_ca_cert_blob,
 	.uri_func               = nm_setting_802_1x_get_ca_cert_uri,
@@ -173,6 +176,7 @@ static const ObjectType ca_type = {
 static const ObjectType phase2_ca_type = {
 	.setting_key            = NM_SETTING_802_1X_PHASE2_CA_CERT,
 	.scheme_func            = nm_setting_802_1x_get_phase2_ca_cert_scheme,
+	.format_func            = NULL,
 	.path_func              = nm_setting_802_1x_get_phase2_ca_cert_path,
 	.blob_func              = nm_setting_802_1x_get_phase2_ca_cert_blob,
 	.uri_func               = nm_setting_802_1x_get_phase2_ca_cert_uri,
@@ -185,6 +189,7 @@ static const ObjectType phase2_ca_type = {
 static const ObjectType client_type = {
 	.setting_key            = NM_SETTING_802_1X_CLIENT_CERT,
 	.scheme_func            = nm_setting_802_1x_get_client_cert_scheme,
+	.format_func            = NULL,
 	.path_func              = nm_setting_802_1x_get_client_cert_path,
 	.blob_func              = nm_setting_802_1x_get_client_cert_blob,
 	.uri_func               = nm_setting_802_1x_get_client_cert_uri,
@@ -197,6 +202,7 @@ static const ObjectType client_type = {
 static const ObjectType phase2_client_type = {
 	.setting_key            = NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
 	.scheme_func            = nm_setting_802_1x_get_phase2_client_cert_scheme,
+	.format_func            = NULL,
 	.path_func              = nm_setting_802_1x_get_phase2_client_cert_path,
 	.blob_func              = nm_setting_802_1x_get_phase2_client_cert_blob,
 	.uri_func               = nm_setting_802_1x_get_phase2_client_cert_uri,
@@ -209,6 +215,7 @@ static const ObjectType phase2_client_type = {
 static const ObjectType pk_type = {
 	.setting_key            = NM_SETTING_802_1X_PRIVATE_KEY,
 	.scheme_func            = nm_setting_802_1x_get_private_key_scheme,
+	.format_func            = nm_setting_802_1x_get_private_key_format,
 	.path_func              = nm_setting_802_1x_get_private_key_path,
 	.blob_func              = nm_setting_802_1x_get_private_key_blob,
 	.uri_func               = nm_setting_802_1x_get_private_key_uri,
@@ -216,11 +223,13 @@ static const ObjectType pk_type = {
 	.pwflag_func            = nm_setting_802_1x_get_private_key_password_flags,
 	.ifcfg_rh_key           = "IEEE_8021X_PRIVATE_KEY",
 	.ifcfg_rh_suffix        = "private-key.pem",
+	.ifcfg_rh_suffix_p12    = "private-key.p12",
 };
 
 static const ObjectType phase2_pk_type = {
 	.setting_key            = NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
 	.scheme_func            = nm_setting_802_1x_get_phase2_private_key_scheme,
+	.format_func            = nm_setting_802_1x_get_phase2_private_key_format,
 	.path_func              = nm_setting_802_1x_get_phase2_private_key_path,
 	.blob_func              = nm_setting_802_1x_get_phase2_private_key_blob,
 	.uri_func               = nm_setting_802_1x_get_phase2_private_key_uri,
@@ -228,30 +237,7 @@ static const ObjectType phase2_pk_type = {
 	.pwflag_func            = nm_setting_802_1x_get_phase2_private_key_password_flags,
 	.ifcfg_rh_key           = "IEEE_8021X_INNER_PRIVATE_KEY",
 	.ifcfg_rh_suffix        = "inner-private-key.pem",
-};
-
-static const ObjectType p12_type = {
-	.setting_key            = NM_SETTING_802_1X_PRIVATE_KEY,
-	.scheme_func            = nm_setting_802_1x_get_private_key_scheme,
-	.path_func              = nm_setting_802_1x_get_private_key_path,
-	.blob_func              = nm_setting_802_1x_get_private_key_blob,
-	.uri_func               = nm_setting_802_1x_get_private_key_uri,
-	.passwd_func            = nm_setting_802_1x_get_private_key_password,
-	.pwflag_func            = nm_setting_802_1x_get_private_key_password_flags,
-	.ifcfg_rh_key           = "IEEE_8021X_PRIVATE_KEY",
-	.ifcfg_rh_suffix        = "private-key.p12",
-};
-
-static const ObjectType phase2_p12_type = {
-	.setting_key            = NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
-	.scheme_func            = nm_setting_802_1x_get_phase2_private_key_scheme,
-	.path_func              = nm_setting_802_1x_get_phase2_private_key_path,
-	.blob_func              = nm_setting_802_1x_get_phase2_private_key_blob,
-	.uri_func               = nm_setting_802_1x_get_phase2_private_key_uri,
-	.passwd_func            = nm_setting_802_1x_get_phase2_private_key_password,
-	.pwflag_func            = nm_setting_802_1x_get_phase2_private_key_password_flags,
-	.ifcfg_rh_key           = "IEEE_8021X_INNER_PRIVATE_KEY",
-	.ifcfg_rh_suffix        = "inner-private-key.p12",
+	.ifcfg_rh_suffix_p12    = "inner-private-key.p12",
 };
 
 static gboolean
@@ -266,6 +252,7 @@ write_object (NMSetting8021x *s_8021x,
 	const char *password = NULL;
 	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
 	char *secret_name, *secret_flags;
+	const char *suffix;
 
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
 	g_return_val_if_fail (objtype != NULL, FALSE);
@@ -298,6 +285,11 @@ write_object (NMSetting8021x *s_8021x,
 	g_free (secret_name);
 	g_free (secret_flags);
 
+	suffix = objtype->ifcfg_rh_suffix;
+	if (   objtype->format_func
+	    && objtype->format_func (s_8021x) == NM_SETTING_802_1X_CK_FORMAT_PKCS12)
+		suffix = objtype->ifcfg_rh_suffix_p12;
+
 	/* If certificate/private key wasn't sent, the connection may no longer be
 	 * 802.1x and thus we clear out the paths and certs.
 	 */
@@ -311,7 +303,7 @@ write_object (NMSetting8021x *s_8021x,
 		 * /etc/sysconfig/network-scripts/ca-cert-Test_Write_Wifi_WPA_EAP-TLS.der
 		 * will be deleted, but /etc/pki/tls/cert.pem will not.
 		 */
-		standard_file = utils_cert_path (svFileGetName (ifcfg), objtype->ifcfg_rh_suffix);
+		standard_file = utils_cert_path (svFileGetName (ifcfg), suffix);
 		if (g_file_test (standard_file, G_FILE_TEST_EXISTS))
 			ignored = unlink (standard_file);
 		g_free (standard_file);
@@ -334,7 +326,7 @@ write_object (NMSetting8021x *s_8021x,
 		char *new_file;
 		GError *write_error = NULL;
 
-		new_file = utils_cert_path (svFileGetName (ifcfg), objtype->ifcfg_rh_suffix);
+		new_file = utils_cert_path (svFileGetName (ifcfg), suffix);
 		if (!new_file) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 			             "Could not create file path for %s / %s",
@@ -374,7 +366,7 @@ write_8021x_certs (NMSetting8021x *s_8021x,
                    shvarFile *ifcfg,
                    GError **error)
 {
-	gboolean success = FALSE, is_pkcs12 = FALSE;
+	gboolean success = FALSE;
 	const ObjectType *otype = NULL;
 
 	/* CA certificate */
@@ -382,26 +374,17 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 		return FALSE;
 
 	/* Private key */
-	if (phase2) {
+	if (phase2)
 		otype = &phase2_pk_type;
-		if (nm_setting_802_1x_get_phase2_private_key_format (s_8021x) == NM_SETTING_802_1X_CK_FORMAT_PKCS12) {
-			otype = &phase2_p12_type;
-			is_pkcs12 = TRUE;
-		}
-	} else {
+	else
 		otype = &pk_type;
-		if (nm_setting_802_1x_get_private_key_format (s_8021x) == NM_SETTING_802_1X_CK_FORMAT_PKCS12) {
-			otype = &p12_type;
-			is_pkcs12 = TRUE;
-		}
-	}
 
 	/* Save the private key */
 	if (!write_object (s_8021x, ifcfg, otype, error))
 		goto out;
 
 	/* Client certificate */
-	if (is_pkcs12) {
+	if (otype->format_func (s_8021x) == NM_SETTING_802_1X_CK_FORMAT_PKCS12) {
 		/* Don't need a client certificate with PKCS#12 since the file is both
 		 * the client certificate and the private key in one file.
 		 */
