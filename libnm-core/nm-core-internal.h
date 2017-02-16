@@ -351,6 +351,8 @@ typedef struct {
 	const char *           (*path_func)   (NMSetting8021x *setting);
 	GBytes *               (*blob_func)   (NMSetting8021x *setting);
 	const char *           (*uri_func)    (NMSetting8021x *setting);
+	const char *           (*passwd_func) (NMSetting8021x *setting);
+	NMSettingSecretFlags   (*pwflag_func) (NMSetting8021x *setting);
 	const char *keyfile_suffix;
 } NMSetting8021xSchemeVtable;
 
