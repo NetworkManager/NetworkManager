@@ -1353,6 +1353,8 @@ read_aliases (NMSettingIPConfig *s_ip4, const char *filename)
 				nm_ip_address_set_attribute (addr, "label", g_variant_new_string (device));
 				if (!nm_setting_ip_config_add_address (s_ip4, addr))
 					PARSE_WARNING ("duplicate IP4 address in alias file %s", item);
+				if (nm_streq0 (nm_setting_ip_config_get_method (s_ip4), NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
+					g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL, NULL);
 			} else {
 				PARSE_WARNING ("error reading IP4 address from alias file '%s': %s",
 				               full_path, err ? err->message : "no address");
