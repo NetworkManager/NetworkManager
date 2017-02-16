@@ -177,6 +177,74 @@ nm_setting_802_1x_new (void)
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_802_1X, NULL);
 }
 
+/*****************************************************************************/
+
+const NMSetting8021xSchemeVtable nm_setting_8021x_scheme_vtable[] = {
+	[NM_SETTING_802_1X_SCHEME_TYPE_CA_CERT] = {
+		.setting_key            = NM_SETTING_802_1X_CA_CERT,
+		.scheme_func            = nm_setting_802_1x_get_ca_cert_scheme,
+		.format_func            = NULL,
+		.path_func              = nm_setting_802_1x_get_ca_cert_path,
+		.blob_func              = nm_setting_802_1x_get_ca_cert_blob,
+		.uri_func               = nm_setting_802_1x_get_ca_cert_uri,
+		.keyfile_suffix         = "ca-cert",
+	},
+
+	[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CA_CERT] = {
+		.setting_key            = NM_SETTING_802_1X_PHASE2_CA_CERT,
+		.scheme_func            = nm_setting_802_1x_get_phase2_ca_cert_scheme,
+		.format_func            = NULL,
+		.path_func              = nm_setting_802_1x_get_phase2_ca_cert_path,
+		.blob_func              = nm_setting_802_1x_get_phase2_ca_cert_blob,
+		.uri_func               = nm_setting_802_1x_get_phase2_ca_cert_uri,
+		.keyfile_suffix         = "inner-ca-cert",
+	},
+
+	[NM_SETTING_802_1X_SCHEME_TYPE_CLIENT_CERT] = {
+		.setting_key            = NM_SETTING_802_1X_CLIENT_CERT,
+		.scheme_func            = nm_setting_802_1x_get_client_cert_scheme,
+		.format_func            = NULL,
+		.path_func              = nm_setting_802_1x_get_client_cert_path,
+		.blob_func              = nm_setting_802_1x_get_client_cert_blob,
+		.uri_func               = nm_setting_802_1x_get_client_cert_uri,
+		.keyfile_suffix         = "client-cert",
+	},
+
+	[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CLIENT_CERT] = {
+		.setting_key            = NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
+		.scheme_func            = nm_setting_802_1x_get_phase2_client_cert_scheme,
+		.format_func            = NULL,
+		.path_func              = nm_setting_802_1x_get_phase2_client_cert_path,
+		.blob_func              = nm_setting_802_1x_get_phase2_client_cert_blob,
+		.uri_func               = nm_setting_802_1x_get_phase2_client_cert_uri,
+		.keyfile_suffix         = "inner-client-cert",
+	},
+
+	[NM_SETTING_802_1X_SCHEME_TYPE_PRIVATE_KEY] = {
+		.setting_key            = NM_SETTING_802_1X_PRIVATE_KEY,
+		.scheme_func            = nm_setting_802_1x_get_private_key_scheme,
+		.format_func            = nm_setting_802_1x_get_private_key_format,
+		.path_func              = nm_setting_802_1x_get_private_key_path,
+		.blob_func              = nm_setting_802_1x_get_private_key_blob,
+		.uri_func               = nm_setting_802_1x_get_private_key_uri,
+		.keyfile_suffix         = "private-key",
+	},
+
+	[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_PRIVATE_KEY] = {
+		.setting_key            = NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
+		.scheme_func            = nm_setting_802_1x_get_phase2_private_key_scheme,
+		.format_func            = nm_setting_802_1x_get_phase2_private_key_format,
+		.path_func              = nm_setting_802_1x_get_phase2_private_key_path,
+		.blob_func              = nm_setting_802_1x_get_phase2_private_key_blob,
+		.uri_func               = nm_setting_802_1x_get_phase2_private_key_uri,
+		.keyfile_suffix         = "inner-private-key",
+	},
+
+	[NM_SETTING_802_1X_SCHEME_TYPE_UNKNOWN] = { NULL },
+};
+
+/*****************************************************************************/
+
 /**
  * nm_setting_802_1x_get_num_eap_methods:
  * @setting: the #NMSetting8021x

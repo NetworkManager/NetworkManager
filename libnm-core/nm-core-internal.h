@@ -342,4 +342,31 @@ gboolean _nm_utils_inet6_is_token (const struct in6_addr *in6addr);
 
 gboolean    _nm_utils_team_config_equal (const char *conf1, const char *conf2, gboolean port);
 
+/*****************************************************************************/
+
+typedef struct {
+	const char *setting_key;
+	NMSetting8021xCKScheme (*scheme_func) (NMSetting8021x *setting);
+	NMSetting8021xCKFormat (*format_func) (NMSetting8021x *setting);
+	const char *           (*path_func)   (NMSetting8021x *setting);
+	GBytes *               (*blob_func)   (NMSetting8021x *setting);
+	const char *           (*uri_func)    (NMSetting8021x *setting);
+	const char *keyfile_suffix;
+} NMSetting8021xSchemeVtable;
+
+enum {
+	NM_SETTING_802_1X_SCHEME_TYPE_CA_CERT,
+	NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CA_CERT,
+	NM_SETTING_802_1X_SCHEME_TYPE_CLIENT_CERT,
+	NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CLIENT_CERT,
+	NM_SETTING_802_1X_SCHEME_TYPE_PRIVATE_KEY,
+	NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_PRIVATE_KEY,
+
+	NM_SETTING_802_1X_SCHEME_TYPE_UNKNOWN,
+};
+
+extern const NMSetting8021xSchemeVtable nm_setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_UNKNOWN + 1];
+
+/*****************************************************************************/
+
 #endif

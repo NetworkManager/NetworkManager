@@ -373,68 +373,6 @@ password_raw_writer (KeyfileWriterInfo *info,
 	nm_keyfile_plugin_kf_set_integer_list_uint8 (info->keyfile, setting_name, key, data, len);
 }
 
-typedef struct ObjectType {
-	const char *key;
-	const char *suffix;
-	NMSetting8021xCKScheme (*scheme_func) (NMSetting8021x *setting);
-	NMSetting8021xCKFormat (*format_func) (NMSetting8021x *setting);
-	const char *           (*path_func)   (NMSetting8021x *setting);
-	GBytes *               (*blob_func)   (NMSetting8021x *setting);
-	const char *           (*uri_func)    (NMSetting8021x *setting);
-} ObjectType;
-
-static const ObjectType objtypes[10] = {
-	{ NM_SETTING_802_1X_CA_CERT,
-	  "ca-cert",
-	  nm_setting_802_1x_get_ca_cert_scheme,
-	  NULL,
-	  nm_setting_802_1x_get_ca_cert_path,
-	  nm_setting_802_1x_get_ca_cert_blob,
-	  nm_setting_802_1x_get_ca_cert_uri },
-
-	{ NM_SETTING_802_1X_PHASE2_CA_CERT,
-	  "inner-ca-cert",
-	  nm_setting_802_1x_get_phase2_ca_cert_scheme,
-	  NULL,
-	  nm_setting_802_1x_get_phase2_ca_cert_path,
-	  nm_setting_802_1x_get_phase2_ca_cert_blob,
-	  nm_setting_802_1x_get_phase2_ca_cert_uri },
-
-	{ NM_SETTING_802_1X_CLIENT_CERT,
-	  "client-cert",
-	  nm_setting_802_1x_get_client_cert_scheme,
-	  NULL,
-	  nm_setting_802_1x_get_client_cert_path,
-	  nm_setting_802_1x_get_client_cert_blob,
-	  nm_setting_802_1x_get_client_cert_uri },
-
-	{ NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
-	  "inner-client-cert",
-	  nm_setting_802_1x_get_phase2_client_cert_scheme,
-	  NULL,
-	  nm_setting_802_1x_get_phase2_client_cert_path,
-	  nm_setting_802_1x_get_phase2_client_cert_blob,
-	  nm_setting_802_1x_get_phase2_client_cert_uri },
-
-	{ NM_SETTING_802_1X_PRIVATE_KEY,
-	  "private-key",
-	  nm_setting_802_1x_get_private_key_scheme,
-	  nm_setting_802_1x_get_private_key_format,
-	  nm_setting_802_1x_get_private_key_path,
-	  nm_setting_802_1x_get_private_key_blob,
-	  nm_setting_802_1x_get_private_key_uri },
-
-	{ NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
-	  "inner-private-key",
-	  nm_setting_802_1x_get_phase2_private_key_scheme,
-	  nm_setting_802_1x_get_phase2_private_key_format,
-	  nm_setting_802_1x_get_phase2_private_key_path,
-	  nm_setting_802_1x_get_phase2_private_key_blob,
-	  nm_setting_802_1x_get_phase2_private_key_uri },
-
-	{ NULL },
-};
-
 /*****************************************************************************/
 
 static void
@@ -514,13 +452,13 @@ cert_writer (KeyfileWriterInfo *info,
              const char *key,
              const GValue *value)
 {
-	const ObjectType *objtype = NULL;
+	const NMSetting8021xSchemeVtable *objtype = NULL;
 	guint i;
 	NMKeyfileWriteTypeDataCert type_data = { 0 };
 
-	for (i = 0; i < G_N_ELEMENTS (objtypes) && objtypes[i].key; i++) {
-		if (g_strcmp0 (objtypes[i].key, key) == 0) {
-			objtype = &objtypes[i];
+	for (i = 0; nm_setting_8021x_scheme_vtable[i].setting_key; i++) {
+		if (g_strcmp0 (nm_setting_8021x_scheme_vtable[i].setting_key, key) == 0) {
+			objtype = &nm_setting_8021x_scheme_vtable[i];
 			break;
 		}
 	}
@@ -529,7 +467,7 @@ cert_writer (KeyfileWriterInfo *info,
 
 	type_data.setting = NM_SETTING_802_1X (setting);
 	type_data.property_name = key;
-	type_data.suffix = objtype->suffix;
+	type_data.suffix = objtype->keyfile_suffix;
 	type_data.scheme_func = objtype->scheme_func;
 	type_data.format_func = objtype->format_func;
 	type_data.path_func = objtype->path_func;
