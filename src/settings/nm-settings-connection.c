@@ -2862,13 +2862,8 @@ set_property (GObject *object, guint prop_id,
 	NMSettingsConnection *self = NM_SETTINGS_CONNECTION (object);
 
 	switch (prop_id) {
-	case PROP_READY:
-		nm_settings_connection_set_ready (self, g_value_get_boolean (value));
-		break;
-	case PROP_FLAGS:
-		nm_settings_connection_set_flags_all (self, g_value_get_uint (value));
-		break;
 	case PROP_FILENAME:
+		/* construct-only */
 		nm_settings_connection_set_filename (self, g_value_get_string (value));
 		break;
 	default:
@@ -2912,7 +2907,7 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 	obj_properties[PROP_READY] =
 	     g_param_spec_boolean (NM_SETTINGS_CONNECTION_READY, "", "",
 	                           TRUE,
-	                           G_PARAM_READWRITE |
+	                           G_PARAM_READABLE |
 	                           G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_FLAGS] =
@@ -2920,13 +2915,14 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 	                        NM_SETTINGS_CONNECTION_FLAGS_NONE,
 	                        NM_SETTINGS_CONNECTION_FLAGS_ALL,
 	                        NM_SETTINGS_CONNECTION_FLAGS_NONE,
-	                        G_PARAM_READWRITE |
+	                        G_PARAM_READABLE |
 	                        G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_FILENAME] =
 	     g_param_spec_string (NM_SETTINGS_CONNECTION_FILENAME, "", "",
 	                          NULL,
 	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT_ONLY |
 	                          G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
