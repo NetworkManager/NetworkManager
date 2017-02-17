@@ -243,6 +243,11 @@ typedef struct {
 
 	void        (* set_enabled) (NMDevice *self, gboolean enabled);
 
+	/* allow derived classes to override the result of nm_device_autoconnect_allowed().
+	 * If the value changes, the class should call nm_device_emit_recheck_auto_activate(),
+	 * which emits NM_DEVICE_RECHECK_AUTO_ACTIVATE signal. */
+	gboolean    (* get_autoconnect_allowed) (NMDevice *self);
+
 	gboolean    (* can_auto_connect) (NMDevice *self,
 	                                  NMConnection *connection,
 	                                  char **specific_object);
@@ -577,7 +582,7 @@ gboolean nm_device_unrealize          (NMDevice *device,
                                        GError **error);
 
 gboolean nm_device_get_autoconnect (NMDevice *device);
-void nm_device_set_autoconnect (NMDevice *device, gboolean autoconnect);
+void nm_device_set_autoconnect_intern (NMDevice *device, gboolean autoconnect);
 void nm_device_emit_recheck_auto_activate (NMDevice *device);
 
 void nm_device_state_changed (NMDevice *device,

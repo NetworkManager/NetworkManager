@@ -53,7 +53,7 @@ NMWifiAP *   nm_wifi_ap_new_from_properties      (const char *supplicant_path,
                                                   GVariant *properties);
 NMWifiAP *   nm_wifi_ap_new_fake_from_connection (NMConnection *connection);
 
-void              nm_wifi_ap_update_from_properties   (NMWifiAP *ap,
+gboolean          nm_wifi_ap_update_from_properties   (NMWifiAP *ap,
                                                        const char *supplicant_path,
                                                        GVariant *properties);
 
@@ -68,25 +68,25 @@ gboolean          nm_wifi_ap_complete_connection      (NMWifiAP *self,
 const char *      nm_wifi_ap_get_supplicant_path      (NMWifiAP *ap);
 guint64           nm_wifi_ap_get_id                   (NMWifiAP *ap);
 const GByteArray *nm_wifi_ap_get_ssid                 (const NMWifiAP *ap);
-void              nm_wifi_ap_set_ssid                 (NMWifiAP *ap,
+gboolean          nm_wifi_ap_set_ssid                 (NMWifiAP *ap,
                                                        const guint8 *ssid,
                                                        gsize len);
 const char *      nm_wifi_ap_get_address              (const NMWifiAP *ap);
-void              nm_wifi_ap_set_address              (NMWifiAP *ap,
+gboolean          nm_wifi_ap_set_address              (NMWifiAP *ap,
                                                        const char *addr);
 NM80211Mode       nm_wifi_ap_get_mode                 (NMWifiAP *ap);
 gboolean          nm_wifi_ap_is_hotspot               (NMWifiAP *ap);
 gint8             nm_wifi_ap_get_strength             (NMWifiAP *ap);
-void              nm_wifi_ap_set_strength             (NMWifiAP *ap,
+gboolean          nm_wifi_ap_set_strength             (NMWifiAP *ap,
                                                        gint8 strength);
 guint32           nm_wifi_ap_get_freq                 (NMWifiAP *ap);
-void              nm_wifi_ap_set_freq                 (NMWifiAP *ap,
+gboolean          nm_wifi_ap_set_freq                 (NMWifiAP *ap,
                                                        guint32 freq);
 guint32           nm_wifi_ap_get_max_bitrate          (NMWifiAP *ap);
-void              nm_wifi_ap_set_max_bitrate          (NMWifiAP *ap,
+gboolean          nm_wifi_ap_set_max_bitrate          (NMWifiAP *ap,
                                                        guint32 bitrate);
 gboolean          nm_wifi_ap_get_fake                 (const NMWifiAP *ap);
-void              nm_wifi_ap_set_fake                 (NMWifiAP *ap,
+gboolean          nm_wifi_ap_set_fake                 (NMWifiAP *ap,
                                                        gboolean fake);
 
 const char       *nm_wifi_ap_to_string                (const NMWifiAP *self,

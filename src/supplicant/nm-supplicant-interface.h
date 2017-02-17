@@ -28,7 +28,8 @@
  * Supplicant interface states
  *   A mix of wpa_supplicant interface states and internal states.
  */
-enum {
+typedef enum {
+	NM_SUPPLICANT_INTERFACE_STATE_INVALID = -1,
 	NM_SUPPLICANT_INTERFACE_STATE_INIT = 0,
 	NM_SUPPLICANT_INTERFACE_STATE_STARTING,
 	NM_SUPPLICANT_INTERFACE_STATE_READY,
@@ -43,8 +44,7 @@ enum {
 	NM_SUPPLICANT_INTERFACE_STATE_GROUP_HANDSHAKE,
 	NM_SUPPLICANT_INTERFACE_STATE_COMPLETED,
 	NM_SUPPLICANT_INTERFACE_STATE_DOWN,
-	NM_SUPPLICANT_INTERFACE_STATE_LAST
-};
+} NMSupplicantInterfaceState;
 
 #define NM_TYPE_SUPPLICANT_INTERFACE            (nm_supplicant_interface_get_type ())
 #define NM_SUPPLICANT_INTERFACE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SUPPLICANT_INTERFACE, NMSupplicantInterface))
@@ -64,11 +64,9 @@ enum {
 /* Signals */
 #define NM_SUPPLICANT_INTERFACE_STATE            "state"
 #define NM_SUPPLICANT_INTERFACE_REMOVED          "removed"
-#define NM_SUPPLICANT_INTERFACE_NEW_BSS          "new-bss"
 #define NM_SUPPLICANT_INTERFACE_BSS_UPDATED      "bss-updated"
 #define NM_SUPPLICANT_INTERFACE_BSS_REMOVED      "bss-removed"
 #define NM_SUPPLICANT_INTERFACE_SCAN_DONE        "scan-done"
-#define NM_SUPPLICANT_INTERFACE_CONNECTION_ERROR "connection-error"
 #define NM_SUPPLICANT_INTERFACE_CREDENTIALS_REQUEST "credentials-request"
 
 typedef struct _NMSupplicantInterfaceClass NMSupplicantInterfaceClass;
@@ -83,19 +81,25 @@ NMSupplicantInterface * nm_supplicant_interface_new (const char *ifname,
 void nm_supplicant_interface_set_supplicant_available (NMSupplicantInterface *self,
                                                        gboolean available);
 
-gboolean nm_supplicant_interface_set_config (NMSupplicantInterface * iface,
-                                             NMSupplicantConfig * cfg,
-                                             GError **error);
+typedef void (*NMSupplicantInterfaceAssocCb) (NMSupplicantInterface *iface,
+                                              GError *error,
+                                              gpointer user_data);
+
+void
+nm_supplicant_interface_assoc (NMSupplicantInterface *self,
+                               NMSupplicantConfig *cfg,
+                               NMSupplicantInterfaceAssocCb callback,
+                               gpointer user_data);
 
 void nm_supplicant_interface_disconnect (NMSupplicantInterface * iface);
 
 const char *nm_supplicant_interface_get_object_path (NMSupplicantInterface * iface);
 
-gboolean nm_supplicant_interface_request_scan (NMSupplicantInterface * self, const GPtrArray *ssids);
+void nm_supplicant_interface_request_scan (NMSupplicantInterface * self, const GPtrArray *ssids);
 
-guint32 nm_supplicant_interface_get_state (NMSupplicantInterface * self);
+NMSupplicantInterfaceState nm_supplicant_interface_get_state (NMSupplicantInterface * self);
 
-const char *nm_supplicant_interface_state_to_string (guint32 state);
+const char *nm_supplicant_interface_state_to_string (NMSupplicantInterfaceState state);
 
 gboolean nm_supplicant_interface_get_scanning (NMSupplicantInterface *self);
 
