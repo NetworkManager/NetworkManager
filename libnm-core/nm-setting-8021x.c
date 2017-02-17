@@ -4150,6 +4150,14 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 *
 	 * Since: 1.8
 	 */
+	/* ---ifcfg-rh---
+	 * property: phase1-auth-flags
+	 * variable: IEEE_8021X_PHASE1_AUTH_FLAGS(+)
+	 * values: space-separated list of authentication flags names
+	 * description: Authentication flags for the supplicant
+	 * example: IEEE_8021X_PHASE1_AUTH_FLAGS="tls-1-0-disable tls-1-1-disable"
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PHASE1_AUTH_FLAGS,
 		 g_param_spec_uint (NM_SETTING_802_1X_PHASE1_AUTH_FLAGS, "", "",

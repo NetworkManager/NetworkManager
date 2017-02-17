@@ -3151,6 +3151,24 @@ fill_8021x (shvarFile *ifcfg,
 	g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_SUBJECT_MATCH, value, NULL);
 	g_free (value);
 
+	value = svGetValueString (ifcfg, "IEEE_8021X_PHASE1_AUTH_FLAGS");
+	if (value) {
+		NMSetting8021xAuthFlags flags;
+		char *token;
+
+		if (nm_utils_enum_from_str (nm_setting_802_1x_auth_flags_get_type (), value,
+		                            (int *) &flags, &token)) {
+			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE1_AUTH_FLAGS, flags, NULL);
+		} else {
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "Invalid IEEE_8021X_PHASE1_AUTH_FLAGS flag '%s'", token);
+			g_free (token);
+			g_free (value);
+			goto error;
+		}
+		g_free (value);
+	}
+
 	read_8021x_list_value (ifcfg, "IEEE_8021X_ALTSUBJECT_MATCHES",
 	                       s_8021x, NM_SETTING_802_1X_ALTSUBJECT_MATCHES);
 	read_8021x_list_value (ifcfg, "IEEE_8021X_PHASE2_ALTSUBJECT_MATCHES",
