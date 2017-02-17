@@ -431,15 +431,54 @@ settings_set_hostname_cb (const char *hostname,
 		nm_dispatcher_call_hostname (NULL, NULL, NULL);
 }
 
+#define HOST_NAME_BUFSIZE (HOST_NAME_MAX + 2)
+
+static char *
+_get_hostname (NMPolicy *self, char **hostname)
+{
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+	char *buf;
+
+	g_assert (hostname && *hostname == NULL);
+
+	/* try to get the hostname via dbus... */
+	if (nm_settings_get_transient_hostname (priv->settings, hostname)) {
+		_LOGT (LOGD_DNS, "gethostname: \"%s\" (from dbus)", *hostname);
+		return *hostname;
+	}
+
+	/* ...or retrieve it by yourself */
+	buf = g_malloc (HOST_NAME_BUFSIZE);
+	if (gethostname (buf, HOST_NAME_BUFSIZE -1) != 0) {
+		int errsv = errno;
+
+		_LOGT (LOGD_DNS, "gethostname: couldn't get the system hostname: (%d) %s",
+		       errsv, g_strerror (errsv));
+		g_free (buf);
+		return NULL;
+	}
+
+	/* the name may be truncated... */
+	buf[HOST_NAME_BUFSIZE - 1] = '\0';
+	if (strlen (buf) >= HOST_NAME_BUFSIZE -1) {
+		_LOGT (LOGD_DNS, "gethostname: system hostname too long: \"%s\"", buf);
+		g_free (buf);
+		return NULL;
+	}
+
+	_LOGT (LOGD_DNS, "gethostname: \"%s\"", buf);
+	*hostname = buf;
+	return *hostname;
+}
+
 static void
 _set_hostname (NMPolicy *self,
                const char *new_hostname,
                const char *msg)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	char old_hostname[HOST_NAME_MAX + 1];
+	gs_free char *old_hostname = NULL;
 	const char *name;
-	int ret;
 
 	/* The incoming hostname *can* be NULL, which will get translated to
 	 * 'localhost.localdomain' or such in the hostname policy code, but we
@@ -484,19 +523,14 @@ _set_hostname (NMPolicy *self,
 	} else
 		name = new_hostname;
 
-	old_hostname[HOST_NAME_MAX] = '\0';
-	errno = 0;
-	ret = gethostname (old_hostname, HOST_NAME_MAX);
-	if (ret != 0) {
-		_LOGW (LOGD_DNS, "couldn't get the system hostname: (%d) %s",
-		       errno, strerror (errno));
-	} else {
-		/* Don't set the hostname if it isn't actually changing */
-		if (nm_streq (name, old_hostname))
-			return;
+	/* Don't set the hostname if it isn't actually changing */
+	if (   _get_hostname (self, &old_hostname)
+	    && (nm_streq (name, old_hostname))) {
+		_LOGT (LOGD_DNS, "sethostname: already set to '%s' (%s)", name, msg);
+		return;
 	}
 
-	_LOGI (LOGD_DNS, "setting system hostname to '%s' (%s)", name, msg);
+	_LOGI (LOGD_DNS, "sethostname: '%s' (%s)", name, msg);
 
 	/* Ask NMSettings to update the transient hostname using its
 	 * systemd-hostnamed proxy */
@@ -2184,14 +2218,15 @@ constructed (GObject *object)
 {
 	NMPolicy *self = NM_POLICY (object);
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	char hostname[HOST_NAME_MAX + 2];
+	char *hostname = NULL;
 
 	/* Grab hostname on startup and use that if nothing provides one */
-	memset (hostname, 0, sizeof (hostname));
-	if (gethostname (&hostname[0], HOST_NAME_MAX) == 0) {
+	if (_get_hostname (self, &hostname)) {
 		/* only cache it if it's a valid hostname */
-		if (*hostname && nm_utils_is_specific_hostname (hostname))
-			priv->orig_hostname = g_strdup (hostname);
+		if (nm_utils_is_specific_hostname (hostname))
+			priv->orig_hostname = hostname;
+		else
+			g_free (hostname);
 	}
 
 	priv->firewall_manager = g_object_ref (nm_firewall_manager_get ());

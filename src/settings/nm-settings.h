@@ -132,4 +132,7 @@ void nm_settings_set_transient_hostname (NMSettings *self,
                                          NMSettingsSetHostnameCb cb,
                                          gpointer user_data);
 
+gboolean nm_settings_get_transient_hostname (NMSettings *self,
+                                             char **hostname);
+
 #endif  /* __NM_SETTINGS_H__ */
