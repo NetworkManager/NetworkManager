@@ -561,7 +561,7 @@ _nm_config_data_log_sort (const char **pa, const char **pb, gpointer dummy)
 	return g_strcmp0 (a, b);
 }
 
-static struct {
+static const struct {
 	const char *group;
 	const char *key;
 	const char *value;

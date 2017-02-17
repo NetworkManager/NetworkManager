@@ -2230,6 +2230,7 @@ set_property (GObject *object, guint prop_id,
 	NMConfig *self = NM_CONFIG (object);
 	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (self);
 	NMConfigCmdLineOptions *cli;
+	char **strv;
 
 	switch (prop_id) {
 	case PROP_CMD_LINE_OPTIONS:
@@ -2242,7 +2243,10 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_ATOMIC_SECTION_PREFIXES:
 		/* construct-only */
-		priv->atomic_section_prefixes = g_strdupv (g_value_get_boxed (value));
+		strv = g_value_get_boxed (value);
+		if (strv && !strv[0])
+			strv = NULL;
+		priv->atomic_section_prefixes = g_strdupv (strv);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);

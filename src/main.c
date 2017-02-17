@@ -59,6 +59,8 @@
 #define NM_DEFAULT_PID_FILE          NMRUNDIR "/NetworkManager.pid"
 #define NM_DEFAULT_SYSTEM_STATE_FILE NMSTATEDIR "/NetworkManager.state"
 
+#define CONFIG_ATOMIC_SECTION_PREFIXES ((char **) NULL)
+
 static GMainLoop *main_loop = NULL;
 static gboolean configure_and_quit = FALSE;
 
@@ -167,7 +169,7 @@ print_config (NMConfigCmdLineOptions *config_cli)
 
 	nm_logging_setup ("OFF", "ALL", NULL, NULL);
 
-	config = nm_config_new (config_cli, NULL, &error);
+	config = nm_config_new (config_cli, CONFIG_ATOMIC_SECTION_PREFIXES, &error);
 	if (config == NULL) {
 		fprintf (stderr, _("Failed to read configuration: %s\n"), error->message);
 		return 7;
@@ -300,7 +302,7 @@ main (int argc, char *argv[])
 	}
 
 	/* Read the config file and CLI overrides */
-	config = nm_config_setup (config_cli, NULL, &error);
+	config = nm_config_setup (config_cli, CONFIG_ATOMIC_SECTION_PREFIXES, &error);
 	nm_config_cmd_line_options_free (config_cli);
 	config_cli = NULL;
 	if (config == NULL) {
