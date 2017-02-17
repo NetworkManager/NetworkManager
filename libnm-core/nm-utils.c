@@ -4305,7 +4305,7 @@ char *nm_utils_enum_to_str (GType type, int value)
  * @type: the %GType of the enum
  * @str: the input string
  * @out_value: (out) (allow-none): the output value
- * @err_token: (out) (allow-none): location to store the first unrecognized token
+ * @err_token: (out) (allow-none) (transfer full): location to store the first unrecognized token
  *
  * Converts a string to the matching enum value.
  *
