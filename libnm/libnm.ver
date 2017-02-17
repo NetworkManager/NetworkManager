@@ -1143,3 +1143,15 @@ global:
 	nm_utils_version;
 	nm_utils_is_valid_iface_name;
 } libnm_1_4_0;
+
+libnm_1_8_0 {
+global:
+	nm_setting_802_1x_get_ca_cert_password;
+	nm_setting_802_1x_get_ca_cert_password_flags;
+	nm_setting_802_1x_get_client_cert_password;
+	nm_setting_802_1x_get_client_cert_password_flags;
+	nm_setting_802_1x_get_phase2_ca_cert_password;
+	nm_setting_802_1x_get_phase2_ca_cert_password_flags;
+	nm_setting_802_1x_get_phase2_client_cert_password;
+	nm_setting_802_1x_get_phase2_client_cert_password_flags;
+} libnm_1_6_0;

@@ -4486,15 +4486,15 @@ test_write_wired_8021x_tls (gconstpointer test_data)
 	}
 
 	/* Clean up created certs and keys */
-	tmp = utils_cert_path (testfile, "ca-cert.der");
+	tmp = utils_cert_path (testfile, "ca-cert", "der");
 	nmtst_file_unlink_if_exists (tmp);
 	g_free (tmp);
 
-	tmp = utils_cert_path (testfile, "client-cert.der");
+	tmp = utils_cert_path (testfile, "client-cert", "der");
 	nmtst_file_unlink_if_exists (tmp);
 	g_free (tmp);
 
-	tmp = utils_cert_path (testfile, "private-key.pem");
+	tmp = utils_cert_path (testfile, "private-key", "pem");
 	nmtst_file_unlink_if_exists (tmp);
 	g_free (tmp);
 }

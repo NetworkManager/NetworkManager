@@ -27,6 +27,8 @@
 #include "nm-connection.h"
 #include "nm-setting-8021x.h"
 
+#include "nm-core-internal.h"
+
 /*****************************************************************************/
 
 #define NM_KEYFILE_CERT_SCHEME_PREFIX_PATH "file://"
@@ -138,17 +140,8 @@ typedef gboolean (*NMKeyfileWriteHandler) (NMConnection *connection,
  * type %NM_KEYFILE_WRITE_TYPE_CERT.
  */
 typedef struct {
+	const NMSetting8021xSchemeVtable *vtable;
 	NMSetting8021x *setting;
-	const char *property_name;
-
-	/* The following functions are helpers that simplify the implementation
-	 * of the handler. */
-	const char *suffix;
-	NMSetting8021xCKScheme (*scheme_func) (NMSetting8021x *setting);
-	NMSetting8021xCKFormat (*format_func) (NMSetting8021x *setting);
-	const char *           (*path_func)   (NMSetting8021x *setting);
-	GBytes *               (*blob_func)   (NMSetting8021x *setting);
-	const char *           (*uri_func)    (NMSetting8021x *setting);
 } NMKeyfileWriteTypeDataCert;
 
 

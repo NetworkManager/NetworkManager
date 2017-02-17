@@ -146,109 +146,67 @@ error:
 	svSetValueString (ifcfg, key, value);
 }
 
-typedef struct ObjectType {
-	const char *setting_key;
-	NMSetting8021xCKScheme (*scheme_func)(NMSetting8021x *setting);
-	const char *           (*path_func)  (NMSetting8021x *setting);
-	GBytes *               (*blob_func)  (NMSetting8021x *setting);
-	const char *ifcfg_key;
-	const char *suffix;
-} ObjectType;
+typedef struct {
+	const NMSetting8021xSchemeVtable *vtable;
+	const char *ifcfg_rh_key;
+} Setting8021xSchemeVtable;
 
-static const ObjectType ca_type = {
-	NM_SETTING_802_1X_CA_CERT,
-	nm_setting_802_1x_get_ca_cert_scheme,
-	nm_setting_802_1x_get_ca_cert_path,
-	nm_setting_802_1x_get_ca_cert_blob,
-	"IEEE_8021X_CA_CERT",
-	"ca-cert.der"
-};
-
-static const ObjectType phase2_ca_type = {
-	NM_SETTING_802_1X_PHASE2_CA_CERT,
-	nm_setting_802_1x_get_phase2_ca_cert_scheme,
-	nm_setting_802_1x_get_phase2_ca_cert_path,
-	nm_setting_802_1x_get_phase2_ca_cert_blob,
-	"IEEE_8021X_INNER_CA_CERT",
-	"inner-ca-cert.der"
-};
-
-static const ObjectType client_type = {
-	NM_SETTING_802_1X_CLIENT_CERT,
-	nm_setting_802_1x_get_client_cert_scheme,
-	nm_setting_802_1x_get_client_cert_path,
-	nm_setting_802_1x_get_client_cert_blob,
-	"IEEE_8021X_CLIENT_CERT",
-	"client-cert.der"
-};
-
-static const ObjectType phase2_client_type = {
-	NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
-	nm_setting_802_1x_get_phase2_client_cert_scheme,
-	nm_setting_802_1x_get_phase2_client_cert_path,
-	nm_setting_802_1x_get_phase2_client_cert_blob,
-	"IEEE_8021X_INNER_CLIENT_CERT",
-	"inner-client-cert.der"
-};
-
-static const ObjectType pk_type = {
-	NM_SETTING_802_1X_PRIVATE_KEY,
-	nm_setting_802_1x_get_private_key_scheme,
-	nm_setting_802_1x_get_private_key_path,
-	nm_setting_802_1x_get_private_key_blob,
-	"IEEE_8021X_PRIVATE_KEY",
-	"private-key.pem"
-};
-
-static const ObjectType phase2_pk_type = {
-	NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
-	nm_setting_802_1x_get_phase2_private_key_scheme,
-	nm_setting_802_1x_get_phase2_private_key_path,
-	nm_setting_802_1x_get_phase2_private_key_blob,
-	"IEEE_8021X_INNER_PRIVATE_KEY",
-	"inner-private-key.pem"
-};
-
-static const ObjectType p12_type = {
-	NM_SETTING_802_1X_PRIVATE_KEY,
-	nm_setting_802_1x_get_private_key_scheme,
-	nm_setting_802_1x_get_private_key_path,
-	nm_setting_802_1x_get_private_key_blob,
-	"IEEE_8021X_PRIVATE_KEY",
-	"private-key.p12"
-};
-
-static const ObjectType phase2_p12_type = {
-	NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
-	nm_setting_802_1x_get_phase2_private_key_scheme,
-	nm_setting_802_1x_get_phase2_private_key_path,
-	nm_setting_802_1x_get_phase2_private_key_blob,
-	"IEEE_8021X_INNER_PRIVATE_KEY",
-	"inner-private-key.p12"
+static const Setting8021xSchemeVtable setting_8021x_scheme_vtable[] = {
+	[NM_SETTING_802_1X_SCHEME_TYPE_CA_CERT] = {
+		.vtable                 = &nm_setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_CA_CERT],
+		.ifcfg_rh_key           = "IEEE_8021X_CA_CERT",
+	},
+	[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CA_CERT] = {
+		.vtable                 = &nm_setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CA_CERT],
+		.ifcfg_rh_key           = "IEEE_8021X_INNER_CA_CERT",
+	},
+	[NM_SETTING_802_1X_SCHEME_TYPE_CLIENT_CERT] = {
+		.vtable                 = &nm_setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_CLIENT_CERT],
+		.ifcfg_rh_key           = "IEEE_8021X_CLIENT_CERT",
+	},
+	[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CLIENT_CERT] = {
+		.vtable                 = &nm_setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CLIENT_CERT],
+		.ifcfg_rh_key           = "IEEE_8021X_INNER_CLIENT_CERT",
+	},
+	[NM_SETTING_802_1X_SCHEME_TYPE_PRIVATE_KEY] = {
+		.vtable                 = &nm_setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PRIVATE_KEY],
+		.ifcfg_rh_key           = "IEEE_8021X_PRIVATE_KEY",
+	},
+	[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_PRIVATE_KEY] = {
+		.vtable                 = &nm_setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_PRIVATE_KEY],
+		.ifcfg_rh_key           = "IEEE_8021X_INNER_PRIVATE_KEY",
+	},
 };
 
 static gboolean
 write_object (NMSetting8021x *s_8021x,
               shvarFile *ifcfg,
-              const ObjectType *objtype,
+              const Setting8021xSchemeVtable *objtype,
               GError **error)
 {
 	NMSetting8021xCKScheme scheme;
-	const char *path = NULL;
+	const char *value = NULL;
 	GBytes *blob = NULL;
+	const char *password = NULL;
+	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
+	char *secret_name, *secret_flags;
+	const char *extension;
 
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
 	g_return_val_if_fail (objtype != NULL, FALSE);
 
-	scheme = (*(objtype->scheme_func))(s_8021x);
+	scheme = (*(objtype->vtable->scheme_func))(s_8021x);
 	switch (scheme) {
 	case NM_SETTING_802_1X_CK_SCHEME_UNKNOWN:
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		blob = (*(objtype->blob_func))(s_8021x);
+		blob = (*(objtype->vtable->blob_func))(s_8021x);
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
-		path = (*(objtype->path_func))(s_8021x);
+		value = (*(objtype->vtable->path_func))(s_8021x);
+		break;
+	case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
+		value = (*(objtype->vtable->uri_func))(s_8021x);
 		break;
 	default:
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
@@ -256,10 +214,26 @@ write_object (NMSetting8021x *s_8021x,
 		return FALSE;
 	}
 
+	/* Set the password for certificate/private key. */
+	secret_name = g_strdup_printf ("%s_PASSWORD", objtype->ifcfg_rh_key);
+	secret_flags = g_strdup_printf ("%s_PASSWORD_FLAGS", objtype->ifcfg_rh_key);
+	password = (*(objtype->vtable->passwd_func))(s_8021x);
+	flags = (*(objtype->vtable->pwflag_func))(s_8021x);
+	set_secret (ifcfg, secret_name, password, secret_flags, flags);
+	g_free (secret_name);
+	g_free (secret_flags);
+
+	if (!objtype->vtable->format_func)
+		extension = "der";
+	else if (objtype->vtable->format_func (s_8021x) == NM_SETTING_802_1X_CK_FORMAT_PKCS12)
+		extension = "p12";
+	else
+		extension = "pem";
+
 	/* If certificate/private key wasn't sent, the connection may no longer be
 	 * 802.1x and thus we clear out the paths and certs.
 	 */
-	if (!path && !blob) {
+	if (!value && !blob) {
 		char *standard_file;
 		int ignored;
 
@@ -269,20 +243,20 @@ write_object (NMSetting8021x *s_8021x,
 		 * /etc/sysconfig/network-scripts/ca-cert-Test_Write_Wifi_WPA_EAP-TLS.der
 		 * will be deleted, but /etc/pki/tls/cert.pem will not.
 		 */
-		standard_file = utils_cert_path (svFileGetName (ifcfg), objtype->suffix);
+		standard_file = utils_cert_path (svFileGetName (ifcfg), objtype->vtable->file_suffix, extension);
 		if (g_file_test (standard_file, G_FILE_TEST_EXISTS))
 			ignored = unlink (standard_file);
 		g_free (standard_file);
 
-		svUnsetValue (ifcfg, objtype->ifcfg_key);
+		svUnsetValue (ifcfg, objtype->ifcfg_rh_key);
 		return TRUE;
 	}
 
 	/* If the object path was specified, prefer that over any raw cert data that
 	 * may have been sent.
 	 */
-	if (path) {
-		svSetValueString (ifcfg, objtype->ifcfg_key, path);
+	if (value) {
+		svSetValueString (ifcfg, objtype->ifcfg_rh_key, value);
 		return TRUE;
 	}
 
@@ -292,11 +266,11 @@ write_object (NMSetting8021x *s_8021x,
 		char *new_file;
 		GError *write_error = NULL;
 
-		new_file = utils_cert_path (svFileGetName (ifcfg), objtype->suffix);
+		new_file = utils_cert_path (svFileGetName (ifcfg), objtype->vtable->file_suffix, extension);
 		if (!new_file) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 			             "Could not create file path for %s / %s",
-			             NM_SETTING_802_1X_SETTING_NAME, objtype->setting_key);
+			             NM_SETTING_802_1X_SETTING_NAME, objtype->vtable->setting_key);
 			return FALSE;
 		}
 
@@ -310,13 +284,13 @@ write_object (NMSetting8021x *s_8021x,
 		                                      0600,
 		                                      &write_error);
 		if (success) {
-			svSetValueString (ifcfg, objtype->ifcfg_key, new_file);
+			svSetValueString (ifcfg, objtype->ifcfg_rh_key, new_file);
 			g_free (new_file);
 			return TRUE;
 		} else {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 			             "Could not write certificate/key for %s / %s: %s",
-			             NM_SETTING_802_1X_SETTING_NAME, objtype->setting_key,
+			             NM_SETTING_802_1X_SETTING_NAME, objtype->vtable->setting_key,
 			             (write_error && write_error->message) ? write_error->message : "(unknown)");
 			g_clear_error (&write_error);
 		}
@@ -332,55 +306,29 @@ write_8021x_certs (NMSetting8021x *s_8021x,
                    shvarFile *ifcfg,
                    GError **error)
 {
-	const char *password = NULL;
-	gboolean success = FALSE, is_pkcs12 = FALSE;
-	const ObjectType *otype = NULL;
-	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
+	gboolean success = FALSE;
+	const Setting8021xSchemeVtable *otype = NULL;
 
 	/* CA certificate */
-	if (!write_object (s_8021x, ifcfg, phase2 ? &phase2_ca_type : &ca_type, error))
+	if (!write_object (s_8021x, ifcfg,
+	                   phase2
+	                       ? &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CA_CERT]
+	                       : &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_CA_CERT],
+	                   error))
 		return FALSE;
 
 	/* Private key */
-	if (phase2) {
-		otype = &phase2_pk_type;
-		if (nm_setting_802_1x_get_phase2_private_key_format (s_8021x) == NM_SETTING_802_1X_CK_FORMAT_PKCS12) {
-			otype = &phase2_p12_type;
-			is_pkcs12 = TRUE;
-		}
-		password = nm_setting_802_1x_get_phase2_private_key_password (s_8021x);
-		flags = nm_setting_802_1x_get_phase2_private_key_password_flags (s_8021x);
-	} else {
-		otype = &pk_type;
-		if (nm_setting_802_1x_get_private_key_format (s_8021x) == NM_SETTING_802_1X_CK_FORMAT_PKCS12) {
-			otype = &p12_type;
-			is_pkcs12 = TRUE;
-		}
-		password = nm_setting_802_1x_get_private_key_password (s_8021x);
-		flags = nm_setting_802_1x_get_private_key_password_flags (s_8021x);
-	}
+	if (phase2)
+		otype = &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_PRIVATE_KEY];
+	else
+		otype = &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PRIVATE_KEY];
 
 	/* Save the private key */
 	if (!write_object (s_8021x, ifcfg, otype, error))
 		goto out;
 
-	/* Private key password */
-	if (phase2) {
-		set_secret (ifcfg,
-		            "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD",
-		            password,
-		            "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD_FLAGS",
-		            flags);
-	} else {
-		set_secret (ifcfg,
-		            "IEEE_8021X_PRIVATE_KEY_PASSWORD",
-		            password,
-		            "IEEE_8021X_PRIVATE_KEY_PASSWORD_FLAGS",
-		            flags);
-	}
-
 	/* Client certificate */
-	if (is_pkcs12) {
+	if (otype->vtable->format_func (s_8021x) == NM_SETTING_802_1X_CK_FORMAT_PKCS12) {
 		/* Don't need a client certificate with PKCS#12 since the file is both
 		 * the client certificate and the private key in one file.
 		 */
@@ -389,7 +337,11 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 		                  NULL);
 	} else {
 		/* Save the client certificate */
-		if (!write_object (s_8021x, ifcfg, phase2 ? &phase2_client_type : &client_type, error))
+		if (!write_object (s_8021x, ifcfg,
+		                   phase2
+		                       ? &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CLIENT_CERT]
+		                       : &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_CLIENT_CERT],
+		                   error))
 			goto out;
 	}
 

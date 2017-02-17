@@ -1688,96 +1688,43 @@ error:
 	return NULL;
 }
 
-typedef NMSetting8021xCKScheme (*SchemeFunc) (NMSetting8021x * setting);
-typedef const char *(*PathFunc) (NMSetting8021x * setting);
-typedef GBytes *(*BlobFunc) (NMSetting8021x * setting);
+typedef struct Setting8021xSchemeVtable {
+	const NMSetting8021xSchemeVtable *vtable;
+	const char *ifnet_key;
+} Setting8021xSchemeVtable;
 
-typedef struct ObjectType {
-	const char *setting_key;
-	SchemeFunc scheme_func;
-	PathFunc path_func;
-	BlobFunc blob_func;
-	const char *conn_name_key;
-	const char *suffix;
-} ObjectType;
-
-static const ObjectType ca_type = {
-	NM_SETTING_802_1X_CA_CERT,
-	nm_setting_802_1x_get_ca_cert_scheme,
-	nm_setting_802_1x_get_ca_cert_path,
-	nm_setting_802_1x_get_ca_cert_blob,
-	"ca_cert",
-	"ca-cert.der"
-};
-
-static const ObjectType phase2_ca_type = {
-	NM_SETTING_802_1X_PHASE2_CA_CERT,
-	nm_setting_802_1x_get_phase2_ca_cert_scheme,
-	nm_setting_802_1x_get_phase2_ca_cert_path,
-	nm_setting_802_1x_get_phase2_ca_cert_blob,
-	"ca_cert2",
-	"inner-ca-cert.der"
-};
-
-static const ObjectType client_type = {
-	NM_SETTING_802_1X_CLIENT_CERT,
-	nm_setting_802_1x_get_client_cert_scheme,
-	nm_setting_802_1x_get_client_cert_path,
-	nm_setting_802_1x_get_client_cert_blob,
-	"client_cert",
-	"client-cert.der"
-};
-
-static const ObjectType phase2_client_type = {
-	NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
-	nm_setting_802_1x_get_phase2_client_cert_scheme,
-	nm_setting_802_1x_get_phase2_client_cert_path,
-	nm_setting_802_1x_get_phase2_client_cert_blob,
-	"client_cert2",
-	"inner-client-cert.der"
-};
-
-static const ObjectType pk_type = {
-	NM_SETTING_802_1X_PRIVATE_KEY,
-	nm_setting_802_1x_get_private_key_scheme,
-	nm_setting_802_1x_get_private_key_path,
-	nm_setting_802_1x_get_private_key_blob,
-	"private_key",
-	"private-key.pem"
-};
-
-static const ObjectType phase2_pk_type = {
-	NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
-	nm_setting_802_1x_get_phase2_private_key_scheme,
-	nm_setting_802_1x_get_phase2_private_key_path,
-	nm_setting_802_1x_get_phase2_private_key_blob,
-	"private_key2",
-	"inner-private-key.pem"
-};
-
-static const ObjectType p12_type = {
-	NM_SETTING_802_1X_PRIVATE_KEY,
-	nm_setting_802_1x_get_private_key_scheme,
-	nm_setting_802_1x_get_private_key_path,
-	nm_setting_802_1x_get_private_key_blob,
-	"private_key",
-	"private-key.p12"
-};
-
-static const ObjectType phase2_p12_type = {
-	NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
-	nm_setting_802_1x_get_phase2_private_key_scheme,
-	nm_setting_802_1x_get_phase2_private_key_path,
-	nm_setting_802_1x_get_phase2_private_key_blob,
-	"private_key2",
-	"inner-private-key.p12"
+static const Setting8021xSchemeVtable setting_8021x_scheme_vtable[] = {
+	[NM_SETTING_802_1X_SCHEME_TYPE_CA_CERT] = {
+		.vtable                 = &nm_setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_CA_CERT],
+		.ifnet_key              = "ca_cert",
+	},
+	[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CA_CERT] = {
+		.vtable                 = &nm_setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CA_CERT],
+		.ifnet_key              = "ca_cert2",
+	},
+	[NM_SETTING_802_1X_SCHEME_TYPE_CLIENT_CERT] = {
+		.vtable                 = &nm_setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_CLIENT_CERT],
+		.ifnet_key              = "client_cert",
+	},
+	[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CLIENT_CERT] = {
+		.vtable                 = &nm_setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CLIENT_CERT],
+		.ifnet_key              = "client_cert2",
+	},
+	[NM_SETTING_802_1X_SCHEME_TYPE_PRIVATE_KEY] = {
+		.vtable                 = &nm_setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PRIVATE_KEY],
+		.ifnet_key              = "private_key",
+	},
+	[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_PRIVATE_KEY] = {
+		.vtable                 = &nm_setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_PRIVATE_KEY],
+		.ifnet_key              = "private_key2",
+	},
 };
 
 static gboolean
 write_object (NMSetting8021x *s_8021x,
               const char *conn_name,
               GBytes *override_data,
-              const ObjectType *objtype,
+              const Setting8021xSchemeVtable *objtype,
               GError **error)
 {
 	NMSetting8021xCKScheme scheme;
@@ -1792,13 +1739,13 @@ write_object (NMSetting8021x *s_8021x,
 		 */
 		blob = override_data;
 	else {
-		scheme = (*(objtype->scheme_func)) (s_8021x);
+		scheme = (*(objtype->vtable->scheme_func)) (s_8021x);
 		switch (scheme) {
 		case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-			blob = (*(objtype->blob_func)) (s_8021x);
+			blob = (*(objtype->vtable->blob_func)) (s_8021x);
 			break;
 		case NM_SETTING_802_1X_CK_SCHEME_PATH:
-			path = (*(objtype->path_func)) (s_8021x);
+			path = (*(objtype->vtable->path_func)) (s_8021x);
 			break;
 		default:
 			break;
@@ -1809,8 +1756,8 @@ write_object (NMSetting8021x *s_8021x,
 	 * may have been sent.
 	 */
 	if (path) {
-		wpa_set_data (conn_name, (gchar *) objtype->conn_name_key,
-			      (gchar *) path);
+		wpa_set_data (conn_name, (gchar *) objtype->ifnet_key,
+		              (gchar *) path);
 		return TRUE;
 	}
 
@@ -1828,17 +1775,16 @@ write_8021x_certs (NMSetting8021x *s_8021x,
                    GError **error)
 {
 	char *password = NULL;
-	const ObjectType *otype = NULL;
+	const Setting8021xSchemeVtable *otype = NULL;
 	gboolean is_pkcs12 = FALSE, success = FALSE;
 	GBytes *blob = NULL;
 	GBytes *enc_key = NULL;
 	gchar *generated_pw = NULL;
 
 	/* CA certificate */
-	if (phase2)
-		otype = &phase2_ca_type;
-	else
-		otype = &ca_type;
+	otype = phase2
+	        ? &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CA_CERT]
+	        : &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_CA_CERT];
 
 	if (!write_object (s_8021x, conn_name, NULL, otype, error))
 		return FALSE;
@@ -1864,14 +1810,13 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 		    nm_setting_802_1x_get_private_key_password (s_8021x);
 	}
 
-	if (is_pkcs12)
-		otype = phase2 ? &phase2_p12_type : &p12_type;
-	else
-		otype = phase2 ? &phase2_pk_type : &pk_type;
+	otype = phase2
+	        ? &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_PRIVATE_KEY]
+	        : &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PRIVATE_KEY];
 
-	if ((*(otype->scheme_func)) (s_8021x) ==
+	if ((*(otype->vtable->scheme_func)) (s_8021x) ==
 	    NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		blob = (*(otype->blob_func)) (s_8021x);
+		blob = (*(otype->vtable->blob_func)) (s_8021x);
 
 	/* Only do the private key re-encrypt dance if we got the raw key data, which
 	 * by definition will be unencrypted.  If we're given a direct path to the
@@ -1883,7 +1828,7 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 		/* Encrypt the unencrypted private key with the fake password */
 		tmp_enc_key =
 		    nm_utils_rsa_key_encrypt (g_bytes_get_data (blob, NULL), g_bytes_get_size (blob),
-					      password, &generated_pw, error);
+		                              password, &generated_pw, error);
 		if (!tmp_enc_key)
 			goto out;
 
@@ -1906,12 +1851,11 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 	/* Client certificate */
 	if (is_pkcs12) {
 		wpa_set_data (conn_name,
-			      phase2 ? "client_cert2" : "client_cert", NULL);
+		              phase2 ? "client_cert2" : "client_cert", NULL);
 	} else {
-		if (phase2)
-			otype = &phase2_client_type;
-		else
-			otype = &client_type;
+		otype = phase2
+		        ? &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CLIENT_CERT]
+		        : &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_CLIENT_CERT];
 
 		/* Save the client certificate */
 		if (!write_object (s_8021x, conn_name, NULL, otype, error))
