@@ -191,6 +191,7 @@ static void _hw_addr_set_scanning (NMDeviceWifi *self, gboolean do_reset);
 
 static void
 _ap_dump (NMDeviceWifi *self,
+          NMLogLevel log_level,
           const NMWifiAP *ap,
           const char *prefix,
           gint32 now_s)
@@ -198,9 +199,9 @@ _ap_dump (NMDeviceWifi *self,
 	char buf[1024];
 
 	buf[0] = '\0';
-	_LOGD (LOGD_WIFI_SCAN, "wifi-ap: %-7s %s",
-	       prefix,
-	       nm_wifi_ap_to_string (ap, buf, sizeof (buf), now_s));
+	_NMLOG (log_level, LOGD_WIFI_SCAN, "wifi-ap: %-7s %s",
+	        prefix,
+	        nm_wifi_ap_to_string (ap, buf, sizeof (buf), now_s));
 }
 
 static void
@@ -446,8 +447,11 @@ periodic_update (NMDeviceWifi *self)
 		/* Smooth out the strength to work around crappy drivers */
 		percent = nm_platform_wifi_get_quality (NM_PLATFORM_GET, ifindex);
 		if (percent >= 0 || ++priv->invalid_strength_counter > 3) {
-			if (nm_wifi_ap_set_strength (priv->current_ap, (gint8) percent))
-				_ap_dump (self, priv->current_ap, "updated", 0);
+			if (nm_wifi_ap_set_strength (priv->current_ap, (gint8) percent)) {
+#if NM_MORE_LOGGING
+				_ap_dump (self, LOGL_TRACE, priv->current_ap, "updated", 0);
+#endif
+			}
 			priv->invalid_strength_counter = 0;
 		}
 	}
@@ -480,9 +484,9 @@ ap_add_remove (NMDeviceWifi *self,
 		g_hash_table_insert (priv->aps,
 		                     (gpointer) nm_exported_object_export ((NMExportedObject *) ap),
 		                     g_object_ref (ap));
-		_ap_dump (self, ap, "added", 0);
+		_ap_dump (self, LOGL_DEBUG, ap, "added", 0);
 	} else
-		_ap_dump (self, ap, "removed", 0);
+		_ap_dump (self, LOGL_DEBUG, ap, "removed", 0);
 
 	g_signal_emit (self, signals[signum], 0, ap);
 
@@ -1587,7 +1591,7 @@ ap_list_dump (gpointer user_data)
 		       priv->scheduled_scan_time);
 		list = ap_list_get_sorted (self, TRUE);
 		for (i = 0; list[i]; i++)
-			_ap_dump (self, list[i], "dump", now_s);
+			_ap_dump (self, LOGL_DEBUG, list[i], "dump", now_s);
 	}
 	return G_SOURCE_REMOVE;
 }
@@ -1662,7 +1666,7 @@ supplicant_iface_bss_updated_cb (NMSupplicantInterface *iface,
 	if (found_ap) {
 		if (!nm_wifi_ap_update_from_properties (found_ap, object_path, properties))
 			return;
-		_ap_dump (self, found_ap, "updated", 0);
+		_ap_dump (self, LOGL_DEBUG, found_ap, "updated", 0);
 	} else {
 		gs_unref_object NMWifiAP *ap = NULL;
 
@@ -1725,7 +1729,7 @@ supplicant_iface_bss_removed_cb (NMSupplicantInterface *iface,
 		 * indicate that this AP is now unknown to the supplicant.
 		 */
 		if (nm_wifi_ap_set_fake (ap, TRUE))
-			_ap_dump (self, ap, "updated", 0);
+			_ap_dump (self, LOGL_DEBUG, ap, "updated", 0);
 	} else {
 		ap_add_remove (self, ACCESS_POINT_REMOVED, ap, TRUE);
 		schedule_ap_list_dump (self);
@@ -2518,7 +2522,7 @@ ensure_hotspot_frequency (NMDeviceWifi *self,
 		freq = (g_strcmp0 (band, "a") == 0) ? 5180 : 2462;
 
 	if (nm_wifi_ap_set_freq (ap, freq))
-		_ap_dump (self, ap, "updated", 0);
+		_ap_dump (self, LOGL_DEBUG, ap, "updated", 0);
 }
 
 static void
@@ -2890,7 +2894,7 @@ activation_success_handler (NMDevice *device)
 				ap_changed |= nm_wifi_ap_set_max_bitrate (priv->current_ap, nm_platform_wifi_get_rate (NM_PLATFORM_GET, ifindex));
 
 			if (ap_changed)
-				_ap_dump (self, priv->current_ap, "updated", 0);
+				_ap_dump (self, LOGL_DEBUG, priv->current_ap, "updated", 0);
 		}
 
 		nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req),
