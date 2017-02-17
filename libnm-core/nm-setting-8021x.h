@@ -77,28 +77,25 @@ typedef enum { /*< underscore_name=nm_setting_802_1x_ck_scheme >*/
 
 /**
  * NMSetting8021xAuthFlags
- * @NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_NONE: Enable all TLS versions
- * @NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_1_0: Disable TLSv1.0
- * @NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_1_1: Disable TLSv1.1
- * @NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_1_2: Disable TLSv1.2
- * @NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_ALL: Disable all TLS versions
- * @NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_DEFAULT: Use default value
+ * @NM_SETTING_802_1X_AUTH_FLAGS_NONE: No flags
+ * @NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_0_DISABLE: Disable TLSv1.0
+ * @NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_1_DISABLE: Disable TLSv1.1
+ * @NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_2_DISABLE: Disable TLSv1.2
+ * @NM_SETTING_802_1X_AUTH_FLAGS_ALL: All supported flags
  *
  * #NMSetting8021xAuthFlags values indicate which authentication settings
- * should be used
+ * should be used.
  *
  * Since: 1.8
  */
 typedef enum { /*< underscore_name=nm_setting_802_1x_auth_flags >*/
-	NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_NONE    = 0,
-	NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_1_0     = (1 << 1),
-	NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_1_1     = (1 << 2),
-	NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_1_2     = (1 << 3),
+	NM_SETTING_802_1X_AUTH_FLAGS_NONE                = 0,
+	NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_0_DISABLE     = (1 << 0),
+	NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_1_DISABLE     = (1 << 1),
+	NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_2_DISABLE     = (1 << 2),
 
-	_NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_LAST, /*< skip >*/
-	NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_ALL     = (((_NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_LAST - 1) << 1) - 1) - (1 << 0 /* DEFAULT */), /*< skip >*/
-
-	NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_DEFAULT = (1 << 0),
+	_NM_SETTING_802_1X_AUTH_FLAGS_LAST, /*< skip >*/
+	NM_SETTING_802_1X_AUTH_FLAGS_ALL                 = (((_NM_SETTING_802_1X_AUTH_FLAGS_LAST - 1) << 1) - 1),
 } NMSetting8021xAuthFlags;
 
 #define NM_TYPE_SETTING_802_1X            (nm_setting_802_1x_get_type ())

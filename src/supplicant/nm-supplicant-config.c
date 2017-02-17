@@ -984,19 +984,12 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	}
 
 	phase1_auth_flags = nm_setting_802_1x_get_phase1_auth_flags (setting);
-	if (phase1_auth_flags != NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_DEFAULT) {
-		if (phase1->len)
-			g_string_append_c (phase1, ' ');
-		g_string_append_printf (phase1, "tls_disable_tlsv1_0=%d",
-		                        (NM_FLAGS_HAS (phase1_auth_flags,
-		                                       NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_1_0)) ? 1 : 0);
-		g_string_append_printf (phase1, " tls_disable_tlsv1_1=%d",
-		                        (NM_FLAGS_HAS (phase1_auth_flags,
-		                                       NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_1_1)) ? 1 : 0);
-		g_string_append_printf (phase1, " tls_disable_tlsv1_2=%d",
-		                        (NM_FLAGS_HAS (phase1_auth_flags,
-		                                       NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_1_2)) ? 1 : 0);
-	}
+	if (NM_FLAGS_HAS (phase1_auth_flags, NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_0_DISABLE))
+		g_string_append_printf (phase1, "%stls_disable_tlsv1_0=1", (phase1->len ? " " : ""));
+	if (NM_FLAGS_HAS (phase1_auth_flags, NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_1_DISABLE))
+		g_string_append_printf (phase1, "%stls_disable_tlsv1_1=1", (phase1->len ? " " : ""));
+	if (NM_FLAGS_HAS (phase1_auth_flags, NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_2_DISABLE))
+		g_string_append_printf (phase1, "%stls_disable_tlsv1_2=1", (phase1->len ? " " : ""));
 
 	if (phase1->len) {
 		if (!add_string_val (self, phase1->str, "phase1", FALSE, NULL, error)) {

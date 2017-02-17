@@ -3262,12 +3262,11 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (NM_FLAGS_ANY (priv->phase1_auth_flags, NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_DEFAULT) &&
-	    !nm_utils_is_power_of_two (priv->phase1_auth_flags)) {
+	if (NM_FLAGS_ANY (priv->phase1_auth_flags, ~NM_SETTING_802_1X_AUTH_FLAGS_ALL)) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("exclusive flags are used"));
+		                     _("invalid auth flags"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_PHASE1_AUTH_FLAGS);
 		return FALSE;
 	}
@@ -4144,20 +4143,17 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 *
 	 * Specifies authentication flags to use in "phase 1" outer
 	 * authentication using #NMSetting8021xAuthFlags options.
-	 * May be any combination of %NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_1_0,
-	 * %NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_1_1,
-	 * %NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_1_2 or the special values
-	 * %NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_DEFAULT (to use default settings)
-	 * and %NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_NONE (to forcefully
-	 * enable use of all TLS versions). See the wpa_supplicant documentation for
-	 * more details.
+	 * The invidual TLS versions can be explicitly disabled. If a certain
+	 * TLS disable flag is not set, it is up to the supplicant to allow
+	 * or forbid it. The TLS options map to tls_disable_tlsv1_x settings.
+	 * See the wpa_supplicant documentation for more details.
 	 *
 	 * Since: 1.8
 	 */
 	g_object_class_install_property
 		(object_class, PROP_PHASE1_AUTH_FLAGS,
 		 g_param_spec_uint (NM_SETTING_802_1X_PHASE1_AUTH_FLAGS, "", "",
-		                    0, G_MAXUINT32, NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_DEFAULT,
+		                    0, G_MAXUINT32, NM_SETTING_802_1X_AUTH_FLAGS_NONE,
 		                    G_PARAM_CONSTRUCT |
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_STATIC_STRINGS));
