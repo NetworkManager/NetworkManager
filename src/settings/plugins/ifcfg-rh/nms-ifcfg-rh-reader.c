@@ -280,33 +280,34 @@ make_connection_setting (const char *file,
 static gboolean
 read_ip4_address (shvarFile *ifcfg,
                   const char *tag,
-                  char **out_addr,
+                  gboolean *out_has_key,
+                  guint32 *out_addr,
                   GError **error)
 {
-	char *value = NULL;
+	gs_free char *value_to_free = NULL;
+	const char *value;
+	guint32 a;
 
-	g_return_val_if_fail (ifcfg != NULL, FALSE);
-	g_return_val_if_fail (tag != NULL, FALSE);
-	g_return_val_if_fail (out_addr != NULL, FALSE);
-	g_return_val_if_fail (!error || !*error, FALSE);
+	nm_assert (ifcfg);
+	nm_assert (tag);
+	nm_assert (!error || !*error);
 
-	nm_assert (out_addr && !*out_addr);
-
-	*out_addr = NULL;
-
-	value = svGetValueString (ifcfg, tag);
-	if (!value)
+	value = svGetValue (ifcfg, tag, &value_to_free);
+	if (!value || !value[0]) {
+		NM_SET_OUT (out_has_key, FALSE);
+		NM_SET_OUT (out_addr, 0);
 		return TRUE;
+	}
 
-	if (nm_utils_ipaddr_valid (AF_INET, value)) {
-		*out_addr = value;
-		return TRUE;
-	} else {
+	if (inet_pton (AF_INET, value, &a) != 1) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Invalid %s IP4 address '%s'", tag, value);
-		g_free (value);
 		return FALSE;
 	}
+
+	NM_SET_OUT (out_has_key, TRUE);
+	NM_SET_OUT (out_addr, a);
+	return TRUE;
 }
 
 static void
@@ -376,10 +377,12 @@ read_full_ip4_address (shvarFile *ifcfg,
 {
 	char tag[256];
 	char prefix_tag[256];
-	gs_free char *ip = NULL;
+	guint32 ipaddr;
 	gs_free char *value = NULL;
 	int prefix = 0;
-	guint32 tmp;
+	gboolean has_key;
+	guint32 a;
+	char inet_buf[NM_UTILS_INET_ADDRSTRLEN];
 
 	g_return_val_if_fail (which >= -1, FALSE);
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
@@ -388,22 +391,24 @@ read_full_ip4_address (shvarFile *ifcfg,
 	g_return_val_if_fail (!error || !*error, FALSE);
 
 	/* IP address */
-	if (!read_ip4_address (ifcfg, numbered_tag (tag, "IPADDR", which), &ip, error))
+	if (!read_ip4_address (ifcfg,
+	                       numbered_tag (tag, "IPADDR", which),
+	                       &has_key, &ipaddr, error))
 		return FALSE;
-	if (!ip) {
-		if (base_addr)
-			ip = g_strdup (nm_ip_address_get_address (base_addr));
-		else
+	if (!has_key) {
+		if (!base_addr)
 			return TRUE;
+		nm_ip_address_get_address_binary (base_addr, &ipaddr);
 	}
 
 	/* Gateway */
 	if (out_gateway && !*out_gateway) {
-		char gw_tag[256];
-
-		numbered_tag (gw_tag, "GATEWAY", which);
-		if (!read_ip4_address (ifcfg, gw_tag, out_gateway, error))
+		if (!read_ip4_address (ifcfg,
+		                       numbered_tag (tag, "GATEWAY", which),
+		                       &has_key, &a, error))
 			return FALSE;
+		if (has_key)
+			*out_gateway = g_strdup (nm_utils_inet4_ntop (a, inet_buf));
 	}
 
 	/* Prefix */
@@ -418,30 +423,24 @@ read_full_ip4_address (shvarFile *ifcfg,
 		}
 	} else {
 		/* Fall back to NETMASK if no PREFIX was specified */
-		if (!read_ip4_address (ifcfg, numbered_tag (tag, "NETMASK", which), &value, error))
+		if (!read_ip4_address (ifcfg,
+		                       numbered_tag (tag, "NETMASK", which),
+		                       &has_key, &a, error))
 			return FALSE;
-		if (value) {
-			inet_pton (AF_INET, value, &tmp);
-			prefix = nm_utils_ip4_netmask_to_prefix (tmp);
-		} else {
+		if (has_key)
+			prefix = nm_utils_ip4_netmask_to_prefix (a);
+		else {
 			if (base_addr)
 				prefix = nm_ip_address_get_prefix (base_addr);
 			else {
 				/* Try to autodetermine the prefix for the address' class */
-				if (inet_pton (AF_INET, ip, &tmp) == 1) {
-					prefix = nm_utils_ip4_get_default_prefix (tmp);
-
-					PARSE_WARNING ("missing %s, assuming %s/%d", prefix_tag, ip, prefix);
-				} else {
-					g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-					             "Missing IP4 prefix");
-					return FALSE;
-				}
+				prefix = nm_utils_ip4_get_default_prefix (ipaddr);
+				PARSE_WARNING ("missing %s, assuming %s/%d", prefix_tag, nm_utils_inet4_ntop (ipaddr, inet_buf), prefix);
 			}
 		}
 	}
 
-	*out_address = nm_ip_address_new (AF_INET, ip, prefix, error);
+	*out_address = nm_ip_address_new_binary (AF_INET, &ipaddr, prefix, error);
 	if (*out_address)
 		return TRUE;
 
@@ -456,12 +455,14 @@ read_one_ip4_route (shvarFile *ifcfg,
                     GError **error)
 {
 	char tag[256];
-	char ip_tag[256];
 	char netmask_tag[256];
-	gs_free char *dest = NULL;
-	gs_free char *next_hop = NULL;
+	guint32 dest;
+	guint32 next_hop;
+	guint32 netmask;
+	gboolean has_key;
 	gs_free char *value = NULL;
 	gint64 prefix, metric;
+	char inet_buf[NM_UTILS_INET_ADDRSTRLEN];
 
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
 	g_return_val_if_fail (out_route != NULL, FALSE);
@@ -469,39 +470,33 @@ read_one_ip4_route (shvarFile *ifcfg,
 	g_return_val_if_fail (!error || !*error, FALSE);
 
 	/* Destination */
-	numbered_tag (ip_tag, "ADDRESS", which);
-	if (!read_ip4_address (ifcfg, ip_tag, &dest, error))
+	if (!read_ip4_address (ifcfg,
+	                       numbered_tag (tag, "ADDRESS", which),
+	                       &has_key, &dest, error))
 		return FALSE;
-	if (!dest) {
-		/* Check whether IP is missing or 0.0.0.0 */
-		char *val;
-
-		val = svGetValueString (ifcfg, ip_tag);
-		if (!val) {
-			*out_route = NULL;
-			/* missing route = success */
-			return TRUE;
-		}
-		g_free (val);
+	if (!has_key) {
+		/* missing route = success */
+		*out_route = NULL;
+		return TRUE;
 	}
 
 	/* Next hop */
-	if (!read_ip4_address (ifcfg, numbered_tag (tag, "GATEWAY", which), &next_hop, error))
+	if (!read_ip4_address (ifcfg,
+	                       numbered_tag (tag, "GATEWAY", which),
+	                       NULL, &next_hop, error))
 		return FALSE;
 	/* We don't make distinction between missing GATEWAY IP and 0.0.0.0 */
 
 	/* Prefix */
-	numbered_tag (netmask_tag, "NETMASK", which);
-	if (!read_ip4_address (ifcfg, netmask_tag, &value, error))
+	if (!read_ip4_address (ifcfg,
+	                       numbered_tag (netmask_tag, "NETMASK", which),
+	                       &has_key, &netmask, error))
 		return FALSE;
-	if (value) {
-		guint32 netmask;
-
-		inet_pton (AF_INET, value, &netmask);
+	if (has_key) {
 		prefix = nm_utils_ip4_netmask_to_prefix (netmask);
 		if (prefix == 0 || netmask != nm_utils_ip4_prefix_to_netmask (prefix)) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Invalid IP4 netmask '%s' \"%s\"", netmask_tag, nm_utils_inet4_ntop (netmask, NULL));
+			             "Invalid IP4 netmask '%s' \"%s\"", netmask_tag, nm_utils_inet4_ntop (netmask, inet_buf));
 			return FALSE;
 		}
 	} else {
@@ -523,7 +518,7 @@ read_one_ip4_route (shvarFile *ifcfg,
 	} else
 		metric = -1;
 
-	*out_route = nm_ip_route_new (AF_INET, dest, prefix, next_hop, metric, error);
+	*out_route = nm_ip_route_new_binary (AF_INET, &dest, prefix, &next_hop, metric, error);
 	if (*out_route)
 		return TRUE;
 
@@ -968,11 +963,14 @@ make_ip4_setting (shvarFile *ifcfg,
 	const char *dns_options = NULL;
 	gs_free char *gateway = NULL;
 	int i;
+	guint32 a;
+	gboolean has_key;
 	shvarFile *network_ifcfg;
 	shvarFile *route_ifcfg;
 	gboolean never_default;
 	gint64 timeout;
 	gint priority;
+	char inet_buf[NM_UTILS_INET_ADDRSTRLEN];
 
 	nm_assert (out_has_defroute && !*out_has_defroute);
 
@@ -1038,16 +1036,18 @@ make_ip4_setting (shvarFile *ifcfg,
 		              NULL);
 		/* 1 IP address is allowed for shared connections. Read it. */
 		if (is_any_ip4_address_defined (ifcfg, &idx)) {
+			guint32 gw;
 			NMIPAddress *addr = NULL;
 
 			if (!read_full_ip4_address (ifcfg, idx, NULL, &addr, NULL, error))
 				goto done;
-			if (!read_ip4_address (ifcfg, "GATEWAY", &gateway, error))
+			if (!read_ip4_address (ifcfg, "GATEWAY", NULL, &gw, error))
 				goto done;
 			(void) nm_setting_ip_config_add_address (s_ip4, addr);
 			nm_ip_address_unref (addr);
 			if (never_default)
 				PARSE_WARNING ("GATEWAY will be ignored when DEFROUTE is disabled");
+			gateway = g_strdup (nm_utils_inet4_ntop (gw, inet_buf));
 			g_object_set (s_ip4, NM_SETTING_IP_CONFIG_GATEWAY, gateway, NULL);
 		}
 		return NM_SETTING (s_ip4);
@@ -1129,16 +1129,17 @@ make_ip4_setting (shvarFile *ifcfg,
 		if (network_ifcfg) {
 			gboolean read_success;
 
-			read_success = read_ip4_address (network_ifcfg, "GATEWAY", &gateway, error);
+			read_success = read_ip4_address (network_ifcfg, "GATEWAY", &has_key, &a, error);
 			svCloseFile (network_ifcfg);
 			if (!read_success)
 				goto done;
-
-			if (gateway && nm_setting_ip_config_get_num_addresses (s_ip4) == 0) {
-				gs_free char *f = g_path_get_basename (svFileGetName (ifcfg));
-				PARSE_WARNING ("ignoring GATEWAY (/etc/sysconfig/network) for %s "
-				               "because the connection has no static addresses", f);
-				g_clear_pointer (&gateway, g_free);
+			if (has_key) {
+				if (nm_setting_ip_config_get_num_addresses (s_ip4) == 0) {
+					gs_free char *f = g_path_get_basename (svFileGetName (ifcfg));
+					PARSE_WARNING ("ignoring GATEWAY (/etc/sysconfig/network) for %s "
+					               "because the connection has no static addresses", f);
+				} else
+					gateway = g_strdup (nm_utils_inet4_ntop (a, inet_buf));
 			}
 		}
 	}
