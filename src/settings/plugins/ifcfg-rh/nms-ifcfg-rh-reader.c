@@ -1152,9 +1152,9 @@ make_ip4_setting (shvarFile *ifcfg,
 	 * Pick up just IPv4 addresses (IPv6 addresses are taken by make_ip6_setting())
 	 */
 	for (i = 1; i <= 10; i++) {
-		char *tag;
+		char tag[256];
 
-		tag = g_strdup_printf ("DNS%u", i);
+		numbered_tag (tag, "DNS", i);
 		value = svGetValueString (ifcfg, tag);
 		if (value) {
 			if (nm_utils_ipaddr_valid (AF_INET, value)) {
@@ -1164,15 +1164,12 @@ make_ip4_setting (shvarFile *ifcfg,
 				/* Ignore IPv6 addresses */
 			} else {
 				PARSE_WARNING ("invalid DNS server address %s", value);
-				g_free (tag);
 				g_free (value);
 				goto done;
 			}
 
 			g_free (value);
 		}
-
-		g_free (tag);
 	}
 
 	/* DNS searches */
@@ -1633,13 +1630,13 @@ make_ip6_setting (shvarFile *ifcfg,
 	 * Pick up just IPv6 addresses (IPv4 addresses are taken by make_ip4_setting())
 	 */
 	for (i = 1; i <= 10; i++) {
-		char *tag;
+		char tag[256];
 
-		tag = g_strdup_printf ("DNS%u", i);
+		numbered_tag (tag, "DNS", i);
 		value = svGetValueString (ifcfg, tag);
 		if (!value) {
-			g_free (tag);
-			break; /* all done */
+			/* all done */
+			break;
 		}
 
 		if (nm_utils_ipaddr_valid (AF_INET6, value)) {
@@ -1649,12 +1646,10 @@ make_ip6_setting (shvarFile *ifcfg,
 			/* Ignore IPv4 addresses */
 		} else {
 			PARSE_WARNING ("invalid DNS server address %s", value);
-			g_free (tag);
 			g_free (value);
 			goto error;
 		}
 
-		g_free (tag);
 		g_free (value);
 	}
 
@@ -3696,7 +3691,7 @@ wireless_connection_from_ifcfg (const char *file,
 		printable_ssid = nm_utils_ssid_to_utf8 (g_bytes_get_data (ssid, NULL),
 		                                        g_bytes_get_size (ssid));
 	} else
-		printable_ssid = g_strdup_printf ("unmanaged");
+		printable_ssid = g_strdup ("unmanaged");
 
 	mode = nm_setting_wireless_get_mode (NM_SETTING_WIRELESS (wireless_setting));
 	if (mode && !strcmp (mode, "adhoc"))
