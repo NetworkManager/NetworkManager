@@ -1581,24 +1581,38 @@ test_read_802_1x_ttls_eapgtc (void)
 }
 
 static void
-test_read_wired_aliases_good (void)
+test_read_wired_aliases_good (gconstpointer test_data)
 {
+	const int N = GPOINTER_TO_INT (test_data);
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
-	int expected_num_addresses = 4;
-	const char *expected_address[4] = { "192.168.1.5", "192.168.1.6", "192.168.1.9", "192.168.1.99" };
-	const char *expected_label[4] = { NULL, "aliasem0:1", "aliasem0:2", "aliasem0:99" };
+	int expected_num_addresses;
+	const char *expected_address_0[] = { "192.168.1.5", "192.168.1.6", "192.168.1.9", "192.168.1.99", NULL };
+	const char *expected_address_3[] = { "192.168.1.5", "192.168.1.6", NULL };
+	const char *expected_label_0[] = { NULL, "aliasem0:1", "aliasem0:2", "aliasem0:99", NULL, };
+	const char *expected_label_3[] = { NULL, "aliasem3:1", NULL, };
+	const char **expected_address;
+	const char **expected_label;
 	int i, j;
+	char path[256];
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-aliasem0",
-	                                    NULL, TYPE_ETHERNET, NULL);
+	expected_address = N == 0 ? expected_address_0 : expected_address_3;
+	expected_label   = N == 0 ? expected_label_0   : expected_label_3;
+	expected_num_addresses = g_strv_length ((char **) expected_address);
+
+	nm_sprintf_buf (path, TEST_IFCFG_DIR "/network-scripts/ifcfg-aliasem%d", N);
+
+	connection = _connection_from_file (path, NULL, TYPE_ETHERNET, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
-	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System aliasem0");
+	if (N == 0)
+		g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System aliasem0");
+	else
+		g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System aliasem3");
 
 	/* ===== IPv4 SETTING ===== */
 
@@ -1637,6 +1651,7 @@ test_read_wired_aliases_good (void)
 	}
 
 	/* Gateway */
+	g_assert (!nm_setting_ip_config_get_never_default (s_ip4));
 	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "192.168.1.1");
 
 	for (i = 0; i < expected_num_addresses; i++)
@@ -8913,7 +8928,8 @@ int main (int argc, char **argv)
 
 	g_test_add_func (TPATH "802-1x/subj-matches", test_read_write_802_1X_subj_matches);
 	g_test_add_func (TPATH "802-1x/ttls-eapgtc", test_read_802_1x_ttls_eapgtc);
-	g_test_add_func (TPATH "wired/read/aliases", test_read_wired_aliases_good);
+	g_test_add_data_func (TPATH "wired/read/aliases/good/0", GINT_TO_POINTER (0), test_read_wired_aliases_good);
+	g_test_add_data_func (TPATH "wired/read/aliases/good/3", GINT_TO_POINTER (3), test_read_wired_aliases_good);
 	g_test_add_func (TPATH "wired/read/aliases/bad1", test_read_wired_aliases_bad_1);
 	g_test_add_func (TPATH "wired/read/aliases/bad2", test_read_wired_aliases_bad_2);
 	g_test_add_func (TPATH "wifi/read/open", test_read_wifi_open);
