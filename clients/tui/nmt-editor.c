@@ -146,6 +146,15 @@ connection_added (GObject      *client,
 }
 
 static void
+page_saved (gpointer data, gpointer user_data)
+{
+	NmtEditorPage *page = data;
+
+	nmt_editor_page_saved (page);
+}
+
+
+static void
 save_connection_and_exit (NmtNewtButton *button,
                           gpointer       user_data)
 {
@@ -182,6 +191,9 @@ save_connection_and_exit (NmtNewtButton *button,
 			return;
 		}
 	}
+
+	/* Let the page know that it was saved. */
+	g_slist_foreach (priv->pages, page_saved, NULL);
 
 	nmt_newt_form_quit (NMT_NEWT_FORM (editor));
 }

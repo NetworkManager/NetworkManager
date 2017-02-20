@@ -112,6 +112,23 @@ nmt_editor_page_add_section (NmtEditorPage *page,
 	priv->sections = g_slist_append (priv->sections, g_object_ref_sink (section));
 }
 
+/**
+ * nmt_editor_page_saved:
+ * @page: the #NmtEditorPage
+ *
+ * This method is called when the user saves the connection. It gives
+ * the page a chance to do save its data outside the connections (such as
+ * recommit the slave connections).
+ */
+void
+nmt_editor_page_saved (NmtEditorPage *page)
+{
+	NmtEditorPageClass *editor_page_class = NMT_EDITOR_PAGE_GET_CLASS (page);
+
+	if (editor_page_class->saved)
+		editor_page_class->saved (page);
+}
+
 static void
 nmt_editor_page_set_property (GObject      *object,
                               guint         prop_id,
