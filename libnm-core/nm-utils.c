@@ -4249,24 +4249,13 @@ int _nm_utils_dns_option_find_idx (GPtrArray *array, const char *option)
 	return -1;
 }
 
-/**
- * nm_utils_enum_to_str:
- * @type: the %GType of the enum
- * @value: the value to be translated
- *
- * Converts an enum value to its string representation. If the enum is a
- * %G_TYPE_FLAGS the function returns a comma-separated list of matching values.
- * If the enum is a %G_TYPE_ENUM and the given value is not valid the
- * function returns %NULL.
- *
- * Returns: a newly allocated string or %NULL
- *
- * Since: 1.2
- */
-char *nm_utils_enum_to_str (GType type, int value)
+char *
+_nm_utils_enum_to_str_full (GType type, int value, const char *sep)
 {
 	GTypeClass *class;
 	char *ret;
+
+	g_return_val_if_fail (sep, NULL);
 
 	class = g_type_class_ref (type);
 
@@ -4286,7 +4275,7 @@ char *nm_utils_enum_to_str (GType type, int value)
 				break;
 
 			if (!first)
-				g_string_append (str, ", ");
+				g_string_append (str, sep);
 			g_string_append (str, flags_value->value_nick);
 
 			value &= ~flags_value->value;
@@ -4298,6 +4287,26 @@ char *nm_utils_enum_to_str (GType type, int value)
 
 	g_type_class_unref (class);
 	return ret;
+}
+
+/**
+ * nm_utils_enum_to_str:
+ * @type: the %GType of the enum
+ * @value: the value to be translated
+ *
+ * Converts an enum value to its string representation. If the enum is a
+ * %G_TYPE_FLAGS the function returns a comma-separated list of matching values.
+ * If the enum is a %G_TYPE_ENUM and the given value is not valid the
+ * function returns %NULL.
+ *
+ * Returns: a newly allocated string or %NULL
+ *
+ * Since: 1.2
+ */
+char *
+nm_utils_enum_to_str (GType type, int value)
+{
+	return _nm_utils_enum_to_str_full (type, value, ", ");
 }
 
 /**
