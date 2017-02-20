@@ -316,6 +316,33 @@ get_available_connection_name (const char *format,
 	return cname;
 }
 
+static char *
+get_available_iface_name (const char *try_name,
+                          NMClient   *client)
+{
+	const GPtrArray *connections;
+	NMConnection *connection;
+	char *new_name;
+	unsigned int num = 1;
+	int i = 0;
+	const char *ifname = NULL;
+
+	connections = nm_client_get_connections (client);
+
+	new_name = g_strdup (try_name);
+	while (i < connections->len) {
+		connection = NM_CONNECTION (connections->pdata[i]);
+		ifname = nm_connection_get_interface_name (connection);
+		if (g_strcmp0 (new_name, ifname) == 0) {
+			g_free (new_name);
+			new_name = g_strdup_printf ("%s%d", try_name, num++);
+			i = 0;
+		} else
+			i++;
+	}
+	return new_name;
+}
+
 /**
  * nm_editor_utils_create_connection:
  * @type: the type of the connection's primary #NMSetting
@@ -343,7 +370,7 @@ nm_editor_utils_create_connection (GType         type,
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSetting *s_hw, *s_slave;
-	char *uuid, *id;
+	char *uuid, *id, *ifname;
 	int i;
 
 	if (master) {
@@ -376,6 +403,15 @@ nm_editor_utils_create_connection (GType         type,
 	s_hw = g_object_new (type, NULL);
 	nm_connection_add_setting (connection, s_hw);
 
+	if (type == NM_TYPE_SETTING_BOND)
+		ifname = get_available_iface_name ("nm-bond", client);
+	else if (type == NM_TYPE_SETTING_TEAM)
+		ifname = get_available_iface_name ("nm-team", client);
+	else if (type == NM_TYPE_SETTING_BRIDGE)
+		ifname = get_available_iface_name ("nm-bridge", client);
+	else
+		ifname = NULL;
+
 	if (slave_setting_type != G_TYPE_INVALID) {
 		s_slave = g_object_new (slave_setting_type, NULL);
 		nm_connection_add_setting (connection, s_slave);
@@ -391,10 +427,12 @@ nm_editor_utils_create_connection (GType         type,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, !type_data->no_autoconnect,
 	              NM_SETTING_CONNECTION_MASTER, master_uuid,
 	              NM_SETTING_CONNECTION_SLAVE_TYPE, master_setting_type,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, ifname,
 	              NULL);
 
 	g_free (uuid);
 	g_free (id);
+	g_free (ifname);
 
 	if (type_data->connection_setup_func)
 		type_data->connection_setup_func (connection, s_con, s_hw);
