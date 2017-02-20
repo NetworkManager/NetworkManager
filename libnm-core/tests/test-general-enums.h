@@ -27,6 +27,8 @@ typedef enum {
 	NM_TEST_GENERAL_BOOL_ENUM_MAYBE    = 2,
 	NM_TEST_GENERAL_BOOL_ENUM_UNKNOWN  = 3,
 	NM_TEST_GENERAL_BOOL_ENUM_INVALID  = 4, /*< skip >*/
+	NM_TEST_GENERAL_BOOL_ENUM_67       = 67,
+	NM_TEST_GENERAL_BOOL_ENUM_46       = 64,
 } NMTestGeneralBoolEnum;
 
 typedef enum {
@@ -34,6 +36,8 @@ typedef enum {
 	NM_TEST_GENERAL_META_FLAGS_FOO     = (1 << 0),
 	NM_TEST_GENERAL_META_FLAGS_BAR     = (1 << 1),
 	NM_TEST_GENERAL_META_FLAGS_BAZ     = (1 << 2),
+	NM_TEST_GENERAL_META_FLAGS_0x8     = (1 << 3),
+	NM_TEST_GENERAL_META_FLAGS_0x4     = (1 << 4),
 } NMTestGeneralMetaFlags;
 
 typedef enum {  /*< flags >*/

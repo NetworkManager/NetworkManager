@@ -359,6 +359,7 @@ write_8021x_setting (NMConnection *connection,
                      GError **error)
 {
 	NMSetting8021x *s_8021x;
+	NMSetting8021xAuthFlags auth_flags;
 	const char *value, *match;
 	char *tmp = NULL;
 	gboolean success = FALSE;
@@ -448,6 +449,17 @@ write_8021x_setting (NMConnection *connection,
 		tmp = g_ascii_strup (value, -1);
 		g_string_append_printf (phase2_auth, "EAP-%s", tmp);
 		g_free (tmp);
+	}
+
+	auth_flags = nm_setting_802_1x_get_phase1_auth_flags (s_8021x);
+	if (auth_flags == NM_SETTING_802_1X_AUTH_FLAGS_NONE) {
+		svUnsetValue (ifcfg, "IEEE_8021X_PHASE1_AUTH_FLAGS");
+	} else {
+		gs_free char *flags_str = NULL;
+
+		flags_str = _nm_utils_enum_to_str_full (nm_setting_802_1x_auth_flags_get_type (),
+		                                        auth_flags, " ");
+		svSetValueString (ifcfg, "IEEE_8021X_PHASE1_AUTH_FLAGS", flags_str);
 	}
 
 	svSetValueString (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS",

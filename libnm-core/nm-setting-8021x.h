@@ -75,6 +75,28 @@ typedef enum { /*< underscore_name=nm_setting_802_1x_ck_scheme >*/
 	NM_SETTING_802_1X_CK_SCHEME_PKCS11,
 } NMSetting8021xCKScheme;
 
+/**
+ * NMSetting8021xAuthFlags
+ * @NM_SETTING_802_1X_AUTH_FLAGS_NONE: No flags
+ * @NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_0_DISABLE: Disable TLSv1.0
+ * @NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_1_DISABLE: Disable TLSv1.1
+ * @NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_2_DISABLE: Disable TLSv1.2
+ * @NM_SETTING_802_1X_AUTH_FLAGS_ALL: All supported flags
+ *
+ * #NMSetting8021xAuthFlags values indicate which authentication settings
+ * should be used.
+ *
+ * Since: 1.8
+ */
+typedef enum { /*< underscore_name=nm_setting_802_1x_auth_flags >*/
+	NM_SETTING_802_1X_AUTH_FLAGS_NONE                = 0,
+	NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_0_DISABLE     = (1 << 0),
+	NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_1_DISABLE     = (1 << 1),
+	NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_2_DISABLE     = (1 << 2),
+
+	_NM_SETTING_802_1X_AUTH_FLAGS_LAST, /*< skip >*/
+	NM_SETTING_802_1X_AUTH_FLAGS_ALL                 = (((_NM_SETTING_802_1X_AUTH_FLAGS_LAST - 1) << 1) - 1),
+} NMSetting8021xAuthFlags;
 
 #define NM_TYPE_SETTING_802_1X            (nm_setting_802_1x_get_type ())
 #define NM_SETTING_802_1X(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTING_802_1X, NMSetting8021x))
@@ -102,6 +124,7 @@ typedef enum { /*< underscore_name=nm_setting_802_1x_ck_scheme >*/
 #define NM_SETTING_802_1X_PHASE1_PEAPVER "phase1-peapver"
 #define NM_SETTING_802_1X_PHASE1_PEAPLABEL "phase1-peaplabel"
 #define NM_SETTING_802_1X_PHASE1_FAST_PROVISIONING "phase1-fast-provisioning"
+#define NM_SETTING_802_1X_PHASE1_AUTH_FLAGS "phase1-auth-flags"
 #define NM_SETTING_802_1X_PHASE2_AUTH "phase2-auth"
 #define NM_SETTING_802_1X_PHASE2_AUTHEAP "phase2-autheap"
 #define NM_SETTING_802_1X_PHASE2_CA_CERT "phase2-ca-cert"
@@ -331,6 +354,8 @@ NMSettingSecretFlags   nm_setting_802_1x_get_phase2_private_key_password_flags (
 
 NMSetting8021xCKFormat nm_setting_802_1x_get_phase2_private_key_format   (NMSetting8021x *setting);
 
+NM_AVAILABLE_IN_1_8
+NMSetting8021xAuthFlags nm_setting_802_1x_get_phase1_auth_flags        (NMSetting8021x *setting);
 
 G_END_DECLS
 
