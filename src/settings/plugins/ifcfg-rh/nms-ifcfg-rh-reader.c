@@ -969,6 +969,7 @@ make_proxy_setting (shvarFile *ifcfg, GError **error)
 static NMSetting *
 make_ip4_setting (shvarFile *ifcfg,
                   const char *network_file,
+                  gboolean *out_has_defroute,
                   GError **error)
 {
 	NMSettingIPConfig *s_ip4 = NULL;
@@ -978,12 +979,14 @@ make_ip4_setting (shvarFile *ifcfg,
 	gs_free char *dns_options_free = NULL;
 	const char *dns_options = NULL;
 	gs_free char *gateway = NULL;
-	gint32 i;
+	int i;
 	shvarFile *network_ifcfg;
 	shvarFile *route_ifcfg;
-	gboolean never_default = FALSE;
+	gboolean never_default;
 	gint64 timeout;
 	gint priority;
+
+	nm_assert (out_has_defroute && !*out_has_defroute);
 
 	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 
@@ -992,7 +995,13 @@ make_ip4_setting (shvarFile *ifcfg,
 	 * specified is DEFROUTE=yes which means that this connection can be used
 	 * as a default route
 	 */
-	never_default = !svGetValueBoolean (ifcfg, "DEFROUTE", TRUE);
+	i = svGetValueBoolean (ifcfg, "DEFROUTE", -1);
+	if (i == -1)
+		never_default = FALSE;
+	else {
+		never_default = !i;
+		*out_has_defroute = TRUE;
+	}
 
 	/* Then check if GATEWAYDEV; it's global and overrides DEFROUTE */
 	network_ifcfg = svOpenFile (network_file, NULL);
@@ -1275,7 +1284,7 @@ done:
 }
 
 static void
-read_aliases (NMSettingIPConfig *s_ip4, const char *filename)
+read_aliases (NMSettingIPConfig *s_ip4, gboolean read_defroute, const char *filename)
 {
 	GDir *dir;
 	char *dirname, *base;
@@ -1301,6 +1310,7 @@ read_aliases (NMSettingIPConfig *s_ip4, const char *filename)
 		gboolean ok;
 
 		while ((item = g_dir_read_name (dir))) {
+			gs_free char *gateway = NULL;
 			char *full_path, *device;
 			const char *p;
 
@@ -1347,20 +1357,38 @@ read_aliases (NMSettingIPConfig *s_ip4, const char *filename)
 			}
 
 			addr = NULL;
-			ok = read_full_ip4_address (parsed, -1, base_addr, &addr, NULL, &err);
-			svCloseFile (parsed);
+			ok = read_full_ip4_address (parsed, -1, base_addr, &addr,
+			                            read_defroute ? &gateway : NULL,
+			                            &err);
 			if (ok) {
 				nm_ip_address_set_attribute (addr, "label", g_variant_new_string (device));
 				if (!nm_setting_ip_config_add_address (s_ip4, addr))
 					PARSE_WARNING ("duplicate IP4 address in alias file %s", item);
 				if (nm_streq0 (nm_setting_ip_config_get_method (s_ip4), NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
 					g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL, NULL);
+				if (read_defroute) {
+					int i;
+
+					if (gateway) {
+						g_object_set (s_ip4, NM_SETTING_IP_CONFIG_GATEWAY, gateway, NULL);
+						read_defroute = FALSE;
+					}
+					i = svGetValueBoolean (parsed, "DEFROUTE", -1);
+					if (i != -1) {
+						g_object_set (s_ip4,
+						              NM_SETTING_IP_CONFIG_NEVER_DEFAULT, (gboolean) !i,
+						              NULL);
+						read_defroute = FALSE;
+					}
+				}
 			} else {
 				PARSE_WARNING ("error reading IP4 address from alias file '%s': %s",
 				               full_path, err ? err->message : "no address");
 				g_clear_error (&err);
 			}
 			nm_ip_address_unref (addr);
+
+			svCloseFile (parsed);
 
 			g_free (device);
 			g_free (full_path);
@@ -5063,6 +5091,7 @@ connection_from_file_full (const char *filename,
 	char *devtype, *bootproto;
 	NMSetting *s_ip4, *s_ip6, *s_proxy, *s_port, *s_dcb = NULL;
 	const char *ifcfg_name = NULL;
+	gboolean has_ip4_defroute = FALSE;
 
 	g_return_val_if_fail (filename != NULL, NULL);
 	g_return_val_if_fail (out_unhandled && !*out_unhandled, NULL);
@@ -5262,13 +5291,15 @@ connection_from_file_full (const char *filename,
 	} else
 		nm_connection_add_setting (connection, s_ip6);
 
-	s_ip4 = make_ip4_setting (parsed, network_file, error);
+	s_ip4 = make_ip4_setting (parsed, network_file, &has_ip4_defroute, error);
 	if (!s_ip4) {
 		g_object_unref (connection);
 		connection = NULL;
 		goto done;
 	} else {
-		read_aliases (NM_SETTING_IP_CONFIG (s_ip4), filename);
+		read_aliases (NM_SETTING_IP_CONFIG (s_ip4),
+		              !has_ip4_defroute && !nm_setting_ip_config_get_gateway (NM_SETTING_IP_CONFIG (s_ip4)),
+		              filename);
 		nm_connection_add_setting (connection, s_ip4);
 	}
 

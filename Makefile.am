@@ -2064,6 +2064,8 @@ src_settings_plugins_ifcfg_rh_tests_network_scripts_alias_files = \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem1:1 \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem2 \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem2:1
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem3 \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem3:1
 
 dist-hook-settings-ifcfg-rh-alias-files:
 	@for f in $(src_settings_plugins_ifcfg_rh_tests_network_scripts_alias_files); do \
