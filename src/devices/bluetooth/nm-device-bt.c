@@ -1174,6 +1174,7 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 	device_class->complete_connection = complete_connection;
 	device_class->is_available = is_available;
 	device_class->component_added = component_added;
+	device_class->get_configured_mtu = nm_modem_get_configured_mtu;
 
 	device_class->state_changed = device_state_changed;
 

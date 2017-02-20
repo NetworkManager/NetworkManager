@@ -44,6 +44,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_CDMA_USERNAME       "username"
 #define NM_SETTING_CDMA_PASSWORD       "password"
 #define NM_SETTING_CDMA_PASSWORD_FLAGS "password-flags"
+#define NM_SETTING_CDMA_MTU            "mtu"
 
 /**
  * NMSettingCdma:
@@ -66,6 +67,9 @@ const char *nm_setting_cdma_get_number   (NMSettingCdma *setting);
 const char *nm_setting_cdma_get_username (NMSettingCdma *setting);
 const char *nm_setting_cdma_get_password (NMSettingCdma *setting);
 NMSettingSecretFlags nm_setting_cdma_get_password_flags (NMSettingCdma *setting);
+
+NM_AVAILABLE_IN_1_8
+guint32 nm_setting_cdma_get_mtu          (NMSettingCdma *setting);
 
 G_END_DECLS
 

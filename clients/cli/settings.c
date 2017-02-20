@@ -490,6 +490,7 @@ NmcOutputField nmc_fields_setting_gsm[] = {
 	SETTING_FIELD (NM_SETTING_GSM_DEVICE_ID),       /* 10 */
 	SETTING_FIELD (NM_SETTING_GSM_SIM_ID),          /* 11 */
 	SETTING_FIELD (NM_SETTING_GSM_SIM_OPERATOR_ID), /* 12 */
+	SETTING_FIELD (NM_SETTING_GSM_MTU),             /* 13 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_GSM_ALL     "name"","\
@@ -504,7 +505,8 @@ NmcOutputField nmc_fields_setting_gsm[] = {
                                        NM_SETTING_GSM_HOME_ONLY","\
                                        NM_SETTING_GSM_DEVICE_ID","\
                                        NM_SETTING_GSM_SIM_ID","\
-                                       NM_SETTING_GSM_SIM_OPERATOR_ID
+                                       NM_SETTING_GSM_SIM_OPERATOR_ID","\
+                                       NM_SETTING_GSM_MTU
 
 /* Available fields for NM_SETTING_CDMA_SETTING_NAME */
 NmcOutputField nmc_fields_setting_cdma[] = {
@@ -513,13 +515,15 @@ NmcOutputField nmc_fields_setting_cdma[] = {
 	SETTING_FIELD (NM_SETTING_CDMA_USERNAME),        /* 2 */
 	SETTING_FIELD (NM_SETTING_CDMA_PASSWORD),        /* 3 */
 	SETTING_FIELD (NM_SETTING_CDMA_PASSWORD_FLAGS),  /* 4 */
+	SETTING_FIELD (NM_SETTING_CDMA_MTU),             /* 5 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_CDMA_ALL     "name"","\
                                         NM_SETTING_CDMA_NUMBER","\
                                         NM_SETTING_CDMA_USERNAME","\
                                         NM_SETTING_CDMA_PASSWORD","\
-                                        NM_SETTING_CDMA_PASSWORD_FLAGS
+                                        NM_SETTING_CDMA_PASSWORD_FLAGS","\
+                                        NM_SETTING_CDMA_MTU
 
 /* Available fields for NM_SETTING_BLUETOOTH_SETTING_NAME */
 NmcOutputField nmc_fields_setting_bluetooth[] = {
@@ -2382,6 +2386,7 @@ DEFINE_GETTER (nmc_property_bridge_port_get_hairpin_mode, NM_SETTING_BRIDGE_PORT
 DEFINE_GETTER (nmc_property_cdma_get_number, NM_SETTING_CDMA_NUMBER)
 DEFINE_GETTER (nmc_property_cdma_get_username, NM_SETTING_CDMA_USERNAME)
 DEFINE_GETTER (nmc_property_cdma_get_password, NM_SETTING_CDMA_PASSWORD)
+DEFINE_GETTER (nmc_property_cdma_get_mtu, NM_SETTING_CDMA_MTU)
 
 DEFINE_SECRET_FLAGS_GETTER (nmc_property_cdma_get_password_flags, NM_SETTING_CDMA_PASSWORD_FLAGS)
 
@@ -3218,6 +3223,7 @@ DEFINE_GETTER (nmc_property_gsm_get_home_only, NM_SETTING_GSM_HOME_ONLY)
 DEFINE_GETTER (nmc_property_gsm_get_device_id, NM_SETTING_GSM_DEVICE_ID)
 DEFINE_GETTER (nmc_property_gsm_get_sim_id, NM_SETTING_GSM_SIM_ID)
 DEFINE_GETTER (nmc_property_gsm_get_sim_operator_id, NM_SETTING_GSM_SIM_OPERATOR_ID)
+DEFINE_GETTER (nmc_property_gsm_get_mtu, NM_SETTING_GSM_MTU)
 
 static gboolean
 nmc_property_gsm_set_sim_operator_id (NMSetting *setting, const char *prop, const char *val, GError **error)
@@ -6600,6 +6606,13 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL);
+	nmc_add_prop_funcs (GLUE (CDMA, MTU),
+	                    nmc_property_cdma_get_mtu,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
 
 	/* Add editable properties for NM_SETTING_CONNECTION_SETTING_NAME */
 	nmc_add_prop_funcs (GLUE (CONNECTION, ID),
@@ -6924,6 +6937,13 @@ nmc_properties_init (void)
 	nmc_add_prop_funcs (GLUE (GSM, SIM_OPERATOR_ID),
 	                    nmc_property_gsm_get_sim_operator_id,
 	                    nmc_property_gsm_set_sim_operator_id,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (GSM, MTU),
+	                    nmc_property_gsm_get_mtu,
+	                    nmc_property_set_uint,
 	                    NULL,
 	                    NULL,
 	                    NULL,
@@ -9006,6 +9026,7 @@ setting_gsm_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboo
 	set_val_str (arr, 10, nmc_property_gsm_get_device_id (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 11, nmc_property_gsm_get_sim_id (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 12, nmc_property_gsm_get_sim_operator_id (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 13, nmc_property_gsm_get_mtu (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -9035,6 +9056,7 @@ setting_cdma_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gbo
 	set_val_str (arr, 2, nmc_property_cdma_get_username (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 3, GET_SECRET (secrets, setting, nmc_property_cdma_get_password));
 	set_val_str (arr, 4, nmc_property_cdma_get_password_flags (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 5, nmc_property_cdma_get_mtu (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */

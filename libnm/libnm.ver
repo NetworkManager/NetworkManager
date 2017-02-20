@@ -1154,4 +1154,6 @@ global:
 	nm_setting_802_1x_get_phase2_ca_cert_password_flags;
 	nm_setting_802_1x_get_phase2_client_cert_password;
 	nm_setting_802_1x_get_phase2_client_cert_password_flags;
+	nm_setting_cdma_get_mtu;
+	nm_setting_gsm_get_mtu;
 } libnm_1_6_0;
