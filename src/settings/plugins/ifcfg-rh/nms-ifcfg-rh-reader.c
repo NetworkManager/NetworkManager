@@ -290,6 +290,8 @@ read_ip4_address (shvarFile *ifcfg,
 	g_return_val_if_fail (out_addr != NULL, FALSE);
 	g_return_val_if_fail (!error || !*error, FALSE);
 
+	nm_assert (out_addr && !*out_addr);
+
 	*out_addr = NULL;
 
 	value = svGetValueString (ifcfg, tag);
@@ -307,13 +309,29 @@ read_ip4_address (shvarFile *ifcfg,
 	}
 }
 
-static char *
-get_numbered_tag (char *tag_name, int which)
+static void
+_numbered_tag (char *buf, gsize buf_len, const char *tag_name, int which)
 {
-	if (which == -1)
-		return g_strdup (tag_name);
-	return g_strdup_printf ("%s%u", tag_name, which);
+	gsize l;
+
+	l = g_strlcpy (buf, tag_name, buf_len);
+	nm_assert (l < buf_len);
+	if (which != -1) {
+		buf_len -= l;
+		l = g_snprintf (&buf[l], buf_len, "%d", which);
+		nm_assert (l < buf_len);
+	}
 }
+#define numbered_tag(buf, tag_name, which) \
+	({ \
+		_nm_unused char *const _buf = (buf); \
+		\
+		/* some static assert trying to ensure that the buffer is statically allocated.
+		 * It disallows a buffer size of sizeof(gpointer) to catch that. */ \
+		G_STATIC_ASSERT (G_N_ELEMENTS (buf) == sizeof (buf) && sizeof (buf) != sizeof (char *) && sizeof (buf) < G_MAXINT); \
+		_numbered_tag (buf, sizeof (buf), ""tag_name"", (which)); \
+		buf; \
+	})
 
 static gboolean
 is_any_ip4_address_defined (shvarFile *ifcfg, int *idx)
@@ -323,32 +341,23 @@ is_any_ip4_address_defined (shvarFile *ifcfg, int *idx)
 	ret_idx = idx ? idx : &ignore;
 
 	for (i = -1; i <= 2; i++) {
-		char *tag;
-		char *value;
+		char tag[256];
+		gs_free char *value = NULL;
 
-		tag = get_numbered_tag ("IPADDR", i);
-		value = svGetValueString (ifcfg, tag);
-		g_free (tag);
+		value = svGetValueString (ifcfg, numbered_tag (tag, "IPADDR", i));
 		if (value) {
-			g_free (value);
 			*ret_idx = i;
 			return TRUE;
 		}
 
-		tag = get_numbered_tag ("PREFIX", i);
-		value = svGetValueString (ifcfg, tag);
-		g_free(tag);
+		value = svGetValueString (ifcfg, numbered_tag (tag, "PREFIX", i));
 		if (value) {
-			g_free (value);
 			*ret_idx = i;
 			return TRUE;
 		}
 
-		tag = get_numbered_tag ("NETMASK", i);
-		value = svGetValueString (ifcfg, tag);
-		g_free(tag);
+		value = svGetValueString (ifcfg, numbered_tag (tag, "NETMASK", i));
 		if (value) {
-			g_free (value);
 			*ret_idx = i;
 			return TRUE;
 		}
@@ -365,11 +374,11 @@ read_full_ip4_address (shvarFile *ifcfg,
                        char **out_gateway,
                        GError **error)
 {
-	char *ip_tag, *prefix_tag, *netmask_tag, *gw_tag;
-	char *ip = NULL;
+	char tag[256];
+	char prefix_tag[256];
+	gs_free char *ip = NULL;
+	gs_free char *value = NULL;
 	int prefix = 0;
-	gboolean success = FALSE;
-	char *value;
 	guint32 tmp;
 
 	g_return_val_if_fail (which >= -1, FALSE);
@@ -378,48 +387,42 @@ read_full_ip4_address (shvarFile *ifcfg,
 	g_return_val_if_fail (*out_address == NULL, FALSE);
 	g_return_val_if_fail (!error || !*error, FALSE);
 
-	ip_tag = get_numbered_tag ("IPADDR", which);
-	prefix_tag = get_numbered_tag ("PREFIX", which);
-	netmask_tag = get_numbered_tag ("NETMASK", which);
-	gw_tag = get_numbered_tag ("GATEWAY", which);
-
 	/* IP address */
-	if (!read_ip4_address (ifcfg, ip_tag, &ip, error))
-		goto done;
+	if (!read_ip4_address (ifcfg, numbered_tag (tag, "IPADDR", which), &ip, error))
+		return FALSE;
 	if (!ip) {
 		if (base_addr)
 			ip = g_strdup (nm_ip_address_get_address (base_addr));
-		else {
-			success = TRUE;
-			goto done;
-		}
+		else
+			return TRUE;
 	}
 
 	/* Gateway */
 	if (out_gateway && !*out_gateway) {
+		char gw_tag[256];
+
+		numbered_tag (gw_tag, "GATEWAY", which);
 		if (!read_ip4_address (ifcfg, gw_tag, out_gateway, error))
-			goto done;
+			return FALSE;
 	}
 
 	/* Prefix */
+	numbered_tag (prefix_tag, "PREFIX", which);
 	value = svGetValueString (ifcfg, prefix_tag);
 	if (value) {
 		prefix = _nm_utils_ascii_str_to_int64 (value, 10, 0, 32, -1);
 		if (prefix < 0) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid IP4 prefix '%s'", value);
-			g_free (value);
-			goto done;
+			return FALSE;
 		}
-		g_free (value);
 	} else {
 		/* Fall back to NETMASK if no PREFIX was specified */
-		if (!read_ip4_address (ifcfg, netmask_tag, &value, error))
-			goto done;
+		if (!read_ip4_address (ifcfg, numbered_tag (tag, "NETMASK", which), &value, error))
+			return FALSE;
 		if (value) {
 			inet_pton (AF_INET, value, &tmp);
 			prefix = nm_utils_ip4_netmask_to_prefix (tmp);
-			g_free (value);
 		} else {
 			if (base_addr)
 				prefix = nm_ip_address_get_prefix (base_addr);
@@ -432,7 +435,7 @@ read_full_ip4_address (shvarFile *ifcfg,
 				} else {
 					g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 					             "Missing IP4 prefix");
-					goto done;
+					return FALSE;
 				}
 			}
 		}
@@ -440,16 +443,9 @@ read_full_ip4_address (shvarFile *ifcfg,
 
 	*out_address = nm_ip_address_new (AF_INET, ip, prefix, error);
 	if (*out_address)
-		success = TRUE;
+		return TRUE;
 
-done:
-	g_free (ip);
-	g_free (ip_tag);
-	g_free (prefix_tag);
-	g_free (netmask_tag);
-	g_free (gw_tag);
-
-	return success;
+	return FALSE;
 }
 
 /* Returns TRUE on missing route or valid route */
@@ -459,87 +455,79 @@ read_one_ip4_route (shvarFile *ifcfg,
                     NMIPRoute **out_route,
                     GError **error)
 {
-	char *ip_tag, *netmask_tag, *gw_tag, *metric_tag, *value;
-	char *dest = NULL, *next_hop = NULL;
+	char tag[256];
+	char ip_tag[256];
+	char netmask_tag[256];
+	gs_free char *dest = NULL;
+	gs_free char *next_hop = NULL;
+	gs_free char *value = NULL;
 	gint64 prefix, metric;
-	gboolean success = FALSE;
 
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
 	g_return_val_if_fail (out_route != NULL, FALSE);
 	g_return_val_if_fail (*out_route == NULL, FALSE);
 	g_return_val_if_fail (!error || !*error, FALSE);
 
-	ip_tag = g_strdup_printf ("ADDRESS%u", which);
-	netmask_tag = g_strdup_printf ("NETMASK%u", which);
-	gw_tag = g_strdup_printf ("GATEWAY%u", which);
-	metric_tag = g_strdup_printf ("METRIC%u", which);
-
 	/* Destination */
+	numbered_tag (ip_tag, "ADDRESS", which);
 	if (!read_ip4_address (ifcfg, ip_tag, &dest, error))
-		goto out;
+		return FALSE;
 	if (!dest) {
 		/* Check whether IP is missing or 0.0.0.0 */
 		char *val;
+
 		val = svGetValueString (ifcfg, ip_tag);
 		if (!val) {
 			*out_route = NULL;
-			success = TRUE;  /* missing route = success */
-			goto out;
+			/* missing route = success */
+			return TRUE;
 		}
 		g_free (val);
 	}
 
 	/* Next hop */
-	if (!read_ip4_address (ifcfg, gw_tag, &next_hop, error))
-		goto out;
+	if (!read_ip4_address (ifcfg, numbered_tag (tag, "GATEWAY", which), &next_hop, error))
+		return FALSE;
 	/* We don't make distinction between missing GATEWAY IP and 0.0.0.0 */
 
 	/* Prefix */
+	numbered_tag (netmask_tag, "NETMASK", which);
 	if (!read_ip4_address (ifcfg, netmask_tag, &value, error))
-		goto out;
+		return FALSE;
 	if (value) {
 		guint32 netmask;
 
 		inet_pton (AF_INET, value, &netmask);
 		prefix = nm_utils_ip4_netmask_to_prefix (netmask);
-		g_free (value);
 		if (prefix == 0 || netmask != nm_utils_ip4_prefix_to_netmask (prefix)) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid IP4 netmask '%s' \"%s\"", netmask_tag, nm_utils_inet4_ntop (netmask, NULL));
-			goto out;
+			return FALSE;
 		}
 	} else {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Missing IP4 route element '%s'", netmask_tag);
-		goto out;
+		return FALSE;
 	}
 
 	/* Metric */
-	value = svGetValueString (ifcfg, metric_tag);
+	nm_clear_g_free (&value);
+	value = svGetValueString (ifcfg, numbered_tag (tag, "METRIC", which));
 	if (value) {
 		metric = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT32, -1);
 		if (metric < 0) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid IP4 route metric '%s'", value);
-			g_free (value);
-			goto out;
+			return FALSE;
 		}
-		g_free (value);
 	} else
 		metric = -1;
 
 	*out_route = nm_ip_route_new (AF_INET, dest, prefix, next_hop, metric, error);
 	if (*out_route)
-		success = TRUE;
+		return TRUE;
 
-out:
-	g_free (dest);
-	g_free (next_hop);
-	g_free (ip_tag);
-	g_free (netmask_tag);
-	g_free (gw_tag);
-	g_free (metric_tag);
-	return success;
+	return FALSE;
 }
 
 static gboolean
