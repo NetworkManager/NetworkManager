@@ -4249,13 +4249,45 @@ int _nm_utils_dns_option_find_idx (GPtrArray *array, const char *option)
 	return -1;
 }
 
+#define IS_FLAGS_SEPARATOR(ch)  (NM_IN_SET ((ch), ' ', '\t', ',', '\n', '\r'))
+
+static gboolean
+_is_hex_string (const char *str)
+{
+	return    str[0] == '0'
+	       && str[1] == 'x'
+	       && str[2]
+	       && NM_STRCHAR_ALL (&str[2], ch, g_ascii_isxdigit (ch));
+}
+
+static gboolean
+_enum_is_valid_enum_nick (const char *str)
+{
+	return    str[0]
+	       && !NM_STRCHAR_ANY (str, ch, g_ascii_isspace (ch))
+	       && !NM_STRCHAR_ALL (str, ch, g_ascii_isdigit (ch));
+}
+
+static gboolean
+_enum_is_valid_flags_nick (const char *str)
+{
+	return    str[0]
+	       && !NM_STRCHAR_ANY (str, ch, IS_FLAGS_SEPARATOR (ch))
+	       && !_is_hex_string (str);
+}
+
 char *
-_nm_utils_enum_to_str_full (GType type, int value, const char *sep)
+_nm_utils_enum_to_str_full (GType type,
+                            int value,
+                            const char *flags_separator)
 {
 	GTypeClass *class;
 	char *ret;
 
-	g_return_val_if_fail (sep, NULL);
+	if (   flags_separator
+	    && (   !flags_separator[0]
+	        || NM_STRCHAR_ANY (flags_separator, ch, !IS_FLAGS_SEPARATOR (ch))))
+		g_return_val_if_reached (NULL);
 
 	class = g_type_class_ref (type);
 
@@ -4263,23 +4295,28 @@ _nm_utils_enum_to_str_full (GType type, int value, const char *sep)
 		GEnumValue *enum_value;
 
 		enum_value = g_enum_get_value (G_ENUM_CLASS (class), value);
-		ret = enum_value ? strdup (enum_value->value_nick) : NULL;
+		if (   !enum_value
+		    || !_enum_is_valid_enum_nick (enum_value->value_nick))
+			ret = g_strdup_printf ("%d", value);
+		else
+			ret = strdup (enum_value->value_nick);
 	} else if (G_IS_FLAGS_CLASS (class)) {
 		GFlagsValue *flags_value;
 		GString *str = g_string_new ("");
-		gboolean first = TRUE;
+
+		flags_separator = flags_separator ?: " ";
 
 		while (value) {
 			flags_value = g_flags_get_first_value (G_FLAGS_CLASS (class), value);
-			if (!flags_value)
+			if (str->len)
+				g_string_append (str, flags_separator);
+			if (   !flags_value
+			    || !_enum_is_valid_flags_nick (flags_value->value_nick)) {
+				g_string_append_printf (str, "0x%x", (unsigned) value);
 				break;
-
-			if (!first)
-				g_string_append (str, sep);
+			}
 			g_string_append (str, flags_value->value_nick);
-
 			value &= ~flags_value->value;
-			first = FALSE;
 		}
 		ret = g_string_free (str, FALSE);
 	} else
@@ -4327,55 +4364,83 @@ nm_utils_enum_to_str (GType type, int value)
  *
  * Since: 1.2
  */
-gboolean nm_utils_enum_from_str (GType type, const char *str,
-                                 int *out_value, char **err_token)
+gboolean
+nm_utils_enum_from_str (GType type, const char *str,
+                        int *out_value, char **err_token)
 {
 	GTypeClass *class;
 	gboolean ret = FALSE;
 	int value = 0;
-	gs_free char *stripped = NULL;
+	gs_free char *str_clone = NULL;
+	char *s;
+	gint64 v64;
 
 	g_return_val_if_fail (str, FALSE);
-	stripped = g_strstrip (strdup (str));
+
+	str_clone = strdup (str);
+	s = nm_str_skip_leading_spaces (str_clone);
+	g_strchomp (s);
+
 	class = g_type_class_ref (type);
 
 	if (G_IS_ENUM_CLASS (class)) {
 		GEnumValue *enum_value;
 
-		enum_value = g_enum_get_value_by_nick (G_ENUM_CLASS (class), stripped);
-		if (enum_value) {
-			value = enum_value->value;
-			ret = TRUE;
+		if (s[0]) {
+			if (NM_STRCHAR_ALL (s, ch, g_ascii_isdigit (ch))) {
+				v64 = _nm_utils_ascii_str_to_int64 (s, 10, 0, G_MAXINT, -1);
+				if (v64 != -1) {
+					value = (int) v64;
+					ret = TRUE;
+				}
+			} else {
+				enum_value = g_enum_get_value_by_nick (G_ENUM_CLASS (class), s);
+				if (enum_value) {
+					value = enum_value->value;
+					ret = TRUE;
+				}
+			}
 		}
 	} else if (G_IS_FLAGS_CLASS (class)) {
 		GFlagsValue *flags_value;
-		gs_strfreev char **strv = NULL;
-		int i;
 
-		strv = g_strsplit_set (stripped, " \t,", 0);
-		for (i = 0; strv[i]; i++) {
-			if (!strv[i][0])
-				continue;
+		ret = TRUE;
+		while (s[0]) {
+			char *s_end;
 
-			flags_value = g_flags_get_value_by_nick (G_FLAGS_CLASS (class), strv[i]);
-			if (!flags_value)
-				break;
+			for (s_end = s; s_end[0]; s_end++) {
+				if (IS_FLAGS_SEPARATOR (s_end[0])) {
+					s_end[0] = '\0';
+					s_end++;
+					break;
+				}
+			}
 
-			value |= flags_value->value;
+			if (s[0]) {
+				if (_is_hex_string (s)) {
+					v64 = _nm_utils_ascii_str_to_int64 (&s[2], 16, 0, G_MAXUINT, -1);
+					if (v64 == -1) {
+						ret = FALSE;
+						break;
+					}
+					value |= (int) v64;
+				} else {
+					flags_value = g_flags_get_value_by_nick (G_FLAGS_CLASS (class), s);
+					if (!flags_value) {
+						ret = FALSE;
+						break;
+					}
+					value |= flags_value->value;
+				}
+			}
+
+			s = s_end;
 		}
-
-		if (strv[i]) {
-			if (err_token)
-				*err_token = strdup (strv[i]);
-			value = 0;
-		} else
-			ret = TRUE;
 	} else
 		g_return_val_if_reached (FALSE);
 
-	if (out_value)
-		*out_value = value;
-
+	NM_SET_OUT (err_token, !ret && s[0] ? g_strdup (s) : NULL);
+	NM_SET_OUT (out_value, ret ? value : 0);
 	g_type_class_unref (class);
 	return ret;
 }
@@ -4398,6 +4463,7 @@ const char **nm_utils_enum_get_values (GType type, gint from, gint to)
 	GTypeClass *class;
 	GPtrArray *array;
 	gint i;
+	char sbuf[64];
 
 	class = g_type_class_ref (type);
 	array = g_ptr_array_new ();
@@ -4408,8 +4474,12 @@ const char **nm_utils_enum_get_values (GType type, gint from, gint to)
 
 		for (i = 0; i < enum_class->n_values; i++) {
 			enum_value = &enum_class->values[i];
-			if (enum_value->value >= from && enum_value->value <= to)
-				g_ptr_array_add (array, (gpointer) enum_value->value_nick);
+			if (enum_value->value >= from && enum_value->value <= to) {
+				if (_enum_is_valid_enum_nick (enum_value->value_nick))
+					g_ptr_array_add (array, (gpointer) enum_value->value_nick);
+				else
+					g_ptr_array_add (array, (gpointer) g_intern_string (nm_sprintf_buf (sbuf, "%d", enum_value->value)));
+			}
 		}
 	} else if (G_IS_FLAGS_CLASS (class)) {
 		GFlagsClass *flags_class = G_FLAGS_CLASS (class);
@@ -4417,8 +4487,12 @@ const char **nm_utils_enum_get_values (GType type, gint from, gint to)
 
 		for (i = 0; i < flags_class->n_values; i++) {
 			flags_value = &flags_class->values[i];
-			if (flags_value->value >= from && flags_value->value <= to)
-				g_ptr_array_add (array, (gpointer) flags_value->value_nick);
+			if (flags_value->value >= from && flags_value->value <= to) {
+				if (_enum_is_valid_flags_nick (flags_value->value_nick))
+					g_ptr_array_add (array, (gpointer) flags_value->value_nick);
+				else
+					g_ptr_array_add (array, (gpointer) g_intern_string (nm_sprintf_buf (sbuf, "0x%x", (unsigned) flags_value->value)));
+			}
 		}
 	} else {
 		g_type_class_unref (class);
