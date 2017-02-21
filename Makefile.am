@@ -2572,6 +2572,7 @@ src_devices_team_libnm_device_plugin_team_la_CPPFLAGS = \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(LIBTEAMDCTL_CFLAGS) \
+	$(JANSSON_CFLAGS) \
 	$(GLIB_CFLAGS)
 
 src_devices_team_libnm_device_plugin_team_la_LDFLAGS = \
@@ -2581,6 +2582,7 @@ src_devices_team_libnm_device_plugin_team_la_LDFLAGS = \
 src_devices_team_libnm_device_plugin_team_la_LIBADD = \
 	introspection/libnmdbus.la \
 	$(LIBTEAMDCTL_LIBS) \
+	$(JANSSON_LIBS) \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS)
 
