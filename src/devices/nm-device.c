@@ -12960,11 +12960,11 @@ nm_device_get_supplicant_timeout (NMDevice *self)
 	connection = nm_device_get_applied_connection (self);
 	g_return_val_if_fail (connection, SUPPLICANT_DEFAULT_TIMEOUT);
 	s_8021x = nm_connection_get_setting_802_1x (connection);
-	g_return_val_if_fail (s_8021x, SUPPLICANT_DEFAULT_TIMEOUT);
-
-	timeout = nm_setting_802_1x_get_auth_timeout (s_8021x);
-	if (timeout > 0)
-		return timeout;
+	if (s_8021x) {
+		timeout = nm_setting_802_1x_get_auth_timeout (s_8021x);
+		if (timeout > 0)
+			return timeout;
+	}
 
 	value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
 	                                               "802-1x.auth-timeout",
