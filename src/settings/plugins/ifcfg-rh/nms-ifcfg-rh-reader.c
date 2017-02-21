@@ -145,12 +145,10 @@ make_connection_setting (const char *file,
 	if (!uuid)
 		uuid = nm_utils_uuid_generate_from_string (svFileGetName (ifcfg), -1, NM_UTILS_UUID_TYPE_LEGACY, NULL);
 
-	stable_id = svGetValueStr_cp (ifcfg, "STABLE_ID");
-
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_TYPE, type,
 	              NM_SETTING_CONNECTION_UUID, uuid,
-	              NM_SETTING_CONNECTION_STABLE_ID, stable_id,
+	              NM_SETTING_CONNECTION_STABLE_ID, svGetValue (ifcfg, "STABLE_ID", &stable_id),
 	              NULL);
 	g_free (uuid);
 
@@ -285,8 +283,8 @@ read_ip4_address (shvarFile *ifcfg,
 	nm_assert (tag);
 	nm_assert (!error || !*error);
 
-	value = svGetValue (ifcfg, tag, &value_to_free);
-	if (!value || !value[0]) {
+	value = svGetValueStr (ifcfg, tag, &value_to_free);
+	if (!value) {
 		NM_SET_OUT (out_has_key, FALSE);
 		NM_SET_OUT (out_addr, 0);
 		return TRUE;
@@ -335,23 +333,20 @@ is_any_ip4_address_defined (shvarFile *ifcfg, int *idx)
 	ret_idx = idx ? idx : &ignore;
 
 	for (i = -1; i <= 2; i++) {
-		char tag[256];
 		gs_free char *value = NULL;
+		char tag[256];
 
-		value = svGetValueStr_cp (ifcfg, numbered_tag (tag, "IPADDR", i));
-		if (value) {
+		if (svGetValueStr (ifcfg, numbered_tag (tag, "IPADDR", i), &value)) {
 			*ret_idx = i;
 			return TRUE;
 		}
 
-		value = svGetValueStr_cp (ifcfg, numbered_tag (tag, "PREFIX", i));
-		if (value) {
+		if (svGetValueStr (ifcfg, numbered_tag (tag, "PREFIX", i), &value)) {
 			*ret_idx = i;
 			return TRUE;
 		}
 
-		value = svGetValueStr_cp (ifcfg, numbered_tag (tag, "NETMASK", i));
-		if (value) {
+		if (svGetValueStr (ifcfg, numbered_tag (tag, "NETMASK", i), &value)) {
 			*ret_idx = i;
 			return TRUE;
 		}

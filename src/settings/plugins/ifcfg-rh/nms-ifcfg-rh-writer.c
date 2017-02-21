@@ -2459,7 +2459,6 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	char *tmp;
 	guint32 i, num, num4;
 	gint priority;
-	GString *searches;
 	NMIPAddress *addr;
 	const char *dns;
 	gint64 route_metric;
@@ -2560,17 +2559,16 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	/* Write out DNS domains - 'DOMAIN' key is shared for both IPv4 and IPv6 domains */
 	num = nm_setting_ip_config_get_num_dns_searches (s_ip6);
 	if (num > 0) {
-		char *ip4_domains;
-		ip4_domains = svGetValueStr_cp (ifcfg, "DOMAIN");
-		searches = g_string_new (ip4_domains);
+		gs_free char *ip4_domains = NULL;
+		nm_auto_free_gstring GString *searches = NULL;
+
+		searches = g_string_new (svGetValueStr (ifcfg, "DOMAIN", &ip4_domains));
 		for (i = 0; i < num; i++) {
 			if (searches->len > 0)
 				g_string_append_c (searches, ' ');
 			g_string_append (searches, nm_setting_ip_config_get_dns_search (s_ip6, i));
 		}
 		svSetValueStr (ifcfg, "DOMAIN", searches->str);
-		g_string_free (searches, TRUE);
-		g_free (ip4_domains);
 	}
 
 
