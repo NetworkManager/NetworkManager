@@ -5128,7 +5128,6 @@ connection_from_file_full (const char *filename,
 			             "File '%s' had neither TYPE nor DEVICE keys.", filename);
 			return NULL;
 		}
-		g_assert (device[0]);
 
 		if (!strcmp (device, "lo")) {
 			if (out_ignore_error)
@@ -5232,8 +5231,11 @@ connection_from_file_full (const char *filename,
 		connection = bridge_connection_from_ifcfg (filename, parsed, error);
 	else {
 		connection = create_unhandled_connection (filename, parsed, "unrecognized", out_unhandled);
-		if (!connection)
+		if (!connection) {
 			PARSE_WARNING ("connection type was unrecognized but device was not uniquely identified; device may be managed");
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "Failed to read unrecognized connection");
+		}
 		return g_steal_pointer (&connection);
 	}
 
