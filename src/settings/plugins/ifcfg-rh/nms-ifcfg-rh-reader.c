@@ -1829,7 +1829,6 @@ read_dcb_bool_array (shvarFile *ifcfg,
 		return TRUE;
 	}
 
-	val = g_strstrip (val);
 	if (strlen (val) != 8) {
 		PARSE_WARNING ("%s value '%s' must be 8 characters long", prop, val);
 		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
@@ -1874,7 +1873,6 @@ read_dcb_uint_array (shvarFile *ifcfg,
 		return TRUE;
 	}
 
-	val = g_strstrip (val);
 	if (strlen (val) != 8) {
 		PARSE_WARNING ("%s value '%s' must be 8 characters long", prop, val);
 		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
@@ -1924,7 +1922,6 @@ read_dcb_percent_array (shvarFile *ifcfg,
 		return TRUE;
 	}
 
-	val = g_strstrip (val);
 	split = g_strsplit_set (val, ",", 0);
 	if (!split || (g_strv_length (split) != 8)) {
 		PARSE_WARNING ("invalid %s percentage list value '%s'", prop, val);
