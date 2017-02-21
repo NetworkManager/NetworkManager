@@ -917,7 +917,7 @@ svGetValue (shvarFile *s, const char *key, char **to_free)
  * be freed by the caller.
  */
 char *
-svGetValueString (shvarFile *s, const char *key)
+svGetValueStr_cp (shvarFile *s, const char *key)
 {
 	char *to_free;
 	const char *value;
@@ -991,8 +991,8 @@ svGetValueInt64 (shvarFile *s, const char *key, guint base, gint64 min, gint64 m
 
 /*****************************************************************************/
 
-/* Same as svSetValueString() but it preserves empty @value -- contrary to
- * svSetValueString() for which "" effectively means to remove the value. */
+/* Same as svSetValueStr() but it preserves empty @value -- contrary to
+ * svSetValueStr() for which "" effectively means to remove the value. */
 void
 svSetValue (shvarFile *s, const char *key, const char *value)
 {
@@ -1041,7 +1041,7 @@ svSetValue (shvarFile *s, const char *key, const char *value)
  * to the bottom of the file.
  */
 void
-svSetValueString (shvarFile *s, const char *key, const char *value)
+svSetValueStr (shvarFile *s, const char *key, const char *value)
 {
 	svSetValue (s, key, value && value[0] ? value : NULL);
 }

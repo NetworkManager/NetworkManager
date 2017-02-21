@@ -49,7 +49,7 @@ shvarFile *svOpenFile (const char *name, GError **error);
  * be freed by the caller.
  */
 const char *svGetValue (shvarFile *s, const char *key, char **to_free);
-char *svGetValueString (shvarFile *s, const char *key);
+char *svGetValueStr_cp (shvarFile *s, const char *key);
 
 gint svParseBoolean (const char *value, gint def);
 
@@ -66,7 +66,7 @@ gint64 svGetValueInt64 (shvarFile *s, const char *key, guint base, gint64 min, g
  * the key=value pair after that line.  Otherwise, prepend the pair
  * to the top of the file.
  */
-void svSetValueString (shvarFile *s, const char *key, const char *value);
+void svSetValueStr (shvarFile *s, const char *key, const char *value);
 void svSetValue (shvarFile *s, const char *key, const char *value);
 void svSetValueBoolean (shvarFile *s, const char *key, gboolean value);
 void svSetValueInt64 (shvarFile *s, const char *key, gint64 value);

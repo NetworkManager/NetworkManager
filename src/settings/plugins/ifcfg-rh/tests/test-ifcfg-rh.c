@@ -81,7 +81,7 @@
 		shvarFile *const _f = (f); \
 		const char *const _key = (key); \
 		\
-		_val_string = svGetValueString (_f, _key); \
+		_val_string = svGetValueStr_cp (_f, _key); \
 		_val = svGetValue (_f, _key, &_to_free); \
 		g_assert_cmpstr (_val, ==, (expected_value)); \
 		g_assert (   (!_val_string && (!_val || !_val[0])) \
@@ -3275,7 +3275,7 @@ test_write_wired_wake_on_lan (void)
 	                        &testfile);
 
 	f = _svOpenFile (testfile);
-	val = svGetValueString (f, "ETHTOOL_OPTS");
+	val = svGetValueStr_cp (f, "ETHTOOL_OPTS");
 	g_assert (val);
 	g_assert (strstr (val, "wol"));
 	g_assert (strstr (val, "sopass 00:00:00:11:22:33"));
@@ -3310,7 +3310,7 @@ test_write_wired_auto_negotiate_off (void)
 	                        &testfile);
 
 	f = _svOpenFile (testfile);
-	val = svGetValueString (f, "ETHTOOL_OPTS");
+	val = svGetValueStr_cp (f, "ETHTOOL_OPTS");
 	g_assert (val);
 	g_assert (strstr (val, "autoneg off"));
 	g_assert (strstr (val, "speed 10"));
@@ -3344,7 +3344,7 @@ test_write_wired_auto_negotiate_on (void)
 	                        &testfile);
 
 	f = _svOpenFile (testfile);
-	val = svGetValueString (f, "ETHTOOL_OPTS");
+	val = svGetValueStr_cp (f, "ETHTOOL_OPTS");
 	g_assert (val);
 	g_assert (strstr (val, "autoneg on"));
 	g_assert (!strstr (val, "speed"));
@@ -4097,7 +4097,7 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	ifcfg = _svOpenFile (testfile);
-	written_ifcfg_gateway = svGetValueString (ifcfg, "IPV6_DEFAULTGW");
+	written_ifcfg_gateway = svGetValueStr_cp (ifcfg, "IPV6_DEFAULTGW");
 	svCloseFile (ifcfg);
 
 	/* access the gateway from the loaded connection. */
@@ -4577,15 +4577,15 @@ test_write_wired_aliases (void)
 
 	/* Create some pre-existing alias files, to make sure they get overwritten / deleted. */
 	ifcfg = svCreateFile (TEST_SCRATCH_ALIAS_BASE ":2");
-	svSetValueString (ifcfg, "DEVICE", "alias0:2");
-	svSetValueString (ifcfg, "IPADDR", "192.168.1.2");
+	svSetValueStr (ifcfg, "DEVICE", "alias0:2");
+	svSetValueStr (ifcfg, "IPADDR", "192.168.1.2");
 	svWriteFile (ifcfg, 0644, NULL);
 	svCloseFile (ifcfg);
 	g_assert (g_file_test (TEST_SCRATCH_ALIAS_BASE ":2", G_FILE_TEST_EXISTS));
 
 	ifcfg = svCreateFile (TEST_SCRATCH_ALIAS_BASE ":5");
-	svSetValueString (ifcfg, "DEVICE", "alias0:5");
-	svSetValueString (ifcfg, "IPADDR", "192.168.1.5");
+	svSetValueStr (ifcfg, "DEVICE", "alias0:5");
+	svSetValueStr (ifcfg, "IPADDR", "192.168.1.5");
 	svWriteFile (ifcfg, 0644, NULL);
 	svCloseFile (ifcfg);
 	g_assert (g_file_test (TEST_SCRATCH_ALIAS_BASE ":5", G_FILE_TEST_EXISTS));
