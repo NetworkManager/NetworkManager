@@ -98,13 +98,12 @@ make_connection_name (shvarFile *ifcfg,
 
 	/* If the ifcfg file already has a NAME, always use that */
 	name = svGetValueString (ifcfg, "NAME");
-	if (name && strlen (name))
+	if (name)
 		return name;
 
 	/* Otherwise construct a new NAME */
-	g_free (name);
 	if (!prefix)
-		prefix = _("System");
+		prefix = "System";
 
 	/* For cosmetic reasons, if the suggested name is the same as
 	 * the ifcfg files name, don't use it.  Mainly for wifi so that
@@ -143,10 +142,8 @@ make_connection_setting (const char *file,
 
 	/* Try for a UUID key before falling back to hashing the file name */
 	uuid = svGetValueString (ifcfg, "UUID");
-	if (!uuid || !strlen (uuid)) {
-		g_free (uuid);
+	if (!uuid)
 		uuid = nm_utils_uuid_generate_from_string (svFileGetName (ifcfg), -1, NM_UTILS_UUID_TYPE_LEGACY, NULL);
-	}
 
 	stable_id = svGetValueString (ifcfg, "STABLE_ID");
 
@@ -213,10 +210,6 @@ make_connection_setting (const char *file,
 
 
 	zone = svGetValueString (ifcfg, "ZONE");
-	if (!zone || !strlen (zone)) {
-		g_free (zone);
-		zone = NULL;
-	}
 	g_object_set (s_con, NM_SETTING_CONNECTION_ZONE, zone, NULL);
 	g_free (zone);
 
@@ -1074,18 +1067,19 @@ make_ip4_setting (shvarFile *ifcfg,
 
 	/* Handle DHCP settings */
 	value = svGetValueString (ifcfg, "DHCP_HOSTNAME");
-	if (value && *value)
+	if (value) {
 		g_object_set (s_ip4, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, value, NULL);
-	g_free (value);
+		g_free (value);
+	}
 
 	value = svGetValueString (ifcfg, "DHCP_FQDN");
-	if (value && *value) {
+	if (value) {
 		g_object_set (s_ip4,
-			      NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, NULL,
-			      NM_SETTING_IP4_CONFIG_DHCP_FQDN, value,
-			      NULL);
+		              NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, NULL,
+		              NM_SETTING_IP4_CONFIG_DHCP_FQDN, value,
+		              NULL);
+		g_free (value);
 	}
-	g_free (value);
 
 	g_object_set (s_ip4,
 		      NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, svGetValueBoolean (ifcfg, "DHCP_SEND_HOSTNAME", TRUE),
@@ -1093,9 +1087,10 @@ make_ip4_setting (shvarFile *ifcfg,
 		      NULL);
 
 	value = svGetValueString (ifcfg, "DHCP_CLIENT_ID");
-	if (value && strlen (value))
+	if (value) {
 		g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID, value, NULL);
-	g_free (value);
+		g_free (value);
+	}
 
 	/* Read static IP addresses.
 	 * Read them even for AUTO method - in this case the addresses are
@@ -2153,10 +2148,8 @@ add_one_wep_key (shvarFile *ifcfg,
 	g_return_val_if_fail (s_wsec != NULL, FALSE);
 
 	value = svGetValueString (ifcfg, shvar_key);
-	if (!value || !strlen (value)) {
-		g_free (value);
+	if (!value)
 		return TRUE;
-	}
 
 	/* Validate keys */
 	if (passphrase) {
@@ -2209,9 +2202,10 @@ add_one_wep_key (shvarFile *ifcfg,
 		nm_setting_wireless_security_set_wep_key (s_wsec, key_idx, key);
 		g_free (key);
 		success = TRUE;
-	} else
+	} else {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Invalid WEP key length.");
+	}
 
 out:
 	g_free (value);
@@ -2786,7 +2780,7 @@ eap_peap_reader (const char *eap_method,
 		g_object_set (s_8021x, NM_SETTING_802_1X_PHASE1_PEAPLABEL, "1", NULL);
 
 	anon_ident = svGetValueString (ifcfg, "IEEE_8021X_ANON_IDENTITY");
-	if (anon_ident && strlen (anon_ident))
+	if (anon_ident)
 		g_object_set (s_8021x, NM_SETTING_802_1X_ANONYMOUS_IDENTITY, anon_ident, NULL);
 
 	inner_auth = svGetValueString (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS");
@@ -2870,7 +2864,7 @@ eap_ttls_reader (const char *eap_method,
 	}
 
 	anon_ident = svGetValueString (ifcfg, "IEEE_8021X_ANON_IDENTITY");
-	if (anon_ident && strlen (anon_ident))
+	if (anon_ident)
 		g_object_set (s_8021x, NM_SETTING_802_1X_ANONYMOUS_IDENTITY, anon_ident, NULL);
 
 	tmp = svGetValueString (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS");
@@ -2981,7 +2975,7 @@ eap_fast_reader (const char *eap_method,
 	}
 
 	anon_ident = svGetValueString (ifcfg, "IEEE_8021X_ANON_IDENTITY");
-	if (anon_ident && strlen (anon_ident))
+	if (anon_ident)
 		g_object_set (s_8021x, NM_SETTING_802_1X_ANONYMOUS_IDENTITY, anon_ident, NULL);
 
 	inner_auth = svGetValueString (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS");
@@ -3354,7 +3348,7 @@ make_leap_setting (shvarFile *ifcfg,
 	}
 
 	value = svGetValueString (ifcfg, "IEEE_8021X_IDENTITY");
-	if (!value || !strlen (value)) {
+	if (!value) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Missing LEAP identity");
 		goto error;
@@ -3996,27 +3990,28 @@ make_wired_setting (shvarFile *ifcfg,
 	}
 
 	value = svGetValueString (ifcfg, "PORTNAME");
-	if (value && strlen (value)) {
+	if (value) {
 		nm_setting_wired_add_s390_option (s_wired, "portname", value);
+		g_free (value);
 	}
-	g_free (value);
 
 	value = svGetValueString (ifcfg, "CTCPROT");
-	if (value && strlen (value))
+	if (value) {
 		nm_setting_wired_add_s390_option (s_wired, "ctcprot", value);
-	g_free (value);
+		g_free (value);
+	}
 
 	nettype = svGetValueString (ifcfg, "NETTYPE");
-	if (nettype && strlen (nettype)) {
+	if (nettype) {
 		if (!strcmp (nettype, "qeth") || !strcmp (nettype, "lcs") || !strcmp (nettype, "ctc"))
 			g_object_set (s_wired, NM_SETTING_WIRED_S390_NETTYPE, nettype, NULL);
 		else
 			PARSE_WARNING ("unknown s390 NETTYPE '%s'", nettype);
+		g_free (nettype);
 	}
-	g_free (nettype);
 
 	value = svGetValueString (ifcfg, "OPTIONS");
-	if (value && strlen (value)) {
+	if (value) {
 		char **options, **iter;
 
 		iter = options = g_strsplit_set (value, " ", 0);
@@ -4033,8 +4028,8 @@ make_wired_setting (shvarFile *ifcfg,
 			iter++;
 		}
 		g_strfreev (options);
+		g_free (value);
 	}
-	g_free (value);
 
 	value = svGetValueString (ifcfg, "MACADDR");
 	if (value) {
@@ -4305,7 +4300,7 @@ make_bond_setting (shvarFile *ifcfg,
 	s_bond = NM_SETTING_BOND (nm_setting_bond_new ());
 
 	value = svGetValueString (ifcfg, "DEVICE");
-	if (!value || !strlen (value)) {
+	if (!value) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "mandatory DEVICE keyword missing");
 		goto error;
@@ -4427,7 +4422,7 @@ make_team_setting (shvarFile *ifcfg,
 	s_team = NM_SETTING_TEAM (nm_setting_team_new ());
 
 	value = svGetValueString (ifcfg, "DEVICE");
-	if (!value || !strlen (value)) {
+	if (!value) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "mandatory DEVICE keyword missing");
 		goto error;
@@ -4584,7 +4579,7 @@ make_bridge_setting (shvarFile *ifcfg,
 	s_bridge = NM_SETTING_BRIDGE (nm_setting_bridge_new ());
 
 	value = svGetValueString (ifcfg, "DEVICE");
-	if (!value || !strlen (value)) {
+	if (!value) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "mandatory DEVICE keyword missing");
 		goto error;
@@ -5063,10 +5058,8 @@ uuid_from_file (const char *filename)
 
 	/* Try for a UUID key before falling back to hashing the file name */
 	uuid = svGetValueString (ifcfg, "UUID");
-	if (!uuid || !strlen (uuid)) {
-		g_free (uuid);
+	if (!uuid)
 		uuid = nm_utils_uuid_generate_from_string (svFileGetName (ifcfg), -1, NM_UTILS_UUID_TYPE_LEGACY, NULL);
-	}
 
 	svCloseFile (ifcfg);
 	return uuid;
@@ -5084,6 +5077,7 @@ check_dns_search_domains (shvarFile *ifcfg, NMSetting *s_ip4, NMSetting *s_ip6)
 	if (!s_ip4 || nm_setting_ip_config_get_num_dns_searches (NM_SETTING_IP_CONFIG (s_ip4)) == 0) {
 		/* DNS searches */
 		char *value = svGetValueString (ifcfg, "DOMAIN");
+
 		if (value) {
 			char **searches = g_strsplit (value, " ", 0);
 			if (searches) {
