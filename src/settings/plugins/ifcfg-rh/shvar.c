@@ -902,19 +902,74 @@ _svGetValue (shvarFile *s, const char *key, char **to_free)
 	return NULL;
 }
 
+/* Returns the value for key. The value is either owned by @s
+ * or returned as to_free. This aims to avoid cloning the string.
+ *
+ * - like svGetValue_cp(), but avoids cloning the value if possible.
+ * - like svGetValueStr(), but does not ignore empty string values.
+ */
 const char *
 svGetValue (shvarFile *s, const char *key, char **to_free)
 {
-	g_return_val_if_fail (s != NULL, NULL);
-	g_return_val_if_fail (key != NULL, NULL);
+	g_return_val_if_fail (s, NULL);
+	g_return_val_if_fail (key, NULL);
 	g_return_val_if_fail (to_free, NULL);
 
 	return _svGetValue (s, key, to_free);
 }
 
-/* Get the value associated with the key, and leave the current pointer
- * pointing at the line containing the value.  The char* returned MUST
- * be freed by the caller.
+/* Returns the value for key. The value is either owned by @s
+ * or returned as to_free. This aims to avoid cloning the string.
+ *
+ * - like svGetValue(), but does not return an empty string.
+ * - like svGetValueStr_cp(), but avoids cloning the value if possible.
+ */
+const char *
+svGetValueStr (shvarFile *s, const char *key, char **to_free)
+{
+	const char *value;
+
+	g_return_val_if_fail (s, NULL);
+	g_return_val_if_fail (key, NULL);
+	g_return_val_if_fail (to_free, NULL);
+
+	value = _svGetValue (s, key, to_free);
+	if (!value || !value[0]) {
+		nm_assert (!*to_free);
+		return NULL;
+	}
+	return value;
+}
+
+/* Returns the value for key. The returned value must be freed
+ * by the caller.
+ *
+ * - like svGetValue(), but always returns a copy of the value.
+ * - like svGetValueStr_cp(), but does not ignore an empty string.
+ */
+char *
+svGetValue_cp (shvarFile *s, const char *key)
+{
+	char *to_free;
+	const char *value;
+
+	g_return_val_if_fail (s, NULL);
+	g_return_val_if_fail (key, NULL);
+
+	value = _svGetValue (s, key, &to_free);
+	if (!value) {
+		nm_assert (!to_free);
+		return NULL;
+	}
+	return to_free ?: g_strdup (value);
+}
+
+/* Returns the value for key. The returned value must be freed
+ * by the caller.
+ * If the key is unset or the value an empty string, NULL is returned.
+ *
+ * - like svGetValueStr(), but always returns a copy of the value.
+ * - like svGetValue_cp(), but returns NULL instead of an empty string.
  */
 char *
 svGetValueStr_cp (shvarFile *s, const char *key)
@@ -922,12 +977,11 @@ svGetValueStr_cp (shvarFile *s, const char *key)
 	char *to_free;
 	const char *value;
 
+	g_return_val_if_fail (s, NULL);
+	g_return_val_if_fail (key, NULL);
+
 	value = _svGetValue (s, key, &to_free);
-	if (!value) {
-		nm_assert (!to_free);
-		return NULL;
-	}
-	if (!value[0]) {
+	if (!value || !value[0]) {
 		nm_assert (!to_free);
 		return NULL;
 	}
