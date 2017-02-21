@@ -87,4 +87,16 @@ void svCloseFile (shvarFile *s);
 const char *svEscape (const char *s, char **to_free);
 const char *svUnescape (const char *s, char **to_free);
 
+static inline void
+_nm_auto_shvar_file_close (shvarFile **p_s)
+{
+	if (*p_s) {
+		int errsv = errno;
+
+		svCloseFile (*p_s);
+		errno = errsv;
+	}
+}
+#define nm_auto_shvar_file_close nm_auto(_nm_auto_shvar_file_close)
+
 #endif /* _SHVAR_H */
