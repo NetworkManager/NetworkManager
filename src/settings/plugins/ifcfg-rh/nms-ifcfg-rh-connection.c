@@ -455,6 +455,11 @@ nm_ifcfg_connection_new (NMConnection *source,
 	if (out_ignore_error)
 		*out_ignore_error = FALSE;
 
+	if (full_path) {
+		/* The connection already is on the disk */
+		update_unsaved = FALSE;
+	}
+
 	/* If we're given a connection already, prefer that instead of re-reading */
 	if (source)
 		tmp = g_object_ref (source);
@@ -465,9 +470,6 @@ nm_ifcfg_connection_new (NMConnection *source,
 		                            out_ignore_error);
 		if (!tmp)
 			return NULL;
-
-		/* If we just read the connection from disk, it's clearly not Unsaved */
-		update_unsaved = FALSE;
 	}
 
 	if (unhandled_spec && g_str_has_prefix (unhandled_spec, "unmanaged:"))
