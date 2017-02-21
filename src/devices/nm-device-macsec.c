@@ -89,8 +89,6 @@ G_DEFINE_TYPE (NMDeviceMacsec, nm_device_macsec, NM_TYPE_DEVICE)
 
 /******************************************************************/
 
-static NM_CACHED_QUARK_FCN ("macsec-secrets-tries", macsec_secrets_tries_quark)
-
 static void macsec_secrets_cancel (NMDeviceMacsec *self);
 
 /******************************************************************/
@@ -480,14 +478,19 @@ handle_auth_or_fail (NMDeviceMacsec *self,
                      gboolean new_secrets)
 {
 	const char *setting_name;
-	guint32 tries;
+	int tries_left;
 	NMConnection *applied_connection;
+	NMSettingsConnection *settings_connection;
 
 	applied_connection = nm_act_request_get_applied_connection (req);
+	settings_connection = nm_act_request_get_settings_connection (req);
 
-	tries = GPOINTER_TO_UINT (g_object_get_qdata (G_OBJECT (applied_connection), macsec_secrets_tries_quark ()));
-	if (tries > 3)
+	tries_left = nm_settings_connection_get_autoconnect_retries (settings_connection);
+	if (tries_left == 0)
 		return NM_ACT_STAGE_RETURN_FAILURE;
+
+	if (tries_left > 0)
+		nm_settings_connection_set_autoconnect_retries (settings_connection, tries_left - 1);
 
 	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
 
@@ -498,7 +501,6 @@ handle_auth_or_fail (NMDeviceMacsec *self,
 		macsec_secrets_get_secrets (self, setting_name,
 		                            NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
 		                             | (new_secrets ? NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW : 0));
-		g_object_set_qdata (G_OBJECT (applied_connection), macsec_secrets_tries_quark (), GUINT_TO_POINTER (++tries));
 	} else
 		_LOGI (LOGD_DEVICE, "Cleared secrets, but setting didn't need any secrets.");
 
@@ -551,6 +553,7 @@ supplicant_interface_init (NMDeviceMacsec *self)
 {
 	NMDeviceMacsecPrivate *priv = NM_DEVICE_MACSEC_GET_PRIVATE (self);
 	NMDevice *parent;
+	guint timeout;
 
 	parent = nm_device_parent_get_device (NM_DEVICE (self));
 	g_return_val_if_fail (parent, FALSE);
@@ -573,9 +576,11 @@ supplicant_interface_init (NMDeviceMacsec *self)
 	                                                    G_CALLBACK (supplicant_iface_state_cb),
 	                                                    self);
 
-	/* Set up a timeout on the connection attempt to fail it after 25 seconds */
-	priv->supplicant.con_timeout_id = g_timeout_add_seconds (25, supplicant_connection_timeout_cb, self);
-
+	/* Set up a timeout on the connection attempt  */
+	timeout = nm_device_get_supplicant_timeout (NM_DEVICE (self));
+	priv->supplicant.con_timeout_id = g_timeout_add_seconds (timeout,
+	                                                         supplicant_connection_timeout_cb,
+	                                                         self);
 	return TRUE;
 }
 
@@ -732,17 +737,19 @@ link_changed (NMDevice *device,
 	update_properties (device);
 }
 
+
 static void
-clear_secrets_tries (NMDevice *device)
+reset_autoconnect_retries (NMDevice *device)
 {
 	NMActRequest *req;
-	NMConnection *connection;
+	NMSettingsConnection *connection;
 
 	req = nm_device_get_act_request (device);
 	if (req) {
-		connection = nm_act_request_get_applied_connection (req);
-		/* Clear macsec secrets tries on success, failure, or when deactivating */
-		g_object_set_qdata (G_OBJECT (connection), macsec_secrets_tries_quark (), NULL);
+		connection = nm_act_request_get_settings_connection (req);
+		g_return_if_fail (connection);
+		/* Reset autoconnect retries on success, failure, or when deactivating */
+		nm_settings_connection_reset_autoconnect_retries (connection);
 	}
 }
 
@@ -758,7 +765,7 @@ device_state_changed (NMDevice *device,
 	if (   new_state == NM_DEVICE_STATE_ACTIVATED
 	    || new_state == NM_DEVICE_STATE_FAILED
 	    || new_state == NM_DEVICE_STATE_DISCONNECTED)
-		clear_secrets_tries (device);
+		reset_autoconnect_retries (device);
 }
 
 /******************************************************************/

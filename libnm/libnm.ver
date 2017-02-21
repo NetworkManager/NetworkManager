@@ -1147,6 +1147,7 @@ global:
 libnm_1_8_0 {
 global:
 	nm_setting_802_1x_auth_flags_get_type;
+	nm_setting_802_1x_get_auth_timeout;
 	nm_setting_802_1x_get_ca_cert_password;
 	nm_setting_802_1x_get_ca_cert_password_flags;
 	nm_setting_802_1x_get_client_cert_password;
