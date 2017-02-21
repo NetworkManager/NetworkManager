@@ -1697,6 +1697,17 @@ update_auth_cb (NMSettingsConnection *self,
 		return;
 	}
 
+	if (!info->new_settings) {
+		/* We're just calling Save(). Just commit the existing connection. */
+		if (info->save_to_disk) {
+			nm_settings_connection_commit_changes (self,
+			                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION,
+			                                       con_update_cb,
+			                                       info);
+		}
+		return;
+	}
+
 	if (!any_secrets_present (info->new_settings)) {
 		/* If the new connection has no secrets, we do not want to remove all
 		 * secrets, rather we keep all the existing ones. Do that by merging
@@ -1846,11 +1857,7 @@ static void
 impl_settings_connection_save (NMSettingsConnection *self,
                                GDBusMethodInvocation *context)
 {
-	/* Do nothing if the connection is already synced with disk */
-	if (nm_settings_connection_get_unsaved (self))
-		settings_connection_update_helper (self, context, NULL, TRUE);
-	else
-		g_dbus_method_invocation_return_value (context, NULL);
+	settings_connection_update_helper (self, context, NULL, TRUE);
 }
 
 static void
