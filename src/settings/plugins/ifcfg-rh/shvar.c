@@ -220,14 +220,12 @@ svEscape (const char *s, char **to_free)
 	int newlen;
 	size_t i, j, slen;
 
-	slen = strlen (s);
-
-	for (i = 0; i < slen; i++) {
-		if (_char_req_escape (s[i]))
+	for (slen = 0; s[slen]; slen++) {
+		if (_char_req_escape (s[slen]))
 			mangle++;
-		else if (_char_req_quotes (s[i]))
+		else if (_char_req_quotes (s[slen]))
 			requires_quotes = TRUE;
-		else if (s[i] < ' ') {
+		else if (s[slen] < ' ') {
 			/* if the string contains newline we can only express it using ANSI C quotation
 			 * (as we don't support line continuation).
 			 * Additionally, ANSI control characters look odd with regular quotation, so handle
