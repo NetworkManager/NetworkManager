@@ -1825,6 +1825,7 @@ src_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_CPPFLAGS = $(filter-out -DGL
 CLEANFILES += $(nodist_src_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_SOURCES)
 
 src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h: src/settings/plugins/ifcfg-rh/nm-ifcfg-rh.xml
+	@$(MKDIR_P) src/settings/plugins/ifcfg-rh/
 	$(AM_V_GEN) gdbus-codegen \
 		--generate-c-code $(basename $@) \
 		--c-namespace NMDBus \
@@ -2865,6 +2866,7 @@ dispatcher_nmdbus_dispatcher_sources = \
 	dispatcher/nmdbus-dispatcher.c
 
 dispatcher/nmdbus-dispatcher.h: dispatcher/nm-dispatcher.xml
+	@$(MKDIR_P) dispatcher/
 	$(AM_V_GEN) gdbus-codegen \
 		--generate-c-code $(basename $@) \
 		--c-namespace NMDBus \
