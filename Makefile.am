@@ -503,6 +503,9 @@ GLIB_GENERATED += \
 	$(libnm_core_lib_c_mkenums)
 nm_core_enum_types_sources = $(libnm_core_lib_h_pub_real)
 
+$(libnm_core_lib_h_pub_mkenums):                                            libnm-core/.dirstamp
+$(libnm_core_lib_c_mkenums):                                                libnm-core/.dirstamp
+
 $(dispatcher_libnm_dispatcher_core_la_OBJECTS):                             $(libnm_core_lib_h_pub_mkenums)
 $(dispatcher_nm_dispatcher_OBJECTS):                                        $(libnm_core_lib_h_pub_mkenums)
 $(libnm_core_libnm_core_la_OBJECTS):                                        $(libnm_core_lib_h_pub_mkenums)
