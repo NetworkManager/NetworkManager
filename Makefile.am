@@ -559,11 +559,11 @@ EXTRA_DIST += \
 	libnm-core/crypto_gnutls.c \
 	libnm-core/crypto_nss.c
 
-libnm-core/nm-vpn-dbus-types.xml: libnm-core libnm-core/nm-vpn-dbus-interface.h tools/enums-to-docbook.pl
+libnm-core/nm-vpn-dbus-types.xml: libnm-core/nm-vpn-dbus-interface.h tools/enums-to-docbook.pl
 	@$(MKDIR_P) libnm-core/
 	$(AM_V_GEN) @PERL@ $(srcdir)/tools/enums-to-docbook.pl 'nm-vpn-dbus-types' 'VPN Plugin D-Bus API Types' $< >$@
 
-libnm-core/nm-dbus-types.xml: libnm-core libnm-core/nm-dbus-interface.h tools/enums-to-docbook.pl
+libnm-core/nm-dbus-types.xml: libnm-core/nm-dbus-interface.h tools/enums-to-docbook.pl
 	@$(MKDIR_P) libnm-core/
 	$(AM_V_GEN) @PERL@ $(srcdir)/tools/enums-to-docbook.pl 'nm-dbus-types' 'NetworkManager D-Bus API Types' $< >$@
 
