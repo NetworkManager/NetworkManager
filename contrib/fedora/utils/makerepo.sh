@@ -279,6 +279,7 @@ detect_build_type 'libqmi-[0-9]*' libqmi.spec
 detect_build_type 'libibverbs-[0-9]*' libibverbs.spec
 detect_build_type 'iproute2-*' iproute.spec
 detect_build_type 'vpnc-*' vpnc.spec
+detect_build_type 'gnome-control-center-*' control-center.spec gnome-control-center
 
 if [[ -z "$BUILD_TYPE" ]]; then
     SPEC="$(ls -1 *.spec 2>/dev/null | head -n1)"
@@ -378,6 +379,8 @@ pushd "$DIRNAME"
         git remote add origin "https://git.fedorahosted.org/git/initscripts.git";
     elif [[ "$BUILD_TYPE" == "iproute" ]]; then
         git remote add origin "git://git.kernel.org/pub/scm/linux/kernel/git/shemminger/iproute2.git"
+    elif [[ "$BUILD_TYPE" == "gnome-control-center" ]]; then
+        git remote add origin "git://git.gnome.org/gnome-control-center"
     elif [[ "$BUILD_TYPE" == "vpnc" ]]; then
         git remote add origin "https://github.com/ndpgroup/vpnc.git"
     fi
@@ -468,6 +471,9 @@ c37a79d43ebe1192ba8dcc5036cd668631b6473e  d87db7021629cef7c110a371dd42b7a8 *Netw
 
 # libqmi
 7d688f382f9756027bf92338e413e425365d2835  17d6c2b404ee1eb4d1e60050fef64491 *libqmi-1.6.0.tar.xz
+
+# gnome-control-center
+e87e0361b117f055ace2aa47cdddd0dc62a852f9  da949e268254af6aafdda0e8c1702384 *gnome-control-center-3.22.1.tar.xz
 
 # wpa_supplicant
 22760dd94722a61175ff90c59d88c4cda1ed5e23  3be2ebfdcced52e00eda0afe2889839d *wpa_supplicant-2.0.tar.gz
