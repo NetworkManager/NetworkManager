@@ -52,6 +52,7 @@
 #include "nm-device-bond.h"
 #include "nm-device-bridge.h"
 #include "nm-device-bt.h"
+#include "nm-device-dummy.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-generic.h"
 #include "nm-device-infiniband.h"
@@ -2046,6 +2047,8 @@ obj_nm_for_gdbus_object (GDBusObject *object, GDBusObjectManager *object_manager
 			type = NM_TYPE_DEVICE_BRIDGE;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_BLUETOOTH) == 0)
 			type = NM_TYPE_DEVICE_BT;
+		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_DUMMY) == 0)
+			type = NM_TYPE_DEVICE_DUMMY;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_WIRED) == 0)
 			type = NM_TYPE_DEVICE_ETHERNET;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_GENERIC) == 0)

@@ -183,6 +183,7 @@ NmcOutputField nmc_fields_settings_names[] = {
 	SETTING_FIELD (NM_SETTING_MACVLAN_SETTING_NAME,           nmc_fields_setting_macvlan + 1),           /* 28 */
 	SETTING_FIELD (NM_SETTING_VXLAN_SETTING_NAME,             nmc_fields_setting_vxlan + 1),             /* 29 */
 	SETTING_FIELD (NM_SETTING_PROXY_SETTING_NAME,             nmc_fields_setting_proxy + 1),             /* 30 */
+	SETTING_FIELD (NM_SETTING_DUMMY_SETTING_NAME,             nmc_fields_setting_dummy + 1),             /* 31 */
 	{NULL, NULL, 0, NULL, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTINGS_NAMES_ALL_X  NM_SETTING_CONNECTION_SETTING_NAME","\
@@ -477,6 +478,7 @@ usage_connection_add (void)
 	              "                  [source-port-min <0-65535>]\n"
 	              "                  [source-port-max <0-65535>]\n"
 	              "                  [destination-port <0-65535>]\n\n"
+	              "    dummy:         \n\n"
 	              "  SLAVE_OPTIONS:\n"
 	              "    bridge:       [priority <0-63>]\n"
 	              "                  [path-cost <1-65535>]\n"
@@ -3071,6 +3073,13 @@ static const NameItem nmc_vxlan_settings [] = {
 	{ NULL, NULL, NULL, FALSE }
 };
 
+static const NameItem nmc_dummy_settings [] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME,  NULL,       NULL, TRUE  },
+	{ NM_SETTING_DUMMY_SETTING_NAME,       NULL,       NULL, TRUE  },
+	{ NM_SETTING_WIRED_SETTING_NAME,       "ethernet", NULL, FALSE },
+	{ NULL, NULL, NULL, FALSE }
+};
+
 /* Available connection types */
 static const NameItem nmc_valid_connection_types[] = {
 	{ NM_SETTING_GENERIC_SETTING_NAME,    NULL,        nmc_generic_settings      }, /* Needs to be first. */
@@ -3098,6 +3107,7 @@ static const NameItem nmc_valid_connection_types[] = {
 	{ NM_SETTING_MACSEC_SETTING_NAME,     NULL,        nmc_macsec_settings       },
 	{ NM_SETTING_MACVLAN_SETTING_NAME,    NULL,        nmc_macvlan_settings      },
 	{ NM_SETTING_VXLAN_SETTING_NAME,      NULL,        nmc_vxlan_settings        },
+	{ NM_SETTING_DUMMY_SETTING_NAME,      NULL,        nmc_dummy_settings        },
 	{ NULL, NULL, NULL }
 };
 

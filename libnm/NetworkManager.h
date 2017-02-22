@@ -33,6 +33,7 @@
 #include <nm-device-bond.h>
 #include <nm-device-bridge.h>
 #include <nm-device-bt.h>
+#include <nm-device-dummy.h>
 #include <nm-device-ethernet.h>
 #include <nm-device-generic.h>
 #include <nm-device-infiniband.h>
@@ -61,6 +62,7 @@
 #include <nm-setting-cdma.h>
 #include <nm-setting-connection.h>
 #include <nm-setting-dcb.h>
+#include <nm-setting-dummy.h>
 #include <nm-setting-generic.h>
 #include <nm-setting-gsm.h>
 #include <nm-setting-infiniband.h>

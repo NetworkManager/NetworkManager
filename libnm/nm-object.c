@@ -1054,7 +1054,7 @@ init_if (GDBusInterface *interface, gpointer user_data)
 
 	props = g_dbus_proxy_get_cached_property_names (proxy);
 
-	for (prop = props; *prop; prop++) {
+	for (prop = props; prop && *prop; prop++) {
 		val = g_dbus_proxy_get_cached_property (proxy, *prop);
 		str = g_variant_print (val, TRUE);
 		handle_property_changed (self, *prop, val);

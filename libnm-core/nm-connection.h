@@ -199,6 +199,8 @@ NMSettingBridgePort *      nm_connection_get_setting_bridge_port       (NMConnec
 NMSettingCdma *            nm_connection_get_setting_cdma              (NMConnection *connection);
 NMSettingConnection *      nm_connection_get_setting_connection        (NMConnection *connection);
 NMSettingDcb *             nm_connection_get_setting_dcb               (NMConnection *connection);
+NM_AVAILABLE_IN_1_8
+NMSettingDummy *           nm_connection_get_setting_dummy             (NMConnection *connection);
 NMSettingGeneric *         nm_connection_get_setting_generic           (NMConnection *connection);
 NMSettingGsm *             nm_connection_get_setting_gsm               (NMConnection *connection);
 NMSettingInfiniband *      nm_connection_get_setting_infiniband        (NMConnection *connection);

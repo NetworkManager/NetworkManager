@@ -58,6 +58,7 @@
 #define NM_DBUS_INTERFACE_DHCP6_CONFIG      NM_DBUS_INTERFACE ".DHCP6Config"
 #define NM_DBUS_INTERFACE_DEVICE_INFINIBAND NM_DBUS_INTERFACE_DEVICE ".Infiniband"
 #define NM_DBUS_INTERFACE_DEVICE_BOND       NM_DBUS_INTERFACE_DEVICE ".Bond"
+#define NM_DBUS_INTERFACE_DEVICE_DUMMY      NM_DBUS_INTERFACE_DEVICE ".Dummy"
 #define NM_DBUS_INTERFACE_DEVICE_TEAM       NM_DBUS_INTERFACE_DEVICE ".Team"
 #define NM_DBUS_INTERFACE_DEVICE_VLAN       NM_DBUS_INTERFACE_DEVICE ".Vlan"
 #define NM_DBUS_INTERFACE_DEVICE_BRIDGE     NM_DBUS_INTERFACE_DEVICE ".Bridge"
@@ -200,6 +201,7 @@ typedef enum {
  * @NM_DEVICE_TYPE_VXLAN: a VXLAN interface
  * @NM_DEVICE_TYPE_VETH: a VETH interface
  * @NM_DEVICE_TYPE_MACSEC: a MACsec interface
+ * @NM_DEVICE_TYPE_DUMMY: a dummy interface
  *
  * #NMDeviceType values indicate the type of hardware represented by a
  * device object.
@@ -227,6 +229,7 @@ typedef enum {
 	NM_DEVICE_TYPE_VXLAN      = 19,
 	NM_DEVICE_TYPE_VETH       = 20,
 	NM_DEVICE_TYPE_MACSEC     = 21,
+	NM_DEVICE_TYPE_DUMMY      = 22,
 } NMDeviceType;
 
 /**

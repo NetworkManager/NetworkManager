@@ -717,6 +717,13 @@ NmcOutputField nmc_fields_setting_dcb[] = {
                                        NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH","\
                                        NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS
 
+/* Available fields for NM_SETTING_DUMMY_SETTING_NAME */
+NmcOutputField nmc_fields_setting_dummy[] = {
+	SETTING_FIELD ("name"),                                /* 0 */
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
+};
+#define NMC_FIELDS_SETTING_DUMMY_ALL       "name"
+
 /* Available fields for NM_SETTING_TUN_SETTING_NAME */
 NmcOutputField nmc_fields_setting_tun[] = {
 	SETTING_FIELD ("name"),                                /* 0 */

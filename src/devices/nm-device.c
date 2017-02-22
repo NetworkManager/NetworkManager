@@ -1349,6 +1349,8 @@ nm_device_get_priority (NMDevice *self)
 		return 450;
 	case NM_DEVICE_TYPE_VXLAN:
 		return 500;
+	case NM_DEVICE_TYPE_DUMMY:
+		return 550;
 	case NM_DEVICE_TYPE_WIFI:
 		return 600;
 	case NM_DEVICE_TYPE_OLPC_MESH:
