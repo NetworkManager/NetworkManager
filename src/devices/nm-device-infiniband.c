@@ -75,7 +75,7 @@ get_generic_capabilities (NMDevice *device)
 }
 
 static NMActStageReturn
-act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
+act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *out_failure_reason)
 {
 	nm_auto_close int dirfd = -1;
 	NMActStageReturn ret;
@@ -84,14 +84,12 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	const char *transport_mode;
 	gboolean ok, no_firmware = FALSE;
 
-	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
-
-	ret = NM_DEVICE_CLASS (nm_device_infiniband_parent_class)->act_stage1_prepare (dev, reason);
+	ret = NM_DEVICE_CLASS (nm_device_infiniband_parent_class)->act_stage1_prepare (dev, out_failure_reason);
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
 		return ret;
 
 	s_infiniband = (NMSettingInfiniband *) nm_device_get_applied_setting (dev, NM_TYPE_SETTING_INFINIBAND);
-	g_assert (s_infiniband);
+	g_return_val_if_fail (s_infiniband, NM_ACT_STAGE_RETURN_FAILURE);
 
 	transport_mode = nm_setting_infiniband_get_transport_mode (s_infiniband);
 
@@ -100,7 +98,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 		if (!strcmp (transport_mode, "datagram"))
 			return NM_ACT_STAGE_RETURN_SUCCESS;
 		else {
-			*reason = NM_DEVICE_STATE_REASON_INFINIBAND_MODE;
+			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_INFINIBAND_MODE);
 			return NM_ACT_STAGE_RETURN_FAILURE;
 		}
 	}
@@ -111,7 +109,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	nm_device_bring_up (dev, TRUE, &no_firmware);
 
 	if (!ok) {
-		*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
+		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 

@@ -922,27 +922,27 @@ out:
 static NMActStageReturn
 static_stage3_ip4_config_start (NMModem *modem,
                                 NMActRequest *req,
-                                NMDeviceStateReason *reason)
+                                NMDeviceStateReason *out_failure_reason)
 {
 	NMModemOfono *self = NM_MODEM_OFONO (modem);
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
-	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	GError *error = NULL;
 
-	if (priv->ip4_config) {
-		_LOGD ("IP4 config is done; setting modem_state -> CONNECTED");
-		g_signal_emit_by_name (self, NM_MODEM_IP4_CONFIG_RESULT, priv->ip4_config, error);
-
-		/* Signal listener takes ownership of the IP4Config */
-		priv->ip4_config = NULL;
-
-		nm_modem_set_state (NM_MODEM (self),
-		                    NM_MODEM_STATE_CONNECTED,
-		                    nm_modem_state_to_string (NM_MODEM_STATE_CONNECTED));
-		ret = NM_ACT_STAGE_RETURN_POSTPONE;
+	if (!priv->ip4_config) {
+		_LOGD ("IP4 config not ready(?)");
+		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
-	return ret;
+	_LOGD ("IP4 config is done; setting modem_state -> CONNECTED");
+	g_signal_emit_by_name (self, NM_MODEM_IP4_CONFIG_RESULT, priv->ip4_config, error);
+
+	/* Signal listener takes ownership of the IP4Config */
+	priv->ip4_config = NULL;
+
+	nm_modem_set_state (NM_MODEM (self),
+	                    NM_MODEM_STATE_CONNECTED,
+	                    nm_modem_state_to_string (NM_MODEM_STATE_CONNECTED));
+	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
 
 static void
@@ -1038,7 +1038,7 @@ create_connect_properties (NMConnection *connection)
 static NMActStageReturn
 act_stage1_prepare (NMModem *modem,
                     NMConnection *connection,
-                    NMDeviceStateReason *reason)
+                    NMDeviceStateReason *out_failure_reason)
 {
 	NMModemOfono *self = NM_MODEM_OFONO (modem);
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
@@ -1047,7 +1047,7 @@ act_stage1_prepare (NMModem *modem,
 
 	context_id = nm_connection_get_id (connection);
 	id = g_strsplit (context_id, "/", 0);
-	g_assert (id[2]);
+	g_return_val_if_fail (id[2], NM_ACT_STAGE_RETURN_FAILURE);
 
 	_LOGD ("trying %s %s", id[1], id[2]);
 
@@ -1058,8 +1058,8 @@ act_stage1_prepare (NMModem *modem,
 	g_strfreev (id);
 
 	if (!priv->context_path) {
-		*reason = NM_DEVICE_STATE_REASON_GSM_APN_FAILED;
-			return NM_ACT_STAGE_RETURN_FAILURE;
+		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_GSM_APN_FAILED);
+		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
 	if (priv->connect_properties)
@@ -1073,7 +1073,7 @@ act_stage1_prepare (NMModem *modem,
 		do_context_activate (self);
 	} else {
 		_LOGW ("could not activate context: modem is not registered.");
-		*reason = NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER;
+		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER);
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 

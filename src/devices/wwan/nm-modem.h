@@ -132,17 +132,17 @@ typedef struct {
 
 	NMActStageReturn (*act_stage1_prepare)     (NMModem *modem,
 	                                            NMConnection *connection,
-	                                            NMDeviceStateReason *reason);
+	                                            NMDeviceStateReason *out_failure_reason);
 
 	NMActStageReturn (*static_stage3_ip4_config_start) (NMModem *self,
 	                                                    NMActRequest *req,
-	                                                    NMDeviceStateReason *reason);
+	                                                    NMDeviceStateReason *out_failure_reason);
 
 	/* Request the IP6 config; when the config returns the modem
 	 * subclass should emit the ip6_config_result signal.
 	 */
 	NMActStageReturn (*stage3_ip6_config_request) (NMModem *self,
-	                                               NMDeviceStateReason *reason);
+	                                               NMDeviceStateReason *out_failure_reason);
 
 	void (*set_mm_enabled)                     (NMModem *self, gboolean enabled);
 
@@ -187,20 +187,20 @@ gboolean nm_modem_complete_connection (NMModem *self,
 
 NMActStageReturn nm_modem_act_stage1_prepare (NMModem *modem,
                                               NMActRequest *req,
-                                              NMDeviceStateReason *reason);
+                                              NMDeviceStateReason *out_failure_reason);
 
 NMActStageReturn nm_modem_act_stage2_config (NMModem *modem,
                                              NMActRequest *req,
-                                             NMDeviceStateReason *reason);
+                                             NMDeviceStateReason *out_failure_reason);
 
 NMActStageReturn nm_modem_stage3_ip4_config_start (NMModem *modem,
                                                    NMDevice *device,
                                                    NMDeviceClass *device_class,
-                                                   NMDeviceStateReason *reason);
+                                                   NMDeviceStateReason *out_failure_reason);
 
 NMActStageReturn nm_modem_stage3_ip6_config_start (NMModem *modem,
                                                    NMActRequest *req,
-                                                   NMDeviceStateReason *reason);
+                                                   NMDeviceStateReason *out_failure_reason);
 
 void nm_modem_ip4_pre_commit (NMModem *modem, NMDevice *device, NMIP4Config *config);
 

@@ -874,15 +874,13 @@ pppoe_reconnect_delay (gpointer user_data)
 }
 
 static NMActStageReturn
-act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
+act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *out_failure_reason)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (dev);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMActStageReturn ret;
 
-	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
-
-	ret = NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->act_stage1_prepare (dev, reason);
+	ret = NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->act_stage1_prepare (dev, out_failure_reason);
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
 		return ret;
 
@@ -916,7 +914,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 }
 
 static NMActStageReturn
-nm_8021x_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *reason)
+nm_8021x_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *out_failure_reason)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMConnection *connection;
@@ -925,11 +923,12 @@ nm_8021x_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *reason)
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 
 	connection = nm_device_get_applied_connection (NM_DEVICE (self));
-	g_assert (connection);
+	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
+
 	security = nm_connection_get_setting_802_1x (connection);
 	if (!security) {
 		_LOGE (LOGD_DEVICE, "Invalid or missing 802.1X security");
-		*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
+		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
 		return ret;
 	}
 
@@ -947,7 +946,7 @@ nm_8021x_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *reason)
 
 		ret = handle_auth_or_fail (self, req, FALSE);
 		if (ret != NM_ACT_STAGE_RETURN_POSTPONE)
-			*reason = NM_DEVICE_STATE_REASON_NO_SECRETS;
+			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_NO_SECRETS);
 	} else {
 		_LOGI (LOGD_DEVICE | LOGD_ETHER,
 		       "Activation: (ethernet) connection '%s' requires no security. No secrets needed.",
@@ -956,7 +955,7 @@ nm_8021x_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *reason)
 		if (supplicant_interface_init (self))
 			ret = NM_ACT_STAGE_RETURN_POSTPONE;
 		else
-			*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
+			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
 	}
 
 	return ret;
@@ -998,43 +997,42 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 }
 
 static NMActStageReturn
-pppoe_stage3_ip4_config_start (NMDeviceEthernet *self, NMDeviceStateReason *reason)
+pppoe_stage3_ip4_config_start (NMDeviceEthernet *self, NMDeviceStateReason *out_failure_reason)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMSettingPppoe *s_pppoe;
 	NMActRequest *req;
 	GError *err = NULL;
-	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 
 	req = nm_device_get_act_request (NM_DEVICE (self));
-	g_assert (req);
+	g_return_val_if_fail (req, NM_ACT_STAGE_RETURN_FAILURE);
 
 	s_pppoe = (NMSettingPppoe *) nm_device_get_applied_setting ((NMDevice *) self, NM_TYPE_SETTING_PPPOE);
-	g_assert (s_pppoe);
+	g_return_val_if_fail (s_pppoe, NM_ACT_STAGE_RETURN_FAILURE);
 
 	priv->ppp_manager = nm_ppp_manager_create (nm_device_get_iface (NM_DEVICE (self)),
 	                                           &err);
-	if (   priv->ppp_manager
-	    && nm_ppp_manager_start (priv->ppp_manager, req,
-	                             nm_setting_pppoe_get_username (s_pppoe),
-	                             30, 0, &err)) {
-		g_signal_connect (priv->ppp_manager, NM_PPP_MANAGER_SIGNAL_STATE_CHANGED,
-		                  G_CALLBACK (ppp_state_changed),
-		                  self);
-		g_signal_connect (priv->ppp_manager, NM_PPP_MANAGER_SIGNAL_IP4_CONFIG,
-		                  G_CALLBACK (ppp_ip4_config),
-		                  self);
-		ret = NM_ACT_STAGE_RETURN_POSTPONE;
-	} else {
+
+	if (   !priv->ppp_manager
+	    || !nm_ppp_manager_start (priv->ppp_manager, req,
+	                              nm_setting_pppoe_get_username (s_pppoe),
+	                              30, 0, &err)) {
 		_LOGW (LOGD_DEVICE, "PPPoE failed to start: %s", err->message);
 		g_error_free (err);
 
 		g_clear_object (&priv->ppp_manager);
 
-		*reason = NM_DEVICE_STATE_REASON_PPP_START_FAILED;
+		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_PPP_START_FAILED);
+		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
-	return ret;
+	g_signal_connect (priv->ppp_manager, NM_PPP_MANAGER_SIGNAL_STATE_CHANGED,
+	                  G_CALLBACK (ppp_state_changed),
+	                  self);
+	g_signal_connect (priv->ppp_manager, NM_PPP_MANAGER_SIGNAL_IP4_CONFIG,
+	                  G_CALLBACK (ppp_ip4_config),
+	                  self);
+	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
 
 /*****************************************************************************/
@@ -1249,7 +1247,7 @@ found:
 /*****************************************************************************/
 
 static NMActStageReturn
-act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
+act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	NMDeviceEthernet *self = (NMDeviceEthernet *) device;
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
@@ -1258,11 +1256,9 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	NMSettingDcb *s_dcb;
 
-	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
-
 	s_con = NM_SETTING_CONNECTION (nm_device_get_applied_setting (device,
 	                                                              NM_TYPE_SETTING_CONNECTION));
-	g_assert (s_con);
+	g_return_val_if_fail (s_con, NM_ACT_STAGE_RETURN_FAILURE);
 
 	nm_clear_g_source (&priv->dcb_timeout_id);
 	nm_clear_g_signal_handler (device, &priv->dcb_carrier_id);
@@ -1278,7 +1274,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 		                                                             NM_TYPE_SETTING_802_1X);
 		if (security) {
 			/* FIXME: for now 802.1x is mutually exclusive with DCB */
-			return nm_8021x_stage2_config (self, reason);
+			return nm_8021x_stage2_config (self, out_failure_reason);
 		}
 	}
 
@@ -1290,7 +1286,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 		/* lldpad really really wants the carrier to be up */
 		if (nm_platform_link_is_connected (NM_PLATFORM_GET, nm_device_get_ifindex (device))) {
 			if (!dcb_enable (device)) {
-				*reason = NM_DEVICE_STATE_REASON_DCB_FCOE_FAILED;
+				NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_DCB_FCOE_FAILED);
 				return NM_ACT_STAGE_RETURN_FAILURE;
 			}
 		} else {
@@ -1337,21 +1333,19 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 static NMActStageReturn
 act_stage3_ip4_config_start (NMDevice *device,
                              NMIP4Config **out_config,
-                             NMDeviceStateReason *reason)
+                             NMDeviceStateReason *out_failure_reason)
 {
 	NMSettingConnection *s_con;
 	const char *connection_type;
 
-	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
-
 	s_con = NM_SETTING_CONNECTION (nm_device_get_applied_setting (device, NM_TYPE_SETTING_CONNECTION));
-	g_assert (s_con);
+	g_return_val_if_fail (s_con, NM_ACT_STAGE_RETURN_FAILURE);
 
 	connection_type = nm_setting_connection_get_connection_type (s_con);
 	if (!strcmp (connection_type, NM_SETTING_PPPOE_SETTING_NAME))
-		return pppoe_stage3_ip4_config_start (NM_DEVICE_ETHERNET (device), reason);
+		return pppoe_stage3_ip4_config_start (NM_DEVICE_ETHERNET (device), out_failure_reason);
 
-	return NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->act_stage3_ip4_config_start (device, out_config, reason);
+	return NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->act_stage3_ip4_config_start (device, out_config, out_failure_reason);
 }
 
 static guint32

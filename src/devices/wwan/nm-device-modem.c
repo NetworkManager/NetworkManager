@@ -201,7 +201,7 @@ modem_ip6_config_result (NMModem *modem,
 	NMDeviceModem *self = NM_DEVICE_MODEM (user_data);
 	NMDevice *device = NM_DEVICE (self);
 	NMActStageReturn ret;
-	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
+	NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
 	NMIP6Config *ignored = NULL;
 	gboolean got_config = !!config;
 
@@ -235,11 +235,11 @@ modem_ip6_config_result (NMModem *modem,
 	}
 
 	/* Start SLAAC now that we have a link-local address from the modem */
-	ret = NM_DEVICE_CLASS (nm_device_modem_parent_class)->act_stage3_ip6_config_start (device, &ignored, &reason);
+	ret = NM_DEVICE_CLASS (nm_device_modem_parent_class)->act_stage3_ip6_config_start (device, &ignored, &failure_reason);
 	g_assert (ignored == NULL);
 	switch (ret) {
 	case NM_ACT_STAGE_RETURN_FAILURE:
-		nm_device_ip_method_failed (device, AF_INET6, reason);
+		nm_device_ip_method_failed (device, AF_INET6, failure_reason);
 		break;
 	case NM_ACT_STAGE_RETURN_IP_FAIL:
 		/* all done */
@@ -509,41 +509,41 @@ deactivate_async (NMDevice *self,
 /*****************************************************************************/
 
 static NMActStageReturn
-act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
+act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	NMActStageReturn ret;
 	NMActRequest *req;
 
-	ret = NM_DEVICE_CLASS (nm_device_modem_parent_class)->act_stage1_prepare (device, reason);
+	ret = NM_DEVICE_CLASS (nm_device_modem_parent_class)->act_stage1_prepare (device, out_failure_reason);
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
 		return ret;
 
 	req = nm_device_get_act_request (device);
-	g_assert (req);
+	g_return_val_if_fail (req, NM_ACT_STAGE_RETURN_FAILURE);
 
-	return nm_modem_act_stage1_prepare (NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) device)->modem, req, reason);
+	return nm_modem_act_stage1_prepare (NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) device)->modem, req, out_failure_reason);
 }
 
 static NMActStageReturn
-act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
+act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	NMActRequest *req;
 
 	req = nm_device_get_act_request (device);
-	g_assert (req);
+	g_return_val_if_fail (req, NM_ACT_STAGE_RETURN_FAILURE);
 
-	return nm_modem_act_stage2_config (NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) device)->modem, req, reason);
+	return nm_modem_act_stage2_config (NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) device)->modem, req, out_failure_reason);
 }
 
 static NMActStageReturn
 act_stage3_ip4_config_start (NMDevice *device,
                              NMIP4Config **out_config,
-                             NMDeviceStateReason *reason)
+                             NMDeviceStateReason *out_failure_reason)
 {
 	return nm_modem_stage3_ip4_config_start (NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) device)->modem,
 	                                         device,
 	                                         NM_DEVICE_CLASS (nm_device_modem_parent_class),
-	                                         reason);
+	                                         out_failure_reason);
 }
 
 static void
@@ -555,11 +555,11 @@ ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 static NMActStageReturn
 act_stage3_ip6_config_start (NMDevice *device,
                              NMIP6Config **out_config,
-                             NMDeviceStateReason *reason)
+                             NMDeviceStateReason *out_failure_reason)
 {
 	return nm_modem_stage3_ip6_config_start (NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) device)->modem,
 	                                         nm_device_get_act_request (device),
-	                                         reason);
+	                                         out_failure_reason);
 }
 
 static gboolean

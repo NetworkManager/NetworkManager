@@ -2218,7 +2218,7 @@ supplicant_iface_notify_current_bss (NMSupplicantInterface *iface,
 	}
 }
 
-static NMActStageReturn
+static gboolean
 handle_auth_or_fail (NMDeviceWifi *self,
                      NMActRequest *req,
                      gboolean new_secrets)
@@ -2226,35 +2226,34 @@ handle_auth_or_fail (NMDeviceWifi *self,
 	const char *setting_name;
 	guint32 tries;
 	NMConnection *applied_connection;
-	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 
-	g_return_val_if_fail (NM_IS_DEVICE_WIFI (self), NM_ACT_STAGE_RETURN_FAILURE);
+	g_return_val_if_fail (NM_IS_DEVICE_WIFI (self), FALSE);
 
 	if (!req) {
 		req = nm_device_get_act_request (NM_DEVICE (self));
-		g_return_val_if_fail (req, NM_ACT_STAGE_RETURN_FAILURE);
+		g_return_val_if_fail (req, FALSE);
 	}
 
 	applied_connection = nm_act_request_get_applied_connection (req);
 
 	tries = GPOINTER_TO_UINT (g_object_get_qdata (G_OBJECT (applied_connection), wireless_secrets_tries_quark ()));
 	if (tries > 3)
-		return NM_ACT_STAGE_RETURN_FAILURE;
+		return FALSE;
 
 	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
 
 	nm_act_request_clear_secrets (req);
 	setting_name = nm_connection_need_secrets (applied_connection, NULL);
-	if (setting_name) {
-		wifi_secrets_get_secrets (self, setting_name,
-		                          NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
-		                          | (new_secrets ? NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW : 0));
-		g_object_set_qdata (G_OBJECT (applied_connection), wireless_secrets_tries_quark (), GUINT_TO_POINTER (++tries));
-		ret = NM_ACT_STAGE_RETURN_POSTPONE;
-	} else
+	if (!setting_name) {
 		_LOGW (LOGD_DEVICE, "Cleared secrets, but setting didn't need any secrets.");
+		return FALSE;
+	}
 
-	return ret;
+	wifi_secrets_get_secrets (self, setting_name,
+	                          NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
+	                          | (new_secrets ? NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW : 0));
+	g_object_set_qdata (G_OBJECT (applied_connection), wireless_secrets_tries_quark (), GUINT_TO_POINTER (++tries));
+	return TRUE;
 }
 
 /*
@@ -2323,7 +2322,7 @@ supplicant_connection_timeout_cb (gpointer user_data)
 		if (nm_settings_connection_get_timestamp (nm_act_request_get_settings_connection (req), &timestamp))
 			new_secrets = !timestamp;
 
-		if (handle_auth_or_fail (self, req, new_secrets) == NM_ACT_STAGE_RETURN_POSTPONE)
+		if (handle_auth_or_fail (self, req, new_secrets))
 			_LOGW (LOGD_DEVICE | LOGD_WIFI, "Activation: (wifi) asking for new secrets");
 		else {
 			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED,
@@ -2407,7 +2406,7 @@ error:
 /*****************************************************************************/
 
 static NMActStageReturn
-act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
+act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
@@ -2419,18 +2418,18 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	const char *mode;
 	const char *ap_path;
 
-	ret = NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage1_prepare (device, reason);
+	ret = NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage1_prepare (device, out_failure_reason);
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
 		return ret;
 
 	req = nm_device_get_act_request (NM_DEVICE (self));
-	g_return_val_if_fail (req != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+	g_return_val_if_fail (req, NM_ACT_STAGE_RETURN_FAILURE);
 
 	connection = nm_act_request_get_applied_connection (req);
-	g_return_val_if_fail (connection != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
-	g_assert (s_wireless);
+	g_return_val_if_fail (s_wireless, NM_ACT_STAGE_RETURN_FAILURE);
 
 	mode = nm_setting_wireless_get_mode (s_wireless);
 	if (g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_INFRA) == 0)
@@ -2451,7 +2450,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	 */
 	if (is_adhoc_wpa (connection)) {
 		_LOGW (LOGD_WIFI, "Ad-Hoc WPA disabled due to kernel bugs");
-		*reason = NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED;
+		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED);
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
@@ -2563,7 +2562,7 @@ set_powersave (NMDevice *device)
 }
 
 static NMActStageReturn
-act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
+act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
@@ -2577,17 +2576,15 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	GError *error = NULL;
 	guint timeout;
 
-	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
-
 	nm_clear_g_source (&priv->sup_timeout_id);
 	nm_clear_g_source (&priv->link_timeout_id);
 
 	req = nm_device_get_act_request (device);
-	g_assert (req);
+	g_return_val_if_fail (req, NM_ACT_STAGE_RETURN_FAILURE);
 
 	ap = priv->current_ap;
 	if (!ap) {
-		*reason = NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED;
+		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
 		goto out;
 	}
 
@@ -2604,9 +2601,12 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 		       "Activation: (wifi) access point '%s' has security, but secrets are required.",
 		       nm_connection_get_id (connection));
 
-		ret = handle_auth_or_fail (self, req, FALSE);
-		if (ret == NM_ACT_STAGE_RETURN_FAILURE)
-			*reason = NM_DEVICE_STATE_REASON_NO_SECRETS;
+		if (handle_auth_or_fail (self, req, FALSE))
+			ret = NM_ACT_STAGE_RETURN_POSTPONE;
+		else {
+			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_NO_SECRETS);
+			ret = NM_ACT_STAGE_RETURN_FAILURE;
+		}
 		goto out;
 	}
 
@@ -2640,7 +2640,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 		       "Activation: (wifi) couldn't build wireless configuration: %s",
 		       error->message);
 		g_clear_error (&error);
-		*reason = NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED;
+		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED);
 		goto out;
 	}
 
@@ -2675,14 +2675,15 @@ out:
 static NMActStageReturn
 act_stage3_ip4_config_start (NMDevice *device,
                              NMIP4Config **out_config,
-                             NMDeviceStateReason *reason)
+                             NMDeviceStateReason *out_failure_reason)
 {
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip4;
 	const char *method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
 
 	connection = nm_device_get_applied_connection (device);
-	g_assert (connection);
+	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
+
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	if (s_ip4)
 		method = nm_setting_ip_config_get_method (s_ip4);
@@ -2691,20 +2692,21 @@ act_stage3_ip4_config_start (NMDevice *device,
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0)
 		nm_platform_wifi_indicate_addressing_running (NM_PLATFORM_GET, nm_device_get_ifindex (device), TRUE);
 
-	return NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage3_ip4_config_start (device, out_config, reason);
+	return NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage3_ip4_config_start (device, out_config, out_failure_reason);
 }
 
 static NMActStageReturn
 act_stage3_ip6_config_start (NMDevice *device,
                              NMIP6Config **out_config,
-                             NMDeviceStateReason *reason)
+                             NMDeviceStateReason *out_failure_reason)
 {
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip6;
 	const char *method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
 
 	connection = nm_device_get_applied_connection (device);
-	g_assert (connection);
+	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
+
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	if (s_ip6)
 		method = nm_setting_ip_config_get_method (s_ip6);
@@ -2714,7 +2716,7 @@ act_stage3_ip6_config_start (NMDevice *device,
 	    strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP) == 0)
 		nm_platform_wifi_indicate_addressing_running (NM_PLATFORM_GET, nm_device_get_ifindex (device), TRUE);
 
-	return NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage3_ip6_config_start (device, out_config, reason);
+	return NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage3_ip6_config_start (device, out_config, out_failure_reason);
 }
 
 static guint32
@@ -2771,7 +2773,7 @@ handle_ip_config_timeout (NMDeviceWifi *self,
                           NMConnection *connection,
                           gboolean may_fail,
                           gboolean *chain_up,
-                          NMDeviceStateReason *reason)
+                          NMDeviceStateReason *out_failure_reason)
 {
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 
@@ -2779,7 +2781,7 @@ handle_ip_config_timeout (NMDeviceWifi *self,
 
 	if (NM_DEVICE_WIFI_GET_PRIVATE (self)->mode == NM_802_11_MODE_AP) {
 		*chain_up = TRUE;
-		return ret;
+		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
 	/* If IP configuration times out and it's a static WEP connection, that
@@ -2795,12 +2797,13 @@ handle_ip_config_timeout (NMDeviceWifi *self,
 		       "Activation: (wifi) could not get IP configuration for connection '%s'.",
 		       nm_connection_get_id (connection));
 
-		ret = handle_auth_or_fail (self, NULL, TRUE);
-		if (ret == NM_ACT_STAGE_RETURN_POSTPONE) {
+		if (handle_auth_or_fail (self, NULL, TRUE)) {
 			_LOGI (LOGD_DEVICE | LOGD_WIFI,
 			       "Activation: (wifi) asking for new secrets");
+			ret = NM_ACT_STAGE_RETURN_POSTPONE;
 		} else {
-			*reason = NM_DEVICE_STATE_REASON_NO_SECRETS;
+			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_NO_SECRETS);
+			ret = NM_ACT_STAGE_RETURN_FAILURE;
 		}
 	} else {
 		/* Not static WEP or failure allowed; let superclass handle it */
@@ -2812,7 +2815,7 @@ handle_ip_config_timeout (NMDeviceWifi *self,
 
 
 static NMActStageReturn
-act_stage4_ip4_config_timeout (NMDevice *device, NMDeviceStateReason *reason)
+act_stage4_ip4_config_timeout (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip4;
@@ -2820,20 +2823,20 @@ act_stage4_ip4_config_timeout (NMDevice *device, NMDeviceStateReason *reason)
 	NMActStageReturn ret;
 
 	connection = nm_device_get_applied_connection (device);
-	g_assert (connection);
+	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	may_fail = nm_setting_ip_config_get_may_fail (s_ip4);
 
-	ret = handle_ip_config_timeout (NM_DEVICE_WIFI (device), connection, may_fail, &chain_up, reason);
+	ret = handle_ip_config_timeout (NM_DEVICE_WIFI (device), connection, may_fail, &chain_up, out_failure_reason);
 	if (chain_up)
-		ret = NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage4_ip4_config_timeout (device, reason);
+		ret = NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage4_ip4_config_timeout (device, out_failure_reason);
 
 	return ret;
 }
 
 static NMActStageReturn
-act_stage4_ip6_config_timeout (NMDevice *device, NMDeviceStateReason *reason)
+act_stage4_ip6_config_timeout (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip6;
@@ -2841,14 +2844,14 @@ act_stage4_ip6_config_timeout (NMDevice *device, NMDeviceStateReason *reason)
 	NMActStageReturn ret;
 
 	connection = nm_device_get_applied_connection (device);
-	g_assert (connection);
+	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	may_fail = nm_setting_ip_config_get_may_fail (s_ip6);
 
-	ret = handle_ip_config_timeout (NM_DEVICE_WIFI (device), connection, may_fail, &chain_up, reason);
+	ret = handle_ip_config_timeout (NM_DEVICE_WIFI (device), connection, may_fail, &chain_up, out_failure_reason);
 	if (chain_up)
-		ret = NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage4_ip6_config_timeout (device, reason);
+		ret = NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage4_ip6_config_timeout (device, out_failure_reason);
 
 	return ret;
 }

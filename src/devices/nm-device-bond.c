@@ -363,21 +363,19 @@ apply_bonding_config (NMDevice *device)
 }
 
 static NMActStageReturn
-act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
+act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *out_failure_reason)
 {
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	gboolean no_firmware = FALSE;
 
-	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
-
-	ret = NM_DEVICE_CLASS (nm_device_bond_parent_class)->act_stage1_prepare (dev, reason);
+	ret = NM_DEVICE_CLASS (nm_device_bond_parent_class)->act_stage1_prepare (dev, out_failure_reason);
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
 		return ret;
 
 	/* Interface must be down to set bond options */
 	nm_device_take_down (dev, TRUE);
 	ret = apply_bonding_config (dev);
-	if (ret)
+	if (ret != NM_ACT_STAGE_RETURN_FAILURE)
 		ret = nm_device_hw_addr_set_cloned (dev, nm_device_get_applied_connection (dev), FALSE);
 	nm_device_bring_up (dev, TRUE, &no_firmware);
 

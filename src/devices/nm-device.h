@@ -283,19 +283,19 @@ typedef struct {
 	                                             GError **error);
 
 	NMActStageReturn    (* act_stage1_prepare)  (NMDevice *self,
-	                                             NMDeviceStateReason *reason);
+	                                             NMDeviceStateReason *out_failure_reason);
 	NMActStageReturn    (* act_stage2_config)   (NMDevice *self,
-	                                             NMDeviceStateReason *reason);
+	                                             NMDeviceStateReason *out_failure_reason);
 	NMActStageReturn    (* act_stage3_ip4_config_start) (NMDevice *self,
 	                                                     NMIP4Config **out_config,
-	                                                     NMDeviceStateReason *reason);
+	                                                     NMDeviceStateReason *out_failure_reason);
 	NMActStageReturn    (* act_stage3_ip6_config_start) (NMDevice *self,
 	                                                     NMIP6Config **out_config,
-	                                                     NMDeviceStateReason *reason);
+	                                                     NMDeviceStateReason *out_failure_reason);
 	NMActStageReturn    (* act_stage4_ip4_config_timeout)   (NMDevice *self,
-	                                                         NMDeviceStateReason *reason);
+	                                                         NMDeviceStateReason *out_failure_reason);
 	NMActStageReturn    (* act_stage4_ip6_config_timeout)   (NMDevice *self,
-	                                                         NMDeviceStateReason *reason);
+	                                                         NMDeviceStateReason *out_failure_reason);
 
 	void                (* ip4_config_pre_commit) (NMDevice *self, NMIP4Config *config);
 

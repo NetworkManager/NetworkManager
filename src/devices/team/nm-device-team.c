@@ -580,7 +580,7 @@ teamd_start (NMDevice *device, NMSettingTeam *s_team)
 }
 
 static NMActStageReturn
-act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
+act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	NMDeviceTeam *self = NM_DEVICE_TEAM (device);
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
@@ -589,14 +589,12 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	NMSettingTeam *s_team;
 	const char *cfg;
 
-	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
-
-	ret = NM_DEVICE_CLASS (nm_device_team_parent_class)->act_stage1_prepare (device, reason);
+	ret = NM_DEVICE_CLASS (nm_device_team_parent_class)->act_stage1_prepare (device, out_failure_reason);
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
 		return ret;
 
 	s_team = (NMSettingTeam *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_TEAM);
-	g_assert (s_team);
+	g_return_val_if_fail (s_team, NM_ACT_STAGE_RETURN_FAILURE);
 
 	if (priv->tdc) {
 		/* If the existing teamd config is the same as we're about to use,
@@ -614,7 +612,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 			_LOGD (LOGD_TEAM, "existing teamd config mismatch; killing existing via teamdctl");
 			if (!teamd_kill (self, NULL, &error)) {
 				_LOGW (LOGD_TEAM, "existing teamd config mismatch; failed to kill existing teamd: %s", error->message);
-				*reason = NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED;
+				NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
 				return NM_ACT_STAGE_RETURN_FAILURE;
 			}
 		}

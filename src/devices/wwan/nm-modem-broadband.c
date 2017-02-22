@@ -581,7 +581,7 @@ connect_context_step (NMModemBroadband *self)
 static NMActStageReturn
 act_stage1_prepare (NMModem *_self,
                     NMConnection *connection,
-                    NMDeviceStateReason *reason)
+                    NMDeviceStateReason *out_failure_reason)
 {
 	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
 
@@ -590,7 +590,7 @@ act_stage1_prepare (NMModem *_self,
 		self->_priv.simple_iface = mm_object_get_modem_simple (self->_priv.modem_object);
 		if (!self->_priv.simple_iface) {
 			_LOGW ("cannot access the Simple mobile broadband modem interface");
-			*reason = NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED;
+			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
 			return NM_ACT_STAGE_RETURN_FAILURE;
 		}
 	}
@@ -944,7 +944,7 @@ out:
 static NMActStageReturn
 static_stage3_ip4_config_start (NMModem *_self,
                                 NMActRequest *req,
-                                NMDeviceStateReason *reason)
+                                NMDeviceStateReason *out_failure_reason)
 {
 	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
 
@@ -1050,7 +1050,7 @@ out:
 }
 
 static NMActStageReturn
-stage3_ip6_config_request (NMModem *_self, NMDeviceStateReason *reason)
+stage3_ip6_config_request (NMModem *_self, NMDeviceStateReason *out_failure_reason)
 {
 	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
 

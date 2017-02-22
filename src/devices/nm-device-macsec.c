@@ -585,7 +585,7 @@ supplicant_interface_init (NMDeviceMacsec *self)
 }
 
 static NMActStageReturn
-act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
+act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	NMDeviceMacsec *self = NM_DEVICE_MACSEC (device);
 	NMDeviceMacsecPrivate *priv = NM_DEVICE_MACSEC_GET_PRIVATE (self);
@@ -594,7 +594,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	const char *setting_name;
 
 	connection = nm_device_get_applied_connection (NM_DEVICE (self));
-	g_assert (connection);
+	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
 
 	if (!priv->supplicant.mgr)
 		priv->supplicant.mgr = g_object_ref (nm_supplicant_manager_get ());
@@ -610,7 +610,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 
 		ret = handle_auth_or_fail (self, req, FALSE);
 		if (ret != NM_ACT_STAGE_RETURN_POSTPONE)
-			*reason = NM_DEVICE_STATE_REASON_NO_SECRETS;
+			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_NO_SECRETS);
 	} else {
 		_LOGI (LOGD_DEVICE | LOGD_ETHER,
 		       "Activation: connection '%s' requires no security. No secrets needed.",
@@ -619,7 +619,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 		if (supplicant_interface_init (self))
 			ret = NM_ACT_STAGE_RETURN_POSTPONE;
 		else
-			*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
+			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
 	}
 
 	return ret;
