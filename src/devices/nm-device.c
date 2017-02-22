@@ -458,21 +458,17 @@ static gboolean nm_device_set_ip4_config (NMDevice *self,
                                           NMIP4Config *config,
                                           guint32 default_route_metric,
                                           gboolean commit,
-                                          gboolean routes_full_sync,
-                                          NMDeviceStateReason *out_reason);
+                                          gboolean routes_full_sync);
 static gboolean ip4_config_merge_and_apply (NMDevice *self,
                                             NMIP4Config *config,
-                                            gboolean commit,
-                                            NMDeviceStateReason *out_reason);
+                                            gboolean commit);
 
 static gboolean nm_device_set_ip6_config (NMDevice *self,
                                           NMIP6Config *config,
                                           gboolean commit,
-                                          gboolean routes_full_sync,
-                                          NMDeviceStateReason *out_reason);
+                                          gboolean routes_full_sync);
 static gboolean ip6_config_merge_and_apply (NMDevice *self,
-                                            gboolean commit,
-                                            NMDeviceStateReason *out_reason);
+                                            gboolean commit);
 
 static void nm_device_master_add_slave (NMDevice *self, NMDevice *slave, gboolean configure);
 static void nm_device_slave_notify_enslave (NMDevice *self, gboolean success);
@@ -2240,11 +2236,11 @@ device_link_changed (NMDevice *self)
 		/* the link was down and just came up. That happens for example, while changing MTU.
 		 * We must restore IP configuration. */
 		if (priv->ip4_state == IP_DONE) {
-			if (!ip4_config_merge_and_apply (self, NULL, TRUE, NULL))
+			if (!ip4_config_merge_and_apply (self, NULL, TRUE))
 				_LOGW (LOGD_IP4, "failed applying IP4 config after link comes up again");
 		}
 		if (priv->ip6_state == IP_DONE) {
-			if (!ip6_config_merge_and_apply (self, TRUE, NULL))
+			if (!ip6_config_merge_and_apply (self, TRUE))
 				_LOGW (LOGD_IP6, "failed applying IP6 config after link comes up again");
 		}
 	}
@@ -3327,8 +3323,8 @@ nm_device_removed (NMDevice *self, gboolean unconfigure_ip_config)
 	_update_default_route (self, AF_INET6, priv->default_route.v6_has, TRUE);
 	_update_default_route (self, AF_INET,  FALSE, TRUE);
 	_update_default_route (self, AF_INET6, FALSE, TRUE);
-	nm_device_set_ip4_config (self, NULL, 0, FALSE, FALSE, NULL);
-	nm_device_set_ip6_config (self, NULL, FALSE, FALSE, NULL);
+	nm_device_set_ip4_config (self, NULL, 0, FALSE, FALSE);
+	nm_device_set_ip6_config (self, NULL, FALSE, FALSE);
 }
 
 static gboolean
@@ -4794,7 +4790,7 @@ nm_device_handle_ipv4ll_event (sd_ipv4ll *ll, int event, void *data)
 			nm_clear_g_source (&priv->ipv4ll_timeout);
 			nm_device_activate_schedule_ip4_config_result (self, config);
 		} else if (priv->ip4_state == IP_DONE) {
-			if (!ip4_config_merge_and_apply (self, config, TRUE, NULL)) {
+			if (!ip4_config_merge_and_apply (self, config, TRUE)) {
 				_LOGE (LOGD_AUTOIP4, "failed to update IP4 config for autoip change.");
 				nm_device_ip_method_failed (self, AF_INET, NM_DEVICE_STATE_REASON_AUTOIP_FAILED);
 			}
@@ -5028,8 +5024,7 @@ _ip4_config_merge_default (gpointer value, gpointer user_data)
 static gboolean
 ip4_config_merge_and_apply (NMDevice *self,
                             NMIP4Config *config,
-                            gboolean commit,
-                            NMDeviceStateReason *out_reason)
+                            gboolean commit)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
@@ -5200,7 +5195,7 @@ END_ADD_DEFAULT_ROUTE:
 	                   && priv->v4_commit_first_time
 	                   && !nm_device_uses_assumed_connection (self);
 
-	success = nm_device_set_ip4_config (self, composite, default_route_metric, commit, routes_full_sync, out_reason);
+	success = nm_device_set_ip4_config (self, composite, default_route_metric, commit, routes_full_sync);
 	g_object_unref (composite);
 
 	if (commit)
@@ -5213,7 +5208,7 @@ dhcp4_lease_change (NMDevice *self, NMIP4Config *config)
 {
 	g_return_val_if_fail (config, FALSE);
 
-	if (!ip4_config_merge_and_apply (self, config, TRUE, NULL)) {
+	if (!ip4_config_merge_and_apply (self, config, TRUE)) {
 		_LOGW (LOGD_DHCP4, "failed to update IPv4 config for DHCP change.");
 		return FALSE;
 	}
@@ -5767,8 +5762,7 @@ _ip6_config_merge_default (gpointer value, gpointer user_data)
 
 static gboolean
 ip6_config_merge_and_apply (NMDevice *self,
-                            gboolean commit,
-                            NMDeviceStateReason *out_reason)
+                            gboolean commit)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
@@ -5956,7 +5950,7 @@ END_ADD_DEFAULT_ROUTE:
 	                   && priv->v6_commit_first_time
 	                   && !nm_device_uses_assumed_connection (self);
 
-	success = nm_device_set_ip6_config (self, composite, commit, routes_full_sync, out_reason);
+	success = nm_device_set_ip6_config (self, composite, commit, routes_full_sync);
 	g_object_unref (composite);
 	if (commit)
 		priv->v6_commit_first_time = FALSE;
@@ -5980,7 +5974,7 @@ dhcp6_lease_change (NMDevice *self)
 	g_assert (settings_connection);
 
 	/* Apply the updated config */
-	if (!ip6_config_merge_and_apply (self, TRUE, NULL)) {
+	if (!ip6_config_merge_and_apply (self, TRUE)) {
 		_LOGW (LOGD_DHCP6, "failed to update IPv6 config in response to DHCP event");
 		return FALSE;
 	}
@@ -6363,7 +6357,7 @@ nm_device_use_ip6_subnet (NMDevice *self, const NMPlatformIP6Address *subnet)
 	       subnet->preferred);
 
 	/* This also updates the ndisc if there are actual changes. */
-	if (!ip6_config_merge_and_apply (self, TRUE, NULL))
+	if (!ip6_config_merge_and_apply (self, TRUE))
 		_LOGW (LOGD_IP6, "ipv6-pd: failed applying IP6 config for connection sharing");
 }
 
@@ -6399,7 +6393,7 @@ nm_device_copy_ip6_dns_config (NMDevice *self, NMDevice *from_device)
 		                              nm_ip6_config_get_search (from_config, i));
 	}
 
-	if (!ip6_config_merge_and_apply (self, TRUE, NULL))
+	if (!ip6_config_merge_and_apply (self, TRUE))
 		_LOGW (LOGD_IP6, "ipv6-pd: failed applying DNS config for connection sharing");
 }
 
@@ -6947,7 +6941,7 @@ addrconf6_start_with_link_ready (NMDevice *self)
 	}
 
 	/* Apply any manual configuration before starting RA */
-	if (!ip6_config_merge_and_apply (self, TRUE, NULL))
+	if (!ip6_config_merge_and_apply (self, TRUE))
 		_LOGW (LOGD_IP6, "failed to apply manual IPv6 configuration");
 
 	/* XXX: These sysctls would probably be better set by the lndp ndisc itself. */
@@ -7884,7 +7878,6 @@ activate_stage5_ip4_config_commit (NMDevice *self)
 	NMActRequest *req;
 	const char *method;
 	NMConnection *connection;
-	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 	int ip_ifindex;
 
 	req = nm_device_get_act_request (self);
@@ -7901,9 +7894,9 @@ activate_stage5_ip4_config_commit (NMDevice *self)
 	}
 
 	/* NULL to use the existing priv->dev_ip4_config */
-	if (!ip4_config_merge_and_apply (self, NULL, TRUE, &reason)) {
+	if (!ip4_config_merge_and_apply (self, NULL, TRUE)) {
 		_LOGD (LOGD_DEVICE | LOGD_IP4, "Activation: Stage 5 of 5 (IPv4 Commit) failed");
-		nm_device_ip_method_failed (self, AF_INET, reason);
+		nm_device_ip_method_failed (self, AF_INET, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
 		return;
 	}
 
@@ -8037,7 +8030,6 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 	NMActRequest *req;
 	const char *method;
 	NMConnection *connection;
-	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 	int ip_ifindex;
 	int errsv;
 
@@ -8054,7 +8046,7 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 			_LOGW (LOGD_DEVICE, "interface %s not up for IP configuration", nm_device_get_ip_iface (self));
 	}
 
-	if (ip6_config_merge_and_apply (self, TRUE, &reason)) {
+	if (ip6_config_merge_and_apply (self, TRUE)) {
 		if (   priv->dhcp6.mode != NM_NDISC_DHCP_LEVEL_NONE
 		    && priv->ip6_state == IP_CONF) {
 			if (priv->dhcp6.ip6_config) {
@@ -8100,7 +8092,7 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 		}
 	} else {
 		_LOGW (LOGD_DEVICE | LOGD_IP6, "Activation: Stage 5 of 5 (IPv6 Commit) failed");
-		nm_device_ip_method_failed (self, AF_INET6, reason);
+		nm_device_ip_method_failed (self, AF_INET6, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
 	}
 }
 
@@ -8437,7 +8429,7 @@ nm_device_reactivate_ip4_config (NMDevice *self,
 			if (!nm_device_activate_stage3_ip4_start (self))
 				_LOGW (LOGD_IP4, "Failed to apply IPv4 configuration");
 		} else {
-			if (!ip4_config_merge_and_apply (self, NULL, TRUE, NULL))
+			if (!ip4_config_merge_and_apply (self, NULL, TRUE))
 				_LOGW (LOGD_IP4, "Failed to reapply IPv4 configuration");
 		}
 	}
@@ -8475,7 +8467,7 @@ nm_device_reactivate_ip6_config (NMDevice *self,
 			if (!nm_device_activate_stage3_ip6_start (self))
 				_LOGW (LOGD_IP6, "Failed to apply IPv6 configuration");
 		} else {
-			if (!ip6_config_merge_and_apply (self, TRUE, NULL))
+			if (!ip6_config_merge_and_apply (self, TRUE))
 				_LOGW (LOGD_IP4, "Failed to reapply IPv6 configuration");
 		}
 	}
@@ -9181,14 +9173,12 @@ nm_device_set_ip4_config (NMDevice *self,
                           NMIP4Config *new_config,
                           guint32 default_route_metric,
                           gboolean commit,
-                          gboolean routes_full_sync,
-                          NMDeviceStateReason *out_reason)
+                          gboolean routes_full_sync)
 {
 	NMDevicePrivate *priv;
 	NMIP4Config *old_config = NULL;
 	gboolean has_changes = FALSE;
 	gboolean success = TRUE;
-	NMDeviceStateReason reason_local = NM_DEVICE_STATE_REASON_NONE;
 	int ip_ifindex, config_ifindex;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
@@ -9218,8 +9208,6 @@ nm_device_set_ip4_config (NMDevice *self,
 		success = nm_ip4_config_commit (new_config, ip_ifindex,
 		                                routes_full_sync,
 		                                assumed ? (gint64) -1 : (gint64) default_route_metric);
-		if (!success)
-			reason_local = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
 	}
 
 	if (new_config) {
@@ -9278,7 +9266,6 @@ nm_device_set_ip4_config (NMDevice *self,
 		nm_device_queue_recheck_assume (self);
 	}
 
-	NM_SET_OUT (out_reason, reason_local);
 	return success;
 }
 
@@ -9324,7 +9311,7 @@ nm_device_replace_vpn4_config (NMDevice *self, NMIP4Config *old, NMIP4Config *co
 		return;
 
 	/* NULL to use existing configs */
-	if (!ip4_config_merge_and_apply (self, NULL, TRUE, NULL))
+	if (!ip4_config_merge_and_apply (self, NULL, TRUE))
 		_LOGW (LOGD_IP4, "failed to set VPN routes for device");
 }
 
@@ -9341,7 +9328,7 @@ nm_device_set_wwan_ip4_config (NMDevice *self, NMIP4Config *config)
 		priv->wwan_ip4_config = g_object_ref (config);
 
 	/* NULL to use existing configs */
-	if (!ip4_config_merge_and_apply (self, NULL, TRUE, NULL))
+	if (!ip4_config_merge_and_apply (self, NULL, TRUE))
 		_LOGW (LOGD_IP4, "failed to set WWAN IPv4 configuration");
 }
 
@@ -9349,14 +9336,12 @@ static gboolean
 nm_device_set_ip6_config (NMDevice *self,
                           NMIP6Config *new_config,
                           gboolean commit,
-                          gboolean routes_full_sync,
-                          NMDeviceStateReason *out_reason)
+                          gboolean routes_full_sync)
 {
 	NMDevicePrivate *priv;
 	NMIP6Config *old_config = NULL;
 	gboolean has_changes = FALSE;
 	gboolean success = TRUE;
-	NMDeviceStateReason reason_local = NM_DEVICE_STATE_REASON_NONE;
 	int ip_ifindex, config_ifindex;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
@@ -9381,8 +9366,6 @@ nm_device_set_ip6_config (NMDevice *self,
 		success = nm_ip6_config_commit (new_config,
 		                                ip_ifindex,
 		                                routes_full_sync);
-		if (!success)
-			reason_local = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
 	}
 
 	if (new_config) {
@@ -9440,7 +9423,6 @@ nm_device_set_ip6_config (NMDevice *self,
 			ndisc_set_router_config (priv->ndisc, self);
 	}
 
-	NM_SET_OUT (out_reason, reason_local);
 	return success;
 }
 
@@ -9453,7 +9435,7 @@ nm_device_replace_vpn6_config (NMDevice *self, NMIP6Config *old, NMIP6Config *co
 		return;
 
 	/* NULL to use existing configs */
-	if (!ip6_config_merge_and_apply (self, TRUE, NULL))
+	if (!ip6_config_merge_and_apply (self, TRUE))
 		_LOGW (LOGD_IP6, "failed to set VPN routes for device");
 }
 
@@ -9470,7 +9452,7 @@ nm_device_set_wwan_ip6_config (NMDevice *self, NMIP6Config *config)
 		priv->wwan_ip6_config = g_object_ref (config);
 
 	/* NULL to use existing configs */
-	if (!ip6_config_merge_and_apply (self, TRUE, NULL))
+	if (!ip6_config_merge_and_apply (self, TRUE))
 		_LOGW (LOGD_IP6, "failed to set WWAN IPv6 configuration");
 }
 
@@ -9849,11 +9831,11 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 
 	/* when the link comes up, we must restore IP configuration if necessary. */
 	if (priv->ip4_state == IP_DONE) {
-		if (!ip4_config_merge_and_apply (self, NULL, TRUE, NULL))
+		if (!ip4_config_merge_and_apply (self, NULL, TRUE))
 			_LOGW (LOGD_IP4, "failed applying IP4 config after bringing link up");
 	}
 	if (priv->ip6_state == IP_DONE) {
-		if (!ip6_config_merge_and_apply (self, TRUE, NULL))
+		if (!ip6_config_merge_and_apply (self, TRUE))
 			_LOGW (LOGD_IP6, "failed applying IP6 config after bringing link up");
 	}
 
@@ -10106,7 +10088,7 @@ update_ip4_config (NMDevice *self, gboolean initial)
 		if (priv->wwan_ip4_config)
 			nm_ip4_config_subtract (priv->ext_ip4_config, priv->wwan_ip4_config);
 
-		ip4_config_merge_and_apply (self, NULL, FALSE, NULL);
+		ip4_config_merge_and_apply (self, NULL, FALSE);
 	}
 }
 
@@ -10191,7 +10173,7 @@ update_ip6_config (NMDevice *self, gboolean initial)
 			nm_ip6_config_subtract (priv->ext_ip6_config, priv->wwan_ip6_config);
 		g_slist_foreach (priv->vpn6_configs, _ip6_config_subtract, priv->ext_ip6_config);
 
-		ip6_config_merge_and_apply (self, FALSE, NULL);
+		ip6_config_merge_and_apply (self, FALSE);
 	}
 
 	if (   priv->linklocal6_timeout_id
@@ -11424,8 +11406,8 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 	/* Clean up IP configs; this does not actually deconfigure the
 	 * interface; the caller must flush routes and addresses explicitly.
 	 */
-	nm_device_set_ip4_config (self, NULL, 0, TRUE, TRUE, NULL);
-	nm_device_set_ip6_config (self, NULL, TRUE, TRUE, NULL);
+	nm_device_set_ip4_config (self, NULL, 0, TRUE, TRUE);
+	nm_device_set_ip6_config (self, NULL, TRUE, TRUE);
 	g_clear_object (&priv->proxy_config);
 	g_clear_object (&priv->con_ip4_config);
 	g_clear_object (&priv->dev_ip4_config);
