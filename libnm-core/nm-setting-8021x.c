@@ -1943,7 +1943,7 @@ nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *setting,
 }
 
 /**
- * nm_setting_802_1x_get_phase2_ca_cert_password:
+ * nm_setting_802_1x_get_phase2_client_cert_password:
  * @setting: the #NMSetting8021x
  *
  * Returns: the password used to access the "phase2" client certificate stored in
