@@ -2967,7 +2967,7 @@ slave_state_changed (NMDevice *slave,
 	}
 
 	/* Don't touch the device if its state changed externally. */
-	if (reason == NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED)
+	if (nm_device_state_reason_check (reason) == NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED)
 		configure = FALSE;
 
 	if (release) {
@@ -3247,10 +3247,10 @@ nm_device_slave_notify_release (NMDevice *self, NMDeviceStateReason reason)
 
 	if (   priv->state > NM_DEVICE_STATE_DISCONNECTED
 	    && priv->state <= NM_DEVICE_STATE_ACTIVATED) {
-		if (reason == NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED) {
+		if (nm_device_state_reason_check (reason) == NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED) {
 			new_state = NM_DEVICE_STATE_FAILED;
 			master_status = "failed";
-		} else if (reason == NM_DEVICE_STATE_REASON_USER_REQUESTED) {
+		} else if (nm_device_state_reason_check (reason) == NM_DEVICE_STATE_REASON_USER_REQUESTED) {
 			new_state = NM_DEVICE_STATE_DEACTIVATING;
 			master_status = "deactivated by user request";
 		} else {
@@ -4232,7 +4232,6 @@ activate_stage1_device_prepare (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
-	NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
 	NMActiveConnection *active = NM_ACTIVE_CONNECTION (priv->act_request);
 
 	_set_ip_state (self, AF_INET, IP_NONE);
@@ -4246,6 +4245,8 @@ activate_stage1_device_prepare (NMDevice *self)
 
 	/* Assumed connections were already set up outside NetworkManager */
 	if (!nm_active_connection_get_assumed (active)) {
+		NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
+
 		ret = NM_DEVICE_GET_CLASS (self)->act_stage1_prepare (self, &failure_reason);
 		if (ret == NM_ACT_STAGE_RETURN_POSTPONE) {
 			return;
@@ -11914,11 +11915,14 @@ _set_state_full (NMDevice *self,
 	case NM_DEVICE_STATE_UNMANAGED:
 		nm_device_set_firmware_missing (self, FALSE);
 		if (old_state > NM_DEVICE_STATE_UNMANAGED) {
-			if (reason == NM_DEVICE_STATE_REASON_REMOVED) {
+			switch (nm_device_state_reason_check (reason)) {
+			case NM_DEVICE_STATE_REASON_REMOVED:
 				nm_device_cleanup (self, reason, CLEANUP_TYPE_REMOVED);
-			} else if (reason == NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED) {
+				break;
+			case NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED:
 				nm_device_cleanup (self, reason, CLEANUP_TYPE_KEEP);
-			} else {
+				break;
+			default:
 				/* Clean up if the device is now unmanaged but was activated */
 				if (nm_device_get_act_request (self))
 					nm_device_cleanup (self, reason, CLEANUP_TYPE_DECONFIGURE);
@@ -11926,17 +11930,18 @@ _set_state_full (NMDevice *self,
 				nm_device_hw_addr_reset (self, "unmanage");
 				set_nm_ipv6ll (self, FALSE);
 				restore_ip6_properties (self);
+				break;
 			}
 		}
 		break;
 	case NM_DEVICE_STATE_UNAVAILABLE:
 		if (old_state == NM_DEVICE_STATE_UNMANAGED) {
 			save_ip6_properties (self);
-			if (reason != NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED)
+			if (nm_device_state_reason_check (reason) != NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED)
 				ip6_managed_setup (self);
 		}
 
-		if (reason != NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED) {
+		if (nm_device_state_reason_check (reason) != NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED) {
 			if (old_state == NM_DEVICE_STATE_UNMANAGED || priv->firmware_missing) {
 				if (!nm_device_bring_up (self, TRUE, &no_firmware) && no_firmware)
 					_LOGW (LOGD_PLATFORM, "firmware may be missing.");
@@ -11963,7 +11968,7 @@ _set_state_full (NMDevice *self,
 
 			nm_device_cleanup (self, reason, CLEANUP_TYPE_DECONFIGURE);
 		} else if (old_state < NM_DEVICE_STATE_DISCONNECTED) {
-			if (reason != NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED) {
+			if (nm_device_state_reason_check (reason) != NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED) {
 				/* Ensure IPv6 is set up as it may not have been done when
 				 * entering the UNAVAILABLE state depending on the reason.
 				 */

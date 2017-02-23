@@ -127,7 +127,7 @@ modem_prepare_result (NMModem *modem,
 	if (success)
 		nm_device_activate_schedule_stage2_device_config (device);
 	else {
-		if (reason == NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT) {
+		if (nm_device_state_reason_check (reason) == NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT) {
 			/* If the connect failed because the SIM PIN was wrong don't allow
 			 * the device to be auto-activated anymore, which would risk locking
 			 * the SIM if the incorrect PIN continues to be used.
@@ -377,7 +377,7 @@ device_state_changed (NMDevice *device,
 
 	nm_modem_device_state_changed (priv->modem, new_state, old_state);
 
-	switch (reason) {
+	switch (nm_device_state_reason_check (reason)) {
 	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_DENIED:
 	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_NOT_SEARCHING:
 	case NM_DEVICE_STATE_REASON_GSM_SIM_NOT_INSERTED:

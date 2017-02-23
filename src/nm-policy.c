@@ -1465,7 +1465,7 @@ device_state_changed (NMDevice *device,
 		    && old_state <= NM_DEVICE_STATE_ACTIVATED) {
 			int tries = nm_settings_connection_get_autoconnect_retries (connection);
 
-			if (reason == NM_DEVICE_STATE_REASON_NO_SECRETS) {
+			if (nm_device_state_reason_check (reason) == NM_DEVICE_STATE_REASON_NO_SECRETS) {
 				_LOGD (LOGD_DEVICE, "connection '%s' now blocked from autoconnect due to no secrets",
 				       nm_settings_connection_get_id (connection));
 
@@ -1524,7 +1524,7 @@ device_state_changed (NMDevice *device,
 			update_routing_and_dns (self, FALSE);
 		break;
 	case NM_DEVICE_STATE_DEACTIVATING:
-		if (reason == NM_DEVICE_STATE_REASON_USER_REQUESTED) {
+		if (nm_device_state_reason_check (reason) == NM_DEVICE_STATE_REASON_USER_REQUESTED) {
 			if (!nm_device_get_autoconnect (device)) {
 				/* The device was disconnected; block all connections on it */
 				block_autoconnect_for_device (self, device);
@@ -1544,7 +1544,8 @@ device_state_changed (NMDevice *device,
 		/* Reset retry counts for a device's connections when carrier on; if cable
 		 * was unplugged and plugged in again, we should try to reconnect.
 		 */
-		if (reason == NM_DEVICE_STATE_REASON_CARRIER && old_state == NM_DEVICE_STATE_UNAVAILABLE)
+		if (   nm_device_state_reason_check (reason) == NM_DEVICE_STATE_REASON_CARRIER
+		    && old_state == NM_DEVICE_STATE_UNAVAILABLE)
 			reset_autoconnect_all (self, device);
 
 		if (old_state > NM_DEVICE_STATE_DISCONNECTED)

@@ -131,7 +131,7 @@ parent_state_changed (NMDevice *parent,
 	NMDeviceMacvlan *self = NM_DEVICE_MACVLAN (user_data);
 
 	/* We'll react to our own carrier state notifications. Ignore the parent's. */
-	if (reason == NM_DEVICE_STATE_REASON_CARRIER)
+	if (nm_device_state_reason_check (reason) == NM_DEVICE_STATE_REASON_CARRIER)
 		return;
 
 	nm_device_set_unmanaged_by_flags (NM_DEVICE (self), NM_UNMANAGED_PARENT, !nm_device_get_managed (parent, FALSE), reason);

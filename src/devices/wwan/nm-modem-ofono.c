@@ -745,7 +745,6 @@ context_property_changed (GDBusProxy *proxy,
 {
 	NMModemOfono *self = NM_MODEM_OFONO (user_data);
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
-	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 	NMPlatformIP4Address addr;
 	gboolean ret = FALSE;
 	GVariant *v_dict;
@@ -910,9 +909,10 @@ context_property_changed (GDBusProxy *proxy,
 out:
 	if (nm_modem_get_state (NM_MODEM (self)) != NM_MODEM_STATE_CONNECTED) {
 		_LOGI ("emitting PREPARE_RESULT: %s", ret ? "TRUE" : "FALSE");
-		if (!ret)
-			reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
-		nm_modem_emit_prepare_result (NM_MODEM (self), ret, reason);
+		nm_modem_emit_prepare_result (NM_MODEM (self), ret,
+		                              ret
+		                                  ? NM_DEVICE_STATE_REASON_NONE
+		                                  : NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
 	} else {
 		_LOGW ("MODEM_PPP_FAILED");
 		nm_modem_emit_ppp_failed (NM_MODEM (self), NM_DEVICE_STATE_REASON_PPP_FAILED);

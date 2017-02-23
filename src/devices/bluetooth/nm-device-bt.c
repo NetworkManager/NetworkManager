@@ -486,7 +486,7 @@ modem_prepare_result (NMModem *modem,
 			break;
 		}
 	} else {
-		if (reason == NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT) {
+		if (nm_device_state_reason_check (reason) == NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT) {
 			/* If the connect failed because the SIM PIN was wrong don't allow
 			 * the device to be auto-activated anymore, which would risk locking
 			 * the SIM if the incorrect PIN continues to be used.

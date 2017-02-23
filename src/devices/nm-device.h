@@ -30,6 +30,21 @@
 #include "nm-rfkill-manager.h"
 #include "NetworkManagerUtils.h"
 
+static inline NMDeviceStateReason
+nm_device_state_reason_check (NMDeviceStateReason reason)
+{
+	/* the device-state-reason serves mostly informational purpse during a state
+	 * change. In some cases however, decisions are made based on the reason.
+	 * I tend to think that interpreting the state reason to derive some behaviors
+	 * is confusing, because the cause and effect are so far apart.
+	 *
+	 * This function is here to mark source that inspects the reason to make
+	 * a decision -- contrary to places that set the reason. Thus, by grepping
+	 * for nm_device_state_reason_check() you can find the "effect" to a certain
+	 * reason.
+	 */
+	return reason;
+}
 
 #define NM_PENDING_ACTION_AUTOACTIVATE              "autoactivate"
 #define NM_PENDING_ACTION_DHCP4                     "dhcp4"
