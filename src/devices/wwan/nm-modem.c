@@ -495,18 +495,19 @@ ppp_ip6_config (NMPPPManager *ppp_manager,
 
 static void
 ppp_stats (NMPPPManager *ppp_manager,
-           guint32 in_bytes,
-           guint32 out_bytes,
+           guint i_in_bytes,
+           guint i_out_bytes,
            gpointer user_data)
 {
 	NMModem *self = NM_MODEM (user_data);
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
+	guint32 in_bytes = i_in_bytes;
+	guint32 out_bytes = i_out_bytes;
 
 	if (priv->in_bytes != in_bytes || priv->out_bytes != out_bytes) {
 		priv->in_bytes = in_bytes;
 		priv->out_bytes = out_bytes;
-
-		g_signal_emit (self, signals[PPP_STATS], 0, in_bytes, out_bytes);
+		g_signal_emit (self, signals[PPP_STATS], 0, (guint) in_bytes, (guint) out_bytes);
 	}
 }
 
@@ -1684,7 +1685,8 @@ nm_modem_class_init (NMModemClass *klass)
 	                  G_SIGNAL_RUN_FIRST,
 	                  0, NULL, NULL, NULL,
 	                  G_TYPE_NONE, 2,
-	                  G_TYPE_UINT, G_TYPE_UINT);
+	                  G_TYPE_UINT /*guint32 in_bytes*/,
+	                  G_TYPE_UINT /*guint32 out_bytes*/);
 
 	signals[PPP_FAILED] =
 	    g_signal_new (NM_MODEM_PPP_FAILED,
