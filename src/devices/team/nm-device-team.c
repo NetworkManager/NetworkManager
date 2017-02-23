@@ -28,6 +28,7 @@
 #include <sys/wait.h>
 #include <teamdctl.h>
 #include <stdlib.h>
+#include <jansson.h>
 
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device-private.h"
@@ -72,7 +73,7 @@ G_DEFINE_TYPE (NMDeviceTeam, nm_device_team, NM_TYPE_DEVICE)
 
 /*****************************************************************************/
 
-static gboolean teamd_start (NMDevice *device, NMSettingTeam *s_team);
+static gboolean teamd_start (NMDevice *device, NMConnection *connection);
 
 /*****************************************************************************/
 
@@ -449,7 +450,7 @@ teamd_dbus_vanished (GDBusConnection *dbus_connection,
 		NMConnection *connection = nm_device_get_applied_connection (device);
 
 		g_assert (connection);
-		if (!teamd_start (device, nm_connection_get_setting_team (connection)))
+		if (!teamd_start (device, connection))
 			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
 	}
 }
@@ -513,7 +514,7 @@ teamd_kill (NMDeviceTeam *self, const char *teamd_binary, GError **error)
 }
 
 static gboolean
-teamd_start (NMDevice *device, NMSettingTeam *s_team)
+teamd_start (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceTeam *self = NM_DEVICE_TEAM (device);
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
@@ -523,6 +524,12 @@ teamd_start (NMDevice *device, NMSettingTeam *s_team)
 	gs_free char *tmp_str = NULL;
 	const char *teamd_binary;
 	const char *config;
+	nm_auto_free const char *config_free = NULL;
+	NMSettingTeam *s_team;
+	gs_free char *cloned_mac = NULL;
+
+	s_team = nm_connection_get_setting_team (connection);
+	g_return_val_if_fail (s_team, FALSE);
 
 	teamd_binary = nm_utils_find_helper ("teamd", NULL, NULL);
 	if (!teamd_binary) {
@@ -548,7 +555,39 @@ teamd_start (NMDevice *device, NMSettingTeam *s_team)
 	g_ptr_array_add (argv, (gpointer) "-t");
 	g_ptr_array_add (argv, (gpointer) iface);
 
-	config = nm_setting_team_get_config(s_team);
+	config = nm_setting_team_get_config (s_team);
+	if (!nm_device_hw_addr_get_cloned (device, connection, FALSE, &cloned_mac, NULL, &error)) {
+		_LOGW (LOGD_DEVICE, "set-hw-addr: %s", error->message);
+		return FALSE;
+	}
+
+	if (cloned_mac) {
+		json_t *json, *hwaddr;
+		json_error_t jerror;
+
+		/* Inject the hwaddr property into the JSON configuration.
+		 * While doing so, detect potential conflicts */
+
+		json = json_loads (config ?: "{}", 0, &jerror);
+		g_return_val_if_fail (json, FALSE);
+
+		hwaddr = json_object_get (json, "hwaddr");
+		if (hwaddr) {
+			if (   !json_is_string (hwaddr)
+			    || !nm_streq0 (json_string_value (hwaddr), cloned_mac))
+				_LOGW (LOGD_TEAM, "set-hw-addr: can't set team cloned-mac-address as the JSON configuration already contains \"hwaddr\"");
+		} else {
+			hwaddr = json_string (cloned_mac);
+			json_object_set (json, "hwaddr", hwaddr);
+			config = config_free = json_dumps (json, JSON_INDENT(0) |
+			                                         JSON_ENSURE_ASCII |
+			                                         JSON_SORT_KEYS);
+			_LOGD (LOGD_TEAM, "set-hw-addr: injected \"hwaddr\" \"%s\" into team configuration", cloned_mac);
+			json_decref (hwaddr);
+		}
+		json_decref (json);
+	}
+
 	if (config) {
 		g_ptr_array_add (argv, (gpointer) "-c");
 		g_ptr_array_add (argv, (gpointer) config);
@@ -587,13 +626,16 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	gs_free_error GError *error = NULL;
 	NMSettingTeam *s_team;
+	NMConnection *connection;
 	const char *cfg;
 
 	ret = NM_DEVICE_CLASS (nm_device_team_parent_class)->act_stage1_prepare (device, out_failure_reason);
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
 		return ret;
 
-	s_team = (NMSettingTeam *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_TEAM);
+	connection = nm_device_get_applied_connection (device);
+	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
+	s_team = nm_connection_get_setting_team (connection);
 	g_return_val_if_fail (s_team, NM_ACT_STAGE_RETURN_FAILURE);
 
 	if (priv->tdc) {
@@ -621,7 +663,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		teamd_cleanup (device, TRUE);
 	}
 
-	return teamd_start (device, s_team) ?
+	return teamd_start (device, connection) ?
 		NM_ACT_STAGE_RETURN_POSTPONE : NM_ACT_STAGE_RETURN_FAILURE;
 }
 

@@ -491,8 +491,11 @@ dflt_cppflags_libnm_core = \
 	-I$(srcdir)/libnm-core \
 	-I$(builddir)/libnm-core \
 	$(CODE_COVERAGE_CFLAGS) \
-	$(GLIB_CFLAGS) \
-	$(JANSSON_CFLAGS)
+	$(GLIB_CFLAGS)
+
+if WITH_JANSSON
+dflt_cppflags_libnm_core += $(JANSSON_CFLAGS)
+endif
 
 if WITH_GNUTLS
 dflt_cppflags_libnm_core += $(GNUTLS_CFLAGS)
@@ -551,8 +554,11 @@ nodist_libnm_core_libnm_core_la_SOURCES = \
 
 libnm_core_libnm_core_la_LIBADD = \
 	$(GLIB_LIBS) \
-	$(UUID_LIBS) \
-	$(JANSSON_LIBS)
+	$(UUID_LIBS)
+
+if WITH_JANSSON
+libnm_core_libnm_core_la_LIBADD += $(JANSSON_LIBS)
+endif
 
 libnm_core_libnm_core_la_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS)
@@ -2566,6 +2572,7 @@ src_devices_team_libnm_device_plugin_team_la_CPPFLAGS = \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(LIBTEAMDCTL_CFLAGS) \
+	$(JANSSON_CFLAGS) \
 	$(GLIB_CFLAGS)
 
 src_devices_team_libnm_device_plugin_team_la_LDFLAGS = \
@@ -2575,6 +2582,7 @@ src_devices_team_libnm_device_plugin_team_la_LDFLAGS = \
 src_devices_team_libnm_device_plugin_team_la_LIBADD = \
 	introspection/libnmdbus.la \
 	$(LIBTEAMDCTL_LIBS) \
+	$(JANSSON_LIBS) \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS)
 
