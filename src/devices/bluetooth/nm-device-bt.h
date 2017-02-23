@@ -37,6 +37,8 @@
 #define NM_DEVICE_BT_CAPABILITIES "bt-capabilities"
 #define NM_DEVICE_BT_DEVICE       "bt-device"
 
+#define NM_DEVICE_BT_PPP_STATS    "ppp-stats"
+
 typedef struct _NMDeviceBt NMDeviceBt;
 typedef struct _NMDeviceBtClass NMDeviceBtClass;
 

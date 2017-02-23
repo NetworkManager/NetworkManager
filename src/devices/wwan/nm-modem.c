@@ -1663,7 +1663,7 @@ nm_modem_class_init (NMModemClass *klass)
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	signals[PPP_STATS] =
-	    g_signal_new ("ppp-stats",
+	    g_signal_new (NM_MODEM_PPP_STATS,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0, NULL, NULL, NULL,
@@ -1671,7 +1671,7 @@ nm_modem_class_init (NMModemClass *klass)
 	                  G_TYPE_UINT, G_TYPE_UINT);
 
 	signals[PPP_FAILED] =
-	    g_signal_new ("ppp-failed",
+	    g_signal_new (NM_MODEM_PPP_FAILED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0, NULL, NULL, NULL,
