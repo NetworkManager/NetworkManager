@@ -68,10 +68,13 @@ G_DEFINE_TYPE (NMDeviceModem, nm_device_modem, NM_TYPE_DEVICE)
 /*****************************************************************************/
 
 static void
-ppp_failed (NMModem *modem, NMDeviceStateReason reason, gpointer user_data)
+ppp_failed (NMModem *modem,
+            guint i_reason,
+            gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
 	NMDeviceModem *self = NM_DEVICE_MODEM (user_data);
+	NMDeviceStateReason reason = i_reason;
 
 	switch (nm_device_get_state (device)) {
 	case NM_DEVICE_STATE_PREPARE:
@@ -110,12 +113,13 @@ ppp_failed (NMModem *modem, NMDeviceStateReason reason, gpointer user_data)
 static void
 modem_prepare_result (NMModem *modem,
                       gboolean success,
-                      NMDeviceStateReason reason,
+                      guint i_reason,
                       gpointer user_data)
 {
 	NMDeviceModem *self = NM_DEVICE_MODEM (user_data);
 	NMDevice *device = NM_DEVICE (self);
 	NMDeviceState state;
+	NMDeviceStateReason reason = i_reason;
 
 	state = nm_device_get_state (device);
 	g_return_if_fail (state == NM_DEVICE_STATE_PREPARE);

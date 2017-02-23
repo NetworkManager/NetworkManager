@@ -150,8 +150,8 @@ monitor_cb (gpointer user_data)
 			_LOGW ("could not read ppp stats: %s", strerror (errno));
 	} else {
 		g_signal_emit (manager, signals[STATS], 0,
-		               stats.p.ppp_ibytes,
-		               stats.p.ppp_obytes);
+		               (guint) stats.p.ppp_ibytes,
+		               (guint) stats.p.ppp_obytes);
 	}
 
 	return TRUE;
@@ -1277,7 +1277,8 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 	                  0,
 	                  NULL, NULL, NULL,
 	                  G_TYPE_NONE, 2,
-	                  G_TYPE_UINT, G_TYPE_UINT);
+	                  G_TYPE_UINT /*guint32 in_bytes*/,
+	                  G_TYPE_UINT /*guint32 out_bytes*/);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (manager_class),
 	                                        NMDBUS_TYPE_PPP_MANAGER_SKELETON,

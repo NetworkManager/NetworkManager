@@ -158,7 +158,7 @@ nm_modem_set_state (NMModem *self,
 
 		priv->state = new_state;
 		_notify (self, PROP_STATE);
-		g_signal_emit (self, signals[STATE_CHANGED], 0, (int) new_state, (int) old_state, reason);
+		g_signal_emit (self, signals[STATE_CHANGED], 0, (int) new_state, (int) old_state);
 	}
 }
 
@@ -201,7 +201,7 @@ nm_modem_set_mm_enabled (NMModem *self,
 
 		/* Try to unlock the modem if it's being enabled */
 		if (enabled)
-			g_signal_emit_by_name (self, NM_MODEM_AUTH_REQUESTED, 0);
+			g_signal_emit (self, signals[AUTH_REQUESTED], 0);
 		return;
 	}
 
@@ -220,6 +220,22 @@ void
 nm_modem_emit_removed (NMModem *self)
 {
 	g_signal_emit (self, signals[REMOVED], 0);
+}
+
+void
+nm_modem_emit_prepare_result (NMModem *self, gboolean success, NMDeviceStateReason reason)
+{
+	nm_assert (NM_IS_MODEM (self));
+
+	g_signal_emit (self, signals[PREPARE_RESULT], 0, success, (guint) reason);
+}
+
+void
+nm_modem_emit_ppp_failed (NMModem *self, NMDeviceStateReason reason)
+{
+	nm_assert (NM_IS_MODEM (self));
+
+	g_signal_emit (self, signals[PPP_FAILED], 0, (guint) reason);
 }
 
 NMModemIPType
@@ -382,10 +398,10 @@ ppp_state_changed (NMPPPManager *ppp_manager, NMPPPStatus status, gpointer user_
 {
 	switch (status) {
 	case NM_PPP_STATUS_DISCONNECT:
-		g_signal_emit (NM_MODEM (user_data), signals[PPP_FAILED], 0, NM_DEVICE_STATE_REASON_PPP_DISCONNECT);
+		nm_modem_emit_ppp_failed (user_data, NM_DEVICE_STATE_REASON_PPP_DISCONNECT);
 		break;
 	case NM_PPP_STATUS_DEAD:
-		g_signal_emit (NM_MODEM (user_data), signals[PPP_FAILED], 0, NM_DEVICE_STATE_REASON_PPP_FAILED);
+		nm_modem_emit_ppp_failed (user_data, NM_DEVICE_STATE_REASON_PPP_FAILED);
 		break;
 	default:
 		break;
@@ -479,18 +495,19 @@ ppp_ip6_config (NMPPPManager *ppp_manager,
 
 static void
 ppp_stats (NMPPPManager *ppp_manager,
-           guint32 in_bytes,
-           guint32 out_bytes,
+           guint i_in_bytes,
+           guint i_out_bytes,
            gpointer user_data)
 {
 	NMModem *self = NM_MODEM (user_data);
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
+	guint32 in_bytes = i_in_bytes;
+	guint32 out_bytes = i_out_bytes;
 
 	if (priv->in_bytes != in_bytes || priv->out_bytes != out_bytes) {
 		priv->in_bytes = in_bytes;
 		priv->out_bytes = out_bytes;
-
-		g_signal_emit (self, signals[PPP_STATS], 0, in_bytes, out_bytes);
+		g_signal_emit (self, signals[PPP_STATS], 0, (guint) in_bytes, (guint) out_bytes);
 	}
 }
 
@@ -1663,15 +1680,16 @@ nm_modem_class_init (NMModemClass *klass)
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	signals[PPP_STATS] =
-	    g_signal_new ("ppp-stats",
+	    g_signal_new (NM_MODEM_PPP_STATS,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0, NULL, NULL, NULL,
 	                  G_TYPE_NONE, 2,
-	                  G_TYPE_UINT, G_TYPE_UINT);
+	                  G_TYPE_UINT /*guint32 in_bytes*/,
+	                  G_TYPE_UINT /*guint32 out_bytes*/);
 
 	signals[PPP_FAILED] =
-	    g_signal_new ("ppp-failed",
+	    g_signal_new (NM_MODEM_PPP_FAILED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0, NULL, NULL, NULL,

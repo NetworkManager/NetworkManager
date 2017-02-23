@@ -362,18 +362,24 @@ complete_connection (NMDevice *device,
 
 static void
 ppp_stats (NMModem *modem,
-           guint32 in_bytes,
-           guint32 out_bytes,
+           guint i_in_bytes,
+           guint i_out_bytes,
            gpointer user_data)
 {
-	g_signal_emit (NM_DEVICE_BT (user_data), signals[PPP_STATS], 0, in_bytes, out_bytes);
+	guint32 in_bytes = i_in_bytes;
+	guint32 out_bytes = i_out_bytes;
+
+	g_signal_emit (NM_DEVICE_BT (user_data), signals[PPP_STATS], 0, (guint) in_bytes, (guint) out_bytes);
 }
 
 static void
-ppp_failed (NMModem *modem, NMDeviceStateReason reason, gpointer user_data)
+ppp_failed (NMModem *modem,
+            guint i_reason,
+            gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
 	NMDeviceBt *self = NM_DEVICE_BT (user_data);
+	NMDeviceStateReason reason = i_reason;
 
 	switch (nm_device_get_state (device)) {
 	case NM_DEVICE_STATE_PREPARE:
@@ -448,11 +454,12 @@ modem_auth_result (NMModem *modem, GError *error, gpointer user_data)
 static void
 modem_prepare_result (NMModem *modem,
                       gboolean success,
-                      NMDeviceStateReason reason,
+                      guint i_reason,
                       gpointer user_data)
 {
 	NMDeviceBt *self = NM_DEVICE_BT (user_data);
 	NMDevice *device = NM_DEVICE (self);
+	NMDeviceStateReason reason = i_reason;
 	NMDeviceState state;
 
 	state = nm_device_get_state (device);
@@ -1194,12 +1201,13 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	signals[PPP_STATS] =
-	    g_signal_new ("ppp-stats",
+	    g_signal_new (NM_DEVICE_BT_PPP_STATS,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0, NULL, NULL, NULL,
 	                  G_TYPE_NONE, 2,
-	                  G_TYPE_UINT, G_TYPE_UINT);
+	                  G_TYPE_UINT /*guint32 in_bytes*/,
+	                  G_TYPE_UINT /*guint32 out_bytes*/);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        NMDBUS_TYPE_DEVICE_BLUETOOTH_SKELETON,
