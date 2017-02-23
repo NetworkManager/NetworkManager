@@ -69,17 +69,24 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct _NMSettingsConnectionPrivate {
-	gboolean removed;
 
 	NMAgentManager *agent_mgr;
 	NMSessionMonitor *session_monitor;
 	gulong session_changed_id;
 
 	NMSettingsConnectionFlags flags;
-	gboolean ready;
+
+	bool removed:1;
+	bool ready:1;
+
+	/* Is this connection visible by some session? */
+	bool visible:1;
+
+	bool timestamp_set:1;
+
+	NMSettingsAutoconnectBlockedReason autoconnect_blocked_reason:3;
 
 	GSList *pending_auths; /* List of pending authentication requests */
-	gboolean visible; /* Is this connection is visible by some session? */
 
 	GSList *get_secret_requests;  /* in-progress secrets requests */
 
@@ -99,12 +106,10 @@ typedef struct _NMSettingsConnectionPrivate {
 	NMConnection *agent_secrets;
 
 	guint64 timestamp;   /* Up-to-date timestamp of connection use */
-	gboolean timestamp_set;
 	GHashTable *seen_bssids; /* Up-to-date BSSIDs that's been seen for the connection */
 
 	int autoconnect_retries;
 	gint32 autoconnect_retry_time;
-	NMDeviceStateReason autoconnect_blocked_reason;
 
 	char *filename;
 } NMSettingsConnectionPrivate;
@@ -2604,7 +2609,7 @@ nm_settings_connection_get_autoconnect_retry_time (NMSettingsConnection *self)
 	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->autoconnect_retry_time;
 }
 
-NMDeviceStateReason
+NMSettingsAutoconnectBlockedReason
 nm_settings_connection_get_autoconnect_blocked_reason (NMSettingsConnection *self)
 {
 	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->autoconnect_blocked_reason;
@@ -2612,8 +2617,12 @@ nm_settings_connection_get_autoconnect_blocked_reason (NMSettingsConnection *sel
 
 void
 nm_settings_connection_set_autoconnect_blocked_reason (NMSettingsConnection *self,
-                                                       NMDeviceStateReason reason)
+                                                       NMSettingsAutoconnectBlockedReason reason)
 {
+	g_return_if_fail (NM_IN_SET (reason,
+	                             NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_UNBLOCKED,
+	                             NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_BLOCKED,
+	                             NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS));
 	NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->autoconnect_blocked_reason = reason;
 }
 
@@ -2626,7 +2635,7 @@ nm_settings_connection_can_autoconnect (NMSettingsConnection *self)
 
 	if (   !priv->visible
 	    || priv->autoconnect_retries == 0
-	    || priv->autoconnect_blocked_reason != NM_DEVICE_STATE_REASON_NONE)
+	    || priv->autoconnect_blocked_reason != NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_UNBLOCKED)
 		return FALSE;
 
 	s_con = nm_connection_get_setting_connection (NM_CONNECTION (self));
@@ -2766,7 +2775,6 @@ nm_settings_connection_init (NMSettingsConnection *self)
 	priv->seen_bssids = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 
 	priv->autoconnect_retries = AUTOCONNECT_RETRIES_UNSET;
-	priv->autoconnect_blocked_reason = NM_DEVICE_STATE_REASON_NONE;
 
 	g_signal_connect (self, NM_CONNECTION_SECRETS_CLEARED, G_CALLBACK (secrets_cleared_cb), NULL);
 	g_signal_connect (self, NM_CONNECTION_CHANGED, G_CALLBACK (connection_changed_cb), NULL);

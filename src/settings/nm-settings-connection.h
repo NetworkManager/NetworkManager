@@ -82,6 +82,12 @@ typedef enum { /*< skip >*/
 	NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED                 = (1LL << 1),
 } NMSettingsConnectionCommitReason;
 
+typedef enum {
+	NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_UNBLOCKED               = 0,
+	NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_BLOCKED                 = 1,
+	NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS              = 2,
+} NMSettingsAutoconnectBlockedReason;
+
 struct _NMSettingsConnectionCallId;
 typedef struct _NMSettingsConnectionCallId *NMSettingsConnectionCallId;
 
@@ -215,9 +221,9 @@ void nm_settings_connection_reset_autoconnect_retries (NMSettingsConnection *sel
 
 gint32 nm_settings_connection_get_autoconnect_retry_time (NMSettingsConnection *self);
 
-NMDeviceStateReason nm_settings_connection_get_autoconnect_blocked_reason (NMSettingsConnection *self);
-void nm_settings_connection_set_autoconnect_blocked_reason (NMSettingsConnection *self,
-                                                            NMDeviceStateReason reason);
+NMSettingsAutoconnectBlockedReason nm_settings_connection_get_autoconnect_blocked_reason (NMSettingsConnection *self);
+void                               nm_settings_connection_set_autoconnect_blocked_reason (NMSettingsConnection *self,
+                                                                                          NMSettingsAutoconnectBlockedReason reason);
 
 gboolean nm_settings_connection_can_autoconnect (NMSettingsConnection *self);
 
