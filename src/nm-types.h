@@ -83,7 +83,7 @@ typedef enum {
 	NM_IP_CONFIG_SOURCE_USER,
 } NMIPConfigSource;
 
-inline static gboolean
+static inline gboolean
 NM_IS_IP_CONFIG_SOURCE_RTPROT (NMIPConfigSource source)
 {
 	return source > NM_IP_CONFIG_SOURCE_UNKNOWN && source <= _NM_IP_CONFIG_SOURCE_RTPROT_LAST;

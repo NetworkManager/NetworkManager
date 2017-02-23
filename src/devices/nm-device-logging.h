@@ -24,7 +24,8 @@
 #include "nm-device.h"
 
 #define _LOG_DECLARE_SELF(t) \
-_nm_unused inline static NMDevice * \
+_nm_unused \
+static inline NMDevice * \
 _nm_device_log_self_to_device (t *self) \
 { \
     return (NMDevice *) self; \

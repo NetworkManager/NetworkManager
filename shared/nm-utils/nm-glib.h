@@ -134,7 +134,7 @@ __g_type_ensure (GType type)
 
 /* Rumtime check for glib version. First do a compile time check which
  * (if satisfied) shortcuts the runtime check. */
-inline static gboolean
+static inline gboolean
 nm_glib_check_version (guint major, guint minor, guint micro)
 {
 	return    GLIB_CHECK_VERSION (major, minor, micro)
@@ -147,7 +147,7 @@ nm_glib_check_version (guint major, guint minor, guint micro)
 }
 
 /* g_test_skip() is only available since glib 2.38. Add a compatibility wrapper. */
-inline static void
+static inline void
 __nmtst_g_test_skip (const gchar *msg)
 {
 #if GLIB_CHECK_VERSION (2, 38, 0)
@@ -162,7 +162,7 @@ __nmtst_g_test_skip (const gchar *msg)
 
 
 /* g_test_add_data_func_full() is only available since glib 2.34. Add a compatibility wrapper. */
-inline static void
+static inline void
 __g_test_add_data_func_full (const char     *testpath,
                              gpointer        test_data,
                              GTestDataFunc   test_func,
@@ -278,7 +278,7 @@ _nm_g_ptr_array_insert (GPtrArray *array,
 
 
 #if !GLIB_CHECK_VERSION (2, 40, 0)
-inline static gboolean
+static inline gboolean
 _g_key_file_save_to_file (GKeyFile     *key_file,
                           const gchar  *filename,
                           GError      **error)

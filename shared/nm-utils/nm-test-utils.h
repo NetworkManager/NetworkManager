@@ -198,7 +198,7 @@ _nmtst_exit (void) \
 }
 
 
-inline static gboolean
+static inline gboolean
 nmtst_initialized (void)
 {
 	return !!__nmtst_internal.rand0;
@@ -219,7 +219,7 @@ nmtst_initialized (void)
  *
  * The caller must g_free() the returned argv array.
  **/
-inline static char **
+static inline char **
 nmtst_str_split (char *str, const char *delimiters)
 {
 	const char *d;
@@ -265,7 +265,7 @@ BREAK_INNER_LOOPS:
 
 /* free instances allocated by nmtst (especially nmtst_init()) on shutdown
  * to release memory. After nmtst_free(), the test is uninitialized again. */
-inline static void
+static inline void
 nmtst_free (void)
 {
 	if (!nmtst_initialized ())
@@ -280,7 +280,7 @@ nmtst_free (void)
 	memset (&__nmtst_internal, 0, sizeof (__nmtst_internal));
 }
 
-inline static void
+static inline void
 __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_level, const char *log_domains, gboolean *out_set_logging)
 {
 	const char *nmtst_debug;
@@ -592,21 +592,21 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 }
 
 #ifndef _NMTST_INSIDE_CORE
-inline static void
+static inline void
 nmtst_init (int *argc, char ***argv, gboolean assert_logging)
 {
 	__nmtst_init (argc, argv, assert_logging, NULL, NULL, NULL);
 }
 #endif
 
-inline static gboolean
+static inline gboolean
 nmtst_is_debug (void)
 {
 	g_assert (nmtst_initialized ());
 	return __nmtst_internal.is_debug;
 }
 
-inline static gboolean
+static inline gboolean
 nmtst_test_quick (void)
 {
 	g_assert (nmtst_initialized ());
@@ -656,7 +656,7 @@ struct _NmtstTestData {
 	gpointer args[1];
 };
 
-inline static void
+static inline void
 _nmtst_test_data_unpack (const NmtstTestData *test_data, gsize n_args, ...)
 {
 	gsize i;
@@ -677,7 +677,7 @@ _nmtst_test_data_unpack (const NmtstTestData *test_data, gsize n_args, ...)
 }
 #define nmtst_test_data_unpack(test_data, ...) _nmtst_test_data_unpack(test_data, NM_NARG (__VA_ARGS__), ##__VA_ARGS__)
 
-inline static void
+static inline void
 _nmtst_test_data_free (gpointer data)
 {
 	NmtstTestData *test_data = data;
@@ -691,7 +691,7 @@ _nmtst_test_data_free (gpointer data)
 	g_free (test_data);
 }
 
-inline static void
+static inline void
 _nmtst_add_test_func_full (const char *testpath, GTestDataFunc test_func, NmtstTestDataRelease fcn_release, gsize n_args, ...)
 {
 	gsize i;
@@ -719,14 +719,14 @@ _nmtst_add_test_func_full (const char *testpath, GTestDataFunc test_func, NmtstT
 
 /*****************************************************************************/
 
-inline static GRand *
+static inline GRand *
 nmtst_get_rand0 (void)
 {
 	g_assert (nmtst_initialized ());
 	return __nmtst_internal.rand0;
 }
 
-inline static GRand *
+static inline GRand *
 nmtst_get_rand (void)
 {
 	g_assert (nmtst_initialized ());
@@ -757,13 +757,13 @@ nmtst_get_rand (void)
 	return __nmtst_internal.rand;
 }
 
-inline static guint32
+static inline guint32
 nmtst_get_rand_int (void)
 {
 	return g_rand_int (nmtst_get_rand ());
 }
 
-inline static gpointer
+static inline gpointer
 nmtst_rand_buf (GRand *rand, gpointer buffer, gsize buffer_length)
 {
 	guint32 v;
@@ -791,7 +791,7 @@ nmtst_rand_buf (GRand *rand, gpointer buffer, gsize buffer_length)
 	return buffer;
 }
 
-inline static void *
+static inline void *
 nmtst_rand_perm (GRand *rand, void *dst, const void *src, gsize elmt_size, gsize n_elmt)
 {
 	gsize i, j;
@@ -832,7 +832,7 @@ nmtst_rand_perm (GRand *rand, void *dst, const void *src, gsize elmt_size, gsize
 	return dst;
 }
 
-inline static GSList *
+static inline GSList *
 nmtst_rand_perm_gslist (GRand *rand, GSList *list)
 {
 	GSList *result;
@@ -859,7 +859,7 @@ nmtst_rand_perm_gslist (GRand *rand, GSList *list)
 
 /*****************************************************************************/
 
-inline static gboolean
+static inline gboolean
 _nmtst_main_loop_run_timeout (gpointer user_data)
 {
 	GMainLoop **p_loop = user_data;
@@ -873,7 +873,7 @@ _nmtst_main_loop_run_timeout (gpointer user_data)
 	return G_SOURCE_REMOVE;
 }
 
-inline static gboolean
+static inline gboolean
 nmtst_main_loop_run (GMainLoop *loop, int timeout_ms)
 {
 	GSource *source = NULL;
@@ -894,7 +894,7 @@ nmtst_main_loop_run (GMainLoop *loop, int timeout_ms)
 	return loopx != NULL;
 }
 
-inline static void
+static inline void
 _nmtst_main_loop_quit_on_notify (GObject *object, GParamSpec *pspec, gpointer user_data)
 {
 	GMainLoop *loop = user_data;
@@ -908,14 +908,14 @@ _nmtst_main_loop_quit_on_notify (GObject *object, GParamSpec *pspec, gpointer us
 
 /*****************************************************************************/
 
-inline static const char *
+static inline const char *
 nmtst_get_sudo_cmd (void)
 {
 	g_assert (nmtst_initialized ());
 	return __nmtst_internal.sudo_cmd;
 }
 
-inline static void
+static inline void
 nmtst_reexec_sudo (void)
 {
 	char *str;
@@ -945,7 +945,7 @@ nmtst_reexec_sudo (void)
 
 /*****************************************************************************/
 
-inline static gsize
+static inline gsize
 nmtst_find_all_indexes (gpointer *elements,
                         gsize n_elements,
                         gpointer *needles,
@@ -987,7 +987,7 @@ next:
 /*****************************************************************************/
 
 #define __define_nmtst_static(NUM,SIZE) \
-inline static const char * \
+static inline const char * \
 nmtst_static_##SIZE##_##NUM (const char *str) \
 { \
 	gsize l; \
@@ -1008,7 +1008,7 @@ __define_nmtst_static(03, 1024)
 	gs_free char *_nmtst_hidden_##uuid = nm_utils_uuid_generate (); \
 	const char *const uuid = _nmtst_hidden_##uuid
 
-inline static const char *
+static inline const char *
 nmtst_uuid_generate (void)
 {
 	static char u[37];
@@ -1039,7 +1039,7 @@ nmtst_uuid_generate (void)
 			g_error ("%s:%d: Expects \"%s\" but got \"%s\"", __FILE__, __LINE__, __substr, __str); \
 	} G_STMT_END
 
-inline static guint32
+static inline guint32
 nmtst_inet4_from_string (const char *str)
 {
 	guint32 addr;
@@ -1055,7 +1055,7 @@ nmtst_inet4_from_string (const char *str)
 	return addr;
 }
 
-inline static const struct in6_addr *
+static inline const struct in6_addr *
 nmtst_inet6_from_string (const char *str)
 {
 	static struct in6_addr addr;
@@ -1071,7 +1071,7 @@ nmtst_inet6_from_string (const char *str)
 	return &addr;
 }
 
-inline static void
+static inline void
 _nmtst_assert_ip4_address (const char *file, int line, in_addr_t addr, const char *str_expected)
 {
 	if (nmtst_inet4_from_string (str_expected) != addr) {
@@ -1084,7 +1084,7 @@ _nmtst_assert_ip4_address (const char *file, int line, in_addr_t addr, const cha
 }
 #define nmtst_assert_ip4_address(addr, str_expected) _nmtst_assert_ip4_address (__FILE__, __LINE__, addr, str_expected)
 
-inline static void
+static inline void
 _nmtst_assert_ip6_address (const char *file, int line, const struct in6_addr *addr, const char *str_expected)
 {
 	struct in6_addr any = in6addr_any;
@@ -1104,9 +1104,9 @@ _nmtst_assert_ip6_address (const char *file, int line, const struct in6_addr *ad
 
 #define nmtst_spawn_sync(working_directory, standard_out, standard_err, assert_exit_status, ...) \
 	__nmtst_spawn_sync (working_directory, standard_out, standard_err, assert_exit_status, ##__VA_ARGS__, NULL)
-inline static gint
+static inline gint
 __nmtst_spawn_sync (const char *working_directory, char **standard_out, char **standard_err, int assert_exit_status, ...) G_GNUC_NULL_TERMINATED;
-inline static gint
+static inline gint
 __nmtst_spawn_sync (const char *working_directory, char **standard_out, char **standard_err, int assert_exit_status, ...)
 {
 	gint exit_status = 0;
@@ -1154,7 +1154,7 @@ __nmtst_spawn_sync (const char *working_directory, char **standard_out, char **s
 
 /*****************************************************************************/
 
-inline static char *
+static inline char *
 nmtst_file_resolve_relative_path (const char *rel, const char *cwd)
 {
 	gs_free char *cwd_free = NULL;
@@ -1169,7 +1169,7 @@ nmtst_file_resolve_relative_path (const char *rel, const char *cwd)
 	return g_build_filename (cwd, rel, NULL);
 }
 
-inline static char *
+static inline char *
 nmtst_file_get_contents (const char *filename)
 {
 	GError *error = NULL;
@@ -1185,7 +1185,7 @@ nmtst_file_get_contents (const char *filename)
 
 /*****************************************************************************/
 
-inline static void
+static inline void
 nmtst_file_unlink_if_exists (const char *name)
 {
 	int errsv;
@@ -1199,7 +1199,7 @@ nmtst_file_unlink_if_exists (const char *name)
 	}
 }
 
-inline static void
+static inline void
 nmtst_file_unlink (const char *name)
 {
 	int errsv;
@@ -1212,7 +1212,7 @@ nmtst_file_unlink (const char *name)
 	}
 }
 
-inline static void
+static inline void
 _nmtst_auto_unlinkfile (char **p_name)
 {
 	if (*p_name) {
@@ -1225,7 +1225,7 @@ _nmtst_auto_unlinkfile (char **p_name)
 
 /*****************************************************************************/
 
-inline static void
+static inline void
 _nmtst_assert_resolve_relative_path_equals (const char *f1, const char *f2, const char *file, int line)
 {
 	gs_free char *p1 = NULL, *p2 = NULL;
@@ -1244,7 +1244,7 @@ _nmtst_assert_resolve_relative_path_equals (const char *f1, const char *f2, cons
 /*****************************************************************************/
 
 #ifdef NM_SETTING_IP_CONFIG_H
-inline static void
+static inline void
 nmtst_setting_ip_config_add_address (NMSettingIPConfig *s_ip,
                                      const char *address,
                                      guint prefix)
@@ -1267,7 +1267,7 @@ nmtst_setting_ip_config_add_address (NMSettingIPConfig *s_ip,
 	nm_ip_address_unref (addr);
 }
 
-inline static void
+static inline void
 nmtst_setting_ip_config_add_route (NMSettingIPConfig *s_ip,
                                    const char *dest,
                                    guint prefix,
@@ -1295,7 +1295,7 @@ nmtst_setting_ip_config_add_route (NMSettingIPConfig *s_ip,
 
 #if (defined(__NM_SIMPLE_CONNECTION_H__) && defined(__NM_SETTING_CONNECTION_H__)) || (defined(NM_CONNECTION_H))
 
-inline static NMConnection *
+static inline NMConnection *
 nmtst_clone_connection (NMConnection *connection)
 {
 	g_assert (NM_IS_CONNECTION (connection));
@@ -1307,7 +1307,7 @@ nmtst_clone_connection (NMConnection *connection)
 #endif
 }
 
-inline static NMConnection *
+static inline NMConnection *
 nmtst_create_minimal_connection (const char *id, const char *uuid, const char *type, NMSettingConnection **out_s_con)
 {
 	NMConnection *con;
@@ -1360,7 +1360,7 @@ nmtst_create_minimal_connection (const char *id, const char *uuid, const char *t
 	return con;
 }
 
-inline static gboolean
+static inline gboolean
 _nmtst_connection_normalize_v (NMConnection *connection, va_list args)
 {
 	GError *error = NULL;
@@ -1390,7 +1390,7 @@ _nmtst_connection_normalize_v (NMConnection *connection, va_list args)
 	return was_modified;
 }
 
-inline static gboolean
+static inline gboolean
 _nmtst_connection_normalize (NMConnection *connection, ...)
 {
 	gboolean was_modified;
@@ -1405,7 +1405,7 @@ _nmtst_connection_normalize (NMConnection *connection, ...)
 #define nmtst_connection_normalize(connection, ...) \
     _nmtst_connection_normalize(connection, ##__VA_ARGS__, NULL)
 
-inline static NMConnection *
+static inline NMConnection *
 _nmtst_connection_duplicate_and_normalize (NMConnection *connection, ...)
 {
 	gboolean was_modified;
@@ -1422,7 +1422,7 @@ _nmtst_connection_duplicate_and_normalize (NMConnection *connection, ...)
 #define nmtst_connection_duplicate_and_normalize(connection, ...) \
     _nmtst_connection_duplicate_and_normalize(connection, ##__VA_ARGS__, NULL)
 
-inline static void
+static inline void
 nmtst_assert_connection_equals (NMConnection *a, gboolean normalize_a, NMConnection *b, gboolean normalize_b)
 {
 	gboolean compare;
@@ -1481,7 +1481,7 @@ nmtst_assert_connection_equals (NMConnection *a, gboolean normalize_a, NMConnect
 	g_assert (compare);
 }
 
-inline static void
+static inline void
 nmtst_assert_connection_verifies (NMConnection *con)
 {
 	/* assert that the connection does verify, it might be normaliziable or not */
@@ -1495,7 +1495,7 @@ nmtst_assert_connection_verifies (NMConnection *con)
 	g_assert (success);
 }
 
-inline static void
+static inline void
 nmtst_assert_connection_verifies_without_normalization (NMConnection *con)
 {
 	/* assert that the connection verifies and does not need any normalization */
@@ -1515,7 +1515,7 @@ nmtst_assert_connection_verifies_without_normalization (NMConnection *con)
 	g_assert (!was_modified);
 }
 
-inline static void
+static inline void
 nmtst_assert_connection_verifies_and_normalizable (NMConnection *con)
 {
 	/* assert that the connection does verify, but normalization still modifies it */
@@ -1537,7 +1537,7 @@ nmtst_assert_connection_verifies_and_normalizable (NMConnection *con)
 	nmtst_assert_connection_verifies_without_normalization (clone);
 }
 
-inline static void
+static inline void
 nmtst_assert_connection_verifies_after_normalization (NMConnection *con,
                                                       GQuark expect_error_domain,
                                                       gint expect_error_code)
@@ -1564,7 +1564,7 @@ nmtst_assert_connection_verifies_after_normalization (NMConnection *con,
 	nmtst_assert_connection_verifies_without_normalization (clone);
 }
 
-inline static void
+static inline void
 nmtst_assert_connection_unnormalizable (NMConnection *con,
                                         GQuark expect_error_domain,
                                         gint expect_error_code)
@@ -1591,7 +1591,7 @@ nmtst_assert_connection_unnormalizable (NMConnection *con,
 	g_clear_error (&error);
 }
 
-inline static void
+static inline void
 nmtst_assert_setting_verifies (NMSetting *setting)
 {
 	/* assert that the setting verifies without an error */
@@ -1606,7 +1606,7 @@ nmtst_assert_setting_verifies (NMSetting *setting)
 	g_assert (success);
 }
 
-inline static void
+static inline void
 nmtst_assert_setting_verify_fails (NMSetting *setting,
                                    GQuark expect_error_domain,
                                    gint expect_error_code)
@@ -1663,7 +1663,7 @@ nmtst_assert_hwaddr_equals (gconstpointer hwaddr1, gssize hwaddr1_len, const cha
 
 #if defined(__NM_SIMPLE_CONNECTION_H__) && defined(__NM_SETTING_CONNECTION_H__) && defined(__NM_KEYFILE_INTERNAL_H__)
 
-inline static NMConnection *
+static inline NMConnection *
 nmtst_create_connection_from_keyfile (const char *keyfile_str, const char *keyfile_name, const char *base_dir)
 {
 	GKeyFile *keyfile;
@@ -1693,7 +1693,7 @@ nmtst_create_connection_from_keyfile (const char *keyfile_str, const char *keyfi
 
 #ifdef __NM_CONNECTION_H__
 
-inline static GVariant *
+static inline GVariant *
 _nmtst_variant_new_vardict (int dummy, ...)
 {
 	GVariantBuilder builder;
