@@ -21,6 +21,8 @@
 #include "nm-default.h"
 
 #include "nm-setting-dummy.h"
+
+#include "nm-connection-private.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-private.h"
 
@@ -51,6 +53,15 @@ nm_setting_dummy_new (void)
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_DUMMY, NULL);
 }
 
+static gboolean
+verify (NMSetting *setting, NMConnection *connection, GError **error)
+{
+	if (!_nm_connection_verify_required_interface_name (connection, error))
+		return FALSE;
+
+	return TRUE;
+}
+
 static void
 nm_setting_dummy_init (NMSettingDummy *setting)
 {
@@ -59,4 +70,7 @@ nm_setting_dummy_init (NMSettingDummy *setting)
 static void
 nm_setting_dummy_class_init (NMSettingDummyClass *setting_class)
 {
+	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+
+	parent_class->verify           = verify;
 }
