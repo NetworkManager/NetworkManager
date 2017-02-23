@@ -239,6 +239,8 @@ NMModemIPType nm_modem_get_supported_ip_types (NMModem *self);
 /* For the modem-manager only */
 void          nm_modem_emit_removed (NMModem *self);
 
+void          nm_modem_emit_prepare_result (NMModem *self, gboolean success, NMDeviceStateReason reason);
+
 GArray       *nm_modem_get_connection_ip_type (NMModem *self,
                                                NMConnection *connection,
                                                GError **error);

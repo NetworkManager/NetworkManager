@@ -222,6 +222,14 @@ nm_modem_emit_removed (NMModem *self)
 	g_signal_emit (self, signals[REMOVED], 0);
 }
 
+void
+nm_modem_emit_prepare_result (NMModem *self, gboolean success, NMDeviceStateReason reason)
+{
+	nm_assert (NM_IS_MODEM (self));
+
+	g_signal_emit (self, signals[PREPARE_RESULT], 0, success, (guint) reason);
+}
+
 NMModemIPType
 nm_modem_get_supported_ip_types (NMModem *self)
 {

@@ -724,8 +724,8 @@ stage1_prepare_done (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data
 	if (error) {
 		_LOGW ("connection failed: %s", error->message);
 
-		g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE,
-		                       NM_DEVICE_STATE_REASON_MODEM_BUSY);
+		nm_modem_emit_prepare_result (NM_MODEM (self), FALSE,
+		                              NM_DEVICE_STATE_REASON_MODEM_BUSY);
 		/*
 		 * FIXME: add code to check for InProgress so that the
 		 * connection doesn't continue to try and activate,
@@ -912,7 +912,7 @@ out:
 		_LOGI ("emitting PREPARE_RESULT: %s", ret ? "TRUE" : "FALSE");
 		if (!ret)
 			reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
-		g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, ret, reason);
+		nm_modem_emit_prepare_result (NM_MODEM (self), ret, reason);
 	} else {
 		_LOGW ("MODEM_PPP_FAILED");
 		g_signal_emit_by_name (self, NM_MODEM_PPP_FAILED, NM_DEVICE_STATE_REASON_PPP_FAILED);
@@ -955,14 +955,14 @@ context_proxy_new_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_dat
 	priv->context_proxy = g_dbus_proxy_new_for_bus_finish (result, &error);
 	if (error) {
 		_LOGE ("failed to create ofono ConnectionContext DBus proxy: %s", error->message);
-		g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE,
-		                       NM_DEVICE_STATE_REASON_MODEM_BUSY);
+		nm_modem_emit_prepare_result (NM_MODEM (self), FALSE,
+		                              NM_DEVICE_STATE_REASON_MODEM_BUSY);
 		return;
 	}
 
 	if (!priv->gprs_attached) {
-		g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE,
-		                       NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER);
+		nm_modem_emit_prepare_result (NM_MODEM (self), FALSE,
+		                              NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER);
 		return;
 	}
 

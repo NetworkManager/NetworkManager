@@ -448,11 +448,12 @@ modem_auth_result (NMModem *modem, GError *error, gpointer user_data)
 static void
 modem_prepare_result (NMModem *modem,
                       gboolean success,
-                      NMDeviceStateReason reason,
+                      guint i_reason,
                       gpointer user_data)
 {
 	NMDeviceBt *self = NM_DEVICE_BT (user_data);
 	NMDevice *device = NM_DEVICE (self);
+	NMDeviceStateReason reason = i_reason;
 	NMDeviceState state;
 
 	state = nm_device_get_state (device);

@@ -407,7 +407,7 @@ connect_ready (MMModemSimple *simple_iface,
 	if (ip4_method == NM_MODEM_IP_METHOD_UNKNOWN &&
 	    ip6_method == NM_MODEM_IP_METHOD_UNKNOWN) {
 		_LOGW ("failed to connect modem: invalid bearer IP configuration");
-		g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+		nm_modem_emit_prepare_result (NM_MODEM (self), FALSE, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
 		connect_context_clear (self);
 		return;
 	}
@@ -439,11 +439,10 @@ send_pin_ready (MMSim *sim, GAsyncResult *result, NMModemBroadband *self)
 	if (error) {
 		if (g_error_matches (error, MM_MOBILE_EQUIPMENT_ERROR, MM_MOBILE_EQUIPMENT_ERROR_SIM_PIN) ||
 		    (g_error_matches (error, MM_CORE_ERROR, MM_CORE_ERROR_UNAUTHORIZED) &&
-		     mm_modem_get_unlock_required (self->_priv.modem_iface) == MM_MODEM_LOCK_SIM_PIN)) {
+		     mm_modem_get_unlock_required (self->_priv.modem_iface) == MM_MODEM_LOCK_SIM_PIN))
 			ask_for_pin (self);
-		} else {
-			g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, translate_mm_error (self, error));
-		}
+		else
+			nm_modem_emit_prepare_result (NM_MODEM (self), FALSE, translate_mm_error (self, error));
 		return;
 	}
 
@@ -506,7 +505,7 @@ connect_context_step (NMModemBroadband *self)
 			_LOGW ("failed to connect '%s': not a mobile broadband modem",
 			       nm_connection_get_id (ctx->connection));
 
-			g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
+			nm_modem_emit_prepare_result (NM_MODEM (self), FALSE, NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
 			connect_context_clear (self);
 			break;
 		}
@@ -520,7 +519,7 @@ connect_context_step (NMModemBroadband *self)
 			       error->message);
 			g_clear_error (&error);
 
-			g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
+			nm_modem_emit_prepare_result (NM_MODEM (self), FALSE, NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
 			connect_context_clear (self);
 			break;
 		}
@@ -559,9 +558,9 @@ connect_context_step (NMModemBroadband *self)
 		/* fall through */
 
 	case CONNECT_STEP_LAST:
-		if (self->_priv.ipv4_config || self->_priv.ipv6_config) {
-			g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, TRUE, NM_DEVICE_STATE_REASON_NONE);
-		} else {
+		if (self->_priv.ipv4_config || self->_priv.ipv6_config)
+			nm_modem_emit_prepare_result (NM_MODEM (self), TRUE, NM_DEVICE_STATE_REASON_NONE);
+		else {
 			/* If we have a saved error from a previous attempt, use it */
 			if (!ctx->first_error)
 				ctx->first_error = g_error_new_literal (NM_DEVICE_ERROR,
@@ -570,7 +569,7 @@ connect_context_step (NMModemBroadband *self)
 
 			_LOGW ("failed to connect modem: %s",
 			       ctx->first_error->message);
-			g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, translate_mm_error (self, ctx->first_error));
+			nm_modem_emit_prepare_result (NM_MODEM (self), FALSE, translate_mm_error (self, ctx->first_error));
 		}
 
 		connect_context_clear (self);
