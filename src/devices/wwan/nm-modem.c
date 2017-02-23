@@ -158,7 +158,7 @@ nm_modem_set_state (NMModem *self,
 
 		priv->state = new_state;
 		_notify (self, PROP_STATE);
-		g_signal_emit (self, signals[STATE_CHANGED], 0, (int) new_state, (int) old_state, reason);
+		g_signal_emit (self, signals[STATE_CHANGED], 0, (int) new_state, (int) old_state);
 	}
 }
 
