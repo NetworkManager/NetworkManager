@@ -222,8 +222,7 @@ gboolean nm_modem_deactivate_async_finish (NMModem *self,
 
 void nm_modem_device_state_changed (NMModem *modem,
                                     NMDeviceState new_state,
-                                    NMDeviceState old_state,
-                                    NMDeviceStateReason reason);
+                                    NMDeviceState old_state);
 
 void          nm_modem_set_mm_enabled (NMModem *self, gboolean enabled);
 

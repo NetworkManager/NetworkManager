@@ -508,7 +508,7 @@ device_state_changed (NMDevice *device,
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE ((NMDeviceBt *) device);
 
 	if (priv->modem)
-		nm_modem_device_state_changed (priv->modem, new_state, old_state, reason);
+		nm_modem_device_state_changed (priv->modem, new_state, old_state);
 
 	/* Need to recheck available connections whenever MM appears or disappears,
 	 * since the device could be both DUN and NAP capable and thus may not
@@ -925,8 +925,7 @@ deactivate (NMDevice *device)
 			 */
 			nm_modem_device_state_changed (priv->modem,
 			                               NM_DEVICE_STATE_DISCONNECTED,
-			                               NM_DEVICE_STATE_ACTIVATED,
-			                               NM_DEVICE_STATE_REASON_USER_REQUESTED);
+			                               NM_DEVICE_STATE_ACTIVATED);
 			modem_cleanup (NM_DEVICE_BT (device));
 		}
 	}

@@ -1257,8 +1257,7 @@ nm_modem_deactivate (NMModem *self, NMDevice *device)
 void
 nm_modem_device_state_changed (NMModem *self,
                                NMDeviceState new_state,
-                               NMDeviceState old_state,
-                               NMDeviceStateReason reason)
+                               NMDeviceState old_state)
 {
 	gboolean was_connected = FALSE, warn = TRUE;
 	NMModemPrivate *priv;

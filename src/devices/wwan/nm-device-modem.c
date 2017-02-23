@@ -375,7 +375,7 @@ device_state_changed (NMDevice *device,
 		       nm_modem_state_to_string (nm_modem_get_state (priv->modem)));
 	}
 
-	nm_modem_device_state_changed (priv->modem, new_state, old_state, reason);
+	nm_modem_device_state_changed (priv->modem, new_state, old_state);
 
 	switch (reason) {
 	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_DENIED:
