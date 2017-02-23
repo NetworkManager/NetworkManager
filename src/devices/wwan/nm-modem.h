@@ -241,6 +241,8 @@ void          nm_modem_emit_removed (NMModem *self);
 
 void          nm_modem_emit_prepare_result (NMModem *self, gboolean success, NMDeviceStateReason reason);
 
+void          nm_modem_emit_ppp_failed (NMModem *self, NMDeviceStateReason reason);
+
 GArray       *nm_modem_get_connection_ip_type (NMModem *self,
                                                NMConnection *connection,
                                                GError **error);

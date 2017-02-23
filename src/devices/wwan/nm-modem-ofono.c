@@ -915,7 +915,7 @@ out:
 		nm_modem_emit_prepare_result (NM_MODEM (self), ret, reason);
 	} else {
 		_LOGW ("MODEM_PPP_FAILED");
-		g_signal_emit_by_name (self, NM_MODEM_PPP_FAILED, NM_DEVICE_STATE_REASON_PPP_FAILED);
+		nm_modem_emit_ppp_failed (NM_MODEM (self), NM_DEVICE_STATE_REASON_PPP_FAILED);
 	}
 }
 

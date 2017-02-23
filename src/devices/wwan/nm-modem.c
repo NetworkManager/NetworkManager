@@ -230,6 +230,14 @@ nm_modem_emit_prepare_result (NMModem *self, gboolean success, NMDeviceStateReas
 	g_signal_emit (self, signals[PREPARE_RESULT], 0, success, (guint) reason);
 }
 
+void
+nm_modem_emit_ppp_failed (NMModem *self, NMDeviceStateReason reason)
+{
+	nm_assert (NM_IS_MODEM (self));
+
+	g_signal_emit (self, signals[PPP_FAILED], 0, (guint) reason);
+}
+
 NMModemIPType
 nm_modem_get_supported_ip_types (NMModem *self)
 {
@@ -390,10 +398,10 @@ ppp_state_changed (NMPPPManager *ppp_manager, NMPPPStatus status, gpointer user_
 {
 	switch (status) {
 	case NM_PPP_STATUS_DISCONNECT:
-		g_signal_emit (NM_MODEM (user_data), signals[PPP_FAILED], 0, NM_DEVICE_STATE_REASON_PPP_DISCONNECT);
+		nm_modem_emit_ppp_failed (user_data, NM_DEVICE_STATE_REASON_PPP_DISCONNECT);
 		break;
 	case NM_PPP_STATUS_DEAD:
-		g_signal_emit (NM_MODEM (user_data), signals[PPP_FAILED], 0, NM_DEVICE_STATE_REASON_PPP_FAILED);
+		nm_modem_emit_ppp_failed (user_data, NM_DEVICE_STATE_REASON_PPP_FAILED);
 		break;
 	default:
 		break;
