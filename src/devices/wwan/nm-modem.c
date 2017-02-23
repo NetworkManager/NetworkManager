@@ -201,7 +201,7 @@ nm_modem_set_mm_enabled (NMModem *self,
 
 		/* Try to unlock the modem if it's being enabled */
 		if (enabled)
-			g_signal_emit_by_name (self, NM_MODEM_AUTH_REQUESTED, 0);
+			g_signal_emit (self, signals[AUTH_REQUESTED], 0);
 		return;
 	}
 
