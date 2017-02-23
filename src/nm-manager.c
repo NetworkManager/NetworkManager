@@ -2947,6 +2947,7 @@ autoconnect_slaves (NMManager *self,
 		while (iter) {
 			NMSettingsConnection *slave_connection = iter->data;
 			const char *uuid;
+			NMDevice *slave_device;
 
 			iter = iter->next;
 
@@ -2974,6 +2975,20 @@ autoconnect_slaves (NMManager *self,
 			                         g_strdup (uuid),
 			                         g_free);
 
+			slave_device = nm_manager_get_best_device_for_connection (self,
+			                                                          NM_CONNECTION (slave_connection),
+			                                                          FALSE);
+			if (!slave_device) {
+				_LOGD (LOGD_CORE,
+				       "will NOT activate slave connection '%s' (%s) as a dependency for master '%s' (%s): "
+				       "no compatible device found",
+				       nm_settings_connection_get_id (slave_connection),
+				       nm_settings_connection_get_uuid (slave_connection),
+				       nm_settings_connection_get_id (master_connection),
+				       nm_settings_connection_get_uuid (master_connection));
+				continue;
+			}
+
 			_LOGD (LOGD_CORE, "will activate slave connection '%s' (%s) as a dependency for master '%s' (%s)",
 			       nm_settings_connection_get_id (slave_connection),
 			       nm_settings_connection_get_uuid (slave_connection),
@@ -2985,7 +3000,7 @@ autoconnect_slaves (NMManager *self,
 			                                slave_connection,
 			                                NULL,
 			                                NULL,
-			                                nm_manager_get_best_device_for_connection (self, NM_CONNECTION (slave_connection), FALSE),
+			                                slave_device,
 			                                subject,
 			                                NM_ACTIVATION_TYPE_MANAGED,
 			                                &local_err);
