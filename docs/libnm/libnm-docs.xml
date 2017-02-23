@@ -87,6 +87,7 @@
     <xi:include href="xml/nm-setting-bridge-port.xml"/>
     <xi:include href="xml/nm-setting-cdma.xml"/>
     <xi:include href="xml/nm-setting-dcb.xml"/>
+    <xi:include href="xml/nm-setting-dummy.xml"/>
     <xi:include href="xml/nm-setting-generic.xml"/>
     <xi:include href="xml/nm-setting-gsm.xml"/>
     <xi:include href="xml/nm-setting-infiniband.xml"/>
@@ -94,6 +95,7 @@
     <xi:include href="xml/nm-setting-ip6-config.xml"/>
     <xi:include href="xml/nm-setting-ip-config.xml"/>
     <xi:include href="xml/nm-setting-ip-tunnel.xml"/>
+    <xi:include href="xml/nm-setting-macsec.xml"/>
     <xi:include href="xml/nm-setting-macvlan.xml"/>
     <xi:include href="xml/nm-setting-olpc-mesh.xml"/>
     <xi:include href="xml/nm-setting-ppp.xml"/>
@@ -120,10 +122,12 @@
     <xi:include href="xml/nm-device-bond.xml"/>
     <xi:include href="xml/nm-device-bridge.xml"/>
     <xi:include href="xml/nm-device-bt.xml"/>
+    <xi:include href="xml/nm-device-dummy.xml"/>
     <xi:include href="xml/nm-device-ethernet.xml"/>
     <xi:include href="xml/nm-device-generic.xml"/>
     <xi:include href="xml/nm-device-infiniband.xml"/>
     <xi:include href="xml/nm-device-ip-tunnel.xml"/>
+    <xi:include href="xml/nm-device-macsec.xml"/>
     <xi:include href="xml/nm-device-macvlan.xml"/>
     <xi:include href="xml/nm-device-modem.xml"/>
     <xi:include href="xml/nm-device-olpc-mesh.xml"/>

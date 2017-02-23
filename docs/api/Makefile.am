@@ -51,6 +51,7 @@ content_files = \
 	dbus-org.freedesktop.NetworkManager.Device.xml \
 	dbus-org.freedesktop.NetworkManager.VPN.Plugin.xml \
 	dbus-org.freedesktop.NetworkManager.Device.Bluetooth.xml \
+	dbus-org.freedesktop.NetworkManager.Device.Dummy.xml \
 	dbus-org.freedesktop.NetworkManager.Device.Vxlan.xml \
 	dbus-org.freedesktop.NetworkManager.Settings.Connection.xml \
 	dbus-org.freedesktop.NetworkManager.Device.Bond.xml \

@@ -78,6 +78,7 @@
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Bond.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Bridge.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Bluetooth.xml"/>
+      <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Dummy.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Wired.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Generic.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Infiniband.xml"/>
