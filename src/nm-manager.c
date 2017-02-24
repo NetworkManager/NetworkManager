@@ -2859,49 +2859,83 @@ ensure_master_active_connection (NMManager *self,
 	return NULL;
 }
 
+typedef struct {
+	NMSettingsConnection *connection;
+	NMDevice *device;
+} SlaveConnectionInfo;
+
 /**
  * find_slaves:
  * @manager: #NMManager object
  * @connection: the master #NMSettingsConnection to find slave connections for
  * @device: the master #NMDevice for the @connection
+ * @out_n_slaves: on return, the number of slaves found
  *
  * Given an #NMSettingsConnection, attempts to find its slaves. If @connection is not
  * master, or has not any slaves, this will return %NULL.
  *
- * Returns: list of slave connections for given master @connection, or %NULL
+ * Returns: an array of #SlaveConnectionInfo for given master @connection, or %NULL
  **/
-static GSList *
+static SlaveConnectionInfo *
 find_slaves (NMManager *manager,
              NMSettingsConnection *connection,
-             NMDevice *device)
+             NMDevice *device,
+             guint *out_n_slaves)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	gs_free NMSettingsConnection **all_connections = NULL;
+	guint n_all_connections;
 	guint i;
-	GSList *slaves = NULL;
+	SlaveConnectionInfo *slaves = NULL;
+	guint n_slaves = 0;
 	NMSettingConnection *s_con;
+	gs_unref_hashtable GHashTable *devices = NULL;
+
+	nm_assert (out_n_slaves);
 
 	s_con = nm_connection_get_setting_connection (NM_CONNECTION (connection));
-	g_assert (s_con);
+	g_return_val_if_fail (s_con, NULL);
+
+	devices = g_hash_table_new (g_direct_hash, g_direct_equal);
 
 	/* Search through all connections, not only inactive ones, because
 	 * even if a slave was already active, it might be deactivated during
 	 * master reactivation.
 	 */
-	all_connections = nm_settings_get_connections_sorted (priv->settings, NULL);
-	for (i = 0; all_connections[i]; i++) {
+	all_connections = nm_settings_get_connections_sorted (priv->settings, &n_all_connections);
+	for (i = 0; i < n_all_connections; i++) {
 		NMSettingsConnection *master_connection = NULL;
-		NMDevice *master_device = NULL;
+		NMDevice *master_device = NULL, *slave_device;
 		NMConnection *candidate = NM_CONNECTION (all_connections[i]);
 
 		find_master (manager, candidate, NULL, &master_connection, &master_device, NULL, NULL);
 		if (   (master_connection && master_connection == connection)
 		    || (master_device && master_device == device)) {
-			slaves = g_slist_prepend (slaves, candidate);
+			slave_device = nm_manager_get_best_device_for_connection (manager,
+			                                                          candidate,
+			                                                          FALSE,
+			                                                          devices);
+
+			if (!slaves) {
+				/* what we allocate is quite likely much too large. Don't bother, it is only
+				 * a temporary buffer. */
+				slaves = g_new (SlaveConnectionInfo, n_all_connections);
+			}
+
+			nm_assert (n_slaves < n_all_connections);
+			slaves[n_slaves].connection = NM_SETTINGS_CONNECTION (candidate),
+			slaves[n_slaves].device = slave_device,
+			n_slaves++;
+
+			if (slave_device)
+				g_hash_table_add (devices, slave_device);
 		}
 	}
 
-	return g_slist_reverse (slaves);
+	*out_n_slaves = n_slaves;
+
+	/* Warning: returns NULL if n_slaves is zero. */
+	return slaves;
 }
 
 static gboolean
@@ -2933,27 +2967,23 @@ out:
 	return FALSE;
 }
 
-static gboolean
+static void
 autoconnect_slaves (NMManager *self,
                     NMSettingsConnection *master_connection,
                     NMDevice *master_device,
                     NMAuthSubject *subject)
 {
 	GError *local_err = NULL;
-	gboolean ret = FALSE;
 
 	if (should_connect_slaves (NM_CONNECTION (master_connection), master_device)) {
-		GSList *slaves, *iter;
+		gs_free SlaveConnectionInfo *slaves = NULL;
+		guint i, n_slaves = 0;
 
-		iter = slaves = find_slaves (self, master_connection, master_device);
-		ret = slaves != NULL;
+		slaves = find_slaves (self, master_connection, master_device, &n_slaves);
 
-		while (iter) {
-			NMSettingsConnection *slave_connection = iter->data;
+		for (i = 0; i < n_slaves; i++) {
+			SlaveConnectionInfo *slave = &slaves[i];
 			const char *uuid;
-			NMDevice *slave_device;
-
-			iter = iter->next;
 
 			/* To avoid loops when autoconnecting slaves, we propagate
 			 * the UUID of the initial connection down to slaves until
@@ -2961,12 +2991,12 @@ autoconnect_slaves (NMManager *self,
 			 */
 			uuid = g_object_get_qdata (G_OBJECT (master_connection),
 			                           autoconnect_root_quark ());
-			if (nm_streq0 (nm_settings_connection_get_uuid (slave_connection), uuid)) {
+			if (nm_streq0 (nm_settings_connection_get_uuid (slave->connection), uuid)) {
 				_LOGI (LOGD_CORE,
 				       "will NOT activate slave connection '%s' (%s) as a dependency for master '%s' (%s): "
 				       "circular dependency detected",
-				       nm_settings_connection_get_id (slave_connection),
-				       nm_settings_connection_get_uuid (slave_connection),
+				       nm_settings_connection_get_id (slave->connection),
+				       nm_settings_connection_get_uuid (slave->connection),
 				       nm_settings_connection_get_id (master_connection),
 				       nm_settings_connection_get_uuid (master_connection));
 				continue;
@@ -2974,38 +3004,34 @@ autoconnect_slaves (NMManager *self,
 
 			if (!uuid)
 				uuid = nm_settings_connection_get_uuid (master_connection);
-			g_object_set_qdata_full (G_OBJECT (slave_connection),
+			g_object_set_qdata_full (G_OBJECT (slave->connection),
 			                         autoconnect_root_quark (),
 			                         g_strdup (uuid),
 			                         g_free);
 
-			slave_device = nm_manager_get_best_device_for_connection (self,
-			                                                          NM_CONNECTION (slave_connection),
-			                                                          FALSE,
-			                                                          NULL);
-			if (!slave_device) {
+			if (!slave->device) {
 				_LOGD (LOGD_CORE,
 				       "will NOT activate slave connection '%s' (%s) as a dependency for master '%s' (%s): "
 				       "no compatible device found",
-				       nm_settings_connection_get_id (slave_connection),
-				       nm_settings_connection_get_uuid (slave_connection),
+				       nm_settings_connection_get_id (slave->connection),
+				       nm_settings_connection_get_uuid (slave->connection),
 				       nm_settings_connection_get_id (master_connection),
 				       nm_settings_connection_get_uuid (master_connection));
 				continue;
 			}
 
 			_LOGD (LOGD_CORE, "will activate slave connection '%s' (%s) as a dependency for master '%s' (%s)",
-			       nm_settings_connection_get_id (slave_connection),
-			       nm_settings_connection_get_uuid (slave_connection),
+			       nm_settings_connection_get_id (slave->connection),
+			       nm_settings_connection_get_uuid (slave->connection),
 			       nm_settings_connection_get_id (master_connection),
 			       nm_settings_connection_get_uuid (master_connection));
 
 			/* Schedule slave activation */
 			nm_manager_activate_connection (self,
-			                                slave_connection,
+			                                slave->connection,
 			                                NULL,
 			                                NULL,
-			                                slave_device,
+			                                slave->device,
 			                                subject,
 			                                NM_ACTIVATION_TYPE_MANAGED,
 			                                &local_err);
@@ -3014,9 +3040,7 @@ autoconnect_slaves (NMManager *self,
 				g_clear_error (&local_err);
 			}
 		}
-		g_slist_free (slaves);
 	}
-	return ret;
 }
 
 static gboolean
