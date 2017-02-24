@@ -428,14 +428,15 @@ AC_ARG_WITH(systemd-logind, AS_HELP_STRING([--with-systemd-logind=yes|no],
 	[Support systemd session tracking]))
 AC_ARG_WITH(consolekit, AS_HELP_STRING([--with-consolekit=yes|no],
 	[Support consolekit session tracking]))
-AC_ARG_WITH(session-tracking, AS_HELP_STRING([--with-session-tracking=systemd|consolekit|no],
+AC_ARG_WITH(session-tracking, AS_HELP_STRING([--with-session-tracking=systemd|elogind|consolekit|no],
 	[Compatibility option to choose one session tracking module]))
 # backwards compatibility
-AS_IF([test "$with_session_tracking" = "ck"], [use_consolekit="yes" use_systemd_logind="no"])
-AS_IF([test "$with_session_tracking" = "consolekit"], [use_consolekit="yes" use_systemd_logind="no"])
-AS_IF([test "$with_session_tracking" = "systemd"], [use_consolekit="no" use_systemd_logind="yes"])
-AS_IF([test "$with_session_tracking" = "no"], [use_consolekit="no" use_systemd_logind="no"])
-AS_IF([test "$with_session_tracking" = "none"], [use_consolekit="no" use_systemd_logind="no"])
+AS_IF([test "$with_session_tracking" = "ck"], [use_consolekit="yes" use_systemd_logind="no" use_elogind="no"])
+AS_IF([test "$with_session_tracking" = "consolekit"], [use_consolekit="yes" use_systemd_logind="no" use_elogind="no"])
+AS_IF([test "$with_session_tracking" = "systemd"], [use_consolekit="no" use_systemd_logind="yes" use_elogind="no"])
+AS_IF([test "$with_session_tracking" = "elogind"], [use_consolekit="no" use_systemd_logind="no" use_elogind="yes"])
+AS_IF([test "$with_session_tracking" = "no"], [use_consolekit="no" use_systemd_logind="no" use_elogind="no"])
+AS_IF([test "$with_session_tracking" = "none"], [use_consolekit="no" use_systemd_logind="no" use_elogind="no"])
 # current options
 AS_IF([test -n "$with_systemd_logind" ], [use_systemd_logind="$with_systemd_logind"])
 AS_IF([test -n "$with_consolekit" ], [use_consolekit="$with_consolekit"])
@@ -456,6 +457,20 @@ if test "$have_systemd_logind" = "yes"; then
 	AC_DEFINE([SESSION_TRACKING_SYSTEMD], 1, [Define to 1 if libsystemd-login is available])
 	session_tracking="$session_tracking, systemd-logind"
 fi
+
+if test "$use_elogind" = "yes" -o "$use_elogind" = "auto"; then
+    PKG_CHECK_MODULES(SYSTEMD_LOGIN, [libelogind], [have_elogind=yes], [PKG_CHECK_MODULES(SYSTEMD_LOGIN, [libelogind], [have_elogind=yes], [have_elogind=no])])
+else
+    have_elogind=no
+fi
+if test "$use_elogind" = "yes" -a "$have_elogind" = "no"; then
+    AC_MSG_ERROR([You must have libelogind installed to build with elogind support.])
+fi
+if test "$have_elogind" = "yes"; then
+    AC_DEFINE([SESSION_TRACKING_ELOGIND], 1, [Define to 1 if libelogin is available])
+    session_tracking="$session_tracking, elogind"
+fi
+
 if test "$use_consolekit" = "yes"; then
 	AC_DEFINE([SESSION_TRACKING_CONSOLEKIT], 1, [Define to 1 if ConsoleKit is available])
 	AC_DEFINE([CKDB_PATH], "/var/run/ConsoleKit/database", [Path to ConsoleKit database])
@@ -463,7 +478,7 @@ if test "$use_consolekit" = "yes"; then
 fi
 session_tracking="$(printf '%s' "${session_tracking}" | sed 's/^, //')"
 
-AC_ARG_WITH(suspend-resume, AS_HELP_STRING([--with-suspend-resume=upower|systemd|consolekit], [Build NetworkManager with specific suspend/resume support]))
+AC_ARG_WITH(suspend-resume, AS_HELP_STRING([--with-suspend-resume=upower|systemd|elogind|consolekit], [Build NetworkManager with specific suspend/resume support]))
 if test "z$with_suspend_resume" = "z"; then
     PKG_CHECK_EXISTS([libsystemd >= 209], [have_systemd_inhibit=yes],
                      [PKG_CHECK_EXISTS([libsystemd-login >= 183], [have_systemd_inhibit=yes], [have_systemd_inhibit=no])])
@@ -471,6 +486,12 @@ if test "z$with_suspend_resume" = "z"; then
         # Use systemd if it's new enough
         with_suspend_resume="systemd"
     else
+        PKG_CHECK_EXISTS([libelogind >= 219], [have_elogind_inhibit=yes],
+                        [PKG_CHECK_EXISTS([libelogind >= 219], [have_elogind_inhibit=yes], [have_elogind_inhibit=no])])
+        if test "z${have_elogind_inhibit}" = "zyes"; then
+            # Use elogind if it's new enough
+            with_suspend_resume="elogind"
+        else
         if test "$use_consolekit" = "yes"; then
                 # Use consolekit suspend if session tracking is consolekit
                 with_suspend_resume="consolekit"
@@ -479,6 +500,7 @@ if test "z$with_suspend_resume" = "z"; then
                 with_suspend_resume="upower"
         fi
     fi
+fi
 fi
 
 case $with_suspend_resume in
@@ -490,11 +512,16 @@ case $with_suspend_resume in
                           [PKG_CHECK_MODULES(SYSTEMD_INHIBIT, [libsystemd-login >= 183])])
         AC_DEFINE([SUSPEND_RESUME_SYSTEMD], 1, [Define to 1 to use systemd suspend api])
         ;;
+    elogind)
+        PKG_CHECK_MODULES(ELOGIND_INHIBIT, [libelogind >= 219],,
+                          [PKG_CHECK_MODULES(ELOGIND_INHIBIT, [libelogind >= 219])])
+        AC_DEFINE([SUSPEND_RESUME_ELOGIND], 1, [Define to 1 to use elogind suspend api])
+        ;;
     consolekit)
         AC_DEFINE([SUSPEND_RESUME_CONSOLEKIT], 1, [Define to 1 to use ConsoleKit2 suspend api])
         ;;
     *)
-        AC_MSG_ERROR(--with-suspend-resume must be one of [upower, systemd, consolekit])
+        AC_MSG_ERROR(--with-suspend-resume must be one of [upower, systemd, elogind, consolekit])
         ;;
 esac
 

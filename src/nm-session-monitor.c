@@ -31,6 +31,11 @@
 #ifdef SESSION_TRACKING_SYSTEMD
 #include <systemd/sd-login.h>
 #endif
+#ifdef SESSION_TRACKING_ELOGIND
+#include <elogind/sd-login.h>
+/* Re-Use SESSION_TRACKING_SYSTEMD as elogind substitutes systemd-login */
+#define SESSION_TRACKING_SYSTEMD 1
+#endif
 
 #include "NetworkManagerUtils.h"
 
@@ -85,7 +90,11 @@ st_sd_session_exists (NMSessionMonitor *monitor, uid_t uid, gboolean active)
 	status = sd_uid_get_sessions (uid, active, NULL);
 
 	if (status < 0)
+#ifdef SESSION_TRACKING_ELOGIND
+		_LOGE ("failed to get elogind sessions for uid %d: %d", uid, status);
+#else
 		_LOGE ("failed to get systemd sessions for uid %d: %d", uid, status);
+#endif /* SESSION_TRACKING_ELOGIND */
 
 	return status > 0;
 }
@@ -112,7 +121,11 @@ st_sd_init (NMSessionMonitor *monitor)
 		return;
 
 	if ((status = sd_login_monitor_new (NULL, &monitor->sd.monitor)) < 0) {
+#ifdef SESSION_TRACKING_ELOGIND
+		_LOGE ("failed to create elogind monitor: %d", status);
+#else
 		_LOGE ("failed to create systemd login monitor: %d", status);
+#endif /* SESSION_TRACKING_ELOGIND */
 		return;
 	}
 
@@ -357,7 +370,11 @@ nm_session_monitor_init (NMSessionMonitor *monitor)
 {
 #ifdef SESSION_TRACKING_SYSTEMD
 	st_sd_init (monitor);
+#ifdef SESSION_TRACKING_ELOGIND
+	_LOGD ("using elogind session tracking");
+#else
 	_LOGD ("using systemd-logind session tracking");
+#endif /* SESSION_TRACKING_ELOGIND */
 #endif
 
 #ifdef SESSION_TRACKING_CONSOLEKIT
