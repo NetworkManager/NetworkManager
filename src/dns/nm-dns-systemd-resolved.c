@@ -118,9 +118,6 @@ add_interface_configuration (NMDnsSystemdResolved *self,
 
 	device = nm_manager_get_device_by_ifindex (nm_manager_get (), ifindex);
 
-	if (!nm_device_get_managed (device, FALSE))
-		return;
-
 	for (i = 0; i < interfaces->len; i++) {
 		InterfaceConfig *tic = &g_array_index (interfaces, InterfaceConfig, i);
 		if (ifindex == tic->ifindex) {
