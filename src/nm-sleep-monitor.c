@@ -44,7 +44,11 @@
 #define SUSPEND_DBUS_PATH               "/org/freedesktop/login1"
 #define SUSPEND_DBUS_INTERFACE          "org.freedesktop.login1.Manager"
 #define USE_UPOWER                      0
+#if defined (SUSPEND_RESUME_SYSTEMD)
 #define _NMLOG_PREFIX_NAME              "sleep-monitor-sd"
+#else
+#define _NMLOG_PREFIX_NAME              "sleep-monitor-el"
+#endif
 
 #elif defined(SUSPEND_RESUME_CONSOLEKIT)
 

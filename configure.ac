@@ -454,11 +454,14 @@ if test "$use_systemd_logind" = "yes" -a "$have_systemd_logind" = "no"; then
     AC_MSG_ERROR([You must have libsystemd installed to build with systemd-logind support.])
 fi
 if test "$have_systemd_logind" = "yes"; then
-	AC_DEFINE([SESSION_TRACKING_SYSTEMD], 1, [Define to 1 if libsystemd-login is available])
-	session_tracking="$session_tracking, systemd-logind"
+    AC_DEFINE([SESSION_TRACKING_SYSTEMD], 1, [Define to 1 if libsystemd-login is available])
+    session_tracking="$session_tracking, systemd-logind"
 fi
 
-if test "$use_elogind" = "yes" -o "$use_elogind" = "auto"; then
+if test "$use_elogind" = "yes" -a "$have_systemd_logind" = "yes"; then
+    AC_MSG_ERROR([Cannot enable systemd-logind together with elogind.])
+fi
+if test "$use_elogind" = "yes"; then
     PKG_CHECK_MODULES(SYSTEMD_LOGIN, [libelogind], [have_elogind=yes], [PKG_CHECK_MODULES(SYSTEMD_LOGIN, [libelogind], [have_elogind=yes], [have_elogind=no])])
 else
     have_elogind=no
