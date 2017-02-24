@@ -2473,7 +2473,8 @@ nm_manager_get_device_paths (NMManager *self)
 static NMDevice *
 nm_manager_get_best_device_for_connection (NMManager *self,
                                            NMConnection *connection,
-                                           gboolean for_user_request)
+                                           gboolean for_user_request,
+                                           GHashTable *unavailable_devices)
 {
 	const GSList *devices, *iter;
 	NMActiveConnection *ac;
@@ -2493,6 +2494,9 @@ nm_manager_get_best_device_for_connection (NMManager *self,
 	devices = nm_manager_get_devices (self);
 	for (iter = devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *device = NM_DEVICE (iter->data);
+
+		if (unavailable_devices && g_hash_table_contains (unavailable_devices, device))
+			continue;
 
 		if (nm_device_check_connection_available (device, connection, flags, NULL))
 			return device;
@@ -2977,7 +2981,8 @@ autoconnect_slaves (NMManager *self,
 
 			slave_device = nm_manager_get_best_device_for_connection (self,
 			                                                          NM_CONNECTION (slave_connection),
-			                                                          FALSE);
+			                                                          FALSE,
+			                                                          NULL);
 			if (!slave_device) {
 				_LOGD (LOGD_CORE,
 				       "will NOT activate slave connection '%s' (%s) as a dependency for master '%s' (%s): "
@@ -3617,7 +3622,7 @@ validate_activation_request (NMManager *self,
 			goto error;
 		}
 	} else
-		device = nm_manager_get_best_device_for_connection (self, connection, TRUE);
+		device = nm_manager_get_best_device_for_connection (self, connection, TRUE, NULL);
 
 	if (!device && !vpn) {
 		gboolean is_software = nm_connection_is_virtual (connection);
