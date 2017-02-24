@@ -6,6 +6,7 @@ set -xv
 BUILD_DIR="${BUILD_DIR:-/tmp/nm-build}"
 BUILD_ID="${BUILD_ID:-master}"
 BUILD_REPO="${BUILD_REPO-https://github.com/NetworkManager/NetworkManager.git}"
+BUILD_REPO2="${BUILD_REPO2-git://github.com/NetworkManager/NetworkManager.git}"
 ARCH="${ARCH:-`arch`}"
 WITH_DEBUG="$WITH_DEBUG"
 DO_TEST_BUILD="${DO_TEST_BUILD:-yes}"
@@ -64,7 +65,11 @@ mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR"
 
 rm -rf "./NetworkManager"
-git clone "$BUILD_REPO"
+
+if ! timeout 10m git clone "$BUILD_REPO"; then
+    git clone "$BUILD_REPO2"
+fi
+
 cd "./NetworkManager/"
 git checkout "$BUILD_ID"
 
