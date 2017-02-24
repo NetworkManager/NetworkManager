@@ -2920,7 +2920,7 @@ autoconnect_slaves (NMManager *self,
 			                                &local_err);
 			if (local_err) {
 				_LOGW (LOGD_CORE, "Slave connection activation failed: %s", local_err->message);
-				g_error_free (local_err);
+				g_clear_error (&local_err);
 			}
 		}
 		g_slist_free (slaves);
