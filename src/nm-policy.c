@@ -87,7 +87,6 @@ typedef struct {
 
 	char *orig_hostname; /* hostname at NM start time */
 	char *cur_hostname;  /* hostname we want to assign */
-	gboolean hostname_changed;  /* TRUE if NM ever set the hostname */
 
 	GArray *ip6_prefix_delegations; /* pool of ip6 prefixes delegated to all devices */
 } NMPolicyPrivate;
@@ -492,20 +491,12 @@ _set_hostname (NMPolicy *self,
 	if (new_hostname)
 		g_clear_object (&priv->lookup_addr);
 
-	if (   priv->orig_hostname
-	    && (priv->hostname_changed == FALSE)
-	    && g_strcmp0 (priv->orig_hostname, new_hostname) == 0) {
-		/* Don't change the hostname or update DNS this is the first time we're
-		 * trying to change the hostname, and it's not actually changing.
-		 */
-	} else if (g_strcmp0 (priv->cur_hostname, new_hostname) == 0) {
-		/* Don't change the hostname or update DNS if the hostname isn't actually
-		 * going to change.
-		 */
-	} else {
+	/* Update the DNS only if the hostname is actually
+	 * going to change.
+	 */
+	if (!nm_streq0 (priv->cur_hostname, new_hostname)) {
 		g_free (priv->cur_hostname);
 		priv->cur_hostname = g_strdup (new_hostname);
-		priv->hostname_changed = TRUE;
 
 		/* Notify the DNS manager of the hostname change so that the domain part, if
 		 * present, can be added to the search list.
