@@ -744,6 +744,95 @@ test_write_existing_commented_duid (void)
 
 /*****************************************************************************/
 
+static const char *interface1_orig = \
+	"interface \"eth0\" {\n"
+	"	also request my-option;\n"
+	"	initial-delay 5;\n"
+	"}\n"
+	"interface \"eth1\" {\n"
+	"	also request another-option;\n"
+	"	initial-delay 0;\n"
+	"}\n"
+	"\n"
+	"also request yet-another-option;\n";
+
+static const char *interface1_expected = \
+	"# Created by NetworkManager\n"
+	"# Merged from /path/to/dhclient.conf\n"
+	"\n"
+	"initial-delay 5;\n"
+	"\n"
+	"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
+	"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
+	"option wpad code 252 = string;\n"
+	"\n"
+	"also request my-option;\n"
+	"also request yet-another-option;\n"
+	"also request rfc3442-classless-static-routes;\n"
+	"also request ms-classless-static-routes;\n"
+	"also request static-routes;\n"
+	"also request wpad;\n"
+	"also request ntp-servers;\n"
+	"\n";
+
+static void
+test_interface1 (void)
+{
+	test_config (interface1_orig, interface1_expected,
+	             FALSE, NULL, NULL,
+	             NULL,
+	             NULL,
+	             "eth0",
+	             NULL);
+}
+
+/*****************************************************************************/
+
+static const char *interface2_orig = \
+	"interface eth0 {\n"
+	"	also request my-option;\n"
+	"	initial-delay 5;\n"
+	" }\n"
+	"interface eth1 {\n"
+	"	initial-delay 0;\n"
+	"	request another-option;\n"
+	" } \n"
+	"\n"
+	"also request yet-another-option;\n";
+
+static const char *interface2_expected = \
+	"# Created by NetworkManager\n"
+	"# Merged from /path/to/dhclient.conf\n"
+	"\n"
+	"initial-delay 0;\n"
+	"\n"
+	"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
+	"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
+	"option wpad code 252 = string;\n"
+	"\n"
+	"request; # override dhclient defaults\n"
+	"also request another-option;\n"
+	"also request yet-another-option;\n"
+	"also request rfc3442-classless-static-routes;\n"
+	"also request ms-classless-static-routes;\n"
+	"also request static-routes;\n"
+	"also request wpad;\n"
+	"also request ntp-servers;\n"
+	"\n";
+
+static void
+test_interface2 (void)
+{
+	test_config (interface2_orig, interface2_expected,
+	             FALSE, NULL, NULL,
+	             NULL,
+	             NULL,
+	             "eth1",
+	             NULL);
+}
+
+/*****************************************************************************/
+
 static void
 test_read_lease_ip4_config_basic (void)
 {
@@ -891,6 +980,8 @@ main (int argc, char **argv)
 	g_test_add_func ("/dhcp/dhclient/existing_alsoreq", test_existing_alsoreq);
 	g_test_add_func ("/dhcp/dhclient/existing_multiline_alsoreq", test_existing_multiline_alsoreq);
 	g_test_add_func ("/dhcp/dhclient/duids", test_duids);
+	g_test_add_func ("/dhcp/dhclient/interface/1", test_interface1);
+	g_test_add_func ("/dhcp/dhclient/interface/2", test_interface2);
 
 	g_test_add_func ("/dhcp/dhclient/read_duid_from_leasefile", test_read_duid_from_leasefile);
 	g_test_add_func ("/dhcp/dhclient/read_commented_duid_from_leasefile", test_read_commented_duid_from_leasefile);
