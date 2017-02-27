@@ -232,6 +232,39 @@ nm_dhcp_dhclient_get_client_id_from_config_file (const char *path)
 	return NULL;
 }
 
+static gboolean
+read_interface (const char *line, char *interface, guint size)
+{
+	gs_free char *dup = g_strdup (line + NM_STRLEN ("interface"));
+	char *ptr = dup, *end;
+
+	while (g_ascii_isspace (*ptr))
+		ptr++;
+
+	if (*ptr == '"') {
+		ptr++;
+		end = strchr (ptr, '"');
+		if (!end)
+			return FALSE;
+		*end = '\0';
+	} else {
+		end = strchr (ptr, ' ');
+		if (!end)
+			end = strchr (ptr, '{');
+		if (!end)
+			return FALSE;
+		*end = '\0';
+	}
+
+	if (   ptr[0] == '\0'
+	    || strlen (ptr) + 1 > size)
+		return FALSE;
+
+	snprintf (interface, size, "%s", ptr);
+
+	return TRUE;
+}
+
 char *
 nm_dhcp_dhclient_create_config (const char *interface,
                                 gboolean is_ip6,
@@ -258,14 +291,30 @@ nm_dhcp_dhclient_create_config (const char *interface,
 		char **lines, **line;
 		gboolean in_alsoreq = FALSE;
 		gboolean in_req = FALSE;
+		char intf[IFNAMSIZ];
 
 		g_string_append_printf (new_contents, _("# Merged from %s\n\n"), orig_path);
+		intf[0] = '\0';
 
 		lines = g_strsplit_set (orig_contents, "\n\r", 0);
 		for (line = lines; lines && *line; line++) {
 			char *p = *line;
 
 			if (!strlen (g_strstrip (p)))
+				continue;
+
+			if (   !intf[0]
+			    && g_str_has_prefix (p, "interface")) {
+				if (read_interface (p, intf, sizeof (intf)))
+					continue;
+			}
+
+			if (intf[0] && strchr (p, '}')) {
+				intf[0] = '\0';
+				continue;
+			}
+
+			if (intf[0] && !nm_streq (intf, interface))
 				continue;
 
 			if (!strncmp (p, CLIENTID_TAG, strlen (CLIENTID_TAG))) {
