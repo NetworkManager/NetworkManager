@@ -424,11 +424,21 @@ nmt_page_bond_constructed (GObject *object)
 }
 
 static void
+nmt_page_bond_saved (NmtEditorPage *editor_page)
+{
+	NmtPageBondPrivate *priv = NMT_PAGE_BOND_GET_PRIVATE (editor_page);
+
+	nmt_edit_connection_list_recommit (NMT_EDIT_CONNECTION_LIST (priv->slaves));
+}
+
+static void
 nmt_page_bond_class_init (NmtPageBondClass *bond_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (bond_class);
+	NmtEditorPageClass *editor_page_class = NMT_EDITOR_PAGE_CLASS (bond_class);
 
 	g_type_class_add_private (bond_class, sizeof (NmtPageBondPrivate));
 
 	object_class->constructed = nmt_page_bond_constructed;
+	editor_page_class->saved = nmt_page_bond_saved;
 }

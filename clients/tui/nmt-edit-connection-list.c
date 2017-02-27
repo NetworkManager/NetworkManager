@@ -319,6 +319,33 @@ listbox_activated (NmtNewtWidget *listbox, gpointer list)
 	edit_clicked (NMT_NEWT_BUTTON (priv->edit), list);
 }
 
+
+static void
+connection_saved (GObject      *conn,
+                  GAsyncResult *result,
+                  gpointer      user_data)
+{
+        nm_remote_connection_save_finish (NM_REMOTE_CONNECTION (conn), result, NULL);
+}
+
+void
+nmt_edit_connection_list_recommit (NmtEditConnectionList *list)
+{
+	NmtEditConnectionListPrivate *priv = NMT_EDIT_CONNECTION_LIST_GET_PRIVATE (list);
+	NMConnection *conn;
+	GSList *iter;
+
+	for (iter = priv->connections; iter; iter = iter->next) {
+		conn = iter->data;
+
+		if (   NM_IS_REMOTE_CONNECTION (conn)
+		    && (nm_remote_connection_get_unsaved (NM_REMOTE_CONNECTION (conn)) == FALSE)) {
+			nm_remote_connection_save_async (NM_REMOTE_CONNECTION (conn),
+			                                 NULL, connection_saved, NULL);
+		}
+	}
+}
+
 static void
 nmt_edit_connection_list_finalize (GObject *object)
 {

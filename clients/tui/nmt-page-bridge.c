@@ -30,6 +30,12 @@
 
 G_DEFINE_TYPE (NmtPageBridge, nmt_page_bridge, NMT_TYPE_EDITOR_PAGE_DEVICE)
 
+#define NMT_PAGE_BRIDGE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_PAGE_BRIDGE, NmtPageBridgePrivate))
+
+typedef struct {
+        NmtSlaveList *slaves;
+} NmtPageBridgePrivate;
+
 NmtEditorPage *
 nmt_page_bridge_new (NMConnection   *conn,
                      NmtDeviceEntry *deventry)
@@ -58,6 +64,7 @@ static void
 nmt_page_bridge_constructed (GObject *object)
 {
 	NmtPageBridge *bridge = NMT_PAGE_BRIDGE (object);
+	NmtPageBridgePrivate *priv = NMT_PAGE_BRIDGE_GET_PRIVATE (bridge);
 	NmtEditorSection *section;
 	NmtEditorGrid *grid;
 	NMSettingBridge *s_bridge;
@@ -80,6 +87,7 @@ nmt_page_bridge_constructed (GObject *object)
 
 	widget = nmt_slave_list_new (conn, bridge_connection_type_filter, bridge);
 	nmt_editor_grid_append (grid, NULL, widget, NULL);
+	priv->slaves = NMT_SLAVE_LIST (widget);
 
 	widget = nmt_newt_entry_numeric_new (10, 0, 1000000);
 	g_object_bind_property (s_bridge, NM_SETTING_BRIDGE_AGEING_TIME,
@@ -145,9 +153,19 @@ nmt_page_bridge_constructed (GObject *object)
 }
 
 static void
+nmt_page_bridge_saved (NmtEditorPage *editor_page)
+{
+	NmtPageBridgePrivate *priv = NMT_PAGE_BRIDGE_GET_PRIVATE (editor_page);
+
+	nmt_edit_connection_list_recommit (NMT_EDIT_CONNECTION_LIST (priv->slaves));
+}
+
+static void
 nmt_page_bridge_class_init (NmtPageBridgeClass *bridge_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (bridge_class);
+	NmtEditorPageClass *editor_page_class = NMT_EDITOR_PAGE_CLASS (bridge_class);
 
 	object_class->constructed = nmt_page_bridge_constructed;
+	editor_page_class->saved = nmt_page_bridge_saved;
 }

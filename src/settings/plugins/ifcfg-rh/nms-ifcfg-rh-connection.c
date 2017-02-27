@@ -336,35 +336,12 @@ commit_changes (NMSettingsConnection *connection,
                 gpointer user_data)
 {
 	GError *error = NULL;
-	NMConnection *reread;
-	gboolean same = FALSE, success = FALSE;
+	gboolean success = FALSE;
 	char *ifcfg_path = NULL;
 	const char *filename;
 
-	/* To ensure we don't rewrite files that are only changed from other
-	 * processes on-disk, read the existing connection back in and only rewrite
-	 * it if it's really changed.
-	 */
 	filename = nm_settings_connection_get_filename (connection);
 	if (filename) {
-		gs_free char *unhandled = NULL;
-
-		reread = connection_from_file (filename, &unhandled, NULL, NULL);
-		if (reread) {
-			same = nm_connection_compare (NM_CONNECTION (connection),
-			                              reread,
-			                              NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS |
-			                                 NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS);
-			g_object_unref (reread);
-
-			/* Don't bother writing anything out if in-memory and on-disk data are the same */
-			if (same) {
-				/* But chain up to parent to handle success - emits updated signal */
-				NM_SETTINGS_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->commit_changes (connection, commit_reason, callback, user_data);
-				return;
-			}
-		}
-
 		success = writer_update_connection (NM_CONNECTION (connection),
 		                                    IFCFG_DIR,
 		                                    filename,
@@ -478,6 +455,11 @@ nm_ifcfg_connection_new (NMConnection *source,
 	if (out_ignore_error)
 		*out_ignore_error = FALSE;
 
+	if (full_path) {
+		/* The connection already is on the disk */
+		update_unsaved = FALSE;
+	}
+
 	/* If we're given a connection already, prefer that instead of re-reading */
 	if (source)
 		tmp = g_object_ref (source);
@@ -488,9 +470,6 @@ nm_ifcfg_connection_new (NMConnection *source,
 		                            out_ignore_error);
 		if (!tmp)
 			return NULL;
-
-		/* If we just read the connection from disk, it's clearly not Unsaved */
-		update_unsaved = FALSE;
 	}
 
 	if (unhandled_spec && g_str_has_prefix (unhandled_spec, "unmanaged:"))

@@ -180,11 +180,21 @@ nmt_page_team_constructed (GObject *object)
 }
 
 static void
+nmt_page_team_saved (NmtEditorPage *editor_page)
+{
+	NmtPageTeamPrivate *priv = NMT_PAGE_TEAM_GET_PRIVATE (editor_page);
+
+	nmt_edit_connection_list_recommit (NMT_EDIT_CONNECTION_LIST (priv->slaves));
+}
+
+static void
 nmt_page_team_class_init (NmtPageTeamClass *team_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (team_class);
+	NmtEditorPageClass *editor_page_class = NMT_EDITOR_PAGE_CLASS (team_class);
 
 	g_type_class_add_private (team_class, sizeof (NmtPageTeamPrivate));
 
 	object_class->constructed = nmt_page_team_constructed;
+	editor_page_class->saved = nmt_page_team_saved;
 }

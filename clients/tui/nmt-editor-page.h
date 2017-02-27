@@ -39,6 +39,7 @@ typedef struct {
 typedef struct {
 	GObjectClass parent;
 
+	void (*saved) (NmtEditorPage *page);
 } NmtEditorPageClass;
 
 GType nmt_editor_page_get_type (void);
@@ -46,6 +47,8 @@ GType nmt_editor_page_get_type (void);
 NMConnection  *nmt_editor_page_get_connection    (NmtEditorPage *page);
 
 GSList        *nmt_editor_page_get_sections      (NmtEditorPage *page);
+
+void           nmt_editor_page_saved            (NmtEditorPage *page);
 
 /*< protected >*/
 void           nmt_editor_page_add_section       (NmtEditorPage *page,
