@@ -307,7 +307,6 @@ write_8021x_certs (NMSetting8021x *s_8021x,
                    shvarFile *ifcfg,
                    GError **error)
 {
-	gboolean success = FALSE;
 	const Setting8021xSchemeVtable *otype = NULL;
 
 	/* CA certificate */
@@ -326,7 +325,7 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 
 	/* Save the private key */
 	if (!write_object (s_8021x, ifcfg, otype, error))
-		goto out;
+		return FALSE;
 
 	/* Client certificate */
 	if (otype->vtable->format_func (s_8021x) == NM_SETTING_802_1X_CK_FORMAT_PKCS12) {
@@ -343,13 +342,10 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 		                       ? &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CLIENT_CERT]
 		                       : &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_CLIENT_CERT],
 		                   error))
-			goto out;
+			return FALSE;
 	}
 
-	success = TRUE;
-
-out:
-	return success;
+	return TRUE;
 }
 
 static gboolean
@@ -362,7 +358,6 @@ write_8021x_setting (NMConnection *connection,
 	NMSetting8021xAuthFlags auth_flags;
 	const char *value, *match;
 	char *tmp = NULL;
-	gboolean success = FALSE;
 	GString *phase2_auth;
 	GString *str;
 	guint32 i, num;
@@ -511,13 +506,14 @@ write_8021x_setting (NMConnection *connection,
 	else
 		svUnsetValue (ifcfg, "IEEE_8021X_AUTH_TIMEOUT");
 
-	success = write_8021x_certs (s_8021x, FALSE, ifcfg, error);
-	if (success) {
-		/* phase2/inner certs */
-		success = write_8021x_certs (s_8021x, TRUE, ifcfg, error);
-	}
+	if (!write_8021x_certs (s_8021x, FALSE, ifcfg, error))
+		return FALSE;
 
-	return success;
+	/* phase2/inner certs */
+	if (!write_8021x_certs (s_8021x, TRUE, ifcfg, error))
+		return FALSE;
+
+	return TRUE;
 }
 
 static gboolean
@@ -1876,12 +1872,11 @@ write_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError 
 {
 	const char *dest, *next_hop;
 	char **route_items;
-	char *route_contents;
+	gs_free char *route_contents = NULL;
 	NMIPRoute *route;
 	guint32 prefix;
 	gint64 metric;
 	guint32 i, num;
-	gboolean success = FALSE;
 
 	g_return_val_if_fail (filename != NULL, FALSE);
 	g_return_val_if_fail (s_ip4 != NULL, FALSE);
@@ -1915,15 +1910,10 @@ write_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError 
 	if (!g_file_set_contents (filename, route_contents, -1, NULL)) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "Writing route file '%s' failed", filename);
-		goto error;
+		return FALSE;
 	}
 
-	success = TRUE;
-
-error:
-	g_free (route_contents);
-
-	return success;
+	return TRUE;
 }
 
 static gboolean
@@ -2382,10 +2372,9 @@ static gboolean
 write_route6_file (const char *filename, NMSettingIPConfig *s_ip6, GError **error)
 {
 	char **route_items;
-	char *route_contents;
+	gs_free char *route_contents = NULL;
 	NMIPRoute *route;
 	guint32 i, num;
-	gboolean success = FALSE;
 
 	g_return_val_if_fail (filename != NULL, FALSE);
 	g_return_val_if_fail (s_ip6 != NULL, FALSE);
@@ -2422,14 +2411,10 @@ write_route6_file (const char *filename, NMSettingIPConfig *s_ip6, GError **erro
 	if (!g_file_set_contents (filename, route_contents, -1, NULL)) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "Writing route6 file '%s' failed", filename);
-		goto error;
+		return FALSE;
 	}
 
-	success = TRUE;
-
-error:
-	g_free (route_contents);
-	return success;
+	return TRUE;
 }
 
 static void
@@ -2637,17 +2622,14 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	if (!route6_path) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "Could not get route6 file path for '%s'", svFileGetName (ifcfg));
-		goto error;
+		return FALSE;
 	}
 	write_route6_file (route6_path, s_ip6, error);
 	g_free (route6_path);
 	if (error && *error)
-		goto error;
+		return FALSE;
 
 	return TRUE;
-
-error:
-	return FALSE;
 }
 
 static void
@@ -2735,9 +2717,8 @@ write_connection (NMConnection *connection,
                   GError **error)
 {
 	NMSettingConnection *s_con;
-	gboolean success = FALSE;
-	shvarFile *ifcfg = NULL;
-	char *ifcfg_name = NULL;
+	nm_auto_shvar_file_close shvarFile *ifcfg = NULL;
+	gs_free char *ifcfg_name = NULL;
 	const char *type;
 	gboolean no_8021x = FALSE;
 	gboolean wired = FALSE;
@@ -2772,13 +2753,12 @@ write_connection (NMConnection *connection,
 		if (g_file_test (ifcfg_name, G_FILE_TEST_EXISTS)) {
 			guint32 idx = 0;
 
-			g_free (ifcfg_name);
+			nm_clear_g_free (&ifcfg_name);
 			while (idx++ < 500) {
 				ifcfg_name = g_strdup_printf ("%s/ifcfg-%s-%u", ifcfg_dir, escaped, idx);
 				if (g_file_test (ifcfg_name, G_FILE_TEST_EXISTS) == FALSE)
 					break;
-				g_free (ifcfg_name);
-				ifcfg_name = NULL;
+				nm_clear_g_free (&ifcfg_name);
 			}
 		}
 		g_free (escaped);
@@ -2796,7 +2776,7 @@ write_connection (NMConnection *connection,
 	if (!type) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "Missing connection type!");
-		goto out;
+		return FALSE;
 	}
 
 	if (!strcmp (type, NM_SETTING_WIRED_SETTING_NAME)) {
@@ -2805,82 +2785,76 @@ write_connection (NMConnection *connection,
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 			             "Can't write connection type '%s'",
 			             NM_SETTING_PPPOE_SETTING_NAME);
-			goto out;
+			return FALSE;
 		}
 
 		if (!write_wired_setting (connection, ifcfg, error))
-			goto out;
+			return FALSE;
 		wired = TRUE;
 	} else if (!strcmp (type, NM_SETTING_VLAN_SETTING_NAME)) {
 		if (!write_vlan_setting (connection, ifcfg, &wired, error))
-			goto out;
+			return FALSE;
 	} else if (!strcmp (type, NM_SETTING_WIRELESS_SETTING_NAME)) {
 		if (!write_wireless_setting (connection, ifcfg, &no_8021x, error))
-			goto out;
+			return FALSE;
 	} else if (!strcmp (type, NM_SETTING_INFINIBAND_SETTING_NAME)) {
 		if (!write_infiniband_setting (connection, ifcfg, error))
-			goto out;
+			return FALSE;
 	} else if (!strcmp (type, NM_SETTING_BOND_SETTING_NAME)) {
 		if (!write_bonding_setting (connection, ifcfg, &wired, error))
-			goto out;
+			return FALSE;
 	} else if (!strcmp (type, NM_SETTING_TEAM_SETTING_NAME)) {
 		if (!write_team_setting (connection, ifcfg, &wired, error))
-			goto out;
+			return FALSE;
 	} else if (!strcmp (type, NM_SETTING_BRIDGE_SETTING_NAME)) {
 		if (!write_bridge_setting (connection, ifcfg, error))
-			goto out;
+			return FALSE;
 	} else {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "Can't write connection type '%s'", type);
-		goto out;
+		return FALSE;
 	}
 
 	if (!no_8021x) {
 		if (!write_8021x_setting (connection, ifcfg, wired, error))
-			goto out;
+			return FALSE;
 	}
 
 	if (!write_bridge_port_setting (connection, ifcfg, error))
-		goto out;
+		return FALSE;
 
 	if (!write_team_port_setting (connection, ifcfg, error))
-		goto out;
+		return FALSE;
 
 	if (!write_dcb_setting (connection, ifcfg, error))
-		goto out;
+		return FALSE;
 
 	if (!write_proxy_setting (connection, ifcfg, error))
-		goto out;
+		return FALSE;
 
 	svUnsetValue (ifcfg, "DHCP_HOSTNAME");
 	svUnsetValue (ifcfg, "DHCP_FQDN");
 
 	if (!write_ip4_setting (connection, ifcfg, error))
-		goto out;
+		return FALSE;
 	write_ip4_aliases (connection, ifcfg_name);
 
 	if (!write_ip6_setting (connection, ifcfg, error))
-		goto out;
+		return FALSE;
 
 	if (!write_res_options (connection, ifcfg, error))
-		goto out;
+		return FALSE;
 
 	write_connection_setting (s_con, ifcfg);
 
 	if (!svWriteFile (ifcfg, 0644, error))
-		goto out;
+		return FALSE;
 
 	/* Only return the filename if this was a newly written ifcfg */
 	if (out_filename && !filename)
-		*out_filename = g_strdup (ifcfg_name);
+		*out_filename = g_steal_pointer (&ifcfg_name);
 
-	success = TRUE;
-
-out:
-	if (ifcfg)
-		svCloseFile (ifcfg);
-	g_free (ifcfg_name);
-	return success;
+	return TRUE;
 }
 
 gboolean
