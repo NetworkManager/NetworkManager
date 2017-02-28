@@ -73,10 +73,6 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-
-static NMSettingVerifyResult _nm_connection_verify (NMConnection *connection, GError **error);
-
-
 /*****************************************************************************/
 
 static void
@@ -1029,7 +1025,7 @@ nm_connection_verify (NMConnection *connection, GError **error)
 	return result == NM_SETTING_VERIFY_SUCCESS || result == NM_SETTING_VERIFY_NORMALIZABLE;
 }
 
-static NMSettingVerifyResult
+NMSettingVerifyResult
 _nm_connection_verify (NMConnection *connection, GError **error)
 {
 	NMConnectionPrivate *priv;
