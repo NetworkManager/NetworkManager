@@ -8383,6 +8383,64 @@ test_read_team_port_empty_config (void)
 }
 
 static void
+test_team_reread_slave (void)
+{
+	nmtst_auto_unlinkfile char *testfile = NULL;
+	gs_unref_object NMConnection *connection_1 = NULL;
+	gs_unref_object NMConnection *connection_2 = NULL;
+	gs_unref_object NMConnection *reread = NULL;
+	gboolean reread_same = FALSE;
+	NMSettingConnection *s_con;
+
+	connection_1 = nmtst_create_connection_from_keyfile (
+	        "[connection]\n"
+	        "id=team-slave-enp31s0f1-142\n"
+	        "uuid=74f435bb-ede4-415a-9d48-f580b60eba04\n"
+	        "type=vlan\n"
+	        "autoconnect=false\n"
+	        "interface-name=enp31s0f1-142\n"
+	        "master=team142\n"
+	        "permissions=\n"
+	        "slave-type=team\n"
+	        "\n"
+	        "[ethernet]\n"
+	        "\n"
+	        "[vlan]\n"
+	        "egress-priority-map=\n"
+	        "flags=1\n"
+	        "id=142\n"
+	        "ingress-priority-map=\n"
+	        "parent=enp31s0f1\n"
+	        , "/test_team_reread_slave", NULL);
+
+	/* to double-check keyfile syntax, re-create the connection by hand. */
+	connection_2 = nmtst_create_minimal_connection ("team-slave-enp31s0f1-142", "74f435bb-ede4-415a-9d48-f580b60eba04", NM_SETTING_VLAN_SETTING_NAME, &s_con);
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, FALSE,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, "enp31s0f1-142",
+	              NM_SETTING_CONNECTION_MASTER, "team142",
+	              NM_SETTING_CONNECTION_SLAVE_TYPE, "team",
+	              NULL);
+	g_object_set (nm_connection_get_setting_vlan (connection_2),
+	              NM_SETTING_VLAN_FLAGS, 1,
+	              NM_SETTING_VLAN_ID, 142,
+	              NM_SETTING_VLAN_PARENT, "enp31s0f1",
+	              NULL);
+	nm_connection_add_setting (connection_2, nm_setting_team_port_new ());
+	nm_connection_add_setting (connection_2, nm_setting_wired_new ());
+
+	nmtst_assert_connection_equals (connection_1, FALSE, connection_2, FALSE);
+
+	_writer_new_connection_reread ((nmtst_get_rand_int () % 2) ? connection_1 : connection_2,
+	                               TEST_SCRATCH_DIR "/network-scripts/",
+	                               &testfile,
+	                               &reread,
+	                               &reread_same);
+	_assert_reread_same_FIXME ((nmtst_get_rand_int () % 2) ? connection_1 : connection_2, reread);
+	g_assert (!reread_same);
+}
+
+static void
 test_read_proxy_basic (void)
 {
 	NMConnection *connection;
@@ -9248,6 +9306,7 @@ int main (int argc, char **argv)
 	g_test_add_data_func (TPATH "team/read-port-2", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-port-2", test_read_team_port);
 	g_test_add_func (TPATH "team/write-port", test_write_team_port);
 	g_test_add_func (TPATH "team/read-port-empty-config", test_read_team_port_empty_config);
+	g_test_add_func (TPATH "team/reread-slave", test_team_reread_slave);
 
 	g_test_add_func (TPATH "proxy/read-proxy-basic", test_read_proxy_basic);
 	g_test_add_func (TPATH "proxy/write-proxy-basic", test_write_proxy_basic);
