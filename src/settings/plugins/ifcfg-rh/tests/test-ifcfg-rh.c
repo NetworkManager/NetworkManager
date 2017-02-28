@@ -8403,8 +8403,6 @@ test_team_reread_slave (void)
 	        "permissions=\n"
 	        "slave-type=team\n"
 	        "\n"
-	        "[ethernet]\n"
-	        "\n"
 	        "[vlan]\n"
 	        "egress-priority-map=\n"
 	        "flags=1\n"
@@ -8427,7 +8425,7 @@ test_team_reread_slave (void)
 	              NM_SETTING_VLAN_PARENT, "enp31s0f1",
 	              NULL);
 	nm_connection_add_setting (connection_2, nm_setting_team_port_new ());
-	nm_connection_add_setting (connection_2, nm_setting_wired_new ());
+	nmtst_connection_normalize (connection_2);
 
 	nmtst_assert_connection_equals (connection_1, FALSE, connection_2, FALSE);
 

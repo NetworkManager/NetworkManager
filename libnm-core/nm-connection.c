@@ -986,6 +986,18 @@ _normalize_team_port_config (NMConnection *self, GHashTable *parameters)
 	return FALSE;
 }
 
+static gboolean
+_normalize_required_settings (NMConnection *self, GHashTable *parameters)
+{
+	if (nm_connection_get_setting_vlan (self)) {
+		if (!nm_connection_get_setting_wired (self)) {
+			nm_connection_add_setting (self, nm_setting_wired_new ());
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
 /**
  * nm_connection_verify:
  * @connection: the #NMConnection to verify
@@ -1233,8 +1245,9 @@ nm_connection_normalize (NMConnection *connection,
 	was_modified |= _normalize_connection_uuid (connection);
 	was_modified |= _normalize_connection_type (connection);
 	was_modified |= _normalize_connection_slave_type (connection);
-	was_modified |= _normalize_ethernet_link_neg (connection);
+	was_modified |= _normalize_required_settings (connection, parameters);
 	was_modified |= _normalize_ip_config (connection, parameters);
+	was_modified |= _normalize_ethernet_link_neg (connection);
 	was_modified |= _normalize_infiniband_mtu (connection, parameters);
 	was_modified |= _normalize_bond_mode (connection, parameters);
 	was_modified |= _normalize_wireless_mac_address_randomization (connection, parameters);
