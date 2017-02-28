@@ -687,7 +687,7 @@ add_connection (NMSettingsPlugin *config,
 		return NULL;
 
 	if (save_to_disk) {
-		if (!writer_new_connection (connection, IFCFG_DIR, &path, error))
+		if (!writer_new_connection (connection, IFCFG_DIR, &path, NULL, NULL, error))
 			return NULL;
 	}
 	return NM_SETTINGS_CONNECTION (update_connection (self, connection, path, NULL, FALSE, NULL, error));

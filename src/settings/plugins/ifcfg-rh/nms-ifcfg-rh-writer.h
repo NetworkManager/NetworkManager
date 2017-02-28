@@ -29,11 +29,15 @@ gboolean writer_can_write_connection (NMConnection *connection,
 gboolean writer_new_connection (NMConnection *connection,
                                 const char *ifcfg_dir,
                                 char **out_filename,
+                                NMConnection **out_reread,
+                                gboolean *out_reread_same,
                                 GError **error);
 
 gboolean writer_update_connection (NMConnection *connection,
                                    const char *ifcfg_dir,
                                    const char *filename,
+                                   NMConnection **out_reread,
+                                   gboolean *out_reread_same,
                                    GError **error);
 
 #endif /* _WRITER_H_ */

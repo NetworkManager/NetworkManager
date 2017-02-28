@@ -2714,6 +2714,8 @@ write_connection (NMConnection *connection,
                   const char *ifcfg_dir,
                   const char *filename,
                   char **out_filename,
+                  NMConnection **out_reread,
+                  gboolean *out_reread_same,
                   GError **error)
 {
 	NMSettingConnection *s_con;
@@ -2725,6 +2727,7 @@ write_connection (NMConnection *connection,
 
 	nm_assert (NM_IS_CONNECTION (connection));
 	nm_assert (nm_connection_verify (connection, NULL));
+	nm_assert (!out_reread || !*out_reread);
 
 	if (!writer_can_write_connection (connection, error))
 		return FALSE;
@@ -2850,6 +2853,40 @@ write_connection (NMConnection *connection,
 	if (!svWriteFile (ifcfg, 0644, error))
 		return FALSE;
 
+	if (out_reread || out_reread_same) {
+		gs_unref_object NMConnection *reread = NULL;
+		gs_free_error GError *local = NULL;
+		gs_free char *unhandled = NULL;
+		gboolean reread_same = FALSE;
+
+		reread = connection_from_file (ifcfg_name, &unhandled, &local, NULL);
+
+		if (unhandled) {
+			_LOGW ("failure to re-read the new connection from file \"%s\": %s",
+			       ifcfg_name, "connection is unhandled");
+			g_clear_object (&reread);
+		} else if (!reread) {
+			_LOGW ("failure to re-read the new connection from file \"%s\": %s",
+			       ifcfg_name, local ? local->message : "<unknown>");
+		} else {
+			if (out_reread_same) {
+				if (nm_connection_compare (reread, connection, NM_SETTING_COMPARE_FLAG_EXACT))
+					reread_same = TRUE;
+
+				nm_assert (reread_same == nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+				nm_assert (reread_same == ({
+				                                gs_unref_hashtable GHashTable *_settings = NULL;
+
+				                                (   nm_connection_diff (reread, connection, NM_SETTING_COMPARE_FLAG_EXACT, &_settings)
+				                                 && !_settings);
+				                           }));
+			}
+		}
+
+		NM_SET_OUT (out_reread, g_steal_pointer (&reread));
+		NM_SET_OUT (out_reread_same, reread_same);
+	}
+
 	/* Only return the filename if this was a newly written ifcfg */
 	if (out_filename && !filename)
 		*out_filename = g_steal_pointer (&ifcfg_name);
@@ -2886,15 +2923,19 @@ gboolean
 writer_new_connection (NMConnection *connection,
                        const char *ifcfg_dir,
                        char **out_filename,
+                       NMConnection **out_reread,
+                       gboolean *out_reread_same,
                        GError **error)
 {
-	return write_connection (connection, ifcfg_dir, NULL, out_filename, error);
+	return write_connection (connection, ifcfg_dir, NULL, out_filename, out_reread, out_reread_same, error);
 }
 
 gboolean
 writer_update_connection (NMConnection *connection,
                           const char *ifcfg_dir,
                           const char *filename,
+                          NMConnection **out_reread,
+                          gboolean *out_reread_same,
                           GError **error)
 {
 	if (utils_has_complex_routes (filename)) {
@@ -2903,6 +2944,6 @@ writer_update_connection (NMConnection *connection,
 		return FALSE;
 	}
 
-	return write_connection (connection, ifcfg_dir, filename, NULL, error);
+	return write_connection (connection, ifcfg_dir, filename, NULL, out_reread, out_reread_same, error);
 }
 
