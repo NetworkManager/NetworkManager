@@ -602,17 +602,17 @@ static gboolean
 _normalize_connection_uuid (NMConnection *self)
 {
 	NMSettingConnection *s_con = nm_connection_get_setting_connection (self);
-	char *uuid;
+	char uuid[37];
 
-	g_assert (s_con);
+	nm_assert (s_con);
 
 	if (nm_setting_connection_get_uuid (s_con))
 		return FALSE;
 
-	uuid = nm_utils_uuid_generate ();
-	g_object_set (s_con, NM_SETTING_CONNECTION_UUID, uuid, NULL);
-	g_free (uuid);
-
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_UUID,
+	              nm_utils_uuid_generate_buf (uuid),
+	              NULL);
 	return TRUE;
 }
 

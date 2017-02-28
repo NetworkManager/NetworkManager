@@ -3629,7 +3629,7 @@ nm_device_generate_connection (NMDevice *self, NMDevice *master)
 	NMSetting *s_con;
 	NMSetting *s_ip4;
 	NMSetting *s_ip6;
-	gs_free char *uuid = NULL;
+	char uuid[37];
 	const char *ip4_method, *ip6_method;
 	GError *error = NULL;
 	const NMPlatformLink *pllink;
@@ -3646,10 +3646,9 @@ nm_device_generate_connection (NMDevice *self, NMDevice *master)
 
 	connection = nm_simple_connection_new ();
 	s_con = nm_setting_connection_new ();
-	uuid = nm_utils_uuid_generate ();
 
 	g_object_set (s_con,
-	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_UUID, nm_utils_uuid_generate_buf (uuid),
 	              NM_SETTING_CONNECTION_ID, ifname,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, FALSE,
 	              NM_SETTING_CONNECTION_INTERFACE_NAME, ifname,

@@ -217,7 +217,7 @@ nm_utils_complete_generic (NMPlatform *platform,
                            gboolean default_enable_ipv6)
 {
 	NMSettingConnection *s_con;
-	char *id, *uuid, *ifname;
+	char *id, *ifname;
 	GHashTable *parameters;
 
 	g_assert (fallback_id_prefix);
@@ -230,9 +230,9 @@ nm_utils_complete_generic (NMPlatform *platform,
 	g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_TYPE, ctype, NULL);
 
 	if (!nm_setting_connection_get_uuid (s_con)) {
-		uuid = nm_utils_uuid_generate ();
-		g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_UUID, uuid, NULL);
-		g_free (uuid);
+		char uuid[37];
+
+		g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_UUID, nm_utils_uuid_generate_buf (uuid), NULL);
 	}
 
 	/* Add a connection ID if absent */
