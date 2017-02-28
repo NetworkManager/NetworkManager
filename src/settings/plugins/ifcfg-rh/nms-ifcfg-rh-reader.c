@@ -5087,8 +5087,15 @@ connection_from_file_full (const char *filename,
 	if (devtype) {
 		if (!strcasecmp (devtype, TYPE_TEAM))
 			type = g_strdup (TYPE_TEAM);
-		else if (!strcasecmp (devtype, TYPE_TEAM_PORT))
-			type = g_strdup (TYPE_ETHERNET);
+		else if (!strcasecmp (devtype, TYPE_TEAM_PORT)) {
+			gs_free char *device = NULL;
+
+			device = svGetValueStr_cp (parsed, "DEVICE");
+			if (device && is_vlan_device (device, parsed))
+				type = g_strdup (TYPE_VLAN);
+			else
+				type = g_strdup (TYPE_ETHERNET);
+		}
 		g_free (devtype);
 	}
 	if (!type) {

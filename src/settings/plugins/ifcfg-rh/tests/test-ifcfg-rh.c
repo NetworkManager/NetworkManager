@@ -8436,8 +8436,14 @@ test_team_reread_slave (void)
 	                               &testfile,
 	                               &reread,
 	                               &reread_same);
-	_assert_reread_same_FIXME ((nmtst_get_rand_int () % 2) ? connection_1 : connection_2, reread);
-	g_assert (!reread_same);
+	_assert_reread_same ((nmtst_get_rand_int () % 2) ? connection_1 : connection_2, reread);
+	g_assert (reread_same);
+	g_clear_object (&reread);
+
+	reread = _connection_from_file (testfile, NULL, TYPE_VLAN,
+	                                NULL);
+	nmtst_assert_connection_equals ((nmtst_get_rand_int () % 2) ? connection_1 : connection_2, FALSE,
+	                                reread, FALSE);
 }
 
 static void
