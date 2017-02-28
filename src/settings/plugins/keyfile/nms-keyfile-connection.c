@@ -64,6 +64,8 @@ commit_changes (NMSettingsConnection *connection,
 	                                    NM_FLAGS_ALL (commit_reason,   NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION
 	                                                                 | NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED),
 	                                    &path,
+	                                    NULL,
+	                                    NULL,
 	                                    &error)) {
 		callback (connection, error, user_data);
 		g_clear_error (&error);

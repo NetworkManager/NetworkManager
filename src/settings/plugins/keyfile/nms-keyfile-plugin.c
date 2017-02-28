@@ -532,7 +532,13 @@ add_connection (NMSettingsPlugin *config,
 	gs_free char *path = NULL;
 
 	if (save_to_disk) {
-		if (!nms_keyfile_writer_connection (connection, NULL, FALSE, &path, error))
+		if (!nms_keyfile_writer_connection (connection,
+		                                    NULL,
+		                                    FALSE,
+		                                    &path,
+		                                    NULL,
+		                                    NULL,
+		                                    error))
 			return NULL;
 	}
 	return NM_SETTINGS_CONNECTION (update_connection (self, connection, path, NULL, FALSE, NULL, error));
