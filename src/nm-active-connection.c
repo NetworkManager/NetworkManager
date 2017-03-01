@@ -44,19 +44,18 @@ typedef struct _NMActiveConnectionPrivate {
 
 	char *pending_activation_id;
 
-	gboolean is_default;
-	gboolean is_default6;
 	NMActiveConnectionState state;
-	gboolean state_set;
-	gboolean vpn;
+	bool is_default:1;
+	bool is_default6:1;
+	bool state_set:1;
+	bool vpn:1;
+	bool assumed:1;
+	bool master_ready:1;
 
 	NMAuthSubject *subject;
 	NMActiveConnection *master;
-	gboolean master_ready;
 
 	NMActiveConnection *parent;
-
-	gboolean assumed;
 
 	NMAuthChain *chain;
 	const char *wifi_shared_permission;
