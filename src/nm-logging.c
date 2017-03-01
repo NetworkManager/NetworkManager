@@ -94,6 +94,7 @@ static struct Global {
 	NMLogLevel log_level;
 	bool uses_syslog:1;
 	bool syslog_identifier_initialized:1;
+	bool debug_stderr:1;
 	const char *prefix;
 	const char *syslog_identifier;
 	enum {
@@ -630,6 +631,9 @@ _nm_log_impl (const char *file,
 
 	g_get_current_time (&tv);
 
+	if (global.debug_stderr)
+		g_printerr (MESSAGE_FMT"\n", MESSAGE_ARG (global, tv, msg));
+
 	switch (global.log_backend) {
 #if SYSTEMD_JOURNAL
 	case LOG_BACKEND_JOURNAL:
@@ -817,7 +821,7 @@ nm_logging_set_prefix (const char *format, ...)
 }
 
 void
-nm_logging_syslog_openlog (const char *logging_backend)
+nm_logging_syslog_openlog (const char *logging_backend, gboolean debug)
 {
 	if (global.log_backend != LOG_BACKEND_GLIB)
 		g_return_if_reached ();
@@ -825,21 +829,21 @@ nm_logging_syslog_openlog (const char *logging_backend)
 	if (!logging_backend)
 		logging_backend = ""NM_CONFIG_DEFAULT_LOGGING_BACKEND;
 
-	if (strcmp (logging_backend, "debug") == 0) {
-		global.log_backend = LOG_BACKEND_SYSLOG;
-		openlog (syslog_identifier_domain (&global), LOG_CONS | LOG_PERROR | LOG_PID, LOG_USER);
 #if SYSTEMD_JOURNAL
-	} else if (strcmp (logging_backend, "syslog") != 0) {
+	if (strcmp (logging_backend, "syslog") != 0) {
 		global.log_backend = LOG_BACKEND_JOURNAL;
 		global.uses_syslog = TRUE;
+		global.debug_stderr = debug;
 
 		/* ensure we read a monotonic timestamp. Reading the timestamp the first
 		 * time causes a logging message. We don't want to do that during _nm_log_impl. */
 		nm_utils_get_monotonic_timestamp_ns ();
+	} else
 #endif
-	} else {
+	{
 		global.log_backend = LOG_BACKEND_SYSLOG;
 		global.uses_syslog = TRUE;
+		global.debug_stderr = debug;
 		openlog (syslog_identifier_domain (&global), LOG_PID, LOG_DAEMON);
 	}
 

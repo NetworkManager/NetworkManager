@@ -191,7 +191,7 @@ gboolean nm_logging_setup (const char  *level,
 void nm_logging_set_syslog_identifier (const char *domain);
 void nm_logging_set_prefix (const char *format, ...) _nm_printf (1, 2);
 
-void     nm_logging_syslog_openlog (const char *logging_backend);
+void     nm_logging_syslog_openlog (const char *logging_backend, gboolean debug);
 gboolean nm_logging_syslog_enabled (void);
 
 /*****************************************************************************/
