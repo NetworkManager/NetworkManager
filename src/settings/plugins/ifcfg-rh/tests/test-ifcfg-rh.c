@@ -115,7 +115,7 @@ _assert_reread_same_FIXME (NMConnection *connection, NMConnection *reread)
 
 #define _writer_update_connection_reread(connection, ifcfg_dir, filename, out_reread, out_reread_same) \
 	G_STMT_START { \
-		NMConnection *_connection = (connection); \
+		gs_unref_object NMConnection *_connection = nmtst_connection_duplicate_and_normalize (connection); \
 		NMConnection **_out_reread = (out_reread); \
 		gboolean *_out_reread_same = (out_reread_same); \
 		const char *_ifcfg_dir = (ifcfg_dir); \
@@ -266,6 +266,7 @@ _writer_new_connection_fail (NMConnection *connection,
                              const char *ifcfg_dir,
                              GError **error)
 {
+	gs_unref_object NMConnection *connection_normalized = NULL;
 	gs_unref_object NMConnection *reread = NULL;
 	gboolean success;
 	GError *local = NULL;
@@ -274,7 +275,9 @@ _writer_new_connection_fail (NMConnection *connection,
 	g_assert (NM_IS_CONNECTION (connection));
 	g_assert (ifcfg_dir);
 
-	success = writer_new_connection (connection,
+	connection_normalized = nmtst_connection_duplicate_and_normalize (connection);
+
+	success = writer_new_connection (connection_normalized,
 	                                 ifcfg_dir,
 	                                 &filename,
 	                                 &reread,

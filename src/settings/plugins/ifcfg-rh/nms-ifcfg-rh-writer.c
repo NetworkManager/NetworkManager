@@ -2726,7 +2726,7 @@ write_connection (NMConnection *connection,
 	gboolean wired = FALSE;
 
 	nm_assert (NM_IS_CONNECTION (connection));
-	nm_assert (nm_connection_verify (connection, NULL));
+	nm_assert (_nm_connection_verify (connection, NULL) == NM_SETTING_VERIFY_SUCCESS);
 	nm_assert (!out_reread || !*out_reread);
 
 	if (!writer_can_write_connection (connection, error))
