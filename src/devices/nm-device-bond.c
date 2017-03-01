@@ -391,6 +391,7 @@ enslave_slave (NMDevice *device,
 	NMDeviceBond *self = NM_DEVICE_BOND (device);
 	gboolean success = TRUE, no_firmware = FALSE;
 	const char *slave_iface = nm_device_get_ip_iface (slave);
+	NMConnection *master_con;
 
 	nm_device_master_check_slave_physical_port (device, slave, LOGD_BOND);
 
@@ -405,6 +406,25 @@ enslave_slave (NMDevice *device,
 			return FALSE;
 
 		_LOGI (LOGD_BOND, "enslaved bond slave %s", slave_iface);
+
+		/* The active_slave option can be set only after the interface is enslaved */
+		master_con = nm_device_get_applied_connection (device);
+		if (master_con) {
+			NMSettingBond *s_bond = nm_connection_get_setting_bond (master_con);
+			const char *active;
+
+			if (s_bond) {
+				active = nm_setting_bond_get_option_by_name (s_bond, "active_slave");
+				if (active && nm_streq0 (active, nm_device_get_iface (slave))) {
+					nm_platform_sysctl_master_set_option (NM_PLATFORM_GET,
+					                                      nm_device_get_ifindex (device),
+					                                      "active_slave",
+					                                      active);
+					_LOGD (LOGD_BOND, "setting slave %s as active one for master %s",
+					       active, nm_device_get_iface (device));
+				}
+			}
+		}
 	} else
 		_LOGI (LOGD_BOND, "bond slave %s was enslaved", slave_iface);
 
