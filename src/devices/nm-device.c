@@ -474,7 +474,7 @@ static gboolean nm_device_set_ip6_config (NMDevice *self,
 static gboolean ip6_config_merge_and_apply (NMDevice *self,
                                             gboolean commit);
 
-static void nm_device_master_add_slave (NMDevice *self, NMDevice *slave, gboolean configure);
+static gboolean nm_device_master_add_slave (NMDevice *self, NMDevice *slave, gboolean configure);
 static void nm_device_slave_notify_enslave (NMDevice *self, gboolean success);
 static void nm_device_slave_notify_release (NMDevice *self, NMDeviceStateReason reason);
 
@@ -2991,17 +2991,21 @@ slave_state_changed (NMDevice *slave,
  *
  * If @self is capable of enslaving other devices (ie it's a bridge, bond, team,
  * etc) then this function adds @slave to the slave list for later enslavement.
+ *
+ * Returns: %TRUE if the slave was enslaved. %FALSE means, the slave was already
+ *   enslaved and nothing was done.
  */
-static void
+static gboolean
 nm_device_master_add_slave (NMDevice *self, NMDevice *slave, gboolean configure)
 {
 	NMDevicePrivate *priv;
 	NMDevicePrivate *slave_priv;
 	SlaveInfo *info;
+	gboolean changed = FALSE;
 
-	g_return_if_fail (NM_IS_DEVICE (self));
-	g_return_if_fail (NM_IS_DEVICE (slave));
-	g_return_if_fail (NM_DEVICE_GET_CLASS (self)->enslave_slave != NULL);
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+	g_return_val_if_fail (NM_IS_DEVICE (slave), FALSE);
+	g_return_val_if_fail (NM_DEVICE_GET_CLASS (self)->enslave_slave != NULL, FALSE);
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	slave_priv = NM_DEVICE_GET_PRIVATE (slave);
@@ -3012,11 +3016,11 @@ nm_device_master_add_slave (NMDevice *self, NMDevice *slave, gboolean configure)
 	       info ? " (already registered)" : "");
 
 	if (configure)
-		g_return_if_fail (nm_device_get_state (slave) >= NM_DEVICE_STATE_DISCONNECTED);
+		g_return_val_if_fail (nm_device_get_state (slave) >= NM_DEVICE_STATE_DISCONNECTED, FALSE);
 
 	if (!info) {
-		g_return_if_fail (!slave_priv->master);
-		g_return_if_fail (!slave_priv->is_enslaved);
+		g_return_val_if_fail (!slave_priv->master, FALSE);
+		g_return_val_if_fail (!slave_priv->is_enslaved, FALSE);
 
 		info = g_slice_new0 (SlaveInfo);
 		info->slave = g_object_ref (slave);
@@ -3036,13 +3040,15 @@ nm_device_master_add_slave (NMDevice *self, NMDevice *slave, gboolean configure)
 
 		g_warn_if_fail (!NM_FLAGS_HAS (slave_priv->unmanaged_mask, NM_UNMANAGED_IS_SLAVE));
 		nm_device_set_unmanaged_by_flags (slave, NM_UNMANAGED_IS_SLAVE, FALSE, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
+		changed = TRUE;
 	} else
-		g_return_if_fail (slave_priv->master == self);
+		g_return_val_if_fail (slave_priv->master == self, FALSE);
 
 	nm_device_queue_recheck_assume (self);
 	nm_device_queue_recheck_assume (slave);
-}
 
+	return changed;
+}
 
 /**
  * nm_device_master_get_slaves:
