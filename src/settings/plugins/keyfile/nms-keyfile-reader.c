@@ -87,7 +87,7 @@ _handler_read (GKeyFile *keyfile,
 		else
 			level = LOGL_INFO;
 
-		nm_log (level, LOGD_SETTINGS, "keyfile: %s",
+		nm_log (level, LOGD_SETTINGS, NULL, NULL, "keyfile: %s",
 		        _fmt_warn (warn_data->group, warn_data->setting,
 		                   warn_data->property_name, warn_data->message,
 		                   &message_free));

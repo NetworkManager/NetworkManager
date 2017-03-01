@@ -87,7 +87,7 @@ G_DEFINE_TYPE (NMSecretAgent, nm_secret_agent, G_TYPE_OBJECT)
                 g_snprintf (__prefix, sizeof (__prefix), "%s[%p]", ""_NMLOG_PREFIX_NAME"", (self)); \
             else \
                 g_strlcpy (__prefix, _NMLOG_PREFIX_NAME, sizeof (__prefix)); \
-            _nm_log ((level), (_NMLOG_DOMAIN), 0, \
+            _nm_log ((level), (_NMLOG_DOMAIN), 0, NULL, NULL, \
                      "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
                      __prefix _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
         } \

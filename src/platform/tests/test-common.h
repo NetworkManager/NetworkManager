@@ -26,7 +26,7 @@
         if (nm_logging_enabled (__level, __domain)) { \
             gint64 _ts = nm_utils_get_monotonic_timestamp_ns (); \
             \
-            _nm_log (__level, __domain, 0, \
+            _nm_log (__level, __domain, 0, NULL, NULL, \
                      "%s[%ld.%09ld]: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
                      _NMLOG_PREFIX_NAME, \
                      (long) (_ts / NM_UTILS_NS_PER_SECOND), \

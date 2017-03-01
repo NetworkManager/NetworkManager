@@ -122,7 +122,7 @@ static void _set_activation_type (NMActiveConnection *self,
     G_STMT_START { \
         char _sbuf[64]; \
         \
-        nm_log ((level), _NMLOG_DOMAIN, \
+        nm_log ((level), _NMLOG_DOMAIN, NULL, NULL, \
                 "%s%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
                 _NMLOG_PREFIX_NAME, \
                 self ? nm_sprintf_buf (_sbuf, "[%p]", self) : "" \

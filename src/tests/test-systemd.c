@@ -54,6 +54,8 @@ _nm_log_impl (const char *file,
               NMLogLevel level,
               NMLogDomain domain,
               int error,
+              const char *ifname,
+              const char *con_uuid,
               const char *fmt,
               ...)
 {

@@ -42,7 +42,7 @@
                                             ? LOGD_DHCP \
                                             : (nm_dhcp_client_get_ipv6 (_self) ? LOGD_DHCP6 : LOGD_DHCP4); \
             \
-            nm_log (_level, _domain, \
+            nm_log (_level, _domain, NULL, NULL, \
                     "%s%s%s%s%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
                     _NMLOG_PREFIX_NAME, \
                     (_domain == LOGD_DHCP4 ? "4" : (_domain == LOGD_DHCP6 ? "6" : "")), \
@@ -65,7 +65,7 @@
         if (nm_logging_enabled (_level, _domain)) { \
             const char *__ifname = (ifname); \
             \
-            nm_log (_level, _domain, \
+            nm_log (_level, _domain, NULL, NULL, \
                     "%s%s%s%s%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
                     _NMLOG_PREFIX_NAME, \
                     (_domain == LOGD_DHCP4 ? "4" : (_domain == LOGD_DHCP6 ? "6" : "")), \

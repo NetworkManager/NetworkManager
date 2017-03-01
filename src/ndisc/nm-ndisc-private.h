@@ -59,7 +59,7 @@ gboolean nm_ndisc_add_dns_domain           (NMNDisc *ndisc, const NMNDiscDNSDoma
             NMNDisc *const __self = (self); \
             char __prefix[64]; \
             \
-            _nm_log (__level, __domain, 0, \
+            _nm_log (__level, __domain, 0, NULL, NULL, \
                      "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
                      (__self \
                         ? ({ \

@@ -138,7 +138,7 @@ G_DEFINE_TYPE_WITH_CODE (NMSettingsConnection, nm_settings_connection, NM_TYPE_E
                 g_snprintf (__prefix, sizeof (__prefix), "%s[%p%s%s]", _NMLOG_PREFIX_NAME, self, __uuid ? "," : "", __uuid ? __uuid : ""); \
                 __p_prefix = __prefix; \
             } \
-            _nm_log (__level, _NMLOG_DOMAIN, 0, \
+            _nm_log (__level, _NMLOG_DOMAIN, 0, NULL, NULL, \
                      "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
                      __p_prefix _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
         } \

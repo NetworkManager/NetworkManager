@@ -77,7 +77,7 @@ G_DEFINE_TYPE_EXTENDED (NMSKeyfilePlugin, nms_keyfile_plugin, G_TYPE_OBJECT, 0,
 #define _NMLOG_PREFIX_NAME      "keyfile"
 #define _NMLOG_DOMAIN           LOGD_SETTINGS
 #define _NMLOG(level, ...) \
-    nm_log ((level), _NMLOG_DOMAIN, \
+    nm_log ((level), _NMLOG_DOMAIN, NULL, NULL, \
             "%s" _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
             _NMLOG_PREFIX_NAME": " \
             _NM_UTILS_MACRO_REST (__VA_ARGS__))

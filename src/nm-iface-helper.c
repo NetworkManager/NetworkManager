@@ -91,7 +91,7 @@ static struct {
 
 #define _NMLOG_PREFIX_NAME      "nm-iface-helper"
 #define _NMLOG(level, domain, ...) \
-    nm_log ((level), (domain), \
+    nm_log ((level), (domain), NULL, NULL, \
             "iface-helper: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__) \
             _NM_UTILS_MACRO_REST (__VA_ARGS__))
 

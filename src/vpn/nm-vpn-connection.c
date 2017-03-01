@@ -240,7 +240,7 @@ __LOG_create_prefix (char *buf, NMVpnConnection *self)
         if (nm_logging_enabled (__level, _NMLOG_DOMAIN)) { \
             char __prefix[__NMLOG_prefix_buf_len]; \
             \
-            _nm_log (__level, _NMLOG_DOMAIN, 0, \
+            _nm_log (__level, _NMLOG_DOMAIN, 0, NULL, NULL, \
                      "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
                      __LOG_create_prefix (__prefix, self) \
                      _NM_UTILS_MACRO_REST (__VA_ARGS__)); \

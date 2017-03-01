@@ -151,7 +151,7 @@
             g_snprintf (__prefix, sizeof (__prefix), "%s[%p]", _NMLOG_PREFIX_NAME, __self); \
             __p_prefix = __prefix; \
         } \
-        _nm_log (__level, __domain, __errsv, \
+        _nm_log (__level, __domain, __errsv, NULL, NULL, \
                  "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
                  __p_prefix _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
     } G_STMT_END

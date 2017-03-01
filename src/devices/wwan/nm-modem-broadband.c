@@ -119,7 +119,7 @@ G_DEFINE_TYPE (NMModemBroadband, nm_modem_broadband, NM_TYPE_MODEM)
             char __prefix_name[128]; \
             const char *__uid; \
             \
-            _nm_log (_level, (_NMLOG_DOMAIN), 0, \
+            _nm_log (_level, (_NMLOG_DOMAIN), 0, NULL, NULL, \
                      "%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
                      _NMLOG_PREFIX_NAME, \
                      (__self \
