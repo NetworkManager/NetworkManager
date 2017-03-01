@@ -136,6 +136,8 @@ typedef enum {
 
 NMSettingVerifyResult _nm_connection_verify (NMConnection *connection, GError **error);
 
+gboolean _nm_connection_remove_setting (NMConnection *connection, GType setting_type);
+
 NMConnection *_nm_simple_connection_new_from_dbus (GVariant      *dict,
                                                    NMSettingParseFlags parse_flags,
                                                    GError       **error);

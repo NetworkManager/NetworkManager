@@ -132,15 +132,15 @@ nm_connection_add_setting (NMConnection *connection, NMSetting *setting)
  * Removes the #NMSetting with the given #GType from the #NMConnection.  This
  * operation dereferences the #NMSetting object.
  **/
-void
-nm_connection_remove_setting (NMConnection *connection, GType setting_type)
+gboolean
+_nm_connection_remove_setting (NMConnection *connection, GType setting_type)
 {
 	NMConnectionPrivate *priv;
 	NMSetting *setting;
 	const char *setting_name;
 
-	g_return_if_fail (NM_IS_CONNECTION (connection));
-	g_return_if_fail (g_type_is_a (setting_type, NM_TYPE_SETTING));
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (g_type_is_a (setting_type, NM_TYPE_SETTING), FALSE);
 
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
 	setting_name = g_type_name (setting_type);
@@ -149,7 +149,23 @@ nm_connection_remove_setting (NMConnection *connection, GType setting_type)
 		g_signal_handlers_disconnect_by_func (setting, setting_changed_cb, connection);
 		g_hash_table_remove (priv->settings, setting_name);
 		g_signal_emit (connection, signals[CHANGED], 0);
+		return TRUE;
 	}
+	return FALSE;
+}
+
+/**
+ * nm_connection_remove_setting:
+ * @connection: a #NMConnection
+ * @setting_type: the #GType of the setting object to remove
+ *
+ * Removes the #NMSetting with the given #GType from the #NMConnection.  This
+ * operation dereferences the #NMSetting object.
+ **/
+void
+nm_connection_remove_setting (NMConnection *connection, GType setting_type)
+{
+	_nm_connection_remove_setting (connection, setting_type);
 }
 
 /**
@@ -994,6 +1010,26 @@ _normalize_required_settings (NMConnection *self, GHashTable *parameters)
 	return FALSE;
 }
 
+static gboolean
+_normalize_invalid_slave_port_settings (NMConnection *self, GHashTable *parameters)
+{
+	NMSettingConnection *s_con = nm_connection_get_setting_connection (self);
+	const char *slave_type;
+	gboolean changed = FALSE;
+
+	slave_type = nm_setting_connection_get_slave_type (s_con);
+
+	if (   !nm_streq0 (slave_type, NM_SETTING_BRIDGE_SETTING_NAME)
+	    && _nm_connection_remove_setting (self, NM_TYPE_SETTING_BRIDGE_PORT))
+		changed = TRUE;
+
+	if (   !nm_streq0 (slave_type, NM_SETTING_TEAM_SETTING_NAME)
+	    && _nm_connection_remove_setting (self, NM_TYPE_SETTING_TEAM_PORT))
+		changed = TRUE;
+
+	return changed;
+}
+
 /**
  * nm_connection_verify:
  * @connection: the #NMConnection to verify
@@ -1242,6 +1278,7 @@ nm_connection_normalize (NMConnection *connection,
 	was_modified |= _normalize_connection_type (connection);
 	was_modified |= _normalize_connection_slave_type (connection);
 	was_modified |= _normalize_required_settings (connection, parameters);
+	was_modified |= _normalize_invalid_slave_port_settings (connection, parameters);
 	was_modified |= _normalize_ip_config (connection, parameters);
 	was_modified |= _normalize_ethernet_link_neg (connection);
 	was_modified |= _normalize_infiniband_mtu (connection, parameters);

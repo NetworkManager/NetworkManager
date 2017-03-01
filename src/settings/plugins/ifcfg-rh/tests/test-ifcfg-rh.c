@@ -1928,10 +1928,12 @@ test_clear_master (void)
 	g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, NULL);
 	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NULL);
 
+	nmtst_assert_connection_verifies_after_normalization (connection, 0, 0);
+
 	/* 4. update the connection on disk */
-	_writer_update_connection_FIXME (connection,
-	                                 TEST_SCRATCH_DIR "/network-scripts/",
-	                                 testfile);
+	_writer_update_connection (connection,
+	                           TEST_SCRATCH_DIR "/network-scripts/",
+	                           testfile);
 	keyfile = utils_get_keys_path (testfile);
 	g_assert (!g_file_test (keyfile, G_FILE_TEST_EXISTS));
 
