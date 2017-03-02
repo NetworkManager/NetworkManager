@@ -2341,6 +2341,38 @@ typedef struct {
 	NMActiveConnection *active;
 } ActivateConnectionInfo;
 
+static void
+active_connection_hint (GString *return_text, ActivateConnectionInfo *info)
+{
+	NMRemoteConnection *connection;
+	nm_auto_free_gstring GString *hint = NULL;
+	const GPtrArray *devices;
+	int i;
+
+	if (strcmp(NM_CONFIG_DEFAULT_LOGGING_BACKEND, "journal") != 0)
+		return;
+
+	connection = nm_active_connection_get_connection (info->active);
+	g_return_if_fail (connection);
+
+	hint = g_string_new ("journalctl -xe ");
+	g_string_append_printf (hint, "NM_CONNECTION=%s",
+	                        nm_connection_get_uuid (NM_CONNECTION (connection)));
+
+	if (info->device) {
+		g_string_append_printf (hint, " + NM_DEVICE=%s", nm_device_get_iface (info->device));
+	} else {
+		devices = nm_active_connection_get_devices (info->active);
+		for (i = 0; i < devices->len; i++) {
+			g_string_append_printf (hint, " + NM_DEVICE=%s",
+			                        nm_device_get_iface (NM_DEVICE (g_ptr_array_index (devices, i))));
+		}
+	}
+
+	g_string_append (return_text, "\n");
+	g_string_append_printf (return_text, _("Hint: use '%s' to get more details."), hint->str);
+}
+
 static void activate_connection_info_finish (ActivateConnectionInfo *info);
 
 static void
@@ -2369,6 +2401,7 @@ check_activated (ActivateConnectionInfo *info)
 		nm_assert (reason);
 		g_string_printf (nmc->return_text, _("Error: Connection activation failed: %s"),
 		                 reason);
+		active_connection_hint (nmc->return_text, info);
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 		activate_connection_info_finish (info);
 		break;
@@ -2491,6 +2524,7 @@ activate_connection_cb (GObject *client, GAsyncResult *result, gpointer user_dat
 		g_string_printf (nmc->return_text, _("Error: Connection activation failed: %s"),
 		                 error->message);
 		g_error_free (error);
+		active_connection_hint (nmc->return_text, info);
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 		activate_connection_info_finish (info);
 	} else {
