@@ -200,18 +200,15 @@ static void _set_vpn_state (NMVpnConnection *self,
 #define __NMLOG_prefix_buf_len 128
 
 static const char *
-__LOG_create_prefix (char *buf, NMVpnConnection *self)
+__LOG_create_prefix (char *buf, NMVpnConnection *self, NMConnection *con)
 {
 	NMVpnConnectionPrivate *priv;
-	NMConnection *con;
 	const char *id;
 
 	if (!self)
 		return _NMLOG_PREFIX_NAME;
 
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
-
-	con = NM_CONNECTION (_get_settings_connection (self, TRUE));
 	id = con ? nm_connection_get_id (con) : NULL;
 
 	g_snprintf (buf, __NMLOG_prefix_buf_len,
@@ -236,13 +233,16 @@ __LOG_create_prefix (char *buf, NMVpnConnection *self)
 #define _NMLOG(level, ...) \
     G_STMT_START { \
         const NMLogLevel __level = (level); \
+        NMConnection *__con = (self) ? (NMConnection *) _get_settings_connection (self, TRUE) : NULL; \
         \
         if (nm_logging_enabled (__level, _NMLOG_DOMAIN)) { \
             char __prefix[__NMLOG_prefix_buf_len]; \
             \
-            _nm_log (__level, _NMLOG_DOMAIN, 0, NULL, NULL, \
+            _nm_log (__level, _NMLOG_DOMAIN, 0, \
+                     (self) ? NM_VPN_CONNECTION_GET_PRIVATE (self)->ip_iface : NULL, \
+                     (__con) ? nm_connection_get_uuid (__con) : NULL, \
                      "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
-                     __LOG_create_prefix (__prefix, self) \
+                     __LOG_create_prefix (__prefix, (self), __con) \
                      _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
         } \
     } G_STMT_END
