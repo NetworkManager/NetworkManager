@@ -58,16 +58,14 @@ gboolean nm_ndisc_add_dns_domain           (NMNDisc *ndisc, const NMNDiscDNSDoma
         if (nm_logging_enabled (__level, __domain)) { \
             NMNDisc *const __self = (self); \
             char __prefix[64]; \
+            const char *__ifname = __self ? nm_ndisc_get_ifname (__self) : NULL; \
             \
-            _nm_log (__level, __domain, 0, NULL, NULL, \
+            _nm_log (__level, __domain, 0, __ifname, NULL, \
                      "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
                      (__self \
-                        ? ({ \
-                            const char *__ifname = nm_ndisc_get_ifname (__self); \
-                            nm_sprintf_buf (__prefix, "%s[%p,%s%s%s]", \
-                                            _NMLOG_PREFIX_NAME, __self, \
-                                            NM_PRINT_FMT_QUOTE_STRING (__ifname)); \
-                            }) \
+                        ?  nm_sprintf_buf (__prefix, "%s[%p,%s%s%s]", \
+                                           _NMLOG_PREFIX_NAME, __self, \
+                                           NM_PRINT_FMT_QUOTE_STRING (__ifname)) \
                         : _NMLOG_PREFIX_NAME) \
                      _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
         } \
