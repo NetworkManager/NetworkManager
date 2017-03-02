@@ -138,6 +138,14 @@ else
 
 fi
 
+if _is_true "$NMTST_MAKE_FIRST" 0; then
+    git_dir="$(readlink -f "$(git rev-parse --show-toplevel)")"
+    rel_path="$(realpath --relative-to="$git_dir" -m "$TEST" 2>/dev/null)" || die "cannot resolve test-name \"$TEST\". Did you call the script properly?"
+    cd "$git_dir"
+    make -j5 "$rel_path" || die "make of $TEST failed ($git_dir / $rel_path)"
+    cd - 1>/dev/null
+fi
+
 [ -x "$TEST" ] || die "Test \"$TEST\" does not exist"
 TEST_PATH="$(readlink -f "$(dirname "$TEST")")"
 TEST_NAME="${TEST##*/}"
@@ -149,14 +157,6 @@ if [ -z "${NMTST_LAUNCH_DBUS}" ]; then
     else
         NMTST_LAUNCH_DBUS=0
     fi
-fi
-
-if _is_true "$NMTST_MAKE_FIRST" 0; then
-    git_dir="$(readlink -f "$(git rev-parse --show-toplevel)")"
-    rel_path="${TEST_PATH/#$(printf '%s/' "$git_dir")}/$TEST_NAME"
-    cd "$git_dir"
-    make -j5 "$rel_path" || die "make of $TEST failed ($git_dir / $rel_path)"
-    cd - 1>/dev/null
 fi
 
 # if the user wishes, change first into the directory of the test
