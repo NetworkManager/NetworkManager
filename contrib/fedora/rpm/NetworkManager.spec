@@ -7,7 +7,6 @@
 # Note that it contains __PLACEHOLDERS__ that will be replaced by the accompanying 'build.sh' script.
 
 
-%global dbus_version 1.1
 %global dbus_glib_version 0.100
 
 %global wireless_tools_version 1:28-0pre9
@@ -47,6 +46,14 @@
 
 %global default_with_bluetooth 1
 %global default_with_wwan 1
+
+%if (0%{?fedora} && 0%{?fedora} < 23)
+%global dbus_version 1.1
+%global dbus_sys_dir %{_sysconfdir}/dbus-1/system.d
+%else
+%global dbus_version 1.9.18
+%global dbus_sys_dir %{_datadir}/dbus-1/system.d
+%endif
 
 # ModemManager on Fedora < 20 too old for Bluetooth && wwan
 %if (0%{?fedora} && 0%{?fedora} < 20)
@@ -429,6 +436,7 @@ intltoolize --automake --copy --force
 	--with-suspend-resume=systemd \
 	--with-systemdsystemunitdir=%{systemd_dir} \
 	--with-system-ca-path=/etc/pki/tls/cert.pem \
+	--with-dbus-sys-dir=%{dbus_sys_dir} \
 	--with-tests=yes \
 	--with-valgrind=no \
 	--enable-ifcfg-rh=yes \
@@ -509,9 +517,9 @@ fi
 
 
 %files
-%{_sysconfdir}/dbus-1/system.d/org.freedesktop.NetworkManager.conf
-%{_sysconfdir}/dbus-1/system.d/nm-dispatcher.conf
-%{_sysconfdir}/dbus-1/system.d/nm-ifcfg-rh.conf
+%{dbus_sys_dir}/org.freedesktop.NetworkManager.conf
+%{dbus_sys_dir}/nm-dispatcher.conf
+%{dbus_sys_dir}/nm-ifcfg-rh.conf
 %{_sbindir}/%{name}
 %{_bindir}/nmcli
 %{_datadir}/bash-completion/completions/nmcli
