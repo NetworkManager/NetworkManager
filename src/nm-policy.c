@@ -47,6 +47,7 @@
 #include "settings/nm-settings-connection.h"
 #include "nm-dhcp4-config.h"
 #include "nm-dhcp6-config.h"
+#include "nm-config.h"
 
 /*****************************************************************************/
 
@@ -85,6 +86,7 @@ typedef struct {
 
 	guint schedule_activate_all_id; /* idle handler for schedule_activate_all(). */
 
+	NMPolicyHostnameMode hostname_mode;
 	char *orig_hostname; /* hostname at NM start time */
 	char *cur_hostname;  /* hostname we want to assign */
 	char *last_hostname; /* last hostname NM set (to detect if someone else changed it in the meanwhile) */
@@ -591,6 +593,9 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6)
 
 	g_return_if_fail (self != NULL);
 
+	if (priv->hostname_mode == NM_POLICY_HOSTNAME_MODE_NONE)
+		return;
+
 	nm_clear_g_cancellable (&priv->lookup_cancellable);
 
 	/* Check if the hostname was set externally to NM, so that in that case
@@ -681,6 +686,9 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6)
 
 	/* If an hostname was set outside NetworkManager keep it */
 	if (external_hostname)
+		return;
+
+	if (priv->hostname_mode == NM_POLICY_HOSTNAME_MODE_DHCP)
 		return;
 
 	if (!best4 && !best6) {
@@ -2257,6 +2265,18 @@ static void
 nm_policy_init (NMPolicy *self)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+	const char *hostname_mode;
+
+	hostname_mode = nm_config_data_get_value (NM_CONFIG_GET_DATA_ORIG,
+	                                          NM_CONFIG_KEYFILE_GROUP_MAIN,
+	                                          NM_CONFIG_KEYFILE_KEY_MAIN_HOSTNAME_MODE,
+	                                          NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY);
+	if (nm_streq0 (hostname_mode, "none"))
+		priv->hostname_mode = NM_POLICY_HOSTNAME_MODE_NONE;
+	else if (nm_streq0 (hostname_mode, "dhcp"))
+		priv->hostname_mode = NM_POLICY_HOSTNAME_MODE_DHCP;
+	else /* default - full mode */
+		priv->hostname_mode = NM_POLICY_HOSTNAME_MODE_FULL;
 
 	priv->devices = g_hash_table_new (NULL, NULL);
 	priv->ip6_prefix_delegations = g_array_new (FALSE, FALSE, sizeof (IP6PrefixDelegation));
