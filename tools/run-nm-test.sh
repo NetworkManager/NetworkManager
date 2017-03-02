@@ -94,8 +94,9 @@ else
     else
         NMTST_LIBTOOL=($NMTST_LIBTOOL --mode=execute)
     fi
-    for a in "$@"; do
-        case "$a" in
+    unset TEST
+    while test $# -gt 0; do
+        case "$1" in
         "--launch-dbus")
             NMTST_LAUNCH_DBUS=1
             shift
@@ -120,6 +121,11 @@ else
             NMTST_USE_VALGRIND=0
             shift;
             ;;
+        "--test"|-t)
+            shift
+            TEST="$1"
+            shift
+            ;;
         "--")
             shift
             break
@@ -131,7 +137,9 @@ else
     done
     # we support calling the script directly. In this case,
     # only pass the path to the test to run.
-    TEST="$1"; shift
+    if test -z "${TEST+x}"; then
+        TEST="$1"; shift
+    fi
     if [[ -z "${NMTST_SUPPRESSIONS+x}" ]]; then
         NMTST_SUPPRESSIONS="$SCRIPT_PATH/../valgrind.suppressions"
     fi
