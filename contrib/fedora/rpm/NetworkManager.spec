@@ -47,18 +47,12 @@
 %global default_with_bluetooth 1
 %global default_with_wwan 1
 
-%if (0%{?fedora} && 0%{?fedora} < 23)
-%global dbus_version 1.1
-%global dbus_sys_dir %{_sysconfdir}/dbus-1/system.d
-%else
+%if 0%{?fedora}
 %global dbus_version 1.9.18
 %global dbus_sys_dir %{_datadir}/dbus-1/system.d
-%endif
-
-# ModemManager on Fedora < 20 too old for Bluetooth && wwan
-%if (0%{?fedora} && 0%{?fedora} < 20)
-%global default_with_bluetooth 0
-%global default_with_wwan 0
+%else
+%global dbus_version 1.1
+%global dbus_sys_dir %{_sysconfdir}/dbus-1/system.d
 %endif
 
 # Bluetooth requires the WWAN plugin
@@ -78,12 +72,7 @@
 %bcond_with wwan
 %endif
 
-%if (0%{?fedora} && 0%{?fedora} <= 19)
-%bcond_with team
-%else
 %bcond_without team
-%endif
-
 %bcond_without wifi
 %bcond_without ppp
 
@@ -94,7 +83,7 @@
 
 ###############################################################################
 
-%if %{with bluetooth} || (%{with wwan} && (0%{?rhel} || (0%{?fedora} && 0%{?fedora} > 19)))
+%if %{with bluetooth} || %{with wwan}
 %global with_modem_manager_1 1
 %else
 %global with_modem_manager_1 0
