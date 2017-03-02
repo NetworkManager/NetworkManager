@@ -28,6 +28,8 @@ gboolean nms_keyfile_writer_connection (NMConnection *connection,
                                         const char *existing_path,
                                         gboolean force_rename,
                                         char **out_path,
+                                        NMConnection **out_reread,
+                                        gboolean *out_reread_same,
                                         GError **error);
 
 gboolean nms_keyfile_writer_test_connection (NMConnection *connection,
@@ -35,6 +37,8 @@ gboolean nms_keyfile_writer_test_connection (NMConnection *connection,
                                              uid_t owner_uid,
                                              pid_t owner_grp,
                                              char **out_path,
+                                             NMConnection **out_reread,
+                                             gboolean *out_reread_same,
                                              GError **error);
 
 #endif /* __NMS_KEYFILE_WRITER_H__ */

@@ -56,6 +56,10 @@ _fmt_warn (const char *group, NMSetting *setting, const char *property_name, con
 		return message;
 }
 
+typedef struct {
+	bool verbose;
+} HandlerReadData;
+
 static gboolean
 _handler_read (GKeyFile *keyfile,
                NMConnection *connection,
@@ -64,10 +68,15 @@ _handler_read (GKeyFile *keyfile,
                void *user_data,
                GError **error)
 {
+	const HandlerReadData *handler_data = user_data;
+
 	if (type == NM_KEYFILE_READ_TYPE_WARN) {
 		NMKeyfileReadTypeDataWarn *warn_data = type_data;
 		NMLogLevel level;
 		char *message_free = NULL;
+
+		if (!handler_data->verbose)
+			return TRUE;
 
 		if (warn_data->severity > NM_KEYFILE_WARN_SEVERITY_WARN)
 			level = LOGL_ERR;
@@ -86,6 +95,19 @@ _handler_read (GKeyFile *keyfile,
 		return TRUE;
 	}
 	return FALSE;
+}
+
+NMConnection *
+nms_keyfile_reader_from_keyfile (GKeyFile *key_file,
+                                 const char *filename,
+                                 gboolean verbose,
+                                 GError **error)
+{
+	HandlerReadData data = {
+		.verbose = verbose,
+	};
+
+	return nm_keyfile_read (key_file, filename, NULL, _handler_read, &data, error);
 }
 
 NMConnection *
@@ -122,7 +144,7 @@ nms_keyfile_reader_from_file (const char *filename, GError **error)
 	if (!g_key_file_load_from_file (key_file, filename, G_KEY_FILE_NONE, error))
 		goto out;
 
-	connection = nm_keyfile_read (key_file, filename, NULL, _handler_read, NULL, error);
+	connection = nms_keyfile_reader_from_keyfile (key_file, filename, TRUE, error);
 	if (!connection)
 		goto out;
 

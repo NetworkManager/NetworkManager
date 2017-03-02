@@ -27,22 +27,6 @@
 
 #include "nm-core-internal.h"
 
-/**
- * NMSettingVerifyResult:
- * @NM_SETTING_VERIFY_SUCCESS: the setting verifies successfully
- * @NM_SETTING_VERIFY_ERROR: the setting has a serious misconfiguration
- * @NM_SETTING_VERIFY_NORMALIZABLE: the setting is valid but has properties
- * that should be normalized
- * @NM_SETTING_VERIFY_NORMALIZABLE_ERROR: the setting is invalid but the
- * errors can be fixed by nm_connection_normalize().
- */
-typedef enum {
-	NM_SETTING_VERIFY_SUCCESS       = TRUE,
-	NM_SETTING_VERIFY_ERROR         = FALSE,
-	NM_SETTING_VERIFY_NORMALIZABLE  = 2,
-	NM_SETTING_VERIFY_NORMALIZABLE_ERROR = 3,
-} NMSettingVerifyResult;
-
 void _nm_register_setting (const char *name,
                            const GType type,
                            const guint32 priority);

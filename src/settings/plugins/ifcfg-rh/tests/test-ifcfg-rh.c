@@ -88,20 +88,70 @@
 		          || ( _val_string && nm_streq0 (_val, _val_string))); \
 	} G_STMT_END
 
-#define _writer_update_connection(connection, ifcfg_dir, filename) \
+static void
+_assert_reread_same (NMConnection *connection, NMConnection *reread)
+{
+	nmtst_assert_connection_verifies_without_normalization (reread);
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
+}
+
+static void
+_assert_reread_same_FIXME (NMConnection *connection, NMConnection *reread)
+{
+	gs_unref_object NMConnection *connection_normalized = NULL;
+	gs_unref_hashtable GHashTable *settings = NULL;
+
+	/* FIXME: these assertion failures should not happen as we expect
+	 * that re-reading a connection after write yields the same result.
+	 *
+	 * Needs investation and fixing. */
+	nmtst_assert_connection_verifies_without_normalization (reread);
+
+	connection_normalized = nmtst_connection_duplicate_and_normalize (connection);
+
+	g_assert (!nm_connection_compare (connection_normalized, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+	g_assert (!nm_connection_diff (connection_normalized, reread, NM_SETTING_COMPARE_FLAG_EXACT, &settings));
+}
+
+#define _writer_update_connection_reread(connection, ifcfg_dir, filename, out_reread, out_reread_same) \
 	G_STMT_START { \
-		NMConnection *_connection = (connection); \
+		gs_unref_object NMConnection *_connection = nmtst_connection_duplicate_and_normalize (connection); \
+		NMConnection **_out_reread = (out_reread); \
+		gboolean *_out_reread_same = (out_reread_same); \
 		const char *_ifcfg_dir = (ifcfg_dir); \
 		const char *_filename = (filename); \
 		GError *_error = NULL; \
 		gboolean _success; \
 		\
-		g_assert (NM_IS_CONNECTION (connection)); \
 		g_assert (_ifcfg_dir && _ifcfg_dir[0]); \
 		g_assert (_filename && _filename[0]); \
 		\
-		_success = writer_update_connection (_connection, _ifcfg_dir, _filename, &_error); \
+		_success = writer_update_connection (_connection, _ifcfg_dir, _filename, _out_reread, _out_reread_same, &_error); \
 		nmtst_assert_success (_success, _error); \
+	} G_STMT_END
+
+#define _writer_update_connection(connection, ifcfg_dir, filename) \
+	G_STMT_START { \
+		gs_unref_object NMConnection *_reread = NULL; \
+		NMConnection *_c = (connection); \
+		gboolean _reread_same = FALSE; \
+		\
+		_writer_update_connection_reread (_c, ifcfg_dir, filename, &_reread, &_reread_same); \
+		_assert_reread_same (_c, _reread); \
+		g_assert (_reread_same); \
+	} G_STMT_END
+
+#define _writer_update_connection_FIXME(connection, ifcfg_dir, filename) \
+	G_STMT_START { \
+		gs_unref_object NMConnection *_reread = NULL; \
+		NMConnection *_c = (connection); \
+		gboolean _reread_same = FALSE; \
+		\
+		/* FIXME: this should not happen. Fix to use _writer_update_connection() */ \
+		\
+		_writer_update_connection_reread (_c, ifcfg_dir, filename, &_reread, &_reread_same); \
+		_assert_reread_same_FIXME (_c, _reread); \
+		g_assert (!_reread_same); \
 	} G_STMT_END
 
 static NMConnection *
@@ -147,14 +197,18 @@ _connection_from_file_fail (const char *filename,
 }
 
 static void
-_writer_new_connection (NMConnection *connection,
-                        const char *ifcfg_dir,
-                        char **out_filename)
+_writer_new_connection_reread (NMConnection *connection,
+                               const char *ifcfg_dir,
+                               char **out_filename,
+                               NMConnection **out_reread,
+                               gboolean *out_reread_same)
 {
 	gboolean success;
 	GError *error = NULL;
 	char *filename = NULL;
 	gs_unref_object NMConnection *con_verified = NULL;
+	gs_unref_object NMConnection *reread_copy = NULL;
+	NMConnection **reread = out_reread ?: ((nmtst_get_rand_int () % 2) ? &reread_copy : NULL);
 
 	g_assert (NM_IS_CONNECTION (connection));
 	g_assert (ifcfg_dir);
@@ -164,9 +218,14 @@ _writer_new_connection (NMConnection *connection,
 	success = writer_new_connection (con_verified,
 	                                 ifcfg_dir,
 	                                 &filename,
+	                                 reread,
+	                                 out_reread_same,
 	                                 &error);
 	nmtst_assert_success (success, error);
 	g_assert (filename && filename[0]);
+
+	if (reread)
+		nmtst_assert_connection_verifies_without_normalization (*reread);
 
 	if (out_filename)
 		*out_filename = filename;
@@ -175,10 +234,40 @@ _writer_new_connection (NMConnection *connection,
 }
 
 static void
+_writer_new_connection (NMConnection *connection,
+                        const char *ifcfg_dir,
+                        char **out_filename)
+{
+	gs_unref_object NMConnection *reread = NULL;
+	gboolean reread_same = FALSE;
+
+	_writer_new_connection_reread (connection, ifcfg_dir, out_filename, &reread, &reread_same);
+	_assert_reread_same (connection, reread);
+	g_assert (reread_same);
+}
+
+static void
+_writer_new_connection_FIXME (NMConnection *connection,
+                              const char *ifcfg_dir,
+                              char **out_filename)
+{
+	gs_unref_object NMConnection *reread = NULL;
+	gboolean reread_same = FALSE;
+
+	/* FIXME: this should not happen. Fix it to use _writer_new_connection() instead. */
+
+	_writer_new_connection_reread (connection, ifcfg_dir, out_filename, &reread, &reread_same);
+	_assert_reread_same_FIXME (connection, reread);
+	g_assert (!reread_same);
+}
+
+static void
 _writer_new_connection_fail (NMConnection *connection,
                              const char *ifcfg_dir,
                              GError **error)
 {
+	gs_unref_object NMConnection *connection_normalized = NULL;
+	gs_unref_object NMConnection *reread = NULL;
 	gboolean success;
 	GError *local = NULL;
 	char *filename = NULL;
@@ -186,12 +275,17 @@ _writer_new_connection_fail (NMConnection *connection,
 	g_assert (NM_IS_CONNECTION (connection));
 	g_assert (ifcfg_dir);
 
-	success = writer_new_connection (connection,
+	connection_normalized = nmtst_connection_duplicate_and_normalize (connection);
+
+	success = writer_new_connection (connection_normalized,
 	                                 ifcfg_dir,
 	                                 &filename,
+	                                 &reread,
+	                                 NULL,
 	                                 &local);
 	nmtst_assert_no_success (success, local);
 	g_assert (!filename);
+	g_assert (!reread);
 
 	g_propagate_error (error, local);
 }
@@ -1567,12 +1661,15 @@ test_read_write_802_1X_subj_matches (void)
 	g_assert_cmpstr (nm_setting_802_1x_get_phase2_altsubject_match (s_8021x, 0), ==, "x.yourdomain.tld");
 	g_assert_cmpstr (nm_setting_802_1x_get_phase2_altsubject_match (s_8021x, 1), ==, "y.yourdomain.tld");
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*missing IEEE_8021X_CA_CERT for EAP method 'peap'; this is insecure!");
 	_writer_new_connection (connection,
 	                        TEST_SCRATCH_DIR "/network-scripts/",
 	                        &testfile);
+	g_test_assert_expected_messages ();
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*missing IEEE_8021X_CA_CERT*peap*");
+	                       "*missing IEEE_8021X_CA_CERT for EAP method 'peap'; this is insecure!");
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 	g_test_assert_expected_messages ();
 
@@ -1831,6 +1928,8 @@ test_clear_master (void)
 	g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, NULL);
 	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NULL);
 
+	nmtst_assert_connection_verifies_after_normalization (connection, 0, 0);
+
 	/* 4. update the connection on disk */
 	_writer_update_connection (connection,
 	                           TEST_SCRATCH_DIR "/network-scripts/",
@@ -1917,9 +2016,9 @@ test_write_dns_options (void)
 
 	nmtst_assert_connection_verifies (connection);
 
-	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        &testfile);
+	_writer_new_connection_FIXME (connection,
+	                              TEST_SCRATCH_DIR "/network-scripts/",
+	                              &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 
@@ -3781,9 +3880,9 @@ test_write_wired_static (void)
 
 	nmtst_assert_connection_verifies (connection);
 
-	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        &testfile);
+	_writer_new_connection_FIXME (connection,
+	                              TEST_SCRATCH_DIR "/network-scripts/",
+	                              &testfile);
 	route6file = utils_get_route6_path (testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
@@ -4451,9 +4550,9 @@ test_write_wired_8021x_tls (gconstpointer test_data)
 
 	nmtst_assert_connection_verifies (connection);
 
-	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        &testfile);
+	_writer_new_connection_FIXME (connection,
+	                              TEST_SCRATCH_DIR "/network-scripts/",
+	                              &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 
@@ -4590,9 +4689,9 @@ test_write_wired_aliases (void)
 	svCloseFile (ifcfg);
 	g_assert (g_file_test (TEST_SCRATCH_ALIAS_BASE ":5", G_FILE_TEST_EXISTS));
 
-	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        &testfile);
+	_writer_new_connection_FIXME (connection,
+	                              TEST_SCRATCH_DIR "/network-scripts/",
+	                              &testfile);
 
 	/* Re-check the alias files */
 	g_assert (g_file_test (TEST_SCRATCH_ALIAS_BASE ":2", G_FILE_TEST_EXISTS));
@@ -5444,9 +5543,9 @@ test_write_wifi_leap_secret_flags (gconstpointer data)
 
 	nmtst_assert_connection_verifies (connection);
 
-	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        &testfile);
+	_writer_new_connection_FIXME (connection,
+	                              TEST_SCRATCH_DIR "/network-scripts/",
+	                              &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 
@@ -6592,9 +6691,9 @@ test_write_wifi_wep_agent_keys (void)
 
 	nmtst_assert_connection_verifies (connection);
 
-	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        &testfile);
+	_writer_new_connection_FIXME (connection,
+	                              TEST_SCRATCH_DIR "/network-scripts/",
+	                              &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 
@@ -8289,6 +8388,68 @@ test_read_team_port_empty_config (void)
 }
 
 static void
+test_team_reread_slave (void)
+{
+	nmtst_auto_unlinkfile char *testfile = NULL;
+	gs_unref_object NMConnection *connection_1 = NULL;
+	gs_unref_object NMConnection *connection_2 = NULL;
+	gs_unref_object NMConnection *reread = NULL;
+	gboolean reread_same = FALSE;
+	NMSettingConnection *s_con;
+
+	connection_1 = nmtst_create_connection_from_keyfile (
+	        "[connection]\n"
+	        "id=team-slave-enp31s0f1-142\n"
+	        "uuid=74f435bb-ede4-415a-9d48-f580b60eba04\n"
+	        "type=vlan\n"
+	        "autoconnect=false\n"
+	        "interface-name=enp31s0f1-142\n"
+	        "master=team142\n"
+	        "permissions=\n"
+	        "slave-type=team\n"
+	        "\n"
+	        "[vlan]\n"
+	        "egress-priority-map=\n"
+	        "flags=1\n"
+	        "id=142\n"
+	        "ingress-priority-map=\n"
+	        "parent=enp31s0f1\n"
+	        , "/test_team_reread_slave", NULL);
+
+	/* to double-check keyfile syntax, re-create the connection by hand. */
+	connection_2 = nmtst_create_minimal_connection ("team-slave-enp31s0f1-142", "74f435bb-ede4-415a-9d48-f580b60eba04", NM_SETTING_VLAN_SETTING_NAME, &s_con);
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, FALSE,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, "enp31s0f1-142",
+	              NM_SETTING_CONNECTION_MASTER, "team142",
+	              NM_SETTING_CONNECTION_SLAVE_TYPE, "team",
+	              NULL);
+	g_object_set (nm_connection_get_setting_vlan (connection_2),
+	              NM_SETTING_VLAN_FLAGS, 1,
+	              NM_SETTING_VLAN_ID, 142,
+	              NM_SETTING_VLAN_PARENT, "enp31s0f1",
+	              NULL);
+	nm_connection_add_setting (connection_2, nm_setting_team_port_new ());
+	nmtst_connection_normalize (connection_2);
+
+	nmtst_assert_connection_equals (connection_1, FALSE, connection_2, FALSE);
+
+	_writer_new_connection_reread ((nmtst_get_rand_int () % 2) ? connection_1 : connection_2,
+	                               TEST_SCRATCH_DIR "/network-scripts/",
+	                               &testfile,
+	                               &reread,
+	                               &reread_same);
+	_assert_reread_same ((nmtst_get_rand_int () % 2) ? connection_1 : connection_2, reread);
+	g_assert (reread_same);
+	g_clear_object (&reread);
+
+	reread = _connection_from_file (testfile, NULL, TYPE_VLAN,
+	                                NULL);
+	nmtst_assert_connection_equals ((nmtst_get_rand_int () % 2) ? connection_1 : connection_2, FALSE,
+	                                reread, FALSE);
+}
+
+static void
 test_read_proxy_basic (void)
 {
 	NMConnection *connection;
@@ -8702,8 +8863,8 @@ test_write_unknown (gconstpointer test_data)
 
 	sv = _svOpenFile (testfile);
 
-	svFileSetName (sv, filename_tmp_1);
-	svFileSetModified (sv);
+	svFileSetName_test_only (sv, filename_tmp_1);
+	svFileSetModified_test_only (sv);
 
 	if (g_str_has_suffix (testfile, "ifcfg-test-write-unknown-4")) {
 		_svGetValue_check (sv, "NAME", "l4x");
@@ -9154,6 +9315,7 @@ int main (int argc, char **argv)
 	g_test_add_data_func (TPATH "team/read-port-2", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-port-2", test_read_team_port);
 	g_test_add_func (TPATH "team/write-port", test_write_team_port);
 	g_test_add_func (TPATH "team/read-port-empty-config", test_read_team_port_empty_config);
+	g_test_add_func (TPATH "team/reread-slave", test_team_reread_slave);
 
 	g_test_add_func (TPATH "proxy/read-proxy-basic", test_read_proxy_basic);
 	g_test_add_func (TPATH "proxy/write-proxy-basic", test_write_proxy_basic);

@@ -345,11 +345,15 @@ commit_changes (NMSettingsConnection *connection,
 		success = writer_update_connection (NM_CONNECTION (connection),
 		                                    IFCFG_DIR,
 		                                    filename,
+		                                    NULL,
+		                                    NULL,
 		                                    &error);
 	} else {
 		success = writer_new_connection (NM_CONNECTION (connection),
 		                                 IFCFG_DIR,
 		                                 &ifcfg_path,
+		                                 NULL,
+		                                 NULL,
 		                                 &error);
 		if (success) {
 			nm_settings_connection_set_filename (connection, ifcfg_path);

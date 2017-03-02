@@ -857,7 +857,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
 	gboolean is_slave;
-	const char *slave_setting_type = NULL;
+	const char *slave_setting_type;
 	NMSetting *normerr_base_type = NULL;
 	const char *normerr_slave_setting_type = NULL;
 	const char *normerr_missing_slave_type = NULL;
@@ -958,16 +958,17 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	}
 
 	is_slave = FALSE;
-	if (priv->slave_type)
+	slave_setting_type = NULL;
+	if (priv->slave_type) {
 		is_slave = _nm_setting_slave_type_is_valid (priv->slave_type, &slave_setting_type);
-
-	if (priv->slave_type && !is_slave) {
-		g_set_error (error,
-		             NM_CONNECTION_ERROR,
-		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("Unknown slave type '%s'"), priv->slave_type);
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
-		return FALSE;
+		if (!is_slave) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("Unknown slave type '%s'"), priv->slave_type);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
+			return FALSE;
+		}
 	}
 
 	if (is_slave) {
@@ -1061,6 +1062,24 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		             NM_SETTING_CONNECTION_SLAVE_TYPE, normerr_missing_slave_type);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
 		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+	}
+
+	if (connection) {
+		gboolean has_bridge_port = FALSE;
+
+		if (   (   !nm_streq0 (priv->slave_type, NM_SETTING_BRIDGE_SETTING_NAME)
+		        && (has_bridge_port = !!nm_connection_get_setting_by_name (connection, NM_SETTING_BRIDGE_PORT_SETTING_NAME)))
+		    || (   !nm_streq0 (priv->slave_type, NM_SETTING_TEAM_SETTING_NAME)
+		        && nm_connection_get_setting_by_name (connection, NM_SETTING_TEAM_PORT_SETTING_NAME))) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_SETTING,
+			             _("A slave connection with '%s' set to '%s' cannot have a '%s' setting"),
+			             NM_SETTING_CONNECTION_SLAVE_TYPE, priv->slave_type ?: "",
+			             has_bridge_port ? NM_SETTING_BRIDGE_PORT_SETTING_NAME : NM_SETTING_TEAM_PORT_SETTING_NAME);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
+			return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+		}
 	}
 
 	return TRUE;

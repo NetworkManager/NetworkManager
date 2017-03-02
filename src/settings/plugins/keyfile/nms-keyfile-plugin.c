@@ -530,12 +530,19 @@ add_connection (NMSettingsPlugin *config,
 {
 	NMSKeyfilePlugin *self = NMS_KEYFILE_PLUGIN (config);
 	gs_free char *path = NULL;
+	gs_unref_object NMConnection *reread = NULL;
 
 	if (save_to_disk) {
-		if (!nms_keyfile_writer_connection (connection, NULL, FALSE, &path, error))
+		if (!nms_keyfile_writer_connection (connection,
+		                                    NULL,
+		                                    FALSE,
+		                                    &path,
+		                                    &reread,
+		                                    NULL,
+		                                    error))
 			return NULL;
 	}
-	return NM_SETTINGS_CONNECTION (update_connection (self, connection, path, NULL, FALSE, NULL, error));
+	return NM_SETTINGS_CONNECTION (update_connection (self, reread ?: connection, path, NULL, FALSE, NULL, error));
 }
 
 static GSList *

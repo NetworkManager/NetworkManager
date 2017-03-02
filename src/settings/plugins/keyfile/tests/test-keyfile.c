@@ -113,13 +113,25 @@ assert_reread_and_unlink (NMConnection *connection, gboolean normalize_connectio
 }
 
 static void
-write_test_connection (NMConnection *connection, char **testfile)
+assert_reread_same (NMConnection *connection,
+                    NMConnection *reread)
+{
+	nmtst_assert_connection_verifies_without_normalization (reread);
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
+}
+
+static void
+write_test_connection_reread (NMConnection *connection,
+                              char **testfile,
+                              NMConnection **out_reread,
+                              gboolean *out_reread_same)
 {
 	uid_t owner_uid;
 	gid_t owner_grp;
 	gboolean success;
 	GError *error = NULL;
 	GError **p_error = (nmtst_get_rand_int () % 2) ? &error : NULL;
+	gs_unref_object NMConnection *connection_normalized = NULL;
 
 	g_assert (NM_IS_CONNECTION (connection));
 	g_assert (testfile && !*testfile);
@@ -127,10 +139,30 @@ write_test_connection (NMConnection *connection, char **testfile)
 	owner_uid = geteuid ();
 	owner_grp = getegid ();
 
-	success = nms_keyfile_writer_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, testfile, p_error);
+	connection_normalized = nmtst_connection_duplicate_and_normalize (connection);
+
+	success = nms_keyfile_writer_test_connection (connection_normalized,
+	                                              TEST_SCRATCH_DIR,
+	                                              owner_uid,
+	                                              owner_grp,
+	                                              testfile,
+	                                              out_reread,
+	                                              out_reread_same,
+	                                              p_error);
 	g_assert_no_error (error);
 	g_assert (success);
 	g_assert (*testfile && (*testfile)[0]);
+}
+
+static void
+write_test_connection (NMConnection *connection, char **testfile)
+{
+	gs_unref_object NMConnection *reread = NULL;
+	gboolean reread_same = FALSE;
+
+	write_test_connection_reread (connection, testfile, &reread, &reread_same);
+	assert_reread_same (connection, reread);
+	g_assert (reread_same);
 }
 
 static void
@@ -159,6 +191,27 @@ keyfile_load_from_file (const char *testfile)
 	g_assert(success);
 
 	return keyfile;
+}
+
+static void
+_setting_copy_property_gbytes (NMConnection *src, NMConnection *dst, const char *setting_name, const char *property_name)
+{
+	gs_unref_bytes GBytes *blob = NULL;
+	NMSetting *s_src;
+	NMSetting *s_dst;
+
+	g_assert (NM_IS_CONNECTION (src));
+	g_assert (NM_IS_CONNECTION (dst));
+	g_assert (setting_name);
+	g_assert (property_name);
+
+	s_src = nm_connection_get_setting_by_name (src, setting_name);
+	g_assert (NM_IS_SETTING (s_src));
+	s_dst = nm_connection_get_setting_by_name (dst, setting_name);
+	g_assert (NM_IS_SETTING (s_dst));
+
+	g_object_get (s_src, property_name, &blob, NULL);
+	g_object_set (s_dst, property_name, blob, NULL);
 }
 
 /*****************************************************************************/
@@ -1639,11 +1692,18 @@ test_write_wired_8021x_tls_connection_path (void)
 	gs_free_error GError *error = NULL;
 	gs_unref_keyfile GKeyFile *keyfile = NULL;
 	gboolean relative = FALSE;
+	gboolean reread_same = FALSE;
 
 	connection = create_wired_tls_connection (NM_SETTING_802_1X_CK_SCHEME_PATH);
 	g_assert (connection != NULL);
 
-	write_test_connection (connection, &testfile);
+	write_test_connection_reread (connection, &testfile, &reread, &reread_same);
+	nmtst_assert_connection_verifies_without_normalization (reread);
+	_setting_copy_property_gbytes (connection, reread, NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_CA_CERT);
+	_setting_copy_property_gbytes (connection, reread, NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_CLIENT_CERT);
+	_setting_copy_property_gbytes (connection, reread, NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_PRIVATE_KEY);
+	assert_reread_same (connection, reread);
+	g_clear_object (&reread);
 
 	/* Read the connection back in and compare it to the one we just wrote out */
 	reread = nms_keyfile_reader_from_file (testfile, &error);
@@ -1716,6 +1776,7 @@ test_write_wired_8021x_tls_connection_blob (void)
 	char *new_client_cert;
 	char *new_priv_key;
 	const char *uuid;
+	gboolean reread_same = FALSE;
 	gs_free_error GError *error = NULL;
 	GBytes *password_raw = NULL;
 #define PASSWORD_RAW "password-raw\0test"
@@ -1733,7 +1794,13 @@ test_write_wired_8021x_tls_connection_blob (void)
 	              NULL);
 	g_bytes_unref (password_raw);
 
-	write_test_connection (connection, &testfile);
+	write_test_connection_reread (connection, &testfile, &reread, &reread_same);
+	nmtst_assert_connection_verifies_without_normalization (reread);
+	_setting_copy_property_gbytes (connection, reread, NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_CA_CERT);
+	_setting_copy_property_gbytes (connection, reread, NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_CLIENT_CERT);
+	_setting_copy_property_gbytes (connection, reread, NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_PRIVATE_KEY);
+	assert_reread_same (connection, reread);
+	g_clear_object (&reread);
 
 	/* Check that the new certs got written out */
 	s_con = nm_connection_get_setting_connection (connection);

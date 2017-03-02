@@ -183,7 +183,8 @@ pan_connection_check_create (NMBluezDevice *self)
 	NMConnection *connection;
 	NMConnection *added;
 	NMSetting *setting;
-	char *uuid, *id;
+	char *id;
+	char uuid[37];
 	GError *error = NULL;
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 
@@ -205,7 +206,7 @@ pan_connection_check_create (NMBluezDevice *self)
 	connection = nm_simple_connection_new ();
 
 	/* Setting: Connection */
-	uuid = nm_utils_uuid_generate ();
+	nm_utils_uuid_generate_buf (uuid);
 	id = g_strdup_printf (_("%s Network"), priv->name);
 	setting = nm_setting_connection_new ();
 	g_object_set (setting,
@@ -266,7 +267,6 @@ pan_connection_check_create (NMBluezDevice *self)
 	g_object_unref (connection);
 
 	g_free (id);
-	g_free (uuid);
 }
 
 static gboolean

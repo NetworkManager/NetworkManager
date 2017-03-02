@@ -73,10 +73,6 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-
-static NMSettingVerifyResult _nm_connection_verify (NMConnection *connection, GError **error);
-
-
 /*****************************************************************************/
 
 static void
@@ -136,15 +132,15 @@ nm_connection_add_setting (NMConnection *connection, NMSetting *setting)
  * Removes the #NMSetting with the given #GType from the #NMConnection.  This
  * operation dereferences the #NMSetting object.
  **/
-void
-nm_connection_remove_setting (NMConnection *connection, GType setting_type)
+gboolean
+_nm_connection_remove_setting (NMConnection *connection, GType setting_type)
 {
 	NMConnectionPrivate *priv;
 	NMSetting *setting;
 	const char *setting_name;
 
-	g_return_if_fail (NM_IS_CONNECTION (connection));
-	g_return_if_fail (g_type_is_a (setting_type, NM_TYPE_SETTING));
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (g_type_is_a (setting_type, NM_TYPE_SETTING), FALSE);
 
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
 	setting_name = g_type_name (setting_type);
@@ -153,7 +149,23 @@ nm_connection_remove_setting (NMConnection *connection, GType setting_type)
 		g_signal_handlers_disconnect_by_func (setting, setting_changed_cb, connection);
 		g_hash_table_remove (priv->settings, setting_name);
 		g_signal_emit (connection, signals[CHANGED], 0);
+		return TRUE;
 	}
+	return FALSE;
+}
+
+/**
+ * nm_connection_remove_setting:
+ * @connection: a #NMConnection
+ * @setting_type: the #GType of the setting object to remove
+ *
+ * Removes the #NMSetting with the given #GType from the #NMConnection.  This
+ * operation dereferences the #NMSetting object.
+ **/
+void
+nm_connection_remove_setting (NMConnection *connection, GType setting_type)
+{
+	_nm_connection_remove_setting (connection, setting_type);
 }
 
 /**
@@ -602,17 +614,17 @@ static gboolean
 _normalize_connection_uuid (NMConnection *self)
 {
 	NMSettingConnection *s_con = nm_connection_get_setting_connection (self);
-	char *uuid;
+	char uuid[37];
 
-	g_assert (s_con);
+	nm_assert (s_con);
 
 	if (nm_setting_connection_get_uuid (s_con))
 		return FALSE;
 
-	uuid = nm_utils_uuid_generate ();
-	g_object_set (s_con, NM_SETTING_CONNECTION_UUID, uuid, NULL);
-	g_free (uuid);
-
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_UUID,
+	              nm_utils_uuid_generate_buf (uuid),
+	              NULL);
 	return TRUE;
 }
 
@@ -986,6 +998,38 @@ _normalize_team_port_config (NMConnection *self, GHashTable *parameters)
 	return FALSE;
 }
 
+static gboolean
+_normalize_required_settings (NMConnection *self, GHashTable *parameters)
+{
+	if (nm_connection_get_setting_vlan (self)) {
+		if (!nm_connection_get_setting_wired (self)) {
+			nm_connection_add_setting (self, nm_setting_wired_new ());
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+static gboolean
+_normalize_invalid_slave_port_settings (NMConnection *self, GHashTable *parameters)
+{
+	NMSettingConnection *s_con = nm_connection_get_setting_connection (self);
+	const char *slave_type;
+	gboolean changed = FALSE;
+
+	slave_type = nm_setting_connection_get_slave_type (s_con);
+
+	if (   !nm_streq0 (slave_type, NM_SETTING_BRIDGE_SETTING_NAME)
+	    && _nm_connection_remove_setting (self, NM_TYPE_SETTING_BRIDGE_PORT))
+		changed = TRUE;
+
+	if (   !nm_streq0 (slave_type, NM_SETTING_TEAM_SETTING_NAME)
+	    && _nm_connection_remove_setting (self, NM_TYPE_SETTING_TEAM_PORT))
+		changed = TRUE;
+
+	return changed;
+}
+
 /**
  * nm_connection_verify:
  * @connection: the #NMConnection to verify
@@ -1017,7 +1061,7 @@ nm_connection_verify (NMConnection *connection, GError **error)
 	return result == NM_SETTING_VERIFY_SUCCESS || result == NM_SETTING_VERIFY_NORMALIZABLE;
 }
 
-static NMSettingVerifyResult
+NMSettingVerifyResult
 _nm_connection_verify (NMConnection *connection, GError **error)
 {
 	NMConnectionPrivate *priv;
@@ -1233,8 +1277,10 @@ nm_connection_normalize (NMConnection *connection,
 	was_modified |= _normalize_connection_uuid (connection);
 	was_modified |= _normalize_connection_type (connection);
 	was_modified |= _normalize_connection_slave_type (connection);
-	was_modified |= _normalize_ethernet_link_neg (connection);
+	was_modified |= _normalize_required_settings (connection, parameters);
+	was_modified |= _normalize_invalid_slave_port_settings (connection, parameters);
 	was_modified |= _normalize_ip_config (connection, parameters);
+	was_modified |= _normalize_ethernet_link_neg (connection);
 	was_modified |= _normalize_infiniband_mtu (connection, parameters);
 	was_modified |= _normalize_bond_mode (connection, parameters);
 	was_modified |= _normalize_wireless_mac_address_randomization (connection, parameters);

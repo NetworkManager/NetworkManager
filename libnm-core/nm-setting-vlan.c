@@ -600,7 +600,7 @@ nm_setting_vlan_init (NMSettingVlan *setting)
 {
 }
 
-static gboolean
+static int
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingVlanPrivate *priv = NM_SETTING_VLAN_GET_PRIVATE (setting);
@@ -679,6 +679,18 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		                     _("flags are invalid"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_VLAN_SETTING_NAME, NM_SETTING_VLAN_FLAGS);
 		return FALSE;
+	}
+
+	if (connection && !s_wired) {
+		/* technically, a VLAN setting does not require an ethernet setting. However,
+		 * the ifcfg-rh reader always adds a ethernet setting when reading a vlan setting.
+		 * Thus, in order to be consistent, always add one via normalization. */
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_SETTING_NOT_FOUND,
+		                     _("vlan setting should have a ethernet setting as well"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_VLAN_SETTING_NAME, NM_SETTING_VLAN_FLAGS);
+		return NM_SETTING_VERIFY_NORMALIZABLE;
 	}
 
 	return TRUE;
