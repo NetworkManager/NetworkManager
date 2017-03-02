@@ -8863,8 +8863,8 @@ test_write_unknown (gconstpointer test_data)
 
 	sv = _svOpenFile (testfile);
 
-	svFileSetName (sv, filename_tmp_1);
-	svFileSetModified (sv);
+	svFileSetName_test_only (sv, filename_tmp_1);
+	svFileSetModified_test_only (sv);
 
 	if (g_str_has_suffix (testfile, "ifcfg-test-write-unknown-4")) {
 		_svGetValue_check (sv, "NAME", "l4x");

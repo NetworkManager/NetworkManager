@@ -637,15 +637,19 @@ svFileGetName (const shvarFile *s)
 }
 
 void
-svFileSetName (shvarFile *s, const char *fileName)
+svFileSetName_test_only (shvarFile *s, const char *fileName)
 {
+	/* changing the file name is not supported for regular
+	 * operation. Only allowed to use in tests, othewise,
+	 * the filename is immutable. */
 	g_free (s->fileName);
 	s->fileName = g_strdup (fileName);
 }
 
 void
-svFileSetModified (shvarFile *s)
+svFileSetModified_test_only (shvarFile *s)
 {
+	/* marking a file as modified is only for testing. */
 	s->modified = TRUE;
 }
 
