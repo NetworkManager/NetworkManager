@@ -38,6 +38,8 @@
 
 G_BEGIN_DECLS
 
+typedef struct _NMVariantAttributeSpec NMVariantAttributeSpec;
+
 /* SSID helpers */
 gboolean    nm_utils_is_empty_ssid (const guint8 *ssid, gsize len);
 const char *nm_utils_escape_ssid   (const guint8 *ssid, gsize len);
@@ -214,6 +216,19 @@ const char **nm_utils_enum_get_values (GType type, gint from, gint to);
 
 NM_AVAILABLE_IN_1_6
 guint nm_utils_version (void);
+
+NM_AVAILABLE_IN_1_8
+GHashTable * nm_utils_parse_variant_attributes (const char *string,
+                                                char attr_separator,
+                                                char key_value_separator,
+                                                gboolean ignore_unknown,
+                                                const NMVariantAttributeSpec *const *spec,
+                                                GError **error);
+
+NM_AVAILABLE_IN_1_8
+char * nm_utils_format_variant_attributes (GHashTable *attributes,
+                                           char attr_separator,
+                                           char key_value_separator);
 
 G_END_DECLS
 

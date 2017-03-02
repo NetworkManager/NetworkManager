@@ -1163,4 +1163,6 @@ global:
 	nm_setting_dummy_get_type;
 	nm_setting_dummy_new;
 	nm_setting_gsm_get_mtu;
+	nm_utils_format_variant_attributes;
+	nm_utils_parse_variant_attributes;
 } libnm_1_6_0;
