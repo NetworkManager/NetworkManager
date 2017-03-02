@@ -40,7 +40,7 @@
 #define _NMLOG_PREFIX_NAME      "wifi-nl80211"
 #define _NMLOG(level, domain, ...) \
 	G_STMT_START { \
-		nm_log ((level), (domain), \
+		nm_log ((level), (domain), NULL, NULL, \
 		        "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
 		        _NMLOG_PREFIX_NAME \
 		        _NM_UTILS_MACRO_REST(__VA_ARGS__)); \

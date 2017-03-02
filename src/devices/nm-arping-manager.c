@@ -81,13 +81,14 @@ G_DEFINE_TYPE (NMArpingManager, nm_arping_manager, G_TYPE_OBJECT)
 #define _NMLOG(level, ...) \
     G_STMT_START { \
         char _sbuf[64]; \
+        int _ifindex = (self) ? NM_ARPING_MANAGER_GET_PRIVATE (self)->ifindex : 0; \
         \
-        nm_log ((level), _NMLOG_DOMAIN, NULL, NULL, \
+        nm_log ((level), _NMLOG_DOMAIN, \
+                nm_platform_link_get_name (NM_PLATFORM_GET, _ifindex), \
+                NULL, \
                 "%s%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
                 _NMLOG_PREFIX_NAME, \
-                self ? nm_sprintf_buf (_sbuf, "[%p,%d]", \
-                                       self, \
-                                       NM_ARPING_MANAGER_GET_PRIVATE (self)->ifindex) : "" \
+                self ? nm_sprintf_buf (_sbuf, "[%p,%d]", self, _ifindex) : "" \
                 _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
     } G_STMT_END
 
