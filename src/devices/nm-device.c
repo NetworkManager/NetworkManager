@@ -8331,8 +8331,9 @@ _cleanup_ip6_pre (NMDevice *self, CleanupType cleanup_type)
 	addrconf6_cleanup (self);
 }
 
-static gboolean
-_hash_check_invalid_keys_impl (GHashTable *hash, const char *setting_name, GError **error, const char **argv)
+gboolean
+_nm_device_hash_check_invalid_keys (GHashTable *hash, const char *setting_name,
+                                    GError **error, const char **argv)
 {
 	guint found_keys = 0;
 	guint i;
@@ -8395,7 +8396,6 @@ _hash_check_invalid_keys_impl (GHashTable *hash, const char *setting_name, GErro
 
 	return TRUE;
 }
-#define _hash_check_invalid_keys(hash, setting_name, error, ...) _hash_check_invalid_keys_impl (hash, setting_name, error, ((const char *[]) { __VA_ARGS__, NULL }))
 
 void
 nm_device_reactivate_ip4_config (NMDevice *self,
@@ -8517,10 +8517,10 @@ reapply_connection (NMDevice *self,
 	/**************************************************************************
 	 * check for unsupported changes and reject to reapply
 	 *************************************************************************/
-	if (!_hash_check_invalid_keys (diffs, NULL, error,
-	                               NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	                               NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	                               NM_SETTING_CONNECTION_SETTING_NAME))
+	if (!nm_device_hash_check_invalid_keys (diffs, NULL, error,
+	                                        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	                                        NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	                                        NM_SETTING_CONNECTION_SETTING_NAME))
 		return FALSE;
 
 	/* whitelist allowed properties from "connection" setting which are allowed to differ.
@@ -8528,15 +8528,15 @@ reapply_connection (NMDevice *self,
 	 * This includes UUID, there is no principal problem with reapplying a connection
 	 * and changing it's UUID. In fact, disallowing it makes it cumbersome for the user
 	 * to reapply any connection but the original settings-connection. */
-	if (!_hash_check_invalid_keys (diffs ? g_hash_table_lookup (diffs, NM_SETTING_CONNECTION_SETTING_NAME) : NULL,
-	                               NM_SETTING_CONNECTION_SETTING_NAME,
-	                               error,
-	                               NM_SETTING_CONNECTION_ID,
-	                               NM_SETTING_CONNECTION_UUID,
-	                               NM_SETTING_CONNECTION_STABLE_ID,
-	                               NM_SETTING_CONNECTION_AUTOCONNECT,
-	                               NM_SETTING_CONNECTION_ZONE,
-	                               NM_SETTING_CONNECTION_METERED))
+	if (!nm_device_hash_check_invalid_keys (diffs ? g_hash_table_lookup (diffs, NM_SETTING_CONNECTION_SETTING_NAME) : NULL,
+	                                        NM_SETTING_CONNECTION_SETTING_NAME,
+	                                        error,
+	                                        NM_SETTING_CONNECTION_ID,
+	                                        NM_SETTING_CONNECTION_UUID,
+	                                        NM_SETTING_CONNECTION_STABLE_ID,
+	                                        NM_SETTING_CONNECTION_AUTOCONNECT,
+	                                        NM_SETTING_CONNECTION_ZONE,
+	                                        NM_SETTING_CONNECTION_METERED))
 		return FALSE;
 
 	if (   version_id != 0
