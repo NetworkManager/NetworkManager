@@ -8519,6 +8519,7 @@ reapply_connection (NMDevice *self, NMConnection *con_old, NMConnection *con_new
  *   the current settings connection
  * @version_id: either zero, or the current version id for the applied
  *   connection.
+ * @audit_args: on return, a string representing the changes
  * @error: the error if %FALSE is returned
  *
  * Change configuration of an already configured device if possible.
@@ -8530,6 +8531,7 @@ static gboolean
 check_and_reapply_connection (NMDevice *self,
                               NMConnection *connection,
                               guint64 version_id,
+                              char **audit_args,
                               GError **error)
 {
 	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (self);
@@ -8555,6 +8557,9 @@ check_and_reapply_connection (NMDevice *self,
 	                    NM_SETTING_COMPARE_FLAG_IGNORE_TIMESTAMP |
 	                    NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS,
 	                    &diffs);
+
+	if (nm_audit_manager_audit_enabled (nm_audit_manager_get ()))
+		*audit_args = nm_utils_format_con_diff_for_audit (diffs);
 
 	/**************************************************************************
 	 * check for unsupported changes and reject to reapply
@@ -8666,6 +8671,7 @@ reapply_cb (NMDevice *self,
 	guint64 version_id = 0;
 	gs_unref_object NMConnection *connection = NULL;
 	GError *local = NULL;
+	gs_free char *audit_args = NULL;
 
 	if (reapply_data) {
 		connection = reapply_data->connection;
@@ -8682,12 +8688,13 @@ reapply_cb (NMDevice *self,
 	if (!check_and_reapply_connection (self,
 	                                   connection ? : (NMConnection *) nm_device_get_settings_connection (self),
 	                                   version_id,
+	                                   &audit_args,
 	                                   &local)) {
-		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, NULL, subject, local->message);
+		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, audit_args, subject, local->message);
 		g_dbus_method_invocation_take_error (context, local);
 		local = NULL;
 	} else {
-		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, TRUE, NULL, subject, NULL);
+		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, TRUE, audit_args, subject, NULL);
 		g_dbus_method_invocation_return_value (context, NULL);
 	}
 }
