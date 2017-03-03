@@ -1693,8 +1693,9 @@ device_ip4_config_changed (NMDevice *device,
 
 	nm_dns_manager_begin_updates (priv->dns_manager, __func__);
 
-	/* Ignore IP config changes while the device is activating, because we'll
-	 * catch all the changes when the device moves to ACTIVATED state.
+	/* We catch already all the IP events registering on the device state changes but
+	 * the ones where the IP changes but the device state keep stable (i.e., activated):
+	 * ignore IP config changes but when the device is in activated state.
 	 * Prevents unecessary changes to DNS information.
 	 */
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
@@ -1728,11 +1729,12 @@ device_ip6_config_changed (NMDevice *device,
 
 	nm_dns_manager_begin_updates (priv->dns_manager, __func__);
 
-	/* Ignore IP config changes while the device is activating, because we'll
-	 * catch all the changes when the device moves to ACTIVATED state.
+	/* We catch already all the IP events registering on the device state changes but
+	 * the ones where the IP changes but the device state keep stable (i.e., activated):
+	 * ignore IP config changes but when the device is in activated state.
 	 * Prevents unecessary changes to DNS information.
 	 */
-	if (!nm_device_is_activating (device)) {
+	if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
 		if (old_config != new_config) {
 			if (old_config)
 				nm_dns_manager_remove_ip6_config (priv->dns_manager, old_config);
