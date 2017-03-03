@@ -156,9 +156,11 @@ create_dm_cmd_line (const char *iface,
 	char first[INET_ADDRSTRLEN];
 	char last[INET_ADDRSTRLEN];
 	char localaddr[INET_ADDRSTRLEN];
+	char tmpaddr[INET_ADDRSTRLEN];
 	char *error_desc = NULL;
 	const char *dm_binary;
 	const NMPlatformIP4Address *listen_address;
+	guint i, n;
 
 	listen_address = nm_ip4_config_get_address (ip4_config, 0);
 	g_return_val_if_fail (listen_address, NULL);
@@ -223,6 +225,24 @@ create_dm_cmd_line (const char *iface,
 		g_string_append (s, "--dhcp-option=option:router,");
 		g_string_append (s, localaddr);
 		nm_cmd_line_add_string (cmd, s->str);
+		g_string_truncate (s, 0);
+	}
+
+	if ((n = nm_ip4_config_get_num_nameservers (ip4_config))) {
+		g_string_append (s, "--dhcp-option=option:dns-server");
+		for (i = 0; i < n; i++) {
+			g_string_append_c (s, ',');
+			g_string_append (s, nm_utils_inet4_ntop (nm_ip4_config_get_nameserver (ip4_config, i), tmpaddr));
+		}
+		g_string_truncate (s, 0);
+	}
+
+	if ((n = nm_ip4_config_get_num_searches (ip4_config))) {
+		g_string_append (s, "--dhcp-option=option:domain-search");
+		for (i = 0; i < n; i++) {
+			g_string_append_c (s, ',');
+			g_string_append (s, nm_ip4_config_get_search (ip4_config, i));
+		}
 		g_string_truncate (s, 0);
 	}
 
