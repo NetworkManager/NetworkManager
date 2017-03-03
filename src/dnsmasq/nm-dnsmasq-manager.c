@@ -152,7 +152,7 @@ create_dm_cmd_line (const char *iface,
                     GError **error)
 {
 	NMCmdLine *cmd;
-	GString *s;
+	nm_auto_free_gstring GString *s = NULL;
 	char first[INET_ADDRSTRLEN];
 	char last[INET_ADDRSTRLEN];
 	char localaddr[INET_ADDRSTRLEN];
@@ -166,6 +166,8 @@ create_dm_cmd_line (const char *iface,
 	dm_binary = nm_utils_find_helper ("dnsmasq", DNSMASQ_PATH, error);
 	if (!dm_binary)
 		return NULL;
+
+	s = g_string_sized_new (100);
 
 	/* Create dnsmasq command line */
 	cmd = nm_cmd_line_new ();
@@ -196,11 +198,11 @@ create_dm_cmd_line (const char *iface,
 	 */
 	nm_cmd_line_add_string (cmd, "--strict-order");
 
-	s = g_string_new ("--listen-address=");
 	nm_utils_inet4_ntop (listen_address->address, localaddr);
+	g_string_append (s, "--listen-address=");
 	g_string_append (s, localaddr);
 	nm_cmd_line_add_string (cmd, s->str);
-	g_string_free (s, TRUE);
+	g_string_truncate (s, 0);
 
 	if (!nm_dnsmasq_utils_get_range (listen_address, first, last, &error_desc)) {
 		g_set_error_literal (error,
@@ -213,24 +215,23 @@ create_dm_cmd_line (const char *iface,
 		return NULL;
 	}
 
-	s = g_string_new ("--dhcp-range=");
-	g_string_append_printf (s, "%s,%s,60m", first, last);
+	g_string_append_printf (s, "--dhcp-range=%s,%s,60m", first, last);
 	nm_cmd_line_add_string (cmd, s->str);
-	g_string_free (s, TRUE);
+	g_string_truncate (s, 0);
 
 	if (!nm_ip4_config_get_never_default (ip4_config)) {
-		s = g_string_new ("--dhcp-option=option:router,");
+		g_string_append (s, "--dhcp-option=option:router,");
 		g_string_append (s, localaddr);
 		nm_cmd_line_add_string (cmd, s->str);
-		g_string_free (s, TRUE);
+		g_string_truncate (s, 0);
 	}
 
 	nm_cmd_line_add_string (cmd, "--dhcp-lease-max=50");
 
-	s = g_string_new ("--pid-file=");
+	g_string_append (s, "--pid-file=");
 	g_string_append (s, pidfile);
 	nm_cmd_line_add_string (cmd, s->str);
-	g_string_free (s, TRUE);
+	g_string_truncate (s, 0);
 
 	/* dnsmasq exits if the conf dir is not present */
 	if (g_file_test (CONFDIR, G_FILE_TEST_IS_DIR))
