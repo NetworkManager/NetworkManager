@@ -2026,10 +2026,14 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 {
 	NMSettingIPConfig *s_ip4;
 	const char *value;
-	char *addr_key, *prefix_key, *netmask_key, *gw_key, *metric_key, *options_key, *tmp;
+	char *tmp;
+	char addr_key[64];
+	char prefix_key[64];
+	char netmask_key[64];
+	char gw_key[64];
 	char *route_path = NULL;
-	gint32 j;
-	guint32 i, n, num;
+	gint j;
+	guint i, num, n;
 	gint64 route_metric;
 	gint priority;
 	int timeout;
@@ -2069,26 +2073,21 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		svUnsetValue (ifcfg, "BOOTPROTO");
 		for (j = -1; j < 256; j++) {
 			if (j == -1) {
-				addr_key = g_strdup ("IPADDR");
-				prefix_key = g_strdup ("PREFIX");
-				netmask_key = g_strdup ("NETMASK");
-				gw_key = g_strdup ("GATEWAY");
+				nm_sprintf_buf (addr_key, "IPADDR");
+				nm_sprintf_buf (prefix_key, "PREFIX");
+				nm_sprintf_buf (netmask_key, "NETMASK");
+				nm_sprintf_buf (gw_key, "GATEWAY");
 			} else {
-				addr_key = g_strdup_printf ("IPADDR%d", j);
-				prefix_key = g_strdup_printf ("PREFIX%d", j);
-				netmask_key = g_strdup_printf ("NETMASK%d", j);
-				gw_key = g_strdup_printf ("GATEWAY%d", j);
+				nm_sprintf_buf (addr_key, "IPADDR%d", (guint) j);
+				nm_sprintf_buf (prefix_key, "PREFIX%u",  (guint) j);
+				nm_sprintf_buf (netmask_key, "NETMASK%u",  (guint) j);
+				nm_sprintf_buf (gw_key, "GATEWAY%u",  (guint) j);
 			}
 
 			svUnsetValue (ifcfg, addr_key);
 			svUnsetValue (ifcfg, prefix_key);
 			svUnsetValue (ifcfg, netmask_key);
 			svUnsetValue (ifcfg, gw_key);
-
-			g_free (addr_key);
-			g_free (prefix_key);
-			g_free (netmask_key);
-			g_free (gw_key);
 		}
 
 		route_path = utils_get_route_path (svFileGetName (ifcfg));
@@ -2140,15 +2139,15 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 			 * See https://bugzilla.redhat.com/show_bug.cgi?id=771673
 			 * and https://bugzilla.redhat.com/show_bug.cgi?id=1105770
 			 */
-			addr_key = g_strdup ("IPADDR");
-			prefix_key = g_strdup ("PREFIX");
-			netmask_key = g_strdup ("NETMASK");
-			gw_key = g_strdup ("GATEWAY");
+			nm_sprintf_buf (addr_key, "IPADDR");
+			nm_sprintf_buf (prefix_key, "PREFIX");
+			nm_sprintf_buf (netmask_key, "NETMASK");
+			nm_sprintf_buf (gw_key, "GATEWAY");
 		} else {
-			addr_key = g_strdup_printf ("IPADDR%d", n);
-			prefix_key = g_strdup_printf ("PREFIX%d", n);
-			netmask_key = g_strdup_printf ("NETMASK%d", n);
-			gw_key = g_strdup_printf ("GATEWAY%d", n);
+			nm_sprintf_buf (addr_key, "IPADDR%u", n);
+			nm_sprintf_buf (prefix_key, "PREFIX%u", n);
+			nm_sprintf_buf (netmask_key, "NETMASK%u", n);
+			nm_sprintf_buf (gw_key, "GATEWAY%u", n);
 		}
 
 		svSetValueStr (ifcfg, addr_key, nm_ip_address_get_address (addr));
@@ -2159,30 +2158,20 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 
 		svUnsetValue (ifcfg, netmask_key);
 		svUnsetValue (ifcfg, gw_key);
-
-		g_free (addr_key);
-		g_free (prefix_key);
-		g_free (netmask_key);
-		g_free (gw_key);
 		n++;
 	}
 
 	/* Clear remaining IPADDR<n..255>, etc */
-	for (; n < 256; n++) {
-		addr_key = g_strdup_printf ("IPADDR%d", n);
-		prefix_key = g_strdup_printf ("PREFIX%d", n);
-		netmask_key = g_strdup_printf ("NETMASK%d", n);
-		gw_key = g_strdup_printf ("GATEWAY%d", n);
+	for (i = n; i < 256; i++) {
+		nm_sprintf_buf (addr_key, "IPADDR%u", i);
+		nm_sprintf_buf (prefix_key, "PREFIX%u", i);
+		nm_sprintf_buf (netmask_key, "NETMASK%u", i);
+		nm_sprintf_buf (gw_key, "GATEWAY%u", i);
 
 		svUnsetValue (ifcfg, addr_key);
 		svUnsetValue (ifcfg, prefix_key);
 		svUnsetValue (ifcfg, netmask_key);
 		svUnsetValue (ifcfg, gw_key);
-
-		g_free (addr_key);
-		g_free (prefix_key);
-		g_free (netmask_key);
-		g_free (gw_key);
 	}
 
 	svSetValueStr (ifcfg, "GATEWAY", nm_setting_ip_config_get_gateway (s_ip4));
@@ -2191,15 +2180,13 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	for (i = 0; i < 254; i++) {
 		const char *dns;
 
-		addr_key = g_strdup_printf ("DNS%d", i + 1);
-
+		nm_sprintf_buf (addr_key, "DNS%u", i + 1);
 		if (i >= num)
 			svUnsetValue (ifcfg, addr_key);
 		else {
 			dns = nm_setting_ip_config_get_dns (s_ip4, i);
 			svSetValueStr (ifcfg, addr_key, dns);
 		}
-		g_free (addr_key);
 	}
 
 	num = nm_setting_ip_config_get_num_dns_searches (s_ip4);
@@ -2278,12 +2265,14 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 			NMIPRoute *route;
 			guint32 netmask;
 			gint64 metric;
+			char metric_key[64];
+			char options_key[64];
 
-			addr_key = g_strdup_printf ("ADDRESS%d", i);
-			netmask_key = g_strdup_printf ("NETMASK%d", i);
-			gw_key = g_strdup_printf ("GATEWAY%d", i);
-			metric_key = g_strdup_printf ("METRIC%d", i);
-			options_key = g_strdup_printf ("OPTIONS%d", i);
+			nm_sprintf_buf (addr_key, "ADDRESS%u", i);
+			nm_sprintf_buf (netmask_key, "NETMASK%u", i);
+			nm_sprintf_buf (gw_key, "GATEWAY%u", i);
+			nm_sprintf_buf (metric_key, "METRIC%u", i);
+			nm_sprintf_buf (options_key, "OPTIONS%u", i);
 
 			if (i >= num) {
 				svUnsetValue (routefile, addr_key);
@@ -2319,12 +2308,6 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 				if (options)
 					svSetValueStr (routefile, options_key, options);
 			}
-
-			g_free (addr_key);
-			g_free (netmask_key);
-			g_free (gw_key);
-			g_free (metric_key);
-			g_free (options_key);
 		}
 		if (!svWriteFile (routefile, 0644, error)) {
 			svCloseFile (routefile);
@@ -2518,9 +2501,8 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	NMSettingIPConfig *s_ip6;
 	NMSettingIPConfig *s_ip4;
 	const char *value;
-	char *addr_key;
 	char *tmp;
-	guint32 i, num, num4;
+	guint i, num, num4;
 	gint priority;
 	NMIPAddress *addr;
 	const char *dns;
@@ -2608,7 +2590,9 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	num4 = s_ip4 ? nm_setting_ip_config_get_num_dns (s_ip4) : 0; /* from where to start with IPv6 entries */
 	num = nm_setting_ip_config_get_num_dns (s_ip6);
 	for (i = 0; i < 254; i++) {
-		addr_key = g_strdup_printf ("DNS%d", i + num4 + 1);
+		char addr_key[64];
+
+		nm_sprintf_buf (addr_key, "DNS%u", i + num4 + 1);
 
 		if (i >= num)
 			svUnsetValue (ifcfg, addr_key);
@@ -2616,7 +2600,6 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 			dns = nm_setting_ip_config_get_dns (s_ip6, i);
 			svSetValueStr (ifcfg, addr_key, dns);
 		}
-		g_free (addr_key);
 	}
 
 	/* Write out DNS domains - 'DOMAIN' key is shared for both IPv4 and IPv6 domains */
