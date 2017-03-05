@@ -238,7 +238,7 @@ nm_active_connection_set_state (NMActiveConnection *self,
 	old_state = priv->state;
 	priv->state = new_state;
 	priv->state_set = TRUE;
-	g_signal_emit (self, signals[STATE_CHANGED], 0, new_state, reason);
+	g_signal_emit (self, signals[STATE_CHANGED], 0, (guint) new_state, (guint) reason);
 	_notify (self, PROP_STATE);
 
 	check_master_ready (self);
