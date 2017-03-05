@@ -124,14 +124,6 @@ nm_connection_add_setting (NMConnection *connection, NMSetting *setting)
 	g_signal_emit (connection, signals[CHANGED], 0);
 }
 
-/**
- * nm_connection_remove_setting:
- * @connection: a #NMConnection
- * @setting_type: the #GType of the setting object to remove
- *
- * Removes the #NMSetting with the given #GType from the #NMConnection.  This
- * operation dereferences the #NMSetting object.
- **/
 gboolean
 _nm_connection_remove_setting (NMConnection *connection, GType setting_type)
 {
