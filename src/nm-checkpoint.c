@@ -24,6 +24,7 @@
 
 #include <string.h>
 
+#include "nm-active-connection.h"
 #include "nm-auth-subject.h"
 #include "nm-core-utils.h"
 #include "nm-dbus-interface.h"
@@ -42,6 +43,7 @@ typedef struct {
 	NMDevice *device;
 	NMConnection *applied_connection;
 	NMConnection *settings_connection;
+	guint64 ac_version_id;
 	NMDeviceState state;
 	bool realized:1;
 	bool unmanaged_explicit:1;
@@ -116,6 +118,62 @@ nm_checkpoint_includes_device (NMCheckpoint *self, NMDevice *device)
 	return g_hash_table_contains (priv->devices, device);
 }
 
+static NMSettingsConnection *
+find_settings_connection (NMCheckpoint *self,
+                          DeviceCheckpoint *dev_checkpoint,
+                          gboolean *need_update,
+                          gboolean *need_activation)
+{
+	NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE (self);
+	const GSList *active_connections, *iter;
+	NMActiveConnection *active = NULL;
+	NMSettingsConnection *connection;
+	const char *uuid, *ac_uuid;
+
+	*need_activation = FALSE;
+	*need_update = FALSE;
+
+	uuid = nm_connection_get_uuid (dev_checkpoint->settings_connection);
+	connection = nm_settings_get_connection_by_uuid (nm_settings_get (), uuid);
+
+	if (!connection)
+		return NULL;
+
+	/* Now check if the connection changed, ... */
+	if (!nm_connection_compare (dev_checkpoint->settings_connection,
+	                            NM_CONNECTION (connection),
+	                            NM_SETTING_COMPARE_FLAG_EXACT)) {
+		_LOGT ("rollback: settings connection %s changed", uuid);
+		*need_update = TRUE;
+		*need_activation = TRUE;
+	}
+
+	/* ... is active, ... */
+	active_connections = nm_manager_get_active_connections (priv->manager);
+	for (iter = active_connections; iter; iter = g_slist_next (iter)) {
+		active = iter->data;
+		ac_uuid = nm_settings_connection_get_uuid (nm_active_connection_get_settings_connection (active));
+		if (nm_streq (uuid, ac_uuid)) {
+			_LOGT ("rollback: connection %s is active", uuid);
+			break;
+		}
+	}
+
+	if (!iter) {
+		_LOGT ("rollback: connection %s is not active", uuid);
+		*need_activation = TRUE;
+		return connection;
+	}
+
+	/* ... or if the connection was reactivated/reapplied */
+	if (nm_active_connection_version_id_get (active) != dev_checkpoint->ac_version_id) {
+		_LOGT ("rollback: active connection version id of %s changed", uuid);
+		*need_activation = TRUE;
+	}
+
+	return connection;
+}
+
 GVariant *
 nm_checkpoint_rollback (NMCheckpoint *self)
 {
@@ -135,7 +193,6 @@ nm_checkpoint_rollback (NMCheckpoint *self)
 	while (g_hash_table_iter_next (&iter, (gpointer *) &device, (gpointer *) &dev_checkpoint)) {
 		gs_unref_object NMAuthSubject *subject = NULL;
 		guint32 result = NM_ROLLBACK_RESULT_OK;
-		const char *con_uuid;
 
 		_LOGD ("rollback: restoring device %s (state %d, realized %d, explicitly unmanaged %d)",
 		       nm_device_get_iface (device),
@@ -180,27 +237,26 @@ activate:
 		}
 
 		if (dev_checkpoint->applied_connection) {
-			/* The device had an active connection, check if the
-			 * connection still exists
-			 * */
-			con_uuid = nm_connection_get_uuid (dev_checkpoint->settings_connection);
-			connection = nm_settings_get_connection_by_uuid (nm_settings_get (), con_uuid);
+			gboolean need_update, need_activation;
 
+			/* The device had an active connection: check if the
+			 * connection still exists, is active and was changed */
+			connection = find_settings_connection (self, dev_checkpoint, &need_update, &need_activation);
 			if (connection) {
-				/* If the connection is still there, restore its content
-				 * and save it
-				 * */
-				_LOGD ("rollback: connection %s still exists", con_uuid);
-
-				nm_connection_replace_settings_from_connection (NM_CONNECTION (connection),
-				                                                dev_checkpoint->settings_connection);
-				nm_settings_connection_commit_changes (connection,
-				                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
-				                                       NULL,
-				                                       NULL);
+				if (need_update) {
+					_LOGD ("rollback: updating connection %s",
+					        nm_settings_connection_get_uuid (connection));
+					nm_connection_replace_settings_from_connection (NM_CONNECTION (connection),
+					                                                dev_checkpoint->settings_connection);
+					nm_settings_connection_commit_changes (connection,
+					                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
+					                                       NULL,
+					                                       NULL);
+				}
 			} else {
 				/* The connection was deleted, recreate it */
-				_LOGD ("rollback: adding connection %s again", con_uuid);
+				_LOGD ("rollback: adding connection %s again",
+				       nm_connection_get_uuid (dev_checkpoint->settings_connection));
 
 				connection = nm_settings_add_connection (nm_settings_get (),
 				                                         dev_checkpoint->settings_connection,
@@ -212,24 +268,28 @@ activate:
 					result = NM_ROLLBACK_RESULT_ERR_FAILED;
 					goto next_dev;
 				}
+				need_activation = TRUE;
 			}
 
-			/* Now re-activate the connection */
-			subject = nm_auth_subject_new_internal ();
-			if (!nm_manager_activate_connection (priv->manager,
-			                                     connection,
-			                                     dev_checkpoint->applied_connection,
-			                                     NULL,
-			                                     device,
-			                                     subject,
-			                                     &local_error)) {
-				_LOGW ("rollback: reactivation of connection %s/%s failed: %s",
-				       nm_connection_get_id ((NMConnection *) connection),
-				       nm_connection_get_uuid ((NMConnection *	) connection),
-				       local_error->message);
-				g_clear_error (&local_error);
-				result = NM_ROLLBACK_RESULT_ERR_FAILED;
-				goto next_dev;
+			if (need_activation) {
+				_LOGD ("rollback: reactivating connection %s",
+				       nm_settings_connection_get_uuid (connection));
+				subject = nm_auth_subject_new_internal ();
+				if (!nm_manager_activate_connection (priv->manager,
+				                                     connection,
+				                                     dev_checkpoint->applied_connection,
+				                                     NULL,
+				                                     device,
+				                                     subject,
+				                                     &local_error)) {
+					_LOGW ("rollback: reactivation of connection %s/%s failed: %s",
+					       nm_connection_get_id ((NMConnection *) connection),
+					       nm_connection_get_uuid ((NMConnection *	) connection),
+					       local_error->message);
+					g_clear_error (&local_error);
+					result = NM_ROLLBACK_RESULT_ERR_FAILED;
+					goto next_dev;
+				}
 			}
 		} else {
 			/* The device was initially disconnected, deactivate any existing connection */
@@ -259,9 +319,8 @@ next_dev:
 			con = list[i];
 			if (!g_hash_table_contains (priv->connection_uuids,
 			                            nm_settings_connection_get_uuid (con))) {
-				_LOGD ("rollback: deleting new connection %s (%s)",
-				       nm_settings_connection_get_uuid (con),
-				       nm_settings_connection_get_id (con));
+				_LOGD ("rollback: deleting new connection %s",
+				       nm_settings_connection_get_uuid (con));
 				nm_settings_connection_delete (con, NULL, NULL);
 			}
 		}
@@ -300,6 +359,7 @@ device_checkpoint_create (NMDevice *device,
 	NMSettingsConnection *settings_connection;
 	const char *path;
 	gboolean unmanaged_explicit;
+	NMActRequest *act_request;
 
 	path = nm_exported_object_get_path (NM_EXPORTED_OBJECT (device));
 	unmanaged_explicit = !!nm_device_get_unmanaged_flags (device,
@@ -321,6 +381,11 @@ device_checkpoint_create (NMDevice *device,
 		g_return_val_if_fail (settings_connection, NULL);
 		dev_checkpoint->settings_connection =
 			nm_simple_connection_new_clone (NM_CONNECTION (settings_connection));
+
+		act_request = nm_device_get_act_request (device);
+		g_return_val_if_fail (act_request, NULL);
+		dev_checkpoint->ac_version_id =
+			nm_active_connection_version_id_get (NM_ACTIVE_CONNECTION (act_request));
 	}
 
 	return dev_checkpoint;
