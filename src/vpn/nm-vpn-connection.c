@@ -447,7 +447,7 @@ dispatcher_pre_down_done (guint call_id, gpointer user_data)
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
 	priv->dispatcher_id = 0;
-	_set_vpn_state (self, STATE_DISCONNECTED, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
+	_set_vpn_state (self, STATE_DISCONNECTED, NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED, FALSE);
 }
 
 static void
@@ -500,7 +500,8 @@ _set_vpn_state (NMVpnConnection *self,
 
 	/* Update active connection base class state */
 	nm_active_connection_set_state (NM_ACTIVE_CONNECTION (self),
-	                                _state_to_ac_state (vpn_state));
+	                                _state_to_ac_state (vpn_state),
+	                                (NMActiveConnectionStateReason) reason);
 
 	/* Clear any in-progress secrets request */
 	cancel_get_secrets (self);

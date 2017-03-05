@@ -1146,6 +1146,7 @@ global:
 
 libnm_1_8_0 {
 global:
+	nm_active_connection_state_reason_get_type;
 	nm_connection_get_setting_dummy;
 	nm_device_dummy_get_type;
 	nm_ip_route_get_variant_attribute_spec;

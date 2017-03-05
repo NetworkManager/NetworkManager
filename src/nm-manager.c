@@ -3061,12 +3061,16 @@ active_connection_parent_active (NMActiveConnection *active,
 		} else {
 			_LOGW (LOGD_CORE, "Could not realize device '%s': %s",
 			       nm_device_get_iface (device), error->message);
-			nm_active_connection_set_state (active, NM_ACTIVE_CONNECTION_STATE_DEACTIVATED);
+			nm_active_connection_set_state (active,
+			                                NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,
+			                                NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REALIZE_FAILED);
 		}
 	} else {
 		_LOGW (LOGD_CORE, "The parent connection device '%s' depended on disappeared.",
 		       nm_device_get_iface (device));
-		nm_active_connection_set_state (active, NM_ACTIVE_CONNECTION_STATE_DEACTIVATED);
+		nm_active_connection_set_state (active,
+		                                NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,
+		                                NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REMOVED);
 	}
 }
 
@@ -3396,8 +3400,12 @@ _internal_activation_failed (NMManager *self,
 	       error_desc);
 
 	if (nm_active_connection_get_state (active) <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-		nm_active_connection_set_state (active, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING);
-		nm_active_connection_set_state (active, NM_ACTIVE_CONNECTION_STATE_DEACTIVATED);
+		nm_active_connection_set_state (active,
+		                                NM_ACTIVE_CONNECTION_STATE_DEACTIVATING,
+		                                NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN);
+		nm_active_connection_set_state (active,
+		                                NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,
+		                                NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN);
 	}
 }
 
