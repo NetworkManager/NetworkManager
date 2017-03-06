@@ -3998,7 +3998,8 @@ xsltproc_flags = \
 	--stringparam funcsynopsis.style ansi \
 	--stringparam man.th.extra1.suppress 1 \
 	--stringparam man.authors.section.enabled 0 \
-	--stringparam man.copyright.section.enabled 0
+	--stringparam man.copyright.section.enabled 0 \
+	--stringparam man.th.title.max.length 30
 
 if BUILD_DOCS
 
