@@ -1653,49 +1653,6 @@ con_update_cb (NMSettingsConnection *self,
 	update_complete (self, info, error);
 }
 
-static char *
-con_list_changed_props (NMConnection *old, NMConnection *new)
-{
-	gs_unref_hashtable GHashTable *diff = NULL;
-	GHashTable *setting_diff;
-	char *setting_name, *prop_name;
-	GHashTableIter iter, iter2;
-	gboolean same;
-	GString *str;
-
-	same = nm_connection_diff (old, new,
-	                           NM_SETTING_COMPARE_FLAG_EXACT |
-	                           NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT,
-	                           &diff);
-
-	if (same || !diff)
-		return NULL;
-
-	str = g_string_sized_new (32);
-	g_hash_table_iter_init (&iter, diff);
-
-	while (g_hash_table_iter_next (&iter,
-	                               (gpointer *) &setting_name,
-	                               (gpointer *) &setting_diff)) {
-		if (!setting_diff)
-			continue;
-
-		g_hash_table_iter_init (&iter2, setting_diff);
-
-		while (g_hash_table_iter_next (&iter2, (gpointer *) &prop_name, NULL)) {
-			g_string_append (str, setting_name);
-			g_string_append_c (str, '.');
-			g_string_append (str, prop_name);
-			g_string_append_c (str, ',');
-		}
-	}
-
-	if (str->len)
-		str->str[str->len - 1] = '\0';
-
-	return g_string_free (str, FALSE);
-}
-
 static void
 update_auth_cb (NMSettingsConnection *self,
                 GDBusMethodInvocation *context,
@@ -1736,8 +1693,17 @@ update_auth_cb (NMSettingsConnection *self,
 		update_agent_secrets_cache (self, info->new_settings);
 	}
 
-	if (nm_audit_manager_audit_enabled (nm_audit_manager_get ()))
-		info->audit_args = con_list_changed_props (NM_CONNECTION (self), info->new_settings);
+	if (nm_audit_manager_audit_enabled (nm_audit_manager_get ())) {
+		gs_unref_hashtable GHashTable *diff = NULL;
+		gboolean same;
+
+		same = nm_connection_diff (NM_CONNECTION (self), info->new_settings,
+		                           NM_SETTING_COMPARE_FLAG_EXACT |
+		                           NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT,
+		                           &diff);
+		if (!same && diff)
+			info->audit_args = nm_utils_format_con_diff_for_audit (diff);
+	}
 
 	if (info->save_to_disk) {
 		nm_settings_connection_replace_and_commit (self,

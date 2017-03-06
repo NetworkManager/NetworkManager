@@ -391,6 +391,7 @@ enslave_slave (NMDevice *device,
 	NMDeviceBond *self = NM_DEVICE_BOND (device);
 	gboolean success = TRUE, no_firmware = FALSE;
 	const char *slave_iface = nm_device_get_ip_iface (slave);
+	NMConnection *master_con;
 
 	nm_device_master_check_slave_physical_port (device, slave, LOGD_BOND);
 
@@ -405,6 +406,25 @@ enslave_slave (NMDevice *device,
 			return FALSE;
 
 		_LOGI (LOGD_BOND, "enslaved bond slave %s", slave_iface);
+
+		/* The active_slave option can be set only after the interface is enslaved */
+		master_con = nm_device_get_applied_connection (device);
+		if (master_con) {
+			NMSettingBond *s_bond = nm_connection_get_setting_bond (master_con);
+			const char *active;
+
+			if (s_bond) {
+				active = nm_setting_bond_get_option_by_name (s_bond, "active_slave");
+				if (active && nm_streq0 (active, nm_device_get_iface (slave))) {
+					nm_platform_sysctl_master_set_option (NM_PLATFORM_GET,
+					                                      nm_device_get_ifindex (device),
+					                                      "active_slave",
+					                                      active);
+					_LOGD (LOGD_BOND, "setting slave %s as active one for master %s",
+					       active, nm_device_get_iface (device));
+				}
+			}
+		}
 	} else
 		_LOGI (LOGD_BOND, "bond slave %s was enslaved", slave_iface);
 
@@ -478,6 +498,116 @@ create_and_realize (NMDevice *device,
 	return TRUE;
 }
 
+static gboolean
+check_changed_options (NMSettingBond *s_a, NMSettingBond *s_b, GError **error)
+{
+	guint i, num;
+	const char *name, *value_a, *value_b;
+
+	/* Check that options in @s_a have compatible changes in @s_b */
+
+	num = nm_setting_bond_get_num_options (s_a);
+	for (i = 0; i < num; i++) {
+		nm_setting_bond_get_option (s_a, i, &name, &value_a);
+
+		/* We support changes to these */
+		if (NM_IN_STRSET (name,
+		                  NM_SETTING_BOND_OPTION_ACTIVE_SLAVE,
+		                  NM_SETTING_BOND_OPTION_PRIMARY)) {
+			continue;
+		}
+
+		/* Missing in @s_b, but has a default value in @s_a */
+		value_b = nm_setting_bond_get_option_by_name (s_b, name);
+		if (   !value_b
+		    && nm_streq0 (value_a, nm_setting_bond_get_option_default (s_a, name))) {
+			continue;
+		}
+
+		/* Reject any other changes */
+		if (!nm_streq0 (value_a, value_b)) {
+			g_set_error (error,
+			             NM_DEVICE_ERROR,
+			             NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+			             "Can't reapply '%s' bond option",
+			             name);
+			return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
+static gboolean
+can_reapply_change (NMDevice *device,
+                    const char *setting_name,
+                    NMSetting *s_old,
+                    NMSetting *s_new,
+                    GHashTable *diffs,
+                    GError **error)
+{
+	NMDeviceClass *device_class;
+	NMSettingBond *s_bond_old, *s_bond_new;
+
+	/* Only handle bond setting here, delegate other settings to parent class */
+	if (nm_streq (setting_name, NM_SETTING_BOND_SETTING_NAME)) {
+		if (!nm_device_hash_check_invalid_keys (diffs,
+		                                        NM_SETTING_BOND_SETTING_NAME,
+		                                        error,
+		                                        NM_SETTING_BOND_OPTIONS))
+			return FALSE;
+
+		s_bond_old = NM_SETTING_BOND (s_old);
+		s_bond_new = NM_SETTING_BOND (s_new);
+
+		if (   !check_changed_options (s_bond_old, s_bond_new, error)
+		    || !check_changed_options (s_bond_new, s_bond_old, error)) {
+			return FALSE;
+		}
+
+		return TRUE;
+	}
+
+	device_class = NM_DEVICE_CLASS (nm_device_bond_parent_class);
+	return device_class->can_reapply_change (device,
+	                                         setting_name,
+	                                         s_old,
+	                                         s_new,
+	                                         diffs,
+	                                         error);
+}
+
+static void
+reapply_connection (NMDevice *device, NMConnection *con_old, NMConnection *con_new)
+{
+	NMDeviceBond *self = NM_DEVICE_BOND (device);
+	const char *value;
+	NMSettingBond *s_bond;
+	NMBondMode mode;
+
+	NM_DEVICE_CLASS (nm_device_bond_parent_class)->reapply_connection (device,
+	                                                                   con_old,
+	                                                                   con_new);
+
+	_LOGD (LOGD_BOND, "reapplying bond settings");
+	s_bond = nm_connection_get_setting_bond (con_new);
+	g_return_if_fail (s_bond);
+
+	value = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_MODE);
+	if (!value)
+		value = "balance-rr";
+
+	mode = _nm_setting_bond_mode_from_string (value);
+	g_return_if_fail (mode != NM_BOND_MODE_UNKNOWN);
+
+	/* Primary */
+	value = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_PRIMARY);
+	set_bond_attr (device, mode, NM_SETTING_BOND_OPTION_PRIMARY, value ? value : "");
+
+	/* Active slave */
+	set_simple_option (device, mode, s_bond, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE);
+}
+
 /*****************************************************************************/
 
 static void
@@ -506,6 +636,8 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 	parent_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
 	parent_class->enslave_slave = enslave_slave;
 	parent_class->release_slave = release_slave;
+	parent_class->can_reapply_change = can_reapply_change;
+	parent_class->reapply_connection = reapply_connection;
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        NMDBUS_TYPE_DEVICE_BOND_SKELETON,

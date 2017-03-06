@@ -83,13 +83,13 @@ gboolean nm_audit_manager_audit_enabled (NMAuditManager *self);
 		} \
 	} G_STMT_END
 
-#define nm_audit_log_device_op(op, device, result, subject_context, reason) \
+#define nm_audit_log_device_op(op, device, result, args, subject_context, reason) \
 	G_STMT_START { \
 		NMAuditManager *_audit = nm_audit_manager_get (); \
 		\
 		if (nm_audit_manager_audit_enabled (_audit)) { \
 			_nm_audit_manager_log_device_op (_audit, __FILE__, __LINE__, G_STRFUNC, \
-			                                 (op), (device), (result), (subject_context), (reason)); \
+			                                 (op), (device), (result), (args), (subject_context), (reason)); \
 		} \
 	} G_STMT_END
 
@@ -114,6 +114,7 @@ void _nm_audit_manager_log_generic_op    (NMAuditManager *self, const char *file
 
 void _nm_audit_manager_log_device_op     (NMAuditManager *self, const char *file, guint line,
                                           const char *func, const char *op, NMDevice *device,
-                                          gboolean result, gpointer subject_context, const char *reason);
+                                          gboolean result, const char *args, gpointer subject_context,
+                                          const char *reason);
 
 #endif /* __NM_AUDIT_MANAGER_H__ */

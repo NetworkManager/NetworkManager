@@ -380,6 +380,17 @@ typedef struct {
 	NMConnection *  (* new_default_connection) (NMDevice *self);
 
 	gboolean        (* unmanaged_on_quit) (NMDevice *self);
+
+	gboolean        (* can_reapply_change) (NMDevice *self,
+	                                        const char *setting_name,
+	                                        NMSetting *s_old,
+	                                        NMSetting *s_new,
+	                                        GHashTable *diffs,
+	                                        GError **error);
+
+	void            (* reapply_connection) (NMDevice *self,
+	                                        NMConnection *con_old,
+	                                        NMConnection *con_new);
 } NMDeviceClass;
 
 typedef void (*NMDeviceAuthRequestFunc) (NMDevice *device,

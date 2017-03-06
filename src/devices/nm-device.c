@@ -8331,12 +8331,14 @@ _cleanup_ip6_pre (NMDevice *self, CleanupType cleanup_type)
 	addrconf6_cleanup (self);
 }
 
-static gboolean
-_hash_check_invalid_keys_impl (GHashTable *hash, const char *setting_name, GError **error, const char **argv)
+gboolean
+_nm_device_hash_check_invalid_keys (GHashTable *hash, const char *setting_name,
+                                    GError **error, const char **argv)
 {
 	guint found_keys = 0;
 	guint i;
 
+	nm_assert (hash && g_hash_table_size (hash) > 0);
 	nm_assert (argv && argv[0]);
 
 #if NM_MORE_ASSERTS > 10
@@ -8351,9 +8353,6 @@ _hash_check_invalid_keys_impl (GHashTable *hash, const char *setting_name, GErro
 		nm_assert (g_hash_table_size (check_dups) > 0);
 	}
 #endif
-
-	if (!hash || g_hash_table_size (hash) == 0)
-		return TRUE;
 
 	for (i = 0; argv[i]; i++) {
 		if (g_hash_table_contains (hash, argv[i]))
@@ -8395,7 +8394,6 @@ _hash_check_invalid_keys_impl (GHashTable *hash, const char *setting_name, GErro
 
 	return TRUE;
 }
-#define _hash_check_invalid_keys(hash, setting_name, error, ...) _hash_check_invalid_keys_impl (hash, setting_name, error, ((const char *[]) { __VA_ARGS__, NULL }))
 
 void
 nm_device_reactivate_ip4_config (NMDevice *self,
@@ -8473,12 +8471,55 @@ nm_device_reactivate_ip6_config (NMDevice *self,
 	}
 }
 
+static gboolean
+can_reapply_change (NMDevice *self, const char *setting_name,
+                    NMSetting *s_old, NMSetting *s_new,
+                    GHashTable *diffs, GError **error)
+{
+	if (!NM_IN_STRSET (setting_name,
+	                   NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	                   NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	                   NM_SETTING_CONNECTION_SETTING_NAME)) {
+		g_set_error (error,
+		             NM_DEVICE_ERROR,
+		             NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+		             "Can't reapply any changes to '%s' setting",
+		             setting_name);
+		return FALSE;
+	}
 
-/* reapply_connection:
+	/* whitelist allowed properties from "connection" setting which are allowed to differ.
+	 *
+	 * This includes UUID, there is no principal problem with reapplying a connection
+	 * and changing it's UUID. In fact, disallowing it makes it cumbersome for the user
+	 * to reapply any connection but the original settings-connection. */
+	if (   nm_streq0 (setting_name, NM_SETTING_CONNECTION_SETTING_NAME)
+	    && !nm_device_hash_check_invalid_keys (diffs,
+	                                           NM_SETTING_CONNECTION_SETTING_NAME,
+	                                           error,
+	                                           NM_SETTING_CONNECTION_ID,
+	                                           NM_SETTING_CONNECTION_UUID,
+	                                           NM_SETTING_CONNECTION_STABLE_ID,
+	                                           NM_SETTING_CONNECTION_AUTOCONNECT,
+	                                           NM_SETTING_CONNECTION_ZONE,
+	                                           NM_SETTING_CONNECTION_METERED))
+		return FALSE;
+
+	return TRUE;
+}
+
+static void
+reapply_connection (NMDevice *self, NMConnection *con_old, NMConnection *con_new)
+{
+
+}
+
+/* check_and_reapply_connection:
  * @connection: the new connection settings to be applied or %NULL to reapply
  *   the current settings connection
  * @version_id: either zero, or the current version id for the applied
  *   connection.
+ * @audit_args: on return, a string representing the changes
  * @error: the error if %FALSE is returned
  *
  * Change configuration of an already configured device if possible.
@@ -8487,11 +8528,13 @@ nm_device_reactivate_ip6_config (NMDevice *self,
  * Return: %FALSE if the new configuration can not be reapplied.
  */
 static gboolean
-reapply_connection (NMDevice *self,
-                    NMConnection *connection,
-                    guint64 version_id,
-                    GError **error)
+check_and_reapply_connection (NMDevice *self,
+                              NMConnection *connection,
+                              guint64 version_id,
+                              char **audit_args,
+                              GError **error)
 {
+	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (self);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *applied = nm_device_get_applied_connection (self);
 	gs_unref_object NMConnection *applied_clone = NULL;
@@ -8499,6 +8542,7 @@ reapply_connection (NMDevice *self,
 	NMConnection *con_old, *con_new;
 	NMSettingIPConfig *s_ip4_old, *s_ip4_new;
 	NMSettingIPConfig *s_ip6_old, *s_ip6_new;
+	GHashTableIter iter;
 
 	if (priv->state != NM_DEVICE_STATE_ACTIVATED) {
 		g_set_error_literal (error,
@@ -8514,30 +8558,27 @@ reapply_connection (NMDevice *self,
 	                    NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS,
 	                    &diffs);
 
+	if (nm_audit_manager_audit_enabled (nm_audit_manager_get ()))
+		*audit_args = nm_utils_format_con_diff_for_audit (diffs);
+
 	/**************************************************************************
 	 * check for unsupported changes and reject to reapply
 	 *************************************************************************/
-	if (!_hash_check_invalid_keys (diffs, NULL, error,
-	                               NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	                               NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	                               NM_SETTING_CONNECTION_SETTING_NAME))
-		return FALSE;
+	if (diffs) {
+		char *setting_name;
+		GHashTable *setting_diff;
 
-	/* whitelist allowed properties from "connection" setting which are allowed to differ.
-	 *
-	 * This includes UUID, there is no principal problem with reapplying a connection
-	 * and changing it's UUID. In fact, disallowing it makes it cumbersome for the user
-	 * to reapply any connection but the original settings-connection. */
-	if (!_hash_check_invalid_keys (diffs ? g_hash_table_lookup (diffs, NM_SETTING_CONNECTION_SETTING_NAME) : NULL,
-	                               NM_SETTING_CONNECTION_SETTING_NAME,
-	                               error,
-	                               NM_SETTING_CONNECTION_ID,
-	                               NM_SETTING_CONNECTION_UUID,
-	                               NM_SETTING_CONNECTION_STABLE_ID,
-	                               NM_SETTING_CONNECTION_AUTOCONNECT,
-	                               NM_SETTING_CONNECTION_ZONE,
-	                               NM_SETTING_CONNECTION_METERED))
-		return FALSE;
+		g_hash_table_iter_init (&iter, diffs);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &setting_name, (gpointer *) &setting_diff)) {
+			if (!klass->can_reapply_change (self,
+			                                setting_name,
+			                                nm_connection_get_setting_by_name (applied, setting_name),
+			                                nm_connection_get_setting_by_name (connection, setting_name),
+			                                setting_diff,
+			                                error))
+				return FALSE;
+		}
+	}
 
 	if (   version_id != 0
 	    && version_id != nm_active_connection_version_id_get ((NMActiveConnection *) priv->act_request)) {
@@ -8567,7 +8608,7 @@ reapply_connection (NMDevice *self,
 			NMSettingConnection *s_con_a, *s_con_n;
 
 			/* we allow re-applying a connection with differing ID, UUID, STABLE_ID and AUTOCONNECT.
-			 * This is for convenience but these values are not actually changable. So, check
+			 * This is for convenience but these values are not actually changeable. So, check
 			 * if they changed, and if the did revert to the original values. */
 			s_con_a = nm_connection_get_setting_connection (applied);
 			s_con_n = nm_connection_get_setting_connection (connection);
@@ -8595,17 +8636,18 @@ reapply_connection (NMDevice *self,
 	} else
 		con_old = con_new = applied;
 
-	s_ip4_new = nm_connection_get_setting_ip4_config (con_new);
-	s_ip4_old = nm_connection_get_setting_ip4_config (con_old);
-	s_ip6_new = nm_connection_get_setting_ip6_config (con_new);
-	s_ip6_old = nm_connection_get_setting_ip6_config (con_old);
-
 	/**************************************************************************
 	 * Reapply changes
 	 *************************************************************************/
+	klass->reapply_connection (self, con_old, con_new);
 
 	nm_device_update_firewall_zone (self);
 	nm_device_update_metered (self);
+
+	s_ip4_old = nm_connection_get_setting_ip4_config (con_old);
+	s_ip4_new = nm_connection_get_setting_ip4_config (con_new);
+	s_ip6_old = nm_connection_get_setting_ip6_config (con_old);
+	s_ip6_new = nm_connection_get_setting_ip6_config (con_new);
 
 	nm_device_reactivate_ip4_config (self, s_ip4_old, s_ip4_new);
 	nm_device_reactivate_ip6_config (self, s_ip6_old, s_ip6_new);
@@ -8629,6 +8671,7 @@ reapply_cb (NMDevice *self,
 	guint64 version_id = 0;
 	gs_unref_object NMConnection *connection = NULL;
 	GError *local = NULL;
+	gs_free char *audit_args = NULL;
 
 	if (reapply_data) {
 		connection = reapply_data->connection;
@@ -8637,20 +8680,21 @@ reapply_cb (NMDevice *self,
 	}
 
 	if (error) {
-		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, subject, error->message);
+		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, NULL, subject, error->message);
 		g_dbus_method_invocation_return_gerror (context, error);
 		return;
 	}
 
-	if (!reapply_connection (self,
-	                         connection ? : (NMConnection *) nm_device_get_settings_connection (self),
-	                         version_id,
-	                         &local)) {
-		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, subject, local->message);
+	if (!check_and_reapply_connection (self,
+	                                   connection ? : (NMConnection *) nm_device_get_settings_connection (self),
+	                                   version_id,
+	                                   &audit_args,
+	                                   &local)) {
+		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, audit_args, subject, local->message);
 		g_dbus_method_invocation_take_error (context, local);
 		local = NULL;
 	} else {
-		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, TRUE, subject, NULL);
+		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, TRUE, audit_args, subject, NULL);
 		g_dbus_method_invocation_return_value (context, NULL);
 	}
 }
@@ -8673,7 +8717,7 @@ impl_device_reapply (NMDevice *self,
 		error = g_error_new_literal (NM_DEVICE_ERROR,
 		                             NM_DEVICE_ERROR_FAILED,
 		                             "Invalid flags specified");
-		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, context, error->message);
+		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, NULL, context, error->message);
 		g_dbus_method_invocation_take_error (context, error);
 		return;
 	}
@@ -8682,7 +8726,7 @@ impl_device_reapply (NMDevice *self,
 		error = g_error_new_literal (NM_DEVICE_ERROR,
 		                             NM_DEVICE_ERROR_NOT_ACTIVE,
 		                             "Device is not activated");
-		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, context, error->message);
+		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, NULL, context, error->message);
 		g_dbus_method_invocation_take_error (context, error);
 		return;
 	}
@@ -8698,7 +8742,7 @@ impl_device_reapply (NMDevice *self,
 		                                                  &error);
 		if (!connection) {
 			g_prefix_error (&error, "The settings specified are invalid: ");
-			nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, context, error->message);
+			nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, NULL, context, error->message);
 			g_dbus_method_invocation_take_error (context, error);
 			return;
 		}
@@ -8828,7 +8872,7 @@ disconnect_cb (NMDevice *self,
 
 	if (error) {
 		g_dbus_method_invocation_return_gerror (context, error);
-		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_DISCONNECT, self, FALSE, subject, error->message);
+		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_DISCONNECT, self, FALSE, NULL, subject, error->message);
 		return;
 	}
 
@@ -8837,7 +8881,7 @@ disconnect_cb (NMDevice *self,
 		local = g_error_new_literal (NM_DEVICE_ERROR,
 		                             NM_DEVICE_ERROR_NOT_ACTIVE,
 		                             "Device is not active");
-		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_DISCONNECT, self, FALSE, subject, local->message);
+		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_DISCONNECT, self, FALSE, NULL, subject, local->message);
 		g_dbus_method_invocation_take_error (context, local);
 	} else {
 		nm_device_set_autoconnect_intern (self, FALSE);
@@ -8846,7 +8890,7 @@ disconnect_cb (NMDevice *self,
 		                         NM_DEVICE_STATE_DEACTIVATING,
 		                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
 		g_dbus_method_invocation_return_value (context, NULL);
-		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_DISCONNECT, self, TRUE, subject, NULL);
+		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_DISCONNECT, self, TRUE, NULL, subject, NULL);
 	}
 }
 
@@ -8897,12 +8941,12 @@ delete_cb (NMDevice *self,
 
 	if (error) {
 		g_dbus_method_invocation_return_gerror (context, error);
-		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_DELETE, self, FALSE, subject, error->message);
+		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_DELETE, self, FALSE, NULL, subject, error->message);
 		return;
 	}
 
 	/* Authorized */
-	nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_DELETE, self, TRUE, subject, NULL);
+	nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_DELETE, self, TRUE, NULL, subject, NULL);
 	if (nm_device_unrealize (self, TRUE, &local))
 		g_dbus_method_invocation_return_value (context, NULL);
 	else
@@ -13607,6 +13651,8 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->unmanaged_on_quit = unmanaged_on_quit;
 	klass->deactivate_reset_hw_addr = deactivate_reset_hw_addr;
 	klass->parent_changed_notify = parent_changed_notify;
+	klass->can_reapply_change = can_reapply_change;
+	klass->reapply_connection = reapply_connection;
 
 	obj_properties[PROP_UDI] =
 	    g_param_spec_string (NM_DEVICE_UDI, "", "",

@@ -134,4 +134,9 @@ guint32 nm_device_get_configured_mtu_for_wired (NMDevice *self, gboolean *out_is
 		NM_DEVICE_CLASS (klass)->link_types = link_types; \
 	}
 
+gboolean _nm_device_hash_check_invalid_keys (GHashTable *hash, const char *setting_name,
+                                             GError **error, const char **argv);
+#define nm_device_hash_check_invalid_keys(hash, setting_name, error, ...) \
+	_nm_device_hash_check_invalid_keys (hash, setting_name, error, ((const char *[]) { __VA_ARGS__, NULL }))
+
 #endif	/* NM_DEVICE_PRIVATE_H */
