@@ -1622,6 +1622,52 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 	return !!nm_device_get_initial_hw_address (device);
 }
 
+static gboolean
+can_reapply_change (NMDevice *device,
+                    const char *setting_name,
+                    NMSetting *s_old,
+                    NMSetting *s_new,
+                    GHashTable *diffs,
+                    GError **error)
+{
+	NMDeviceClass *device_class;
+
+	/* Only handle wired setting here, delegate other settings to parent class */
+	if (nm_streq (setting_name, NM_SETTING_WIRED_SETTING_NAME)) {
+		return nm_device_hash_check_invalid_keys (diffs,
+		                                          NM_SETTING_WIRED_SETTING_NAME,
+		                                          error,
+		                                          NM_SETTING_WIRED_SPEED,
+		                                          NM_SETTING_WIRED_DUPLEX,
+		                                          NM_SETTING_WIRED_AUTO_NEGOTIATE,
+		                                          NM_SETTING_WIRED_WAKE_ON_LAN,
+		                                          NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD);
+	}
+
+	device_class = NM_DEVICE_CLASS (nm_device_ethernet_parent_class);
+	return device_class->can_reapply_change (device,
+	                                         setting_name,
+	                                         s_old,
+	                                         s_new,
+	                                         diffs,
+	                                         error);
+}
+
+static void
+reapply_connection (NMDevice *device, NMConnection *con_old, NMConnection *con_new)
+{
+	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
+
+	NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->reapply_connection (device,
+	                                                                       con_old,
+	                                                                       con_new);
+
+	_LOGD (LOGD_DEVICE, "reapplying wired settings");
+
+	link_negotiation_set (device);
+	wake_on_lan_enable (device);
+}
+
 static void
 dispose (GObject *object)
 {
@@ -1719,6 +1765,8 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->carrier_changed = carrier_changed;
 	parent_class->link_changed = link_changed;
 	parent_class->is_available = is_available;
+	parent_class->can_reapply_change = can_reapply_change;
+	parent_class->reapply_connection = reapply_connection;
 
 	parent_class->state_changed = device_state_changed;
 
