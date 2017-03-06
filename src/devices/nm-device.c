@@ -4285,6 +4285,43 @@ act_stage2_config (NMDevice *self, NMDeviceStateReason *out_failure_reason)
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
+static void
+lldp_init (NMDevice *self, gboolean restart)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->ifindex > 0 && lldp_rx_enabled (self)) {
+		gs_free_error GError *error = NULL;
+		gconstpointer addr;
+		size_t addr_length;
+
+		if (priv->lldp_listener) {
+			if (restart && nm_lldp_listener_is_running (priv->lldp_listener))
+				nm_lldp_listener_stop (priv->lldp_listener);
+		} else {
+			priv->lldp_listener = nm_lldp_listener_new ();
+			g_signal_connect (priv->lldp_listener,
+			                  "notify::" NM_LLDP_LISTENER_NEIGHBORS,
+			                  G_CALLBACK (lldp_neighbors_changed),
+			                  self);
+		}
+
+		if (!nm_lldp_listener_is_running (priv->lldp_listener)) {
+			addr = nm_platform_link_get_address (NM_PLATFORM_GET, priv->ifindex, &addr_length);
+
+			if (nm_lldp_listener_start (priv->lldp_listener, nm_device_get_ifindex (self), &error))
+				_LOGD (LOGD_DEVICE, "LLDP listener %p started", priv->lldp_listener);
+			else {
+				_LOGD (LOGD_DEVICE, "LLDP listener %p could not be started: %s",
+				       priv->lldp_listener, error->message);
+			}
+		}
+	} else {
+		if (priv->lldp_listener)
+			nm_lldp_listener_stop (priv->lldp_listener);
+	}
+}
+
 /*
  * activate_stage2_device_config
  *
@@ -4337,31 +4374,7 @@ activate_stage2_device_config (NMDevice *self)
 			nm_device_queue_recheck_assume (info->slave);
 	}
 
-	if (lldp_rx_enabled (self) && priv->ifindex > 0) {
-		gs_free_error GError *error = NULL;
-		gconstpointer addr;
-		size_t addr_length;
-
-		if (priv->lldp_listener)
-			nm_lldp_listener_stop (priv->lldp_listener);
-		else {
-			priv->lldp_listener = nm_lldp_listener_new ();
-			g_signal_connect (priv->lldp_listener,
-			                  "notify::" NM_LLDP_LISTENER_NEIGHBORS,
-			                  G_CALLBACK (lldp_neighbors_changed),
-			                  self);
-		}
-
-		addr = nm_platform_link_get_address (NM_PLATFORM_GET, priv->ifindex, &addr_length);
-
-		if (nm_lldp_listener_start (priv->lldp_listener, nm_device_get_ifindex (self), &error))
-			_LOGD (LOGD_DEVICE, "LLDP listener %p started", priv->lldp_listener);
-		else {
-			_LOGD (LOGD_DEVICE, "LLDP listener %p could not be started: %s",
-			       priv->lldp_listener, error->message);
-		}
-	}
-
+	lldp_init (self, TRUE);
 	nm_device_activate_schedule_stage3_ip_config_start (self);
 }
 
@@ -8502,7 +8515,8 @@ can_reapply_change (NMDevice *self, const char *setting_name,
 	                                           NM_SETTING_CONNECTION_STABLE_ID,
 	                                           NM_SETTING_CONNECTION_AUTOCONNECT,
 	                                           NM_SETTING_CONNECTION_ZONE,
-	                                           NM_SETTING_CONNECTION_METERED))
+	                                           NM_SETTING_CONNECTION_METERED,
+	                                           NM_SETTING_CONNECTION_LLDP))
 		return FALSE;
 
 	return TRUE;
@@ -8645,6 +8659,7 @@ check_and_reapply_connection (NMDevice *self,
 
 	nm_device_update_firewall_zone (self);
 	nm_device_update_metered (self);
+	lldp_init (self, FALSE);
 
 	s_ip4_old = nm_connection_get_setting_ip4_config (con_old);
 	s_ip4_new = nm_connection_get_setting_ip4_config (con_new);
