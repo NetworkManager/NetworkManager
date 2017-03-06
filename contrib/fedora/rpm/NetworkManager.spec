@@ -43,15 +43,6 @@
 ###############################################################################
 
 %bcond_without adsl
-
-%if 0%{?fedora}
-%global dbus_version 1.9.18
-%global dbus_sys_dir %{_datadir}/dbus-1/system.d
-%else
-%global dbus_version 1.1
-%global dbus_sys_dir %{_sysconfdir}/dbus-1/system.d
-%endif
-
 %bcond_without bluetooth
 %bcond_without wwan
 %bcond_without team
@@ -63,6 +54,14 @@
 %bcond_without test
 
 ###############################################################################
+
+%if 0%{?fedora}
+%global dbus_version 1.9.18
+%global dbus_sys_dir %{_datadir}/dbus-1/system.d
+%else
+%global dbus_version 1.1
+%global dbus_sys_dir %{_sysconfdir}/dbus-1/system.d
+%endif
 
 %if %{with bluetooth} || %{with wwan}
 %global with_modem_manager_1 1
