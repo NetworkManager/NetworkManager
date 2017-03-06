@@ -1142,8 +1142,14 @@ if test -n "$INTROSPECTION_MAKEFILE"; then
         AC_MSG_ERROR(["--enable-introspection aims to build the settings documentation. This requires GObject introspection for python (pygobject)])
     fi
 
-    AC_PATH_PROG(PERL, perl, no)
-    AC_PATH_PROG(XSLTPROC, xsltproc, no)
+    AC_PATH_PROG(PERL, perl)
+    if test -z "$PERL"; then
+        AC_MSG_ERROR([--enable-introspection requires perl])
+    fi
+    AC_PATH_PROG(XSLTPROC, xsltproc)
+    if test -z "$XSLTPROC"; then
+        AC_MSG_ERROR([--enable-introspection requires xsltproc])
+    fi
 
     have_introspection=yes
     if test "$enable_gtk_doc" = "yes"; then
