@@ -324,9 +324,20 @@ typedef union {
 	 * of platform users. This flag is internal to track those hidden
 	 * routes. Such a route is not alive, according to nmp_object_is_alive(). */ \
 	bool rt_cloned:1; \
+	bool lock_window:1; \
+	bool lock_cwnd:1; \
+	bool lock_initcwnd:1; \
+	bool lock_initrwnd:1; \
+	bool lock_mtu:1; \
 	\
 	guint32 metric; \
 	guint32 mss; \
+	guint32 tos; \
+	guint32 window; \
+	guint32 cwnd; \
+	guint32 initcwnd; \
+	guint32 initrwnd; \
+	guint32 mtu; \
 	;
 
 typedef struct {
@@ -358,6 +369,9 @@ struct _NMPlatformIP6Route {
 	__NMPlatformIPRoute_COMMON;
 	struct in6_addr network;
 	struct in6_addr gateway;
+	struct in6_addr pref_src;
+	struct in6_addr src;
+	guint8 src_plen;
 };
 
 typedef union {
@@ -667,12 +681,8 @@ typedef struct {
 
 	GArray * (*ip4_route_get_all) (NMPlatform *, int ifindex, NMPlatformGetRouteFlags flags);
 	GArray * (*ip6_route_get_all) (NMPlatform *, int ifindex, NMPlatformGetRouteFlags flags);
-	gboolean (*ip4_route_add) (NMPlatform *, int ifindex, NMIPConfigSource source,
-	                           in_addr_t network, guint8 plen, in_addr_t gateway,
-	                           in_addr_t pref_src, guint32 metric, guint32 mss);
-	gboolean (*ip6_route_add) (NMPlatform *, int ifindex, NMIPConfigSource source,
-	                           struct in6_addr network, guint8 plen, struct in6_addr gateway,
-	                           guint32 metric, guint32 mss);
+	gboolean (*ip4_route_add) (NMPlatform *, const NMPlatformIP4Route *route);
+	gboolean (*ip6_route_add) (NMPlatform *, const NMPlatformIP6Route *route);
 	gboolean (*ip4_route_delete) (NMPlatform *, int ifindex, in_addr_t network, guint8 plen, guint32 metric);
 	gboolean (*ip6_route_delete) (NMPlatform *, int ifindex, struct in6_addr network, guint8 plen, guint32 metric);
 	const NMPlatformIP4Route *(*ip4_route_get) (NMPlatform *, int ifindex, in_addr_t network, guint8 plen, guint32 metric);
@@ -969,12 +979,8 @@ const NMPlatformIP4Route *nm_platform_ip4_route_get (NMPlatform *self, int ifind
 const NMPlatformIP6Route *nm_platform_ip6_route_get (NMPlatform *self, int ifindex, struct in6_addr network, guint8 plen, guint32 metric);
 GArray *nm_platform_ip4_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteFlags flags);
 GArray *nm_platform_ip6_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteFlags flags);
-gboolean nm_platform_ip4_route_add (NMPlatform *self, int ifindex, NMIPConfigSource source,
-                                    in_addr_t network, guint8 plen, in_addr_t gateway,
-                                    in_addr_t pref_src, guint32 metric, guint32 mss);
-gboolean nm_platform_ip6_route_add (NMPlatform *self, int ifindex, NMIPConfigSource source,
-                                    struct in6_addr network, guint8 plen, struct in6_addr gateway,
-                                    guint32 metric, guint32 mss);
+gboolean nm_platform_ip4_route_add (NMPlatform *self, const NMPlatformIP4Route *route);
+gboolean nm_platform_ip6_route_add (NMPlatform *self, const NMPlatformIP6Route *route);
 gboolean nm_platform_ip4_route_delete (NMPlatform *self, int ifindex, in_addr_t network, guint8 plen, guint32 metric);
 gboolean nm_platform_ip6_route_delete (NMPlatform *self, int ifindex, struct in6_addr network, guint8 plen, guint32 metric);
 

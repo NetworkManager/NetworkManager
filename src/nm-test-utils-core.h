@@ -162,7 +162,7 @@ nmtst_platform_ip4_route_full (const char *network, guint plen, const char *gate
 }
 
 static inline NMPlatformIP6Route *
-nmtst_platform_ip6_route (const char *network, guint plen, const char *gateway)
+nmtst_platform_ip6_route (const char *network, guint plen, const char *gateway, const char *pref_src)
 {
 	static NMPlatformIP6Route route;
 
@@ -172,6 +172,7 @@ nmtst_platform_ip6_route (const char *network, guint plen, const char *gateway)
 	route.network = *nmtst_inet6_from_string (network);
 	route.plen = plen;
 	route.gateway = *nmtst_inet6_from_string (gateway);
+	route.pref_src = *nmtst_inet6_from_string (pref_src);
 
 	return &route;
 }
@@ -181,7 +182,7 @@ nmtst_platform_ip6_route_full (const char *network, guint plen, const char *gate
                                int ifindex, NMIPConfigSource source,
                                guint metric, guint mss)
 {
-	NMPlatformIP6Route *route = nmtst_platform_ip6_route (network, plen, gateway);
+	NMPlatformIP6Route *route = nmtst_platform_ip6_route (network, plen, gateway, NULL);
 
 	route->ifindex = ifindex;
 	route->rt_source = source;

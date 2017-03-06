@@ -412,6 +412,38 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex, gboolean routes_fu
 	return TRUE;
 }
 
+static void
+merge_route_attributes (NMIPRoute *s_route, NMPlatformIP4Route *r)
+{
+	GVariant *variant;
+	in_addr_t addr;
+
+#define GET_ATTR(name, field, variant_type, type) \
+	variant = nm_ip_route_get_attribute (s_route, name); \
+	if (variant && g_variant_is_of_type (variant, G_VARIANT_TYPE_ ## variant_type)) \
+		r->field = g_variant_get_ ## type (variant);
+
+	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_TOS,            tos,            BYTE,     byte);
+	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_WINDOW,         window,         UINT32,   uint32);
+	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_CWND,           cwnd,           UINT32,   uint32);
+	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_INITCWND,       initcwnd,       UINT32,   uint32);
+	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_INITRWND,       initrwnd,       UINT32,   uint32);
+	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_MTU,            mtu,            UINT32,   uint32);
+	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_LOCK_WINDOW,    lock_window,    BOOLEAN,  boolean);
+	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_LOCK_CWND,      lock_cwnd,      BOOLEAN,  boolean);
+	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_LOCK_INITCWND,  lock_initcwnd,  BOOLEAN,  boolean);
+	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_LOCK_INITRWND,  lock_initrwnd,  BOOLEAN,  boolean);
+	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_LOCK_MTU,       lock_mtu,       BOOLEAN,  boolean);
+
+	if (   (variant = nm_ip_route_get_attribute (s_route, NM_IP_ROUTE_ATTRIBUTE_PREF_SRC))
+	    && g_variant_is_of_type (variant, G_VARIANT_TYPE_STRING)) {
+		if (inet_pton (AF_INET, g_variant_get_string (variant, NULL), &addr) == 1)
+			r->pref_src = addr;
+	}
+
+#undef GET_ATTR
+}
+
 void
 nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIPConfig *setting, guint32 default_route_metric)
 {
@@ -492,6 +524,7 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIPConfig *setting, gu
 			route.metric = nm_ip_route_get_metric (s_route);
 		route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 
+		merge_route_attributes (s_route, &route);
 		nm_ip4_config_add_route (config, &route);
 	}
 

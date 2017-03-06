@@ -224,6 +224,7 @@ test_read_valid_wired_connection (void)
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
+	NMIPRoute *route;
 	gs_free_error GError *error = NULL;
 	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 };
@@ -318,6 +319,15 @@ test_read_valid_wired_connection (void)
 	check_ip_route (s_ip4, 10, "1.1.1.10", 20, NULL, -1);
 	check_ip_route (s_ip4, 11, "1.1.1.11", 21, NULL, 21);
 
+	/* Route attributes */
+	route = nm_setting_ip_config_get_route (s_ip4, 11);
+	g_assert (route);
+
+	nmtst_assert_route_attribute_uint32  (route, NM_IP_ROUTE_ATTRIBUTE_CWND, 10);
+	nmtst_assert_route_attribute_uint32  (route, NM_IP_ROUTE_ATTRIBUTE_MTU, 1430);
+	nmtst_assert_route_attribute_boolean (route, NM_IP_ROUTE_ATTRIBUTE_LOCK_CWND, TRUE);
+	nmtst_assert_route_attribute_string  (route, NM_IP_ROUTE_ATTRIBUTE_PREF_SRC, "7.7.7.7");
+
 	/* ===== IPv6 SETTING ===== */
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
@@ -357,6 +367,11 @@ test_read_valid_wired_connection (void)
 	check_ip_route (s_ip6, 4, "7:8:9:0:1:2:3:4", 125, NULL, 5);
 	check_ip_route (s_ip6, 5, "8:9:0:1:2:3:4:5", 124, NULL, 6);
 	check_ip_route (s_ip6, 6, "8:9:0:1:2:3:4:6", 123, NULL, -1);
+
+	/* Route attributes */
+	route = nm_setting_ip_config_get_route (s_ip6, 6);
+	g_assert (route);
+	nmtst_assert_route_attribute_string (route, NM_IP_ROUTE_ATTRIBUTE_SRC, "abce::/63");
 }
 
 static void
@@ -402,6 +417,7 @@ test_write_wired_connection (void)
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
+	NMIPRoute *rt;
 	const char *mac = "99:88:77:66:55:44";
 	const char *dns1 = "4.2.2.1";
 	const char *dns2 = "4.2.2.2";
@@ -429,6 +445,7 @@ test_write_wired_connection (void)
 	const char *route6_4 = "5:6:7:8:9:0:1:2";
 	const char *route6_4_nh = "::";
 	guint64 timestamp = 0x12345678L;
+	GError *error = NULL;
 
 	connection = nm_simple_connection_new ();
 
@@ -473,7 +490,14 @@ test_write_wired_connection (void)
 	add_one_ip_route (s_ip4, route1, route1_nh, 24, 3);
 	add_one_ip_route (s_ip4, route2, route2_nh, 8, 1);
 	add_one_ip_route (s_ip4, route3, route3_nh, 7, -1);
-	add_one_ip_route (s_ip4, route4, route4_nh, 6, 4);
+
+	rt = nm_ip_route_new (AF_INET, route4, 6, route4_nh, 4, &error);
+	g_assert_no_error (error);
+	nm_ip_route_set_attribute (rt, NM_IP_ROUTE_ATTRIBUTE_CWND, g_variant_new_uint32 (10));
+	nm_ip_route_set_attribute (rt, NM_IP_ROUTE_ATTRIBUTE_MTU, g_variant_new_uint32 (1492));
+	nm_ip_route_set_attribute (rt, NM_IP_ROUTE_ATTRIBUTE_PREF_SRC, g_variant_new_string ("1.2.3.4"));
+	g_assert (nm_setting_ip_config_add_route (s_ip4, rt));
+	nm_ip_route_unref (rt);
 
 	/* DNS servers */
 	nm_setting_ip_config_add_dns (s_ip4, dns1);

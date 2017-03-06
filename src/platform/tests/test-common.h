@@ -167,6 +167,26 @@ void nmtstp_ip6_address_del (NMPlatform *platform,
                              struct in6_addr address,
                              int plen);
 
+void nmtstp_ip4_route_add (NMPlatform *platform,
+                           int ifindex,
+                           NMIPConfigSource source,
+                           in_addr_t network,
+                           guint8 plen,
+                           in_addr_t gateway,
+                           in_addr_t pref_src,
+                           guint32 metric,
+                           guint32 mss);
+
+void nmtstp_ip6_route_add (NMPlatform *platform,
+                           int ifindex,
+                           NMIPConfigSource source,
+                           struct in6_addr network,
+                           guint8 plen,
+                           struct in6_addr gateway,
+                           struct in6_addr pref_src,
+                           guint32 metric,
+                           guint32 mss);
+
 /*****************************************************************************/
 
 const NMPlatformLink *nmtstp_link_get_typed (NMPlatform *platform, int ifindex, const char *name, NMLinkType link_type);

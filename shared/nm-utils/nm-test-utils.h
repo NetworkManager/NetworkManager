@@ -1291,6 +1291,50 @@ nmtst_setting_ip_config_add_route (NMSettingIPConfig *s_ip,
 	g_assert (nm_setting_ip_config_add_route (s_ip, route));
 	nm_ip_route_unref (route);
 }
+
+inline static void
+nmtst_assert_route_attribute_string (NMIPRoute *route, const char *name, const char *value)
+{
+	GVariant *variant;
+
+	variant = nm_ip_route_get_attribute (route, name);
+	g_assert (variant);
+	g_assert (g_variant_is_of_type (variant, G_VARIANT_TYPE_STRING));
+	g_assert_cmpstr (g_variant_get_string (variant, NULL), ==, value);
+}
+
+inline static void
+nmtst_assert_route_attribute_byte (NMIPRoute *route, const char *name, guchar value)
+{
+	GVariant *variant;
+
+	variant = nm_ip_route_get_attribute (route, name);
+	g_assert (variant);
+	g_assert (g_variant_is_of_type (variant, G_VARIANT_TYPE_BYTE));
+	g_assert_cmpint (g_variant_get_byte (variant), ==, value);
+}
+
+inline static void
+nmtst_assert_route_attribute_uint32 (NMIPRoute *route, const char *name, guint32 value)
+{
+	GVariant *variant;
+
+	variant = nm_ip_route_get_attribute (route, name);
+	g_assert (variant);
+	g_assert (g_variant_is_of_type (variant, G_VARIANT_TYPE_UINT32));
+	g_assert_cmpint (g_variant_get_uint32 (variant), ==, value);
+}
+
+inline static void
+nmtst_assert_route_attribute_boolean (NMIPRoute *route, const char *name, gboolean value)
+{
+	GVariant *variant;
+
+	variant = nm_ip_route_get_attribute (route, name);
+	g_assert (variant);
+	g_assert (g_variant_is_of_type (variant, G_VARIANT_TYPE_BOOLEAN));
+	g_assert_cmpint (g_variant_get_boolean (variant), ==, value);
+}
 #endif /* NM_SETTING_IP_CONFIG_H */
 
 #if (defined(__NM_SIMPLE_CONNECTION_H__) && defined(__NM_SETTING_CONNECTION_H__)) || (defined(NM_CONNECTION_H))
@@ -1660,6 +1704,7 @@ nmtst_assert_hwaddr_equals (gconstpointer hwaddr1, gssize hwaddr1_len, const cha
 #define nmtst_assert_hwaddr_equals(hwaddr1, hwaddr1_len, expected) \
     nmtst_assert_hwaddr_equals (hwaddr1, hwaddr1_len, expected, __FILE__, __LINE__)
 #endif
+
 
 #if defined(__NM_SIMPLE_CONNECTION_H__) && defined(__NM_SETTING_CONNECTION_H__) && defined(__NM_KEYFILE_INTERNAL_H__)
 

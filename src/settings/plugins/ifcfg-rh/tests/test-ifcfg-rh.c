@@ -1127,6 +1127,15 @@ test_read_wired_static_routes (void)
 	g_assert_cmpint (nm_ip_route_get_prefix (ip4_route), ==, 32);
 	g_assert_cmpstr (nm_ip_route_get_next_hop (ip4_route), ==, "192.168.1.7");
 	g_assert_cmpint (nm_ip_route_get_metric (ip4_route), ==, 3);
+	nmtst_assert_route_attribute_byte (ip4_route, NM_IP_ROUTE_ATTRIBUTE_TOS, 0x28);
+	nmtst_assert_route_attribute_uint32 (ip4_route, NM_IP_ROUTE_ATTRIBUTE_WINDOW, 30000);
+	nmtst_assert_route_attribute_uint32 (ip4_route, NM_IP_ROUTE_ATTRIBUTE_CWND, 12);
+	nmtst_assert_route_attribute_uint32 (ip4_route, NM_IP_ROUTE_ATTRIBUTE_INITCWND, 13);
+	nmtst_assert_route_attribute_uint32 (ip4_route, NM_IP_ROUTE_ATTRIBUTE_INITRWND, 14);
+	nmtst_assert_route_attribute_uint32 (ip4_route, NM_IP_ROUTE_ATTRIBUTE_MTU, 9000);
+	nmtst_assert_route_attribute_boolean (ip4_route, NM_IP_ROUTE_ATTRIBUTE_LOCK_MTU, TRUE);
+	nmtst_assert_route_attribute_boolean (ip4_route, NM_IP_ROUTE_ATTRIBUTE_LOCK_INITCWND, TRUE);
+	nmtst_assert_route_attribute_string (ip4_route, NM_IP_ROUTE_ATTRIBUTE_PREF_SRC, "1.1.1.1");
 
 	g_object_unref (connection);
 }
@@ -1188,6 +1197,14 @@ test_read_wired_static_routes_legacy (void)
 	g_assert_cmpint (nm_ip_route_get_prefix (ip4_route), ==, 16);
 	g_assert_cmpstr (nm_ip_route_get_next_hop (ip4_route), ==, "7.7.7.7");
 	g_assert_cmpint (nm_ip_route_get_metric (ip4_route), ==, 3);
+	nmtst_assert_route_attribute_uint32 (ip4_route, NM_IP_ROUTE_ATTRIBUTE_WINDOW, 10000);
+	nmtst_assert_route_attribute_uint32 (ip4_route, NM_IP_ROUTE_ATTRIBUTE_CWND, 14);
+	nmtst_assert_route_attribute_uint32 (ip4_route, NM_IP_ROUTE_ATTRIBUTE_INITCWND, 42);
+	nmtst_assert_route_attribute_uint32 (ip4_route, NM_IP_ROUTE_ATTRIBUTE_INITRWND, 20);
+	nmtst_assert_route_attribute_uint32 (ip4_route, NM_IP_ROUTE_ATTRIBUTE_MTU, 9000);
+	nmtst_assert_route_attribute_boolean (ip4_route, NM_IP_ROUTE_ATTRIBUTE_LOCK_WINDOW, TRUE);
+	nmtst_assert_route_attribute_boolean (ip4_route, NM_IP_ROUTE_ATTRIBUTE_LOCK_MTU, TRUE);
+	nmtst_assert_route_attribute_string (ip4_route, NM_IP_ROUTE_ATTRIBUTE_PREF_SRC, "1.2.3.4");
 
 	g_object_unref (connection);
 }
@@ -1328,7 +1345,7 @@ test_read_wired_ipv6_manual (void)
 	g_assert_cmpint (nm_ip_address_get_prefix (ip6_addr), ==, 96);
 
 	/* Routes */
-	g_assert_cmpint (nm_setting_ip_config_get_num_routes (s_ip6), ==, 2);
+	g_assert_cmpint (nm_setting_ip_config_get_num_routes (s_ip6), ==, 3);
 	/* Route #1 */
 	ip6_route = nm_setting_ip_config_get_route (s_ip6, 0);
 	g_assert (ip6_route);
@@ -1343,6 +1360,17 @@ test_read_wired_ipv6_manual (void)
 	g_assert_cmpint (nm_ip_route_get_prefix (ip6_route), ==, 64);
 	g_assert_cmpstr (nm_ip_route_get_next_hop (ip6_route), ==, NULL);
 	g_assert_cmpint (nm_ip_route_get_metric (ip6_route), ==, 777);
+	/* Route #3 */
+	ip6_route = nm_setting_ip_config_get_route (s_ip6, 2);
+	g_assert (ip6_route);
+	g_assert_cmpstr (nm_ip_route_get_dest (ip6_route), ==, "aaaa::cccc");
+	g_assert_cmpint (nm_ip_route_get_prefix (ip6_route), ==, 64);
+	g_assert_cmpstr (nm_ip_route_get_next_hop (ip6_route), ==, "3333::4444");
+	nmtst_assert_route_attribute_uint32 (ip6_route, NM_IP_ROUTE_ATTRIBUTE_CWND, 13);
+	nmtst_assert_route_attribute_uint32 (ip6_route, NM_IP_ROUTE_ATTRIBUTE_MTU, 1450);
+	nmtst_assert_route_attribute_boolean (ip6_route, NM_IP_ROUTE_ATTRIBUTE_LOCK_MTU, TRUE);
+	nmtst_assert_route_attribute_string (ip6_route, NM_IP_ROUTE_ATTRIBUTE_SRC, "1111::2222/48");
+	nmtst_assert_route_attribute_string (ip6_route, NM_IP_ROUTE_ATTRIBUTE_PREF_SRC, "5555::6666");
 
 	/* DNS Addresses */
 	g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip6), ==, 2);
@@ -3867,6 +3895,12 @@ test_write_wired_static (void)
 
 	route6 = nm_ip_route_new (AF_INET6, "::", 128, "2222:aaaa::9999", 1, &error);
 	g_assert_no_error (error);
+	nm_ip_route_set_attribute (route6, NM_IP_ROUTE_ATTRIBUTE_TOS, g_variant_new_byte (0xb8));
+	nm_ip_route_set_attribute (route6, NM_IP_ROUTE_ATTRIBUTE_CWND, g_variant_new_uint32 (100));
+	nm_ip_route_set_attribute (route6, NM_IP_ROUTE_ATTRIBUTE_MTU, g_variant_new_uint32 (1280));
+	nm_ip_route_set_attribute (route6, NM_IP_ROUTE_ATTRIBUTE_LOCK_CWND, g_variant_new_boolean (TRUE));
+	nm_ip_route_set_attribute (route6, NM_IP_ROUTE_ATTRIBUTE_SRC, g_variant_new_string ("2222::bbbb/32"));
+	nm_ip_route_set_attribute (route6, NM_IP_ROUTE_ATTRIBUTE_PREF_SRC, g_variant_new_string ("::42"));
 	nm_setting_ip_config_add_route (s_ip6, route6);
 	nm_ip_route_unref (route6);
 

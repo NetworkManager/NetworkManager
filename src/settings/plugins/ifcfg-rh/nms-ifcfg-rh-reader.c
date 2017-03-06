@@ -435,6 +435,134 @@ read_full_ip4_address (shvarFile *ifcfg,
 	return FALSE;
 }
 
+/*
+ * Use looser syntax to comprise all the possibilities.
+ * The validity must be checked after the match.
+ */
+#define IPV4_ADDR_REGEX "(?:[0-9]{1,3}\\.){3}[0-9]{1,3}"
+#define IPV6_ADDR_REGEX "[0-9A-Fa-f:.]+"
+
+/*
+ * NOTE: The regexes below don't describe all variants allowed by 'ip route add',
+ * namely destination IP without 'to' keyword is recognized just at line start.
+ */
+
+static gboolean
+parse_route_options (NMIPRoute *route, int family, const char *line, GError **error)
+{
+	GRegex *regex = NULL;
+	GMatchInfo *match_info = NULL;
+	gboolean success = FALSE;
+	char *metrics[] = { NM_IP_ROUTE_ATTRIBUTE_WINDOW, NM_IP_ROUTE_ATTRIBUTE_CWND,
+	                    NM_IP_ROUTE_ATTRIBUTE_INITCWND , NM_IP_ROUTE_ATTRIBUTE_INITRWND,
+	                    NM_IP_ROUTE_ATTRIBUTE_MTU , NULL };
+	char buffer[1024];
+	int i;
+
+	g_return_val_if_fail (family == AF_INET || family == AF_INET6, FALSE);
+
+	for (i = 0; metrics[i]; i++) {
+		nm_sprintf_buf (buffer, "(?:\\s|^)%s\\s+(lock\\s+)?(\\d+)(?:$|\\s)", metrics[i]);
+		regex = g_regex_new (buffer, 0, 0, NULL);
+		g_regex_match (regex, line, 0, &match_info);
+		if (g_match_info_matches (match_info)) {
+			gs_free char *lock = g_match_info_fetch (match_info, 1);
+			gs_free char *str = g_match_info_fetch (match_info, 2);
+			gint64 num = _nm_utils_ascii_str_to_int64 (str, 10, 0, G_MAXUINT32, -1);
+
+			if (num == -1) {
+				g_match_info_free (match_info);
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+				             "Invalid route %s '%s'", metrics[i], str);
+				goto out;
+			}
+
+			nm_ip_route_set_attribute (route, metrics[i],
+			                           g_variant_new_uint32 (num));
+			if (lock && lock[0]) {
+				nm_sprintf_buf (buffer, "lock-%s", metrics[i]);
+				nm_ip_route_set_attribute (route, buffer,
+				                           g_variant_new_boolean (TRUE));
+			}
+		}
+		g_clear_pointer (&regex, g_regex_unref);
+		g_clear_pointer (&match_info, g_match_info_free);
+	}
+
+	/* tos */
+	regex = g_regex_new ("(?:\\s|^)tos\\s+(\\S+)(?:$|\\s)", 0, 0, NULL);
+	g_regex_match (regex, line, 0, &match_info);
+	if (g_match_info_matches (match_info)) {
+		gs_free char *str = g_match_info_fetch (match_info, 1);
+		gs_free_error GError *local_error = NULL;
+		gint64 num = _nm_utils_ascii_str_to_int64 (str, 0, 0, G_MAXUINT8, -1);
+
+		if (num == -1) {
+			g_match_info_free (match_info);
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "Invalid route %s '%s'", "tos", str);
+			goto out;
+		}
+		nm_ip_route_set_attribute (route, NM_IP_ROUTE_ATTRIBUTE_TOS,
+		                           g_variant_new_byte ((guchar) num));
+	}
+	g_clear_pointer (&regex, g_regex_unref);
+	g_clear_pointer (&match_info, g_match_info_free);
+
+	/* from */
+	if (family == AF_INET6) {
+		regex = g_regex_new ("(?:\\s|^)from\\s+(" IPV6_ADDR_REGEX "(?:/\\d{1,3})?)(?:$|\\s)", 0, 0, NULL);
+		g_regex_match (regex, line, 0, &match_info);
+		if (g_match_info_matches (match_info)) {
+			gs_free char *str = g_match_info_fetch (match_info, 1);
+			gs_free_error GError *local_error = NULL;
+			GVariant *variant = g_variant_new_string (str);
+
+			if (!nm_ip_route_attribute_validate (NM_IP_ROUTE_ATTRIBUTE_SRC, variant, family, NULL, &local_error)) {
+				g_match_info_free (match_info);
+				g_variant_unref (variant);
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+				             "Invalid route from '%s': %s", str, local_error->message);
+				goto out;
+			}
+			nm_ip_route_set_attribute (route, NM_IP_ROUTE_ATTRIBUTE_SRC, variant);
+		}
+		g_clear_pointer (&regex, g_regex_unref);
+		g_clear_pointer (&match_info, g_match_info_free);
+	}
+
+	if (family == AF_INET)
+		regex = g_regex_new ("(?:\\s|^)src\\s+(" IPV4_ADDR_REGEX ")(?:$|\\s)", 0, 0, NULL);
+	else
+		regex = g_regex_new ("(?:\\s|^)src\\s+(" IPV6_ADDR_REGEX ")(?:$|\\s)", 0, 0, NULL);
+	g_regex_match (regex, line, 0, &match_info);
+	if (g_match_info_matches (match_info)) {
+		gs_free char *str = g_match_info_fetch (match_info, 1);
+		gs_free_error GError *local_error = NULL;
+		GVariant *variant = g_variant_new_string (str);
+
+		if (!nm_ip_route_attribute_validate (NM_IP_ROUTE_ATTRIBUTE_PREF_SRC, variant, family,
+		                                     NULL, &local_error)) {
+			g_match_info_free (match_info);
+			g_variant_unref (variant);
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "Invalid route src '%s': %s", str, local_error->message);
+			goto out;
+		}
+
+		nm_ip_route_set_attribute (route, NM_IP_ROUTE_ATTRIBUTE_PREF_SRC, variant);
+	}
+	success = TRUE;
+
+out:
+	if (regex)
+		g_regex_unref (regex);
+	if (match_info)
+		g_match_info_free (match_info);
+
+	return success;
+}
+
 /* Returns TRUE on missing route or valid route */
 static gboolean
 read_one_ip4_route (shvarFile *ifcfg,
@@ -507,10 +635,20 @@ read_one_ip4_route (shvarFile *ifcfg,
 		metric = -1;
 
 	*out_route = nm_ip_route_new_binary (AF_INET, &dest, prefix, &next_hop, metric, error);
-	if (*out_route)
-		return TRUE;
+	if (!*out_route)
+		return FALSE;
 
-	return FALSE;
+	/* Options */
+	nm_clear_g_free (&value);
+	value = svGetValueStr_cp (ifcfg, numbered_tag (tag, "OPTIONS", which));
+	if (value) {
+		if (!parse_route_options (*out_route, AF_INET, value, error)) {
+			g_clear_pointer (out_route, nm_ip_route_unref);
+			return FALSE;
+		}
+	}
+
+	return TRUE;
 }
 
 static gboolean
@@ -636,6 +774,12 @@ read_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError *
 		route = nm_ip_route_new (AF_INET, dest, prefix_int, next_hop, metric_int, error);
 		if (!route)
 			goto error;
+
+		if (!parse_route_options (route, AF_INET, *iter, error)) {
+			nm_ip_route_unref (route);
+			goto error;
+		}
+
 		if (!nm_setting_ip_config_add_route (s_ip4, route))
 			PARSE_WARNING ("duplicate IP4 route");
 		nm_ip_route_unref (route);
@@ -729,13 +873,6 @@ error:
 	return success;
 }
 
-/* IPv6 address is very complex to describe completely by a regular expression,
- * so don't try to, rather use looser syntax to comprise all possibilities
- * NOTE: The regexes below don't describe all variants allowed by 'ip route add',
- * namely destination IP without 'to' keyword is recognized just at line start.
- */
-#define IPV6_ADDR_REGEX "[0-9A-Fa-f:.]+"
-
 static gboolean
 read_route6_file (const char *filename, NMSettingIPConfig *s_ip6, GError **error)
 {
@@ -756,6 +893,7 @@ read_route6_file (const char *filename, NMSettingIPConfig *s_ip6, GError **error
 	                          "(?:/(\\d{1,3}))?";                   /* optional prefix */
 	const char *pattern_via = "via\\s+(" IPV6_ADDR_REGEX ")";       /* IPv6 of gateway */
 	const char *pattern_metric = "metric\\s+(\\d+)";                /* metric */
+
 
 	g_return_val_if_fail (filename != NULL, FALSE);
 	g_return_val_if_fail (s_ip6 != NULL, FALSE);
@@ -862,6 +1000,12 @@ read_route6_file (const char *filename, NMSettingIPConfig *s_ip6, GError **error
 		g_free (next_hop);
 		if (!route)
 			goto error;
+
+		if (!parse_route_options (route, AF_INET6, *iter, error)) {
+			nm_ip_route_unref (route);
+			goto error;
+		}
+
 		if (!nm_setting_ip_config_add_route (s_ip6, route))
 			PARSE_WARNING ("duplicate IP6 route");
 		nm_ip_route_unref (route);

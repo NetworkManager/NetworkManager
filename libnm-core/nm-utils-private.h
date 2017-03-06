@@ -28,6 +28,14 @@
 #include "nm-setting-private.h"
 #include "nm-setting-ip-config.h"
 
+struct _NMVariantAttributeSpec {
+	char *name;
+	const GVariantType *type;
+	bool v4:1;
+	bool v6:1;
+	char str_type;
+};
+
 gboolean    _nm_utils_string_slist_validate (GSList *list,
                                              const char **valid_values);
 

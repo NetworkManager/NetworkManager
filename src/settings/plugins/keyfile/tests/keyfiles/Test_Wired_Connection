@@ -34,6 +34,7 @@ routes8=1.1.1.8/18,0.0.0.0,
 routes9=1.1.1.9/19,0.0.0.0,0
 routes10=1.1.1.10/20,,0
 routes11=1.1.1.11/21,,21
+routes11_options=cwnd=10,lock-cwnd=true,mtu=1430,pref-src=7.7.7.7
 ignore-auto-routes=false
 ignore-auto-dns=false
 
@@ -58,5 +59,6 @@ route3=6:7:8:9:0:1:2:3/126,,1
 route4=7:8:9:0:1:2:3:4/125/::,5
 route5=8:9:0:1:2:3:4:5/124,6
 route6=8:9:0:1:2:3:4:6/123,,
+route6_options=src=abce::/63
 ignore-auto-routes=false
 ignore-auto-dns=false

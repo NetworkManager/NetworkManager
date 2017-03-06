@@ -4697,6 +4697,261 @@ _nm_utils_team_config_equal (const char *conf1,
 }
 #endif
 
+static char *
+attribute_escape (const char *src, char c1, char c2)
+{
+	char *ret, *dest;
+
+	dest = ret = malloc (strlen (src) * 2 + 1);
+
+	while (*src) {
+		if (*src == c1 || *src == c2 || *src == '\\')
+			*dest++ = '\\';
+		*dest++ = *src++;
+	}
+	*dest++ = '\0';
+
+	return ret;
+}
+
+static char *
+attribute_unescape (const char *start, const char *end)
+{
+	char *ret, *dest;
+
+	nm_assert (start <= end);
+	dest = ret = g_malloc (end - start + 1);
+
+	for (; start < end && *start; start++) {
+		if (*start == '\\') {
+			start++;
+			if (!*start)
+				break;
+		}
+		*dest++ = *start;
+	}
+	*dest = '\0';
+
+	return ret;
+}
+
+/**
+ * nm_utils_parse_variant_attributes:
+ * @string: the input string
+ * @attr_separator: the attribute separator character
+ * @key_value_separator: character separating key and values
+ * @ignore_unknown: whether unknown attributes should be ignored
+ * @spec: the attribute format specifiers
+ * @error: (out) (allow-none): location to store the error on failure
+ *
+ * Parse attributes from a string.
+ *
+ * Returns: (transfer full): a #GHashTable mapping attribute names to #GVariant values.
+ *
+ * Since: 1.8
+ */
+GHashTable *
+nm_utils_parse_variant_attributes (const char *string,
+                                   char attr_separator,
+                                   char key_value_separator,
+                                   gboolean ignore_unknown,
+                                   const NMVariantAttributeSpec *const *spec,
+                                   GError **error)
+{
+	gs_unref_hashtable GHashTable *ht = NULL;
+	const char *ptr = string, *start = NULL, *sep;
+	GVariant *variant;
+	const NMVariantAttributeSpec * const *s;
+
+	g_return_val_if_fail (string, NULL);
+	g_return_val_if_fail (attr_separator, NULL);
+	g_return_val_if_fail (key_value_separator, NULL);
+	g_return_val_if_fail (!error || !*error, NULL);
+
+	ht = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, (GDestroyNotify) g_variant_unref);
+
+	while (TRUE) {
+		gs_free char *name = NULL, *value = NULL;
+
+		if (!start)
+			start = ptr;
+		if (*ptr == '\\') {
+			ptr++;
+			if (!*ptr) {
+				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+				             _("unterminated escape sequence"));
+				return NULL;
+			}
+			goto next;
+		}
+		if (*ptr == attr_separator || *ptr == '\0') {
+			if (ptr == start) {
+				/* multiple separators */
+				start = NULL;
+				goto next;
+			}
+
+			/* Find the key-value separator */
+			for (sep = start; sep != ptr; sep++) {
+				if (*sep == '\\') {
+					sep++;
+					if (!*sep) {
+						g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+						             _("unterminated escape sequence"));
+						return NULL;
+					}
+				}
+				if (*sep == key_value_separator)
+					break;
+			}
+
+			if (*sep != key_value_separator) {
+				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+				             _("missing key-value separator '%c'"), key_value_separator);
+				return NULL;
+			}
+
+			name = attribute_unescape (start, sep);
+			value = attribute_unescape (sep + 1, ptr);
+
+			for (s = spec; *s; s++) {
+				if (nm_streq (name, (*s)->name))
+					break;
+			}
+
+			if (!*s) {
+				if (ignore_unknown)
+					goto next;
+				else {
+					g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+					             _("unknown attribute '%s'"), name);
+					return NULL;
+				}
+			}
+
+			if (g_variant_type_equal ((*s)->type, G_VARIANT_TYPE_UINT32)) {
+				gint64 num = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT32, -1);
+
+				if (num == -1) {
+					g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+					             _("invalid uint32 value '%s' for attribute '%s'"), value, name);
+					return NULL;
+				}
+				variant = g_variant_new_uint32 (num);
+			} else if (g_variant_type_equal ((*s)->type, G_VARIANT_TYPE_BYTE)) {
+				gint64 num = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT8, -1);
+
+				if (num == -1) {
+					g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+					             _("invalid uint8 value '%s' for attribute '%s'"), value, name);
+					return NULL;
+				}
+				variant = g_variant_new_byte ((guchar) num);
+			} else if (g_variant_type_equal ((*s)->type, G_VARIANT_TYPE_BOOLEAN)) {
+				gboolean b;
+
+				if (nm_streq (value, "true"))
+					b = TRUE;
+				else if (nm_streq (value, "false"))
+					b = FALSE;
+				else {
+					g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+					             _("invalid boolean value '%s' for attribute '%s'"), value, name);
+					return NULL;
+				}
+				variant = g_variant_new_boolean (b);
+			} else if (g_variant_type_equal ((*s)->type, G_VARIANT_TYPE_STRING)) {
+				variant = g_variant_new_take_string (g_steal_pointer (&value));
+			} else {
+				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+				             _("unsupported attribute '%s' of type '%s'"), name,
+				             (char *) (*s)->type);
+				return NULL;
+			}
+
+			g_hash_table_insert (ht, g_steal_pointer (&name), variant);
+			start = NULL;
+		}
+next:
+		if (*ptr == '\0')
+			break;
+		ptr++;
+	}
+
+	return g_steal_pointer (&ht);
+}
+
+/*
+ * nm_utils_format_variant_attributes:
+ * @attributes:  a #GHashTable mapping attribute names to #GVariant values
+ * @attr_separator: the attribute separator character
+ * @key_value_separator: character separating key and values
+ *
+ * Format attributes to a string.
+ *
+ * Returns: (transfer full): the string representing attributes, or %NULL
+ *    in case there are no attributes
+ *
+ * Since: 1.8
+ */
+char *
+nm_utils_format_variant_attributes (GHashTable *attributes,
+                                    char attr_separator,
+                                    char key_value_separator)
+{
+	GString *str = NULL;
+	GVariant *variant;
+	char sep = 0;
+	const char *name, *value;
+	char *escaped;
+	char buf[64];
+	gs_free_list GList *keys = NULL;
+	GList *iter;
+
+	g_return_val_if_fail (attr_separator, NULL);
+	g_return_val_if_fail (key_value_separator, NULL);
+
+	if (!attributes || !g_hash_table_size (attributes))
+		return NULL;
+
+	keys = g_list_sort (g_hash_table_get_keys (attributes), (GCompareFunc) g_strcmp0);
+	str = g_string_new ("");
+
+	for (iter = keys; iter; iter = g_list_next (iter)) {
+		name = iter->data;
+		variant = g_hash_table_lookup (attributes, name);
+		value = NULL;
+
+		if (g_variant_is_of_type (variant, G_VARIANT_TYPE_UINT32))
+			value = nm_sprintf_buf (buf, "%u", g_variant_get_uint32 (variant));
+		else if (g_variant_is_of_type (variant, G_VARIANT_TYPE_BYTE))
+			value = nm_sprintf_buf (buf, "%hhu", g_variant_get_byte (variant));
+		else if (g_variant_is_of_type (variant, G_VARIANT_TYPE_BOOLEAN))
+			value = g_variant_get_boolean (variant) ? "true" : "false";
+		else if (g_variant_is_of_type (variant, G_VARIANT_TYPE_STRING))
+			value = g_variant_get_string (variant, NULL);
+		else
+			continue;
+
+		if (sep)
+			g_string_append_c (str, sep);
+
+		escaped = attribute_escape (name, attr_separator, key_value_separator);
+		g_string_append (str, escaped);
+		g_free (escaped);
+
+		g_string_append_c (str, key_value_separator);
+
+		escaped = attribute_escape (value, attr_separator, key_value_separator);
+		g_string_append (str, escaped);
+		g_free (escaped);
+
+		sep = attr_separator;
+	}
+
+	return g_string_free (str, FALSE);
+}
+
 /*****************************************************************************/
 
 /**
