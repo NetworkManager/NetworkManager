@@ -152,6 +152,7 @@ BuildRequires: libuuid-devel
 BuildRequires: libgudev1-devel >= 143
 BuildRequires: vala-tools
 BuildRequires: iptables
+BuildRequires: libxslt
 %if %{with bluetooth}
 BuildRequires: bluez-libs-devel
 %endif
@@ -406,6 +407,7 @@ intltoolize --automake --copy --force
 	--enable-wifi=no \
 %endif
 	--enable-vala=yes \
+	--enable-introspection \
 %if %{with regen_docs}
 	--enable-gtk-doc \
 %else
