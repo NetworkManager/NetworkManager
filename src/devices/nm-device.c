@@ -8558,8 +8558,10 @@ check_and_reapply_connection (NMDevice *self,
 	                    NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS,
 	                    &diffs);
 
-	if (nm_audit_manager_audit_enabled (nm_audit_manager_get ()))
+	if (diffs && nm_audit_manager_audit_enabled (nm_audit_manager_get ()))
 		*audit_args = nm_utils_format_con_diff_for_audit (diffs);
+	else
+		*audit_args = NULL;
 
 	/**************************************************************************
 	 * check for unsupported changes and reject to reapply
