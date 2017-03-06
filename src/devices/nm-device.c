@@ -12192,7 +12192,7 @@ _set_state_full (NMDevice *self,
 
 	_notify (self, PROP_STATE);
 	_notify (self, PROP_STATE_REASON);
-	g_signal_emit (self, signals[STATE_CHANGED], 0, state, old_state, reason);
+	g_signal_emit (self, signals[STATE_CHANGED], 0, (guint) state, (guint) old_state, (guint) reason);
 
 	/* Post-process the event after internal notification */
 
