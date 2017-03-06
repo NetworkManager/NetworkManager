@@ -44,9 +44,6 @@
 
 %bcond_without adsl
 
-%global default_with_bluetooth 1
-%global default_with_wwan 1
-
 %if 0%{?fedora}
 %global dbus_version 1.9.18
 %global dbus_sys_dir %{_datadir}/dbus-1/system.d
@@ -55,27 +52,11 @@
 %global dbus_sys_dir %{_sysconfdir}/dbus-1/system.d
 %endif
 
-# Bluetooth requires the WWAN plugin
-%if 0%{?default_with_bluetooth}
-%global default_with_wwan 1
-%endif
-
-%if 0%{?default_with_bluetooth}
 %bcond_without bluetooth
-%else
-%bcond_with bluetooth
-%endif
-
-%if 0%{?default_with_wwan}
 %bcond_without wwan
-%else
-%bcond_with wwan
-%endif
-
 %bcond_without team
 %bcond_without wifi
 %bcond_without ppp
-
 %bcond_without nmtui
 %bcond_without regen_docs
 %bcond_with    debug
