@@ -2124,50 +2124,62 @@ typedef struct {
 static void activate_connection_info_finish (ActivateConnectionInfo *info);
 
 static const char *
-vpn_connection_state_reason_to_string (NMVpnConnectionStateReason reason)
+active_connection_state_reason_to_string (NMActiveConnectionStateReason reason)
 {
 	switch (reason) {
-	case NM_VPN_CONNECTION_STATE_REASON_UNKNOWN:
-		return _("unknown reason");
-	case NM_VPN_CONNECTION_STATE_REASON_NONE:
-		return _("none");
-	case NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED:
-		return _("the user was disconnected");
-	case NM_VPN_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED:
-		return _("the base network connection was interrupted");
-	case NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED:
-		return _("the VPN service stopped unexpectedly");
-	case NM_VPN_CONNECTION_STATE_REASON_IP_CONFIG_INVALID:
-		return _("the VPN service returned invalid configuration");
-	case NM_VPN_CONNECTION_STATE_REASON_CONNECT_TIMEOUT:
-		return _("the connection attempt timed out");
-	case NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_TIMEOUT:
-		return _("the VPN service did not start in time");
-	case NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_FAILED:
-		return _("the VPN service failed to start");
-	case NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS:
-		return _("no valid VPN secrets");
-	case NM_VPN_CONNECTION_STATE_REASON_LOGIN_FAILED:
-		return _("invalid VPN secrets");
-	case NM_VPN_CONNECTION_STATE_REASON_CONNECTION_REMOVED:
-		return _("the connection was removed");
-	default:
-		return _("unknown");
+	case NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN:
+		return _("Unknown reason");
+	case NM_ACTIVE_CONNECTION_STATE_REASON_NONE:
+		return _("The connection was disconnected");
+	case NM_ACTIVE_CONNECTION_STATE_REASON_USER_DISCONNECTED:
+		return _("Disconnected by user");
+	case NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED:
+		return _("The base network connection was interrupted");
+	case NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_STOPPED:
+		return _("The VPN service stopped unexpectedly");
+	case NM_ACTIVE_CONNECTION_STATE_REASON_IP_CONFIG_INVALID:
+		return _("The VPN service returned invalid configuration");
+	case NM_ACTIVE_CONNECTION_STATE_REASON_CONNECT_TIMEOUT:
+		return _("The connection attempt timed out");
+	case NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_START_TIMEOUT:
+		return _("The VPN service did not start in time");
+	case NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_START_FAILED:
+		return _("The VPN service failed to start");
+	case NM_ACTIVE_CONNECTION_STATE_REASON_NO_SECRETS:
+		return _("No valid secrets");
+	case NM_ACTIVE_CONNECTION_STATE_REASON_LOGIN_FAILED:
+		return _("Invalid secrets");
+	case NM_ACTIVE_CONNECTION_STATE_REASON_CONNECTION_REMOVED:
+		return _("The connection was removed");
+	case NM_ACTIVE_CONNECTION_STATE_REASON_DEPENDENCY_FAILED:
+		return _("Master connection failed");
+	case NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REALIZE_FAILED:
+		return _("Could not create a software link");
+	case NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REMOVED:
+		return _("The device disappeared");
 	}
+
+	g_return_val_if_reached (_("Invalid reason"));
 }
 
 static void
-device_state_cb (NMDevice *device, GParamSpec *pspec, ActivateConnectionInfo *info)
+check_activated (ActivateConnectionInfo *info)
 {
 	NmCli *nmc = info->nmc;
-	NMActiveConnection *active;
-	NMDeviceState state;
+	NMDevice *device = info->device;
+	NMActiveConnection *active = info->active;
 	NMActiveConnectionState ac_state;
+	NMActiveConnectionStateReason ac_reason;
+	NMDeviceState dev_state;
+	NMDeviceStateReason dev_reason;
 
-	active = nm_device_get_active_connection (device);
-	state = nm_device_get_state (device);
+	ac_state = nm_active_connection_get_state (active);
+	ac_reason = nm_active_connection_get_state_reason (active);
 
-	ac_state = active ? nm_active_connection_get_state (active) : NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
+	if (device) {
+		dev_state = nm_device_get_state (device);
+		dev_reason = nm_device_get_state_reason (device);
+	}
 
 	if (ac_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
 		if (nmc->print_output == NMC_PRINT_PRETTY)
@@ -2175,53 +2187,27 @@ device_state_cb (NMDevice *device, GParamSpec *pspec, ActivateConnectionInfo *in
 		g_print (_("Connection successfully activated (D-Bus active path: %s)\n"),
 		         nm_object_get_path (NM_OBJECT (active)));
 		activate_connection_info_finish (info);
-	} else if (   ac_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING
-	           && state >= NM_DEVICE_STATE_IP_CONFIG
-	           && state <= NM_DEVICE_STATE_ACTIVATED) {
-		if (nmc->print_output == NMC_PRINT_PRETTY)
-			nmc_terminal_erase_line ();
-		g_print (_("Connection successfully activated (master waiting for slaves) (D-Bus active path: %s)\n"),
-		         nm_object_get_path (NM_OBJECT (active)));
-		activate_connection_info_finish (info);
-	}
-}
-
-static void
-active_connection_removed_cb (NMClient *client, NMActiveConnection *active, ActivateConnectionInfo *info)
-{
-	NmCli *nmc = info->nmc;
-
-	if (active == info->active) {
-		g_string_printf (nmc->return_text, _("Error: Connection activation failed."));
-		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
-		activate_connection_info_finish (info);
-	}
-}
-
-static void
-active_connection_state_cb (NMActiveConnection *active, GParamSpec *pspec, ActivateConnectionInfo *info)
-{
-	NmCli *nmc = info->nmc;
-	NMActiveConnectionState state;
-
-	state = nm_active_connection_get_state (active);
-
-	if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-		if (nmc->print_output == NMC_PRINT_PRETTY)
-			nmc_terminal_erase_line ();
-		g_print (_("Connection successfully activated (D-Bus active path: %s)\n"),
-		         nm_object_get_path (NM_OBJECT (active)));
-		activate_connection_info_finish (info);
-	} else if (state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED) {
-		g_string_printf (nmc->return_text, _("Error: Connection activation failed."));
-		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
-		activate_connection_info_finish (info);
-	} else if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING) {
+	} else if (ac_state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED) {
+		if (device && ac_reason == NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED) {
+			if (dev_state == NM_DEVICE_STATE_FAILED || dev_state == NM_DEVICE_STATE_DISCONNECTED) {
+				g_string_printf (nmc->return_text, _("Error: Connection activation failed: %s"),
+				                 nmc_device_reason_to_string (dev_reason));
+				nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
+				activate_connection_info_finish (info);
+			} else {
+				/* Just wait for the device to go failed. We'll get a better error message. */
+				return;
+			}
+		} else {
+			g_string_printf (nmc->return_text, _("Error: Connection activation failed: %s"),
+			                 active_connection_state_reason_to_string (ac_reason));
+			nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
+			activate_connection_info_finish (info);
+		}
+	} else if (ac_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING) {
 		/* activating master connection does not automatically activate any slaves, so their
 		 * active connection state will not progress beyond ACTIVATING state.
 		 * Monitor the device instead. */
-		const GPtrArray *devices;
-		NMDevice *device;
 
 		if (nmc->secret_agent) {
 			NMRemoteConnection *connection = nm_active_connection_get_connection (active);
@@ -2230,53 +2216,34 @@ active_connection_state_cb (NMActiveConnection *active, GParamSpec *pspec, Activ
 			                               nm_connection_get_path (NM_CONNECTION (connection)));
 		}
 
-		devices = nm_active_connection_get_devices (active);
-		device = devices->len ? g_ptr_array_index (devices, 0) : NULL;
 		if (   device
 		    && (   NM_IS_DEVICE_BOND (device)
 		        || NM_IS_DEVICE_TEAM (device)
-		        || NM_IS_DEVICE_BRIDGE (device))) {
-			g_signal_connect (device, "notify::" NM_DEVICE_STATE, G_CALLBACK (device_state_cb), info);
-			device_state_cb (device, NULL, info);
+		        || NM_IS_DEVICE_BRIDGE (device))
+	            && dev_state >= NM_DEVICE_STATE_IP_CONFIG
+	            && dev_state <= NM_DEVICE_STATE_ACTIVATED) {
+			if (nmc->print_output == NMC_PRINT_PRETTY)
+				nmc_terminal_erase_line ();
+			g_print (_("Connection successfully activated (master waiting for slaves) (D-Bus active path: %s)\n"),
+			          nm_object_get_path (NM_OBJECT (active)));
+			activate_connection_info_finish (info);
 		}
 	}
 }
 
 static void
-vpn_connection_state_cb (NMVpnConnection *vpn,
-                         NMVpnConnectionState state,
-                         NMVpnConnectionStateReason reason,
-                         ActivateConnectionInfo *info)
+device_state_cb (NMDevice *device, GParamSpec *pspec, ActivateConnectionInfo *info)
 {
-	NmCli *nmc = info->nmc;
+	check_activated (info);
+}
 
-	switch (state) {
-	case NM_VPN_CONNECTION_STATE_PREPARE:
-	case NM_VPN_CONNECTION_STATE_NEED_AUTH:
-	case NM_VPN_CONNECTION_STATE_CONNECT:
-	case NM_VPN_CONNECTION_STATE_IP_CONFIG_GET:
-		/* no operation */
-		break;
-
-	case NM_VPN_CONNECTION_STATE_ACTIVATED:
-		if (nmc->print_output == NMC_PRINT_PRETTY)
-			nmc_terminal_erase_line ();
-		g_print (_("VPN connection successfully activated (D-Bus active path: %s)\n"),
-		         nm_object_get_path (NM_OBJECT (vpn)));
-		activate_connection_info_finish (info);
-		break;
-
-	case NM_VPN_CONNECTION_STATE_FAILED:
-	case NM_VPN_CONNECTION_STATE_DISCONNECTED:
-		g_string_printf (nmc->return_text, _("Error: Connection activation failed: %s."),
-		                 vpn_connection_state_reason_to_string (reason));
-		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
-		activate_connection_info_finish (info);
-		break;
-
-	default:
-		break;
-	}
+static void
+active_connection_state_cb (NMActiveConnection *active,
+                            NMActiveConnectionState state,
+                            NMActiveConnectionStateReason reason,
+                            ActivateConnectionInfo *info)
+{
+	check_activated (info);
 }
 
 static void
@@ -2308,24 +2275,28 @@ progress_cb (gpointer user_data)
 }
 
 static gboolean
-progress_device_cb (gpointer user_data)
+progress_active_connection_cb (gpointer user_data)
 {
-	NMDevice *device = (NMDevice *) user_data;
-
-	nmc_terminal_show_progress (device ? nmc_device_state_to_string (nm_device_get_state (device)) : "");
-
-	return TRUE;
-}
-
-static gboolean
-progress_vpn_cb (gpointer user_data)
-{
-	NMVpnConnection *vpn = (NMVpnConnection *) user_data;
+	NMActiveConnection *active = user_data;
 	const char *str;
+	NMDevice *device;
+	NMActiveConnectionState ac_state;
+	const GPtrArray *ac_devs;
 
-	str = NM_IS_VPN_CONNECTION (vpn) ?
-	        vpn_connection_state_to_string (nm_vpn_connection_get_vpn_state (vpn)) :
-	        "";
+	ac_state = nm_active_connection_get_state (active);
+
+	if (ac_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING) {
+		/* If the connection is activating, the device state
+		 * is more interesting. */
+		ac_devs = nm_active_connection_get_devices (active);
+		device = ac_devs->len > 0 ? g_ptr_array_index (ac_devs, 0) : NULL;
+	} else {
+		device = NULL;
+	}
+
+	str =   device
+	      ? nmc_device_state_to_string (nm_device_get_state (device))
+	      : active_connection_state_to_string (ac_state);
 
 	nmc_terminal_show_progress (str);
 
@@ -2341,14 +2312,9 @@ activate_connection_info_finish (ActivateConnectionInfo *info)
 	}
 
 	if (info->active) {
-		if (NM_IS_VPN_CONNECTION (info->active))
-			g_signal_handlers_disconnect_by_func (info->active, G_CALLBACK (vpn_connection_state_cb), info);
-		else
-			g_signal_handlers_disconnect_by_func (info->active, G_CALLBACK (active_connection_state_cb), info);
+		g_signal_handlers_disconnect_by_func (info->active, G_CALLBACK (active_connection_state_cb), info);
 		g_object_unref (info->active);
-
 	}
-	g_signal_handlers_disconnect_by_func (info->nmc->client, G_CALLBACK (active_connection_removed_cb), info);
 
 	g_free (info);
 	quit ();
@@ -2393,34 +2359,27 @@ activate_connection_cb (GObject *client, GAsyncResult *result, gpointer user_dat
 			}
 			activate_connection_info_finish (info);
 		} else {
-			if (NM_IS_VPN_CONNECTION (active)) {
-				/* Monitor VPN state */
-				g_signal_connect (G_OBJECT (active), "vpn-state-changed", G_CALLBACK (vpn_connection_state_cb), info);
+			/* Monitor the active connection state state */
+			g_signal_connect (G_OBJECT (active), "state-changed", G_CALLBACK (active_connection_state_cb), info);
+			active_connection_state_cb (active,
+			                            nm_active_connection_get_state (active),
+			                            nm_active_connection_get_state_reason (active),
+			                            info);
 
-				/* Start progress indication showing VPN states */
-				if (nmc->print_output == NMC_PRINT_PRETTY) {
-					if (progress_id)
-						g_source_remove (progress_id);
-					progress_id = g_timeout_add (120, progress_vpn_cb, NM_VPN_CONNECTION (active));
-				}
-			} else {
-				g_signal_connect (active, "notify::state", G_CALLBACK (active_connection_state_cb), info);
-				active_connection_state_cb (active, NULL, info);
+			if (device) {
+				g_signal_connect (device, "notify::" NM_DEVICE_STATE, G_CALLBACK (device_state_cb), info);
+				device_state_cb (device, NULL, info);
+			}
 
-				/* Start progress indication showing device states */
-				if (nmc->print_output == NMC_PRINT_PRETTY) {
-					if (progress_id)
-						g_source_remove (progress_id);
-					progress_id = g_timeout_add (120, progress_device_cb, device);
-				}
+			/* Start progress indication showing VPN states */
+			if (nmc->print_output == NMC_PRINT_PRETTY) {
+				if (progress_id)
+					g_source_remove (progress_id);
+				progress_id = g_timeout_add (120, progress_active_connection_cb, active);
 			}
 
 			/* Start timer not to loop forever when signals are not emitted */
 			g_timeout_add_seconds (nmc->timeout, activate_connection_timeout_cb, info);
-
-			/* Fail when the active connection goes away. */
-			g_signal_connect (nmc->client, NM_CLIENT_ACTIVE_CONNECTION_REMOVED,
-			                  G_CALLBACK (active_connection_removed_cb), info);
 		}
 	}
 }
