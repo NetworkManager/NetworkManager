@@ -472,4 +472,10 @@ char **nm_utils_read_plugin_paths (const char *dirname, const char *prefix);
 char *nm_utils_format_con_diff_for_audit (GHashTable *diff);
 
 
+/*****************************************************************************/
+
+const char *nm_activation_type_to_string (NMActivationType activation_type);
+
+/*****************************************************************************/
+
 #endif /* __NM_CORE_UTILS_H__ */

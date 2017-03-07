@@ -40,6 +40,7 @@ NMActRequest *nm_act_request_new          (NMSettingsConnection *settings_connec
                                            NMConnection *applied_connection,
                                            const char *specific_object,
                                            NMAuthSubject *subject,
+                                           NMActivationType activation_type,
                                            NMDevice *device);
 
 NMSettingsConnection *nm_act_request_get_settings_connection (NMActRequest *req);

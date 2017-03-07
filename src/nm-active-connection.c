@@ -52,6 +52,8 @@ typedef struct _NMActiveConnectionPrivate {
 	bool assumed:1;
 	bool master_ready:1;
 
+	NMActivationType activation_type:3;
+
 	NMAuthSubject *subject;
 	NMActiveConnection *master;
 
@@ -87,6 +89,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMActiveConnection,
 	PROP_INT_SUBJECT,
 	PROP_INT_MASTER,
 	PROP_INT_MASTER_READY,
+	PROP_INT_ACTIVATION_TYPE,
 );
 
 enum {
@@ -711,6 +714,14 @@ nm_active_connection_set_master (NMActiveConnection *self, NMActiveConnection *m
 	check_master_ready (self);
 }
 
+NMActivationType
+nm_active_connection_get_activation_type (NMActiveConnection *self)
+{
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), NM_ACTIVATION_TYPE_MANAGED);
+
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->activation_type;
+}
+
 void
 nm_active_connection_set_assumed (NMActiveConnection *self, gboolean assumed)
 {
@@ -1057,6 +1068,7 @@ set_property (GObject *object, guint prop_id,
 	const char *tmp;
 	NMSettingsConnection *con;
 	NMConnection *acon;
+	int i;
 
 	switch (prop_id) {
 	case PROP_INT_SETTINGS_CONNECTION:
@@ -1080,6 +1092,13 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_INT_MASTER:
 		nm_active_connection_set_master (self, g_value_get_object (value));
+		break;
+	case PROP_INT_ACTIVATION_TYPE:
+		/* construct-only */
+		i = g_value_get_int (value);
+		if (!NM_IN_SET (i, NM_ACTIVATION_TYPE_MANAGED, NM_ACTIVATION_TYPE_ASSUME))
+			g_return_if_reached ();
+		priv->activation_type = (NMActivationType) i;
 		break;
 	case PROP_SPECIFIC_OBJECT:
 		tmp = g_value_get_string (value);
@@ -1116,6 +1135,7 @@ nm_active_connection_init (NMActiveConnection *self)
 
 	_LOGT ("creating");
 
+	priv->activation_type = NM_ACTIVATION_TYPE_MANAGED;
 	priv->version_id = _version_id_new ();
 }
 
@@ -1135,7 +1155,10 @@ constructed (GObject *object)
 	if (priv->applied_connection)
 		nm_connection_clear_secrets (priv->applied_connection);
 
-	_LOGD ("constructed (%s, version-id %llu)", G_OBJECT_TYPE_NAME (self), (unsigned long long) priv->version_id);
+	_LOGD ("constructed (%s, version-id %llu, type %s)",
+	       G_OBJECT_TYPE_NAME (self),
+	       (unsigned long long) priv->version_id,
+	       nm_activation_type_to_string (priv->activation_type));
 
 	g_return_if_fail (priv->subject);
 }
@@ -1319,6 +1342,15 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 	     g_param_spec_boolean (NM_ACTIVE_CONNECTION_INT_MASTER_READY, "", "",
 	                           FALSE, G_PARAM_READABLE |
 	                           G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_INT_ACTIVATION_TYPE] =
+	     g_param_spec_int (NM_ACTIVE_CONNECTION_INT_ACTIVATION_TYPE, "", "",
+	                       NM_ACTIVATION_TYPE_MANAGED,
+	                       NM_ACTIVATION_TYPE_ASSUME,
+	                       NM_ACTIVATION_TYPE_MANAGED,
+	                       G_PARAM_WRITABLE |
+	                       G_PARAM_CONSTRUCT_ONLY |
+	                       G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
