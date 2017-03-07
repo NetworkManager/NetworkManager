@@ -342,6 +342,7 @@ typedef struct _NMDevicePrivate {
 		NMDhcp4Config * config;
 		guint           restart_id;
 		guint           num_tries_left;
+		char *          pac_url;
 	} dhcp4;
 
 	struct {
@@ -452,7 +453,7 @@ G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, NM_TYPE_EXPORTED_OBJECT)
 
 /*****************************************************************************/
 
-static void nm_device_set_proxy_config (NMDevice *self, GHashTable *options);
+static void nm_device_set_proxy_config (NMDevice *self, const char *pac_url);
 
 static gboolean nm_device_set_ip4_config (NMDevice *self,
                                           NMIP4Config *config,
@@ -5005,6 +5006,7 @@ dhcp4_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	nm_clear_g_source (&priv->dhcp4.restart_id);
+	g_clear_pointer (&priv->dhcp4.pac_url, g_free);
 
 	if (priv->dhcp4.client) {
 		/* Stop any ongoing DHCP transaction on this device */
@@ -5341,7 +5343,9 @@ dhcp4_state_changed (NMDhcpClient *client,
 			break;
 		}
 
-		nm_device_set_proxy_config (self, options);
+		g_free (priv->dhcp4.pac_url);
+		priv->dhcp4.pac_url = g_strdup (g_hash_table_lookup (options, "wpad"));
+		nm_device_set_proxy_config (self, priv->dhcp4.pac_url);
 
 		nm_dhcp4_config_set_options (priv->dhcp4.config, options);
 		_notify (self, PROP_DHCP4_CONFIG);
@@ -8484,15 +8488,52 @@ nm_device_reactivate_ip6_config (NMDevice *self,
 	}
 }
 
+static void
+reactivate_proxy_config (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	nm_pacrunner_manager_remove (priv->pacrunner_manager,
+	                             nm_device_get_ip_iface (self));
+
+	nm_device_set_proxy_config (self, priv->dhcp4.pac_url);
+	nm_pacrunner_manager_send (priv->pacrunner_manager,
+	                           nm_device_get_ip_iface (self),
+	                           priv->proxy_config,
+	                           priv->ip4_config,
+	                           priv->ip6_config);
+}
+
 static gboolean
 can_reapply_change (NMDevice *self, const char *setting_name,
                     NMSetting *s_old, NMSetting *s_new,
                     GHashTable *diffs, GError **error)
 {
-	if (!NM_IN_STRSET (setting_name,
-	                   NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	                   NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	                   NM_SETTING_CONNECTION_SETTING_NAME)) {
+	if (nm_streq (setting_name, NM_SETTING_CONNECTION_SETTING_NAME)) {
+		/* Whitelist allowed properties from "connection" setting which are
+		 * allowed to differ.
+		 *
+		 * This includes UUID, there is no principal problem with reapplying a
+		 * connection and changing it's UUID. In fact, disallowing it makes it
+		 * cumbersome for the user to reapply any connection but the original
+		 * settings-connection. */
+		return nm_device_hash_check_invalid_keys (diffs,
+		                                          NM_SETTING_CONNECTION_SETTING_NAME,
+		                                          error,
+		                                          NM_SETTING_CONNECTION_ID,
+		                                          NM_SETTING_CONNECTION_UUID,
+		                                          NM_SETTING_CONNECTION_STABLE_ID,
+		                                          NM_SETTING_CONNECTION_AUTOCONNECT,
+		                                          NM_SETTING_CONNECTION_ZONE,
+		                                          NM_SETTING_CONNECTION_METERED,
+		                                          NM_SETTING_CONNECTION_LLDP);
+	} else if (NM_IN_STRSET (setting_name,
+	                         NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	                         NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	                         NM_SETTING_PROXY_SETTING_NAME)) {
+		/* accept all */
+		return TRUE;
+	} else {
 		g_set_error (error,
 		             NM_DEVICE_ERROR,
 		             NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
@@ -8500,26 +8541,6 @@ can_reapply_change (NMDevice *self, const char *setting_name,
 		             setting_name);
 		return FALSE;
 	}
-
-	/* whitelist allowed properties from "connection" setting which are allowed to differ.
-	 *
-	 * This includes UUID, there is no principal problem with reapplying a connection
-	 * and changing it's UUID. In fact, disallowing it makes it cumbersome for the user
-	 * to reapply any connection but the original settings-connection. */
-	if (   nm_streq0 (setting_name, NM_SETTING_CONNECTION_SETTING_NAME)
-	    && !nm_device_hash_check_invalid_keys (diffs,
-	                                           NM_SETTING_CONNECTION_SETTING_NAME,
-	                                           error,
-	                                           NM_SETTING_CONNECTION_ID,
-	                                           NM_SETTING_CONNECTION_UUID,
-	                                           NM_SETTING_CONNECTION_STABLE_ID,
-	                                           NM_SETTING_CONNECTION_AUTOCONNECT,
-	                                           NM_SETTING_CONNECTION_ZONE,
-	                                           NM_SETTING_CONNECTION_METERED,
-	                                           NM_SETTING_CONNECTION_LLDP))
-		return FALSE;
-
-	return TRUE;
 }
 
 static void
@@ -8668,6 +8689,8 @@ check_and_reapply_connection (NMDevice *self,
 
 	nm_device_reactivate_ip4_config (self, s_ip4_old, s_ip4_new);
 	nm_device_reactivate_ip6_config (self, s_ip6_old, s_ip6_new);
+
+	reactivate_proxy_config (self);
 
 	return TRUE;
 }
@@ -9177,12 +9200,11 @@ nm_device_get_proxy_config (NMDevice *self)
 }
 
 static void
-nm_device_set_proxy_config (NMDevice *self, GHashTable *options)
+nm_device_set_proxy_config (NMDevice *self, const char *pac_url)
 {
 	NMDevicePrivate *priv;
 	NMConnection *connection;
 	NMSettingProxy *s_proxy = NULL;
-	char *pac = NULL;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -9191,17 +9213,12 @@ nm_device_set_proxy_config (NMDevice *self, GHashTable *options)
 	g_clear_object (&priv->proxy_config);
 	priv->proxy_config = nm_proxy_config_new ();
 
-	if (options) {
-		pac = g_hash_table_lookup (options, "wpad");
-		if (pac) {
-			nm_proxy_config_set_method (priv->proxy_config, NM_PROXY_CONFIG_METHOD_AUTO);
-			nm_proxy_config_set_pac_url (priv->proxy_config, pac);
-			_LOGD (LOGD_PROXY, "proxy: PAC url \"%s\"", pac);
-		} else {
-			nm_proxy_config_set_method (priv->proxy_config, NM_PROXY_CONFIG_METHOD_NONE);
-			_LOGD (LOGD_PROXY, "proxy: PAC url not obtained from DHCP server");
-		}
-	}
+	if (pac_url) {
+		nm_proxy_config_set_method (priv->proxy_config, NM_PROXY_CONFIG_METHOD_AUTO);
+		nm_proxy_config_set_pac_url (priv->proxy_config, pac_url);
+		_LOGD (LOGD_PROXY, "proxy: PAC url \"%s\"", pac_url);
+	} else
+		nm_proxy_config_set_method (priv->proxy_config, NM_PROXY_CONFIG_METHOD_NONE);
 
 	connection = nm_device_get_applied_connection (self);
 	if (connection)
