@@ -1637,6 +1637,7 @@ can_reapply_change (NMDevice *device,
 		return nm_device_hash_check_invalid_keys (diffs,
 		                                          NM_SETTING_WIRED_SETTING_NAME,
 		                                          error,
+		                                          NM_SETTING_WIRED_MTU, /* reapplied with IP config */
 		                                          NM_SETTING_WIRED_SPEED,
 		                                          NM_SETTING_WIRED_DUPLEX,
 		                                          NM_SETTING_WIRED_AUTO_NEGOTIATE,
