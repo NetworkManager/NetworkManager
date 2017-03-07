@@ -763,6 +763,8 @@ get_property (GObject *object, guint prop_id,
 static void
 constructed (GObject *object)
 {
+	G_OBJECT_CLASS (nm_remote_connection_parent_class)->constructed (object);
+
 	nm_connection_set_path (NM_CONNECTION (object),
 	                        nm_object_get_path (NM_OBJECT (object)));
 }
