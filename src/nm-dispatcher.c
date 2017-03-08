@@ -837,19 +837,25 @@ nm_dispatcher_call_vpn_sync (NMDispatcherAction action,
 
 /**
  * nm_dispatcher_call_connectivity():
- * @action: the %NMDispatcherAction
  * @connectivity_state: the #NMConnectivityState value
+ * @callback: a caller-supplied callback to execute when done
+ * @user_data: caller-supplied pointer passed to @callback
+ * @out_call_id: on success, a call identifier which can be passed to
+ * nm_dispatcher_call_cancel()
  *
  * This method does not block the caller.
  *
  * Returns: %TRUE if the action was dispatched, %FALSE on failure
  */
 gboolean
-nm_dispatcher_call_connectivity (NMDispatcherAction action,
-                                 NMConnectivityState connectivity_state)
+nm_dispatcher_call_connectivity (NMConnectivityState connectivity_state,
+                                 NMDispatcherFunc callback,
+                                 gpointer user_data,
+                                 guint *out_call_id)
 {
-	return _dispatcher_call (action, FALSE, NULL, NULL, NULL, connectivity_state,
-	                         NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _dispatcher_call (NM_DISPATCHER_ACTION_CONNECTIVITY_CHANGE, FALSE, NULL, NULL, NULL, connectivity_state,
+	                         NULL, NULL, NULL, NULL,
+	                         callback, user_data, out_call_id);
 }
 
 void
