@@ -535,7 +535,7 @@ _set_vpn_state (NMVpnConnection *self,
 		 */
 		break;
 	case STATE_PRE_UP:
-		if (!nm_dispatcher_call_vpn (DISPATCHER_ACTION_VPN_PRE_UP,
+		if (!nm_dispatcher_call_vpn (NM_DISPATCHER_ACTION_VPN_PRE_UP,
 		                             _get_settings_connection (self, FALSE),
 		                             _get_applied_connection (self),
 		                             parent_dev,
@@ -555,7 +555,7 @@ _set_vpn_state (NMVpnConnection *self,
 		nm_active_connection_clear_secrets (NM_ACTIVE_CONNECTION (self));
 
 		/* Let dispatcher scripts know we're up and running */
-		nm_dispatcher_call_vpn (DISPATCHER_ACTION_VPN_UP,
+		nm_dispatcher_call_vpn (NM_DISPATCHER_ACTION_VPN_UP,
 		                        _get_settings_connection (self, FALSE),
 		                        _get_applied_connection (self),
 		                        parent_dev,
@@ -577,7 +577,7 @@ _set_vpn_state (NMVpnConnection *self,
 		break;
 	case STATE_DEACTIVATING:
 		if (quitting) {
-			nm_dispatcher_call_vpn_sync (DISPATCHER_ACTION_VPN_PRE_DOWN,
+			nm_dispatcher_call_vpn_sync (NM_DISPATCHER_ACTION_VPN_PRE_DOWN,
 			                             _get_settings_connection (self, FALSE),
 			                             _get_applied_connection (self),
 			                             parent_dev,
@@ -586,7 +586,7 @@ _set_vpn_state (NMVpnConnection *self,
 			                             priv->ip4_config,
 			                             priv->ip6_config);
 		} else {
-			if (!nm_dispatcher_call_vpn (DISPATCHER_ACTION_VPN_PRE_DOWN,
+			if (!nm_dispatcher_call_vpn (NM_DISPATCHER_ACTION_VPN_PRE_DOWN,
 			                             _get_settings_connection (self, FALSE),
 			                             _get_applied_connection (self),
 			                             parent_dev,
@@ -611,7 +611,7 @@ _set_vpn_state (NMVpnConnection *self,
 		    && old_vpn_state <= STATE_DEACTIVATING) {
 			/* Let dispatcher scripts know we're about to go down */
 			if (quitting) {
-				nm_dispatcher_call_vpn_sync (DISPATCHER_ACTION_VPN_DOWN,
+				nm_dispatcher_call_vpn_sync (NM_DISPATCHER_ACTION_VPN_DOWN,
 				                             _get_settings_connection (self, FALSE),
 				                             _get_applied_connection (self),
 				                             parent_dev,
@@ -620,7 +620,7 @@ _set_vpn_state (NMVpnConnection *self,
 				                             NULL,
 				                             NULL);
 			} else {
-				nm_dispatcher_call_vpn (DISPATCHER_ACTION_VPN_DOWN,
+				nm_dispatcher_call_vpn (NM_DISPATCHER_ACTION_VPN_DOWN,
 				                        _get_settings_connection (self, FALSE),
 				                        _get_applied_connection (self),
 				                        parent_dev,

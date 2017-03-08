@@ -5238,7 +5238,7 @@ dhcp4_lease_change (NMDevice *self, NMIP4Config *config)
 	}
 
 	/* Notify dispatcher scripts of new DHCP4 config */
-	nm_dispatcher_call (DISPATCHER_ACTION_DHCP4_CHANGE,
+	nm_dispatcher_call (NM_DISPATCHER_ACTION_DHCP4_CHANGE,
 	                    nm_device_get_settings_connection (self),
 	                    nm_device_get_applied_connection (self),
 	                    self,
@@ -6006,7 +6006,7 @@ dhcp6_lease_change (NMDevice *self)
 	}
 
 	/* Notify dispatcher scripts of new DHCPv6 config */
-	nm_dispatcher_call (DISPATCHER_ACTION_DHCP6_CHANGE,
+	nm_dispatcher_call (NM_DISPATCHER_ACTION_DHCP6_CHANGE,
 	                    settings_connection,
 	                    nm_device_get_applied_connection (self),
 	                    self, NULL, NULL, NULL);
@@ -7947,7 +7947,7 @@ activate_stage5_ip4_config_commit (NMDevice *self)
 	    && nm_device_activate_ip4_state_in_conf (self)
 	    && (nm_device_get_state (self) > NM_DEVICE_STATE_IP_CONFIG)) {
 		/* Notify dispatcher scripts of new DHCP4 config */
-		nm_dispatcher_call (DISPATCHER_ACTION_DHCP4_CHANGE,
+		nm_dispatcher_call (NM_DISPATCHER_ACTION_DHCP4_CHANGE,
 		                    nm_device_get_settings_connection (self),
 		                    nm_device_get_applied_connection (self),
 		                    self,
@@ -8082,7 +8082,7 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 				/* If IPv6 wasn't the first IP to complete, and DHCP was used,
 				 * then ensure dispatcher scripts get the DHCP lease information.
 				 */
-				nm_dispatcher_call (DISPATCHER_ACTION_DHCP6_CHANGE,
+				nm_dispatcher_call (NM_DISPATCHER_ACTION_DHCP6_CHANGE,
 				                    nm_device_get_settings_connection (self),
 				                    nm_device_get_applied_connection (self),
 				                    self,
@@ -9617,7 +9617,7 @@ ip_check_pre_up (NMDevice *self)
 
 	priv->dispatcher.post_state = NM_DEVICE_STATE_SECONDARIES;
 	priv->dispatcher.post_state_reason = NM_DEVICE_STATE_REASON_NONE;
-	if (!nm_dispatcher_call (DISPATCHER_ACTION_PRE_UP,
+	if (!nm_dispatcher_call (NM_DISPATCHER_ACTION_PRE_UP,
 	                         nm_device_get_settings_connection (self),
 	                         nm_device_get_applied_connection (self),
 	                         self,
@@ -12139,14 +12139,14 @@ _set_state_full (NMDevice *self,
 		priv->ignore_carrier = nm_config_data_get_ignore_carrier (NM_CONFIG_GET_DATA, self);
 
 		if (quitting) {
-			nm_dispatcher_call_sync (DISPATCHER_ACTION_PRE_DOWN,
+			nm_dispatcher_call_sync (NM_DISPATCHER_ACTION_PRE_DOWN,
 			                         nm_act_request_get_settings_connection (req),
 			                         nm_act_request_get_applied_connection (req),
 			                         self);
 		} else {
 			priv->dispatcher.post_state = NM_DEVICE_STATE_DISCONNECTED;
 			priv->dispatcher.post_state_reason = reason;
-			if (!nm_dispatcher_call (DISPATCHER_ACTION_PRE_DOWN,
+			if (!nm_dispatcher_call (NM_DISPATCHER_ACTION_PRE_DOWN,
 			                         nm_act_request_get_settings_connection (req),
 			                         nm_act_request_get_applied_connection (req),
 			                         self,
@@ -12179,7 +12179,7 @@ _set_state_full (NMDevice *self,
 	case NM_DEVICE_STATE_ACTIVATED:
 		_LOGI (LOGD_DEVICE, "Activation: successful, device activated.");
 		nm_device_update_metered (self);
-		nm_dispatcher_call (DISPATCHER_ACTION_UP,
+		nm_dispatcher_call (NM_DISPATCHER_ACTION_UP,
 		                    nm_act_request_get_settings_connection (req),
 		                    nm_act_request_get_applied_connection (req),
 		                    self, NULL, NULL, NULL);
@@ -12274,12 +12274,12 @@ _set_state_full (NMDevice *self,
 	if (   (old_state == NM_DEVICE_STATE_ACTIVATED || old_state == NM_DEVICE_STATE_DEACTIVATING)
 	    && (state != NM_DEVICE_STATE_DEACTIVATING)) {
 		if (quitting) {
-			nm_dispatcher_call_sync (DISPATCHER_ACTION_DOWN,
+			nm_dispatcher_call_sync (NM_DISPATCHER_ACTION_DOWN,
 			                         nm_act_request_get_settings_connection (req),
 			                         nm_act_request_get_applied_connection (req),
 			                         self);
 		} else {
-			nm_dispatcher_call (DISPATCHER_ACTION_DOWN,
+			nm_dispatcher_call (NM_DISPATCHER_ACTION_DOWN,
 			                    nm_act_request_get_settings_connection (req),
 			                    nm_act_request_get_applied_connection (req),
 			                    self, NULL, NULL, NULL);

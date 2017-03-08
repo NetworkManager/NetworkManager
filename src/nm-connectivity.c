@@ -106,7 +106,7 @@ update_state (NMConnectivity *self, NMConnectivityState state)
 		_notify (self, PROP_STATE);
 
 		/* Notify dispatcher scripts of a connectivity state change */
-		nm_dispatcher_call_connectivity (DISPATCHER_ACTION_CONNECTIVITY_CHANGE, state);
+		nm_dispatcher_call_connectivity (NM_DISPATCHER_ACTION_CONNECTIVITY_CHANGE, state);
 	}
 }
 

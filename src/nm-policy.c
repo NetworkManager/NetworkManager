@@ -428,7 +428,7 @@ settings_set_hostname_cb (const char *hostname,
 	}
 
 	if (!ret)
-		nm_dispatcher_call (DISPATCHER_ACTION_HOSTNAME, NULL, NULL, NULL, NULL, NULL, NULL);
+		nm_dispatcher_call (NM_DISPATCHER_ACTION_HOSTNAME, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 static void

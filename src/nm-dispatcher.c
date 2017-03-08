@@ -70,14 +70,14 @@ static Monitor monitors[3] = {
 };
 
 static const Monitor*
-_get_monitor_by_action (DispatcherAction action)
+_get_monitor_by_action (NMDispatcherAction action)
 {
 	switch (action) {
-	case DISPATCHER_ACTION_PRE_UP:
-	case DISPATCHER_ACTION_VPN_PRE_UP:
+	case NM_DISPATCHER_ACTION_PRE_UP:
+	case NM_DISPATCHER_ACTION_VPN_PRE_UP:
 		return &monitors[MONITOR_INDEX_PRE_UP];
-	case DISPATCHER_ACTION_PRE_DOWN:
-	case DISPATCHER_ACTION_VPN_PRE_DOWN:
+	case NM_DISPATCHER_ACTION_PRE_DOWN:
+	case NM_DISPATCHER_ACTION_VPN_PRE_DOWN:
 		return &monitors[MONITOR_INDEX_PRE_DOWN];
 	default:
 		return &monitors[MONITOR_INDEX_DEFAULT];
@@ -311,9 +311,9 @@ fill_vpn_props (NMProxyConfig *proxy_config,
 }
 
 typedef struct {
-	DispatcherAction action;
+	NMDispatcherAction action;
 	guint request_id;
-	DispatcherFunc callback;
+	NMDispatcherFunc callback;
 	gpointer user_data;
 	guint idle_id;
 } DispatchInfo;
@@ -362,7 +362,7 @@ dispatch_result_to_string (DispatchResult result)
 }
 
 static void
-dispatcher_results_process (guint request_id, DispatcherAction action, GVariantIter *results)
+dispatcher_results_process (guint request_id, NMDispatcherAction action, GVariantIter *results)
 {
 	const char *script, *err;
 	guint32 result;
@@ -440,22 +440,22 @@ dispatcher_done_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 }
 
 static const char *action_table[] = {
-	[DISPATCHER_ACTION_HOSTNAME]     = NMD_ACTION_HOSTNAME,
-	[DISPATCHER_ACTION_PRE_UP]       = NMD_ACTION_PRE_UP,
-	[DISPATCHER_ACTION_UP]           = NMD_ACTION_UP,
-	[DISPATCHER_ACTION_PRE_DOWN]     = NMD_ACTION_PRE_DOWN,
-	[DISPATCHER_ACTION_DOWN]         = NMD_ACTION_DOWN,
-	[DISPATCHER_ACTION_VPN_PRE_UP]   = NMD_ACTION_VPN_PRE_UP,
-	[DISPATCHER_ACTION_VPN_UP]       = NMD_ACTION_VPN_UP,
-	[DISPATCHER_ACTION_VPN_PRE_DOWN] = NMD_ACTION_VPN_PRE_DOWN,
-	[DISPATCHER_ACTION_VPN_DOWN]     = NMD_ACTION_VPN_DOWN,
-	[DISPATCHER_ACTION_DHCP4_CHANGE] = NMD_ACTION_DHCP4_CHANGE,
-	[DISPATCHER_ACTION_DHCP6_CHANGE] = NMD_ACTION_DHCP6_CHANGE,
-	[DISPATCHER_ACTION_CONNECTIVITY_CHANGE] = NMD_ACTION_CONNECTIVITY_CHANGE
+	[NM_DISPATCHER_ACTION_HOSTNAME]     = NMD_ACTION_HOSTNAME,
+	[NM_DISPATCHER_ACTION_PRE_UP]       = NMD_ACTION_PRE_UP,
+	[NM_DISPATCHER_ACTION_UP]           = NMD_ACTION_UP,
+	[NM_DISPATCHER_ACTION_PRE_DOWN]     = NMD_ACTION_PRE_DOWN,
+	[NM_DISPATCHER_ACTION_DOWN]         = NMD_ACTION_DOWN,
+	[NM_DISPATCHER_ACTION_VPN_PRE_UP]   = NMD_ACTION_VPN_PRE_UP,
+	[NM_DISPATCHER_ACTION_VPN_UP]       = NMD_ACTION_VPN_UP,
+	[NM_DISPATCHER_ACTION_VPN_PRE_DOWN] = NMD_ACTION_VPN_PRE_DOWN,
+	[NM_DISPATCHER_ACTION_VPN_DOWN]     = NMD_ACTION_VPN_DOWN,
+	[NM_DISPATCHER_ACTION_DHCP4_CHANGE] = NMD_ACTION_DHCP4_CHANGE,
+	[NM_DISPATCHER_ACTION_DHCP6_CHANGE] = NMD_ACTION_DHCP6_CHANGE,
+	[NM_DISPATCHER_ACTION_CONNECTIVITY_CHANGE] = NMD_ACTION_CONNECTIVITY_CHANGE
 };
 
 static const char *
-action_to_string (DispatcherAction action)
+action_to_string (NMDispatcherAction action)
 {
 	g_assert ((gsize) action < G_N_ELEMENTS (action_table));
 	return action_table[action];
@@ -474,7 +474,7 @@ dispatcher_idle_cb (gpointer user_data)
 }
 
 static gboolean
-_dispatcher_call (DispatcherAction action,
+_dispatcher_call (NMDispatcherAction action,
                   gboolean blocking,
                   NMSettingsConnection *settings_connection,
                   NMConnection *applied_connection,
@@ -484,7 +484,7 @@ _dispatcher_call (DispatcherAction action,
                   NMProxyConfig *vpn_proxy_config,
                   NMIP4Config *vpn_ip4_config,
                   NMIP6Config *vpn_ip6_config,
-                  DispatcherFunc callback,
+                  NMDispatcherFunc callback,
                   gpointer user_data,
                   guint *out_call_id)
 {
@@ -517,8 +517,8 @@ _dispatcher_call (DispatcherAction action,
 	_ensure_requests ();
 
 	/* All actions except 'hostname' and 'connectivity-change' require a device */
-	if (   action == DISPATCHER_ACTION_HOSTNAME
-	    || action == DISPATCHER_ACTION_CONNECTIVITY_CHANGE) {
+	if (   action == NM_DISPATCHER_ACTION_HOSTNAME
+	    || action == NM_DISPATCHER_ACTION_CONNECTIVITY_CHANGE) {
 		_LOGD ("(%u) dispatching action '%s'%s",
 		       reqid, action_to_string (action),
 		       blocking
@@ -589,8 +589,8 @@ _dispatcher_call (DispatcherAction action,
 	g_variant_builder_init (&vpn_ip6_props, G_VARIANT_TYPE_VARDICT);
 
 	/* hostname and connectivity-change actions don't send device data */
-	if (   action != DISPATCHER_ACTION_HOSTNAME
-	    && action != DISPATCHER_ACTION_CONNECTIVITY_CHANGE) {
+	if (   action != NM_DISPATCHER_ACTION_HOSTNAME
+	    && action != NM_DISPATCHER_ACTION_CONNECTIVITY_CHANGE) {
 		fill_device_props (device,
 		                   &device_props,
 		                   &device_proxy_props,
@@ -695,7 +695,7 @@ done:
 
 /**
  * nm_dispatcher_call:
- * @action: the %DispatcherAction
+ * @action: the %NMDispatcherAction
  * @settings_connection: the #NMSettingsConnection the action applies to
  * @applied_connection: the currently applied connection
  * @device: the #NMDevice the action applies to
@@ -710,11 +710,11 @@ done:
  * Returns: %TRUE if the action was dispatched, %FALSE on failure
  */
 gboolean
-nm_dispatcher_call (DispatcherAction action,
+nm_dispatcher_call (NMDispatcherAction action,
                     NMSettingsConnection *settings_connection,
                     NMConnection *applied_connection,
                     NMDevice *device,
-                    DispatcherFunc callback,
+                    NMDispatcherFunc callback,
                     gpointer user_data,
                     guint *out_call_id)
 {
@@ -725,7 +725,7 @@ nm_dispatcher_call (DispatcherAction action,
 
 /**
  * nm_dispatcher_call_sync():
- * @action: the %DispatcherAction
+ * @action: the %NMDispatcherAction
  * @settings_connection: the #NMSettingsConnection the action applies to
  * @applied_connection: the currently applied connection
  * @device: the #NMDevice the action applies to
@@ -736,7 +736,7 @@ nm_dispatcher_call (DispatcherAction action,
  * Returns: %TRUE if the action was dispatched, %FALSE on failure
  */
 gboolean
-nm_dispatcher_call_sync (DispatcherAction action,
+nm_dispatcher_call_sync (NMDispatcherAction action,
                          NMSettingsConnection *settings_connection,
                          NMConnection *applied_connection,
                          NMDevice *device)
@@ -747,7 +747,7 @@ nm_dispatcher_call_sync (DispatcherAction action,
 
 /**
  * nm_dispatcher_call_vpn():
- * @action: the %DispatcherAction
+ * @action: the %NMDispatcherAction
  * @settings_connection: the #NMSettingsConnection the action applies to
  * @applied_connection: the currently applied connection
  * @parent_device: the parent #NMDevice of the VPN connection
@@ -766,7 +766,7 @@ nm_dispatcher_call_sync (DispatcherAction action,
  * Returns: %TRUE if the action was dispatched, %FALSE on failure
  */
 gboolean
-nm_dispatcher_call_vpn (DispatcherAction action,
+nm_dispatcher_call_vpn (NMDispatcherAction action,
                         NMSettingsConnection *settings_connection,
                         NMConnection *applied_connection,
                         NMDevice *parent_device,
@@ -774,7 +774,7 @@ nm_dispatcher_call_vpn (DispatcherAction action,
                         NMProxyConfig *vpn_proxy_config,
                         NMIP4Config *vpn_ip4_config,
                         NMIP6Config *vpn_ip6_config,
-                        DispatcherFunc callback,
+                        NMDispatcherFunc callback,
                         gpointer user_data,
                         guint *out_call_id)
 {
@@ -785,7 +785,7 @@ nm_dispatcher_call_vpn (DispatcherAction action,
 
 /**
  * nm_dispatcher_call_vpn_sync():
- * @action: the %DispatcherAction
+ * @action: the %NMDispatcherAction
  * @settings_connection: the #NMSettingsConnection the action applies to
  * @applied_connection: the currently applied connection
  * @parent_device: the parent #NMDevice of the VPN connection
@@ -800,7 +800,7 @@ nm_dispatcher_call_vpn (DispatcherAction action,
  * Returns: %TRUE if the action was dispatched, %FALSE on failure
  */
 gboolean
-nm_dispatcher_call_vpn_sync (DispatcherAction action,
+nm_dispatcher_call_vpn_sync (NMDispatcherAction action,
                              NMSettingsConnection *settings_connection,
                              NMConnection *applied_connection,
                              NMDevice *parent_device,
@@ -816,7 +816,7 @@ nm_dispatcher_call_vpn_sync (DispatcherAction action,
 
 /**
  * nm_dispatcher_call_connectivity():
- * @action: the %DispatcherAction
+ * @action: the %NMDispatcherAction
  * @connectivity_state: the #NMConnectivityState value
  *
  * This method does not block the caller.
@@ -824,7 +824,7 @@ nm_dispatcher_call_vpn_sync (DispatcherAction action,
  * Returns: %TRUE if the action was dispatched, %FALSE on failure
  */
 gboolean
-nm_dispatcher_call_connectivity (DispatcherAction action,
+nm_dispatcher_call_connectivity (NMDispatcherAction action,
                                  NMConnectivityState connectivity_state)
 {
 	return _dispatcher_call (action, FALSE, NULL, NULL, NULL, connectivity_state,
