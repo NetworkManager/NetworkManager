@@ -478,9 +478,10 @@ dispatcher_idle_cb (gpointer user_data)
 static gboolean
 _dispatcher_call (NMDispatcherAction action,
                   gboolean blocking,
+                  NMDevice *device,
                   NMSettingsConnection *settings_connection,
                   NMConnection *applied_connection,
-                  NMDevice *device,
+                  gboolean activation_type_external,
                   NMConnectivityState connectivity_state,
                   const char *vpn_iface,
                   NMProxyConfig *vpn_proxy_config,
@@ -575,7 +576,7 @@ _dispatcher_call (NMDispatcherAction action,
 			                       NMD_CONNECTION_PROPS_FILENAME,
 			                       g_variant_new_string (filename));
 		}
-		if (nm_settings_connection_get_volatile (settings_connection)) {
+		if (activation_type_external) {
 			g_variant_builder_add (&connection_props, "{sv}",
 			                       NMD_CONNECTION_PROPS_EXTERNAL,
 			                       g_variant_new_boolean (TRUE));
@@ -711,8 +712,10 @@ nm_dispatcher_call_hostname (NMDispatcherFunc callback,
                              gpointer user_data,
                              guint *out_call_id)
 {
-	return _dispatcher_call (NM_DISPATCHER_ACTION_HOSTNAME, FALSE, NULL, NULL, NULL,
-	                         NM_CONNECTIVITY_UNKNOWN, NULL, NULL, NULL, NULL,
+	return _dispatcher_call (NM_DISPATCHER_ACTION_HOSTNAME, FALSE,
+	                         NULL, NULL, NULL, FALSE,
+	                         NM_CONNECTIVITY_UNKNOWN,
+	                         NULL, NULL, NULL, NULL,
 	                         callback, user_data, out_call_id);
 }
 
@@ -748,10 +751,12 @@ nm_dispatcher_call_device (NMDispatcherAction action,
 	}
 	nm_assert (NM_IN_SET (nm_active_connection_get_device (NM_ACTIVE_CONNECTION (act_request)), NULL, device));
 	return _dispatcher_call (action, FALSE,
+	                         device,
 	                         nm_act_request_get_settings_connection (act_request),
 	                         nm_act_request_get_applied_connection (act_request),
-	                         device,
-	                         NM_CONNECTIVITY_UNKNOWN, NULL, NULL, NULL, NULL,
+	                         nm_active_connection_get_activation_type (NM_ACTIVE_CONNECTION (act_request)) == NM_ACTIVATION_TYPE_EXTERNAL,
+	                         NM_CONNECTIVITY_UNKNOWN,
+	                         NULL, NULL, NULL, NULL,
 	                         callback, user_data, out_call_id);
 }
 
@@ -780,10 +785,12 @@ nm_dispatcher_call_device_sync (NMDispatcherAction action,
 	}
 	nm_assert (NM_IN_SET (nm_active_connection_get_device (NM_ACTIVE_CONNECTION (act_request)), NULL, device));
 	return _dispatcher_call (action, TRUE,
+	                         device,
 	                         nm_act_request_get_settings_connection (act_request),
 	                         nm_act_request_get_applied_connection (act_request),
-	                         device,
-	                         NM_CONNECTIVITY_UNKNOWN, NULL, NULL, NULL, NULL,
+	                         nm_active_connection_get_activation_type (NM_ACTIVE_CONNECTION (act_request)) == NM_ACTIVATION_TYPE_EXTERNAL,
+	                         NM_CONNECTIVITY_UNKNOWN,
+	                         NULL, NULL, NULL, NULL,
 	                         NULL, NULL, NULL);
 }
 
@@ -820,9 +827,14 @@ nm_dispatcher_call_vpn (NMDispatcherAction action,
                         gpointer user_data,
                         guint *out_call_id)
 {
-	return _dispatcher_call (action, FALSE, settings_connection, applied_connection,
-	                         parent_device, NM_CONNECTIVITY_UNKNOWN, vpn_iface, vpn_proxy_config,
-	                         vpn_ip4_config, vpn_ip6_config, callback, user_data, out_call_id);
+	return _dispatcher_call (action, FALSE,
+	                         parent_device,
+	                         settings_connection,
+	                         applied_connection,
+	                         FALSE,
+	                         NM_CONNECTIVITY_UNKNOWN,
+	                         vpn_iface, vpn_proxy_config, vpn_ip4_config, vpn_ip6_config,
+	                         callback, user_data, out_call_id);
 }
 
 /**
@@ -851,9 +863,14 @@ nm_dispatcher_call_vpn_sync (NMDispatcherAction action,
                              NMIP4Config *vpn_ip4_config,
                              NMIP6Config *vpn_ip6_config)
 {
-	return _dispatcher_call (action, TRUE, settings_connection, applied_connection,
-	                         parent_device, NM_CONNECTIVITY_UNKNOWN, vpn_iface, vpn_proxy_config,
-	                         vpn_ip4_config, vpn_ip6_config, NULL, NULL, NULL);
+	return _dispatcher_call (action, TRUE,
+	                         parent_device,
+	                         settings_connection,
+	                         applied_connection,
+	                         FALSE,
+	                         NM_CONNECTIVITY_UNKNOWN,
+	                         vpn_iface, vpn_proxy_config, vpn_ip4_config, vpn_ip6_config,
+	                         NULL, NULL, NULL);
 }
 
 /**
@@ -874,7 +891,9 @@ nm_dispatcher_call_connectivity (NMConnectivityState connectivity_state,
                                  gpointer user_data,
                                  guint *out_call_id)
 {
-	return _dispatcher_call (NM_DISPATCHER_ACTION_CONNECTIVITY_CHANGE, FALSE, NULL, NULL, NULL, connectivity_state,
+	return _dispatcher_call (NM_DISPATCHER_ACTION_CONNECTIVITY_CHANGE, FALSE,
+	                         NULL, NULL, NULL, FALSE,
+	                         connectivity_state,
 	                         NULL, NULL, NULL, NULL,
 	                         callback, user_data, out_call_id);
 }

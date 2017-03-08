@@ -51,6 +51,8 @@ typedef struct _NMActiveConnectionPrivate {
 	bool vpn:1;
 	bool master_ready:1;
 
+	/* TODO: when the user updates a connection with an extern activation
+	 * type, the activation type must be updated to FULL. */
 	NMActivationType activation_type:3;
 
 	NMAuthSubject *subject;
@@ -567,7 +569,7 @@ nm_active_connection_set_device (NMActiveConnection *self, NMDevice *device)
 		g_signal_connect (device, "notify::" NM_DEVICE_METERED,
 		                  G_CALLBACK (device_metered_changed), self);
 
-		if (priv->activation_type == NM_ACTIVATION_TYPE_MANAGED) {
+		if (priv->activation_type != NM_ACTIVATION_TYPE_EXTERNAL) {
 			priv->pending_activation_id = g_strdup_printf (NM_PENDING_ACTIONPREFIX_ACTIVATION"%p", (void *)self);
 			nm_device_add_pending_action (device, priv->pending_activation_id, TRUE);
 		}
@@ -724,7 +726,9 @@ nm_active_connection_get_activation_type (NMActiveConnection *self)
 gboolean
 nm_active_connection_has_activation_type_assume_or_external (NMActiveConnection *self)
 {
-	return nm_active_connection_get_activation_type (self) == NM_ACTIVATION_TYPE_ASSUME;
+	return NM_IN_SET (nm_active_connection_get_activation_type (self),
+	                  NM_ACTIVATION_TYPE_ASSUME,
+	                  NM_ACTIVATION_TYPE_EXTERNAL);
 }
 
 /*****************************************************************************/
@@ -1081,7 +1085,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_INT_ACTIVATION_TYPE:
 		/* construct-only */
 		i = g_value_get_int (value);
-		if (!NM_IN_SET (i, NM_ACTIVATION_TYPE_MANAGED, NM_ACTIVATION_TYPE_ASSUME))
+		if (!NM_IN_SET (i, NM_ACTIVATION_TYPE_MANAGED,
+		                   NM_ACTIVATION_TYPE_ASSUME,
+		                   NM_ACTIVATION_TYPE_EXTERNAL))
 			g_return_if_reached ();
 		priv->activation_type = (NMActivationType) i;
 		break;
@@ -1331,7 +1337,7 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 	obj_properties[PROP_INT_ACTIVATION_TYPE] =
 	     g_param_spec_int (NM_ACTIVE_CONNECTION_INT_ACTIVATION_TYPE, "", "",
 	                       NM_ACTIVATION_TYPE_MANAGED,
-	                       NM_ACTIVATION_TYPE_ASSUME,
+	                       NM_ACTIVATION_TYPE_EXTERNAL,
 	                       NM_ACTIVATION_TYPE_MANAGED,
 	                       G_PARAM_WRITABLE |
 	                       G_PARAM_CONSTRUCT_ONLY |

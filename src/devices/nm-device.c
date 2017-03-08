@@ -1602,16 +1602,10 @@ static gboolean
 nm_device_has_activation_type_external (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMSettingsConnection *connection;
 
-	if (   priv->act_request
-	    && nm_active_connection_has_activation_type_assume_or_external (NM_ACTIVE_CONNECTION (priv->act_request))) {
-		connection = nm_act_request_get_settings_connection (priv->act_request);
-		if (   connection
-		    && nm_settings_connection_get_volatile (connection))
-			return TRUE;
-	}
-	return FALSE;
+	return    priv->act_request
+	       && NM_IN_SET (nm_active_connection_get_activation_type (NM_ACTIVE_CONNECTION (priv->act_request)),
+	                     NM_ACTIVATION_TYPE_EXTERNAL);
 }
 
 gboolean
@@ -1619,10 +1613,10 @@ nm_device_has_activation_type_assume_or_external (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (   priv->act_request
-	    && nm_active_connection_has_activation_type_assume_or_external (NM_ACTIVE_CONNECTION (priv->act_request)))
-		return TRUE;
-	return FALSE;
+	return    priv->act_request
+	       && NM_IN_SET (nm_active_connection_get_activation_type (NM_ACTIVE_CONNECTION (priv->act_request)),
+	                     NM_ACTIVATION_TYPE_ASSUME,
+	                     NM_ACTIVATION_TYPE_EXTERNAL);
 }
 
 static SlaveInfo *
