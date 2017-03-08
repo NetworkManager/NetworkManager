@@ -435,6 +435,339 @@ security_from_vardict (GVariant *security)
 	return flags;
 }
 
+static guint32
+get_max_ht20_rate(int mcs)
+{
+        if (mcs == 0)
+                return 6500000;
+        if (mcs == (1 || 8))
+                return 13000000;
+        if (mcs == (2 || 16))
+                return 19500000;
+        if (mcs == (3 || 9 || 24))
+                return 26000000;
+        if (mcs == (4 || 10 || 17))
+                return 39000000;
+        if (mcs == (5 || 11 || 25))
+                return 52000000;
+        if (mcs == (6 || 18))
+                return 58500000;
+        if (mcs == 7)
+                return 65000000;
+        if (mcs == (12 || 19 || 26))
+                return 78000000;
+        if (mcs == (13 || 27))
+                return 104000000;
+        if (mcs == (14 || 20))
+                return 117000000;
+        if (mcs == 15)
+                return 130000000;
+        if (mcs == (21 || 28))
+                return 156000000;
+        if (mcs == 22)
+                return 175500000;
+        if (mcs == 23)
+                return 195000000;
+        if (mcs == 29)
+                return 208000000;
+        if (mcs == 30)
+                return 234000000;
+	if (mcs == 31)
+		return 260000000;
+
+	return 0;
+}
+
+static guint32
+get_max_ht40_rate(int mcs)
+{
+        if (mcs == 0)
+                return 13500000;
+        if (mcs == (1 || 8))
+                return 27000000;
+        if (mcs == 2)
+                return 40500000;
+        if (mcs == (3 || 9 || 24))
+                return 54000000;
+        if (mcs == (4 || 10 || 17))
+                return 81000000;
+        if (mcs == (5 || 11 || 25))
+                return 108000000;
+        if (mcs == (6 || 18))
+                return 121500000;
+        if (mcs == 7)
+                return 135000000;
+        if (mcs == (12 || 19 || 26))
+                return 162000000;
+        if (mcs == (13  || 27))
+                return 216000000;
+        if (mcs == (14 || 20))
+                return 243000000;
+        if (mcs == 15)
+                return 270000000;
+        if (mcs == 16)
+                return 40500000;
+        if (mcs == (21 || 28))
+                return 324000000;
+        if (mcs == 22)
+                return 364500000;
+        if (mcs == 23)
+                return 405000000;
+        if (mcs == 29)
+                return 432000000;
+        if (mcs == 30)
+                return 486000000;
+        if (mcs == 31)
+	        return 540000000;
+
+	return 0;
+}
+
+static guint32
+get_max_vht80_rate_ss1(int mcs)
+{
+        if (mcs == 0)
+                return 29300000;
+        if (mcs == 1)
+                return 58500000;
+        if (mcs == 2)
+                return 87800000;
+        if (mcs == 3)
+                return 117000000;
+        if (mcs == 4)
+                return 175500000;
+        if (mcs == 5)
+                return 234000000;
+        if (mcs == 6)
+                return 263300000;
+        if (mcs == 7)
+                return 292500000;
+        if (mcs == 8)
+                return 351000000;
+	 if (mcs == 9)
+		return 390000000;
+	 return 0;
+}
+
+static guint32
+get_max_vht80_rate_ss2(int mcs)
+{
+
+	if (mcs == 0)
+		return 58500000;
+	if (mcs == 1)
+		return 117000000;
+	if (mcs == 2)
+		return 175500000;
+	if (mcs == 3)
+		return 234000000;
+	if (mcs == 4)
+		return 351000000;
+	if (mcs == 5)
+		return 468000000;
+	if (mcs == 6)
+		return 526500000;
+	if (mcs == 7)
+		return 585000000;
+	if (mcs == 8)
+		return 702000000;
+	if (mcs == 9)
+		return 780000000;
+	return 0;
+}
+
+static guint32
+get_max_vht80_rate_ss3(int mcs)
+{
+
+	if (mcs == 0)
+		return 87800000;
+	if (mcs == 1)
+		return 175500000;
+	if (mcs == 2)
+		return 263300000;
+	if (mcs == 3)
+		return 351000000;
+	if (mcs == 4)
+		return 526500000;
+	if (mcs == 5)
+		return 702000000;
+	if (mcs == 6)
+		return 0;
+	if (mcs == 7)
+		return 877500000;
+	if (mcs == 8)
+		return 105300000;
+	if (mcs == 9)
+		return 117000000;
+	return 0;
+}
+
+static guint32
+get_max_vht160_rate_ss1(int mcs)
+{
+	if (mcs == 0)
+                return 58500000;
+	if (mcs == 1)
+                return 117000000;
+	if (mcs == 2)
+                return 175500000;
+	if (mcs == 3)
+                return 234000000;
+	if (mcs == 4)
+                return 351000000;
+	if (mcs == 5)
+                return 468000000;
+	if (mcs == 6)
+                return 526500000;
+	if (mcs == 7)
+                return 585000000;
+	if (mcs == 8)
+                return 702000000;
+	if (mcs == 9)
+		return 780000000;
+	return 0;
+}
+
+static guint32
+get_max_vht160_rate_ss2(int mcs)
+{
+
+	if (mcs == 0)
+		return 117000000;
+	if (mcs == 1)
+		return 234000000;
+	if (mcs == 2)
+		return 351000000;
+	if (mcs == 3)
+		return 468000000;
+	if (mcs == 4)
+		return 702000000;
+	if (mcs == 5)
+		return 936000000;
+	if (mcs == 6)
+		return 1053000000;
+	if (mcs == 7)
+		return 1170000000;
+	if (mcs == 8)
+		return 1404000000;
+	if (mcs == 9)
+		return 1560000000;
+	return 0;
+}
+
+static guint32
+get_max_vht160_rate_ss3(int mcs)
+{
+
+	if (mcs == 0)
+		return 175500000;
+	if (mcs == 1)
+		return 351000000;
+	if (mcs == 2)
+		return 526500000;
+	if (mcs == 3)
+		return 702000000;
+	if (mcs == 4)
+		return 1053000000;
+	if (mcs == 5)
+		return 1404000000;
+	if (mcs == 6)
+		return 1579500000;
+	if (mcs == 7)
+		return 1755000000;
+	if (mcs == 8)
+		return 2106000000;
+	if (mcs == 9)
+		return 0;
+	return 0;
+}
+
+static guint32
+get_max_ht_rate(guint16 ht_cap_info, const guint8 * supported_mcs_set){
+	guint32 mcs,i,j;
+
+	/* Find the maximum supported mcs rate */
+	mcs = -1;
+	for (i = 0; i <= 15; i++){
+		for (j = 0; j <= 7; j++){
+			if (*supported_mcs_set & (1 << j))
+				mcs++;
+		}
+		supported_mcs_set++;
+	}
+
+	/* Check for 40Mhz wide channel support */
+	if (ht_cap_info & (1 << 1))
+		return get_max_ht40_rate(mcs);
+	else
+		return get_max_ht20_rate(mcs);
+
+}
+
+static guint32
+get_max_vht_rate(guint32 vht_cap,guint16 tx_map){
+	guint32 mcs = 7, ss = 1;
+
+	/* Check for mcs rates 8 and 9 support */
+	if (tx_map & 0x2a)
+		mcs = 9;
+	else if (tx_map & 0x15)
+		mcs = 8;
+
+	/* Check for 160Mhz wide channel support and
+	 * spatial stream support */
+	if ( vht_cap & (1 << 2)){
+		if (tx_map & 0x30)
+			return get_max_vht160_rate_ss3(mcs);
+		else if (tx_map & 0x0C)
+			return get_max_vht160_rate_ss2(mcs);
+		else
+			return get_max_vht160_rate_ss1(mcs);
+	} else {
+		if (tx_map & 0x30)
+			return get_max_vht80_rate_ss3(mcs);
+		else if (tx_map & 0x0C)
+			return get_max_vht80_rate_ss2(mcs);
+		else
+			return get_max_vht80_rate_ss1(mcs);
+	}
+
+	return 0;
+}
+
+#define IEEE_80211_IE_HT_CAP	45
+#define IEEE_80211_IE_VHT_CAP   191
+
+static guint32
+get_max_rate(const guint8 *bytes, gsize len){
+	guint8 id, elem_len;
+	guint32 max_rate = 0;
+
+	while (len >= 2) {
+		id = *bytes++;
+		elem_len = *bytes++;
+		len -= 2;
+
+		if (elem_len > len) {
+			return -1;
+		}
+
+		if (id == IEEE_80211_IE_HT_CAP){
+			max_rate = get_max_ht_rate(*bytes,bytes+3);
+		}
+
+		if (id == IEEE_80211_IE_VHT_CAP) {
+			max_rate = get_max_vht_rate(*bytes,*(bytes+8));
+		}
+
+		len -= elem_len;
+		bytes += elem_len;
+	}
+
+	return max_rate;
+}
+
 gboolean
 nm_wifi_ap_update_from_properties (NMWifiAP *ap,
                                    const char *supplicant_path,
@@ -511,6 +844,15 @@ nm_wifi_ap_update_from_properties (NMWifiAP *ap,
 		if (maxrate)
 			changed |= nm_wifi_ap_set_max_bitrate (ap, maxrate / 1000);
 		g_variant_unref (v);
+	}
+
+	v = g_variant_lookup_value (properties, "IEs", G_VARIANT_TYPE_BYTESTRING);
+	if (v){
+		bytes = g_variant_get_fixed_array (v, &len, 1);
+		guint32 max_rate = get_max_rate(bytes,len);
+		if (max_rate > 0)
+			nm_wifi_ap_set_max_bitrate (ap, max_rate / 1000);
+		g_variant_unref(v);
 	}
 
 	v = g_variant_lookup_value (properties, "WPA", G_VARIANT_TYPE_VARDICT);
