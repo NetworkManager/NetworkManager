@@ -47,6 +47,7 @@ bool hostname_is_set(void) {
         return true;
 }
 
+#if 0 /* NM_IGNORED */
 char* gethostname_malloc(void) {
         struct utsname u;
 
@@ -57,10 +58,11 @@ char* gethostname_malloc(void) {
         assert_se(uname(&u) >= 0);
 
         if (isempty(u.nodename) || streq(u.nodename, "(none)"))
-                return strdup(u.sysname);
+                return strdup(FALLBACK_HOSTNAME);
 
         return strdup(u.nodename);
 }
+#endif /* NM_IGNORED */
 
 int gethostname_strict(char **ret) {
         struct utsname u;

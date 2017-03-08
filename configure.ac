@@ -62,6 +62,12 @@ AC_TYPE_PID_T
 AC_CHECK_SIZEOF(dev_t)
 AC_CHECK_SIZEOF(time_t)
 
+AC_CHECK_DECLS([
+	explicit_bzero],
+	[], [], [[
+#include <string.h>
+]])
+
 dnl
 dnl translation support
 dnl
