@@ -1429,7 +1429,7 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_BUS:
-		/* Construct only */
+		/* construct-only */
 		priv->bus = g_value_dup_boxed (value);
 		if (!priv->bus)
 			priv->bus = _nm_dbus_new_connection (NULL);

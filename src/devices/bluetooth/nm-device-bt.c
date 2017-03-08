@@ -1029,15 +1029,15 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_BT_NAME:
-		/* Construct only */
+		/* construct-only */
 		priv->name = g_value_dup_string (value);
 		break;
 	case PROP_BT_CAPABILITIES:
-		/* Construct only */
+		/* construct-only */
 		priv->capabilities = g_value_get_uint (value);
 		break;
 	case PROP_BT_DEVICE:
-		/* Construct only */
+		/* construct-only */
 		priv->bt_device = g_value_dup_object (value);
 		g_signal_connect (priv->bt_device, "removed", G_CALLBACK (bluez_device_removed), object);
 		break;

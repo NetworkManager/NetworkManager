@@ -369,11 +369,11 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_DBUS_CONNECTION:
-		/* Construct only */
+		/* construct-only */
 		priv->connection = g_value_dup_boxed (value);
 		break;
 	case PROP_DBUS_PATH:
-		/* Construct only */
+		/* construct-only */
 		priv->path = g_value_dup_string (value);
 		break;
 	default:

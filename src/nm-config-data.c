@@ -1437,15 +1437,17 @@ set_property (GObject *object,
 	NMConfigData *self = NM_CONFIG_DATA (object);
 	NMConfigDataPrivate *priv = NM_CONFIG_DATA_GET_PRIVATE (self);
 
-	/* This type is immutable. All properties are construct only. */
 	switch (prop_id) {
 	case PROP_CONFIG_MAIN_FILE:
+		/* construct-only */
 		priv->config_main_file = g_value_dup_string (value);
 		break;
 	case PROP_CONFIG_DESCRIPTION:
+		/* construct-only */
 		priv->config_description = g_value_dup_string (value);
 		break;
 	case PROP_KEYFILE_USER:
+		/* construct-only */
 		priv->keyfile_user = g_value_dup_boxed (value);
 		if (   priv->keyfile_user
 		    && !_nm_keyfile_has_values (priv->keyfile_user)) {
@@ -1454,6 +1456,7 @@ set_property (GObject *object,
 		}
 		break;
 	case PROP_KEYFILE_INTERN:
+		/* construct-only */
 		priv->keyfile_intern = g_value_dup_boxed (value);
 		if (   priv->keyfile_intern
 		    && !_nm_keyfile_has_values (priv->keyfile_intern)) {
@@ -1462,6 +1465,7 @@ set_property (GObject *object,
 		}
 		break;
 	case PROP_NO_AUTO_DEFAULT:
+		/* construct-only */
 		{
 			char **value_arr = g_value_get_boxed (value);
 			guint i, j = 0;

@@ -1447,15 +1447,15 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_PATH:
-		/* Construct only */
+		/* construct-only */
 		priv->path = g_value_dup_string (value);
 		break;
 	case PROP_DRIVER:
-		/* Construct only */
+		/* construct-only */
 		priv->driver = g_value_dup_string (value);
 		break;
 	case PROP_CONTROL_PORT:
-		/* Construct only */
+		/* construct-only */
 		priv->control_port = g_value_dup_string (value);
 		break;
 	case PROP_DATA_PORT:
@@ -1463,7 +1463,7 @@ set_property (GObject *object, guint prop_id,
 		priv->data_port = g_value_dup_string (value);
 		break;
 	case PROP_UID:
-		/* Construct only */
+		/* construct-only */
 		priv->uid = g_value_dup_string (value);
 		break;
 	case PROP_IP4_METHOD:

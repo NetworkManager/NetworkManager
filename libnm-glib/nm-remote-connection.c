@@ -796,7 +796,7 @@ set_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_BUS:
 	case PROP_DBUS_CONNECTION:
-		/* Construct only */
+		/* construct-only */
 		/* priv->bus is set from either of two properties so that it (a) remains
 		 * backwards compatible with the previous "bus" property, and that (b)
 		 * it can be created just like an NMObject using the "dbus-connection",

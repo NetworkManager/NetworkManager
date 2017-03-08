@@ -1200,13 +1200,13 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_DBUS_OBJECT:
-		/* Construct only */
+		/* construct-only */
 		priv->object = g_value_dup_object (value);
 		if (!priv->object)
 			g_return_if_reached ();
 		break;
 	case PROP_DBUS_OBJECT_MANAGER:
-		/* Construct only */
+		/* construct-only */
 		priv->object_manager = g_value_dup_object (value);
 		break;
 	default:

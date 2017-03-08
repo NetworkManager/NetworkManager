@@ -290,9 +290,9 @@ set_property (GObject *object, guint prop_id, const GValue *value, GParamSpec *p
 	const char *str;
 	gulong id;
 
-	/* all properties are construct-only */
 	switch (prop_id) {
 	case PROP_SUBJECT_TYPE:
+		/* construct-only */
 		i = g_value_get_int (value);
 		g_return_if_fail (NM_IN_SET (i, (int) NM_AUTH_SUBJECT_TYPE_INTERNAL, (int) NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS));
 		subject_type = i;
@@ -300,6 +300,7 @@ set_property (GObject *object, guint prop_id, const GValue *value, GParamSpec *p
 		g_return_if_fail (priv->subject_type == subject_type);
 		break;
 	case PROP_UNIX_PROCESS_DBUS_SENDER:
+		/* construct-only */
 		if ((str = g_value_get_string (value))) {
 			priv->subject_type |= NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS;
 			g_return_if_fail (priv->subject_type == NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS);
@@ -307,6 +308,7 @@ set_property (GObject *object, guint prop_id, const GValue *value, GParamSpec *p
 		}
 		break;
 	case PROP_UNIX_PROCESS_PID:
+		/* construct-only */
 		if ((id = g_value_get_ulong (value)) != G_MAXULONG) {
 			priv->subject_type |= NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS;
 			g_return_if_fail (priv->subject_type == NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS);
@@ -314,6 +316,7 @@ set_property (GObject *object, guint prop_id, const GValue *value, GParamSpec *p
 		}
 		break;
 	case PROP_UNIX_PROCESS_UID:
+		/* construct-only */
 		if ((id = g_value_get_ulong (value)) != G_MAXULONG) {
 			priv->subject_type |= NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS;
 			g_return_if_fail (priv->subject_type == NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS);
@@ -407,7 +410,6 @@ nm_auth_subject_class_init (NMAuthSubjectClass *config_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
 
-	/* virtual methods */
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 	object_class->constructed = constructed;

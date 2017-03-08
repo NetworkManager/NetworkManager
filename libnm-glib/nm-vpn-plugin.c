@@ -799,7 +799,7 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_DBUS_SERVICE_NAME:
-		/* Construct-only */
+		/* construct-only */
 		priv->dbus_service_name = g_value_dup_string (value);
 		break;
 	case PROP_STATE:

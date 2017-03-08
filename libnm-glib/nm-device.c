@@ -519,7 +519,7 @@ set_property (GObject *object,
 
 	switch (prop_id) {
 	case PROP_DEVICE_TYPE:
-		/* Construct only */
+		/* construct-only */
 		priv->device_type = g_value_get_uint (value);
 		break;
 	case PROP_MANAGED:
