@@ -418,20 +418,17 @@ test_ip6_route_options (void)
 {
 	int ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME);
 	NMPlatformIP6Route route = { };
-	struct in6_addr network, src;
+	struct in6_addr network;
 	GArray *routes;
 	NMPlatformIP6Route rts[3];
 
 	inet_pton (AF_INET6, "2001:db8:a:b:0:0:0:0", &network);
-	inet_pton (AF_INET6, "2001:db8:e:0:0:0:0:0", &src);
 
 	route.ifindex = ifindex;
 	route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	route.network = network;
 	route.plen = 64;
 	route.gateway = in6addr_any;
-	route.src = src;
-	route.src_plen = 48;
 	route.metric = 1024;
 	route.window = 20000;
 	route.cwnd = 8;
@@ -452,8 +449,6 @@ test_ip6_route_options (void)
 	rts[0].plen = 64;
 	rts[0].ifindex = ifindex;
 	rts[0].gateway = in6addr_any;
-	rts[0].src = src;
-	rts[0].src_plen = 48;
 	rts[0].metric = 1024;
 	rts[0].window = 20000;
 	rts[0].cwnd = 8;
