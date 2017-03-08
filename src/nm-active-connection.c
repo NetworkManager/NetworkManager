@@ -110,6 +110,8 @@ static void _device_cleanup (NMActiveConnection *self);
 static void _settings_connection_notify_flags (NMSettingsConnection *settings_connection,
                                                GParamSpec *param,
                                                NMActiveConnection *self);
+static void _set_activation_type (NMActiveConnection *self,
+                                  NMActivationType activation_type);
 
 /*****************************************************************************/
 
@@ -222,6 +224,14 @@ nm_active_connection_set_state (NMActiveConnection *self,
 	_LOGD ("set state %s (was %s)",
 	       state_to_string (new_state),
 	       state_to_string (priv->state));
+
+	if (   new_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED
+	    && priv->activation_type == NM_ACTIVATION_TYPE_ASSUME) {
+		/* assuming connections mean to gracefully take over an externally
+		 * configured device. Once activation is complete, an assumed
+		 * activation *is* the same as a full activation. */
+		_set_activation_type (self, NM_ACTIVATION_TYPE_MANAGED);
+	}
 
 	old_state = priv->state;
 	priv->state = new_state;
