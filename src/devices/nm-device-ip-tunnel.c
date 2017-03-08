@@ -866,12 +866,27 @@ constructed (GObject *object)
 }
 
 static void
+dispose (GObject *object)
+{
+	NMDeviceIPTunnel *self = NM_DEVICE_IP_TUNNEL (object);
+	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE (self);
+
+	g_clear_pointer (&priv->local, g_free);
+	g_clear_pointer (&priv->remote, g_free);
+	g_clear_pointer (&priv->input_key, g_free);
+	g_clear_pointer (&priv->output_key, g_free);
+
+	G_OBJECT_CLASS (nm_device_ip_tunnel_parent_class)->dispose (object);
+}
+
+static void
 nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->constructed = constructed;
+	object_class->dispose = dispose;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 
