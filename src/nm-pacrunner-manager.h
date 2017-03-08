@@ -36,10 +36,11 @@ NMPacrunnerManager *nm_pacrunner_manager_get (void);
 
 void nm_pacrunner_manager_send (NMPacrunnerManager *self,
                                 const char *iface,
+                                const char *tag,
                                 NMProxyConfig *proxy_config,
                                 NMIP4Config *ip4_config,
                                 NMIP6Config *ip6_config);
 
-void nm_pacrunner_manager_remove (NMPacrunnerManager *self, const char *iface);
+void nm_pacrunner_manager_remove (NMPacrunnerManager *self, const char *tag);
 
 #endif /* __NETWORKMANAGER_PACRUNNER_MANAGER_H__ */
