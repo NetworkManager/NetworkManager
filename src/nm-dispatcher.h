@@ -45,18 +45,16 @@ gboolean nm_dispatcher_call_hostname (NMDispatcherFunc callback,
                                       gpointer user_data,
                                       guint *out_call_id);
 
-gboolean nm_dispatcher_call (NMDispatcherAction action,
-                             NMSettingsConnection *settings_connection,
-                             NMConnection *applied_connection,
-                             NMDevice *device,
-                             NMDispatcherFunc callback,
-                             gpointer user_data,
-                             guint *out_call_id);
+gboolean nm_dispatcher_call_device (NMDispatcherAction action,
+                                    NMDevice *device,
+                                    NMActRequest *act_request,
+                                    NMDispatcherFunc callback,
+                                    gpointer user_data,
+                                    guint *out_call_id);
 
-gboolean nm_dispatcher_call_sync (NMDispatcherAction action,
-                                  NMSettingsConnection *settings_connection,
-                                  NMConnection *applied_connection,
-                                  NMDevice *device);
+gboolean nm_dispatcher_call_device_sync (NMDispatcherAction action,
+                                         NMDevice *device,
+                                         NMActRequest *act_request);
 
 gboolean nm_dispatcher_call_vpn (NMDispatcherAction action,
                                  NMSettingsConnection *settings_connection,

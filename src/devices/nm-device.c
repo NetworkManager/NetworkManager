@@ -1535,7 +1535,7 @@ nm_device_has_carrier (NMDevice *self)
 NMActRequest *
 nm_device_get_act_request (NMDevice *self)
 {
-	g_return_val_if_fail (self != NULL, NULL);
+	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
 
 	return NM_DEVICE_GET_PRIVATE (self)->act_request;
 }
@@ -5237,14 +5237,10 @@ dhcp4_lease_change (NMDevice *self, NMIP4Config *config)
 		return FALSE;
 	}
 
-	/* Notify dispatcher scripts of new DHCP4 config */
-	nm_dispatcher_call (NM_DISPATCHER_ACTION_DHCP4_CHANGE,
-	                    nm_device_get_settings_connection (self),
-	                    nm_device_get_applied_connection (self),
-	                    self,
-	                    NULL,
-	                    NULL,
-	                    NULL);
+	nm_dispatcher_call_device (NM_DISPATCHER_ACTION_DHCP4_CHANGE,
+	                           self,
+	                           NULL,
+	                           NULL, NULL, NULL);
 
 	nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP4, FALSE);
 
@@ -6005,11 +6001,10 @@ dhcp6_lease_change (NMDevice *self)
 		return FALSE;
 	}
 
-	/* Notify dispatcher scripts of new DHCPv6 config */
-	nm_dispatcher_call (NM_DISPATCHER_ACTION_DHCP6_CHANGE,
-	                    settings_connection,
-	                    nm_device_get_applied_connection (self),
-	                    self, NULL, NULL, NULL);
+	nm_dispatcher_call_device (NM_DISPATCHER_ACTION_DHCP6_CHANGE,
+	                           self,
+	                           NULL,
+	                           NULL, NULL, NULL);
 
 	nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP6, FALSE);
 
@@ -7946,14 +7941,10 @@ activate_stage5_ip4_config_commit (NMDevice *self)
 	if (   priv->dhcp4.client
 	    && nm_device_activate_ip4_state_in_conf (self)
 	    && (nm_device_get_state (self) > NM_DEVICE_STATE_IP_CONFIG)) {
-		/* Notify dispatcher scripts of new DHCP4 config */
-		nm_dispatcher_call (NM_DISPATCHER_ACTION_DHCP4_CHANGE,
-		                    nm_device_get_settings_connection (self),
-		                    nm_device_get_applied_connection (self),
-		                    self,
-		                    NULL,
-		                    NULL,
-		                    NULL);
+		nm_dispatcher_call_device (NM_DISPATCHER_ACTION_DHCP4_CHANGE,
+		                           self,
+		                           NULL,
+		                           NULL, NULL, NULL);
 	}
 
 	arp_announce (self);
@@ -8082,13 +8073,10 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 				/* If IPv6 wasn't the first IP to complete, and DHCP was used,
 				 * then ensure dispatcher scripts get the DHCP lease information.
 				 */
-				nm_dispatcher_call (NM_DISPATCHER_ACTION_DHCP6_CHANGE,
-				                    nm_device_get_settings_connection (self),
-				                    nm_device_get_applied_connection (self),
-				                    self,
-				                    NULL,
-				                    NULL,
-				                    NULL);
+				nm_dispatcher_call_device (NM_DISPATCHER_ACTION_DHCP6_CHANGE,
+				                           self,
+				                           NULL,
+				                           NULL, NULL, NULL);
 			} else {
 				/* still waiting for first dhcp6 lease. */
 				return;
@@ -9617,13 +9605,12 @@ ip_check_pre_up (NMDevice *self)
 
 	priv->dispatcher.post_state = NM_DEVICE_STATE_SECONDARIES;
 	priv->dispatcher.post_state_reason = NM_DEVICE_STATE_REASON_NONE;
-	if (!nm_dispatcher_call (NM_DISPATCHER_ACTION_PRE_UP,
-	                         nm_device_get_settings_connection (self),
-	                         nm_device_get_applied_connection (self),
-	                         self,
-	                         dispatcher_complete_proceed_state,
-	                         self,
-	                         &priv->dispatcher.call_id)) {
+	if (!nm_dispatcher_call_device (NM_DISPATCHER_ACTION_PRE_UP,
+	                                self,
+	                                NULL,
+	                                dispatcher_complete_proceed_state,
+	                                self,
+	                                &priv->dispatcher.call_id)) {
 		/* Just proceed on errors */
 		dispatcher_complete_proceed_state (0, self);
 	}
@@ -12139,20 +12126,17 @@ _set_state_full (NMDevice *self,
 		priv->ignore_carrier = nm_config_data_get_ignore_carrier (NM_CONFIG_GET_DATA, self);
 
 		if (quitting) {
-			nm_dispatcher_call_sync (NM_DISPATCHER_ACTION_PRE_DOWN,
-			                         nm_act_request_get_settings_connection (req),
-			                         nm_act_request_get_applied_connection (req),
-			                         self);
+			nm_dispatcher_call_device_sync (NM_DISPATCHER_ACTION_PRE_DOWN,
+			                                self, req);
 		} else {
 			priv->dispatcher.post_state = NM_DEVICE_STATE_DISCONNECTED;
 			priv->dispatcher.post_state_reason = reason;
-			if (!nm_dispatcher_call (NM_DISPATCHER_ACTION_PRE_DOWN,
-			                         nm_act_request_get_settings_connection (req),
-			                         nm_act_request_get_applied_connection (req),
-			                         self,
-			                         deactivate_dispatcher_complete,
-			                         self,
-			                         &priv->dispatcher.call_id)) {
+			if (!nm_dispatcher_call_device (NM_DISPATCHER_ACTION_PRE_DOWN,
+			                                self,
+			                                req,
+			                                deactivate_dispatcher_complete,
+			                                self,
+			                                &priv->dispatcher.call_id)) {
 				/* Just proceed on errors */
 				deactivate_dispatcher_complete (0, self);
 			}
@@ -12179,10 +12163,10 @@ _set_state_full (NMDevice *self,
 	case NM_DEVICE_STATE_ACTIVATED:
 		_LOGI (LOGD_DEVICE, "Activation: successful, device activated.");
 		nm_device_update_metered (self);
-		nm_dispatcher_call (NM_DISPATCHER_ACTION_UP,
-		                    nm_act_request_get_settings_connection (req),
-		                    nm_act_request_get_applied_connection (req),
-		                    self, NULL, NULL, NULL);
+		nm_dispatcher_call_device (NM_DISPATCHER_ACTION_UP,
+		                           self,
+		                           req,
+		                           NULL, NULL, NULL);
 
 		if (priv->proxy_config) {
 			nm_pacrunner_manager_send (priv->pacrunner_manager,
@@ -12274,15 +12258,13 @@ _set_state_full (NMDevice *self,
 	if (   (old_state == NM_DEVICE_STATE_ACTIVATED || old_state == NM_DEVICE_STATE_DEACTIVATING)
 	    && (state != NM_DEVICE_STATE_DEACTIVATING)) {
 		if (quitting) {
-			nm_dispatcher_call_sync (NM_DISPATCHER_ACTION_DOWN,
-			                         nm_act_request_get_settings_connection (req),
-			                         nm_act_request_get_applied_connection (req),
-			                         self);
+			nm_dispatcher_call_device_sync (NM_DISPATCHER_ACTION_DOWN,
+			                                self, req);
 		} else {
-			nm_dispatcher_call (NM_DISPATCHER_ACTION_DOWN,
-			                    nm_act_request_get_settings_connection (req),
-			                    nm_act_request_get_applied_connection (req),
-			                    self, NULL, NULL, NULL);
+			nm_dispatcher_call_device (NM_DISPATCHER_ACTION_DOWN,
+			                           self,
+			                           req,
+			                           NULL, NULL, NULL);
 		}
 	}
 

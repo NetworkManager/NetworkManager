@@ -21,14 +21,16 @@
 
 #include "nm-default.h"
 
+#include "nm-dispatcher.h"
+
 #include <string.h>
 #include <errno.h>
 
-#include "nm-dispatcher.h"
 #include "nm-dispatcher-api.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-connectivity.h"
+#include "nm-act-request.h"
 #include "devices/nm-device.h"
 #include "nm-dhcp4-config.h"
 #include "nm-dhcp6-config.h"
@@ -715,41 +717,50 @@ nm_dispatcher_call_hostname (NMDispatcherFunc callback,
 }
 
 /**
- * nm_dispatcher_call:
+ * nm_dispatcher_call_device:
  * @action: the %NMDispatcherAction
- * @settings_connection: the #NMSettingsConnection the action applies to
- * @applied_connection: the currently applied connection
  * @device: the #NMDevice the action applies to
+ * @act_request: the #NMActRequest for the action. If %NULL, use the
+ *   current request of the device.
  * @callback: a caller-supplied callback to execute when done
  * @user_data: caller-supplied pointer passed to @callback
  * @out_call_id: on success, a call identifier which can be passed to
  * nm_dispatcher_call_cancel()
  *
- * This method always invokes the dispatcher action asynchronously.  To ignore
+ * This method always invokes the device dispatcher action asynchronously.  To ignore
  * the result, pass %NULL to @callback.
  *
  * Returns: %TRUE if the action was dispatched, %FALSE on failure
  */
 gboolean
-nm_dispatcher_call (NMDispatcherAction action,
-                    NMSettingsConnection *settings_connection,
-                    NMConnection *applied_connection,
-                    NMDevice *device,
-                    NMDispatcherFunc callback,
-                    gpointer user_data,
-                    guint *out_call_id)
+nm_dispatcher_call_device (NMDispatcherAction action,
+                           NMDevice *device,
+                           NMActRequest *act_request,
+                           NMDispatcherFunc callback,
+                           gpointer user_data,
+                           guint *out_call_id)
 {
-	return _dispatcher_call (action, FALSE, settings_connection, applied_connection, device,
+	nm_assert (NM_IS_DEVICE (device));
+	if (!act_request) {
+		act_request = nm_device_get_act_request (device);
+		if (!act_request)
+			return FALSE;
+	}
+	nm_assert (NM_IN_SET (nm_active_connection_get_device (NM_ACTIVE_CONNECTION (act_request)), NULL, device));
+	return _dispatcher_call (action, FALSE,
+	                         nm_act_request_get_settings_connection (act_request),
+	                         nm_act_request_get_applied_connection (act_request),
+	                         device,
 	                         NM_CONNECTIVITY_UNKNOWN, NULL, NULL, NULL, NULL,
 	                         callback, user_data, out_call_id);
 }
 
 /**
- * nm_dispatcher_call_sync():
+ * nm_dispatcher_call_device_sync():
  * @action: the %NMDispatcherAction
- * @settings_connection: the #NMSettingsConnection the action applies to
- * @applied_connection: the currently applied connection
  * @device: the #NMDevice the action applies to
+ * @act_request: the #NMActRequest for the action. If %NULL, use the
+ *   current request of the device.
  *
  * This method always invokes the dispatcher action synchronously and it may
  * take a long time to return.
@@ -757,13 +768,23 @@ nm_dispatcher_call (NMDispatcherAction action,
  * Returns: %TRUE if the action was dispatched, %FALSE on failure
  */
 gboolean
-nm_dispatcher_call_sync (NMDispatcherAction action,
-                         NMSettingsConnection *settings_connection,
-                         NMConnection *applied_connection,
-                         NMDevice *device)
+nm_dispatcher_call_device_sync (NMDispatcherAction action,
+                                NMDevice *device,
+                                NMActRequest *act_request)
 {
-	return _dispatcher_call (action, TRUE, settings_connection, applied_connection, device,
-	                         NM_CONNECTIVITY_UNKNOWN, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	nm_assert (NM_IS_DEVICE (device));
+	if (!act_request) {
+		act_request = nm_device_get_act_request (device);
+		if (!act_request)
+			return FALSE;
+	}
+	nm_assert (NM_IN_SET (nm_active_connection_get_device (NM_ACTIVE_CONNECTION (act_request)), NULL, device));
+	return _dispatcher_call (action, TRUE,
+	                         nm_act_request_get_settings_connection (act_request),
+	                         nm_act_request_get_applied_connection (act_request),
+	                         device,
+	                         NM_CONNECTIVITY_UNKNOWN, NULL, NULL, NULL, NULL,
+	                         NULL, NULL, NULL);
 }
 
 /**
