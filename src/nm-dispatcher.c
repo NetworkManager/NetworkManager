@@ -694,6 +694,27 @@ done:
 }
 
 /**
+ * nm_dispatcher_call_hostname:
+ * @callback: a caller-supplied callback to execute when done
+ * @user_data: caller-supplied pointer passed to @callback
+ * @out_call_id: on success, a call identifier which can be passed to
+ * nm_dispatcher_call_cancel()
+ *
+ * This method always invokes the dispatcher action asynchronously.
+ *
+ * Returns: %TRUE if the action was dispatched, %FALSE on failure
+ */
+gboolean
+nm_dispatcher_call_hostname (NMDispatcherFunc callback,
+                             gpointer user_data,
+                             guint *out_call_id)
+{
+	return _dispatcher_call (NM_DISPATCHER_ACTION_HOSTNAME, FALSE, NULL, NULL, NULL,
+	                         NM_CONNECTIVITY_UNKNOWN, NULL, NULL, NULL, NULL,
+	                         callback, user_data, out_call_id);
+}
+
+/**
  * nm_dispatcher_call:
  * @action: the %NMDispatcherAction
  * @settings_connection: the #NMSettingsConnection the action applies to

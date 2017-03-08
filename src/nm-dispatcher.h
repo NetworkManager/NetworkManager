@@ -41,6 +41,10 @@ typedef enum {
 
 typedef void (*NMDispatcherFunc) (guint call_id, gpointer user_data);
 
+gboolean nm_dispatcher_call_hostname (NMDispatcherFunc callback,
+                                      gpointer user_data,
+                                      guint *out_call_id);
+
 gboolean nm_dispatcher_call (NMDispatcherAction action,
                              NMSettingsConnection *settings_connection,
                              NMConnection *applied_connection,

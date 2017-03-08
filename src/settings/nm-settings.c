@@ -2143,7 +2143,7 @@ hostnamed_properties_changed (GDBusProxy *proxy,
 		g_free (priv->hostname.value);
 		priv->hostname.value = g_strdup (hostname);
 		_notify (self, PROP_HOSTNAME);
-		nm_dispatcher_call (NM_DISPATCHER_ACTION_HOSTNAME, NULL, NULL, NULL, NULL, NULL, NULL);
+		nm_dispatcher_call_hostname (NULL, NULL, NULL);
 	}
 
 	g_variant_unref (v_hostname);
