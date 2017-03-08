@@ -481,6 +481,7 @@ _set_vpn_state (NMVpnConnection *self,
 	VpnState old_vpn_state;
 	NMVpnConnectionState new_external_state, old_external_state;
 	NMDevice *parent_dev = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (self));
+	NMConnection *applied;
 
 	g_return_if_fail (NM_IS_VPN_CONNECTION (self));
 
@@ -552,13 +553,15 @@ _set_vpn_state (NMVpnConnection *self,
 		}
 		break;
 	case STATE_ACTIVATED:
+		applied = _get_applied_connection (self);
+
 		/* Secrets no longer needed now that we're connected */
 		nm_active_connection_clear_secrets (NM_ACTIVE_CONNECTION (self));
 
 		/* Let dispatcher scripts know we're up and running */
 		nm_dispatcher_call_vpn (NM_DISPATCHER_ACTION_VPN_UP,
 		                        _get_settings_connection (self, FALSE),
-		                        _get_applied_connection (self),
+		                        applied,
 		                        parent_dev,
 		                        priv->ip_iface,
 		                        priv->proxy_config,
@@ -571,16 +574,18 @@ _set_vpn_state (NMVpnConnection *self,
 		if (priv->proxy_config) {
 			nm_pacrunner_manager_send (nm_pacrunner_manager_get (),
 			                           priv->ip_iface,
+			                           nm_connection_get_uuid (applied),
 			                           priv->proxy_config,
 			                           priv->ip4_config,
 			                           priv->ip6_config);
 		}
 		break;
 	case STATE_DEACTIVATING:
+		applied = _get_applied_connection (self);
 		if (quitting) {
 			nm_dispatcher_call_vpn_sync (NM_DISPATCHER_ACTION_VPN_PRE_DOWN,
 			                             _get_settings_connection (self, FALSE),
-			                             _get_applied_connection (self),
+			                             applied,
 			                             parent_dev,
 			                             priv->ip_iface,
 			                             priv->proxy_config,
@@ -589,7 +594,7 @@ _set_vpn_state (NMVpnConnection *self,
 		} else {
 			if (!nm_dispatcher_call_vpn (NM_DISPATCHER_ACTION_VPN_PRE_DOWN,
 			                             _get_settings_connection (self, FALSE),
-			                             _get_applied_connection (self),
+			                             applied,
 			                             parent_dev,
 			                             priv->ip_iface,
 			                             priv->proxy_config,
@@ -604,7 +609,7 @@ _set_vpn_state (NMVpnConnection *self,
 		}
 
 		/* Remove config from PacRunner */
-		nm_pacrunner_manager_remove (nm_pacrunner_manager_get(), priv->ip_iface);
+		nm_pacrunner_manager_remove (nm_pacrunner_manager_get(), nm_connection_get_uuid (applied));
 		break;
 	case STATE_FAILED:
 	case STATE_DISCONNECTED:

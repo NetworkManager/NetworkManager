@@ -28,23 +28,28 @@
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 
+static void pacrunner_remove_done (GDBusProxy *proxy, GAsyncResult *res, gpointer user_data);
+
 #define PACRUNNER_DBUS_SERVICE "org.pacrunner"
 #define PACRUNNER_DBUS_INTERFACE "org.pacrunner.Manager"
 #define PACRUNNER_DBUS_PATH "/org/pacrunner/manager"
 
 /*****************************************************************************/
 
-struct remove_data {
-	char *iface;
+typedef struct {
+	char *tag;
+	NMPacrunnerManager *manager;
+	GVariant *args;
 	char *path;
-};
+	guint refcount;
+	bool removed;
+} Config;
 
 typedef struct {
 	char *iface;
 	GDBusProxy *pacrunner;
 	GCancellable *pacrunner_cancellable;
-	GList *args;
-	GList *remove;
+	GList *configs;
 } NMPacrunnerManagerPrivate;
 
 struct _NMPacrunnerManager {
@@ -71,15 +76,42 @@ NM_DEFINE_SINGLETON_GETTER (NMPacrunnerManager, nm_pacrunner_manager_get, NM_TYP
 
 /*****************************************************************************/
 
-static void
-remove_data_destroy (struct remove_data *data)
+static Config *
+config_new (NMPacrunnerManager *manager, char *tag, GVariant *args)
 {
-	g_return_if_fail (data != NULL);
+	Config *config;
 
-	g_free (data->iface);
-	g_free (data->path);
-	memset (data, 0, sizeof (struct remove_data));
-	g_free (data);
+	config = g_slice_new0 (Config);
+	config->manager = manager;
+	config->tag = tag;
+	config->args = g_variant_ref_sink (args);
+	config->refcount = 1;
+
+	return config;
+}
+
+static void
+config_ref (Config *config)
+{
+	g_assert (config);
+	g_assert (config->refcount > 0);
+
+	config->refcount++;
+}
+
+static void
+config_unref (Config *config)
+{
+	g_assert (config);
+	g_assert (config->refcount > 0);
+
+	if (config->refcount == 1) {
+		g_free (config->tag);
+		g_variant_unref (config->args);
+		g_free (config->path);
+		g_slice_free (Config, config);
+	} else
+		config->refcount--;
 }
 
 static void
@@ -180,63 +212,71 @@ get_ip6_domains (GPtrArray *domains, NMIP6Config *ip6)
 }
 
 static void
-pacrunner_send_done (GObject *source, GAsyncResult *res, gpointer user_data)
+pacrunner_send_done (GDBusProxy *proxy, GAsyncResult *res, gpointer user_data)
 {
-	NMPacrunnerManager *self = NM_PACRUNNER_MANAGER (user_data);
-	NMPacrunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
+	Config *config = user_data;
+	NMPacrunnerManager *self;
+	NMPacrunnerManagerPrivate *priv;
 	gs_free_error GError *error = NULL;
 	gs_unref_variant GVariant *variant = NULL;
 	const char *path = NULL;
-	GList *iter = NULL;
-	gboolean found = FALSE;
 
-	variant = g_dbus_proxy_call_finish (priv->pacrunner, res, &error);
+	g_return_if_fail (!config->path);
+
+	variant = g_dbus_proxy_call_finish (proxy, res, &error);
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+		config_unref (config);
+		return;
+	}
+
+	self = NM_PACRUNNER_MANAGER (config->manager);
+	priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
+
 	if (!variant) {
-		_LOGD ("sending proxy config to pacrunner failed: %s", error->message);
+		_LOGD ("send config for '%s' failed: %s", config->tag, error->message);
 	} else {
-		struct remove_data *data;
 		g_variant_get (variant, "(&o)", &path);
 
-		/* Replace the old path (if any) of proxy config with the new one returned
-		 * from CreateProxyConfiguration() DBus method on pacrunner.
-		 */
-		for (iter = g_list_first (priv->remove); iter; iter = g_list_next (iter)) {
-			struct remove_data *r = iter->data;
-			if (g_strcmp0 (priv->iface, r->iface) == 0) {
-				g_free (r->path);
-				r->path = g_strdup (path);
-				found = TRUE;
-				break;
-			}
-		}
+		config->path = g_strdup (path);
+		_LOGD ("successfully sent config for '%s'", config->tag);
 
-		if (!found) {
-			data = g_malloc0 (sizeof (struct remove_data));
-			data->iface = g_strdup (priv->iface);
-			data->path = g_strdup (path);
-			priv->remove = g_list_append (priv->remove, data);
-			_LOGD ("proxy config sent to pacrunner");
+		if (config->removed) {
+			g_dbus_proxy_call (priv->pacrunner,
+			                   "DestroyProxyConfiguration",
+			                   g_variant_new ("(o)", config->path),
+			                   G_DBUS_CALL_FLAGS_NO_AUTO_START,
+			                   -1,
+			                   priv->pacrunner_cancellable,
+			                   (GAsyncReadyCallback) pacrunner_remove_done,
+			                   config);
 		}
 	}
+	config_unref (config);
 }
 
 static void
-send_pacrunner_proxy_data (NMPacrunnerManager *self, GVariant *pacrunner_manager_args)
+pacrunner_send_config (NMPacrunnerManager *self, Config *config)
 {
 	NMPacrunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
 
-	if (!pacrunner_manager_args)
-		return;
+	if (priv->pacrunner) {
+		gs_free char *args_str = NULL;
 
-	if (priv->pacrunner)
+		_LOGT ("sending proxy config for '%s': %s", config->tag,
+		       (args_str = g_variant_print (config->args, FALSE)));
+
+		config_ref (config);
+		g_clear_pointer (&config->path, g_free);
+
 		g_dbus_proxy_call (priv->pacrunner,
 		                   "CreateProxyConfiguration",
-		                   pacrunner_manager_args,
-		                   G_DBUS_CALL_FLAGS_NONE,
+		                   config->args,
+		                   G_DBUS_CALL_FLAGS_NO_AUTO_START,
 		                   -1,
-		                   NULL,
-		                  (GAsyncReadyCallback) pacrunner_send_done,
-		                   self);
+		                   priv->pacrunner_cancellable,
+		                   (GAsyncReadyCallback) pacrunner_send_done,
+		                   config);
+	}
 }
 
 static void
@@ -252,9 +292,8 @@ name_owner_changed (GObject *object,
 	owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (object));
 	if (owner) {
 		_LOGD ("pacrunner appeared as %s", owner);
-		for (iter = g_list_first(priv->args); iter; iter = g_list_next(iter)) {
-			send_pacrunner_proxy_data (self, iter->data);
-		}
+		for (iter = g_list_first (priv->configs); iter; iter = g_list_next (iter))
+			pacrunner_send_config (self, iter->data);
 	} else {
 		_LOGD ("pacrunner disappeared");
 	}
@@ -289,6 +328,7 @@ pacrunner_proxy_cb (GObject *source, GAsyncResult *res, gpointer user_data)
  * nm_pacrunner_manager_send:
  * @self: the #NMPacrunnerManager
  * @iface: the iface for the connection or %NULL
+ * @tag: unique configuration identifier
  * @proxy_config: proxy config of the connection
  * @ip4_config: IP4 config of the connection
  * @ip6_config: IP6 config of the connection
@@ -296,6 +336,7 @@ pacrunner_proxy_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 void
 nm_pacrunner_manager_send (NMPacrunnerManager *self,
                            const char *iface,
+                           const char *tag,
                            NMProxyConfig *proxy_config,
                            NMIP4Config *ip4_config,
                            NMIP6Config *ip6_config)
@@ -304,8 +345,8 @@ nm_pacrunner_manager_send (NMPacrunnerManager *self,
 	NMProxyConfigMethod method;
 	NMPacrunnerManagerPrivate *priv;
 	GVariantBuilder proxy_data;
-	GVariant *pacrunner_manager_args;
 	GPtrArray *domains;
+	Config *config;
 
 	g_return_if_fail (NM_IS_PACRUNNER_MANAGER (self));
 	g_return_if_fail (proxy_config);
@@ -357,31 +398,39 @@ nm_pacrunner_manager_send (NMPacrunnerManager *self,
 		g_strfreev (strv);
 	}
 
-	pacrunner_manager_args = g_variant_ref_sink (g_variant_new ("(a{sv})", &proxy_data));
-	priv->args = g_list_append (priv->args, pacrunner_manager_args);
+	config = config_new (self, g_strdup (tag),
+	                     g_variant_new ("(a{sv})", &proxy_data));
+	priv->configs = g_list_append (priv->configs, config);
 
-	/* Send if pacrunner is available on Bus, otherwise
-	 * argument has already been appended above to be
+	/* Send if pacrunner is available on bus, otherwise
+	 * config has already been appended above to be
 	 * sent when pacrunner appears.
 	 */
-	send_pacrunner_proxy_data (self, pacrunner_manager_args);
+	pacrunner_send_config (self, config);
 }
 
 static void
-pacrunner_remove_done (GObject *source, GAsyncResult *res, gpointer user_data)
+pacrunner_remove_done (GDBusProxy *proxy, GAsyncResult *res, gpointer user_data)
 {
-	/* @self may be a dangling pointer. However, we don't use it as the
-	 * logging macro below does not dereference @self. */
-	NMPacrunnerManager *self = user_data;
+	Config *config = user_data;
+	NMPacrunnerManager *self;
 	gs_free_error GError *error = NULL;
 	gs_unref_variant GVariant *ret = NULL;
 
-	ret = g_dbus_proxy_call_finish ((GDBusProxy *) source, res, &error);
+	ret = g_dbus_proxy_call_finish (proxy, res, &error);
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+		config_unref (config);
+		return;
+	}
+
+	self = NM_PACRUNNER_MANAGER (config->manager);
 
 	if (!ret)
-		_LOGD ("Couldn't remove proxy config from pacrunner: %s", error->message);
+		_LOGD ("couldn't remove config for '%s': %s", config->tag, error->message);
 	else
-		_LOGD ("Successfully removed proxy config from pacrunner");
+		_LOGD ("successfully removed config for '%s'", config->tag);
+
+	config_unref (config);
 }
 
 /**
@@ -391,26 +440,44 @@ pacrunner_remove_done (GObject *source, GAsyncResult *res, gpointer user_data)
  * from pacrunner
  */
 void
-nm_pacrunner_manager_remove (NMPacrunnerManager *self, const char *iface)
+nm_pacrunner_manager_remove (NMPacrunnerManager *self, const char *tag)
 {
 	NMPacrunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
 	GList *list;
 
-	for (list = g_list_first(priv->remove); list; list = g_list_next(list)) {
-		struct remove_data *data = list->data;
-		if (g_strcmp0 (data->iface, iface) == 0) {
-			if (priv->pacrunner && data->path)
+	g_return_if_fail (tag);
+
+	_LOGT ("removing config for '%s'", tag);
+
+	for (list = g_list_first (priv->configs); list; list = g_list_next (list)) {
+		Config *config = list->data;
+
+		if (nm_streq (config->tag, tag)) {
+			if (priv->pacrunner) {
+				if (!config->path) {
+					/* send() is pending: mark the config as removed
+					 * so that the send() callback will remove it when
+					 * the D-Bus path is known. */
+					config->removed = TRUE;
+					config_unref (config);
+					return;
+				}
 				g_dbus_proxy_call (priv->pacrunner,
 				                   "DestroyProxyConfiguration",
-				                   g_variant_new ("(o)", data->path),
-				                   G_DBUS_CALL_FLAGS_NONE,
+				                   g_variant_new ("(o)", config->path),
+				                   G_DBUS_CALL_FLAGS_NO_AUTO_START,
 				                   -1,
-				                   NULL,
-				                  (GAsyncReadyCallback) pacrunner_remove_done,
-				                   self);
-			break;
+				                   priv->pacrunner_cancellable,
+				                   (GAsyncReadyCallback) pacrunner_remove_done,
+				                   config);
+			} else
+				config_unref (config);
+			priv->configs = g_list_delete_link (priv->configs, list);
+			return;
 		}
 	}
+	/* bug, remove() should always match a previous send() for a given tag */
+	g_return_if_reached ();
 }
 
 /*****************************************************************************/
@@ -439,16 +506,11 @@ dispose (GObject *object)
 	NMPacrunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE ((NMPacrunnerManager *) object);
 
 	g_clear_pointer (&priv->iface, g_free);
-
 	nm_clear_g_cancellable (&priv->pacrunner_cancellable);
-
 	g_clear_object (&priv->pacrunner);
 
-	g_list_free_full (priv->args, (GDestroyNotify) g_variant_unref);
-	priv->args = NULL;
-
-	g_list_free_full (priv->remove, (GDestroyNotify) remove_data_destroy);
-	priv->remove = NULL;
+	g_list_free_full (priv->configs, (GDestroyNotify) config_unref);
+	priv->configs = NULL;
 
 	G_OBJECT_CLASS (nm_pacrunner_manager_parent_class)->dispose (object);
 }
