@@ -416,7 +416,7 @@ teamd_dbus_appeared (GDBusConnection *connection,
 			success = teamd_read_config (device);
 		if (success)
 			nm_device_activate_schedule_stage2_device_config (device);
-		else if (!nm_device_uses_assumed_connection (device))
+		else if (!nm_device_has_activation_type_assume_or_external (device))
 			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
 	}
 }

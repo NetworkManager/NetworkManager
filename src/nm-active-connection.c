@@ -722,7 +722,7 @@ nm_active_connection_get_activation_type (NMActiveConnection *self)
 }
 
 gboolean
-nm_active_connection_get_assumed (NMActiveConnection *self)
+nm_active_connection_has_activation_type_assume_or_external (NMActiveConnection *self)
 {
 	return nm_active_connection_get_activation_type (self) == NM_ACTIVATION_TYPE_ASSUME;
 }

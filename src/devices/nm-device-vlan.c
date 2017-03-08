@@ -96,7 +96,7 @@ parent_hwaddr_maybe_changed (NMDevice *parent,
 	NMSettingIPConfig *s_ip6;
 
 	/* Never touch assumed devices */
-	if (nm_device_uses_assumed_connection ((NMDevice *) self))
+	if (nm_device_has_activation_type_assume_or_external ((NMDevice *) self))
 		return;
 
 	connection = nm_device_get_applied_connection ((NMDevice *) self);

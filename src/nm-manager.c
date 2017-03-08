@@ -271,7 +271,7 @@ active_connection_remove (NMManager *self, NMActiveConnection *active)
 		g_signal_handlers_disconnect_by_func (active, active_connection_default_changed, self);
 		g_signal_handlers_disconnect_by_func (active, active_connection_parent_active, self);
 
-		if (   nm_active_connection_get_assumed (active)
+		if (   nm_active_connection_has_activation_type_assume_or_external (active)
 		    && (connection = nm_active_connection_get_settings_connection (active))
 		    && nm_settings_connection_get_volatile (connection))
 			g_object_ref (connection);
@@ -802,13 +802,13 @@ find_best_device_state (NMManager *manager, gboolean *force_connectivity_check)
 			}
 			break;
 		case NM_ACTIVE_CONNECTION_STATE_ACTIVATING:
-			if (!nm_active_connection_get_assumed (ac)) {
+			if (!nm_active_connection_has_activation_type_assume_or_external (ac)) {
 				if (best_state != NM_STATE_CONNECTED_GLOBAL)
 					best_state = NM_STATE_CONNECTING;
 			}
 			break;
 		case NM_ACTIVE_CONNECTION_STATE_DEACTIVATING:
-			if (!nm_active_connection_get_assumed (ac)) {
+			if (!nm_active_connection_has_activation_type_assume_or_external (ac)) {
 				if (best_state < NM_STATE_DISCONNECTING)
 					best_state = NM_STATE_DISCONNECTING;
 			}

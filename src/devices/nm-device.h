@@ -489,7 +489,7 @@ gboolean nm_device_complete_connection (NMDevice *device,
 gboolean nm_device_check_connection_compatible (NMDevice *device, NMConnection *connection);
 gboolean nm_device_check_slave_connection_compatible (NMDevice *device, NMConnection *connection);
 
-gboolean nm_device_uses_assumed_connection (NMDevice *device);
+gboolean nm_device_has_activation_type_assume_or_external (NMDevice *device);
 
 gboolean nm_device_unmanage_on_quit (NMDevice *self);
 
