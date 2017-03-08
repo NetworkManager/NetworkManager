@@ -41,7 +41,6 @@ struct remove_data {
 
 typedef struct {
 	char *iface;
-	GPtrArray *domains;
 	GDBusProxy *pacrunner;
 	GCancellable *pacrunner_cancellable;
 	GList *args;
@@ -84,7 +83,7 @@ remove_data_destroy (struct remove_data *data)
 }
 
 static void
-add_proxy_config (NMPacrunnerManager *self, GVariantBuilder *proxy_data, const NMProxyConfig *proxy_config)
+add_proxy_config (GVariantBuilder *proxy_data, const NMProxyConfig *proxy_config)
 {
 	const char *pac_url, *pac_script;
 	NMProxyConfigMethod method;
@@ -113,19 +112,18 @@ add_proxy_config (NMPacrunnerManager *self, GVariantBuilder *proxy_data, const N
 }
 
 static void
-add_ip4_config (NMPacrunnerManager *self, GVariantBuilder *proxy_data, NMIP4Config *ip4)
+get_ip4_domains (GPtrArray *domains, NMIP4Config *ip4)
 {
-	NMPacrunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
+	char *cidr;
 	int i;
-	char *cidr = NULL;
 
 	/* Extract searches */
 	for (i = 0; i < nm_ip4_config_get_num_searches (ip4); i++)
-		g_ptr_array_add (priv->domains, g_strdup (nm_ip4_config_get_search (ip4, i)));
+		g_ptr_array_add (domains, g_strdup (nm_ip4_config_get_search (ip4, i)));
 
 	/* Extract domains */
 	for (i = 0; i < nm_ip4_config_get_num_domains (ip4); i++)
-		g_ptr_array_add (priv->domains, g_strdup (nm_ip4_config_get_domain (ip4, i)));
+		g_ptr_array_add (domains, g_strdup (nm_ip4_config_get_domain (ip4, i)));
 
 	/* Add addresses and routes in CIDR form */
 	for (i = 0; i < nm_ip4_config_get_num_addresses (ip4); i++) {
@@ -134,8 +132,7 @@ add_ip4_config (NMPacrunnerManager *self, GVariantBuilder *proxy_data, NMIP4Conf
 		cidr = g_strdup_printf ("%s/%u",
 		                        nm_utils_inet4_ntop (address->address, NULL),
 		                        address->plen);
-		g_ptr_array_add (priv->domains, g_strdup (cidr));
-		g_free (cidr);
+		g_ptr_array_add (domains, cidr);
 	}
 
 	for (i = 0; i < nm_ip4_config_get_num_routes (ip4); i++) {
@@ -144,25 +141,23 @@ add_ip4_config (NMPacrunnerManager *self, GVariantBuilder *proxy_data, NMIP4Conf
 		cidr = g_strdup_printf ("%s/%u",
 		                        nm_utils_inet4_ntop (routes->network, NULL),
 		                        routes->plen);
-		g_ptr_array_add (priv->domains, g_strdup (cidr));
-		g_free (cidr);
+		g_ptr_array_add (domains, cidr);
 	}
 }
 
 static void
-add_ip6_config (NMPacrunnerManager *self, GVariantBuilder *proxy_data, NMIP6Config *ip6)
+get_ip6_domains (GPtrArray *domains, NMIP6Config *ip6)
 {
-	NMPacrunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
+	char *cidr;
 	int i;
-	char *cidr = NULL;
 
 	/* Extract searches */
 	for (i = 0; i < nm_ip6_config_get_num_searches (ip6); i++)
-		g_ptr_array_add (priv->domains, g_strdup (nm_ip6_config_get_search (ip6, i)));
+		g_ptr_array_add (domains, g_strdup (nm_ip6_config_get_search (ip6, i)));
 
 	/* Extract domains */
 	for (i = 0; i < nm_ip6_config_get_num_domains (ip6); i++)
-		g_ptr_array_add (priv->domains, g_strdup (nm_ip6_config_get_domain (ip6, i)));
+		g_ptr_array_add (domains, g_strdup (nm_ip6_config_get_domain (ip6, i)));
 
 	/* Add addresses and routes in CIDR form */
 	for (i = 0; i < nm_ip6_config_get_num_addresses (ip6); i++) {
@@ -171,8 +166,7 @@ add_ip6_config (NMPacrunnerManager *self, GVariantBuilder *proxy_data, NMIP6Conf
 		cidr = g_strdup_printf ("%s/%u",
 		                        nm_utils_inet6_ntop (&address->address, NULL),
 		                        address->plen);
-		g_ptr_array_add (priv->domains, g_strdup (cidr));
-		g_free (cidr);
+		g_ptr_array_add (domains, cidr);
 	}
 
 	for (i = 0; i < nm_ip6_config_get_num_routes (ip6); i++) {
@@ -181,8 +175,7 @@ add_ip6_config (NMPacrunnerManager *self, GVariantBuilder *proxy_data, NMIP6Conf
 		cidr = g_strdup_printf ("%s/%u",
 		                        nm_utils_inet6_ntop (&routes->network, NULL),
 		                        routes->plen);
-		g_ptr_array_add (priv->domains, g_strdup (cidr));
-		g_free (cidr);
+		g_ptr_array_add (domains, cidr);
 	}
 }
 
@@ -312,6 +305,7 @@ nm_pacrunner_manager_send (NMPacrunnerManager *self,
 	NMPacrunnerManagerPrivate *priv;
 	GVariantBuilder proxy_data;
 	GVariant *pacrunner_manager_args;
+	GPtrArray *domains;
 
 	g_return_if_fail (NM_IS_PACRUNNER_MANAGER (self));
 	g_return_if_fail (proxy_config);
@@ -343,18 +337,18 @@ nm_pacrunner_manager_send (NMPacrunnerManager *self,
 		                       g_variant_new_string ("direct"));
 	}
 
-	priv->domains = g_ptr_array_new_with_free_func (g_free);
+	domains = g_ptr_array_new_with_free_func (g_free);
 
 	/* Extract stuff from configs */
-	add_proxy_config (self, &proxy_data, proxy_config);
+	add_proxy_config (&proxy_data, proxy_config);
 
 	if (ip4_config)
-		add_ip4_config (self, &proxy_data, ip4_config);
+		get_ip4_domains (domains, ip4_config);
 	if (ip6_config)
-		add_ip6_config (self, &proxy_data, ip6_config);
+		get_ip6_domains (domains, ip6_config);
 
-	g_ptr_array_add (priv->domains, NULL);
-	strv = (char **) g_ptr_array_free (priv->domains, (priv->domains->len == 1));
+	g_ptr_array_add (domains, NULL);
+	strv = (char **) g_ptr_array_free (domains, (domains->len == 1));
 
 	if (strv) {
 		g_variant_builder_add (&proxy_data, "{sv}",
