@@ -1837,7 +1837,7 @@ assume_connection (NMManager *self, NMDevice *device, NMSettingsConnection *conn
 
 	subject = nm_auth_subject_new_internal ();
 	active = _new_active_connection (self, NM_CONNECTION (connection), NULL, NULL,
-	                                 device, subject, NM_ACTIVATION_TYPE_MANAGED, &error);
+	                                 device, subject, NM_ACTIVATION_TYPE_ASSUME, &error);
 	g_object_unref (subject);
 
 	if (!active) {
@@ -1853,7 +1853,6 @@ assume_connection (NMManager *self, NMDevice *device, NMSettingsConnection *conn
 	if (find_master (self, NM_CONNECTION (connection), device, NULL, NULL, &master_ac, NULL) && master_ac)
 		nm_active_connection_set_master (active, master_ac);
 
-	nm_active_connection_set_assumed (active, TRUE);
 	nm_exported_object_export (NM_EXPORTED_OBJECT (active));
 	active_connection_add (self, active);
 	nm_device_queue_activation (device, NM_ACT_REQUEST (active));

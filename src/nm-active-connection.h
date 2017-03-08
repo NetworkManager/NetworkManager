@@ -159,9 +159,6 @@ void          nm_active_connection_set_master (NMActiveConnection *self,
 void          nm_active_connection_set_parent (NMActiveConnection *self,
                                                NMActiveConnection *parent);
 
-void          nm_active_connection_set_assumed (NMActiveConnection *self,
-                                                gboolean assumed);
-
 gboolean      nm_active_connection_get_assumed (NMActiveConnection *self);
 
 NMActivationType nm_active_connection_get_activation_type (NMActiveConnection *self);

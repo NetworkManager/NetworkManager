@@ -49,7 +49,6 @@ typedef struct _NMActiveConnectionPrivate {
 	bool is_default6:1;
 	bool state_set:1;
 	bool vpn:1;
-	bool assumed:1;
 	bool master_ready:1;
 
 	NMActivationType activation_type:3;
@@ -568,7 +567,7 @@ nm_active_connection_set_device (NMActiveConnection *self, NMDevice *device)
 		g_signal_connect (device, "notify::" NM_DEVICE_METERED,
 		                  G_CALLBACK (device_metered_changed), self);
 
-		if (!priv->assumed) {
+		if (priv->activation_type == NM_ACTIVATION_TYPE_MANAGED) {
 			priv->pending_activation_id = g_strdup_printf (NM_PENDING_ACTIONPREFIX_ACTIVATION"%p", (void *)self);
 			nm_device_add_pending_action (device, priv->pending_activation_id, TRUE);
 		}
@@ -722,24 +721,10 @@ nm_active_connection_get_activation_type (NMActiveConnection *self)
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->activation_type;
 }
 
-void
-nm_active_connection_set_assumed (NMActiveConnection *self, gboolean assumed)
-{
-	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
-
-	g_return_if_fail (priv->assumed == FALSE);
-	priv->assumed = assumed;
-
-	if (priv->pending_activation_id) {
-		nm_device_remove_pending_action (priv->device, priv->pending_activation_id, TRUE);
-		g_clear_pointer (&priv->pending_activation_id, g_free);
-	}
-}
-
 gboolean
 nm_active_connection_get_assumed (NMActiveConnection *self)
 {
-	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->assumed;
+	return nm_active_connection_get_activation_type (self) == NM_ACTIVATION_TYPE_ASSUME;
 }
 
 /*****************************************************************************/
