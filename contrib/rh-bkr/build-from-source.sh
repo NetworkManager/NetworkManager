@@ -72,7 +72,7 @@ fi
 
 cd "./NetworkManager/"
 git checkout "$BUILD_ID"
-
+echo "HEAD is $(git rev-parse HEAD)"
 
 if [[ "$DO_TEST_BUILD" == yes ]]; then
     NOCONFIGURE=yes ./autogen.sh
