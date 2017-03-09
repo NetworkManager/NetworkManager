@@ -1028,6 +1028,20 @@ _nmp_cache_id_init (NMPCacheId *id, NMPCacheIdType id_type)
 	 * all structs have the packed attribute, there are no holes
 	 * due to alignment, and it becomes simple for nmp_cache_id_init_*()
 	 * to ensure that all fields are set. */
+
+#if NM_MORE_ASSERTS
+	nm_assert (id);
+	{
+		guint i;
+
+		/* initialized with some bogus canary to hopefully detect when we miss
+		 * to initialize a field of the cache-id. */
+		for (i = 0; i < sizeof (*id); i++) {
+			((char *) id)[i] = GPOINTER_TO_UINT (id) ^ i;
+		}
+	}
+#endif
+
 	id->_id_type = id_type;
 }
 
