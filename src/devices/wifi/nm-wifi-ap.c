@@ -687,14 +687,16 @@ get_max_rate (const guint8 *bytes, gsize len)
 	guint8 id, elem_len;
 	guint32 max_rate = 0;
 
-	while (len >= 2) {
+	while (len) {
+		if (len < 2)
+			return 0;
+
 		id = *bytes++;
 		elem_len = *bytes++;
 		len -= 2;
 
-		if (elem_len > len) {
-			return -1;
-		}
+		if (elem_len > len)
+			return 0;
 
 		if (id == IEEE_80211_IE_HT_CAP)
 			max_rate = get_max_ht_rate (*bytes, bytes+3);
