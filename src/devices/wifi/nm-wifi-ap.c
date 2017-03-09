@@ -438,242 +438,188 @@ security_from_vardict (GVariant *security)
 static guint32
 get_max_ht20_rate (int mcs)
 {
-	if (mcs == 0)
-		return 6500000;
-	if (mcs == (1 || 8))
-		return 13000000;
-	if (mcs == (2 || 16))
-		return 19500000;
-	if (mcs == (3 || 9 || 24))
-		return 26000000;
-	if (mcs == (4 || 10 || 17))
-		return 39000000;
-	if (mcs == (5 || 11 || 25))
-		return 52000000;
-	if (mcs == (6 || 18))
-		return 58500000;
-	if (mcs == 7)
-		return 65000000;
-	if (mcs == (12 || 19 || 26))
-		return 78000000;
-	if (mcs == (13 || 27))
-		return 104000000;
-	if (mcs == (14 || 20))
-		return 117000000;
-	if (mcs == 15)
-		return 130000000;
-	if (mcs == (21 || 28))
-		return 156000000;
-	if (mcs == 22)
-		return 175500000;
-	if (mcs == 23)
-		return 195000000;
-	if (mcs == 29)
-		return 208000000;
-	if (mcs == 30)
-		return 234000000;
-	if (mcs == 31)
-		return 260000000;
+	switch (mcs) {
+	case 0:  return 6500000;
+	case 1:
+	case 8:  return 13000000;
+	case 2:
+	case 16: return 19500000;
+	case 3:
+	case 9:
+	case 24: return 26000000;
+	case 4:
+	case 10:
+	case 17: return 39000000;
+	case 5:
+	case 11:
+	case 25: return 52000000;
+	case 6:
+	case 18: return 58500000;
+	case 7:  return 65000000;
+	case 12:
+	case 19:
+	case 26: return 78000000;
+	case 13:
+	case 27: return 104000000;
+	case 14:
+	case 20: return 117000000;
+	case 15: return 130000000;
+	case 21:
+	case 28: return 156000000;
+	case 22: return 175500000;
+	case 23: return 195000000;
+	case 29: return 208000000;
+	case 30: return 234000000;
+	case 31: return 260000000;
+	}
 	return 0;
 }
 
 static guint32
 get_max_ht40_rate (int mcs)
 {
-	if (mcs == 0)
-		return 13500000;
-	if (mcs == (1 || 8))
-		return 27000000;
-	if (mcs == 2)
-		return 40500000;
-	if (mcs == (3 || 9 || 24))
-		return 54000000;
-	if (mcs == (4 || 10 || 17))
-		return 81000000;
-	if (mcs == (5 || 11 || 25))
-		return 108000000;
-	if (mcs == (6 || 18))
-		return 121500000;
-	if (mcs == 7)
-		return 135000000;
-	if (mcs == (12 || 19 || 26))
-		return 162000000;
-	if (mcs == (13  || 27))
-		return 216000000;
-	if (mcs == (14 || 20))
-		return 243000000;
-	if (mcs == 15)
-		return 270000000;
-	if (mcs == 16)
-		return 40500000;
-	if (mcs == (21 || 28))
-		return 324000000;
-	if (mcs == 22)
-		return 364500000;
-	if (mcs == 23)
-		return 405000000;
-	if (mcs == 29)
-		return 432000000;
-	if (mcs == 30)
-		return 486000000;
-	if (mcs == 31)
-		return 540000000;
+	switch (mcs) {
+	case 0:  return 13500000;
+	case 1:
+	case 8:  return 27000000;
+	case 2:  return 40500000;
+	case 3:
+	case 9:
+	case 24: return 54000000;
+	case 4:
+	case 10:
+	case 17: return 81000000;
+	case 5:
+	case 11:
+	case 25: return 108000000;
+	case 6:
+	case 18: return 121500000;
+	case 7:  return 135000000;
+	case 12:
+	case 19:
+	case 26: return 162000000;
+	case 13:
+	case 27: return 216000000;
+	case 14:
+	case 20: return 243000000;
+	case 15: return 270000000;
+	case 16: return 40500000;
+	case 21:
+	case 28: return 324000000;
+	case 22: return 364500000;
+	case 23: return 405000000;
+	case 29: return 432000000;
+	case 30: return 486000000;
+	case 31: return 540000000;
+	}
 	return 0;
 }
 
 static guint32
 get_max_vht80_rate_ss1 (int mcs)
 {
-	if (mcs == 0)
-		return 29300000;
-	if (mcs == 1)
-		return 58500000;
-	if (mcs == 2)
-		return 87800000;
-	if (mcs == 3)
-		return 117000000;
-	if (mcs == 4)
-		return 175500000;
-	if (mcs == 5)
-		return 234000000;
-	if (mcs == 6)
-		return 263300000;
-	if (mcs == 7)
-		return 292500000;
-	if (mcs == 8)
-		return 351000000;
-	 if (mcs == 9)
-		return 390000000;
+	switch (mcs) {
+	case 0:  return 29300000;
+	case 1:  return 58500000;
+	case 2:  return 87800000;
+	case 3:  return 117000000;
+	case 4:  return 175500000;
+	case 5:  return 234000000;
+	case 6:  return 263300000;
+	case 7:  return 292500000;
+	case 8:  return 351000000;
+	case 9:  return 390000000;
+	}
 	return 0;
 }
 
 static guint32
 get_max_vht80_rate_ss2 (int mcs)
 {
-	if (mcs == 0)
-		return 58500000;
-	if (mcs == 1)
-		return 117000000;
-	if (mcs == 2)
-		return 175500000;
-	if (mcs == 3)
-		return 234000000;
-	if (mcs == 4)
-		return 351000000;
-	if (mcs == 5)
-		return 468000000;
-	if (mcs == 6)
-		return 526500000;
-	if (mcs == 7)
-		return 585000000;
-	if (mcs == 8)
-		return 702000000;
-	if (mcs == 9)
-		return 780000000;
+	switch (mcs) {
+	case 0:  return 58500000;
+	case 1:  return 117000000;
+	case 2:  return 175500000;
+	case 3:  return 234000000;
+	case 4:  return 351000000;
+	case 5:  return 468000000;
+	case 6:  return 526500000;
+	case 7:  return 585000000;
+	case 8:  return 702000000;
+	case 9:  return 780000000;
+	}
 	return 0;
 }
 
 static guint32
 get_max_vht80_rate_ss3 (int mcs)
 {
-	if (mcs == 0)
-		return 87800000;
-	if (mcs == 1)
-		return 175500000;
-	if (mcs == 2)
-		return 263300000;
-	if (mcs == 3)
-		return 351000000;
-	if (mcs == 4)
-		return 526500000;
-	if (mcs == 5)
-		return 702000000;
-	if (mcs == 6)
-		return 0;
-	if (mcs == 7)
-		return 877500000;
-	if (mcs == 8)
-		return 105300000;
-	if (mcs == 9)
-		return 117000000;
+	switch (mcs) {
+	case 0:  return 87800000;
+	case 1:  return 175500000;
+	case 2:  return 263300000;
+	case 3:  return 351000000;
+	case 4:  return 526500000;
+	case 5:  return 702000000;
+	case 6:  return 0;
+	case 7:  return 877500000;
+	case 8:  return 105300000;
+	case 9:  return 117000000;
+	}
 	return 0;
 }
 
 static guint32
 get_max_vht160_rate_ss1 (int mcs)
 {
-	if (mcs == 0)
-		return 58500000;
-	if (mcs == 1)
-		return 117000000;
-	if (mcs == 2)
-		return 175500000;
-	if (mcs == 3)
-		return 234000000;
-	if (mcs == 4)
-		return 351000000;
-	if (mcs == 5)
-		return 468000000;
-	if (mcs == 6)
-		return 526500000;
-	if (mcs == 7)
-		return 585000000;
-	if (mcs == 8)
-		return 702000000;
-	if (mcs == 9)
-		return 780000000;
+	switch (mcs) {
+	case 0:  return 58500000;
+	case 1:  return 117000000;
+	case 2:  return 175500000;
+	case 3:  return 234000000;
+	case 4:  return 351000000;
+	case 5:  return 468000000;
+	case 6:  return 526500000;
+	case 7:  return 585000000;
+	case 8:  return 702000000;
+	case 9:  return 780000000;
+	}
 	return 0;
 }
 
 static guint32
 get_max_vht160_rate_ss2 (int mcs)
 {
-	if (mcs == 0)
-		return 117000000;
-	if (mcs == 1)
-		return 234000000;
-	if (mcs == 2)
-		return 351000000;
-	if (mcs == 3)
-		return 468000000;
-	if (mcs == 4)
-		return 702000000;
-	if (mcs == 5)
-		return 936000000;
-	if (mcs == 6)
-		return 1053000000;
-	if (mcs == 7)
-		return 1170000000;
-	if (mcs == 8)
-		return 1404000000;
-	if (mcs == 9)
-		return 1560000000;
+	switch (mcs) {
+	case 0:  return 117000000;
+	case 1:  return 234000000;
+	case 2:  return 351000000;
+	case 3:  return 468000000;
+	case 4:  return 702000000;
+	case 5:  return 936000000;
+	case 6:  return 1053000000;
+	case 7:  return 1170000000;
+	case 8:  return 1404000000;
+	case 9:  return 1560000000;
+	}
 	return 0;
 }
 
 static guint32
 get_max_vht160_rate_ss3 (int mcs)
 {
-	if (mcs == 0)
-		return 175500000;
-	if (mcs == 1)
-		return 351000000;
-	if (mcs == 2)
-		return 526500000;
-	if (mcs == 3)
-		return 702000000;
-	if (mcs == 4)
-		return 1053000000;
-	if (mcs == 5)
-		return 1404000000;
-	if (mcs == 6)
-		return 1579500000;
-	if (mcs == 7)
-		return 1755000000;
-	if (mcs == 8)
-		return 2106000000;
-	if (mcs == 9)
-		return 0;
+	switch (mcs) {
+	case 0:  return 175500000;
+	case 1:  return 351000000;
+	case 2:  return 526500000;
+	case 3:  return 702000000;
+	case 4:  return 1053000000;
+	case 5:  return 1404000000;
+	case 6:  return 1579500000;
+	case 7:  return 1755000000;
+	case 8:  return 2106000000;
+	case 9:  return 0;
+	}
 	return 0;
 }
 
