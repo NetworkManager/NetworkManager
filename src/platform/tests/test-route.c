@@ -250,6 +250,8 @@ test_ip6_route (void)
 	/* Choose a high metric so that we hopefully don't conflict. */
 	int metric = 22987;
 	int mss = 1000;
+	const NMPlatformIP6Address *plt_addr;
+	gint64 time_start;
 
 	inet_pton (AF_INET6, "2001:db8:a:b:0:0:0:0", &network);
 	inet_pton (AF_INET6, "2001:db8:c:d:1:2:3:4", &gateway);
@@ -258,6 +260,21 @@ test_ip6_route (void)
 	g_assert (nm_platform_ip6_address_add (NM_PLATFORM_GET, ifindex, pref_src, 128, in6addr_any,
 	                                       NM_PLATFORM_LIFETIME_PERMANENT, NM_PLATFORM_LIFETIME_PERMANENT, 0));
 	accept_signals (route_added, 0, 1);
+
+	/* Wait that the address becomes non-tentative.  Dummy interfaces are NOARP
+	 * and thus don't do DAD, but the kernel sets the address as tentative for a
+	 * small amount of time, which prevents the immediate addition of the route
+	 * with RTA_PREFSRC */
+	time_start = nm_utils_get_monotonic_timestamp_ms ();
+	while (TRUE) {
+		nm_platform_process_events (NM_PLATFORM_GET);
+		plt_addr = nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, pref_src, 128);
+		if (plt_addr && !NM_FLAGS_HAS (plt_addr->n_ifa_flags, IFA_F_TENTATIVE))
+			break;
+		if (nm_utils_get_monotonic_timestamp_ms() - time_start > 2000)
+			g_assert_not_reached();
+		g_usleep (100);
+	}
 
 	/* Add route to gateway */
 	nmtstp_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, gateway, 128, in6addr_any, in6addr_any, metric, mss);
