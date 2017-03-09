@@ -680,8 +680,9 @@ get_max_rate_vht (guint32 vht_cap, guint16 tx_map)
 	return 0;
 }
 
-#define IEEE_80211_IE_HT_CAP    45
-#define IEEE_80211_IE_VHT_CAP   191
+/* Management Frame Information Element IDs, ieee80211_eid */
+#define WLAN_EID_HT_CAPABILITY       45
+#define WLAN_EID_VHT_CAPABILITY     191
 
 static guint32
 get_max_rate (const guint8 *bytes, gsize len)
@@ -700,11 +701,14 @@ get_max_rate (const guint8 *bytes, gsize len)
 		if (elem_len > len)
 			return 0;
 
-		if (id == IEEE_80211_IE_HT_CAP)
-			max_rate = get_max_rate_ht (*bytes, bytes+3);
-
-		if (id == IEEE_80211_IE_VHT_CAP)
-			max_rate = get_max_rate_vht (*bytes, *(bytes+8));
+		switch (id) {
+		case WLAN_EID_HT_CAPABILITY:
+			max_rate = NM_MAX (max_rate, get_max_rate_ht (*bytes, bytes+3));
+			break;
+		case WLAN_EID_VHT_CAPABILITY:
+			max_rate = NM_MAX (max_rate, get_max_rate_vht (*bytes, *(bytes+8)));
+			break;
+		}
 
 		len -= elem_len;
 		bytes += elem_len;
