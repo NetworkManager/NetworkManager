@@ -435,8 +435,10 @@ security_from_vardict (GVariant *security)
 	return flags;
 }
 
+/*****************************************************************************/
+
 static guint32
-get_max_ht20_rate (int mcs)
+get_max_rate_ht_20 (int mcs)
 {
 	switch (mcs) {
 	case 0:  return 6500000;
@@ -476,7 +478,7 @@ get_max_ht20_rate (int mcs)
 }
 
 static guint32
-get_max_ht40_rate (int mcs)
+get_max_rate_ht_40 (int mcs)
 {
 	switch (mcs) {
 	case 0:  return 13500000;
@@ -516,7 +518,7 @@ get_max_ht40_rate (int mcs)
 }
 
 static guint32
-get_max_vht80_rate_ss1 (int mcs)
+get_max_rate_vht_80_ss1 (int mcs)
 {
 	switch (mcs) {
 	case 0:  return 29300000;
@@ -534,7 +536,7 @@ get_max_vht80_rate_ss1 (int mcs)
 }
 
 static guint32
-get_max_vht80_rate_ss2 (int mcs)
+get_max_rate_vht_80_ss2 (int mcs)
 {
 	switch (mcs) {
 	case 0:  return 58500000;
@@ -552,7 +554,7 @@ get_max_vht80_rate_ss2 (int mcs)
 }
 
 static guint32
-get_max_vht80_rate_ss3 (int mcs)
+get_max_rate_vht_80_ss3 (int mcs)
 {
 	switch (mcs) {
 	case 0:  return 87800000;
@@ -570,7 +572,7 @@ get_max_vht80_rate_ss3 (int mcs)
 }
 
 static guint32
-get_max_vht160_rate_ss1 (int mcs)
+get_max_rate_vht_160_ss1 (int mcs)
 {
 	switch (mcs) {
 	case 0:  return 58500000;
@@ -588,7 +590,7 @@ get_max_vht160_rate_ss1 (int mcs)
 }
 
 static guint32
-get_max_vht160_rate_ss2 (int mcs)
+get_max_rate_vht_160_ss2 (int mcs)
 {
 	switch (mcs) {
 	case 0:  return 117000000;
@@ -606,7 +608,7 @@ get_max_vht160_rate_ss2 (int mcs)
 }
 
 static guint32
-get_max_vht160_rate_ss3 (int mcs)
+get_max_rate_vht_160_ss3 (int mcs)
 {
 	switch (mcs) {
 	case 0:  return 175500000;
@@ -624,7 +626,7 @@ get_max_vht160_rate_ss3 (int mcs)
 }
 
 static guint32
-get_max_ht_rate (guint16 ht_cap_info, const guint8 *supported_mcs_set)
+get_max_rate_ht (guint16 ht_cap_info, const guint8 *supported_mcs_set)
 {
 	guint32 mcs, i, j;
 
@@ -640,14 +642,14 @@ get_max_ht_rate (guint16 ht_cap_info, const guint8 *supported_mcs_set)
 
 	/* Check for 40Mhz wide channel support */
 	if (ht_cap_info & (1 << 1))
-		return get_max_ht40_rate (mcs);
+		return get_max_rate_ht_40 (mcs);
 	else
-		return get_max_ht20_rate (mcs);
+		return get_max_rate_ht_20 (mcs);
 
 }
 
 static guint32
-get_max_vht_rate (guint32 vht_cap, guint16 tx_map)
+get_max_rate_vht (guint32 vht_cap, guint16 tx_map)
 {
 	guint32 mcs = 7;
 
@@ -661,18 +663,18 @@ get_max_vht_rate (guint32 vht_cap, guint16 tx_map)
 	 * spatial stream support */
 	if (vht_cap & (1 << 2)) {
 		if (tx_map & 0x30)
-			return get_max_vht160_rate_ss3 (mcs);
+			return get_max_rate_vht_160_ss3 (mcs);
 		else if (tx_map & 0x0C)
-			return get_max_vht160_rate_ss2 (mcs);
+			return get_max_rate_vht_160_ss2 (mcs);
 		else
-			return get_max_vht160_rate_ss1 (mcs);
+			return get_max_rate_vht_160_ss1 (mcs);
 	} else {
 		if (tx_map & 0x30)
-			return get_max_vht80_rate_ss3 (mcs);
+			return get_max_rate_vht_80_ss3 (mcs);
 		else if (tx_map & 0x0C)
-			return get_max_vht80_rate_ss2 (mcs);
+			return get_max_rate_vht_80_ss2 (mcs);
 		else
-			return get_max_vht80_rate_ss1 (mcs);
+			return get_max_rate_vht_80_ss1 (mcs);
 	}
 
 	return 0;
@@ -699,10 +701,10 @@ get_max_rate (const guint8 *bytes, gsize len)
 			return 0;
 
 		if (id == IEEE_80211_IE_HT_CAP)
-			max_rate = get_max_ht_rate (*bytes, bytes+3);
+			max_rate = get_max_rate_ht (*bytes, bytes+3);
 
 		if (id == IEEE_80211_IE_VHT_CAP)
-			max_rate = get_max_vht_rate (*bytes, *(bytes+8));
+			max_rate = get_max_rate_vht (*bytes, *(bytes+8));
 
 		len -= elem_len;
 		bytes += elem_len;
@@ -710,6 +712,8 @@ get_max_rate (const guint8 *bytes, gsize len)
 
 	return max_rate;
 }
+
+/*****************************************************************************/
 
 gboolean
 nm_wifi_ap_update_from_properties (NMWifiAP *ap,
