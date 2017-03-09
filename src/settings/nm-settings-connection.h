@@ -25,7 +25,7 @@
 #include <net/ethernet.h>
 
 #include "nm-exported-object.h"
-#include <nm-connection.h>
+#include "nm-connection.h"
 
 #define NM_TYPE_SETTINGS_CONNECTION            (nm_settings_connection_get_type ())
 #define NM_SETTINGS_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTINGS_CONNECTION, NMSettingsConnection))

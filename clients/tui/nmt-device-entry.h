@@ -21,7 +21,7 @@
 
 #include "nmt-editor-grid.h"
 
-#include <NetworkManager.h>
+#include "NetworkManager.h"
 
 #define NMT_TYPE_DEVICE_ENTRY            (nmt_device_entry_get_type ())
 #define NMT_DEVICE_ENTRY(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_DEVICE_ENTRY, NmtDeviceEntry))

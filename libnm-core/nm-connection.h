@@ -27,9 +27,9 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <nm-core-types.h>
-#include <nm-setting.h>
-#include <nm-errors.h>
+#include "nm-core-types.h"
+#include "nm-setting.h"
+#include "nm-errors.h"
 
 G_BEGIN_DECLS
 

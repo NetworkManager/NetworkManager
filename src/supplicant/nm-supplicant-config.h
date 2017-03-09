@@ -22,10 +22,10 @@
 #ifndef __NETWORKMANAGER_SUPPLICANT_CONFIG_H__
 #define __NETWORKMANAGER_SUPPLICANT_CONFIG_H__
 
-#include <nm-setting-macsec.h>
-#include <nm-setting-wireless.h>
-#include <nm-setting-wireless-security.h>
-#include <nm-setting-8021x.h>
+#include "nm-setting-macsec.h"
+#include "nm-setting-wireless.h"
+#include "nm-setting-wireless-security.h"
+#include "nm-setting-8021x.h"
 
 #include "nm-supplicant-types.h"
 

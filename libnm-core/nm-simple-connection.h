@@ -25,7 +25,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <nm-connection.h>
+#include "nm-connection.h"
 
 G_BEGIN_DECLS
 

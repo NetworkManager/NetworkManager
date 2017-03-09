@@ -23,7 +23,7 @@
 #ifndef NM_SETTING_PPPOE_H
 #define NM_SETTING_PPPOE_H
 
-#include <nm-setting.h>
+#include "nm-setting.h"
 
 G_BEGIN_DECLS
 

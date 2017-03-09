@@ -21,7 +21,7 @@
 #ifndef NM_SETTING_TEAM_PORT_H
 #define NM_SETTING_TEAM_PORT_H
 
-#include <nm-setting.h>
+#include "nm-setting.h"
 
 G_BEGIN_DECLS
 

@@ -23,9 +23,9 @@
 
 #include <glib-object.h>
 
-#include <nm-version.h>
-#include <nm-dbus-interface.h>
-#include <nm-core-enum-types.h>
+#include "nm-version.h"
+#include "nm-dbus-interface.h"
+#include "nm-core-enum-types.h"
 
 typedef struct _NMConnection              NMConnection;
 typedef struct _NMSetting                 NMSetting;

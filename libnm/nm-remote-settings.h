@@ -22,7 +22,7 @@
 #ifndef __NM_REMOTE_SETTINGS_H__
 #define __NM_REMOTE_SETTINGS_H__
 
-#include <nm-object.h>
+#include "nm-object.h"
 
 G_BEGIN_DECLS
 

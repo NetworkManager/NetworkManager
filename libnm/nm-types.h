@@ -23,8 +23,8 @@
 
 #include <gio/gio.h>
 
-#include <nm-dbus-interface.h>
-#include <nm-connection.h>
+#include "nm-dbus-interface.h"
+#include "nm-connection.h"
 
 typedef struct _NMAccessPoint       NMAccessPoint;
 typedef struct _NMActiveConnection  NMActiveConnection;

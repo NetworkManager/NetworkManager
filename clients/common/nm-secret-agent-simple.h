@@ -19,8 +19,8 @@
 #ifndef __NM_SECRET_AGENT_SIMPLE_H__
 #define __NM_SECRET_AGENT_SIMPLE_H__
 
-#include <NetworkManager.h>
-#include <nm-secret-agent-old.h>
+#include "NetworkManager.h"
+#include "nm-secret-agent-old.h"
 
 #define NM_TYPE_SECRET_AGENT_SIMPLE            (nm_secret_agent_simple_get_type ())
 #define NM_SECRET_AGENT_SIMPLE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SECRET_AGENT_SIMPLE, NMSecretAgentSimple))

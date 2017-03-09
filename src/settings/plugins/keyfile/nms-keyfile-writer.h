@@ -22,7 +22,7 @@
 #ifndef __NMS_KEYFILE_WRITER_H__
 #define __NMS_KEYFILE_WRITER_H__
 
-#include <nm-connection.h>
+#include "nm-connection.h"
 
 gboolean nms_keyfile_writer_connection (NMConnection *connection,
                                         const char *existing_path,

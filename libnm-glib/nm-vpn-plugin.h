@@ -25,8 +25,8 @@
 #include <glib.h>
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
-#include <NetworkManagerVPN.h>
-#include <nm-connection.h>
+#include "NetworkManagerVPN.h"
+#include "nm-connection.h"
 
 G_BEGIN_DECLS
 

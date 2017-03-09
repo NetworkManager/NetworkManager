@@ -22,8 +22,8 @@
 #ifndef __NM_MANAGER_H__
 #define __NM_MANAGER_H__
 
-#include <nm-object.h>
-#include <nm-client.h>
+#include "nm-object.h"
+#include "nm-client.h"
 
 G_BEGIN_DECLS
 

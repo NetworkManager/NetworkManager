@@ -26,8 +26,8 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <nm-active-connection.h>
-#include <nm-vpn-dbus-interface.h>
+#include "nm-active-connection.h"
+#include "nm-vpn-dbus-interface.h"
 
 G_BEGIN_DECLS
 

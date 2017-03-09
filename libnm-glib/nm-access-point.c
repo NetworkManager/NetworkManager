@@ -24,11 +24,11 @@
 #include <string.h>
 #include <netinet/ether.h>
 
-#include <nm-connection.h>
-#include <nm-setting-connection.h>
-#include <nm-setting-wireless.h>
-#include <nm-setting-wireless-security.h>
-#include <nm-utils.h>
+#include "nm-connection.h"
+#include "nm-setting-connection.h"
+#include "nm-setting-wireless.h"
+#include "nm-setting-wireless-security.h"
+#include "nm-utils.h"
 
 #include "nm-access-point.h"
 #include "NetworkManager.h"

@@ -28,7 +28,7 @@
 
 /* This header must not include glib or libnm. */
 
-#include <nm-version-macros.h>
+#include "nm-version-macros.h"
 
 /*
  * dbus services details

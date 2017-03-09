@@ -26,8 +26,8 @@
 
 #include <arpa/inet.h>
 
-#include <nm-setting-ip6-config.h>
-#include <nm-setting-ip4-config.h>
+#include "nm-setting-ip6-config.h"
+#include "nm-setting-ip4-config.h"
 
 #include "nms-ifnet-net-parser.h"
 

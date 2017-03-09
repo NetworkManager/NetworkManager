@@ -23,7 +23,7 @@
 #ifndef NM_SETTING_VPN_H
 #define NM_SETTING_VPN_H
 
-#include <nm-setting.h>
+#include "nm-setting.h"
 
 G_BEGIN_DECLS
 

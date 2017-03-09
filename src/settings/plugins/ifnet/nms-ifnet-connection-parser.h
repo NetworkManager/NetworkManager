@@ -22,7 +22,7 @@
 #ifndef _CONNECTION_PARSER_H
 #define _CONNECTION_PARSER_H
 
-#include <nm-connection.h>
+#include "nm-connection.h"
 
 #include "nms-ifnet-net-parser.h"
 

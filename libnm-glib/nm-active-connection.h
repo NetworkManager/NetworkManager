@@ -25,8 +25,8 @@
 #include <glib.h>
 #include <glib-object.h>
 #include "nm-object.h"
-#include <nm-connection.h>
-#include <NetworkManager.h>
+#include "nm-connection.h"
+#include "NetworkManager.h"
 #include "nm-ip4-config.h"
 #include "nm-dhcp4-config.h"
 #include "nm-ip6-config.h"

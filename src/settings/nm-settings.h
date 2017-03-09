@@ -26,7 +26,7 @@
 #ifndef __NM_SETTINGS_H__
 #define __NM_SETTINGS_H__
 
-#include <nm-connection.h>
+#include "nm-connection.h"
 
 #include "nm-exported-object.h"
 

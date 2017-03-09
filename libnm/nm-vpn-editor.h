@@ -28,9 +28,9 @@
 
 #include <glib.h>
 #include <glib-object.h>
-#include <nm-types.h>
+#include "nm-types.h"
 
-#include <nm-vpn-editor-plugin.h>
+#include "nm-vpn-editor-plugin.h"
 
 G_BEGIN_DECLS
 

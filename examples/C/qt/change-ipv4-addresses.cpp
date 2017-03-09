@@ -38,9 +38,9 @@
 #include <QtCore/QDebug>
 #include <QtNetwork/QHostAddress>
 
-#include "arpa/inet.h"
+#include <arpa/inet.h>
 
-#include "nm-dbus-interface.h"
+#include <nm-dbus-interface.h>
 
 typedef QMap<QString, QMap<QString, QVariant> > Connection;
 Q_DECLARE_METATYPE(Connection)

@@ -22,7 +22,7 @@
 #ifndef NM_SETTING_INFINIBAND_H
 #define NM_SETTING_INFINIBAND_H
 
-#include <nm-setting.h>
+#include "nm-setting.h"
 
 G_BEGIN_DECLS
 

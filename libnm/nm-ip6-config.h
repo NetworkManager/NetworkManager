@@ -22,7 +22,7 @@
 #ifndef __NM_IP6_CONFIG_H__
 #define __NM_IP6_CONFIG_H__
 
-#include <nm-ip-config.h>
+#include "nm-ip-config.h"
 
 G_BEGIN_DECLS
 

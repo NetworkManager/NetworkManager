@@ -24,7 +24,7 @@
 #ifndef __PARSER_H__
 #define __PARSER_H__
 
-#include <nm-connection.h>
+#include "nm-connection.h"
 
 #include "nms-ifupdown-interface-parser.h"
 

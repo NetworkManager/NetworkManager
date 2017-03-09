@@ -30,7 +30,7 @@
 #ifndef NM_SETTING_TEMPLATE_H
 #define NM_SETTING_TEMPLATE_H
 
-#include <nm-setting.h>
+#include "nm-setting.h"
 
 G_BEGIN_DECLS
 

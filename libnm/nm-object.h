@@ -26,7 +26,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <nm-types.h>
+#include "nm-types.h"
 
 G_BEGIN_DECLS
 

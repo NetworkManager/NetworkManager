@@ -23,9 +23,9 @@
 #ifndef NM_SETTING_WIRELESS_H
 #define NM_SETTING_WIRELESS_H
 
-#include <NetworkManager.h>
-#include <nm-setting.h>
-#include <nm-setting-wireless-security.h>
+#include "NetworkManager.h"
+#include "nm-setting.h"
+#include "nm-setting-wireless-security.h"
 
 G_BEGIN_DECLS
 

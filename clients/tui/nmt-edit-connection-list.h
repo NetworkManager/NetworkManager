@@ -21,7 +21,7 @@
 
 #include "nmt-newt.h"
 
-#include <NetworkManager.h>
+#include "NetworkManager.h"
 
 #define NMT_TYPE_EDIT_CONNECTION_LIST            (nmt_edit_connection_list_get_type ())
 #define NMT_EDIT_CONNECTION_LIST(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_EDIT_CONNECTION_LIST, NmtEditConnectionList))

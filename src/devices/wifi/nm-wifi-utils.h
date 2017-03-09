@@ -21,11 +21,11 @@
 #ifndef __NM_WIFI_UTILS_H__
 #define __NM_WIFI_UTILS_H__
 
-#include <nm-dbus-interface.h>
-#include <nm-connection.h>
-#include <nm-setting-wireless.h>
-#include <nm-setting-wireless-security.h>
-#include <nm-setting-8021x.h>
+#include "nm-dbus-interface.h"
+#include "nm-connection.h"
+#include "nm-setting-wireless.h"
+#include "nm-setting-wireless-security.h"
+#include "nm-setting-8021x.h"
 
 gboolean nm_wifi_utils_complete_connection (const GByteArray *ssid,
                                             const char *bssid,

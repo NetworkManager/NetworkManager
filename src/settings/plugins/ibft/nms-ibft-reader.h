@@ -21,7 +21,7 @@
 #ifndef __NMS_IBFT_READER_H__
 #define __NMS_IBFT_READER_H__
 
-#include <nm-connection.h>
+#include "nm-connection.h"
 
 gboolean nms_ibft_reader_load_blocks (const char *iscsiadm_path,
                                       GSList **out_blocks,

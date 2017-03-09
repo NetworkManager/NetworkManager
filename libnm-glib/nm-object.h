@@ -26,7 +26,7 @@
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
 
-#include <nm-version.h>
+#include "nm-version.h"
 
 G_BEGIN_DECLS
 

@@ -26,7 +26,7 @@
 #include <glib.h>
 #include <glib-object.h>
 
-#include <nm-version.h>
+#include "nm-version.h"
 
 G_BEGIN_DECLS
 

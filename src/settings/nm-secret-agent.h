@@ -21,7 +21,7 @@
 #ifndef __NETWORKMANAGER_SECRET_AGENT_H__
 #define __NETWORKMANAGER_SECRET_AGENT_H__
 
-#include <nm-connection.h>
+#include "nm-connection.h"
 
 #define NM_TYPE_SECRET_AGENT            (nm_secret_agent_get_type ())
 #define NM_SECRET_AGENT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SECRET_AGENT, NMSecretAgent))

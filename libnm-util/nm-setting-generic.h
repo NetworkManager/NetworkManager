@@ -22,7 +22,7 @@
 #ifndef NM_SETTING_GENERIC_H
 #define NM_SETTING_GENERIC_H
 
-#include <nm-setting.h>
+#include "nm-setting.h"
 
 G_BEGIN_DECLS
 

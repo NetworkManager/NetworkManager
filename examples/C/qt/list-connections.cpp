@@ -25,10 +25,9 @@
 #include <QtDBus/QDBusConnection>
 #include <QtDBus/QDBusInterface>
 #include <QtDBus/QDBusReply>
-
 #include <QtCore/QDebug>
 
-#include "nm-dbus-interface.h"
+#include <nm-dbus-interface.h>
 
 
 void listConnections(QDBusInterface& interface) {

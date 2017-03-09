@@ -22,7 +22,7 @@
 #define NM_VPN_PLUGIN_UTILS_H
 
 #include <glib.h>
-#include <nm-setting.h>
+#include "nm-setting.h"
 
 G_BEGIN_DECLS
 

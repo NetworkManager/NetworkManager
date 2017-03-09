@@ -20,8 +20,8 @@
 #ifndef NMC_NMCLI_H
 #define NMC_NMCLI_H
 
-#include <NetworkManager.h>
-#include <nm-secret-agent-old.h>
+#include "NetworkManager.h"
+#include "nm-secret-agent-old.h"
 
 #if WITH_POLKIT_AGENT
 #include "nm-polkit-listener.h"

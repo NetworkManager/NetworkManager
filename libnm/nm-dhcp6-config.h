@@ -21,7 +21,7 @@
 #ifndef __NM_DHCP6_CONFIG_H__
 #define __NM_DHCP6_CONFIG_H__
 
-#include <nm-dhcp-config.h>
+#include "nm-dhcp-config.h"
 
 G_BEGIN_DECLS
 

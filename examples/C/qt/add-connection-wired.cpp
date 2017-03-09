@@ -28,10 +28,9 @@
 #include <QtDBus/QDBusInterface>
 #include <QtDBus/QDBusMetaType>
 #include <QtDBus/QDBusReply>
-
 #include <QtCore/QDebug>
 
-#include "nm-dbus-interface.h"
+#include <nm-dbus-interface.h>
 
 typedef QMap<QString, QMap<QString, QVariant> > Connection;
 Q_DECLARE_METATYPE(Connection)

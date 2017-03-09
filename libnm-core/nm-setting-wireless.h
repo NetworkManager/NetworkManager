@@ -27,8 +27,8 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <nm-setting.h>
-#include <nm-setting-wireless-security.h>
+#include "nm-setting.h"
+#include "nm-setting-wireless-security.h"
 
 G_BEGIN_DECLS
 

@@ -19,7 +19,7 @@
 #ifndef NM_EDITOR_UTILS_H
 #define NM_EDITOR_UTILS_H
 
-#include <NetworkManager.h>
+#include "NetworkManager.h"
 
 typedef struct {
 	const char *name;

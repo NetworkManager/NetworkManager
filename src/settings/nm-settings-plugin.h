@@ -22,7 +22,7 @@
 #ifndef __NETWORKMANAGER_SETTINGS_PLUGIN_H__
 #define __NETWORKMANAGER_SETTINGS_PLUGIN_H__
 
-#include <nm-connection.h>
+#include "nm-connection.h"
 
 /* Plugin's factory function that returns a GObject that implements
  * NMSettingsPlugin.

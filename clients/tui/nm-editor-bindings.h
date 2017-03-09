@@ -19,7 +19,7 @@
 #ifndef NM_EDITOR_BINDINGS_H
 #define NM_EDITOR_BINDINGS_H
 
-#include <NetworkManager.h>
+#include "NetworkManager.h"
 
 void nm_editor_bindings_init (void);
 

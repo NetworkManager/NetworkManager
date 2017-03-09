@@ -22,7 +22,7 @@
 #ifndef NM_SETTING_ADSL_H
 #define NM_SETTING_ADSL_H
 
-#include <nm-setting.h>
+#include "nm-setting.h"
 
 G_BEGIN_DECLS
 

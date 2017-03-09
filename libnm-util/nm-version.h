@@ -23,7 +23,7 @@
 
 #include <glib.h>
 
-#include <nm-version-macros.h>
+#include "nm-version-macros.h"
 
 /* Deprecation / Availability macros */
 

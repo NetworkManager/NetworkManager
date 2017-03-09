@@ -24,7 +24,7 @@
 
 #include <glib.h>
 #include <glib-object.h>
-#include <NetworkManager.h>
+#include "NetworkManager.h"
 #include "nm-object.h"
 
 G_BEGIN_DECLS

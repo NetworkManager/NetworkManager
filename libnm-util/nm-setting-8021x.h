@@ -23,7 +23,7 @@
 #ifndef NM_SETTING_8021X_H
 #define NM_SETTING_8021X_H
 
-#include <nm-setting.h>
+#include "nm-setting.h"
 
 G_BEGIN_DECLS
 

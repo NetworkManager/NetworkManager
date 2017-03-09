@@ -26,7 +26,7 @@
 #include <glib-object.h>
 #include <gio/gio.h>
 #include <dbus/dbus-glib.h>
-#include <NetworkManager.h>
+#include "NetworkManager.h"
 #include "nm-object.h"
 #include "nm-device.h"
 #include "nm-active-connection.h"

@@ -24,7 +24,7 @@
 #include <glib.h>
 #include <glib-object.h>
 
-#include <nm-glib-enum-types.h>
+#include "nm-glib-enum-types.h"
 
 G_BEGIN_DECLS
 

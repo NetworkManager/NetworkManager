@@ -24,8 +24,8 @@
 
 #include <gio/gio.h>
 #include <dbus/dbus-glib.h>
-#include <nm-connection.h>
-#include <nm-remote-connection.h>
+#include "nm-connection.h"
+#include "nm-remote-connection.h"
 
 G_BEGIN_DECLS
 

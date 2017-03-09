@@ -21,7 +21,7 @@
 #ifndef NM_SECRET_AGENT_H
 #define NM_SECRET_AGENT_H
 
-#include <nm-connection.h>
+#include "nm-connection.h"
 
 G_BEGIN_DECLS
 

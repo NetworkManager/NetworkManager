@@ -24,7 +24,7 @@
 
 #include <glib.h>
 #include <glib-object.h>
-#include <nm-connection.h>
+#include "nm-connection.h"
 
 G_BEGIN_DECLS
 

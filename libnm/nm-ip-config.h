@@ -26,7 +26,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <nm-object.h>
+#include "nm-object.h"
 
 G_BEGIN_DECLS
 

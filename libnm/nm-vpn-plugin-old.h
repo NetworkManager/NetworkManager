@@ -23,8 +23,8 @@
 #define __NM_VPN_PLUGIN_OLD_H__
 
 #include <gio/gio.h>
-#include <nm-vpn-dbus-interface.h>
-#include <nm-connection.h>
+#include "nm-vpn-dbus-interface.h"
+#include "nm-connection.h"
 
 G_BEGIN_DECLS
 
