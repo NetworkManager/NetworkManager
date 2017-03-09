@@ -848,7 +848,7 @@ nm_wifi_ap_update_from_properties (NMWifiAP *ap,
 		bytes = g_variant_get_fixed_array (v, &len, 1);
 		max_rate = get_max_rate (bytes, len);
 		if (max_rate > 0)
-			nm_wifi_ap_set_max_bitrate (ap, max_rate / 1000);
+			changed |= nm_wifi_ap_set_max_bitrate (ap, max_rate / 1000);
 		g_variant_unref (v);
 	}
 
