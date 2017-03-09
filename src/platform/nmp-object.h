@@ -307,7 +307,7 @@ NMP_CLASS_IS_VALID (const NMPClass *klass)
 {
 	return klass >= &_nmp_classes[0]
 	    && klass <= &_nmp_classes[G_N_ELEMENTS (_nmp_classes)]
-	    && ((((char *) klass) - ((char *) NULL)) % (&_nmp_classes[1] - &_nmp_classes[0])) == 0;
+	    && ((((char *) klass) - ((char *) _nmp_classes)) % (sizeof (_nmp_classes[0]))) == 0;
 }
 
 #define NMP_REF_COUNT_STACKINIT (G_MAXINT)
