@@ -703,7 +703,7 @@ get_max_ht_rate (guint16 ht_cap_info, const guint8 *supported_mcs_set)
 static guint32
 get_max_vht_rate (guint32 vht_cap, guint16 tx_map)
 {
-	guint32 mcs = 7, ss = 1;
+	guint32 mcs = 7;
 
 	/* Check for mcs rates 8 and 9 support */
 	if (tx_map & 0x2a)
@@ -843,8 +843,10 @@ nm_wifi_ap_update_from_properties (NMWifiAP *ap,
 
 	v = g_variant_lookup_value (properties, "IEs", G_VARIANT_TYPE_BYTESTRING);
 	if (v) {
+		guint32 max_rate;
+
 		bytes = g_variant_get_fixed_array (v, &len, 1);
-		guint32 max_rate = get_max_rate (bytes, len);
+		max_rate = get_max_rate (bytes, len);
 		if (max_rate > 0)
 			nm_wifi_ap_set_max_bitrate (ap, max_rate / 1000);
 		g_variant_unref (v);
