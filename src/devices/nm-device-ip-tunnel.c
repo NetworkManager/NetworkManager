@@ -784,6 +784,33 @@ unrealize_notify (NMDevice *device)
 	update_properties_from_ifindex (device, 0);
 }
 
+static gboolean
+can_reapply_change (NMDevice *device,
+                    const char *setting_name,
+                    NMSetting *s_old,
+                    NMSetting *s_new,
+                    GHashTable *diffs,
+                    GError **error)
+{
+	NMDeviceClass *device_class;
+
+	/* Only handle ip-tunnel setting here, delegate other settings to parent class */
+	if (nm_streq (setting_name, NM_SETTING_IP_TUNNEL_SETTING_NAME)) {
+		return nm_device_hash_check_invalid_keys (diffs,
+		                                          NM_SETTING_IP_TUNNEL_SETTING_NAME,
+		                                          error,
+		                                          NM_SETTING_IP_TUNNEL_MTU); /* reapplied with IP config */
+	}
+
+	device_class = NM_DEVICE_CLASS (nm_device_ip_tunnel_parent_class);
+	return device_class->can_reapply_change (device,
+	                                         setting_name,
+	                                         s_old,
+	                                         s_new,
+	                                         diffs,
+	                                         error);
+}
+
 /*****************************************************************************/
 
 static void
@@ -891,6 +918,7 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 	object_class->set_property = set_property;
 
 	device_class->link_changed = link_changed;
+	device_class->can_reapply_change = can_reapply_change;
 	device_class->complete_connection = complete_connection;
 	device_class->update_connection = update_connection;
 	device_class->check_connection_compatible = check_connection_compatible;
