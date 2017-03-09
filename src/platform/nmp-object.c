@@ -1533,13 +1533,17 @@ nmp_cache_lookup_link_full (const NMPCache *cache,
 		    && strlen (ifname) <= sizeof (cache_id.link_by_ifname.ifname_short)) {
 			p_cache_id = nmp_cache_id_init_link_by_ifname (&cache_id, ifname);
 			ifname = NULL;
-		} else
+		} else {
 			p_cache_id = nmp_cache_id_init_object_type (&cache_id, NMP_OBJECT_TYPE_LINK, visible_only);
+			visible_only = FALSE;
+		}
 
 		list = nmp_cache_lookup_multi (cache, p_cache_id, &len);
 		for (i = 0; i < len; i++) {
 			obj = NMP_OBJECT_UP_CAST (list[i]);
 
+			if (visible_only && !nmp_object_is_visible (obj))
+				continue;
 			if (link_type != NM_LINK_TYPE_NONE && obj->link.type != link_type)
 				continue;
 			if (ifname && strcmp (ifname, obj->link.name))
