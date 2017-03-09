@@ -985,11 +985,6 @@ nmp_cache_id_hash (const NMPCacheId *id)
 	guint hash = 5381;
 	guint i, n;
 
-	/* for hashing we only iterate over the actually set bytes and skip the
-	 * zero padding at the end (which depends on the type of the id).
-	 *
-	 * For the equal implementation, we don't care about that and compare the
-	 * entire NMPCacheId sized struct. */
 	n = _nmp_cache_id_size_by_type (id->_id_type);
 	for (i = 0; i < n; i++)
 		hash = ((hash << 5) + hash) + ((char *) id)[i]; /* hash * 33 + c */
