@@ -72,7 +72,7 @@ NM_DEFINE_SINGLETON_GETTER (NMPacrunnerManager, nm_pacrunner_manager_get, NM_TYP
 /*****************************************************************************/
 
 #define _NMLOG_DOMAIN      LOGD_PROXY
-#define _NMLOG(level, ...) __NMLOG_DEFAULT_WITH_ADDR (level, _NMLOG_DOMAIN, "pacrunner", __VA_ARGS__)
+#define _NMLOG(level, ...) __NMLOG_DEFAULT (level, _NMLOG_DOMAIN, "pacrunner", __VA_ARGS__)
 
 /*****************************************************************************/
 
@@ -291,11 +291,11 @@ name_owner_changed (GObject *object,
 
 	owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (object));
 	if (owner) {
-		_LOGD ("pacrunner appeared as %s", owner);
+		_LOGD ("name owner appeared (%s)", owner);
 		for (iter = g_list_first (priv->configs); iter; iter = g_list_next (iter))
 			pacrunner_send_config (self, iter->data);
 	} else {
-		_LOGD ("pacrunner disappeared");
+		_LOGD ("name owner disappeared");
 	}
 }
 
