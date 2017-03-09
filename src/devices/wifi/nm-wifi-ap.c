@@ -720,11 +720,13 @@ nm_wifi_ap_update_from_properties (NMWifiAP *ap,
 	const guint8 *bytes;
 	GVariant *v;
 	gsize len;
+	gsize i;
 	gboolean b = FALSE;
 	const char *s;
 	gint16 i16;
 	guint16 u16;
 	gboolean changed = FALSE;
+	guint32 max_rate;
 
 	g_return_val_if_fail (NM_IS_WIFI_AP (ap), FALSE);
 	g_return_val_if_fail (properties, FALSE);
@@ -773,32 +775,23 @@ nm_wifi_ap_update_from_properties (NMWifiAP *ap,
 		g_variant_unref (v);
 	}
 
+	max_rate = 0;
 	v = g_variant_lookup_value (properties, "Rates", G_VARIANT_TYPE ("au"));
 	if (v) {
 		const guint32 *rates = g_variant_get_fixed_array (v, &len, sizeof (guint32));
-		guint32 maxrate = 0;
-		int i;
 
-		/* Find the max AP rate */
-		for (i = 0; i < len; i++) {
-			if (rates[i] > maxrate)
-				maxrate = rates[i];
-		}
-		if (maxrate)
-			changed |= nm_wifi_ap_set_max_bitrate (ap, maxrate / 1000);
+		for (i = 0; i < len; i++)
+			max_rate = NM_MAX (max_rate, rates[i]);
 		g_variant_unref (v);
 	}
-
 	v = g_variant_lookup_value (properties, "IEs", G_VARIANT_TYPE_BYTESTRING);
 	if (v) {
-		guint32 max_rate;
-
 		bytes = g_variant_get_fixed_array (v, &len, 1);
-		max_rate = get_max_rate (bytes, len);
-		if (max_rate > 0)
-			changed |= nm_wifi_ap_set_max_bitrate (ap, max_rate / 1000);
+		max_rate = NM_MAX (max_rate, get_max_rate (bytes, len));
 		g_variant_unref (v);
 	}
+	if (max_rate)
+		changed |= nm_wifi_ap_set_max_bitrate (ap, max_rate / 1000);
 
 	v = g_variant_lookup_value (properties, "WPA", G_VARIANT_TYPE_VARDICT);
 	if (v) {
