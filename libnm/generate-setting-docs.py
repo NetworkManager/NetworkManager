@@ -112,7 +112,7 @@ def get_prop_type(setting, pspec, propxml):
 
     return prop_type
 
-def get_docs(setting, pspec, propxml):
+def get_docs(propxml):
     doc_xml = propxml.find('gi:doc', ns_map)
     if doc_xml is None:
         return None
@@ -215,7 +215,10 @@ for settingxml in settings:
     new_func = NM.__getattr__(settingxml.attrib['name'])
     setting = new_func()
 
-    outfile.write("  <setting name=\"%s\">\n" % setting.props.name)
+    class_desc = get_docs(settingxml)
+    if class_desc is None:
+        raise Exception("%s needs a gtk-doc block with one-line description" % setting.props.name)
+    outfile.write("  <setting name=\"%s\" description=\"%s\">\n" % (setting.props.name, class_desc))
 
     setting_properties = { prop.name: prop for prop in GObject.list_properties(setting) }
     if args.overrides is None:
@@ -239,7 +242,7 @@ for settingxml in settings:
                 propxml = ipxml.find('./gi:property[@name="%s"]' % pspec.name, ns_map)
 
             value_type = get_prop_type(setting, pspec, propxml)
-            value_desc = get_docs(setting, pspec, propxml)
+            value_desc = get_docs(propxml)
             default_value = get_default_value(setting, pspec, propxml)
 
         if prop in setting_overrides:
