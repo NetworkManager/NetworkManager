@@ -494,7 +494,6 @@ parse_route_options (NMIPRoute *route, int family, const char *line, GError **er
 	g_regex_match (regex, line, 0, &match_info);
 	if (g_match_info_matches (match_info)) {
 		gs_free char *str = g_match_info_fetch (match_info, 1);
-		gs_free_error GError *local_error = NULL;
 		gint64 num = _nm_utils_ascii_str_to_int64 (str, 0, 0, G_MAXUINT8, -1);
 
 		if (num == -1) {
