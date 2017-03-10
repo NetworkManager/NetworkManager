@@ -126,22 +126,25 @@
   </xsl:template>
 
   <xsl:template match="setting">
-    <table>
+    <refsect2>
       <title><xsl:value-of select="@name"/> setting</title>
-      <tgroup cols="4">
-        <thead>
-          <row>
-            <entry>Key Name</entry>
-            <entry>Value Type</entry>
-            <entry>Default Value</entry>
-            <entry>Value Description</entry>
-          </row>
-        </thead>
-        <tbody>
-          <xsl:apply-templates/>
-        </tbody>
-      </tgroup>
-    </table>
+      <para><xsl:value-of select="@description"/>.</para>
+      <informaltable>
+        <tgroup cols="4">
+          <thead>
+            <row>
+              <entry>Key Name</entry>
+              <entry>Value Type</entry>
+              <entry>Default Value</entry>
+              <entry>Value Description</entry>
+            </row>
+          </thead>
+          <tbody>
+            <xsl:apply-templates/>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </refsect2>
   </xsl:template>
 
   <xsl:template match="property">
