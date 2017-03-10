@@ -6,7 +6,11 @@
 <book id="index" xmlns:xi="http://www.w3.org/2003/XInclude">
   <bookinfo>
     <title>NetworkManager Reference Manual</title>
-    <releaseinfo>Version &version;</releaseinfo>
+    <releaseinfo>
+      for NetworkManager &version;
+      The latest version of this documentation can be found on-line at
+      <ulink url="https://developer.gnome.org/NetworkManager/stable/">https://developer.gnome.org/NetworkManager/stable/</ulink>.
+    </releaseinfo>
 
     <copyright>
       <year>2012</year>
