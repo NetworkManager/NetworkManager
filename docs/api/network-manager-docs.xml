@@ -43,6 +43,26 @@
 	</address>
       </para>
     </legalnotice>
+
+    <abstract>
+      <para>
+        This manual is the reference documentation for NetworkManager, the standard
+        Linux network management service. It is intended for system administrators and
+        integrators who need to understand the capabilities of NetworkManager, its
+        configuration options, command line tools and the D-Bus API for programmatic
+        control of the service.
+      </para>
+      <para>
+        The end users NetworkManager should instead refer to respective documentation
+        of their desktop environment of choice.
+      </para>
+      <para>
+        The application developers who prefer not to use the D-Bus API directly can use the
+        <ulink url="https://developer.gnome.org/libnm/stable/">libnm</ulink> library
+        shipped with NetworkManager or its bindings to a higher level language such as
+        Python, Ruby or Vala via GObject introspection.
+      </para>
+    </abstract>
   </bookinfo>
 
   <chapter id="manpages">
