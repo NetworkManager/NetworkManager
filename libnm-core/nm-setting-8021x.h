@@ -76,7 +76,7 @@ typedef enum { /*< underscore_name=nm_setting_802_1x_ck_scheme >*/
 } NMSetting8021xCKScheme;
 
 /**
- * NMSetting8021xAuthFlags
+ * NMSetting8021xAuthFlags:
  * @NM_SETTING_802_1X_AUTH_FLAGS_NONE: No flags
  * @NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_0_DISABLE: Disable TLSv1.0
  * @NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_1_DISABLE: Disable TLSv1.1
