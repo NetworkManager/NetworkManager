@@ -162,6 +162,14 @@ def get_default_value(setting, pspec, propxml):
 
     return default_value
 
+def cmp_settings(x,y):
+    x_prefix = x.attrib['{%s}symbol-prefix' % ns_map['c']]
+    y_prefix = y.attrib['{%s}symbol-prefix' % ns_map['c']]
+    if x_prefix == "setting_connection":
+        # Always sort NMSettingConnection first
+        return -1;
+    return cmp(x_prefix, y_prefix)
+
 def escape(val):
     return str(val).replace('"', '&quot;')
 
@@ -186,7 +194,7 @@ settings = girxml.findall('./gi:namespace/gi:class[@parent="Setting"]', ns_map)
 # Hack. Need a better way to do this
 ipxml = girxml.find('./gi:namespace/gi:class[@name="SettingIPConfig"]', ns_map)
 settings.extend(girxml.findall('./gi:namespace/gi:class[@parent="SettingIPConfig"]', ns_map))
-settings = sorted(settings, key=lambda setting: setting.attrib['{%s}symbol-prefix' % ns_map['c']])
+settings = sorted(settings, cmp=cmp_settings)
 
 init_constants(girxml, settings)
 
