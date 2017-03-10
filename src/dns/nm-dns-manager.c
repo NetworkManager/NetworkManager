@@ -1434,7 +1434,8 @@ nm_dns_manager_set_initial_hostname (NMDnsManager *self,
 
 void
 nm_dns_manager_set_hostname (NMDnsManager *self,
-                             const char *hostname)
+                             const char *hostname,
+                             gboolean skip_update)
 {
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 	GError *error = NULL;
@@ -1455,6 +1456,8 @@ nm_dns_manager_set_hostname (NMDnsManager *self,
 	g_free (priv->hostname);
 	priv->hostname = g_strdup (filtered);
 
+	if (skip_update)
+		return;
 	if (!priv->updates_queue && !update_dns (self, FALSE, &error)) {
 		_LOGW ("could not commit DNS changes: %s", error->message);
 		g_clear_error (&error);

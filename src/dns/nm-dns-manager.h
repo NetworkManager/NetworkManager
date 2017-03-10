@@ -87,7 +87,8 @@ gboolean nm_dns_manager_remove_ip6_config (NMDnsManager *self, NMIP6Config *conf
 void nm_dns_manager_set_initial_hostname (NMDnsManager *self,
                                           const char *hostname);
 void nm_dns_manager_set_hostname         (NMDnsManager *self,
-                                          const char *hostname);
+                                          const char *hostname,
+                                          gboolean skip_update);
 
 /**
  * NMDnsManagerResolvConfManager

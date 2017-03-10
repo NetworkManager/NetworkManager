@@ -386,6 +386,26 @@ get_best_ip6_device (NMPolicy *self, gboolean fully_activated)
 	                                                     priv->default_device6);
 }
 
+static gboolean
+all_devices_not_active (NMPolicy *self)
+{
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+	const GSList *iter = nm_manager_get_devices (priv->manager);
+
+	while (iter != NULL) {
+		NMDeviceState state;
+
+		state = nm_device_get_state (NM_DEVICE (iter->data));
+		if (   state <= NM_DEVICE_STATE_DISCONNECTED
+		    || state >= NM_DEVICE_STATE_DEACTIVATING) {
+			iter = g_slist_next (iter);
+			continue;
+		}
+		return FALSE;
+	}
+	return TRUE;
+}
+
 #define FALLBACK_HOSTNAME4 "localhost.localdomain"
 
 static void
@@ -451,7 +471,8 @@ _set_hostname (NMPolicy *self,
 		/* Notify the DNS manager of the hostname change so that the domain part, if
 		 * present, can be added to the search list.
 		 */
-		nm_dns_manager_set_hostname (priv->dns_manager, priv->cur_hostname);
+		nm_dns_manager_set_hostname (priv->dns_manager, priv->cur_hostname,
+		                             all_devices_not_active (self));
 	}
 
 	 /* Finally, set kernel hostname */
