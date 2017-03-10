@@ -46,6 +46,8 @@ G_BEGIN_DECLS
 
 /**
  * NMSettingOlpcMesh:
+ *
+ * OLPC Wireless Mesh Settings
  */
 struct _NMSettingOlpcMesh {
 	NMSetting parent;

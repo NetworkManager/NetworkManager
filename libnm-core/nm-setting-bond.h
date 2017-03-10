@@ -72,6 +72,8 @@ G_BEGIN_DECLS
 
 /**
  * NMSettingBond:
+ *
+ * Bonding Settings
  */
 struct _NMSettingBond {
 	NMSetting parent;

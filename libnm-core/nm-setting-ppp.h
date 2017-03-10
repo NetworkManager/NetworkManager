@@ -61,6 +61,8 @@ G_BEGIN_DECLS
 
 /**
  * NMSettingPpp:
+ *
+ * Point-to-Point Protocol Settings
  */
 struct _NMSettingPpp {
 	NMSetting parent;

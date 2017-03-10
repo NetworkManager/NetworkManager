@@ -94,6 +94,8 @@ typedef enum { /*< flags >*/
 
 /**
  * NMSettingDcb:
+ *
+ * Data Center Bridging Settings
  */
 struct _NMSettingDcb {
 	NMSetting parent;

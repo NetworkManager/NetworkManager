@@ -99,8 +99,7 @@ typedef enum {
 /**
  * NMSettingConnection:
  *
- * The NMSettingConnection struct contains only private data.
- * It should only be accessed through the functions described below.
+ * General Connection Profile Settings
  */
 struct _NMSettingConnection {
 	NMSetting parent;

@@ -47,6 +47,8 @@ G_BEGIN_DECLS
 
 /**
  * NMSettingPppoe:
+ *
+ * PPP-over-Ethernet Settings
  */
 struct _NMSettingPppoe {
 	NMSetting parent;

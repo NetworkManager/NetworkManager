@@ -96,6 +96,8 @@ typedef enum { /*< flags >*/
 
 /**
  * NMSettingWired:
+ *
+ * Wired Ethernet Settings
  */
 struct _NMSettingWired {
 	NMSetting parent;

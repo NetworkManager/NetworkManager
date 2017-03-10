@@ -62,6 +62,8 @@ typedef enum {
 
 /**
  * NMSettingTun:
+ *
+ * Tunnel Settings
  */
 struct _NMSettingTun {
 	NMSetting parent;

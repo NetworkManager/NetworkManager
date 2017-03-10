@@ -41,6 +41,8 @@ G_BEGIN_DECLS
 
 /**
  * NMSettingGeneric:
+ *
+ * Generic Link Settings
  */
 struct _NMSettingGeneric {
 	NMSetting parent;

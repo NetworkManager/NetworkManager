@@ -45,6 +45,8 @@ G_BEGIN_DECLS
 
 /**
  * NMSettingBridgePort:
+ *
+ * Bridge Port Settings
  */
 struct _NMSettingBridgePort {
 	NMSetting parent;

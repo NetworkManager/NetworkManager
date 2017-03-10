@@ -89,6 +89,8 @@ G_BEGIN_DECLS
 
 /**
  * NMSettingIP4Config:
+ *
+ * IPv4 Settings
  */
 struct _NMSettingIP4Config {
 	NMSettingIPConfig parent;

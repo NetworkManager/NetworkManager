@@ -53,6 +53,8 @@ G_BEGIN_DECLS
 
 /**
  * NMSettingIPTunnel:
+ *
+ * IP Tunneling Settings
  */
 struct _NMSettingIPTunnel {
 	NMSetting parent;

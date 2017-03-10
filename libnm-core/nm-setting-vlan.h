@@ -48,6 +48,8 @@ G_BEGIN_DECLS
 
 /**
  * NMSettingVlan:
+ *
+ * VLAN Settings
  */
 struct _NMSettingVlan {
 	NMSetting parent;

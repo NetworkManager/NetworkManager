@@ -61,6 +61,8 @@ G_BEGIN_DECLS
 
 /**
  * NMSettingBluetooth:
+ *
+ * Bluetooth Settings
  */
 struct _NMSettingBluetooth {
 	NMSetting parent;
