@@ -469,6 +469,9 @@ _notify (obj_type *obj, _PropertyEnums prop) \
 
 /*****************************************************************************/
 
+/* these are implemented as a macro, because they accept self
+ * as both (type*) and (const type*), and return a const
+ * private pointer accordingly. */
 #define __NM_GET_PRIVATE(self, type, is_check, result_cmd) \
 	({ \
 		/* preserve the const-ness of self. Unfortunately, that
@@ -476,7 +479,7 @@ _notify (obj_type *obj, _PropertyEnums prop) \
 		typeof (self) _self = (self); \
 		\
 		/* Get compiler error if variable is of wrong type */ \
-		_nm_unused const type *_self2 = (_self); \
+		_nm_unused const type *const _self2 = (_self); \
 		\
 		nm_assert (is_check (_self)); \
 		( result_cmd ); \
@@ -484,6 +487,21 @@ _notify (obj_type *obj, _PropertyEnums prop) \
 
 #define _NM_GET_PRIVATE(self, type, is_check)     __NM_GET_PRIVATE(self, type, is_check, &_self->_priv)
 #define _NM_GET_PRIVATE_PTR(self, type, is_check) __NM_GET_PRIVATE(self, type, is_check,  _self->_priv)
+
+#define __NM_GET_PRIVATE_VOID(self, type, is_check, result_cmd) \
+	({ \
+		/* (self) can be any non-const pointer. It will be cast to "type *".
+		 * We don't explicitly cast but assign first to (void *) which
+		 * will fail if @self is pointing to const. */ \
+		void *const _self1 = (self); \
+		type *const _self = _self1; \
+		\
+		nm_assert (is_check (_self)); \
+		( result_cmd ); \
+	})
+
+#define _NM_GET_PRIVATE_VOID(self, type, is_check)     __NM_GET_PRIVATE_VOID(self, type, is_check, &_self->_priv)
+#define _NM_GET_PRIVATE_PTR_VOID(self, type, is_check) __NM_GET_PRIVATE_VOID(self, type, is_check,  _self->_priv)
 
 /*****************************************************************************/
 
