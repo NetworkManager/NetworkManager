@@ -65,7 +65,7 @@
     </abstract>
   </bookinfo>
 
-  <chapter id="manpages">
+  <part id="manpages">
     <title>Manual Pages</title>
     <xi:include href="../../man/NetworkManager.xml"/>
     <xi:include href="../../man/NetworkManager.conf.xml"/>
@@ -76,9 +76,9 @@
     <xi:include href="../../man/nm-settings-keyfile.xml"><xi:fallback /></xi:include>
     <xi:include href="../../man/nm-settings-ifcfg-rh.xml"><xi:fallback /></xi:include>
     <xi:include href="../../man/nm-online.xml"/>
-  </chapter>
+  </part>
 
-  <chapter id="ref-settings">
+  <part id="ref-settings">
     <title>Network Configuration Setting Specification</title>
     <para>
       This part documents the properties and value types of each "Setting"
@@ -89,16 +89,16 @@
     </para>
     <xi:include href="settings-spec.xml">
       <xi:fallback>
-	<section>
+	<chapter>
 	  <title>Configuration Settings</title>
 	  <note><para>
 	    (NetworkManager was built without full introspection support. Setting
 	    documentation is not available.)
 	  </para></note>
-	</section>
+	</chapter>
       </xi:fallback>
     </xi:include>
-    <section id="secrets-flags">
+    <chapter id="secrets-flags">
       <title>Secret flag types</title>
       <para>
         Each secret property in a setting has an associated "flags" property
@@ -132,30 +132,52 @@
           </listitem>
         </itemizedlist>
       </para>
-    </section>
-  </chapter>
+    </chapter>
+  </part>
 
-  <chapter id="spec">
-    <title>D-Bus API Reference</title>
+  <part id="spec">
+    <title id="dbus-interfaces">D-Bus API Reference</title>
 
     <para>
       This part documents the D-Bus interface used to access the
       NetworkManager daemon.
     </para>
 
-    <section id="dbus-interfaces">
-      <title>Interfaces</title>
-      <!-- TODO: Split me into chapters about daemon, vpn plugins, dispatcher and the secret agent.
-                    Then describe the daemon's singletons and object hierarchy. -->
+    <chapter id="ref-dbus-manager">
+      <title>The <literal>/org/freedesktop/NetworkManager</literal> object</title>
+      <!-- TODO: Describe the object here -->
       <xi:include href="dbus-org.freedesktop.NetworkManager.xml"/>
-      <xi:include href="dbus-org.freedesktop.NetworkManager.Settings.xml"/>
+    </chapter>
+
+    <chapter id="ref-dbus-agent-manager">
+      <title>The <literal>/org/freedesktop/NetworkManager/AgentManager</literal> object</title>
+      <!-- TODO: Describe the object here -->
       <xi:include href="dbus-org.freedesktop.NetworkManager.AgentManager.xml"/>
-      <xi:include href="dbus-org.freedesktop.NetworkManager.AccessPoint.xml"/>
-      <xi:include href="dbus-org.freedesktop.NetworkManager.PPP.xml"/>
+    </chapter>
+
+    <chapter id="ref-dbus-dns-manager">
+      <title>The <literal>/org/freedesktop/NetworkManager/DnsManager</literal> object</title>
+      <!-- TODO: Describe the object here -->
+      <xi:include href="dbus-org.freedesktop.NetworkManager.DnsManager.xml"/>
+    </chapter>
+
+    <chapter id="ref-dbus-settings-manager">
+      <title>The <literal>/org/freedesktop/NetworkManager/Settings</literal> object</title>
+      <!-- TODO: Describe the object here -->
+      <xi:include href="dbus-org.freedesktop.NetworkManager.Settings.xml"/>
+    </chapter>
+
+    <chapter id="ref-dbus-settings">
+      <title>The <literal>/org/freedesktop/NetworkManager/Settings/*</literal> objects</title>
+      <!-- TODO: Describe the objects here -->
       <xi:include href="dbus-org.freedesktop.NetworkManager.Settings.Connection.xml"/>
-      <xi:include href="dbus-org.freedesktop.NetworkManager.VPN.Connection.xml"/>
-      <xi:include href="dbus-org.freedesktop.NetworkManager.Connection.Active.xml"/>
+    </chapter>
+
+    <chapter id="ref-dbus-devices">
+      <title>The <literal>/org/freedesktop/NetworkManager/Devices/*</literal> objects</title>
+      <!-- TODO: Describe the objects here -->
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.xml"/>
+      <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Statistics.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Adsl.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Bond.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Bridge.xml"/>
@@ -176,21 +198,75 @@
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Vxlan.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Wireless.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.WiMax.xml"/>
-      <xi:include href="dbus-org.freedesktop.NetworkManager.DHCP4Config.xml"/>
-      <xi:include href="dbus-org.freedesktop.NetworkManager.DHCP6Config.xml"/>
+      <xi:include href="dbus-org.freedesktop.NetworkManager.PPP.xml"/>
+    </chapter>
+
+    <chapter id="ref-dbus-active-connections">
+      <title>The <literal>/org/freedesktop/NetworkManager/ActiveConnection/*</literal> objects</title>
+      <!-- TODO: Describe the objects here -->
+      <xi:include href="dbus-org.freedesktop.NetworkManager.Connection.Active.xml"/>
+      <xi:include href="dbus-org.freedesktop.NetworkManager.VPN.Connection.xml"/>
+    </chapter>
+
+    <chapter id="ref-dbus-ip4-configs">
+      <title>The <literal>/org/freedesktop/NetworkManager/IP4Config/*</literal> objects</title>
+      <!-- TODO: Describe the objects here -->
       <xi:include href="dbus-org.freedesktop.NetworkManager.IP4Config.xml"/>
+    </chapter>
+
+    <chapter id="ref-dbus-ip6-configs">
+      <title>The <literal>/org/freedesktop/NetworkManager/IP6Config/*</literal> objects</title>
+      <!-- TODO: Describe the objects here -->
       <xi:include href="dbus-org.freedesktop.NetworkManager.IP6Config.xml"/>
-      <xi:include href="dbus-org.freedesktop.NetworkManager.VPN.Plugin.xml"/>
-      <xi:include href="dbus-org.freedesktop.NetworkManager.SecretAgent.xml"/>
-      <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Statistics.xml"/>
-      <xi:include href="dbus-org.freedesktop.NetworkManager.DnsManager.xml"/>
-    </section>
-    <section id="dbus-types">
+    </chapter>
+
+    <chapter id="ref-dbus-dhcp4-configs">
+      <title>The <literal>/org/freedesktop/NetworkManager/DHCP4Config/*</literal> objects</title>
+      <!-- TODO: Describe the objects here -->
+      <xi:include href="dbus-org.freedesktop.NetworkManager.DHCP4Config.xml"/>
+    </chapter>
+
+    <chapter id="ref-dbus-dhcp6-configs">
+      <title>The <literal>/org/freedesktop/NetworkManager/DHCP4Config/*</literal> objects</title>
+      <!-- TODO: Describe the objects here -->
+      <xi:include href="dbus-org.freedesktop.NetworkManager.DHCP6Config.xml"/>
+    </chapter>
+
+    <chapter id="ref-dbus-access-points">
+      <title>The <literal>/org/freedesktop/NetworkManager/AccessPoint/*</literal> objects</title>
+      <!-- TODO: Describe the objects here -->
+      <xi:include href="dbus-org.freedesktop.NetworkManager.AccessPoint.xml"/>
+    </chapter>
+
+    <chapter id="dbus-types">
       <title>Types</title>
       <xi:include href="../../libnm-core/nm-dbus-types.xml"/>
+    </chapter>
+  </part>
+
+  <part id="secret-agents">
+    <title>Secret Agent D-Bus API Reference</title>
+
+    <chapter id="dbus-secret-agent">
+      <title>Secret agents</title>
+      <!-- TODO: Describe the secret agent here -->
+      <xi:include href="dbus-org.freedesktop.NetworkManager.SecretAgent.xml"/>
+    </chapter>
+  </part>
+
+  <part id="vpn-plugins">
+    <title>VPN Plugin D-Bus API Reference</title>
+
+    <chapter id="dbus-vpn-types">
+      <title>VPN services</title>
+      <!-- TODO: Describe the VPN services here -->
+      <xi:include href="dbus-org.freedesktop.NetworkManager.VPN.Plugin.xml"/>
+    </chapter>
+    <chapter id="dbus-vpn-types">
+      <title>Types</title>
       <xi:include href="../../libnm-core/nm-vpn-dbus-types.xml"/>
-    </section>
-  </chapter>
+    </chapter>
+  </part>
 
   <index>
     <title>Index</title>
