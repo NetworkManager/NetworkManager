@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <node name="/">
+  <!--
+      org.freedesktop.NetworkManager.Device.WiMax:
+      @short_description: WiMax Device
+
+  -->
   <interface name="org.freedesktop.NetworkManager.Device.WiMax">
 
     <!--

@@ -3,6 +3,7 @@
 
   <!--
       org.freedesktop.NetworkManager.Checkpoint:
+      @short_description: Configuration and State Snapshot
 
       A snapshot of NetworkManager state for a given device list
   -->

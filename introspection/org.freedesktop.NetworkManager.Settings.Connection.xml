@@ -3,6 +3,7 @@
 
   <!--
       org.freedesktop.NetworkManager.Settings.Connection:
+      @short_description: Connection Settings Profile
 
       Represents a single network connection configuration.
   -->

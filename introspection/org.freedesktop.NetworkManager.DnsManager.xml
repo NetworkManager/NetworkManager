@@ -3,6 +3,7 @@
 
   <!--
       org.freedesktop.NetworkManager.DnsManager:
+      @short_description: DNS Configuration State
 
       The interface contains DNS-related information.
   -->
