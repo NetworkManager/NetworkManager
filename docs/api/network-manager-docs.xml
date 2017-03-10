@@ -43,15 +43,15 @@
 
   <chapter id="manpages">
     <title>Manual Pages</title>
-    <xi:include href="../../man/nmcli.xml"/>
-    <xi:include href="../../man/nmtui.xml"/>
-    <xi:include href="../../man/nm-online.xml"/>
+    <xi:include href="../../man/NetworkManager.xml"/>
     <xi:include href="../../man/NetworkManager.conf.xml"/>
+    <xi:include href="../../man/nmcli.xml"/>
+    <xi:include href="../../man/nmcli-examples.xml"/>
+    <xi:include href="../../man/nmtui.xml"/>
     <xi:include href="../../man/nm-settings.xml"><xi:fallback /></xi:include>
     <xi:include href="../../man/nm-settings-keyfile.xml"><xi:fallback /></xi:include>
     <xi:include href="../../man/nm-settings-ifcfg-rh.xml"><xi:fallback /></xi:include>
-    <xi:include href="../../man/nmcli-examples.xml"/>
-    <xi:include href="../../man/NetworkManager.xml"/>
+    <xi:include href="../../man/nm-online.xml"/>
   </chapter>
 
   <chapter id="spec">
