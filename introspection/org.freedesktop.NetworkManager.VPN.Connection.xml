@@ -39,7 +39,7 @@
     <!--
         VpnStateChanged:
         @state: (<link linkend="NMVpnConnectionState">NMVpnConnectionState</link>) The new state of the VPN connection.
-        @reason: (<link linkend="NMVpnConnectionStateReason">NMVpnConnectionStateReason</link>) Reason code describing the change to the new state.
+        @reason: (<link linkend="NMActiveConnectionStateReason">NMActiveConnectionStateReason</link>) Reason code describing the change to the new state.
 
         Emitted when the state of the VPN connection has changed.
     -->

@@ -57,7 +57,7 @@ typedef struct {
 	/* Signals */
 	void (*vpn_state_changed) (NMVpnConnection *connection,
 	                           NMVpnConnectionState state,
-	                           NMVpnConnectionStateReason reason);
+	                           NMActiveConnectionStateReason reason);
 
 	/*< private >*/
 	gpointer padding[4];
