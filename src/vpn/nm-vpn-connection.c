@@ -885,23 +885,6 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_vpn_state_to_string, VpnState,
 );
 #define vpn_state_to_string(state) NM_UTILS_LOOKUP_STR (_vpn_state_to_string, state)
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_vpn_reason_to_string, NMVpnConnectionStateReason,
-	NM_UTILS_LOOKUP_DEFAULT (NULL),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_VPN_CONNECTION_STATE_REASON_UNKNOWN,               "unknown"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_VPN_CONNECTION_STATE_REASON_NONE,                  "none"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED,     "user-disconnected"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_VPN_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED,   "device-disconnected"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED,       "service-stopped"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_VPN_CONNECTION_STATE_REASON_IP_CONFIG_INVALID,     "ip-config-invalid"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_VPN_CONNECTION_STATE_REASON_CONNECT_TIMEOUT,       "connect-timeout"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_TIMEOUT, "service-start-timeout"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_FAILED,  "service-start-failed"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS,            "no-secrets"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_VPN_CONNECTION_STATE_REASON_LOGIN_FAILED,          "login-failed"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_VPN_CONNECTION_STATE_REASON_CONNECTION_REMOVED,    "connection-removed"),
-);
-#define vpn_reason_to_string(reason) NM_UTILS_LOOKUP_STR (_vpn_reason_to_string, reason)
-
 static void
 plugin_state_changed (NMVpnConnection *self, NMVpnServiceState new_service_state)
 {
@@ -921,8 +904,6 @@ plugin_state_changed (NMVpnConnection *self, NMVpnServiceState new_service_state
 		if ((priv->vpn_state >= STATE_WAITING) && (priv->vpn_state <= STATE_ACTIVATED)) {
 			VpnState old_state = priv->vpn_state;
 
-			_LOGI ("VPN plugin: state change reason: %s (%d)",
-			       vpn_reason_to_string (priv->failure_reason), priv->failure_reason);
 			_set_vpn_state (self, STATE_FAILED, priv->failure_reason, FALSE);
 
 			/* Reset the failure reason */
