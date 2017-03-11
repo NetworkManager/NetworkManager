@@ -408,6 +408,7 @@ static void
 dispose (GObject *object)
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (object);
+	GDBusProxy *proxy;
 
 	g_clear_pointer (&priv->devices, g_ptr_array_unref);
 
@@ -417,6 +418,12 @@ dispose (GObject *object)
 	g_clear_object (&priv->dhcp4_config);
 	g_clear_object (&priv->ip6_config);
 	g_clear_object (&priv->dhcp6_config);
+
+	proxy = _nm_object_get_proxy (NM_OBJECT (object), NM_DBUS_INTERFACE_ACTIVE_CONNECTION);
+	if (proxy) {
+		g_signal_handlers_disconnect_by_data (proxy, object);
+		g_object_unref (proxy);
+	}
 
 	G_OBJECT_CLASS (nm_active_connection_parent_class)->dispose (object);
 }
