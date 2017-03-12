@@ -23,7 +23,9 @@
 #include "nm-rfkill-manager.h"
 
 #include <string.h>
-#include <gudev/gudev.h>
+#include <libudev.h>
+
+#include "nm-utils/nm-udev-utils.h"
 
 /*****************************************************************************/
 
@@ -35,7 +37,7 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
-	GUdevClient *client;
+	NMUdevClient *udev_client;
 
 	/* Authoritative rfkill state (RFKILL_* enum) */
 	RfKillState rfkill_states[RFKILL_TYPE_MAX];
@@ -101,32 +103,32 @@ rfkill_state_to_desc (RfKillState rstate)
 }
 
 static Killswitch *
-killswitch_new (GUdevDevice *device, RfKillType rtype)
+killswitch_new (struct udev_device *device, RfKillType rtype)
 {
 	Killswitch *ks;
-	GUdevDevice *parent = NULL, *grandparent = NULL;
+	struct udev_device *parent = NULL, *grandparent = NULL;
 	const char *driver, *subsys, *parent_subsys = NULL;
 
 	ks = g_malloc0 (sizeof (Killswitch));
-	ks->name = g_strdup (g_udev_device_get_name (device));
-	ks->seqnum = g_udev_device_get_seqnum (device);
-	ks->path = g_strdup (g_udev_device_get_sysfs_path (device));
+	ks->name = g_strdup (udev_device_get_sysname (device));
+	ks->seqnum = udev_device_get_seqnum (device);
+	ks->path = g_strdup (udev_device_get_syspath (device));
 	ks->rtype = rtype;
 
-	driver = g_udev_device_get_property (device, "DRIVER");
-	subsys = g_udev_device_get_subsystem (device);
+	driver = udev_device_get_property_value (device, "DRIVER");
+	subsys = udev_device_get_subsystem (device);
 
 	/* Check parent for various attributes */
-	parent = g_udev_device_get_parent (device);
+	parent = udev_device_get_parent (device);
 	if (parent) {
-		parent_subsys = g_udev_device_get_subsystem (parent);
+		parent_subsys = udev_device_get_subsystem (parent);
 		if (!driver)
-			driver = g_udev_device_get_property (parent, "DRIVER");
+			driver = udev_device_get_property_value (parent, "DRIVER");
 		if (!driver) {
 			/* Sigh; try the grandparent */
-			grandparent = g_udev_device_get_parent (parent);
+			grandparent = udev_device_get_parent (parent);
 			if (grandparent)
-				driver = g_udev_device_get_property (grandparent, "DRIVER");
+				driver = udev_device_get_property_value (grandparent, "DRIVER");
 		}
 	}
 
@@ -140,10 +142,6 @@ killswitch_new (GUdevDevice *device, RfKillType rtype)
 	    || g_strcmp0 (parent_subsys, "acpi") == 0)
 		ks->platform = TRUE;
 
-	if (grandparent)
-		g_object_unref (grandparent);
-	if (parent)
-		g_object_unref (parent);
 	return ks;
 }
 
@@ -196,32 +194,34 @@ recheck_killswitches (NMRfkillManager *self)
 	/* Poll the states of all killswitches */
 	for (iter = priv->killswitches; iter; iter = g_slist_next (iter)) {
 		Killswitch *ks = iter->data;
-		GUdevDevice *device;
+		struct udev_device *device;
 		RfKillState dev_state;
 		int sysfs_state;
 
-		device = g_udev_client_query_by_subsystem_and_name (priv->client, "rfkill", ks->name);
-		if (device) {
-			sysfs_state = g_udev_device_get_property_as_int (device, "RFKILL_STATE");
-			dev_state = sysfs_state_to_nm_state (sysfs_state);
+		device = udev_device_new_from_subsystem_sysname (nm_udev_client_get_udev (priv->udev_client),
+		                                                 "rfkill", ks->name);
+		if (!device)
+			continue;
+		sysfs_state = _nm_utils_ascii_str_to_int64 (udev_device_get_property_value (device, "RFKILL_STATE"),
+		                                            10, G_MININT, G_MAXINT, -1);
+		dev_state = sysfs_state_to_nm_state (sysfs_state);
 
-			nm_log_dbg (LOGD_RFKILL, "%s rfkill%s switch %s state now %d/%u",
-			            rfkill_type_to_desc (ks->rtype),
-			            ks->platform ? " platform" : "",
-			            ks->name,
-			            sysfs_state,
-			            dev_state);
+		nm_log_dbg (LOGD_RFKILL, "%s rfkill%s switch %s state now %d/%u",
+		            rfkill_type_to_desc (ks->rtype),
+		            ks->platform ? " platform" : "",
+		            ks->name,
+		            sysfs_state,
+		            dev_state);
 
-			if (ks->platform == FALSE) {
-				if (dev_state > poll_states[ks->rtype])
-					poll_states[ks->rtype] = dev_state;
-			} else {
-				platform_checked[ks->rtype] = TRUE;
-				if (dev_state > platform_states[ks->rtype])
-					platform_states[ks->rtype] = dev_state;
-			}
-			g_object_unref (device);
+		if (ks->platform == FALSE) {
+			if (dev_state > poll_states[ks->rtype])
+				poll_states[ks->rtype] = dev_state;
+		} else {
+			platform_checked[ks->rtype] = TRUE;
+			if (dev_state > platform_states[ks->rtype])
+				platform_states[ks->rtype] = dev_state;
 		}
+		udev_device_unref (device);
 	}
 
 	/* Log and emit change signal for final rfkill states */
@@ -276,14 +276,14 @@ rfkill_type_to_enum (const char *str)
 }
 
 static void
-add_one_killswitch (NMRfkillManager *self, GUdevDevice *device)
+add_one_killswitch (NMRfkillManager *self, struct udev_device *device)
 {
 	NMRfkillManagerPrivate *priv = NM_RFKILL_MANAGER_GET_PRIVATE (self);
 	const char *str_type;
 	RfKillType rtype;
 	Killswitch *ks;
 
-	str_type = g_udev_device_get_property (device, "RFKILL_TYPE");
+	str_type = udev_device_get_property_value (device, "RFKILL_TYPE");
 	rtype = rfkill_type_to_enum (str_type);
 	if (rtype == RFKILL_TYPE_UNKNOWN)
 		return;
@@ -300,12 +300,12 @@ add_one_killswitch (NMRfkillManager *self, GUdevDevice *device)
 }
 
 static void
-rfkill_add (NMRfkillManager *self, GUdevDevice *device)
+rfkill_add (NMRfkillManager *self, struct udev_device *device)
 {
 	const char *name;
 
 	g_return_if_fail (device != NULL);
-	name = g_udev_device_get_name (device);
+	name = udev_device_get_sysname (device);
 	g_return_if_fail (name != NULL);
 
 	if (!killswitch_find_by_name (self, name))
@@ -314,14 +314,14 @@ rfkill_add (NMRfkillManager *self, GUdevDevice *device)
 
 static void
 rfkill_remove (NMRfkillManager *self,
-               GUdevDevice *device)
+               struct udev_device *device)
 {
 	NMRfkillManagerPrivate *priv = NM_RFKILL_MANAGER_GET_PRIVATE (self);
 	GSList *iter;
 	const char *name;
 
 	g_return_if_fail (device != NULL);
-	name = g_udev_device_get_name (device);
+	name = udev_device_get_sysname (device);
 	g_return_if_fail (name != NULL);
 
 	for (iter = priv->killswitches; iter; iter = g_slist_next (iter)) {
@@ -337,22 +337,24 @@ rfkill_remove (NMRfkillManager *self,
 }
 
 static void
-handle_uevent (GUdevClient *client,
-               const char *action,
-               GUdevDevice *device,
+handle_uevent (NMUdevClient *client,
+               struct udev_device *device,
                gpointer user_data)
 {
 	NMRfkillManager *self = NM_RFKILL_MANAGER (user_data);
 	const char *subsys;
+	const char *action;
+
+	action = udev_device_get_action (device);
 
 	g_return_if_fail (action != NULL);
 
 	/* A bit paranoid */
-	subsys = g_udev_device_get_subsystem (device);
+	subsys = udev_device_get_subsystem (device);
 	g_return_if_fail (!g_strcmp0 (subsys, "rfkill"));
 
 	nm_log_dbg (LOGD_PLATFORM, "udev rfkill event: action '%s' device '%s'",
-	            action, g_udev_device_get_name (device));
+	            action, udev_device_get_sysname (device));
 
 	if (!strcmp (action, "add"))
 		rfkill_add (self, device);
@@ -368,22 +370,31 @@ static void
 nm_rfkill_manager_init (NMRfkillManager *self)
 {
 	NMRfkillManagerPrivate *priv = NM_RFKILL_MANAGER_GET_PRIVATE (self);
-	const char *subsys[] = { "rfkill", NULL };
-	GList *switches, *iter;
-	guint32 i;
+	struct udev_enumerate *enumerate;
+	struct udev_list_entry *iter;
+	guint i;
 
 	for (i = 0; i < RFKILL_TYPE_MAX; i++)
 		priv->rfkill_states[i] = RFKILL_UNBLOCKED;
 
-	priv->client = g_udev_client_new (subsys);
-	g_signal_connect (priv->client, "uevent", G_CALLBACK (handle_uevent), self);
+	priv->udev_client = nm_udev_client_new ((const char *[]) { "rfkill", NULL },
+	                                        handle_uevent, self);
 
-	switches = g_udev_client_query_by_subsystem (priv->client, "rfkill");
-	for (iter = switches; iter; iter = g_list_next (iter)) {
-		add_one_killswitch (self, G_UDEV_DEVICE (iter->data));
-		g_object_unref (G_UDEV_DEVICE (iter->data));
+	enumerate = nm_udev_client_enumerate_new (priv->udev_client);
+	udev_enumerate_scan_devices (enumerate);
+	iter = udev_enumerate_get_list_entry (enumerate);
+	for (; iter; iter = udev_list_entry_get_next (iter)) {
+		struct udev_device *udevice;
+
+		udevice = udev_device_new_from_syspath (udev_enumerate_get_udev (enumerate),
+		                                        udev_list_entry_get_name (iter));
+		if (!udevice)
+			continue;
+
+		add_one_killswitch (self, udevice);
+		udev_device_unref (udevice);
 	}
-	g_list_free (switches);
+	udev_enumerate_unref (enumerate);
 
 	recheck_killswitches (self);
 }
@@ -400,12 +411,12 @@ dispose (GObject *object)
 	NMRfkillManager *self = NM_RFKILL_MANAGER (object);
 	NMRfkillManagerPrivate *priv = NM_RFKILL_MANAGER_GET_PRIVATE (self);
 
-	g_clear_object (&priv->client);
-
 	if (priv->killswitches) {
 		g_slist_free_full (priv->killswitches, (GDestroyNotify) killswitch_destroy);
 		priv->killswitches = NULL;
 	}
+
+	priv->udev_client = nm_udev_client_unref (priv->udev_client);
 
 	G_OBJECT_CLASS (nm_rfkill_manager_parent_class)->dispose (object);
 }

@@ -20,7 +20,10 @@
 
 #include "nm-default.h"
 
+#include <libudev.h>
+
 #include "platform/nmp-object.h"
+#include "nm-utils/nm-udev-utils.h"
 
 #include "nm-test-utils-core.h"
 
@@ -159,7 +162,7 @@ _nmp_cache_update_netlink (NMPCache *cache, NMPObject *obj, NMPObject **out_obj,
 
 	obj_old = nmp_cache_lookup_link (cache, obj->object.ifindex);
 	if (obj_old && obj_old->_link.udev.device)
-		obj_clone->_link.udev.device = g_object_ref (obj_old->_link.udev.device);
+		obj_clone->_link.udev.device = udev_device_ref (obj_old->_link.udev.device);
 	_nmp_object_fixup_link_udev_fields (obj_clone, nmp_cache_use_udev_get (cache));
 
 	g_assert (cache);
@@ -219,8 +222,8 @@ test_cache_link (void)
 	NMPObject objs1;
 	gboolean was_visible;
 	NMPCacheId cache_id_storage;
-	GUdevDevice *udev_device_2 = g_list_nth_data (global.udev_devices, 0);
-	GUdevDevice *udev_device_3 = g_list_nth_data (global.udev_devices, 0);
+	struct udev_device *udev_device_2 = g_list_nth_data (global.udev_devices, 0);
+	struct udev_device *udev_device_3 = g_list_nth_data (global.udev_devices, 0);
 	NMPCacheOpsType ops_type;
 
 	cache = nmp_cache_new (nmtst_get_rand_int () % 2);
@@ -390,23 +393,40 @@ int
 main (int argc, char **argv)
 {
 	int result;
-	gs_unref_object GUdevClient *udev_client = NULL;
+	NMUdevClient *udev_client;
 
 	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
 
-	udev_client = g_udev_client_new ((const char *[]) { "net", NULL });
+	udev_client = nm_udev_client_new ((const char *[]) { "net", NULL },
+	                                  NULL, NULL);
 	{
-		gs_unref_object GUdevEnumerator *udev_enumerator = g_udev_enumerator_new (udev_client);
+		struct udev_enumerate *enumerator;
+		struct udev_list_entry *devices, *l;
 
-		g_udev_enumerator_add_match_subsystem (udev_enumerator, "net");
+		enumerator = nm_udev_client_enumerate_new (udev_client);
 
 		/* Demand that the device is initialized (udev rules ran,
 		 * device has a stable name now) in case udev is running
 		 * (not in a container). */
 		if (access ("/sys", W_OK) == 0)
-			g_udev_enumerator_add_match_is_initialized (udev_enumerator);
+			udev_enumerate_add_match_is_initialized (enumerator);
 
-		global.udev_devices = g_udev_enumerator_execute (udev_enumerator);
+		udev_enumerate_scan_devices (enumerator);
+
+		devices = udev_enumerate_get_list_entry (enumerator);
+		for (l = devices; l != NULL; l = udev_list_entry_get_next (l)) {
+			struct udev_device *udevice;
+
+			udevice = udev_device_new_from_syspath (udev_enumerate_get_udev (enumerator),
+			                                        udev_list_entry_get_name (l));
+			if (udevice == NULL)
+				continue;
+
+			global.udev_devices = g_list_prepend (global.udev_devices, udevice);
+		}
+		global.udev_devices = g_list_reverse (global.udev_devices);
+
+		udev_enumerate_unref (enumerator);
 	}
 
 	g_test_add_func ("/nmp-object/cache_link", test_cache_link);
@@ -414,9 +434,11 @@ main (int argc, char **argv)
 	result = g_test_run ();
 
 	while (global.udev_devices) {
-		g_object_unref (global.udev_devices->data);
+		udev_device_unref (global.udev_devices->data);
 		global.udev_devices = g_list_remove (global.udev_devices, global.udev_devices->data);
 	}
+
+	nm_udev_client_unref (udev_client);
 
 	return result;
 }

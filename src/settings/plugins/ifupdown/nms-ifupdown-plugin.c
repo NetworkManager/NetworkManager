@@ -28,8 +28,8 @@
 
 #include <string.h>
 #include <arpa/inet.h>
-#include <gudev/gudev.h>
 #include <gmodule.h>
+#include <libudev.h>
 
 #include "nm-setting-connection.h"
 #include "nm-dbus-interface.h"
@@ -42,6 +42,7 @@
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 #include "nm-config.h"
+#include "nm-utils/nm-udev-utils.h"
 
 #include "nms-ifupdown-interface-parser.h"
 #include "nms-ifupdown-connection.h"
@@ -62,7 +63,7 @@
 /*****************************************************************************/
 
 typedef struct {
-	GUdevClient *client;
+	NMUdevClient *udev_client;
 
 	GHashTable *connections;  /* /e/n/i block name :: NMIfupdownConnection */
 
@@ -103,21 +104,21 @@ NM_DEFINE_SINGLETON_GETTER (SettingsPluginIfupdown, settings_plugin_ifupdown_get
 
 static void
 bind_device_to_connection (SettingsPluginIfupdown *self,
-                           GUdevDevice *device,
+                           struct udev_device *device,
                            NMIfupdownConnection *exported)
 {
 	NMSettingWired *s_wired;
 	NMSettingWireless *s_wifi;
 	const char *iface, *address;
 
-	iface = g_udev_device_get_name (device);
+	iface = udev_device_get_sysname (device);
 	if (!iface) {
 		nm_log_warn (LOGD_SETTINGS, "failed to get ifname for device.");
 		return;
 	}
 
-	address = g_udev_device_get_sysfs_attr (device, "address");
-	if (!address || !strlen (address)) {
+	address = udev_device_get_sysattr_value (device, "address");
+	if (!address || !address[0]) {
 		nm_log_warn (LOGD_SETTINGS, "failed to get MAC address for %s", iface);
 		return;
 	}
@@ -142,14 +143,14 @@ bind_device_to_connection (SettingsPluginIfupdown *self,
 }
 
 static void
-udev_device_added (SettingsPluginIfupdown *self, GUdevDevice *device)
+udev_device_added (SettingsPluginIfupdown *self, struct udev_device *device)
 {
 	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (self);
 	const char *iface, *path;
 	NMIfupdownConnection *exported;
 
-	iface = g_udev_device_get_name (device);
-	path = g_udev_device_get_sysfs_path (device);
+	iface = udev_device_get_sysname (device);
+	path = udev_device_get_syspath (device);
 	if (!iface || !path)
 		return;
 
@@ -165,7 +166,7 @@ udev_device_added (SettingsPluginIfupdown *self, GUdevDevice *device)
 		return;
 	}
 
-	g_hash_table_insert (priv->kernel_ifaces, g_strdup (iface), g_object_ref (device));
+	g_hash_table_insert (priv->kernel_ifaces, g_strdup (iface), udev_device_ref (device));
 
 	if (exported)
 		bind_device_to_connection (self, device, exported);
@@ -175,13 +176,13 @@ udev_device_added (SettingsPluginIfupdown *self, GUdevDevice *device)
 }
 
 static void
-udev_device_removed (SettingsPluginIfupdown *self, GUdevDevice *device)
+udev_device_removed (SettingsPluginIfupdown *self, struct udev_device *device)
 {
 	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (self);
 	const char *iface, *path;
 
-	iface = g_udev_device_get_name (device);
-	path = g_udev_device_get_sysfs_path (device);
+	iface = udev_device_get_sysname (device);
+	path = udev_device_get_syspath (device);
 	if (!iface || !path)
 		return;
 
@@ -195,13 +196,13 @@ udev_device_removed (SettingsPluginIfupdown *self, GUdevDevice *device)
 }
 
 static void
-udev_device_changed (SettingsPluginIfupdown *self, GUdevDevice *device)
+udev_device_changed (SettingsPluginIfupdown *self, struct udev_device *device)
 {
 	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (self);
 	const char *iface, *path;
 
-	iface = g_udev_device_get_name (device);
-	path = g_udev_device_get_sysfs_path (device);
+	iface = udev_device_get_sysname (device);
+	path = udev_device_get_syspath (device);
 	if (!iface || !path)
 		return;
 
@@ -215,20 +216,21 @@ udev_device_changed (SettingsPluginIfupdown *self, GUdevDevice *device)
 }
 
 static void
-handle_uevent (GUdevClient *client,
-               const char *action,
-               GUdevDevice *device,
+handle_uevent (NMUdevClient *client,
+               struct udev_device *device,
                gpointer user_data)
 {
 	SettingsPluginIfupdown *self = SETTINGS_PLUGIN_IFUPDOWN (user_data);
 	const char *subsys;
+	const char *action;
+
+	action = udev_device_get_action (device);
 
 	g_return_if_fail (action != NULL);
 
 	/* A bit paranoid */
-	subsys = g_udev_device_get_subsystem (device);
-	g_return_if_fail (subsys != NULL);
-	g_return_if_fail (strcmp (subsys, "net") == 0);
+	subsys = udev_device_get_subsystem (device);
+	g_return_if_fail (nm_streq0 (subsys, "net"));
 
 	if (!strcmp (action, "add"))
 		udev_device_added (self, device);
@@ -271,7 +273,7 @@ get_unmanaged_specs (NMSettingsPlugin *config)
 	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE ((SettingsPluginIfupdown *) config);
 	GSList *specs = NULL;
 	GHashTableIter iter;
-	GUdevDevice *device;
+	struct udev_device *device;
 	const char *iface;
 
 	if (!ALWAYS_UNMANAGE && !priv->unmanage_well_known)
@@ -284,7 +286,7 @@ get_unmanaged_specs (NMSettingsPlugin *config)
 	while (g_hash_table_iter_next (&iter, (gpointer) &iface, (gpointer) &device)) {
 		const char *address;
 
-		address = g_udev_device_get_sysfs_attr (device, "address");
+		address = udev_device_get_sysattr_value (device, "address");
 		if (address)
 			specs = g_slist_append (specs, g_strdup_printf ("mac:%s", address));
 		else
@@ -318,17 +320,23 @@ get_property (GObject *object, guint prop_id,
 /*****************************************************************************/
 
 static void
+_udev_device_unref (gpointer ptr)
+{
+	udev_device_unref (ptr);
+}
+
+static void
 init (NMSettingsPlugin *config)
 {
 	SettingsPluginIfupdown *self = SETTINGS_PLUGIN_IFUPDOWN (config);
 	SettingsPluginIfupdownPrivate *priv = SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE (self);
 	GHashTable *auto_ifaces;
 	if_block *block = NULL;
-	GList *keys, *iter;
+	struct udev_enumerate *enumerate;
+	struct udev_list_entry *keys;
 	GHashTableIter con_iter;
 	const char *block_name;
 	NMIfupdownConnection *connection;
-	const char *subsys[2] = { "net", NULL };
 
 	auto_ifaces = g_hash_table_new (g_str_hash, g_str_equal);
 
@@ -336,18 +344,15 @@ init (NMSettingsPlugin *config)
 		priv->connections = g_hash_table_new (g_str_hash, g_str_equal);
 
 	if(!priv->kernel_ifaces)
-		priv->kernel_ifaces = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
+		priv->kernel_ifaces = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, _udev_device_unref);
 
 	if(!priv->eni_ifaces)
 		priv->eni_ifaces = g_hash_table_new (g_str_hash, g_str_equal);
 
 	nm_log_info (LOGD_SETTINGS, "init!");
 
-	priv->client = g_udev_client_new (subsys);
-	if (!priv->client) {
-		nm_log_warn (LOGD_SETTINGS, "    error initializing libgudev");
-	} else
-		g_signal_connect (priv->client, "uevent", G_CALLBACK (handle_uevent), self);
+	priv->udev_client = nm_udev_client_new ((const char *[]) { "net", NULL },
+	                                        handle_uevent, self);
 
 	/* Read in all the interfaces */
 	ifparser_init (ENI_INTERFACES_FILE, 0);
@@ -445,12 +450,20 @@ init (NMSettingsPlugin *config)
 	nm_log_info (LOGD_SETTINGS, "management mode: %s", priv->unmanage_well_known ? "unmanaged" : "managed");
 
 	/* Add well-known interfaces */
-	keys = g_udev_client_query_by_subsystem (priv->client, "net");
-	for (iter = keys; iter; iter = g_list_next (iter)) {
-		udev_device_added (self, G_UDEV_DEVICE (iter->data));
-		g_object_unref (G_UDEV_DEVICE (iter->data));
+	enumerate = nm_udev_client_enumerate_new (priv->udev_client);
+	udev_enumerate_scan_devices (enumerate);
+	keys = udev_enumerate_get_list_entry (enumerate);
+	for (; keys; keys = udev_list_entry_get_next (keys)) {
+		struct udev_device *udevice;
+
+		udevice = udev_device_new_from_syspath (udev_enumerate_get_udev (enumerate),
+		                                        udev_list_entry_get_name (keys));
+		if (udevice) {
+			udev_device_added (self, udevice);
+			udev_device_unref (udevice);
+		}
 	}
-	g_list_free (keys);
+	udev_enumerate_unref (enumerate);
 
 	/* Now if we're running in managed mode, let NM know there are new connections */
 	if (!priv->unmanage_well_known) {
@@ -483,7 +496,8 @@ dispose (GObject *object)
 
 	g_clear_pointer (&priv->kernel_ifaces, g_hash_table_destroy);
 	g_clear_pointer (&priv->eni_ifaces, g_hash_table_destroy);
-	g_clear_object (&priv->client);
+
+	priv->udev_client = nm_udev_client_unref (priv->udev_client);
 
 	G_OBJECT_CLASS (settings_plugin_ifupdown_parent_class)->dispose (object);
 }

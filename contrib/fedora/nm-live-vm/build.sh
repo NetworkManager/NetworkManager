@@ -33,7 +33,7 @@ ARCH=i386
 ROOT="${ROOT:-"fedora-20-$ARCH"}"
 TREE="/var/lib/mock/$ROOT/root"
 PACKAGES="kernel passwd git autoconf automake libtool intltool gtk-doc libnl3-devel
-    dbus-glib-devel libgudev1-devel libuuid-devel nss-devel ppp-devel newt-devel libndp-devel
+    dbus-glib-devel libuuid-devel nss-devel ppp-devel newt-devel libndp-devel
     readline-devel
     gobject-introspection-devel
     pygobject3

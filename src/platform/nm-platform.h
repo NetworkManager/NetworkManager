@@ -49,6 +49,8 @@
 
 /*****************************************************************************/
 
+struct udev_device;
+
 /* workaround for older libnl version, that does not define these flags. */
 #ifndef IFA_F_MANAGETEMPADDR
 #define IFA_F_MANAGETEMPADDR 0x100
@@ -562,7 +564,7 @@ typedef struct {
 	gboolean (*link_set_noarp) (NMPlatform *, int ifindex);
 
 	const char *(*link_get_udi) (NMPlatform *self, int ifindex);
-	GObject *(*link_get_udev_device) (NMPlatform *self, int ifindex);
+	struct udev_device *(*link_get_udev_device) (NMPlatform *self, int ifindex);
 
 	NMPlatformError (*link_set_user_ipv6ll_enabled) (NMPlatform *, int ifindex, gboolean enabled);
 	gboolean (*link_set_token) (NMPlatform *, int ifindex, NMUtilsIPv6IfaceId iid);
@@ -814,7 +816,7 @@ gboolean nm_platform_link_set_noarp (NMPlatform *self, int ifindex);
 
 const char *nm_platform_link_get_udi (NMPlatform *self, int ifindex);
 
-GObject *nm_platform_link_get_udev_device (NMPlatform *self, int ifindex);
+struct udev_device *nm_platform_link_get_udev_device (NMPlatform *self, int ifindex);
 
 NMPlatformError nm_platform_link_set_user_ipv6ll_enabled (NMPlatform *self, int ifindex, gboolean enabled);
 gboolean nm_platform_link_set_ipv6_token (NMPlatform *self, int ifindex, NMUtilsIPv6IfaceId iid);

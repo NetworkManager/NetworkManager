@@ -21,7 +21,6 @@ yum install \
     gettext-devel \
     dbus-devel \
     dbus-glib-devel \
-    libgudev1-devel \
     libuuid-devel \
     nss-devel \
     ppp-devel \

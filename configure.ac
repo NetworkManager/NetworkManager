@@ -310,7 +310,7 @@ Configure with --without-libnm-glib if you do not need the legacy libraries])])
 fi
 AM_CONDITIONAL(WITH_LEGACY_LIBRARIES, test "$with_libnm_glib" != "no")
 
-PKG_CHECK_MODULES(GUDEV, gudev-1.0 >= 165)
+PKG_CHECK_MODULES([LIBUDEV], [libudev >= 175])
 
 GOBJECT_INTROSPECTION_CHECK([0.9.6])
 

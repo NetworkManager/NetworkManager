@@ -21,10 +21,10 @@
 #ifndef __NMP_OBJECT_H__
 #define __NMP_OBJECT_H__
 
-#include <gudev/gudev.h>
-
 #include "nm-platform.h"
 #include "nm-multi-index.h"
+
+struct udev_device;
 
 typedef enum { /*< skip >*/
 	NMP_OBJECT_TO_STRING_ID,
@@ -186,7 +186,23 @@ typedef struct {
 	} netlink;
 
 	struct {
-		GUdevDevice *device;
+		/* note that "struct udev_device" references the library context
+		 * "struct udev", but doesn't own it.
+		 *
+		 * Hence, the udev.device shall not be used after the library
+		 * context is is destroyed.
+		 *
+		 * In case of NMPObjectLink instances that you obtained from the
+		 * platform cache, that means that you shall no keep references
+		 * to those instances that outlife the NMPlatform instance.
+		 *
+		 * In practice, the requirement is less strict and you'll be even
+		 * fine if the platform instance (and the "struct udev" instance)
+		 * are already destroyed while you still hold onto a reference to
+		 * the NMPObjectLink instance. Just don't make use of udev functions
+		 * that cause access to the udev library context.
+		 */
+		struct udev_device *device;
 	} udev;
 } NMPObjectLink;
 
@@ -442,7 +458,7 @@ void ASSERT_nmp_cache_is_consistent (const NMPCache *cache);
 NMPCacheOpsType nmp_cache_remove (NMPCache *cache, const NMPObject *obj, gboolean equals_by_ptr, NMPObject **out_obj, gboolean *out_was_visible, NMPCachePreHook pre_hook, gpointer user_data);
 NMPCacheOpsType nmp_cache_remove_netlink (NMPCache *cache, const NMPObject *obj, NMPObject **out_obj, gboolean *out_was_visible, NMPCachePreHook pre_hook, gpointer user_data);
 NMPCacheOpsType nmp_cache_update_netlink (NMPCache *cache, NMPObject *obj, NMPObject **out_obj, gboolean *out_was_visible, NMPCachePreHook pre_hook, gpointer user_data);
-NMPCacheOpsType nmp_cache_update_link_udev (NMPCache *cache, int ifindex, GUdevDevice *udev_device, NMPObject **out_obj, gboolean *out_was_visible, NMPCachePreHook pre_hook, gpointer user_data);
+NMPCacheOpsType nmp_cache_update_link_udev (NMPCache *cache, int ifindex, struct udev_device *udevice, NMPObject **out_obj, gboolean *out_was_visible, NMPCachePreHook pre_hook, gpointer user_data);
 NMPCacheOpsType nmp_cache_update_link_master_connected (NMPCache *cache, int ifindex, NMPObject **out_obj, gboolean *out_was_visible, NMPCachePreHook pre_hook, gpointer user_data);
 
 NMPCache *nmp_cache_new (gboolean use_udev);

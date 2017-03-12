@@ -22,9 +22,11 @@
 #include "nm-default.h"
 
 #include <string.h>
-#include <gudev/gudev.h>
+#include <libudev.h>
 
 #include "NetworkManager.h"
+
+#include "nm-utils/nm-udev-utils.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-adsl.h"
 #include "nm-device-wifi.h"
@@ -92,7 +94,7 @@ typedef struct {
 	NMActiveConnection *active_connection;
 	GPtrArray *available_connections;
 
-	GUdevClient *client;
+	NMUdevClient *udev_client;
 	char *product, *short_product;
 	char *vendor, *short_vendor;
 	char *description, *bus_name;
@@ -374,8 +376,9 @@ dispose (GObject *object)
 	g_clear_object (&priv->dhcp4_config);
 	g_clear_object (&priv->ip6_config);
 	g_clear_object (&priv->dhcp6_config);
-	g_clear_object (&priv->client);
 	g_clear_object (&priv->active_connection);
+
+	priv->udev_client = nm_udev_client_unref (priv->udev_client);
 
 	if (priv->available_connections) {
 		int i;
@@ -1501,13 +1504,13 @@ nm_device_get_available_connections (NMDevice *device)
 }
 
 static char *
-get_decoded_property (GUdevDevice *device, const char *property)
+get_decoded_property (struct udev_device *device, const char *property)
 {
 	const char *orig, *p;
 	char *unescaped, *n;
 	guint len;
 
-	p = orig = g_udev_device_get_property (device, property);
+	p = orig = udev_device_get_property_value (device, property);
 	if (!orig)
 		return NULL;
 
@@ -1530,13 +1533,13 @@ get_decoded_property (GUdevDevice *device, const char *property)
 static gboolean
 ensure_udev_client (NMDevice *device)
 {
-	static const char *const subsys[3] = { "net", "tty", NULL };
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 
-	if (!priv->client)
-		priv->client = g_udev_client_new (subsys);
-
-	return priv->client != NULL;
+	if (!priv->udev_client) {
+		priv->udev_client = nm_udev_client_new ((const char *[]) { "net", "tty", NULL },
+		                                        NULL, NULL);
+	}
+	return !!priv->udev_client;
 }
 
 static char *
@@ -1545,7 +1548,7 @@ _get_udev_property (NMDevice *device,
                     const char *db_prop)   /* ID_XXX_FROM_DATABASE */
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
-	GUdevDevice *udev_device = NULL, *tmpdev, *olddev;
+	struct udev_device *udev_device, *tmpdev;
 	const char *ifname;
 	guint32 count = 0;
 	char *enc_value = NULL, *db_value = NULL;
@@ -1557,39 +1560,25 @@ _get_udev_property (NMDevice *device,
 	if (!ifname)
 		return NULL;
 
-	udev_device = g_udev_client_query_by_subsystem_and_name (priv->client, "net", ifname);
-	if (!udev_device)
-		udev_device = g_udev_client_query_by_subsystem_and_name (priv->client, "tty", ifname);
-	if (!udev_device)
-		return NULL;
-
+	udev_device = udev_device_new_from_subsystem_sysname (nm_udev_client_get_udev (priv->udev_client), "net", ifname);
+	if (!udev_device) {
+		udev_device = udev_device_new_from_subsystem_sysname (nm_udev_client_get_udev (priv->udev_client), "tty", ifname);
+		if (!udev_device)
+			return NULL;
+	}
 	/* Walk up the chain of the device and its parents a few steps to grab
 	 * vendor and device ID information off it.
 	 */
-
-	/* Ref the device again because we have to unref it each iteration,
-	 * as g_udev_device_get_parent() returns a ref-ed object.
-	 */
-	tmpdev = g_object_ref (udev_device);
+	tmpdev = udev_device;
 	while ((count++ < 3) && tmpdev && !enc_value) {
 		if (!enc_value)
 			enc_value = get_decoded_property (tmpdev, enc_prop);
 		if (!db_value)
-			db_value = g_strdup (g_udev_device_get_property (tmpdev, db_prop));
+			db_value = g_strdup (udev_device_get_property_value (tmpdev, db_prop));
 
-		olddev = tmpdev;
-		tmpdev = g_udev_device_get_parent (tmpdev);
-		g_object_unref (olddev);
+		tmpdev = udev_device_get_parent (tmpdev);
 	}
-
-	/* Unref the last device if we found what we needed before running out
-	 * of parents.
-	 */
-	if (tmpdev)
-		g_object_unref (tmpdev);
-
-	/* Balance the initial g_udev_client_query_by_subsystem_and_name() */
-	g_object_unref (udev_device);
+	udev_device_unref (udev_device);
 
 	/* Prefer the encoded value which comes directly from the device
 	 * over the hwdata database value.
@@ -1930,7 +1919,7 @@ static const char *
 get_bus_name (NMDevice *device)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
-	GUdevDevice *udevice;
+	struct udev_device *udevice;
 	const char *ifname, *bus;
 
 	if (priv->bus_name)
@@ -1943,13 +1932,13 @@ get_bus_name (NMDevice *device)
 	if (!ifname)
 		return NULL;
 
-	udevice = g_udev_client_query_by_subsystem_and_name (priv->client, "net", ifname);
+	udevice = udev_device_new_from_subsystem_sysname (nm_udev_client_get_udev (priv->udev_client), "net", ifname);
 	if (!udevice)
-		udevice = g_udev_client_query_by_subsystem_and_name (priv->client, "tty", ifname);
+		udevice = udev_device_new_from_subsystem_sysname (nm_udev_client_get_udev (priv->udev_client), "tty", ifname);
 	if (!udevice)
 		return NULL;
 
-	bus = g_udev_device_get_property (udevice, "ID_BUS");
+	bus = udev_device_get_property_value (udevice, "ID_BUS");
 	if (!g_strcmp0 (bus, "pci"))
 		priv->bus_name = g_strdup (_("PCI"));
 	else if (!g_strcmp0 (bus, "usb"))
@@ -1960,7 +1949,7 @@ get_bus_name (NMDevice *device)
 		 */
 		priv->bus_name = g_strdup ("");
 	}
-	g_object_unref (udevice);
+	udev_device_unref (udevice);
 
 out:
 	if (*priv->bus_name)

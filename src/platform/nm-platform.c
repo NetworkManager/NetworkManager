@@ -1000,7 +1000,7 @@ nm_platform_link_get_udi (NMPlatform *self, int ifindex)
 	return NULL;
 }
 
-GObject *
+struct udev_device *
 nm_platform_link_get_udev_device (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, FALSE);
