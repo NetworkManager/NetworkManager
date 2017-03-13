@@ -13253,6 +13253,8 @@ dispose (GObject *object)
 
 	_LOGD (LOGD_DEVICE, "disposing");
 
+	nm_clear_g_cancellable (&priv->deactivating_cancellable);
+
 	_parent_set_ifindex (self, 0, FALSE);
 
 	platform = NM_PLATFORM_GET;
