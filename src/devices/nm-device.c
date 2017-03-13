@@ -11860,9 +11860,8 @@ deactivate_async_ready (NMDevice *self,
 	if (   g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)
 	    || (priv->deactivating_cancellable && g_cancellable_is_cancelled (priv->deactivating_cancellable))) {
 		_LOGW (LOGD_DEVICE, "Deactivation cancelled");
-	}
-	/* In every other case, transition to the DISCONNECTED state */
-	else {
+	} else {
+		/* In every other case, transition to the DISCONNECTED state */
 		if (error) {
 			_LOGW (LOGD_DEVICE, "Deactivation failed: %s",
 			       error->message);
@@ -11890,11 +11889,8 @@ deactivate_dispatcher_complete (guint call_id, gpointer user_data)
 	priv->dispatcher.post_state = NM_DEVICE_STATE_UNKNOWN;
 	priv->dispatcher.post_state_reason = NM_DEVICE_STATE_REASON_NONE;
 
-	if (priv->deactivating_cancellable) {
+	if (nm_clear_g_cancellable (&priv->deactivating_cancellable))
 		g_warn_if_reached ();
-		g_cancellable_cancel (priv->deactivating_cancellable);
-		g_clear_object (&priv->deactivating_cancellable);
-	}
 
 	if (   NM_DEVICE_GET_CLASS (self)->deactivate_async
 	    && NM_DEVICE_GET_CLASS (self)->deactivate_async_finish) {

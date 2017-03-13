@@ -2647,10 +2647,8 @@ dispose (GObject *object)
 
 	cancel_get_secrets (self);
 
-	if (priv->cancellable) {
-		g_cancellable_cancel (priv->cancellable);
-		g_clear_object (&priv->cancellable);
-	}
+	nm_clear_g_cancellable (&priv->cancellable);
+
 	g_clear_object (&priv->proxy_config);
 	nm_exported_object_clear_and_unexport (&priv->ip4_config);
 	nm_exported_object_clear_and_unexport (&priv->ip6_config);

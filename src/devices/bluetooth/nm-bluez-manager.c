@@ -134,10 +134,7 @@ cleanup_checking (NMBluezManager *self, gboolean do_unwatch_name)
 {
 	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
 
-	if (priv->async_cancellable) {
-		g_cancellable_cancel (priv->async_cancellable);
-		g_clear_object (&priv->async_cancellable);
-	}
+	nm_clear_g_cancellable (&priv->async_cancellable);
 
 	g_clear_object (&priv->introspect_proxy);
 

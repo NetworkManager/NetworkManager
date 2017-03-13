@@ -595,10 +595,7 @@ dispose (GObject *object)
 	/* since we take a reference for each queued call, we don't expect to have any queued calls in dispose() */
 	g_assert (!priv->queued_calls);
 
-	if (priv->new_proxy_cancellable) {
-		g_cancellable_cancel (priv->new_proxy_cancellable);
-		g_clear_object (&priv->new_proxy_cancellable);
-	}
+	nm_clear_g_cancellable (&priv->new_proxy_cancellable);
 
 	if (priv->proxy) {
 		g_signal_handlers_disconnect_by_data (priv->proxy, self);

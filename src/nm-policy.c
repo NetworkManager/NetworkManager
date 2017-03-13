@@ -523,10 +523,7 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6)
 
 	g_return_if_fail (self != NULL);
 
-	if (priv->lookup_cancellable) {
-		g_cancellable_cancel (priv->lookup_cancellable);
-		g_clear_object (&priv->lookup_cancellable);
-	}
+	nm_clear_g_cancellable (&priv->lookup_cancellable);
 
 	/* Hostname precedence order:
 	 *
@@ -1953,11 +1950,7 @@ dns_config_changed (NMDnsManager *dns_manager, gpointer user_data)
 	 * (race in updating DNS and doing the reverse lookup).
 	 */
 
-	/* Stop a lookup thread if any. */
-	if (priv->lookup_cancellable) {
-		g_cancellable_cancel (priv->lookup_cancellable);
-		g_clear_object (&priv->lookup_cancellable);
-	}
+	nm_clear_g_cancellable (&priv->lookup_cancellable);
 
 	/* Re-start the hostname lookup thread if we don't have hostname yet. */
 	if (priv->lookup_addr) {

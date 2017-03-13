@@ -398,10 +398,7 @@ dispose (GObject *object)
 
 	nm_clear_g_source (&priv->die_count_reset_id);
 
-	if (priv->cancellable) {
-		g_cancellable_cancel (priv->cancellable);
-		g_clear_object (&priv->cancellable);
-	}
+	nm_clear_g_cancellable (&priv->cancellable);
 
 	if (priv->ifaces) {
 		for (ifaces = priv->ifaces; ifaces; ifaces = ifaces->next)

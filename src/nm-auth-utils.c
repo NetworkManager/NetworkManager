@@ -301,12 +301,10 @@ auth_call_cancel (gpointer user_data)
 {
 	AuthCall *call = user_data;
 
-	if (call->cancellable) {
+	if (nm_clear_g_cancellable (&call->cancellable)) {
 		/* we don't free call immediately. Instead we cancel the async operation
 		 * and set cancellable to NULL. pk_call_cb() will check for this and
 		 * do the final cleanup. */
-		g_cancellable_cancel (call->cancellable);
-		g_clear_object (&call->cancellable);
 	} else {
 		g_source_remove (call->call_idle_id);
 		auth_call_free (call);

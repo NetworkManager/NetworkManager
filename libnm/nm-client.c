@@ -2525,10 +2525,7 @@ dispose (GObject *object)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
 
-	if (priv->new_object_manager_cancellable) {
-		g_cancellable_cancel (priv->new_object_manager_cancellable);
-		g_clear_object (&priv->new_object_manager_cancellable);
-	}
+	nm_clear_g_cancellable (&priv->new_object_manager_cancellable);
 
 	if (priv->manager) {
 		g_signal_handlers_disconnect_by_data (priv->manager, object);

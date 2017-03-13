@@ -1274,11 +1274,7 @@ dispose (GObject *object)
 	NMManager *manager = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (object);
 
-	if (priv->perm_call_cancellable) {
-		g_cancellable_cancel (priv->perm_call_cancellable);
-		g_clear_object (&priv->perm_call_cancellable);
-	}
-
+	nm_clear_g_cancellable (&priv->perm_call_cancellable);
 
 	if (priv->devices) {
 		g_ptr_array_unref (priv->devices);
