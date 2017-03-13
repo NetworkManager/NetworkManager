@@ -10645,6 +10645,8 @@ _set_unmanaged_flags (NMDevice *self,
 	const char *operation = NULL;
 	char str1[512];
 	char str2[512];
+	gboolean do_notify_has_pending_actions = FALSE;
+	gboolean had_pending_actions = FALSE;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 	g_return_if_fail (flags);
@@ -10679,6 +10681,11 @@ _set_unmanaged_flags (NMDevice *self,
 			priv->queued_ip6_config_pending = FALSE;
 			nm_assert_se (!nm_clear_g_source (&priv->queued_ip6_config_id));
 			priv->queued_ip6_config_id = g_idle_add (queued_ip6_config_change, self);
+		}
+
+		if (!priv->pending_actions) {
+			do_notify_has_pending_actions = TRUE;
+			had_pending_actions = nm_device_has_pending_action (self);
 		}
 	}
 
@@ -10738,6 +10745,10 @@ _set_unmanaged_flags (NMDevice *self,
 	                            transition_state ? ", transition-state" : "",
 	                            ""));
 #undef _FMT
+
+	if (   do_notify_has_pending_actions
+	    && had_pending_actions != nm_device_has_pending_action (self))
+		_notify (self, PROP_HAS_PENDING_ACTION);
 
 	if (transition_state) {
 		new_state = was_managed ? NM_DEVICE_STATE_UNMANAGED : NM_DEVICE_STATE_UNAVAILABLE;
@@ -11412,7 +11423,16 @@ nm_device_has_pending_action (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	return !!priv->pending_actions;
+	if (priv->pending_actions)
+		return TRUE;
+
+	if (nm_device_get_unmanaged_flags (self, NM_UNMANAGED_PLATFORM_INIT)) {
+		/* as long as the platform link is not yet initialized, we have a pending
+		 * action. */
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
 /*****************************************************************************/
