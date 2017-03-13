@@ -1739,6 +1739,7 @@ get_existing_connection (NMManager *self,
 	GError *error = NULL;
 	NMDevice *master = NULL;
 	int ifindex = nm_device_get_ifindex (device);
+	NMSettingsConnection *matched;
 
 	if (out_generated)
 		*out_generated = FALSE;
@@ -1782,20 +1783,15 @@ get_existing_connection (NMManager *self,
 	 * When no configured connection matches the generated connection, we keep
 	 * the generated connection instead.
 	 */
-	if (assume_connection_uuid) {
-		gs_free_slist GSList *connections = NULL;
-		gs_free NMSettingsConnection **cons = NULL;
-		NMSettingsConnection *matched;
-		guint i, len;
+	if (   assume_connection_uuid
+	    && (matched = nm_settings_get_connection_by_uuid (priv->settings, assume_connection_uuid))
+	    && !active_connection_find_first (self, matched, NULL,
+	                                      NM_ACTIVE_CONNECTION_STATE_DEACTIVATING)) {
+		NMConnection *const connections[] = {
+			NM_CONNECTION (matched),
+			NULL,
+		};
 
-		cons = nm_manager_get_activatable_connections (self, &len, FALSE);
-		for (i = 0; i < len; i++) {
-			if (nm_streq0 (assume_connection_uuid, nm_connection_get_uuid (NM_CONNECTION (cons[i])))) {
-				connections = g_slist_append (NULL, cons[i]);
-				break;
-			}
-		}
-		connections = g_slist_sort (connections, (GCompareFunc) nm_settings_connection_cmp_timestamp);
 		matched = NM_SETTINGS_CONNECTION (nm_utils_match_connection (connections,
 		                                                             connection,
 		                                                             nm_device_has_carrier (device),

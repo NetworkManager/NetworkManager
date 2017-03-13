@@ -715,7 +715,7 @@ check_possible_match (NMConnection *orig,
  * matches well enough.
  */
 NMConnection *
-nm_utils_match_connection (GSList *connections,
+nm_utils_match_connection (NMConnection *const*connections,
                            NMConnection *original,
                            gboolean device_has_carrier,
                            gint64 default_v4_metric,
@@ -724,10 +724,12 @@ nm_utils_match_connection (GSList *connections,
                            gpointer match_filter_data)
 {
 	NMConnection *best_match = NULL;
-	GSList *iter;
 
-	for (iter = connections; iter; iter = iter->next) {
-		NMConnection *candidate = NM_CONNECTION (iter->data);
+	if (!connections)
+		return NULL;
+
+	for (; *connections; connections++) {
+		NMConnection *candidate = NM_CONNECTION (*connections);
 		GHashTable *diffs = NULL;
 
 		if (match_filter_func) {
