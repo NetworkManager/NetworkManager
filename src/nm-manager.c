@@ -815,13 +815,17 @@ find_best_device_state (NMManager *manager, gboolean *force_connectivity_check)
 			}
 			break;
 		case NM_ACTIVE_CONNECTION_STATE_ACTIVATING:
-			if (!nm_active_connection_has_activation_type_assume_or_external (ac)) {
+			if (!NM_IN_SET (nm_active_connection_get_activation_type (ac),
+			                NM_ACTIVATION_TYPE_EXTERNAL,
+			                NM_ACTIVATION_TYPE_ASSUME)) {
 				if (best_state != NM_STATE_CONNECTED_GLOBAL)
 					best_state = NM_STATE_CONNECTING;
 			}
 			break;
 		case NM_ACTIVE_CONNECTION_STATE_DEACTIVATING:
-			if (!nm_active_connection_has_activation_type_assume_or_external (ac)) {
+			if (!NM_IN_SET (nm_active_connection_get_activation_type (ac),
+			                NM_ACTIVATION_TYPE_EXTERNAL,
+			                NM_ACTIVATION_TYPE_ASSUME)) {
 				if (best_state < NM_STATE_DISCONNECTING)
 					best_state = NM_STATE_DISCONNECTING;
 			}
@@ -1034,8 +1038,10 @@ remove_device (NMManager *self,
 		if (unmanage) {
 			if (quitting)
 				nm_device_set_unmanaged_by_quitting (device);
-			else
+			else {
+				nm_device_sys_iface_state_set (device, NM_DEVICE_SYS_IFACE_STATE_REMOVED);
 				nm_device_set_unmanaged_by_flags (device, NM_UNMANAGED_PLATFORM_INIT, TRUE, NM_DEVICE_STATE_REASON_REMOVED);
+			}
 		} else if (quitting && nm_config_get_configure_and_quit (priv->config)) {
 			nm_device_spawn_iface_helper (device);
 		}
@@ -1854,6 +1860,9 @@ recheck_assume_connection (NMManager *self,
 	if (state > NM_DEVICE_STATE_DISCONNECTED)
 		return FALSE;
 
+	if (nm_device_sys_iface_state_get (device) != NM_DEVICE_SYS_IFACE_STATE_EXTERNAL)
+		return FALSE;
+
 	connection = get_existing_connection (self, device, assume_connection_uuid, &generated);
 	if (!connection) {
 		_LOGD (LOGD_DEVICE, "(%s): can't assume; no connection",
@@ -1863,6 +1872,9 @@ recheck_assume_connection (NMManager *self,
 
 	_LOGD (LOGD_DEVICE, "(%s): will attempt to assume connection",
 	       nm_device_get_iface (device));
+
+	if (!generated)
+		nm_device_sys_iface_state_set (device, NM_DEVICE_SYS_IFACE_STATE_ASSUME);
 
 	/* Move device to DISCONNECTED to activate the connection */
 	if (state == NM_DEVICE_STATE_UNMANAGED) {
@@ -1908,6 +1920,9 @@ recheck_assume_connection (NMManager *self,
 				       nm_device_get_iface (device));
 
 				nm_settings_connection_delete (connection, NULL, NULL);
+			} else {
+				if (nm_device_sys_iface_state_get (device) == NM_DEVICE_SYS_IFACE_STATE_ASSUME)
+					nm_device_sys_iface_state_set (device, NM_DEVICE_SYS_IFACE_STATE_EXTERNAL);
 			}
 			return FALSE;
 		}

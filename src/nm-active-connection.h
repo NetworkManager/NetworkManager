@@ -159,8 +159,6 @@ void          nm_active_connection_set_master (NMActiveConnection *self,
 void          nm_active_connection_set_parent (NMActiveConnection *self,
                                                NMActiveConnection *parent);
 
-gboolean      nm_active_connection_has_activation_type_assume_or_external (NMActiveConnection *self);
-
 NMActivationType nm_active_connection_get_activation_type (NMActiveConnection *self);
 
 void          nm_active_connection_clear_secrets (NMActiveConnection *self);

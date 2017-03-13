@@ -752,14 +752,14 @@ _set_activation_type (NMActiveConnection *self,
 	       nm_activation_type_to_string (priv->activation_type),
 	       nm_activation_type_to_string (activation_type));
 	priv->activation_type = activation_type;
-}
 
-gboolean
-nm_active_connection_has_activation_type_assume_or_external (NMActiveConnection *self)
-{
-	return NM_IN_SET (nm_active_connection_get_activation_type (self),
-	                  NM_ACTIVATION_TYPE_ASSUME,
-	                  NM_ACTIVATION_TYPE_EXTERNAL);
+	if (   priv->activation_type == NM_ACTIVATION_TYPE_MANAGED
+	    && priv->device
+	    && self == NM_ACTIVE_CONNECTION (nm_device_get_act_request (priv->device))
+	    && NM_IN_SET (nm_device_sys_iface_state_get (priv->device),
+	                  NM_DEVICE_SYS_IFACE_STATE_EXTERNAL,
+	                  NM_DEVICE_SYS_IFACE_STATE_ASSUME))
+		nm_device_sys_iface_state_set (priv->device, NM_DEVICE_SYS_IFACE_STATE_MANAGED);
 }
 
 /*****************************************************************************/
