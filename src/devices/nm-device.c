@@ -5871,16 +5871,19 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
 
+	if (priv->ext_ip6_config_captured)
+		ll_addr = nm_ip6_config_get_address_first_nontentative (priv->ext_ip6_config_captured, TRUE);
+
+	if (!ll_addr) {
+		_LOGW (LOGD_DHCP6, "can't start DHCPv6: no link-local address");
+		return FALSE;
+	}
+
 	hw_addr = nm_platform_link_get_address (NM_PLATFORM_GET, nm_device_get_ip_ifindex (self), &hw_addr_len);
 	if (hw_addr_len) {
 		tmp = g_byte_array_sized_new (hw_addr_len);
 		g_byte_array_append (tmp, hw_addr, hw_addr_len);
 	}
-
-	if (priv->ext_ip6_config_captured)
-		ll_addr = nm_ip6_config_get_address_first_nontentative (priv->ext_ip6_config_captured, TRUE);
-
-	g_return_val_if_fail (ll_addr, FALSE);
 
 	priv->dhcp6.client = nm_dhcp_manager_start_ip6 (nm_dhcp_manager_get (),
 	                                                nm_device_get_ip_iface (self),
