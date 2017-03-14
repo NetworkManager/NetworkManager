@@ -751,7 +751,7 @@ _mi_rebucket (GRand *rand, guint num_values, guint num_buckets, NMMultiIndexOper
 	         op == MI_OP_ADD ? "ADD" : (op == MI_OP_REMOVE ? "REM" : "MOV"),
 	         bucket_old, had_bucket_old ? '*' : ' ',
 	         bucket, had_bucket ? '*' : ' ',
-	         (long long unsigned) buckets_old, (long long unsigned) v->buckets,
+	         (unsigned long long) buckets_old, (unsigned long long) v->buckets,
 	         buckets_old != v->buckets ? "(changed)" : "(unchanged)");
 #endif
 

@@ -942,7 +942,7 @@ nm_active_connection_version_id_bump (NMActiveConnection *self)
 
 	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE  (self);
 	priv->version_id = _version_id_new ();
-	_LOGT ("new version-id %llu", (long long unsigned) priv->version_id);
+	_LOGT ("new version-id %llu", (unsigned long long) priv->version_id);
 	return priv->version_id;
 }
 
@@ -1136,7 +1136,7 @@ constructed (GObject *object)
 	if (priv->applied_connection)
 		nm_connection_clear_secrets (priv->applied_connection);
 
-	_LOGD ("constructed (%s, version-id %llu)", G_OBJECT_TYPE_NAME (self), (long long unsigned) priv->version_id);
+	_LOGD ("constructed (%s, version-id %llu)", G_OBJECT_TYPE_NAME (self), (unsigned long long) priv->version_id);
 
 	g_return_if_fail (priv->subject);
 }

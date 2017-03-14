@@ -593,7 +593,7 @@ _create_export_path (NMExportedObjectClass *klass)
 		}
 
 		NM_PRAGMA_WARNING_DISABLE("-Wformat-nonliteral")
-		return g_strdup_printf (class_export_path, (long long unsigned) (++(*counter)));
+		return g_strdup_printf (class_export_path, (unsigned long long) (++(*counter)));
 		NM_PRAGMA_WARNING_REENABLE
 	}
 

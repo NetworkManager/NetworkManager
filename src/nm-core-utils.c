@@ -976,7 +976,7 @@ nm_utils_kill_process_sync (pid_t pid, guint64 start_time, int sig, NMLogDomain 
 	}
 	if (start_time != 0 && start_time != start_time0) {
 		nm_log_dbg (log_domain, LOG_NAME_PROCESS_FMT ": don't kill process %ld because the start_time is unexpectedly %lu instead of %ld",
-		            LOG_NAME_ARGS, (long int) pid, (long unsigned) start_time0, (long unsigned) start_time);
+		            LOG_NAME_ARGS, (long int) pid, (unsigned long) start_time0, (unsigned long) start_time);
 		return;
 	}
 

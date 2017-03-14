@@ -8634,7 +8634,7 @@ check_and_reapply_connection (NMDevice *self,
 		nm_active_connection_version_id_bump ((NMActiveConnection *) priv->act_request);
 
 	_LOGD (LOGD_DEVICE, "reapply (version-id %llu%s)",
-	       (long long unsigned) nm_active_connection_version_id_get (((NMActiveConnection *) priv->act_request)),
+	       (unsigned long long) nm_active_connection_version_id_get (((NMActiveConnection *) priv->act_request)),
 	       diffs ? "" : " (unmodified)");
 
 	if (diffs) {
@@ -10919,7 +10919,7 @@ nm_device_reapply_settings_immediately (NMDevice *self)
 	               nm_setting_connection_get_zone (s_con_applied)) != 0) {
 
 		version_id = nm_active_connection_version_id_bump ((NMActiveConnection *) self->_priv->act_request);
-		_LOGD (LOGD_DEVICE, "reapply setting: zone = %s%s%s (version-id %llu)", NM_PRINT_FMT_QUOTE_STRING (zone), (long long unsigned) version_id);
+		_LOGD (LOGD_DEVICE, "reapply setting: zone = %s%s%s (version-id %llu)", NM_PRINT_FMT_QUOTE_STRING (zone), (unsigned long long) version_id);
 
 		g_object_set (G_OBJECT (s_con_applied),
 		              NM_SETTING_CONNECTION_ZONE, zone,
@@ -10931,7 +10931,7 @@ nm_device_reapply_settings_immediately (NMDevice *self)
 	if ((metered = nm_setting_connection_get_metered (s_con_settings)) != nm_setting_connection_get_metered (s_con_applied)) {
 
 		version_id = nm_active_connection_version_id_bump ((NMActiveConnection *) self->_priv->act_request);
-		_LOGD (LOGD_DEVICE, "reapply setting: metered = %d (version-id %llu)", (int) metered, (long long unsigned) version_id);
+		_LOGD (LOGD_DEVICE, "reapply setting: metered = %d (version-id %llu)", (int) metered, (unsigned long long) version_id);
 
 		g_object_set (G_OBJECT (s_con_applied),
 		              NM_SETTING_CONNECTION_METERED, metered,

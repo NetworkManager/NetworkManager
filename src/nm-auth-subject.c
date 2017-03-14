@@ -88,9 +88,9 @@ nm_auth_subject_to_string (NMAuthSubject *self, char *buf, gsize buf_len)
 	switch (priv->subject_type) {
 	case NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS:
 		g_snprintf (buf, buf_len, "unix-process[pid=%lu, uid=%lu, start=%llu]",
-		            (long unsigned) priv->unix_process.pid,
-		            (long unsigned) priv->unix_process.uid,
-		            (long long unsigned) priv->unix_process.start_time);
+		            (unsigned long) priv->unix_process.pid,
+		            (unsigned long) priv->unix_process.uid,
+		            (unsigned long long) priv->unix_process.start_time);
 		break;
 	case NM_AUTH_SUBJECT_TYPE_INTERNAL:
 		g_strlcat (buf, "internal", buf_len);

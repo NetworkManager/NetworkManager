@@ -218,7 +218,7 @@ nmtst_platform_ip4_routes_equal (const NMPlatformIP4Route *a, const NMPlatformIP
 		if (nm_platform_ip4_route_cmp (&a[i], &b[i]) != 0) {
 			char buf[sizeof (_nm_utils_to_string_buffer)];
 
-			g_error ("Error comparing IPv4 route[%lu]: %s vs %s", (long unsigned) i,
+			g_error ("Error comparing IPv4 route[%lu]: %s vs %s", (unsigned long) i,
 			         nm_platform_ip4_route_to_string (&a[i], NULL, 0),
 			         nm_platform_ip4_route_to_string (&b[i], buf, sizeof (buf)));
 			g_assert_not_reached ();
@@ -252,7 +252,7 @@ nmtst_platform_ip6_routes_equal (const NMPlatformIP6Route *a, const NMPlatformIP
 		if (nm_platform_ip6_route_cmp (&a[i], &b[i]) != 0) {
 			char buf[sizeof (_nm_utils_to_string_buffer)];
 
-			g_error ("Error comparing IPv6 route[%lu]: %s vs %s", (long unsigned) i,
+			g_error ("Error comparing IPv6 route[%lu]: %s vs %s", (unsigned long) i,
 			         nm_platform_ip6_route_to_string (&a[i], NULL, 0),
 			         nm_platform_ip6_route_to_string (&b[i], buf, sizeof (buf)));
 			g_assert_not_reached ();

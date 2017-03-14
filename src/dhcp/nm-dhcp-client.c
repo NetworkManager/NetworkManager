@@ -571,7 +571,7 @@ nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name)
 	if (start_time == 0)
 		goto out;
 
-	nm_sprintf_buf (proc_path, "/proc/%lu/cmdline", (long unsigned) pid);
+	nm_sprintf_buf (proc_path, "/proc/%lu/cmdline", (unsigned long) pid);
 	if (!g_file_get_contents (proc_path, &proc_contents, NULL, NULL))
 		goto out;
 

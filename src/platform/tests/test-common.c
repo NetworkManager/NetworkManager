@@ -1595,7 +1595,7 @@ nmtstp_namespace_get_fd_for_process (pid_t pid, const char *ns_name)
 	g_return_val_if_fail (pid > 0, 0);
 	g_return_val_if_fail (ns_name && ns_name[0] && strlen (ns_name) < 50, 0);
 
-	nm_sprintf_buf (p, "/proc/%lu/ns/%s", (long unsigned) pid, ns_name);
+	nm_sprintf_buf (p, "/proc/%lu/ns/%s", (unsigned long) pid, ns_name);
 
 	return open(p, O_RDONLY | O_CLOEXEC);
 }
