@@ -4814,11 +4814,6 @@ nm_manager_start (NMManager *self, GError **error)
 	if (!nm_settings_start (priv->settings, error))
 		return FALSE;
 
-	g_signal_connect (NM_PLATFORM_GET,
-	                  NM_PLATFORM_SIGNAL_LINK_CHANGED,
-	                  G_CALLBACK (platform_link_cb),
-	                  self);
-
 	/* Set initial radio enabled/disabled state */
 	for (i = 0; i < RFKILL_TYPE_MAX; i++) {
 		RadioState *rstate = &priv->radio_states[i];
@@ -4850,6 +4845,13 @@ nm_manager_start (NMManager *self, GError **error)
 	/* Start device factories */
 	nm_device_factory_manager_load_factories (_register_device_factory, self);
 	nm_device_factory_manager_for_each_factory (start_factory, NULL);
+
+	nm_platform_process_events (NM_PLATFORM_GET);
+
+	g_signal_connect (NM_PLATFORM_GET,
+	                  NM_PLATFORM_SIGNAL_LINK_CHANGED,
+	                  G_CALLBACK (platform_link_cb),
+	                  self);
 
 	platform_query_devices (self);
 
