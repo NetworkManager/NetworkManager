@@ -239,7 +239,7 @@ if test "$with_wifi" = "yes"; then
                     #include <linux/types.h>
                     #include <sys/socket.h>
                     #include <linux/nl80211.h>]],
-                  [[unsigned int a = NL80211_CMD_CRIT_PROTOCOL_START; a++;]])],
+                  [[unsigned a = NL80211_CMD_CRIT_PROTOCOL_START; a++;]])],
 		[ac_have_nl80211_critproto=yes],
 		[ac_have_nl80211_critproto=no])
 	AC_MSG_RESULT($ac_have_nl80211_critproto)
@@ -264,7 +264,7 @@ AC_COMPILE_IFELSE(
                 #include <sys/types.h>
                 #include <linux/types.h>
                 #include <linux/if_vlan.h>]],
-              [[unsigned int a = VLAN_FLAG_LOOSE_BINDING;]])],
+              [[unsigned a = VLAN_FLAG_LOOSE_BINDING;]])],
 	[ac_have_vlan_flag_loose_binding=yes],
 	[ac_have_vlan_flag_loose_binding=no])
 AC_MSG_RESULT($ac_have_vlan_flag_loose_binding)

@@ -1294,7 +1294,7 @@ nmc_unique_connection_name (const GPtrArray *connections, const char *try_name)
 	NMConnection *connection;
 	const char *name;
 	char *new_name;
-	unsigned int num = 1;
+	unsigned num = 1;
 	int i = 0;
 
 	new_name = g_strdup (try_name);

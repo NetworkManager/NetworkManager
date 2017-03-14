@@ -42,8 +42,8 @@
  * utils
  ******************************************************************/
 
-extern char *if_indextoname (unsigned int __ifindex, char *__ifname);
-unsigned int if_nametoindex (const char *__ifname);
+extern char *if_indextoname (unsigned __ifindex, char *__ifname);
+unsigned if_nametoindex (const char *__ifname);
 
 const char *
 nmp_utils_if_indextoname (int ifindex, char *out_ifname/*IFNAMSIZ*/)
@@ -440,7 +440,7 @@ nmp_utils_ethtool_set_wake_on_lan (int ifindex,
 		return TRUE;
 
 	nm_log_dbg (LOGD_PLATFORM, "setting Wake-on-LAN options 0x%x, password '%s'",
-	            (unsigned int) wol, wol_password);
+	            (unsigned) wol, wol_password);
 
 	wol_info.cmd = ETHTOOL_SWOL;
 	wol_info.wolopts = 0;

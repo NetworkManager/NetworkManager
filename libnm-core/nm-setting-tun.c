@@ -184,7 +184,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("'%u': invalid mode"), (unsigned int) priv->mode);
+		             _("'%u': invalid mode"), (unsigned) priv->mode);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_TUN_SETTING_NAME, NM_SETTING_TUN_MODE);
 		return FALSE;
 	}

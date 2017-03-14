@@ -323,7 +323,7 @@ get_available_iface_name (const char *try_name,
 	const GPtrArray *connections;
 	NMConnection *connection;
 	char *new_name;
-	unsigned int num = 1;
+	unsigned num = 1;
 	int i = 0;
 	const char *ifname = NULL;
 

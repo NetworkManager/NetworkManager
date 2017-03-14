@@ -2551,7 +2551,7 @@ set_powersave (NMDevice *device)
 		                                          NM_SETTING_WIRELESS_POWERSAVE_IGNORE);
 	}
 
-	_LOGT (LOGD_WIFI, "powersave is set to %u", (unsigned int) powersave);
+	_LOGT (LOGD_WIFI, "powersave is set to %u", (unsigned) powersave);
 
 	if (powersave == NM_SETTING_WIRELESS_POWERSAVE_IGNORE)
 		return;

@@ -4738,7 +4738,7 @@ vlan_add (NMPlatform *platform,
 	vlan_flags &= (guint32) NM_VLAN_FLAGS_ALL;
 
 	_LOGD ("link: add vlan '%s', parent %d, vlan id %d, flags %X",
-	       name, parent, vlan_id, (unsigned int) vlan_flags);
+	       name, parent, vlan_id, (unsigned) vlan_flags);
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,

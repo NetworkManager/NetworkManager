@@ -91,7 +91,7 @@ crypto_decrypt (const char *cipher,
 	PK11Context *ctx = NULL;
 	SECStatus s;
 	gboolean success = FALSE;
-	unsigned int pad_len = 0, extra = 0;
+	unsigned pad_len = 0, extra = 0;
 	guint32 i, real_iv_len = 0;
 
 	if (!crypto_init (error))

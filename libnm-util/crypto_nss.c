@@ -79,7 +79,7 @@ crypto_md5_hash (const char *salt,
 {
 	PK11Context *ctx;
 	int nkey = buflen;
-	unsigned int digest_len;
+	unsigned digest_len;
 	int count = 0;
 	char digest[MD5_HASH_LEN];
 	char *p = buffer;
@@ -144,7 +144,7 @@ crypto_decrypt (const char *cipher,
 	PK11Context *ctx = NULL;
 	SECStatus s;
 	gboolean success = FALSE;
-	unsigned int pad_len = 0, extra = 0;
+	unsigned pad_len = 0, extra = 0;
 	guint32 i, real_iv_len = 0;
 
 	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC)) {
