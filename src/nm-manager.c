@@ -129,9 +129,6 @@ typedef struct {
 	char *hostname;
 
 	RadioState radio_states[RFKILL_TYPE_MAX];
-	gboolean sleeping;
-	gboolean net_enabled;
-
 	NMVpnManager *vpn_manager;
 
 	NMSleepMonitor *sleep_monitor;
@@ -147,8 +144,14 @@ typedef struct {
 
 	guint timestamp_update_id;
 
-	gboolean startup;
-	gboolean devices_inited;
+	guint devices_inited_id;
+
+	bool startup:1;
+	bool devices_inited:1;
+	bool devices_inited_ready:1;
+
+	bool sleeping:1;
+	bool net_enabled:1;
 } NMManagerPrivate;
 
 struct _NMManager {
@@ -4804,6 +4807,25 @@ nm_manager_write_device_state (NMManager *self)
 	                                     seen_ifindexes);
 }
 
+static gboolean
+devices_inited_cb (gpointer user_data)
+{
+	NMManager *self = user_data;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+
+	if (!priv->devices_inited_ready) {
+		/* lets go through another idle invocation to give the system
+		 * more time to settle. */
+		priv->devices_inited_ready = TRUE;
+		return G_SOURCE_CONTINUE;
+	}
+
+	priv->devices_inited_id = 0;
+	priv->devices_inited = TRUE;
+	check_if_startup_complete (self);
+	return G_SOURCE_REMOVE;
+}
+
 gboolean
 nm_manager_start (NMManager *self, GError **error)
 {
@@ -4866,9 +4888,8 @@ nm_manager_start (NMManager *self, GError **error)
 	for (i = 0; connections[i]; i++)
 		connection_changed (self, NM_CONNECTION (connections[i]));
 
-	priv->devices_inited = TRUE;
-
-	check_if_startup_complete (self);
+	nm_clear_g_source (&priv->devices_inited_id);
+	priv->devices_inited_id = g_idle_add_full (G_PRIORITY_LOW + 10, devices_inited_cb, self, NULL);
 
 	return TRUE;
 }
@@ -4883,6 +4904,8 @@ nm_manager_stop (NMManager *self)
 		remove_device (self, NM_DEVICE (priv->devices->data), TRUE, TRUE);
 
 	_active_connection_cleanup (self);
+
+	nm_clear_g_source (&priv->devices_inited_id);
 }
 
 static gboolean
@@ -6040,6 +6063,8 @@ dispose (GObject *object)
 
 	g_slist_free_full (priv->auth_chains, (GDestroyNotify) nm_auth_chain_unref);
 	priv->auth_chains = NULL;
+
+	nm_clear_g_source (&priv->devices_inited_id);
 
 	if (priv->checkpoint_mgr) {
 		nm_checkpoint_manager_destroy_all (priv->checkpoint_mgr, NULL);
