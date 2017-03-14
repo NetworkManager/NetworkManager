@@ -1292,7 +1292,7 @@ nmtst_setting_ip_config_add_route (NMSettingIPConfig *s_ip,
 	nm_ip_route_unref (route);
 }
 
-inline static void
+static inline void
 nmtst_assert_route_attribute_string (NMIPRoute *route, const char *name, const char *value)
 {
 	GVariant *variant;
@@ -1303,7 +1303,7 @@ nmtst_assert_route_attribute_string (NMIPRoute *route, const char *name, const c
 	g_assert_cmpstr (g_variant_get_string (variant, NULL), ==, value);
 }
 
-inline static void
+static inline void
 nmtst_assert_route_attribute_byte (NMIPRoute *route, const char *name, guchar value)
 {
 	GVariant *variant;
@@ -1314,7 +1314,7 @@ nmtst_assert_route_attribute_byte (NMIPRoute *route, const char *name, guchar va
 	g_assert_cmpint (g_variant_get_byte (variant), ==, value);
 }
 
-inline static void
+static inline void
 nmtst_assert_route_attribute_uint32 (NMIPRoute *route, const char *name, guint32 value)
 {
 	GVariant *variant;
@@ -1325,7 +1325,7 @@ nmtst_assert_route_attribute_uint32 (NMIPRoute *route, const char *name, guint32
 	g_assert_cmpint (g_variant_get_uint32 (variant), ==, value);
 }
 
-inline static void
+static inline void
 nmtst_assert_route_attribute_boolean (NMIPRoute *route, const char *name, gboolean value)
 {
 	GVariant *variant;
