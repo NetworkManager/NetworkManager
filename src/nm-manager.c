@@ -86,6 +86,10 @@ static void device_sleep_cb (NMDevice *device,
                              GParamSpec *pspec,
                              NMManager *self);
 
+static void settings_startup_complete_changed (NMSettings *settings,
+                                               GParamSpec *pspec,
+                                               NMManager *self);
+
 static NM_CACHED_QUARK_FCN ("active-connection-add-and-activate", active_connection_add_and_activate_quark)
 
 typedef struct {
@@ -940,14 +944,17 @@ check_if_startup_complete (NMManager *self)
 	_LOGI (LOGD_CORE, "startup complete");
 
 	priv->startup = FALSE;
-	_notify (self, PROP_STARTUP);
 
-	/* We don't have to watch notify::has-pending-action any more. */
+	/* we no longer care about these signals. Startup-complete only
+	 * happens once. */
+	g_signal_handlers_disconnect_by_func (priv->settings, G_CALLBACK (settings_startup_complete_changed), self);
 	for (iter = priv->devices; iter; iter = iter->next) {
-		NMDevice *dev = iter->data;
-
-		g_signal_handlers_disconnect_by_func (dev, G_CALLBACK (device_has_pending_action_changed), self);
+		g_signal_handlers_disconnect_by_func (iter->data,
+		                                      G_CALLBACK (device_has_pending_action_changed),
+		                                      self);
 	}
+
+	_notify (self, PROP_STARTUP);
 
 	if (nm_config_get_configure_and_quit (priv->config))
 		g_signal_emit (self, signals[CONFIGURE_QUIT], 0);
