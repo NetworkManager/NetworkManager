@@ -1186,8 +1186,8 @@ nm_ip_route_set_attribute (NMIPRoute *route, const char *name, GVariant *value)
 	&(NMVariantAttributeSpec) { name, type, v4, v6, str_type }
 
 static const NMVariantAttributeSpec * const ip_route_attribute_spec[] = {
-	ATTR_SPEC_PTR (NM_IP_ROUTE_ATTRIBUTE_PREF_SRC,        G_VARIANT_TYPE_STRING,   TRUE,  TRUE, 'a'),
-	ATTR_SPEC_PTR (NM_IP_ROUTE_ATTRIBUTE_SRC,             G_VARIANT_TYPE_STRING,   FALSE, TRUE, 'p'),
+	ATTR_SPEC_PTR (NM_IP_ROUTE_ATTRIBUTE_SRC,             G_VARIANT_TYPE_STRING,   TRUE,  TRUE, 'a'),
+	ATTR_SPEC_PTR (NM_IP_ROUTE_ATTRIBUTE_FROM,            G_VARIANT_TYPE_STRING,   FALSE, TRUE, 'p'),
 	ATTR_SPEC_PTR (NM_IP_ROUTE_ATTRIBUTE_TOS,             G_VARIANT_TYPE_BYTE,     TRUE,  TRUE,  0 ),
 	ATTR_SPEC_PTR (NM_IP_ROUTE_ATTRIBUTE_WINDOW,          G_VARIANT_TYPE_UINT32,   TRUE,  TRUE,  0 ),
 	ATTR_SPEC_PTR (NM_IP_ROUTE_ATTRIBUTE_CWND,            G_VARIANT_TYPE_UINT32,   TRUE,  TRUE,  0 ),

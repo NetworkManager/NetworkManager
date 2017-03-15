@@ -1906,9 +1906,9 @@ get_route_attributes_string (NMIPRoute *route, int family)
 			/* handled above */
 		} else if (nm_streq (names[i], NM_IP_ROUTE_ATTRIBUTE_TOS)) {
 			g_string_append_printf (str, "%s %u", names[i], (unsigned) g_variant_get_byte (attr));
-		} else if (   nm_streq (names[i], NM_IP_ROUTE_ATTRIBUTE_PREF_SRC)
-		           || nm_streq (names[i], NM_IP_ROUTE_ATTRIBUTE_SRC)) {
-			char *arg = nm_streq (names[i], NM_IP_ROUTE_ATTRIBUTE_PREF_SRC) ? "src" : "from";
+		} else if (   nm_streq (names[i], NM_IP_ROUTE_ATTRIBUTE_SRC)
+		           || nm_streq (names[i], NM_IP_ROUTE_ATTRIBUTE_FROM)) {
+			char *arg = nm_streq (names[i], NM_IP_ROUTE_ATTRIBUTE_SRC) ? "src" : "from";
 
 			g_string_append_printf (str, "%s %s", arg, g_variant_get_string (attr, NULL));
 		} else {

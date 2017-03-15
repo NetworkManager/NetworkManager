@@ -517,14 +517,14 @@ parse_route_options (NMIPRoute *route, int family, const char *line, GError **er
 			gs_free_error GError *local_error = NULL;
 			GVariant *variant = g_variant_new_string (str);
 
-			if (!nm_ip_route_attribute_validate (NM_IP_ROUTE_ATTRIBUTE_SRC, variant, family, NULL, &local_error)) {
+			if (!nm_ip_route_attribute_validate (NM_IP_ROUTE_ATTRIBUTE_FROM, variant, family, NULL, &local_error)) {
 				g_match_info_free (match_info);
 				g_variant_unref (variant);
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Invalid route from '%s': %s", str, local_error->message);
 				goto out;
 			}
-			nm_ip_route_set_attribute (route, NM_IP_ROUTE_ATTRIBUTE_SRC, variant);
+			nm_ip_route_set_attribute (route, NM_IP_ROUTE_ATTRIBUTE_FROM, variant);
 		}
 		g_clear_pointer (&regex, g_regex_unref);
 		g_clear_pointer (&match_info, g_match_info_free);
@@ -540,7 +540,7 @@ parse_route_options (NMIPRoute *route, int family, const char *line, GError **er
 		gs_free_error GError *local_error = NULL;
 		GVariant *variant = g_variant_new_string (str);
 
-		if (!nm_ip_route_attribute_validate (NM_IP_ROUTE_ATTRIBUTE_PREF_SRC, variant, family,
+		if (!nm_ip_route_attribute_validate (NM_IP_ROUTE_ATTRIBUTE_SRC, variant, family,
 		                                     NULL, &local_error)) {
 			g_match_info_free (match_info);
 			g_variant_unref (variant);
@@ -549,7 +549,7 @@ parse_route_options (NMIPRoute *route, int family, const char *line, GError **er
 			goto out;
 		}
 
-		nm_ip_route_set_attribute (route, NM_IP_ROUTE_ATTRIBUTE_PREF_SRC, variant);
+		nm_ip_route_set_attribute (route, NM_IP_ROUTE_ATTRIBUTE_SRC, variant);
 	}
 	success = TRUE;
 

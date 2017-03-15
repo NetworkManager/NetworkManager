@@ -666,19 +666,19 @@ test_setting_ip_route_attributes (void)
 	TEST_ATTR ("lock-mtu", boolean, TRUE, AF_INET, TRUE,  TRUE);
 	TEST_ATTR ("lock-mtu", uint32,  1,    AF_INET, FALSE, TRUE);
 
-	TEST_ATTR ("src", string, "fd01::1",     AF_INET6, TRUE,  TRUE);
-	TEST_ATTR ("src", string, "fd01::1/64",  AF_INET6, TRUE,  TRUE);
-	TEST_ATTR ("src", string, "fd01::1/128", AF_INET6, TRUE,  TRUE);
-	TEST_ATTR ("src", string, "fd01::1/129", AF_INET6, FALSE, TRUE);
-	TEST_ATTR ("src", string, "fd01::1/a",   AF_INET6, FALSE, TRUE);
-	TEST_ATTR ("src", string, "abc/64",      AF_INET6, FALSE, TRUE);
-	TEST_ATTR ("src", string, "1.2.3.4",     AF_INET,  FALSE, TRUE);
-	TEST_ATTR ("src", string, "1.2.3.4",     AF_INET6, FALSE, TRUE);
+	TEST_ATTR ("from", string, "fd01::1",     AF_INET6, TRUE,  TRUE);
+	TEST_ATTR ("from", string, "fd01::1/64",  AF_INET6, TRUE,  TRUE);
+	TEST_ATTR ("from", string, "fd01::1/128", AF_INET6, TRUE,  TRUE);
+	TEST_ATTR ("from", string, "fd01::1/129", AF_INET6, FALSE, TRUE);
+	TEST_ATTR ("from", string, "fd01::1/a",   AF_INET6, FALSE, TRUE);
+	TEST_ATTR ("from", string, "abc/64",      AF_INET6, FALSE, TRUE);
+	TEST_ATTR ("from", string, "1.2.3.4",     AF_INET,  FALSE, TRUE);
+	TEST_ATTR ("from", string, "1.2.3.4",     AF_INET6, FALSE, TRUE);
 
-	TEST_ATTR ("pref-src", string, "1.2.3.4",    AF_INET,  TRUE,  TRUE);
-	TEST_ATTR ("pref-src", string, "1.2.3.4",    AF_INET6, FALSE, TRUE);
-	TEST_ATTR ("pref-src", string, "1.2.3.0/24", AF_INET,  FALSE, TRUE);
-	TEST_ATTR ("pref-src", string, "fd01::12",   AF_INET6, TRUE,  TRUE);
+	TEST_ATTR ("src", string, "1.2.3.4",    AF_INET,  TRUE,  TRUE);
+	TEST_ATTR ("src", string, "1.2.3.4",    AF_INET6, FALSE, TRUE);
+	TEST_ATTR ("src", string, "1.2.3.0/24", AF_INET,  FALSE, TRUE);
+	TEST_ATTR ("src", string, "fd01::12",   AF_INET6, TRUE,  TRUE);
 
 #undef TEST_ATTR
 }
@@ -5460,7 +5460,7 @@ test_route_attributes_parse (void)
 	GError *error = NULL;
 	GVariant *variant;
 
-	ht = nm_utils_parse_variant_attributes ("mtu=1400  pref-src=1.2.3.4 cwnd=14",
+	ht = nm_utils_parse_variant_attributes ("mtu=1400  src=1.2.3.4 cwnd=14",
 	                                        ' ', '=', FALSE,
 	                                        nm_ip_route_get_variant_attribute_spec (),
 	                                        &error);
@@ -5468,7 +5468,7 @@ test_route_attributes_parse (void)
 	g_assert (ht);
 	g_hash_table_unref (ht);
 
-	ht = nm_utils_parse_variant_attributes ("mtu=1400 pref-src=1.2.3.4 cwnd=14 \\",
+	ht = nm_utils_parse_variant_attributes ("mtu=1400 src=1.2.3.4 cwnd=14 \\",
 	                                         ' ', '=', FALSE,
 	                                         nm_ip_route_get_variant_attribute_spec (),
 	                                         &error);
@@ -5476,7 +5476,7 @@ test_route_attributes_parse (void)
 	g_assert (!ht);
 	g_clear_error (&error);
 
-	ht = nm_utils_parse_variant_attributes ("mtu.1400 pref-src.1\\.2\\.3\\.4 ",
+	ht = nm_utils_parse_variant_attributes ("mtu.1400 src.1\\.2\\.3\\.4 ",
 	                                         ' ', '.', FALSE,
 	                                         nm_ip_route_get_variant_attribute_spec (),
 	                                         &error);
@@ -5487,13 +5487,13 @@ test_route_attributes_parse (void)
 	g_assert (g_variant_is_of_type (variant, G_VARIANT_TYPE_UINT32));
 	g_assert_cmpuint (g_variant_get_uint32 (variant), ==, 1400);
 
-	variant = g_hash_table_lookup (ht, NM_IP_ROUTE_ATTRIBUTE_PREF_SRC);
+	variant = g_hash_table_lookup (ht, NM_IP_ROUTE_ATTRIBUTE_SRC);
 	g_assert (variant);
 	g_assert (g_variant_is_of_type (variant, G_VARIANT_TYPE_STRING));
 	g_assert_cmpstr (g_variant_get_string (variant, NULL), ==, "1.2.3.4");
 	g_hash_table_unref (ht);
 
-	ht = nm_utils_parse_variant_attributes ("src:fd01\\:\\:42\\/64/initrwnd:21",
+	ht = nm_utils_parse_variant_attributes ("from:fd01\\:\\:42\\/64/initrwnd:21",
 	                                         '/', ':', FALSE,
 	                                         nm_ip_route_get_variant_attribute_spec (),
 	                                         &error);
@@ -5504,7 +5504,7 @@ test_route_attributes_parse (void)
 	g_assert (g_variant_is_of_type (variant, G_VARIANT_TYPE_UINT32));
 	g_assert_cmpuint (g_variant_get_uint32 (variant), ==, 21);
 
-	variant = g_hash_table_lookup (ht, NM_IP_ROUTE_ATTRIBUTE_SRC);
+	variant = g_hash_table_lookup (ht, NM_IP_ROUTE_ATTRIBUTE_FROM);
 	g_assert (variant);
 	g_assert (g_variant_is_of_type (variant, G_VARIANT_TYPE_STRING));
 	g_assert_cmpstr (g_variant_get_string (variant, NULL), ==, "fd01::42/64");
@@ -5529,17 +5529,17 @@ test_route_attributes_format (void)
 	g_hash_table_insert (ht, NM_IP_ROUTE_ATTRIBUTE_MTU, g_variant_new_uint32 (5000));
 	g_hash_table_insert (ht, NM_IP_ROUTE_ATTRIBUTE_INITRWND, g_variant_new_uint32 (20));
 	g_hash_table_insert (ht, NM_IP_ROUTE_ATTRIBUTE_LOCK_MTU, g_variant_new_boolean (TRUE));
-	g_hash_table_insert (ht, NM_IP_ROUTE_ATTRIBUTE_PREF_SRC, g_variant_new_string ("aaaa:bbbb::1"));
+	g_hash_table_insert (ht, NM_IP_ROUTE_ATTRIBUTE_SRC, g_variant_new_string ("aaaa:bbbb::1"));
 	str = nm_utils_format_variant_attributes (ht, ' ', '=');
-	g_assert_cmpstr (str, ==, "initrwnd=20 lock-mtu=true mtu=5000 pref-src=aaaa:bbbb::1");
+	g_assert_cmpstr (str, ==, "initrwnd=20 lock-mtu=true mtu=5000 src=aaaa:bbbb::1");
 	g_hash_table_remove_all (ht);
 	g_free (str);
 
 	g_hash_table_insert (ht, NM_IP_ROUTE_ATTRIBUTE_WINDOW, g_variant_new_uint32 (30000));
 	g_hash_table_insert (ht, NM_IP_ROUTE_ATTRIBUTE_INITCWND, g_variant_new_uint32 (21));
-	g_hash_table_insert (ht, NM_IP_ROUTE_ATTRIBUTE_SRC, g_variant_new_string ("aaaa:bbbb:cccc:dddd::/64"));
+	g_hash_table_insert (ht, NM_IP_ROUTE_ATTRIBUTE_FROM, g_variant_new_string ("aaaa:bbbb:cccc:dddd::/64"));
 	str = nm_utils_format_variant_attributes (ht, '/', ':');
-	g_assert_cmpstr (str, ==, "initcwnd:21/src:aaaa\\:bbbb\\:cccc\\:dddd\\:\\:\\/64/window:30000");
+	g_assert_cmpstr (str, ==, "from:aaaa\\:bbbb\\:cccc\\:dddd\\:\\:\\/64/initcwnd:21/window:30000");
 	g_hash_table_remove_all (ht);
 	g_free (str);
 }

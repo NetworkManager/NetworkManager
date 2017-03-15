@@ -440,13 +440,13 @@ merge_route_attributes (NMIPRoute *s_route, NMPlatformIP6Route *r)
 	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_LOCK_MTU,       lock_mtu,       BOOLEAN,  boolean);
 
 
-	if (   (variant = nm_ip_route_get_attribute (s_route, NM_IP_ROUTE_ATTRIBUTE_PREF_SRC))
+	if (   (variant = nm_ip_route_get_attribute (s_route, NM_IP_ROUTE_ATTRIBUTE_SRC))
 	    && g_variant_is_of_type (variant, G_VARIANT_TYPE_STRING)) {
 		if (inet_pton (AF_INET6, g_variant_get_string (variant, NULL), &addr) == 1)
 			r->pref_src = addr;
 	}
 
-	if (   (variant = nm_ip_route_get_attribute (s_route, NM_IP_ROUTE_ATTRIBUTE_SRC))
+	if (   (variant = nm_ip_route_get_attribute (s_route, NM_IP_ROUTE_ATTRIBUTE_FROM))
 	    && g_variant_is_of_type (variant, G_VARIANT_TYPE_STRING)) {
 		gs_free char *string = NULL;
 		guint8 plen = 128;
