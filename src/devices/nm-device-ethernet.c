@@ -256,13 +256,14 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 }
 
 static void
-reset_autoconnect_retries (NMDevice *device)
+reset_8021x_autoconnect_retries (NMDevice *device)
 {
 	NMActRequest *req;
 	NMSettingsConnection *connection;
 
 	req = nm_device_get_act_request (device);
-	if (req) {
+	if (   req
+	    && nm_device_get_applied_setting (device, NM_TYPE_SETTING_802_1X)) {
 		connection = nm_act_request_get_settings_connection (req);
 		g_return_if_fail (connection);
 		/* Reset autoconnect retries on success, failure, or when deactivating */
@@ -279,10 +280,11 @@ device_state_changed (NMDevice *device,
 	if (new_state > NM_DEVICE_STATE_ACTIVATED)
 		wired_secrets_cancel (NM_DEVICE_ETHERNET (device));
 
-	if (   new_state == NM_DEVICE_STATE_ACTIVATED
-	    || new_state == NM_DEVICE_STATE_FAILED
-	    || new_state == NM_DEVICE_STATE_DISCONNECTED)
-		reset_autoconnect_retries (device);
+	if (NM_IN_SET (new_state,
+	               NM_DEVICE_STATE_ACTIVATED,
+	               NM_DEVICE_STATE_FAILED,
+	               NM_DEVICE_STATE_DISCONNECTED))
+		reset_8021x_autoconnect_retries (device);
 }
 
 static void
@@ -1367,7 +1369,7 @@ deactivate (NMDevice *device)
 	GError *error = NULL;
 
 	/* Clear wired secrets tries when deactivating */
-	reset_autoconnect_retries (device);
+	reset_8021x_autoconnect_retries (device);
 
 	nm_clear_g_source (&priv->pppoe_wait_id);
 
