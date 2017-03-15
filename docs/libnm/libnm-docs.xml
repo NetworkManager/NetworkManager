@@ -48,24 +48,130 @@
 
   <chapter id="ref-overview">
     <title>Overview</title>
-    <para>
-      libnm maps fairly closely to the actual D-Bus API that NetworkManager
-      provides, wrapping the remote D-Bus objects as native GObjects,
-      mapping D-Bus signals and properties to GObject signals and properties,
-      and providing helpful accessor and utility functions.  However, unlike
-      the old libnm-util/libnm-glib API, the mapping to the D-Bus API is not
-      exact, and various inconveniences and historical anomolies of the D-Bus
-      API are papered over.
-    </para>
-    <para>
-      The following is a rough overview of the libnm object structure and
-      how to use the various parts of it:
-      <mediaobject  id="libnm-overview">
-        <imageobject>
-          <imagedata fileref="libnm.png" format="PNG"/>
-        </imageobject>
-      </mediaobject>
-    </para>
+    <section id="intro">
+      <title>Introduction to libnm</title>
+      <para>
+        libnm is a client library for NetworkManager, the standard Linux network
+        management service. NetworkManager supports a wide variety of network
+        configuration scenarios, hardware devices and protocol families. Most of
+        the functionality is exposed on a
+        <ulink url="https://developer.gnome.org/NetworkManager/stable/spec.html">D-Bus API</ulink>,
+        allowing other tools to use the functionality provided by NetworkManager.
+      </para>
+      <para>
+        libnm provides C language bindings for functionality provided by
+        NetworkManager, optionally useful from other language runtimes as well.
+      </para>
+      <para>
+        libnm maps fairly closely to the actual D-Bus API that NetworkManager
+        provides, wrapping the remote D-Bus objects as native GObjects,
+        mapping D-Bus signals and properties to GObject signals and properties,
+        and providing helpful accessor and utility functions.  However, unlike
+        the old libnm-util/libnm-glib API, the mapping to the D-Bus API is not
+        exact, and various inconveniences and historical anomolies of the D-Bus
+        API are papered over.
+      </para>
+      <para>
+        The following is a rough overview of the libnm object structure and
+        how to use the various parts of it:
+        <mediaobject  id="libnm-overview">
+          <imageobject>
+            <imagedata fileref="libnm.png" format="PNG"/>
+          </imageobject>
+        </mediaobject>
+      </para>
+    </section>
+
+    <section id="usage">
+      <title>Using libnm</title>
+      <simplesect>
+        <title>When to use libnm</title>
+        <para>
+          libnm is fairly simple to use from C. It's based on glib and GObject.
+          If your project uses these already you'll find integration libnm with your
+          project rather convenient. In fact, the <command>nmcli</command> tool shipped
+          with NetworkManager is based on libnm.
+        </para>
+        <para>
+          libnm should be also the way to go if your project does something non-trivial
+          with NetworkManager, such as manipulating the connection profiles.
+          That is, if you're writing a specialized networking control tool or a desktop
+          environment, libnm is probably the right choice. The popular desktop
+          environments in fact all use libnm directly or with nm-applet and
+          nm-connection-editor that are all based on libnm.
+        </para>
+        <para>
+          An alternative to use of libnm is the use of the
+          <ulink url="https://developer.gnome.org/NetworkManager/stable/spec.html">D-Bus API</ulink>
+          directly.  This gives you larger flexibility and reduces the overhead of linking
+          with the libnm library. This makes sense if your task is simple and you have a good
+          D-Bus library at your disposal. Activating a particular connection profile
+          from a Python script is a good example of a task that is perfectly simple
+          without using libnm.
+        </para>
+      </simplesect>
+
+      <simplesect>
+        <title>How to use libnm</title>
+        <para>
+          You can use the libnm's C API directly. To do so, all libnm programs need to
+          include <filename>NetworkManager.h</filename> that provides necessary definitions.
+          The rest of the API is documented in the reference manual.
+        </para>
+        <informalexample><programlisting><![CDATA[#include <glib.h>
+#include <NetworkManager.h>
+
+int
+main (int argc, char *argv[])
+{
+	NMClient *client;
+
+	client = nm_client_new (NULL, NULL);
+	if (client)
+		g_print ("NetworkManager version: %s\n", nm_client_get_version (client));
+}]]></programlisting></informalexample>
+        <para>
+          Use <command>pkg-config</command> for <varname>libnm</varname> to discover the necessary
+          compiler flags.
+        </para>
+  <screen><prompt>$ </prompt><userinput>cc $(pkg-config --libs --cflags libnm) -o hello-nm hello-nm.c</userinput>
+  <prompt>$ </prompt><userinput>./hello-nm</userinput>
+  NetworkManager version: &version;
+  <prompt>$ </prompt></screen>
+        <para>
+          Utilize the <varname>PKG_CHECK_MODULES</varname> macro to integrate with an
+          autoconf-based build system. It's also recommended to use
+          <varname>NM_VERSION_MIN_REQUIRED</varname> and <varname>NM_VERSION_MAX_ALLOWED</varname>
+          macros to tell libnm headers which API version does your application need to work with.
+          If you use them, the compiler will warn you when you use functionality that is not
+          available in the versions you specified.
+        </para>
+        <informalexample><programlisting><![CDATA[PKG_CHECK_MODULES(LIBNM, libnm >= 1.8)
+LIBNM_CFLAGS="$LIBNM_CFLAGS -DNM_VERSION_MIN_REQUIRED=NM_VERSION_1_8"
+LIBNM_CFLAGS="$LIBNM_CFLAGS -DNM_VERSION_MAX_ALLOWED=NM_VERSION_1_8"]]></programlisting></informalexample>
+        <para>
+          You can use libnm from other languages than C with the use of GObject introspection.
+          This includes Perl, Python, Javascript, Lua, Ruby and more. The example below shows what the
+          typical libnm use in Python would look like.
+        </para>
+        <informalexample><programlisting><![CDATA[import gi
+gi.require_version('NM', '1.0')
+from gi.repository import NM
+
+client = NM.Client.new(None)
+print ("NetworkManager version " + client.get_version())]]></programlisting></informalexample>
+        <para>
+          There's <ulink url="https://lazka.github.io/pgi-docs/#NM-1.0">NM-1.0 Python API Reference</ulink>
+          maintained a third party that is generated from the introspection metadata.
+        </para>
+        <para>
+          In general, the C API documentation applies to the use GObject introspection
+          from other languages, with the calling convention respecting the language's
+          customs. Consult the source tree for
+          <ulink url="https://cgit.freedesktop.org/NetworkManager/NetworkManager/tree/examples">some examples</ulink>.
+        </para>
+      </simplesect>
+    </section>
   </chapter>
 
   <chapter>
