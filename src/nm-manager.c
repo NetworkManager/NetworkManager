@@ -152,7 +152,6 @@ typedef struct {
 
 	bool startup:1;
 	bool devices_inited:1;
-	bool devices_inited_ready:1;
 
 	bool sleeping:1;
 	bool net_enabled:1;
@@ -4819,13 +4818,6 @@ devices_inited_cb (gpointer user_data)
 {
 	NMManager *self = user_data;
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-
-	if (!priv->devices_inited_ready) {
-		/* lets go through another idle invocation to give the system
-		 * more time to settle. */
-		priv->devices_inited_ready = TRUE;
-		return G_SOURCE_CONTINUE;
-	}
 
 	priv->devices_inited_id = 0;
 	priv->devices_inited = TRUE;
