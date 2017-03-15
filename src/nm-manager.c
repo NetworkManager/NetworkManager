@@ -86,6 +86,10 @@ static void device_sleep_cb (NMDevice *device,
                              GParamSpec *pspec,
                              NMManager *self);
 
+static void settings_startup_complete_changed (NMSettings *settings,
+                                               GParamSpec *pspec,
+                                               NMManager *self);
+
 static NM_CACHED_QUARK_FCN ("active-connection-add-and-activate", active_connection_add_and_activate_quark)
 
 typedef struct {
@@ -129,9 +133,6 @@ typedef struct {
 	char *hostname;
 
 	RadioState radio_states[RFKILL_TYPE_MAX];
-	gboolean sleeping;
-	gboolean net_enabled;
-
 	NMVpnManager *vpn_manager;
 
 	NMSleepMonitor *sleep_monitor;
@@ -147,8 +148,14 @@ typedef struct {
 
 	guint timestamp_update_id;
 
-	gboolean startup;
-	gboolean devices_inited;
+	guint devices_inited_id;
+
+	bool startup:1;
+	bool devices_inited:1;
+	bool devices_inited_ready:1;
+
+	bool sleeping:1;
+	bool net_enabled:1;
 } NMManagerPrivate;
 
 struct _NMManager {
@@ -937,14 +944,17 @@ check_if_startup_complete (NMManager *self)
 	_LOGI (LOGD_CORE, "startup complete");
 
 	priv->startup = FALSE;
-	_notify (self, PROP_STARTUP);
 
-	/* We don't have to watch notify::has-pending-action any more. */
+	/* we no longer care about these signals. Startup-complete only
+	 * happens once. */
+	g_signal_handlers_disconnect_by_func (priv->settings, G_CALLBACK (settings_startup_complete_changed), self);
 	for (iter = priv->devices; iter; iter = iter->next) {
-		NMDevice *dev = iter->data;
-
-		g_signal_handlers_disconnect_by_func (dev, G_CALLBACK (device_has_pending_action_changed), self);
+		g_signal_handlers_disconnect_by_func (iter->data,
+		                                      G_CALLBACK (device_has_pending_action_changed),
+		                                      self);
 	}
+
+	_notify (self, PROP_STARTUP);
 
 	if (nm_config_get_configure_and_quit (priv->config))
 		g_signal_emit (self, signals[CONFIGURE_QUIT], 0);
@@ -4804,6 +4814,25 @@ nm_manager_write_device_state (NMManager *self)
 	                                     seen_ifindexes);
 }
 
+static gboolean
+devices_inited_cb (gpointer user_data)
+{
+	NMManager *self = user_data;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+
+	if (!priv->devices_inited_ready) {
+		/* lets go through another idle invocation to give the system
+		 * more time to settle. */
+		priv->devices_inited_ready = TRUE;
+		return G_SOURCE_CONTINUE;
+	}
+
+	priv->devices_inited_id = 0;
+	priv->devices_inited = TRUE;
+	check_if_startup_complete (self);
+	return G_SOURCE_REMOVE;
+}
+
 gboolean
 nm_manager_start (NMManager *self, GError **error)
 {
@@ -4813,11 +4842,6 @@ nm_manager_start (NMManager *self, GError **error)
 
 	if (!nm_settings_start (priv->settings, error))
 		return FALSE;
-
-	g_signal_connect (NM_PLATFORM_GET,
-	                  NM_PLATFORM_SIGNAL_LINK_CHANGED,
-	                  G_CALLBACK (platform_link_cb),
-	                  self);
 
 	/* Set initial radio enabled/disabled state */
 	for (i = 0; i < RFKILL_TYPE_MAX; i++) {
@@ -4851,6 +4875,13 @@ nm_manager_start (NMManager *self, GError **error)
 	nm_device_factory_manager_load_factories (_register_device_factory, self);
 	nm_device_factory_manager_for_each_factory (start_factory, NULL);
 
+	nm_platform_process_events (NM_PLATFORM_GET);
+
+	g_signal_connect (NM_PLATFORM_GET,
+	                  NM_PLATFORM_SIGNAL_LINK_CHANGED,
+	                  G_CALLBACK (platform_link_cb),
+	                  self);
+
 	platform_query_devices (self);
 
 	/* Load VPN plugins */
@@ -4864,9 +4895,8 @@ nm_manager_start (NMManager *self, GError **error)
 	for (i = 0; connections[i]; i++)
 		connection_changed (self, NM_CONNECTION (connections[i]));
 
-	priv->devices_inited = TRUE;
-
-	check_if_startup_complete (self);
+	nm_clear_g_source (&priv->devices_inited_id);
+	priv->devices_inited_id = g_idle_add_full (G_PRIORITY_LOW + 10, devices_inited_cb, self, NULL);
 
 	return TRUE;
 }
@@ -4881,6 +4911,8 @@ nm_manager_stop (NMManager *self)
 		remove_device (self, NM_DEVICE (priv->devices->data), TRUE, TRUE);
 
 	_active_connection_cleanup (self);
+
+	nm_clear_g_source (&priv->devices_inited_id);
 }
 
 static gboolean
@@ -6038,6 +6070,8 @@ dispose (GObject *object)
 
 	g_slist_free_full (priv->auth_chains, (GDestroyNotify) nm_auth_chain_unref);
 	priv->auth_chains = NULL;
+
+	nm_clear_g_source (&priv->devices_inited_id);
 
 	if (priv->checkpoint_mgr) {
 		nm_checkpoint_manager_destroy_all (priv->checkpoint_mgr, NULL);

@@ -402,6 +402,8 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
+	nm_platform_process_events (NM_PLATFORM_GET);
+
 	/* Make sure the loopback interface is up. If interface is down, we bring
 	 * it up and kernel will assign it link-local IPv4 and IPv6 addresses. If
 	 * it was already up, we assume is in clean state.
