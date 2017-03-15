@@ -44,6 +44,8 @@ NMSupplicantConfig *nm_supplicant_config_new (void);
 
 guint32 nm_supplicant_config_get_ap_scan (NMSupplicantConfig *self);
 
+guint32 nm_supplicant_config_get_pmf (NMSupplicantConfig *self);
+
 gboolean nm_supplicant_config_fast_required (NMSupplicantConfig *self);
 
 GVariant *nm_supplicant_config_to_variant (NMSupplicantConfig *self);

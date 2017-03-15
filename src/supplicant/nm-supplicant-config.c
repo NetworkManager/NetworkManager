@@ -44,6 +44,7 @@ typedef struct {
 	GHashTable *config;
 	GHashTable *blobs;
 	guint32    ap_scan;
+	guint32    pmf;
 	gboolean   fast_required;
 	gboolean   dispose_has_run;
 } NMSupplicantConfigPrivate;
@@ -96,6 +97,7 @@ nm_supplicant_config_init (NMSupplicantConfig * self)
 	                                     (GDestroyNotify) blob_free);
 
 	priv->ap_scan = 1;
+	priv->pmf = 1;
 	priv->dispose_has_run = FALSE;
 }
 
@@ -278,6 +280,14 @@ nm_supplicant_config_get_ap_scan (NMSupplicantConfig * self)
 	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), 1);
 
 	return NM_SUPPLICANT_CONFIG_GET_PRIVATE (self)->ap_scan;
+}
+
+guint32
+nm_supplicant_config_get_pmf (NMSupplicantConfig * self)
+{
+	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), 1);
+
+	return NM_SUPPLICANT_CONFIG_GET_PRIVATE (self)->pmf;
 }
 
 gboolean
@@ -466,6 +476,8 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 		priv->ap_scan = 2;
 	else
 		priv->ap_scan = 1;
+
+	priv->pmf = 1;
 
 	ssid = nm_setting_wireless_get_ssid (setting);
 	if (!nm_supplicant_config_add_option (self, "ssid",
@@ -931,6 +943,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 		if (!add_string_val (self, "0", "eapol_flags", FALSE, NULL, error))
 			return FALSE;
 		priv->ap_scan = 0;
+		priv->pmf = 0;
 	}
 
 	if (!ADD_STRING_LIST_VAL (self, setting, 802_1x, eap_method, eap_methods, "eap", ' ', TRUE, NULL, error))

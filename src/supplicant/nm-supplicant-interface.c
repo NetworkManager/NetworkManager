@@ -470,6 +470,34 @@ iface_check_ready (NMSupplicantInterface *self)
 	}
 }
 
+static void
+set_pmf_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
+{
+	NMSupplicantInterface *self;
+	NMSupplicantInterfacePrivate *priv;
+	gs_unref_variant GVariant *reply = NULL;
+	gs_free_error GError *error = NULL;
+
+	reply = g_dbus_proxy_call_finish (proxy, result, &error);
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	self = NM_SUPPLICANT_INTERFACE (user_data);
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	if (!reply) {
+		g_dbus_error_strip_remote_error (error);
+		_LOGW ("couldn't send PMF mode to the supplicant interface: %s",
+		       error->message);
+		emit_error_helper (self, error);
+		return;
+	}
+
+	_LOGI ("config: set interface pmf to %d",
+	       nm_supplicant_config_get_pmf (priv->cfg));
+
+}
+
 gboolean
 nm_supplicant_interface_credentials_reply (NMSupplicantInterface *self,
                                            const char *field,
@@ -835,6 +863,17 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 		                   priv->init_cancellable,
 		                   (GAsyncReadyCallback) iface_introspect_cb,
 		                   self);
+		g_dbus_proxy_call (priv->iface_proxy,
+				   DBUS_INTERFACE_PROPERTIES ".Set",
+				   g_variant_new ("(ssv)",
+					          WPAS_DBUS_IFACE_INTERFACE,
+						  "Pmf",
+						  g_variant_new_uint32 (nm_supplicant_config_get_pmf (priv->cfg))),
+				   G_DBUS_CALL_FLAGS_NONE,
+				   -1,
+				   priv->assoc_cancellable,
+				   (GAsyncReadyCallback) set_pmf_cb,
+				   self);
 	}
 }
 
