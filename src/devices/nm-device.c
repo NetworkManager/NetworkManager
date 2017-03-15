@@ -10722,19 +10722,16 @@ _set_unmanaged_flags (NMDevice *self,
 	                       || (   !was_managed
 	                           && nm_device_get_state (self) == NM_DEVICE_STATE_UNMANAGED));
 
-#define _FMTX "[%s%s0x%0x/0x%x/%s"
-#define _FMT(flags, mask, str) \
-	_unmanaged_flags2str ((flags), (mask), str, sizeof (str)), \
-	((flags) | (mask)) ? "=" : "", \
-	(flags), \
-	(mask), \
-	(_get_managed_by_flags (flags, mask, FALSE) \
-	     ? "managed" \
-	     : (_get_managed_by_flags (flags, mask, TRUE) \
-	            ? "manageable" \
-	            : "unmanaged"))
-	_LOGD (LOGD_DEVICE, "unmanaged: flags set to "_FMTX"%s, %s [%s=0x%0x]%s%s%s)",
-	       _FMT (priv->unmanaged_flags, priv->unmanaged_mask, str1),
+	_LOGD (LOGD_DEVICE, "unmanaged: flags set to [%s%s0x%0x/0x%x/%s%s], %s [%s=0x%0x]%s%s%s)",
+	       _unmanaged_flags2str (priv->unmanaged_flags, priv->unmanaged_mask, str1, sizeof (str1)), \
+	       (priv->unmanaged_flags | priv->unmanaged_mask) ? "=" : "", \
+	       (guint) priv->unmanaged_flags, \
+	       (guint) priv->unmanaged_mask, \
+	       (_get_managed_by_flags (priv->unmanaged_flags, priv->unmanaged_mask, FALSE) \
+	            ? "managed" \
+	            : (_get_managed_by_flags (priv->unmanaged_flags, priv->unmanaged_mask, TRUE) \
+	                   ? "manageable" \
+	                   : "unmanaged")),
 	       priv->real ? "" : "/unrealized",
 	       operation,
 	       nm_unmanaged_flags2str (flags, str2, sizeof (str2)),
@@ -10744,7 +10741,6 @@ _set_unmanaged_flags (NMDevice *self,
 	                            reason_to_string (reason),
 	                            transition_state ? ", transition-state" : "",
 	                            ""));
-#undef _FMT
 
 	if (   do_notify_has_pending_actions
 	    && had_pending_actions != nm_device_has_pending_action (self))
