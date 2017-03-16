@@ -302,6 +302,9 @@ typedef struct _NMDevicePrivate {
 
 	bool            up:1;   /* IFF_UP */
 
+	bool            v4_commit_first_time:1;
+	bool            v6_commit_first_time:1;
+
 	/* Generic DHCP stuff */
 	guint32         dhcp_timeout;
 	char *          dhcp_anycast_address;
@@ -331,9 +334,6 @@ typedef struct _NMDevicePrivate {
 		NMPlatformIP4Route v4;
 		NMPlatformIP6Route v6;
 	} default_route;
-
-	bool v4_commit_first_time;
-	bool v6_commit_first_time;
 
 	/* DHCPv4 tracking */
 	struct {
@@ -8675,6 +8675,9 @@ check_and_reapply_connection (NMDevice *self,
 		nm_connection_clear_secrets (applied);
 	} else
 		con_old = con_new = applied;
+
+	priv->v4_commit_first_time = TRUE;
+	priv->v6_commit_first_time = TRUE;
 
 	/**************************************************************************
 	 * Reapply changes
