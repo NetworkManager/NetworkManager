@@ -124,7 +124,7 @@ NM_DEFINE_SINGLETON_GETTER (NMDefaultRouteManager, nm_default_route_manager_get,
             const Entry *const __entry = (entry); \
             \
             _nm_log (__level, __domain, 0, \
-                     "%s: entry[%u/%s:%p:%s:%c:%csync]: "_NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                     "%s: entry[%u/%s:%p:%s:%chas:%csync]: "_NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
                      self != singleton_instance \
                         ? nm_sprintf_buf (__prefix_buf, "%s%c[%p]", \
                                           _NMLOG2_PREFIX_NAME, \
@@ -135,7 +135,7 @@ NM_DEFINE_SINGLETON_GETTER (NMDefaultRouteManager, nm_default_route_manager_get,
                      NM_IS_DEVICE (__entry->source.pointer) ? "dev" : "vpn", \
                      __entry->source.pointer, \
                      NM_IS_DEVICE (__entry->source.pointer) ? nm_device_get_iface (__entry->source.device) : nm_active_connection_get_settings_connection_id (NM_ACTIVE_CONNECTION (__entry->source.vpn)), \
-                     (__entry->never_default ? '0' : '1'), \
+                     (__entry->never_default ? '-' : '+'), \
                      (__entry->synced ? '+' : '-') \
                      _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
         } \
