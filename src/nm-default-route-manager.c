@@ -525,8 +525,6 @@ _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *c
 	for (i = 0; i < entries->len; i++) {
 		entry = g_ptr_array_index (entries, i);
 
-		g_assert (entry != old_entry);
-
 		if (entry->never_default)
 			continue;
 
@@ -581,12 +579,15 @@ _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *c
 			/* for the changed entry, the previous metric was either old_entry->effective_metric,
 			 * or none. Hence, we only have to remember what is going to change. */
 			g_array_append_val (changed_metrics, expected_metric);
-			if (old_entry) {
+			if (!old_entry) {
+				_LOG2D (vtable, i, entry, "sync:add    %s (%u)",
+				        vtable->vt->route_to_string (&entry->route, NULL, 0), (guint) expected_metric);
+			} else if (old_entry != changed_entry) {
 				_LOG2D (vtable, i, entry, "sync:update %s (%u -> %u)",
 				        vtable->vt->route_to_string (&entry->route, NULL, 0), (guint) old_entry->effective_metric,
 				        (guint) expected_metric);
 			} else {
-				_LOG2D (vtable, i, entry, "sync:add    %s (%u)",
+				_LOG2D (vtable, i, entry, "sync:resync %s (%u)",
 				        vtable->vt->route_to_string (&entry->route, NULL, 0), (guint) expected_metric);
 			}
 		} else if (entry->effective_metric != expected_metric) {
@@ -664,7 +665,11 @@ _entry_at_idx_update (const VTableIP *vtable, NMDefaultRouteManager *self, guint
 		entry->effective_metric = entry->route.rx.metric;
 
 	_LOG2D (vtable, entry_idx, entry, "%s %s (%"G_GUINT32_FORMAT")",
-	        old_entry ? "record:update" : "record:add   ",
+	        old_entry
+	            ? (entry != old_entry
+	                   ? "record:update"
+	                   : "record:resync")
+	            : "record:add   ",
 	        vtable->vt->route_to_string (&entry->route, NULL, 0),
 	        entry->effective_metric);
 
@@ -701,7 +706,9 @@ _entry_at_idx_remove (const VTableIP *vtable, NMDefaultRouteManager *self, guint
 /*****************************************************************************/
 
 static void
-_ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, gpointer source)
+_ipx_update_default_route (const VTableIP *vtable,
+                           NMDefaultRouteManager *self,
+                           gpointer source)
 {
 	NMDefaultRouteManagerPrivate *priv;
 	Entry *entry;
@@ -866,12 +873,18 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 		new_entry.never_default = never_default;
 		new_entry.synced = synced;
 
-		if (memcmp (entry, &new_entry, sizeof (new_entry)) == 0)
-			return;
-
-		old_entry = *entry;
-		*entry = new_entry;
-		_entry_at_idx_update (vtable, self, entry_idx, &old_entry);
+		if (memcmp (entry, &new_entry, sizeof (new_entry)) == 0) {
+			if (!synced) {
+				/* the internal book-keeping doesn't change, so don't do a full
+				 * sync of the configured routes. */
+				return;
+			}
+			_entry_at_idx_update (vtable, self, entry_idx, entry);
+		} else {
+			old_entry = *entry;
+			*entry = new_entry;
+			_entry_at_idx_update (vtable, self, entry_idx, &old_entry);
+		}
 	} else {
 		/* delete */
 		_entry_at_idx_remove (vtable, self, entry_idx);
@@ -879,13 +892,15 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 }
 
 void
-nm_default_route_manager_ip4_update_default_route (NMDefaultRouteManager *self, gpointer source)
+nm_default_route_manager_ip4_update_default_route (NMDefaultRouteManager *self,
+                                                   gpointer source)
 {
 	_ipx_update_default_route (&vtable_ip4, self, source);
 }
 
 void
-nm_default_route_manager_ip6_update_default_route (NMDefaultRouteManager *self, gpointer source)
+nm_default_route_manager_ip6_update_default_route (NMDefaultRouteManager *self,
+                                                   gpointer source)
 {
 	_ipx_update_default_route (&vtable_ip6, self, source);
 }
