@@ -1167,7 +1167,7 @@ ac_overview (NmCli *nmc, NMActiveConnection *ac)
 	NMIPConfig *ip;
 
 	if (nm_active_connection_get_master (ac)) {
-		g_string_append_printf (outbuf, "%s %s,", _("master"),
+		g_string_append_printf (outbuf, "%s %s, ", _("master"),
 		                        nm_device_get_iface (nm_active_connection_get_master (ac)));
 	}
 	if (nm_active_connection_get_vpn (ac))
