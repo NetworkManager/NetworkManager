@@ -1255,7 +1255,7 @@ static const VTableIP vtable_ip6 = {
 /*****************************************************************************/
 
 static gboolean
-_resync_idle_now (NMDefaultRouteManager *self)
+_resync_now (NMDefaultRouteManager *self)
 {
 	gboolean has_v4_changes, has_v6_changes;
 	gboolean changed = FALSE;
@@ -1270,7 +1270,7 @@ _resync_idle_now (NMDefaultRouteManager *self)
 
 	priv->resync.has_v4_changes = FALSE;
 	priv->resync.has_v6_changes = FALSE;
-	priv->resync.idle_handle = 0;
+	nm_clear_g_source (&priv->resync.idle_handle);
 	priv->resync.backoff_wait_time_ms =
 	    priv->resync.backoff_wait_time_ms == 0
 	    ? 100
@@ -1287,6 +1287,64 @@ _resync_idle_now (NMDefaultRouteManager *self)
 		_resync_idle_cancel (self);
 	}
 
+	return changed;
+}
+
+/**
+ * nm_default_route_manager_resync:
+ * @self: the #NMDefaultRouteManager instance
+ * @af_family: the address family to resync, can be
+ *   AF_INET, AF_INET6 or AF_UNSPEC to sync both.
+ *
+ * #NMDefaultRouteManager keeps an internal list of configured
+ * routes. Usually, it configures routes in the system only
+ *  - when that internal list changes due to
+ *    nm_default_route_manager_ip4_update_default_route() or
+ *    nm_default_route_manager_ip6_update_default_route().
+ *  - when platform notifies about changes, via _resync_idle_now().
+ * This forces a resync to update the internal bookkeeping
+ * with what is currently configured in the system, but also
+ * reconfigure the system with all non-assumed default routes.
+ *
+ * Returns: %TRUE if anything changed during resync.
+ */
+gboolean
+nm_default_route_manager_resync (NMDefaultRouteManager *self,
+                                 int af_family)
+{
+	NMDefaultRouteManagerPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEFAULT_ROUTE_MANAGER (self), FALSE);
+	g_return_val_if_fail (NM_IN_SET (af_family, AF_INET, AF_INET6, AF_UNSPEC), FALSE);
+
+	priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
+
+	if (priv->disposed)
+		return FALSE;
+
+	switch (af_family) {
+	case AF_INET:
+		priv->resync.has_v4_changes = TRUE;
+		break;
+	case AF_INET6:
+		priv->resync.has_v6_changes = TRUE;
+		break;
+	default:
+		priv->resync.has_v4_changes = TRUE;
+		priv->resync.has_v6_changes = TRUE;
+		break;
+	}
+
+	return _resync_now (self);
+}
+
+static gboolean
+_resync_idle_now (NMDefaultRouteManager *self)
+{
+	NMDefaultRouteManagerPrivate *priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
+
+	priv->resync.idle_handle = 0;
+	_resync_now (self);
 	return G_SOURCE_REMOVE;
 }
 
