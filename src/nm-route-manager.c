@@ -967,6 +967,33 @@ nm_route_manager_route_flush (NMRouteManager *self, int ifindex)
 	return success;
 }
 
+/**
+ * nm_route_manager_ip4_routes_shadowed:
+ * @ifindex: Interface index
+ *
+ * Returns: %TRUE if some other link has a route to the same destination
+ *   with a lower metric.
+ */
+gboolean
+nm_route_manager_ip4_routes_shadowed (NMRouteManager *self, int ifindex)
+{
+	NMRouteManagerPrivate *priv = NM_ROUTE_MANAGER_GET_PRIVATE (self);
+	RouteIndex *index = priv->ip4_routes.index;
+	const NMPlatformIP4Route *route;
+	guint i;
+
+	for (i = 1; i < index->len; i++) {
+		route = (const NMPlatformIP4Route *) index->entries[i];
+
+		if (route->ifindex != ifindex)
+			continue;
+		if (_v4_route_dest_cmp (route, (const NMPlatformIP4Route *) index->entries[i - 1]) == 0)
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
 /*****************************************************************************/
 
 static gboolean
