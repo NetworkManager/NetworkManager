@@ -483,17 +483,6 @@ _get_assumed_interface_metrics (const VTableIP *vtable, NMDefaultRouteManager *s
 	return result;
 }
 
-static int
-_sort_metrics_ascending_fcn (gconstpointer a, gconstpointer b)
-{
-	guint32 m_a = *((guint32 *) a);
-	guint32 m_b = *((guint32 *) b);
-
-	if (m_a < m_b)
-		return -1;
-	return m_a == m_b ? 0 : 1;
-}
-
 static gboolean
 _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *changed_entry, const Entry *old_entry, gboolean external_change)
 {
@@ -624,7 +613,7 @@ _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *c
 
 	g_array_free (routes, TRUE);
 
-	g_array_sort (changed_metrics, _sort_metrics_ascending_fcn);
+	g_array_sort_with_data (changed_metrics, nm_cmp_uint32_p_with_data, NULL);
 	last_metric = -1;
 	for (j = 0; j < changed_metrics->len; j++) {
 		expected_metric = g_array_index (changed_metrics, guint32, j);
