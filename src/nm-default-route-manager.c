@@ -1335,15 +1335,36 @@ _resync_idle_reschedule (NMDefaultRouteManager *self)
 }
 
 static void
-_platform_ipx_route_changed_cb (const VTableIP *vtable,
-                                NMDefaultRouteManager *self,
-                                const NMPlatformIPRoute *route)
+_platform_changed_cb (NMPlatform *platform,
+                      int obj_type_i,
+                      int ifindex,
+                      gpointer platform_object,
+                      int change_type_i,
+                      NMDefaultRouteManager *self)
 {
 	NMDefaultRouteManagerPrivate *priv;
+	const NMPObjectType obj_type = obj_type_i;
+	const VTableIP *vtable;
 
-	if (route && !NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)) {
-		/* we only care about address changes or changes of default route. */
-		return;
+	switch (obj_type) {
+	case NMP_OBJECT_TYPE_IP4_ADDRESS:
+		vtable = &vtable_ip4;
+		break;
+	case NMP_OBJECT_TYPE_IP6_ADDRESS:
+		vtable = &vtable_ip6;
+		break;
+	case NMP_OBJECT_TYPE_IP4_ROUTE:
+		if (!NM_PLATFORM_IP_ROUTE_IS_DEFAULT (platform_object))
+			return;
+		vtable = &vtable_ip4;
+		break;
+	case NMP_OBJECT_TYPE_IP6_ROUTE:
+		if (!NM_PLATFORM_IP_ROUTE_IS_DEFAULT (platform_object))
+			return;
+		vtable = &vtable_ip6;
+		break;
+	default:
+		g_return_if_reached ();
 	}
 
 	priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
@@ -1359,34 +1380,6 @@ _platform_ipx_route_changed_cb (const VTableIP *vtable,
 		priv->resync.has_v6_changes = TRUE;
 
 	_resync_idle_reschedule (self);
-}
-
-static void
-_platform_changed_cb (NMPlatform *platform,
-                      int obj_type_i,
-                      int ifindex,
-                      gpointer platform_object,
-                      int change_type_i,
-                      NMDefaultRouteManager *self)
-{
-	const NMPObjectType obj_type = obj_type_i;
-
-	switch (obj_type) {
-	case NMP_OBJECT_TYPE_IP4_ADDRESS:
-		_platform_ipx_route_changed_cb (&vtable_ip4, self, NULL);
-		break;
-	case NMP_OBJECT_TYPE_IP6_ADDRESS:
-		_platform_ipx_route_changed_cb (&vtable_ip6, self, NULL);
-		break;
-	case NMP_OBJECT_TYPE_IP4_ROUTE:
-		_platform_ipx_route_changed_cb (&vtable_ip4, self, (const NMPlatformIPRoute *) platform_object);
-		break;
-	case NMP_OBJECT_TYPE_IP6_ROUTE:
-		_platform_ipx_route_changed_cb (&vtable_ip6, self, (const NMPlatformIPRoute *) platform_object);
-		break;
-	default:
-		g_return_if_reached ();
-	}
 }
 
 /*****************************************************************************/
