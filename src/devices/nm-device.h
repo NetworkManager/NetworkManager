@@ -30,6 +30,13 @@
 #include "nm-rfkill-manager.h"
 #include "NetworkManagerUtils.h"
 
+typedef enum {
+	NM_DEVICE_SYS_IFACE_STATE_EXTERNAL,
+	NM_DEVICE_SYS_IFACE_STATE_ASSUME,
+	NM_DEVICE_SYS_IFACE_STATE_MANAGED,
+	NM_DEVICE_SYS_IFACE_STATE_REMOVED,
+} NMDeviceSysIfaceState;
+
 static inline NMDeviceStateReason
 nm_device_state_reason_check (NMDeviceStateReason reason)
 {
@@ -489,8 +496,6 @@ gboolean nm_device_complete_connection (NMDevice *device,
 gboolean nm_device_check_connection_compatible (NMDevice *device, NMConnection *connection);
 gboolean nm_device_check_slave_connection_compatible (NMDevice *device, NMConnection *connection);
 
-gboolean nm_device_uses_assumed_connection (NMDevice *device);
-
 gboolean nm_device_unmanage_on_quit (NMDevice *self);
 
 gboolean nm_device_spec_match_list (NMDevice *device, const GSList *specs);
@@ -595,6 +600,7 @@ gboolean nm_device_has_capability (NMDevice *self, NMDeviceCapabilities caps);
 
 gboolean nm_device_realize_start      (NMDevice *device,
                                        const NMPlatformLink *plink,
+                                       NMUnmanFlagOp unmanaged_user_explicit,
                                        gboolean *out_compatible,
                                        GError **error);
 void     nm_device_realize_finish     (NMDevice *self,
@@ -610,6 +616,13 @@ gboolean nm_device_unrealize          (NMDevice *device,
 gboolean nm_device_get_autoconnect (NMDevice *device);
 void nm_device_set_autoconnect_intern (NMDevice *device, gboolean autoconnect);
 void nm_device_emit_recheck_auto_activate (NMDevice *device);
+
+NMDeviceSysIfaceState nm_device_sys_iface_state_get (NMDevice *device);
+
+gboolean nm_device_sys_iface_state_is_external (NMDevice *self);
+gboolean nm_device_sys_iface_state_is_external_or_assume (NMDevice *self);
+
+void nm_device_sys_iface_state_set (NMDevice *device, NMDeviceSysIfaceState sys_iface_state);
 
 void nm_device_state_changed (NMDevice *device,
                               NMDeviceState state,

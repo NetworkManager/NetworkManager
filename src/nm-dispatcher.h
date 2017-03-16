@@ -19,44 +19,44 @@
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
-#ifndef __NETWORKMANAGER_DISPATCHER_H__
-#define __NETWORKMANAGER_DISPATCHER_H__
-
-#include <stdio.h>
+#ifndef __NM_DISPATCHER_H__
+#define __NM_DISPATCHER_H__
 
 #include "nm-connection.h"
 
 typedef enum {
-	DISPATCHER_ACTION_HOSTNAME,
-	DISPATCHER_ACTION_PRE_UP,
-	DISPATCHER_ACTION_UP,
-	DISPATCHER_ACTION_PRE_DOWN,
-	DISPATCHER_ACTION_DOWN,
-	DISPATCHER_ACTION_VPN_PRE_UP,
-	DISPATCHER_ACTION_VPN_UP,
-	DISPATCHER_ACTION_VPN_PRE_DOWN,
-	DISPATCHER_ACTION_VPN_DOWN,
-	DISPATCHER_ACTION_DHCP4_CHANGE,
-	DISPATCHER_ACTION_DHCP6_CHANGE,
-	DISPATCHER_ACTION_CONNECTIVITY_CHANGE
-} DispatcherAction;
+	NM_DISPATCHER_ACTION_HOSTNAME,
+	NM_DISPATCHER_ACTION_PRE_UP,
+	NM_DISPATCHER_ACTION_UP,
+	NM_DISPATCHER_ACTION_PRE_DOWN,
+	NM_DISPATCHER_ACTION_DOWN,
+	NM_DISPATCHER_ACTION_VPN_PRE_UP,
+	NM_DISPATCHER_ACTION_VPN_UP,
+	NM_DISPATCHER_ACTION_VPN_PRE_DOWN,
+	NM_DISPATCHER_ACTION_VPN_DOWN,
+	NM_DISPATCHER_ACTION_DHCP4_CHANGE,
+	NM_DISPATCHER_ACTION_DHCP6_CHANGE,
+	NM_DISPATCHER_ACTION_CONNECTIVITY_CHANGE
+} NMDispatcherAction;
 
-typedef void (*DispatcherFunc) (guint call_id, gpointer user_data);
+typedef void (*NMDispatcherFunc) (guint call_id, gpointer user_data);
 
-gboolean nm_dispatcher_call (DispatcherAction action,
-                             NMSettingsConnection *settings_connection,
-                             NMConnection *applied_connection,
-                             NMDevice *device,
-                             DispatcherFunc callback,
-                             gpointer user_data,
-                             guint *out_call_id);
+gboolean nm_dispatcher_call_hostname (NMDispatcherFunc callback,
+                                      gpointer user_data,
+                                      guint *out_call_id);
 
-gboolean nm_dispatcher_call_sync (DispatcherAction action,
-                                  NMSettingsConnection *settings_connection,
-                                  NMConnection *applied_connection,
-                                  NMDevice *device);
+gboolean nm_dispatcher_call_device (NMDispatcherAction action,
+                                    NMDevice *device,
+                                    NMActRequest *act_request,
+                                    NMDispatcherFunc callback,
+                                    gpointer user_data,
+                                    guint *out_call_id);
 
-gboolean nm_dispatcher_call_vpn (DispatcherAction action,
+gboolean nm_dispatcher_call_device_sync (NMDispatcherAction action,
+                                         NMDevice *device,
+                                         NMActRequest *act_request);
+
+gboolean nm_dispatcher_call_vpn (NMDispatcherAction action,
                                  NMSettingsConnection *settings_connection,
                                  NMConnection *applied_connection,
                                  NMDevice *parent_device,
@@ -64,11 +64,11 @@ gboolean nm_dispatcher_call_vpn (DispatcherAction action,
                                  NMProxyConfig *vpn_proxy_config,
                                  NMIP4Config *vpn_ip4_config,
                                  NMIP6Config *vpn_ip6_config,
-                                 DispatcherFunc callback,
+                                 NMDispatcherFunc callback,
                                  gpointer user_data,
                                  guint *out_call_id);
 
-gboolean nm_dispatcher_call_vpn_sync (DispatcherAction action,
+gboolean nm_dispatcher_call_vpn_sync (NMDispatcherAction action,
                                       NMSettingsConnection *settings_connection,
                                       NMConnection *applied_connection,
                                       NMDevice *parent_device,
@@ -77,11 +77,14 @@ gboolean nm_dispatcher_call_vpn_sync (DispatcherAction action,
                                       NMIP4Config *vpn_ip4_config,
                                       NMIP6Config *vpn_ip6_config);
 
-gboolean nm_dispatcher_call_connectivity (DispatcherAction action,
-                                          NMConnectivityState state);
+gboolean nm_dispatcher_call_connectivity (NMConnectivityState state,
+                                          NMDispatcherFunc callback,
+                                          gpointer user_data,
+                                          guint *out_call_id);
+
 
 void nm_dispatcher_call_cancel (guint call_id);
 
 void nm_dispatcher_init (void);
 
-#endif /* __NETWORKMANAGER_DISPATCHER_H__ */
+#endif /* __NM_DISPATCHER_H__ */

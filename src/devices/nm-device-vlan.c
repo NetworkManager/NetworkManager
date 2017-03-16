@@ -90,13 +90,14 @@ parent_hwaddr_maybe_changed (NMDevice *parent,
                              GParamSpec *pspec,
                              gpointer user_data)
 {
-	NMDeviceVlan *self = NM_DEVICE_VLAN (user_data);
+	NMDevice *device = NM_DEVICE (user_data);
+	NMDeviceVlan *self = NM_DEVICE_VLAN (device);
 	NMConnection *connection;
 	const char *new_mac, *old_mac;
 	NMSettingIPConfig *s_ip6;
 
 	/* Never touch assumed devices */
-	if (nm_device_uses_assumed_connection ((NMDevice *) self))
+	if (nm_device_sys_iface_state_is_external_or_assume (device))
 		return;
 
 	connection = nm_device_get_applied_connection ((NMDevice *) self);

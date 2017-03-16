@@ -55,6 +55,22 @@ typedef struct _NMSleepMonitor       NMSleepMonitor;
 typedef struct _NMLldpListener       NMLldpListener;
 typedef struct _NMConfigDeviceStateData NMConfigDeviceStateData;
 
+/*****************************************************************************/
+
+typedef enum {
+	/* Do a full activation. */
+	NM_ACTIVATION_TYPE_MANAGED = 0,
+
+	/* gracefully/seamlessly take over the device. This leaves additional
+	 * IP addresses and does not restore missing manual addresses. */
+	NM_ACTIVATION_TYPE_ASSUME = 1,
+
+	/* external activation. This device is not managed by NM, instead
+	 * a in-memory connection is generated and NM pretends the device
+	 * to be active, but it doesn't do anything really. */
+	NM_ACTIVATION_TYPE_EXTERNAL = 2,
+} NMActivationType;
+
 typedef enum {
 	/* In priority order; higher number == higher priority */
 

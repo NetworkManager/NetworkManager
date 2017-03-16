@@ -498,7 +498,7 @@ set_unsaved (NMSettingsConnection *self, gboolean now_unsaved)
 		else {
 			flags &= ~(NM_SETTINGS_CONNECTION_FLAGS_UNSAVED |
 			           NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED |
-			           NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED_ASSUMED);
+			           NM_SETTINGS_CONNECTION_FLAGS_VOLATILE);
 		}
 		nm_settings_connection_set_flags_all (self, flags);
 	}
@@ -561,7 +561,7 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 	_LOGD ("replace settings from connection %p (%s)", new_connection, nm_connection_get_id (NM_CONNECTION (self)));
 
 	nm_settings_connection_set_flags (self,
-	                                  NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED | NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED_ASSUMED,
+	                                  NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED | NM_SETTINGS_CONNECTION_FLAGS_VOLATILE,
 	                                  FALSE);
 
 	/* Cache the just-updated system secrets in case something calls
@@ -2641,18 +2641,18 @@ nm_settings_connection_get_nm_generated (NMSettingsConnection *self)
 }
 
 /**
- * nm_settings_connection_get_nm_generated_assumed:
+ * nm_settings_connection_get_volatile:
  * @self: an #NMSettingsConnection
  *
- * Gets the "nm-generated-assumed" flag on @self.
+ * Gets the "volatile" flag on @self.
  *
- * The connection is a generated connection especially
- * generated for connection assumption.
+ * The connection is marked as volatile and will be removed when
+ * it disconnects.
  */
 gboolean
-nm_settings_connection_get_nm_generated_assumed (NMSettingsConnection *self)
+nm_settings_connection_get_volatile (NMSettingsConnection *self)
 {
-	return NM_FLAGS_HAS (nm_settings_connection_get_flags (self), NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED_ASSUMED);
+	return NM_FLAGS_HAS (nm_settings_connection_get_flags (self), NM_SETTINGS_CONNECTION_FLAGS_VOLATILE);
 }
 
 gboolean

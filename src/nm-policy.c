@@ -428,7 +428,7 @@ settings_set_hostname_cb (const char *hostname,
 	}
 
 	if (!ret)
-		nm_dispatcher_call (DISPATCHER_ACTION_HOSTNAME, NULL, NULL, NULL, NULL, NULL, NULL);
+		nm_dispatcher_call_hostname (NULL, NULL, NULL);
 }
 
 static void
@@ -1023,6 +1023,7 @@ auto_activate_device (NMPolicy *self,
 		                                     specific_object,
 		                                     device,
 		                                     subject,
+		                                     NM_ACTIVATION_TYPE_MANAGED,
 		                                     &error)) {
 			_LOGI (LOGD_DEVICE, "connection '%s' auto-activation failed: (%d) %s",
 			       nm_settings_connection_get_id (best_connection),
@@ -1433,6 +1434,7 @@ activate_secondary_connections (NMPolicy *self,
 		                                     nm_exported_object_get_path (NM_EXPORTED_OBJECT (req)),
 		                                     device,
 		                                     nm_active_connection_get_subject (NM_ACTIVE_CONNECTION (req)),
+		                                     NM_ACTIVATION_TYPE_MANAGED,
 		                                     &error);
 		if (ac)
 			secondary_ac_list = g_slist_append (secondary_ac_list, g_object_ref (ac));
@@ -1846,6 +1848,7 @@ vpn_connection_retry_after_failure (NMVpnConnection *vpn, NMPolicy *self)
 	                                     NULL,
 	                                     NULL,
 	                                     nm_active_connection_get_subject (ac),
+	                                     NM_ACTIVATION_TYPE_MANAGED,
 	                                     &error)) {
 		_LOGW (LOGD_DEVICE, "VPN '%s' reconnect failed: %s",
 		       nm_settings_connection_get_id (connection),

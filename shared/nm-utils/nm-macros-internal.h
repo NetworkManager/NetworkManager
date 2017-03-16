@@ -233,21 +233,34 @@ NM_G_ERROR_MSG (GError *error)
 #define _NM_IN_SET_EVAL_16(op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_15 (op, _x, __VA_ARGS__)
 
 #define _NM_IN_SET_EVAL_N2(op, _x, n, ...)      (_NM_IN_SET_EVAL_##n(op, _x, __VA_ARGS__))
-#define _NM_IN_SET_EVAL_N(op, x, n, ...)                            \
+#define _NM_IN_SET_EVAL_N(op, type, x, n, ...)                      \
     ({                                                              \
-        typeof(x) _x = (x);                                         \
+        type _x = (x);                                              \
+                                                                    \
+        /* trigger a -Wenum-compare warning */                      \
+        nm_assert (TRUE || _x == (x));                              \
+                                                                    \
         !!_NM_IN_SET_EVAL_N2(op, _x, n, __VA_ARGS__);               \
     })
+
+#define _NM_IN_SET(op, type, x, ...)        _NM_IN_SET_EVAL_N(op, type, x, NM_NARG (__VA_ARGS__), __VA_ARGS__)
 
 /* Beware that this does short-circuit evaluation (use "||" instead of "|")
  * which has a possibly unexpected non-function-like behavior.
  * Use NM_IN_SET_SE if you need all arguments to be evaluted. */
-#define NM_IN_SET(x, ...)               _NM_IN_SET_EVAL_N(||, x, NM_NARG (__VA_ARGS__), __VA_ARGS__)
+#define NM_IN_SET(x, ...)                   _NM_IN_SET(||, typeof (x), x, __VA_ARGS__)
 
 /* "SE" stands for "side-effect". Contrary to NM_IN_SET(), this does not do
  * short-circuit evaluation, which can make a difference if the arguments have
  * side-effects. */
-#define NM_IN_SET_SE(x, ...)            _NM_IN_SET_EVAL_N(|, x, NM_NARG (__VA_ARGS__), __VA_ARGS__)
+#define NM_IN_SET_SE(x, ...)                _NM_IN_SET(|,  typeof (x), x, __VA_ARGS__)
+
+/* the *_TYPED forms allow to explicitly select the type of "x". This is useful
+ * if "x" doesn't support typeof (bitfields) or you want to gracefully convert
+ * a type using automatic type conversion rules (but not forcing the conversion
+ * with a cast). */
+#define NM_IN_SET_TYPED(type, x, ...)       _NM_IN_SET(||, type,       x, __VA_ARGS__)
+#define NM_IN_SET_SE_TYPED(type, x, ...)    _NM_IN_SET(|,  type,       x, __VA_ARGS__)
 
 /*****************************************************************************/
 
@@ -278,8 +291,8 @@ _NM_IN_STRSET_streq (const char *x, const char *s)
 #define _NM_IN_STRSET_EVAL_N(op, x, n, ...)                       \
     ({                                                            \
         const char *_x = (x);                                     \
-        (   ((_x == NULL) && _NM_IN_SET_EVAL_N2    (op, (const char *) NULL, n, __VA_ARGS__)) \
-         || ((_x != NULL) && _NM_IN_STRSET_EVAL_N2 (op, _x,                  n, __VA_ARGS__)) \
+        (   ((_x == NULL) && _NM_IN_SET_EVAL_N2    (op, ((const char *) NULL), n, __VA_ARGS__)) \
+         || ((_x != NULL) && _NM_IN_STRSET_EVAL_N2 (op, _x,                    n, __VA_ARGS__)) \
         ); \
     })
 
