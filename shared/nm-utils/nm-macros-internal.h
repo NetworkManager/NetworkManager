@@ -766,13 +766,15 @@ nm_cmp_uint32_p_with_data (gconstpointer p_a, gconstpointer p_b, gpointer user_d
 /*****************************************************************************/
 
 static inline guint
-nm_encode_version (guint major, guint minor, guint micro) {
+nm_encode_version (guint major, guint minor, guint micro)
+{
 	/* analog to the preprocessor macro NM_ENCODE_VERSION(). */
 	return (major << 16) | (minor << 8) | micro;
 }
 
 static inline void
-nm_decode_version (guint version, guint *major, guint *minor, guint *micro) {
+nm_decode_version (guint version, guint *major, guint *minor, guint *micro)
+{
 	*major = (version & 0xFFFF0000u) >> 16;
 	*minor = (version & 0x0000FF00u) >>  8;
 	*micro = (version & 0x000000FFu);
@@ -820,7 +822,8 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro) {
 			: "(null)"); \
 	})
 
-#define nm_sprintf_buf(buf, format, ...) ({ \
+#define nm_sprintf_buf(buf, format, ...) \
+	({ \
 		char * _buf = (buf); \
 		int _buf_len; \
 		\
@@ -918,7 +921,6 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro) {
 	})
 #define _G_BOOLEAN_EXPR(expr) __NM_G_BOOLEAN_EXPR_IMPL (NM_UNIQ, expr)
 #endif
-
 
 /*****************************************************************************/
 
