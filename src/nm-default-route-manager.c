@@ -770,9 +770,8 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 				default_route = &rt.rx;
 
 				never_default = TRUE;
-				synced = TRUE;
-			} else
-				synced = default_route && !is_assumed;
+			}
+			synced = !is_assumed;
 		} else {
 			NMConnection *connection = nm_active_connection_get_applied_connection ((NMActiveConnection *) vpn);
 
