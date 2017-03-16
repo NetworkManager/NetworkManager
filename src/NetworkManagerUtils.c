@@ -370,9 +370,9 @@ route_compare (NMIPRoute *route1, NMIPRoute *route2, gint64 default_metric)
 }
 
 static int
-route_ptr_compare (const void *a, const void *b)
+route_ptr_compare (const void *a, const void *b, gpointer metric)
 {
-	return route_compare (*(NMIPRoute **) a, *(NMIPRoute **) b, -1);
+	return route_compare (*(NMIPRoute **) a, *(NMIPRoute **) b, *((gint64 *) metric));
 }
 
 static gboolean
@@ -384,6 +384,7 @@ check_ip_routes (NMConnection *orig,
 {
 	gs_free NMIPRoute **routes1 = NULL, **routes2 = NULL;
 	NMSettingIPConfig *s_ip1, *s_ip2;
+	gint64 m;
 	const char *s_name;
 	GHashTable *props;
 	guint i, num;
@@ -415,8 +416,12 @@ check_ip_routes (NMConnection *orig,
 		routes2[i] = nm_setting_ip_config_get_route (s_ip2, i);
 	}
 
-	qsort (routes1, num, sizeof (NMIPRoute *), route_ptr_compare);
-	qsort (routes2, num, sizeof (NMIPRoute *), route_ptr_compare);
+	m = nm_setting_ip_config_get_route_metric (s_ip2);
+	if (m != -1)
+		default_metric = m;
+
+	g_qsort_with_data (routes1, num, sizeof (NMIPRoute *), route_ptr_compare, &default_metric);
+	g_qsort_with_data (routes2, num, sizeof (NMIPRoute *), route_ptr_compare, &default_metric);
 
 	for (i = 0; i < num; i++) {
 		if (route_compare (routes1[i], routes2[i], default_metric))
