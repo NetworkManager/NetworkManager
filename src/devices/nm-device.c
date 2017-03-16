@@ -8418,7 +8418,8 @@ _nm_device_hash_check_invalid_keys (GHashTable *hash, const char *setting_name,
 void
 nm_device_reactivate_ip4_config (NMDevice *self,
                                  NMSettingIPConfig *s_ip4_old,
-                                 NMSettingIPConfig *s_ip4_new)
+                                 NMSettingIPConfig *s_ip4_new,
+                                 gboolean force_restart)
 {
 	NMDevicePrivate *priv;
 	const char *method_old, *method_new;
@@ -8434,14 +8435,17 @@ nm_device_reactivate_ip4_config (NMDevice *self,
 		                             s_ip4_new,
 		                             nm_device_get_ip4_route_metric (self));
 
-		method_old = s_ip4_old ?
-			nm_setting_ip_config_get_method (s_ip4_old) :
-			NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
-		method_new = s_ip4_new ?
-			nm_setting_ip_config_get_method (s_ip4_new) :
-			NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
+		if (!force_restart) {
+			method_old = s_ip4_old
+			             ? nm_setting_ip_config_get_method (s_ip4_old)
+			             : NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
+			method_new = s_ip4_new
+			             ? nm_setting_ip_config_get_method (s_ip4_new)
+			             : NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
+			force_restart = !nm_streq0 (method_old, method_new);
+		}
 
-		if (!nm_streq0 (method_old, method_new)) {
+		if (force_restart) {
 			_cleanup_ip4_pre (self, CLEANUP_TYPE_DECONFIGURE);
 			_set_ip_state (self, AF_INET, IP_WAIT);
 			if (!nm_device_activate_stage3_ip4_start (self))
@@ -8456,7 +8460,8 @@ nm_device_reactivate_ip4_config (NMDevice *self,
 void
 nm_device_reactivate_ip6_config (NMDevice *self,
                                  NMSettingIPConfig *s_ip6_old,
-                                 NMSettingIPConfig *s_ip6_new)
+                                 NMSettingIPConfig *s_ip6_new,
+                                 gboolean force_restart)
 {
 	NMDevicePrivate *priv;
 	const char *method_old, *method_new;
@@ -8472,14 +8477,17 @@ nm_device_reactivate_ip6_config (NMDevice *self,
 		                             s_ip6_new,
 		                             nm_device_get_ip6_route_metric (self));
 
-		method_old = s_ip6_old ?
-			nm_setting_ip_config_get_method (s_ip6_old) :
-			NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
-		method_new = s_ip6_new ?
-			nm_setting_ip_config_get_method (s_ip6_new) :
-			NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
+		if (!force_restart) {
+			method_old = s_ip6_old
+			             ? nm_setting_ip_config_get_method (s_ip6_old)
+			             : NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
+			method_new = s_ip6_new
+			             ? nm_setting_ip_config_get_method (s_ip6_new)
+			             : NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
+			force_restart = !nm_streq0 (method_old, method_new);
+		}
 
-		if (!nm_streq0 (method_old, method_new)) {
+		if (force_restart) {
 			_cleanup_ip6_pre (self, CLEANUP_TYPE_DECONFIGURE);
 			_set_ip_state (self, AF_INET6, IP_WAIT);
 			if (!nm_device_activate_stage3_ip6_start (self))
@@ -8693,8 +8701,8 @@ check_and_reapply_connection (NMDevice *self,
 	s_ip6_old = nm_connection_get_setting_ip6_config (con_old);
 	s_ip6_new = nm_connection_get_setting_ip6_config (con_new);
 
-	nm_device_reactivate_ip4_config (self, s_ip4_old, s_ip4_new);
-	nm_device_reactivate_ip6_config (self, s_ip6_old, s_ip6_new);
+	nm_device_reactivate_ip4_config (self, s_ip4_old, s_ip4_new, TRUE);
+	nm_device_reactivate_ip6_config (self, s_ip6_old, s_ip6_new, TRUE);
 
 	reactivate_proxy_config (self);
 
