@@ -229,3 +229,9 @@ nm_vpn_connection_class_init (NMVpnConnectionClass *connection_class)
 		              G_TYPE_NONE, 2,
 		              G_TYPE_UINT, G_TYPE_UINT);
 }
+
+GType
+nm_vpn_connection_state_reason_get_type (void)
+{
+	return nm_active_connection_state_reason_get_type ();
+}

@@ -512,6 +512,8 @@ GLIB_GENERATED += \
 	$(libnm_core_lib_c_mkenums)
 nm_core_enum_types_sources = $(libnm_core_lib_h_pub_real)
 
+nm_core_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\n'
+
 $(libnm_core_lib_h_pub_mkenums):                                            libnm-core/.dirstamp
 $(libnm_core_lib_c_mkenums):                                                libnm-core/.dirstamp
 
