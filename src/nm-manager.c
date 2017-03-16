@@ -279,11 +279,12 @@ active_connection_remove (NMManager *self, NMActiveConnection *active)
 
 		nm_exported_object_clear_and_unexport (&active);
 
-		if (   connection
-		    && nm_settings_has_connection (priv->settings, connection)) {
-			_LOGD (LOGD_DEVICE, "assumed connection disconnected. Deleting generated connection '%s' (%s)",
-			       nm_settings_connection_get_id (connection), nm_settings_connection_get_uuid (connection));
-			nm_settings_connection_delete (NM_SETTINGS_CONNECTION (connection), NULL, NULL);
+		if (connection) {
+			if (nm_settings_has_connection (priv->settings, connection)) {
+				_LOGD (LOGD_DEVICE, "assumed connection disconnected. Deleting generated connection '%s' (%s)",
+				       nm_settings_connection_get_id (connection), nm_settings_connection_get_uuid (connection));
+				nm_settings_connection_delete (connection, NULL, NULL);
+			}
 			g_object_unref (connection);
 		}
 	}
