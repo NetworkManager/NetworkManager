@@ -271,8 +271,7 @@ active_connection_remove (NMManager *self, NMActiveConnection *active)
 		g_signal_handlers_disconnect_by_func (active, active_connection_default_changed, self);
 		g_signal_handlers_disconnect_by_func (active, active_connection_parent_active, self);
 
-		if (   nm_active_connection_has_activation_type_assume_or_external (active)
-		    && (connection = nm_active_connection_get_settings_connection (active))
+		if (   (connection = nm_active_connection_get_settings_connection (active))
 		    && nm_settings_connection_get_volatile (connection))
 			g_object_ref (connection);
 		else
