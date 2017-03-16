@@ -30,6 +30,8 @@
 
 #define NM_ROUTE_MANAGER_PLATFORM "platform"
 
+#define NM_ROUTE_MANAGER_IP4_ROUTES_CHANGED "ip4-routes-changed"
+
 typedef struct _NMRouteManagerClass NMRouteManagerClass;
 
 GType nm_route_manager_get_type (void);

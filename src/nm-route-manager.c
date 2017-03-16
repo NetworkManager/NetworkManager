@@ -63,6 +63,12 @@ typedef struct {
 
 /*****************************************************************************/
 
+enum {
+	IP4_ROUTES_CHANGED,
+	LAST_SIGNAL,
+};
+static guint signals[LAST_SIGNAL] = { 0 };
+
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_PLATFORM,
 );
@@ -904,6 +910,9 @@ next:
 		}
 	}
 
+	if (vtable->vt->is_ip4 && ipx_routes_changed)
+		g_signal_emit (self, signals[IP4_ROUTES_CHANGED], 0);
+
 	g_free (known_routes_idx);
 	g_free (plat_routes_idx);
 	g_array_unref (plat_routes);
@@ -1285,4 +1294,11 @@ nm_route_manager_class_init (NMRouteManagerClass *klass)
 	                         G_PARAM_CONSTRUCT_ONLY |
 	                         G_PARAM_STATIC_STRINGS);
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+
+	signals[IP4_ROUTES_CHANGED] =
+	    g_signal_new (NM_ROUTE_MANAGER_IP4_ROUTES_CHANGED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 0);
 }
