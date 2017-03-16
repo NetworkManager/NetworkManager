@@ -339,6 +339,8 @@ typedef struct _NMDevicePrivate {
 		NMPlatformIP4Route v4;
 		NMPlatformIP6Route v6;
 	} default_route;
+	bool v4_has_shadowed_routes;
+	const char *ip4_rp_filter;
 
 	/* DHCPv4 tracking */
 	struct {
@@ -2391,6 +2393,45 @@ link_changed_cb (NMPlatform *platform,
 			_LOGD (LOGD_DEVICE, "queued link change for ip-ifindex %d", ifindex);
 		}
 	}
+}
+
+static void
+ip4_rp_filter_update (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	const char *ip4_rp_filter;
+
+	if (   priv->v4_has_shadowed_routes
+	    || priv->default_route.v4_has) {
+		if (nm_device_ipv4_sysctl_get_uint32 (self, "rp_filter", 0) != 1) {
+			/* Don't touch the rp_filter if it's not strict. */
+			return;
+		}
+		/* Loose rp_filter */
+		ip4_rp_filter = "2";
+	} else {
+		/* Default rp_filter */
+		ip4_rp_filter = NULL;
+	}
+
+	if (ip4_rp_filter != priv->ip4_rp_filter) {
+		nm_device_ipv4_sysctl_set (self, "rp_filter", ip4_rp_filter);
+		priv->ip4_rp_filter = ip4_rp_filter;
+	}
+}
+
+static void
+ip4_routes_changed_changed_cb (NMRouteManager *route_manager, NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	int ifindex = nm_device_get_ip_ifindex (self);
+
+	if (nm_device_sys_iface_state_is_external_or_assume (self))
+		return;
+
+	priv->v4_has_shadowed_routes = nm_route_manager_ip4_routes_shadowed (route_manager,
+	                                                                     ifindex);
+	ip4_rp_filter_update (self);
 }
 
 static void
@@ -9442,6 +9483,8 @@ nm_device_set_ip4_config (NMDevice *self,
 	}
 
 	nm_default_route_manager_ip4_update_default_route (nm_default_route_manager_get (), self);
+	if (!nm_device_sys_iface_state_is_external_or_assume (self))
+		ip4_rp_filter_update (self);
 
 	if (has_changes) {
 		NMSettingsConnection *settings_connection;
@@ -13375,6 +13418,9 @@ constructed (GObject *object)
 	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, G_CALLBACK (device_ipx_changed), self);
 	g_signal_connect (platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, G_CALLBACK (link_changed_cb), self);
 
+	g_signal_connect (nm_route_manager_get (), NM_ROUTE_MANAGER_IP4_ROUTES_CHANGED,
+	                  G_CALLBACK (ip4_routes_changed_changed_cb), self);
+
 	priv->settings = g_object_ref (NM_SETTINGS_GET);
 	g_assert (priv->settings);
 
@@ -13412,6 +13458,9 @@ dispose (GObject *object)
 	platform = NM_PLATFORM_GET;
 	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (device_ipx_changed), self);
 	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (link_changed_cb), self);
+
+	g_signal_handlers_disconnect_by_func (nm_route_manager_get (),
+	                                      G_CALLBACK (ip4_routes_changed_changed_cb), self);
 
 	g_slist_free_full (priv->arping.dad_list, (GDestroyNotify) nm_arping_manager_destroy);
 	priv->arping.dad_list = NULL;
