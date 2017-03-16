@@ -704,6 +704,38 @@ init_ip6_config_dns_priority (NMDevice *self, NMIP6Config *config)
 
 /*****************************************************************************/
 
+static gboolean
+nm_device_ipv4_sysctl_set (NMDevice *self, const char *property, const char *value)
+{
+	NMPlatform *platform = NM_PLATFORM_GET;
+	gs_free char *value_to_free = NULL;
+	const char *value_to_set;
+
+	if (value) {
+		value_to_set = value;
+	} else {
+		/* Set to a default value when we've got a NULL @value. */
+		value_to_free = nm_platform_sysctl_get (platform,
+		                                        NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_ip4_property_path ("default", property)));
+		value_to_set = value_to_free;
+	}
+
+	return nm_platform_sysctl_set (platform,
+	                               NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_ip4_property_path (nm_device_get_ip_iface (self), property)),
+	                               value_to_set);
+}
+
+static guint32
+nm_device_ipv4_sysctl_get_uint32 (NMDevice *self, const char *property, guint32 fallback)
+{
+	return nm_platform_sysctl_get_int_checked (NM_PLATFORM_GET,
+	                                           NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_ip4_property_path (nm_device_get_ip_iface (self), property)),
+	                                           10,
+	                                           0,
+	                                           G_MAXUINT32,
+	                                           fallback);
+}
+
 gboolean
 nm_device_ipv6_sysctl_set (NMDevice *self, const char *property, const char *value)
 {
