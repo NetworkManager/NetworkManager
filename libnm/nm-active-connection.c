@@ -402,6 +402,8 @@ constructed (GObject *object)
 	g_signal_connect (proxy, "state-changed",
 	                  G_CALLBACK (state_changed_proxy), object);
 	g_object_unref (proxy);
+
+	G_OBJECT_CLASS (nm_active_connection_parent_class)->constructed (object);
 }
 
 static void
