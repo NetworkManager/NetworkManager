@@ -46,6 +46,8 @@ G_BEGIN_DECLS
 
 /**
  * NMSettingMacvlan:
+ *
+ * MAC VLAN Settings
  */
 struct _NMSettingMacvlan {
 	NMSetting parent;

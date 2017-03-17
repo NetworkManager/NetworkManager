@@ -3,6 +3,7 @@
 
   <!--
       org.freedesktop.NetworkManager.VPN.Plugin:
+      @short_description: VPN Service
 
       This interface is provided by plugins providing VPN services to the
       NetworkManager daemon.

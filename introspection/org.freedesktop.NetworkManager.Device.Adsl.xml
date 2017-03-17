@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <node name="/">
+  <!--
+      org.freedesktop.NetworkManager.Device.Adsl:
+      @short_description: ADSL Device
+
+  -->
   <interface name="org.freedesktop.NetworkManager.Device.Adsl">
 
     <!--

@@ -101,6 +101,8 @@ typedef enum {
 
 /**
  * NMSettingWireless:
+ *
+ * Wi-Fi Settings
  */
 struct _NMSettingWireless {
 	NMSetting parent;

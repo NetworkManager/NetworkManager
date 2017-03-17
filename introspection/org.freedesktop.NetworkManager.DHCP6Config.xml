@@ -3,6 +3,7 @@
 
   <!--
       org.freedesktop.NetworkManager.DHCP6Config:
+      @short_description: IPv6 DHCP Client State
 
       Options and configuration returned by the IPv6 DHCP server.
   -->

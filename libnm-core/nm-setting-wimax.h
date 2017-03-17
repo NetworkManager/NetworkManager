@@ -44,6 +44,8 @@ G_BEGIN_DECLS
 
 /**
  * NMSettingWimax:
+ *
+ * WiMax Settings
  */
 struct _NMSettingWimax {
 	NMSetting parent;

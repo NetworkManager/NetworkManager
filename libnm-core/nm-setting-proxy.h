@@ -58,6 +58,11 @@ typedef enum {
 #define NM_SETTING_PROXY_PAC_URL "pac-url"
 #define NM_SETTING_PROXY_PAC_SCRIPT "pac-script"
 
+/**
+ * NMSettingProxy:
+ *
+ * WWW Proxy Settings
+ */
 struct _NMSettingProxy {
 	NMSetting parent;
 };

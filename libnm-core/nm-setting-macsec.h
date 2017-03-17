@@ -50,6 +50,8 @@ G_BEGIN_DECLS
 
 /**
  * NMSettingMacsec:
+ *
+ * MACSec Settings
  */
 struct _NMSettingMacsec {
 	NMSetting parent;

@@ -58,6 +58,8 @@ G_BEGIN_DECLS
 
 /**
  * NMSettingVxlan:
+ *
+ * VXLAN Settings
  */
 struct _NMSettingVxlan {
 	NMSetting parent;

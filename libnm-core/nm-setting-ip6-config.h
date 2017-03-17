@@ -139,6 +139,8 @@ typedef enum {
 
 /**
  * NMSettingIP6Config:
+ *
+ * IPv6 Settings
  */
 struct _NMSettingIP6Config {
 	NMSettingIPConfig parent;

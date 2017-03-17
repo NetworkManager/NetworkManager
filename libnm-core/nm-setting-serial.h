@@ -62,6 +62,8 @@ typedef enum {
 
 /**
  * NMSettingSerial:
+ *
+ * Serial Link Settings
  */
 struct _NMSettingSerial {
 	NMSetting parent;

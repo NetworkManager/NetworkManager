@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <node name="/">
+  <!--
+      org.freedesktop.NetworkManager.Device.IPTunnel:
+      @short_description: IP Tunneling Device
+
+  -->
   <interface name="org.freedesktop.NetworkManager.Device.IPTunnel">
 
     <!--

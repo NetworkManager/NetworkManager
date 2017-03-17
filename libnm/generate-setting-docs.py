@@ -112,7 +112,7 @@ def get_prop_type(setting, pspec, propxml):
 
     return prop_type
 
-def get_docs(setting, pspec, propxml):
+def get_docs(propxml):
     doc_xml = propxml.find('gi:doc', ns_map)
     if doc_xml is None:
         return None
@@ -162,6 +162,14 @@ def get_default_value(setting, pspec, propxml):
 
     return default_value
 
+def cmp_settings(x,y):
+    x_prefix = x.attrib['{%s}symbol-prefix' % ns_map['c']]
+    y_prefix = y.attrib['{%s}symbol-prefix' % ns_map['c']]
+    if x_prefix == "setting_connection":
+        # Always sort NMSettingConnection first
+        return -1;
+    return cmp(x_prefix, y_prefix)
+
 def escape(val):
     return str(val).replace('"', '&quot;')
 
@@ -186,7 +194,7 @@ settings = girxml.findall('./gi:namespace/gi:class[@parent="Setting"]', ns_map)
 # Hack. Need a better way to do this
 ipxml = girxml.find('./gi:namespace/gi:class[@name="SettingIPConfig"]', ns_map)
 settings.extend(girxml.findall('./gi:namespace/gi:class[@parent="SettingIPConfig"]', ns_map))
-settings = sorted(settings, key=lambda setting: setting.attrib['{%s}symbol-prefix' % ns_map['c']])
+settings = sorted(settings, cmp=cmp_settings)
 
 init_constants(girxml, settings)
 
@@ -207,7 +215,10 @@ for settingxml in settings:
     new_func = NM.__getattr__(settingxml.attrib['name'])
     setting = new_func()
 
-    outfile.write("  <setting name=\"%s\">\n" % setting.props.name)
+    class_desc = get_docs(settingxml)
+    if class_desc is None:
+        raise Exception("%s needs a gtk-doc block with one-line description" % setting.props.name)
+    outfile.write("  <setting name=\"%s\" description=\"%s\">\n" % (setting.props.name, class_desc))
 
     setting_properties = { prop.name: prop for prop in GObject.list_properties(setting) }
     if args.overrides is None:
@@ -231,7 +242,7 @@ for settingxml in settings:
                 propxml = ipxml.find('./gi:property[@name="%s"]' % pspec.name, ns_map)
 
             value_type = get_prop_type(setting, pspec, propxml)
-            value_desc = get_docs(setting, pspec, propxml)
+            value_desc = get_docs(propxml)
             default_value = get_default_value(setting, pspec, propxml)
 
         if prop in setting_overrides:

@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <node name="/org/freedesktop/NetworkManager">
+  <!--
+      org.freedesktop.NetworkManager:
+      @short_description: Connection Manager
+
+  -->
   <interface name="org.freedesktop.NetworkManager">
     <annotation name="org.gtk.GDBus.C.Name" value="Manager"/>
 

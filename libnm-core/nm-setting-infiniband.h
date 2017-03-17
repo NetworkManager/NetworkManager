@@ -47,6 +47,8 @@ G_BEGIN_DECLS
 
 /**
  * NMSettingInfiniband:
+ *
+ * Infiniband Settings
  */
 struct _NMSettingInfiniband {
 	NMSetting parent;

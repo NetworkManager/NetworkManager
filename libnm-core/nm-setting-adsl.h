@@ -56,6 +56,8 @@ G_BEGIN_DECLS
 
 /**
  * NMSettingAdsl:
+ *
+ * ADSL Settings
  */
 struct _NMSettingAdsl {
 	NMSetting parent;

@@ -3,6 +3,7 @@
 
   <!--
       org.freedesktop.NetworkManager.Settings:
+      @short_description: Connection Settings Profile Manager
 
       The Settings interface allows clients to view and administrate the
       connections stored and used by NetworkManager.

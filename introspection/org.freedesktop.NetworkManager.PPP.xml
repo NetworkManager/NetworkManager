@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <node name="/">
+  <!--
+      org.freedesktop.NetworkManager.PPP:
+      @short_description: Helper interface for a PPP plugin
+
+  -->
   <interface name="org.freedesktop.NetworkManager.PPP">
     <annotation name="org.gtk.GDBus.C.Name" value="PPP_Manager"/>
 

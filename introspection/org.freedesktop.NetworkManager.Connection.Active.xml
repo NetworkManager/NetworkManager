@@ -3,6 +3,7 @@
 
   <!--
       org.freedesktop.NetworkManager.Connection.Active:
+      @short_description: Active Connection
 
       Objects that implement the Connection.Active interface represent an
       attempt to connect to a network using the details provided by a Connection

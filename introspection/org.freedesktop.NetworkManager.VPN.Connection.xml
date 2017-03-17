@@ -3,6 +3,7 @@
 
   <!--
       org.freedesktop.NetworkManager.VPN.Connection:
+      @short_description: Active VPN Connection
 
       Represents an active connection to a Virtual Private Network.
   -->

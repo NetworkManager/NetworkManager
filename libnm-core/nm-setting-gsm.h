@@ -56,6 +56,8 @@ G_BEGIN_DECLS
 
 /**
  * NMSettingGsm:
+ *
+ * GSM-based Mobile Broadband Settings
  */
 struct _NMSettingGsm {
 	NMSetting parent;

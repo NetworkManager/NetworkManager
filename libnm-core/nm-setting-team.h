@@ -42,6 +42,8 @@ G_BEGIN_DECLS
 
 /**
  * NMSettingTeam:
+ *
+ * Teaming Settings
  */
 struct _NMSettingTeam {
 	NMSetting parent;

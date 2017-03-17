@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <node name="/">
+  <!--
+      org.freedesktop.NetworkManager.Device.Vxlan:
+      @short_description: VXLAN Device
+
+  -->
   <interface name="org.freedesktop.NetworkManager.Device.Vxlan">
 
     <!--

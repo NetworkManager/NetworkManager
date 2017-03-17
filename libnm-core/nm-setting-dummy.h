@@ -41,6 +41,8 @@ G_BEGIN_DECLS
 
 /**
  * NMSettingDummy:
+ *
+ * Dummy Link Settings
  */
 struct _NMSettingDummy {
 	NMSetting parent;

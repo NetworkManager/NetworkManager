@@ -50,6 +50,8 @@ G_BEGIN_DECLS
 
 /**
  * NMSettingBridge:
+ *
+ * Bridging Settings
  */
 struct _NMSettingBridge {
 	NMSetting parent;

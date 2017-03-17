@@ -48,6 +48,8 @@ G_BEGIN_DECLS
 
 /**
  * NMSettingCdma:
+ *
+ * CDMA-based Mobile Broadband Settings
  */
 struct _NMSettingCdma {
 	NMSetting parent;
