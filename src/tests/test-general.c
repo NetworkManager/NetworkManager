@@ -986,13 +986,25 @@ test_connection_sort_autoconnect_priority (void)
 /*****************************************************************************/
 
 #define MATCH_S390 "S390:"
+#define MATCH_DRIVER "DRIVER:"
 
 static NMMatchSpecMatchType
 _test_match_spec_device (const GSList *specs, const char *match_str)
 {
 	if (match_str && g_str_has_prefix (match_str, MATCH_S390))
-		return nm_match_spec_device (specs, NULL, NULL, NULL, &match_str[NM_STRLEN (MATCH_S390)]);
-	return nm_match_spec_device (specs, match_str, NULL, NULL, NULL);
+		return nm_match_spec_device (specs, NULL, NULL, NULL, NULL, NULL, &match_str[NM_STRLEN (MATCH_S390)]);
+	if (match_str && g_str_has_prefix (match_str, MATCH_DRIVER)) {
+		gs_free char *s = g_strdup (&match_str[NM_STRLEN (MATCH_DRIVER)]);
+		char *t;
+
+		t = strchr (s, '|');
+		if (t) {
+			t[0] = '\0';
+			t++;
+		}
+		return nm_match_spec_device (specs, NULL, NULL, s, t, NULL, NULL);
+	}
+	return nm_match_spec_device (specs, match_str, NULL, NULL, NULL, NULL, NULL);
 }
 
 static void
@@ -1142,6 +1154,23 @@ test_match_spec_device (void)
 	                            NULL,
 	                            S (NULL),
 	                            S (MATCH_S390"0.0.1000", MATCH_S390"0.0.1000,deadbeef", MATCH_S390"0.0.1000,0.0.1001", MATCH_S390"0.0.1000,0.0.1002"));
+
+	_do_test_match_spec_device ("driver:DRV",
+	                            S (MATCH_DRIVER"DRV", MATCH_DRIVER"DRV|1.6"),
+	                            S (MATCH_DRIVER"DR", MATCH_DRIVER"DR*"),
+	                            NULL);
+	_do_test_match_spec_device ("driver:DRV//",
+	                            S (MATCH_DRIVER"DRV/"),
+	                            S (MATCH_DRIVER"DRV/|1.6", MATCH_DRIVER"DR", MATCH_DRIVER"DR*"),
+	                            NULL);
+	_do_test_match_spec_device ("driver:DRV//*",
+	                            S (MATCH_DRIVER"DRV/", MATCH_DRIVER"DRV/|1.6"),
+	                            S (MATCH_DRIVER"DR", MATCH_DRIVER"DR*"),
+	                            NULL);
+	_do_test_match_spec_device ("driver:DRV//1.5*",
+	                            S (MATCH_DRIVER"DRV/|1.5", MATCH_DRIVER"DRV/|1.5.2"),
+	                            S (MATCH_DRIVER"DRV/", MATCH_DRIVER"DRV/|1.6", MATCH_DRIVER"DR", MATCH_DRIVER"DR*"),
+	                            NULL);
 #undef S
 }
 

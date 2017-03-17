@@ -1182,6 +1182,7 @@ nm_utils_read_link_absolute (const char *link_file, GError **error)
 #define MAC_TAG "mac:"
 #define INTERFACE_NAME_TAG "interface-name:"
 #define DEVICE_TYPE_TAG "type:"
+#define DRIVER_TAG "driver:"
 #define SUBCHAN_TAG "s390-subchannels:"
 #define EXCEPT_TAG "except:"
 #define MATCH_TAG_CONFIG_NM_VERSION             "nm-version:"
@@ -1192,6 +1193,8 @@ nm_utils_read_link_absolute (const char *link_file, GError **error)
 typedef struct {
 	const char *interface_name;
 	const char *device_type;
+	const char *driver;
+	const char *driver_version;
 	struct {
 		const char *value;
 		gboolean is_parsed;
@@ -1374,6 +1377,38 @@ match_device_eval (const char *spec_str,
 		return FALSE;
 	}
 
+	if (_MATCH_CHECK (spec_str, DRIVER_TAG)) {
+		const char *t;
+
+		if (!match_data->driver)
+			return FALSE;
+
+		/* support:
+		 * 1) "${DRIVER}"
+		 *   In this case, DRIVER may not contain a '/' character.
+		 *   It matches any driver version.
+		 * 2) "${DRIVER}/${DRIVER_VERSION}"
+		 *   In this case, DRIVER may contains '/' but DRIVER_VERSION
+		 *   may not. A '/' in DRIVER_VERSION may be replaced by '?'.
+		 *
+		 * It follows, that "${DRIVER}/""*" is like 1), but allows
+		 * '/' inside DRIVER.
+		 *
+		 * The fields match to what `nmcli -f GENERAL.DRIVER,GENERAL.DRIVER-VERSION device show`
+		 * gives. However, DRIVER matches literally, while DRIVER_VERSION is a glob
+		 * supporting ? and *.
+		 */
+
+		t = strrchr (spec_str, '/');
+
+		if (!t)
+			return nm_streq (spec_str, match_data->driver);
+
+		return    (strncmp (spec_str, match_data->driver, t - spec_str) == 0)
+		       && g_pattern_match_simple (&t[1],
+		                                  match_data->driver_version ?: "");
+	}
+
 	if (_MATCH_CHECK (spec_str, SUBCHAN_TAG))
 		return match_data_s390_subchannels_eval (spec_str, match_data);
 
@@ -1392,6 +1427,8 @@ NMMatchSpecMatchType
 nm_match_spec_device (const GSList *specs,
                       const char *interface_name,
                       const char *device_type,
+                      const char *driver,
+                      const char *driver_version,
                       const char *hwaddr,
                       const char *s390_subchannels)
 {
@@ -1402,6 +1439,8 @@ nm_match_spec_device (const GSList *specs,
 	MatchDeviceData match_data = {
 	    .interface_name = interface_name,
 	    .device_type = nm_str_not_empty (device_type),
+	    .driver = nm_str_not_empty (driver),
+	    .driver_version = nm_str_not_empty (driver_version),
 	    .hwaddr = {
 	        .value = hwaddr,
 	    },

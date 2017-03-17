@@ -13193,6 +13193,8 @@ nm_device_spec_match_list (NMDevice *self, const GSList *specs)
 	m = nm_match_spec_device (specs,
 	                          nm_device_get_iface (self),
 	                          nm_device_get_type_description (self),
+	                          nm_device_get_driver (self),
+	                          nm_device_get_driver_version (self),
 	                          nm_device_get_permanent_hw_address (self),
 	                          klass->get_s390_subchannels ? klass->get_s390_subchannels (self) : NULL);
 	return m == NM_MATCH_SPEC_MATCH;
