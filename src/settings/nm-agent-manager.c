@@ -178,7 +178,7 @@ remove_agent (NMAgentManager *self, const char *owner)
 	while (g_hash_table_iter_next (&iter, &data, NULL))
 		request_remove_agent ((Request *) data, agent, &pending_reqs);
 
-	/* We cannot call request_next_agent() from from within hash iterating loop,
+	/* We cannot call request_next_agent() from within hash iterating loop,
 	 * because it may remove the request from the hash table, which invalidates
 	 * the iterator. So, only remove the agent from requests. And store the requests
 	 * that should be sent to other agent to a temporary list to proceed afterwards.

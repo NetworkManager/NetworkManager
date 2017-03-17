@@ -1,4 +1,4 @@
-# This configuration file, when placed into into
+# This configuration file, when placed into
 # @sysconfdir@/NetworkManager/conf.d will change NetworkManager's
 # behavior to what's expected on "traditional UNIX server" type
 # deployments.

@@ -3560,7 +3560,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * #NMSetting8021x:private-key-password property must be set to password
 	 * used to decrypt the PKCS#<!-- -->12 certificate and key. When using PKCS#<!-- -->12 files
 	 * and the path scheme, this property should be set to the full UTF-8
-	 * encoded path of the key, prefixed with the string "file://" and and
+	 * encoded path of the key, prefixed with the string "file://" and
 	 * ending with a terminating NUL byte, and as with the blob scheme the
 	 * "private-key-password" property must be set to the password used to
 	 * decode the PKCS#<!-- -->12 private key and certificate.
@@ -3632,7 +3632,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * password used to decrypt the PKCS#<!-- -->12 certificate and key. When using
 	 * PKCS#<!-- -->12 files and the path scheme, this property should be set to the
 	 * full UTF-8 encoded path of the key, prefixed with the string "file://"
-	 * and and ending with a terminating NUL byte, and as with the blob scheme
+	 * and ending with a terminating NUL byte, and as with the blob scheme
 	 * the #NMSetting8021x:phase2-private-key-password property must be set to
 	 * the password used to decode the PKCS#<!-- -->12 private key and certificate.
 	 *

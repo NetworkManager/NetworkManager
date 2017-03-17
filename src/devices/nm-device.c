@@ -5685,7 +5685,7 @@ connection_requires_carrier (NMConnection *connection)
 			return TRUE;
 	}
 
-	/* If an IP version wants a carrier and and the other IP version isn't
+	/* If an IP version wants a carrier and the other IP version isn't
 	 * used, the connection requires carrier since it will just fail without one.
 	 */
 	if (ip4_carrier_wanted && !ip6_used)

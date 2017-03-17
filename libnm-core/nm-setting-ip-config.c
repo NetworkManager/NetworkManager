@@ -1267,7 +1267,7 @@ nm_ip_route_attribute_validate  (const char *name,
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_FAILED,
-		             _("invalid attribute type'%s'"),
+		             _("invalid attribute type '%s'"),
 		             g_variant_get_type_string (value));
 		return FALSE;
 	}

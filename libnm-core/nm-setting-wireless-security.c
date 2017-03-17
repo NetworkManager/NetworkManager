@@ -182,7 +182,7 @@ nm_setting_wireless_security_get_proto (NMSettingWirelessSecurity *setting, guin
  * by this connection only supports WPA2/RSN, the connection cannot be used
  * with the access point.
  *
- * Returns: %TRUE if the protocol was new and and was added to the allowed
+ * Returns: %TRUE if the protocol was new and was added to the allowed
  * protocol list, or %FALSE if it was already in the list
  **/
 gboolean
@@ -236,7 +236,7 @@ nm_setting_wireless_security_remove_proto (NMSettingWirelessSecurity *setting, g
  *
  * Removes a protocol from the allowed protocol list.
  *
- * Returns: %TRUE if the protocol was found and removed; %FALSE it it was not.
+ * Returns: %TRUE if the protocol was found and removed; %FALSE if it was not.
  **/
 gboolean
 nm_setting_wireless_security_remove_proto_by_value (NMSettingWirelessSecurity *setting,
@@ -382,7 +382,7 @@ nm_setting_wireless_security_remove_pairwise (NMSettingWirelessSecurity *setting
  * Removes an encryption algorithm from the allowed pairwise encryption
  * algorithm list.
  *
- * Returns: %TRUE if the encryption algorith was found and removed; %FALSE it it was not.
+ * Returns: %TRUE if the encryption algorith was found and removed; %FALSE if it was not.
  **/
 gboolean
 nm_setting_wireless_security_remove_pairwise_by_value (NMSettingWirelessSecurity *setting,
@@ -530,7 +530,7 @@ nm_setting_wireless_security_remove_group (NMSettingWirelessSecurity *setting, g
  * Removes an encryption algorithm from the allowed groupwise encryption
  * algorithm list.
  *
- * Returns: %TRUE if the algorithm was found and removed; %FALSE it it was not.
+ * Returns: %TRUE if the algorithm was found and removed; %FALSE if it was not.
  **/
 gboolean
 nm_setting_wireless_security_remove_group_by_value (NMSettingWirelessSecurity *setting,

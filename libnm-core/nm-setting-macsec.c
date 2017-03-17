@@ -251,7 +251,7 @@ verify_macsec_key (const char *key, gboolean cak, GError **error)
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("the key contais non-hexadecimal characters"));
+		                     _("the key contains non-hexadecimal characters"));
 		return FALSE;
 	}
 
