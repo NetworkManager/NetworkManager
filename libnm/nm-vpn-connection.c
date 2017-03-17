@@ -36,6 +36,8 @@ G_DEFINE_TYPE (NMVpnConnection, nm_vpn_connection, NM_TYPE_ACTIVE_CONNECTION)
 
 #define NM_VPN_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_VPN_CONNECTION, NMVpnConnectionPrivate))
 
+G_STATIC_ASSERT (sizeof (NMVpnConnectionStateReason) == sizeof (NMActiveConnectionStateReason));
+
 typedef struct {
 	char *banner;
 	NMVpnConnectionState vpn_state;
@@ -220,6 +222,7 @@ nm_vpn_connection_class_init (NMVpnConnectionClass *connection_class)
 		                      G_PARAM_STATIC_STRINGS));
 
 	/* signals */
+	G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 	signals[VPN_STATE_CHANGED] =
 		g_signal_new ("vpn-state-changed",
 		              G_OBJECT_CLASS_TYPE (object_class),
@@ -228,10 +231,5 @@ nm_vpn_connection_class_init (NMVpnConnectionClass *connection_class)
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 2,
 		              G_TYPE_UINT, G_TYPE_UINT);
-}
-
-GType
-nm_vpn_connection_state_reason_get_type (void)
-{
-	return nm_active_connection_state_reason_get_type ();
+	G_GNUC_END_IGNORE_DEPRECATIONS
 }

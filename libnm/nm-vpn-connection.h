@@ -41,9 +41,6 @@ G_BEGIN_DECLS
 #define NM_VPN_CONNECTION_VPN_STATE "vpn-state"
 #define NM_VPN_CONNECTION_BANNER "banner"
 
-GType nm_vpn_connection_state_reason_get_type (void) G_GNUC_CONST;
-#define NM_TYPE_VPN_CONNECTION_STATE_REASON (nm_vpn_connection_state_reason_get_type ())
-
 /**
  * NMVpnConnection:
  */
@@ -55,9 +52,17 @@ typedef struct {
 	NMActiveConnectionClass parent;
 
 	/* Signals */
+
+	/* NMVpnConnectionStateReason got deprecated in 1.8.0. Thus, vpn_state_changed()
+	 * uses a deprecated type and is itself deprecated.
+	 *
+	 * If you use this signal slot, you are advised to cast the reason
+	 * to the NMActiveConnectionStateReason type, which is fully compatible.
+	 */
+	NM_DEPRECATED_IN_1_8
 	void (*vpn_state_changed) (NMVpnConnection *connection,
 	                           NMVpnConnectionState state,
-	                           NMActiveConnectionStateReason reason);
+	                           NMVpnConnectionStateReason reason);
 
 	/*< private >*/
 	gpointer padding[4];
