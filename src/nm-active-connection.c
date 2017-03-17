@@ -95,6 +95,7 @@ enum {
 	DEVICE_CHANGED,
 	DEVICE_METERED_CHANGED,
 	PARENT_ACTIVE,
+	STATE_CHANGED,
 	LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -209,7 +210,8 @@ nm_active_connection_get_state (NMActiveConnection *self)
 
 void
 nm_active_connection_set_state (NMActiveConnection *self,
-                                NMActiveConnectionState new_state)
+                                NMActiveConnectionState new_state,
+                                NMActiveConnectionStateReason reason)
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 	NMActiveConnectionState old_state;
@@ -236,6 +238,7 @@ nm_active_connection_set_state (NMActiveConnection *self,
 	old_state = priv->state;
 	priv->state = new_state;
 	priv->state_set = TRUE;
+	g_signal_emit (self, signals[STATE_CHANGED], 0, (guint) new_state, (guint) reason);
 	_notify (self, PROP_STATE);
 
 	check_master_ready (self);
@@ -1417,6 +1420,13 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 	                  G_STRUCT_OFFSET (NMActiveConnectionClass, parent_active),
 	                  NULL, NULL, NULL,
 	                  G_TYPE_NONE, 1, NM_TYPE_ACTIVE_CONNECTION);
+
+	signals[STATE_CHANGED] =
+	    g_signal_new (NM_ACTIVE_CONNECTION_STATE_CHANGED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (ac_class),
 	                                        NMDBUS_TYPE_ACTIVE_CONNECTION_SKELETON,

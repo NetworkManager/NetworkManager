@@ -129,11 +129,16 @@ GDBusProxy *
 _nm_object_get_proxy (NMObject   *object,
                       const char *interface)
 {
+	NMObjectPrivate *priv;
 	GDBusInterface *proxy;
 
 	g_return_val_if_fail (NM_IS_OBJECT (object), NULL);
 
-	proxy = g_dbus_object_get_interface (NM_OBJECT_GET_PRIVATE (object)->object, interface);
+	priv = NM_OBJECT_GET_PRIVATE (object);
+	if (priv->object == NULL)
+		return NULL;
+
+	proxy = g_dbus_object_get_interface (priv->object, interface);
 	g_return_val_if_fail (proxy != NULL, NULL);
 
 	return G_DBUS_PROXY (proxy);

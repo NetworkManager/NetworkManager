@@ -37,6 +37,8 @@
 #include "nm-ip6-config.h"
 #include "nm-remote-connection.h"
 
+#include "introspection/org.freedesktop.NetworkManager.Connection.Active.h"
+
 G_DEFINE_TYPE (NMActiveConnection, nm_active_connection, NM_TYPE_OBJECT);
 
 #define NM_ACTIVE_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_ACTIVE_CONNECTION, NMActiveConnectionPrivate))
@@ -57,6 +59,7 @@ typedef struct {
 	NMDhcpConfig *dhcp6_config;
 	gboolean is_vpn;
 	NMDevice *master;
+	NMActiveConnectionStateReason reason;
 } NMActiveConnectionPrivate;
 
 enum {
@@ -79,6 +82,14 @@ enum {
 
 	LAST_PROP
 };
+
+enum {
+	STATE_CHANGED,
+
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
 
 /**
  * nm_active_connection_get_connection:
@@ -202,6 +213,24 @@ nm_active_connection_get_state (NMActiveConnection *connection)
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NM_ACTIVE_CONNECTION_STATE_UNKNOWN);
 
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->state;
+}
+
+/**
+ * nm_active_connection_get_state_reason:
+ * @connection: a #NMActiveConnection
+ *
+ * Gets the reason for active connection's state.
+ *
+ * Returns: the reason
+ *
+ * Since: 1.8
+ **/
+NMActiveConnectionStateReason
+nm_active_connection_get_state_reason (NMActiveConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN);
+
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->reason;
 }
 
 /**
@@ -351,9 +380,35 @@ nm_active_connection_init (NMActiveConnection *connection)
 }
 
 static void
+state_changed_proxy (NMDBusActiveConnectionProxy *proxy,
+                     NMActiveConnectionState state,
+                     NMActiveConnectionStateReason reason,
+                     gpointer user_data)
+{
+	NMActiveConnection *connection = NM_ACTIVE_CONNECTION (user_data);
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
+
+	priv->state = state;
+	priv->reason = reason;
+	g_signal_emit (connection, signals[STATE_CHANGED], 0, state, reason);
+}
+
+static void
+constructed (GObject *object)
+{
+	GDBusProxy *proxy;
+
+	proxy = _nm_object_get_proxy (NM_OBJECT (object), NM_DBUS_INTERFACE_ACTIVE_CONNECTION);
+	g_signal_connect (proxy, "state-changed",
+	                  G_CALLBACK (state_changed_proxy), object);
+	g_object_unref (proxy);
+}
+
+static void
 dispose (GObject *object)
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (object);
+	GDBusProxy *proxy;
 
 	g_clear_pointer (&priv->devices, g_ptr_array_unref);
 
@@ -363,6 +418,12 @@ dispose (GObject *object)
 	g_clear_object (&priv->dhcp4_config);
 	g_clear_object (&priv->ip6_config);
 	g_clear_object (&priv->dhcp6_config);
+
+	proxy = _nm_object_get_proxy (NM_OBJECT (object), NM_DBUS_INTERFACE_ACTIVE_CONNECTION);
+	if (proxy) {
+		g_signal_handlers_disconnect_by_data (proxy, object);
+		g_object_unref (proxy);
+	}
 
 	G_OBJECT_CLASS (nm_active_connection_parent_class)->dispose (object);
 }
@@ -503,6 +564,7 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 
 	/* virtual methods */
 	object_class->get_property = get_property;
+	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
@@ -693,4 +755,13 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 		                      NM_TYPE_DEVICE,
 		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS));
+
+	/* signals */
+	signals[STATE_CHANGED] =
+		g_signal_new ("state-changed",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL, NULL,
+		              G_TYPE_NONE, 2,
+		              G_TYPE_UINT, G_TYPE_UINT);
 }

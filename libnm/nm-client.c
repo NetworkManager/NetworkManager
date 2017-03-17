@@ -45,6 +45,7 @@
 #include "introspection/org.freedesktop.NetworkManager.Settings.h"
 #include "introspection/org.freedesktop.NetworkManager.Settings.Connection.h"
 #include "introspection/org.freedesktop.NetworkManager.VPN.Connection.h"
+#include "introspection/org.freedesktop.NetworkManager.Connection.Active.h"
 
 #include "nm-access-point.h"
 #include "nm-active-connection.h"
@@ -2008,6 +2009,8 @@ proxy_type (GDBusObjectManagerClient *manager,
 		return NMDBUS_TYPE_DNS_MANAGER_PROXY;
 	else if (strcmp (interface_name, NM_DBUS_INTERFACE_VPN_CONNECTION) == 0)
 		return NMDBUS_TYPE_VPN_CONNECTION_PROXY;
+	else if (strcmp (interface_name, NM_DBUS_INTERFACE_ACTIVE_CONNECTION) == 0)
+		return NMDBUS_TYPE_ACTIVE_CONNECTION_PROXY;
 
 	/* Use a generic D-Bus Proxy whenever we can. The typed GDBusProxy
 	 * subclasses actually use quite some memory, so they're better avoided. */

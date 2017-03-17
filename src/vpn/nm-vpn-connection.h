@@ -62,10 +62,10 @@ const char *         nm_vpn_connection_get_banner      (NMVpnConnection *self);
 const gchar *        nm_vpn_connection_get_service     (NMVpnConnection *self);
 
 gboolean             nm_vpn_connection_deactivate      (NMVpnConnection *self,
-                                                        NMVpnConnectionStateReason reason,
+                                                        NMActiveConnectionStateReason reason,
                                                         gboolean quitting);
 void                 nm_vpn_connection_disconnect      (NMVpnConnection *self,
-                                                        NMVpnConnectionStateReason reason,
+                                                        NMActiveConnectionStateReason reason,
                                                         gboolean quitting);
 
 NMProxyConfig *      nm_vpn_connection_get_proxy_config (NMVpnConnection *self);

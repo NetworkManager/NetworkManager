@@ -9029,7 +9029,9 @@ static void
 _clear_queued_act_request (NMDevicePrivate *priv)
 {
 	if (priv->queued_act_request) {
-		nm_active_connection_set_state ((NMActiveConnection *) priv->queued_act_request, NM_ACTIVE_CONNECTION_STATE_DEACTIVATED);
+		nm_active_connection_set_state ((NMActiveConnection *) priv->queued_act_request,
+		                                NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,
+		                                NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED);
 		g_clear_object (&priv->queued_act_request);
 	}
 }
@@ -12192,7 +12194,7 @@ _set_state_full (NMDevice *self,
 
 	_notify (self, PROP_STATE);
 	_notify (self, PROP_STATE_REASON);
-	g_signal_emit (self, signals[STATE_CHANGED], 0, state, old_state, reason);
+	g_signal_emit (self, signals[STATE_CHANGED], 0, (guint) state, (guint) old_state, (guint) reason);
 
 	/* Post-process the event after internal notification */
 

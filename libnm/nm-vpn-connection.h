@@ -41,6 +41,9 @@ G_BEGIN_DECLS
 #define NM_VPN_CONNECTION_VPN_STATE "vpn-state"
 #define NM_VPN_CONNECTION_BANNER "banner"
 
+GType nm_vpn_connection_state_reason_get_type (void) G_GNUC_CONST;
+#define NM_TYPE_VPN_CONNECTION_STATE_REASON (nm_vpn_connection_state_reason_get_type ())
+
 /**
  * NMVpnConnection:
  */
@@ -54,7 +57,7 @@ typedef struct {
 	/* Signals */
 	void (*vpn_state_changed) (NMVpnConnection *connection,
 	                           NMVpnConnectionState state,
-	                           NMVpnConnectionStateReason reason);
+	                           NMActiveConnectionStateReason reason);
 
 	/*< private >*/
 	gpointer padding[4];

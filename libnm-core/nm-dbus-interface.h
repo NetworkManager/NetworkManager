@@ -30,6 +30,7 @@
 
 #ifndef NM_VERSION_H
 #define NM_AVAILABLE_IN_1_2
+#define NM_AVAILABLE_IN_1_8
 #endif
 
 /*
@@ -641,6 +642,62 @@ typedef enum {
 } NMActiveConnectionState;
 
 /**
+ * NMActiveConnectionStateReason:
+ * @NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN: The reason for the active connection
+ *   state change is unknown.
+ * @NM_ACTIVE_CONNECTION_STATE_REASON_NONE: No reason was given for the active
+ *   connection state change.
+ * @NM_ACTIVE_CONNECTION_STATE_REASON_USER_DISCONNECTED: The active connection changed
+ *   state because the user disconnected it.
+ * @NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED: The active connection
+ *   changed state because the device it was using was disconnected.
+ * @NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_STOPPED: The service providing the
+ *   VPN connection was stopped.
+ * @NM_ACTIVE_CONNECTION_STATE_REASON_IP_CONFIG_INVALID: The IP config of the active
+ *   connection was invalid.
+ * @NM_ACTIVE_CONNECTION_STATE_REASON_CONNECT_TIMEOUT: The connection attempt to
+ *   the VPN service timed out.
+ * @NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_START_TIMEOUT: A timeout occurred
+ *   while starting the service providing the VPN connection.
+ * @NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_START_FAILED: Starting the service
+ *   providing the VPN connection failed.
+ * @NM_ACTIVE_CONNECTION_STATE_REASON_NO_SECRETS: Necessary secrets for the
+ *   connection were not provided.
+ * @NM_ACTIVE_CONNECTION_STATE_REASON_LOGIN_FAILED: Authentication to the
+ *   server failed.
+ * @NM_ACTIVE_CONNECTION_STATE_REASON_CONNECTION_REMOVED: The connection was
+ *   deleted from settings.
+ * @NM_ACTIVE_CONNECTION_STATE_REASON_DEPENDENCY_FAILED: Master connection of this
+ *   connection failed to activate.
+ * @NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REALIZE_FAILED: Could not create the
+ *   software device link.
+ * @NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REMOVED: The device this connection
+ *   depended on disappeared.
+ *
+ * Active connection state reasons.
+ *
+ * Since: 1.8
+ */
+NM_AVAILABLE_IN_1_8
+typedef enum {
+	NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN                  = 0,
+	NM_ACTIVE_CONNECTION_STATE_REASON_NONE                     = 1,
+	NM_ACTIVE_CONNECTION_STATE_REASON_USER_DISCONNECTED        = 2,
+	NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED      = 3,
+	NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_STOPPED          = 4,
+	NM_ACTIVE_CONNECTION_STATE_REASON_IP_CONFIG_INVALID        = 5,
+	NM_ACTIVE_CONNECTION_STATE_REASON_CONNECT_TIMEOUT          = 6,
+	NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_START_TIMEOUT    = 7,
+	NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_START_FAILED     = 8,
+	NM_ACTIVE_CONNECTION_STATE_REASON_NO_SECRETS               = 9,
+	NM_ACTIVE_CONNECTION_STATE_REASON_LOGIN_FAILED             = 10,
+	NM_ACTIVE_CONNECTION_STATE_REASON_CONNECTION_REMOVED       = 11,
+	NM_ACTIVE_CONNECTION_STATE_REASON_DEPENDENCY_FAILED        = 12,
+	NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REALIZE_FAILED    = 13,
+	NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REMOVED           = 14,
+} NMActiveConnectionStateReason;
+
+/**
  * NMSecretAgentGetSecretsFlags:
  * @NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE: no special behavior; by default no
  *   user interaction is allowed and requests for secrets are fulfilled from
@@ -693,6 +750,7 @@ typedef enum /*< flags >*/ {
 
 #ifndef NM_VERSION_H
 #undef NM_AVAILABLE_IN_1_2
+#undef NM_AVAILABLE_IN_1_8
 #endif
 
 #define NM_LLDP_ATTR_DESTINATION             "destination"

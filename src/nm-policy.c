@@ -1820,7 +1820,7 @@ static void
 vpn_connection_state_changed (NMVpnConnection *vpn,
                               NMVpnConnectionState new_state,
                               NMVpnConnectionState old_state,
-                              NMVpnConnectionStateReason reason,
+                              NMActiveConnectionStateReason reason,
                               NMPolicy *self)
 {
 	if (new_state == NM_VPN_CONNECTION_STATE_ACTIVATED)
