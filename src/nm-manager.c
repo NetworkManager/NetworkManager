@@ -1070,7 +1070,12 @@ remove_device (NMManager *self,
 
 		g_signal_emit (self, signals[DEVICE_REMOVED], 0, device);
 		_notify (self, PROP_DEVICES);
+	} else {
+		/* unrealize() does not release a slave device from master and
+		 * clear IP configurations, do it here */
+		nm_device_removed (device, TRUE);
 	}
+
 	g_signal_emit (self, signals[INTERNAL_DEVICE_REMOVED], 0, device);
 	_notify (self, PROP_ALL_DEVICES);
 
