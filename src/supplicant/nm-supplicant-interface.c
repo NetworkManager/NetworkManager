@@ -1424,6 +1424,7 @@ nm_supplicant_interface_assoc (NMSupplicantInterface *self,
 {
 	NMSupplicantInterfacePrivate *priv;
 	AssocData *assoc_data;
+	GError *error = NULL;
 
 	g_return_if_fail (NM_IS_SUPPLICANT_INTERFACE (self));
 	g_return_if_fail (NM_IS_SUPPLICANT_CONFIG (cfg));
@@ -1439,6 +1440,14 @@ nm_supplicant_interface_assoc (NMSupplicantInterface *self,
 	assoc_data->cfg = g_object_ref (cfg);
 	assoc_data->callback = callback;
 	assoc_data->user_data = user_data;
+
+	if (   priv->driver == NM_SUPPLICANT_DRIVER_WIRELESS
+	    && priv->pmf_support == NM_SUPPLICANT_FEATURE_YES) {
+		if (!nm_supplicant_config_enable_pmf_akm (cfg, &error)) {
+			_LOGW ("could not enable PMF AKMs in config: %s", error->message);
+			g_error_free (error);
+		}
+	}
 
 	_LOGD ("assoc[%p]: starting association...", assoc_data);
 

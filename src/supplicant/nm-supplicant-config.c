@@ -1325,3 +1325,31 @@ nm_supplicant_config_add_no_security (NMSupplicantConfig *self, GError **error)
 	return nm_supplicant_config_add_option (self, "key_mgmt", "NONE", -1, NULL, error);
 }
 
+gboolean
+nm_supplicant_config_enable_pmf_akm (NMSupplicantConfig *self, GError **error)
+{
+	NMSupplicantConfigPrivate *priv;
+	ConfigOption *option;
+
+	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
+
+	priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
+
+	option = g_hash_table_lookup (priv->config, "key_mgmt");
+	if (!option)
+		return TRUE;
+
+	if (nm_streq0 (option->value, "WPA-PSK")) {
+		g_hash_table_remove (priv->config, "key_mgmt");
+		if (!nm_supplicant_config_add_option (self, "key_mgmt", "WPA-PSK WPA-PSK-SHA256", -1, NULL, error))
+			return FALSE;
+	} else if (nm_streq0 (option->value, "WPA-EAP")) {
+		g_hash_table_remove (priv->config, "key_mgmt");
+		if (!nm_supplicant_config_add_option (self, "key_mgmt", "WPA-EAP WPA-EAP-SHA256", -1, NULL, error))
+			return FALSE;
+	}
+
+	return TRUE;
+}
+

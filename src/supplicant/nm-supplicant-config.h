@@ -76,4 +76,6 @@ gboolean nm_supplicant_config_add_setting_macsec (NMSupplicantConfig *self,
                                                   NMSettingMacsec *setting,
                                                   GError **error);
 
+gboolean nm_supplicant_config_enable_pmf_akm (NMSupplicantConfig *self,
+                                              GError **error);
 #endif /* __NETWORKMANAGER_SUPPLICANT_CONFIG_H__ */
