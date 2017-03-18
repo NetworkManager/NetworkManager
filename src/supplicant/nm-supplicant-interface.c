@@ -487,15 +487,11 @@ set_pmf_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 
 	if (!reply) {
 		g_dbus_error_strip_remote_error (error);
-		_LOGW ("couldn't send PMF mode to the supplicant interface: %s",
-		       error->message);
-		emit_error_helper (self, error);
+		_LOGW ("couldn't enable PMF: %s", error->message);
 		return;
 	}
 
-	_LOGI ("config: set interface pmf to %d",
-	       nm_supplicant_config_get_pmf (priv->cfg));
-
+	_LOGD ("PMF enabled");
 }
 
 gboolean
@@ -812,7 +808,7 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 
 	/* Scan result aging parameters */
 	g_dbus_proxy_call (priv->iface_proxy,
-	                   "org.freedesktop.DBus.Properties.Set",
+	                   DBUS_INTERFACE_PROPERTIES ".Set",
 	                   g_variant_new ("(ssv)",
 	                                  WPAS_DBUS_IFACE_INTERFACE,
 	                                  "BSSExpireAge",
@@ -823,7 +819,7 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	                   NULL,
 	                   NULL);
 	g_dbus_proxy_call (priv->iface_proxy,
-	                   "org.freedesktop.DBus.Properties.Set",
+	                   DBUS_INTERFACE_PROPERTIES ".Set",
 	                   g_variant_new ("(ssv)",
 	                                  WPAS_DBUS_IFACE_INTERFACE,
 	                                  "BSSExpireCount",
@@ -833,6 +829,20 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	                   priv->init_cancellable,
 	                   NULL,
 	                   NULL);
+
+	if (priv->driver == NM_SUPPLICANT_DRIVER_WIRELESS) {
+		g_dbus_proxy_call (priv->iface_proxy,
+		                   DBUS_INTERFACE_PROPERTIES ".Set",
+		                   g_variant_new ("(ssv)",
+		                                  WPAS_DBUS_IFACE_INTERFACE,
+		                                  "Pmf",
+		                                  g_variant_new_uint32 (1)),
+		                   G_DBUS_CALL_FLAGS_NONE,
+		                   -1,
+		                   priv->init_cancellable,
+		                   (GAsyncReadyCallback) set_pmf_cb,
+		                   self);
+	}
 
 	/* Check whether NetworkReply and AP mode are supported */
 	priv->ready_count = 1;
@@ -863,17 +873,6 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 		                   priv->init_cancellable,
 		                   (GAsyncReadyCallback) iface_introspect_cb,
 		                   self);
-		g_dbus_proxy_call (priv->iface_proxy,
-				   DBUS_INTERFACE_PROPERTIES ".Set",
-				   g_variant_new ("(ssv)",
-					          WPAS_DBUS_IFACE_INTERFACE,
-						  "Pmf",
-						  g_variant_new_uint32 (nm_supplicant_config_get_pmf (priv->cfg))),
-				   G_DBUS_CALL_FLAGS_NONE,
-				   -1,
-				   priv->assoc_cancellable,
-				   (GAsyncReadyCallback) set_pmf_cb,
-				   self);
 	}
 }
 
