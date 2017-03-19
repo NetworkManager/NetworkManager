@@ -6,14 +6,13 @@
 # Tomasz Dominikowski <dominikowski@gmail.com>, 2008-2010.
 # Piotr Drąg <piotrdrag@gmail.com>, 2009-2017.
 # Aviary.pl <community-poland@mozilla.org>, 2007-2017.
-# Piotr Drąg <piotrdrag@gmail.com>, 2017. #zanata
-# Thomas Haller <thaller@redhat.com>, 2017. #zanata
+#
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 17:42+0200\n"
-"PO-Revision-Date: 2017-03-22 04:16-0400\n"
+"PO-Revision-Date: 2017-03-19 21:33+0100\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <community-poland@mozilla.org>\n"
 "Language: pl\n"
@@ -22,7 +21,6 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
 "%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2\n"
-"X-Generator: Zanata 3.9.6\n"
 
 #: ../clients/cli/agent.c:39
 #, c-format
@@ -7037,9 +7035,9 @@ msgstr "(Brak reguł użytkownika)"
 #, c-format
 msgid "One custom route"
 msgid_plural "%d custom routes"
-msgstr[0] "Jedna reguła użytkownika"
-msgstr[1] "%d  reguły użytkownika"
-msgstr[2] "%d  reguł użytkownika"
+msgstr[0] "%d reguła użytkownika"
+msgstr[1] "%d reguły użytkownika"
+msgstr[2] "%d reguł użytkownika"
 
 #: ../clients/tui/nmt-page-ip4.c:128
 msgid "IPv4 CONFIGURATION"
@@ -9152,7 +9150,7 @@ msgstr "USB"
 #, c-format
 msgctxt "long device name"
 msgid "%s %s"
-msgstr "%s (%s)"
+msgstr "%2$s (%1$s)"
 
 #: ../libnm-glib/nm-remote-connection.c:149
 msgid "Disconnected by D-Bus"
