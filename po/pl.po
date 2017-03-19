@@ -1,27 +1,19 @@
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-# Aviary.pl
-# Jeśli masz jakiekolwiek uwagi odnoszące się do tłumaczenia lub chcesz
-# pomóc w jego rozwijaniu i pielęgnowaniu, napisz do nas:
-# gnomepl@aviary.pl
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# Polish translation for NetworkManager.
+# Copyright © 2007-2017 the NetworkManager authors.
+# This file is distributed under the same license as the NetworkManager package.
 # Wadim Dziedzic <wdziedzic@aviary.pl>, 2007-2008.
 # Artur Flinta <aflinta@at.kernel.pl>, 2007.
 # Tomasz Dominikowski <dominikowski@gmail.com>, 2008-2010.
-# Piotr Drąg <piotrdrag@gmail.com>, 2009-2016.
-# Aviary.pl <gnomepl@aviary.pl>, 2007-2016.
-# Polish translation for NetworkManager.
-# Copyright © 2007-2016 the NetworkManager authors.
-# This file is distributed under the same license as the NetworkManager package.
-# Aviary.pl <community-poland@mozilla.org>, 2007-2016.
-# Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
-# Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Piotr Drąg <piotrdrag@gmail.com>, 2009-2017.
+# Aviary.pl <community-poland@mozilla.org>, 2007-2017.
+#
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-03-21 14:51+0100\n"
-"PO-Revision-Date: 2017-01-16 09:36-0500\n"
-"Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
+"POT-Creation-Date: 2017-03-19 22:00+0100\n"
+"PO-Revision-Date: 2017-03-19 22:01+0100\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <community-poland@mozilla.org>\n"
 "Language: pl\n"
 "MIME-Version: 1.0\n"
@@ -29,7 +21,6 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
 "%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2\n"
-"X-Generator: Zanata 3.9.6\n"
 
 #: ../clients/cli/agent.c:39
 #, c-format
@@ -170,27 +161,28 @@ msgid "invalid IP address: %s"
 msgstr "nieprawidłowy adres IP: %s"
 
 #: ../clients/cli/common.c:435
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "'%s' is not valid (the format is: ip[/prefix] [next-hop] [metric] [attr=val] "
 "[attr=val])"
 msgstr ""
-"„%s” jest nieprawidłowe (format: ip[/przedrostek] [next-hop] [parametry])"
+"„%s” jest nieprawidłowe (format: ip[/przedrostek] [next-hop] [parametry] "
+"[atrybut=wartość] [atrybut=wartość])"
 
 #: ../clients/cli/common.c:457
 #, c-format
 msgid "the next hop ('%s') must be first"
-msgstr ""
+msgstr "następny krok („%s”) musi być pierwszy"
 
 #: ../clients/cli/common.c:463
 #, c-format
 msgid "the metric ('%s') must be before attributes"
-msgstr ""
+msgstr "parametry („%s”) muszą być przed atrybutami"
 
 #: ../clients/cli/common.c:495
-#, fuzzy, c-format
+#, c-format
 msgid "unrecognized option '%s'"
-msgstr "nieprawidłowa opcja „%s”"
+msgstr "nieznana opcja „%s”"
 
 #: ../clients/cli/common.c:503
 #, c-format
@@ -585,42 +577,42 @@ msgstr "priorytet „%s” jest nieprawidłowy (<0-%ld>)"
 #: ../clients/cli/common.c:910
 #, c-format
 msgid "cannot read team config from file '%s'"
-msgstr ""
+msgstr "nie można odczytać konfiguracji zespołu z pliku „%s”"
 
 #: ../clients/cli/common.c:917
 #, c-format
 msgid "team config file '%s' contains non-valid utf-8"
-msgstr ""
+msgstr "plik konfiguracji zespołu „%s” zawiera nieprawidłowy tekst UTF-8"
 
 #: ../clients/cli/common.c:929
 #, c-format
 msgid "'%s' does not contain a valid team configuration"
-msgstr ""
+msgstr "„%s” nie zawiera prawidłowej konfiguracji zespołu"
 
 #: ../clients/cli/common.c:932
 #, c-format
 msgid "team configuration must be a JSON object"
-msgstr ""
+msgstr "konfiguracja zespołu musi być obiektem JSON"
 
 #: ../clients/cli/common.c:985
 #, c-format
 msgid "cannot read pac-script from file '%s'"
-msgstr ""
+msgstr "nie można odczytać skryptu PAC z pliku „%s”"
 
 #: ../clients/cli/common.c:992
 #, c-format
 msgid "file '%s' contains non-valid utf-8"
-msgstr ""
+msgstr "plik „%s” zawiera nieprawidłowy tekst UTF-8"
 
 #: ../clients/cli/common.c:1005
 #, c-format
 msgid "'%s' does not contain a valid PAC Script"
-msgstr ""
+msgstr "„%s” nie zawiera prawidłowego skryptu PAC"
 
 #: ../clients/cli/common.c:1008
 #, c-format
 msgid "Not a valid PAC Script"
-msgstr ""
+msgstr "Nieprawidłowy skrypt PAC"
 
 #: ../clients/cli/common.c:1131
 #, c-format
@@ -739,13 +731,12 @@ msgid "MACVLAN mode"
 msgstr "Tryb MACVLAN"
 
 #: ../clients/cli/connections.c:111
-#, fuzzy
 msgid "MACsec mode"
-msgstr "Tryb MACVLAN"
+msgstr "Tryb MACsec"
 
 #: ../clients/cli/connections.c:116
 msgid "Proxy method"
-msgstr ""
+msgstr "Metoda pośrednika"
 
 #: ../clients/cli/connections.c:121
 msgid "Connection (name, UUID, or path)"
@@ -794,12 +785,12 @@ msgstr "TYP"
 #. 2
 #: ../clients/cli/connections.c:133
 msgid "TIMESTAMP"
-msgstr "OKRES-CZASU"
+msgstr "CZAS"
 
 #. 3
 #: ../clients/cli/connections.c:134
 msgid "TIMESTAMP-REAL"
-msgstr "RZECZYWISTY-OKRES-CZASU"
+msgstr "RZECZYWISTY-CZAS"
 
 #. 4
 #. 16
@@ -866,7 +857,7 @@ msgstr "AKTYWNA-ŚCIEŻKA"
 #. 12
 #: ../clients/cli/connections.c:143
 msgid "SLAVE"
-msgstr ""
+msgstr "PODRZĘDNE"
 
 #. 2
 #: ../clients/cli/connections.c:227
@@ -1079,7 +1070,7 @@ msgstr ""
 "\n"
 "Wyświetla szczegóły podanych połączeń. Domyślnie wyświetlane są dane\n"
 "statycznej konfiguracji i aktywnego połączenia. Można filtrować wyjście\n"
-"używając globalnej opcji „--fields”. Na stronie podręcznika znajduje się\n"
+"za pomocą globalnej opcji „--fields”. Na stronie podręcznika znajduje się\n"
 "więcej informacji. Podanie opcji „--active” spowoduje uwzględnienie tylko\n"
 "aktywnych profili. Opcja „--show-secrets” ujawni także powiązane hasła.\n"
 
@@ -1301,6 +1292,162 @@ msgid ""
 "                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n"
 "\n"
 msgstr ""
+"Użycie: nmcli connection add { PARAMETRY | help }\n"
+"\n"
+"PARAMETRY := WSPÓLNE_OPCJE OPCJE_DLA_KONKRETNYCH_TYPÓW OPCJE_PODRZĘDNE "
+"OPCJE_IP [-- ([+|-]<ustawienie>.<właściwość> <wartość>)+]\n"
+"\n"
+"  WSPÓLNE_OPCJE:\n"
+"                  type <typ>\n"
+"                  ifname <nazwa interfejsu> | \"*\"\n"
+"                  [con-name <nazwa połączenia>]\n"
+"                  [autoconnect yes|no]\n"
+"                  [save yes|no]\n"
+"                  [master <master (nazwa interfejsu, albo UUID lub nazwa "
+"połączenia)>]\n"
+"                  [slave-type <typ połączenia master>]\n"
+"\n"
+"  OPCJE_DLA_KONKRETNYCH_TYPÓW:\n"
+"    ethernet:     [mac <adres MAC>]\n"
+"                  [cloned-mac <sklonowany adres MAC>]\n"
+"                  [mtu <MTU>]\n"
+"\n"
+"    wifi:         ssid <SSID>\n"
+"                  [mac <adres MAC>]\n"
+"                  [cloned-mac <sklonowany adres MAC>]\n"
+"                  [mtu <MTU>]\n"
+"                  [mode infrastructure|ap|adhoc]\n"
+"\n"
+"    wimax:        [mac <adres MAC>]\n"
+"                  [nsp <NSP>]\n"
+"\n"
+"    pppoe:        username <nazwa użytkownika PPPoE>\n"
+"                  [password <hasło PPPoE>]\n"
+"                  [service <nazwa usługi PPPoE>]\n"
+"                  [mtu <MTU>]\n"
+"                  [mac <adres MAC>]\n"
+"\n"
+"    gsm:          apn <APN>\n"
+"                  [user <nazwa użytkownika>]\n"
+"                  [password <hasło>]\n"
+"\n"
+"    cdma:         [user <nazwa użytkownika>]\n"
+"                  [password <hasło>]\n"
+"\n"
+"    infiniband:   [mac <adres MAC>]\n"
+"                  [mtu <MTU>]\n"
+"                  [transport-mode datagram | connected]\n"
+"                  [parent <nazwa interfejsu>]\n"
+"                  [p-key <IPoIB P_Key>]\n"
+"\n"
+"    bluetooth:    [addr <adres Bluetooth>]\n"
+"                  [bt-type panu|dun-gsm|dun-cdma]\n"
+"\n"
+"    vlan:         dev <urządzenie nadrzędne (UUID połączenia, nazwa "
+"interfejsu lub adres MAC)>\n"
+"                  [id <identyfikator VLAN>]\n"
+"                  [flags <flagi VLAN>]\n"
+"                  [ingress <wejściowe mapowanie priorytetów>]\n"
+"                  [egress <wyjściowe mapowanie priorytetów>]\n"
+"                  [mtu <MTU>]\n"
+"\n"
+"    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) "
+"| broadcast (3) |\n"
+"                        802.3ad    (4) | balance-tlb   (5) | balance-alb "
+"(6)]\n"
+"                  [primary <nazwa interfejsu>]\n"
+"                  [miimon <numer>]\n"
+"                  [downdelay <numer>]\n"
+"                  [updelay <numer>]\n"
+"                  [arp-interval <numer>]\n"
+"                  [arp-ip-target <numer>]\n"
+"                  [lacp-rate slow (0) | fast (1)]\n"
+"\n"
+"    bond-slave:   master <master (nazwa interfejsu, UUID połączenia lub "
+"nazwa)>\n"
+"\n"
+"    team:         [config <plik>|<surowe dane JSON>]\n"
+"\n"
+"    team-slave:   master <master (nazwa interfejsu, UUID połączenia lub "
+"nazwa)>\n"
+"                  [config <plik>|<surowe dane JSON>]\n"
+"\n"
+"    bridge:       [stp yes|no>]\n"
+"                  [priority <numer>]\n"
+"                  [forward-delay <2-30>]\n"
+"                  [hello-time <1-10>]\n"
+"                  [max-age <6-40>]\n"
+"                  [ageing-time <0-1000000>]\n"
+"                  [multicast-snooping yes|no]\n"
+"                  [mac <adres MAC>]\n"
+"\n"
+"    bridge-slave: master <master (nazwa interfejsu, albo UUID lub nazwa "
+"połączenia)\n"
+"                  [priority <0-63>]\n"
+"                  [path-cost <1-65535>]\n"
+"                  [hairpin yes|no]\n"
+"\n"
+"    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan|libreswan|"
+"ssh|l2tp|iodine|…\n"
+"                  [user <nazwa użytkownika>]\n"
+"\n"
+"    olpc-mesh:    ssid <SSID>\n"
+"                  [channel <1-13>]\n"
+"                  [dhcp-anycast <adres MAC>]\n"
+"\n"
+"    adsl:         username <nazwa użytkownika>\n"
+"                  protocol pppoa|pppoe|ipoatm\n"
+"                  [password <hasło>]\n"
+"                  [encapsulation vcmux|llc]\n"
+"\n"
+"    tun:          mode tun|tap\n"
+"                  [owner <UID>]\n"
+"                  [group <GID>]\n"
+"                  [pi yes|no]\n"
+"                  [vnet-hdr yes|no]\n"
+"                  [multi-queue yes|no]\n"
+"\n"
+"    ip-tunnel:    mode ipip|gre|sit|isatap|vti|ip6ip6|ipip6|ip6gre|vti6\n"
+"                  remote <zdalny punkt końcowy IP>\n"
+"                  [local <lokalny punkt końcowy IP>]\n"
+"                  [dev <urządzenie nadrzędne (nazwa interfejsu lub UUID "
+"połączenia)>]\n"
+"\n"
+"    macsec:       dev <urządzenie nadrzędne (UUID połączenia, nazwa "
+"interfejsu lub adres MAC)>\n"
+"                  mode <psk|eap>\n"
+"                  [cak <klucz> ckn <klucz>]\n"
+"                  [encrypt yes|no]\n"
+"                  [port 1-65534]\n"
+"\n"
+"\n"
+"    macvlan:      dev <urządzenie nadrzędne (UUID połączenia, nazwa "
+"interfejsu lub adres MAC)>\n"
+"                  mode vepa|bridge|private|passthru|source\n"
+"                  [tap yes|no]\n"
+"\n"
+"    vxlan:        id <identyfikator VXLAN>\n"
+"                  remote <adres IP grupy multikastu lu zdalnego adresu>\n"
+"                  [local <źródłowy adres IP>]\n"
+"                  [dev <urządzenie nadrzędne (nazwa interfejsu lub UUID "
+"połączenia)>]\n"
+"                  [source-port-min <0-65535>]\n"
+"                  [source-port-max <0-65535>]\n"
+"                  [destination-port <0-65535>]\n"
+"\n"
+"    dummy:         \n"
+"\n"
+"  OPCJE_PODRZĘDNE:\n"
+"    bridge:       [priority <0-63>]\n"
+"                  [path-cost <1-65535>]\n"
+"                  [hairpin yes|no]\n"
+"\n"
+"    team:         [config <plik>|<surowe dane JSON>]\n"
+"\n"
+"  OPCJE_IP:\n"
+"                  [ip4 <adres IPv4>] [gw4 <brama IPv4>]\n"
+"                  [ip6 <adres IPv6>] [gw6 <brama IPv6>]\n"
+"\n"
 
 #: ../clients/cli/connections.c:495
 #, c-format
@@ -1690,84 +1837,68 @@ msgid "no device found for connection '%s'"
 msgstr "nie odnaleziono urządzenia dla połączenia „%s”"
 
 #: ../clients/cli/connections.c:2131
-#, fuzzy
 msgid "Unknown reason"
-msgstr "nieznany powód"
+msgstr "Nieznana przyczyna"
 
 #: ../clients/cli/connections.c:2133
-#, fuzzy
 msgid "The connection was disconnected"
-msgstr "Połączenie nie jest połączeniem wiązanym."
+msgstr "Połączenie zostało rozłączone"
 
 #: ../clients/cli/connections.c:2135
-#, fuzzy
 msgid "Disconnected by user"
-msgstr "Rozłączono przez D-Bus"
+msgstr "Rozłączono przez użytkownika"
 
 #: ../clients/cli/connections.c:2137
-#, fuzzy
 msgid "The base network connection was interrupted"
-msgstr "przerwano podstawowe połączenie sieciowe"
+msgstr "Przerwano podstawowe połączenie sieciowe"
 
 #: ../clients/cli/connections.c:2139
-#, fuzzy
 msgid "The VPN service stopped unexpectedly"
-msgstr "usługa VPN została nieoczekiwanie zatrzymana"
+msgstr "Usługa VPN została nieoczekiwanie zatrzymana"
 
 #: ../clients/cli/connections.c:2141
-#, fuzzy
 msgid "The VPN service returned invalid configuration"
-msgstr "usługa VPN zwróciła nieprawidłową konfigurację"
+msgstr "Usługa VPN zwróciła nieprawidłową konfigurację"
 
 #: ../clients/cli/connections.c:2143
-#, fuzzy
 msgid "The connection attempt timed out"
-msgstr "próba połączenia przekroczyła czas oczekiwania"
+msgstr "Próba połączenia przekroczyła czas oczekiwania"
 
 #: ../clients/cli/connections.c:2145
-#, fuzzy
 msgid "The VPN service did not start in time"
-msgstr "usługa VPN nie została uruchomiona w czasie"
+msgstr "Usługa VPN nie została uruchomiona na czas"
 
 #: ../clients/cli/connections.c:2147
-#, fuzzy
 msgid "The VPN service failed to start"
-msgstr "uruchomienie usługi VPN się nie powiodło"
+msgstr "Uruchomienie usługi VPN się nie powiodło"
 
 #: ../clients/cli/connections.c:2149
-#, fuzzy
 msgid "No valid secrets"
-msgstr "brak prawidłowych haseł VPN"
+msgstr "Brak prawidłowych haseł"
 
 #: ../clients/cli/connections.c:2151
-#, fuzzy
 msgid "Invalid secrets"
-msgstr "nieprawidłowe hasła VPN"
+msgstr "Nieprawidłowe hasła"
 
 #: ../clients/cli/connections.c:2153
-#, fuzzy
 msgid "The connection was removed"
-msgstr "usunięto połączenie"
+msgstr "Usunięto połączenie"
 
 #: ../clients/cli/connections.c:2155
-#, fuzzy
 msgid "Master connection failed"
-msgstr "połączenie się nie powiodło"
+msgstr "Główne połączenie się nie powiodło"
 
 #: ../clients/cli/connections.c:2157
-#, fuzzy
 msgid "Could not create a software link"
-msgstr "Nie można utworzyć pliku tymczasowego: %s"
+msgstr "Nie można utworzyć łącza programowego"
 
 #: ../clients/cli/connections.c:2159
-#, fuzzy
 msgid "The device disappeared"
-msgstr "Aktywne połączenie urządzenia zniknęło"
+msgstr "Urządzenie zniknęło"
 
 #: ../clients/cli/connections.c:2162
-#, fuzzy
 msgid "Invalid reason"
-msgstr "nieprawidłowa trasa: %s"
+msgstr "Nieprawidłowa przyczyna"
 
 #: ../clients/cli/connections.c:2187 ../clients/cli/connections.c:2357
 #: ../clients/cli/connections.c:6419
@@ -1921,7 +2052,7 @@ msgstr "Błąd: błędny typ połączenia; %s."
 #: ../clients/cli/connections.c:4023
 #, c-format
 msgid "Error: '%s': %s"
-msgstr ""
+msgstr "Błąd: „%s”: %s"
 
 #: ../clients/cli/connections.c:4044
 msgid "Error: master is required"
@@ -2117,24 +2248,24 @@ msgstr "Nazwa użytkownika"
 
 #: ../clients/cli/connections.c:4316
 msgid "MACsec parent device or connection UUID"
-msgstr ""
+msgstr "Urządzenie nadrzędne MACsec lub UUID połączenia"
 
 #: ../clients/cli/connections.c:4318
 msgid "Enable encryption [yes]"
-msgstr ""
+msgstr "Włączenie szyfrowania [yes]"
 
 #: ../clients/cli/connections.c:4319
 #: ../clients/common/nm-secret-agent-simple.c:520
 msgid "MKA CAK"
-msgstr ""
+msgstr "MKA CAK"
 
 #: ../clients/cli/connections.c:4320
 msgid "MKA_CKN"
-msgstr ""
+msgstr "MKA_CKN"
 
 #: ../clients/cli/connections.c:4321
 msgid "SCI port [1]"
-msgstr ""
+msgstr "Port SCI [1]"
 
 #: ../clients/cli/connections.c:4323
 msgid "MACVLAN parent device or connection UUID"
@@ -2214,15 +2345,15 @@ msgstr "Brama IPv6 [none]"
 
 #: ../clients/cli/connections.c:4359
 msgid "Browser only [no]"
-msgstr ""
+msgstr "Tylko przeglądarka [no]"
 
 #: ../clients/cli/connections.c:4361
 msgid "PAC URL"
-msgstr ""
+msgstr "Adres URL PAC"
 
 #: ../clients/cli/connections.c:4362
 msgid "PAC script"
-msgstr ""
+msgstr "Skrypt PAC"
 
 #: ../clients/cli/connections.c:4497
 #, c-format
@@ -2339,7 +2470,7 @@ msgstr "Urządzenie mostka"
 msgid "Bridge port"
 msgstr "Port mostka"
 
-#: ../clients/cli/connections.c:4854 ../src/nm-manager.c:3962
+#: ../clients/cli/connections.c:4854 ../src/nm-manager.c:3957
 msgid "VPN connection"
 msgstr "Połączenie VPN"
 
@@ -2353,7 +2484,7 @@ msgstr "Połączenie ADSL"
 
 #: ../clients/cli/connections.c:4860
 msgid "MACsec connection"
-msgstr ""
+msgstr "Połączenie MACsec"
 
 #: ../clients/cli/connections.c:4862
 msgid "macvlan connection"
@@ -2377,7 +2508,7 @@ msgstr "Protokół IPv6"
 
 #: ../clients/cli/connections.c:4872
 msgid "Proxy"
-msgstr ""
+msgstr "Pośrednik"
 
 #: ../clients/cli/connections.c:4955 ../clients/cli/utils.c:122
 #, c-format
@@ -3849,7 +3980,7 @@ msgstr ""
 " TYP        — typ urządzenia\n"
 " STAN       — stan urządzenia\n"
 " POŁĄCZENIE — połączenie aktywowane na urządzeniu (jeśli istnieje)\n"
-"Wyświetlane kolumny mogą być zmieniane używając globalnej opcji\n"
+"Wyświetlane kolumny mogą być zmieniane za pomocą globalnej opcji\n"
 "„--fields”. „status” jest domyślnym poleceniem, co oznacza, że „nmcli\n"
 "device” wywołuje „nmcli device status”.\n"
 "\n"
@@ -4094,6 +4225,58 @@ msgid ""
 "use 'nmcli device wifi list' for that.\n"
 "\n"
 msgstr ""
+"Użycie: nmcli device wifi { PARAMETRY | help }\n"
+"\n"
+"Wykonuje działanie na urządzeniach Wi-Fi.\n"
+"\n"
+"PARAMETRY := [list [ifname <nazwa interfejsu>] [bssid <BSSID>]]\n"
+"\n"
+"Wyświetla listę dostępnych punktów dostępowych Wi-Fi. Opcje „ifname” i\n"
+"„bssid” mogą być używane do wyświetlenia listy punktów dostępowych dla\n"
+"konkretnego interfejsu lub o podanym BSSID.\n"
+"\n"
+"PARAMETRY := connect <(B)SSID> [password <hasło>] [wep-key-type key|phrase] "
+"[ifname <nazwa interfejsu>]\n"
+"                    [bssid <BSSID>] [name <nazwa>] [private yes|no] [hidden "
+"yes|no]\n"
+"\n"
+"Łączy z siecią Wi-Fi podaną jako SSID lub BSSID. Polecenie tworzy nowe\n"
+"połączenia, a następnie aktywuje je na urządzeniu. Jest to odpowiednik\n"
+"kliknięcia SSID w kliencie graficznym dla wiersza poleceń. Polecenie zawsze\n"
+"tworzy nowe połączenie, jest więc przydatne głównie do łączenia z nowymi\n"
+"sieciami Wi-Fi. Jeśli połączenie dla sieci już istnieje, to lepiej jest\n"
+"aktywować istniejący profil w ten sposób: nmcli con up id <nazwa>. Proszę\n"
+"zauważyć, że w tej chwili obsługiwane są tylko sieci otwarte oraz\n"
+"zabezpieczone za pomocą WEP i WPA-PSK. Przyjmowane jest także, że\n"
+"konfiguracja IP jest uzyskiwana przez DHCP.\n"
+"\n"
+"PARAMETRY := hotspot [ifname <nazwa interfejsu>] [con-name <nazwa>] [ssid "
+"<SSID>]\n"
+"                          [band a|bg] [channel <kanał>] [password <hasło>]\n"
+"\n"
+"Tworzy hotspot Wi-Fi. Należy użyć „connection down” lub „device "
+"disconnect”,\n"
+"aby zatrzymać hotspot.\n"
+"Parametry hotspotu mogą być zmieniane opcjonalnymi parametrami:\n"
+"ifname — używane urządzenie Wi-Fi\n"
+"con-name — nazwa profilu połączenia tworzonego hotspotu\n"
+"ssid — SSID hotspotu\n"
+"band — używane pasmo Wi-Fi\n"
+"channel — używany kanał Wi-Fi\n"
+"password — hasło hotspotu\n"
+"\n"
+"PARAMETRY := rescan [ifname <nazwa interfejsu>] [[ssid <SSID do skanowania>] "
+"…]\n"
+"\n"
+"Żąda, aby usługa NetworkManager natychmiastowo ponownie przeskanowała "
+"dostępne punkty dostępowe.\n"
+"Usługa NetworkManager okresowo skanuje sieci Wi-Fi, ale w niektórych\n"
+"przypadkach ręczne rozpoczęcie skanowania może być przydatne. „ssid”\n"
+"umożliwia skanowanie podanego SSID, co jest przydatne dla punktów\n"
+"dostępowych z ukrytym SSID. Można podać więcej parametrów „ssid”. Proszę\n"
+"zauważyć, że to polecenie nie wyświetla punktów dostępowych, i w tym celu\n"
+"należy użyć „nmcli device wifi list”.\n"
+"\n"
 
 #: ../clients/cli/devices.c:483
 #, c-format
@@ -5191,7 +5374,7 @@ msgstr ""
 "\n"
 "OBIEKT\n"
 "  g[eneral]       ogólny stan i działania usługi NetworkManager\n"
-"  n[etworking]    ogólna kontrola sieci\n"
+"  n[etworking]    ogólne sterowanie siecią\n"
 "  r[adio]         przełączniki radiowe usługi NetworkManager\n"
 "  c[onnection]    połączenia usługi NetworkManager\n"
 "  d[evice]        urządzenia zarządzane przez usługę NetworkManager\n"
@@ -5255,7 +5438,7 @@ msgstr ""
 #: ../clients/cli/nmcli.c:409 ../clients/cli/nmcli.c:416
 #, c-format
 msgid "Error: nmcli terminated by signal %s (%d)\n"
-msgstr ""
+msgstr "Błąd: nmcli zostało zakończone sygnałem %s (%d)\n"
 
 #: ../clients/cli/nmcli.c:514
 msgid "Success"
@@ -5572,9 +5755,9 @@ msgstr ""
 "           ab 4 55 0xa6 ea 3a 74 C2\n"
 
 #: ../clients/cli/settings.c:2240
-#, fuzzy, c-format
+#, c-format
 msgid "invalid option '%s', use a combination of [%s]"
-msgstr "nieprawidłowa opcja „%s”, należy użyć jednej z [%s]"
+msgstr "nieprawidłowa opcja „%s”, należy użyć połączenia [%s]"
 
 #: ../clients/cli/settings.c:2408
 #, c-format
@@ -5610,7 +5793,7 @@ msgstr ""
 #: ../clients/cli/settings.c:2483
 #, c-format
 msgid "%d (forever)"
-msgstr ""
+msgstr "%d (zawsze)"
 
 #. Don't allow setting type unless the connection is brand new.
 #. * Just because it's a bad idea and the user wouldn't probably want that.
@@ -5696,7 +5879,7 @@ msgid ""
 "\n"
 "Example: private-openvpn, fe6ba5d8-c2fc-4aae-b2e3-97efddd8d9a7\n"
 msgstr ""
-"Proszę podać drugorzędne połączenia, które powinny zostać aktywowane\n"
+"Proszę podać drugorzędne połączenia, które mają zostać aktywowane\n"
 "podczas aktywacji tego połączenia. Połączenia mogą być podawane według UUID\n"
 "lub identyfikatora (nazwy). nmcli samodzielnie przetłumaczy nazwy na UUID.\n"
 "Proszę zauważyć, że w tej chwili usługa NetworkManager obsługuje sieci VPN\n"
@@ -5713,11 +5896,11 @@ msgid ""
 "'false','no','off' to set the connection as not metered\n"
 "'unknown' to let NetworkManager choose a value using some heuristics\n"
 msgstr ""
-"Proszę podać wartość wskazującą, czy połączenie posiada limit przesłanych\n"
+"Proszę podać wartość wskazującą, czy połączenie ma limit przesłanych\n"
 "danych, koszty użytkowania lub inne ograniczenia. Dostępne opcje:\n"
 "„true”, „yes”, „on” ustawiają połączenie jako mierzone\n"
 "„false”, „no”, „off” ustawiają połączenie jako niemierzone\n"
-"„unknown” umożliwia usłudze NetworkManager wybranie wartości używając "
+"„unknown” umożliwia usłudze NetworkManager wybranie wartości za pomocą "
 "heurystyki\n"
 
 #: ../clients/cli/settings.c:2884 ../clients/cli/settings.c:4303
@@ -5986,7 +6169,7 @@ msgstr "„%s” nie jest prawidłowym kanałem; należy użyć <1-13>"
 #: ../clients/cli/settings.c:4557
 #, c-format
 msgid "invalid method '%s', use one of %s"
-msgstr ""
+msgstr "nieprawidłowa metoda „%s”, należy użyć jednej z %s"
 
 #: ../clients/cli/settings.c:4622
 #, c-format
@@ -6373,15 +6556,15 @@ msgstr "Wymagane jest hasło, aby połączyć z „%s”."
 #: ../clients/common/nm-secret-agent-simple.c:515
 #, c-format
 msgid "Secrets are required to access the MACsec network '%s'"
-msgstr ""
+msgstr "Wymagane są hasła, aby uzyskać dostęp do sieci MACsec „%s”"
 
 #: ../clients/common/nm-secret-agent-simple.c:519
 msgid "MACsec PSK authentication"
-msgstr ""
+msgstr "Uwierzytelnianie PSK sieci MACsec"
 
 #: ../clients/common/nm-secret-agent-simple.c:528
 msgid "MACsec EAP authentication"
-msgstr ""
+msgstr "Uwierzytelnianie EAP sieci MACsec"
 
 #: ../clients/common/nm-secret-agent-simple.c:568
 msgid "VPN password required"
@@ -6395,7 +6578,7 @@ msgstr "nieznana wtyczka VPN „%s”"
 #: ../clients/common/nm-vpn-helpers.c:59
 #, c-format
 msgid "cannot load legacy-only VPN plugin \"%s\" for \"%s\""
-msgstr ""
+msgstr "nie można wczytać przestarzałej wtyczki VPN „%s” dla „%s”"
 
 #: ../clients/common/nm-vpn-helpers.c:64
 #, c-format
@@ -6440,14 +6623,15 @@ msgid "Connecting"
 msgstr "Łączenie"
 
 #: ../clients/nm-online.c:189
-#, fuzzy, c-format
+#, c-format
 msgid "Error: timeout creating NMClient object\n"
-msgstr "Błąd: nie można utworzyć obiektu NMClient: %s."
+msgstr ""
+"Błąd: przekroczono czas oczekiwania podczas tworzenia obiektu NMClient\n"
 
 #: ../clients/nm-online.c:209
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Could not create NMClient object: %s\n"
-msgstr "Błąd: nie można utworzyć obiektu NMClient: %s."
+msgstr "Błąd: nie można utworzyć obiektu NMClient: %s\n"
 
 #: ../clients/nm-online.c:235
 msgid ""
@@ -6607,12 +6791,12 @@ msgstr "Połączenie VLAN %d"
 
 #: ../clients/tui/nm-editor-utils.c:225 ../clients/tui/nmt-page-ip-tunnel.c:136
 msgid "IP tunnel"
-msgstr ""
+msgstr "Tunel IP"
 
 #: ../clients/tui/nm-editor-utils.c:229
 #, c-format
 msgid "IP tunnel connection %d"
-msgstr ""
+msgstr "Połączenie tunelu IP %d"
 
 #: ../clients/tui/nm-editor-utils.c:244
 #, c-format
@@ -6927,39 +7111,39 @@ msgstr "Wymaganie adresowania IPv6 dla tego połączenia"
 #. The order must match the NM_IP_TUNNEL_MODE_* enum
 #: ../clients/tui/nmt-page-ip-tunnel.c:78
 msgid "IPIP"
-msgstr ""
+msgstr "IPIP"
 
 #: ../clients/tui/nmt-page-ip-tunnel.c:79
 msgid "GRE"
-msgstr ""
+msgstr "GRE"
 
 #: ../clients/tui/nmt-page-ip-tunnel.c:80
 msgid "SIT"
-msgstr ""
+msgstr "SIT"
 
 #: ../clients/tui/nmt-page-ip-tunnel.c:81
 msgid "ISATAP"
-msgstr ""
+msgstr "ISATAP"
 
 #: ../clients/tui/nmt-page-ip-tunnel.c:82
 msgid "VTI"
-msgstr ""
+msgstr "VTI"
 
 #: ../clients/tui/nmt-page-ip-tunnel.c:83
 msgid "IP6IP6"
-msgstr ""
+msgstr "IP6IP6"
 
 #: ../clients/tui/nmt-page-ip-tunnel.c:84
 msgid "IPIP6"
-msgstr ""
+msgstr "IPIP6"
 
 #: ../clients/tui/nmt-page-ip-tunnel.c:85
 msgid "IP6GRE"
-msgstr ""
+msgstr "IP6GRE"
 
 #: ../clients/tui/nmt-page-ip-tunnel.c:86
 msgid "VTI6"
-msgstr ""
+msgstr "VTI6"
 
 #: ../clients/tui/nmt-page-ip-tunnel.c:150 ../clients/tui/nmt-page-vlan.c:99
 msgid "Parent"
@@ -6967,19 +7151,19 @@ msgstr "Nadrzędne"
 
 #: ../clients/tui/nmt-page-ip-tunnel.c:157
 msgid "Local IP"
-msgstr ""
+msgstr "Lokalny adres IP"
 
 #: ../clients/tui/nmt-page-ip-tunnel.c:163
 msgid "Remote IP"
-msgstr ""
+msgstr "Zdalny adres IP"
 
 #: ../clients/tui/nmt-page-ip-tunnel.c:169
 msgid "Input key"
-msgstr ""
+msgstr "Klucz wejściowy"
 
 #: ../clients/tui/nmt-page-ip-tunnel.c:176
 msgid "Output key"
-msgstr ""
+msgstr "Klucz wyjściowy"
 
 #: ../clients/tui/nmt-page-ppp.c:131
 msgid "PPP CONFIGURATION"
@@ -7636,7 +7820,7 @@ msgstr "Nie można zdekodować certyfikatu: %d"
 #: ../libnm-core/crypto_nss.c:420
 #, c-format
 msgid "Password must be UTF-8"
-msgstr "Hasło musi być UTF-8"
+msgstr "Hasło musi być tekstem UTF-8"
 
 #: ../libnm-core/crypto_nss.c:450 ../libnm-util/crypto_nss.c:488
 #, c-format
@@ -7840,7 +8024,7 @@ msgstr "nieprawidłowa ścieżka wartości klucz/certyfikat „%s”"
 #: ../libnm-core/nm-keyfile-reader.c:1001
 #, c-format
 msgid "invalid PKCS#11 URI \"%s\""
-msgstr ""
+msgstr "nieprawidłowy adres URI PKCS#11 „%s”"
 
 #: ../libnm-core/nm-keyfile-reader.c:1039
 msgid "invalid key/cert value data:;base64, is not base64"
@@ -7914,15 +8098,15 @@ msgstr "brak danych binarnych"
 
 #: ../libnm-core/nm-setting-8021x.c:500
 msgid "URI not NUL terminated"
-msgstr ""
+msgstr "adres URI nie kończy się NUL"
 
 #: ../libnm-core/nm-setting-8021x.c:509
 msgid "URI is empty"
-msgstr ""
+msgstr "adres URI jest pusty"
 
 #: ../libnm-core/nm-setting-8021x.c:517
 msgid "URI is not valid UTF-8"
-msgstr ""
+msgstr "adres URI nie jest prawidłowym tekstem UTF-8"
 
 #: ../libnm-core/nm-setting-8021x.c:753 ../libnm-util/nm-setting-8021x.c:639
 msgid "CA certificate must be in X.509 format"
@@ -7993,7 +8177,7 @@ msgstr "certyfikat jest nieprawidłowy: %s"
 #: ../libnm-core/nm-setting-8021x.c:3198
 #, c-format
 msgid "password is not supported when certificate is not on a PKCS#11 token"
-msgstr ""
+msgstr "hasło nie jest obsługiwane, kiedy certyfikat nie jest tokenem PKCS#11"
 
 #: ../libnm-core/nm-setting-8021x.c:3235
 #: ../libnm-core/nm-setting-bluetooth.c:129
@@ -8051,9 +8235,8 @@ msgid "'%s' is not a valid value for the property"
 msgstr "„%s” nie jest prawidłową wartością dla właściwości"
 
 #: ../libnm-core/nm-setting-8021x.c:3290
-#, fuzzy
 msgid "invalid auth flags"
-msgstr "nieprawidłowa trasa: %s"
+msgstr "nieprawidłowe flagi uwierzytelniania"
 
 #: ../libnm-core/nm-setting-bluetooth.c:168
 #, c-format
@@ -8088,7 +8271,7 @@ msgstr "„%s=%s” nie jest zgodne z „%s > 0”"
 #: ../libnm-core/nm-setting-bond.c:627
 #, c-format
 msgid "'%s' is not a valid for '%s' option: %s"
-msgstr ""
+msgstr "„%s” nie jest prawidłową opcją dla „%s”: %s"
 
 #: ../libnm-core/nm-setting-bond.c:638 ../libnm-util/nm-setting-bond.c:577
 #, c-format
@@ -8214,11 +8397,10 @@ msgstr ""
 "powinno zostać ustawione na „%s”"
 
 #: ../libnm-core/nm-setting-connection.c:1077
-#, fuzzy, c-format
+#, c-format
 msgid "A slave connection with '%s' set to '%s' cannot have a '%s' setting"
 msgstr ""
-"Wykryto połączenie podrzędne z ustawionym „%s” i typem portu „%s”. „%s” "
-"powinno zostać ustawione na „%s”"
+"Połączenie podrzędne z „%s” ustawionym na „%s” nie może mieć ustawienia „%s”"
 
 #: ../libnm-core/nm-setting-dcb.c:522 ../libnm-util/nm-setting-dcb.c:594
 msgid "flags invalid"
@@ -8335,41 +8517,40 @@ msgid "Invalid routing metric '%s'"
 msgstr "Nieprawidłowe parametry trasy „%s”"
 
 #: ../libnm-core/nm-setting-ip-config.c:1260
-#, fuzzy
 msgid "unknown attribute"
-msgstr "nieznana nazwa ustawienia"
+msgstr "nieznany atrybut"
 
 #: ../libnm-core/nm-setting-ip-config.c:1270
-#, fuzzy, c-format
+#, c-format
 msgid "invalid attribute type '%s'"
-msgstr "nieprawidłowa wartość parzystości „%s”"
+msgstr "nieprawidłowy typ atrybutu „%s”"
 
 #: ../libnm-core/nm-setting-ip-config.c:1281
 #, c-format
 msgid "attribute is not valid for a IPv4 route"
-msgstr ""
+msgstr "atrybut nie jest prawidłowy dla trasy IPv4"
 
 #: ../libnm-core/nm-setting-ip-config.c:1282
 #, c-format
 msgid "attribute is not valid for a IPv6 route"
-msgstr ""
+msgstr "atrybut nie jest prawidłowy dla trasy IPv6"
 
 #: ../libnm-core/nm-setting-ip-config.c:1298
 #: ../libnm-core/nm-setting-ip-config.c:1322
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid IPv4 address"
-msgstr "„%s” nie jest prawidłowym adresem IP"
+msgstr "„%s” nie jest prawidłowym adresem IPv4"
 
 #: ../libnm-core/nm-setting-ip-config.c:1299
 #: ../libnm-core/nm-setting-ip-config.c:1323
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid IPv6 address"
-msgstr "„%s” nie jest prawidłowym adresem IP"
+msgstr "„%s” nie jest prawidłowym adresem IPv6"
 
 #: ../libnm-core/nm-setting-ip-config.c:1313
-#, fuzzy, c-format
+#, c-format
 msgid "invalid prefix %s"
-msgstr "nieprawidłowa trasa: %s"
+msgstr "nieprawidłowy przedrostek %s"
 
 #: ../libnm-core/nm-setting-ip-config.c:2429
 #, c-format
@@ -8384,12 +8565,12 @@ msgstr "%d. adres IP jest nieprawidłowy"
 #: ../libnm-core/nm-setting-ip-config.c:2457
 #, c-format
 msgid "%d. IP address has 'label' property with invalid type"
-msgstr "%d. adres IP posiada właściwość „label” z nieprawidłowym typem"
+msgstr "%d. adres IP ma właściwość „label” z nieprawidłowym typem"
 
 #: ../libnm-core/nm-setting-ip-config.c:2466
 #, c-format
 msgid "%d. IP address has invalid label '%s'"
-msgstr "%d. adres IP posiada nieprawidłową etykietę „%s”"
+msgstr "%d. adres IP ma nieprawidłową etykietę „%s”"
 
 #: ../libnm-core/nm-setting-ip-config.c:2480
 msgid "gateway cannot be set if there are no addresses configured"
@@ -8452,7 +8633,7 @@ msgstr ""
 #: ../libnm-core/nm-setting-ip4-config.c:235
 #, c-format
 msgid "multiple addresses are not allowed for '%s=%s'"
-msgstr ""
+msgstr "wiele adresów nie jest dozwolonych dla „%s=%s”"
 
 #: ../libnm-core/nm-setting-ip4-config.c:249
 msgid "property should be TRUE when method is set to disabled"
@@ -8512,17 +8693,16 @@ msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:235
 msgid "the key is empty"
-msgstr ""
+msgstr "klucz jest pusty"
 
 #: ../libnm-core/nm-setting-macsec.c:246
 #, c-format
 msgid "the key must be %d characters"
-msgstr ""
+msgstr "klucz musi mieć %d znaków"
 
 #: ../libnm-core/nm-setting-macsec.c:254
-#, fuzzy
 msgid "the key contains non-hexadecimal characters"
-msgstr "IV zawiera nieszesnastkowe cyfry."
+msgstr "klucz zawiera nieszesnastkowe znaki"
 
 #: ../libnm-core/nm-setting-macsec.c:291 ../libnm-core/nm-setting-vlan.c:634
 #: ../libnm-util/nm-setting-vlan.c:556
@@ -8539,12 +8719,12 @@ msgstr "właściwość nie została podana, tak jak i „%s:%s”"
 #: ../libnm-core/nm-setting-macsec.c:333
 #, c-format
 msgid "EAP key management requires '%s' setting presence"
-msgstr ""
+msgstr "zarządzanie kluczem EAP wymaga obecności ustawienia „%s”"
 
 #: ../libnm-core/nm-setting-macsec.c:344
 #, c-format
 msgid "invalid port %d"
-msgstr ""
+msgstr "nieprawidłowy port %d"
 
 #: ../libnm-core/nm-setting-macvlan.c:192
 msgid "non promiscuous operation is allowed only in passthru mode"
@@ -8578,32 +8758,32 @@ msgstr "ustawienie tej właściwości wymaga niezerowej właściwości „%s”"
 #: ../libnm-core/nm-setting-proxy.c:163
 #, c-format
 msgid "invalid proxy method"
-msgstr ""
+msgstr "nieprawidłowa metoda pośrednika"
 
 #: ../libnm-core/nm-setting-proxy.c:173 ../libnm-core/nm-setting-proxy.c:182
 #, c-format
 msgid "this property is not allowed for method none"
-msgstr ""
+msgstr "ta właściwość nie jest dozwolona dla metody „none”"
 
 #: ../libnm-core/nm-setting-proxy.c:193
 #, c-format
 msgid "the script is too large"
-msgstr ""
+msgstr "skrypt jest za duży"
 
 #: ../libnm-core/nm-setting-proxy.c:201
 #, c-format
 msgid "the script is not valid utf8"
-msgstr ""
+msgstr "skrypt nie jest prawidłowym tekstem UTF-8"
 
 #: ../libnm-core/nm-setting-proxy.c:209
 #, c-format
 msgid "the script lacks FindProxyForURL function"
-msgstr ""
+msgstr "skrypt nie ma funkcji FindProxyForURL"
 
 #: ../libnm-core/nm-setting-team.c:94 ../libnm-core/nm-setting-team-port.c:122
 #, c-format
 msgid "team config exceeds size limit"
-msgstr ""
+msgstr "konfiguracja zespołu przekracza ograniczenie rozmiaru"
 
 #: ../libnm-core/nm-setting-tun.c:187
 #, c-format
@@ -8631,7 +8811,7 @@ msgstr "flagi są nieprawidłowe"
 
 #: ../libnm-core/nm-setting-vlan.c:691
 msgid "vlan setting should have a ethernet setting as well"
-msgstr ""
+msgstr "ustawienie VLAN powinno mieć także ustawienie Ethernet"
 
 #: ../libnm-core/nm-setting-vpn.c:460
 #, c-format
@@ -8704,14 +8884,17 @@ msgstr ""
 #: ../libnm-core/nm-setting-wired.c:768
 msgid "when link autonegotiation is enabled no duplex value is accepted"
 msgstr ""
+"kiedy automatyczna negocjacja łącza jest włączona, żadna wartość dupleksu "
+"nie jest przyjmowana"
 
 #: ../libnm-core/nm-setting-wired.c:776
 msgid "when link autonegotiation is enabled speed should be 0"
 msgstr ""
+"kiedy automatyczna negocjacja łącza jest włączona, prędkość powinna wynosić 0"
 
 #: ../libnm-core/nm-setting-wired.c:786
 msgid "both speed and duplex are required for static link configuration"
-msgstr ""
+msgstr "prędkość i dupleks są wymagane dla konfiguracji statycznego łącza"
 
 #: ../libnm-core/nm-setting-wireless-security.c:882
 #: ../libnm-util/nm-setting-wireless-security.c:912
@@ -8866,75 +9049,75 @@ msgstr "nieprawidłowy adres MAC Ethernetu #%u w miejscu %lld"
 
 #: ../libnm-core/nm-utils.c:3714
 msgid "interface name is too short"
-msgstr ""
+msgstr "nazwa interfejsu jest za krótka"
 
 #: ../libnm-core/nm-utils.c:3720
 msgid "interface name is longer than 15 characters"
-msgstr ""
+msgstr "nazwa interfejsu jest dłuższa niż 15 znaków"
 
 #: ../libnm-core/nm-utils.c:3726
 msgid "interface name is reserved"
-msgstr ""
+msgstr "nazwa interfejsu jest zastrzeżona"
 
 #: ../libnm-core/nm-utils.c:3733
 msgid "interface name contains an invalid character"
-msgstr ""
+msgstr "nazwa interfejsu zawiera nieprawidłowy znak"
 
 #: ../libnm-core/nm-utils.c:4534 ../libnm-core/nm-utils.c:4668
 msgid "value is NULL"
-msgstr ""
+msgstr "wartość wynosi NULL"
 
 #: ../libnm-core/nm-utils.c:4534 ../libnm-core/nm-utils.c:4668
 msgid "value is empty"
-msgstr ""
+msgstr "wartość jest pusta"
 
 #: ../libnm-core/nm-utils.c:4543
 #, c-format
 msgid "invalid JSON at position %d (%s)"
-msgstr ""
+msgstr "nieprawidłowy kod JSON w miejscu %d (%s)"
 
 #: ../libnm-core/nm-utils.c:4555 ../libnm-core/nm-utils.c:4687
 msgid "is not a JSON object"
-msgstr ""
+msgstr "nie jest obiektem JSON"
 
 #: ../libnm-core/nm-utils.c:4657
 msgid "not valid utf-8"
-msgstr ""
+msgstr "nieprawidłowy tekst UTF-8"
 
 #: ../libnm-core/nm-utils.c:4782 ../libnm-core/nm-utils.c:4800
 #, c-format
 msgid "unterminated escape sequence"
-msgstr ""
+msgstr "niezakończona sekwencja sterująca"
 
 #: ../libnm-core/nm-utils.c:4810
 #, c-format
 msgid "missing key-value separator '%c'"
-msgstr ""
+msgstr "brak separatora klucz-wartość „%c”"
 
 #: ../libnm-core/nm-utils.c:4827
-#, fuzzy, c-format
+#, c-format
 msgid "unknown attribute '%s'"
-msgstr "nieznane urządzenie „%s”."
+msgstr "nieznany atrybut „%s”"
 
 #: ../libnm-core/nm-utils.c:4837
-#, fuzzy, c-format
+#, c-format
 msgid "invalid uint32 value '%s' for attribute '%s'"
-msgstr "nieprawidłowa opcja „%s” lub jej wartość „%s”"
+msgstr "nieprawidłowa wartość uint32 „%s” dla atrybutu „%s”"
 
 #: ../libnm-core/nm-utils.c:4846
-#, fuzzy, c-format
+#, c-format
 msgid "invalid uint8 value '%s' for attribute '%s'"
-msgstr "nieprawidłowa opcja „%s” lub jej wartość „%s”"
+msgstr "nieprawidłowa wartość uint8 „%s” dla atrybutu „%s”"
 
 #: ../libnm-core/nm-utils.c:4859
-#, fuzzy, c-format
+#, c-format
 msgid "invalid boolean value '%s' for attribute '%s'"
-msgstr "nieprawidłowa opcja „%s” lub jej wartość „%s”"
+msgstr "nieprawidłowa wartość logiczna „%s” dla atrybutu „%s”"
 
 #: ../libnm-core/nm-utils.c:4867
 #, c-format
 msgid "unsupported attribute '%s' of type '%s'"
-msgstr ""
+msgstr "nieobsługiwany atrybut „%s” typu „%s”"
 
 #: ../libnm-core/nm-vpn-editor-plugin.c:296
 #, c-format
@@ -8984,12 +9167,12 @@ msgstr "nazwa pliku musi być ścieżką bezwzględną (%s)"
 #: ../libnm-core/nm-vpn-plugin-info.c:127
 #, c-format
 msgid "filename has invalid format (%s)"
-msgstr "nazwa pliku posiada nieprawidłowy format (%s)"
+msgstr "nazwa pliku ma nieprawidłowy format (%s)"
 
 #: ../libnm-core/nm-vpn-plugin-info.c:450
 #, c-format
 msgid "there exists a conflicting plugin (%s) that has the same %s.%s value"
-msgstr "istnieje wtyczka w konflikcie (%s) posiadająca tą samą wartość %s.%s"
+msgstr "istnieje wtyczka w konflikcie (%s) mająca tą samą wartość %s.%s"
 
 #: ../libnm-core/nm-vpn-plugin-info.c:488
 #, c-format
@@ -9073,8 +9256,8 @@ msgstr "USB"
 #. * "%2$s (%1$s)" if there's no grammatical way to combine
 #. * the strings otherwise.
 #.
-#: ../libnm-glib/nm-device.c:2053 ../libnm-glib/nm-device.c:2072
-#: ../libnm/nm-device.c:1861 ../libnm/nm-device.c:1880
+#: ../libnm-glib/nm-device.c:2052 ../libnm-glib/nm-device.c:2071
+#: ../libnm/nm-device.c:1860 ../libnm/nm-device.c:1879
 #, c-format
 msgctxt "long device name"
 msgid "%s %s"
@@ -9127,7 +9310,7 @@ msgstr "wymaga obecności ustawienia „%s” w połączeniu"
 
 #: ../libnm-util/nm-setting-infiniband.c:231
 msgid "not a valid interface name"
-msgstr "nie jest prawidłową nazwą interfejsu"
+msgstr "nieprawidłowa nazwa interfejsu"
 
 #: ../libnm-util/nm-setting-ip4-config.c:957
 #, c-format
@@ -9137,13 +9320,13 @@ msgstr "%d. adres IPv4 jest nieprawidłowy"
 #: ../libnm-util/nm-setting-ip4-config.c:967
 #, c-format
 msgid "%d. IPv4 address has invalid prefix"
-msgstr "%d. adres IPv4 posiada nieprawidłowy przedrostek"
+msgstr "%d. adres IPv4 ma nieprawidłowy przedrostek"
 
 #: ../libnm-util/nm-setting-ip4-config.c:983
 #: ../libnm-util/nm-setting-ip6-config.c:939
 #, c-format
 msgid "%d. route has invalid prefix"
-msgstr "%d. trasa posiada nieprawidłowy przedrostek"
+msgstr "%d. trasa ma nieprawidłowy przedrostek"
 
 #: ../libnm-util/nm-setting-ip6-config.c:913
 #, c-format
@@ -9153,7 +9336,7 @@ msgstr "%d. adres IPv6 jest nieprawidłowy"
 #: ../libnm-util/nm-setting-ip6-config.c:923
 #, c-format
 msgid "%d. IPv6 address has invalid prefix"
-msgstr "%d. adres IPv6 posiada nieprawidłowy przedrostek"
+msgstr "%d. adres IPv6 ma nieprawidłowy przedrostek"
 
 #: ../libnm-util/nm-setting-vpn.c:582
 #, c-format
@@ -9198,13 +9381,11 @@ msgstr "Adresy Bluetooth urządzenia i połączenia się nie zgadzają."
 #: ../libnm/nm-device-bt.c:161
 msgid ""
 "The device is lacking Bluetooth capabilities required by the connection."
-msgstr ""
-"Urządzenie nie posiada możliwości Bluetooth wymaganych przez połączenie."
+msgstr "Urządzenie nie ma możliwości Bluetooth wymaganych przez połączenie."
 
 #: ../libnm/nm-device-dummy.c:46
-#, fuzzy
 msgid "The connection was not a dummy connection."
-msgstr "Połączenie nie jest połączeniem modemowym."
+msgstr "Połączenie nie jest atrapą połączenia."
 
 #: ../libnm/nm-device-dummy.c:53 ../libnm/nm-device-generic.c:97
 msgid "The connection did not specify an interface name."
@@ -9281,7 +9462,7 @@ msgstr "Połączenie nie jest prawidłowym połączeniem modemowym."
 
 #: ../libnm/nm-device-modem.c:134
 msgid "The device is lacking capabilities required by the connection."
-msgstr "Urządzenie nie posiada możliwości wymaganych przez połączenie."
+msgstr "Urządzenie nie ma możliwości wymaganych przez połączenie."
 
 #: ../libnm/nm-device-olpc-mesh.c:114
 msgid "The connection was not an OLPC Mesh connection."
@@ -9317,12 +9498,11 @@ msgstr "Połączenie nie jest połączeniem Wi-Fi."
 
 #: ../libnm/nm-device-wifi.c:626
 msgid "The device is lacking WPA capabilities required by the connection."
-msgstr "Urządzenie nie posiada możliwości WPA wymaganych przez połączenie."
+msgstr "Urządzenie nie ma możliwości WPA wymaganych przez połączenie."
 
 #: ../libnm/nm-device-wifi.c:633
 msgid "The device is lacking WPA2/RSN capabilities required by the connection."
-msgstr ""
-"Urządzenie nie posiada możliwości WPA2/RSN wymaganych przez połączenie."
+msgstr "Urządzenie nie ma możliwości WPA2/RSN wymaganych przez połączenie."
 
 #: ../libnm/nm-device-wimax.c:315
 msgid "The connection was not a WiMAX connection."
@@ -9330,18 +9510,18 @@ msgstr "Połączenie nie jest połączeniem WiMAX."
 
 #: ../libnm/nm-device.c:1699
 msgid "MACsec"
-msgstr ""
+msgstr "MACsec"
 
 #: ../libnm/nm-device.c:1701
 msgid "Dummy"
-msgstr ""
+msgstr "Atrapa"
 
-#: ../libnm/nm-device.c:2592
+#: ../libnm/nm-device.c:2591
 #, c-format
 msgid "The connection was not valid: %s"
 msgstr "Połączenie jest nieprawidłowe: %s"
 
-#: ../libnm/nm-device.c:2601
+#: ../libnm/nm-device.c:2600
 #, c-format
 msgid "The interface names of the device and the connection didn't match."
 msgstr "Nazwy interfejsu urządzenia i połączenia się nie zgadzają."
@@ -9365,7 +9545,7 @@ msgstr "Włączenie lub wyłączenie sieci systemowej"
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:2
 msgid "System policy prevents enabling or disabling system networking"
 msgstr ""
-"Polityka systemu powstrzymuje włączanie lub wyłączanie sieci systemowej"
+"Polityka systemu uniemożliwia włączanie lub wyłączanie sieci systemowej"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:3
 msgid "Reload NetworkManager configuration"
@@ -9373,7 +9553,7 @@ msgstr "Ponowne wczytanie konfiguracji usługi NetworkManager"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:4
 msgid "System policy prevents reloading NetworkManager"
-msgstr "Polityka systemu powstrzymuje ponowne wczytanie usługi NetworkManager"
+msgstr "Polityka systemu uniemożliwia ponowne wczytanie usługi NetworkManager"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:5
 msgid ""
@@ -9386,7 +9566,7 @@ msgstr ""
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:6
 msgid "System policy prevents putting NetworkManager to sleep or waking it up"
 msgstr ""
-"Polityka systemu powstrzymuje umieszczenie usługi NetworkManager w stanie "
+"Polityka systemu uniemożliwia umieszczenie usługi NetworkManager w stanie "
 "uśpienia lub przebudzenie go"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:7
@@ -9395,7 +9575,7 @@ msgstr "Włączenie lub wyłączenie urządzeń Wi-Fi"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:8
 msgid "System policy prevents enabling or disabling WiFi devices"
-msgstr "Polityka systemu powstrzymuje włączanie lub wyłączanie urządzeń Wi-Fi"
+msgstr "Polityka systemu uniemożliwia włączanie lub wyłączanie urządzeń Wi-Fi"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:9
 msgid "Enable or disable mobile broadband devices"
@@ -9404,7 +9584,7 @@ msgstr "Włączenie lub wyłączenie urządzeń komórkowych"
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:10
 msgid "System policy prevents enabling or disabling mobile broadband devices"
 msgstr ""
-"Polityka systemu powstrzymuje włączenie lub wyłączenie urządzeń komórkowych"
+"Polityka systemu uniemożliwia włączenie lub wyłączenie urządzeń komórkowych"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:11
 msgid "Enable or disable WiMAX mobile broadband devices"
@@ -9414,16 +9594,16 @@ msgstr "Włączenie lub wyłączenie urządzeń komórkowych WiMAX"
 msgid ""
 "System policy prevents enabling or disabling WiMAX mobile broadband devices"
 msgstr ""
-"Polityka systemu powstrzymuje włączenie lub wyłączenie urządzeń komórkowych "
+"Polityka systemu uniemożliwia włączenie lub wyłączenie urządzeń komórkowych "
 "WiMAX"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:13
 msgid "Allow control of network connections"
-msgstr "Umożliwienie kontroli połączeń sieciowych"
+msgstr "Umożliwienie sterowania połączeniami sieciowymi"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:14
 msgid "System policy prevents control of network connections"
-msgstr "Polityka systemu powstrzymuje kontrolę połączeń sieciowych"
+msgstr "Polityka systemu uniemożliwia sterowanie połączeniami sieciowymi"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:15
 msgid "Connection sharing via a protected WiFi network"
@@ -9432,7 +9612,7 @@ msgstr "Współdzielenie połączenia przez chronioną sieć Wi-Fi"
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:16
 msgid "System policy prevents sharing connections via a protected WiFi network"
 msgstr ""
-"Polityka systemu powstrzymuje współdzielenie połączeń przez chronioną sieć "
+"Polityka systemu uniemożliwia współdzielenie połączeń przez chronioną sieć "
 "Wi-Fi"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:17
@@ -9442,7 +9622,7 @@ msgstr "Współdzielenie połączenia przez otwartą sieć Wi-Fi"
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:18
 msgid "System policy prevents sharing connections via an open WiFi network"
 msgstr ""
-"Polityka systemu powstrzymuje współdzielenie połączeń przez otwartą sieć Wi-"
+"Polityka systemu uniemożliwia współdzielenie połączeń przez otwartą sieć Wi-"
 "Fi"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:19
@@ -9452,7 +9632,7 @@ msgstr "Modyfikacja osobistych połączeń sieciowych"
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:20
 msgid "System policy prevents modification of personal network settings"
 msgstr ""
-"Polityka systemu powstrzymuje modyfikację osobistych ustawień systemowych"
+"Polityka systemu uniemożliwia modyfikację osobistych ustawień systemowych"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:21
 msgid "Modify network connections for all users"
@@ -9461,7 +9641,7 @@ msgstr "Modyfikacja połączeń sieciowych dla wszystkich użytkowników"
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:22
 msgid "System policy prevents modification of network settings for all users"
 msgstr ""
-"Polityka systemu powstrzymuje modyfikację ustawień sieciowych dla wszystkich "
+"Polityka systemu uniemożliwia modyfikację ustawień sieciowych dla wszystkich "
 "użytkowników"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:23
@@ -9471,7 +9651,7 @@ msgstr "Modyfikacja trwałej systemowej nazwy komputera"
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:24
 msgid "System policy prevents modification of the persistent system hostname"
 msgstr ""
-"Polityka systemu powstrzymuje modyfikację trwałej systemowej nazwy komputera"
+"Polityka systemu uniemożliwia modyfikację trwałej systemowej nazwy komputera"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:25
 msgid "Modify persistent global DNS configuration"
@@ -9482,7 +9662,7 @@ msgid ""
 "System policy prevents modification of the persistent global DNS "
 "configuration"
 msgstr ""
-"Polityka systemu powstrzymuje modyfikację trwałej globalnej konfiguracji DNS"
+"Polityka systemu uniemożliwia modyfikację trwałej globalnej konfiguracji DNS"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:27
 msgid "Perform a checkpoint or rollback of interfaces configuration"
@@ -9491,6 +9671,8 @@ msgstr "Wykonanie punktu kontrolnego lub przywrócenie konfiguracji interfejsów
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:28
 msgid "System policy prevents the creation of a checkpoint or its rollback"
 msgstr ""
+"Polityka systemu uniemożliwia utworzenie punktu kontrolnego lub jego "
+"przywrócenie"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:29
 msgid "Enable or disable device statistics"
@@ -9499,12 +9681,12 @@ msgstr "Włączenie lub wyłączenie statystyk urządzenia"
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:30
 msgid "System policy prevents enabling or disabling device statistics"
 msgstr ""
-"Polityka systemu powstrzymuje włączanie lub wyłączanie statystyk urządzenia"
+"Polityka systemu uniemożliwia włączanie lub wyłączanie statystyk urządzenia"
 
 #: ../shared/nm-utils/nm-shared-utils.c:312
 #, c-format
 msgid "object class '%s' has no property named '%s'"
-msgstr "klasa obiektów „%s” nie posiada właściwości o nazwie „%s”"
+msgstr "klasa obiektów „%s” nie ma właściwości o nazwie „%s”"
 
 #: ../shared/nm-utils/nm-shared-utils.c:319
 #, c-format
@@ -9596,7 +9778,7 @@ msgstr ""
 "Usługa NetworkManager monitoruje wszystkie połączenia sieciowe i\n"
 "automatycznie wybiera najlepsze. Umożliwia użytkownikowi także\n"
 "wybranie bezprzewodowych punktów dostępowych, z którymi karty\n"
-"sieciowe w komputerze powinny być powiązane."
+"sieciowe w komputerze mają być powiązane."
 
 #: ../src/main.c:294 ../src/main-utils.c:283 ../src/nm-iface-helper.c:407
 #, c-format
@@ -9607,8 +9789,7 @@ msgstr "%s. Parametr --help wyświetli listę prawidłowych opcji.\n"
 #, c-format
 msgid "Ignoring unrecognized log domain(s) '%s' passed on command line.\n"
 msgstr ""
-"Ignorowanie nierozpoznanych domen dziennika „%s” przekazanych w wierszu "
-"poleceń.\n"
+"Ignorowanie nieznanych domen dziennika „%s” przekazanych w wierszu poleceń.\n"
 
 #: ../src/main.c:324
 #, c-format
@@ -9618,8 +9799,7 @@ msgstr "Błąd w pliku konfiguracji: %s.\n"
 #: ../src/main.c:329
 #, c-format
 msgid "Ignoring unrecognized log domain(s) '%s' from config files.\n"
-msgstr ""
-"Ignorowanie nierozpoznanych domen dziennika „%s” z plików konfiguracji.\n"
+msgstr "Ignorowanie nieznanych domen dziennika „%s” z plików konfiguracji.\n"
 
 #: ../src/main.c:340 ../src/nm-iface-helper.c:422
 #, c-format
@@ -9724,9 +9904,8 @@ msgid "Bridge connection"
 msgstr "Połączenie mostkowane"
 
 #: ../src/devices/nm-device-dummy.c:70
-#, fuzzy
 msgid "Dummy connection"
-msgstr "Połączenie ADSL"
+msgstr "Atrapa połączenia"
 
 #: ../src/devices/nm-device-ethernet.c:1436
 msgid "PPPoE connection"
@@ -10099,31 +10278,3 @@ msgstr "Nieznany poziom dziennika „%s”"
 #, c-format
 msgid "Unknown log domain '%s'"
 msgstr "Nieznana domena dziennika „%s”"
-
-#~ msgid ""
-#~ "the second component of route ('%s') is neither a next hop address nor a "
-#~ "metric"
-#~ msgstr ""
-#~ "drugi składnik trasy („%s”) nie jest adresem next-hop ani parametrami"
-
-#~ msgid "invalid metric '%s'"
-#~ msgstr "nieprawidłowe parametry „%s”"
-
-#~ msgid "the user was disconnected"
-#~ msgstr "rozłączono użytkownika"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "Błąd: aktywacja połączenia się nie powiodła."
-
-#~ msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
-#~ msgstr "Pomyślnie aktywowano połączenie VPN (ścieżka aktywacji D-Bus: %s)\n"
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "Błąd: aktywacja połączenia się nie powiodła: %s."
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr ""
-#~ "„%d” nie jest prawidłową wartością dla właściwości (powinno wynosić <= %d)"
-
-#~ msgid "System"
-#~ msgstr "Systemowe"
