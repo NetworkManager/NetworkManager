@@ -56,4 +56,7 @@ void _nm_object_set_property (NMObject *object,
 GDBusProxy *_nm_object_get_proxy (NMObject   *object,
                                   const char *interface);
 
+struct udev;
+void _nm_device_set_udev (NMDevice *device, struct udev *udev);
+
 #endif /* __NM_OBJECT_PRIVATE_H__ */

@@ -40,7 +40,6 @@
 #include "nm-dbus-helpers.h"
 #include "nm-device-tun.h"
 #include "nm-setting-connection.h"
-#include "nm-utils/nm-udev-utils.h"
 
 #include "introspection/org.freedesktop.NetworkManager.Device.h"
 
@@ -80,7 +79,7 @@ typedef struct {
 	NMActiveConnection *active_connection;
 	GPtrArray *available_connections;
 
-	NMUdevClient *udev_client;
+	struct udev *udev;
 	char *product, *short_product;
 	char *vendor, *short_vendor;
 	char *description, *bus_name;
@@ -295,7 +294,8 @@ dispose (GObject *object)
 	g_clear_object (&priv->dhcp6_config);
 	g_clear_object (&priv->active_connection);
 
-	priv->udev_client = nm_udev_client_unref (priv->udev_client);
+	udev_unref (priv->udev);
+	priv->udev = NULL;
 
 	g_clear_pointer (&priv->available_connections, g_ptr_array_unref);
 	g_clear_pointer (&priv->lldp_neighbors, g_ptr_array_unref);
@@ -1332,16 +1332,19 @@ get_decoded_property (struct udev_device *device, const char *property)
 	return unescaped;
 }
 
-static gboolean
-ensure_udev_client (NMDevice *device)
+void
+_nm_device_set_udev (NMDevice *device, struct udev *udev)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+	NMDevicePrivate *priv;
 
-	if (!priv->udev_client) {
-		priv->udev_client = nm_udev_client_new ((const char *[]) { "net", "tty", NULL },
-		                                        NULL, NULL);
-	}
-	return !!priv->udev_client;
+	nm_assert (NM_IS_DEVICE (device));
+	nm_assert (udev);
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+
+	nm_assert (!priv->udev);
+
+	priv->udev = udev_ref (udev);
 }
 
 static char *
@@ -1355,16 +1358,16 @@ _get_udev_property (NMDevice *device,
 	guint32 count = 0;
 	char *enc_value = NULL, *db_value = NULL;
 
-	if (!ensure_udev_client (device))
+	if (!priv->udev)
 		return NULL;
 
 	ifname = nm_device_get_iface (device);
 	if (!ifname)
 		return NULL;
 
-	udev_device = udev_device_new_from_subsystem_sysname (nm_udev_client_get_udev (priv->udev_client), "net", ifname);
+	udev_device = udev_device_new_from_subsystem_sysname (priv->udev, "net", ifname);
 	if (!udev_device) {
-		udev_device = udev_device_new_from_subsystem_sysname (nm_udev_client_get_udev (priv->udev_client), "tty", ifname);
+		udev_device = udev_device_new_from_subsystem_sysname (priv->udev, "tty", ifname);
 		if (!udev_device)
 			return NULL;
 	}
@@ -1734,16 +1737,16 @@ get_bus_name (NMDevice *device)
 	if (priv->bus_name)
 		goto out;
 
-	if (!ensure_udev_client (device))
+	if (!priv->udev)
 		return NULL;
 
 	ifname = nm_device_get_iface (device);
 	if (!ifname)
 		return NULL;
 
-	udevice = udev_device_new_from_subsystem_sysname (nm_udev_client_get_udev (priv->udev_client), "net", ifname);
+	udevice = udev_device_new_from_subsystem_sysname (priv->udev, "net", ifname);
 	if (!udevice) {
-		udevice = udev_device_new_from_subsystem_sysname (nm_udev_client_get_udev (priv->udev_client), "tty", ifname);
+		udevice = udev_device_new_from_subsystem_sysname (priv->udev, "tty", ifname);
 		if (!udevice)
 			return NULL;
 	}
