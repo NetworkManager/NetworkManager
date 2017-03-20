@@ -69,6 +69,15 @@ struct iw_range_with_scan_capa
 	/* don't need the rest... */
 };
 
+#define _NMLOG_PREFIX_NAME      "wifi-wext"
+#define _NMLOG(level, domain, ...) \
+	G_STMT_START { \
+		nm_log ((level), (domain), \
+		        "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+		        _NMLOG_PREFIX_NAME \
+		        _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+	} G_STMT_END
+
 static guint32
 iw_freq_to_uint32 (struct iw_freq *freq)
 {
@@ -101,9 +110,9 @@ get_ifname (int ifindex, char *buffer, const char *op)
 
 	if (!nmp_utils_if_indextoname (ifindex, buffer)) {
 		errsv = errno;
-		nm_log_warn (LOGD_PLATFORM | LOGD_WIFI,
-		             "wifi-wext: error getting interface name for ifindex %d, operation '%s': %s (%d)",
-		             ifindex, op, g_strerror (errsv), errsv);
+		_LOGW (LOGD_PLATFORM | LOGD_WIFI,
+		       "error getting interface name for ifindex %d, operation '%s': %s (%d)",
+		       ifindex, op, g_strerror (errsv), errsv);
 		return FALSE;
 	}
 
@@ -121,9 +130,9 @@ wifi_wext_get_mode_ifname (WifiData *data, const char *ifname)
 
 	if (ioctl (wext->fd, SIOCGIWMODE, &wrq) < 0) {
 		if (errno != ENODEV) {
-			nm_log_warn (LOGD_PLATFORM | LOGD_WIFI,
-			             "(%s): error %d getting card mode",
-			             ifname, errno);
+			_LOGW (LOGD_PLATFORM | LOGD_WIFI,
+			       "(%s): error %d getting card mode",
+			       ifname, errno);
 		}
 		return NM_802_11_MODE_UNKNOWN;
 	}
@@ -185,9 +194,9 @@ wifi_wext_set_mode (WifiData *data, const NM80211Mode mode)
 	nm_utils_ifname_cpy (wrq.ifr_name, ifname);
 	if (ioctl (wext->fd, SIOCSIWMODE, &wrq) < 0) {
 		if (errno != ENODEV) {
-			nm_log_err (LOGD_PLATFORM | LOGD_WIFI,
-			            "(%s): error setting mode %d",
-			            ifname, mode);
+			_LOGE (LOGD_PLATFORM | LOGD_WIFI,
+			       "(%s): error setting mode %d",
+			       ifname, mode);
 		}
 		return FALSE;
 	}
@@ -214,9 +223,9 @@ wifi_wext_set_powersave (WifiData *data, guint32 powersave)
 	nm_utils_ifname_cpy (wrq.ifr_name, ifname);
 	if (ioctl (wext->fd, SIOCSIWPOWER, &wrq) < 0) {
 		if (errno != ENODEV) {
-			nm_log_err (LOGD_PLATFORM | LOGD_WIFI,
-			            "(%s): error setting powersave %" G_GUINT32_FORMAT,
-			            ifname, powersave);
+			_LOGE (LOGD_PLATFORM | LOGD_WIFI,
+			       "(%s): error setting powersave %" G_GUINT32_FORMAT,
+			       ifname, powersave);
 		}
 		return FALSE;
 	}
@@ -237,9 +246,9 @@ wifi_wext_get_freq (WifiData *data)
 	memset (&wrq, 0, sizeof (struct iwreq));
 	nm_utils_ifname_cpy (wrq.ifr_name, ifname);
 	if (ioctl (wext->fd, SIOCGIWFREQ, &wrq) < 0) {
-		nm_log_warn (LOGD_PLATFORM | LOGD_WIFI,
-		             "(%s): error getting frequency: %s",
-		             ifname, strerror (errno));
+		_LOGW (LOGD_PLATFORM | LOGD_WIFI,
+		       "(%s): error getting frequency: %s",
+		       ifname, strerror (errno));
 		return 0;
 	}
 
@@ -275,9 +284,9 @@ wifi_wext_get_bssid (WifiData *data, guint8 *out_bssid)
 	memset (&wrq, 0, sizeof (wrq));
 	nm_utils_ifname_cpy (wrq.ifr_name, ifname);
 	if (ioctl (wext->fd, SIOCGIWAP, &wrq) < 0) {
-		nm_log_warn (LOGD_PLATFORM | LOGD_WIFI,
-		             "(%s): error getting associated BSSID: %s",
-		             ifname, strerror (errno));
+		_LOGW (LOGD_PLATFORM | LOGD_WIFI,
+		       "(%s): error getting associated BSSID: %s",
+		       ifname, strerror (errno));
 		return FALSE;
 	}
 	memcpy (out_bssid, &(wrq.u.ap_addr.sa_data), ETH_ALEN);
@@ -313,16 +322,16 @@ wext_qual_to_percent (const struct iw_quality *qual,
 
 	/* Magically convert the many different WEXT quality representations to a percentage */
 
-	nm_log_dbg (LOGD_WIFI,
-	            "QL: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X, updated: 0x%X  ** MAX: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X, updated: 0x%X",
-	            (__s8) qual->qual, qual->qual, qual->qual,
-	            (__s8) qual->level, qual->level, qual->level,
-	            (__s8) qual->noise, qual->noise, qual->noise,
-	            qual->updated,
-	            (__s8) max_qual->qual, max_qual->qual, max_qual->qual,
-	            (__s8) max_qual->level, max_qual->level, max_qual->level,
-	            (__s8) max_qual->noise, max_qual->noise, max_qual->noise,
-	            max_qual->updated);
+	_LOGD (LOGD_WIFI,
+	       "QL: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X, updated: 0x%X  ** MAX: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X, updated: 0x%X",
+	       (__s8) qual->qual, qual->qual, qual->qual,
+	       (__s8) qual->level, qual->level, qual->level,
+	       (__s8) qual->noise, qual->noise, qual->noise,
+	       qual->updated,
+	       (__s8) max_qual->qual, max_qual->qual, max_qual->qual,
+	       (__s8) max_qual->level, max_qual->level, max_qual->level,
+	       (__s8) max_qual->noise, max_qual->noise, max_qual->noise,
+	       max_qual->updated);
 
 	/* Try using the card's idea of the signal quality first as long as it tells us what the max quality is.
 	 * Drivers that fill in quality values MUST treat them as percentages, ie the "Link Quality" MUST be
@@ -368,8 +377,8 @@ wext_qual_to_percent (const struct iw_quality *qual,
 		/* A sort of signal-to-noise ratio calculation */
 		level_percent = (int) (100 - 70 * (((double)max_level - (double)level) /
 		                                   ((double)max_level - (double)noise)));
-		nm_log_dbg (LOGD_WIFI, "QL1: level_percent is %d.  max_level %d, level %d, noise_floor %d.",
-		            level_percent, max_level, level, noise);
+		_LOGD (LOGD_WIFI, "QL1: level_percent is %d.  max_level %d, level %d, noise_floor %d.",
+		       level_percent, max_level, level, noise);
 	} else if (   (max_qual->level != 0)
 	           && !(max_qual->updated & IW_QUAL_LEVEL_INVALID) /* Valid max_qual->level as upper bound */
 	           && !(qual->updated & IW_QUAL_LEVEL_INVALID)) {
@@ -380,18 +389,18 @@ wext_qual_to_percent (const struct iw_quality *qual,
 		/* Signal level is relavtive (0 -> max_qual->level) */
 		level = CLAMP (level, 0, max_qual->level);
 		level_percent = (int)(100 * ((double)level / (double)max_qual->level));
-		nm_log_dbg (LOGD_WIFI, "QL2: level_percent is %d.  max_level %d, level %d.",
-		            level_percent, max_qual->level, level);
+		_LOGD (LOGD_WIFI, "QL2: level_percent is %d.  max_level %d, level %d.",
+		       level_percent, max_qual->level, level);
 	} else if (percent == -1) {
-		nm_log_dbg (LOGD_WIFI, "QL: Could not get quality %% value from driver.  Driver is probably buggy.");
+		_LOGD (LOGD_WIFI, "QL: Could not get quality %% value from driver.  Driver is probably buggy.");
 	}
 
 	/* If the quality percent was 0 or doesn't exist, then try to use signal levels instead */
 	if ((percent < 1) && (level_percent >= 0))
 		percent = level_percent;
 
-	nm_log_dbg (LOGD_WIFI, "QL: Final quality percent is %d (%d).",
-	            percent, CLAMP (percent, 0, 100));
+	_LOGD (LOGD_WIFI, "QL: Final quality percent is %d (%d).",
+	       percent, CLAMP (percent, 0, 100));
 	return (CLAMP (percent, 0, 100));
 }
 
@@ -413,9 +422,9 @@ wifi_wext_get_qual (WifiData *data)
 	nm_utils_ifname_cpy (wrq.ifr_name, ifname);
 
 	if (ioctl (wext->fd, SIOCGIWSTATS, &wrq) < 0) {
-		nm_log_warn (LOGD_PLATFORM | LOGD_WIFI,
-		             "(%s): error getting signal strength: %s",
-		             ifname, strerror (errno));
+		_LOGW (LOGD_PLATFORM | LOGD_WIFI,
+		       "(%s): error getting signal strength: %s",
+		       ifname, strerror (errno));
 		return -1;
 	}
 
@@ -460,9 +469,9 @@ wifi_wext_set_mesh_channel (WifiData *data, guint32 channel)
 	}
 
 	if (ioctl (wext->fd, SIOCSIWFREQ, &wrq) < 0) {
-		nm_log_err (LOGD_PLATFORM | LOGD_WIFI | LOGD_OLPC,
-		            "(%s): error setting channel to %d: %s",
-		            ifname, channel, strerror (errno));
+		_LOGE (LOGD_PLATFORM | LOGD_WIFI | LOGD_OLPC,
+		       "(%s): error setting channel to %d: %s",
+		       ifname, channel, strerror (errno));
 		return FALSE;
 	}
 
@@ -494,11 +503,11 @@ wifi_wext_set_mesh_ssid (WifiData *data, const guint8 *ssid, gsize len)
 
 	if (errno != ENODEV) {
 		errsv = errno;
-		nm_log_err (LOGD_PLATFORM | LOGD_WIFI | LOGD_OLPC,
-		            "(%s): error setting SSID to '%s': %s",
-		            ifname,
-		            ssid ? nm_utils_escape_ssid (ssid, len) : "(null)",
-		            strerror (errsv));
+		_LOGE (LOGD_PLATFORM | LOGD_WIFI | LOGD_OLPC,
+		       "(%s): error setting SSID to '%s': %s",
+		       ifname,
+		       ssid ? nm_utils_escape_ssid (ssid, len) : "(null)",
+		       strerror (errsv));
 	}
 
 	return FALSE;
@@ -546,9 +555,9 @@ wext_get_range_ifname (WifiDataWext *wext,
 			success = TRUE;
 			break;
 		} else if (errno != EAGAIN) {
-			nm_log_err (LOGD_PLATFORM | LOGD_WIFI,
-			            "(%s): couldn't get driver range information (%d).",
-			            ifname, errno);
+			_LOGE (LOGD_PLATFORM | LOGD_WIFI,
+			       "(%s): couldn't get driver range information (%d).",
+			       ifname, errno);
 			break;
 		}
 
@@ -556,9 +565,9 @@ wext_get_range_ifname (WifiDataWext *wext,
 	}
 
 	if (i <= 0) {
-		nm_log_warn (LOGD_PLATFORM | LOGD_WIFI,
-		             "(%s): driver took too long to respond to IWRANGE query.",
-		             ifname);
+		_LOGW (LOGD_PLATFORM | LOGD_WIFI,
+		       "(%s): driver took too long to respond to IWRANGE query.",
+		       ifname);
 	}
 
 	return success;
@@ -595,18 +604,18 @@ wext_get_caps (WifiDataWext *wext, const char *ifname, struct iw_range *range)
 	/* Check for cipher support but not WPA support */
 	if (    (caps & (NM_WIFI_DEVICE_CAP_CIPHER_TKIP | NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
 	    && !(caps & (NM_WIFI_DEVICE_CAP_WPA | NM_WIFI_DEVICE_CAP_RSN))) {
-		nm_log_warn (LOGD_WIFI,
-		             "%s: device supports WPA ciphers but not WPA protocol; WPA unavailable.",
-		             ifname);
+		_LOGW (LOGD_WIFI,
+		       "%s: device supports WPA ciphers but not WPA protocol; WPA unavailable.",
+		       ifname);
 		caps &= ~WPA_CAPS;
 	}
 
 	/* Check for WPA support but not cipher support */
 	if (    (caps & (NM_WIFI_DEVICE_CAP_WPA | NM_WIFI_DEVICE_CAP_RSN))
 	    && !(caps & (NM_WIFI_DEVICE_CAP_CIPHER_TKIP | NM_WIFI_DEVICE_CAP_CIPHER_CCMP))) {
-		nm_log_warn (LOGD_WIFI,
-		             "%s: device supports WPA protocol but not WPA ciphers; WPA unavailable.",
-		             ifname);
+		_LOGW (LOGD_WIFI,
+		       "%s: device supports WPA protocol but not WPA ciphers; WPA unavailable.",
+		       ifname);
 		caps &= ~WPA_CAPS;
 	}
 
@@ -631,8 +640,8 @@ wifi_wext_init (int ifindex, gboolean check_scan)
 	char ifname[IFNAMSIZ];
 
 	if (!nmp_utils_if_indextoname (ifindex, ifname)) {
-		nm_log_warn (LOGD_PLATFORM | LOGD_WIFI,
-		             "wifi-wext: can't determine interface name for ifindex %d", ifindex);
+		_LOGW (LOGD_PLATFORM | LOGD_WIFI,
+		       "can't determine interface name for ifindex %d", ifindex);
 		return NULL;
 	}
 
@@ -656,16 +665,16 @@ wifi_wext_init (int ifindex, gboolean check_scan)
 
 	memset (&range, 0, sizeof (struct iw_range));
 	if (wext_get_range_ifname (wext, ifname, &range, &response_len) == FALSE) {
-		nm_log_info (LOGD_PLATFORM | LOGD_WIFI, "(%s): driver WEXT range request failed",
-		             ifname);
+		_LOGI (LOGD_PLATFORM | LOGD_WIFI, "(%s): driver WEXT range request failed",
+		       ifname);
 		goto error;
 	}
 
 	if ((response_len < 300) || (range.we_version_compiled < 21)) {
-		nm_log_info (LOGD_PLATFORM | LOGD_WIFI,
-		             "(%s): driver WEXT version too old (got %d, expected >= 21)",
-		             ifname,
-		             range.we_version_compiled);
+		_LOGI (LOGD_PLATFORM | LOGD_WIFI,
+		       "(%s): driver WEXT version too old (got %d, expected >= 21)",
+		       ifname,
+		       range.we_version_compiled);
 		goto error;
 	}
 
@@ -686,9 +695,9 @@ wifi_wext_init (int ifindex, gboolean check_scan)
 
 	/* Check for scanning capability; cards that can't scan are not supported */
 	if (check_scan && (wext_can_scan_ifname (wext, ifname) == FALSE)) {
-		nm_log_info (LOGD_PLATFORM | LOGD_WIFI,
-		             "(%s): drivers that cannot scan are unsupported",
-		             ifname);
+		_LOGI (LOGD_PLATFORM | LOGD_WIFI,
+		       "(%s): drivers that cannot scan are unsupported",
+		       ifname);
 		goto error;
 	}
 
@@ -698,15 +707,15 @@ wifi_wext_init (int ifindex, gboolean check_scan)
 	 */
 	scan_capa_range = (struct iw_range_with_scan_capa *) &range;
 	if (scan_capa_range->scan_capa & NM_IW_SCAN_CAPA_ESSID) {
-		nm_log_info (LOGD_PLATFORM | LOGD_WIFI,
-		             "(%s): driver supports SSID scans (scan_capa 0x%02X).",
-		             ifname,
-		             scan_capa_range->scan_capa);
+		_LOGI (LOGD_PLATFORM | LOGD_WIFI,
+		       "(%s): driver supports SSID scans (scan_capa 0x%02X).",
+		       ifname,
+		       scan_capa_range->scan_capa);
 	} else {
-		nm_log_info (LOGD_PLATFORM | LOGD_WIFI,
-		             "(%s): driver does not support SSID scans (scan_capa 0x%02X).",
-		             ifname,
-		             scan_capa_range->scan_capa);
+		_LOGI (LOGD_PLATFORM | LOGD_WIFI,
+		       "(%s): driver does not support SSID scans (scan_capa 0x%02X).",
+		       ifname,
+		       scan_capa_range->scan_capa);
 	}
 
 	wext->parent.caps = wext_get_caps (wext, ifname, &range);
@@ -717,9 +726,9 @@ wifi_wext_init (int ifindex, gboolean check_scan)
 	if (has_5ghz)
 		wext->parent.caps |= NM_WIFI_DEVICE_CAP_FREQ_5GHZ;
 
-	nm_log_info (LOGD_PLATFORM | LOGD_WIFI,
-	             "(%s): using WEXT for WiFi device control",
-	             ifname);
+	_LOGI (LOGD_PLATFORM | LOGD_WIFI,
+	       "(%s): using WEXT for WiFi device control",
+	       ifname);
 
 	return (WifiData *) wext;
 
