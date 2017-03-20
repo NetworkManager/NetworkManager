@@ -476,6 +476,7 @@ wifi_wext_set_mesh_ssid (WifiData *data, const guint8 *ssid, gsize len)
 	struct iwreq wrq;
 	char buf[IW_ESSID_MAX_SIZE + 1];
 	char ifname[IFNAMSIZ];
+	int errsv;
 
 	if (!get_ifname (data->ifindex, ifname, "set-mesh-ssid"))
 		return FALSE;
@@ -492,11 +493,12 @@ wifi_wext_set_mesh_ssid (WifiData *data, const guint8 *ssid, gsize len)
 		return TRUE;
 
 	if (errno != ENODEV) {
+		errsv = errno;
 		nm_log_err (LOGD_PLATFORM | LOGD_WIFI | LOGD_OLPC,
 		            "(%s): error setting SSID to '%s': %s",
 		            ifname,
 		            ssid ? nm_utils_escape_ssid (ssid, len) : "(null)",
-		            strerror (errno));
+		            strerror (errsv));
 	}
 
 	return FALSE;
