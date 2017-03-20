@@ -59,10 +59,12 @@ typedef struct {
 	 * If you use this signal slot, you are advised to cast the reason
 	 * to the NMActiveConnectionStateReason type, which is fully compatible.
 	 */
+	G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 	NM_DEPRECATED_IN_1_8
 	void (*vpn_state_changed) (NMVpnConnection *connection,
 	                           NMVpnConnectionState state,
 	                           NMVpnConnectionStateReason reason);
+	G_GNUC_END_IGNORE_DEPRECATIONS
 
 	/*< private >*/
 	gpointer padding[4];
