@@ -38,6 +38,14 @@
 #include "platform/nm-platform-utils.h"
 #include "nm-utils.h"
 
+#define _NMLOG_PREFIX_NAME      "wifi-nl80211"
+#define _NMLOG(level, domain, ...) \
+	G_STMT_START { \
+		nm_log ((level), (domain), \
+		        "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+		        _NMLOG_PREFIX_NAME \
+		        _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+	} G_STMT_END
 
 /*****************************************************************************
  * Copied from libnl3/genl:
@@ -220,9 +228,9 @@ out_cb_free:
 	nl_cb_put (cb);
 out:
 	if (result >= 0)
-		nm_log_dbg (LOGD_WIFI, "genl_ctrl_resolve: resolved \"%s\" as 0x%x", name, result);
+		_LOGD (LOGD_WIFI, "genl_ctrl_resolve: resolved \"%s\" as 0x%x", name, result);
 	else
-		nm_log_err (LOGD_WIFI, "genl_ctrl_resolve: failed resolve \"%s\"", name);
+		_LOGE (LOGD_WIFI, "genl_ctrl_resolve: failed resolve \"%s\"", name);
 	return result;
 }
 
@@ -334,8 +342,8 @@ _nl80211_send_and_recv (struct nl_sock *nl_sock,
 			    genlmsg_hdr (nlmsg_hdr (msg))->cmd == NL80211_CMD_GET_SCAN)
 				break;
 
-			nm_log_warn (LOGD_WIFI, "nl_recvmsgs() error: (%d) %s",
-			             err, nl_geterror (err));
+			_LOGW (LOGD_WIFI, "nl_recvmsgs() error: (%d) %s",
+			       err, nl_geterror (err));
 			break;
 		}
 	}
@@ -1006,7 +1014,9 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 			case WLAN_CIPHER_SUITE_SMS4:
 				break;
 			default:
-				nm_log_dbg (LOGD_PLATFORM | LOGD_WIFI, "Don't know the meaning of NL80211_ATTR_CIPHER_SUITE %#8.8x.", ciphers[i]);
+				_LOGD (LOGD_PLATFORM | LOGD_WIFI,
+				       "don't know the meaning of NL80211_ATTR_CIPHER_SUITE %#8.8x.",
+				       ciphers[i]);
 				break;
 			}
 		}
@@ -1041,8 +1051,8 @@ wifi_nl80211_init (int ifindex)
 	char ifname[IFNAMSIZ];
 
 	if (!nmp_utils_if_indextoname (ifindex, ifname)) {
-		nm_log_warn (LOGD_PLATFORM | LOGD_WIFI,
-		             "wifi-nl80211: can't determine interface name for ifindex %d", ifindex);
+		_LOGW (LOGD_PLATFORM | LOGD_WIFI,
+		       "can't determine interface name for ifindex %d", ifindex);
 		nm_sprintf_buf (ifname, "if %d", ifindex);
 	}
 
@@ -1081,30 +1091,30 @@ wifi_nl80211_init (int ifindex)
 
 	if (nl80211_send_and_recv (nl80211, msg, nl80211_wiphy_info_handler,
 	                           &device_info) < 0) {
-		nm_log_dbg (LOGD_PLATFORM | LOGD_WIFI,
-		            "(%s): NL80211_CMD_GET_WIPHY request failed",
-		            ifname);
+		_LOGD (LOGD_PLATFORM | LOGD_WIFI,
+		       "(%s): NL80211_CMD_GET_WIPHY request failed",
+		       ifname);
 		goto error;
 	}
 
 	if (!device_info.success) {
-		nm_log_dbg (LOGD_PLATFORM | LOGD_WIFI,
-		            "(%s): NL80211_CMD_GET_WIPHY request indicated failure",
-		            ifname);
+		_LOGD (LOGD_PLATFORM | LOGD_WIFI,
+		       "(%s): NL80211_CMD_GET_WIPHY request indicated failure",
+		       ifname);
 		goto error;
 	}
 
 	if (!device_info.supported) {
-		nm_log_dbg (LOGD_PLATFORM | LOGD_WIFI,
-		            "(%s): driver does not fully support nl80211, falling back to WEXT",
-		            ifname);
+		_LOGD (LOGD_PLATFORM | LOGD_WIFI,
+		       "(%s): driver does not fully support nl80211, falling back to WEXT",
+		       ifname);
 		goto error;
 	}
 
 	if (!device_info.can_scan_ssid) {
-		nm_log_err (LOGD_PLATFORM | LOGD_WIFI,
-		            "(%s): driver does not support SSID scans",
-		            ifname);
+		_LOGE (LOGD_PLATFORM | LOGD_WIFI,
+		       "(%s): driver does not support SSID scans",
+		       ifname);
 		goto error;
 	}
 
@@ -1116,9 +1126,9 @@ wifi_nl80211_init (int ifindex)
 	}
 
 	if (device_info.caps == 0) {
-		nm_log_err (LOGD_PLATFORM | LOGD_WIFI,
-		            "(%s): driver doesn't report support of any encryption",
-		            ifname);
+		_LOGE (LOGD_PLATFORM | LOGD_WIFI,
+		       "(%s): driver doesn't report support of any encryption",
+		       ifname);
 		goto error;
 	}
 
@@ -1130,9 +1140,9 @@ wifi_nl80211_init (int ifindex)
 	if (device_info.can_wowlan)
 		nl80211->parent.get_wowlan = wifi_nl80211_get_wowlan;
 
-	nm_log_info (LOGD_PLATFORM | LOGD_WIFI,
-	             "(%s): using nl80211 for WiFi device control",
-	             ifname);
+	_LOGI (LOGD_PLATFORM | LOGD_WIFI,
+	       "(%s): using nl80211 for WiFi device control",
+	       ifname);
 
 	return (WifiData *) nl80211;
 
