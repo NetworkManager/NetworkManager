@@ -52,17 +52,10 @@
 
 #include "introspection/org.freedesktop.NetworkManager.DnsManager.h"
 
-#if WITH_LIBSOUP
-#include <libsoup/soup.h>
-
-#ifdef SOUP_CHECK_VERSION
-#if SOUP_CHECK_VERSION (2, 40, 0)
-#define DOMAIN_IS_VALID(domain) (*(domain) && !soup_tld_domain_is_public_suffix (domain))
-#endif
-#endif
-#endif
-
-#ifndef DOMAIN_IS_VALID
+#if WITH_LIBPSL
+#include <libpsl.h>
+#define DOMAIN_IS_VALID(domain) (*(domain) && !psl_is_public_suffix (psl_builtin (), domain))
+#else
 #define DOMAIN_IS_VALID(domain) (*(domain))
 #endif
 

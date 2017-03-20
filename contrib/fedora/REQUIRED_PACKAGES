@@ -35,6 +35,7 @@ yum install \
     dbus-x11 \
     wireless-tools-devel \
     polkit-devel \
+    libpsl-devel \
     libsoup-devel \
     readline-devel \
     teamd-devel \
