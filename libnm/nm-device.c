@@ -1721,6 +1721,7 @@ get_bus_name (NMDevice *device)
 		 */
 		priv->bus_name = g_strdup ("");
 	}
+	g_object_unref (udevice);
 
 out:
 	if (*priv->bus_name)
