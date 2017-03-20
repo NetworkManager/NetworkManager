@@ -30,11 +30,9 @@ typedef struct WifiData WifiData;
 
 gboolean wifi_utils_is_wifi (int dirfd, const char *ifname);
 
-WifiData *wifi_utils_init (const char *iface, int ifindex, gboolean check_scan);
+WifiData *wifi_utils_init (int ifindex, gboolean check_scan);
 
 int wifi_utils_get_ifindex (WifiData *data);
-
-const char *wifi_utils_get_iface (WifiData *data);
 
 void wifi_utils_deinit (WifiData *data);
 

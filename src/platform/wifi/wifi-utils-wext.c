@@ -94,20 +94,36 @@ wifi_wext_deinit (WifiData *parent)
 		close (wext->fd);
 }
 
+static gboolean
+get_ifname (int ifindex, char *buffer, const char *op)
+{
+	int errsv;
+
+	if (!nmp_utils_if_indextoname (ifindex, buffer)) {
+		errsv = errno;
+		nm_log_warn (LOGD_PLATFORM | LOGD_WIFI,
+		             "wifi-wext: error getting interface name for ifindex %d, operation '%s': %s (%d)",
+		             ifindex, op, g_strerror (errsv), errsv);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 static NM80211Mode
-wifi_wext_get_mode (WifiData *data)
+wifi_wext_get_mode_ifname (WifiData *data, const char *ifname)
 {
 	WifiDataWext *wext = (WifiDataWext *) data;
 	struct iwreq wrq;
 
 	memset (&wrq, 0, sizeof (struct iwreq));
-	nm_utils_ifname_cpy (wrq.ifr_name, wext->parent.iface);
+	nm_utils_ifname_cpy (wrq.ifr_name, ifname);
 
 	if (ioctl (wext->fd, SIOCGIWMODE, &wrq) < 0) {
 		if (errno != ENODEV) {
 			nm_log_warn (LOGD_PLATFORM | LOGD_WIFI,
 			             "(%s): error %d getting card mode",
-			             wext->parent.iface, errno);
+			             ifname, errno);
 		}
 		return NM_802_11_MODE_UNKNOWN;
 	}
@@ -126,13 +142,28 @@ wifi_wext_get_mode (WifiData *data)
 	return NM_802_11_MODE_UNKNOWN;
 }
 
+static NM80211Mode
+wifi_wext_get_mode (WifiData *data)
+{
+	char ifname[IFNAMSIZ];
+
+	if (!get_ifname (data->ifindex, ifname, "get-mode"))
+		return FALSE;
+
+	return wifi_wext_get_mode_ifname (data, ifname);
+}
+
 static gboolean
 wifi_wext_set_mode (WifiData *data, const NM80211Mode mode)
 {
 	WifiDataWext *wext = (WifiDataWext *) data;
 	struct iwreq wrq;
+	char ifname[IFNAMSIZ];
 
-	if (wifi_wext_get_mode (data) == mode)
+	if (!get_ifname (data->ifindex, ifname, "set-mode"))
+		return FALSE;
+
+	if (wifi_wext_get_mode_ifname (data, ifname) == mode)
 		return TRUE;
 
 	memset (&wrq, 0, sizeof (struct iwreq));
@@ -151,11 +182,12 @@ wifi_wext_set_mode (WifiData *data, const NM80211Mode mode)
 		return FALSE;
 	}
 
-	nm_utils_ifname_cpy (wrq.ifr_name, wext->parent.iface);
+	nm_utils_ifname_cpy (wrq.ifr_name, ifname);
 	if (ioctl (wext->fd, SIOCSIWMODE, &wrq) < 0) {
 		if (errno != ENODEV) {
-			nm_log_err (LOGD_PLATFORM | LOGD_WIFI, "(%s): error setting mode %d",
-			            wext->parent.iface, mode);
+			nm_log_err (LOGD_PLATFORM | LOGD_WIFI,
+			            "(%s): error setting mode %d",
+			            ifname, mode);
 		}
 		return FALSE;
 	}
@@ -168,6 +200,10 @@ wifi_wext_set_powersave (WifiData *data, guint32 powersave)
 {
 	WifiDataWext *wext = (WifiDataWext *) data;
 	struct iwreq wrq;
+	char ifname[IFNAMSIZ];
+
+	if (!get_ifname (data->ifindex, ifname, "set-powersave"))
+		return FALSE;
 
 	memset (&wrq, 0, sizeof (struct iwreq));
 	if (powersave == 1) {
@@ -175,11 +211,12 @@ wifi_wext_set_powersave (WifiData *data, guint32 powersave)
 	} else
 		wrq.u.power.disabled = 1;
 
-	nm_utils_ifname_cpy (wrq.ifr_name, wext->parent.iface);
+	nm_utils_ifname_cpy (wrq.ifr_name, ifname);
 	if (ioctl (wext->fd, SIOCSIWPOWER, &wrq) < 0) {
 		if (errno != ENODEV) {
-			nm_log_err (LOGD_PLATFORM | LOGD_WIFI, "(%s): error setting powersave %" G_GUINT32_FORMAT,
-			            wext->parent.iface, powersave);
+			nm_log_err (LOGD_PLATFORM | LOGD_WIFI,
+			            "(%s): error setting powersave %" G_GUINT32_FORMAT,
+			            ifname, powersave);
 		}
 		return FALSE;
 	}
@@ -192,13 +229,17 @@ wifi_wext_get_freq (WifiData *data)
 {
 	WifiDataWext *wext = (WifiDataWext *) data;
 	struct iwreq wrq;
+	char ifname[IFNAMSIZ];
+
+	if (!get_ifname (data->ifindex, ifname, "get-freq"))
+		return FALSE;
 
 	memset (&wrq, 0, sizeof (struct iwreq));
-	nm_utils_ifname_cpy (wrq.ifr_name, wext->parent.iface);
+	nm_utils_ifname_cpy (wrq.ifr_name, ifname);
 	if (ioctl (wext->fd, SIOCGIWFREQ, &wrq) < 0) {
 		nm_log_warn (LOGD_PLATFORM | LOGD_WIFI,
 		             "(%s): error getting frequency: %s",
-		             wext->parent.iface, strerror (errno));
+		             ifname, strerror (errno));
 		return 0;
 	}
 
@@ -226,13 +267,17 @@ wifi_wext_get_bssid (WifiData *data, guint8 *out_bssid)
 {
 	WifiDataWext *wext = (WifiDataWext *) data;
 	struct iwreq wrq;
+	char ifname[IFNAMSIZ];
+
+	if (!get_ifname (data->ifindex, ifname, "get-bssid"))
+		return FALSE;
 
 	memset (&wrq, 0, sizeof (wrq));
-	nm_utils_ifname_cpy (wrq.ifr_name, wext->parent.iface);
+	nm_utils_ifname_cpy (wrq.ifr_name, ifname);
 	if (ioctl (wext->fd, SIOCGIWAP, &wrq) < 0) {
 		nm_log_warn (LOGD_PLATFORM | LOGD_WIFI,
 		             "(%s): error getting associated BSSID: %s",
-		             wext->parent.iface, strerror (errno));
+		             ifname, strerror (errno));
 		return FALSE;
 	}
 	memcpy (out_bssid, &(wrq.u.ap_addr.sa_data), ETH_ALEN);
@@ -245,9 +290,13 @@ wifi_wext_get_rate (WifiData *data)
 	WifiDataWext *wext = (WifiDataWext *) data;
 	struct iwreq wrq;
 	int err;
+	char ifname[IFNAMSIZ];
+
+	if (!get_ifname (data->ifindex, ifname, "get-rate"))
+		return FALSE;
 
 	memset (&wrq, 0, sizeof (wrq));
-	nm_utils_ifname_cpy (wrq.ifr_name, wext->parent.iface);
+	nm_utils_ifname_cpy (wrq.ifr_name, ifname);
 	err = ioctl (wext->fd, SIOCGIWRATE, &wrq);
 	return ((err == 0) ? wrq.u.bitrate.value / 1000 : 0);
 }
@@ -352,17 +401,21 @@ wifi_wext_get_qual (WifiData *data)
 	WifiDataWext *wext = (WifiDataWext *) data;
 	struct iwreq wrq;
 	struct iw_statistics stats;
+	char ifname[IFNAMSIZ];
+
+	if (!get_ifname (data->ifindex, ifname, "get-qual"))
+		return FALSE;
 
 	memset (&stats, 0, sizeof (stats));
 	wrq.u.data.pointer = &stats;
 	wrq.u.data.length = sizeof (stats);
 	wrq.u.data.flags = 1;  /* Clear updated flag */
-	nm_utils_ifname_cpy (wrq.ifr_name, wext->parent.iface);
+	nm_utils_ifname_cpy (wrq.ifr_name, ifname);
 
 	if (ioctl (wext->fd, SIOCGIWSTATS, &wrq) < 0) {
 		nm_log_warn (LOGD_PLATFORM | LOGD_WIFI,
 		             "(%s): error getting signal strength: %s",
-		             wext->parent.iface, strerror (errno));
+		             ifname, strerror (errno));
 		return -1;
 	}
 
@@ -392,9 +445,13 @@ wifi_wext_set_mesh_channel (WifiData *data, guint32 channel)
 {
 	WifiDataWext *wext = (WifiDataWext *) data;
 	struct iwreq wrq;
+	char ifname[IFNAMSIZ];
+
+	if (!get_ifname (data->ifindex, ifname, "set-mesh-channel"))
+		return FALSE;
 
 	memset (&wrq, 0, sizeof (struct iwreq));
-	nm_utils_ifname_cpy (wrq.ifr_name, wext->parent.iface);
+	nm_utils_ifname_cpy (wrq.ifr_name, ifname);
 
 	if (channel > 0) {
 		wrq.u.freq.flags = IW_FREQ_FIXED;
@@ -405,7 +462,7 @@ wifi_wext_set_mesh_channel (WifiData *data, guint32 channel)
 	if (ioctl (wext->fd, SIOCSIWFREQ, &wrq) < 0) {
 		nm_log_err (LOGD_PLATFORM | LOGD_WIFI | LOGD_OLPC,
 		            "(%s): error setting channel to %d: %s",
-		            wext->parent.iface, channel, strerror (errno));
+		            ifname, channel, strerror (errno));
 		return FALSE;
 	}
 
@@ -418,6 +475,10 @@ wifi_wext_set_mesh_ssid (WifiData *data, const guint8 *ssid, gsize len)
 	WifiDataWext *wext = (WifiDataWext *) data;
 	struct iwreq wrq;
 	char buf[IW_ESSID_MAX_SIZE + 1];
+	char ifname[IFNAMSIZ];
+
+	if (!get_ifname (data->ifindex, ifname, "set-mesh-ssid"))
+		return FALSE;
 
 	memset (buf, 0, sizeof (buf));
 	memcpy (buf, ssid, MIN (sizeof (buf) - 1, len));
@@ -426,14 +487,14 @@ wifi_wext_set_mesh_ssid (WifiData *data, const guint8 *ssid, gsize len)
 	wrq.u.essid.length = len;
 	wrq.u.essid.flags = (len > 0) ? 1 : 0; /* 1=enable SSID, 0=disable/any */
 
-	nm_utils_ifname_cpy (wrq.ifr_name, wext->parent.iface);
+	nm_utils_ifname_cpy (wrq.ifr_name, ifname);
 	if (ioctl (wext->fd, SIOCSIWESSID, &wrq) == 0)
 		return TRUE;
 
 	if (errno != ENODEV) {
 		nm_log_err (LOGD_PLATFORM | LOGD_WIFI | LOGD_OLPC,
 		            "(%s): error setting SSID to '%s': %s",
-		            wext->parent.iface,
+		            ifname,
 		            ssid ? nm_utils_escape_ssid (ssid, len) : "(null)",
 		            strerror (errno));
 	}
@@ -444,12 +505,12 @@ wifi_wext_set_mesh_ssid (WifiData *data, const guint8 *ssid, gsize len)
 /*****************************************************************************/
 
 static gboolean
-wext_can_scan (WifiDataWext *wext)
+wext_can_scan_ifname (WifiDataWext *wext, const char *ifname)
 {
 	struct iwreq wrq;
 
 	memset (&wrq, 0, sizeof (struct iwreq));
-	nm_utils_ifname_cpy (wrq.ifr_name, wext->parent.iface);
+	nm_utils_ifname_cpy (wrq.ifr_name, ifname);
 	if (ioctl (wext->fd, SIOCSIWSCAN, &wrq) < 0) {
 		if (errno == EOPNOTSUPP)
 			return FALSE;
@@ -458,16 +519,17 @@ wext_can_scan (WifiDataWext *wext)
 }
 
 static gboolean
-wext_get_range (WifiDataWext *wext,
-                struct iw_range *range,
-                guint32 *response_len)
+wext_get_range_ifname (WifiDataWext *wext,
+                       const char *ifname,
+                       struct iw_range *range,
+                       guint32 *response_len)
 {
 	int i = 26;
 	gboolean success = FALSE;
 	struct iwreq wrq;
 
 	memset (&wrq, 0, sizeof (struct iwreq));
-	nm_utils_ifname_cpy (wrq.ifr_name, wext->parent.iface);
+	nm_utils_ifname_cpy (wrq.ifr_name, ifname);
 	wrq.u.data.pointer = (caddr_t) range;
 	wrq.u.data.length = sizeof (struct iw_range);
 
@@ -484,7 +546,7 @@ wext_get_range (WifiDataWext *wext,
 		} else if (errno != EAGAIN) {
 			nm_log_err (LOGD_PLATFORM | LOGD_WIFI,
 			            "(%s): couldn't get driver range information (%d).",
-			            wext->parent.iface, errno);
+			            ifname, errno);
 			break;
 		}
 
@@ -494,7 +556,7 @@ wext_get_range (WifiDataWext *wext,
 	if (i <= 0) {
 		nm_log_warn (LOGD_PLATFORM | LOGD_WIFI,
 		             "(%s): driver took too long to respond to IWRANGE query.",
-		             wext->parent.iface);
+		             ifname);
 	}
 
 	return success;
@@ -506,7 +568,7 @@ wext_get_range (WifiDataWext *wext,
                   NM_WIFI_DEVICE_CAP_RSN)
 
 static guint32
-wext_get_caps (WifiDataWext *wext, struct iw_range *range)
+wext_get_caps (WifiDataWext *wext, const char *ifname, struct iw_range *range)
 {
 	guint32 caps = NM_WIFI_DEVICE_CAP_NONE;
 
@@ -531,16 +593,18 @@ wext_get_caps (WifiDataWext *wext, struct iw_range *range)
 	/* Check for cipher support but not WPA support */
 	if (    (caps & (NM_WIFI_DEVICE_CAP_CIPHER_TKIP | NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
 	    && !(caps & (NM_WIFI_DEVICE_CAP_WPA | NM_WIFI_DEVICE_CAP_RSN))) {
-		nm_log_warn (LOGD_WIFI, "%s: device supports WPA ciphers but not WPA protocol; "
-		             "WPA unavailable.", wext->parent.iface);
+		nm_log_warn (LOGD_WIFI,
+		             "%s: device supports WPA ciphers but not WPA protocol; WPA unavailable.",
+		             ifname);
 		caps &= ~WPA_CAPS;
 	}
 
 	/* Check for WPA support but not cipher support */
 	if (    (caps & (NM_WIFI_DEVICE_CAP_WPA | NM_WIFI_DEVICE_CAP_RSN))
 	    && !(caps & (NM_WIFI_DEVICE_CAP_CIPHER_TKIP | NM_WIFI_DEVICE_CAP_CIPHER_CCMP))) {
-		nm_log_warn (LOGD_WIFI, "%s: device supports WPA protocol but not WPA ciphers; "
-		             "WPA unavailable.", wext->parent.iface);
+		nm_log_warn (LOGD_WIFI,
+		             "%s: device supports WPA protocol but not WPA ciphers; WPA unavailable.",
+		             ifname);
 		caps &= ~WPA_CAPS;
 	}
 
@@ -554,7 +618,7 @@ wext_get_caps (WifiDataWext *wext, struct iw_range *range)
 }
 
 WifiData *
-wifi_wext_init (const char *iface, int ifindex, gboolean check_scan)
+wifi_wext_init (int ifindex, gboolean check_scan)
 {
 	WifiDataWext *wext;
 	struct iw_range range;
@@ -562,8 +626,15 @@ wifi_wext_init (const char *iface, int ifindex, gboolean check_scan)
 	struct iw_range_with_scan_capa *scan_capa_range;
 	int i;
 	gboolean freq_valid = FALSE, has_5ghz = FALSE, has_2ghz = FALSE;
+	char ifname[IFNAMSIZ];
 
-	wext = wifi_data_new (iface, ifindex, sizeof (*wext));
+	if (!nmp_utils_if_indextoname (ifindex, ifname)) {
+		nm_log_warn (LOGD_PLATFORM | LOGD_WIFI,
+		             "wifi-wext: can't determine interface name for ifindex %d", ifindex);
+		return NULL;
+	}
+
+	wext = wifi_data_new (ifindex, sizeof (*wext));
 	wext->parent.get_mode = wifi_wext_get_mode;
 	wext->parent.set_mode = wifi_wext_set_mode;
 	wext->parent.set_powersave = wifi_wext_set_powersave;
@@ -582,16 +653,16 @@ wifi_wext_init (const char *iface, int ifindex, gboolean check_scan)
 		goto error;
 
 	memset (&range, 0, sizeof (struct iw_range));
-	if (wext_get_range (wext, &range, &response_len) == FALSE) {
+	if (wext_get_range_ifname (wext, ifname, &range, &response_len) == FALSE) {
 		nm_log_info (LOGD_PLATFORM | LOGD_WIFI, "(%s): driver WEXT range request failed",
-		             wext->parent.iface);
+		             ifname);
 		goto error;
 	}
 
 	if ((response_len < 300) || (range.we_version_compiled < 21)) {
 		nm_log_info (LOGD_PLATFORM | LOGD_WIFI,
 		             "(%s): driver WEXT version too old (got %d, expected >= 21)",
-		             wext->parent.iface,
+		             ifname,
 		             range.we_version_compiled);
 		goto error;
 	}
@@ -612,10 +683,10 @@ wifi_wext_init (const char *iface, int ifindex, gboolean check_scan)
 	}
 
 	/* Check for scanning capability; cards that can't scan are not supported */
-	if (check_scan && (wext_can_scan (wext) == FALSE)) {
+	if (check_scan && (wext_can_scan_ifname (wext, ifname) == FALSE)) {
 		nm_log_info (LOGD_PLATFORM | LOGD_WIFI,
 		             "(%s): drivers that cannot scan are unsupported",
-		             wext->parent.iface);
+		             ifname);
 		goto error;
 	}
 
@@ -627,16 +698,16 @@ wifi_wext_init (const char *iface, int ifindex, gboolean check_scan)
 	if (scan_capa_range->scan_capa & NM_IW_SCAN_CAPA_ESSID) {
 		nm_log_info (LOGD_PLATFORM | LOGD_WIFI,
 		             "(%s): driver supports SSID scans (scan_capa 0x%02X).",
-		             wext->parent.iface,
+		             ifname,
 		             scan_capa_range->scan_capa);
 	} else {
 		nm_log_info (LOGD_PLATFORM | LOGD_WIFI,
 		             "(%s): driver does not support SSID scans (scan_capa 0x%02X).",
-		             wext->parent.iface,
+		             ifname,
 		             scan_capa_range->scan_capa);
 	}
 
-	wext->parent.caps = wext_get_caps (wext, &range);
+	wext->parent.caps = wext_get_caps (wext, ifname, &range);
 	if (freq_valid)
 		wext->parent.caps |= NM_WIFI_DEVICE_CAP_FREQ_VALID;
 	if (has_2ghz)
@@ -646,7 +717,7 @@ wifi_wext_init (const char *iface, int ifindex, gboolean check_scan)
 
 	nm_log_info (LOGD_PLATFORM | LOGD_WIFI,
 	             "(%s): using WEXT for WiFi device control",
-	             wext->parent.iface);
+	             ifname);
 
 	return (WifiData *) wext;
 

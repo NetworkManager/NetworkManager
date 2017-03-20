@@ -35,6 +35,7 @@
 #include "wifi-utils-private.h"
 #include "wifi-utils-nl80211.h"
 #include "platform/nm-platform.h"
+#include "platform/nm-platform-utils.h"
 #include "nm-utils.h"
 
 
@@ -1032,13 +1033,20 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 }
 
 WifiData *
-wifi_nl80211_init (const char *iface, int ifindex)
+wifi_nl80211_init (int ifindex)
 {
 	WifiDataNl80211 *nl80211;
 	struct nl_msg *msg;
 	struct nl80211_device_info device_info = {};
+	char ifname[IFNAMSIZ];
 
-	nl80211 = wifi_data_new (iface, ifindex, sizeof (*nl80211));
+	if (!nmp_utils_if_indextoname (ifindex, ifname)) {
+		nm_log_warn (LOGD_PLATFORM | LOGD_WIFI,
+		             "wifi-nl80211: can't determine interface name for ifindex %d", ifindex);
+		nm_sprintf_buf (ifname, "if %d", ifindex);
+	}
+
+	nl80211 = wifi_data_new (ifindex, sizeof (*nl80211));
 	nl80211->parent.get_mode = wifi_nl80211_get_mode;
 	nl80211->parent.set_mode = wifi_nl80211_set_mode;
 	nl80211->parent.set_powersave = wifi_nl80211_set_powersave;
@@ -1075,42 +1083,42 @@ wifi_nl80211_init (const char *iface, int ifindex)
 	                           &device_info) < 0) {
 		nm_log_dbg (LOGD_PLATFORM | LOGD_WIFI,
 		            "(%s): NL80211_CMD_GET_WIPHY request failed",
-		            nl80211->parent.iface);
+		            ifname);
 		goto error;
 	}
 
 	if (!device_info.success) {
 		nm_log_dbg (LOGD_PLATFORM | LOGD_WIFI,
 		            "(%s): NL80211_CMD_GET_WIPHY request indicated failure",
-		            nl80211->parent.iface);
+		            ifname);
 		goto error;
 	}
 
 	if (!device_info.supported) {
 		nm_log_dbg (LOGD_PLATFORM | LOGD_WIFI,
 		            "(%s): driver does not fully support nl80211, falling back to WEXT",
-		            nl80211->parent.iface);
+		            ifname);
 		goto error;
 	}
 
 	if (!device_info.can_scan_ssid) {
 		nm_log_err (LOGD_PLATFORM | LOGD_WIFI,
 		            "(%s): driver does not support SSID scans",
-		            nl80211->parent.iface);
+		            ifname);
 		goto error;
 	}
 
 	if (device_info.num_freqs == 0 || device_info.freqs == NULL) {
 		nm_log_err (LOGD_PLATFORM | LOGD_WIFI,
 		            "(%s): driver reports no supported frequencies",
-		            nl80211->parent.iface);
+		            ifname);
 		goto error;
 	}
 
 	if (device_info.caps == 0) {
 		nm_log_err (LOGD_PLATFORM | LOGD_WIFI,
 		            "(%s): driver doesn't report support of any encryption",
-		            nl80211->parent.iface);
+		            ifname);
 		goto error;
 	}
 
@@ -1124,7 +1132,7 @@ wifi_nl80211_init (const char *iface, int ifindex)
 
 	nm_log_info (LOGD_PLATFORM | LOGD_WIFI,
 	             "(%s): using nl80211 for WiFi device control",
-	             nl80211->parent.iface);
+	             ifname);
 
 	return (WifiData *) nl80211;
 

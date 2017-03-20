@@ -23,7 +23,7 @@
 
 #include "wifi-utils.h"
 
-WifiData *wifi_wext_init (const char *iface, int ifindex, gboolean check_scan);
+WifiData *wifi_wext_init (int ifindex, gboolean check_scan);
 
 gboolean wifi_wext_is_wifi (const char *iface);
 

@@ -25,7 +25,6 @@
 #include "wifi-utils.h"
 
 struct WifiData {
-	char *iface;
 	int ifindex;
 	NMDeviceWifiCapabilities caps;
 
@@ -69,7 +68,7 @@ struct WifiData {
 	gboolean (*indicate_addressing_running) (WifiData *data, gboolean running);
 };
 
-gpointer wifi_data_new (const char *iface, int ifindex, gsize len);
+gpointer wifi_data_new (int ifindex, gsize len);
 void wifi_data_free (WifiData *data);
 
 #endif  /* __WIFI_UTILS_PRIVATE_H__ */
