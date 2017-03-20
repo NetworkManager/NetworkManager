@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2009 Novell, Inc.
- * Copyright (C) 2007 - 2012 Red Hat, Inc.
+ * Copyright (C) 2007 - 2017 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -54,6 +54,7 @@
 #include "nm-dbus-compat.h"
 #include "nm-checkpoint.h"
 #include "nm-checkpoint-manager.h"
+#include "nm-dispatcher.h"
 #include "NetworkManagerUtils.h"
 
 #include "introspection/org.freedesktop.NetworkManager.h"
@@ -117,7 +118,7 @@ typedef struct {
 	GSList *devices;
 	NMState state;
 	NMConfig *config;
-	NMConnectivity *connectivity;
+	NMConnectivityState connectivity_state;
 
 	NMPolicy *policy;
 
@@ -497,12 +498,6 @@ active_connection_get_by_path (NMManager *manager, const char *path)
 static void
 _config_changed_cb (NMConfig *config, NMConfigData *config_data, NMConfigChangeFlags changes, NMConfigData *old_data, NMManager *self)
 {
-	g_object_set (NM_MANAGER_GET_PRIVATE (self)->connectivity,
-	              NM_CONNECTIVITY_URI, nm_config_data_get_connectivity_uri (config_data),
-	              NM_CONNECTIVITY_INTERVAL, nm_config_data_get_connectivity_interval (config_data),
-	              NM_CONNECTIVITY_RESPONSE, nm_config_data_get_connectivity_response (config_data),
-	              NULL);
-
 	if (NM_FLAGS_HAS (changes, NM_CONFIG_CHANGE_GLOBAL_DNS_CONFIG))
 		_notify (self, PROP_GLOBAL_DNS_CONFIGURATION);
 }
@@ -770,27 +765,8 @@ set_state (NMManager *self, NMState state)
 	g_signal_emit (self, signals[STATE_CHANGED], 0, priv->state);
 }
 
-static void
-checked_connectivity (GObject *object, GAsyncResult *result, gpointer user_data)
-{
-	NMManager *manager = user_data;
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	NMConnectivityState connectivity;
-
-	if (priv->state == NM_STATE_CONNECTING || priv->state == NM_STATE_CONNECTED_SITE) {
-		connectivity = nm_connectivity_check_finish (priv->connectivity, result, NULL);
-
-		if (connectivity == NM_CONNECTIVITY_FULL)
-			set_state (manager, NM_STATE_CONNECTED_GLOBAL);
-
-		_notify (manager, PROP_CONNECTIVITY);
-	}
-
-	g_object_unref (manager);
-}
-
 static NMState
-find_best_device_state (NMManager *manager, gboolean *force_connectivity_check)
+find_best_device_state (NMManager *manager)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	NMState best_state = NM_STATE_DISCONNECTED;
@@ -804,11 +780,10 @@ find_best_device_state (NMManager *manager, gboolean *force_connectivity_check)
 		case NM_ACTIVE_CONNECTION_STATE_ACTIVATED:
 			if (   nm_active_connection_get_default (ac)
 			    || nm_active_connection_get_default6 (ac)) {
-				if (nm_connectivity_get_state (priv->connectivity) == NM_CONNECTIVITY_FULL)
+				if (priv->connectivity_state)
 					return NM_STATE_CONNECTED_GLOBAL;
 
 				best_state = NM_STATE_CONNECTED_SITE;
-				NM_SET_OUT (force_connectivity_check, TRUE);
 			} else {
 				if (best_state < NM_STATE_CONNECTING)
 					best_state = NM_STATE_CONNECTED_LOCAL;
@@ -866,7 +841,6 @@ nm_manager_update_state (NMManager *manager)
 {
 	NMManagerPrivate *priv;
 	NMState new_state = NM_STATE_DISCONNECTED;
-	gboolean force_connectivity_check = FALSE;
 
 	g_return_if_fail (NM_IS_MANAGER (manager));
 
@@ -875,27 +849,11 @@ nm_manager_update_state (NMManager *manager)
 	if (manager_sleeping (manager))
 		new_state = NM_STATE_ASLEEP;
 	else
-		new_state = find_best_device_state (manager, &force_connectivity_check);
+		new_state = find_best_device_state (manager);
 
-	nm_connectivity_set_online (priv->connectivity, new_state >= NM_STATE_CONNECTED_LOCAL);
-
-	if (new_state == NM_STATE_CONNECTED_SITE) {
-		/* We have a default route, let's see if we can reach the Internet or a
-		 * captive portal. */
-		force_connectivity_check = TRUE;
-	}
-
-	if (new_state == NM_STATE_CONNECTED_LOCAL) {
-		/* If we just lost a default route, let's retrigger the connectivity check
-		 * so that the connectivity property would be updated to indicate we can't
-		 * reach the Internet anymore. */
-		force_connectivity_check = TRUE;
-	}
-
-	if (force_connectivity_check) {
-		nm_connectivity_check_async (priv->connectivity,
-		                             checked_connectivity,
-		                             g_object_ref (manager));
+	if (   new_state >= NM_STATE_CONNECTED_LOCAL
+	    && priv->connectivity_state == NM_CONNECTIVITY_FULL) {
+		new_state = NM_STATE_CONNECTED_GLOBAL;
 	}
 
 	set_state (manager, new_state);
@@ -2008,6 +1966,41 @@ device_realized (NMDevice *device,
 	_notify (self, PROP_DEVICES);
 }
 
+#if WITH_CONCHECK
+static void
+nm_manager_update_connectivity_state (NMManager *self)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMConnectivityState state = NM_CONNECTIVITY_UNKNOWN;
+	NMDevice *device;
+
+	if (priv->primary_connection) {
+		device =  nm_active_connection_get_device (priv->primary_connection);
+		if (device)
+			state = nm_device_get_connectivity_state (device);
+	}
+
+	if (state != priv->connectivity_state) {
+		priv->connectivity_state = state;
+
+		_LOGD (LOGD_CORE, "connectivity checking indicates %s",
+		       nm_connectivity_state_to_string (priv->connectivity_state));
+
+		nm_manager_update_state (self);
+		_notify (self, PROP_CONNECTIVITY);
+		nm_dispatcher_call_connectivity (priv->connectivity_state, NULL, NULL, NULL);
+	}
+}
+
+static void
+device_connectivity_changed (NMDevice *device,
+                             GParamSpec *pspec,
+                             NMManager *self)
+{
+	nm_manager_update_connectivity_state (self);
+}
+#endif
+
 static void
 _device_realize_finish (NMManager *self,
                         NMDevice *device,
@@ -2111,6 +2104,12 @@ add_device (NMManager *self, NMDevice *device, GError **error)
 	g_signal_connect (device, "notify::" NM_DEVICE_REAL,
 	                  G_CALLBACK (device_realized),
 	                  self);
+
+#if WITH_CONCHECK
+	g_signal_connect (device, "notify::" NM_DEVICE_CONNECTIVITY,
+	                  G_CALLBACK (device_connectivity_changed),
+	                  self);
+#endif
 
 	if (priv->startup) {
 		g_signal_connect (device, "notify::" NM_DEVICE_HAS_PENDING_ACTION,
@@ -4827,23 +4826,13 @@ impl_manager_get_logging (NMManager *manager,
 }
 
 static void
-connectivity_check_done (GObject *object,
-                         GAsyncResult *result,
-                         gpointer user_data)
+device_connectivity_done (NMDevice *device, NMConnectivityState state, gpointer user_data)
 {
 	GDBusMethodInvocation *context = user_data;
-	NMConnectivityState state;
-	GError *error = NULL;
 
-	state = nm_connectivity_check_finish (NM_CONNECTIVITY (object), result, &error);
-	if (error)
-		g_dbus_method_invocation_take_error (context, error);
-	else {
-		g_dbus_method_invocation_return_value (context,
-		                                       g_variant_new ("(u)", state));
-	}
+	g_dbus_method_invocation_return_value (context,
+	                                       g_variant_new ("(u)", state));
 }
-
 
 static void
 check_connectivity_auth_done_cb (NMAuthChain *chain,
@@ -4872,9 +4861,14 @@ check_connectivity_auth_done_cb (NMAuthChain *chain,
 		                             "Not authorized to recheck connectivity");
 	} else {
 		/* it's allowed */
-		nm_connectivity_check_async (priv->connectivity,
-		                             connectivity_check_done,
-		                             context);
+		if (priv->primary_connection) {
+			nm_device_check_connectivity (nm_active_connection_get_device (priv->primary_connection),
+			                              device_connectivity_done,
+			                              context);
+		} else {
+			g_dbus_method_invocation_return_value (context,
+			                                       g_variant_new ("(u)", priv->connectivity_state));
+		}
 	}
 
 	if (error)
@@ -5086,20 +5080,6 @@ handle_firmware_changed (gpointer user_data)
 }
 
 static void
-connectivity_changed (NMConnectivity *connectivity,
-                      GParamSpec *pspec,
-                      gpointer user_data)
-{
-	NMManager *self = NM_MANAGER (user_data);
-
-	_LOGD (LOGD_CORE, "connectivity checking indicates %s",
-	       nm_connectivity_state_to_string (nm_connectivity_get_state (connectivity)));
-
-	nm_manager_update_state (self);
-	_notify (self, PROP_CONNECTIVITY);
-}
-
-static void
 firmware_dir_changed (GFileMonitor *monitor,
                       GFile *file,
                       GFile *other_file,
@@ -5173,6 +5153,7 @@ policy_default_device_changed (GObject *object, GParamSpec *pspec, gpointer user
 		_notify (self, PROP_PRIMARY_CONNECTION);
 		_notify (self, PROP_PRIMARY_CONNECTION_TYPE);
 		nm_manager_update_metered (self);
+		nm_manager_update_connectivity_state (self);
 	}
 }
 
@@ -5906,7 +5887,6 @@ constructed (GObject *object)
 {
 	NMManager *self = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMConfigData *config_data;
 	const NMConfigState *state;
 
 	G_OBJECT_CLASS (nm_manager_parent_class)->constructed (object);
@@ -5948,13 +5928,6 @@ constructed (GObject *object)
 	                  NM_CONFIG_SIGNAL_CONFIG_CHANGED,
 	                  G_CALLBACK (_config_changed_cb),
 	                  self);
-
-	config_data = nm_config_get_data (priv->config);
-	priv->connectivity = nm_connectivity_new (nm_config_data_get_connectivity_uri (config_data),
-	                                          nm_config_data_get_connectivity_interval (config_data),
-	                                          nm_config_data_get_connectivity_response (config_data));
-	g_signal_connect (priv->connectivity, "notify::" NM_CONNECTIVITY_STATE,
-	                  G_CALLBACK (connectivity_changed), self);
 
 	state = nm_config_state_get (priv->config);
 
@@ -6111,7 +6084,7 @@ get_property (GObject *object, guint prop_id,
 		nm_utils_g_value_set_object_path_array (value, priv->active_connections, NULL, NULL);
 		break;
 	case PROP_CONNECTIVITY:
-		g_value_set_uint (value, nm_connectivity_get_state (priv->connectivity));
+		g_value_set_uint (value, priv->connectivity_state);
 		break;
 	case PROP_PRIMARY_CONNECTION:
 		nm_utils_g_value_set_object_path (value, priv->primary_connection);
@@ -6239,10 +6212,6 @@ dispose (GObject *object)
 	if (priv->config) {
 		g_signal_handlers_disconnect_by_func (priv->config, _config_changed_cb, manager);
 		g_clear_object (&priv->config);
-	}
-	if (priv->connectivity) {
-		g_signal_handlers_disconnect_by_func (priv->connectivity, connectivity_changed, manager);
-		g_clear_object (&priv->connectivity);
 	}
 
 	g_free (priv->hostname);

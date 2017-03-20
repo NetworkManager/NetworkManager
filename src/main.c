@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2012 Red Hat, Inc.
+ * Copyright (C) 2004 - 2017 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
@@ -49,6 +49,7 @@
 #include "nm-auth-manager.h"
 #include "nm-core-internal.h"
 #include "nm-exported-object.h"
+#include "nm-connectivity.h"
 #include "dns/nm-dns-manager.h"
 #include "systemd/nm-sd.h"
 
@@ -391,6 +392,9 @@ main (int argc, char *argv[])
 	nm_linux_platform_setup ();
 
 	NM_UTILS_KEEP_ALIVE (config, NM_PLATFORM_GET, "NMConfig-depends-on-NMPlatform");
+#if WITH_CONCHECK
+	NM_UTILS_KEEP_ALIVE (nm_manager_get (), nm_connectivity_get (), "NMManager-depends-on-NMConnectivity");
+#endif
 
 	nm_dispatcher_init ();
 
