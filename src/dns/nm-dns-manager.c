@@ -1186,6 +1186,10 @@ update_dns (NMDnsManager *self,
 		case NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE:
 			result = update_resolv_conf (self, searches, nameservers, options, error, priv->rc_manager);
 			resolv_conf_updated = TRUE;
+			/* If we have ended with no nameservers avoid updating again resolv.conf
+			 * on stop, as some external changes may be applied to it in the meanwhile */
+			if (!nameservers && !options)
+				priv->dns_touched = FALSE;
 			break;
 		case NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF:
 			result = dispatch_resolvconf (self, searches, nameservers, options, error);
