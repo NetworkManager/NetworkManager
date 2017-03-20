@@ -40,6 +40,7 @@
 #include "nm-dbus-helpers.h"
 #include "nm-device-tun.h"
 #include "nm-setting-connection.h"
+#include "shared/nm-utils/nm-udev-utils.h"
 
 #include "introspection/org.freedesktop.NetworkManager.Device.h"
 
@@ -1292,46 +1293,6 @@ nm_device_get_available_connections (NMDevice *device)
 	return NM_DEVICE_GET_PRIVATE (device)->available_connections;
 }
 
-static inline guint8
-hex2byte (const char *hex)
-{
-	int a, b;
-	a = g_ascii_xdigit_value (*hex++);
-	if (a < 0)
-		return -1;
-	b = g_ascii_xdigit_value (*hex++);
-	if (b < 0)
-		return -1;
-	return (a << 4) | b;
-}
-
-static char *
-get_decoded_property (struct udev_device *device, const char *property)
-{
-	const char *orig, *p;
-	char *unescaped, *n;
-	guint len;
-
-	p = orig = udev_device_get_property_value (device, property);
-	if (!orig)
-		return NULL;
-
-	len = strlen (orig);
-	n = unescaped = g_malloc0 (len + 1);
-	while (*p) {
-		if ((len >= 4) && (*p == '\\') && (*(p+1) == 'x')) {
-			*n++ = (char) hex2byte (p + 2);
-			p += 4;
-			len -= 4;
-		} else {
-			*n++ = *p++;
-			len--;
-		}
-	}
-
-	return unescaped;
-}
-
 void
 _nm_device_set_udev (NMDevice *device, struct udev *udev)
 {
@@ -1377,7 +1338,7 @@ _get_udev_property (NMDevice *device,
 	tmpdev = udev_device;
 	while ((count++ < 3) && tmpdev && !enc_value) {
 		if (!enc_value)
-			enc_value = get_decoded_property (tmpdev, enc_prop);
+			enc_value = nm_udev_utils_property_decode_cp (udev_device_get_property_value (tmpdev, enc_prop));
 		if (!db_value)
 			db_value = g_strdup (udev_device_get_property_value (tmpdev, db_prop));
 

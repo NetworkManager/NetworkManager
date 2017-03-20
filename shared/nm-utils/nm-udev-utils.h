@@ -26,6 +26,8 @@ struct udev_device;
 struct udev_enumerate;
 
 gboolean nm_udev_utils_property_as_boolean (const char *uproperty);
+const char *nm_udev_utils_property_decode    (const char *uproperty, char **to_free);
+char       *nm_udev_utils_property_decode_cp (const char *uproperty);
 
 typedef struct _NMPUdevClient NMUdevClient;
 

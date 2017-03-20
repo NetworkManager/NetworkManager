@@ -1503,33 +1503,6 @@ nm_device_get_available_connections (NMDevice *device)
 	return handle_ptr_array_return (NM_DEVICE_GET_PRIVATE (device)->available_connections);
 }
 
-static char *
-get_decoded_property (struct udev_device *device, const char *property)
-{
-	const char *orig, *p;
-	char *unescaped, *n;
-	guint len;
-
-	p = orig = udev_device_get_property_value (device, property);
-	if (!orig)
-		return NULL;
-
-	len = strlen (orig);
-	n = unescaped = g_malloc0 (len + 1);
-	while (*p) {
-		if ((len >= 4) && (*p == '\\') && (*(p+1) == 'x')) {
-			*n++ = (char) nm_utils_hex2byte (p + 2);
-			p += 4;
-			len -= 4;
-		} else {
-			*n++ = *p++;
-			len--;
-		}
-	}
-
-	return unescaped;
-}
-
 static gboolean
 ensure_udev_client (NMDevice *device)
 {
@@ -1572,7 +1545,7 @@ _get_udev_property (NMDevice *device,
 	tmpdev = udev_device;
 	while ((count++ < 3) && tmpdev && !enc_value) {
 		if (!enc_value)
-			enc_value = get_decoded_property (tmpdev, enc_prop);
+			enc_value = nm_udev_utils_property_decode_cp (udev_device_get_property_value (tmpdev, enc_prop));
 		if (!db_value)
 			db_value = g_strdup (udev_device_get_property_value (tmpdev, db_prop));
 

@@ -48,6 +48,59 @@ nm_udev_utils_property_as_boolean (const char *uproperty)
 	return FALSE;
 }
 
+const char *
+nm_udev_utils_property_decode (const char *uproperty, char **to_free)
+{
+	const char *p;
+	char *unescaped = NULL;
+	char *n = NULL;
+
+	if (!uproperty) {
+		*to_free = NULL;
+		return NULL;
+	}
+
+	p = uproperty;
+	while (*p) {
+		int a, b;
+
+		if (   p[0] == '\\'
+		    && p[1] == 'x'
+		    && (a = g_ascii_xdigit_value (p[2])) >= 0
+		    && (b = g_ascii_xdigit_value (p[3])) >= 0) {
+			if (!unescaped) {
+				gssize l = p - uproperty;
+
+				unescaped = g_malloc (l + strlen (p) + 1 - 3);
+				memcpy (unescaped, uproperty, l);
+				n = &unescaped[l];
+			}
+			*n++ = (a << 4) | b;
+			p += 4;
+		} else {
+			if (n)
+				*n++ = *p;
+			p++;
+		}
+	}
+
+	if (!unescaped) {
+		*to_free = NULL;
+		return uproperty;
+	}
+
+	return (*to_free = unescaped);
+}
+
+char *
+nm_udev_utils_property_decode_cp (const char *uproperty)
+{
+	char *cpy;
+
+	uproperty = nm_udev_utils_property_decode (uproperty, &cpy);
+	return cpy ?: g_strdup (uproperty);
+}
+
 /*****************************************************************************/
 
 static void
