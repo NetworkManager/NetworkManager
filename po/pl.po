@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-03-19 22:00+0100\n"
+"POT-Creation-Date: 2017-03-21 14:51+0100\n"
 "PO-Revision-Date: 2017-03-19 22:01+0100\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <community-poland@mozilla.org>\n"
@@ -2470,7 +2470,7 @@ msgstr "Urządzenie mostka"
 msgid "Bridge port"
 msgstr "Port mostka"
 
-#: ../clients/cli/connections.c:4854 ../src/nm-manager.c:3957
+#: ../clients/cli/connections.c:4854 ../src/nm-manager.c:3962
 msgid "VPN connection"
 msgstr "Połączenie VPN"
 
@@ -9256,8 +9256,8 @@ msgstr "USB"
 #. * "%2$s (%1$s)" if there's no grammatical way to combine
 #. * the strings otherwise.
 #.
-#: ../libnm-glib/nm-device.c:2052 ../libnm-glib/nm-device.c:2071
-#: ../libnm/nm-device.c:1860 ../libnm/nm-device.c:1879
+#: ../libnm-glib/nm-device.c:2053 ../libnm-glib/nm-device.c:2072
+#: ../libnm/nm-device.c:1861 ../libnm/nm-device.c:1880
 #, c-format
 msgctxt "long device name"
 msgid "%s %s"
@@ -9516,12 +9516,12 @@ msgstr "MACsec"
 msgid "Dummy"
 msgstr "Atrapa"
 
-#: ../libnm/nm-device.c:2591
+#: ../libnm/nm-device.c:2592
 #, c-format
 msgid "The connection was not valid: %s"
 msgstr "Połączenie jest nieprawidłowe: %s"
 
-#: ../libnm/nm-device.c:2600
+#: ../libnm/nm-device.c:2601
 #, c-format
 msgid "The interface names of the device and the connection didn't match."
 msgstr "Nazwy interfejsu urządzenia i połączenia się nie zgadzają."

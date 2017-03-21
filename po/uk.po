@@ -8,9 +8,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Report-Msgid-Bugs-To: https://bugzilla.gnome.org/enter_bug.cgi?"
-"product=NetworkManager&keywords=I18N+L10N&component=Translations\n"
-"POT-Creation-Date: 2017-03-17 03:24+0000\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-03-21 14:51+0100\n"
 "PO-Revision-Date: 2017-03-17 16:05+0200\n"
 "Last-Translator: Yuri Chornoivan <yurchor@ukr.net>\n"
 "Language-Team: Ukrainian <kde-i18n-uk@kde.org>\n"
@@ -163,14 +162,12 @@ msgstr "некоректна адреса IP: %s"
 
 #: ../clients/cli/common.c:435
 #, c-format
-#| msgid "'%s' is not valid (the format is: ip[/prefix] [next-hop] [metric])"
 msgid ""
 "'%s' is not valid (the format is: ip[/prefix] [next-hop] [metric] [attr=val] "
 "[attr=val])"
 msgstr ""
 "«%s» є некоректним (формат: ip[/префікс] [наступний_перехід] [метрика] "
-"[атрибут=значення] "
-"[атрибут=значення])"
+"[атрибут=значення] [атрибут=значення])"
 
 #: ../clients/cli/common.c:457
 #, c-format
@@ -184,7 +181,6 @@ msgstr "метрику («%s») слід вказувати перед атри�
 
 #: ../clients/cli/common.c:495
 #, c-format
-#| msgid "invalid option '%s'"
 msgid "unrecognized option '%s'"
 msgstr "невідомий параметр «%s»"
 
@@ -248,13 +244,12 @@ msgstr "невдала спроба з’єднання"
 
 #: ../clients/cli/common.c:565 ../clients/cli/common.c:582
 #: ../clients/cli/connections.c:652 ../clients/cli/connections.c:675
-#: ../clients/cli/connections.c:2155 ../clients/cli/devices.c:1190
-#: ../clients/cli/devices.c:1231 ../clients/cli/devices.c:1233
-#: ../clients/cli/general.c:251 ../clients/cli/general.c:289
-#: ../clients/cli/general.c:437 ../clients/cli/general.c:452
-#: ../clients/cli/settings.c:923 ../clients/cli/settings.c:1009
-#: ../clients/cli/settings.c:2800 ../clients/cli/settings.c:2919
-#: ../clients/cli/settings.c:5287
+#: ../clients/cli/devices.c:1190 ../clients/cli/devices.c:1231
+#: ../clients/cli/devices.c:1233 ../clients/cli/general.c:251
+#: ../clients/cli/general.c:289 ../clients/cli/general.c:437
+#: ../clients/cli/general.c:452 ../clients/cli/settings.c:923
+#: ../clients/cli/settings.c:1009 ../clients/cli/settings.c:2800
+#: ../clients/cli/settings.c:2919 ../clients/cli/settings.c:5287
 #, c-format
 msgid "unknown"
 msgstr "невідомо"
@@ -264,8 +259,8 @@ msgstr "невідомо"
 #: ../clients/cli/connections.c:965 ../clients/cli/connections.c:967
 #: ../clients/cli/connections.c:1002 ../clients/cli/connections.c:1072
 #: ../clients/cli/connections.c:1073 ../clients/cli/connections.c:1075
-#: ../clients/cli/connections.c:3511 ../clients/cli/connections.c:4743
-#: ../clients/cli/connections.c:6570 ../clients/cli/connections.c:6571
+#: ../clients/cli/connections.c:3470 ../clients/cli/connections.c:4702
+#: ../clients/cli/connections.c:6529 ../clients/cli/connections.c:6530
 #: ../clients/cli/devices.c:868 ../clients/cli/devices.c:1155
 #: ../clients/cli/devices.c:1156 ../clients/cli/devices.c:1157
 #: ../clients/cli/devices.c:1158 ../clients/cli/devices.c:1159
@@ -282,9 +277,9 @@ msgstr "так"
 #: ../clients/cli/common.c:576 ../clients/cli/connections.c:963
 #: ../clients/cli/connections.c:965 ../clients/cli/connections.c:967
 #: ../clients/cli/connections.c:1072 ../clients/cli/connections.c:1073
-#: ../clients/cli/connections.c:1075 ../clients/cli/connections.c:3512
-#: ../clients/cli/connections.c:4742 ../clients/cli/connections.c:6570
-#: ../clients/cli/connections.c:6571 ../clients/cli/devices.c:868
+#: ../clients/cli/connections.c:1075 ../clients/cli/connections.c:3471
+#: ../clients/cli/connections.c:4701 ../clients/cli/connections.c:6529
+#: ../clients/cli/connections.c:6530 ../clients/cli/devices.c:868
 #: ../clients/cli/devices.c:1155 ../clients/cli/devices.c:1156
 #: ../clients/cli/devices.c:1157 ../clients/cli/devices.c:1158
 #: ../clients/cli/devices.c:1159 ../clients/cli/devices.c:1194
@@ -310,7 +305,7 @@ msgid "No reason given"
 msgstr "Причину не вказано"
 
 #. We should not really come here
-#: ../clients/cli/common.c:594 ../clients/cli/connections.c:3360
+#: ../clients/cli/common.c:594 ../clients/cli/connections.c:3319
 #, c-format
 msgid "Unknown error"
 msgstr "Невідома помилка"
@@ -713,7 +708,7 @@ msgstr "Тип Bluetooth"
 msgid "Bonding mode"
 msgstr "Режим прив’язування"
 
-#: ../clients/cli/connections.c:85 ../clients/cli/connections.c:4319
+#: ../clients/cli/connections.c:85 ../clients/cli/connections.c:4278
 msgid "Bonding monitoring mode"
 msgstr "Режим спостереження за зв’язком"
 
@@ -742,7 +737,6 @@ msgid "MACVLAN mode"
 msgstr "Режим MACVLAN"
 
 #: ../clients/cli/connections.c:111
-#| msgid "MACVLAN mode"
 msgid "MACsec mode"
 msgstr "Режим MACsec"
 
@@ -1161,145 +1155,6 @@ msgstr ""
 
 #: ../clients/cli/connections.c:377
 #, c-format
-#| msgid ""
-#| "Usage: nmcli connection add { ARGUMENTS | help }\n"
-#| "\n"
-#| "ARGUMENTS := COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS SLAVE_OPTIONS "
-#| "IP_OPTIONS [-- ([+|-]<setting>.<property> <value>)+]\n"
-#| "\n"
-#| "  COMMON_OPTIONS:\n"
-#| "                  type <type>\n"
-#| "                  ifname <interface name> | \"*\"\n"
-#| "                  [con-name <connection name>]\n"
-#| "                  [autoconnect yes|no]\n"
-#| "                  [save yes|no]\n"
-#| "                  [master <master (ifname, or connection UUID or name)>]\n"
-#| "                  [slave-type <master connection type>]\n"
-#| "\n"
-#| "  TYPE_SPECIFIC_OPTIONS:\n"
-#| "    ethernet:     [mac <MAC address>]\n"
-#| "                  [cloned-mac <cloned MAC address>]\n"
-#| "                  [mtu <MTU>]\n"
-#| "\n"
-#| "    wifi:         ssid <SSID>\n"
-#| "                  [mac <MAC address>]\n"
-#| "                  [cloned-mac <cloned MAC address>]\n"
-#| "                  [mtu <MTU>]\n"
-#| "                  [mode infrastructure|ap|adhoc]\n"
-#| "\n"
-#| "    wimax:        [mac <MAC address>]\n"
-#| "                  [nsp <NSP>]\n"
-#| "\n"
-#| "    pppoe:        username <PPPoE username>\n"
-#| "                  [password <PPPoE password>]\n"
-#| "                  [service <PPPoE service name>]\n"
-#| "                  [mtu <MTU>]\n"
-#| "                  [mac <MAC address>]\n"
-#| "\n"
-#| "    gsm:          apn <APN>\n"
-#| "                  [user <username>]\n"
-#| "                  [password <password>]\n"
-#| "\n"
-#| "    cdma:         [user <username>]\n"
-#| "                  [password <password>]\n"
-#| "\n"
-#| "    infiniband:   [mac <MAC address>]\n"
-#| "                  [mtu <MTU>]\n"
-#| "                  [transport-mode datagram | connected]\n"
-#| "                  [parent <ifname>]\n"
-#| "                  [p-key <IPoIB P_Key>]\n"
-#| "\n"
-#| "    bluetooth:    [addr <bluetooth address>]\n"
-#| "                  [bt-type panu|dun-gsm|dun-cdma]\n"
-#| "\n"
-#| "    vlan:         dev <parent device (connection UUID, ifname, or MAC)>\n"
-#| "                  id <VLAN ID>\n"
-#| "                  [flags <VLAN flags>]\n"
-#| "                  [ingress <ingress priority mapping>]\n"
-#| "                  [egress <egress priority mapping>]\n"
-#| "                  [mtu <MTU>]\n"
-#| "\n"
-#| "    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor "
-#| "(2) | broadcast (3) |\n"
-#| "                        802.3ad    (4) | balance-tlb   (5) | balance-alb "
-#| "(6)]\n"
-#| "                  [primary <ifname>]\n"
-#| "                  [miimon <num>]\n"
-#| "                  [downdelay <num>]\n"
-#| "                  [updelay <num>]\n"
-#| "                  [arp-interval <num>]\n"
-#| "                  [arp-ip-target <num>]\n"
-#| "                  [lacp-rate slow (0) | fast (1)]\n"
-#| "\n"
-#| "    bond-slave:   master <master (ifname, or connection UUID or name)>\n"
-#| "\n"
-#| "    team:         [config <file>|<raw JSON data>]\n"
-#| "\n"
-#| "    team-slave:   master <master (ifname, or connection UUID or name)>\n"
-#| "                  [config <file>|<raw JSON data>]\n"
-#| "\n"
-#| "    bridge:       [stp yes|no]\n"
-#| "                  [priority <num>]\n"
-#| "                  [forward-delay <2-30>]\n"
-#| "                  [hello-time <1-10>]\n"
-#| "                  [max-age <6-40>]\n"
-#| "                  [ageing-time <0-1000000>]\n"
-#| "                  [multicast-snooping yes|no]\n"
-#| "                  [mac <MAC address>]\n"
-#| "\n"
-#| "    bridge-slave: master <master (ifname, or connection UUID or name)>\n"
-#| "                  [priority <0-63>]\n"
-#| "                  [path-cost <1-65535>]\n"
-#| "                  [hairpin yes|no]\n"
-#| "\n"
-#| "    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan|"
-#| "libreswan|ssh|l2tp|iodine|...\n"
-#| "                  [user <username>]\n"
-#| "\n"
-#| "    olpc-mesh:    ssid <SSID>\n"
-#| "                  [channel <1-13>]\n"
-#| "                  [dhcp-anycast <MAC address>]\n"
-#| "\n"
-#| "    adsl:         username <username>\n"
-#| "                  protocol pppoa|pppoe|ipoatm\n"
-#| "                  [password <password>]\n"
-#| "                  [encapsulation vcmux|llc]\n"
-#| "\n"
-#| "    tun:          mode tun|tap\n"
-#| "                  [owner <UID>]\n"
-#| "                  [group <GID>]\n"
-#| "                  [pi yes|no]\n"
-#| "                  [vnet-hdr yes|no]\n"
-#| "                  [multi-queue yes|no]\n"
-#| "\n"
-#| "    ip-tunnel:    mode ipip|gre|sit|isatap|vti|ip6ip6|ipip6|ip6gre|vti6\n"
-#| "                  remote <remote endpoint IP>\n"
-#| "                  [local <local endpoint IP>]\n"
-#| "                  [dev <parent device (ifname or connection UUID)>]\n"
-#| "\n"
-#| "    macvlan:      dev <parent device (connection UUID, ifname, or MAC)>\n"
-#| "                  mode vepa|bridge|private|passthru|source\n"
-#| "                  [tap yes|no]\n"
-#| "\n"
-#| "    vxlan:        id <VXLAN ID>\n"
-#| "                  remote <IP of multicast group or remote address>\n"
-#| "                  [local <source IP>]\n"
-#| "                  [dev <parent device (ifname or connection UUID)>]\n"
-#| "                  [source-port-min <0-65535>]\n"
-#| "                  [source-port-max <0-65535>]\n"
-#| "                  [destination-port <0-65535>]\n"
-#| "\n"
-#| "  SLAVE_OPTIONS:\n"
-#| "    bridge:       [priority <0-63>]\n"
-#| "                  [path-cost <1-65535>]\n"
-#| "                  [hairpin yes|no]\n"
-#| "\n"
-#| "    team:         [config <file>|<raw JSON data>]\n"
-#| "\n"
-#| "  IP_OPTIONS:\n"
-#| "                  [ip4 <IPv4 address>] [gw4 <IPv4 gateway>]\n"
-#| "                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n"
-#| "\n"
 msgid ""
 "Usage: nmcli connection add { ARGUMENTS | help }\n"
 "\n"
@@ -1576,8 +1431,8 @@ msgstr ""
 "                  [encrypt yes|no]\n"
 "                  [port 1-65534]\n"
 "\n"
-"\n    macvlan:      dev <батьківський пристрій (назва інтерфейсу, MAC або "
-"UUID "
+"\n"
+"    macvlan:      dev <батьківський пристрій (назва інтерфейсу, MAC або UUID "
 "з’єднання)>\n"
 "                  mode vepa|bridge|private|passthru|source\n"
 "                  [tap yes|no]\n"
@@ -1934,10 +1789,10 @@ msgstr "Активні профілі NetworkManager"
 msgid "NetworkManager connection profiles"
 msgstr "Профілі з’єднань NetworkManager"
 
-#: ../clients/cli/connections.c:1863 ../clients/cli/connections.c:2644
-#: ../clients/cli/connections.c:2654 ../clients/cli/connections.c:2664
-#: ../clients/cli/connections.c:2835 ../clients/cli/connections.c:8634
-#: ../clients/cli/connections.c:8649 ../clients/cli/devices.c:2640
+#: ../clients/cli/connections.c:1863 ../clients/cli/connections.c:2603
+#: ../clients/cli/connections.c:2613 ../clients/cli/connections.c:2623
+#: ../clients/cli/connections.c:2794 ../clients/cli/connections.c:8593
+#: ../clients/cli/connections.c:8608 ../clients/cli/devices.c:2640
 #: ../clients/cli/devices.c:2648 ../clients/cli/devices.c:2883
 #: ../clients/cli/devices.c:2891 ../clients/cli/devices.c:2907
 #: ../clients/cli/devices.c:2914 ../clients/cli/devices.c:2933
@@ -1956,9 +1811,9 @@ msgstr "Помилка: пропущено аргумент %s."
 msgid "Error: %s - no such connection profile."
 msgstr "Помилка: профілю з’єднання %s не існує."
 
-#: ../clients/cli/connections.c:1946 ../clients/cli/connections.c:2633
-#: ../clients/cli/connections.c:2692 ../clients/cli/connections.c:8140
-#: ../clients/cli/connections.c:8249 ../clients/cli/connections.c:8760
+#: ../clients/cli/connections.c:1946 ../clients/cli/connections.c:2592
+#: ../clients/cli/connections.c:2651 ../clients/cli/connections.c:8099
+#: ../clients/cli/connections.c:8208 ../clients/cli/connections.c:8719
 #: ../clients/cli/devices.c:1496 ../clients/cli/devices.c:1554
 #: ../clients/cli/devices.c:1840 ../clients/cli/devices.c:2008
 #: ../clients/cli/devices.c:2115 ../clients/cli/devices.c:2303
@@ -1996,60 +1851,98 @@ msgid "no device found for connection '%s'"
 msgstr "не виявлено пристрою для з’єднання «%s»"
 
 #: ../clients/cli/connections.c:2131
-msgid "unknown reason"
+#, fuzzy
+msgid "Unknown reason"
 msgstr "невідома причина"
 
-#: ../clients/cli/connections.c:2133 ../clients/cli/general.c:280
-msgid "none"
-msgstr "немає"
+#: ../clients/cli/connections.c:2133
+#, fuzzy
+msgid "The connection was disconnected"
+msgstr "З’єднання не є з’єднанням зв’язку."
 
 #: ../clients/cli/connections.c:2135
-msgid "the user was disconnected"
-msgstr "користувача від’єднано"
+#, fuzzy
+msgid "Disconnected by user"
+msgstr "Від’єднано D-Bus"
 
 #: ../clients/cli/connections.c:2137
-msgid "the base network connection was interrupted"
+#, fuzzy
+msgid "The base network connection was interrupted"
 msgstr "основне з’єднання з мережею розірвано"
 
 #: ../clients/cli/connections.c:2139
-msgid "the VPN service stopped unexpectedly"
+#, fuzzy
+msgid "The VPN service stopped unexpectedly"
 msgstr "служба VPN неочікувано завершила роботу"
 
 #: ../clients/cli/connections.c:2141
-msgid "the VPN service returned invalid configuration"
+#, fuzzy
+msgid "The VPN service returned invalid configuration"
 msgstr "службою VPN повернуто неприпустимі налаштування"
 
 #: ../clients/cli/connections.c:2143
-msgid "the connection attempt timed out"
+#, fuzzy
+msgid "The connection attempt timed out"
 msgstr "перевищено час очікування на встановлення з’єднання"
 
 #: ../clients/cli/connections.c:2145
-msgid "the VPN service did not start in time"
+#, fuzzy
+msgid "The VPN service did not start in time"
 msgstr "службу VPN не було вчасно запущено"
 
 #: ../clients/cli/connections.c:2147
-msgid "the VPN service failed to start"
+#, fuzzy
+msgid "The VPN service failed to start"
 msgstr "не вдалося запустити службу VPN"
 
 #: ../clients/cli/connections.c:2149
-msgid "no valid VPN secrets"
+#, fuzzy
+msgid "No valid secrets"
 msgstr "не виявлено коректних реєстраційних даних VPN"
 
 #: ../clients/cli/connections.c:2151
-msgid "invalid VPN secrets"
+#, fuzzy
+msgid "Invalid secrets"
 msgstr "некоректні реєстраційні дані VPN"
 
 #: ../clients/cli/connections.c:2153
-msgid "the connection was removed"
+#, fuzzy
+msgid "The connection was removed"
 msgstr "з’єднання було вилучено"
 
-#: ../clients/cli/connections.c:2175 ../clients/cli/connections.c:2212
-#: ../clients/cli/connections.c:2391 ../clients/cli/connections.c:6460
+#: ../clients/cli/connections.c:2155
+#, fuzzy
+msgid "Master connection failed"
+msgstr "невдала спроба з’єднання"
+
+#: ../clients/cli/connections.c:2157
+#, fuzzy
+msgid "Could not create a software link"
+msgstr "Не вдалося створити тимчасовий файл «%s»"
+
+#: ../clients/cli/connections.c:2159
+#, fuzzy
+msgid "The device disappeared"
+msgstr "Активне з’єднання з пристроєм зникло"
+
+#: ../clients/cli/connections.c:2162
+#, fuzzy
+msgid "Invalid reason"
+msgstr "некоректний маршрут: %s"
+
+#: ../clients/cli/connections.c:2187 ../clients/cli/connections.c:2357
+#: ../clients/cli/connections.c:6419
 #, c-format
 msgid "Connection successfully activated (D-Bus active path: %s)\n"
 msgstr "З’єднання успішно задіяно (активний шлях D-Bus: %s)\n"
 
-#: ../clients/cli/connections.c:2183
+#: ../clients/cli/connections.c:2193 ../clients/cli/connections.c:2202
+#: ../clients/cli/connections.c:2337
+#, c-format
+msgid "Error: Connection activation failed: %s"
+msgstr "Помилка: не вдалося активувати з’єднання: %s"
+
+#: ../clients/cli/connections.c:2227
 #, c-format
 msgid ""
 "Connection successfully activated (master waiting for slaves) (D-Bus active "
@@ -2058,337 +1951,317 @@ msgstr ""
 "З’єднання успішно задіяно (основне з’єднання очікує на допоміжні) (активний "
 "шлях D-Bus: %s)\n"
 
-#: ../clients/cli/connections.c:2195 ../clients/cli/connections.c:2216
-#, c-format
-msgid "Error: Connection activation failed."
-msgstr "Помилка: невдала спроба активації з’єднання."
-
-#: ../clients/cli/connections.c:2264
-#, c-format
-msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
-msgstr "З’єднання VPN успішно задіяно (активний шлях D-Bus: %s)\n"
-
-#: ../clients/cli/connections.c:2271
-#, c-format
-msgid "Error: Connection activation failed: %s."
-msgstr "Помилка: не вдалося активувати з’єднання: %s."
-
-#: ../clients/cli/connections.c:2285
+#: ../clients/cli/connections.c:2252
 #, c-format
 msgid "Error: Timeout expired (%d seconds)"
 msgstr "Помилка: перевищено час очікування (%d секунд)."
 
-#: ../clients/cli/connections.c:2371
-#, c-format
-msgid "Error: Connection activation failed: %s"
-msgstr "Помилка: не вдалося активувати з’єднання: %s"
-
-#: ../clients/cli/connections.c:2460
+#: ../clients/cli/connections.c:2419
 #, c-format
 msgid "failed to read passwd-file '%s': %s"
 msgstr "не вдалося прочитати файл passwd «%s»: %s"
 
-#: ../clients/cli/connections.c:2472
+#: ../clients/cli/connections.c:2431
 #, c-format
 msgid "missing colon in 'password' entry '%s'"
 msgstr "пропущено двокрапку у записі «password» «%s»"
 
-#: ../clients/cli/connections.c:2480
+#: ../clients/cli/connections.c:2439
 #, c-format
 msgid "missing dot in 'password' entry '%s'"
 msgstr "пропущено крапку у записі «password» «%s»"
 
-#: ../clients/cli/connections.c:2493
+#: ../clients/cli/connections.c:2452
 #, c-format
 msgid "invalid setting name in 'password' entry '%s'"
 msgstr "некоректна назва параметра у записі «password» «%s»"
 
-#: ../clients/cli/connections.c:2549
+#: ../clients/cli/connections.c:2508
 #, c-format
 msgid "unknown device '%s'."
 msgstr "невідомий пристрій, «%s»."
 
-#: ../clients/cli/connections.c:2554
+#: ../clients/cli/connections.c:2513
 msgid "neither a valid connection nor device given"
 msgstr "не вказано ні коректного з’єднання, ні пристрою"
 
-#: ../clients/cli/connections.c:2674 ../clients/cli/devices.c:1502
+#: ../clients/cli/connections.c:2633 ../clients/cli/devices.c:1502
 #: ../clients/cli/devices.c:2655 ../clients/cli/devices.c:2969
 #: ../clients/cli/devices.c:3562
 #, c-format
 msgid "Unknown parameter: %s\n"
 msgstr "Невідомий параметр: %s\n"
 
-#: ../clients/cli/connections.c:2700
+#: ../clients/cli/connections.c:2659
 msgid "preparing"
 msgstr "приготування"
 
-#: ../clients/cli/connections.c:2720
+#: ../clients/cli/connections.c:2679
 #, c-format
 msgid "Connection '%s' (%s) successfully deleted.\n"
 msgstr "Запис з’єднання «%s» (%s) успішно вилучено.\n"
 
-#: ../clients/cli/connections.c:2736
+#: ../clients/cli/connections.c:2695
 #, c-format
 msgid "Connection '%s' successfully deactivated (D-Bus active path: %s)\n"
 msgstr "З’єднання «%s» успішно вимкнено (активний шлях D-Bus: %s)\n"
 
-#: ../clients/cli/connections.c:2813 ../clients/cli/connections.c:8360
-#: ../clients/cli/connections.c:8392 ../clients/cli/connections.c:8546
+#: ../clients/cli/connections.c:2772 ../clients/cli/connections.c:8319
+#: ../clients/cli/connections.c:8351 ../clients/cli/connections.c:8505
 #, c-format
 msgid "Error: No connection specified."
 msgstr "Помилка: не вказано з’єднання."
 
-#: ../clients/cli/connections.c:2852
+#: ../clients/cli/connections.c:2811
 #, c-format
 msgid "Error: '%s' is not an active connection.\n"
 msgstr "Помилка: «%s» не є активним з’єднанням.\n"
 
-#: ../clients/cli/connections.c:2853
+#: ../clients/cli/connections.c:2812
 #, c-format
 msgid "Error: not all active connections found."
 msgstr "Помилка: не усі активні з’єднання знайдено."
 
-#: ../clients/cli/connections.c:2862
+#: ../clients/cli/connections.c:2821
 #, c-format
 msgid "Error: no active connection provided."
 msgstr "Помилка: не надано активного з’єднання."
 
-#: ../clients/cli/connections.c:3340 ../clients/cli/utils.c:646
+#: ../clients/cli/connections.c:3299 ../clients/cli/utils.c:646
 #, c-format
 msgid "'%s' not among [%s]"
 msgstr "«%s» немає серед [%s]"
 
-#: ../clients/cli/connections.c:3500
+#: ../clients/cli/connections.c:3459
 #, c-format
 msgid "Warning: master='%s' doesn't refer to any existing profile.\n"
 msgstr ""
 "Попередження: master='%s' не посилається ні на один з наявних профілів.\n"
 
-#: ../clients/cli/connections.c:3674
+#: ../clients/cli/connections.c:3633
 #, c-format
 msgid "Error: don't know how to create '%s' setting."
 msgstr "Помилка: спосіб створення параметра «%s» є невідомим."
 
-#: ../clients/cli/connections.c:3685
+#: ../clients/cli/connections.c:3644
 #, c-format
 msgid "Error: invalid property '%s': %s."
 msgstr "Помилка: некоректна властивість, «%s»: %s."
 
-#: ../clients/cli/connections.c:3702
+#: ../clients/cli/connections.c:3661
 #, c-format
 msgid "Error: failed to modify %s.%s: %s."
 msgstr "Помилка: не вдалося внести зміни до %s.%s: %s."
 
-#: ../clients/cli/connections.c:3721
+#: ../clients/cli/connections.c:3680
 #, c-format
 msgid "Error: failed to remove a value from %s.%s: %s."
 msgstr "Помилка: не вдалося вилучити значення з %s.%s: %s."
 
-#: ../clients/cli/connections.c:3747
+#: ../clients/cli/connections.c:3706
 #, c-format
 msgid "Error: '%s' is mandatory."
 msgstr "Помилка: «%s» є обов’язковим."
 
-#: ../clients/cli/connections.c:3779
+#: ../clients/cli/connections.c:3738
 #, c-format
 msgid "Error: invalid slave type; %s."
 msgstr "Помилка: некоректний тип підлеглого; %s."
 
-#: ../clients/cli/connections.c:3792
+#: ../clients/cli/connections.c:3751
 #, c-format
 msgid "Error: invalid connection type; %s."
 msgstr "Помилка: некоректний тип з’єднання; %s."
 
-#: ../clients/cli/connections.c:4001
+#: ../clients/cli/connections.c:3960
 #, c-format
 msgid "Error: bad connection type: %s."
 msgstr "Помилка: помилковий тип з’єднання: %s."
 
-#: ../clients/cli/connections.c:4064
+#: ../clients/cli/connections.c:4023
 #, c-format
 msgid "Error: '%s': %s"
 msgstr "Помилка: «%s»: %s"
 
-#: ../clients/cli/connections.c:4085
+#: ../clients/cli/connections.c:4044
 msgid "Error: master is required"
 msgstr "Помилка: слід вказати значення параметра «master»"
 
-#: ../clients/cli/connections.c:4144
+#: ../clients/cli/connections.c:4103
 #, c-format
 msgid "Error: error adding bond option '%s=%s'."
 msgstr "Помилка: помилка під час спроби додавання параметра прив’язки «%s=%s»."
 
-#: ../clients/cli/connections.c:4175
+#: ../clients/cli/connections.c:4134
 #, c-format
 msgid "Error: '%s' is not a valid monitoring mode; use '%s' or '%s'.\n"
 msgstr ""
 "Помилка: «%s» не є коректним режимом спостереження; скористайтеся «%s» або "
 "«%s».\n"
 
-#: ../clients/cli/connections.c:4206
+#: ../clients/cli/connections.c:4165
 #, c-format
 msgid "Error: 'bt-type': '%s' not valid; use [%s, %s (%s), %s]."
 msgstr ""
 "Помилка: «bt-type»: «%s» є некоректним; скористайтеся значенням з переліку "
 "[%s, %s (%s), %s]."
 
-#: ../clients/cli/connections.c:4281
+#: ../clients/cli/connections.c:4240
 msgid "PPPoE username"
 msgstr "Користувач PPPoE"
 
-#: ../clients/cli/connections.c:4282 ../clients/cli/connections.c:4303
-#: ../clients/cli/connections.c:4305 ../clients/cli/connections.c:4354
+#: ../clients/cli/connections.c:4241 ../clients/cli/connections.c:4262
+#: ../clients/cli/connections.c:4264 ../clients/cli/connections.c:4313
 msgid "Password [none]"
 msgstr "Пароль [типово немає]"
 
-#: ../clients/cli/connections.c:4283
+#: ../clients/cli/connections.c:4242
 msgid "Service [none]"
 msgstr "Служба [типово немає]"
 
-#: ../clients/cli/connections.c:4284 ../clients/cli/connections.c:4287
-#: ../clients/cli/connections.c:4296
+#: ../clients/cli/connections.c:4243 ../clients/cli/connections.c:4246
+#: ../clients/cli/connections.c:4255
 msgid "MTU [auto]"
 msgstr "MTU [типово авто]"
 
-#: ../clients/cli/connections.c:4285 ../clients/cli/connections.c:4288
-#: ../clients/cli/connections.c:4297 ../clients/cli/connections.c:4300
-#: ../clients/cli/connections.c:4341
+#: ../clients/cli/connections.c:4244 ../clients/cli/connections.c:4247
+#: ../clients/cli/connections.c:4256 ../clients/cli/connections.c:4259
+#: ../clients/cli/connections.c:4300
 msgid "MAC [none]"
 msgstr "MAC [типово немає]"
 
-#: ../clients/cli/connections.c:4286 ../clients/cli/connections.c:4298
+#: ../clients/cli/connections.c:4245 ../clients/cli/connections.c:4257
 msgid "Cloned MAC [none]"
 msgstr "Клонований MAC [типово немає]"
 
-#: ../clients/cli/connections.c:4291
+#: ../clients/cli/connections.c:4250
 msgid "Parent interface [none]"
 msgstr "Батьківський інтерфейс [типово немає]"
 
-#: ../clients/cli/connections.c:4292
+#: ../clients/cli/connections.c:4251
 msgid "P_KEY [none]"
 msgstr "P_KEY [типово немає]"
 
 #. 0
-#: ../clients/cli/connections.c:4293 ../clients/cli/connections.c:4348
+#: ../clients/cli/connections.c:4252 ../clients/cli/connections.c:4307
 #: ../clients/cli/devices.c:152 ../clients/tui/nmt-page-wifi.c:224
 msgid "SSID"
 msgstr "SSID"
 
-#: ../clients/cli/connections.c:4299
+#: ../clients/cli/connections.c:4258
 msgid "WiMAX NSP name"
 msgstr "Назва NSP WiMAX"
 
-#: ../clients/cli/connections.c:4301
+#: ../clients/cli/connections.c:4260
 msgid "APN"
 msgstr "APN"
 
-#: ../clients/cli/connections.c:4302 ../clients/cli/connections.c:4304
-#: ../clients/cli/connections.c:4347
+#: ../clients/cli/connections.c:4261 ../clients/cli/connections.c:4263
+#: ../clients/cli/connections.c:4306
 msgid "Username [none]"
 msgstr "Користувач [типово немає]"
 
-#: ../clients/cli/connections.c:4306
+#: ../clients/cli/connections.c:4265
 msgid "Bluetooth device address"
 msgstr "Адреса пристрою Bluetooth"
 
-#: ../clients/cli/connections.c:4309
+#: ../clients/cli/connections.c:4268
 msgid "VLAN parent device or connection UUID"
 msgstr "Батьківський пристрій VLAN або UUID з’єднання"
 
-#: ../clients/cli/connections.c:4311
+#: ../clients/cli/connections.c:4270
 msgid "VLAN ID (<0-4094>)"
 msgstr "Ід. VLAN (<0-4094>)"
 
-#: ../clients/cli/connections.c:4312
+#: ../clients/cli/connections.c:4271
 msgid "VLAN flags (<0-7>) [none]"
 msgstr "Прапорці VLAN (<0-7>) [типово немає]"
 
-#: ../clients/cli/connections.c:4313
+#: ../clients/cli/connections.c:4272
 msgid "Ingress priority maps [none]"
 msgstr "Відображення пріоритетності вхідного доступу [типово немає]"
 
-#: ../clients/cli/connections.c:4314
+#: ../clients/cli/connections.c:4273
 msgid "Egress priority maps [none]"
 msgstr "Відображення пріоритетності вихідного доступу [типово немає]"
 
-#: ../clients/cli/connections.c:4317
+#: ../clients/cli/connections.c:4276
 msgid "Bonding primary interface [none]"
 msgstr "Основний інтерфейс прив’язування [типово немає]"
 
-#: ../clients/cli/connections.c:4321
+#: ../clients/cli/connections.c:4280
 msgid "Bonding miimon [100]"
 msgstr "Частота спостереження MII прив’язування [типово 100]"
 
-#: ../clients/cli/connections.c:4322
+#: ../clients/cli/connections.c:4281
 msgid "Bonding downdelay [0]"
 msgstr "downdelay прив’язування [типово 0]"
 
-#: ../clients/cli/connections.c:4323
+#: ../clients/cli/connections.c:4282
 msgid "Bonding updelay [0]"
 msgstr "updelay прив’язування [типово 0]"
 
-#: ../clients/cli/connections.c:4324
+#: ../clients/cli/connections.c:4283
 msgid "Bonding arp-interval [0]"
 msgstr "arp-interval прив’язування [типово 0]"
 
-#: ../clients/cli/connections.c:4326
+#: ../clients/cli/connections.c:4285
 msgid "Bonding arp-ip-target [none]"
 msgstr "arp-ip-target прив’язування [типово немає]"
 
-#: ../clients/cli/connections.c:4328
+#: ../clients/cli/connections.c:4287
 msgid "LACP rate ('slow' or 'fast') [slow]"
 msgstr "Швидкість LACP (slow або fast) [slow]"
 
-#: ../clients/cli/connections.c:4330 ../clients/cli/connections.c:4331
+#: ../clients/cli/connections.c:4289 ../clients/cli/connections.c:4290
 msgid "Team JSON configuration [none]"
 msgstr "Налаштування JSON команди [немає]"
 
-#: ../clients/cli/connections.c:4332
+#: ../clients/cli/connections.c:4291
 msgid "Enable STP [no]"
 msgstr "Увімкнути STP [типово ні]"
 
-#: ../clients/cli/connections.c:4334
+#: ../clients/cli/connections.c:4293
 msgid "STP priority [32768]"
 msgstr "Пріоритет STP [типово 32768]"
 
-#: ../clients/cli/connections.c:4335
+#: ../clients/cli/connections.c:4294
 msgid "Forward delay [15]"
 msgstr "Затримка переспрямування [типово 15]"
 
-#: ../clients/cli/connections.c:4336
+#: ../clients/cli/connections.c:4295
 msgid "Hello time [2]"
 msgstr "Час на вітання [типово 2]"
 
-#: ../clients/cli/connections.c:4337
+#: ../clients/cli/connections.c:4296
 msgid "Max age [20]"
 msgstr "Макс. вік [типово 20]"
 
-#: ../clients/cli/connections.c:4338
+#: ../clients/cli/connections.c:4297
 msgid "MAC address ageing time [300]"
 msgstr "Час застарівання MAC-адреси [типово 300]"
 
-#: ../clients/cli/connections.c:4339
+#: ../clients/cli/connections.c:4298
 msgid "Enable IGMP snooping [no]"
 msgstr "Увімкнути підглядання IGMP [типово ні]"
 
-#: ../clients/cli/connections.c:4342
+#: ../clients/cli/connections.c:4301
 msgid "Bridge port priority [32]"
 msgstr "Пріоритетний порт містка [типово 32]"
 
-#: ../clients/cli/connections.c:4343
+#: ../clients/cli/connections.c:4302
 msgid "Bridge port STP path cost [100]"
 msgstr "Вартість маршруту STP порту містка [типово 100]"
 
-#: ../clients/cli/connections.c:4344
+#: ../clients/cli/connections.c:4303
 msgid "Hairpin [no]"
 msgstr "Початкова зона [типово немає]"
 
-#: ../clients/cli/connections.c:4349
+#: ../clients/cli/connections.c:4308
 msgid "OLPC Mesh channel [1]"
 msgstr "Канал OLPC Mesh [типово 1]"
 
-#: ../clients/cli/connections.c:4350
+#: ../clients/cli/connections.c:4309
 msgid "DHCP anycast MAC address [none]"
 msgstr "MAC-адреса довільного надсилання (anycast) DHCP [типово немає]"
 
@@ -2396,158 +2269,157 @@ msgstr "MAC-адреса довільного надсилання (anycast) DHC
 #. * is not visible here since we only care about phase2 authentication
 #. * (and don't even care of which one)
 #.
-#: ../clients/cli/connections.c:4351
+#: ../clients/cli/connections.c:4310
 #: ../clients/common/nm-secret-agent-simple.c:223
 #: ../clients/common/nm-secret-agent-simple.c:328
 #: ../clients/tui/nmt-page-dsl.c:66 ../clients/tui/nmt-page-wifi.c:332
 msgid "Username"
 msgstr "Користувач"
 
-#: ../clients/cli/connections.c:4357
-#| msgid "MACVLAN parent device or connection UUID"
+#: ../clients/cli/connections.c:4316
 msgid "MACsec parent device or connection UUID"
 msgstr "Батьківський пристрій MACsec або UUID з’єднання"
 
-#: ../clients/cli/connections.c:4359
+#: ../clients/cli/connections.c:4318
 msgid "Enable encryption [yes]"
 msgstr "Увімкнути шифрування [типово «так»]"
 
-#: ../clients/cli/connections.c:4360
+#: ../clients/cli/connections.c:4319
 #: ../clients/common/nm-secret-agent-simple.c:520
 msgid "MKA CAK"
 msgstr "MKA CAK"
 
-#: ../clients/cli/connections.c:4361
+#: ../clients/cli/connections.c:4320
 msgid "MKA_CKN"
 msgstr "MKA_CKN"
 
-#: ../clients/cli/connections.c:4362
+#: ../clients/cli/connections.c:4321
 msgid "SCI port [1]"
 msgstr "Порт SCI [1]"
 
-#: ../clients/cli/connections.c:4364
+#: ../clients/cli/connections.c:4323
 msgid "MACVLAN parent device or connection UUID"
 msgstr "Батьківський пристрій MACVLAN або UUID з’єднання"
 
-#: ../clients/cli/connections.c:4368
+#: ../clients/cli/connections.c:4327
 msgid "Tap [no]"
 msgstr "Tap [типово ні]"
 
-#: ../clients/cli/connections.c:4370
+#: ../clients/cli/connections.c:4329
 msgid "VXLAN ID"
 msgstr "Ід. VXLAN"
 
-#: ../clients/cli/connections.c:4371 ../clients/cli/connections.c:4390
+#: ../clients/cli/connections.c:4330 ../clients/cli/connections.c:4349
 msgid "Remote"
 msgstr "Віддалений"
 
-#: ../clients/cli/connections.c:4372 ../clients/cli/connections.c:4391
+#: ../clients/cli/connections.c:4331 ../clients/cli/connections.c:4350
 msgid "Parent device [none]"
 msgstr "Батьківський пристрій [типово немає]"
 
-#: ../clients/cli/connections.c:4374
+#: ../clients/cli/connections.c:4333
 msgid "Local address [none]"
 msgstr "Локальна адреса [типово немає]"
 
-#: ../clients/cli/connections.c:4375
+#: ../clients/cli/connections.c:4334
 msgid "Minimum source port [0]"
 msgstr "Мінімальний порт джерела [0]"
 
-#: ../clients/cli/connections.c:4376
+#: ../clients/cli/connections.c:4335
 msgid "Maximum source port [0]"
 msgstr "Максимальний порт джерела [0]"
 
-#: ../clients/cli/connections.c:4377
+#: ../clients/cli/connections.c:4336
 msgid "Destination port [8472]"
 msgstr "Порт призначення [типово 8472]"
 
-#: ../clients/cli/connections.c:4380
+#: ../clients/cli/connections.c:4339
 msgid "User ID [none]"
 msgstr "Ідентифікатор користувача [типово немає]"
 
-#: ../clients/cli/connections.c:4381
+#: ../clients/cli/connections.c:4340
 msgid "Group ID [none]"
 msgstr "Ідентифікатор групи [типово немає]"
 
-#: ../clients/cli/connections.c:4382
+#: ../clients/cli/connections.c:4341
 msgid "Enable PI [no]"
 msgstr "Увімкнути PI [типово ні]"
 
-#: ../clients/cli/connections.c:4384
+#: ../clients/cli/connections.c:4343
 msgid "Enable VNET header [no]"
 msgstr "Увімкнути заголовок VNET [типово ні]"
 
-#: ../clients/cli/connections.c:4386
+#: ../clients/cli/connections.c:4345
 msgid "Enable multi queue [no]"
 msgstr "Увімкнути декілька черг [типово ні]"
 
-#: ../clients/cli/connections.c:4389
+#: ../clients/cli/connections.c:4348
 msgid "Local endpoint [none]"
 msgstr "Локальна кінцева точка [типово немає]"
 
-#: ../clients/cli/connections.c:4393
+#: ../clients/cli/connections.c:4352
 msgid "IPv4 address (IP[/plen]) [none]"
 msgstr "Адреса IPv4 (IP[/plen]) [немає]"
 
-#: ../clients/cli/connections.c:4395
+#: ../clients/cli/connections.c:4354
 msgid "IPv4 gateway [none]"
 msgstr "Шлюз IPv4 [немає]"
 
-#: ../clients/cli/connections.c:4396
+#: ../clients/cli/connections.c:4355
 msgid "IPv6 address (IP[/plen]) [none]"
 msgstr "Адреса IPv6 (IP[/plen]) [немає]"
 
-#: ../clients/cli/connections.c:4398
+#: ../clients/cli/connections.c:4357
 msgid "IPv6 gateway [none]"
 msgstr "Шлюз IPv6 [типово немає]"
 
-#: ../clients/cli/connections.c:4400
+#: ../clients/cli/connections.c:4359
 msgid "Browser only [no]"
 msgstr "Лише навігатор [типово «ні»]"
 
-#: ../clients/cli/connections.c:4402
+#: ../clients/cli/connections.c:4361
 msgid "PAC URL"
 msgstr "Адреса PAC"
 
-#: ../clients/cli/connections.c:4403
+#: ../clients/cli/connections.c:4362
 msgid "PAC script"
 msgstr "Скрипт PAC"
 
-#: ../clients/cli/connections.c:4538
+#: ../clients/cli/connections.c:4497
 #, c-format
 msgid "Error: value for '%s' is missing."
 msgstr "Помилка: не вказано значення «%s»."
 
-#: ../clients/cli/connections.c:4583
+#: ../clients/cli/connections.c:4542
 msgid "Error: <setting>.<property> argument is missing."
 msgstr "Помилка: пропущено аргумент <параметр>.<властивість>."
 
-#: ../clients/cli/connections.c:4606
+#: ../clients/cli/connections.c:4565
 #, c-format
 msgid "Error: invalid or not allowed setting '%s': %s."
 msgstr "Помилка: некоректний або заборонений параметр, «%s»: %s."
 
-#: ../clients/cli/connections.c:4630
+#: ../clients/cli/connections.c:4589
 #, c-format
 msgid "Error: '%s' is ambiguous (%s.%s or %s.%s)."
 msgstr "Помилка: «%s» є неоднозначним (%s.%s або %s.%s)."
 
-#: ../clients/cli/connections.c:4644
+#: ../clients/cli/connections.c:4603
 #, c-format
 msgid "Error: invalid <setting>.<property> '%s'."
 msgstr "Помилка: некоректний аргумент <параметр>.<властивість>, «%s»."
 
-#: ../clients/cli/connections.c:4685 ../clients/cli/connections.c:8191
+#: ../clients/cli/connections.c:4644 ../clients/cli/connections.c:8150
 #, c-format
 msgid "Error: Failed to add '%s' connection: %s"
 msgstr "Помилка: не вдалося додати з’єднання «%s»: %s"
 
-#: ../clients/cli/connections.c:4690
+#: ../clients/cli/connections.c:4649
 #, c-format
 msgid "Connection '%s' (%s) successfully added.\n"
 msgstr "Запис з’єднання «%s» (%s) успішно додано.\n"
 
-#: ../clients/cli/connections.c:4812
+#: ../clients/cli/connections.c:4771
 #, c-format
 msgid ""
 "You can specify this option more than once. Press <Enter> when you're done.\n"
@@ -2556,7 +2428,7 @@ msgstr ""
 "завершите.\n"
 
 #. Ask for optional arguments.
-#: ../clients/cli/connections.c:4850
+#: ../clients/cli/connections.c:4809
 #, c-format
 msgid "There is %d optional setting for %s.\n"
 msgid_plural "There are %d optional settings for %s.\n"
@@ -2565,7 +2437,7 @@ msgstr[1] "Для «%2$s» передбачено %1$d додатковий па
 msgstr[2] "Для з’єднань типу «%2$s» передбачено %1$d додаткових аргументів.\n"
 msgstr[3] "Для з’єднань типу «%2$s» передбачено %1$d додатковий аргумент.\n"
 
-#: ../clients/cli/connections.c:4853
+#: ../clients/cli/connections.c:4812
 #, c-format
 msgid "Do you want to provide it? %s"
 msgid_plural "Do you want to provide them? %s"
@@ -2574,119 +2446,118 @@ msgstr[1] "Хочете вказати їх? %s"
 msgstr[2] "Хочете вказати їх? %s"
 msgstr[3] "Хочете вказати його? %s"
 
-#: ../clients/cli/connections.c:4867
+#: ../clients/cli/connections.c:4826
 msgid "Wired Ethernet"
 msgstr "Дротовий Ethernet"
 
-#: ../clients/cli/connections.c:4869 ../src/devices/nm-device-infiniband.c:192
+#: ../clients/cli/connections.c:4828 ../src/devices/nm-device-infiniband.c:192
 msgid "InfiniBand connection"
 msgstr "З’єднання InfiniBand"
 
-#: ../clients/cli/connections.c:4871
+#: ../clients/cli/connections.c:4830
 msgid "Wi-Fi connection"
 msgstr "З’єднання Wi-Fi"
 
-#: ../clients/cli/connections.c:4873
+#: ../clients/cli/connections.c:4832
 msgid "WiMAX connection"
 msgstr "З’єднання WiMAX"
 
-#: ../clients/cli/connections.c:4875
+#: ../clients/cli/connections.c:4834
 msgid "PPPoE"
 msgstr "PPPoE"
 
-#: ../clients/cli/connections.c:4877
+#: ../clients/cli/connections.c:4836
 msgid "CDMA mobile broadband connection"
 msgstr "мобільне широкосмугове з’єднання CDMA"
 
-#: ../clients/cli/connections.c:4879
+#: ../clients/cli/connections.c:4838
 msgid "GSM mobile broadband connection"
 msgstr "мобільне широкосмугове з’єднання GSM"
 
-#: ../clients/cli/connections.c:4881
+#: ../clients/cli/connections.c:4840
 msgid "bluetooth connection"
 msgstr "з’єднання bluetooth"
 
-#: ../clients/cli/connections.c:4883 ../src/devices/nm-device-vlan.c:433
+#: ../clients/cli/connections.c:4842 ../src/devices/nm-device-vlan.c:433
 msgid "VLAN connection"
 msgstr "З’єднання VLAN"
 
-#: ../clients/cli/connections.c:4885
+#: ../clients/cli/connections.c:4844
 msgid "Bond device"
 msgstr "Пристрій Bond"
 
-#: ../clients/cli/connections.c:4887
+#: ../clients/cli/connections.c:4846
 msgid "Team device"
 msgstr "Пристрій Team"
 
-#: ../clients/cli/connections.c:4889
+#: ../clients/cli/connections.c:4848
 msgid "Team port"
 msgstr "Порт Team"
 
-#: ../clients/cli/connections.c:4891
+#: ../clients/cli/connections.c:4850
 msgid "Bridge device"
 msgstr "Пристрій містка"
 
-#: ../clients/cli/connections.c:4893
+#: ../clients/cli/connections.c:4852
 msgid "Bridge port"
 msgstr "Порт містка"
 
-#: ../clients/cli/connections.c:4895 ../src/nm-manager.c:3949
+#: ../clients/cli/connections.c:4854 ../src/nm-manager.c:3962
 msgid "VPN connection"
 msgstr "З’єднання VPN"
 
-#: ../clients/cli/connections.c:4897
+#: ../clients/cli/connections.c:4856
 msgid "OLPC Mesh connection"
 msgstr "З’єднання OLPC Mesh"
 
-#: ../clients/cli/connections.c:4899 ../src/devices/adsl/nm-device-adsl.c:137
+#: ../clients/cli/connections.c:4858 ../src/devices/adsl/nm-device-adsl.c:137
 msgid "ADSL connection"
 msgstr "З’єднання ADSL"
 
-#: ../clients/cli/connections.c:4901
-#| msgid "CDMA connection"
+#: ../clients/cli/connections.c:4860
 msgid "MACsec connection"
 msgstr "З’єднання MACsec"
 
-#: ../clients/cli/connections.c:4903
+#: ../clients/cli/connections.c:4862
 msgid "macvlan connection"
 msgstr "З’єднання MACVLAN"
 
-#: ../clients/cli/connections.c:4905 ../src/devices/nm-device-vxlan.c:369
+#: ../clients/cli/connections.c:4864 ../src/devices/nm-device-vxlan.c:369
 msgid "VXLAN connection"
 msgstr "З’єднання VXLAN"
 
-#: ../clients/cli/connections.c:4907
+#: ../clients/cli/connections.c:4866
 msgid "Tun device"
 msgstr "Пристрій TUN"
 
-#: ../clients/cli/connections.c:4909
+#: ../clients/cli/connections.c:4868
 msgid "IPv4 protocol"
 msgstr "Протокол IPv4"
 
-#: ../clients/cli/connections.c:4911
+#: ../clients/cli/connections.c:4870
 msgid "IPv6 protocol"
 msgstr "Протокол IPv6"
 
-#: ../clients/cli/connections.c:4913
+#: ../clients/cli/connections.c:4872
 msgid "Proxy"
 msgstr "Проксі"
 
-#: ../clients/cli/connections.c:4996 ../clients/cli/utils.c:122
+#: ../clients/cli/connections.c:4955 ../clients/cli/utils.c:122
 #, c-format
 msgid "Error: value for '%s' argument is required."
 msgstr "Помилка: слід вказати значення «%s» аргументу."
 
-#: ../clients/cli/connections.c:5002
+#: ../clients/cli/connections.c:4961
 #, c-format
 msgid "Error: 'save': %s."
 msgstr "Помилка: «save»: %s."
 
-#: ../clients/cli/connections.c:5074
+#: ../clients/cli/connections.c:5033
 #, c-format
 msgid "Error: '%s' argument is required."
 msgstr "Помилка: слід вказати параметр «%s»."
 
-#: ../clients/cli/connections.c:6046
+#: ../clients/cli/connections.c:6005
 #, c-format
 msgid "['%s' setting values]\n"
 msgstr "['%s' значення параметра]\n"
@@ -2694,7 +2565,7 @@ msgstr "['%s' значення параметра]\n"
 #. TRANSLATORS: do not translate command names and keywords before ::
 #. *              However, you should translate terms enclosed in <>.
 #.
-#: ../clients/cli/connections.c:6128
+#: ../clients/cli/connections.c:6087
 #, c-format
 msgid ""
 "---[ Main menu ]---\n"
@@ -2728,7 +2599,7 @@ msgstr ""
 "nmcli    <параметр-налашт.> <знач.>   :: налаштовування nmcli\n"
 "quit                                  :: завершити роботу nmcli\n"
 
-#: ../clients/cli/connections.c:6155
+#: ../clients/cli/connections.c:6114
 #, c-format
 msgid ""
 "goto <setting>[.<prop>] | <prop>  :: enter setting/property for editing\n"
@@ -2749,7 +2620,7 @@ msgstr ""
 "          nmcli connection> goto secondaries\n"
 "          nmcli> goto ipv4.addresses\n"
 
-#: ../clients/cli/connections.c:6162
+#: ../clients/cli/connections.c:6121
 #, c-format
 msgid ""
 "remove <setting>[.<prop>]  :: remove setting or reset property value\n"
@@ -2771,7 +2642,7 @@ msgstr ""
 "Приклади: nmcli> remove wifi-sec\n"
 "          nmcli> remove eth.mtu\n"
 
-#: ../clients/cli/connections.c:6169
+#: ../clients/cli/connections.c:6128
 #, c-format
 msgid ""
 "set [<setting>.<prop> <value>]  :: set property value\n"
@@ -2787,7 +2658,7 @@ msgstr ""
 "\n"
 "Приклад: nmcli> s con.id My connection\n"
 
-#: ../clients/cli/connections.c:6174
+#: ../clients/cli/connections.c:6133
 #, c-format
 msgid ""
 "describe [<setting>.<prop>]  :: describe property\n"
@@ -2800,7 +2671,7 @@ msgstr ""
 "Показує опис властивості. Список усіх параметрів і властивостей NM можна "
 "знайти на сторінці довідника (man) nm-settings(5).\n"
 
-#: ../clients/cli/connections.c:6179
+#: ../clients/cli/connections.c:6138
 #, c-format
 msgid ""
 "print [all]  :: print setting or connection values\n"
@@ -2815,7 +2686,7 @@ msgstr ""
 "\n"
 "Приклад: nmcli ipv4> print all\n"
 
-#: ../clients/cli/connections.c:6184
+#: ../clients/cli/connections.c:6143
 #, c-format
 msgid ""
 "verify [all | fix]  :: verify setting or connection validity\n"
@@ -2840,7 +2711,7 @@ msgstr ""
 "          nmcli> verify fix\n"
 "          nmcli bond> verify\n"
 
-#: ../clients/cli/connections.c:6193
+#: ../clients/cli/connections.c:6152
 #, c-format
 msgid ""
 "save [persistent|temporary]  :: save the connection\n"
@@ -2867,7 +2738,7 @@ msgstr ""
 "потрібно\n"
 "повністю вилучити постійне з’єднання, вам доведеться вилучити його профіль.\n"
 
-#: ../clients/cli/connections.c:6204
+#: ../clients/cli/connections.c:6163
 #, c-format
 msgid ""
 "activate [<ifname>] [/<ap>|<nsp>]  :: activate the connection\n"
@@ -2888,7 +2759,7 @@ msgstr ""
 "/<ap>|<nsp> - AP (Wi-Fi) або NSP (WiMAX) (додайте на початку «/», якщо не "
 "вказано <інтерфейс>)\n"
 
-#: ../clients/cli/connections.c:6211 ../clients/cli/connections.c:6370
+#: ../clients/cli/connections.c:6170 ../clients/cli/connections.c:6329
 #, c-format
 msgid ""
 "back  :: go to upper menu level\n"
@@ -2897,7 +2768,7 @@ msgstr ""
 "back  :: піднятися у меню на один рівень\n"
 "\n"
 
-#: ../clients/cli/connections.c:6214
+#: ../clients/cli/connections.c:6173
 #, c-format
 msgid ""
 "help/? [<command>]  :: help for the nmcli commands\n"
@@ -2906,7 +2777,7 @@ msgstr ""
 "help/? [<команда>]  :: довідка з команди nmcli\n"
 "\n"
 
-#: ../clients/cli/connections.c:6217
+#: ../clients/cli/connections.c:6176
 #, c-format
 msgid ""
 "nmcli [<conf-option> <value>]  :: nmcli configuration\n"
@@ -2933,7 +2804,7 @@ msgstr ""
 "          nmcli> nmcli save-confirmation no\n"
 "          nmcli> nmcli prompt-color 3\n"
 
-#: ../clients/cli/connections.c:6239 ../clients/cli/connections.c:6376
+#: ../clients/cli/connections.c:6198 ../clients/cli/connections.c:6335
 #, c-format
 msgid ""
 "quit  :: exit nmcli\n"
@@ -2947,8 +2818,8 @@ msgstr ""
 "запис з’єднання не було збережено, користувачеві буде запропоновано "
 "підтвердити дію з виходу з програми.\n"
 
-#: ../clients/cli/connections.c:6244 ../clients/cli/connections.c:6381
-#: ../clients/cli/connections.c:6801 ../clients/cli/connections.c:7753
+#: ../clients/cli/connections.c:6203 ../clients/cli/connections.c:6340
+#: ../clients/cli/connections.c:6760 ../clients/cli/connections.c:7712
 #, c-format
 msgid "Unknown command: '%s'\n"
 msgstr "Невідома команда «%s».\n"
@@ -2956,7 +2827,7 @@ msgstr "Невідома команда «%s».\n"
 #. TRANSLATORS: do not translate command names and keywords before ::
 #. *              However, you should translate terms enclosed in <>.
 #.
-#: ../clients/cli/connections.c:6310
+#: ../clients/cli/connections.c:6269
 #, c-format
 msgid ""
 "---[ Property menu ]---\n"
@@ -2983,7 +2854,7 @@ msgstr ""
 "help/?   [<команда>]             :: вивести цю довідку або опис команди\n"
 "quit                             :: вийти з nmcli\n"
 
-#: ../clients/cli/connections.c:6335
+#: ../clients/cli/connections.c:6294
 #, c-format
 msgid ""
 "set [<value>]  :: set new value\n"
@@ -2995,7 +2866,7 @@ msgstr ""
 "За допомогою цієї команди можна змінити значення властивості на вказане "
 "<значення>\n"
 
-#: ../clients/cli/connections.c:6339
+#: ../clients/cli/connections.c:6298
 #, c-format
 msgid ""
 "add [<value>]  :: append new value to the property\n"
@@ -3010,7 +2881,7 @@ msgstr ""
 "якщо властивість належить до типу контейнерів. Якщо властивість складається "
 "лише з одного значення, це значення буде замінено (те саме, що і «set»).\n"
 
-#: ../clients/cli/connections.c:6345
+#: ../clients/cli/connections.c:6304
 #, c-format
 msgid ""
 "change  :: change current value\n"
@@ -3021,7 +2892,7 @@ msgstr ""
 "\n"
 "Показує поточне значення і надає змогу його редагувати.\n"
 
-#: ../clients/cli/connections.c:6349
+#: ../clients/cli/connections.c:6308
 #, c-format
 msgid ""
 "remove [<value>|<index>|<option name>]  :: delete the value\n"
@@ -3054,7 +2925,7 @@ msgstr ""
 "          nmcli bond.options> remove downdelay\n"
 "\n"
 
-#: ../clients/cli/connections.c:6360
+#: ../clients/cli/connections.c:6319
 #, c-format
 msgid ""
 "describe  :: describe property\n"
@@ -3067,7 +2938,7 @@ msgstr ""
 "Показує опис властивості. Список усіх параметрів і властивостей NM можна "
 "знайти на сторінці довідника (man) nm-settings(5).\n"
 
-#: ../clients/cli/connections.c:6365
+#: ../clients/cli/connections.c:6324
 #, c-format
 msgid ""
 "print [property|setting|connection]  :: print property (setting, connection) "
@@ -3082,7 +2953,7 @@ msgstr ""
 "Виводить значення властивості. За допомогою аргументу команди ви можете "
 "виводити значення усього параметра або усього запису з’єднання.\n"
 
-#: ../clients/cli/connections.c:6373
+#: ../clients/cli/connections.c:6332
 #, c-format
 msgid ""
 "help/? [<command>]  :: help for nmcli commands\n"
@@ -3091,29 +2962,29 @@ msgstr ""
 "help/? [<команда>]  :: довідка з команди nmcli\n"
 "\n"
 
-#: ../clients/cli/connections.c:6466
+#: ../clients/cli/connections.c:6425
 #, c-format
 msgid "Error: Connection activation failed.\n"
 msgstr "Помилка: невдала спроба активації з’єднання.\n"
 
-#: ../clients/cli/connections.c:6550
+#: ../clients/cli/connections.c:6509
 #, c-format
 msgid "Error: setting '%s' is mandatory and cannot be removed.\n"
 msgstr "Помилка: параметр «%s» є обов’язковим, його не можна вилучати.\n"
 
 #. TRANSLATORS: status line in nmcli connection editor
-#: ../clients/cli/connections.c:6568
+#: ../clients/cli/connections.c:6527
 #, c-format
 msgid "[ Type: %s | Name: %s | UUID: %s | Dirty: %s | Temp: %s ]\n"
 msgstr "[ Тип: %s | Назва: %s | UUID: %s | Не збережено: %s | Тимч.: %s ]\n"
 
-#: ../clients/cli/connections.c:6604
+#: ../clients/cli/connections.c:6563
 #, c-format
 msgid "The connection is not saved. Do you really want to quit? %s"
 msgstr ""
 "З’єднання не збережено. Ви справді хочете завершити роботу програми? %s"
 
-#: ../clients/cli/connections.c:6653
+#: ../clients/cli/connections.c:6612
 #, c-format
 msgid ""
 "The connection profile has been removed from another client. You may type "
@@ -3122,66 +2993,66 @@ msgstr ""
 "Профіль з’єднання було вилучено з іншого клієнта. Ви можете ввести «save» у "
 "головному меню, щоб відновити його.\n"
 
-#: ../clients/cli/connections.c:6678 ../clients/cli/connections.c:7099
-#: ../clients/cli/connections.c:7157
+#: ../clients/cli/connections.c:6637 ../clients/cli/connections.c:7058
+#: ../clients/cli/connections.c:7116
 #, c-format
 msgid "Allowed values for '%s' property: %s\n"
 msgstr "Можливі значення властивості «%s»: %s\n"
 
-#: ../clients/cli/connections.c:6682 ../clients/cli/connections.c:7103
-#: ../clients/cli/connections.c:7161
+#: ../clients/cli/connections.c:6641 ../clients/cli/connections.c:7062
+#: ../clients/cli/connections.c:7120
 #, c-format
 msgid "Enter '%s' value: "
 msgstr "Введіть значення «%s»: "
 
-#: ../clients/cli/connections.c:6697 ../clients/cli/connections.c:6719
-#: ../clients/cli/connections.c:7107 ../clients/cli/connections.c:7166
+#: ../clients/cli/connections.c:6656 ../clients/cli/connections.c:6678
+#: ../clients/cli/connections.c:7066 ../clients/cli/connections.c:7125
 #, c-format
 msgid "Error: failed to set '%s' property: %s\n"
 msgstr "Помилка: не вдалося встановити значення властивості «%s»: %s\n"
 
-#: ../clients/cli/connections.c:6713
+#: ../clients/cli/connections.c:6672
 #, c-format
 msgid "Edit '%s' value: "
 msgstr "Редагування значення «%s»: "
 
-#: ../clients/cli/connections.c:6742
+#: ../clients/cli/connections.c:6701
 #, c-format
 msgid "Error: %s\n"
 msgstr "Помилка: %s\n"
 
-#: ../clients/cli/connections.c:6748 ../clients/cli/connections.c:7258
-#: ../clients/cli/connections.c:7306
+#: ../clients/cli/connections.c:6707 ../clients/cli/connections.c:7217
+#: ../clients/cli/connections.c:7265
 #, c-format
 msgid "Error: failed to remove value of '%s': %s\n"
 msgstr "Помилка: не вдалося вилучити значення «%s»: %s\n"
 
-#: ../clients/cli/connections.c:6769
+#: ../clients/cli/connections.c:6728
 #, c-format
 msgid "Unknown command argument: '%s'\n"
 msgstr "Невідомий аргумент команди: «%s»\n"
 
-#: ../clients/cli/connections.c:6874
+#: ../clients/cli/connections.c:6833
 #, c-format
 msgid "Available settings: %s\n"
 msgstr "Доступні параметри: %s\n"
 
-#: ../clients/cli/connections.c:6886
+#: ../clients/cli/connections.c:6845
 #, c-format
 msgid "Error: invalid setting name; %s\n"
 msgstr "Помилка: некоректна назва параметра; %s\n"
 
-#: ../clients/cli/connections.c:6903
+#: ../clients/cli/connections.c:6862
 #, c-format
 msgid "Available properties: %s\n"
 msgstr "Доступні властивості: %s\n"
 
-#: ../clients/cli/connections.c:6911
+#: ../clients/cli/connections.c:6870
 #, c-format
 msgid "Error: property %s\n"
 msgstr "Помилка: властивість %s\n"
 
-#: ../clients/cli/connections.c:6952
+#: ../clients/cli/connections.c:6911
 #, c-format
 msgid ""
 "Saving the connection with 'autoconnect=yes'. That might result in an "
@@ -3192,12 +3063,12 @@ msgstr ""
 "значення параметра може призвести до негайного задіяння з’єднання.\n"
 "Хочете зберегти запис? %s"
 
-#: ../clients/cli/connections.c:7041
+#: ../clients/cli/connections.c:7000
 #, c-format
 msgid "You may edit the following settings: %s\n"
 msgstr "Можна редагувати такі параметри: %s\n"
 
-#: ../clients/cli/connections.c:7069
+#: ../clients/cli/connections.c:7028
 #, c-format
 msgid ""
 "The connection profile has been removed from another client. You may type "
@@ -3206,224 +3077,224 @@ msgstr ""
 "Профіль з’єднання було вилучено з іншого клієнта. Ви можете ввести «save», "
 "щоб відновити його.\n"
 
-#: ../clients/cli/connections.c:7111 ../clients/cli/connections.c:7351
+#: ../clients/cli/connections.c:7070 ../clients/cli/connections.c:7310
 #, c-format
 msgid "Error: no setting selected; valid are [%s]\n"
 msgstr ""
 "Помилка: не вибрано значення параметра; коректними значеннями є такі: [%s]\n"
 
-#: ../clients/cli/connections.c:7112
+#: ../clients/cli/connections.c:7071
 #, c-format
 msgid "use 'goto <setting>' first, or 'set <setting>.<property>'\n"
 msgstr ""
 "спочатку скористайтеся командою «goto <параметр>» або командою «set "
 "<параметр>.<властивість>»\n"
 
-#: ../clients/cli/connections.c:7126 ../clients/cli/connections.c:7285
-#: ../clients/cli/connections.c:7373
+#: ../clients/cli/connections.c:7085 ../clients/cli/connections.c:7244
+#: ../clients/cli/connections.c:7332
 #, c-format
 msgid "Error: invalid setting argument '%s'; valid are [%s]\n"
 msgstr ""
 "Помилка: некоректний аргумент параметра, «%s»; коректними є такі ПАРАМЕТРИ: "
 "[%s]\n"
 
-#: ../clients/cli/connections.c:7136
+#: ../clients/cli/connections.c:7095
 #, c-format
 msgid "Error: missing setting for '%s' property\n"
 msgstr "Помилка: не вказано параметра для властивості «%s»\n"
 
-#: ../clients/cli/connections.c:7143
+#: ../clients/cli/connections.c:7102
 #, c-format
 msgid "Error: invalid property: %s\n"
 msgstr "Помилка: некоректна властивість: %s\n"
 
-#: ../clients/cli/connections.c:7196
+#: ../clients/cli/connections.c:7155
 #, c-format
 msgid "Error: unknown setting '%s'\n"
 msgstr "Помилка: невідоме значення «%s»\n"
 
-#: ../clients/cli/connections.c:7219
+#: ../clients/cli/connections.c:7178
 #, c-format
 msgid "You may edit the following properties: %s\n"
 msgstr "Можна редагувати значення таких властивостей: %s\n"
 
-#: ../clients/cli/connections.c:7263
+#: ../clients/cli/connections.c:7222
 #, c-format
 msgid "Error: no argument given; valid are [%s]\n"
 msgstr "Помилка: не вказано аргументу; коректними аргументами є такі: [%s]\n"
 
-#: ../clients/cli/connections.c:7282
+#: ../clients/cli/connections.c:7241
 #, c-format
 msgid "Setting '%s' is not present in the connection.\n"
 msgstr "У з’єднання немає параметра «%s».\n"
 
-#: ../clients/cli/connections.c:7327
+#: ../clients/cli/connections.c:7286
 #, c-format
 msgid "Error: %s properties, nor it is a setting name.\n"
 msgstr "Помилка: властивості %s і не є назвою параметра.\n"
 
-#: ../clients/cli/connections.c:7352
+#: ../clients/cli/connections.c:7311
 #, c-format
 msgid "use 'goto <setting>' first, or 'describe <setting>.<property>'\n"
 msgstr ""
 "скористайтеся спочатку командою «goto <параметр> або командою «describe "
 "<параметр>.<властивість>»\n"
 
-#: ../clients/cli/connections.c:7401
+#: ../clients/cli/connections.c:7360
 #, c-format
 msgid "Error: invalid property: %s, neither a valid setting name.\n"
 msgstr ""
 "Помилка: некоректна властивість: %s і не є коректною назвою параметра.\n"
 
-#: ../clients/cli/connections.c:7433
+#: ../clients/cli/connections.c:7392
 #, c-format
 msgid "Error: unknown setting: '%s'\n"
 msgstr "Помилка: невідомий параметр: «%s»\n"
 
-#: ../clients/cli/connections.c:7438
+#: ../clients/cli/connections.c:7397
 #, c-format
 msgid "Error: '%s' setting not present in the connection\n"
 msgstr "Помилка: у з’єднання немає параметра «%s».\n"
 
-#: ../clients/cli/connections.c:7466
+#: ../clients/cli/connections.c:7425
 #, c-format
 msgid "Error: invalid property: %s%s\n"
 msgstr "Помилка: некоректна властивість: %s%s\n"
 
-#: ../clients/cli/connections.c:7468
+#: ../clients/cli/connections.c:7427
 msgid ", neither a valid setting name"
 msgstr ", і не є коректною назвою параметра"
 
-#: ../clients/cli/connections.c:7485
+#: ../clients/cli/connections.c:7444
 #, c-format
 msgid "Invalid verify option: %s\n"
 msgstr "Некоректний параметр verify: %s\n"
 
-#: ../clients/cli/connections.c:7493
+#: ../clients/cli/connections.c:7452
 #, c-format
 msgid "Verify setting '%s': %s\n"
 msgstr "Перевірка параметра «%s»: %s\n"
 
-#: ../clients/cli/connections.c:7508
+#: ../clients/cli/connections.c:7467
 #, c-format
 msgid "Verify connection: %s\n"
 msgstr "Перевірка з’єднання: %s\n"
 
-#: ../clients/cli/connections.c:7511
+#: ../clients/cli/connections.c:7470
 #, c-format
 msgid "The error cannot be fixed automatically.\n"
 msgstr "Помилку не можна виправити у автоматичному режимі.\n"
 
-#: ../clients/cli/connections.c:7528
+#: ../clients/cli/connections.c:7487
 #, c-format
 msgid "Error: invalid argument '%s'\n"
 msgstr "Помилка: некоректний аргумент «%s»\n"
 
-#: ../clients/cli/connections.c:7560
+#: ../clients/cli/connections.c:7519
 #, c-format
 msgid "Error: Failed to save '%s' (%s) connection: %s\n"
 msgstr "Помилка: не вдалося додати з’єднання «%s» (%s): %s\n"
 
-#: ../clients/cli/connections.c:7567
+#: ../clients/cli/connections.c:7526
 #, c-format
 msgid "Connection '%s' (%s) successfully saved.\n"
 msgstr "Запис з’єднання «%s» (%s) успішно збережено.\n"
 
-#: ../clients/cli/connections.c:7568
+#: ../clients/cli/connections.c:7527
 #, c-format
 msgid "Connection '%s' (%s) successfully updated.\n"
 msgstr "Запис з’єднання «%s» (%s) успішно оновлено.\n"
 
-#: ../clients/cli/connections.c:7600
+#: ../clients/cli/connections.c:7559
 #, c-format
 msgid "Error: connection verification failed: %s\n"
 msgstr "Помилка: з’єднання не пройшло перевірки: %s\n"
 
-#: ../clients/cli/connections.c:7601
+#: ../clients/cli/connections.c:7560
 msgid "(unknown error)"
 msgstr "(невідома помилка)"
 
-#: ../clients/cli/connections.c:7602
+#: ../clients/cli/connections.c:7561
 #, c-format
 msgid "You may try running 'verify fix' to fix errors.\n"
 msgstr "Ви можете спробувати запустити «verify fix» для виправлення помилок.\n"
 
-#: ../clients/cli/connections.c:7624
+#: ../clients/cli/connections.c:7583
 #, c-format
 msgid "Error: connection is not saved. Type 'save' first.\n"
 msgstr "Помилка: з’єднання не збережено. Спочатку введіть «save».\n"
 
-#: ../clients/cli/connections.c:7628
+#: ../clients/cli/connections.c:7587
 #, c-format
 msgid "Error: connection is not valid: %s\n"
 msgstr "Помилка: некоректне з’єднання: %s\n"
 
-#: ../clients/cli/connections.c:7638
+#: ../clients/cli/connections.c:7597
 #, c-format
 msgid "Error: Cannot activate connection: %s.\n"
 msgstr "Помилка: не вдалося задіяти з’єднання: %s.\n"
 
-#: ../clients/cli/connections.c:7647
+#: ../clients/cli/connections.c:7606
 #, c-format
 msgid "Error: Failed to activate '%s' (%s) connection: %s\n"
 msgstr "Помилка: не вдалося задіяти з’єднання «%s» (%s): %s\n"
 
-#: ../clients/cli/connections.c:7653
+#: ../clients/cli/connections.c:7612
 msgid "Monitoring connection activation (press any key to continue)\n"
 msgstr ""
 "Спостерігаємо за активацією з’єднання (натисніть будь-яку клавішу, щоб "
 "продовжити)\n"
 
-#: ../clients/cli/connections.c:7689
+#: ../clients/cli/connections.c:7648
 #, c-format
 msgid "Error: status-line: %s\n"
 msgstr "Помилка: рядок стану: %s\n"
 
-#: ../clients/cli/connections.c:7697
+#: ../clients/cli/connections.c:7656
 #, c-format
 msgid "Error: save-confirmation: %s\n"
 msgstr "Помилка: save-confirmation: %s\n"
 
-#: ../clients/cli/connections.c:7705
+#: ../clients/cli/connections.c:7664
 #, c-format
 msgid "Error: show-secrets: %s\n"
 msgstr "Помилка: show-secrets: %s\n"
 
-#: ../clients/cli/connections.c:7714
+#: ../clients/cli/connections.c:7673
 #, c-format
 msgid "Error: bad color: %s\n"
 msgstr "Помилка: некоректний колір: %s\n"
 
-#: ../clients/cli/connections.c:7728
+#: ../clients/cli/connections.c:7687
 #, c-format
 msgid "Current nmcli configuration:\n"
 msgstr "Поточне налаштування nmcli:\n"
 
-#: ../clients/cli/connections.c:7738
+#: ../clients/cli/connections.c:7697
 #, c-format
 msgid "Invalid configuration option '%s'; allowed [%s]\n"
 msgstr ""
 "Некоректний параметр налаштування, «%s»; можна використовувати лише такі: "
 "[%s]\n"
 
-#: ../clients/cli/connections.c:7966
+#: ../clients/cli/connections.c:7925
 #, c-format
 msgid "Error: only one of 'id', uuid, or 'path' can be provided."
 msgstr "Помилка: можна вказувати лише один з параметрів «id», uuid або «path»."
 
-#: ../clients/cli/connections.c:7981 ../clients/cli/connections.c:8148
+#: ../clients/cli/connections.c:7940 ../clients/cli/connections.c:8107
 #, c-format
 msgid "Error: Unknown connection '%s'."
 msgstr "Помилка: невідоме з’єднання, «%s»."
 
-#: ../clients/cli/connections.c:7999
+#: ../clients/cli/connections.c:7958
 #, c-format
 msgid "Warning: editing existing connection '%s'; 'type' argument is ignored\n"
 msgstr ""
 "Попередження: редагування вже створеного запису з’єднання «%s»; аргумент "
 "«type» проігноровано\n"
 
-#: ../clients/cli/connections.c:8002
+#: ../clients/cli/connections.c:7961
 #, c-format
 msgid ""
 "Warning: editing existing connection '%s'; 'con-name' argument is ignored\n"
@@ -3431,199 +3302,199 @@ msgstr ""
 "Попередження: редагування вже створеного запису з’єднання «%s»; аргумент "
 "«con-name» проігноровано\n"
 
-#: ../clients/cli/connections.c:8022
+#: ../clients/cli/connections.c:7981
 #, c-format
 msgid "Valid connection types: %s\n"
 msgstr "Коректні типи з’єднань: %s\n"
 
-#: ../clients/cli/connections.c:8024
+#: ../clients/cli/connections.c:7983
 #, c-format
 msgid "Error: invalid connection type; %s\n"
 msgstr "Помилка: некоректний тип з’єднання; %s\n"
 
-#: ../clients/cli/connections.c:8063
+#: ../clients/cli/connections.c:8022
 #, c-format
 msgid "===| nmcli interactive connection editor |==="
 msgstr "===| Інтерактивний редактор з’єднань nmcli |==="
 
-#: ../clients/cli/connections.c:8066
+#: ../clients/cli/connections.c:8025
 #, c-format
 msgid "Editing existing '%s' connection: '%s'"
 msgstr "Редагування наявного з’єднання «%s»: «%s»"
 
-#: ../clients/cli/connections.c:8068
+#: ../clients/cli/connections.c:8027
 #, c-format
 msgid "Adding a new '%s' connection"
 msgstr "Додавання нового з’єднання «%s»"
 
-#: ../clients/cli/connections.c:8070
+#: ../clients/cli/connections.c:8029
 #, c-format
 msgid "Type 'help' or '?' for available commands."
 msgstr "Введіть «help» або «?», щоб ознайомитися зі списком доступних команд."
 
-#: ../clients/cli/connections.c:8072
+#: ../clients/cli/connections.c:8031
 #, c-format
 msgid "Type 'describe [<setting>.<prop>]' for detailed property description."
 msgstr ""
 "Щоб ознайомитися з докладним описом властивості, скористайтеся командою "
 "«describe [<параметр>.<властивість>]."
 
-#: ../clients/cli/connections.c:8107
+#: ../clients/cli/connections.c:8066
 #, c-format
 msgid "Error: Failed to modify connection '%s': %s"
 msgstr "Помилка: не вдалося внести зміни до запису з’єднання «%s»: %s"
 
-#: ../clients/cli/connections.c:8114
+#: ../clients/cli/connections.c:8073
 #, c-format
 msgid "Connection '%s' (%s) successfully modified.\n"
 msgstr "Зміни до з’єднання «%s» (%s) успішно внесено.\n"
 
-#: ../clients/cli/connections.c:8196
+#: ../clients/cli/connections.c:8155
 #, c-format
 msgid "%s (%s) cloned as %s (%s).\n"
 msgstr "%s (%s) клоновано як %s (%s).\n"
 
-#: ../clients/cli/connections.c:8260
+#: ../clients/cli/connections.c:8219
 msgid "New connection name: "
 msgstr "Нова назва з’єднання: "
 
-#: ../clients/cli/connections.c:8262
+#: ../clients/cli/connections.c:8221
 #, c-format
 msgid "Error: <new name> argument is missing."
 msgstr "Помилка: не вказано параметр <нова назва>."
 
-#: ../clients/cli/connections.c:8268 ../clients/cli/connections.c:8774
+#: ../clients/cli/connections.c:8227 ../clients/cli/connections.c:8733
 #, c-format
 msgid "Error: unknown extra argument: '%s'."
 msgstr "Помилка: невідомий зайвий параметр: «%s»."
 
-#: ../clients/cli/connections.c:8319
+#: ../clients/cli/connections.c:8278
 #, c-format
 msgid "Error: not all connections deleted."
 msgstr "Помилка: вилучено не усі з’єднання."
 
-#: ../clients/cli/connections.c:8320
+#: ../clients/cli/connections.c:8279
 #, c-format
 msgid "Error: Connection deletion failed: %s"
 msgstr "Помилка: не вдалося вилучити з’єднання: %s"
 
-#: ../clients/cli/connections.c:8377 ../clients/cli/connections.c:8501
+#: ../clients/cli/connections.c:8336 ../clients/cli/connections.c:8460
 #, c-format
 msgid "Error: %s.\n"
 msgstr "Помилка: %s.\n"
 
-#: ../clients/cli/connections.c:8378 ../clients/cli/connections.c:8502
+#: ../clients/cli/connections.c:8337 ../clients/cli/connections.c:8461
 #, c-format
 msgid "Error: not all connections found."
 msgstr "Помилка: знайдено не усі з’єднання."
 
 #. truncate trailing ", "
-#: ../clients/cli/connections.c:8421
+#: ../clients/cli/connections.c:8380
 #, c-format
 msgid "Error: cannot delete unknown connection(s): %s."
 msgstr "Помилка: не можна вилучати невідомі з’єднання: %s."
 
-#: ../clients/cli/connections.c:8433
+#: ../clients/cli/connections.c:8392
 #, c-format
 msgid "%s: connection profile changed\n"
 msgstr "%s: змінено профіль з’єднання\n"
 
-#: ../clients/cli/connections.c:8459
+#: ../clients/cli/connections.c:8418
 #, c-format
 msgid "%s: connection profile created\n"
 msgstr "%s: створено профіль з’єднання\n"
 
-#: ../clients/cli/connections.c:8468
+#: ../clients/cli/connections.c:8427
 #, c-format
 msgid "%s: connection profile removed\n"
 msgstr "%s: вилучено профіль з’єднання\n"
 
-#: ../clients/cli/connections.c:8529
+#: ../clients/cli/connections.c:8488
 #, c-format
 msgid "Error: failed to reload connections: %s."
 msgstr "Помилка: не вдалося перезавантажити з’єднання: %s."
 
-#: ../clients/cli/connections.c:8561
+#: ../clients/cli/connections.c:8520
 #, c-format
 msgid "Error: failed to load connection: %s."
 msgstr "Помилка: не вдалося завантажити з’єднання: %s."
 
-#: ../clients/cli/connections.c:8569
+#: ../clients/cli/connections.c:8528
 #, c-format
 msgid "Could not load file '%s'\n"
 msgstr "Не вдалося завантажити файл «%s»\n"
 
-#: ../clients/cli/connections.c:8578
+#: ../clients/cli/connections.c:8537
 msgid "File to import: "
 msgstr "Файл для імпортування: "
 
-#: ../clients/cli/connections.c:8618
+#: ../clients/cli/connections.c:8577
 #, c-format
 msgid "Error: No arguments provided."
 msgstr "Помилка: не надано аргументів."
 
-#: ../clients/cli/connections.c:8645
+#: ../clients/cli/connections.c:8604
 #, c-format
 msgid "Warning: 'type' already specified, ignoring extra one.\n"
 msgstr ""
 "Попередження: значення «type» вже задано, зайве значення проігноровано.\n"
 
-#: ../clients/cli/connections.c:8658
+#: ../clients/cli/connections.c:8617
 #, c-format
 msgid "Warning: 'file' already specified, ignoring extra one.\n"
 msgstr ""
 "Попередження: значення «file» вже задано, зайве значення проігноровано.\n"
 
-#: ../clients/cli/connections.c:8660
+#: ../clients/cli/connections.c:8619
 #, c-format
 msgid "Unknown parameter: %s"
 msgstr "Невідомий параметр: %s"
 
-#: ../clients/cli/connections.c:8673
+#: ../clients/cli/connections.c:8632
 #, c-format
 msgid "Error: 'type' argument is required."
 msgstr "Помилка: слід вказати значення «type»."
 
-#: ../clients/cli/connections.c:8678
+#: ../clients/cli/connections.c:8637
 #, c-format
 msgid "Error: 'file' argument is required."
 msgstr "Помилка: слід вказати значення «file»."
 
-#: ../clients/cli/connections.c:8685
+#: ../clients/cli/connections.c:8644
 #, c-format
 msgid "Error: failed to find VPN plugin for %s."
 msgstr "Помилка: не вдалося знайти додаток VPN для %s."
 
-#: ../clients/cli/connections.c:8693 ../clients/cli/connections.c:8790
+#: ../clients/cli/connections.c:8652 ../clients/cli/connections.c:8749
 #, c-format
 msgid "Error: failed to load VPN plugin: %s."
 msgstr "Помилка: не вдалося завантажити додаток VPN: %s."
 
-#: ../clients/cli/connections.c:8701
+#: ../clients/cli/connections.c:8660
 #, c-format
 msgid "Error: failed to import '%s': %s."
 msgstr "Помилка: не вдалося імпортувати «%s»: %s."
 
-#: ../clients/cli/connections.c:8771
+#: ../clients/cli/connections.c:8730
 msgid "Output file name: "
 msgstr "Назва файла результатів: "
 
-#: ../clients/cli/connections.c:8781
+#: ../clients/cli/connections.c:8740
 #, c-format
 msgid "Error: the connection is not VPN."
 msgstr "Помилка: з’єднання не належить до типу VPN."
 
-#: ../clients/cli/connections.c:8802
+#: ../clients/cli/connections.c:8761
 #, c-format
 msgid "Error: failed to create temporary file %s."
 msgstr "Помилка: не вдалося створити тимчасовий файл %s."
 
-#: ../clients/cli/connections.c:8811
+#: ../clients/cli/connections.c:8770
 #, c-format
 msgid "Error: failed to export '%s': %s."
 msgstr "Помилка: не вдалося експортувати «%s»: %s."
 
-#: ../clients/cli/connections.c:8822
+#: ../clients/cli/connections.c:8781
 #, c-format
 msgid "Error: failed to read temporary file '%s': %s."
 msgstr "Помилка: не вдалося прочитати тимчасовий файл «%s»: %s."
@@ -4430,8 +4301,7 @@ msgstr ""
 "мереж WEP і WPA-PSK. Також припускається, що налаштування IP отримуються за\n"
 "допомогою DHCP.\n"
 "\n"
-"ПАРАМЕТРИ := hotspot [ifname <інтерфейс>] [con-name <назва>] [ssid "
-"<SSID>]\n"
+"ПАРАМЕТРИ := hotspot [ifname <інтерфейс>] [con-name <назва>] [ssid <SSID>]\n"
 "                          [band a|bg] [channel <канал>] [password <пароль>]\n"
 "\n"
 "Створити точку доступу Wi-Fi. Для зупинення роботи точки доступу\n"
@@ -5274,6 +5144,10 @@ msgstr "з’єднано (на вузлі)"
 msgid "disconnecting"
 msgstr "роз’єднується"
 
+#: ../clients/cli/general.c:280
+msgid "none"
+msgstr "немає"
+
 #: ../clients/cli/general.c:282
 msgid "portal"
 msgstr "портал"
@@ -5951,7 +5825,6 @@ msgstr ""
 
 #: ../clients/cli/settings.c:2240
 #, c-format
-#| msgid "invalid option '%s', use one of [%s]"
 msgid "invalid option '%s', use a combination of [%s]"
 msgstr "некоректний параметр «%s», скористайтеся комбінацією [%s]"
 
@@ -6760,19 +6633,14 @@ msgstr "Для встановлення з’єднання з «%s» слід �
 
 #: ../clients/common/nm-secret-agent-simple.c:515
 #, c-format
-#| msgid ""
-#| "Passwords or encryption keys are required to access the wireless network "
-#| "'%s'."
 msgid "Secrets are required to access the MACsec network '%s'"
 msgstr "Для доступу до мережі MACsec «%s» потрібні реєстраційні дані"
 
 #: ../clients/common/nm-secret-agent-simple.c:519
-#| msgid "DSL authentication"
 msgid "MACsec PSK authentication"
 msgstr "Розпізнавання у MACsec за PSK"
 
 #: ../clients/common/nm-secret-agent-simple.c:528
-#| msgid "Authentication"
 msgid "MACsec EAP authentication"
 msgstr "Розпізнавання у MACsec за EAP"
 
@@ -6835,13 +6703,11 @@ msgstr "Встановлюється з’єднання"
 
 #: ../clients/nm-online.c:189
 #, c-format
-#| msgid "Error: Could not create NMClient object: %s."
 msgid "Error: timeout creating NMClient object\n"
 msgstr "Помилка: перевищення часу очікування на створення об’єкта NMClient\n"
 
 #: ../clients/nm-online.c:209
 #, c-format
-#| msgid "Error: Could not create NMClient object: %s."
 msgid "Error: Could not create NMClient object: %s\n"
 msgstr "Помилка: не вдалося створити об’єкт NMClient: %s\n"
 
@@ -8389,7 +8255,8 @@ msgstr "некоректний сертифікат: %s"
 #, c-format
 msgid "password is not supported when certificate is not on a PKCS#11 token"
 msgstr ""
-"підтримки паролів не передбачено, якщо сертифікат не міститься у ключі PKCS#11"
+"підтримки паролів не передбачено, якщо сертифікат не міститься у ключі "
+"PKCS#11"
 
 #: ../libnm-core/nm-setting-8021x.c:3235
 #: ../libnm-core/nm-setting-bluetooth.c:129
@@ -8447,7 +8314,6 @@ msgid "'%s' is not a valid value for the property"
 msgstr "«%s» не є коректним значенням властивості"
 
 #: ../libnm-core/nm-setting-8021x.c:3290
-#| msgid "invalid route: %s"
 msgid "invalid auth flags"
 msgstr "некоректні прапорці розпізнавання"
 
@@ -8611,13 +8477,10 @@ msgstr ""
 
 #: ../libnm-core/nm-setting-connection.c:1077
 #, c-format
-#| msgid ""
-#| "Detect a slave connection with '%s' set and a port type '%s'. '%s' should "
-#| "be set to '%s'"
 msgid "A slave connection with '%s' set to '%s' cannot have a '%s' setting"
 msgstr ""
-"Підлегле з’єднання з «%s», переведене у режим «%s», не може мати параметра «%"
-"s»"
+"Підлегле з’єднання з «%s», переведене у режим «%s», не може мати параметра "
+"«%s»"
 
 #: ../libnm-core/nm-setting-dcb.c:522 ../libnm-util/nm-setting-dcb.c:594
 msgid "flags invalid"
@@ -8735,13 +8598,11 @@ msgid "Invalid routing metric '%s'"
 msgstr "Некоректна метрика маршрутизації, «%s»"
 
 #: ../libnm-core/nm-setting-ip-config.c:1260
-#| msgid "unknown setting name"
 msgid "unknown attribute"
 msgstr "невідомий атрибут"
 
 #: ../libnm-core/nm-setting-ip-config.c:1270
 #, c-format
-#| msgid "invalid metric '%s'"
 msgid "invalid attribute type '%s'"
 msgstr "некоректний тип атрибута «%s»"
 
@@ -8758,20 +8619,17 @@ msgstr "атрибут не є коректним для маршрутизац�
 #: ../libnm-core/nm-setting-ip-config.c:1298
 #: ../libnm-core/nm-setting-ip-config.c:1322
 #, c-format
-#| msgid "'%s' is not a valid IP address"
 msgid "'%s' is not a valid IPv4 address"
 msgstr "«%s» не є коректною адресою IPv4"
 
 #: ../libnm-core/nm-setting-ip-config.c:1299
 #: ../libnm-core/nm-setting-ip-config.c:1323
 #, c-format
-#| msgid "'%s' is not a valid IP address"
 msgid "'%s' is not a valid IPv6 address"
 msgstr "«%s» не є коректною адресою IPv6"
 
 #: ../libnm-core/nm-setting-ip-config.c:1313
 #, c-format
-#| msgid "invalid route: %s"
 msgid "invalid prefix %s"
 msgstr "некоректний префікс %s"
 
@@ -8914,7 +8772,6 @@ msgstr ""
 "шляхів"
 
 #: ../libnm-core/nm-setting-macsec.c:235
-#| msgid "property is empty"
 msgid "the key is empty"
 msgstr "ключ є порожнім"
 
@@ -8924,7 +8781,6 @@ msgid "the key must be %d characters"
 msgstr "ключ має складатися з %d символів"
 
 #: ../libnm-core/nm-setting-macsec.c:254
-#| msgid "IV contains non-hexadecimal digits."
 msgid "the key contains non-hexadecimal characters"
 msgstr "ключ містить нешістнадцяткові цифри"
 
@@ -8942,13 +8798,11 @@ msgstr "властивість не вказано і не визначено «
 
 #: ../libnm-core/nm-setting-macsec.c:333
 #, c-format
-#| msgid "'%s' security requires '%s' setting presence"
 msgid "EAP key management requires '%s' setting presence"
 msgstr "Керування ключами за допомогою EAP потребує додавання параметра «%s»"
 
 #: ../libnm-core/nm-setting-macsec.c:344
 #, c-format
-#| msgid "invalid route: %s"
 msgid "invalid port %d"
 msgstr "некоректний порт %d"
 
@@ -9320,25 +9174,21 @@ msgstr "пропущено роздільник ключа і значення, 
 
 #: ../libnm-core/nm-utils.c:4827
 #, c-format
-#| msgid "unknown device '%s'."
 msgid "unknown attribute '%s'"
 msgstr "невідомий атрибут «%s»"
 
 #: ../libnm-core/nm-utils.c:4837
 #, c-format
-#| msgid "invalid option '%s' or its value '%s'"
 msgid "invalid uint32 value '%s' for attribute '%s'"
 msgstr "некоректне значення uint32 «%s» атрибута «%s»"
 
 #: ../libnm-core/nm-utils.c:4846
 #, c-format
-#| msgid "invalid option '%s' or its value '%s'"
 msgid "invalid uint8 value '%s' for attribute '%s'"
 msgstr "некоректне значення uint8 «%s» атрибута «%s»"
 
 #: ../libnm-core/nm-utils.c:4859
 #, c-format
-#| msgid "invalid option '%s' or its value '%s'"
 msgid "invalid boolean value '%s' for attribute '%s'"
 msgstr "некоректне булеве значення «%s» атрибута «%s»"
 
@@ -9485,8 +9335,8 @@ msgstr "USB"
 #. * "%2$s (%1$s)" if there's no grammatical way to combine
 #. * the strings otherwise.
 #.
-#: ../libnm-glib/nm-device.c:2052 ../libnm-glib/nm-device.c:2071
-#: ../libnm/nm-device.c:1860 ../libnm/nm-device.c:1879
+#: ../libnm-glib/nm-device.c:2053 ../libnm-glib/nm-device.c:2072
+#: ../libnm/nm-device.c:1861 ../libnm/nm-device.c:1880
 #, c-format
 msgctxt "long device name"
 msgid "%s %s"
@@ -9613,7 +9463,6 @@ msgid ""
 msgstr "У пристрою немає можливостей Bluetooth, потрібних з’єднанню."
 
 #: ../libnm/nm-device-dummy.c:46
-#| msgid "The connection was not a modem connection."
 msgid "The connection was not a dummy connection."
 msgstr "З’єднання не є фіктивним з’єднанням."
 
@@ -9746,12 +9595,12 @@ msgstr "MACsec"
 msgid "Dummy"
 msgstr "Фіктивний"
 
-#: ../libnm/nm-device.c:2591
+#: ../libnm/nm-device.c:2592
 #, c-format
 msgid "The connection was not valid: %s"
 msgstr "З’єднання не є коректним: %s"
 
-#: ../libnm/nm-device.c:2600
+#: ../libnm/nm-device.c:2601
 #, c-format
 msgid "The interface names of the device and the connection didn't match."
 msgstr "Назви інтерфейсу пристрою і з’єднання не збігаються."
@@ -10149,7 +9998,6 @@ msgid "Bridge connection"
 msgstr "З’єднання містка"
 
 #: ../src/devices/nm-device-dummy.c:70
-#| msgid "ADSL connection"
 msgid "Dummy connection"
 msgstr "Фіктивне з’єднання"
 
@@ -10538,6 +10386,18 @@ msgstr "Невідомий рівень ведення журналу, «%s»"
 #, c-format
 msgid "Unknown log domain '%s'"
 msgstr "Невідомий домен ведення журналу, «%s»"
+
+#~ msgid "the user was disconnected"
+#~ msgstr "користувача від’єднано"
+
+#~ msgid "Error: Connection activation failed."
+#~ msgstr "Помилка: невдала спроба активації з’єднання."
+
+#~ msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
+#~ msgstr "З’єднання VPN успішно задіяно (активний шлях D-Bus: %s)\n"
+
+#~ msgid "Error: Connection activation failed: %s."
+#~ msgstr "Помилка: не вдалося активувати з’єднання: %s."
 
 #~ msgid ""
 #~ "the second component of route ('%s') is neither a next hop address nor a "
