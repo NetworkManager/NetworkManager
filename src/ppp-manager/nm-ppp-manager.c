@@ -835,6 +835,7 @@ create_pppd_cmd_line (NMPPPManager *self,
                       NMSettingAdsl  *adsl,
                       const char *ppp_name,
                       guint baud_override,
+                      gboolean ip6_enabled,
                       GError **err)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (self);
@@ -858,9 +859,11 @@ create_pppd_cmd_line (NMPPPManager *self,
 	/* NM handles setting the default route */
 	nm_cmd_line_add_string (cmd, "nodefaultroute");
 
-	/* Allow IPv6 to be configured by IPV6CP */
-	nm_cmd_line_add_string (cmd, "ipv6");
-	nm_cmd_line_add_string (cmd, ",");
+	if (ip6_enabled) {
+		/* Allow IPv6 to be configured by IPV6CP */
+		nm_cmd_line_add_string (cmd, "ipv6");
+		nm_cmd_line_add_string (cmd, ",");
+	}
 
 	ppp_debug = !!getenv ("NM_PPP_DEBUG");
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PPP))
@@ -1038,6 +1041,8 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	NMCmdLine *ppp_cmd;
 	char *cmd_str;
 	struct stat st;
+	const char *ip6_method;
+	gboolean ip6_enabled = FALSE;
 
 	g_return_val_if_fail (NM_IS_PPP_MANAGER (manager), FALSE);
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
@@ -1080,7 +1085,10 @@ nm_ppp_manager_start (NMPPPManager *manager,
 
 	adsl_setting = (NMSettingAdsl *) nm_connection_get_setting (connection, NM_TYPE_SETTING_ADSL);
 
-	ppp_cmd = create_pppd_cmd_line (manager, s_ppp, pppoe_setting, adsl_setting, ppp_name, baud_override, err);
+	ip6_method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
+	ip6_enabled = g_strcmp0 (ip6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0;
+
+	ppp_cmd = create_pppd_cmd_line (manager, s_ppp, pppoe_setting, adsl_setting, ppp_name, baud_override, ip6_enabled, err);
 	if (!ppp_cmd)
 		goto out;
 
