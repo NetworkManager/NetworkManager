@@ -23,6 +23,6 @@
 
 #include "wifi-utils.h"
 
-WifiData *wifi_nl80211_init (const char *iface, int ifindex);
+WifiData *wifi_nl80211_init (int ifindex);
 
 #endif  /* __WIFI_UTILS_NL80211_H__ */

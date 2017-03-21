@@ -38,12 +38,11 @@
 #include "platform/nm-platform-utils.h"
 
 gpointer
-wifi_data_new (const char *iface, int ifindex, gsize len)
+wifi_data_new (int ifindex, gsize len)
 {
 	WifiData *data;
 
 	data = g_malloc0 (len);
-	data->iface = g_strdup (iface);
 	data->ifindex = ifindex;
 	return data;
 }
@@ -51,7 +50,6 @@ wifi_data_new (const char *iface, int ifindex, gsize len)
 void
 wifi_data_free (WifiData *data)
 {
-	g_free (data->iface);
 	memset (data, 0, sizeof (*data));
 	g_free (data);
 }
@@ -59,17 +57,16 @@ wifi_data_free (WifiData *data)
 /*****************************************************************************/
 
 WifiData *
-wifi_utils_init (const char *iface, int ifindex, gboolean check_scan)
+wifi_utils_init (int ifindex, gboolean check_scan)
 {
 	WifiData *ret;
 
-	g_return_val_if_fail (iface != NULL, NULL);
 	g_return_val_if_fail (ifindex > 0, NULL);
 
-	ret = wifi_nl80211_init (iface, ifindex);
+	ret = wifi_nl80211_init (ifindex);
 	if (ret == NULL) {
 #if HAVE_WEXT
-		ret = wifi_wext_init (iface, ifindex, check_scan);
+		ret = wifi_wext_init (ifindex, check_scan);
 #endif
 	}
 	return ret;
@@ -81,14 +78,6 @@ wifi_utils_get_ifindex (WifiData *data)
 	g_return_val_if_fail (data != NULL, -1);
 
 	return data->ifindex;
-}
-
-const char *
-wifi_utils_get_iface (WifiData *data)
-{
-	g_return_val_if_fail (data != NULL, NULL);
-
-	return data->iface;
 }
 
 NMDeviceWifiCapabilities
