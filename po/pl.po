@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-11-27 16:59+0100\n"
+"POT-Creation-Date: 2017-03-22 11:12+0100\n"
 "PO-Revision-Date: 2016-11-27 17:00+0100\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <community-poland@mozilla.org>\n"
@@ -2355,7 +2355,7 @@ msgstr "Urządzenie mostka"
 msgid "Bridge port"
 msgstr "Port mostka"
 
-#: ../clients/cli/connections.c:4793 ../src/nm-manager.c:3709
+#: ../clients/cli/connections.c:4793 ../src/nm-manager.c:3736
 msgid "VPN connection"
 msgstr "Połączenie VPN"
 
@@ -6627,7 +6627,7 @@ msgstr "Połączenie DSL %d"
 
 #: ../clients/tui/nm-editor-utils.c:190 ../libnm-core/nm-connection.c:1835
 #: ../libnm-glib/nm-device.c:1873 ../libnm-util/nm-connection.c:1626
-#: ../libnm/nm-device.c:1824 ../src/settings/plugins/ifcfg-rh/reader.c:4206
+#: ../libnm/nm-device.c:1824 ../src/settings/plugins/ifcfg-rh/reader.c:4214
 msgid "Bond"
 msgstr "Wiązane"
 
@@ -6638,7 +6638,7 @@ msgstr "Połączenie wiązane %d"
 
 #: ../clients/tui/nm-editor-utils.c:199 ../libnm-core/nm-connection.c:1839
 #: ../libnm-glib/nm-device.c:1877 ../libnm-util/nm-connection.c:1630
-#: ../libnm/nm-device.c:1828 ../src/settings/plugins/ifcfg-rh/reader.c:4510
+#: ../libnm/nm-device.c:1828 ../src/settings/plugins/ifcfg-rh/reader.c:4518
 msgid "Bridge"
 msgstr "Mostek"
 
@@ -6649,7 +6649,7 @@ msgstr "Połączenie mostkowane %d"
 
 #: ../clients/tui/nm-editor-utils.c:208 ../libnm-core/nm-connection.c:1837
 #: ../libnm-glib/nm-device.c:1875 ../libnm-util/nm-connection.c:1628
-#: ../libnm/nm-device.c:1826 ../src/settings/plugins/ifcfg-rh/reader.c:4319
+#: ../libnm/nm-device.c:1826 ../src/settings/plugins/ifcfg-rh/reader.c:4327
 msgid "Team"
 msgstr "Zespół"
 
@@ -7799,7 +7799,7 @@ msgid "ignoring invalid DNS server IPv6 address '%s'"
 msgstr "ignorowanie nieprawidłowego adresu IPv6 serwera DNS „%s”"
 
 #: ../libnm-core/nm-keyfile-reader.c:639 ../libnm-core/nm-keyfile-reader.c:784
-#: ../libnm-core/nm-keyfile-reader.c:1487
+#: ../libnm-core/nm-keyfile-reader.c:1482
 #, c-format
 msgid "ignoring invalid byte element '%d' (not between 0 and 255 inclusive)"
 msgstr ""
@@ -7859,37 +7859,37 @@ msgstr "nieprawidłowa wartość parzystości „%s”"
 msgid "ignoring invalid team configuration: %s"
 msgstr "ignorowanie nieprawidłowej konfiguracji zespołu: %s"
 
-#: ../libnm-core/nm-keyfile-reader.c:1388
+#: ../libnm-core/nm-keyfile-reader.c:1383
 #, c-format
 msgid "error loading setting value: %s"
 msgstr "błąd podczas wczytywania wartości ustawienia: %s"
 
-#: ../libnm-core/nm-keyfile-reader.c:1420
+#: ../libnm-core/nm-keyfile-reader.c:1415
 #, c-format
 msgid "invalid negative value (%i)"
 msgstr "nieprawidłowa wartość ujemna (%i)"
 
-#: ../libnm-core/nm-keyfile-reader.c:1441
+#: ../libnm-core/nm-keyfile-reader.c:1436
 #, c-format
 msgid "invalid char value (%i)"
 msgstr "nieprawidłowa wartość znaku (%i)"
 
-#: ../libnm-core/nm-keyfile-reader.c:1464
+#: ../libnm-core/nm-keyfile-reader.c:1459
 #, c-format
 msgid "invalid int64 value (%s)"
 msgstr "nieprawidłowa wartość int64 (%s)"
 
-#: ../libnm-core/nm-keyfile-reader.c:1523
+#: ../libnm-core/nm-keyfile-reader.c:1518
 #, c-format
 msgid "too large FLAGS property '%s' (%llu)"
 msgstr "za duża właściwość FLAGS „%s” (%llu)"
 
-#: ../libnm-core/nm-keyfile-reader.c:1536
+#: ../libnm-core/nm-keyfile-reader.c:1531
 #, c-format
 msgid "unhandled setting property type '%s'"
 msgstr "nieobsłużony typ właściwości ustawienia „%s”"
 
-#: ../libnm-core/nm-keyfile-reader.c:1567
+#: ../libnm-core/nm-keyfile-reader.c:1562
 #, c-format
 msgid "invalid setting name '%s'"
 msgstr "nieprawidłowa nazwa ustawienia „%s”"
@@ -8874,8 +8874,8 @@ msgstr "USB"
 #. * "%2$s (%1$s)" if there's no grammatical way to combine
 #. * the strings otherwise.
 #.
-#: ../libnm-glib/nm-device.c:2052 ../libnm-glib/nm-device.c:2071
-#: ../libnm/nm-device.c:2001 ../libnm/nm-device.c:2020
+#: ../libnm-glib/nm-device.c:2053 ../libnm-glib/nm-device.c:2072
+#: ../libnm/nm-device.c:2002 ../libnm/nm-device.c:2021
 #, c-format
 msgctxt "long device name"
 msgid "%s %s"
@@ -9109,12 +9109,12 @@ msgstr ""
 msgid "The connection was not a WiMAX connection."
 msgstr "Połączenie nie jest połączeniem WiMAX."
 
-#: ../libnm/nm-device.c:2739
+#: ../libnm/nm-device.c:2740
 #, c-format
 msgid "The connection was not valid: %s"
 msgstr "Połączenie jest nieprawidłowe: %s"
 
-#: ../libnm/nm-device.c:2748
+#: ../libnm/nm-device.c:2749
 #, c-format
 msgid "The interface names of the device and the connection didn't match."
 msgstr "Nazwy interfejsu urządzenia i połączenia się nie zgadzają."
@@ -9127,7 +9127,7 @@ msgstr "Nie można podłączyć aktywnego połączenia do urządzenia"
 msgid "Active connection removed before it was initialized"
 msgstr "Usunięto aktywne połączenie przed jego inicjacją"
 
-#: ../libnm/nm-object.c:1558 ../libnm/nm-object.c:1704
+#: ../libnm/nm-object.c:1566 ../libnm/nm-object.c:1712
 msgid "Caller did not specify D-Bus path for object"
 msgstr "Dzwoniący nie podał ścieżki D-Bus do obiektu"
 
