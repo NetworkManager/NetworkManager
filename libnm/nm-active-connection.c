@@ -391,6 +391,7 @@ state_changed_proxy (NMDBusActiveConnectionProxy *proxy,
 	priv->state = state;
 	priv->reason = reason;
 	g_signal_emit (connection, signals[STATE_CHANGED], 0, state, reason);
+	g_object_notify (G_OBJECT (connection), NM_ACTIVE_CONNECTION_STATE);
 }
 
 static void
