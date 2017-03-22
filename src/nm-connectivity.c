@@ -297,6 +297,8 @@ curl_timeout_cb (gpointer user_data)
 	CURLMcode ret;
 	int pending_conn;
 
+	priv->curl_timer = 0;
+
 	ret = curl_multi_socket_action (priv->curl_mhandle, CURL_SOCKET_TIMEOUT, 0, &pending_conn);
 	_LOGT ("timeout elapsed - multi_socket_action (%d conn remaining)", pending_conn);
 
