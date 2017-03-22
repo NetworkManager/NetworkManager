@@ -136,7 +136,9 @@ BuildRequires: libxslt
 BuildRequires: bluez-libs-devel
 %endif
 BuildRequires: systemd >= 200-3 systemd-devel
+%if 0%{?fedora}
 BuildRequires: libpsl-devel >= 0.1
+%endif
 BuildRequires: libcurl-devel
 BuildRequires: libndp-devel >= 1.0
 %if 0%{?with_modem_manager_1}
@@ -403,6 +405,11 @@ intltoolize --automake --copy --force
 	--enable-polkit-agent \
 	--enable-modify-system=yes \
 	--enable-concheck \
+%if 0%{?fedora}
+	--enable-libpsl \
+%else
+	--disable-libpsl \
+%endif
 	--with-session-tracking=systemd \
 	--with-suspend-resume=systemd \
 	--with-systemdsystemunitdir=%{systemd_dir} \
