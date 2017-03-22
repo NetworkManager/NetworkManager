@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2004 - 2005 Colin Walters <walters@redhat.com>
- * Copyright (C) 2004 - 2013 Red Hat, Inc.
+ * Copyright (C) 2004 - 2017 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
  *   and others
  */
@@ -35,6 +35,10 @@
 
 #include <linux/fs.h>
 
+#if WITH_LIBPSL
+#include <libpsl.h>
+#endif
+
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 #include "nm-dns-manager.h"
@@ -51,20 +55,6 @@
 #include "nm-dns-unbound.h"
 
 #include "introspection/org.freedesktop.NetworkManager.DnsManager.h"
-
-#if WITH_LIBSOUP
-#include <libsoup/soup.h>
-
-#ifdef SOUP_CHECK_VERSION
-#if SOUP_CHECK_VERSION (2, 40, 0)
-#define DOMAIN_IS_VALID(domain) (*(domain) && !soup_tld_domain_is_public_suffix (domain))
-#endif
-#endif
-#endif
-
-#ifndef DOMAIN_IS_VALID
-#define DOMAIN_IS_VALID(domain) (*(domain))
-#endif
 
 #define HASH_LEN 20
 
@@ -166,6 +156,18 @@ struct _NMDnsManagerClass {
 G_DEFINE_TYPE (NMDnsManager, nm_dns_manager, NM_TYPE_EXPORTED_OBJECT)
 
 #define NM_DNS_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDnsManager, NM_IS_DNS_MANAGER)
+
+static gboolean
+domain_is_valid (const gchar *domain)
+{
+	if (*domain == '\0')
+		return FALSE;
+#if WITH_LIBPSL
+	if (psl_is_public_suffix (psl_builtin (), domain))
+		return FALSE;
+#endif
+	return TRUE;
+}
 
 /*****************************************************************************/
 
@@ -306,7 +308,7 @@ merge_one_ip4_config (NMResolvConfData *rc, NMIP4Config *src)
 		const char *search;
 
 		search = nm_ip4_config_get_search (src, i);
-		if (!DOMAIN_IS_VALID (search))
+		if (!domain_is_valid (search))
 			continue;
 		add_string_item (rc->searches, search);
 	}
@@ -316,7 +318,7 @@ merge_one_ip4_config (NMResolvConfData *rc, NMIP4Config *src)
 			const char *domain;
 
 			domain = nm_ip4_config_get_domain (src, i);
-			if (!DOMAIN_IS_VALID (domain))
+			if (!domain_is_valid (domain))
 				continue;
 			add_string_item (rc->searches, domain);
 		}
@@ -376,7 +378,7 @@ merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src, const char *iface)
 		const char *search;
 
 		search = nm_ip6_config_get_search (src, i);
-		if (!DOMAIN_IS_VALID (search))
+		if (!domain_is_valid (search))
 			continue;
 		add_string_item (rc->searches, search);
 	}
@@ -386,7 +388,7 @@ merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src, const char *iface)
 			const char *domain;
 
 			domain = nm_ip6_config_get_domain (src, i);
-			if (!DOMAIN_IS_VALID (domain))
+			if (!domain_is_valid (domain))
 				continue;
 			add_string_item (rc->searches, domain);
 		}
@@ -917,7 +919,7 @@ merge_global_dns_config (NMResolvConfData *rc, NMGlobalDnsConfig *global_conf)
 	options = nm_global_dns_config_get_options (global_conf);
 
 	for (i = 0; searches && searches[i]; i++) {
-		if (DOMAIN_IS_VALID (searches[i]))
+		if (domain_is_valid (searches[i]))
 			add_string_item (rc->searches, searches[i]);
 	}
 
@@ -1058,9 +1060,9 @@ _collect_resolv_conf_data (NMDnsManager *self, /* only for logging context, no o
 		if (   hostdomain
 		    && !nm_utils_ipaddr_valid (AF_UNSPEC, hostname)) {
 			hostdomain++;
-			if (DOMAIN_IS_VALID (hostdomain))
+			if (domain_is_valid (hostdomain))
 				add_string_item (rc.searches, hostdomain);
-			else if (DOMAIN_IS_VALID (hostname))
+			else if (domain_is_valid (hostname))
 				add_string_item (rc.searches, hostname);
 		}
 	}

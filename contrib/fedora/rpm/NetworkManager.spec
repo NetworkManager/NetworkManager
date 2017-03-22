@@ -137,7 +137,8 @@ BuildRequires: libxslt
 BuildRequires: bluez-libs-devel
 %endif
 BuildRequires: systemd >= 200-3 systemd-devel
-BuildRequires: libsoup-devel
+BuildRequires: libpsl-devel >= 0.1
+BuildRequires: libcurl-devel
 BuildRequires: libndp-devel >= 1.0
 %if 0%{?with_modem_manager_1}
 BuildRequires: ModemManager-glib-devel >= 1.0
