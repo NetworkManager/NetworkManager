@@ -299,7 +299,7 @@ curl_timeout_cb (gpointer user_data)
 
 	curl_check_connectivity (priv->curl_mhandle, ret);
 
-	return FALSE;
+	return G_SOURCE_REMOVE;
 }
 
 static int
@@ -384,7 +384,7 @@ multi_socket_cb (CURL *e_handle, curl_socket_t s, int what, void *userdata, void
 		curl_multi_assign (priv->curl_mhandle, s, fdp);
 	}
 
-	return 0;
+	return CURLM_OK;
 }
 
 #define HEADER_STATUS_ONLINE "X-NetworkManager-Status: online\r\n"
@@ -623,6 +623,7 @@ nm_connectivity_init (NMConnectivity *self)
 	curl_multi_setopt (priv->curl_mhandle, CURLMOPT_SOCKETDATA, self);
 	curl_multi_setopt (priv->curl_mhandle, CURLMOPT_TIMERFUNCTION, multi_timer_cb);
 	curl_multi_setopt (priv->curl_mhandle, CURLMOPT_TIMERDATA, self);
+	curl_multi_setopt (priv->curl_mhandle, CURLOPT_VERBOSE, 1);
 #endif
 }
 
