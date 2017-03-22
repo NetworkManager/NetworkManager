@@ -29,7 +29,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include <gudev/gudev.h>
+#include <libudev.h>
 
 #include "nm-device-private.h"
 #include "nm-act-request.h"
@@ -155,8 +155,8 @@ static void
 _update_s390_subchannels (NMDeviceEthernet *self)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-	gs_unref_object GUdevDevice *dev = NULL;
-	gs_unref_object GUdevDevice *parent = NULL;
+	struct udev_device *dev = NULL;
+	struct udev_device *parent = NULL;
 	const char *parent_path, *item;
 	int ifindex;
 	GDir *dir;
@@ -172,21 +172,20 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 	}
 
 	ifindex = nm_device_get_ifindex ((NMDevice *) self);
-	dev = (GUdevDevice *) nm_g_object_ref (nm_platform_link_get_udev_device (NM_PLATFORM_GET, ifindex));
+	dev = nm_platform_link_get_udev_device (NM_PLATFORM_GET, ifindex);
 	if (!dev)
 		return;
 
 	/* Try for the "ccwgroup" parent */
-	parent = g_udev_device_get_parent_with_subsystem (dev, "ccwgroup", NULL);
+	parent = udev_device_get_parent_with_subsystem_devtype (dev, "ccwgroup", NULL);
 	if (!parent) {
 		/* FIXME: whatever 'lcs' devices' subsystem is here... */
-		if (!parent) {
-			/* Not an s390 device */
-			return;
-		}
+
+		/* Not an s390 device */
+		return;
 	}
 
-	parent_path = g_udev_device_get_sysfs_path (parent);
+	parent_path = udev_device_get_syspath (parent);
 	dir = g_dir_open (parent_path, 0, &error);
 	if (!dir) {
 		_LOGW (LOGD_DEVICE | LOGD_PLATFORM, "update-s390: failed to open directory '%s': %s",

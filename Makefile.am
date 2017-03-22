@@ -414,6 +414,7 @@ libnm_core_lib_h_pub_mkenums = \
 	libnm-core/nm-core-enum-types.h
 libnm_core_lib_h_priv = \
 	shared/nm-utils/nm-shared-utils.h \
+	shared/nm-utils/nm-udev-utils.h \
 	shared/nm-setting-metadata.h \
 	libnm-core/crypto.h \
 	libnm-core/nm-connection-private.h \
@@ -426,6 +427,7 @@ libnm_core_lib_h_priv = \
 	libnm-core/nm-utils-private.h
 libnm_core_lib_c_real = \
 	shared/nm-utils/nm-shared-utils.c \
+	shared/nm-utils/nm-udev-utils.c \
 	shared/nm-setting-metadata.c \
 	libnm-core/crypto.c \
 	libnm-core/nm-connection.c \
@@ -491,7 +493,8 @@ dflt_cppflags_libnm_core = \
 	-I$(srcdir)/libnm-core \
 	-I$(builddir)/libnm-core \
 	$(CODE_COVERAGE_CFLAGS) \
-	$(GLIB_CFLAGS)
+	$(GLIB_CFLAGS) \
+	$(LIBUDEV_CFLAGS)
 
 if WITH_JANSSON
 dflt_cppflags_libnm_core += $(JANSSON_CFLAGS)
@@ -556,7 +559,8 @@ nodist_libnm_core_libnm_core_la_SOURCES = \
 
 libnm_core_libnm_core_la_LIBADD = \
 	$(GLIB_LIBS) \
-	$(UUID_LIBS)
+	$(UUID_LIBS) \
+	$(LIBUDEV_LIBS)
 
 if WITH_JANSSON
 libnm_core_libnm_core_la_LIBADD += $(JANSSON_LIBS)
@@ -810,7 +814,7 @@ libnm_libnm_la_CPPFLAGS = \
 	$(dflt_cppflags_libnm_core) \
 	-I$(srcdir)/libnm \
 	-I$(builddir)/libnm \
-	$(GUDEV_CFLAGS) \
+	$(LIBUDEV_CFLAGS) \
 	-DG_LOG_DOMAIN=\""libnm"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB \
 	-DNMRUNDIR=\"$(nmrundir)\"
@@ -834,7 +838,7 @@ libnm_libnm_la_LIBADD = \
 	$(DL_LIBS) \
 	$(GLIB_LIBS) \
 	$(UUID_LIBS) \
-	$(GUDEV_LIBS)
+	$(LIBUDEV_LIBS)
 
 libnm_libnm_la_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/libnm/libnm.ver" \
@@ -859,7 +863,7 @@ EXTRA_DIST += \
 if HAVE_INTROSPECTION
 libnm/NM-1.0.gir: libnm/libnm.la
 libnm_NM_1_0_gir_INCLUDES = Gio-2.0
-libnm_NM_1_0_gir_PACKAGES = gio-2.0 gudev-1.0
+libnm_NM_1_0_gir_PACKAGES = gio-2.0
 libnm_NM_1_0_gir_EXPORT_PACKAGES = libnm
 libnm_NM_1_0_gir_CFLAGS = $(libnm_libnm_la_CPPFLAGS)
 libnm_NM_1_0_gir_LIBS = libnm/libnm.la
@@ -1031,7 +1035,7 @@ src_cppflags = \
 	-DDHCLIENT_PATH=\"$(DHCLIENT_PATH)\" \
 	-DDHCPCD_PATH=\"$(DHCPCD_PATH)\" \
 	\
-	$(GUDEV_CFLAGS) \
+	$(LIBUDEV_CFLAGS) \
 	$(LIBNL_CFLAGS) \
 	$(LIBNDP_CFLAGS) \
 	$(LIBPSL_CFLAGS) \
@@ -1288,6 +1292,7 @@ src_libNetworkManagerBase_la_LIBADD = \
 	introspection/libnmdbus.la \
 	$(GLIB_LIBS) \
 	$(SYSTEMD_JOURNAL_LIBS) \
+	$(LIBUDEV_LIBS) \
 	$(NULL)
 
 ###############################################################################
@@ -1463,7 +1468,7 @@ src_libNetworkManager_la_LIBADD = \
 	src/libNetworkManagerBase.la \
 	src/libsystemd-nm.la \
 	$(GLIB_LIBS) \
-	$(GUDEV_LIBS) \
+	$(LIBUDEV_LIBS) \
 	$(LIBNL_LIBS) \
 	$(SYSTEMD_LOGIN_LIBS) \
 	$(LIBNDP_LIBS) \
@@ -1502,7 +1507,7 @@ src_libNetworkManagerTest_la_LIBADD = \
 	src/libNetworkManager.la \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(GLIB_LIBS) \
-	$(GUDEV_LIBS) \
+	$(LIBUDEV_LIBS) \
 	$(LIBNL_LIBS)
 
 ###############################################################################
@@ -1538,7 +1543,7 @@ src_nm_iface_helper_LDADD = \
 	src/libNetworkManagerBase.la \
 	src/libsystemd-nm.la \
 	$(GLIB_LIBS) \
-	$(GUDEV_LIBS) \
+	$(LIBUDEV_LIBS) \
 	$(LIBNL_LIBS) \
 	$(LIBNDP_LIBS) \
 	$(DL_LIBS) \
@@ -2131,7 +2136,7 @@ src_settings_plugins_ifupdown_cppflags = \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS) \
-	$(GUDEV_CFLAGS) \
+	$(LIBUDEV_CFLAGS) \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
 
 
@@ -2143,6 +2148,8 @@ src_settings_plugins_ifupdown_libnms_ifupdown_core_la_SOURCES = \
 
 src_settings_plugins_ifupdown_libnms_ifupdown_core_la_CPPFLAGS = $(src_settings_plugins_ifupdown_cppflags)
 
+src_settings_plugins_ifupdown_libnms_ifupdown_core_la_LIBADD = \
+	$(LIBUDEV_LIBS)
 
 src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_SOURCES = \
 	src/settings/plugins/ifupdown/nms-ifupdown-connection.c \
@@ -2157,7 +2164,8 @@ src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-settings.ver"
 
 src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_LIBADD = \
-	src/settings/plugins/ifupdown/libnms-ifupdown-core.la
+	src/settings/plugins/ifupdown/libnms-ifupdown-core.la \
+	$(LIBUDEV_LIBS)
 
 check-local-symbols-settings-ifupdown: src/settings/plugins/ifupdown/libnm-settings-plugin-ifupdown.la
 	$(call check_so_symbols,$(builddir)/src/settings/plugins/ifupdown/.libs/libnm-settings-plugin-ifupdown.so)
@@ -2325,7 +2333,7 @@ src_devices_adsl_libnm_device_plugin_adsl_la_CPPFLAGS = \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS) \
-	$(GUDEV_CFLAGS)
+	$(LIBUDEV_CFLAGS)
 
 src_devices_adsl_libnm_device_plugin_adsl_la_LDFLAGS = \
 	-module -avoid-version \
@@ -2333,7 +2341,7 @@ src_devices_adsl_libnm_device_plugin_adsl_la_LDFLAGS = \
 
 src_devices_adsl_libnm_device_plugin_adsl_la_LIBADD = \
 	introspection/libnmdbus.la \
-	$(GUDEV_LIBS)
+	$(LIBUDEV_LIBS)
 
 check-local-devices-adsl: src/devices/adsl/libnm-device-plugin-adsl.la
 	$(srcdir)/tools/check-exports.sh $(builddir)/src/devices/adsl/.libs/libnm-device-plugin-adsl.so "$(srcdir)/linker-script-devices.ver"
@@ -2464,8 +2472,7 @@ src_devices_bluetooth_libnm_device_plugin_bluetooth_la_LDFLAGS = \
 src_devices_bluetooth_libnm_device_plugin_bluetooth_la_LIBADD = \
 	introspection/libnmdbus.la \
 	src/devices/wwan/libnm-wwan.la \
-	$(GLIB_LIBS) \
-	$(GUDEV_LIBS)
+	$(GLIB_LIBS)
 
 if WITH_BLUEZ5_DUN
 src_devices_bluetooth_libnm_device_plugin_bluetooth_la_CPPFLAGS += $(BLUEZ5_CFLAGS)
@@ -2521,8 +2528,7 @@ src_devices_wifi_libnm_device_plugin_wifi_la_LDFLAGS = \
 
 src_devices_wifi_libnm_device_plugin_wifi_la_LIBADD = \
 	introspection/libnmdbus.la \
-	$(GLIB_LIBS) \
-	$(GUDEV_LIBS)
+	$(GLIB_LIBS)
 
 check-local-devices-wifi: src/devices/wifi/libnm-device-plugin-wifi.la
 	$(srcdir)/tools/check-exports.sh $(builddir)/src/devices/wifi/.libs/libnm-device-plugin-wifi.so "$(srcdir)/linker-script-devices.ver"
@@ -2588,8 +2594,7 @@ src_devices_team_libnm_device_plugin_team_la_LIBADD = \
 	introspection/libnmdbus.la \
 	$(LIBTEAMDCTL_LIBS) \
 	$(JANSSON_LIBS) \
-	$(GLIB_LIBS) \
-	$(GUDEV_LIBS)
+	$(GLIB_LIBS)
 
 check-local-devices-team: src/devices/team/libnm-device-plugin-team.la
 	$(srcdir)/tools/check-exports.sh $(builddir)/src/devices/team/.libs/libnm-device-plugin-team.so "$(srcdir)/linker-script-devices.ver"
@@ -2622,7 +2627,7 @@ src_platform_tests_ldflags = \
 src_platform_tests_libadd = \
 	src/libNetworkManagerTest.la \
 	$(GLIB_LIBS) \
-	$(GUDEV_LIBS) \
+	$(LIBUDEV_LIBS) \
 	$(LIBNL_LIBS)
 
 check_programs_norun += \
@@ -2843,7 +2848,7 @@ src_tests_test_route_manager_ldflags = \
 src_tests_test_route_manager_ldadd = \
 	src/libNetworkManagerTest.la \
 	$(GLIB_LIBS) \
-	$(GUDEV_LIBS) \
+	$(LIBUDEV_LIBS) \
 	$(LIBNL_LIBS)
 
 src_tests_test_route_manager_fake_SOURCES = src/tests/test-route-manager.c
@@ -3283,7 +3288,6 @@ clients_tui_nmtui_CPPFLAGS = \
 	-I$(srcdir)/clients/common \
 	$(GLIB_CFLAGS) \
 	$(NEWT_CFLAGS) \
-	$(GUDEV_CFLAGS) \
 	-DG_LOG_DOMAIN=\""nmtui"\" \
 	-DLOCALEDIR=\""$(localedir)"\" \
 	$(NULL)
@@ -3294,9 +3298,8 @@ clients_tui_nmtui_LDFLAGS = \
 clients_tui_nmtui_LDADD = \
 	libnm/libnm.la \
 	clients/tui/newt/libnmt-newt.a \
-	$(GUDEV_LIBS) \
-	$(NEWT_LIBS) \
 	$(GLIB_LIBS) \
+	$(NEWT_LIBS) \
 	$(NULL)
 
 nmtui_links = nmtui-edit nmtui-connect nmtui-hostname
@@ -3743,6 +3746,7 @@ libnm_glib_lib_h_pub_real = \
 libnm_glib_lib_h_pub_mkenums = \
 	libnm-glib/nm-glib-enum-types.h
 libnm_glib_lib_h_priv = \
+	shared/nm-utils/nm-udev-utils.h \
 	libnm-glib/nm-object-private.h \
 	libnm-glib/nm-device-private.h \
 	libnm-glib/nm-types-private.h \
@@ -3769,6 +3773,7 @@ nodist_libnm_glib_libnmvpn_HEADERS = \
 	$(libnm_glib_vpn_h_mkenums)
 
 libnm_glib_lib_c_real = \
+	shared/nm-utils/nm-udev-utils.c \
 	libnm-glib/nm-object.c \
 	libnm-glib/nm-dbus-helpers.c \
 	libnm-glib/nm-client.c \
@@ -3813,7 +3818,7 @@ nodist_libnm_glib_libnm_glib_la_SOURCES = \
 
 libnm_glib_libnm_glib_la_CPPFLAGS = \
 	$(libnm_glib_cppflags) \
-	$(GUDEV_CFLAGS) \
+	$(LIBUDEV_CFLAGS) \
 	-DNMRUNDIR=\"$(nmrundir)\"
 
 libnm_glib_libnm_glib_la_LDFLAGS = \
@@ -3825,7 +3830,7 @@ libnm_glib_libnm_glib_la_LIBADD = \
 	libnm-glib/libdeprecated-nm-glib.la \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS) \
-	$(GUDEV_LIBS)
+	$(LIBUDEV_LIBS)
 
 
 GLIB_GENERATED += \
@@ -3905,7 +3910,7 @@ EXTRA_DIST += \
 if HAVE_INTROSPECTION
 libnm-glib/NMClient-1.0.gir: libnm-glib/libnm-glib.la $(builddir)/libnm-util/NetworkManager-1.0.gir
 libnm_glib_NMClient_1_0_gir_INCLUDES = Gio-2.0 DBusGLib-1.0
-libnm_glib_NMClient_1_0_gir_PACKAGES = gio-2.0 dbus-glib-1 gudev-1.0
+libnm_glib_NMClient_1_0_gir_PACKAGES = gio-2.0 dbus-glib-1
 libnm_glib_NMClient_1_0_gir_EXPORT_PACKAGES = libnm-glib libnm-glib-vpn
 libnm_glib_NMClient_1_0_gir_CFLAGS = $(libnm_glib_cppflags)
 libnm_glib_NMClient_1_0_gir_LIBS = \

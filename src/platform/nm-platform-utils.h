@@ -21,8 +21,6 @@
 #ifndef __NM_PLATFORM_UTILS_H__
 #define __NM_PLATFORM_UTILS_H__
 
-#include <gudev/gudev.h>
-
 #include "nm-platform.h"
 #include "nm-setting-wired.h"
 
@@ -66,7 +64,9 @@ gboolean  nmp_utils_ethtool_get_permanent_address (int ifindex,
 gboolean nmp_utils_mii_supports_carrier_detect (int ifindex);
 
 
-const char *nmp_utils_udev_get_driver (GUdevDevice *device);
+struct udev_device;
+
+const char *nmp_utils_udev_get_driver (struct udev_device *udevice);
 
 NMIPConfigSource nmp_utils_ip_config_source_from_rtprot (guint8 rtprot) _nm_const;
 guint8           nmp_utils_ip_config_source_coerce_to_rtprot   (NMIPConfigSource source) _nm_const;

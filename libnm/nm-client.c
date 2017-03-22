@@ -22,6 +22,7 @@
 #include "nm-default.h"
 
 #include <string.h>
+#include <libudev.h>
 
 #include "nm-utils.h"
 #include "nm-client.h"
@@ -96,6 +97,7 @@ typedef struct {
 	NMDnsManager *dns_manager;
 	GDBusObjectManager *object_manager;
 	GCancellable *new_object_manager_cancellable;
+	struct udev *udev;
 } NMClientPrivate;
 
 enum {
@@ -2018,8 +2020,9 @@ proxy_type (GDBusObjectManagerClient *manager,
 }
 
 static NMObject *
-obj_nm_for_gdbus_object (GDBusObject *object, GDBusObjectManager *object_manager)
+obj_nm_for_gdbus_object (NMClient *self, GDBusObject *object, GDBusObjectManager *object_manager)
 {
+	NMClientPrivate *priv;
 	GList *interfaces;
 	GList *l;
 	GType type = G_TYPE_INVALID;
@@ -2111,6 +2114,12 @@ obj_nm_for_gdbus_object (GDBusObject *object, GDBusObjectManager *object_manager
 	                       NM_OBJECT_DBUS_OBJECT, object,
 	                       NM_OBJECT_DBUS_OBJECT_MANAGER, object_manager,
 	                       NULL);
+	if (NM_IS_DEVICE (object)) {
+		priv = NM_CLIENT_GET_PRIVATE (self);
+		if (!priv->udev)
+			priv->udev = udev_new ();
+		_nm_device_set_udev (NM_DEVICE (obj_nm), priv->udev);
+	}
 	g_object_set_qdata_full (G_OBJECT (object), _nm_object_obj_nm_quark (),
 	                         obj_nm, g_object_unref);
 	return obj_nm;
@@ -2130,9 +2139,10 @@ obj_nm_inited (GObject *object, GAsyncResult *result, gpointer user_data)
 static void
 object_added (GDBusObjectManager *object_manager, GDBusObject *object, gpointer user_data)
 {
+	NMClient *client = user_data;
 	NMObject *obj_nm;
 
-	obj_nm = obj_nm_for_gdbus_object (object, object_manager);
+	obj_nm = obj_nm_for_gdbus_object (client, object, object_manager);
 	if (obj_nm) {
 		g_async_initable_init_async (G_ASYNC_INITABLE (obj_nm),
 		                             G_PRIORITY_DEFAULT, NULL,
@@ -2159,7 +2169,7 @@ objects_created (NMClient *client, GDBusObjectManager *object_manager, GError **
 	/* First just ensure all the NMObjects for known GDBusObjects exist. */
 	objects = g_dbus_object_manager_get_objects (object_manager);
 	for (iter = objects; iter; iter = iter->next)
-		obj_nm_for_gdbus_object (iter->data, object_manager);
+		obj_nm_for_gdbus_object (client, iter->data, object_manager);
 	g_list_free_full (objects, g_object_unref);
 
 	manager = g_dbus_object_manager_get_object (object_manager, NM_DBUS_PATH);
@@ -2559,6 +2569,11 @@ dispose (GObject *object)
 	}
 
 	G_OBJECT_CLASS (nm_client_parent_class)->dispose (object);
+
+	if (priv->udev) {
+		udev_unref (priv->udev);
+		priv->udev = NULL;
+	}
 }
 
 static void

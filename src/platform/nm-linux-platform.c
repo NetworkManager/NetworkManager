@@ -38,7 +38,7 @@
 #include <linux/if_tunnel.h>
 #include <netlink/netlink.h>
 #include <netlink/msg.h>
-#include <gudev/gudev.h>
+#include <libudev.h>
 
 #include "nm-utils.h"
 #include "nm-core-internal.h"
@@ -51,6 +51,7 @@
 #include "wifi/wifi-utils.h"
 #include "wifi/wifi-utils-wext.h"
 #include "nm-utils/unaligned.h"
+#include "nm-utils/nm-udev-utils.h"
 
 #define VLAN_FLAG_MVRP 0x8
 
@@ -2547,7 +2548,7 @@ typedef struct {
 	gboolean sysctl_get_warned;
 	GHashTable *sysctl_get_prev_values;
 
-	GUdevClient *udev_client;
+	NMUdevClient *udev_client;
 
 	struct {
 		/* which delayed actions are scheduled, as marked in @flags.
@@ -4399,18 +4400,20 @@ link_get_unmanaged (NMPlatform *platform, int ifindex, gboolean *unmanaged)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	const NMPObject *link;
-	GUdevDevice *udev_device = NULL;
+	struct udev_device *udevice = NULL;
+	const char *uproperty;
 
 	link = nmp_cache_lookup_link (priv->cache, ifindex);
-	if (link)
-		udev_device = link->_link.udev.device;
+	if (!link)
+		return FALSE;
 
-	if (udev_device && g_udev_device_get_property (udev_device, "NM_UNMANAGED")) {
-		*unmanaged = g_udev_device_get_property_as_boolean (udev_device, "NM_UNMANAGED");
-		return TRUE;
-	}
+	udevice = link->_link.udev.device;
+	if (!udevice)
+		return FALSE;
 
-	return FALSE;
+	uproperty = udev_device_get_property_value (udevice, "NM_UNMANAGED");
+
+	return nm_udev_utils_property_as_boolean (uproperty);
 }
 
 static gboolean
@@ -4510,10 +4513,10 @@ link_get_udi (NMPlatform *platform, int ifindex)
 	    || !obj->_link.netlink.is_in_netlink
 	    || !obj->_link.udev.device)
 		return NULL;
-	return g_udev_device_get_sysfs_path (obj->_link.udev.device);
+	return udev_device_get_syspath (obj->_link.udev.device);
 }
 
-static GObject *
+static struct udev_device *
 link_get_udev_device (NMPlatform *platform, int ifindex)
 {
 	const NMPObject *obj_cache;
@@ -4524,7 +4527,7 @@ link_get_udev_device (NMPlatform *platform, int ifindex)
 	 * appears invisible via other platform functions. */
 
 	obj_cache = nmp_cache_lookup_link (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, ifindex);
-	return obj_cache ? (GObject *) obj_cache->_link.udev.device : NULL;
+	return obj_cache ? obj_cache->_link.udev.device : NULL;
 }
 
 static NMPlatformError
@@ -6503,14 +6506,16 @@ after_read:
 /*****************************************************************************/
 
 static void
-cache_update_link_udev (NMPlatform *platform, int ifindex, GUdevDevice *udev_device)
+cache_update_link_udev (NMPlatform *platform,
+                        int ifindex,
+                        struct udev_device *udevice)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	nm_auto_nmpobj NMPObject *obj_cache = NULL;
 	gboolean was_visible;
 	NMPCacheOpsType cache_op;
 
-	cache_op = nmp_cache_update_link_udev (priv->cache, ifindex, udev_device, &obj_cache, &was_visible, cache_pre_hook, platform);
+	cache_op = nmp_cache_update_link_udev (priv->cache, ifindex, udevice, &obj_cache, &was_visible, cache_pre_hook, platform);
 
 	if (cache_op != NMP_CACHE_OPS_UNCHANGED) {
 		nm_auto_pop_netns NMPNetns *netns = NULL;
@@ -6523,55 +6528,58 @@ cache_update_link_udev (NMPlatform *platform, int ifindex, GUdevDevice *udev_dev
 
 static void
 udev_device_added (NMPlatform *platform,
-                   GUdevDevice *udev_device)
+                   struct udev_device *udevice)
 {
 	const char *ifname;
+	const char *ifindex_s;
 	int ifindex;
 
-	ifname = g_udev_device_get_name (udev_device);
+	ifname = udev_device_get_sysname (udevice);
 	if (!ifname) {
 		_LOGD ("udev-add: failed to get device's interface");
 		return;
 	}
 
-	if (!g_udev_device_get_property (udev_device, "IFINDEX")) {
+	ifindex_s = udev_device_get_property_value (udevice, "IFINDEX");
+	if (!ifindex_s) {
 		_LOGW ("udev-add[%s]failed to get device's ifindex", ifname);
 		return;
 	}
-	ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
+	ifindex = _nm_utils_ascii_str_to_int64 (ifindex_s, 10, 1, G_MAXINT, 0);
 	if (ifindex <= 0) {
 		_LOGW ("udev-add[%s]: retrieved invalid IFINDEX=%d", ifname, ifindex);
 		return;
 	}
 
-	if (!g_udev_device_get_sysfs_path (udev_device)) {
+	if (!udev_device_get_syspath (udevice)) {
 		_LOGD ("udev-add[%s,%d]: couldn't determine device path; ignoring...", ifname, ifindex);
 		return;
 	}
 
 	_LOGT ("udev-add[%s,%d]: device added", ifname, ifindex);
-	cache_update_link_udev (platform, ifindex, udev_device);
+	cache_update_link_udev (platform, ifindex, udevice);
 }
 
 static gboolean
-_udev_device_removed_match_link (const NMPObject *obj, gpointer udev_device)
+_udev_device_removed_match_link (const NMPObject *obj, gpointer udevice)
 {
-	return obj->_link.udev.device == udev_device;
+	return obj->_link.udev.device == udevice;
 }
 
 static void
 udev_device_removed (NMPlatform *platform,
-                     GUdevDevice *udev_device)
+                     struct udev_device *udevice)
 {
+	const char *ifindex_s;
 	int ifindex = 0;
 
-	if (g_udev_device_get_property (udev_device, "IFINDEX"))
-		ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
-	else {
+	ifindex_s = udev_device_get_property_value (udevice, "IFINDEX");
+	ifindex = _nm_utils_ascii_str_to_int64 (ifindex_s, 10, 1, G_MAXINT, 0);
+	if (ifindex <= 0) {
 		const NMPObject *obj;
 
 		obj = nmp_cache_lookup_link_full (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache,
-		                                  0, NULL, FALSE, NM_LINK_TYPE_NONE, _udev_device_removed_match_link, udev_device);
+		                                  0, NULL, FALSE, NM_LINK_TYPE_NONE, _udev_device_removed_match_link, udevice);
 		if (obj)
 			ifindex = obj->link.ifindex;
 	}
@@ -6584,9 +6592,8 @@ udev_device_removed (NMPlatform *platform,
 }
 
 static void
-handle_udev_event (GUdevClient *client,
-                   const char *action,
-                   GUdevDevice *udev_device,
+handle_udev_event (NMUdevClient *udev_client,
+                   struct udev_device *udevice,
                    gpointer user_data)
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
@@ -6594,26 +6601,27 @@ handle_udev_event (GUdevClient *client,
 	const char *subsys;
 	const char *ifindex;
 	guint64 seqnum;
+	const char *action;
 
-	g_return_if_fail (action != NULL);
+	action = udev_device_get_action (udevice);
+	g_return_if_fail (action);
+
+	subsys = udev_device_get_subsystem (udevice);
+	g_return_if_fail (nm_streq0 (subsys, "net"));
 
 	if (!nm_platform_netns_push (platform, &netns))
 		return;
 
-	/* A bit paranoid */
-	subsys = g_udev_device_get_subsystem (udev_device);
-	g_return_if_fail (!g_strcmp0 (subsys, "net"));
-
-	ifindex = g_udev_device_get_property (udev_device, "IFINDEX");
-	seqnum = g_udev_device_get_seqnum (udev_device);
+	ifindex = udev_device_get_property_value (udevice, "IFINDEX");
+	seqnum = udev_device_get_seqnum (udevice);
 	_LOGD ("UDEV event: action '%s' subsys '%s' device '%s' (%s); seqnum=%" G_GUINT64_FORMAT,
-	        action, subsys, g_udev_device_get_name (udev_device),
+	        action, subsys, udev_device_get_sysname (udevice),
 	        ifindex ? ifindex : "unknown", seqnum);
 
-	if (!strcmp (action, "add") || !strcmp (action, "move"))
-		udev_device_added (platform, udev_device);
-	if (!strcmp (action, "remove"))
-		udev_device_removed (platform, udev_device);
+	if (NM_IN_STRSET (action, "add", "move"))
+		udev_device_added (platform, udevice);
+	else if (NM_IN_STRSET (action, "remove"))
+		udev_device_removed (platform, udevice);
 }
 
 /*****************************************************************************/
@@ -6634,8 +6642,10 @@ nm_linux_platform_init (NMLinuxPlatform *self)
 	priv->delayed_action.list_wait_for_nl_response = g_array_new (FALSE, TRUE, sizeof (DelayedActionWaitForNlResponseData));
 	priv->wifi_data = g_hash_table_new_full (NULL, NULL, NULL, (GDestroyNotify) wifi_utils_deinit);
 
-	if (use_udev)
-		priv->udev_client = g_udev_client_new ((const char *[]) { "net", NULL });
+	if (use_udev) {
+		priv->udev_client = nm_udev_client_new ((const char *[]) { "net", NULL },
+		                                        handle_udev_event, self);
+	}
 }
 
 static void
@@ -6718,24 +6728,30 @@ constructed (GObject *_object)
 
 	/* Set up udev monitoring */
 	if (priv->udev_client) {
-		GUdevEnumerator *enumerator;
-		GList *devices, *iter;
-
-		g_signal_connect (priv->udev_client, "uevent", G_CALLBACK (handle_udev_event), platform);
+		struct udev_enumerate *enumerator;
+		struct udev_list_entry *devices, *l;
 
 		/* And read initial device list */
-		enumerator = g_udev_enumerator_new (priv->udev_client);
-		g_udev_enumerator_add_match_subsystem (enumerator, "net");
+		enumerator = nm_udev_client_enumerate_new (priv->udev_client);
 
-		g_udev_enumerator_add_match_is_initialized (enumerator);
+		udev_enumerate_add_match_is_initialized (enumerator);
 
-		devices = g_udev_enumerator_execute (enumerator);
-		for (iter = devices; iter; iter = g_list_next (iter)) {
-			udev_device_added (platform, G_UDEV_DEVICE (iter->data));
-			g_object_unref (G_UDEV_DEVICE (iter->data));
+		udev_enumerate_scan_devices (enumerator);
+
+		devices = udev_enumerate_get_list_entry (enumerator);
+		for (l = devices; l; l = udev_list_entry_get_next (l)) {
+			struct udev_device *udevice;
+
+			udevice = udev_device_new_from_syspath (udev_enumerate_get_udev (enumerator),
+			                                        udev_list_entry_get_name (l));
+			if (!udevice)
+				continue;
+
+			udev_device_added (platform, udevice);
+			udev_device_unref (udevice);
 		}
-		g_list_free (devices);
-		g_object_unref (enumerator);
+
+		udev_enumerate_unref (enumerator);
 	}
 }
 
@@ -6754,11 +6770,6 @@ dispose (GObject *object)
 	g_ptr_array_set_size (priv->delayed_action.list_refresh_link, 0);
 
 	g_clear_pointer (&priv->prune_candidates, g_hash_table_unref);
-
-	if (priv->udev_client) {
-		g_signal_handlers_disconnect_by_func (priv->udev_client, G_CALLBACK (handle_udev_event), platform);
-		g_clear_object (&priv->udev_client);
-	}
 
 	G_OBJECT_CLASS (nm_linux_platform_parent_class)->dispose (object);
 }
@@ -6784,6 +6795,8 @@ finalize (GObject *object)
 		sysctl_clear_cache_list = g_slist_remove (sysctl_clear_cache_list, object);
 		g_hash_table_destroy (priv->sysctl_get_prev_values);
 	}
+
+	priv->udev_client = nm_udev_client_unref (priv->udev_client);
 
 	G_OBJECT_CLASS (nm_linux_platform_parent_class)->finalize (object);
 }
