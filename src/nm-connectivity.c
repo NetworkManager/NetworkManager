@@ -208,10 +208,45 @@ typedef struct {
 } ConCheckCbData;
 
 static void
+finish_cb_data (ConCheckCbData *cb_data, NMConnectivityState new_state)
+{
+	NMConnectivity *self = NM_CONNECTIVITY (g_async_result_get_source_object (G_ASYNC_RESULT (cb_data->simple)));
+	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
+
+	/* Only update the state, if the call was done from external, or if the periodic check
+	 * is still the one that called this async check. */
+	if (!cb_data->check_id_when_scheduled || cb_data->check_id_when_scheduled == priv->check_id) {
+		/* Only update the state, if the URI and response parameters did not change
+		 * since invocation.
+		 * The interval does not matter for exernal calls, and for internal calls
+		 * we don't reach this line if the interval changed. */
+		if (   !g_strcmp0 (cb_data->uri, priv->uri)
+		    && !g_strcmp0 (cb_data->response, priv->response)) {
+			_LOGT ("Update to connectivity state %s",
+			       nm_connectivity_state_to_string (new_state));
+			update_state (self, new_state);
+		}
+	}
+
+	/* Contrary to what cURL manual claim it is *not* safe to remove
+	 * the easy handle "at any moment"; specifically not from the
+	 * write function. Thus here we just dissociate the cb_data from
+	 * the easy handle and the easy handle will be cleaned up when the
+	 * message goes to CURLMSG_DONE in curl_check_connectivity(). */
+	curl_easy_setopt (cb_data->curl_ehandle, CURLOPT_PRIVATE, NULL);
+
+	g_simple_async_result_set_op_res_gssize (cb_data->simple, new_state);
+	g_simple_async_result_complete (cb_data->simple);
+	g_object_unref (cb_data->simple);
+	curl_slist_free_all (cb_data->request_headers);
+	g_free (cb_data->uri);
+	g_free (cb_data->response);
+	g_slice_free (ConCheckCbData, cb_data);
+}
+
+static void
 curl_check_connectivity (CURLM *mhandle, CURLMcode ret)
 {
-	NMConnectivity *self;
-	NMConnectivityPrivate *priv;
 	NMConnectivityState new_state = NM_CONNECTIVITY_UNKNOWN;
 	ConCheckCbData *cb_data;
 	CURLMsg *msg;
@@ -233,56 +268,36 @@ curl_check_connectivity (CURLM *mhandle, CURLMcode ret)
 			_LOGE ("curl cannot extract cb_data for easy handle %p, skipping msg", msg->easy_handle);
 			continue;
 		}
-		self = NM_CONNECTIVITY (g_async_result_get_source_object (G_ASYNC_RESULT (cb_data->simple)));
-		priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
-		if (msg->data.result != CURLE_OK) {
-			_LOGD ("Check for uri '%s' failed", cb_data->uri);
-			new_state = NM_CONNECTIVITY_LIMITED;
-			goto cleanup;
-		}
-
-		if (cb_data->online_header) {
-			_LOGD ("check for uri '%s' with Status header successful.", cb_data->uri);
-			new_state = NM_CONNECTIVITY_FULL;
-			goto cleanup;
-		}
-
-		/* Check response */
-		if (cb_data->msg && g_str_has_prefix (cb_data->msg, cb_data->response)) {
-			_LOGD ("Check for uri '%s' successful.", cb_data->uri);
-			new_state = NM_CONNECTIVITY_FULL;
-			goto cleanup;
-		}
-
-		_LOGI ("Check for uri '%s' did not match expected response '%s'; assuming captive portal.",
-			cb_data->uri, cb_data->response);
-		new_state = NM_CONNECTIVITY_PORTAL;
-cleanup:
-		/* Only update the state, if the call was done from external, or if the periodic check
-		 * is still the one that called this async check. */
-		if (!cb_data->check_id_when_scheduled || cb_data->check_id_when_scheduled == priv->check_id) {
-			/* Only update the state, if the URI and response parameters did not change
-			 * since invocation.
-			 * The interval does not matter for exernal calls, and for internal calls
-			 * we don't reach this line if the interval changed. */
-			if (   !g_strcmp0 (cb_data->uri, priv->uri)
-			    && !g_strcmp0 (cb_data->response, priv->response)) {
-				_LOGT ("Update to connectivity state %s",
-				       nm_connectivity_state_to_string (new_state));
-				update_state (self, new_state);
+		if (cb_data) {
+			if (msg->data.result != CURLE_OK) {
+				_LOGD ("Check for uri '%s' failed", cb_data->uri);
+				new_state = NM_CONNECTIVITY_LIMITED;
+				goto cleanup;
 			}
-		}
-		g_simple_async_result_set_op_res_gssize (cb_data->simple, new_state);
-		g_simple_async_result_complete (cb_data->simple);
-		g_object_unref (cb_data->simple);
 
-		curl_multi_remove_handle (mhandle, cb_data->curl_ehandle);
-		curl_easy_cleanup (cb_data->curl_ehandle);
-		curl_slist_free_all (cb_data->request_headers);
-		g_free (cb_data->uri);
-		g_free (cb_data->response);
-		g_slice_free (ConCheckCbData, cb_data);
+			if (cb_data->online_header) {
+				_LOGD ("check for uri '%s' with Status header successful.", cb_data->uri);
+				new_state = NM_CONNECTIVITY_FULL;
+				goto cleanup;
+			}
+
+			/* Check response */
+			if (cb_data->msg && g_str_has_prefix (cb_data->msg, cb_data->response)) {
+				_LOGD ("Check for uri '%s' successful.", cb_data->uri);
+				new_state = NM_CONNECTIVITY_FULL;
+				goto cleanup;
+			}
+
+			_LOGI ("Check for uri '%s' did not match expected response '%s'; assuming captive portal.",
+				cb_data->uri, cb_data->response);
+			new_state = NM_CONNECTIVITY_PORTAL;
+cleanup:
+			finish_cb_data (cb_data, new_state);
+		}
+
+		curl_multi_remove_handle (mhandle, msg->easy_handle);
+		curl_easy_cleanup (msg->easy_handle);
 	}
 }
 
