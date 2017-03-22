@@ -204,7 +204,6 @@ typedef struct {
 	size_t msg_size;
 	char *msg;
 	struct curl_slist *request_headers;
-	gboolean online_header;
 } ConCheckCbData;
 
 static void
@@ -273,12 +272,6 @@ curl_check_connectivity (CURLM *mhandle, CURLMcode ret)
 			if (msg->data.result != CURLE_OK) {
 				_LOGD ("Check for uri '%s' failed", cb_data->uri);
 				new_state = NM_CONNECTIVITY_LIMITED;
-				goto cleanup;
-			}
-
-			if (cb_data->online_header) {
-				_LOGD ("check for uri '%s' with Status header successful.", cb_data->uri);
-				new_state = NM_CONNECTIVITY_FULL;
 				goto cleanup;
 			}
 
@@ -414,7 +407,9 @@ easy_header_cb (char *buffer, size_t size, size_t nitems, void *userdata)
 
 	if (   len >= sizeof (HEADER_STATUS_ONLINE) - 1
 	    && !g_ascii_strncasecmp (buffer, HEADER_STATUS_ONLINE, sizeof (HEADER_STATUS_ONLINE) - 1)) {
-		cb_data->online_header = TRUE;
+		_LOGD ("check for uri '%s' with Status header successful.", cb_data->uri);
+		finish_cb_data (cb_data, NM_CONNECTIVITY_FULL);
+		return 0;
 	}
 
 	return len;
