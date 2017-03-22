@@ -246,7 +246,6 @@ finish_cb_data (ConCheckCbData *cb_data, NMConnectivityState new_state)
 static void
 curl_check_connectivity (CURLM *mhandle, CURLMcode ret)
 {
-	NMConnectivityState new_state = NM_CONNECTIVITY_UNKNOWN;
 	ConCheckCbData *cb_data;
 	CURLMsg *msg;
 	CURLcode eret;
@@ -269,24 +268,18 @@ curl_check_connectivity (CURLM *mhandle, CURLMcode ret)
 		}
 
 		if (cb_data) {
-			if (msg->data.result != CURLE_OK) {
+			/* If cb_data is still there this message hasn't been
+			 * taken care of. Do so now. */
+			if (msg->data.result == CURLE_OK) {
+				/* If we get here, it means that easy_write_cb() didn't read enough
+				 * bytes to be able to do a match. */
+				_LOGI ("Check for uri '%s' returned a shorter response than expected '%s'; assuming captive portal.",
+				       cb_data->uri, cb_data->response);
+				finish_cb_data (cb_data, NM_CONNECTIVITY_PORTAL);
+			} else {
 				_LOGD ("Check for uri '%s' failed", cb_data->uri);
-				new_state = NM_CONNECTIVITY_LIMITED;
-				goto cleanup;
+				finish_cb_data (cb_data, NM_CONNECTIVITY_LIMITED);
 			}
-
-			/* Check response */
-			if (cb_data->msg && g_str_has_prefix (cb_data->msg, cb_data->response)) {
-				_LOGD ("Check for uri '%s' successful.", cb_data->uri);
-				new_state = NM_CONNECTIVITY_FULL;
-				goto cleanup;
-			}
-
-			_LOGI ("Check for uri '%s' did not match expected response '%s'; assuming captive portal.",
-				cb_data->uri, cb_data->response);
-			new_state = NM_CONNECTIVITY_PORTAL;
-cleanup:
-			finish_cb_data (cb_data, new_state);
 		}
 
 		curl_multi_remove_handle (mhandle, msg->easy_handle);
@@ -426,6 +419,19 @@ easy_write_cb (void *buffer, size_t size, size_t nmemb, void *userdata)
 	cb_data->msg = g_realloc (cb_data->msg, cb_data->msg_size + len);
 	memcpy (cb_data->msg + cb_data->msg_size, buffer, len);
 	cb_data->msg_size += len;
+
+	if (cb_data->msg_size >= strlen (cb_data->response)) {
+		/* We already have enough data -- check response */
+		if (g_str_has_prefix (cb_data->msg, cb_data->response)) {
+			_LOGD ("Check for uri '%s' successful.", cb_data->uri);
+			finish_cb_data (cb_data, NM_CONNECTIVITY_FULL);
+		} else {
+			_LOGI ("Check for uri '%s' did not match expected response '%s'; assuming captive portal.",
+			       cb_data->uri, cb_data->response);
+			finish_cb_data (cb_data, NM_CONNECTIVITY_PORTAL);
+		}
+		return 0;
+	}
 
 	return len;
 }
