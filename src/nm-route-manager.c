@@ -63,6 +63,12 @@ typedef struct {
 
 /*****************************************************************************/
 
+enum {
+	IP4_ROUTES_CHANGED,
+	LAST_SIGNAL,
+};
+static guint signals[LAST_SIGNAL] = { 0 };
+
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_PLATFORM,
 );
@@ -904,6 +910,9 @@ next:
 		}
 	}
 
+	if (vtable->vt->is_ip4 && ipx_routes_changed)
+		g_signal_emit (self, signals[IP4_ROUTES_CHANGED], 0);
+
 	g_free (known_routes_idx);
 	g_free (plat_routes_idx);
 	g_array_unref (plat_routes);
@@ -965,6 +974,33 @@ nm_route_manager_route_flush (NMRouteManager *self, int ifindex)
 	success &= (bool) nm_route_manager_ip4_route_sync (self, ifindex, NULL, FALSE, TRUE);
 	success &= (bool) nm_route_manager_ip6_route_sync (self, ifindex, NULL, FALSE, TRUE);
 	return success;
+}
+
+/**
+ * nm_route_manager_ip4_routes_shadowed:
+ * @ifindex: Interface index
+ *
+ * Returns: %TRUE if some other link has a route to the same destination
+ *   with a lower metric.
+ */
+gboolean
+nm_route_manager_ip4_routes_shadowed (NMRouteManager *self, int ifindex)
+{
+	NMRouteManagerPrivate *priv = NM_ROUTE_MANAGER_GET_PRIVATE (self);
+	RouteIndex *index = priv->ip4_routes.index;
+	const NMPlatformIP4Route *route;
+	guint i;
+
+	for (i = 1; i < index->len; i++) {
+		route = (const NMPlatformIP4Route *) index->entries[i];
+
+		if (route->ifindex != ifindex)
+			continue;
+		if (_v4_route_dest_cmp (route, (const NMPlatformIP4Route *) index->entries[i - 1]) == 0)
+			return TRUE;
+	}
+
+	return FALSE;
 }
 
 /*****************************************************************************/
@@ -1258,4 +1294,11 @@ nm_route_manager_class_init (NMRouteManagerClass *klass)
 	                         G_PARAM_CONSTRUCT_ONLY |
 	                         G_PARAM_STATIC_STRINGS);
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+
+	signals[IP4_ROUTES_CHANGED] =
+	    g_signal_new (NM_ROUTE_MANAGER_IP4_ROUTES_CHANGED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 0);
 }
