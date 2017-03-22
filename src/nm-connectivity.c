@@ -204,6 +204,7 @@ typedef struct {
 	size_t msg_size;
 	char *msg;
 	struct curl_slist *request_headers;
+	guint timeout_id;
 } ConCheckCbData;
 
 static void
@@ -240,6 +241,7 @@ finish_cb_data (ConCheckCbData *cb_data, NMConnectivityState new_state)
 	curl_slist_free_all (cb_data->request_headers);
 	g_free (cb_data->uri);
 	g_free (cb_data->response);
+	g_source_remove (cb_data->timeout_id);
 	g_slice_free (ConCheckCbData, cb_data);
 }
 
@@ -435,6 +437,22 @@ easy_write_cb (void *buffer, size_t size, size_t nmemb, void *userdata)
 
 	return len;
 }
+
+static gboolean
+timeout_cb (gpointer user_data)
+{
+	ConCheckCbData *cb_data = user_data;
+	NMConnectivity *self = NM_CONNECTIVITY (g_async_result_get_source_object (G_ASYNC_RESULT (cb_data->simple)));
+	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
+	CURL *ehandle = cb_data->curl_ehandle;
+
+	_LOGI ("Check for uri '%s' timed out.", cb_data->uri);
+	finish_cb_data (cb_data, NM_CONNECTIVITY_LIMITED);
+	curl_multi_remove_handle (priv->curl_mhandle, ehandle);
+	curl_easy_cleanup (ehandle);
+
+	return G_SOURCE_REMOVE;
+}
 #endif
 
 #define IS_PERIODIC_CHECK(callback)  ((callback) == run_check_complete)
@@ -482,10 +500,9 @@ nm_connectivity_check_async (NMConnectivity      *self,
 		curl_easy_setopt (ehandle, CURLOPT_HEADERDATA, cb_data);
 		curl_easy_setopt (ehandle, CURLOPT_PRIVATE, cb_data);
 		curl_easy_setopt (ehandle, CURLOPT_HTTPHEADER, cb_data->request_headers);
-		curl_easy_setopt (ehandle, CURLOPT_CONNECTTIMEOUT, 30);
-		curl_easy_setopt (ehandle, CURLOPT_LOW_SPEED_LIMIT, 1);
-		curl_easy_setopt (ehandle, CURLOPT_LOW_SPEED_TIME, 30);
 		curl_multi_add_handle (priv->curl_mhandle, ehandle);
+
+		cb_data->timeout_id = g_timeout_add_seconds (30, timeout_cb, cb_data);
 
 		priv->initial_check_obsoleted = TRUE;
 
