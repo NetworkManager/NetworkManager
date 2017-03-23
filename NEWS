@@ -1,5 +1,5 @@
 ============================================
-NetworkManager-1.7 (development version)
+NetworkManager-1.7.2 (development snapshot)
 Overview of changes since NetworkManager-1.6
 ============================================
 
@@ -8,8 +8,25 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 Notable changes included in this snapshot so far include:
 
-* With DNS mode "rc-manager=symlink", don't write /etc/resolv.conf as a
-    symlink if it already exists as a regular file.
+* Fixed detection of EAP-FAST support in wpa_supplicant
+* Support for handling PINs for PKCS#11 tokens as secrets
+* GSM and CDMA connections now have a MTU property
+* An option to disable selected TLS versions during EAP phase 1 authentication
+* The 802.1x authentication timeout is now configurable to allow a faster
+    fallback to other connections
+* Introduced support for creating and managing dummy links
+* The teaming devices now support setting a hardcoded MAC address
+* Settings of bonding devices can now be modified on-the-fly, without the
+    need to reactivate a connection
+* The failures to activate a connection now communicate better error
+    responses to nmcli
+* Dropped dependency on libgudev
+* Reverse Path filtering is now disabled in multihoming configurations where
+    it would interfere with legitimate network traffic
+* libcurl is used instead of libsoup for connectivity checking, resulting in
+    a smaller dependency footprint
+* With DNS mode "rc-manager=symlink", don't write /etc/resolv.conf as
+    a symlink if it already exists as a regular file.
 * Many bug fixes and improvements
 
 ============================================
