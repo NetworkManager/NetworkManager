@@ -155,6 +155,37 @@ _nm_singleton_instance_register_destruction (GObject *instance)
 
 /*****************************************************************************/
 
+static double
+_10pow (guint16 ex)
+{
+	double v;
+
+	if (ex == 0)
+		return 1.0;
+
+	v = _10pow (ex / 2);
+	v = v * v;
+	if (ex % 2)
+		v *= 10;
+	return v;
+}
+
+/*/
+ * nm_utils_10pow:
+ * @ex: the exponent
+ *
+ * Returns: 10^ex or pow(10, ex)
+ */
+double
+nm_utils_10pow (gint16 ex)
+{
+	if (ex >= 0)
+		return _10pow (ex);
+	return 1.0 / _10pow (- ((gint32) ex));
+}
+
+/*****************************************************************************/
+
 /*
  * nm_ethernet_address_is_valid:
  * @addr: pointer to a binary or ASCII Ethernet address

@@ -23,6 +23,9 @@
 #include <string.h>
 #include <errno.h>
 
+/* need math.h for isinf() and INFINITY. No need to link with -lm */
+#include <math.h>
+
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
 
@@ -1653,6 +1656,53 @@ test_stable_id_generated_complete (void)
 
 /*****************************************************************************/
 
+static void
+test_nm_utils_10pow (void)
+{
+#define FLOAT_CMP(a, b) \
+	G_STMT_START { \
+		double _a = (a); \
+		double _b = (b); \
+		\
+		if (isinf (_b)) \
+			g_assert (isinf (_a)); \
+		else if (_b >= 0.0 && _b <= 0.0) \
+			g_assert (_a >= 0.0 && _a <= 0.0); \
+		else { \
+			double _x = (_a) - (_b); \
+			g_assert (_b > 0.0); \
+			if (_x < 0.0) \
+				_x = -_x; \
+			g_assert (_x / _b <  1E-10); \
+		} \
+	} G_STMT_END
+
+	FLOAT_CMP (nm_utils_10pow (G_MININT16),  0.0);
+	FLOAT_CMP (nm_utils_10pow (-310),        0.0);
+	FLOAT_CMP (nm_utils_10pow (-309),        0.0);
+	FLOAT_CMP (nm_utils_10pow (-308),        1e-308);
+	FLOAT_CMP (nm_utils_10pow (-307),        1e-307);
+	FLOAT_CMP (nm_utils_10pow (-1),          1e-1);
+	FLOAT_CMP (nm_utils_10pow (-2),          1e-2);
+	FLOAT_CMP (nm_utils_10pow (0),           1e0);
+	FLOAT_CMP (nm_utils_10pow (1),           1e1);
+	FLOAT_CMP (nm_utils_10pow (2),           1e2);
+	FLOAT_CMP (nm_utils_10pow (3),           1e3);
+	FLOAT_CMP (nm_utils_10pow (4),           1e4);
+	FLOAT_CMP (nm_utils_10pow (5),           1e5);
+	FLOAT_CMP (nm_utils_10pow (6),           1e6);
+	FLOAT_CMP (nm_utils_10pow (7),           1e7);
+	FLOAT_CMP (nm_utils_10pow (122),         1e122);
+	FLOAT_CMP (nm_utils_10pow (200),         1e200);
+	FLOAT_CMP (nm_utils_10pow (307),         1e307);
+	FLOAT_CMP (nm_utils_10pow (308),         1e308);
+	FLOAT_CMP (nm_utils_10pow (309),         INFINITY);
+	FLOAT_CMP (nm_utils_10pow (310),         INFINITY);
+	FLOAT_CMP (nm_utils_10pow (G_MAXINT16),  INFINITY);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -1665,6 +1715,8 @@ main (int argc, char **argv)
 	g_test_add_func ("/general/nm_utils_ip6_address_clear_host_address", test_nm_utils_ip6_address_clear_host_address);
 	g_test_add_func ("/general/nm_utils_ip6_address_same_prefix", test_nm_utils_ip6_address_same_prefix);
 	g_test_add_func ("/general/nm_utils_log_connection_diff", test_nm_utils_log_connection_diff);
+
+	g_test_add_func ("/general/10pow", test_nm_utils_10pow);
 
 	g_test_add_func ("/general/connection-match/basic", test_connection_match_basic);
 	g_test_add_func ("/general/connection-match/ip6-method", test_connection_match_ip6_method);
