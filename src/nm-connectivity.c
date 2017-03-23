@@ -253,12 +253,10 @@ curl_check_connectivity (CURLM *mhandle, CURLMcode ret)
 	CURLcode eret;
 	gint m_left;
 
-	_LOGT ("curl_multi check for easy messages");
 	if (ret != CURLM_OK)
-		_LOGE ("Connectivity check failed");
+		_LOGW ("Connectivity check failed");
 
 	while ((msg = curl_multi_info_read (mhandle, &m_left))) {
-		_LOGT ("curl MSG received - ehandle:%p, type:%d", msg->easy_handle, msg->msg);
 		if (msg->msg != CURLMSG_DONE)
 			continue;
 
@@ -313,8 +311,6 @@ multi_timer_cb (CURLM *multi, long timeout_ms, void *userdata)
 	NMConnectivity *self = NM_CONNECTIVITY (userdata);
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
-	_LOGT ("curl_multi timer invocation --> timeout ms: %ld", timeout_ms);
-
 	nm_clear_g_source (&priv->curl_timer);
 	if (timeout_ms != -1)
 		priv->curl_timer = g_timeout_add (timeout_ms * 1000, curl_timeout_cb, self);
@@ -339,7 +335,6 @@ curl_socketevent_cb (GIOChannel *ch, GIOCondition condition, gpointer data)
 		action |= CURL_CSELECT_OUT;
 
 	ret = curl_multi_socket_action (priv->curl_mhandle, fd, 0, &pending_conn);
-	_LOGT ("activity on monitored fd %d - multi_socket_action (%d conn remaining)", fd, pending_conn);
 
 	curl_check_connectivity (priv->curl_mhandle, ret);
 
@@ -363,18 +358,14 @@ multi_socket_cb (CURL *e_handle, curl_socket_t s, int what, void *userdata, void
 	CurlSockData *fdp = (CurlSockData *) socketp;
 	GIOCondition condition = 0;
 
-	_LOGT ("curl_multi socket callback --> socket %d", s);
-
 	if (what == CURL_POLL_REMOVE) {
 		if (fdp) {
-			_LOGT ("remove socket s=%d", s);
 			nm_clear_g_source (&fdp->ev);
 			g_io_channel_unref (fdp->ch);
 			g_slice_free (CurlSockData, fdp);
 		}
 	} else {
 		if (!fdp) {
-			_LOGT ("register new socket s=%d", s);
 			fdp = g_slice_new0 (CurlSockData);
 			fdp->ch = g_io_channel_unix_new (s);
 		} else
@@ -400,8 +391,6 @@ easy_header_cb (char *buffer, size_t size, size_t nitems, void *userdata)
 	ConCheckCbData *cb_data = userdata;
 	size_t len = size * nitems;
 
-	_LOGT ("Received %lu header bytes from cURL\n", len);
-
 	if (   len >= sizeof (HEADER_STATUS_ONLINE) - 1
 	    && !g_ascii_strncasecmp (buffer, HEADER_STATUS_ONLINE, sizeof (HEADER_STATUS_ONLINE) - 1)) {
 		_LOGD ("check for uri '%s' with Status header successful.", cb_data->uri);
@@ -417,8 +406,6 @@ easy_write_cb (void *buffer, size_t size, size_t nmemb, void *userdata)
 {
 	ConCheckCbData *cb_data = userdata;
 	size_t len = size * nmemb;
-
-	_LOGT ("Received %lu body bytes from cURL\n", len);
 
 	cb_data->msg = g_realloc (cb_data->msg, cb_data->msg_size + len);
 	memcpy (cb_data->msg + cb_data->msg_size, buffer, len);
