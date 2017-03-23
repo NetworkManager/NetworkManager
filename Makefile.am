@@ -3067,6 +3067,7 @@ clients_cli_nmcli_CPPFLAGS = \
 	-I$(srcdir)/libnm \
 	-I$(builddir)/libnm \
 	-I$(srcdir)/clients/cli \
+	-I$(builddir)/clients/cli \
 	-I$(srcdir)/clients/common \
 	$(GLIB_CFLAGS) \
 	-DG_LOG_DOMAIN=\""nmcli"\" \
@@ -3089,6 +3090,7 @@ clients_cli_nmcli_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
 
 $(clients_cli_nmcli_OBJECTS): $(clients_cli_settings_doc_c)
+$(clients_cli_nmcli_OBJECTS): clients/cli/.dirstamp
 
 install-data-hook-nmcli:
 	$(mkinstalldirs) $(DESTDIR)$(completiondir)
@@ -3106,6 +3108,7 @@ endif
 
 clients_cli_settings_doc_c = clients/cli/settings-docs.c
 if HAVE_INTROSPECTION
+$(clients_cli_settings_doc_c): clients/cli/.dirstamp
 $(clients_cli_settings_doc_c): clients/cli/settings-docs.xsl libnm/nm-property-docs.xml
 	$(AM_V_GEN) $(XSLTPROC) --output $@ $^
 DISTCLEANFILES += $(clients_cli_settings_doc_c)
