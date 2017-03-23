@@ -4898,9 +4898,9 @@ prop_set_auth_done_cb (NMAuthChain *chain,
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
 	result = nm_auth_chain_get_result (chain, pfd->permission);
 	if (error || (result != NM_AUTH_CALL_RESULT_YES)) {
-		reply = g_dbus_message_new_method_error (pfd->message,
-		                                         NM_PERM_DENIED_ERROR,
-		                                         (error_message = "Not authorized to perform this operation"));
+		reply = g_dbus_message_new_method_error_literal (pfd->message,
+		                                                 NM_PERM_DENIED_ERROR,
+		                                                 (error_message = "Not authorized to perform this operation"));
 		if (error)
 			error_message = error->message;
 		goto done;
@@ -4909,17 +4909,17 @@ prop_set_auth_done_cb (NMAuthChain *chain,
 	object = NM_EXPORTED_OBJECT (nm_bus_manager_get_registered_object (priv->dbus_mgr,
 	                                                                   g_dbus_message_get_path (pfd->message)));
 	if (!object) {
-		reply = g_dbus_message_new_method_error (pfd->message,
-		                                         "org.freedesktop.DBus.Error.UnknownObject",
-		                                         (error_message = "Object doesn't exist."));
+		reply = g_dbus_message_new_method_error_literal (pfd->message,
+		                                                 "org.freedesktop.DBus.Error.UnknownObject",
+		                                                 (error_message = "Object doesn't exist."));
 		goto done;
 	}
 
 	/* do some extra type checking... */
 	if (!nm_exported_object_get_interface_by_type (object, pfd->interface_type)) {
-		reply = g_dbus_message_new_method_error (pfd->message,
-		                                         "org.freedesktop.DBus.Error.InvalidArgs",
-		                                         (error_message = "Object is of unexpected type."));
+		reply = g_dbus_message_new_method_error_literal (pfd->message,
+		                                                 "org.freedesktop.DBus.Error.InvalidArgs",
+		                                                 (error_message = "Object is of unexpected type."));
 		goto done;
 	}
 
@@ -4932,9 +4932,9 @@ prop_set_auth_done_cb (NMAuthChain *chain,
 		global_dns = nm_config_data_get_global_dns_config (nm_config_get_data (priv->config));
 
 		if (global_dns && !nm_global_dns_config_is_internal (global_dns)) {
-			reply = g_dbus_message_new_method_error (pfd->message,
-			                                         NM_PERM_DENIED_ERROR,
-			                                         (error_message = "Global DNS configuration already set via configuration file"));
+			reply = g_dbus_message_new_method_error_literal (pfd->message,
+			                                                 NM_PERM_DENIED_ERROR,
+			                                                 (error_message = "Global DNS configuration already set via configuration file"));
 			goto done;
 		}
 		/* ... but set the property on the @object itself. It would be correct to set the property
@@ -4976,18 +4976,18 @@ do_set_property_check (gpointer user_data)
 
 	pfd->subject = nm_auth_subject_new_unix_process_from_message (pfd->connection, pfd->message);
 	if (!pfd->subject) {
-		reply = g_dbus_message_new_method_error (pfd->message,
-		                                         NM_PERM_DENIED_ERROR,
-		                                         (error_message = "Could not determine request UID."));
+		reply = g_dbus_message_new_method_error_literal (pfd->message,
+		                                                 NM_PERM_DENIED_ERROR,
+		                                                 (error_message = "Could not determine request UID."));
 		goto out;
 	}
 
 	/* Validate the user request */
 	chain = nm_auth_chain_new_subject (pfd->subject, NULL, prop_set_auth_done_cb, pfd);
 	if (!chain) {
-		reply = g_dbus_message_new_method_error (pfd->message,
-		                                         NM_PERM_DENIED_ERROR,
-		                                         (error_message = "Could not authenticate request."));
+		reply = g_dbus_message_new_method_error_literal (pfd->message,
+		                                                 NM_PERM_DENIED_ERROR,
+		                                                 (error_message = "Could not authenticate request."));
 		goto out;
 	}
 
