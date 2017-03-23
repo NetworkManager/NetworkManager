@@ -3031,9 +3031,6 @@ bin_PROGRAMS += clients/cli/nmcli
 
 clients_cli_nmcli_SOURCES = \
 	\
-	shared/nm-setting-metadata.c \
-	shared/nm-setting-metadata.h \
-	\
 	clients/cli/agent.c \
 	clients/cli/agent.h \
 	clients/cli/common.c \
