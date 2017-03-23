@@ -610,16 +610,16 @@ nm_clear_g_cancellable (GCancellable **cancellable)
 
 /* Determine whether @x is a power of two (@x being an integer type).
  * For the special cases @x equals zero or one, it also returns true.
- * For negative @x, always returns FALSE. That only applies, if the data
- * type of @x is signed. */
+ * In case @x being a signed type, for negative @x always return FALSE. */
 #define nm_utils_is_power_of_two(x) ({ \
 		typeof(x) __x = (x); \
 		\
 		/* Check if the value is negative. In that case, return FALSE.
 		 * The first expression is a compile time constant, depending on whether
 		 * the type is signed. The second expression is a clumsy way for (__x >= 0),
-		 * which causes a compiler warning for unsigned types. */ \
-		    ( ( ((typeof(__x)) -1) > ((typeof(__x)) 0) ) || (__x > 0) || (__x == 0) ) \
+		 * which otherwise causes a compiler warning for unsigned types. */ \
+		    (    (((typeof(__x)) -1) > ((typeof(__x)) 0)) \
+		      || (__x > 0 || __x == 0) ) \
 		 && ((__x & (__x - 1)) == 0); \
 	})
 
@@ -628,7 +628,7 @@ nm_clear_g_cancellable (GCancellable **cancellable)
 /* check if @flags has exactly one flag (@check) set. You should call this
  * only with @check being a compile time constant and a power of two. */
 #define NM_FLAGS_HAS(flags, check)  \
-    ( (G_STATIC_ASSERT_EXPR ( ((check) != 0) && ((check) & ((check)-1)) == 0 )), (NM_FLAGS_ANY ((flags), (check))) )
+    ( G_STATIC_ASSERT_EXPR ((check) > 0 && ((check) & ((check) - 1)) == 0), NM_FLAGS_ANY ((flags), (check)) )
 
 #define NM_FLAGS_ANY(flags, check)  ( ( ((flags) & (check)) != 0       ) ? TRUE : FALSE )
 #define NM_FLAGS_ALL(flags, check)  ( ( ((flags) & (check)) == (check) ) ? TRUE : FALSE )
