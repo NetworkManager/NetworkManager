@@ -1473,7 +1473,6 @@ src_libNetworkManager_la_LIBADD = \
 	$(SYSTEMD_LOGIN_LIBS) \
 	$(LIBNDP_LIBS) \
 	$(DL_LIBS) \
-	$(LIBM) \
 	$(SELINUX_LIBS) \
 	$(LIBAUDIT_LIBS) \
 	$(LIBPSL_LIBS) \
@@ -1546,8 +1545,7 @@ src_nm_iface_helper_LDADD = \
 	$(LIBUDEV_LIBS) \
 	$(LIBNL_LIBS) \
 	$(LIBNDP_LIBS) \
-	$(DL_LIBS) \
-	$(LIBM)
+	$(DL_LIBS)
 
 src_nm_iface_helper_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"

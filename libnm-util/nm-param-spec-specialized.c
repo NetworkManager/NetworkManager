@@ -30,7 +30,6 @@ struct _NMParamSpecSpecialized {
 };
 
 #include <string.h>
-#include <math.h>
 #include <netinet/in.h>
 #include <dbus/dbus-glib.h>
 
@@ -157,15 +156,19 @@ _gvalues_compare_fixed (const GValue *value1, const GValue *value2)
 	case G_TYPE_FLOAT: {
 		gfloat val1 = g_value_get_float (value1);
 		gfloat val2 = g_value_get_float (value2);
+		float diff = val1 - val2;
+
 		/* Can't use == or != here due to inexactness of FP */
-		if (fabsf (val1 - val2) > FLOAT_FACTOR)
+		if (diff > FLOAT_FACTOR || diff < -FLOAT_FACTOR)
 			ret = val1 < val2 ? -1 : val1 > val2;
 		break;
 	}
 	case G_TYPE_DOUBLE: {
 		gdouble val1 = g_value_get_double (value1);
 		gdouble val2 = g_value_get_double (value2);
-		if (fabs (val1 - val2) > FLOAT_FACTOR)
+		double diff = val1 - val2;
+
+		if (diff > FLOAT_FACTOR || diff < -FLOAT_FACTOR)
 			ret = val1 < val2 ? -1 : val1 > val2;
 		break;
 	}

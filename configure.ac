@@ -275,11 +275,6 @@ else
 fi
 
 dnl
-dnl Checks for libm - needed for pow()
-dnl
-LT_LIB_M
-
-dnl
 dnl Checks for libdl - on certain platforms its part of libc
 dnl
 AC_SEARCH_LIBS([dlopen], [dl dld], [], [ac_cv_search_dlopen=])

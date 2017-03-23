@@ -27,7 +27,6 @@
 #include <sys/ioctl.h>
 #include <net/ethernet.h>
 #include <unistd.h>
-#include <math.h>
 #include <netlink/netlink.h>
 #include <netlink/msg.h>
 #include <linux/nl80211.h>

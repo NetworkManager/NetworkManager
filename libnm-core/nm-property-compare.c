@@ -23,7 +23,6 @@
 #include "nm-default.h"
 
 #include <string.h>
-#include <math.h>
 #include <netinet/in.h>
 
 #include "nm-property-compare.h"

@@ -26,7 +26,6 @@
 #include <sys/ioctl.h>
 #include <net/ethernet.h>
 #include <unistd.h>
-#include <math.h>
 
 #include "wifi-utils-private.h"
 #include "wifi-utils-wext.h"
@@ -79,7 +78,7 @@ struct iw_range_with_scan_capa
 	} G_STMT_END
 
 static guint32
-iw_freq_to_uint32 (struct iw_freq *freq)
+iw_freq_to_uint32 (const struct iw_freq *freq)
 {
 	if (freq->e == 0) {
 		/* Some drivers report channel not frequency.  Convert to a
@@ -90,8 +89,7 @@ iw_freq_to_uint32 (struct iw_freq *freq)
 		else if (freq->m == 14)
 			return 2484;
 	}
-
-	return (guint32) (((double) freq->m) * pow (10, freq->e) / 1000000);
+	return (guint32) ((((double) freq->m) * nm_utils_10pow (freq->e)) / 1000000.0);
 }
 
 static void
