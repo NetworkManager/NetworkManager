@@ -2052,6 +2052,7 @@ EXTRA_DIST += \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-dynamic-wep-leap \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-dynamic-wep-leap \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-infiniband \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-eth-type \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-main \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-slave \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-slave-ib \
