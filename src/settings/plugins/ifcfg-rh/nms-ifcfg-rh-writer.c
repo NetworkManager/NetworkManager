@@ -1029,11 +1029,11 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		int len = g_strv_length ((char **)s390_subchannels);
 
 		tmp = NULL;
-	    if (len == 2) {
-		    tmp = g_strdup_printf ("%s,%s", s390_subchannels[0], s390_subchannels[1]);
-	    } else if (len == 3) {
-		    tmp = g_strdup_printf ("%s,%s,%s", s390_subchannels[0], s390_subchannels[1],
-		                           s390_subchannels[2]);
+		if (len == 2) {
+			tmp = g_strdup_printf ("%s,%s", s390_subchannels[0], s390_subchannels[1]);
+		} else if (len == 3) {
+			tmp = g_strdup_printf ("%s,%s,%s", s390_subchannels[0], s390_subchannels[1],
+			                       s390_subchannels[2]);
 		}
 		svSetValueStr (ifcfg, "SUBCHANNELS", tmp);
 		g_free (tmp);
@@ -1781,7 +1781,7 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 		g_string_free (str, TRUE);
 	}
 
-	svSetValueStr (ifcfg, "ZONE", nm_setting_connection_get_zone(s_con));
+	svSetValueStr (ifcfg, "ZONE", nm_setting_connection_get_zone (s_con));
 
 	svSetValueStr (ifcfg, "MASTER_UUID", NULL);
 	svSetValueStr (ifcfg, "MASTER", NULL);
@@ -1944,7 +1944,7 @@ write_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError 
 		return TRUE;
 	}
 
-	route_items = g_malloc0 (sizeof (char*) * (num + 1));
+	route_items = g_malloc0 (sizeof (char *) * (num + 1));
 	for (i = 0; i < num; i++) {
 		gs_free char *options = NULL;
 
@@ -2345,7 +2345,7 @@ write_ip4_aliases (NMConnection *connection, char *base_ifcfg_path)
 {
 	NMSettingIPConfig *s_ip4;
 	gs_free char *base_ifcfg_dir = NULL, *base_ifcfg_name = NULL;
-	const char*base_name;
+	const char *base_name;
 	int i, num, base_ifcfg_name_len, base_name_len;
 	GDir *dir;
 
@@ -2620,7 +2620,7 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 
 	/* handle IPV6_DEFROUTE */
 	/* IPV6_DEFROUTE has the opposite meaning from 'never-default' */
-	if (nm_setting_ip_config_get_never_default(s_ip6))
+	if (nm_setting_ip_config_get_never_default (s_ip6))
 		svSetValueStr (ifcfg, "IPV6_DEFROUTE", "no");
 	else
 		svSetValueStr (ifcfg, "IPV6_DEFROUTE", "yes");
@@ -2642,7 +2642,7 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	/* IPv6 Privacy Extensions */
 	svUnsetValue (ifcfg, "IPV6_PRIVACY");
 	svUnsetValue (ifcfg, "IPV6_PRIVACY_PREFER_PUBLIC_IP");
-	switch (nm_setting_ip6_config_get_ip6_privacy (NM_SETTING_IP6_CONFIG (s_ip6))){
+	switch (nm_setting_ip6_config_get_ip6_privacy (NM_SETTING_IP6_CONFIG (s_ip6))) {
 	case NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED:
 		svSetValueStr (ifcfg, "IPV6_PRIVACY", "no");
 	break;

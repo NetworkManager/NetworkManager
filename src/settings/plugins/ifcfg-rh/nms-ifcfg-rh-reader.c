@@ -328,7 +328,7 @@ _numbered_tag (char *buf, gsize buf_len, const char *tag_name, int which)
 static gboolean
 is_any_ip4_address_defined (shvarFile *ifcfg, int *idx)
 {
-	int i, ignore, *ret_idx;;
+	int i, ignore, *ret_idx;
 
 	ret_idx = idx ? idx : &ignore;
 
@@ -453,9 +453,9 @@ parse_route_options (NMIPRoute *route, int family, const char *line, GError **er
 	GRegex *regex = NULL;
 	GMatchInfo *match_info = NULL;
 	gboolean success = FALSE;
-	char *metrics[] = { NM_IP_ROUTE_ATTRIBUTE_WINDOW, NM_IP_ROUTE_ATTRIBUTE_CWND,
-	                    NM_IP_ROUTE_ATTRIBUTE_INITCWND , NM_IP_ROUTE_ATTRIBUTE_INITRWND,
-	                    NM_IP_ROUTE_ATTRIBUTE_MTU , NULL };
+	static const char *metrics[] = { NM_IP_ROUTE_ATTRIBUTE_WINDOW, NM_IP_ROUTE_ATTRIBUTE_CWND,
+	                                 NM_IP_ROUTE_ATTRIBUTE_INITCWND, NM_IP_ROUTE_ATTRIBUTE_INITRWND,
+	                                 NM_IP_ROUTE_ATTRIBUTE_MTU, NULL };
 	char buffer[1024];
 	int i;
 
@@ -2089,7 +2089,7 @@ read_dcb_percent_array (shvarFile *ifcfg,
 		return FALSE;
 	}
 
-	return TRUE;;
+	return TRUE;
 }
 
 static gboolean
@@ -2696,7 +2696,7 @@ eap_tls_reader (const char *eap_method,
 	const char *cli_cert_pw_flags_prop = phase2 ? NM_SETTING_802_1X_PHASE2_CLIENT_CERT_PASSWORD_FLAGS : NM_SETTING_802_1X_CLIENT_CERT_PASSWORD_FLAGS;
 	const char *pk_key = phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY" : "IEEE_8021X_PRIVATE_KEY";
 	const char *pk_pw_key = phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD": "IEEE_8021X_PRIVATE_KEY_PASSWORD";
-	const char *pk_pw_flags_key = phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD_FLAGS": "IEEE_8021X_PRIVATE_KEY_PASSWORD_FLAGS";
+	const char *pk_pw_flags_key = phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD_FLAGS" : "IEEE_8021X_PRIVATE_KEY_PASSWORD_FLAGS";
 	const char *pk_pw_flags_prop = phase2 ? NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS : NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS;
 	NMSettingSecretFlags flags;
 	NMSetting8021xCKScheme scheme;
@@ -3033,7 +3033,7 @@ eap_fast_reader (const char *eap_method,
 	char *fast_provisioning = NULL;
 	char *lower;
 	char **list = NULL, **iter;
-	const char* pac_prov_str;
+	const char *pac_prov_str;
 	gboolean allow_unauth = FALSE, allow_auth = FALSE;
 	gboolean success = FALSE;
 
@@ -3125,12 +3125,12 @@ done:
 
 typedef struct {
 	const char *method;
-	gboolean (*reader)(const char *eap_method,
-	                   shvarFile *ifcfg,
-	                   shvarFile *keys,
-	                   NMSetting8021x *s_8021x,
-	                   gboolean phase2,
-	                   GError **error);
+	gboolean (*reader) (const char *eap_method,
+	                    shvarFile *ifcfg,
+	                    shvarFile *keys,
+	                    NMSetting8021x *s_8021x,
+	                    gboolean phase2,
+	                    GError **error);
 	gboolean wifi_phase2_only;
 } EAPReader;
 
@@ -3232,7 +3232,7 @@ fill_8021x (shvarFile *ifcfg,
 			found = TRUE;
 			break;
 
-		next:
+next:
 			eap++;
 		}
 
@@ -4417,7 +4417,7 @@ make_bond_setting (shvarFile *ifcfg,
 				if (keys && *keys) {
 					key = *keys;
 					val = *(keys + 1);
-					if (val && strlen(key) && strlen(val))
+					if (val && key[0] && val[0])
 						handle_bond_option (s_bond, key, val);
 				}
 
@@ -4593,23 +4593,23 @@ handle_bridge_option (NMSetting *setting,
 	guint32 u = 0;
 
 	if (!strcmp (key, "priority")) {
-		if (stp == FALSE) {
+		if (stp == FALSE)
 			PARSE_WARNING ("'priority' invalid when STP is disabled");
-		} else if (get_uint (value, &u))
+		else if (get_uint (value, &u))
 			g_object_set (setting, NM_SETTING_BRIDGE_PRIORITY, u, NULL);
 		else
 			PARSE_WARNING ("invalid priority value '%s'", value);
 	} else if (!strcmp (key, "hello_time")) {
-		if (stp == FALSE) {
+		if (stp == FALSE)
 			PARSE_WARNING ("'hello_time' invalid when STP is disabled");
-		} else if (get_uint (value, &u))
+		else if (get_uint (value, &u))
 			g_object_set (setting, NM_SETTING_BRIDGE_HELLO_TIME, u, NULL);
 		else
 			PARSE_WARNING ("invalid hello_time value '%s'", value);
 	} else if (!strcmp (key, "max_age")) {
-		if (stp == FALSE) {
+		if (stp == FALSE)
 			PARSE_WARNING ("'max_age' invalid when STP is disabled");
-		} else if (get_uint (value, &u))
+		else if (get_uint (value, &u))
 			g_object_set (setting, NM_SETTING_BRIDGE_MAX_AGE, u, NULL);
 		else
 			PARSE_WARNING ("invalid max_age value '%s'", value);
@@ -4645,7 +4645,7 @@ handle_bridging_opts (NMSetting *setting,
 			if (keys && *keys) {
 				key = *keys;
 				val = *(keys + 1);
-				if (val && strlen(key) && strlen(val))
+				if (val && strlen (key) && strlen (val))
 					func (setting, stp, key, val);
 			}
 
@@ -4751,7 +4751,7 @@ bridge_connection_from_ifcfg (const char *file,
 		g_object_unref (connection);
 		return NULL;
 	}
-	nm_connection_add_setting (connection, bridge_setting);	
+	nm_connection_add_setting (connection, bridge_setting);
 
 	return connection;
 }

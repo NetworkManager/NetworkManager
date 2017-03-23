@@ -45,8 +45,9 @@ check_rpm_temp_suffix (const char *path)
 
 	/* Matches *;[a-fA-F0-9]{8}; used by rpm */
 	ptr = strrchr (path, ';');
-	if (ptr && (strspn (ptr + 1, "abcdefABCDEF0123456789") == 8)
-	    && (! ptr[9]))
+	if (   ptr
+	    && strspn (ptr + 1, "abcdefABCDEF0123456789") == 8
+	    && !ptr[9])
 		return TRUE;
 	return FALSE;
 }
