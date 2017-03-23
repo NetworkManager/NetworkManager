@@ -517,8 +517,8 @@ nm_core_enum_types_sources = $(libnm_core_lib_h_pub_real)
 
 nm_core_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\n'
 
-$(libnm_core_lib_h_pub_mkenums):                                            libnm-core/.dirstamp
-$(libnm_core_lib_c_mkenums):                                                libnm-core/.dirstamp
+libnm-core/nm-core-enum-types.h.stamp:                                      libnm-core/.dirstamp
+libnm-core/nm-core-enum-types.c.stamp:                                      libnm-core/.dirstamp
 
 $(dispatcher_libnm_dispatcher_core_la_OBJECTS):                             $(libnm_core_lib_h_pub_mkenums)
 $(dispatcher_nm_dispatcher_OBJECTS):                                        $(libnm_core_lib_h_pub_mkenums)
