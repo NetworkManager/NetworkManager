@@ -7527,6 +7527,28 @@ test_read_bond_main (void)
 }
 
 static void
+test_read_bond_eth_type (void)
+{
+	NMConnection *connection;
+	NMSettingBond *s_bond;
+
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-bond-eth-type",
+	                                    NULL, TYPE_ETHERNET,NULL);
+
+	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "bond0");
+
+	/* ===== Bonding SETTING ===== */
+
+	s_bond = nm_connection_get_setting_bond (connection);
+	g_assert (s_bond);
+
+	g_assert_cmpstr (nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_MIIMON), ==, "213");
+	g_assert_cmpstr (nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_LACP_RATE), ==, "1");
+
+	g_object_unref (connection);
+}
+
+static void
 test_write_bond_main (void)
 {
 	nmtst_auto_unlinkfile char *testfile = NULL;
@@ -9328,6 +9350,7 @@ int main (int argc, char **argv)
 	g_test_add_data_func (TPATH "fcoe/write-vn2vn", (gpointer) NM_SETTING_DCB_FCOE_MODE_VN2VN, test_write_fcoe_mode);
 
 	g_test_add_func (TPATH "bond/read-master", test_read_bond_main);
+	g_test_add_func (TPATH "bond/read-master-eth-type", test_read_bond_eth_type);
 	g_test_add_func (TPATH "bond/read-slave", test_read_bond_slave);
 	g_test_add_func (TPATH "bond/read-slave-ib", test_read_bond_slave_ib);
 	g_test_add_func (TPATH "bond/write-master", test_write_bond_main);

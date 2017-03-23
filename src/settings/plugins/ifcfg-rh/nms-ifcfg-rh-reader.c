@@ -5352,6 +5352,16 @@ connection_from_file_full (const char *filename,
 		}
 	}
 
+	if (nm_streq0 (type, TYPE_ETHERNET)) {
+		gs_free char *bond_options = NULL;
+
+		if (svGetValueStr (parsed, "BONDING_OPTS", &bond_options)) {
+			/* initscripts consider these as bond masters */
+			g_free (type);
+			type = g_strdup (TYPE_BOND);
+		}
+	}
+
 	if (svGetValueBoolean (parsed, "BONDING_MASTER", FALSE) &&
 	    strcasecmp (type, TYPE_BOND)) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
