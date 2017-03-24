@@ -97,7 +97,7 @@ in_addr_t nm_utils_ip4_address_clear_host_address (in_addr_t addr, guint8 plen);
 const struct in6_addr *nm_utils_ip6_address_clear_host_address (struct in6_addr *dst, const struct in6_addr *src, guint8 plen);
 gboolean nm_utils_ip6_address_same_prefix (const struct in6_addr *addr_a, const struct in6_addr *addr_b, guint8 plen);
 
-double nm_utils_10pow (gint16 e);
+double nm_utils_exp10 (gint16 e);
 
 /**
  * nm_utils_ip6_route_metric_normalize:

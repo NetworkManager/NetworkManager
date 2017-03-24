@@ -89,7 +89,7 @@ iw_freq_to_uint32 (const struct iw_freq *freq)
 		else if (freq->m == 14)
 			return 2484;
 	}
-	return (guint32) ((((double) freq->m) * nm_utils_10pow (freq->e)) / 1000000.0);
+	return (guint32) ((((double) freq->m) * nm_utils_exp10 (freq->e)) / 1000000.0);
 }
 
 static void

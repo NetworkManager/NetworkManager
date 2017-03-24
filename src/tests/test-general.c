@@ -1657,7 +1657,7 @@ test_stable_id_generated_complete (void)
 /*****************************************************************************/
 
 static void
-test_nm_utils_10pow (void)
+test_nm_utils_exp10 (void)
 {
 #define FLOAT_CMP(a, b) \
 	G_STMT_START { \
@@ -1677,28 +1677,28 @@ test_nm_utils_10pow (void)
 		} \
 	} G_STMT_END
 
-	FLOAT_CMP (nm_utils_10pow (G_MININT16),  0.0);
-	FLOAT_CMP (nm_utils_10pow (-310),        0.0);
-	FLOAT_CMP (nm_utils_10pow (-309),        0.0);
-	FLOAT_CMP (nm_utils_10pow (-308),        1e-308);
-	FLOAT_CMP (nm_utils_10pow (-307),        1e-307);
-	FLOAT_CMP (nm_utils_10pow (-1),          1e-1);
-	FLOAT_CMP (nm_utils_10pow (-2),          1e-2);
-	FLOAT_CMP (nm_utils_10pow (0),           1e0);
-	FLOAT_CMP (nm_utils_10pow (1),           1e1);
-	FLOAT_CMP (nm_utils_10pow (2),           1e2);
-	FLOAT_CMP (nm_utils_10pow (3),           1e3);
-	FLOAT_CMP (nm_utils_10pow (4),           1e4);
-	FLOAT_CMP (nm_utils_10pow (5),           1e5);
-	FLOAT_CMP (nm_utils_10pow (6),           1e6);
-	FLOAT_CMP (nm_utils_10pow (7),           1e7);
-	FLOAT_CMP (nm_utils_10pow (122),         1e122);
-	FLOAT_CMP (nm_utils_10pow (200),         1e200);
-	FLOAT_CMP (nm_utils_10pow (307),         1e307);
-	FLOAT_CMP (nm_utils_10pow (308),         1e308);
-	FLOAT_CMP (nm_utils_10pow (309),         INFINITY);
-	FLOAT_CMP (nm_utils_10pow (310),         INFINITY);
-	FLOAT_CMP (nm_utils_10pow (G_MAXINT16),  INFINITY);
+	FLOAT_CMP (nm_utils_exp10 (G_MININT16),  0.0);
+	FLOAT_CMP (nm_utils_exp10 (-310),        0.0);
+	FLOAT_CMP (nm_utils_exp10 (-309),        0.0);
+	FLOAT_CMP (nm_utils_exp10 (-308),        1e-308);
+	FLOAT_CMP (nm_utils_exp10 (-307),        1e-307);
+	FLOAT_CMP (nm_utils_exp10 (-1),          1e-1);
+	FLOAT_CMP (nm_utils_exp10 (-2),          1e-2);
+	FLOAT_CMP (nm_utils_exp10 (0),           1e0);
+	FLOAT_CMP (nm_utils_exp10 (1),           1e1);
+	FLOAT_CMP (nm_utils_exp10 (2),           1e2);
+	FLOAT_CMP (nm_utils_exp10 (3),           1e3);
+	FLOAT_CMP (nm_utils_exp10 (4),           1e4);
+	FLOAT_CMP (nm_utils_exp10 (5),           1e5);
+	FLOAT_CMP (nm_utils_exp10 (6),           1e6);
+	FLOAT_CMP (nm_utils_exp10 (7),           1e7);
+	FLOAT_CMP (nm_utils_exp10 (122),         1e122);
+	FLOAT_CMP (nm_utils_exp10 (200),         1e200);
+	FLOAT_CMP (nm_utils_exp10 (307),         1e307);
+	FLOAT_CMP (nm_utils_exp10 (308),         1e308);
+	FLOAT_CMP (nm_utils_exp10 (309),         INFINITY);
+	FLOAT_CMP (nm_utils_exp10 (310),         INFINITY);
+	FLOAT_CMP (nm_utils_exp10 (G_MAXINT16),  INFINITY);
 }
 
 /*****************************************************************************/
@@ -1716,7 +1716,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/general/nm_utils_ip6_address_same_prefix", test_nm_utils_ip6_address_same_prefix);
 	g_test_add_func ("/general/nm_utils_log_connection_diff", test_nm_utils_log_connection_diff);
 
-	g_test_add_func ("/general/10pow", test_nm_utils_10pow);
+	g_test_add_func ("/general/exp10", test_nm_utils_exp10);
 
 	g_test_add_func ("/general/connection-match/basic", test_connection_match_basic);
 	g_test_add_func ("/general/connection-match/ip6-method", test_connection_match_ip6_method);
