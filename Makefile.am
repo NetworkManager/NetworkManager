@@ -3519,6 +3519,8 @@ nodist_libnm_util_libnm_util_la_SOURCES = \
 	$(libnm_util_lib_h_pub_mkenums) \
 	$(libnm_util_lib_c_mkenums)
 
+$(libnm_util_libnm_util_la_OBJECTS): $(libnm_util_lib_h_pub_mkenums)
+
 libnm_util_libnm_util_la_CPPFLAGS = $(libnm_util_cppflags)
 
 
