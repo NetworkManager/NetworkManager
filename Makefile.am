@@ -3103,9 +3103,9 @@ endif
 
 clients_cli_settings_doc_c = clients/cli/settings-docs.c
 if HAVE_INTROSPECTION
-$(clients_cli_settings_doc_c): clients/cli/.dirstamp
 $(clients_cli_settings_doc_c): clients/cli/settings-docs.xsl libnm/nm-property-docs.xml
-	$(AM_V_GEN) $(XSLTPROC) --output $@ "$(srcdir)/clients/cli/settings-docs.xsl" "$(builddir)/libnm/nm-property-docs.xml"
+	$(AM_V_GEN) $(XSLTPROC) --output $@ $< $(word 2,$^)
+$(clients_cli_settings_doc_c): clients/cli/.dirstamp
 DISTCLEANFILES += $(clients_cli_settings_doc_c)
 else
 $(clients_cli_settings_doc_c):
