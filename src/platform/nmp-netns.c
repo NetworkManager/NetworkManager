@@ -75,7 +75,7 @@ __ns_types_to_str (int ns_types, int ns_types_already_set, char *buf, gsize len)
             NMPNetns *_netns = (netns); \
             char _sbuf[20]; \
             \
-            _nm_log (_level, _NMLOG_DOMAIN, 0, \
+            _nm_log (_level, _NMLOG_DOMAIN, 0, NULL, NULL, \
                      "%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
                      _NMLOG_PREFIX_NAME, \
                      (_netns ? nm_sprintf_buf (_sbuf, "[%p]", _netns) : "") \

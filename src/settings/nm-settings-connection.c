@@ -131,14 +131,13 @@ G_DEFINE_TYPE_WITH_CODE (NMSettingsConnection, nm_settings_connection, NM_TYPE_E
         if (nm_logging_enabled (__level, _NMLOG_DOMAIN)) { \
             char __prefix[128]; \
             const char *__p_prefix = _NMLOG_PREFIX_NAME; \
+            const char *__uuid = (self) ? nm_settings_connection_get_uuid (self) : NULL; \
             \
             if (self) { \
-                const char *__uuid = nm_settings_connection_get_uuid (self); \
-                \
                 g_snprintf (__prefix, sizeof (__prefix), "%s[%p%s%s]", _NMLOG_PREFIX_NAME, self, __uuid ? "," : "", __uuid ? __uuid : ""); \
                 __p_prefix = __prefix; \
             } \
-            _nm_log (__level, _NMLOG_DOMAIN, 0, \
+            _nm_log (__level, _NMLOG_DOMAIN, 0, NULL, __uuid, \
                      "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
                      __p_prefix _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
         } \

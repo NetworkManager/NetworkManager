@@ -94,6 +94,7 @@ static struct Global {
 	NMLogLevel log_level;
 	bool uses_syslog:1;
 	bool syslog_identifier_initialized:1;
+	bool debug_stderr:1;
 	const char *prefix;
 	const char *syslog_identifier;
 	enum {
@@ -593,6 +594,8 @@ _nm_log_impl (const char *file,
               NMLogLevel level,
               NMLogDomain domain,
               int error,
+              const char *ifname,
+              const char *conn_uuid,
               const char *fmt,
               ...)
 {
@@ -630,6 +633,9 @@ _nm_log_impl (const char *file,
 
 	g_get_current_time (&tv);
 
+	if (global.debug_stderr)
+		g_printerr (MESSAGE_FMT"\n", MESSAGE_ARG (global, tv, msg));
+
 	switch (global.log_backend) {
 #if SYSTEMD_JOURNAL
 	case LOG_BACKEND_JOURNAL:
@@ -638,7 +644,7 @@ _nm_log_impl (const char *file,
 #define _NUM_MAX_FIELDS_SYSLOG_FACILITY 10
 			struct iovec iov_data[12 + _NUM_MAX_FIELDS_SYSLOG_FACILITY];
 			struct iovec *iov = iov_data;
-			gpointer iov_free_data[3];
+			gpointer iov_free_data[5];
 			gpointer *iov_free = iov_free_data;
 			nm_auto_free_gstring GString *s_domain_all = NULL;
 
@@ -700,6 +706,10 @@ _nm_log_impl (const char *file,
 			_iovec_set_format_a (iov++, 60, "TIMESTAMP_BOOTTIME=%lld.%06lld", (long long) (boottime / NM_UTILS_NS_PER_SECOND), (long long) ((boottime % NM_UTILS_NS_PER_SECOND) / 1000));
 			if (error != 0)
 				_iovec_set_format_a (iov++, 30, "ERRNO=%d", error);
+			if (ifname)
+				_iovec_set_format (iov++, iov_free++, "NM_DEVICE=%s", ifname);
+			if (conn_uuid)
+				_iovec_set_format (iov++, iov_free++, "NM_CONNECTION=%s", conn_uuid);
 
 			nm_assert (iov <= &iov_data[G_N_ELEMENTS (iov_data)]);
 			nm_assert (iov_free <= &iov_free_data[G_N_ELEMENTS (iov_free_data)]);
@@ -817,7 +827,7 @@ nm_logging_set_prefix (const char *format, ...)
 }
 
 void
-nm_logging_syslog_openlog (const char *logging_backend)
+nm_logging_syslog_openlog (const char *logging_backend, gboolean debug)
 {
 	if (global.log_backend != LOG_BACKEND_GLIB)
 		g_return_if_reached ();
@@ -825,21 +835,21 @@ nm_logging_syslog_openlog (const char *logging_backend)
 	if (!logging_backend)
 		logging_backend = ""NM_CONFIG_DEFAULT_LOGGING_BACKEND;
 
-	if (strcmp (logging_backend, "debug") == 0) {
-		global.log_backend = LOG_BACKEND_SYSLOG;
-		openlog (syslog_identifier_domain (&global), LOG_CONS | LOG_PERROR | LOG_PID, LOG_USER);
 #if SYSTEMD_JOURNAL
-	} else if (strcmp (logging_backend, "syslog") != 0) {
+	if (strcmp (logging_backend, "syslog") != 0) {
 		global.log_backend = LOG_BACKEND_JOURNAL;
 		global.uses_syslog = TRUE;
+		global.debug_stderr = debug;
 
 		/* ensure we read a monotonic timestamp. Reading the timestamp the first
 		 * time causes a logging message. We don't want to do that during _nm_log_impl. */
 		nm_utils_get_monotonic_timestamp_ns ();
+	} else
 #endif
-	} else {
+	{
 		global.log_backend = LOG_BACKEND_SYSLOG;
 		global.uses_syslog = TRUE;
+		global.debug_stderr = debug;
 		openlog (syslog_identifier_domain (&global), LOG_PID, LOG_DAEMON);
 	}
 

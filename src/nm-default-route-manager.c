@@ -97,7 +97,7 @@ NM_DEFINE_SINGLETON_GETTER (NMDefaultRouteManager, nm_default_route_manager_get,
         if (nm_logging_enabled (__level, __domain)) { \
             char __prefix_buf[100]; \
             \
-            _nm_log (__level, __domain, 0, \
+            _nm_log (__level, __domain, 0, NULL, NULL, \
                      "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
                      self != singleton_instance \
                         ? nm_sprintf_buf (__prefix_buf, "%s%c[%p]", \
@@ -123,7 +123,7 @@ NM_DEFINE_SINGLETON_GETTER (NMDefaultRouteManager, nm_default_route_manager_get,
             guint __entry_idx = (entry_idx); \
             const Entry *const __entry = (entry); \
             \
-            _nm_log (__level, __domain, 0, \
+            _nm_log (__level, __domain, 0, NULL, NULL, \
                      "%s: entry[%u/%s:%p:%s:%chas:%csync]: "_NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
                      self != singleton_instance \
                         ? nm_sprintf_buf (__prefix_buf, "%s%c[%p]", \

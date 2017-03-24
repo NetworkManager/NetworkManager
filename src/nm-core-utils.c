@@ -438,11 +438,11 @@ nm_utils_modprobe (GError **error, gboolean suppress_error_logging, const char *
 
 	nm_log_dbg (LOGD_CORE, "modprobe: '%s'", ARGV_TO_STR (argv));
 	if (!g_spawn_sync (NULL, (char **) argv->pdata, NULL, 0, NULL, NULL, &std_out, &std_err, &exit_status, &local)) {
-		nm_log (llevel, LOGD_CORE, "modprobe: '%s' failed: %s", ARGV_TO_STR (argv), local->message);
+		nm_log (llevel, LOGD_CORE, NULL, NULL, "modprobe: '%s' failed: %s", ARGV_TO_STR (argv), local->message);
 		g_propagate_error (error, local);
 		return -1;
 	} else if (exit_status != 0) {
-		nm_log (llevel, LOGD_CORE, "modprobe: '%s' exited with error %d%s%s%s%s%s%s", ARGV_TO_STR (argv), exit_status,
+		nm_log (llevel, LOGD_CORE, NULL, NULL, "modprobe: '%s' exited with error %d%s%s%s%s%s%s", ARGV_TO_STR (argv), exit_status,
 		        std_out&&*std_out ? " (" : "", std_out&&*std_out ? _trunk_first_line (std_out) : "", std_out&&*std_out ? ")" : "",
 		        std_err&&*std_err ? " (" : "", std_err&&*std_err ? _trunk_first_line (std_err) : "", std_err&&*std_err ? ")" : "");
 	}
@@ -2431,9 +2431,9 @@ nm_utils_log_connection_diff (NMConnection *connection, NMConnection *diff_base,
 	connection_diff_are_same = nm_connection_diff (connection, diff_base, NM_SETTING_COMPARE_FLAG_EXACT | NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT, &connection_diff);
 	if (connection_diff_are_same) {
 		if (diff_base)
-			nm_log (level, domain, "%sconnection '%s' (%p/%s and %p/%s): no difference", prefix, name, connection, G_OBJECT_TYPE_NAME (connection), diff_base, G_OBJECT_TYPE_NAME (diff_base));
+			nm_log (level, domain, NULL, NULL, "%sconnection '%s' (%p/%s and %p/%s): no difference", prefix, name, connection, G_OBJECT_TYPE_NAME (connection), diff_base, G_OBJECT_TYPE_NAME (diff_base));
 		else
-			nm_log (level, domain, "%sconnection '%s' (%p/%s): no properties set", prefix, name, connection, G_OBJECT_TYPE_NAME (connection));
+			nm_log (level, domain, NULL, NULL, "%sconnection '%s' (%p/%s): no properties set", prefix, name, connection, G_OBJECT_TYPE_NAME (connection));
 		g_assert (!connection_diff);
 		return;
 	}
@@ -2469,16 +2469,16 @@ nm_utils_log_connection_diff (NMConnection *connection, NMConnection *diff_base,
 				const char *path = nm_connection_get_path (connection);
 
 				if (diff_base) {
-					nm_log (level, domain, "%sconnection '%s' (%p/%s < %p/%s)%s%s%s:", prefix, name, connection, G_OBJECT_TYPE_NAME (connection), diff_base, G_OBJECT_TYPE_NAME (diff_base),
+					nm_log (level, domain, NULL, NULL, "%sconnection '%s' (%p/%s < %p/%s)%s%s%s:", prefix, name, connection, G_OBJECT_TYPE_NAME (connection), diff_base, G_OBJECT_TYPE_NAME (diff_base),
 					        NM_PRINT_FMT_QUOTED (path, " [", path, "]", ""));
 				} else {
-					nm_log (level, domain, "%sconnection '%s' (%p/%s):%s%s%s", prefix, name, connection, G_OBJECT_TYPE_NAME (connection),
+					nm_log (level, domain, NULL, NULL, "%sconnection '%s' (%p/%s):%s%s%s", prefix, name, connection, G_OBJECT_TYPE_NAME (connection),
 					        NM_PRINT_FMT_QUOTED (path, " [", path, "]", ""));
 				}
 				print_header = FALSE;
 
 				if (!nm_connection_verify (connection, &err_verify)) {
-					nm_log (level, domain, "%sconnection %p does not verify: %s", prefix, connection, err_verify->message);
+					nm_log (level, domain, NULL, NULL, "%sconnection %p does not verify: %s", prefix, connection, err_verify->message);
 					g_clear_error (&err_verify);
 				}
 			}
@@ -2491,21 +2491,21 @@ nm_utils_log_connection_diff (NMConnection *connection, NMConnection *diff_base,
 						g_string_printf (str1, "*missing* < %p", setting_data->diff_base_setting);
 					else
 						g_string_printf (str1, "%p < *missing*", setting_data->setting);
-					nm_log (level, domain, "%s%"_NM_LOG_ALIGN"s [ %s ]", prefix, setting_data->name, str1->str);
+					nm_log (level, domain, NULL, NULL, "%s%"_NM_LOG_ALIGN"s [ %s ]", prefix, setting_data->name, str1->str);
 				} else
-					nm_log (level, domain, "%s%"_NM_LOG_ALIGN"s [ %p ]", prefix, setting_data->name, setting_data->setting);
+					nm_log (level, domain, NULL, NULL, "%s%"_NM_LOG_ALIGN"s [ %p ]", prefix, setting_data->name, setting_data->setting);
 				print_setting_header = FALSE;
 			}
 			g_string_printf (str1, "%s.%s", setting_data->name, item->item_name);
 			switch (item->diff_result & (NM_SETTING_DIFF_RESULT_IN_A | NM_SETTING_DIFF_RESULT_IN_B)) {
 				case NM_SETTING_DIFF_RESULT_IN_B:
-					nm_log (level, domain, "%s%"_NM_LOG_ALIGN"s < %s", prefix, str1->str, str_diff ? str_diff : "NULL");
+					nm_log (level, domain, NULL, NULL, "%s%"_NM_LOG_ALIGN"s < %s", prefix, str1->str, str_diff ? str_diff : "NULL");
 					break;
 				case NM_SETTING_DIFF_RESULT_IN_A:
-					nm_log (level, domain, "%s%"_NM_LOG_ALIGN"s = %s", prefix, str1->str, str_conn ? str_conn : "NULL");
+					nm_log (level, domain, NULL, NULL, "%s%"_NM_LOG_ALIGN"s = %s", prefix, str1->str, str_conn ? str_conn : "NULL");
 					break;
 				default:
-					nm_log (level, domain, "%s%"_NM_LOG_ALIGN"s = %s < %s", prefix, str1->str, str_conn ? str_conn : "NULL", str_diff ? str_diff : "NULL");
+					nm_log (level, domain, NULL, NULL, "%s%"_NM_LOG_ALIGN"s = %s < %s", prefix, str1->str, str_conn ? str_conn : "NULL", str_diff ? str_diff : "NULL");
 					break;
 #undef _NM_LOG_ALIGN
 			}

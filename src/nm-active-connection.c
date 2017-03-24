@@ -121,8 +121,12 @@ static void _set_activation_type (NMActiveConnection *self,
 #define _NMLOG(level, ...) \
     G_STMT_START { \
         char _sbuf[64]; \
+        NMDevice *_device = (self) ? NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->device : NULL; \
+        NMConnection *_applied_connection = _device ? NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->applied_connection : NULL; \
         \
         nm_log ((level), _NMLOG_DOMAIN, \
+                (_device) ? nm_device_get_iface (_device) : NULL, \
+                (_applied_connection) ? nm_connection_get_uuid (_applied_connection) : NULL, \
                 "%s%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
                 _NMLOG_PREFIX_NAME, \
                 self ? nm_sprintf_buf (_sbuf, "[%p]", self) : "" \

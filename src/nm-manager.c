@@ -228,7 +228,7 @@ NM_DEFINE_SINGLETON_INSTANCE (NMManager);
             const NMManager *const __self = (self); \
             char __sbuf[32]; \
             \
-            _nm_log (__level, __domain, 0, \
+            _nm_log (__level, __domain, 0, NULL, NULL, \
                      "%s%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
                      _NMLOG_PREFIX_NAME, \
                      (__self && __self != singleton_instance) \

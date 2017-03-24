@@ -41,7 +41,7 @@
         if (nm_logging_enabled (__level, _NMLOG_DOMAIN)) { \
             const NMPObject *const __obj = (obj); \
             \
-            _nm_log (__level, _NMLOG_DOMAIN, 0, \
+            _nm_log (__level, _NMLOG_DOMAIN, 0, NULL, NULL, \
                      "nmp-object[%p/%s]: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
                      __obj, \
                      (__obj ? NMP_OBJECT_GET_CLASS (__obj)->obj_type_name : "???") \

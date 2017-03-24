@@ -601,7 +601,7 @@ nm_config_data_log (const NMConfigData *self,
 #define _LOG(stream, prefix, ...) \
 	G_STMT_START { \
 		if (!stream) \
-			_nm_log (LOGL_DEBUG, LOGD_CORE, 0, "%s"_NM_UTILS_MACRO_FIRST(__VA_ARGS__)"%s", prefix _NM_UTILS_MACRO_REST (__VA_ARGS__), ""); \
+			_nm_log (LOGL_DEBUG, LOGD_CORE, 0, NULL, NULL, "%s"_NM_UTILS_MACRO_FIRST(__VA_ARGS__)"%s", prefix _NM_UTILS_MACRO_REST (__VA_ARGS__), ""); \
 		else \
 			fprintf (stream, "%s"_NM_UTILS_MACRO_FIRST(__VA_ARGS__)"%s", prefix _NM_UTILS_MACRO_REST (__VA_ARGS__), "\n"); \
 	} G_STMT_END

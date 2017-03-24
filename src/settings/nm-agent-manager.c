@@ -103,7 +103,7 @@ NM_DEFINE_SINGLETON_GETTER (NMAgentManager, nm_agent_manager_get, NM_TYPE_AGENT_
                             nm_secret_agent_get_description (__agent)); \
             } else \
                 __prefix2[0] = '\0'; \
-            _nm_log ((level), (_NMLOG_DOMAIN), 0, \
+            _nm_log ((level), (_NMLOG_DOMAIN), 0, NULL, NULL, \
                      "%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
                      __prefix1, __prefix2 _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
         } \

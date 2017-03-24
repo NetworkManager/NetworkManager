@@ -135,16 +135,12 @@ G_DEFINE_TYPE (NMSupplicantInterface, nm_supplicant_interface, G_TYPE_OBJECT)
 #define _NMLOG(level, ...) \
     G_STMT_START { \
          char _sbuf[64]; \
+         const char *__ifname = self ?  NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->dev : NULL; \
          \
-         nm_log ((level), _NMLOG_DOMAIN, \
+         nm_log ((level), _NMLOG_DOMAIN, __ifname, NULL, \
                  "%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
                  _NMLOG_PREFIX_NAME, \
-                 ((self) \
-                      ? nm_sprintf_buf (_sbuf, \
-                                        "[%p,%s]", \
-                                        (self), \
-                                        NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->dev) \
-                      : "") \
+                 ((self) ? nm_sprintf_buf (_sbuf, "[%p,%s]", (self), __ifname) : "") \
                  _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
     } G_STMT_END
 

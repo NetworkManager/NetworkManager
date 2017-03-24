@@ -60,7 +60,7 @@
 #define _NMLOG_PREFIX_NAME "ifcfg-rh"
 #define _NMLOG(level, ...) \
     G_STMT_START { \
-        nm_log ((level), (_NMLOG_DOMAIN), \
+        nm_log ((level), (_NMLOG_DOMAIN), NULL, NULL, \
                 "%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
                 _NMLOG_PREFIX_NAME": " \
                 _NM_UTILS_MACRO_REST(__VA_ARGS__)); \

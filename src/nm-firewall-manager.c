@@ -118,7 +118,7 @@ _ops_type_to_string (CBInfoOpsType ops_type)
             char __prefix_name[30]; \
             char __prefix_info[64]; \
             \
-            _nm_log ((level), (_NMLOG_DOMAIN), 0, \
+            _nm_log ((level), (_NMLOG_DOMAIN), 0, NULL, NULL, \
                      "%s: %s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
                      (self) != singleton_instance \
                         ? ({ \

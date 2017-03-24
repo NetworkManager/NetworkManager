@@ -22,6 +22,8 @@
 #ifndef __NETWORKMANAGER_LOGGING_H__
 #define __NETWORKMANAGER_LOGGING_H__
 
+#include "nm-core-types.h"
+
 #ifdef __NM_TEST_UTILS_H__
 #error nm-test-utils.h must be included as last header
 #endif
@@ -97,11 +99,11 @@ typedef enum  { /*< skip >*/
 	_LOGL_N, /* the number of logging levels including "OFF" */
 } NMLogLevel;
 
-#define nm_log_err(domain, ...)     nm_log (LOGL_ERR,   (domain), __VA_ARGS__)
-#define nm_log_warn(domain, ...)    nm_log (LOGL_WARN,  (domain), __VA_ARGS__)
-#define nm_log_info(domain, ...)    nm_log (LOGL_INFO,  (domain), __VA_ARGS__)
-#define nm_log_dbg(domain, ...)     nm_log (LOGL_DEBUG, (domain), __VA_ARGS__)
-#define nm_log_trace(domain, ...)   nm_log (LOGL_TRACE, (domain), __VA_ARGS__)
+#define nm_log_err(domain, ...)     nm_log (LOGL_ERR,   (domain),  NULL, NULL, __VA_ARGS__)
+#define nm_log_warn(domain, ...)    nm_log (LOGL_WARN,  (domain),  NULL, NULL, __VA_ARGS__)
+#define nm_log_info(domain, ...)    nm_log (LOGL_INFO,  (domain),  NULL, NULL, __VA_ARGS__)
+#define nm_log_dbg(domain, ...)     nm_log (LOGL_DEBUG, (domain),  NULL, NULL, __VA_ARGS__)
+#define nm_log_trace(domain, ...)   nm_log (LOGL_TRACE, (domain),  NULL, NULL, __VA_ARGS__)
 
 //#define _NM_LOG_FUNC G_STRFUNC
 #define _NM_LOG_FUNC NULL
@@ -109,53 +111,84 @@ typedef enum  { /*< skip >*/
 /* A wrapper for the _nm_log_impl() function that adds call site information.
  * Contrary to nm_log(), it unconditionally calls the function without
  * checking whether logging for the given level and domain is enabled. */
-#define _nm_log(level, domain, error, ...) \
+#define _nm_log(level, domain, error, ifname, con_uuid, ...) \
     G_STMT_START { \
         _nm_log_impl (__FILE__, __LINE__, \
                       _NM_LOG_FUNC, \
                       (level), \
                       (domain), \
                       (error), \
+                      (ifname), \
+                      (con_uuid), \
                       ""__VA_ARGS__); \
     } G_STMT_END
 
 /* nm_log() only evaluates it's argument list after checking
  * whether logging for the given level/domain is enabled.  */
-#define nm_log(level, domain, ...) \
+#define nm_log(level, domain, ifname, con_uuid, ...) \
     G_STMT_START { \
         if (nm_logging_enabled ((level), (domain))) { \
-            _nm_log (level, domain, 0, __VA_ARGS__); \
+            _nm_log (level, domain, 0, ifname, con_uuid, __VA_ARGS__); \
         } \
     } G_STMT_END
 
 
-#define _nm_log_ptr(level, domain, self, prefix, ...) \
-   nm_log ((level), (domain), "%s[%p] " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), (prefix) ?: "", self _NM_UTILS_MACRO_REST(__VA_ARGS__))
+#define _nm_log_ptr(level, domain, ifname, con_uuid, self, prefix, ...) \
+   nm_log ((level), \
+           (domain), \
+           (ifname), \
+           (con_uuid), \
+           "%s[%p] " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+           (prefix) ?: "", \
+           self _NM_UTILS_MACRO_REST(__VA_ARGS__))
 
 /* log a message for an object (with providing a generic @self pointer) */
-#define nm_log_ptr(level, domain, self, prefix, ...) \
+#define nm_log_ptr(level, domain, ifname, con_uuid, self, prefix, ...) \
     G_STMT_START { \
         NM_PRAGMA_WARNING_DISABLE("-Wtautological-compare") \
         if ((level) <= LOGL_DEBUG) { \
-            _nm_log_ptr ((level), (domain), (self), (prefix), __VA_ARGS__); \
+            _nm_log_ptr ((level), \
+                         (domain), \
+                         (ifname), \
+                         (con_uuid), \
+                         (self), \
+                         (prefix), \
+                         __VA_ARGS__); \
         } else { \
             const char *__prefix = (prefix); \
             \
-            nm_log ((level), (domain), "%s%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), __prefix ?: "", __prefix ? " " : "" _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+            nm_log ((level), \
+                    (domain), \
+                    (ifname), \
+                    (con_uuid), \
+                    "%s%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                    __prefix ?: "", \
+                    __prefix ? " " : "" _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
         } \
         NM_PRAGMA_WARNING_REENABLE \
     } G_STMT_END
 
 
-#define _nm_log_obj(level, domain, self, prefix, ...) \
-    _nm_log_ptr ((level), (domain), (self), prefix, __VA_ARGS__)
+#define _nm_log_obj(level, domain, ifname, con_uuid, self, prefix, ...) \
+    _nm_log_ptr ((level), \
+                 (domain), \
+                 (ifname), \
+                 (con_uuid), \
+                 (self), \
+                 prefix, \
+                 __VA_ARGS__)
 
 /* log a message for an object (with providing a @self pointer to a GObject).
  * Contrary to nm_log_ptr(), @self must be a GObject type (or %NULL).
  * As of now, nm_log_obj() is identical to nm_log_ptr(), but we might change that */
-#define nm_log_obj(level, domain, self, prefix, ...) \
-    nm_log_ptr ((level), (domain), (self), prefix, __VA_ARGS__)
-
+#define nm_log_obj(level, domain, ifname, con_uuid, self, prefix, ...) \
+    nm_log_ptr ((level), \
+                (domain), \
+                (ifname), \
+                (con_uuid), \
+                (self), \
+                prefix, \
+                __VA_ARGS__)
 
 void _nm_log_impl (const char *file,
                    guint line,
@@ -163,8 +196,10 @@ void _nm_log_impl (const char *file,
                    NMLogLevel level,
                    NMLogDomain domain,
                    int error,
+                   const char *ifname,
+                   const char *con_uuid,
                    const char *fmt,
-                   ...) _nm_printf (7, 8);
+                   ...) _nm_printf (9, 10);
 
 const char *nm_logging_level_to_string (void);
 const char *nm_logging_domains_to_string (void);
@@ -191,7 +226,7 @@ gboolean nm_logging_setup (const char  *level,
 void nm_logging_set_syslog_identifier (const char *domain);
 void nm_logging_set_prefix (const char *format, ...) _nm_printf (1, 2);
 
-void     nm_logging_syslog_openlog (const char *logging_backend);
+void     nm_logging_syslog_openlog (const char *logging_backend, gboolean debug);
 gboolean nm_logging_syslog_enabled (void);
 
 /*****************************************************************************/
@@ -277,7 +312,7 @@ extern void (*_nm_logging_clear_platform_logging_cache) (void);
 
 #define __NMLOG_DEFAULT(level, domain, prefix, ...) \
 	G_STMT_START { \
-		nm_log ((level), (domain), \
+		nm_log ((level), (domain), NULL, NULL, \
 		        "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
 		        (prefix) \
 		        _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
@@ -285,7 +320,7 @@ extern void (*_nm_logging_clear_platform_logging_cache) (void);
 
 #define __NMLOG_DEFAULT_WITH_ADDR(level, domain, prefix, ...) \
 	G_STMT_START { \
-		nm_log ((level), (domain), \
+		nm_log ((level), (domain), NULL, NULL, \
 		        "%s[%p]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
 		        (prefix), \
 		        (self) \

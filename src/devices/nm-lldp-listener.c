@@ -128,6 +128,8 @@ typedef struct {
             int _ifindex = (self) ? NM_LLDP_LISTENER_GET_PRIVATE (self)->ifindex : 0; \
             \
             _nm_log (_level, _NMLOG_DOMAIN, 0, \
+                     nm_platform_link_get_name (NM_PLATFORM_GET, _ifindex), \
+                     NULL, \
                      "%s%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
                      _NMLOG_PREFIX_NAME, \
                      ((_ifindex > 0) \

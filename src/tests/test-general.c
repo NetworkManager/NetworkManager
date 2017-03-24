@@ -228,7 +228,7 @@ test_nm_utils_log_connection_diff (void)
 	 * early without doing anything. Hence, in the normal testing, this test does nothing.
 	 * It only gets interesting, when run verbosely with NMTST_DEBUG=debug ... */
 
-	nm_log (LOGL_DEBUG, LOGD_CORE, "START TEST test_nm_utils_log_connection_diff...");
+	nm_log (LOGL_DEBUG, LOGD_CORE, NULL, NULL, "START TEST test_nm_utils_log_connection_diff...");
 
 	connection = nm_simple_connection_new ();
 	nm_connection_add_setting (connection, nm_setting_connection_new ());

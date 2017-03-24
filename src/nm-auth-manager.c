@@ -79,7 +79,7 @@ NM_DEFINE_SINGLETON_REGISTER (NMAuthManager);
             \
             if ((self) != singleton_instance) \
                 g_snprintf (__prefix, sizeof (__prefix), ""_NMLOG_PREFIX_NAME"[%p]", (self)); \
-            _nm_log ((level), (_NMLOG_DOMAIN), 0, \
+            _nm_log ((level), (_NMLOG_DOMAIN), 0, NULL, NULL, \
                      "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
                      __prefix _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
         } \

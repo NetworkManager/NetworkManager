@@ -92,7 +92,7 @@ NM_DEFINE_SINGLETON_GETTER (NMDhcpListener, nm_dhcp_listener_get, NM_TYPE_DHCP_L
         const NMDhcpListener *_self = (self); \
         char _prefix[64]; \
         \
-        nm_log ((level), (_NMLOG_DOMAIN), \
+        nm_log ((level), (_NMLOG_DOMAIN), NULL, NULL, \
                 "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
                 (_self != singleton_instance \
                     ? nm_sprintf_buf (_prefix, "%s[%p]", _NMLOG_PREFIX_NAME, _self) \

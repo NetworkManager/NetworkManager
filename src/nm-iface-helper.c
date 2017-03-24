@@ -91,7 +91,7 @@ static struct {
 
 #define _NMLOG_PREFIX_NAME      "nm-iface-helper"
 #define _NMLOG(level, domain, ...) \
-    nm_log ((level), (domain), \
+    nm_log ((level), (domain), global_opt.ifname, NULL, \
             "iface-helper: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__) \
             _NM_UTILS_MACRO_REST (__VA_ARGS__))
 
@@ -432,9 +432,8 @@ main (int argc, char *argv[])
 	gl.main_loop = g_main_loop_new (NULL, FALSE);
 	setup_signals ();
 
-	nm_logging_syslog_openlog (global_opt.logging_backend
-	                           ? global_opt.logging_backend
-	                           : (global_opt.debug ? "debug" : NULL));
+	nm_logging_syslog_openlog (global_opt.logging_backend,
+	                           global_opt.debug);
 
 	_LOGI (LOGD_CORE, "nm-iface-helper (version " NM_DIST_VERSION ") is starting...");
 
