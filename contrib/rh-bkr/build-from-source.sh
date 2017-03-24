@@ -56,6 +56,8 @@ $SUDO yum install \
     polkit-devel \
     teamd-devel \
     jansson-devel \
+    libpsl-devel \
+    libcurl-devel \
     -y
 
 # for the tests, let's pre-load some modules:
