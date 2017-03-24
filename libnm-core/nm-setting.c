@@ -147,6 +147,8 @@ _ensure_registered_constructor (void)
  * can be established, like PPP, PPPoE, etc.
  *
  * 4: IP-level stuff
+ *
+ * 10: NMSettingUser
  */
 void
 (_nm_register_setting) (const char *name,
@@ -158,7 +160,6 @@ void
 	g_return_if_fail (name != NULL && *name);
 	g_return_if_fail (type != G_TYPE_INVALID);
 	g_return_if_fail (type != G_TYPE_NONE);
-	g_return_if_fail (priority <= 4);
 
 	_ensure_registered ();
 

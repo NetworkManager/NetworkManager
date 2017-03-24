@@ -396,6 +396,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-setting-team-port.h \
 	libnm-core/nm-setting-team.h \
 	libnm-core/nm-setting-tun.h \
+	libnm-core/nm-setting-user.h \
 	libnm-core/nm-setting-vlan.h \
 	libnm-core/nm-setting-vpn.h \
 	libnm-core/nm-setting-vxlan.h \
@@ -464,6 +465,7 @@ libnm_core_lib_c_real = \
 	libnm-core/nm-setting-team-port.c \
 	libnm-core/nm-setting-team.c \
 	libnm-core/nm-setting-tun.c \
+	libnm-core/nm-setting-user.c \
 	libnm-core/nm-setting-vlan.c \
 	libnm-core/nm-setting-vpn.c \
 	libnm-core/nm-setting-vxlan.c \

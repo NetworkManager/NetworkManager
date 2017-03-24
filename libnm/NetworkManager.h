@@ -80,6 +80,7 @@
 #include "nm-setting-team.h"
 #include "nm-setting-team-port.h"
 #include "nm-setting-tun.h"
+#include "nm-setting-user.h"
 #include "nm-setting-vlan.h"
 #include "nm-setting-vpn.h"
 #include "nm-setting-vxlan.h"

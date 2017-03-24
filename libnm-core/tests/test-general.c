@@ -51,6 +51,7 @@
 #include "nm-setting-serial.h"
 #include "nm-setting-team.h"
 #include "nm-setting-team-port.h"
+#include "nm-setting-user.h"
 #include "nm-setting-vlan.h"
 #include "nm-setting-vpn.h"
 #include "nm-setting-wimax.h"
@@ -4326,6 +4327,18 @@ test_setting_compare_default_strv (void)
 	out_settings = NULL;
 }
 
+/*****************************************************************************/
+
+static void
+test_setting_user_data (void)
+{
+	gs_unref_object NMSettingUser *s_user = NULL;
+
+	s_user = NM_SETTING_USER (nm_setting_user_new ());
+}
+
+/*****************************************************************************/
+
 static void
 test_hexstr2bin (void)
 {
@@ -5691,6 +5704,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_setting_ip4_gateway", test_setting_ip4_gateway);
 	g_test_add_func ("/core/general/test_setting_ip6_gateway", test_setting_ip6_gateway);
 	g_test_add_func ("/core/general/test_setting_compare_default_strv", test_setting_compare_default_strv);
+	g_test_add_func ("/core/general/test_setting_user_data", test_setting_user_data);
 
 	g_test_add_func ("/core/general/hexstr2bin", test_hexstr2bin);
 	g_test_add_func ("/core/general/test_nm_utils_uuid_generate_from_string", test_nm_utils_uuid_generate_from_string);

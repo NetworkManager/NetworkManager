@@ -77,6 +77,7 @@ libnm-core/nm-setting-proxy.c
 libnm-core/nm-setting-team.c
 libnm-core/nm-setting-team-port.c
 libnm-core/nm-setting-tun.c
+libnm-core/nm-setting-user.c
 libnm-core/nm-setting-vlan.c
 libnm-core/nm-setting-vpn.c
 libnm-core/nm-setting-vxlan.c
