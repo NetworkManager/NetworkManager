@@ -277,6 +277,34 @@ no-auto-default=*
       </varlistentry>
 
       <varlistentry>
+        <term><varname>hostname-mode</varname></term>
+        <listitem>
+          <para>
+            Set the management mode of the hostname. This parameter will
+            affect only the transient hostname. If a valid static hostname is set,
+            NetworkManager will skip the update of the hostname despite the value of
+            this option. An hostname empty or equal to 'localhost', 'localhost6',
+            'localhost.localdomain' or 'localhost6.localdomain' is considered invalid.
+          </para>
+          <para><literal>default</literal>: NetworkManager will update the hostname
+          with the one provided via DHCP on the main connection (the one with a default
+          route). If not present, the hostname will be updated to the last one set
+          outside NetworkManager. If it is not valid, NetworkManager will try to recover
+          the hostname from the reverse lookup of the IP address of the main connection.
+          If this fails too, the hostname will be set to 'localhost.localdomain'.
+          </para>
+          <para><literal>dhcp</literal>: NetworkManager will update the transient hostname
+          only with information coming from DHCP. No fallback nor reverse lookup will be
+          performed, but when the dhcp connection providing the hostname is deactivated,
+          the hostname is reset to the last hostname set outside NetworkManager or
+          'localhost' if none valid is there.
+          </para>
+          <para><literal>none</literal>: NetworkManager will not manage the transient
+          hostname and will never set it.
+          </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
         <term><varname>dns</varname></term>
         <listitem><para>Set the DNS (<filename>resolv.conf</filename>) processing mode.
         If the key is unspecified, <literal>default</literal> is used,

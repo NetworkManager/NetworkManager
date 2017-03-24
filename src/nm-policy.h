@@ -47,4 +47,21 @@ NMDevice *nm_policy_get_default_ip6_device (NMPolicy *policy);
 NMDevice *nm_policy_get_activating_ip4_device (NMPolicy *policy);
 NMDevice *nm_policy_get_activating_ip6_device (NMPolicy *policy);
 
+/**
+ * NMPolicyHostnameMode
+ * @NM_POLICY_HOSTNAME_MODE_NONE: never update the transient hostname.
+ * @NM_POLICY_HOSTNAME_MODE_DHCP: only hostname from DHCP hostname
+ *   options are eligible to be set as transient hostname.
+ * @NM_POLICY_HOSTNAME_MODE_FULL: NM will try to update the hostname looking
+ *   to current static hostname, DHCP options, reverse IP lookup and externally
+ *   set hostnames.
+ *
+ * NMPolicy's hostname update policy
+ */
+typedef enum {
+	NM_POLICY_HOSTNAME_MODE_NONE,
+	NM_POLICY_HOSTNAME_MODE_DHCP,
+	NM_POLICY_HOSTNAME_MODE_FULL,
+} NMPolicyHostnameMode;
+
 #endif /* __NETWORKMANAGER_POLICY_H__ */

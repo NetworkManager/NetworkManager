@@ -47,6 +47,7 @@
 #include "settings/nm-settings-connection.h"
 #include "nm-dhcp4-config.h"
 #include "nm-dhcp6-config.h"
+#include "nm-config.h"
 
 /*****************************************************************************/
 
@@ -85,9 +86,12 @@ typedef struct {
 
 	guint schedule_activate_all_id; /* idle handler for schedule_activate_all(). */
 
+	NMPolicyHostnameMode hostname_mode;
 	char *orig_hostname; /* hostname at NM start time */
 	char *cur_hostname;  /* hostname we want to assign */
-	gboolean hostname_changed;  /* TRUE if NM ever set the hostname */
+	char *last_hostname; /* last hostname NM set (to detect if someone else changed it in the meanwhile) */
+	gboolean changing_hostname; /* hostname set operation still in progress */
+	gboolean dhcp_hostname; /* current hostname was set from dhcp */
 
 	GArray *ip6_prefix_delegations; /* pool of ip6 prefixes delegated to all devices */
 } NMPolicyPrivate;
@@ -413,22 +417,76 @@ settings_set_hostname_cb (const char *hostname,
                           gboolean result,
                           gpointer user_data)
 {
+	NMPolicy *self = NM_POLICY (user_data);
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	int ret = 0;
 
 	if (!result) {
+		_LOGT (LOGD_DNS, "set-hostname: hostname set via dbus failed, fallback to \"sethostname\"");
 		ret = sethostname (hostname, strlen (hostname));
 		if (ret != 0) {
 			int errsv = errno;
 
-			_LOGW (LOGD_DNS, "couldn't set the system hostname to '%s': (%d) %s",
+			_LOGW (LOGD_DNS, "set-hostname: couldn't set the system hostname to '%s': (%d) %s",
 			       hostname, errsv, strerror (errsv));
 			if (errsv == EPERM)
-				_LOGW (LOGD_DNS, "you should use hostnamed when systemd hardening is in effect!");
+				_LOGW (LOGD_DNS, "set-hostname: you should use hostnamed when systemd hardening is in effect!");
 		}
 	}
 
+	priv->changing_hostname = FALSE;
 	if (!ret)
 		nm_dispatcher_call_hostname (NULL, NULL, NULL);
+	g_object_unref (self);
+}
+
+#define HOST_NAME_BUFSIZE (HOST_NAME_MAX + 2)
+
+static char *
+_get_hostname (NMPolicy *self, char **hostname)
+{
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+	char *buf;
+
+	g_assert (hostname && *hostname == NULL);
+
+	/* If there is an in-progress hostname change, return
+	 * the last hostname set as would be set soon...
+	 */
+	if (priv->changing_hostname) {
+		_LOGT (LOGD_DNS, "get-hostname: \"%s\" (last on set)", priv->last_hostname);
+		*hostname = g_strdup (priv->last_hostname);
+		return *hostname;
+	}
+
+	/* try to get the hostname via dbus... */
+	if (nm_settings_get_transient_hostname (priv->settings, hostname)) {
+		_LOGT (LOGD_DNS, "get-hostname: \"%s\" (from dbus)", *hostname);
+		return *hostname;
+	}
+
+	/* ...or retrieve it by yourself */
+	buf = g_malloc (HOST_NAME_BUFSIZE);
+	if (gethostname (buf, HOST_NAME_BUFSIZE -1) != 0) {
+		int errsv = errno;
+
+		_LOGT (LOGD_DNS, "get-hostname: couldn't get the system hostname: (%d) %s",
+		       errsv, g_strerror (errsv));
+		g_free (buf);
+		return NULL;
+	}
+
+	/* the name may be truncated... */
+	buf[HOST_NAME_BUFSIZE - 1] = '\0';
+	if (strlen (buf) >= HOST_NAME_BUFSIZE -1) {
+		_LOGT (LOGD_DNS, "get-hostname: system hostname too long: \"%s\"", buf);
+		g_free (buf);
+		return NULL;
+	}
+
+	_LOGT (LOGD_DNS, "get-hostname: \"%s\"", buf);
+	*hostname = buf;
+	return *hostname;
 }
 
 static void
@@ -437,9 +495,8 @@ _set_hostname (NMPolicy *self,
                const char *msg)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	char old_hostname[HOST_NAME_MAX + 1];
+	gs_free char *old_hostname = NULL;
 	const char *name;
-	int ret;
 
 	/* The incoming hostname *can* be NULL, which will get translated to
 	 * 'localhost.localdomain' or such in the hostname policy code, but we
@@ -453,20 +510,12 @@ _set_hostname (NMPolicy *self,
 	if (new_hostname)
 		g_clear_object (&priv->lookup_addr);
 
-	if (   priv->orig_hostname
-	    && (priv->hostname_changed == FALSE)
-	    && g_strcmp0 (priv->orig_hostname, new_hostname) == 0) {
-		/* Don't change the hostname or update DNS this is the first time we're
-		 * trying to change the hostname, and it's not actually changing.
-		 */
-	} else if (g_strcmp0 (priv->cur_hostname, new_hostname) == 0) {
-		/* Don't change the hostname or update DNS if the hostname isn't actually
-		 * going to change.
-		 */
-	} else {
+	/* Update the DNS only if the hostname is actually
+	 * going to change.
+	 */
+	if (!nm_streq0 (priv->cur_hostname, new_hostname)) {
 		g_free (priv->cur_hostname);
 		priv->cur_hostname = g_strdup (new_hostname);
-		priv->hostname_changed = TRUE;
 
 		/* Notify the DNS manager of the hostname change so that the domain part, if
 		 * present, can be added to the search list.
@@ -484,26 +533,26 @@ _set_hostname (NMPolicy *self,
 	} else
 		name = new_hostname;
 
-	old_hostname[HOST_NAME_MAX] = '\0';
-	errno = 0;
-	ret = gethostname (old_hostname, HOST_NAME_MAX);
-	if (ret != 0) {
-		_LOGW (LOGD_DNS, "couldn't get the system hostname: (%d) %s",
-		       errno, strerror (errno));
-	} else {
-		/* Don't set the hostname if it isn't actually changing */
-		if (nm_streq (name, old_hostname))
-			return;
+	/* Don't set the hostname if it isn't actually changing */
+	if (   _get_hostname (self, &old_hostname)
+	    && (nm_streq (name, old_hostname))) {
+		_LOGT (LOGD_DNS, "set-hostname: hostname already set to '%s' (%s)", name, msg);
+		return;
 	}
 
-	_LOGI (LOGD_DNS, "setting system hostname to '%s' (%s)", name, msg);
+	/* Keep track of the last set hostname */
+	g_free (priv->last_hostname);
+	priv->last_hostname = g_strdup (name);
+	priv->changing_hostname = TRUE;
+
+	_LOGI (LOGD_DNS, "set-hostname: set hostname to '%s' (%s)", name, msg);
 
 	/* Ask NMSettings to update the transient hostname using its
 	 * systemd-hostnamed proxy */
 	nm_settings_set_transient_hostname (priv->settings,
 	                                    name,
 	                                    settings_set_hostname_cb,
-	                                    NULL);
+	                                    g_object_ref (self));
 }
 
 static void
@@ -534,23 +583,55 @@ lookup_callback (GObject *source,
 }
 
 static void
-update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6)
+update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const char *msg)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	char *configured_hostname = NULL;
+	gs_free char *temp_hostname = NULL;
 	const char *dhcp_hostname, *p;
 	NMIP4Config *ip4_config;
 	NMIP6Config *ip6_config;
+	gboolean external_hostname = FALSE;
 
 	g_return_if_fail (self != NULL);
 
+	if (priv->hostname_mode == NM_POLICY_HOSTNAME_MODE_NONE) {
+		_LOGT (LOGD_DNS, "set-hostname: hostname is unmanaged");
+		return;
+	}
+
+	_LOGT (LOGD_DNS, "set-hostname: updating hostname (%s)", msg);
+
 	nm_clear_g_cancellable (&priv->lookup_cancellable);
+
+	/* Check if the hostname was set externally to NM, so that in that case
+	 * we can avoid to fallback to the one we got when we started.
+	 * Consider "not specific" hostnames as equal. */
+	if (   _get_hostname (self, &temp_hostname)
+	    && !nm_streq0 (temp_hostname, priv->last_hostname)
+	    && (   nm_utils_is_specific_hostname (temp_hostname)
+	        || nm_utils_is_specific_hostname (priv->last_hostname))) {
+		external_hostname = TRUE;
+		_LOGI (LOGD_DNS, "set-hostname: current hostname was changed outside NetworkManager: '%s'",
+		       temp_hostname);
+		priv->dhcp_hostname = FALSE;
+
+		if (!nm_streq0 (temp_hostname, priv->orig_hostname)) {
+			/* Update original (fallback) hostname */
+			g_free (priv->orig_hostname);
+			if (nm_utils_is_specific_hostname (temp_hostname)) {
+				priv->orig_hostname = temp_hostname;
+				temp_hostname = NULL;
+			} else
+				priv->orig_hostname = NULL;
+		}
+	}
 
 	/* Hostname precedence order:
 	 *
 	 * 1) a configured hostname (from settings)
 	 * 2) automatic hostname from the default device's config (DHCP, VPN, etc)
-	 * 3) the original hostname when NM started
+	 * 3) the last hostname set outside NM
 	 * 4) reverse-DNS of the best device's IPv4 address
 	 *
 	 */
@@ -559,6 +640,7 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6)
 	g_object_get (G_OBJECT (priv->manager), NM_MANAGER_HOSTNAME, &configured_hostname, NULL);
 	if (configured_hostname && nm_utils_is_specific_hostname (configured_hostname)) {
 		_set_hostname (self, configured_hostname, "from system configuration");
+		priv->dhcp_hostname = FALSE;
 		g_free (configured_hostname);
 		return;
 	}
@@ -569,14 +651,6 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6)
 		best4 = get_best_ip4_device (self, TRUE);
 	if (!best6)
 		best6 = get_best_ip6_device (self, TRUE);
-
-	if (!best4 && !best6) {
-		/* No best device; fall back to original hostname or if there wasn't
-		 * one, 'localhost.localdomain'
-		 */
-		_set_hostname (self, priv->orig_hostname, "no default device");
-		return;
-	}
 
 	if (best4) {
 		NMDhcp4Config *dhcp4_config;
@@ -590,10 +664,11 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6)
 				while (*p) {
 					if (!g_ascii_isspace (*p++)) {
 						_set_hostname (self, p-1, "from DHCPv4");
+						priv->dhcp_hostname = TRUE;
 						return;
 					}
 				}
-				_LOGW (LOGD_DNS, "DHCPv4-provided hostname '%s' looks invalid; ignoring it",
+				_LOGW (LOGD_DNS, "set-hostname: DHCPv4-provided hostname '%s' looks invalid; ignoring it",
 				       dhcp_hostname);
 			}
 		}
@@ -609,17 +684,45 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6)
 				while (*p) {
 					if (!g_ascii_isspace (*p++)) {
 						_set_hostname (self, p-1, "from DHCPv6");
+						priv->dhcp_hostname = TRUE;
 						return;
 					}
 				}
-				_LOGW (LOGD_DNS, "DHCPv6-provided hostname '%s' looks invalid; ignoring it",
+				_LOGW (LOGD_DNS, "set-hostname: DHCPv6-provided hostname '%s' looks invalid; ignoring it",
 				       dhcp_hostname);
 			}
 		}
 	}
 
-	/* If no automatically-configured hostname, try using the hostname from
-	 * when NM started up.
+	/* If an hostname was set outside NetworkManager keep it */
+	if (external_hostname)
+		return;
+
+	if (priv->hostname_mode == NM_POLICY_HOSTNAME_MODE_DHCP) {
+		/* In dhcp hostname-mode, the hostname is updated only if it comes from
+		 * a DHCP host-name option: if last set was from a host-name option and
+		 * we are here than that connection is gone (with its host-name option),
+		 * so reset the hostname to the previous value
+		 */
+		if (priv->dhcp_hostname) {
+			_set_hostname (self, priv->orig_hostname, "reset dhcp hostname");
+			priv->dhcp_hostname = FALSE;
+		}
+		return;
+	}
+
+	priv->dhcp_hostname = FALSE;
+
+	if (!best4 && !best6) {
+		/* No best device; fall back to the last hostname set externally
+		 * to NM or if there wasn't one, 'localhost.localdomain'
+		 */
+		_set_hostname (self, priv->orig_hostname, "no default device");
+		return;
+	}
+
+	/* If no automatically-configured hostname, try using the last hostname
+	 * set externally to NM
 	 */
 	if (priv->orig_hostname) {
 		_set_hostname (self, priv->orig_hostname, "from system startup");
@@ -921,7 +1024,7 @@ update_routing_and_dns (NMPolicy *self, gboolean force_update)
 	update_ip6_routing (self, force_update);
 
 	/* Update the system hostname */
-	update_system_hostname (self, priv->default_device4, priv->default_device6);
+	update_system_hostname (self, priv->default_device4, priv->default_device6, "routing and dns");
 
 	nm_dns_manager_end_updates (priv->dns_manager, __func__);
 }
@@ -1152,7 +1255,7 @@ hostname_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 	NMPolicyPrivate *priv = user_data;
 	NMPolicy *self = _PRIV_TO_SELF (priv);
 
-	update_system_hostname (self, NULL, NULL);
+	update_system_hostname (self, NULL, NULL, "hostname changed");
 }
 
 static void
@@ -1620,8 +1723,9 @@ device_ip4_config_changed (NMDevice *device,
 
 	nm_dns_manager_begin_updates (priv->dns_manager, __func__);
 
-	/* Ignore IP config changes while the device is activating, because we'll
-	 * catch all the changes when the device moves to ACTIVATED state.
+	/* We catch already all the IP events registering on the device state changes but
+	 * the ones where the IP changes but the device state keep stable (i.e., activated):
+	 * ignore IP config changes but when the device is in activated state.
 	 * Prevents unecessary changes to DNS information.
 	 */
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
@@ -1633,7 +1737,7 @@ device_ip4_config_changed (NMDevice *device,
 		}
 		update_ip4_dns (self, priv->dns_manager);
 		update_ip4_routing (self, TRUE);
-		update_system_hostname (self, priv->default_device4, priv->default_device6);
+		update_system_hostname (self, priv->default_device4, priv->default_device6, "ip4 conf");
 	} else {
 		/* Old configs get removed immediately */
 		if (old_config)
@@ -1655,11 +1759,12 @@ device_ip6_config_changed (NMDevice *device,
 
 	nm_dns_manager_begin_updates (priv->dns_manager, __func__);
 
-	/* Ignore IP config changes while the device is activating, because we'll
-	 * catch all the changes when the device moves to ACTIVATED state.
+	/* We catch already all the IP events registering on the device state changes but
+	 * the ones where the IP changes but the device state keep stable (i.e., activated):
+	 * ignore IP config changes but when the device is in activated state.
 	 * Prevents unecessary changes to DNS information.
 	 */
-	if (!nm_device_is_activating (device)) {
+	if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
 		if (old_config != new_config) {
 			if (old_config)
 				nm_dns_manager_remove_ip6_config (priv->dns_manager, old_config);
@@ -1668,7 +1773,7 @@ device_ip6_config_changed (NMDevice *device,
 		}
 		update_ip6_dns (self, priv->dns_manager);
 		update_ip6_routing (self, TRUE);
-		update_system_hostname (self, priv->default_device4, priv->default_device6);
+		update_system_hostname (self, priv->default_device4, priv->default_device6, "ip6 conf");
 	} else {
 		/* Old configs get removed immediately */
 		if (old_config)
@@ -1979,6 +2084,15 @@ dns_config_changed (NMDnsManager *dns_manager, gpointer user_data)
 	/* Re-start the hostname lookup thread if we don't have hostname yet. */
 	if (priv->lookup_addr) {
 		char *str = NULL;
+		gs_free char *hostname = NULL;
+
+		/* Check if the hostname was externally set */
+		if (   _get_hostname (self, &hostname)
+		    && nm_utils_is_specific_hostname (hostname)
+		    && !nm_streq0 (hostname, priv->last_hostname)) {
+			g_clear_object (&priv->lookup_addr);
+			return;
+		}
 
 		_LOGD (LOGD_DNS, "restarting reverse-lookup thread for address %s",
 		       (str = g_inet_address_to_string (priv->lookup_addr)));
@@ -2173,7 +2287,20 @@ static void
 nm_policy_init (NMPolicy *self)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+	const char *hostname_mode;
 
+	hostname_mode = nm_config_data_get_value (NM_CONFIG_GET_DATA_ORIG,
+	                                          NM_CONFIG_KEYFILE_GROUP_MAIN,
+	                                          NM_CONFIG_KEYFILE_KEY_MAIN_HOSTNAME_MODE,
+	                                          NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY);
+	if (nm_streq0 (hostname_mode, "none"))
+		priv->hostname_mode = NM_POLICY_HOSTNAME_MODE_NONE;
+	else if (nm_streq0 (hostname_mode, "dhcp"))
+		priv->hostname_mode = NM_POLICY_HOSTNAME_MODE_DHCP;
+	else /* default - full mode */
+		priv->hostname_mode = NM_POLICY_HOSTNAME_MODE_FULL;
+
+	_LOGI (LOGD_DNS, "hostname management mode: %s", hostname_mode ? hostname_mode : "default");
 	priv->devices = g_hash_table_new (NULL, NULL);
 	priv->ip6_prefix_delegations = g_array_new (FALSE, FALSE, sizeof (IP6PrefixDelegation));
 	g_array_set_clear_func (priv->ip6_prefix_delegations, clear_ip6_prefix_delegation);
@@ -2184,13 +2311,15 @@ constructed (GObject *object)
 {
 	NMPolicy *self = NM_POLICY (object);
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	char hostname[HOST_NAME_MAX + 2];
+	char *hostname = NULL;
 
 	/* Grab hostname on startup and use that if nothing provides one */
-	memset (hostname, 0, sizeof (hostname));
-	if (gethostname (&hostname[0], HOST_NAME_MAX) == 0) {
+	if (_get_hostname (self, &hostname)) {
+		/* init last_hostname */
+		priv->last_hostname = hostname;
+
 		/* only cache it if it's a valid hostname */
-		if (*hostname && nm_utils_is_specific_hostname (hostname))
+		if (nm_utils_is_specific_hostname (hostname))
 			priv->orig_hostname = g_strdup (hostname);
 	}
 
@@ -2284,6 +2413,7 @@ dispose (GObject *object)
 
 	g_clear_pointer (&priv->orig_hostname, g_free);
 	g_clear_pointer (&priv->cur_hostname, g_free);
+	g_clear_pointer (&priv->last_hostname, g_free);
 
 	if (priv->settings) {
 		g_signal_handlers_disconnect_by_data (priv->settings, priv);

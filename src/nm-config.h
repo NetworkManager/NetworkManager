@@ -62,6 +62,7 @@
 #define NM_CONFIG_KEYFILE_KEY_MAIN_AUTH_POLKIT              "auth-polkit"
 #define NM_CONFIG_KEYFILE_KEY_MAIN_DHCP                     "dhcp"
 #define NM_CONFIG_KEYFILE_KEY_MAIN_DEBUG                    "debug"
+#define NM_CONFIG_KEYFILE_KEY_MAIN_HOSTNAME_MODE            "hostname-mode"
 #define NM_CONFIG_KEYFILE_KEY_LOGGING_BACKEND               "backend"
 #define NM_CONFIG_KEYFILE_KEY_CONFIG_ENABLE                 "enable"
 #define NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS            ".was"

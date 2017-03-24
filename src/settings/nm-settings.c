@@ -1685,6 +1685,28 @@ nm_settings_set_transient_hostname (NMSettings *self,
 	                   info);
 }
 
+gboolean
+nm_settings_get_transient_hostname (NMSettings *self, char **hostname)
+{
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	GVariant *v_hostname;
+
+	if (!priv->hostname.hostnamed_proxy)
+		return FALSE;
+
+	v_hostname = g_dbus_proxy_get_cached_property (priv->hostname.hostnamed_proxy,
+	                                               "Hostname");
+	if (!v_hostname) {
+		_LOGT ("transient hostname retrieval failed");
+		return FALSE;
+	}
+
+	*hostname = g_variant_dup_string (v_hostname, NULL);
+	g_variant_unref (v_hostname);
+
+	return TRUE;
+}
+
 static gboolean
 write_hostname (NMSettingsPrivate *priv, const char *hostname)
 {
