@@ -40,7 +40,7 @@ typedef enum {
 
 /* === Functions === */
 gboolean matches (const char *cmd, const char *pattern);
-int next_arg (int *argc, char ***argv);
+int next_arg (NmCli *nmc, int *argc, char ***argv);
 gboolean nmc_arg_is_help (const char *arg);
 gboolean nmc_arg_is_option (const char *arg, const char *opt_name);
 gboolean nmc_parse_args (nmc_arg_t *arg_arr, gboolean last, int *argc, char ***argv, GError **error);

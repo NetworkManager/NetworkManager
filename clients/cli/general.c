@@ -687,7 +687,7 @@ do_general_logging (NmCli *nmc, int argc, char **argv)
 				g_string_printf (nmc->return_text, _("Error: property '%s' is not known."), *argv);
 				return NMC_RESULT_ERROR_USER_INPUT;
 			}
-		} while (next_arg (&argc, &argv) == 0);
+		} while (next_arg (nmc, &argc, &argv) == 0);
 
 		if (nmc->complete)
 			return nmc->return_value;
@@ -737,7 +737,7 @@ do_general_hostname (NmCli *nmc, int argc, char **argv)
 		/* hostname provided -> set it */
 		const char *hostname = *argv;
 
-		if (next_arg (&argc, &argv) == 0)
+		if (next_arg (nmc, &argc, &argv) == 0)
 			g_print ("Warning: ignoring extra garbage after '%s' hostname\n", hostname);
 
 		nmc->should_wait++;

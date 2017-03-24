@@ -39,7 +39,7 @@ matches (const char *cmd, const char *pattern)
 }
 
 int
-next_arg (int *argc, char ***argv)
+next_arg (NmCli *nmc, int *argc, char ***argv)
 {
 	int arg_num = *argc;
 
@@ -153,7 +153,7 @@ nmc_parse_args (nmc_arg_t *arg_arr, gboolean last, int *argc, char ***argv, GErr
 			return FALSE;
 		}
 
-		next_arg (argc, argv);
+		next_arg (NULL, argc, argv);
 	}
 
 	return TRUE;

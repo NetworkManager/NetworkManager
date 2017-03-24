@@ -613,7 +613,7 @@ get_device_list (NmCli *nmc, int argc, char **argv)
 		}
 
 		/* Take next argument */
-		next_arg (&arg_num, &arg_ptr);
+		next_arg (nmc->ask ? NULL : nmc, &arg_num, &arg_ptr);
 	}
 	g_free (devices);
 
@@ -642,7 +642,7 @@ get_device (NmCli *nmc, int *argc, char ***argv, GError **error)
 		}
 	} else {
 		ifname = **argv;
-		next_arg (argc, argv);
+		next_arg (nmc, argc, argv);
 	}
 
 	devices = nmc_get_devices_sorted (nmc->client);
@@ -1496,7 +1496,7 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 
 	while (argc > 0) {
 		g_printerr (_("Unknown parameter: %s\n"), *argv);
-		next_arg (&argc, &argv);
+		next_arg (nmc, &argc, &argv);
 	}
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
@@ -2289,7 +2289,7 @@ do_device_set (NmCli *nmc, int argc, char **argv)
 	gs_free_error GError *error = NULL;
 
 	if (argc >= 1 && g_strcmp0 (*argv, "ifname") == 0) {
-		next_arg (&argc, &argv);
+		next_arg (nmc, &argc, &argv);
 	}
 
 	device = get_device (nmc, &argc, &argv, &error);
@@ -2348,7 +2348,7 @@ do_device_set (NmCli *nmc, int argc, char **argv)
 			g_string_printf (nmc->return_text, _("Error: property '%s' is not known."), *argv);
 			return NMC_RESULT_ERROR_USER_INPUT;
 		}
-	} while (next_arg (&argc, &argv) == 0);
+	} while (next_arg (nmc, &argc, &argv) == 0);
 
 	if (nmc->complete)
 		return nmc->return_value;
@@ -2657,7 +2657,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 			g_printerr (_("Unknown parameter: %s\n"), *argv);
 		}
 
-		next_arg (&argc, &argv);
+		next_arg (nmc, &argc, &argv);
 	}
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
@@ -2854,7 +2854,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 		if (argc == 1 && nmc->complete)
 			complete_aps (devices, NULL, param_user, param_user);
 
-		next_arg (&argc, &argv);
+		next_arg (nmc, &argc, &argv);
 	} else {
 		/* nmc_do_cmd() should not call this with argc=0. */
 		g_assert (!nmc->complete);
@@ -2981,7 +2981,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 			g_printerr (_("Unknown parameter: %s\n"), *argv);
 		}
 
-		next_arg (&argc, &argv);
+		next_arg (nmc, &argc, &argv);
 	}
 
 	if (nmc->complete)
@@ -3408,7 +3408,7 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 			return NMC_RESULT_ERROR_USER_INPUT;
 		}
 
-		next_arg (&argc, &argv);
+		next_arg (nmc, &argc, &argv);
 	}
 	show_password = nmc->show_secrets || show_password;
 
@@ -3587,7 +3587,7 @@ do_device_wifi_rescan (NmCli *nmc, int argc, char **argv)
 		} else if (!nmc->complete)
 			g_printerr (_("Unknown parameter: %s\n"), *argv);
 
-		next_arg (&argc, &argv);
+		next_arg (nmc, &argc, &argv);
 	}
 
 	if (nmc->complete)
@@ -3761,7 +3761,7 @@ do_device_lldp_list (NmCli *nmc, int argc, char **argv)
 			return NMC_RESULT_ERROR_USER_INPUT;
 		}
 
-		next_arg (&argc, &argv);
+		next_arg (nmc, &argc, &argv);
 	}
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)

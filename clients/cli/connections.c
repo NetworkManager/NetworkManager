@@ -1734,7 +1734,7 @@ get_connection (NmCli *nmc, int *argc, char ***argv, int *pos, GError **error)
 	 * don't switch to next argument.
 	 */
 	if (!pos || !*pos)
-		next_arg (argc, argv);
+		next_arg (nmc, argc, argv);
 
 	return connection;
 }
@@ -1759,12 +1759,12 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 
 		if (!active_only && nmc_arg_is_option (*argv, "active")) {
 			active_only = TRUE;
-			next_arg (&argc, &argv);
+			next_arg (nmc, &argc, &argv);
 		} else if (!show_secrets && nmc_arg_is_option (*argv, "show-secrets")) {
 			/* --show-secrets is deprecated in favour of global --show-secrets */
 			/* Keep it here for backwards compatibility */
 			show_secrets = TRUE;
-			next_arg (&argc, &argv);
+			next_arg (nmc, &argc, &argv);
 		} else if (!order && nmc_arg_is_option (*argv, "order")) {
 			if (!argc) {
 				g_set_error_literal (&err, NMCLI_ERROR, 0,
@@ -1777,7 +1777,7 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 			order = parse_preferred_connection_order (*argv, &err);
 			if (err)
 				goto finish;
-			next_arg (&argc, &argv);
+			next_arg (nmc, &argc, &argv);
 		} else {
 			break;
 		}
@@ -1895,12 +1895,12 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 			if (!acon)
 				acon = get_ac_for_connection (active_cons, con);
 			if (active_only && !acon) {
-				next_arg (&argc, &argv);
+				next_arg (nmc, &argc, &argv);
 				continue;
 			}
 
 			if (nmc->complete) {
-				next_arg (&argc, &argv);
+				next_arg (nmc, &argc, &argv);
 				continue;
 			}
 
@@ -1938,7 +1938,7 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 			 * so process the same argument again.
 			 */
 			if (!pos)
-				next_arg (&argc, &argv);
+				next_arg (nmc, &argc, &argv);
 		}
 	}
 
@@ -2640,7 +2640,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 			g_printerr (_("Unknown parameter: %s\n"), *argv);
 		}
 
-		next_arg (&argc, &argv);
+		next_arg (nmc, &argc, &argv);
 	}
 
 	if (nmc->complete)
@@ -2822,7 +2822,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 		}
 
 		if (idx == 0)
-			next_arg (&arg_num, &arg_ptr);
+			next_arg (nmc->ask ? NULL : nmc, &arg_num, &arg_ptr);
 	}
 
 	if (!queue) {
@@ -4955,7 +4955,7 @@ read_properties:
 			 * options and properties to be separated with "--" */
 			g_clear_error (&error);
 			seen_dash_dash = TRUE;
-			next_arg (&argc, &argv);
+			next_arg (nmc, &argc, &argv);
 			goto read_properties;
 		} else if (g_strcmp0 (*argv, "save") == 0) {
 			/* It would be better if "save" was a separate argument and not
@@ -4977,7 +4977,7 @@ read_properties:
 				g_clear_error (&error);
 				goto finish;
 			}
-			next_arg (&argc, &argv);
+			next_arg (nmc, &argc, &argv);
 			goto read_properties;
 		}
 
@@ -8104,7 +8104,7 @@ do_connection_modify (NmCli *nmc,
 		if (nmc->complete)
 			goto finish;
 		temporary = TRUE;
-		next_arg (&argc, &argv);
+		next_arg (nmc, &argc, &argv);
 	}
 
 	connection = get_connection (nmc, &argc, &argv, NULL, &error);
@@ -8213,7 +8213,7 @@ do_connection_clone (NmCli *nmc, int argc, char **argv)
 		argc_ptr = &arg_num;
 	} else if (nmc_arg_is_option (*argv, "temporary")) {
 		temporary = TRUE;
-		next_arg (&argc, &argv);
+		next_arg (nmc, &argc, &argv);
 	}
 
 	connection = get_connection (nmc, argc_ptr, argv_ptr, NULL, &error);
@@ -8236,7 +8236,7 @@ do_connection_clone (NmCli *nmc, int argc, char **argv)
 		goto finish;
 	}
 
-	if (next_arg (argc_ptr, argv_ptr) == 0) {
+	if (next_arg (nmc->ask ? NULL : nmc, argc_ptr, argv_ptr) == 0) {
 		g_string_printf (nmc->return_text, _("Error: unknown extra argument: '%s'."), *argv);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto finish;
@@ -8598,7 +8598,7 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 			nmc_complete_strings (*argv, "temporary", "type", "file", NULL);
 		if (nmc_arg_is_option (*argv, "temporary")) {
 			temporary = TRUE;
-			next_arg (&argc, &argv);
+			next_arg (nmc, &argc, &argv);
 		}
 
 		if (strcmp (*argv, "type") == 0) {
@@ -8638,7 +8638,7 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 			goto finish;
 		}
 
-		next_arg (&argc, &argv);
+		next_arg (nmc, &argc, &argv);
 	}
 
 	if (nmc->complete)
@@ -8746,7 +8746,7 @@ do_connection_export (NmCli *nmc, int argc, char **argv)
 		argv++;
 	}
 
-	if (next_arg (argc_ptr, argv_ptr) == 0) {
+	if (next_arg (nmc->ask ? NULL : nmc, argc_ptr, argv_ptr) == 0) {
 		g_string_printf (nmc->return_text, _("Error: unknown extra argument: '%s'."), *argv);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto finish;
