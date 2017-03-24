@@ -4122,7 +4122,7 @@ vapi_libnm_glib_vapi_METADATADIRS = $(srcdir)/vapi
 vapi_libnm_glib_vapi_FILES = $(builddir)/libnm-glib/NMClient-1.0.gir
 vapi_libnm_glib_vapi_VAPIDIRS = $(builddir)/vapi
 vapi_libnm_glib_vapi_GIRDIRS = $(builddir)/libnm-util
-vapi_libnm_glib_vapi_DEPS = gio-2.0
+vapi_libnm_glib_vapi_DEPS = gio-2.0 dbus-glib-1 libnm-util
 
 vapi_DATA += \
 	$(VAPIGEN_VAPIS) \
