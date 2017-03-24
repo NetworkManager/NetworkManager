@@ -29,6 +29,7 @@
 
 #include "utils.h"
 #include "common.h"
+#include "settings.h"
 
 gboolean
 matches (const char *cmd, const char *pattern)
@@ -869,16 +870,27 @@ parse_output_fields (const char *fields_str,
 
 			for (i = 0; fields_array[i].name; i++) {
 				if (strcasecmp (left, fields_array[i].name) == 0) {
-					NmcOutputField *valid_names = fields_array[i].group;
+					const NmcOutputField *valid_names = fields_array[i].group_list;
+					const NmcSettingInfo *setting_info = fields_array[i].setting_info;
+
 					idx = i;
-					if (!right && !valid_names) {
+					if (!right && !valid_names && !setting_info) {
 						found = TRUE;
 						break;
 					}
-					for (j = 0; valid_names && valid_names[j].name; j++) {
-						if (!right || strcasecmp (right, valid_names[j].name) == 0) {
-							found = TRUE;
-							break;
+					if (valid_names) {
+						for (j = 0; valid_names[j].name; j++) {
+							if (!right || strcasecmp (right, valid_names[j].name) == 0) {
+								found = TRUE;
+								break;
+							}
+						}
+					} else if (setting_info) {
+						for (j = 1; j < setting_info->properties_num; j++) {
+							if (!right || strcasecmp (right, setting_info->properties[j].property_name) == 0) {
+								found = TRUE;
+								break;
+							}
 						}
 					}
 					if (found)
@@ -946,11 +958,20 @@ nmc_get_allowed_fields (const NmcOutputField fields_array[], int group_idx)
 	GString *allowed_fields = g_string_sized_new (256);
 	int i;
 
-	if (group_idx != -1 && fields_array[group_idx].group) {
-		NmcOutputField *second_level = fields_array[group_idx].group;
-		for (i = 0; second_level[i].name; i++)
+	if (group_idx != -1 && fields_array[group_idx].group_list) {
+		const NmcOutputField *second_level = fields_array[group_idx].group_list;
+
+		for (i = 0; second_level[i].name; i++) {
 			g_string_append_printf (allowed_fields, "%s.%s,",
 			                        fields_array[group_idx].name, second_level[i].name);
+		}
+	} else if (group_idx != -1 && fields_array[group_idx].setting_info) {
+		const NmcSettingInfo *second_level = fields_array[group_idx].setting_info;
+
+		for (i = 1; i < second_level->properties_num; i++) {
+			g_string_append_printf (allowed_fields, "%s.%s,",
+			                        fields_array[group_idx].name, second_level->properties[i].property_name);
+		}
 	} else {
 		for (i = 0; fields_array[i].name; i++)
 			g_string_append_printf (allowed_fields, "%s,", fields_array[i].name);

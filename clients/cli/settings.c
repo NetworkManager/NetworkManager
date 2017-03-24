@@ -29,61 +29,76 @@
 #include "common.h"
 #include "nm-vpn-helpers.h"
 
-/* Forward declarations */
-static char *wep_key_type_to_string (NMWepKeyType type);
+/*****************************************************************************/
 
-typedef enum {
-	NMC_PROPERTY_GET_PRETTY,
-	NMC_PROPERTY_GET_PARSABLE,
-} NmcPropertyGetType;
-
-/* Helper macro to define fields */
 #define SETTING_FIELD(setting) { setting, N_(setting), 0, NULL, FALSE, FALSE, 0 }
 
-/* Available fields for NM_SETTING_CONNECTION_SETTING_NAME */
-NmcOutputField nmc_fields_setting_connection[] = {
-	SETTING_FIELD ("name"),                                      /* 0 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_ID),                    /* 1 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_UUID),                  /* 2 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_STABLE_ID),             /* 3 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_INTERFACE_NAME),        /* 4 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_TYPE),                  /* 5 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_AUTOCONNECT),           /* 6 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY),  /* 7 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES),   /* 8 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_TIMESTAMP),             /* 9 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_READ_ONLY),             /* 10 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_PERMISSIONS),           /* 11 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_ZONE),                  /* 12 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_MASTER),                /* 13 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_SLAVE_TYPE),            /* 14 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES),    /* 15 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_SECONDARIES),           /* 16 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT),  /* 17 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_METERED),               /* 18 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_LLDP),                  /* 19 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_CONNECTION_ALL     "name"","\
-                                              NM_SETTING_CONNECTION_ID","\
-                                              NM_SETTING_CONNECTION_UUID","\
-                                              NM_SETTING_CONNECTION_STABLE_ID","\
-                                              NM_SETTING_CONNECTION_INTERFACE_NAME","\
-                                              NM_SETTING_CONNECTION_TYPE","\
-                                              NM_SETTING_CONNECTION_AUTOCONNECT","\
-                                              NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY","\
-                                              NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES","\
-                                              NM_SETTING_CONNECTION_TIMESTAMP","\
-                                              NM_SETTING_CONNECTION_READ_ONLY","\
-                                              NM_SETTING_CONNECTION_PERMISSIONS","\
-                                              NM_SETTING_CONNECTION_ZONE","\
-                                              NM_SETTING_CONNECTION_MASTER","\
-                                              NM_SETTING_CONNECTION_SLAVE_TYPE","\
-                                              NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES","\
-                                              NM_SETTING_CONNECTION_SECONDARIES","\
-                                              NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT","\
-                                              NM_SETTING_CONNECTION_METERED","\
-                                              NM_SETTING_CONNECTION_LLDP
+static char *wep_key_type_to_string (NMWepKeyType type);
+
+/*****************************************************************************/
+
+static char *
+_get_fcn_direct (const NmcSettingInfo *setting_info,
+                 const NmcPropertyInfo *property_info,
+                 NMSetting *setting,
+                 NmcPropertyGetType get_type)
+{
+	return g_strdup (property_info->get_data.get_direct (setting));
+}
+
+static char *
+_get_fcn_nmc (const NmcSettingInfo *setting_info,
+              const NmcPropertyInfo *property_info,
+              NMSetting *setting,
+              NmcPropertyGetType get_type)
+{
+	return property_info->get_data.get_nmc (setting, get_type);
+}
+
+static char *
+_get_fcn_gobject (const NmcSettingInfo *setting_info,
+                  const NmcPropertyInfo *property_info,
+                  NMSetting *setting,
+                  NmcPropertyGetType get_type)
+{
+	char *s;
+	GValue val = G_VALUE_INIT;
+
+	g_value_init (&val, G_TYPE_STRING);
+	g_object_get_property (G_OBJECT (setting), property_info->property_name, &val);
+	s = g_value_dup_string (&val);
+	g_value_unset (&val);
+	return s;
+}
+
+/*****************************************************************************/
+
+static const NmcOutputField *
+_get_nmc_output_fields (const NmcSettingInfo *setting_info)
+{
+	static NmcOutputField *fields[_NM_META_SETTING_TYPE_NUM + 1] = { };
+	NmcOutputField **field;
+	guint i;
+
+	g_return_val_if_fail (setting_info, NULL);
+	g_return_val_if_fail (setting_info->general->meta_type < _NM_META_SETTING_TYPE_NUM, NULL);
+
+	field = &fields[setting_info->general->meta_type];
+
+	if (G_UNLIKELY (!*field)) {
+		*field = g_new0 (NmcOutputField, setting_info->properties_num + 1);
+		for (i = 0; i < setting_info->properties_num; i++) {
+			NmcOutputField *f = &(*field)[i];
+
+			f->name = setting_info->properties[i].property_name;
+			f->name_l10n = setting_info->properties[i].property_name;
+		}
+	}
+
+	return *field;
+}
+
+/*****************************************************************************/
 
 /* Available fields for NM_SETTING_WIRED_SETTING_NAME */
 NmcOutputField nmc_fields_setting_wired[] = {
@@ -8654,42 +8669,33 @@ nmc_property_set_gvalue (NMSetting *setting, const char *prop, GValue *value)
 	(show ? func (setting, NMC_PROPERTY_GET_PRETTY) : g_strdup (_("<hidden>")))
 
 static gboolean
-setting_connection_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
+_get_setting_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
-	NMSettingConnection *s_con = NM_SETTING_CONNECTION (setting);
-	NmcOutputField *tmpl, *arr;
+	gs_free NmcOutputField *tmpl = NULL;
+	NmcOutputField *arr;
+	guint i;
 	size_t tmpl_len;
 
-	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (s_con), FALSE);
+	g_return_val_if_fail (G_TYPE_CHECK_INSTANCE_TYPE (setting, setting_info->general->get_setting_gtype ()), FALSE);
 
-	tmpl = nmc_fields_setting_connection;
-	tmpl_len = sizeof (nmc_fields_setting_connection);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_CONNECTION_ALL,
+	tmpl_len = sizeof (NmcOutputField) * (setting_info->properties_num + 1);
+	tmpl = g_memdup (_get_nmc_output_fields (setting_info), tmpl_len);
+
+	nmc->print_fields.indices = parse_output_fields (one_prop ?: setting_info->all_properties,
 	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_connection_get_id (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 2, nmc_property_connection_get_uuid (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 3, nmc_property_connection_get_stable_id (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 4, nmc_property_connection_get_interface_name (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 5, nmc_property_connection_get_type (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 6, nmc_property_connection_get_autoconnect (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 7, nmc_property_connection_get_autoconnect_priority (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 8, nmc_property_connection_get_autoconnect_retries (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 9, nmc_property_connection_get_timestamp (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 10, nmc_property_connection_get_read_only (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 11, nmc_property_connection_get_permissions (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 12, nmc_property_connection_get_zone (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 13, nmc_property_connection_get_master (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 14, nmc_property_connection_get_slave_type (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 15, nmc_property_connection_get_autoconnect_slaves (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 16, nmc_property_connection_get_secondaries (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 17, nmc_property_connection_get_gateway_ping_timeout (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 18, nmc_property_connection_get_metered (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 19, nmc_property_connection_get_lldp (setting, NMC_PROPERTY_GET_PRETTY));
+	for (i = 0; i < setting_info->properties_num; i++) {
+		const NmcPropertyInfo *property_info = &setting_info->properties[i];
+
+		set_val_str (arr, i, property_info->get_fcn (setting_info,
+		                                             property_info,
+		                                             setting,
+		                                             NMC_PROPERTY_GET_PRETTY));
+	}
+
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -9729,6 +9735,119 @@ setting_proxy_details (const NmcSettingInfo *setting_info, NMSetting *setting, N
 	return TRUE;
 }
 
+/*****************************************************************************/
+
+static const NmcPropertyInfo properties_setting_connection[] = {
+	{
+		.property_name =                N_ ("name"),
+		.is_name                        = TRUE,
+		.get_fcn =                      _get_fcn_direct,
+		.get_data =                     { .get_direct = nm_setting_get_name, },
+	},
+	{
+		.property_name =                N_ (NM_SETTING_CONNECTION_ID),
+		.get_fcn =                      _get_fcn_gobject,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_CONNECTION_UUID),
+		.get_fcn =                      _get_fcn_gobject,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_CONNECTION_STABLE_ID),
+		.get_fcn =                      _get_fcn_gobject,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_CONNECTION_INTERFACE_NAME),
+		.get_fcn =                      _get_fcn_gobject,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_CONNECTION_TYPE),
+		.get_fcn =                      _get_fcn_gobject,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_CONNECTION_AUTOCONNECT),
+		.get_fcn =                      _get_fcn_gobject,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY),
+		.get_fcn =                      _get_fcn_gobject,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES),
+		.get_fcn =                      _get_fcn_nmc,
+		.get_data =                     { .get_nmc = nmc_property_connection_get_autoconnect_retries, },
+	},
+	{
+		.property_name =                N_ (NM_SETTING_CONNECTION_TIMESTAMP),
+		.get_fcn =                      _get_fcn_gobject,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_CONNECTION_READ_ONLY),
+		.get_fcn =                      _get_fcn_gobject,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_CONNECTION_PERMISSIONS),
+		.get_fcn =                      _get_fcn_nmc,
+		.get_data =                     { .get_nmc = nmc_property_connection_get_permissions, },
+	},
+	{
+		.property_name =                N_ (NM_SETTING_CONNECTION_ZONE),
+		.get_fcn =                      _get_fcn_gobject,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_CONNECTION_MASTER),
+		.get_fcn =                      _get_fcn_gobject,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_CONNECTION_SLAVE_TYPE),
+		.get_fcn =                      _get_fcn_gobject,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES),
+		.get_fcn =                      _get_fcn_nmc,
+		.get_data =                     { .get_nmc = nmc_property_connection_get_autoconnect_slaves, },
+	},
+	{
+		.property_name =                N_ (NM_SETTING_CONNECTION_SECONDARIES),
+		.get_fcn =                      _get_fcn_gobject,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT),
+		.get_fcn =                      _get_fcn_gobject,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_CONNECTION_METERED),
+		.get_fcn =                      _get_fcn_nmc,
+		.get_data =                     { .get_nmc = nmc_property_connection_get_metered, },
+	},
+	{
+		.property_name =                N_ (NM_SETTING_CONNECTION_LLDP),
+		.get_fcn =                      _get_fcn_nmc,
+		.get_data =                     { .get_nmc = nmc_property_connection_get_lldp, },
+	},
+};
+
+#define NMC_FIELDS_SETTING_CONNECTION_ALL     "name"","\
+                                              NM_SETTING_CONNECTION_ID","\
+                                              NM_SETTING_CONNECTION_UUID","\
+                                              NM_SETTING_CONNECTION_STABLE_ID","\
+                                              NM_SETTING_CONNECTION_INTERFACE_NAME","\
+                                              NM_SETTING_CONNECTION_TYPE","\
+                                              NM_SETTING_CONNECTION_AUTOCONNECT","\
+                                              NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY","\
+                                              NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES","\
+                                              NM_SETTING_CONNECTION_TIMESTAMP","\
+                                              NM_SETTING_CONNECTION_READ_ONLY","\
+                                              NM_SETTING_CONNECTION_PERMISSIONS","\
+                                              NM_SETTING_CONNECTION_ZONE","\
+                                              NM_SETTING_CONNECTION_MASTER","\
+                                              NM_SETTING_CONNECTION_SLAVE_TYPE","\
+                                              NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES","\
+                                              NM_SETTING_CONNECTION_SECONDARIES","\
+                                              NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT","\
+                                              NM_SETTING_CONNECTION_METERED","\
+                                              NM_SETTING_CONNECTION_LLDP
+
 const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM] = {
 	[NM_META_SETTING_TYPE_802_1X] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_802_1X],
@@ -9760,7 +9879,10 @@ const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM] = {
 	},
 	[NM_META_SETTING_TYPE_CONNECTION] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_CONNECTION],
-		.get_setting_details                = setting_connection_details,
+		.get_setting_details                = _get_setting_details,
+		.properties                         = properties_setting_connection,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_connection),
+		.all_properties                     = NMC_FIELDS_SETTING_CONNECTION_ALL,
 	},
 	[NM_META_SETTING_TYPE_DCB] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_DCB],

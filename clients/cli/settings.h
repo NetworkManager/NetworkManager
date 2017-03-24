@@ -27,7 +27,32 @@
 
 /*****************************************************************************/
 
+typedef enum {
+	NMC_PROPERTY_GET_PRETTY,
+	NMC_PROPERTY_GET_PARSABLE,
+} NmcPropertyGetType;
+
 typedef struct _NmcSettingInfo NmcSettingInfo;
+typedef struct _NmcPropertyInfo NmcPropertyInfo;
+
+struct _NmcPropertyInfo {
+	const char *property_name;
+
+	/* the property list for now must contain as first field the
+	 * "name", which isn't a regular property. This is required by
+	 * NmcOutputField and this first field is ignored for the
+	 * group_list/setting_info. */
+	bool is_name:1;
+
+	char *(*get_fcn) (const NmcSettingInfo *setting_info,
+	                  const NmcPropertyInfo *property_info,
+	                  NMSetting *setting,
+	                  NmcPropertyGetType get_type);
+	union {
+		const char *(*get_direct) (NMSetting *setting);
+		char *(*get_nmc) (NMSetting *setting, NmcPropertyGetType get_type);
+	} get_data;
+};
 
 struct _NmcSettingInfo {
 	const NMMetaSettingInfo *general;
@@ -36,6 +61,9 @@ struct _NmcSettingInfo {
 	                                 NmCli *nmc,
 	                                 const char *one_prop,
 	                                 gboolean secrets);
+	const NmcPropertyInfo *properties;
+	guint properties_num;
+	const char *all_properties;
 };
 
 extern const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM];
@@ -81,7 +109,6 @@ gboolean nmc_property_set_gvalue (NMSetting *setting, const char *prop, GValue *
 
 gboolean setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets);
 
-extern NmcOutputField nmc_fields_setting_connection[];
 extern NmcOutputField nmc_fields_setting_wired[];
 extern NmcOutputField nmc_fields_setting_8021X[];
 extern NmcOutputField nmc_fields_setting_wireless[];

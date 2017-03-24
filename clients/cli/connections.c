@@ -148,11 +148,22 @@ NmcOutputField nmc_fields_con_show[] = {
 #define NMC_FIELDS_CON_SHOW_COMMON  "NAME,UUID,TYPE,DEVICE"
 
 /* Helper macro to define fields */
-#define SETTING_FIELD(setting, props) { setting, N_(setting), 0, props, NULL, FALSE, FALSE, 0 }
+#define SETTING_FIELD(setting, props) \
+	{ \
+		.name = setting, \
+		.name_l10n = N_(setting), \
+		.group_list = props, \
+	}
+#define SETTING_FIELD_TYPE(setting, setting_type) \
+	{ \
+		.name = setting, \
+		.name_l10n = N_ (setting), \
+		.setting_info = &nmc_setting_infos[setting_type], \
+	}
 
 /* Available settings for 'connection show <con>' - profile part */
 NmcOutputField nmc_fields_settings_names[] = {
-	SETTING_FIELD (NM_SETTING_CONNECTION_SETTING_NAME,        nmc_fields_setting_connection + 1),        /* 0 */
+	SETTING_FIELD_TYPE (NM_SETTING_CONNECTION_SETTING_NAME, NM_META_SETTING_TYPE_CONNECTION),
 	SETTING_FIELD (NM_SETTING_WIRED_SETTING_NAME,             nmc_fields_setting_wired + 1),             /* 1 */
 	SETTING_FIELD (NM_SETTING_802_1X_SETTING_NAME,            nmc_fields_setting_8021X + 1),             /* 2 */
 	SETTING_FIELD (NM_SETTING_WIRELESS_SETTING_NAME,          nmc_fields_setting_wireless + 1),          /* 3 */
@@ -3179,6 +3190,7 @@ get_valid_properties_string (const NameItem *array,
 {
 	const NameItem *iter = array;
 	const NmcOutputField *field_iter;
+	const NmcSettingInfo *setting_info;
 	const char *prop_name = NULL;
 	GString *str;
 	int i, j;
@@ -3219,20 +3231,31 @@ get_valid_properties_string (const NameItem *array,
 				g_assert (nmc_fields_settings_names[j].name);
 				j++;
 			}
-			field_iter = nmc_fields_settings_names[j].group;
+			field_iter = nmc_fields_settings_names[j].group_list;
+			setting_info = nmc_fields_settings_names[j].setting_info;
 
 			j = 0;
-			while (field_iter[j].name) {
+			while (TRUE) {
 				gchar *new;
-				const char *arg_name = field_iter[j].name;
+				const char *arg_name;
+
+				if (field_iter) {
+					arg_name = field_iter[j].name;
+					if (!arg_name)
+						break;
+				} else {
+					if (j + 1 >= setting_info->properties_num)
+						break;
+					arg_name = setting_info->properties[j + 1].property_name;
+				}
 
 				/* If required, expand the alias too */
 				if (!postfix && iter->alias) {
 					if (modifier)
 						g_string_append_c (str, modifier);
 					new = g_strdup_printf ("%s.%s\n",
-							       iter->alias,
-							       arg_name);
+					                       iter->alias,
+					                       arg_name);
 					g_string_append (str, new);
 					g_free (new);
 				}
@@ -3245,8 +3268,8 @@ get_valid_properties_string (const NameItem *array,
 				if (modifier)
 					g_string_append_c (str, modifier);
 				new = g_strdup_printf ("%s.%s\n",
-						       prop_name,
-						       arg_name);
+				                       prop_name,
+				                       arg_name);
 				g_string_append (str, new);
 				g_free (new);
 				j++;

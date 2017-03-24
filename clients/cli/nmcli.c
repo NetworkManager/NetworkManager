@@ -66,7 +66,23 @@ struct termios termios_orig;
 NM_CACHED_QUARK_FCN ("nmcli-error-quark", nmcli_error_quark)
 
 static void
-complete_field (GHashTable *h, const char *setting, NmcOutputField field[])
+complete_field_new (GHashTable *h, const char *setting, NMMetaSettingType setting_type)
+{
+	const NmcSettingInfo *setting_info = &nmc_setting_infos[setting_type];
+	int i;
+
+	for (i = 0; i < setting_info->properties_num; i++) {
+		const char *n = setting_info->properties[i].property_name;
+
+		if (setting)
+			g_hash_table_add (h, g_strdup_printf ("%s.%s", setting, n));
+		else
+			g_hash_table_add (h, g_strdup (n));
+	}
+}
+
+static void
+complete_field (GHashTable *h, const char *setting, const NmcOutputField *field)
 {
 	int i;
 
@@ -130,7 +146,7 @@ complete_fields (const char *prefix)
 	complete_field (h, NULL, nmc_fields_dev_show_sections);
 	complete_field (h, NULL, nmc_fields_dev_lldp_list);
 
-	complete_field (h, "connection", nmc_fields_setting_connection);
+	complete_field_new (h, "connection", NM_META_SETTING_TYPE_CONNECTION);
 	complete_field (h, "802-3-ethernet", nmc_fields_setting_wired);
 	complete_field (h, "802-1x", nmc_fields_setting_8021X);
 	complete_field (h, "802-11-wireless", nmc_fields_setting_wireless);

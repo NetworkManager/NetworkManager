@@ -104,17 +104,27 @@ typedef enum {
 #define NMC_OF_FLAG_MAIN_HEADER_ADD    0x00000004   /* Print main header in addition to values/field names */
 #define NMC_OF_FLAG_MAIN_HEADER_ONLY   0x00000008   /* Print main header only */
 
+struct _NmcSettingInfo;
+
 typedef struct _NmcOutputField {
 	const char *name;               /* Field's name */
 	const char *name_l10n;          /* Field's name for translation */
 	int width;                      /* Width in screen columns */
-	struct _NmcOutputField *group;  /* Points to an array with available section field names if this is a section (group) field */
+	const struct _NmcOutputField *group_list; /* Points to an array with available section field names if this is a section (group) field */
 	void *value;                    /* Value of current field - char* or char** (NULL-terminated array) */
 	gboolean value_is_array;        /* Whether value is char** instead of char* */
 	gboolean free_value;            /* Whether to free the value */
 	guint32 flags;                  /* Flags - whether and how to print values/field names/headers */
 	NmcTermColor color;             /* Use this color to print value */
 	NmcTermFormat color_fmt;        /* Use this terminal format to print value */
+
+	/* in a very particular case NmcOutputField is used in combination with
+	 * the @group_list above. That list will go away (and the entire NmcOutputField
+	 * should separate formatting-options, setting-metadata and output.
+	 *
+	 * For now, hack around that by alternatively providing a @setting_info instead
+	 * of @group_list. */
+	const struct _NmcSettingInfo *setting_info;
 } NmcOutputField;
 
 typedef struct {
