@@ -20,10 +20,27 @@
 #ifndef NMC_SETTINGS_H
 #define NMC_SETTINGS_H
 
+#include "nm-setting-metadata.h"
+
 #include "nmcli.h"
 #include "utils.h"
 
-/* --- Functions --- */
+/*****************************************************************************/
+
+typedef struct _NmcSettingInfo NmcSettingInfo;
+
+struct _NmcSettingInfo {
+	const NMMetaSettingInfo *general;
+	gboolean (*get_setting_details) (const NmcSettingInfo *setting_info,
+	                                 NMSetting *setting,
+	                                 NmCli *nmc,
+	                                 const char *one_prop,
+	                                 gboolean secrets);
+};
+
+extern const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM];
+
+/*****************************************************************************/
 
 void nmc_properties_init (void);
 void nmc_properties_cleanup (void);

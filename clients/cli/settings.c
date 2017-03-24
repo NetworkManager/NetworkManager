@@ -8654,7 +8654,7 @@ nmc_property_set_gvalue (NMSetting *setting, const char *prop, GValue *value)
 	(show ? func (setting, NMC_PROPERTY_GET_PRETTY) : g_strdup (_("<hidden>")))
 
 static gboolean
-setting_connection_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_connection_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingConnection *s_con = NM_SETTING_CONNECTION (setting);
 	NmcOutputField *tmpl, *arr;
@@ -8698,7 +8698,7 @@ setting_connection_details (NMSetting *setting, NmCli *nmc,  const char *one_pro
 }
 
 static gboolean
-setting_wired_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_wired_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingWired *s_wired = NM_SETTING_WIRED (setting);
 	NmcOutputField *tmpl, *arr;
@@ -8737,7 +8737,7 @@ setting_wired_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gb
 }
 
 static gboolean
-setting_802_1X_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_802_1X_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSetting8021x *s_8021x = NM_SETTING_802_1X (setting);
 	NmcOutputField *tmpl, *arr;
@@ -8806,7 +8806,7 @@ setting_802_1X_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, g
 }
 
 static gboolean
-setting_wireless_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_wireless_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingWireless *s_wireless = NM_SETTING_WIRELESS (setting);
 	NmcOutputField *tmpl, *arr;
@@ -8847,7 +8847,7 @@ setting_wireless_details (NMSetting *setting, NmCli *nmc,  const char *one_prop,
 }
 
 static gboolean
-setting_wireless_security_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
+setting_wireless_security_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingWirelessSecurity *s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (setting);
 	NmcOutputField *tmpl, *arr;
@@ -8889,7 +8889,7 @@ setting_wireless_security_details (NMSetting *setting, NmCli *nmc, const char *o
 }
 
 static gboolean
-setting_ip4_config_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_ip4_config_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingIPConfig *s_ip4 = NM_SETTING_IP_CONFIG (setting);
 	NmcOutputField *tmpl, *arr;
@@ -8933,7 +8933,7 @@ setting_ip4_config_details (NMSetting *setting, NmCli *nmc,  const char *one_pro
 }
 
 static gboolean
-setting_ip6_config_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_ip6_config_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingIPConfig *s_ip6 = NM_SETTING_IP_CONFIG (setting);
 	NmcOutputField *tmpl, *arr;
@@ -8976,7 +8976,7 @@ setting_ip6_config_details (NMSetting *setting, NmCli *nmc,  const char *one_pro
 }
 
 static gboolean
-setting_serial_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_serial_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingSerial *s_serial = NM_SETTING_SERIAL (setting);
 	NmcOutputField *tmpl, *arr;
@@ -9006,7 +9006,7 @@ setting_serial_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, g
 }
 
 static gboolean
-setting_ppp_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_ppp_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingPpp *s_ppp = NM_SETTING_PPP (setting);
 	NmcOutputField *tmpl, *arr;
@@ -9049,7 +9049,7 @@ setting_ppp_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboo
 }
 
 static gboolean
-setting_pppoe_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_pppoe_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingPppoe *s_pppoe = NM_SETTING_PPPOE (setting);
 	NmcOutputField *tmpl, *arr;
@@ -9078,7 +9078,7 @@ setting_pppoe_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gb
 }
 
 static gboolean
-setting_gsm_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_gsm_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingGsm *s_gsm = NM_SETTING_GSM (setting);
 	NmcOutputField *tmpl, *arr;
@@ -9116,7 +9116,7 @@ setting_gsm_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboo
 }
 
 static gboolean
-setting_cdma_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_cdma_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingCdma *s_cdma = NM_SETTING_CDMA (setting);
 	NmcOutputField *tmpl, *arr;
@@ -9146,7 +9146,7 @@ setting_cdma_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gbo
 }
 
 static gboolean
-setting_bluetooth_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_bluetooth_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingBluetooth *s_bluetooth = NM_SETTING_BLUETOOTH (setting);
 	NmcOutputField *tmpl, *arr;
@@ -9173,7 +9173,7 @@ setting_bluetooth_details (NMSetting *setting, NmCli *nmc,  const char *one_prop
 }
 
 static gboolean
-setting_olpc_mesh_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_olpc_mesh_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingOlpcMesh *s_olpc_mesh = NM_SETTING_OLPC_MESH (setting);
 	NmcOutputField *tmpl, *arr;
@@ -9201,7 +9201,7 @@ setting_olpc_mesh_details (NMSetting *setting, NmCli *nmc,  const char *one_prop
 }
 
 static gboolean
-setting_vpn_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_vpn_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingVpn *s_vpn = NM_SETTING_VPN (setting);
 	NmcOutputField *tmpl, *arr;
@@ -9232,7 +9232,7 @@ setting_vpn_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboo
 }
 
 static gboolean
-setting_wimax_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_wimax_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingWimax *s_wimax = NM_SETTING_WIMAX (setting);
 	NmcOutputField *tmpl, *arr;
@@ -9259,7 +9259,7 @@ setting_wimax_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gb
 }
 
 static gboolean
-setting_infiniband_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_infiniband_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingInfiniband *s_infiniband = NM_SETTING_INFINIBAND (setting);
 	NmcOutputField *tmpl, *arr;
@@ -9289,7 +9289,7 @@ setting_infiniband_details (NMSetting *setting, NmCli *nmc,  const char *one_pro
 }
 
 static gboolean
-setting_bond_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_bond_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingBond *s_bond = NM_SETTING_BOND (setting);
 	NmcOutputField *tmpl, *arr;
@@ -9315,7 +9315,7 @@ setting_bond_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gbo
 }
 
 static gboolean
-setting_vlan_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_vlan_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingVlan *s_vlan = NM_SETTING_VLAN (setting);
 	NmcOutputField *tmpl, *arr;
@@ -9345,7 +9345,7 @@ setting_vlan_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gbo
 }
 
 static gboolean
-setting_adsl_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_adsl_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingAdsl *s_adsl = NM_SETTING_ADSL (setting);
 	NmcOutputField *tmpl, *arr;
@@ -9377,7 +9377,7 @@ setting_adsl_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gbo
 }
 
 static gboolean
-setting_bridge_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_bridge_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingBridge *s_bridge = NM_SETTING_BRIDGE (setting);
 	NmcOutputField *tmpl, *arr;
@@ -9410,7 +9410,7 @@ setting_bridge_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, g
 }
 
 static gboolean
-setting_bridge_port_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_bridge_port_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingBridgePort *s_bridge_port = NM_SETTING_BRIDGE_PORT (setting);
 	NmcOutputField *tmpl, *arr;
@@ -9438,7 +9438,7 @@ setting_bridge_port_details (NMSetting *setting, NmCli *nmc,  const char *one_pr
 }
 
 static gboolean
-setting_team_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_team_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingTeam *s_team = NM_SETTING_TEAM (setting);
 	NmcOutputField *tmpl, *arr;
@@ -9464,7 +9464,7 @@ setting_team_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gbo
 }
 
 static gboolean
-setting_team_port_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_team_port_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingTeamPort *s_team_port = NM_SETTING_TEAM_PORT (setting);
 	NmcOutputField *tmpl, *arr;
@@ -9490,7 +9490,7 @@ setting_team_port_details (NMSetting *setting, NmCli *nmc,  const char *one_prop
 }
 
 static gboolean
-setting_dcb_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_dcb_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingDcb *s_dcb = NM_SETTING_DCB (setting);
 	NmcOutputField *tmpl, *arr;
@@ -9530,7 +9530,7 @@ setting_dcb_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboo
 }
 
 static gboolean
-setting_tun_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_tun_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingTun *s_tun = NM_SETTING_TUN (setting);
 	NmcOutputField *tmpl, *arr;
@@ -9561,7 +9561,7 @@ setting_tun_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboo
 }
 
 static gboolean
-setting_ip_tunnel_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_ip_tunnel_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingIPTunnel *s_ip_tunnel = NM_SETTING_IP_TUNNEL (setting);
 	NmcOutputField *tmpl, *arr;
@@ -9598,7 +9598,7 @@ setting_ip_tunnel_details (NMSetting *setting, NmCli *nmc,  const char *one_prop
 }
 
 static gboolean
-setting_macsec_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_macsec_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingMacsec *s_macsec = NM_SETTING_MACSEC (setting);
 	NmcOutputField *tmpl, *arr;
@@ -9631,7 +9631,7 @@ setting_macsec_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, g
 }
 
 static gboolean
-setting_macvlan_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_macvlan_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingMacvlan *s_macvlan = NM_SETTING_MACVLAN (setting);
 	NmcOutputField *tmpl, *arr;
@@ -9660,7 +9660,7 @@ setting_macvlan_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, 
 }
 
 static gboolean
-setting_vxlan_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_vxlan_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingVxlan *s_vxlan = NM_SETTING_VXLAN (setting);
 	NmcOutputField *tmpl, *arr;
@@ -9701,7 +9701,7 @@ setting_vxlan_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gb
 }
 
 static gboolean
-setting_proxy_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_proxy_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingProxy *s_proxy = NM_SETTING_PROXY (setting);
 	NmcOutputField *tmpl, *arr;
@@ -9729,60 +9729,147 @@ setting_proxy_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gb
 	return TRUE;
 }
 
-typedef struct {
-	const char *sname;
-	gboolean (*func) (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets);
-} SettingDetails;
-
-static const SettingDetails detail_printers[] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME,        setting_connection_details },
-	{ NM_SETTING_WIRED_SETTING_NAME,             setting_wired_details },
-	{ NM_SETTING_802_1X_SETTING_NAME,            setting_802_1X_details },
-	{ NM_SETTING_WIRELESS_SETTING_NAME,          setting_wireless_details },
-	{ NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, setting_wireless_security_details },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,        setting_ip4_config_details },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,        setting_ip6_config_details },
-	{ NM_SETTING_SERIAL_SETTING_NAME,            setting_serial_details },
-	{ NM_SETTING_PPP_SETTING_NAME,               setting_ppp_details },
-	{ NM_SETTING_PPPOE_SETTING_NAME,             setting_pppoe_details },
-	{ NM_SETTING_GSM_SETTING_NAME,               setting_gsm_details },
-	{ NM_SETTING_CDMA_SETTING_NAME,              setting_cdma_details },
-	{ NM_SETTING_BLUETOOTH_SETTING_NAME,         setting_bluetooth_details },
-	{ NM_SETTING_OLPC_MESH_SETTING_NAME,         setting_olpc_mesh_details },
-	{ NM_SETTING_VPN_SETTING_NAME,               setting_vpn_details },
-	{ NM_SETTING_WIMAX_SETTING_NAME,             setting_wimax_details },
-	{ NM_SETTING_INFINIBAND_SETTING_NAME,        setting_infiniband_details },
-	{ NM_SETTING_BOND_SETTING_NAME,              setting_bond_details },
-	{ NM_SETTING_VLAN_SETTING_NAME,              setting_vlan_details },
-	{ NM_SETTING_ADSL_SETTING_NAME,              setting_adsl_details },
-	{ NM_SETTING_BRIDGE_SETTING_NAME,            setting_bridge_details },
-	{ NM_SETTING_BRIDGE_PORT_SETTING_NAME,       setting_bridge_port_details },
-	{ NM_SETTING_TEAM_SETTING_NAME,              setting_team_details },
-	{ NM_SETTING_TEAM_PORT_SETTING_NAME,         setting_team_port_details },
-	{ NM_SETTING_DCB_SETTING_NAME,               setting_dcb_details },
-	{ NM_SETTING_TUN_SETTING_NAME,               setting_tun_details },
-	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,         setting_ip_tunnel_details },
-	{ NM_SETTING_MACSEC_SETTING_NAME,            setting_macsec_details },
-	{ NM_SETTING_MACVLAN_SETTING_NAME,           setting_macvlan_details },
-	{ NM_SETTING_VXLAN_SETTING_NAME,             setting_vxlan_details },
-	{ NM_SETTING_PROXY_SETTING_NAME,             setting_proxy_details },
-	{ NULL },
+const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM] = {
+	[NM_META_SETTING_TYPE_802_1X] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_802_1X],
+		.get_setting_details                = setting_802_1X_details,
+	},
+	[NM_META_SETTING_TYPE_ADSL] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_ADSL],
+		.get_setting_details                = setting_adsl_details,
+	},
+	[NM_META_SETTING_TYPE_BLUETOOTH] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_BLUETOOTH],
+		.get_setting_details                = setting_bluetooth_details,
+	},
+	[NM_META_SETTING_TYPE_BOND] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_BOND],
+		.get_setting_details                = setting_bond_details,
+	},
+	[NM_META_SETTING_TYPE_BRIDGE] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_BRIDGE],
+		.get_setting_details                = setting_bridge_details,
+	},
+	[NM_META_SETTING_TYPE_BRIDGE_PORT] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_BRIDGE_PORT],
+		.get_setting_details                = setting_bridge_port_details,
+	},
+	[NM_META_SETTING_TYPE_CDMA] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_CDMA],
+		.get_setting_details                = setting_cdma_details,
+	},
+	[NM_META_SETTING_TYPE_CONNECTION] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_CONNECTION],
+		.get_setting_details                = setting_connection_details,
+	},
+	[NM_META_SETTING_TYPE_DCB] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_DCB],
+		.get_setting_details                = setting_dcb_details,
+	},
+	[NM_META_SETTING_TYPE_GSM] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_GSM],
+		.get_setting_details                = setting_gsm_details,
+	},
+	[NM_META_SETTING_TYPE_INFINIBAND] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_INFINIBAND],
+		.get_setting_details                = setting_infiniband_details,
+	},
+	[NM_META_SETTING_TYPE_IP4_CONFIG] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_IP4_CONFIG],
+		.get_setting_details                = setting_ip4_config_details,
+	},
+	[NM_META_SETTING_TYPE_IP6_CONFIG] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_IP6_CONFIG],
+		.get_setting_details                = setting_ip6_config_details,
+	},
+	[NM_META_SETTING_TYPE_IP_TUNNEL] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_IP_TUNNEL],
+		.get_setting_details                = setting_ip_tunnel_details,
+	},
+	[NM_META_SETTING_TYPE_MACSEC] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_MACSEC],
+		.get_setting_details                = setting_macsec_details,
+	},
+	[NM_META_SETTING_TYPE_MACVLAN] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_MACVLAN],
+		.get_setting_details                = setting_macvlan_details,
+	},
+	[NM_META_SETTING_TYPE_OLPC_MESH] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_OLPC_MESH],
+		.get_setting_details                = setting_olpc_mesh_details,
+	},
+	[NM_META_SETTING_TYPE_PPPOE] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_PPPOE],
+		.get_setting_details                = setting_pppoe_details,
+	},
+	[NM_META_SETTING_TYPE_PPP] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_PPP],
+		.get_setting_details                = setting_ppp_details,
+	},
+	[NM_META_SETTING_TYPE_PROXY] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_PROXY],
+		.get_setting_details                = setting_proxy_details,
+	},
+	[NM_META_SETTING_TYPE_SERIAL] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_SERIAL],
+		.get_setting_details                = setting_serial_details,
+	},
+	[NM_META_SETTING_TYPE_TEAM] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_TEAM],
+		.get_setting_details                = setting_team_details,
+	},
+	[NM_META_SETTING_TYPE_TEAM_PORT] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_TEAM_PORT],
+		.get_setting_details                = setting_team_port_details,
+	},
+	[NM_META_SETTING_TYPE_TUN] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_TUN],
+		.get_setting_details                = setting_tun_details,
+	},
+	[NM_META_SETTING_TYPE_VLAN] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_VLAN],
+		.get_setting_details                = setting_vlan_details,
+	},
+	[NM_META_SETTING_TYPE_VPN] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_VPN],
+		.get_setting_details                = setting_vpn_details,
+	},
+	[NM_META_SETTING_TYPE_VXLAN] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_VXLAN],
+		.get_setting_details                = setting_vxlan_details,
+	},
+	[NM_META_SETTING_TYPE_WIMAX] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_WIMAX],
+		.get_setting_details                = setting_wimax_details,
+	},
+	[NM_META_SETTING_TYPE_WIRED] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_WIRED],
+		.get_setting_details                = setting_wired_details,
+	},
+	[NM_META_SETTING_TYPE_WIRELESS] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_WIRELESS],
+		.get_setting_details                = setting_wireless_details,
+	},
+	[NM_META_SETTING_TYPE_WIRELESS_SECURITY] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_WIRELESS_SECURITY],
+		.get_setting_details                = setting_wireless_security_details,
+	},
 };
 
 gboolean
-setting_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
+setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
-	const SettingDetails *iter = &detail_printers[0];
+	const NMMetaSettingInfo *meta_setting_info;
+	const NmcSettingInfo *setting_info;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 
-	while (iter->sname) {
-		if (nm_setting_lookup_type (iter->sname) == G_OBJECT_TYPE (setting))
-			return iter->func (setting, nmc, one_prop, secrets);
-		iter++;
-	}
+	meta_setting_info = nm_meta_setting_infos_by_gtype (G_OBJECT_TYPE (setting));
+	g_return_val_if_fail (meta_setting_info, FALSE);
 
-	g_assert_not_reached ();
-	return FALSE;
+	setting_info = &nmc_setting_infos[meta_setting_info->meta_type];
+	g_return_val_if_fail (setting_info && setting_info->get_setting_details, FALSE);
+
+	return setting_info->get_setting_details (setting_info, setting, nmc, one_prop, secrets);
 }
 
