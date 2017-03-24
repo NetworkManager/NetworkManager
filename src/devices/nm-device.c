@@ -4278,7 +4278,7 @@ get_ip_config_may_fail (NMDevice *self, int family)
 		g_assert_not_reached ();
 	}
 
-	return nm_setting_ip_config_get_may_fail (s_ip);
+	return !s_ip || nm_setting_ip_config_get_may_fail (s_ip);
 }
 
 static void
