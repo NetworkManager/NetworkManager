@@ -403,7 +403,7 @@ no-auto-default=*
           <term><varname>path</varname></term>
           <listitem>
             <para>The location where keyfiles are read and stored.
-            This defaults to "<filename>&sysconfdir;/NetworkManager/conf.d</filename>".
+            This defaults to "<filename>&sysconfdir;/NetworkManager/system-connections</filename>".
             </para>
           </listitem>
         </varlistentry>
