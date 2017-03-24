@@ -231,8 +231,8 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 
 		if (argc == 1 && nmc->complete) {
 			nmc_complete_strings (opt, "--terse", "--pretty", "--mode", "--colors", "--escape",
-			                           "--fields", "--nocheck", "--ask", "--show-secrets",
-			                           "--get-values", "--wait", "--version", "--help", NULL);
+			                           "--fields", "--nocheck", "--get-values",
+			                            "--wait", "--version", "--help", NULL);
 		}
 
 		if (opt[1] == '-') {
@@ -360,10 +360,6 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 			nmc->mode_specified = TRUE;
 		} else if (matches (opt, "-nocheck")) {
 			/* ignore for backward compatibility */
-		} else if (matches (opt, "-ask")) {
-			nmc->ask = TRUE;
-		} else if (matches (opt, "-show-secrets")) {
-			nmc->show_secrets = TRUE;
 		} else if (matches (opt, "-wait")) {
 			unsigned long timeout;
 			if (!argc) {

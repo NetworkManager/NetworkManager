@@ -28,6 +28,7 @@
 #include <arpa/inet.h>
 
 #include "utils.h"
+#include "common.h"
 
 gboolean
 matches (const char *cmd, const char *pattern)
@@ -38,17 +39,34 @@ matches (const char *cmd, const char *pattern)
 	return memcmp (pattern, cmd, len) == 0;
 }
 
+static gboolean
+parse_global_arg (NmCli *nmc, const char *arg)
+{
+	if (nmc_arg_is_option (arg, "ask"))
+		nmc->ask = TRUE;
+	else if (nmc_arg_is_option (arg, "show-secrets"))
+		nmc->show_secrets = TRUE;
+	else
+		return FALSE;
+
+	return TRUE;
+}
+
 int
 next_arg (NmCli *nmc, int *argc, char ***argv)
 {
 	int arg_num = *argc;
 
-	if (arg_num > 0) {
-		(*argc)--;
-		(*argv)++;
-	}
-	if (arg_num <= 1)
-		return -1;
+	do {
+		if (arg_num > 0) {
+			(*argc)--;
+			(*argv)++;
+		}
+		if (nmc && nmc->complete && *argc == 1 && ***argv == '-')
+			nmc_complete_strings (**argv, "--ask", "--show-secrets", NULL);
+		if (arg_num <= 1)
+			return -1;
+	} while (nmc && parse_global_arg (nmc, **argv));
 
 	return 0;
 }
@@ -81,7 +99,6 @@ nmc_arg_is_option (const char *str, const char *opt_name)
 
 	return (*p ? matches (p, opt_name) : FALSE);
 }
-
 
 /*
  * Helper function to parse command-line arguments.
