@@ -1746,24 +1746,18 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 	char *profile_flds = NULL, *active_flds = NULL;
 	GPtrArray *invisibles, *sorted_cons;
 	gboolean active_only = FALSE;
-	gboolean show_secrets = FALSE;
 	GArray *order = NULL;
 	int i;
 
-	/* check connection show options [--active] [--show-secrets] */
-	for (i = 0; i < 3; i++) {
+	/* check connection show options [--active] */
+	while (argc) {
 		if (argc == 1 && nmc->complete) {
-			nmc_complete_strings (*argv, "--active", "--show-secrets",
+			nmc_complete_strings (*argv, "--active",
 			                             "--order", NULL);
 		}
 
 		if (!active_only && nmc_arg_is_option (*argv, "active")) {
 			active_only = TRUE;
-			next_arg (nmc, &argc, &argv);
-		} else if (!show_secrets && nmc_arg_is_option (*argv, "show-secrets")) {
-			/* --show-secrets is deprecated in favour of global --show-secrets */
-			/* Keep it here for backwards compatibility */
-			show_secrets = TRUE;
 			next_arg (nmc, &argc, &argv);
 		} else if (!order && nmc_arg_is_option (*argv, "order")) {
 			if (!argc) {
@@ -1782,7 +1776,6 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 			break;
 		}
 	}
-	show_secrets = nmc->show_secrets || show_secrets;
 
 	if (argc == 0) {
 		const GPtrArray *connections;
@@ -1912,9 +1905,9 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 			if (without_fields || profile_flds) {
 				if (con) {
 					nmc->required_fields = profile_flds;
-					if (show_secrets)
+					if (nmc->show_secrets)
 						update_secrets_in_connection (NM_REMOTE_CONNECTION (con), con);
-					res = nmc_connection_profile_details (con, nmc, show_secrets);
+					res = nmc_connection_profile_details (con, nmc, nmc->show_secrets);
 					nmc->required_fields = NULL;
 					if (!res)
 						goto finish;
