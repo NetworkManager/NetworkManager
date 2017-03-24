@@ -117,11 +117,13 @@ nmc_parse_args (nmc_arg_t *arg_arr, gboolean last, int *argc, char ***argv, GErr
 				}
 
 				if (p->has_value) {
-					if (next_arg (argc, argv) != 0) {
+					if (!argc) {
 						g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 						             _("Error: value for '%s' argument is required."), *(*argv-1));
 						return FALSE;
 					}
+					argc--;
+					argv++;
 					*(p->value) = **argv;
 				}
 				p->found = TRUE;

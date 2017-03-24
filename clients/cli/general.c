@@ -655,20 +655,24 @@ do_general_logging (NmCli *nmc, int argc, char **argv)
 				nmc_complete_strings (*argv, "level", "domains", NULL);
 
 			if (matches (*argv, "level")) {
-				if (next_arg (&argc, &argv) != 0) {
+				if (!argc) {
 					g_string_printf (nmc->return_text, _("Error: '%s' argument is missing."), *(argv-1));
 					return NMC_RESULT_ERROR_USER_INPUT;
 				}
+				argc--;
+				argv++;
 				if (argc == 1 && nmc->complete) {
 					nmc_complete_strings_nocase (*argv, "TRACE", "DEBUG", "INFO", "WARN",
 					                             "ERR", "OFF", "KEEP", NULL);
 				}
 				level = *argv;
 			} else if (matches (*argv, "domains")) {
-				if (next_arg (&argc, &argv) != 0) {
+				if (!argc) {
 					g_string_printf (nmc->return_text, _("Error: '%s' argument is missing."), *(argv-1));
 					return NMC_RESULT_ERROR_USER_INPUT;
 				}
+				argc--;
+				argv++;
 				if (argc == 1 && nmc->complete) {
 					nmc_complete_strings_nocase (*argv, "PLATFORM", "RFKILL", "ETHER", "WIFI", "BT",
 					                             "MB", "DHCP4", "DHCP6", "PPP", "WIFI_SCAN", "IP4",

@@ -1713,11 +1713,13 @@ get_connection (NmCli *nmc, int *argc, char ***argv, int *pos, GError **error)
 	    || strcmp (**argv, "uuid") == 0
 	    || strcmp (**argv, "path") == 0) {
 		selector = **argv;
-		if (next_arg (argc, argv) != 0) {
+		if (!*argc) {
 			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			             _("%s argument is missing"), selector);
 			return NULL;
 		}
+		(*argc)--;
+		(*argv)++;
 	}
 
 	connections = nm_client_get_connections (nmc->client);
@@ -1764,11 +1766,13 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 			show_secrets = TRUE;
 			next_arg (&argc, &argv);
 		} else if (!order && nmc_arg_is_option (*argv, "order")) {
-			if (next_arg (&argc, &argv) != 0) {
+			if (!argc) {
 				g_set_error_literal (&err, NMCLI_ERROR, 0,
 				                     _("'--order' argument is missing"));
 				goto finish;
 			}
+			argc--;
+			argv++;
 			/* TODO: complete --order */
 			order = parse_preferred_connection_order (*argv, &err);
 			if (err)
@@ -1856,7 +1860,7 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 			    || strcmp (*argv, "path") == 0
 			    || strcmp (*argv, "apath") == 0) {
 				selector = *argv;
-				if (next_arg (&argc, &argv) != 0) {
+				if (!argc) {
 					g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 					goto finish;
@@ -2596,31 +2600,37 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 			nmc_complete_strings (*argv, "ifname", "ap", "passwd-file", NULL);
 
 		if (strcmp (*argv, "ifname") == 0) {
-			if (next_arg (&argc, &argv) != 0) {
+			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				return NMC_RESULT_ERROR_USER_INPUT;
 			}
 
+			argc--;
+			argv++;
 			ifname = *argv;
 			if (argc == 1 && nmc->complete)
 				nmc_complete_device (nmc->client, ifname, ap != NULL);
 		}
 		else if (strcmp (*argv, "ap") == 0) {
-			if (next_arg (&argc, &argv) != 0) {
+			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				return NMC_RESULT_ERROR_USER_INPUT;
 			}
 
+			argc--;
+			argv++;
 			ap = *argv;
 			if (argc == 1 && nmc->complete)
 				nmc_complete_bssid (nmc->client, ifname, ap);
 		}
 		else if (strcmp (*argv, "passwd-file") == 0) {
-			if (next_arg (&argc, &argv) != 0) {
+			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				return NMC_RESULT_ERROR_USER_INPUT;
 			}
 
+			argc--;
+			argv++;
 			if (argc == 1 && nmc->complete)
 				nmc->return_value = NMC_RESULT_COMPLETE_FILE;
 
@@ -2630,8 +2640,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 			g_printerr (_("Unknown parameter: %s\n"), *argv);
 		}
 
-		argc--;
-		argv++;
+		next_arg (&argc, &argv);
 	}
 
 	if (nmc->complete)
@@ -2787,11 +2796,13 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 		    || strcmp (*arg_ptr, "apath") == 0) {
 
 			selector = *arg_ptr;
-			if (next_arg (&arg_num, &arg_ptr) != 0) {
+			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), selector);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto finish;
 			}
+			argc--;
+			argv++;
 		}
 
 		connections = nm_client_get_connections (nmc->client);
@@ -4501,7 +4512,8 @@ get_value (const char **value, int *argc, char ***argv, const char *option, GErr
 	else
 		*value = *argv[0];
 
-	next_arg (argc, argv);
+	(*argc)--;
+	(*argv)++;
 	return TRUE;
 }
 
@@ -4565,7 +4577,8 @@ nmc_read_connection_properties (NmCli *nmc,
 				return FALSE;
 			}
 
-			next_arg (argc, argv);
+			(*argc)--;
+			(*argv)++;
 			if (!get_value (&value, argc, argv, option, error))
 				return FALSE;
 
@@ -4604,7 +4617,8 @@ nmc_read_connection_properties (NmCli *nmc,
 			if (*argc == 1 && nmc->complete)
 				complete_property_name (nmc, connection, modifier, option, NULL);
 
-			next_arg (argc, argv);
+			(*argc)--;
+			(*argv)++;
 			if (!get_value (&value, argc, argv, option, error))
 				return FALSE;
 
@@ -4947,13 +4961,15 @@ read_properties:
 			/* It would be better if "save" was a separate argument and not
 			 * mixed with properties, but there's not much we can do about it now. */
 			g_clear_error (&error);
-			if (next_arg (&argc, &argv) != 0) {
+			if (!argc) {
 				g_string_printf (nmc->return_text,
 				                 _("Error: value for '%s' argument is required."),
 				                "save");
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto finish;
 			}
+			argc--;
+			argv++;
 			if (!nmc_string_to_bool (*argv, &save_bool, &error)) {
 				g_string_printf (nmc->return_text, _("Error: 'save': %s."),
 				                 error->message);
@@ -8586,12 +8602,14 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 		}
 
 		if (strcmp (*argv, "type") == 0) {
-			if (next_arg (&argc, &argv) != 0) {
+			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto finish;
 			}
 
+			argc--;
+			argv++;
 			if (argc == 1 && nmc->complete)
 				nmc_complete_vpn_service (*argv);
 
@@ -8601,11 +8619,13 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 				g_printerr (_("Warning: 'type' already specified, ignoring extra one.\n"));
 
 		} else if (strcmp (*argv, "file") == 0) {
-			if (next_arg (&argc, &argv) != 0) {
+			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto finish;
 			}
+			argc--;
+			argv++;
 			if (argc == 1 && nmc->complete)
 				nmc->return_value = NMC_RESULT_COMPLETE_FILE;
 			if (!filename)
@@ -8618,8 +8638,7 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 			goto finish;
 		}
 
-		argc--;
-		argv++;
+		next_arg (&argc, &argv);
 	}
 
 	if (nmc->complete)
@@ -8721,16 +8740,20 @@ do_connection_export (NmCli *nmc, int argc, char **argv)
 	if (nmc->complete)
 		return nmc->return_value;
 
-	if (next_arg (&argc, &argv) == 0)
+	if (argc) {
 		out_name = *argv;
-	else if (nmc->ask)
-		out_name = out_name_ask = nmc_readline (_("Output file name: "));
+		argc--;
+		argv++;
+	}
 
 	if (next_arg (argc_ptr, argv_ptr) == 0) {
 		g_string_printf (nmc->return_text, _("Error: unknown extra argument: '%s'."), *argv);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto finish;
 	}
+
+	if (out_name == NULL && nmc->ask)
+		out_name = out_name_ask = nmc_readline (_("Output file name: "));
 
 	type = nm_connection_get_connection_type (connection);
 	if (g_strcmp0 (type, NM_SETTING_VPN_SETTING_NAME) != 0) {
