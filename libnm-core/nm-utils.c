@@ -4453,7 +4453,7 @@ nm_utils_enum_from_str (GType type, const char *str,
  *
  * Returns the list of possible values for a given enum.
  *
- * Returns: (transfer full): a NULL-terminated dynamically-allocated array of static strings
+ * Returns: (transfer container): a NULL-terminated dynamically-allocated array of static strings
  * or %NULL on error
  *
  * Since: 1.2
