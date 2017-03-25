@@ -67,13 +67,16 @@ struct _NmcPropertyTypData {
 			gboolean (*set_fcn) (NMSetting *setting, const char *property_name, const char *value, GError **error);
 			gboolean (*remove_fcn) (NMSetting *setting, const char *property_name, const char *option, guint32 idx, GError **error);
 			union {
-				struct {
-					GType (*get_gtype) (void);
-					bool has_minmax:1;
-					int min;
-					int max;
-				} gobject_enum;
-			} values_data;
+				union {
+					struct {
+						GType (*get_gtype) (void);
+						bool has_minmax:1;
+						int min;
+						int max;
+					} gobject_enum;
+				} values_data;
+				const char *const* (*values_fcn) (NMSetting *setting, const char *prop);
+			};
 		} nmc;
 	};
 	const char *const*values_static;
@@ -177,7 +180,6 @@ extern NmcOutputField nmc_fields_setting_ip_tunnel[];
 extern NmcOutputField nmc_fields_setting_macvlan[];
 extern NmcOutputField nmc_fields_setting_macsec[];
 extern NmcOutputField nmc_fields_setting_vxlan[];
-extern NmcOutputField nmc_fields_setting_proxy[];
 extern NmcOutputField nmc_fields_setting_dummy[];
 
 #endif /* NMC_SETTINGS_H */

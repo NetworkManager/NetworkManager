@@ -247,6 +247,13 @@ _remove_fcn_nmc (const NmcSettingInfo *setting_info,
 /*****************************************************************************/
 
 static const char *const*
+_values_fcn_nmc (const NmcSettingInfo *setting_info,
+                 const NmcPropertyInfo *property_info)
+{
+	return property_info->property_typ_data->nmc.values_fcn (NULL, property_info->property_name);
+}
+
+static const char *const*
 _values_fcn_nmc_gobject_enum (const NmcSettingInfo *setting_info,
                               const NmcPropertyInfo *property_info)
 {
@@ -1085,21 +1092,8 @@ NmcOutputField nmc_fields_setting_vxlan[] = {
                                              NM_SETTING_VXLAN_L2_MISS","\
                                              NM_SETTING_VXLAN_L3_MISS
 
-/* Available fields for NM_SETTING_PROXY_SETTING_NAME */
-NmcOutputField nmc_fields_setting_proxy[] = {
-	SETTING_FIELD ("name"),                            /* 0 */
-	SETTING_FIELD (NM_SETTING_PROXY_METHOD),           /* 1 */
-	SETTING_FIELD (NM_SETTING_PROXY_BROWSER_ONLY),     /* 2 */
-	SETTING_FIELD (NM_SETTING_PROXY_PAC_URL),          /* 3 */
-	SETTING_FIELD (NM_SETTING_PROXY_PAC_SCRIPT),       /* 4 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_PROXY_ALL         "name"","\
-                                             NM_SETTING_PROXY_METHOD","\
-                                             NM_SETTING_PROXY_BROWSER_ONLY","\
-                                             NM_SETTING_PROXY_PAC_URL","\
-                                             NM_SETTING_PROXY_PAC_SCRIPT
-/*----------------------------------------------------------------------------*/
+/*****************************************************************************/
+
 static char *
 wep_key_type_to_string (NMWepKeyType type)
 {
@@ -4629,11 +4623,6 @@ DEFINE_GETTER (nmc_property_pppoe_get_password, NM_SETTING_PPPOE_PASSWORD)
 DEFINE_SECRET_FLAGS_GETTER (nmc_property_pppoe_get_password_flags, NM_SETTING_PPPOE_PASSWORD_FLAGS)
 
 
-/* --- NM_SETTING_PROXY_SETTING_NAME property functions --- */
-DEFINE_GETTER (nmc_property_proxy_get_browser_only, NM_SETTING_PROXY_BROWSER_ONLY)
-DEFINE_GETTER (nmc_property_proxy_get_pac_url, NM_SETTING_PROXY_PAC_URL)
-DEFINE_GETTER (nmc_property_proxy_get_pac_script, NM_SETTING_PROXY_PAC_SCRIPT)
-
 static char *
 nmc_property_proxy_get_method (NMSetting *setting, NmcPropertyGetType get_type)
 {
@@ -5847,7 +5836,7 @@ nmc_property_wifi_set_psk (NMSetting *setting, const char *prop, const char *val
 	return TRUE;
 }
 
-/*----------------------------------------------------------------------------*/
+/*****************************************************************************/
 
 static void
 nmc_value_transform_bool_string (const GValue *src_value,
@@ -5870,7 +5859,7 @@ register_nmcli_value_transforms (void)
 	g_value_register_transform_func (G_TYPE_CHAR, G_TYPE_STRING, nmc_value_transform_char_string);
 }
 
-/*----------------------------------------------------------------------------*/
+/*****************************************************************************/
 
 /* Main hash table storing function pointer for manipulating properties */
 static GHashTable *nmc_properties = NULL;
@@ -6246,7 +6235,7 @@ nmc_setting_custom_init (NMSetting *setting)
 	}
 }
 
-/*----------------------------------------------------------------------------*/
+/*****************************************************************************/
 
 static inline void
 _nmc_add_prop_funcs (const char *key,
@@ -8030,36 +8019,6 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL);
-
-	/* Add editable properties for NM_SETTING_PROXY_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_PROXY_SETTING_NAME""NM_SETTING_PROXY_METHOD,
-	                    nmc_property_proxy_get_method,
-	                    nmc_property_proxy_set_method,
-	                    NULL,
-	                    NULL,
-	                    nmc_property_proxy_allowed_method,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_PROXY_SETTING_NAME""NM_SETTING_PROXY_BROWSER_ONLY,
-	                    nmc_property_proxy_get_browser_only,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_PROXY_SETTING_NAME""NM_SETTING_PROXY_PAC_URL,
-	                    nmc_property_proxy_get_pac_url,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_PROXY_SETTING_NAME""NM_SETTING_PROXY_PAC_SCRIPT,
-	                    nmc_property_proxy_get_pac_script,
-	                    nmc_property_proxy_set_pac_script,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
 }
 
 void
@@ -8449,7 +8408,7 @@ nmc_property_set_gvalue (NMSetting *setting, const char *prop, GValue *value)
 	return FALSE;
 }
 
-/*----------------------------------------------------------------------------*/
+/*****************************************************************************/
 
 #define GET_SECRET(show, setting, func) \
 	(show ? func (setting, NMC_PROPERTY_GET_PRETTY) : g_strdup (_("<hidden>")))
@@ -9421,35 +9380,6 @@ setting_vxlan_details (const NmcSettingInfo *setting_info, NMSetting *setting, N
 	return TRUE;
 }
 
-static gboolean
-setting_proxy_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingProxy *s_proxy = NM_SETTING_PROXY (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_PROXY (s_proxy), FALSE);
-
-	tmpl = nmc_fields_setting_proxy;
-	tmpl_len = sizeof (nmc_fields_setting_proxy);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_PROXY_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_proxy_get_method (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 2, nmc_property_proxy_get_browser_only (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 3, nmc_property_proxy_get_pac_url (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 4, nmc_property_proxy_get_pac_script (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
 /*****************************************************************************/
 
 #define DEFINE_PROPERTY_TYPE(...) \
@@ -9977,6 +9907,41 @@ static const NmcPropertyInfo properties_setting_ip6_config[] = {
 	},
 };
 
+static const NmcPropertyInfo properties_setting_proxy[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_PROXY_METHOD),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_nmc,
+			.set_fcn =                  _set_fcn_nmc,
+			.values_fcn =               _values_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_proxy_get_method,
+			.set_fcn =                  nmc_property_proxy_set_method,
+			.values_fcn =               nmc_property_proxy_allowed_method,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_PROXY_BROWSER_ONLY),
+		.property_type =                &_pt_gobject_bool
+	},
+	{
+		.property_name =                N_ (NM_SETTING_PROXY_PAC_URL),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_PROXY_PAC_SCRIPT),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.set_fcn =                  nmc_property_proxy_set_pac_script,
+		),
+	},
+};
+
 const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM] = {
 	[NM_META_SETTING_TYPE_802_1X] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_802_1X],
@@ -10059,7 +10024,8 @@ const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM] = {
 	},
 	[NM_META_SETTING_TYPE_PROXY] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_PROXY],
-		.get_setting_details                = setting_proxy_details,
+		.properties                         = properties_setting_proxy,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_proxy),
 	},
 	[NM_META_SETTING_TYPE_SERIAL] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_SERIAL],

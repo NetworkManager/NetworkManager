@@ -175,6 +175,7 @@ complete_fields (const char *prefix)
 	complete_field (h, "ip-tunnel", nmc_fields_setting_ip_tunnel);
 	complete_field (h, "macvlan", nmc_fields_setting_macvlan);
 	complete_field (h, "vxlan", nmc_fields_setting_vxlan);
+	complete_field_new (h, "proxy", NM_META_SETTING_TYPE_PROXY);
 
 	g_hash_table_foreach (h, complete_one, (gpointer) prefix);
 	g_hash_table_destroy (h);
