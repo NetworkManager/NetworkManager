@@ -36,6 +36,7 @@
 static char *wep_key_type_to_string (NMWepKeyType type);
 static gboolean validate_int (NMSetting *setting, const char* prop, gint val, GError **error);
 static gboolean validate_uint (NMSetting *setting, const char* prop, guint val, GError **error);
+static gboolean validate_int64 (NMSetting *setting, const char* prop, gint64 val, GError **error);
 
 /*****************************************************************************/
 
@@ -71,6 +72,33 @@ _get_fcn_gobject (const NmcSettingInfo *setting_info,
 	s = g_value_dup_string (&val);
 	g_value_unset (&val);
 	return s;
+}
+
+static char *
+_get_fcn_gobject_with_default (const NmcSettingInfo *setting_info,
+                               const NmcPropertyInfo *property_info,
+                               NMSetting *setting,
+                               NmcPropertyGetType get_type)
+{
+	const char *s;
+	char *s_full;
+	GValue val = G_VALUE_INIT;
+
+	if (property_info->get_data.get_gobject_with_default_fcn (setting)) {
+		if (get_type == NMC_PROPERTY_GET_PARSABLE)
+			return g_strdup ("");
+		return g_strdup (_("(default)"));
+	}
+
+	g_value_init (&val, G_TYPE_STRING);
+	g_object_get_property (G_OBJECT (setting), property_info->property_name, &val);
+	s = g_value_get_string (&val);
+	if (get_type == NMC_PROPERTY_GET_PARSABLE)
+		s_full = g_strdup (s && *s ? s : " ");
+	else
+		s_full = s ? g_strdup_printf ("\"%s\"", s) : g_strdup ("");
+	g_value_unset (&val);
+	return s_full;
 }
 
 /*****************************************************************************/
@@ -155,6 +183,30 @@ _set_fcn_gobject_int (const NmcSettingInfo *setting_info,
 }
 
 static gboolean
+_set_fcn_gobject_int64 (const NmcSettingInfo *setting_info,
+                        const NmcPropertyInfo *property_info,
+                        NMSetting *setting,
+                        const char *value,
+                        GError **error)
+{
+	long val_int;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!nmc_string_to_int (value, FALSE, 0, 0, &val_int)) {
+		g_set_error (error, 1, 0, _("'%s' is not a valid number (or out of range)"), value);
+		return FALSE;
+	}
+
+	/* Validate the number according to the property spec */
+	if (!validate_int64 (setting, property_info->property_name, (gint64) val_int, error))
+		return FALSE;
+
+	g_object_set (setting, property_info->property_name, (gint64) val_int, NULL);
+	return TRUE;
+}
+
+static gboolean
 _set_fcn_gobject_uint (const NmcSettingInfo *setting_info,
                        const NmcPropertyInfo *property_info,
                        NMSetting *setting,
@@ -189,6 +241,30 @@ _remove_fcn_nmc (const NmcSettingInfo *setting_info,
                  GError **error)
 {
 	return property_info->remove_data.remove_nmc (setting, property_info->property_name, option, idx, error);
+}
+
+/*****************************************************************************/
+
+static const char *const*
+_values_fcn_gobject_enum (const NmcSettingInfo *setting_info,
+                          const NmcPropertyInfo *property_info)
+{
+	static GHashTable *cache = NULL;
+	const char **v;
+
+	if (G_UNLIKELY (!cache))
+		cache = g_hash_table_new (NULL, NULL);
+
+	v = g_hash_table_lookup (cache, property_info);
+	if (!v) {
+		bool has_minmax = property_info->values_data.gobject_enum.has_minmax;
+
+		v = nm_utils_enum_get_values (property_info->values_data.gobject_enum.get_gtype (),
+		                              has_minmax ? property_info->values_data.gobject_enum.min : G_MININT,
+		                              has_minmax ? property_info->values_data.gobject_enum.max : G_MAXINT);
+		g_hash_table_insert (cache, (gpointer) property_info, v);
+	}
+	return (const char *const*) v;
 }
 
 /*****************************************************************************/
@@ -539,94 +615,6 @@ NmcOutputField nmc_fields_setting_wireless_security[] = {
                                                      NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS","\
                                                      NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD","\
                                                      NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS
-
-/* Available fields for NM_SETTING_IP4_CONFIG_SETTING_NAME */
-NmcOutputField nmc_fields_setting_ip4_config[] = {
-	SETTING_FIELD ("name"),                                   /* 0 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_METHOD),              /* 1 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_DNS),                 /* 2 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_DNS_SEARCH),          /* 3 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_DNS_OPTIONS),         /* 4 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_DNS_PRIORITY),        /* 5 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_ADDRESSES),           /* 6 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_GATEWAY),             /* 7 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_ROUTES),              /* 8 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_ROUTE_METRIC),        /* 9 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES),  /* 10 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS),     /* 11 */
-	SETTING_FIELD (NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID),     /* 12 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_TIMEOUT),        /* 13 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME),  /* 14 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME),       /* 15 */
-	SETTING_FIELD (NM_SETTING_IP4_CONFIG_DHCP_FQDN),          /* 16 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_NEVER_DEFAULT),       /* 17 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_MAY_FAIL),            /* 18 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_DAD_TIMEOUT),         /* 19 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_IP4_CONFIG_ALL     "name"","\
-                                              NM_SETTING_IP_CONFIG_METHOD","\
-                                              NM_SETTING_IP_CONFIG_DNS","\
-                                              NM_SETTING_IP_CONFIG_DNS_SEARCH","\
-                                              NM_SETTING_IP_CONFIG_DNS_OPTIONS","\
-                                              NM_SETTING_IP_CONFIG_DNS_PRIORITY","\
-                                              NM_SETTING_IP_CONFIG_ADDRESSES","\
-                                              NM_SETTING_IP_CONFIG_GATEWAY","\
-                                              NM_SETTING_IP_CONFIG_ROUTES","\
-                                              NM_SETTING_IP_CONFIG_ROUTE_METRIC","\
-                                              NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES","\
-                                              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS","\
-                                              NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID","\
-                                              NM_SETTING_IP_CONFIG_DHCP_TIMEOUT","\
-                                              NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME","\
-                                              NM_SETTING_IP_CONFIG_DHCP_HOSTNAME","\
-                                              NM_SETTING_IP4_CONFIG_DHCP_FQDN","\
-                                              NM_SETTING_IP_CONFIG_NEVER_DEFAULT","\
-                                              NM_SETTING_IP_CONFIG_MAY_FAIL","\
-                                              NM_SETTING_IP_CONFIG_DAD_TIMEOUT
-
-/* Available fields for NM_SETTING_IP6_CONFIG_SETTING_NAME */
-NmcOutputField nmc_fields_setting_ip6_config[] = {
-	SETTING_FIELD ("name"),                                   /* 0 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_METHOD),              /* 1 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_DNS),                 /* 2 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_DNS_SEARCH),          /* 3 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_DNS_OPTIONS),         /* 4 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_DNS_PRIORITY),        /* 5 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_ADDRESSES),           /* 6 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_GATEWAY),             /* 7 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_ROUTES),              /* 8 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_ROUTE_METRIC),        /* 9 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES),  /* 10 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS),     /* 11 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_NEVER_DEFAULT),       /* 12 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_MAY_FAIL),            /* 13 */
-	SETTING_FIELD (NM_SETTING_IP6_CONFIG_IP6_PRIVACY),        /* 14 */
-	SETTING_FIELD (NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE),      /* 15 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME),  /* 16 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME),       /* 17 */
-	SETTING_FIELD (NM_SETTING_IP6_CONFIG_TOKEN),              /* 18 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_IP6_CONFIG_ALL     "name"","\
-                                              NM_SETTING_IP_CONFIG_METHOD","\
-                                              NM_SETTING_IP_CONFIG_DNS","\
-                                              NM_SETTING_IP_CONFIG_DNS_SEARCH","\
-                                              NM_SETTING_IP_CONFIG_DNS_OPTIONS","\
-                                              NM_SETTING_IP_CONFIG_DNS_PRIORITY","\
-                                              NM_SETTING_IP_CONFIG_ADDRESSES","\
-                                              NM_SETTING_IP_CONFIG_GATEWAY","\
-                                              NM_SETTING_IP_CONFIG_ROUTES","\
-                                              NM_SETTING_IP_CONFIG_ROUTE_METRIC","\
-                                              NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES","\
-                                              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS","\
-                                              NM_SETTING_IP_CONFIG_NEVER_DEFAULT","\
-                                              NM_SETTING_IP_CONFIG_MAY_FAIL","\
-                                              NM_SETTING_IP6_CONFIG_IP6_PRIVACY","\
-                                              NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE","\
-                                              NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME","\
-                                              NM_SETTING_IP_CONFIG_DHCP_HOSTNAME","\
-                                              NM_SETTING_IP6_CONFIG_TOKEN
 
 /* Available fields for NM_SETTING_SERIAL_SETTING_NAME */
 NmcOutputField nmc_fields_setting_serial[] = {
@@ -1694,26 +1682,6 @@ nmc_property_set_int (NMSetting *setting, const char *prop, const char *val, GEr
 		return FALSE;
 
 	g_object_set (setting, prop, (gint) val_int, NULL);
-	return TRUE;
-}
-
-static gboolean
-nmc_property_set_int64 (NMSetting *setting, const char *prop, const char *val, GError **error)
-{
-	long val_int;
-
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if (!nmc_string_to_int (val, FALSE, 0, 0, &val_int)) {
-		g_set_error (error, 1, 0, _("'%s' is not a valid number (or out of range)"), val);
-		return FALSE;
-	}
-
-	/* Validate the number according to the property spec */
-	if (!validate_int64 (setting, prop, (gint64) val_int, error))
-		return FALSE;
-
-	g_object_set (setting, prop, (gint64) val_int, NULL);
 	return TRUE;
 }
 
@@ -3663,14 +3631,11 @@ _parse_ip_address (int family, const char *address, GError **error)
 	return ipaddr;
 }
 
-DEFINE_GETTER (nmc_property_ipv4_get_method, NM_SETTING_IP_CONFIG_METHOD)
-DEFINE_GETTER (nmc_property_ipv4_get_dns, NM_SETTING_IP_CONFIG_DNS)
-DEFINE_GETTER (nmc_property_ipv4_get_dns_search, NM_SETTING_IP_CONFIG_DNS_SEARCH)
-DEFINE_GETTER_WITH_DEFAULT (nmc_property_ipv4_get_dns_options, NM_SETTING_IP_CONFIG_DNS_OPTIONS, !nm_setting_ip_config_has_dns_options ((NMSettingIPConfig *) setting))
-DEFINE_GETTER (nmc_property_ipv4_get_dns_priority, NM_SETTING_IP_CONFIG_DNS_PRIORITY)
-
 static char *
-nmc_property_ip_get_addresses (NMSetting *setting, NmcPropertyGetType get_type)
+_get_fcn_ip_config_addresses (const NmcSettingInfo *setting_info,
+                              const NmcPropertyInfo *property_info,
+                              NMSetting *setting,
+                              NmcPropertyGetType get_type)
 {
 	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
 	GString *printable;
@@ -3695,7 +3660,10 @@ nmc_property_ip_get_addresses (NMSetting *setting, NmcPropertyGetType get_type)
 }
 
 static char *
-nmc_property_ipvx_get_routes (NMSetting *setting, NmcPropertyGetType get_type)
+_get_fcn_ip_config_routes (const NmcSettingInfo *setting_info,
+                           const NmcPropertyInfo *property_info,
+                           NMSetting *setting,
+                           NmcPropertyGetType get_type)
 {
 	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
 	GString *printable;
@@ -3764,25 +3732,10 @@ nmc_property_ipvx_get_routes (NMSetting *setting, NmcPropertyGetType get_type)
 }
 
 static char *
-nmc_property_ipv4_get_routes (NMSetting *setting, NmcPropertyGetType get_type)
-{
-	return nmc_property_ipvx_get_routes (setting, get_type);
-}
-
-DEFINE_GETTER (nmc_property_ipv4_get_gateway, NM_SETTING_IP_CONFIG_GATEWAY)
-DEFINE_GETTER (nmc_property_ipv4_get_route_metric, NM_SETTING_IP_CONFIG_ROUTE_METRIC)
-DEFINE_GETTER (nmc_property_ipv4_get_ignore_auto_routes, NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES)
-DEFINE_GETTER (nmc_property_ipv4_get_ignore_auto_dns, NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS)
-DEFINE_GETTER (nmc_property_ipv4_get_dhcp_client_id, NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID)
-DEFINE_GETTER (nmc_property_ipv4_get_dhcp_timeout, NM_SETTING_IP_CONFIG_DHCP_TIMEOUT)
-DEFINE_GETTER (nmc_property_ipv4_get_dhcp_send_hostname, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME)
-DEFINE_GETTER (nmc_property_ipv4_get_dhcp_hostname, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME)
-DEFINE_GETTER (nmc_property_ipv4_get_dhcp_fqdn, NM_SETTING_IP4_CONFIG_DHCP_FQDN)
-DEFINE_GETTER (nmc_property_ipv4_get_never_default, NM_SETTING_IP_CONFIG_NEVER_DEFAULT)
-DEFINE_GETTER (nmc_property_ipv4_get_may_fail, NM_SETTING_IP_CONFIG_MAY_FAIL)
-
-static char *
-nmc_property_ipv4_get_dad_timeout (NMSetting *setting, NmcPropertyGetType get_type)
+_get_fcn_ip4_config_dad_timeout (const NmcSettingInfo *setting_info,
+                                 const NmcPropertyInfo *property_info,
+                                 NMSetting *setting,
+                                 NmcPropertyGetType get_type)
 {
 	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
 	gint dad_timeout;
@@ -3801,7 +3754,6 @@ nmc_property_ipv4_get_dad_timeout (NMSetting *setting, NmcPropertyGetType get_ty
 	}
 }
 
-/* 'method' */
 static const char *ipv4_valid_methods[] = {
 	NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 	NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
@@ -3812,27 +3764,32 @@ static const char *ipv4_valid_methods[] = {
 };
 
 static gboolean
-nmc_property_ipv4_set_method (NMSetting *setting, const char *prop, const char *val, GError **error)
+_set_fcn_ip4_config_method (const NmcSettingInfo *setting_info,
+                            const NmcPropertyInfo *property_info,
+                            NMSetting *setting,
+                            const char *value,
+                            GError **error)
 {
 	/* Silently accept "static" and convert to "manual" */
-	if (val && strlen (val) > 1 && matches (val, "static"))
-		val = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
+	if (value && strlen (value) > 1 && matches (value, "static"))
+		value = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
 
-	return check_and_set_string (setting, prop, val, ipv4_valid_methods, error);
+	return check_and_set_string (setting, property_info->property_name, value, ipv4_valid_methods, error);
 }
 
-DEFINE_ALLOWED_VAL_FUNC (nmc_property_ipv4_allowed_method, ipv4_valid_methods)
-
-/* 'dns' */
 static gboolean
-nmc_property_ipv4_set_dns (NMSetting *setting, const char *prop, const char *val, GError **error)
+_set_fcn_ip4_config_dns (const NmcSettingInfo *setting_info,
+                         const NmcPropertyInfo *property_info,
+                         NMSetting *setting,
+                         const char *value,
+                         GError **error)
 {
 	char **strv = NULL, **iter, *addr;
 	guint32 ip4_addr;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	strv = nmc_strsplit_set (val, " \t,", 0);
+	strv = nmc_strsplit_set (value, " \t,", 0);
 	for (iter = strv; iter && *iter; iter++) {
 		addr = g_strstrip (*iter);
 		if (inet_pton (AF_INET, addr, &ip4_addr) < 1) {
@@ -3870,24 +3827,20 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv4_remove_dns,
                                nm_setting_ip_config_remove_dns,
                                _validate_and_remove_ipv4_dns)
 
-static const char *
-nmc_property_ipv4_describe_dns (NMSetting *setting, const char *prop)
-{
-	return _("Enter a list of IPv4 addresses of DNS servers.\n\n"
-	         "Example: 8.8.8.8, 8.8.4.4\n");
-}
-
-/* 'dns-search' */
 static gboolean
-nmc_property_ipv4_set_dns_search (NMSetting *setting, const char *prop, const char *val, GError **error)
+_set_fcn_ip4_config_dns_search (const NmcSettingInfo *setting_info,
+                                const NmcPropertyInfo *property_info,
+                                NMSetting *setting,
+                                const char *value,
+                                GError **error)
 {
 	char **strv = NULL;
 	guint i = 0;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	strv = nmc_strsplit_set (val, " \t,", 0);
-	if (!verify_string_list (strv, prop, nmc_util_is_domain, error)) {
+	strv = nmc_strsplit_set (value, " \t,", 0);
+	if (!verify_string_list (strv, property_info->property_name, nmc_util_is_domain, error)) {
 		g_strfreev (strv);
 		return FALSE;
 	}
@@ -3919,9 +3872,12 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv4_remove_dns_search,
                                nm_setting_ip_config_remove_dns_search,
                                _validate_and_remove_ipv4_dns_search)
 
-/* 'dns-options' */
 static gboolean
-nmc_property_ipv4_set_dns_options (NMSetting *setting, const char *prop, const char *val, GError **error)
+_set_fcn_ip4_config_dns_options (const NmcSettingInfo *setting_info,
+                                 const NmcPropertyInfo *property_info,
+                                 NMSetting *setting,
+                                 const char *value,
+                                 GError **error)
 {
 	char **strv = NULL;
 	guint i = 0;
@@ -3929,7 +3885,7 @@ nmc_property_ipv4_set_dns_options (NMSetting *setting, const char *prop, const c
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
 	nm_setting_ip_config_clear_dns_options (NM_SETTING_IP_CONFIG (setting), TRUE);
-	strv = nmc_strsplit_set (val, " \t,", 0);
+	strv = nmc_strsplit_set (value, " \t,", 0);
 	while (strv && strv[i])
 		nm_setting_ip_config_add_dns_option (NM_SETTING_IP_CONFIG (setting), strv[i++]);
 	g_strfreev (strv);
@@ -3965,14 +3921,18 @@ _parse_ipv4_address (const char *address, GError **error)
 }
 
 static gboolean
-nmc_property_ipv4_set_addresses (NMSetting *setting, const char *prop, const char *val, GError **error)
+_set_fcn_ip4_config_addresses (const NmcSettingInfo *setting_info,
+                               const NmcPropertyInfo *property_info,
+                               NMSetting *setting,
+                               const char *value,
+                               GError **error)
 {
 	char **strv = NULL, **iter;
 	NMIPAddress *ip4addr;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	strv = nmc_strsplit_set (val, ",", 0);
+	strv = nmc_strsplit_set (value, ",", 0);
 	for (iter = strv; iter && *iter; iter++) {
 		ip4addr = _parse_ipv4_address (*iter, error);
 		if (!ip4addr) {
@@ -4011,38 +3971,31 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv4_remove_addresses,
                                nm_setting_ip_config_remove_address,
                                _validate_and_remove_ipv4_address)
 
-static const char *
-nmc_property_ipv4_describe_addresses (NMSetting *setting, const char *prop)
-{
-	return _("Enter a list of IPv4 addresses formatted as:\n"
-	         "  ip[/prefix], ip[/prefix],...\n"
-	         "Missing prefix is regarded as prefix of 32.\n\n"
-	         "Example: 192.168.1.5/24, 10.0.0.11/24\n");
-}
-
-/* 'gateway' */
 static gboolean
-nmc_property_ipv4_set_gateway (NMSetting *setting, const char *prop, const char *val, GError **error)
+_set_fcn_ip4_config_gateway (const NmcSettingInfo *setting_info,
+                             const NmcPropertyInfo *property_info,
+                             NMSetting *setting,
+                             const char *value,
+                             GError **error)
 {
 	NMIPAddress *ip4addr;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	if (strchr (val, '/')) {
+	if (strchr (value, '/')) {
 		g_set_error (error, 1, 0,
-	                     _("invalid gateway address '%s'"), val);
+	                     _("invalid gateway address '%s'"), value);
 		return FALSE;
 	}
-	ip4addr = _parse_ipv4_address (val, error);
+	ip4addr = _parse_ipv4_address (value, error);
 	if (!ip4addr)
 		return FALSE;
 
-	g_object_set (setting, prop, val, NULL);
+	g_object_set (setting, property_info->property_name, value, NULL);
 	nm_ip_address_unref (ip4addr);
 	return TRUE;
 }
 
-/* 'routes' */
 static NMIPRoute *
 _parse_ipv4_route (const char *route, GError **error)
 {
@@ -4050,14 +4003,18 @@ _parse_ipv4_route (const char *route, GError **error)
 }
 
 static gboolean
-nmc_property_ipv4_set_routes (NMSetting *setting, const char *prop, const char *val, GError **error)
+_set_fcn_ip4_config_routes (const NmcSettingInfo *setting_info,
+                            const NmcPropertyInfo *property_info,
+                            NMSetting *setting,
+                            const char *value,
+                            GError **error)
 {
 	char **strv = NULL, **iter;
 	NMIPRoute *ip4route;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	strv = nmc_strsplit_set (val, ",", 0);
+	strv = nmc_strsplit_set (value, ",", 0);
 	for (iter = strv; iter && *iter; iter++) {
 		ip4route = _parse_ipv4_route (*iter, error);
 		if (!ip4route) {
@@ -4095,44 +4052,11 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv4_remove_routes,
                                nm_setting_ip_config_remove_route,
                                _validate_and_remove_ipv4_route)
 
-static const char *
-nmc_property_ipv4_describe_routes (NMSetting *setting, const char *prop)
-{
-	return _("Enter a list of IPv4 routes formatted as:\n"
-	         "  ip[/prefix] [next-hop] [metric],...\n\n"
-	         "Missing prefix is regarded as a prefix of 32.\n"
-	         "Missing next-hop is regarded as 0.0.0.0.\n"
-	         "Missing metric means default (NM/kernel will set a default value).\n\n"
-	         "Examples: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
-	         "          10.1.2.0/24\n");
-}
-
-
-/* --- NM_SETTING_IP6_CONFIG_SETTING_NAME property functions --- */
-DEFINE_GETTER (nmc_property_ipv6_get_method, NM_SETTING_IP_CONFIG_METHOD)
-DEFINE_GETTER (nmc_property_ipv6_get_dns, NM_SETTING_IP_CONFIG_DNS)
-DEFINE_GETTER (nmc_property_ipv6_get_dns_search, NM_SETTING_IP_CONFIG_DNS_SEARCH)
-DEFINE_GETTER_WITH_DEFAULT (nmc_property_ipv6_get_dns_options, NM_SETTING_IP_CONFIG_DNS_OPTIONS, !nm_setting_ip_config_has_dns_options ((NMSettingIPConfig *) setting))
-DEFINE_GETTER (nmc_property_ipv6_get_dns_priority, NM_SETTING_IP_CONFIG_DNS_PRIORITY)
-
 static char *
-nmc_property_ipv6_get_routes (NMSetting *setting, NmcPropertyGetType get_type)
-{
-	return nmc_property_ipvx_get_routes (setting, get_type);
-}
-
-DEFINE_GETTER (nmc_property_ipv6_get_gateway, NM_SETTING_IP_CONFIG_GATEWAY)
-DEFINE_GETTER (nmc_property_ipv6_get_route_metric, NM_SETTING_IP_CONFIG_ROUTE_METRIC)
-DEFINE_GETTER (nmc_property_ipv6_get_ignore_auto_routes, NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES)
-DEFINE_GETTER (nmc_property_ipv6_get_ignore_auto_dns, NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS)
-DEFINE_GETTER (nmc_property_ipv6_get_never_default, NM_SETTING_IP_CONFIG_NEVER_DEFAULT)
-DEFINE_GETTER (nmc_property_ipv6_get_may_fail, NM_SETTING_IP_CONFIG_MAY_FAIL)
-DEFINE_GETTER (nmc_property_ipv6_get_dhcp_send_hostname, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME)
-DEFINE_GETTER (nmc_property_ipv6_get_dhcp_hostname, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME)
-DEFINE_GETTER (nmc_property_ipv6_get_token, NM_SETTING_IP6_CONFIG_TOKEN)
-
-static char *
-nmc_property_ipv6_get_ip6_privacy (NMSetting *setting, NmcPropertyGetType get_type)
+_get_fcn_ip6_config_ip6_privacy (const NmcSettingInfo *setting_info,
+                                 const NmcPropertyInfo *property_info,
+                                 NMSetting *setting,
+                                 NmcPropertyGetType get_type)
 {
 	NMSettingIP6Config *s_ip6 = NM_SETTING_IP6_CONFIG (setting);
 	return ip6_privacy_to_string (nm_setting_ip6_config_get_ip6_privacy (s_ip6), get_type);
@@ -4150,27 +4074,32 @@ static const char *ipv6_valid_methods[] = {
 };
 
 static gboolean
-nmc_property_ipv6_set_method (NMSetting *setting, const char *prop, const char *val, GError **error)
+_set_fcn_ip6_config_method (const NmcSettingInfo *setting_info,
+                            const NmcPropertyInfo *property_info,
+                            NMSetting *setting,
+                            const char *value,
+                            GError **error)
 {
 	/* Silently accept "static" and convert to "manual" */
-	if (val && strlen (val) > 1 && matches (val, "static"))
-		val = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
+	if (value && strlen (value) > 1 && matches (value, "static"))
+		value = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
 
-	return check_and_set_string (setting, prop, val, ipv6_valid_methods, error);
+	return check_and_set_string (setting, property_info->property_name, value, ipv6_valid_methods, error);
 }
 
-DEFINE_ALLOWED_VAL_FUNC (nmc_property_ipv6_allowed_method, ipv6_valid_methods)
-
-/* 'dns' */
 static gboolean
-nmc_property_ipv6_set_dns (NMSetting *setting, const char *prop, const char *val, GError **error)
+_set_fcn_ip6_config_dns (const NmcSettingInfo *setting_info,
+                         const NmcPropertyInfo *property_info,
+                         NMSetting *setting,
+                         const char *value,
+                         GError **error)
 {
 	char **strv = NULL, **iter, *addr;
 	struct in6_addr ip6_addr;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	strv = nmc_strsplit_set (val, " \t,", 0);
+	strv = nmc_strsplit_set (value, " \t,", 0);
 	for (iter = strv; iter && *iter; iter++) {
 		addr = g_strstrip (*iter);
 		if (inet_pton (AF_INET6, addr, &ip6_addr) < 1) {
@@ -4208,30 +4137,20 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv6_remove_dns,
                                nm_setting_ip_config_remove_dns,
                                _validate_and_remove_ipv6_dns)
 
-static const char *
-nmc_property_ipv6_describe_dns (NMSetting *setting, const char *prop)
-{
-	return _("Enter a list of IPv6 addresses of DNS servers.  If the IPv6 "
-	         "configuration method is 'auto' these DNS servers are appended "
-	         "to those (if any) returned by automatic configuration.  DNS "
-	         "servers cannot be used with the 'shared' or 'link-local' IPv6 "
-	         "configuration methods, as there is no upstream network. In "
-	         "all other IPv6 configuration methods, these DNS "
-	         "servers are used as the only DNS servers for this connection.\n\n"
-	         "Example: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n");
-}
-
-/* 'dns-search' */
 static gboolean
-nmc_property_ipv6_set_dns_search (NMSetting *setting, const char *prop, const char *val, GError **error)
+_set_fcn_ip6_config_dns_search (const NmcSettingInfo *setting_info,
+                                const NmcPropertyInfo *property_info,
+                                NMSetting *setting,
+                                const char *value,
+                                GError **error)
 {
 	char **strv = NULL;
 	guint i = 0;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	strv = nmc_strsplit_set (val, " \t,", 0);
-	if (!verify_string_list (strv, prop, nmc_util_is_domain, error)) {
+	strv = nmc_strsplit_set (value, " \t,", 0);
+	if (!verify_string_list (strv, property_info->property_name, nmc_util_is_domain, error)) {
 		g_strfreev (strv);
 		return FALSE;
 	}
@@ -4263,9 +4182,12 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv6_remove_dns_search,
                                nm_setting_ip_config_remove_dns_search,
                                _validate_and_remove_ipv6_dns_search)
 
-/* 'dns-options' */
 static gboolean
-nmc_property_ipv6_set_dns_options (NMSetting *setting, const char *prop, const char *val, GError **error)
+_set_fcn_ip6_config_dns_options (const NmcSettingInfo *setting_info,
+                                 const NmcPropertyInfo *property_info,
+                                 NMSetting *setting,
+                                 const char *value,
+                                 GError **error)
 {
 	char **strv = NULL;
 	guint i = 0;
@@ -4273,7 +4195,7 @@ nmc_property_ipv6_set_dns_options (NMSetting *setting, const char *prop, const c
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
 	nm_setting_ip_config_clear_dns_options (NM_SETTING_IP_CONFIG (setting), TRUE);
-	strv = nmc_strsplit_set (val, " \t,", 0);
+	strv = nmc_strsplit_set (value, " \t,", 0);
 	while (strv && strv[i])
 		nm_setting_ip_config_add_dns_option (NM_SETTING_IP_CONFIG (setting), strv[i++]);
 	g_strfreev (strv);
@@ -4309,14 +4231,18 @@ _parse_ipv6_address (const char *address, GError **error)
 }
 
 static gboolean
-nmc_property_ipv6_set_addresses (NMSetting *setting, const char *prop, const char *val, GError **error)
+_set_fcn_ip6_config_addresses (const NmcSettingInfo *setting_info,
+                               const NmcPropertyInfo *property_info,
+                               NMSetting *setting,
+                               const char *value,
+                               GError **error)
 {
 	char **strv = NULL, **iter;
 	NMIPAddress *ip6addr;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	strv = nmc_strsplit_set (val, ",", 0);
+	strv = nmc_strsplit_set (value, ",", 0);
 	for (iter = strv; iter && *iter; iter++) {
 		ip6addr = _parse_ipv6_address (*iter, error);
 		if (!ip6addr) {
@@ -4354,38 +4280,31 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv6_remove_addresses,
                                nm_setting_ip_config_remove_address,
                                _validate_and_remove_ipv6_address)
 
-static const char *
-nmc_property_ipv6_describe_addresses (NMSetting *setting, const char *prop)
-{
-	return _("Enter a list of IPv6 addresses formatted as:\n"
-	         "  ip[/prefix], ip[/prefix],...\n"
-	         "Missing prefix is regarded as prefix of 128.\n\n"
-	         "Example: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n");
-}
-
-/* 'gateway' */
 static gboolean
-nmc_property_ipv6_set_gateway (NMSetting *setting, const char *prop, const char *val, GError **error)
+_set_fcn_ip6_config_gateway (const NmcSettingInfo *setting_info,
+                             const NmcPropertyInfo *property_info,
+                             NMSetting *setting,
+                             const char *value,
+                             GError **error)
 {
 	NMIPAddress *ip6addr;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	if (strchr (val, '/')) {
+	if (strchr (value, '/')) {
 		g_set_error (error, 1, 0,
-	                     _("invalid gateway address '%s'"), val);
+	                     _("invalid gateway address '%s'"), value);
 		return FALSE;
 	}
-	ip6addr = _parse_ipv6_address (val, error);
+	ip6addr = _parse_ipv6_address (value, error);
 	if (!ip6addr)
 		return FALSE;
 
-	g_object_set (setting, prop, val, NULL);
+	g_object_set (setting, property_info->property_name, value, NULL);
 	nm_ip_address_unref (ip6addr);
 	return TRUE;
 }
 
-/* 'routes' */
 static NMIPRoute *
 _parse_ipv6_route (const char *route, GError **error)
 {
@@ -4393,14 +4312,18 @@ _parse_ipv6_route (const char *route, GError **error)
 }
 
 static gboolean
-nmc_property_ipv6_set_routes (NMSetting *setting, const char *prop, const char *val, GError **error)
+_set_fcn_ip6_config_routes (const NmcSettingInfo *setting_info,
+                            const NmcPropertyInfo *property_info,
+                            NMSetting *setting,
+                            const char *value,
+                            GError **error)
 {
 	char **strv = NULL, **iter;
 	NMIPRoute *ip6route;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	strv = nmc_strsplit_set (val, ",", 0);
+	strv = nmc_strsplit_set (value, ",", 0);
 	for (iter = strv; iter && *iter; iter++) {
 		ip6route = _parse_ipv6_route (*iter, error);
 		if (!ip6route) {
@@ -4438,44 +4361,38 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv6_remove_routes,
                                nm_setting_ip_config_remove_route,
                                _validate_and_remove_ipv6_route)
 
-static const char *
-nmc_property_ipv6_describe_routes (NMSetting *setting, const char *prop)
-{
-	return _("Enter a list of IPv6 routes formatted as:\n"
-	         "  ip[/prefix] [next-hop] [metric],...\n\n"
-	         "Missing prefix is regarded as a prefix of 128.\n"
-	         "Missing next-hop is regarded as \"::\".\n"
-	         "Missing metric means default (NM/kernel will set a default value).\n\n"
-	         "Examples: 2001:db8:beef:2::/64 2001:db8:beef::2, 2001:db8:beef:3::/64 2001:db8:beef::3 2\n"
-	         "          abbe::/64 55\n");
-}
-
 static gboolean
-nmc_property_ipv6_set_ip6_privacy (NMSetting *setting, const char *prop, const char *val, GError **error)
+_set_fcn_ip6_config_ip6_privacy (const NmcSettingInfo *setting_info,
+                                 const NmcPropertyInfo *property_info,
+                                 NMSetting *setting,
+                                 const char *value,
+                                 GError **error)
 {
 	unsigned long val_int;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	if (!nmc_string_to_uint (val, FALSE, 0, 0, &val_int)) {
-		g_set_error (error, 1, 0, _("'%s' is not a number"), val);
+	if (!nmc_string_to_uint (value, FALSE, 0, 0, &val_int)) {
+		g_set_error (error, 1, 0, _("'%s' is not a number"), value);
 		return FALSE;
 	}
 
 	if (   val_int != NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED
 	    && val_int != NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR
 	    && val_int != NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR) {
-		g_set_error (error, 1, 0, _("'%s' is not valid; use 0, 1, or 2"), val);
+		g_set_error (error, 1, 0, _("'%s' is not valid; use 0, 1, or 2"), value);
 		return FALSE;
 	}
 
-	g_object_set (setting, prop, val_int, NULL);
+	g_object_set (setting, property_info->property_name, val_int, NULL);
 	return TRUE;
 }
 
-/* 'addr_gen_mode' */
 static char *
-nmc_property_ipv6_get_addr_gen_mode (NMSetting *setting, NmcPropertyGetType get_type)
+_get_fcn_ip6_config_addr_gen_mode (const NmcSettingInfo *setting_info,
+                                   const NmcPropertyInfo *property_info,
+                                   NMSetting *setting,
+                                   NmcPropertyGetType get_type)
 {
 	NMSettingIP6Config *s_ip6 = NM_SETTING_IP6_CONFIG (setting);
 	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
@@ -4486,26 +4403,24 @@ nmc_property_ipv6_get_addr_gen_mode (NMSetting *setting, NmcPropertyGetType get_
 
 
 static gboolean
-nmc_property_ipv6_set_addr_gen_mode (NMSetting *setting, const char *prop,
-                                     const char *val, GError **error)
+_set_fcn_ip6_config_addr_gen_mode (const NmcSettingInfo *setting_info,
+                                   const NmcPropertyInfo *property_info,
+                                   NMSetting *setting,
+                                   const char *value,
+                                   GError **error)
 {
 	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
 
-	if (!nm_utils_enum_from_str (nm_setting_ip6_config_addr_gen_mode_get_type (), val,
+	if (!nm_utils_enum_from_str (nm_setting_ip6_config_addr_gen_mode_get_type (), value,
 	                             (int *) &addr_gen_mode, NULL)) {
 		g_set_error (error, 1, 0, _("invalid option '%s', use one of [%s]"),
-		             val, "eui64,stable-privacy");
+		             value, "eui64,stable-privacy");
 			return FALSE;
 	}
 
-	g_object_set (setting, prop, addr_gen_mode, NULL);
+	g_object_set (setting, property_info->property_name, addr_gen_mode, NULL);
 	return TRUE;
 }
-
-DEFINE_ALLOWED_FOR_ENUMS (nmc_property_ipv6_allowed_addr_gen_mode,
-                          nm_setting_ip6_config_addr_gen_mode_get_type,
-                          G_MININT, G_MAXINT)
-
 
 /* --- NM_SETTING_MACSEC_SETTING_NAME property functions --- */
 DEFINE_GETTER (nmc_property_macsec_get_parent, NM_SETTING_MACSEC_PARENT)
@@ -7113,269 +7028,6 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL);
 
-	/* Add editable properties for NM_SETTING_IP4_CONFIG_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_IP4_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_METHOD,
-	                    nmc_property_ipv4_get_method,
-	                    nmc_property_ipv4_set_method,
-	                    NULL,
-	                    NULL,
-	                    nmc_property_ipv4_allowed_method,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP4_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_DNS,
-	                    nmc_property_ipv4_get_dns,
-	                    nmc_property_ipv4_set_dns,
-	                    nmc_property_ipv4_remove_dns,
-	                    nmc_property_ipv4_describe_dns,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP4_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_DNS_SEARCH,
-	                    nmc_property_ipv4_get_dns_search,
-	                    nmc_property_ipv4_set_dns_search,
-	                    nmc_property_ipv4_remove_dns_search,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP4_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_DNS_OPTIONS,
-	                    nmc_property_ipv4_get_dns_options,
-	                    nmc_property_ipv4_set_dns_options,
-	                    nmc_property_ipv4_remove_dns_option,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP4_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_DNS_PRIORITY,
-	                    nmc_property_ipv4_get_dns_priority,
-	                    nmc_property_set_int,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP4_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_ADDRESSES,
-	                    nmc_property_ip_get_addresses,
-	                    nmc_property_ipv4_set_addresses,
-	                    nmc_property_ipv4_remove_addresses,
-	                    nmc_property_ipv4_describe_addresses,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP4_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_GATEWAY,
-	                    nmc_property_ipv4_get_gateway,
-	                    nmc_property_ipv4_set_gateway,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP4_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_ROUTES,
-	                    nmc_property_ipv4_get_routes,
-	                    nmc_property_ipv4_set_routes,
-	                    nmc_property_ipv4_remove_routes,
-	                    nmc_property_ipv4_describe_routes,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP4_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_ROUTE_METRIC,
-	                    nmc_property_ipv4_get_route_metric,
-	                    nmc_property_set_int64,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP4_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES,
-	                    nmc_property_ipv4_get_ignore_auto_routes,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP4_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS,
-	                    nmc_property_ipv4_get_ignore_auto_dns,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP4_CONFIG_SETTING_NAME""NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID,
-	                    nmc_property_ipv4_get_dhcp_client_id,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP4_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_DHCP_TIMEOUT,
-	                    nmc_property_ipv4_get_dhcp_timeout,
-	                    nmc_property_set_int,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP4_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME,
-	                    nmc_property_ipv4_get_dhcp_send_hostname,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP4_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_DHCP_HOSTNAME,
-	                    nmc_property_ipv4_get_dhcp_hostname,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP4_CONFIG_SETTING_NAME""NM_SETTING_IP4_CONFIG_DHCP_FQDN,
-	                    nmc_property_ipv4_get_dhcp_fqdn,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP4_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_NEVER_DEFAULT,
-	                    nmc_property_ipv4_get_never_default,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP4_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_MAY_FAIL,
-	                    nmc_property_ipv4_get_may_fail,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP4_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_DAD_TIMEOUT,
-	                    nmc_property_ipv4_get_dad_timeout,
-	                    nmc_property_set_int,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-
-	/* Add editable properties for NM_SETTING_IP6_CONFIG_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_IP6_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_METHOD,
-	                    nmc_property_ipv6_get_method,
-	                    nmc_property_ipv6_set_method,
-	                    NULL,
-	                    NULL,
-	                    nmc_property_ipv6_allowed_method,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP6_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_DNS,
-	                    nmc_property_ipv6_get_dns,
-	                    nmc_property_ipv6_set_dns,
-	                    nmc_property_ipv6_remove_dns,
-	                    nmc_property_ipv6_describe_dns,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP6_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_DNS_SEARCH,
-	                    nmc_property_ipv6_get_dns_search,
-	                    nmc_property_ipv6_set_dns_search,
-	                    nmc_property_ipv6_remove_dns_search,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP6_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_DNS_OPTIONS,
-	                    nmc_property_ipv6_get_dns_options,
-	                    nmc_property_ipv6_set_dns_options,
-	                    nmc_property_ipv6_remove_dns_option,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP6_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_DNS_PRIORITY,
-	                    nmc_property_ipv6_get_dns_priority,
-	                    nmc_property_set_int,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP6_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_ADDRESSES,
-	                    nmc_property_ip_get_addresses,
-	                    nmc_property_ipv6_set_addresses,
-	                    nmc_property_ipv6_remove_addresses,
-	                    nmc_property_ipv6_describe_addresses,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP6_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_GATEWAY,
-	                    nmc_property_ipv6_get_gateway,
-	                    nmc_property_ipv6_set_gateway,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP6_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_ROUTES,
-	                    nmc_property_ipv6_get_routes,
-	                    nmc_property_ipv6_set_routes,
-	                    nmc_property_ipv6_remove_routes,
-	                    nmc_property_ipv6_describe_routes,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP6_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_ROUTE_METRIC,
-	                    nmc_property_ipv6_get_route_metric,
-	                    nmc_property_set_int64,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP6_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES,
-	                    nmc_property_ipv6_get_ignore_auto_routes,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP6_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS,
-	                    nmc_property_ipv6_get_ignore_auto_dns,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP6_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_NEVER_DEFAULT,
-	                    nmc_property_ipv6_get_never_default,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP6_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_MAY_FAIL,
-	                    nmc_property_ipv6_get_may_fail,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP6_CONFIG_SETTING_NAME""NM_SETTING_IP6_CONFIG_IP6_PRIVACY,
-	                    nmc_property_ipv6_get_ip6_privacy,
-	                    nmc_property_ipv6_set_ip6_privacy,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP6_CONFIG_SETTING_NAME""NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
-	                    nmc_property_ipv6_get_addr_gen_mode,
-	                    nmc_property_ipv6_set_addr_gen_mode,
-	                    NULL,
-	                    NULL,
-	                    nmc_property_ipv6_allowed_addr_gen_mode,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP6_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME,
-	                    nmc_property_ipv6_get_dhcp_send_hostname,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP6_CONFIG_SETTING_NAME""NM_SETTING_IP_CONFIG_DHCP_HOSTNAME,
-	                    nmc_property_ipv6_get_dhcp_hostname,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP6_CONFIG_SETTING_NAME""NM_SETTING_IP6_CONFIG_TOKEN,
-	                    nmc_property_ipv6_get_token,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-
 	/* Add editable properties for NM_SETTING_OLPC_MESH_SETTING_NAME */
 	nmc_add_prop_funcs (NM_SETTING_OLPC_MESH_SETTING_NAME""NM_SETTING_OLPC_MESH_SSID,
 	                    nmc_property_olpc_get_ssid,
@@ -8700,6 +8352,9 @@ nmc_setting_get_property_allowed_values (NMSetting *setting, const char *prop)
 		if (property_info->is_name) {
 			/* NmcPropertyFuncs would not register the "name" property.
 			 * For the moment, skip it from get_property_val(). */
+		} else if (property_info->values_fcn) {
+			return property_info->values_fcn (setting_info,
+			                                  property_info);
 		} else if (property_info->values_static)
 			return property_info->values_static;
 	}
@@ -9036,93 +8691,6 @@ setting_wireless_security_details (const NmcSettingInfo *setting_info, NMSetting
 	set_val_str (arr, 15, nmc_property_wifi_sec_get_psk_flags (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 16, GET_SECRET (secrets, setting, nmc_property_wifi_sec_get_leap_password));
 	set_val_str (arr, 17, nmc_property_wifi_sec_get_leap_password_flags (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
-setting_ip4_config_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingIPConfig *s_ip4 = NM_SETTING_IP_CONFIG (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (s_ip4), FALSE);
-
-	tmpl = nmc_fields_setting_ip4_config;
-	tmpl_len = sizeof (nmc_fields_setting_ip4_config);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_IP4_CONFIG_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_ipv4_get_method (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 2, nmc_property_ipv4_get_dns (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 3, nmc_property_ipv4_get_dns_search (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 4, nmc_property_ipv4_get_dns_options (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 5, nmc_property_ipv4_get_dns_priority (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 6, nmc_property_ip_get_addresses (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 7, nmc_property_ipv4_get_gateway (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 8, nmc_property_ipv4_get_routes (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 9, nmc_property_ipv4_get_route_metric (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 10, nmc_property_ipv4_get_ignore_auto_routes (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 11, nmc_property_ipv4_get_ignore_auto_dns (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 12, nmc_property_ipv4_get_dhcp_client_id (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 13, nmc_property_ipv4_get_dhcp_timeout (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 14, nmc_property_ipv4_get_dhcp_send_hostname (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 15, nmc_property_ipv4_get_dhcp_hostname (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 16, nmc_property_ipv4_get_dhcp_fqdn (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 17, nmc_property_ipv4_get_never_default (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 18, nmc_property_ipv4_get_may_fail (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 19, nmc_property_ipv4_get_dad_timeout (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
-setting_ip6_config_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingIPConfig *s_ip6 = NM_SETTING_IP_CONFIG (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (s_ip6), FALSE);
-
-	tmpl = nmc_fields_setting_ip6_config;
-	tmpl_len = sizeof (nmc_fields_setting_ip6_config);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_IP6_CONFIG_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_ipv6_get_method (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 2, nmc_property_ipv6_get_dns (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 3, nmc_property_ipv6_get_dns_search (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 4, nmc_property_ipv6_get_dns_options (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 5, nmc_property_ipv6_get_dns_priority (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 6, nmc_property_ip_get_addresses (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 7, nmc_property_ipv6_get_gateway (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 8, nmc_property_ipv6_get_routes (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 9, nmc_property_ipv6_get_route_metric (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 10, nmc_property_ipv6_get_ignore_auto_routes (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 11, nmc_property_ipv6_get_ignore_auto_dns (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 12, nmc_property_ipv6_get_never_default (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 13, nmc_property_ipv6_get_may_fail (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 14, nmc_property_ipv6_get_ip6_privacy (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 15, nmc_property_ipv6_get_addr_gen_mode (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 16, nmc_property_ipv6_get_dhcp_send_hostname (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 17, nmc_property_ipv6_get_dhcp_hostname (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 18, nmc_property_ipv6_get_token (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -9886,15 +9454,23 @@ setting_proxy_details (const NmcSettingInfo *setting_info, NMSetting *setting, N
 
 /*****************************************************************************/
 
+#define PROPERTY_INFO_NAME() \
+	{ \
+		.property_name =                N_ ("name"), \
+		.is_name                        = TRUE, \
+		.get_fcn =                      _get_fcn_direct, \
+		.get_data =                     { .get_direct = nm_setting_get_name, }, \
+	}
+
 #define VALUES_STATIC(...)  (((const char *[]) { __VA_ARGS__, NULL }))
 
+#define GET_WITH_DEFAULT_FCN(type, func) \
+	/* macro that returns @func as const (gboolean(*)(NMSetting*)) type, but checks
+	 * that the actual type is (gboolean(*)(type *)). */ \
+	((gboolean (*) (NMSetting *)) ((sizeof (func == ((gboolean (*) (type *)) func))) ? func : func) )
+
 static const NmcPropertyInfo properties_setting_connection[] = {
-	{
-		.property_name =                N_ ("name"),
-		.is_name                        = TRUE,
-		.get_fcn =                      _get_fcn_direct,
-		.get_data =                     { .get_direct = nm_setting_get_name, },
-	},
+	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_ID),
 		.get_fcn =                      _get_fcn_gobject,
@@ -10021,6 +9597,267 @@ static const NmcPropertyInfo properties_setting_connection[] = {
 	},
 };
 
+static const NmcPropertyInfo properties_setting_ip4_config[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_METHOD),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_ip4_config_method,
+		.values_static =                ipv4_valid_methods,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_DNS),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_ip4_config_dns,
+		.remove_fcn =                   _remove_fcn_nmc,
+		.remove_data =                  { .remove_nmc = nmc_property_ipv4_remove_dns, },
+		.describe_message =
+		    N_ ("Enter a list of IPv4 addresses of DNS servers.\n\n"
+		        "Example: 8.8.8.8, 8.8.4.4\n"),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_DNS_SEARCH),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_ip4_config_dns_search,
+		.remove_fcn =                   _remove_fcn_nmc,
+		.remove_data =                  { .remove_nmc = nmc_property_ipv4_remove_dns_search, },
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_DNS_OPTIONS),
+		.get_fcn =                      _get_fcn_gobject_with_default,
+		.get_data =                     { .get_gobject_with_default_fcn = GET_WITH_DEFAULT_FCN (NMSettingIPConfig, nm_setting_ip_config_has_dns_options), },
+		.set_fcn =                      _set_fcn_ip4_config_dns_options,
+		.remove_fcn =                   _remove_fcn_nmc,
+		.remove_data =                  { .remove_nmc = nmc_property_ipv4_remove_dns_option, },
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_DNS_PRIORITY),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_gobject_int,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_ADDRESSES),
+		.get_fcn =                      _get_fcn_ip_config_addresses,
+		.set_fcn =                      _set_fcn_ip4_config_addresses,
+		.remove_fcn =                   _remove_fcn_nmc,
+		.remove_data =                  { .remove_nmc = nmc_property_ipv4_remove_addresses, },
+		.describe_message =
+		    N_ ("Enter a list of IPv4 addresses formatted as:\n"
+		        "  ip[/prefix], ip[/prefix],...\n"
+		        "Missing prefix is regarded as prefix of 32.\n\n"
+		        "Example: 192.168.1.5/24, 10.0.0.11/24\n"),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_GATEWAY),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_ip4_config_gateway,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_ROUTES),
+		.get_fcn =                      _get_fcn_ip_config_routes,
+		.set_fcn =                      _set_fcn_ip4_config_routes,
+		.remove_fcn =                   _remove_fcn_nmc,
+		.remove_data =                  { .remove_nmc = nmc_property_ipv4_remove_routes, },
+		.describe_message =
+		    N_ ("Enter a list of IPv4 routes formatted as:\n"
+		         "  ip[/prefix] [next-hop] [metric],...\n\n"
+		         "Missing prefix is regarded as a prefix of 32.\n"
+		         "Missing next-hop is regarded as 0.0.0.0.\n"
+		         "Missing metric means default (NM/kernel will set a default value).\n\n"
+		         "Examples: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
+		         "          10.1.2.0/24\n"),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_ROUTE_METRIC),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_gobject_int64,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_DHCP_TIMEOUT),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_gobject_int,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP4_CONFIG_DHCP_FQDN),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_NEVER_DEFAULT),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_MAY_FAIL),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_DAD_TIMEOUT),
+		.get_fcn =                      _get_fcn_ip4_config_dad_timeout,
+		.set_fcn =                      _set_fcn_gobject_int,
+	},
+};
+
+static const NmcPropertyInfo properties_setting_ip6_config[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_METHOD),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_ip6_config_method,
+		.values_static =                ipv6_valid_methods,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_DNS),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_ip6_config_dns,
+		.remove_fcn =                   _remove_fcn_nmc,
+		.remove_data =                  { .remove_nmc = nmc_property_ipv6_remove_dns, },
+		.describe_message =
+		    N_ ("Enter a list of IPv6 addresses of DNS servers.  If the IPv6 "
+		        "configuration method is 'auto' these DNS servers are appended "
+		        "to those (if any) returned by automatic configuration.  DNS "
+		        "servers cannot be used with the 'shared' or 'link-local' IPv6 "
+		        "configuration methods, as there is no upstream network. In "
+		        "all other IPv6 configuration methods, these DNS "
+		        "servers are used as the only DNS servers for this connection.\n\n"
+		        "Example: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n")
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_DNS_SEARCH),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_ip6_config_dns_search,
+		.remove_fcn =                   _remove_fcn_nmc,
+		.remove_data =                  { .remove_nmc = nmc_property_ipv6_remove_dns_search, },
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_DNS_OPTIONS),
+		.get_fcn =                      _get_fcn_gobject_with_default,
+		.get_data =                     { .get_gobject_with_default_fcn = GET_WITH_DEFAULT_FCN (NMSettingIPConfig, nm_setting_ip_config_has_dns_options), },
+		.set_fcn =                      _set_fcn_ip6_config_dns_options,
+		.remove_fcn =                   _remove_fcn_nmc,
+		.remove_data =                  { .remove_nmc = nmc_property_ipv6_remove_dns_option, },
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_DNS_PRIORITY),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_gobject_int,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_ADDRESSES),
+		.get_fcn =                      _get_fcn_ip_config_addresses,
+		.set_fcn =                      _set_fcn_ip6_config_addresses,
+		.remove_fcn =                   _remove_fcn_nmc,
+		.remove_data =                  { .remove_nmc = nmc_property_ipv6_remove_addresses, },
+		.describe_message =
+		    N_ ("Enter a list of IPv6 addresses formatted as:\n"
+		        "  ip[/prefix], ip[/prefix],...\n"
+		        "Missing prefix is regarded as prefix of 128.\n\n"
+		        "Example: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_GATEWAY),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_ip6_config_gateway,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_ROUTES),
+		.get_fcn =                      _get_fcn_ip_config_routes,
+		.set_fcn =                      _set_fcn_ip6_config_routes,
+		.remove_fcn =                   _remove_fcn_nmc,
+		.remove_data =                  { .remove_nmc = nmc_property_ipv6_remove_routes, },
+		.describe_message =
+		    N_ ("Enter a list of IPv6 routes formatted as:\n"
+		        "  ip[/prefix] [next-hop] [metric],...\n\n"
+		        "Missing prefix is regarded as a prefix of 128.\n"
+		        "Missing next-hop is regarded as \"::\".\n"
+		        "Missing metric means default (NM/kernel will set a default value).\n\n"
+		         "Examples: 2001:db8:beef:2::/64 2001:db8:beef::2, 2001:db8:beef:3::/64 2001:db8:beef::3 2\n"
+		        "          abbe::/64 55\n"),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_ROUTE_METRIC),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_gobject_int64,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_NEVER_DEFAULT),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_MAY_FAIL),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP6_CONFIG_IP6_PRIVACY),
+		.get_fcn =                      _get_fcn_ip6_config_ip6_privacy,
+		.set_fcn =                      _set_fcn_ip6_config_ip6_privacy,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE),
+		.get_fcn =                      _get_fcn_ip6_config_addr_gen_mode,
+		.set_fcn =                      _set_fcn_ip6_config_addr_gen_mode,
+		.values_fcn =                   _values_fcn_gobject_enum,
+		.values_data = {
+			.gobject_enum = {
+				.get_gtype =            nm_setting_ip6_config_addr_gen_mode_get_type,
+			},
+		},
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP6_CONFIG_TOKEN),
+		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_gobject_string,
+	},
+};
+
 const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM] = {
 	[NM_META_SETTING_TYPE_802_1X] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_802_1X],
@@ -10052,7 +9889,6 @@ const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM] = {
 	},
 	[NM_META_SETTING_TYPE_CONNECTION] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_CONNECTION],
-		.get_setting_details                = _get_setting_details,
 		.properties                         = properties_setting_connection,
 		.properties_num                     = G_N_ELEMENTS (properties_setting_connection),
 	},
@@ -10070,11 +9906,13 @@ const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM] = {
 	},
 	[NM_META_SETTING_TYPE_IP4_CONFIG] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_IP4_CONFIG],
-		.get_setting_details                = setting_ip4_config_details,
+		.properties                         = properties_setting_ip4_config,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_ip4_config),
 	},
 	[NM_META_SETTING_TYPE_IP6_CONFIG] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_IP6_CONFIG],
-		.get_setting_details                = setting_ip6_config_details,
+		.properties                         = properties_setting_ip6_config,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_ip6_config),
 	},
 	[NM_META_SETTING_TYPE_IP_TUNNEL] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_IP_TUNNEL],
@@ -10162,8 +10000,8 @@ setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean 
 	g_return_val_if_fail (meta_setting_info, FALSE);
 
 	setting_info = &nmc_setting_infos[meta_setting_info->meta_type];
-	g_return_val_if_fail (setting_info && setting_info->get_setting_details, FALSE);
+	g_return_val_if_fail (setting_info, FALSE);
 
-	return setting_info->get_setting_details (setting_info, setting, nmc, one_prop, secrets);
+	return (setting_info->get_setting_details ?: _get_setting_details) (setting_info, setting, nmc, one_prop, secrets);
 }
 

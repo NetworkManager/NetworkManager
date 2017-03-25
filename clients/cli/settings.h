@@ -51,6 +51,7 @@ struct _NmcPropertyInfo {
 	union {
 		const char *(*get_direct) (NMSetting *setting);
 		char *(*get_nmc) (NMSetting *setting, NmcPropertyGetType get_type);
+		gboolean (*get_gobject_with_default_fcn) (NMSetting *setting);
 	} get_data;
 
 	gboolean (*set_fcn) (const NmcSettingInfo *setting_info,
@@ -74,7 +75,19 @@ struct _NmcPropertyInfo {
 
 	const char *describe_message;
 
-	const char *const*values_static;
+	const char *const*(*values_fcn) (const NmcSettingInfo *setting_info,
+	                                 const NmcPropertyInfo *property_info);
+	union {
+		union {
+			struct {
+				GType (*get_gtype) (void);
+				bool has_minmax:1;
+				int min;
+				int max;
+			} gobject_enum;
+		} values_data;
+		const char *const*values_static;
+	};
 };
 
 struct _NmcSettingInfo {
@@ -137,8 +150,6 @@ extern NmcOutputField nmc_fields_setting_wired[];
 extern NmcOutputField nmc_fields_setting_8021X[];
 extern NmcOutputField nmc_fields_setting_wireless[];
 extern NmcOutputField nmc_fields_setting_wireless_security[];
-extern NmcOutputField nmc_fields_setting_ip4_config[];
-extern NmcOutputField nmc_fields_setting_ip6_config[];
 extern NmcOutputField nmc_fields_setting_serial[];
 extern NmcOutputField nmc_fields_setting_ppp[];
 extern NmcOutputField nmc_fields_setting_pppoe[];
