@@ -677,7 +677,7 @@ finish:
  * Returns: a newly allocated string. Caller must free it with g_free().
  */
 char *
-nmc_util_strv_for_display (const char **strv, gboolean brackets)
+nmc_util_strv_for_display (const char *const*strv, gboolean brackets)
 {
 	GString *result;
 	guint i = 0;

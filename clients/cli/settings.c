@@ -1456,14 +1456,14 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 	}
 
 #define DEFINE_ALLOWED_VAL_FUNC(def_func, valid_values) \
-	static const char ** \
+	static const char *const* \
 	def_func (NMSetting *setting, const char *prop) \
 	{ \
 		return valid_values; \
 	}
 
 #define DEFINE_ALLOWED_FOR_ENUMS(def_func, get_type_func, min, max) \
-	static const char ** \
+	static const char *const* \
 	def_func (NMSetting *setting, const char *prop) \
 	{ \
 		static const char **words = NULL; \
@@ -2654,7 +2654,7 @@ nmc_property_bond_describe_options (NMSetting *setting, const char *prop)
 	return desc;
 }
 
-static const char **
+static const char *const*
 nmc_property_bond_allowed_options (NMSetting *setting, const char *prop)
 {
 	return nm_setting_bond_get_valid_options (NM_SETTING_BOND (setting));
@@ -2895,8 +2895,6 @@ nmc_property_con_set_slave_type (NMSetting *setting, const char *prop, const cha
 	return check_and_set_string (setting, prop, val, con_valid_slave_types, error);
 }
 
-DEFINE_ALLOWED_VAL_FUNC (nmc_property_con_allowed_slave_type, con_valid_slave_types)
-
 static gboolean
 _set_fcn_connection_secondaries (const NmcSettingInfo *setting_info,
                                  const NmcPropertyInfo *property_info,
@@ -3039,9 +3037,6 @@ _set_fcn_connection_metered (const NmcSettingInfo *setting_info,
 	return TRUE;
 }
 
-static const char *metered_valid_values[] = { "yes", "no", "unknown", NULL };
-DEFINE_ALLOWED_VAL_FUNC (nmc_property_connection_allowed_metered, metered_valid_values)
-
 static char *
 nmc_property_connection_get_lldp (NMSetting *setting, NmcPropertyGetType get_type)
 {
@@ -3093,10 +3088,6 @@ _set_fcn_connection_lldp (const NmcSettingInfo *setting_info,
 	g_object_set (setting, property_info->property_name, lldp, NULL);
 	return TRUE;
 }
-
-static const char *lldp_valid_values[] = { "default", "disable", "enable-rx", NULL };
-DEFINE_ALLOWED_VAL_FUNC (nmc_property_connection_allowed_lldp, lldp_valid_values)
-
 
 /* --- NM_SETTING_DCB_SETTING_NAME property functions --- */
 static char *
@@ -5384,7 +5375,7 @@ DEFINE_REMOVER_OPTION (nmc_property_wired_remove_option_s390_options,
                        NM_SETTING_WIRED,
                        nm_setting_wired_remove_s390_option)
 
-static const char **
+static const char *const*
 nmc_property_wired_allowed_s390_options (NMSetting *setting, const char *prop)
 {
 	return nm_setting_wired_get_valid_s390_options (NM_SETTING_WIRED (setting));
@@ -5974,7 +5965,7 @@ typedef	char *        (*NmcPropertyGetFunc)      (NMSetting *, NmcPropertyGetTyp
 typedef	gboolean      (*NmcPropertySetFunc)      (NMSetting *, const char *, const char *, GError **);
 typedef	gboolean      (*NmcPropertyRemoveFunc)   (NMSetting *, const char *, const char *, guint32, GError **);
 typedef	const char *  (*NmcPropertyDescribeFunc) (NMSetting *, const char *);
-typedef	const char ** (*NmcPropertyValuesFunc)   (NMSetting *, const char *);
+typedef	const char *const* (*NmcPropertyValuesFunc)   (NMSetting *, const char *);
 
 typedef struct {
 	/* The order of the fields is important as they correspond
@@ -6887,28 +6878,6 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL,
-	                    NULL);
-
-	nmc_add_prop_funcs (GLUE (CONNECTION, SLAVE_TYPE),
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    nmc_property_con_allowed_slave_type,
-	                    NULL);
-	nmc_add_prop_funcs (GLUE (CONNECTION, METERED),
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    nmc_property_connection_allowed_metered,
-	                    NULL);
-	nmc_add_prop_funcs (GLUE (CONNECTION, LLDP),
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    nmc_property_connection_allowed_lldp,
 	                    NULL);
 
 	/* Add editable properties for NM_SETTING_DCB_SETTING_NAME */
@@ -8715,11 +8684,13 @@ nmc_setting_get_valid_properties (NMSetting *setting)
 /*
  * Return allowed values for 'prop' as a string.
  */
-const char **
+const char *const*
 nmc_setting_get_property_allowed_values (NMSetting *setting, const char *prop)
 {
 
 	const NmcPropertyFuncs *item;
+	const NmcSettingInfo *setting_info;
+	const NmcPropertyInfo *property_info;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 
@@ -8727,7 +8698,17 @@ nmc_setting_get_property_allowed_values (NMSetting *setting, const char *prop)
 	if (item && item->values_func)
 		return item->values_func (setting, prop);
 
-	return NULL;
+	if ((property_info = _meta_find_property_info_by_setting (setting, prop, &setting_info))) {
+		nm_assert (property_info == _meta_find_property_info_by_name (nm_setting_get_name (setting), prop, NULL));
+
+		if (property_info->is_name) {
+			/* NmcPropertyFuncs would not register the "name" property.
+			 * For the moment, skip it from get_property_val(). */
+		} else if (property_info->values_static)
+			return property_info->values_static;
+	}
+
+return NULL;
 }
 
 #include "settings-docs.c"
@@ -9893,6 +9874,8 @@ setting_proxy_details (const NmcSettingInfo *setting_info, NMSetting *setting, N
 
 /*****************************************************************************/
 
+#define VALUES_STATIC(...)  (((const char *[]) { __VA_ARGS__, NULL }))
+
 static const NmcPropertyInfo properties_setting_connection[] = {
 	{
 		.property_name =                N_ ("name"),
@@ -9977,6 +9960,7 @@ static const NmcPropertyInfo properties_setting_connection[] = {
 		.get_fcn =                      _get_fcn_gobject,
 		.set_fcn =                      _set_fcn_nmc,
 		.set_data =                     { .set_nmc = nmc_property_con_set_slave_type, },
+		.values_static =                con_valid_slave_types,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES),
@@ -10014,12 +9998,14 @@ static const NmcPropertyInfo properties_setting_connection[] = {
 		        "'true','yes','on' to set the connection as metered\n"
 		        "'false','no','off' to set the connection as not metered\n"
 		        "'unknown' to let NetworkManager choose a value using some heuristics\n"),
+		.values_static =                VALUES_STATIC ("yes", "no", "unknown"),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_LLDP),
 		.get_fcn =                      _get_fcn_nmc,
 		.get_data =                     { .get_nmc = nmc_property_connection_get_lldp, },
 		.set_fcn =                      _set_fcn_connection_lldp,
+		.values_static =                VALUES_STATIC ("default", "disable", "enable-rx"),
 	},
 };
 
