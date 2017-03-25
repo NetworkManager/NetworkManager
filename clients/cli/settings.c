@@ -8805,6 +8805,21 @@ nmc_property_set_gvalue (NMSetting *setting, const char *prop, GValue *value)
 #define GET_SECRET(show, setting, func) \
 	(show ? func (setting, NMC_PROPERTY_GET_PRETTY) : g_strdup (_("<hidden>")))
 
+static char *
+_all_properties (const NmcSettingInfo *setting_info)
+{
+	GString *str;
+	guint i;
+
+	str = g_string_sized_new (250);
+	for (i = 0; i < setting_info->properties_num; i++) {
+		if (str->len)
+			g_string_append_c (str, ',');
+		g_string_append (str, setting_info->properties[i].property_name);
+	}
+	return g_string_free (str, FALSE);
+}
+
 static gboolean
 _get_setting_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
@@ -8812,13 +8827,14 @@ _get_setting_details (const NmcSettingInfo *setting_info, NMSetting *setting, Nm
 	NmcOutputField *arr;
 	guint i;
 	size_t tmpl_len;
+	gs_free char *s_all = NULL;
 
 	g_return_val_if_fail (G_TYPE_CHECK_INSTANCE_TYPE (setting, setting_info->general->get_setting_gtype ()), FALSE);
 
 	tmpl_len = sizeof (NmcOutputField) * (setting_info->properties_num + 1);
 	tmpl = g_memdup (_get_nmc_output_fields (setting_info), tmpl_len);
 
-	nmc->print_fields.indices = parse_output_fields (one_prop ?: setting_info->all_properties,
+	nmc->print_fields.indices = parse_output_fields (one_prop ?: (s_all = _all_properties (setting_info)),
 	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
@@ -10009,27 +10025,6 @@ static const NmcPropertyInfo properties_setting_connection[] = {
 	},
 };
 
-#define NMC_FIELDS_SETTING_CONNECTION_ALL     "name"","\
-                                              NM_SETTING_CONNECTION_ID","\
-                                              NM_SETTING_CONNECTION_UUID","\
-                                              NM_SETTING_CONNECTION_STABLE_ID","\
-                                              NM_SETTING_CONNECTION_INTERFACE_NAME","\
-                                              NM_SETTING_CONNECTION_TYPE","\
-                                              NM_SETTING_CONNECTION_AUTOCONNECT","\
-                                              NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY","\
-                                              NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES","\
-                                              NM_SETTING_CONNECTION_TIMESTAMP","\
-                                              NM_SETTING_CONNECTION_READ_ONLY","\
-                                              NM_SETTING_CONNECTION_PERMISSIONS","\
-                                              NM_SETTING_CONNECTION_ZONE","\
-                                              NM_SETTING_CONNECTION_MASTER","\
-                                              NM_SETTING_CONNECTION_SLAVE_TYPE","\
-                                              NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES","\
-                                              NM_SETTING_CONNECTION_SECONDARIES","\
-                                              NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT","\
-                                              NM_SETTING_CONNECTION_METERED","\
-                                              NM_SETTING_CONNECTION_LLDP
-
 const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM] = {
 	[NM_META_SETTING_TYPE_802_1X] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_802_1X],
@@ -10064,7 +10059,6 @@ const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM] = {
 		.get_setting_details                = _get_setting_details,
 		.properties                         = properties_setting_connection,
 		.properties_num                     = G_N_ELEMENTS (properties_setting_connection),
-		.all_properties                     = NMC_FIELDS_SETTING_CONNECTION_ALL,
 	},
 	[NM_META_SETTING_TYPE_DCB] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_DCB],

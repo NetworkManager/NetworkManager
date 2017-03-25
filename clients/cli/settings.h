@@ -84,9 +84,10 @@ struct _NmcSettingInfo {
 	                                 NmCli *nmc,
 	                                 const char *one_prop,
 	                                 gboolean secrets);
+	/* the order of the properties matter. The first *must* be the
+	 * "name", and then the order is as they are listed by default. */
 	const NmcPropertyInfo *properties;
 	guint properties_num;
-	const char *all_properties;
 };
 
 extern const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM];
