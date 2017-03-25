@@ -52,6 +52,15 @@ struct _NmcPropertyInfo {
 		const char *(*get_direct) (NMSetting *setting);
 		char *(*get_nmc) (NMSetting *setting, NmcPropertyGetType get_type);
 	} get_data;
+
+	gboolean (*set_fcn) (const NmcSettingInfo *setting_info,
+	                     const NmcPropertyInfo *property_info,
+	                     NMSetting *setting,
+	                     const char *value,
+	                     GError **error);
+	union {
+		gboolean (*set_nmc) (NMSetting *setting, const char *property_name, const char *value, GError **error);
+	} set_data;
 };
 
 struct _NmcSettingInfo {

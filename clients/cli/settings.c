@@ -34,6 +34,8 @@
 #define SETTING_FIELD(setting) { setting, N_(setting), 0, NULL, FALSE, FALSE, 0 }
 
 static char *wep_key_type_to_string (NMWepKeyType type);
+static gboolean validate_int (NMSetting *setting, const char* prop, gint val, GError **error);
+static gboolean validate_uint (NMSetting *setting, const char* prop, guint val, GError **error);
 
 /*****************************************************************************/
 
@@ -69,6 +71,111 @@ _get_fcn_gobject (const NmcSettingInfo *setting_info,
 	s = g_value_dup_string (&val);
 	g_value_unset (&val);
 	return s;
+}
+
+/*****************************************************************************/
+
+static gboolean
+_set_fcn_nmc (const NmcSettingInfo *setting_info,
+              const NmcPropertyInfo *property_info,
+              NMSetting *setting,
+              const char *value,
+              GError **error)
+{
+	return property_info->set_data.set_nmc (setting, property_info->property_name, value, error);
+}
+
+static gboolean
+_set_fcn_gobject_string (const NmcSettingInfo *setting_info,
+                         const NmcPropertyInfo *property_info,
+                         NMSetting *setting,
+                         const char *value,
+                         GError **error)
+{
+	g_object_set (setting, property_info->property_name, value, NULL);
+	return TRUE;
+}
+
+static gboolean
+_set_fcn_gobject_bool (const NmcSettingInfo *setting_info,
+                       const NmcPropertyInfo *property_info,
+                       NMSetting *setting,
+                       const char *value,
+                       GError **error)
+{
+	gboolean val_bool;
+
+	if (!nmc_string_to_bool (value, &val_bool, error))
+		return FALSE;
+
+	g_object_set (setting, property_info->property_name, val_bool, NULL);
+	return TRUE;
+}
+
+static gboolean
+_set_fcn_gobject_trilean (const NmcSettingInfo *setting_info,
+                          const NmcPropertyInfo *property_info,
+                          NMSetting *setting,
+                          const char *value,
+                          GError **error)
+{
+	long int val_int;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!nmc_string_to_int (value, TRUE, -1, 1, &val_int)) {
+		g_set_error (error, 1, 0, _("'%s' is not a valid value; use -1, 0 or 1"), value);
+		return FALSE;
+	}
+
+	g_object_set (setting, property_info->property_name, val_int, NULL);
+	return TRUE;
+}
+
+static gboolean
+_set_fcn_gobject_int (const NmcSettingInfo *setting_info,
+                      const NmcPropertyInfo *property_info,
+                      NMSetting *setting,
+                      const char *value,
+                      GError **error)
+{
+	long int val_int;
+
+	if (!nmc_string_to_int (value, TRUE, G_MININT, G_MAXINT, &val_int)) {
+		g_set_error (error, 1, 0, _("'%s' is not a valid number (or out of range)"), value);
+		return FALSE;
+	}
+
+	/* Validate the number according to the property spec */
+	if (!validate_int (setting, property_info->property_name, (gint) val_int, error))
+		return FALSE;
+
+	g_object_set (setting, property_info->property_name, (gint) val_int, NULL);
+	return TRUE;
+}
+
+static gboolean
+_set_fcn_gobject_uint (const NmcSettingInfo *setting_info,
+                       const NmcPropertyInfo *property_info,
+                       NMSetting *setting,
+                       const char *value,
+                       GError **error)
+{
+	unsigned long val_int;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!nmc_string_to_uint (value, TRUE, 0, G_MAXUINT, &val_int)) {
+		g_set_error (error, 1, 0, _("'%s' is not a valid number (or out of range)"), value);
+		return FALSE;
+	}
+
+	/* Validate the number according to the property spec */
+	if (!validate_uint (setting, property_info->property_name, (guint) val_int, error))
+		return FALSE;
+
+	g_object_set (setting, property_info->property_name, (guint) val_int, NULL);
+	return TRUE;
 }
 
 /*****************************************************************************/
@@ -1632,22 +1739,6 @@ nmc_property_set_bool (NMSetting *setting, const char *prop, const char *val, GE
 }
 
 static gboolean
-nmc_property_set_trilean (NMSetting *setting, const char *prop, const char *val, GError **error)
-{
-	long int val_int;
-
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if (!nmc_string_to_int (val, TRUE, -1, 1, &val_int)) {
-		g_set_error (error, 1, 0, _("'%s' is not a valid value; use -1, 0 or 1"), val);
-		return FALSE;
-	}
-
-	g_object_set (setting, prop, val_int, NULL);
-	return TRUE;
-}
-
-static gboolean
 nmc_property_set_ssid (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
 	GBytes *ssid;
@@ -2633,7 +2724,11 @@ nmc_property_connection_get_autoconnect_slaves (NMSetting *setting, NmcPropertyG
 }
 
 static gboolean
-nmc_property_connection_set_type (NMSetting *setting, const char *prop, const char *val, GError **error)
+_set_fcn_connection_type (const NmcSettingInfo *setting_info,
+                          const NmcPropertyInfo *property_info,
+                          NMSetting *setting,
+                          const char *value,
+                          GError **error)
 {
 	gs_free char *uuid = NULL;
 
@@ -2654,7 +2749,7 @@ nmc_property_connection_set_type (NMSetting *setting, const char *prop, const ch
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NULL);
 
-	g_object_set (G_OBJECT (setting), prop, val, NULL);
+	g_object_set (G_OBJECT (setting), property_info->property_name, value, NULL);
 	return TRUE;
 }
 
@@ -2700,15 +2795,19 @@ permissions_valid (const char *perm)
 }
 
 static gboolean
-nmc_property_connection_set_permissions (NMSetting *setting, const char *prop, const char *val, GError **error)
+_set_fcn_connection_permissions (const NmcSettingInfo *setting_info,
+                                 const NmcPropertyInfo *property_info,
+                                 NMSetting *setting,
+                                 const char *value,
+                                 GError **error)
 {
 	char **strv = NULL;
 	guint i = 0;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	strv = nmc_strsplit_set (val, " \t,", 0);
-	if (!verify_string_list (strv, prop, permissions_valid, error)) {
+	strv = nmc_strsplit_set (value, " \t,", 0);
+	if (!verify_string_list (strv, property_info->property_name, permissions_valid, error)) {
 		g_strfreev (strv);
 		return FALSE;
 	}
@@ -2754,24 +2853,27 @@ nmc_property_connection_describe_permissions (NMSetting *setting, const char *pr
 	         "Example: alice bob charlie\n");
 }
 
-/* 'master' */
 static gboolean
-nmc_property_con_set_master (NMSetting *setting, const char *prop, const char *val, GError **error)
+_set_fcn_connection_master (const NmcSettingInfo *setting_info,
+                            const NmcPropertyInfo *property_info,
+                            NMSetting *setting,
+                            const char *value,
+                            GError **error)
 {
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	if (!val)
+	if (!value)
 		;
-	else if (!*val)
-		val = NULL;
-	else if (   !nm_utils_is_valid_iface_name (val, NULL)
-	         && !nm_utils_is_uuid (val)) {
+	else if (!*value)
+		value = NULL;
+	else if (   !nm_utils_is_valid_iface_name (value, NULL)
+	         && !nm_utils_is_uuid (value)) {
 		g_set_error (error, 1, 0,
 		             _("'%s' is not valid master; use ifname or connection UUID"),
-		             val);
+		             value);
 		return FALSE;
 	}
-	g_object_set (setting, prop, val, NULL);
+	g_object_set (setting, property_info->property_name, value, NULL);
 	return TRUE;
 }
 
@@ -2789,22 +2891,22 @@ nmc_property_con_set_slave_type (NMSetting *setting, const char *prop, const cha
 	return check_and_set_string (setting, prop, val, con_valid_slave_types, error);
 }
 
-
 DEFINE_ALLOWED_VAL_FUNC (nmc_property_con_allowed_slave_type, con_valid_slave_types)
 
-/* 'secondaries' */
 static gboolean
-nmc_property_connection_set_secondaries (NMSetting *setting, const char *prop, const char *val, GError **error)
+_set_fcn_connection_secondaries (const NmcSettingInfo *setting_info,
+                                 const NmcPropertyInfo *property_info,
+                                 NMSetting *setting,
+                                 const char *value,
+                                 GError **error)
 {
 	const GPtrArray *connections;
 	NMConnection *con;
 	char **strv = NULL, **iter;
 	guint i = 0;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
 	connections = nm_client_get_connections (nm_cli.client);
-	strv = nmc_strsplit_set (val, " \t,", 0);
+	strv = nmc_strsplit_set (value, " \t,", 0);
 	for (iter = strv; iter && *iter; iter++) {
 		if (**iter == '\0')
 			continue;
@@ -2914,13 +3016,16 @@ nmc_property_connection_get_metered (NMSetting *setting, NmcPropertyGetType get_
 }
 
 static gboolean
-nmc_property_connection_set_metered (NMSetting *setting, const char *prop,
-                                     const char *val, GError **error)
+_set_fcn_connection_metered (const NmcSettingInfo *setting_info,
+                             const NmcPropertyInfo *property_info,
+                             NMSetting *setting,
+                             const char *value,
+                             GError **error)
 {
 	NMMetered metered;
 	NMCTriStateValue ts_val;
 
-	if (!nmc_string_to_tristate (val, &ts_val, error))
+	if (!nmc_string_to_tristate (value, &ts_val, error))
 		return FALSE;
 
 	switch (ts_val) {
@@ -2937,7 +3042,7 @@ nmc_property_connection_set_metered (NMSetting *setting, const char *prop,
 		g_assert_not_reached();
 	}
 
-	g_object_set (setting, prop, metered, NULL);
+	g_object_set (setting, property_info->property_name, metered, NULL);
 	return TRUE;
 }
 
@@ -2972,34 +3077,37 @@ nmc_property_connection_get_lldp (NMSetting *setting, NmcPropertyGetType get_typ
 }
 
 static gboolean
-nmc_property_connection_set_lldp (NMSetting *setting, const char *prop,
-                                  const char *val, GError **error)
+_set_fcn_connection_lldp (const NmcSettingInfo *setting_info,
+                          const NmcPropertyInfo *property_info,
+                          NMSetting *setting,
+                          const char *value,
+                          GError **error)
 {
 	NMSettingConnectionLldp lldp;
 	gboolean ret;
 	long int t;
 
-	if (nmc_string_to_int_base (val, 0, TRUE,
+	if (nmc_string_to_int_base (value, 0, TRUE,
 	                           NM_SETTING_CONNECTION_LLDP_DEFAULT,
 	                           NM_SETTING_CONNECTION_LLDP_ENABLE_RX,
 	                           &t))
 		lldp = t;
 	else {
-		ret = nm_utils_enum_from_str (nm_setting_connection_lldp_get_type (), val,
+		ret = nm_utils_enum_from_str (nm_setting_connection_lldp_get_type (), value,
 		                              (int *) &lldp, NULL);
 
 		if (!ret) {
-			if (g_ascii_strcasecmp (val, "enable") == 0)
+			if (g_ascii_strcasecmp (value, "enable") == 0)
 				lldp = NM_SETTING_CONNECTION_LLDP_ENABLE_RX;
 			else {
 				g_set_error (error, 1, 0, _("invalid option '%s', use one of [%s]"),
-				             val, "default,disable,enable-rx,enable");
+				             value, "default,disable,enable-rx,enable");
 				return FALSE;
 			}
 		}
 	}
 
-	g_object_set (setting, prop, lldp, NULL);
+	g_object_set (setting, property_info->property_name, lldp, NULL);
 	return TRUE;
 }
 
@@ -6798,136 +6906,37 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL);
 
-	/* Add editable properties for NM_SETTING_CONNECTION_SETTING_NAME */
-	nmc_add_prop_funcs (GLUE (CONNECTION, ID),
-	                    NULL,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (GLUE (CONNECTION, UUID),
-	                    NULL,
-	                    NULL, /* forbid setting/removing UUID */
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (GLUE (CONNECTION, STABLE_ID),
-	                    NULL,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (GLUE (CONNECTION, INTERFACE_NAME),
-	                    NULL,
-	                    nmc_property_set_ifname,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (GLUE (CONNECTION, TYPE),
-	                    NULL,
-	                    nmc_property_connection_set_type,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (GLUE (CONNECTION, AUTOCONNECT),
-	                    NULL,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (GLUE (CONNECTION, AUTOCONNECT_PRIORITY),
-	                    NULL,
-	                    nmc_property_set_int,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (GLUE (CONNECTION, AUTOCONNECT_RETRIES),
-	                    NULL,
-	                    nmc_property_set_int,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (GLUE (CONNECTION, TIMESTAMP),
-	                    NULL,
-	                    NULL, /* read-only */
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (GLUE (CONNECTION, READ_ONLY),
-	                    NULL,
-	                    NULL, /* 'read-only' is read-only :-) */
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, PERMISSIONS),
 	                    NULL,
-	                    nmc_property_connection_set_permissions,
+	                    NULL,
 	                    nmc_property_connection_remove_permissions,
 	                    nmc_property_connection_describe_permissions,
 	                    NULL,
 	                    NULL);
-	nmc_add_prop_funcs (GLUE (CONNECTION, ZONE),
-	                    NULL,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (GLUE (CONNECTION, MASTER),
-	                    NULL,
-	                    nmc_property_con_set_master,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, SLAVE_TYPE),
 	                    NULL,
-	                    nmc_property_con_set_slave_type,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    nmc_property_con_allowed_slave_type,
 	                    NULL);
-	nmc_add_prop_funcs (GLUE (CONNECTION, AUTOCONNECT_SLAVES),
-	                    NULL,
-	                    nmc_property_set_trilean,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, SECONDARIES),
 	                    NULL,
-	                    nmc_property_connection_set_secondaries,
+	                    NULL,
 	                    nmc_property_connection_remove_secondaries,
 	                    nmc_property_connection_describe_secondaries,
 	                    NULL,
 	                    NULL);
-	nmc_add_prop_funcs (GLUE (CONNECTION, GATEWAY_PING_TIMEOUT),
-	                    NULL,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, METERED),
 	                    NULL,
-	                    nmc_property_connection_set_metered,
+	                    NULL,
 	                    NULL,
 	                    nmc_property_connection_describe_metered,
 	                    nmc_property_connection_allowed_metered,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, LLDP),
 	                    NULL,
-	                    nmc_property_connection_set_lldp,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    nmc_property_connection_allowed_lldp,
@@ -8561,6 +8570,8 @@ gboolean
 nmc_setting_set_property (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
 	const NmcPropertyFuncs *item;
+	const NmcSettingInfo *setting_info;
+	const NmcPropertyInfo *property_info;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -8573,6 +8584,27 @@ nmc_setting_set_property (NMSetting *setting, const char *prop, const char *val,
 			return TRUE;
 		}
 		return item->set_func (setting, prop, val, error);
+	}
+
+	if ((property_info = _meta_find_property_info_by_setting (setting, prop, &setting_info))) {
+		nm_assert (property_info == _meta_find_property_info_by_name (nm_setting_get_name (setting), prop, NULL));
+
+		if (!val) {
+			/* No value argument sets default value */
+			nmc_property_set_default_value (setting, prop);
+			return TRUE;
+		}
+
+		if (property_info->is_name) {
+			/* NmcPropertyFuncs would not register the "name" property.
+			 * For the moment, skip it from get_property_val(). */
+		} else if (property_info->set_fcn) {
+			return property_info->set_fcn (setting_info,
+			                               property_info,
+			                               setting,
+			                               val,
+			                               error);
+		}
 	}
 
 	g_set_error_literal (error, 1, 0, _("the property can't be changed"));
@@ -8606,6 +8638,8 @@ gboolean
 nmc_setting_reset_property (NMSetting *setting, const char *prop, GError **error)
 {
 	const NmcPropertyFuncs *item;
+	const NmcSettingInfo *setting_info;
+	const NmcPropertyInfo *property_info;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -8615,6 +8649,19 @@ nmc_setting_reset_property (NMSetting *setting, const char *prop, GError **error
 		nmc_property_set_default_value (setting, prop);
 		return TRUE;
 	}
+
+	if ((property_info = _meta_find_property_info_by_setting (setting, prop, &setting_info))) {
+		nm_assert (property_info == _meta_find_property_info_by_name (nm_setting_get_name (setting), prop, NULL));
+
+		if (property_info->is_name) {
+			/* NmcPropertyFuncs would not register the "name" property.
+			 * For the moment, skip it from get_property_val(). */
+		} else if (property_info->set_fcn) {
+			nmc_property_set_default_value (setting, prop);
+			return TRUE;
+		}
+	}
+
 	g_set_error_literal (error, 1, 0, _("the property can't be changed"));
 	return FALSE;
 }
@@ -9855,6 +9902,7 @@ static const NmcPropertyInfo properties_setting_connection[] = {
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_ID),
 		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_gobject_string,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_UUID),
@@ -9863,27 +9911,34 @@ static const NmcPropertyInfo properties_setting_connection[] = {
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_STABLE_ID),
 		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_gobject_string,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_INTERFACE_NAME),
 		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_nmc,
+		.set_data =                     { .set_nmc = nmc_property_set_ifname, },
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_TYPE),
 		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_connection_type,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_AUTOCONNECT),
 		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_gobject_bool,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY),
 		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_gobject_int,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES),
 		.get_fcn =                      _get_fcn_nmc,
 		.get_data =                     { .get_nmc = nmc_property_connection_get_autoconnect_retries, },
+		.set_fcn =                      _set_fcn_gobject_int,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_TIMESTAMP),
@@ -9897,41 +9952,51 @@ static const NmcPropertyInfo properties_setting_connection[] = {
 		.property_name =                N_ (NM_SETTING_CONNECTION_PERMISSIONS),
 		.get_fcn =                      _get_fcn_nmc,
 		.get_data =                     { .get_nmc = nmc_property_connection_get_permissions, },
+		.set_fcn =                      _set_fcn_connection_permissions,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_ZONE),
 		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_gobject_string,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_MASTER),
 		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_connection_master,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_SLAVE_TYPE),
 		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_nmc,
+		.set_data =                     { .set_nmc = nmc_property_con_set_slave_type, },
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES),
 		.get_fcn =                      _get_fcn_nmc,
 		.get_data =                     { .get_nmc = nmc_property_connection_get_autoconnect_slaves, },
+		.set_fcn =                      _set_fcn_gobject_trilean,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_SECONDARIES),
 		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_connection_secondaries,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT),
 		.get_fcn =                      _get_fcn_gobject,
+		.set_fcn =                      _set_fcn_gobject_uint,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_METERED),
 		.get_fcn =                      _get_fcn_nmc,
 		.get_data =                     { .get_nmc = nmc_property_connection_get_metered, },
+		.set_fcn =                      _set_fcn_connection_metered,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_LLDP),
 		.get_fcn =                      _get_fcn_nmc,
 		.get_data =                     { .get_nmc = nmc_property_connection_get_lldp, },
+		.set_fcn =                      _set_fcn_connection_lldp,
 	},
 };
 
