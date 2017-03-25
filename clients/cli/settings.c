@@ -73,6 +73,116 @@ _get_fcn_gobject (const NmcSettingInfo *setting_info,
 
 /*****************************************************************************/
 
+static const NmcSettingInfo *
+_meta_find_setting_info_by_name (const char *setting_name)
+{
+	const NMMetaSettingInfo *meta_setting_info;
+	const NmcSettingInfo *setting_info;
+
+	g_return_val_if_fail (setting_name, NULL);
+
+	meta_setting_info = nm_meta_setting_infos_by_name (setting_name);
+
+	if (!meta_setting_info)
+		return NULL;
+
+	g_return_val_if_fail (nm_streq0 (meta_setting_info->setting_name, setting_name), NULL);
+
+	if (meta_setting_info->meta_type >= G_N_ELEMENTS (nmc_setting_infos))
+		return NULL;
+
+	setting_info = &nmc_setting_infos[meta_setting_info->meta_type];
+
+	g_return_val_if_fail (setting_info->general == meta_setting_info, NULL);
+
+	return setting_info;
+}
+
+static const NmcSettingInfo *
+_meta_find_setting_info_by_gtype (GType gtype)
+{
+	const NMMetaSettingInfo *meta_setting_info;
+	const NmcSettingInfo *setting_info;
+
+	meta_setting_info = nm_meta_setting_infos_by_gtype (gtype);
+
+	if (!meta_setting_info)
+		return NULL;
+
+	g_return_val_if_fail (meta_setting_info->get_setting_gtype, NULL);
+	g_return_val_if_fail (meta_setting_info->get_setting_gtype () == gtype, NULL);
+
+	if (meta_setting_info->meta_type >= G_N_ELEMENTS (nmc_setting_infos))
+		return NULL;
+
+	setting_info = &nmc_setting_infos[meta_setting_info->meta_type];
+
+	g_return_val_if_fail (setting_info->general == meta_setting_info, NULL);
+
+	return setting_info;
+}
+
+static const NmcSettingInfo *
+_meta_find_setting_info_by_setting (NMSetting *setting)
+{
+	const NmcSettingInfo *setting_info;
+
+	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
+
+	setting_info = _meta_find_setting_info_by_gtype (G_OBJECT_TYPE (setting));
+
+	if (!setting_info)
+		return NULL;
+
+	g_return_val_if_fail (setting_info == _meta_find_setting_info_by_name (nm_setting_get_name (setting)), NULL);
+
+	return setting_info;
+}
+
+static const NmcPropertyInfo *
+_meta_setting_info_find_property_info (const NmcSettingInfo *setting_info, const char *property_name)
+{
+	guint i;
+
+	g_return_val_if_fail (setting_info, NULL);
+	g_return_val_if_fail (property_name, NULL);
+
+	for (i = 0; i < setting_info->properties_num; i++) {
+		if (nm_streq (setting_info->properties[i].property_name, property_name))
+			return &setting_info->properties[i];
+	}
+
+	return NULL;
+}
+
+static const NmcPropertyInfo *
+_meta_find_property_info_by_name (const char *setting_name, const char *property_name, const NmcSettingInfo **out_setting_info)
+{
+	const NmcSettingInfo *setting_info;
+
+	setting_info = _meta_find_setting_info_by_name (setting_name);
+
+	NM_SET_OUT (out_setting_info, setting_info);
+	if (!setting_info)
+		return NULL;
+	return _meta_setting_info_find_property_info (setting_info, property_name);
+}
+
+static const NmcPropertyInfo *
+_meta_find_property_info_by_setting (NMSetting *setting, const char *property_name, const NmcSettingInfo **out_setting_info)
+{
+	const NmcSettingInfo *setting_info;
+
+	setting_info = _meta_find_setting_info_by_setting (setting);
+
+	NM_SET_OUT (out_setting_info, setting_info);
+	if (!setting_info)
+		return NULL;
+	return _meta_setting_info_find_property_info (setting_info, property_name);
+}
+
+/*****************************************************************************/
+
 static const NmcOutputField *
 _get_nmc_output_fields (const NmcSettingInfo *setting_info)
 {
@@ -2472,18 +2582,6 @@ DEFINE_GETTER (nmc_property_cdma_get_mtu, NM_SETTING_CDMA_MTU)
 
 DEFINE_SECRET_FLAGS_GETTER (nmc_property_cdma_get_password_flags, NM_SETTING_CDMA_PASSWORD_FLAGS)
 
-
-/* --- NM_SETTING_CONNECTION_SETTING_NAME property functions --- */
-DEFINE_GETTER (nmc_property_connection_get_id, NM_SETTING_CONNECTION_ID)
-DEFINE_GETTER (nmc_property_connection_get_uuid, NM_SETTING_CONNECTION_UUID)
-DEFINE_GETTER (nmc_property_connection_get_stable_id, NM_SETTING_CONNECTION_STABLE_ID)
-DEFINE_GETTER (nmc_property_connection_get_interface_name, NM_SETTING_CONNECTION_INTERFACE_NAME)
-DEFINE_GETTER (nmc_property_connection_get_type, NM_SETTING_CONNECTION_TYPE)
-DEFINE_GETTER (nmc_property_connection_get_autoconnect, NM_SETTING_CONNECTION_AUTOCONNECT)
-DEFINE_GETTER (nmc_property_connection_get_autoconnect_priority, NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY)
-DEFINE_GETTER (nmc_property_connection_get_timestamp, NM_SETTING_CONNECTION_TIMESTAMP)
-DEFINE_GETTER (nmc_property_connection_get_read_only, NM_SETTING_CONNECTION_READ_ONLY)
-
 static char *
 nmc_property_connection_get_autoconnect_retries (NMSetting *setting, NmcPropertyGetType get_type)
 {
@@ -2527,19 +2625,12 @@ nmc_property_connection_get_permissions (NMSetting *setting, NmcPropertyGetType 
 	return g_string_free (perm, TRUE);
 }
 
-DEFINE_GETTER (nmc_property_connection_get_zone, NM_SETTING_CONNECTION_ZONE)
-DEFINE_GETTER (nmc_property_connection_get_master, NM_SETTING_CONNECTION_MASTER)
-DEFINE_GETTER (nmc_property_connection_get_slave_type, NM_SETTING_CONNECTION_SLAVE_TYPE)
-
 static char *
 nmc_property_connection_get_autoconnect_slaves (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSettingConnection *s_con = NM_SETTING_CONNECTION (setting);
 	return autoconnect_slaves_to_string (nm_setting_connection_get_autoconnect_slaves (s_con), get_type);
 }
-
-DEFINE_GETTER (nmc_property_connection_get_secondaries, NM_SETTING_CONNECTION_SECONDARIES)
-DEFINE_GETTER (nmc_property_connection_get_gateway_ping_timeout, NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT)
 
 static gboolean
 nmc_property_connection_set_type (NMSetting *setting, const char *prop, const char *val, GError **error)
@@ -2863,7 +2954,6 @@ nmc_property_connection_describe_metered (NMSetting *setting, const char *prop)
 static const char *metered_valid_values[] = { "yes", "no", "unknown", NULL };
 DEFINE_ALLOWED_VAL_FUNC (nmc_property_connection_allowed_metered, metered_valid_values)
 
-/* 'lldp' */
 static char *
 nmc_property_connection_get_lldp (NMSetting *setting, NmcPropertyGetType get_type)
 {
@@ -6710,133 +6800,133 @@ nmc_properties_init (void)
 
 	/* Add editable properties for NM_SETTING_CONNECTION_SETTING_NAME */
 	nmc_add_prop_funcs (GLUE (CONNECTION, ID),
-	                    nmc_property_connection_get_id,
+	                    NULL,
 	                    nmc_property_set_string,
 	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, UUID),
-	                    nmc_property_connection_get_uuid,
+	                    NULL,
 	                    NULL, /* forbid setting/removing UUID */
 	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, STABLE_ID),
-	                    nmc_property_connection_get_stable_id,
+	                    NULL,
 	                    nmc_property_set_string,
 	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, INTERFACE_NAME),
-	                    nmc_property_connection_get_interface_name,
+	                    NULL,
 	                    nmc_property_set_ifname,
 	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, TYPE),
-	                    nmc_property_connection_get_type,
+	                    NULL,
 	                    nmc_property_connection_set_type,
 	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, AUTOCONNECT),
-	                    nmc_property_connection_get_autoconnect,
+	                    NULL,
 	                    nmc_property_set_bool,
 	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, AUTOCONNECT_PRIORITY),
-	                    nmc_property_connection_get_autoconnect_priority,
+	                    NULL,
 	                    nmc_property_set_int,
 	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, AUTOCONNECT_RETRIES),
-	                    nmc_property_connection_get_autoconnect_retries,
+	                    NULL,
 	                    nmc_property_set_int,
 	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, TIMESTAMP),
-	                    nmc_property_connection_get_timestamp,
+	                    NULL,
 	                    NULL, /* read-only */
 	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, READ_ONLY),
-	                    nmc_property_connection_get_read_only,
+	                    NULL,
 	                    NULL, /* 'read-only' is read-only :-) */
 	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, PERMISSIONS),
-	                    nmc_property_connection_get_permissions,
+	                    NULL,
 	                    nmc_property_connection_set_permissions,
 	                    nmc_property_connection_remove_permissions,
 	                    nmc_property_connection_describe_permissions,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, ZONE),
-	                    nmc_property_connection_get_zone,
+	                    NULL,
 	                    nmc_property_set_string,
 	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, MASTER),
-	                    nmc_property_connection_get_master,
+	                    NULL,
 	                    nmc_property_con_set_master,
 	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, SLAVE_TYPE),
-	                    nmc_property_connection_get_slave_type,
+	                    NULL,
 	                    nmc_property_con_set_slave_type,
 	                    NULL,
 	                    NULL,
 	                    nmc_property_con_allowed_slave_type,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, AUTOCONNECT_SLAVES),
-	                    nmc_property_connection_get_autoconnect_slaves,
+	                    NULL,
 	                    nmc_property_set_trilean,
 	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, SECONDARIES),
-	                    nmc_property_connection_get_secondaries,
+	                    NULL,
 	                    nmc_property_connection_set_secondaries,
 	                    nmc_property_connection_remove_secondaries,
 	                    nmc_property_connection_describe_secondaries,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, GATEWAY_PING_TIMEOUT),
-	                    nmc_property_connection_get_gateway_ping_timeout,
+	                    NULL,
 	                    nmc_property_set_uint,
 	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, METERED),
-	                    nmc_property_connection_get_metered,
+	                    NULL,
 	                    nmc_property_connection_set_metered,
 	                    NULL,
 	                    nmc_property_connection_describe_metered,
 	                    nmc_property_connection_allowed_metered,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, LLDP),
-	                    nmc_property_connection_get_lldp,
+	                    NULL,
 	                    nmc_property_connection_set_lldp,
 	                    NULL,
 	                    NULL,
@@ -8406,13 +8496,31 @@ static char *
 get_property_val (NMSetting *setting, const char *prop, NmcPropertyGetType get_type, GError **error)
 {
 	const NmcPropertyFuncs *item;
+	const NmcSettingInfo *setting_info;
+	const NmcPropertyInfo *property_info;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
 	item = nmc_properties_find (nm_setting_get_name (setting), prop);
-	if (item && item->get_func)
-		return item->get_func (setting, get_type);
+	if (item) {
+		if (item->get_func)
+			return item->get_func (setting, get_type);
+	}
+
+	if ((property_info = _meta_find_property_info_by_setting (setting, prop, &setting_info))) {
+		nm_assert (property_info == _meta_find_property_info_by_name (nm_setting_get_name (setting), prop, NULL));
+
+		if (property_info->is_name) {
+			/* NmcPropertyFuncs would not register the "name" property.
+			 * For the moment, skip it from get_property_val(). */
+		} else if (property_info->get_fcn) {
+			return property_info->get_fcn (setting_info,
+			                               property_info,
+			                               setting,
+			                               get_type);
+		}
+	}
 
 	g_set_error_literal (error, 1, 0, _("don't know how to get the property value"));
 	return NULL;
