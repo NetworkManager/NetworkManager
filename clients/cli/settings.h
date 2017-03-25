@@ -61,6 +61,16 @@ struct _NmcPropertyInfo {
 	union {
 		gboolean (*set_nmc) (NMSetting *setting, const char *property_name, const char *value, GError **error);
 	} set_data;
+
+	gboolean (*remove_fcn) (const NmcSettingInfo *setting_info,
+	                        const NmcPropertyInfo *property_info,
+	                        NMSetting *setting,
+	                        const char *option,
+	                        guint32 idx,
+	                        GError **error);
+	union {
+		gboolean (*remove_nmc) (NMSetting *setting, const char *property_name, const char *option, guint32 idx, GError **error);
+	} remove_data;
 };
 
 struct _NmcSettingInfo {

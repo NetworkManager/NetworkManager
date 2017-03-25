@@ -180,6 +180,19 @@ _set_fcn_gobject_uint (const NmcSettingInfo *setting_info,
 
 /*****************************************************************************/
 
+static gboolean
+_remove_fcn_nmc (const NmcSettingInfo *setting_info,
+                 const NmcPropertyInfo *property_info,
+                 NMSetting *setting,
+                 const char *option,
+                 guint32 idx,
+                 GError **error)
+{
+	return property_info->remove_data.remove_nmc (setting, property_info->property_name, option, idx, error);
+}
+
+/*****************************************************************************/
+
 static const NmcSettingInfo *
 _meta_find_setting_info_by_name (const char *setting_name)
 {
@@ -6909,7 +6922,7 @@ nmc_properties_init (void)
 	nmc_add_prop_funcs (GLUE (CONNECTION, PERMISSIONS),
 	                    NULL,
 	                    NULL,
-	                    nmc_property_connection_remove_permissions,
+	                    NULL,
 	                    nmc_property_connection_describe_permissions,
 	                    NULL,
 	                    NULL);
@@ -6923,7 +6936,7 @@ nmc_properties_init (void)
 	nmc_add_prop_funcs (GLUE (CONNECTION, SECONDARIES),
 	                    NULL,
 	                    NULL,
-	                    nmc_property_connection_remove_secondaries,
+	                    NULL,
 	                    nmc_property_connection_describe_secondaries,
 	                    NULL,
 	                    NULL);
@@ -8683,6 +8696,8 @@ nmc_setting_remove_property_option (NMSetting *setting,
                                     GError **error)
 {
 	const NmcPropertyFuncs *item;
+	const NmcSettingInfo *setting_info;
+	const NmcPropertyInfo *property_info;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -8690,6 +8705,22 @@ nmc_setting_remove_property_option (NMSetting *setting,
 	item = nmc_properties_find (nm_setting_get_name (setting), prop);
 	if (item && item->remove_func)
 		return item->remove_func (setting, prop, option, idx, error);
+
+	if ((property_info = _meta_find_property_info_by_setting (setting, prop, &setting_info))) {
+		nm_assert (property_info == _meta_find_property_info_by_name (nm_setting_get_name (setting), prop, NULL));
+
+		if (property_info->is_name) {
+			/* NmcPropertyFuncs would not register the "name" property.
+			 * For the moment, skip it from get_property_val(). */
+		} else if (property_info->remove_fcn) {
+			return property_info->remove_fcn (setting_info,
+			                                  property_info,
+			                                  setting,
+			                                  option,
+			                                  idx,
+			                                  error);
+		}
+	}
 
 	return TRUE;
 }
@@ -9953,6 +9984,8 @@ static const NmcPropertyInfo properties_setting_connection[] = {
 		.get_fcn =                      _get_fcn_nmc,
 		.get_data =                     { .get_nmc = nmc_property_connection_get_permissions, },
 		.set_fcn =                      _set_fcn_connection_permissions,
+		.remove_fcn =                   _remove_fcn_nmc,
+		.remove_data =                  { .remove_nmc = nmc_property_connection_remove_permissions, },
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_ZONE),
@@ -9980,6 +10013,8 @@ static const NmcPropertyInfo properties_setting_connection[] = {
 		.property_name =                N_ (NM_SETTING_CONNECTION_SECONDARIES),
 		.get_fcn =                      _get_fcn_gobject,
 		.set_fcn =                      _set_fcn_connection_secondaries,
+		.remove_fcn =                   _remove_fcn_nmc,
+		.remove_data =                  { .remove_nmc = nmc_property_connection_remove_secondaries, },
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT),
