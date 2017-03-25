@@ -71,6 +71,8 @@ struct _NmcPropertyInfo {
 	union {
 		gboolean (*remove_nmc) (NMSetting *setting, const char *property_name, const char *option, guint32 idx, GError **error);
 	} remove_data;
+
+	const char *describe_message;
 };
 
 struct _NmcSettingInfo {

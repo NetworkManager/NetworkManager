@@ -2857,15 +2857,6 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_connection_remove_permissions,
                                nm_setting_connection_remove_permission,
                                _validate_and_remove_connection_permission)
 
-static const char *
-nmc_property_connection_describe_permissions (NMSetting *setting, const char *prop)
-{
-	return _("Enter a list of user permissions. This is a list of user names formatted as:\n"
-	         "  [user:]<user name 1>, [user:]<user name 2>,...\n"
-	         "The items can be separated by commas or spaces.\n\n"
-	         "Example: alice bob charlie\n");
-}
-
 static gboolean
 _set_fcn_connection_master (const NmcSettingInfo *setting_info,
                             const NmcPropertyInfo *property_info,
@@ -2989,17 +2980,6 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_connection_remove_secondaries,
                                nm_setting_connection_remove_secondary,
                                _validate_and_remove_connection_secondary)
 
-static const char *
-nmc_property_connection_describe_secondaries (NMSetting *setting, const char *prop)
-{
-	return _("Enter secondary connections that should be activated when this connection is\n"
-	         "activated. Connections can be specified either by UUID or ID (name). nmcli\n"
-	         "transparently translates names to UUIDs. Note that NetworkManager only supports\n"
-	         "VPNs as secondary connections at the moment.\n"
-	         "The items can be separated by commas or spaces.\n\n"
-	         "Example: private-openvpn, fe6ba5d8-c2fc-4aae-b2e3-97efddd8d9a7\n");
-}
-
 /* 'metered' */
 static char *
 nmc_property_connection_get_metered (NMSetting *setting, NmcPropertyGetType get_type)
@@ -3057,16 +3037,6 @@ _set_fcn_connection_metered (const NmcSettingInfo *setting_info,
 
 	g_object_set (setting, property_info->property_name, metered, NULL);
 	return TRUE;
-}
-
-static const char *
-nmc_property_connection_describe_metered (NMSetting *setting, const char *prop)
-{
-	return _("Enter a value which indicates whether the connection is subject to a data\n"
-	         "quota, usage costs or other limitations. Accepted options are:\n"
-	         "'true','yes','on' to set the connection as metered\n"
-	         "'false','no','off' to set the connection as not metered\n"
-	         "'unknown' to let NetworkManager choose a value using some heuristics\n");
 }
 
 static const char *metered_valid_values[] = { "yes", "no", "unknown", NULL };
@@ -6919,13 +6889,6 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL);
 
-	nmc_add_prop_funcs (GLUE (CONNECTION, PERMISSIONS),
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    nmc_property_connection_describe_permissions,
-	                    NULL,
-	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, SLAVE_TYPE),
 	                    NULL,
 	                    NULL,
@@ -6933,18 +6896,11 @@ nmc_properties_init (void)
 	                    NULL,
 	                    nmc_property_con_allowed_slave_type,
 	                    NULL);
-	nmc_add_prop_funcs (GLUE (CONNECTION, SECONDARIES),
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    nmc_property_connection_describe_secondaries,
-	                    NULL,
-	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, METERED),
 	                    NULL,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_connection_describe_metered,
+	                    NULL,
 	                    nmc_property_connection_allowed_metered,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, LLDP),
@@ -8793,6 +8749,8 @@ nmc_setting_get_property_desc (NMSetting *setting, const char *prop)
 	const char *nmcli_desc = NULL;
 	const char *nmcli_desc_title = "";
 	const char *nmcli_nl = "";
+	const NmcSettingInfo *setting_info;
+	const NmcPropertyInfo *property_info;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 
@@ -8805,7 +8763,19 @@ nmc_setting_get_property_desc (NMSetting *setting, const char *prop)
 		nmcli_desc = item->describe_func (setting, prop);
 		nmcli_desc_title = _("[nmcli specific description]");
 		nmcli_nl = "\n";
+	} else if ((property_info = _meta_find_property_info_by_setting (setting, prop, &setting_info))) {
+		nm_assert (property_info == _meta_find_property_info_by_name (nm_setting_get_name (setting), prop, NULL));
+
+		if (property_info->is_name) {
+			/* NmcPropertyFuncs would not register the "name" property.
+			 * For the moment, skip it from get_property_val(). */
+		} else if (property_info->describe_message) {
+			nmcli_desc = _(property_info->describe_message);
+			nmcli_desc_title = _("[nmcli specific description]");
+			nmcli_nl = "\n";
+		}
 	}
+
 
 	return g_strdup_printf ("%s\n%s\n%s%s%s%s",
 	                        setting_desc_title,
@@ -9986,6 +9956,11 @@ static const NmcPropertyInfo properties_setting_connection[] = {
 		.set_fcn =                      _set_fcn_connection_permissions,
 		.remove_fcn =                   _remove_fcn_nmc,
 		.remove_data =                  { .remove_nmc = nmc_property_connection_remove_permissions, },
+		.describe_message =
+		     N_ ("Enter a list of user permissions. This is a list of user names formatted as:\n"
+		         "  [user:]<user name 1>, [user:]<user name 2>,...\n"
+		         "The items can be separated by commas or spaces.\n\n"
+		         "Example: alice bob charlie\n"),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_ZONE),
@@ -10015,6 +9990,13 @@ static const NmcPropertyInfo properties_setting_connection[] = {
 		.set_fcn =                      _set_fcn_connection_secondaries,
 		.remove_fcn =                   _remove_fcn_nmc,
 		.remove_data =                  { .remove_nmc = nmc_property_connection_remove_secondaries, },
+		.describe_message =
+		    N_ ("Enter secondary connections that should be activated when this connection is\n"
+		         "activated. Connections can be specified either by UUID or ID (name). nmcli\n"
+		         "transparently translates names to UUIDs. Note that NetworkManager only supports\n"
+		         "VPNs as secondary connections at the moment.\n"
+		         "The items can be separated by commas or spaces.\n\n"
+		         "Example: private-openvpn, fe6ba5d8-c2fc-4aae-b2e3-97efddd8d9a7\n"),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT),
@@ -10026,6 +10008,12 @@ static const NmcPropertyInfo properties_setting_connection[] = {
 		.get_fcn =                      _get_fcn_nmc,
 		.get_data =                     { .get_nmc = nmc_property_connection_get_metered, },
 		.set_fcn =                      _set_fcn_connection_metered,
+		.describe_message =
+		    N_ ("Enter a value which indicates whether the connection is subject to a data\n"
+		        "quota, usage costs or other limitations. Accepted options are:\n"
+		        "'true','yes','on' to set the connection as metered\n"
+		        "'false','no','off' to set the connection as not metered\n"
+		        "'unknown' to let NetworkManager choose a value using some heuristics\n"),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_LLDP),
