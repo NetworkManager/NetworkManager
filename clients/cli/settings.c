@@ -31,8 +31,6 @@
 
 /*****************************************************************************/
 
-#define SETTING_FIELD(setting) { setting, N_(setting), 0, NULL, FALSE, FALSE, 0 }
-
 static char *wep_key_type_to_string (NMWepKeyType type);
 static gboolean validate_int (NMSetting *setting, const char* prop, gint val, GError **error);
 static gboolean validate_uint (NMSetting *setting, const char* prop, guint val, GError **error);
@@ -297,40 +295,36 @@ _set_fcn_gobject_mtu (const NmcSettingInfo *setting_info,
 }
 
 static gboolean
-_set_fcn_gobject_mac_impl (const NmcSettingInfo *setting_info,
-                           const NmcPropertyInfo *property_info,
-                           NMSetting *setting,
-                           const char *value,
-                           gboolean is_cloned_mac,
-                           GError **error)
-{
-	if (   (!is_cloned_mac || !NM_CLONED_MAC_IS_SPECIAL (value))
-	    && !nm_utils_hwaddr_valid (value, ETH_ALEN)) {
-		g_set_error (error, 1, 0, _("'%s' is not a valid Ethernet MAC"), value);
-		return FALSE;
-	}
-	g_object_set (setting, property_info->property_name, value, NULL);
-	return TRUE;
-}
-
-static gboolean
 _set_fcn_gobject_mac (const NmcSettingInfo *setting_info,
                       const NmcPropertyInfo *property_info,
                       NMSetting *setting,
                       const char *value,
                       GError **error)
 {
-	return _set_fcn_gobject_mac_impl (setting_info, property_info, setting, value, FALSE, error);
-}
+	NmcPropertyTypeMacMode mode;
+	gboolean valid;
 
-static gboolean
-_set_fcn_gobject_mac_cloned (const NmcSettingInfo *setting_info,
-                             const NmcPropertyInfo *property_info,
-                             NMSetting *setting,
-                             const char *value,
-                             GError **error)
-{
-	return _set_fcn_gobject_mac_impl (setting_info, property_info, setting, value, TRUE, error);
+	if (property_info->property_typ_data)
+		mode = property_info->property_typ_data->mac.mode;
+	else
+		mode = NMC_PROPERTY_TYPE_MAC_MODE_DEFAULT;
+
+
+	if (mode == NMC_PROPERTY_TYPE_MAC_MODE_INFINIBAND)
+		valid = nm_utils_hwaddr_valid (value, INFINIBAND_ALEN);
+	else {
+		valid =    nm_utils_hwaddr_valid (value, ETH_ALEN)
+		        || (   mode == NMC_PROPERTY_TYPE_MAC_MODE_CLONED
+		            && NM_CLONED_MAC_IS_SPECIAL (value));
+	}
+
+	if (!valid) {
+		g_set_error (error, 1, 0, _("'%s' is not a valid Ethernet MAC"), value);
+		return FALSE;
+	}
+
+	g_object_set (setting, property_info->property_name, value, NULL);
+	return TRUE;
 }
 
 static gboolean
@@ -550,349 +544,6 @@ _get_nmc_output_fields (const NmcSettingInfo *setting_info)
 
 /*****************************************************************************/
 
-/* Available fields for NM_SETTING_SERIAL_SETTING_NAME */
-NmcOutputField nmc_fields_setting_serial[] = {
-	SETTING_FIELD ("name"),                        /* 0 */
-	SETTING_FIELD (NM_SETTING_SERIAL_BAUD),        /* 1 */
-	SETTING_FIELD (NM_SETTING_SERIAL_BITS),        /* 2 */
-	SETTING_FIELD (NM_SETTING_SERIAL_PARITY),      /* 3 */
-	SETTING_FIELD (NM_SETTING_SERIAL_STOPBITS),    /* 4 */
-	SETTING_FIELD (NM_SETTING_SERIAL_SEND_DELAY),  /* 5 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_SERIAL_ALL     "name"","\
-                                          NM_SETTING_SERIAL_BAUD","\
-                                          NM_SETTING_SERIAL_BITS","\
-                                          NM_SETTING_SERIAL_PARITY","\
-                                          NM_SETTING_SERIAL_STOPBITS","\
-                                          NM_SETTING_SERIAL_SEND_DELAY
-
-/* Available fields for NM_SETTING_GSM_SETTING_NAME */
-NmcOutputField nmc_fields_setting_gsm[] = {
-	SETTING_FIELD ("name"),                         /* 0 */
-	SETTING_FIELD (NM_SETTING_GSM_NUMBER),          /* 1 */
-	SETTING_FIELD (NM_SETTING_GSM_USERNAME),        /* 2 */
-	SETTING_FIELD (NM_SETTING_GSM_PASSWORD),        /* 3 */
-	SETTING_FIELD (NM_SETTING_GSM_PASSWORD_FLAGS),  /* 4 */
-	SETTING_FIELD (NM_SETTING_GSM_APN),             /* 5 */
-	SETTING_FIELD (NM_SETTING_GSM_NETWORK_ID),      /* 6 */
-	SETTING_FIELD (NM_SETTING_GSM_PIN),             /* 7 */
-	SETTING_FIELD (NM_SETTING_GSM_PIN_FLAGS),       /* 8 */
-	SETTING_FIELD (NM_SETTING_GSM_HOME_ONLY),       /* 9 */
-	SETTING_FIELD (NM_SETTING_GSM_DEVICE_ID),       /* 10 */
-	SETTING_FIELD (NM_SETTING_GSM_SIM_ID),          /* 11 */
-	SETTING_FIELD (NM_SETTING_GSM_SIM_OPERATOR_ID), /* 12 */
-	SETTING_FIELD (NM_SETTING_GSM_MTU),             /* 13 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_GSM_ALL     "name"","\
-                                       NM_SETTING_GSM_NUMBER","\
-                                       NM_SETTING_GSM_USERNAME","\
-                                       NM_SETTING_GSM_PASSWORD","\
-                                       NM_SETTING_GSM_PASSWORD_FLAGS","\
-                                       NM_SETTING_GSM_APN","\
-                                       NM_SETTING_GSM_NETWORK_ID","\
-                                       NM_SETTING_GSM_PIN","\
-                                       NM_SETTING_GSM_PIN_FLAGS","\
-                                       NM_SETTING_GSM_HOME_ONLY","\
-                                       NM_SETTING_GSM_DEVICE_ID","\
-                                       NM_SETTING_GSM_SIM_ID","\
-                                       NM_SETTING_GSM_SIM_OPERATOR_ID","\
-                                       NM_SETTING_GSM_MTU
-
-/* Available fields for NM_SETTING_CDMA_SETTING_NAME */
-NmcOutputField nmc_fields_setting_cdma[] = {
-	SETTING_FIELD ("name"),                          /* 0 */
-	SETTING_FIELD (NM_SETTING_CDMA_NUMBER),          /* 1 */
-	SETTING_FIELD (NM_SETTING_CDMA_USERNAME),        /* 2 */
-	SETTING_FIELD (NM_SETTING_CDMA_PASSWORD),        /* 3 */
-	SETTING_FIELD (NM_SETTING_CDMA_PASSWORD_FLAGS),  /* 4 */
-	SETTING_FIELD (NM_SETTING_CDMA_MTU),             /* 5 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_CDMA_ALL     "name"","\
-                                        NM_SETTING_CDMA_NUMBER","\
-                                        NM_SETTING_CDMA_USERNAME","\
-                                        NM_SETTING_CDMA_PASSWORD","\
-                                        NM_SETTING_CDMA_PASSWORD_FLAGS","\
-                                        NM_SETTING_CDMA_MTU
-
-/* Available fields for NM_SETTING_BLUETOOTH_SETTING_NAME */
-NmcOutputField nmc_fields_setting_bluetooth[] = {
-	SETTING_FIELD ("name"),                       /* 0 */
-	SETTING_FIELD (NM_SETTING_BLUETOOTH_BDADDR),  /* 1 */
-	SETTING_FIELD (NM_SETTING_BLUETOOTH_TYPE),    /* 2 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_BLUETOOTH_ALL     "name"","\
-                                             NM_SETTING_BLUETOOTH_BDADDR","\
-                                             NM_SETTING_BLUETOOTH_TYPE
-
-/* Available fields for NM_SETTING_OLPC_MESH_SETTING_NAME */
-NmcOutputField nmc_fields_setting_olpc_mesh[] = {
-	SETTING_FIELD ("name"),                                     /* 0 */
-	SETTING_FIELD (NM_SETTING_OLPC_MESH_SSID),                  /* 1 */
-	SETTING_FIELD (NM_SETTING_OLPC_MESH_CHANNEL),               /* 2 */
-	SETTING_FIELD (NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS),  /* 3 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_OLPC_MESH_ALL     "name"","\
-                                             NM_SETTING_OLPC_MESH_SSID","\
-                                             NM_SETTING_OLPC_MESH_CHANNEL","\
-                                             NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS
-
-/* Available fields for NM_SETTING_VPN_SETTING_NAME */
-NmcOutputField nmc_fields_setting_vpn[] = {
-	SETTING_FIELD ("name"),                       /* 0 */
-	SETTING_FIELD (NM_SETTING_VPN_SERVICE_TYPE),  /* 1 */
-	SETTING_FIELD (NM_SETTING_VPN_USER_NAME),     /* 2 */
-	SETTING_FIELD (NM_SETTING_VPN_DATA),          /* 3 */
-	SETTING_FIELD (NM_SETTING_VPN_SECRETS),       /* 4 */
-	SETTING_FIELD (NM_SETTING_VPN_PERSISTENT),    /* 5 */
-	SETTING_FIELD (NM_SETTING_VPN_TIMEOUT),       /* 6 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_VPN_ALL     "name"","\
-                                       NM_SETTING_VPN_SERVICE_TYPE","\
-                                       NM_SETTING_VPN_USER_NAME","\
-                                       NM_SETTING_VPN_DATA","\
-                                       NM_SETTING_VPN_SECRETS","\
-                                       NM_SETTING_VPN_PERSISTENT","\
-                                       NM_SETTING_VPN_TIMEOUT
-
-/* Available fields for NM_SETTING_INFINIBAND_SETTING_NAME */
-NmcOutputField nmc_fields_setting_infiniband[] = {
-	SETTING_FIELD ("name"),                                /* 0 */
-	SETTING_FIELD (NM_SETTING_INFINIBAND_MAC_ADDRESS),     /* 1 */
-	SETTING_FIELD (NM_SETTING_INFINIBAND_MTU),             /* 2 */
-	SETTING_FIELD (NM_SETTING_INFINIBAND_TRANSPORT_MODE),  /* 3 */
-	SETTING_FIELD (NM_SETTING_INFINIBAND_P_KEY),           /* 4 */
-	SETTING_FIELD (NM_SETTING_INFINIBAND_PARENT),          /* 5 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_INFINIBAND_ALL     "name"","\
-                                              NM_SETTING_INFINIBAND_MAC_ADDRESS","\
-                                              NM_SETTING_INFINIBAND_MTU"," \
-                                              NM_SETTING_INFINIBAND_TRANSPORT_MODE"," \
-                                              NM_SETTING_INFINIBAND_P_KEY"," \
-                                              NM_SETTING_INFINIBAND_PARENT
-
-/* Available fields for NM_SETTING_BOND_SETTING_NAME */
-NmcOutputField nmc_fields_setting_bond[] = {
-	SETTING_FIELD ("name"),                   /* 0 */
-	SETTING_FIELD (NM_SETTING_BOND_OPTIONS),  /* 1 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_BOND_ALL     "name"","\
-                                        NM_SETTING_BOND_OPTIONS
-
-/* Available fields for NM_SETTING_VLAN_SETTING_NAME */
-NmcOutputField nmc_fields_setting_vlan[] = {
-	SETTING_FIELD ("name"),                                /* 0 */
-	SETTING_FIELD (NM_SETTING_VLAN_PARENT),                /* 1 */
-	SETTING_FIELD (NM_SETTING_VLAN_ID),                    /* 2 */
-	SETTING_FIELD (NM_SETTING_VLAN_FLAGS),                 /* 3 */
-	SETTING_FIELD (NM_SETTING_VLAN_INGRESS_PRIORITY_MAP),  /* 4 */
-	SETTING_FIELD (NM_SETTING_VLAN_EGRESS_PRIORITY_MAP),   /* 5 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_VLAN_ALL     "name"","\
-                                        NM_SETTING_VLAN_PARENT","\
-                                        NM_SETTING_VLAN_ID","\
-                                        NM_SETTING_VLAN_FLAGS","\
-                                        NM_SETTING_VLAN_INGRESS_PRIORITY_MAP","\
-                                        NM_SETTING_VLAN_EGRESS_PRIORITY_MAP
-
-/* Available fields for NM_SETTING_BRIDGE_SETTING_NAME */
-NmcOutputField nmc_fields_setting_bridge[] = {
-	SETTING_FIELD ("name"),                                /* 0 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_MAC_ADDRESS),         /* 1 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_STP),                 /* 2 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_PRIORITY),            /* 3 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_FORWARD_DELAY),       /* 4 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_HELLO_TIME),          /* 5 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_MAX_AGE),             /* 6 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_AGEING_TIME),         /* 7 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_MULTICAST_SNOOPING),  /* 8 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_BRIDGE_ALL    "name"","\
-                                         NM_SETTING_BRIDGE_MAC_ADDRESS","\
-                                         NM_SETTING_BRIDGE_STP","\
-                                         NM_SETTING_BRIDGE_PRIORITY","\
-                                         NM_SETTING_BRIDGE_FORWARD_DELAY","\
-                                         NM_SETTING_BRIDGE_HELLO_TIME","\
-                                         NM_SETTING_BRIDGE_MAX_AGE","\
-                                         NM_SETTING_BRIDGE_AGEING_TIME","\
-                                         NM_SETTING_BRIDGE_MULTICAST_SNOOPING
-
-/* Available fields for NM_SETTING_BRIDGE_PORT_SETTING_NAME */
-NmcOutputField nmc_fields_setting_bridge_port[] = {
-	SETTING_FIELD ("name"),                               /* 0 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_PORT_PRIORITY),      /* 1 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_PORT_PATH_COST),     /* 2 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE),  /* 3 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_BRIDGE_PORT_ALL    "name"","\
-                                              NM_SETTING_BRIDGE_PORT_PRIORITY","\
-                                              NM_SETTING_BRIDGE_PORT_PATH_COST","\
-                                              NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE
-
-/* Available fields for NM_SETTING_TEAM_SETTING_NAME */
-NmcOutputField nmc_fields_setting_team[] = {
-	SETTING_FIELD ("name"),                  /* 0 */
-	SETTING_FIELD (NM_SETTING_TEAM_CONFIG),  /* 1 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_TEAM_ALL     "name"","\
-                                        NM_SETTING_TEAM_CONFIG
-
-/* Available fields for NM_SETTING_TEAM_PORT_SETTING_NAME */
-NmcOutputField nmc_fields_setting_team_port[] = {
-	SETTING_FIELD ("name"),                       /* 0 */
-	SETTING_FIELD (NM_SETTING_TEAM_PORT_CONFIG),  /* 1 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_TEAM_PORT_ALL     "name"","\
-                                             NM_SETTING_TEAM_PORT_CONFIG
-
-/* Available fields for NM_SETTING_DUMMY_SETTING_NAME */
-NmcOutputField nmc_fields_setting_dummy[] = {
-	SETTING_FIELD ("name"),                                /* 0 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_DUMMY_ALL       "name"
-
-/* Available fields for NM_SETTING_TUN_SETTING_NAME */
-NmcOutputField nmc_fields_setting_tun[] = {
-	SETTING_FIELD ("name"),                                /* 0 */
-	SETTING_FIELD (NM_SETTING_TUN_MODE),                   /* 1 */
-	SETTING_FIELD (NM_SETTING_TUN_OWNER),                  /* 2 */
-	SETTING_FIELD (NM_SETTING_TUN_GROUP),                  /* 3 */
-	SETTING_FIELD (NM_SETTING_TUN_PI),                     /* 4 */
-	SETTING_FIELD (NM_SETTING_TUN_VNET_HDR),               /* 5 */
-	SETTING_FIELD (NM_SETTING_TUN_MULTI_QUEUE),            /* 6 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_TUN_ALL     "name"","\
-                                       NM_SETTING_TUN_MODE","\
-                                       NM_SETTING_TUN_OWNER","\
-                                       NM_SETTING_TUN_GROUP","\
-                                       NM_SETTING_TUN_PI","\
-                                       NM_SETTING_TUN_VNET_HDR","\
-                                       NM_SETTING_TUN_MULTI_QUEUE
-
-/* Available fields for NM_SETTING_IP_TUNNEL_SETTING_NAME */
-NmcOutputField nmc_fields_setting_ip_tunnel[] = {
-	SETTING_FIELD ("name"),                                       /* 0 */
-	SETTING_FIELD (NM_SETTING_IP_TUNNEL_MODE),                    /* 1 */
-	SETTING_FIELD (NM_SETTING_IP_TUNNEL_PARENT),                  /* 2 */
-	SETTING_FIELD (NM_SETTING_IP_TUNNEL_LOCAL),                   /* 3 */
-	SETTING_FIELD (NM_SETTING_IP_TUNNEL_REMOTE),                  /* 4 */
-	SETTING_FIELD (NM_SETTING_IP_TUNNEL_TTL),                     /* 5 */
-	SETTING_FIELD (NM_SETTING_IP_TUNNEL_TOS),                     /* 6 */
-	SETTING_FIELD (NM_SETTING_IP_TUNNEL_PATH_MTU_DISCOVERY),      /* 7 */
-	SETTING_FIELD (NM_SETTING_IP_TUNNEL_INPUT_KEY),               /* 8 */
-	SETTING_FIELD (NM_SETTING_IP_TUNNEL_OUTPUT_KEY),              /* 9 */
-	SETTING_FIELD (NM_SETTING_IP_TUNNEL_ENCAPSULATION_LIMIT),     /* 10 */
-	SETTING_FIELD (NM_SETTING_IP_TUNNEL_FLOW_LABEL),              /* 11 */
-	SETTING_FIELD (NM_SETTING_IP_TUNNEL_MTU),                     /* 12 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_IP_TUNNEL_ALL     "name"","\
-                                              NM_SETTING_IP_TUNNEL_MODE","\
-                                              NM_SETTING_IP_TUNNEL_PARENT","\
-                                              NM_SETTING_IP_TUNNEL_LOCAL","\
-                                              NM_SETTING_IP_TUNNEL_REMOTE","\
-                                              NM_SETTING_IP_TUNNEL_TTL","\
-                                              NM_SETTING_IP_TUNNEL_TOS","\
-                                              NM_SETTING_IP_TUNNEL_PATH_MTU_DISCOVERY","\
-                                              NM_SETTING_IP_TUNNEL_INPUT_KEY","\
-                                              NM_SETTING_IP_TUNNEL_OUTPUT_KEY","\
-                                              NM_SETTING_IP_TUNNEL_ENCAPSULATION_LIMIT","\
-                                              NM_SETTING_IP_TUNNEL_FLOW_LABEL","\
-                                              NM_SETTING_IP_TUNNEL_MTU
-
-/* Available fields for NM_SETTING_MACSEC_SETTING_NAME */
-NmcOutputField nmc_fields_setting_macsec[] = {
-	SETTING_FIELD ("name"),                                 /* 0 */
-	SETTING_FIELD (NM_SETTING_MACSEC_PARENT),               /* 1 */
-	SETTING_FIELD (NM_SETTING_MACSEC_MODE),                 /* 2 */
-	SETTING_FIELD (NM_SETTING_MACSEC_ENCRYPT),              /* 3 */
-	SETTING_FIELD (NM_SETTING_MACSEC_MKA_CAK),              /* 4 */
-	SETTING_FIELD (NM_SETTING_MACSEC_MKA_CAK_FLAGS),        /* 5 */
-	SETTING_FIELD (NM_SETTING_MACSEC_MKA_CKN),              /* 6 */
-	SETTING_FIELD (NM_SETTING_MACSEC_PORT),                 /* 7 */
-	SETTING_FIELD (NM_SETTING_MACSEC_VALIDATION),           /* 8 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_MACSEC_ALL     "name"","\
-                                           NM_SETTING_MACSEC_PARENT","\
-                                           NM_SETTING_MACSEC_MODE","\
-                                           NM_SETTING_MACSEC_ENCRYPT","\
-                                           NM_SETTING_MACSEC_MKA_CAK","\
-                                           NM_SETTING_MACSEC_MKA_CAK_FLAGS","\
-                                           NM_SETTING_MACSEC_MKA_CKN","\
-                                           NM_SETTING_MACSEC_PORT","\
-                                           NM_SETTING_MACSEC_VALIDATION
-
-/* Available fields for NM_SETTING_MACVLAN_SETTING_NAME */
-NmcOutputField nmc_fields_setting_macvlan[] = {
-	SETTING_FIELD ("name"),                                 /* 0 */
-	SETTING_FIELD (NM_SETTING_MACVLAN_PARENT),              /* 1 */
-	SETTING_FIELD (NM_SETTING_MACVLAN_MODE),                /* 2 */
-	SETTING_FIELD (NM_SETTING_MACVLAN_PROMISCUOUS),         /* 3 */
-	SETTING_FIELD (NM_SETTING_MACVLAN_TAP),                 /* 4 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_MACVLAN_ALL     "name"","\
-                                           NM_SETTING_MACVLAN_PARENT","\
-                                           NM_SETTING_MACVLAN_MODE","\
-                                           NM_SETTING_MACVLAN_PROMISCUOUS","\
-                                           NM_SETTING_MACVLAN_TAP
-
-/* Available fields for NM_SETTING_VXLAN_SETTING_NAME */
-NmcOutputField nmc_fields_setting_vxlan[] = {
-	SETTING_FIELD ("name"),                            /* 0 */
-	SETTING_FIELD (NM_SETTING_VXLAN_PARENT),           /* 1 */
-	SETTING_FIELD (NM_SETTING_VXLAN_ID),               /* 2 */
-	SETTING_FIELD (NM_SETTING_VXLAN_LOCAL),            /* 3 */
-	SETTING_FIELD (NM_SETTING_VXLAN_REMOTE),           /* 4 */
-	SETTING_FIELD (NM_SETTING_VXLAN_SOURCE_PORT_MIN),  /* 5 */
-	SETTING_FIELD (NM_SETTING_VXLAN_SOURCE_PORT_MAX),  /* 6 */
-	SETTING_FIELD (NM_SETTING_VXLAN_DESTINATION_PORT), /* 7 */
-	SETTING_FIELD (NM_SETTING_VXLAN_TOS),              /* 8 */
-	SETTING_FIELD (NM_SETTING_VXLAN_TTL),              /* 9 */
-	SETTING_FIELD (NM_SETTING_VXLAN_AGEING),           /* 10 */
-	SETTING_FIELD (NM_SETTING_VXLAN_LIMIT),            /* 11 */
-	SETTING_FIELD (NM_SETTING_VXLAN_LEARNING),         /* 12 */
-	SETTING_FIELD (NM_SETTING_VXLAN_PROXY),            /* 13 */
-	SETTING_FIELD (NM_SETTING_VXLAN_RSC),              /* 14 */
-	SETTING_FIELD (NM_SETTING_VXLAN_L2_MISS),          /* 15 */
-	SETTING_FIELD (NM_SETTING_VXLAN_L3_MISS),          /* 16 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_VXLAN_ALL         "name"","\
-                                             NM_SETTING_VXLAN_PARENT","\
-                                             NM_SETTING_VXLAN_ID","\
-                                             NM_SETTING_VXLAN_LOCAL","\
-                                             NM_SETTING_VXLAN_REMOTE","\
-                                             NM_SETTING_VXLAN_SOURCE_PORT_MIN","\
-                                             NM_SETTING_VXLAN_SOURCE_PORT_MAX","\
-                                             NM_SETTING_VXLAN_DESTINATION_PORT","\
-                                             NM_SETTING_VXLAN_TOS","\
-                                             NM_SETTING_VXLAN_TTL","\
-                                             NM_SETTING_VXLAN_AGEING","\
-                                             NM_SETTING_VXLAN_LIMIT","\
-                                             NM_SETTING_VXLAN_LEARNING","\
-                                             NM_SETTING_VXLAN_PROXY","\
-                                             NM_SETTING_VXLAN_RSC","\
-                                             NM_SETTING_VXLAN_L2_MISS","\
-                                             NM_SETTING_VXLAN_L3_MISS
-
-/*****************************************************************************/
-
 static char *
 wep_key_type_to_string (NMWepKeyType type)
 {
@@ -1055,59 +706,6 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 
 	g_string_append_printf (ret_str, "%s = %s", key, value);
 }
-
-
-/*  generic helper macros for property functions */
-#define DEFINE_GETTER(func_name, property_name) \
-	static char * \
-	func_name (NMSetting *setting, NmcPropertyGetType get_type) \
-	{ \
-		char *s; \
-		GValue val = G_VALUE_INIT; \
-		g_value_init (&val, G_TYPE_STRING); \
-		g_object_get_property (G_OBJECT (setting), property_name, &val); \
-		s = g_value_dup_string (&val); \
-		g_value_unset (&val); \
-		return s; \
-	}
-
-#define DEFINE_GETTER_WITH_DEFAULT(func_name, property_name, check_is_default) \
-	static char * \
-	func_name (NMSetting *setting, NmcPropertyGetType get_type) \
-	{ \
-		const char *s; \
-		char *s_full; \
-		GValue val = G_VALUE_INIT; \
-		\
-		if ((check_is_default)) { \
-			if (get_type == NMC_PROPERTY_GET_PARSABLE) \
-				return g_strdup (""); \
-			return g_strdup (_("(default)")); \
-		} \
-		\
-		g_value_init (&val, G_TYPE_STRING); \
-		g_object_get_property (G_OBJECT (setting), property_name, &val); \
-		s = g_value_get_string (&val); \
-		if (get_type == NMC_PROPERTY_GET_PARSABLE) \
-			s_full = g_strdup (s && *s ? s : " "); \
-		else \
-			s_full = s ? g_strdup_printf ("\"%s\"", s) : g_strdup (""); \
-		g_value_unset (&val); \
-		return s_full; \
-	}
-
-#define DEFINE_SECRET_FLAGS_GETTER(func_name, property_name) \
-	static char * \
-	func_name (NMSetting *setting, NmcPropertyGetType get_type) \
-	{ \
-		guint v; \
-		GValue val = G_VALUE_INIT; \
-		g_value_init (&val, G_TYPE_UINT); \
-		g_object_get_property (G_OBJECT (setting), property_name, &val); \
-		v = g_value_get_uint (&val); \
-		g_value_unset (&val); \
-		return secret_flags_to_string (v, get_type); \
-	}
 
 #define DEFINE_SETTER_STR_LIST_MULTI(def_func, s_macro, set_func) \
 	static gboolean \
@@ -1431,54 +1029,6 @@ check_and_set_string (NMSetting *setting,
 	return TRUE;
 }
 
-/* --- generic property setter functions --- */
-static gboolean
-nmc_property_set_string (NMSetting *setting, const char *prop, const char *val, GError **error)
-{
-	g_object_set (setting, prop, val, NULL);
-	return TRUE;
-}
-
-static gboolean
-nmc_property_set_uint (NMSetting *setting, const char *prop, const char *val, GError **error)
-{
-	unsigned long val_int;
-
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if (!nmc_string_to_uint (val, TRUE, 0, G_MAXUINT, &val_int)) {
-		g_set_error (error, 1, 0, _("'%s' is not a valid number (or out of range)"), val);
-		return FALSE;
-	}
-
-	/* Validate the number according to the property spec */
-	if (!validate_uint (setting, prop, (guint) val_int, error))
-		return FALSE;
-
-	g_object_set (setting, prop, (guint) val_int, NULL);
-	return TRUE;
-}
-
-static gboolean
-nmc_property_set_int (NMSetting *setting, const char *prop, const char *val, GError **error)
-{
-	long int val_int;
-
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if (!nmc_string_to_int (val, TRUE, G_MININT, G_MAXINT, &val_int)) {
-		g_set_error (error, 1, 0, _("'%s' is not a valid number (or out of range)"), val);
-		return FALSE;
-	}
-
-	/* Validate the number according to the property spec */
-	if (!validate_int (setting, prop, (gint) val_int, error))
-		return FALSE;
-
-	g_object_set (setting, prop, (gint) val_int, NULL);
-	return TRUE;
-}
-
 static gboolean
 nmc_property_set_flags (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
@@ -1496,20 +1046,6 @@ nmc_property_set_flags (NMSetting *setting, const char *prop, const char *val, G
 		return FALSE;
 
 	g_object_set (setting, prop, (guint) val_int, NULL);
-	return TRUE;
-}
-
-static gboolean
-nmc_property_set_bool (NMSetting *setting, const char *prop, const char *val, GError **error)
-{
-	gboolean val_bool;
-
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if (!nmc_string_to_bool (val, &val_bool, error))
-		return FALSE;
-
-	g_object_set (setting, prop, val_bool, NULL);
 	return TRUE;
 }
 
@@ -1532,38 +1068,6 @@ nmc_property_set_ssid (NMSetting *setting, const char *prop, const char *val, GE
 }
 
 static gboolean
-_property_set_mac (NMSetting *setting, const char *prop, const char *val, gboolean cloned_mac_addr, GError **error)
-{
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if (   (!cloned_mac_addr || !NM_CLONED_MAC_IS_SPECIAL (val))
-	    && !nm_utils_hwaddr_valid (val, ETH_ALEN)) {
-		g_set_error (error, 1, 0, _("'%s' is not a valid Ethernet MAC"), val);
-		return FALSE;
-	}
-
-	g_object_set (setting, prop, val, NULL);
-	return TRUE;
-}
-
-static gboolean
-nmc_property_set_mac (NMSetting *setting, const char *prop, const char *val, GError **error)
-{
-	return _property_set_mac (setting, prop, val, FALSE, error);
-}
-
-static gboolean
-nmc_property_set_mtu (NMSetting *setting, const char *prop, const char *val, GError **error)
-{
-	const char *mtu = val;
-
-	if (strcmp (mtu, "auto") == 0)
-		mtu = "0";
-
-	return nmc_property_set_uint (setting, prop, mtu, error);
-}
-
-static gboolean
 nmc_property_set_ifname (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -1571,36 +1075,6 @@ nmc_property_set_ifname (NMSetting *setting, const char *prop, const char *val, 
 	if (!nm_utils_is_valid_iface_name (val, error))
 		return FALSE;
 	g_object_set (setting, prop, val, NULL);
-	return TRUE;
-}
-
-static gboolean
-nmc_property_set_secret_flags (NMSetting *setting, const char *prop, const char *val, GError **error)
-{
-	char **strv = NULL, **iter;
-	unsigned long flags = 0, val_int;
-
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	strv = nmc_strsplit_set (val, " \t,", 0);
-	for (iter = strv; iter && *iter; iter++) {
-		if (!nmc_string_to_uint (*iter, TRUE, 0, ALL_SECRET_FLAGS, &val_int)) {
-			g_set_error (error, 1, 0, _("'%s' is not a valid flag number; use <0-%d>"),
-			             *iter, ALL_SECRET_FLAGS);
-			g_strfreev (strv);
-			return FALSE;
-		}
-		flags += val_int;
-	}
-	g_strfreev (strv);
-
-	/* Validate the flags number */
-	if (flags > ALL_SECRET_FLAGS) {
-		flags = ALL_SECRET_FLAGS;
-		g_print (_("Warning: '%s' sum is higher than all flags => all flags set\n"), val);
-	}
-
-	g_object_set (setting, prop, (guint) flags, NULL);
 	return TRUE;
 }
 
@@ -2071,24 +1545,6 @@ nmc_property_802_1X_set_phase1_auth_flags (NMSetting *setting, const char *prop,
 	return TRUE;
 }
 
-/* --- NM_SETTING_BLUETOOTH_SETTING_NAME property functions --- */
-DEFINE_GETTER (nmc_property_bluetooth_get_bdaddr, NM_SETTING_BLUETOOTH_BDADDR)
-DEFINE_GETTER (nmc_property_bluetooth_get_type, NM_SETTING_BLUETOOTH_TYPE)
-
-/* 'type' */
-static gboolean
-nmc_property_bluetooth_set_type (NMSetting *setting, const char *prop, const char *val, GError **error)
-{
-	const char *types[] = {
-	    NM_SETTING_BLUETOOTH_TYPE_DUN,
-	    NM_SETTING_BLUETOOTH_TYPE_PANU,
-	    NULL };
-
-	return check_and_set_string (setting, prop, val, types, error);
-}
-
-/* --- NM_SETTING_BOND_SETTING_NAME property functions --- */
-/* 'options' */
 static char *
 nmc_property_bond_get_options (NMSetting *setting, NmcPropertyGetType get_type)
 {
@@ -2174,14 +1630,15 @@ DEFINE_REMOVER_OPTION (nmc_property_bond_remove_option_options,
                        _validate_and_remove_bond_option)
 
 static const char *
-nmc_property_bond_describe_options (NMSetting *setting, const char *prop)
+_describe_fcn_bond_options (const NmcSettingInfo *setting_info,
+                            const NmcPropertyInfo *property_info)
 {
 	static char *desc = NULL;
 	const char **valid_options;
 	char *options_str;
 
 	if (G_UNLIKELY (desc == NULL)) {
-		valid_options = nm_setting_bond_get_valid_options (NM_SETTING_BOND (setting));
+		valid_options = nm_setting_bond_get_valid_options (NULL);
 		options_str = g_strjoinv (", ", (char **) valid_options);
 
 		desc = g_strdup_printf (_("Enter a list of bonding options formatted as:\n"
@@ -2206,32 +1663,6 @@ nmc_property_bond_allowed_options (NMSetting *setting, const char *prop)
 {
 	return nm_setting_bond_get_valid_options (NM_SETTING_BOND (setting));
 }
-
-
-/* --- NM_SETTING_BRIDGE_SETTING_NAME property functions --- */
-DEFINE_GETTER (nmc_property_bridge_get_mac_address, NM_SETTING_BRIDGE_MAC_ADDRESS)
-DEFINE_GETTER (nmc_property_bridge_get_stp, NM_SETTING_BRIDGE_STP)
-DEFINE_GETTER (nmc_property_bridge_get_priority, NM_SETTING_BRIDGE_PRIORITY)
-DEFINE_GETTER (nmc_property_bridge_get_forward_delay, NM_SETTING_BRIDGE_FORWARD_DELAY)
-DEFINE_GETTER (nmc_property_bridge_get_hello_time, NM_SETTING_BRIDGE_HELLO_TIME)
-DEFINE_GETTER (nmc_property_bridge_get_max_age, NM_SETTING_BRIDGE_MAX_AGE)
-DEFINE_GETTER (nmc_property_bridge_get_ageing_time, NM_SETTING_BRIDGE_AGEING_TIME)
-DEFINE_GETTER (nmc_property_bridge_get_multicast_snooping, NM_SETTING_BRIDGE_MULTICAST_SNOOPING)
-
-
-/* --- NM_SETTING_BRIDGE_PORT_SETTING_NAME property functions --- */
-DEFINE_GETTER (nmc_property_bridge_port_get_priority, NM_SETTING_BRIDGE_PORT_PRIORITY)
-DEFINE_GETTER (nmc_property_bridge_port_get_path_cost, NM_SETTING_BRIDGE_PORT_PATH_COST)
-DEFINE_GETTER (nmc_property_bridge_port_get_hairpin_mode, NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE)
-
-
-/* --- NM_SETTING_CDMA_SETTING_NAME property functions --- */
-DEFINE_GETTER (nmc_property_cdma_get_number, NM_SETTING_CDMA_NUMBER)
-DEFINE_GETTER (nmc_property_cdma_get_username, NM_SETTING_CDMA_USERNAME)
-DEFINE_GETTER (nmc_property_cdma_get_password, NM_SETTING_CDMA_PASSWORD)
-DEFINE_GETTER (nmc_property_cdma_get_mtu, NM_SETTING_CDMA_MTU)
-
-DEFINE_SECRET_FLAGS_GETTER (nmc_property_cdma_get_password_flags, NM_SETTING_CDMA_PASSWORD_FLAGS)
 
 static char *
 nmc_property_connection_get_autoconnect_retries (NMSetting *setting, NmcPropertyGetType get_type)
@@ -2985,21 +2416,6 @@ nmc_property_dcb_set_pg_traffic_class (NMSetting *setting, const char *prop, con
 	return TRUE;
 }
 
-/* --- NM_SETTING_GSM_SETTING_NAME property functions --- */
-DEFINE_GETTER (nmc_property_gsm_get_number, NM_SETTING_GSM_NUMBER)
-DEFINE_GETTER (nmc_property_gsm_get_username, NM_SETTING_GSM_USERNAME)
-DEFINE_GETTER (nmc_property_gsm_get_password, NM_SETTING_GSM_PASSWORD)
-DEFINE_SECRET_FLAGS_GETTER (nmc_property_gsm_get_password_flags, NM_SETTING_GSM_PASSWORD_FLAGS)
-DEFINE_GETTER (nmc_property_gsm_get_apn, NM_SETTING_GSM_APN)
-DEFINE_GETTER (nmc_property_gsm_get_network_id, NM_SETTING_GSM_NETWORK_ID)
-DEFINE_GETTER (nmc_property_gsm_get_pin, NM_SETTING_GSM_PIN)
-DEFINE_SECRET_FLAGS_GETTER (nmc_property_gsm_get_pin_flags, NM_SETTING_GSM_PIN_FLAGS)
-DEFINE_GETTER (nmc_property_gsm_get_home_only, NM_SETTING_GSM_HOME_ONLY)
-DEFINE_GETTER (nmc_property_gsm_get_device_id, NM_SETTING_GSM_DEVICE_ID)
-DEFINE_GETTER (nmc_property_gsm_get_sim_id, NM_SETTING_GSM_SIM_ID)
-DEFINE_GETTER (nmc_property_gsm_get_sim_operator_id, NM_SETTING_GSM_SIM_OPERATOR_ID)
-DEFINE_GETTER (nmc_property_gsm_get_mtu, NM_SETTING_GSM_MTU)
-
 static gboolean
 nmc_property_gsm_set_sim_operator_id (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
@@ -3025,38 +2441,6 @@ nmc_property_gsm_set_sim_operator_id (NMSetting *setting, const char *prop, cons
 	return TRUE;
 }
 
-
-/* --- NM_SETTING_INFINIBAND_SETTING_NAME property functions --- */
-DEFINE_GETTER (nmc_property_ib_get_mac_address, NM_SETTING_INFINIBAND_MAC_ADDRESS)
-DEFINE_GETTER (nmc_property_ib_get_transport_mode, NM_SETTING_INFINIBAND_TRANSPORT_MODE)
-
-/* 'mac-address' */
-static gboolean
-nmc_property_ib_set_mac (NMSetting *setting, const char *prop, const char *val, GError **error)
-{
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if (!nm_utils_hwaddr_valid (val, INFINIBAND_ALEN)) {
-		g_set_error (error, 1, 0, _("'%s' is not a valid InfiniBand MAC"), val);
-		return FALSE;
-	}
-
-	g_object_set (setting, prop, val, NULL);
-	return TRUE;
-}
-
-/* 'transport-mode' */
-static const char *ib_valid_transport_modes[] = { "datagram", "connected", NULL };
-
-static gboolean
-nmc_property_ib_set_transport_mode (NMSetting *setting, const char *prop, const char *val, GError **error)
-{
-	return check_and_set_string (setting, prop, val, ib_valid_transport_modes, error);
-}
-
-DEFINE_ALLOWED_VAL_FUNC (nmc_property_ib_allowed_transport_mode, ib_valid_transport_modes)
-
-/* 'p-key' */
 static gboolean
 nmc_property_ib_set_p_key (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
@@ -3084,46 +2468,20 @@ nmc_property_ib_set_p_key (NMSetting *setting, const char *prop, const char *val
 
 
 static char *
-nmc_property_ib_get_mtu (NMSetting *setting, NmcPropertyGetType get_type)
-{
-	NMSettingInfiniband *s_infiniband = NM_SETTING_INFINIBAND (setting);
-	int mtu;
-
-	mtu = nm_setting_infiniband_get_mtu (s_infiniband);
-	if (mtu == 0)
-		return g_strdup (_("auto"));
-	else
-		return g_strdup_printf ("%d", mtu);
-}
-
-static char *
 nmc_property_ib_get_p_key (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSettingInfiniband *s_infiniband = NM_SETTING_INFINIBAND (setting);
 	int p_key;
 
 	p_key = nm_setting_infiniband_get_p_key (s_infiniband);
-	if (p_key == -1)
-		return g_strdup (_("default"));
-	else
+	if (p_key == -1) {
+		if (get_type == NMC_PROPERTY_GET_PARSABLE)
+			return g_strdup ("default");
+		else
+			return g_strdup (_("default"));
+	} else
 		return g_strdup_printf ("0x%04x", p_key);
 }
-
-DEFINE_GETTER (nmc_property_ib_get_parent, NM_SETTING_INFINIBAND_PARENT)
-
-
-/* --- NM_SETTING_IP_TUNNEL_SETTING_NAME property functions --- */
-DEFINE_GETTER (nmc_property_ip_tunnel_get_parent, NM_SETTING_IP_TUNNEL_PARENT);
-DEFINE_GETTER (nmc_property_ip_tunnel_get_local, NM_SETTING_IP_TUNNEL_LOCAL);
-DEFINE_GETTER (nmc_property_ip_tunnel_get_remote, NM_SETTING_IP_TUNNEL_REMOTE);
-DEFINE_GETTER (nmc_property_ip_tunnel_get_ttl, NM_SETTING_IP_TUNNEL_TTL);
-DEFINE_GETTER (nmc_property_ip_tunnel_get_tos, NM_SETTING_IP_TUNNEL_TOS);
-DEFINE_GETTER (nmc_property_ip_tunnel_get_path_mtu_discovery, NM_SETTING_IP_TUNNEL_PATH_MTU_DISCOVERY);
-DEFINE_GETTER (nmc_property_ip_tunnel_get_input_key, NM_SETTING_IP_TUNNEL_INPUT_KEY);
-DEFINE_GETTER (nmc_property_ip_tunnel_get_output_key, NM_SETTING_IP_TUNNEL_OUTPUT_KEY);
-DEFINE_GETTER (nmc_property_ip_tunnel_get_encapsulation_limit, NM_SETTING_IP_TUNNEL_ENCAPSULATION_LIMIT);
-DEFINE_GETTER (nmc_property_ip_tunnel_get_flow_label, NM_SETTING_IP_TUNNEL_FLOW_LABEL);
-DEFINE_GETTER (nmc_property_ip_tunnel_get_mtu, NM_SETTING_IP_TUNNEL_MTU);
 
 static char *
 nmc_property_ip_tunnel_get_mode (NMSetting *setting, NmcPropertyGetType get_type)
@@ -3972,15 +3330,6 @@ _set_fcn_ip6_config_addr_gen_mode (const NmcSettingInfo *setting_info,
 	return TRUE;
 }
 
-/* --- NM_SETTING_MACSEC_SETTING_NAME property functions --- */
-DEFINE_GETTER (nmc_property_macsec_get_parent, NM_SETTING_MACSEC_PARENT)
-DEFINE_GETTER (nmc_property_macsec_get_encrypt, NM_SETTING_MACSEC_ENCRYPT)
-DEFINE_GETTER (nmc_property_macsec_get_mka_cak, NM_SETTING_MACSEC_MKA_CAK)
-DEFINE_SECRET_FLAGS_GETTER (nmc_property_macsec_get_mka_cak_flags, NM_SETTING_MACSEC_MKA_CAK_FLAGS)
-DEFINE_GETTER (nmc_property_macsec_get_mka_ckn, NM_SETTING_MACSEC_MKA_CKN)
-DEFINE_GETTER (nmc_property_macsec_get_port, NM_SETTING_MACSEC_PORT)
-
-/* 'mode' */
 static char *
 nmc_property_macsec_get_mode (NMSetting *setting, NmcPropertyGetType get_type)
 {
@@ -4054,12 +3403,6 @@ DEFINE_ALLOWED_FOR_ENUMS (nmc_property_macsec_allowed_validation,
                           nm_setting_macsec_validation_get_type,
                           G_MININT, G_MAXINT)
 
-
-/* --- NM_SETTING_MACVLAN_SETTING_NAME property functions --- */
-DEFINE_GETTER (nmc_property_macvlan_get_parent, NM_SETTING_MACVLAN_PARENT)
-DEFINE_GETTER (nmc_property_macvlan_get_promiscuous, NM_SETTING_MACVLAN_PROMISCUOUS)
-DEFINE_GETTER (nmc_property_macvlan_get_tap, NM_SETTING_MACVLAN_TAP)
-
 static char *
 nmc_property_macvlan_get_mode (NMSetting *setting, NmcPropertyGetType get_type)
 {
@@ -4113,11 +3456,6 @@ nmc_property_macvlan_set_mode (NMSetting *setting, const char *prop,
 DEFINE_ALLOWED_FOR_ENUMS (nmc_property_macvlan_allowed_mode,
                           nm_setting_macvlan_mode_get_type,
                           NM_SETTING_MACVLAN_MODE_UNKNOWN + 1, G_MAXINT)
-
-
-/* --- NM_SETTING_OLPC_MESH_SETTING_NAME property functions --- */
-DEFINE_GETTER (nmc_property_olpc_get_channel, NM_SETTING_OLPC_MESH_CHANNEL)
-DEFINE_GETTER (nmc_property_olpc_get_anycast_address, NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS)
 
 static char *
 nmc_property_olpc_get_ssid (NMSetting *setting, NmcPropertyGetType get_type)
@@ -4208,13 +3546,6 @@ nmc_property_proxy_set_pac_script (NMSetting *setting, const char *prop,
 	return TRUE;
 }
 
-
-/* --- NM_SETTING_SERIAL_SETTING_NAME property functions --- */
-DEFINE_GETTER (nmc_property_serial_get_baud, NM_SETTING_SERIAL_BAUD)
-DEFINE_GETTER (nmc_property_serial_get_bits, NM_SETTING_SERIAL_BITS)
-DEFINE_GETTER (nmc_property_serial_get_stopbits, NM_SETTING_SERIAL_STOPBITS)
-DEFINE_GETTER (nmc_property_serial_get_send_delay, NM_SETTING_SERIAL_SEND_DELAY)
-
 static char *
 nmc_property_serial_get_parity (NMSetting *setting, NmcPropertyGetType get_type)
 {
@@ -4251,10 +3582,6 @@ nmc_property_serial_set_parity (NMSetting *setting, const char *prop, const char
 	return TRUE;
 }
 
-
-/* --- NM_SETTING_TEAM_SETTING_NAME property functions --- */
-DEFINE_GETTER (nmc_property_team_get_config, NM_SETTING_TEAM_CONFIG)
-
 static gboolean
 nmc_property_team_set_config (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
@@ -4269,29 +3596,6 @@ nmc_property_team_set_config (NMSetting *setting, const char *prop, const char *
 	g_free (json);
 	return TRUE;
 }
-
-static const char *
-nmc_property_team_describe_config (NMSetting *setting, const char *prop)
-{
-	return _("nmcli can accepts both direct JSON configuration data and a file name containing "
-	         "the configuration. In the latter case the file is read and the contents is put "
-	         "into this property.\n\n"
-	         "Examples: set team.config "
-	         "{ \"device\": \"team0\", \"runner\": {\"name\": \"roundrobin\"}, \"ports\": {\"eth1\": {}, \"eth2\": {}} }\n"
-	         "          set team.config /etc/my-team.conf\n");
-}
-
-
-/* --- NM_SETTING_TEAM_PORT_SETTING_NAME property functions --- */
-DEFINE_GETTER (nmc_property_team_port_get_config, NM_SETTING_TEAM_PORT_CONFIG)
-
-
-/* --- NM_SETTING_TUN_SETTING_NAME property functions --- */
-DEFINE_GETTER (nmc_property_tun_get_owner, NM_SETTING_TUN_OWNER);
-DEFINE_GETTER (nmc_property_tun_get_group, NM_SETTING_TUN_GROUP);
-DEFINE_GETTER (nmc_property_tun_get_pi, NM_SETTING_TUN_PI);
-DEFINE_GETTER (nmc_property_tun_get_vnet_hdr, NM_SETTING_TUN_VNET_HDR);
-DEFINE_GETTER (nmc_property_tun_get_multi_queue, NM_SETTING_TUN_MULTI_QUEUE);
 
 static char *
 nmc_property_tun_get_mode (NMSetting *setting, NmcPropertyGetType get_type)
@@ -4338,11 +3642,6 @@ nmc_property_tun_set_mode (NMSetting *setting, const char *prop,
 static const char *tun_valid_modes[] = { "tun", "tap", "unknown", NULL };
 
 DEFINE_ALLOWED_VAL_FUNC (nmc_property_tun_allowed_mode, tun_valid_modes)
-
-
-/* --- NM_SETTING_VLAN_SETTING_NAME property functions --- */
-DEFINE_GETTER (nmc_property_vlan_get_parent, NM_SETTING_VLAN_PARENT)
-DEFINE_GETTER (nmc_property_vlan_get_id, NM_SETTING_VLAN_ID)
 
 static char *
 nmc_property_vlan_get_flags (NMSetting *setting, NmcPropertyGetType get_type)
@@ -4486,11 +3785,6 @@ nmc_property_vlan_remove_egress_priority_map (NMSetting *setting,
                                                       error);
 }
 
-
-/* --- NM_SETTING_VPN_SETTING_NAME property functions --- */
-DEFINE_GETTER (nmc_property_vpn_get_service_type, NM_SETTING_VPN_SERVICE_TYPE)
-DEFINE_GETTER (nmc_property_vpn_get_user_name, NM_SETTING_VPN_USER_NAME)
-
 static char *
 nmc_property_vpn_get_data (NMSetting *setting, NmcPropertyGetType get_type)
 {
@@ -4515,10 +3809,6 @@ nmc_property_vpn_get_secrets (NMSetting *setting, NmcPropertyGetType get_type)
 	return g_string_free (secret_str, FALSE);
 }
 
-DEFINE_GETTER (nmc_property_vpn_get_persistent, NM_SETTING_VPN_PERSISTENT)
-DEFINE_GETTER (nmc_property_vpn_get_timeout, NM_SETTING_VPN_TIMEOUT)
-
-/* Validate value of vpn 'data' and 'secret' options */
 static const char *
 _validate_vpn_hash_value (const char *option, const char *value, GError **error)
 {
@@ -4550,25 +3840,6 @@ DEFINE_SETTER_OPTIONS (nmc_property_vpn_set_secrets,
 DEFINE_REMOVER_OPTION (nmc_property_vpn_remove_option_secret,
                        NM_SETTING_VPN,
                        nm_setting_vpn_remove_secret)
-
-
-/* --- NM_SETTING_VXLAN_SETTING_NAME property functions --- */
-DEFINE_GETTER (nmc_property_vxlan_get_parent, NM_SETTING_VXLAN_PARENT)
-DEFINE_GETTER (nmc_property_vxlan_get_id, NM_SETTING_VXLAN_ID)
-DEFINE_GETTER (nmc_property_vxlan_get_local, NM_SETTING_VXLAN_LOCAL)
-DEFINE_GETTER (nmc_property_vxlan_get_remote, NM_SETTING_VXLAN_REMOTE)
-DEFINE_GETTER (nmc_property_vxlan_get_source_port_min, NM_SETTING_VXLAN_SOURCE_PORT_MIN)
-DEFINE_GETTER (nmc_property_vxlan_get_source_port_max, NM_SETTING_VXLAN_SOURCE_PORT_MAX)
-DEFINE_GETTER (nmc_property_vxlan_get_destination_port, NM_SETTING_VXLAN_DESTINATION_PORT)
-DEFINE_GETTER (nmc_property_vxlan_get_tos, NM_SETTING_VXLAN_TOS)
-DEFINE_GETTER (nmc_property_vxlan_get_ttl, NM_SETTING_VXLAN_TTL)
-DEFINE_GETTER (nmc_property_vxlan_get_ageing, NM_SETTING_VXLAN_AGEING)
-DEFINE_GETTER (nmc_property_vxlan_get_limit, NM_SETTING_VXLAN_LIMIT)
-DEFINE_GETTER (nmc_property_vxlan_get_learning, NM_SETTING_VXLAN_LEARNING)
-DEFINE_GETTER (nmc_property_vxlan_get_proxy, NM_SETTING_VXLAN_PROXY)
-DEFINE_GETTER (nmc_property_vxlan_get_rsc, NM_SETTING_VXLAN_RSC)
-DEFINE_GETTER (nmc_property_vxlan_get_l2_miss, NM_SETTING_VXLAN_L2_MISS)
-DEFINE_GETTER (nmc_property_vxlan_get_l3_miss, NM_SETTING_VXLAN_L3_MISS)
 
 static char *
 nmc_property_wired_get_wake_on_lan (NMSetting *setting, NmcPropertyGetType get_type)
@@ -4714,10 +3985,8 @@ _describe_fcn_wired_s390_options (const NmcSettingInfo *setting_info,
 	char *options_str;
 
 	if (G_UNLIKELY (desc == NULL)) {
-		gs_unref_object NMSetting *s = nm_setting_wired_new ();
+		valid_options = nm_setting_wired_get_valid_s390_options (NULL);
 
-		/* FIXME: we shall not require a dummy setting to get the list of valid options. */
-		valid_options = nm_setting_wired_get_valid_s390_options (NM_SETTING_WIRED (s));
 		options_str = g_strjoinv (", ", (char **) valid_options);
 
 		desc = g_strdup_printf (_("Enter a list of S/390 options formatted as:\n"
@@ -5176,27 +4445,6 @@ register_nmcli_value_transforms (void)
 
 /*****************************************************************************/
 
-/* Main hash table storing function pointer for manipulating properties */
-static GHashTable *nmc_properties = NULL;
-typedef	char *        (*NmcPropertyGetFunc)      (NMSetting *, NmcPropertyGetType);
-typedef	gboolean      (*NmcPropertySetFunc)      (NMSetting *, const char *, const char *, GError **);
-typedef	gboolean      (*NmcPropertyRemoveFunc)   (NMSetting *, const char *, const char *, guint32, GError **);
-typedef	const char *  (*NmcPropertyDescribeFunc) (NMSetting *, const char *);
-typedef	const char *const* (*NmcPropertyValuesFunc)   (NMSetting *, const char *);
-
-typedef struct {
-	/* The order of the fields is important as they correspond
-	 * to the order as _nmc_add_prop_funcs() passes the arguments. */
-#define NmcPropertyFuncsFields \
-	NmcPropertyGetFunc get_func;           /* func getting property values */ \
-	NmcPropertySetFunc set_func;           /* func adding/setting property values */ \
-	NmcPropertyRemoveFunc remove_func;     /* func removing items from container options */ \
-	NmcPropertyDescribeFunc describe_func; /* func returning property description */ \
-	NmcPropertyValuesFunc values_func;     /* func returning allowed property values */ \
-	;
-	NmcPropertyFuncsFields
-} NmcPropertyFuncs;
-
 NMSetting *
 nmc_setting_new_for_name (const char *name)
 {
@@ -5552,853 +4800,20 @@ nmc_setting_custom_init (NMSetting *setting)
 
 /*****************************************************************************/
 
-static inline void
-_nmc_add_prop_funcs (const char *key,
-                     const NmcPropertyFuncs *item_init)
-{
-	NmcPropertyFuncs *item;
-
-	item = g_malloc (sizeof (NmcPropertyFuncs));
-	*item = *item_init;
-	g_hash_table_insert (nmc_properties, (gpointer) key, item);
-}
-
-#define nmc_add_prop_funcs(key, ...) \
-	G_STMT_START { \
-		struct { \
-			NmcPropertyFuncsFields; \
-			/* The _dummy field is here so that the last argument can be always
-			 * NULL. That means every call to nmc_add_prop_funcs() below ends
-			 * with a separate line "NULL);". */ \
-			gpointer _dummy; \
-		} _item_init = { \
-			__VA_ARGS__ \
-		};\
-		\
-		nm_assert (_item_init._dummy == NULL); \
-		_nmc_add_prop_funcs ("" key, (NmcPropertyFuncs *) &_item_init); \
-	} G_STMT_END
-
-void
-nmc_properties_init (void)
-{
-	if (G_LIKELY (nmc_properties))
-		return;
-
-	/* create properties hash table */
-	nmc_properties = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
-
-	/* Add editable properties for NM_SETTING_BLUETOOTH_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_BLUETOOTH_SETTING_NAME""NM_SETTING_BLUETOOTH_BDADDR,
-	                    nmc_property_bluetooth_get_bdaddr,
-	                    nmc_property_set_mac,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_BLUETOOTH_SETTING_NAME""NM_SETTING_BLUETOOTH_TYPE,
-	                    nmc_property_bluetooth_get_type,
-	                    nmc_property_bluetooth_set_type,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-
-	/* Add editable properties for NM_SETTING_BOND_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_BOND_SETTING_NAME""NM_SETTING_BOND_OPTIONS,
-	                    nmc_property_bond_get_options,
-	                    nmc_property_bond_set_options,
-	                    nmc_property_bond_remove_option_options,
-	                    nmc_property_bond_describe_options,
-	                    nmc_property_bond_allowed_options,
-	                    NULL);
-
-	/* Add editable properties for NM_SETTING_BRIDGE_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_BRIDGE_SETTING_NAME""NM_SETTING_BRIDGE_MAC_ADDRESS,
-	                    nmc_property_bridge_get_mac_address,
-	                    nmc_property_set_mac,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_BRIDGE_SETTING_NAME""NM_SETTING_BRIDGE_STP,
-	                    nmc_property_bridge_get_stp,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_BRIDGE_SETTING_NAME""NM_SETTING_BRIDGE_PRIORITY,
-	                    nmc_property_bridge_get_priority,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_BRIDGE_SETTING_NAME""NM_SETTING_BRIDGE_FORWARD_DELAY,
-	                    nmc_property_bridge_get_forward_delay,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_BRIDGE_SETTING_NAME""NM_SETTING_BRIDGE_HELLO_TIME,
-	                    nmc_property_bridge_get_hello_time,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_BRIDGE_SETTING_NAME""NM_SETTING_BRIDGE_MAX_AGE,
-	                    nmc_property_bridge_get_max_age,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_BRIDGE_SETTING_NAME""NM_SETTING_BRIDGE_AGEING_TIME,
-	                    nmc_property_bridge_get_ageing_time,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-
-	nmc_add_prop_funcs (NM_SETTING_BRIDGE_SETTING_NAME""NM_SETTING_BRIDGE_MULTICAST_SNOOPING,
-	                    nmc_property_bridge_get_multicast_snooping,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-
-	/* Add editable properties for NM_SETTING_BRIDGE_PORT_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_BRIDGE_PORT_SETTING_NAME""NM_SETTING_BRIDGE_PORT_PRIORITY,
-	                    nmc_property_bridge_port_get_priority,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_BRIDGE_PORT_SETTING_NAME""NM_SETTING_BRIDGE_PORT_PATH_COST,
-	                    nmc_property_bridge_port_get_path_cost,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_BRIDGE_PORT_SETTING_NAME""NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE,
-	                    nmc_property_bridge_port_get_hairpin_mode,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-
-	/* Add editable properties for NM_SETTING_CDMA_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_CDMA_SETTING_NAME""NM_SETTING_CDMA_NUMBER,
-	                    nmc_property_cdma_get_number,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_CDMA_SETTING_NAME""NM_SETTING_CDMA_USERNAME,
-	                    nmc_property_cdma_get_username,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_CDMA_SETTING_NAME""NM_SETTING_CDMA_PASSWORD,
-	                    nmc_property_cdma_get_password,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_CDMA_SETTING_NAME""NM_SETTING_CDMA_PASSWORD_FLAGS,
-	                    nmc_property_cdma_get_password_flags,
-	                    nmc_property_set_secret_flags,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_CDMA_SETTING_NAME""NM_SETTING_CDMA_MTU,
-	                    nmc_property_cdma_get_mtu,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-
-	/* Add editable properties for NM_SETTING_GSM_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_GSM_SETTING_NAME""NM_SETTING_GSM_NUMBER,
-	                    nmc_property_gsm_get_number,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_GSM_SETTING_NAME""NM_SETTING_GSM_USERNAME,
-	                    nmc_property_gsm_get_username,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_GSM_SETTING_NAME""NM_SETTING_GSM_PASSWORD,
-	                    nmc_property_gsm_get_password,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_GSM_SETTING_NAME""NM_SETTING_GSM_PASSWORD_FLAGS,
-	                    nmc_property_gsm_get_password_flags,
-	                    nmc_property_set_secret_flags,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_GSM_SETTING_NAME""NM_SETTING_GSM_APN,
-	                    nmc_property_gsm_get_apn,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_GSM_SETTING_NAME""NM_SETTING_GSM_NETWORK_ID,
-	                    nmc_property_gsm_get_network_id,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_GSM_SETTING_NAME""NM_SETTING_GSM_PIN,
-	                    nmc_property_gsm_get_pin,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_GSM_SETTING_NAME""NM_SETTING_GSM_PIN_FLAGS,
-	                    nmc_property_gsm_get_pin_flags,
-	                    nmc_property_set_secret_flags,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_GSM_SETTING_NAME""NM_SETTING_GSM_HOME_ONLY,
-	                    nmc_property_gsm_get_home_only,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_GSM_SETTING_NAME""NM_SETTING_GSM_DEVICE_ID,
-	                    nmc_property_gsm_get_device_id,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_GSM_SETTING_NAME""NM_SETTING_GSM_SIM_ID,
-	                    nmc_property_gsm_get_sim_id,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_GSM_SETTING_NAME""NM_SETTING_GSM_SIM_OPERATOR_ID,
-	                    nmc_property_gsm_get_sim_operator_id,
-	                    nmc_property_gsm_set_sim_operator_id,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_GSM_SETTING_NAME""NM_SETTING_GSM_MTU,
-	                    nmc_property_gsm_get_mtu,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-
-	/* Add editable properties for NM_SETTING_INFINIBAND_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_INFINIBAND_SETTING_NAME""NM_SETTING_INFINIBAND_MAC_ADDRESS,
-	                    nmc_property_ib_get_mac_address,
-	                    nmc_property_ib_set_mac,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_INFINIBAND_SETTING_NAME""NM_SETTING_INFINIBAND_MTU,
-	                    nmc_property_ib_get_mtu,
-	                    nmc_property_set_mtu,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_INFINIBAND_SETTING_NAME""NM_SETTING_INFINIBAND_TRANSPORT_MODE,
-	                    nmc_property_ib_get_transport_mode,
-	                    nmc_property_ib_set_transport_mode,
-	                    NULL,
-	                    NULL,
-	                    nmc_property_ib_allowed_transport_mode,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_INFINIBAND_SETTING_NAME""NM_SETTING_INFINIBAND_P_KEY,
-	                    nmc_property_ib_get_p_key,
-	                    nmc_property_ib_set_p_key,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_INFINIBAND_SETTING_NAME""NM_SETTING_INFINIBAND_PARENT,
-	                    nmc_property_ib_get_parent,
-	                    nmc_property_set_ifname,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-
-	/* Add editable properties for NM_SETTING_OLPC_MESH_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_OLPC_MESH_SETTING_NAME""NM_SETTING_OLPC_MESH_SSID,
-	                    nmc_property_olpc_get_ssid,
-	                    nmc_property_set_ssid,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_OLPC_MESH_SETTING_NAME""NM_SETTING_OLPC_MESH_CHANNEL,
-	                    nmc_property_olpc_get_channel,
-	                    nmc_property_olpc_set_channel,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_OLPC_MESH_SETTING_NAME""NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS,
-	                    nmc_property_olpc_get_anycast_address,
-	                    nmc_property_set_mac,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-
-	/* Add editable properties for NM_SETTING_SERIAL_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_SERIAL_SETTING_NAME""NM_SETTING_SERIAL_BAUD,
-	                    nmc_property_serial_get_baud,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_SERIAL_SETTING_NAME""NM_SETTING_SERIAL_BITS,
-	                    nmc_property_serial_get_bits,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_SERIAL_SETTING_NAME""NM_SETTING_SERIAL_PARITY,
-	                    nmc_property_serial_get_parity,
-	                    nmc_property_serial_set_parity,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_SERIAL_SETTING_NAME""NM_SETTING_SERIAL_STOPBITS,
-	                    nmc_property_serial_get_stopbits,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_SERIAL_SETTING_NAME""NM_SETTING_SERIAL_SEND_DELAY,
-	                    nmc_property_serial_get_send_delay,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-
-	/* Add editable properties for NM_SETTING_TEAM_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_TEAM_SETTING_NAME""NM_SETTING_TEAM_CONFIG,
-	                    nmc_property_team_get_config,
-	                    nmc_property_team_set_config,
-	                    NULL,
-	                    nmc_property_team_describe_config,
-	                    NULL,
-	                    NULL);
-
-	/* Add editable properties for NM_SETTING_TEAM_PORT_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_TEAM_PORT_SETTING_NAME""NM_SETTING_TEAM_PORT_CONFIG,
-	                    nmc_property_team_port_get_config,
-	                    nmc_property_team_set_config,
-	                    NULL,
-	                    nmc_property_team_describe_config,
-	                    NULL,
-	                    NULL);
-
-	/* Add editable properties for NM_SETTING_VLAN_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_VLAN_SETTING_NAME""NM_SETTING_VLAN_PARENT,
-	                    nmc_property_vlan_get_parent,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_VLAN_SETTING_NAME""NM_SETTING_VLAN_ID,
-	                    nmc_property_vlan_get_id,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_VLAN_SETTING_NAME""NM_SETTING_VLAN_FLAGS,
-	                    nmc_property_vlan_get_flags,
-	                    nmc_property_set_flags,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_VLAN_SETTING_NAME""NM_SETTING_VLAN_INGRESS_PRIORITY_MAP,
-	                    nmc_property_vlan_get_ingress_priority_map,
-	                    nmc_property_vlan_set_ingress_priority_map,
-	                    nmc_property_vlan_remove_ingress_priority_map,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_VLAN_SETTING_NAME""NM_SETTING_VLAN_EGRESS_PRIORITY_MAP,
-	                    nmc_property_vlan_get_egress_priority_map,
-	                    nmc_property_vlan_set_egress_priority_map,
-	                    nmc_property_vlan_remove_egress_priority_map,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-
-	/* Add editable properties for NM_SETTING_VPN_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_VPN_SETTING_NAME""NM_SETTING_VPN_SERVICE_TYPE,
-	                    nmc_property_vpn_get_service_type,
-	                    nmc_property_set_vpn_service,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_VPN_SETTING_NAME""NM_SETTING_VPN_USER_NAME,
-	                    nmc_property_vpn_get_user_name,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_VPN_SETTING_NAME""NM_SETTING_VPN_DATA,
-	                    nmc_property_vpn_get_data,
-	                    nmc_property_vpn_set_data,
-	                    nmc_property_vpn_remove_option_data,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_VPN_SETTING_NAME""NM_SETTING_VPN_SECRETS,
-	                    nmc_property_vpn_get_secrets,
-	                    nmc_property_vpn_set_secrets,
-	                    nmc_property_vpn_remove_option_secret,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_VPN_SETTING_NAME""NM_SETTING_VPN_PERSISTENT,
-	                    nmc_property_vpn_get_persistent,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-
-	nmc_add_prop_funcs (NM_SETTING_VPN_SETTING_NAME""NM_SETTING_VPN_TIMEOUT,
-	                    nmc_property_vpn_get_timeout,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-
-	/* Add editable properties for NM_SETTING_TUN_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_TUN_SETTING_NAME""NM_SETTING_TUN_MODE,
-	                    nmc_property_tun_get_mode,
-	                    nmc_property_tun_set_mode,
-	                    NULL,
-	                    NULL,
-	                    nmc_property_tun_allowed_mode,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_TUN_SETTING_NAME""NM_SETTING_TUN_OWNER,
-	                    nmc_property_tun_get_owner,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_TUN_SETTING_NAME""NM_SETTING_TUN_GROUP,
-	                    nmc_property_tun_get_group,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_TUN_SETTING_NAME""NM_SETTING_TUN_PI,
-	                    nmc_property_tun_get_pi,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_TUN_SETTING_NAME""NM_SETTING_TUN_VNET_HDR,
-	                    nmc_property_tun_get_vnet_hdr,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_TUN_SETTING_NAME""NM_SETTING_TUN_MULTI_QUEUE,
-	                    nmc_property_tun_get_multi_queue,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-
-	/* Add editable properties for NM_SETTING_IP_TUNNEL_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_IP_TUNNEL_SETTING_NAME""NM_SETTING_IP_TUNNEL_MODE,
-	                    nmc_property_ip_tunnel_get_mode,
-	                    nmc_property_ip_tunnel_set_mode,
-	                    NULL,
-	                    NULL,
-	                    nmc_property_ip_tunnel_allowed_mode,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP_TUNNEL_SETTING_NAME""NM_SETTING_IP_TUNNEL_PARENT,
-	                    nmc_property_ip_tunnel_get_parent,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP_TUNNEL_SETTING_NAME""NM_SETTING_IP_TUNNEL_LOCAL,
-	                    nmc_property_ip_tunnel_get_local,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP_TUNNEL_SETTING_NAME""NM_SETTING_IP_TUNNEL_REMOTE,
-	                    nmc_property_ip_tunnel_get_remote,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP_TUNNEL_SETTING_NAME""NM_SETTING_IP_TUNNEL_TTL,
-	                    nmc_property_ip_tunnel_get_ttl,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP_TUNNEL_SETTING_NAME""NM_SETTING_IP_TUNNEL_TOS,
-	                    nmc_property_ip_tunnel_get_tos,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP_TUNNEL_SETTING_NAME""NM_SETTING_IP_TUNNEL_PATH_MTU_DISCOVERY,
-	                    nmc_property_ip_tunnel_get_path_mtu_discovery,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP_TUNNEL_SETTING_NAME""NM_SETTING_IP_TUNNEL_INPUT_KEY,
-	                    nmc_property_ip_tunnel_get_input_key,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP_TUNNEL_SETTING_NAME""NM_SETTING_IP_TUNNEL_OUTPUT_KEY,
-	                    nmc_property_ip_tunnel_get_output_key,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP_TUNNEL_SETTING_NAME""NM_SETTING_IP_TUNNEL_ENCAPSULATION_LIMIT,
-	                    nmc_property_ip_tunnel_get_encapsulation_limit,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP_TUNNEL_SETTING_NAME""NM_SETTING_IP_TUNNEL_FLOW_LABEL,
-	                    nmc_property_ip_tunnel_get_flow_label,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_IP_TUNNEL_SETTING_NAME""NM_SETTING_IP_TUNNEL_MTU,
-	                    nmc_property_ip_tunnel_get_mtu,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-
-	/* Add editable properties for NM_SETTING_MACSEC_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_MACSEC_SETTING_NAME""NM_SETTING_MACSEC_PARENT,
-	                    nmc_property_macsec_get_parent,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_MACSEC_SETTING_NAME""NM_SETTING_MACSEC_MODE,
-	                    nmc_property_macsec_get_mode,
-	                    nmc_property_macsec_set_mode,
-	                    NULL,
-	                    NULL,
-	                    nmc_property_macsec_allowed_mode,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_MACSEC_SETTING_NAME""NM_SETTING_MACSEC_ENCRYPT,
-	                    nmc_property_macsec_get_encrypt,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_MACSEC_SETTING_NAME""NM_SETTING_MACSEC_MKA_CAK,
-	                    nmc_property_macsec_get_mka_cak,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_MACSEC_SETTING_NAME""NM_SETTING_MACSEC_MKA_CAK_FLAGS,
-	                    nmc_property_macsec_get_mka_cak_flags,
-	                    nmc_property_set_secret_flags,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_MACSEC_SETTING_NAME""NM_SETTING_MACSEC_MKA_CKN,
-	                    nmc_property_macsec_get_mka_ckn,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_MACSEC_SETTING_NAME""NM_SETTING_MACSEC_PORT,
-	                    nmc_property_macsec_get_port,
-	                    nmc_property_set_int,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_MACSEC_SETTING_NAME""NM_SETTING_MACSEC_VALIDATION,
-	                    nmc_property_macsec_get_validation,
-	                    nmc_property_macsec_set_validation,
-	                    NULL,
-	                    NULL,
-	                    nmc_property_macsec_allowed_validation,
-	                    NULL);
-
-	/* Add editable properties for NM_SETTING_MACVLAN_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_MACVLAN_SETTING_NAME""NM_SETTING_MACVLAN_PARENT,
-	                    nmc_property_macvlan_get_parent,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_MACVLAN_SETTING_NAME""NM_SETTING_MACVLAN_MODE,
-	                    nmc_property_macvlan_get_mode,
-	                    nmc_property_macvlan_set_mode,
-	                    NULL,
-	                    NULL,
-	                    nmc_property_macvlan_allowed_mode,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_MACVLAN_SETTING_NAME""NM_SETTING_MACVLAN_PROMISCUOUS,
-	                    nmc_property_macvlan_get_promiscuous,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_MACVLAN_SETTING_NAME""NM_SETTING_MACVLAN_TAP,
-	                    nmc_property_macvlan_get_tap,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-
-	/* Add editable properties for NM_SETTING_VXLAN_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_VXLAN_SETTING_NAME""NM_SETTING_VXLAN_PARENT,
-	                    nmc_property_vxlan_get_parent,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_VXLAN_SETTING_NAME""NM_SETTING_VXLAN_ID,
-	                    nmc_property_vxlan_get_id,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_VXLAN_SETTING_NAME""NM_SETTING_VXLAN_LOCAL,
-	                    nmc_property_vxlan_get_local,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_VXLAN_SETTING_NAME""NM_SETTING_VXLAN_REMOTE,
-	                    nmc_property_vxlan_get_remote,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_VXLAN_SETTING_NAME""NM_SETTING_VXLAN_SOURCE_PORT_MIN,
-	                    nmc_property_vxlan_get_source_port_min,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_VXLAN_SETTING_NAME""NM_SETTING_VXLAN_SOURCE_PORT_MAX,
-	                    nmc_property_vxlan_get_source_port_max,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_VXLAN_SETTING_NAME""NM_SETTING_VXLAN_DESTINATION_PORT,
-	                    nmc_property_vxlan_get_destination_port,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_VXLAN_SETTING_NAME""NM_SETTING_VXLAN_TOS,
-	                    nmc_property_vxlan_get_tos,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_VXLAN_SETTING_NAME""NM_SETTING_VXLAN_TTL,
-	                    nmc_property_vxlan_get_ttl,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_VXLAN_SETTING_NAME""NM_SETTING_VXLAN_AGEING,
-	                    nmc_property_vxlan_get_ageing,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_VXLAN_SETTING_NAME""NM_SETTING_VXLAN_LIMIT,
-	                    nmc_property_vxlan_get_limit,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_VXLAN_SETTING_NAME""NM_SETTING_VXLAN_LEARNING,
-	                    nmc_property_vxlan_get_learning,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_VXLAN_SETTING_NAME""NM_SETTING_VXLAN_PROXY,
-	                    nmc_property_vxlan_get_proxy,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_VXLAN_SETTING_NAME""NM_SETTING_VXLAN_RSC,
-	                    nmc_property_vxlan_get_rsc,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_VXLAN_SETTING_NAME""NM_SETTING_VXLAN_L2_MISS,
-	                    nmc_property_vxlan_get_l2_miss,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_VXLAN_SETTING_NAME""NM_SETTING_VXLAN_L3_MISS,
-	                    nmc_property_vxlan_get_l3_miss,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-}
-
-void
-nmc_properties_cleanup ()
-{
-	if (nmc_properties)
-		g_hash_table_destroy (nmc_properties);
-}
-
-static const NmcPropertyFuncs *
-nmc_properties_find (const char *s_name, const char *p_name)
-{
-	char *key;
-	gsize p_l, s_l;
-
-	nmc_properties_init ();
-
-	s_l = strlen (s_name);
-	p_l = strlen (p_name);
-	key = g_alloca (s_l + p_l + 1);
-	memcpy (&key[  0], s_name, s_l);
-	memcpy (&key[s_l], p_name, p_l + 1);
-	return (NmcPropertyFuncs *) g_hash_table_lookup (nmc_properties, key);
-}
-
 static char *
 get_property_val (NMSetting *setting, const char *prop, NmcPropertyGetType get_type, GError **error)
 {
-	const NmcPropertyFuncs *item;
 	const NmcSettingInfo *setting_info;
 	const NmcPropertyInfo *property_info;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	item = nmc_properties_find (nm_setting_get_name (setting), prop);
-	if (item) {
-		if (item->get_func)
-			return item->get_func (setting, get_type);
-	}
-
 	if ((property_info = _meta_find_property_info_by_setting (setting, prop, &setting_info))) {
 		nm_assert (property_info == _meta_find_property_info_by_name (nm_setting_get_name (setting), prop, NULL));
 
 		if (property_info->is_name) {
-			/* NmcPropertyFuncs would not register the "name" property.
+			/* Traditionally, the "name" property was not handled here.
 			 * For the moment, skip it from get_property_val(). */
 		} else if (property_info->property_type->get_fcn) {
 			return property_info->property_type->get_fcn (setting_info,
@@ -6446,22 +4861,11 @@ nmc_setting_get_property_parsable (NMSetting *setting, const char *prop, GError 
 gboolean
 nmc_setting_set_property (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
-	const NmcPropertyFuncs *item;
 	const NmcSettingInfo *setting_info;
 	const NmcPropertyInfo *property_info;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	item = nmc_properties_find (nm_setting_get_name (setting), prop);
-	if (item && item->set_func) {
-		if (!val) {
-			/* No value argument sets default value */
-			nmc_property_set_default_value (setting, prop);
-			return TRUE;
-		}
-		return item->set_func (setting, prop, val, error);
-	}
 
 	if ((property_info = _meta_find_property_info_by_setting (setting, prop, &setting_info))) {
 		nm_assert (property_info == _meta_find_property_info_by_name (nm_setting_get_name (setting), prop, NULL));
@@ -6473,7 +4877,7 @@ nmc_setting_set_property (NMSetting *setting, const char *prop, const char *val,
 		}
 
 		if (property_info->is_name) {
-			/* NmcPropertyFuncs would not register the "name" property.
+			/* Traditionally, the "name" property was not handled here.
 			 * For the moment, skip it from get_property_val(). */
 		} else if (property_info->property_type->set_fcn) {
 			return property_info->property_type->set_fcn (setting_info,
@@ -6514,24 +4918,17 @@ nmc_property_set_default_value (NMSetting *setting, const char *prop)
 gboolean
 nmc_setting_reset_property (NMSetting *setting, const char *prop, GError **error)
 {
-	const NmcPropertyFuncs *item;
 	const NmcSettingInfo *setting_info;
 	const NmcPropertyInfo *property_info;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	item = nmc_properties_find (nm_setting_get_name (setting), prop);
-	if (item && item->set_func) {
-		nmc_property_set_default_value (setting, prop);
-		return TRUE;
-	}
-
 	if ((property_info = _meta_find_property_info_by_setting (setting, prop, &setting_info))) {
 		nm_assert (property_info == _meta_find_property_info_by_name (nm_setting_get_name (setting), prop, NULL));
 
 		if (property_info->is_name) {
-			/* NmcPropertyFuncs would not register the "name" property.
+			/* Traditionally, the "name" property was not handled here.
 			 * For the moment, skip it from get_property_val(). */
 		} else if (property_info->property_type->set_fcn) {
 			nmc_property_set_default_value (setting, prop);
@@ -6559,22 +4956,17 @@ nmc_setting_remove_property_option (NMSetting *setting,
                                     guint32 idx,
                                     GError **error)
 {
-	const NmcPropertyFuncs *item;
 	const NmcSettingInfo *setting_info;
 	const NmcPropertyInfo *property_info;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	item = nmc_properties_find (nm_setting_get_name (setting), prop);
-	if (item && item->remove_func)
-		return item->remove_func (setting, prop, option, idx, error);
-
 	if ((property_info = _meta_find_property_info_by_setting (setting, prop, &setting_info))) {
 		nm_assert (property_info == _meta_find_property_info_by_name (nm_setting_get_name (setting), prop, NULL));
 
 		if (property_info->is_name) {
-			/* NmcPropertyFuncs would not register the "name" property.
+			/* Traditionally, the "name" property was not handled here.
 			 * For the moment, skip it from get_property_val(). */
 		} else if (property_info->property_type->remove_fcn) {
 			return property_info->property_type->remove_fcn (setting_info,
@@ -6627,21 +5019,16 @@ const char *const*
 nmc_setting_get_property_allowed_values (NMSetting *setting, const char *prop)
 {
 
-	const NmcPropertyFuncs *item;
 	const NmcSettingInfo *setting_info;
 	const NmcPropertyInfo *property_info;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 
-	item = nmc_properties_find (nm_setting_get_name (setting), prop);
-	if (item && item->values_func)
-		return item->values_func (setting, prop);
-
 	if ((property_info = _meta_find_property_info_by_setting (setting, prop, &setting_info))) {
 		nm_assert (property_info == _meta_find_property_info_by_name (nm_setting_get_name (setting), prop, NULL));
 
 		if (property_info->is_name) {
-			/* NmcPropertyFuncs would not register the "name" property.
+			/* Traditionally, the "name" property was not handled here.
 			 * For the moment, skip it from get_property_val(). */
 		} else if (property_info->property_type->values_fcn) {
 			return property_info->property_type->values_fcn (setting_info,
@@ -6650,7 +5037,7 @@ nmc_setting_get_property_allowed_values (NMSetting *setting, const char *prop)
 			return property_info->property_typ_data->values_static;
 	}
 
-return NULL;
+	return NULL;
 }
 
 #include "settings-docs.c"
@@ -6666,7 +5053,6 @@ return NULL;
 char *
 nmc_setting_get_property_desc (NMSetting *setting, const char *prop)
 {
-	const NmcPropertyFuncs *item;
 	const char *setting_desc = NULL;
 	const char *setting_desc_title = "";
 	const char *nmcli_desc = NULL;
@@ -6681,16 +5067,11 @@ nmc_setting_get_property_desc (NMSetting *setting, const char *prop)
 	if (setting_desc)
 		setting_desc_title = _("[NM property description]");
 
-	item = nmc_properties_find (nm_setting_get_name (setting), prop);
-	if (item && item->describe_func) {
-		nmcli_desc = item->describe_func (setting, prop);
-		nmcli_desc_title = _("[nmcli specific description]");
-		nmcli_nl = "\n";
-	} else if ((property_info = _meta_find_property_info_by_setting (setting, prop, &setting_info))) {
+	if ((property_info = _meta_find_property_info_by_setting (setting, prop, &setting_info))) {
 		nm_assert (property_info == _meta_find_property_info_by_name (nm_setting_get_name (setting), prop, NULL));
 
 		if (property_info->is_name) {
-			/* NmcPropertyFuncs would not register the "name" property.
+			/* Traditionally, the "name" property was not handled here.
 			 * For the moment, skip it from get_property_val(). */
 		} else if (property_info->describe_message) {
 			nmcli_desc = _(property_info->describe_message);
@@ -6744,9 +5125,6 @@ nmc_property_set_gvalue (NMSetting *setting, const char *prop, GValue *value)
 
 /*****************************************************************************/
 
-#define GET_SECRET(show, setting, func) \
-	(show ? func (setting, NMC_PROPERTY_GET_PRETTY) : g_strdup (_("<hidden>")))
-
 static char *
 _all_properties (const NmcSettingInfo *setting_info)
 {
@@ -6762,14 +5140,24 @@ _all_properties (const NmcSettingInfo *setting_info)
 	return g_string_free (str, FALSE);
 }
 
-static gboolean
-_get_setting_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
+gboolean
+setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
+	const NMMetaSettingInfo *meta_setting_info;
+	const NmcSettingInfo *setting_info;
 	gs_free NmcOutputField *tmpl = NULL;
 	NmcOutputField *arr;
 	guint i;
 	size_t tmpl_len;
 	gs_free char *s_all = NULL;
+
+	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
+
+	meta_setting_info = nm_meta_setting_infos_by_gtype (G_OBJECT_TYPE (setting));
+	g_return_val_if_fail (meta_setting_info, FALSE);
+
+	setting_info = &nmc_setting_infos[meta_setting_info->meta_type];
+	g_return_val_if_fail (setting_info, FALSE);
 
 	g_return_val_if_fail (G_TYPE_CHECK_INSTANCE_TYPE (setting, setting_info->general->get_setting_gtype ()), FALSE);
 
@@ -6794,560 +5182,6 @@ _get_setting_details (const NmcSettingInfo *setting_info, NMSetting *setting, Nm
 			set_val_str (arr, i, g_strdup (_("<hidden>")));
 	}
 
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
-setting_serial_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingSerial *s_serial = NM_SETTING_SERIAL (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_SERIAL (s_serial), FALSE);
-
-	tmpl = nmc_fields_setting_serial;
-	tmpl_len = sizeof (nmc_fields_setting_serial);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_SERIAL_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_serial_get_baud (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 2, nmc_property_serial_get_bits (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 3, nmc_property_serial_get_parity (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 4, nmc_property_serial_get_stopbits (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 5, nmc_property_serial_get_send_delay (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
-setting_gsm_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingGsm *s_gsm = NM_SETTING_GSM (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_GSM (s_gsm), FALSE);
-
-	tmpl = nmc_fields_setting_gsm;
-	tmpl_len = sizeof (nmc_fields_setting_gsm);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_GSM_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_gsm_get_number (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 2, nmc_property_gsm_get_username (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 3, GET_SECRET (secrets, setting, nmc_property_gsm_get_password));
-	set_val_str (arr, 4, nmc_property_gsm_get_password_flags (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 5, nmc_property_gsm_get_apn (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 6, nmc_property_gsm_get_network_id (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 7, GET_SECRET (secrets, setting, nmc_property_gsm_get_pin));
-	set_val_str (arr, 8, nmc_property_gsm_get_pin_flags (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 9, nmc_property_gsm_get_home_only (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 10, nmc_property_gsm_get_device_id (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 11, nmc_property_gsm_get_sim_id (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 12, nmc_property_gsm_get_sim_operator_id (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 13, nmc_property_gsm_get_mtu (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
-setting_cdma_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingCdma *s_cdma = NM_SETTING_CDMA (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_CDMA (s_cdma), FALSE);
-
-	tmpl = nmc_fields_setting_cdma;
-	tmpl_len = sizeof (nmc_fields_setting_cdma);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_CDMA_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_cdma_get_number (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 2, nmc_property_cdma_get_username (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 3, GET_SECRET (secrets, setting, nmc_property_cdma_get_password));
-	set_val_str (arr, 4, nmc_property_cdma_get_password_flags (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 5, nmc_property_cdma_get_mtu (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
-setting_bluetooth_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingBluetooth *s_bluetooth = NM_SETTING_BLUETOOTH (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_BLUETOOTH (s_bluetooth), FALSE);
-
-	tmpl = nmc_fields_setting_bluetooth;
-	tmpl_len = sizeof (nmc_fields_setting_bluetooth);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_BLUETOOTH_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_bluetooth_get_bdaddr (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 2, nmc_property_bluetooth_get_type (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
-setting_olpc_mesh_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingOlpcMesh *s_olpc_mesh = NM_SETTING_OLPC_MESH (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_OLPC_MESH (s_olpc_mesh), FALSE);
-
-	tmpl = nmc_fields_setting_olpc_mesh;
-	tmpl_len = sizeof (nmc_fields_setting_olpc_mesh);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_OLPC_MESH_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_olpc_get_ssid (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 2, nmc_property_olpc_get_channel (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 3, nmc_property_olpc_get_anycast_address (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
-setting_vpn_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingVpn *s_vpn = NM_SETTING_VPN (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_VPN (s_vpn), FALSE);
-
-	tmpl = nmc_fields_setting_vpn;
-	tmpl_len = sizeof (nmc_fields_setting_vpn);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_VPN_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_vpn_get_service_type (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 2, nmc_property_vpn_get_user_name (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 3, nmc_property_vpn_get_data (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 4, GET_SECRET (secrets, setting, nmc_property_vpn_get_secrets));
-	set_val_str (arr, 5, nmc_property_vpn_get_persistent (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 6, nmc_property_vpn_get_timeout (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
-setting_infiniband_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingInfiniband *s_infiniband = NM_SETTING_INFINIBAND (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_INFINIBAND (s_infiniband), FALSE);
-
-	tmpl = nmc_fields_setting_infiniband;
-	tmpl_len = sizeof (nmc_fields_setting_infiniband);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_INFINIBAND_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_ib_get_mac_address (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 2, nmc_property_ib_get_mtu (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 3, nmc_property_ib_get_transport_mode (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 4, nmc_property_ib_get_p_key (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 5, nmc_property_ib_get_parent (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
-setting_bond_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingBond *s_bond = NM_SETTING_BOND (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_BOND (s_bond), FALSE);
-
-	tmpl = nmc_fields_setting_bond;
-	tmpl_len = sizeof (nmc_fields_setting_bond);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_BOND_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_bond_get_options (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
-setting_vlan_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingVlan *s_vlan = NM_SETTING_VLAN (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_VLAN (s_vlan), FALSE);
-
-	tmpl = nmc_fields_setting_vlan;
-	tmpl_len = sizeof (nmc_fields_setting_vlan);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_VLAN_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_vlan_get_parent (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 2, nmc_property_vlan_get_id (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 3, nmc_property_vlan_get_flags (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 4, nmc_property_vlan_get_ingress_priority_map (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 5, nmc_property_vlan_get_egress_priority_map (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
-setting_bridge_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingBridge *s_bridge = NM_SETTING_BRIDGE (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_BRIDGE (s_bridge), FALSE);
-
-	tmpl = nmc_fields_setting_bridge;
-	tmpl_len = sizeof (nmc_fields_setting_bridge);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_BRIDGE_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_bridge_get_mac_address (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 2, nmc_property_bridge_get_stp (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 3, nmc_property_bridge_get_priority (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 4, nmc_property_bridge_get_forward_delay (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 5, nmc_property_bridge_get_hello_time (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 6, nmc_property_bridge_get_max_age (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 7, nmc_property_bridge_get_ageing_time (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 8, nmc_property_bridge_get_multicast_snooping (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
-setting_bridge_port_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingBridgePort *s_bridge_port = NM_SETTING_BRIDGE_PORT (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_BRIDGE_PORT (s_bridge_port), FALSE);
-
-	tmpl = nmc_fields_setting_bridge_port;
-	tmpl_len = sizeof (nmc_fields_setting_bridge_port);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_BRIDGE_PORT_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_bridge_port_get_priority (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 2, nmc_property_bridge_port_get_path_cost (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 3, nmc_property_bridge_port_get_hairpin_mode (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
-setting_team_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingTeam *s_team = NM_SETTING_TEAM (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_TEAM (s_team), FALSE);
-
-	tmpl = nmc_fields_setting_team;
-	tmpl_len = sizeof (nmc_fields_setting_team);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_TEAM_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_team_get_config (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
-setting_team_port_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingTeamPort *s_team_port = NM_SETTING_TEAM_PORT (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_TEAM_PORT (s_team_port), FALSE);
-
-	tmpl = nmc_fields_setting_team_port;
-	tmpl_len = sizeof (nmc_fields_setting_team_port);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_TEAM_PORT_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_team_port_get_config (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
-setting_tun_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingTun *s_tun = NM_SETTING_TUN (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_TUN (s_tun), FALSE);
-
-	tmpl = nmc_fields_setting_tun;
-	tmpl_len = sizeof (nmc_fields_setting_tun);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_TUN_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_tun_get_mode (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 2, nmc_property_tun_get_owner (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 3, nmc_property_tun_get_group (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 4, nmc_property_tun_get_pi (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 5, nmc_property_tun_get_vnet_hdr (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 6, nmc_property_tun_get_multi_queue (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
-setting_ip_tunnel_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingIPTunnel *s_ip_tunnel = NM_SETTING_IP_TUNNEL (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_IP_TUNNEL (s_ip_tunnel), FALSE);
-
-	tmpl = nmc_fields_setting_ip_tunnel;
-	tmpl_len = sizeof (nmc_fields_setting_ip_tunnel);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_IP_TUNNEL_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_ip_tunnel_get_mode (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 2, nmc_property_ip_tunnel_get_parent (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 3, nmc_property_ip_tunnel_get_local (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 4, nmc_property_ip_tunnel_get_remote (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 5, nmc_property_ip_tunnel_get_ttl (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 6, nmc_property_ip_tunnel_get_tos (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 7, nmc_property_ip_tunnel_get_path_mtu_discovery (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 8, nmc_property_ip_tunnel_get_input_key (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 9, nmc_property_ip_tunnel_get_output_key (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 10, nmc_property_ip_tunnel_get_encapsulation_limit (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 11, nmc_property_ip_tunnel_get_flow_label (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 12, nmc_property_ip_tunnel_get_mtu (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
-setting_macsec_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingMacsec *s_macsec = NM_SETTING_MACSEC (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_MACSEC (s_macsec), FALSE);
-
-	tmpl = nmc_fields_setting_macsec;
-	tmpl_len = sizeof (nmc_fields_setting_macsec);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_MACSEC_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_macsec_get_parent (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 2, nmc_property_macsec_get_mode (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 3, nmc_property_macsec_get_encrypt (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 4, GET_SECRET (secrets, setting, nmc_property_macsec_get_mka_cak));
-	set_val_str (arr, 5, nmc_property_macsec_get_mka_cak_flags (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 6, nmc_property_macsec_get_mka_ckn (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 7, nmc_property_macsec_get_port (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 8, nmc_property_macsec_get_validation (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
-setting_macvlan_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingMacvlan *s_macvlan = NM_SETTING_MACVLAN (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_MACVLAN (s_macvlan), FALSE);
-
-	tmpl = nmc_fields_setting_macvlan;
-	tmpl_len = sizeof (nmc_fields_setting_macvlan);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_MACVLAN_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_macvlan_get_parent (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 2, nmc_property_macvlan_get_mode (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 3, nmc_property_macvlan_get_promiscuous (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 4, nmc_property_macvlan_get_tap (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
-setting_vxlan_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingVxlan *s_vxlan = NM_SETTING_VXLAN (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_VXLAN (s_vxlan), FALSE);
-
-	tmpl = nmc_fields_setting_vxlan;
-	tmpl_len = sizeof (nmc_fields_setting_vxlan);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_VXLAN_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_vxlan_get_parent (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 2, nmc_property_vxlan_get_id (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 3, nmc_property_vxlan_get_local (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 4, nmc_property_vxlan_get_remote (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 5, nmc_property_vxlan_get_source_port_min (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 6, nmc_property_vxlan_get_source_port_max (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 7, nmc_property_vxlan_get_destination_port (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 8, nmc_property_vxlan_get_tos (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 9, nmc_property_vxlan_get_ttl (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 10, nmc_property_vxlan_get_ageing (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 11, nmc_property_vxlan_get_limit (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 12, nmc_property_vxlan_get_learning (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 13, nmc_property_vxlan_get_proxy (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 14, nmc_property_vxlan_get_rsc (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 15, nmc_property_vxlan_get_l2_miss (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 16, nmc_property_vxlan_get_l3_miss (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -7417,11 +5251,6 @@ static const NmcPropertyType _pt_gobject_mac = {
 	.set_fcn =                      _set_fcn_gobject_mac,
 };
 
-static const NmcPropertyType _pt_gobject_mac_cloned = {
-	.get_fcn =                      _get_fcn_gobject,
-	.set_fcn =                      _set_fcn_gobject_mac_cloned,
-};
-
 static const NmcPropertyType _pt_gobject_secret_flags = {
 	.get_fcn =                      _get_fcn_gobject_secret_flags,
 	.set_fcn =                      _set_fcn_gobject_secret_flags,
@@ -7452,6 +5281,14 @@ static const NmcPropertyType _pt_nmc_getset = {
 	/* macro that returns @func as const (guint32(*)(NMSetting*)) type, but checks
 	 * that the actual type is (guint32(*)(type *)). */ \
 	((guint32 (*) (NMSetting *)) ((sizeof (func == ((guint32 (*) (type *)) func))) ? func : func) )
+
+#define TEAM_DESCRIBE_MESSAGE \
+	"nmcli can accepts both direct JSON configuration data and a file name containing " \
+	"the configuration. In the latter case the file is read and the contents is put " \
+	"into this property.\n\n" \
+	"Examples: set team.config " \
+	"{ \"device\": \"team0\", \"runner\": {\"name\": \"roundrobin\"}, \"ports\": {\"eth1\": {}, \"eth2\": {}} }\n" \
+	"          set team.config /etc/my-team.conf\n"
 
 static const NmcPropertyInfo properties_setting_802_1x[] = {
 	PROPERTY_INFO_NAME(),
@@ -7796,6 +5633,121 @@ static const NmcPropertyInfo properties_setting_adsl[] = {
 	},
 };
 
+static const NmcPropertyInfo properties_setting_bluetooth[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_BLUETOOTH_BDADDR),
+		.property_type =                &_pt_gobject_mac,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_BLUETOOTH_TYPE),
+		.property_type =                &_pt_gobject_string,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			.values_static =            VALUES_STATIC (NM_SETTING_BLUETOOTH_TYPE_DUN,
+			                                           NM_SETTING_BLUETOOTH_TYPE_PANU),
+		),
+	},
+};
+
+static const NmcPropertyInfo properties_setting_bond[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_BOND_OPTIONS),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.describe_fcn =             _describe_fcn_bond_options,
+			.get_fcn =                  _get_fcn_nmc,
+			.set_fcn =                  _set_fcn_nmc,
+			.remove_fcn =               _remove_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_bond_get_options,
+			.set_fcn =                  nmc_property_bond_set_options,
+			.remove_fcn =               nmc_property_bond_remove_option_options,
+			.values_fcn =               nmc_property_bond_allowed_options,
+		),
+	},
+};
+
+static const NmcPropertyInfo properties_setting_bridge[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_BRIDGE_MAC_ADDRESS),
+		.property_type =                &_pt_gobject_mac,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_BRIDGE_STP),
+		.property_type =                &_pt_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_BRIDGE_PRIORITY),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_BRIDGE_FORWARD_DELAY),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_BRIDGE_HELLO_TIME),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_BRIDGE_MAX_AGE),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_BRIDGE_AGEING_TIME),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_BRIDGE_MULTICAST_SNOOPING),
+		.property_type =                &_pt_gobject_bool,
+	},
+};
+
+static const NmcPropertyInfo properties_setting_bridge_port[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_BRIDGE_PORT_PRIORITY),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_BRIDGE_PORT_PATH_COST),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE),
+		.property_type =                &_pt_gobject_bool,
+	},
+};
+
+static const NmcPropertyInfo properties_setting_cdma[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_CDMA_NUMBER),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_CDMA_USERNAME),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_CDMA_PASSWORD),
+		.is_secret =                    TRUE,
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_CDMA_PASSWORD_FLAGS),
+		.property_type =                &_pt_gobject_secret_flags,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_CDMA_MTU),
+		.property_type =                &_pt_gobject_mtu,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (mtu,
+			.get_fcn =                  MTU_GET_FCN (NMSettingCdma, nm_setting_cdma_get_mtu),
+		),
+	},
+};
+
 static const NmcPropertyInfo properties_setting_connection[] = {
 	PROPERTY_INFO_NAME(),
 	{
@@ -8072,6 +6024,120 @@ static const NmcPropertyInfo properties_setting_dcb[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
 			.get_fcn =                  nmc_property_dcb_get_pg_traffic_class,
 			.set_fcn =                  nmc_property_dcb_set_pg_traffic_class,
+		),
+	},
+};
+
+static const NmcPropertyInfo properties_setting_dummy[] = {
+	PROPERTY_INFO_NAME(),
+};
+
+static const NmcPropertyInfo properties_setting_gsm[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_GSM_NUMBER),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_GSM_USERNAME),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_GSM_PASSWORD),
+		.is_secret =                    TRUE,
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_GSM_PASSWORD_FLAGS),
+		.property_type =                &_pt_gobject_secret_flags,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_GSM_APN),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_GSM_NETWORK_ID),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_GSM_PIN),
+		.is_secret =                    TRUE,
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_GSM_PIN_FLAGS),
+		.property_type =                &_pt_gobject_secret_flags,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_GSM_HOME_ONLY),
+		.property_type =                &_pt_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_GSM_DEVICE_ID),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_GSM_SIM_ID),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_GSM_SIM_OPERATOR_ID),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.set_fcn =                  nmc_property_gsm_set_sim_operator_id,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_GSM_MTU),
+		.property_type =                &_pt_gobject_mtu,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (mtu,
+			.get_fcn =                  MTU_GET_FCN (NMSettingGsm, nm_setting_gsm_get_mtu),
+		),
+	},
+};
+
+static const NmcPropertyInfo properties_setting_infiniband[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_INFINIBAND_MAC_ADDRESS),
+		.property_type =                &_pt_gobject_mac,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (mac,
+			.mode =                     NMC_PROPERTY_TYPE_MAC_MODE_INFINIBAND,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_INFINIBAND_MTU),
+		.property_type =                &_pt_gobject_mtu,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (mtu,
+			.get_fcn =                  MTU_GET_FCN (NMSettingInfiniband, nm_setting_infiniband_get_mtu),
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_INFINIBAND_TRANSPORT_MODE),
+		.property_type =                &_pt_gobject_string,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			.values_static =            VALUES_STATIC ("datagram", "connected"),
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_INFINIBAND_P_KEY),
+		.property_type =                &_pt_nmc_getset,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_ib_get_p_key,
+			.set_fcn =                  nmc_property_ib_set_p_key,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_INFINIBAND_PARENT),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.set_fcn =                  nmc_property_set_ifname,
 		),
 	},
 };
@@ -8377,6 +6443,177 @@ static const NmcPropertyInfo properties_setting_ip6_config[] = {
 	},
 };
 
+static const NmcPropertyInfo properties_setting_ip_tunnel[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_IP_TUNNEL_MODE),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_nmc,
+			.set_fcn =                  _set_fcn_nmc,
+			.values_fcn =               _values_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_ip_tunnel_get_mode,
+			.set_fcn =                  nmc_property_ip_tunnel_set_mode,
+			.values_fcn =               nmc_property_ip_tunnel_allowed_mode,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_TUNNEL_PARENT),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_TUNNEL_LOCAL),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_TUNNEL_REMOTE),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_TUNNEL_TTL),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_TUNNEL_TOS),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_TUNNEL_PATH_MTU_DISCOVERY),
+		.property_type =                &_pt_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_TUNNEL_INPUT_KEY),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_TUNNEL_OUTPUT_KEY),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_TUNNEL_ENCAPSULATION_LIMIT),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_TUNNEL_FLOW_LABEL),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_IP_TUNNEL_MTU),
+		.property_type =                &_pt_gobject_mtu,
+	},
+};
+
+static const NmcPropertyInfo properties_setting_macsec[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_MACSEC_PARENT),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_MACSEC_MODE),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_nmc,
+			.set_fcn =                  _set_fcn_nmc,
+			.values_fcn =               _values_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_macsec_get_mode,
+			.set_fcn =                  nmc_property_macsec_set_mode,
+			.values_fcn =               nmc_property_macsec_allowed_mode,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_MACSEC_ENCRYPT),
+		.property_type =                &_pt_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_MACSEC_MKA_CAK),
+		.is_secret =                    TRUE,
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_MACSEC_MKA_CAK_FLAGS),
+		.property_type =                &_pt_gobject_secret_flags,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_MACSEC_MKA_CKN),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_MACSEC_PORT),
+		.property_type =                &_pt_gobject_int,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_MACSEC_VALIDATION),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_nmc,
+			.set_fcn =                  _set_fcn_nmc,
+			.values_fcn =               _values_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_macsec_get_validation,
+			.set_fcn =                  nmc_property_macsec_set_validation,
+			.values_fcn =               nmc_property_macsec_allowed_validation,
+		),
+	},
+};
+
+static const NmcPropertyInfo properties_setting_macvlan[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_MACVLAN_PARENT),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_MACVLAN_MODE),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_nmc,
+			.set_fcn =                  _set_fcn_nmc,
+			.values_fcn =               _values_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_macvlan_get_mode,
+			.set_fcn =                  nmc_property_macvlan_set_mode,
+			.values_fcn =               nmc_property_macvlan_allowed_mode,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_MACVLAN_PROMISCUOUS),
+		.property_type =                &_pt_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_MACVLAN_TAP),
+		.property_type =                &_pt_gobject_bool,
+	},
+};
+
+static const NmcPropertyInfo properties_setting_olpc_mesh[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_OLPC_MESH_SSID),
+		.property_type =                &_pt_nmc_getset,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_olpc_get_ssid,
+			.set_fcn =                  nmc_property_set_ssid,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_OLPC_MESH_CHANNEL),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.set_fcn =                  nmc_property_olpc_set_channel,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS),
+		.property_type =                &_pt_gobject_mac,
+	},
+};
+
 static const NmcPropertyInfo properties_setting_pppoe[] = {
 	PROPERTY_INFO_NAME (),
 	{
@@ -8512,6 +6749,268 @@ static const NmcPropertyInfo properties_setting_proxy[] = {
 	},
 };
 
+static const NmcPropertyInfo properties_setting_team[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_TEAM_CONFIG),
+		.describe_message =             N_ (TEAM_DESCRIBE_MESSAGE),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.set_fcn =                  nmc_property_team_set_config,
+		),
+	},
+};
+
+static const NmcPropertyInfo properties_setting_team_port[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_TEAM_PORT_CONFIG),
+		.describe_message =             N_ (TEAM_DESCRIBE_MESSAGE),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.set_fcn =                  nmc_property_team_set_config,
+		),
+	},
+};
+
+static const NmcPropertyInfo properties_setting_tun[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_TUN_MODE),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_nmc,
+			.set_fcn =                  _set_fcn_nmc,
+			.values_fcn =               _values_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_tun_get_mode,
+			.set_fcn =                  nmc_property_tun_set_mode,
+			.values_fcn =               nmc_property_tun_allowed_mode,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_TUN_OWNER),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_TUN_GROUP),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_TUN_PI),
+		.property_type =                &_pt_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_TUN_VNET_HDR),
+		.property_type =                &_pt_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_TUN_MULTI_QUEUE),
+		.property_type =                &_pt_gobject_bool,
+	},
+};
+
+static const NmcPropertyInfo properties_setting_serial[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_SERIAL_BAUD),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_SERIAL_BITS),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_SERIAL_PARITY),
+		.property_type =                &_pt_nmc_getset,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_serial_get_parity,
+			.set_fcn =                  nmc_property_serial_set_parity,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_SERIAL_STOPBITS),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_SERIAL_SEND_DELAY),
+		.property_type =                &_pt_gobject_uint,
+	},
+};
+
+static const NmcPropertyInfo properties_setting_vlan[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_VLAN_PARENT),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_VLAN_ID),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_VLAN_FLAGS),
+		.property_type =                &_pt_nmc_getset,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_vlan_get_flags,
+			.set_fcn =                  nmc_property_set_flags,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_VLAN_INGRESS_PRIORITY_MAP),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_nmc,
+			.set_fcn =                  _set_fcn_nmc,
+			.remove_fcn =               _remove_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_vlan_get_ingress_priority_map,
+			.set_fcn =                  nmc_property_vlan_set_ingress_priority_map,
+			.remove_fcn =               nmc_property_vlan_remove_ingress_priority_map,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_VLAN_EGRESS_PRIORITY_MAP),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_nmc,
+			.set_fcn =                  _set_fcn_nmc,
+			.remove_fcn =               _remove_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_vlan_get_egress_priority_map,
+			.set_fcn =                  nmc_property_vlan_set_egress_priority_map,
+			.remove_fcn =               nmc_property_vlan_remove_egress_priority_map,
+		),
+	},
+};
+
+static const NmcPropertyInfo properties_setting_vpn[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_VPN_SERVICE_TYPE),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.set_fcn =                  nmc_property_set_vpn_service,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_VPN_USER_NAME),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_VPN_DATA),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_nmc,
+			.set_fcn =                  _set_fcn_nmc,
+			.remove_fcn =               _remove_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_vpn_get_data,
+			.set_fcn =                  nmc_property_vpn_set_data,
+			.remove_fcn =               nmc_property_vpn_remove_option_data,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_VPN_SECRETS),
+		.is_secret =                    TRUE,
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_nmc,
+			.set_fcn =                  _set_fcn_nmc,
+			.remove_fcn =               _remove_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_vpn_get_secrets,
+			.set_fcn =                  nmc_property_vpn_set_secrets,
+			.remove_fcn =               nmc_property_vpn_remove_option_secret,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_VPN_PERSISTENT),
+		.property_type =                &_pt_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_VPN_TIMEOUT),
+		.property_type =                &_pt_gobject_uint,
+	},
+};
+
+static const NmcPropertyInfo properties_setting_vxlan[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_VXLAN_PARENT),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_VXLAN_ID),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_VXLAN_LOCAL),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_VXLAN_REMOTE),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_VXLAN_SOURCE_PORT_MIN),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_VXLAN_SOURCE_PORT_MAX),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_VXLAN_DESTINATION_PORT),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_VXLAN_TOS),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_VXLAN_TTL),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_VXLAN_AGEING),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_VXLAN_LIMIT),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_VXLAN_LEARNING),
+		.property_type =                &_pt_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_VXLAN_PROXY),
+		.property_type =                &_pt_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_VXLAN_RSC),
+		.property_type =                &_pt_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_VXLAN_L2_MISS),
+		.property_type =                &_pt_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_VXLAN_L3_MISS),
+		.property_type =                &_pt_gobject_bool,
+	},
+};
+
 static const NmcPropertyInfo properties_setting_wimax[] = {
 	PROPERTY_INFO_NAME(),
 	{
@@ -8555,7 +7054,10 @@ static const NmcPropertyInfo properties_setting_wired[] = {
 	},
 	{
 		.property_name =                N_ (NM_SETTING_WIRED_CLONED_MAC_ADDRESS),
-		.property_type =                &_pt_gobject_mac_cloned,
+		.property_type =                &_pt_gobject_mac,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (mac,
+			.mode =                     NMC_PROPERTY_TYPE_MAC_MODE_CLONED,
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_WIRED_GENERATE_MAC_ADDRESS_MASK),
@@ -8685,7 +7187,10 @@ static const NmcPropertyInfo properties_setting_wireless[] = {
 	},
 	{
 		.property_name =                N_ (NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS),
-		.property_type =                &_pt_gobject_mac_cloned,
+		.property_type =                &_pt_gobject_mac,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (mac,
+			.mode =                     NMC_PROPERTY_TYPE_MAC_MODE_CLONED,
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_WIRELESS_GENERATE_MAC_ADDRESS_MASK),
@@ -8889,23 +7394,28 @@ const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM] = {
 	},
 	[NM_META_SETTING_TYPE_BLUETOOTH] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_BLUETOOTH],
-		.get_setting_details                = setting_bluetooth_details,
+		.properties                         = properties_setting_bluetooth,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_bluetooth),
 	},
 	[NM_META_SETTING_TYPE_BOND] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_BOND],
-		.get_setting_details                = setting_bond_details,
+		.properties                         = properties_setting_bond,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_bond),
 	},
 	[NM_META_SETTING_TYPE_BRIDGE] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_BRIDGE],
-		.get_setting_details                = setting_bridge_details,
+		.properties                         = properties_setting_bridge,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_bridge),
 	},
 	[NM_META_SETTING_TYPE_BRIDGE_PORT] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_BRIDGE_PORT],
-		.get_setting_details                = setting_bridge_port_details,
+		.properties                         = properties_setting_bridge_port,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_bridge_port),
 	},
 	[NM_META_SETTING_TYPE_CDMA] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_CDMA],
-		.get_setting_details                = setting_cdma_details,
+		.properties                         = properties_setting_cdma,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_cdma),
 	},
 	[NM_META_SETTING_TYPE_CONNECTION] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_CONNECTION],
@@ -8917,13 +7427,20 @@ const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM] = {
 		.properties                         = properties_setting_dcb,
 		.properties_num                     = G_N_ELEMENTS (properties_setting_dcb),
 	},
+	[NM_META_SETTING_TYPE_DUMMY] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_DUMMY],
+		.properties                         = properties_setting_dummy,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_dummy),
+	},
 	[NM_META_SETTING_TYPE_GSM] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_GSM],
-		.get_setting_details                = setting_gsm_details,
+		.properties                         = properties_setting_gsm,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_gsm),
 	},
 	[NM_META_SETTING_TYPE_INFINIBAND] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_INFINIBAND],
-		.get_setting_details                = setting_infiniband_details,
+		.properties                         = properties_setting_infiniband,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_infiniband),
 	},
 	[NM_META_SETTING_TYPE_IP4_CONFIG] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_IP4_CONFIG],
@@ -8937,19 +7454,23 @@ const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM] = {
 	},
 	[NM_META_SETTING_TYPE_IP_TUNNEL] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_IP_TUNNEL],
-		.get_setting_details                = setting_ip_tunnel_details,
+		.properties                         = properties_setting_ip_tunnel,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_ip_tunnel),
 	},
 	[NM_META_SETTING_TYPE_MACSEC] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_MACSEC],
-		.get_setting_details                = setting_macsec_details,
+		.properties                         = properties_setting_macsec,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_macsec),
 	},
 	[NM_META_SETTING_TYPE_MACVLAN] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_MACVLAN],
-		.get_setting_details                = setting_macvlan_details,
+		.properties                         = properties_setting_macvlan,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_macvlan),
 	},
 	[NM_META_SETTING_TYPE_OLPC_MESH] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_OLPC_MESH],
-		.get_setting_details                = setting_olpc_mesh_details,
+		.properties                         = properties_setting_olpc_mesh,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_olpc_mesh),
 	},
 	[NM_META_SETTING_TYPE_PPPOE] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_PPPOE],
@@ -8968,31 +7489,38 @@ const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM] = {
 	},
 	[NM_META_SETTING_TYPE_SERIAL] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_SERIAL],
-		.get_setting_details                = setting_serial_details,
+		.properties                         = properties_setting_serial,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_serial),
 	},
 	[NM_META_SETTING_TYPE_TEAM] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_TEAM],
-		.get_setting_details                = setting_team_details,
+		.properties                         = properties_setting_team,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_team),
 	},
 	[NM_META_SETTING_TYPE_TEAM_PORT] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_TEAM_PORT],
-		.get_setting_details                = setting_team_port_details,
+		.properties                         = properties_setting_team_port,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_team_port),
 	},
 	[NM_META_SETTING_TYPE_TUN] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_TUN],
-		.get_setting_details                = setting_tun_details,
+		.properties                         = properties_setting_tun,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_tun),
 	},
 	[NM_META_SETTING_TYPE_VLAN] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_VLAN],
-		.get_setting_details                = setting_vlan_details,
+		.properties                         = properties_setting_vlan,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_vlan),
 	},
 	[NM_META_SETTING_TYPE_VPN] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_VPN],
-		.get_setting_details                = setting_vpn_details,
+		.properties                         = properties_setting_vpn,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_vpn),
 	},
 	[NM_META_SETTING_TYPE_VXLAN] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_VXLAN],
-		.get_setting_details                = setting_vxlan_details,
+		.properties                         = properties_setting_vxlan,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_vxlan),
 	},
 	[NM_META_SETTING_TYPE_WIMAX] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_WIMAX],
@@ -9015,21 +7543,3 @@ const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM] = {
 		.properties_num                     = G_N_ELEMENTS (properties_setting_wireless_security),
 	},
 };
-
-gboolean
-setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	const NMMetaSettingInfo *meta_setting_info;
-	const NmcSettingInfo *setting_info;
-
-	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
-
-	meta_setting_info = nm_meta_setting_infos_by_gtype (G_OBJECT_TYPE (setting));
-	g_return_val_if_fail (meta_setting_info, FALSE);
-
-	setting_info = &nmc_setting_infos[meta_setting_info->meta_type];
-	g_return_val_if_fail (setting_info, FALSE);
-
-	return (setting_info->get_setting_details ?: _get_setting_details) (setting_info, setting, nmc, one_prop, secrets);
-}
-

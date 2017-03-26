@@ -146,6 +146,8 @@ complete_fields (const char *prefix)
 	complete_field (h, NULL, nmc_fields_dev_show_sections);
 	complete_field (h, NULL, nmc_fields_dev_lldp_list);
 
+	/* FIXME: just iterate over the list, but ensure that the setting name
+	 * is identical to setting_info's setting_name. */
 	complete_field_new (h, "connection", NM_META_SETTING_TYPE_CONNECTION);
 	complete_field_new (h, "802-3-ethernet", NM_META_SETTING_TYPE_WIRED);
 	complete_field_new (h, "802-1x", NM_META_SETTING_TYPE_802_1X);
@@ -153,28 +155,30 @@ complete_fields (const char *prefix)
 	complete_field_new (h, "802-11-wireless-security", NM_META_SETTING_TYPE_WIRELESS_SECURITY);
 	complete_field_new (h, "ipv4", NM_META_SETTING_TYPE_IP4_CONFIG);
 	complete_field_new (h, "ipv6", NM_META_SETTING_TYPE_IP6_CONFIG);
-	complete_field (h, "serial", nmc_fields_setting_serial);
+	complete_field_new (h, "serial", NM_META_SETTING_TYPE_SERIAL);
+	complete_field_new (h, "dummy", NM_META_SETTING_TYPE_DUMMY);
 	complete_field_new (h, "ppp", NM_META_SETTING_TYPE_PPP);
 	complete_field_new (h, "pppoe", NM_META_SETTING_TYPE_PPPOE);
 	complete_field_new (h, "adsl", NM_META_SETTING_TYPE_ADSL);
-	complete_field (h, "gsm", nmc_fields_setting_gsm);
-	complete_field (h, "cdma", nmc_fields_setting_cdma);
-	complete_field (h, "bluetooth", nmc_fields_setting_bluetooth);
-	complete_field (h, "802-11-olpc-mesh", nmc_fields_setting_olpc_mesh);
-	complete_field (h, "vpn", nmc_fields_setting_vpn);
+	complete_field_new (h, "gsm", NM_META_SETTING_TYPE_GSM);
+	complete_field_new (h, "macsec", NM_META_SETTING_TYPE_MACSEC);
+	complete_field_new (h, "cdma", NM_META_SETTING_TYPE_CDMA);
+	complete_field_new (h, "bluetooth", NM_META_SETTING_TYPE_BLUETOOTH);
+	complete_field_new (h, "802-11-olpc-mesh", NM_META_SETTING_TYPE_OLPC_MESH);
+	complete_field_new (h, "vpn", NM_META_SETTING_TYPE_VPN);
 	complete_field_new (h, "wimax", NM_META_SETTING_TYPE_WIMAX);
-	complete_field (h, "infiniband", nmc_fields_setting_infiniband);
-	complete_field (h, "bond", nmc_fields_setting_bond);
-	complete_field (h, "vlan", nmc_fields_setting_vlan);
-	complete_field (h, "bridge", nmc_fields_setting_bridge);
-	complete_field (h, "bridge-port", nmc_fields_setting_bridge_port);
-	complete_field (h, "team", nmc_fields_setting_team);
-	complete_field (h, "team-port", nmc_fields_setting_team_port);
+	complete_field_new (h, "infiniband", NM_META_SETTING_TYPE_INFINIBAND);
+	complete_field_new (h, "bond", NM_META_SETTING_TYPE_BOND);
+	complete_field_new (h, "vlan", NM_META_SETTING_TYPE_VLAN);
+	complete_field_new (h, "bridge", NM_META_SETTING_TYPE_BRIDGE);
+	complete_field_new (h, "bridge-port", NM_META_SETTING_TYPE_BRIDGE_PORT);
+	complete_field_new (h, "team", NM_META_SETTING_TYPE_TEAM);
+	complete_field_new (h, "team-port", NM_META_SETTING_TYPE_TEAM_PORT);
 	complete_field_new (h, "dcb", NM_META_SETTING_TYPE_DCB);
-	complete_field (h, "tun", nmc_fields_setting_tun);
-	complete_field (h, "ip-tunnel", nmc_fields_setting_ip_tunnel);
-	complete_field (h, "macvlan", nmc_fields_setting_macvlan);
-	complete_field (h, "vxlan", nmc_fields_setting_vxlan);
+	complete_field_new (h, "tun", NM_META_SETTING_TYPE_TUN);
+	complete_field_new (h, "ip-tunnel", NM_META_SETTING_TYPE_IP_TUNNEL);
+	complete_field_new (h, "macvlan", NM_META_SETTING_TYPE_MACVLAN);
+	complete_field_new (h, "vxlan", NM_META_SETTING_TYPE_VXLAN);
 	complete_field_new (h, "proxy", NM_META_SETTING_TYPE_PROXY);
 
 	g_hash_table_foreach (h, complete_one, (gpointer) prefix);

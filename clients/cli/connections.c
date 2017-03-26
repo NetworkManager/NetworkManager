@@ -148,12 +148,6 @@ NmcOutputField nmc_fields_con_show[] = {
 #define NMC_FIELDS_CON_SHOW_COMMON  "NAME,UUID,TYPE,DEVICE"
 
 /* Helper macro to define fields */
-#define SETTING_FIELD(setting, props) \
-	{ \
-		.name = setting, \
-		.name_l10n = N_(setting), \
-		.group_list = props, \
-	}
 #define SETTING_FIELD_TYPE(setting, setting_type) \
 	{ \
 		.name = setting, \
@@ -170,34 +164,34 @@ NmcOutputField nmc_fields_settings_names[] = {
 	SETTING_FIELD_TYPE (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NM_META_SETTING_TYPE_WIRELESS_SECURITY), /* 4 */
 	SETTING_FIELD_TYPE (NM_SETTING_IP4_CONFIG_SETTING_NAME,   NM_META_SETTING_TYPE_IP4_CONFIG),          /* 5 */
 	SETTING_FIELD_TYPE (NM_SETTING_IP6_CONFIG_SETTING_NAME,   NM_META_SETTING_TYPE_IP6_CONFIG),          /* 6 */
-	SETTING_FIELD (NM_SETTING_SERIAL_SETTING_NAME,            nmc_fields_setting_serial + 1),            /* 7 */
+	SETTING_FIELD_TYPE (NM_SETTING_SERIAL_SETTING_NAME,       NM_META_SETTING_TYPE_SERIAL),              /* 7 */
 	SETTING_FIELD_TYPE (NM_SETTING_PPP_SETTING_NAME,          NM_META_SETTING_TYPE_PPP),                 /* 8 */
 	SETTING_FIELD_TYPE (NM_SETTING_PPPOE_SETTING_NAME,        NM_META_SETTING_TYPE_PPPOE),               /* 9 */
-	SETTING_FIELD (NM_SETTING_GSM_SETTING_NAME,               nmc_fields_setting_gsm + 1),               /* 10 */
-	SETTING_FIELD (NM_SETTING_CDMA_SETTING_NAME,              nmc_fields_setting_cdma + 1),              /* 11 */
-	SETTING_FIELD (NM_SETTING_BLUETOOTH_SETTING_NAME,         nmc_fields_setting_bluetooth + 1),         /* 12 */
-	SETTING_FIELD (NM_SETTING_OLPC_MESH_SETTING_NAME,         nmc_fields_setting_olpc_mesh + 1),         /* 13 */
-	SETTING_FIELD (NM_SETTING_VPN_SETTING_NAME,               nmc_fields_setting_vpn + 1),               /* 14 */
+	SETTING_FIELD_TYPE (NM_SETTING_GSM_SETTING_NAME,          NM_META_SETTING_TYPE_GSM),                 /* 10 */
+	SETTING_FIELD_TYPE (NM_SETTING_CDMA_SETTING_NAME,         NM_META_SETTING_TYPE_CDMA),                /* 11 */
+	SETTING_FIELD_TYPE (NM_SETTING_BLUETOOTH_SETTING_NAME,    NM_META_SETTING_TYPE_BLUETOOTH),           /* 12 */
+	SETTING_FIELD_TYPE (NM_SETTING_OLPC_MESH_SETTING_NAME,    NM_META_SETTING_TYPE_OLPC_MESH),           /* 13 */
+	SETTING_FIELD_TYPE (NM_SETTING_VPN_SETTING_NAME,          NM_META_SETTING_TYPE_VPN),                 /* 14 */
 	SETTING_FIELD_TYPE (NM_SETTING_WIMAX_SETTING_NAME,        NM_META_SETTING_TYPE_WIMAX),               /* 15 */
-	SETTING_FIELD (NM_SETTING_INFINIBAND_SETTING_NAME,        nmc_fields_setting_infiniband + 1),        /* 16 */
-	SETTING_FIELD (NM_SETTING_BOND_SETTING_NAME,              nmc_fields_setting_bond + 1),              /* 17 */
-	SETTING_FIELD (NM_SETTING_VLAN_SETTING_NAME,              nmc_fields_setting_vlan + 1),              /* 18 */
+	SETTING_FIELD_TYPE (NM_SETTING_INFINIBAND_SETTING_NAME,   NM_META_SETTING_TYPE_INFINIBAND),          /* 16 */
+	SETTING_FIELD_TYPE (NM_SETTING_BOND_SETTING_NAME,         NM_META_SETTING_TYPE_BOND),                /* 17 */
+	SETTING_FIELD_TYPE (NM_SETTING_VLAN_SETTING_NAME,         NM_META_SETTING_TYPE_VLAN),                /* 18 */
 	SETTING_FIELD_TYPE (NM_SETTING_ADSL_SETTING_NAME,         NM_META_SETTING_TYPE_ADSL),                /* 19 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_SETTING_NAME,            nmc_fields_setting_bridge + 1),            /* 20 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_PORT_SETTING_NAME,       nmc_fields_setting_bridge_port + 1),       /* 21 */
-	SETTING_FIELD (NM_SETTING_TEAM_SETTING_NAME,              nmc_fields_setting_team + 1),              /* 22 */
-	SETTING_FIELD (NM_SETTING_TEAM_PORT_SETTING_NAME,         nmc_fields_setting_team_port + 1),         /* 23 */
+	SETTING_FIELD_TYPE (NM_SETTING_BRIDGE_SETTING_NAME,       NM_META_SETTING_TYPE_BRIDGE),              /* 20 */
+	SETTING_FIELD_TYPE (NM_SETTING_BRIDGE_PORT_SETTING_NAME,  NM_META_SETTING_TYPE_BRIDGE_PORT),         /* 21 */
+	SETTING_FIELD_TYPE (NM_SETTING_TEAM_SETTING_NAME,         NM_META_SETTING_TYPE_TEAM),                /* 22 */
+	SETTING_FIELD_TYPE (NM_SETTING_TEAM_PORT_SETTING_NAME,    NM_META_SETTING_TYPE_TEAM_PORT),           /* 23 */
 	SETTING_FIELD_TYPE (NM_SETTING_DCB_SETTING_NAME,          NM_META_SETTING_TYPE_DCB),                 /* 24 */
-	SETTING_FIELD (NM_SETTING_TUN_SETTING_NAME,               nmc_fields_setting_tun + 1),               /* 25 */
-	SETTING_FIELD (NM_SETTING_IP_TUNNEL_SETTING_NAME,         nmc_fields_setting_ip_tunnel + 1),         /* 26 */
-	SETTING_FIELD (NM_SETTING_MACSEC_SETTING_NAME,            nmc_fields_setting_macsec + 1),            /* 27 */
-	SETTING_FIELD (NM_SETTING_MACVLAN_SETTING_NAME,           nmc_fields_setting_macvlan + 1),           /* 28 */
-	SETTING_FIELD (NM_SETTING_VXLAN_SETTING_NAME,             nmc_fields_setting_vxlan + 1),             /* 29 */
+	SETTING_FIELD_TYPE (NM_SETTING_TUN_SETTING_NAME,          NM_META_SETTING_TYPE_TUN),                 /* 25 */
+	SETTING_FIELD_TYPE (NM_SETTING_IP_TUNNEL_SETTING_NAME,    NM_META_SETTING_TYPE_IP_TUNNEL),           /* 26 */
+	SETTING_FIELD_TYPE (NM_SETTING_MACSEC_SETTING_NAME,       NM_META_SETTING_TYPE_MACSEC),              /* 27 */
+	SETTING_FIELD_TYPE (NM_SETTING_MACVLAN_SETTING_NAME,      NM_META_SETTING_TYPE_MACVLAN),             /* 28 */
+	SETTING_FIELD_TYPE (NM_SETTING_VXLAN_SETTING_NAME,        NM_META_SETTING_TYPE_VXLAN),               /* 29 */
 	SETTING_FIELD_TYPE (NM_SETTING_PROXY_SETTING_NAME,        NM_META_SETTING_TYPE_PROXY),               /* 30 */
-	SETTING_FIELD (NM_SETTING_DUMMY_SETTING_NAME,             nmc_fields_setting_dummy + 1),             /* 31 */
+	SETTING_FIELD_TYPE (NM_SETTING_DUMMY_SETTING_NAME,        NM_META_SETTING_TYPE_DUMMY),               /* 31 */
 	{NULL, NULL, 0, NULL, NULL, FALSE, FALSE, 0}
 };
-#define NMC_FIELDS_SETTINGS_NAMES_ALL_X  NM_SETTING_CONNECTION_SETTING_NAME","\
+#define NMC_FIELDS_SETTINGS_NAMES_ALL    NM_SETTING_CONNECTION_SETTING_NAME","\
                                          NM_SETTING_WIRED_SETTING_NAME","\
                                          NM_SETTING_802_1X_SETTING_NAME","\
                                          NM_SETTING_WIRELESS_SETTING_NAME","\
@@ -227,7 +221,8 @@ NmcOutputField nmc_fields_settings_names[] = {
                                          NM_SETTING_MACVLAN_SETTING_NAME"," \
                                          NM_SETTING_VXLAN_SETTING_NAME"," \
                                          NM_SETTING_PROXY_SETTING_NAME
-#define NMC_FIELDS_SETTINGS_NAMES_ALL    NMC_FIELDS_SETTINGS_NAMES_ALL_X
+                                         // NM_SETTING_DUMMY_SETTING_NAME
+                                         // NM_SETTING_WIMAX_SETTING_NAME
 
 /* Active connection data */
 /* Available fields for GENERAL group */

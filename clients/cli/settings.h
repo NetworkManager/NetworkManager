@@ -32,6 +32,12 @@ typedef enum {
 	NMC_PROPERTY_GET_PARSABLE,
 } NmcPropertyGetType;
 
+typedef enum {
+	NMC_PROPERTY_TYPE_MAC_MODE_DEFAULT,
+	NMC_PROPERTY_TYPE_MAC_MODE_CLONED,
+	NMC_PROPERTY_TYPE_MAC_MODE_INFINIBAND,
+} NmcPropertyTypeMacMode;
+
 typedef struct _NmcSettingInfo     NmcSettingInfo;
 typedef struct _NmcPropertyInfo    NmcPropertyInfo;
 typedef struct _NmcPropertyType    NmcPropertyType;
@@ -88,6 +94,9 @@ struct _NmcPropertyTypData {
 		struct {
 			guint32 (*get_fcn) (NMSetting *setting);
 		} mtu;
+		struct {
+			NmcPropertyTypeMacMode mode;
+		} mac;
 	};
 	const char *const*values_static;
 };
@@ -111,11 +120,6 @@ struct _NmcPropertyInfo {
 
 struct _NmcSettingInfo {
 	const NMMetaSettingInfo *general;
-	gboolean (*get_setting_details) (const NmcSettingInfo *setting_info,
-	                                 NMSetting *setting,
-	                                 NmCli *nmc,
-	                                 const char *one_prop,
-	                                 gboolean secrets);
 	/* the order of the properties matter. The first *must* be the
 	 * "name", and then the order is as they are listed by default. */
 	const NmcPropertyInfo *properties;
@@ -125,9 +129,6 @@ struct _NmcSettingInfo {
 extern const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM];
 
 /*****************************************************************************/
-
-void nmc_properties_init (void);
-void nmc_properties_cleanup (void);
 
 NMSetting *nmc_setting_new_for_name (const char *name);
 void nmc_setting_custom_init (NMSetting *setting);
@@ -164,25 +165,5 @@ gboolean nmc_property_get_gvalue (NMSetting *setting, const char *prop, GValue *
 gboolean nmc_property_set_gvalue (NMSetting *setting, const char *prop, GValue *value);
 
 gboolean setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets);
-
-extern NmcOutputField nmc_fields_setting_serial[];
-extern NmcOutputField nmc_fields_setting_gsm[];
-extern NmcOutputField nmc_fields_setting_cdma[];
-extern NmcOutputField nmc_fields_setting_bluetooth[];
-extern NmcOutputField nmc_fields_setting_olpc_mesh[];
-extern NmcOutputField nmc_fields_setting_vpn[];
-extern NmcOutputField nmc_fields_setting_infiniband[];
-extern NmcOutputField nmc_fields_setting_bond[];
-extern NmcOutputField nmc_fields_setting_vlan[];
-extern NmcOutputField nmc_fields_setting_bridge[];
-extern NmcOutputField nmc_fields_setting_bridge_port[];
-extern NmcOutputField nmc_fields_setting_team[];
-extern NmcOutputField nmc_fields_setting_team_port[];
-extern NmcOutputField nmc_fields_setting_tun[];
-extern NmcOutputField nmc_fields_setting_ip_tunnel[];
-extern NmcOutputField nmc_fields_setting_macvlan[];
-extern NmcOutputField nmc_fields_setting_macsec[];
-extern NmcOutputField nmc_fields_setting_vxlan[];
-extern NmcOutputField nmc_fields_setting_dummy[];
 
 #endif /* NMC_SETTINGS_H */
