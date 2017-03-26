@@ -150,7 +150,7 @@ complete_fields (const char *prefix)
 	complete_field (h, "802-3-ethernet", nmc_fields_setting_wired);
 	complete_field (h, "802-1x", nmc_fields_setting_8021X);
 	complete_field (h, "802-11-wireless", nmc_fields_setting_wireless);
-	complete_field (h, "802-11-wireless-security", nmc_fields_setting_wireless_security);
+	complete_field_new (h, "802-11-wireless-security", NM_META_SETTING_TYPE_WIRELESS_SECURITY);
 	complete_field_new (h, "ipv4", NM_META_SETTING_TYPE_IP4_CONFIG);
 	complete_field_new (h, "ipv6", NM_META_SETTING_TYPE_IP6_CONFIG);
 	complete_field (h, "serial", nmc_fields_setting_serial);

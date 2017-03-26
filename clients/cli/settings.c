@@ -640,47 +640,6 @@ NmcOutputField nmc_fields_setting_wireless[] = {
                                             NM_SETTING_WIRELESS_HIDDEN"," \
                                             NM_SETTING_WIRELESS_POWERSAVE
 
-/* Available fields for NM_SETTING_WIRELESS_SECURITY_SETTING_NAME */
-NmcOutputField nmc_fields_setting_wireless_security[] = {
-	SETTING_FIELD ("name"),                                            /* 0 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_KEY_MGMT),             /* 1 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX),        /* 2 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_AUTH_ALG),             /* 3 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_PROTO),                /* 4 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_PAIRWISE),             /* 5 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_GROUP),                /* 6 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME),        /* 7 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_WEP_KEY0),             /* 8 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_WEP_KEY1),             /* 9 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_WEP_KEY2),             /* 10 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_WEP_KEY3),             /* 11 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS),        /* 12 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE),         /* 13 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_PSK),                  /* 14 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS),            /* 15 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD),        /* 16 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS),  /* 17 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_WIRELESS_SECURITY_ALL     "name"","\
-                                                     NM_SETTING_WIRELESS_SECURITY_KEY_MGMT","\
-                                                     NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX","\
-                                                     NM_SETTING_WIRELESS_SECURITY_AUTH_ALG","\
-                                                     NM_SETTING_WIRELESS_SECURITY_PROTO","\
-                                                     NM_SETTING_WIRELESS_SECURITY_PAIRWISE","\
-                                                     NM_SETTING_WIRELESS_SECURITY_GROUP","\
-                                                     NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME","\
-                                                     NM_SETTING_WIRELESS_SECURITY_WEP_KEY0","\
-                                                     NM_SETTING_WIRELESS_SECURITY_WEP_KEY1","\
-                                                     NM_SETTING_WIRELESS_SECURITY_WEP_KEY2","\
-                                                     NM_SETTING_WIRELESS_SECURITY_WEP_KEY3","\
-                                                     NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS","\
-                                                     NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE","\
-                                                     NM_SETTING_WIRELESS_SECURITY_PSK","\
-                                                     NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS","\
-                                                     NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD","\
-                                                     NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS
-
 /* Available fields for NM_SETTING_SERIAL_SETTING_NAME */
 NmcOutputField nmc_fields_setting_serial[] = {
 	SETTING_FIELD ("name"),                        /* 0 */
@@ -5517,21 +5476,6 @@ nmc_property_wireless_set_mac_address_randomization (NMSetting *setting,
 	return TRUE;
 }
 
-
-/* --- NM_SETTING_WIRELESS_SECURITY_SETTING_NAME property functions --- */
-DEFINE_GETTER (nmc_property_wifi_sec_get_key_mgmt, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT)
-DEFINE_GETTER (nmc_property_wifi_sec_get_wep_tx_keyidx, NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX)
-DEFINE_GETTER (nmc_property_wifi_sec_get_auth_alg, NM_SETTING_WIRELESS_SECURITY_AUTH_ALG)
-DEFINE_GETTER (nmc_property_wifi_sec_get_proto, NM_SETTING_WIRELESS_SECURITY_PROTO)
-DEFINE_GETTER (nmc_property_wifi_sec_get_pairwise, NM_SETTING_WIRELESS_SECURITY_PAIRWISE)
-DEFINE_GETTER (nmc_property_wifi_sec_get_group, NM_SETTING_WIRELESS_SECURITY_GROUP)
-DEFINE_GETTER (nmc_property_wifi_sec_get_leap_username, NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME)
-DEFINE_SECRET_FLAGS_GETTER (nmc_property_wifi_sec_get_wep_key_flags, NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS)
-DEFINE_GETTER (nmc_property_wifi_sec_get_psk, NM_SETTING_WIRELESS_SECURITY_PSK)
-DEFINE_SECRET_FLAGS_GETTER (nmc_property_wifi_sec_get_psk_flags, NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS)
-DEFINE_GETTER (nmc_property_wifi_sec_get_leap_password, NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD)
-DEFINE_SECRET_FLAGS_GETTER (nmc_property_wifi_sec_get_leap_password_flags, NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS)
-
 static char *
 nmc_property_wifi_sec_get_wep_key0 (NMSetting *setting, NmcPropertyGetType get_type)
 {
@@ -5576,8 +5520,6 @@ nmc_property_wifi_sec_set_key_mgmt (NMSetting *setting, const char *prop, const 
 	return check_and_set_string (setting, prop, val, wifi_sec_valid_key_mgmts, error);
 }
 
-DEFINE_ALLOWED_VAL_FUNC (nmc_property_wifi_sec_allowed_key_mgmt, wifi_sec_valid_key_mgmts)
-
 /* 'auth-alg' */
 static const char *wifi_sec_valid_auth_algs[] = { "open", "shared", "leap", NULL };
 
@@ -5586,8 +5528,6 @@ nmc_property_wifi_sec_set_auth_alg (NMSetting *setting, const char *prop, const 
 {
 	return check_and_set_string (setting, prop, val, wifi_sec_valid_auth_algs, error);
 }
-
-DEFINE_ALLOWED_VAL_FUNC (nmc_property_wifi_sec_allowed_auth_alg, wifi_sec_valid_auth_algs)
 
 /* 'proto' */
 static const char *wifi_sec_valid_protos[] = { "wpa", "rsn", NULL };
@@ -5626,9 +5566,6 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_wifi_sec_remove_proto,
                                nm_setting_wireless_security_remove_proto,
                                _validate_and_remove_wifi_sec_proto)
 
-DEFINE_ALLOWED_VAL_FUNC (nmc_property_wifi_sec_allowed_proto, wifi_sec_valid_protos)
-
-/* 'pairwise' */
 static const char *wifi_sec_valid_pairwises[] = { "tkip", "ccmp", NULL };
 
 DEFINE_SETTER_STR_LIST_MULTI (check_and_add_wifi_sec_pairwise,
@@ -5664,8 +5601,6 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_wifi_sec_remove_pairwise,
                                nm_setting_wireless_security_get_num_pairwise,
                                nm_setting_wireless_security_remove_pairwise,
                                _validate_and_remove_wifi_sec_pairwise)
-
-DEFINE_ALLOWED_VAL_FUNC (nmc_property_wifi_sec_allowed_pairwise, wifi_sec_valid_pairwises)
 
 /* 'group' */
 static const char *wifi_sec_valid_groups[] = { "wep40", "wep104", "tkip", "ccmp", NULL };
@@ -5703,7 +5638,6 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_wifi_sec_remove_group,
                                nm_setting_wireless_security_get_num_groups,
                                nm_setting_wireless_security_remove_group,
                                _validate_and_remove_wifi_sec_group)
-DEFINE_ALLOWED_VAL_FUNC (nmc_property_wifi_sec_allowed_group, wifi_sec_valid_groups)
 
 /* 'wep-key' */
 static gboolean
@@ -5797,18 +5731,6 @@ nmc_property_wifi_set_wep_key_type (NMSetting *setting, const char *prop, const 
 
 	g_object_set (setting, prop, type, NULL);
 	return TRUE;
-}
-
-static const char *
-nmc_property_wifi_describe_wep_key_type (NMSetting *setting, const char *prop)
-{
-	static char *desc = NULL;
-
-	if (G_UNLIKELY (desc == NULL)) {
-		desc = g_strdup_printf (_("Enter the type of WEP keys. The accepted values are: "
-		                          "0 or unknown, 1 or key, and 2 or passphrase.\n"));
-	}
-	return desc;
 }
 
 /* 'psk' */
@@ -7419,127 +7341,6 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL);
 
-	/* Add editable properties for NM_SETTING_WIRELESS_SECURITY_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME""NM_SETTING_WIRELESS_SECURITY_KEY_MGMT,
-	                    nmc_property_wifi_sec_get_key_mgmt,
-	                    nmc_property_wifi_sec_set_key_mgmt,
-	                    NULL,
-	                    NULL,
-	                    nmc_property_wifi_sec_allowed_key_mgmt,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME""NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX,
-	                    nmc_property_wifi_sec_get_wep_tx_keyidx,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME""NM_SETTING_WIRELESS_SECURITY_AUTH_ALG,
-	                    nmc_property_wifi_sec_get_auth_alg,
-	                    nmc_property_wifi_sec_set_auth_alg,
-	                    NULL,
-	                    NULL,
-	                    nmc_property_wifi_sec_allowed_auth_alg,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME""NM_SETTING_WIRELESS_SECURITY_PROTO,
-	                    nmc_property_wifi_sec_get_proto,
-	                    nmc_property_wifi_sec_set_proto,
-	                    nmc_property_wifi_sec_remove_proto,
-	                    NULL,
-	                    nmc_property_wifi_sec_allowed_proto,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME""NM_SETTING_WIRELESS_SECURITY_PAIRWISE,
-	                    nmc_property_wifi_sec_get_pairwise,
-	                    nmc_property_wifi_sec_set_pairwise,
-	                    nmc_property_wifi_sec_remove_pairwise,
-	                    NULL,
-	                    nmc_property_wifi_sec_allowed_pairwise,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME""NM_SETTING_WIRELESS_SECURITY_GROUP,
-	                    nmc_property_wifi_sec_get_group,
-	                    nmc_property_wifi_sec_set_group,
-	                    nmc_property_wifi_sec_remove_group,
-	                    NULL,
-	                    nmc_property_wifi_sec_allowed_group,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME""NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME,
-	                    nmc_property_wifi_sec_get_leap_username,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME""NM_SETTING_WIRELESS_SECURITY_WEP_KEY0,
-	                    nmc_property_wifi_sec_get_wep_key0,
-	                    nmc_property_wifi_set_wep_key,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME""NM_SETTING_WIRELESS_SECURITY_WEP_KEY1,
-	                    nmc_property_wifi_sec_get_wep_key1,
-	                    nmc_property_wifi_set_wep_key,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME""NM_SETTING_WIRELESS_SECURITY_WEP_KEY2,
-	                    nmc_property_wifi_sec_get_wep_key2,
-	                    nmc_property_wifi_set_wep_key,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME""NM_SETTING_WIRELESS_SECURITY_WEP_KEY3,
-	                    nmc_property_wifi_sec_get_wep_key3,
-	                    nmc_property_wifi_set_wep_key,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME""NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS,
-	                    nmc_property_wifi_sec_get_wep_key_flags,
-	                    nmc_property_set_secret_flags,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME""NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE,
-	                    nmc_property_wifi_sec_get_wep_key_type,
-	                    nmc_property_wifi_set_wep_key_type,
-	                    NULL,
-	                    nmc_property_wifi_describe_wep_key_type,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME""NM_SETTING_WIRELESS_SECURITY_PSK,
-	                    nmc_property_wifi_sec_get_psk,
-	                    nmc_property_wifi_set_psk,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME""NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS,
-	                    nmc_property_wifi_sec_get_psk_flags,
-	                    nmc_property_set_secret_flags,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME""NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD,
-	                    nmc_property_wifi_sec_get_leap_password,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME""NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS,
-	                    nmc_property_wifi_sec_get_leap_password_flags,
-	                    nmc_property_set_secret_flags,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-
 	/* Add editable properties for NM_SETTING_TUN_SETTING_NAME */
 	nmc_add_prop_funcs (NM_SETTING_TUN_SETTING_NAME""NM_SETTING_TUN_MODE,
 	                    nmc_property_tun_get_mode,
@@ -8461,48 +8262,6 @@ setting_wireless_details (const NmcSettingInfo *setting_info, NMSetting *setting
 	set_val_str (arr, 14, nmc_property_wireless_get_seen_bssids (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 15, nmc_property_wireless_get_hidden (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 16, nmc_property_wireless_get_powersave (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
-setting_wireless_security_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingWirelessSecurity *s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (s_wireless_sec), FALSE);
-
-	tmpl = nmc_fields_setting_wireless_security;
-	tmpl_len = sizeof (nmc_fields_setting_wireless_security);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_WIRELESS_SECURITY_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_wifi_sec_get_key_mgmt (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 2, nmc_property_wifi_sec_get_wep_tx_keyidx (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 3, nmc_property_wifi_sec_get_auth_alg (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 4, nmc_property_wifi_sec_get_proto (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 5, nmc_property_wifi_sec_get_pairwise (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 6, nmc_property_wifi_sec_get_group (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 7, nmc_property_wifi_sec_get_leap_username (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 8, GET_SECRET (secrets, setting, nmc_property_wifi_sec_get_wep_key0));
-	set_val_str (arr, 9, GET_SECRET (secrets, setting, nmc_property_wifi_sec_get_wep_key1));
-	set_val_str (arr, 10, GET_SECRET (secrets, setting, nmc_property_wifi_sec_get_wep_key2));
-	set_val_str (arr, 11, GET_SECRET (secrets, setting, nmc_property_wifi_sec_get_wep_key3));
-	set_val_str (arr, 12, nmc_property_wifi_sec_get_wep_key_flags (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 13, nmc_property_wifi_sec_get_wep_key_type (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 14, GET_SECRET (secrets, setting, nmc_property_wifi_sec_get_psk));
-	set_val_str (arr, 15, nmc_property_wifi_sec_get_psk_flags (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 16, GET_SECRET (secrets, setting, nmc_property_wifi_sec_get_leap_password));
-	set_val_str (arr, 17, nmc_property_wifi_sec_get_leap_password_flags (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -9884,6 +9643,154 @@ static const NmcPropertyInfo properties_setting_proxy[] = {
 	},
 };
 
+static const NmcPropertyInfo properties_setting_wireless_security[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_WIRELESS_SECURITY_KEY_MGMT),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_WITH_ARG1 (nmc,
+			.values_static =            wifi_sec_valid_key_mgmts,
+			.set_fcn =                  nmc_property_wifi_sec_set_key_mgmt,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRELESS_SECURITY_AUTH_ALG),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_WITH_ARG1 (nmc,
+			.values_static =            wifi_sec_valid_auth_algs,
+			.set_fcn =                  nmc_property_wifi_sec_set_auth_alg,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRELESS_SECURITY_PROTO),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_nmc,
+			.remove_fcn =               _remove_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_WITH_ARG1 (nmc,
+			.values_static =            wifi_sec_valid_protos,
+			.set_fcn =                  nmc_property_wifi_sec_set_proto,
+			.remove_fcn =               nmc_property_wifi_sec_remove_proto,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRELESS_SECURITY_PAIRWISE),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_nmc,
+			.remove_fcn =               _remove_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_WITH_ARG1 (nmc,
+			.values_static =            wifi_sec_valid_pairwises,
+			.set_fcn =                  nmc_property_wifi_sec_set_pairwise,
+			.remove_fcn =               nmc_property_wifi_sec_remove_pairwise,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRELESS_SECURITY_GROUP),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_nmc,
+			.remove_fcn =               _remove_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_WITH_ARG1 (nmc,
+			.values_static =            wifi_sec_valid_groups,
+			.set_fcn =                  nmc_property_wifi_sec_set_group,
+			.remove_fcn =               nmc_property_wifi_sec_remove_group,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRELESS_SECURITY_WEP_KEY0),
+		.is_secret =                    TRUE,
+		.property_type =                &_pt_nmc_getset,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_wifi_sec_get_wep_key0,
+			.set_fcn =                  nmc_property_wifi_set_wep_key,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRELESS_SECURITY_WEP_KEY1),
+		.is_secret =                    TRUE,
+		.property_type =                &_pt_nmc_getset,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_wifi_sec_get_wep_key1,
+			.set_fcn =                  nmc_property_wifi_set_wep_key,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRELESS_SECURITY_WEP_KEY2),
+		.is_secret =                    TRUE,
+		.property_type =                &_pt_nmc_getset,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_wifi_sec_get_wep_key2,
+			.set_fcn =                  nmc_property_wifi_set_wep_key,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRELESS_SECURITY_WEP_KEY3),
+		.is_secret =                    TRUE,
+		.property_type =                &_pt_nmc_getset,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_wifi_sec_get_wep_key3,
+			.set_fcn =                  nmc_property_wifi_set_wep_key,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS),
+		.property_type =                &_pt_gobject_secret_flags,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE),
+		.describe_message =
+		    N_ ("Enter the type of WEP keys. The accepted values are: "
+		        "0 or unknown, 1 or key, and 2 or passphrase.\n"),
+		.property_type =                &_pt_nmc_getset,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_wifi_sec_get_wep_key_type,
+			.set_fcn =                  nmc_property_wifi_set_wep_key_type,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRELESS_SECURITY_PSK),
+		.is_secret =                    TRUE,
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.set_fcn =                  nmc_property_wifi_set_psk,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS),
+		.property_type =                &_pt_gobject_secret_flags,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD),
+		.is_secret =                    TRUE,
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS),
+		.property_type =                &_pt_gobject_secret_flags,
+	},
+};
+
 const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM] = {
 	[NM_META_SETTING_TYPE_802_1X] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_802_1X],
@@ -10013,7 +9920,8 @@ const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM] = {
 	},
 	[NM_META_SETTING_TYPE_WIRELESS_SECURITY] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_WIRELESS_SECURITY],
-		.get_setting_details                = setting_wireless_security_details,
+		.properties                         = properties_setting_wireless_security,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_wireless_security),
 	},
 };
 
