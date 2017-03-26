@@ -178,7 +178,7 @@ NmcOutputField nmc_fields_settings_names[] = {
 	SETTING_FIELD (NM_SETTING_BLUETOOTH_SETTING_NAME,         nmc_fields_setting_bluetooth + 1),         /* 12 */
 	SETTING_FIELD (NM_SETTING_OLPC_MESH_SETTING_NAME,         nmc_fields_setting_olpc_mesh + 1),         /* 13 */
 	SETTING_FIELD (NM_SETTING_VPN_SETTING_NAME,               nmc_fields_setting_vpn + 1),               /* 14 */
-	SETTING_FIELD (NM_SETTING_WIMAX_SETTING_NAME,             nmc_fields_setting_wimax + 1),             /* 15 */
+	SETTING_FIELD_TYPE (NM_SETTING_WIMAX_SETTING_NAME,        NM_META_SETTING_TYPE_WIMAX),               /* 15 */
 	SETTING_FIELD (NM_SETTING_INFINIBAND_SETTING_NAME,        nmc_fields_setting_infiniband + 1),        /* 16 */
 	SETTING_FIELD (NM_SETTING_BOND_SETTING_NAME,              nmc_fields_setting_bond + 1),              /* 17 */
 	SETTING_FIELD (NM_SETTING_VLAN_SETTING_NAME,              nmc_fields_setting_vlan + 1),              /* 18 */

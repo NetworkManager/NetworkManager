@@ -162,7 +162,7 @@ complete_fields (const char *prefix)
 	complete_field (h, "bluetooth", nmc_fields_setting_bluetooth);
 	complete_field (h, "802-11-olpc-mesh", nmc_fields_setting_olpc_mesh);
 	complete_field (h, "vpn", nmc_fields_setting_vpn);
-	complete_field (h, "wimax", nmc_fields_setting_wimax);
+	complete_field_new (h, "wimax", NM_META_SETTING_TYPE_WIMAX);
 	complete_field (h, "infiniband", nmc_fields_setting_infiniband);
 	complete_field (h, "bond", nmc_fields_setting_bond);
 	complete_field (h, "vlan", nmc_fields_setting_vlan);

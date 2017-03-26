@@ -275,6 +275,27 @@ _set_fcn_gobject_mtu (const NmcSettingInfo *setting_info,
 }
 
 static gboolean
+_set_fcn_gobject_mac (const NmcSettingInfo *setting_info,
+                      const NmcPropertyInfo *property_info,
+                      NMSetting *setting,
+                      const char *value,
+                      GError **error)
+{
+	gboolean is_cloned_mac = FALSE;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (   (!is_cloned_mac || !NM_CLONED_MAC_IS_SPECIAL (value))
+	    && !nm_utils_hwaddr_valid (value, ETH_ALEN)) {
+		g_set_error (error, 1, 0, _("'%s' is not a valid Ethernet MAC"), value);
+		return FALSE;
+	}
+
+	g_object_set (setting, property_info->property_name, value, NULL);
+	return TRUE;
+}
+
+static gboolean
 _set_fcn_gobject_secret_flags (const NmcSettingInfo *setting_info,
                                const NmcPropertyInfo *property_info,
                                NMSetting *setting,
@@ -674,17 +695,6 @@ NmcOutputField nmc_fields_setting_vpn[] = {
                                        NM_SETTING_VPN_SECRETS","\
                                        NM_SETTING_VPN_PERSISTENT","\
                                        NM_SETTING_VPN_TIMEOUT
-
-/* Available fields for NM_SETTING_WIMAX_SETTING_NAME */
-NmcOutputField nmc_fields_setting_wimax[] = {
-	SETTING_FIELD ("name"),                         /* 0 */
-	SETTING_FIELD (NM_SETTING_WIMAX_MAC_ADDRESS),   /* 1 */
-	SETTING_FIELD (NM_SETTING_WIMAX_NETWORK_NAME),  /* 2 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_WIMAX_ALL     "name"","\
-                                         NM_SETTING_WIMAX_MAC_ADDRESS","\
-                                         NM_SETTING_WIMAX_NETWORK_NAME
 
 /* Available fields for NM_SETTING_INFINIBAND_SETTING_NAME */
 NmcOutputField nmc_fields_setting_infiniband[] = {
@@ -4602,12 +4612,6 @@ DEFINE_GETTER (nmc_property_vxlan_get_rsc, NM_SETTING_VXLAN_RSC)
 DEFINE_GETTER (nmc_property_vxlan_get_l2_miss, NM_SETTING_VXLAN_L2_MISS)
 DEFINE_GETTER (nmc_property_vxlan_get_l3_miss, NM_SETTING_VXLAN_L3_MISS)
 
-
-/* --- NM_SETTING_WIMAX_SETTING_NAME property functions --- */
-DEFINE_GETTER (nmc_property_wimax_get_network_name, NM_SETTING_WIMAX_NETWORK_NAME)
-DEFINE_GETTER (nmc_property_wimax_get_mac_address, NM_SETTING_WIMAX_MAC_ADDRESS)
-
-
 /* --- NM_SETTING_WIRED_SETTING_NAME property functions --- */
 DEFINE_GETTER (nmc_property_wired_get_port, NM_SETTING_WIRED_PORT)
 DEFINE_GETTER (nmc_property_wired_get_auto_negotiate, NM_SETTING_WIRED_AUTO_NEGOTIATE)
@@ -6211,22 +6215,6 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL);
 
-	/* Add editable properties for NM_SETTING_WIMAX_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_WIMAX_SETTING_NAME""NM_SETTING_WIMAX_NETWORK_NAME,
-	                    nmc_property_wimax_get_network_name,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIMAX_SETTING_NAME""NM_SETTING_WIMAX_MAC_ADDRESS,
-	                    nmc_property_wimax_get_mac_address,
-	                    nmc_property_set_mac,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-
 	/* Add editable properties for NM_SETTING_WIRED_SETTING_NAME */
 	nmc_add_prop_funcs (NM_SETTING_WIRED_SETTING_NAME""NM_SETTING_WIRED_PORT,
 	                    nmc_property_wired_get_port,
@@ -7489,33 +7477,6 @@ setting_vpn_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmC
 }
 
 static gboolean
-setting_wimax_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingWimax *s_wimax = NM_SETTING_WIMAX (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_WIMAX (s_wimax), FALSE);
-
-	tmpl = nmc_fields_setting_wimax;
-	tmpl_len = sizeof (nmc_fields_setting_wimax);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_WIMAX_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_wimax_get_mac_address (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 2, nmc_property_wimax_get_network_name (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
 setting_infiniband_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingInfiniband *s_infiniband = NM_SETTING_INFINIBAND (setting);
@@ -7940,6 +7901,11 @@ static const NmcPropertyType _pt_gobject_uint = {
 static const NmcPropertyType _pt_gobject_mtu = {
 	.get_fcn =                      _get_fcn_gobject,
 	.set_fcn =                      _set_fcn_gobject_mtu,
+};
+
+static const NmcPropertyType _pt_gobject_mac = {
+	.get_fcn =                      _get_fcn_gobject,
+	.set_fcn =                      _set_fcn_gobject_mac,
 };
 
 static const NmcPropertyType _pt_gobject_secret_flags = {
@@ -9024,6 +8990,18 @@ static const NmcPropertyInfo properties_setting_proxy[] = {
 	},
 };
 
+static const NmcPropertyInfo properties_setting_wimax[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_WIMAX_MAC_ADDRESS),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIMAX_NETWORK_NAME),
+		.property_type =                &_pt_gobject_mac,
+	},
+};
+
 static const NmcPropertyInfo properties_setting_wireless_security[] = {
 	PROPERTY_INFO_NAME(),
 	{
@@ -9284,7 +9262,8 @@ const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM] = {
 	},
 	[NM_META_SETTING_TYPE_WIMAX] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_WIMAX],
-		.get_setting_details                = setting_wimax_details,
+		.properties                         = properties_setting_wimax,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_wimax),
 	},
 	[NM_META_SETTING_TYPE_WIRED] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_WIRED],

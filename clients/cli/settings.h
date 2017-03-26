@@ -163,7 +163,6 @@ extern NmcOutputField nmc_fields_setting_cdma[];
 extern NmcOutputField nmc_fields_setting_bluetooth[];
 extern NmcOutputField nmc_fields_setting_olpc_mesh[];
 extern NmcOutputField nmc_fields_setting_vpn[];
-extern NmcOutputField nmc_fields_setting_wimax[];
 extern NmcOutputField nmc_fields_setting_infiniband[];
 extern NmcOutputField nmc_fields_setting_bond[];
 extern NmcOutputField nmc_fields_setting_vlan[];
