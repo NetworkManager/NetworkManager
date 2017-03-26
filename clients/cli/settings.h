@@ -156,7 +156,6 @@ gboolean nmc_property_set_gvalue (NMSetting *setting, const char *prop, GValue *
 gboolean setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets);
 
 extern NmcOutputField nmc_fields_setting_wired[];
-extern NmcOutputField nmc_fields_setting_8021X[];
 extern NmcOutputField nmc_fields_setting_wireless[];
 extern NmcOutputField nmc_fields_setting_serial[];
 extern NmcOutputField nmc_fields_setting_ppp[];
