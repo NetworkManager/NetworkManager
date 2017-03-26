@@ -131,10 +131,10 @@ complete_fields (const char *prefix)
 	complete_field (h, NULL, nmc_fields_dev_lldp_list);
 
 	complete_field (h, "connection", nmc_fields_setting_connection);
-	complete_field (h, "wired", nmc_fields_setting_wired);
-	complete_field (h, "8021X", nmc_fields_setting_8021X);
-	complete_field (h, "wireless", nmc_fields_setting_wireless);
-	complete_field (h, "wireless_security", nmc_fields_setting_wireless_security);
+	complete_field (h, "802-3-ethernet", nmc_fields_setting_wired);
+	complete_field (h, "802-1x", nmc_fields_setting_8021X);
+	complete_field (h, "802-11-wireless", nmc_fields_setting_wireless);
+	complete_field (h, "802-11-wireless-security", nmc_fields_setting_wireless_security);
 	complete_field (h, "ip4-config", nmc_fields_setting_ip4_config);
 	complete_field (h, "ip6-config", nmc_fields_setting_ip6_config);
 	complete_field (h, "serial", nmc_fields_setting_serial);
@@ -153,7 +153,7 @@ complete_fields (const char *prefix)
 	complete_field (h, "bridge", nmc_fields_setting_bridge);
 	complete_field (h, "bridge-port", nmc_fields_setting_bridge_port);
 	complete_field (h, "team", nmc_fields_setting_team);
-	complete_field (h, "team0port", nmc_fields_setting_team_port);
+	complete_field (h, "team-port", nmc_fields_setting_team_port);
 	complete_field (h, "dcb", nmc_fields_setting_dcb);
 	complete_field (h, "tun", nmc_fields_setting_tun);
 	complete_field (h, "ip-tunnel", nmc_fields_setting_ip_tunnel);
