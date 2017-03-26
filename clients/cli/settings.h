@@ -32,8 +32,52 @@ typedef enum {
 	NMC_PROPERTY_GET_PARSABLE,
 } NmcPropertyGetType;
 
-typedef struct _NmcSettingInfo NmcSettingInfo;
-typedef struct _NmcPropertyInfo NmcPropertyInfo;
+typedef struct _NmcSettingInfo     NmcSettingInfo;
+typedef struct _NmcPropertyInfo    NmcPropertyInfo;
+typedef struct _NmcPropertyType    NmcPropertyType;
+typedef struct _NmcPropertyTypData NmcPropertyTypData;
+
+struct _NmcPropertyType {
+	char *(*get_fcn) (const NmcSettingInfo *setting_info,
+	                  const NmcPropertyInfo *property_info,
+	                  NMSetting *setting,
+	                  NmcPropertyGetType get_type);
+	gboolean (*set_fcn) (const NmcSettingInfo *setting_info,
+	                     const NmcPropertyInfo *property_info,
+	                     NMSetting *setting,
+	                     const char *value,
+	                     GError **error);
+	gboolean (*remove_fcn) (const NmcSettingInfo *setting_info,
+	                        const NmcPropertyInfo *property_info,
+	                        NMSetting *setting,
+	                        const char *option,
+	                        guint32 idx,
+	                        GError **error);
+	const char *const*(*values_fcn) (const NmcSettingInfo *setting_info,
+	                                 const NmcPropertyInfo *property_info);
+};
+
+struct _NmcPropertyTypData {
+	union {
+		struct {
+			union {
+				char *(*get_fcn) (NMSetting *setting, NmcPropertyGetType get_type);
+				gboolean (*get_fcn_with_default) (NMSetting *setting);
+			};
+			gboolean (*set_fcn) (NMSetting *setting, const char *property_name, const char *value, GError **error);
+			gboolean (*remove_fcn) (NMSetting *setting, const char *property_name, const char *option, guint32 idx, GError **error);
+			union {
+				struct {
+					GType (*get_gtype) (void);
+					bool has_minmax:1;
+					int min;
+					int max;
+				} gobject_enum;
+			} values_data;
+		} nmc;
+	};
+	const char *const*values_static;
+};
 
 struct _NmcPropertyInfo {
 	const char *property_name;
@@ -44,50 +88,10 @@ struct _NmcPropertyInfo {
 	 * group_list/setting_info. */
 	bool is_name:1;
 
-	char *(*get_fcn) (const NmcSettingInfo *setting_info,
-	                  const NmcPropertyInfo *property_info,
-	                  NMSetting *setting,
-	                  NmcPropertyGetType get_type);
-	union {
-		const char *(*get_direct) (NMSetting *setting);
-		char *(*get_nmc) (NMSetting *setting, NmcPropertyGetType get_type);
-		gboolean (*get_gobject_with_default_fcn) (NMSetting *setting);
-	} get_data;
-
-	gboolean (*set_fcn) (const NmcSettingInfo *setting_info,
-	                     const NmcPropertyInfo *property_info,
-	                     NMSetting *setting,
-	                     const char *value,
-	                     GError **error);
-	union {
-		gboolean (*set_nmc) (NMSetting *setting, const char *property_name, const char *value, GError **error);
-	} set_data;
-
-	gboolean (*remove_fcn) (const NmcSettingInfo *setting_info,
-	                        const NmcPropertyInfo *property_info,
-	                        NMSetting *setting,
-	                        const char *option,
-	                        guint32 idx,
-	                        GError **error);
-	union {
-		gboolean (*remove_nmc) (NMSetting *setting, const char *property_name, const char *option, guint32 idx, GError **error);
-	} remove_data;
-
 	const char *describe_message;
 
-	const char *const*(*values_fcn) (const NmcSettingInfo *setting_info,
-	                                 const NmcPropertyInfo *property_info);
-	union {
-		union {
-			struct {
-				GType (*get_gtype) (void);
-				bool has_minmax:1;
-				int min;
-				int max;
-			} gobject_enum;
-		} values_data;
-		const char *const*values_static;
-	};
+	const NmcPropertyType    *property_type;
+	const NmcPropertyTypData *property_typ_data;
 };
 
 struct _NmcSettingInfo {

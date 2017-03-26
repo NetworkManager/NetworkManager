@@ -41,12 +41,13 @@ static gboolean validate_int64 (NMSetting *setting, const char* prop, gint64 val
 /*****************************************************************************/
 
 static char *
-_get_fcn_direct (const NmcSettingInfo *setting_info,
-                 const NmcPropertyInfo *property_info,
-                 NMSetting *setting,
-                 NmcPropertyGetType get_type)
+_get_fcn_name (const NmcSettingInfo *setting_info,
+               const NmcPropertyInfo *property_info,
+               NMSetting *setting,
+               NmcPropertyGetType get_type)
 {
-	return g_strdup (property_info->get_data.get_direct (setting));
+	nm_assert (nm_streq0 (nm_setting_get_name (setting), setting_info->general->setting_name));
+	return g_strdup (setting_info->general->setting_name);
 }
 
 static char *
@@ -55,7 +56,34 @@ _get_fcn_nmc (const NmcSettingInfo *setting_info,
               NMSetting *setting,
               NmcPropertyGetType get_type)
 {
-	return property_info->get_data.get_nmc (setting, get_type);
+	return property_info->property_typ_data->nmc.get_fcn (setting, get_type);
+}
+
+static char *
+_get_fcn_nmc_with_default (const NmcSettingInfo *setting_info,
+                           const NmcPropertyInfo *property_info,
+                           NMSetting *setting,
+                           NmcPropertyGetType get_type)
+{
+	const char *s;
+	char *s_full;
+	GValue val = G_VALUE_INIT;
+
+	if (property_info->property_typ_data->nmc.get_fcn_with_default (setting)) {
+		if (get_type == NMC_PROPERTY_GET_PARSABLE)
+			return g_strdup ("");
+		return g_strdup (_("(default)"));
+	}
+
+	g_value_init (&val, G_TYPE_STRING);
+	g_object_get_property (G_OBJECT (setting), property_info->property_name, &val);
+	s = g_value_get_string (&val);
+	if (get_type == NMC_PROPERTY_GET_PARSABLE)
+		s_full = g_strdup (s && *s ? s : " ");
+	else
+		s_full = s ? g_strdup_printf ("\"%s\"", s) : g_strdup ("");
+	g_value_unset (&val);
+	return s_full;
 }
 
 static char *
@@ -74,33 +102,6 @@ _get_fcn_gobject (const NmcSettingInfo *setting_info,
 	return s;
 }
 
-static char *
-_get_fcn_gobject_with_default (const NmcSettingInfo *setting_info,
-                               const NmcPropertyInfo *property_info,
-                               NMSetting *setting,
-                               NmcPropertyGetType get_type)
-{
-	const char *s;
-	char *s_full;
-	GValue val = G_VALUE_INIT;
-
-	if (property_info->get_data.get_gobject_with_default_fcn (setting)) {
-		if (get_type == NMC_PROPERTY_GET_PARSABLE)
-			return g_strdup ("");
-		return g_strdup (_("(default)"));
-	}
-
-	g_value_init (&val, G_TYPE_STRING);
-	g_object_get_property (G_OBJECT (setting), property_info->property_name, &val);
-	s = g_value_get_string (&val);
-	if (get_type == NMC_PROPERTY_GET_PARSABLE)
-		s_full = g_strdup (s && *s ? s : " ");
-	else
-		s_full = s ? g_strdup_printf ("\"%s\"", s) : g_strdup ("");
-	g_value_unset (&val);
-	return s_full;
-}
-
 /*****************************************************************************/
 
 static gboolean
@@ -110,7 +111,7 @@ _set_fcn_nmc (const NmcSettingInfo *setting_info,
               const char *value,
               GError **error)
 {
-	return property_info->set_data.set_nmc (setting, property_info->property_name, value, error);
+	return property_info->property_typ_data->nmc.set_fcn (setting, property_info->property_name, value, error);
 }
 
 static gboolean
@@ -240,14 +241,14 @@ _remove_fcn_nmc (const NmcSettingInfo *setting_info,
                  guint32 idx,
                  GError **error)
 {
-	return property_info->remove_data.remove_nmc (setting, property_info->property_name, option, idx, error);
+	return property_info->property_typ_data->nmc.remove_fcn (setting, property_info->property_name, option, idx, error);
 }
 
 /*****************************************************************************/
 
 static const char *const*
-_values_fcn_gobject_enum (const NmcSettingInfo *setting_info,
-                          const NmcPropertyInfo *property_info)
+_values_fcn_nmc_gobject_enum (const NmcSettingInfo *setting_info,
+                              const NmcPropertyInfo *property_info)
 {
 	static GHashTable *cache = NULL;
 	const char **v;
@@ -257,11 +258,11 @@ _values_fcn_gobject_enum (const NmcSettingInfo *setting_info,
 
 	v = g_hash_table_lookup (cache, property_info);
 	if (!v) {
-		bool has_minmax = property_info->values_data.gobject_enum.has_minmax;
+		bool has_minmax = property_info->property_typ_data->nmc.values_data.gobject_enum.has_minmax;
 
-		v = nm_utils_enum_get_values (property_info->values_data.gobject_enum.get_gtype (),
-		                              has_minmax ? property_info->values_data.gobject_enum.min : G_MININT,
-		                              has_minmax ? property_info->values_data.gobject_enum.max : G_MAXINT);
+		v = nm_utils_enum_get_values (             property_info->property_typ_data->nmc.values_data.gobject_enum.get_gtype (),
+		                              has_minmax ? property_info->property_typ_data->nmc.values_data.gobject_enum.min : G_MININT,
+		                              has_minmax ? property_info->property_typ_data->nmc.values_data.gobject_enum.max : G_MAXINT);
 		g_hash_table_insert (cache, (gpointer) property_info, v);
 	}
 	return (const char *const*) v;
@@ -2849,7 +2850,6 @@ _set_fcn_connection_master (const NmcSettingInfo *setting_info,
 	return TRUE;
 }
 
-/* 'slave-type' */
 static const char *con_valid_slave_types[] = {
 	NM_SETTING_BOND_SETTING_NAME,
 	NM_SETTING_BRIDGE_SETTING_NAME,
@@ -5015,7 +5015,6 @@ _validate_vpn_hash_value (const char *option, const char *value, GError **error)
 	return value;
 }
 
-/* 'data' */
 DEFINE_SETTER_OPTIONS (nmc_property_vpn_set_data,
                        NM_SETTING_VPN,
                        NMSettingVpn,
@@ -5026,7 +5025,6 @@ DEFINE_REMOVER_OPTION (nmc_property_vpn_remove_option_data,
                        NM_SETTING_VPN,
                        nm_setting_vpn_remove_data_item)
 
-/* 'secrets' */
 DEFINE_SETTER_OPTIONS (nmc_property_vpn_set_secrets,
                        NM_SETTING_VPN,
                        NMSettingVpn,
@@ -8109,11 +8107,11 @@ get_property_val (NMSetting *setting, const char *prop, NmcPropertyGetType get_t
 		if (property_info->is_name) {
 			/* NmcPropertyFuncs would not register the "name" property.
 			 * For the moment, skip it from get_property_val(). */
-		} else if (property_info->get_fcn) {
-			return property_info->get_fcn (setting_info,
-			                               property_info,
-			                               setting,
-			                               get_type);
+		} else if (property_info->property_type->get_fcn) {
+			return property_info->property_type->get_fcn (setting_info,
+			                                              property_info,
+			                                              setting,
+			                                              get_type);
 		}
 	}
 
@@ -8184,12 +8182,12 @@ nmc_setting_set_property (NMSetting *setting, const char *prop, const char *val,
 		if (property_info->is_name) {
 			/* NmcPropertyFuncs would not register the "name" property.
 			 * For the moment, skip it from get_property_val(). */
-		} else if (property_info->set_fcn) {
-			return property_info->set_fcn (setting_info,
-			                               property_info,
-			                               setting,
-			                               val,
-			                               error);
+		} else if (property_info->property_type->set_fcn) {
+			return property_info->property_type->set_fcn (setting_info,
+			                                              property_info,
+			                                              setting,
+			                                              val,
+			                                              error);
 		}
 	}
 
@@ -8242,7 +8240,7 @@ nmc_setting_reset_property (NMSetting *setting, const char *prop, GError **error
 		if (property_info->is_name) {
 			/* NmcPropertyFuncs would not register the "name" property.
 			 * For the moment, skip it from get_property_val(). */
-		} else if (property_info->set_fcn) {
+		} else if (property_info->property_type->set_fcn) {
 			nmc_property_set_default_value (setting, prop);
 			return TRUE;
 		}
@@ -8285,13 +8283,13 @@ nmc_setting_remove_property_option (NMSetting *setting,
 		if (property_info->is_name) {
 			/* NmcPropertyFuncs would not register the "name" property.
 			 * For the moment, skip it from get_property_val(). */
-		} else if (property_info->remove_fcn) {
-			return property_info->remove_fcn (setting_info,
-			                                  property_info,
-			                                  setting,
-			                                  option,
-			                                  idx,
-			                                  error);
+		} else if (property_info->property_type->remove_fcn) {
+			return property_info->property_type->remove_fcn (setting_info,
+			                                                 property_info,
+			                                                 setting,
+			                                                 option,
+			                                                 idx,
+			                                                 error);
 		}
 	}
 
@@ -8352,11 +8350,11 @@ nmc_setting_get_property_allowed_values (NMSetting *setting, const char *prop)
 		if (property_info->is_name) {
 			/* NmcPropertyFuncs would not register the "name" property.
 			 * For the moment, skip it from get_property_val(). */
-		} else if (property_info->values_fcn) {
-			return property_info->values_fcn (setting_info,
-			                                  property_info);
-		} else if (property_info->values_static)
-			return property_info->values_static;
+		} else if (property_info->property_type->values_fcn) {
+			return property_info->property_type->values_fcn (setting_info,
+			                                                 property_info);
+		} else if (property_info->property_typ_data && property_info->property_typ_data->values_static)
+			return property_info->property_typ_data->values_static;
 	}
 
 return NULL;
@@ -8494,10 +8492,10 @@ _get_setting_details (const NmcSettingInfo *setting_info, NMSetting *setting, Nm
 	for (i = 0; i < setting_info->properties_num; i++) {
 		const NmcPropertyInfo *property_info = &setting_info->properties[i];
 
-		set_val_str (arr, i, property_info->get_fcn (setting_info,
-		                                             property_info,
-		                                             setting,
-		                                             NMC_PROPERTY_GET_PRETTY));
+		set_val_str (arr, i, property_info->property_type->get_fcn (setting_info,
+		                                                            property_info,
+		                                                            setting,
+		                                                            NMC_PROPERTY_GET_PRETTY));
 	}
 
 	g_ptr_array_add (nmc->output_data, arr);
@@ -9454,17 +9452,68 @@ setting_proxy_details (const NmcSettingInfo *setting_info, NMSetting *setting, N
 
 /*****************************************************************************/
 
+#define DEFINE_PROPERTY_TYPE(...) \
+	(&((NmcPropertyType) { __VA_ARGS__ } ))
+
+#define DEFINE_PROPERTY_TYP_DATA(...) \
+	(&((NmcPropertyTypData) { __VA_ARGS__ } ))
+
+#define DEFINE_PROPERTY_TYP_DATA_SUBTYPE(type, ...) \
+	DEFINE_PROPERTY_TYP_DATA ( \
+		.type = { __VA_ARGS__ }, \
+	)
+
+#define DEFINE_PROPERTY_TYP_DATA_WITH_ARG1(type, arg1, ...) \
+	DEFINE_PROPERTY_TYP_DATA ( \
+		arg1, \
+		.type = { __VA_ARGS__ }, \
+	)
+
+static const NmcPropertyType _pt_name = {
+	.get_fcn =                      _get_fcn_name,
+};
+
+static const NmcPropertyType _pt_gobject_readonly = {
+	.get_fcn =                      _get_fcn_gobject,
+};
+
+static const NmcPropertyType _pt_gobject_string = {
+	.get_fcn =                      _get_fcn_gobject,
+	.set_fcn =                      _set_fcn_gobject_string,
+};
+
+static const NmcPropertyType _pt_gobject_bool = {
+	.get_fcn =                      _get_fcn_gobject,
+	.set_fcn =                      _set_fcn_gobject_bool,
+};
+
+static const NmcPropertyType _pt_gobject_int = {
+	.get_fcn =                      _get_fcn_gobject,
+	.set_fcn =                      _set_fcn_gobject_int,
+};
+
+static const NmcPropertyType _pt_gobject_int64 = {
+	.get_fcn =                      _get_fcn_gobject,
+	.set_fcn =                      _set_fcn_gobject_int64,
+};
+
+static const NmcPropertyType _pt_gobject_uint = {
+	.get_fcn =                      _get_fcn_gobject,
+	.set_fcn =                      _set_fcn_gobject_uint,
+};
+
+/*****************************************************************************/
+
 #define PROPERTY_INFO_NAME() \
 	{ \
 		.property_name =                N_ ("name"), \
 		.is_name                        = TRUE, \
-		.get_fcn =                      _get_fcn_direct, \
-		.get_data =                     { .get_direct = nm_setting_get_name, }, \
+		.property_type =                &_pt_name, \
 	}
 
 #define VALUES_STATIC(...)  (((const char *[]) { __VA_ARGS__, NULL }))
 
-#define GET_WITH_DEFAULT_FCN(type, func) \
+#define GET_FCN_WITH_DEFAULT(type, func) \
 	/* macro that returns @func as const (gboolean(*)(NMSetting*)) type, but checks
 	 * that the actual type is (gboolean(*)(type *)). */ \
 	((gboolean (*) (NMSetting *)) ((sizeof (func == ((gboolean (*) (type *)) func))) ? func : func) )
@@ -9473,95 +9522,110 @@ static const NmcPropertyInfo properties_setting_connection[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_ID),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_gobject_string,
+		.property_type =                &_pt_gobject_string,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_UUID),
-		.get_fcn =                      _get_fcn_gobject,
+		.property_type =                DEFINE_PROPERTY_TYPE ( .get_fcn = _get_fcn_gobject ),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_STABLE_ID),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_gobject_string,
+		.property_type =                &_pt_gobject_string,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_INTERFACE_NAME),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_nmc,
-		.set_data =                     { .set_nmc = nmc_property_set_ifname, },
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.set_fcn =                  nmc_property_set_ifname,
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_TYPE),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_connection_type,
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_connection_type,
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_AUTOCONNECT),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_gobject_bool,
+		.property_type =                &_pt_gobject_bool,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_gobject_int,
+		.property_type =                &_pt_gobject_int,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES),
-		.get_fcn =                      _get_fcn_nmc,
-		.get_data =                     { .get_nmc = nmc_property_connection_get_autoconnect_retries, },
-		.set_fcn =                      _set_fcn_gobject_int,
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_nmc,
+			.set_fcn =                  _set_fcn_gobject_int,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_connection_get_autoconnect_retries,
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_TIMESTAMP),
-		.get_fcn =                      _get_fcn_gobject,
+		.property_type =                &_pt_gobject_readonly,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_READ_ONLY),
-		.get_fcn =                      _get_fcn_gobject,
+		.property_type =                &_pt_gobject_readonly,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_PERMISSIONS),
-		.get_fcn =                      _get_fcn_nmc,
-		.get_data =                     { .get_nmc = nmc_property_connection_get_permissions, },
-		.set_fcn =                      _set_fcn_connection_permissions,
-		.remove_fcn =                   _remove_fcn_nmc,
-		.remove_data =                  { .remove_nmc = nmc_property_connection_remove_permissions, },
 		.describe_message =
 		     N_ ("Enter a list of user permissions. This is a list of user names formatted as:\n"
 		         "  [user:]<user name 1>, [user:]<user name 2>,...\n"
 		         "The items can be separated by commas or spaces.\n\n"
 		         "Example: alice bob charlie\n"),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_nmc,
+			.set_fcn =                  _set_fcn_connection_permissions,
+			.remove_fcn =               _remove_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_connection_get_permissions,
+			.remove_fcn =               nmc_property_connection_remove_permissions,
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_ZONE),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_gobject_string,
+		.property_type =                &_pt_gobject_string,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_MASTER),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_connection_master,
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_connection_master,
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_SLAVE_TYPE),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_nmc,
-		.set_data =                     { .set_nmc = nmc_property_con_set_slave_type, },
-		.values_static =                con_valid_slave_types,
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_WITH_ARG1 (nmc,
+			.values_static =            con_valid_slave_types,
+			.set_fcn =                  nmc_property_con_set_slave_type,
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES),
-		.get_fcn =                      _get_fcn_nmc,
-		.get_data =                     { .get_nmc = nmc_property_connection_get_autoconnect_slaves, },
-		.set_fcn =                      _set_fcn_gobject_trilean,
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_nmc,
+			.set_fcn =                  _set_fcn_gobject_trilean,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_connection_get_autoconnect_slaves,
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_SECONDARIES),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_connection_secondaries,
-		.remove_fcn =                   _remove_fcn_nmc,
-		.remove_data =                  { .remove_nmc = nmc_property_connection_remove_secondaries, },
 		.describe_message =
 		    N_ ("Enter secondary connections that should be activated when this connection is\n"
 		         "activated. Connections can be specified either by UUID or ID (name). nmcli\n"
@@ -9569,31 +9633,46 @@ static const NmcPropertyInfo properties_setting_connection[] = {
 		         "VPNs as secondary connections at the moment.\n"
 		         "The items can be separated by commas or spaces.\n\n"
 		         "Example: private-openvpn, fe6ba5d8-c2fc-4aae-b2e3-97efddd8d9a7\n"),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_connection_secondaries,
+			.remove_fcn =               _remove_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.remove_fcn =               nmc_property_connection_remove_secondaries,
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_gobject_uint,
+		.property_type =                &_pt_gobject_uint,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_METERED),
-		.get_fcn =                      _get_fcn_nmc,
-		.get_data =                     { .get_nmc = nmc_property_connection_get_metered, },
-		.set_fcn =                      _set_fcn_connection_metered,
 		.describe_message =
 		    N_ ("Enter a value which indicates whether the connection is subject to a data\n"
 		        "quota, usage costs or other limitations. Accepted options are:\n"
 		        "'true','yes','on' to set the connection as metered\n"
 		        "'false','no','off' to set the connection as not metered\n"
 		        "'unknown' to let NetworkManager choose a value using some heuristics\n"),
-		.values_static =                VALUES_STATIC ("yes", "no", "unknown"),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_nmc,
+			.set_fcn =                  _set_fcn_connection_metered,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_WITH_ARG1 (nmc,
+			.values_static =            VALUES_STATIC ("yes", "no", "unknown"),
+			.get_fcn =                  nmc_property_connection_get_metered,
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_LLDP),
-		.get_fcn =                      _get_fcn_nmc,
-		.get_data =                     { .get_nmc = nmc_property_connection_get_lldp, },
-		.set_fcn =                      _set_fcn_connection_lldp,
-		.values_static =                VALUES_STATIC ("default", "disable", "enable-rx"),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_nmc,
+			.set_fcn =                  _set_fcn_connection_lldp,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_WITH_ARG1 (nmc,
+			.values_static =            VALUES_STATIC ("default", "disable", "enable-rx"),
+			.get_fcn =                  nmc_property_connection_get_lldp,
+		),
 	},
 };
 
@@ -9601,63 +9680,80 @@ static const NmcPropertyInfo properties_setting_ip4_config[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_METHOD),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_ip4_config_method,
-		.values_static =                ipv4_valid_methods,
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_ip4_config_method,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			.values_static =            ipv4_valid_methods,
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_DNS),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_ip4_config_dns,
-		.remove_fcn =                   _remove_fcn_nmc,
-		.remove_data =                  { .remove_nmc = nmc_property_ipv4_remove_dns, },
 		.describe_message =
 		    N_ ("Enter a list of IPv4 addresses of DNS servers.\n\n"
 		        "Example: 8.8.8.8, 8.8.4.4\n"),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_ip4_config_dns,
+			.remove_fcn =               _remove_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.remove_fcn =               nmc_property_ipv4_remove_dns,
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_DNS_SEARCH),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_ip4_config_dns_search,
-		.remove_fcn =                   _remove_fcn_nmc,
-		.remove_data =                  { .remove_nmc = nmc_property_ipv4_remove_dns_search, },
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_ip4_config_dns_search,
+			.remove_fcn =               _remove_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.remove_fcn =               nmc_property_ipv4_remove_dns_search,
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_DNS_OPTIONS),
-		.get_fcn =                      _get_fcn_gobject_with_default,
-		.get_data =                     { .get_gobject_with_default_fcn = GET_WITH_DEFAULT_FCN (NMSettingIPConfig, nm_setting_ip_config_has_dns_options), },
-		.set_fcn =                      _set_fcn_ip4_config_dns_options,
-		.remove_fcn =                   _remove_fcn_nmc,
-		.remove_data =                  { .remove_nmc = nmc_property_ipv4_remove_dns_option, },
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_nmc_with_default,
+			.set_fcn =                  _set_fcn_ip4_config_dns_options,
+			.remove_fcn =               _remove_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn_with_default =     GET_FCN_WITH_DEFAULT (NMSettingIPConfig, nm_setting_ip_config_has_dns_options),
+			.remove_fcn =               nmc_property_ipv4_remove_dns_option,
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_DNS_PRIORITY),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_gobject_int,
+		.property_type =                &_pt_gobject_int,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_ADDRESSES),
-		.get_fcn =                      _get_fcn_ip_config_addresses,
-		.set_fcn =                      _set_fcn_ip4_config_addresses,
-		.remove_fcn =                   _remove_fcn_nmc,
-		.remove_data =                  { .remove_nmc = nmc_property_ipv4_remove_addresses, },
 		.describe_message =
 		    N_ ("Enter a list of IPv4 addresses formatted as:\n"
 		        "  ip[/prefix], ip[/prefix],...\n"
 		        "Missing prefix is regarded as prefix of 32.\n\n"
 		        "Example: 192.168.1.5/24, 10.0.0.11/24\n"),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_ip_config_addresses,
+			.set_fcn =                  _set_fcn_ip4_config_addresses,
+			.remove_fcn =               _remove_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.remove_fcn =               nmc_property_ipv4_remove_addresses,
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_GATEWAY),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_ip4_config_gateway,
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_ip4_config_gateway,
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_ROUTES),
-		.get_fcn =                      _get_fcn_ip_config_routes,
-		.set_fcn =                      _set_fcn_ip4_config_routes,
-		.remove_fcn =                   _remove_fcn_nmc,
-		.remove_data =                  { .remove_nmc = nmc_property_ipv4_remove_routes, },
 		.describe_message =
 		    N_ ("Enter a list of IPv4 routes formatted as:\n"
 		         "  ip[/prefix] [next-hop] [metric],...\n\n"
@@ -9666,61 +9762,61 @@ static const NmcPropertyInfo properties_setting_ip4_config[] = {
 		         "Missing metric means default (NM/kernel will set a default value).\n\n"
 		         "Examples: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
 		         "          10.1.2.0/24\n"),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_ip_config_routes,
+			.set_fcn =                  _set_fcn_ip4_config_routes,
+			.remove_fcn =               _remove_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.remove_fcn =               nmc_property_ipv4_remove_routes,
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_ROUTE_METRIC),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_gobject_int64,
+		.property_type =                &_pt_gobject_int64,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_gobject_bool,
+		.property_type =                &_pt_gobject_bool,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_gobject_bool,
+		.property_type =                &_pt_gobject_bool,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_gobject_string,
+		.property_type =                &_pt_gobject_string,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_DHCP_TIMEOUT),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_gobject_int,
+		.property_type =                &_pt_gobject_int,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_gobject_bool,
+		.property_type =                &_pt_gobject_bool,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_gobject_string,
+		.property_type =                &_pt_gobject_string,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP4_CONFIG_DHCP_FQDN),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_gobject_string,
+		.property_type =                &_pt_gobject_string,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_NEVER_DEFAULT),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_gobject_bool,
+		.property_type =                &_pt_gobject_bool,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_MAY_FAIL),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_gobject_bool,
+		.property_type =                &_pt_gobject_bool,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_DAD_TIMEOUT),
-		.get_fcn =                      _get_fcn_ip4_config_dad_timeout,
-		.set_fcn =                      _set_fcn_gobject_int,
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_ip4_config_dad_timeout,
+			.set_fcn =                  _set_fcn_gobject_int,
+		),
 	},
 };
 
@@ -9728,16 +9824,16 @@ static const NmcPropertyInfo properties_setting_ip6_config[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_METHOD),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_ip6_config_method,
-		.values_static =                ipv6_valid_methods,
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_ip6_config_method,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			.values_static =            ipv6_valid_methods,
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_DNS),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_ip6_config_dns,
-		.remove_fcn =                   _remove_fcn_nmc,
-		.remove_data =                  { .remove_nmc = nmc_property_ipv6_remove_dns, },
 		.describe_message =
 		    N_ ("Enter a list of IPv6 addresses of DNS servers.  If the IPv6 "
 		        "configuration method is 'auto' these DNS servers are appended "
@@ -9746,51 +9842,68 @@ static const NmcPropertyInfo properties_setting_ip6_config[] = {
 		        "configuration methods, as there is no upstream network. In "
 		        "all other IPv6 configuration methods, these DNS "
 		        "servers are used as the only DNS servers for this connection.\n\n"
-		        "Example: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n")
+		        "Example: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_ip6_config_dns,
+			.remove_fcn =               _remove_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.remove_fcn =               nmc_property_ipv6_remove_dns,
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_DNS_SEARCH),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_ip6_config_dns_search,
-		.remove_fcn =                   _remove_fcn_nmc,
-		.remove_data =                  { .remove_nmc = nmc_property_ipv6_remove_dns_search, },
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_ip6_config_dns_search,
+			.remove_fcn =               _remove_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.remove_fcn =               nmc_property_ipv6_remove_dns_search,
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_DNS_OPTIONS),
-		.get_fcn =                      _get_fcn_gobject_with_default,
-		.get_data =                     { .get_gobject_with_default_fcn = GET_WITH_DEFAULT_FCN (NMSettingIPConfig, nm_setting_ip_config_has_dns_options), },
-		.set_fcn =                      _set_fcn_ip6_config_dns_options,
-		.remove_fcn =                   _remove_fcn_nmc,
-		.remove_data =                  { .remove_nmc = nmc_property_ipv6_remove_dns_option, },
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_nmc_with_default,
+			.set_fcn =                  _set_fcn_ip6_config_dns_options,
+			.remove_fcn =               _remove_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn_with_default =     GET_FCN_WITH_DEFAULT (NMSettingIPConfig, nm_setting_ip_config_has_dns_options),
+			.remove_fcn =               nmc_property_ipv6_remove_dns_option,
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_DNS_PRIORITY),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_gobject_int,
+		.property_type =                &_pt_gobject_int,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_ADDRESSES),
-		.get_fcn =                      _get_fcn_ip_config_addresses,
-		.set_fcn =                      _set_fcn_ip6_config_addresses,
-		.remove_fcn =                   _remove_fcn_nmc,
-		.remove_data =                  { .remove_nmc = nmc_property_ipv6_remove_addresses, },
 		.describe_message =
 		    N_ ("Enter a list of IPv6 addresses formatted as:\n"
 		        "  ip[/prefix], ip[/prefix],...\n"
 		        "Missing prefix is regarded as prefix of 128.\n\n"
 		        "Example: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_ip_config_addresses,
+			.set_fcn =                  _set_fcn_ip6_config_addresses,
+			.remove_fcn =               _remove_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.remove_fcn =               nmc_property_ipv6_remove_addresses,
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_GATEWAY),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_ip6_config_gateway,
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_ip6_config_gateway,
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_ROUTES),
-		.get_fcn =                      _get_fcn_ip_config_routes,
-		.set_fcn =                      _set_fcn_ip6_config_routes,
-		.remove_fcn =                   _remove_fcn_nmc,
-		.remove_data =                  { .remove_nmc = nmc_property_ipv6_remove_routes, },
 		.describe_message =
 		    N_ ("Enter a list of IPv6 routes formatted as:\n"
 		        "  ip[/prefix] [next-hop] [metric],...\n\n"
@@ -9799,62 +9912,68 @@ static const NmcPropertyInfo properties_setting_ip6_config[] = {
 		        "Missing metric means default (NM/kernel will set a default value).\n\n"
 		         "Examples: 2001:db8:beef:2::/64 2001:db8:beef::2, 2001:db8:beef:3::/64 2001:db8:beef::3 2\n"
 		        "          abbe::/64 55\n"),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_ip_config_routes,
+			.set_fcn =                  _set_fcn_ip6_config_routes,
+			.remove_fcn =               _remove_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.remove_fcn =               nmc_property_ipv6_remove_routes,
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_ROUTE_METRIC),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_gobject_int64,
+		.property_type =                &_pt_gobject_int64,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_gobject_bool,
+		.property_type =                &_pt_gobject_bool,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_gobject_bool,
+		.property_type =                &_pt_gobject_bool,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_NEVER_DEFAULT),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_gobject_bool,
+		.property_type =                &_pt_gobject_bool,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_MAY_FAIL),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_gobject_bool,
+		.property_type =                &_pt_gobject_bool,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP6_CONFIG_IP6_PRIVACY),
-		.get_fcn =                      _get_fcn_ip6_config_ip6_privacy,
-		.set_fcn =                      _set_fcn_ip6_config_ip6_privacy,
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_ip6_config_ip6_privacy,
+			.set_fcn =                  _set_fcn_ip6_config_ip6_privacy,
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE),
-		.get_fcn =                      _get_fcn_ip6_config_addr_gen_mode,
-		.set_fcn =                      _set_fcn_ip6_config_addr_gen_mode,
-		.values_fcn =                   _values_fcn_gobject_enum,
-		.values_data = {
-			.gobject_enum = {
-				.get_gtype =            nm_setting_ip6_config_addr_gen_mode_get_type,
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_ip6_config_addr_gen_mode,
+			.set_fcn =                  _set_fcn_ip6_config_addr_gen_mode,
+			.values_fcn =               _values_fcn_nmc_gobject_enum,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.values_data = {
+				.gobject_enum = {
+					.get_gtype =        nm_setting_ip6_config_addr_gen_mode_get_type,
+				},
 			},
-		},
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_gobject_bool,
+		.property_type =                &_pt_gobject_bool,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_gobject_string,
+		.property_type =                &_pt_gobject_string,
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP6_CONFIG_TOKEN),
-		.get_fcn =                      _get_fcn_gobject,
-		.set_fcn =                      _set_fcn_gobject_string,
+		.property_type =                &_pt_gobject_string,
 	},
 };
 
