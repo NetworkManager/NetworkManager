@@ -158,7 +158,6 @@ gboolean setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, 
 extern NmcOutputField nmc_fields_setting_wired[];
 extern NmcOutputField nmc_fields_setting_wireless[];
 extern NmcOutputField nmc_fields_setting_serial[];
-extern NmcOutputField nmc_fields_setting_adsl[];
 extern NmcOutputField nmc_fields_setting_gsm[];
 extern NmcOutputField nmc_fields_setting_cdma[];
 extern NmcOutputField nmc_fields_setting_bluetooth[];

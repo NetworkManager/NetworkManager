@@ -156,7 +156,7 @@ complete_fields (const char *prefix)
 	complete_field (h, "serial", nmc_fields_setting_serial);
 	complete_field_new (h, "ppp", NM_META_SETTING_TYPE_PPP);
 	complete_field_new (h, "pppoe", NM_META_SETTING_TYPE_PPPOE);
-	complete_field (h, "adsl", nmc_fields_setting_adsl);
+	complete_field_new (h, "adsl", NM_META_SETTING_TYPE_ADSL);
 	complete_field (h, "gsm", nmc_fields_setting_gsm);
 	complete_field (h, "cdma", nmc_fields_setting_cdma);
 	complete_field (h, "bluetooth", nmc_fields_setting_bluetooth);

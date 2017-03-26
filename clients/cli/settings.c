@@ -574,27 +574,6 @@ NmcOutputField nmc_fields_setting_serial[] = {
                                           NM_SETTING_SERIAL_STOPBITS","\
                                           NM_SETTING_SERIAL_SEND_DELAY
 
-/* Available fields for NM_SETTING_ADSL_SETTING_NAME */
-NmcOutputField nmc_fields_setting_adsl[] = {
-	SETTING_FIELD ("name"),                          /* 0 */
-	SETTING_FIELD (NM_SETTING_ADSL_USERNAME),        /* 1 */
-	SETTING_FIELD (NM_SETTING_ADSL_PASSWORD),        /* 2 */
-	SETTING_FIELD (NM_SETTING_ADSL_PASSWORD_FLAGS),  /* 3 */
-	SETTING_FIELD (NM_SETTING_ADSL_PROTOCOL),        /* 4 */
-	SETTING_FIELD (NM_SETTING_ADSL_ENCAPSULATION),   /* 5 */
-	SETTING_FIELD (NM_SETTING_ADSL_VPI),             /* 6 */
-	SETTING_FIELD (NM_SETTING_ADSL_VCI),             /* 7 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_ADSL_ALL     "name"","\
-                                        NM_SETTING_ADSL_USERNAME","\
-                                        NM_SETTING_ADSL_PASSWORD","\
-                                        NM_SETTING_ADSL_PASSWORD_FLAGS","\
-                                        NM_SETTING_ADSL_PROTOCOL","\
-                                        NM_SETTING_ADSL_ENCAPSULATION","\
-                                        NM_SETTING_ADSL_VPI","\
-                                        NM_SETTING_ADSL_VCI
-
 /* Available fields for NM_SETTING_GSM_SETTING_NAME */
 NmcOutputField nmc_fields_setting_gsm[] = {
 	SETTING_FIELD ("name"),                         /* 0 */
@@ -2158,16 +2137,6 @@ nmc_property_802_1X_set_phase1_auth_flags (NMSetting *setting, const char *prop,
 }
 
 
-/* --- NM_SETTING_ADSL_SETTING_NAME property functions --- */
-DEFINE_GETTER (nmc_property_adsl_get_username, NM_SETTING_ADSL_USERNAME)
-DEFINE_GETTER (nmc_property_adsl_get_password, NM_SETTING_ADSL_PASSWORD)
-DEFINE_SECRET_FLAGS_GETTER (nmc_property_adsl_get_password_flags, NM_SETTING_ADSL_PASSWORD_FLAGS)
-DEFINE_GETTER (nmc_property_adsl_get_protocol, NM_SETTING_ADSL_PROTOCOL)
-DEFINE_GETTER (nmc_property_adsl_get_encapsulation, NM_SETTING_ADSL_ENCAPSULATION)
-DEFINE_GETTER (nmc_property_adsl_get_vpi, NM_SETTING_ADSL_VPI)
-DEFINE_GETTER (nmc_property_adsl_get_vci, NM_SETTING_ADSL_VCI)
-
-/* 'protocol' */
 static const char *adsl_valid_protocols[] = {
 	NM_SETTING_ADSL_PROTOCOL_PPPOA,
 	NM_SETTING_ADSL_PROTOCOL_PPPOE,
@@ -2181,9 +2150,6 @@ nmc_property_adsl_set_protocol (NMSetting *setting, const char *prop, const char
 	return check_and_set_string (setting, prop, val, adsl_valid_protocols, error);
 }
 
-DEFINE_ALLOWED_VAL_FUNC (nmc_property_adsl_allowed_protocol, adsl_valid_protocols)
-
-/* 'encapsulation' */
 static const char *adsl_valid_encapsulations[] = {
 	NM_SETTING_ADSL_ENCAPSULATION_VCMUX,
 	NM_SETTING_ADSL_ENCAPSULATION_LLC,
@@ -2195,9 +2161,6 @@ nmc_property_adsl_set_encapsulation (NMSetting *setting, const char *prop, const
 {
 	return check_and_set_string (setting, prop, val, adsl_valid_encapsulations, error);
 }
-
-DEFINE_ALLOWED_VAL_FUNC (nmc_property_adsl_allowed_encapsulation, adsl_valid_encapsulations)
-
 
 /* --- NM_SETTING_BLUETOOTH_SETTING_NAME property functions --- */
 DEFINE_GETTER (nmc_property_bluetooth_get_bdaddr, NM_SETTING_BLUETOOTH_BDADDR)
@@ -5916,57 +5879,6 @@ nmc_properties_init (void)
 	/* create properties hash table */
 	nmc_properties = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
 
-	/* Add editable properties for NM_SETTING_ADSL_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_ADSL_SETTING_NAME""NM_SETTING_ADSL_USERNAME,
-	                    nmc_property_adsl_get_username,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_ADSL_SETTING_NAME""NM_SETTING_ADSL_PASSWORD,
-	                    nmc_property_adsl_get_password,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_ADSL_SETTING_NAME""NM_SETTING_ADSL_PASSWORD_FLAGS,
-	                    nmc_property_adsl_get_password_flags,
-	                    nmc_property_set_secret_flags,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_ADSL_SETTING_NAME""NM_SETTING_ADSL_PROTOCOL,
-	                    nmc_property_adsl_get_protocol,
-	                    nmc_property_adsl_set_protocol,
-	                    NULL,
-	                    NULL,
-	                    nmc_property_adsl_allowed_protocol,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_ADSL_SETTING_NAME""NM_SETTING_ADSL_ENCAPSULATION,
-	                    nmc_property_adsl_get_encapsulation,
-	                    nmc_property_adsl_set_encapsulation,
-	                    NULL,
-	                    NULL,
-	                    nmc_property_adsl_allowed_encapsulation,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_ADSL_SETTING_NAME""NM_SETTING_ADSL_VPI,
-	                    nmc_property_adsl_get_vpi,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_ADSL_SETTING_NAME""NM_SETTING_ADSL_VCI,
-	                    nmc_property_adsl_get_vci,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-
 	/* Add editable properties for NM_SETTING_BLUETOOTH_SETTING_NAME */
 	nmc_add_prop_funcs (NM_SETTING_BLUETOOTH_SETTING_NAME""NM_SETTING_BLUETOOTH_BDADDR,
 	                    nmc_property_bluetooth_get_bdaddr,
@@ -7792,38 +7704,6 @@ setting_vlan_details (const NmcSettingInfo *setting_info, NMSetting *setting, Nm
 }
 
 static gboolean
-setting_adsl_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingAdsl *s_adsl = NM_SETTING_ADSL (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_ADSL (s_adsl), FALSE);
-
-	tmpl = nmc_fields_setting_adsl;
-	tmpl_len = sizeof (nmc_fields_setting_adsl);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_ADSL_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_adsl_get_username (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 2, GET_SECRET (secrets, setting, nmc_property_adsl_get_password));
-	set_val_str (arr, 3, nmc_property_adsl_get_password_flags (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 4, nmc_property_adsl_get_protocol (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 5, nmc_property_adsl_get_encapsulation (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 6, nmc_property_adsl_get_vpi (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 7, nmc_property_adsl_get_vci (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
 setting_bridge_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingBridge *s_bridge = NM_SETTING_BRIDGE (setting);
@@ -8508,6 +8388,53 @@ static const NmcPropertyInfo properties_setting_802_1x[] = {
 	{
 		.property_name =                N_ (NM_SETTING_802_1X_AUTH_TIMEOUT),
 		.property_type =                &_pt_gobject_int,
+	},
+};
+
+static const NmcPropertyInfo properties_setting_adsl[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_ADSL_USERNAME),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_ADSL_PASSWORD),
+		.is_secret =                    TRUE,
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_ADSL_PASSWORD_FLAGS),
+		.property_type =                &_pt_gobject_secret_flags,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_ADSL_PROTOCOL),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_WITH_ARG1 (nmc,
+			.values_static =            adsl_valid_protocols,
+			.set_fcn =                  nmc_property_adsl_set_protocol,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_ADSL_ENCAPSULATION),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_WITH_ARG1 (nmc,
+			.values_static =            adsl_valid_encapsulations,
+			.set_fcn =                  nmc_property_adsl_set_encapsulation,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_ADSL_VPI),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_ADSL_VCI),
+		.property_type =                &_pt_gobject_uint,
 	},
 };
 
@@ -9383,7 +9310,8 @@ const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM] = {
 	},
 	[NM_META_SETTING_TYPE_ADSL] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_ADSL],
-		.get_setting_details                = setting_adsl_details,
+		.properties                         = properties_setting_adsl,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_adsl),
 	},
 	[NM_META_SETTING_TYPE_BLUETOOTH] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_BLUETOOTH],
