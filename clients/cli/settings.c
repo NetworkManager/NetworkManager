@@ -921,43 +921,6 @@ NmcOutputField nmc_fields_setting_team_port[] = {
 #define NMC_FIELDS_SETTING_TEAM_PORT_ALL     "name"","\
                                              NM_SETTING_TEAM_PORT_CONFIG
 
-/* Available fields for NM_SETTING_DCB_SETTING_NAME */
-NmcOutputField nmc_fields_setting_dcb[] = {
-	SETTING_FIELD ("name"),                                      /* 0 */
-	SETTING_FIELD (NM_SETTING_DCB_APP_FCOE_FLAGS),               /* 1 */
-	SETTING_FIELD (NM_SETTING_DCB_APP_FCOE_PRIORITY),            /* 2 */
-	SETTING_FIELD (NM_SETTING_DCB_APP_FCOE_MODE),                /* 3 */
-	SETTING_FIELD (NM_SETTING_DCB_APP_ISCSI_FLAGS),              /* 4 */
-	SETTING_FIELD (NM_SETTING_DCB_APP_ISCSI_PRIORITY),           /* 5 */
-	SETTING_FIELD (NM_SETTING_DCB_APP_FIP_FLAGS),                /* 6 */
-	SETTING_FIELD (NM_SETTING_DCB_APP_FIP_PRIORITY),             /* 7 */
-	SETTING_FIELD (NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS),  /* 8 */
-	SETTING_FIELD (NM_SETTING_DCB_PRIORITY_FLOW_CONTROL),        /* 9 */
-	SETTING_FIELD (NM_SETTING_DCB_PRIORITY_GROUP_FLAGS),         /* 10 */
-	SETTING_FIELD (NM_SETTING_DCB_PRIORITY_GROUP_ID),            /* 11 */
-	SETTING_FIELD (NM_SETTING_DCB_PRIORITY_GROUP_BANDWIDTH),     /* 12 */
-	SETTING_FIELD (NM_SETTING_DCB_PRIORITY_BANDWIDTH),           /* 13 */
-	SETTING_FIELD (NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH),    /* 14 */
-	SETTING_FIELD (NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS),       /* 15 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_DCB_ALL     "name"","\
-                                       NM_SETTING_DCB_APP_FCOE_FLAGS","\
-                                       NM_SETTING_DCB_APP_FCOE_PRIORITY","\
-                                       NM_SETTING_DCB_APP_FCOE_MODE","\
-                                       NM_SETTING_DCB_APP_ISCSI_FLAGS","\
-                                       NM_SETTING_DCB_APP_ISCSI_PRIORITY","\
-                                       NM_SETTING_DCB_APP_FIP_FLAGS","\
-                                       NM_SETTING_DCB_APP_FIP_PRIORITY","\
-                                       NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS","\
-                                       NM_SETTING_DCB_PRIORITY_FLOW_CONTROL","\
-                                       NM_SETTING_DCB_PRIORITY_GROUP_FLAGS","\
-                                       NM_SETTING_DCB_PRIORITY_GROUP_ID","\
-                                       NM_SETTING_DCB_PRIORITY_GROUP_BANDWIDTH","\
-                                       NM_SETTING_DCB_PRIORITY_BANDWIDTH","\
-                                       NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH","\
-                                       NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS
-
 /* Available fields for NM_SETTING_DUMMY_SETTING_NAME */
 NmcOutputField nmc_fields_setting_dummy[] = {
 	SETTING_FIELD ("name"),                                /* 0 */
@@ -3425,9 +3388,6 @@ nmc_property_dcb_set_app_fcoe_mode (NMSetting *setting, const char *prop, const 
 {
 	return check_and_set_string (setting, prop, val, _dcb_valid_fcoe_modes, error);
 }
-
-DEFINE_ALLOWED_VAL_FUNC (nmc_property_dcb_allowed_app_fcoe_modes, _dcb_valid_fcoe_modes)
-
 
 /* --- NM_SETTING_GSM_SETTING_NAME property functions --- */
 DEFINE_GETTER (nmc_property_gsm_get_number, NM_SETTING_GSM_NUMBER)
@@ -6778,113 +6738,6 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL);
 
-	/* Add editable properties for NM_SETTING_DCB_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_DCB_SETTING_NAME""NM_SETTING_DCB_APP_FCOE_FLAGS,
-	                    nmc_property_dcb_get_app_fcoe_flags,
-	                    nmc_property_dcb_set_flags,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_DCB_SETTING_NAME""NM_SETTING_DCB_APP_FCOE_MODE,
-	                    nmc_property_dcb_get_app_fcoe_mode,
-	                    nmc_property_dcb_set_app_fcoe_mode,
-	                    NULL,
-	                    NULL,
-	                    nmc_property_dcb_allowed_app_fcoe_modes,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_DCB_SETTING_NAME""NM_SETTING_DCB_APP_FCOE_PRIORITY,
-	                    nmc_property_dcb_get_app_fcoe_priority,
-	                    nmc_property_dcb_set_priority,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_DCB_SETTING_NAME""NM_SETTING_DCB_APP_ISCSI_FLAGS,
-	                    nmc_property_dcb_get_app_iscsi_flags,
-	                    nmc_property_dcb_set_flags,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_DCB_SETTING_NAME""NM_SETTING_DCB_APP_ISCSI_PRIORITY,
-	                    nmc_property_dcb_get_app_iscsi_priority,
-	                    nmc_property_dcb_set_priority,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_DCB_SETTING_NAME""NM_SETTING_DCB_APP_FIP_FLAGS,
-	                    nmc_property_dcb_get_app_fip_flags,
-	                    nmc_property_dcb_set_flags,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_DCB_SETTING_NAME""NM_SETTING_DCB_APP_FIP_PRIORITY,
-	                    nmc_property_dcb_get_app_fip_priority,
-	                    nmc_property_dcb_set_priority,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_DCB_SETTING_NAME""NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS,
-	                    nmc_property_dcb_get_pfc_flags,
-	                    nmc_property_dcb_set_flags,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_DCB_SETTING_NAME""NM_SETTING_DCB_PRIORITY_FLOW_CONTROL,
-	                    nmc_property_dcb_get_pfc,
-	                    nmc_property_dcb_set_pfc,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_DCB_SETTING_NAME""NM_SETTING_DCB_PRIORITY_GROUP_FLAGS,
-	                    nmc_property_dcb_get_pg_flags,
-	                    nmc_property_dcb_set_flags,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_DCB_SETTING_NAME""NM_SETTING_DCB_PRIORITY_GROUP_ID,
-	                    nmc_property_dcb_get_pg_group_id,
-	                    nmc_property_dcb_set_pg_group_id,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_DCB_SETTING_NAME""NM_SETTING_DCB_PRIORITY_GROUP_BANDWIDTH,
-	                    nmc_property_dcb_get_pg_group_bandwidth,
-	                    nmc_property_dcb_set_pg_group_bandwidth,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_DCB_SETTING_NAME""NM_SETTING_DCB_PRIORITY_BANDWIDTH,
-	                    nmc_property_dcb_get_pg_bandwidth,
-	                    nmc_property_dcb_set_pg_bandwidth,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_DCB_SETTING_NAME""NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH,
-	                    nmc_property_dcb_get_pg_strict,
-	                    nmc_property_dcb_set_pg_strict,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_DCB_SETTING_NAME""NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS,
-	                    nmc_property_dcb_get_pg_traffic_class,
-	                    nmc_property_dcb_set_pg_traffic_class,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-
 	/* Add editable properties for NM_SETTING_GSM_SETTING_NAME */
 	nmc_add_prop_funcs (NM_SETTING_GSM_SETTING_NAME""NM_SETTING_GSM_NUMBER,
 	                    nmc_property_gsm_get_number,
@@ -9170,46 +9023,6 @@ setting_team_port_details (const NmcSettingInfo *setting_info, NMSetting *settin
 }
 
 static gboolean
-setting_dcb_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingDcb *s_dcb = NM_SETTING_DCB (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_DCB (s_dcb), FALSE);
-
-	tmpl = nmc_fields_setting_dcb;
-	tmpl_len = sizeof (nmc_fields_setting_dcb);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_DCB_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_dcb_get_app_fcoe_flags (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 2, nmc_property_dcb_get_app_fcoe_priority (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 3, nmc_property_dcb_get_app_fcoe_mode (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 4, nmc_property_dcb_get_app_iscsi_flags (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 5, nmc_property_dcb_get_app_iscsi_priority (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 6, nmc_property_dcb_get_app_fip_flags (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 7, nmc_property_dcb_get_app_fip_priority (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 8, nmc_property_dcb_get_pfc_flags (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 9, nmc_property_dcb_get_pfc (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 10, nmc_property_dcb_get_pg_flags (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 11, nmc_property_dcb_get_pg_group_id (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 12, nmc_property_dcb_get_pg_group_bandwidth (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 13, nmc_property_dcb_get_pg_bandwidth (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 14, nmc_property_dcb_get_pg_strict (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 15, nmc_property_dcb_get_pg_traffic_class (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
 setting_tun_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingTun *s_tun = NM_SETTING_TUN (setting);
@@ -9432,6 +9245,11 @@ static const NmcPropertyType _pt_gobject_uint = {
 	.set_fcn =                      _set_fcn_gobject_uint,
 };
 
+static const NmcPropertyType _pt_nmc_getset = {
+	.get_fcn =                      _get_fcn_nmc,
+	.set_fcn =                      _set_fcn_nmc,
+};
+
 /*****************************************************************************/
 
 #define PROPERTY_INFO_NAME() \
@@ -9602,6 +9420,131 @@ static const NmcPropertyInfo properties_setting_connection[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_WITH_ARG1 (nmc,
 			.values_static =            VALUES_STATIC ("default", "disable", "enable-rx"),
 			.get_fcn =                  nmc_property_connection_get_lldp,
+		),
+	},
+};
+
+static const NmcPropertyInfo properties_setting_dcb[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_DCB_APP_FCOE_FLAGS),
+		.property_type =                &_pt_nmc_getset,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_dcb_get_app_fcoe_flags,
+			.set_fcn =                  nmc_property_dcb_set_flags,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_DCB_APP_FCOE_PRIORITY),
+		.property_type =                &_pt_nmc_getset,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_dcb_get_app_fcoe_priority,
+			.set_fcn =                  nmc_property_dcb_set_priority,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_DCB_APP_FCOE_MODE),
+		.property_type =                &_pt_nmc_getset,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_WITH_ARG1 (nmc,
+			.values_static =            _dcb_valid_fcoe_modes,
+			.get_fcn =                  nmc_property_dcb_get_app_fcoe_mode,
+			.set_fcn =                  nmc_property_dcb_set_app_fcoe_mode,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_DCB_APP_ISCSI_FLAGS),
+		.property_type =                &_pt_nmc_getset,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_dcb_get_app_iscsi_flags,
+			.set_fcn =                  nmc_property_dcb_set_flags,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_DCB_APP_ISCSI_PRIORITY),
+		.property_type =                &_pt_nmc_getset,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_dcb_get_app_iscsi_priority,
+			.set_fcn =                  nmc_property_dcb_set_priority,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_DCB_APP_FIP_FLAGS),
+		.property_type =                &_pt_nmc_getset,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_dcb_get_app_fip_flags,
+			.set_fcn =                  nmc_property_dcb_set_flags,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_DCB_APP_FIP_PRIORITY),
+		.property_type =                &_pt_nmc_getset,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_dcb_get_app_fip_priority,
+			.set_fcn =                  nmc_property_dcb_set_priority,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS),
+		.property_type =                &_pt_nmc_getset,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_dcb_get_pfc_flags,
+			.set_fcn =                  nmc_property_dcb_set_flags,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_DCB_PRIORITY_FLOW_CONTROL),
+		.property_type =                &_pt_nmc_getset,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_dcb_get_pfc,
+			.set_fcn =                  nmc_property_dcb_set_pfc,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_DCB_PRIORITY_GROUP_FLAGS),
+		.property_type =                &_pt_nmc_getset,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_dcb_get_pg_flags,
+			.set_fcn =                  nmc_property_dcb_set_flags,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_DCB_PRIORITY_GROUP_ID),
+		.property_type =                &_pt_nmc_getset,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_dcb_get_pg_group_id,
+			.set_fcn =                  nmc_property_dcb_set_pg_group_id,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_DCB_PRIORITY_GROUP_BANDWIDTH),
+		.property_type =                &_pt_nmc_getset,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_dcb_get_pg_group_bandwidth,
+			.set_fcn =                  nmc_property_dcb_set_pg_group_bandwidth,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_DCB_PRIORITY_BANDWIDTH),
+		.property_type =                &_pt_nmc_getset,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_dcb_get_pg_bandwidth,
+			.set_fcn =                  nmc_property_dcb_set_pg_bandwidth,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH),
+		.property_type =                &_pt_nmc_getset,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_dcb_get_pg_strict,
+			.set_fcn =                  nmc_property_dcb_set_pg_strict,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS),
+		.property_type =                &_pt_nmc_getset,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_dcb_get_pg_traffic_class,
+			.set_fcn =                  nmc_property_dcb_set_pg_traffic_class,
 		),
 	},
 };
@@ -9978,7 +9921,8 @@ const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM] = {
 	},
 	[NM_META_SETTING_TYPE_DCB] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_DCB],
-		.get_setting_details                = setting_dcb_details,
+		.properties                         = properties_setting_dcb,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_dcb),
 	},
 	[NM_META_SETTING_TYPE_GSM] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_GSM],

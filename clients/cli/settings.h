@@ -174,7 +174,6 @@ extern NmcOutputField nmc_fields_setting_bridge[];
 extern NmcOutputField nmc_fields_setting_bridge_port[];
 extern NmcOutputField nmc_fields_setting_team[];
 extern NmcOutputField nmc_fields_setting_team_port[];
-extern NmcOutputField nmc_fields_setting_dcb[];
 extern NmcOutputField nmc_fields_setting_tun[];
 extern NmcOutputField nmc_fields_setting_ip_tunnel[];
 extern NmcOutputField nmc_fields_setting_macvlan[];

@@ -170,7 +170,7 @@ complete_fields (const char *prefix)
 	complete_field (h, "bridge-port", nmc_fields_setting_bridge_port);
 	complete_field (h, "team", nmc_fields_setting_team);
 	complete_field (h, "team-port", nmc_fields_setting_team_port);
-	complete_field (h, "dcb", nmc_fields_setting_dcb);
+	complete_field_new (h, "dcb", NM_META_SETTING_TYPE_DCB);
 	complete_field (h, "tun", nmc_fields_setting_tun);
 	complete_field (h, "ip-tunnel", nmc_fields_setting_ip_tunnel);
 	complete_field (h, "macvlan", nmc_fields_setting_macvlan);
