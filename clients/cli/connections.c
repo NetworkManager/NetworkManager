@@ -172,7 +172,7 @@ NmcOutputField nmc_fields_settings_names[] = {
 	SETTING_FIELD_TYPE (NM_SETTING_IP6_CONFIG_SETTING_NAME,   NM_META_SETTING_TYPE_IP6_CONFIG),          /* 6 */
 	SETTING_FIELD (NM_SETTING_SERIAL_SETTING_NAME,            nmc_fields_setting_serial + 1),            /* 7 */
 	SETTING_FIELD (NM_SETTING_PPP_SETTING_NAME,               nmc_fields_setting_ppp + 1),               /* 8 */
-	SETTING_FIELD (NM_SETTING_PPPOE_SETTING_NAME,             nmc_fields_setting_pppoe + 1),             /* 9 */
+	SETTING_FIELD_TYPE (NM_SETTING_PPPOE_SETTING_NAME,        NM_META_SETTING_TYPE_PPPOE),               /* 9 */
 	SETTING_FIELD (NM_SETTING_GSM_SETTING_NAME,               nmc_fields_setting_gsm + 1),               /* 10 */
 	SETTING_FIELD (NM_SETTING_CDMA_SETTING_NAME,              nmc_fields_setting_cdma + 1),              /* 11 */
 	SETTING_FIELD (NM_SETTING_BLUETOOTH_SETTING_NAME,         nmc_fields_setting_bluetooth + 1),         /* 12 */

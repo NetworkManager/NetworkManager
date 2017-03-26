@@ -37,6 +37,13 @@ static char *wep_key_type_to_string (NMWepKeyType type);
 static gboolean validate_int (NMSetting *setting, const char* prop, gint val, GError **error);
 static gboolean validate_uint (NMSetting *setting, const char* prop, guint val, GError **error);
 static gboolean validate_int64 (NMSetting *setting, const char* prop, gint64 val, GError **error);
+static char *secret_flags_to_string (guint32 flags, NmcPropertyGetType get_type);
+
+#define ALL_SECRET_FLAGS \
+	(NM_SETTING_SECRET_FLAG_NONE | \
+	 NM_SETTING_SECRET_FLAG_AGENT_OWNED | \
+	 NM_SETTING_SECRET_FLAG_NOT_SAVED | \
+	 NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
 
 /*****************************************************************************/
 
@@ -100,6 +107,22 @@ _get_fcn_gobject (const NmcSettingInfo *setting_info,
 	s = g_value_dup_string (&val);
 	g_value_unset (&val);
 	return s;
+}
+
+static char *
+_get_fcn_gobject_secret_flags (const NmcSettingInfo *setting_info,
+                               const NmcPropertyInfo *property_info,
+                               NMSetting *setting,
+                               NmcPropertyGetType get_type)
+{
+	guint v;
+	GValue val = G_VALUE_INIT;
+
+	g_value_init (&val, G_TYPE_UINT);
+	g_object_get_property (G_OBJECT (setting), property_info->property_name, &val);
+	v = g_value_get_uint (&val);
+	g_value_unset (&val);
+	return secret_flags_to_string (v, get_type);
 }
 
 /*****************************************************************************/
@@ -228,6 +251,40 @@ _set_fcn_gobject_uint (const NmcSettingInfo *setting_info,
 		return FALSE;
 
 	g_object_set (setting, property_info->property_name, (guint) val_int, NULL);
+	return TRUE;
+}
+
+static gboolean
+_set_fcn_gobject_secret_flags (const NmcSettingInfo *setting_info,
+                               const NmcPropertyInfo *property_info,
+                               NMSetting *setting,
+                               const char *value,
+                               GError **error)
+{
+	char **strv = NULL, **iter;
+	unsigned long flags = 0, val_int;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	strv = nmc_strsplit_set (value, " \t,", 0);
+	for (iter = strv; iter && *iter; iter++) {
+		if (!nmc_string_to_uint (*iter, TRUE, 0, ALL_SECRET_FLAGS, &val_int)) {
+			g_set_error (error, 1, 0, _("'%s' is not a valid flag number; use <0-%d>"),
+			             *iter, ALL_SECRET_FLAGS);
+			g_strfreev (strv);
+			return FALSE;
+		}
+		flags += val_int;
+	}
+	g_strfreev (strv);
+
+	/* Validate the flags number */
+	if (flags > ALL_SECRET_FLAGS) {
+		flags = ALL_SECRET_FLAGS;
+		g_print (_("Warning: '%s' sum is higher than all flags => all flags set\n"), value);
+	}
+
+	g_object_set (setting, property_info->property_name, (guint) flags, NULL);
 	return TRUE;
 }
 
@@ -683,21 +740,6 @@ NmcOutputField nmc_fields_setting_ppp[] = {
                                        NM_SETTING_PPP_MTU","\
                                        NM_SETTING_PPP_LCP_ECHO_FAILURE","\
                                        NM_SETTING_PPP_LCP_ECHO_INTERVAL
-
-/* Available fields for NM_SETTING_PPPOE_SETTING_NAME */
-NmcOutputField nmc_fields_setting_pppoe[] = {
-	SETTING_FIELD ("name"),                           /* 0 */
-	SETTING_FIELD (NM_SETTING_PPPOE_SERVICE),         /* 1 */
-	SETTING_FIELD (NM_SETTING_PPPOE_USERNAME),        /* 2 */
-	SETTING_FIELD (NM_SETTING_PPPOE_PASSWORD),        /* 3 */
-	SETTING_FIELD (NM_SETTING_PPPOE_PASSWORD_FLAGS),  /* 4 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_PPPOE_ALL     "name"","\
-                                         NM_SETTING_PPPOE_SERVICE","\
-                                         NM_SETTING_PPPOE_USERNAME","\
-                                         NM_SETTING_PPPOE_PASSWORD","\
-                                         NM_SETTING_PPPOE_PASSWORD_FLAGS
 
 /* Available fields for NM_SETTING_ADSL_SETTING_NAME */
 NmcOutputField nmc_fields_setting_adsl[] = {
@@ -1743,12 +1785,6 @@ nmc_property_set_ifname (NMSetting *setting, const char *prop, const char *val, 
 	g_object_set (setting, prop, val, NULL);
 	return TRUE;
 }
-
-#define ALL_SECRET_FLAGS \
-	(NM_SETTING_SECRET_FLAG_NONE | \
-	 NM_SETTING_SECRET_FLAG_AGENT_OWNED | \
-	 NM_SETTING_SECRET_FLAG_NOT_SAVED | \
-	 NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
 
 static gboolean
 nmc_property_set_secret_flags (NMSetting *setting, const char *prop, const char *val, GError **error)
@@ -4576,13 +4612,6 @@ DEFINE_GETTER (nmc_property_ppp_get_lcp_echo_failure, NM_SETTING_PPP_LCP_ECHO_FA
 DEFINE_GETTER (nmc_property_ppp_get_lcp_echo_interval, NM_SETTING_PPP_LCP_ECHO_INTERVAL)
 
 
-/* --- NM_SETTING_PPPOE_SETTING_NAME property functions --- */
-DEFINE_GETTER (nmc_property_pppoe_get_service, NM_SETTING_PPPOE_SERVICE)
-DEFINE_GETTER (nmc_property_pppoe_get_username, NM_SETTING_PPPOE_USERNAME)
-DEFINE_GETTER (nmc_property_pppoe_get_password, NM_SETTING_PPPOE_PASSWORD)
-DEFINE_SECRET_FLAGS_GETTER (nmc_property_pppoe_get_password_flags, NM_SETTING_PPPOE_PASSWORD_FLAGS)
-
-
 static char *
 nmc_property_proxy_get_method (NMSetting *setting, NmcPropertyGetType get_type)
 {
@@ -7019,36 +7048,6 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL);
 
-	/* Add editable properties for NM_SETTING_PPPOE_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_PPPOE_SETTING_NAME""NM_SETTING_PPPOE_SERVICE,
-	                    nmc_property_pppoe_get_service,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_PPPOE_SETTING_NAME""NM_SETTING_PPPOE_USERNAME,
-	                    nmc_property_pppoe_get_username,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_PPPOE_SETTING_NAME""NM_SETTING_PPPOE_PASSWORD,
-	                    nmc_property_pppoe_get_password,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_PPPOE_SETTING_NAME""NM_SETTING_PPPOE_PASSWORD_FLAGS,
-	                    nmc_property_pppoe_get_password_flags,
-	                    nmc_property_set_secret_flags,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-
 	/* Add editable properties for NM_SETTING_SERIAL_SETTING_NAME */
 	nmc_add_prop_funcs (NM_SETTING_SERIAL_SETTING_NAME""NM_SETTING_SERIAL_BAUD,
 	                    nmc_property_serial_get_baud,
@@ -8304,10 +8303,13 @@ _get_setting_details (const NmcSettingInfo *setting_info, NMSetting *setting, Nm
 	for (i = 0; i < setting_info->properties_num; i++) {
 		const NmcPropertyInfo *property_info = &setting_info->properties[i];
 
-		set_val_str (arr, i, property_info->property_type->get_fcn (setting_info,
-		                                                            property_info,
-		                                                            setting,
-		                                                            NMC_PROPERTY_GET_PRETTY));
+		if (!property_info->is_secret || secrets) {
+			set_val_str (arr, i, property_info->property_type->get_fcn (setting_info,
+			                                                            property_info,
+			                                                            setting,
+			                                                            NMC_PROPERTY_GET_PRETTY));
+		} else
+			set_val_str (arr, i, g_strdup (_("<hidden>")));
 	}
 
 	g_ptr_array_add (nmc->output_data, arr);
@@ -8574,35 +8576,6 @@ setting_ppp_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmC
 	set_val_str (arr, 16, nmc_property_ppp_get_mtu (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 17, nmc_property_ppp_get_lcp_echo_failure (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 18, nmc_property_ppp_get_lcp_echo_interval (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
-setting_pppoe_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingPppoe *s_pppoe = NM_SETTING_PPPOE (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_PPPOE (s_pppoe), FALSE);
-
-	tmpl = nmc_fields_setting_pppoe;
-	tmpl_len = sizeof (nmc_fields_setting_pppoe);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_PPPOE_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_pppoe_get_service (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 2, nmc_property_pppoe_get_username (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 3, GET_SECRET (secrets, setting, nmc_property_pppoe_get_password));
-	set_val_str (arr, 4, nmc_property_pppoe_get_password_flags (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -9245,6 +9218,11 @@ static const NmcPropertyType _pt_gobject_uint = {
 	.set_fcn =                      _set_fcn_gobject_uint,
 };
 
+static const NmcPropertyType _pt_gobject_secret_flags = {
+	.get_fcn =                      _get_fcn_gobject_secret_flags,
+	.set_fcn =                      _set_fcn_gobject_secret_flags,
+};
+
 static const NmcPropertyType _pt_nmc_getset = {
 	.get_fcn =                      _get_fcn_nmc,
 	.set_fcn =                      _set_fcn_nmc,
@@ -9850,6 +9828,27 @@ static const NmcPropertyInfo properties_setting_ip6_config[] = {
 	},
 };
 
+static const NmcPropertyInfo properties_setting_pppoe[] = {
+	PROPERTY_INFO_NAME (),
+	{
+		.property_name =                N_ (NM_SETTING_PPPOE_SERVICE),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_PPPOE_USERNAME),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_PPPOE_PASSWORD),
+		.is_secret =                    TRUE,
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_PPPOE_PASSWORD_FLAGS),
+		.property_type =                &_pt_gobject_secret_flags,
+	},
+};
+
 static const NmcPropertyInfo properties_setting_proxy[] = {
 	PROPERTY_INFO_NAME(),
 	{
@@ -9960,7 +9959,8 @@ const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM] = {
 	},
 	[NM_META_SETTING_TYPE_PPPOE] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_PPPOE],
-		.get_setting_details                = setting_pppoe_details,
+		.properties                         = properties_setting_pppoe,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_pppoe),
 	},
 	[NM_META_SETTING_TYPE_PPP] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_PPP],

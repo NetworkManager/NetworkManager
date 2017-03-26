@@ -91,6 +91,8 @@ struct _NmcPropertyInfo {
 	 * group_list/setting_info. */
 	bool is_name:1;
 
+	bool is_secret:1;
+
 	const char *describe_message;
 
 	const NmcPropertyType    *property_type;
@@ -159,7 +161,6 @@ extern NmcOutputField nmc_fields_setting_wireless[];
 extern NmcOutputField nmc_fields_setting_wireless_security[];
 extern NmcOutputField nmc_fields_setting_serial[];
 extern NmcOutputField nmc_fields_setting_ppp[];
-extern NmcOutputField nmc_fields_setting_pppoe[];
 extern NmcOutputField nmc_fields_setting_adsl[];
 extern NmcOutputField nmc_fields_setting_gsm[];
 extern NmcOutputField nmc_fields_setting_cdma[];
