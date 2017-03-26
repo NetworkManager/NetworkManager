@@ -255,6 +255,18 @@ _set_fcn_gobject_uint (const NmcSettingInfo *setting_info,
 }
 
 static gboolean
+_set_fcn_gobject_mtu (const NmcSettingInfo *setting_info,
+                      const NmcPropertyInfo *property_info,
+                      NMSetting *setting,
+                      const char *value,
+                      GError **error)
+{
+	if (nm_streq0 (value, "auto"))
+		value = "0";
+	return _set_fcn_gobject_uint (setting_info, property_info, setting, value, error);
+}
+
+static gboolean
 _set_fcn_gobject_secret_flags (const NmcSettingInfo *setting_info,
                                const NmcPropertyInfo *property_info,
                                NMSetting *setting,
@@ -561,49 +573,6 @@ NmcOutputField nmc_fields_setting_serial[] = {
                                           NM_SETTING_SERIAL_PARITY","\
                                           NM_SETTING_SERIAL_STOPBITS","\
                                           NM_SETTING_SERIAL_SEND_DELAY
-
-/* Available fields for NM_SETTING_PPP_SETTING_NAME */
-NmcOutputField nmc_fields_setting_ppp[] = {
-	SETTING_FIELD ("name"),                            /* 0 */
-	SETTING_FIELD (NM_SETTING_PPP_NOAUTH),             /* 1 */
-	SETTING_FIELD (NM_SETTING_PPP_REFUSE_EAP),         /* 2 */
-	SETTING_FIELD (NM_SETTING_PPP_REFUSE_PAP),         /* 3 */
-	SETTING_FIELD (NM_SETTING_PPP_REFUSE_CHAP),        /* 4 */
-	SETTING_FIELD (NM_SETTING_PPP_REFUSE_MSCHAP),      /* 5 */
-	SETTING_FIELD (NM_SETTING_PPP_REFUSE_MSCHAPV2),    /* 6 */
-	SETTING_FIELD (NM_SETTING_PPP_NOBSDCOMP),          /* 7 */
-	SETTING_FIELD (NM_SETTING_PPP_NODEFLATE),          /* 8 */
-	SETTING_FIELD (NM_SETTING_PPP_NO_VJ_COMP),         /* 9 */
-	SETTING_FIELD (NM_SETTING_PPP_REQUIRE_MPPE),       /* 10 */
-	SETTING_FIELD (NM_SETTING_PPP_REQUIRE_MPPE_128),   /* 11 */
-	SETTING_FIELD (NM_SETTING_PPP_MPPE_STATEFUL),      /* 12 */
-	SETTING_FIELD (NM_SETTING_PPP_CRTSCTS),            /* 13 */
-	SETTING_FIELD (NM_SETTING_PPP_BAUD),               /* 14 */
-	SETTING_FIELD (NM_SETTING_PPP_MRU),                /* 15 */
-	SETTING_FIELD (NM_SETTING_PPP_MTU),                /* 16 */
-	SETTING_FIELD (NM_SETTING_PPP_LCP_ECHO_FAILURE),   /* 17 */
-	SETTING_FIELD (NM_SETTING_PPP_LCP_ECHO_INTERVAL),  /* 18 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_PPP_ALL     "name"","\
-                                       NM_SETTING_PPP_NOAUTH","\
-                                       NM_SETTING_PPP_REFUSE_EAP","\
-                                       NM_SETTING_PPP_REFUSE_PAP","\
-                                       NM_SETTING_PPP_REFUSE_CHAP","\
-                                       NM_SETTING_PPP_REFUSE_MSCHAP","\
-                                       NM_SETTING_PPP_REFUSE_MSCHAPV2","\
-                                       NM_SETTING_PPP_NOBSDCOMP","\
-                                       NM_SETTING_PPP_NODEFLATE","\
-                                       NM_SETTING_PPP_NO_VJ_COMP","\
-                                       NM_SETTING_PPP_REQUIRE_MPPE","\
-                                       NM_SETTING_PPP_REQUIRE_MPPE_128","\
-                                       NM_SETTING_PPP_MPPE_STATEFUL","\
-                                       NM_SETTING_PPP_CRTSCTS","\
-                                       NM_SETTING_PPP_BAUD","\
-                                       NM_SETTING_PPP_MRU","\
-                                       NM_SETTING_PPP_MTU","\
-                                       NM_SETTING_PPP_LCP_ECHO_FAILURE","\
-                                       NM_SETTING_PPP_LCP_ECHO_INTERVAL
 
 /* Available fields for NM_SETTING_ADSL_SETTING_NAME */
 NmcOutputField nmc_fields_setting_adsl[] = {
@@ -4334,28 +4303,6 @@ nmc_property_olpc_set_channel (NMSetting *setting, const char *prop, const char 
 	return TRUE;
 }
 
-
-/* --- NM_SETTING_PPP_SETTING_NAME property functions --- */
-DEFINE_GETTER (nmc_property_ppp_get_noauth, NM_SETTING_PPP_NOAUTH)
-DEFINE_GETTER (nmc_property_ppp_get_refuse_eap, NM_SETTING_PPP_REFUSE_EAP)
-DEFINE_GETTER (nmc_property_ppp_get_refuse_pap, NM_SETTING_PPP_REFUSE_PAP)
-DEFINE_GETTER (nmc_property_ppp_get_refuse_chap, NM_SETTING_PPP_REFUSE_CHAP)
-DEFINE_GETTER (nmc_property_ppp_get_refuse_mschap, NM_SETTING_PPP_REFUSE_MSCHAP)
-DEFINE_GETTER (nmc_property_ppp_get_refuse_mschapv2, NM_SETTING_PPP_REFUSE_MSCHAPV2)
-DEFINE_GETTER (nmc_property_ppp_get_nobsdcomp, NM_SETTING_PPP_NOBSDCOMP)
-DEFINE_GETTER (nmc_property_ppp_get_nodeflate, NM_SETTING_PPP_NODEFLATE)
-DEFINE_GETTER (nmc_property_ppp_get_no_vj_comp, NM_SETTING_PPP_NO_VJ_COMP)
-DEFINE_GETTER (nmc_property_ppp_get_require_mppe, NM_SETTING_PPP_REQUIRE_MPPE)
-DEFINE_GETTER (nmc_property_ppp_get_require_mppe_128, NM_SETTING_PPP_REQUIRE_MPPE_128)
-DEFINE_GETTER (nmc_property_ppp_get_mppe_stateful, NM_SETTING_PPP_MPPE_STATEFUL)
-DEFINE_GETTER (nmc_property_ppp_get_crtscts, NM_SETTING_PPP_CRTSCTS)
-DEFINE_GETTER (nmc_property_ppp_get_baud, NM_SETTING_PPP_BAUD)
-DEFINE_GETTER (nmc_property_ppp_get_mru, NM_SETTING_PPP_MRU)
-DEFINE_GETTER (nmc_property_ppp_get_mtu, NM_SETTING_PPP_MTU)
-DEFINE_GETTER (nmc_property_ppp_get_lcp_echo_failure, NM_SETTING_PPP_LCP_ECHO_FAILURE)
-DEFINE_GETTER (nmc_property_ppp_get_lcp_echo_interval, NM_SETTING_PPP_LCP_ECHO_INTERVAL)
-
-
 static char *
 nmc_property_proxy_get_method (NMSetting *setting, NmcPropertyGetType get_type)
 {
@@ -6317,134 +6264,6 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL);
 
-	/* Add editable properties for NM_SETTING_PPP_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_PPP_SETTING_NAME""NM_SETTING_PPP_NOAUTH,
-	                    nmc_property_ppp_get_noauth,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_PPP_SETTING_NAME""NM_SETTING_PPP_REFUSE_EAP,
-	                    nmc_property_ppp_get_refuse_eap,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_PPP_SETTING_NAME""NM_SETTING_PPP_REFUSE_PAP,
-	                    nmc_property_ppp_get_refuse_pap,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_PPP_SETTING_NAME""NM_SETTING_PPP_REFUSE_CHAP,
-	                    nmc_property_ppp_get_refuse_chap,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_PPP_SETTING_NAME""NM_SETTING_PPP_REFUSE_MSCHAP,
-	                    nmc_property_ppp_get_refuse_mschap,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_PPP_SETTING_NAME""NM_SETTING_PPP_REFUSE_MSCHAPV2,
-	                    nmc_property_ppp_get_refuse_mschapv2,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_PPP_SETTING_NAME""NM_SETTING_PPP_NOBSDCOMP,
-	                    nmc_property_ppp_get_nobsdcomp,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_PPP_SETTING_NAME""NM_SETTING_PPP_NODEFLATE,
-	                    nmc_property_ppp_get_nodeflate,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_PPP_SETTING_NAME""NM_SETTING_PPP_NO_VJ_COMP,
-	                    nmc_property_ppp_get_no_vj_comp,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_PPP_SETTING_NAME""NM_SETTING_PPP_REQUIRE_MPPE,
-	                    nmc_property_ppp_get_require_mppe,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_PPP_SETTING_NAME""NM_SETTING_PPP_REQUIRE_MPPE_128,
-	                    nmc_property_ppp_get_require_mppe_128,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_PPP_SETTING_NAME""NM_SETTING_PPP_MPPE_STATEFUL,
-	                    nmc_property_ppp_get_mppe_stateful,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_PPP_SETTING_NAME""NM_SETTING_PPP_CRTSCTS,
-	                    nmc_property_ppp_get_crtscts,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_PPP_SETTING_NAME""NM_SETTING_PPP_BAUD,
-	                    nmc_property_ppp_get_baud,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_PPP_SETTING_NAME""NM_SETTING_PPP_MRU,
-	                    nmc_property_ppp_get_mru,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_PPP_SETTING_NAME""NM_SETTING_PPP_MTU,
-	                    nmc_property_ppp_get_mtu,
-	                    nmc_property_set_mtu,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_PPP_SETTING_NAME""NM_SETTING_PPP_LCP_ECHO_FAILURE,
-	                    nmc_property_ppp_get_lcp_echo_failure,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_PPP_SETTING_NAME""NM_SETTING_PPP_LCP_ECHO_INTERVAL,
-	                    nmc_property_ppp_get_lcp_echo_interval,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-
 	/* Add editable properties for NM_SETTING_SERIAL_SETTING_NAME */
 	nmc_add_prop_funcs (NM_SETTING_SERIAL_SETTING_NAME""NM_SETTING_SERIAL_BAUD,
 	                    nmc_property_serial_get_baud,
@@ -7706,49 +7525,6 @@ setting_serial_details (const NmcSettingInfo *setting_info, NMSetting *setting, 
 }
 
 static gboolean
-setting_ppp_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingPpp *s_ppp = NM_SETTING_PPP (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_PPP (s_ppp), FALSE);
-
-	tmpl = nmc_fields_setting_ppp;
-	tmpl_len = sizeof (nmc_fields_setting_ppp);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_PPP_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_ppp_get_noauth (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 2, nmc_property_ppp_get_refuse_eap (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 3, nmc_property_ppp_get_refuse_pap (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 4, nmc_property_ppp_get_refuse_chap (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 5, nmc_property_ppp_get_refuse_mschap (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 6, nmc_property_ppp_get_refuse_mschapv2 (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 7, nmc_property_ppp_get_nobsdcomp (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 8, nmc_property_ppp_get_nodeflate (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 9, nmc_property_ppp_get_no_vj_comp (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 10, nmc_property_ppp_get_require_mppe (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 11, nmc_property_ppp_get_require_mppe_128 (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 12, nmc_property_ppp_get_mppe_stateful (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 13, nmc_property_ppp_get_crtscts (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 14, nmc_property_ppp_get_baud (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 15, nmc_property_ppp_get_mru (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 16, nmc_property_ppp_get_mtu (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 17, nmc_property_ppp_get_lcp_echo_failure (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 18, nmc_property_ppp_get_lcp_echo_interval (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
 setting_gsm_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingGsm *s_gsm = NM_SETTING_GSM (setting);
@@ -8381,6 +8157,11 @@ static const NmcPropertyType _pt_gobject_int64 = {
 static const NmcPropertyType _pt_gobject_uint = {
 	.get_fcn =                      _get_fcn_gobject,
 	.set_fcn =                      _set_fcn_gobject_uint,
+};
+
+static const NmcPropertyType _pt_gobject_mtu = {
+	.get_fcn =                      _get_fcn_gobject,
+	.set_fcn =                      _set_fcn_gobject_mtu,
 };
 
 static const NmcPropertyType _pt_gobject_secret_flags = {
@@ -9335,6 +9116,82 @@ static const NmcPropertyInfo properties_setting_pppoe[] = {
 	},
 };
 
+static const NmcPropertyInfo properties_setting_ppp[] = {
+	PROPERTY_INFO_NAME (),
+	{
+		.property_name =                N_ (NM_SETTING_PPP_NOAUTH),
+		.property_type =                &_pt_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_PPP_REFUSE_EAP),
+		.property_type =                &_pt_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_PPP_REFUSE_PAP),
+		.property_type =                &_pt_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_PPP_REFUSE_CHAP),
+		.property_type =                &_pt_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_PPP_REFUSE_MSCHAP),
+		.property_type =                &_pt_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_PPP_REFUSE_MSCHAPV2),
+		.property_type =                &_pt_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_PPP_NOBSDCOMP),
+		.property_type =                &_pt_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_PPP_NODEFLATE),
+		.property_type =                &_pt_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_PPP_NO_VJ_COMP),
+		.property_type =                &_pt_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_PPP_REQUIRE_MPPE),
+		.property_type =                &_pt_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_PPP_REQUIRE_MPPE_128),
+		.property_type =                &_pt_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_PPP_MPPE_STATEFUL),
+		.property_type =                &_pt_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_PPP_CRTSCTS),
+		.property_type =                &_pt_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_PPP_BAUD),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_PPP_MRU),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_PPP_MTU),
+		.property_type =                &_pt_gobject_mtu,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_PPP_LCP_ECHO_FAILURE),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_PPP_LCP_ECHO_INTERVAL),
+		.property_type =                &_pt_gobject_uint,
+	},
+};
+
 static const NmcPropertyInfo properties_setting_proxy[] = {
 	PROPERTY_INFO_NAME(),
 	{
@@ -9599,7 +9456,8 @@ const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM] = {
 	},
 	[NM_META_SETTING_TYPE_PPP] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_PPP],
-		.get_setting_details                = setting_ppp_details,
+		.properties                         = properties_setting_ppp,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_ppp),
 	},
 	[NM_META_SETTING_TYPE_PROXY] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_PROXY],

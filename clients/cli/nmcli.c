@@ -154,7 +154,7 @@ complete_fields (const char *prefix)
 	complete_field_new (h, "ipv4", NM_META_SETTING_TYPE_IP4_CONFIG);
 	complete_field_new (h, "ipv6", NM_META_SETTING_TYPE_IP6_CONFIG);
 	complete_field (h, "serial", nmc_fields_setting_serial);
-	complete_field (h, "ppp", nmc_fields_setting_ppp);
+	complete_field_new (h, "ppp", NM_META_SETTING_TYPE_PPP);
 	complete_field_new (h, "pppoe", NM_META_SETTING_TYPE_PPPOE);
 	complete_field (h, "adsl", nmc_fields_setting_adsl);
 	complete_field (h, "gsm", nmc_fields_setting_gsm);
