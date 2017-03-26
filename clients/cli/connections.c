@@ -163,8 +163,8 @@ NmcOutputField nmc_fields_con_show[] = {
 
 /* Available settings for 'connection show <con>' - profile part */
 NmcOutputField nmc_fields_settings_names[] = {
-	SETTING_FIELD_TYPE (NM_SETTING_CONNECTION_SETTING_NAME,   NM_META_SETTING_TYPE_CONNECTION),
-	SETTING_FIELD (NM_SETTING_WIRED_SETTING_NAME,             nmc_fields_setting_wired + 1),             /* 1 */
+	SETTING_FIELD_TYPE (NM_SETTING_CONNECTION_SETTING_NAME,   NM_META_SETTING_TYPE_CONNECTION),          /* 0 */
+	SETTING_FIELD_TYPE (NM_SETTING_WIRED_SETTING_NAME,        NM_META_SETTING_TYPE_WIRED),               /* 1 */
 	SETTING_FIELD_TYPE (NM_SETTING_802_1X_SETTING_NAME,       NM_META_SETTING_TYPE_802_1X),              /* 2 */
 	SETTING_FIELD (NM_SETTING_WIRELESS_SETTING_NAME,          nmc_fields_setting_wireless + 1),          /* 3 */
 	SETTING_FIELD_TYPE (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NM_META_SETTING_TYPE_WIRELESS_SECURITY), /* 4 */

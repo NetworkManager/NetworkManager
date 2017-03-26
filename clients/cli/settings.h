@@ -38,6 +38,11 @@ typedef struct _NmcPropertyType    NmcPropertyType;
 typedef struct _NmcPropertyTypData NmcPropertyTypData;
 
 struct _NmcPropertyType {
+
+	/* FIXME: the function should return an allocated string. */
+	const char *(*describe_fcn) (const NmcSettingInfo *setting_info,
+	                             const NmcPropertyInfo *property_info);
+
 	char *(*get_fcn) (const NmcSettingInfo *setting_info,
 	                  const NmcPropertyInfo *property_info,
 	                  NMSetting *setting,
@@ -53,6 +58,8 @@ struct _NmcPropertyType {
 	                        const char *option,
 	                        guint32 idx,
 	                        GError **error);
+
+	/* FIXME: the function should return an allocated string. */
 	const char *const*(*values_fcn) (const NmcSettingInfo *setting_info,
 	                                 const NmcPropertyInfo *property_info);
 };
@@ -78,6 +85,9 @@ struct _NmcPropertyTypData {
 				const char *const* (*values_fcn) (NMSetting *setting, const char *prop);
 			};
 		} nmc;
+		struct {
+			guint32 (*get_fcn) (NMSetting *setting);
+		} mtu;
 	};
 	const char *const*values_static;
 };
@@ -155,7 +165,6 @@ gboolean nmc_property_set_gvalue (NMSetting *setting, const char *prop, GValue *
 
 gboolean setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets);
 
-extern NmcOutputField nmc_fields_setting_wired[];
 extern NmcOutputField nmc_fields_setting_wireless[];
 extern NmcOutputField nmc_fields_setting_serial[];
 extern NmcOutputField nmc_fields_setting_gsm[];

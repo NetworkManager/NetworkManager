@@ -147,7 +147,7 @@ complete_fields (const char *prefix)
 	complete_field (h, NULL, nmc_fields_dev_lldp_list);
 
 	complete_field_new (h, "connection", NM_META_SETTING_TYPE_CONNECTION);
-	complete_field (h, "802-3-ethernet", nmc_fields_setting_wired);
+	complete_field_new (h, "802-3-ethernet", NM_META_SETTING_TYPE_WIRED);
 	complete_field_new (h, "802-1x", NM_META_SETTING_TYPE_802_1X);
 	complete_field (h, "802-11-wireless", nmc_fields_setting_wireless);
 	complete_field_new (h, "802-11-wireless-security", NM_META_SETTING_TYPE_WIRELESS_SECURITY);

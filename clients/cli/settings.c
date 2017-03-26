@@ -110,6 +110,28 @@ _get_fcn_gobject (const NmcSettingInfo *setting_info,
 }
 
 static char *
+_get_fcn_gobject_mtu (const NmcSettingInfo *setting_info,
+                      const NmcPropertyInfo *property_info,
+                      NMSetting *setting,
+                      NmcPropertyGetType get_type)
+{
+	guint32 mtu;
+
+	if (   !property_info->property_typ_data
+	    || !property_info->property_typ_data->mtu.get_fcn)
+		return _get_fcn_gobject (setting_info, property_info, setting, get_type);
+
+	mtu = property_info->property_typ_data->mtu.get_fcn (setting);
+	if (mtu == 0) {
+		if (get_type == NMC_PROPERTY_GET_PARSABLE)
+			return g_strdup ("auto");
+		else
+			return g_strdup (_("auto"));
+	}
+	return g_strdup_printf ("%u", (unsigned) mtu);
+}
+
+static char *
 _get_fcn_gobject_secret_flags (const NmcSettingInfo *setting_info,
                                const NmcPropertyInfo *property_info,
                                NMSetting *setting,
@@ -275,24 +297,40 @@ _set_fcn_gobject_mtu (const NmcSettingInfo *setting_info,
 }
 
 static gboolean
+_set_fcn_gobject_mac_impl (const NmcSettingInfo *setting_info,
+                           const NmcPropertyInfo *property_info,
+                           NMSetting *setting,
+                           const char *value,
+                           gboolean is_cloned_mac,
+                           GError **error)
+{
+	if (   (!is_cloned_mac || !NM_CLONED_MAC_IS_SPECIAL (value))
+	    && !nm_utils_hwaddr_valid (value, ETH_ALEN)) {
+		g_set_error (error, 1, 0, _("'%s' is not a valid Ethernet MAC"), value);
+		return FALSE;
+	}
+	g_object_set (setting, property_info->property_name, value, NULL);
+	return TRUE;
+}
+
+static gboolean
 _set_fcn_gobject_mac (const NmcSettingInfo *setting_info,
                       const NmcPropertyInfo *property_info,
                       NMSetting *setting,
                       const char *value,
                       GError **error)
 {
-	gboolean is_cloned_mac = FALSE;
+	return _set_fcn_gobject_mac_impl (setting_info, property_info, setting, value, FALSE, error);
+}
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if (   (!is_cloned_mac || !NM_CLONED_MAC_IS_SPECIAL (value))
-	    && !nm_utils_hwaddr_valid (value, ETH_ALEN)) {
-		g_set_error (error, 1, 0, _("'%s' is not a valid Ethernet MAC"), value);
-		return FALSE;
-	}
-
-	g_object_set (setting, property_info->property_name, value, NULL);
-	return TRUE;
+static gboolean
+_set_fcn_gobject_mac_cloned (const NmcSettingInfo *setting_info,
+                             const NmcPropertyInfo *property_info,
+                             NMSetting *setting,
+                             const char *value,
+                             GError **error)
+{
+	return _set_fcn_gobject_mac_impl (setting_info, property_info, setting, value, TRUE, error);
 }
 
 static gboolean
@@ -511,41 +549,6 @@ _get_nmc_output_fields (const NmcSettingInfo *setting_info)
 }
 
 /*****************************************************************************/
-
-/* Available fields for NM_SETTING_WIRED_SETTING_NAME */
-NmcOutputField nmc_fields_setting_wired[] = {
-	SETTING_FIELD ("name"),                                  /* 0 */
-	SETTING_FIELD (NM_SETTING_WIRED_PORT),                   /* 1 */
-	SETTING_FIELD (NM_SETTING_WIRED_SPEED),                  /* 2 */
-	SETTING_FIELD (NM_SETTING_WIRED_DUPLEX),                 /* 3 */
-	SETTING_FIELD (NM_SETTING_WIRED_AUTO_NEGOTIATE),         /* 4 */
-	SETTING_FIELD (NM_SETTING_WIRED_MAC_ADDRESS),            /* 5 */
-	SETTING_FIELD (NM_SETTING_WIRED_CLONED_MAC_ADDRESS),     /* 6 */
-	SETTING_FIELD (NM_SETTING_WIRED_GENERATE_MAC_ADDRESS_MASK), /* 7 */
-	SETTING_FIELD (NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST),  /* 8 */
-	SETTING_FIELD (NM_SETTING_WIRED_MTU),                    /* 9 */
-	SETTING_FIELD (NM_SETTING_WIRED_S390_SUBCHANNELS),       /* 10 */
-	SETTING_FIELD (NM_SETTING_WIRED_S390_NETTYPE),           /* 11 */
-	SETTING_FIELD (NM_SETTING_WIRED_S390_OPTIONS),           /* 12 */
-	SETTING_FIELD (NM_SETTING_WIRED_WAKE_ON_LAN),            /* 13 */
-	SETTING_FIELD (NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD),   /* 14 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
-};
-#define NMC_FIELDS_SETTING_WIRED_ALL     "name"","\
-                                         NM_SETTING_WIRED_PORT","\
-                                         NM_SETTING_WIRED_SPEED","\
-                                         NM_SETTING_WIRED_DUPLEX","\
-                                         NM_SETTING_WIRED_AUTO_NEGOTIATE","\
-                                         NM_SETTING_WIRED_MAC_ADDRESS","\
-                                         NM_SETTING_WIRED_CLONED_MAC_ADDRESS","\
-                                         NM_SETTING_WIRED_GENERATE_MAC_ADDRESS_MASK","\
-                                         NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST","\
-                                         NM_SETTING_WIRED_MTU","\
-                                         NM_SETTING_WIRED_S390_SUBCHANNELS","\
-                                         NM_SETTING_WIRED_S390_NETTYPE","\
-                                         NM_SETTING_WIRED_S390_OPTIONS","\
-                                         NM_SETTING_WIRED_WAKE_ON_LAN","\
-                                         NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD
 
 /* Available fields for NM_SETTING_WIRELESS_SETTING_NAME */
 NmcOutputField nmc_fields_setting_wireless[] = {
@@ -4612,55 +4615,6 @@ DEFINE_GETTER (nmc_property_vxlan_get_rsc, NM_SETTING_VXLAN_RSC)
 DEFINE_GETTER (nmc_property_vxlan_get_l2_miss, NM_SETTING_VXLAN_L2_MISS)
 DEFINE_GETTER (nmc_property_vxlan_get_l3_miss, NM_SETTING_VXLAN_L3_MISS)
 
-/* --- NM_SETTING_WIRED_SETTING_NAME property functions --- */
-DEFINE_GETTER (nmc_property_wired_get_port, NM_SETTING_WIRED_PORT)
-DEFINE_GETTER (nmc_property_wired_get_auto_negotiate, NM_SETTING_WIRED_AUTO_NEGOTIATE)
-DEFINE_GETTER (nmc_property_wired_get_mac_address, NM_SETTING_WIRED_MAC_ADDRESS)
-DEFINE_GETTER (nmc_property_wired_get_cloned_mac_address, NM_SETTING_WIRED_CLONED_MAC_ADDRESS)
-DEFINE_GETTER (nmc_property_wired_get_generate_mac_address_mask, NM_SETTING_WIRED_GENERATE_MAC_ADDRESS_MASK)
-DEFINE_GETTER (nmc_property_wired_get_mac_address_blacklist, NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST)
-DEFINE_GETTER (nmc_property_wired_get_s390_subchannels, NM_SETTING_WIRED_S390_SUBCHANNELS)
-DEFINE_GETTER (nmc_property_wired_get_s390_nettype, NM_SETTING_WIRED_S390_NETTYPE)
-DEFINE_GETTER (nmc_property_wired_get_s390_options, NM_SETTING_WIRED_S390_OPTIONS)
-DEFINE_GETTER (nmc_property_wired_get_wake_on_lan_password, NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD)
-
-static char *
-nmc_property_wired_get_speed (NMSetting *setting, NmcPropertyGetType get_type)
-{
-	NMSettingWired *s_wired = NM_SETTING_WIRED (setting);
-	guint32 speed;
-
-	speed = nm_setting_wired_get_speed (s_wired);
-	return g_strdup_printf ("%d", speed);
-}
-
-static char *
-nmc_property_wired_get_duplex (NMSetting *setting, NmcPropertyGetType get_type)
-{
-	NMSettingWired *s_wired = NM_SETTING_WIRED (setting);
-	const char *str;
-
-	str = nm_setting_wired_get_duplex (s_wired);
-	if (!str)
-		return NULL;
-	else
-		return g_strdup (str);
-
-}
-
-static char *
-nmc_property_wired_get_mtu (NMSetting *setting, NmcPropertyGetType get_type)
-{
-	NMSettingWired *s_wired = NM_SETTING_WIRED (setting);
-	int mtu;
-
-	mtu = nm_setting_wired_get_mtu (s_wired);
-	if (mtu == 0)
-		return g_strdup (_("auto"));
-	else
-		return g_strdup_printf ("%d", mtu);
-}
-
 static char *
 nmc_property_wired_get_wake_on_lan (NMSetting *setting, NmcPropertyGetType get_type)
 {
@@ -4721,36 +4675,6 @@ nmc_property_wired_set_wake_on_lan (NMSetting *setting, const char *prop,
 	return TRUE;
 }
 
-#if 0
--/*
-- * Do not allow setting 'port' for now. It is not implemented in
-- * NM core, nor in ifcfg-rh plugin. Enable this when it gets done.
-- */
-/* 'port' */
-static const char *wired_valid_ports[] = { "tp", "aui", "bnc", "mii", NULL };
-
-static gboolean
-nmc_property_wired_set_port (NMSetting *setting, const char *prop, const char *val, GError **error)
-{
-	return check_and_set_string (setting, prop, val, wired_valid_ports, error);
-}
-
-DEFINE_ALLOWED_VAL_FUNC (nmc_property_wired_allowed_port, wired_valid_ports)
-#endif
-
-/* 'duplex' */
-static const char *wired_valid_duplexes[] = { "half", "full", NULL };
-
-static gboolean
-nmc_property_wired_set_duplex (NMSetting *setting, const char *prop, const char *val, GError **error)
-{
-	return check_and_set_string (setting, prop, val, wired_valid_duplexes, error);
-}
-
-DEFINE_ALLOWED_VAL_FUNC (nmc_property_wired_allowed_duplex, wired_valid_duplexes)
-
-
-/* 'mac-address-blacklist' */
 DEFINE_SETTER_MAC_BLACKLIST (nmc_property_wired_set_mac_address_blacklist,
                              NM_SETTING_WIRED,
                              nm_setting_wired_add_mac_blacklist_item)
@@ -4801,26 +4725,6 @@ nmc_property_wired_set_s390_subchannels (NMSetting *setting, const char *prop, c
 }
 
 static const char *
-nmc_property_wired_describe_s390_subchannels (NMSetting *setting, const char *prop)
-{
-	return _("Enter a list of subchannels (comma or space separated).\n\n"
-	         "Example: 0.0.0e20 0.0.0e21 0.0.0e22\n");
-}
-
-/* 's390-nettype' */
-static const char *wired_valid_s390_nettypes[] = { "qeth", "lcs", "ctc", NULL };
-
-static gboolean
-nmc_property_wired_set_s390_nettype (NMSetting *setting, const char *prop, const char *val, GError **error)
-{
-	return check_and_set_string (setting, prop, val, wired_valid_s390_nettypes, error);
-}
-
-DEFINE_ALLOWED_VAL_FUNC (nmc_property_wired_allowed_s390_nettype, wired_valid_s390_nettypes)
-
-/* 's390-options' */
-/* Validate value of 's390-options' */
-static const char *
 _validate_s390_option_value (const char *option, const char *value, GError **error)
 {
 	/*  nm_setting_wired_add_s390_option() requires value len in <1,199> interval */
@@ -4847,14 +4751,17 @@ nmc_property_wired_allowed_s390_options (NMSetting *setting, const char *prop)
 }
 
 static const char *
-nmc_property_wired_describe_s390_options (NMSetting *setting, const char *prop)
+_describe_fcn_wired_s390_options (const NmcSettingInfo *setting_info,
+                                  const NmcPropertyInfo *property_info)
 {
 	static char *desc = NULL;
 	const char **valid_options;
 	char *options_str;
 
 	if (G_UNLIKELY (desc == NULL)) {
-		valid_options = nm_setting_wired_get_valid_s390_options (NM_SETTING_WIRED (setting));
+		gs_unref_object NMSetting *s = nm_setting_wired_new ();
+
+		valid_options = nm_setting_wired_get_valid_s390_options (NM_SETTING_WIRED (s));
 		options_str = g_strjoinv (", ", (char **) valid_options);
 
 		desc = g_strdup_printf (_("Enter a list of S/390 options formatted as:\n"
@@ -6215,106 +6122,6 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL);
 
-	/* Add editable properties for NM_SETTING_WIRED_SETTING_NAME */
-	nmc_add_prop_funcs (NM_SETTING_WIRED_SETTING_NAME""NM_SETTING_WIRED_PORT,
-	                    nmc_property_wired_get_port,
-	                    NULL, /* nmc_property_wired_set_port, */
-	                    NULL,
-	                    NULL,
-	                    NULL, /* nmc_property_wired_allowed_port, */
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRED_SETTING_NAME""NM_SETTING_WIRED_SPEED,
-	                    nmc_property_wired_get_speed,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRED_SETTING_NAME""NM_SETTING_WIRED_DUPLEX,
-	                    nmc_property_wired_get_duplex,
-	                    nmc_property_wired_set_duplex,
-	                    NULL,
-	                    NULL,
-	                    nmc_property_wired_allowed_duplex,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRED_SETTING_NAME""NM_SETTING_WIRED_AUTO_NEGOTIATE,
-	                    nmc_property_wired_get_auto_negotiate,
-	                    nmc_property_set_bool,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRED_SETTING_NAME""NM_SETTING_WIRED_MAC_ADDRESS,
-	                    nmc_property_wired_get_mac_address,
-	                    nmc_property_set_mac,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRED_SETTING_NAME""NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
-	                    nmc_property_wired_get_cloned_mac_address,
-	                    nmc_property_set_mac_cloned,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRED_SETTING_NAME""NM_SETTING_WIRED_GENERATE_MAC_ADDRESS_MASK,
-	                    nmc_property_wired_get_generate_mac_address_mask,
-	                    nmc_property_set_string,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRED_SETTING_NAME""NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST,
-	                    nmc_property_wired_get_mac_address_blacklist,
-	                    nmc_property_wired_set_mac_address_blacklist,
-	                    nmc_property_wired_remove_mac_address_blacklist,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRED_SETTING_NAME""NM_SETTING_WIRED_MTU,
-	                    nmc_property_wired_get_mtu,
-	                    nmc_property_set_mtu,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRED_SETTING_NAME""NM_SETTING_WIRED_S390_SUBCHANNELS,
-	                    nmc_property_wired_get_s390_subchannels,
-	                    nmc_property_wired_set_s390_subchannels,
-	                    NULL,
-	                    nmc_property_wired_describe_s390_subchannels,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRED_SETTING_NAME""NM_SETTING_WIRED_S390_NETTYPE,
-	                    nmc_property_wired_get_s390_nettype,
-	                    nmc_property_wired_set_s390_nettype,
-	                    NULL,
-	                    NULL,
-	                    nmc_property_wired_allowed_s390_nettype,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRED_SETTING_NAME""NM_SETTING_WIRED_S390_OPTIONS,
-	                    nmc_property_wired_get_s390_options,
-	                    nmc_property_wired_set_s390_options,
-	                    nmc_property_wired_remove_option_s390_options,
-	                    nmc_property_wired_describe_s390_options,
-	                    nmc_property_wired_allowed_s390_options,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRED_SETTING_NAME""NM_SETTING_WIRED_WAKE_ON_LAN,
-	                    nmc_property_wired_get_wake_on_lan,
-	                    nmc_property_wired_set_wake_on_lan,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (NM_SETTING_WIRED_SETTING_NAME""NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD,
-	                    nmc_property_wired_get_wake_on_lan_password,
-	                    nmc_property_set_mac,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-
 	/* Add editable properties for NM_SETTING_WIRELESS_SETTING_NAME */
 	nmc_add_prop_funcs (NM_SETTING_WIRELESS_SETTING_NAME""NM_SETTING_WIRELESS_SSID,
 	                    nmc_property_wireless_get_ssid,
@@ -7213,45 +7020,6 @@ _get_setting_details (const NmcSettingInfo *setting_info, NMSetting *setting, Nm
 }
 
 static gboolean
-setting_wired_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
-{
-	NMSettingWired *s_wired = NM_SETTING_WIRED (setting);
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
-
-	g_return_val_if_fail (NM_IS_SETTING_WIRED (s_wired), FALSE);
-
-	tmpl = nmc_fields_setting_wired;
-	tmpl_len = sizeof (nmc_fields_setting_wired);
-	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_WIRED_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_wired_get_port (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 2, nmc_property_wired_get_speed (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 3, nmc_property_wired_get_duplex (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 4, nmc_property_wired_get_auto_negotiate (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 5, nmc_property_wired_get_mac_address (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 6, nmc_property_wired_get_cloned_mac_address (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 7, nmc_property_wired_get_generate_mac_address_mask (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 8, nmc_property_wired_get_mac_address_blacklist (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 9, nmc_property_wired_get_mtu (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 10, nmc_property_wired_get_s390_subchannels (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 11, nmc_property_wired_get_s390_nettype (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 12, nmc_property_wired_get_s390_options (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 13, nmc_property_wired_get_wake_on_lan (setting, NMC_PROPERTY_GET_PRETTY));
-	set_val_str (arr, 14, nmc_property_wired_get_wake_on_lan_password (setting, NMC_PROPERTY_GET_PRETTY));
-	g_ptr_array_add (nmc->output_data, arr);
-
-	print_data (nmc);  /* Print all data */
-
-	return TRUE;
-}
-
-static gboolean
 setting_wireless_details (const NmcSettingInfo *setting_info, NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingWireless *s_wireless = NM_SETTING_WIRELESS (setting);
@@ -7899,13 +7667,18 @@ static const NmcPropertyType _pt_gobject_uint = {
 };
 
 static const NmcPropertyType _pt_gobject_mtu = {
-	.get_fcn =                      _get_fcn_gobject,
+	.get_fcn =                      _get_fcn_gobject_mtu,
 	.set_fcn =                      _set_fcn_gobject_mtu,
 };
 
 static const NmcPropertyType _pt_gobject_mac = {
 	.get_fcn =                      _get_fcn_gobject,
 	.set_fcn =                      _set_fcn_gobject_mac,
+};
+
+static const NmcPropertyType _pt_gobject_mac_cloned = {
+	.get_fcn =                      _get_fcn_gobject,
+	.set_fcn =                      _set_fcn_gobject_mac_cloned,
 };
 
 static const NmcPropertyType _pt_gobject_secret_flags = {
@@ -7933,6 +7706,11 @@ static const NmcPropertyType _pt_nmc_getset = {
 	/* macro that returns @func as const (gboolean(*)(NMSetting*)) type, but checks
 	 * that the actual type is (gboolean(*)(type *)). */ \
 	((gboolean (*) (NMSetting *)) ((sizeof (func == ((gboolean (*) (type *)) func))) ? func : func) )
+
+#define MTU_GET_FCN(type, func) \
+	/* macro that returns @func as const (guint32(*)(NMSetting*)) type, but checks
+	 * that the actual type is (guint32(*)(type *)). */ \
+	((guint32 (*) (NMSetting *)) ((sizeof (func == ((guint32 (*) (type *)) func))) ? func : func) )
 
 static const NmcPropertyInfo properties_setting_802_1x[] = {
 	PROPERTY_INFO_NAME(),
@@ -8944,6 +8722,9 @@ static const NmcPropertyInfo properties_setting_ppp[] = {
 	{
 		.property_name =                N_ (NM_SETTING_PPP_MTU),
 		.property_type =                &_pt_gobject_mtu,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (mtu,
+			.get_fcn =                  MTU_GET_FCN (NMSettingPpp, nm_setting_ppp_get_mtu),
+		),
 	},
 	{
 		.property_name =                N_ (NM_SETTING_PPP_LCP_ECHO_FAILURE),
@@ -8998,6 +8779,111 @@ static const NmcPropertyInfo properties_setting_wimax[] = {
 	},
 	{
 		.property_name =                N_ (NM_SETTING_WIMAX_NETWORK_NAME),
+		.property_type =                &_pt_gobject_mac,
+	},
+};
+
+static const NmcPropertyInfo properties_setting_wired[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_WIRED_PORT),
+		/* Do not allow setting 'port' for now. It is not implemented in
+		 * NM core, nor in ifcfg-rh plugin. Enable this when it gets done.
+		 * wired_valid_ports[] = { "tp", "aui", "bnc", "mii", NULL };
+		 */
+		.property_type =                &_pt_gobject_readonly,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRED_SPEED),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRED_DUPLEX),
+		.property_type =                &_pt_gobject_string,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			.values_static =            VALUES_STATIC ("half", "full"),
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRED_AUTO_NEGOTIATE),
+		.property_type =                &_pt_gobject_bool,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRED_MAC_ADDRESS),
+		.property_type =                &_pt_gobject_mac,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRED_CLONED_MAC_ADDRESS),
+		.property_type =                &_pt_gobject_mac_cloned,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRED_GENERATE_MAC_ADDRESS_MASK),
+		.property_type =                &_pt_gobject_string,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_nmc,
+			.remove_fcn =               _remove_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.set_fcn =                  nmc_property_wired_set_mac_address_blacklist,
+			.remove_fcn =               nmc_property_wired_remove_mac_address_blacklist,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRED_MTU),
+		.property_type =                &_pt_gobject_mtu,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (mtu,
+			.get_fcn =                  MTU_GET_FCN (NMSettingWired, nm_setting_wired_get_mtu),
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRED_S390_SUBCHANNELS),
+		.describe_message =
+		    N_ ("Enter a list of subchannels (comma or space separated).\n\n"
+		        "Example: 0.0.0e20 0.0.0e21 0.0.0e22\n"),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.set_fcn =                  nmc_property_wired_set_s390_subchannels,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRED_S390_NETTYPE),
+		.property_type =                &_pt_gobject_string,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			.values_static =            VALUES_STATIC ("qeth", "lcs", "ctc"),
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRED_S390_OPTIONS),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.describe_fcn =             _describe_fcn_wired_s390_options,
+			.get_fcn =                  _get_fcn_gobject,
+			.set_fcn =                  _set_fcn_nmc,
+			.remove_fcn =               _remove_fcn_nmc,
+			.values_fcn =               _values_fcn_nmc,
+		),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.set_fcn =                  nmc_property_wired_set_s390_options,
+			.remove_fcn =               nmc_property_wired_remove_option_s390_options,
+			.values_fcn =               nmc_property_wired_allowed_s390_options,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRED_WAKE_ON_LAN),
+		.property_type =                &_pt_nmc_getset,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
+			.get_fcn =                  nmc_property_wired_get_wake_on_lan,
+			.set_fcn =                  nmc_property_wired_set_wake_on_lan,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD),
 		.property_type =                &_pt_gobject_mac,
 	},
 };
@@ -9267,7 +9153,8 @@ const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM] = {
 	},
 	[NM_META_SETTING_TYPE_WIRED] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_WIRED],
-		.get_setting_details                = setting_wired_details,
+		.properties                         = properties_setting_wired,
+		.properties_num                     = G_N_ELEMENTS (properties_setting_wired),
 	},
 	[NM_META_SETTING_TYPE_WIRELESS] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_WIRELESS],
