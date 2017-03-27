@@ -45,9 +45,9 @@ typedef struct _NmcPropertyTypData NmcPropertyTypData;
 
 struct _NmcPropertyType {
 
-	/* FIXME: the function should return an allocated string. */
 	const char *(*describe_fcn) (const NmcSettingInfo *setting_info,
-	                             const NmcPropertyInfo *property_info);
+	                             const NmcPropertyInfo *property_info,
+	                             char **out_to_free);
 
 	char *(*get_fcn) (const NmcSettingInfo *setting_info,
 	                  const NmcPropertyInfo *property_info,
@@ -66,9 +66,9 @@ struct _NmcPropertyType {
 	                        guint32 idx,
 	                        GError **error);
 
-	/* FIXME: the function should return an allocated string. */
 	const char *const*(*values_fcn) (const NmcSettingInfo *setting_info,
-	                                 const NmcPropertyInfo *property_info);
+	                                 const NmcPropertyInfo *property_info,
+	                                 char ***out_to_free);
 };
 
 struct _NmcPropertyTypData {
@@ -130,7 +130,7 @@ void nmc_setting_connection_connect_handlers (NMSettingConnection *setting, NMCo
 
 char      **nmc_setting_get_valid_properties (NMSetting *setting);
 char       *nmc_setting_get_property_desc (NMSetting *setting, const char *prop);
-const char *const*nmc_setting_get_property_allowed_values (NMSetting *setting, const char *prop);
+const char *const*nmc_setting_get_property_allowed_values (NMSetting *setting, const char *prop, char ***out_to_free);
 char       *nmc_setting_get_property (NMSetting *setting,
                                       const char *prop,
                                       GError **error);

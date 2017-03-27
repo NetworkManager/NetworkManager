@@ -47,7 +47,7 @@ static char *secret_flags_to_string (guint32 flags, NmcPropertyGetType get_type)
 /*****************************************************************************/
 
 #define ARGS_DESCRIBE_FCN \
-	const NmcSettingInfo *setting_info, const NmcPropertyInfo *property_info
+	const NmcSettingInfo *setting_info, const NmcPropertyInfo *property_info, char **out_to_free
 
 #define ARGS_GET_FCN \
 	const NmcSettingInfo *setting_info, const NmcPropertyInfo *property_info, NMSetting *setting, NmcPropertyGetType get_type, gboolean show_secrets
@@ -59,7 +59,7 @@ static char *secret_flags_to_string (guint32 flags, NmcPropertyGetType get_type)
 	const NmcSettingInfo *setting_info, const NmcPropertyInfo *property_info, NMSetting *setting, const char *value, guint32 idx, GError **error
 
 #define ARGS_VALUES_FCN \
-	const NmcSettingInfo *setting_info, const NmcPropertyInfo *property_info
+	const NmcSettingInfo *setting_info, const NmcPropertyInfo *property_info, char ***out_to_free
 
 static char *
 _get_fcn_name (ARGS_GET_FCN)
@@ -312,23 +312,16 @@ _set_fcn_gobject_secret_flags (ARGS_SET_FCN)
 static const char *const*
 _values_fcn_gobject_enum (ARGS_VALUES_FCN)
 {
-	static GHashTable *cache = NULL;
-	const char **v;
+	char **v, **w;
+	bool has_minmax =    property_info->property_typ_data->subtype.gobject_enum.min
+	                  || property_info->property_typ_data->subtype.gobject_enum.max;
 
-	if (G_UNLIKELY (!cache))
-		cache = g_hash_table_new (NULL, NULL);
-
-	v = g_hash_table_lookup (cache, property_info);
-	if (!v) {
-		bool has_minmax =    property_info->property_typ_data->subtype.gobject_enum.min
-		                  || property_info->property_typ_data->subtype.gobject_enum.max;
-
-		v = nm_utils_enum_get_values (             property_info->property_typ_data->subtype.gobject_enum.get_gtype (),
-		                              has_minmax ? property_info->property_typ_data->subtype.gobject_enum.min : G_MININT,
-		                              has_minmax ? property_info->property_typ_data->subtype.gobject_enum.max : G_MAXINT);
-		g_hash_table_insert (cache, (gpointer) property_info, v);
-	}
-	return (const char *const*) v;
+	v = (char **) nm_utils_enum_get_values (             property_info->property_typ_data->subtype.gobject_enum.get_gtype (),
+	                                        has_minmax ? property_info->property_typ_data->subtype.gobject_enum.min : G_MININT,
+	                                        has_minmax ? property_info->property_typ_data->subtype.gobject_enum.max : G_MAXINT);
+	for (w = v; w && *w; w++)
+		*w = g_strdup (*w);
+	return (const char *const*) (*out_to_free = v);
 }
 
 /*****************************************************************************/
@@ -1480,29 +1473,26 @@ DEFINE_REMOVER_OPTION (_remove_fcn_bond_options,
 static const char *
 _describe_fcn_bond_options (ARGS_DESCRIBE_FCN)
 {
-	static char *desc = NULL;
+	gs_free char *options_str = NULL;
 	const char **valid_options;
-	char *options_str;
+	char *s;
 
-	if (G_UNLIKELY (desc == NULL)) {
-		valid_options = nm_setting_bond_get_valid_options (NULL);
-		options_str = g_strjoinv (", ", (char **) valid_options);
+	valid_options = nm_setting_bond_get_valid_options (NULL);
+	options_str = g_strjoinv (", ", (char **) valid_options);
 
-		desc = g_strdup_printf (_("Enter a list of bonding options formatted as:\n"
-		                          "  option = <value>, option = <value>,... \n"
-		                          "Valid options are: %s\n"
-		                          "'mode' can be provided as a name or a number:\n"
-		                          "balance-rr    = 0\n"
-		                          "active-backup = 1\n"
-		                          "balance-xor   = 2\n"
-		                          "broadcast     = 3\n"
-		                          "802.3ad       = 4\n"
-		                          "balance-tlb   = 5\n"
-		                          "balance-alb   = 6\n\n"
-		                          "Example: mode=2,miimon=120\n"), options_str);
-		g_free (options_str);
-	}
-	return desc;
+	s = g_strdup_printf (_("Enter a list of bonding options formatted as:\n"
+	                       "  option = <value>, option = <value>,... \n"
+	                       "Valid options are: %s\n"
+	                       "'mode' can be provided as a name or a number:\n"
+	                       "balance-rr    = 0\n"
+	                       "active-backup = 1\n"
+	                       "balance-xor   = 2\n"
+	                       "broadcast     = 3\n"
+	                       "802.3ad       = 4\n"
+	                       "balance-tlb   = 5\n"
+	                       "balance-alb   = 6\n\n"
+	                       "Example: mode=2,miimon=120\n"), options_str);
+	return (*out_to_free = s);
 }
 
 static const char *const*
@@ -3641,22 +3631,19 @@ _values_fcn__wired_s390_options (ARGS_VALUES_FCN)
 static const char *
 _describe_fcn_wired_s390_options (ARGS_DESCRIBE_FCN)
 {
-	static char *desc = NULL;
+	gs_free char *options_str = NULL;
 	const char **valid_options;
-	char *options_str;
+	char *s;
 
-	if (G_UNLIKELY (desc == NULL)) {
-		valid_options = nm_setting_wired_get_valid_s390_options (NULL);
+	valid_options = nm_setting_wired_get_valid_s390_options (NULL);
 
-		options_str = g_strjoinv (", ", (char **) valid_options);
+	options_str = g_strjoinv (", ", (char **) valid_options);
 
-		desc = g_strdup_printf (_("Enter a list of S/390 options formatted as:\n"
-		                          "  option = <value>, option = <value>,...\n"
-		                          "Valid options are: %s\n"),
-		                        options_str);
-		g_free (options_str);
-	}
-	return desc;
+	s = g_strdup_printf (_("Enter a list of S/390 options formatted as:\n"
+	                       "  option = <value>, option = <value>,...\n"
+	                       "Valid options are: %s\n"),
+	                       options_str);
+	return (*out_to_free = s);
 }
 
 
@@ -4655,17 +4642,17 @@ nmc_setting_get_valid_properties (NMSetting *setting)
 	return valid_props;
 }
 
-/*
- * Return allowed values for 'prop' as a string.
- */
 const char *const*
-nmc_setting_get_property_allowed_values (NMSetting *setting, const char *prop)
+nmc_setting_get_property_allowed_values (NMSetting *setting, const char *prop, char ***out_to_free)
 {
 
 	const NmcSettingInfo *setting_info;
 	const NmcPropertyInfo *property_info;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
+	g_return_val_if_fail (out_to_free, FALSE);
+
+	*out_to_free = NULL;
 
 	if ((property_info = _meta_find_property_info_by_setting (setting, prop, &setting_info))) {
 		if (property_info->is_name) {
@@ -4673,7 +4660,8 @@ nmc_setting_get_property_allowed_values (NMSetting *setting, const char *prop)
 			 * For the moment, skip it from get_property_val(). */
 		} else if (property_info->property_type->values_fcn) {
 			return property_info->property_type->values_fcn (setting_info,
-			                                                 property_info);
+			                                                 property_info,
+			                                                 out_to_free);
 		} else if (property_info->property_typ_data && property_info->property_typ_data->values_static)
 			return property_info->property_typ_data->values_static;
 	}
@@ -4694,6 +4682,7 @@ nmc_setting_get_property_allowed_values (NMSetting *setting, const char *prop)
 char *
 nmc_setting_get_property_desc (NMSetting *setting, const char *prop)
 {
+	gs_free char *desc_to_free = NULL;
 	const char *setting_desc = NULL;
 	const char *setting_desc_title = "";
 	const char *nmcli_desc = NULL;
@@ -4709,11 +4698,18 @@ nmc_setting_get_property_desc (NMSetting *setting, const char *prop)
 		setting_desc_title = _("[NM property description]");
 
 	if ((property_info = _meta_find_property_info_by_setting (setting, prop, &setting_info))) {
+		const char *desc = NULL;
+
 		if (property_info->is_name) {
 			/* Traditionally, the "name" property was not handled here.
 			 * For the moment, skip it from get_property_val(). */
-		} else if (property_info->describe_message) {
-			nmcli_desc = _(property_info->describe_message);
+		} else if (property_info->property_type->describe_fcn) {
+			desc = property_info->property_type->describe_fcn (setting_info, property_info, &desc_to_free);
+		} else
+			desc = property_info->describe_message;
+
+		if (desc) {
+			nmcli_desc = _(desc);
 			nmcli_desc_title = _("[nmcli specific description]");
 			nmcli_nl = "\n";
 		}

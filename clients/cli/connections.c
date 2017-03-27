@@ -5701,26 +5701,23 @@ should_complete_vpn_uuids (const char *prompt, const char *line)
 }
 
 static const char *const*
-get_allowed_property_values (void)
+get_allowed_property_values (char ***out_to_free)
 {
-	NMSetting *setting;
-	char *property;
+	gs_unref_object NMSetting *setting = NULL;
+	gs_free char *property = NULL;
 	const char *const*avals = NULL;
 
 	get_setting_and_property (rl_prompt, rl_line_buffer, &setting, &property);
 	if (setting && property)
-		avals = nmc_setting_get_property_allowed_values (setting, property);
-
-	if (setting)
-		g_object_unref (setting);
-	g_free (property);
-
+		avals = nmc_setting_get_property_allowed_values (setting, property, out_to_free);
 	return avals;
 }
 
 static gboolean
 should_complete_property_values (const char *prompt, const char *line, gboolean *multi)
 {
+	gs_strfreev char **to_free = NULL;
+
 	/* properties allowing multiple values */
 	const char *multi_props[] = {
 		/* '802-1x' properties */
@@ -5736,10 +5733,9 @@ should_complete_property_values (const char *prompt, const char *line, gboolean 
 		NULL
 	};
 	_get_and_check_property (prompt, line, NULL, multi_props, multi);
-	return get_allowed_property_values () != NULL;
+	return !!get_allowed_property_values (&to_free);
 }
 
-//FIXME: this helper should go to libnm later
 static gboolean
 _setting_property_is_boolean (NMSetting *setting, const char *property_name)
 {
@@ -5775,13 +5771,13 @@ should_complete_boolean (const char *prompt, const char *line)
 static char *
 gen_property_values (const char *text, int state)
 {
-	char *ret = NULL;
+	gs_strfreev char **to_free = NULL;
 	const char *const*avals;
 
-	avals = get_allowed_property_values ();
-	if (avals)
-		ret = nmc_rl_gen_func_basic (text, state, avals);
-	return ret;
+	avals = get_allowed_property_values (&to_free);
+	if (!avals)
+		return NULL;
+	return nmc_rl_gen_func_basic (text, state, avals);
 }
 
 /* from readline */
@@ -6657,13 +6653,16 @@ property_edit_submenu (NmCli *nmc,
 			 * single values:  : both SET and ADD sets the new value
 			 */
 			if (!cmd_property_arg) {
-				const char *const*avals = nmc_setting_get_property_allowed_values (curr_setting, prop_name);
+				gs_strfreev char **to_free = NULL;
+				const char *const*avals;
 
+				avals = nmc_setting_get_property_allowed_values (curr_setting, prop_name, &to_free);
 				if (avals) {
-					char *avals_str = nmc_util_strv_for_display (avals, FALSE);
+					gs_free char *avals_str = NULL;
+
+					avals_str = nmc_util_strv_for_display (avals, FALSE);
 					g_print (_("Allowed values for '%s' property: %s\n"),
 					         prop_name, avals_str);
-					g_free (avals_str);
 				}
 				prop_val_user = nmc_readline (_("Enter '%s' value: "), prop_name);
 			} else
@@ -7068,8 +7067,9 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 			/* Set property value */
 			if (!cmd_arg) {
 				if (menu_ctx.level == 1) {
+					gs_strfreev char **avals_to_free = NULL;
+					gs_free char *prop_val_user = NULL;
 					const char *prop_name;
-					char *prop_val_user = NULL;
 					const char *const*avals;
 					GError *tmp_err = NULL;
 
@@ -7079,12 +7079,13 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					if (!prop_name)
 						break;
 
-					avals = nmc_setting_get_property_allowed_values (menu_ctx.curr_setting, prop_name);
+					avals = nmc_setting_get_property_allowed_values (menu_ctx.curr_setting, prop_name, &avals_to_free);
 					if (avals) {
-						char *avals_str = nmc_util_strv_for_display (avals, FALSE);
+						gs_free char *avals_str = NULL;
+
+						avals_str = nmc_util_strv_for_display (avals, FALSE);
 						g_print (_("Allowed values for '%s' property: %s\n"),
 						         prop_name, avals_str);
-						g_free (avals_str);
 					}
 					prop_val_user = nmc_readline (_("Enter '%s' value: "), prop_name);
 
@@ -7137,12 +7138,16 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 				/* Ask for value */
 				if (!cmd_arg_v) {
-					const char *const*avals = nmc_setting_get_property_allowed_values (ss, prop_name);
+					gs_strfreev char **avals_to_free = NULL;
+					const char *const*avals;
+
+					avals = nmc_setting_get_property_allowed_values (ss, prop_name, &avals_to_free);
 					if (avals) {
-						char *avals_str = nmc_util_strv_for_display (avals, FALSE);
+						gs_free char *avals_str = NULL;
+
+						avals_str = nmc_util_strv_for_display (avals, FALSE);
 						g_print (_("Allowed values for '%s' property: %s\n"),
 						         prop_name, avals_str);
-						g_free (avals_str);
 					}
 					cmd_arg_v = nmc_readline (_("Enter '%s' value: "), prop_name);
 				}
