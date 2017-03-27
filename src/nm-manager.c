@@ -1968,20 +1968,23 @@ device_realized (NMDevice *device,
 
 #if WITH_CONCHECK
 static void
-nm_manager_update_connectivity_state (NMManager *self)
+device_connectivity_changed (NMDevice *device,
+                             GParamSpec *pspec,
+                             NMManager *self)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMConnectivityState state = NM_CONNECTIVITY_UNKNOWN;
-	NMDevice *device;
+	NMConnectivityState best_state = NM_CONNECTIVITY_UNKNOWN;
+	NMConnectivityState state;
+	const GSList *devices;
 
-	if (priv->primary_connection) {
-		device =  nm_active_connection_get_device (priv->primary_connection);
-		if (device)
-			state = nm_device_get_connectivity_state (device);
+	for (devices = priv->devices; devices; devices = devices->next) {
+		state = nm_device_get_connectivity_state (NM_DEVICE (devices->data));
+		if (state > best_state)
+			best_state = state;
 	}
 
-	if (state != priv->connectivity_state) {
-		priv->connectivity_state = state;
+	if (best_state != priv->connectivity_state) {
+		priv->connectivity_state = best_state;
 
 		_LOGD (LOGD_CORE, "connectivity checking indicates %s",
 		       nm_connectivity_state_to_string (priv->connectivity_state));
@@ -1990,14 +1993,6 @@ nm_manager_update_connectivity_state (NMManager *self)
 		_notify (self, PROP_CONNECTIVITY);
 		nm_dispatcher_call_connectivity (priv->connectivity_state, NULL, NULL, NULL);
 	}
-}
-
-static void
-device_connectivity_changed (NMDevice *device,
-                             GParamSpec *pspec,
-                             NMManager *self)
-{
-	nm_manager_update_connectivity_state (self);
 }
 #endif
 
@@ -4825,13 +4820,35 @@ impl_manager_get_logging (NMManager *manager,
 	                                                      nm_logging_domains_to_string ()));
 }
 
+typedef struct {
+	guint remaining;
+	GDBusMethodInvocation *context;
+	NMConnectivityState state;
+} ConnectivityCheckData;
+
 static void
 device_connectivity_done (NMDevice *device, NMConnectivityState state, gpointer user_data)
 {
-	GDBusMethodInvocation *context = user_data;
+	ConnectivityCheckData *data = user_data;
 
-	g_dbus_method_invocation_return_value (context,
-	                                       g_variant_new ("(u)", state));
+	data->remaining--;
+
+	/* We check if the state is already FULL so that we can provide the
+	 * response without waiting for slower devices that are not going to
+	 * affect the overall state anyway. */
+
+	if (data->state != NM_CONNECTIVITY_FULL) {
+		if (state > data->state)
+			data->state = state;
+
+		if (data->state == NM_CONNECTIVITY_FULL || !data->remaining) {
+			g_dbus_method_invocation_return_value (data->context,
+			                                       g_variant_new ("(u)", data->state));
+		}
+	}
+
+	if (!data->remaining)
+		g_slice_free (ConnectivityCheckData, data);
 }
 
 static void
@@ -4844,6 +4861,8 @@ check_connectivity_auth_done_cb (NMAuthChain *chain,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GError *error = NULL;
 	NMAuthCallResult result;
+	ConnectivityCheckData *data;
+	const GSList *devices;
 
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
 
@@ -4861,13 +4880,14 @@ check_connectivity_auth_done_cb (NMAuthChain *chain,
 		                             "Not authorized to recheck connectivity");
 	} else {
 		/* it's allowed */
-		if (priv->primary_connection) {
-			nm_device_check_connectivity (nm_active_connection_get_device (priv->primary_connection),
+		data = g_slice_new0 (ConnectivityCheckData);
+		data->context = context;
+
+		for (devices = priv->devices; devices; devices = devices->next) {
+			data->remaining++;
+			nm_device_check_connectivity (NM_DEVICE (devices->data),
 			                              device_connectivity_done,
-			                              context);
-		} else {
-			g_dbus_method_invocation_return_value (context,
-			                                       g_variant_new ("(u)", priv->connectivity_state));
+			                              data);
 		}
 	}
 
@@ -5153,7 +5173,6 @@ policy_default_device_changed (GObject *object, GParamSpec *pspec, gpointer user
 		_notify (self, PROP_PRIMARY_CONNECTION);
 		_notify (self, PROP_PRIMARY_CONNECTION_TYPE);
 		nm_manager_update_metered (self);
-		nm_manager_update_connectivity_state (self);
 	}
 }
 
