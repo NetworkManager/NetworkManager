@@ -52,7 +52,8 @@ struct _NmcPropertyType {
 	char *(*get_fcn) (const NmcSettingInfo *setting_info,
 	                  const NmcPropertyInfo *property_info,
 	                  NMSetting *setting,
-	                  NmcPropertyGetType get_type);
+	                  NmcPropertyGetType get_type,
+	                  gboolean show_secrets);
 	gboolean (*set_fcn) (const NmcSettingInfo *setting_info,
 	                     const NmcPropertyInfo *property_info,
 	                     NMSetting *setting,
