@@ -298,7 +298,6 @@ nm_dhcp_client_set_state (NMDhcpClient *self,
 		g_assert (   (priv->ipv6 && NM_IS_IP6_CONFIG (ip_config))
 		          || (!priv->ipv6 && NM_IS_IP4_CONFIG (ip_config)));
 		g_assert (options);
-		g_assert_cmpint (g_hash_table_size (options), >, 0);
 	} else {
 		g_assert (ip_config == NULL);
 		g_assert (options == NULL);
