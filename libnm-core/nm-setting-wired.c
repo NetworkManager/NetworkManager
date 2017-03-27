@@ -565,9 +565,11 @@ nm_setting_wired_remove_s390_option (NMSettingWired *setting,
 
 /**
  * nm_setting_wired_get_valid_s390_options:
- * @setting: the #NMSettingWired
+ * @setting: (allow none): the #NMSettingWired
  *
  * Returns a list of valid s390 options.
+ *
+ * The @setting argument is unused and %NULL may be passed instead.
  *
  * Returns: (transfer none): a %NULL-terminated array of strings of valid s390 options.
  **/
