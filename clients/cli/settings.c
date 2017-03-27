@@ -45,36 +45,36 @@ static char *secret_flags_to_string (guint32 flags, NmcPropertyGetType get_type)
 
 /*****************************************************************************/
 
+#define ARGS_DESCRIBE_FCN \
+	const NmcSettingInfo *setting_info, const NmcPropertyInfo *property_info
+
 #define ARGS_GET_FCN \
 	const NmcSettingInfo *setting_info, const NmcPropertyInfo *property_info, NMSetting *setting, NmcPropertyGetType get_type
 
 #define ARGS_SET_FCN \
 	const NmcSettingInfo *setting_info, const NmcPropertyInfo *property_info, NMSetting *setting, const char *value, GError **error
 
+#define ARGS_REMOVE_FCN \
+	const NmcSettingInfo *setting_info, const NmcPropertyInfo *property_info, NMSetting *setting, const char *option, guint32 idx, GError **error
+
+#define ARGS_VALUES_FCN \
+	const NmcSettingInfo *setting_info, const NmcPropertyInfo *property_info
+
 static char *
-_get_fcn_name (const NmcSettingInfo *setting_info,
-               const NmcPropertyInfo *property_info,
-               NMSetting *setting,
-               NmcPropertyGetType get_type)
+_get_fcn_name (ARGS_GET_FCN)
 {
 	nm_assert (nm_streq0 (nm_setting_get_name (setting), setting_info->general->setting_name));
 	return g_strdup (setting_info->general->setting_name);
 }
 
 static char *
-_get_fcn_nmc (const NmcSettingInfo *setting_info,
-              const NmcPropertyInfo *property_info,
-              NMSetting *setting,
-              NmcPropertyGetType get_type)
+_get_fcn_nmc (ARGS_GET_FCN)
 {
 	return property_info->property_typ_data->nmc.get_fcn (setting, get_type);
 }
 
 static char *
-_get_fcn_nmc_with_default (const NmcSettingInfo *setting_info,
-                           const NmcPropertyInfo *property_info,
-                           NMSetting *setting,
-                           NmcPropertyGetType get_type)
+_get_fcn_nmc_with_default (ARGS_GET_FCN)
 {
 	const char *s;
 	char *s_full;
@@ -98,10 +98,7 @@ _get_fcn_nmc_with_default (const NmcSettingInfo *setting_info,
 }
 
 static char *
-_get_fcn_gobject (const NmcSettingInfo *setting_info,
-                  const NmcPropertyInfo *property_info,
-                  NMSetting *setting,
-                  NmcPropertyGetType get_type)
+_get_fcn_gobject (ARGS_GET_FCN)
 {
 	char *s;
 	GValue val = G_VALUE_INIT;
@@ -114,10 +111,7 @@ _get_fcn_gobject (const NmcSettingInfo *setting_info,
 }
 
 static char *
-_get_fcn_gobject_mtu (const NmcSettingInfo *setting_info,
-                      const NmcPropertyInfo *property_info,
-                      NMSetting *setting,
-                      NmcPropertyGetType get_type)
+_get_fcn_gobject_mtu (ARGS_GET_FCN)
 {
 	guint32 mtu;
 
@@ -136,10 +130,7 @@ _get_fcn_gobject_mtu (const NmcSettingInfo *setting_info,
 }
 
 static char *
-_get_fcn_gobject_secret_flags (const NmcSettingInfo *setting_info,
-                               const NmcPropertyInfo *property_info,
-                               NMSetting *setting,
-                               NmcPropertyGetType get_type)
+_get_fcn_gobject_secret_flags (ARGS_GET_FCN)
 {
 	guint v;
 	GValue val = G_VALUE_INIT;
@@ -154,21 +145,13 @@ _get_fcn_gobject_secret_flags (const NmcSettingInfo *setting_info,
 /*****************************************************************************/
 
 static gboolean
-_set_fcn_nmc (const NmcSettingInfo *setting_info,
-              const NmcPropertyInfo *property_info,
-              NMSetting *setting,
-              const char *value,
-              GError **error)
+_set_fcn_nmc (ARGS_SET_FCN)
 {
 	return property_info->property_typ_data->nmc.set_fcn (setting, property_info->property_name, value, error);
 }
 
 static gboolean
-_set_fcn_gobject_string (const NmcSettingInfo *setting_info,
-                         const NmcPropertyInfo *property_info,
-                         NMSetting *setting,
-                         const char *value,
-                         GError **error)
+_set_fcn_gobject_string (ARGS_SET_FCN)
 {
 	if (   property_info->property_typ_data
 	    && property_info->property_typ_data->values_static) {
@@ -183,11 +166,7 @@ _set_fcn_gobject_string (const NmcSettingInfo *setting_info,
 }
 
 static gboolean
-_set_fcn_gobject_bool (const NmcSettingInfo *setting_info,
-                       const NmcPropertyInfo *property_info,
-                       NMSetting *setting,
-                       const char *value,
-                       GError **error)
+_set_fcn_gobject_bool (ARGS_SET_FCN)
 {
 	gboolean val_bool;
 
@@ -199,11 +178,7 @@ _set_fcn_gobject_bool (const NmcSettingInfo *setting_info,
 }
 
 static gboolean
-_set_fcn_gobject_trilean (const NmcSettingInfo *setting_info,
-                          const NmcPropertyInfo *property_info,
-                          NMSetting *setting,
-                          const char *value,
-                          GError **error)
+_set_fcn_gobject_trilean (ARGS_SET_FCN)
 {
 	long int val_int;
 
@@ -219,11 +194,7 @@ _set_fcn_gobject_trilean (const NmcSettingInfo *setting_info,
 }
 
 static gboolean
-_set_fcn_gobject_int (const NmcSettingInfo *setting_info,
-                      const NmcPropertyInfo *property_info,
-                      NMSetting *setting,
-                      const char *value,
-                      GError **error)
+_set_fcn_gobject_int (ARGS_SET_FCN)
 {
 	long int val_int;
 
@@ -241,11 +212,7 @@ _set_fcn_gobject_int (const NmcSettingInfo *setting_info,
 }
 
 static gboolean
-_set_fcn_gobject_int64 (const NmcSettingInfo *setting_info,
-                        const NmcPropertyInfo *property_info,
-                        NMSetting *setting,
-                        const char *value,
-                        GError **error)
+_set_fcn_gobject_int64 (ARGS_SET_FCN)
 {
 	long val_int;
 
@@ -265,11 +232,7 @@ _set_fcn_gobject_int64 (const NmcSettingInfo *setting_info,
 }
 
 static gboolean
-_set_fcn_gobject_uint (const NmcSettingInfo *setting_info,
-                       const NmcPropertyInfo *property_info,
-                       NMSetting *setting,
-                       const char *value,
-                       GError **error)
+_set_fcn_gobject_uint (ARGS_SET_FCN)
 {
 	unsigned long val_int;
 
@@ -289,11 +252,7 @@ _set_fcn_gobject_uint (const NmcSettingInfo *setting_info,
 }
 
 static gboolean
-_set_fcn_gobject_mtu (const NmcSettingInfo *setting_info,
-                      const NmcPropertyInfo *property_info,
-                      NMSetting *setting,
-                      const char *value,
-                      GError **error)
+_set_fcn_gobject_mtu (ARGS_SET_FCN)
 {
 	if (nm_streq0 (value, "auto"))
 		value = "0";
@@ -301,11 +260,7 @@ _set_fcn_gobject_mtu (const NmcSettingInfo *setting_info,
 }
 
 static gboolean
-_set_fcn_gobject_mac (const NmcSettingInfo *setting_info,
-                      const NmcPropertyInfo *property_info,
-                      NMSetting *setting,
-                      const char *value,
-                      GError **error)
+_set_fcn_gobject_mac (ARGS_SET_FCN)
 {
 	NmcPropertyTypeMacMode mode;
 	gboolean valid;
@@ -334,11 +289,7 @@ _set_fcn_gobject_mac (const NmcSettingInfo *setting_info,
 }
 
 static gboolean
-_set_fcn_gobject_secret_flags (const NmcSettingInfo *setting_info,
-                               const NmcPropertyInfo *property_info,
-                               NMSetting *setting,
-                               const char *value,
-                               GError **error)
+_set_fcn_gobject_secret_flags (ARGS_SET_FCN)
 {
 	char **strv = NULL, **iter;
 	unsigned long flags = 0, val_int;
@@ -370,12 +321,7 @@ _set_fcn_gobject_secret_flags (const NmcSettingInfo *setting_info,
 /*****************************************************************************/
 
 static gboolean
-_remove_fcn_nmc (const NmcSettingInfo *setting_info,
-                 const NmcPropertyInfo *property_info,
-                 NMSetting *setting,
-                 const char *option,
-                 guint32 idx,
-                 GError **error)
+_remove_fcn_nmc (ARGS_REMOVE_FCN)
 {
 	return property_info->property_typ_data->nmc.remove_fcn (setting, property_info->property_name, option, idx, error);
 }
@@ -383,15 +329,13 @@ _remove_fcn_nmc (const NmcSettingInfo *setting_info,
 /*****************************************************************************/
 
 static const char *const*
-_values_fcn_nmc (const NmcSettingInfo *setting_info,
-                 const NmcPropertyInfo *property_info)
+_values_fcn_nmc (ARGS_VALUES_FCN)
 {
 	return property_info->property_typ_data->nmc.values_fcn (NULL, property_info->property_name);
 }
 
 static const char *const*
-_values_fcn_nmc_gobject_enum (const NmcSettingInfo *setting_info,
-                              const NmcPropertyInfo *property_info)
+_values_fcn_nmc_gobject_enum (ARGS_VALUES_FCN)
 {
 	static GHashTable *cache = NULL;
 	const char **v;
@@ -1636,8 +1580,7 @@ DEFINE_REMOVER_OPTION (nmc_property_bond_remove_option_options,
                        _validate_and_remove_bond_option)
 
 static const char *
-_describe_fcn_bond_options (const NmcSettingInfo *setting_info,
-                            const NmcPropertyInfo *property_info)
+_describe_fcn_bond_options (ARGS_DESCRIBE_FCN)
 {
 	static char *desc = NULL;
 	const char **valid_options;
@@ -1721,11 +1664,7 @@ nmc_property_connection_get_autoconnect_slaves (NMSetting *setting, NmcPropertyG
 }
 
 static gboolean
-_set_fcn_connection_type (const NmcSettingInfo *setting_info,
-                          const NmcPropertyInfo *property_info,
-                          NMSetting *setting,
-                          const char *value,
-                          GError **error)
+_set_fcn_connection_type (ARGS_SET_FCN)
 {
 	gs_free char *uuid = NULL;
 
@@ -1792,11 +1731,7 @@ permissions_valid (const char *perm)
 }
 
 static gboolean
-_set_fcn_connection_permissions (const NmcSettingInfo *setting_info,
-                                 const NmcPropertyInfo *property_info,
-                                 NMSetting *setting,
-                                 const char *value,
-                                 GError **error)
+_set_fcn_connection_permissions (ARGS_SET_FCN)
 {
 	char **strv = NULL;
 	guint i = 0;
@@ -1842,11 +1777,7 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_connection_remove_permissions,
                                _validate_and_remove_connection_permission)
 
 static gboolean
-_set_fcn_connection_master (const NmcSettingInfo *setting_info,
-                            const NmcPropertyInfo *property_info,
-                            NMSetting *setting,
-                            const char *value,
-                            GError **error)
+_set_fcn_connection_master (ARGS_SET_FCN)
 {
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
@@ -1866,11 +1797,7 @@ _set_fcn_connection_master (const NmcSettingInfo *setting_info,
 }
 
 static gboolean
-_set_fcn_connection_secondaries (const NmcSettingInfo *setting_info,
-                                 const NmcPropertyInfo *property_info,
-                                 NMSetting *setting,
-                                 const char *value,
-                                 GError **error)
+_set_fcn_connection_secondaries (ARGS_SET_FCN)
 {
 	const GPtrArray *connections;
 	NMConnection *con;
@@ -1977,11 +1904,7 @@ nmc_property_connection_get_metered (NMSetting *setting, NmcPropertyGetType get_
 }
 
 static gboolean
-_set_fcn_connection_metered (const NmcSettingInfo *setting_info,
-                             const NmcPropertyInfo *property_info,
-                             NMSetting *setting,
-                             const char *value,
-                             GError **error)
+_set_fcn_connection_metered (ARGS_SET_FCN)
 {
 	NMMetered metered;
 	NMCTriStateValue ts_val;
@@ -2025,11 +1948,7 @@ nmc_property_connection_get_lldp (NMSetting *setting, NmcPropertyGetType get_typ
 }
 
 static gboolean
-_set_fcn_connection_lldp (const NmcSettingInfo *setting_info,
-                          const NmcPropertyInfo *property_info,
-                          NMSetting *setting,
-                          const char *value,
-                          GError **error)
+_set_fcn_connection_lldp (ARGS_SET_FCN)
 {
 	NMSettingConnectionLldp lldp;
 	gboolean ret;
@@ -2546,10 +2465,7 @@ _parse_ip_address (int family, const char *address, GError **error)
 }
 
 static char *
-_get_fcn_ip_config_addresses (const NmcSettingInfo *setting_info,
-                              const NmcPropertyInfo *property_info,
-                              NMSetting *setting,
-                              NmcPropertyGetType get_type)
+_get_fcn_ip_config_addresses (ARGS_GET_FCN)
 {
 	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
 	GString *printable;
@@ -2574,10 +2490,7 @@ _get_fcn_ip_config_addresses (const NmcSettingInfo *setting_info,
 }
 
 static char *
-_get_fcn_ip_config_routes (const NmcSettingInfo *setting_info,
-                           const NmcPropertyInfo *property_info,
-                           NMSetting *setting,
-                           NmcPropertyGetType get_type)
+_get_fcn_ip_config_routes (ARGS_GET_FCN)
 {
 	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
 	GString *printable;
@@ -2646,10 +2559,7 @@ _get_fcn_ip_config_routes (const NmcSettingInfo *setting_info,
 }
 
 static char *
-_get_fcn_ip4_config_dad_timeout (const NmcSettingInfo *setting_info,
-                                 const NmcPropertyInfo *property_info,
-                                 NMSetting *setting,
-                                 NmcPropertyGetType get_type)
+_get_fcn_ip4_config_dad_timeout (ARGS_GET_FCN)
 {
 	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
 	gint dad_timeout;
@@ -2678,11 +2588,7 @@ static const char *ipv4_valid_methods[] = {
 };
 
 static gboolean
-_set_fcn_ip4_config_method (const NmcSettingInfo *setting_info,
-                            const NmcPropertyInfo *property_info,
-                            NMSetting *setting,
-                            const char *value,
-                            GError **error)
+_set_fcn_ip4_config_method (ARGS_SET_FCN)
 {
 	/* Silently accept "static" and convert to "manual" */
 	if (value && strlen (value) > 1 && matches (value, "static"))
@@ -2692,11 +2598,7 @@ _set_fcn_ip4_config_method (const NmcSettingInfo *setting_info,
 }
 
 static gboolean
-_set_fcn_ip4_config_dns (const NmcSettingInfo *setting_info,
-                         const NmcPropertyInfo *property_info,
-                         NMSetting *setting,
-                         const char *value,
-                         GError **error)
+_set_fcn_ip4_config_dns (ARGS_SET_FCN)
 {
 	char **strv = NULL, **iter, *addr;
 	guint32 ip4_addr;
@@ -2742,11 +2644,7 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv4_remove_dns,
                                _validate_and_remove_ipv4_dns)
 
 static gboolean
-_set_fcn_ip4_config_dns_search (const NmcSettingInfo *setting_info,
-                                const NmcPropertyInfo *property_info,
-                                NMSetting *setting,
-                                const char *value,
-                                GError **error)
+_set_fcn_ip4_config_dns_search (ARGS_SET_FCN)
 {
 	char **strv = NULL;
 	guint i = 0;
@@ -2787,11 +2685,7 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv4_remove_dns_search,
                                _validate_and_remove_ipv4_dns_search)
 
 static gboolean
-_set_fcn_ip4_config_dns_options (const NmcSettingInfo *setting_info,
-                                 const NmcPropertyInfo *property_info,
-                                 NMSetting *setting,
-                                 const char *value,
-                                 GError **error)
+_set_fcn_ip4_config_dns_options (ARGS_SET_FCN)
 {
 	char **strv = NULL;
 	guint i = 0;
@@ -2827,7 +2721,6 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv4_remove_dns_option,
                                nm_setting_ip_config_remove_dns_option,
                                _validate_and_remove_ipv4_dns_option)
 
-/* 'addresses' */
 static NMIPAddress *
 _parse_ipv4_address (const char *address, GError **error)
 {
@@ -2835,11 +2728,7 @@ _parse_ipv4_address (const char *address, GError **error)
 }
 
 static gboolean
-_set_fcn_ip4_config_addresses (const NmcSettingInfo *setting_info,
-                               const NmcPropertyInfo *property_info,
-                               NMSetting *setting,
-                               const char *value,
-                               GError **error)
+_set_fcn_ip4_config_addresses (ARGS_SET_FCN)
 {
 	char **strv = NULL, **iter;
 	NMIPAddress *ip4addr;
@@ -2886,11 +2775,7 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv4_remove_addresses,
                                _validate_and_remove_ipv4_address)
 
 static gboolean
-_set_fcn_ip4_config_gateway (const NmcSettingInfo *setting_info,
-                             const NmcPropertyInfo *property_info,
-                             NMSetting *setting,
-                             const char *value,
-                             GError **error)
+_set_fcn_ip4_config_gateway (ARGS_SET_FCN)
 {
 	NMIPAddress *ip4addr;
 
@@ -2917,11 +2802,7 @@ _parse_ipv4_route (const char *route, GError **error)
 }
 
 static gboolean
-_set_fcn_ip4_config_routes (const NmcSettingInfo *setting_info,
-                            const NmcPropertyInfo *property_info,
-                            NMSetting *setting,
-                            const char *value,
-                            GError **error)
+_set_fcn_ip4_config_routes (ARGS_SET_FCN)
 {
 	char **strv = NULL, **iter;
 	NMIPRoute *ip4route;
@@ -2967,10 +2848,7 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv4_remove_routes,
                                _validate_and_remove_ipv4_route)
 
 static char *
-_get_fcn_ip6_config_ip6_privacy (const NmcSettingInfo *setting_info,
-                                 const NmcPropertyInfo *property_info,
-                                 NMSetting *setting,
-                                 NmcPropertyGetType get_type)
+_get_fcn_ip6_config_ip6_privacy (ARGS_GET_FCN)
 {
 	NMSettingIP6Config *s_ip6 = NM_SETTING_IP6_CONFIG (setting);
 	return ip6_privacy_to_string (nm_setting_ip6_config_get_ip6_privacy (s_ip6), get_type);
@@ -2988,11 +2866,7 @@ static const char *ipv6_valid_methods[] = {
 };
 
 static gboolean
-_set_fcn_ip6_config_method (const NmcSettingInfo *setting_info,
-                            const NmcPropertyInfo *property_info,
-                            NMSetting *setting,
-                            const char *value,
-                            GError **error)
+_set_fcn_ip6_config_method (ARGS_SET_FCN)
 {
 	/* Silently accept "static" and convert to "manual" */
 	if (value && strlen (value) > 1 && matches (value, "static"))
@@ -3002,11 +2876,7 @@ _set_fcn_ip6_config_method (const NmcSettingInfo *setting_info,
 }
 
 static gboolean
-_set_fcn_ip6_config_dns (const NmcSettingInfo *setting_info,
-                         const NmcPropertyInfo *property_info,
-                         NMSetting *setting,
-                         const char *value,
-                         GError **error)
+_set_fcn_ip6_config_dns (ARGS_SET_FCN)
 {
 	char **strv = NULL, **iter, *addr;
 	struct in6_addr ip6_addr;
@@ -3052,11 +2922,7 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv6_remove_dns,
                                _validate_and_remove_ipv6_dns)
 
 static gboolean
-_set_fcn_ip6_config_dns_search (const NmcSettingInfo *setting_info,
-                                const NmcPropertyInfo *property_info,
-                                NMSetting *setting,
-                                const char *value,
-                                GError **error)
+_set_fcn_ip6_config_dns_search (ARGS_SET_FCN)
 {
 	char **strv = NULL;
 	guint i = 0;
@@ -3097,11 +2963,7 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv6_remove_dns_search,
                                _validate_and_remove_ipv6_dns_search)
 
 static gboolean
-_set_fcn_ip6_config_dns_options (const NmcSettingInfo *setting_info,
-                                 const NmcPropertyInfo *property_info,
-                                 NMSetting *setting,
-                                 const char *value,
-                                 GError **error)
+_set_fcn_ip6_config_dns_options (ARGS_SET_FCN)
 {
 	char **strv = NULL;
 	guint i = 0;
@@ -3145,11 +3007,7 @@ _parse_ipv6_address (const char *address, GError **error)
 }
 
 static gboolean
-_set_fcn_ip6_config_addresses (const NmcSettingInfo *setting_info,
-                               const NmcPropertyInfo *property_info,
-                               NMSetting *setting,
-                               const char *value,
-                               GError **error)
+_set_fcn_ip6_config_addresses (ARGS_SET_FCN)
 {
 	char **strv = NULL, **iter;
 	NMIPAddress *ip6addr;
@@ -3195,11 +3053,7 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv6_remove_addresses,
                                _validate_and_remove_ipv6_address)
 
 static gboolean
-_set_fcn_ip6_config_gateway (const NmcSettingInfo *setting_info,
-                             const NmcPropertyInfo *property_info,
-                             NMSetting *setting,
-                             const char *value,
-                             GError **error)
+_set_fcn_ip6_config_gateway (ARGS_SET_FCN)
 {
 	NMIPAddress *ip6addr;
 
@@ -3226,11 +3080,7 @@ _parse_ipv6_route (const char *route, GError **error)
 }
 
 static gboolean
-_set_fcn_ip6_config_routes (const NmcSettingInfo *setting_info,
-                            const NmcPropertyInfo *property_info,
-                            NMSetting *setting,
-                            const char *value,
-                            GError **error)
+_set_fcn_ip6_config_routes (ARGS_SET_FCN)
 {
 	char **strv = NULL, **iter;
 	NMIPRoute *ip6route;
@@ -3276,11 +3126,7 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv6_remove_routes,
                                _validate_and_remove_ipv6_route)
 
 static gboolean
-_set_fcn_ip6_config_ip6_privacy (const NmcSettingInfo *setting_info,
-                                 const NmcPropertyInfo *property_info,
-                                 NMSetting *setting,
-                                 const char *value,
-                                 GError **error)
+_set_fcn_ip6_config_ip6_privacy (ARGS_SET_FCN)
 {
 	unsigned long val_int;
 
@@ -3303,10 +3149,7 @@ _set_fcn_ip6_config_ip6_privacy (const NmcSettingInfo *setting_info,
 }
 
 static char *
-_get_fcn_ip6_config_addr_gen_mode (const NmcSettingInfo *setting_info,
-                                   const NmcPropertyInfo *property_info,
-                                   NMSetting *setting,
-                                   NmcPropertyGetType get_type)
+_get_fcn_ip6_config_addr_gen_mode (ARGS_GET_FCN)
 {
 	NMSettingIP6Config *s_ip6 = NM_SETTING_IP6_CONFIG (setting);
 	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
@@ -3317,11 +3160,7 @@ _get_fcn_ip6_config_addr_gen_mode (const NmcSettingInfo *setting_info,
 
 
 static gboolean
-_set_fcn_ip6_config_addr_gen_mode (const NmcSettingInfo *setting_info,
-                                   const NmcPropertyInfo *property_info,
-                                   NMSetting *setting,
-                                   const char *value,
-                                   GError **error)
+_set_fcn_ip6_config_addr_gen_mode (ARGS_SET_FCN)
 {
 	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
 
@@ -3982,8 +3821,7 @@ nmc_property_wired_allowed_s390_options (NMSetting *setting, const char *prop)
 }
 
 static const char *
-_describe_fcn_wired_s390_options (const NmcSettingInfo *setting_info,
-                                  const NmcPropertyInfo *property_info)
+_describe_fcn_wired_s390_options (ARGS_DESCRIBE_FCN)
 {
 	static char *desc = NULL;
 	const char **valid_options;
