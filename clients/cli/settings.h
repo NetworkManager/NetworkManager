@@ -74,31 +74,20 @@ struct _NmcPropertyType {
 struct _NmcPropertyTypData {
 	union {
 		struct {
-			union {
-				char *(*get_fcn) (NMSetting *setting, NmcPropertyGetType get_type);
-				gboolean (*get_fcn_with_default) (NMSetting *setting);
-			};
-			gboolean (*set_fcn) (NMSetting *setting, const char *property_name, const char *value, GError **error);
-			gboolean (*remove_fcn) (NMSetting *setting, const char *property_name, const char *option, guint32 idx, GError **error);
-			union {
-				union {
-					struct {
-						GType (*get_gtype) (void);
-						bool has_minmax:1;
-						int min;
-						int max;
-					} gobject_enum;
-				} values_data;
-				const char *const* (*values_fcn) (NMSetting *setting, const char *prop);
-			};
-		} nmc;
+			gboolean (*fcn) (NMSetting *setting);
+		} get_with_default;
+		struct {
+			GType (*get_gtype) (void);
+			int min;
+			int max;
+		} gobject_enum;
 		struct {
 			guint32 (*get_fcn) (NMSetting *setting);
 		} mtu;
 		struct {
 			NmcPropertyTypeMacMode mode;
 		} mac;
-	};
+	} subtype;
 	const char *const*values_static;
 };
 
