@@ -628,7 +628,7 @@ get_max_rate_vht_160_ss3 (int mcs)
 static gboolean
 get_max_rate_ht (const guint8 *bytes, guint len, guint32 *out_maxrate)
 {
-	guint32 mcs, i, j, m;
+	guint32 mcs, i, m;
 	guint8 ht_cap_info;
 	const guint8 *supported_mcs_set;
 
@@ -643,12 +643,12 @@ get_max_rate_ht (const guint8 *bytes, guint len, guint32 *out_maxrate)
 
 	/* Find the maximum supported mcs rate */
 	mcs = -1;
-	for (i = 0; i <= 15; i++) {
-		for (j = 0; j <= 7; j++) {
-			if (*supported_mcs_set & (1 << j))
-				mcs++;
-		}
-		supported_mcs_set++;
+	for (i = 0; i <= 76; i++) {
+		unsigned int mcs_octet = i/8;
+		unsigned int MCS_RATE_BIT = 1 << i % 8;
+
+		if (supported_mcs_set[mcs_octet] & MCS_RATE_BIT)
+			mcs = i;
 	}
 
 	/* Check for 40Mhz wide channel support */
