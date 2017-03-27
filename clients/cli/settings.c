@@ -45,6 +45,12 @@ static char *secret_flags_to_string (guint32 flags, NmcPropertyGetType get_type)
 
 /*****************************************************************************/
 
+#define ARGS_GET_FCN \
+	const NmcSettingInfo *setting_info, const NmcPropertyInfo *property_info, NMSetting *setting, NmcPropertyGetType get_type
+
+#define ARGS_SET_FCN \
+	const NmcSettingInfo *setting_info, const NmcPropertyInfo *property_info, NMSetting *setting, const char *value, GError **error
+
 static char *
 _get_fcn_name (const NmcSettingInfo *setting_info,
                const NmcPropertyInfo *property_info,
@@ -3842,7 +3848,7 @@ DEFINE_REMOVER_OPTION (nmc_property_vpn_remove_option_secret,
                        nm_setting_vpn_remove_secret)
 
 static char *
-nmc_property_wired_get_wake_on_lan (NMSetting *setting, NmcPropertyGetType get_type)
+_get_fcn_wired_wake_on_lan (ARGS_GET_FCN)
 {
 	NMSettingWired *s_wired = NM_SETTING_WIRED (setting);
 	NMSettingWiredWakeOnLan wol;
@@ -3859,21 +3865,20 @@ nmc_property_wired_get_wake_on_lan (NMSetting *setting, NmcPropertyGetType get_t
 }
 
 static gboolean
-nmc_property_wired_set_wake_on_lan (NMSetting *setting, const char *prop,
-                                    const char *val, GError **error)
+_set_fcn_wired_wake_on_lan (ARGS_SET_FCN)
 {
 	NMSettingWiredWakeOnLan wol;
 	gs_free char *err_token = NULL;
 	gboolean ret;
 	long int t;
 
-	if (nmc_string_to_int_base (val, 0, TRUE, 0,
+	if (nmc_string_to_int_base (value, 0, TRUE, 0,
 	                            NM_SETTING_WIRED_WAKE_ON_LAN_ALL
 	                            | NM_SETTING_WIRED_WAKE_ON_LAN_EXCLUSIVE_FLAGS,
 	                            &t))
 		wol = (NMSettingWiredWakeOnLan) t;
 	else {
-		ret = nm_utils_enum_from_str (nm_setting_wired_wake_on_lan_get_type (), val,
+		ret = nm_utils_enum_from_str (nm_setting_wired_wake_on_lan_get_type (), value,
 		                              (int *) &wol, &err_token);
 
 		if (!ret) {
@@ -3897,7 +3902,7 @@ nmc_property_wired_set_wake_on_lan (NMSetting *setting, const char *prop,
 		return FALSE;
 	}
 
-	g_object_set (setting, prop, (guint) wol, NULL);
+	g_object_set (setting, property_info->property_name, (guint) wol, NULL);
 	return TRUE;
 }
 
@@ -4196,13 +4201,11 @@ nmc_property_wifi_sec_get_wep_key3 (NMSetting *setting, NmcPropertyGetType get_t
 }
 
 static char *
-nmc_property_wifi_sec_get_wep_key_type (NMSetting *setting, NmcPropertyGetType get_type)
+_get_fcn_wireless_security_wep_key_type (ARGS_GET_FCN)
 {
-	NMSettingWirelessSecurity *s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (setting);
-	return wep_key_type_to_string (nm_setting_wireless_security_get_wep_key_type (s_wireless_sec));
+	return wep_key_type_to_string (nm_setting_wireless_security_get_wep_key_type (NM_SETTING_WIRELESS_SECURITY (setting)));
 }
 
-/* 'proto' */
 static const char *wifi_sec_valid_protos[] = { "wpa", "rsn", NULL };
 
 DEFINE_SETTER_STR_LIST_MULTI (check_and_add_wifi_sec_proto,
@@ -4360,9 +4363,8 @@ nmc_property_wifi_set_wep_key (NMSetting *setting, const char *prop, const char 
 	return TRUE;
 }
 
-/* 'wep-key-type' */
 static gboolean
-nmc_property_wifi_set_wep_key_type (NMSetting *setting, const char *prop, const char *val, GError **error)
+_set_fcn_wireless_security_wep_key_type (ARGS_SET_FCN)
 {
 	unsigned long  type_int;
 	const char *valid_wep_types[] = { "unknown", "key", "passphrase", NULL };
@@ -4372,9 +4374,9 @@ nmc_property_wifi_set_wep_key_type (NMSetting *setting, const char *prop, const 
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	if (!nmc_string_to_uint (val, TRUE, 0, 2, &type_int)) {
-		if (!(type_str = nmc_string_is_valid (val, valid_wep_types, NULL))) {
-			g_set_error (error, 1, 0, _("'%s' not among [0 (unknown), 1 (key), 2 (passphrase)]"), val);
+	if (!nmc_string_to_uint (value, TRUE, 0, 2, &type_int)) {
+		if (!(type_str = nmc_string_is_valid (value, valid_wep_types, NULL))) {
+			g_set_error (error, 1, 0, _("'%s' not among [0 (unknown), 1 (key), 2 (passphrase)]"), value);
 			return FALSE;
 		}
 		if (type_str == valid_wep_types[1])
@@ -4402,21 +4404,18 @@ nmc_property_wifi_set_wep_key_type (NMSetting *setting, const char *prop, const 
 		g_print (_("Warning: '%s' is not compatible with '%s' type, please change or delete the key.\n"),
 		         NM_SETTING_WIRELESS_SECURITY_WEP_KEY3, wep_key_type_to_string (type));
 
-	g_object_set (setting, prop, type, NULL);
+	g_object_set (setting, property_info->property_name, type, NULL);
 	return TRUE;
 }
 
-/* 'psk' */
 static gboolean
-nmc_property_wifi_set_psk (NMSetting *setting, const char *prop, const char *val, GError **error)
+_set_fcn_wireless_security_psk (ARGS_SET_FCN)
 {
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if (!nm_utils_wpa_psk_valid (val)) {
-		g_set_error (error, 1, 0, _("'%s' is not a valid PSK"), val);
+	if (!nm_utils_wpa_psk_valid (value)) {
+		g_set_error (error, 1, 0, _("'%s' is not a valid PSK"), value);
 		return FALSE;
 	}
-	g_object_set (setting, prop, val, NULL);
+	g_object_set (setting, property_info->property_name, value, NULL);
 	return TRUE;
 }
 
@@ -7119,10 +7118,9 @@ static const NmcPropertyInfo properties_setting_wired[] = {
 	},
 	{
 		.property_name =                N_ (NM_SETTING_WIRED_WAKE_ON_LAN),
-		.property_type =                &_pt_nmc_getset,
-		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
-			.get_fcn =                  nmc_property_wired_get_wake_on_lan,
-			.set_fcn =                  nmc_property_wired_set_wake_on_lan,
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_wired_wake_on_lan,
+			.set_fcn =                  _set_fcn_wired_wake_on_lan,
 		),
 	},
 	{
@@ -7349,10 +7347,9 @@ static const NmcPropertyInfo properties_setting_wireless_security[] = {
 		.describe_message =
 		    N_ ("Enter the type of WEP keys. The accepted values are: "
 		        "0 or unknown, 1 or key, and 2 or passphrase.\n"),
-		.property_type =                &_pt_nmc_getset,
-		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
-			.get_fcn =                  nmc_property_wifi_sec_get_wep_key_type,
-			.set_fcn =                  nmc_property_wifi_set_wep_key_type,
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_wireless_security_wep_key_type,
+			.set_fcn =                  _set_fcn_wireless_security_wep_key_type,
 		),
 	},
 	{
@@ -7360,10 +7357,7 @@ static const NmcPropertyInfo properties_setting_wireless_security[] = {
 		.is_secret =                    TRUE,
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_nmc,
-		),
-		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nmc,
-			.set_fcn =                  nmc_property_wifi_set_psk,
+			.set_fcn =                  _set_fcn_wireless_security_psk,
 		),
 	},
 	{
