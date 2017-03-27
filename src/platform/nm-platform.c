@@ -444,11 +444,19 @@ _link_get_all_presort (gconstpointer  p_a,
 	const NMPlatformLink *a = p_a;
 	const NMPlatformLink *b = p_b;
 
-	if (a->ifindex < b->ifindex)
+	/* Loopback always first */
+	if (a->ifindex == 1)
 		return -1;
-	if (a->ifindex > b->ifindex)
+	if (b->ifindex == 1)
 		return 1;
-	return 0;
+
+	/* Initialized links first */
+	if (a->initialized > b->initialized)
+		return -1;
+	if (a->initialized < b->initialized)
+		return 1;
+
+	return strcmp (a->name, b->name);
 }
 
 /**
