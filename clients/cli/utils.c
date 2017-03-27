@@ -974,36 +974,35 @@ nmc_empty_output_fields (NmCli *nmc)
 	}
 }
 
-static char *
+static const char *
 colorize_string (NmCli *nmc,
                  NmcTermColor color,
                  NmcTermFormat color_fmt,
                  const char *str,
-                 gboolean *dealloc)
+                 char **out_to_free)
 {
-	char *out;
+	const char *out = str;
 
 	if (   use_colors (nmc)
 	    && (color != NMC_TERM_COLOR_NORMAL || color_fmt != NMC_TERM_FORMAT_NORMAL)) {
-		out = nmc_colorize (nmc, color, color_fmt, "%s", str);
-		*dealloc = TRUE;
-	} else {
-		out = (char *) str;
-		*dealloc = FALSE;
+		*out_to_free = nmc_colorize (nmc, color, color_fmt, "%s", str);
+		out = *out_to_free;
 	}
+
 	return out;
 }
 
-static char *
+static const char *
 get_value_to_print (NmCli *nmc,
                     NmcOutputField *field,
                     gboolean field_name,
                     const char *not_set_str,
-                    gboolean *dealloc)
+                    char **out_to_free)
 {
 	gboolean is_array = field->value_is_array;
-	char *value, *out;
-	gboolean free_value, free_out;
+	char *value;
+	const char *out;
+	gboolean free_value;
 
 	if (field_name)
 		value = _(field->name_l10n);
@@ -1018,13 +1017,12 @@ get_value_to_print (NmCli *nmc,
 	free_value = field->value && is_array && !field_name;
 
 	/* colorize the value */
-	out = colorize_string (nmc, field->color, field->color_fmt, value, &free_out);
-	if (free_out) {
+	out = colorize_string (nmc, field->color, field->color_fmt, value, out_to_free);
+	if (*out_to_free) {
 		if (free_value)
 			g_free (value);
-		 *dealloc = TRUE;
-	} else
-		 *dealloc = free_value;
+	} else if (free_value)
+		 *out_to_free = value;
 
 	return out;
 }
@@ -1095,7 +1093,6 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 	if (multiline) {
 		for (i = 0; i < fields.indices->len; i++) {
 			char *tmp;
-			gboolean dealloc;
 			int idx = g_array_index (fields.indices, int, i);
 			gboolean is_array = field_values[idx].value_is_array;
 
@@ -1107,14 +1104,14 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 
 			if (is_array) {
 				/* value is a null-terminated string array */
-				const char **p, *val;
-				char *print_val;
+				const char **p, *val, *print_val;
+				gs_free char *val_to_free = NULL;
 				int j;
 
 				for (p = (const char **) field_values[idx].value, j = 1; p && *p; p++, j++) {
 					val = *p ? *p : not_set_str;
 					print_val = colorize_string (nmc, field_values[idx].color, field_values[idx].color_fmt,
-					                             val, &dealloc);
+					                             val, &val_to_free);
 					tmp = g_strdup_printf ("%s%s%s[%d]:",
 					                       section_prefix ? (const char*) field_values[0].value : "",
 					                       section_prefix ? "." : "",
@@ -1124,18 +1121,17 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 					width2 = nmc_string_screen_width (tmp, NULL);
 					g_print ("%-*s%s\n", terse ? 0 : ML_VALUE_INDENT+width1-width2, tmp, print_val);
 					g_free (tmp);
-					if (dealloc)
-						g_free (print_val);
 				}
 			} else {
 				/* value is a string */
 				const char *hdr_name = (const char*) field_values[0].value;
 				const char *val = (const char*) field_values[idx].value;
-				char *print_val;
+				const char *print_val;
+				gs_free char *val_to_free = NULL;
 
 				val = val && *val ? val : not_set_str;
 				print_val = colorize_string (nmc, field_values[idx].color, field_values[idx].color_fmt,
-				                             val, &dealloc);
+				                             val, &val_to_free);
 				tmp = g_strdup_printf ("%s%s%s:",
 				                       section_prefix ? hdr_name : "",
 				                       section_prefix ? "." : "",
@@ -1144,8 +1140,6 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 				width2 = nmc_string_screen_width (tmp, NULL);
 				g_print ("%-*s%s\n", terse ? 0 : ML_VALUE_INDENT+width1-width2, tmp, print_val);
 				g_free (tmp);
-				if (dealloc)
-					g_free (print_val);
 			}
 		}
 		if (pretty) {
@@ -1163,9 +1157,9 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 
 	for (i = 0; i < fields.indices->len; i++) {
 		int idx = g_array_index (fields.indices, int, i);
-		gboolean dealloc;
-		char *value = get_value_to_print (nmc, (NmcOutputField *) field_values+idx, field_names,
-		                                  not_set_str, &dealloc);
+		gs_free char *val_to_free = NULL;
+		const char *value = get_value_to_print (nmc, (NmcOutputField *) field_values+idx, field_names,
+		                                        not_set_str, &val_to_free);
 
 		if (terse) {
 			if (escape) {
@@ -1187,9 +1181,6 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 			g_string_append_c (str, ' ');  /* Column separator */
 			table_width += field_values[idx].width + width1 - width2 + 1;
 		}
-
-		if (dealloc)
-			g_free (value);
 	}
 
 	/* Print actual values */
@@ -1243,15 +1234,15 @@ print_data (NmCli *nmc)
 	for (i = 0; i < num_fields; i++) {
 		size_t max_width = 0;
 		for (j = 0; j < nmc->output_data->len; j++) {
-			gboolean field_names, dealloc;
-			char *value;
+			gboolean field_names;
+			gs_free char * val_to_free = NULL;
+			const char *value;
+
 			row = g_ptr_array_index (nmc->output_data, j);
 			field_names = row[0].flags & NMC_OF_FLAG_FIELD_NAMES;
-			value = get_value_to_print (NULL, row+i, field_names, "--", &dealloc);
+			value = get_value_to_print (NULL, row+i, field_names, "--", &val_to_free);
 			len = nmc_string_screen_width (value, NULL);
 			max_width = len > max_width ? len : max_width;
-			if (dealloc)
-				g_free (value);
 		}
 		for (j = 0; j < nmc->output_data->len; j++) {
 			row = g_ptr_array_index (nmc->output_data, j);
