@@ -224,7 +224,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                      _("property is invalid"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP_CONFIG_METHOD);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE);
 		return FALSE;
 	}
 
