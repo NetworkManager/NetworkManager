@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2013 Red Hat, Inc.
+ * Copyright (C) 2005 - 2017 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -134,6 +134,8 @@ nm_device_state_reason_check (NMDeviceStateReason reason)
 #define NM_DEVICE_STATISTICS_REFRESH_RATE_MS "refresh-rate-ms"
 #define NM_DEVICE_STATISTICS_TX_BYTES        "tx-bytes"
 #define NM_DEVICE_STATISTICS_RX_BYTES        "rx-bytes"
+
+#define NM_DEVICE_CONNECTIVITY               "connectivity"
 
 #define NM_TYPE_DEVICE            (nm_device_get_type ())
 #define NM_DEVICE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE, NMDevice))
@@ -688,5 +690,13 @@ gboolean nm_device_hw_addr_get_cloned (NMDevice *self,
                                        char **hwaddr,
                                        gboolean *preserve,
                                        GError **error);
+
+typedef void (*NMDeviceConnectivityCallback) (NMDevice *self,
+                                              NMConnectivityState state,
+                                              gpointer user_data);
+void nm_device_check_connectivity (NMDevice *self,
+                                   NMDeviceConnectivityCallback callback,
+                                   gpointer user_data);
+NMConnectivityState nm_device_get_connectivity_state (NMDevice *self);
 
 #endif /* __NETWORKMANAGER_DEVICE_H__ */

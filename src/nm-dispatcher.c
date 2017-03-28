@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2012 Red Hat, Inc.
+ * Copyright (C) 2004 - 2017 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
@@ -507,6 +507,7 @@ _dispatcher_call (NMDispatcherAction action,
 	GError *error = NULL;
 	static guint request_counter = 0;
 	guint reqid = ++request_counter;
+	const char *connectivity_state_string = "UNKNOWN";
 
 	if (!dispatcher_proxy)
 		return FALSE;
@@ -616,6 +617,10 @@ _dispatcher_call (NMDispatcherAction action,
 	if (!device_dhcp6_props)
 		device_dhcp6_props = g_variant_ref_sink (g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0));
 
+#if WITH_CONCHECK
+	connectivity_state_string = nm_connectivity_state_to_string (connectivity_state);
+#endif
+
 	/* Send the action to the dispatcher */
 	if (blocking) {
 		GVariant *ret;
@@ -632,7 +637,7 @@ _dispatcher_call (NMDispatcherAction action,
 		                                               &device_ip6_props,
 		                                               device_dhcp4_props,
 		                                               device_dhcp6_props,
-		                                               nm_connectivity_state_to_string (connectivity_state),
+		                                               connectivity_state_string,
 		                                               vpn_iface ? vpn_iface : "",
 		                                               &vpn_proxy_props,
 		                                               &vpn_ip4_props,
@@ -670,7 +675,7 @@ _dispatcher_call (NMDispatcherAction action,
 		                                  &device_ip6_props,
 		                                  device_dhcp4_props,
 		                                  device_dhcp6_props,
-		                                  nm_connectivity_state_to_string (connectivity_state),
+		                                  connectivity_state_string,
 		                                  vpn_iface ? vpn_iface : "",
 		                                  &vpn_proxy_props,
 		                                  &vpn_ip4_props,
