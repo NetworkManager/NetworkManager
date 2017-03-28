@@ -62,6 +62,37 @@ static char *secret_flags_to_string (guint32 flags, NMMetaAccessorGetType get_ty
 
 /*****************************************************************************/
 
+static GType
+_gobject_property_get_gtype (GObject *gobject, const char *property_name)
+{
+	GParamSpec *param_spec;
+
+	param_spec = g_object_class_find_property (G_OBJECT_GET_CLASS (gobject), property_name);
+	if (param_spec)
+		return param_spec->value_type;
+	g_return_val_if_reached (G_TYPE_INVALID);
+}
+
+static GType
+_gtype_property_get_gtype (GType gtype, const char *property_name)
+{
+	/* given @gtype, a type for a GObject, lookup the property @property_name
+	 * and return its value_type. */
+	if (G_TYPE_IS_CLASSED (gtype)) {
+		GParamSpec *param_spec;
+		nm_auto_unref_gtypeclass GTypeClass *gtypeclass = g_type_class_ref (gtype);
+
+		if (G_IS_OBJECT_CLASS (gtypeclass)) {
+			param_spec = g_object_class_find_property (G_OBJECT_CLASS (gtypeclass), property_name);
+			if (param_spec)
+				return param_spec->value_type;
+		}
+	}
+	g_return_val_if_reached (G_TYPE_INVALID);
+}
+
+/*****************************************************************************/
+
 /*
  * Parse IP address from string to NMIPAddress stucture.
  * ip_str is the IP address in the form address/prefix
@@ -575,6 +606,132 @@ _get_fcn_gobject_secret_flags (ARGS_GET_FCN)
 	return secret_flags_to_string (v, get_type);
 }
 
+static char *
+_get_fcn_gobject_enum (ARGS_GET_FCN)
+{
+	GType gtype = 0;
+	GType gtype_prop;
+	nm_auto_unref_gtypeclass GTypeClass *gtype_class = NULL;
+	nm_auto_unref_gtypeclass GTypeClass *gtype_prop_class = NULL;
+	gboolean has_gtype = FALSE;
+	nm_auto_unset_gvalue GValue gval = G_VALUE_INIT;
+	gint64 v;
+	gboolean format_numeric = FALSE;
+	gboolean format_numeric_hex = FALSE;
+	gboolean format_numeric_hex_unknown = FALSE;
+	gboolean format_text = FALSE;
+	gboolean format_text_l10n = FALSE;
+	gs_free char *s = NULL;
+	char s_numeric[64];
+
+	if (property_info->property_typ_data) {
+		if (property_info->property_typ_data->subtype.gobject_enum.get_gtype) {
+			gtype = property_info->property_typ_data->subtype.gobject_enum.get_gtype ();
+			has_gtype = TRUE;
+		}
+	}
+
+	if (   property_info->property_typ_data
+	    && get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY
+	    && NM_FLAGS_ANY (property_info->property_typ_data->typ_flags,   NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_NUMERIC
+	                                                                  | NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_NUMERIC_HEX
+	                                                                  | NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT
+	                                                                  | NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT_L10N)) {
+		format_numeric_hex = NM_FLAGS_HAS (property_info->property_typ_data->typ_flags, NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_NUMERIC_HEX);
+		format_numeric = format_numeric_hex || NM_FLAGS_HAS (property_info->property_typ_data->typ_flags, NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_NUMERIC);
+		format_text_l10n = NM_FLAGS_HAS (property_info->property_typ_data->typ_flags, NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT_L10N);
+		format_text = format_text_l10n || NM_FLAGS_HAS (property_info->property_typ_data->typ_flags, NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT);
+	} else if (   property_info->property_typ_data
+	           && get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE
+	           && NM_FLAGS_ANY (property_info->property_typ_data->typ_flags,   NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_NUMERIC
+	                                                                         | NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_NUMERIC_HEX
+	                                                                         | NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_TEXT)) {
+		format_numeric_hex = NM_FLAGS_HAS (property_info->property_typ_data->typ_flags, NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_NUMERIC_HEX);
+		format_numeric = format_numeric && NM_FLAGS_HAS (property_info->property_typ_data->typ_flags, NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_NUMERIC);
+		format_text = NM_FLAGS_HAS (property_info->property_typ_data->typ_flags, NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_TEXT);
+	} else if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY) {
+		/* by default, output in format "%u (%s)" (with hex for flags and l10n). */
+		format_numeric = TRUE;
+		format_numeric_hex_unknown = TRUE;
+		format_text = TRUE;
+		format_text_l10n = TRUE;
+	} else {
+		/* by default, output only numeric (with hex for flags). */
+		format_numeric = TRUE;
+		format_numeric_hex_unknown = TRUE;
+	}
+
+	nm_assert (format_text || format_numeric);
+
+	gtype_prop = _gobject_property_get_gtype (G_OBJECT (setting), property_info->property_name);
+
+	g_value_init (&gval, gtype_prop);
+
+	g_object_get_property (G_OBJECT (setting), property_info->property_name, &gval);
+
+	if (   gtype_prop == G_TYPE_INT
+	    || (    G_TYPE_IS_CLASSED (gtype_prop)
+	        &&  G_IS_ENUM_CLASS ((gtype_prop_class ?: (gtype_prop_class = g_type_class_ref (gtype_prop)))))) {
+		if (gtype_prop == G_TYPE_INT) {
+			if (!has_gtype)
+				g_return_val_if_reached (NULL);
+			v = g_value_get_int (&gval);
+		} else
+		    v = g_value_get_enum (&gval);
+	} else if (   gtype_prop == G_TYPE_UINT
+	           || (   G_TYPE_IS_CLASSED (gtype_prop)
+	               && G_IS_FLAGS_CLASS ((gtype_prop_class ?: (gtype_prop_class = g_type_class_ref (gtype_prop)))))) {
+		if (gtype_prop == G_TYPE_UINT) {
+			if (!has_gtype)
+				g_return_val_if_reached (NULL);
+			v = g_value_get_uint (&gval);
+		} else
+		    v = g_value_get_flags (&gval);
+	} else
+		g_return_val_if_reached (NULL);
+
+	if (!has_gtype) {
+		gtype = gtype_prop;
+		gtype_class = g_steal_pointer (&gtype_prop_class);
+	}
+
+	nm_assert (({
+		nm_auto_unref_gtypeclass GTypeClass *t = NULL;
+
+		(   G_TYPE_IS_CLASSED (gtype)
+		 && (t = g_type_class_ref (gtype))
+		 && (G_IS_ENUM_CLASS (t) || G_IS_FLAGS_CLASS (t)));
+	}));
+
+	if (format_numeric && !format_text) {
+		return    format_numeric_hex
+		       || (   format_numeric_hex_unknown
+		           && !G_IS_ENUM_CLASS (gtype_class ?: (gtype_class = g_type_class_ref (gtype))))
+		       ? g_strdup_printf ("0x%"G_GINT64_FORMAT, v)
+		       : g_strdup_printf ("%"G_GINT64_FORMAT, v);
+	}
+
+	s = nm_utils_enum_to_str (gtype, (int) v);
+
+	if (!format_numeric)
+		return g_steal_pointer (&s);
+
+	if (   format_numeric_hex
+	    || (   format_numeric_hex_unknown
+	        && !G_IS_ENUM_CLASS (gtype_class ?: (gtype_class = g_type_class_ref (gtype)))))
+		nm_sprintf_buf (s_numeric, "0x%"G_GINT64_FORMAT, v);
+	else
+		nm_sprintf_buf (s_numeric, "%"G_GINT64_FORMAT, v);
+
+	if (nm_streq0 (s, s_numeric))
+		return g_steal_pointer (&s);
+
+	if (format_text_l10n)
+		return g_strdup_printf (_("%s (%s)"), s_numeric, s);
+	else
+		return g_strdup_printf ("%s (%s)", s_numeric, s);
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -745,20 +902,122 @@ _set_fcn_gobject_secret_flags (ARGS_SET_FCN)
 	return TRUE;
 }
 
+static gboolean
+_set_fcn_gobject_enum (ARGS_SET_FCN)
+{
+	GType gtype = 0;
+	GType gtype_prop;
+	gboolean has_gtype = FALSE;
+	nm_auto_unset_gvalue GValue gval = G_VALUE_INIT;
+	int v;
+
+	if (property_info->property_typ_data) {
+		if (property_info->property_typ_data->subtype.gobject_enum.get_gtype) {
+			gtype = property_info->property_typ_data->subtype.gobject_enum.get_gtype ();
+			has_gtype = TRUE;
+		}
+	}
+
+	gtype_prop = _gobject_property_get_gtype (G_OBJECT (setting), property_info->property_name);
+
+	if (   gtype_prop == G_TYPE_INT
+	    || G_IS_ENUM_CLASS (gtype_prop)) {
+		if (gtype_prop == G_TYPE_INT) {
+			if (!has_gtype)
+				g_return_val_if_reached (FALSE);
+		}
+	} else if (   gtype_prop == G_TYPE_UINT
+	           || G_IS_FLAGS_CLASS (gtype_prop)) {
+		if (gtype_prop == G_TYPE_UINT) {
+			if (!has_gtype)
+				g_return_val_if_reached (FALSE);
+		}
+	} else
+		g_return_val_if_reached (FALSE);
+
+	if (!has_gtype)
+		gtype = gtype_prop;
+
+	if (!nm_utils_enum_from_str (gtype, value, &v, NULL))
+		goto fail;
+
+	g_value_init (&gval, gtype_prop);
+	if (   gtype_prop == G_TYPE_INT
+	    || G_IS_ENUM_CLASS (gtype_prop)) {
+		if (gtype_prop == G_TYPE_INT)
+			g_value_set_int (&gval, v);
+		else
+		    g_value_set_enum (&gval, v);
+	} else if (   gtype_prop == G_TYPE_UINT
+	           || G_IS_FLAGS_CLASS (gtype_prop)) {
+		if (gtype_prop == G_TYPE_UINT)
+			g_value_set_uint (&gval, v);
+		else
+		    g_value_set_flags (&gval, v);
+	}
+	if (!nm_g_object_set_property (G_OBJECT (setting), property_info->property_name, &gval, NULL))
+		goto fail;
+
+	return TRUE;
+
+fail:
+	if (error) {
+		gs_free const char **valid_all = NULL;
+		gs_free const char *valid_str = NULL;
+		int min = G_MININT;
+		int max = G_MAXINT;
+
+		if (property_info->property_typ_data) {
+			if (   property_info->property_typ_data->subtype.gobject_enum.min
+			    || property_info->property_typ_data->subtype.gobject_enum.max) {
+				min = property_info->property_typ_data->subtype.gobject_enum.min;
+				max = property_info->property_typ_data->subtype.gobject_enum.max;
+			}
+		}
+
+		valid_all = nm_utils_enum_get_values (gtype, min, max);
+		valid_str = g_strjoinv (",", (char **) valid_all);
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
+		             _("invalid option '%s', use one of [%s]"),
+		             value,
+		             valid_str);
+	}
+	return FALSE;
+}
+
 /*****************************************************************************/
 
 static const char *const*
 _values_fcn_gobject_enum (ARGS_VALUES_FCN)
 {
+	GType gtype = 0;
+	gboolean has_gtype = FALSE;
+	int min = G_MININT;
+	int max = G_MAXINT;
 	char **v, **w;
-	bool has_minmax =    property_info->property_typ_data->subtype.gobject_enum.min
-	                  || property_info->property_typ_data->subtype.gobject_enum.max;
 
-	v = (char **) nm_utils_enum_get_values (             property_info->property_typ_data->subtype.gobject_enum.get_gtype (),
-	                                        has_minmax ? property_info->property_typ_data->subtype.gobject_enum.min : G_MININT,
-	                                        has_minmax ? property_info->property_typ_data->subtype.gobject_enum.max : G_MAXINT);
-	for (w = v; w && *w; w++)
-		*w = g_strdup (*w);
+	if (property_info->property_typ_data) {
+		if (   property_info->property_typ_data->subtype.gobject_enum.min
+		    || property_info->property_typ_data->subtype.gobject_enum.max) {
+			min = property_info->property_typ_data->subtype.gobject_enum.min;
+			max = property_info->property_typ_data->subtype.gobject_enum.max;
+		}
+		if (property_info->property_typ_data->subtype.gobject_enum.get_gtype) {
+			gtype = property_info->property_typ_data->subtype.gobject_enum.get_gtype ();
+			has_gtype = TRUE;
+		}
+	}
+
+	if (!has_gtype) {
+		gtype = _gtype_property_get_gtype (setting_info->general->get_setting_gtype (),
+		                                   property_info->property_name);
+	}
+
+	v = (char **) nm_utils_enum_get_values (gtype, min, max);
+	if (v) {
+		for (w = v; *w; w++)
+			*w = g_strdup (*w);
+	}
 	return (const char *const*) (*out_to_free = v);
 }
 
@@ -3301,33 +3560,6 @@ _set_fcn_ip6_config_ip6_privacy (ARGS_SET_FCN)
 }
 
 static char *
-_get_fcn_ip6_config_addr_gen_mode (ARGS_GET_FCN)
-{
-	NMSettingIP6Config *s_ip6 = NM_SETTING_IP6_CONFIG (setting);
-	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
-
-	addr_gen_mode = nm_setting_ip6_config_get_addr_gen_mode (s_ip6);
-	return nm_utils_enum_to_str (nm_setting_ip6_config_addr_gen_mode_get_type (), addr_gen_mode);
-}
-
-
-static gboolean
-_set_fcn_ip6_config_addr_gen_mode (ARGS_SET_FCN)
-{
-	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
-
-	if (!nm_utils_enum_from_str (nm_setting_ip6_config_addr_gen_mode_get_type (), value,
-	                             (int *) &addr_gen_mode, NULL)) {
-		g_set_error (error, 1, 0, _("invalid option '%s', use one of [%s]"),
-		             value, "eui64,stable-privacy");
-			return FALSE;
-	}
-
-	g_object_set (setting, property_info->property_name, addr_gen_mode, NULL);
-	return TRUE;
-}
-
-static char *
 _get_fcn_macsec_mode (ARGS_GET_FCN)
 {
 	NMSettingMacsec *s_macsec = NM_SETTING_MACSEC (setting);
@@ -4388,9 +4620,14 @@ register_nmcli_value_transforms (void)
 #define DEFINE_PROPERTY_TYP_DATA(...) \
 	(&((NMMetaPropertyTypData) { __VA_ARGS__ } ))
 
-#define DEFINE_PROPERTY_TYP_DATA_SUBTYPE(type, ...) \
+#define PROPERTY_TYP_DATA_SUBTYPE(stype, ...) \
+	.subtype = { \
+		.stype = { __VA_ARGS__ }, \
+	}
+
+#define DEFINE_PROPERTY_TYP_DATA_SUBTYPE(stype, ...) \
 	DEFINE_PROPERTY_TYP_DATA ( \
-		.subtype = { .type = { __VA_ARGS__ } } , \
+		PROPERTY_TYP_DATA_SUBTYPE (stype, __VA_ARGS__), \
 	)
 
 static const NMMetaPropertyType _pt_name = {
@@ -4439,6 +4676,12 @@ static const NMMetaPropertyType _pt_gobject_mac = {
 static const NMMetaPropertyType _pt_gobject_secret_flags = {
 	.get_fcn =                      _get_fcn_gobject_secret_flags,
 	.set_fcn =                      _set_fcn_gobject_secret_flags,
+};
+
+static const NMMetaPropertyType _pt_gobject_enum = {
+	.get_fcn =                      _get_fcn_gobject_enum,
+	.set_fcn =                      _set_fcn_gobject_enum,
+	.values_fcn =                   _values_fcn_gobject_enum,
 };
 
 /*****************************************************************************/
@@ -5511,13 +5754,13 @@ static const NMMetaPropertyInfo property_infos_ip6_config[] = {
 	},
 	{
 		.property_name =                N_ (NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE),
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_ip6_config_addr_gen_mode,
-			.set_fcn =                  _set_fcn_ip6_config_addr_gen_mode,
-			.values_fcn =               _values_fcn_gobject_enum,
-		),
-		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
-			.get_gtype =                nm_setting_ip6_config_addr_gen_mode_get_type,
+		.property_type =                &_pt_gobject_enum,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
+				.get_gtype =            nm_setting_ip6_config_addr_gen_mode_get_type,
+			),
+			.typ_flags =                  NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_TEXT
+			                            | NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT,
 		),
 	},
 	{

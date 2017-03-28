@@ -30,6 +30,16 @@ typedef enum {
 } NMMetaAccessorGetType;
 
 typedef enum {
+	NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_NUMERIC                       = (1LL <<  0),
+	NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_NUMERIC_HEX                   = (1LL <<  1),
+	NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT                          = (1LL <<  2),
+	NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT_L10N                     = (1LL <<  3),
+	NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_NUMERIC                     = (1LL <<  4),
+	NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_NUMERIC_HEX                 = (1LL <<  5),
+	NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_TEXT                        = (1LL <<  6),
+} NMMetaPropertyTypFlags;
+
+typedef enum {
 	NM_META_PROPERTY_TYPE_MAC_MODE_DEFAULT,
 	NM_META_PROPERTY_TYPE_MAC_MODE_CLONED,
 	NM_META_PROPERTY_TYPE_MAC_MODE_INFINIBAND,
@@ -86,6 +96,7 @@ struct _NMMetaPropertyTypData {
 		} mac;
 	} subtype;
 	const char *const*values_static;
+	NMMetaPropertyTypFlags typ_flags;
 };
 
 struct _NMMetaPropertyInfo {
