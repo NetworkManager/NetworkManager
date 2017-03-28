@@ -21,7 +21,7 @@
 
 #include "nm-default.h"
 
-#include "nm-setting-metadata.h"
+#include "nm-meta-setting.h"
 
 #include "nm-setting-8021x.h"
 #include "nm-setting-adsl.h"

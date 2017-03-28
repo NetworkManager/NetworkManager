@@ -31,7 +31,7 @@
 #include "settings/nm-settings-plugin.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
-#include "nm-setting-metadata.h"
+#include "nm-meta-setting.h"
 
 #include "nms-ifnet-net-utils.h"
 #include "nms-ifnet-wpa-parser.h"

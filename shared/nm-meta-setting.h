@@ -19,8 +19,8 @@
  * Copyright 2017 Red Hat, Inc.
  */
 
-#ifndef __NM_SETTING_METADATA_H__
-#define __NM_SETTING_METADATA_H__
+#ifndef __NM_META_SETTING_H__
+#define __NM_META_SETTING_H__
 
 #include "nm-setting-8021x.h"
 
@@ -108,4 +108,4 @@ const NMMetaSettingInfo *nm_meta_setting_infos_by_gtype (GType gtype);
 
 /*****************************************************************************/
 
-#endif /* __NM_SETTING_METADATA_H__ */
+#endif /* __NM_META_SETTING_H__ */
