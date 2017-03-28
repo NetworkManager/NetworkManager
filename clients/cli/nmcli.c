@@ -135,8 +135,8 @@ complete_fields (const char *prefix)
 	complete_field (h, "802-1x", nmc_fields_setting_8021X);
 	complete_field (h, "802-11-wireless", nmc_fields_setting_wireless);
 	complete_field (h, "802-11-wireless-security", nmc_fields_setting_wireless_security);
-	complete_field (h, "ip4-config", nmc_fields_setting_ip4_config);
-	complete_field (h, "ip6-config", nmc_fields_setting_ip6_config);
+	complete_field (h, "ipv4", nmc_fields_setting_ip4_config);
+	complete_field (h, "ipv6", nmc_fields_setting_ip6_config);
 	complete_field (h, "serial", nmc_fields_setting_serial);
 	complete_field (h, "ppp", nmc_fields_setting_ppp);
 	complete_field (h, "pppoe", nmc_fields_setting_pppoe);
@@ -144,7 +144,7 @@ complete_fields (const char *prefix)
 	complete_field (h, "gsm", nmc_fields_setting_gsm);
 	complete_field (h, "cdma", nmc_fields_setting_cdma);
 	complete_field (h, "bluetooth", nmc_fields_setting_bluetooth);
-	complete_field (h, "olpc-mesh", nmc_fields_setting_olpc_mesh);
+	complete_field (h, "802-11-olpc-mesh", nmc_fields_setting_olpc_mesh);
 	complete_field (h, "vpn", nmc_fields_setting_vpn);
 	complete_field (h, "wimax", nmc_fields_setting_wimax);
 	complete_field (h, "infiniband", nmc_fields_setting_infiniband);
