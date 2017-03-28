@@ -28,6 +28,11 @@
 
 #include <string.h>
 #include <gio/gio.h>
+
+#include <nm-dbus-interface.h>
+
+/* include NetworkManager.h for the defines, but we don't link against
+ * libnm. */
 #include <NetworkManager.h>
 
 static void

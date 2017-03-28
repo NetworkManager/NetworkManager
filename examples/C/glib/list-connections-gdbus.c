@@ -28,7 +28,8 @@
  */
 
 #include <gio/gio.h>
-#include <NetworkManager.h>
+
+#include <nm-dbus-interface.h>
 
 static void
 list_connections (GDBusProxy *proxy)

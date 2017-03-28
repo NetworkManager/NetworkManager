@@ -29,6 +29,11 @@
 
 #include <gio/gio.h>
 #include <uuid/uuid.h>
+
+#include <nm-dbus-interface.h>
+
+/* include NetworkManager.h for the defines, but we don't link against
+ * libnm. */
 #include <NetworkManager.h>
 
 /* copied from libnm-core/nm-utils.c */
