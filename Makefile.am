@@ -1930,6 +1930,8 @@ src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_LDADD = \
 	src/settings/plugins/ifcfg-rh/libnms-ifcfg-rh-core.la \
 	src/libNetworkManagerTest.la
 
+$(src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
 endif
 
 EXTRA_DIST += \
