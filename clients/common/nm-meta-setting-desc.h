@@ -78,6 +78,8 @@ struct _NMMetaPropertyType {
 	                                 char ***out_to_free);
 };
 
+struct _NMUtilsEnumValueInfo;
+
 struct _NMMetaPropertyTypData {
 	union {
 		struct {
@@ -87,6 +89,7 @@ struct _NMMetaPropertyTypData {
 			GType (*get_gtype) (void);
 			int min;
 			int max;
+			const struct _NMUtilsEnumValueInfo *value_infos;
 		} gobject_enum;
 		struct {
 			guint32 (*get_fcn) (NMSetting *setting);

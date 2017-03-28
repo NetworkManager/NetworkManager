@@ -3120,6 +3120,8 @@ bin_PROGRAMS += clients/cli/nmcli
 
 clients_cli_nmcli_SOURCES = \
 	\
+	shared/nm-utils/nm-enum-utils.c \
+	shared/nm-utils/nm-enum-utils.h \
 	shared/nm-utils/nm-shared-utils.c \
 	shared/nm-utils/nm-shared-utils.h \
 	\

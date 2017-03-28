@@ -25,6 +25,7 @@
 #include <arpa/inet.h>
 
 #include "nm-common-macros.h"
+#include "nm-utils/nm-enum-utils.h"
 
 #include "nm-vpn-helpers.h"
 #include "nm-client-utils.h"
@@ -711,6 +712,9 @@ _get_fcn_gobject_enum (ARGS_GET_FCN)
 		       : g_strdup_printf ("%"G_GINT64_FORMAT, v);
 	}
 
+	/* the gobject_enum.value_infos are currently ignored for the getter. They
+	 * only declare additional aliases for the setter. */
+
 	s = nm_utils_enum_to_str (gtype, (int) v);
 
 	if (!format_numeric)
@@ -938,7 +942,10 @@ _set_fcn_gobject_enum (ARGS_SET_FCN)
 	if (!has_gtype)
 		gtype = gtype_prop;
 
-	if (!nm_utils_enum_from_str (gtype, value, &v, NULL))
+	if (!_nm_utils_enum_from_str_full (gtype, value, &v, NULL,
+	                                   property_info->property_typ_data
+	                                       ? property_info->property_typ_data->subtype.gobject_enum.value_infos
+	                                       : NULL))
 		goto fail;
 
 	g_value_init (&gval, gtype_prop);
@@ -1012,6 +1019,9 @@ _values_fcn_gobject_enum (ARGS_VALUES_FCN)
 		gtype = _gtype_property_get_gtype (setting_info->general->get_setting_gtype (),
 		                                   property_info->property_name);
 	}
+
+	/* the gobject_enum.value_infos are currently ignored for the list of
+	 * values. They only declare additional (hidden) aliases for the setter. */
 
 	v = (char **) nm_utils_enum_get_values (gtype, min, max);
 	if (v) {
@@ -2298,54 +2308,6 @@ _set_fcn_connection_metered (ARGS_SET_FCN)
 	}
 
 	g_object_set (setting, property_info->property_name, metered, NULL);
-	return TRUE;
-}
-
-static char *
-_get_fcn_connection_lldp (ARGS_GET_FCN)
-{
-	NMSettingConnection *s_conn = NM_SETTING_CONNECTION (setting);
-	NMSettingConnectionLldp lldp;
-	char *tmp, *str;
-
-	lldp = nm_setting_connection_get_lldp (s_conn);
-	tmp = nm_utils_enum_to_str (nm_setting_connection_lldp_get_type (), lldp);
-	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
-		str = g_strdup_printf ("%s", tmp && *tmp ? tmp : "default");
-	else
-		str = g_strdup_printf ("%d (%s)", lldp, tmp && *tmp ? tmp : "default");
-	g_free (tmp);
-	return str;
-}
-
-static gboolean
-_set_fcn_connection_lldp (ARGS_SET_FCN)
-{
-	NMSettingConnectionLldp lldp;
-	gboolean ret;
-	long int t;
-
-	if (nmc_string_to_int_base (value, 0, TRUE,
-	                           NM_SETTING_CONNECTION_LLDP_DEFAULT,
-	                           NM_SETTING_CONNECTION_LLDP_ENABLE_RX,
-	                           &t))
-		lldp = t;
-	else {
-		ret = nm_utils_enum_from_str (nm_setting_connection_lldp_get_type (), value,
-		                              (int *) &lldp, NULL);
-
-		if (!ret) {
-			if (g_ascii_strcasecmp (value, "enable") == 0)
-				lldp = NM_SETTING_CONNECTION_LLDP_ENABLE_RX;
-			else {
-				g_set_error (error, 1, 0, _("invalid option '%s', use one of [%s]"),
-				             value, "default,disable,enable-rx,enable");
-				return FALSE;
-			}
-		}
-	}
-
-	g_object_set (setting, property_info->property_name, lldp, NULL);
 	return TRUE;
 }
 
@@ -4595,6 +4557,8 @@ static const NMMetaPropertyType _pt_gobject_enum = {
 
 #define VALUES_STATIC(...)  (((const char *[]) { __VA_ARGS__, NULL }))
 
+#define ENUM_VALUE_INFOS(...)  (((const NMUtilsEnumValueInfo []) { __VA_ARGS__, { 0 } }))
+
 #define GET_FCN_WITH_DEFAULT(type, func) \
 	/* macro that returns @func as const (gboolean(*)(NMSetting*)) type, but checks
 	 * that the actual type is (gboolean(*)(type *)). */ \
@@ -5179,12 +5143,19 @@ static const NMMetaPropertyInfo property_infos_connection[] = {
 	},
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_LLDP),
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_connection_lldp,
-			.set_fcn =                  _set_fcn_connection_lldp,
-		),
+		.property_type =                &_pt_gobject_enum,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            VALUES_STATIC ("default", "disable", "enable-rx"),
+			PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
+				.get_gtype =            nm_setting_connection_lldp_get_type,
+				.value_infos =          ENUM_VALUE_INFOS (
+					{
+						.value = NM_SETTING_CONNECTION_LLDP_ENABLE_RX,
+						.nick = "enable",
+					}
+				),
+			),
+			.typ_flags =                  NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_TEXT
+			                            | NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT,
 		),
 	},
 };
