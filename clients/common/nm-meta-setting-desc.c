@@ -1892,57 +1892,6 @@ _set_fcn_802_1x_password_raw (ARGS_SET_FCN)
 }
 
 static char *
-_get_fcn_802_1x_phase1_auth_flags (ARGS_GET_FCN)
-{
-	NMSetting8021x *s_8021x = NM_SETTING_802_1X (setting);
-	NMSetting8021xAuthFlags flags;
-	char *tmp, *str;
-
-	flags = nm_setting_802_1x_get_phase1_auth_flags (s_8021x);
-	tmp = nm_utils_enum_to_str (nm_setting_802_1x_auth_flags_get_type (), flags);
-	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
-		str = g_strdup_printf ("%s", tmp && *tmp ? tmp : "none");
-	else
-		str = g_strdup_printf ("%d (%s)", flags, tmp && *tmp ? tmp : "none");
-	g_free (tmp);
-	return str;
-}
-
-static gboolean
-_set_fcn_802_1x_phase1_auth_flags (ARGS_SET_FCN)
-{
-	NMSetting8021xAuthFlags flags;
-	gs_free char *err_token = NULL;
-	gboolean ret;
-	long int t;
-
-	if (nmc_string_to_int_base (value, 0, TRUE,
-	                            NM_SETTING_802_1X_AUTH_FLAGS_NONE,
-	                            NM_SETTING_802_1X_AUTH_FLAGS_ALL,
-	                            &t))
-		flags = (NMSetting8021xAuthFlags) t;
-	else {
-		ret = nm_utils_enum_from_str (nm_setting_802_1x_auth_flags_get_type (), value,
-		                              (int *) &flags, &err_token);
-
-		if (!ret) {
-			if (g_ascii_strcasecmp (err_token, "none") == 0)
-				flags = NM_SETTING_802_1X_AUTH_FLAGS_NONE;
-			else {
-				g_set_error (error, 1, 0, _("invalid option '%s', use a combination of [%s]"),
-				             err_token,
-				             nm_utils_enum_to_str (nm_setting_802_1x_auth_flags_get_type (),
-				                                   NM_SETTING_802_1X_AUTH_FLAGS_ALL));
-				return FALSE;
-			}
-		}
-	}
-
-	g_object_set (setting, property_info->property_name, (guint) flags, NULL);
-	return TRUE;
-}
-
-static char *
 _get_fcn_bond_options (ARGS_GET_FCN)
 {
 	NMSettingBond *s_bond = NM_SETTING_BOND (setting);
@@ -4774,9 +4723,12 @@ static const NMMetaPropertyInfo property_infos_802_1x[] = {
 	},
 	{
 		.property_name =                N_ (NM_SETTING_802_1X_PHASE1_AUTH_FLAGS),
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_802_1x_phase1_auth_flags,
-			.set_fcn =                  _set_fcn_802_1x_phase1_auth_flags,
+		.property_type =                &_pt_gobject_enum,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
+				.get_gtype =            nm_setting_802_1x_auth_flags_get_type,
+			),
+			.typ_flags =                NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_TEXT,
 		),
 	},
 	{
