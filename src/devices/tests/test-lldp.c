@@ -351,7 +351,11 @@ _test_recv_fixture_setup (TestRecvFixture *fixture, gconstpointer user_data)
 	int fd, s;
 
 	fd = open ("/dev/net/tun", O_RDWR | O_CLOEXEC);
-	g_assert (fd >= 0);
+	if (fd == -1) {
+		g_test_skip ("Unable to open /dev/net/tun");
+		fixture->ifindex = 0;
+		return;
+	}
 
 	ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
 	nm_utils_ifname_cpy (ifr.ifr_name, TEST_IFNAME);
@@ -395,6 +399,11 @@ test_recv (TestRecvFixture *fixture, gconstpointer user_data)
 	GError *error = NULL;
 	guint sd_id;
 
+	if (fixture->ifindex == 0) {
+		g_test_skip ("Tun device not available");
+		return;
+	}
+
 	listener = nm_lldp_listener_new ();
 	g_assert (listener != NULL);
 	g_assert (nm_lldp_listener_start (listener, fixture->ifindex, &error));
@@ -427,7 +436,8 @@ test_recv (TestRecvFixture *fixture, gconstpointer user_data)
 static void
 _test_recv_fixture_teardown (TestRecvFixture *fixture, gconstpointer user_data)
 {
-	nm_platform_link_delete (NM_PLATFORM_GET, fixture->ifindex);
+	if (fixture->ifindex)
+		nm_platform_link_delete (NM_PLATFORM_GET, fixture->ifindex);
 }
 
 /*****************************************************************************/
