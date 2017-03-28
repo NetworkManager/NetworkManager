@@ -92,8 +92,8 @@ NmcOutputField nmc_fields_dev_show_connections[] = {
 	{"AVAILABLE-CONNECTIONS",      N_("AVAILABLE-CONNECTIONS")},       /* 2 */
 	{NULL, NULL}
 };
-#define NMC_FIELDS_DEV_SHOW_CONNECTIONS_ALL     "AVAILABLE-CONNECTION-PATHS,AVAILABLE-CONNECTIONS"
-#define NMC_FIELDS_DEV_SHOW_CONNECTIONS_COMMON  "AVAILABLE-CONNECTION-PATHS,AVAILABLE-CONNECTIONS"
+#define NMC_FIELDS_DEV_SHOW_CONNECTIONS_ALL     "NAME,AVAILABLE-CONNECTION-PATHS,AVAILABLE-CONNECTIONS"
+#define NMC_FIELDS_DEV_SHOW_CONNECTIONS_COMMON  "NAME,AVAILABLE-CONNECTION-PATHS,AVAILABLE-CONNECTIONS"
 
 /* Available fields for 'device show' - CAPABILITIES part */
 NmcOutputField nmc_fields_dev_show_cap[] = {
@@ -1084,7 +1084,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
 		fields_str = fields_common;
-	else if (!nmc->required_fields || strcasecmp (nmc->required_fields, "all") == 0)
+	else if (strcasecmp (nmc->required_fields, "all") == 0)
 		fields_str = fields_all;
 	else
 		fields_str = nmc->required_fields;
@@ -1097,8 +1097,10 @@ show_device_info (NMDevice *device, NmCli *nmc)
 		return FALSE;
 	}
 
-	/* Main header */
+	/* Main header (pretty only) */
 	nmc->print_fields.header_name = (char *) construct_header_name (base_hdr, nm_device_get_iface (device));
+
+	/* Lazy way to retrieve sorted array from 0 to the number of dev fields */
 	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_SHOW_GENERAL_ALL,
 	                                                 nmc_fields_dev_show_general, FALSE, NULL, NULL);
 
@@ -1491,12 +1493,6 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 	/* Nothing to complete */
 	if (nmc->complete)
 		return nmc->return_value;
-
-	if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
-		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-		g_error_free (error);
-		return NMC_RESULT_ERROR_USER_INPUT;
-	}
 
 	while (argc > 0) {
 		g_printerr (_("Unknown parameter: %s\n"), *argv);
@@ -3617,14 +3613,6 @@ static NMCCommand device_wifi_cmds[] = {
 static NMCResultCode
 do_device_wifi (NmCli *nmc, int argc, char **argv)
 {
-	GError *error = NULL;
-
-	if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
-		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-		g_error_free (error);
-		return NMC_RESULT_ERROR_USER_INPUT;
-	}
-
 	nmc_do_cmd (nmc, device_wifi_cmds, *argv, argc, argv);
 
 	return nmc->return_value;
@@ -3789,14 +3777,6 @@ static NMCCommand device_lldp_cmds[] = {
 static NMCResultCode
 do_device_lldp (NmCli *nmc, int argc, char **argv)
 {
-	GError *error = NULL;
-
-	if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
-		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-		g_error_free (error);
-		return NMC_RESULT_ERROR_USER_INPUT;
-	}
-
 	if (!nmc->mode_specified)
 		nmc->multiline_output = TRUE;  /* multiline mode is default for 'device lldp' */
 

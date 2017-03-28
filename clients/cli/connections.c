@@ -1801,10 +1801,7 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 		tmpl = nmc_fields_con_show;
 		tmpl_len = sizeof (nmc_fields_con_show);
 		nmc->print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &err);
-		if (err) {
-			goto finish;
-		}
-		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &err))
+		if (err)
 			goto finish;
 
 		/* Add headers */
