@@ -104,7 +104,7 @@ typedef enum {
 #define NMC_OF_FLAG_MAIN_HEADER_ADD    0x00000004   /* Print main header in addition to values/field names */
 #define NMC_OF_FLAG_MAIN_HEADER_ONLY   0x00000008   /* Print main header only */
 
-struct _NmcSettingInfo;
+struct _NMMetaSettingInfoEditor;
 
 typedef struct _NmcOutputField {
 	const char *name;               /* Field's name */
@@ -124,7 +124,7 @@ typedef struct _NmcOutputField {
 	 *
 	 * For now, hack around that by alternatively providing a @setting_info instead
 	 * of @group_list. */
-	const struct _NmcSettingInfo *setting_info;
+	const struct _NMMetaSettingInfoEditor *setting_info;
 } NmcOutputField;
 
 typedef struct {

@@ -152,7 +152,7 @@ NmcOutputField nmc_fields_con_show[] = {
 	{ \
 		.name = setting, \
 		.name_l10n = N_ (setting), \
-		.setting_info = &nmc_setting_infos[setting_type], \
+		.setting_info = &nm_meta_setting_infos_editor[setting_type], \
 	}
 
 /* Available settings for 'connection show <con>' - profile part */
@@ -3185,7 +3185,7 @@ get_valid_properties_string (const NameItem *array,
 {
 	const NameItem *iter = array;
 	const NmcOutputField *field_iter;
-	const NmcSettingInfo *setting_info;
+	const NMMetaSettingInfoEditor *setting_info;
 	const char *prop_name = NULL;
 	GString *str;
 	int i, j;

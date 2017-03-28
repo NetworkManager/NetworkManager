@@ -28,50 +28,50 @@
 /*****************************************************************************/
 
 typedef enum {
-	NMC_PROPERTY_GET_PRETTY,
-	NMC_PROPERTY_GET_PARSABLE,
-} NmcPropertyGetType;
+	NM_META_ACCESSOR_GET_TYPE_PRETTY,
+	NM_META_ACCESSOR_GET_TYPE_PARSABLE,
+} NMMetaAccessorGetType;
 
 typedef enum {
-	NMC_PROPERTY_TYPE_MAC_MODE_DEFAULT,
-	NMC_PROPERTY_TYPE_MAC_MODE_CLONED,
-	NMC_PROPERTY_TYPE_MAC_MODE_INFINIBAND,
-} NmcPropertyTypeMacMode;
+	NM_META_PROPERTY_TYPE_MAC_MODE_DEFAULT,
+	NM_META_PROPERTY_TYPE_MAC_MODE_CLONED,
+	NM_META_PROPERTY_TYPE_MAC_MODE_INFINIBAND,
+} NMMetaPropertyTypeMacMode;
 
-typedef struct _NmcSettingInfo     NmcSettingInfo;
-typedef struct _NmcPropertyInfo    NmcPropertyInfo;
-typedef struct _NmcPropertyType    NmcPropertyType;
-typedef struct _NmcPropertyTypData NmcPropertyTypData;
+typedef struct _NMMetaSettingInfoEditor     NMMetaSettingInfoEditor;
+typedef struct _NMMetaPropertyInfo    NMMetaPropertyInfo;
+typedef struct _NMMetaPropertyType    NMMetaPropertyType;
+typedef struct _NMMetaPropertyTypData NMMetaPropertyTypData;
 
-struct _NmcPropertyType {
+struct _NMMetaPropertyType {
 
-	const char *(*describe_fcn) (const NmcSettingInfo *setting_info,
-	                             const NmcPropertyInfo *property_info,
+	const char *(*describe_fcn) (const NMMetaSettingInfoEditor *setting_info,
+	                             const NMMetaPropertyInfo *property_info,
 	                             char **out_to_free);
 
-	char *(*get_fcn) (const NmcSettingInfo *setting_info,
-	                  const NmcPropertyInfo *property_info,
+	char *(*get_fcn) (const NMMetaSettingInfoEditor *setting_info,
+	                  const NMMetaPropertyInfo *property_info,
 	                  NMSetting *setting,
-	                  NmcPropertyGetType get_type,
+	                  NMMetaAccessorGetType get_type,
 	                  gboolean show_secrets);
-	gboolean (*set_fcn) (const NmcSettingInfo *setting_info,
-	                     const NmcPropertyInfo *property_info,
+	gboolean (*set_fcn) (const NMMetaSettingInfoEditor *setting_info,
+	                     const NMMetaPropertyInfo *property_info,
 	                     NMSetting *setting,
 	                     const char *value,
 	                     GError **error);
-	gboolean (*remove_fcn) (const NmcSettingInfo *setting_info,
-	                        const NmcPropertyInfo *property_info,
+	gboolean (*remove_fcn) (const NMMetaSettingInfoEditor *setting_info,
+	                        const NMMetaPropertyInfo *property_info,
 	                        NMSetting *setting,
 	                        const char *option,
 	                        guint32 idx,
 	                        GError **error);
 
-	const char *const*(*values_fcn) (const NmcSettingInfo *setting_info,
-	                                 const NmcPropertyInfo *property_info,
+	const char *const*(*values_fcn) (const NMMetaSettingInfoEditor *setting_info,
+	                                 const NMMetaPropertyInfo *property_info,
 	                                 char ***out_to_free);
 };
 
-struct _NmcPropertyTypData {
+struct _NMMetaPropertyTypData {
 	union {
 		struct {
 			gboolean (*fcn) (NMSetting *setting);
@@ -85,13 +85,13 @@ struct _NmcPropertyTypData {
 			guint32 (*get_fcn) (NMSetting *setting);
 		} mtu;
 		struct {
-			NmcPropertyTypeMacMode mode;
+			NMMetaPropertyTypeMacMode mode;
 		} mac;
 	} subtype;
 	const char *const*values_static;
 };
 
-struct _NmcPropertyInfo {
+struct _NMMetaPropertyInfo {
 	const char *property_name;
 
 	/* the property list for now must contain as first field the
@@ -104,19 +104,19 @@ struct _NmcPropertyInfo {
 
 	const char *describe_message;
 
-	const NmcPropertyType    *property_type;
-	const NmcPropertyTypData *property_typ_data;
+	const NMMetaPropertyType    *property_type;
+	const NMMetaPropertyTypData *property_typ_data;
 };
 
-struct _NmcSettingInfo {
+struct _NMMetaSettingInfoEditor {
 	const NMMetaSettingInfo *general;
 	/* the order of the properties matter. The first *must* be the
 	 * "name", and then the order is as they are listed by default. */
-	const NmcPropertyInfo *properties;
+	const NMMetaPropertyInfo *properties;
 	guint properties_num;
 };
 
-extern const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM];
+extern const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[_NM_META_SETTING_TYPE_NUM];
 
 /*****************************************************************************/
 

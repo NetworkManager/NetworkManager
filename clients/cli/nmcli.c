@@ -68,7 +68,7 @@ NM_CACHED_QUARK_FCN ("nmcli-error-quark", nmcli_error_quark)
 static void
 complete_field_new (GHashTable *h, const char *setting, NMMetaSettingType setting_type)
 {
-	const NmcSettingInfo *setting_info = &nmc_setting_infos[setting_type];
+	const NMMetaSettingInfoEditor *setting_info = &nm_meta_setting_infos_editor[setting_type];
 	int i;
 
 	for (i = 0; i < setting_info->properties_num; i++) {

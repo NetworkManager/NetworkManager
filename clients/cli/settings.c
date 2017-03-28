@@ -34,7 +34,7 @@
 static gboolean validate_int (NMSetting *setting, const char* prop, gint val, GError **error);
 static gboolean validate_uint (NMSetting *setting, const char* prop, guint val, GError **error);
 static gboolean validate_int64 (NMSetting *setting, const char* prop, gint64 val, GError **error);
-static char *secret_flags_to_string (guint32 flags, NmcPropertyGetType get_type);
+static char *secret_flags_to_string (guint32 flags, NMMetaAccessorGetType get_type);
 
 #define ALL_SECRET_FLAGS \
 	(NM_SETTING_SECRET_FLAG_NONE | \
@@ -47,19 +47,19 @@ static char *secret_flags_to_string (guint32 flags, NmcPropertyGetType get_type)
 /*****************************************************************************/
 
 #define ARGS_DESCRIBE_FCN \
-	const NmcSettingInfo *setting_info, const NmcPropertyInfo *property_info, char **out_to_free
+	const NMMetaSettingInfoEditor *setting_info, const NMMetaPropertyInfo *property_info, char **out_to_free
 
 #define ARGS_GET_FCN \
-	const NmcSettingInfo *setting_info, const NmcPropertyInfo *property_info, NMSetting *setting, NmcPropertyGetType get_type, gboolean show_secrets
+	const NMMetaSettingInfoEditor *setting_info, const NMMetaPropertyInfo *property_info, NMSetting *setting, NMMetaAccessorGetType get_type, gboolean show_secrets
 
 #define ARGS_SET_FCN \
-	const NmcSettingInfo *setting_info, const NmcPropertyInfo *property_info, NMSetting *setting, const char *value, GError **error
+	const NMMetaSettingInfoEditor *setting_info, const NMMetaPropertyInfo *property_info, NMSetting *setting, const char *value, GError **error
 
 #define ARGS_REMOVE_FCN \
-	const NmcSettingInfo *setting_info, const NmcPropertyInfo *property_info, NMSetting *setting, const char *value, guint32 idx, GError **error
+	const NMMetaSettingInfoEditor *setting_info, const NMMetaPropertyInfo *property_info, NMSetting *setting, const char *value, guint32 idx, GError **error
 
 #define ARGS_VALUES_FCN \
-	const NmcSettingInfo *setting_info, const NmcPropertyInfo *property_info, char ***out_to_free
+	const NMMetaSettingInfoEditor *setting_info, const NMMetaPropertyInfo *property_info, char ***out_to_free
 
 static char *
 _get_fcn_name (ARGS_GET_FCN)
@@ -76,7 +76,7 @@ _get_fcn_nmc_with_default (ARGS_GET_FCN)
 	GValue val = G_VALUE_INIT;
 
 	if (property_info->property_typ_data->subtype.get_with_default.fcn (setting)) {
-		if (get_type == NMC_PROPERTY_GET_PARSABLE)
+		if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
 			return g_strdup ("");
 		return g_strdup (_("(default)"));
 	}
@@ -84,7 +84,7 @@ _get_fcn_nmc_with_default (ARGS_GET_FCN)
 	g_value_init (&val, G_TYPE_STRING);
 	g_object_get_property (G_OBJECT (setting), property_info->property_name, &val);
 	s = g_value_get_string (&val);
-	if (get_type == NMC_PROPERTY_GET_PARSABLE)
+	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
 		s_full = g_strdup (s && *s ? s : " ");
 	else
 		s_full = s ? g_strdup_printf ("\"%s\"", s) : g_strdup ("");
@@ -116,7 +116,7 @@ _get_fcn_gobject_mtu (ARGS_GET_FCN)
 
 	mtu = property_info->property_typ_data->subtype.mtu.get_fcn (setting);
 	if (mtu == 0) {
-		if (get_type == NMC_PROPERTY_GET_PARSABLE)
+		if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
 			return g_strdup ("auto");
 		else
 			return g_strdup (_("auto"));
@@ -251,20 +251,20 @@ _set_fcn_gobject_mtu (ARGS_SET_FCN)
 static gboolean
 _set_fcn_gobject_mac (ARGS_SET_FCN)
 {
-	NmcPropertyTypeMacMode mode;
+	NMMetaPropertyTypeMacMode mode;
 	gboolean valid;
 
 	if (property_info->property_typ_data)
 		mode = property_info->property_typ_data->subtype.mac.mode;
 	else
-		mode = NMC_PROPERTY_TYPE_MAC_MODE_DEFAULT;
+		mode = NM_META_PROPERTY_TYPE_MAC_MODE_DEFAULT;
 
 
-	if (mode == NMC_PROPERTY_TYPE_MAC_MODE_INFINIBAND)
+	if (mode == NM_META_PROPERTY_TYPE_MAC_MODE_INFINIBAND)
 		valid = nm_utils_hwaddr_valid (value, INFINIBAND_ALEN);
 	else {
 		valid =    nm_utils_hwaddr_valid (value, ETH_ALEN)
-		        || (   mode == NMC_PROPERTY_TYPE_MAC_MODE_CLONED
+		        || (   mode == NM_META_PROPERTY_TYPE_MAC_MODE_CLONED
 		            && NM_CLONED_MAC_IS_SPECIAL (value));
 	}
 
@@ -326,11 +326,11 @@ _values_fcn_gobject_enum (ARGS_VALUES_FCN)
 
 /*****************************************************************************/
 
-static const NmcSettingInfo *
+static const NMMetaSettingInfoEditor *
 _meta_find_setting_info_by_name (const char *setting_name)
 {
 	const NMMetaSettingInfo *meta_setting_info;
-	const NmcSettingInfo *setting_info;
+	const NMMetaSettingInfoEditor *setting_info;
 
 	g_return_val_if_fail (setting_name, NULL);
 
@@ -341,21 +341,21 @@ _meta_find_setting_info_by_name (const char *setting_name)
 
 	g_return_val_if_fail (nm_streq0 (meta_setting_info->setting_name, setting_name), NULL);
 
-	if (meta_setting_info->meta_type >= G_N_ELEMENTS (nmc_setting_infos))
+	if (meta_setting_info->meta_type >= G_N_ELEMENTS (nm_meta_setting_infos_editor))
 		return NULL;
 
-	setting_info = &nmc_setting_infos[meta_setting_info->meta_type];
+	setting_info = &nm_meta_setting_infos_editor[meta_setting_info->meta_type];
 
 	g_return_val_if_fail (setting_info->general == meta_setting_info, NULL);
 
 	return setting_info;
 }
 
-static const NmcSettingInfo *
+static const NMMetaSettingInfoEditor *
 _meta_find_setting_info_by_gtype (GType gtype)
 {
 	const NMMetaSettingInfo *meta_setting_info;
-	const NmcSettingInfo *setting_info;
+	const NMMetaSettingInfoEditor *setting_info;
 
 	meta_setting_info = nm_meta_setting_infos_by_gtype (gtype);
 
@@ -365,20 +365,20 @@ _meta_find_setting_info_by_gtype (GType gtype)
 	g_return_val_if_fail (meta_setting_info->get_setting_gtype, NULL);
 	g_return_val_if_fail (meta_setting_info->get_setting_gtype () == gtype, NULL);
 
-	if (meta_setting_info->meta_type >= G_N_ELEMENTS (nmc_setting_infos))
+	if (meta_setting_info->meta_type >= G_N_ELEMENTS (nm_meta_setting_infos_editor))
 		return NULL;
 
-	setting_info = &nmc_setting_infos[meta_setting_info->meta_type];
+	setting_info = &nm_meta_setting_infos_editor[meta_setting_info->meta_type];
 
 	g_return_val_if_fail (setting_info->general == meta_setting_info, NULL);
 
 	return setting_info;
 }
 
-static const NmcSettingInfo *
+static const NMMetaSettingInfoEditor *
 _meta_find_setting_info_by_setting (NMSetting *setting)
 {
-	const NmcSettingInfo *setting_info;
+	const NMMetaSettingInfoEditor *setting_info;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
 
@@ -392,8 +392,8 @@ _meta_find_setting_info_by_setting (NMSetting *setting)
 	return setting_info;
 }
 
-static const NmcPropertyInfo *
-_meta_setting_info_find_property_info (const NmcSettingInfo *setting_info, const char *property_name)
+static const NMMetaPropertyInfo *
+_meta_setting_info_find_property_info (const NMMetaSettingInfoEditor *setting_info, const char *property_name)
 {
 	guint i;
 
@@ -408,10 +408,10 @@ _meta_setting_info_find_property_info (const NmcSettingInfo *setting_info, const
 	return NULL;
 }
 
-static const NmcPropertyInfo *
-_meta_find_property_info_by_name (const char *setting_name, const char *property_name, const NmcSettingInfo **out_setting_info)
+static const NMMetaPropertyInfo *
+_meta_find_property_info_by_name (const char *setting_name, const char *property_name, const NMMetaSettingInfoEditor **out_setting_info)
 {
-	const NmcSettingInfo *setting_info;
+	const NMMetaSettingInfoEditor *setting_info;
 
 	setting_info = _meta_find_setting_info_by_name (setting_name);
 
@@ -421,11 +421,11 @@ _meta_find_property_info_by_name (const char *setting_name, const char *property
 	return _meta_setting_info_find_property_info (setting_info, property_name);
 }
 
-static const NmcPropertyInfo *
-_meta_find_property_info_by_setting (NMSetting *setting, const char *property_name, const NmcSettingInfo **out_setting_info)
+static const NMMetaPropertyInfo *
+_meta_find_property_info_by_setting (NMSetting *setting, const char *property_name, const NMMetaSettingInfoEditor **out_setting_info)
 {
-	const NmcSettingInfo *setting_info;
-	const NmcPropertyInfo *property_info;
+	const NMMetaSettingInfoEditor *setting_info;
+	const NMMetaPropertyInfo *property_info;
 
 	setting_info = _meta_find_setting_info_by_setting (setting);
 
@@ -442,7 +442,7 @@ _meta_find_property_info_by_setting (NMSetting *setting, const char *property_na
 /*****************************************************************************/
 
 static const NmcOutputField *
-_get_nmc_output_fields (const NmcSettingInfo *setting_info)
+_get_nmc_output_fields (const NMMetaSettingInfoEditor *setting_info)
 {
 	static NmcOutputField *fields[_NM_META_SETTING_TYPE_NUM + 1] = { };
 	NmcOutputField **field;
@@ -502,11 +502,11 @@ bytes_to_string (GBytes *bytes)
 }
 
 static char *
-vlan_flags_to_string (guint32 flags, NmcPropertyGetType get_type)
+vlan_flags_to_string (guint32 flags, NMMetaAccessorGetType get_type)
 {
 	GString *flag_str;
 
-	if (get_type == NMC_PROPERTY_GET_PARSABLE)
+	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
 		return g_strdup_printf ("%u", flags);
 
 	if (flags == 0)
@@ -554,9 +554,9 @@ vlan_priorities_to_string (NMSettingVlan *s_vlan, NMVlanPriorityMap map)
 }
 
 static char *
-ip6_privacy_to_string (NMSettingIP6ConfigPrivacy ip6_privacy, NmcPropertyGetType get_type)
+ip6_privacy_to_string (NMSettingIP6ConfigPrivacy ip6_privacy, NMMetaAccessorGetType get_type)
 {
-	if (get_type == NMC_PROPERTY_GET_PARSABLE)
+	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
 		return g_strdup_printf ("%d", ip6_privacy);
 
 	switch (ip6_privacy) {
@@ -573,9 +573,9 @@ ip6_privacy_to_string (NMSettingIP6ConfigPrivacy ip6_privacy, NmcPropertyGetType
 
 static char *
 autoconnect_slaves_to_string (NMSettingConnectionAutoconnectSlaves autoconnect_slaves,
-                              NmcPropertyGetType get_type)
+                              NMMetaAccessorGetType get_type)
 {
-	if (get_type == NMC_PROPERTY_GET_PARSABLE)
+	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
 		return g_strdup_printf ("%d", autoconnect_slaves);
 
 	switch (autoconnect_slaves) {
@@ -590,11 +590,11 @@ autoconnect_slaves_to_string (NMSettingConnectionAutoconnectSlaves autoconnect_s
 }
 
 static char *
-secret_flags_to_string (guint32 flags, NmcPropertyGetType get_type)
+secret_flags_to_string (guint32 flags, NMMetaAccessorGetType get_type)
 {
 	GString *flag_str;
 
-	if (get_type == NMC_PROPERTY_GET_PARSABLE)
+	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
 		return g_strdup_printf ("%u", flags);
 
 	if (flags == 0)
@@ -1345,7 +1345,7 @@ _get_fcn_802_1x_phase1_auth_flags (ARGS_GET_FCN)
 
 	flags = nm_setting_802_1x_get_phase1_auth_flags (s_8021x);
 	tmp = nm_utils_enum_to_str (nm_setting_802_1x_auth_flags_get_type (), flags);
-	if (get_type == NMC_PROPERTY_GET_PARSABLE)
+	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
 		str = g_strdup_printf ("%s", tmp && *tmp ? tmp : "none");
 	else
 		str = g_strdup_printf ("%d (%s)", flags, tmp && *tmp ? tmp : "none");
@@ -1508,7 +1508,7 @@ _get_fcn_connection_autoconnect_retires (ARGS_GET_FCN)
 	gint retries;
 
 	retries = nm_setting_connection_get_autoconnect_retries (s_con);
-	if (get_type == NMC_PROPERTY_GET_PARSABLE)
+	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
 		return g_strdup_printf ("%d", retries);
 
 	switch (retries) {
@@ -1748,7 +1748,7 @@ _get_fcn_connection_metered (ARGS_GET_FCN)
 {
 	NMSettingConnection *s_conn = NM_SETTING_CONNECTION (setting);
 
-	if (get_type == NMC_PROPERTY_GET_PARSABLE) {
+	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE) {
 		switch (nm_setting_connection_get_metered (s_conn)) {
 		case NM_METERED_YES:
 			return g_strdup ("yes");
@@ -1806,7 +1806,7 @@ _get_fcn_connection_lldp (ARGS_GET_FCN)
 
 	lldp = nm_setting_connection_get_lldp (s_conn);
 	tmp = nm_utils_enum_to_str (nm_setting_connection_lldp_get_type (), lldp);
-	if (get_type == NMC_PROPERTY_GET_PARSABLE)
+	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
 		str = g_strdup_printf ("%s", tmp && *tmp ? tmp : "default");
 	else
 		str = g_strdup_printf ("%d (%s)", lldp, tmp && *tmp ? tmp : "default");
@@ -2266,7 +2266,7 @@ _get_fcn_infiniband_p_key (ARGS_GET_FCN)
 
 	p_key = nm_setting_infiniband_get_p_key (s_infiniband);
 	if (p_key == -1) {
-		if (get_type == NMC_PROPERTY_GET_PARSABLE)
+		if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
 			return g_strdup ("default");
 		else
 			return g_strdup (_("default"));
@@ -2374,7 +2374,7 @@ _get_fcn_ip_config_routes (ARGS_GET_FCN)
 
 		attr_str = nm_utils_format_variant_attributes (hash, ' ', '=');
 
-		if (get_type == NMC_PROPERTY_GET_PARSABLE) {
+		if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE) {
 			if (printable->len > 0)
 				g_string_append (printable, ", ");
 
@@ -2423,7 +2423,7 @@ _get_fcn_ip4_config_dad_timeout (ARGS_GET_FCN)
 	gint dad_timeout;
 
 	dad_timeout = nm_setting_ip_config_get_dad_timeout (s_ip);
-	if (get_type == NMC_PROPERTY_GET_PARSABLE)
+	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
 		return g_strdup_printf ("%d", dad_timeout);
 
 	switch (dad_timeout) {
@@ -3103,7 +3103,7 @@ _get_fcn_macvlan_mode (ARGS_GET_FCN)
 	mode = nm_setting_macvlan_get_mode (s_macvlan);
 	tmp = nm_utils_enum_to_str (nm_setting_macvlan_mode_get_type (), mode);
 
-	if (get_type == NMC_PROPERTY_GET_PARSABLE)
+	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
 		str = g_strdup (tmp ? tmp : "");
 	else
 		str = g_strdup_printf ("%d (%s)", mode, tmp ? tmp : "");
@@ -3285,7 +3285,7 @@ _get_fcn_tun_mode (ARGS_GET_FCN)
 
 	mode = nm_setting_tun_get_mode (s_tun);
 	tmp = nm_utils_enum_to_str (nm_setting_tun_mode_get_type (), mode);
-	if (get_type == NMC_PROPERTY_GET_PARSABLE)
+	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
 		str = g_strdup_printf ("%s", tmp ? tmp : "");
 	else
 		str = g_strdup_printf ("%d (%s)", mode, tmp ? tmp : "");
@@ -3371,7 +3371,7 @@ _set_fcn_vlan_egress_priority_map (ARGS_SET_FCN)
 
 static gboolean
 _remove_vlan_xgress_priority_map (NMSetting *setting,
-                                  const NmcPropertyInfo *property_info,
+                                  const NMMetaPropertyInfo *property_info,
                                   const char *value,
                                   guint32 idx,
                                   NMVlanPriorityMap map_type,
@@ -3504,7 +3504,7 @@ _get_fcn_wired_wake_on_lan (ARGS_GET_FCN)
 
 	wol = nm_setting_wired_get_wake_on_lan (s_wired);
 	tmp = nm_utils_enum_to_str (nm_setting_wired_wake_on_lan_get_type (), wol);
-	if (get_type == NMC_PROPERTY_GET_PARSABLE)
+	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
 		str = g_strdup_printf ("%s", tmp && *tmp ? tmp : "none");
 	else
 		str = g_strdup_printf ("%d (%s)", wol, tmp && *tmp ? tmp : "none");
@@ -3674,7 +3674,7 @@ _get_fcn_wireless_powersave (ARGS_GET_FCN)
 	powersave = nm_setting_wireless_get_powersave (s_wireless);
 	str = nm_utils_enum_to_str (nm_setting_wireless_powersave_get_type (), powersave);
 
-	if (get_type == NMC_PROPERTY_GET_PARSABLE) {
+	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE) {
 		ret = str;
 		str = NULL;
 		return ret;
@@ -4437,10 +4437,10 @@ nmc_setting_custom_init (NMSetting *setting)
 /*****************************************************************************/
 
 static char *
-get_property_val (NMSetting *setting, const char *prop, NmcPropertyGetType get_type, gboolean show_secrets, GError **error)
+get_property_val (NMSetting *setting, const char *prop, NMMetaAccessorGetType get_type, gboolean show_secrets, GError **error)
 {
-	const NmcSettingInfo *setting_info;
-	const NmcPropertyInfo *property_info;
+	const NMMetaSettingInfoEditor *setting_info;
+	const NMMetaPropertyInfo *property_info;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -4472,7 +4472,7 @@ get_property_val (NMSetting *setting, const char *prop, NmcPropertyGetType get_t
 char *
 nmc_setting_get_property (NMSetting *setting, const char *prop, GError **error)
 {
-	return get_property_val (setting, prop, NMC_PROPERTY_GET_PRETTY, TRUE, error);
+	return get_property_val (setting, prop, NM_META_ACCESSOR_GET_TYPE_PRETTY, TRUE, error);
 }
 
 /*
@@ -4482,7 +4482,7 @@ nmc_setting_get_property (NMSetting *setting, const char *prop, GError **error)
 char *
 nmc_setting_get_property_parsable (NMSetting *setting, const char *prop, GError **error)
 {
-	return get_property_val (setting, prop, NMC_PROPERTY_GET_PARSABLE, TRUE, error);
+	return get_property_val (setting, prop, NM_META_ACCESSOR_GET_TYPE_PARSABLE, TRUE, error);
 }
 
 /*
@@ -4496,8 +4496,8 @@ nmc_setting_get_property_parsable (NMSetting *setting, const char *prop, GError 
 gboolean
 nmc_setting_set_property (NMSetting *setting, const char *prop, const char *value, GError **error)
 {
-	const NmcSettingInfo *setting_info;
-	const NmcPropertyInfo *property_info;
+	const NMMetaSettingInfoEditor *setting_info;
+	const NMMetaPropertyInfo *property_info;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -4552,8 +4552,8 @@ nmc_property_set_default_value (NMSetting *setting, const char *prop)
 gboolean
 nmc_setting_reset_property (NMSetting *setting, const char *prop, GError **error)
 {
-	const NmcSettingInfo *setting_info;
-	const NmcPropertyInfo *property_info;
+	const NMMetaSettingInfoEditor *setting_info;
+	const NMMetaPropertyInfo *property_info;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -4588,8 +4588,8 @@ nmc_setting_remove_property_option (NMSetting *setting,
                                     guint32 idx,
                                     GError **error)
 {
-	const NmcSettingInfo *setting_info;
-	const NmcPropertyInfo *property_info;
+	const NMMetaSettingInfoEditor *setting_info;
+	const NMMetaPropertyInfo *property_info;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -4646,8 +4646,8 @@ const char *const*
 nmc_setting_get_property_allowed_values (NMSetting *setting, const char *prop, char ***out_to_free)
 {
 
-	const NmcSettingInfo *setting_info;
-	const NmcPropertyInfo *property_info;
+	const NMMetaSettingInfoEditor *setting_info;
+	const NMMetaPropertyInfo *property_info;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (out_to_free, FALSE);
@@ -4688,8 +4688,8 @@ nmc_setting_get_property_desc (NMSetting *setting, const char *prop)
 	const char *nmcli_desc = NULL;
 	const char *nmcli_desc_title = "";
 	const char *nmcli_nl = "";
-	const NmcSettingInfo *setting_info;
-	const NmcPropertyInfo *property_info;
+	const NMMetaSettingInfoEditor *setting_info;
+	const NMMetaPropertyInfo *property_info;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 
@@ -4761,7 +4761,7 @@ nmc_property_set_gvalue (NMSetting *setting, const char *prop, GValue *value)
 /*****************************************************************************/
 
 static char *
-_all_properties (const NmcSettingInfo *setting_info)
+_all_properties (const NMMetaSettingInfoEditor *setting_info)
 {
 	GString *str;
 	guint i;
@@ -4779,26 +4779,26 @@ gboolean
 setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean show_secrets)
 {
 	const NMMetaSettingInfo *meta_setting_info;
-	const NmcSettingInfo *setting_info;
+	const NMMetaSettingInfoEditor *setting_info;
 	gs_free NmcOutputField *tmpl = NULL;
 	NmcOutputField *arr;
 	guint i;
 	size_t tmpl_len;
 	gs_free char *s_all = NULL;
-	NmcPropertyGetType type = NMC_PROPERTY_GET_PRETTY;
+	NMMetaAccessorGetType type = NM_META_ACCESSOR_GET_TYPE_PRETTY;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 
 	meta_setting_info = nm_meta_setting_infos_by_gtype (G_OBJECT_TYPE (setting));
 	g_return_val_if_fail (meta_setting_info, FALSE);
 
-	setting_info = &nmc_setting_infos[meta_setting_info->meta_type];
+	setting_info = &nm_meta_setting_infos_editor[meta_setting_info->meta_type];
 	g_return_val_if_fail (setting_info, FALSE);
 
 	g_return_val_if_fail (G_TYPE_CHECK_INSTANCE_TYPE (setting, setting_info->general->get_setting_gtype ()), FALSE);
 
 	if (nmc->print_output == NMC_PRINT_TERSE)
-		type = NMC_PROPERTY_GET_PARSABLE;
+		type = NM_META_ACCESSOR_GET_TYPE_PARSABLE;
 
 	tmpl_len = sizeof (NmcOutputField) * (setting_info->properties_num + 1);
 	tmpl = g_memdup (_get_nmc_output_fields (setting_info), tmpl_len);
@@ -4810,7 +4810,7 @@ setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean 
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	for (i = 0; i < setting_info->properties_num; i++) {
-		const NmcPropertyInfo *property_info = &setting_info->properties[i];
+		const NMMetaPropertyInfo *property_info = &setting_info->properties[i];
 
 		if (!property_info->is_secret || show_secrets) {
 			set_val_str (arr, i, property_info->property_type->get_fcn (setting_info,
@@ -4832,60 +4832,60 @@ setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean 
 /*****************************************************************************/
 
 #define DEFINE_PROPERTY_TYPE(...) \
-	(&((NmcPropertyType) { __VA_ARGS__ } ))
+	(&((NMMetaPropertyType) { __VA_ARGS__ } ))
 
 #define DEFINE_PROPERTY_TYP_DATA(...) \
-	(&((NmcPropertyTypData) { __VA_ARGS__ } ))
+	(&((NMMetaPropertyTypData) { __VA_ARGS__ } ))
 
 #define DEFINE_PROPERTY_TYP_DATA_SUBTYPE(type, ...) \
 	DEFINE_PROPERTY_TYP_DATA ( \
 		.subtype = { .type = { __VA_ARGS__ } } , \
 	)
 
-static const NmcPropertyType _pt_name = {
+static const NMMetaPropertyType _pt_name = {
 	.get_fcn =                      _get_fcn_name,
 };
 
-static const NmcPropertyType _pt_gobject_readonly = {
+static const NMMetaPropertyType _pt_gobject_readonly = {
 	.get_fcn =                      _get_fcn_gobject,
 };
 
-static const NmcPropertyType _pt_gobject_string = {
+static const NMMetaPropertyType _pt_gobject_string = {
 	.get_fcn =                      _get_fcn_gobject,
 	.set_fcn =                      _set_fcn_gobject_string,
 };
 
-static const NmcPropertyType _pt_gobject_bool = {
+static const NMMetaPropertyType _pt_gobject_bool = {
 	.get_fcn =                      _get_fcn_gobject,
 	.set_fcn =                      _set_fcn_gobject_bool,
 };
 
-static const NmcPropertyType _pt_gobject_int = {
+static const NMMetaPropertyType _pt_gobject_int = {
 	.get_fcn =                      _get_fcn_gobject,
 	.set_fcn =                      _set_fcn_gobject_int,
 };
 
-static const NmcPropertyType _pt_gobject_int64 = {
+static const NMMetaPropertyType _pt_gobject_int64 = {
 	.get_fcn =                      _get_fcn_gobject,
 	.set_fcn =                      _set_fcn_gobject_int64,
 };
 
-static const NmcPropertyType _pt_gobject_uint = {
+static const NMMetaPropertyType _pt_gobject_uint = {
 	.get_fcn =                      _get_fcn_gobject,
 	.set_fcn =                      _set_fcn_gobject_uint,
 };
 
-static const NmcPropertyType _pt_gobject_mtu = {
+static const NMMetaPropertyType _pt_gobject_mtu = {
 	.get_fcn =                      _get_fcn_gobject_mtu,
 	.set_fcn =                      _set_fcn_gobject_mtu,
 };
 
-static const NmcPropertyType _pt_gobject_mac = {
+static const NMMetaPropertyType _pt_gobject_mac = {
 	.get_fcn =                      _get_fcn_gobject,
 	.set_fcn =                      _set_fcn_gobject_mac,
 };
 
-static const NmcPropertyType _pt_gobject_secret_flags = {
+static const NMMetaPropertyType _pt_gobject_secret_flags = {
 	.get_fcn =                      _get_fcn_gobject_secret_flags,
 	.set_fcn =                      _set_fcn_gobject_secret_flags,
 };
@@ -4919,7 +4919,7 @@ static const NmcPropertyType _pt_gobject_secret_flags = {
 	"{ \"device\": \"team0\", \"runner\": {\"name\": \"roundrobin\"}, \"ports\": {\"eth1\": {}, \"eth2\": {}} }\n" \
 	"          set team.config /etc/my-team.conf\n"
 
-static const NmcPropertyInfo properties_setting_802_1x[] = {
+static const NMMetaPropertyInfo property_infos_802_1x[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_802_1X_EAP),
@@ -5202,7 +5202,7 @@ static const NmcPropertyInfo properties_setting_802_1x[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_adsl[] = {
+static const NMMetaPropertyInfo property_infos_adsl[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_ADSL_USERNAME),
@@ -5244,7 +5244,7 @@ static const NmcPropertyInfo properties_setting_adsl[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_bluetooth[] = {
+static const NMMetaPropertyInfo property_infos_bluetooth[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_BLUETOOTH_BDADDR),
@@ -5260,7 +5260,7 @@ static const NmcPropertyInfo properties_setting_bluetooth[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_bond[] = {
+static const NMMetaPropertyInfo property_infos_bond[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_BOND_OPTIONS),
@@ -5274,7 +5274,7 @@ static const NmcPropertyInfo properties_setting_bond[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_bridge[] = {
+static const NMMetaPropertyInfo property_infos_bridge[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_BRIDGE_MAC_ADDRESS),
@@ -5310,7 +5310,7 @@ static const NmcPropertyInfo properties_setting_bridge[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_bridge_port[] = {
+static const NMMetaPropertyInfo property_infos_bridge_port[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_BRIDGE_PORT_PRIORITY),
@@ -5326,7 +5326,7 @@ static const NmcPropertyInfo properties_setting_bridge_port[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_cdma[] = {
+static const NMMetaPropertyInfo property_infos_cdma[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_CDMA_NUMBER),
@@ -5354,7 +5354,7 @@ static const NmcPropertyInfo properties_setting_cdma[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_connection[] = {
+static const NMMetaPropertyInfo property_infos_connection[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_CONNECTION_ID),
@@ -5492,7 +5492,7 @@ static const NmcPropertyInfo properties_setting_connection[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_dcb[] = {
+static const NMMetaPropertyInfo property_infos_dcb[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_DCB_APP_FCOE_FLAGS),
@@ -5602,11 +5602,11 @@ static const NmcPropertyInfo properties_setting_dcb[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_dummy[] = {
+static const NMMetaPropertyInfo property_infos_dummy[] = {
 	PROPERTY_INFO_NAME(),
 };
 
-static const NmcPropertyInfo properties_setting_gsm[] = {
+static const NMMetaPropertyInfo property_infos_gsm[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_GSM_NUMBER),
@@ -5670,13 +5670,13 @@ static const NmcPropertyInfo properties_setting_gsm[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_infiniband[] = {
+static const NMMetaPropertyInfo property_infos_infiniband[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_INFINIBAND_MAC_ADDRESS),
 		.property_type =                &_pt_gobject_mac,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (mac,
-			.mode =                     NMC_PROPERTY_TYPE_MAC_MODE_INFINIBAND,
+			.mode =                     NM_META_PROPERTY_TYPE_MAC_MODE_INFINIBAND,
 		),
 	},
 	{
@@ -5709,7 +5709,7 @@ static const NmcPropertyInfo properties_setting_infiniband[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_ip4_config[] = {
+static const NMMetaPropertyInfo property_infos_ip4_config[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_METHOD),
@@ -5840,7 +5840,7 @@ static const NmcPropertyInfo properties_setting_ip4_config[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_ip6_config[] = {
+static const NMMetaPropertyInfo property_infos_ip6_config[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_IP_CONFIG_METHOD),
@@ -5980,7 +5980,7 @@ static const NmcPropertyInfo properties_setting_ip6_config[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_ip_tunnel[] = {
+static const NMMetaPropertyInfo property_infos_ip_tunnel[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_IP_TUNNEL_MODE),
@@ -6041,7 +6041,7 @@ static const NmcPropertyInfo properties_setting_ip_tunnel[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_macsec[] = {
+static const NMMetaPropertyInfo property_infos_macsec[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_MACSEC_PARENT),
@@ -6092,7 +6092,7 @@ static const NmcPropertyInfo properties_setting_macsec[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_macvlan[] = {
+static const NMMetaPropertyInfo property_infos_macvlan[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_MACVLAN_PARENT),
@@ -6121,7 +6121,7 @@ static const NmcPropertyInfo properties_setting_macvlan[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_olpc_mesh[] = {
+static const NMMetaPropertyInfo property_infos_olpc_mesh[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_OLPC_MESH_SSID),
@@ -6143,7 +6143,7 @@ static const NmcPropertyInfo properties_setting_olpc_mesh[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_pppoe[] = {
+static const NMMetaPropertyInfo property_infos_pppoe[] = {
 	PROPERTY_INFO_NAME (),
 	{
 		.property_name =                N_ (NM_SETTING_PPPOE_SERVICE),
@@ -6164,7 +6164,7 @@ static const NmcPropertyInfo properties_setting_pppoe[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_ppp[] = {
+static const NMMetaPropertyInfo property_infos_ppp[] = {
 	PROPERTY_INFO_NAME (),
 	{
 		.property_name =                N_ (NM_SETTING_PPP_NOAUTH),
@@ -6243,7 +6243,7 @@ static const NmcPropertyInfo properties_setting_ppp[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_proxy[] = {
+static const NMMetaPropertyInfo property_infos_proxy[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_PROXY_METHOD),
@@ -6275,7 +6275,7 @@ static const NmcPropertyInfo properties_setting_proxy[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_team[] = {
+static const NMMetaPropertyInfo property_infos_team[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_TEAM_CONFIG),
@@ -6287,7 +6287,7 @@ static const NmcPropertyInfo properties_setting_team[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_team_port[] = {
+static const NMMetaPropertyInfo property_infos_team_port[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_TEAM_PORT_CONFIG),
@@ -6299,7 +6299,7 @@ static const NmcPropertyInfo properties_setting_team_port[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_tun[] = {
+static const NMMetaPropertyInfo property_infos_tun[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_TUN_MODE),
@@ -6333,7 +6333,7 @@ static const NmcPropertyInfo properties_setting_tun[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_serial[] = {
+static const NMMetaPropertyInfo property_infos_serial[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_SERIAL_BAUD),
@@ -6360,7 +6360,7 @@ static const NmcPropertyInfo properties_setting_serial[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_vlan[] = {
+static const NMMetaPropertyInfo property_infos_vlan[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_VLAN_PARENT),
@@ -6395,7 +6395,7 @@ static const NmcPropertyInfo properties_setting_vlan[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_vpn[] = {
+static const NMMetaPropertyInfo property_infos_vpn[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_VPN_SERVICE_TYPE),
@@ -6435,7 +6435,7 @@ static const NmcPropertyInfo properties_setting_vpn[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_vxlan[] = {
+static const NMMetaPropertyInfo property_infos_vxlan[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_VXLAN_PARENT),
@@ -6503,7 +6503,7 @@ static const NmcPropertyInfo properties_setting_vxlan[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_wimax[] = {
+static const NMMetaPropertyInfo property_infos_wimax[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_WIMAX_MAC_ADDRESS),
@@ -6515,7 +6515,7 @@ static const NmcPropertyInfo properties_setting_wimax[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_wired[] = {
+static const NMMetaPropertyInfo property_infos_wired[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_WIRED_PORT),
@@ -6548,7 +6548,7 @@ static const NmcPropertyInfo properties_setting_wired[] = {
 		.property_name =                N_ (NM_SETTING_WIRED_CLONED_MAC_ADDRESS),
 		.property_type =                &_pt_gobject_mac,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (mac,
-			.mode =                     NMC_PROPERTY_TYPE_MAC_MODE_CLONED,
+			.mode =                     NM_META_PROPERTY_TYPE_MAC_MODE_CLONED,
 		),
 	},
 	{
@@ -6610,7 +6610,7 @@ static const NmcPropertyInfo properties_setting_wired[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_wireless[] = {
+static const NMMetaPropertyInfo property_infos_wireless[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_WIRELESS_SSID),
@@ -6664,7 +6664,7 @@ static const NmcPropertyInfo properties_setting_wireless[] = {
 		.property_name =                N_ (NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS),
 		.property_type =                &_pt_gobject_mac,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (mac,
-			.mode =                     NMC_PROPERTY_TYPE_MAC_MODE_CLONED,
+			.mode =                     NM_META_PROPERTY_TYPE_MAC_MODE_CLONED,
 		),
 	},
 	{
@@ -6710,7 +6710,7 @@ static const NmcPropertyInfo properties_setting_wireless[] = {
 	},
 };
 
-static const NmcPropertyInfo properties_setting_wireless_security[] = {
+static const NMMetaPropertyInfo property_infos_wireless_security[] = {
 	PROPERTY_INFO_NAME(),
 	{
 		.property_name =                N_ (NM_SETTING_WIRELESS_SECURITY_KEY_MGMT),
@@ -6836,165 +6836,165 @@ static const NmcPropertyInfo properties_setting_wireless_security[] = {
 	},
 };
 
-const NmcSettingInfo nmc_setting_infos[_NM_META_SETTING_TYPE_NUM] = {
+const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[_NM_META_SETTING_TYPE_NUM] = {
 	[NM_META_SETTING_TYPE_802_1X] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_802_1X],
-		.properties                         = properties_setting_802_1x,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_802_1x),
+		.properties                         = property_infos_802_1x,
+		.properties_num                     = G_N_ELEMENTS (property_infos_802_1x),
 	},
 	[NM_META_SETTING_TYPE_ADSL] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_ADSL],
-		.properties                         = properties_setting_adsl,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_adsl),
+		.properties                         = property_infos_adsl,
+		.properties_num                     = G_N_ELEMENTS (property_infos_adsl),
 	},
 	[NM_META_SETTING_TYPE_BLUETOOTH] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_BLUETOOTH],
-		.properties                         = properties_setting_bluetooth,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_bluetooth),
+		.properties                         = property_infos_bluetooth,
+		.properties_num                     = G_N_ELEMENTS (property_infos_bluetooth),
 	},
 	[NM_META_SETTING_TYPE_BOND] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_BOND],
-		.properties                         = properties_setting_bond,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_bond),
+		.properties                         = property_infos_bond,
+		.properties_num                     = G_N_ELEMENTS (property_infos_bond),
 	},
 	[NM_META_SETTING_TYPE_BRIDGE] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_BRIDGE],
-		.properties                         = properties_setting_bridge,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_bridge),
+		.properties                         = property_infos_bridge,
+		.properties_num                     = G_N_ELEMENTS (property_infos_bridge),
 	},
 	[NM_META_SETTING_TYPE_BRIDGE_PORT] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_BRIDGE_PORT],
-		.properties                         = properties_setting_bridge_port,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_bridge_port),
+		.properties                         = property_infos_bridge_port,
+		.properties_num                     = G_N_ELEMENTS (property_infos_bridge_port),
 	},
 	[NM_META_SETTING_TYPE_CDMA] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_CDMA],
-		.properties                         = properties_setting_cdma,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_cdma),
+		.properties                         = property_infos_cdma,
+		.properties_num                     = G_N_ELEMENTS (property_infos_cdma),
 	},
 	[NM_META_SETTING_TYPE_CONNECTION] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_CONNECTION],
-		.properties                         = properties_setting_connection,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_connection),
+		.properties                         = property_infos_connection,
+		.properties_num                     = G_N_ELEMENTS (property_infos_connection),
 	},
 	[NM_META_SETTING_TYPE_DCB] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_DCB],
-		.properties                         = properties_setting_dcb,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_dcb),
+		.properties                         = property_infos_dcb,
+		.properties_num                     = G_N_ELEMENTS (property_infos_dcb),
 	},
 	[NM_META_SETTING_TYPE_DUMMY] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_DUMMY],
-		.properties                         = properties_setting_dummy,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_dummy),
+		.properties                         = property_infos_dummy,
+		.properties_num                     = G_N_ELEMENTS (property_infos_dummy),
 	},
 	[NM_META_SETTING_TYPE_GSM] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_GSM],
-		.properties                         = properties_setting_gsm,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_gsm),
+		.properties                         = property_infos_gsm,
+		.properties_num                     = G_N_ELEMENTS (property_infos_gsm),
 	},
 	[NM_META_SETTING_TYPE_INFINIBAND] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_INFINIBAND],
-		.properties                         = properties_setting_infiniband,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_infiniband),
+		.properties                         = property_infos_infiniband,
+		.properties_num                     = G_N_ELEMENTS (property_infos_infiniband),
 	},
 	[NM_META_SETTING_TYPE_IP4_CONFIG] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_IP4_CONFIG],
-		.properties                         = properties_setting_ip4_config,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_ip4_config),
+		.properties                         = property_infos_ip4_config,
+		.properties_num                     = G_N_ELEMENTS (property_infos_ip4_config),
 	},
 	[NM_META_SETTING_TYPE_IP6_CONFIG] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_IP6_CONFIG],
-		.properties                         = properties_setting_ip6_config,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_ip6_config),
+		.properties                         = property_infos_ip6_config,
+		.properties_num                     = G_N_ELEMENTS (property_infos_ip6_config),
 	},
 	[NM_META_SETTING_TYPE_IP_TUNNEL] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_IP_TUNNEL],
-		.properties                         = properties_setting_ip_tunnel,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_ip_tunnel),
+		.properties                         = property_infos_ip_tunnel,
+		.properties_num                     = G_N_ELEMENTS (property_infos_ip_tunnel),
 	},
 	[NM_META_SETTING_TYPE_MACSEC] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_MACSEC],
-		.properties                         = properties_setting_macsec,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_macsec),
+		.properties                         = property_infos_macsec,
+		.properties_num                     = G_N_ELEMENTS (property_infos_macsec),
 	},
 	[NM_META_SETTING_TYPE_MACVLAN] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_MACVLAN],
-		.properties                         = properties_setting_macvlan,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_macvlan),
+		.properties                         = property_infos_macvlan,
+		.properties_num                     = G_N_ELEMENTS (property_infos_macvlan),
 	},
 	[NM_META_SETTING_TYPE_OLPC_MESH] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_OLPC_MESH],
-		.properties                         = properties_setting_olpc_mesh,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_olpc_mesh),
+		.properties                         = property_infos_olpc_mesh,
+		.properties_num                     = G_N_ELEMENTS (property_infos_olpc_mesh),
 	},
 	[NM_META_SETTING_TYPE_PPPOE] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_PPPOE],
-		.properties                         = properties_setting_pppoe,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_pppoe),
+		.properties                         = property_infos_pppoe,
+		.properties_num                     = G_N_ELEMENTS (property_infos_pppoe),
 	},
 	[NM_META_SETTING_TYPE_PPP] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_PPP],
-		.properties                         = properties_setting_ppp,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_ppp),
+		.properties                         = property_infos_ppp,
+		.properties_num                     = G_N_ELEMENTS (property_infos_ppp),
 	},
 	[NM_META_SETTING_TYPE_PROXY] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_PROXY],
-		.properties                         = properties_setting_proxy,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_proxy),
+		.properties                         = property_infos_proxy,
+		.properties_num                     = G_N_ELEMENTS (property_infos_proxy),
 	},
 	[NM_META_SETTING_TYPE_SERIAL] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_SERIAL],
-		.properties                         = properties_setting_serial,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_serial),
+		.properties                         = property_infos_serial,
+		.properties_num                     = G_N_ELEMENTS (property_infos_serial),
 	},
 	[NM_META_SETTING_TYPE_TEAM] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_TEAM],
-		.properties                         = properties_setting_team,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_team),
+		.properties                         = property_infos_team,
+		.properties_num                     = G_N_ELEMENTS (property_infos_team),
 	},
 	[NM_META_SETTING_TYPE_TEAM_PORT] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_TEAM_PORT],
-		.properties                         = properties_setting_team_port,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_team_port),
+		.properties                         = property_infos_team_port,
+		.properties_num                     = G_N_ELEMENTS (property_infos_team_port),
 	},
 	[NM_META_SETTING_TYPE_TUN] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_TUN],
-		.properties                         = properties_setting_tun,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_tun),
+		.properties                         = property_infos_tun,
+		.properties_num                     = G_N_ELEMENTS (property_infos_tun),
 	},
 	[NM_META_SETTING_TYPE_VLAN] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_VLAN],
-		.properties                         = properties_setting_vlan,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_vlan),
+		.properties                         = property_infos_vlan,
+		.properties_num                     = G_N_ELEMENTS (property_infos_vlan),
 	},
 	[NM_META_SETTING_TYPE_VPN] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_VPN],
-		.properties                         = properties_setting_vpn,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_vpn),
+		.properties                         = property_infos_vpn,
+		.properties_num                     = G_N_ELEMENTS (property_infos_vpn),
 	},
 	[NM_META_SETTING_TYPE_VXLAN] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_VXLAN],
-		.properties                         = properties_setting_vxlan,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_vxlan),
+		.properties                         = property_infos_vxlan,
+		.properties_num                     = G_N_ELEMENTS (property_infos_vxlan),
 	},
 	[NM_META_SETTING_TYPE_WIMAX] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_WIMAX],
-		.properties                         = properties_setting_wimax,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_wimax),
+		.properties                         = property_infos_wimax,
+		.properties_num                     = G_N_ELEMENTS (property_infos_wimax),
 	},
 	[NM_META_SETTING_TYPE_WIRED] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_WIRED],
-		.properties                         = properties_setting_wired,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_wired),
+		.properties                         = property_infos_wired,
+		.properties_num                     = G_N_ELEMENTS (property_infos_wired),
 	},
 	[NM_META_SETTING_TYPE_WIRELESS] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_WIRELESS],
-		.properties                         = properties_setting_wireless,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_wireless),
+		.properties                         = property_infos_wireless,
+		.properties_num                     = G_N_ELEMENTS (property_infos_wireless),
 	},
 	[NM_META_SETTING_TYPE_WIRELESS_SECURITY] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_WIRELESS_SECURITY],
-		.properties                         = properties_setting_wireless_security,
-		.properties_num                     = G_N_ELEMENTS (properties_setting_wireless_security),
+		.properties                         = property_infos_wireless_security,
+		.properties_num                     = G_N_ELEMENTS (property_infos_wireless_security),
 	},
 };
