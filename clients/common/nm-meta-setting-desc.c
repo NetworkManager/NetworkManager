@@ -4192,25 +4192,6 @@ _get_fcn_wireless_ssid (ARGS_GET_FCN)
 }
 
 static char *
-_get_fcn_wireless_powersave (ARGS_GET_FCN)
-{
-	NMSettingWireless *s_wireless = NM_SETTING_WIRELESS (setting);
-	NMSettingWirelessPowersave powersave;
-	gs_free char *str = NULL;
-	char *ret;
-
-	powersave = nm_setting_wireless_get_powersave (s_wireless);
-	str = nm_utils_enum_to_str (nm_setting_wireless_powersave_get_type (), powersave);
-
-	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE) {
-		ret = str;
-		str = NULL;
-		return ret;
-	} else
-		return g_strdup_printf ("%s (%u)", str, powersave);
-}
-
-static char *
 _get_fcn_wireless_mac_address_randomization (ARGS_GET_FCN)
 {
 	NMSettingWireless *s_wifi = NM_SETTING_WIRELESS (setting);
@@ -4275,39 +4256,6 @@ DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_wireless_mac_address_blacklist,
                                nm_setting_wireless_get_num_mac_blacklist_items,
                                nm_setting_wireless_remove_mac_blacklist_item,
                                _validate_and_remove_wifi_mac_blacklist_item)
-
-static gboolean
-_set_fcn_wireless_powersave (ARGS_SET_FCN)
-{
-	NMSettingWirelessPowersave powersave;
-	gs_free const char **options = NULL;
-	gs_free char *options_str = NULL;
-	long int t;
-	gboolean ret;
-
-	if (nmc_string_to_int_base (value, 0, TRUE,
-	                            NM_SETTING_WIRELESS_POWERSAVE_DEFAULT,
-	                            NM_SETTING_WIRELESS_POWERSAVE_LAST,
-	                            &t))
-		powersave = (NMSettingWirelessPowersave) t;
-	else {
-		ret = nm_utils_enum_from_str (nm_setting_wireless_powersave_get_type (),
-		                              value,
-		                              (int *) &powersave,
-		                              NULL);
-		if (!ret) {
-			options = nm_utils_enum_get_values (nm_setting_wireless_powersave_get_type (),
-			                                    NM_SETTING_WIRELESS_POWERSAVE_DEFAULT,
-			                                    NM_SETTING_WIRELESS_POWERSAVE_LAST);
-			options_str = g_strjoinv (",", (char **) options);
-			g_set_error (error, 1, 0, _("invalid option '%s', use one of [%s]"), value, options_str);
-			return FALSE;
-		}
-	}
-
-	g_object_set (setting, property_info->property_name, (guint) powersave, NULL);
-	return TRUE;
-}
 
 static gboolean
 _set_fcn_wireless_mac_address_randomization (ARGS_SET_FCN)
@@ -6504,9 +6452,12 @@ static const NMMetaPropertyInfo property_infos_wireless[] = {
 	},
 	{
 		.property_name =                N_ (NM_SETTING_WIRELESS_POWERSAVE),
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_wireless_powersave,
-			.set_fcn =                  _set_fcn_wireless_powersave,
+		.property_type =                &_pt_gobject_enum,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
+				.get_gtype =            nm_setting_wireless_powersave_get_type,
+			),
+			.typ_flags =                NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_TEXT,
 		),
 	},
 };
