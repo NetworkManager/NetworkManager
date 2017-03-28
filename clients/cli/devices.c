@@ -26,6 +26,8 @@
 #include <readline/readline.h>
 
 #include "nm-secret-agent-simple.h"
+#include "nm-client-utils.h"
+
 #include "polkit-agent.h"
 #include "utils.h"
 #include "common.h"

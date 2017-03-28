@@ -10,6 +10,7 @@ clients/cli/nmcli.c
 clients/cli/polkit-agent.c
 clients/cli/settings.c
 clients/cli/utils.c
+clients/common/nm-client-utils.c
 clients/common/nm-meta-setting-desc.c
 clients/common/nm-polkit-listener.c
 clients/common/nm-secret-agent-simple.c

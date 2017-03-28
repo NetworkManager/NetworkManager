@@ -22,13 +22,15 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "nm-common-macros.h"
+
+#include "nm-client-utils.h"
+
 #include "polkit-agent.h"
 #include "utils.h"
 #include "common.h"
 #include "general.h"
 #include "common.h"
-#include "nm-common-macros.h"
-
 #include "devices.h"
 #include "connections.h"
 

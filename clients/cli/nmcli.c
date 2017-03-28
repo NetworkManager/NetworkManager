@@ -32,6 +32,8 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+#include "nm-client-utils.h"
+
 #include "polkit-agent.h"
 #include "nmcli.h"
 #include "utils.h"

@@ -115,4 +115,7 @@ struct _NMMetaSettingInfoEditor {
 
 extern const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[_NM_META_SETTING_TYPE_NUM];
 
+/* FIXME: don't expose this function on it's own, at least not from this file. */
+const char *nmc_bond_validate_mode (const char *mode, GError **error);
+
 #endif /* __NM_META_SETTING_DESC_H__ */

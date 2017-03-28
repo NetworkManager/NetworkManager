@@ -25,9 +25,12 @@
 #include <arpa/inet.h>
 
 #include "nm-common-macros.h"
+
+#include "nm-client-utils.h"
+#include "nm-vpn-helpers.h"
+
 #include "utils.h"
 #include "common.h"
-#include "nm-vpn-helpers.h"
 
 /*****************************************************************************/
 

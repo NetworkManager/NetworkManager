@@ -438,7 +438,7 @@ set_property (GObject *object, guint prop_id,
 			nm_clear_g_free (&priv->keys);
 			return;
 		}
-		g_hash_table_iter_init (&iter, priv->data);
+		g_hash_table_iter_init (&iter, data);
 		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &val)) {
 			if (!nm_setting_user_check_key (key, NULL))
 				g_return_if_reached ();

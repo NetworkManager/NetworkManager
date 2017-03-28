@@ -25,11 +25,27 @@
 #include <arpa/inet.h>
 
 #include "nm-common-macros.h"
-#include "nm-vpn-helpers.h"
 
-/* FIXME: don't include headers from nmcli */
-#include "utils.h"
-#include "common.h"
+#include "nm-vpn-helpers.h"
+#include "nm-client-utils.h"
+
+/*****************************************************************************/
+
+/* FIXME: don't include headers from nmcli. And move all uses of NMClient out
+ * of there. */
+
+/* FIXME: don't directly print any warnings. Instead, add a hook mechanism to notify
+ * the caller about warnings, error or whatever.
+ */
+
+#include "nmcli.h"
+
+NMConnection *
+nmc_find_connection (const GPtrArray *connections,
+                     const char *filter_type,
+                     const char *filter_val,
+                     int *start,
+                     gboolean complete);
 
 /*****************************************************************************/
 
@@ -43,6 +59,428 @@ static char *secret_flags_to_string (guint32 flags, NMMetaAccessorGetType get_ty
 	 NM_SETTING_SECRET_FLAG_AGENT_OWNED | \
 	 NM_SETTING_SECRET_FLAG_NOT_SAVED | \
 	 NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
+
+/*****************************************************************************/
+
+/*
+ * Parse IP address from string to NMIPAddress stucture.
+ * ip_str is the IP address in the form address/prefix
+ */
+static NMIPAddress *
+nmc_parse_and_build_address (int family, const char *ip_str, GError **error)
+{
+	int max_prefix = (family == AF_INET) ? 32 : 128;
+	NMIPAddress *addr = NULL;
+	const char *ip;
+	char *tmp;
+	char *plen;
+	long int prefix;
+	GError *local = NULL;
+
+	g_return_val_if_fail (ip_str != NULL, NULL);
+	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+	tmp = g_strdup (ip_str);
+	plen = strchr (tmp, '/');  /* prefix delimiter */
+	if (plen)
+		*plen++ = '\0';
+
+	ip = tmp;
+
+	prefix = max_prefix;
+	if (plen) {
+		if (!nmc_string_to_int (plen, TRUE, 1, max_prefix, &prefix)) {
+			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
+			             _("invalid prefix '%s'; <1-%d> allowed"), plen, max_prefix);
+			goto finish;
+		}
+	}
+
+	addr = nm_ip_address_new (family, ip, (guint32) prefix, &local);
+	if (!addr) {
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
+		             _("invalid IP address: %s"), local->message);
+		g_clear_error (&local);
+	}
+
+finish:
+	g_free (tmp);
+	return addr;
+}
+
+/*
+ * nmc_parse_and_build_route:
+ * @family: AF_INET or AF_INET6
+ * @str: route string to be parsed
+ * @error: location to store GError
+ *
+ * Parse route from string and return an #NMIPRoute
+ *
+ * Returns: a new #NMIPRoute or %NULL on error
+ */
+static NMIPRoute *
+nmc_parse_and_build_route (int family,
+                           const char *str,
+                           GError **error)
+{
+	int max_prefix = (family == AF_INET) ? 32 : 128;
+	char *plen = NULL;
+	const char *next_hop = NULL;
+	const char *canon_dest;
+	long int prefix = max_prefix;
+	unsigned long int tmp_ulong;
+	NMIPRoute *route = NULL;
+	gboolean success = FALSE;
+	GError *local = NULL;
+	gint64 metric = -1;
+	guint i, len;
+	gs_strfreev char **routev = NULL;
+	gs_free char *value = NULL;
+	gs_free char *dest = NULL;
+	gs_unref_hashtable GHashTable *attrs = NULL;
+	GHashTable *tmp_attrs;
+
+	g_return_val_if_fail (family == AF_INET || family == AF_INET6, FALSE);
+	g_return_val_if_fail (str, FALSE);
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	value = g_strdup (str);
+	routev = nmc_strsplit_set (g_strstrip (value), " \t", 0);
+	len = g_strv_length (routev);
+	if (len < 1) {
+		g_set_error (error, 1, 0, _("'%s' is not valid (the format is: ip[/prefix] [next-hop] [metric] [attr=val] [attr=val])"),
+		             str);
+		goto finish;
+	}
+
+	dest = g_strdup (routev[0]);
+	plen = strchr (dest, '/');  /* prefix delimiter */
+	if (plen)
+		*plen++ = '\0';
+
+	if (plen) {
+		if (!nmc_string_to_int (plen, TRUE, 1, max_prefix, &prefix)) {
+			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
+			             _("invalid prefix '%s'; <1-%d> allowed"),
+			             plen, max_prefix);
+			goto finish;
+		}
+	}
+
+	for (i = 1; i < len; i++) {
+		if (nm_utils_ipaddr_valid (family, routev[i])) {
+			if (metric != -1 || attrs) {
+				g_set_error (error, 1, 0, _("the next hop ('%s') must be first"), routev[i]);
+				goto finish;
+			}
+			next_hop = routev[i];
+		} else if (nmc_string_to_uint (routev[i], TRUE, 0, G_MAXUINT32, &tmp_ulong)) {
+			if (attrs) {
+				g_set_error (error, 1, 0, _("the metric ('%s') must be before attributes"), routev[i]);
+				goto finish;
+			}
+			metric = tmp_ulong;
+		} else if (strchr (routev[i], '=')) {
+			GHashTableIter iter;
+			char *iter_key;
+			GVariant *iter_value;
+
+			tmp_attrs = nm_utils_parse_variant_attributes (routev[i], ' ', '=', FALSE,
+			                                               nm_ip_route_get_variant_attribute_spec(),
+			                                               error);
+			if (!tmp_attrs) {
+				g_prefix_error (error, "invalid option '%s': ", routev[i]);
+				goto finish;
+			}
+
+			if (!attrs)
+				attrs = g_hash_table_new (g_str_hash, g_str_equal);
+
+			g_hash_table_iter_init (&iter, tmp_attrs);
+			while (g_hash_table_iter_next (&iter, (gpointer *) &iter_key, (gpointer *) &iter_value)) {
+				if (!nm_ip_route_attribute_validate (iter_key, iter_value, family, NULL, error)) {
+					g_prefix_error (error, "%s: ", iter_key);
+					g_hash_table_unref (tmp_attrs);
+					goto finish;
+				}
+				g_hash_table_insert (attrs, iter_key, iter_value);
+				g_hash_table_iter_steal (&iter);
+			}
+			g_hash_table_unref (tmp_attrs);
+		} else {
+			g_set_error (error, 1, 0, _("unrecognized option '%s'"), routev[i]);
+			goto finish;
+		}
+	}
+
+	route = nm_ip_route_new (family, dest, prefix, next_hop, metric, &local);
+	if (!route) {
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
+		             _("invalid route: %s"), local->message);
+		g_clear_error (&local);
+		goto finish;
+	}
+
+	/* We don't accept default routes as NetworkManager handles it
+	 * itself. But we have to check this after @route has normalized the
+	 * dest string.
+	 */
+	canon_dest = nm_ip_route_get_dest (route);
+	if (!strcmp (canon_dest, "0.0.0.0") || !strcmp (canon_dest, "::")) {
+		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
+		                     _("default route cannot be added (NetworkManager handles it by itself)"));
+		g_clear_pointer (&route, nm_ip_route_unref);
+		goto finish;
+	}
+
+	if (attrs) {
+		GHashTableIter iter;
+		char *name;
+		GVariant *variant;
+
+		g_hash_table_iter_init (&iter, attrs);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &name, (gpointer *) &variant))
+			nm_ip_route_set_attribute (route, name, variant);
+	}
+
+	success = TRUE;
+
+finish:
+	return route;
+}
+
+/* Max priority values from libnm-core/nm-setting-vlan.c */
+#define MAX_SKB_PRIO   G_MAXUINT32
+#define MAX_8021P_PRIO 7  /* Max 802.1p priority */
+
+/*
+ * Parse VLAN priority mappings from the following format: 2:1,3:4,7:3
+ * and verify if the priority numbers are valid
+ *
+ * Return: string array with split maps, or NULL on error
+ * Caller is responsible for freeing the array.
+ */
+static char **
+nmc_vlan_parse_priority_maps (const char *priority_map,
+                              NMVlanPriorityMap map_type,
+                              GError **error)
+{
+	char **mapping = NULL, **iter;
+	unsigned long from, to, from_max, to_max;
+
+	g_return_val_if_fail (priority_map != NULL, NULL);
+	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+	if (map_type == NM_VLAN_INGRESS_MAP) {
+		from_max = MAX_8021P_PRIO;
+		to_max = MAX_SKB_PRIO;
+	} else {
+		from_max = MAX_SKB_PRIO;
+		to_max = MAX_8021P_PRIO;
+	}
+
+	mapping = g_strsplit (priority_map, ",", 0);
+	for (iter = mapping; iter && *iter; iter++) {
+		char *left, *right;
+
+		left = g_strstrip (*iter);
+		right = strchr (left, ':');
+		if (!right) {
+			g_set_error (error, 1, 0, _("invalid priority map '%s'"), *iter);
+			g_strfreev (mapping);
+			return NULL;
+		}
+		*right++ = '\0';
+
+		if (!nmc_string_to_uint (left, TRUE, 0, from_max, &from)) {
+			g_set_error (error, 1, 0, _("priority '%s' is not valid (<0-%ld>)"),
+			             left, from_max);
+			g_strfreev (mapping);
+			return NULL;
+		}
+		if (!nmc_string_to_uint (right, TRUE, 0, to_max, &to)) {
+			g_set_error (error, 1, 0, _("priority '%s' is not valid (<0-%ld>)"),
+			             right, to_max);
+			g_strfreev (mapping);
+			return NULL;
+		}
+		*(right-1) = ':'; /* Put back ':' */
+	}
+	return mapping;
+}
+
+/*
+ * nmc_proxy_check_script:
+ * @script: file name with PAC script, or raw PAC Script data
+ * @out_script: raw PAC Script (with removed new-line characters)
+ * @error: location to store error, or %NULL
+ *
+ * Check PAC Script from @script parameter and return the checked/sanitized
+ * config in @out_script.
+ *
+ * Returns: %TRUE if the script is valid, %FALSE if it is invalid
+ */
+static gboolean
+nmc_proxy_check_script (const char *script, char **out_script, GError **error)
+{
+	enum {
+		_PAC_SCRIPT_TYPE_GUESS,
+		_PAC_SCRIPT_TYPE_FILE,
+		_PAC_SCRIPT_TYPE_JSON,
+	} desired_type = _PAC_SCRIPT_TYPE_GUESS;
+	const char *filename = NULL;
+	size_t c_len = 0;
+	gs_free char *script_clone = NULL;
+
+	*out_script = NULL;
+
+	if (!script || !script[0])
+		return TRUE;
+
+	if (g_str_has_prefix (script, "file://")) {
+		script += NM_STRLEN ("file://");
+		desired_type = _PAC_SCRIPT_TYPE_FILE;
+	} else if (g_str_has_prefix (script, "js://")) {
+		script += NM_STRLEN ("js://");
+		desired_type = _PAC_SCRIPT_TYPE_JSON;
+	}
+
+	if (NM_IN_SET (desired_type, _PAC_SCRIPT_TYPE_FILE, _PAC_SCRIPT_TYPE_GUESS)) {
+		gs_free char *contents = NULL;
+
+		if (!g_file_get_contents (script, &contents, &c_len, NULL)) {
+			if (desired_type == _PAC_SCRIPT_TYPE_FILE) {
+				g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
+				             _("cannot read pac-script from file '%s'"),
+				             script);
+				return FALSE;
+			}
+		} else {
+			if (c_len != strlen (contents)) {
+				g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
+				             _("file '%s' contains non-valid utf-8"),
+				             script);
+				return FALSE;
+			}
+			filename = script;
+			script = script_clone = g_steal_pointer (&contents);
+		}
+	}
+
+	if (   !strstr (script, "FindProxyForURL")
+	    || !g_utf8_validate (script, -1, NULL)) {
+		if (filename) {
+			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
+			             _("'%s' does not contain a valid PAC Script"), filename);
+		} else {
+			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
+			             _("Not a valid PAC Script"));
+		}
+		return FALSE;
+	}
+
+	*out_script = (script == script_clone)
+	              ? g_steal_pointer (&script_clone)
+	              : g_strdup (script);
+	return TRUE;
+}
+
+const char *
+nmc_bond_validate_mode (const char *mode, GError **error)
+{
+	unsigned long mode_int;
+	static const char *valid_modes[] = { "balance-rr",
+	                                     "active-backup",
+	                                     "balance-xor",
+	                                     "broadcast",
+	                                     "802.3ad",
+	                                     "balance-tlb",
+	                                     "balance-alb",
+	                                     NULL };
+	if (nmc_string_to_uint (mode, TRUE, 0, 6, &mode_int)) {
+		/* Translate bonding mode numbers to mode names:
+		 * https://www.kernel.org/doc/Documentation/networking/bonding.txt
+		 */
+		return valid_modes[mode_int];
+	} else
+		return nmc_string_is_valid (mode, valid_modes, error);
+}
+
+/*
+ * nmc_team_check_config:
+ * @config: file name with team config, or raw team JSON config data
+ * @out_config: raw team JSON config data
+ *   The value must be freed with g_free().
+ * @error: location to store error, or %NUL
+ *
+ * Check team config from @config parameter and return the checked
+ * config in @out_config.
+ *
+ * Returns: %TRUE if the config is valid, %FALSE if it is invalid
+ */
+static gboolean
+nmc_team_check_config (const char *config, char **out_config, GError **error)
+{
+	enum {
+		_TEAM_CONFIG_TYPE_GUESS,
+		_TEAM_CONFIG_TYPE_FILE,
+		_TEAM_CONFIG_TYPE_JSON,
+	} desired_type = _TEAM_CONFIG_TYPE_GUESS;
+	const char *filename = NULL;
+	size_t c_len = 0;
+	gs_free char *config_clone = NULL;
+
+	*out_config = NULL;
+
+	if (!config || !config[0])
+		return TRUE;
+
+	if (g_str_has_prefix (config, "file://")) {
+		config += NM_STRLEN ("file://");
+		desired_type = _TEAM_CONFIG_TYPE_FILE;
+	} else if (g_str_has_prefix (config, "json://")) {
+		config += NM_STRLEN ("json://");
+		desired_type = _TEAM_CONFIG_TYPE_JSON;
+	}
+
+	if (NM_IN_SET (desired_type, _TEAM_CONFIG_TYPE_FILE, _TEAM_CONFIG_TYPE_GUESS)) {
+		gs_free char *contents = NULL;
+
+		if (!g_file_get_contents (config, &contents, &c_len, NULL)) {
+			if (desired_type == _TEAM_CONFIG_TYPE_FILE) {
+				g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
+				             _("cannot read team config from file '%s'"),
+				             config);
+				return FALSE;
+			}
+		} else {
+			if (c_len != strlen (contents)) {
+				g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
+				             _("team config file '%s' contains non-valid utf-8"),
+				             config);
+				return FALSE;
+			}
+			filename = config;
+			config = config_clone = g_steal_pointer (&contents);
+		}
+	}
+
+	if (!nm_utils_is_json_object (config, NULL)) {
+		if (filename) {
+			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
+			             _("'%s' does not contain a valid team configuration"), filename);
+		} else {
+			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
+			             _("team configuration must be a JSON object"));
+		}
+		return FALSE;
+	}
+
+	*out_config = (config == config_clone)
+	              ? g_steal_pointer (&config_clone)
+	              : g_strdup (config);
+	return TRUE;
+}
 
 /*****************************************************************************/
 
@@ -3933,6 +4371,11 @@ nmc_value_transform_char_string (const GValue *src_value,
 static void __attribute__((constructor))
 register_nmcli_value_transforms (void)
 {
+	/* FIXME: we should not register a g-value transform function. Instead, our meta data
+	 * should be able to access the values according to their type.
+	 *
+	 * Also, running code as a ((constructor)) is hightly unexpected and affects the
+	 * entire binary. */
 	g_value_register_transform_func (G_TYPE_BOOLEAN, G_TYPE_STRING, nmc_value_transform_bool_string);
 	g_value_register_transform_func (G_TYPE_CHAR, G_TYPE_STRING, nmc_value_transform_char_string);
 }
@@ -6106,3 +6549,4 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[_NM_META_SETTING_TYPE
 		.properties_num                     = G_N_ELEMENTS (property_infos_wireless_security),
 	},
 };
+

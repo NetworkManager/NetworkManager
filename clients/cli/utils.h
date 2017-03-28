@@ -32,43 +32,12 @@ typedef struct {
 	gboolean found;
 } nmc_arg_t;
 
-typedef enum {
-	NMC_TRI_STATE_NO,
-	NMC_TRI_STATE_YES,
-	NMC_TRI_STATE_UNKNOWN,
-} NMCTriStateValue;
-
 /* === Functions === */
-gboolean matches (const char *cmd, const char *pattern);
 int next_arg (NmCli *nmc, int *argc, char ***argv);
 gboolean nmc_arg_is_help (const char *arg);
 gboolean nmc_arg_is_option (const char *arg, const char *opt_name);
 gboolean nmc_parse_args (nmc_arg_t *arg_arr, gboolean last, int *argc, char ***argv, GError **error);
 char *ssid_to_hex (const char *str, gsize len);
-gboolean nmc_string_to_int_base (const char *str,
-                                 int base,
-                                 gboolean range_check,
-                                 long int min,
-                                 long int max,
-                                 long int *value);
-gboolean nmc_string_to_uint_base (const char *str,
-                                  int base,
-                                  gboolean range_check,
-                                  unsigned long int min,
-                                  unsigned long int max,
-                                  unsigned long int *value);
-gboolean nmc_string_to_int (const char *str,
-                            gboolean range_check,
-                            long int min,
-                            long int max,
-                            long int *value);
-gboolean nmc_string_to_uint (const char *str,
-                             gboolean range_check,
-                             unsigned long int min,
-                             unsigned long int max,
-                             unsigned long int *value);
-gboolean nmc_string_to_bool (const char *str, gboolean *val_bool, GError **error);
-gboolean nmc_string_to_tristate (const char *str, NMCTriStateValue *val, GError **error);
 void nmc_terminal_erase_line (void);
 void nmc_terminal_show_progress (const char *str);
 const char *nmc_term_color_sequence (NmcTermColor color);

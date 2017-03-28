@@ -29,6 +29,8 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+#include "nm-client-utils.h"
+
 #include "utils.h"
 #include "common.h"
 #include "settings.h"

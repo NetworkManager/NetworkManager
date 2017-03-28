@@ -3118,9 +3118,14 @@ bin_PROGRAMS += clients/cli/nmcli
 
 clients_cli_nmcli_SOURCES = \
 	\
+	shared/nm-utils/nm-shared-utils.c \
+	shared/nm-utils/nm-shared-utils.h \
+	\
 	shared/nm-meta-setting.c \
 	shared/nm-meta-setting.h \
 	\
+	clients/common/nm-client-utils.c \
+	clients/common/nm-client-utils.h \
 	clients/common/nm-meta-setting-desc.c \
 	clients/common/nm-meta-setting-desc.h \
 	\
