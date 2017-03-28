@@ -5853,6 +5853,33 @@ static const NMMetaPropertyInfo property_infos_team_port[] = {
 	},
 };
 
+static const NMMetaPropertyInfo property_infos_serial[] = {
+	PROPERTY_INFO_NAME(),
+	{
+		.property_name =                N_ (NM_SETTING_SERIAL_BAUD),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_SERIAL_BITS),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_SERIAL_PARITY),
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_serial_parity,
+			.set_fcn =                  _set_fcn_serial_parity,
+		),
+	},
+	{
+		.property_name =                N_ (NM_SETTING_SERIAL_STOPBITS),
+		.property_type =                &_pt_gobject_uint,
+	},
+	{
+		.property_name =                N_ (NM_SETTING_SERIAL_SEND_DELAY),
+		.property_type =                &_pt_gobject_uint,
+	},
+};
+
 static const NMMetaPropertyInfo property_infos_tun[] = {
 	PROPERTY_INFO_NAME(),
 	{
@@ -5887,31 +5914,8 @@ static const NMMetaPropertyInfo property_infos_tun[] = {
 	},
 };
 
-static const NMMetaPropertyInfo property_infos_serial[] = {
+static const NMMetaPropertyInfo property_infos_user[] = {
 	PROPERTY_INFO_NAME(),
-	{
-		.property_name =                N_ (NM_SETTING_SERIAL_BAUD),
-		.property_type =                &_pt_gobject_uint,
-	},
-	{
-		.property_name =                N_ (NM_SETTING_SERIAL_BITS),
-		.property_type =                &_pt_gobject_uint,
-	},
-	{
-		.property_name =                N_ (NM_SETTING_SERIAL_PARITY),
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_serial_parity,
-			.set_fcn =                  _set_fcn_serial_parity,
-		),
-	},
-	{
-		.property_name =                N_ (NM_SETTING_SERIAL_STOPBITS),
-		.property_type =                &_pt_gobject_uint,
-	},
-	{
-		.property_name =                N_ (NM_SETTING_SERIAL_SEND_DELAY),
-		.property_type =                &_pt_gobject_uint,
-	},
 };
 
 static const NMMetaPropertyInfo property_infos_vlan[] = {
@@ -6515,6 +6519,11 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[_NM_META_SETTING_TYPE
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_TUN],
 		.properties                         = property_infos_tun,
 		.properties_num                     = G_N_ELEMENTS (property_infos_tun),
+	},
+	[NM_META_SETTING_TYPE_USER] = {
+		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_USER],
+		.properties                         = property_infos_user,
+		.properties_num                     = G_N_ELEMENTS (property_infos_user),
 	},
 	[NM_META_SETTING_TYPE_VLAN] = {
 		.general                            = &nm_meta_setting_infos[NM_META_SETTING_TYPE_VLAN],
