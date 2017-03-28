@@ -655,20 +655,24 @@ do_general_logging (NmCli *nmc, int argc, char **argv)
 				nmc_complete_strings (*argv, "level", "domains", NULL);
 
 			if (matches (*argv, "level")) {
-				if (next_arg (&argc, &argv) != 0) {
+				if (!argc) {
 					g_string_printf (nmc->return_text, _("Error: '%s' argument is missing."), *(argv-1));
 					return NMC_RESULT_ERROR_USER_INPUT;
 				}
+				argc--;
+				argv++;
 				if (argc == 1 && nmc->complete) {
 					nmc_complete_strings_nocase (*argv, "TRACE", "DEBUG", "INFO", "WARN",
 					                             "ERR", "OFF", "KEEP", NULL);
 				}
 				level = *argv;
 			} else if (matches (*argv, "domains")) {
-				if (next_arg (&argc, &argv) != 0) {
+				if (!argc) {
 					g_string_printf (nmc->return_text, _("Error: '%s' argument is missing."), *(argv-1));
 					return NMC_RESULT_ERROR_USER_INPUT;
 				}
+				argc--;
+				argv++;
 				if (argc == 1 && nmc->complete) {
 					nmc_complete_strings_nocase (*argv, "PLATFORM", "RFKILL", "ETHER", "WIFI", "BT",
 					                             "MB", "DHCP4", "DHCP6", "PPP", "WIFI_SCAN", "IP4",
@@ -683,7 +687,7 @@ do_general_logging (NmCli *nmc, int argc, char **argv)
 				g_string_printf (nmc->return_text, _("Error: property '%s' is not known."), *argv);
 				return NMC_RESULT_ERROR_USER_INPUT;
 			}
-		} while (next_arg (&argc, &argv) == 0);
+		} while (next_arg (nmc, &argc, &argv) == 0);
 
 		if (nmc->complete)
 			return nmc->return_value;
@@ -733,7 +737,7 @@ do_general_hostname (NmCli *nmc, int argc, char **argv)
 		/* hostname provided -> set it */
 		const char *hostname = *argv;
 
-		if (next_arg (&argc, &argv) == 0)
+		if (next_arg (nmc, &argc, &argv) == 0)
 			g_print ("Warning: ignoring extra garbage after '%s' hostname\n", hostname);
 
 		nmc->should_wait++;
