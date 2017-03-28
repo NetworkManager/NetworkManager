@@ -1667,7 +1667,7 @@ test_nm_utils_exp10 (void)
 		if (isinf (_b)) \
 			g_assert (isinf (_a)); \
 		else if (_b >= 0.0 && _b <= 0.0) \
-			g_assert (_a >= 0.0 && _a <= 0.0); \
+			g_assert (_a - _b < G_MINFLOAT); \
 		else { \
 			double _x = (_a) - (_b); \
 			g_assert (_b > 0.0); \

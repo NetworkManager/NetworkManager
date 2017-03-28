@@ -170,7 +170,7 @@ _exp10 (guint16 ex)
 	return v;
 }
 
-/*/
+/*
  * nm_utils_exp10:
  * @ex: the exponent
  *
