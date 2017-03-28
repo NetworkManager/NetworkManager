@@ -4785,6 +4785,7 @@ setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean 
 	guint i;
 	size_t tmpl_len;
 	gs_free char *s_all = NULL;
+	NmcPropertyGetType type = NMC_PROPERTY_GET_PRETTY;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 
@@ -4795,6 +4796,9 @@ setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean 
 	g_return_val_if_fail (setting_info, FALSE);
 
 	g_return_val_if_fail (G_TYPE_CHECK_INSTANCE_TYPE (setting, setting_info->general->get_setting_gtype ()), FALSE);
+
+	if (nmc->print_output == NMC_PRINT_TERSE)
+		type = NMC_PROPERTY_GET_PARSABLE;
 
 	tmpl_len = sizeof (NmcOutputField) * (setting_info->properties_num + 1);
 	tmpl = g_memdup (_get_nmc_output_fields (setting_info), tmpl_len);
@@ -4812,7 +4816,7 @@ setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean 
 			set_val_str (arr, i, property_info->property_type->get_fcn (setting_info,
 			                                                            property_info,
 			                                                            setting,
-			                                                            NMC_PROPERTY_GET_PRETTY,
+			                                                            type,
 			                                                            show_secrets));
 		} else
 			set_val_str (arr, i, g_strdup (_(HIDDEN_TEXT)));
