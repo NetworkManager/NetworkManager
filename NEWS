@@ -1,5 +1,5 @@
 ============================================
-NetworkManager-1.7.2 (development snapshot)
+NetworkManager-1.7.90 (1.8-rc1)
 Overview of changes since NetworkManager-1.6
 ============================================
 
@@ -8,6 +8,13 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 Notable changes included in this snapshot so far include:
 
+* Default routes set by devices that failed connectivity checks are now
+    penalized with a higher metric
+* nmcli is now able to produce output more friendly for machine parsing
+* The slaves available at the time a master connection is activated are
+    enslaved in a stable order, making the automatic MAC address for Bonding
+    devices more predictable.
+* Hostname management is now more flexibly configured
 * Fixed detection of EAP-FAST support in wpa_supplicant
 * Support for handling PINs for PKCS#11 tokens as secrets
 * GSM and CDMA connections now have a MTU property
