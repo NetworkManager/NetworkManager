@@ -3,12 +3,12 @@
 ###############################################################################
 
 examples_C_glib_cppflags = \
-	-I${top_srcdir}/shared \
-	-I${top_builddir}/shared \
-	-I${top_srcdir}/libnm-core \
-	-I${top_builddir}/libnm-core \
-	-I${top_srcdir}/libnm \
-	-I${top_builddir}/libnm \
+	-I$(top_srcdir)/shared \
+	-I$(top_builddir)/shared \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-I$(top_srcdir)/libnm \
+	-I$(top_builddir)/libnm \
 	$(GLIB_CFLAGS) \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE
 
@@ -29,20 +29,24 @@ examples_C_glib_add_connection_gdbus_CPPFLAGS = $(examples_C_glib_cppflags_gdbus
 examples_C_glib_add_connection_gdbus_LDADD = \
 	$(GLIB_LIBS) \
 	$(UUID_LIBS)
+$(examples_C_glib_add_connection_gdbus_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 examples_C_glib_add_connection_libnm_CPPFLAGS = $(examples_C_glib_cppflags_libnm)
 examples_C_glib_add_connection_libnm_LDADD = \
 	libnm/libnm.la \
 	$(GLIB_LIBS)
+$(examples_C_glib_add_connection_libnm_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 examples_C_glib_get_active_connections_gdbus_CPPFLAGS = $(examples_C_glib_cppflags_gdbus)
 examples_C_glib_get_active_connections_gdbus_LDADD = \
 	$(GLIB_LIBS)
+$(examples_C_glib_get_active_connections_gdbus_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 examples_C_glib_get_ap_info_libnm_CPPFLAGS = $(examples_C_glib_cppflags_libnm)
 examples_C_glib_get_ap_info_libnm_LDADD = \
 	libnm/libnm.la \
 	$(GLIB_LIBS)
+$(examples_C_glib_get_ap_info_libnm_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 examples_C_glib_list_connections_gdbus_CPPFLAGS = $(examples_C_glib_cppflags_gdbus)
 examples_C_glib_list_connections_gdbus_LDADD = \
@@ -52,6 +56,7 @@ examples_C_glib_list_connections_libnm_CPPFLAGS = $(examples_C_glib_cppflags_lib
 examples_C_glib_list_connections_libnm_LDADD = \
 	libnm/libnm.la \
 	$(GLIB_LIBS)
+$(examples_C_glib_list_connections_libnm_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 examples_C_glib_monitor_nm_running_gdbus_CPPFLAGS = $(examples_C_glib_cppflags_gdbus)
 examples_C_glib_monitor_nm_running_gdbus_LDADD = \
@@ -68,9 +73,9 @@ examples_C_glib_monitor_nm_state_gdbus_LDADD = \
 if WITH_QT
 
 examples_C_qt_cppflags = \
-	-I${top_srcdir}/libnm-core \
-	-I${top_builddir}/libnm-core \
-	-I${builddir}/examples/C/qt \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-I$(builddir)/examples/C/qt \
 	$(DBUS_CFLAGS) \
 	$(QT_CFLAGS)
 

@@ -659,6 +659,16 @@ libnm_core_tests_test_setting_bond_LDADD = $(libnm_core_tests_ldadd)
 libnm_core_tests_test_setting_dcb_LDADD = $(libnm_core_tests_ldadd)
 libnm_core_tests_test_settings_defaults_LDADD = $(libnm_core_tests_ldadd)
 
+$(libnm_core_tests_test_compare_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(libnm_core_tests_test_crypto_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(libnm_core_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(libnm_core_tests_test_keyfile_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(libnm_core_tests_test_secrets_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(libnm_core_tests_test_setting_8021x_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(libnm_core_tests_test_setting_bond_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(libnm_core_tests_test_setting_dcb_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(libnm_core_tests_test_settings_defaults_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
 # test-cert.p12 created with:
 #
 # openssl pkcs12 -export \
@@ -983,6 +993,10 @@ libnm_tests_test_nm_client_LDADD = $(libnm_tests_ldadd)
 libnm_tests_test_remote_settings_client_LDADD = $(libnm_tests_ldadd)
 libnm_tests_test_secret_agent_LDADD = $(libnm_tests_ldadd)
 
+$(libnm_tests_test_nm_client_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(libnm_tests_test_remote_settings_client_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(libnm_tests_test_secret_agent_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
 ###############################################################################
 
 # just test, that we can build "nm-vpn-plugin-utils.c"
@@ -1221,6 +1235,7 @@ src_libsystemd_nm_la_SOURCES = \
 
 src_libsystemd_nm_la_CPPFLAGS = $(src_libsystemd_nm_la_cppflags)
 src_libsystemd_nm_la_LIBADD = $(src_libsystemd_nm_la_libadd)
+$(src_libsystemd_nm_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 ###############################################################################
 
@@ -1296,6 +1311,8 @@ src_libNetworkManagerBase_la_LIBADD = \
 	$(SYSTEMD_JOURNAL_LIBS) \
 	$(LIBUDEV_LIBS) \
 	$(NULL)
+
+$(src_libNetworkManagerBase_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 ###############################################################################
 
@@ -1484,6 +1501,8 @@ src_libNetworkManager_la_LIBADD = \
 	$(LIBPSL_LIBS) \
 	$(LIBCURL_LIBS)
 
+$(src_libNetworkManager_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
 ###############################################################################
 
 check_ltlibraries += src/libNetworkManagerTest.la
@@ -1515,6 +1534,8 @@ src_libNetworkManagerTest_la_LIBADD = \
 	$(LIBUDEV_LIBS) \
 	$(LIBNL_LIBS)
 
+$(src_libNetworkManagerTest_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
 ###############################################################################
 
 src/NetworkManager.ver: src/libNetworkManager.la $(core_plugins)
@@ -1537,6 +1558,8 @@ src_NetworkManager_LDFLAGS = \
 	-rdynamic \
 	-Wl,--version-script="src/NetworkManager.ver"
 
+$(src_NetworkManager_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
 ###############################################################################
 
 src_nm_iface_helper_CPPFLAGS = $(src_cppflags)
@@ -1555,6 +1578,8 @@ src_nm_iface_helper_LDADD = \
 
 src_nm_iface_helper_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
+
+$(src_nm_iface_helper_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 ###############################################################################
 
@@ -1608,6 +1633,9 @@ src_dhcp_tests_test_dhcp_utils_CPPFLAGS = $(src_dhcp_tests_cppflags)
 src_dhcp_tests_test_dhcp_dhclient_LDADD = $(src_dhcp_tests_ldadd)
 src_dhcp_tests_test_dhcp_utils_LDADD = $(src_dhcp_tests_ldadd)
 
+$(src_dhcp_tests_test_dhcp_dhclient_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_dhcp_tests_test_dhcp_utils_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
 EXTRA_DIST += \
 	src/dhcp/tests/test-dhclient-duid.leases \
 	src/dhcp/tests/test-dhclient-commented-duid.leases \
@@ -1648,6 +1676,8 @@ src_ppp_nm_pppd_plugin_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(DL_LIBS)
 
+$(src_ppp_nm_pppd_plugin_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
 src_ppp_libnm_ppp_plugin_la_SOURCES = \
 	src/ppp/nm-pppd-plugin.h \
 	src/ppp/nm-ppp-manager.c \
@@ -1678,6 +1708,8 @@ src_ppp_libnm_ppp_plugin_la_LIBADD = \
 	introspection/libnmdbus.la \
 	$(GLIB_LIBS)
 
+$(src_ppp_libnm_ppp_plugin_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
 endif
 
 ###############################################################################
@@ -1697,6 +1729,8 @@ src_settings_plugins_keyfile_tests_test_keyfile_LDFLAGS = \
 
 src_settings_plugins_keyfile_tests_test_keyfile_LDADD = \
 	src/libNetworkManagerTest.la
+
+$(src_settings_plugins_keyfile_tests_test_keyfile_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
 	src/settings/plugins/keyfile/tests/keyfiles/Test_Wired_Connection \
@@ -1802,6 +1836,8 @@ src_settings_plugins_ibft_tests_test_ibft_LDFLAGS = \
 src_settings_plugins_ibft_tests_test_ibft_LDADD = \
 	src/settings/plugins/ibft/libnms-ibft-core.la \
 	src/libNetworkManagerTest.la
+
+$(src_settings_plugins_ibft_tests_test_ibft_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
 	src/settings/plugins/ibft/tests/iscsiadm-test-dhcp \
@@ -2402,6 +2438,8 @@ src_devices_wwan_libnm_wwan_la_LIBADD = \
 	$(LIBSYSTEMD_LIBS) \
 	$(MM_GLIB_LIBS)
 
+$(src_devices_wwan_libnm_wwan_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
 EXTRA_src_devices_wwan_libnm_wwan_la_DEPENDENCIES = \
 	src/devices/wwan/libnm-wwan.ver
 
@@ -2565,6 +2603,8 @@ src_devices_wifi_tests_test_general_CPPFLAGS = \
 
 src_devices_wifi_tests_test_general_LDADD = src/libNetworkManagerTest.la
 
+$(src_devices_wifi_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
 endif
 
 ###############################################################################
@@ -2623,6 +2663,8 @@ src_dnsmasq_tests_test_dnsmasq_utils_CPPFLAGS = \
 
 src_dnsmasq_tests_test_dnsmasq_utils_LDADD = \
 	src/libNetworkManagerTest.la
+
+$(src_dnsmasq_tests_test_dnsmasq_utils_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 ###############################################################################
 # src/platform/tests
@@ -2704,6 +2746,18 @@ src_platform_tests_test_general_CPPFLAGS = $(src_tests_cppflags)
 src_platform_tests_test_general_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_general_LDADD = src/libNetworkManagerTest.la
 
+$(src_platform_tests_monitor_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_platform_tests_test_link_fake_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_platform_tests_test_link_linux_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_platform_tests_test_address_fake_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_platform_tests_test_address_linux_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_platform_tests_test_route_fake_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_platform_tests_test_route_linux_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_platform_tests_test_cleanup_fake_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_platform_tests_test_cleanup_linux_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_platform_tests_test_nmp_object_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_platform_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
 ###############################################################################
 # src/devices/tests
 ###############################################################################
@@ -2724,6 +2778,9 @@ src_devices_tests_test_arping_CPPFLAGS = $(src_tests_cppflags)
 src_devices_tests_test_arping_LDFLAGS = $(src_devices_tests_ldflags)
 src_devices_tests_test_arping_LDADD = \
 	src/libNetworkManagerTest.la
+
+$(src_devices_tests_test_lldp_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_devices_tests_test_arping_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 ###############################################################################
 # src/ndisc/tests
@@ -2747,6 +2804,9 @@ src_ndisc_tests_test_ndisc_fake_CPPFLAGS = $(src_tests_cppflags)
 src_ndisc_tests_test_ndisc_fake_LDFLAGS = $(src_ndisc_tests_flags)
 src_ndisc_tests_test_ndisc_fake_LDADD = $(src_ndisc_tests_ldadd)
 
+$(src_ndisc_tests_test_ndisc_linux_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_ndisc_tests_test_ndisc_fake_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
 ###############################################################################
 # src/supplicant/tests
 ###############################################################################
@@ -2759,6 +2819,8 @@ src_supplicant_tests_test_supplicant_config_CPPFLAGS = \
 
 src_supplicant_tests_test_supplicant_config_LDADD = \
 	src/libNetworkManagerTest.la
+
+$(src_supplicant_tests_test_supplicant_config_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
 	src/supplicant/tests/certs/test-ca-cert.pem \
@@ -2782,6 +2844,8 @@ src_tests_config_test_config_CPPFLAGS = \
 
 src_tests_config_test_config_LDADD = \
 	src/libNetworkManagerTest.la
+
+$(src_tests_config_test_config_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
 	src/tests/config/NetworkManager.conf \
@@ -2848,6 +2912,14 @@ src_tests_test_utils_CPPFLAGS = $(src_tests_cppflags)
 src_tests_test_utils_LDFLAGS = $(src_tests_ldflags)
 src_tests_test_utils_LDADD = $(src_tests_ldadd)
 
+$(src_tests_test_ip4_config_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_tests_test_ip6_config_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_tests_test_dcb_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_tests_test_resolvconf_capture_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_tests_test_general_with_expect_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_tests_test_wired_defname_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_tests_test_utils_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 src_tests_test_route_manager_ldflags = \
 	$(CODE_COVERAGE_LDFLAGS)
@@ -2868,11 +2940,15 @@ src_tests_test_route_manager_linux_CPPFLAGS = $(src_tests_cppflags_linux)
 src_tests_test_route_manager_linux_LDFLAGS = $(src_tests_test_route_manager_ldflags)
 src_tests_test_route_manager_linux_LDADD = $(src_tests_test_route_manager_ldadd)
 
+$(src_tests_test_route_manager_fake_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_tests_test_route_manager_linux_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 src_tests_test_systemd_CPPFLAGS = $(src_libsystemd_nm_la_cppflags)
 src_tests_test_systemd_LDADD = \
 	src/libsystemd-nm.la \
 	$(src_libsystemd_nm_la_libadd)
+
+$(src_tests_test_systemd_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
 	src/tests/test-secret-agent.py
@@ -2995,6 +3071,8 @@ dispatcher_tests_test_dispatcher_envp_LDADD = \
 	dispatcher/libnm-dispatcher-core.la \
 	$(GLIB_LIBS)
 
+$(dispatcher_tests_test_dispatcher_envp_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
 EXTRA_DIST += \
 	dispatcher/tests/dispatcher-connectivity-full \
 	dispatcher/tests/dispatcher-connectivity-unknown \
@@ -3027,6 +3105,8 @@ clients_nm_online_LDFLAGS = \
 clients_nm_online_LDADD = \
 	libnm/libnm.la \
 	$(GLIB_LIBS)
+
+$(clients_nm_online_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 ###############################################################################
 # clients/cli
@@ -3307,6 +3387,8 @@ clients_tui_nmtui_LDADD = \
 	$(GLIB_LIBS) \
 	$(NEWT_LIBS) \
 	$(NULL)
+
+$(clients_tui_nmtui_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 nmtui_links = nmtui-edit nmtui-connect nmtui-hostname
 
@@ -3680,6 +3762,14 @@ libnm_util_tests_test_libnm_linking_LDADD = \
 	libnm/libnm.la \
 	$(libnm_util_tests_ldadd)
 
+$(libnm_util_tests_test_settings_defaults_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(libnm_util_tests_test_crypto_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(libnm_util_tests_test_secrets_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(libnm_util_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(libnm_util_tests_test_setting_8021x_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(libnm_util_tests_test_setting_dcb_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(libnm_util_tests_test_libnm_linking_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
 ###############################################################################
 # libnm-glib
 ###############################################################################
@@ -3839,7 +3929,7 @@ libnm_glib_libnm_glib_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS) \
 	$(LIBUDEV_LIBS)
-
+$(libnm_glib_libnm_glib_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 GLIB_GENERATED += \
 	$(libnm_glib_lib_h_pub_mkenums) \
@@ -3856,7 +3946,7 @@ libnm_glib_libnm_glib_test_LDADD = \
 	libnm-util/libnm-util.la \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS)
-
+$(libnm_glib_libnm_glib_test_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 lib_LTLIBRARIES += libnm-glib/libnm-glib-vpn.la
 
@@ -3878,6 +3968,7 @@ libnm_glib_libnm_glib_vpn_la_LIBADD = \
 libnm_glib_libnm_glib_vpn_la_LDFLAGS = \
 	-Wl,--version-script=$(srcdir)/libnm-glib/libnm-glib-vpn.ver \
 	-version-info "3:0:2"
+$(libnm_glib_libnm_glib_vpn_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 
 GLIB_GENERATED += \
@@ -3984,6 +4075,9 @@ libnm_glib_tests_test_nm_client_LDADD = \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS)
 
+$(libnm_glib_tests_test_nm_client_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
+
 libnm_glib_tests_test_remote_settings_client_CPPFLAGS = $(libnm_glib_tests_cppflags)
 
 libnm_glib_tests_test_remote_settings_client_SOURCES = \
@@ -3996,6 +4090,8 @@ libnm_glib_tests_test_remote_settings_client_LDADD = \
 	libnm-glib/libnm-glib.la \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS)
+
+$(libnm_glib_tests_test_remote_settings_client_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 endif
 
