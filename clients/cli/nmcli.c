@@ -68,18 +68,17 @@ struct termios termios_orig;
 NM_CACHED_QUARK_FCN ("nmcli-error-quark", nmcli_error_quark)
 
 static void
-complete_field_new (GHashTable *h, const char *setting, NMMetaSettingType setting_type)
+complete_field_setting (GHashTable *h, NMMetaSettingType setting_type)
 {
 	const NMMetaSettingInfoEditor *setting_info = &nm_meta_setting_infos_editor[setting_type];
-	int i;
+	guint i;
 
 	for (i = 0; i < setting_info->properties_num; i++) {
-		const char *n = setting_info->properties[i].property_name;
-
-		if (setting)
-			g_hash_table_add (h, g_strdup_printf ("%s.%s", setting, n));
-		else
-			g_hash_table_add (h, g_strdup (n));
+		if (setting_info->properties[i].is_name)
+			continue;
+		g_hash_table_add (h, g_strdup_printf ("%s.%s",
+		                                      setting_info->general->setting_name,
+		                                      setting_info->properties[i].property_name));
 	}
 }
 
@@ -118,7 +117,7 @@ complete_one (gpointer key, gpointer value, gpointer user_data)
 static void
 complete_fields (const char *prefix)
 {
-
+	guint i;
 	GHashTable *h;
 
 	h = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
@@ -148,40 +147,8 @@ complete_fields (const char *prefix)
 	complete_field (h, NULL, nmc_fields_dev_show_sections);
 	complete_field (h, NULL, nmc_fields_dev_lldp_list);
 
-	/* FIXME: just iterate over the list, but ensure that the setting name
-	 * is identical to setting_info's setting_name. */
-	complete_field_new (h, "connection", NM_META_SETTING_TYPE_CONNECTION);
-	complete_field_new (h, "802-3-ethernet", NM_META_SETTING_TYPE_WIRED);
-	complete_field_new (h, "802-1x", NM_META_SETTING_TYPE_802_1X);
-	complete_field_new (h, "802-11-wireless", NM_META_SETTING_TYPE_WIRELESS);
-	complete_field_new (h, "802-11-wireless-security", NM_META_SETTING_TYPE_WIRELESS_SECURITY);
-	complete_field_new (h, "ipv4", NM_META_SETTING_TYPE_IP4_CONFIG);
-	complete_field_new (h, "ipv6", NM_META_SETTING_TYPE_IP6_CONFIG);
-	complete_field_new (h, "serial", NM_META_SETTING_TYPE_SERIAL);
-	complete_field_new (h, "dummy", NM_META_SETTING_TYPE_DUMMY);
-	complete_field_new (h, "ppp", NM_META_SETTING_TYPE_PPP);
-	complete_field_new (h, "pppoe", NM_META_SETTING_TYPE_PPPOE);
-	complete_field_new (h, "adsl", NM_META_SETTING_TYPE_ADSL);
-	complete_field_new (h, "gsm", NM_META_SETTING_TYPE_GSM);
-	complete_field_new (h, "macsec", NM_META_SETTING_TYPE_MACSEC);
-	complete_field_new (h, "cdma", NM_META_SETTING_TYPE_CDMA);
-	complete_field_new (h, "bluetooth", NM_META_SETTING_TYPE_BLUETOOTH);
-	complete_field_new (h, "802-11-olpc-mesh", NM_META_SETTING_TYPE_OLPC_MESH);
-	complete_field_new (h, "vpn", NM_META_SETTING_TYPE_VPN);
-	complete_field_new (h, "wimax", NM_META_SETTING_TYPE_WIMAX);
-	complete_field_new (h, "infiniband", NM_META_SETTING_TYPE_INFINIBAND);
-	complete_field_new (h, "bond", NM_META_SETTING_TYPE_BOND);
-	complete_field_new (h, "vlan", NM_META_SETTING_TYPE_VLAN);
-	complete_field_new (h, "bridge", NM_META_SETTING_TYPE_BRIDGE);
-	complete_field_new (h, "bridge-port", NM_META_SETTING_TYPE_BRIDGE_PORT);
-	complete_field_new (h, "team", NM_META_SETTING_TYPE_TEAM);
-	complete_field_new (h, "team-port", NM_META_SETTING_TYPE_TEAM_PORT);
-	complete_field_new (h, "dcb", NM_META_SETTING_TYPE_DCB);
-	complete_field_new (h, "tun", NM_META_SETTING_TYPE_TUN);
-	complete_field_new (h, "ip-tunnel", NM_META_SETTING_TYPE_IP_TUNNEL);
-	complete_field_new (h, "macvlan", NM_META_SETTING_TYPE_MACVLAN);
-	complete_field_new (h, "vxlan", NM_META_SETTING_TYPE_VXLAN);
-	complete_field_new (h, "proxy", NM_META_SETTING_TYPE_PROXY);
+	for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++)
+		complete_field_setting (h, i);
 
 	g_hash_table_foreach (h, complete_one, (gpointer) prefix);
 	g_hash_table_destroy (h);

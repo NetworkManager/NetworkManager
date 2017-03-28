@@ -4443,6 +4443,9 @@ static const NMMetaPropertyType _pt_gobject_secret_flags = {
 
 /*****************************************************************************/
 
+/* FIXME: it is wrong to have a property-type "name". The name is a regular
+ * "property" of the setting. Also, this is redundant to the setting_name
+ * in NMMetaSettingInfo. */
 #define PROPERTY_INFO_NAME() \
 	{ \
 		.property_name =                N_ ("name"), \
