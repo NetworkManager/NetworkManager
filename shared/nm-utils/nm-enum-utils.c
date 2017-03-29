@@ -156,12 +156,35 @@ gboolean
 nm_utils_enum_from_str (GType type, const char *str,
                         int *out_value, char **err_token)
 {
+	return _nm_utils_enum_from_str_full (type, str, out_value, err_token, NULL);
+}
+
+static const NMUtilsEnumValueInfo *
+_find_value_info (const NMUtilsEnumValueInfo *value_infos, const char *needle)
+{
+	if (value_infos) {
+		for (; value_infos->nick; value_infos++) {
+			if (nm_streq (needle, value_infos->nick))
+				return value_infos;
+		}
+	}
+	return NULL;
+}
+
+gboolean
+_nm_utils_enum_from_str_full (GType type,
+                              const char *str,
+                              int *out_value,
+                              char **err_token,
+                              const NMUtilsEnumValueInfo *value_infos)
+{
 	GTypeClass *class;
 	gboolean ret = FALSE;
 	int value = 0;
 	gs_free char *str_clone = NULL;
 	char *s;
 	gint64 v64;
+	const NMUtilsEnumValueInfo *nick;
 
 	g_return_val_if_fail (str, FALSE);
 
@@ -192,6 +215,12 @@ nm_utils_enum_from_str (GType type, const char *str,
 				if (enum_value) {
 					value = enum_value->value;
 					ret = TRUE;
+				} else {
+					nick = _find_value_info (value_infos, s);
+					if (nick) {
+						value = nick->value;
+						ret = TRUE;
+					}
 				}
 			}
 		}
@@ -228,11 +257,17 @@ nm_utils_enum_from_str (GType type, const char *str,
 					uvalue |= (unsigned) v64;
 				} else {
 					flags_value = g_flags_get_value_by_nick (G_FLAGS_CLASS (class), s);
-					if (!flags_value) {
-						ret = FALSE;
-						break;
+					if (flags_value)
+						uvalue |= flags_value->value;
+					else {
+						nick = _find_value_info (value_infos, s);
+						if (nick)
+							uvalue = (unsigned) nick->value;
+						else {
+							ret = FALSE;
+							break;
+						}
 					}
-					uvalue |= flags_value->value;
 				}
 			}
 
