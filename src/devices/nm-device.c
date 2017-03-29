@@ -1740,10 +1740,12 @@ update_connectivity_state (NMDevice *self, NMConnectivityState state)
 		priv->connectivity_state = state;
 		_notify (self, PROP_CONNECTIVITY);
 
-		if (!ip4_config_merge_and_apply (self, NULL, TRUE))
-			_LOGW (LOGD_IP4, "Failed to update IPv4 default route metric");
-		if (!ip6_config_merge_and_apply (self, TRUE))
-			_LOGW (LOGD_IP6, "Failed to update IPv6 default route metric");
+		if (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED) {
+			if (!ip4_config_merge_and_apply (self, NULL, TRUE))
+				_LOGW (LOGD_IP4, "Failed to update IPv4 default route metric");
+			if (!ip6_config_merge_and_apply (self, TRUE))
+				_LOGW (LOGD_IP6, "Failed to update IPv6 default route metric");
+		}
 	}
 }
 
