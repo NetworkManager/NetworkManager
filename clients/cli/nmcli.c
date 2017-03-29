@@ -272,13 +272,13 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 				nmc->print_output = NMC_PRINT_PRETTY;
 		} else if (matches (opt, "-mode")) {
 			nmc->mode_specified = TRUE;
+			argc--;
+			argv++;
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return FALSE;
 			}
-			argc--;
-			argv++;
 			if (argc == 1 && nmc->complete)
 				nmc_complete_strings (argv[0], "tabular", "multiline", NULL);
 			if (matches (argv[0], "tabular"))
@@ -291,13 +291,13 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 				return FALSE;
 			}
 		} else if (matches (opt, "-colors")) {
+			argc--;
+			argv++;
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return FALSE;
 			}
-			argc--;
-			argv++;
 			if (argc == 1 && nmc->complete)
 				nmc_complete_strings (argv[0], "yes", "no", "auto", NULL);
 			if (matches (argv[0], "auto"))
@@ -312,13 +312,13 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 				return FALSE;
 			}
 		} else if (matches (opt, "-escape")) {
+			argc--;
+			argv++;
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return FALSE;
 			}
-			argc--;
-			argv++;
 			if (argc == 1 && nmc->complete)
 				nmc_complete_strings (argv[0], "yes", "no", NULL);
 			if (matches (argv[0], "yes"))
@@ -331,24 +331,24 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 				return FALSE;
 			}
 		} else if (matches (opt, "-fields")) {
+			argc--;
+			argv++;
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: fields for '%s' options are missing."), opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return FALSE;
 			}
-			argc--;
-			argv++;
 			if (argc == 1 && nmc->complete)
 				complete_fields (argv[0]);
 			nmc->required_fields = g_strdup (argv[0]);
 		} else if (matches (opt, "-get-values")) {
+			argc--;
+			argv++;
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: fields for '%s' options are missing."), opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return FALSE;
 			}
-			argc--;
-			argv++;
 			if (argc == 1 && nmc->complete)
 				complete_fields (argv[0]);
 			nmc->required_fields = g_strdup (argv[0]);
@@ -362,13 +362,14 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 			/* ignore for backward compatibility */
 		} else if (matches (opt, "-wait")) {
 			unsigned long timeout;
+
+			argc--;
+			argv++;
 			if (!argc) {
 				g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return FALSE;
 			}
-			argc--;
-			argv++;
 			if (!nmc_string_to_uint (argv[0], TRUE, 0, G_MAXINT, &timeout)) {
 				g_string_printf (nmc->return_text, _("Error: '%s' is not a valid timeout for '%s' option."),
 						 argv[0], opt);
