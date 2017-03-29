@@ -4303,21 +4303,23 @@ _nm_utils_enum_to_str_full (GType type,
 	} else if (G_IS_FLAGS_CLASS (class)) {
 		GFlagsValue *flags_value;
 		GString *str = g_string_new ("");
+		unsigned uvalue = (unsigned) value;
 
 		flags_separator = flags_separator ?: " ";
 
-		while (value) {
-			flags_value = g_flags_get_first_value (G_FLAGS_CLASS (class), value);
+		do {
+			flags_value = g_flags_get_first_value (G_FLAGS_CLASS (class), uvalue);
 			if (str->len)
 				g_string_append (str, flags_separator);
 			if (   !flags_value
 			    || !_enum_is_valid_flags_nick (flags_value->value_nick)) {
-				g_string_append_printf (str, "0x%x", (unsigned) value);
+				if (uvalue)
+					g_string_append_printf (str, "0x%x", uvalue);
 				break;
 			}
 			g_string_append (str, flags_value->value_nick);
-			value &= ~flags_value->value;
-		}
+			uvalue &= ~flags_value->value;
+		} while (uvalue);
 		ret = g_string_free (str, FALSE);
 	} else
 		g_return_val_if_reached (NULL);
@@ -4333,8 +4335,9 @@ _nm_utils_enum_to_str_full (GType type,
  *
  * Converts an enum value to its string representation. If the enum is a
  * %G_TYPE_FLAGS the function returns a comma-separated list of matching values.
- * If the enum is a %G_TYPE_ENUM and the given value is not valid the
- * function returns %NULL.
+ * If the value has no corresponding string representation, it is converted
+ * to a number. For enums it is converted to a decimal number, for flags
+ * to an (unsigned) hex number.
  *
  * Returns: a newly allocated string or %NULL
  *
@@ -4403,6 +4406,7 @@ nm_utils_enum_from_str (GType type, const char *str,
 		}
 	} else if (G_IS_FLAGS_CLASS (class)) {
 		GFlagsValue *flags_value;
+		unsigned uvalue = 0;
 
 		ret = TRUE;
 		while (s[0]) {
@@ -4423,19 +4427,21 @@ nm_utils_enum_from_str (GType type, const char *str,
 						ret = FALSE;
 						break;
 					}
-					value |= (int) v64;
+					uvalue |= (unsigned) v64;
 				} else {
 					flags_value = g_flags_get_value_by_nick (G_FLAGS_CLASS (class), s);
 					if (!flags_value) {
 						ret = FALSE;
 						break;
 					}
-					value |= flags_value->value;
+					uvalue |= flags_value->value;
 				}
 			}
 
 			s = s_end;
 		}
+
+		value = (int) uvalue;
 	} else
 		g_return_val_if_reached (FALSE);
 
