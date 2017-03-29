@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
+#include "nm-utils/nm-enum-utils.h"
 #include "nm-manager.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wired.h"

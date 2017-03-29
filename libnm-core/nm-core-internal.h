@@ -204,8 +204,6 @@ gboolean _nm_utils_check_module_file (const char *name,
                                       gpointer user_data,
                                       GError **error);
 
-char *_nm_utils_enum_to_str_full (GType type, int value, const char *sep);
-
 #define NM_UTILS_UUID_TYPE_LEGACY            0
 #define NM_UTILS_UUID_TYPE_VARIANT3          1
 
