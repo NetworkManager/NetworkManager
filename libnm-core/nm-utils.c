@@ -4261,11 +4261,19 @@ _is_hex_string (const char *str)
 }
 
 static gboolean
+_is_dec_string (const char *str)
+{
+	return    str[0]
+	       && NM_STRCHAR_ALL (&str[0], ch, g_ascii_isdigit (ch));
+}
+
+static gboolean
 _enum_is_valid_enum_nick (const char *str)
 {
 	return    str[0]
 	       && !NM_STRCHAR_ANY (str, ch, g_ascii_isspace (ch))
-	       && !NM_STRCHAR_ALL (str, ch, g_ascii_isdigit (ch));
+	       && !_is_dec_string (str)
+	       && !_is_hex_string (str);
 }
 
 static gboolean
@@ -4273,6 +4281,7 @@ _enum_is_valid_flags_nick (const char *str)
 {
 	return    str[0]
 	       && !NM_STRCHAR_ANY (str, ch, IS_FLAGS_SEPARATOR (ch))
+	       && !_is_dec_string (str)
 	       && !_is_hex_string (str);
 }
 
@@ -4390,8 +4399,14 @@ nm_utils_enum_from_str (GType type, const char *str,
 		GEnumValue *enum_value;
 
 		if (s[0]) {
-			if (NM_STRCHAR_ALL (s, ch, g_ascii_isdigit (ch))) {
-				v64 = _nm_utils_ascii_str_to_int64 (s, 10, 0, G_MAXINT, -1);
+			if (_is_hex_string (s)) {
+				v64 = _nm_utils_ascii_str_to_int64 (s, 16, 0, G_MAXUINT, -1);
+				if (v64 != -1) {
+					value = (int) v64;
+					ret = TRUE;
+				}
+			} else if (_is_dec_string (s)) {
+				v64 = _nm_utils_ascii_str_to_int64 (s, 10, 0, G_MAXUINT, -1);
 				if (v64 != -1) {
 					value = (int) v64;
 					ret = TRUE;
@@ -4423,6 +4438,13 @@ nm_utils_enum_from_str (GType type, const char *str,
 			if (s[0]) {
 				if (_is_hex_string (s)) {
 					v64 = _nm_utils_ascii_str_to_int64 (&s[2], 16, 0, G_MAXUINT, -1);
+					if (v64 == -1) {
+						ret = FALSE;
+						break;
+					}
+					uvalue |= (unsigned) v64;
+				} else if (_is_dec_string (s)) {
+					v64 = _nm_utils_ascii_str_to_int64 (s, 10, 0, G_MAXUINT, -1);
 					if (v64 == -1) {
 						ret = FALSE;
 						break;
