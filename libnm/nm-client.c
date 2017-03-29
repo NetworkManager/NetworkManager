@@ -2114,7 +2114,7 @@ obj_nm_for_gdbus_object (NMClient *self, GDBusObject *object, GDBusObjectManager
 	                       NM_OBJECT_DBUS_OBJECT, object,
 	                       NM_OBJECT_DBUS_OBJECT_MANAGER, object_manager,
 	                       NULL);
-	if (NM_IS_DEVICE (object)) {
+	if (NM_IS_DEVICE (obj_nm)) {
 		priv = NM_CLIENT_GET_PRIVATE (self);
 		if (!priv->udev)
 			priv->udev = udev_new ();
