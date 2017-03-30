@@ -62,10 +62,12 @@ gint _nm_utils_ascii_str_to_bool (const char *str,
  *   error reason. Depending on the usage, this might indicate a bug because
  *   usually the target object should stay alive as long as there are pending
  *   operations.
+ * @NM_UTILS_ERROR_INVALID_ARGUMENT: invalid argument.
  */
 typedef enum {
 	NM_UTILS_ERROR_UNKNOWN = 0,                 /*< nick=Unknown >*/
 	NM_UTILS_ERROR_CANCELLED_DISPOSING,         /*< nick=CancelledDisposing >*/
+	NM_UTILS_ERROR_INVALID_ARGUMENT,            /*< nick=InvalidArgument >*/
 } NMUtilsError;
 
 #define NM_UTILS_ERROR (nm_utils_error_quark ())

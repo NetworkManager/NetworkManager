@@ -104,17 +104,26 @@ typedef enum {
 #define NMC_OF_FLAG_MAIN_HEADER_ADD    0x00000004   /* Print main header in addition to values/field names */
 #define NMC_OF_FLAG_MAIN_HEADER_ONLY   0x00000008   /* Print main header only */
 
+struct _NMMetaSettingInfoEditor;
+
 typedef struct _NmcOutputField {
 	const char *name;               /* Field's name */
-	const char *name_l10n;          /* Field's name for translation */
 	int width;                      /* Width in screen columns */
-	struct _NmcOutputField *group;  /* Points to an array with available section field names if this is a section (group) field */
+	const struct _NmcOutputField *group_list; /* Points to an array with available section field names if this is a section (group) field */
 	void *value;                    /* Value of current field - char* or char** (NULL-terminated array) */
 	gboolean value_is_array;        /* Whether value is char** instead of char* */
 	gboolean free_value;            /* Whether to free the value */
 	guint32 flags;                  /* Flags - whether and how to print values/field names/headers */
 	NmcTermColor color;             /* Use this color to print value */
 	NmcTermFormat color_fmt;        /* Use this terminal format to print value */
+
+	/* in a very particular case NmcOutputField is used in combination with
+	 * the @group_list above. That list will go away (and the entire NmcOutputField
+	 * should separate formatting-options, setting-metadata and output.
+	 *
+	 * For now, hack around that by alternatively providing a @setting_info instead
+	 * of @group_list. */
+	const struct _NMMetaSettingInfoEditor *setting_info;
 } NmcOutputField;
 
 typedef struct {
@@ -128,6 +137,19 @@ typedef enum {
 	NMC_USE_COLOR_YES,
 	NMC_USE_COLOR_NO,
 } NmcColorOption;
+
+typedef struct _NmcConfig {
+	NMCPrintOutput print_output;                      /* Output mode */
+	NmcColorOption use_colors;                        /* Whether to use colors for output: option '--color' */
+	gboolean multiline_output;                        /* Multiline output instead of default tabular */
+	gboolean escape_values;                           /* Whether to escape ':' and '\' in terse tabular mode */
+	gboolean in_editor;                               /* Whether running the editor - nmcli con edit' */
+} NmcConfig;
+
+typedef struct _NmcOutputData {
+	GPtrArray *output_data;                           /* GPtrArray of arrays of NmcOutputField structs - accumulates data for output */
+	NmcPrintFields print_fields;                      /* Structure with field indices to print */
+} NmcOutputData;
 
 /* NmCli - main structure */
 typedef struct _NmCli {
@@ -144,18 +166,15 @@ typedef struct _NmCli {
 
 	int should_wait;                                  /* Semaphore indicating whether nmcli should not end or not yet */
 	gboolean nowait_flag;                             /* '--nowait' option; used for passing to callbacks */
-	NMCPrintOutput print_output;                      /* Output mode */
-	gboolean multiline_output;                        /* Multiline output instead of default tabular */
 	gboolean mode_specified;                          /* Whether tabular/multiline mode was specified via '--mode' option */
-	NmcColorOption use_colors;                        /* Whether to use colors for output: option '--color' */
-	gboolean escape_values;                           /* Whether to escape ':' and '\' in terse tabular mode */
+	union {
+		const NmcConfig nmc_config;
+		NmcConfig nmc_config_mutable;
+	};
 	char *required_fields;                            /* Required fields in output: '--fields' option */
-	GPtrArray *output_data;                           /* GPtrArray of arrays of NmcOutputField structs - accumulates data for output */
-	NmcPrintFields print_fields;                      /* Structure with field indices to print */
 	gboolean ask;                                     /* Ask for missing parameters: option '--ask' */
 	gboolean complete;                                /* Autocomplete the command line */
 	gboolean show_secrets;                            /* Whether to display secrets (both input and output): option '--show-secrets' */
-	gboolean in_editor;                               /* Whether running the editor - nmcli con edit' */
 	gboolean editor_status_line;                      /* Whether to display status line in connection editor */
 	gboolean editor_save_confirmation;                /* Whether to ask for confirmation on saving connections with 'autoconnect=yes' */
 	gboolean editor_show_secrets;                     /* Whether to display secrets in the editor' */
@@ -172,5 +191,12 @@ gboolean nmc_seen_sigint (void);
 void     nmc_clear_sigint (void);
 void     nmc_set_sigquit_internal (void);
 void     nmc_exit (void);
+
+void nmc_empty_output_fields (NmcOutputData *output_data);
+
+#define NMC_OUTPUT_DATA_DEFINE_SCOPED(out) \
+	nm_auto (nmc_empty_output_fields) NmcOutputData out = { \
+		.output_data = g_ptr_array_new_full (20, g_free), \
+	}
 
 #endif /* NMC_NMCLI_H */

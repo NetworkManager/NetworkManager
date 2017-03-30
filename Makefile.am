@@ -414,9 +414,10 @@ libnm_core_lib_h_pub_real = \
 libnm_core_lib_h_pub_mkenums = \
 	libnm-core/nm-core-enum-types.h
 libnm_core_lib_h_priv = \
+	shared/nm-utils/nm-enum-utils.h \
 	shared/nm-utils/nm-shared-utils.h \
 	shared/nm-utils/nm-udev-utils.h \
-	shared/nm-setting-metadata.h \
+	shared/nm-meta-setting.h \
 	libnm-core/crypto.h \
 	libnm-core/nm-connection-private.h \
 	libnm-core/nm-core-internal.h \
@@ -427,9 +428,10 @@ libnm_core_lib_h_priv = \
 	libnm-core/nm-setting-private.h \
 	libnm-core/nm-utils-private.h
 libnm_core_lib_c_real = \
+	shared/nm-utils/nm-enum-utils.c \
 	shared/nm-utils/nm-shared-utils.c \
 	shared/nm-utils/nm-udev-utils.c \
-	shared/nm-setting-metadata.c \
+	shared/nm-meta-setting.c \
 	libnm-core/crypto.c \
 	libnm-core/nm-connection.c \
 	libnm-core/nm-dbus-utils.c \
@@ -3117,6 +3119,19 @@ if BUILD_NMCLI
 bin_PROGRAMS += clients/cli/nmcli
 
 clients_cli_nmcli_SOURCES = \
+	\
+	shared/nm-utils/nm-enum-utils.c \
+	shared/nm-utils/nm-enum-utils.h \
+	shared/nm-utils/nm-shared-utils.c \
+	shared/nm-utils/nm-shared-utils.h \
+	\
+	shared/nm-meta-setting.c \
+	shared/nm-meta-setting.h \
+	\
+	clients/common/nm-client-utils.c \
+	clients/common/nm-client-utils.h \
+	clients/common/nm-meta-setting-desc.c \
+	clients/common/nm-meta-setting-desc.h \
 	\
 	clients/cli/agent.c \
 	clients/cli/agent.h \

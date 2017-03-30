@@ -32,6 +32,8 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+#include "nm-client-utils.h"
+
 #include "polkit-agent.h"
 #include "nmcli.h"
 #include "utils.h"
@@ -66,7 +68,22 @@ struct termios termios_orig;
 NM_CACHED_QUARK_FCN ("nmcli-error-quark", nmcli_error_quark)
 
 static void
-complete_field (GHashTable *h, const char *setting, NmcOutputField field[])
+complete_field_setting (GHashTable *h, NMMetaSettingType setting_type)
+{
+	const NMMetaSettingInfoEditor *setting_info = &nm_meta_setting_infos_editor[setting_type];
+	guint i;
+
+	for (i = 0; i < setting_info->properties_num; i++) {
+		if (setting_info->properties[i].is_name)
+			continue;
+		g_hash_table_add (h, g_strdup_printf ("%s.%s",
+		                                      setting_info->general->setting_name,
+		                                      setting_info->properties[i].property_name));
+	}
+}
+
+static void
+complete_field (GHashTable *h, const char *setting, const NmcOutputField *field)
 {
 	int i;
 
@@ -100,7 +117,7 @@ complete_one (gpointer key, gpointer value, gpointer user_data)
 static void
 complete_fields (const char *prefix)
 {
-
+	guint i;
 	GHashTable *h;
 
 	h = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
@@ -130,35 +147,8 @@ complete_fields (const char *prefix)
 	complete_field (h, NULL, nmc_fields_dev_show_sections);
 	complete_field (h, NULL, nmc_fields_dev_lldp_list);
 
-	complete_field (h, "connection", nmc_fields_setting_connection);
-	complete_field (h, "802-3-ethernet", nmc_fields_setting_wired);
-	complete_field (h, "802-1x", nmc_fields_setting_8021X);
-	complete_field (h, "802-11-wireless", nmc_fields_setting_wireless);
-	complete_field (h, "802-11-wireless-security", nmc_fields_setting_wireless_security);
-	complete_field (h, "ipv4", nmc_fields_setting_ip4_config);
-	complete_field (h, "ipv6", nmc_fields_setting_ip6_config);
-	complete_field (h, "serial", nmc_fields_setting_serial);
-	complete_field (h, "ppp", nmc_fields_setting_ppp);
-	complete_field (h, "pppoe", nmc_fields_setting_pppoe);
-	complete_field (h, "adsl", nmc_fields_setting_adsl);
-	complete_field (h, "gsm", nmc_fields_setting_gsm);
-	complete_field (h, "cdma", nmc_fields_setting_cdma);
-	complete_field (h, "bluetooth", nmc_fields_setting_bluetooth);
-	complete_field (h, "802-11-olpc-mesh", nmc_fields_setting_olpc_mesh);
-	complete_field (h, "vpn", nmc_fields_setting_vpn);
-	complete_field (h, "wimax", nmc_fields_setting_wimax);
-	complete_field (h, "infiniband", nmc_fields_setting_infiniband);
-	complete_field (h, "bond", nmc_fields_setting_bond);
-	complete_field (h, "vlan", nmc_fields_setting_vlan);
-	complete_field (h, "bridge", nmc_fields_setting_bridge);
-	complete_field (h, "bridge-port", nmc_fields_setting_bridge_port);
-	complete_field (h, "team", nmc_fields_setting_team);
-	complete_field (h, "team-port", nmc_fields_setting_team_port);
-	complete_field (h, "dcb", nmc_fields_setting_dcb);
-	complete_field (h, "tun", nmc_fields_setting_tun);
-	complete_field (h, "ip-tunnel", nmc_fields_setting_ip_tunnel);
-	complete_field (h, "macvlan", nmc_fields_setting_macvlan);
-	complete_field (h, "vxlan", nmc_fields_setting_vxlan);
+	for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++)
+		complete_field_setting (h, i);
 
 	g_hash_table_foreach (h, complete_one, (gpointer) prefix);
 	g_hash_table_destroy (h);
@@ -245,31 +235,31 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 		}
 
 		if (matches (opt, "-terse")) {
-			if (nmc->print_output == NMC_PRINT_TERSE) {
+			if (nmc->nmc_config.print_output == NMC_PRINT_TERSE) {
 				g_string_printf (nmc->return_text, _("Error: Option '--terse' is specified the second time."));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return FALSE;
 			}
-			else if (nmc->print_output == NMC_PRINT_PRETTY) {
+			else if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY) {
 				g_string_printf (nmc->return_text, _("Error: Option '--terse' is mutually exclusive with '--pretty'."));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return FALSE;
 			}
 			else
-				nmc->print_output = NMC_PRINT_TERSE;
+				nmc->nmc_config_mutable.print_output = NMC_PRINT_TERSE;
 		} else if (matches (opt, "-pretty")) {
-			if (nmc->print_output == NMC_PRINT_PRETTY) {
+			if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY) {
 				g_string_printf (nmc->return_text, _("Error: Option '--pretty' is specified the second time."));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return FALSE;
 			}
-			else if (nmc->print_output == NMC_PRINT_TERSE) {
+			else if (nmc->nmc_config.print_output == NMC_PRINT_TERSE) {
 				g_string_printf (nmc->return_text, _("Error: Option '--pretty' is mutually exclusive with '--terse'."));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return FALSE;
 			}
 			else
-				nmc->print_output = NMC_PRINT_PRETTY;
+				nmc->nmc_config_mutable.print_output = NMC_PRINT_PRETTY;
 		} else if (matches (opt, "-mode")) {
 			nmc->mode_specified = TRUE;
 			argc--;
@@ -282,9 +272,9 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 			if (argc == 1 && nmc->complete)
 				nmc_complete_strings (argv[0], "tabular", "multiline", NULL);
 			if (matches (argv[0], "tabular"))
-				nmc->multiline_output = FALSE;
+				nmc->nmc_config_mutable.multiline_output = FALSE;
 			else if (matches (argv[0], "multiline"))
-				nmc->multiline_output = TRUE;
+				nmc->nmc_config_mutable.multiline_output = TRUE;
 			else {
 				g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[0], opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
@@ -301,11 +291,11 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 			if (argc == 1 && nmc->complete)
 				nmc_complete_strings (argv[0], "yes", "no", "auto", NULL);
 			if (matches (argv[0], "auto"))
-				nmc->use_colors = NMC_USE_COLOR_AUTO;
+				nmc->nmc_config_mutable.use_colors = NMC_USE_COLOR_AUTO;
 			else if (matches (argv[0], "yes"))
-				nmc->use_colors = NMC_USE_COLOR_YES;
+				nmc->nmc_config_mutable.use_colors = NMC_USE_COLOR_YES;
 			else if (matches (argv[0], "no"))
-				nmc->use_colors = NMC_USE_COLOR_NO;
+				nmc->nmc_config_mutable.use_colors = NMC_USE_COLOR_NO;
 			else {
 				g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[0], opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
@@ -322,9 +312,9 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 			if (argc == 1 && nmc->complete)
 				nmc_complete_strings (argv[0], "yes", "no", NULL);
 			if (matches (argv[0], "yes"))
-				nmc->escape_values = TRUE;
+				nmc->nmc_config_mutable.escape_values = TRUE;
 			else if (matches (argv[0], "no"))
-				nmc->escape_values = FALSE;
+				nmc->nmc_config_mutable.escape_values = FALSE;
 			else {
 				g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[0], opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
@@ -352,7 +342,7 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 			if (argc == 1 && nmc->complete)
 				complete_fields (argv[0]);
 			nmc->required_fields = g_strdup (argv[0]);
-			nmc->print_output = NMC_PRINT_TERSE;
+			nmc->nmc_config_mutable.print_output = NMC_PRINT_TERSE;
 			/* We want fixed tabular mode here, but just set the mode specified and rely on the initialization
 			 * in nmc_init: in this way we allow use of "-m multiline" to swap the output mode also if placed
 			 * before the "-g <field>" option (-g may be still more practical and easy to remember than -t -f).
@@ -545,18 +535,16 @@ nmc_init (NmCli *nmc)
 
 	nmc->should_wait = 0;
 	nmc->nowait_flag = TRUE;
-	nmc->print_output = NMC_PRINT_NORMAL;
-	nmc->multiline_output = FALSE;
+	nmc->nmc_config_mutable.print_output = NMC_PRINT_NORMAL;
+	nmc->nmc_config_mutable.multiline_output = FALSE;
 	nmc->mode_specified = FALSE;
-	nmc->escape_values = TRUE;
+	nmc->nmc_config_mutable.escape_values = TRUE;
 	nmc->required_fields = NULL;
-	nmc->output_data = g_ptr_array_new_full (20, g_free);
-	memset (&nmc->print_fields, '\0', sizeof (NmcPrintFields));
 	nmc->ask = FALSE;
 	nmc->complete = FALSE;
 	nmc->show_secrets = FALSE;
-	nmc->use_colors = NMC_USE_COLOR_AUTO;
-	nmc->in_editor = FALSE;
+	nmc->nmc_config_mutable.use_colors = NMC_USE_COLOR_AUTO;
+	nmc->nmc_config_mutable.in_editor = FALSE;
 	nmc->editor_status_line = FALSE;
 	nmc->editor_save_confirmation = TRUE;
 	nmc->editor_show_secrets = FALSE;
@@ -579,8 +567,6 @@ nmc_cleanup (NmCli *nmc)
 		g_hash_table_destroy (nmc->pwds_hash);
 
 	g_free (nmc->required_fields);
-	nmc_empty_output_fields (nmc);
-	g_ptr_array_unref (nmc->output_data);
 
 	nmc_polkit_agent_fini (nmc);
 }

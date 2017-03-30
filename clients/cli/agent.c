@@ -125,7 +125,7 @@ secrets_requested (NMSecretAgentSimple *agent,
 	NmCli *nmc = (NmCli *) user_data;
 	gboolean success = FALSE;
 
-	if (nmc->print_output == NMC_PRINT_PRETTY)
+	if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
 		nmc_terminal_erase_line ();
 
 	success = get_secrets_from_user (request_id, title, msg, secrets);

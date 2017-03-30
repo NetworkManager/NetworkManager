@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
+#include "nm-utils/nm-enum-utils.h"
 #include "nm-manager.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wired.h"
@@ -47,7 +48,7 @@
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
-#include "nm-setting-metadata.h"
+#include "nm-meta-setting.h"
 
 #include "nms-ifcfg-rh-common.h"
 #include "nms-ifcfg-rh-reader.h"

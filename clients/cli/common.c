@@ -30,56 +30,60 @@
 #include <readline/history.h>
 
 #include "nm-vpn-helpers.h"
+#include "nm-client-utils.h"
+
 #include "common.h"
 #include "utils.h"
 
 extern GMainLoop *loop;
 
+#define OUTPUT_FIELD_WITH_NAME(n) { .name = N_ (n), }
+
 /* Available fields for IPv4 group */
 NmcOutputField nmc_fields_ip4_config[] = {
-	{"GROUP",      N_("GROUP")},    /* 0 */
-	{"ADDRESS",    N_("ADDRESS")},  /* 1 */
-	{"GATEWAY",    N_("GATEWAY")},  /* 2 */
-	{"ROUTE",      N_("ROUTE")},    /* 3 */
-	{"DNS",        N_("DNS")},      /* 4 */
-	{"DOMAIN",     N_("DOMAIN")},   /* 5 */
-	{"WINS",       N_("WINS")},     /* 6 */
-	{NULL, NULL}
+	OUTPUT_FIELD_WITH_NAME ("GROUP"),     /* 0 */
+	OUTPUT_FIELD_WITH_NAME ("ADDRESS"),   /* 1 */
+	OUTPUT_FIELD_WITH_NAME ("GATEWAY"),   /* 2 */
+	OUTPUT_FIELD_WITH_NAME ("ROUTE"),     /* 3 */
+	OUTPUT_FIELD_WITH_NAME ("DNS"),       /* 4 */
+	OUTPUT_FIELD_WITH_NAME ("DOMAIN"),    /* 5 */
+	OUTPUT_FIELD_WITH_NAME ("WINS"),      /* 6 */
+	{ 0 }
 };
 #define NMC_FIELDS_IP4_CONFIG_ALL     "GROUP,ADDRESS,GATEWAY,ROUTE,DNS,DOMAIN,WINS"
 
 /* Available fields for DHCPv4 group */
 NmcOutputField nmc_fields_dhcp4_config[] = {
-	{"GROUP",      N_("GROUP")},   /* 0 */
-	{"OPTION",     N_("OPTION")},  /* 1 */
-	{NULL, NULL}
+	OUTPUT_FIELD_WITH_NAME ("GROUP"),    /* 0 */
+	OUTPUT_FIELD_WITH_NAME ("OPTION"),   /* 1 */
+	{ 0 }
 };
 #define NMC_FIELDS_DHCP4_CONFIG_ALL     "GROUP,OPTION"
 
 /* Available fields for IPv6 group */
 NmcOutputField nmc_fields_ip6_config[] = {
-	{"GROUP",      N_("GROUP")},    /* 0 */
-	{"ADDRESS",    N_("ADDRESS")},  /* 1 */
-	{"GATEWAY",    N_("GATEWAY")},  /* 2 */
-	{"ROUTE",      N_("ROUTE")},    /* 3 */
-	{"DNS",        N_("DNS")},      /* 4 */
-	{"DOMAIN",     N_("DOMAIN")},   /* 5 */
-	{NULL, NULL}
+	OUTPUT_FIELD_WITH_NAME ("GROUP"),     /* 0 */
+	OUTPUT_FIELD_WITH_NAME ("ADDRESS"),   /* 1 */
+	OUTPUT_FIELD_WITH_NAME ("GATEWAY"),   /* 2 */
+	OUTPUT_FIELD_WITH_NAME ("ROUTE"),     /* 3 */
+	OUTPUT_FIELD_WITH_NAME ("DNS"),       /* 4 */
+	OUTPUT_FIELD_WITH_NAME ("DOMAIN"),    /* 5 */
+	{ 0 }
 };
 #define NMC_FIELDS_IP6_CONFIG_ALL     "GROUP,ADDRESS,GATEWAY,ROUTE,DNS,DOMAIN"
 
 /* Available fields for DHCPv6 group */
 NmcOutputField nmc_fields_dhcp6_config[] = {
-	{"GROUP",      N_("GROUP")},   /* 0 */
-	{"OPTION",     N_("OPTION")},  /* 1 */
-	{NULL, NULL}
+	OUTPUT_FIELD_WITH_NAME ("GROUP"),    /* 0 */
+	OUTPUT_FIELD_WITH_NAME ("OPTION"),   /* 1 */
+	{ 0 }
 };
 #define NMC_FIELDS_DHCP6_CONFIG_ALL     "GROUP,OPTION"
 
 
 gboolean
 print_ip4_config (NMIPConfig *cfg4,
-                  NmCli *nmc,
+                  const NmcConfig *nmc_config,
                   const char *group_prefix,
                   const char *one_field)
 {
@@ -92,16 +96,17 @@ print_ip4_config (NMIPConfig *cfg4,
 	int i = 0;
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
+	NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
 	if (cfg4 == NULL)
 		return FALSE;
 
 	tmpl = nmc_fields_ip4_config;
 	tmpl_len = sizeof (nmc_fields_ip4_config);
-	nmc->print_fields.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_IP4_CONFIG_ALL,
+	out.print_fields.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_IP4_CONFIG_ALL,
 	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
+	g_ptr_array_add (out.output_data, arr);
 
 	/* addresses */
 	ptr_array = nm_ip_config_get_addresses (cfg4);
@@ -156,19 +161,17 @@ print_ip4_config (NMIPConfig *cfg4,
 	set_val_arr  (arr, 4, dns_arr);
 	set_val_arr  (arr, 5, domain_arr);
 	set_val_arr  (arr, 6, wins_arr);
-	g_ptr_array_add (nmc->output_data, arr);
+	g_ptr_array_add (out.output_data, arr);
 
-	print_data (nmc); /* Print all data */
-
-	/* Remove any previous data */
-	nmc_empty_output_fields (nmc);
+	print_data_prepare_width (out.output_data);
+	print_data (nmc_config, &out);
 
 	return TRUE;
 }
 
 gboolean
 print_ip6_config (NMIPConfig *cfg6,
-                  NmCli *nmc,
+                  const NmcConfig *nmc_config,
                   const char *group_prefix,
                   const char *one_field)
 {
@@ -180,16 +183,17 @@ print_ip6_config (NMIPConfig *cfg6,
 	int i = 0;
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
+	NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
 	if (cfg6 == NULL)
 		return FALSE;
 
 	tmpl = nmc_fields_ip6_config;
 	tmpl_len = sizeof (nmc_fields_ip6_config);
-	nmc->print_fields.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_IP6_CONFIG_ALL,
+	out.print_fields.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_IP6_CONFIG_ALL,
 	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
+	g_ptr_array_add (out.output_data, arr);
 
 	/* addresses */
 	ptr_array = nm_ip_config_get_addresses (cfg6);
@@ -240,19 +244,17 @@ print_ip6_config (NMIPConfig *cfg6,
 	set_val_arr  (arr, 3, route_arr);
 	set_val_arr  (arr, 4, dns_arr);
 	set_val_arr  (arr, 5, domain_arr);
-	g_ptr_array_add (nmc->output_data, arr);
+	g_ptr_array_add (out.output_data, arr);
 
-	print_data (nmc); /* Print all data */
-
-	/* Remove any previous data */
-	nmc_empty_output_fields (nmc);
+	print_data_prepare_width (out.output_data);
+	print_data (nmc_config, &out);
 
 	return TRUE;
 }
 
 gboolean
 print_dhcp4_config (NMDhcpConfig *dhcp4,
-                    NmCli *nmc,
+                    const NmcConfig *nmc_config,
                     const char *group_prefix,
                     const char *one_field)
 {
@@ -269,13 +271,14 @@ print_dhcp4_config (NMDhcpConfig *dhcp4,
 		gpointer key, value;
 		char **options_arr = NULL;
 		int i = 0;
+		NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
 		tmpl = nmc_fields_dhcp4_config;
 		tmpl_len = sizeof (nmc_fields_dhcp4_config);
-		nmc->print_fields.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_DHCP4_CONFIG_ALL,
-		                                                 tmpl, FALSE, NULL, NULL);
+		out.print_fields.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_DHCP4_CONFIG_ALL,
+		                                                tmpl, FALSE, NULL, NULL);
 		arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-		g_ptr_array_add (nmc->output_data, arr);
+		g_ptr_array_add (out.output_data, arr);
 
 		options_arr = g_new (char *, g_hash_table_size (table) + 1);
 		g_hash_table_iter_init (&table_iter, table);
@@ -286,12 +289,10 @@ print_dhcp4_config (NMDhcpConfig *dhcp4,
 		arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 		set_val_strc (arr, 0, group_prefix);
 		set_val_arr  (arr, 1, options_arr);
-		g_ptr_array_add (nmc->output_data, arr);
+		g_ptr_array_add (out.output_data, arr);
 
-		print_data (nmc); /* Print all data */
-
-		/* Remove any previous data */
-		nmc_empty_output_fields (nmc);
+		print_data_prepare_width (out.output_data);
+		print_data (nmc_config, &out);
 
 		return TRUE;
 	}
@@ -300,7 +301,7 @@ print_dhcp4_config (NMDhcpConfig *dhcp4,
 
 gboolean
 print_dhcp6_config (NMDhcpConfig *dhcp6,
-                    NmCli *nmc,
+                    const NmcConfig *nmc_config,
                     const char *group_prefix,
                     const char *one_field)
 {
@@ -317,13 +318,14 @@ print_dhcp6_config (NMDhcpConfig *dhcp6,
 		gpointer key, value;
 		char **options_arr = NULL;
 		int i = 0;
+		NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
 		tmpl = nmc_fields_dhcp6_config;
 		tmpl_len = sizeof (nmc_fields_dhcp6_config);
-		nmc->print_fields.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_DHCP6_CONFIG_ALL,
-		                                                 tmpl, FALSE, NULL, NULL);
+		out.print_fields.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_DHCP6_CONFIG_ALL,
+		                                                tmpl, FALSE, NULL, NULL);
 		arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-		g_ptr_array_add (nmc->output_data, arr);
+		g_ptr_array_add (out.output_data, arr);
 
 		options_arr = g_new (char *, g_hash_table_size (table) + 1);
 		g_hash_table_iter_init (&table_iter, table);
@@ -334,203 +336,14 @@ print_dhcp6_config (NMDhcpConfig *dhcp6,
 		arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 		set_val_strc (arr, 0, group_prefix);
 		set_val_arr  (arr, 1, options_arr);
-		g_ptr_array_add (nmc->output_data, arr);
+		g_ptr_array_add (out.output_data, arr);
 
-		print_data (nmc); /* Print all data */
-
-		/* Remove any previous data */
-		nmc_empty_output_fields (nmc);
+		print_data_prepare_width (out.output_data);
+		print_data (nmc_config, &out);
 
 		return TRUE;
 	}
 	return FALSE;
-}
-
-/*
- * Parse IP address from string to NMIPAddress stucture.
- * ip_str is the IP address in the form address/prefix
- */
-NMIPAddress *
-nmc_parse_and_build_address (int family, const char *ip_str, GError **error)
-{
-	int max_prefix = (family == AF_INET) ? 32 : 128;
-	NMIPAddress *addr = NULL;
-	const char *ip;
-	char *tmp;
-	char *plen;
-	long int prefix;
-	GError *local = NULL;
-
-	g_return_val_if_fail (ip_str != NULL, NULL);
-	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
-
-	tmp = g_strdup (ip_str);
-	plen = strchr (tmp, '/');  /* prefix delimiter */
-	if (plen)
-		*plen++ = '\0';
-
-	ip = tmp;
-
-	prefix = max_prefix;
-	if (plen) {
-		if (!nmc_string_to_int (plen, TRUE, 1, max_prefix, &prefix)) {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("invalid prefix '%s'; <1-%d> allowed"), plen, max_prefix);
-			goto finish;
-		}
-	}
-
-	addr = nm_ip_address_new (family, ip, (guint32) prefix, &local);
-	if (!addr) {
-		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-		             _("invalid IP address: %s"), local->message);
-		g_clear_error (&local);
-	}
-
-finish:
-	g_free (tmp);
-	return addr;
-}
-
-/*
- * nmc_parse_and_build_route:
- * @family: AF_INET or AF_INET6
- * @str: route string to be parsed
- * @error: location to store GError
- *
- * Parse route from string and return an #NMIPRoute
- *
- * Returns: a new #NMIPRoute or %NULL on error
- */
-NMIPRoute *
-nmc_parse_and_build_route (int family,
-                           const char *str,
-                           GError **error)
-{
-	int max_prefix = (family == AF_INET) ? 32 : 128;
-	char *plen = NULL;
-	const char *next_hop = NULL;
-	const char *canon_dest;
-	long int prefix = max_prefix;
-	unsigned long int tmp_ulong;
-	NMIPRoute *route = NULL;
-	gboolean success = FALSE;
-	GError *local = NULL;
-	gint64 metric = -1;
-	guint i, len;
-	gs_strfreev char **routev = NULL;
-	gs_free char *value = NULL;
-	gs_free char *dest = NULL;
-	gs_unref_hashtable GHashTable *attrs = NULL;
-	GHashTable *tmp_attrs;
-
-	g_return_val_if_fail (family == AF_INET || family == AF_INET6, FALSE);
-	g_return_val_if_fail (str, FALSE);
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	value = g_strdup (str);
-	routev = nmc_strsplit_set (g_strstrip (value), " \t", 0);
-	len = g_strv_length (routev);
-	if (len < 1) {
-		g_set_error (error, 1, 0, _("'%s' is not valid (the format is: ip[/prefix] [next-hop] [metric] [attr=val] [attr=val])"),
-		             str);
-		goto finish;
-	}
-
-	dest = g_strdup (routev[0]);
-	plen = strchr (dest, '/');  /* prefix delimiter */
-	if (plen)
-		*plen++ = '\0';
-
-	if (plen) {
-		if (!nmc_string_to_int (plen, TRUE, 1, max_prefix, &prefix)) {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("invalid prefix '%s'; <1-%d> allowed"),
-			             plen, max_prefix);
-			goto finish;
-		}
-	}
-
-	for (i = 1; i < len; i++) {
-		if (nm_utils_ipaddr_valid (family, routev[i])) {
-			if (metric != -1 || attrs) {
-				g_set_error (error, 1, 0, _("the next hop ('%s') must be first"), routev[i]);
-				goto finish;
-			}
-			next_hop = routev[i];
-		} else if (nmc_string_to_uint (routev[i], TRUE, 0, G_MAXUINT32, &tmp_ulong)) {
-			if (attrs) {
-				g_set_error (error, 1, 0, _("the metric ('%s') must be before attributes"), routev[i]);
-				goto finish;
-			}
-			metric = tmp_ulong;
-		} else if (strchr (routev[i], '=')) {
-			GHashTableIter iter;
-			char *iter_key;
-			GVariant *iter_value;
-
-			tmp_attrs = nm_utils_parse_variant_attributes (routev[i], ' ', '=', FALSE,
-			                                               nm_ip_route_get_variant_attribute_spec(),
-			                                               error);
-			if (!tmp_attrs) {
-				g_prefix_error (error, "invalid option '%s': ", routev[i]);
-				goto finish;
-			}
-
-			if (!attrs)
-				attrs = g_hash_table_new (g_str_hash, g_str_equal);
-
-			g_hash_table_iter_init (&iter, tmp_attrs);
-			while (g_hash_table_iter_next (&iter, (gpointer *) &iter_key, (gpointer *) &iter_value)) {
-				if (!nm_ip_route_attribute_validate (iter_key, iter_value, family, NULL, error)) {
-					g_prefix_error (error, "%s: ", iter_key);
-					g_hash_table_unref (tmp_attrs);
-					goto finish;
-				}
-				g_hash_table_insert (attrs, iter_key, iter_value);
-				g_hash_table_iter_steal (&iter);
-			}
-			g_hash_table_unref (tmp_attrs);
-		} else {
-			g_set_error (error, 1, 0, _("unrecognized option '%s'"), routev[i]);
-			goto finish;
-		}
-	}
-
-	route = nm_ip_route_new (family, dest, prefix, next_hop, metric, &local);
-	if (!route) {
-		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-		             _("invalid route: %s"), local->message);
-		g_clear_error (&local);
-		goto finish;
-	}
-
-	/* We don't accept default routes as NetworkManager handles it
-	 * itself. But we have to check this after @route has normalized the
-	 * dest string.
-	 */
-	canon_dest = nm_ip_route_get_dest (route);
-	if (!strcmp (canon_dest, "0.0.0.0") || !strcmp (canon_dest, "::")) {
-		g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-		                     _("default route cannot be added (NetworkManager handles it by itself)"));
-		g_clear_pointer (&route, nm_ip_route_unref);
-		goto finish;
-	}
-
-	if (attrs) {
-		GHashTableIter iter;
-		char *name;
-		GVariant *variant;
-
-		g_hash_table_iter_init (&iter, attrs);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &name, (gpointer *) &variant))
-			nm_ip_route_set_attribute (route, name, variant);
-	}
-
-	success = TRUE;
-
-finish:
-	return route;
 }
 
 const char *
@@ -782,240 +595,6 @@ nmc_device_reason_to_string (NMDeviceStateReason reason)
 	}
 }
 
-
-/* Max priority values from libnm-core/nm-setting-vlan.c */
-#define MAX_SKB_PRIO   G_MAXUINT32
-#define MAX_8021P_PRIO 7  /* Max 802.1p priority */
-
-/*
- * Parse VLAN priority mappings from the following format: 2:1,3:4,7:3
- * and verify if the priority numbers are valid
- *
- * Return: string array with split maps, or NULL on error
- * Caller is responsible for freeing the array.
- */
-char **
-nmc_vlan_parse_priority_maps (const char *priority_map,
-                              NMVlanPriorityMap map_type,
-                              GError **error)
-{
-	char **mapping = NULL, **iter;
-	unsigned long from, to, from_max, to_max;
-
-	g_return_val_if_fail (priority_map != NULL, NULL);
-	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
-
-	if (map_type == NM_VLAN_INGRESS_MAP) {
-		from_max = MAX_8021P_PRIO;
-		to_max = MAX_SKB_PRIO;
-	} else {
-		from_max = MAX_SKB_PRIO;
-		to_max = MAX_8021P_PRIO;
-	}
-
-	mapping = g_strsplit (priority_map, ",", 0);
-	for (iter = mapping; iter && *iter; iter++) {
-		char *left, *right;
-
-		left = g_strstrip (*iter);
-		right = strchr (left, ':');
-		if (!right) {
-			g_set_error (error, 1, 0, _("invalid priority map '%s'"), *iter);
-			g_strfreev (mapping);
-			return NULL;
-		}
-		*right++ = '\0';
-
-		if (!nmc_string_to_uint (left, TRUE, 0, from_max, &from)) {
-			g_set_error (error, 1, 0, _("priority '%s' is not valid (<0-%ld>)"),
-			             left, from_max);
-			g_strfreev (mapping);
-			return NULL;
-		}
-		if (!nmc_string_to_uint (right, TRUE, 0, to_max, &to)) {
-			g_set_error (error, 1, 0, _("priority '%s' is not valid (<0-%ld>)"),
-			             right, to_max);
-			g_strfreev (mapping);
-			return NULL;
-		}
-		*(right-1) = ':'; /* Put back ':' */
-	}
-	return mapping;
-}
-
-const char *
-nmc_bond_validate_mode (const char *mode, GError **error)
-{
-	unsigned long mode_int;
-	static const char *valid_modes[] = { "balance-rr",
-	                                     "active-backup",
-	                                     "balance-xor",
-	                                     "broadcast",
-	                                     "802.3ad",
-	                                     "balance-tlb",
-	                                     "balance-alb",
-	                                     NULL };
-	if (nmc_string_to_uint (mode, TRUE, 0, 6, &mode_int)) {
-		/* Translate bonding mode numbers to mode names:
-		 * https://www.kernel.org/doc/Documentation/networking/bonding.txt
-		 */
-		return valid_modes[mode_int];
-	} else
-		return nmc_string_is_valid (mode, valid_modes, error);
-}
-
-/*
- * nmc_team_check_config:
- * @config: file name with team config, or raw team JSON config data
- * @out_config: raw team JSON config data
- *   The value must be freed with g_free().
- * @error: location to store error, or %NUL
- *
- * Check team config from @config parameter and return the checked
- * config in @out_config.
- *
- * Returns: %TRUE if the config is valid, %FALSE if it is invalid
- */
-gboolean
-nmc_team_check_config (const char *config, char **out_config, GError **error)
-{
-	enum {
-		_TEAM_CONFIG_TYPE_GUESS,
-		_TEAM_CONFIG_TYPE_FILE,
-		_TEAM_CONFIG_TYPE_JSON,
-	} desired_type = _TEAM_CONFIG_TYPE_GUESS;
-	const char *filename = NULL;
-	size_t c_len = 0;
-	gs_free char *config_clone = NULL;
-
-	*out_config = NULL;
-
-	if (!config || !config[0])
-		return TRUE;
-
-	if (g_str_has_prefix (config, "file://")) {
-		config += NM_STRLEN ("file://");
-		desired_type = _TEAM_CONFIG_TYPE_FILE;
-	} else if (g_str_has_prefix (config, "json://")) {
-		config += NM_STRLEN ("json://");
-		desired_type = _TEAM_CONFIG_TYPE_JSON;
-	}
-
-	if (NM_IN_SET (desired_type, _TEAM_CONFIG_TYPE_FILE, _TEAM_CONFIG_TYPE_GUESS)) {
-		gs_free char *contents = NULL;
-
-		if (!g_file_get_contents (config, &contents, &c_len, NULL)) {
-			if (desired_type == _TEAM_CONFIG_TYPE_FILE) {
-				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-				             _("cannot read team config from file '%s'"),
-				             config);
-				return FALSE;
-			}
-		} else {
-			if (c_len != strlen (contents)) {
-				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-				             _("team config file '%s' contains non-valid utf-8"),
-				             config);
-				return FALSE;
-			}
-			filename = config;
-			config = config_clone = g_steal_pointer (&contents);
-		}
-	}
-
-	if (!nm_utils_is_json_object (config, NULL)) {
-		if (filename) {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("'%s' does not contain a valid team configuration"), filename);
-		} else {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("team configuration must be a JSON object"));
-		}
-		return FALSE;
-	}
-
-	*out_config = (config == config_clone)
-	              ? g_steal_pointer (&config_clone)
-	              : g_strdup (config);
-	return TRUE;
-}
-
-/*
- * nmc_proxy_check_script:
- * @script: file name with PAC script, or raw PAC Script data
- * @out_script: raw PAC Script (with removed new-line characters)
- * @error: location to store error, or %NULL
- *
- * Check PAC Script from @script parameter and return the checked/sanitized
- * config in @out_script.
- *
- * Returns: %TRUE if the script is valid, %FALSE if it is invalid
- */
-gboolean
-nmc_proxy_check_script (const char *script, char **out_script, GError **error)
-{
-	enum {
-		_PAC_SCRIPT_TYPE_GUESS,
-		_PAC_SCRIPT_TYPE_FILE,
-		_PAC_SCRIPT_TYPE_JSON,
-	} desired_type = _PAC_SCRIPT_TYPE_GUESS;
-	const char *filename = NULL;
-	size_t c_len = 0;
-	gs_free char *script_clone = NULL;
-
-	*out_script = NULL;
-
-	if (!script || !script[0])
-		return TRUE;
-
-	if (g_str_has_prefix (script, "file://")) {
-		script += NM_STRLEN ("file://");
-		desired_type = _PAC_SCRIPT_TYPE_FILE;
-	} else if (g_str_has_prefix (script, "js://")) {
-		script += NM_STRLEN ("js://");
-		desired_type = _PAC_SCRIPT_TYPE_JSON;
-	}
-
-	if (NM_IN_SET (desired_type, _PAC_SCRIPT_TYPE_FILE, _PAC_SCRIPT_TYPE_GUESS)) {
-		gs_free char *contents = NULL;
-
-		if (!g_file_get_contents (script, &contents, &c_len, NULL)) {
-			if (desired_type == _PAC_SCRIPT_TYPE_FILE) {
-				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-				             _("cannot read pac-script from file '%s'"),
-				             script);
-				return FALSE;
-			}
-		} else {
-			if (c_len != strlen (contents)) {
-				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-				             _("file '%s' contains non-valid utf-8"),
-				             script);
-				return FALSE;
-			}
-			filename = script;
-			script = script_clone = g_steal_pointer (&contents);
-		}
-	}
-
-	if (   !strstr (script, "FindProxyForURL")
-	    || !g_utf8_validate (script, -1, NULL)) {
-		if (filename) {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("'%s' does not contain a valid PAC Script"), filename);
-		} else {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("Not a valid PAC Script"));
-		}
-		return FALSE;
-	}
-
-	*out_script = (script == script_clone)
-	              ? g_steal_pointer (&script_clone)
-	              : g_strdup (script);
-	return TRUE;
-}
-
 /*
  * nmc_find_connection:
  * @connections: array of NMConnections to search in
@@ -1260,7 +839,7 @@ nmc_secrets_requested (NMSecretAgentSimple *agent,
 	gboolean success = FALSE;
 	const GPtrArray *connections;
 
-	if (nmc->print_output == NMC_PRINT_PRETTY)
+	if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
 		nmc_terminal_erase_line ();
 
 	/* Find the connection for the request */
@@ -1274,7 +853,7 @@ nmc_secrets_requested (NMSecretAgentSimple *agent,
 		g_free (path);
 	}
 
-	success = get_secrets_from_user (request_id, title, msg, connection, nmc->in_editor || nmc->ask,
+	success = get_secrets_from_user (request_id, title, msg, connection, nmc->nmc_config.in_editor || nmc->ask,
 	                                 nmc->show_secrets, nmc->pwds_hash, secrets);
 	if (success)
 		nm_secret_agent_simple_response (agent, request_id, secrets);
@@ -1393,7 +972,7 @@ read_again:
 	if (nmc_seen_sigint ()) {
 		/* Ctrl-C */
 		nmc_clear_sigint ();
-		if (   nm_cli.in_editor
+		if (   nm_cli.nmc_config.in_editor
 		    || (rl_string  && *rl_string)) {
 			/* In editor, or the line is not empty */
 			/* Call readline again to get new prompt (repeat) */
@@ -1500,7 +1079,7 @@ nmc_readline_echo (gboolean echo_on, const char *prompt_fmt, ...)
  * See e.g. http://cnswww.cns.cwru.edu/php/chet/readline/readline.html#SEC49
  */
 char *
-nmc_rl_gen_func_basic (const char *text, int state, const char **words)
+nmc_rl_gen_func_basic (const char *text, int state, const char *const*words)
 {
 	static int list_idx, len;
 	const char *name;

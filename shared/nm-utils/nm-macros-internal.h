@@ -56,6 +56,14 @@ _nm_auto_unset_gvalue_impl (GValue *v)
 #define nm_auto_unset_gvalue nm_auto(_nm_auto_unset_gvalue_impl)
 
 static inline void
+_nm_auto_unref_gtypeclass (GTypeClass **v)
+{
+	if (v && *v)
+		g_type_class_unref (*v);
+}
+#define nm_auto_unref_gtypeclass nm_auto(_nm_auto_unref_gtypeclass)
+
+static inline void
 _nm_auto_free_gstring_impl (GString **str)
 {
 	if (*str)
