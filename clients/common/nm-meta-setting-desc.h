@@ -49,6 +49,7 @@ typedef struct _NMMetaSettingInfoEditor     NMMetaSettingInfoEditor;
 typedef struct _NMMetaPropertyInfo    NMMetaPropertyInfo;
 typedef struct _NMMetaPropertyType    NMMetaPropertyType;
 typedef struct _NMMetaPropertyTypData NMMetaPropertyTypData;
+typedef struct _NMMetaEnvironment     NMMetaEnvironment;
 
 struct _NMMetaPropertyType {
 
@@ -61,12 +62,16 @@ struct _NMMetaPropertyType {
 	                  NMSetting *setting,
 	                  NMMetaAccessorGetType get_type,
 	                  gboolean show_secrets);
-	gboolean (*set_fcn) (const NMMetaSettingInfoEditor *setting_info,
+	gboolean (*set_fcn) (const NMMetaEnvironment *environment,
+	                     gpointer environment_user_data,
+	                     const NMMetaSettingInfoEditor *setting_info,
 	                     const NMMetaPropertyInfo *property_info,
 	                     NMSetting *setting,
 	                     const char *value,
 	                     GError **error);
-	gboolean (*remove_fcn) (const NMMetaSettingInfoEditor *setting_info,
+	gboolean (*remove_fcn) (const NMMetaEnvironment *environment,
+	                        gpointer environment_user_data,
+	                        const NMMetaSettingInfoEditor *setting_info,
 	                        const NMMetaPropertyInfo *property_info,
 	                        NMSetting *setting,
 	                        const char *option,
@@ -130,6 +135,29 @@ struct _NMMetaSettingInfoEditor {
 };
 
 extern const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[_NM_META_SETTING_TYPE_NUM];
+
+/*****************************************************************************/
+
+typedef enum {
+	NM_META_ENV_WARN_LEVEL_INFO,
+	NM_META_ENV_WARN_LEVEL_WARN,
+} NMMetaEnvWarnLevel;
+
+/* the settings-meta data is supposed to be independent of an actual client
+ * implementation. Hence, there is a need for hooks to the meta-data.
+ * The meta-data handlers may call back to the enviroment with certain
+ * actions. */
+struct _NMMetaEnvironment {
+
+	void (*warn_fcn) (const NMMetaEnvironment *environment,
+	                  gpointer environment_user_data,
+	                  NMMetaEnvWarnLevel warn_level,
+	                  const char *fmt_l10n, /* the untranslated format string, but it is marked for translation using N_(). */
+	                  va_list ap);
+
+};
+
+/*****************************************************************************/
 
 /* FIXME: don't expose this function on it's own, at least not from this file. */
 const char *nmc_bond_validate_mode (const char *mode, GError **error);

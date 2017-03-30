@@ -516,6 +516,30 @@ nmc_team_check_config (const char *config, char **out_config, GError **error)
 
 /*****************************************************************************/
 
+G_GNUC_PRINTF (4, 5)
+static void
+_env_warn_fcn (const NMMetaEnvironment *environment,
+               gpointer environment_user_data,
+               NMMetaEnvWarnLevel warn_level,
+               const char *fmt_l10n,
+               ...)
+{
+	va_list ap;
+
+	if (!environment || !environment->warn_fcn)
+		return;
+
+	va_start (ap, fmt_l10n);
+	environment->warn_fcn (environment,
+	                       environment_user_data,
+	                       warn_level,
+	                       fmt_l10n,
+	                       ap);
+	va_end (ap);
+}
+
+/*****************************************************************************/
+
 #define ARGS_DESCRIBE_FCN \
 	const NMMetaSettingInfoEditor *setting_info, const NMMetaPropertyInfo *property_info, char **out_to_free
 
@@ -523,10 +547,10 @@ nmc_team_check_config (const char *config, char **out_config, GError **error)
 	const NMMetaSettingInfoEditor *setting_info, const NMMetaPropertyInfo *property_info, NMSetting *setting, NMMetaAccessorGetType get_type, gboolean show_secrets
 
 #define ARGS_SET_FCN \
-	const NMMetaSettingInfoEditor *setting_info, const NMMetaPropertyInfo *property_info, NMSetting *setting, const char *value, GError **error
+	const NMMetaEnvironment *environment, gpointer environment_user_data, const NMMetaSettingInfoEditor *setting_info, const NMMetaPropertyInfo *property_info, NMSetting *setting, const char *value, GError **error
 
 #define ARGS_REMOVE_FCN \
-	const NMMetaSettingInfoEditor *setting_info, const NMMetaPropertyInfo *property_info, NMSetting *setting, const char *value, guint32 idx, GError **error
+	const NMMetaEnvironment *environment, gpointer environment_user_data, const NMMetaSettingInfoEditor *setting_info, const NMMetaPropertyInfo *property_info, NMSetting *setting, const char *value, guint32 idx, GError **error
 
 #define ARGS_VALUES_FCN \
 	const NMMetaSettingInfoEditor *setting_info, const NMMetaPropertyInfo *property_info, char ***out_to_free
@@ -852,7 +876,7 @@ _set_fcn_gobject_mtu (ARGS_SET_FCN)
 {
 	if (nm_streq0 (value, "auto"))
 		value = "0";
-	return _set_fcn_gobject_uint (setting_info, property_info, setting, value, error);
+	return _set_fcn_gobject_uint (environment, environment_user_data, setting_info, property_info, setting, value, error);
 }
 
 static gboolean
@@ -907,7 +931,10 @@ _set_fcn_gobject_secret_flags (ARGS_SET_FCN)
 	/* Validate the flags number */
 	if (flags > ALL_SECRET_FLAGS) {
 		flags = ALL_SECRET_FLAGS;
-		g_print (_("Warning: '%s' sum is higher than all flags => all flags set\n"), value);
+		_env_warn_fcn (environment, environment_user_data,
+		               NM_META_ENV_WARN_LEVEL_WARN,
+		               N_ ("'%s' sum is higher than all flags => all flags set"),
+		               value);
 	}
 
 	g_object_set (setting, property_info->property_name, (guint) flags, NULL);
@@ -2216,9 +2243,12 @@ _set_fcn_connection_secondaries (ARGS_SET_FCN)
 
 		if (nm_utils_is_uuid (*iter)) {
 			con = nmc_find_connection (connections, "uuid", *iter, NULL, FALSE);
-			if (!con)
-				g_print (_("Warning: %s is not an UUID of any existing connection profile\n"), *iter);
-			else {
+			if (!con){
+				_env_warn_fcn (environment, environment_user_data,
+				               NM_META_ENV_WARN_LEVEL_WARN,
+				               N_ ("%s is not an UUID of any existing connection profile"),
+				               *iter);
+			} else {
 				/* Currenly NM only supports VPN connections as secondaries */
 				if (!nm_connection_is_type (con, NM_SETTING_VPN_SETTING_NAME)) {
 					g_set_error (error, 1, 0, _("'%s' is not a VPN connection profile"), *iter);
@@ -2571,13 +2601,17 @@ error:
 }
 
 static void
-dcb_check_feature_enabled (NMSettingDcb *s_dcb, const char *flags_prop)
+dcb_check_feature_enabled (const NMMetaEnvironment *environment, gpointer *environment_user_data, NMSettingDcb *s_dcb, const char *flags_prop)
 {
 	NMSettingDcbFlags flags = NM_SETTING_DCB_FLAG_NONE;
 
 	g_object_get (s_dcb, flags_prop, &flags, NULL);
-	if (!(flags & NM_SETTING_DCB_FLAG_ENABLE))
-		g_print (_("Warning: changes will have no effect until '%s' includes 1 (enabled)\n\n"), flags_prop);
+	if (!(flags & NM_SETTING_DCB_FLAG_ENABLE)) {
+		_env_warn_fcn (environment, environment_user_data,
+		               NM_META_ENV_WARN_LEVEL_WARN,
+		               N_ ("changes will have no effect until '%s' includes 1 (enabled)"),
+		               flags_prop);
+	}
 }
 
 static gboolean
@@ -2594,7 +2628,7 @@ _set_fcn_dcb_priority_flow_control (ARGS_SET_FCN)
 	for (i = 0; i < 8; i++)
 		nm_setting_dcb_set_priority_flow_control (NM_SETTING_DCB (setting), i, !!nums[i]);
 
-	dcb_check_feature_enabled (NM_SETTING_DCB (setting), NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS);
+	dcb_check_feature_enabled (environment, environment_user_data, NM_SETTING_DCB (setting), NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS);
 	return TRUE;
 }
 
@@ -2612,7 +2646,7 @@ _set_fcn_dcb_priority_group_id (ARGS_SET_FCN)
 	for (i = 0; i < 8; i++)
 		nm_setting_dcb_set_priority_group_id (NM_SETTING_DCB (setting), i, nums[i]);
 
-	dcb_check_feature_enabled (NM_SETTING_DCB (setting), NM_SETTING_DCB_PRIORITY_GROUP_FLAGS);
+	dcb_check_feature_enabled (environment, environment_user_data, NM_SETTING_DCB (setting), NM_SETTING_DCB_PRIORITY_GROUP_FLAGS);
 	return TRUE;
 }
 
@@ -2637,7 +2671,7 @@ _set_fcn_dcb_priority_group_bandwidth (ARGS_SET_FCN)
 	for (i = 0; i < 8; i++)
 		nm_setting_dcb_set_priority_group_bandwidth (NM_SETTING_DCB (setting), i, nums[i]);
 
-	dcb_check_feature_enabled (NM_SETTING_DCB (setting), NM_SETTING_DCB_PRIORITY_GROUP_FLAGS);
+	dcb_check_feature_enabled (environment, environment_user_data, NM_SETTING_DCB (setting), NM_SETTING_DCB_PRIORITY_GROUP_FLAGS);
 	return TRUE;
 }
 
@@ -2655,7 +2689,7 @@ _set_fcn_dcb_priority_bandwidth (ARGS_SET_FCN)
 	for (i = 0; i < 8; i++)
 		nm_setting_dcb_set_priority_bandwidth (NM_SETTING_DCB (setting), i, nums[i]);
 
-	dcb_check_feature_enabled (NM_SETTING_DCB (setting), NM_SETTING_DCB_PRIORITY_GROUP_FLAGS);
+	dcb_check_feature_enabled (environment, environment_user_data, NM_SETTING_DCB (setting), NM_SETTING_DCB_PRIORITY_GROUP_FLAGS);
 	return TRUE;
 }
 
@@ -2673,7 +2707,7 @@ _set_fcn_dcb_priority_strict (ARGS_SET_FCN)
 	for (i = 0; i < 8; i++)
 		nm_setting_dcb_set_priority_strict_bandwidth (NM_SETTING_DCB (setting), i, !!nums[i]);
 
-	dcb_check_feature_enabled (NM_SETTING_DCB (setting), NM_SETTING_DCB_PRIORITY_GROUP_FLAGS);
+	dcb_check_feature_enabled (environment, environment_user_data, NM_SETTING_DCB (setting), NM_SETTING_DCB_PRIORITY_GROUP_FLAGS);
 	return TRUE;
 }
 
@@ -2691,7 +2725,7 @@ _set_fcn_dcb_priority_traffic_class (ARGS_SET_FCN)
 	for (i = 0; i < 8; i++)
 		nm_setting_dcb_set_priority_traffic_class (NM_SETTING_DCB (setting), i, nums[i]);
 
-	dcb_check_feature_enabled (NM_SETTING_DCB (setting), NM_SETTING_DCB_PRIORITY_GROUP_FLAGS);
+	dcb_check_feature_enabled (environment, environment_user_data, NM_SETTING_DCB (setting), NM_SETTING_DCB_PRIORITY_GROUP_FLAGS);
 	return TRUE;
 }
 
@@ -3831,7 +3865,9 @@ _set_fcn_vlan_egress_priority_map (ARGS_SET_FCN)
 }
 
 static gboolean
-_remove_vlan_xgress_priority_map (NMSetting *setting,
+_remove_vlan_xgress_priority_map (const NMMetaEnvironment *environment,
+                                  gpointer environment_user_data,
+                                  NMSetting *setting,
                                   const NMMetaPropertyInfo *property_info,
                                   const char *value,
                                   guint32 idx,
@@ -3849,9 +3885,12 @@ _remove_vlan_xgress_priority_map (NMSetting *setting,
 		prio_map = nmc_vlan_parse_priority_maps (v, map_type, error);
 		if (!prio_map)
 			return FALSE;
-		if (prio_map[1])
-			g_print (_("Warning: only one mapping at a time is supported; taking the first one (%s)\n"),
-			         prio_map[0]);
+		if (prio_map[1]) {
+			_env_warn_fcn (environment, environment_user_data,
+			               NM_META_ENV_WARN_LEVEL_WARN,
+			               N_ ("only one mapping at a time is supported; taking the first one (%s)"),
+			               prio_map[0]);
+		}
 		ret = nm_setting_vlan_remove_priority_str_by_value (NM_SETTING_VLAN (setting),
 		                                                    map_type,
 		                                                    prio_map[0]);
@@ -3881,7 +3920,9 @@ _remove_vlan_xgress_priority_map (NMSetting *setting,
 static gboolean
 _remove_fcn_vlan_ingress_priority_map (ARGS_REMOVE_FCN)
 {
-	return _remove_vlan_xgress_priority_map (setting,
+	return _remove_vlan_xgress_priority_map (environment,
+	                                         environment_user_data,
+	                                         setting,
 	                                         property_info,
 	                                         value,
 	                                         idx,
@@ -3892,7 +3933,9 @@ _remove_fcn_vlan_ingress_priority_map (ARGS_REMOVE_FCN)
 static gboolean
 _remove_fcn_vlan_egress_priority_map (ARGS_REMOVE_FCN)
 {
-	return _remove_vlan_xgress_priority_map (setting,
+	return _remove_vlan_xgress_priority_map (environment,
+	                                         environment_user_data,
+	                                         setting,
 	                                         property_info,
 	                                         value,
 	                                         idx,
@@ -4398,9 +4441,16 @@ _set_fcn_wireless_wep_key (ARGS_SET_FCN)
 	}
 	prev_idx = nm_setting_wireless_security_get_wep_tx_keyidx (NM_SETTING_WIRELESS_SECURITY (setting));
 	idx = property_info->property_name[strlen (property_info->property_name) - 1] - '0';
-	g_print (_("WEP key is guessed to be of '%s'\n"), wep_key_type_to_string (guessed_type));
-	if (idx != prev_idx)
-		g_print (_("WEP key index set to '%d'\n"), idx);
+	_env_warn_fcn (environment, environment_user_data,
+	               NM_META_ENV_WARN_LEVEL_INFO,
+	               N_ ("WEP key is guessed to be of '%s'"),
+	               wep_key_type_to_string (guessed_type));
+	if (idx != prev_idx) {
+		_env_warn_fcn (environment, environment_user_data,
+		               NM_META_ENV_WARN_LEVEL_INFO,
+		               N_ ("WEP key index set to '%d'"),
+		               idx);
+	}
 
 	g_object_set (setting, property_info->property_name, value, NULL);
 	g_object_set (setting, NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, guessed_type, NULL);
@@ -4415,7 +4465,6 @@ _set_fcn_wireless_security_wep_key_type (ARGS_SET_FCN)
 	unsigned long  type_int;
 	const char *valid_wep_types[] = { "unknown", "key", "passphrase", NULL };
 	const char *type_str = NULL;
-	const char *key0, *key1,* key2, *key3;
 	NMWepKeyType type = NM_WEP_KEY_TYPE_UNKNOWN;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -4433,22 +4482,26 @@ _set_fcn_wireless_security_wep_key_type (ARGS_SET_FCN)
 		type = (NMWepKeyType) type_int;
 
 	/* Check type compatibility with set keys */
-	key0 = nm_setting_wireless_security_get_wep_key (NM_SETTING_WIRELESS_SECURITY (setting), 0);
-	key1 = nm_setting_wireless_security_get_wep_key (NM_SETTING_WIRELESS_SECURITY (setting), 1);
-	key2 = nm_setting_wireless_security_get_wep_key (NM_SETTING_WIRELESS_SECURITY (setting), 2);
-	key3 = nm_setting_wireless_security_get_wep_key (NM_SETTING_WIRELESS_SECURITY (setting), 3);
-	if (key0 && !nm_utils_wep_key_valid (key0, type))
-		g_print (_("Warning: '%s' is not compatible with '%s' type, please change or delete the key.\n"),
-		         NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, wep_key_type_to_string (type));
-	if (key1 && !nm_utils_wep_key_valid (key1, type))
-		g_print (_("Warning: '%s' is not compatible with '%s' type, please change or delete the key.\n"),
-		         NM_SETTING_WIRELESS_SECURITY_WEP_KEY1, wep_key_type_to_string (type));
-	if (key2 && !nm_utils_wep_key_valid (key2, type))
-		g_print (_("Warning: '%s' is not compatible with '%s' type, please change or delete the key.\n"),
-		         NM_SETTING_WIRELESS_SECURITY_WEP_KEY2, wep_key_type_to_string (type));
-	if (key3 && !nm_utils_wep_key_valid (key3, type))
-		g_print (_("Warning: '%s' is not compatible with '%s' type, please change or delete the key.\n"),
-		         NM_SETTING_WIRELESS_SECURITY_WEP_KEY3, wep_key_type_to_string (type));
+	{
+		guint i;
+		const char *key;
+		const char *keynames[] = {
+			NM_SETTING_WIRELESS_SECURITY_WEP_KEY0,
+			NM_SETTING_WIRELESS_SECURITY_WEP_KEY1,
+			NM_SETTING_WIRELESS_SECURITY_WEP_KEY2,
+			NM_SETTING_WIRELESS_SECURITY_WEP_KEY3,
+		};
+
+		for (i = 0; i < 4; i++) {
+			key = nm_setting_wireless_security_get_wep_key (NM_SETTING_WIRELESS_SECURITY (setting), i);
+			if (key && !nm_utils_wep_key_valid (key, type)) {
+				_env_warn_fcn (environment, environment_user_data,
+				               NM_META_ENV_WARN_LEVEL_WARN,
+				               N_ ("'%s' is not compatible with '%s' type, please change or delete the key."),
+				               keynames[i], wep_key_type_to_string (type));
+			}
+		}
+	}
 
 	g_object_set (setting, property_info->property_name, type, NULL);
 	return TRUE;

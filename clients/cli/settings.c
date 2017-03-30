@@ -530,6 +530,36 @@ nmc_setting_custom_init (NMSetting *setting)
 
 /*****************************************************************************/
 
+static void
+_env_warn_fcn_handle (const NMMetaEnvironment *environment,
+                      gpointer environment_user_data,
+                      NMMetaEnvWarnLevel warn_level,
+                      const char *fmt_l10n, /* the untranslated format string, but it is marked for translation using N_(). */
+                      va_list ap)
+{
+	gs_free char *m = NULL;
+
+	NM_PRAGMA_WARNING_DISABLE("-Wformat-nonliteral")
+	m = g_strdup_vprintf (_(fmt_l10n), ap);
+	NM_PRAGMA_WARNING_REENABLE
+
+	switch (warn_level) {
+	case NM_META_ENV_WARN_LEVEL_WARN:
+		g_print (_("Warning: %s\n"), m);
+		return;
+	case NM_META_ENV_WARN_LEVEL_INFO:
+		g_print (_("Info: %s\n"), m);
+		return;
+	}
+	g_print (_("Error: %s\n"), m);
+}
+
+/*****************************************************************************/
+
+static const NMMetaEnvironment meta_environment = {
+	.warn_fcn = _env_warn_fcn_handle,
+};
+
 static char *
 get_property_val (NMSetting *setting, const char *prop, NMMetaAccessorGetType get_type, gboolean show_secrets, GError **error)
 {
@@ -608,7 +638,9 @@ nmc_setting_set_property (NMSetting *setting, const char *prop, const char *valu
 			/* Traditionally, the "name" property was not handled here.
 			 * For the moment, skip it from get_property_val(). */
 		} else if (property_info->property_type->set_fcn) {
-			return property_info->property_type->set_fcn (setting_info,
+			return property_info->property_type->set_fcn (&meta_environment,
+			                                              NULL,
+			                                              setting_info,
 			                                              property_info,
 			                                              setting,
 			                                              value,
@@ -693,7 +725,9 @@ nmc_setting_remove_property_option (NMSetting *setting,
 			/* Traditionally, the "name" property was not handled here.
 			 * For the moment, skip it from get_property_val(). */
 		} else if (property_info->property_type->remove_fcn) {
-			return property_info->property_type->remove_fcn (setting_info,
+			return property_info->property_type->remove_fcn (&meta_environment,
+			                                                 NULL,
+			                                                 setting_info,
 			                                                 property_info,
 			                                                 setting,
 			                                                 option,
