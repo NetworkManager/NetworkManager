@@ -822,35 +822,37 @@ colorize_string (NmcColorOption color_option,
 
 static const char *
 get_value_to_print (NmcColorOption color_option,
-                    NmcOutputField *field,
+                    const NmcOutputField *field,
                     gboolean field_name,
                     const char *not_set_str,
                     char **out_to_free)
 {
 	gboolean is_array = field->value_is_array;
-	char *value;
+	const char *value;
 	const char *out;
-	gboolean free_value;
+	gs_free char *free_value = NULL;
+
+	nm_assert (out_to_free && !*out_to_free);
 
 	if (field_name)
 		value = _(field->name);
-	else
+	else {
 		value = field->value
 		            ? (is_array
-		                  ? g_strjoinv (" | ", (char **) field->value)
-		                  : (*((char *) field->value)
-		                        ? (char *) field->value
-		                        : (char *) not_set_str))
-		            : (char *) not_set_str;
-	free_value = field->value && is_array && !field_name;
+		                  ? (free_value = g_strjoinv (" | ", (char **) field->value))
+		                  : (*((const char *) field->value))
+		                        ? field->value
+		                        : not_set_str)
+		            : not_set_str;
+	}
 
 	/* colorize the value */
 	out = colorize_string (color_option, field->color, field->color_fmt, value, out_to_free);
-	if (*out_to_free) {
-		if (free_value)
-			g_free (value);
-	} else if (free_value)
-		 *out_to_free = value;
+
+	if (out && out == free_value) {
+		nm_assert (!*out_to_free);
+		*out_to_free = g_steal_pointer (&free_value);
+	}
 
 	return out;
 }
