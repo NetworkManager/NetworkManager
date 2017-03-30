@@ -325,6 +325,7 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 	const char *fields_common = print_flds ? print_flds : NMC_FIELDS_NM_STATUS_COMMON;
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
+	NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
 		fields_str = fields_common;
@@ -335,7 +336,7 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 
 	tmpl = nmc_fields_nm_status;
 	tmpl_len = sizeof (nmc_fields_nm_status);
-	nmc->out.print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &error);
+	out.print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &error);
 
 	if (error) {
 		g_string_printf (nmc->return_text, _("Error: only these fields are allowed: %s"), fields_all);
@@ -353,9 +354,9 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 	wwan_hw_enabled = nm_client_wwan_hardware_get_enabled (nmc->client);
 	wwan_enabled = nm_client_wwan_get_enabled (nmc->client);
 
-	nmc->out.print_fields.header_name = pretty_header_name ? (char *) pretty_header_name : _("NetworkManager status");
+	out.print_fields.header_name = pretty_header_name ? (char *) pretty_header_name : _("NetworkManager status");
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->out.output_data, arr);
+	g_ptr_array_add (out.output_data, arr);
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, 0);
 	set_val_strc (arr, 0, _("running"));
@@ -379,10 +380,10 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 	arr[8].color = wwan_hw_enabled ? NMC_TERM_COLOR_GREEN : NMC_TERM_COLOR_RED;
 	arr[9].color = wwan_enabled ? NMC_TERM_COLOR_GREEN : NMC_TERM_COLOR_RED;
 
-	g_ptr_array_add (nmc->out.output_data, arr);
+	g_ptr_array_add (out.output_data, arr);
 
-	print_data_prepare_width (nmc->out.output_data);
-	print_data (&nmc->nmc_config, &nmc->out);
+	print_data_prepare_width (out.output_data);
+	print_data (&nmc->nmc_config, &out);
 
 	return TRUE;
 }
@@ -473,6 +474,7 @@ print_permissions (void *user_data)
 	const char *fields_common = NMC_FIELDS_NM_PERMISSIONS_COMMON;
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
+	NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
 		fields_str = fields_common;
@@ -483,7 +485,7 @@ print_permissions (void *user_data)
 
 	tmpl = nmc_fields_nm_permissions;
 	tmpl_len = sizeof (nmc_fields_nm_permissions);
-	nmc->out.print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &error);
+	out.print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &error);
 
 	if (error) {
 		g_string_printf (nmc->return_text, _("Error: 'general permissions': %s"), error->message);
@@ -492,9 +494,9 @@ print_permissions (void *user_data)
 		return FALSE;
 	}
 
-	nmc->out.print_fields.header_name = _("NetworkManager permissions");
+	out.print_fields.header_name = _("NetworkManager permissions");
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->out.output_data, arr);
+	g_ptr_array_add (out.output_data, arr);
 
 
 	for (perm = NM_CLIENT_PERMISSION_NONE + 1; perm <= NM_CLIENT_PERMISSION_LAST; perm++) {
@@ -503,10 +505,10 @@ print_permissions (void *user_data)
 		arr = nmc_dup_fields_array (tmpl, tmpl_len, 0);
 		set_val_strc (arr, 0, permission_to_string (perm));
 		set_val_strc (arr, 1, permission_result_to_string (perm_result));
-		g_ptr_array_add (nmc->out.output_data, arr);
+		g_ptr_array_add (out.output_data, arr);
 	}
-	print_data_prepare_width (nmc->out.output_data);
-	print_data (&nmc->nmc_config, &nmc->out);
+	print_data_prepare_width (out.output_data);
+	print_data (&nmc->nmc_config, &out);
 
 	quit ();
 	return G_SOURCE_REMOVE;
@@ -583,6 +585,7 @@ show_general_logging (NmCli *nmc)
 	const char *fields_common = NMC_FIELDS_NM_LOGGING_COMMON;
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
+	NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
 		fields_str = fields_common;
@@ -593,7 +596,7 @@ show_general_logging (NmCli *nmc)
 
 	tmpl = nmc_fields_nm_logging;
 	tmpl_len = sizeof (nmc_fields_nm_logging);
-	nmc->out.print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &error);
+	out.print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &error);
 
 	if (error) {
 		g_string_printf (nmc->return_text, _("Error: 'general logging': %s"), error->message);
@@ -610,17 +613,17 @@ show_general_logging (NmCli *nmc)
 		return FALSE;
 	}
 
-	nmc->out.print_fields.header_name = _("NetworkManager logging");
+	out.print_fields.header_name = _("NetworkManager logging");
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->out.output_data, arr);
+	g_ptr_array_add (out.output_data, arr);
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, 0);
 	set_val_str (arr, 0, level);
 	set_val_str (arr, 1, domains);
-	g_ptr_array_add (nmc->out.output_data, arr);
+	g_ptr_array_add (out.output_data, arr);
 
-	print_data_prepare_width (nmc->out.output_data);
-	print_data (&nmc->nmc_config, &nmc->out);
+	print_data_prepare_width (out.output_data);
+	print_data (&nmc->nmc_config, &out);
 
 	return TRUE;
 }

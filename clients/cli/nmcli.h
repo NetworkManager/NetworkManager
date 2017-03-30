@@ -172,7 +172,6 @@ typedef struct _NmCli {
 		NmcConfig nmc_config_mutable;
 	};
 	char *required_fields;                            /* Required fields in output: '--fields' option */
-	NmcOutputData out;
 	gboolean ask;                                     /* Ask for missing parameters: option '--ask' */
 	gboolean complete;                                /* Autocomplete the command line */
 	gboolean show_secrets;                            /* Whether to display secrets (both input and output): option '--show-secrets' */
@@ -192,5 +191,12 @@ gboolean nmc_seen_sigint (void);
 void     nmc_clear_sigint (void);
 void     nmc_set_sigquit_internal (void);
 void     nmc_exit (void);
+
+void nmc_empty_output_fields (NmcOutputData *output_data);
+
+#define NMC_OUTPUT_DATA_DEFINE_SCOPED(out) \
+	nm_auto (nmc_empty_output_fields) NmcOutputData out = { \
+		.output_data = g_ptr_array_new_full (20, g_free), \
+	}
 
 #endif /* NMC_NMCLI_H */

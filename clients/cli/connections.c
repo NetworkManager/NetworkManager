@@ -790,12 +790,16 @@ nmc_connection_profile_details (NMConnection *connection, NmCli *nmc, gboolean s
 	g_assert (print_settings_array);
 
 	/* Main header */
-	nmc->out.print_fields.header_name = (char *) construct_header_name (base_hdr, nm_connection_get_id (connection));
-	nmc->out.print_fields.indices = parse_output_fields (NMC_FIELDS_SETTINGS_NAMES_ALL,
-	                                                 nmc_fields_settings_names, FALSE, NULL, NULL);
+	{
+		NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
-	nmc_fields_settings_names[0].flags = NMC_OF_FLAG_MAIN_HEADER_ONLY;
-	print_required_fields (&nmc->nmc_config, &nmc->out.print_fields, nmc_fields_settings_names);
+		out.print_fields.header_name = (char *) construct_header_name (base_hdr, nm_connection_get_id (connection));
+		out.print_fields.indices = parse_output_fields (NMC_FIELDS_SETTINGS_NAMES_ALL,
+		                                                nmc_fields_settings_names, FALSE, NULL, NULL);
+
+		nmc_fields_settings_names[0].flags = NMC_OF_FLAG_MAIN_HEADER_ONLY;
+		print_required_fields (&nmc->nmc_config, &out.print_fields, nmc_fields_settings_names);
+	}
 
 	/* Loop through the required settings and print them. */
 	for (i = 0; i < print_settings_array->len; i++) {
@@ -808,13 +812,10 @@ nmc_connection_profile_details (NMConnection *connection, NmCli *nmc, gboolean s
 
 		was_output = FALSE;
 
-		nmc_empty_output_fields (&nmc->out);
-
 		setting = nm_connection_get_setting_by_name (connection, nmc_fields_settings_names[section_idx].name);
 		if (setting) {
 			setting_details (setting, nmc, prop_name, secrets);
 			was_output = TRUE;
-			continue;
 		}
 	}
 
@@ -916,7 +917,7 @@ nmc_active_connection_state_to_color (NMActiveConnectionState state, NmcTermColo
 }
 
 static void
-fill_output_connection (NMConnection *connection, NmCli *nmc, gboolean active_only)
+fill_output_connection (NMConnection *connection, NMClient *client, GPtrArray *output_data, gboolean active_only)
 {
 	NMSettingConnection *s_con;
 	guint64 timestamp;
@@ -935,7 +936,7 @@ fill_output_connection (NMConnection *connection, NmCli *nmc, gboolean active_on
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
-	ac = get_ac_for_connection (nm_client_get_active_connections (nmc->client), connection);
+	ac = get_ac_for_connection (nm_client_get_active_connections (client), connection);
 	if (active_only && !ac)
 		return;
 
@@ -979,11 +980,11 @@ fill_output_connection (NMConnection *connection, NmCli *nmc, gboolean active_on
 	set_val_strc (arr, 12, ac_path);
 	set_val_strc (arr, 13, nm_setting_connection_get_slave_type (s_con));
 
-	g_ptr_array_add (nmc->out.output_data, arr);
+	g_ptr_array_add (output_data, arr);
 }
 
 static void
-fill_output_connection_for_invisible (NMActiveConnection *ac, NmCli *nmc)
+fill_output_connection_for_invisible (NMActiveConnection *ac, GPtrArray *output_data)
 {
 	NmcOutputField *arr;
 	const char *ac_path = NULL;
@@ -1016,12 +1017,12 @@ fill_output_connection_for_invisible (NMActiveConnection *ac, NmCli *nmc)
 
 	set_val_color_fmt_all (arr, NMC_TERM_FORMAT_DIM);
 
-	g_ptr_array_add (nmc->out.output_data, arr);
+	g_ptr_array_add (output_data, arr);
 }
 
 static void
 fill_output_active_connection (NMActiveConnection *active,
-                               NmCli *nmc,
+                               GPtrArray *output_data,
                                gboolean with_group,
                                guint32 o_flags)
 {
@@ -1088,7 +1089,7 @@ fill_output_active_connection (NMActiveConnection *active,
 	set_val_strc (arr, 12-idx_start, master ? nm_object_get_path (NM_OBJECT (master)) : NULL);
 	set_val_strc (arr, 13-idx_start, s_con ? nm_setting_connection_get_slave_type (s_con) : NULL);
 
-	g_ptr_array_add (nmc->out.output_data, arr);
+	g_ptr_array_add (output_data, arr);
 
 	g_string_free (dev_str, FALSE);
 }
@@ -1216,12 +1217,16 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 	g_assert (print_groups);
 
 	/* Main header */
-	nmc->out.print_fields.header_name = (char *) construct_header_name (base_hdr, nm_active_connection_get_uuid (acon));
-	nmc->out.print_fields.indices = parse_output_fields (NMC_FIELDS_CON_ACTIVE_DETAILS_ALL,
-	                                                 nmc_fields_con_active_details_groups, FALSE, NULL, NULL);
+	{
+		NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
-	nmc_fields_con_active_details_groups[0].flags = NMC_OF_FLAG_MAIN_HEADER_ONLY;
-	print_required_fields (&nmc->nmc_config, &nmc->out.print_fields, nmc_fields_con_active_details_groups);
+		out.print_fields.header_name = (char *) construct_header_name (base_hdr, nm_active_connection_get_uuid (acon));
+		out.print_fields.indices = parse_output_fields (NMC_FIELDS_CON_ACTIVE_DETAILS_ALL,
+		                                                 nmc_fields_con_active_details_groups, FALSE, NULL, NULL);
+
+		nmc_fields_con_active_details_groups[0].flags = NMC_OF_FLAG_MAIN_HEADER_ONLY;
+		print_required_fields (&nmc->nmc_config, &out.print_fields, nmc_fields_con_active_details_groups);
+	}
 
 	/* Loop through the groups and print them. */
 	for (i = 0; i < print_groups->len; i++) {
@@ -1233,23 +1238,23 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 
 		was_output = FALSE;
 
-		nmc_empty_output_fields (&nmc->out);
-
 		/* GENERAL */
 		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx].name, nmc_fields_con_active_details_groups[0].name) == 0) {
+			NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
+
 			/* Add field names */
 			tmpl = nmc_fields_con_active_details_general;
 			tmpl_len = sizeof (nmc_fields_con_active_details_general);
-			nmc->out.print_fields.indices = parse_output_fields (group_fld ? group_fld : NMC_FIELDS_CON_ACTIVE_DETAILS_GENERAL_ALL,
-			                                                 tmpl, FALSE, NULL, NULL);
+			out.print_fields.indices = parse_output_fields (group_fld ? group_fld : NMC_FIELDS_CON_ACTIVE_DETAILS_GENERAL_ALL,
+			                                                tmpl, FALSE, NULL, NULL);
 			arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-			g_ptr_array_add (nmc->out.output_data, arr);
+			g_ptr_array_add (out.output_data, arr);
 
 			/* Fill in values */
-			fill_output_active_connection (acon, nmc, TRUE, NMC_OF_FLAG_SECTION_PREFIX);
+			fill_output_active_connection (acon, out.output_data, TRUE, NMC_OF_FLAG_SECTION_PREFIX);
 
-			print_data_prepare_width (nmc->out.output_data);
-			print_data (&nmc->nmc_config, &nmc->out);
+			print_data_prepare_width (out.output_data);
+			print_data (&nmc->nmc_config, &out);
 
 			was_output = TRUE;
 		}
@@ -1259,7 +1264,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			gboolean b1 = FALSE;
 			NMIPConfig *cfg4 = nm_active_connection_get_ip4_config (acon);
 
-			b1 = print_ip4_config (cfg4, nmc, "IP4", group_fld);
+			b1 = print_ip4_config (cfg4, &nmc->nmc_config, "IP4", group_fld);
 			was_output = was_output || b1;
 		}
 
@@ -1268,7 +1273,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			gboolean b1 = FALSE;
 			NMDhcpConfig *dhcp4 = nm_active_connection_get_dhcp4_config (acon);
 
-			b1 = print_dhcp4_config (dhcp4, nmc, "DHCP4", group_fld);
+			b1 = print_dhcp4_config (dhcp4, &nmc->nmc_config, "DHCP4", group_fld);
 			was_output = was_output || b1;
 		}
 
@@ -1277,7 +1282,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			gboolean b1 = FALSE;
 			NMIPConfig *cfg6 = nm_active_connection_get_ip6_config (acon);
 
-			b1 = print_ip6_config (cfg6, nmc, "IP6", group_fld);
+			b1 = print_ip6_config (cfg6, &nmc->nmc_config, "IP6", group_fld);
 			was_output = was_output || b1;
 		}
 
@@ -1286,7 +1291,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			gboolean b1 = FALSE;
 			NMDhcpConfig *dhcp6 = nm_active_connection_get_dhcp6_config (acon);
 
-			b1 = print_dhcp6_config (dhcp6, nmc, "DHCP6", group_fld);
+			b1 = print_dhcp6_config (dhcp6, &nmc->nmc_config, "DHCP6", group_fld);
 			was_output = was_output || b1;
 		}
 
@@ -1302,6 +1307,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			const char *username = NULL;
 			char **vpn_data_array = NULL;
 			guint32 items_num;
+			NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
 			con = NM_CONNECTION (nm_active_connection_get_connection (acon));
 
@@ -1310,10 +1316,10 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 
 			tmpl = nmc_fields_con_active_details_vpn;
 			tmpl_len = sizeof (nmc_fields_con_active_details_vpn);
-			nmc->out.print_fields.indices = parse_output_fields (group_fld ? group_fld : NMC_FIELDS_CON_ACTIVE_DETAILS_VPN_ALL,
-			                                                 tmpl, FALSE, NULL, NULL);
+			out.print_fields.indices = parse_output_fields (group_fld ? group_fld : NMC_FIELDS_CON_ACTIVE_DETAILS_VPN_ALL,
+			                                                tmpl, FALSE, NULL, NULL);
 			arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-			g_ptr_array_add (nmc->out.output_data, arr);
+			g_ptr_array_add (out.output_data, arr);
 
 			s_vpn = nm_connection_get_setting_vpn (con);
 			if (s_vpn) {
@@ -1346,10 +1352,10 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			set_val_str  (arr, 4, banner_str);
 			set_val_str  (arr, 5, vpn_state_str);
 			set_val_arr  (arr, 6, vpn_data_array);
-			g_ptr_array_add (nmc->out.output_data, arr);
+			g_ptr_array_add (out.output_data, arr);
 
-			print_data_prepare_width (nmc->out.output_data);
-			print_data (&nmc->nmc_config, &nmc->out);
+			print_data_prepare_width (out.output_data);
+			print_data (&nmc->nmc_config, &out);
 			was_output = TRUE;
 		}
 	}
@@ -1794,6 +1800,7 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 		char *fields_common = NMC_FIELDS_CON_SHOW_COMMON;
 		NmcOutputField *tmpl, *arr;
 		size_t tmpl_len;
+		NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
 		if (nmc->complete)
 			goto finish;
@@ -1807,32 +1814,32 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 
 		tmpl = nmc_fields_con_show;
 		tmpl_len = sizeof (nmc_fields_con_show);
-		nmc->out.print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &err);
+		out.print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &err);
 		if (err)
 			goto finish;
 
 		/* Add headers */
-		nmc->out.print_fields.header_name = active_only ? _("NetworkManager active profiles") :
+		out.print_fields.header_name = active_only ? _("NetworkManager active profiles") :
 		                                              _("NetworkManager connection profiles");
 		arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
-		g_ptr_array_add (nmc->out.output_data, arr);
+		g_ptr_array_add (out.output_data, arr);
 
 		/* There might be active connections not present in connection list
 		 * (e.g. private connections of a different user). Show them as well. */
 		invisibles = get_invisible_active_connections (nmc);
 		for (i = 0; i < invisibles->len; i++)
-			fill_output_connection_for_invisible (invisibles->pdata[i], nmc);
+			fill_output_connection_for_invisible (invisibles->pdata[i], out.output_data);
 		g_ptr_array_free (invisibles, TRUE);
 
 		/* Sort the connections and fill the output data */
 		connections = nm_client_get_connections (nmc->client);
 		sorted_cons = sort_connections (connections, nmc, order);
 		for (i = 0; i < sorted_cons->len; i++)
-			fill_output_connection (sorted_cons->pdata[i], nmc, active_only);
+			fill_output_connection (sorted_cons->pdata[i], nmc->client, out.output_data, active_only);
 		g_ptr_array_free (sorted_cons, TRUE);
 
-		print_data_prepare_width (nmc->out.output_data);
-		print_data (&nmc->nmc_config, &nmc->out);
+		print_data_prepare_width (out.output_data);
+		print_data (&nmc->nmc_config, &out);
 	} else {
 		gboolean new_line = FALSE;
 		gboolean without_fields = (nmc->required_fields == NULL);
@@ -6020,8 +6027,6 @@ editor_show_connection (NMConnection *connection, NmCli *nmc)
 	nmc->nmc_config_mutable.multiline_output = TRUE;
 	nmc->nmc_config_mutable.escape_values = 0;
 
-	nmc_empty_output_fields (&nmc->out);
-
 	nmc_connection_profile_details (connection, nmc, nmc->editor_show_secrets);
 }
 
@@ -6034,8 +6039,6 @@ editor_show_setting (NMSetting *setting, NmCli *nmc)
 	nmc->nmc_config_mutable.print_output = NMC_PRINT_NORMAL;
 	nmc->nmc_config_mutable.multiline_output = TRUE;
 	nmc->nmc_config_mutable.escape_values = 0;
-
-	nmc_empty_output_fields (&nmc->out);
 
 	setting_details (setting, nmc, NULL, nmc->editor_show_secrets);
 }

@@ -880,6 +880,7 @@ setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean 
 	size_t tmpl_len;
 	gs_free char *s_all = NULL;
 	NMMetaAccessorGetType type = NM_META_ACCESSOR_GET_TYPE_PRETTY;
+	NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 
@@ -897,10 +898,10 @@ setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean 
 	tmpl_len = sizeof (NmcOutputField) * (setting_info->properties_num + 1);
 	tmpl = g_memdup (_get_nmc_output_fields (setting_info), tmpl_len);
 
-	nmc->out.print_fields.indices = parse_output_fields (one_prop ?: (s_all = _all_properties (setting_info)),
+	out.print_fields.indices = parse_output_fields (one_prop ?: (s_all = _all_properties (setting_info)),
 	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->out.output_data, arr);
+	g_ptr_array_add (out.output_data, arr);
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	for (i = 0; i < setting_info->properties_num; i++) {
@@ -916,10 +917,10 @@ setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean 
 			set_val_str (arr, i, g_strdup (_(NM_META_TEXT_HIDDEN)));
 	}
 
-	g_ptr_array_add (nmc->out.output_data, arr);
+	g_ptr_array_add (out.output_data, arr);
 
-	print_data_prepare_width (nmc->out.output_data);
-	print_data (&nmc->nmc_config, &nmc->out);
+	print_data_prepare_width (out.output_data);
+	print_data (&nmc->nmc_config, &out);
 
 	return TRUE;
 }

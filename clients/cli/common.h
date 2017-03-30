@@ -25,10 +25,10 @@
 #include "nmcli.h"
 #include "nm-secret-agent-simple.h"
 
-gboolean print_ip4_config (NMIPConfig *cfg4, NmCli *nmc, const char *group_prefix, const char *one_field);
-gboolean print_ip6_config (NMIPConfig *cfg6, NmCli *nmc, const char *group_prefix, const char *one_field);
-gboolean print_dhcp4_config (NMDhcpConfig *dhcp4, NmCli *nmc, const char *group_prefix, const char *one_field);
-gboolean print_dhcp6_config (NMDhcpConfig *dhcp6, NmCli *nmc, const char *group_prefix, const char *one_field);
+gboolean print_ip4_config (NMIPConfig *cfg4, const NmcConfig *nmc_config, const char *group_prefix, const char *one_field);
+gboolean print_ip6_config (NMIPConfig *cfg6, const NmcConfig *nmc_config, const char *group_prefix, const char *one_field);
+gboolean print_dhcp4_config (NMDhcpConfig *dhcp4, const NmcConfig *nmc_config, const char *group_prefix, const char *one_field);
+gboolean print_dhcp6_config (NMDhcpConfig *dhcp6, const NmcConfig *nmc_config, const char *group_prefix, const char *one_field);
 
 const char * nmc_device_state_to_string (NMDeviceState state);
 const char * nmc_device_reason_to_string (NMDeviceStateReason reason);
