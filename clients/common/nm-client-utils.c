@@ -210,22 +210,9 @@ finish:
 char **
 nmc_strsplit_set (const char *str, const char *delimiter, int max_tokens)
 {
-	char **result;
-	uint i;
-	uint j;
-
-	result = g_strsplit_set (str, delimiter, max_tokens);
-
 	/* remove empty strings */
-	for (i = 0; result && result[i]; i++) {
-		if (*(result[i]) == '\0') {
-			g_free (result[i]);
-			for (j = i; result[j]; j++)
-				result[j] = result[j + 1];
-			i--;
-		}
-	}
-	return result;
+	return _nm_utils_strv_cleanup (g_strsplit_set (str, delimiter, max_tokens),
+	                               FALSE, TRUE, FALSE);
 }
 
 gboolean

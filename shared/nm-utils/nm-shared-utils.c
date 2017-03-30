@@ -204,6 +204,35 @@ nm_utils_strv_find_first (char **list, gssize len, const char *needle)
 	return -1;
 }
 
+char **
+_nm_utils_strv_cleanup (char **strv,
+                        gboolean strip_whitespace,
+                        gboolean skip_empty,
+                        gboolean skip_repeated)
+{
+	guint i, j;
+
+	if (!strv || !*strv)
+		return strv;
+
+	if (strip_whitespace) {
+		for (i = 0; strv[i]; i++)
+			g_strstrip (strv[i]);
+	}
+	if (!skip_empty && !skip_repeated)
+		return strv;
+	j = 0;
+	for (i = 0; strv[i]; i++) {
+		if (   (skip_empty && !*strv[i])
+		    || (skip_repeated && nm_utils_strv_find_first (strv, j, strv[i]) >= 0))
+			g_free (strv[i]);
+		else
+			strv[j++] = strv[i];
+	}
+	strv[j] = NULL;
+	return strv;
+}
+
 /*****************************************************************************/
 
 gint
