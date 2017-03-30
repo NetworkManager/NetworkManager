@@ -1248,7 +1248,8 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			/* Fill in values */
 			fill_output_active_connection (acon, nmc, TRUE, NMC_OF_FLAG_SECTION_PREFIX);
 
-			print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
+			print_data_prepare_width (nmc->out.output_data);
+			print_data (&nmc->nmc_config, &nmc->out);
 
 			was_output = TRUE;
 		}
@@ -1347,7 +1348,8 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			set_val_arr  (arr, 6, vpn_data_array);
 			g_ptr_array_add (nmc->out.output_data, arr);
 
-			print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
+			print_data_prepare_width (nmc->out.output_data);
+			print_data (&nmc->nmc_config, &nmc->out);
 			was_output = TRUE;
 		}
 	}
@@ -1829,7 +1831,8 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 			fill_output_connection (sorted_cons->pdata[i], nmc, active_only);
 		g_ptr_array_free (sorted_cons, TRUE);
 
-		print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
+		print_data_prepare_width (nmc->out.output_data);
+		print_data (&nmc->nmc_config, &nmc->out);
 	} else {
 		gboolean new_line = FALSE;
 		gboolean without_fields = (nmc->required_fields == NULL);

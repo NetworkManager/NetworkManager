@@ -984,7 +984,8 @@ print_bond_bridge_info (NMDevice *device,
 	set_val_str  (arr, 1, slaves_str->str);
 	g_ptr_array_add (nmc->out.output_data, arr);
 
-	print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
+	print_data_prepare_width (nmc->out.output_data);
+	print_data (&nmc->nmc_config, &nmc->out);
 
 	g_string_free (slaves_str, FALSE);
 	nmc_empty_output_fields (&nmc->out);
@@ -1054,7 +1055,8 @@ print_team_info (NMDevice *device,
 	set_val_str (arr, 2, sanitize_team_config (nm_device_team_get_config (NM_DEVICE_TEAM (device))));
 	g_ptr_array_add (nmc->out.output_data, arr);
 
-	print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
+	print_data_prepare_width (nmc->out.output_data);
+	print_data (&nmc->nmc_config, &nmc->out);
 
 	g_string_free (slaves_str, FALSE);
 	nmc_empty_output_fields (&nmc->out);
@@ -1170,7 +1172,8 @@ show_device_info (NMDevice *device, NmCli *nmc)
 			set_val_strc (arr, 24, nmc_device_metered_to_string (nm_device_get_metered (device)));
 			g_ptr_array_add (nmc->out.output_data, arr);
 
-			print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
+			print_data_prepare_width (nmc->out.output_data);
+			print_data (&nmc->nmc_config, &nmc->out);
 			was_output = TRUE;
 		}
 
@@ -1202,7 +1205,8 @@ show_device_info (NMDevice *device, NmCli *nmc)
 			set_val_strc (arr, 3, (caps & NM_DEVICE_CAP_IS_SOFTWARE) ? _("yes") : _("no"));
 			g_ptr_array_add (nmc->out.output_data, arr);
 
-			print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
+			print_data_prepare_width (nmc->out.output_data);
+			print_data (&nmc->nmc_config, &nmc->out);
 			was_output = TRUE;
 		}
 
@@ -1240,7 +1244,8 @@ show_device_info (NMDevice *device, NmCli *nmc)
 				                      ((wcaps & NM_WIFI_DEVICE_CAP_FREQ_5GHZ) ? _("yes") : _("no")));
 				g_ptr_array_add (nmc->out.output_data, arr);
 
-				print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
+				print_data_prepare_width (nmc->out.output_data);
+				print_data (&nmc->nmc_config, &nmc->out);
 				was_output = TRUE;
 			}
 
@@ -1268,7 +1273,8 @@ show_device_info (NMDevice *device, NmCli *nmc)
 				g_ptr_array_foreach ((GPtrArray *) aps, fill_output_access_point, (gpointer) info);
 				g_ptr_array_free (aps, FALSE);
 				g_free (info);
-				print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
+				print_data_prepare_width (nmc->out.output_data);
+				print_data (&nmc->nmc_config, &nmc->out);
 				was_output = TRUE;
 			}
 		} else if (NM_IS_DEVICE_ETHERNET (device)) {
@@ -1288,7 +1294,8 @@ show_device_info (NMDevice *device, NmCli *nmc)
 				set_val_arrc (arr, 2, ((const char **) nm_device_ethernet_get_s390_subchannels (NM_DEVICE_ETHERNET (device))));
 				g_ptr_array_add (nmc->out.output_data, arr);
 
-				print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
+				print_data_prepare_width (nmc->out.output_data);
+				print_data (&nmc->nmc_config, &nmc->out);
 				was_output = TRUE;
 			}
 		}
@@ -1352,7 +1359,8 @@ show_device_info (NMDevice *device, NmCli *nmc)
 				set_val_str  (arr, 2, vlan_id_str);
 				g_ptr_array_add (nmc->out.output_data, arr);
 
-				print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
+				print_data_prepare_width (nmc->out.output_data);
+				print_data (&nmc->nmc_config, &nmc->out);
 
 				was_output = TRUE;
 			}
@@ -1372,7 +1380,8 @@ show_device_info (NMDevice *device, NmCli *nmc)
 				set_val_str (arr, 1, bluetooth_caps_to_string (nm_device_bt_get_capabilities (NM_DEVICE_BT (device))));
 				g_ptr_array_add (nmc->out.output_data, arr);
 
-				print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
+				print_data_prepare_width (nmc->out.output_data);
+				print_data (&nmc->nmc_config, &nmc->out);
 				was_output = TRUE;
 			}
 		}
@@ -1421,7 +1430,8 @@ show_device_info (NMDevice *device, NmCli *nmc)
 			set_val_arr  (arr, 2, (ac_arr));
 			g_ptr_array_add (nmc->out.output_data, arr);
 
-			print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
+			print_data_prepare_width (nmc->out.output_data);
+			print_data (&nmc->nmc_config, &nmc->out);
 
 			g_string_free (ac_paths_str, FALSE);
 			was_output = TRUE;
@@ -1529,7 +1539,8 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 	for (i = 0; devices[i]; i++)
 		fill_output_device_status (devices[i], nmc);
 
-	print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
+	print_data_prepare_width (nmc->out.output_data);
+	print_data (&nmc->nmc_config, &nmc->out);
 
 	g_free (devices);
 
@@ -2494,7 +2505,8 @@ show_access_point_info (NMDevice *device, NmCli *nmc)
 	g_ptr_array_foreach ((GPtrArray *) aps, fill_output_access_point, (gpointer) info);
 	g_ptr_array_free (aps, FALSE);
 
-	print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
+	print_data_prepare_width (nmc->out.output_data);
+	print_data (&nmc->nmc_config, &nmc->out);
 	nmc_empty_output_fields (&nmc->out);
 	g_free (info);
 }
@@ -2724,7 +2736,8 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 
 				fill_output_access_point (ap, info);
 
-				print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
+				print_data_prepare_width (nmc->out.output_data);
+				print_data (&nmc->nmc_config, &nmc->out);
 				g_free (info);
 			} else {
 				show_access_point_info (device, nmc);
@@ -2784,7 +2797,8 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 				}
 				if (empty_line)
 					g_print ("\n"); /* Empty line between devices' APs */
-				print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
+				print_data_prepare_width (nmc->out.output_data);
+				print_data (&nmc->nmc_config, &nmc->out);
 				nmc_empty_output_fields (&nmc->out);
 				empty_line = TRUE;
 			}
@@ -3732,7 +3746,8 @@ show_device_lldp_list (NMDevice *device, NmCli *nmc, char *fields_str, int *coun
 		g_ptr_array_add (nmc->out.output_data, arr);
 	}
 
-	print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
+	print_data_prepare_width (nmc->out.output_data);
+	print_data (&nmc->nmc_config, &nmc->out);
 	nmc_empty_output_fields (&nmc->out);
 
 	return neighbors->len;

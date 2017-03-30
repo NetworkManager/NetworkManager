@@ -1033,16 +1033,8 @@ print_required_fields (const NmcConfig *nmc_config, const NmcPrintFields *print_
 	g_string_free (str, TRUE);
 }
 
-/*
- * Print nmc->output_data
- *
- * It first finds out maximal string length in columns and fill the value to
- * 'width' member of NmcOutputField, so that columns in tabular output are
- * properly aligned. Then each object (row in tabular) is printed using
- * print_required_fields() function.
- */
 void
-print_data (const NmcConfig *nmc_config, const NmcPrintFields *print_fields, GPtrArray *output_data)
+print_data_prepare_width (GPtrArray *output_data)
 {
 	int i, j;
 	size_t len;
@@ -1078,11 +1070,16 @@ print_data (const NmcConfig *nmc_config, const NmcPrintFields *print_fields, GPt
 			row[i].width = max_width + 1;
 		}
 	}
+}
 
-	/* Now we can print the data. */
-	for (i = 0; i < output_data->len; i++) {
-		row = g_ptr_array_index (output_data, i);
-		print_required_fields (nmc_config, print_fields, row);
+void
+print_data (const NmcConfig *nmc_config, const NmcOutputData *out)
+{
+	guint i;
+
+	for (i = 0; i < out->output_data->len; i++) {
+		print_required_fields (nmc_config, &out->print_fields,
+		                       g_ptr_array_index (out->output_data, i));
 	}
 }
 

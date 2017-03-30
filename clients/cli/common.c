@@ -162,7 +162,8 @@ print_ip4_config (NMIPConfig *cfg4,
 	set_val_arr  (arr, 6, wins_arr);
 	g_ptr_array_add (nmc->out.output_data, arr);
 
-	print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
+	print_data_prepare_width (nmc->out.output_data);
+	print_data (&nmc->nmc_config, &nmc->out);
 
 	nmc_empty_output_fields (&nmc->out);
 
@@ -245,7 +246,8 @@ print_ip6_config (NMIPConfig *cfg6,
 	set_val_arr  (arr, 5, domain_arr);
 	g_ptr_array_add (nmc->out.output_data, arr);
 
-	print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
+	print_data_prepare_width (nmc->out.output_data);
+	print_data (&nmc->nmc_config, &nmc->out);
 
 	nmc_empty_output_fields (&nmc->out);
 
@@ -290,7 +292,8 @@ print_dhcp4_config (NMDhcpConfig *dhcp4,
 		set_val_arr  (arr, 1, options_arr);
 		g_ptr_array_add (nmc->out.output_data, arr);
 
-		print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
+		print_data_prepare_width (nmc->out.output_data);
+		print_data (&nmc->nmc_config, &nmc->out);
 
 		nmc_empty_output_fields (&nmc->out);
 
@@ -337,7 +340,8 @@ print_dhcp6_config (NMDhcpConfig *dhcp6,
 		set_val_arr  (arr, 1, options_arr);
 		g_ptr_array_add (nmc->out.output_data, arr);
 
-		print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
+		print_data_prepare_width (nmc->out.output_data);
+		print_data (&nmc->nmc_config, &nmc->out);
 
 		nmc_empty_output_fields (&nmc->out);
 

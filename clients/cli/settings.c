@@ -918,7 +918,8 @@ setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean 
 
 	g_ptr_array_add (nmc->out.output_data, arr);
 
-	print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
+	print_data_prepare_width (nmc->out.output_data);
+	print_data (&nmc->nmc_config, &nmc->out);
 
 	return TRUE;
 }
