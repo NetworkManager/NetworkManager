@@ -634,7 +634,7 @@ _on_disconnected_name_owner_changed (GDBusConnection *connection,
 {
 	NMSecretAgent *self = NM_SECRET_AGENT (user_data);
 	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
-	const char *old_owner, *new_owner;
+	const char *old_owner = NULL, *new_owner = NULL;
 
 	g_variant_get (parameters,
 	               "(&s&s&s)",
