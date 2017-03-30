@@ -1817,6 +1817,20 @@ _get_fcn_802_1x_phase2_private_key (ARGS_GET_FCN)
 		return success; \
 	}
 
+DEFINE_SETTER_STR_LIST_MULTI (check_and_add_eap_method,
+                              NM_SETTING_802_1X,
+                              nm_setting_802_1x_add_eap_method)
+
+static gboolean
+_set_fcn_802_1x_eap (ARGS_SET_FCN)
+{
+	return check_and_add_eap_method (setting,
+	                                 property_info->property_name,
+	                                 value,
+	                                 (const char **) property_info->property_typ_data->values_static,
+	                                 error);
+}
+
 static gboolean
 _validate_and_remove_eap_method (NMSetting8021x *setting,
                                  const char *eap,
@@ -1824,7 +1838,7 @@ _validate_and_remove_eap_method (NMSetting8021x *setting,
 {
 	gboolean ret;
 
-	ret = nm_setting_802_1x_remove_eap_method_by_value(setting, eap);
+	ret = nm_setting_802_1x_remove_eap_method_by_value (setting, eap);
 	if (!ret)
 		g_set_error (error, 1, 0, _("the property doesn't contain EAP method '%s'"), eap);
 	return ret;
@@ -4594,7 +4608,7 @@ static const NMMetaPropertyInfo property_infos_802_1x[] = {
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_EAP),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_gobject_string,
+			.set_fcn =                  _set_fcn_802_1x_eap,
 			.remove_fcn =               _remove_fcn_802_1x_eap,
 		),
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
