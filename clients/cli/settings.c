@@ -530,6 +530,64 @@ nmc_setting_custom_init (NMSetting *setting)
 
 /*****************************************************************************/
 
+static gboolean
+_set_fcn_precheck_connection_secondaries (const char *value,
+                                          char **value_coerced,
+                                          GError **error)
+{
+	const GPtrArray *connections;
+	NMConnection *con;
+	gs_strfreev char **strv = NULL;
+	char **iter;
+	gboolean modified;
+
+	strv = nmc_strsplit_set (value, " \t,", 0);
+	if (!strv)
+		return TRUE;
+
+	connections = nm_client_get_connections (nm_cli.client);
+
+	for (iter = strv; *iter; iter++) {
+		if (nm_utils_is_uuid (*iter)) {
+			con = nmc_find_connection (connections, "uuid", *iter, NULL, FALSE);
+			if (!con){
+				g_print (_("Warning: %s is not an UUID of any existing connection profile\n"),
+				         *iter);
+			} else {
+				/* Currenly NM only supports VPN connections as secondaries */
+				if (!nm_connection_is_type (con, NM_SETTING_VPN_SETTING_NAME)) {
+					g_set_error (error, 1, 0, _("'%s' is not a VPN connection profile"), *iter);
+					return FALSE;
+				}
+			}
+		} else {
+			con = nmc_find_connection (connections, "id", *iter, NULL, FALSE);
+			if (!con) {
+				g_set_error (error, 1, 0, _("'%s' is not a name of any exiting profile"), *iter);
+				return FALSE;
+			}
+
+			/* Currenly NM only supports VPN connections as secondaries */
+			if (!nm_connection_is_type (con, NM_SETTING_VPN_SETTING_NAME)) {
+				g_set_error (error, 1, 0, _("'%s' is not a VPN connection profile"), *iter);
+				return FALSE;
+			}
+
+			/* translate id to uuid */
+			g_free (*iter);
+			*iter = g_strdup (nm_connection_get_uuid (con));
+			modified = TRUE;
+		}
+	}
+
+	if (modified)
+		*value_coerced = g_strjoinv (" ", strv);
+
+	return TRUE;
+}
+
+/*****************************************************************************/
+
 static void
 _env_warn_fcn_handle (const NMMetaEnvironment *environment,
                       gpointer environment_user_data,
@@ -609,6 +667,22 @@ nmc_setting_get_property_parsable (NMSetting *setting, const char *prop, GError 
 	return get_property_val (setting, prop, NM_META_ACCESSOR_GET_TYPE_PARSABLE, TRUE, error);
 }
 
+static gboolean
+_set_fcn_call (const NMMetaSettingInfoEditor *setting_info,
+               const NMMetaPropertyInfo *property_info,
+               NMSetting *setting,
+               const char *value,
+               GError **error)
+{
+	return property_info->property_type->set_fcn (&meta_environment,
+	                                              NULL,
+	                                              setting_info,
+	                                              property_info,
+	                                              setting,
+	                                              value,
+	                                              error);
+}
+
 /*
  * Generic function for setting property value.
  *
@@ -638,13 +712,29 @@ nmc_setting_set_property (NMSetting *setting, const char *prop, const char *valu
 			/* Traditionally, the "name" property was not handled here.
 			 * For the moment, skip it from get_property_val(). */
 		} else if (property_info->property_type->set_fcn) {
-			return property_info->property_type->set_fcn (&meta_environment,
-			                                              NULL,
-			                                              setting_info,
-			                                              property_info,
-			                                              setting,
-			                                              value,
-			                                              error);
+			switch (setting_info->general->meta_type) {
+			case NM_META_SETTING_TYPE_CONNECTION:
+				if (nm_streq (property_info->property_name, NM_SETTING_CONNECTION_SECONDARIES)) {
+					gs_free char *value_coerced = NULL;
+
+					if (!_set_fcn_precheck_connection_secondaries (value, &value_coerced, error))
+						return FALSE;
+
+					return _set_fcn_call (setting_info,
+					                      property_info,
+					                      setting,
+					                      value_coerced ?: value,
+					                      error);
+				}
+				break;
+			default:
+				break;
+			}
+			return _set_fcn_call (setting_info,
+			                      property_info,
+			                      setting,
+			                      value,
+			                      error);
 		}
 	}
 

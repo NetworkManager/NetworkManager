@@ -27,26 +27,9 @@
 #include "nm-common-macros.h"
 #include "nm-utils/nm-enum-utils.h"
 
+#include "NetworkManager.h"
 #include "nm-vpn-helpers.h"
 #include "nm-client-utils.h"
-
-/*****************************************************************************/
-
-/* FIXME: don't include headers from nmcli. And move all uses of NMClient out
- * of there. */
-
-/* FIXME: don't directly print any warnings. Instead, add a hook mechanism to notify
- * the caller about warnings, error or whatever.
- */
-
-#include "nmcli.h"
-
-NMConnection *
-nmc_find_connection (const GPtrArray *connections,
-                     const char *filter_type,
-                     const char *filter_val,
-                     int *start,
-                     gboolean complete);
 
 /*****************************************************************************/
 
@@ -2230,57 +2213,16 @@ _set_fcn_connection_master (ARGS_SET_FCN)
 static gboolean
 _set_fcn_connection_secondaries (ARGS_SET_FCN)
 {
-	const GPtrArray *connections;
-	NMConnection *con;
-	char **strv = NULL, **iter;
-	guint i = 0;
+	gs_strfreev char **strv = NULL;
+	char **iter;
 
-	connections = nm_client_get_connections (nm_cli.client);
 	strv = nmc_strsplit_set (value, " \t,", 0);
-	for (iter = strv; iter && *iter; iter++) {
-		if (**iter == '\0')
-			continue;
-
-		if (nm_utils_is_uuid (*iter)) {
-			con = nmc_find_connection (connections, "uuid", *iter, NULL, FALSE);
-			if (!con){
-				_env_warn_fcn (environment, environment_user_data,
-				               NM_META_ENV_WARN_LEVEL_WARN,
-				               N_ ("%s is not an UUID of any existing connection profile"),
-				               *iter);
-			} else {
-				/* Currenly NM only supports VPN connections as secondaries */
-				if (!nm_connection_is_type (con, NM_SETTING_VPN_SETTING_NAME)) {
-					g_set_error (error, 1, 0, _("'%s' is not a VPN connection profile"), *iter);
-					g_strfreev (strv);
-					return FALSE;
-				}
-			}
-		} else {
-			con = nmc_find_connection (connections, "id", *iter, NULL, FALSE);
-			if (!con) {
-				g_set_error (error, 1, 0, _("'%s' is not a name of any exiting profile"), *iter);
-				g_strfreev (strv);
-				return FALSE;
-			}
-
-			/* Currenly NM only supports VPN connections as secondaries */
-			if (!nm_connection_is_type (con, NM_SETTING_VPN_SETTING_NAME)) {
-				g_set_error (error, 1, 0, _("'%s' is not a VPN connection profile"), *iter);
-				g_strfreev (strv);
-				return FALSE;
-			}
-
-			/* translate id to uuid */
-			g_free (*iter);
-			*iter = g_strdup (nm_connection_get_uuid (con));
+	if (strv) {
+		for (iter = strv; *iter; iter++) {
+			if (**iter)
+				nm_setting_connection_add_secondary (NM_SETTING_CONNECTION (setting), *iter);
 		}
 	}
-
-	while (strv && strv[i])
-		nm_setting_connection_add_secondary (NM_SETTING_CONNECTION (setting), strv[i++]);
-	g_strfreev (strv);
-
 	return TRUE;
 }
 
