@@ -67,7 +67,7 @@ GArray *parse_output_fields (const char *fields_str,
                              GError **error);
 char *nmc_get_allowed_fields (const NmcOutputField fields_array[], int group_idx);
 NmcOutputField *nmc_dup_fields_array (NmcOutputField fields[], size_t size, guint32 flags);
-void nmc_empty_output_fields (NmCli *nmc);
+void nmc_empty_output_fields (NmcOutputData *output_data);
 void print_required_fields (const NmcConfig *nmc_config, const NmcPrintFields *print_fields, const NmcOutputField field_values[]);
 void print_data (const NmcConfig *nmc_config, const NmcPrintFields *print_fields, GPtrArray *output_data);
 

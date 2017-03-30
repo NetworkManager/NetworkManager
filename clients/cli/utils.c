@@ -782,23 +782,23 @@ nmc_dup_fields_array (NmcOutputField fields[], size_t size, guint32 flags)
 }
 
 void
-nmc_empty_output_fields (NmCli *nmc)
+nmc_empty_output_fields (NmcOutputData *output_data)
 {
 	guint i;
 
 	/* Free values in field structure */
-	for (i = 0; i < nmc->output_data->len; i++) {
-		NmcOutputField *fld_arr = g_ptr_array_index (nmc->output_data, i);
+	for (i = 0; i < output_data->output_data->len; i++) {
+		NmcOutputField *fld_arr = g_ptr_array_index (output_data->output_data, i);
 		nmc_free_output_field_values (fld_arr);
 	}
 
 	/* Empty output_data array */
-	if (nmc->output_data->len > 0)
-		g_ptr_array_remove_range (nmc->output_data, 0, nmc->output_data->len);
+	if (output_data->output_data->len > 0)
+		g_ptr_array_remove_range (output_data->output_data, 0, output_data->output_data->len);
 
-	if (nmc->print_fields.indices) {
-		g_array_free (nmc->print_fields.indices, TRUE);
-		nmc->print_fields.indices = NULL;
+	if (output_data->print_fields.indices) {
+		g_array_free (output_data->print_fields.indices, TRUE);
+		output_data->print_fields.indices = NULL;
 	}
 }
 
@@ -865,7 +865,7 @@ get_value_to_print (NmcColorOption color_option,
  * of 'field_values' array.
  */
 void
-print_required_fields (const NmcConfig *nmc_config, const NmcPrintFields *print_fields, const NmcOutputField field_values[])
+print_required_fields (const NmcConfig *nmc_config, const NmcPrintFields *print_fields, const NmcOutputField *field_values)
 {
 	GString *str;
 	int width1, width2;
@@ -874,7 +874,6 @@ print_required_fields (const NmcConfig *nmc_config, const NmcPrintFields *print_
 	char *indent_str;
 	const char *not_set_str = "--";
 	int i;
-	const NmcPrintFields fields = *print_fields;
 	gboolean multiline = nmc_config->multiline_output;
 	gboolean terse = (nmc_config->print_output == NMC_PRINT_TERSE);
 	gboolean pretty = (nmc_config->print_output == NMC_PRINT_PRETTY);
@@ -891,7 +890,7 @@ print_required_fields (const NmcConfig *nmc_config, const NmcPrintFields *print_
 
 	/* --- Main header --- */
 	if (main_header && pretty) {
-		int header_width = nmc_string_screen_width (fields.header_name, NULL) + 4;
+		int header_width = nmc_string_screen_width (print_fields->header_name, NULL) + 4;
 
 		if (multiline) {
 			table_width = header_width < ML_HEADER_WIDTH ? ML_HEADER_WIDTH : header_width;
@@ -901,10 +900,10 @@ print_required_fields (const NmcConfig *nmc_config, const NmcPrintFields *print_
 			line = g_strnfill (table_width, '=');
 		}
 
-		width1 = strlen (fields.header_name);
-		width2 = nmc_string_screen_width (fields.header_name, NULL);
+		width1 = strlen (print_fields->header_name);
+		width2 = nmc_string_screen_width (print_fields->header_name, NULL);
 		g_print ("%s\n", line);
-		g_print ("%*s\n", (table_width + width2)/2 + width1 - width2, fields.header_name);
+		g_print ("%*s\n", (table_width + width2)/2 + width1 - width2, print_fields->header_name);
 		g_print ("%s\n", line);
 		g_free (line);
 	}
@@ -921,9 +920,9 @@ print_required_fields (const NmcConfig *nmc_config, const NmcPrintFields *print_
 
 
 	if (multiline) {
-		for (i = 0; i < fields.indices->len; i++) {
+		for (i = 0; i < print_fields->indices->len; i++) {
 			char *tmp;
-			int idx = g_array_index (fields.indices, int, i);
+			int idx = g_array_index (print_fields->indices, int, i);
 			gboolean is_array = field_values[idx].value_is_array;
 
 			/* section prefix can't be an array */
@@ -985,8 +984,8 @@ print_required_fields (const NmcConfig *nmc_config, const NmcPrintFields *print_
 
 	str = g_string_new (NULL);
 
-	for (i = 0; i < fields.indices->len; i++) {
-		int idx = g_array_index (fields.indices, int, i);
+	for (i = 0; i < print_fields->indices->len; i++) {
+		int idx = g_array_index (print_fields->indices, int, i);
 		gs_free char *val_to_free = NULL;
 		const char *value = get_value_to_print (nmc_config->use_colors, (NmcOutputField *) field_values+idx, field_names,
 		                                        not_set_str, &val_to_free);
@@ -1016,8 +1015,8 @@ print_required_fields (const NmcConfig *nmc_config, const NmcPrintFields *print_
 	/* Print actual values */
 	if (str->len > 0) {
 		g_string_truncate (str, str->len-1);  /* Chop off last column separator */
-		if (fields.indent > 0) {
-			indent_str = g_strnfill (fields.indent, ' ');
+		if (print_fields->indent > 0) {
+			indent_str = g_strnfill (print_fields->indent, ' ');
 			g_string_prepend (str, indent_str);
 			g_free (indent_str);
 		}

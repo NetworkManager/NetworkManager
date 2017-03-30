@@ -102,10 +102,10 @@ print_ip4_config (NMIPConfig *cfg4,
 
 	tmpl = nmc_fields_ip4_config;
 	tmpl_len = sizeof (nmc_fields_ip4_config);
-	nmc->print_fields.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_IP4_CONFIG_ALL,
+	nmc->out.print_fields.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_IP4_CONFIG_ALL,
 	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
+	g_ptr_array_add (nmc->out.output_data, arr);
 
 	/* addresses */
 	ptr_array = nm_ip_config_get_addresses (cfg4);
@@ -160,12 +160,11 @@ print_ip4_config (NMIPConfig *cfg4,
 	set_val_arr  (arr, 4, dns_arr);
 	set_val_arr  (arr, 5, domain_arr);
 	set_val_arr  (arr, 6, wins_arr);
-	g_ptr_array_add (nmc->output_data, arr);
+	g_ptr_array_add (nmc->out.output_data, arr);
 
-	print_data (&nmc->nmc_config, &nmc->print_fields, nmc->output_data);
+	print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
 
-	/* Remove any previous data */
-	nmc_empty_output_fields (nmc);
+	nmc_empty_output_fields (&nmc->out);
 
 	return TRUE;
 }
@@ -190,10 +189,10 @@ print_ip6_config (NMIPConfig *cfg6,
 
 	tmpl = nmc_fields_ip6_config;
 	tmpl_len = sizeof (nmc_fields_ip6_config);
-	nmc->print_fields.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_IP6_CONFIG_ALL,
+	nmc->out.print_fields.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_IP6_CONFIG_ALL,
 	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (nmc->output_data, arr);
+	g_ptr_array_add (nmc->out.output_data, arr);
 
 	/* addresses */
 	ptr_array = nm_ip_config_get_addresses (cfg6);
@@ -244,12 +243,11 @@ print_ip6_config (NMIPConfig *cfg6,
 	set_val_arr  (arr, 3, route_arr);
 	set_val_arr  (arr, 4, dns_arr);
 	set_val_arr  (arr, 5, domain_arr);
-	g_ptr_array_add (nmc->output_data, arr);
+	g_ptr_array_add (nmc->out.output_data, arr);
 
-	print_data (&nmc->nmc_config, &nmc->print_fields, nmc->output_data);
+	print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
 
-	/* Remove any previous data */
-	nmc_empty_output_fields (nmc);
+	nmc_empty_output_fields (&nmc->out);
 
 	return TRUE;
 }
@@ -276,10 +274,10 @@ print_dhcp4_config (NMDhcpConfig *dhcp4,
 
 		tmpl = nmc_fields_dhcp4_config;
 		tmpl_len = sizeof (nmc_fields_dhcp4_config);
-		nmc->print_fields.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_DHCP4_CONFIG_ALL,
+		nmc->out.print_fields.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_DHCP4_CONFIG_ALL,
 		                                                 tmpl, FALSE, NULL, NULL);
 		arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-		g_ptr_array_add (nmc->output_data, arr);
+		g_ptr_array_add (nmc->out.output_data, arr);
 
 		options_arr = g_new (char *, g_hash_table_size (table) + 1);
 		g_hash_table_iter_init (&table_iter, table);
@@ -290,12 +288,11 @@ print_dhcp4_config (NMDhcpConfig *dhcp4,
 		arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 		set_val_strc (arr, 0, group_prefix);
 		set_val_arr  (arr, 1, options_arr);
-		g_ptr_array_add (nmc->output_data, arr);
+		g_ptr_array_add (nmc->out.output_data, arr);
 
-		print_data (&nmc->nmc_config, &nmc->print_fields, nmc->output_data);
+		print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
 
-		/* Remove any previous data */
-		nmc_empty_output_fields (nmc);
+		nmc_empty_output_fields (&nmc->out);
 
 		return TRUE;
 	}
@@ -324,10 +321,10 @@ print_dhcp6_config (NMDhcpConfig *dhcp6,
 
 		tmpl = nmc_fields_dhcp6_config;
 		tmpl_len = sizeof (nmc_fields_dhcp6_config);
-		nmc->print_fields.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_DHCP6_CONFIG_ALL,
+		nmc->out.print_fields.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_DHCP6_CONFIG_ALL,
 		                                                 tmpl, FALSE, NULL, NULL);
 		arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
-		g_ptr_array_add (nmc->output_data, arr);
+		g_ptr_array_add (nmc->out.output_data, arr);
 
 		options_arr = g_new (char *, g_hash_table_size (table) + 1);
 		g_hash_table_iter_init (&table_iter, table);
@@ -338,12 +335,11 @@ print_dhcp6_config (NMDhcpConfig *dhcp6,
 		arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 		set_val_strc (arr, 0, group_prefix);
 		set_val_arr  (arr, 1, options_arr);
-		g_ptr_array_add (nmc->output_data, arr);
+		g_ptr_array_add (nmc->out.output_data, arr);
 
-		print_data (&nmc->nmc_config, &nmc->print_fields, nmc->output_data);
+		print_data (&nmc->nmc_config, &nmc->out.print_fields, nmc->out.output_data);
 
-		/* Remove any previous data */
-		nmc_empty_output_fields (nmc);
+		nmc_empty_output_fields (&nmc->out);
 
 		return TRUE;
 	}

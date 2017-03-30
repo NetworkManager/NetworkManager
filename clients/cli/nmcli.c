@@ -540,8 +540,8 @@ nmc_init (NmCli *nmc)
 	nmc->mode_specified = FALSE;
 	nmc->nmc_config_mutable.escape_values = TRUE;
 	nmc->required_fields = NULL;
-	nmc->output_data = g_ptr_array_new_full (20, g_free);
-	memset (&nmc->print_fields, '\0', sizeof (NmcPrintFields));
+	nmc->out.output_data = g_ptr_array_new_full (20, g_free);
+	memset (&nmc->out.print_fields, '\0', sizeof (NmcPrintFields));
 	nmc->ask = FALSE;
 	nmc->complete = FALSE;
 	nmc->show_secrets = FALSE;
@@ -569,8 +569,8 @@ nmc_cleanup (NmCli *nmc)
 		g_hash_table_destroy (nmc->pwds_hash);
 
 	g_free (nmc->required_fields);
-	nmc_empty_output_fields (nmc);
-	g_ptr_array_unref (nmc->output_data);
+	nmc_empty_output_fields (&nmc->out);
+	g_ptr_array_unref (nmc->out.output_data);
 
 	nmc_polkit_agent_fini (nmc);
 }

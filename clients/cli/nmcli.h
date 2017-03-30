@@ -146,6 +146,11 @@ typedef struct _NmcConfig {
 	gboolean in_editor;                               /* Whether running the editor - nmcli con edit' */
 } NmcConfig;
 
+typedef struct _NmcOutputData {
+	GPtrArray *output_data;                           /* GPtrArray of arrays of NmcOutputField structs - accumulates data for output */
+	NmcPrintFields print_fields;                      /* Structure with field indices to print */
+} NmcOutputData;
+
 /* NmCli - main structure */
 typedef struct _NmCli {
 	NMClient *client;                                 /* Pointer to NMClient of libnm */
@@ -167,8 +172,7 @@ typedef struct _NmCli {
 		NmcConfig nmc_config_mutable;
 	};
 	char *required_fields;                            /* Required fields in output: '--fields' option */
-	GPtrArray *output_data;                           /* GPtrArray of arrays of NmcOutputField structs - accumulates data for output */
-	NmcPrintFields print_fields;                      /* Structure with field indices to print */
+	NmcOutputData out;
 	gboolean ask;                                     /* Ask for missing parameters: option '--ask' */
 	gboolean complete;                                /* Autocomplete the command line */
 	gboolean show_secrets;                            /* Whether to display secrets (both input and output): option '--show-secrets' */
