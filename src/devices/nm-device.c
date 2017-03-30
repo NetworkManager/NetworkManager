@@ -13358,8 +13358,10 @@ nm_device_hw_addr_set_cloned (NMDevice *self, NMConnection *connection, gboolean
 	if (preserve)
 		return nm_device_hw_addr_reset (self, detail);
 
-	if (hwaddr)
+	if (hwaddr) {
+		priv->hw_addr_type = type;
 		return _hw_addr_set (self, hwaddr, "set-cloned", detail);
+	}
 
 	return TRUE;
 }
