@@ -3188,7 +3188,7 @@ endif
 clients_cli_nmcli_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
 
-$(clients_cli_nmcli_OBJECTS): $(clients_cli_settings_doc_c)
+$(clients_cli_nmcli_OBJECTS): $(clients_common_settings_doc_c)
 $(clients_cli_nmcli_OBJECTS): clients/cli/.dirstamp
 
 install-data-hook-nmcli:
@@ -3205,24 +3205,24 @@ uninstall_hook += uninstall-hook-nmcli
 endif
 
 
-clients_cli_settings_doc_c = clients/cli/settings-docs.c
+clients_common_settings_doc_c = clients/common/settings-docs.c
 if HAVE_INTROSPECTION
-$(clients_cli_settings_doc_c): clients/cli/settings-docs.xsl libnm/nm-property-docs.xml
+$(clients_common_settings_doc_c): clients/common/settings-docs.xsl libnm/nm-property-docs.xml
 	$(AM_V_GEN) $(XSLTPROC) --output $@ $< $(word 2,$^)
-$(clients_cli_settings_doc_c): clients/cli/.dirstamp
-DISTCLEANFILES += $(clients_cli_settings_doc_c)
+$(clients_common_settings_doc_c): clients/common/.dirstamp
+DISTCLEANFILES += $(clients_common_settings_doc_c)
 else
-$(clients_cli_settings_doc_c):
-	@echo "to generate $(clients_cli_settings_doc_c), configure with --enable-introspection"
+$(clients_common_settings_doc_c):
+	@echo "to generate $(clients_common_settings_doc_c), configure with --enable-introspection"
 	@echo "alternatively, build --without-nmcli"
 	@false
 endif
-EXTRA_DIST += $(clients_cli_settings_doc_c)
+EXTRA_DIST += $(clients_common_settings_doc_c)
 
 
 EXTRA_DIST += \
 	clients/cli/nmcli-completion \
-	clients/cli/settings-docs.xsl
+	clients/common/settings-docs.xsl
 
 ###############################################################################
 # clients/tui

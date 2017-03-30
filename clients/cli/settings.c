@@ -763,8 +763,6 @@ nmc_setting_get_property_allowed_values (NMSetting *setting, const char *prop, c
 	return NULL;
 }
 
-#include "settings-docs.c"
-
 /*
  * Create a description string for a property.
  *
@@ -787,12 +785,13 @@ nmc_setting_get_property_desc (NMSetting *setting, const char *prop)
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 
-	setting_desc = nmc_setting_get_property_doc (setting, prop);
-	if (setting_desc)
-		setting_desc_title = _("[NM property description]");
-
 	if ((property_info = _meta_find_property_info_by_setting (setting, prop, &setting_info))) {
 		const char *desc = NULL;
+
+		if (property_info->describe_doc) {
+			setting_desc = _(property_info->describe_doc);
+			setting_desc_title = _("[NM property description]");
+		}
 
 		if (property_info->is_name) {
 			/* Traditionally, the "name" property was not handled here.

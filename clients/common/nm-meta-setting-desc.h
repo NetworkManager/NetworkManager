@@ -113,6 +113,8 @@ struct _NMMetaPropertyInfo {
 
 	bool is_secret:1;
 
+	const char *describe_doc;
+
 	const char *describe_message;
 
 	const NMMetaPropertyType    *property_type;
