@@ -873,10 +873,10 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 	const char *not_set_str = "--";
 	int i;
 	const NmcPrintFields fields = nmc->print_fields;
-	gboolean multiline = nmc->multiline_output;
-	gboolean terse = (nmc->print_output == NMC_PRINT_TERSE);
-	gboolean pretty = (nmc->print_output == NMC_PRINT_PRETTY);
-	gboolean escape = nmc->escape_values;
+	gboolean multiline = nmc->nmc_config.multiline_output;
+	gboolean terse = (nmc->nmc_config.print_output == NMC_PRINT_TERSE);
+	gboolean pretty = (nmc->nmc_config.print_output == NMC_PRINT_PRETTY);
+	gboolean escape = nmc->nmc_config.escape_values;
 	gboolean main_header_add = field_values[0].flags & NMC_OF_FLAG_MAIN_HEADER_ADD;
 	gboolean main_header_only = field_values[0].flags & NMC_OF_FLAG_MAIN_HEADER_ONLY;
 	gboolean field_names = field_values[0].flags & NMC_OF_FLAG_FIELD_NAMES;

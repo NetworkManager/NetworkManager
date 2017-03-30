@@ -786,8 +786,8 @@ nmc_switch_show (NmCli *nmc, const char *switch_name, const char *header)
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		return FALSE;
 	}
-	if (nmc->print_output == NMC_PRINT_NORMAL)
-		nmc->print_output = NMC_PRINT_TERSE;
+	if (nmc->nmc_config.print_output == NMC_PRINT_NORMAL)
+		nmc->nmc_config_mutable.print_output = NMC_PRINT_TERSE;
 
 	if (!nmc->required_fields)
 		nmc->required_fields = g_strdup (switch_name);

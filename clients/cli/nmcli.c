@@ -235,31 +235,31 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 		}
 
 		if (matches (opt, "-terse")) {
-			if (nmc->print_output == NMC_PRINT_TERSE) {
+			if (nmc->nmc_config.print_output == NMC_PRINT_TERSE) {
 				g_string_printf (nmc->return_text, _("Error: Option '--terse' is specified the second time."));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return FALSE;
 			}
-			else if (nmc->print_output == NMC_PRINT_PRETTY) {
+			else if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY) {
 				g_string_printf (nmc->return_text, _("Error: Option '--terse' is mutually exclusive with '--pretty'."));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return FALSE;
 			}
 			else
-				nmc->print_output = NMC_PRINT_TERSE;
+				nmc->nmc_config_mutable.print_output = NMC_PRINT_TERSE;
 		} else if (matches (opt, "-pretty")) {
-			if (nmc->print_output == NMC_PRINT_PRETTY) {
+			if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY) {
 				g_string_printf (nmc->return_text, _("Error: Option '--pretty' is specified the second time."));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return FALSE;
 			}
-			else if (nmc->print_output == NMC_PRINT_TERSE) {
+			else if (nmc->nmc_config.print_output == NMC_PRINT_TERSE) {
 				g_string_printf (nmc->return_text, _("Error: Option '--pretty' is mutually exclusive with '--terse'."));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return FALSE;
 			}
 			else
-				nmc->print_output = NMC_PRINT_PRETTY;
+				nmc->nmc_config_mutable.print_output = NMC_PRINT_PRETTY;
 		} else if (matches (opt, "-mode")) {
 			nmc->mode_specified = TRUE;
 			argc--;
@@ -272,9 +272,9 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 			if (argc == 1 && nmc->complete)
 				nmc_complete_strings (argv[0], "tabular", "multiline", NULL);
 			if (matches (argv[0], "tabular"))
-				nmc->multiline_output = FALSE;
+				nmc->nmc_config_mutable.multiline_output = FALSE;
 			else if (matches (argv[0], "multiline"))
-				nmc->multiline_output = TRUE;
+				nmc->nmc_config_mutable.multiline_output = TRUE;
 			else {
 				g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[0], opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
@@ -291,11 +291,11 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 			if (argc == 1 && nmc->complete)
 				nmc_complete_strings (argv[0], "yes", "no", "auto", NULL);
 			if (matches (argv[0], "auto"))
-				nmc->nmc_config.use_colors = NMC_USE_COLOR_AUTO;
+				nmc->nmc_config_mutable.use_colors = NMC_USE_COLOR_AUTO;
 			else if (matches (argv[0], "yes"))
-				nmc->nmc_config.use_colors = NMC_USE_COLOR_YES;
+				nmc->nmc_config_mutable.use_colors = NMC_USE_COLOR_YES;
 			else if (matches (argv[0], "no"))
-				nmc->nmc_config.use_colors = NMC_USE_COLOR_NO;
+				nmc->nmc_config_mutable.use_colors = NMC_USE_COLOR_NO;
 			else {
 				g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[0], opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
@@ -312,9 +312,9 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 			if (argc == 1 && nmc->complete)
 				nmc_complete_strings (argv[0], "yes", "no", NULL);
 			if (matches (argv[0], "yes"))
-				nmc->escape_values = TRUE;
+				nmc->nmc_config_mutable.escape_values = TRUE;
 			else if (matches (argv[0], "no"))
-				nmc->escape_values = FALSE;
+				nmc->nmc_config_mutable.escape_values = FALSE;
 			else {
 				g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[0], opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
@@ -342,7 +342,7 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 			if (argc == 1 && nmc->complete)
 				complete_fields (argv[0]);
 			nmc->required_fields = g_strdup (argv[0]);
-			nmc->print_output = NMC_PRINT_TERSE;
+			nmc->nmc_config_mutable.print_output = NMC_PRINT_TERSE;
 			/* We want fixed tabular mode here, but just set the mode specified and rely on the initialization
 			 * in nmc_init: in this way we allow use of "-m multiline" to swap the output mode also if placed
 			 * before the "-g <field>" option (-g may be still more practical and easy to remember than -t -f).
@@ -535,18 +535,18 @@ nmc_init (NmCli *nmc)
 
 	nmc->should_wait = 0;
 	nmc->nowait_flag = TRUE;
-	nmc->print_output = NMC_PRINT_NORMAL;
-	nmc->multiline_output = FALSE;
+	nmc->nmc_config_mutable.print_output = NMC_PRINT_NORMAL;
+	nmc->nmc_config_mutable.multiline_output = FALSE;
 	nmc->mode_specified = FALSE;
-	nmc->escape_values = TRUE;
+	nmc->nmc_config_mutable.escape_values = TRUE;
 	nmc->required_fields = NULL;
 	nmc->output_data = g_ptr_array_new_full (20, g_free);
 	memset (&nmc->print_fields, '\0', sizeof (NmcPrintFields));
 	nmc->ask = FALSE;
 	nmc->complete = FALSE;
 	nmc->show_secrets = FALSE;
-	nmc->nmc_config.use_colors = NMC_USE_COLOR_AUTO;
-	nmc->in_editor = FALSE;
+	nmc->nmc_config_mutable.use_colors = NMC_USE_COLOR_AUTO;
+	nmc->nmc_config_mutable.in_editor = FALSE;
 	nmc->editor_status_line = FALSE;
 	nmc->editor_save_confirmation = TRUE;
 	nmc->editor_show_secrets = FALSE;

@@ -803,7 +803,7 @@ nmc_connection_profile_details (NMConnection *connection, NmCli *nmc, gboolean s
 		int section_idx = g_array_index (print_settings_array, int, i);
 		const char *prop_name = (const char *) g_ptr_array_index (prop_array, i);
 
-		if (nmc->print_output != NMC_PRINT_TERSE && !nmc->multiline_output && was_output)
+		if (nmc->nmc_config.print_output != NMC_PRINT_TERSE && !nmc->nmc_config.multiline_output && was_output)
 			g_print ("\n"); /* Empty line */
 
 		was_output = FALSE;
@@ -1229,7 +1229,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 		int group_idx = g_array_index (print_groups, int, i);
 		char *group_fld = (char *) g_ptr_array_index (group_fields, i);
 
-		if (nmc->print_output != NMC_PRINT_TERSE && !nmc->multiline_output && was_output)
+		if (nmc->nmc_config.print_output != NMC_PRINT_TERSE && !nmc->nmc_config.multiline_output && was_output)
 			g_print ("\n"); /* Empty line */
 
 		was_output = FALSE;
@@ -1840,7 +1840,7 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 
 		/* multiline mode is default for 'connection show <ID>' */
 		if (!nmc->mode_specified)
-			nmc->multiline_output = TRUE;
+			nmc->nmc_config_mutable.multiline_output = TRUE;
 
 		/* Split required fields into the settings and active ones. */
 		if (!split_required_fields_for_con_show (nmc->required_fields, &profile_flds, &active_flds, &err))
@@ -2188,7 +2188,7 @@ check_activated (ActivateConnectionInfo *info)
 	}
 
 	if (ac_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-		if (nmc->print_output == NMC_PRINT_PRETTY)
+		if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
 			nmc_terminal_erase_line ();
 		g_print (_("Connection successfully activated (D-Bus active path: %s)\n"),
 		         nm_object_get_path (NM_OBJECT (active)));
@@ -2228,7 +2228,7 @@ check_activated (ActivateConnectionInfo *info)
 		        || NM_IS_DEVICE_BRIDGE (device))
 	            && dev_state >= NM_DEVICE_STATE_IP_CONFIG
 	            && dev_state <= NM_DEVICE_STATE_ACTIVATED) {
-			if (nmc->print_output == NMC_PRINT_PRETTY)
+			if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
 				nmc_terminal_erase_line ();
 			g_print (_("Connection successfully activated (master waiting for slaves) (D-Bus active path: %s)\n"),
 			          nm_object_get_path (NM_OBJECT (active)));
@@ -2358,7 +2358,7 @@ activate_connection_cb (GObject *client, GAsyncResult *result, gpointer user_dat
 		if (nmc->nowait_flag || state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
 			/* User doesn't want to wait or already activated */
 			if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-				if (nmc->print_output == NMC_PRINT_PRETTY)
+				if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
 					nmc_terminal_erase_line ();
 				g_print (_("Connection successfully activated (D-Bus active path: %s)\n"),
 				         nm_object_get_path (NM_OBJECT (active)));
@@ -2378,7 +2378,7 @@ activate_connection_cb (GObject *client, GAsyncResult *result, gpointer user_dat
 			}
 
 			/* Start progress indication showing VPN states */
-			if (nmc->print_output == NMC_PRINT_PRETTY) {
+			if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY) {
 				if (progress_id)
 					g_source_remove (progress_id);
 				progress_id = g_timeout_add (120, progress_active_connection_cb, active);
@@ -2666,7 +2666,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	}
 
 	/* Start progress indication */
-	if (nmc->print_output == NMC_PRINT_PRETTY)
+	if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
 		progress_id = g_timeout_add (120, progress_cb, _("preparing"));
 
 	return nmc->return_value;
@@ -2701,7 +2701,7 @@ down_active_connection_state_cb (NMActiveConnection *active,
 	if (nm_active_connection_get_state (active) < NM_ACTIVE_CONNECTION_STATE_DEACTIVATED)
 		return;
 
-	if (info->nmc->print_output == NMC_PRINT_PRETTY)
+	if (info->nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
 		nmc_terminal_erase_line ();
 	g_print (_("Connection '%s' successfully deactivated (D-Bus active path: %s)\n"),
 	         nm_active_connection_get_id (active), nm_object_get_path (NM_OBJECT (active)));
@@ -6015,9 +6015,9 @@ save_history_cmds (const char *uuid)
 static void
 editor_show_connection (NMConnection *connection, NmCli *nmc)
 {
-	nmc->print_output = NMC_PRINT_PRETTY;
-	nmc->multiline_output = TRUE;
-	nmc->escape_values = 0;
+	nmc->nmc_config_mutable.print_output = NMC_PRINT_PRETTY;
+	nmc->nmc_config_mutable.multiline_output = TRUE;
+	nmc->nmc_config_mutable.escape_values = 0;
 
 	/* Remove any previous data */
 	nmc_empty_output_fields (nmc);
@@ -6031,9 +6031,9 @@ editor_show_setting (NMSetting *setting, NmCli *nmc)
 	g_print (_("['%s' setting values]\n"),
 	         nm_setting_get_name (setting));
 
-	nmc->print_output = NMC_PRINT_NORMAL;
-	nmc->multiline_output = TRUE;
-	nmc->escape_values = 0;
+	nmc->nmc_config_mutable.print_output = NMC_PRINT_NORMAL;
+	nmc->nmc_config_mutable.multiline_output = TRUE;
+	nmc->nmc_config_mutable.escape_values = 0;
 
 	/* Remove any previous data */
 	nmc_empty_output_fields (nmc);
@@ -7627,7 +7627,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 			nmc->nowait_flag = FALSE;
 			nmc->should_wait++;
-			nmc->print_output = NMC_PRINT_PRETTY;
+			nmc->nmc_config_mutable.print_output = NMC_PRINT_PRETTY;
 			if (!nmc_activate_connection (nmc, NM_CONNECTION (rem_con), ifname, ap_nsp, ap_nsp, NULL,
 			                              activate_connection_editor_cb, &tmp_err)) {
 				g_print (_("Error: Cannot activate connection: %s.\n"), tmp_err->message);
@@ -8052,7 +8052,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 	}
 
 	/* nmcli runs the editor */
-	nmc->in_editor = TRUE;
+	nmc->nmc_config_mutable.in_editor = TRUE;
 
 	g_print ("\n");
 	g_print (_("===| nmcli interactive connection editor |==="));
@@ -8105,7 +8105,7 @@ modify_connection_cb (GObject *connection,
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 	} else {
-		if (nmc->print_output == NMC_PRINT_PRETTY)
+		if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
 			g_print (_("Connection '%s' (%s) successfully modified.\n"),
 			         nm_connection_get_id (NM_CONNECTION (connection)),
 			         nm_connection_get_uuid (NM_CONNECTION (connection)));

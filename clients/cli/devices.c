@@ -1117,7 +1117,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 		int section_idx = g_array_index (sections_array, int, k);
 		char *section_fld = (char *) g_ptr_array_index (fields_in_section, k);
 
-		if (nmc->print_output != NMC_PRINT_TERSE && !nmc->multiline_output && was_output)
+		if (nmc->nmc_config.print_output != NMC_PRINT_TERSE && !nmc->nmc_config.multiline_output && was_output)
 			g_print ("\n"); /* Print empty line between groups in tabular mode */
 
 		was_output = FALSE;
@@ -1544,7 +1544,7 @@ do_device_show (NmCli *nmc, int argc, char **argv)
 	gs_free_error GError *error = NULL;
 
 	if (!nmc->mode_specified)
-		nmc->multiline_output = TRUE;  /* multiline mode is default for 'device show' */
+		nmc->nmc_config_mutable.multiline_output = TRUE;  /* multiline mode is default for 'device show' */
 
 	if (argc) {
 		NMDevice *device;
@@ -1708,7 +1708,7 @@ add_and_activate_cb (GObject *client,
 		if (nmc->nowait_flag || state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
 			/* User doesn't want to wait or already activated */
 			if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-				if (nmc->print_output == NMC_PRINT_PRETTY)
+				if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
 					nmc_terminal_erase_line ();
 				if (info->hotspot)
 					g_print (_("Connection with UUID '%s' created and activated on device '%s'\n"),
@@ -1726,7 +1726,7 @@ add_and_activate_cb (GObject *client,
 
 			g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);  /* Exit if timeout expires */
 
-			if (nmc->print_output == NMC_PRINT_PRETTY)
+			if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
 				progress_id = g_timeout_add (120, progress_cb, device);
 		}
 	}
@@ -1800,7 +1800,7 @@ connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 
 		if (nmc->nowait_flag || state == NM_DEVICE_STATE_ACTIVATED) {
 			/* Don't want to wait or device already activated */
-			if (state == NM_DEVICE_STATE_ACTIVATED && nmc->print_output == NMC_PRINT_PRETTY) {
+			if (state == NM_DEVICE_STATE_ACTIVATED && nmc->nmc_config.print_output == NMC_PRINT_PRETTY) {
 				nmc_terminal_erase_line ();
 				g_print (_("Device '%s' has been connected.\n"), nm_device_get_iface (device));
 			}
@@ -1879,7 +1879,7 @@ do_device_connect (NmCli *nmc, int argc, char **argv)
 	                                     info);
 
 	/* Start progress indication */
-	if (nmc->print_output == NMC_PRINT_PRETTY)
+	if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
 		progress_id = g_timeout_add (120, progress_cb, device);
 
 	return nmc->return_value;
@@ -1984,7 +1984,7 @@ reapply_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 		nmc->return_value = NMC_RESULT_ERROR_DEV_DISCONNECT;
 		device_cb_info_finish (info, device);
 	} else {
-		if (nmc->print_output == NMC_PRINT_PRETTY)
+		if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
 			nmc_terminal_erase_line ();
 		g_print (_("Connection successfully reapplied to device '%s'.\n"),
 		         nm_device_get_iface (device));
@@ -2052,7 +2052,7 @@ modify_reapply_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_DEV_DISCONNECT;
 	} else {
-		if (nmc->print_output == NMC_PRINT_PRETTY)
+		if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
 			nmc_terminal_erase_line ();
 		g_print (_("Connection successfully reapplied to device '%s'.\n"),
 		         nm_device_get_iface (device));
@@ -2155,7 +2155,7 @@ disconnect_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 		if (nmc->nowait_flag || state <= NM_DEVICE_STATE_DISCONNECTED) {
 			/* Don't want to wait or device already disconnected */
 			if (state <= NM_DEVICE_STATE_DISCONNECTED) {
-				if (nmc->print_output == NMC_PRINT_PRETTY)
+				if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
 					nmc_terminal_erase_line ();
 				g_print (_("Device '%s' successfully disconnected.\n"),
 				         nm_device_get_iface (device));
@@ -3817,7 +3817,7 @@ static NMCResultCode
 do_device_lldp (NmCli *nmc, int argc, char **argv)
 {
 	if (!nmc->mode_specified)
-		nmc->multiline_output = TRUE;  /* multiline mode is default for 'device lldp' */
+		nmc->nmc_config_mutable.multiline_output = TRUE;  /* multiline mode is default for 'device lldp' */
 
 	nmc_do_cmd (nmc, device_lldp_cmds, *argv, argc, argv);
 

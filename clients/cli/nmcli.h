@@ -139,7 +139,11 @@ typedef enum {
 } NmcColorOption;
 
 typedef struct _NmcConfig {
+	NMCPrintOutput print_output;                      /* Output mode */
 	NmcColorOption use_colors;                        /* Whether to use colors for output: option '--color' */
+	gboolean multiline_output;                        /* Multiline output instead of default tabular */
+	gboolean escape_values;                           /* Whether to escape ':' and '\' in terse tabular mode */
+	gboolean in_editor;                               /* Whether running the editor - nmcli con edit' */
 } NmcConfig;
 
 /* NmCli - main structure */
@@ -157,18 +161,17 @@ typedef struct _NmCli {
 
 	int should_wait;                                  /* Semaphore indicating whether nmcli should not end or not yet */
 	gboolean nowait_flag;                             /* '--nowait' option; used for passing to callbacks */
-	NMCPrintOutput print_output;                      /* Output mode */
-	gboolean multiline_output;                        /* Multiline output instead of default tabular */
 	gboolean mode_specified;                          /* Whether tabular/multiline mode was specified via '--mode' option */
-	NmcConfig nmc_config;
-	gboolean escape_values;                           /* Whether to escape ':' and '\' in terse tabular mode */
+	union {
+		const NmcConfig nmc_config;
+		NmcConfig nmc_config_mutable;
+	};
 	char *required_fields;                            /* Required fields in output: '--fields' option */
 	GPtrArray *output_data;                           /* GPtrArray of arrays of NmcOutputField structs - accumulates data for output */
 	NmcPrintFields print_fields;                      /* Structure with field indices to print */
 	gboolean ask;                                     /* Ask for missing parameters: option '--ask' */
 	gboolean complete;                                /* Autocomplete the command line */
 	gboolean show_secrets;                            /* Whether to display secrets (both input and output): option '--show-secrets' */
-	gboolean in_editor;                               /* Whether running the editor - nmcli con edit' */
 	gboolean editor_status_line;                      /* Whether to display status line in connection editor */
 	gboolean editor_save_confirmation;                /* Whether to ask for confirmation on saving connections with 'autoconnect=yes' */
 	gboolean editor_show_secrets;                     /* Whether to display secrets in the editor' */

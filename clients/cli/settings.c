@@ -891,7 +891,7 @@ setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean 
 
 	g_return_val_if_fail (G_TYPE_CHECK_INSTANCE_TYPE (setting, setting_info->general->get_setting_gtype ()), FALSE);
 
-	if (nmc->print_output == NMC_PRINT_TERSE)
+	if (nmc->nmc_config.print_output == NMC_PRINT_TERSE)
 		type = NM_META_ACCESSOR_GET_TYPE_PARSABLE;
 
 	tmpl_len = sizeof (NmcOutputField) * (setting_info->properties_num + 1);
