@@ -57,7 +57,7 @@ test-*.trs
 /dispatcher/tests/test-dispatcher-envp
 
 /clients/cli/nmcli
-/clients/cli/settings-docs.c
+/clients/common/settings-docs.c
 /clients/tui/newt/libnmt-newt.a
 /clients/tui/nmtui
 /clients/nm-online
