@@ -3166,8 +3166,8 @@ clients_cli_nmcli_CPPFLAGS = \
 	-I$(srcdir)/libnm \
 	-I$(builddir)/libnm \
 	-I$(srcdir)/clients/cli \
-	-I$(builddir)/clients/cli \
 	-I$(srcdir)/clients/common \
+	-I$(builddir)/clients/common \
 	$(GLIB_CFLAGS) \
 	-DG_LOG_DOMAIN=\""nmcli"\" \
 	-DNMCLI_LOCALEDIR=\"$(datadir)/locale\"
