@@ -2383,7 +2383,7 @@ device_state (NMDevice *device, GParamSpec *pspec, NmCli *nmc)
 	char *str;
 
 	nmc_device_state_to_color (state, &color, &color_fmt);
-	str = nmc_colorize (nmc, color, color_fmt, "%s: %s\n",
+	str = nmc_colorize (nmc->nmc_config.use_colors, color, color_fmt, "%s: %s\n",
 	                    nm_device_get_iface (device),
 	                    nmc_device_state_to_string (state));
 

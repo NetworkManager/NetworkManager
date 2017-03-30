@@ -1011,7 +1011,7 @@ networkmanager_running (NMClient *client, GParamSpec *param, NmCli *nmc)
 	char *str;
 
 	running = nm_client_get_nm_running (client);
-	str = nmc_colorize (nmc,
+	str = nmc_colorize (nmc->nmc_config.use_colors,
 	                    running ? NMC_TERM_COLOR_GREEN : NMC_TERM_COLOR_RED,
 	                    NMC_TERM_FORMAT_NORMAL,
 	                    running ? _("NetworkManager has started") : _("NetworkManager has stopped"));
@@ -1053,7 +1053,7 @@ client_connectivity (NMClient *client, GParamSpec *param, NmCli *nmc)
 	char *str;
 
 	g_object_get (client, NM_CLIENT_CONNECTIVITY, &connectivity, NULL);
-	str = nmc_colorize (nmc, connectivity_to_color (connectivity), NMC_TERM_FORMAT_NORMAL,
+	str = nmc_colorize (nmc->nmc_config.use_colors, connectivity_to_color (connectivity), NMC_TERM_FORMAT_NORMAL,
 	                    _("Connectivity is now '%s'\n"), nm_connectivity_to_string (connectivity));
 	g_print ("%s", str);
 	g_free (str);
@@ -1066,7 +1066,7 @@ client_state (NMClient *client, GParamSpec *param, NmCli *nmc)
 	char *str;
 
 	g_object_get (client, NM_CLIENT_STATE, &state, NULL);
-	str = nmc_colorize (nmc, state_to_color (state), NMC_TERM_FORMAT_NORMAL,
+	str = nmc_colorize (nmc->nmc_config.use_colors, state_to_color (state), NMC_TERM_FORMAT_NORMAL,
 	                    _("Networkmanager is now in the '%s' state\n"),
 	                    nm_state_to_string (state));
 	g_print ("%s", str);
@@ -1110,12 +1110,12 @@ device_overview (NmCli *nmc, NMDevice *device)
 	if (!nm_device_get_autoconnect (device))
 		g_string_append_printf (outbuf, "%s, ", _("autoconnect"));
 	if (nm_device_get_firmware_missing (device)) {
-		tmp = nmc_colorize (nmc, NMC_TERM_COLOR_RED, NMC_TERM_FORMAT_NORMAL, _("fw missing"));
+		tmp = nmc_colorize (nmc->nmc_config.use_colors, NMC_TERM_COLOR_RED, NMC_TERM_FORMAT_NORMAL, _("fw missing"));
 		g_string_append_printf (outbuf, "%s, ", tmp);
 		g_free (tmp);
 	}
 	if (nm_device_get_nm_plugin_missing (device)) {
-		tmp = nmc_colorize (nmc, NMC_TERM_COLOR_RED, NMC_TERM_FORMAT_NORMAL, _("plugin missing"));
+		tmp = nmc_colorize (nmc->nmc_config.use_colors, NMC_TERM_COLOR_RED, NMC_TERM_FORMAT_NORMAL, _("plugin missing"));
 		g_string_append_printf (outbuf, "%s, ", tmp);
 		g_free (tmp);
 	}
@@ -1236,7 +1236,7 @@ do_overview (NmCli *nmc, int argc, char **argv)
 
 		state = nm_active_connection_get_state (ac);
 		nmc_active_connection_state_to_color (state, &color);
-		tmp = nmc_colorize (nmc, color, NMC_TERM_FORMAT_NORMAL, _("%s VPN connection"),
+		tmp = nmc_colorize (nmc->nmc_config.use_colors, color, NMC_TERM_FORMAT_NORMAL, _("%s VPN connection"),
 		                    nm_active_connection_get_id (ac));
 		g_print ("%s\n", tmp);
 		g_free (tmp);
@@ -1254,7 +1254,7 @@ do_overview (NmCli *nmc, int argc, char **argv)
 
 		state = nm_device_get_state (devices[i]);
 		nmc_device_state_to_color (state, &color, &color_fmt);
-		tmp = nmc_colorize (nmc, color, color_fmt, "%s: %s%s%s",
+		tmp = nmc_colorize (nmc->nmc_config.use_colors, color, color_fmt, "%s: %s%s%s",
 		                    nm_device_get_iface (devices[i]),
 		                    nmc_device_state_to_string (state),
 		                    ac ? " to " : "",
@@ -1336,7 +1336,7 @@ do_monitor (NmCli *nmc, int argc, char **argv)
 	if (!nm_client_get_nm_running (nmc->client)) {
 		char *str;
 
-		str = nmc_colorize (nmc, NMC_TERM_COLOR_RED, NMC_TERM_FORMAT_NORMAL,
+		str = nmc_colorize (nmc->nmc_config.use_colors, NMC_TERM_COLOR_RED, NMC_TERM_FORMAT_NORMAL,
 		                    _("Networkmanager is not running (waiting for it)\n"));
 		g_print ("%s", str);
 		g_free (str);

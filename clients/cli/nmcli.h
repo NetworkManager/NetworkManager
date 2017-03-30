@@ -138,6 +138,10 @@ typedef enum {
 	NMC_USE_COLOR_NO,
 } NmcColorOption;
 
+typedef struct _NmcConfig {
+	NmcColorOption use_colors;                        /* Whether to use colors for output: option '--color' */
+} NmcConfig;
+
 /* NmCli - main structure */
 typedef struct _NmCli {
 	NMClient *client;                                 /* Pointer to NMClient of libnm */
@@ -156,7 +160,7 @@ typedef struct _NmCli {
 	NMCPrintOutput print_output;                      /* Output mode */
 	gboolean multiline_output;                        /* Multiline output instead of default tabular */
 	gboolean mode_specified;                          /* Whether tabular/multiline mode was specified via '--mode' option */
-	NmcColorOption use_colors;                        /* Whether to use colors for output: option '--color' */
+	NmcConfig nmc_config;
 	gboolean escape_values;                           /* Whether to escape ':' and '\' in terse tabular mode */
 	char *required_fields;                            /* Required fields in output: '--fields' option */
 	GPtrArray *output_data;                           /* GPtrArray of arrays of NmcOutputField structs - accumulates data for output */

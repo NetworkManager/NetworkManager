@@ -291,11 +291,11 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 			if (argc == 1 && nmc->complete)
 				nmc_complete_strings (argv[0], "yes", "no", "auto", NULL);
 			if (matches (argv[0], "auto"))
-				nmc->use_colors = NMC_USE_COLOR_AUTO;
+				nmc->nmc_config.use_colors = NMC_USE_COLOR_AUTO;
 			else if (matches (argv[0], "yes"))
-				nmc->use_colors = NMC_USE_COLOR_YES;
+				nmc->nmc_config.use_colors = NMC_USE_COLOR_YES;
 			else if (matches (argv[0], "no"))
-				nmc->use_colors = NMC_USE_COLOR_NO;
+				nmc->nmc_config.use_colors = NMC_USE_COLOR_NO;
 			else {
 				g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[0], opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
@@ -545,7 +545,7 @@ nmc_init (NmCli *nmc)
 	nmc->ask = FALSE;
 	nmc->complete = FALSE;
 	nmc->show_secrets = FALSE;
-	nmc->use_colors = NMC_USE_COLOR_AUTO;
+	nmc->nmc_config.use_colors = NMC_USE_COLOR_AUTO;
 	nmc->in_editor = FALSE;
 	nmc->editor_status_line = FALSE;
 	nmc->editor_save_confirmation = TRUE;
