@@ -108,7 +108,6 @@ struct _NMMetaSettingInfoEditor;
 
 typedef struct _NmcOutputField {
 	const char *name;               /* Field's name */
-	const char *name_l10n;          /* Field's name for translation */
 	int width;                      /* Width in screen columns */
 	const struct _NmcOutputField *group_list; /* Points to an array with available section field names if this is a section (group) field */
 	void *value;                    /* Value of current field - char* or char** (NULL-terminated array) */

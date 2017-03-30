@@ -831,7 +831,7 @@ get_value_to_print (NmCli *nmc,
 	gboolean free_value;
 
 	if (field_name)
-		value = _(field->name_l10n);
+		value = _(field->name);
 	else
 		value = field->value
 		            ? (is_array
@@ -941,7 +941,7 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 					tmp = g_strdup_printf ("%s%s%s[%d]:",
 					                       section_prefix ? (const char*) field_values[0].value : "",
 					                       section_prefix ? "." : "",
-					                       _(field_values[idx].name_l10n),
+					                       _(field_values[idx].name),
 					                       j);
 					width1 = strlen (tmp);
 					width2 = nmc_string_screen_width (tmp, NULL);
@@ -961,7 +961,7 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 				tmp = g_strdup_printf ("%s%s%s:",
 				                       section_prefix ? hdr_name : "",
 				                       section_prefix ? "." : "",
-				                       _(field_values[idx].name_l10n));
+				                       _(field_values[idx].name));
 				width1 = strlen (tmp);
 				width2 = nmc_string_screen_width (tmp, NULL);
 				g_print ("%-*s%s\n", terse ? 0 : ML_VALUE_INDENT+width1-width2, tmp, print_val);

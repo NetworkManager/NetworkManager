@@ -167,7 +167,6 @@ _get_nmc_output_fields (const NMMetaSettingInfoEditor *setting_info)
 			NmcOutputField *f = &(*field)[i];
 
 			f->name = setting_info->properties[i].property_name;
-			f->name_l10n = setting_info->properties[i].property_name;
 		}
 	}
 

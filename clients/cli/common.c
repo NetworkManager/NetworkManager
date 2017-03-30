@@ -37,44 +37,46 @@
 
 extern GMainLoop *loop;
 
+#define OUTPUT_FIELD_WITH_NAME(n) { .name = N_ (n), }
+
 /* Available fields for IPv4 group */
 NmcOutputField nmc_fields_ip4_config[] = {
-	{"GROUP",      N_("GROUP")},    /* 0 */
-	{"ADDRESS",    N_("ADDRESS")},  /* 1 */
-	{"GATEWAY",    N_("GATEWAY")},  /* 2 */
-	{"ROUTE",      N_("ROUTE")},    /* 3 */
-	{"DNS",        N_("DNS")},      /* 4 */
-	{"DOMAIN",     N_("DOMAIN")},   /* 5 */
-	{"WINS",       N_("WINS")},     /* 6 */
-	{NULL, NULL}
+	OUTPUT_FIELD_WITH_NAME ("GROUP"),     /* 0 */
+	OUTPUT_FIELD_WITH_NAME ("ADDRESS"),   /* 1 */
+	OUTPUT_FIELD_WITH_NAME ("GATEWAY"),   /* 2 */
+	OUTPUT_FIELD_WITH_NAME ("ROUTE"),     /* 3 */
+	OUTPUT_FIELD_WITH_NAME ("DNS"),       /* 4 */
+	OUTPUT_FIELD_WITH_NAME ("DOMAIN"),    /* 5 */
+	OUTPUT_FIELD_WITH_NAME ("WINS"),      /* 6 */
+	{ 0 }
 };
 #define NMC_FIELDS_IP4_CONFIG_ALL     "GROUP,ADDRESS,GATEWAY,ROUTE,DNS,DOMAIN,WINS"
 
 /* Available fields for DHCPv4 group */
 NmcOutputField nmc_fields_dhcp4_config[] = {
-	{"GROUP",      N_("GROUP")},   /* 0 */
-	{"OPTION",     N_("OPTION")},  /* 1 */
-	{NULL, NULL}
+	OUTPUT_FIELD_WITH_NAME ("GROUP"),    /* 0 */
+	OUTPUT_FIELD_WITH_NAME ("OPTION"),   /* 1 */
+	{ 0 }
 };
 #define NMC_FIELDS_DHCP4_CONFIG_ALL     "GROUP,OPTION"
 
 /* Available fields for IPv6 group */
 NmcOutputField nmc_fields_ip6_config[] = {
-	{"GROUP",      N_("GROUP")},    /* 0 */
-	{"ADDRESS",    N_("ADDRESS")},  /* 1 */
-	{"GATEWAY",    N_("GATEWAY")},  /* 2 */
-	{"ROUTE",      N_("ROUTE")},    /* 3 */
-	{"DNS",        N_("DNS")},      /* 4 */
-	{"DOMAIN",     N_("DOMAIN")},   /* 5 */
-	{NULL, NULL}
+	OUTPUT_FIELD_WITH_NAME ("GROUP"),     /* 0 */
+	OUTPUT_FIELD_WITH_NAME ("ADDRESS"),   /* 1 */
+	OUTPUT_FIELD_WITH_NAME ("GATEWAY"),   /* 2 */
+	OUTPUT_FIELD_WITH_NAME ("ROUTE"),     /* 3 */
+	OUTPUT_FIELD_WITH_NAME ("DNS"),       /* 4 */
+	OUTPUT_FIELD_WITH_NAME ("DOMAIN"),    /* 5 */
+	{ 0 }
 };
 #define NMC_FIELDS_IP6_CONFIG_ALL     "GROUP,ADDRESS,GATEWAY,ROUTE,DNS,DOMAIN"
 
 /* Available fields for DHCPv6 group */
 NmcOutputField nmc_fields_dhcp6_config[] = {
-	{"GROUP",      N_("GROUP")},   /* 0 */
-	{"OPTION",     N_("OPTION")},  /* 1 */
-	{NULL, NULL}
+	OUTPUT_FIELD_WITH_NAME ("GROUP"),    /* 0 */
+	OUTPUT_FIELD_WITH_NAME ("OPTION"),   /* 1 */
+	{ 0 }
 };
 #define NMC_FIELDS_DHCP6_CONFIG_ALL     "GROUP,OPTION"
 

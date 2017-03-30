@@ -40,6 +40,9 @@
 #include "polkit-agent.h"
 #include "nm-vpn-helpers.h"
 
+#define OUTPUT_FIELD_WITH_NAME(n) { .name = N_ (n), }
+#define OUTPUT_FIELD_WITH_FIELDS(n, fields) { .name = N_ (n), .group_list = fields + 1,  }
+
 typedef struct _OptionInfo OptionInfo;
 struct _OptionInfo {
 	const char *setting_name;
@@ -129,69 +132,68 @@ struct _OptionInfo {
 
 /* Available fields for 'connection show' */
 NmcOutputField nmc_fields_con_show[] = {
-	{"NAME",                 N_("NAME")},                  /* 0 */
-	{"UUID",                 N_("UUID")},                  /* 1 */
-	{"TYPE",                 N_("TYPE")},                  /* 2 */
-	{"TIMESTAMP",            N_("TIMESTAMP")},             /* 3 */
-	{"TIMESTAMP-REAL",       N_("TIMESTAMP-REAL")},        /* 4 */
-	{"AUTOCONNECT",          N_("AUTOCONNECT")},           /* 5 */
-	{"AUTOCONNECT-PRIORITY", N_("AUTOCONNECT-PRIORITY")},  /* 6 */
-	{"READONLY",             N_("READONLY")},              /* 7 */
-	{"DBUS-PATH",            N_("DBUS-PATH")},             /* 8 */
-	{"ACTIVE",               N_("ACTIVE")},                /* 9 */
-	{"DEVICE",               N_("DEVICE")},                /* 10 */
-	{"STATE",                N_("STATE")},                 /* 11 */
-	{"ACTIVE-PATH",          N_("ACTIVE-PATH")},           /* 12 */
-	{"SLAVE",                N_("SLAVE")},                 /* 13 */
-	{NULL, NULL}
+	OUTPUT_FIELD_WITH_NAME ("NAME"),                  /* 0 */
+	OUTPUT_FIELD_WITH_NAME ("UUID"),                  /* 1 */
+	OUTPUT_FIELD_WITH_NAME ("TYPE"),                  /* 2 */
+	OUTPUT_FIELD_WITH_NAME ("TIMESTAMP"),             /* 3 */
+	OUTPUT_FIELD_WITH_NAME ("TIMESTAMP-REAL"),        /* 4 */
+	OUTPUT_FIELD_WITH_NAME ("AUTOCONNECT"),           /* 5 */
+	OUTPUT_FIELD_WITH_NAME ("AUTOCONNECT-PRIORITY"),  /* 6 */
+	OUTPUT_FIELD_WITH_NAME ("READONLY"),              /* 7 */
+	OUTPUT_FIELD_WITH_NAME ("DBUS-PATH"),             /* 8 */
+	OUTPUT_FIELD_WITH_NAME ("ACTIVE"),                /* 9 */
+	OUTPUT_FIELD_WITH_NAME ("DEVICE"),                /* 10 */
+	OUTPUT_FIELD_WITH_NAME ("STATE"),                 /* 11 */
+	OUTPUT_FIELD_WITH_NAME ("ACTIVE-PATH"),           /* 12 */
+	OUTPUT_FIELD_WITH_NAME ("SLAVE"),                 /* 13 */
+	{ 0 }
 };
 #define NMC_FIELDS_CON_SHOW_ALL     "NAME,UUID,TYPE,TIMESTAMP,TIMESTAMP-REAL,AUTOCONNECT,AUTOCONNECT-PRIORITY,READONLY,DBUS-PATH,"\
                                     "ACTIVE,DEVICE,STATE,ACTIVE-PATH,SLAVE"
 #define NMC_FIELDS_CON_SHOW_COMMON  "NAME,UUID,TYPE,DEVICE"
 
 /* Helper macro to define fields */
-#define SETTING_FIELD_TYPE(setting, setting_type) \
+#define OUTPUT_FIELD_WITH_SETTING(setting, setting_type) \
 	{ \
 		.name = setting, \
-		.name_l10n = N_ (setting), \
 		.setting_info = &nm_meta_setting_infos_editor[setting_type], \
 	}
 
 /* Available settings for 'connection show <con>' - profile part */
 NmcOutputField nmc_fields_settings_names[] = {
-	SETTING_FIELD_TYPE (NM_SETTING_CONNECTION_SETTING_NAME,   NM_META_SETTING_TYPE_CONNECTION),          /* 0 */
-	SETTING_FIELD_TYPE (NM_SETTING_WIRED_SETTING_NAME,        NM_META_SETTING_TYPE_WIRED),               /* 1 */
-	SETTING_FIELD_TYPE (NM_SETTING_802_1X_SETTING_NAME,       NM_META_SETTING_TYPE_802_1X),              /* 2 */
-	SETTING_FIELD_TYPE (NM_SETTING_WIRELESS_SETTING_NAME,     NM_META_SETTING_TYPE_WIRELESS),            /* 3 */
-	SETTING_FIELD_TYPE (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NM_META_SETTING_TYPE_WIRELESS_SECURITY), /* 4 */
-	SETTING_FIELD_TYPE (NM_SETTING_IP4_CONFIG_SETTING_NAME,   NM_META_SETTING_TYPE_IP4_CONFIG),          /* 5 */
-	SETTING_FIELD_TYPE (NM_SETTING_IP6_CONFIG_SETTING_NAME,   NM_META_SETTING_TYPE_IP6_CONFIG),          /* 6 */
-	SETTING_FIELD_TYPE (NM_SETTING_SERIAL_SETTING_NAME,       NM_META_SETTING_TYPE_SERIAL),              /* 7 */
-	SETTING_FIELD_TYPE (NM_SETTING_PPP_SETTING_NAME,          NM_META_SETTING_TYPE_PPP),                 /* 8 */
-	SETTING_FIELD_TYPE (NM_SETTING_PPPOE_SETTING_NAME,        NM_META_SETTING_TYPE_PPPOE),               /* 9 */
-	SETTING_FIELD_TYPE (NM_SETTING_GSM_SETTING_NAME,          NM_META_SETTING_TYPE_GSM),                 /* 10 */
-	SETTING_FIELD_TYPE (NM_SETTING_CDMA_SETTING_NAME,         NM_META_SETTING_TYPE_CDMA),                /* 11 */
-	SETTING_FIELD_TYPE (NM_SETTING_BLUETOOTH_SETTING_NAME,    NM_META_SETTING_TYPE_BLUETOOTH),           /* 12 */
-	SETTING_FIELD_TYPE (NM_SETTING_OLPC_MESH_SETTING_NAME,    NM_META_SETTING_TYPE_OLPC_MESH),           /* 13 */
-	SETTING_FIELD_TYPE (NM_SETTING_VPN_SETTING_NAME,          NM_META_SETTING_TYPE_VPN),                 /* 14 */
-	SETTING_FIELD_TYPE (NM_SETTING_WIMAX_SETTING_NAME,        NM_META_SETTING_TYPE_WIMAX),               /* 15 */
-	SETTING_FIELD_TYPE (NM_SETTING_INFINIBAND_SETTING_NAME,   NM_META_SETTING_TYPE_INFINIBAND),          /* 16 */
-	SETTING_FIELD_TYPE (NM_SETTING_BOND_SETTING_NAME,         NM_META_SETTING_TYPE_BOND),                /* 17 */
-	SETTING_FIELD_TYPE (NM_SETTING_VLAN_SETTING_NAME,         NM_META_SETTING_TYPE_VLAN),                /* 18 */
-	SETTING_FIELD_TYPE (NM_SETTING_ADSL_SETTING_NAME,         NM_META_SETTING_TYPE_ADSL),                /* 19 */
-	SETTING_FIELD_TYPE (NM_SETTING_BRIDGE_SETTING_NAME,       NM_META_SETTING_TYPE_BRIDGE),              /* 20 */
-	SETTING_FIELD_TYPE (NM_SETTING_BRIDGE_PORT_SETTING_NAME,  NM_META_SETTING_TYPE_BRIDGE_PORT),         /* 21 */
-	SETTING_FIELD_TYPE (NM_SETTING_TEAM_SETTING_NAME,         NM_META_SETTING_TYPE_TEAM),                /* 22 */
-	SETTING_FIELD_TYPE (NM_SETTING_TEAM_PORT_SETTING_NAME,    NM_META_SETTING_TYPE_TEAM_PORT),           /* 23 */
-	SETTING_FIELD_TYPE (NM_SETTING_DCB_SETTING_NAME,          NM_META_SETTING_TYPE_DCB),                 /* 24 */
-	SETTING_FIELD_TYPE (NM_SETTING_TUN_SETTING_NAME,          NM_META_SETTING_TYPE_TUN),                 /* 25 */
-	SETTING_FIELD_TYPE (NM_SETTING_IP_TUNNEL_SETTING_NAME,    NM_META_SETTING_TYPE_IP_TUNNEL),           /* 26 */
-	SETTING_FIELD_TYPE (NM_SETTING_MACSEC_SETTING_NAME,       NM_META_SETTING_TYPE_MACSEC),              /* 27 */
-	SETTING_FIELD_TYPE (NM_SETTING_MACVLAN_SETTING_NAME,      NM_META_SETTING_TYPE_MACVLAN),             /* 28 */
-	SETTING_FIELD_TYPE (NM_SETTING_VXLAN_SETTING_NAME,        NM_META_SETTING_TYPE_VXLAN),               /* 29 */
-	SETTING_FIELD_TYPE (NM_SETTING_PROXY_SETTING_NAME,        NM_META_SETTING_TYPE_PROXY),               /* 30 */
-	SETTING_FIELD_TYPE (NM_SETTING_DUMMY_SETTING_NAME,        NM_META_SETTING_TYPE_DUMMY),               /* 31 */
-	{NULL, NULL, 0, NULL, NULL, FALSE, FALSE, 0}
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_CONNECTION_SETTING_NAME,   NM_META_SETTING_TYPE_CONNECTION),          /* 0 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_WIRED_SETTING_NAME,        NM_META_SETTING_TYPE_WIRED),               /* 1 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_802_1X_SETTING_NAME,       NM_META_SETTING_TYPE_802_1X),              /* 2 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_WIRELESS_SETTING_NAME,     NM_META_SETTING_TYPE_WIRELESS),            /* 3 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NM_META_SETTING_TYPE_WIRELESS_SECURITY), /* 4 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_IP4_CONFIG_SETTING_NAME,   NM_META_SETTING_TYPE_IP4_CONFIG),          /* 5 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_IP6_CONFIG_SETTING_NAME,   NM_META_SETTING_TYPE_IP6_CONFIG),          /* 6 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_SERIAL_SETTING_NAME,       NM_META_SETTING_TYPE_SERIAL),              /* 7 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_PPP_SETTING_NAME,          NM_META_SETTING_TYPE_PPP),                 /* 8 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_PPPOE_SETTING_NAME,        NM_META_SETTING_TYPE_PPPOE),               /* 9 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_GSM_SETTING_NAME,          NM_META_SETTING_TYPE_GSM),                 /* 10 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_CDMA_SETTING_NAME,         NM_META_SETTING_TYPE_CDMA),                /* 11 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_BLUETOOTH_SETTING_NAME,    NM_META_SETTING_TYPE_BLUETOOTH),           /* 12 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_OLPC_MESH_SETTING_NAME,    NM_META_SETTING_TYPE_OLPC_MESH),           /* 13 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_VPN_SETTING_NAME,          NM_META_SETTING_TYPE_VPN),                 /* 14 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_WIMAX_SETTING_NAME,        NM_META_SETTING_TYPE_WIMAX),               /* 15 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_INFINIBAND_SETTING_NAME,   NM_META_SETTING_TYPE_INFINIBAND),          /* 16 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_BOND_SETTING_NAME,         NM_META_SETTING_TYPE_BOND),                /* 17 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_VLAN_SETTING_NAME,         NM_META_SETTING_TYPE_VLAN),                /* 18 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_ADSL_SETTING_NAME,         NM_META_SETTING_TYPE_ADSL),                /* 19 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_BRIDGE_SETTING_NAME,       NM_META_SETTING_TYPE_BRIDGE),              /* 20 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_BRIDGE_PORT_SETTING_NAME,  NM_META_SETTING_TYPE_BRIDGE_PORT),         /* 21 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_TEAM_SETTING_NAME,         NM_META_SETTING_TYPE_TEAM),                /* 22 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_TEAM_PORT_SETTING_NAME,    NM_META_SETTING_TYPE_TEAM_PORT),           /* 23 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_DCB_SETTING_NAME,          NM_META_SETTING_TYPE_DCB),                 /* 24 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_TUN_SETTING_NAME,          NM_META_SETTING_TYPE_TUN),                 /* 25 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_IP_TUNNEL_SETTING_NAME,    NM_META_SETTING_TYPE_IP_TUNNEL),           /* 26 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_MACSEC_SETTING_NAME,       NM_META_SETTING_TYPE_MACSEC),              /* 27 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_MACVLAN_SETTING_NAME,      NM_META_SETTING_TYPE_MACVLAN),             /* 28 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_VXLAN_SETTING_NAME,        NM_META_SETTING_TYPE_VXLAN),               /* 29 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_PROXY_SETTING_NAME,        NM_META_SETTING_TYPE_PROXY),               /* 30 */
+	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_DUMMY_SETTING_NAME,        NM_META_SETTING_TYPE_DUMMY),               /* 31 */
+	{ 0 }
 };
 #define NMC_FIELDS_SETTINGS_NAMES_ALL    NM_SETTING_CONNECTION_SETTING_NAME","\
                                          NM_SETTING_WIRED_SETTING_NAME","\
@@ -229,20 +231,20 @@ NmcOutputField nmc_fields_settings_names[] = {
 /* Active connection data */
 /* Available fields for GENERAL group */
 NmcOutputField nmc_fields_con_active_details_general[] = {
-	{"GROUP",         N_("GROUP")},        /* 0 */
-	{"NAME",          N_("NAME")},         /* 1 */
-	{"UUID",          N_("UUID")},         /* 2 */
-	{"DEVICES",       N_("DEVICES")},      /* 3 */
-	{"STATE",         N_("STATE")},        /* 4 */
-	{"DEFAULT",       N_("DEFAULT")},      /* 5 */
-	{"DEFAULT6",      N_("DEFAULT6")},     /* 6 */
-	{"SPEC-OBJECT",   N_("SPEC-OBJECT")},  /* 7 */
-	{"VPN",           N_("VPN")},          /* 8 */
-	{"DBUS-PATH",     N_("DBUS-PATH")},    /* 9 */
-	{"CON-PATH",      N_("CON-PATH")},     /* 10 */
-	{"ZONE",          N_("ZONE")},         /* 11 */
-	{"MASTER-PATH",   N_("MASTER-PATH")},  /* 12 */
-	{NULL, NULL}
+	OUTPUT_FIELD_WITH_NAME ("GROUP"),        /* 0 */
+	OUTPUT_FIELD_WITH_NAME ("NAME"),         /* 1 */
+	OUTPUT_FIELD_WITH_NAME ("UUID"),         /* 2 */
+	OUTPUT_FIELD_WITH_NAME ("DEVICES"),      /* 3 */
+	OUTPUT_FIELD_WITH_NAME ("STATE"),        /* 4 */
+	OUTPUT_FIELD_WITH_NAME ("DEFAULT"),      /* 5 */
+	OUTPUT_FIELD_WITH_NAME ("DEFAULT6"),     /* 6 */
+	OUTPUT_FIELD_WITH_NAME ("SPEC-OBJECT"),  /* 7 */
+	OUTPUT_FIELD_WITH_NAME ("VPN"),          /* 8 */
+	OUTPUT_FIELD_WITH_NAME ("DBUS-PATH"),    /* 9 */
+	OUTPUT_FIELD_WITH_NAME ("CON-PATH"),     /* 10 */
+	OUTPUT_FIELD_WITH_NAME ("ZONE"),         /* 11 */
+	OUTPUT_FIELD_WITH_NAME ("MASTER-PATH"),  /* 12 */
+	{ 0 }
 };
 #define NMC_FIELDS_CON_ACTIVE_DETAILS_GENERAL_ALL  "GROUP,NAME,UUID,DEVICES,STATE,DEFAULT,DEFAULT6,"\
                                                    "VPN,ZONE,DBUS-PATH,CON-PATH,SPEC-OBJECT,MASTER-PATH"
@@ -251,14 +253,14 @@ NmcOutputField nmc_fields_con_active_details_general[] = {
 
 /* Available fields for VPN group */
 NmcOutputField nmc_fields_con_active_details_vpn[] = {
-	{"GROUP",     N_("GROUP")},      /* 0 */
-	{"TYPE",      N_("TYPE")},       /* 1 */
-	{"USERNAME",  N_("USERNAME")},   /* 2 */
-	{"GATEWAY",   N_("GATEWAY")},    /* 3 */
-	{"BANNER",    N_("BANNER")},     /* 4 */
-	{"VPN-STATE", N_("VPN-STATE")},  /* 5 */
-	{"CFG",       N_("CFG")},        /* 6 */
-	{NULL, NULL}
+	OUTPUT_FIELD_WITH_NAME ("GROUP"),      /* 0 */
+	OUTPUT_FIELD_WITH_NAME ("TYPE"),       /* 1 */
+	OUTPUT_FIELD_WITH_NAME ("USERNAME"),   /* 2 */
+	OUTPUT_FIELD_WITH_NAME ("GATEWAY"),    /* 3 */
+	OUTPUT_FIELD_WITH_NAME ("BANNER"),     /* 4 */
+	OUTPUT_FIELD_WITH_NAME ("VPN-STATE"),  /* 5 */
+	OUTPUT_FIELD_WITH_NAME ("CFG"),        /* 6 */
+	{ 0 }
 };
 #define NMC_FIELDS_CON_ACTIVE_DETAILS_VPN_ALL  "GROUP,TYPE,USERNAME,GATEWAY,BANNER,VPN-STATE,CFG"
 
@@ -270,13 +272,13 @@ extern NmcOutputField nmc_fields_dhcp6_config[];
 
 /* Available fields for 'connection show <con>' - active part */
 NmcOutputField nmc_fields_con_active_details_groups[] = {
-	{"GENERAL",  N_("GENERAL"), 0, nmc_fields_con_active_details_general + 1},  /* 0 */
-	{"IP4",      N_("IP4"),     0, nmc_fields_ip4_config + 1                },  /* 1 */
-	{"DHCP4",    N_("DHCP4"),   0, nmc_fields_dhcp4_config + 1              },  /* 2 */
-	{"IP6",      N_("IP6"),     0, nmc_fields_ip6_config + 1                },  /* 3 */
-	{"DHCP6",    N_("DHCP6"),   0, nmc_fields_dhcp6_config + 1              },  /* 4 */
-	{"VPN",      N_("VPN"),     0, nmc_fields_con_active_details_vpn + 1    },  /* 5 */
-	{NULL, NULL, 0, NULL}
+	OUTPUT_FIELD_WITH_FIELDS ("GENERAL", nmc_fields_con_active_details_general), /* 0 */
+	OUTPUT_FIELD_WITH_FIELDS ("IP4",     nmc_fields_ip4_config),                 /* 1 */
+	OUTPUT_FIELD_WITH_FIELDS ("DHCP4",   nmc_fields_dhcp4_config),               /* 2 */
+	OUTPUT_FIELD_WITH_FIELDS ("IP6",     nmc_fields_ip6_config),                 /* 3 */
+	OUTPUT_FIELD_WITH_FIELDS ("DHCP6",   nmc_fields_dhcp6_config),               /* 4 */
+	OUTPUT_FIELD_WITH_FIELDS ("VPN",     nmc_fields_con_active_details_vpn),     /* 5 */
+	{ 0 }
 };
 #define NMC_FIELDS_CON_ACTIVE_DETAILS_ALL  "GENERAL,IP4,DHCP4,IP6,DHCP6,VPN"
 
