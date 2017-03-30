@@ -566,12 +566,20 @@ static char *
 _get_fcn_gobject (ARGS_GET_FCN)
 {
 	char *s;
-	GValue val = G_VALUE_INIT;
+	GType gtype_prop;
+	nm_auto_unset_gvalue GValue val = G_VALUE_INIT;
 
-	g_value_init (&val, G_TYPE_STRING);
-	g_object_get_property (G_OBJECT (setting), property_info->property_name, &val);
-	s = g_value_dup_string (&val);
-	g_value_unset (&val);
+	gtype_prop = _gobject_property_get_gtype (G_OBJECT (setting), property_info->property_name);
+
+	if (gtype_prop == G_TYPE_BOOLEAN) {
+		g_value_init (&val, gtype_prop);
+		g_object_get_property (G_OBJECT (setting), property_info->property_name, &val);
+		s = g_strdup (g_value_get_boolean (&val) ? "yes" : "no");
+	} else {
+		g_value_init (&val, G_TYPE_STRING);
+		g_object_get_property (G_OBJECT (setting), property_info->property_name, &val);
+		s = g_value_dup_string (&val);
+	}
 	return s;
 }
 
@@ -4455,34 +4463,6 @@ _set_fcn_wireless_security_psk (ARGS_SET_FCN)
 	}
 	g_object_set (setting, property_info->property_name, value, NULL);
 	return TRUE;
-}
-
-/*****************************************************************************/
-
-static void
-nmc_value_transform_bool_string (const GValue *src_value,
-                                 GValue       *dest_value)
-{
-	dest_value->data[0].v_pointer = g_strdup (src_value->data[0].v_int ? "yes" : "no");
-}
-
-static void
-nmc_value_transform_char_string (const GValue *src_value,
-                                 GValue       *dest_value)
-{
-	dest_value->data[0].v_pointer = g_strdup_printf ("%c", src_value->data[0].v_uint);
-}
-
-static void __attribute__((constructor))
-register_nmcli_value_transforms (void)
-{
-	/* FIXME: we should not register a g-value transform function. Instead, our meta data
-	 * should be able to access the values according to their type.
-	 *
-	 * Also, running code as a ((constructor)) is hightly unexpected and affects the
-	 * entire binary. */
-	g_value_register_transform_func (G_TYPE_BOOLEAN, G_TYPE_STRING, nmc_value_transform_bool_string);
-	g_value_register_transform_func (G_TYPE_CHAR, G_TYPE_STRING, nmc_value_transform_char_string);
 }
 
 /*****************************************************************************/
