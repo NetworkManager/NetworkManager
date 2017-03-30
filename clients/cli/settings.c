@@ -918,7 +918,7 @@ setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean 
 
 	g_ptr_array_add (nmc->output_data, arr);
 
-	print_data (nmc);  /* Print all data */
+	print_data (&nmc->nmc_config, &nmc->print_fields, nmc->output_data);
 
 	return TRUE;
 }

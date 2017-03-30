@@ -381,7 +381,7 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 
 	g_ptr_array_add (nmc->output_data, arr);
 
-	print_data (nmc);  /* Print all data */
+	print_data (&nmc->nmc_config, &nmc->print_fields, nmc->output_data);
 
 	return TRUE;
 }
@@ -504,7 +504,7 @@ print_permissions (void *user_data)
 		set_val_strc (arr, 1, permission_result_to_string (perm_result));
 		g_ptr_array_add (nmc->output_data, arr);
 	}
-	print_data (nmc);  /* Print all data */
+	print_data (&nmc->nmc_config, &nmc->print_fields, nmc->output_data);
 
 	quit ();
 	return G_SOURCE_REMOVE;
@@ -617,7 +617,7 @@ show_general_logging (NmCli *nmc)
 	set_val_str (arr, 1, domains);
 	g_ptr_array_add (nmc->output_data, arr);
 
-	print_data (nmc);  /* Print all data */
+	print_data (&nmc->nmc_config, &nmc->print_fields, nmc->output_data);
 
 	return TRUE;
 }

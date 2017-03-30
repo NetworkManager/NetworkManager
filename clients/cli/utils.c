@@ -863,7 +863,7 @@ get_value_to_print (NmcColorOption color_option,
  * of 'field_values' array.
  */
 void
-print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
+print_required_fields (const NmcConfig *nmc_config, const NmcPrintFields *print_fields, const NmcOutputField field_values[])
 {
 	GString *str;
 	int width1, width2;
@@ -872,11 +872,11 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 	char *indent_str;
 	const char *not_set_str = "--";
 	int i;
-	const NmcPrintFields fields = nmc->print_fields;
-	gboolean multiline = nmc->nmc_config.multiline_output;
-	gboolean terse = (nmc->nmc_config.print_output == NMC_PRINT_TERSE);
-	gboolean pretty = (nmc->nmc_config.print_output == NMC_PRINT_PRETTY);
-	gboolean escape = nmc->nmc_config.escape_values;
+	const NmcPrintFields fields = *print_fields;
+	gboolean multiline = nmc_config->multiline_output;
+	gboolean terse = (nmc_config->print_output == NMC_PRINT_TERSE);
+	gboolean pretty = (nmc_config->print_output == NMC_PRINT_PRETTY);
+	gboolean escape = nmc_config->escape_values;
 	gboolean main_header_add = field_values[0].flags & NMC_OF_FLAG_MAIN_HEADER_ADD;
 	gboolean main_header_only = field_values[0].flags & NMC_OF_FLAG_MAIN_HEADER_ONLY;
 	gboolean field_names = field_values[0].flags & NMC_OF_FLAG_FIELD_NAMES;
@@ -938,7 +938,7 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 
 				for (p = (const char **) field_values[idx].value, j = 1; p && *p; p++, j++) {
 					val = *p ? *p : not_set_str;
-					print_val = colorize_string (nmc->nmc_config.use_colors, field_values[idx].color, field_values[idx].color_fmt,
+					print_val = colorize_string (nmc_config->use_colors, field_values[idx].color, field_values[idx].color_fmt,
 					                             val, &val_to_free);
 					tmp = g_strdup_printf ("%s%s%s[%d]:",
 					                       section_prefix ? (const char*) field_values[0].value : "",
@@ -958,7 +958,7 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 				gs_free char *val_to_free = NULL;
 
 				val = val && *val ? val : not_set_str;
-				print_val = colorize_string (nmc->nmc_config.use_colors, field_values[idx].color, field_values[idx].color_fmt,
+				print_val = colorize_string (nmc_config->use_colors, field_values[idx].color, field_values[idx].color_fmt,
 				                             val, &val_to_free);
 				tmp = g_strdup_printf ("%s%s%s:",
 				                       section_prefix ? hdr_name : "",
@@ -986,7 +986,7 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 	for (i = 0; i < fields.indices->len; i++) {
 		int idx = g_array_index (fields.indices, int, i);
 		gs_free char *val_to_free = NULL;
-		const char *value = get_value_to_print (nmc->nmc_config.use_colors, (NmcOutputField *) field_values+idx, field_names,
+		const char *value = get_value_to_print (nmc_config->use_colors, (NmcOutputField *) field_values+idx, field_names,
 		                                        not_set_str, &val_to_free);
 
 		if (terse) {
@@ -1041,18 +1041,18 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
  * print_required_fields() function.
  */
 void
-print_data (NmCli *nmc)
+print_data (const NmcConfig *nmc_config, const NmcPrintFields *print_fields, GPtrArray *output_data)
 {
 	int i, j;
 	size_t len;
 	NmcOutputField *row;
 	int num_fields = 0;
 
-	if (!nmc->output_data || nmc->output_data->len < 1)
+	if (!output_data || output_data->len < 1)
 		return;
 
 	/* How many fields? */
-	row = g_ptr_array_index (nmc->output_data, 0);
+	row = g_ptr_array_index (output_data, 0);
 	while (row->name) {
 		num_fields++;
 		row++;
@@ -1061,27 +1061,27 @@ print_data (NmCli *nmc)
 	/* Find out maximal string lengths */
 	for (i = 0; i < num_fields; i++) {
 		size_t max_width = 0;
-		for (j = 0; j < nmc->output_data->len; j++) {
+		for (j = 0; j < output_data->len; j++) {
 			gboolean field_names;
 			gs_free char * val_to_free = NULL;
 			const char *value;
 
-			row = g_ptr_array_index (nmc->output_data, j);
+			row = g_ptr_array_index (output_data, j);
 			field_names = row[0].flags & NMC_OF_FLAG_FIELD_NAMES;
 			value = get_value_to_print (NMC_USE_COLOR_NO, row+i, field_names, "--", &val_to_free);
 			len = nmc_string_screen_width (value, NULL);
 			max_width = len > max_width ? len : max_width;
 		}
-		for (j = 0; j < nmc->output_data->len; j++) {
-			row = g_ptr_array_index (nmc->output_data, j);
+		for (j = 0; j < output_data->len; j++) {
+			row = g_ptr_array_index (output_data, j);
 			row[i].width = max_width + 1;
 		}
 	}
 
 	/* Now we can print the data. */
-	for (i = 0; i < nmc->output_data->len; i++) {
-		row = g_ptr_array_index (nmc->output_data, i);
-		print_required_fields (nmc, row);
+	for (i = 0; i < output_data->len; i++) {
+		row = g_ptr_array_index (output_data, i);
+		print_required_fields (nmc_config, print_fields, row);
 	}
 }
 
