@@ -39,8 +39,8 @@ GType nm_default_route_manager_get_type (void);
 NMDefaultRouteManager *nm_default_route_manager_get (void);
 NMDefaultRouteManager *nm_default_route_manager_new (NMPlatform *platform);
 
-void nm_default_route_manager_ip4_update_default_route (NMDefaultRouteManager *manager, gpointer source);
-void nm_default_route_manager_ip6_update_default_route (NMDefaultRouteManager *manager, gpointer source);
+gboolean nm_default_route_manager_ip4_update_default_route (NMDefaultRouteManager *manager, gpointer source);
+gboolean nm_default_route_manager_ip6_update_default_route (NMDefaultRouteManager *manager, gpointer source);
 
 gboolean nm_default_route_manager_ip4_connection_has_default_route (NMDefaultRouteManager *manager, NMConnection *connection, gboolean *out_is_never_default);
 gboolean nm_default_route_manager_ip6_connection_has_default_route (NMDefaultRouteManager *manager, NMConnection *connection, gboolean *out_is_never_default);

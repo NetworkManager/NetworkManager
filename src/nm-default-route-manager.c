@@ -643,7 +643,7 @@ _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *c
 	return changed;
 }
 
-static void
+static gboolean
 _entry_at_idx_update (const VTableIP *vtable, NMDefaultRouteManager *self, guint entry_idx, const Entry *old_entry)
 {
 	NMDefaultRouteManagerPrivate *priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
@@ -672,15 +672,16 @@ _entry_at_idx_update (const VTableIP *vtable, NMDefaultRouteManager *self, guint
 
 	g_ptr_array_sort_with_data (entries, _sort_entries_cmp, NULL);
 
-	_resync_all (vtable, self, entry, old_entry, FALSE);
+	return _resync_all (vtable, self, entry, old_entry, FALSE);
 }
 
-static void
+static gboolean
 _entry_at_idx_remove (const VTableIP *vtable, NMDefaultRouteManager *self, guint entry_idx)
 {
 	NMDefaultRouteManagerPrivate *priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
 	Entry *entry;
 	GPtrArray *entries;
+	gboolean ret;
 
 	entries = vtable->get_entries (priv);
 
@@ -695,14 +696,15 @@ _entry_at_idx_remove (const VTableIP *vtable, NMDefaultRouteManager *self, guint
 	g_ptr_array_index (entries, entry_idx) = NULL;
 	g_ptr_array_remove_index (entries, entry_idx);
 
-	_resync_all (vtable, self, NULL, entry, FALSE);
-
+	ret = _resync_all (vtable, self, NULL, entry, FALSE);
 	_entry_free (entry);
+
+	return ret;
 }
 
 /*****************************************************************************/
 
-static void
+static gboolean
 _ipx_update_default_route (const VTableIP *vtable,
                            NMDefaultRouteManager *self,
                            gpointer source)
@@ -717,20 +719,20 @@ _ipx_update_default_route (const VTableIP *vtable,
 	NMDevice *device = NULL;
 	NMVpnConnection *vpn = NULL;
 	gboolean never_default = FALSE;
-	gboolean synced = FALSE;
+	gboolean synced = FALSE, ret;
 
-	g_return_if_fail (NM_IS_DEFAULT_ROUTE_MANAGER (self));
+	g_return_val_if_fail (NM_IS_DEFAULT_ROUTE_MANAGER (self), FALSE);
 
 	priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
 	if (priv->disposed)
-		return;
+		return FALSE;
 
 	if (NM_IS_DEVICE (source))
 		device = source;
 	else if (NM_IS_VPN_CONNECTION (source))
 		vpn = source;
 	else
-		g_return_if_reached ();
+		g_return_val_if_reached (FALSE);
 
 	if (device)
 		ip_ifindex = nm_device_get_ip_ifindex (device);
@@ -749,9 +751,9 @@ _ipx_update_default_route (const VTableIP *vtable,
 		g_object_freeze_notify (G_OBJECT (self));
 		_entry_at_idx_remove (vtable, self, entry_idx);
 		g_assert (!_entry_find_by_source (entries, source, NULL));
-		_ipx_update_default_route (vtable, self, source);
+		ret = _ipx_update_default_route (vtable, self, source);
 		g_object_thaw_notify (G_OBJECT (self));
-		return;
+		return ret;
 	}
 
 	/* get the @default_route from the device. */
@@ -834,9 +836,10 @@ _ipx_update_default_route (const VTableIP *vtable,
 		default_route = NULL;
 	}
 
-	if (!entry && !default_route)
-		/* nothing to do */;
-	else if (!entry) {
+	if (!entry && !default_route) {
+		/* nothing to do */
+		return FALSE;
+	} else if (!entry) {
 		/* add */
 		entry = g_slice_new0 (Entry);
 		entry->source.object = g_object_ref (source);
@@ -854,7 +857,7 @@ _ipx_update_default_route (const VTableIP *vtable,
 		entry->synced = synced;
 
 		g_ptr_array_add (entries, entry);
-		_entry_at_idx_update (vtable, self, entries->len - 1, NULL);
+		return _entry_at_idx_update (vtable, self, entries->len - 1, NULL);
 	} else if (default_route) {
 		/* update */
 		Entry old_entry, new_entry;
@@ -874,32 +877,32 @@ _ipx_update_default_route (const VTableIP *vtable,
 			if (!synced) {
 				/* the internal book-keeping doesn't change, so don't do a full
 				 * sync of the configured routes. */
-				return;
+				return FALSE;
 			}
-			_entry_at_idx_update (vtable, self, entry_idx, entry);
+			return _entry_at_idx_update (vtable, self, entry_idx, entry);
 		} else {
 			old_entry = *entry;
 			*entry = new_entry;
-			_entry_at_idx_update (vtable, self, entry_idx, &old_entry);
+			return _entry_at_idx_update (vtable, self, entry_idx, &old_entry);
 		}
 	} else {
 		/* delete */
-		_entry_at_idx_remove (vtable, self, entry_idx);
+		return _entry_at_idx_remove (vtable, self, entry_idx);
 	}
 }
 
-void
+gboolean
 nm_default_route_manager_ip4_update_default_route (NMDefaultRouteManager *self,
                                                    gpointer source)
 {
-	_ipx_update_default_route (&vtable_ip4, self, source);
+	return _ipx_update_default_route (&vtable_ip4, self, source);
 }
 
-void
+gboolean
 nm_default_route_manager_ip6_update_default_route (NMDefaultRouteManager *self,
                                                    gpointer source)
 {
-	_ipx_update_default_route (&vtable_ip6, self, source);
+	return _ipx_update_default_route (&vtable_ip6, self, source);
 }
 
 /*****************************************************************************/
