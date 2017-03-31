@@ -45,41 +45,38 @@ typedef enum {
 	NM_META_PROPERTY_TYPE_MAC_MODE_INFINIBAND,
 } NMMetaPropertyTypeMacMode;
 
+typedef struct _NMMetaEnvironment           NMMetaEnvironment;
+typedef struct _NMMetaType                  NMMetaType;
+typedef struct _NMMetaAbstractInfo          NMMetaAbstractInfo;
 typedef struct _NMMetaSettingInfoEditor     NMMetaSettingInfoEditor;
-typedef struct _NMMetaPropertyInfo    NMMetaPropertyInfo;
-typedef struct _NMMetaPropertyType    NMMetaPropertyType;
-typedef struct _NMMetaPropertyTypData NMMetaPropertyTypData;
-typedef struct _NMMetaEnvironment     NMMetaEnvironment;
+typedef struct _NMMetaPropertyInfo          NMMetaPropertyInfo;
+typedef struct _NMMetaPropertyType          NMMetaPropertyType;
+typedef struct _NMMetaPropertyTypData       NMMetaPropertyTypData;
 
 struct _NMMetaPropertyType {
 
-	const char *(*describe_fcn) (const NMMetaSettingInfoEditor *setting_info,
-	                             const NMMetaPropertyInfo *property_info,
+	const char *(*describe_fcn) (const NMMetaPropertyInfo *property_info,
 	                             char **out_to_free);
 
-	char *(*get_fcn) (const NMMetaSettingInfoEditor *setting_info,
-	                  const NMMetaPropertyInfo *property_info,
+	char *(*get_fcn) (const NMMetaPropertyInfo *property_info,
 	                  NMSetting *setting,
 	                  NMMetaAccessorGetType get_type,
 	                  gboolean show_secrets);
 	gboolean (*set_fcn) (const NMMetaEnvironment *environment,
 	                     gpointer environment_user_data,
-	                     const NMMetaSettingInfoEditor *setting_info,
 	                     const NMMetaPropertyInfo *property_info,
 	                     NMSetting *setting,
 	                     const char *value,
 	                     GError **error);
 	gboolean (*remove_fcn) (const NMMetaEnvironment *environment,
 	                        gpointer environment_user_data,
-	                        const NMMetaSettingInfoEditor *setting_info,
 	                        const NMMetaPropertyInfo *property_info,
 	                        NMSetting *setting,
 	                        const char *option,
 	                        guint32 idx,
 	                        GError **error);
 
-	const char *const*(*values_fcn) (const NMMetaSettingInfoEditor *setting_info,
-	                                 const NMMetaPropertyInfo *property_info,
+	const char *const*(*values_fcn) (const NMMetaPropertyInfo *property_info,
 	                                 char ***out_to_free);
 };
 
@@ -108,6 +105,10 @@ struct _NMMetaPropertyTypData {
 };
 
 struct _NMMetaPropertyInfo {
+	const NMMetaType *meta_type;
+
+	const NMMetaSettingInfoEditor *setting_info;
+
 	const char *property_name;
 
 	/* the property list for now must contain as first field the
@@ -127,12 +128,30 @@ struct _NMMetaPropertyInfo {
 };
 
 struct _NMMetaSettingInfoEditor {
+	const NMMetaType *meta_type;
 	const NMMetaSettingInfo *general;
 	/* the order of the properties matter. The first *must* be the
 	 * "name", and then the order is as they are listed by default. */
 	const NMMetaPropertyInfo *properties;
 	guint properties_num;
 };
+
+struct _NMMetaType {
+	const char *type_name;
+};
+
+struct _NMMetaAbstractInfo {
+	union {
+		const NMMetaType *meta_type;
+		union {
+			NMMetaSettingInfoEditor setting_info;
+			NMMetaPropertyInfo property_info;
+		} as;
+	};
+};
+
+extern const NMMetaType nm_meta_type_setting_info_editor;
+extern const NMMetaType nm_meta_type_property_info;
 
 extern const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[_NM_META_SETTING_TYPE_NUM];
 

@@ -98,6 +98,8 @@ nm_meta_setting_info_editor_get_property_info (const NMMetaSettingInfoEditor *se
 	g_return_val_if_fail (property_name, NULL);
 
 	for (i = 0; i < setting_info->properties_num; i++) {
+		nm_assert (setting_info->properties[i].property_name);
+		nm_assert (setting_info->properties[i].setting_info == setting_info);
 		if (nm_streq (setting_info->properties[i].property_name, property_name))
 			return &setting_info->properties[i];
 	}
@@ -106,32 +108,35 @@ nm_meta_setting_info_editor_get_property_info (const NMMetaSettingInfoEditor *se
 }
 
 const NMMetaPropertyInfo *
-nm_meta_property_info_find_by_name (const char *setting_name, const char *property_name, const NMMetaSettingInfoEditor **out_setting_info)
+nm_meta_property_info_find_by_name (const char *setting_name, const char *property_name)
 {
 	const NMMetaSettingInfoEditor *setting_info;
+	const NMMetaPropertyInfo *property_info;
 
 	setting_info = nm_meta_setting_info_editor_find_by_name (setting_name);
-
-	NM_SET_OUT (out_setting_info, setting_info);
 	if (!setting_info)
 		return NULL;
-	return nm_meta_setting_info_editor_get_property_info (setting_info, property_name);
+
+	property_info = nm_meta_setting_info_editor_get_property_info (setting_info, property_name);
+
+	nm_assert (property_info->setting_info == setting_info);
+
+	return property_info;
 }
 
 const NMMetaPropertyInfo *
-nm_meta_property_info_find_by_setting (NMSetting *setting, const char *property_name, const NMMetaSettingInfoEditor **out_setting_info)
+nm_meta_property_info_find_by_setting (NMSetting *setting, const char *property_name)
 {
 	const NMMetaSettingInfoEditor *setting_info;
 	const NMMetaPropertyInfo *property_info;
 
 	setting_info = nm_meta_setting_info_editor_find_by_setting (setting);
-
-	NM_SET_OUT (out_setting_info, setting_info);
 	if (!setting_info)
 		return NULL;
 	property_info = nm_meta_setting_info_editor_get_property_info (setting_info, property_name);
 
-	nm_assert (property_info == nm_meta_property_info_find_by_name (nm_setting_get_name (setting), property_name, NULL));
+	nm_assert (property_info->setting_info == setting_info);
+	nm_assert (property_info == nm_meta_property_info_find_by_name (nm_setting_get_name (setting), property_name));
 
 	return property_info;
 }

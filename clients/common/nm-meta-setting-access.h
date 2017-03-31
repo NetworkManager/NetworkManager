@@ -31,11 +31,9 @@ const NMMetaSettingInfoEditor *nm_meta_setting_info_editor_find_by_gtype (GType 
 const NMMetaPropertyInfo *nm_meta_setting_info_editor_get_property_info (const NMMetaSettingInfoEditor *setting_info,
                                                                          const char *property_name);
 const NMMetaPropertyInfo *nm_meta_property_info_find_by_name (const char *setting_name,
-                                                              const char *property_name,
-                                                              const NMMetaSettingInfoEditor **out_setting_info);
+                                                              const char *property_name);
 const NMMetaPropertyInfo *nm_meta_property_info_find_by_setting (NMSetting *setting,
-                                                                 const char *property_name,
-                                                                 const NMMetaSettingInfoEditor **out_setting_info);
+                                                                 const char *property_name);
 
 /*****************************************************************************/
 
