@@ -9608,6 +9608,7 @@ nm_device_set_ip4_config (NMDevice *self,
 	NMIP4Config *old_config = NULL;
 	gboolean has_changes = FALSE;
 	gboolean success = TRUE;
+	gboolean def_route_changed;
 	int ip_ifindex, config_ifindex;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
@@ -9667,7 +9668,7 @@ nm_device_set_ip4_config (NMDevice *self,
 		g_clear_object (&priv->dev_ip4_config);
 	}
 
-	nm_default_route_manager_ip4_update_default_route (nm_default_route_manager_get (), self);
+	def_route_changed = nm_default_route_manager_ip4_update_default_route (nm_default_route_manager_get (), self);
 	concheck_periodic_update (self);
 
 	if (!nm_device_sys_iface_state_is_external_or_assume (self))
@@ -9701,6 +9702,9 @@ nm_device_set_ip4_config (NMDevice *self,
 		}
 
 		nm_device_queue_recheck_assume (self);
+	} else if (def_route_changed) {
+		_LOGD (LOGD_IP4, "ip4-config: default route changed");
+		g_signal_emit (self, signals[IP4_CONFIG_CHANGED], 0, priv->ip4_config, priv->ip4_config);
 	}
 
 	return success;
@@ -9779,6 +9783,7 @@ nm_device_set_ip6_config (NMDevice *self,
 	NMIP6Config *old_config = NULL;
 	gboolean has_changes = FALSE;
 	gboolean success = TRUE;
+	gboolean def_route_changed;
 	int ip_ifindex, config_ifindex;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
@@ -9831,7 +9836,7 @@ nm_device_set_ip6_config (NMDevice *self,
 		       nm_exported_object_get_path (NM_EXPORTED_OBJECT (old_config)));
 	}
 
-	nm_default_route_manager_ip6_update_default_route (nm_default_route_manager_get (), self);
+	def_route_changed = nm_default_route_manager_ip6_update_default_route (nm_default_route_manager_get (), self);
 
 	if (has_changes) {
 		NMSettingsConnection *settings_connection;
@@ -9862,6 +9867,9 @@ nm_device_set_ip6_config (NMDevice *self,
 
 		if (priv->ndisc)
 			ndisc_set_router_config (priv->ndisc, self);
+	} else if (def_route_changed) {
+		_LOGD (LOGD_IP6, "ip6-config: default route changed");
+		g_signal_emit (self, signals[IP6_CONFIG_CHANGED], 0, priv->ip6_config, priv->ip6_config);
 	}
 
 	return success;
