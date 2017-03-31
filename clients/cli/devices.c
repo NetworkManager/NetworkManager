@@ -1116,7 +1116,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 		                                                nmc_fields_dev_show_general, FALSE, NULL, NULL);
 
 		nmc_fields_dev_show_general[0].flags = NMC_OF_FLAG_MAIN_HEADER_ONLY;
-		print_required_fields (&nmc->nmc_config, &out.print_fields, nmc_fields_dev_show_general);
+		print_required_fields (&nmc->nmc_config, NMC_OF_FLAG_MAIN_HEADER_ONLY, &out.print_fields, nmc_fields_dev_show_general);
 	}
 
 	/* Loop through the required sections and print them. */

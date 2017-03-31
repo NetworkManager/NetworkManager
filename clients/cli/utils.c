@@ -815,7 +815,7 @@ nmc_get_allowed_fields (const NmcOutputField fields_array[], int group_idx)
 }
 
 NmcOutputField *
-nmc_dup_fields_array (NmcOutputField fields[], size_t size, guint32 flags)
+nmc_dup_fields_array (NmcOutputField fields[], size_t size, NmcOfFlags flags)
 {
 	NmcOutputField *row;
 
@@ -910,7 +910,7 @@ get_value_to_print (NmcColorOption color_option,
  * of 'field_values' array.
  */
 void
-print_required_fields (const NmcConfig *nmc_config, const NmcPrintFields *print_fields, const NmcOutputField *field_values)
+print_required_fields (const NmcConfig *nmc_config, NmcOfFlags of_flags, const NmcPrintFields *print_fields, const NmcOutputField *field_values)
 {
 	GString *str;
 	int width1, width2;
@@ -923,10 +923,10 @@ print_required_fields (const NmcConfig *nmc_config, const NmcPrintFields *print_
 	gboolean terse = (nmc_config->print_output == NMC_PRINT_TERSE);
 	gboolean pretty = (nmc_config->print_output == NMC_PRINT_PRETTY);
 	gboolean escape = nmc_config->escape_values;
-	gboolean main_header_add = field_values[0].flags & NMC_OF_FLAG_MAIN_HEADER_ADD;
-	gboolean main_header_only = field_values[0].flags & NMC_OF_FLAG_MAIN_HEADER_ONLY;
-	gboolean field_names = field_values[0].flags & NMC_OF_FLAG_FIELD_NAMES;
-	gboolean section_prefix = field_values[0].flags & NMC_OF_FLAG_SECTION_PREFIX;
+	gboolean main_header_add = of_flags & NMC_OF_FLAG_MAIN_HEADER_ADD;
+	gboolean main_header_only = of_flags & NMC_OF_FLAG_MAIN_HEADER_ONLY;
+	gboolean field_names = of_flags & NMC_OF_FLAG_FIELD_NAMES;
+	gboolean section_prefix = of_flags & NMC_OF_FLAG_SECTION_PREFIX;
 	gboolean main_header = main_header_add || main_header_only;
 
 	enum { ML_HEADER_WIDTH = 79 };
@@ -1123,8 +1123,10 @@ print_data (const NmcConfig *nmc_config, const NmcOutputData *out)
 	guint i;
 
 	for (i = 0; i < out->output_data->len; i++) {
-		print_required_fields (nmc_config, &out->print_fields,
-		                       g_ptr_array_index (out->output_data, i));
+		const NmcOutputField *field_values = g_ptr_array_index (out->output_data, i);
+
+		print_required_fields (nmc_config, field_values[0].flags,
+		                       &out->print_fields, field_values);
 	}
 }
 

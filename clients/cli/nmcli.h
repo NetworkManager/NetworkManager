@@ -98,11 +98,13 @@ typedef enum {
 } NMCPrintOutput;
 
 /* === Output fields === */
-/* Flags for NmcOutputField */
-#define NMC_OF_FLAG_FIELD_NAMES        0x00000001   /* Print field names instead of values */
-#define NMC_OF_FLAG_SECTION_PREFIX     0x00000002   /* Use the first value as section prefix for the other field names - just in multiline */
-#define NMC_OF_FLAG_MAIN_HEADER_ADD    0x00000004   /* Print main header in addition to values/field names */
-#define NMC_OF_FLAG_MAIN_HEADER_ONLY   0x00000008   /* Print main header only */
+
+typedef enum {
+	NMC_OF_FLAG_FIELD_NAMES        = 0x00000001,   /* Print field names instead of values */
+	NMC_OF_FLAG_SECTION_PREFIX     = 0x00000002,   /* Use the first value as section prefix for the other field names - just in multiline */
+	NMC_OF_FLAG_MAIN_HEADER_ADD    = 0x00000004,   /* Print main header in addition to values/field names */
+	NMC_OF_FLAG_MAIN_HEADER_ONLY   = 0x00000008,   /* Print main header only */
+} NmcOfFlags;
 
 struct _NMMetaSettingInfoEditor;
 
@@ -113,7 +115,7 @@ typedef struct _NmcOutputField {
 	void *value;                    /* Value of current field - char* or char** (NULL-terminated array) */
 	gboolean value_is_array;        /* Whether value is char** instead of char* */
 	gboolean free_value;            /* Whether to free the value */
-	guint32 flags;                  /* Flags - whether and how to print values/field names/headers */
+	NmcOfFlags flags;               /* Flags - whether and how to print values/field names/headers */
 	NmcTermColor color;             /* Use this color to print value */
 	NmcTermFormat color_fmt;        /* Use this terminal format to print value */
 

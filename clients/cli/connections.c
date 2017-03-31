@@ -798,7 +798,7 @@ nmc_connection_profile_details (NMConnection *connection, NmCli *nmc, gboolean s
 		                                                nmc_fields_settings_names, FALSE, NULL, NULL);
 
 		nmc_fields_settings_names[0].flags = NMC_OF_FLAG_MAIN_HEADER_ONLY;
-		print_required_fields (&nmc->nmc_config, &out.print_fields, nmc_fields_settings_names);
+		print_required_fields (&nmc->nmc_config, NMC_OF_FLAG_MAIN_HEADER_ONLY, &out.print_fields, nmc_fields_settings_names);
 	}
 
 	/* Loop through the required settings and print them. */
@@ -1225,7 +1225,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 		                                                 nmc_fields_con_active_details_groups, FALSE, NULL, NULL);
 
 		nmc_fields_con_active_details_groups[0].flags = NMC_OF_FLAG_MAIN_HEADER_ONLY;
-		print_required_fields (&nmc->nmc_config, &out.print_fields, nmc_fields_con_active_details_groups);
+		print_required_fields (&nmc->nmc_config, NMC_OF_FLAG_MAIN_HEADER_ONLY, &out.print_fields, nmc_fields_con_active_details_groups);
 	}
 
 	/* Loop through the groups and print them. */
