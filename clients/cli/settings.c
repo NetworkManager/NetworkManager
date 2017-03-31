@@ -35,32 +35,6 @@
 
 /*****************************************************************************/
 
-static const NmcOutputField *
-_get_nmc_output_fields (const NMMetaSettingInfoEditor *setting_info)
-{
-	static NmcOutputField *fields[_NM_META_SETTING_TYPE_NUM + 1] = { };
-	NmcOutputField **field;
-	guint i;
-
-	g_return_val_if_fail (setting_info, NULL);
-	g_return_val_if_fail (setting_info->general->meta_type < _NM_META_SETTING_TYPE_NUM, NULL);
-
-	field = &fields[setting_info->general->meta_type];
-
-	if (G_UNLIKELY (!*field)) {
-		*field = g_new0 (NmcOutputField, setting_info->properties_num + 1);
-		for (i = 0; i < setting_info->properties_num; i++) {
-			NmcOutputField *f = &(*field)[i];
-
-			f->name = setting_info->properties[i].property_name;
-		}
-	}
-
-	return *field;
-}
-
-/*****************************************************************************/
-
 static gboolean
 get_answer (const char *prop, const char *value)
 {
@@ -833,40 +807,33 @@ nmc_property_set_gvalue (NMSetting *setting, const char *prop, GValue *value)
 
 /*****************************************************************************/
 
-static char *
-_all_properties (const NMMetaSettingInfoEditor *setting_info)
+static NmcOutputField *
+_dup_fields_array (const NMMetaSettingInfoEditor *setting_info, NmcOfFlags flags)
 {
-	GString *str;
-	guint i;
+	NmcOutputField *row;
+	gsize l;
 
-	str = g_string_sized_new (250);
-	for (i = 0; i < setting_info->properties_num; i++) {
-		if (str->len)
-			g_string_append_c (str, ',');
-		g_string_append (str, setting_info->properties[i].property_name);
-	}
-	return g_string_free (str, FALSE);
+	l = setting_info->properties_num;
+
+	row = g_malloc0 ((l + 1) * sizeof (NmcOutputField));
+	for (l = 0; l < setting_info->properties_num; l++)
+		row[l].info = (const NMMetaAbstractInfo *) &setting_info->properties[l];
+	row[0].flags = flags;
+	return row;
 }
 
 gboolean
 setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean show_secrets)
 {
-	const NMMetaSettingInfo *meta_setting_info;
 	const NMMetaSettingInfoEditor *setting_info;
-	gs_free NmcOutputField *tmpl = NULL;
 	NmcOutputField *arr;
 	guint i;
-	size_t tmpl_len;
-	gs_free char *s_all = NULL;
 	NMMetaAccessorGetType type = NM_META_ACCESSOR_GET_TYPE_PRETTY;
 	NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 
-	meta_setting_info = nm_meta_setting_infos_by_gtype (G_OBJECT_TYPE (setting));
-	g_return_val_if_fail (meta_setting_info, FALSE);
-
-	setting_info = &nm_meta_setting_infos_editor[meta_setting_info->meta_type];
+	setting_info = nm_meta_setting_info_editor_find_by_setting (setting);
 	g_return_val_if_fail (setting_info, FALSE);
 
 	g_return_val_if_fail (G_TYPE_CHECK_INSTANCE_TYPE (setting, setting_info->general->get_setting_gtype ()), FALSE);
@@ -874,15 +841,13 @@ setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean 
 	if (nmc->nmc_config.print_output == NMC_PRINT_TERSE)
 		type = NM_META_ACCESSOR_GET_TYPE_PARSABLE;
 
-	tmpl_len = sizeof (NmcOutputField) * (setting_info->properties_num + 1);
-	tmpl = g_memdup (_get_nmc_output_fields (setting_info), tmpl_len);
-
-	out_indices = parse_output_fields (one_prop ?: (s_all = _all_properties (setting_info)),
-	                                   tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+	out_indices = parse_output_fields (one_prop,
+	                                   (const NMMetaAbstractInfo *const*) nm_property_infos_for_setting_type (setting_info->general->meta_type),
+	                                   FALSE, NULL, NULL);
+	arr = _dup_fields_array (setting_info, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (out.output_data, arr);
 
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
+	arr = _dup_fields_array (setting_info, NMC_OF_FLAG_SECTION_PREFIX);
 	for (i = 0; i < setting_info->properties_num; i++) {
 		const NMMetaPropertyInfo *property_info = &setting_info->properties[i];
 

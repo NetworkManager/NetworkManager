@@ -35,10 +35,9 @@ nmc_read_connection_properties (NmCli *nmc,
 
 void nmc_active_connection_state_to_color (NMActiveConnectionState state, NmcTermColor *color);
 
-extern NmcOutputField nmc_fields_con_show[];
-extern NmcOutputField nmc_fields_settings_names[];
-extern NmcOutputField nmc_fields_con_active_details_general[];
-extern NmcOutputField nmc_fields_con_active_details_vpn[];
-extern NmcOutputField nmc_fields_con_active_details_groups[];
+extern const NmcMetaGenericInfo *const nmc_fields_con_show[];
+extern const NmcMetaGenericInfo *const nmc_fields_con_active_details_general[];
+extern const NmcMetaGenericInfo *const nmc_fields_con_active_details_vpn[];
+extern const NmcMetaGenericInfo *const nmc_fields_con_active_details_groups[];
 
 #endif /* NMC_CONNECTIONS_H */

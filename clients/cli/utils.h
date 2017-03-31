@@ -61,12 +61,12 @@ void set_val_color_all (NmcOutputField fields_array[], NmcTermColor color);
 void set_val_color_fmt_all (NmcOutputField fields_array[], NmcTermFormat format);
 void nmc_free_output_field_values (NmcOutputField fields_array[]);
 GArray *parse_output_fields (const char *fields_str,
-                             const NmcOutputField fields_array[],
+                             const NMMetaAbstractInfo *const* fields_array,
                              gboolean parse_groups,
                              GPtrArray **group_fields,
                              GError **error);
-char *nmc_get_allowed_fields (const NmcOutputField fields_array[], int group_idx);
-NmcOutputField *nmc_dup_fields_array (NmcOutputField fields[], size_t size, guint32 flags);
+char *nmc_get_allowed_fields (const NMMetaAbstractInfo *const*fields_array, int group_idx);
+NmcOutputField *nmc_dup_fields_array (const NMMetaAbstractInfo *const*fields, NmcOfFlags flags);
 void nmc_empty_output_fields (NmcOutputData *output_data);
 void print_required_fields (const NmcConfig *nmc_config,
                             NmcOfFlags of_flags,

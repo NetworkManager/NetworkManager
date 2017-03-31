@@ -23,6 +23,8 @@
 #include "NetworkManager.h"
 #include "nm-secret-agent-old.h"
 
+#include "nm-meta-setting-desc.h"
+
 #if WITH_POLKIT_AGENT
 #include "nm-polkit-listener.h"
 #else
@@ -106,27 +108,37 @@ typedef enum {
 	NMC_OF_FLAG_MAIN_HEADER_ONLY   = 0x00000008,   /* Print main header only */
 } NmcOfFlags;
 
-struct _NMMetaSettingInfoEditor;
+extern const const NMMetaType nmc_meta_type_generic_info;
 
-typedef struct _NmcOutputField {
-	const char *name;               /* Field's name */
+typedef struct _NmcOutputField NmcOutputField;
+typedef struct _NmcMetaGenericInfo NmcMetaGenericInfo;
+
+struct _NmcMetaGenericInfo {
+	const NMMetaType *meta_type;
+	const char *name;
+	const NmcMetaGenericInfo *const*nested;
+};
+
+#define NMC_META_GENERIC(n, ...) \
+	(&((NmcMetaGenericInfo) { \
+		.meta_type =                        &nmc_meta_type_generic_info, \
+		.name =                             N_ (n), \
+		__VA_ARGS__ \
+	}))
+
+#define NMC_META_GENERIC_WITH_NESTED(n, nest) \
+	NMC_META_GENERIC (n, .nested = (nest))
+
+struct _NmcOutputField {
+	const NMMetaAbstractInfo *info;
 	int width;                      /* Width in screen columns */
-	const struct _NmcOutputField *group_list; /* Points to an array with available section field names if this is a section (group) field */
 	void *value;                    /* Value of current field - char* or char** (NULL-terminated array) */
 	gboolean value_is_array;        /* Whether value is char** instead of char* */
 	gboolean free_value;            /* Whether to free the value */
 	NmcOfFlags flags;               /* Flags - whether and how to print values/field names/headers */
 	NmcTermColor color;             /* Use this color to print value */
 	NmcTermFormat color_fmt;        /* Use this terminal format to print value */
-
-	/* in a very particular case NmcOutputField is used in combination with
-	 * the @group_list above. That list will go away (and the entire NmcOutputField
-	 * should separate formatting-options, setting-metadata and output.
-	 *
-	 * For now, hack around that by alternatively providing a @setting_info instead
-	 * of @group_list. */
-	const struct _NMMetaSettingInfoEditor *setting_info;
-} NmcOutputField;
+};
 
 typedef enum {
 	NMC_USE_COLOR_AUTO,

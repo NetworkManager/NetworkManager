@@ -37,49 +37,38 @@
 
 extern GMainLoop *loop;
 
-#define OUTPUT_FIELD_WITH_NAME(n) { .name = N_ (n), }
-
-/* Available fields for IPv4 group */
-NmcOutputField nmc_fields_ip4_config[] = {
-	OUTPUT_FIELD_WITH_NAME ("GROUP"),     /* 0 */
-	OUTPUT_FIELD_WITH_NAME ("ADDRESS"),   /* 1 */
-	OUTPUT_FIELD_WITH_NAME ("GATEWAY"),   /* 2 */
-	OUTPUT_FIELD_WITH_NAME ("ROUTE"),     /* 3 */
-	OUTPUT_FIELD_WITH_NAME ("DNS"),       /* 4 */
-	OUTPUT_FIELD_WITH_NAME ("DOMAIN"),    /* 5 */
-	OUTPUT_FIELD_WITH_NAME ("WINS"),      /* 6 */
-	{ 0 }
+const NmcMetaGenericInfo *const nmc_fields_ip4_config[] = {
+	NMC_META_GENERIC ("GROUP"),     /* 0 */
+	NMC_META_GENERIC ("ADDRESS"),   /* 1 */
+	NMC_META_GENERIC ("GATEWAY"),   /* 2 */
+	NMC_META_GENERIC ("ROUTE"),     /* 3 */
+	NMC_META_GENERIC ("DNS"),       /* 4 */
+	NMC_META_GENERIC ("DOMAIN"),    /* 5 */
+	NMC_META_GENERIC ("WINS"),      /* 6 */
+	NULL,
 };
-#define NMC_FIELDS_IP4_CONFIG_ALL     "GROUP,ADDRESS,GATEWAY,ROUTE,DNS,DOMAIN,WINS"
 
-/* Available fields for DHCPv4 group */
-NmcOutputField nmc_fields_dhcp4_config[] = {
-	OUTPUT_FIELD_WITH_NAME ("GROUP"),    /* 0 */
-	OUTPUT_FIELD_WITH_NAME ("OPTION"),   /* 1 */
-	{ 0 }
+const NmcMetaGenericInfo *const nmc_fields_dhcp4_config[] = {
+	NMC_META_GENERIC ("GROUP"),    /* 0 */
+	NMC_META_GENERIC ("OPTION"),   /* 1 */
+	NULL,
 };
-#define NMC_FIELDS_DHCP4_CONFIG_ALL     "GROUP,OPTION"
 
-/* Available fields for IPv6 group */
-NmcOutputField nmc_fields_ip6_config[] = {
-	OUTPUT_FIELD_WITH_NAME ("GROUP"),     /* 0 */
-	OUTPUT_FIELD_WITH_NAME ("ADDRESS"),   /* 1 */
-	OUTPUT_FIELD_WITH_NAME ("GATEWAY"),   /* 2 */
-	OUTPUT_FIELD_WITH_NAME ("ROUTE"),     /* 3 */
-	OUTPUT_FIELD_WITH_NAME ("DNS"),       /* 4 */
-	OUTPUT_FIELD_WITH_NAME ("DOMAIN"),    /* 5 */
-	{ 0 }
+const NmcMetaGenericInfo *const nmc_fields_ip6_config[] = {
+	NMC_META_GENERIC ("GROUP"),     /* 0 */
+	NMC_META_GENERIC ("ADDRESS"),   /* 1 */
+	NMC_META_GENERIC ("GATEWAY"),   /* 2 */
+	NMC_META_GENERIC ("ROUTE"),     /* 3 */
+	NMC_META_GENERIC ("DNS"),       /* 4 */
+	NMC_META_GENERIC ("DOMAIN"),    /* 5 */
+	NULL,
 };
-#define NMC_FIELDS_IP6_CONFIG_ALL     "GROUP,ADDRESS,GATEWAY,ROUTE,DNS,DOMAIN"
 
-/* Available fields for DHCPv6 group */
-NmcOutputField nmc_fields_dhcp6_config[] = {
-	OUTPUT_FIELD_WITH_NAME ("GROUP"),    /* 0 */
-	OUTPUT_FIELD_WITH_NAME ("OPTION"),   /* 1 */
-	{ 0 }
+const NmcMetaGenericInfo *const nmc_fields_dhcp6_config[] = {
+	NMC_META_GENERIC ("GROUP"),    /* 0 */
+	NMC_META_GENERIC ("OPTION"),   /* 1 */
+	NULL,
 };
-#define NMC_FIELDS_DHCP6_CONFIG_ALL     "GROUP,OPTION"
-
 
 gboolean
 print_ip4_config (NMIPConfig *cfg4,
@@ -94,18 +83,17 @@ print_ip4_config (NMIPConfig *cfg4,
 	char **domain_arr = NULL;
 	char **wins_arr = NULL;
 	int i = 0;
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
+	const NMMetaAbstractInfo *const*tmpl;
+	NmcOutputField *arr;
 	NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
 	if (cfg4 == NULL)
 		return FALSE;
 
-	tmpl = nmc_fields_ip4_config;
-	tmpl_len = sizeof (nmc_fields_ip4_config);
-	out_indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_IP4_CONFIG_ALL,
+	tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_ip4_config;
+	out_indices = parse_output_fields (one_field,
 	                                   tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+	arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (out.output_data, arr);
 
 	/* addresses */
@@ -153,7 +141,7 @@ print_ip4_config (NMIPConfig *cfg4,
 	/* WINS */
 	wins_arr = g_strdupv ((char **) nm_ip_config_get_wins_servers (cfg4));
 
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
+	arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_strc (arr, 0, group_prefix);
 	set_val_arr  (arr, 1, addr_arr);
 	set_val_strc (arr, 2, nm_ip_config_get_gateway (cfg4));
@@ -181,18 +169,17 @@ print_ip6_config (NMIPConfig *cfg6,
 	char **dns_arr = NULL;
 	char **domain_arr = NULL;
 	int i = 0;
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
+	const NMMetaAbstractInfo *const*tmpl;
+	NmcOutputField *arr;
 	NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
 	if (cfg6 == NULL)
 		return FALSE;
 
-	tmpl = nmc_fields_ip6_config;
-	tmpl_len = sizeof (nmc_fields_ip6_config);
-	out_indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_IP6_CONFIG_ALL,
+	tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_ip6_config;
+	out_indices = parse_output_fields (one_field,
 	                                   tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+	arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (out.output_data, arr);
 
 	/* addresses */
@@ -237,7 +224,7 @@ print_ip6_config (NMIPConfig *cfg6,
 	/* domains */
 	domain_arr = g_strdupv ((char **) nm_ip_config_get_domains (cfg6));
 
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
+	arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_strc (arr, 0, group_prefix);
 	set_val_arr  (arr, 1, addr_arr);
 	set_val_strc (arr, 2, nm_ip_config_get_gateway (cfg6));
@@ -259,8 +246,8 @@ print_dhcp4_config (NMDhcpConfig *dhcp4,
                     const char *one_field)
 {
 	GHashTable *table;
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
+	const NMMetaAbstractInfo *const*tmpl;
+	NmcOutputField *arr;
 
 	if (dhcp4 == NULL)
 		return FALSE;
@@ -273,11 +260,10 @@ print_dhcp4_config (NMDhcpConfig *dhcp4,
 		int i = 0;
 		NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
-		tmpl = nmc_fields_dhcp4_config;
-		tmpl_len = sizeof (nmc_fields_dhcp4_config);
-		out_indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_DHCP4_CONFIG_ALL,
+		tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_dhcp4_config;
+		out_indices = parse_output_fields (one_field,
 		                                   tmpl, FALSE, NULL, NULL);
-		arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+		arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_FIELD_NAMES);
 		g_ptr_array_add (out.output_data, arr);
 
 		options_arr = g_new (char *, g_hash_table_size (table) + 1);
@@ -286,7 +272,7 @@ print_dhcp4_config (NMDhcpConfig *dhcp4,
 			options_arr[i++] = g_strdup_printf ("%s = %s", (char *) key, (char *) value);
 		options_arr[i] = NULL;
 
-		arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
+		arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_SECTION_PREFIX);
 		set_val_strc (arr, 0, group_prefix);
 		set_val_arr  (arr, 1, options_arr);
 		g_ptr_array_add (out.output_data, arr);
@@ -306,8 +292,8 @@ print_dhcp6_config (NMDhcpConfig *dhcp6,
                     const char *one_field)
 {
 	GHashTable *table;
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
+	const NMMetaAbstractInfo *const*tmpl;
+	NmcOutputField *arr;
 
 	if (dhcp6 == NULL)
 		return FALSE;
@@ -320,11 +306,10 @@ print_dhcp6_config (NMDhcpConfig *dhcp6,
 		int i = 0;
 		NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
-		tmpl = nmc_fields_dhcp6_config;
-		tmpl_len = sizeof (nmc_fields_dhcp6_config);
-		out_indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_DHCP6_CONFIG_ALL,
+		tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_dhcp6_config;
+		out_indices = parse_output_fields (one_field,
 		                                   tmpl, FALSE, NULL, NULL);
-		arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+		arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_FIELD_NAMES);
 		g_ptr_array_add (out.output_data, arr);
 
 		options_arr = g_new (char *, g_hash_table_size (table) + 1);
@@ -333,7 +318,7 @@ print_dhcp6_config (NMDhcpConfig *dhcp6,
 			options_arr[i++] = g_strdup_printf ("%s = %s", (char *) key, (char *) value);
 		options_arr[i] = NULL;
 
-		arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
+		arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_SECTION_PREFIX);
 		set_val_strc (arr, 0, group_prefix);
 		set_val_arr  (arr, 1, options_arr);
 		g_ptr_array_add (out.output_data, arr);

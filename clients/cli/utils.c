@@ -613,7 +613,7 @@ set_val_color_all (NmcOutputField fields_array[], NmcTermColor color)
 {
 	int i;
 
-	for (i = 0; fields_array[i].name; i++) {
+	for (i = 0; fields_array[i].info; i++) {
 		fields_array[i].color = color;
 	}
 }
@@ -623,7 +623,7 @@ set_val_color_fmt_all (NmcOutputField fields_array[], NmcTermFormat format)
 {
 	int i;
 
-	for (i = 0; fields_array[i].name; i++) {
+	for (i = 0; fields_array[i].info; i++) {
 		fields_array[i].color_fmt = format;
 	}
 }
@@ -636,7 +636,7 @@ nmc_free_output_field_values (NmcOutputField fields_array[])
 {
 	NmcOutputField *iter = fields_array;
 
-	while (iter && iter->name) {
+	while (iter && iter->info) {
 		if (iter->free_value) {
 			if (iter->value_is_array)
 				g_strfreev ((char **) iter->value);
@@ -646,6 +646,19 @@ nmc_free_output_field_values (NmcOutputField fields_array[])
 		}
 		iter++;
 	}
+}
+
+static const char *
+_abstract_info_get_name (const NMMetaAbstractInfo *abstract_info)
+{
+	const char *n;
+
+	nm_assert (abstract_info);
+	nm_assert (abstract_info->meta_type);
+	nm_assert (abstract_info->meta_type->get_name);
+	n = abstract_info->meta_type->get_name (abstract_info);
+	nm_assert (n && n[0]);
+	return n;
 }
 
 /**
@@ -670,110 +683,107 @@ nmc_free_output_field_values (NmcOutputField fields_array[])
  */
 GArray *
 parse_output_fields (const char *fields_str,
-                     const NmcOutputField fields_array[],
+                     const NMMetaAbstractInfo *const*fields_array,
                      gboolean parse_groups,
-                     GPtrArray **group_fields,
+                     GPtrArray **out_group_fields,
                      GError **error)
 {
-	char **fields, **iter;
-	GArray *array;
+	gs_strfreev char **fields = NULL;
+	const char *const*iter = NULL;
+	gs_unref_ptrarray GPtrArray *group_fields = NULL;
+	gs_unref_array GArray *array = NULL;
 	int i, j;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
-	g_return_val_if_fail (group_fields == NULL || *group_fields == NULL, NULL);
+	g_return_val_if_fail (!error || !*error, NULL);
+	g_return_val_if_fail (!out_group_fields || !*out_group_fields, NULL);
 
 	array = g_array_new (FALSE, FALSE, sizeof (int));
-	if (parse_groups && group_fields)
-		*group_fields = g_ptr_array_new_full (20, (GDestroyNotify) g_free);
+	if (parse_groups && out_group_fields)
+		group_fields = g_ptr_array_new_full (20, g_free);
 
-	/* Split supplied fields string */
-	fields = g_strsplit_set (fields_str, ",", -1);
-	for (iter = fields; iter && *iter; iter++) {
+	if (!fields_str) {
+		for (i = 0; fields_array[i]; i++) {
+			g_array_append_val (array, i);
+			if (group_fields)
+				g_ptr_array_add (group_fields, NULL);
+		}
+		goto out;
+	}
+
+	fields = _nm_utils_strv_cleanup (g_strsplit_set (fields_str, ",", -1),
+	                                 TRUE,
+	                                 TRUE,
+	                                 FALSE);
+	for (iter = (const char *const*) fields; *iter; iter++) {
+		gs_free char *tmp = NULL;
 		int idx = -1;
+		const char *i_name = *iter;
+		char *right = NULL;
 
-		g_strstrip (*iter);
-		if (parse_groups) {
-			/* e.g. "general.device,general.driver,ip4,ip6" */
-			gboolean found = FALSE;
-			char *left = *iter;
-			char *right = strchr (*iter, '.');
-
+		if (group_fields) {
+			tmp = g_strdup (i_name);
+			i_name = tmp;
+			right = strchr (tmp, '.');
 			if (right)
 				*right++ = '\0';
-
-			for (i = 0; fields_array[i].name; i++) {
-				if (strcasecmp (left, fields_array[i].name) == 0) {
-					const NmcOutputField *valid_names = fields_array[i].group_list;
-					const NMMetaSettingInfoEditor *setting_info = fields_array[i].setting_info;
-
-					idx = i;
-					if (!right && !valid_names && !setting_info) {
-						found = TRUE;
-						break;
-					}
-					if (valid_names) {
-						for (j = 0; valid_names[j].name; j++) {
-							if (!right || strcasecmp (right, valid_names[j].name) == 0) {
-								found = TRUE;
-								break;
-							}
-						}
-					} else if (setting_info) {
-						for (j = 1; j < setting_info->properties_num; j++) {
-							if (!right || strcasecmp (right, setting_info->properties[j].property_name) == 0) {
-								found = TRUE;
-								break;
-							}
-						}
-					}
-					if (found)
-						break;
-				}
-			}
-			if (found) {
-				/* Add index to array, and field name (or NULL) to group_fields array */
-				g_array_append_val (array, idx);
-				if (group_fields && *group_fields)
-					g_ptr_array_add (*group_fields, g_strdup (right));
-			}
-			if (right)
-				*(right-1) = '.';  /* Restore the original string */
-		} else {
-			/* e.g. "general,ip4,ip6" */
-			for (i = 0; fields_array[i].name; i++) {
-				if (strcasecmp (*iter, fields_array[i].name) == 0) {
-					g_array_append_val (array, i);
-					break;
-				}
-			}
 		}
 
-		/* Field was not found - error case */
-		if (fields_array[i].name == NULL) {
-			/* Set GError */
-			if (!strcasecmp (*iter, "all") || !strcasecmp (*iter, "common"))
-				g_set_error (error, NMCLI_ERROR, 0, _("field '%s' has to be alone"), *iter);
+		for (i = 0; fields_array[i]; i++) {
+			const NMMetaAbstractInfo *fi = fields_array[i];
+			gboolean found;
+
+			if (g_ascii_strcasecmp (i_name, _abstract_info_get_name (fi)) != 0)
+				continue;
+
+			if (!right)
+				found = TRUE;
 			else {
-				char *allowed_fields = nmc_get_allowed_fields (fields_array, idx);
-				g_set_error (error, NMCLI_ERROR, 1, _("invalid field '%s'; allowed fields: %s"),
-				             *iter, allowed_fields);
-				g_free (allowed_fields);
+				found = FALSE;
+				if (fi->meta_type == &nm_meta_type_setting_info_editor) {
+					const NMMetaSettingInfoEditor *fi_s = &fi->as.setting_info;
+
+					for (j = 1; j < fi_s->properties_num; j++) {
+						if (g_ascii_strcasecmp (right, fi_s->properties[j].property_name) == 0) {
+							found = TRUE;
+							break;
+						}
+					}
+				} else if (fi->meta_type == &nmc_meta_type_generic_info) {
+					const NmcMetaGenericInfo *fi_g = (const NmcMetaGenericInfo *) fi;
+
+					for (j = 0; fi_g->nested && fi_g->nested[j]; j++) {
+						if (g_ascii_strcasecmp (right, _abstract_info_get_name ((const NMMetaAbstractInfo *) fi_g->nested[j])) == 0) {
+							found = TRUE;
+							break;
+						}
+					}
+				}
 			}
 
-			/* Free arrays on error */
-			g_array_free (array, TRUE);
-			array = NULL;
-			if (group_fields && *group_fields) {
-				g_ptr_array_free (*group_fields, TRUE);
-				*group_fields = NULL;
+			if (found) {
+				g_array_append_val (array, i);
+				if (group_fields)
+					g_ptr_array_add (group_fields, g_strdup (right));
+				break;
 			}
-			goto done;
+
+			if (   !g_ascii_strcasecmp (i_name, "all")
+			    || !g_ascii_strcasecmp (i_name, "common"))
+				g_set_error (error, NMCLI_ERROR, 0, _("field '%s' has to be alone"), i_name);
+			else {
+				gs_free char *allowed_fields = nmc_get_allowed_fields (fields_array, idx);
+
+				g_set_error (error, NMCLI_ERROR, 1, _("invalid field '%s'; allowed fields: %s"),
+				             i_name, allowed_fields);
+			}
+			NM_SET_OUT (out_group_fields, NULL);
+			return NULL;
 		}
 	}
-done:
-	if (fields)
-		g_strfreev (fields);
-	return array;
+
+out:
+	NM_SET_OUT (out_group_fields, g_steal_pointer (&group_fields));
+	return g_steal_pointer (&array);
 }
 
 /**
@@ -786,28 +796,30 @@ done:
 *   Caller is responsible for freeing the array.
 */
 char *
-nmc_get_allowed_fields (const NmcOutputField fields_array[], int group_idx)
+nmc_get_allowed_fields (const NMMetaAbstractInfo *const*fields_array, int group_idx)
 {
 	GString *allowed_fields = g_string_sized_new (256);
 	int i;
 
-	if (group_idx != -1 && fields_array[group_idx].group_list) {
-		const NmcOutputField *second_level = fields_array[group_idx].group_list;
+	if (group_idx != -1 && fields_array[group_idx]->meta_type == &nmc_meta_type_generic_info) {
+		const NmcMetaGenericInfo *const*nested = ((const NmcMetaGenericInfo *) fields_array[group_idx])->nested;
+		const char *name = _abstract_info_get_name (fields_array[group_idx]);
 
-		for (i = 0; second_level[i].name; i++) {
+		for (i = 0; nested && nested[i]; i++) {
 			g_string_append_printf (allowed_fields, "%s.%s,",
-			                        fields_array[group_idx].name, second_level[i].name);
+			                        name, _abstract_info_get_name ((const NMMetaAbstractInfo *) nested[i]));
 		}
-	} else if (group_idx != -1 && fields_array[group_idx].setting_info) {
-		const NMMetaSettingInfoEditor *second_level = fields_array[group_idx].setting_info;
+	} else if (group_idx != -1 && fields_array[group_idx]->meta_type == &nm_meta_type_setting_info_editor) {
+		const NMMetaSettingInfoEditor *fi = &fields_array[group_idx]->as.setting_info;
+		const char *name = _abstract_info_get_name (fields_array[group_idx]);
 
-		for (i = 1; i < second_level->properties_num; i++) {
+		for (i = 1; i < fi->properties_num; i++) {
 			g_string_append_printf (allowed_fields, "%s.%s,",
-			                        fields_array[group_idx].name, second_level->properties[i].property_name);
+			                        name, fi->properties[i].property_name);
 		}
 	} else {
-		for (i = 0; fields_array[i].name; i++)
-			g_string_append_printf (allowed_fields, "%s,", fields_array[i].name);
+		for (i = 0; fields_array[i]; i++)
+			g_string_append_printf (allowed_fields, "%s,", _abstract_info_get_name (fields_array[i]));
 	}
 	g_string_truncate (allowed_fields, allowed_fields->len - 1);
 
@@ -815,14 +827,18 @@ nmc_get_allowed_fields (const NmcOutputField fields_array[], int group_idx)
 }
 
 NmcOutputField *
-nmc_dup_fields_array (NmcOutputField fields[], size_t size, NmcOfFlags flags)
+nmc_dup_fields_array (const NMMetaAbstractInfo *const*fields, NmcOfFlags flags)
 {
 	NmcOutputField *row;
+	gsize l;
 
-	row = g_malloc0 (size);
-	memcpy (row, fields, size);
+	for (l = 0; fields[l]; l++) {
+	}
+
+	row = g_new0 (NmcOutputField, l + 1);
+	for (l = 0; fields[l]; l++)
+		row[l].info = fields[l];
 	row[0].flags = flags;
-
 	return row;
 }
 
@@ -875,7 +891,7 @@ get_value_to_print (NmcColorOption color_option,
 	nm_assert (out_to_free && !*out_to_free);
 
 	if (field_name)
-		value = _(field->name);
+		value = _(_abstract_info_get_name (field->info));
 	else {
 		value = field->value
 		            ? (is_array
@@ -989,7 +1005,7 @@ print_required_fields (const NmcConfig *nmc_config,
 					tmp = g_strdup_printf ("%s%s%s[%d]:",
 					                       section_prefix ? (const char*) field_values[0].value : "",
 					                       section_prefix ? "." : "",
-					                       _(field_values[idx].name),
+					                       _(_abstract_info_get_name (field_values[idx].info)),
 					                       j);
 					width1 = strlen (tmp);
 					width2 = nmc_string_screen_width (tmp, NULL);
@@ -1009,7 +1025,7 @@ print_required_fields (const NmcConfig *nmc_config,
 				tmp = g_strdup_printf ("%s%s%s:",
 				                       section_prefix ? hdr_name : "",
 				                       section_prefix ? "." : "",
-				                       _(field_values[idx].name));
+				                       _(_abstract_info_get_name (field_values[idx].info)));
 				width1 = strlen (tmp);
 				width2 = nmc_string_screen_width (tmp, NULL);
 				g_print ("%-*s%s\n", terse ? 0 : ML_VALUE_INDENT+width1-width2, tmp, print_val);
@@ -1091,7 +1107,7 @@ print_data_prepare_width (GPtrArray *output_data)
 
 	/* How many fields? */
 	row = g_ptr_array_index (output_data, 0);
-	while (row->name) {
+	while (row->info) {
 		num_fields++;
 		row++;
 	}

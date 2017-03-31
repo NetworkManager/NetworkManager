@@ -6580,7 +6580,7 @@ static const NMMetaPropertyInfo property_infos_WIRELESS_SECURITY[] = {
 	},
 };
 
-const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[_NM_META_SETTING_TYPE_NUM] = {
+const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 #define SETTING_INFO(type) \
 	[NM_META_SETTING_TYPE_##type] = { \
 		.meta_type =                        &nm_meta_type_setting_info_editor, \
@@ -6623,10 +6623,26 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[_NM_META_SETTING_TYPE
 	SETTING_INFO (WIRELESS_SECURITY),
 };
 
+/*****************************************************************************/
+
+static const char *
+_meta_type_setting_info_editor_get_name (const NMMetaAbstractInfo *abstract_info)
+{
+	return ((const NMMetaSettingInfoEditor *) abstract_info)->general->setting_name;
+}
+
+static const char *
+_meta_type_property_info_get_name (const NMMetaAbstractInfo *abstract_info)
+{
+	return ((const NMMetaPropertyInfo *) abstract_info)->property_name;
+}
+
 const NMMetaType nm_meta_type_setting_info_editor = {
-	.type_name = "setting_info_editor",
+	.type_name =         "setting_info_editor",
+	.get_name =          _meta_type_setting_info_editor_get_name,
 };
 
 const NMMetaType nm_meta_type_property_info = {
-	.type_name = "property_info",
+	.type_name =        "property_info",
+	.get_name =         _meta_type_property_info_get_name,
 };

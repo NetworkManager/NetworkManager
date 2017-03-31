@@ -51,9 +51,22 @@
 #endif
 
 /* Global NmCli object */
-// FIXME: Currently, we pass NmCli over in most APIs, but we might refactor
-// that and use the global variable directly instead.
 NmCli nm_cli;
+
+/*****************************************************************************/
+
+static const char *
+_meta_type_nmc_generic_info_get_name (const NMMetaAbstractInfo *abstract_info)
+{
+	return ((const NmcMetaGenericInfo *) abstract_info)->name;
+}
+
+const NMMetaType nmc_meta_type_generic_info = {
+	.type_name =         "nmc-generic-info",
+	.get_name =          _meta_type_nmc_generic_info_get_name,
+};
+
+/*****************************************************************************/
 
 typedef struct {
 	NmCli *nmc;
@@ -83,16 +96,12 @@ complete_field_setting (GHashTable *h, NMMetaSettingType setting_type)
 }
 
 static void
-complete_field (GHashTable *h, const char *setting, const NmcOutputField *field)
+complete_field (GHashTable *h, const NmcMetaGenericInfo *const*field)
 {
 	int i;
 
-	for (i = 0; field[i].name; i++) {
-		if (setting)
-			g_hash_table_add (h, g_strdup_printf ("%s.%s", setting, field[i].name));
-		else
-			g_hash_table_add (h, g_strdup (field[i].name));
-	}
+	for (i = 0; field[i]; i++)
+		g_hash_table_add (h, g_strdup (field[i]->name));
 }
 
 static void
@@ -122,30 +131,29 @@ complete_fields (const char *prefix)
 
 	h = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 
-	complete_field (h, NULL, nmc_fields_ip4_config);
-	complete_field (h, NULL, nmc_fields_dhcp4_config);
-	complete_field (h, NULL, nmc_fields_ip6_config);
-	complete_field (h, NULL, nmc_fields_dhcp6_config);
-	complete_field (h, NULL, nmc_fields_con_show);
-	complete_field (h, NULL, nmc_fields_settings_names);
-	complete_field (h, NULL, nmc_fields_con_active_details_general);
-	complete_field (h, NULL, nmc_fields_con_active_details_vpn);
-	complete_field (h, NULL, nmc_fields_con_active_details_groups);
-	complete_field (h, NULL, nmc_fields_dev_status);
-	complete_field (h, NULL, nmc_fields_dev_show_general);
-	complete_field (h, NULL, nmc_fields_dev_show_connections);
-	complete_field (h, NULL, nmc_fields_dev_show_cap);
-	complete_field (h, NULL, nmc_fields_dev_show_wired_prop);
-	complete_field (h, NULL, nmc_fields_dev_show_wifi_prop);
-	complete_field (h, NULL, nmc_fields_dev_show_wimax_prop);
-	complete_field (h, NULL, nmc_fields_dev_wifi_list);
-	complete_field (h, NULL, nmc_fields_dev_wimax_list);
-	complete_field (h, NULL, nmc_fields_dev_show_master_prop);
-	complete_field (h, NULL, nmc_fields_dev_show_team_prop);
-	complete_field (h, NULL, nmc_fields_dev_show_vlan_prop);
-	complete_field (h, NULL, nmc_fields_dev_show_bluetooth);
-	complete_field (h, NULL, nmc_fields_dev_show_sections);
-	complete_field (h, NULL, nmc_fields_dev_lldp_list);
+	complete_field (h, nmc_fields_ip4_config);
+	complete_field (h, nmc_fields_dhcp4_config);
+	complete_field (h, nmc_fields_ip6_config);
+	complete_field (h, nmc_fields_dhcp6_config);
+	complete_field (h, nmc_fields_con_show);
+	complete_field (h, nmc_fields_con_active_details_general);
+	complete_field (h, nmc_fields_con_active_details_vpn);
+	complete_field (h, nmc_fields_con_active_details_groups);
+	complete_field (h, nmc_fields_dev_status);
+	complete_field (h, nmc_fields_dev_show_general);
+	complete_field (h, nmc_fields_dev_show_connections);
+	complete_field (h, nmc_fields_dev_show_cap);
+	complete_field (h, nmc_fields_dev_show_wired_prop);
+	complete_field (h, nmc_fields_dev_show_wifi_prop);
+	complete_field (h, nmc_fields_dev_show_wimax_prop);
+	complete_field (h, nmc_fields_dev_wifi_list);
+	complete_field (h, nmc_fields_dev_wimax_list);
+	complete_field (h, nmc_fields_dev_show_master_prop);
+	complete_field (h, nmc_fields_dev_show_team_prop);
+	complete_field (h, nmc_fields_dev_show_vlan_prop);
+	complete_field (h, nmc_fields_dev_show_bluetooth);
+	complete_field (h, nmc_fields_dev_show_sections);
+	complete_field (h, nmc_fields_dev_lldp_list);
 
 	for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++)
 		complete_field_setting (h, i);

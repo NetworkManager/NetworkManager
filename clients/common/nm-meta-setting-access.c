@@ -72,7 +72,7 @@ nm_meta_setting_info_editor_find_by_gtype (GType gtype)
 	return setting_info;
 }
 
-static const NMMetaSettingInfoEditor *
+const NMMetaSettingInfoEditor *
 nm_meta_setting_info_editor_find_by_setting (NMSetting *setting)
 {
 	const NMMetaSettingInfoEditor *setting_info;
@@ -81,10 +81,7 @@ nm_meta_setting_info_editor_find_by_setting (NMSetting *setting)
 
 	setting_info = nm_meta_setting_info_editor_find_by_gtype (G_OBJECT_TYPE (setting));
 
-	if (!setting_info)
-		return NULL;
-
-	g_return_val_if_fail (setting_info == nm_meta_setting_info_editor_find_by_name (nm_setting_get_name (setting)), NULL);
+	nm_assert (setting_info == nm_meta_setting_info_editor_find_by_name (nm_setting_get_name (setting)));
 
 	return setting_info;
 }
@@ -140,3 +137,44 @@ nm_meta_property_info_find_by_setting (NMSetting *setting, const char *property_
 
 	return property_info;
 }
+
+/*****************************************************************************/
+
+/* this basically returns NMMetaSettingType.properties, but with type
+ * (NMMetaPropertyInfo **) instead of (NMMetaPropertyInfo *), which is
+ * required by some APIs. */
+const NMMetaPropertyInfo *const*
+nm_property_infos_for_setting_type (NMMetaSettingType setting_type)
+{
+	static const NMMetaPropertyInfo **cache[_NM_META_SETTING_TYPE_NUM] = { NULL };
+	const NMMetaPropertyInfo **p;
+	guint i;
+
+	nm_assert (setting_type < _NM_META_SETTING_TYPE_NUM);
+	nm_assert (setting_type == 0 || setting_type > 0);
+
+	if (G_UNLIKELY (!(p = cache[setting_type]))) {
+		const NMMetaSettingInfoEditor *setting_info = &nm_meta_setting_infos_editor[setting_type];
+
+		p = g_new (const NMMetaPropertyInfo *, setting_info->properties_num + 1);
+		for (i = 0; i < setting_info->properties_num; i++)
+			p[i] = &setting_info->properties[i];
+		p[i] = NULL;
+		cache[setting_type] = p;
+	}
+	return (const NMMetaPropertyInfo *const*) p;
+}
+
+const NMMetaSettingInfoEditor *const*
+nm_meta_setting_infos_editor_p (void)
+{
+	static const NMMetaSettingInfoEditor *cache[_NM_META_SETTING_TYPE_NUM + 1] = { NULL };
+	guint i;
+
+	if (G_UNLIKELY (!cache[0])) {
+		for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++)
+			cache[i] = &nm_meta_setting_infos_editor[i];
+	}
+	return cache;
+}
+

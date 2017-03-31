@@ -80,9 +80,9 @@ void nmc_complete_bool (const char *prefix);
 
 const char *nmc_error_get_simple_message (GError *error);
 
-extern NmcOutputField nmc_fields_ip4_config[];
-extern NmcOutputField nmc_fields_dhcp4_config[];
-extern NmcOutputField nmc_fields_ip6_config[];
-extern NmcOutputField nmc_fields_dhcp6_config[];
+extern const NmcMetaGenericInfo *const nmc_fields_ip4_config[];
+extern const NmcMetaGenericInfo *const nmc_fields_dhcp4_config[];
+extern const NmcMetaGenericInfo *const nmc_fields_ip6_config[];
+extern const NmcMetaGenericInfo *const nmc_fields_dhcp6_config[];
 
 #endif /* NMC_COMMON_H */
