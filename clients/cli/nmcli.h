@@ -128,12 +128,6 @@ typedef struct _NmcOutputField {
 	const struct _NMMetaSettingInfoEditor *setting_info;
 } NmcOutputField;
 
-typedef struct {
-	GArray *indices;      /* Array of field indices to the array of allowed fields */
-	char *header_name;    /* Name of the output */
-	int indent;           /* Indent by this number of spaces */
-} NmcPrintFields;
-
 typedef enum {
 	NMC_USE_COLOR_AUTO,
 	NMC_USE_COLOR_YES,
@@ -150,7 +144,9 @@ typedef struct _NmcConfig {
 
 typedef struct _NmcOutputData {
 	GPtrArray *output_data;                           /* GPtrArray of arrays of NmcOutputField structs - accumulates data for output */
-	NmcPrintFields print_fields;                      /* Structure with field indices to print */
+	GArray *indices;                                  /* Array of field indices to the array of allowed fields */
+	const char *header_name;                          /* Name of the output */
+	int indent;                                       /* Indent by this number of spaces */
 } NmcOutputData;
 
 /* NmCli - main structure */

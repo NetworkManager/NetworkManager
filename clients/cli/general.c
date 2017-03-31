@@ -336,7 +336,7 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 
 	tmpl = nmc_fields_nm_status;
 	tmpl_len = sizeof (nmc_fields_nm_status);
-	out.print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &error);
+	out.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &error);
 
 	if (error) {
 		g_string_printf (nmc->return_text, _("Error: only these fields are allowed: %s"), fields_all);
@@ -354,7 +354,7 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 	wwan_hw_enabled = nm_client_wwan_hardware_get_enabled (nmc->client);
 	wwan_enabled = nm_client_wwan_get_enabled (nmc->client);
 
-	out.print_fields.header_name = pretty_header_name ? (char *) pretty_header_name : _("NetworkManager status");
+	out.header_name = pretty_header_name ?: _("NetworkManager status");
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (out.output_data, arr);
 
@@ -486,7 +486,7 @@ print_permissions (void *user_data)
 
 	tmpl = nmc_fields_nm_permissions;
 	tmpl_len = sizeof (nmc_fields_nm_permissions);
-	out.print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &error);
+	out.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &error);
 
 	if (error) {
 		g_string_printf (nmc->return_text, _("Error: 'general permissions': %s"), error->message);
@@ -495,7 +495,7 @@ print_permissions (void *user_data)
 		return FALSE;
 	}
 
-	out.print_fields.header_name = _("NetworkManager permissions");
+	out.header_name = _("NetworkManager permissions");
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (out.output_data, arr);
 
@@ -598,7 +598,7 @@ show_general_logging (NmCli *nmc)
 
 	tmpl = nmc_fields_nm_logging;
 	tmpl_len = sizeof (nmc_fields_nm_logging);
-	out.print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &error);
+	out.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &error);
 
 	if (error) {
 		g_string_printf (nmc->return_text, _("Error: 'general logging': %s"), error->message);
@@ -615,7 +615,7 @@ show_general_logging (NmCli *nmc)
 		return FALSE;
 	}
 
-	out.print_fields.header_name = _("NetworkManager logging");
+	out.header_name = _("NetworkManager logging");
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (out.output_data, arr);
 

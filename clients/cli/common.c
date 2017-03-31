@@ -103,8 +103,8 @@ print_ip4_config (NMIPConfig *cfg4,
 
 	tmpl = nmc_fields_ip4_config;
 	tmpl_len = sizeof (nmc_fields_ip4_config);
-	out.print_fields.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_IP4_CONFIG_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
+	out.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_IP4_CONFIG_ALL,
+	                                   tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (out.output_data, arr);
 
@@ -190,8 +190,8 @@ print_ip6_config (NMIPConfig *cfg6,
 
 	tmpl = nmc_fields_ip6_config;
 	tmpl_len = sizeof (nmc_fields_ip6_config);
-	out.print_fields.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_IP6_CONFIG_ALL,
-	                                                 tmpl, FALSE, NULL, NULL);
+	out.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_IP6_CONFIG_ALL,
+	                                   tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (out.output_data, arr);
 
@@ -275,8 +275,8 @@ print_dhcp4_config (NMDhcpConfig *dhcp4,
 
 		tmpl = nmc_fields_dhcp4_config;
 		tmpl_len = sizeof (nmc_fields_dhcp4_config);
-		out.print_fields.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_DHCP4_CONFIG_ALL,
-		                                                tmpl, FALSE, NULL, NULL);
+		out.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_DHCP4_CONFIG_ALL,
+		                                   tmpl, FALSE, NULL, NULL);
 		arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 		g_ptr_array_add (out.output_data, arr);
 
@@ -322,8 +322,8 @@ print_dhcp6_config (NMDhcpConfig *dhcp6,
 
 		tmpl = nmc_fields_dhcp6_config;
 		tmpl_len = sizeof (nmc_fields_dhcp6_config);
-		out.print_fields.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_DHCP6_CONFIG_ALL,
-		                                                tmpl, FALSE, NULL, NULL);
+		out.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_DHCP6_CONFIG_ALL,
+		                                   tmpl, FALSE, NULL, NULL);
 		arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 		g_ptr_array_add (out.output_data, arr);
 

@@ -793,12 +793,14 @@ nmc_connection_profile_details (NMConnection *connection, NmCli *nmc, gboolean s
 	{
 		NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
-		out.print_fields.header_name = (char *) construct_header_name (base_hdr, nm_connection_get_id (connection));
-		out.print_fields.indices = parse_output_fields (NMC_FIELDS_SETTINGS_NAMES_ALL,
+		out.header_name = construct_header_name (base_hdr, nm_connection_get_id (connection));
+		out.indices = parse_output_fields (NMC_FIELDS_SETTINGS_NAMES_ALL,
 		                                                nmc_fields_settings_names, FALSE, NULL, NULL);
 
 		nmc_fields_settings_names[0].flags = NMC_OF_FLAG_MAIN_HEADER_ONLY;
-		print_required_fields (&nmc->nmc_config, NMC_OF_FLAG_MAIN_HEADER_ONLY, &out.print_fields, nmc_fields_settings_names);
+		print_required_fields (&nmc->nmc_config, NMC_OF_FLAG_MAIN_HEADER_ONLY,
+		                       out.indices, out.header_name,
+		                       out.indent, nmc_fields_settings_names);
 	}
 
 	/* Loop through the required settings and print them. */
@@ -1220,12 +1222,14 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 	{
 		NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
-		out.print_fields.header_name = (char *) construct_header_name (base_hdr, nm_active_connection_get_uuid (acon));
-		out.print_fields.indices = parse_output_fields (NMC_FIELDS_CON_ACTIVE_DETAILS_ALL,
+		out.header_name = construct_header_name (base_hdr, nm_active_connection_get_uuid (acon));
+		out.indices = parse_output_fields (NMC_FIELDS_CON_ACTIVE_DETAILS_ALL,
 		                                                 nmc_fields_con_active_details_groups, FALSE, NULL, NULL);
 
 		nmc_fields_con_active_details_groups[0].flags = NMC_OF_FLAG_MAIN_HEADER_ONLY;
-		print_required_fields (&nmc->nmc_config, NMC_OF_FLAG_MAIN_HEADER_ONLY, &out.print_fields, nmc_fields_con_active_details_groups);
+		print_required_fields (&nmc->nmc_config, NMC_OF_FLAG_MAIN_HEADER_ONLY,
+		                       out.indices, out.header_name,
+		                       out.indent, nmc_fields_con_active_details_groups);
 	}
 
 	/* Loop through the groups and print them. */
@@ -1245,7 +1249,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			/* Add field names */
 			tmpl = nmc_fields_con_active_details_general;
 			tmpl_len = sizeof (nmc_fields_con_active_details_general);
-			out.print_fields.indices = parse_output_fields (group_fld ? group_fld : NMC_FIELDS_CON_ACTIVE_DETAILS_GENERAL_ALL,
+			out.indices = parse_output_fields (group_fld ? group_fld : NMC_FIELDS_CON_ACTIVE_DETAILS_GENERAL_ALL,
 			                                                tmpl, FALSE, NULL, NULL);
 			arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 			g_ptr_array_add (out.output_data, arr);
@@ -1316,7 +1320,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 
 			tmpl = nmc_fields_con_active_details_vpn;
 			tmpl_len = sizeof (nmc_fields_con_active_details_vpn);
-			out.print_fields.indices = parse_output_fields (group_fld ? group_fld : NMC_FIELDS_CON_ACTIVE_DETAILS_VPN_ALL,
+			out.indices = parse_output_fields (group_fld ? group_fld : NMC_FIELDS_CON_ACTIVE_DETAILS_VPN_ALL,
 			                                                tmpl, FALSE, NULL, NULL);
 			arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 			g_ptr_array_add (out.output_data, arr);
@@ -1810,13 +1814,13 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 
 		tmpl = nmc_fields_con_show;
 		tmpl_len = sizeof (nmc_fields_con_show);
-		out.print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &err);
+		out.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &err);
 		if (err)
 			goto finish;
 
 		/* Add headers */
-		out.print_fields.header_name = active_only ? _("NetworkManager active profiles") :
-		                                              _("NetworkManager connection profiles");
+		out.header_name = active_only ? _("NetworkManager active profiles")
+		                              : _("NetworkManager connection profiles");
 		arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
 		g_ptr_array_add (out.output_data, arr);
 

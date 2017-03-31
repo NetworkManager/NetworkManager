@@ -841,9 +841,9 @@ nmc_empty_output_fields (NmcOutputData *output_data)
 	if (output_data->output_data->len > 0)
 		g_ptr_array_remove_range (output_data->output_data, 0, output_data->output_data->len);
 
-	if (output_data->print_fields.indices) {
-		g_array_free (output_data->print_fields.indices, TRUE);
-		output_data->print_fields.indices = NULL;
+	if (output_data->indices) {
+		g_array_free (output_data->indices, TRUE);
+		output_data->indices = NULL;
 	}
 }
 
@@ -905,12 +905,17 @@ get_value_to_print (NmcColorOption color_option,
 /*
  * Print both headers or values of 'field_values' array.
  * Entries to print and their order are specified via indices in
- * 'nmc->print_fields.indices' array.
+ * 'nmc->indices' array.
  * Various flags influencing the output of fields are set up in the first item
  * of 'field_values' array.
  */
 void
-print_required_fields (const NmcConfig *nmc_config, NmcOfFlags of_flags, const NmcPrintFields *print_fields, const NmcOutputField *field_values)
+print_required_fields (const NmcConfig *nmc_config,
+                       NmcOfFlags of_flags,
+                       const GArray *indices,
+                       const char *header_name,
+                       int indent,
+                       const NmcOutputField *field_values)
 {
 	GString *str;
 	int width1, width2;
@@ -935,7 +940,7 @@ print_required_fields (const NmcConfig *nmc_config, NmcOfFlags of_flags, const N
 
 	/* --- Main header --- */
 	if (main_header && pretty) {
-		int header_width = nmc_string_screen_width (print_fields->header_name, NULL) + 4;
+		int header_width = nmc_string_screen_width (header_name, NULL) + 4;
 
 		if (multiline) {
 			table_width = header_width < ML_HEADER_WIDTH ? ML_HEADER_WIDTH : header_width;
@@ -945,10 +950,10 @@ print_required_fields (const NmcConfig *nmc_config, NmcOfFlags of_flags, const N
 			line = g_strnfill (table_width, '=');
 		}
 
-		width1 = strlen (print_fields->header_name);
-		width2 = nmc_string_screen_width (print_fields->header_name, NULL);
+		width1 = strlen (header_name);
+		width2 = nmc_string_screen_width (header_name, NULL);
 		g_print ("%s\n", line);
-		g_print ("%*s\n", (table_width + width2)/2 + width1 - width2, print_fields->header_name);
+		g_print ("%*s\n", (table_width + width2)/2 + width1 - width2, header_name);
 		g_print ("%s\n", line);
 		g_free (line);
 	}
@@ -965,9 +970,9 @@ print_required_fields (const NmcConfig *nmc_config, NmcOfFlags of_flags, const N
 
 
 	if (multiline) {
-		for (i = 0; i < print_fields->indices->len; i++) {
+		for (i = 0; i < indices->len; i++) {
 			char *tmp;
-			int idx = g_array_index (print_fields->indices, int, i);
+			int idx = g_array_index (indices, int, i);
 			gboolean is_array = field_values[idx].value_is_array;
 
 			/* section prefix can't be an array */
@@ -1029,8 +1034,8 @@ print_required_fields (const NmcConfig *nmc_config, NmcOfFlags of_flags, const N
 
 	str = g_string_new (NULL);
 
-	for (i = 0; i < print_fields->indices->len; i++) {
-		int idx = g_array_index (print_fields->indices, int, i);
+	for (i = 0; i < indices->len; i++) {
+		int idx = g_array_index (indices, int, i);
 		gs_free char *val_to_free = NULL;
 		const char *value = get_value_to_print (nmc_config->use_colors, (NmcOutputField *) field_values+idx, field_names,
 		                                        not_set_str, &val_to_free);
@@ -1060,8 +1065,8 @@ print_required_fields (const NmcConfig *nmc_config, NmcOfFlags of_flags, const N
 	/* Print actual values */
 	if (str->len > 0) {
 		g_string_truncate (str, str->len-1);  /* Chop off last column separator */
-		if (print_fields->indent > 0) {
-			indent_str = g_strnfill (print_fields->indent, ' ');
+		if (indent > 0) {
+			indent_str = g_strnfill (indent, ' ');
 			g_string_prepend (str, indent_str);
 			g_free (indent_str);
 		}
@@ -1126,7 +1131,8 @@ print_data (const NmcConfig *nmc_config, const NmcOutputData *out)
 		const NmcOutputField *field_values = g_ptr_array_index (out->output_data, i);
 
 		print_required_fields (nmc_config, field_values[0].flags,
-		                       &out->print_fields, field_values);
+		                       out->indices, out->header_name,
+		                       out->indent, field_values);
 	}
 }
 

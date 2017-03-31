@@ -1021,8 +1021,8 @@ setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean 
 	tmpl_len = sizeof (NmcOutputField) * (setting_info->properties_num + 1);
 	tmpl = g_memdup (_get_nmc_output_fields (setting_info), tmpl_len);
 
-	out.print_fields.indices = parse_output_fields (one_prop ?: (s_all = _all_properties (setting_info)),
-	                                                 tmpl, FALSE, NULL, NULL);
+	out.indices = parse_output_fields (one_prop ?: (s_all = _all_properties (setting_info)),
+	                                   tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (out.output_data, arr);
 
