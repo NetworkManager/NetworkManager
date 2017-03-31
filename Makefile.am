@@ -3132,6 +3132,8 @@ clients_cli_nmcli_SOURCES = \
 	clients/common/nm-client-utils.h \
 	clients/common/nm-meta-setting-desc.c \
 	clients/common/nm-meta-setting-desc.h \
+	clients/common/nm-meta-setting-access.c \
+	clients/common/nm-meta-setting-access.h \
 	\
 	clients/cli/agent.c \
 	clients/cli/agent.h \

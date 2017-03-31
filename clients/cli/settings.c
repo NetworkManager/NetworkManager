@@ -28,124 +28,10 @@
 
 #include "nm-client-utils.h"
 #include "nm-vpn-helpers.h"
+#include "nm-meta-setting-access.h"
 
 #include "utils.h"
 #include "common.h"
-
-/*****************************************************************************/
-
-static const NMMetaSettingInfoEditor *
-_meta_find_setting_info_by_name (const char *setting_name)
-{
-	const NMMetaSettingInfo *meta_setting_info;
-	const NMMetaSettingInfoEditor *setting_info;
-
-	g_return_val_if_fail (setting_name, NULL);
-
-	meta_setting_info = nm_meta_setting_infos_by_name (setting_name);
-
-	if (!meta_setting_info)
-		return NULL;
-
-	g_return_val_if_fail (nm_streq0 (meta_setting_info->setting_name, setting_name), NULL);
-
-	if (meta_setting_info->meta_type >= G_N_ELEMENTS (nm_meta_setting_infos_editor))
-		return NULL;
-
-	setting_info = &nm_meta_setting_infos_editor[meta_setting_info->meta_type];
-
-	g_return_val_if_fail (setting_info->general == meta_setting_info, NULL);
-
-	return setting_info;
-}
-
-static const NMMetaSettingInfoEditor *
-_meta_find_setting_info_by_gtype (GType gtype)
-{
-	const NMMetaSettingInfo *meta_setting_info;
-	const NMMetaSettingInfoEditor *setting_info;
-
-	meta_setting_info = nm_meta_setting_infos_by_gtype (gtype);
-
-	if (!meta_setting_info)
-		return NULL;
-
-	g_return_val_if_fail (meta_setting_info->get_setting_gtype, NULL);
-	g_return_val_if_fail (meta_setting_info->get_setting_gtype () == gtype, NULL);
-
-	if (meta_setting_info->meta_type >= G_N_ELEMENTS (nm_meta_setting_infos_editor))
-		return NULL;
-
-	setting_info = &nm_meta_setting_infos_editor[meta_setting_info->meta_type];
-
-	g_return_val_if_fail (setting_info->general == meta_setting_info, NULL);
-
-	return setting_info;
-}
-
-static const NMMetaSettingInfoEditor *
-_meta_find_setting_info_by_setting (NMSetting *setting)
-{
-	const NMMetaSettingInfoEditor *setting_info;
-
-	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
-
-	setting_info = _meta_find_setting_info_by_gtype (G_OBJECT_TYPE (setting));
-
-	if (!setting_info)
-		return NULL;
-
-	g_return_val_if_fail (setting_info == _meta_find_setting_info_by_name (nm_setting_get_name (setting)), NULL);
-
-	return setting_info;
-}
-
-static const NMMetaPropertyInfo *
-_meta_setting_info_find_property_info (const NMMetaSettingInfoEditor *setting_info, const char *property_name)
-{
-	guint i;
-
-	g_return_val_if_fail (setting_info, NULL);
-	g_return_val_if_fail (property_name, NULL);
-
-	for (i = 0; i < setting_info->properties_num; i++) {
-		if (nm_streq (setting_info->properties[i].property_name, property_name))
-			return &setting_info->properties[i];
-	}
-
-	return NULL;
-}
-
-static const NMMetaPropertyInfo *
-_meta_find_property_info_by_name (const char *setting_name, const char *property_name, const NMMetaSettingInfoEditor **out_setting_info)
-{
-	const NMMetaSettingInfoEditor *setting_info;
-
-	setting_info = _meta_find_setting_info_by_name (setting_name);
-
-	NM_SET_OUT (out_setting_info, setting_info);
-	if (!setting_info)
-		return NULL;
-	return _meta_setting_info_find_property_info (setting_info, property_name);
-}
-
-static const NMMetaPropertyInfo *
-_meta_find_property_info_by_setting (NMSetting *setting, const char *property_name, const NMMetaSettingInfoEditor **out_setting_info)
-{
-	const NMMetaSettingInfoEditor *setting_info;
-	const NMMetaPropertyInfo *property_info;
-
-	setting_info = _meta_find_setting_info_by_setting (setting);
-
-	NM_SET_OUT (out_setting_info, setting_info);
-	if (!setting_info)
-		return NULL;
-	property_info = _meta_setting_info_find_property_info (setting_info, property_name);
-
-	nm_assert (property_info == _meta_find_property_info_by_name (nm_setting_get_name (setting), property_name, NULL));
-
-	return property_info;
-}
 
 /*****************************************************************************/
 
@@ -174,22 +60,6 @@ _get_nmc_output_fields (const NMMetaSettingInfoEditor *setting_info)
 }
 
 /*****************************************************************************/
-
-NMSetting *
-nmc_setting_new_for_name (const char *name)
-{
-	GType stype;
-	NMSetting *setting = NULL;
-
-	if (name) {
-		stype = nm_setting_lookup_type (name);
-		if (stype != G_TYPE_INVALID) {
-			setting = g_object_new (stype, NULL);
-			g_warn_if_fail (NM_IS_SETTING (setting));
-		}
-	}
-	return setting;
-}
 
 static gboolean
 get_answer (const char *prop, const char *value)
@@ -627,7 +497,7 @@ get_property_val (NMSetting *setting, const char *prop, NMMetaAccessorGetType ge
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	if ((property_info = _meta_find_property_info_by_setting (setting, prop, &setting_info))) {
+	if ((property_info = nm_meta_property_info_find_by_setting (setting, prop, &setting_info))) {
 		if (property_info->is_name) {
 			/* Traditionally, the "name" property was not handled here.
 			 * For the moment, skip it from get_property_val(). */
@@ -700,7 +570,7 @@ nmc_setting_set_property (NMSetting *setting, const char *prop, const char *valu
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	if ((property_info = _meta_find_property_info_by_setting (setting, prop, &setting_info))) {
+	if ((property_info = nm_meta_property_info_find_by_setting (setting, prop, &setting_info))) {
 
 		if (!value) {
 			/* No value argument sets default value */
@@ -774,7 +644,7 @@ nmc_setting_reset_property (NMSetting *setting, const char *prop, GError **error
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	if ((property_info = _meta_find_property_info_by_setting (setting, prop, &setting_info))) {
+	if ((property_info = nm_meta_property_info_find_by_setting (setting, prop, &setting_info))) {
 		if (property_info->is_name) {
 			/* Traditionally, the "name" property was not handled here.
 			 * For the moment, skip it from get_property_val(). */
@@ -810,7 +680,7 @@ nmc_setting_remove_property_option (NMSetting *setting,
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	if ((property_info = _meta_find_property_info_by_setting (setting, prop, &setting_info))) {
+	if ((property_info = nm_meta_property_info_find_by_setting (setting, prop, &setting_info))) {
 		if (property_info->is_name) {
 			/* Traditionally, the "name" property was not handled here.
 			 * For the moment, skip it from get_property_val(). */
@@ -872,7 +742,7 @@ nmc_setting_get_property_allowed_values (NMSetting *setting, const char *prop, c
 
 	*out_to_free = NULL;
 
-	if ((property_info = _meta_find_property_info_by_setting (setting, prop, &setting_info))) {
+	if ((property_info = nm_meta_property_info_find_by_setting (setting, prop, &setting_info))) {
 		if (property_info->is_name) {
 			/* Traditionally, the "name" property was not handled here.
 			 * For the moment, skip it from get_property_val(). */
@@ -909,7 +779,7 @@ nmc_setting_get_property_desc (NMSetting *setting, const char *prop)
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 
-	if ((property_info = _meta_find_property_info_by_setting (setting, prop, &setting_info))) {
+	if ((property_info = nm_meta_property_info_find_by_setting (setting, prop, &setting_info))) {
 		const char *desc = NULL;
 
 		if (property_info->describe_doc) {

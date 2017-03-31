@@ -28,7 +28,6 @@
 
 /*****************************************************************************/
 
-NMSetting *nmc_setting_new_for_name (const char *name);
 void nmc_setting_custom_init (NMSetting *setting);
 void nmc_setting_ip4_connect_handlers (NMSettingIPConfig *setting);
 void nmc_setting_ip6_connect_handlers (NMSettingIPConfig *setting);

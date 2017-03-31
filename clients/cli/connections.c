@@ -616,6 +616,22 @@ usage_connection_export (void)
 	              "The data are directed to standard output or to a file if a name is given.\n\n"));
 }
 
+static NMSetting *
+nmc_setting_new_for_name (const char *name)
+{
+	GType stype;
+	NMSetting *setting = NULL;
+
+	if (name) {
+		stype = nm_setting_lookup_type (name);
+		if (stype != G_TYPE_INVALID) {
+			setting = g_object_new (stype, NULL);
+			g_warn_if_fail (NM_IS_SETTING (setting));
+		}
+	}
+	return setting;
+}
+
 /* quit main loop */
 static void
 quit (void)
