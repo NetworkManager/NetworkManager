@@ -840,11 +840,6 @@ nmc_empty_output_fields (NmcOutputData *output_data)
 	/* Empty output_data array */
 	if (output_data->output_data->len > 0)
 		g_ptr_array_remove_range (output_data->output_data, 0, output_data->output_data->len);
-
-	if (output_data->indices) {
-		g_array_free (output_data->indices, TRUE);
-		output_data->indices = NULL;
-	}
 }
 
 static const char *
@@ -1123,7 +1118,11 @@ print_data_prepare_width (GPtrArray *output_data)
 }
 
 void
-print_data (const NmcConfig *nmc_config, const NmcOutputData *out)
+print_data (const NmcConfig *nmc_config,
+            const GArray *indices,
+            const char *header_name,
+            int indent,
+            const NmcOutputData *out)
 {
 	guint i;
 
@@ -1131,8 +1130,8 @@ print_data (const NmcConfig *nmc_config, const NmcOutputData *out)
 		const NmcOutputField *field_values = g_ptr_array_index (out->output_data, i);
 
 		print_required_fields (nmc_config, field_values[0].flags,
-		                       out->indices, out->header_name,
-		                       out->indent, field_values);
+		                       indices, header_name,
+		                       indent, field_values);
 	}
 }
 

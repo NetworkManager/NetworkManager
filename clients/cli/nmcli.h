@@ -144,9 +144,6 @@ typedef struct _NmcConfig {
 
 typedef struct _NmcOutputData {
 	GPtrArray *output_data;                           /* GPtrArray of arrays of NmcOutputField structs - accumulates data for output */
-	GArray *indices;                                  /* Array of field indices to the array of allowed fields */
-	const char *header_name;                          /* Name of the output */
-	int indent;                                       /* Indent by this number of spaces */
 } NmcOutputData;
 
 /* NmCli - main structure */
@@ -193,6 +190,7 @@ void     nmc_exit (void);
 void nmc_empty_output_fields (NmcOutputData *output_data);
 
 #define NMC_OUTPUT_DATA_DEFINE_SCOPED(out) \
+	gs_unref_array GArray *out##_indices = NULL; \
 	nm_auto (nmc_empty_output_fields) NmcOutputData out = { \
 		.output_data = g_ptr_array_new_full (20, g_free), \
 	}

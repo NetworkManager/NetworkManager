@@ -75,6 +75,10 @@ void print_required_fields (const NmcConfig *nmc_config,
                             int indent,
                             const NmcOutputField *field_values);
 void print_data_prepare_width (GPtrArray *output_data);
-void print_data (const NmcConfig *nmc_config, const NmcOutputData *out);
+void print_data (const NmcConfig *nmc_config,
+                 const GArray *indices,
+                 const char *header_name,
+                 int indent,
+                 const NmcOutputData *out);
 
 #endif /* NMC_UTILS_H */
