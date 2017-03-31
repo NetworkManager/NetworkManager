@@ -1061,7 +1061,6 @@ print_team_info (NMDevice *device,
 	print_data (&nmc->nmc_config, &out);
 
 	g_string_free (slaves_str, FALSE);
-	nmc_empty_output_fields (&out);
 
 	return TRUE;
 }
@@ -2798,16 +2797,17 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 			/* Specific AP requested - list only that */
 			for (i = 0; devices[i]; i++) {
 				NMDevice *dev = devices[i];
+				NMC_OUTPUT_DATA_DEFINE_SCOPED (out2);
 
 				if (!NM_IS_DEVICE_WIFI (dev))
 					continue;
 
 				/* Main header name */
-				out.print_fields.header_name = (char *) construct_header_name (base_hdr, nm_device_get_iface (dev));
-				out.print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, NULL);
+				out2.print_fields.header_name = (char *) construct_header_name (base_hdr, nm_device_get_iface (dev));
+				out2.print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, NULL);
 
 				arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
-				g_ptr_array_add (out.output_data, arr);
+				g_ptr_array_add (out2.output_data, arr);
 
 				aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (dev));
 				for (j = 0; j < aps->len; j++) {
@@ -2832,9 +2832,8 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 				}
 				if (empty_line)
 					g_print ("\n"); /* Empty line between devices' APs */
-				print_data_prepare_width (out.output_data);
-				print_data (&nmc->nmc_config, &out);
-				nmc_empty_output_fields (&out);
+				print_data_prepare_width (out2.output_data);
+				print_data (&nmc->nmc_config, &out2);
 				empty_line = TRUE;
 			}
 			if (!ap) {
