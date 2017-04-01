@@ -168,7 +168,7 @@ NmcOutputField nmc_fields_dev_wifi_list[] = {
 	OUTPUT_FIELD_WITH_NAME ("RSN-FLAGS"),   /* 12 */
 	OUTPUT_FIELD_WITH_NAME ("DEVICE"),      /* 13 */
 	OUTPUT_FIELD_WITH_NAME ("ACTIVE"),      /* 14 */
-	OUTPUT_FIELD_WITH_NAME ("*"),           /* 15 */
+	OUTPUT_FIELD_WITH_NAME ("IN-USE"),      /* 15 */
 	OUTPUT_FIELD_WITH_NAME ("DBUS-PATH"),   /* 16 */
 	{ 0 }
 };
