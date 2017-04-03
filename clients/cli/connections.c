@@ -8756,11 +8756,7 @@ do_connection_export (NmCli *nmc, int argc, char **argv)
 	if (nmc->complete)
 		return nmc->return_value;
 
-	if (argc) {
-		out_name = *argv;
-		argc--;
-		argv++;
-	}
+	out_name = *argv;
 
 	if (next_arg (nmc->ask ? NULL : nmc, argc_ptr, argv_ptr, NULL) == 0) {
 		g_string_printf (nmc->return_text, _("Error: unknown extra argument: '%s'."), *argv);
