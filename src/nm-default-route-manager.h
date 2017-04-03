@@ -61,4 +61,7 @@ NMIP6Config *nm_default_route_manager_ip6_get_best_config (NMDefaultRouteManager
                                                            NMDevice **out_device,
                                                            NMVpnConnection **out_vpn);
 
+gboolean nm_default_route_manager_resync (NMDefaultRouteManager *self,
+                                          int af_family);
+
 #endif  /* NM_DEFAULT_ROUTE_MANAGER_H */
