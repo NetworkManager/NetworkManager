@@ -770,7 +770,7 @@ nmc_connection_profile_details (NMConnection *connection, NmCli *nmc, gboolean s
 
 		setting = nm_connection_get_setting_by_name (connection, nm_meta_setting_infos_editor[section_idx].general->setting_name);
 		if (setting) {
-			setting_details (setting, nmc, prop_name, secrets);
+			setting_details (&nmc->nmc_config, setting, prop_name, secrets);
 			was_output = TRUE;
 		}
 	}
@@ -1390,8 +1390,8 @@ split_required_fields_for_con_show (const char *input,
 			else if (!strcasecmp (*iter, CON_SHOW_DETAIL_GROUP_ACTIVE))
 				group_active = TRUE;
 			else {
-				char *allowed1 = nmc_get_allowed_fields ((const NMMetaAbstractInfo *const*) nm_meta_setting_infos_editor_p (), -1);
-				char *allowed2 = nmc_get_allowed_fields ((const NMMetaAbstractInfo *const*) nmc_fields_con_active_details_groups, -1);
+				char *allowed1 = nmc_get_allowed_fields ((const NMMetaAbstractInfo *const*) nm_meta_setting_infos_editor_p ());
+				char *allowed2 = nmc_get_allowed_fields ((const NMMetaAbstractInfo *const*) nmc_fields_con_active_details_groups);
 				g_set_error (error, NMCLI_ERROR, 0, _("invalid field '%s'; allowed fields: %s and %s, or %s,%s"),
 				             *iter, allowed1, allowed2, CON_SHOW_DETAIL_GROUP_PROFILE, CON_SHOW_DETAIL_GROUP_ACTIVE);
 				g_free (allowed1);
@@ -5981,7 +5981,7 @@ editor_show_setting (NMSetting *setting, NmCli *nmc)
 	nmc->nmc_config_mutable.multiline_output = TRUE;
 	nmc->nmc_config_mutable.escape_values = 0;
 
-	setting_details (setting, nmc, NULL, nmc->editor_show_secrets);
+	setting_details (&nmc->nmc_config, setting, NULL, nmc->editor_show_secrets);
 }
 
 typedef enum {

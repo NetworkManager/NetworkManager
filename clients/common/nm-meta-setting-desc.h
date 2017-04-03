@@ -139,6 +139,9 @@ struct _NMMetaSettingInfoEditor {
 struct _NMMetaType {
 	const char *type_name;
 	const char *(*get_name) (const NMMetaAbstractInfo *abstract_info);
+	const NMMetaAbstractInfo *const*(*get_nested) (const NMMetaAbstractInfo *abstract_info,
+	                                               guint *out_len,
+	                                               gpointer *out_to_free);
 };
 
 struct _NMMetaAbstractInfo {

@@ -30,6 +30,7 @@
 #include "NetworkManager.h"
 #include "nm-vpn-helpers.h"
 #include "nm-client-utils.h"
+#include "nm-meta-setting-access.h"
 
 /*****************************************************************************/
 
@@ -6637,9 +6638,24 @@ _meta_type_property_info_get_name (const NMMetaAbstractInfo *abstract_info)
 	return ((const NMMetaPropertyInfo *) abstract_info)->property_name;
 }
 
+static const NMMetaAbstractInfo *const*
+_meta_type_setting_info_editor_get_nested (const NMMetaAbstractInfo *abstract_info,
+                                           guint *out_len,
+                                           gpointer *out_to_free)
+{
+	const NMMetaSettingInfoEditor *info;
+
+	info = (const NMMetaSettingInfoEditor *) abstract_info;
+
+	NM_SET_OUT (out_len, info->properties_num);
+	*out_to_free = NULL;
+	return (const NMMetaAbstractInfo *const*) nm_property_infos_for_setting_type (info->general->meta_type);
+}
+
 const NMMetaType nm_meta_type_setting_info_editor = {
 	.type_name =         "setting_info_editor",
 	.get_name =          _meta_type_setting_info_editor_get_name,
+	.get_nested =        _meta_type_setting_info_editor_get_nested,
 };
 
 const NMMetaType nm_meta_type_property_info = {

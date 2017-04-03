@@ -61,6 +61,6 @@ void nmc_property_set_default_value (NMSetting *setting, const char *prop);
 gboolean nmc_property_get_gvalue (NMSetting *setting, const char *prop, GValue *value);
 gboolean nmc_property_set_gvalue (NMSetting *setting, const char *prop, GValue *value);
 
-gboolean setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets);
+gboolean setting_details (const NmcConfig *nmc_config, NMSetting *setting, const char *one_prop, gboolean secrets);
 
 #endif /* NMC_SETTINGS_H */

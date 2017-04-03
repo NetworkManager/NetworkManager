@@ -823,7 +823,7 @@ _dup_fields_array (const NMMetaSettingInfoEditor *setting_info, NmcOfFlags flags
 }
 
 gboolean
-setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean show_secrets)
+setting_details (const NmcConfig *nmc_config, NMSetting *setting, const char *one_prop, gboolean show_secrets)
 {
 	const NMMetaSettingInfoEditor *setting_info;
 	NmcOutputField *arr;
@@ -834,11 +834,10 @@ setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 
 	setting_info = nm_meta_setting_info_editor_find_by_setting (setting);
-	g_return_val_if_fail (setting_info, FALSE);
+	if (!setting_info)
+		return FALSE;
 
-	g_return_val_if_fail (G_TYPE_CHECK_INSTANCE_TYPE (setting, setting_info->general->get_setting_gtype ()), FALSE);
-
-	if (nmc->nmc_config.print_output == NMC_PRINT_TERSE)
+	if (nmc_config->print_output == NMC_PRINT_TERSE)
 		type = NM_META_ACCESSOR_GET_TYPE_PARSABLE;
 
 	out_indices = parse_output_fields (one_prop,
@@ -865,7 +864,7 @@ setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean 
 	g_ptr_array_add (out.output_data, arr);
 
 	print_data_prepare_width (out.output_data);
-	print_data (&nmc->nmc_config, out_indices, NULL, 0, &out);
+	print_data (nmc_config, out_indices, NULL, 0, &out);
 
 	return TRUE;
 }

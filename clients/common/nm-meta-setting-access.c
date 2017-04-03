@@ -82,6 +82,7 @@ nm_meta_setting_info_editor_find_by_setting (NMSetting *setting)
 	setting_info = nm_meta_setting_info_editor_find_by_gtype (G_OBJECT_TYPE (setting));
 
 	nm_assert (setting_info == nm_meta_setting_info_editor_find_by_name (nm_setting_get_name (setting)));
+	nm_assert (!setting_info || G_TYPE_CHECK_INSTANCE_TYPE (setting, setting_info->general->get_setting_gtype ()));
 
 	return setting_info;
 }
