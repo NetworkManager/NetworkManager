@@ -60,4 +60,7 @@ gboolean nmc_string_to_tristate (const char *str, NMCTriStateValue *val, GError 
 
 gboolean matches (const char *cmd, const char *pattern);
 
+/* FIXME: don't expose this function on it's own, at least not from this file. */
+const char *nmc_bond_validate_mode (const char *mode, GError **error);
+
 #endif /* __NM_CLIENT_UTILS_H__ */

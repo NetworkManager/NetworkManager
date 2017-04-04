@@ -401,27 +401,6 @@ nmc_proxy_check_script (const char *script, char **out_script, GError **error)
 	return TRUE;
 }
 
-const char *
-nmc_bond_validate_mode (const char *mode, GError **error)
-{
-	unsigned long mode_int;
-	static const char *valid_modes[] = { "balance-rr",
-	                                     "active-backup",
-	                                     "balance-xor",
-	                                     "broadcast",
-	                                     "802.3ad",
-	                                     "balance-tlb",
-	                                     "balance-alb",
-	                                     NULL };
-	if (nmc_string_to_uint (mode, TRUE, 0, 6, &mode_int)) {
-		/* Translate bonding mode numbers to mode names:
-		 * https://www.kernel.org/doc/Documentation/networking/bonding.txt
-		 */
-		return valid_modes[mode_int];
-	} else
-		return nmc_string_is_valid (mode, valid_modes, error);
-}
-
 /*
  * nmc_team_check_config:
  * @config: file name with team config, or raw team JSON config data
