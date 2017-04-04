@@ -8847,8 +8847,8 @@ reactivate_proxy_config (NMDevice *self)
 	                           nm_device_get_ip_iface (self),
 	                           nm_device_get_ip_iface (self),
 	                           priv->proxy_config,
-	                           priv->ip4_config,
-	                           priv->ip6_config);
+	                           NULL,
+	                           NULL);
 }
 
 static gboolean
@@ -12540,8 +12540,8 @@ _set_state_full (NMDevice *self,
 			                           nm_device_get_ip_iface (self),
 			                           nm_device_get_ip_iface (self),
 			                           priv->proxy_config,
-			                           priv->ip4_config,
-			                           priv->ip6_config);
+			                           NULL,
+			                           NULL);
 		}
 		break;
 	case NM_DEVICE_STATE_FAILED:

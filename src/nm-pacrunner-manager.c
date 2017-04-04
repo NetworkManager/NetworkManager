@@ -330,8 +330,8 @@ pacrunner_proxy_cb (GObject *source, GAsyncResult *res, gpointer user_data)
  * @iface: the iface for the connection or %NULL
  * @tag: unique configuration identifier
  * @proxy_config: proxy config of the connection
- * @ip4_config: IP4 config of the connection
- * @ip6_config: IP6 config of the connection
+ * @ip4_config: IP4 config of the connection to extract domain info from
+ * @ip6_config: IP6 config of the connection to extract domain info from
  */
 void
 nm_pacrunner_manager_send (NMPacrunnerManager *self,
@@ -378,24 +378,27 @@ nm_pacrunner_manager_send (NMPacrunnerManager *self,
 		                       g_variant_new_string ("direct"));
 	}
 
-	domains = g_ptr_array_new_with_free_func (g_free);
 
 	/* Extract stuff from configs */
 	add_proxy_config (&proxy_data, proxy_config);
 
-	if (ip4_config)
-		get_ip4_domains (domains, ip4_config);
-	if (ip6_config)
-		get_ip6_domains (domains, ip6_config);
+	if (ip4_config || ip6_config) {
+		domains = g_ptr_array_new_with_free_func (g_free);
 
-	g_ptr_array_add (domains, NULL);
-	strv = (char **) g_ptr_array_free (domains, (domains->len == 1));
+		if (ip4_config)
+			get_ip4_domains (domains, ip4_config);
+		if (ip6_config)
+			get_ip6_domains (domains, ip6_config);
 
-	if (strv) {
-		g_variant_builder_add (&proxy_data, "{sv}",
-		                       "Domains",
-		                       g_variant_new_strv ((const char *const *) strv, -1));
-		g_strfreev (strv);
+		g_ptr_array_add (domains, NULL);
+		strv = (char **) g_ptr_array_free (domains, (domains->len == 1));
+
+		if (strv) {
+			g_variant_builder_add (&proxy_data, "{sv}",
+			                       "Domains",
+			                       g_variant_new_strv ((const char *const *) strv, -1));
+			g_strfreev (strv);
+		}
 	}
 
 	config = config_new (self, g_strdup (tag),
