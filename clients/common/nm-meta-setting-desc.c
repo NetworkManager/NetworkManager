@@ -528,7 +528,7 @@ _env_warn_fcn (const NMMetaEnvironment *environment,
 	const NMMetaPropertyInfo *property_info, char **out_to_free
 
 #define ARGS_GET_FCN \
-	const NMMetaPropertyInfo *property_info, NMSetting *setting, NMMetaAccessorGetType get_type, gboolean show_secrets
+	const NMMetaEnvironment *environment, gpointer environment_user_data, const NMMetaPropertyInfo *property_info, NMSetting *setting, NMMetaAccessorGetType get_type, NMMetaAccessorGetFlags get_flags
 
 #define ARGS_SET_FCN \
 	const NMMetaEnvironment *environment, gpointer environment_user_data, const NMMetaPropertyInfo *property_info, NMSetting *setting, const char *value, GError **error
@@ -571,18 +571,28 @@ _get_fcn_nmc_with_default (ARGS_GET_FCN)
 }
 
 static char *
-_get_fcn_gobject (ARGS_GET_FCN)
+_get_fcn_gobject_impl (const NMMetaPropertyInfo *property_info,
+                       NMSetting *setting,
+                       NMMetaAccessorGetType get_type)
 {
 	char *s;
+	const char *s_c;
 	GType gtype_prop;
 	nm_auto_unset_gvalue GValue val = G_VALUE_INIT;
 
 	gtype_prop = _gobject_property_get_gtype (G_OBJECT (setting), property_info->property_name);
 
 	if (gtype_prop == G_TYPE_BOOLEAN) {
+		gboolean b;
+
 		g_value_init (&val, gtype_prop);
 		g_object_get_property (G_OBJECT (setting), property_info->property_name, &val);
-		s = g_strdup (g_value_get_boolean (&val) ? "yes" : "no");
+		b = g_value_get_boolean (&val);
+		if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
+			s_c = b ? _("yes") : _("no");
+		else
+			s_c = b ? "yes" : "no";
+		s = g_strdup (s_c);
 	} else {
 		g_value_init (&val, G_TYPE_STRING);
 		g_object_get_property (G_OBJECT (setting), property_info->property_name, &val);
@@ -592,13 +602,19 @@ _get_fcn_gobject (ARGS_GET_FCN)
 }
 
 static char *
+_get_fcn_gobject (ARGS_GET_FCN)
+{
+	return _get_fcn_gobject_impl (property_info, setting, get_type);
+}
+
+static char *
 _get_fcn_gobject_mtu (ARGS_GET_FCN)
 {
 	guint32 mtu;
 
 	if (   !property_info->property_typ_data
 	    || !property_info->property_typ_data->subtype.mtu.get_fcn)
-		return _get_fcn_gobject (property_info, setting, get_type, show_secrets);
+		return _get_fcn_gobject_impl (property_info, setting, get_type);
 
 	mtu = property_info->property_typ_data->subtype.mtu.get_fcn (setting);
 	if (mtu == 0) {
@@ -1646,7 +1662,7 @@ _get_fcn_802_1x_client_cert (ARGS_GET_FCN)
 
 	switch (nm_setting_802_1x_get_client_cert_scheme (s_8021X)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		if (show_secrets)
+		if (NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS))
 			cert_str = bytes_to_string (nm_setting_802_1x_get_client_cert_blob (s_8021X));
 		else
 			cert_str = g_strdup (_(NM_META_TEXT_HIDDEN));
@@ -1695,7 +1711,7 @@ _get_fcn_802_1x_phase2_client_cert (ARGS_GET_FCN)
 
 	switch (nm_setting_802_1x_get_phase2_client_cert_scheme (s_8021X)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		if (show_secrets)
+		if (NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS))
 			cert_str = bytes_to_string (nm_setting_802_1x_get_phase2_client_cert_blob (s_8021X));
 		else
 			cert_str = g_strdup (_(NM_META_TEXT_HIDDEN));
@@ -1728,7 +1744,7 @@ _get_fcn_802_1x_private_key (ARGS_GET_FCN)
 
 	switch (nm_setting_802_1x_get_private_key_scheme (s_8021X)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		if (show_secrets)
+		if (NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS))
 			key_str = bytes_to_string (nm_setting_802_1x_get_private_key_blob (s_8021X));
 		else
 			key_str = g_strdup (_(NM_META_TEXT_HIDDEN));
@@ -1754,7 +1770,7 @@ _get_fcn_802_1x_phase2_private_key (ARGS_GET_FCN)
 
 	switch (nm_setting_802_1x_get_phase2_private_key_scheme (s_8021X)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		if (show_secrets)
+		if (NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS))
 			key_str = bytes_to_string (nm_setting_802_1x_get_phase2_private_key_blob (s_8021X));
 		else
 			key_str = g_strdup (_(NM_META_TEXT_HIDDEN));
@@ -6638,6 +6654,37 @@ _meta_type_property_info_get_name (const NMMetaAbstractInfo *abstract_info)
 	return ((const NMMetaPropertyInfo *) abstract_info)->property_name;
 }
 
+static const char *
+_meta_type_setting_info_editor_get_fcn (const NMMetaEnvironment *environment,
+                                        gpointer environment_user_data,
+                                        const NMMetaAbstractInfo *abstract_info,
+                                        gpointer target,
+                                        NMMetaAccessorGetType get_type,
+                                        NMMetaAccessorGetFlags get_flags,
+                                        char **out_to_free)
+{
+	nm_assert (out_to_free && !out_to_free);
+	g_return_val_if_reached (NULL);
+}
+
+static const char *
+_meta_type_property_info_get_fcn (const NMMetaEnvironment *environment,
+                                  gpointer environment_user_data,
+                                  const NMMetaAbstractInfo *abstract_info,
+                                  gpointer target,
+                                  NMMetaAccessorGetType get_type,
+                                  NMMetaAccessorGetFlags get_flags,
+                                  char **out_to_free)
+{
+	const NMMetaPropertyInfo *info = (const NMMetaPropertyInfo *) abstract_info;
+
+	nm_assert (out_to_free && !out_to_free);
+
+	return (*out_to_free = info->property_type->get_fcn (environment, environment_user_data,
+	                                                     info, target,
+	                                                     get_type, get_flags));
+}
+
 static const NMMetaAbstractInfo *const*
 _meta_type_setting_info_editor_get_nested (const NMMetaAbstractInfo *abstract_info,
                                            guint *out_len,
@@ -6652,13 +6699,26 @@ _meta_type_setting_info_editor_get_nested (const NMMetaAbstractInfo *abstract_in
 	return (const NMMetaAbstractInfo *const*) nm_property_infos_for_setting_type (info->general->meta_type);
 }
 
+static const NMMetaAbstractInfo *const*
+_meta_type_property_info_get_nested (const NMMetaAbstractInfo *abstract_info,
+                                     guint *out_len,
+                                     gpointer *out_to_free)
+{
+	NM_SET_OUT (out_len, 0);
+	*out_to_free = NULL;
+	return NULL;
+}
+
 const NMMetaType nm_meta_type_setting_info_editor = {
 	.type_name =         "setting_info_editor",
 	.get_name =          _meta_type_setting_info_editor_get_name,
 	.get_nested =        _meta_type_setting_info_editor_get_nested,
+	.get_fcn =           _meta_type_setting_info_editor_get_fcn,
 };
 
 const NMMetaType nm_meta_type_property_info = {
 	.type_name =        "property_info",
 	.get_name =         _meta_type_property_info_get_name,
+	.get_nested =       _meta_type_property_info_get_nested,
+	.get_fcn =          _meta_type_property_info_get_fcn,
 };

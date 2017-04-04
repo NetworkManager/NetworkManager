@@ -475,10 +475,12 @@ get_property_val (NMSetting *setting, const char *prop, NMMetaAccessorGetType ge
 			/* Traditionally, the "name" property was not handled here.
 			 * For the moment, skip it from get_property_val(). */
 		} else if (property_info->property_type->get_fcn) {
-			return property_info->property_type->get_fcn (property_info,
+			return property_info->property_type->get_fcn (&meta_environment,
+			                                              NULL,
+			                                              property_info,
 			                                              setting,
 			                                              get_type,
-			                                              show_secrets);
+			                                              show_secrets ? NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS : 0);
 		}
 	}
 
@@ -853,10 +855,12 @@ setting_details (const NmcConfig *nmc_config, NMSetting *setting, const char *on
 		nm_assert (property_info->setting_info == setting_info);
 
 		if (!property_info->is_secret || show_secrets) {
-			set_val_str (arr, i, property_info->property_type->get_fcn (property_info,
+			set_val_str (arr, i, property_info->property_type->get_fcn (&meta_environment,
+			                                                            NULL,
+			                                                            property_info,
 			                                                            setting,
 			                                                            type,
-			                                                            show_secrets));
+			                                                            show_secrets ? NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS : 0));
 		} else
 			set_val_str (arr, i, g_strdup (_(NM_META_TEXT_HIDDEN)));
 	}

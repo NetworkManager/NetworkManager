@@ -83,10 +83,32 @@ _meta_type_nmc_generic_info_get_nested (const NMMetaAbstractInfo *abstract_info,
 	return (const NMMetaAbstractInfo *const*) info->nested;
 }
 
+static const char *
+_meta_type_nmc_generic_info_get_fcn (const NMMetaEnvironment *environment,
+                                     gpointer environment_user_data,
+                                     const NMMetaAbstractInfo *abstract_info,
+                                     gpointer target,
+                                     NMMetaAccessorGetType get_type,
+                                     NMMetaAccessorGetFlags get_flags,
+                                     char **out_to_free)
+{
+	const NmcMetaGenericInfo *info = (const NmcMetaGenericInfo *) abstract_info;
+
+	nm_assert (out_to_free && !*out_to_free);
+
+	if (!info->get_fcn)
+		g_return_val_if_reached (NULL);
+	return info->get_fcn (environment, environment_user_data,
+	                      info, target,
+	                      get_type, get_flags,
+	                      out_to_free);
+}
+
 const NMMetaType nmc_meta_type_generic_info = {
 	.type_name =         "nmc-generic-info",
 	.get_name =          _meta_type_nmc_generic_info_get_name,
 	.get_nested =        _meta_type_nmc_generic_info_get_nested,
+	.get_fcn =           _meta_type_nmc_generic_info_get_fcn,
 };
 
 /*****************************************************************************/

@@ -30,6 +30,11 @@ typedef enum {
 } NMMetaAccessorGetType;
 
 typedef enum {
+	NM_META_ACCESSOR_GET_FLAGS_NONE                                         = 0,
+	NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS                                 = (1LL <<  0),
+} NMMetaAccessorGetFlags;
+
+typedef enum {
 	NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_NUMERIC                       = (1LL <<  0),
 	NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_NUMERIC_HEX                   = (1LL <<  1),
 	NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT                          = (1LL <<  2),
@@ -58,10 +63,12 @@ struct _NMMetaPropertyType {
 	const char *(*describe_fcn) (const NMMetaPropertyInfo *property_info,
 	                             char **out_to_free);
 
-	char *(*get_fcn) (const NMMetaPropertyInfo *property_info,
+	char *(*get_fcn) (const NMMetaEnvironment *environment,
+	                  gpointer environment_user_data,
+	                  const NMMetaPropertyInfo *property_info,
 	                  NMSetting *setting,
 	                  NMMetaAccessorGetType get_type,
-	                  gboolean show_secrets);
+	                  NMMetaAccessorGetFlags get_flags);
 	gboolean (*set_fcn) (const NMMetaEnvironment *environment,
 	                     gpointer environment_user_data,
 	                     const NMMetaPropertyInfo *property_info,
@@ -142,6 +149,13 @@ struct _NMMetaType {
 	const NMMetaAbstractInfo *const*(*get_nested) (const NMMetaAbstractInfo *abstract_info,
 	                                               guint *out_len,
 	                                               gpointer *out_to_free);
+	const char *(*get_fcn) (const NMMetaEnvironment *environment,
+	                        gpointer environment_user_data,
+	                        const NMMetaAbstractInfo *info,
+	                        gpointer target,
+	                        NMMetaAccessorGetType get_type,
+	                        NMMetaAccessorGetFlags get_flags,
+	                        char **out_to_free);
 };
 
 struct _NMMetaAbstractInfo {
