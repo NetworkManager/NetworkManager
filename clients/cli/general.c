@@ -108,20 +108,107 @@ connectivity_to_color (NMConnectivityState connectivity)
 
 /*****************************************************************************/
 
-static const NmcMetaGenericInfo *const nmc_fields_nm_status[] = {
-	NMC_META_GENERIC ("RUNNING"),        /* 0 */
-	NMC_META_GENERIC ("VERSION"),        /* 1 */
-	NMC_META_GENERIC ("STATE"),          /* 2 */
-	NMC_META_GENERIC ("STARTUP"),        /* 3 */
-	NMC_META_GENERIC ("CONNECTIVITY"),   /* 4 */
-	NMC_META_GENERIC ("NETWORKING"),     /* 5 */
-	NMC_META_GENERIC ("WIFI-HW"),        /* 6 */
-	NMC_META_GENERIC ("WIFI"),           /* 7 */
-	NMC_META_GENERIC ("WWAN-HW"),        /* 8 */
-	NMC_META_GENERIC ("WWAN"),           /* 9 */
-	NMC_META_GENERIC ("WIMAX-HW"),       /* 10 */
-	NMC_META_GENERIC ("WIMAX"),          /* 11 */
-	NULL,
+static const NmcMetaGenericInfo *const metagen_general_status[];
+
+static gconstpointer
+_metagen_general_status_get_fcn (const NMMetaEnvironment *environment,
+                                 gpointer environment_user_data,
+                                 const NmcMetaGenericInfo *info,
+                                 gpointer target,
+                                 NMMetaAccessorGetType get_type,
+                                 NMMetaAccessorGetFlags get_flags,
+                                 gpointer *out_to_free)
+{
+	NmCli *nmc = target;
+	const char *value;
+	gboolean v_bool;
+	NMState state;
+	NMConnectivityState connectivity;
+
+#define HANDLE_TERMFORMAT(color) \
+	G_STMT_START { \
+		if (get_type == NM_META_ACCESSOR_GET_TYPE_TERMFORMAT) \
+			return nm_meta_termformat_pack ((color), NM_META_TERM_FORMAT_NORMAL); \
+	} G_STMT_END
+
+	switch (info->info_type) {
+	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_RUNNING:
+		HANDLE_TERMFORMAT (NM_META_TERM_COLOR_NORMAL);
+		value = N_("running");
+		goto translate_and_out;
+	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_VERSION:
+		HANDLE_TERMFORMAT (NM_META_TERM_COLOR_NORMAL);
+		value = nm_client_get_version (nmc->client);
+		goto clone_and_out;
+	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_STATE:
+		state = nm_client_get_state (nmc->client);
+		HANDLE_TERMFORMAT (state_to_color (state));
+		value = nm_state_to_string_no_l10n (state);
+		goto translate_and_out;
+	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_STARTUP:
+		v_bool = nm_client_get_startup (nmc->client);
+		HANDLE_TERMFORMAT (v_bool ? NM_META_TERM_COLOR_YELLOW : NM_META_TERM_COLOR_GREEN);
+		value = v_bool ? N_("starting") : N_("started");
+		goto translate_and_out;
+	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_CONNECTIVITY:
+		connectivity = nm_client_get_connectivity (nmc->client);
+		HANDLE_TERMFORMAT (connectivity_to_color (connectivity));
+		value = nm_connectivity_to_string_no_l10n (connectivity);
+		goto translate_and_out;
+	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_NETWORKING:
+		v_bool = nm_client_networking_get_enabled (nmc->client);
+		goto enabled_out;
+	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WIFI_HW:
+		v_bool = nm_client_wireless_hardware_get_enabled (nmc->client);
+		goto enabled_out;
+	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WIFI:
+		v_bool = nm_client_wireless_get_enabled (nmc->client);
+		goto enabled_out;
+	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WWAN_HW:
+		v_bool = nm_client_wwan_hardware_get_enabled (nmc->client);
+		goto enabled_out;
+	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WWAN:
+		v_bool = nm_client_wwan_get_enabled (nmc->client);
+		goto enabled_out;
+	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WIMAX_HW:
+	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WIMAX:
+		/* deprected fields. Don't return anything. */
+		return NULL;
+	default:
+		break;
+	}
+
+	g_return_val_if_reached (NULL);
+
+enabled_out:
+	HANDLE_TERMFORMAT (v_bool ? NM_META_TERM_COLOR_GREEN : NM_META_TERM_COLOR_RED);
+	value = v_bool ? N_("enabled") : N_("disabled");
+	goto translate_and_out;
+
+clone_and_out:
+	return (*out_to_free = g_strdup (value));
+
+translate_and_out:
+	if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
+		return _(value);
+	return value;
+}
+
+static const NmcMetaGenericInfo *const metagen_general_status[_NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_NUM + 1] = {
+#define _METAGEN_GENERAL_STATUS(type, name) \
+	[type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_general_status_get_fcn)
+	_METAGEN_GENERAL_STATUS (NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_RUNNING,       "RUNNING"),
+	_METAGEN_GENERAL_STATUS (NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_VERSION,       "VERSION"),
+	_METAGEN_GENERAL_STATUS (NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_STATE,         "STATE"),
+	_METAGEN_GENERAL_STATUS (NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_STARTUP,       "STARTUP"),
+	_METAGEN_GENERAL_STATUS (NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_CONNECTIVITY,  "CONNECTIVITY"),
+	_METAGEN_GENERAL_STATUS (NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_NETWORKING,    "NETWORKING"),
+	_METAGEN_GENERAL_STATUS (NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WIFI_HW,       "WIFI-HW"),
+	_METAGEN_GENERAL_STATUS (NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WIFI,          "WIFI"),
+	_METAGEN_GENERAL_STATUS (NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WWAN_HW,       "WWAN-HW"),
+	_METAGEN_GENERAL_STATUS (NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WWAN,          "WWAN"),
+	_METAGEN_GENERAL_STATUS (NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WIMAX_HW,      "WIMAX-HW"),
+	_METAGEN_GENERAL_STATUS (NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WIMAX,         "WIMAX"),
 };
 #define NMC_FIELDS_NM_STATUS_ALL     "RUNNING,VERSION,STATE,STARTUP,CONNECTIVITY,NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN"
 #define NMC_FIELDS_NM_STATUS_SWITCH  "NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN"
@@ -306,19 +393,10 @@ quit (void)
 static gboolean
 show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_flds)
 {
-	gboolean startup = FALSE;
-	NMState state = NM_STATE_UNKNOWN;
-	NMConnectivityState connectivity = NM_CONNECTIVITY_UNKNOWN;
-	gboolean net_enabled;
-	gboolean wireless_hw_enabled, wireless_enabled;
-	gboolean wwan_hw_enabled, wwan_enabled;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 	const char *fields_str;
 	const char *fields_all =    print_flds ? print_flds : NMC_FIELDS_NM_STATUS_ALL;
 	const char *fields_common = print_flds ? print_flds : NMC_FIELDS_NM_STATUS_COMMON;
-	const NMMetaAbstractInfo *const*tmpl;
-	NmcOutputField *arr;
-	NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
 		fields_str = fields_common;
@@ -327,57 +405,16 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 	else
 		fields_str = nmc->required_fields;
 
-	tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_nm_status;
-	out_indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &error);
-
-	if (error) {
+	if (!nmc_print (&nmc->nmc_config,
+	                (gpointer[]) { nmc, NULL },
+	                pretty_header_name ?: N_("NetworkManager status"),
+	                (const NMMetaAbstractInfo *const*) metagen_general_status,
+	                fields_str,
+	                &error)) {
 		g_string_printf (nmc->return_text, _("Error: only these fields are allowed: %s"), fields_all);
-		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		return FALSE;
 	}
-
-	state = nm_client_get_state (nmc->client);
-	startup = nm_client_get_startup (nmc->client);
-	connectivity = nm_client_get_connectivity (nmc->client);
-	net_enabled = nm_client_networking_get_enabled (nmc->client);
-	wireless_hw_enabled = nm_client_wireless_hardware_get_enabled (nmc->client);
-	wireless_enabled = nm_client_wireless_get_enabled (nmc->client);
-	wwan_hw_enabled = nm_client_wwan_hardware_get_enabled (nmc->client);
-	wwan_enabled = nm_client_wwan_get_enabled (nmc->client);
-
-	arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (out.output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, 0);
-	set_val_strc (arr, 0, _("running"));
-	set_val_strc (arr, 1, nm_client_get_version (nmc->client));
-	set_val_strc (arr, 2, nm_state_to_string (state));
-	set_val_strc (arr, 3, startup ? _("starting") : _("started"));
-	set_val_strc (arr, 4, nm_connectivity_to_string (connectivity));
-	set_val_strc (arr, 5, net_enabled ? _("enabled") : _("disabled"));
-	set_val_strc (arr, 6, wireless_hw_enabled ? _("enabled") : _("disabled"));
-	set_val_strc (arr, 7, wireless_enabled ? _("enabled") : _("disabled"));
-	set_val_strc (arr, 8, wwan_hw_enabled ? _("enabled") : _("disabled"));
-	set_val_strc (arr, 9, wwan_enabled ? _("enabled") : _("disabled"));
-
-	/* Set colors */
-	arr[2].color = state_to_color (state);
-	arr[3].color = startup ? NM_META_TERM_COLOR_YELLOW : NM_META_TERM_COLOR_GREEN;
-	arr[4].color = connectivity_to_color (connectivity);
-	arr[5].color = net_enabled ? NM_META_TERM_COLOR_GREEN : NM_META_TERM_COLOR_RED;
-	arr[6].color = wireless_hw_enabled ? NM_META_TERM_COLOR_GREEN : NM_META_TERM_COLOR_RED;
-	arr[7].color = wireless_enabled ? NM_META_TERM_COLOR_GREEN : NM_META_TERM_COLOR_RED;
-	arr[8].color = wwan_hw_enabled ? NM_META_TERM_COLOR_GREEN : NM_META_TERM_COLOR_RED;
-	arr[9].color = wwan_enabled ? NM_META_TERM_COLOR_GREEN : NM_META_TERM_COLOR_RED;
-
-	g_ptr_array_add (out.output_data, arr);
-
-	print_data_prepare_width (out.output_data);
-	print_data (&nmc->nmc_config, out_indices,
-	            pretty_header_name ?: _("NetworkManager status"),
-	            0, &out);
-
 	return TRUE;
 }
 
@@ -860,7 +897,7 @@ do_networking_connectivity (NmCli *nmc, int argc, char **argv)
 
 	if (!argc) {
 		/* no arguments -> get current state */
-		nmc_switch_show (nmc, NMC_FIELDS_NM_CONNECTIVITY, _("Connectivity"));
+		nmc_switch_show (nmc, NMC_FIELDS_NM_CONNECTIVITY, N_("Connectivity"));
 	} else if (matches (*argv, "check")) {
 		gs_free_error GError *error = NULL;
 
@@ -872,7 +909,7 @@ do_networking_connectivity (NmCli *nmc, int argc, char **argv)
 			g_string_printf (nmc->return_text, _("Error: %s."), error->message);
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 		} else
-			nmc_switch_show (nmc, NMC_FIELDS_NM_CONNECTIVITY, _("Connectivity"));
+			nmc_switch_show (nmc, NMC_FIELDS_NM_CONNECTIVITY, N_("Connectivity"));
 	} else {
 		usage_networking ();
 		g_string_printf (nmc->return_text, _("Error: 'networking' command '%s' is not valid."), *argv);
@@ -889,7 +926,7 @@ do_networking_show (NmCli *nmc, int argc, char **argv)
 	if (nmc->complete)
 		return nmc->return_value;
 
-	nmc_switch_show (nmc, NMC_FIELDS_NM_NETWORKING, _("Networking"));
+	nmc_switch_show (nmc, NMC_FIELDS_NM_NETWORKING, N_("Networking"));
 
 	return nmc->return_value;
 }
@@ -924,7 +961,7 @@ do_radio_all (NmCli *nmc, int argc, char **argv)
 			return nmc->return_value;
 
 		/* no argument, show all radio switches */
-		show_nm_status (nmc, _("Radio switches"), NMC_FIELDS_NM_STATUS_RADIO);
+		show_nm_status (nmc, N_("Radio switches"), NMC_FIELDS_NM_STATUS_RADIO);
 	} else {
 		if (nmc->complete) {
 			if (argc == 1)
@@ -954,7 +991,7 @@ do_radio_wifi (NmCli *nmc, int argc, char **argv)
 			return nmc->return_value;
 
 		/* no argument, show current WiFi state */
-		nmc_switch_show (nmc, NMC_FIELDS_NM_WIFI, _("Wi-Fi radio switch"));
+		nmc_switch_show (nmc, NMC_FIELDS_NM_WIFI, N_("Wi-Fi radio switch"));
 	} else {
 		if (nmc->complete) {
 			if (argc == 1)
@@ -981,7 +1018,7 @@ do_radio_wwan (NmCli *nmc, int argc, char **argv)
 			return nmc->return_value;
 
 		/* no argument, show current WWAN (mobile broadband) state */
-		nmc_switch_show (nmc, NMC_FIELDS_NM_WWAN, _("WWAN radio switch"));
+		nmc_switch_show (nmc, NMC_FIELDS_NM_WWAN, N_("WWAN radio switch"));
 	} else {
 		if (nmc->complete) {
 			if (argc == 1)

@@ -63,6 +63,7 @@ void nmc_free_output_field_values (NmcOutputField fields_array[]);
 
 typedef struct {
 	const NMMetaAbstractInfo *info;
+	const char *self_selection;
 	const char *sub_selection;
 	guint idx;
 } NmcOutputSelectionItem;
@@ -73,7 +74,9 @@ typedef struct {
 } NmcOutputSelection;
 
 NmcOutputSelection *nmc_output_selection_create (const NMMetaAbstractInfo *const* fields_array,
+                                                 const char *fields_prefix,
                                                  const char *fields_str,
+                                                 gboolean validate_nested,
                                                  GError **error);
 
 GArray *parse_output_fields (const char *fields_str,
@@ -81,8 +84,8 @@ GArray *parse_output_fields (const char *fields_str,
                              gboolean parse_groups,
                              GPtrArray **group_fields,
                              GError **error);
-char *nmc_get_allowed_fields_nested (const NMMetaAbstractInfo *abstract_info);
-char *nmc_get_allowed_fields (const NMMetaAbstractInfo *const*fields_array);
+char *nmc_get_allowed_fields_nested (const NMMetaAbstractInfo *abstract_info, const char *name_prefix);
+char *nmc_get_allowed_fields (const NMMetaAbstractInfo *const*fields_array, const char *name_prefix);
 NmcOutputField *nmc_dup_fields_array (const NMMetaAbstractInfo *const*fields, NmcOfFlags flags);
 void nmc_empty_output_fields (NmcOutputData *output_data);
 void print_required_fields (const NmcConfig *nmc_config,
@@ -100,8 +103,25 @@ void print_data (const NmcConfig *nmc_config,
 
 /*****************************************************************************/
 
+typedef enum {
+	NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_RUNNING = 0,
+	NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_VERSION,
+	NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_STATE,
+	NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_STARTUP,
+	NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_CONNECTIVITY,
+	NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_NETWORKING,
+	NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WIFI_HW,
+	NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WIFI,
+	NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WWAN_HW,
+	NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WWAN,
+	NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WIMAX_HW,
+	NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WIMAX,
+	_NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_NUM,
+} NmcGenericInfoType;
+
 struct _NmcMetaGenericInfo {
 	const NMMetaType *meta_type;
+	NmcGenericInfoType info_type;
 	const char *name;
 	const NmcMetaGenericInfo *const*nested;
 	gconstpointer (*get_fcn) (const NMMetaEnvironment *environment,
@@ -122,6 +142,15 @@ struct _NmcMetaGenericInfo {
 
 #define NMC_META_GENERIC_WITH_NESTED(n, nest) \
 	NMC_META_GENERIC (n, .nested = (nest))
+
+/*****************************************************************************/
+
+gboolean nmc_print (const NmcConfig *nmc_config,
+                    gpointer const *targets,
+                    const char *header_name_no_l10n,
+                    const NMMetaAbstractInfo *const*fields,
+                    const char *fields_str,
+                    GError **error);
 
 /*****************************************************************************/
 

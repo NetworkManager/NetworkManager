@@ -223,3 +223,27 @@ nm_meta_abstract_info_get_nested (const NMMetaAbstractInfo *abstract_info,
 	NM_SET_OUT (out_len, 0);
 	return NULL;
 }
+
+gconstpointer
+nm_meta_abstract_info_get (const NMMetaAbstractInfo *abstract_info,
+                           const NMMetaEnvironment *environment,
+                           gpointer environment_user_data,
+                           gpointer target,
+                           NMMetaAccessorGetType get_type,
+                           NMMetaAccessorGetFlags get_flags,
+                           gpointer *out_to_free)
+{
+	nm_assert (abstract_info);
+	nm_assert (abstract_info->meta_type);
+	nm_assert (!out_to_free || !*out_to_free);
+
+	if (!abstract_info->meta_type->get_fcn)
+		g_return_val_if_reached (NULL);
+
+	return abstract_info->meta_type->get_fcn (environment, environment_user_data,
+	                                          abstract_info,
+	                                          target,
+	                                          get_type,
+	                                          get_flags,
+	                                          out_to_free);
+}

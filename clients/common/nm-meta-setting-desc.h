@@ -49,7 +49,34 @@ typedef enum {
 typedef enum {
 	NM_META_ACCESSOR_GET_TYPE_PRETTY,
 	NM_META_ACCESSOR_GET_TYPE_PARSABLE,
+	NM_META_ACCESSOR_GET_TYPE_TERMFORMAT,
 } NMMetaAccessorGetType;
+
+static inline void
+nm_meta_termformat_unpack (gconstpointer value, NMMetaTermColor *out_color, NMMetaTermFormat *out_format)
+{
+	/* get_fcn() with NM_META_ACCESSOR_GET_TYPE_TERMFORMAT returns a pointer
+	 * that encodes NMMetaTermColor and NMMetaTermFormat. Unpack it. */
+	if (!value) {
+		/* by default, objects that don't support NM_META_ACCESSOR_GET_TYPE_TERMFORMAT
+		 * return NULL. This allows for an explicit fallback value here... */
+		NM_SET_OUT (out_color, NM_META_TERM_COLOR_NORMAL);
+		NM_SET_OUT (out_format, NM_META_TERM_FORMAT_NORMAL);
+	} else {
+		NM_SET_OUT (out_color, GPOINTER_TO_UINT (value) & 0xFF);
+		NM_SET_OUT (out_format, (GPOINTER_TO_UINT (value) & 0xFF00) >> 8);
+	}
+}
+
+static inline gconstpointer
+nm_meta_termformat_pack (NMMetaTermColor color, NMMetaTermFormat format)
+{
+	/* get_fcn() with NM_META_ACCESSOR_GET_TYPE_TERMFORMAT returns a pointer
+	 * that encodes NMMetaTermColor and NMMetaTermFormat. Pack it. */
+	return GUINT_TO_POINTER (((guint) 0x10000) | (((guint) color) & 0xFFu) | ((((guint) format) & 0xFFu) << 8));
+}
+
+#define NM_META_TERMFORMAT_DEFAULT() (nm_meta_termformat_pack (NM_META_TERM_COLOR_NORMAL, NM_META_TERM_FORMAT_NORMAL))
 
 typedef enum {
 	NM_META_ACCESSOR_GET_FLAGS_NONE                                         = 0,

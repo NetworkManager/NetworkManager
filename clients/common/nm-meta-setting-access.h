@@ -50,6 +50,14 @@ const NMMetaAbstractInfo *const*nm_meta_abstract_info_get_nested (const NMMetaAb
                                                                   guint *out_len,
                                                                   gpointer *nested_to_free);
 
+gconstpointer nm_meta_abstract_info_get (const NMMetaAbstractInfo *abstract_info,
+                                         const NMMetaEnvironment *environment,
+                                         gpointer environment_user_data,
+                                         gpointer target,
+                                         NMMetaAccessorGetType get_type,
+                                         NMMetaAccessorGetFlags get_flags,
+                                         gpointer *out_to_free);
+
 /*****************************************************************************/
 
 #endif /* _NM_META_SETTING_ACCESS_H__ */
