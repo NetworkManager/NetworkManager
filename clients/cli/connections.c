@@ -861,16 +861,16 @@ found:
 }
 
 void
-nmc_active_connection_state_to_color (NMActiveConnectionState state, NmcTermColor *color)
+nmc_active_connection_state_to_color (NMActiveConnectionState state, NMMetaTermColor *color)
 {
-	*color = NMC_TERM_COLOR_NORMAL;
+	*color = NM_META_TERM_COLOR_NORMAL;
 
 	if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING)
-		*color = NMC_TERM_COLOR_YELLOW;
+		*color = NM_META_TERM_COLOR_YELLOW;
 	else if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
-		*color = NMC_TERM_COLOR_GREEN;
+		*color = NM_META_TERM_COLOR_GREEN;
 	else if (state > NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
-		*color = NMC_TERM_COLOR_RED;
+		*color = NM_META_TERM_COLOR_RED;
 }
 
 static void
@@ -888,7 +888,7 @@ fill_output_connection (NMConnection *connection, NMClient *client, GPtrArray *o
 	const char *ac_state = NULL;
 	NMActiveConnectionState ac_state_int = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
 	char *ac_dev = NULL;
-	NmcTermColor color;
+	NMMetaTermColor color;
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -968,7 +968,7 @@ fill_output_connection_for_invisible (NMActiveConnection *ac, GPtrArray *output_
 	set_val_strc (arr, 12, ac_path);
 	set_val_strc (arr, 13, NULL);
 
-	set_val_color_fmt_all (arr, NMC_TERM_FORMAT_DIM);
+	set_val_color_fmt_all (arr, NM_META_TERM_FORMAT_DIM);
 
 	g_ptr_array_add (output_data, arr);
 }
@@ -6568,7 +6568,7 @@ property_edit_submenu (NmCli *nmc,
 	/* Set global variable for use in TAB completion */
 	nmc_tab_completion.property = prop_name;
 
-	prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NMC_TERM_FORMAT_NORMAL,
+	prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NM_META_TERM_FORMAT_NORMAL,
 	                       "nmcli %s.%s> ",
 	                       nm_setting_get_name (curr_setting), prop_name);
 
@@ -6907,11 +6907,11 @@ static void
 menu_switch_to_level0 (NmcColorOption color_option,
                        NmcEditorMenuContext *menu_ctx,
                        const char *prompt,
-                       NmcTermColor prompt_color)
+                       NMMetaTermColor prompt_color)
 {
 	menu_ctx->level = 0;
 	g_free (menu_ctx->main_prompt);
-	menu_ctx->main_prompt = nmc_colorize (color_option, prompt_color, NMC_TERM_FORMAT_NORMAL, "%s", prompt);
+	menu_ctx->main_prompt = nmc_colorize (color_option, prompt_color, NM_META_TERM_FORMAT_NORMAL, "%s", prompt);
 	menu_ctx->curr_setting = NULL;
 	g_strfreev (menu_ctx->valid_props);
 	menu_ctx->valid_props = NULL;
@@ -6924,11 +6924,11 @@ menu_switch_to_level1 (NmcColorOption color_option,
                        NmcEditorMenuContext *menu_ctx,
                        NMSetting *setting,
                        const char *setting_name,
-                       NmcTermColor prompt_color)
+                       NMMetaTermColor prompt_color)
 {
 	menu_ctx->level = 1;
 	g_free (menu_ctx->main_prompt);
-	menu_ctx->main_prompt = nmc_colorize (color_option, prompt_color, NMC_TERM_FORMAT_NORMAL,
+	menu_ctx->main_prompt = nmc_colorize (color_option, prompt_color, NM_META_TERM_FORMAT_NORMAL,
 	                                      "nmcli %s> ", setting_name);
 	menu_ctx->curr_setting = setting;
 	g_strfreev (menu_ctx->valid_props);
@@ -6974,7 +6974,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	g_print (_("You may edit the following settings: %s\n"), valid_settings_str);
 
 	menu_ctx.level = 0;
-	menu_ctx.main_prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NMC_TERM_FORMAT_NORMAL,
+	menu_ctx.main_prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NM_META_TERM_FORMAT_NORMAL,
 	                                     BASE_PROMPT);
 	menu_ctx.curr_setting = NULL;
 	menu_ctx.valid_props = NULL;
@@ -7647,7 +7647,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					nmc->editor_show_secrets = bb;
 			} else if (cmd_arg_p && matches (cmd_arg_p, "prompt-color")) {
 				GError *tmp_err = NULL;
-				NmcTermColor color;
+				NMMetaTermColor color;
 				color = nmc_term_color_parse_string (cmd_arg_v ? g_strstrip (cmd_arg_v) : " ", &tmp_err);
 				if (tmp_err) {
 					g_print (_("Error: bad color: %s\n"), tmp_err->message);
@@ -7656,10 +7656,10 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					nmc->editor_prompt_color = color;
 					g_free (menu_ctx.main_prompt);
 					if (menu_ctx.level == 0)
-						menu_ctx.main_prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NMC_TERM_FORMAT_NORMAL,
+						menu_ctx.main_prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NM_META_TERM_FORMAT_NORMAL,
 						                                     BASE_PROMPT);
 					else
-						menu_ctx.main_prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NMC_TERM_FORMAT_NORMAL,
+						menu_ctx.main_prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NM_META_TERM_FORMAT_NORMAL,
 						                                     "nmcli %s> ",
 						                                     nm_setting_get_name (menu_ctx.curr_setting));
 				}

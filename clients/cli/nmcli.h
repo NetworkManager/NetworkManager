@@ -72,28 +72,6 @@ typedef enum {
 } NMCResultCode;
 
 typedef enum {
-	NMC_TERM_COLOR_NORMAL  = 0,
-	NMC_TERM_COLOR_BLACK   = 1,
-	NMC_TERM_COLOR_RED     = 2,
-	NMC_TERM_COLOR_GREEN   = 3,
-	NMC_TERM_COLOR_YELLOW  = 4,
-	NMC_TERM_COLOR_BLUE    = 5,
-	NMC_TERM_COLOR_MAGENTA = 6,
-	NMC_TERM_COLOR_CYAN    = 7,
-	NMC_TERM_COLOR_WHITE   = 8
-} NmcTermColor;
-
-typedef enum {
-	NMC_TERM_FORMAT_NORMAL,
-	NMC_TERM_FORMAT_BOLD,
-	NMC_TERM_FORMAT_DIM,
-	NMC_TERM_FORMAT_UNDERLINE,
-	NMC_TERM_FORMAT_BLINK,
-	NMC_TERM_FORMAT_REVERSE,
-	NMC_TERM_FORMAT_HIDDEN,
-} NmcTermFormat;
-
-typedef enum {
 	NMC_PRINT_TERSE = 0,
 	NMC_PRINT_NORMAL = 1,
 	NMC_PRINT_PRETTY = 2
@@ -120,8 +98,8 @@ struct _NmcOutputField {
 	gboolean value_is_array;        /* Whether value is char** instead of char* */
 	gboolean free_value;            /* Whether to free the value */
 	NmcOfFlags flags;               /* Flags - whether and how to print values/field names/headers */
-	NmcTermColor color;             /* Use this color to print value */
-	NmcTermFormat color_fmt;        /* Use this terminal format to print value */
+	NMMetaTermColor color;             /* Use this color to print value */
+	NMMetaTermFormat color_fmt;        /* Use this terminal format to print value */
 };
 
 typedef enum {
@@ -169,7 +147,7 @@ typedef struct _NmCli {
 	gboolean editor_status_line;                      /* Whether to display status line in connection editor */
 	gboolean editor_save_confirmation;                /* Whether to ask for confirmation on saving connections with 'autoconnect=yes' */
 	gboolean editor_show_secrets;                     /* Whether to display secrets in the editor' */
-	NmcTermColor editor_prompt_color;                 /* Color of prompt in connection editor */
+	NMMetaTermColor editor_prompt_color;                 /* Color of prompt in connection editor */
 } NmCli;
 
 extern NmCli nm_cli;

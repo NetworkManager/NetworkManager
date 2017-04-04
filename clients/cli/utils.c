@@ -334,31 +334,31 @@ nmc_terminal_show_progress (const char *str)
 }
 
 const char *
-nmc_term_color_sequence (NmcTermColor color)
+nmc_term_color_sequence (NMMetaTermColor color)
 {
 	switch (color) {
-        case NMC_TERM_COLOR_BLACK:
+        case NM_META_TERM_COLOR_BLACK:
 		return "\33[30m";
 		break;
-        case NMC_TERM_COLOR_RED:
+        case NM_META_TERM_COLOR_RED:
 		return "\33[31m";
 		break;
-        case NMC_TERM_COLOR_GREEN:
+        case NM_META_TERM_COLOR_GREEN:
 		return "\33[32m";
 		break;
-        case NMC_TERM_COLOR_YELLOW:
+        case NM_META_TERM_COLOR_YELLOW:
 		return "\33[33m";
 		break;
-        case NMC_TERM_COLOR_BLUE:
+        case NM_META_TERM_COLOR_BLUE:
 		return "\33[34m";
 		break;
-        case NMC_TERM_COLOR_MAGENTA:
+        case NM_META_TERM_COLOR_MAGENTA:
 		return "\33[35m";
 		break;
-        case NMC_TERM_COLOR_CYAN:
+        case NM_META_TERM_COLOR_CYAN:
 		return "\33[36m";
 		break;
-        case NMC_TERM_COLOR_WHITE:
+        case NM_META_TERM_COLOR_WHITE:
 		return "\33[37m";
 		break;
 	default:
@@ -368,7 +368,7 @@ nmc_term_color_sequence (NmcTermColor color)
 }
 
 /* Parses @str for color as string or number */
-NmcTermColor
+NMMetaTermColor
 nmc_term_color_parse_string (const char *str, GError **error)
 {
 	unsigned long color_int;
@@ -376,7 +376,7 @@ nmc_term_color_parse_string (const char *str, GError **error)
 	                                "blue", "magenta", "cyan", "white", NULL };
 
 	if (nmc_string_to_uint (str, TRUE, 0, 8, &color_int)) {
-		return (NmcTermColor) color_int;
+		return (NMMetaTermColor) color_int;
 	} else {
 		const char *color, **p;
 		int i;
@@ -384,32 +384,32 @@ nmc_term_color_parse_string (const char *str, GError **error)
 		color = nmc_string_is_valid (str, colors, error);
 		for (p = colors, i = 0; *p != NULL; p++, i++) {
 			if (*p == color)
-				return (NmcTermColor) i;
+				return (NMMetaTermColor) i;
 		}
 		return -1;
 	}
 }
 
 const char *
-nmc_term_format_sequence (NmcTermFormat format)
+nmc_term_format_sequence (NMMetaTermFormat format)
 {
 	switch (format) {
-        case NMC_TERM_FORMAT_BOLD:
+        case NM_META_TERM_FORMAT_BOLD:
 		return "\33[1m";
 		break;
-        case NMC_TERM_FORMAT_DIM:
+        case NM_META_TERM_FORMAT_DIM:
 		return "\33[2m";
 		break;
-        case NMC_TERM_FORMAT_UNDERLINE:
+        case NM_META_TERM_FORMAT_UNDERLINE:
 		return "\33[4m";
 		break;
-        case NMC_TERM_FORMAT_BLINK:
+        case NM_META_TERM_FORMAT_BLINK:
 		return "\33[5m";
 		break;
-        case NMC_TERM_FORMAT_REVERSE:
+        case NM_META_TERM_FORMAT_REVERSE:
 		return "\33[7m";
 		break;
-        case NMC_TERM_FORMAT_HIDDEN:
+        case NM_META_TERM_FORMAT_HIDDEN:
 		return "\33[8m";
 		break;
 	default:
@@ -438,7 +438,7 @@ use_colors (NmcColorOption color_option)
 }
 
 char *
-nmc_colorize (NmcColorOption color_option, NmcTermColor color, NmcTermFormat format, const char *fmt, ...)
+nmc_colorize (NmcColorOption color_option, NMMetaTermColor color, NMMetaTermFormat format, const char *fmt, ...)
 {
 	va_list args;
 	char *str, *colored;
@@ -670,7 +670,7 @@ set_val_arrc (NmcOutputField fields_array[], guint32 idx, const char **value)
 }
 
 void
-set_val_color_all (NmcOutputField fields_array[], NmcTermColor color)
+set_val_color_all (NmcOutputField fields_array[], NMMetaTermColor color)
 {
 	int i;
 
@@ -680,7 +680,7 @@ set_val_color_all (NmcOutputField fields_array[], NmcTermColor color)
 }
 
 void
-set_val_color_fmt_all (NmcOutputField fields_array[], NmcTermFormat format)
+set_val_color_fmt_all (NmcOutputField fields_array[], NMMetaTermFormat format)
 {
 	int i;
 
@@ -1005,15 +1005,15 @@ nmc_empty_output_fields (NmcOutputData *output_data)
 
 static const char *
 colorize_string (NmcColorOption color_option,
-                 NmcTermColor color,
-                 NmcTermFormat color_fmt,
+                 NMMetaTermColor color,
+                 NMMetaTermFormat color_fmt,
                  const char *str,
                  char **out_to_free)
 {
 	const char *out = str;
 
 	if (   use_colors (color_option)
-	    && (color != NMC_TERM_COLOR_NORMAL || color_fmt != NMC_TERM_FORMAT_NORMAL)) {
+	    && (color != NM_META_TERM_COLOR_NORMAL || color_fmt != NM_META_TERM_FORMAT_NORMAL)) {
 		*out_to_free = nmc_colorize (color_option, color, color_fmt, "%s", str);
 		out = *out_to_free;
 	}

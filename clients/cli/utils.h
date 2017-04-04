@@ -40,10 +40,10 @@ gboolean nmc_parse_args (nmc_arg_t *arg_arr, gboolean last, int *argc, char ***a
 char *ssid_to_hex (const char *str, gsize len);
 void nmc_terminal_erase_line (void);
 void nmc_terminal_show_progress (const char *str);
-const char *nmc_term_color_sequence (NmcTermColor color);
-const char *nmc_term_format_sequence (NmcTermFormat format);
-NmcTermColor nmc_term_color_parse_string (const char *str, GError **error);
-char *nmc_colorize (NmcColorOption color_option, NmcTermColor color, NmcTermFormat format, const char * fmt, ...)  _nm_printf (4, 5);
+const char *nmc_term_color_sequence (NMMetaTermColor color);
+const char *nmc_term_format_sequence (NMMetaTermFormat format);
+NMMetaTermColor nmc_term_color_parse_string (const char *str, GError **error);
+char *nmc_colorize (NmcColorOption color_option, NMMetaTermColor color, NMMetaTermFormat format, const char * fmt, ...)  _nm_printf (4, 5);
 void nmc_filter_out_colors_inplace (char *str);
 char *nmc_filter_out_colors (const char *str);
 char *nmc_get_user_input (const char *ask_str);
@@ -57,8 +57,8 @@ void set_val_str  (NmcOutputField fields_array[], guint32 index, char *value);
 void set_val_strc (NmcOutputField fields_array[], guint32 index, const char *value);
 void set_val_arr  (NmcOutputField fields_array[], guint32 index, char **value);
 void set_val_arrc (NmcOutputField fields_array[], guint32 index, const char **value);
-void set_val_color_all (NmcOutputField fields_array[], NmcTermColor color);
-void set_val_color_fmt_all (NmcOutputField fields_array[], NmcTermFormat format);
+void set_val_color_all (NmcOutputField fields_array[], NMMetaTermColor color);
+void set_val_color_fmt_all (NmcOutputField fields_array[], NMMetaTermFormat format);
 void nmc_free_output_field_values (NmcOutputField fields_array[]);
 
 typedef struct {

@@ -32,7 +32,7 @@ void monitor_devices (NmCli *nmc);
 
 NMDevice ** nmc_get_devices_sorted (NMClient *client);
 
-void nmc_device_state_to_color (NMDeviceState state, NmcTermColor *color, NmcTermFormat *color_fmt);
+void nmc_device_state_to_color (NMDeviceState state, NMMetaTermColor *color, NMMetaTermFormat *color_fmt);
 
 extern const NmcMetaGenericInfo *const nmc_fields_dev_status[];
 extern const NmcMetaGenericInfo *const nmc_fields_dev_show_general[];

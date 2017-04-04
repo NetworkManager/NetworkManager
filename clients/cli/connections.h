@@ -33,7 +33,7 @@ nmc_read_connection_properties (NmCli *nmc,
                                 char ***argv,
                                 GError **error);
 
-void nmc_active_connection_state_to_color (NMActiveConnectionState state, NmcTermColor *color);
+void nmc_active_connection_state_to_color (NMActiveConnectionState state, NMMetaTermColor *color);
 
 extern const NmcMetaGenericInfo *const nmc_fields_con_show[];
 extern const NmcMetaGenericInfo *const nmc_fields_con_active_details_general[];

@@ -658,21 +658,21 @@ sort_access_points (const GPtrArray *aps)
 }
 
 static void
-wifi_signal_to_color (guint8 strength, NmcTermColor *color, NmcTermFormat *color_fmt)
+wifi_signal_to_color (guint8 strength, NMMetaTermColor *color, NMMetaTermFormat *color_fmt)
 {
-	*color = NMC_TERM_COLOR_NORMAL;
-	*color_fmt = NMC_TERM_FORMAT_NORMAL;
+	*color = NM_META_TERM_COLOR_NORMAL;
+	*color_fmt = NM_META_TERM_FORMAT_NORMAL;
 
 	if (strength > 80)
-		*color = NMC_TERM_COLOR_GREEN;
+		*color = NM_META_TERM_COLOR_GREEN;
 	else if (strength > 55)
-		*color = NMC_TERM_COLOR_YELLOW;
+		*color = NM_META_TERM_COLOR_YELLOW;
 	else if (strength > 30)
-		*color = NMC_TERM_COLOR_MAGENTA;
+		*color = NM_META_TERM_COLOR_MAGENTA;
 	else if (strength > 5)
-		*color = NMC_TERM_COLOR_CYAN;
+		*color = NM_META_TERM_COLOR_CYAN;
 	else
-		*color_fmt = NMC_TERM_FORMAT_DIM;
+		*color_fmt = NM_META_TERM_FORMAT_DIM;
 }
 
 static char *
@@ -745,8 +745,8 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	GString *security_str;
 	char *ap_name;
 	const char *sig_bars;
-	NmcTermColor color;
-	NmcTermFormat color_fmt;
+	NMMetaTermColor color;
+	NMMetaTermFormat color_fmt;
 
 	if (info->active_bssid) {
 		const char *current_bssid = nm_access_point_get_bssid (ap);
@@ -836,7 +836,7 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	set_val_color_all (arr, color);
 	set_val_color_fmt_all (arr, color_fmt);
 	if (active)
-		arr[15].color = NMC_TERM_COLOR_GREEN;
+		arr[15].color = NM_META_TERM_COLOR_GREEN;
 
 	g_ptr_array_add (info->output_data, arr);
 
@@ -1413,19 +1413,19 @@ show_device_info (NMDevice *device, NmCli *nmc)
 }
 
 void
-nmc_device_state_to_color (NMDeviceState state, NmcTermColor *color, NmcTermFormat *color_fmt)
+nmc_device_state_to_color (NMDeviceState state, NMMetaTermColor *color, NMMetaTermFormat *color_fmt)
 {
-	*color = NMC_TERM_COLOR_NORMAL;
-	*color_fmt = NMC_TERM_FORMAT_NORMAL;
+	*color = NM_META_TERM_COLOR_NORMAL;
+	*color_fmt = NM_META_TERM_FORMAT_NORMAL;
 
 	if (state <= NM_DEVICE_STATE_UNAVAILABLE)
-		*color_fmt= NMC_TERM_FORMAT_DIM;
+		*color_fmt= NM_META_TERM_FORMAT_DIM;
 	else if (state == NM_DEVICE_STATE_DISCONNECTED)
-		*color = NMC_TERM_COLOR_RED;
+		*color = NM_META_TERM_COLOR_RED;
 	else if (state >= NM_DEVICE_STATE_PREPARE && state <= NM_DEVICE_STATE_SECONDARIES)
-		*color = NMC_TERM_COLOR_YELLOW;
+		*color = NM_META_TERM_COLOR_YELLOW;
 	else if (state == NM_DEVICE_STATE_ACTIVATED)
-		*color = NMC_TERM_COLOR_GREEN;
+		*color = NM_META_TERM_COLOR_GREEN;
 }
 
 static void
@@ -1433,8 +1433,8 @@ fill_output_device_status (NMDevice *device, GPtrArray *output_data)
 {
 	NMActiveConnection *ac;
 	NMDeviceState state;
-	NmcTermColor color;
-	NmcTermFormat color_fmt;
+	NMMetaTermColor color;
+	NMMetaTermFormat color_fmt;
 	NmcOutputField *arr = nmc_dup_fields_array ((const NMMetaAbstractInfo *const*) nmc_fields_dev_status,
 	                                            0);
 
@@ -2355,8 +2355,8 @@ static void
 device_state (NMDevice *device, GParamSpec *pspec, NmCli *nmc)
 {
 	NMDeviceState state = nm_device_get_state (device);
-	NmcTermColor color;
-	NmcTermFormat color_fmt;
+	NMMetaTermColor color;
+	NMMetaTermFormat color_fmt;
 	char *str;
 
 	nmc_device_state_to_color (state, &color, &color_fmt);
