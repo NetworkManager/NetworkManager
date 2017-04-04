@@ -104,13 +104,13 @@ struct _NmcMetaGenericInfo {
 	const NMMetaType *meta_type;
 	const char *name;
 	const NmcMetaGenericInfo *const*nested;
-	const char *(*get_fcn) (const NMMetaEnvironment *environment,
-	                        gpointer environment_user_data,
-	                        const NmcMetaGenericInfo *info,
-	                        gpointer target,
-	                        NMMetaAccessorGetType get_type,
-	                        NMMetaAccessorGetFlags get_flags,
-	                        char **out_to_free);
+	gconstpointer (*get_fcn) (const NMMetaEnvironment *environment,
+	                          gpointer environment_user_data,
+	                          const NmcMetaGenericInfo *info,
+	                          gpointer target,
+	                          NMMetaAccessorGetType get_type,
+	                          NMMetaAccessorGetFlags get_flags,
+	                          gpointer *out_to_free);
 };
 
 #define NMC_META_GENERIC(n, ...) \

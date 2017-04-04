@@ -6632,31 +6632,36 @@ _meta_type_property_info_get_name (const NMMetaAbstractInfo *abstract_info)
 	return ((const NMMetaPropertyInfo *) abstract_info)->property_name;
 }
 
-static const char *
+static gconstpointer
 _meta_type_setting_info_editor_get_fcn (const NMMetaEnvironment *environment,
                                         gpointer environment_user_data,
                                         const NMMetaAbstractInfo *abstract_info,
                                         gpointer target,
                                         NMMetaAccessorGetType get_type,
                                         NMMetaAccessorGetFlags get_flags,
-                                        char **out_to_free)
+                                        gpointer *out_to_free)
 {
 	nm_assert (out_to_free && !out_to_free);
 	g_return_val_if_reached (NULL);
 }
 
-static const char *
+static gconstpointer
 _meta_type_property_info_get_fcn (const NMMetaEnvironment *environment,
                                   gpointer environment_user_data,
                                   const NMMetaAbstractInfo *abstract_info,
                                   gpointer target,
                                   NMMetaAccessorGetType get_type,
                                   NMMetaAccessorGetFlags get_flags,
-                                  char **out_to_free)
+                                  gpointer *out_to_free)
 {
 	const NMMetaPropertyInfo *info = (const NMMetaPropertyInfo *) abstract_info;
 
 	nm_assert (out_to_free && !out_to_free);
+
+	if (!NM_IN_SET (get_type,
+	                NM_META_ACCESSOR_GET_TYPE_PARSABLE,
+	                NM_META_ACCESSOR_GET_TYPE_PRETTY))
+		return NULL;
 
 	return (*out_to_free = info->property_type->get_fcn (environment, environment_user_data,
 	                                                     info, target,

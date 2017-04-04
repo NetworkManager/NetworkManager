@@ -149,13 +149,13 @@ struct _NMMetaType {
 	const NMMetaAbstractInfo *const*(*get_nested) (const NMMetaAbstractInfo *abstract_info,
 	                                               guint *out_len,
 	                                               gpointer *out_to_free);
-	const char *(*get_fcn) (const NMMetaEnvironment *environment,
-	                        gpointer environment_user_data,
-	                        const NMMetaAbstractInfo *info,
-	                        gpointer target,
-	                        NMMetaAccessorGetType get_type,
-	                        NMMetaAccessorGetFlags get_flags,
-	                        char **out_to_free);
+	gconstpointer (*get_fcn) (const NMMetaEnvironment *environment,
+	                          gpointer environment_user_data,
+	                          const NMMetaAbstractInfo *info,
+	                          gpointer target,
+	                          NMMetaAccessorGetType get_type,
+	                          NMMetaAccessorGetFlags get_flags,
+	                          gpointer *out_to_free);
 };
 
 struct _NMMetaAbstractInfo {

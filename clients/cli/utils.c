@@ -64,14 +64,14 @@ _meta_type_nmc_generic_info_get_nested (const NMMetaAbstractInfo *abstract_info,
 	return (const NMMetaAbstractInfo *const*) info->nested;
 }
 
-static const char *
+static gconstpointer
 _meta_type_nmc_generic_info_get_fcn (const NMMetaEnvironment *environment,
                                      gpointer environment_user_data,
                                      const NMMetaAbstractInfo *abstract_info,
                                      gpointer target,
                                      NMMetaAccessorGetType get_type,
                                      NMMetaAccessorGetFlags get_flags,
-                                     char **out_to_free)
+                                     gpointer *out_to_free)
 {
 	const NmcMetaGenericInfo *info = (const NmcMetaGenericInfo *) abstract_info;
 
