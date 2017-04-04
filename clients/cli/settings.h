@@ -24,7 +24,6 @@
 #include "nm-meta-setting-desc.h"
 
 #include "nmcli.h"
-#include "utils.h"
 
 /*****************************************************************************/
 

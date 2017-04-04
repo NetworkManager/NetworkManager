@@ -19,6 +19,8 @@
 
 #include "nm-default.h"
 
+#include "general.h"
+
 #include <string.h>
 #include <stdlib.h>
 
@@ -29,7 +31,6 @@
 #include "polkit-agent.h"
 #include "utils.h"
 #include "common.h"
-#include "general.h"
 #include "common.h"
 #include "devices.h"
 #include "connections.h"

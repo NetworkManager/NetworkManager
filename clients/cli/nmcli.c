@@ -21,6 +21,8 @@
 
 #include "nm-default.h"
 
+#include "nmcli.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -35,7 +37,6 @@
 #include "nm-client-utils.h"
 
 #include "polkit-agent.h"
-#include "nmcli.h"
 #include "utils.h"
 #include "common.h"
 #include "connections.h"
@@ -52,64 +53,6 @@
 
 /* Global NmCli object */
 NmCli nm_cli;
-
-/*****************************************************************************/
-
-static const char *
-_meta_type_nmc_generic_info_get_name (const NMMetaAbstractInfo *abstract_info)
-{
-	return ((const NmcMetaGenericInfo *) abstract_info)->name;
-}
-
-static const NMMetaAbstractInfo *const*
-_meta_type_nmc_generic_info_get_nested (const NMMetaAbstractInfo *abstract_info,
-                                        guint *out_len,
-                                        gpointer *out_to_free)
-{
-	const NmcMetaGenericInfo *info;
-	guint n;
-
-	info = (const NmcMetaGenericInfo *) abstract_info;
-
-	if (out_len) {
-		n = 0;
-		if (info->nested) {
-			for (; info->nested[n]; n++) {
-			}
-		}
-		*out_len = n;
-	}
-	*out_to_free = NULL;
-	return (const NMMetaAbstractInfo *const*) info->nested;
-}
-
-static const char *
-_meta_type_nmc_generic_info_get_fcn (const NMMetaEnvironment *environment,
-                                     gpointer environment_user_data,
-                                     const NMMetaAbstractInfo *abstract_info,
-                                     gpointer target,
-                                     NMMetaAccessorGetType get_type,
-                                     NMMetaAccessorGetFlags get_flags,
-                                     char **out_to_free)
-{
-	const NmcMetaGenericInfo *info = (const NmcMetaGenericInfo *) abstract_info;
-
-	nm_assert (out_to_free && !*out_to_free);
-
-	if (!info->get_fcn)
-		g_return_val_if_reached (NULL);
-	return info->get_fcn (environment, environment_user_data,
-	                      info, target,
-	                      get_type, get_flags,
-	                      out_to_free);
-}
-
-const NMMetaType nmc_meta_type_generic_info = {
-	.type_name =         "nmc-generic-info",
-	.get_name =          _meta_type_nmc_generic_info_get_name,
-	.get_nested =        _meta_type_nmc_generic_info_get_nested,
-	.get_fcn =           _meta_type_nmc_generic_info_get_fcn,
-};
 
 /*****************************************************************************/
 

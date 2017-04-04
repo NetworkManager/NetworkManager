@@ -19,6 +19,8 @@
 
 #include "nm-default.h"
 
+#include "connections.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -30,16 +32,15 @@
 #include <readline/history.h>
 
 #include "nm-client-utils.h"
+#include "nm-vpn-helpers.h"
+#include "nm-meta-setting-access.h"
+#include "nm-secret-agent-simple.h"
 
 #include "utils.h"
 #include "common.h"
 #include "settings.h"
-#include "connections.h"
 #include "devices.h"
-#include "nm-secret-agent-simple.h"
 #include "polkit-agent.h"
-#include "nm-vpn-helpers.h"
-#include "nm-meta-setting-access.h"
 
 typedef struct _OptionInfo OptionInfo;
 struct _OptionInfo {

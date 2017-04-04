@@ -113,29 +113,6 @@ extern const const NMMetaType nmc_meta_type_generic_info;
 typedef struct _NmcOutputField NmcOutputField;
 typedef struct _NmcMetaGenericInfo NmcMetaGenericInfo;
 
-struct _NmcMetaGenericInfo {
-	const NMMetaType *meta_type;
-	const char *name;
-	const NmcMetaGenericInfo *const*nested;
-	const char *(*get_fcn) (const NMMetaEnvironment *environment,
-	                        gpointer environment_user_data,
-	                        const NmcMetaGenericInfo *info,
-	                        gpointer target,
-	                        NMMetaAccessorGetType get_type,
-	                        NMMetaAccessorGetFlags get_flags,
-	                        char **out_to_free);
-};
-
-#define NMC_META_GENERIC(n, ...) \
-	(&((NmcMetaGenericInfo) { \
-		.meta_type =                        &nmc_meta_type_generic_info, \
-		.name =                             N_ (n), \
-		__VA_ARGS__ \
-	}))
-
-#define NMC_META_GENERIC_WITH_NESTED(n, nest) \
-	NMC_META_GENERIC (n, .nested = (nest))
-
 struct _NmcOutputField {
 	const NMMetaAbstractInfo *info;
 	int width;                      /* Width in screen columns */

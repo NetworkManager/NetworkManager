@@ -21,6 +21,8 @@
 
 #include "nm-default.h"
 
+#include "common.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -32,7 +34,6 @@
 #include "nm-vpn-helpers.h"
 #include "nm-client-utils.h"
 
-#include "common.h"
 #include "utils.h"
 
 extern GMainLoop *loop;
