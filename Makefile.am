@@ -3197,6 +3197,27 @@ $(clients_common_libnmc_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(clients_common_libnmc_la_OBJECTS): $(clients_common_settings_doc_c)
 $(clients_common_libnmc_la_OBJECTS): clients/common/.dirstamp
 
+if HAVE_INTROSPECTION
+check_programs += clients/common/tests/test-general
+else
+if BUILD_NMCLI
+check_programs += clients/common/tests/test-general
+endif
+endif
+
+clients_common_tests_test_general_CPPFLAGS = \
+	-I$(srcdir)/clients/common/tests \
+	$(clients_cppflags) \
+	-DG_LOG_DOMAIN=\""libnmc"\"
+
+clients_common_tests_test_general_LDADD = \
+	libnm/libnm.la \
+	clients/common/libnmc-base.la \
+	clients/common/libnmc.la \
+	$(GLIB_LIBS)
+
+$(clients_common_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
 ###############################################################################
 # clients/cli
 ###############################################################################
@@ -3206,22 +3227,22 @@ if BUILD_NMCLI
 bin_PROGRAMS += clients/cli/nmcli
 
 clients_cli_nmcli_SOURCES = \
-	clients/cli/agent.c \
-	clients/cli/agent.h \
 	clients/cli/common.c \
 	clients/cli/common.h \
+	clients/cli/utils.c \
+	clients/cli/utils.h \
+	clients/cli/agent.c \
+	clients/cli/agent.h \
+	clients/cli/general.c \
+	clients/cli/general.h \
 	clients/cli/connections.c \
 	clients/cli/connections.h \
 	clients/cli/devices.c \
 	clients/cli/devices.h \
-	clients/cli/general.c \
-	clients/cli/general.h \
 	clients/cli/settings.c \
 	clients/cli/settings.h \
 	clients/cli/nmcli.c \
 	clients/cli/nmcli.h \
-	clients/cli/utils.c \
-	clients/cli/utils.h \
 	clients/cli/polkit-agent.c \
 	clients/cli/polkit-agent.h \
 	$(NULL)
