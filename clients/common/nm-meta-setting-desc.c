@@ -554,18 +554,18 @@ _get_fcn_nmc_with_default (ARGS_GET_FCN)
 	GValue val = G_VALUE_INIT;
 
 	if (property_info->property_typ_data->subtype.get_with_default.fcn (setting)) {
-		if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
-			return g_strdup ("");
-		return g_strdup (_("(default)"));
+		if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
+			return g_strdup (_("(default)"));
+		return g_strdup ("");
 	}
 
 	g_value_init (&val, G_TYPE_STRING);
 	g_object_get_property (G_OBJECT (setting), property_info->property_name, &val);
 	s = g_value_get_string (&val);
-	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
-		s_full = g_strdup (s && *s ? s : " ");
-	else
+	if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
 		s_full = s ? g_strdup_printf ("\"%s\"", s) : g_strdup ("");
+	else
+		s_full = g_strdup (s && *s ? s : " ");
 	g_value_unset (&val);
 	return s_full;
 }
@@ -618,10 +618,9 @@ _get_fcn_gobject_mtu (ARGS_GET_FCN)
 
 	mtu = property_info->property_typ_data->subtype.mtu.get_fcn (setting);
 	if (mtu == 0) {
-		if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
-			return g_strdup ("auto");
-		else
+		if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
 			return g_strdup (_("auto"));
+		return g_strdup ("auto");
 	}
 	return g_strdup_printf ("%u", (unsigned) mtu);
 }
@@ -675,7 +674,7 @@ _get_fcn_gobject_enum (ARGS_GET_FCN)
 		format_text_l10n = NM_FLAGS_HAS (property_info->property_typ_data->typ_flags, NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT_L10N);
 		format_text = format_text_l10n || NM_FLAGS_HAS (property_info->property_typ_data->typ_flags, NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT);
 	} else if (   property_info->property_typ_data
-	           && get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE
+	           && get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY
 	           && NM_FLAGS_ANY (property_info->property_typ_data->typ_flags,   NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_NUMERIC
 	                                                                         | NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_NUMERIC_HEX
 	                                                                         | NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_TEXT)) {
@@ -1106,7 +1105,7 @@ vlan_flags_to_string (guint32 flags, NMMetaAccessorGetType get_type)
 {
 	GString *flag_str;
 
-	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
+	if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY)
 		return g_strdup_printf ("%u", flags);
 
 	if (flags == 0)
@@ -1156,7 +1155,7 @@ vlan_priorities_to_string (NMSettingVlan *s_vlan, NMVlanPriorityMap map)
 static char *
 ip6_privacy_to_string (NMSettingIP6ConfigPrivacy ip6_privacy, NMMetaAccessorGetType get_type)
 {
-	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
+	if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY)
 		return g_strdup_printf ("%d", ip6_privacy);
 
 	switch (ip6_privacy) {
@@ -1175,7 +1174,7 @@ static char *
 autoconnect_slaves_to_string (NMSettingConnectionAutoconnectSlaves autoconnect_slaves,
                               NMMetaAccessorGetType get_type)
 {
-	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
+	if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY)
 		return g_strdup_printf ("%d", autoconnect_slaves);
 
 	switch (autoconnect_slaves) {
@@ -1194,7 +1193,7 @@ secret_flags_to_string (guint32 flags, NMMetaAccessorGetType get_type)
 {
 	GString *flag_str;
 
-	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
+	if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY)
 		return g_strdup_printf ("%u", flags);
 
 	if (flags == 0)
@@ -2071,7 +2070,7 @@ _get_fcn_connection_autoconnect_retires (ARGS_GET_FCN)
 	gint retries;
 
 	retries = nm_setting_connection_get_autoconnect_retries (s_con);
-	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
+	if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY)
 		return g_strdup_printf ("%d", retries);
 
 	switch (retries) {
@@ -2273,7 +2272,7 @@ _get_fcn_connection_metered (ARGS_GET_FCN)
 {
 	NMSettingConnection *s_conn = NM_SETTING_CONNECTION (setting);
 
-	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE) {
+	if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY) {
 		switch (nm_setting_connection_get_metered (s_conn)) {
 		case NM_METERED_YES:
 			return g_strdup ("yes");
@@ -2747,7 +2746,7 @@ _get_fcn_infiniband_p_key (ARGS_GET_FCN)
 
 	p_key = nm_setting_infiniband_get_p_key (s_infiniband);
 	if (p_key == -1) {
-		if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
+		if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY)
 			return g_strdup ("default");
 		else
 			return g_strdup (_("default"));
@@ -2855,7 +2854,7 @@ _get_fcn_ip_config_routes (ARGS_GET_FCN)
 
 		attr_str = nm_utils_format_variant_attributes (hash, ' ', '=');
 
-		if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE) {
+		if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY) {
 			if (printable->len > 0)
 				g_string_append (printable, ", ");
 
@@ -2904,7 +2903,7 @@ _get_fcn_ip4_config_dad_timeout (ARGS_GET_FCN)
 	gint dad_timeout;
 
 	dad_timeout = nm_setting_ip_config_get_dad_timeout (s_ip);
-	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
+	if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY)
 		return g_strdup_printf ("%d", dad_timeout);
 
 	switch (dad_timeout) {
@@ -3557,7 +3556,7 @@ _get_fcn_macvlan_mode (ARGS_GET_FCN)
 	mode = nm_setting_macvlan_get_mode (s_macvlan);
 	tmp = nm_utils_enum_to_str (nm_setting_macvlan_mode_get_type (), mode);
 
-	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
+	if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY)
 		str = g_strdup (tmp ? tmp : "");
 	else
 		str = g_strdup_printf ("%d (%s)", mode, tmp ? tmp : "");
@@ -3739,7 +3738,7 @@ _get_fcn_tun_mode (ARGS_GET_FCN)
 
 	mode = nm_setting_tun_get_mode (s_tun);
 	tmp = nm_utils_enum_to_str (nm_setting_tun_mode_get_type (), mode);
-	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
+	if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY)
 		str = g_strdup_printf ("%s", tmp ? tmp : "");
 	else
 		str = g_strdup_printf ("%d (%s)", mode, tmp ? tmp : "");
@@ -3967,7 +3966,7 @@ _get_fcn_wired_wake_on_lan (ARGS_GET_FCN)
 
 	wol = nm_setting_wired_get_wake_on_lan (s_wired);
 	tmp = nm_utils_enum_to_str (nm_setting_wired_wake_on_lan_get_type (), wol);
-	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE)
+	if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY)
 		str = g_strdup_printf ("%s", tmp && *tmp ? tmp : "none");
 	else
 		str = g_strdup_printf ("%d (%s)", wol, tmp && *tmp ? tmp : "none");
