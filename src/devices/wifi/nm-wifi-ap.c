@@ -628,36 +628,40 @@ get_max_rate_vht_160_ss3 (int mcs)
 static gboolean
 get_max_rate_ht (const guint8 *bytes, guint len, guint32 *out_maxrate)
 {
-	guint32 mcs, i, m;
+	guint32 mcs, i;
 	guint8 ht_cap_info;
 	const guint8 *supported_mcs_set;
+	guint32 rate;
 
-	/* https://mrncciew.com/2014/10/19/cwap-ht-capabilities-ie/
-	   http://luci.subsignal.org/~jow/802.11n-2009.pdf */
+	/* http://standards.ieee.org/getieee802/download/802.11-2012.pdf
+	 * https://mrncciew.com/2014/10/19/cwap-ht-capabilities-ie/
+	 */
 
 	if (len != 26)
 		return FALSE;
 
 	ht_cap_info = bytes[0];
 	supported_mcs_set = &bytes[3];
+	*out_maxrate = 0;
 
 	/* Find the maximum supported mcs rate */
 	mcs = -1;
 	for (i = 0; i <= 76; i++) {
-		unsigned int mcs_octet = i/8;
+		unsigned int mcs_octet = i / 8;
 		unsigned int MCS_RATE_BIT = 1 << i % 8;
 
-		if (supported_mcs_set[mcs_octet] & MCS_RATE_BIT)
-			mcs = i;
+		if (supported_mcs_set[mcs_octet] & MCS_RATE_BIT) {
+			/* Check for 40Mhz wide channel support */
+			if (ht_cap_info & (1 << 1))
+				rate = get_max_rate_ht_40 (i);
+			else
+				rate = get_max_rate_ht_20 (i);
+
+			if (rate > *out_maxrate)
+				*out_maxrate = rate;
+		}
 	}
 
-	/* Check for 40Mhz wide channel support */
-	if (ht_cap_info & (1 << 1))
-		m = get_max_rate_ht_40 (mcs);
-	else
-		m = get_max_rate_ht_20 (mcs);
-
-	*out_maxrate = m;
 	return TRUE;
 }
 
