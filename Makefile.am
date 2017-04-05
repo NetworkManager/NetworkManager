@@ -3148,17 +3148,25 @@ $(clients_common_libnmc_base_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 clients_common_settings_doc_c = clients/common/settings-docs.c
 if HAVE_INTROSPECTION
-$(clients_common_settings_doc_c): clients/common/settings-docs.xsl libnm/nm-property-docs.xml
+$(clients_common_settings_doc_c): clients/common/settings-docs.xsl libnm/nm-property-docs.xml clients/common/.dirstamp
 	$(AM_V_GEN) $(XSLTPROC) --output $@ $< $(word 2,$^)
-$(clients_common_settings_doc_c): clients/common/.dirstamp
 DISTCLEANFILES += $(clients_common_settings_doc_c)
+check-local-settings-docs: $(clients_common_settings_doc_c)
+	@if test -z "$$NMTST_NO_CHECK_SETTINGS_DOCS" ; then  \
+		if ! cmp -s "$(srcdir)/$(clients_common_settings_doc_c).in" "$(builddir)/$(clients_common_settings_doc_c)" ; then \
+			echo "The generated file \"$(builddir)/$(clients_common_settings_doc_c)\" differs from the source file \"$(srcdir)/$(clients_common_settings_doc_c).in\". You probably should copy the generated file over to the source file. You can skip this test by setting \$$NMTST_NO_CHECK_SETTINGS_DOCS=yes"; \
+			false; \
+		fi;\
+	fi
+check_local += check-local-settings-docs
 else
-$(clients_common_settings_doc_c):
-	@echo "to generate $(clients_common_settings_doc_c), configure with --enable-introspection"
-	@echo "alternatively, build --without-nmcli"
-	@false
+$(clients_common_settings_doc_c): $(clients_common_settings_doc_c).in clients/common/.dirstamp
+	$(AM_V_GEN) cp "$(srcdir)/$(clients_common_settings_doc_c).in" "$(builddir)/$(clients_common_settings_doc_c)"
+check-local-settings-docs:
 endif
-EXTRA_DIST += $(clients_common_settings_doc_c)
+EXTRA_DIST += \
+	$(clients_common_settings_doc_c) \
+	$(clients_common_settings_doc_c).in
 
 
 if HAVE_INTROSPECTION
