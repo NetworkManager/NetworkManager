@@ -417,7 +417,6 @@ static const char *override_hostname6_expected = \
 	"# Merged from /path/to/dhclient.conf\n"
 	"\n"
 	"send fqdn.fqdn \"blahblah.local\"; # added by NetworkManager\n"
-	"send fqdn.encoded on;\n"
 	"send fqdn.server-update on;\n"
 	"\n"
 	"also request dhcp6.name-servers;\n"

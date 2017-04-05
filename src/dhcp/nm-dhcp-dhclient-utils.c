@@ -174,7 +174,6 @@ add_hostname6 (GString *str, const char *hostname)
 	if (hostname && strchr (hostname, '.')) {
 		g_string_append_printf (str, FQDN_FORMAT "\n", hostname);
 		g_string_append (str,
-		                 "send fqdn.encoded on;\n"
 		                 "send fqdn.server-update on;\n");
 		g_string_append_c (str, '\n');
 	}
