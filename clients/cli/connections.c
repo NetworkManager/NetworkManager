@@ -2355,17 +2355,16 @@ activate_connection_cb (GObject *client, GAsyncResult *result, gpointer user_dat
 			}
 			activate_connection_info_finish (info);
 		} else {
-			/* Monitor the active connection state state */
-			g_signal_connect (G_OBJECT (active), "state-changed", G_CALLBACK (active_connection_state_cb), info);
-			active_connection_state_cb (active,
-			                            nm_active_connection_get_state (active),
-			                            nm_active_connection_get_state_reason (active),
-			                            info);
-
-			if (device) {
+			/* Monitor the active connection and device (if available) states */
+			g_signal_connect (active, "state-changed", G_CALLBACK (active_connection_state_cb), info);
+			if (device)
 				g_signal_connect (device, "notify::" NM_DEVICE_STATE, G_CALLBACK (device_state_cb), info);
-				device_state_cb (device, NULL, info);
-			}
+			/* Both active_connection_state_cb () and device_state_cb () will just
+			 * call check_activated (info). So, just call it once directly after
+			 * connecting on both the signals of the objects and skip the call to
+			 * the callbacks.
+			 */
+			check_activated (info);
 
 			/* Start progress indication showing VPN states */
 			if (nmc->print_output == NMC_PRINT_PRETTY) {
