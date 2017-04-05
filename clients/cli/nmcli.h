@@ -23,6 +23,8 @@
 #include "NetworkManager.h"
 #include "nm-secret-agent-old.h"
 
+#include "nm-meta-setting-desc.h"
+
 #if WITH_POLKIT_AGENT
 #include "nm-polkit-listener.h"
 #else
@@ -70,67 +72,35 @@ typedef enum {
 } NMCResultCode;
 
 typedef enum {
-	NMC_TERM_COLOR_NORMAL  = 0,
-	NMC_TERM_COLOR_BLACK   = 1,
-	NMC_TERM_COLOR_RED     = 2,
-	NMC_TERM_COLOR_GREEN   = 3,
-	NMC_TERM_COLOR_YELLOW  = 4,
-	NMC_TERM_COLOR_BLUE    = 5,
-	NMC_TERM_COLOR_MAGENTA = 6,
-	NMC_TERM_COLOR_CYAN    = 7,
-	NMC_TERM_COLOR_WHITE   = 8
-} NmcTermColor;
-
-typedef enum {
-	NMC_TERM_FORMAT_NORMAL,
-	NMC_TERM_FORMAT_BOLD,
-	NMC_TERM_FORMAT_DIM,
-	NMC_TERM_FORMAT_UNDERLINE,
-	NMC_TERM_FORMAT_BLINK,
-	NMC_TERM_FORMAT_REVERSE,
-	NMC_TERM_FORMAT_HIDDEN,
-} NmcTermFormat;
-
-typedef enum {
 	NMC_PRINT_TERSE = 0,
 	NMC_PRINT_NORMAL = 1,
 	NMC_PRINT_PRETTY = 2
 } NMCPrintOutput;
 
 /* === Output fields === */
-/* Flags for NmcOutputField */
-#define NMC_OF_FLAG_FIELD_NAMES        0x00000001   /* Print field names instead of values */
-#define NMC_OF_FLAG_SECTION_PREFIX     0x00000002   /* Use the first value as section prefix for the other field names - just in multiline */
-#define NMC_OF_FLAG_MAIN_HEADER_ADD    0x00000004   /* Print main header in addition to values/field names */
-#define NMC_OF_FLAG_MAIN_HEADER_ONLY   0x00000008   /* Print main header only */
 
-struct _NMMetaSettingInfoEditor;
+typedef enum {
+	NMC_OF_FLAG_FIELD_NAMES        = 0x00000001,   /* Print field names instead of values */
+	NMC_OF_FLAG_SECTION_PREFIX     = 0x00000002,   /* Use the first value as section prefix for the other field names - just in multiline */
+	NMC_OF_FLAG_MAIN_HEADER_ADD    = 0x00000004,   /* Print main header in addition to values/field names */
+	NMC_OF_FLAG_MAIN_HEADER_ONLY   = 0x00000008,   /* Print main header only */
+} NmcOfFlags;
 
-typedef struct _NmcOutputField {
-	const char *name;               /* Field's name */
+extern const const NMMetaType nmc_meta_type_generic_info;
+
+typedef struct _NmcOutputField NmcOutputField;
+typedef struct _NmcMetaGenericInfo NmcMetaGenericInfo;
+
+struct _NmcOutputField {
+	const NMMetaAbstractInfo *info;
 	int width;                      /* Width in screen columns */
-	const struct _NmcOutputField *group_list; /* Points to an array with available section field names if this is a section (group) field */
 	void *value;                    /* Value of current field - char* or char** (NULL-terminated array) */
 	gboolean value_is_array;        /* Whether value is char** instead of char* */
 	gboolean free_value;            /* Whether to free the value */
-	guint32 flags;                  /* Flags - whether and how to print values/field names/headers */
-	NmcTermColor color;             /* Use this color to print value */
-	NmcTermFormat color_fmt;        /* Use this terminal format to print value */
-
-	/* in a very particular case NmcOutputField is used in combination with
-	 * the @group_list above. That list will go away (and the entire NmcOutputField
-	 * should separate formatting-options, setting-metadata and output.
-	 *
-	 * For now, hack around that by alternatively providing a @setting_info instead
-	 * of @group_list. */
-	const struct _NMMetaSettingInfoEditor *setting_info;
-} NmcOutputField;
-
-typedef struct {
-	GArray *indices;      /* Array of field indices to the array of allowed fields */
-	char *header_name;    /* Name of the output */
-	int indent;           /* Indent by this number of spaces */
-} NmcPrintFields;
+	NmcOfFlags flags;               /* Flags - whether and how to print values/field names/headers */
+	NMMetaTermColor color;             /* Use this color to print value */
+	NMMetaTermFormat color_fmt;        /* Use this terminal format to print value */
+};
 
 typedef enum {
 	NMC_USE_COLOR_AUTO,
@@ -148,7 +118,6 @@ typedef struct _NmcConfig {
 
 typedef struct _NmcOutputData {
 	GPtrArray *output_data;                           /* GPtrArray of arrays of NmcOutputField structs - accumulates data for output */
-	NmcPrintFields print_fields;                      /* Structure with field indices to print */
 } NmcOutputData;
 
 /* NmCli - main structure */
@@ -178,7 +147,7 @@ typedef struct _NmCli {
 	gboolean editor_status_line;                      /* Whether to display status line in connection editor */
 	gboolean editor_save_confirmation;                /* Whether to ask for confirmation on saving connections with 'autoconnect=yes' */
 	gboolean editor_show_secrets;                     /* Whether to display secrets in the editor' */
-	NmcTermColor editor_prompt_color;                 /* Color of prompt in connection editor */
+	NMMetaTermColor editor_prompt_color;                 /* Color of prompt in connection editor */
 } NmCli;
 
 extern NmCli nm_cli;
@@ -195,6 +164,7 @@ void     nmc_exit (void);
 void nmc_empty_output_fields (NmcOutputData *output_data);
 
 #define NMC_OUTPUT_DATA_DEFINE_SCOPED(out) \
+	gs_unref_array GArray *out##_indices = NULL; \
 	nm_auto (nmc_empty_output_fields) NmcOutputData out = { \
 		.output_data = g_ptr_array_new_full (20, g_free), \
 	}

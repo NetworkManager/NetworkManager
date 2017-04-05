@@ -28,6 +28,7 @@ examples_DATA =
 CLEANFILES =
 DISTCLEANFILES =
 EXTRA_DIST =
+EXTRA_LTLIBRARIES =
 dist_hook =
 dist_dependencies =
 dist_configure_check =
@@ -3111,15 +3112,70 @@ clients_nm_online_LDADD = \
 $(clients_nm_online_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 ###############################################################################
-# clients/cli
+# clients/common
 ###############################################################################
 
-if BUILD_NMCLI
+clients_cppflags = \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/libnm-core \
+	-I$(builddir)/libnm-core \
+	-I$(srcdir)/libnm \
+	-I$(builddir)/libnm \
+	-I$(srcdir)/clients/common \
+	-I$(builddir)/clients/common \
+	$(GLIB_CFLAGS) \
+	-DNMLOCALEDIR=\"$(datadir)/locale\"
 
-bin_PROGRAMS += clients/cli/nmcli
+check_ltlibraries += clients/common/libnmc-base.la
 
-clients_cli_nmcli_SOURCES = \
-	\
+clients_common_libnmc_base_la_SOURCES = \
+	clients/common/nm-secret-agent-simple.c \
+	clients/common/nm-secret-agent-simple.h \
+	clients/common/nm-vpn-helpers.c \
+	clients/common/nm-vpn-helpers.h
+
+clients_common_libnmc_base_la_CPPFLAGS = \
+	$(clients_cppflags) \
+	-DG_LOG_DOMAIN=\""libnmc"\"
+
+clients_common_libnmc_base_la_LIBADD = \
+	libnm/libnm.la \
+	$(GLIB_LIBS)
+
+$(clients_common_libnmc_base_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
+
+clients_common_settings_doc_c = clients/common/settings-docs.c
+if HAVE_INTROSPECTION
+$(clients_common_settings_doc_c): clients/common/settings-docs.xsl libnm/nm-property-docs.xml clients/common/.dirstamp
+	$(AM_V_GEN) $(XSLTPROC) --output $@ $< $(word 2,$^)
+DISTCLEANFILES += $(clients_common_settings_doc_c)
+check-local-settings-docs: $(clients_common_settings_doc_c)
+	@if test -z "$$NMTST_NO_CHECK_SETTINGS_DOCS" ; then  \
+		if ! cmp -s "$(srcdir)/$(clients_common_settings_doc_c).in" "$(builddir)/$(clients_common_settings_doc_c)" ; then \
+			echo "The generated file \"$(builddir)/$(clients_common_settings_doc_c)\" differs from the source file \"$(srcdir)/$(clients_common_settings_doc_c).in\". You probably should copy the generated file over to the source file. You can skip this test by setting \$$NMTST_NO_CHECK_SETTINGS_DOCS=yes"; \
+			false; \
+		fi;\
+	fi
+check_local += check-local-settings-docs
+else
+$(clients_common_settings_doc_c): $(clients_common_settings_doc_c).in clients/common/.dirstamp
+	$(AM_V_GEN) cp "$(srcdir)/$(clients_common_settings_doc_c).in" "$(builddir)/$(clients_common_settings_doc_c)"
+check-local-settings-docs:
+endif
+EXTRA_DIST += \
+	$(clients_common_settings_doc_c) \
+	$(clients_common_settings_doc_c).in
+
+
+if HAVE_INTROSPECTION
+check_ltlibraries += clients/common/libnmc.la
+else
+EXTRA_LTLIBRARIES += clients/common/libnmc.la
+endif
+
+clients_common_libnmc_la_SOURCES = \
 	shared/nm-utils/nm-enum-utils.c \
 	shared/nm-utils/nm-enum-utils.h \
 	shared/nm-utils/nm-shared-utils.c \
@@ -3132,50 +3188,85 @@ clients_cli_nmcli_SOURCES = \
 	clients/common/nm-client-utils.h \
 	clients/common/nm-meta-setting-desc.c \
 	clients/common/nm-meta-setting-desc.h \
-	\
-	clients/cli/agent.c \
-	clients/cli/agent.h \
+	clients/common/nm-meta-setting-access.c \
+	clients/common/nm-meta-setting-access.h \
+	$(NULL)
+
+clients_common_libnmc_la_CPPFLAGS = \
+	$(clients_cppflags) \
+	-DG_LOG_DOMAIN=\""libnmc"\"
+
+clients_common_libnmc_la_LIBADD = \
+	libnm/libnm.la \
+	clients/common/libnmc-base.la \
+	$(GLIB_LIBS)
+
+$(clients_common_libnmc_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(clients_common_libnmc_la_OBJECTS): $(clients_common_settings_doc_c)
+$(clients_common_libnmc_la_OBJECTS): clients/common/.dirstamp
+
+if HAVE_INTROSPECTION
+check_programs += clients/common/tests/test-general
+else
+if BUILD_NMCLI
+check_programs += clients/common/tests/test-general
+endif
+endif
+
+clients_common_tests_test_general_CPPFLAGS = \
+	-I$(srcdir)/clients/common/tests \
+	$(clients_cppflags) \
+	-DG_LOG_DOMAIN=\""libnmc"\"
+
+clients_common_tests_test_general_LDADD = \
+	libnm/libnm.la \
+	clients/common/libnmc-base.la \
+	clients/common/libnmc.la \
+	$(GLIB_LIBS)
+
+$(clients_common_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
+###############################################################################
+# clients/cli
+###############################################################################
+
+if BUILD_NMCLI
+
+bin_PROGRAMS += clients/cli/nmcli
+
+clients_cli_nmcli_SOURCES = \
 	clients/cli/common.c \
 	clients/cli/common.h \
+	clients/cli/utils.c \
+	clients/cli/utils.h \
+	clients/cli/agent.c \
+	clients/cli/agent.h \
+	clients/cli/general.c \
+	clients/cli/general.h \
 	clients/cli/connections.c \
 	clients/cli/connections.h \
 	clients/cli/devices.c \
 	clients/cli/devices.h \
-	clients/cli/general.c \
-	clients/cli/general.h \
 	clients/cli/settings.c \
 	clients/cli/settings.h \
 	clients/cli/nmcli.c \
 	clients/cli/nmcli.h \
-	clients/cli/utils.c \
-	clients/cli/utils.h \
 	clients/cli/polkit-agent.c \
 	clients/cli/polkit-agent.h \
-	\
-	clients/common/nm-secret-agent-simple.c \
-	clients/common/nm-secret-agent-simple.h \
-	clients/common/nm-vpn-helpers.c \
-	clients/common/nm-vpn-helpers.h \
 	$(NULL)
 
 clients_cli_nmcli_CPPFLAGS = \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
-	-I$(srcdir)/libnm-core \
-	-I$(builddir)/libnm-core \
-	-I$(srcdir)/libnm \
-	-I$(builddir)/libnm \
 	-I$(srcdir)/clients/cli \
-	-I$(srcdir)/clients/common \
-	-I$(builddir)/clients/common \
-	$(GLIB_CFLAGS) \
+	$(clients_cppflags) \
 	-DG_LOG_DOMAIN=\""nmcli"\" \
 	-DNMCLI_LOCALEDIR=\"$(datadir)/locale\"
 
 clients_cli_nmcli_LDADD = \
+	libnm/libnm.la \
+	clients/common/libnmc-base.la \
+	clients/common/libnmc.la \
 	$(GLIB_LIBS) \
-	$(READLINE_LIBS) \
-	libnm/libnm.la
+	$(READLINE_LIBS)
 
 if WITH_POLKIT_AGENT
 clients_cli_nmcli_CPPFLAGS += $(POLKIT_CFLAGS)
@@ -3188,8 +3279,7 @@ endif
 clients_cli_nmcli_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
 
-$(clients_cli_nmcli_OBJECTS): $(clients_common_settings_doc_c)
-$(clients_cli_nmcli_OBJECTS): clients/cli/.dirstamp
+$(clients_cli_nmcli_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 install-data-hook-nmcli:
 	$(mkinstalldirs) $(DESTDIR)$(completiondir)
@@ -3203,22 +3293,6 @@ uninstall-hook-nmcli:
 uninstall_hook += uninstall-hook-nmcli
 
 endif
-
-
-clients_common_settings_doc_c = clients/common/settings-docs.c
-if HAVE_INTROSPECTION
-$(clients_common_settings_doc_c): clients/common/settings-docs.xsl libnm/nm-property-docs.xml
-	$(AM_V_GEN) $(XSLTPROC) --output $@ $< $(word 2,$^)
-$(clients_common_settings_doc_c): clients/common/.dirstamp
-DISTCLEANFILES += $(clients_common_settings_doc_c)
-else
-$(clients_common_settings_doc_c):
-	@echo "to generate $(clients_common_settings_doc_c), configure with --enable-introspection"
-	@echo "alternatively, build --without-nmcli"
-	@false
-endif
-EXTRA_DIST += $(clients_common_settings_doc_c)
-
 
 EXTRA_DIST += \
 	clients/cli/nmcli-completion \
@@ -3372,26 +3446,14 @@ clients_tui_nmtui_SOURCES = \
 	clients/tui/nmt-utils.h \
 	clients/tui/nmt-widget-list.c \
 	clients/tui/nmt-widget-list.h \
-	clients/common/nm-secret-agent-simple.c \
-	clients/common/nm-secret-agent-simple.h \
-	clients/common/nm-vpn-helpers.c \
-	clients/common/nm-vpn-helpers.h \
 	$(NULL)
 
 clients_tui_nmtui_CPPFLAGS = \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
-	-I$(srcdir)/libnm-core \
-	-I$(builddir)/libnm-core \
-	-I$(srcdir)/libnm \
-	-I$(builddir)/libnm \
 	-I$(srcdir)/clients/tui/newt \
-	-I$(srcdir)/clients/common \
-	$(GLIB_CFLAGS) \
+	$(clients_cppflags) \
 	$(NEWT_CFLAGS) \
 	-DG_LOG_DOMAIN=\""nmtui"\" \
-	-DLOCALEDIR=\""$(localedir)"\" \
-	$(NULL)
+	-DLOCALEDIR=\""$(localedir)"\"
 
 clients_tui_nmtui_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
@@ -3399,6 +3461,7 @@ clients_tui_nmtui_LDFLAGS = \
 clients_tui_nmtui_LDADD = \
 	libnm/libnm.la \
 	clients/tui/newt/libnmt-newt.a \
+	clients/common/libnmc-base.la \
 	$(GLIB_LIBS) \
 	$(NEWT_LIBS) \
 	$(NULL)

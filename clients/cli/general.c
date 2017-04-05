@@ -19,6 +19,8 @@
 
 #include "nm-default.h"
 
+#include "general.h"
+
 #include <string.h>
 #include <stdlib.h>
 
@@ -29,28 +31,24 @@
 #include "polkit-agent.h"
 #include "utils.h"
 #include "common.h"
-#include "general.h"
 #include "common.h"
 #include "devices.h"
 #include "connections.h"
 
-#define OUTPUT_FIELD_WITH_NAME(n) { .name = N_ (n), }
-
-/* Available fields for 'general status' */
-static NmcOutputField nmc_fields_nm_status[] = {
-	OUTPUT_FIELD_WITH_NAME ("RUNNING"),        /* 0 */
-	OUTPUT_FIELD_WITH_NAME ("VERSION"),        /* 1 */
-	OUTPUT_FIELD_WITH_NAME ("STATE"),          /* 2 */
-	OUTPUT_FIELD_WITH_NAME ("STARTUP"),        /* 3 */
-	OUTPUT_FIELD_WITH_NAME ("CONNECTIVITY"),   /* 4 */
-	OUTPUT_FIELD_WITH_NAME ("NETWORKING"),     /* 5 */
-	OUTPUT_FIELD_WITH_NAME ("WIFI-HW"),        /* 6 */
-	OUTPUT_FIELD_WITH_NAME ("WIFI"),           /* 7 */
-	OUTPUT_FIELD_WITH_NAME ("WWAN-HW"),        /* 8 */
-	OUTPUT_FIELD_WITH_NAME ("WWAN"),           /* 9 */
-	OUTPUT_FIELD_WITH_NAME ("WIMAX-HW"),       /* 10 */
-	OUTPUT_FIELD_WITH_NAME ("WIMAX"),          /* 11 */
-	{ 0 }
+static const NmcMetaGenericInfo *const nmc_fields_nm_status[] = {
+	NMC_META_GENERIC ("RUNNING"),        /* 0 */
+	NMC_META_GENERIC ("VERSION"),        /* 1 */
+	NMC_META_GENERIC ("STATE"),          /* 2 */
+	NMC_META_GENERIC ("STARTUP"),        /* 3 */
+	NMC_META_GENERIC ("CONNECTIVITY"),   /* 4 */
+	NMC_META_GENERIC ("NETWORKING"),     /* 5 */
+	NMC_META_GENERIC ("WIFI-HW"),        /* 6 */
+	NMC_META_GENERIC ("WIFI"),           /* 7 */
+	NMC_META_GENERIC ("WWAN-HW"),        /* 8 */
+	NMC_META_GENERIC ("WWAN"),           /* 9 */
+	NMC_META_GENERIC ("WIMAX-HW"),       /* 10 */
+	NMC_META_GENERIC ("WIMAX"),          /* 11 */
+	NULL,
 };
 #define NMC_FIELDS_NM_STATUS_ALL     "RUNNING,VERSION,STATE,STARTUP,CONNECTIVITY,NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN"
 #define NMC_FIELDS_NM_STATUS_SWITCH  "NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN"
@@ -64,19 +62,19 @@ static NmcOutputField nmc_fields_nm_status[] = {
 
 
 /* Available fields for 'general permissions' */
-static NmcOutputField nmc_fields_nm_permissions[] = {
-	OUTPUT_FIELD_WITH_NAME ("PERMISSION"),   /* 0 */
-	OUTPUT_FIELD_WITH_NAME ("VALUE"),        /* 1 */
-	{ 0 }
+static const NmcMetaGenericInfo *const nmc_fields_nm_permissions[] = {
+	NMC_META_GENERIC ("PERMISSION"),   /* 0 */
+	NMC_META_GENERIC ("VALUE"),        /* 1 */
+	NULL,
 };
 #define NMC_FIELDS_NM_PERMISSIONS_ALL     "PERMISSION,VALUE"
 #define NMC_FIELDS_NM_PERMISSIONS_COMMON  "PERMISSION,VALUE"
 
 /* Available fields for 'general logging' */
-static NmcOutputField nmc_fields_nm_logging[] = {
-	OUTPUT_FIELD_WITH_NAME ("LEVEL"),     /* 0 */
-	OUTPUT_FIELD_WITH_NAME ("DOMAINS"),   /* 1 */
-	{ 0 }
+static const NmcMetaGenericInfo *const nmc_fields_nm_logging[] = {
+	NMC_META_GENERIC ("LEVEL"),     /* 0 */
+	NMC_META_GENERIC ("DOMAINS"),   /* 1 */
+	NULL,
 };
 #define NMC_FIELDS_NM_LOGGING_ALL     "LEVEL,DOMAINS"
 #define NMC_FIELDS_NM_LOGGING_COMMON  "LEVEL,DOMAINS"
@@ -256,23 +254,23 @@ nm_state_to_string (NMState state)
 	}
 }
 
-static NmcTermColor
+static NMMetaTermColor
 state_to_color (NMState state)
 {
 	switch (state) {
 	case NM_STATE_CONNECTING:
-		return NMC_TERM_COLOR_YELLOW;
+		return NM_META_TERM_COLOR_YELLOW;
 	case NM_STATE_CONNECTED_LOCAL:
 	case NM_STATE_CONNECTED_SITE:
 	case NM_STATE_CONNECTED_GLOBAL:
-		return NMC_TERM_COLOR_GREEN;
+		return NM_META_TERM_COLOR_GREEN;
 	case NM_STATE_DISCONNECTING:
-		return NMC_TERM_COLOR_YELLOW;
+		return NM_META_TERM_COLOR_YELLOW;
 	case NM_STATE_ASLEEP:
 	case NM_STATE_DISCONNECTED:
-		return NMC_TERM_COLOR_RED;
+		return NM_META_TERM_COLOR_RED;
 	default:
-		return NMC_TERM_COLOR_NORMAL;
+		return NM_META_TERM_COLOR_NORMAL;
 	}
 }
 
@@ -294,19 +292,19 @@ nm_connectivity_to_string (NMConnectivityState connectivity)
 	}
 }
 
-static NmcTermColor
+static NMMetaTermColor
 connectivity_to_color (NMConnectivityState connectivity)
 {
 	switch (connectivity) {
 	case NM_CONNECTIVITY_NONE:
-		return NMC_TERM_COLOR_RED;
+		return NM_META_TERM_COLOR_RED;
 	case NM_CONNECTIVITY_PORTAL:
 	case NM_CONNECTIVITY_LIMITED:
-		return NMC_TERM_COLOR_YELLOW;
+		return NM_META_TERM_COLOR_YELLOW;
 	case NM_CONNECTIVITY_FULL:
-		return NMC_TERM_COLOR_GREEN;
+		return NM_META_TERM_COLOR_GREEN;
 	default:
-		return NMC_TERM_COLOR_NORMAL;
+		return NM_META_TERM_COLOR_NORMAL;
 	}
 }
 
@@ -323,8 +321,8 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 	const char *fields_str;
 	const char *fields_all =    print_flds ? print_flds : NMC_FIELDS_NM_STATUS_ALL;
 	const char *fields_common = print_flds ? print_flds : NMC_FIELDS_NM_STATUS_COMMON;
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
+	const NMMetaAbstractInfo *const*tmpl;
+	NmcOutputField *arr;
 	NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
@@ -334,9 +332,8 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 	else
 		fields_str = nmc->required_fields;
 
-	tmpl = nmc_fields_nm_status;
-	tmpl_len = sizeof (nmc_fields_nm_status);
-	out.print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &error);
+	tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_nm_status;
+	out_indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &error);
 
 	if (error) {
 		g_string_printf (nmc->return_text, _("Error: only these fields are allowed: %s"), fields_all);
@@ -354,11 +351,10 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 	wwan_hw_enabled = nm_client_wwan_hardware_get_enabled (nmc->client);
 	wwan_enabled = nm_client_wwan_get_enabled (nmc->client);
 
-	out.print_fields.header_name = pretty_header_name ? (char *) pretty_header_name : _("NetworkManager status");
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
+	arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (out.output_data, arr);
 
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, 0);
+	arr = nmc_dup_fields_array (tmpl, 0);
 	set_val_strc (arr, 0, _("running"));
 	set_val_strc (arr, 1, nm_client_get_version (nmc->client));
 	set_val_strc (arr, 2, nm_state_to_string (state));
@@ -372,18 +368,20 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 
 	/* Set colors */
 	arr[2].color = state_to_color (state);
-	arr[3].color = startup ? NMC_TERM_COLOR_YELLOW : NMC_TERM_COLOR_GREEN;
+	arr[3].color = startup ? NM_META_TERM_COLOR_YELLOW : NM_META_TERM_COLOR_GREEN;
 	arr[4].color = connectivity_to_color (connectivity);
-	arr[5].color = net_enabled ? NMC_TERM_COLOR_GREEN : NMC_TERM_COLOR_RED;
-	arr[6].color = wireless_hw_enabled ? NMC_TERM_COLOR_GREEN : NMC_TERM_COLOR_RED;
-	arr[7].color = wireless_enabled ? NMC_TERM_COLOR_GREEN : NMC_TERM_COLOR_RED;
-	arr[8].color = wwan_hw_enabled ? NMC_TERM_COLOR_GREEN : NMC_TERM_COLOR_RED;
-	arr[9].color = wwan_enabled ? NMC_TERM_COLOR_GREEN : NMC_TERM_COLOR_RED;
+	arr[5].color = net_enabled ? NM_META_TERM_COLOR_GREEN : NM_META_TERM_COLOR_RED;
+	arr[6].color = wireless_hw_enabled ? NM_META_TERM_COLOR_GREEN : NM_META_TERM_COLOR_RED;
+	arr[7].color = wireless_enabled ? NM_META_TERM_COLOR_GREEN : NM_META_TERM_COLOR_RED;
+	arr[8].color = wwan_hw_enabled ? NM_META_TERM_COLOR_GREEN : NM_META_TERM_COLOR_RED;
+	arr[9].color = wwan_enabled ? NM_META_TERM_COLOR_GREEN : NM_META_TERM_COLOR_RED;
 
 	g_ptr_array_add (out.output_data, arr);
 
 	print_data_prepare_width (out.output_data);
-	print_data (&nmc->nmc_config, &out);
+	print_data (&nmc->nmc_config, out_indices,
+	            pretty_header_name ?: _("NetworkManager status"),
+	            0, &out);
 
 	return TRUE;
 }
@@ -473,8 +471,8 @@ print_permissions (void *user_data)
 	const char *fields_str;
 	const char *fields_all =    NMC_FIELDS_NM_PERMISSIONS_ALL;
 	const char *fields_common = NMC_FIELDS_NM_PERMISSIONS_COMMON;
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
+	const NMMetaAbstractInfo *const*tmpl;
+	NmcOutputField *arr;
 	NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
@@ -484,9 +482,8 @@ print_permissions (void *user_data)
 	else
 		fields_str = nmc->required_fields;
 
-	tmpl = nmc_fields_nm_permissions;
-	tmpl_len = sizeof (nmc_fields_nm_permissions);
-	out.print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &error);
+	tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_nm_permissions;
+	out_indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &error);
 
 	if (error) {
 		g_string_printf (nmc->return_text, _("Error: 'general permissions': %s"), error->message);
@@ -495,21 +492,23 @@ print_permissions (void *user_data)
 		return FALSE;
 	}
 
-	out.print_fields.header_name = _("NetworkManager permissions");
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
+	arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (out.output_data, arr);
 
 
 	for (perm = NM_CLIENT_PERMISSION_NONE + 1; perm <= NM_CLIENT_PERMISSION_LAST; perm++) {
 		NMClientPermissionResult perm_result = nm_client_get_permission_result (nmc->client, perm);
 
-		arr = nmc_dup_fields_array (tmpl, tmpl_len, 0);
+		arr = nmc_dup_fields_array (tmpl, 0);
 		set_val_strc (arr, 0, permission_to_string (perm));
 		set_val_strc (arr, 1, permission_result_to_string (perm_result));
 		g_ptr_array_add (out.output_data, arr);
 	}
 	print_data_prepare_width (out.output_data);
-	print_data (&nmc->nmc_config, &out);
+	print_data (&nmc->nmc_config,
+	            out_indices,
+	            _("NetworkManager permissions"),
+	            0, &out);
 
 	quit ();
 	return G_SOURCE_REMOVE;
@@ -585,8 +584,8 @@ show_general_logging (NmCli *nmc)
 	const char *fields_str;
 	const char *fields_all =    NMC_FIELDS_NM_LOGGING_ALL;
 	const char *fields_common = NMC_FIELDS_NM_LOGGING_COMMON;
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
+	const NMMetaAbstractInfo *const*tmpl;
+	NmcOutputField *arr;
 	NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
@@ -596,9 +595,8 @@ show_general_logging (NmCli *nmc)
 	else
 		fields_str = nmc->required_fields;
 
-	tmpl = nmc_fields_nm_logging;
-	tmpl_len = sizeof (nmc_fields_nm_logging);
-	out.print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &error);
+	tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_nm_logging;
+	out_indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &error);
 
 	if (error) {
 		g_string_printf (nmc->return_text, _("Error: 'general logging': %s"), error->message);
@@ -615,17 +613,18 @@ show_general_logging (NmCli *nmc)
 		return FALSE;
 	}
 
-	out.print_fields.header_name = _("NetworkManager logging");
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
+	arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (out.output_data, arr);
 
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, 0);
+	arr = nmc_dup_fields_array (tmpl, 0);
 	set_val_str (arr, 0, level);
 	set_val_str (arr, 1, domains);
 	g_ptr_array_add (out.output_data, arr);
 
 	print_data_prepare_width (out.output_data);
-	print_data (&nmc->nmc_config, &out);
+	print_data (&nmc->nmc_config, out_indices,
+	            _("NetworkManager logging"),
+	            0, &out);
 
 	return TRUE;
 }
@@ -1034,8 +1033,8 @@ networkmanager_running (NMClient *client, GParamSpec *param, NmCli *nmc)
 
 	running = nm_client_get_nm_running (client);
 	str = nmc_colorize (nmc->nmc_config.use_colors,
-	                    running ? NMC_TERM_COLOR_GREEN : NMC_TERM_COLOR_RED,
-	                    NMC_TERM_FORMAT_NORMAL,
+	                    running ? NM_META_TERM_COLOR_GREEN : NM_META_TERM_COLOR_RED,
+	                    NM_META_TERM_FORMAT_NORMAL,
 	                    running ? _("NetworkManager has started") : _("NetworkManager has stopped"));
 	g_print ("%s\n", str);
 	g_free (str);
@@ -1075,7 +1074,7 @@ client_connectivity (NMClient *client, GParamSpec *param, NmCli *nmc)
 	char *str;
 
 	g_object_get (client, NM_CLIENT_CONNECTIVITY, &connectivity, NULL);
-	str = nmc_colorize (nmc->nmc_config.use_colors, connectivity_to_color (connectivity), NMC_TERM_FORMAT_NORMAL,
+	str = nmc_colorize (nmc->nmc_config.use_colors, connectivity_to_color (connectivity), NM_META_TERM_FORMAT_NORMAL,
 	                    _("Connectivity is now '%s'\n"), nm_connectivity_to_string (connectivity));
 	g_print ("%s", str);
 	g_free (str);
@@ -1088,7 +1087,7 @@ client_state (NMClient *client, GParamSpec *param, NmCli *nmc)
 	char *str;
 
 	g_object_get (client, NM_CLIENT_STATE, &state, NULL);
-	str = nmc_colorize (nmc->nmc_config.use_colors, state_to_color (state), NMC_TERM_FORMAT_NORMAL,
+	str = nmc_colorize (nmc->nmc_config.use_colors, state_to_color (state), NM_META_TERM_FORMAT_NORMAL,
 	                    _("Networkmanager is now in the '%s' state\n"),
 	                    nm_state_to_string (state));
 	g_print ("%s", str);
@@ -1132,12 +1131,12 @@ device_overview (NmCli *nmc, NMDevice *device)
 	if (!nm_device_get_autoconnect (device))
 		g_string_append_printf (outbuf, "%s, ", _("autoconnect"));
 	if (nm_device_get_firmware_missing (device)) {
-		tmp = nmc_colorize (nmc->nmc_config.use_colors, NMC_TERM_COLOR_RED, NMC_TERM_FORMAT_NORMAL, _("fw missing"));
+		tmp = nmc_colorize (nmc->nmc_config.use_colors, NM_META_TERM_COLOR_RED, NM_META_TERM_FORMAT_NORMAL, _("fw missing"));
 		g_string_append_printf (outbuf, "%s, ", tmp);
 		g_free (tmp);
 	}
 	if (nm_device_get_nm_plugin_missing (device)) {
-		tmp = nmc_colorize (nmc->nmc_config.use_colors, NMC_TERM_COLOR_RED, NMC_TERM_FORMAT_NORMAL, _("plugin missing"));
+		tmp = nmc_colorize (nmc->nmc_config.use_colors, NM_META_TERM_COLOR_RED, NM_META_TERM_FORMAT_NORMAL, _("plugin missing"));
 		g_string_append_printf (outbuf, "%s, ", tmp);
 		g_free (tmp);
 	}
@@ -1238,7 +1237,7 @@ do_overview (NmCli *nmc, int argc, char **argv)
 	NMDevice **devices;
 	const GPtrArray *p;
 	NMActiveConnection *ac;
-	NmcTermColor color;
+	NMMetaTermColor color;
 	NMDnsEntry *dns;
 	char *tmp;
 	int i;
@@ -1260,7 +1259,7 @@ do_overview (NmCli *nmc, int argc, char **argv)
 
 		state = nm_active_connection_get_state (ac);
 		nmc_active_connection_state_to_color (state, &color);
-		tmp = nmc_colorize (nmc->nmc_config.use_colors, color, NMC_TERM_FORMAT_NORMAL, _("%s VPN connection"),
+		tmp = nmc_colorize (nmc->nmc_config.use_colors, color, NM_META_TERM_FORMAT_NORMAL, _("%s VPN connection"),
 		                    nm_active_connection_get_id (ac));
 		g_print ("%s\n", tmp);
 		g_free (tmp);
@@ -1271,7 +1270,7 @@ do_overview (NmCli *nmc, int argc, char **argv)
 
 	devices = nmc_get_devices_sorted (nmc->client);
 	for (i = 0; devices[i]; i++) {
-		NmcTermFormat color_fmt;
+		NMMetaTermFormat color_fmt;
 		NMDeviceState state;
 
 		ac = nm_device_get_active_connection (devices[i]);
@@ -1362,7 +1361,7 @@ do_monitor (NmCli *nmc, int argc, char **argv)
 	if (!nm_client_get_nm_running (nmc->client)) {
 		char *str;
 
-		str = nmc_colorize (nmc->nmc_config.use_colors, NMC_TERM_COLOR_RED, NMC_TERM_FORMAT_NORMAL,
+		str = nmc_colorize (nmc->nmc_config.use_colors, NM_META_TERM_COLOR_RED, NM_META_TERM_FORMAT_NORMAL,
 		                    _("Networkmanager is not running (waiting for it)\n"));
 		g_print ("%s", str);
 		g_free (str);

@@ -19,6 +19,8 @@
 
 #include "nm-default.h"
 
+#include "connections.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -30,18 +32,15 @@
 #include <readline/history.h>
 
 #include "nm-client-utils.h"
+#include "nm-vpn-helpers.h"
+#include "nm-meta-setting-access.h"
+#include "nm-secret-agent-simple.h"
 
 #include "utils.h"
 #include "common.h"
 #include "settings.h"
-#include "connections.h"
 #include "devices.h"
-#include "nm-secret-agent-simple.h"
 #include "polkit-agent.h"
-#include "nm-vpn-helpers.h"
-
-#define OUTPUT_FIELD_WITH_NAME(n) { .name = N_ (n), }
-#define OUTPUT_FIELD_WITH_FIELDS(n, fields) { .name = N_ (n), .group_list = fields + 1,  }
 
 typedef struct _OptionInfo OptionInfo;
 struct _OptionInfo {
@@ -130,70 +129,42 @@ struct _OptionInfo {
 
 #define BASE_PROMPT "nmcli> "
 
-/* Available fields for 'connection show' */
-NmcOutputField nmc_fields_con_show[] = {
-	OUTPUT_FIELD_WITH_NAME ("NAME"),                  /* 0 */
-	OUTPUT_FIELD_WITH_NAME ("UUID"),                  /* 1 */
-	OUTPUT_FIELD_WITH_NAME ("TYPE"),                  /* 2 */
-	OUTPUT_FIELD_WITH_NAME ("TIMESTAMP"),             /* 3 */
-	OUTPUT_FIELD_WITH_NAME ("TIMESTAMP-REAL"),        /* 4 */
-	OUTPUT_FIELD_WITH_NAME ("AUTOCONNECT"),           /* 5 */
-	OUTPUT_FIELD_WITH_NAME ("AUTOCONNECT-PRIORITY"),  /* 6 */
-	OUTPUT_FIELD_WITH_NAME ("READONLY"),              /* 7 */
-	OUTPUT_FIELD_WITH_NAME ("DBUS-PATH"),             /* 8 */
-	OUTPUT_FIELD_WITH_NAME ("ACTIVE"),                /* 9 */
-	OUTPUT_FIELD_WITH_NAME ("DEVICE"),                /* 10 */
-	OUTPUT_FIELD_WITH_NAME ("STATE"),                 /* 11 */
-	OUTPUT_FIELD_WITH_NAME ("ACTIVE-PATH"),           /* 12 */
-	OUTPUT_FIELD_WITH_NAME ("SLAVE"),                 /* 13 */
-	{ 0 }
+/*****************************************************************************/
+
+const NmcMetaGenericInfo *const nmc_fields_con_show[] = {
+	NMC_META_GENERIC ("NAME"),                  /* 0 */
+	NMC_META_GENERIC ("UUID"),                  /* 1 */
+	NMC_META_GENERIC ("TYPE"),                  /* 2 */
+	NMC_META_GENERIC ("TIMESTAMP"),             /* 3 */
+	NMC_META_GENERIC ("TIMESTAMP-REAL"),        /* 4 */
+	NMC_META_GENERIC ("AUTOCONNECT"),           /* 5 */
+	NMC_META_GENERIC ("AUTOCONNECT-PRIORITY"),  /* 6 */
+	NMC_META_GENERIC ("READONLY"),              /* 7 */
+	NMC_META_GENERIC ("DBUS-PATH"),             /* 8 */
+	NMC_META_GENERIC ("ACTIVE"),                /* 9 */
+	NMC_META_GENERIC ("DEVICE"),                /* 10 */
+	NMC_META_GENERIC ("STATE"),                 /* 11 */
+	NMC_META_GENERIC ("ACTIVE-PATH"),           /* 12 */
+	NMC_META_GENERIC ("SLAVE"),                 /* 13 */
+	NULL,
 };
-#define NMC_FIELDS_CON_SHOW_ALL     "NAME,UUID,TYPE,TIMESTAMP,TIMESTAMP-REAL,AUTOCONNECT,AUTOCONNECT-PRIORITY,READONLY,DBUS-PATH,"\
-                                    "ACTIVE,DEVICE,STATE,ACTIVE-PATH,SLAVE"
 #define NMC_FIELDS_CON_SHOW_COMMON  "NAME,UUID,TYPE,DEVICE"
 
-/* Helper macro to define fields */
-#define OUTPUT_FIELD_WITH_SETTING(setting, setting_type) \
-	{ \
-		.name = setting, \
-		.setting_info = &nm_meta_setting_infos_editor[setting_type], \
-	}
-
-/* Available settings for 'connection show <con>' - profile part */
-NmcOutputField nmc_fields_settings_names[] = {
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_CONNECTION_SETTING_NAME,   NM_META_SETTING_TYPE_CONNECTION),          /* 0 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_WIRED_SETTING_NAME,        NM_META_SETTING_TYPE_WIRED),               /* 1 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_802_1X_SETTING_NAME,       NM_META_SETTING_TYPE_802_1X),              /* 2 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_WIRELESS_SETTING_NAME,     NM_META_SETTING_TYPE_WIRELESS),            /* 3 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NM_META_SETTING_TYPE_WIRELESS_SECURITY), /* 4 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_IP4_CONFIG_SETTING_NAME,   NM_META_SETTING_TYPE_IP4_CONFIG),          /* 5 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_IP6_CONFIG_SETTING_NAME,   NM_META_SETTING_TYPE_IP6_CONFIG),          /* 6 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_SERIAL_SETTING_NAME,       NM_META_SETTING_TYPE_SERIAL),              /* 7 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_PPP_SETTING_NAME,          NM_META_SETTING_TYPE_PPP),                 /* 8 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_PPPOE_SETTING_NAME,        NM_META_SETTING_TYPE_PPPOE),               /* 9 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_GSM_SETTING_NAME,          NM_META_SETTING_TYPE_GSM),                 /* 10 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_CDMA_SETTING_NAME,         NM_META_SETTING_TYPE_CDMA),                /* 11 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_BLUETOOTH_SETTING_NAME,    NM_META_SETTING_TYPE_BLUETOOTH),           /* 12 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_OLPC_MESH_SETTING_NAME,    NM_META_SETTING_TYPE_OLPC_MESH),           /* 13 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_VPN_SETTING_NAME,          NM_META_SETTING_TYPE_VPN),                 /* 14 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_WIMAX_SETTING_NAME,        NM_META_SETTING_TYPE_WIMAX),               /* 15 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_INFINIBAND_SETTING_NAME,   NM_META_SETTING_TYPE_INFINIBAND),          /* 16 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_BOND_SETTING_NAME,         NM_META_SETTING_TYPE_BOND),                /* 17 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_VLAN_SETTING_NAME,         NM_META_SETTING_TYPE_VLAN),                /* 18 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_ADSL_SETTING_NAME,         NM_META_SETTING_TYPE_ADSL),                /* 19 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_BRIDGE_SETTING_NAME,       NM_META_SETTING_TYPE_BRIDGE),              /* 20 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_BRIDGE_PORT_SETTING_NAME,  NM_META_SETTING_TYPE_BRIDGE_PORT),         /* 21 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_TEAM_SETTING_NAME,         NM_META_SETTING_TYPE_TEAM),                /* 22 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_TEAM_PORT_SETTING_NAME,    NM_META_SETTING_TYPE_TEAM_PORT),           /* 23 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_DCB_SETTING_NAME,          NM_META_SETTING_TYPE_DCB),                 /* 24 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_TUN_SETTING_NAME,          NM_META_SETTING_TYPE_TUN),                 /* 25 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_IP_TUNNEL_SETTING_NAME,    NM_META_SETTING_TYPE_IP_TUNNEL),           /* 26 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_MACSEC_SETTING_NAME,       NM_META_SETTING_TYPE_MACSEC),              /* 27 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_MACVLAN_SETTING_NAME,      NM_META_SETTING_TYPE_MACVLAN),             /* 28 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_VXLAN_SETTING_NAME,        NM_META_SETTING_TYPE_VXLAN),               /* 29 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_PROXY_SETTING_NAME,        NM_META_SETTING_TYPE_PROXY),               /* 30 */
-	OUTPUT_FIELD_WITH_SETTING (NM_SETTING_DUMMY_SETTING_NAME,        NM_META_SETTING_TYPE_DUMMY),               /* 31 */
-	{ 0 }
+const NmcMetaGenericInfo *const nmc_fields_con_active_details_general[] = {
+	NMC_META_GENERIC ("GROUP"),        /* 0 */
+	NMC_META_GENERIC ("NAME"),         /* 1 */
+	NMC_META_GENERIC ("UUID"),         /* 2 */
+	NMC_META_GENERIC ("DEVICES"),      /* 3 */
+	NMC_META_GENERIC ("STATE"),        /* 4 */
+	NMC_META_GENERIC ("DEFAULT"),      /* 5 */
+	NMC_META_GENERIC ("DEFAULT6"),     /* 6 */
+	NMC_META_GENERIC ("SPEC-OBJECT"),  /* 7 */
+	NMC_META_GENERIC ("VPN"),          /* 8 */
+	NMC_META_GENERIC ("DBUS-PATH"),    /* 9 */
+	NMC_META_GENERIC ("CON-PATH"),     /* 10 */
+	NMC_META_GENERIC ("ZONE"),         /* 11 */
+	NMC_META_GENERIC ("MASTER-PATH"),  /* 12 */
+	NULL,
 };
 #define NMC_FIELDS_SETTINGS_NAMES_ALL    NM_SETTING_CONNECTION_SETTING_NAME","\
                                          NM_SETTING_WIRED_SETTING_NAME","\
@@ -228,59 +199,27 @@ NmcOutputField nmc_fields_settings_names[] = {
                                          // NM_SETTING_DUMMY_SETTING_NAME
                                          // NM_SETTING_WIMAX_SETTING_NAME
 
-/* Active connection data */
-/* Available fields for GENERAL group */
-NmcOutputField nmc_fields_con_active_details_general[] = {
-	OUTPUT_FIELD_WITH_NAME ("GROUP"),        /* 0 */
-	OUTPUT_FIELD_WITH_NAME ("NAME"),         /* 1 */
-	OUTPUT_FIELD_WITH_NAME ("UUID"),         /* 2 */
-	OUTPUT_FIELD_WITH_NAME ("DEVICES"),      /* 3 */
-	OUTPUT_FIELD_WITH_NAME ("STATE"),        /* 4 */
-	OUTPUT_FIELD_WITH_NAME ("DEFAULT"),      /* 5 */
-	OUTPUT_FIELD_WITH_NAME ("DEFAULT6"),     /* 6 */
-	OUTPUT_FIELD_WITH_NAME ("SPEC-OBJECT"),  /* 7 */
-	OUTPUT_FIELD_WITH_NAME ("VPN"),          /* 8 */
-	OUTPUT_FIELD_WITH_NAME ("DBUS-PATH"),    /* 9 */
-	OUTPUT_FIELD_WITH_NAME ("CON-PATH"),     /* 10 */
-	OUTPUT_FIELD_WITH_NAME ("ZONE"),         /* 11 */
-	OUTPUT_FIELD_WITH_NAME ("MASTER-PATH"),  /* 12 */
-	{ 0 }
+
+const NmcMetaGenericInfo *const nmc_fields_con_active_details_vpn[] = {
+	NMC_META_GENERIC ("GROUP"),      /* 0 */
+	NMC_META_GENERIC ("TYPE"),       /* 1 */
+	NMC_META_GENERIC ("USERNAME"),   /* 2 */
+	NMC_META_GENERIC ("GATEWAY"),    /* 3 */
+	NMC_META_GENERIC ("BANNER"),     /* 4 */
+	NMC_META_GENERIC ("VPN-STATE"),  /* 5 */
+	NMC_META_GENERIC ("CFG"),        /* 6 */
+	NULL,
 };
-#define NMC_FIELDS_CON_ACTIVE_DETAILS_GENERAL_ALL  "GROUP,NAME,UUID,DEVICES,STATE,DEFAULT,DEFAULT6,"\
-                                                   "VPN,ZONE,DBUS-PATH,CON-PATH,SPEC-OBJECT,MASTER-PATH"
 
-/* IP group is handled by common.c */
-
-/* Available fields for VPN group */
-NmcOutputField nmc_fields_con_active_details_vpn[] = {
-	OUTPUT_FIELD_WITH_NAME ("GROUP"),      /* 0 */
-	OUTPUT_FIELD_WITH_NAME ("TYPE"),       /* 1 */
-	OUTPUT_FIELD_WITH_NAME ("USERNAME"),   /* 2 */
-	OUTPUT_FIELD_WITH_NAME ("GATEWAY"),    /* 3 */
-	OUTPUT_FIELD_WITH_NAME ("BANNER"),     /* 4 */
-	OUTPUT_FIELD_WITH_NAME ("VPN-STATE"),  /* 5 */
-	OUTPUT_FIELD_WITH_NAME ("CFG"),        /* 6 */
-	{ 0 }
+const NmcMetaGenericInfo *const nmc_fields_con_active_details_groups[] = {
+	NMC_META_GENERIC_WITH_NESTED ("GENERAL", nmc_fields_con_active_details_general + 1), /* 0 */
+	NMC_META_GENERIC_WITH_NESTED ("IP4",     nmc_fields_ip4_config + 1),                 /* 1 */
+	NMC_META_GENERIC_WITH_NESTED ("DHCP4",   nmc_fields_dhcp4_config + 1),               /* 2 */
+	NMC_META_GENERIC_WITH_NESTED ("IP6",     nmc_fields_ip6_config + 1),                 /* 3 */
+	NMC_META_GENERIC_WITH_NESTED ("DHCP6",   nmc_fields_dhcp6_config + 1),               /* 4 */
+	NMC_META_GENERIC_WITH_NESTED ("VPN",     nmc_fields_con_active_details_vpn + 1),     /* 5 */
+	NULL,
 };
-#define NMC_FIELDS_CON_ACTIVE_DETAILS_VPN_ALL  "GROUP,TYPE,USERNAME,GATEWAY,BANNER,VPN-STATE,CFG"
-
-/* defined in common.c */
-extern NmcOutputField nmc_fields_ip4_config[];
-extern NmcOutputField nmc_fields_ip6_config[];
-extern NmcOutputField nmc_fields_dhcp4_config[];
-extern NmcOutputField nmc_fields_dhcp6_config[];
-
-/* Available fields for 'connection show <con>' - active part */
-NmcOutputField nmc_fields_con_active_details_groups[] = {
-	OUTPUT_FIELD_WITH_FIELDS ("GENERAL", nmc_fields_con_active_details_general), /* 0 */
-	OUTPUT_FIELD_WITH_FIELDS ("IP4",     nmc_fields_ip4_config),                 /* 1 */
-	OUTPUT_FIELD_WITH_FIELDS ("DHCP4",   nmc_fields_dhcp4_config),               /* 2 */
-	OUTPUT_FIELD_WITH_FIELDS ("IP6",     nmc_fields_ip6_config),                 /* 3 */
-	OUTPUT_FIELD_WITH_FIELDS ("DHCP6",   nmc_fields_dhcp6_config),               /* 4 */
-	OUTPUT_FIELD_WITH_FIELDS ("VPN",     nmc_fields_con_active_details_vpn),     /* 5 */
-	{ 0 }
-};
-#define NMC_FIELDS_CON_ACTIVE_DETAILS_ALL  "GENERAL,IP4,DHCP4,IP6,DHCP6,VPN"
 
 /* Pseudo group names for 'connection show <con>' */
 /* e.g.: nmcli -f profile con show my-eth0 */
@@ -616,6 +555,22 @@ usage_connection_export (void)
 	              "The data are directed to standard output or to a file if a name is given.\n\n"));
 }
 
+static NMSetting *
+nmc_setting_new_for_name (const char *name)
+{
+	GType stype;
+	NMSetting *setting = NULL;
+
+	if (name) {
+		stype = nm_setting_lookup_type (name);
+		if (stype != G_TYPE_INVALID) {
+			setting = g_object_new (stype, NULL);
+			g_warn_if_fail (NM_IS_SETTING (setting));
+		}
+	}
+	return setting;
+}
+
 /* quit main loop */
 static void
 quit (void)
@@ -629,20 +584,13 @@ quit (void)
 	g_main_loop_quit (loop);  /* quit main loop */
 }
 
-static const char *
+static char *
 construct_header_name (const char *base, const char *spec)
 {
-	static char header_name[128];
-
 	if (spec == NULL)
-		return base;
+		return g_strdup (base);
 
-	g_strlcpy (header_name, base, sizeof (header_name));
-	g_strlcat (header_name, " (", sizeof (header_name));
-	g_strlcat (header_name, spec, sizeof (header_name));
-	g_strlcat (header_name, ")", sizeof (header_name));
-
-	return header_name;
+	return g_strdup_printf ("%s (%s)", base, spec);
 }
 
 static const char *
@@ -746,12 +694,12 @@ update_secrets_in_connection (NMRemoteConnection *remote, NMConnection *local)
 	int i;
 	GError *error = NULL;
 
-	for (i = 0; nmc_fields_settings_names[i].name; i++) {
-		secrets = nm_remote_connection_get_secrets (remote, nmc_fields_settings_names[i].name, NULL, NULL);
+	for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
+		secrets = nm_remote_connection_get_secrets (remote, nm_meta_setting_infos[i].setting_name, NULL, NULL);
 		if (secrets) {
 			if (!nm_connection_update_secrets (local, NULL, secrets, &error) && error) {
 				g_printerr (_("Error updating secrets for %s: %s\n"),
-				            nmc_fields_settings_names[i].name,
+				            nm_meta_setting_infos[i].setting_name,
 				            error->message);
 				g_clear_error (&error);
 			}
@@ -780,7 +728,8 @@ nmc_connection_profile_details (NMConnection *connection, NmCli *nmc, gboolean s
 	else
 		fields_str = nmc->required_fields;
 
-	print_settings_array = parse_output_fields (fields_str, nmc_fields_settings_names, TRUE, &prop_array, &error);
+	print_settings_array = parse_output_fields (fields_str, (const NMMetaAbstractInfo *const*) nm_meta_setting_infos_editor_p (),
+	                                            TRUE, &prop_array, &error);
 	if (error) {
 		g_string_printf (nmc->return_text, _("Error: 'connection show': %s"), error->message);
 		g_error_free (error);
@@ -791,14 +740,22 @@ nmc_connection_profile_details (NMConnection *connection, NmCli *nmc, gboolean s
 
 	/* Main header */
 	{
-		NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
+		gs_free char *header_name = NULL;
+		gs_free NmcOutputField *row = NULL;
+		gs_unref_array GArray *out_indices = NULL;
 
-		out.print_fields.header_name = (char *) construct_header_name (base_hdr, nm_connection_get_id (connection));
-		out.print_fields.indices = parse_output_fields (NMC_FIELDS_SETTINGS_NAMES_ALL,
-		                                                nmc_fields_settings_names, FALSE, NULL, NULL);
+		header_name = construct_header_name (base_hdr, nm_connection_get_id (connection));
+		out_indices = parse_output_fields (NMC_FIELDS_SETTINGS_NAMES_ALL,
+		                                   (const NMMetaAbstractInfo *const*) nm_meta_setting_infos_editor_p (),
+		                                   FALSE, NULL, NULL);
 
-		nmc_fields_settings_names[0].flags = NMC_OF_FLAG_MAIN_HEADER_ONLY;
-		print_required_fields (&nmc->nmc_config, &out.print_fields, nmc_fields_settings_names);
+		row = g_new0 (NmcOutputField, _NM_META_SETTING_TYPE_NUM + 1);
+		for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++)
+			row[i].info = (const NMMetaAbstractInfo *) &nm_meta_setting_infos_editor[i];
+
+		print_required_fields (&nmc->nmc_config, NMC_OF_FLAG_MAIN_HEADER_ONLY,
+		                       out_indices, header_name,
+		                       0, row);
 	}
 
 	/* Loop through the required settings and print them. */
@@ -812,9 +769,9 @@ nmc_connection_profile_details (NMConnection *connection, NmCli *nmc, gboolean s
 
 		was_output = FALSE;
 
-		setting = nm_connection_get_setting_by_name (connection, nmc_fields_settings_names[section_idx].name);
+		setting = nm_connection_get_setting_by_name (connection, nm_meta_setting_infos_editor[section_idx].general->setting_name);
 		if (setting) {
-			setting_details (setting, nmc, prop_name, secrets);
+			setting_details (&nmc->nmc_config, setting, prop_name, secrets);
 			was_output = TRUE;
 		}
 	}
@@ -904,16 +861,16 @@ found:
 }
 
 void
-nmc_active_connection_state_to_color (NMActiveConnectionState state, NmcTermColor *color)
+nmc_active_connection_state_to_color (NMActiveConnectionState state, NMMetaTermColor *color)
 {
-	*color = NMC_TERM_COLOR_NORMAL;
+	*color = NM_META_TERM_COLOR_NORMAL;
 
 	if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING)
-		*color = NMC_TERM_COLOR_YELLOW;
+		*color = NM_META_TERM_COLOR_YELLOW;
 	else if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
-		*color = NMC_TERM_COLOR_GREEN;
+		*color = NM_META_TERM_COLOR_GREEN;
 	else if (state > NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
-		*color = NMC_TERM_COLOR_RED;
+		*color = NM_META_TERM_COLOR_RED;
 }
 
 static void
@@ -931,7 +888,7 @@ fill_output_connection (NMConnection *connection, NMClient *client, GPtrArray *o
 	const char *ac_state = NULL;
 	NMActiveConnectionState ac_state_int = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
 	char *ac_dev = NULL;
-	NmcTermColor color;
+	NMMetaTermColor color;
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -957,9 +914,7 @@ fill_output_connection (NMConnection *connection, NMClient *client, GPtrArray *o
 	}
 	prio_str = g_strdup_printf ("%u", nm_setting_connection_get_autoconnect_priority (s_con));
 
-	arr = nmc_dup_fields_array (nmc_fields_con_show,
-	                            sizeof (nmc_fields_con_show),
-	                            0);
+	arr = nmc_dup_fields_array ((const NMMetaAbstractInfo *const*) nmc_fields_con_show, 0);
 
 	/* Show active connections in color */
 	nmc_active_connection_state_to_color (ac_state_int, &color);
@@ -996,9 +951,7 @@ fill_output_connection_for_invisible (NMActiveConnection *ac, GPtrArray *output_
 	ac_state = active_connection_state_to_string (nm_active_connection_get_state (ac));
 	ac_dev = get_ac_device_string (ac);
 
-	arr = nmc_dup_fields_array (nmc_fields_con_show,
-	                            sizeof (nmc_fields_con_show),
-	                            0);
+	arr = nmc_dup_fields_array ((const NMMetaAbstractInfo *const*) nmc_fields_con_show, 0);
 
 	set_val_str  (arr, 0, name);
 	set_val_strc (arr, 1, nm_active_connection_get_uuid (ac));
@@ -1015,7 +968,7 @@ fill_output_connection_for_invisible (NMActiveConnection *ac, GPtrArray *output_
 	set_val_strc (arr, 12, ac_path);
 	set_val_strc (arr, 13, NULL);
 
-	set_val_color_fmt_all (arr, NMC_TERM_FORMAT_DIM);
+	set_val_color_fmt_all (arr, NM_META_TERM_FORMAT_DIM);
 
 	g_ptr_array_add (output_data, arr);
 }
@@ -1034,8 +987,8 @@ fill_output_active_connection (NMActiveConnection *active,
 	NMDevice *master;
 	const char *con_path = NULL, *con_zone = NULL;
 	int i;
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
+	const NMMetaAbstractInfo *const*tmpl;
+	NmcOutputField *arr;
 	int idx_start = with_group ? 0 : 1;
 
 	con = nm_active_connection_get_connection (active);
@@ -1064,17 +1017,14 @@ fill_output_active_connection (NMActiveConnection *active,
 	if (dev_str->len > 0)
 		g_string_truncate (dev_str, dev_str->len - 1);  /* Cut off last ',' */
 
-	tmpl = nmc_fields_con_active_details_general;
-	tmpl_len = sizeof (nmc_fields_con_active_details_general);
-	if (!with_group) {
+	tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_con_active_details_general;
+	if (!with_group)
 		tmpl++;
-		tmpl_len -= sizeof (NmcOutputField);
-	}
 
 	/* Fill field values */
-	arr = nmc_dup_fields_array (tmpl, tmpl_len, o_flags);
+	arr = nmc_dup_fields_array (tmpl, o_flags);
 	if (with_group)
-		set_val_strc (arr, 0, nmc_fields_con_active_details_groups[0].name);
+		set_val_strc (arr, 0, nmc_fields_con_active_details_groups[0]->name);
 	set_val_strc (arr, 1-idx_start, nm_active_connection_get_id (active));
 	set_val_strc (arr, 2-idx_start, nm_active_connection_get_uuid (active));
 	set_val_str  (arr, 3-idx_start, dev_str->str);
@@ -1192,22 +1142,19 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 	GArray *print_groups;
 	GPtrArray *group_fields = NULL;
 	int i;
-	char *fields_str;
-	char *fields_all =    NMC_FIELDS_CON_ACTIVE_DETAILS_ALL;
-	char *fields_common = NMC_FIELDS_CON_ACTIVE_DETAILS_ALL;
-	NmcOutputField *tmpl, *arr;
+	const char *fields_str = NULL;
+	const NMMetaAbstractInfo *const*tmpl;
+	NmcOutputField *arr;
 	size_t tmpl_len;
 	const char *base_hdr = _("Activate connection details");
 	gboolean was_output = FALSE;
 
-	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
-		fields_str = fields_common;
-	else if (!nmc->required_fields || strcasecmp (nmc->required_fields, "all") == 0)
-		fields_str = fields_all;
-	else
+	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0) {
+	} else if (!nmc->required_fields || strcasecmp (nmc->required_fields, "all") == 0) {
+	} else
 		fields_str = nmc->required_fields;
 
-	print_groups = parse_output_fields (fields_str, nmc_fields_con_active_details_groups, TRUE, &group_fields, &error);
+	print_groups = parse_output_fields (fields_str, (const NMMetaAbstractInfo *const*) nmc_fields_con_active_details_groups, TRUE, &group_fields, &error);
 	if (error) {
 		g_string_printf (nmc->return_text, _("Error: 'connection show': %s"), error->message);
 		g_error_free (error);
@@ -1218,14 +1165,22 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 
 	/* Main header */
 	{
-		NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
+		gs_free char *header_name = NULL;
+		gs_free NmcOutputField *row = NULL;
+		gs_unref_array GArray *out_indices = NULL;
 
-		out.print_fields.header_name = (char *) construct_header_name (base_hdr, nm_active_connection_get_uuid (acon));
-		out.print_fields.indices = parse_output_fields (NMC_FIELDS_CON_ACTIVE_DETAILS_ALL,
-		                                                 nmc_fields_con_active_details_groups, FALSE, NULL, NULL);
+		header_name = construct_header_name (base_hdr, nm_active_connection_get_uuid (acon));
+		out_indices = parse_output_fields (NULL,
+		                                   (const NMMetaAbstractInfo *const*) nmc_fields_con_active_details_groups,
+		                                   FALSE, NULL, NULL);
 
-		nmc_fields_con_active_details_groups[0].flags = NMC_OF_FLAG_MAIN_HEADER_ONLY;
-		print_required_fields (&nmc->nmc_config, &out.print_fields, nmc_fields_con_active_details_groups);
+		row = g_new0 (NmcOutputField, G_N_ELEMENTS (nmc_fields_con_active_details_groups) + 1);
+		for (i = 0; nmc_fields_con_active_details_groups[i]; i++)
+			row[i].info = (const NMMetaAbstractInfo *) nmc_fields_con_active_details_groups[i];
+
+		print_required_fields (&nmc->nmc_config, NMC_OF_FLAG_MAIN_HEADER_ONLY,
+		                       out_indices, header_name,
+		                       0, row);
 	}
 
 	/* Loop through the groups and print them. */
@@ -1239,28 +1194,28 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 		was_output = FALSE;
 
 		/* GENERAL */
-		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx].name, nmc_fields_con_active_details_groups[0].name) == 0) {
+		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx]->name, nmc_fields_con_active_details_groups[0]->name) == 0) {
 			NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
 			/* Add field names */
-			tmpl = nmc_fields_con_active_details_general;
+			tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_con_active_details_general;
 			tmpl_len = sizeof (nmc_fields_con_active_details_general);
-			out.print_fields.indices = parse_output_fields (group_fld ? group_fld : NMC_FIELDS_CON_ACTIVE_DETAILS_GENERAL_ALL,
-			                                                tmpl, FALSE, NULL, NULL);
-			arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+			out_indices = parse_output_fields (group_fld,
+			                                   tmpl, FALSE, NULL, NULL);
+			arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_FIELD_NAMES);
 			g_ptr_array_add (out.output_data, arr);
 
 			/* Fill in values */
 			fill_output_active_connection (acon, out.output_data, TRUE, NMC_OF_FLAG_SECTION_PREFIX);
 
 			print_data_prepare_width (out.output_data);
-			print_data (&nmc->nmc_config, &out);
+			print_data (&nmc->nmc_config, out_indices, NULL, 0, &out);
 
 			was_output = TRUE;
 		}
 
 		/* IP4 */
-		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[1].name) == 0) {
+		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx]->name,  nmc_fields_con_active_details_groups[1]->name) == 0) {
 			gboolean b1 = FALSE;
 			NMIPConfig *cfg4 = nm_active_connection_get_ip4_config (acon);
 
@@ -1269,7 +1224,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 		}
 
 		/* DHCP4 */
-		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[2].name) == 0) {
+		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx]->name,  nmc_fields_con_active_details_groups[2]->name) == 0) {
 			gboolean b1 = FALSE;
 			NMDhcpConfig *dhcp4 = nm_active_connection_get_dhcp4_config (acon);
 
@@ -1278,7 +1233,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 		}
 
 		/* IP6 */
-		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[3].name) == 0) {
+		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx]->name,  nmc_fields_con_active_details_groups[3]->name) == 0) {
 			gboolean b1 = FALSE;
 			NMIPConfig *cfg6 = nm_active_connection_get_ip6_config (acon);
 
@@ -1287,7 +1242,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 		}
 
 		/* DHCP6 */
-		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[4].name) == 0) {
+		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx]->name,  nmc_fields_con_active_details_groups[4]->name) == 0) {
 			gboolean b1 = FALSE;
 			NMDhcpConfig *dhcp6 = nm_active_connection_get_dhcp6_config (acon);
 
@@ -1297,7 +1252,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 
 		/* VPN */
 		if (NM_IS_VPN_CONNECTION (acon) &&
-		    strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[5].name) == 0) {
+		    strcasecmp (nmc_fields_con_active_details_groups[group_idx]->name,  nmc_fields_con_active_details_groups[5]->name) == 0) {
 			NMConnection *con;
 			NMSettingConnection *s_con;
 			NMSettingVpn *s_vpn;
@@ -1314,11 +1269,10 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			s_con = nm_connection_get_setting_connection (con);
 			g_assert (s_con != NULL);
 
-			tmpl = nmc_fields_con_active_details_vpn;
-			tmpl_len = sizeof (nmc_fields_con_active_details_vpn);
-			out.print_fields.indices = parse_output_fields (group_fld ? group_fld : NMC_FIELDS_CON_ACTIVE_DETAILS_VPN_ALL,
-			                                                tmpl, FALSE, NULL, NULL);
-			arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+			tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_con_active_details_vpn;
+			out_indices = parse_output_fields (group_fld,
+			                                   tmpl, FALSE, NULL, NULL);
+			arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_FIELD_NAMES);
 			g_ptr_array_add (out.output_data, arr);
 
 			s_vpn = nm_connection_get_setting_vpn (con);
@@ -1344,8 +1298,8 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			vpn_state_str = g_strdup_printf ("%d - %s", vpn_state, vpn_connection_state_to_string (vpn_state));
 
 			/* Add values */
-			arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-			set_val_strc (arr, 0, nmc_fields_con_active_details_groups[5].name);
+			arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_SECTION_PREFIX);
+			set_val_strc (arr, 0, nmc_fields_con_active_details_groups[5]->name);
 			set_val_str  (arr, 1, type_str);
 			set_val_strc (arr, 2, username ? username : get_vpn_data_item (con, VPN_DATA_ITEM_USERNAME));
 			set_val_strc (arr, 3, get_vpn_data_item (con, VPN_DATA_ITEM_GATEWAY));
@@ -1355,7 +1309,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			g_ptr_array_add (out.output_data, arr);
 
 			print_data_prepare_width (out.output_data);
-			print_data (&nmc->nmc_config, &out);
+			print_data (&nmc->nmc_config, out_indices, NULL, 0, &out);
 			was_output = TRUE;
 		}
 	}
@@ -1405,9 +1359,9 @@ split_required_fields_for_con_show (const char *input,
 
 		found = FALSE;
 
-		for (i = 0; nmc_fields_settings_names[i].name; i++) {
+		for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
 			if (   is_all || is_common
-			    || !strcasecmp (*iter, nmc_fields_settings_names[i].name)) {
+			    || !strcasecmp (*iter, nm_meta_setting_infos[i].setting_name)) {
 				if (dot)
 					*dot = '.';
 				g_string_append (str1, *iter);
@@ -1418,9 +1372,9 @@ split_required_fields_for_con_show (const char *input,
 		}
 		if (found)
 			continue;
-		for (i = 0; nmc_fields_con_active_details_groups[i].name; i++) {
+		for (i = 0; nmc_fields_con_active_details_groups[i]; i++) {
 			if (   is_all || is_common
-			    || !strcasecmp (*iter, nmc_fields_con_active_details_groups[i].name)) {
+			    || !strcasecmp (*iter, nmc_fields_con_active_details_groups[i]->name)) {
 				if (dot)
 					*dot = '.';
 				g_string_append (str2, *iter);
@@ -1437,8 +1391,8 @@ split_required_fields_for_con_show (const char *input,
 			else if (!strcasecmp (*iter, CON_SHOW_DETAIL_GROUP_ACTIVE))
 				group_active = TRUE;
 			else {
-				char *allowed1 = nmc_get_allowed_fields (nmc_fields_settings_names, -1);
-				char *allowed2 = nmc_get_allowed_fields (nmc_fields_con_active_details_groups, -1);
+				char *allowed1 = nmc_get_allowed_fields ((const NMMetaAbstractInfo *const*) nm_meta_setting_infos_editor_p ());
+				char *allowed2 = nmc_get_allowed_fields ((const NMMetaAbstractInfo *const*) nmc_fields_con_active_details_groups);
 				g_set_error (error, NMCLI_ERROR, 0, _("invalid field '%s'; allowed fields: %s and %s, or %s,%s"),
 				             *iter, allowed1, allowed2, CON_SHOW_DETAIL_GROUP_PROFILE, CON_SHOW_DETAIL_GROUP_ACTIVE);
 				g_free (allowed1);
@@ -1791,11 +1745,10 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 
 	if (argc == 0) {
 		const GPtrArray *connections;
-		char *fields_str;
-		char *fields_all =    NMC_FIELDS_CON_SHOW_ALL;
+		const char *fields_str = NULL;
 		char *fields_common = NMC_FIELDS_CON_SHOW_COMMON;
-		NmcOutputField *tmpl, *arr;
-		size_t tmpl_len;
+		const NMMetaAbstractInfo *const*tmpl;
+		NmcOutputField *arr;
 		NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
 		if (nmc->complete)
@@ -1803,21 +1756,17 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 
 		if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
 			fields_str = fields_common;
-		else if (!nmc->required_fields || strcasecmp (nmc->required_fields, "all") == 0)
-			fields_str = fields_all;
-		else
+		else if (!nmc->required_fields || strcasecmp (nmc->required_fields, "all") == 0) {
+		} else
 			fields_str = nmc->required_fields;
 
-		tmpl = nmc_fields_con_show;
-		tmpl_len = sizeof (nmc_fields_con_show);
-		out.print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &err);
+		tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_con_show;
+		out_indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &err);
 		if (err)
 			goto finish;
 
 		/* Add headers */
-		out.print_fields.header_name = active_only ? _("NetworkManager active profiles") :
-		                                              _("NetworkManager connection profiles");
-		arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
+		arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
 		g_ptr_array_add (out.output_data, arr);
 
 		/* There might be active connections not present in connection list
@@ -1835,7 +1784,10 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 		g_ptr_array_free (sorted_cons, TRUE);
 
 		print_data_prepare_width (out.output_data);
-		print_data (&nmc->nmc_config, &out);
+		print_data (&nmc->nmc_config, out_indices,
+		            active_only ? _("NetworkManager active profiles")
+		                        : _("NetworkManager connection profiles"),
+		            0, &out);
 	} else {
 		gboolean new_line = FALSE;
 		gboolean without_fields = (nmc->required_fields == NULL);
@@ -3063,7 +3015,6 @@ static const NameItem nmc_dummy_settings [] = {
 	{ NULL, NULL, NULL, FALSE }
 };
 
-/* Available connection types */
 static const NameItem nmc_valid_connection_types[] = {
 	{ NM_SETTING_GENERIC_SETTING_NAME,    NULL,        nmc_generic_settings      }, /* Needs to be first. */
 	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet",  nmc_ethernet_settings     },
@@ -3199,7 +3150,6 @@ get_valid_properties_string (const NameItem *array,
                              const char *postfix)
 {
 	const NameItem *iter = array;
-	const NmcOutputField *field_iter;
 	const NMMetaSettingInfoEditor *setting_info;
 	const char *prop_name = NULL;
 	GString *str;
@@ -3236,28 +3186,15 @@ get_valid_properties_string (const NameItem *array,
 			}
 
 			/* Search the array with the arguments of the current property */
-			j = 0;
-			while (!nm_streq0 (iter->name, nmc_fields_settings_names[j].name)) {
-				g_assert (nmc_fields_settings_names[j].name);
-				j++;
-			}
-			field_iter = nmc_fields_settings_names[j].group_list;
-			setting_info = nmc_fields_settings_names[j].setting_info;
-
+			setting_info = nm_meta_setting_info_editor_find_by_name (iter->name);
 			j = 0;
 			while (TRUE) {
 				gchar *new;
 				const char *arg_name;
 
-				if (field_iter) {
-					arg_name = field_iter[j].name;
-					if (!arg_name)
-						break;
-				} else {
-					if (j + 1 >= setting_info->properties_num)
-						break;
-					arg_name = setting_info->properties[j + 1].property_name;
-				}
+				if (j + 1 >= setting_info->properties_num)
+					break;
+				arg_name = setting_info->properties[j + 1].property_name;
 
 				/* If required, expand the alias too */
 				if (!postfix && iter->alias) {
@@ -6045,7 +5982,7 @@ editor_show_setting (NMSetting *setting, NmCli *nmc)
 	nmc->nmc_config_mutable.multiline_output = TRUE;
 	nmc->nmc_config_mutable.escape_values = 0;
 
-	setting_details (setting, nmc, NULL, nmc->editor_show_secrets);
+	setting_details (&nmc->nmc_config, setting, NULL, nmc->editor_show_secrets);
 }
 
 typedef enum {
@@ -6631,7 +6568,7 @@ property_edit_submenu (NmCli *nmc,
 	/* Set global variable for use in TAB completion */
 	nmc_tab_completion.property = prop_name;
 
-	prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NMC_TERM_FORMAT_NORMAL,
+	prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NM_META_TERM_FORMAT_NORMAL,
 	                       "nmcli %s.%s> ",
 	                       nm_setting_get_name (curr_setting), prop_name);
 
@@ -6970,11 +6907,11 @@ static void
 menu_switch_to_level0 (NmcColorOption color_option,
                        NmcEditorMenuContext *menu_ctx,
                        const char *prompt,
-                       NmcTermColor prompt_color)
+                       NMMetaTermColor prompt_color)
 {
 	menu_ctx->level = 0;
 	g_free (menu_ctx->main_prompt);
-	menu_ctx->main_prompt = nmc_colorize (color_option, prompt_color, NMC_TERM_FORMAT_NORMAL, "%s", prompt);
+	menu_ctx->main_prompt = nmc_colorize (color_option, prompt_color, NM_META_TERM_FORMAT_NORMAL, "%s", prompt);
 	menu_ctx->curr_setting = NULL;
 	g_strfreev (menu_ctx->valid_props);
 	menu_ctx->valid_props = NULL;
@@ -6987,11 +6924,11 @@ menu_switch_to_level1 (NmcColorOption color_option,
                        NmcEditorMenuContext *menu_ctx,
                        NMSetting *setting,
                        const char *setting_name,
-                       NmcTermColor prompt_color)
+                       NMMetaTermColor prompt_color)
 {
 	menu_ctx->level = 1;
 	g_free (menu_ctx->main_prompt);
-	menu_ctx->main_prompt = nmc_colorize (color_option, prompt_color, NMC_TERM_FORMAT_NORMAL,
+	menu_ctx->main_prompt = nmc_colorize (color_option, prompt_color, NM_META_TERM_FORMAT_NORMAL,
 	                                      "nmcli %s> ", setting_name);
 	menu_ctx->curr_setting = setting;
 	g_strfreev (menu_ctx->valid_props);
@@ -7037,7 +6974,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	g_print (_("You may edit the following settings: %s\n"), valid_settings_str);
 
 	menu_ctx.level = 0;
-	menu_ctx.main_prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NMC_TERM_FORMAT_NORMAL,
+	menu_ctx.main_prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NM_META_TERM_FORMAT_NORMAL,
 	                                     BASE_PROMPT);
 	menu_ctx.curr_setting = NULL;
 	menu_ctx.valid_props = NULL;
@@ -7710,7 +7647,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					nmc->editor_show_secrets = bb;
 			} else if (cmd_arg_p && matches (cmd_arg_p, "prompt-color")) {
 				GError *tmp_err = NULL;
-				NmcTermColor color;
+				NMMetaTermColor color;
 				color = nmc_term_color_parse_string (cmd_arg_v ? g_strstrip (cmd_arg_v) : " ", &tmp_err);
 				if (tmp_err) {
 					g_print (_("Error: bad color: %s\n"), tmp_err->message);
@@ -7719,10 +7656,10 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					nmc->editor_prompt_color = color;
 					g_free (menu_ctx.main_prompt);
 					if (menu_ctx.level == 0)
-						menu_ctx.main_prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NMC_TERM_FORMAT_NORMAL,
+						menu_ctx.main_prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NM_META_TERM_FORMAT_NORMAL,
 						                                     BASE_PROMPT);
 					else
-						menu_ctx.main_prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NMC_TERM_FORMAT_NORMAL,
+						menu_ctx.main_prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NM_META_TERM_FORMAT_NORMAL,
 						                                     "nmcli %s> ",
 						                                     nm_setting_get_name (menu_ctx.curr_setting));
 				}

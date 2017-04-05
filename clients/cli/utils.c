@@ -19,6 +19,8 @@
 
 #include "nm-default.h"
 
+#include "utils.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -28,10 +30,70 @@
 #include <arpa/inet.h>
 
 #include "nm-client-utils.h"
+#include "nm-meta-setting-access.h"
 
-#include "utils.h"
 #include "common.h"
 #include "settings.h"
+
+/*****************************************************************************/
+
+static const char *
+_meta_type_nmc_generic_info_get_name (const NMMetaAbstractInfo *abstract_info)
+{
+	return ((const NmcMetaGenericInfo *) abstract_info)->name;
+}
+
+static const NMMetaAbstractInfo *const*
+_meta_type_nmc_generic_info_get_nested (const NMMetaAbstractInfo *abstract_info,
+                                        guint *out_len,
+                                        gpointer *out_to_free)
+{
+	const NmcMetaGenericInfo *info;
+	guint n;
+
+	info = (const NmcMetaGenericInfo *) abstract_info;
+
+	if (out_len) {
+		n = 0;
+		if (info->nested) {
+			for (; info->nested[n]; n++) {
+			}
+		}
+		*out_len = n;
+	}
+	*out_to_free = NULL;
+	return (const NMMetaAbstractInfo *const*) info->nested;
+}
+
+static gconstpointer
+_meta_type_nmc_generic_info_get_fcn (const NMMetaEnvironment *environment,
+                                     gpointer environment_user_data,
+                                     const NMMetaAbstractInfo *abstract_info,
+                                     gpointer target,
+                                     NMMetaAccessorGetType get_type,
+                                     NMMetaAccessorGetFlags get_flags,
+                                     gpointer *out_to_free)
+{
+	const NmcMetaGenericInfo *info = (const NmcMetaGenericInfo *) abstract_info;
+
+	nm_assert (out_to_free && !*out_to_free);
+
+	if (!info->get_fcn)
+		g_return_val_if_reached (NULL);
+	return info->get_fcn (environment, environment_user_data,
+	                      info, target,
+	                      get_type, get_flags,
+	                      out_to_free);
+}
+
+const NMMetaType nmc_meta_type_generic_info = {
+	.type_name =         "nmc-generic-info",
+	.get_name =          _meta_type_nmc_generic_info_get_name,
+	.get_nested =        _meta_type_nmc_generic_info_get_nested,
+	.get_fcn =           _meta_type_nmc_generic_info_get_fcn,
+};
+
+/*****************************************************************************/
 
 static gboolean
 parse_global_arg (NmCli *nmc, const char *arg)
@@ -273,31 +335,31 @@ nmc_terminal_show_progress (const char *str)
 }
 
 const char *
-nmc_term_color_sequence (NmcTermColor color)
+nmc_term_color_sequence (NMMetaTermColor color)
 {
 	switch (color) {
-        case NMC_TERM_COLOR_BLACK:
+        case NM_META_TERM_COLOR_BLACK:
 		return "\33[30m";
 		break;
-        case NMC_TERM_COLOR_RED:
+        case NM_META_TERM_COLOR_RED:
 		return "\33[31m";
 		break;
-        case NMC_TERM_COLOR_GREEN:
+        case NM_META_TERM_COLOR_GREEN:
 		return "\33[32m";
 		break;
-        case NMC_TERM_COLOR_YELLOW:
+        case NM_META_TERM_COLOR_YELLOW:
 		return "\33[33m";
 		break;
-        case NMC_TERM_COLOR_BLUE:
+        case NM_META_TERM_COLOR_BLUE:
 		return "\33[34m";
 		break;
-        case NMC_TERM_COLOR_MAGENTA:
+        case NM_META_TERM_COLOR_MAGENTA:
 		return "\33[35m";
 		break;
-        case NMC_TERM_COLOR_CYAN:
+        case NM_META_TERM_COLOR_CYAN:
 		return "\33[36m";
 		break;
-        case NMC_TERM_COLOR_WHITE:
+        case NM_META_TERM_COLOR_WHITE:
 		return "\33[37m";
 		break;
 	default:
@@ -307,7 +369,7 @@ nmc_term_color_sequence (NmcTermColor color)
 }
 
 /* Parses @str for color as string or number */
-NmcTermColor
+NMMetaTermColor
 nmc_term_color_parse_string (const char *str, GError **error)
 {
 	unsigned long color_int;
@@ -315,7 +377,7 @@ nmc_term_color_parse_string (const char *str, GError **error)
 	                                "blue", "magenta", "cyan", "white", NULL };
 
 	if (nmc_string_to_uint (str, TRUE, 0, 8, &color_int)) {
-		return (NmcTermColor) color_int;
+		return (NMMetaTermColor) color_int;
 	} else {
 		const char *color, **p;
 		int i;
@@ -323,32 +385,32 @@ nmc_term_color_parse_string (const char *str, GError **error)
 		color = nmc_string_is_valid (str, colors, error);
 		for (p = colors, i = 0; *p != NULL; p++, i++) {
 			if (*p == color)
-				return (NmcTermColor) i;
+				return (NMMetaTermColor) i;
 		}
 		return -1;
 	}
 }
 
 const char *
-nmc_term_format_sequence (NmcTermFormat format)
+nmc_term_format_sequence (NMMetaTermFormat format)
 {
 	switch (format) {
-        case NMC_TERM_FORMAT_BOLD:
+        case NM_META_TERM_FORMAT_BOLD:
 		return "\33[1m";
 		break;
-        case NMC_TERM_FORMAT_DIM:
+        case NM_META_TERM_FORMAT_DIM:
 		return "\33[2m";
 		break;
-        case NMC_TERM_FORMAT_UNDERLINE:
+        case NM_META_TERM_FORMAT_UNDERLINE:
 		return "\33[4m";
 		break;
-        case NMC_TERM_FORMAT_BLINK:
+        case NM_META_TERM_FORMAT_BLINK:
 		return "\33[5m";
 		break;
-        case NMC_TERM_FORMAT_REVERSE:
+        case NM_META_TERM_FORMAT_REVERSE:
 		return "\33[7m";
 		break;
-        case NMC_TERM_FORMAT_HIDDEN:
+        case NM_META_TERM_FORMAT_HIDDEN:
 		return "\33[8m";
 		break;
 	default:
@@ -377,7 +439,7 @@ use_colors (NmcColorOption color_option)
 }
 
 char *
-nmc_colorize (NmcColorOption color_option, NmcTermColor color, NmcTermFormat format, const char *fmt, ...)
+nmc_colorize (NmcColorOption color_option, NMMetaTermColor color, NMMetaTermFormat format, const char *fmt, ...)
 {
 	va_list args;
 	char *str, *colored;
@@ -609,21 +671,21 @@ set_val_arrc (NmcOutputField fields_array[], guint32 idx, const char **value)
 }
 
 void
-set_val_color_all (NmcOutputField fields_array[], NmcTermColor color)
+set_val_color_all (NmcOutputField fields_array[], NMMetaTermColor color)
 {
 	int i;
 
-	for (i = 0; fields_array[i].name; i++) {
+	for (i = 0; fields_array[i].info; i++) {
 		fields_array[i].color = color;
 	}
 }
 
 void
-set_val_color_fmt_all (NmcOutputField fields_array[], NmcTermFormat format)
+set_val_color_fmt_all (NmcOutputField fields_array[], NMMetaTermFormat format)
 {
 	int i;
 
-	for (i = 0; fields_array[i].name; i++) {
+	for (i = 0; fields_array[i].info; i++) {
 		fields_array[i].color_fmt = format;
 	}
 }
@@ -636,7 +698,7 @@ nmc_free_output_field_values (NmcOutputField fields_array[])
 {
 	NmcOutputField *iter = fields_array;
 
-	while (iter && iter->name) {
+	while (iter && iter->info) {
 		if (iter->free_value) {
 			if (iter->value_is_array)
 				g_strfreev ((char **) iter->value);
@@ -647,6 +709,159 @@ nmc_free_output_field_values (NmcOutputField fields_array[])
 		iter++;
 	}
 }
+
+typedef struct {
+	guint idx;
+	gsize offset_plus_1;
+} OutputSelectionItem;
+
+NmcOutputSelection *
+nmc_output_selection_create (const NMMetaAbstractInfo *const* fields_array,
+                             const char *fields_str,
+                             GError **error)
+{
+	gs_unref_array GArray *array = NULL;
+	nm_auto_free_gstring GString *str = NULL;
+	guint i, j;
+	NmcOutputSelection *result;
+
+	g_return_val_if_fail (!error || !*error, NULL);
+
+	array = g_array_new (FALSE, FALSE, sizeof (OutputSelectionItem));
+
+	if (!fields_str) {
+		for (i = 0; fields_array[i]; i++) {
+			OutputSelectionItem s = {
+				.idx = i,
+			};
+
+			g_array_append_val (array, s);
+		}
+	} else {
+		gs_free char *fields_str_clone = NULL;
+		char *fields_str_cur;
+		char *fields_str_next;
+
+		fields_str_clone = g_strdup (fields_str);
+		for (fields_str_cur = fields_str_clone; fields_str_cur; fields_str_cur = fields_str_next) {
+			const char *i_name;
+			const char *right = NULL;
+			gboolean found = FALSE;
+			const NMMetaAbstractInfo *fields_array_failure = NULL;
+
+			fields_str_cur = nm_str_skip_leading_spaces (fields_str_cur);
+			fields_str_next = strchr (fields_str_cur, ',');
+			if (fields_str_next)
+				*fields_str_next++ = '\0';
+
+			g_strchomp (fields_str_cur);
+			if (!fields_str_cur[0])
+				continue;
+
+			i_name = fields_str_cur;
+			fields_str_cur = strchr (fields_str_cur, '.');
+			if (fields_str_cur) {
+				right = fields_str_cur + 1;
+				*fields_str_cur = '\0';
+			}
+
+			for (i = 0; fields_array[i]; i++) {
+				const NMMetaAbstractInfo *fi = fields_array[i];
+
+				if (g_ascii_strcasecmp (i_name, nm_meta_abstract_info_get_name (fi)) != 0)
+					continue;
+
+				if (!right)
+					found = TRUE;
+				else {
+					found = FALSE;
+					if (fi->meta_type == &nm_meta_type_setting_info_editor) {
+						const NMMetaSettingInfoEditor *fi_s = &fi->as.setting_info;
+
+						for (j = 1; j < fi_s->properties_num; j++) {
+							if (g_ascii_strcasecmp (right, fi_s->properties[j].property_name) == 0) {
+								found = TRUE;
+								break;
+							}
+						}
+					} else if (fi->meta_type == &nmc_meta_type_generic_info) {
+						const NmcMetaGenericInfo *fi_g = (const NmcMetaGenericInfo *) fi;
+
+						for (j = 0; fi_g->nested && fi_g->nested[j]; j++) {
+							if (g_ascii_strcasecmp (right, nm_meta_abstract_info_get_name ((const NMMetaAbstractInfo *) fi_g->nested[j])) == 0) {
+								found = TRUE;
+								break;
+							}
+						}
+					}
+				}
+
+				if (found) {
+					OutputSelectionItem s = {
+						.idx = i,
+					};
+
+					if (right) {
+						if (!str)
+							str = g_string_sized_new (32);
+
+						s.offset_plus_1 = str->len + 1;
+						g_string_append_len (str, right, strlen (right) + 1);
+					}
+
+					g_array_append_val (array, s);
+				}
+
+				fields_array_failure = fields_array[i];
+				break;
+			}
+
+			if (!found) {
+				if (   !right
+				    && (   !g_ascii_strcasecmp (i_name, "all")
+				        || !g_ascii_strcasecmp (i_name, "common")))
+					g_set_error (error, NMCLI_ERROR, 0, _("field '%s' has to be alone"), i_name);
+				else {
+					gs_free char *allowed_fields = NULL;
+
+					if (fields_array_failure)
+						allowed_fields = nmc_get_allowed_fields_nested (fields_array_failure);
+					else
+						allowed_fields = nmc_get_allowed_fields (fields_array);
+
+					g_set_error (error, NMCLI_ERROR, 1, _("invalid field '%s%s%s'; allowed fields: %s"),
+					             i_name, right ? "." : "", right ?: "", allowed_fields);
+				}
+
+				return NULL;
+			}
+		}
+	}
+
+	/* re-organize the collected output data in one buffer that can be freed using
+	 * g_free(). This makes allocation more complicated, but saves us from special
+	 * handling for free. */
+	result = g_malloc0 (sizeof (NmcOutputSelection) + (array->len * sizeof (NmcOutputSelectionItem)) + (str ? str->len : 0));
+	*((guint *) &result->num) = array->len;
+	if (array->len > 0) {
+		char *pdata = &((char *) result)[sizeof (NmcOutputSelection) + (array->len * sizeof (NmcOutputSelectionItem))];
+
+		if (str)
+			memcpy (pdata, str->str, str->len);
+		for (i = 0; i < array->len; i++) {
+			const OutputSelectionItem *a = &g_array_index (array, OutputSelectionItem, i);
+			NmcOutputSelectionItem *p = (NmcOutputSelectionItem *) &result->items[i];
+
+			p->info = fields_array[a->idx];
+			p->idx = a->idx;
+			if (a->offset_plus_1 > 0)
+				p->sub_selection = &pdata[a->offset_plus_1 - 1];
+		}
+	}
+
+	return result;
+}
+
 
 /**
  * parse_output_fields:
@@ -670,159 +885,91 @@ nmc_free_output_field_values (NmcOutputField fields_array[])
  */
 GArray *
 parse_output_fields (const char *fields_str,
-                     const NmcOutputField fields_array[],
+                     const NMMetaAbstractInfo *const*fields_array,
                      gboolean parse_groups,
-                     GPtrArray **group_fields,
+                     GPtrArray **out_group_fields,
                      GError **error)
 {
-	char **fields, **iter;
+	gs_free NmcOutputSelection *selection = NULL;
 	GArray *array;
-	int i, j;
+	GPtrArray *group_fields = NULL;
+	guint i;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
-	g_return_val_if_fail (group_fields == NULL || *group_fields == NULL, NULL);
+	g_return_val_if_fail (!error || !*error, NULL);
+	g_return_val_if_fail (!out_group_fields || !*out_group_fields, NULL);
 
-	array = g_array_new (FALSE, FALSE, sizeof (int));
-	if (parse_groups && group_fields)
-		*group_fields = g_ptr_array_new_full (20, (GDestroyNotify) g_free);
+	selection = nmc_output_selection_create (fields_array, fields_str, error);
+	if (!selection)
+		return NULL;
 
-	/* Split supplied fields string */
-	fields = g_strsplit_set (fields_str, ",", -1);
-	for (iter = fields; iter && *iter; iter++) {
-		int idx = -1;
+	array = g_array_sized_new (FALSE, FALSE, sizeof (int), selection->num);
+	if (parse_groups && out_group_fields)
+		group_fields = g_ptr_array_new_full (selection->num, g_free);
 
-		g_strstrip (*iter);
-		if (parse_groups) {
-			/* e.g. "general.device,general.driver,ip4,ip6" */
-			gboolean found = FALSE;
-			char *left = *iter;
-			char *right = strchr (*iter, '.');
+	for (i = 0; i < selection->num; i++) {
+		int idx = selection->items[i].idx;
 
-			if (right)
-				*right++ = '\0';
-
-			for (i = 0; fields_array[i].name; i++) {
-				if (strcasecmp (left, fields_array[i].name) == 0) {
-					const NmcOutputField *valid_names = fields_array[i].group_list;
-					const NMMetaSettingInfoEditor *setting_info = fields_array[i].setting_info;
-
-					idx = i;
-					if (!right && !valid_names && !setting_info) {
-						found = TRUE;
-						break;
-					}
-					if (valid_names) {
-						for (j = 0; valid_names[j].name; j++) {
-							if (!right || strcasecmp (right, valid_names[j].name) == 0) {
-								found = TRUE;
-								break;
-							}
-						}
-					} else if (setting_info) {
-						for (j = 1; j < setting_info->properties_num; j++) {
-							if (!right || strcasecmp (right, setting_info->properties[j].property_name) == 0) {
-								found = TRUE;
-								break;
-							}
-						}
-					}
-					if (found)
-						break;
-				}
-			}
-			if (found) {
-				/* Add index to array, and field name (or NULL) to group_fields array */
-				g_array_append_val (array, idx);
-				if (group_fields && *group_fields)
-					g_ptr_array_add (*group_fields, g_strdup (right));
-			}
-			if (right)
-				*(right-1) = '.';  /* Restore the original string */
-		} else {
-			/* e.g. "general,ip4,ip6" */
-			for (i = 0; fields_array[i].name; i++) {
-				if (strcasecmp (*iter, fields_array[i].name) == 0) {
-					g_array_append_val (array, i);
-					break;
-				}
-			}
-		}
-
-		/* Field was not found - error case */
-		if (fields_array[i].name == NULL) {
-			/* Set GError */
-			if (!strcasecmp (*iter, "all") || !strcasecmp (*iter, "common"))
-				g_set_error (error, NMCLI_ERROR, 0, _("field '%s' has to be alone"), *iter);
-			else {
-				char *allowed_fields = nmc_get_allowed_fields (fields_array, idx);
-				g_set_error (error, NMCLI_ERROR, 1, _("invalid field '%s'; allowed fields: %s"),
-				             *iter, allowed_fields);
-				g_free (allowed_fields);
-			}
-
-			/* Free arrays on error */
-			g_array_free (array, TRUE);
-			array = NULL;
-			if (group_fields && *group_fields) {
-				g_ptr_array_free (*group_fields, TRUE);
-				*group_fields = NULL;
-			}
-			goto done;
-		}
+		g_array_append_val (array, idx);
+		if (group_fields)
+			g_ptr_array_add (group_fields, g_strdup (selection->items[i].sub_selection));
 	}
-done:
-	if (fields)
-		g_strfreev (fields);
+
+	if (group_fields)
+		*out_group_fields = group_fields;
 	return array;
 }
 
-/**
-* nmc_get_allowed_fields:
-* @fields_array: array of fields
-* @group_idx: index to the array (for second-level array in 'group' member),
-*   or -1
-*
-* Returns: string of allowed fields names.
-*   Caller is responsible for freeing the array.
-*/
 char *
-nmc_get_allowed_fields (const NmcOutputField fields_array[], int group_idx)
+nmc_get_allowed_fields_nested (const NMMetaAbstractInfo *abstract_info)
 {
 	GString *allowed_fields = g_string_sized_new (256);
 	int i;
+	const char *name = nm_meta_abstract_info_get_name (abstract_info);
+	gs_free gpointer nested_to_free = NULL;
+	const NMMetaAbstractInfo *const*nested = NULL;
 
-	if (group_idx != -1 && fields_array[group_idx].group_list) {
-		const NmcOutputField *second_level = fields_array[group_idx].group_list;
-
-		for (i = 0; second_level[i].name; i++) {
+	nested = nm_meta_abstract_info_get_nested (abstract_info, NULL, &nested_to_free);
+	if (nested) {
+		for (i = 0; nested && nested[i]; i++) {
 			g_string_append_printf (allowed_fields, "%s.%s,",
-			                        fields_array[group_idx].name, second_level[i].name);
+			                        name, nm_meta_abstract_info_get_name (nested[i]));
 		}
-	} else if (group_idx != -1 && fields_array[group_idx].setting_info) {
-		const NMMetaSettingInfoEditor *second_level = fields_array[group_idx].setting_info;
+	} else
+		g_string_append_printf (allowed_fields, "%s,", name);
 
-		for (i = 1; i < second_level->properties_num; i++) {
-			g_string_append_printf (allowed_fields, "%s.%s,",
-			                        fields_array[group_idx].name, second_level->properties[i].property_name);
-		}
-	} else {
-		for (i = 0; fields_array[i].name; i++)
-			g_string_append_printf (allowed_fields, "%s,", fields_array[i].name);
-	}
 	g_string_truncate (allowed_fields, allowed_fields->len - 1);
 
 	return g_string_free (allowed_fields, FALSE);
 }
 
+char *
+nmc_get_allowed_fields (const NMMetaAbstractInfo *const*fields_array)
+{
+	GString *allowed_fields = g_string_sized_new (256);
+	guint i;
+
+	for (i = 0; fields_array[i]; i++)
+		g_string_append_printf (allowed_fields, "%s,", nm_meta_abstract_info_get_name (fields_array[i]));
+
+	if (allowed_fields->len)
+		g_string_truncate (allowed_fields, allowed_fields->len - 1);
+
+	return g_string_free (allowed_fields, FALSE);
+}
+
 NmcOutputField *
-nmc_dup_fields_array (NmcOutputField fields[], size_t size, guint32 flags)
+nmc_dup_fields_array (const NMMetaAbstractInfo *const*fields, NmcOfFlags flags)
 {
 	NmcOutputField *row;
+	gsize l;
 
-	row = g_malloc0 (size);
-	memcpy (row, fields, size);
+	for (l = 0; fields[l]; l++) {
+	}
+
+	row = g_new0 (NmcOutputField, l + 1);
+	for (l = 0; fields[l]; l++)
+		row[l].info = fields[l];
 	row[0].flags = flags;
-
 	return row;
 }
 
@@ -840,24 +987,19 @@ nmc_empty_output_fields (NmcOutputData *output_data)
 	/* Empty output_data array */
 	if (output_data->output_data->len > 0)
 		g_ptr_array_remove_range (output_data->output_data, 0, output_data->output_data->len);
-
-	if (output_data->print_fields.indices) {
-		g_array_free (output_data->print_fields.indices, TRUE);
-		output_data->print_fields.indices = NULL;
-	}
 }
 
 static const char *
 colorize_string (NmcColorOption color_option,
-                 NmcTermColor color,
-                 NmcTermFormat color_fmt,
+                 NMMetaTermColor color,
+                 NMMetaTermFormat color_fmt,
                  const char *str,
                  char **out_to_free)
 {
 	const char *out = str;
 
 	if (   use_colors (color_option)
-	    && (color != NMC_TERM_COLOR_NORMAL || color_fmt != NMC_TERM_FORMAT_NORMAL)) {
+	    && (color != NM_META_TERM_COLOR_NORMAL || color_fmt != NM_META_TERM_FORMAT_NORMAL)) {
 		*out_to_free = nmc_colorize (color_option, color, color_fmt, "%s", str);
 		out = *out_to_free;
 	}
@@ -880,7 +1022,7 @@ get_value_to_print (NmcColorOption color_option,
 	nm_assert (out_to_free && !*out_to_free);
 
 	if (field_name)
-		value = _(field->name);
+		value = _(nm_meta_abstract_info_get_name (field->info));
 	else {
 		value = field->value
 		            ? (is_array
@@ -905,12 +1047,17 @@ get_value_to_print (NmcColorOption color_option,
 /*
  * Print both headers or values of 'field_values' array.
  * Entries to print and their order are specified via indices in
- * 'nmc->print_fields.indices' array.
+ * 'nmc->indices' array.
  * Various flags influencing the output of fields are set up in the first item
  * of 'field_values' array.
  */
 void
-print_required_fields (const NmcConfig *nmc_config, const NmcPrintFields *print_fields, const NmcOutputField *field_values)
+print_required_fields (const NmcConfig *nmc_config,
+                       NmcOfFlags of_flags,
+                       const GArray *indices,
+                       const char *header_name,
+                       int indent,
+                       const NmcOutputField *field_values)
 {
 	GString *str;
 	int width1, width2;
@@ -923,19 +1070,18 @@ print_required_fields (const NmcConfig *nmc_config, const NmcPrintFields *print_
 	gboolean terse = (nmc_config->print_output == NMC_PRINT_TERSE);
 	gboolean pretty = (nmc_config->print_output == NMC_PRINT_PRETTY);
 	gboolean escape = nmc_config->escape_values;
-	gboolean main_header_add = field_values[0].flags & NMC_OF_FLAG_MAIN_HEADER_ADD;
-	gboolean main_header_only = field_values[0].flags & NMC_OF_FLAG_MAIN_HEADER_ONLY;
-	gboolean field_names = field_values[0].flags & NMC_OF_FLAG_FIELD_NAMES;
-	gboolean section_prefix = field_values[0].flags & NMC_OF_FLAG_SECTION_PREFIX;
-	gboolean main_header = main_header_add || main_header_only;
+	gboolean main_header_add = of_flags & NMC_OF_FLAG_MAIN_HEADER_ADD;
+	gboolean main_header_only = of_flags & NMC_OF_FLAG_MAIN_HEADER_ONLY;
+	gboolean field_names = of_flags & NMC_OF_FLAG_FIELD_NAMES;
+	gboolean section_prefix = of_flags & NMC_OF_FLAG_SECTION_PREFIX;
 
 	enum { ML_HEADER_WIDTH = 79 };
 	enum { ML_VALUE_INDENT = 40 };
 
 
 	/* --- Main header --- */
-	if (main_header && pretty) {
-		int header_width = nmc_string_screen_width (print_fields->header_name, NULL) + 4;
+	if ((main_header_add || main_header_only) && pretty) {
+		int header_width = nmc_string_screen_width (header_name, NULL) + 4;
 
 		if (multiline) {
 			table_width = header_width < ML_HEADER_WIDTH ? ML_HEADER_WIDTH : header_width;
@@ -945,10 +1091,10 @@ print_required_fields (const NmcConfig *nmc_config, const NmcPrintFields *print_
 			line = g_strnfill (table_width, '=');
 		}
 
-		width1 = strlen (print_fields->header_name);
-		width2 = nmc_string_screen_width (print_fields->header_name, NULL);
+		width1 = strlen (header_name);
+		width2 = nmc_string_screen_width (header_name, NULL);
 		g_print ("%s\n", line);
-		g_print ("%*s\n", (table_width + width2)/2 + width1 - width2, print_fields->header_name);
+		g_print ("%*s\n", (table_width + width2)/2 + width1 - width2, header_name);
 		g_print ("%s\n", line);
 		g_free (line);
 	}
@@ -965,9 +1111,9 @@ print_required_fields (const NmcConfig *nmc_config, const NmcPrintFields *print_
 
 
 	if (multiline) {
-		for (i = 0; i < print_fields->indices->len; i++) {
+		for (i = 0; i < indices->len; i++) {
 			char *tmp;
-			int idx = g_array_index (print_fields->indices, int, i);
+			int idx = g_array_index (indices, int, i);
 			gboolean is_array = field_values[idx].value_is_array;
 
 			/* section prefix can't be an array */
@@ -989,7 +1135,7 @@ print_required_fields (const NmcConfig *nmc_config, const NmcPrintFields *print_
 					tmp = g_strdup_printf ("%s%s%s[%d]:",
 					                       section_prefix ? (const char*) field_values[0].value : "",
 					                       section_prefix ? "." : "",
-					                       _(field_values[idx].name),
+					                       _(nm_meta_abstract_info_get_name (field_values[idx].info)),
 					                       j);
 					width1 = strlen (tmp);
 					width2 = nmc_string_screen_width (tmp, NULL);
@@ -1009,7 +1155,7 @@ print_required_fields (const NmcConfig *nmc_config, const NmcPrintFields *print_
 				tmp = g_strdup_printf ("%s%s%s:",
 				                       section_prefix ? hdr_name : "",
 				                       section_prefix ? "." : "",
-				                       _(field_values[idx].name));
+				                       _(nm_meta_abstract_info_get_name (field_values[idx].info)));
 				width1 = strlen (tmp);
 				width2 = nmc_string_screen_width (tmp, NULL);
 				g_print ("%-*s%s\n", terse ? 0 : ML_VALUE_INDENT+width1-width2, tmp, print_val);
@@ -1029,8 +1175,8 @@ print_required_fields (const NmcConfig *nmc_config, const NmcPrintFields *print_
 
 	str = g_string_new (NULL);
 
-	for (i = 0; i < print_fields->indices->len; i++) {
-		int idx = g_array_index (print_fields->indices, int, i);
+	for (i = 0; i < indices->len; i++) {
+		int idx = g_array_index (indices, int, i);
 		gs_free char *val_to_free = NULL;
 		const char *value = get_value_to_print (nmc_config->use_colors, (NmcOutputField *) field_values+idx, field_names,
 		                                        not_set_str, &val_to_free);
@@ -1060,8 +1206,8 @@ print_required_fields (const NmcConfig *nmc_config, const NmcPrintFields *print_
 	/* Print actual values */
 	if (str->len > 0) {
 		g_string_truncate (str, str->len-1);  /* Chop off last column separator */
-		if (print_fields->indent > 0) {
-			indent_str = g_strnfill (print_fields->indent, ' ');
+		if (indent > 0) {
+			indent_str = g_strnfill (indent, ' ');
 			g_string_prepend (str, indent_str);
 			g_free (indent_str);
 		}
@@ -1091,7 +1237,7 @@ print_data_prepare_width (GPtrArray *output_data)
 
 	/* How many fields? */
 	row = g_ptr_array_index (output_data, 0);
-	while (row->name) {
+	while (row->info) {
 		num_fields++;
 		row++;
 	}
@@ -1118,13 +1264,20 @@ print_data_prepare_width (GPtrArray *output_data)
 }
 
 void
-print_data (const NmcConfig *nmc_config, const NmcOutputData *out)
+print_data (const NmcConfig *nmc_config,
+            const GArray *indices,
+            const char *header_name,
+            int indent,
+            const NmcOutputData *out)
 {
 	guint i;
 
 	for (i = 0; i < out->output_data->len; i++) {
-		print_required_fields (nmc_config, &out->print_fields,
-		                       g_ptr_array_index (out->output_data, i));
+		const NmcOutputField *field_values = g_ptr_array_index (out->output_data, i);
+
+		print_required_fields (nmc_config, field_values[0].flags,
+		                       indices, header_name,
+		                       indent, field_values);
 	}
 }
 

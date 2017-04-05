@@ -21,6 +21,8 @@
 
 #include "nm-default.h"
 
+#include "agent.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -31,7 +33,6 @@
 #include "utils.h"
 #include "nm-secret-agent-simple.h"
 #include "polkit-agent.h"
-#include "agent.h"
 
 static void
 usage (void)

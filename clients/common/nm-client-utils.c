@@ -210,22 +210,9 @@ finish:
 char **
 nmc_strsplit_set (const char *str, const char *delimiter, int max_tokens)
 {
-	char **result;
-	uint i;
-	uint j;
-
-	result = g_strsplit_set (str, delimiter, max_tokens);
-
 	/* remove empty strings */
-	for (i = 0; result && result[i]; i++) {
-		if (*(result[i]) == '\0') {
-			g_free (result[i]);
-			for (j = i; result[j]; j++)
-				result[j] = result[j + 1];
-			i--;
-		}
-	}
-	return result;
+	return _nm_utils_strv_cleanup (g_strsplit_set (str, delimiter, max_tokens),
+	                               FALSE, TRUE, FALSE);
 }
 
 gboolean
@@ -235,5 +222,26 @@ matches (const char *cmd, const char *pattern)
 	if (!len || len > strlen (pattern))
 		return FALSE;
 	return memcmp (pattern, cmd, len) == 0;
+}
+
+const char *
+nmc_bond_validate_mode (const char *mode, GError **error)
+{
+	unsigned long mode_int;
+	static const char *valid_modes[] = { "balance-rr",
+	                                     "active-backup",
+	                                     "balance-xor",
+	                                     "broadcast",
+	                                     "802.3ad",
+	                                     "balance-tlb",
+	                                     "balance-alb",
+	                                     NULL };
+	if (nmc_string_to_uint (mode, TRUE, 0, 6, &mode_int)) {
+		/* Translate bonding mode numbers to mode names:
+		 * https://www.kernel.org/doc/Documentation/networking/bonding.txt
+		 */
+		return valid_modes[mode_int];
+	} else
+		return nmc_string_is_valid (mode, valid_modes, error);
 }
 

@@ -24,11 +24,9 @@
 #include "nm-meta-setting-desc.h"
 
 #include "nmcli.h"
-#include "utils.h"
 
 /*****************************************************************************/
 
-NMSetting *nmc_setting_new_for_name (const char *name);
 void nmc_setting_custom_init (NMSetting *setting);
 void nmc_setting_ip4_connect_handlers (NMSettingIPConfig *setting);
 void nmc_setting_ip6_connect_handlers (NMSettingIPConfig *setting);
@@ -62,6 +60,6 @@ void nmc_property_set_default_value (NMSetting *setting, const char *prop);
 gboolean nmc_property_get_gvalue (NMSetting *setting, const char *prop, GValue *value);
 gboolean nmc_property_set_gvalue (NMSetting *setting, const char *prop, GValue *value);
 
-gboolean setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets);
+gboolean setting_details (const NmcConfig *nmc_config, NMSetting *setting, const char *one_prop, gboolean secrets);
 
 #endif /* NMC_SETTINGS_H */

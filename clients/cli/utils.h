@@ -40,10 +40,10 @@ gboolean nmc_parse_args (nmc_arg_t *arg_arr, gboolean last, int *argc, char ***a
 char *ssid_to_hex (const char *str, gsize len);
 void nmc_terminal_erase_line (void);
 void nmc_terminal_show_progress (const char *str);
-const char *nmc_term_color_sequence (NmcTermColor color);
-const char *nmc_term_format_sequence (NmcTermFormat format);
-NmcTermColor nmc_term_color_parse_string (const char *str, GError **error);
-char *nmc_colorize (NmcColorOption color_option, NmcTermColor color, NmcTermFormat format, const char * fmt, ...)  _nm_printf (4, 5);
+const char *nmc_term_color_sequence (NMMetaTermColor color);
+const char *nmc_term_format_sequence (NMMetaTermFormat format);
+NMMetaTermColor nmc_term_color_parse_string (const char *str, GError **error);
+char *nmc_colorize (NmcColorOption color_option, NMMetaTermColor color, NMMetaTermFormat format, const char * fmt, ...)  _nm_printf (4, 5);
 void nmc_filter_out_colors_inplace (char *str);
 char *nmc_filter_out_colors (const char *str);
 char *nmc_get_user_input (const char *ask_str);
@@ -57,19 +57,72 @@ void set_val_str  (NmcOutputField fields_array[], guint32 index, char *value);
 void set_val_strc (NmcOutputField fields_array[], guint32 index, const char *value);
 void set_val_arr  (NmcOutputField fields_array[], guint32 index, char **value);
 void set_val_arrc (NmcOutputField fields_array[], guint32 index, const char **value);
-void set_val_color_all (NmcOutputField fields_array[], NmcTermColor color);
-void set_val_color_fmt_all (NmcOutputField fields_array[], NmcTermFormat format);
+void set_val_color_all (NmcOutputField fields_array[], NMMetaTermColor color);
+void set_val_color_fmt_all (NmcOutputField fields_array[], NMMetaTermFormat format);
 void nmc_free_output_field_values (NmcOutputField fields_array[]);
+
+typedef struct {
+	const NMMetaAbstractInfo *info;
+	const char *sub_selection;
+	guint idx;
+} NmcOutputSelectionItem;
+
+typedef struct {
+	const guint num;
+	const NmcOutputSelectionItem items[];
+} NmcOutputSelection;
+
+NmcOutputSelection *nmc_output_selection_create (const NMMetaAbstractInfo *const* fields_array,
+                                                 const char *fields_str,
+                                                 GError **error);
+
 GArray *parse_output_fields (const char *fields_str,
-                             const NmcOutputField fields_array[],
+                             const NMMetaAbstractInfo *const* fields_array,
                              gboolean parse_groups,
                              GPtrArray **group_fields,
                              GError **error);
-char *nmc_get_allowed_fields (const NmcOutputField fields_array[], int group_idx);
-NmcOutputField *nmc_dup_fields_array (NmcOutputField fields[], size_t size, guint32 flags);
+char *nmc_get_allowed_fields_nested (const NMMetaAbstractInfo *abstract_info);
+char *nmc_get_allowed_fields (const NMMetaAbstractInfo *const*fields_array);
+NmcOutputField *nmc_dup_fields_array (const NMMetaAbstractInfo *const*fields, NmcOfFlags flags);
 void nmc_empty_output_fields (NmcOutputData *output_data);
-void print_required_fields (const NmcConfig *nmc_config, const NmcPrintFields *print_fields, const NmcOutputField field_values[]);
+void print_required_fields (const NmcConfig *nmc_config,
+                            NmcOfFlags of_flags,
+                            const GArray *indices,
+                            const char *header_name,
+                            int indent,
+                            const NmcOutputField *field_values);
 void print_data_prepare_width (GPtrArray *output_data);
-void print_data (const NmcConfig *nmc_config, const NmcOutputData *out);
+void print_data (const NmcConfig *nmc_config,
+                 const GArray *indices,
+                 const char *header_name,
+                 int indent,
+                 const NmcOutputData *out);
+
+/*****************************************************************************/
+
+struct _NmcMetaGenericInfo {
+	const NMMetaType *meta_type;
+	const char *name;
+	const NmcMetaGenericInfo *const*nested;
+	gconstpointer (*get_fcn) (const NMMetaEnvironment *environment,
+	                          gpointer environment_user_data,
+	                          const NmcMetaGenericInfo *info,
+	                          gpointer target,
+	                          NMMetaAccessorGetType get_type,
+	                          NMMetaAccessorGetFlags get_flags,
+	                          gpointer *out_to_free);
+};
+
+#define NMC_META_GENERIC(n, ...) \
+	(&((NmcMetaGenericInfo) { \
+		.meta_type =                        &nmc_meta_type_generic_info, \
+		.name =                             N_ (n), \
+		__VA_ARGS__ \
+	}))
+
+#define NMC_META_GENERIC_WITH_NESTED(n, nest) \
+	NMC_META_GENERIC (n, .nested = (nest))
+
+/*****************************************************************************/
 
 #endif /* NMC_UTILS_H */

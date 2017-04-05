@@ -25,9 +25,36 @@
 #define NM_META_TEXT_HIDDEN "<hidden>"
 
 typedef enum {
+	NM_META_TERM_COLOR_NORMAL  = 0,
+	NM_META_TERM_COLOR_BLACK   = 1,
+	NM_META_TERM_COLOR_RED     = 2,
+	NM_META_TERM_COLOR_GREEN   = 3,
+	NM_META_TERM_COLOR_YELLOW  = 4,
+	NM_META_TERM_COLOR_BLUE    = 5,
+	NM_META_TERM_COLOR_MAGENTA = 6,
+	NM_META_TERM_COLOR_CYAN    = 7,
+	NM_META_TERM_COLOR_WHITE   = 8,
+} NMMetaTermColor;
+
+typedef enum {
+	NM_META_TERM_FORMAT_NORMAL     = 0,
+	NM_META_TERM_FORMAT_BOLD       = 1,
+	NM_META_TERM_FORMAT_DIM        = 2,
+	NM_META_TERM_FORMAT_UNDERLINE  = 3,
+	NM_META_TERM_FORMAT_BLINK      = 4,
+	NM_META_TERM_FORMAT_REVERSE    = 5,
+	NM_META_TERM_FORMAT_HIDDEN     = 6,
+} NMMetaTermFormat;
+
+typedef enum {
 	NM_META_ACCESSOR_GET_TYPE_PRETTY,
 	NM_META_ACCESSOR_GET_TYPE_PARSABLE,
 } NMMetaAccessorGetType;
+
+typedef enum {
+	NM_META_ACCESSOR_GET_FLAGS_NONE                                         = 0,
+	NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS                                 = (1LL <<  0),
+} NMMetaAccessorGetFlags;
 
 typedef enum {
 	NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_NUMERIC                       = (1LL <<  0),
@@ -45,36 +72,40 @@ typedef enum {
 	NM_META_PROPERTY_TYPE_MAC_MODE_INFINIBAND,
 } NMMetaPropertyTypeMacMode;
 
+typedef struct _NMMetaEnvironment           NMMetaEnvironment;
+typedef struct _NMMetaType                  NMMetaType;
+typedef struct _NMMetaAbstractInfo          NMMetaAbstractInfo;
 typedef struct _NMMetaSettingInfoEditor     NMMetaSettingInfoEditor;
-typedef struct _NMMetaPropertyInfo    NMMetaPropertyInfo;
-typedef struct _NMMetaPropertyType    NMMetaPropertyType;
-typedef struct _NMMetaPropertyTypData NMMetaPropertyTypData;
+typedef struct _NMMetaPropertyInfo          NMMetaPropertyInfo;
+typedef struct _NMMetaPropertyType          NMMetaPropertyType;
+typedef struct _NMMetaPropertyTypData       NMMetaPropertyTypData;
 
 struct _NMMetaPropertyType {
 
-	const char *(*describe_fcn) (const NMMetaSettingInfoEditor *setting_info,
-	                             const NMMetaPropertyInfo *property_info,
+	const char *(*describe_fcn) (const NMMetaPropertyInfo *property_info,
 	                             char **out_to_free);
 
-	char *(*get_fcn) (const NMMetaSettingInfoEditor *setting_info,
+	char *(*get_fcn) (const NMMetaEnvironment *environment,
+	                  gpointer environment_user_data,
 	                  const NMMetaPropertyInfo *property_info,
 	                  NMSetting *setting,
 	                  NMMetaAccessorGetType get_type,
-	                  gboolean show_secrets);
-	gboolean (*set_fcn) (const NMMetaSettingInfoEditor *setting_info,
+	                  NMMetaAccessorGetFlags get_flags);
+	gboolean (*set_fcn) (const NMMetaEnvironment *environment,
+	                     gpointer environment_user_data,
 	                     const NMMetaPropertyInfo *property_info,
 	                     NMSetting *setting,
 	                     const char *value,
 	                     GError **error);
-	gboolean (*remove_fcn) (const NMMetaSettingInfoEditor *setting_info,
+	gboolean (*remove_fcn) (const NMMetaEnvironment *environment,
+	                        gpointer environment_user_data,
 	                        const NMMetaPropertyInfo *property_info,
 	                        NMSetting *setting,
 	                        const char *option,
 	                        guint32 idx,
 	                        GError **error);
 
-	const char *const*(*values_fcn) (const NMMetaSettingInfoEditor *setting_info,
-	                                 const NMMetaPropertyInfo *property_info,
+	const char *const*(*values_fcn) (const NMMetaPropertyInfo *property_info,
 	                                 char ***out_to_free);
 };
 
@@ -103,6 +134,10 @@ struct _NMMetaPropertyTypData {
 };
 
 struct _NMMetaPropertyInfo {
+	const NMMetaType *meta_type;
+
+	const NMMetaSettingInfoEditor *setting_info;
+
 	const char *property_name;
 
 	/* the property list for now must contain as first field the
@@ -122,6 +157,7 @@ struct _NMMetaPropertyInfo {
 };
 
 struct _NMMetaSettingInfoEditor {
+	const NMMetaType *meta_type;
 	const NMMetaSettingInfo *general;
 	/* the order of the properties matter. The first *must* be the
 	 * "name", and then the order is as they are listed by default. */
@@ -129,9 +165,57 @@ struct _NMMetaSettingInfoEditor {
 	guint properties_num;
 };
 
+struct _NMMetaType {
+	const char *type_name;
+	const char *(*get_name) (const NMMetaAbstractInfo *abstract_info);
+	const NMMetaAbstractInfo *const*(*get_nested) (const NMMetaAbstractInfo *abstract_info,
+	                                               guint *out_len,
+	                                               gpointer *out_to_free);
+	gconstpointer (*get_fcn) (const NMMetaEnvironment *environment,
+	                          gpointer environment_user_data,
+	                          const NMMetaAbstractInfo *info,
+	                          gpointer target,
+	                          NMMetaAccessorGetType get_type,
+	                          NMMetaAccessorGetFlags get_flags,
+	                          gpointer *out_to_free);
+};
+
+struct _NMMetaAbstractInfo {
+	union {
+		const NMMetaType *meta_type;
+		union {
+			NMMetaSettingInfoEditor setting_info;
+			NMMetaPropertyInfo property_info;
+		} as;
+	};
+};
+
+extern const NMMetaType nm_meta_type_setting_info_editor;
+extern const NMMetaType nm_meta_type_property_info;
+
 extern const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[_NM_META_SETTING_TYPE_NUM];
 
-/* FIXME: don't expose this function on it's own, at least not from this file. */
-const char *nmc_bond_validate_mode (const char *mode, GError **error);
+/*****************************************************************************/
+
+typedef enum {
+	NM_META_ENV_WARN_LEVEL_INFO,
+	NM_META_ENV_WARN_LEVEL_WARN,
+} NMMetaEnvWarnLevel;
+
+/* the settings-meta data is supposed to be independent of an actual client
+ * implementation. Hence, there is a need for hooks to the meta-data.
+ * The meta-data handlers may call back to the enviroment with certain
+ * actions. */
+struct _NMMetaEnvironment {
+
+	void (*warn_fcn) (const NMMetaEnvironment *environment,
+	                  gpointer environment_user_data,
+	                  NMMetaEnvWarnLevel warn_level,
+	                  const char *fmt_l10n, /* the untranslated format string, but it is marked for translation using N_(). */
+	                  va_list ap);
+
+};
+
+/*****************************************************************************/
 
 #endif /* __NM_META_SETTING_DESC_H__ */

@@ -270,6 +270,8 @@ test-*.trs
 /src/tests/test-utils
 /src/tests/test-wired-defname
 
+/clients/common/tests/test-general
+
 /vapi/*.vapi
 
 # The following names are no longer present on this branch,

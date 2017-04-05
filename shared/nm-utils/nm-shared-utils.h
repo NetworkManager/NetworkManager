@@ -45,6 +45,11 @@ void nm_utils_strbuf_append_str (char **buf, gsize *len, const char *str);
 
 gssize nm_utils_strv_find_first (char **list, gssize len, const char *needle);
 
+char **_nm_utils_strv_cleanup (char **strv,
+                               gboolean strip_whitespace,
+                               gboolean skip_empty,
+                               gboolean skip_repeated);
+
 /*****************************************************************************/
 
 gint64 _nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max, gint64 fallback);
