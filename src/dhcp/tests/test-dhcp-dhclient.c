@@ -440,6 +440,9 @@ test_override_hostname6 (void)
 static const char *nonfqdn_hostname6_expected = \
 	"# Created by NetworkManager\n"
 	"\n"
+	"send fqdn.fqdn \"blahblah\"; # added by NetworkManager\n"
+	"send fqdn.server-update on;\n"
+	"\n"
 	"also request dhcp6.name-servers;\n"
 	"also request dhcp6.domain-search;\n"
 	"also request dhcp6.client-id;\n"
@@ -448,7 +451,7 @@ static const char *nonfqdn_hostname6_expected = \
 static void
 test_nonfqdn_hostname6 (void)
 {
-	/* Non-FQDN hostname can't be used with dhclient */
+	/* Non-FQDN hostname can now be used with dhclient */
 	test_config (NULL, nonfqdn_hostname6_expected,
 	             TRUE, "blahblah",
 	             NULL, NULL,

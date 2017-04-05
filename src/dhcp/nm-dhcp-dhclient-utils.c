@@ -168,10 +168,7 @@ add_ip4_config (GString *str, GBytes *client_id, const char *hostname, const cha
 static void
 add_hostname6 (GString *str, const char *hostname)
 {
-	/* dhclient only supports the fqdn.fqdn for DHCPv6 and requires a fully-
-	 * qualified name for this option, so we must require one here too.
-	 */
-	if (hostname && strchr (hostname, '.')) {
+	if (hostname) {
 		g_string_append_printf (str, FQDN_FORMAT "\n", hostname);
 		g_string_append (str,
 		                 "send fqdn.server-update on;\n");
