@@ -716,6 +716,7 @@ create_pppd_cmd_line (NMPPPManager *self,
                       NMSettingAdsl  *adsl,
                       const char *ppp_name,
                       guint baud_override,
+                      gboolean ip4_enabled,
                       gboolean ip6_enabled,
                       GError **err)
 {
@@ -730,6 +731,14 @@ create_pppd_cmd_line (NMPPPManager *self,
 	if (!pppd_binary)
 		return NULL;
 
+	if (!ip4_enabled && !ip6_enabled) {
+		g_set_error_literal (err,
+		                     NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_FAILED,
+		                     "Neither IPv4 or IPv6 allowed.");
+		return NULL;
+	}
+
 	/* Create pppd command line */
 	cmd = nm_cmd_line_new ();
 	nm_cmd_line_add_string (cmd, pppd_binary);
@@ -740,11 +749,15 @@ create_pppd_cmd_line (NMPPPManager *self,
 	/* NM handles setting the default route */
 	nm_cmd_line_add_string (cmd, "nodefaultroute");
 
+	if (!ip4_enabled)
+		nm_cmd_line_add_string (cmd, "noip");
+
 	if (ip6_enabled) {
 		/* Allow IPv6 to be configured by IPV6CP */
 		nm_cmd_line_add_string (cmd, "ipv6");
 		nm_cmd_line_add_string (cmd, ",");
-	}
+	} else
+		nm_cmd_line_add_string (cmd, "noipv6");
 
 	ppp_debug = !!getenv ("NM_PPP_DEBUG");
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PPP))
@@ -922,8 +935,9 @@ _ppp_manager_start (NMPPPManager *manager,
 	NMCmdLine *ppp_cmd;
 	char *cmd_str;
 	struct stat st;
-	const char *ip6_method;
+	const char *ip6_method, *ip4_method;
 	gboolean ip6_enabled = FALSE;
+	gboolean ip4_enabled = FALSE;
 
 	g_return_val_if_fail (NM_IS_PPP_MANAGER (manager), FALSE);
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
@@ -968,10 +982,21 @@ _ppp_manager_start (NMPPPManager *manager,
 
 	adsl_setting = (NMSettingAdsl *) nm_connection_get_setting (connection, NM_TYPE_SETTING_ADSL);
 
+	/* Figure out what address methods should be enabled */
+	ip4_method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	ip4_enabled = g_strcmp0 (ip4_method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0;
 	ip6_method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
 	ip6_enabled = g_strcmp0 (ip6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0;
 
-	ppp_cmd = create_pppd_cmd_line (manager, s_ppp, pppoe_setting, adsl_setting, ppp_name, baud_override, ip6_enabled, err);
+	ppp_cmd = create_pppd_cmd_line (manager,
+	                                s_ppp,
+	                                pppoe_setting,
+	                                adsl_setting,
+	                                ppp_name,
+	                                baud_override,
+	                                ip4_enabled,
+	                                ip6_enabled,
+	                                err);
 	if (!ppp_cmd)
 		goto out;
 
