@@ -115,22 +115,33 @@ nm_vpn_supports_ipv6 (NMConnection *connection)
 const VpnPasswordName *
 nm_vpn_get_secret_names (const char *service_type)
 {
+	static const VpnPasswordName const generic_vpn_secrets[] = {
+		{ "password", N_("Password") },
+		{ 0 }
+	};
+	static const VpnPasswordName const openvpn_secrets[] = {
+		{ "password", N_("Password") },
+		{ "cert-pass", N_("Certificate password") },
+		{ "http-proxy-password", N_("HTTP proxy password") },
+		{ 0 }
+	};
+	static const VpnPasswordName const vpnc_secrets[] = {
+		{ "Xauth password", N_("Password") },
+		{ "IPSec secret", N_("Group password") },
+		{ 0 }
+	};
+	static const VpnPasswordName const swan_secrets[] = {
+		{ "xauthpassword", N_("Password") },
+		{ "pskvalue", N_("Group password") },
+		{ 0 }
+	};
+	static const VpnPasswordName const openconnect_secrets[] = {
+		{ "gateway", N_("Gateway") },
+		{ "cookie", N_("Cookie") },
+		{ "gwcert", N_("Gateway certificate hash") },
+		{ 0 }
+	};
 	const char *type;
-	static VpnPasswordName generic_vpn_secrets[] = { {"password", N_("Password")}, {NULL, NULL} };
-	static VpnPasswordName openvpn_secrets[] = { {"password", N_("Password")},
-	                                             {"cert-pass", N_("Certificate password")},
-	                                             {"http-proxy-password", N_("HTTP proxy password")},
-	                                             {NULL, NULL} };
-	static VpnPasswordName vpnc_secrets[] = { {"Xauth password", N_("Password")},
-	                                          {"IPSec secret", N_("Group password")},
-	                                          {NULL, NULL} };
-	static VpnPasswordName swan_secrets[] = { {"xauthpassword", N_("Password")},
-	                                          {"pskvalue", N_("Group password")},
-	                                          {NULL, NULL} };
-	static VpnPasswordName openconnect_secrets[] = { {"gateway", N_("Gateway")},
-	                                                 {"cookie", N_("Cookie")},
-	                                                 {"gwcert", N_("Gateway certificate hash")},
-	                                                 {NULL, NULL} };
 
 	if (!service_type)
 		return NULL;
