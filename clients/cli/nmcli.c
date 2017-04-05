@@ -219,9 +219,9 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 	if (argc > 1 && nm_streq (argv[1], "--complete-args")) {
 		nmc->complete = TRUE;
 		argv[1] = argv[0];
-		next_arg (nmc, &argc, &argv);
+		next_arg (nmc, &argc, &argv, NULL);
 	}
-	next_arg (nmc, &argc, &argv);
+	next_arg (nmc, &argc, &argv, NULL);
 
 	/* parse options */
 	while (argc) {
@@ -239,7 +239,7 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 			opt++;
 			/* '--' ends options */
 			if (opt[1] == '\0') {
-				next_arg (nmc, &argc, &argv);
+				next_arg (nmc, &argc, &argv, NULL);
 				break;
 			}
 		}
@@ -390,7 +390,7 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 			return FALSE;
 		}
-		next_arg (nmc, &argc, &argv);
+		next_arg (nmc, &argc, &argv, NULL);
 	}
 
 	/* Now run the requested command */

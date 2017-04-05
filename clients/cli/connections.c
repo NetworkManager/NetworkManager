@@ -1734,7 +1734,7 @@ get_connection (NmCli *nmc, int *argc, char ***argv, int *pos, GError **error)
 	 * don't switch to next argument.
 	 */
 	if (!pos || !*pos)
-		next_arg (nmc, argc, argv);
+		next_arg (nmc, argc, argv, NULL);
 
 	return connection;
 }
@@ -1747,19 +1747,15 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 	GPtrArray *invisibles, *sorted_cons;
 	gboolean active_only = FALSE;
 	GArray *order = NULL;
-	int i;
+	int i, option;
 
-	/* check connection show options [--active] */
-	while (argc) {
-		if (argc == 1 && nmc->complete) {
-			nmc_complete_strings (*argv, "--active",
-			                             "--order", NULL);
-		}
-
-		if (!active_only && nmc_arg_is_option (*argv, "active")) {
+	/* check connection show options [--active] [--order <order spec>] */
+	while ((option = next_arg (nmc, &argc, &argv, "--active", "--order", NULL)) > 0) {
+		switch (option) {
+		case 1: /* --active */
 			active_only = TRUE;
-			next_arg (nmc, &argc, &argv);
-		} else if (!order && nmc_arg_is_option (*argv, "order")) {
+			break;
+		case 2: /* --order */
 			argc--;
 			argv++;
 			if (!argc) {
@@ -1767,12 +1763,12 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 				                     _("'--order' argument is missing"));
 				goto finish;
 			}
-			/* TODO: complete --order */
 			order = parse_preferred_connection_order (*argv, &err);
 			if (err)
 				goto finish;
-			next_arg (nmc, &argc, &argv);
-		} else {
+			break;
+		default:
+			g_assert_not_reached();
 			break;
 		}
 	}
@@ -1890,12 +1886,12 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 			if (!acon)
 				acon = get_ac_for_connection (active_cons, con);
 			if (active_only && !acon) {
-				next_arg (nmc, &argc, &argv);
+				next_arg (nmc, &argc, &argv, NULL);
 				continue;
 			}
 
 			if (nmc->complete) {
-				next_arg (nmc, &argc, &argv);
+				next_arg (nmc, &argc, &argv, NULL);
 				continue;
 			}
 
@@ -1933,7 +1929,7 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 			 * so process the same argument again.
 			 */
 			if (!pos)
-				next_arg (nmc, &argc, &argv);
+				next_arg (nmc, &argc, &argv, NULL);
 		}
 	}
 
@@ -2558,8 +2554,8 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	gs_free_error GError *error = NULL;
 	char **arg_arr = NULL;
 	int arg_num;
-	char ***argv_ptr = &argv;
-	int *argc_ptr = &argc;
+	char ***argv_ptr;
+	int *argc_ptr;
 
 	/*
 	 * Set default timeout for connection activation.
@@ -2567,6 +2563,10 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	 */
 	if (nmc->timeout == -1)
 		nmc->timeout = 90;
+
+	next_arg (nmc, &argc, &argv, NULL);
+	argv_ptr = &argv;
+	argc_ptr = &argc;
 
 	if (argc == 0 && nmc->ask) {
 		char *line;
@@ -2634,7 +2634,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 			g_printerr (_("Unknown parameter: %s\n"), *argv);
 		}
 
-		next_arg (nmc, &argc, &argv);
+		next_arg (nmc, &argc, &argv, NULL);
 	}
 
 	if (nmc->complete)
@@ -2751,12 +2751,16 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 	const GPtrArray *active_cons;
 	GSList *queue = NULL, *iter;
 	char **arg_arr = NULL;
-	char **arg_ptr = argv;
-	int arg_num = argc;
+	char **arg_ptr;
+	int arg_num;
 	int idx = 0;
 
 	if (nmc->timeout == -1)
 		nmc->timeout = 10;
+
+	next_arg (nmc, &argc, &argv, NULL);
+	arg_ptr = argv;
+	arg_num = argc;
 
 	if (argc == 0) {
 		/* nmc_do_cmd() should not call this with argc=0. */
@@ -2816,7 +2820,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 		}
 
 		if (idx == 0)
-			next_arg (nmc->ask ? NULL : nmc, &arg_num, &arg_ptr);
+			next_arg (nmc->ask ? NULL : nmc, &arg_num, &arg_ptr, NULL);
 	}
 
 	if (!queue) {
@@ -4930,6 +4934,8 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 	OptionInfo *candidate;
 	gboolean seen_dash_dash = FALSE;
 
+	next_arg (nmc, &argc, &argv, NULL);
+
 	rl_attempted_completion_function = (rl_completion_func_t *) nmcli_con_add_tab_completion;
 
 	nmc->return_value = NMC_RESULT_SUCCESS;
@@ -4949,7 +4955,7 @@ read_properties:
 			 * options and properties to be separated with "--" */
 			g_clear_error (&error);
 			seen_dash_dash = TRUE;
-			next_arg (nmc, &argc, &argv);
+			next_arg (nmc, &argc, &argv, NULL);
 			goto read_properties;
 		} else if (g_strcmp0 (*argv, "save") == 0) {
 			/* It would be better if "save" was a separate argument and not
@@ -4971,7 +4977,7 @@ read_properties:
 				g_clear_error (&error);
 				goto finish;
 			}
-			next_arg (nmc, &argc, &argv);
+			next_arg (nmc, &argc, &argv, NULL);
 			goto read_properties;
 		}
 
@@ -7891,6 +7897,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 	                         {"path",     TRUE, &con_path, FALSE},
 	                         {NULL} };
 
+	next_arg (nmc, &argc, &argv, NULL);
 	if (argc == 1 && nmc->complete)
 		nmc_complete_strings (*argv, "type", "con-name", "id", "uuid", "path", NULL);
 
@@ -8094,11 +8101,10 @@ do_connection_modify (NmCli *nmc,
 	GError *error = NULL;
 	gboolean temporary = FALSE;
 
-	if (argc && nmc_arg_is_option (*argv, "temporary")) {
-		if (nmc->complete)
-			goto finish;
+	/* Check --temporary */
+	if (next_arg (nmc, &argc, &argv, "--temporary", NULL) > 0) {
 		temporary = TRUE;
-		next_arg (nmc, &argc, &argv);
+		next_arg (nmc, &argc, &argv, NULL);
 	}
 
 	connection = get_connection (nmc, &argc, &argv, NULL, &error);
@@ -8187,12 +8193,17 @@ do_connection_clone (NmCli *nmc, int argc, char **argv)
 	gboolean temporary = FALSE;
 	char **arg_arr = NULL;
 	int arg_num;
-	char ***argv_ptr = &argv;
-	int *argc_ptr = &argc;
+	char ***argv_ptr;
+	int *argc_ptr;
 	GError *error = NULL;
 
-	if (argc == 1 && nmc->complete)
-		nmc_complete_strings (*argv, "temporary", NULL);
+	if (next_arg (nmc, &argc, &argv, "--temporary", NULL) > 0) {
+		temporary = TRUE;
+		next_arg (nmc, &argc, &argv, NULL);
+	}
+
+	argv_ptr = &argv;
+	argc_ptr = &argc;
 
 	if (argc == 0 && nmc->ask) {
 		char *line;
@@ -8205,9 +8216,6 @@ do_connection_clone (NmCli *nmc, int argc, char **argv)
 		g_free (line);
 		argv_ptr = &arg_arr;
 		argc_ptr = &arg_num;
-	} else if (nmc_arg_is_option (*argv, "temporary")) {
-		temporary = TRUE;
-		next_arg (nmc, &argc, &argv);
 	}
 
 	connection = get_connection (nmc, argc_ptr, argv_ptr, NULL, &error);
@@ -8230,7 +8238,7 @@ do_connection_clone (NmCli *nmc, int argc, char **argv)
 		goto finish;
 	}
 
-	if (next_arg (nmc->ask ? NULL : nmc, argc_ptr, argv_ptr) == 0) {
+	if (next_arg (nmc->ask ? NULL : nmc, argc_ptr, argv_ptr, NULL) == 0) {
 		g_string_printf (nmc->return_text, _("Error: unknown extra argument: '%s'."), *argv);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto finish;
@@ -8301,14 +8309,18 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 	ConnectionCbInfo *info = NULL;
 	GSList *queue = NULL, *iter;
 	char **arg_arr = NULL, *old_arg;
-	char **arg_ptr = argv;
-	int arg_num = argc;
+	char **arg_ptr;
+	int arg_num;
 	GString *invalid_cons = NULL;
 	int pos = 0;
 	GError *error = NULL;
 
 	if (nmc->timeout == -1)
 		nmc->timeout = 10;
+
+	next_arg (nmc, &argc, &argv, NULL);
+	arg_ptr = argv;
+	arg_num = argc;
 
 	if (argc == 0) {
 		if (nmc->ask) {
@@ -8440,6 +8452,7 @@ do_connection_monitor (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
 
+	next_arg (nmc, &argc, &argv, NULL);
 	if (argc == 0) {
 		/* No connections specified. Monitor all. */
 		const GPtrArray *connections;
@@ -8488,6 +8501,7 @@ do_connection_reload (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
 
+	next_arg (nmc, &argc, &argv, NULL);
 	if (nmc->complete)
 		return nmc->return_value;
 
@@ -8508,6 +8522,7 @@ do_connection_load (NmCli *nmc, int argc, char **argv)
 	char **filenames, **failures = NULL;
 	int i;
 
+	next_arg (nmc, &argc, &argv, NULL);
 	if (argc == 0) {
 		g_string_printf (nmc->return_text, _("Error: No connection specified."));
 		return NMC_RESULT_ERROR_USER_INPUT;
@@ -8571,6 +8586,13 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 	gs_free char *service_type = NULL;
 	gboolean temporary = FALSE;
 
+	/* Check --temporary */
+	if (next_arg (nmc, &argc, &argv, "--temporary", NULL) > 0) {
+		temporary = TRUE;
+		next_arg (nmc, &argc, &argv, NULL);
+	}
+
+
 	if (argc == 0) {
 		/* nmc_do_cmd() should not call this with argc=0. */
 		g_assert (!nmc->complete);
@@ -8589,11 +8611,7 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 
 	while (argc > 0) {
 		if (argc == 1 && nmc->complete)
-			nmc_complete_strings (*argv, "temporary", "type", "file", NULL);
-		if (nmc_arg_is_option (*argv, "temporary")) {
-			temporary = TRUE;
-			next_arg (nmc, &argc, &argv);
-		}
+			nmc_complete_strings (*argv, "type", "file", NULL);
 
 		if (strcmp (*argv, "type") == 0) {
 			argc--;
@@ -8632,7 +8650,7 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 			goto finish;
 		}
 
-		next_arg (nmc, &argc, &argv);
+		next_arg (nmc, &argc, &argv, NULL);
 	}
 
 	if (nmc->complete)
@@ -8708,8 +8726,12 @@ do_connection_export (NmCli *nmc, int argc, char **argv)
 	char tmpfile[] = "/tmp/nmcli-export-temp-XXXXXX";
 	char **arg_arr = NULL;
 	int arg_num;
-	char ***argv_ptr = &argv;
-	int *argc_ptr = &argc;
+	char ***argv_ptr;
+	int *argc_ptr;
+
+	next_arg (nmc, &argc, &argv, NULL);
+	argv_ptr = &argv;
+	argc_ptr = &argc;
 
 	if (argc == 0 && nmc->ask) {
 		char *line;
@@ -8734,13 +8756,9 @@ do_connection_export (NmCli *nmc, int argc, char **argv)
 	if (nmc->complete)
 		return nmc->return_value;
 
-	if (argc) {
-		out_name = *argv;
-		argc--;
-		argv++;
-	}
+	out_name = *argv;
 
-	if (next_arg (nmc->ask ? NULL : nmc, argc_ptr, argv_ptr) == 0) {
+	if (next_arg (nmc->ask ? NULL : nmc, argc_ptr, argv_ptr, NULL) == 0) {
 		g_string_printf (nmc->return_text, _("Error: unknown extra argument: '%s'."), *argv);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto finish;
@@ -8916,6 +8934,8 @@ static const NMCCommand connection_cmds[] = {
 NMCResultCode
 do_connections (NmCli *nmc, int argc, char **argv)
 {
+	next_arg (nmc, &argc, &argv, NULL);
+
 	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
 

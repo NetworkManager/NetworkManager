@@ -1754,7 +1754,6 @@ nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, char
 			g_simple_async_result_complete_in_idle (simple);
 			g_object_unref (simple);
 		} else {
-			next_arg (nmc, &argc, &argv);
 			call_cmd (nmc, simple, c, argc, argv);
 		}
 	} else if (cmd) {
