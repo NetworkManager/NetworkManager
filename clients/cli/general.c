@@ -391,6 +391,7 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 static NMCResultCode
 do_general_status (NmCli *nmc, int argc, char **argv)
 {
+	next_arg (nmc, &argc, &argv, NULL);
 	if (nmc->complete)
 		return nmc->return_value;
 
@@ -567,6 +568,7 @@ show_nm_permissions (NmCli *nmc)
 static NMCResultCode
 do_general_permissions (NmCli *nmc, int argc, char **argv)
 {
+	next_arg (nmc, &argc, &argv, NULL);
 	if (nmc->complete)
 		return nmc->return_value;
 
@@ -650,6 +652,7 @@ do_general_logging (NmCli *nmc, int argc, char **argv)
 {
 	gs_free_error GError *error = NULL;
 
+	next_arg (nmc, &argc, &argv, NULL);
 	if (argc == 0) {
 		if (nmc->complete)
 			return nmc->return_value;
@@ -697,7 +700,7 @@ do_general_logging (NmCli *nmc, int argc, char **argv)
 				g_string_printf (nmc->return_text, _("Error: property '%s' is not known."), *argv);
 				return NMC_RESULT_ERROR_USER_INPUT;
 			}
-		} while (next_arg (nmc, &argc, &argv) == 0);
+		} while (next_arg (nmc, &argc, &argv, NULL) == 0);
 
 		if (nmc->complete)
 			return nmc->return_value;
@@ -732,6 +735,7 @@ save_hostname_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 static NMCResultCode
 do_general_hostname (NmCli *nmc, int argc, char **argv)
 {
+	next_arg (nmc, &argc, &argv, NULL);
 	if (nmc->complete)
 		return nmc->return_value;
 
@@ -747,7 +751,7 @@ do_general_hostname (NmCli *nmc, int argc, char **argv)
 		/* hostname provided -> set it */
 		const char *hostname = *argv;
 
-		if (next_arg (nmc, &argc, &argv) == 0)
+		if (next_arg (nmc, &argc, &argv, NULL) == 0)
 			g_print ("Warning: ignoring extra garbage after '%s' hostname\n", hostname);
 
 		nmc->should_wait++;
@@ -772,6 +776,8 @@ static const NMCCommand general_cmds[] = {
 NMCResultCode
 do_general (NmCli *nmc, int argc, char **argv)
 {
+	next_arg (nmc, &argc, &argv, NULL);
+
 	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
 
@@ -837,18 +843,21 @@ do_networking_on_off (NmCli *nmc, int argc, char **argv, gboolean enable)
 static NMCResultCode
 do_networking_on (NmCli *nmc, int argc, char **argv)
 {
+	next_arg (nmc, &argc, &argv, NULL);
 	return do_networking_on_off (nmc, argc, argv, TRUE);
 }
 
 static NMCResultCode
 do_networking_off (NmCli *nmc, int argc, char **argv)
 {
+	next_arg (nmc, &argc, &argv, NULL);
 	return do_networking_on_off (nmc, argc, argv, FALSE);
 }
 
 static NMCResultCode
 do_networking_connectivity (NmCli *nmc, int argc, char **argv)
 {
+	next_arg (nmc, &argc, &argv, NULL);
 	if (nmc->complete) {
 		if (argc == 1)
 			nmc_complete_strings (*argv, "check", NULL);
@@ -882,6 +891,7 @@ do_networking_connectivity (NmCli *nmc, int argc, char **argv)
 static NMCResultCode
 do_networking_show (NmCli *nmc, int argc, char **argv)
 {
+	next_arg (nmc, &argc, &argv, NULL);
 	if (nmc->complete)
 		return nmc->return_value;
 
@@ -903,6 +913,7 @@ static const NMCCommand networking_cmds[] = {
 NMCResultCode
 do_networking (NmCli *nmc, int argc, char **argv)
 {
+	next_arg (nmc, &argc, &argv, NULL);
 	nmc_do_cmd (nmc, networking_cmds, *argv, argc, argv);
 
 	return nmc->return_value;
@@ -913,6 +924,7 @@ do_radio_all (NmCli *nmc, int argc, char **argv)
 {
 	gboolean enable_flag;
 
+	next_arg (nmc, &argc, &argv, NULL);
 	if (argc == 0) {
 		if (nmc->complete)
 			return nmc->return_value;
@@ -942,6 +954,7 @@ do_radio_wifi (NmCli *nmc, int argc, char **argv)
 {
 	gboolean enable_flag;
 
+	next_arg (nmc, &argc, &argv, NULL);
 	if (argc == 0) {
 		if (nmc->complete)
 			return nmc->return_value;
@@ -968,6 +981,7 @@ do_radio_wwan (NmCli *nmc, int argc, char **argv)
 {
 	gboolean enable_flag;
 
+	next_arg (nmc, &argc, &argv, NULL);
 	if (argc == 0) {
 		if (nmc->complete)
 			return nmc->return_value;
@@ -1002,6 +1016,8 @@ static const NMCCommand radio_cmds[] = {
 NMCResultCode
 do_radio (NmCli *nmc, int argc, char **argv)
 {
+	next_arg (nmc, &argc, &argv, NULL);
+
 	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
 
@@ -1227,6 +1243,8 @@ do_overview (NmCli *nmc, int argc, char **argv)
 	char *tmp;
 	int i;
 
+	next_arg (nmc, &argc, &argv, NULL);
+
 	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
 
@@ -1326,6 +1344,8 @@ do_overview (NmCli *nmc, int argc, char **argv)
 NMCResultCode
 do_monitor (NmCli *nmc, int argc, char **argv)
 {
+	next_arg (nmc, &argc, &argv, NULL);
+
 	if (nmc->complete)
 		return nmc->return_value;
 

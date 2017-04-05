@@ -139,6 +139,7 @@ secrets_requested (NMSecretAgentSimple *agent,
 static NMCResultCode
 do_agent_secret (NmCli *nmc, int argc, char **argv)
 {
+	next_arg (nmc, &argc, &argv, NULL);
 	if (nmc->complete)
 		return nmc->return_value;
 
@@ -167,6 +168,7 @@ do_agent_polkit (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
 
+	next_arg (nmc, &argc, &argv, NULL);
 	if (nmc->complete)
 		return nmc->return_value;
 
@@ -192,6 +194,7 @@ do_agent_all (NmCli *nmc, int argc, char **argv)
 {
 	NMCResultCode secret_res;
 
+	next_arg (nmc, &argc, &argv, NULL);
 	if (nmc->complete)
 		return nmc->return_value;
 
@@ -218,6 +221,7 @@ static const NMCCommand agent_cmds[] = {
 NMCResultCode
 do_agent (NmCli *nmc, int argc, char **argv)
 {
+	next_arg (nmc, &argc, &argv, NULL);
 	nmc_do_cmd (nmc, agent_cmds, *argv, argc, argv);
 
 	return nmc->return_value;

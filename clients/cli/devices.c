@@ -618,7 +618,7 @@ get_device_list (NmCli *nmc, int argc, char **argv)
 		}
 
 		/* Take next argument */
-		next_arg (nmc->ask ? NULL : nmc, &arg_num, &arg_ptr);
+		next_arg (nmc->ask ? NULL : nmc, &arg_num, &arg_ptr, NULL);
 	}
 	g_free (devices);
 
@@ -647,7 +647,7 @@ get_device (NmCli *nmc, int *argc, char ***argv, GError **error)
 		}
 	} else {
 		ifname = **argv;
-		next_arg (nmc, argc, argv);
+		next_arg (nmc, argc, argv, NULL);
 	}
 
 	devices = nmc_get_devices_sorted (nmc->client);
@@ -1527,13 +1527,15 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 	size_t tmpl_len;
 	NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
+	next_arg (nmc, &argc, &argv, NULL);
+
 	/* Nothing to complete */
 	if (nmc->complete)
 		return nmc->return_value;
 
 	while (argc > 0) {
 		g_printerr (_("Unknown parameter: %s\n"), *argv);
-		next_arg (nmc, &argc, &argv);
+		next_arg (nmc, &argc, &argv, NULL);
 	}
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
@@ -1575,6 +1577,7 @@ do_device_show (NmCli *nmc, int argc, char **argv)
 {
 	gs_free_error GError *error = NULL;
 
+	next_arg (nmc, &argc, &argv, NULL);
 	if (!nmc->mode_specified)
 		nmc->nmc_config_mutable.multiline_output = TRUE;  /* multiline mode is default for 'device show' */
 
@@ -1866,6 +1869,7 @@ do_device_connect (NmCli *nmc, int argc, char **argv)
 	if (nmc->timeout == -1)
 		nmc->timeout = 90;
 
+	next_arg (nmc, &argc, &argv, NULL);
 	device = get_device (nmc, &argc, &argv, &error);
 	if (!device) {
 		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
@@ -2034,6 +2038,7 @@ do_device_reapply (NmCli *nmc, int argc, char **argv)
 	if (nmc->timeout == -1)
 		nmc->timeout = 10;
 
+	next_arg (nmc, &argc, &argv, NULL);
 	device = get_device (nmc, &argc, &argv, &error);
 	if (!device) {
 		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
@@ -2141,6 +2146,7 @@ do_device_modify (NmCli *nmc, int argc, char **argv)
 	ModifyInfo *info = NULL;
 	gs_free_error GError *error = NULL;
 
+	next_arg (nmc, &argc, &argv, NULL);
 	device = get_device (nmc, &argc, &argv, &error);
 	if (!device) {
 		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
@@ -2207,6 +2213,7 @@ do_devices_disconnect (NmCli *nmc, int argc, char **argv)
 	if (nmc->timeout == -1)
 		nmc->timeout = 10;
 
+	next_arg (nmc, &argc, &argv, NULL);
 	queue = get_device_list (nmc, argc, argv);
 	if (!queue)
 		return nmc->return_value;
@@ -2276,6 +2283,7 @@ do_devices_delete (NmCli *nmc, int argc, char **argv)
 	if (nmc->timeout == -1)
 		nmc->timeout = 10;
 
+	next_arg (nmc, &argc, &argv, NULL);
 	queue = get_device_list (nmc, argc, argv);
 	if (!queue)
 		return nmc->return_value;
@@ -2324,9 +2332,9 @@ do_device_set (NmCli *nmc, int argc, char **argv)
 	};
 	gs_free_error GError *error = NULL;
 
-	if (argc >= 1 && g_strcmp0 (*argv, "ifname") == 0) {
-		next_arg (nmc, &argc, &argv);
-	}
+	next_arg (nmc, &argc, &argv, NULL);
+	if (argc >= 1 && g_strcmp0 (*argv, "ifname") == 0)
+		next_arg (nmc, &argc, &argv, NULL);
 
 	device = get_device (nmc, &argc, &argv, &error);
 	if (!device) {
@@ -2384,7 +2392,7 @@ do_device_set (NmCli *nmc, int argc, char **argv)
 			g_string_printf (nmc->return_text, _("Error: property '%s' is not known."), *argv);
 			return NMC_RESULT_ERROR_USER_INPUT;
 		}
-	} while (next_arg (nmc, &argc, &argv) == 0);
+	} while (next_arg (nmc, &argc, &argv, NULL) == 0);
 
 	if (nmc->complete)
 		return nmc->return_value;
@@ -2477,6 +2485,7 @@ do_devices_monitor (NmCli *nmc, int argc, char **argv)
 	if (nmc->complete)
 		return nmc->return_value;
 
+	next_arg (nmc, &argc, &argv, NULL);
 	if (argc == 0) {
 		/* No devices specified. Monitor all. */
 		const GPtrArray *devices = nm_client_get_devices (nmc->client);
@@ -2669,6 +2678,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 
 	devices = nmc_get_devices_sorted (nmc->client);
 
+	next_arg (nmc, &argc, &argv, NULL);
 	while (argc > 0) {
 		if (argc == 1 && nmc->complete)
 			nmc_complete_strings (*argv, "ifname", "bssid", NULL);
@@ -2697,7 +2707,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 			g_printerr (_("Unknown parameter: %s\n"), *argv);
 		}
 
-		next_arg (nmc, &argc, &argv);
+		next_arg (nmc, &argc, &argv, NULL);
 	}
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
@@ -2889,6 +2899,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 
 	devices = nmc_get_devices_sorted (nmc->client);
 
+	next_arg (nmc, &argc, &argv, NULL);
 	/* Get the first compulsory argument (SSID or BSSID) */
 	if (argc > 0) {
 		param_user = *argv;
@@ -2897,7 +2908,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 		if (argc == 1 && nmc->complete)
 			complete_aps (devices, NULL, param_user, param_user);
 
-		next_arg (nmc, &argc, &argv);
+		next_arg (nmc, &argc, &argv, NULL);
 	} else {
 		/* nmc_do_cmd() should not call this with argc=0. */
 		g_assert (!nmc->complete);
@@ -3028,7 +3039,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 			g_printerr (_("Unknown parameter: %s\n"), *argv);
 		}
 
-		next_arg (nmc, &argc, &argv);
+		next_arg (nmc, &argc, &argv, NULL);
 	}
 
 	if (nmc->complete)
@@ -3122,7 +3133,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 		if (con_name)
 			g_object_set (s_con, NM_SETTING_CONNECTION_ID, con_name, NULL);
 
-		/* Connection will only be visible to this user when '--private' is specified */
+		/* Connection will only be visible to this user when 'private' is specified */
 		if (private)
 			nm_setting_connection_add_permission (s_con, "user", g_get_user_name (), NULL);
 	}
@@ -3379,6 +3390,7 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 
 	devices = nmc_get_devices_sorted (nmc->client);
 
+	next_arg (nmc, &argc, &argv, NULL);
 	while (argc > 0) {
 		if (argc == 1 && nmc->complete) {
 			nmc_complete_strings (*argv, "ifname", "con-name", "ssid", "band",
@@ -3455,7 +3467,7 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 			return NMC_RESULT_ERROR_USER_INPUT;
 		}
 
-		next_arg (nmc, &argc, &argv);
+		next_arg (nmc, &argc, &argv, NULL);
 	}
 	show_password = nmc->show_secrets || show_password;
 
@@ -3601,6 +3613,7 @@ do_device_wifi_rescan (NmCli *nmc, int argc, char **argv)
 	ssids = g_ptr_array_new ();
 	devices = nmc_get_devices_sorted (nmc->client);
 
+	next_arg (nmc, &argc, &argv, NULL);
 	/* Get the parameters */
 	while (argc > 0) {
 		if (argc == 1 && nmc->complete)
@@ -3634,7 +3647,7 @@ do_device_wifi_rescan (NmCli *nmc, int argc, char **argv)
 		} else if (!nmc->complete)
 			g_printerr (_("Unknown parameter: %s\n"), *argv);
 
-		next_arg (nmc, &argc, &argv);
+		next_arg (nmc, &argc, &argv, NULL);
 	}
 
 	if (nmc->complete)
@@ -3689,6 +3702,7 @@ static NMCCommand device_wifi_cmds[] = {
 static NMCResultCode
 do_device_wifi (NmCli *nmc, int argc, char **argv)
 {
+	next_arg (nmc, &argc, &argv, NULL);
 	nmc_do_cmd (nmc, device_wifi_cmds, *argv, argc, argv);
 
 	return nmc->return_value;
@@ -3788,6 +3802,7 @@ do_device_lldp_list (NmCli *nmc, int argc, char **argv)
 	int counter = 0;
 	NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
+	next_arg (nmc, &argc, &argv, NULL);
 	while (argc > 0) {
 		if (argc == 1 && nmc->complete)
 			nmc_complete_strings (*argv, "ifname", NULL);
@@ -3810,7 +3825,7 @@ do_device_lldp_list (NmCli *nmc, int argc, char **argv)
 			return NMC_RESULT_ERROR_USER_INPUT;
 		}
 
-		next_arg (nmc, &argc, &argv);
+		next_arg (nmc, &argc, &argv, NULL);
 	}
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
@@ -3856,6 +3871,7 @@ do_device_lldp (NmCli *nmc, int argc, char **argv)
 	if (!nmc->mode_specified)
 		nmc->nmc_config_mutable.multiline_output = TRUE;  /* multiline mode is default for 'device lldp' */
 
+	next_arg (nmc, &argc, &argv, NULL);
 	nmc_do_cmd (nmc, device_lldp_cmds, *argv, argc, argv);
 
 	return nmc->return_value;
@@ -3921,6 +3937,8 @@ static const NMCCommand device_cmds[] = {
 NMCResultCode
 do_devices (NmCli *nmc, int argc, char **argv)
 {
+	next_arg (nmc, &argc, &argv, NULL);
+
 	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
 
