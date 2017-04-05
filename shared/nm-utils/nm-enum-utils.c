@@ -113,52 +113,6 @@ _nm_utils_enum_to_str_full (GType type,
 	return ret;
 }
 
-/**
- * nm_utils_enum_to_str:
- * @type: the %GType of the enum
- * @value: the value to be translated
- *
- * Converts an enum value to its string representation. If the enum is a
- * %G_TYPE_FLAGS the function returns a comma-separated list of matching values.
- * If the value has no corresponding string representation, it is converted
- * to a number. For enums it is converted to a decimal number, for flags
- * to an (unsigned) hex number.
- *
- * Returns: a newly allocated string or %NULL
- *
- * Since: 1.2
- */
-char *
-nm_utils_enum_to_str (GType type, int value)
-{
-	return _nm_utils_enum_to_str_full (type, value, ", ");
-}
-
-/**
- * nm_utils_enum_from_str:
- * @type: the %GType of the enum
- * @str: the input string
- * @out_value: (out) (allow-none): the output value
- * @err_token: (out) (allow-none) (transfer full): location to store the first unrecognized token
- *
- * Converts a string to the matching enum value.
- *
- * If the enum is a %G_TYPE_FLAGS the function returns the logical OR of values
- * matching the comma-separated tokens in the string; if an unknown token is found
- * the function returns %FALSE and stores a pointer to a newly allocated string
- * containing the unrecognized token in @err_token.
- *
- * Returns: %TRUE if the conversion was successful, %FALSE otherwise
- *
- * Since: 1.2
- */
-gboolean
-nm_utils_enum_from_str (GType type, const char *str,
-                        int *out_value, char **err_token)
-{
-	return _nm_utils_enum_from_str_full (type, str, out_value, err_token, NULL);
-}
-
 static const NMUtilsEnumValueInfo *
 _find_value_info (const NMUtilsEnumValueInfo *value_infos, const char *needle)
 {
@@ -284,20 +238,8 @@ _nm_utils_enum_from_str_full (GType type,
 	return ret;
 }
 
-/**
- * nm_utils_enum_get_values:
- * @type: the %GType of the enum
- * @from: the first element to be returned
- * @to: the last element to be returned
- *
- * Returns the list of possible values for a given enum.
- *
- * Returns: (transfer container): a NULL-terminated dynamically-allocated array of static strings
- * or %NULL on error
- *
- * Since: 1.2
- */
-const char **nm_utils_enum_get_values (GType type, gint from, gint to)
+const char **
+_nm_utils_enum_get_values (GType type, gint from, gint to)
 {
 	GTypeClass *class;
 	GPtrArray *array;

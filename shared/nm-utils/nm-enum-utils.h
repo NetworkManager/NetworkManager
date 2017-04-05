@@ -38,9 +38,7 @@ gboolean _nm_utils_enum_from_str_full (GType type,
                                        char **err_token,
                                        const NMUtilsEnumValueInfo *value_infos);
 
-char *nm_utils_enum_to_str (GType type, int value);
-gboolean nm_utils_enum_from_str (GType type, const char *str, int *out_value, char **err_token);
-const char **nm_utils_enum_get_values (GType type, gint from, gint to);
+const char **_nm_utils_enum_get_values (GType type, gint from, gint to);
 
 /*****************************************************************************/
 
