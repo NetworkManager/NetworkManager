@@ -179,3 +179,43 @@ nm_meta_setting_infos_editor_p (void)
 	return cache;
 }
 
+/*****************************************************************************/
+
+const char *
+nm_meta_abstract_info_get_name (const NMMetaAbstractInfo *abstract_info)
+{
+	const char *n;
+
+	nm_assert (abstract_info);
+	nm_assert (abstract_info->meta_type);
+	nm_assert (abstract_info->meta_type->get_name);
+	n = abstract_info->meta_type->get_name (abstract_info);
+	nm_assert (n && n[0]);
+	return n;
+}
+
+const NMMetaAbstractInfo *const*
+nm_meta_abstract_info_get_nested (const NMMetaAbstractInfo *abstract_info,
+                                  guint *out_len,
+                                  gpointer *nested_to_free)
+{
+	const NMMetaAbstractInfo *const*nested;
+	guint l = 0;
+	gs_free gpointer f = NULL;
+
+	nm_assert (abstract_info);
+	nm_assert (abstract_info->meta_type);
+	nm_assert (nested_to_free && !*nested_to_free);
+
+	if (abstract_info->meta_type->get_nested) {
+		nested = abstract_info->meta_type->get_nested (abstract_info, &l, &f);
+		nm_assert ((nested ? g_strv_length ((char **) nested) : 0) == l);
+		if (nested && nested[0]) {
+			NM_SET_OUT (out_len, l);
+			*nested_to_free = g_steal_pointer (&f);
+			return nested;
+		}
+	}
+	NM_SET_OUT (out_len, 0);
+	return NULL;
+}

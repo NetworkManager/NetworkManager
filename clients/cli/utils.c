@@ -30,6 +30,7 @@
 #include <arpa/inet.h>
 
 #include "nm-client-utils.h"
+#include "nm-meta-setting-access.h"
 
 #include "common.h"
 #include "settings.h"
@@ -709,19 +710,6 @@ nmc_free_output_field_values (NmcOutputField fields_array[])
 	}
 }
 
-static const char *
-_abstract_info_get_name (const NMMetaAbstractInfo *abstract_info)
-{
-	const char *n;
-
-	nm_assert (abstract_info);
-	nm_assert (abstract_info->meta_type);
-	nm_assert (abstract_info->meta_type->get_name);
-	n = abstract_info->meta_type->get_name (abstract_info);
-	nm_assert (n && n[0]);
-	return n;
-}
-
 typedef struct {
 	guint idx;
 	gsize offset_plus_1;
@@ -780,7 +768,7 @@ nmc_output_selection_create (const NMMetaAbstractInfo *const* fields_array,
 			for (i = 0; fields_array[i]; i++) {
 				const NMMetaAbstractInfo *fi = fields_array[i];
 
-				if (g_ascii_strcasecmp (i_name, _abstract_info_get_name (fi)) != 0)
+				if (g_ascii_strcasecmp (i_name, nm_meta_abstract_info_get_name (fi)) != 0)
 					continue;
 
 				if (!right)
@@ -800,7 +788,7 @@ nmc_output_selection_create (const NMMetaAbstractInfo *const* fields_array,
 						const NmcMetaGenericInfo *fi_g = (const NmcMetaGenericInfo *) fi;
 
 						for (j = 0; fi_g->nested && fi_g->nested[j]; j++) {
-							if (g_ascii_strcasecmp (right, _abstract_info_get_name ((const NMMetaAbstractInfo *) fi_g->nested[j])) == 0) {
+							if (g_ascii_strcasecmp (right, nm_meta_abstract_info_get_name ((const NMMetaAbstractInfo *) fi_g->nested[j])) == 0) {
 								found = TRUE;
 								break;
 							}
@@ -936,17 +924,15 @@ nmc_get_allowed_fields_nested (const NMMetaAbstractInfo *abstract_info)
 {
 	GString *allowed_fields = g_string_sized_new (256);
 	int i;
-	const char *name = _abstract_info_get_name (abstract_info);
+	const char *name = nm_meta_abstract_info_get_name (abstract_info);
 	gs_free gpointer nested_to_free = NULL;
 	const NMMetaAbstractInfo *const*nested = NULL;
 
-	if (abstract_info->meta_type->get_nested)
-		nested = abstract_info->meta_type->get_nested (abstract_info, NULL, &nested_to_free);
-
-	if (nested && nested[0]) {
+	nested = nm_meta_abstract_info_get_nested (abstract_info, NULL, &nested_to_free);
+	if (nested) {
 		for (i = 0; nested && nested[i]; i++) {
 			g_string_append_printf (allowed_fields, "%s.%s,",
-			                        name, _abstract_info_get_name (nested[i]));
+			                        name, nm_meta_abstract_info_get_name (nested[i]));
 		}
 	} else
 		g_string_append_printf (allowed_fields, "%s,", name);
@@ -963,7 +949,7 @@ nmc_get_allowed_fields (const NMMetaAbstractInfo *const*fields_array)
 	guint i;
 
 	for (i = 0; fields_array[i]; i++)
-		g_string_append_printf (allowed_fields, "%s,", _abstract_info_get_name (fields_array[i]));
+		g_string_append_printf (allowed_fields, "%s,", nm_meta_abstract_info_get_name (fields_array[i]));
 
 	if (allowed_fields->len)
 		g_string_truncate (allowed_fields, allowed_fields->len - 1);
@@ -1036,7 +1022,7 @@ get_value_to_print (NmcColorOption color_option,
 	nm_assert (out_to_free && !*out_to_free);
 
 	if (field_name)
-		value = _(_abstract_info_get_name (field->info));
+		value = _(nm_meta_abstract_info_get_name (field->info));
 	else {
 		value = field->value
 		            ? (is_array
@@ -1149,7 +1135,7 @@ print_required_fields (const NmcConfig *nmc_config,
 					tmp = g_strdup_printf ("%s%s%s[%d]:",
 					                       section_prefix ? (const char*) field_values[0].value : "",
 					                       section_prefix ? "." : "",
-					                       _(_abstract_info_get_name (field_values[idx].info)),
+					                       _(nm_meta_abstract_info_get_name (field_values[idx].info)),
 					                       j);
 					width1 = strlen (tmp);
 					width2 = nmc_string_screen_width (tmp, NULL);
@@ -1169,7 +1155,7 @@ print_required_fields (const NmcConfig *nmc_config,
 				tmp = g_strdup_printf ("%s%s%s:",
 				                       section_prefix ? hdr_name : "",
 				                       section_prefix ? "." : "",
-				                       _(_abstract_info_get_name (field_values[idx].info)));
+				                       _(nm_meta_abstract_info_get_name (field_values[idx].info)));
 				width1 = strlen (tmp);
 				width2 = nmc_string_screen_width (tmp, NULL);
 				g_print ("%-*s%s\n", terse ? 0 : ML_VALUE_INDENT+width1-width2, tmp, print_val);
