@@ -4412,8 +4412,11 @@ link_get_unmanaged (NMPlatform *platform, int ifindex, gboolean *unmanaged)
 		return FALSE;
 
 	uproperty = udev_device_get_property_value (udevice, "NM_UNMANAGED");
+	if (!uproperty)
+		return FALSE;
 
-	return nm_udev_utils_property_as_boolean (uproperty);
+	*unmanaged = nm_udev_utils_property_as_boolean (uproperty);
+	return TRUE;
 }
 
 static gboolean
