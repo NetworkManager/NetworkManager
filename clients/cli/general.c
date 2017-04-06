@@ -37,28 +37,22 @@
 
 /*****************************************************************************/
 
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (nm_state_to_string_no_l10n, NMState,
+	NM_UTILS_LOOKUP_DEFAULT (N_("unknown")),
+	NM_UTILS_LOOKUP_ITEM (NM_STATE_ASLEEP,           N_("asleep")),
+	NM_UTILS_LOOKUP_ITEM (NM_STATE_CONNECTING,       N_("connecting")),
+	NM_UTILS_LOOKUP_ITEM (NM_STATE_CONNECTED_LOCAL,  N_("connected (local only)")),
+	NM_UTILS_LOOKUP_ITEM (NM_STATE_CONNECTED_SITE,   N_("connected (site only)")),
+	NM_UTILS_LOOKUP_ITEM (NM_STATE_CONNECTED_GLOBAL, N_("connected")),
+	NM_UTILS_LOOKUP_ITEM (NM_STATE_DISCONNECTING,    N_("disconnecting")),
+	NM_UTILS_LOOKUP_ITEM (NM_STATE_DISCONNECTED,     N_("disconnected")),
+	NM_UTILS_LOOKUP_ITEM_IGNORE (NM_STATE_UNKNOWN),
+);
+
 static const char *
 nm_state_to_string (NMState state)
 {
-	switch (state) {
-	case NM_STATE_ASLEEP:
-		return _("asleep");
-	case NM_STATE_CONNECTING:
-		return _("connecting");
-	case NM_STATE_CONNECTED_LOCAL:
-		return _("connected (local only)");
-	case NM_STATE_CONNECTED_SITE:
-		return _("connected (site only)");
-	case NM_STATE_CONNECTED_GLOBAL:
-		return _("connected");
-	case NM_STATE_DISCONNECTING:
-		return _("disconnecting");
-	case NM_STATE_DISCONNECTED:
-		return _("disconnected");
-	case NM_STATE_UNKNOWN:
-	default:
-		return _("unknown");
-	}
+	return _(nm_state_to_string_no_l10n (state));
 }
 
 static NMMetaTermColor
@@ -81,22 +75,19 @@ state_to_color (NMState state)
 	}
 }
 
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (nm_connectivity_to_string_no_l10n, NMConnectivityState,
+	NM_UTILS_LOOKUP_DEFAULT (N_("unknown")),
+	NM_UTILS_LOOKUP_ITEM (NM_CONNECTIVITY_NONE,    N_("none")),
+	NM_UTILS_LOOKUP_ITEM (NM_CONNECTIVITY_PORTAL,  N_("portal")),
+	NM_UTILS_LOOKUP_ITEM (NM_CONNECTIVITY_LIMITED, N_("limited")),
+	NM_UTILS_LOOKUP_ITEM (NM_CONNECTIVITY_FULL,    N_("full")),
+	NM_UTILS_LOOKUP_ITEM_IGNORE (NM_CONNECTIVITY_UNKNOWN),
+);
+
 static const char *
 nm_connectivity_to_string (NMConnectivityState connectivity)
 {
-	switch (connectivity) {
-	case NM_CONNECTIVITY_NONE:
-		return _("none");
-	case NM_CONNECTIVITY_PORTAL:
-		return _("portal");
-	case NM_CONNECTIVITY_LIMITED:
-		return _("limited");
-	case NM_CONNECTIVITY_FULL:
-		return _("full");
-	case NM_CONNECTIVITY_UNKNOWN:
-	default:
-		return _("unknown");
-	}
+	return _(nm_connectivity_to_string_no_l10n (connectivity));
 }
 
 static NMMetaTermColor
