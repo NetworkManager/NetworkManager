@@ -318,15 +318,51 @@ static const NmcMetaGenericInfo *const metagen_general_permissions[_NMC_GENERIC_
 
 /*****************************************************************************/
 
-/* Available fields for 'general logging' */
-static const NmcMetaGenericInfo *const nmc_fields_nm_logging[] = {
-	NMC_META_GENERIC ("LEVEL"),     /* 0 */
-	NMC_META_GENERIC ("DOMAINS"),   /* 1 */
-	NULL,
-};
-#define NMC_FIELDS_NM_LOGGING_ALL     "LEVEL,DOMAINS"
-#define NMC_FIELDS_NM_LOGGING_COMMON  "LEVEL,DOMAINS"
+typedef struct {
+	bool initialized;
+	char **level;
+	char **domains;
+} GetGeneralLoggingData;
 
+static gconstpointer
+_metagen_general_logging_get_fcn (const NMMetaEnvironment *environment,
+                                  gpointer environment_user_data,
+                                  const NmcMetaGenericInfo *info,
+                                  gpointer target,
+                                  NMMetaAccessorGetType get_type,
+                                  NMMetaAccessorGetFlags get_flags,
+                                  gpointer *out_to_free)
+{
+	NmCli *nmc = environment_user_data;
+	GetGeneralLoggingData *d = target;
+
+	nm_assert (info->info_type < _NMC_GENERIC_INFO_TYPE_GENERAL_LOGGING_NUM);
+
+	HANDLE_TERMFORMAT (NM_META_TERM_COLOR_NORMAL);
+
+	if (!d->initialized) {
+		d->initialized = TRUE;
+		if (!nm_client_get_logging (nmc->client,
+		                            d->level,
+		                            d->domains,
+		                            NULL))
+			return NULL;
+	}
+
+	if (info->info_type == NMC_GENERIC_INFO_TYPE_GENERAL_LOGGING_LEVEL)
+		return *d->level;
+	else
+		return *d->domains;
+}
+
+static const NmcMetaGenericInfo *const metagen_general_logging[_NMC_GENERIC_INFO_TYPE_GENERAL_LOGGING_NUM + 1] = {
+#define _METAGEN_GENERAL_LOGGING(type, name) \
+	[type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_general_logging_get_fcn)
+	_METAGEN_GENERAL_LOGGING (NMC_GENERIC_INFO_TYPE_GENERAL_LOGGING_LEVEL,   "LEVEL"),
+	_METAGEN_GENERAL_LOGGING (NMC_GENERIC_INFO_TYPE_GENERAL_LOGGING_DOMAINS, "DOMAINS"),
+};
+
+/*****************************************************************************/
 
 /* glib main loop variable - defined in nmcli.c */
 extern GMainLoop *loop;
@@ -622,58 +658,32 @@ do_general_permissions (NmCli *nmc, int argc, char **argv)
 	return nmc->return_value;
 }
 
-static gboolean
+static void
 show_general_logging (NmCli *nmc)
 {
-	char *level = NULL;
-	char *domains = NULL;
-	GError *error = NULL;
-	const char *fields_str;
-	const char *fields_all =    NMC_FIELDS_NM_LOGGING_ALL;
-	const char *fields_common = NMC_FIELDS_NM_LOGGING_COMMON;
-	const NMMetaAbstractInfo *const*tmpl;
-	NmcOutputField *arr;
-	NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
+	gs_free char *level_cache = NULL;
+	gs_free char *domains_cache = NULL;
+	gs_free GError *error = NULL;
+	const char *fields_str = NULL;
+	GetGeneralLoggingData d = {
+		.level = &level_cache,
+		.domains = &domains_cache,
+	};
 
-	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
-		fields_str = fields_common;
-	else if (!nmc->required_fields || strcasecmp (nmc->required_fields, "all") == 0)
-		fields_str = fields_all;
-	else
+	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0) {
+	} else if (strcasecmp (nmc->required_fields, "all") == 0) {
+	} else
 		fields_str = nmc->required_fields;
 
-	tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_nm_logging;
-	out_indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &error);
-
-	if (error) {
+	if (!nmc_print (&nmc->nmc_config,
+	                (gpointer const []) { &d, NULL },
+	                _("NetworkManager logging"),
+	                (const NMMetaAbstractInfo *const*) metagen_general_logging,
+	                fields_str,
+	                &error)) {
 		g_string_printf (nmc->return_text, _("Error: 'general logging': %s"), error->message);
-		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		return FALSE;
 	}
-
-	nm_client_get_logging (nmc->client, &level, &domains, &error);
-	if (error) {
-		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		g_error_free (error);
-		return FALSE;
-	}
-
-	arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (out.output_data, arr);
-
-	arr = nmc_dup_fields_array (tmpl, 0);
-	set_val_str (arr, 0, level);
-	set_val_str (arr, 1, domains);
-	g_ptr_array_add (out.output_data, arr);
-
-	print_data_prepare_width (out.output_data);
-	print_data (&nmc->nmc_config, out_indices,
-	            _("NetworkManager logging"),
-	            0, &out);
-
-	return TRUE;
 }
 
 static void
