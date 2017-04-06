@@ -106,6 +106,67 @@ connectivity_to_color (NMConnectivityState connectivity)
 	}
 }
 
+static const char *
+permission_to_string (NMClientPermission perm)
+{
+	switch (perm) {
+	case NM_CLIENT_PERMISSION_ENABLE_DISABLE_NETWORK:
+		return NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK;
+	case NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIFI:
+		return NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI;
+	case NM_CLIENT_PERMISSION_ENABLE_DISABLE_WWAN:
+		return NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN;
+	case NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIMAX:
+		return NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX;
+	case NM_CLIENT_PERMISSION_SLEEP_WAKE:
+		return NM_AUTH_PERMISSION_SLEEP_WAKE;
+	case NM_CLIENT_PERMISSION_NETWORK_CONTROL:
+		return NM_AUTH_PERMISSION_NETWORK_CONTROL;
+	case NM_CLIENT_PERMISSION_WIFI_SHARE_PROTECTED:
+		return NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED;
+	case NM_CLIENT_PERMISSION_WIFI_SHARE_OPEN:
+		return NM_AUTH_PERMISSION_WIFI_SHARE_OPEN;
+	case NM_CLIENT_PERMISSION_SETTINGS_MODIFY_SYSTEM:
+		return NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM;
+	case NM_CLIENT_PERMISSION_SETTINGS_MODIFY_OWN:
+		return NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN;
+	case NM_CLIENT_PERMISSION_SETTINGS_MODIFY_HOSTNAME:
+		return NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME;
+	case NM_CLIENT_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS:
+		return NM_AUTH_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS;
+	case NM_CLIENT_PERMISSION_RELOAD:
+		return NM_AUTH_PERMISSION_RELOAD;
+	case NM_CLIENT_PERMISSION_CHECKPOINT_ROLLBACK:
+		return NM_AUTH_PERMISSION_CHECKPOINT_ROLLBACK;
+	case NM_CLIENT_PERMISSION_ENABLE_DISABLE_STATISTICS:
+		return NM_AUTH_PERMISSION_ENABLE_DISABLE_STATISTICS;
+	default:
+		return _("unknown");
+	}
+}
+
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (permission_result_to_string_no_l10n, NMClientPermissionResult,
+	NM_UTILS_LOOKUP_DEFAULT (N_("unknown")),
+	NM_UTILS_LOOKUP_ITEM (NM_CLIENT_PERMISSION_RESULT_YES,  N_("yes")),
+	NM_UTILS_LOOKUP_ITEM (NM_CLIENT_PERMISSION_RESULT_NO,   N_("no")),
+	NM_UTILS_LOOKUP_ITEM (NM_CLIENT_PERMISSION_RESULT_AUTH, N_("auth")),
+	NM_UTILS_LOOKUP_ITEM_IGNORE (NM_CLIENT_PERMISSION_RESULT_UNKNOWN),
+);
+
+_NM_UTILS_LOOKUP_DEFINE (static, permission_result_to_color, NMClientPermissionResult, NMMetaTermColor,
+	NM_UTILS_LOOKUP_DEFAULT (NM_META_TERM_COLOR_NORMAL),
+	NM_UTILS_LOOKUP_ITEM (NM_CLIENT_PERMISSION_RESULT_YES,  NM_META_TERM_COLOR_GREEN),
+	NM_UTILS_LOOKUP_ITEM (NM_CLIENT_PERMISSION_RESULT_NO,   NM_META_TERM_COLOR_RED),
+	NM_UTILS_LOOKUP_ITEM (NM_CLIENT_PERMISSION_RESULT_AUTH, NM_META_TERM_COLOR_YELLOW),
+	NM_UTILS_LOOKUP_ITEM_IGNORE (NM_CLIENT_PERMISSION_RESULT_UNKNOWN),
+);
+
+#define HANDLE_TERMFORMAT(color) \
+	G_STMT_START { \
+		if (get_type == NM_META_ACCESSOR_GET_TYPE_TERMFORMAT) \
+			return nm_meta_termformat_pack ((color), NM_META_TERM_FORMAT_NORMAL); \
+	} G_STMT_END
+
 /*****************************************************************************/
 
 static const NmcMetaGenericInfo *const metagen_general_status[];
@@ -124,12 +185,6 @@ _metagen_general_status_get_fcn (const NMMetaEnvironment *environment,
 	gboolean v_bool;
 	NMState state;
 	NMConnectivityState connectivity;
-
-#define HANDLE_TERMFORMAT(color) \
-	G_STMT_START { \
-		if (get_type == NM_META_ACCESSOR_GET_TYPE_TERMFORMAT) \
-			return nm_meta_termformat_pack ((color), NM_META_TERM_FORMAT_NORMAL); \
-	} G_STMT_END
 
 	switch (info->info_type) {
 	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_RUNNING:
@@ -220,15 +275,48 @@ static const NmcMetaGenericInfo *const metagen_general_status[_NMC_GENERIC_INFO_
 #define NMC_FIELDS_NM_WIMAX          "WIMAX"
 #define NMC_FIELDS_NM_CONNECTIVITY   "CONNECTIVITY"
 
+/*****************************************************************************/
 
-/* Available fields for 'general permissions' */
-static const NmcMetaGenericInfo *const nmc_fields_nm_permissions[] = {
-	NMC_META_GENERIC ("PERMISSION"),   /* 0 */
-	NMC_META_GENERIC ("VALUE"),        /* 1 */
-	NULL,
+static gconstpointer
+_metagen_general_permissions_get_fcn (const NMMetaEnvironment *environment,
+                                      gpointer environment_user_data,
+                                      const NmcMetaGenericInfo *info,
+                                      gpointer target,
+                                      NMMetaAccessorGetType get_type,
+                                      NMMetaAccessorGetFlags get_flags,
+                                      gpointer *out_to_free)
+{
+	NMClientPermission perm = GPOINTER_TO_UINT (target);
+	NmCli *nmc = environment_user_data;
+	NMClientPermissionResult perm_result;
+	const char *s;
+
+	switch (info->info_type) {
+	case NMC_GENERIC_INFO_TYPE_GENERAL_PERMISSIONS_PERMISSION:
+		HANDLE_TERMFORMAT (NM_META_TERM_COLOR_NORMAL);
+		return permission_to_string (perm);
+	case NMC_GENERIC_INFO_TYPE_GENERAL_PERMISSIONS_VALUE:
+		perm_result = nm_client_get_permission_result (nmc->client, perm);
+		HANDLE_TERMFORMAT (permission_result_to_color (perm_result));
+		s = permission_result_to_string_no_l10n (perm_result);
+		if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
+			return _(s);
+		return s;
+	default:
+		break;
+	}
+
+	g_return_val_if_reached (NULL);
+}
+
+static const NmcMetaGenericInfo *const metagen_general_permissions[_NMC_GENERIC_INFO_TYPE_GENERAL_PERMISSIONS_NUM + 1] = {
+#define _METAGEN_GENERAL_PERMISSIONS(type, name) \
+	[type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_general_permissions_get_fcn)
+	_METAGEN_GENERAL_PERMISSIONS (NMC_GENERIC_INFO_TYPE_GENERAL_PERMISSIONS_PERMISSION,  "PERMISSION"),
+	_METAGEN_GENERAL_PERMISSIONS (NMC_GENERIC_INFO_TYPE_GENERAL_PERMISSIONS_VALUE,       "VALUE"),
 };
-#define NMC_FIELDS_NM_PERMISSIONS_ALL     "PERMISSION,VALUE"
-#define NMC_FIELDS_NM_PERMISSIONS_COMMON  "PERMISSION,VALUE"
+
+/*****************************************************************************/
 
 /* Available fields for 'general logging' */
 static const NmcMetaGenericInfo *const nmc_fields_nm_logging[] = {
@@ -429,60 +517,6 @@ do_general_status (NmCli *nmc, int argc, char **argv)
 	return nmc->return_value;
 }
 
-static const char *
-permission_to_string (NMClientPermission perm)
-{
-	switch (perm) {
-	case NM_CLIENT_PERMISSION_ENABLE_DISABLE_NETWORK:
-		return NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK;
-	case NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIFI:
-		return NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI;
-	case NM_CLIENT_PERMISSION_ENABLE_DISABLE_WWAN:
-		return NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN;
-	case NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIMAX:
-		return NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX;
-	case NM_CLIENT_PERMISSION_SLEEP_WAKE:
-		return NM_AUTH_PERMISSION_SLEEP_WAKE;
-	case NM_CLIENT_PERMISSION_NETWORK_CONTROL:
-		return NM_AUTH_PERMISSION_NETWORK_CONTROL;
-	case NM_CLIENT_PERMISSION_WIFI_SHARE_PROTECTED:
-		return NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED;
-	case NM_CLIENT_PERMISSION_WIFI_SHARE_OPEN:
-		return NM_AUTH_PERMISSION_WIFI_SHARE_OPEN;
-	case NM_CLIENT_PERMISSION_SETTINGS_MODIFY_SYSTEM:
-		return NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM;
-	case NM_CLIENT_PERMISSION_SETTINGS_MODIFY_OWN:
-		return NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN;
-	case NM_CLIENT_PERMISSION_SETTINGS_MODIFY_HOSTNAME:
-		return NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME;
-	case NM_CLIENT_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS:
-		return NM_AUTH_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS;
-	case NM_CLIENT_PERMISSION_RELOAD:
-		return NM_AUTH_PERMISSION_RELOAD;
-	case NM_CLIENT_PERMISSION_CHECKPOINT_ROLLBACK:
-		return NM_AUTH_PERMISSION_CHECKPOINT_ROLLBACK;
-	case NM_CLIENT_PERMISSION_ENABLE_DISABLE_STATISTICS:
-		return NM_AUTH_PERMISSION_ENABLE_DISABLE_STATISTICS;
-	default:
-		return _("unknown");
-	}
-}
-
-static const char *
-permission_result_to_string (NMClientPermissionResult perm_result)
-{
-	switch (perm_result) {
-	case NM_CLIENT_PERMISSION_RESULT_YES:
-		return _("yes");
-	case NM_CLIENT_PERMISSION_RESULT_NO:
-		return _("no");
-	case NM_CLIENT_PERMISSION_RESULT_AUTH:
-		return _("auth");
-	default:
-		return _("unknown");
-	}
-}
-
 static gboolean
 timeout_cb (gpointer user_data)
 {
@@ -498,49 +532,30 @@ static int
 print_permissions (void *user_data)
 {
 	NmCli *nmc = user_data;
+	gs_free_error GError *error = NULL;
+	const char *fields_str = NULL;
 	NMClientPermission perm;
-	GError *error = NULL;
-	const char *fields_str;
-	const char *fields_all =    NMC_FIELDS_NM_PERMISSIONS_ALL;
-	const char *fields_common = NMC_FIELDS_NM_PERMISSIONS_COMMON;
-	const NMMetaAbstractInfo *const*tmpl;
-	NmcOutputField *arr;
-	NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
+	guint i;
+	gpointer permissions[NM_CLIENT_PERMISSION_LAST + 1];
 
-	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
-		fields_str = fields_common;
-	else if (!nmc->required_fields || strcasecmp (nmc->required_fields, "all") == 0)
-		fields_str = fields_all;
-	else
+	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0) {
+	} else if (strcasecmp (nmc->required_fields, "all") == 0) {
+	} else
 		fields_str = nmc->required_fields;
 
-	tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_nm_permissions;
-	out_indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &error);
+	for (i = 0, perm = NM_CLIENT_PERMISSION_NONE + 1; perm <= NM_CLIENT_PERMISSION_LAST; perm++)
+		permissions[i++] = GINT_TO_POINTER (perm);
+	permissions[i++] = NULL;
 
-	if (error) {
+	if (!nmc_print (&nmc->nmc_config,
+	                permissions,
+	                _("NetworkManager permissions"),
+	                (const NMMetaAbstractInfo *const*) metagen_general_permissions,
+	                fields_str,
+	                &error)) {
 		g_string_printf (nmc->return_text, _("Error: 'general permissions': %s"), error->message);
-		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		return FALSE;
 	}
-
-	arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (out.output_data, arr);
-
-
-	for (perm = NM_CLIENT_PERMISSION_NONE + 1; perm <= NM_CLIENT_PERMISSION_LAST; perm++) {
-		NMClientPermissionResult perm_result = nm_client_get_permission_result (nmc->client, perm);
-
-		arr = nmc_dup_fields_array (tmpl, 0);
-		set_val_strc (arr, 0, permission_to_string (perm));
-		set_val_strc (arr, 1, permission_result_to_string (perm_result));
-		g_ptr_array_add (out.output_data, arr);
-	}
-	print_data_prepare_width (out.output_data);
-	print_data (&nmc->nmc_config,
-	            out_indices,
-	            _("NetworkManager permissions"),
-	            0, &out);
 
 	quit ();
 	return G_SOURCE_REMOVE;
