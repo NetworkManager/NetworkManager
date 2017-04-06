@@ -8845,9 +8845,10 @@ reactivate_proxy_config (NMDevice *self)
 	nm_device_set_proxy_config (self, priv->dhcp4.pac_url);
 	nm_pacrunner_manager_send (priv->pacrunner_manager,
 	                           nm_device_get_ip_iface (self),
+	                           nm_device_get_ip_iface (self),
 	                           priv->proxy_config,
-	                           priv->ip4_config,
-	                           priv->ip6_config);
+	                           NULL,
+	                           NULL);
 }
 
 static gboolean
@@ -12537,9 +12538,10 @@ _set_state_full (NMDevice *self,
 		if (priv->proxy_config) {
 			nm_pacrunner_manager_send (priv->pacrunner_manager,
 			                           nm_device_get_ip_iface (self),
+			                           nm_device_get_ip_iface (self),
 			                           priv->proxy_config,
-			                           priv->ip4_config,
-			                           priv->ip6_config);
+			                           NULL,
+			                           NULL);
 		}
 		break;
 	case NM_DEVICE_STATE_FAILED:
