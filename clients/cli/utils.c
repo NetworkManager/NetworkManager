@@ -35,6 +35,9 @@
 #include "common.h"
 #include "settings.h"
 
+#define ML_HEADER_WIDTH 79
+#define ML_VALUE_INDENT 40
+
 /*****************************************************************************/
 
 static const char *
@@ -1059,35 +1062,30 @@ print_required_fields (const NmcConfig *nmc_config,
                        int indent,
                        const NmcOutputField *field_values)
 {
-	GString *str;
+	nm_auto_free_gstring GString *str = NULL;
 	int width1, width2;
 	int table_width = 0;
-	char *line = NULL;
-	char *indent_str;
-	const char *not_set_str = "--";
+	const char *not_set_str;
 	int i;
-	gboolean multiline = nmc_config->multiline_output;
 	gboolean terse = (nmc_config->print_output == NMC_PRINT_TERSE);
 	gboolean pretty = (nmc_config->print_output == NMC_PRINT_PRETTY);
-	gboolean escape = nmc_config->escape_values;
 	gboolean main_header_add = of_flags & NMC_OF_FLAG_MAIN_HEADER_ADD;
 	gboolean main_header_only = of_flags & NMC_OF_FLAG_MAIN_HEADER_ONLY;
 	gboolean field_names = of_flags & NMC_OF_FLAG_FIELD_NAMES;
 	gboolean section_prefix = of_flags & NMC_OF_FLAG_SECTION_PREFIX;
 
-	enum { ML_HEADER_WIDTH = 79 };
-	enum { ML_VALUE_INDENT = 40 };
-
-
 	/* --- Main header --- */
 	if ((main_header_add || main_header_only) && pretty) {
-		int header_width = nmc_string_screen_width (header_name, NULL) + 4;
+		gs_free char *line = NULL;
+		int header_width;
 
-		if (multiline) {
-			table_width = header_width < ML_HEADER_WIDTH ? ML_HEADER_WIDTH : header_width;
+		header_width = nmc_string_screen_width (header_name, NULL) + 4;
+
+		if (nmc_config->multiline_output) {
+			table_width = NM_MAX (header_width, ML_HEADER_WIDTH);
 			line = g_strnfill (ML_HEADER_WIDTH, '=');
 		} else { /* tabular */
-			table_width = table_width < header_width ? header_width : table_width;
+			table_width = NM_MAX (table_width, header_width);
 			line = g_strnfill (table_width, '=');
 		}
 
@@ -1096,23 +1094,20 @@ print_required_fields (const NmcConfig *nmc_config,
 		g_print ("%s\n", line);
 		g_print ("%*s\n", (table_width + width2)/2 + width1 - width2, header_name);
 		g_print ("%s\n", line);
-		g_free (line);
 	}
 
 	if (main_header_only)
 		return;
 
 	/* No field headers are printed in terse mode nor for multiline output */
-	if ((terse || multiline) && field_names)
+	if ((terse || nmc_config->multiline_output) && field_names)
 		return;
 
-	if (terse)
-		not_set_str = ""; /* Don't replace empty strings in terse mode */
+	/* Don't replace empty strings in terse mode */
+	not_set_str = terse ? "" : "--";
 
-
-	if (multiline) {
+	if (nmc_config->multiline_output) {
 		for (i = 0; i < indices->len; i++) {
-			char *tmp;
 			int idx = g_array_index (indices, int, i);
 			gboolean is_array = field_values[idx].value_is_array;
 
@@ -1123,13 +1118,16 @@ print_required_fields (const NmcConfig *nmc_config,
 				continue;
 
 			if (is_array) {
-				/* value is a null-terminated string array */
-				const char **p, *val, *print_val;
 				gs_free char *val_to_free = NULL;
+				const char **p, *val, *print_val;
 				int j;
 
+				/* value is a null-terminated string array */
+
 				for (p = (const char **) field_values[idx].value, j = 1; p && *p; p++, j++) {
-					val = *p ? *p : not_set_str;
+					gs_free char *tmp = NULL;
+
+					val = *p ?: not_set_str;
 					print_val = colorize_string (nmc_config->use_colors, field_values[idx].color, field_values[idx].color_fmt,
 					                             val, &val_to_free);
 					tmp = g_strdup_printf ("%s%s%s[%d]:",
@@ -1140,14 +1138,15 @@ print_required_fields (const NmcConfig *nmc_config,
 					width1 = strlen (tmp);
 					width2 = nmc_string_screen_width (tmp, NULL);
 					g_print ("%-*s%s\n", terse ? 0 : ML_VALUE_INDENT+width1-width2, tmp, print_val);
-					g_free (tmp);
 				}
 			} else {
-				/* value is a string */
+				gs_free char *val_to_free = NULL;
+				gs_free char *tmp = NULL;
 				const char *hdr_name = (const char*) field_values[0].value;
 				const char *val = (const char*) field_values[idx].value;
 				const char *print_val;
-				gs_free char *val_to_free = NULL;
+
+				/* value is a string */
 
 				val = val && *val ? val : not_set_str;
 				print_val = colorize_string (nmc_config->use_colors, field_values[idx].color, field_values[idx].color_fmt,
@@ -1159,13 +1158,12 @@ print_required_fields (const NmcConfig *nmc_config,
 				width1 = strlen (tmp);
 				width2 = nmc_string_screen_width (tmp, NULL);
 				g_print ("%-*s%s\n", terse ? 0 : ML_VALUE_INDENT+width1-width2, tmp, print_val);
-				g_free (tmp);
 			}
 		}
 		if (pretty) {
-			line = g_strnfill (ML_HEADER_WIDTH, '-');
-			g_print ("%s\n", line);
-			g_free (line);
+			gs_free char *line = NULL;
+
+			g_print ("%s\n", (line = g_strnfill (ML_HEADER_WIDTH, '-')));
 		}
 
 		return;
@@ -1176,13 +1174,17 @@ print_required_fields (const NmcConfig *nmc_config,
 	str = g_string_new (NULL);
 
 	for (i = 0; i < indices->len; i++) {
-		int idx = g_array_index (indices, int, i);
 		gs_free char *val_to_free = NULL;
-		const char *value = get_value_to_print (nmc_config->use_colors, (NmcOutputField *) field_values+idx, field_names,
-		                                        not_set_str, &val_to_free);
+		int idx;
+		const char *value;
+
+		idx = g_array_index (indices, int, i);
+
+		value = get_value_to_print (nmc_config->use_colors, (NmcOutputField *) field_values+idx, field_names,
+		                            not_set_str, &val_to_free);
 
 		if (terse) {
-			if (escape) {
+			if (nmc_config->escape_values) {
 				const char *p = value;
 				while (*p) {
 					if (*p == ':' || *p == '\\')
@@ -1207,21 +1209,20 @@ print_required_fields (const NmcConfig *nmc_config,
 	if (str->len > 0) {
 		g_string_truncate (str, str->len-1);  /* Chop off last column separator */
 		if (indent > 0) {
-			indent_str = g_strnfill (indent, ' ');
-			g_string_prepend (str, indent_str);
-			g_free (indent_str);
+			gs_free char *indent_str = NULL;
+
+			g_string_prepend (str, (indent_str = g_strnfill (indent, ' ')));
 		}
+
 		g_print ("%s\n", str->str);
 
 		/* Print horizontal separator */
 		if (field_names && pretty) {
-			line = g_strnfill (table_width, '-');
-			g_print ("%s\n", line);
-			g_free (line);
+			gs_free char *line = NULL;
+
+			g_print ("%s\n", (line = g_strnfill (table_width, '-')));
 		}
 	}
-
-	g_string_free (str, TRUE);
 }
 
 void
