@@ -227,9 +227,6 @@ const NmcMetaGenericInfo *const nmc_fields_con_active_details_groups[] = {
 #define CON_SHOW_DETAIL_GROUP_PROFILE "profile"
 #define CON_SHOW_DETAIL_GROUP_ACTIVE  "active"
 
-/* glib main loop variable - defined in nmcli.c */
-extern GMainLoop *loop;
-
 static guint progress_id = 0;  /* ID of event source for displaying progress */
 
 /* for readline TAB completion in editor */
@@ -571,7 +568,6 @@ nmc_setting_new_for_name (const char *name)
 	return setting;
 }
 
-/* quit main loop */
 static void
 quit (void)
 {
@@ -581,7 +577,7 @@ quit (void)
 		nmc_terminal_erase_line ();
 	}
 
-	g_main_loop_quit (loop);  /* quit main loop */
+	g_main_loop_quit (loop);
 }
 
 static char *

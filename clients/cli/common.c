@@ -36,8 +36,6 @@
 
 #include "utils.h"
 
-extern GMainLoop *loop;
-
 const NmcMetaGenericInfo *const nmc_fields_ip4_config[] = {
 	NMC_META_GENERIC ("GROUP"),     /* 0 */
 	NMC_META_GENERIC ("ADDRESS"),   /* 1 */
@@ -1169,8 +1167,6 @@ nmc_parse_lldp_capabilities (guint value)
 
 	return g_string_free (str, FALSE);
 }
-
-extern GMainLoop *loop;
 
 static void
 command_done (GObject *object, GAsyncResult *res, gpointer user_data)

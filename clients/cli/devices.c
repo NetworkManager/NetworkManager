@@ -245,9 +245,6 @@ const NmcMetaGenericInfo *const nmc_fields_dev_lldp_list[] = {
 #define NMC_FIELDS_DEV_LLDP_LIST_COMMON  "DEVICE,CHASSIS-ID,PORT-ID,PORT-DESCRIPTION,SYSTEM-NAME,SYSTEM-DESCRIPTION," \
                                          "SYSTEM-CAPABILITIES"
 
-/* glib main loop variable - defined in nmcli.c */
-extern GMainLoop *loop;
-
 static guint progress_id = 0;  /* ID of event source for displaying progress */
 
 static void
@@ -450,7 +447,6 @@ usage_device_lldp (void)
 	              "used to list neighbors for a particular interface.\n\n"));
 }
 
-/* quit main loop */
 static void
 quit (void)
 {
@@ -459,7 +455,7 @@ quit (void)
 		nmc_terminal_erase_line ();
 	}
 
-	g_main_loop_quit (loop);  /* quit main loop */
+	g_main_loop_quit (loop);
 }
 
 static int

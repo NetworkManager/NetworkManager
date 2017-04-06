@@ -155,6 +155,8 @@ extern NmCli nm_cli;
 #define NMCLI_ERROR (nmcli_error_quark ())
 GQuark nmcli_error_quark (void);
 
+extern GMainLoop *loop;
+
 gboolean nmc_seen_sigint (void);
 void     nmc_clear_sigint (void);
 void     nmc_set_sigquit_internal (void);

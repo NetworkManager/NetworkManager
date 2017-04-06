@@ -364,10 +364,6 @@ static const NmcMetaGenericInfo *const metagen_general_logging[_NMC_GENERIC_INFO
 
 /*****************************************************************************/
 
-/* glib main loop variable - defined in nmcli.c */
-extern GMainLoop *loop;
-
-
 static void
 usage_general (void)
 {
@@ -507,11 +503,10 @@ usage_monitor (void)
 	              "Prints a line whenever a change occurs in NetworkManager\n\n"));
 }
 
-/* quit main loop */
 static void
 quit (void)
 {
-	g_main_loop_quit (loop);  /* quit main loop */
+	g_main_loop_quit (loop);
 }
 
 static gboolean
