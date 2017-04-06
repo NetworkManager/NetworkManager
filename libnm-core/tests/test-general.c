@@ -4655,6 +4655,81 @@ test_nm_utils_strstrdictkey (void)
 
 /*****************************************************************************/
 
+static guint
+_g_strv_length (gconstpointer arr)
+{
+	return arr ? g_strv_length ((char **) arr) : 0;
+}
+
+static void
+test_nm_ptrarray_len (void)
+{
+#define _PTRARRAY_cmp(len, arr) \
+	G_STMT_START { \
+		g_assert_cmpint (len, ==, NM_PTRARRAY_LEN (arr)); \
+		g_assert_cmpint (len, ==, _g_strv_length (arr)); \
+	} G_STMT_END
+#define _PTRARRAY_LEN0(T) \
+	G_STMT_START { \
+		T **vnull = NULL; \
+		T *const*vnull1 = NULL; \
+		T *const*const vnull2 = NULL; \
+		T *v0[] = { NULL }; \
+		T *const*v01 = v0; \
+		T *const*const v02 = v0; \
+		T **const v03 = v0; \
+		\
+		_PTRARRAY_cmp (0, vnull); \
+		_PTRARRAY_cmp (0, vnull1); \
+		_PTRARRAY_cmp (0, vnull2); \
+		_PTRARRAY_cmp (0, v0); \
+		_PTRARRAY_cmp (0, v01); \
+		_PTRARRAY_cmp (0, v02); \
+		_PTRARRAY_cmp (0, v03); \
+	} G_STMT_END
+
+	_PTRARRAY_LEN0 (char);
+	_PTRARRAY_LEN0 (const char);
+	_PTRARRAY_LEN0 (int);
+	_PTRARRAY_LEN0 (const int);
+	_PTRARRAY_LEN0 (void *);
+	_PTRARRAY_LEN0 (void);
+	_PTRARRAY_LEN0 (const void);
+
+#define _PTRARRAY_LENn(T) \
+	G_STMT_START { \
+		T x[5] = { 0 }; \
+		\
+		T *v1[] = { &x[0], NULL }; \
+		T *const*v11 = v1; \
+		T *const*const v12 = v1; \
+		T **const v13 = v1; \
+		\
+		T *v2[] = { &x[0], &x[1], NULL }; \
+		T *const*v21 = v2; \
+		T *const*const v22 = v2; \
+		T **const v23 = v2; \
+		\
+		_PTRARRAY_cmp (1, v1); \
+		_PTRARRAY_cmp (1, v11); \
+		_PTRARRAY_cmp (1, v12); \
+		_PTRARRAY_cmp (1, v13); \
+		\
+		_PTRARRAY_cmp (2, v2); \
+		_PTRARRAY_cmp (2, v21); \
+		_PTRARRAY_cmp (2, v22); \
+		_PTRARRAY_cmp (2, v23); \
+	} G_STMT_END
+
+	_PTRARRAY_LENn (char);
+	_PTRARRAY_LENn (const char);
+	_PTRARRAY_LENn (int);
+	_PTRARRAY_LENn (const int);
+	_PTRARRAY_LENn (void *);
+}
+
+/*****************************************************************************/
+
 static void
 test_nm_utils_dns_option_validate_do (char *option, gboolean ipv6, const NMUtilsDNSOptionDesc *descs,
                                       gboolean exp_result, char *exp_name, gboolean exp_value)
@@ -5716,6 +5791,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/_glib_compat_g_hash_table_get_keys_as_array", test_g_hash_table_get_keys_as_array);
 	g_test_add_func ("/core/general/_nm_utils_ptrarray_find_binary_search", test_nm_utils_ptrarray_find_binary_search);
 	g_test_add_func ("/core/general/_nm_utils_strstrdictkey", test_nm_utils_strstrdictkey);
+	g_test_add_func ("/core/general/nm_ptrarray_len", test_nm_ptrarray_len);
 
 	g_test_add_func ("/core/general/_nm_utils_dns_option_validate", test_nm_utils_dns_option_validate);
 	g_test_add_func ("/core/general/_nm_utils_dns_option_find_idx", test_nm_utils_dns_option_find_idx);
