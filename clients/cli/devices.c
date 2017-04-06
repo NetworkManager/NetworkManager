@@ -3110,7 +3110,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	if (ap_flags & NM_802_11_AP_FLAGS_PRIVACY) {
 		/* Ask for missing password when one is expected and '--ask' is used */
 		if (!password && nmc->ask)
-			password = passwd_ask = nmc_readline_echo (nmc->show_secrets, _("Password: "));
+			password = passwd_ask = nmc_readline_echo (nmc->nmc_config.show_secrets, _("Password: "));
 
 		if (password) {
 			if (!connection)
@@ -3408,7 +3408,7 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 
 		next_arg (nmc, &argc, &argv, NULL);
 	}
-	show_password = nmc->show_secrets || show_password;
+	show_password = nmc->nmc_config.show_secrets || show_password;
 
 	if (nmc->complete)
 		return nmc->return_value;

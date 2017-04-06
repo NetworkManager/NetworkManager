@@ -1873,9 +1873,9 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 			if (without_fields || profile_flds) {
 				if (con) {
 					nmc->required_fields = profile_flds;
-					if (nmc->show_secrets)
+					if (nmc->nmc_config.show_secrets)
 						update_secrets_in_connection (NM_REMOTE_CONNECTION (con), con);
-					res = nmc_connection_profile_details (con, nmc, nmc->show_secrets);
+					res = nmc_connection_profile_details (con, nmc, nmc->nmc_config.show_secrets);
 					nmc->required_fields = NULL;
 					if (!res)
 						goto finish;

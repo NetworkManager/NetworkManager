@@ -152,7 +152,7 @@ parse_global_arg (NmCli *nmc, const char *arg)
 	if (nmc_arg_is_option (arg, "ask"))
 		nmc->ask = TRUE;
 	else if (nmc_arg_is_option (arg, "show-secrets"))
-		nmc->show_secrets = TRUE;
+		nmc->nmc_config_mutable.show_secrets = TRUE;
 	else
 		return FALSE;
 

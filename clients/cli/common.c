@@ -840,7 +840,7 @@ nmc_secrets_requested (NMSecretAgentSimple *agent,
 	}
 
 	success = get_secrets_from_user (request_id, title, msg, connection, nmc->nmc_config.in_editor || nmc->ask,
-	                                 nmc->show_secrets, nmc->pwds_hash, secrets);
+	                                 nmc->nmc_config.show_secrets, nmc->pwds_hash, secrets);
 	if (success)
 		nm_secret_agent_simple_response (agent, request_id, secrets);
 	else {

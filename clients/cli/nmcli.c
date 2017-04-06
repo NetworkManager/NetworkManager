@@ -538,7 +538,7 @@ nmc_init (NmCli *nmc)
 	nmc->required_fields = NULL;
 	nmc->ask = FALSE;
 	nmc->complete = FALSE;
-	nmc->show_secrets = FALSE;
+	nmc->nmc_config_mutable.show_secrets = FALSE;
 	nmc->nmc_config_mutable.use_colors = NMC_USE_COLOR_AUTO;
 	nmc->nmc_config_mutable.in_editor = FALSE;
 	nmc->editor_status_line = FALSE;
