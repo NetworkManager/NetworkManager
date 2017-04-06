@@ -709,7 +709,7 @@ update_secrets_in_connection (NMRemoteConnection *remote, NMConnection *local)
 }
 
 static gboolean
-nmc_connection_profile_details (NMConnection *connection, NmCli *nmc, gboolean secrets)
+nmc_connection_profile_details (NMConnection *connection, NmCli *nmc)
 {
 	GError *error = NULL;
 	GArray *print_settings_array;
@@ -771,7 +771,7 @@ nmc_connection_profile_details (NMConnection *connection, NmCli *nmc, gboolean s
 
 		setting = nm_connection_get_setting_by_name (connection, nm_meta_setting_infos_editor[section_idx].general->setting_name);
 		if (setting) {
-			setting_details (&nmc->nmc_config, setting, prop_name, secrets);
+			setting_details (&nmc->nmc_config, setting, prop_name);
 			was_output = TRUE;
 		}
 	}
@@ -1875,7 +1875,7 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 					nmc->required_fields = profile_flds;
 					if (nmc->nmc_config.show_secrets)
 						update_secrets_in_connection (NM_REMOTE_CONNECTION (con), con);
-					res = nmc_connection_profile_details (con, nmc, nmc->nmc_config.show_secrets);
+					res = nmc_connection_profile_details (con, nmc);
 					nmc->required_fields = NULL;
 					if (!res)
 						goto finish;
@@ -1893,7 +1893,7 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 				}
 			}
 			new_line = TRUE;
-			
+
 			/* Take next argument.
 			 * But for pos != NULL we have more connections of the same name,
 			 * so process the same argument again.
@@ -3187,14 +3187,11 @@ get_valid_properties_string (const NameItem *array,
 
 			/* Search the array with the arguments of the current property */
 			setting_info = nm_meta_setting_info_editor_find_by_name (iter->name);
-			j = 0;
-			while (TRUE) {
+			for (j = 0; j < setting_info->properties_num; j++) {
 				gchar *new;
 				const char *arg_name;
 
-				if (j + 1 >= setting_info->properties_num)
-					break;
-				arg_name = setting_info->properties[j + 1].property_name;
+				arg_name = setting_info->properties[j].property_name;
 
 				/* If required, expand the alias too */
 				if (!postfix && iter->alias) {
@@ -3207,10 +3204,8 @@ get_valid_properties_string (const NameItem *array,
 					g_free (new);
 				}
 
-				if (postfix && !g_str_has_prefix (arg_name, postfix)) {
-					j++;
+				if (postfix && !g_str_has_prefix (arg_name, postfix))
 					continue;
-				}
 
 				if (modifier)
 					g_string_append_c (str, modifier);
@@ -3219,7 +3214,6 @@ get_valid_properties_string (const NameItem *array,
 				                       arg_name);
 				g_string_append (str, new);
 				g_free (new);
-				j++;
 			}
 			iter++;
 		}
@@ -5969,7 +5963,7 @@ editor_show_connection (NMConnection *connection, NmCli *nmc)
 	nmc->nmc_config_mutable.multiline_output = TRUE;
 	nmc->nmc_config_mutable.escape_values = 0;
 
-	nmc_connection_profile_details (connection, nmc, nmc->nmc_config.show_secrets);
+	nmc_connection_profile_details (connection, nmc);
 }
 
 static void
@@ -5982,7 +5976,7 @@ editor_show_setting (NMSetting *setting, NmCli *nmc)
 	nmc->nmc_config_mutable.multiline_output = TRUE;
 	nmc->nmc_config_mutable.escape_values = 0;
 
-	setting_details (&nmc->nmc_config, setting, NULL, nmc->nmc_config.show_secrets);
+	setting_details (&nmc->nmc_config, setting, NULL);
 }
 
 typedef enum {

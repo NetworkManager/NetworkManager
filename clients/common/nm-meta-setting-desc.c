@@ -519,13 +519,6 @@ _env_warn_fcn (const NMMetaEnvironment *environment,
 	const NMMetaPropertyInfo *property_info, char ***out_to_free
 
 static char *
-_get_fcn_name (ARGS_GET_FCN)
-{
-	nm_assert (nm_streq0 (nm_setting_get_name (setting), property_info->setting_info->general->setting_name));
-	return g_strdup (property_info->setting_info->general->setting_name);
-}
-
-static char *
 _get_fcn_nmc_with_default (ARGS_GET_FCN)
 {
 	const char *s;
@@ -4473,10 +4466,6 @@ _set_fcn_wireless_security_psk (ARGS_SET_FCN)
 		PROPERTY_TYP_DATA_SUBTYPE (stype, __VA_ARGS__), \
 	)
 
-static const NMMetaPropertyType _pt_name = {
-	.get_fcn =                      _get_fcn_name,
-};
-
 static const NMMetaPropertyType _pt_gobject_readonly = {
 	.get_fcn =                      _get_fcn_gobject,
 };
@@ -4533,18 +4522,6 @@ static const NMMetaPropertyType _pt_gobject_enum = {
 
 /*****************************************************************************/
 
-/* FIXME: it is wrong to have a property-type "name". The name is a regular
- * "property" of the setting. Also, this is redundant to the setting_name
- * in NMMetaSettingInfo. */
-#define PROPERTY_INFO_NAME() \
-	{ \
-		.meta_type =                    &nm_meta_type_property_info, \
-		.setting_info =                 &nm_meta_setting_infos_editor[_CURRENT_NM_META_SETTING_TYPE], \
-		.property_name =                N_ ("name"), \
-		.is_name                        = TRUE, \
-		.property_type =                &_pt_name, \
-	}
-
 #define PROPERTY_INFO(name, doc) \
 	.meta_type =                        &nm_meta_type_property_info, \
 	.setting_info =                     &nm_meta_setting_infos_editor[_CURRENT_NM_META_SETTING_TYPE], \
@@ -4578,7 +4555,6 @@ static const NMMetaPropertyType _pt_gobject_enum = {
 
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_802_1X
 static const NMMetaPropertyInfo property_infos_802_1X[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_EAP),
 		.property_type = DEFINE_PROPERTY_TYPE (
@@ -4866,7 +4842,6 @@ static const NMMetaPropertyInfo property_infos_802_1X[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_ADSL
 static const NMMetaPropertyInfo property_infos_ADSL[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_ADSL_USERNAME),
 		.property_type =                &_pt_gobject_string,
@@ -4910,7 +4885,6 @@ static const NMMetaPropertyInfo property_infos_ADSL[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_BLUETOOTH
 static const NMMetaPropertyInfo property_infos_BLUETOOTH[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_BLUETOOTH_BDADDR),
 		.property_type =                &_pt_gobject_mac,
@@ -4928,7 +4902,6 @@ static const NMMetaPropertyInfo property_infos_BLUETOOTH[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_BOND
 static const NMMetaPropertyInfo property_infos_BOND[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_BOND_OPTIONS),
 		.property_type = DEFINE_PROPERTY_TYPE (
@@ -4944,7 +4917,6 @@ static const NMMetaPropertyInfo property_infos_BOND[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_BRIDGE
 static const NMMetaPropertyInfo property_infos_BRIDGE[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_BRIDGE_MAC_ADDRESS),
 		.property_type =                &_pt_gobject_mac,
@@ -4982,7 +4954,6 @@ static const NMMetaPropertyInfo property_infos_BRIDGE[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_BRIDGE_PORT
 static const NMMetaPropertyInfo property_infos_BRIDGE_PORT[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_BRIDGE_PORT_PRIORITY),
 		.property_type =                &_pt_gobject_uint,
@@ -5000,7 +4971,6 @@ static const NMMetaPropertyInfo property_infos_BRIDGE_PORT[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_CDMA
 static const NMMetaPropertyInfo property_infos_CDMA[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_CDMA_NUMBER),
 		.property_type =                &_pt_gobject_string,
@@ -5030,7 +5000,6 @@ static const NMMetaPropertyInfo property_infos_CDMA[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_CONNECTION
 static const NMMetaPropertyInfo property_infos_CONNECTION[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_ID),
 		.property_type =                &_pt_gobject_string,
@@ -5177,7 +5146,6 @@ static const NMMetaPropertyInfo property_infos_CONNECTION[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_DCB
 static const NMMetaPropertyInfo property_infos_DCB[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_APP_FCOE_FLAGS),
 		.property_type = DEFINE_PROPERTY_TYPE (
@@ -5287,15 +5255,8 @@ static const NMMetaPropertyInfo property_infos_DCB[] = {
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
-#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_DUMMY
-static const NMMetaPropertyInfo property_infos_DUMMY[] = {
-	PROPERTY_INFO_NAME(),
-};
-
-#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_GSM
 static const NMMetaPropertyInfo property_infos_GSM[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_GSM_NUMBER),
 		.property_type =                &_pt_gobject_string,
@@ -5361,7 +5322,6 @@ static const NMMetaPropertyInfo property_infos_GSM[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_INFINIBAND
 static const NMMetaPropertyInfo property_infos_INFINIBAND[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_INFINIBAND_MAC_ADDRESS),
 		.property_type =                &_pt_gobject_mac,
@@ -5402,7 +5362,6 @@ static const NMMetaPropertyInfo property_infos_INFINIBAND[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_IP4_CONFIG
 static const NMMetaPropertyInfo property_infos_IP4_CONFIG[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO (NM_SETTING_IP_CONFIG_METHOD, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_METHOD),
 		.property_type = DEFINE_PROPERTY_TYPE (
@@ -5535,7 +5494,6 @@ static const NMMetaPropertyInfo property_infos_IP4_CONFIG[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_IP6_CONFIG
 static const NMMetaPropertyInfo property_infos_IP6_CONFIG[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO (NM_SETTING_IP_CONFIG_METHOD, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_METHOD),
 		.property_type = DEFINE_PROPERTY_TYPE (
@@ -5677,7 +5635,6 @@ static const NMMetaPropertyInfo property_infos_IP6_CONFIG[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_IP_TUNNEL
 static const NMMetaPropertyInfo property_infos_IP_TUNNEL[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_IP_TUNNEL_MODE),
 		.property_type = DEFINE_PROPERTY_TYPE (
@@ -5740,7 +5697,6 @@ static const NMMetaPropertyInfo property_infos_IP_TUNNEL[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_MACSEC
 static const NMMetaPropertyInfo property_infos_MACSEC[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_MACSEC_PARENT),
 		.property_type =                &_pt_gobject_string,
@@ -5793,7 +5749,6 @@ static const NMMetaPropertyInfo property_infos_MACSEC[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_MACVLAN
 static const NMMetaPropertyInfo property_infos_MACVLAN[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_MACVLAN_PARENT),
 		.property_type =                &_pt_gobject_string,
@@ -5824,7 +5779,6 @@ static const NMMetaPropertyInfo property_infos_MACVLAN[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_OLPC_MESH
 static const NMMetaPropertyInfo property_infos_OLPC_MESH[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_OLPC_MESH_SSID),
 		.property_type = DEFINE_PROPERTY_TYPE (
@@ -5848,7 +5802,6 @@ static const NMMetaPropertyInfo property_infos_OLPC_MESH[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_PPPOE
 static const NMMetaPropertyInfo property_infos_PPPOE[] = {
-	PROPERTY_INFO_NAME (),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_PPPOE_SERVICE),
 		.property_type =                &_pt_gobject_string,
@@ -5871,7 +5824,6 @@ static const NMMetaPropertyInfo property_infos_PPPOE[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_PPP
 static const NMMetaPropertyInfo property_infos_PPP[] = {
-	PROPERTY_INFO_NAME (),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_PPP_NOAUTH),
 		.property_type =                &_pt_gobject_bool,
@@ -5952,7 +5904,6 @@ static const NMMetaPropertyInfo property_infos_PPP[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_PROXY
 static const NMMetaPropertyInfo property_infos_PROXY[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_PROXY_METHOD),
 		.property_type = DEFINE_PROPERTY_TYPE (
@@ -5986,7 +5937,6 @@ static const NMMetaPropertyInfo property_infos_PROXY[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_TEAM
 static const NMMetaPropertyInfo property_infos_TEAM[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_CONFIG),
 		.describe_message =             N_ (TEAM_DESCRIBE_MESSAGE),
@@ -6000,7 +5950,6 @@ static const NMMetaPropertyInfo property_infos_TEAM[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_TEAM_PORT
 static const NMMetaPropertyInfo property_infos_TEAM_PORT[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_PORT_CONFIG),
 		.describe_message =             N_ (TEAM_DESCRIBE_MESSAGE),
@@ -6014,7 +5963,6 @@ static const NMMetaPropertyInfo property_infos_TEAM_PORT[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_SERIAL
 static const NMMetaPropertyInfo property_infos_SERIAL[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_SERIAL_BAUD),
 		.property_type =                &_pt_gobject_uint,
@@ -6043,7 +5991,6 @@ static const NMMetaPropertyInfo property_infos_SERIAL[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_TUN
 static const NMMetaPropertyInfo property_infos_TUN[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_TUN_MODE),
 		.property_type = DEFINE_PROPERTY_TYPE (
@@ -6077,15 +6024,8 @@ static const NMMetaPropertyInfo property_infos_TUN[] = {
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
-#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_USER
-static const NMMetaPropertyInfo property_infos_USER[] = {
-	PROPERTY_INFO_NAME(),
-};
-
-#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_VLAN
 static const NMMetaPropertyInfo property_infos_VLAN[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_VLAN_PARENT),
 		.property_type =                &_pt_gobject_string,
@@ -6122,7 +6062,6 @@ static const NMMetaPropertyInfo property_infos_VLAN[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_VPN
 static const NMMetaPropertyInfo property_infos_VPN[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_VPN_SERVICE_TYPE),
 		.property_type = DEFINE_PROPERTY_TYPE (
@@ -6164,7 +6103,6 @@ static const NMMetaPropertyInfo property_infos_VPN[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_VXLAN
 static const NMMetaPropertyInfo property_infos_VXLAN[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_VXLAN_PARENT),
 		.property_type =                &_pt_gobject_string,
@@ -6234,7 +6172,6 @@ static const NMMetaPropertyInfo property_infos_VXLAN[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_WIMAX
 static const NMMetaPropertyInfo property_infos_WIMAX[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_WIMAX_MAC_ADDRESS),
 		.property_type =                &_pt_gobject_string,
@@ -6248,7 +6185,6 @@ static const NMMetaPropertyInfo property_infos_WIMAX[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_WIRED
 static const NMMetaPropertyInfo property_infos_WIRED[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRED_PORT),
 		/* Do not allow setting 'port' for now. It is not implemented in
@@ -6345,7 +6281,6 @@ static const NMMetaPropertyInfo property_infos_WIRED[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_WIRELESS
 static const NMMetaPropertyInfo property_infos_WIRELESS[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SSID),
 		.property_type = DEFINE_PROPERTY_TYPE (
@@ -6450,7 +6385,6 @@ static const NMMetaPropertyInfo property_infos_WIRELESS[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_WIRELESS_SECURITY
 static const NMMetaPropertyInfo property_infos_WIRELESS_SECURITY[] = {
-	PROPERTY_INFO_NAME(),
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_KEY_MGMT),
 		.property_type =                &_pt_gobject_string,
@@ -6576,6 +6510,11 @@ static const NMMetaPropertyInfo property_infos_WIRELESS_SECURITY[] = {
 };
 
 const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
+#define SETTING_INFO_EMPTY(type) \
+	[NM_META_SETTING_TYPE_##type] = { \
+		.meta_type =                        &nm_meta_type_setting_info_editor, \
+		.general =                          &nm_meta_setting_infos[NM_META_SETTING_TYPE_##type], \
+	}
 #define SETTING_INFO(type) \
 	[NM_META_SETTING_TYPE_##type] = { \
 		.meta_type =                        &nm_meta_type_setting_info_editor, \
@@ -6592,7 +6531,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 	SETTING_INFO (CDMA),
 	SETTING_INFO (CONNECTION),
 	SETTING_INFO (DCB),
-	SETTING_INFO (DUMMY),
+	SETTING_INFO_EMPTY (DUMMY),
 	SETTING_INFO (GSM),
 	SETTING_INFO (INFINIBAND),
 	SETTING_INFO (IP4_CONFIG),
@@ -6608,7 +6547,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 	SETTING_INFO (TEAM),
 	SETTING_INFO (TEAM_PORT),
 	SETTING_INFO (TUN),
-	SETTING_INFO (USER),
+	SETTING_INFO_EMPTY (USER),
 	SETTING_INFO (VLAN),
 	SETTING_INFO (VPN),
 	SETTING_INFO (VXLAN),
@@ -6641,8 +6580,20 @@ _meta_type_setting_info_editor_get_fcn (const NMMetaEnvironment *environment,
                                         NMMetaAccessorGetFlags get_flags,
                                         gpointer *out_to_free)
 {
-	nm_assert (out_to_free && !*out_to_free);
-	g_return_val_if_reached (NULL);
+	const NMMetaSettingInfoEditor *info = (const NMMetaSettingInfoEditor *) abstract_info;
+
+	nm_assert (!out_to_free || !*out_to_free);
+
+	if (!NM_IN_SET (get_type,
+	                NM_META_ACCESSOR_GET_TYPE_PARSABLE,
+	                NM_META_ACCESSOR_GET_TYPE_PRETTY))
+		return NULL;
+
+	nm_assert (out_to_free);
+
+	if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
+		return _(info->general->setting_name);
+	return info->general->setting_name;
 }
 
 static gconstpointer
@@ -6656,12 +6607,21 @@ _meta_type_property_info_get_fcn (const NMMetaEnvironment *environment,
 {
 	const NMMetaPropertyInfo *info = (const NMMetaPropertyInfo *) abstract_info;
 
-	nm_assert (out_to_free && !*out_to_free);
+	nm_assert (!out_to_free || !*out_to_free);
 
 	if (!NM_IN_SET (get_type,
 	                NM_META_ACCESSOR_GET_TYPE_PARSABLE,
 	                NM_META_ACCESSOR_GET_TYPE_PRETTY))
 		return NULL;
+
+	nm_assert (out_to_free);
+
+	if (   info->is_secret
+	    && !NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS)) {
+		if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
+			return _(NM_META_TEXT_HIDDEN);
+		return NM_META_TEXT_HIDDEN;
+	}
 
 	return (*out_to_free = info->property_type->get_fcn (environment, environment_user_data,
 	                                                     info, target,

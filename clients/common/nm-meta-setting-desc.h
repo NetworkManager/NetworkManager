@@ -167,12 +167,6 @@ struct _NMMetaPropertyInfo {
 
 	const char *property_name;
 
-	/* the property list for now must contain as first field the
-	 * "name", which isn't a regular property. This is required by
-	 * NmcOutputField and this first field is ignored for the
-	 * group_list/setting_info. */
-	bool is_name:1;
-
 	bool is_secret:1;
 
 	const char *describe_doc;

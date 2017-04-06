@@ -834,7 +834,7 @@ _output_selection_select_one (const NMMetaAbstractInfo *const* fields_array,
 		if (fi->meta_type == &nm_meta_type_setting_info_editor) {
 			const NMMetaSettingInfoEditor *fi_s = &fi->as.setting_info;
 
-			for (j = 1; j < fi_s->properties_num; j++) {
+			for (j = 0; j < fi_s->properties_num; j++) {
 				if (g_ascii_strcasecmp (right, fi_s->properties[j].property_name) == 0) {
 					found = TRUE;
 					break;
@@ -1037,7 +1037,9 @@ _output_selection_append (GArray *cols,
 			                               si, gfree_keeper, error))
 				return FALSE;
 		}
-		g_array_index (cols, PrintDataCol, col_idx).is_leaf = FALSE;
+
+		if (selection_item->info->meta_type != &nm_meta_type_setting_info_editor)
+			g_array_index (cols, PrintDataCol, col_idx).is_leaf = FALSE;
 	}
 
 	return TRUE;
@@ -1282,6 +1284,7 @@ typedef struct {
 	const PrintDataCol *col;
 	bool is_nested;
 	const char *title;
+	bool title_to_free:1;
 	int width;
 } PrintDataHeaderCell;
 
@@ -1297,6 +1300,13 @@ typedef struct {
 static void
 _print_data_header_cell_clear (gpointer cell_p)
 {
+	PrintDataHeaderCell *cell = cell_p;
+
+	if (cell->title_to_free) {
+		g_free ((char *) cell->title);
+		cell->title_to_free = FALSE;
+	}
+	cell->title = NULL;
 }
 
 static void
@@ -1331,6 +1341,7 @@ _print_fill (const NmcConfig *nmc_config,
 	guint targets_len;
 	gboolean pretty;
 	NMMetaAccessorGetType text_get_type;
+	NMMetaAccessorGetFlags text_get_flags;
 
 	pretty = (nmc_config->print_output != NMC_PRINT_TERSE);
 
@@ -1341,10 +1352,14 @@ _print_fill (const NmcConfig *nmc_config,
 		const PrintDataCol *col;
 		PrintDataHeaderCell *header_cell;
 		guint col_idx;
+		const NMMetaAbstractInfo *info;
+		gboolean translate_title;
 
 		col = &cols[i_col];
 		if (!col->is_leaf)
 			continue;
+
+		info = col->selection_item->info;
 
 		col_idx = header_row->len;
 		g_array_set_size (header_row, col_idx + 1);
@@ -1354,8 +1369,23 @@ _print_fill (const NmcConfig *nmc_config,
 		header_cell->col_idx = col_idx;
 		header_cell->col = col;
 		header_cell->is_nested = FALSE;
-		header_cell->title = nm_meta_abstract_info_get_name (col->selection_item->info);
-		if (pretty)
+
+		translate_title = pretty;
+
+		if (info->meta_type == &nm_meta_type_property_info) {
+			header_cell->title = nm_meta_abstract_info_get_name (info);
+			if (nmc_config->multiline_output) {
+				header_cell->title = g_strdup_printf ("%s.%s",
+				                                      ((const NMMetaPropertyInfo *) info)->setting_info->general->setting_name,
+				                                      header_cell->title);
+				header_cell->title_to_free = TRUE;
+			}
+		} else if (info->meta_type == &nm_meta_type_setting_info_editor)
+			header_cell->title = N_("name");
+		else
+			header_cell->title = nm_meta_abstract_info_get_name (info);
+
+		if (translate_title)
 			header_cell->title = _(header_cell->title);
 	}
 
@@ -1368,6 +1398,9 @@ _print_fill (const NmcConfig *nmc_config,
 	text_get_type = pretty
 	                ? NM_META_ACCESSOR_GET_TYPE_PRETTY
 	                : NM_META_ACCESSOR_GET_TYPE_PARSABLE;
+	text_get_flags = NM_META_ACCESSOR_GET_FLAGS_NONE;
+	if (nmc_config->show_secrets)
+		text_get_flags |= NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS;
 
 	for (i_row = 0; i_row < targets_len; i_row++) {
 		gpointer target = targets[i_row];
@@ -1389,7 +1422,7 @@ _print_fill (const NmcConfig *nmc_config,
 			                                        NULL,
 			                                        target,
 			                                        text_get_type,
-			                                        NM_META_ACCESSOR_GET_FLAGS_NONE,
+			                                        text_get_flags,
 			                                        (gpointer *) &to_free);
 			cell->text_to_free = !!to_free;
 
@@ -1434,6 +1467,26 @@ _print_fill (const NmcConfig *nmc_config,
 	*out_cells = cells;
 }
 
+static gboolean
+_print_skip_column (const NmcConfig *nmc_config,
+                    const PrintDataHeaderCell *header_cell)
+{
+	if (nmc_config->multiline_output) {
+		if (header_cell->col->selection_item->info->meta_type == &nm_meta_type_setting_info_editor) {
+			/* we skip the "name" entry for the setting in multiline output. */
+			return TRUE;
+		}
+	} else {
+		if (   header_cell->col->selection_item->info->meta_type == &nm_meta_type_setting_info_editor
+		    && header_cell->col->selection_item->sub_selection) {
+			/* in tabular form, we skip the "name" entry for sections that have sub-selections.
+			 * That is, for "ipv4.may-fail", but not for "ipv4". */
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
 static void
 _print_do (const NmcConfig *nmc_config,
            const char *header_name_no_l10n,
@@ -1453,7 +1506,7 @@ _print_do (const NmcConfig *nmc_config,
 	g_assert (col_len && row_len);
 
 	/* Main header */
-	if (pretty) {
+	if (pretty && header_name_no_l10n) {
 		gs_free char *line = NULL;
 		int header_width;
 		const char *header_name = _(header_name_no_l10n);
@@ -1485,6 +1538,9 @@ _print_do (const NmcConfig *nmc_config,
 			const PrintDataHeaderCell *header_cell = &header_row[i_col];
 			const char *title;
 
+			if (_print_skip_column (nmc_config, header_cell))
+				continue;
+
 			title = header_cell->title;
 
 			width1 = strlen (title);
@@ -1515,6 +1571,9 @@ _print_do (const NmcConfig *nmc_config,
 			gs_free char *text_to_free = NULL;
 			const char *text;
 
+			if (_print_skip_column (nmc_config, cell->header_cell))
+				continue;
+
 			if (cell->header_cell->is_nested) {
 				g_assert_not_reached (/*TODO*/);
 			} else {
@@ -1522,7 +1581,6 @@ _print_do (const NmcConfig *nmc_config,
 				                        cell->term_color, cell->term_format,
 				                        cell->text, &text_to_free);
 			}
-
 			if (multiline) {
 				gs_free char *prefix = NULL;
 

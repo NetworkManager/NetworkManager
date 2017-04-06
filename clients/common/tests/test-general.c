@@ -85,11 +85,6 @@ test_client_meta_check (void)
 
 				g_assert (pi->property_name == pi->meta_type->get_name ((const NMMetaAbstractInfo *) pi));
 
-				if (pi->is_name)
-					g_assert (p == 0);
-				else
-					g_assert (p != 0);
-
 				g_assert (pi->property_type);
 				g_assert (pi->property_type->get_fcn);
 			}

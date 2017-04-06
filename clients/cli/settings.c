@@ -471,10 +471,7 @@ get_property_val (NMSetting *setting, const char *prop, NMMetaAccessorGetType ge
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
 	if ((property_info = nm_meta_property_info_find_by_setting (setting, prop))) {
-		if (property_info->is_name) {
-			/* Traditionally, the "name" property was not handled here.
-			 * For the moment, skip it from get_property_val(). */
-		} else if (property_info->property_type->get_fcn) {
+		if (property_info->property_type->get_fcn) {
 			return property_info->property_type->get_fcn (&meta_environment,
 			                                              NULL,
 			                                              property_info,
@@ -549,10 +546,7 @@ nmc_setting_set_property (NMSetting *setting, const char *prop, const char *valu
 			return TRUE;
 		}
 
-		if (property_info->is_name) {
-			/* Traditionally, the "name" property was not handled here.
-			 * For the moment, skip it from get_property_val(). */
-		} else if (property_info->property_type->set_fcn) {
+		if (property_info->property_type->set_fcn) {
 			switch (property_info->setting_info->general->meta_type) {
 			case NM_META_SETTING_TYPE_CONNECTION:
 				if (nm_streq (property_info->property_name, NM_SETTING_CONNECTION_SECONDARIES)) {
@@ -613,10 +607,7 @@ nmc_setting_reset_property (NMSetting *setting, const char *prop, GError **error
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
 	if ((property_info = nm_meta_property_info_find_by_setting (setting, prop))) {
-		if (property_info->is_name) {
-			/* Traditionally, the "name" property was not handled here.
-			 * For the moment, skip it from get_property_val(). */
-		} else if (property_info->property_type->set_fcn) {
+		if (property_info->property_type->set_fcn) {
 			nmc_property_set_default_value (setting, prop);
 			return TRUE;
 		}
@@ -648,10 +639,7 @@ nmc_setting_remove_property_option (NMSetting *setting,
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
 	if ((property_info = nm_meta_property_info_find_by_setting (setting, prop))) {
-		if (property_info->is_name) {
-			/* Traditionally, the "name" property was not handled here.
-			 * For the moment, skip it from get_property_val(). */
-		} else if (property_info->property_type->remove_fcn) {
+		if (property_info->property_type->remove_fcn) {
 			return property_info->property_type->remove_fcn (&meta_environment,
 			                                                 NULL,
 			                                                 property_info,
@@ -707,10 +695,7 @@ nmc_setting_get_property_allowed_values (NMSetting *setting, const char *prop, c
 	*out_to_free = NULL;
 
 	if ((property_info = nm_meta_property_info_find_by_setting (setting, prop))) {
-		if (property_info->is_name) {
-			/* Traditionally, the "name" property was not handled here.
-			 * For the moment, skip it from get_property_val(). */
-		} else if (property_info->property_type->values_fcn) {
+		if (property_info->property_type->values_fcn) {
 			return property_info->property_type->values_fcn (property_info,
 			                                                 out_to_free);
 		} else if (property_info->property_typ_data && property_info->property_typ_data->values_static)
@@ -751,10 +736,7 @@ nmc_setting_get_property_desc (NMSetting *setting, const char *prop)
 		setting_desc_title = _("[NM property description]");
 	}
 
-	if (property_info->is_name) {
-		/* Traditionally, the "name" property was not handled here.
-		 * For the moment, skip it from get_property_val(). */
-	} else if (property_info->property_type->describe_fcn) {
+	if (property_info->property_type->describe_fcn) {
 		desc = property_info->property_type->describe_fcn (property_info, &desc_to_free);
 	} else
 		desc = property_info->describe_message;
@@ -809,29 +791,12 @@ nmc_property_set_gvalue (NMSetting *setting, const char *prop, GValue *value)
 
 /*****************************************************************************/
 
-static NmcOutputField *
-_dup_fields_array (const NMMetaSettingInfoEditor *setting_info, NmcOfFlags flags)
-{
-	NmcOutputField *row;
-	gsize l;
-
-	l = setting_info->properties_num;
-
-	row = g_malloc0 ((l + 1) * sizeof (NmcOutputField));
-	for (l = 0; l < setting_info->properties_num; l++)
-		row[l].info = (const NMMetaAbstractInfo *) &setting_info->properties[l];
-	row[0].flags = flags;
-	return row;
-}
-
 gboolean
-setting_details (const NmcConfig *nmc_config, NMSetting *setting, const char *one_prop, gboolean show_secrets)
+setting_details (const NmcConfig *nmc_config, NMSetting *setting, const char *one_prop)
 {
 	const NMMetaSettingInfoEditor *setting_info;
-	NmcOutputField *arr;
-	guint i;
-	NMMetaAccessorGetType type = NM_META_ACCESSOR_GET_TYPE_PRETTY;
-	NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
+	gs_free_error GError *error = NULL;
+	gs_free char *fields_str = NULL;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 
@@ -839,36 +804,20 @@ setting_details (const NmcConfig *nmc_config, NMSetting *setting, const char *on
 	if (!setting_info)
 		return FALSE;
 
-	if (nmc_config->print_output == NMC_PRINT_TERSE)
-		type = NM_META_ACCESSOR_GET_TYPE_PARSABLE;
-
-	out_indices = parse_output_fields (one_prop,
-	                                   (const NMMetaAbstractInfo *const*) nm_property_infos_for_setting_type (setting_info->general->meta_type),
-	                                   FALSE, NULL, NULL);
-	arr = _dup_fields_array (setting_info, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (out.output_data, arr);
-
-	arr = _dup_fields_array (setting_info, NMC_OF_FLAG_SECTION_PREFIX);
-	for (i = 0; i < setting_info->properties_num; i++) {
-		const NMMetaPropertyInfo *property_info = &setting_info->properties[i];
-
-		nm_assert (property_info->setting_info == setting_info);
-
-		if (!property_info->is_secret || show_secrets) {
-			set_val_str (arr, i, property_info->property_type->get_fcn (&meta_environment,
-			                                                            NULL,
-			                                                            property_info,
-			                                                            setting,
-			                                                            type,
-			                                                            show_secrets ? NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS : 0));
-		} else
-			set_val_str (arr, i, g_strdup (_(NM_META_TEXT_HIDDEN)));
+	if (one_prop) {
+		/* hack around setting-details being called for one setting. Must prefix the
+		 * property name with the setting name. Later we should remove setting_details()
+		 * and merge it into the caller. */
+		fields_str = g_strdup_printf ("%s.%s", nm_setting_get_name (setting), one_prop);
 	}
 
-	g_ptr_array_add (out.output_data, arr);
-
-	print_data_prepare_width (out.output_data);
-	print_data (nmc_config, out_indices, NULL, 0, &out);
+	if (!nmc_print (nmc_config,
+	                (gpointer[]) { setting, NULL },
+	                NULL,
+	                (const NMMetaAbstractInfo *const[]) { (const NMMetaAbstractInfo *) setting_info, NULL },
+	                fields_str,
+	                &error))
+		return FALSE;
 
 	return TRUE;
 }
