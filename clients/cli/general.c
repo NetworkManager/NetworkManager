@@ -161,12 +161,6 @@ _NM_UTILS_LOOKUP_DEFINE (static, permission_result_to_color, NMClientPermissionR
 	NM_UTILS_LOOKUP_ITEM_IGNORE (NM_CLIENT_PERMISSION_RESULT_UNKNOWN),
 );
 
-#define HANDLE_TERMFORMAT(color) \
-	G_STMT_START { \
-		if (get_type == NM_META_ACCESSOR_GET_TYPE_TERMFORMAT) \
-			return nm_meta_termformat_pack ((color), NM_META_TERM_FORMAT_NORMAL); \
-	} G_STMT_END
-
 /*****************************************************************************/
 
 static const NmcMetaGenericInfo *const metagen_general_status[];
@@ -178,6 +172,7 @@ _metagen_general_status_get_fcn (const NMMetaEnvironment *environment,
                                  gpointer target,
                                  NMMetaAccessorGetType get_type,
                                  NMMetaAccessorGetFlags get_flags,
+                                 NMMetaAccessorGetOutFlags *out_flags,
                                  gpointer *out_to_free)
 {
 	NmCli *nmc = target;
@@ -188,26 +183,26 @@ _metagen_general_status_get_fcn (const NMMetaEnvironment *environment,
 
 	switch (info->info_type) {
 	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_RUNNING:
-		HANDLE_TERMFORMAT (NM_META_TERM_COLOR_NORMAL);
+		NMC_HANDLE_TERMFORMAT (NM_META_TERM_COLOR_NORMAL);
 		value = N_("running");
 		goto translate_and_out;
 	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_VERSION:
-		HANDLE_TERMFORMAT (NM_META_TERM_COLOR_NORMAL);
+		NMC_HANDLE_TERMFORMAT (NM_META_TERM_COLOR_NORMAL);
 		value = nm_client_get_version (nmc->client);
 		goto clone_and_out;
 	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_STATE:
 		state = nm_client_get_state (nmc->client);
-		HANDLE_TERMFORMAT (state_to_color (state));
+		NMC_HANDLE_TERMFORMAT (state_to_color (state));
 		value = nm_state_to_string_no_l10n (state);
 		goto translate_and_out;
 	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_STARTUP:
 		v_bool = nm_client_get_startup (nmc->client);
-		HANDLE_TERMFORMAT (v_bool ? NM_META_TERM_COLOR_YELLOW : NM_META_TERM_COLOR_GREEN);
+		NMC_HANDLE_TERMFORMAT (v_bool ? NM_META_TERM_COLOR_YELLOW : NM_META_TERM_COLOR_GREEN);
 		value = v_bool ? N_("starting") : N_("started");
 		goto translate_and_out;
 	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_CONNECTIVITY:
 		connectivity = nm_client_get_connectivity (nmc->client);
-		HANDLE_TERMFORMAT (connectivity_to_color (connectivity));
+		NMC_HANDLE_TERMFORMAT (connectivity_to_color (connectivity));
 		value = nm_connectivity_to_string_no_l10n (connectivity);
 		goto translate_and_out;
 	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_NETWORKING:
@@ -236,7 +231,7 @@ _metagen_general_status_get_fcn (const NMMetaEnvironment *environment,
 	g_return_val_if_reached (NULL);
 
 enabled_out:
-	HANDLE_TERMFORMAT (v_bool ? NM_META_TERM_COLOR_GREEN : NM_META_TERM_COLOR_RED);
+	NMC_HANDLE_TERMFORMAT (v_bool ? NM_META_TERM_COLOR_GREEN : NM_META_TERM_COLOR_RED);
 	value = v_bool ? N_("enabled") : N_("disabled");
 	goto translate_and_out;
 
@@ -284,6 +279,7 @@ _metagen_general_permissions_get_fcn (const NMMetaEnvironment *environment,
                                       gpointer target,
                                       NMMetaAccessorGetType get_type,
                                       NMMetaAccessorGetFlags get_flags,
+                                      NMMetaAccessorGetOutFlags *out_flags,
                                       gpointer *out_to_free)
 {
 	NMClientPermission perm = GPOINTER_TO_UINT (target);
@@ -293,11 +289,11 @@ _metagen_general_permissions_get_fcn (const NMMetaEnvironment *environment,
 
 	switch (info->info_type) {
 	case NMC_GENERIC_INFO_TYPE_GENERAL_PERMISSIONS_PERMISSION:
-		HANDLE_TERMFORMAT (NM_META_TERM_COLOR_NORMAL);
+		NMC_HANDLE_TERMFORMAT (NM_META_TERM_COLOR_NORMAL);
 		return permission_to_string (perm);
 	case NMC_GENERIC_INFO_TYPE_GENERAL_PERMISSIONS_VALUE:
 		perm_result = nm_client_get_permission_result (nmc->client, perm);
-		HANDLE_TERMFORMAT (permission_result_to_color (perm_result));
+		NMC_HANDLE_TERMFORMAT (permission_result_to_color (perm_result));
 		s = permission_result_to_string_no_l10n (perm_result);
 		if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
 			return _(s);
@@ -331,6 +327,7 @@ _metagen_general_logging_get_fcn (const NMMetaEnvironment *environment,
                                   gpointer target,
                                   NMMetaAccessorGetType get_type,
                                   NMMetaAccessorGetFlags get_flags,
+                                  NMMetaAccessorGetOutFlags *out_flags,
                                   gpointer *out_to_free)
 {
 	NmCli *nmc = environment_user_data;
@@ -338,7 +335,7 @@ _metagen_general_logging_get_fcn (const NMMetaEnvironment *environment,
 
 	nm_assert (info->info_type < _NMC_GENERIC_INFO_TYPE_GENERAL_LOGGING_NUM);
 
-	HANDLE_TERMFORMAT (NM_META_TERM_COLOR_NORMAL);
+	NMC_HANDLE_TERMFORMAT (NM_META_TERM_COLOR_NORMAL);
 
 	if (!d->initialized) {
 		d->initialized = TRUE;

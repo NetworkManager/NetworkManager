@@ -208,7 +208,7 @@ const NmcMetaGenericInfo *const nmc_fields_dev_show_sections[] = {
 	NMC_META_GENERIC_WITH_NESTED ("WIRED-PROPERTIES",  nmc_fields_dev_show_wired_prop + 1),   /* 4 */
 	NMC_META_GENERIC_WITH_NESTED ("WIMAX-PROPERTIES",  nmc_fields_dev_show_wimax_prop + 1),   /* 5 */
 	NMC_META_GENERIC_WITH_NESTED ("NSP",               nmc_fields_dev_wimax_list + 1),        /* 6 */
-	NMC_META_GENERIC_WITH_NESTED ("IP4",               nmc_fields_ip4_config + 1),            /* 7 */
+	NMC_META_GENERIC_WITH_NESTED ("IP4",               metagen_ip4_config),                   /* 7 */
 	NMC_META_GENERIC_WITH_NESTED ("DHCP4",             nmc_fields_dhcp4_config + 1),          /* 8 */
 	NMC_META_GENERIC_WITH_NESTED ("IP6",               nmc_fields_ip6_config + 1),            /* 9 */
 	NMC_META_GENERIC_WITH_NESTED ("DHCP6",             nmc_fields_dhcp6_config + 1),          /* 10 */
@@ -1269,7 +1269,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 
 		/* IP4 */
 		if (cfg4 && !strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[7]->name))
-			was_output = print_ip4_config (cfg4, &nmc->nmc_config, nmc_fields_dev_show_sections[7]->name, section_fld);
+			was_output = print_ip4_config (cfg4, &nmc->nmc_config, section_fld);
 
 		/* DHCP4 */
 		if (dhcp4 && !strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[8]->name))

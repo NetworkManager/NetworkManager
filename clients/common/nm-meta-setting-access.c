@@ -186,14 +186,14 @@ nm_meta_setting_infos_editor_p (void)
 /*****************************************************************************/
 
 const char *
-nm_meta_abstract_info_get_name (const NMMetaAbstractInfo *abstract_info)
+nm_meta_abstract_info_get_name (const NMMetaAbstractInfo *abstract_info, gboolean for_header)
 {
 	const char *n;
 
 	nm_assert (abstract_info);
 	nm_assert (abstract_info->meta_type);
 	nm_assert (abstract_info->meta_type->get_name);
-	n = abstract_info->meta_type->get_name (abstract_info);
+	n = abstract_info->meta_type->get_name (abstract_info, for_header);
 	nm_assert (n && n[0]);
 	return n;
 }
@@ -231,11 +231,15 @@ nm_meta_abstract_info_get (const NMMetaAbstractInfo *abstract_info,
                            gpointer target,
                            NMMetaAccessorGetType get_type,
                            NMMetaAccessorGetFlags get_flags,
+                           NMMetaAccessorGetOutFlags *out_flags,
                            gpointer *out_to_free)
 {
 	nm_assert (abstract_info);
 	nm_assert (abstract_info->meta_type);
 	nm_assert (!out_to_free || !*out_to_free);
+	nm_assert (out_flags);
+
+	*out_flags = NM_META_ACCESSOR_GET_OUT_FLAGS_NONE;
 
 	if (!abstract_info->meta_type->get_fcn)
 		g_return_val_if_reached (NULL);
@@ -245,5 +249,6 @@ nm_meta_abstract_info_get (const NMMetaAbstractInfo *abstract_info,
 	                                          target,
 	                                          get_type,
 	                                          get_flags,
+	                                          out_flags,
 	                                          out_to_free);
 }

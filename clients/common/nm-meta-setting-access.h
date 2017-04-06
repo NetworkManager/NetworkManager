@@ -44,7 +44,7 @@ const NMMetaSettingInfoEditor *const*nm_meta_setting_infos_editor_p (void);
 
 /*****************************************************************************/
 
-const char *nm_meta_abstract_info_get_name (const NMMetaAbstractInfo *abstract_info);
+const char *nm_meta_abstract_info_get_name (const NMMetaAbstractInfo *abstract_info, gboolean for_header);
 
 const NMMetaAbstractInfo *const*nm_meta_abstract_info_get_nested (const NMMetaAbstractInfo *abstract_info,
                                                                   guint *out_len,
@@ -56,6 +56,7 @@ gconstpointer nm_meta_abstract_info_get (const NMMetaAbstractInfo *abstract_info
                                          gpointer target,
                                          NMMetaAccessorGetType get_type,
                                          NMMetaAccessorGetFlags get_flags,
+                                         NMMetaAccessorGetOutFlags *out_flags,
                                          gpointer *out_to_free);
 
 /*****************************************************************************/

@@ -34,6 +34,9 @@ test_client_meta_check (void)
 	NMMetaSettingType m;
 	guint p;
 
+	G_STATIC_ASSERT (G_STRUCT_OFFSET (NMMetaAbstractInfo, meta_type) == G_STRUCT_OFFSET (NMMetaSettingInfoEditor, meta_type));
+	G_STATIC_ASSERT (G_STRUCT_OFFSET (NMMetaAbstractInfo, meta_type) == G_STRUCT_OFFSET (NMMetaPropertyInfo, meta_type));
+
 	for (m = 0; m < _NM_META_SETTING_TYPE_NUM; m++) {
 		const NMMetaSettingInfo *info = &nm_meta_setting_infos[m];
 		GType gtype;
@@ -68,7 +71,8 @@ test_client_meta_check (void)
 		g_assert (info->general);
 		g_assert (info->general == &nm_meta_setting_infos[m]);
 
-		g_assert (info->general->setting_name == info->meta_type->get_name ((const NMMetaAbstractInfo *) info));
+		g_assert_cmpstr (info->general->setting_name, ==, info->meta_type->get_name ((const NMMetaAbstractInfo *) info, FALSE));
+		g_assert_cmpstr ("name", ==, info->meta_type->get_name ((const NMMetaAbstractInfo *) info, TRUE));
 
 		if (info->properties_num) {
 			gs_unref_hashtable GHashTable *property_names = g_hash_table_new (g_str_hash, g_str_equal);
@@ -83,7 +87,8 @@ test_client_meta_check (void)
 
 				g_assert (nm_g_hash_table_add (property_names, (gpointer) pi->property_name));
 
-				g_assert (pi->property_name == pi->meta_type->get_name ((const NMMetaAbstractInfo *) pi));
+				g_assert_cmpstr (pi->property_name, ==, pi->meta_type->get_name ((const NMMetaAbstractInfo *) pi, FALSE));
+				g_assert_cmpstr (pi->property_name, ==, pi->meta_type->get_name ((const NMMetaAbstractInfo *) pi, TRUE));
 
 				g_assert (pi->property_type);
 				g_assert (pi->property_type->get_fcn);

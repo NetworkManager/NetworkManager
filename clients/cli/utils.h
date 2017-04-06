@@ -127,12 +127,27 @@ typedef enum {
 	NMC_GENERIC_INFO_TYPE_GENERAL_LOGGING_DOMAINS,
 	_NMC_GENERIC_INFO_TYPE_GENERAL_LOGGING_NUM,
 
+	NMC_GENERIC_INFO_TYPE_IP4_CONFIG_ADDRESS = 0,
+	NMC_GENERIC_INFO_TYPE_IP4_CONFIG_GATEWAY,
+	NMC_GENERIC_INFO_TYPE_IP4_CONFIG_ROUTE,
+	NMC_GENERIC_INFO_TYPE_IP4_CONFIG_DNS,
+	NMC_GENERIC_INFO_TYPE_IP4_CONFIG_DOMAIN,
+	NMC_GENERIC_INFO_TYPE_IP4_CONFIG_WINS,
+	_NMC_GENERIC_INFO_TYPE_IP4_CONFIG_NUM,
+
 } NmcGenericInfoType;
+
+#define NMC_HANDLE_TERMFORMAT(color) \
+	G_STMT_START { \
+		if (get_type == NM_META_ACCESSOR_GET_TYPE_TERMFORMAT) \
+			return nm_meta_termformat_pack ((color), NM_META_TERM_FORMAT_NORMAL); \
+	} G_STMT_END
 
 struct _NmcMetaGenericInfo {
 	const NMMetaType *meta_type;
 	NmcGenericInfoType info_type;
 	const char *name;
+	const char *name_header;
 	const NmcMetaGenericInfo *const*nested;
 	gconstpointer (*get_fcn) (const NMMetaEnvironment *environment,
 	                          gpointer environment_user_data,
@@ -140,6 +155,7 @@ struct _NmcMetaGenericInfo {
 	                          gpointer target,
 	                          NMMetaAccessorGetType get_type,
 	                          NMMetaAccessorGetFlags get_flags,
+	                          NMMetaAccessorGetOutFlags *out_flags,
 	                          gpointer *out_to_free);
 };
 
@@ -150,8 +166,8 @@ struct _NmcMetaGenericInfo {
 		__VA_ARGS__ \
 	}))
 
-#define NMC_META_GENERIC_WITH_NESTED(n, nest) \
-	NMC_META_GENERIC (n, .nested = (nest))
+#define NMC_META_GENERIC_WITH_NESTED(n, nest, ...) \
+	NMC_META_GENERIC (n, .nested = (nest), __VA_ARGS__)
 
 /*****************************************************************************/
 

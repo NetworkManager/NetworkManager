@@ -6560,13 +6560,15 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 /*****************************************************************************/
 
 static const char *
-_meta_type_setting_info_editor_get_name (const NMMetaAbstractInfo *abstract_info)
+_meta_type_setting_info_editor_get_name (const NMMetaAbstractInfo *abstract_info, gboolean for_header)
 {
+	if (for_header)
+		return N_("name");
 	return ((const NMMetaSettingInfoEditor *) abstract_info)->general->setting_name;
 }
 
 static const char *
-_meta_type_property_info_get_name (const NMMetaAbstractInfo *abstract_info)
+_meta_type_property_info_get_name (const NMMetaAbstractInfo *abstract_info, gboolean for_header)
 {
 	return ((const NMMetaPropertyInfo *) abstract_info)->property_name;
 }
@@ -6578,11 +6580,13 @@ _meta_type_setting_info_editor_get_fcn (const NMMetaEnvironment *environment,
                                         gpointer target,
                                         NMMetaAccessorGetType get_type,
                                         NMMetaAccessorGetFlags get_flags,
+                                        NMMetaAccessorGetOutFlags *out_flags,
                                         gpointer *out_to_free)
 {
 	const NMMetaSettingInfoEditor *info = (const NMMetaSettingInfoEditor *) abstract_info;
 
 	nm_assert (!out_to_free || !*out_to_free);
+	nm_assert (out_flags && !*out_flags);
 
 	if (!NM_IN_SET (get_type,
 	                NM_META_ACCESSOR_GET_TYPE_PARSABLE,
@@ -6603,11 +6607,13 @@ _meta_type_property_info_get_fcn (const NMMetaEnvironment *environment,
                                   gpointer target,
                                   NMMetaAccessorGetType get_type,
                                   NMMetaAccessorGetFlags get_flags,
+                                  NMMetaAccessorGetOutFlags *out_flags,
                                   gpointer *out_to_free)
 {
 	const NMMetaPropertyInfo *info = (const NMMetaPropertyInfo *) abstract_info;
 
 	nm_assert (!out_to_free || !*out_to_free);
+	nm_assert (out_flags && !*out_flags);
 
 	if (!NM_IN_SET (get_type,
 	                NM_META_ACCESSOR_GET_TYPE_PARSABLE,

@@ -117,7 +117,7 @@ complete_fields (const char *prefix)
 
 	h = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 
-	complete_field (h, nmc_fields_ip4_config);
+	complete_field (h, metagen_ip4_config);
 	complete_field (h, nmc_fields_dhcp4_config);
 	complete_field (h, nmc_fields_ip6_config);
 	complete_field (h, nmc_fields_dhcp6_config);

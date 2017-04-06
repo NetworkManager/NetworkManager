@@ -25,7 +25,7 @@
 #include "nmcli.h"
 #include "nm-secret-agent-simple.h"
 
-gboolean print_ip4_config (NMIPConfig *cfg4, const NmcConfig *nmc_config, const char *group_prefix, const char *one_field);
+gboolean print_ip4_config (NMIPConfig *cfg4, const NmcConfig *nmc_config, const char *one_field);
 gboolean print_ip6_config (NMIPConfig *cfg6, const NmcConfig *nmc_config, const char *group_prefix, const char *one_field);
 gboolean print_dhcp4_config (NMDhcpConfig *dhcp4, const NmcConfig *nmc_config, const char *group_prefix, const char *one_field);
 gboolean print_dhcp6_config (NMDhcpConfig *dhcp6, const NmcConfig *nmc_config, const char *group_prefix, const char *one_field);
@@ -80,7 +80,7 @@ void nmc_complete_bool (const char *prefix);
 
 const char *nmc_error_get_simple_message (GError *error);
 
-extern const NmcMetaGenericInfo *const nmc_fields_ip4_config[];
+extern const NmcMetaGenericInfo *const metagen_ip4_config[];
 extern const NmcMetaGenericInfo *const nmc_fields_dhcp4_config[];
 extern const NmcMetaGenericInfo *const nmc_fields_ip6_config[];
 extern const NmcMetaGenericInfo *const nmc_fields_dhcp6_config[];

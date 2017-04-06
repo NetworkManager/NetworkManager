@@ -80,8 +80,14 @@ nm_meta_termformat_pack (NMMetaTermColor color, NMMetaTermFormat format)
 
 typedef enum {
 	NM_META_ACCESSOR_GET_FLAGS_NONE                                         = 0,
-	NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS                                 = (1LL <<  0),
+	NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV                                  = (1LL <<  0),
+	NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS                                 = (1LL <<  1),
 } NMMetaAccessorGetFlags;
+
+typedef enum {
+	NM_META_ACCESSOR_GET_OUT_FLAGS_NONE                                     = 0,
+	NM_META_ACCESSOR_GET_OUT_FLAGS_STRV                                     = (1LL <<  0),
+} NMMetaAccessorGetOutFlags;
 
 typedef enum {
 	NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_NUMERIC                       = (1LL <<  0),
@@ -188,7 +194,7 @@ struct _NMMetaSettingInfoEditor {
 
 struct _NMMetaType {
 	const char *type_name;
-	const char *(*get_name) (const NMMetaAbstractInfo *abstract_info);
+	const char *(*get_name) (const NMMetaAbstractInfo *abstract_info, gboolean for_header);
 	const NMMetaAbstractInfo *const*(*get_nested) (const NMMetaAbstractInfo *abstract_info,
 	                                               guint *out_len,
 	                                               gpointer *out_to_free);
@@ -198,6 +204,7 @@ struct _NMMetaType {
 	                          gpointer target,
 	                          NMMetaAccessorGetType get_type,
 	                          NMMetaAccessorGetFlags get_flags,
+	                          NMMetaAccessorGetOutFlags *out_flags,
 	                          gpointer *out_to_free);
 };
 
