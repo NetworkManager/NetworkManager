@@ -35,6 +35,88 @@
 #include "devices.h"
 #include "connections.h"
 
+/*****************************************************************************/
+
+static const char *
+nm_state_to_string (NMState state)
+{
+	switch (state) {
+	case NM_STATE_ASLEEP:
+		return _("asleep");
+	case NM_STATE_CONNECTING:
+		return _("connecting");
+	case NM_STATE_CONNECTED_LOCAL:
+		return _("connected (local only)");
+	case NM_STATE_CONNECTED_SITE:
+		return _("connected (site only)");
+	case NM_STATE_CONNECTED_GLOBAL:
+		return _("connected");
+	case NM_STATE_DISCONNECTING:
+		return _("disconnecting");
+	case NM_STATE_DISCONNECTED:
+		return _("disconnected");
+	case NM_STATE_UNKNOWN:
+	default:
+		return _("unknown");
+	}
+}
+
+static NMMetaTermColor
+state_to_color (NMState state)
+{
+	switch (state) {
+	case NM_STATE_CONNECTING:
+		return NM_META_TERM_COLOR_YELLOW;
+	case NM_STATE_CONNECTED_LOCAL:
+	case NM_STATE_CONNECTED_SITE:
+	case NM_STATE_CONNECTED_GLOBAL:
+		return NM_META_TERM_COLOR_GREEN;
+	case NM_STATE_DISCONNECTING:
+		return NM_META_TERM_COLOR_YELLOW;
+	case NM_STATE_ASLEEP:
+	case NM_STATE_DISCONNECTED:
+		return NM_META_TERM_COLOR_RED;
+	default:
+		return NM_META_TERM_COLOR_NORMAL;
+	}
+}
+
+static const char *
+nm_connectivity_to_string (NMConnectivityState connectivity)
+{
+	switch (connectivity) {
+	case NM_CONNECTIVITY_NONE:
+		return _("none");
+	case NM_CONNECTIVITY_PORTAL:
+		return _("portal");
+	case NM_CONNECTIVITY_LIMITED:
+		return _("limited");
+	case NM_CONNECTIVITY_FULL:
+		return _("full");
+	case NM_CONNECTIVITY_UNKNOWN:
+	default:
+		return _("unknown");
+	}
+}
+
+static NMMetaTermColor
+connectivity_to_color (NMConnectivityState connectivity)
+{
+	switch (connectivity) {
+	case NM_CONNECTIVITY_NONE:
+		return NM_META_TERM_COLOR_RED;
+	case NM_CONNECTIVITY_PORTAL:
+	case NM_CONNECTIVITY_LIMITED:
+		return NM_META_TERM_COLOR_YELLOW;
+	case NM_CONNECTIVITY_FULL:
+		return NM_META_TERM_COLOR_GREEN;
+	default:
+		return NM_META_TERM_COLOR_NORMAL;
+	}
+}
+
+/*****************************************************************************/
+
 static const NmcMetaGenericInfo *const nmc_fields_nm_status[] = {
 	NMC_META_GENERIC ("RUNNING"),        /* 0 */
 	NMC_META_GENERIC ("VERSION"),        /* 1 */
@@ -228,84 +310,6 @@ static void
 quit (void)
 {
 	g_main_loop_quit (loop);  /* quit main loop */
-}
-
-static const char *
-nm_state_to_string (NMState state)
-{
-	switch (state) {
-	case NM_STATE_ASLEEP:
-		return _("asleep");
-	case NM_STATE_CONNECTING:
-		return _("connecting");
-	case NM_STATE_CONNECTED_LOCAL:
-		return _("connected (local only)");
-	case NM_STATE_CONNECTED_SITE:
-		return _("connected (site only)");
-	case NM_STATE_CONNECTED_GLOBAL:
-		return _("connected");
-	case NM_STATE_DISCONNECTING:
-		return _("disconnecting");
-	case NM_STATE_DISCONNECTED:
-		return _("disconnected");
-	case NM_STATE_UNKNOWN:
-	default:
-		return _("unknown");
-	}
-}
-
-static NMMetaTermColor
-state_to_color (NMState state)
-{
-	switch (state) {
-	case NM_STATE_CONNECTING:
-		return NM_META_TERM_COLOR_YELLOW;
-	case NM_STATE_CONNECTED_LOCAL:
-	case NM_STATE_CONNECTED_SITE:
-	case NM_STATE_CONNECTED_GLOBAL:
-		return NM_META_TERM_COLOR_GREEN;
-	case NM_STATE_DISCONNECTING:
-		return NM_META_TERM_COLOR_YELLOW;
-	case NM_STATE_ASLEEP:
-	case NM_STATE_DISCONNECTED:
-		return NM_META_TERM_COLOR_RED;
-	default:
-		return NM_META_TERM_COLOR_NORMAL;
-	}
-}
-
-static const char *
-nm_connectivity_to_string (NMConnectivityState connectivity)
-{
-	switch (connectivity) {
-	case NM_CONNECTIVITY_NONE:
-		return _("none");
-	case NM_CONNECTIVITY_PORTAL:
-		return _("portal");
-	case NM_CONNECTIVITY_LIMITED:
-		return _("limited");
-	case NM_CONNECTIVITY_FULL:
-		return _("full");
-	case NM_CONNECTIVITY_UNKNOWN:
-	default:
-		return _("unknown");
-	}
-}
-
-static NMMetaTermColor
-connectivity_to_color (NMConnectivityState connectivity)
-{
-	switch (connectivity) {
-	case NM_CONNECTIVITY_NONE:
-		return NM_META_TERM_COLOR_RED;
-	case NM_CONNECTIVITY_PORTAL:
-	case NM_CONNECTIVITY_LIMITED:
-		return NM_META_TERM_COLOR_YELLOW;
-	case NM_CONNECTIVITY_FULL:
-		return NM_META_TERM_COLOR_GREEN;
-	default:
-		return NM_META_TERM_COLOR_NORMAL;
-	}
 }
 
 static gboolean

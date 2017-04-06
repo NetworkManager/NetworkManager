@@ -99,6 +99,45 @@ const NMMetaType nmc_meta_type_generic_info = {
 /*****************************************************************************/
 
 static gboolean
+use_colors (NmcColorOption color_option)
+{
+	if (color_option == NMC_USE_COLOR_AUTO) {
+		static NmcColorOption cached = NMC_USE_COLOR_AUTO;
+
+		if (G_UNLIKELY (cached == NMC_USE_COLOR_AUTO)) {
+			if (   g_strcmp0 (g_getenv ("TERM"), "dumb") == 0
+				|| !isatty (fileno (stdout)))
+				cached = NMC_USE_COLOR_NO;
+			else
+				cached = NMC_USE_COLOR_YES;
+		}
+		return cached == NMC_USE_COLOR_YES;
+	}
+
+	return color_option == NMC_USE_COLOR_YES;
+}
+
+static const char *
+colorize_string (NmcColorOption color_option,
+                 NMMetaTermColor color,
+                 NMMetaTermFormat color_fmt,
+                 const char *str,
+                 char **out_to_free)
+{
+	const char *out = str;
+
+	if (   use_colors (color_option)
+	    && (color != NM_META_TERM_COLOR_NORMAL || color_fmt != NM_META_TERM_FORMAT_NORMAL)) {
+		*out_to_free = nmc_colorize (color_option, color, color_fmt, "%s", str);
+		out = *out_to_free;
+	}
+
+	return out;
+}
+
+/*****************************************************************************/
+
+static gboolean
 parse_global_arg (NmCli *nmc, const char *arg)
 {
 	if (nmc_arg_is_option (arg, "ask"))
@@ -420,25 +459,6 @@ nmc_term_format_sequence (NMMetaTermFormat format)
 		return "";
 		break;
 	}
-}
-
-static gboolean
-use_colors (NmcColorOption color_option)
-{
-	if (color_option == NMC_USE_COLOR_AUTO) {
-		static NmcColorOption cached = NMC_USE_COLOR_AUTO;
-
-		if (G_UNLIKELY (cached == NMC_USE_COLOR_AUTO)) {
-			if (   g_strcmp0 (g_getenv ("TERM"), "dumb") == 0
-				|| !isatty (fileno (stdout)))
-				cached = NMC_USE_COLOR_NO;
-			else
-				cached = NMC_USE_COLOR_YES;
-		}
-		return cached == NMC_USE_COLOR_YES;
-	}
-
-	return color_option == NMC_USE_COLOR_YES;
 }
 
 char *
@@ -990,24 +1010,6 @@ nmc_empty_output_fields (NmcOutputData *output_data)
 	/* Empty output_data array */
 	if (output_data->output_data->len > 0)
 		g_ptr_array_remove_range (output_data->output_data, 0, output_data->output_data->len);
-}
-
-static const char *
-colorize_string (NmcColorOption color_option,
-                 NMMetaTermColor color,
-                 NMMetaTermFormat color_fmt,
-                 const char *str,
-                 char **out_to_free)
-{
-	const char *out = str;
-
-	if (   use_colors (color_option)
-	    && (color != NM_META_TERM_COLOR_NORMAL || color_fmt != NM_META_TERM_FORMAT_NORMAL)) {
-		*out_to_free = nmc_colorize (color_option, color, color_fmt, "%s", str);
-		out = *out_to_free;
-	}
-
-	return out;
 }
 
 static const char *
