@@ -5969,7 +5969,7 @@ editor_show_connection (NMConnection *connection, NmCli *nmc)
 	nmc->nmc_config_mutable.multiline_output = TRUE;
 	nmc->nmc_config_mutable.escape_values = 0;
 
-	nmc_connection_profile_details (connection, nmc, nmc->editor_show_secrets);
+	nmc_connection_profile_details (connection, nmc, nmc->nmc_config.show_secrets);
 }
 
 static void
@@ -5982,7 +5982,7 @@ editor_show_setting (NMSetting *setting, NmCli *nmc)
 	nmc->nmc_config_mutable.multiline_output = TRUE;
 	nmc->nmc_config_mutable.escape_values = 0;
 
-	setting_details (&nmc->nmc_config, setting, NULL, nmc->editor_show_secrets);
+	setting_details (&nmc->nmc_config, setting, NULL, nmc->nmc_config.show_secrets);
 }
 
 typedef enum {
@@ -7646,7 +7646,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					g_print (_("Error: show-secrets: %s\n"), tmp_err->message);
 					g_clear_error (&tmp_err);
 				} else
-					nmc->editor_show_secrets = bb;
+					nmc->nmc_config_mutable.show_secrets = bb;
 			} else if (cmd_arg_p && matches (cmd_arg_p, "prompt-color")) {
 				GError *tmp_err = NULL;
 				NMMetaTermColor color;
@@ -7673,7 +7673,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				         "prompt-color: %d\n",
 				         nmc->editor_status_line ? "yes" : "no",
 				         nmc->editor_save_confirmation ? "yes" : "no",
-				         nmc->editor_show_secrets ? "yes" : "no",
+				         nmc->nmc_config.show_secrets ? "yes" : "no",
 				         nmc->editor_prompt_color);
 			} else
 				g_print (_("Invalid configuration option '%s'; allowed [%s]\n"),
