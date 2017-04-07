@@ -4937,6 +4937,7 @@ nm_manager_write_device_state (NMManager *self)
 		NMDevice *device = NM_DEVICE (devices->data);
 		int ifindex;
 		gboolean managed;
+		NMConfigDeviceStateManagedType managed_type;
 		NMConnection *settings_connection;
 		const char *uuid = NULL;
 		const char *perm_hw_addr_fake = NULL;
@@ -4958,7 +4959,11 @@ nm_manager_write_device_state (NMManager *self)
 			settings_connection = NM_CONNECTION (nm_device_get_settings_connection (device));
 			if (settings_connection)
 				uuid = nm_connection_get_uuid (settings_connection);
-		}
+			managed_type = NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_MANAGED;
+		} else if (nm_device_get_unmanaged_flags (device, NM_UNMANAGED_USER_EXPLICIT))
+			managed_type = NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_UNMANAGED;
+		else
+			managed_type = NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_UNKNOWN;
 
 		perm_hw_addr_fake = nm_device_get_permanent_hw_address_full (device, FALSE, &perm_hw_addr_is_fake);
 		if (perm_hw_addr_fake && !perm_hw_addr_is_fake)
@@ -4966,7 +4971,7 @@ nm_manager_write_device_state (NMManager *self)
 
 		if (nm_config_device_state_write (priv->config,
 		                                  ifindex,
-		                                  managed,
+		                                  managed_type,
 		                                  perm_hw_addr_fake,
 		                                  uuid))
 			g_hash_table_add (seen_ifindexes, GINT_TO_POINTER (ifindex));
