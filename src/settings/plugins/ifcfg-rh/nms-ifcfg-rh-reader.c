@@ -2620,14 +2620,8 @@ eap_simple_reader (const char *eap_method,
 			value = svGetValueStr_cp (keys, "IEEE_8021X_PASSWORD");
 		}
 
-		if (!value) {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Missing IEEE_8021X_PASSWORD for EAP method '%s'.",
-			             eap_method);
-			return FALSE;
-		}
-
-		g_object_set (s_8021x, NM_SETTING_802_1X_PASSWORD, value, NULL);
+		if (value)
+			g_object_set (s_8021x, NM_SETTING_802_1X_PASSWORD, value, NULL);
 		g_free (value);
 	}
 
@@ -2745,14 +2739,6 @@ eap_tls_reader (const char *eap_method,
 		if (!privkey_password && keys) {
 			/* Try the lookaside keys file */
 			privkey_password = svGetValueStr_cp (keys, pk_pw_key);
-		}
-
-		if (!privkey_password) {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Missing %s for EAP method '%s'.",
-			             pk_pw_key,
-			             eap_method);
-			return FALSE;
 		}
 	}
 
