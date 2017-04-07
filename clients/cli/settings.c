@@ -469,17 +469,26 @@ get_property_val (NMSetting *setting, const char *prop, NMMetaAccessorGetType ge
 {
 	const NMMetaPropertyInfo *property_info;
 
-	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
+	g_return_val_if_fail (!error || !*error, NULL);
+	g_return_val_if_fail (NM_IN_SET (get_type, NM_META_ACCESSOR_GET_TYPE_PARSABLE, NM_META_ACCESSOR_GET_TYPE_PRETTY), NULL);
 
 	if ((property_info = nm_meta_property_info_find_by_setting (setting, prop))) {
 		if (property_info->property_type->get_fcn) {
-			return property_info->property_type->get_fcn (property_info,
-			                                              nmc_meta_environment,
-			                                              nmc_meta_environment_arg,
-			                                              setting,
-			                                              get_type,
-			                                              show_secrets ? NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS : 0);
+			NMMetaAccessorGetOutFlags out_flags = NM_META_ACCESSOR_GET_OUT_FLAGS_NONE;
+			char *to_free = NULL;
+			const char *value;
+
+			value = property_info->property_type->get_fcn (property_info,
+			                                               nmc_meta_environment,
+			                                               nmc_meta_environment_arg,
+			                                               setting,
+			                                               get_type,
+			                                               show_secrets ? NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS : 0,
+			                                               &out_flags,
+			                                               (gpointer *) &to_free);
+			nm_assert (!out_flags);
+			return to_free ?: g_strdup (value);
 		}
 	}
 

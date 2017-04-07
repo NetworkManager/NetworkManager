@@ -507,7 +507,7 @@ _env_warn_fcn (const NMMetaEnvironment *environment,
 	const NMMetaPropertyInfo *property_info, char **out_to_free
 
 #define ARGS_GET_FCN \
-	const NMMetaPropertyInfo *property_info, const NMMetaEnvironment *environment, gpointer environment_user_data, NMSetting *setting, NMMetaAccessorGetType get_type, NMMetaAccessorGetFlags get_flags
+	const NMMetaPropertyInfo *property_info, const NMMetaEnvironment *environment, gpointer environment_user_data, NMSetting *setting, NMMetaAccessorGetType get_type, NMMetaAccessorGetFlags get_flags, NMMetaAccessorGetOutFlags *out_flags, gpointer *out_to_free
 
 #define ARGS_SET_FCN \
 	const NMMetaPropertyInfo *property_info, const NMMetaEnvironment *environment, gpointer environment_user_data, NMSetting *setting, const char *value, GError **error
@@ -518,17 +518,35 @@ _env_warn_fcn (const NMMetaEnvironment *environment,
 #define ARGS_VALUES_FCN \
 	const NMMetaPropertyInfo *property_info, char ***out_to_free
 
-static char *
+#define RETURN_UNSUPPORTED_GET_TYPE() \
+	G_STMT_START { \
+		if (!NM_IN_SET (get_type, \
+		                NM_META_ACCESSOR_GET_TYPE_PARSABLE, \
+		                NM_META_ACCESSOR_GET_TYPE_PRETTY)) { \
+			nm_assert_not_reached (); \
+			return NULL; \
+		} \
+	} G_STMT_END;
+
+#define RETURN_STR_TO_FREE(val) \
+	G_STMT_START { \
+		char *_val = (val); \
+		return ((*(out_to_free)) = _val); \
+	} G_STMT_END
+
+static gconstpointer
 _get_fcn_nmc_with_default (ARGS_GET_FCN)
 {
 	const char *s;
 	char *s_full;
 	GValue val = G_VALUE_INIT;
 
+	RETURN_UNSUPPORTED_GET_TYPE ();
+
 	if (property_info->property_typ_data->subtype.get_with_default.fcn (setting)) {
 		if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
-			return g_strdup (_("(default)"));
-		return g_strdup ("");
+			return _("(default)");
+		return "";
 	}
 
 	g_value_init (&val, G_TYPE_STRING);
@@ -539,18 +557,21 @@ _get_fcn_nmc_with_default (ARGS_GET_FCN)
 	else
 		s_full = g_strdup (s && *s ? s : " ");
 	g_value_unset (&val);
-	return s_full;
+	RETURN_STR_TO_FREE (s_full);
 }
 
-static char *
+static gconstpointer
 _get_fcn_gobject_impl (const NMMetaPropertyInfo *property_info,
                        NMSetting *setting,
-                       NMMetaAccessorGetType get_type)
+                       NMMetaAccessorGetType get_type,
+                       gpointer *out_to_free)
 {
 	char *s;
 	const char *s_c;
 	GType gtype_prop;
 	nm_auto_unset_gvalue GValue val = G_VALUE_INIT;
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
 
 	gtype_prop = _gobject_property_get_gtype (G_OBJECT (setting), property_info->property_name);
 
@@ -564,53 +585,57 @@ _get_fcn_gobject_impl (const NMMetaPropertyInfo *property_info,
 			s_c = b ? _("yes") : _("no");
 		else
 			s_c = b ? "yes" : "no";
-		s = g_strdup (s_c);
+		return s_c;
 	} else {
 		g_value_init (&val, G_TYPE_STRING);
 		g_object_get_property (G_OBJECT (setting), property_info->property_name, &val);
 		s = g_value_dup_string (&val);
+		RETURN_STR_TO_FREE (s);
 	}
-	return s;
 }
 
-static char *
+static gconstpointer
 _get_fcn_gobject (ARGS_GET_FCN)
 {
-	return _get_fcn_gobject_impl (property_info, setting, get_type);
+	return _get_fcn_gobject_impl (property_info, setting, get_type, out_to_free);
 }
 
-static char *
+static gconstpointer
 _get_fcn_gobject_mtu (ARGS_GET_FCN)
 {
 	guint32 mtu;
 
+	RETURN_UNSUPPORTED_GET_TYPE ();
+
 	if (   !property_info->property_typ_data
 	    || !property_info->property_typ_data->subtype.mtu.get_fcn)
-		return _get_fcn_gobject_impl (property_info, setting, get_type);
+		return _get_fcn_gobject_impl (property_info, setting, get_type, out_to_free);
 
 	mtu = property_info->property_typ_data->subtype.mtu.get_fcn (setting);
 	if (mtu == 0) {
 		if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
-			return g_strdup (_("auto"));
-		return g_strdup ("auto");
+			return _("auto");
+		return "auto";
 	}
-	return g_strdup_printf ("%u", (unsigned) mtu);
+	RETURN_STR_TO_FREE (g_strdup_printf ("%u", (unsigned) mtu));
 }
 
-static char *
+static gconstpointer
 _get_fcn_gobject_secret_flags (ARGS_GET_FCN)
 {
 	guint v;
 	GValue val = G_VALUE_INIT;
 
+	RETURN_UNSUPPORTED_GET_TYPE ();
+
 	g_value_init (&val, G_TYPE_UINT);
 	g_object_get_property (G_OBJECT (setting), property_info->property_name, &val);
 	v = g_value_get_uint (&val);
 	g_value_unset (&val);
-	return secret_flags_to_string (v, get_type);
+	RETURN_STR_TO_FREE (secret_flags_to_string (v, get_type));
 }
 
-static char *
+static gconstpointer
 _get_fcn_gobject_enum (ARGS_GET_FCN)
 {
 	GType gtype = 0;
@@ -627,6 +652,8 @@ _get_fcn_gobject_enum (ARGS_GET_FCN)
 	gboolean format_text_l10n = FALSE;
 	gs_free char *s = NULL;
 	char s_numeric[64];
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
 
 	if (property_info->property_typ_data) {
 		if (property_info->property_typ_data->subtype.gobject_enum.get_gtype) {
@@ -708,11 +735,12 @@ _get_fcn_gobject_enum (ARGS_GET_FCN)
 	}));
 
 	if (format_numeric && !format_text) {
-		return    format_numeric_hex
-		       || (   format_numeric_hex_unknown
-		           && !G_IS_ENUM_CLASS (gtype_class ?: (gtype_class = g_type_class_ref (gtype))))
-		       ? g_strdup_printf ("0x%"G_GINT64_FORMAT, v)
-		       : g_strdup_printf ("%"G_GINT64_FORMAT, v);
+		s =    format_numeric_hex
+		    || (   format_numeric_hex_unknown
+		        && !G_IS_ENUM_CLASS (gtype_class ?: (gtype_class = g_type_class_ref (gtype))))
+		    ? g_strdup_printf ("0x%"G_GINT64_FORMAT, v)
+		    : g_strdup_printf ("%"G_GINT64_FORMAT, v);
+		RETURN_STR_TO_FREE (s);
 	}
 
 	/* the gobject_enum.value_infos are currently ignored for the getter. They
@@ -721,7 +749,7 @@ _get_fcn_gobject_enum (ARGS_GET_FCN)
 	s = nm_utils_enum_to_str (gtype, (int) v);
 
 	if (!format_numeric)
-		return g_steal_pointer (&s);
+		RETURN_STR_TO_FREE (g_steal_pointer (&s));
 
 	if (   format_numeric_hex
 	    || (   format_numeric_hex_unknown
@@ -731,12 +759,12 @@ _get_fcn_gobject_enum (ARGS_GET_FCN)
 		nm_sprintf_buf (s_numeric, "%"G_GINT64_FORMAT, v);
 
 	if (nm_streq0 (s, s_numeric))
-		return g_steal_pointer (&s);
+		RETURN_STR_TO_FREE (g_steal_pointer (&s));
 
 	if (format_text_l10n)
-		return g_strdup_printf (_("%s (%s)"), s_numeric, s);
+		RETURN_STR_TO_FREE (g_strdup_printf (_("%s (%s)"), s_numeric, s));
 	else
-		return g_strdup_printf ("%s (%s)", s_numeric, s);
+		RETURN_STR_TO_FREE (g_strdup_printf ("%s (%s)", s_numeric, s));
 }
 
 /*****************************************************************************/
@@ -1611,11 +1639,13 @@ done:
 
 /*****************************************************************************/
 
-static char *
+static gconstpointer
 _get_fcn_802_1x_ca_cert (ARGS_GET_FCN)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
 	char *ca_cert_str = NULL;
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
 
 	switch (nm_setting_802_1x_get_ca_cert_scheme (s_8021X)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
@@ -1631,21 +1661,23 @@ _get_fcn_802_1x_ca_cert (ARGS_GET_FCN)
 		break;
 	}
 
-	return ca_cert_str;
+	RETURN_STR_TO_FREE (ca_cert_str);
 }
 
-static char *
+static gconstpointer
 _get_fcn_802_1x_client_cert (ARGS_GET_FCN)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
 	char *cert_str = NULL;
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
 
 	switch (nm_setting_802_1x_get_client_cert_scheme (s_8021X)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		if (NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS))
 			cert_str = bytes_to_string (nm_setting_802_1x_get_client_cert_blob (s_8021X));
 		else
-			cert_str = g_strdup (_(NM_META_TEXT_HIDDEN));
+			return _(NM_META_TEXT_HIDDEN);
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		cert_str = g_strdup (nm_setting_802_1x_get_client_cert_path (s_8021X));
@@ -1657,14 +1689,16 @@ _get_fcn_802_1x_client_cert (ARGS_GET_FCN)
 		break;
 	}
 
-	return cert_str;
+	RETURN_STR_TO_FREE (cert_str);
 }
 
-static char *
+static gconstpointer
 _get_fcn_802_1x_phase2_ca_cert (ARGS_GET_FCN)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
 	char *phase2_ca_cert_str = NULL;
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
 
 	switch (nm_setting_802_1x_get_phase2_ca_cert_scheme (s_8021X)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
@@ -1680,21 +1714,23 @@ _get_fcn_802_1x_phase2_ca_cert (ARGS_GET_FCN)
 		break;
 	}
 
-	return phase2_ca_cert_str;
+	RETURN_STR_TO_FREE (phase2_ca_cert_str);
 }
 
-static char *
+static gconstpointer
 _get_fcn_802_1x_phase2_client_cert (ARGS_GET_FCN)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
 	char *cert_str = NULL;
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
 
 	switch (nm_setting_802_1x_get_phase2_client_cert_scheme (s_8021X)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		if (NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS))
 			cert_str = bytes_to_string (nm_setting_802_1x_get_phase2_client_cert_blob (s_8021X));
 		else
-			cert_str = g_strdup (_(NM_META_TEXT_HIDDEN));
+			return _(NM_META_TEXT_HIDDEN);
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		cert_str = g_strdup (nm_setting_802_1x_get_phase2_client_cert_path (s_8021X));
@@ -1706,28 +1742,32 @@ _get_fcn_802_1x_phase2_client_cert (ARGS_GET_FCN)
 		break;
 	}
 
-	return cert_str;
+	RETURN_STR_TO_FREE (cert_str);
 }
 
-static char *
+static gconstpointer
 _get_fcn_802_1x_password_raw (ARGS_GET_FCN)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
-	return bytes_to_string (nm_setting_802_1x_get_password_raw (s_8021X));
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
+	RETURN_STR_TO_FREE (bytes_to_string (nm_setting_802_1x_get_password_raw (s_8021X)));
 }
 
-static char *
+static gconstpointer
 _get_fcn_802_1x_private_key (ARGS_GET_FCN)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
 	char *key_str = NULL;
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
 
 	switch (nm_setting_802_1x_get_private_key_scheme (s_8021X)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		if (NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS))
 			key_str = bytes_to_string (nm_setting_802_1x_get_private_key_blob (s_8021X));
 		else
-			key_str = g_strdup (_(NM_META_TEXT_HIDDEN));
+			return _(NM_META_TEXT_HIDDEN);
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		key_str = g_strdup (nm_setting_802_1x_get_private_key_path (s_8021X));
@@ -1739,21 +1779,23 @@ _get_fcn_802_1x_private_key (ARGS_GET_FCN)
 		break;
 	}
 
-	return key_str;
+	RETURN_STR_TO_FREE (key_str);
 }
 
-static char *
+static gconstpointer
 _get_fcn_802_1x_phase2_private_key (ARGS_GET_FCN)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
 	char *key_str = NULL;
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
 
 	switch (nm_setting_802_1x_get_phase2_private_key_scheme (s_8021X)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		if (NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS))
 			key_str = bytes_to_string (nm_setting_802_1x_get_phase2_private_key_blob (s_8021X));
 		else
-			key_str = g_strdup (_(NM_META_TEXT_HIDDEN));
+			return _(NM_META_TEXT_HIDDEN);
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		key_str = g_strdup (nm_setting_802_1x_get_phase2_private_key_path (s_8021X));
@@ -1765,7 +1807,7 @@ _get_fcn_802_1x_phase2_private_key (ARGS_GET_FCN)
 		break;
 	}
 
-	return key_str;
+	RETURN_STR_TO_FREE (key_str);
 }
 
 #define DEFINE_SETTER_STR_LIST(def_func, set_func) \
@@ -1930,12 +1972,14 @@ _set_fcn_802_1x_password_raw (ARGS_SET_FCN)
 	return nmc_property_set_byte_array (setting, property_info->property_name, value, error);
 }
 
-static char *
+static gconstpointer
 _get_fcn_bond_options (ARGS_GET_FCN)
 {
 	NMSettingBond *s_bond = NM_SETTING_BOND (setting);
 	GString *bond_options_s;
 	int i;
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
 
 	bond_options_s = g_string_new (NULL);
 	for (i = 0; i < nm_setting_bond_get_num_options (s_bond); i++) {
@@ -1957,7 +2001,7 @@ _get_fcn_bond_options (ARGS_GET_FCN)
 	}
 	g_string_truncate (bond_options_s, bond_options_s->len-1);  /* chop off trailing ',' */
 
-	return g_string_free (bond_options_s, FALSE);
+	RETURN_STR_TO_FREE (g_string_free (bond_options_s, FALSE));
 }
 
 /*  example: miimon=100,mode=balance-rr, updelay=5 */
@@ -2044,27 +2088,36 @@ _values_fcn_bond_options (ARGS_VALUES_FCN)
 	return nm_setting_bond_get_valid_options (NULL);
 }
 
-static char *
+static gconstpointer
 _get_fcn_connection_autoconnect_retires (ARGS_GET_FCN)
 {
 	NMSettingConnection *s_con = NM_SETTING_CONNECTION (setting);
 	gint retries;
+	char *s;
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
 
 	retries = nm_setting_connection_get_autoconnect_retries (s_con);
 	if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY)
-		return g_strdup_printf ("%d", retries);
-
-	switch (retries) {
-	case -1:
-		return g_strdup_printf (_("%d (default)"), retries);
-	case 0:
-		return g_strdup_printf (_("%d (forever)"), retries);
-	default:
-		return g_strdup_printf ("%d", retries);
+		s = g_strdup_printf ("%d", retries);
+	else {
+		switch (retries) {
+		case -1:
+			s = g_strdup_printf (_("%d (default)"), retries);
+			break;
+		case 0:
+			s = g_strdup_printf (_("%d (forever)"), retries);
+			break;
+		default:
+			s = g_strdup_printf ("%d", retries);
+			break;
+		}
 	}
+
+	RETURN_STR_TO_FREE (s);
 }
 
-static char *
+static gconstpointer
 _get_fcn_connection_permissions (ARGS_GET_FCN)
 {
 	NMSettingConnection *s_con = NM_SETTING_CONNECTION (setting);
@@ -2073,6 +2126,8 @@ _get_fcn_connection_permissions (ARGS_GET_FCN)
 	const char *perm_type;
 	int i;
 
+	RETURN_UNSUPPORTED_GET_TYPE ();
+
 	perm = g_string_new (NULL);
 	for (i = 0; i < nm_setting_connection_get_num_permissions (s_con); i++) {
 		if (nm_setting_connection_get_permission (s_con, i, &perm_type, &perm_item, NULL))
@@ -2080,18 +2135,20 @@ _get_fcn_connection_permissions (ARGS_GET_FCN)
 	}
 	if (perm->len > 0) {
 		g_string_truncate (perm, perm->len-1); /* remove trailing , */
-		return g_string_free (perm, FALSE);
+		RETURN_STR_TO_FREE (g_string_free (perm, FALSE));
 	}
 
 	/* No value from get_permission */
-	return g_string_free (perm, TRUE);
+	g_string_free (perm, TRUE);
+	return NULL;
 }
 
-static char *
+static gconstpointer
 _get_fcn_connection_autoconnect_slaves (ARGS_GET_FCN)
 {
 	NMSettingConnection *s_con = NM_SETTING_CONNECTION (setting);
-	return autoconnect_slaves_to_string (nm_setting_connection_get_autoconnect_slaves (s_con), get_type);
+	RETURN_UNSUPPORTED_GET_TYPE ();
+	RETURN_STR_TO_FREE (autoconnect_slaves_to_string (nm_setting_connection_get_autoconnect_slaves (s_con), get_type));
 }
 
 static gboolean
@@ -2248,31 +2305,27 @@ DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_connection_secondaries,
                                nm_setting_connection_remove_secondary,
                                _validate_and_remove_connection_secondary)
 
-static char *
+static gconstpointer
 _get_fcn_connection_metered (ARGS_GET_FCN)
 {
 	NMSettingConnection *s_conn = NM_SETTING_CONNECTION (setting);
+	const char *s;
 
-	if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY) {
-		switch (nm_setting_connection_get_metered (s_conn)) {
-		case NM_METERED_YES:
-			return g_strdup ("yes");
-		case NM_METERED_NO:
-			return g_strdup ("no");
-		case NM_METERED_UNKNOWN:
-		default:
-			return g_strdup ("unknown");
-		}
-	}
+	RETURN_UNSUPPORTED_GET_TYPE ();
+
 	switch (nm_setting_connection_get_metered (s_conn)) {
 	case NM_METERED_YES:
-		return g_strdup (_("yes"));
+		s = N_("yes");
 	case NM_METERED_NO:
-		return g_strdup (_("no"));
+		s = N_("no");
 	case NM_METERED_UNKNOWN:
 	default:
-		return g_strdup (_("unknown"));
+		s = N_("unknown");
+		break;
 	}
+	if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
+		return _(s);
+	return s;
 }
 
 static gboolean
@@ -2331,16 +2384,18 @@ dcb_flags_to_string (NMSettingDcbFlags flags)
 }
 
 #define DEFINE_DCB_FLAGS_GETTER(func_name, property_name) \
-	static char * \
+	static gconstpointer \
 	func_name (ARGS_GET_FCN) \
 	{ \
 		guint v; \
 		GValue val = G_VALUE_INIT; \
+		\
+		RETURN_UNSUPPORTED_GET_TYPE (); \
 		g_value_init (&val, G_TYPE_UINT); \
 		g_object_get_property (G_OBJECT (setting), property_name, &val); \
 		v = g_value_get_uint (&val); \
 		g_value_unset (&val); \
-		return dcb_flags_to_string (v); \
+		RETURN_STR_TO_FREE (dcb_flags_to_string (v)); \
 	}
 
 static char *
@@ -2350,56 +2405,61 @@ dcb_app_priority_to_string (gint priority)
 }
 
 #define DEFINE_DCB_APP_PRIORITY_GETTER(func_name, property_name) \
-	static char * \
+	static gconstpointer \
 	func_name (ARGS_GET_FCN) \
 	{ \
 		int v; \
 		GValue val = G_VALUE_INIT; \
+		\
+		RETURN_UNSUPPORTED_GET_TYPE (); \
 		g_value_init (&val, G_TYPE_INT); \
 		g_object_get_property (G_OBJECT (setting), property_name, &val); \
 		v = g_value_get_int (&val); \
 		g_value_unset (&val); \
-		return dcb_app_priority_to_string (v); \
+		RETURN_STR_TO_FREE (dcb_app_priority_to_string (v)); \
 	}
 
 #define DEFINE_DCB_BOOL_GETTER(func_name, getter_func_name) \
-	static char * \
+	static gconstpointer \
 	func_name (ARGS_GET_FCN) \
 	{ \
 		NMSettingDcb *s_dcb = NM_SETTING_DCB (setting); \
 		GString *str; \
 		guint i; \
-\
+		\
+		RETURN_UNSUPPORTED_GET_TYPE (); \
+		\
 		str = g_string_new (NULL); \
 		for (i = 0; i < 8; i++) { \
 			if (getter_func_name (s_dcb,  i)) \
 				g_string_append_c (str, '1'); \
 			else \
 				g_string_append_c (str, '0'); \
-\
 			if (i < 7) \
 				g_string_append_c (str, ','); \
 		} \
-\
-		return g_string_free (str, FALSE); \
+		\
+		RETURN_STR_TO_FREE (g_string_free (str, FALSE)); \
 	}
 
 #define DEFINE_DCB_UINT_GETTER(func_name, getter_func_name) \
-	static char * \
+	static gconstpointer \
 	func_name (ARGS_GET_FCN) \
 	{ \
 		NMSettingDcb *s_dcb = NM_SETTING_DCB (setting); \
 		GString *str; \
 		guint i; \
- \
+		\
+		RETURN_UNSUPPORTED_GET_TYPE (); \
+		\
 		str = g_string_new (NULL); \
 		for (i = 0; i < 8; i++) { \
 			g_string_append_printf (str, "%u", getter_func_name (s_dcb, i)); \
 			if (i < 7) \
 				g_string_append_c (str, ','); \
 		} \
-\
-		return g_string_free (str, FALSE); \
+		\
+		RETURN_STR_TO_FREE (g_string_free (str, FALSE)); \
 	}
 
 DEFINE_DCB_FLAGS_GETTER (_get_fcn_dcb_app_fcoe_flags, NM_SETTING_DCB_APP_FCOE_FLAGS)
@@ -2719,30 +2779,34 @@ _set_fcn_infiniband_p_key (ARGS_SET_FCN)
 }
 
 
-static char *
+static gconstpointer
 _get_fcn_infiniband_p_key (ARGS_GET_FCN)
 {
 	NMSettingInfiniband *s_infiniband = NM_SETTING_INFINIBAND (setting);
 	int p_key;
 
+	RETURN_UNSUPPORTED_GET_TYPE ();
+
 	p_key = nm_setting_infiniband_get_p_key (s_infiniband);
 	if (p_key == -1) {
 		if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY)
-			return g_strdup ("default");
+			return "default";
 		else
-			return g_strdup (_("default"));
+			return _("default");
 	} else
-		return g_strdup_printf ("0x%04x", p_key);
+		RETURN_STR_TO_FREE (g_strdup_printf ("0x%04x", p_key));
 }
 
-static char *
+static gconstpointer
 _get_fcn_ip_tunnel_mode (ARGS_GET_FCN)
 {
 	NMSettingIPTunnel *s_ip_tunnel = NM_SETTING_IP_TUNNEL (setting);
 	NMIPTunnelMode mode;
 
+	RETURN_UNSUPPORTED_GET_TYPE ();
+
 	mode = nm_setting_ip_tunnel_get_mode (s_ip_tunnel);
-	return nm_utils_enum_to_str (nm_ip_tunnel_mode_get_type (), mode);
+	RETURN_STR_TO_FREE (nm_utils_enum_to_str (nm_ip_tunnel_mode_get_type (), mode));
 }
 
 static gboolean
@@ -2783,13 +2847,15 @@ _parse_ip_address (int family, const char *address, GError **error)
 	return ipaddr;
 }
 
-static char *
+static gconstpointer
 _get_fcn_ip_config_addresses (ARGS_GET_FCN)
 {
 	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
 	GString *printable;
 	guint32 num_addresses, i;
 	NMIPAddress *addr;
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
 
 	printable = g_string_new (NULL);
 
@@ -2805,16 +2871,18 @@ _get_fcn_ip_config_addresses (ARGS_GET_FCN)
 		                        nm_ip_address_get_prefix (addr));
 	}
 
-	return g_string_free (printable, FALSE);
+	RETURN_STR_TO_FREE (g_string_free (printable, FALSE));
 }
 
-static char *
+static gconstpointer
 _get_fcn_ip_config_routes (ARGS_GET_FCN)
 {
 	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
 	GString *printable;
 	guint32 num_routes, i;
 	NMIPRoute *route;
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
 
 	printable = g_string_new (NULL);
 
@@ -2874,26 +2942,28 @@ _get_fcn_ip_config_routes (ARGS_GET_FCN)
 		}
 	}
 
-	return g_string_free (printable, FALSE);
+	RETURN_STR_TO_FREE (g_string_free (printable, FALSE));
 }
 
-static char *
+static gconstpointer
 _get_fcn_ip4_config_dad_timeout (ARGS_GET_FCN)
 {
 	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
 	gint dad_timeout;
 
+	RETURN_UNSUPPORTED_GET_TYPE ();
+
 	dad_timeout = nm_setting_ip_config_get_dad_timeout (s_ip);
 	if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY)
-		return g_strdup_printf ("%d", dad_timeout);
+		RETURN_STR_TO_FREE (g_strdup_printf ("%d", dad_timeout));
 
 	switch (dad_timeout) {
 	case -1:
-		return g_strdup_printf (_("%d (default)"), dad_timeout);
+		RETURN_STR_TO_FREE (g_strdup_printf (_("%d (default)"), dad_timeout));
 	case 0:
-		return g_strdup_printf (_("%d (off)"), dad_timeout);
+		RETURN_STR_TO_FREE (g_strdup_printf (_("%d (off)"), dad_timeout));
 	default:
-		return g_strdup_printf ("%d", dad_timeout);
+		RETURN_STR_TO_FREE (g_strdup_printf ("%d", dad_timeout));
 	}
 }
 
@@ -3166,11 +3236,12 @@ DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ipv4_config_routes,
                                nm_setting_ip_config_remove_route,
                                _validate_and_remove_ipv4_route)
 
-static char *
+static gconstpointer
 _get_fcn_ip6_config_ip6_privacy (ARGS_GET_FCN)
 {
 	NMSettingIP6Config *s_ip6 = NM_SETTING_IP6_CONFIG (setting);
-	return ip6_privacy_to_string (nm_setting_ip6_config_get_ip6_privacy (s_ip6), get_type);
+	RETURN_UNSUPPORTED_GET_TYPE ();
+	RETURN_STR_TO_FREE (ip6_privacy_to_string (nm_setting_ip6_config_get_ip6_privacy (s_ip6), get_type));
 }
 
 static const char *ipv6_valid_methods[] = {
@@ -3465,14 +3536,16 @@ _set_fcn_ip6_config_ip6_privacy (ARGS_SET_FCN)
 	return TRUE;
 }
 
-static char *
+static gconstpointer
 _get_fcn_macsec_mode (ARGS_GET_FCN)
 {
 	NMSettingMacsec *s_macsec = NM_SETTING_MACSEC (setting);
 	NMSettingMacsecMode mode;
 
+	RETURN_UNSUPPORTED_GET_TYPE ();
+
 	mode = nm_setting_macsec_get_mode (s_macsec);
-	return nm_utils_enum_to_str (nm_setting_macsec_mode_get_type (), mode);
+	RETURN_STR_TO_FREE (nm_utils_enum_to_str (nm_setting_macsec_mode_get_type (), mode));
 }
 
 static gboolean
@@ -3496,14 +3569,16 @@ _set_fcn_macsec_mode (ARGS_SET_FCN)
 	return TRUE;
 }
 
-static char *
+static gconstpointer
 _get_fcn_macsec_validation (ARGS_GET_FCN)
 {
 	NMSettingMacsec *s_macsec = NM_SETTING_MACSEC (setting);
 	NMSettingMacsecValidation validation;
 
+	RETURN_UNSUPPORTED_GET_TYPE ();
+
 	validation = nm_setting_macsec_get_validation (s_macsec);
-	return nm_utils_enum_to_str (nm_setting_macsec_validation_get_type (), validation);
+	RETURN_STR_TO_FREE (nm_utils_enum_to_str (nm_setting_macsec_validation_get_type (), validation));
 }
 
 static gboolean
@@ -3527,23 +3602,26 @@ _set_fcn_macsec_validation (ARGS_SET_FCN)
 	return TRUE;
 }
 
-static char *
+static gconstpointer
 _get_fcn_macvlan_mode (ARGS_GET_FCN)
 {
 	NMSettingMacvlan *s_macvlan = NM_SETTING_MACVLAN (setting);
 	NMSettingMacvlanMode mode;
 	char *tmp, *str;
 
+	RETURN_UNSUPPORTED_GET_TYPE ();
+
 	mode = nm_setting_macvlan_get_mode (s_macvlan);
 	tmp = nm_utils_enum_to_str (nm_setting_macvlan_mode_get_type (), mode);
 
 	if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY)
-		str = g_strdup (tmp ? tmp : "");
-	else
-		str = g_strdup_printf ("%d (%s)", mode, tmp ? tmp : "");
-	g_free (tmp);
+		str = tmp ?: g_strdup ("");
+	else {
+		str = g_strdup_printf ("%d (%s)", mode, tmp ?: "");
+		g_free (tmp);
+	}
 
-	return str;
+	RETURN_STR_TO_FREE (str);
 }
 
 static gboolean
@@ -3576,12 +3654,14 @@ _set_fcn_macvlan_mode (ARGS_SET_FCN)
 	return TRUE;
 }
 
-static char *
+static gconstpointer
 _get_fcn_olpc_mesh_ssid (ARGS_GET_FCN)
 {
 	NMSettingOlpcMesh *s_olpc_mesh = NM_SETTING_OLPC_MESH (setting);
 	GBytes *ssid;
 	char *ssid_str = NULL;
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
 
 	ssid = nm_setting_olpc_mesh_get_ssid (s_olpc_mesh);
 	if (ssid) {
@@ -3589,7 +3669,7 @@ _get_fcn_olpc_mesh_ssid (ARGS_GET_FCN)
 		                                  g_bytes_get_size (ssid));
 	}
 
-	return ssid_str;
+	RETURN_STR_TO_FREE (ssid_str);
 }
 
 static gboolean
@@ -3607,14 +3687,16 @@ _set_fcn_olpc_mesh_channel (ARGS_SET_FCN)
 	return TRUE;
 }
 
-static char *
+static gconstpointer
 _get_fcn_proxy_method (ARGS_GET_FCN)
 {
 	NMSettingProxy *s_proxy = NM_SETTING_PROXY (setting);
 	NMSettingProxyMethod method;
 
+	RETURN_UNSUPPORTED_GET_TYPE ();
+
 	method = nm_setting_proxy_get_method (s_proxy);
-	return nm_utils_enum_to_str (nm_setting_proxy_method_get_type (), method);
+	RETURN_STR_TO_FREE (nm_utils_enum_to_str (nm_setting_proxy_method_get_type (), method));
 }
 
 static gboolean
@@ -3659,19 +3741,21 @@ _set_fcn_proxy_pac_script (ARGS_SET_FCN)
 	return TRUE;
 }
 
-static char *
+static gconstpointer
 _get_fcn_serial_parity (ARGS_GET_FCN)
 {
 	NMSettingSerial *s_serial = NM_SETTING_SERIAL (setting);
 
+	RETURN_UNSUPPORTED_GET_TYPE ();
+
 	switch (nm_setting_serial_get_parity (s_serial)) {
 	case NM_SETTING_SERIAL_PARITY_EVEN:
-		return g_strdup ("even");
+		return "even";
 	case NM_SETTING_SERIAL_PARITY_ODD:
-		return g_strdup ("odd");
+		return "odd";
 	default:
 	case NM_SETTING_SERIAL_PARITY_NONE:
-		return g_strdup ("none");
+		return "none";
 	}
 }
 
@@ -3710,21 +3794,24 @@ _set_fcn_team_config (ARGS_SET_FCN)
 	return TRUE;
 }
 
-static char *
+static gconstpointer
 _get_fcn_tun_mode (ARGS_GET_FCN)
 {
 	NMSettingTun *s_tun = NM_SETTING_TUN (setting);
 	NMSettingTunMode mode;
 	char *tmp, *str;
 
+	RETURN_UNSUPPORTED_GET_TYPE ();
+
 	mode = nm_setting_tun_get_mode (s_tun);
 	tmp = nm_utils_enum_to_str (nm_setting_tun_mode_get_type (), mode);
 	if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY)
-		str = g_strdup_printf ("%s", tmp ? tmp : "");
-	else
+		str = tmp ?: g_strdup ("");
+	else {
 		str = g_strdup_printf ("%d (%s)", mode, tmp ? tmp : "");
-	g_free (tmp);
-	return str;
+		g_free (tmp);
+	}
+	RETURN_STR_TO_FREE (str);
 }
 
 static gboolean
@@ -3751,25 +3838,28 @@ _set_fcn_tun_mode (ARGS_SET_FCN)
 	return TRUE;
 }
 
-static char *
+static gconstpointer
 _get_fcn_vlan_flags (ARGS_GET_FCN)
 {
 	NMSettingVlan *s_vlan = NM_SETTING_VLAN (setting);
-	return vlan_flags_to_string (nm_setting_vlan_get_flags (s_vlan), get_type);
+	RETURN_UNSUPPORTED_GET_TYPE ();
+	RETURN_STR_TO_FREE (vlan_flags_to_string (nm_setting_vlan_get_flags (s_vlan), get_type));
 }
 
-static char *
+static gconstpointer
 _get_fcn_vlan_ingress_priority_map (ARGS_GET_FCN)
 {
 	NMSettingVlan *s_vlan = NM_SETTING_VLAN (setting);
-	return vlan_priorities_to_string (s_vlan, NM_VLAN_INGRESS_MAP);
+	RETURN_UNSUPPORTED_GET_TYPE ();
+	RETURN_STR_TO_FREE (vlan_priorities_to_string (s_vlan, NM_VLAN_INGRESS_MAP));
 }
 
-static char *
+static gconstpointer
 _get_fcn_vlan_egress_priority_map (ARGS_GET_FCN)
 {
 	NMSettingVlan *s_vlan = NM_SETTING_VLAN (setting);
-	return vlan_priorities_to_string (s_vlan, NM_VLAN_EGRESS_MAP);
+	RETURN_UNSUPPORTED_GET_TYPE ();
+	RETURN_STR_TO_FREE (vlan_priorities_to_string (s_vlan, NM_VLAN_EGRESS_MAP));
 }
 
 static gboolean
@@ -3882,28 +3972,32 @@ _remove_fcn_vlan_egress_priority_map (ARGS_REMOVE_FCN)
 	                                         error);
 }
 
-static char *
+static gconstpointer
 _get_fcn_vpn_data (ARGS_GET_FCN)
 {
 	NMSettingVpn *s_vpn = NM_SETTING_VPN (setting);
 	GString *data_item_str;
 
+	RETURN_UNSUPPORTED_GET_TYPE ();
+
 	data_item_str = g_string_new (NULL);
 	nm_setting_vpn_foreach_data_item (s_vpn, &vpn_data_item, data_item_str);
 
-	return g_string_free (data_item_str, FALSE);
+	RETURN_STR_TO_FREE (g_string_free (data_item_str, FALSE));
 }
 
-static char *
+static gconstpointer
 _get_fcn_vpn_secrets (ARGS_GET_FCN)
 {
 	NMSettingVpn *s_vpn = NM_SETTING_VPN (setting);
 	GString *secret_str;
 
+	RETURN_UNSUPPORTED_GET_TYPE ();
+
 	secret_str = g_string_new (NULL);
 	nm_setting_vpn_foreach_secret (s_vpn, &vpn_data_item, secret_str);
 
-	return g_string_free (secret_str, FALSE);
+	RETURN_STR_TO_FREE (g_string_free (secret_str, FALSE));
 }
 
 static const char *
@@ -3938,12 +4032,14 @@ DEFINE_REMOVER_OPTION (_remove_fcn_vpn_secrets,
                        NM_SETTING_VPN,
                        nm_setting_vpn_remove_secret)
 
-static char *
+static gconstpointer
 _get_fcn_wired_wake_on_lan (ARGS_GET_FCN)
 {
 	NMSettingWired *s_wired = NM_SETTING_WIRED (setting);
 	NMSettingWiredWakeOnLan wol;
 	char *tmp, *str;
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
 
 	wol = nm_setting_wired_get_wake_on_lan (s_wired);
 	tmp = nm_utils_enum_to_str (nm_setting_wired_wake_on_lan_get_type (), wol);
@@ -3952,7 +4048,7 @@ _get_fcn_wired_wake_on_lan (ARGS_GET_FCN)
 	else
 		str = g_strdup_printf ("%d (%s)", wol, tmp && *tmp ? tmp : "none");
 	g_free (tmp);
-	return str;
+	RETURN_STR_TO_FREE (str);
 }
 
 static gboolean
@@ -4090,12 +4186,14 @@ _describe_fcn_wired_s390_options (ARGS_DESCRIBE_FCN)
 }
 
 
-static char *
+static gconstpointer
 _get_fcn_wireless_ssid (ARGS_GET_FCN)
 {
 	NMSettingWireless *s_wireless = NM_SETTING_WIRELESS (setting);
 	GBytes *ssid;
 	char *ssid_str = NULL;
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
 
 	ssid = nm_setting_wireless_get_ssid (s_wireless);
 	if (ssid) {
@@ -4103,23 +4201,30 @@ _get_fcn_wireless_ssid (ARGS_GET_FCN)
 		                                  g_bytes_get_size (ssid));
 	}
 
-	return ssid_str;
+	RETURN_STR_TO_FREE (ssid_str);
 }
 
-static char *
+static gconstpointer
 _get_fcn_wireless_mac_address_randomization (ARGS_GET_FCN)
 {
 	NMSettingWireless *s_wifi = NM_SETTING_WIRELESS (setting);
 	NMSettingMacRandomization randomization = nm_setting_wireless_get_mac_address_randomization (s_wifi);
+	const char *s;
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
 
 	if (randomization == NM_SETTING_MAC_RANDOMIZATION_DEFAULT)
-		return g_strdup (_("default"));
+		s = N_("default");
 	else if (randomization == NM_SETTING_MAC_RANDOMIZATION_NEVER)
-		return g_strdup (_("never"));
+		s = N_("never");
 	else if (randomization == NM_SETTING_MAC_RANDOMIZATION_ALWAYS)
-		return g_strdup_printf (_("always"));
+		s = N_("always");
 	else
-		return g_strdup_printf (_("unknown"));
+		s = N_("unknown");
+
+	if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
+		return _(s);
+	return s;
 }
 
 static gboolean
@@ -4202,38 +4307,47 @@ _set_fcn_wireless_mac_address_randomization (ARGS_SET_FCN)
 	return TRUE;
 }
 
-static char *
+static gconstpointer
 _get_fcn_wireless_security_wep_key0 (ARGS_GET_FCN)
 {
 	NMSettingWirelessSecurity *s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (setting);
-	return g_strdup (nm_setting_wireless_security_get_wep_key (s_wireless_sec, 0));
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
+	RETURN_STR_TO_FREE (g_strdup (nm_setting_wireless_security_get_wep_key (s_wireless_sec, 0)));
 }
 
-static char *
+static gconstpointer
 _get_fcn_wireless_security_wep_key1 (ARGS_GET_FCN)
 {
 	NMSettingWirelessSecurity *s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (setting);
-	return g_strdup (nm_setting_wireless_security_get_wep_key (s_wireless_sec, 1));
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
+	RETURN_STR_TO_FREE (g_strdup (nm_setting_wireless_security_get_wep_key (s_wireless_sec, 1)));
 }
 
-static char *
+static gconstpointer
 _get_fcn_wireless_security_wep_key2 (ARGS_GET_FCN)
 {
 	NMSettingWirelessSecurity *s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (setting);
-	return g_strdup (nm_setting_wireless_security_get_wep_key (s_wireless_sec, 2));
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
+	RETURN_STR_TO_FREE (g_strdup (nm_setting_wireless_security_get_wep_key (s_wireless_sec, 2)));
 }
 
-static char *
+static gconstpointer
 _get_fcn_wireless_security_wep_key3 (ARGS_GET_FCN)
 {
 	NMSettingWirelessSecurity *s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (setting);
-	return g_strdup (nm_setting_wireless_security_get_wep_key (s_wireless_sec, 3));
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
+	RETURN_STR_TO_FREE (g_strdup (nm_setting_wireless_security_get_wep_key (s_wireless_sec, 3)));
 }
 
-static char *
+static gconstpointer
 _get_fcn_wireless_security_wep_key_type (ARGS_GET_FCN)
 {
-	return wep_key_type_to_string (nm_setting_wireless_security_get_wep_key_type (NM_SETTING_WIRELESS_SECURITY (setting)));
+	RETURN_UNSUPPORTED_GET_TYPE ();
+	RETURN_STR_TO_FREE (wep_key_type_to_string (nm_setting_wireless_security_get_wep_key_type (NM_SETTING_WIRELESS_SECURITY (setting))));
 }
 
 static const char *wifi_sec_valid_protos[] = { "wpa", "rsn", NULL };
@@ -6638,12 +6752,15 @@ _meta_type_property_info_get_fcn (const NMMetaAbstractInfo *abstract_info,
 		return NM_META_TEXT_HIDDEN;
 	}
 
-	return (*out_to_free = info->property_type->get_fcn (info,
-	                                                     environment,
-	                                                     environment_user_data,
-	                                                     target,
-	                                                     get_type,
-	                                                     get_flags));
+	return info->property_type->get_fcn (info,
+	                                     environment,
+	                                     environment_user_data,
+	                                     target,
+	                                     get_type,
+	                                     get_flags,
+	                                     out_flags,
+	                                     out_to_free);
+
 }
 
 static const NMMetaAbstractInfo *const*

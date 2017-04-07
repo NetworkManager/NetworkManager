@@ -117,13 +117,14 @@ struct _NMMetaPropertyType {
 
 	const char *(*describe_fcn) (const NMMetaPropertyInfo *property_info,
 	                             char **out_to_free);
-
-	char *(*get_fcn) (const NMMetaPropertyInfo *property_info,
-	                  const NMMetaEnvironment *environment,
-	                  gpointer environment_user_data,
-	                  NMSetting *setting,
-	                  NMMetaAccessorGetType get_type,
-	                  NMMetaAccessorGetFlags get_flags);
+	gconstpointer (*get_fcn) (const NMMetaPropertyInfo *property_info,
+	                          const NMMetaEnvironment *environment,
+	                          gpointer environment_user_data,
+	                          NMSetting *setting,
+	                          NMMetaAccessorGetType get_type,
+	                          NMMetaAccessorGetFlags get_flags,
+	                          NMMetaAccessorGetOutFlags *out_flags,
+	                          gpointer *out_to_free);
 	gboolean (*set_fcn) (const NMMetaPropertyInfo *property_info,
 	                     const NMMetaEnvironment *environment,
 	                     gpointer environment_user_data,
