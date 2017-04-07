@@ -759,7 +759,7 @@ _ipx_update_default_route (const VTableIP *vtable,
 	/* get the @default_route from the device. */
 	if (ip_ifindex > 0) {
 		if (device) {
-			gboolean is_assumed;
+			gboolean is_assumed = FALSE;
 
 			if (vtable->vt->is_ip4)
 				default_route = (const NMPlatformIPRoute *) nm_device_get_ip4_default_route (device, &is_assumed);
