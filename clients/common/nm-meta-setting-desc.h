@@ -167,6 +167,16 @@ struct _NMMetaPropertyTypData {
 	NMMetaPropertyTypFlags typ_flags;
 };
 
+typedef enum {
+	NM_META_PROPERTY_INF_FLAG_NONE                      = 0x00,
+	NM_META_PROPERTY_INF_FLAG_REQD                      = 0x01, /* Don't ask to ask. */
+	NM_META_PROPERTY_INF_FLAG_DONT_ASK                  = 0x02, /* Don't ask interactively by default */
+	NM_META_PROPERTY_INF_FLAG_MULTI                     = 0x04, /* Ask multiple times, do an append instead of set. */
+
+	NM_META_PROPERTY_INF_FLAG_DISABLED                  = 0x10, /* Don't ask due to runtime decision. */
+	NM_META_PROPERTY_INF_FLAG_ENABLED                   = 0x20, /* Override NM_META_PROPERTY_INF_FLAG_DONT_ASK due to runtime decision. */
+} NMMetaPropertyInfFlags;
+
 struct _NMMetaPropertyInfo {
 	const NMMetaType *meta_type;
 

@@ -47,15 +47,7 @@ struct _OptionInfo {
 	const char *setting_name;
 	const char *property;
 	const char *option;
-	enum {
-		OPTION_NONE = 0x00,
-		OPTION_REQD = 0x01,	/* Don't ask to ask. */
-		OPTION_DONT_ASK = 0x02,	/* Don't ask interactively by default */
-		OPTION_MULTI = 0x04,	/* Ask multiple times, do an append instead of set. */
-
-		OPTION_DISABLED = 0x10,	/* Don't ask due to runtime decision. */
-		OPTION_ENABLED = 0x20,	/* Override OPTION_DONT_ASK due to runtime decision. */
-	} flags;
+	NMMetaPropertyInfFlags flags;
 	const char *prompt;
 	const char *def_hint;
 	gboolean (*check_and_set)(NmCli *nmc, NMConnection *connection, OptionInfo *option, const char *value, GError **error);
@@ -3537,10 +3529,10 @@ enable_options (const gchar *setting_name, const gchar *property, const gchar * 
 	for (candidate = option_info; candidate->setting_name; candidate++) {
 		if (   strcmp (candidate->setting_name, setting_name) == 0
 		    && strcmp (candidate->property, property) == 0
-		    && (candidate->flags & OPTION_DONT_ASK)
+		    && (candidate->flags & NM_META_PROPERTY_INF_FLAG_DONT_ASK)
 		    && candidate->option
 		    && g_strv_contains (opts, candidate->option)) {
-			candidate->flags |= OPTION_ENABLED;
+			candidate->flags |= NM_META_PROPERTY_INF_FLAG_ENABLED;
 		}
 	}
 }
@@ -3558,7 +3550,7 @@ disable_options (const gchar *setting_name, const gchar *property)
 	for (candidate = option_info; candidate->setting_name; candidate++) {
 		if (   strcmp (candidate->setting_name, setting_name) == 0
 		    && (!property || strcmp (candidate->property, property) == 0))
-		candidate->flags |= OPTION_DISABLED;
+		candidate->flags |= NM_META_PROPERTY_INF_FLAG_DISABLED;
 	}
 }
 
@@ -3573,8 +3565,8 @@ reset_options (void)
 	OptionInfo *candidate;
 
 	for (candidate = option_info; candidate->setting_name; candidate++) {
-		candidate->flags &= ~OPTION_DISABLED;
-		candidate->flags &= ~OPTION_ENABLED;
+		candidate->flags &= ~NM_META_PROPERTY_INF_FLAG_DISABLED;
+		candidate->flags &= ~NM_META_PROPERTY_INF_FLAG_ENABLED;
 	}
 }
 
@@ -3658,13 +3650,13 @@ set_property (NMConnection *connection,
 static gboolean
 set_option (NmCli *nmc, NMConnection *connection, OptionInfo *option, const gchar *value, GError **error)
 {
-	option->flags |= OPTION_DISABLED;
+	option->flags |= NM_META_PROPERTY_INF_FLAG_DISABLED;
 	if (option->check_and_set) {
 		return option->check_and_set (nmc, connection, option, value, error);
 	} else if (value) {
 		return set_property (connection, option->setting_name, option->property,
-		                     value, option->flags & OPTION_MULTI ? '+' : '\0', error);
-	} else if (option->flags & OPTION_REQD) {
+		                     value, option->flags & NM_META_PROPERTY_INF_FLAG_MULTI ? '+' : '\0', error);
+	} else if (option->flags & NM_META_PROPERTY_INF_FLAG_REQD) {
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 	                     _("Error: '%s' is mandatory."), option->option);
 		return FALSE;
@@ -4162,7 +4154,7 @@ set_ip4_address (NmCli *nmc, NMConnection *con, OptionInfo *option, const char *
 		              NULL);
 	}
 	return set_property (con, option->setting_name, option->property, value,
-	                     option->flags & OPTION_MULTI ? '+' : '\0', error);
+	                     option->flags & NM_META_PROPERTY_INF_FLAG_MULTI ? '+' : '\0', error);
 }
 
 static gboolean
@@ -4182,156 +4174,156 @@ set_ip6_address (NmCli *nmc, NMConnection *con, OptionInfo *option, const char *
 		              NULL);
 	}
 	return set_property (con, option->setting_name, option->property, value,
-	                     option->flags & OPTION_MULTI ? '+' : '\0', error);
+	                     option->flags & NM_META_PROPERTY_INF_FLAG_MULTI ? '+' : '\0', error);
 }
 
 
 /*----------------------------------------------------------------------------*/
 
 static OptionInfo option_info[] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_TYPE,             "type",         OPTION_REQD, PROMPT_CON_TYPE, NULL,
+	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_TYPE,             "type",         NM_META_PROPERTY_INF_FLAG_REQD, PROMPT_CON_TYPE, NULL,
                                                                                                         set_connection_type, gen_connection_types },
-	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_ID,               "con-name",     OPTION_DONT_ASK, NULL, NULL, NULL, NULL },
-	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_AUTOCONNECT,      "autoconnect",  OPTION_DONT_ASK, NULL, NULL, NULL,
+	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_ID,               "con-name",     NM_META_PROPERTY_INF_FLAG_DONT_ASK, NULL, NULL, NULL, NULL },
+	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_AUTOCONNECT,      "autoconnect",  NM_META_PROPERTY_INF_FLAG_DONT_ASK, NULL, NULL, NULL,
                                                                                                         gen_func_bool_values_l10n },
-	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_INTERFACE_NAME,   "ifname",       OPTION_REQD, PROMPT_IFNAME, NULL,
+	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_INTERFACE_NAME,   "ifname",       NM_META_PROPERTY_INF_FLAG_REQD, PROMPT_IFNAME, NULL,
                                                                                                         set_connection_iface, nmc_rl_gen_func_ifnames },
-	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_MASTER,           "master",       OPTION_DONT_ASK, PROMPT_MASTER, NULL,
+	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_MASTER,           "master",       NM_META_PROPERTY_INF_FLAG_DONT_ASK, PROMPT_MASTER, NULL,
                                                                                                         set_connection_master, gen_func_master_ifnames },
-	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_SLAVE_TYPE,       "slave-type",   OPTION_DONT_ASK, NULL, NULL, NULL,
+	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_SLAVE_TYPE,       "slave-type",   NM_META_PROPERTY_INF_FLAG_DONT_ASK, NULL, NULL, NULL,
                                                                                                         gen_func_slave_type },
-	{ NM_SETTING_PPPOE_SETTING_NAME,        NM_SETTING_PPPOE_USERNAME,              "username",     OPTION_REQD, N_("PPPoE username"), NULL, NULL, NULL },
-	{ NM_SETTING_PPPOE_SETTING_NAME,        NM_SETTING_PPPOE_PASSWORD,              "password",     OPTION_NONE, N_("Password [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_PPPOE_SETTING_NAME,        NM_SETTING_PPPOE_SERVICE,               "service",      OPTION_NONE, N_("Service [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_WIRED_SETTING_NAME,        NM_SETTING_WIRED_MTU,                   "mtu",          OPTION_NONE, N_("MTU [auto]"), NULL, NULL, NULL },
-	{ NM_SETTING_WIRED_SETTING_NAME,        NM_SETTING_WIRED_MAC_ADDRESS,           "mac",          OPTION_NONE, N_("MAC [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_WIRED_SETTING_NAME,        NM_SETTING_WIRED_CLONED_MAC_ADDRESS,    "cloned-mac",   OPTION_NONE, N_("Cloned MAC [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_INFINIBAND_SETTING_NAME,   NM_SETTING_INFINIBAND_MTU,              "mtu",          OPTION_NONE, N_("MTU [auto]"), NULL, NULL, NULL },
-	{ NM_SETTING_INFINIBAND_SETTING_NAME,   NM_SETTING_INFINIBAND_MAC_ADDRESS,      "mac",          OPTION_NONE, N_("MAC [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_INFINIBAND_SETTING_NAME,   NM_SETTING_INFINIBAND_TRANSPORT_MODE,   "transport-mode", OPTION_NONE, PROMPT_IB_MODE, PROMPT_IB_MODE_CHOICES,
+	{ NM_SETTING_PPPOE_SETTING_NAME,        NM_SETTING_PPPOE_USERNAME,              "username",     NM_META_PROPERTY_INF_FLAG_REQD, N_("PPPoE username"), NULL, NULL, NULL },
+	{ NM_SETTING_PPPOE_SETTING_NAME,        NM_SETTING_PPPOE_PASSWORD,              "password",     NM_META_PROPERTY_INF_FLAG_NONE, N_("Password [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_PPPOE_SETTING_NAME,        NM_SETTING_PPPOE_SERVICE,               "service",      NM_META_PROPERTY_INF_FLAG_NONE, N_("Service [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_WIRED_SETTING_NAME,        NM_SETTING_WIRED_MTU,                   "mtu",          NM_META_PROPERTY_INF_FLAG_NONE, N_("MTU [auto]"), NULL, NULL, NULL },
+	{ NM_SETTING_WIRED_SETTING_NAME,        NM_SETTING_WIRED_MAC_ADDRESS,           "mac",          NM_META_PROPERTY_INF_FLAG_NONE, N_("MAC [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_WIRED_SETTING_NAME,        NM_SETTING_WIRED_CLONED_MAC_ADDRESS,    "cloned-mac",   NM_META_PROPERTY_INF_FLAG_NONE, N_("Cloned MAC [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_INFINIBAND_SETTING_NAME,   NM_SETTING_INFINIBAND_MTU,              "mtu",          NM_META_PROPERTY_INF_FLAG_NONE, N_("MTU [auto]"), NULL, NULL, NULL },
+	{ NM_SETTING_INFINIBAND_SETTING_NAME,   NM_SETTING_INFINIBAND_MAC_ADDRESS,      "mac",          NM_META_PROPERTY_INF_FLAG_NONE, N_("MAC [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_INFINIBAND_SETTING_NAME,   NM_SETTING_INFINIBAND_TRANSPORT_MODE,   "transport-mode", NM_META_PROPERTY_INF_FLAG_NONE, PROMPT_IB_MODE, PROMPT_IB_MODE_CHOICES,
                                                                                                         NULL, gen_func_ib_type },
-	{ NM_SETTING_INFINIBAND_SETTING_NAME,   NM_SETTING_INFINIBAND_PARENT,           "parent",       OPTION_NONE, N_("Parent interface [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_INFINIBAND_SETTING_NAME,   NM_SETTING_INFINIBAND_P_KEY,            "p-key",        OPTION_NONE, N_("P_KEY [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_WIRELESS_SETTING_NAME,     NM_SETTING_WIRELESS_SSID,               "ssid",         OPTION_REQD, N_("SSID"), NULL, NULL, NULL },
-	{ NM_SETTING_WIRELESS_SETTING_NAME,     NM_SETTING_WIRELESS_MODE,               "mode",         OPTION_NONE, PROMPT_WIFI_MODE, PROMPT_WIFI_MODE_CHOICES,
+	{ NM_SETTING_INFINIBAND_SETTING_NAME,   NM_SETTING_INFINIBAND_PARENT,           "parent",       NM_META_PROPERTY_INF_FLAG_NONE, N_("Parent interface [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_INFINIBAND_SETTING_NAME,   NM_SETTING_INFINIBAND_P_KEY,            "p-key",        NM_META_PROPERTY_INF_FLAG_NONE, N_("P_KEY [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_WIRELESS_SETTING_NAME,     NM_SETTING_WIRELESS_SSID,               "ssid",         NM_META_PROPERTY_INF_FLAG_REQD, N_("SSID"), NULL, NULL, NULL },
+	{ NM_SETTING_WIRELESS_SETTING_NAME,     NM_SETTING_WIRELESS_MODE,               "mode",         NM_META_PROPERTY_INF_FLAG_NONE, PROMPT_WIFI_MODE, PROMPT_WIFI_MODE_CHOICES,
                                                                                                         NULL, gen_func_wifi_mode },
-	{ NM_SETTING_WIRELESS_SETTING_NAME,     NM_SETTING_WIRELESS_MTU,                "mtu",          OPTION_NONE, N_("MTU [auto]"), NULL, NULL, NULL },
-	{ NM_SETTING_WIRELESS_SETTING_NAME,     NM_SETTING_WIRELESS_MAC_ADDRESS,        "mac",          OPTION_NONE, N_("MAC [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_WIRELESS_SETTING_NAME,     NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, "cloned-mac",   OPTION_NONE, N_("Cloned MAC [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_WIMAX_SETTING_NAME,        NM_SETTING_WIMAX_NETWORK_NAME,          "nsp",          OPTION_REQD, N_("WiMAX NSP name"), NULL, NULL, NULL },
-	{ NM_SETTING_WIMAX_SETTING_NAME,        NM_SETTING_WIMAX_MAC_ADDRESS,           "mac",          OPTION_NONE, N_("MAC [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_GSM_SETTING_NAME,          NM_SETTING_GSM_APN,                     "apn",          OPTION_REQD, N_("APN"), NULL, NULL, NULL },
-	{ NM_SETTING_GSM_SETTING_NAME,          NM_SETTING_GSM_USERNAME,                "user",         OPTION_NONE, N_("Username [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_GSM_SETTING_NAME,          NM_SETTING_GSM_PASSWORD,                "password",     OPTION_NONE, N_("Password [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_CDMA_SETTING_NAME,         NM_SETTING_CDMA_USERNAME,               "user",         OPTION_NONE, N_("Username [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_CDMA_SETTING_NAME,         NM_SETTING_CDMA_PASSWORD,               "password",     OPTION_NONE, N_("Password [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_BLUETOOTH_SETTING_NAME,    NM_SETTING_BLUETOOTH_BDADDR,            "addr",         OPTION_REQD, N_("Bluetooth device address"), NULL, NULL, NULL },
-	{ NM_SETTING_BLUETOOTH_SETTING_NAME,    NM_SETTING_BLUETOOTH_TYPE,              "bt-type",      OPTION_NONE, PROMPT_BT_TYPE, PROMPT_BT_TYPE_CHOICES,
+	{ NM_SETTING_WIRELESS_SETTING_NAME,     NM_SETTING_WIRELESS_MTU,                "mtu",          NM_META_PROPERTY_INF_FLAG_NONE, N_("MTU [auto]"), NULL, NULL, NULL },
+	{ NM_SETTING_WIRELESS_SETTING_NAME,     NM_SETTING_WIRELESS_MAC_ADDRESS,        "mac",          NM_META_PROPERTY_INF_FLAG_NONE, N_("MAC [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_WIRELESS_SETTING_NAME,     NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, "cloned-mac",   NM_META_PROPERTY_INF_FLAG_NONE, N_("Cloned MAC [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_WIMAX_SETTING_NAME,        NM_SETTING_WIMAX_NETWORK_NAME,          "nsp",          NM_META_PROPERTY_INF_FLAG_REQD, N_("WiMAX NSP name"), NULL, NULL, NULL },
+	{ NM_SETTING_WIMAX_SETTING_NAME,        NM_SETTING_WIMAX_MAC_ADDRESS,           "mac",          NM_META_PROPERTY_INF_FLAG_NONE, N_("MAC [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_GSM_SETTING_NAME,          NM_SETTING_GSM_APN,                     "apn",          NM_META_PROPERTY_INF_FLAG_REQD, N_("APN"), NULL, NULL, NULL },
+	{ NM_SETTING_GSM_SETTING_NAME,          NM_SETTING_GSM_USERNAME,                "user",         NM_META_PROPERTY_INF_FLAG_NONE, N_("Username [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_GSM_SETTING_NAME,          NM_SETTING_GSM_PASSWORD,                "password",     NM_META_PROPERTY_INF_FLAG_NONE, N_("Password [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_CDMA_SETTING_NAME,         NM_SETTING_CDMA_USERNAME,               "user",         NM_META_PROPERTY_INF_FLAG_NONE, N_("Username [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_CDMA_SETTING_NAME,         NM_SETTING_CDMA_PASSWORD,               "password",     NM_META_PROPERTY_INF_FLAG_NONE, N_("Password [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_BLUETOOTH_SETTING_NAME,    NM_SETTING_BLUETOOTH_BDADDR,            "addr",         NM_META_PROPERTY_INF_FLAG_REQD, N_("Bluetooth device address"), NULL, NULL, NULL },
+	{ NM_SETTING_BLUETOOTH_SETTING_NAME,    NM_SETTING_BLUETOOTH_TYPE,              "bt-type",      NM_META_PROPERTY_INF_FLAG_NONE, PROMPT_BT_TYPE, PROMPT_BT_TYPE_CHOICES,
                                                                                                         set_bluetooth_type, gen_func_bt_type },
-	{ NM_SETTING_VLAN_SETTING_NAME,         NM_SETTING_VLAN_PARENT,                 "dev",          OPTION_REQD, N_("VLAN parent device or connection UUID"), NULL,
+	{ NM_SETTING_VLAN_SETTING_NAME,         NM_SETTING_VLAN_PARENT,                 "dev",          NM_META_PROPERTY_INF_FLAG_REQD, N_("VLAN parent device or connection UUID"), NULL,
                                                                                                         NULL, nmc_rl_gen_func_ifnames },
-	{ NM_SETTING_VLAN_SETTING_NAME,         NM_SETTING_VLAN_ID,                     "id",           OPTION_REQD, N_("VLAN ID (<0-4094>)"), NULL, NULL, NULL },
-	{ NM_SETTING_VLAN_SETTING_NAME,         NM_SETTING_VLAN_FLAGS,                  "flags",        OPTION_NONE, N_("VLAN flags (<0-7>) [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_VLAN_SETTING_NAME,         NM_SETTING_VLAN_INGRESS_PRIORITY_MAP,   "ingress",      OPTION_NONE, N_("Ingress priority maps [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_VLAN_SETTING_NAME,         NM_SETTING_VLAN_EGRESS_PRIORITY_MAP,    "egress",       OPTION_NONE, N_("Egress priority maps [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "mode",         OPTION_NONE, PROMPT_BOND_MODE, "[balance-rr]",
+	{ NM_SETTING_VLAN_SETTING_NAME,         NM_SETTING_VLAN_ID,                     "id",           NM_META_PROPERTY_INF_FLAG_REQD, N_("VLAN ID (<0-4094>)"), NULL, NULL, NULL },
+	{ NM_SETTING_VLAN_SETTING_NAME,         NM_SETTING_VLAN_FLAGS,                  "flags",        NM_META_PROPERTY_INF_FLAG_NONE, N_("VLAN flags (<0-7>) [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_VLAN_SETTING_NAME,         NM_SETTING_VLAN_INGRESS_PRIORITY_MAP,   "ingress",      NM_META_PROPERTY_INF_FLAG_NONE, N_("Ingress priority maps [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_VLAN_SETTING_NAME,         NM_SETTING_VLAN_EGRESS_PRIORITY_MAP,    "egress",       NM_META_PROPERTY_INF_FLAG_NONE, N_("Egress priority maps [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "mode",         NM_META_PROPERTY_INF_FLAG_NONE, PROMPT_BOND_MODE, "[balance-rr]",
                                                                                                         set_bond_option, gen_func_bond_mode },
-	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "primary",      OPTION_DONT_ASK, N_("Bonding primary interface [none]"),
+	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "primary",      NM_META_PROPERTY_INF_FLAG_DONT_ASK, N_("Bonding primary interface [none]"),
                                                                                                         NULL, set_bond_option, nmc_rl_gen_func_ifnames },
-	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                NULL,           OPTION_NONE, N_("Bonding monitoring mode"), PROMPT_BOND_MON_MODE_CHOICES,
+	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                NULL,           NM_META_PROPERTY_INF_FLAG_NONE, N_("Bonding monitoring mode"), PROMPT_BOND_MON_MODE_CHOICES,
                                                                                                         set_bond_monitoring_mode, gen_func_bond_mon_mode },
-	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "miimon",       OPTION_DONT_ASK, N_("Bonding miimon [100]"), NULL, set_bond_option, NULL },
-	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "downdelay",    OPTION_DONT_ASK, N_("Bonding downdelay [0]"), NULL, set_bond_option, NULL },
-	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "updelay",      OPTION_DONT_ASK, N_("Bonding updelay [0]"), NULL, set_bond_option, NULL },
-	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "arp-interval", OPTION_DONT_ASK, N_("Bonding arp-interval [0]"), NULL,
+	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "miimon",       NM_META_PROPERTY_INF_FLAG_DONT_ASK, N_("Bonding miimon [100]"), NULL, set_bond_option, NULL },
+	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "downdelay",    NM_META_PROPERTY_INF_FLAG_DONT_ASK, N_("Bonding downdelay [0]"), NULL, set_bond_option, NULL },
+	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "updelay",      NM_META_PROPERTY_INF_FLAG_DONT_ASK, N_("Bonding updelay [0]"), NULL, set_bond_option, NULL },
+	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "arp-interval", NM_META_PROPERTY_INF_FLAG_DONT_ASK, N_("Bonding arp-interval [0]"), NULL,
                                                                                                         set_bond_option, NULL },
-	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "arp-ip-target", OPTION_DONT_ASK, N_("Bonding arp-ip-target [none]"),
+	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "arp-ip-target", NM_META_PROPERTY_INF_FLAG_DONT_ASK, N_("Bonding arp-ip-target [none]"),
                                                                                                         NULL, set_bond_option, NULL },
-	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "lacp-rate",    OPTION_DONT_ASK, N_("LACP rate ('slow' or 'fast') [slow]"), NULL,
+	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "lacp-rate",    NM_META_PROPERTY_INF_FLAG_DONT_ASK, N_("LACP rate ('slow' or 'fast') [slow]"), NULL,
                                                                                                         set_bond_option, gen_func_bond_lacp_rate },
-	{ NM_SETTING_TEAM_SETTING_NAME,         NM_SETTING_TEAM_CONFIG,                 "config",       OPTION_NONE, N_("Team JSON configuration [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_TEAM_PORT_SETTING_NAME,    NM_SETTING_TEAM_PORT_CONFIG,            "config",       OPTION_NONE, N_("Team JSON configuration [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_STP,                  "stp",          OPTION_NONE, N_("Enable STP [no]"), NULL,
+	{ NM_SETTING_TEAM_SETTING_NAME,         NM_SETTING_TEAM_CONFIG,                 "config",       NM_META_PROPERTY_INF_FLAG_NONE, N_("Team JSON configuration [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_TEAM_PORT_SETTING_NAME,    NM_SETTING_TEAM_PORT_CONFIG,            "config",       NM_META_PROPERTY_INF_FLAG_NONE, N_("Team JSON configuration [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_STP,                  "stp",          NM_META_PROPERTY_INF_FLAG_NONE, N_("Enable STP [no]"), NULL,
                                                                                                         set_yes_no, gen_func_bool_values_l10n },
-	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_PRIORITY,             "priority",     OPTION_NONE, N_("STP priority [32768]"), NULL, NULL, NULL },
-	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_FORWARD_DELAY,        "forward-delay", OPTION_NONE, N_("Forward delay [15]"), NULL, NULL, NULL },
-	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_HELLO_TIME,           "hello-time",   OPTION_NONE, N_("Hello time [2]"), NULL, NULL, NULL },
-	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_MAX_AGE,              "max-age",      OPTION_NONE, N_("Max age [20]"), NULL, NULL, NULL },
-	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_AGEING_TIME,          "ageing-time",  OPTION_NONE, N_("MAC address ageing time [300]"), NULL, NULL, NULL },
-	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_MULTICAST_SNOOPING,   "multicast-snooping", OPTION_NONE, N_("Enable IGMP snooping [no]"), NULL,
+	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_PRIORITY,             "priority",     NM_META_PROPERTY_INF_FLAG_NONE, N_("STP priority [32768]"), NULL, NULL, NULL },
+	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_FORWARD_DELAY,        "forward-delay", NM_META_PROPERTY_INF_FLAG_NONE, N_("Forward delay [15]"), NULL, NULL, NULL },
+	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_HELLO_TIME,           "hello-time",   NM_META_PROPERTY_INF_FLAG_NONE, N_("Hello time [2]"), NULL, NULL, NULL },
+	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_MAX_AGE,              "max-age",      NM_META_PROPERTY_INF_FLAG_NONE, N_("Max age [20]"), NULL, NULL, NULL },
+	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_AGEING_TIME,          "ageing-time",  NM_META_PROPERTY_INF_FLAG_NONE, N_("MAC address ageing time [300]"), NULL, NULL, NULL },
+	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_MULTICAST_SNOOPING,   "multicast-snooping", NM_META_PROPERTY_INF_FLAG_NONE, N_("Enable IGMP snooping [no]"), NULL,
                                                                                                         set_yes_no, gen_func_bool_values_l10n },
-	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_MAC_ADDRESS,          "mac",          OPTION_NONE, N_("MAC [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_BRIDGE_PORT_SETTING_NAME,  NM_SETTING_BRIDGE_PORT_PRIORITY,        "priority",     OPTION_NONE, N_("Bridge port priority [32]"), NULL, NULL, NULL },
-	{ NM_SETTING_BRIDGE_PORT_SETTING_NAME,  NM_SETTING_BRIDGE_PORT_PATH_COST,       "path-cost",    OPTION_NONE, N_("Bridge port STP path cost [100]"), NULL, NULL, NULL },
-	{ NM_SETTING_BRIDGE_PORT_SETTING_NAME,  NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE,    "hairpin",      OPTION_NONE, N_("Hairpin [no]"), NULL,
+	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_MAC_ADDRESS,          "mac",          NM_META_PROPERTY_INF_FLAG_NONE, N_("MAC [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_BRIDGE_PORT_SETTING_NAME,  NM_SETTING_BRIDGE_PORT_PRIORITY,        "priority",     NM_META_PROPERTY_INF_FLAG_NONE, N_("Bridge port priority [32]"), NULL, NULL, NULL },
+	{ NM_SETTING_BRIDGE_PORT_SETTING_NAME,  NM_SETTING_BRIDGE_PORT_PATH_COST,       "path-cost",    NM_META_PROPERTY_INF_FLAG_NONE, N_("Bridge port STP path cost [100]"), NULL, NULL, NULL },
+	{ NM_SETTING_BRIDGE_PORT_SETTING_NAME,  NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE,    "hairpin",      NM_META_PROPERTY_INF_FLAG_NONE, N_("Hairpin [no]"), NULL,
                                                                                                         set_yes_no, gen_func_bool_values_l10n },
-	{ NM_SETTING_VPN_SETTING_NAME,          NM_SETTING_VPN_SERVICE_TYPE,            "vpn-type",     OPTION_REQD, PROMPT_VPN_TYPE, NULL, NULL, gen_func_vpn_types },
-	{ NM_SETTING_VPN_SETTING_NAME,          NM_SETTING_VPN_USER_NAME,               "user",         OPTION_NONE, N_("Username [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_OLPC_MESH_SETTING_NAME,    NM_SETTING_OLPC_MESH_SSID,              "ssid",         OPTION_REQD, N_("SSID"), NULL, NULL, NULL },
-	{ NM_SETTING_OLPC_MESH_SETTING_NAME,    NM_SETTING_OLPC_MESH_CHANNEL,           "channel",      OPTION_NONE, N_("OLPC Mesh channel [1]"), NULL, NULL, NULL },
-	{ NM_SETTING_OLPC_MESH_SETTING_NAME,    NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS, "dhcp-anycast", OPTION_NONE, N_("DHCP anycast MAC address [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_ADSL_SETTING_NAME,         NM_SETTING_ADSL_USERNAME,               "username",     OPTION_REQD, N_("Username"), NULL, NULL, NULL },
-	{ NM_SETTING_ADSL_SETTING_NAME,         NM_SETTING_ADSL_PROTOCOL,               "protocol",     OPTION_REQD, PROMPT_ADSL_PROTO, PROMPT_ADSL_PROTO_CHOICES,
+	{ NM_SETTING_VPN_SETTING_NAME,          NM_SETTING_VPN_SERVICE_TYPE,            "vpn-type",     NM_META_PROPERTY_INF_FLAG_REQD, PROMPT_VPN_TYPE, NULL, NULL, gen_func_vpn_types },
+	{ NM_SETTING_VPN_SETTING_NAME,          NM_SETTING_VPN_USER_NAME,               "user",         NM_META_PROPERTY_INF_FLAG_NONE, N_("Username [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_OLPC_MESH_SETTING_NAME,    NM_SETTING_OLPC_MESH_SSID,              "ssid",         NM_META_PROPERTY_INF_FLAG_REQD, N_("SSID"), NULL, NULL, NULL },
+	{ NM_SETTING_OLPC_MESH_SETTING_NAME,    NM_SETTING_OLPC_MESH_CHANNEL,           "channel",      NM_META_PROPERTY_INF_FLAG_NONE, N_("OLPC Mesh channel [1]"), NULL, NULL, NULL },
+	{ NM_SETTING_OLPC_MESH_SETTING_NAME,    NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS, "dhcp-anycast", NM_META_PROPERTY_INF_FLAG_NONE, N_("DHCP anycast MAC address [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_ADSL_SETTING_NAME,         NM_SETTING_ADSL_USERNAME,               "username",     NM_META_PROPERTY_INF_FLAG_REQD, N_("Username"), NULL, NULL, NULL },
+	{ NM_SETTING_ADSL_SETTING_NAME,         NM_SETTING_ADSL_PROTOCOL,               "protocol",     NM_META_PROPERTY_INF_FLAG_REQD, PROMPT_ADSL_PROTO, PROMPT_ADSL_PROTO_CHOICES,
                                                                                                         NULL, gen_func_adsl_proto },
-	{ NM_SETTING_ADSL_SETTING_NAME,         NM_SETTING_ADSL_PASSWORD,               "password",     OPTION_NONE, N_("Password [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_ADSL_SETTING_NAME,         NM_SETTING_ADSL_ENCAPSULATION,          "encapsulation", OPTION_NONE, PROMPT_ADSL_ENCAP, PROMPT_ADSL_ENCAP_CHOICES,
+	{ NM_SETTING_ADSL_SETTING_NAME,         NM_SETTING_ADSL_PASSWORD,               "password",     NM_META_PROPERTY_INF_FLAG_NONE, N_("Password [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_ADSL_SETTING_NAME,         NM_SETTING_ADSL_ENCAPSULATION,          "encapsulation", NM_META_PROPERTY_INF_FLAG_NONE, PROMPT_ADSL_ENCAP, PROMPT_ADSL_ENCAP_CHOICES,
                                                                                                         NULL, gen_func_adsl_encap },
-	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_PARENT,               "dev",          OPTION_REQD, N_("MACsec parent device or connection UUID"), NULL, NULL, NULL },
-	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_MODE,                 "mode",         OPTION_REQD, PROMPT_MACSEC_MODE, PROMPT_MACSEC_MODE_CHOICES, NULL, gen_func_macsec_mode },
-	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_ENCRYPT,              "encrypt",      OPTION_NONE, N_("Enable encryption [yes]"), NULL, set_yes_no, gen_func_bool_values_l10n },
-	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_MKA_CAK,              "cak",          OPTION_NONE, N_("MKA CAK"), NULL, NULL, NULL },
-	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_MKA_CKN,              "ckn",          OPTION_NONE, N_("MKA_CKN"), NULL, NULL, NULL },
-	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_PORT,                 "port",         OPTION_NONE, N_("SCI port [1]"), NULL, NULL, NULL },
+	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_PARENT,               "dev",          NM_META_PROPERTY_INF_FLAG_REQD, N_("MACsec parent device or connection UUID"), NULL, NULL, NULL },
+	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_MODE,                 "mode",         NM_META_PROPERTY_INF_FLAG_REQD, PROMPT_MACSEC_MODE, PROMPT_MACSEC_MODE_CHOICES, NULL, gen_func_macsec_mode },
+	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_ENCRYPT,              "encrypt",      NM_META_PROPERTY_INF_FLAG_NONE, N_("Enable encryption [yes]"), NULL, set_yes_no, gen_func_bool_values_l10n },
+	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_MKA_CAK,              "cak",          NM_META_PROPERTY_INF_FLAG_NONE, N_("MKA CAK"), NULL, NULL, NULL },
+	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_MKA_CKN,              "ckn",          NM_META_PROPERTY_INF_FLAG_NONE, N_("MKA_CKN"), NULL, NULL, NULL },
+	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_PORT,                 "port",         NM_META_PROPERTY_INF_FLAG_NONE, N_("SCI port [1]"), NULL, NULL, NULL },
 
-	{ NM_SETTING_MACVLAN_SETTING_NAME,      NM_SETTING_MACVLAN_PARENT,              "dev",          OPTION_REQD, N_("MACVLAN parent device or connection UUID"), NULL,
+	{ NM_SETTING_MACVLAN_SETTING_NAME,      NM_SETTING_MACVLAN_PARENT,              "dev",          NM_META_PROPERTY_INF_FLAG_REQD, N_("MACVLAN parent device or connection UUID"), NULL,
                                                                                                         NULL, nmc_rl_gen_func_ifnames },
-	{ NM_SETTING_MACVLAN_SETTING_NAME,      NM_SETTING_MACVLAN_MODE,                "mode",         OPTION_REQD, PROMPT_MACVLAN_MODE, NULL,
+	{ NM_SETTING_MACVLAN_SETTING_NAME,      NM_SETTING_MACVLAN_MODE,                "mode",         NM_META_PROPERTY_INF_FLAG_REQD, PROMPT_MACVLAN_MODE, NULL,
                                                                                                         NULL, gen_func_macvlan_mode },
-	{ NM_SETTING_MACVLAN_SETTING_NAME,      NM_SETTING_MACVLAN_TAP,                 "tap",          OPTION_NONE, N_("Tap [no]"), NULL,
+	{ NM_SETTING_MACVLAN_SETTING_NAME,      NM_SETTING_MACVLAN_TAP,                 "tap",          NM_META_PROPERTY_INF_FLAG_NONE, N_("Tap [no]"), NULL,
                                                                                                         set_yes_no, gen_func_bool_values_l10n },
-	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_ID,                    "id",           OPTION_REQD, N_("VXLAN ID"), NULL, NULL, NULL },
-	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_REMOTE,                "remote",       OPTION_REQD, N_("Remote"), NULL, NULL, NULL },
-	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_PARENT,                "dev",          OPTION_NONE, N_("Parent device [none]"), NULL,
+	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_ID,                    "id",           NM_META_PROPERTY_INF_FLAG_REQD, N_("VXLAN ID"), NULL, NULL, NULL },
+	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_REMOTE,                "remote",       NM_META_PROPERTY_INF_FLAG_REQD, N_("Remote"), NULL, NULL, NULL },
+	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_PARENT,                "dev",          NM_META_PROPERTY_INF_FLAG_NONE, N_("Parent device [none]"), NULL,
                                                                                                         NULL, nmc_rl_gen_func_ifnames },
-	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_LOCAL,                 "local",        OPTION_NONE, N_("Local address [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_SOURCE_PORT_MIN,       "source-port-min", OPTION_NONE, N_("Minimum source port [0]"), NULL, NULL, NULL },
-	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_SOURCE_PORT_MAX,       "source-port-max", OPTION_NONE, N_("Maximum source port [0]"), NULL, NULL, NULL },
-	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_DESTINATION_PORT,      "destination-port", OPTION_NONE, N_("Destination port [8472]"), NULL, NULL, NULL },
-	{ NM_SETTING_TUN_SETTING_NAME,          NM_SETTING_TUN_MODE,                    "mode",         OPTION_NONE, PROMPT_TUN_MODE, PROMPT_TUN_MODE_CHOICES,
+	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_LOCAL,                 "local",        NM_META_PROPERTY_INF_FLAG_NONE, N_("Local address [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_SOURCE_PORT_MIN,       "source-port-min", NM_META_PROPERTY_INF_FLAG_NONE, N_("Minimum source port [0]"), NULL, NULL, NULL },
+	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_SOURCE_PORT_MAX,       "source-port-max", NM_META_PROPERTY_INF_FLAG_NONE, N_("Maximum source port [0]"), NULL, NULL, NULL },
+	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_DESTINATION_PORT,      "destination-port", NM_META_PROPERTY_INF_FLAG_NONE, N_("Destination port [8472]"), NULL, NULL, NULL },
+	{ NM_SETTING_TUN_SETTING_NAME,          NM_SETTING_TUN_MODE,                    "mode",         NM_META_PROPERTY_INF_FLAG_NONE, PROMPT_TUN_MODE, PROMPT_TUN_MODE_CHOICES,
                                                                                                         NULL, gen_func_tun_mode },
-	{ NM_SETTING_TUN_SETTING_NAME,          NM_SETTING_TUN_OWNER,                   "owner",        OPTION_NONE, N_("User ID [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_TUN_SETTING_NAME,          NM_SETTING_TUN_GROUP,                   "group",        OPTION_NONE, N_("Group ID [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_TUN_SETTING_NAME,          NM_SETTING_TUN_PI,                      "pi",           OPTION_NONE, N_("Enable PI [no]"), NULL,
+	{ NM_SETTING_TUN_SETTING_NAME,          NM_SETTING_TUN_OWNER,                   "owner",        NM_META_PROPERTY_INF_FLAG_NONE, N_("User ID [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_TUN_SETTING_NAME,          NM_SETTING_TUN_GROUP,                   "group",        NM_META_PROPERTY_INF_FLAG_NONE, N_("Group ID [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_TUN_SETTING_NAME,          NM_SETTING_TUN_PI,                      "pi",           NM_META_PROPERTY_INF_FLAG_NONE, N_("Enable PI [no]"), NULL,
                                                                                                         set_yes_no, gen_func_bool_values_l10n },
-	{ NM_SETTING_TUN_SETTING_NAME,          NM_SETTING_TUN_VNET_HDR,                "vnet-hdr",     OPTION_NONE, N_("Enable VNET header [no]"), NULL,
+	{ NM_SETTING_TUN_SETTING_NAME,          NM_SETTING_TUN_VNET_HDR,                "vnet-hdr",     NM_META_PROPERTY_INF_FLAG_NONE, N_("Enable VNET header [no]"), NULL,
                                                                                                         set_yes_no, gen_func_bool_values_l10n },
-	{ NM_SETTING_TUN_SETTING_NAME,          NM_SETTING_TUN_MULTI_QUEUE,             "multi-queue",  OPTION_NONE, N_("Enable multi queue [no]"), NULL,
+	{ NM_SETTING_TUN_SETTING_NAME,          NM_SETTING_TUN_MULTI_QUEUE,             "multi-queue",  NM_META_PROPERTY_INF_FLAG_NONE, N_("Enable multi queue [no]"), NULL,
                                                                                                         set_yes_no, gen_func_bool_values_l10n },
-	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,    NM_SETTING_IP_TUNNEL_MODE,              "mode",         OPTION_REQD, PROMPT_IP_TUNNEL_MODE, NULL, NULL, gen_func_ip_tunnel_mode },
-	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,    NM_SETTING_IP_TUNNEL_LOCAL,             "local",        OPTION_NONE, N_("Local endpoint [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,    NM_SETTING_IP_TUNNEL_REMOTE,            "remote",       OPTION_REQD, N_("Remote"), NULL, NULL, NULL },
-	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,    NM_SETTING_IP_TUNNEL_PARENT,            "dev",          OPTION_NONE, N_("Parent device [none]"), NULL,
+	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,    NM_SETTING_IP_TUNNEL_MODE,              "mode",         NM_META_PROPERTY_INF_FLAG_REQD, PROMPT_IP_TUNNEL_MODE, NULL, NULL, gen_func_ip_tunnel_mode },
+	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,    NM_SETTING_IP_TUNNEL_LOCAL,             "local",        NM_META_PROPERTY_INF_FLAG_NONE, N_("Local endpoint [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,    NM_SETTING_IP_TUNNEL_REMOTE,            "remote",       NM_META_PROPERTY_INF_FLAG_REQD, N_("Remote"), NULL, NULL, NULL },
+	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,    NM_SETTING_IP_TUNNEL_PARENT,            "dev",          NM_META_PROPERTY_INF_FLAG_NONE, N_("Parent device [none]"), NULL,
                                                                                                         NULL, nmc_rl_gen_func_ifnames },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,   NM_SETTING_IP_CONFIG_ADDRESSES,         "ip4",          OPTION_MULTI, N_("IPv4 address (IP[/plen]) [none]"), NULL,
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,   NM_SETTING_IP_CONFIG_ADDRESSES,         "ip4",          NM_META_PROPERTY_INF_FLAG_MULTI, N_("IPv4 address (IP[/plen]) [none]"), NULL,
 	                                                                                                set_ip4_address, NULL },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,   NM_SETTING_IP_CONFIG_GATEWAY,           "gw4",          OPTION_NONE, N_("IPv4 gateway [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,   NM_SETTING_IP_CONFIG_ADDRESSES,         "ip6",          OPTION_MULTI, N_("IPv6 address (IP[/plen]) [none]"), NULL,
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,   NM_SETTING_IP_CONFIG_GATEWAY,           "gw4",          NM_META_PROPERTY_INF_FLAG_NONE, N_("IPv4 gateway [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,   NM_SETTING_IP_CONFIG_ADDRESSES,         "ip6",          NM_META_PROPERTY_INF_FLAG_MULTI, N_("IPv6 address (IP[/plen]) [none]"), NULL,
 	                                                                                                set_ip6_address, NULL },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,   NM_SETTING_IP_CONFIG_GATEWAY,           "gw6",          OPTION_NONE, N_("IPv6 gateway [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_METHOD,                "method",       OPTION_NONE, PROMPT_PROXY_METHOD, PROMPT_PROXY_METHOD_CHOICES, NULL, gen_func_proxy_method },
-	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_BROWSER_ONLY,          "browser-only", OPTION_NONE, N_("Browser only [no]"), NULL,
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,   NM_SETTING_IP_CONFIG_GATEWAY,           "gw6",          NM_META_PROPERTY_INF_FLAG_NONE, N_("IPv6 gateway [none]"), NULL, NULL, NULL },
+	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_METHOD,                "method",       NM_META_PROPERTY_INF_FLAG_NONE, PROMPT_PROXY_METHOD, PROMPT_PROXY_METHOD_CHOICES, NULL, gen_func_proxy_method },
+	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_BROWSER_ONLY,          "browser-only", NM_META_PROPERTY_INF_FLAG_NONE, N_("Browser only [no]"), NULL,
                                                                                                         set_yes_no, gen_func_bool_values_l10n },
-	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_PAC_URL,               "pac-url",      OPTION_NONE, N_("PAC URL"), NULL, NULL, NULL },
-	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_PAC_SCRIPT,            "pac-script",   OPTION_NONE, N_("PAC script"), NULL, NULL, NULL },
-	{ NULL, NULL, NULL, OPTION_NONE, NULL, NULL, NULL, NULL },
+	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_PAC_URL,               "pac-url",      NM_META_PROPERTY_INF_FLAG_NONE, N_("PAC URL"), NULL, NULL, NULL },
+	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_PAC_SCRIPT,            "pac-script",   NM_META_PROPERTY_INF_FLAG_NONE, N_("PAC script"), NULL, NULL, NULL },
+	{ NULL, NULL, NULL, NM_META_PROPERTY_INF_FLAG_NONE, NULL, NULL, NULL, NULL },
 };
 
 static gboolean
 option_relevant (NMConnection *connection, OptionInfo *option)
 {
-	if (option->flags & OPTION_DONT_ASK && !(option->flags & OPTION_ENABLED))
+	if (option->flags & NM_META_PROPERTY_INF_FLAG_DONT_ASK && !(option->flags & NM_META_PROPERTY_INF_FLAG_ENABLED))
 		return FALSE;
-	if (option->flags & OPTION_DISABLED)
+	if (option->flags & NM_META_PROPERTY_INF_FLAG_DISABLED)
 		return FALSE;
 	if (!nm_connection_get_setting_by_name (connection, option->setting_name))
 		return FALSE;
@@ -4724,7 +4716,7 @@ ask_option (NmCli *nmc, NMConnection *connection, OptionInfo *option)
 	gchar *value;
 	GError *error = NULL;
 	gs_free gchar *prompt = NULL;
-	gboolean multi = option->flags & OPTION_MULTI;
+	gboolean multi = option->flags & NM_META_PROPERTY_INF_FLAG_MULTI;
 
 	prompt = g_strjoin ("",
 	                    gettext (option->prompt),
@@ -4760,7 +4752,7 @@ questionnaire_mandatory (NmCli *nmc, NMConnection *connection)
 	for (candidate = option_info; candidate->setting_name; candidate++) {
 		if (!option_relevant (connection, candidate))
 			continue;
-		if (candidate->flags & OPTION_REQD || candidate->flags & OPTION_ENABLED)
+		if (candidate->flags & NM_META_PROPERTY_INF_FLAG_REQD || candidate->flags & NM_META_PROPERTY_INF_FLAG_ENABLED)
 			ask_option (nmc, connection, candidate);
 	}
 }
@@ -4999,7 +4991,7 @@ read_properties:
 	for (candidate = option_info; candidate->setting_name; candidate++) {
 		if (!option_relevant (connection, candidate))
 			continue;
-		if (candidate->flags & OPTION_REQD) {
+		if (candidate->flags & NM_META_PROPERTY_INF_FLAG_REQD) {
 			g_string_printf (nmc->return_text, _("Error: '%s' argument is required."), candidate->option);
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 			goto finish;
