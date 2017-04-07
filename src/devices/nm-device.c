@@ -322,6 +322,7 @@ typedef struct _NMDevicePrivate {
 	/* Proxy Configuration */
 	NMProxyConfig *proxy_config;
 	NMPacrunnerManager *pacrunner_manager;
+	bool proxy_config_sent;
 
 	/* IP4 configuration info */
 	NMIP4Config *   ip4_config;     /* Combined config from VPN, settings, and device */
@@ -8839,6 +8840,9 @@ reactivate_proxy_config (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
+	if (!priv->proxy_config_sent)
+		return;
+
 	nm_pacrunner_manager_remove (priv->pacrunner_manager,
 	                             nm_device_get_ip_iface (self));
 
@@ -12509,8 +12513,11 @@ _set_state_full (NMDevice *self,
 			}
 		}
 
-		/* Remove config from PacRunner */
-		nm_pacrunner_manager_remove (priv->pacrunner_manager, nm_device_get_ip_iface (self));
+		if (priv->proxy_config_sent) {
+			nm_pacrunner_manager_remove (priv->pacrunner_manager,
+			                             nm_device_get_ip_iface (self));
+			priv->proxy_config_sent = FALSE;
+		}
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
 		if (   priv->queued_act_request
@@ -12542,6 +12549,7 @@ _set_state_full (NMDevice *self,
 			                           priv->proxy_config,
 			                           NULL,
 			                           NULL);
+			priv->proxy_config_sent = TRUE;
 		}
 		break;
 	case NM_DEVICE_STATE_FAILED:

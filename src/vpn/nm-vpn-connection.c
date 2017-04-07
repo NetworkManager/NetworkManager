@@ -127,6 +127,7 @@ typedef struct {
 	GVariant *connect_hash;
 	guint connect_timeout;
 	NMProxyConfig *proxy_config;
+	gboolean proxy_config_sent;
 	gboolean has_ip4;
 	NMIP4Config *ip4_config;
 	guint32 ip4_internal_gw;
@@ -578,6 +579,7 @@ _set_vpn_state (NMVpnConnection *self,
 			                           priv->proxy_config,
 			                           priv->ip4_config,
 			                           priv->ip6_config);
+			priv->proxy_config_sent = TRUE;
 		}
 		break;
 	case STATE_DEACTIVATING:
@@ -608,8 +610,11 @@ _set_vpn_state (NMVpnConnection *self,
 			}
 		}
 
-		/* Remove config from PacRunner */
-		nm_pacrunner_manager_remove (nm_pacrunner_manager_get(), nm_connection_get_uuid (applied));
+		if (priv->proxy_config_sent) {
+			nm_pacrunner_manager_remove (nm_pacrunner_manager_get(),
+			                             nm_connection_get_uuid (applied));
+			priv->proxy_config_sent = FALSE;
+		}
 		break;
 	case STATE_FAILED:
 	case STATE_DISCONNECTED:
