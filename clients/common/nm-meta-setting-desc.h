@@ -118,21 +118,21 @@ struct _NMMetaPropertyType {
 	const char *(*describe_fcn) (const NMMetaPropertyInfo *property_info,
 	                             char **out_to_free);
 
-	char *(*get_fcn) (const NMMetaEnvironment *environment,
+	char *(*get_fcn) (const NMMetaPropertyInfo *property_info,
+	                  const NMMetaEnvironment *environment,
 	                  gpointer environment_user_data,
-	                  const NMMetaPropertyInfo *property_info,
 	                  NMSetting *setting,
 	                  NMMetaAccessorGetType get_type,
 	                  NMMetaAccessorGetFlags get_flags);
-	gboolean (*set_fcn) (const NMMetaEnvironment *environment,
+	gboolean (*set_fcn) (const NMMetaPropertyInfo *property_info,
+	                     const NMMetaEnvironment *environment,
 	                     gpointer environment_user_data,
-	                     const NMMetaPropertyInfo *property_info,
 	                     NMSetting *setting,
 	                     const char *value,
 	                     GError **error);
-	gboolean (*remove_fcn) (const NMMetaEnvironment *environment,
+	gboolean (*remove_fcn) (const NMMetaPropertyInfo *property_info,
+	                        const NMMetaEnvironment *environment,
 	                        gpointer environment_user_data,
-	                        const NMMetaPropertyInfo *property_info,
 	                        NMSetting *setting,
 	                        const char *option,
 	                        guint32 idx,
@@ -194,13 +194,14 @@ struct _NMMetaSettingInfoEditor {
 
 struct _NMMetaType {
 	const char *type_name;
-	const char *(*get_name) (const NMMetaAbstractInfo *abstract_info, gboolean for_header);
+	const char *(*get_name) (const NMMetaAbstractInfo *abstract_info,
+	                         gboolean for_header);
 	const NMMetaAbstractInfo *const*(*get_nested) (const NMMetaAbstractInfo *abstract_info,
 	                                               guint *out_len,
 	                                               gpointer *out_to_free);
-	gconstpointer (*get_fcn) (const NMMetaEnvironment *environment,
+	gconstpointer (*get_fcn) (const NMMetaAbstractInfo *info,
+	                          const NMMetaEnvironment *environment,
 	                          gpointer environment_user_data,
-	                          const NMMetaAbstractInfo *info,
 	                          gpointer target,
 	                          NMMetaAccessorGetType get_type,
 	                          NMMetaAccessorGetFlags get_flags,
@@ -209,13 +210,7 @@ struct _NMMetaType {
 };
 
 struct _NMMetaAbstractInfo {
-	union {
-		const NMMetaType *meta_type;
-		union {
-			NMMetaSettingInfoEditor setting_info;
-			NMMetaPropertyInfo property_info;
-		} as;
-	};
+	const NMMetaType *meta_type;
 };
 
 extern const NMMetaType nm_meta_type_setting_info_editor;

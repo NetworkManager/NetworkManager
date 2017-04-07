@@ -507,13 +507,13 @@ _env_warn_fcn (const NMMetaEnvironment *environment,
 	const NMMetaPropertyInfo *property_info, char **out_to_free
 
 #define ARGS_GET_FCN \
-	const NMMetaEnvironment *environment, gpointer environment_user_data, const NMMetaPropertyInfo *property_info, NMSetting *setting, NMMetaAccessorGetType get_type, NMMetaAccessorGetFlags get_flags
+	const NMMetaPropertyInfo *property_info, const NMMetaEnvironment *environment, gpointer environment_user_data, NMSetting *setting, NMMetaAccessorGetType get_type, NMMetaAccessorGetFlags get_flags
 
 #define ARGS_SET_FCN \
-	const NMMetaEnvironment *environment, gpointer environment_user_data, const NMMetaPropertyInfo *property_info, NMSetting *setting, const char *value, GError **error
+	const NMMetaPropertyInfo *property_info, const NMMetaEnvironment *environment, gpointer environment_user_data, NMSetting *setting, const char *value, GError **error
 
 #define ARGS_REMOVE_FCN \
-	const NMMetaEnvironment *environment, gpointer environment_user_data, const NMMetaPropertyInfo *property_info, NMSetting *setting, const char *value, guint32 idx, GError **error
+	const NMMetaPropertyInfo *property_info, const NMMetaEnvironment *environment, gpointer environment_user_data, NMSetting *setting, const char *value, guint32 idx, GError **error
 
 #define ARGS_VALUES_FCN \
 	const NMMetaPropertyInfo *property_info, char ***out_to_free
@@ -823,7 +823,10 @@ _set_fcn_gobject_int64 (ARGS_SET_FCN)
 }
 
 static gboolean
-_set_fcn_gobject_uint (ARGS_SET_FCN)
+_set_fcn_gobject_uint_impl (const NMMetaPropertyInfo *property_info,
+                            NMSetting *setting,
+                            const char *value,
+                            GError **error)
 {
 	unsigned long val_int;
 
@@ -843,11 +846,17 @@ _set_fcn_gobject_uint (ARGS_SET_FCN)
 }
 
 static gboolean
+_set_fcn_gobject_uint (ARGS_SET_FCN)
+{
+	return _set_fcn_gobject_uint_impl (property_info, setting, value, error);
+}
+
+static gboolean
 _set_fcn_gobject_mtu (ARGS_SET_FCN)
 {
 	if (nm_streq0 (value, "auto"))
 		value = "0";
-	return _set_fcn_gobject_uint (environment, environment_user_data, property_info, setting, value, error);
+	return _set_fcn_gobject_uint_impl (property_info, setting, value, error);
 }
 
 static gboolean
@@ -6574,9 +6583,9 @@ _meta_type_property_info_get_name (const NMMetaAbstractInfo *abstract_info, gboo
 }
 
 static gconstpointer
-_meta_type_setting_info_editor_get_fcn (const NMMetaEnvironment *environment,
+_meta_type_setting_info_editor_get_fcn (const NMMetaAbstractInfo *abstract_info,
+                                        const NMMetaEnvironment *environment,
                                         gpointer environment_user_data,
-                                        const NMMetaAbstractInfo *abstract_info,
                                         gpointer target,
                                         NMMetaAccessorGetType get_type,
                                         NMMetaAccessorGetFlags get_flags,
@@ -6601,9 +6610,9 @@ _meta_type_setting_info_editor_get_fcn (const NMMetaEnvironment *environment,
 }
 
 static gconstpointer
-_meta_type_property_info_get_fcn (const NMMetaEnvironment *environment,
+_meta_type_property_info_get_fcn (const NMMetaAbstractInfo *abstract_info,
+                                  const NMMetaEnvironment *environment,
                                   gpointer environment_user_data,
-                                  const NMMetaAbstractInfo *abstract_info,
                                   gpointer target,
                                   NMMetaAccessorGetType get_type,
                                   NMMetaAccessorGetFlags get_flags,
@@ -6629,9 +6638,12 @@ _meta_type_property_info_get_fcn (const NMMetaEnvironment *environment,
 		return NM_META_TEXT_HIDDEN;
 	}
 
-	return (*out_to_free = info->property_type->get_fcn (environment, environment_user_data,
-	                                                     info, target,
-	                                                     get_type, get_flags));
+	return (*out_to_free = info->property_type->get_fcn (info,
+	                                                     environment,
+	                                                     environment_user_data,
+	                                                     target,
+	                                                     get_type,
+	                                                     get_flags));
 }
 
 static const NMMetaAbstractInfo *const*

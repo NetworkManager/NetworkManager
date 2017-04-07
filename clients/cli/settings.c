@@ -458,9 +458,11 @@ _env_warn_fcn_handle (const NMMetaEnvironment *environment,
 
 /*****************************************************************************/
 
-static const NMMetaEnvironment meta_environment = {
+const NMMetaEnvironment *const nmc_meta_environment = &((NMMetaEnvironment) {
 	.warn_fcn = _env_warn_fcn_handle,
-};
+});
+
+NmCli *const nmc_meta_environment_arg = &nm_cli;
 
 static char *
 get_property_val (NMSetting *setting, const char *prop, NMMetaAccessorGetType get_type, gboolean show_secrets, GError **error)
@@ -472,9 +474,9 @@ get_property_val (NMSetting *setting, const char *prop, NMMetaAccessorGetType ge
 
 	if ((property_info = nm_meta_property_info_find_by_setting (setting, prop))) {
 		if (property_info->property_type->get_fcn) {
-			return property_info->property_type->get_fcn (&meta_environment,
-			                                              NULL,
-			                                              property_info,
+			return property_info->property_type->get_fcn (property_info,
+			                                              nmc_meta_environment,
+			                                              nmc_meta_environment_arg,
 			                                              setting,
 			                                              get_type,
 			                                              show_secrets ? NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS : 0);
@@ -514,9 +516,9 @@ _set_fcn_call (const NMMetaPropertyInfo *property_info,
                const char *value,
                GError **error)
 {
-	return property_info->property_type->set_fcn (&meta_environment,
-	                                              NULL,
-	                                              property_info,
+	return property_info->property_type->set_fcn (property_info,
+	                                              nmc_meta_environment,
+	                                              nmc_meta_environment_arg,
 	                                              setting,
 	                                              value,
 	                                              error);
@@ -640,9 +642,9 @@ nmc_setting_remove_property_option (NMSetting *setting,
 
 	if ((property_info = nm_meta_property_info_find_by_setting (setting, prop))) {
 		if (property_info->property_type->remove_fcn) {
-			return property_info->property_type->remove_fcn (&meta_environment,
-			                                                 NULL,
-			                                                 property_info,
+			return property_info->property_type->remove_fcn (property_info,
+			                                                 nmc_meta_environment,
+			                                                 nmc_meta_environment_arg,
 			                                                 setting,
 			                                                 option,
 			                                                 idx,

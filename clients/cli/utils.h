@@ -103,6 +103,9 @@ void print_data (const NmcConfig *nmc_config,
 
 /*****************************************************************************/
 
+extern const NMMetaEnvironment *const nmc_meta_environment;
+extern NmCli *const nmc_meta_environment_arg;
+
 typedef enum {
 
 	NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_RUNNING = 0,

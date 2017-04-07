@@ -73,9 +73,9 @@ _meta_type_nmc_generic_info_get_nested (const NMMetaAbstractInfo *abstract_info,
 }
 
 static gconstpointer
-_meta_type_nmc_generic_info_get_fcn (const NMMetaEnvironment *environment,
+_meta_type_nmc_generic_info_get_fcn (const NMMetaAbstractInfo *abstract_info,
+                                     const NMMetaEnvironment *environment,
                                      gpointer environment_user_data,
-                                     const NMMetaAbstractInfo *abstract_info,
                                      gpointer target,
                                      NMMetaAccessorGetType get_type,
                                      NMMetaAccessorGetFlags get_flags,
@@ -852,7 +852,7 @@ _output_selection_select_one (const NMMetaAbstractInfo *const* fields_array,
 		}
 
 		if (fi->meta_type == &nm_meta_type_setting_info_editor) {
-			const NMMetaSettingInfoEditor *fi_s = &fi->as.setting_info;
+			const NMMetaSettingInfoEditor *fi_s = (const NMMetaSettingInfoEditor *) fi;
 
 			for (j = 0; j < fi_s->properties_num; j++) {
 				if (g_ascii_strcasecmp (right, fi_s->properties[j].property_name) == 0) {
@@ -1456,8 +1456,8 @@ _print_fill (const NmcConfig *nmc_config,
 			cell->header_cell = header_cell;
 
 			value = nm_meta_abstract_info_get (info,
-			                                   NULL,
-			                                   &nm_cli,
+			                                   nmc_meta_environment,
+			                                   nmc_meta_environment_arg,
 			                                   target,
 			                                   text_get_type,
 			                                   text_get_flags,
@@ -1482,8 +1482,8 @@ _print_fill (const NmcConfig *nmc_config,
 			}
 
 			nm_meta_termformat_unpack (nm_meta_abstract_info_get (info,
-			                                                      NULL,
-			                                                      &nm_cli,
+			                                                      nmc_meta_environment,
+			                                                      nmc_meta_environment_arg,
 			                                                      target,
 			                                                      NM_META_ACCESSOR_GET_TYPE_TERMFORMAT,
 			                                                      NM_META_ACCESSOR_GET_FLAGS_NONE,

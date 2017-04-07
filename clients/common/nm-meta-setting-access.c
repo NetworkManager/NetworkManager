@@ -244,8 +244,9 @@ nm_meta_abstract_info_get (const NMMetaAbstractInfo *abstract_info,
 	if (!abstract_info->meta_type->get_fcn)
 		g_return_val_if_reached (NULL);
 
-	return abstract_info->meta_type->get_fcn (environment, environment_user_data,
-	                                          abstract_info,
+	return abstract_info->meta_type->get_fcn (abstract_info,
+	                                          environment,
+	                                          environment_user_data,
 	                                          target,
 	                                          get_type,
 	                                          get_flags,
