@@ -866,11 +866,11 @@ add_pkcs11_uri_with_pin (NMSupplicantConfig *self,
 	}
 
 	tmp = g_strdup_printf ("%s%s%s", split[0],
-	                       (pin_qattr ? "&" : ""),
+	                       (pin_qattr ? "?" : ""),
 	                       (pin_qattr ? pin_qattr : ""));
 
 	tmp_log = g_strdup_printf ("%s%s%s", split[0],
-	                           (pin_qattr ? "&" : ""),
+	                           (pin_qattr ? "?" : ""),
 	                           (pin_qattr ? "pin-value=<hidden>" : ""));
 
 	return add_string_val (self, tmp, name, FALSE, tmp_log, error);
