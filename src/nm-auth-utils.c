@@ -319,7 +319,7 @@ pk_call_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 {
 	AuthCall *call = user_data;
 	GError *error = NULL;
-	gboolean is_authorized, is_challenge;
+	gboolean is_authorized = FALSE, is_challenge = FALSE;
 	guint call_result = NM_AUTH_CALL_RESULT_UNKNOWN;
 
 	nm_auth_manager_polkit_authority_check_authorization_finish (NM_AUTH_MANAGER (object),
