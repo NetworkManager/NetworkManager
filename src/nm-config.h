@@ -207,7 +207,7 @@ NMConfigDeviceStateData *nm_config_device_state_load (NMConfig *self,
                                                       int ifindex);
 gboolean nm_config_device_state_write (NMConfig *self,
                                        int ifindex,
-                                       gboolean managed,
+                                       NMConfigDeviceStateManagedType managed,
                                        const char *perm_hw_addr_fake,
                                        const char *connection_uuid);
 void nm_config_device_state_prune_unseen (NMConfig *self, GHashTable *seen_ifindexes);

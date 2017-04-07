@@ -1964,10 +1964,17 @@ nm_config_device_state_load (NMConfig *self,
 	return device_state;
 }
 
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_device_state_managed_type_to_str, NMConfigDeviceStateManagedType,
+	NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT ("unknown"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_UNKNOWN,   "unknown"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_UNMANAGED, "unmanaged"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_MANAGED,   "managed"),
+);
+
 gboolean
 nm_config_device_state_write (NMConfig *self,
                               int ifindex,
-                              gboolean managed,
+                              NMConfigDeviceStateManagedType managed,
                               const char *perm_hw_addr_fake,
                               const char *connection_uuid)
 {
@@ -1978,17 +1985,21 @@ nm_config_device_state_write (NMConfig *self,
 	g_return_val_if_fail (NM_IS_CONFIG (self), FALSE);
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (!connection_uuid || *connection_uuid, FALSE);
-	g_return_val_if_fail (managed || !connection_uuid, FALSE);
+	g_return_val_if_fail (managed != NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_MANAGED || !connection_uuid, FALSE);
 
 	nm_assert (!perm_hw_addr_fake || nm_utils_hwaddr_valid (perm_hw_addr_fake, -1));
 
 	nm_sprintf_buf (path, "%s/%d", NM_CONFIG_DEVICE_STATE_DIR, ifindex);
 
 	kf = nm_config_create_keyfile ();
-	g_key_file_set_boolean (kf,
-	                        DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
-	                        DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_MANAGED,
-	                        !!managed);
+	if (NM_IN_SET (managed,
+	               NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_MANAGED,
+	               NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_UNMANAGED)) {
+		g_key_file_set_boolean (kf,
+		                        DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
+		                        DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_MANAGED,
+		                        managed == NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_MANAGED);
+	}
 	if (perm_hw_addr_fake) {
 		g_key_file_set_string (kf,
 		                       DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
@@ -2007,9 +2018,9 @@ nm_config_device_state_write (NMConfig *self,
 		g_error_free (local);
 		return FALSE;
 	}
-	_LOGT ("device-state: write #%d (%s); managed=%d%s%s%s%s%s%s",
+	_LOGT ("device-state: write #%d (%s); managed=%s%s%s%s%s%s%s",
 	       ifindex, path,
-	       (bool) managed,
+	       _device_state_managed_type_to_str (managed),
 	       NM_PRINT_FMT_QUOTED (connection_uuid, ", connection-uuid=", connection_uuid, "", ""),
 	       NM_PRINT_FMT_QUOTED (perm_hw_addr_fake, ", perm-hw-addr-fake=", perm_hw_addr_fake, "", ""));
 	return TRUE;
