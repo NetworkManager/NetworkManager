@@ -42,15 +42,22 @@
 #include "devices.h"
 #include "polkit-agent.h"
 
+typedef enum {
+	PROPERTY_INF_FLAG_NONE                      = 0x0,
+	PROPERTY_INF_FLAG_DISABLED                  = 0x1, /* Don't ask due to runtime decision. */
+	PROPERTY_INF_FLAG_ENABLED                   = 0x2, /* Override NM_META_PROPERTY_INF_FLAG_DONT_ASK due to runtime decision. */
+	PROPERTY_INF_FLAG_ALL                       = 0x3,
+} PropertyInfFlags;
+
 typedef struct _OptionInfo OptionInfo;
 struct _OptionInfo {
 	const char *setting_name;
 	const char *property;
 	const char *option;
-	NMMetaPropertyInfFlags flags;
+	const NMMetaPropertyInfFlags flags;
 	const char *prompt;
 	const char *def_hint;
-	gboolean (*check_and_set)(NmCli *nmc, NMConnection *connection, OptionInfo *option, const char *value, GError **error);
+	gboolean (*check_and_set)(NmCli *nmc, NMConnection *connection, const OptionInfo *option, const char *value, GError **error);
 	rl_compentry_func_t *generator_func;
 };
 
@@ -3515,7 +3522,36 @@ set_default_interface_name (NmCli *nmc, NMSettingConnection *s_con)
 
 /*----------------------------------------------------------------------------*/
 
-static OptionInfo option_info[];
+static const OptionInfo option_info[];
+
+static PropertyInfFlags
+_options_set (const OptionInfo *option,
+              PropertyInfFlags mask, PropertyInfFlags set)
+{
+	static GHashTable *cache = NULL;
+	gpointer p;
+	PropertyInfFlags v, v2;
+
+	if (G_UNLIKELY (!cache))
+		cache = g_hash_table_new (NULL, NULL);
+
+	if (g_hash_table_lookup_extended (cache, (gpointer) option, NULL, &p))
+		v = GPOINTER_TO_UINT (p);
+	else
+		v = 0;
+
+	v2 = (v & ~mask) | (mask & set);
+	if (v != v2)
+		g_hash_table_insert (cache, (gpointer) option, GUINT_TO_POINTER (v2));
+
+	return v2;
+}
+
+static PropertyInfFlags
+_options_get (const OptionInfo *option)
+{
+	return _options_set (option, 0, 0);
+}
 
 /*
  * Mark options in option_info as relevant.
@@ -3524,16 +3560,15 @@ static OptionInfo option_info[];
 static void
 enable_options (const gchar *setting_name, const gchar *property, const gchar * const *opts)
 {
-	OptionInfo *candidate;
+	const OptionInfo *candidate;
 
 	for (candidate = option_info; candidate->setting_name; candidate++) {
 		if (   strcmp (candidate->setting_name, setting_name) == 0
 		    && strcmp (candidate->property, property) == 0
 		    && (candidate->flags & NM_META_PROPERTY_INF_FLAG_DONT_ASK)
 		    && candidate->option
-		    && g_strv_contains (opts, candidate->option)) {
-			candidate->flags |= NM_META_PROPERTY_INF_FLAG_ENABLED;
-		}
+		    && g_strv_contains (opts, candidate->option))
+			_options_set (candidate, PROPERTY_INF_FLAG_ENABLED, PROPERTY_INF_FLAG_ENABLED);
 	}
 }
 
@@ -3545,12 +3580,12 @@ enable_options (const gchar *setting_name, const gchar *property, const gchar * 
 static void
 disable_options (const gchar *setting_name, const gchar *property)
 {
-	OptionInfo *candidate;
+	const OptionInfo *candidate;
 
 	for (candidate = option_info; candidate->setting_name; candidate++) {
 		if (   strcmp (candidate->setting_name, setting_name) == 0
 		    && (!property || strcmp (candidate->property, property) == 0))
-		candidate->flags |= NM_META_PROPERTY_INF_FLAG_DISABLED;
+			_options_set (candidate, PROPERTY_INF_FLAG_DISABLED, PROPERTY_INF_FLAG_DISABLED);
 	}
 }
 
@@ -3562,12 +3597,10 @@ disable_options (const gchar *setting_name, const gchar *property)
 static void
 reset_options (void)
 {
-	OptionInfo *candidate;
+	const OptionInfo *candidate;
 
-	for (candidate = option_info; candidate->setting_name; candidate++) {
-		candidate->flags &= ~NM_META_PROPERTY_INF_FLAG_DISABLED;
-		candidate->flags &= ~NM_META_PROPERTY_INF_FLAG_ENABLED;
-	}
+	for (candidate = option_info; candidate->setting_name; candidate++)
+		_options_set (candidate, PROPERTY_INF_FLAG_ALL, 0);
 }
 
 static gboolean
@@ -3648,9 +3681,9 @@ set_property (NMConnection *connection,
 }
 
 static gboolean
-set_option (NmCli *nmc, NMConnection *connection, OptionInfo *option, const gchar *value, GError **error)
+set_option (NmCli *nmc, NMConnection *connection, const OptionInfo *option, const gchar *value, GError **error)
 {
-	option->flags |= NM_META_PROPERTY_INF_FLAG_DISABLED;
+	_options_set (option, PROPERTY_INF_FLAG_DISABLED, PROPERTY_INF_FLAG_DISABLED);
 	if (option->check_and_set) {
 		return option->check_and_set (nmc, connection, option, value, error);
 	} else if (value) {
@@ -3903,7 +3936,7 @@ gen_func_master_ifnames (const char *text, int state)
 /*----------------------------------------------------------------------------*/
 
 static gboolean
-set_connection_type (NmCli *nmc, NMConnection *con, OptionInfo *option, const char *value, GError **error)
+set_connection_type (NmCli *nmc, NMConnection *con, const OptionInfo *option, const char *value, GError **error)
 {
 	const NameItem *type_settings, *slv_settings;
 	GError *local = NULL;
@@ -3965,7 +3998,7 @@ set_connection_type (NmCli *nmc, NMConnection *con, OptionInfo *option, const ch
 }
 
 static gboolean
-set_connection_iface (NmCli *nmc, NMConnection *con, OptionInfo *option, const char *value, GError **error)
+set_connection_iface (NmCli *nmc, NMConnection *con, const OptionInfo *option, const char *value, GError **error)
 {
 	GError *tmp_error = NULL;
 
@@ -3985,7 +4018,7 @@ set_connection_iface (NmCli *nmc, NMConnection *con, OptionInfo *option, const c
 }
 
 static gboolean
-set_connection_master (NmCli *nmc, NMConnection *con, OptionInfo *option, const char *value, GError **error)
+set_connection_master (NmCli *nmc, NMConnection *con, const OptionInfo *option, const char *value, GError **error)
 {
 	const GPtrArray *connections;
 	NMSettingConnection *s_con;
@@ -4014,7 +4047,7 @@ set_connection_master (NmCli *nmc, NMConnection *con, OptionInfo *option, const 
 }
 
 static gboolean
-set_bond_option (NmCli *nmc, NMConnection *con, OptionInfo *option, const char *value, GError **error)
+set_bond_option (NmCli *nmc, NMConnection *con, const OptionInfo *option, const char *value, GError **error)
 {
 	NMSettingBond *s_bond;
 	gboolean success;
@@ -4063,7 +4096,7 @@ set_bond_option (NmCli *nmc, NMConnection *con, OptionInfo *option, const char *
 }
 
 static gboolean
-set_bond_monitoring_mode (NmCli *nmc, NMConnection *con, OptionInfo *option, const char *value, GError **error)
+set_bond_monitoring_mode (NmCli *nmc, NMConnection *con, const OptionInfo *option, const char *value, GError **error)
 {
 	NMSettingBond *s_bond;
 	gs_free gchar *monitor_mode = NULL;
@@ -4095,7 +4128,7 @@ set_bond_monitoring_mode (NmCli *nmc, NMConnection *con, OptionInfo *option, con
 }
 
 static gboolean
-set_bluetooth_type (NmCli *nmc, NMConnection *con, OptionInfo *option, const char *value, GError **error)
+set_bluetooth_type (NmCli *nmc, NMConnection *con, const OptionInfo *option, const char *value, GError **error)
 {
 	NMSetting *setting;
 
@@ -4127,7 +4160,7 @@ set_bluetooth_type (NmCli *nmc, NMConnection *con, OptionInfo *option, const cha
 }
 
 static gboolean
-set_yes_no (NmCli *nmc, NMConnection *con, OptionInfo *option, const char *value, GError **error)
+set_yes_no (NmCli *nmc, NMConnection *con, const OptionInfo *option, const char *value, GError **error)
 {
 	if (g_strcmp0 (value, _(WORD_LOC_YES)))
 		value = WORD_YES;
@@ -4138,7 +4171,7 @@ set_yes_no (NmCli *nmc, NMConnection *con, OptionInfo *option, const char *value
 }
 
 static gboolean
-set_ip4_address (NmCli *nmc, NMConnection *con, OptionInfo *option, const char *value, GError **error)
+set_ip4_address (NmCli *nmc, NMConnection *con, const OptionInfo *option, const char *value, GError **error)
 {
 	NMSettingIPConfig *s_ip4;
 
@@ -4158,7 +4191,7 @@ set_ip4_address (NmCli *nmc, NMConnection *con, OptionInfo *option, const char *
 }
 
 static gboolean
-set_ip6_address (NmCli *nmc, NMConnection *con, OptionInfo *option, const char *value, GError **error)
+set_ip6_address (NmCli *nmc, NMConnection *con, const OptionInfo *option, const char *value, GError **error)
 {
 	NMSettingIPConfig *s_ip6;
 
@@ -4180,7 +4213,7 @@ set_ip6_address (NmCli *nmc, NMConnection *con, OptionInfo *option, const char *
 
 /*----------------------------------------------------------------------------*/
 
-static OptionInfo option_info[] = {
+static const OptionInfo option_info[] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_TYPE,             "type",         NM_META_PROPERTY_INF_FLAG_REQD, PROMPT_CON_TYPE, NULL,
                                                                                                         set_connection_type, gen_connection_types },
 	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_ID,               "con-name",     NM_META_PROPERTY_INF_FLAG_DONT_ASK, NULL, NULL, NULL, NULL },
@@ -4319,11 +4352,12 @@ static OptionInfo option_info[] = {
 };
 
 static gboolean
-option_relevant (NMConnection *connection, OptionInfo *option)
+option_relevant (NMConnection *connection, const OptionInfo *option)
 {
-	if (option->flags & NM_META_PROPERTY_INF_FLAG_DONT_ASK && !(option->flags & NM_META_PROPERTY_INF_FLAG_ENABLED))
+	if (   (option->flags & NM_META_PROPERTY_INF_FLAG_DONT_ASK)
+	    && !(_options_get (option) & PROPERTY_INF_FLAG_ENABLED))
 		return FALSE;
-	if (option->flags & NM_META_PROPERTY_INF_FLAG_DISABLED)
+	if (_options_get (option) & PROPERTY_INF_FLAG_DISABLED)
 		return FALSE;
 	if (!nm_connection_get_setting_by_name (connection, option->setting_name))
 		return FALSE;
@@ -4334,9 +4368,9 @@ option_relevant (NMConnection *connection, OptionInfo *option)
 
 static void
 complete_property_name (NmCli *nmc, NMConnection *connection,
-			 char modifier,
-			 const gchar *prefix,
-			 const gchar *postfix)
+                        char modifier,
+                        const gchar *prefix,
+                        const gchar *postfix)
 {
 	NMSettingConnection *s_con;
 	const NameItem *valid_settings_main = NULL;
@@ -4345,7 +4379,7 @@ complete_property_name (NmCli *nmc, NMConnection *connection,
 	const char *slave_type = NULL;
 	gs_free char *slv_type = NULL;
 	gs_free char *word_list = NULL;
-	OptionInfo *candidate;
+	const OptionInfo *candidate;
 
 	connection_type = nm_connection_get_connection_type (connection);
 	s_con = nm_connection_get_setting_connection (connection);
@@ -4388,7 +4422,7 @@ run_rl_generator (rl_compentry_func_t *generator_func, const char *prefix)
 }
 
 static void
-complete_option (OptionInfo *option, const gchar *prefix)
+complete_option (const OptionInfo *option, const gchar *prefix)
 {
 	if (option->generator_func)
 		run_rl_generator (option->generator_func, prefix);
@@ -4480,8 +4514,8 @@ nmc_read_connection_properties (NmCli *nmc,
 	 */
 	/* Go through arguments and set properties */
 	do {
-		OptionInfo *candidate;
-		OptionInfo *chosen = NULL;
+		const OptionInfo *candidate;
+		const OptionInfo *chosen = NULL;
 		gs_strfreev gchar **strv = NULL;
 		const NameItem *type_settings, *slv_settings;
 		char modifier = '\0';
@@ -4711,7 +4745,7 @@ nmcli_con_add_tab_completion (const char *text, int start, int end)
 }
 
 static void
-ask_option (NmCli *nmc, NMConnection *connection, OptionInfo *option)
+ask_option (NmCli *nmc, NMConnection *connection, const OptionInfo *option)
 {
 	gchar *value;
 	GError *error = NULL;
@@ -4746,13 +4780,14 @@ again:
 static void
 questionnaire_mandatory (NmCli *nmc, NMConnection *connection)
 {
-	OptionInfo *candidate;
+	const OptionInfo *candidate;
 
 	/* Mandatory settings. */
 	for (candidate = option_info; candidate->setting_name; candidate++) {
 		if (!option_relevant (connection, candidate))
 			continue;
-		if (candidate->flags & NM_META_PROPERTY_INF_FLAG_REQD || candidate->flags & NM_META_PROPERTY_INF_FLAG_ENABLED)
+		if (   (candidate->flags & NM_META_PROPERTY_INF_FLAG_REQD)
+		    || (_options_get (candidate) & PROPERTY_INF_FLAG_ENABLED))
 			ask_option (nmc, connection, candidate);
 	}
 }
@@ -4836,7 +4871,7 @@ setting_name_to_name (const char *name)
 static gboolean
 questionnaire_one_optional (NmCli *nmc, NMConnection *connection)
 {
-	OptionInfo *candidate;
+	const OptionInfo *candidate;
 
 	/* Optional settings. */
 	const gchar *setting_name = NULL;
@@ -4880,7 +4915,7 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 	GError *error = NULL;
 	AddConnectionInfo *info = NULL;
 	gboolean save_bool = TRUE;
-	OptionInfo *candidate;
+	const OptionInfo *candidate;
 	gboolean seen_dash_dash = FALSE;
 
 	next_arg (nmc, &argc, &argv, NULL);
