@@ -2234,7 +2234,7 @@ src_settings_plugins_ifupdown_tests_test_ifupdown_CPPFLAGS = \
 	-DTEST_ENI_DIR=\"$(abs_srcdir)/src/settings/plugins/ifupdown/tests\"
 
 src_settings_plugins_ifupdown_tests_test_ifupdown_LDFLAGS = \
-	$(GLIB_LDFLAGS)
+	$(GLIB_LDFLAGS) \
 	$(CODE_COVERAGE_LDFLAGS)
 
 src_settings_plugins_ifupdown_tests_test_ifupdown_LDADD = \
@@ -2289,7 +2289,7 @@ src_settings_plugins_ifnet_cppflags = \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	$(GLIB_CFLAGS) \
-	-DSYSCONFDIR=\"$(sysconfdir)\"
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DSBINDIR=\"$(sbindir)\"
 
 src_settings_plugins_ifnet_libnms_ifnet_core_la_SOURCES = \
