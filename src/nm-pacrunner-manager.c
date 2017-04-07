@@ -458,21 +458,22 @@ nm_pacrunner_manager_remove (NMPacrunnerManager *self, const char *tag)
 		if (nm_streq (config->tag, tag)) {
 			if (priv->pacrunner) {
 				if (!config->path) {
-					/* send() is pending: mark the config as removed
-					 * so that the send() callback will remove it when
-					 * the D-Bus path is known. */
+					/* send() failed or is still pending. Mark the item as
+					 * removed, so that we ask pacrunner to drop it when the
+					 * send() completes.
+					 */
 					config->removed = TRUE;
 					config_unref (config);
-					return;
+				} else {
+					g_dbus_proxy_call (priv->pacrunner,
+					                   "DestroyProxyConfiguration",
+					                   g_variant_new ("(o)", config->path),
+					                   G_DBUS_CALL_FLAGS_NO_AUTO_START,
+					                   -1,
+					                   priv->pacrunner_cancellable,
+					                   (GAsyncReadyCallback) pacrunner_remove_done,
+					                   config);
 				}
-				g_dbus_proxy_call (priv->pacrunner,
-				                   "DestroyProxyConfiguration",
-				                   g_variant_new ("(o)", config->path),
-				                   G_DBUS_CALL_FLAGS_NO_AUTO_START,
-				                   -1,
-				                   priv->pacrunner_cancellable,
-				                   (GAsyncReadyCallback) pacrunner_remove_done,
-				                   config);
 			} else
 				config_unref (config);
 			priv->configs = g_list_delete_link (priv->configs, list);
