@@ -1985,7 +1985,7 @@ nm_config_device_state_write (NMConfig *self,
 	g_return_val_if_fail (NM_IS_CONFIG (self), FALSE);
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (!connection_uuid || *connection_uuid, FALSE);
-	g_return_val_if_fail (managed != NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_MANAGED || !connection_uuid, FALSE);
+	g_return_val_if_fail (managed == NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_MANAGED || !connection_uuid, FALSE);
 
 	nm_assert (!perm_hw_addr_fake || nm_utils_hwaddr_valid (perm_hw_addr_fake, -1));
 
