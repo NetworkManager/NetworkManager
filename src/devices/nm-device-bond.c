@@ -502,7 +502,7 @@ static gboolean
 check_changed_options (NMSettingBond *s_a, NMSettingBond *s_b, GError **error)
 {
 	guint i, num;
-	const char *name, *value_a, *value_b;
+	const char *name = NULL, *value_a = NULL, *value_b = NULL;
 
 	/* Check that options in @s_a have compatible changes in @s_b */
 
