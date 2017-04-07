@@ -24,6 +24,60 @@
 
 #define NM_META_TEXT_HIDDEN "<hidden>"
 
+#define NM_META_TEXT_PROMPT_ADSL_PROTO N_("Protocol")
+#define NM_META_TEXT_PROMPT_ADSL_PROTO_CHOICES "(" NM_SETTING_ADSL_PROTOCOL_PPPOA "/" NM_SETTING_ADSL_PROTOCOL_PPPOE "/" NM_SETTING_ADSL_PROTOCOL_IPOATM ")"
+
+#define NM_META_TEXT_PROMPT_ADSL_ENCAP N_("ADSL encapsulation")
+#define NM_META_TEXT_PROMPT_ADSL_ENCAP_CHOICES "(" NM_SETTING_ADSL_ENCAPSULATION_VCMUX "/" NM_SETTING_ADSL_ENCAPSULATION_LLC ") [none]"
+
+#define NM_META_TEXT_PROMPT_CON_TYPE    N_("Connection type")
+#define NM_META_TEXT_PROMPT_IFNAME      N_("Interface name [*]")
+#define NM_META_TEXT_PROMPT_VPN_TYPE    N_("VPN type")
+#define NM_META_TEXT_PROMPT_MASTER      N_("Master")
+
+#define NM_META_TEXT_PROMPT_IB_MODE     N_("Transport mode")
+#define NM_META_TEXT_WORD_DATAGRAM  "datagram"
+#define NM_META_TEXT_WORD_CONNECTED "connected"
+#define NM_META_TEXT_PROMPT_IB_MODE_CHOICES "(" NM_META_TEXT_WORD_DATAGRAM "/" NM_META_TEXT_WORD_CONNECTED ") [" NM_META_TEXT_WORD_DATAGRAM "]"
+
+#define NM_META_TEXT_PROMPT_BT_TYPE N_("Bluetooth type")
+#define NM_META_TEXT_WORD_PANU      "panu"
+#define NM_META_TEXT_WORD_DUN_GSM   "dun-gsm"
+#define NM_META_TEXT_WORD_DUN_CDMA  "dun-cdma"
+#define NM_META_TEXT_PROMPT_BT_TYPE_CHOICES "(" NM_META_TEXT_WORD_PANU "/" NM_META_TEXT_WORD_DUN_GSM "/" NM_META_TEXT_WORD_DUN_CDMA ") [" NM_META_TEXT_WORD_PANU "]"
+
+#define NM_META_TEXT_PROMPT_BOND_MODE N_("Bonding mode")
+
+#define NM_META_TEXT_PROMPT_BOND_MON_MODE N_("Bonding monitoring mode")
+#define NM_META_TEXT_WORD_MIIMON "miimon"
+#define NM_META_TEXT_WORD_ARP    "arp"
+#define NM_META_TEXT_PROMPT_BOND_MON_MODE_CHOICES "(" NM_META_TEXT_WORD_MIIMON "/" NM_META_TEXT_WORD_ARP ") [" NM_META_TEXT_WORD_MIIMON "]"
+
+#define NM_META_TEXT_PROMPT_WIFI_MODE N_("Wi-Fi mode")
+#define NM_META_TEXT_WORD_INFRA  "infrastructure"
+#define NM_META_TEXT_WORD_AP     "ap"
+#define NM_META_TEXT_WORD_ADHOC  "adhoc"
+#define NM_META_TEXT_PROMPT_WIFI_MODE_CHOICES "(" NM_META_TEXT_WORD_INFRA "/" NM_META_TEXT_WORD_AP "/" NM_META_TEXT_WORD_ADHOC ") [" NM_META_TEXT_WORD_INFRA "]"
+
+#define NM_META_TEXT_PROMPT_TUN_MODE N_("Tun mode")
+#define NM_META_TEXT_WORD_TUN  "tun"
+#define NM_META_TEXT_WORD_TAP  "tap"
+#define NM_META_TEXT_PROMPT_TUN_MODE_CHOICES "(" NM_META_TEXT_WORD_TUN "/" NM_META_TEXT_WORD_TAP ") [" NM_META_TEXT_WORD_TUN "]"
+
+#define NM_META_TEXT_PROMPT_IP_TUNNEL_MODE N_("IP Tunnel mode")
+
+#define NM_META_TEXT_PROMPT_MACVLAN_MODE N_("MACVLAN mode")
+
+#define NM_META_TEXT_PROMPT_MACSEC_MODE N_("MACsec mode")
+#define NM_META_TEXT_WORD_PSK "psk"
+#define NM_META_TEXT_WORD_EAP "eap"
+#define NM_META_TEXT_PROMPT_MACSEC_MODE_CHOICES "(" NM_META_TEXT_WORD_PSK "/" NM_META_TEXT_WORD_EAP ")"
+
+#define NM_META_TEXT_PROMPT_PROXY_METHOD N_("Proxy method")
+#define NM_META_TEXT_WORD_NONE "none"
+#define NM_META_TEXT_WORD_AUTO "auto"
+#define NM_META_TEXT_PROMPT_PROXY_METHOD_CHOICES "(" NM_META_TEXT_WORD_NONE "/" NM_META_TEXT_WORD_AUTO ") [" NM_META_TEXT_WORD_NONE "]"
+
 typedef enum {
 	NM_META_TERM_COLOR_NORMAL  = 0,
 	NM_META_TERM_COLOR_BLACK   = 1,
@@ -145,6 +199,8 @@ struct _NMMetaPropertyType {
 
 struct _NMUtilsEnumValueInfo;
 
+struct _NMMetaPropertyTypDataNested;
+
 struct _NMMetaPropertyTypData {
 	union {
 		struct {
@@ -162,6 +218,9 @@ struct _NMMetaPropertyTypData {
 		struct {
 			NMMetaPropertyTypeMacMode mode;
 		} mac;
+		struct {
+			const struct _NMMetaPropertyTypDataNested *data;
+		} nested;
 	} subtype;
 	const char *const*values_static;
 	NMMetaPropertyTypFlags typ_flags;
@@ -181,7 +240,16 @@ struct _NMMetaPropertyInfo {
 
 	const char *property_name;
 
+	const char *property_alias;
+
+	NMMetaPropertyInfFlags inf_flags;
 	bool is_secret:1;
+
+	bool is_cli_option:1;
+
+	const char *prompt;
+
+	const char *def_hint;
 
 	const char *describe_doc;
 
@@ -194,6 +262,7 @@ struct _NMMetaPropertyInfo {
 struct _NMMetaSettingInfoEditor {
 	const NMMetaType *meta_type;
 	const NMMetaSettingInfo *general;
+	const char *pretty_name;
 	/* the order of the properties matter. The first *must* be the
 	 * "name", and then the order is as they are listed by default. */
 	const NMMetaPropertyInfo *properties;
@@ -246,6 +315,30 @@ struct _NMMetaEnvironment {
 	                  va_list ap);
 
 };
+
+/*****************************************************************************/
+
+/* NMSettingBond is special in that it has nested properties.
+ * We will add API to proper handle such types (Bond, VPN, User),
+ * but for now just expose the type info directly. */
+
+extern const NMMetaType nm_meta_type_nested_property_info;
+
+typedef struct _NMMetaNestedPropertyTypeInfo  {
+	const NMMetaType *meta_type;
+	const NMMetaPropertyInfo *parent_info;
+	const char *field_name;
+	NMMetaPropertyInfFlags inf_flags;
+	const char *prompt;
+	const char *def_hint;
+} NMMetaNestedPropertyTypeInfo;
+
+typedef struct _NMMetaPropertyTypDataNested  {
+	const NMMetaNestedPropertyTypeInfo *nested;
+	guint nested_len;
+} NMMetaPropertyTypDataNested;
+
+const NMMetaPropertyTypDataNested nm_meta_property_typ_data_bond;
 
 /*****************************************************************************/
 

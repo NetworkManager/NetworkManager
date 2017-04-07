@@ -49,16 +49,15 @@ typedef enum {
 	PROPERTY_INF_FLAG_ALL                       = 0x3,
 } PropertyInfFlags;
 
+typedef char *(*CompEntryFunc) (const char *, int);
+
 typedef struct _OptionInfo OptionInfo;
 struct _OptionInfo {
-	const char *setting_name;
+	const NMMetaSettingInfoEditor *setting_info;
 	const char *property;
 	const char *option;
-	const NMMetaPropertyInfFlags flags;
-	const char *prompt;
-	const char *def_hint;
 	gboolean (*check_and_set)(NmCli *nmc, NMConnection *connection, const OptionInfo *option, const char *value, GError **error);
-	rl_compentry_func_t *generator_func;
+	CompEntryFunc generator_func;
 };
 
 /* define some prompts for connection editor */
@@ -67,59 +66,6 @@ struct _OptionInfo {
 #define EDITOR_PROMPT_CON_TYPE _("Enter connection type: ")
 
 /* define some other prompts */
-#define PROMPT_CON_TYPE    N_("Connection type")
-#define PROMPT_IFNAME      N_("Interface name [*]")
-#define PROMPT_VPN_TYPE    N_("VPN type")
-#define PROMPT_MASTER      N_("Master")
-
-#define PROMPT_IB_MODE     N_("Transport mode")
-#define WORD_DATAGRAM  "datagram"
-#define WORD_CONNECTED "connected"
-#define PROMPT_IB_MODE_CHOICES "(" WORD_DATAGRAM "/" WORD_CONNECTED ") [" WORD_DATAGRAM "]"
-
-#define PROMPT_BT_TYPE N_("Bluetooth type")
-#define WORD_PANU      "panu"
-#define WORD_DUN_GSM   "dun-gsm"
-#define WORD_DUN_CDMA  "dun-cdma"
-#define PROMPT_BT_TYPE_CHOICES "(" WORD_PANU "/" WORD_DUN_GSM "/" WORD_DUN_CDMA ") [" WORD_PANU "]"
-
-#define PROMPT_BOND_MODE N_("Bonding mode")
-
-#define PROMPT_BOND_MON_MODE N_("Bonding monitoring mode")
-#define WORD_MIIMON "miimon"
-#define WORD_ARP    "arp"
-#define PROMPT_BOND_MON_MODE_CHOICES "(" WORD_MIIMON "/" WORD_ARP ") [" WORD_MIIMON "]"
-
-#define PROMPT_ADSL_PROTO N_("Protocol")
-#define PROMPT_ADSL_PROTO_CHOICES "(" NM_SETTING_ADSL_PROTOCOL_PPPOA "/" NM_SETTING_ADSL_PROTOCOL_PPPOE "/" NM_SETTING_ADSL_PROTOCOL_IPOATM ")"
-
-#define PROMPT_WIFI_MODE N_("Wi-Fi mode")
-#define WORD_INFRA  "infrastructure"
-#define WORD_AP     "ap"
-#define WORD_ADHOC  "adhoc"
-#define PROMPT_WIFI_MODE_CHOICES "(" WORD_INFRA "/" WORD_AP "/" WORD_ADHOC ") [" WORD_INFRA "]"
-
-#define PROMPT_ADSL_ENCAP N_("ADSL encapsulation")
-#define PROMPT_ADSL_ENCAP_CHOICES "(" NM_SETTING_ADSL_ENCAPSULATION_VCMUX "/" NM_SETTING_ADSL_ENCAPSULATION_LLC ") [none]"
-
-#define PROMPT_TUN_MODE N_("Tun mode")
-#define WORD_TUN  "tun"
-#define WORD_TAP  "tap"
-#define PROMPT_TUN_MODE_CHOICES "(" WORD_TUN "/" WORD_TAP ") [" WORD_TUN "]"
-
-#define PROMPT_IP_TUNNEL_MODE N_("IP Tunnel mode")
-
-#define PROMPT_MACVLAN_MODE N_("MACVLAN mode")
-
-#define PROMPT_MACSEC_MODE N_("MACsec mode")
-#define WORD_PSK "psk"
-#define WORD_EAP "eap"
-#define PROMPT_MACSEC_MODE_CHOICES "(" WORD_PSK "/" WORD_EAP ")"
-
-#define PROMPT_PROXY_METHOD N_("Proxy method")
-#define WORD_NONE "none"
-#define WORD_AUTO "auto"
-#define PROMPT_PROXY_METHOD_CHOICES "(" WORD_NONE "/" WORD_AUTO ") [" WORD_NONE "]"
 
 #define PROMPT_CONNECTION  _("Connection (name, UUID, or path)")
 #define PROMPT_VPN_CONNECTION  _("VPN connection (name, UUID, or path)")
@@ -1834,7 +1780,7 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 				if (acon)
 					con = NM_CONNECTION (nm_active_connection_get_connection (acon));
 			}
-			
+
 			if (!con && !acon) {
 				g_string_printf (nmc->return_text, _("Error: %s - no such connection profile."), *argv);
 				nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
@@ -3520,13 +3466,11 @@ set_default_interface_name (NmCli *nmc, NMSettingConnection *s_con)
 	g_free (ifname);
 }
 
-/*----------------------------------------------------------------------------*/
-
-static const OptionInfo option_info[];
+/*****************************************************************************/
 
 static PropertyInfFlags
-_options_set (const OptionInfo *option,
-              PropertyInfFlags mask, PropertyInfFlags set)
+_dynamic_options_set (const NMMetaAbstractInfo *abstract_info,
+                      PropertyInfFlags mask, PropertyInfFlags set)
 {
 	static GHashTable *cache = NULL;
 	gpointer p;
@@ -3535,23 +3479,73 @@ _options_set (const OptionInfo *option,
 	if (G_UNLIKELY (!cache))
 		cache = g_hash_table_new (NULL, NULL);
 
-	if (g_hash_table_lookup_extended (cache, (gpointer) option, NULL, &p))
+	if (g_hash_table_lookup_extended (cache, (gpointer) abstract_info, NULL, &p))
 		v = GPOINTER_TO_UINT (p);
 	else
 		v = 0;
 
 	v2 = (v & ~mask) | (mask & set);
 	if (v != v2)
-		g_hash_table_insert (cache, (gpointer) option, GUINT_TO_POINTER (v2));
+		g_hash_table_insert (cache, (gpointer) abstract_info, GUINT_TO_POINTER (v2));
 
 	return v2;
 }
 
 static PropertyInfFlags
-_options_get (const OptionInfo *option)
+_dynamic_options_get (const NMMetaAbstractInfo *abstract_info)
 {
-	return _options_set (option, 0, 0);
+	return _dynamic_options_set (abstract_info, 0, 0);
 }
+
+/*****************************************************************************/
+
+static gboolean
+_meta_property_needs_bond_hack (const NMMetaPropertyInfo *property_info)
+{
+	/* hack: the bond property data is handled special and not generically.
+	 * Eventually, get rid of explicitly checking whether we handle a bond. */
+	if (!property_info)
+		g_return_val_if_reached (FALSE);
+	return    property_info->property_typ_data
+	       && property_info->property_typ_data->subtype.nested.data == &nm_meta_property_typ_data_bond;
+
+}
+
+static void
+_meta_abstract_get (const NMMetaAbstractInfo *abstract_info,
+                    const NMMetaSettingInfoEditor **out_setting_info,
+                    const char **out_setting_name,
+                    const char **out_property_name,
+                    const char **out_option,
+                    NMMetaPropertyInfFlags *out_inf_flags,
+                    const char **out_prompt,
+                    const char **out_def_hint)
+{
+	/* _meta_property_needs_bond_hack () */
+	if (abstract_info->meta_type == &nm_meta_type_nested_property_info) {
+		const NMMetaNestedPropertyTypeInfo *info = (const NMMetaNestedPropertyTypeInfo *) abstract_info;
+
+		NM_SET_OUT (out_setting_info, info->parent_info->setting_info);
+		NM_SET_OUT (out_setting_name, info->parent_info->setting_info->general->setting_name);
+		NM_SET_OUT (out_property_name, info->parent_info->property_name);
+		NM_SET_OUT (out_option, info->field_name);
+		NM_SET_OUT (out_inf_flags, info->inf_flags);
+		NM_SET_OUT (out_prompt, info->prompt);
+		NM_SET_OUT (out_def_hint, info->def_hint);
+	} else {
+		const NMMetaPropertyInfo *info = (const NMMetaPropertyInfo *) abstract_info;
+
+		NM_SET_OUT (out_setting_info, info->setting_info);
+		NM_SET_OUT (out_setting_name, info->setting_info->general->setting_name);
+		NM_SET_OUT (out_property_name, info->property_name);
+		NM_SET_OUT (out_option, info->property_alias);
+		NM_SET_OUT (out_inf_flags, info->inf_flags);
+		NM_SET_OUT (out_prompt, info->prompt);
+		NM_SET_OUT (out_def_hint, info->def_hint);
+	}
+}
+
+static const OptionInfo *_meta_abstract_get_option_info (const NMMetaAbstractInfo *abstract_info);
 
 /*
  * Mark options in option_info as relevant.
@@ -3560,16 +3554,34 @@ _options_get (const OptionInfo *option)
 static void
 enable_options (const gchar *setting_name, const gchar *property, const gchar * const *opts)
 {
-	const OptionInfo *candidate;
+	const NMMetaPropertyInfo *property_info;
 
-	for (candidate = option_info; candidate->setting_name; candidate++) {
-		if (   strcmp (candidate->setting_name, setting_name) == 0
-		    && strcmp (candidate->property, property) == 0
-		    && (candidate->flags & NM_META_PROPERTY_INF_FLAG_DONT_ASK)
-		    && candidate->option
-		    && g_strv_contains (opts, candidate->option))
-			_options_set (candidate, PROPERTY_INF_FLAG_ENABLED, PROPERTY_INF_FLAG_ENABLED);
+	property_info = nm_meta_property_info_find_by_name (setting_name, property);
+
+	if (!property_info)
+		g_return_if_reached ();
+
+	if (_meta_property_needs_bond_hack (property_info)) {
+		guint i;
+
+		for (i = 0; i < nm_meta_property_typ_data_bond.nested_len; i++) {
+			const NMMetaNestedPropertyTypeInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
+
+			if (   bi->inf_flags & NM_META_PROPERTY_INF_FLAG_DONT_ASK
+			    && bi->field_name
+			    && g_strv_contains (opts, bi->field_name))
+				_dynamic_options_set ((const NMMetaAbstractInfo *) bi, PROPERTY_INF_FLAG_ENABLED, PROPERTY_INF_FLAG_ENABLED);
+		}
+		return;
 	}
+
+	if (!property_info->is_cli_option)
+		g_return_if_reached ();
+
+	if (   property_info->inf_flags & NM_META_PROPERTY_INF_FLAG_DONT_ASK
+	    && property_info->property_alias
+	    && g_strv_contains (opts, property_info->property_alias))
+		_dynamic_options_set ((const NMMetaAbstractInfo *) property_info, PROPERTY_INF_FLAG_ENABLED, PROPERTY_INF_FLAG_ENABLED);
 }
 
 /*
@@ -3580,12 +3592,47 @@ enable_options (const gchar *setting_name, const gchar *property, const gchar * 
 static void
 disable_options (const gchar *setting_name, const gchar *property)
 {
-	const OptionInfo *candidate;
+	const NMMetaPropertyInfo *property_infos_local[2];
+	const NMMetaPropertyInfo *const*property_infos;
+	guint p;
 
-	for (candidate = option_info; candidate->setting_name; candidate++) {
-		if (   strcmp (candidate->setting_name, setting_name) == 0
-		    && (!property || strcmp (candidate->property, property) == 0))
-			_options_set (candidate, PROPERTY_INF_FLAG_DISABLED, PROPERTY_INF_FLAG_DISABLED);
+	if (property) {
+		const NMMetaPropertyInfo *pi;
+
+		pi = nm_meta_property_info_find_by_name (setting_name, property);
+		if (!pi)
+			g_return_if_reached ();
+		if (   !_meta_property_needs_bond_hack (pi)
+		    && !pi->is_cli_option)
+			return;
+		property_infos_local[0] = pi;
+		property_infos_local[1] = NULL;
+		property_infos = property_infos_local;
+	} else {
+		const NMMetaSettingInfoEditor *setting_info;
+
+		setting_info = nm_meta_setting_info_editor_find_by_name (setting_name);
+		if (!setting_info)
+			g_return_if_reached ();
+		property_infos = nm_property_infos_for_setting_type (setting_info->general->meta_type);
+	}
+
+	for (p = 0; property_infos[p]; p++) {
+		const NMMetaPropertyInfo *property_info = property_infos[p];
+
+		if (_meta_property_needs_bond_hack (property_info)) {
+			guint i;
+
+			for (i = 0; i < nm_meta_property_typ_data_bond.nested_len; i++) {
+				const NMMetaNestedPropertyTypeInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
+
+				_dynamic_options_set ((const NMMetaAbstractInfo *) bi, PROPERTY_INF_FLAG_DISABLED, PROPERTY_INF_FLAG_DISABLED);
+			}
+			nm_assert (p == 0 && !property_infos[1]);
+		} else {
+			if (property_info->is_cli_option)
+				_dynamic_options_set ((const NMMetaAbstractInfo *) property_info, PROPERTY_INF_FLAG_DISABLED, PROPERTY_INF_FLAG_DISABLED);
+		}
 	}
 }
 
@@ -3597,10 +3644,30 @@ disable_options (const gchar *setting_name, const gchar *property)
 static void
 reset_options (void)
 {
-	const OptionInfo *candidate;
+	NMMetaSettingType s;
 
-	for (candidate = option_info; candidate->setting_name; candidate++)
-		_options_set (candidate, PROPERTY_INF_FLAG_ALL, 0);
+	for (s = 0; s < _NM_META_SETTING_TYPE_NUM; s++) {
+		const NMMetaPropertyInfo *const*property_infos;
+		guint p;
+
+		property_infos = nm_property_infos_for_setting_type (s);
+		for (p = 0; property_infos[p]; p++) {
+			const NMMetaPropertyInfo *property_info = property_infos[p];
+
+			if (_meta_property_needs_bond_hack (property_info)) {
+				guint i;
+
+				for (i = 0; i < nm_meta_property_typ_data_bond.nested_len; i++) {
+					const NMMetaNestedPropertyTypeInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
+
+					_dynamic_options_set ((const NMMetaAbstractInfo *) bi, PROPERTY_INF_FLAG_ALL, 0);
+				}
+			} else {
+				if (property_info->is_cli_option)
+					_dynamic_options_set ((const NMMetaAbstractInfo *) property_info, PROPERTY_INF_FLAG_ALL, 0);
+			}
+		}
+	}
 }
 
 static gboolean
@@ -3612,10 +3679,13 @@ set_property (NMConnection *connection,
 	NMSetting *setting;
 	GError *local = NULL;
 
+	g_assert (setting_name && setting_name[0]);
+
 	setting = nm_connection_get_setting_by_name (connection, setting_name);
 	if (!setting) {
 		setting = nmc_setting_new_for_name (setting_name);
 		if (!setting) {
+			g_assert (FALSE);
 			/* This should really not happen */
 			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_UNKNOWN,
 			             _("Error: don't know how to create '%s' setting."),
@@ -3681,17 +3751,25 @@ set_property (NMConnection *connection,
 }
 
 static gboolean
-set_option (NmCli *nmc, NMConnection *connection, const OptionInfo *option, const gchar *value, GError **error)
+set_option (NmCli *nmc, NMConnection *connection, const NMMetaAbstractInfo *abstract_info, const gchar *value, GError **error)
 {
-	_options_set (option, PROPERTY_INF_FLAG_DISABLED, PROPERTY_INF_FLAG_DISABLED);
-	if (option->check_and_set) {
+	const char *setting_name, *property_name, *option_name;
+	NMMetaPropertyInfFlags inf_flags;
+	const OptionInfo *option;
+
+	option = _meta_abstract_get_option_info (abstract_info);
+
+	_dynamic_options_set (abstract_info, PROPERTY_INF_FLAG_DISABLED, PROPERTY_INF_FLAG_DISABLED);
+
+	_meta_abstract_get (abstract_info, NULL, &setting_name, &property_name, &option_name, &inf_flags, NULL, NULL);
+	if (option && option->check_and_set) {
 		return option->check_and_set (nmc, connection, option, value, error);
 	} else if (value) {
-		return set_property (connection, option->setting_name, option->property,
-		                     value, option->flags & NM_META_PROPERTY_INF_FLAG_MULTI ? '+' : '\0', error);
-	} else if (option->flags & NM_META_PROPERTY_INF_FLAG_REQD) {
+		return set_property (connection, setting_name, property_name,
+		                     value, inf_flags & NM_META_PROPERTY_INF_FLAG_MULTI ? '+' : '\0', error);
+	} else if (inf_flags & NM_META_PROPERTY_INF_FLAG_REQD) {
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-	                     _("Error: '%s' is mandatory."), option->option);
+	                     _("Error: '%s' is mandatory."), option_name);
 		return FALSE;
 	}
 
@@ -3985,7 +4063,7 @@ set_connection_type (NmCli *nmc, NMConnection *con, const OptionInfo *option, co
 		                 NM_SETTING_CONNECTION_INTERFACE_NAME);
 	}
 
-	if (!set_property (con, option->setting_name, option->property, value, '\0', error))
+	if (!set_property (con, option->setting_info->general->setting_name, option->property, value, '\0', error))
 		return FALSE;
 
 	if (!con_settings (con, &type_settings, &slv_settings, error))
@@ -4014,7 +4092,7 @@ set_connection_iface (NmCli *nmc, NMConnection *con, const OptionInfo *option, c
 		}
 	}
 
-	return set_property (con, option->setting_name, option->property, value, '\0', error);
+	return set_property (con, option->setting_info->general->setting_name, option->property, value, '\0', error);
 }
 
 static gboolean
@@ -4043,7 +4121,7 @@ set_connection_master (NmCli *nmc, NMConnection *con, const OptionInfo *option, 
 		return FALSE;
 	}
 
-	return set_property (con, option->setting_name, option->property, value, '\0', error);
+	return set_property (con, option->setting_info->general->setting_name, option->property, value, '\0', error);
 }
 
 static gboolean
@@ -4110,17 +4188,17 @@ set_bond_monitoring_mode (NmCli *nmc, NMConnection *con, const OptionInfo *optio
 		monitor_mode = g_strdup (value);
 		g_strstrip (monitor_mode);
 	} else {
-		monitor_mode = g_strdup (WORD_MIIMON);
+		monitor_mode = g_strdup (NM_META_TEXT_WORD_MIIMON);
 	}
 
-	if (matches (monitor_mode, WORD_MIIMON))
+	if (matches (monitor_mode, NM_META_TEXT_WORD_MIIMON))
 		enable_options (NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS, miimon_opts);
-	else if (matches (monitor_mode, WORD_ARP))
+	else if (matches (monitor_mode, NM_META_TEXT_WORD_ARP))
 		enable_options (NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS, arp_opts);
 	else {
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 		             _("Error: '%s' is not a valid monitoring mode; use '%s' or '%s'.\n"),
-		             monitor_mode, WORD_MIIMON, WORD_ARP);
+		             monitor_mode, NM_META_TEXT_WORD_MIIMON, NM_META_TEXT_WORD_ARP);
 		return FALSE;
 	}
 
@@ -4156,7 +4234,7 @@ set_bluetooth_type (NmCli *nmc, NMConnection *con, const OptionInfo *option, con
 		return FALSE;
 	}
 
-	return set_property (con, option->setting_name, option->property, value, '\0', error);
+	return set_property (con, option->setting_info->general->setting_name, option->property, value, '\0', error);
 }
 
 static gboolean
@@ -4167,7 +4245,7 @@ set_yes_no (NmCli *nmc, NMConnection *con, const OptionInfo *option, const char 
 	if (g_strcmp0 (value, _(WORD_LOC_NO)))
 		value = WORD_NO;
 
-	return set_property (con, option->setting_name, option->property, value, '\0', error);
+	return set_property (con, option->setting_info->general->setting_name, option->property, value, '\0', error);
 }
 
 static gboolean
@@ -4186,8 +4264,8 @@ set_ip4_address (NmCli *nmc, NMConnection *con, const OptionInfo *option, const 
 		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
 		              NULL);
 	}
-	return set_property (con, option->setting_name, option->property, value,
-	                     option->flags & NM_META_PROPERTY_INF_FLAG_MULTI ? '+' : '\0', error);
+	return set_property (con, option->setting_info->general->setting_name, option->property, value,
+	                     '+', error);
 }
 
 static gboolean
@@ -4206,160 +4284,96 @@ set_ip6_address (NmCli *nmc, NMConnection *con, const OptionInfo *option, const 
 		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
 		              NULL);
 	}
-	return set_property (con, option->setting_name, option->property, value,
-	                     option->flags & NM_META_PROPERTY_INF_FLAG_MULTI ? '+' : '\0', error);
+	return set_property (con, option->setting_info->general->setting_name, option->property, value,
+	                     '+', error);
 }
 
+/*****************************************************************************/
 
-/*----------------------------------------------------------------------------*/
+static const OptionInfo *
+_meta_abstract_get_option_info (const NMMetaAbstractInfo *abstract_info)
+{
+	static const OptionInfo option_info[] = {
+#define OPTION_INFO(name, property_name_, property_alias_, check_and_set_, generator_func_) \
+		{ \
+			.setting_info =        &nm_meta_setting_infos_editor[NM_META_SETTING_TYPE_##name], \
+			.property =            property_name_, \
+			.option =              property_alias_, \
+			.check_and_set =       check_and_set_, \
+			.generator_func =      generator_func_, \
+		}
+		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_TYPE,                  "type",               set_connection_type,       gen_connection_types),
+		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_AUTOCONNECT,           "autoconnect",        NULL,                      gen_func_bool_values_l10n),
+		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_INTERFACE_NAME,        "ifname",             set_connection_iface,      nmc_rl_gen_func_ifnames),
+		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_MASTER,                "master",             set_connection_master,     gen_func_master_ifnames),
+		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_SLAVE_TYPE,            "slave-type",         NULL,                      gen_func_slave_type),
+		OPTION_INFO (INFINIBAND,   NM_SETTING_INFINIBAND_TRANSPORT_MODE,        "transport-mode",     NULL,                      gen_func_ib_type),
+		OPTION_INFO (WIRELESS,     NM_SETTING_WIRELESS_MODE,                    "mode",               NULL,                      gen_func_wifi_mode),
+		OPTION_INFO (BLUETOOTH,    NM_SETTING_BLUETOOTH_TYPE,                   "bt-type",            set_bluetooth_type,        gen_func_bt_type),
+		OPTION_INFO (VLAN,         NM_SETTING_VLAN_PARENT,                      "dev",                NULL,                      nmc_rl_gen_func_ifnames),
+		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     "mode",               set_bond_option,           gen_func_bond_mode),
+		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     "primary",            set_bond_option,           nmc_rl_gen_func_ifnames),
+		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     NULL,                 set_bond_monitoring_mode,  gen_func_bond_mon_mode),
+		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     "miimon",             set_bond_option,           NULL),
+		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     "downdelay",          set_bond_option,           NULL),
+		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     "updelay",            set_bond_option,           NULL),
+		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     "arp-interval",       set_bond_option,           NULL),
+		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     "arp-ip-target",      set_bond_option,           NULL),
+		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     "lacp-rate",          set_bond_option,           gen_func_bond_lacp_rate),
+		OPTION_INFO (BRIDGE,       NM_SETTING_BRIDGE_STP,                       "stp",                set_yes_no,                gen_func_bool_values_l10n),
+		OPTION_INFO (BRIDGE,       NM_SETTING_BRIDGE_MULTICAST_SNOOPING,        "multicast-snooping", set_yes_no,                gen_func_bool_values_l10n),
+		OPTION_INFO (BRIDGE_PORT,  NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE,         "hairpin",            set_yes_no,                gen_func_bool_values_l10n),
+		OPTION_INFO (VPN,          NM_SETTING_VPN_SERVICE_TYPE,                 "vpn-type",           NULL,                      gen_func_vpn_types),
+		OPTION_INFO (ADSL,         NM_SETTING_ADSL_PROTOCOL,                    "protocol",           NULL,                      gen_func_adsl_proto),
+		OPTION_INFO (ADSL,         NM_SETTING_ADSL_ENCAPSULATION,               "encapsulation",      NULL,                      gen_func_adsl_encap),
+		OPTION_INFO (MACSEC,       NM_SETTING_MACSEC_MODE,                      "mode",               NULL,                      gen_func_macsec_mode),
+		OPTION_INFO (MACSEC,       NM_SETTING_MACSEC_ENCRYPT,                   "encrypt",            set_yes_no,                gen_func_bool_values_l10n),
+		OPTION_INFO (MACVLAN,      NM_SETTING_MACVLAN_PARENT,                   "dev",                NULL,                      nmc_rl_gen_func_ifnames),
+		OPTION_INFO (MACVLAN,      NM_SETTING_MACVLAN_MODE,                     "mode",               NULL,                      gen_func_macvlan_mode),
+		OPTION_INFO (MACVLAN,      NM_SETTING_MACVLAN_TAP,                      "tap",                set_yes_no,                gen_func_bool_values_l10n),
+		OPTION_INFO (VXLAN,        NM_SETTING_VXLAN_PARENT,                     "dev",                NULL,                      nmc_rl_gen_func_ifnames),
+		OPTION_INFO (TUN,          NM_SETTING_TUN_MODE,                         "mode",               NULL,                      gen_func_tun_mode),
+		OPTION_INFO (TUN,          NM_SETTING_TUN_PI,                           "pi",                 set_yes_no,                gen_func_bool_values_l10n),
+		OPTION_INFO (TUN,          NM_SETTING_TUN_VNET_HDR,                     "vnet-hdr",           set_yes_no,                gen_func_bool_values_l10n),
+		OPTION_INFO (TUN,          NM_SETTING_TUN_MULTI_QUEUE,                  "multi-queue",        set_yes_no,                gen_func_bool_values_l10n),
+		OPTION_INFO (IP_TUNNEL,    NM_SETTING_IP_TUNNEL_MODE,                   "mode",               NULL,                      gen_func_ip_tunnel_mode),
+		OPTION_INFO (IP_TUNNEL,    NM_SETTING_IP_TUNNEL_PARENT,                 "dev",                NULL,                      nmc_rl_gen_func_ifnames),
+		OPTION_INFO (IP4_CONFIG,   NM_SETTING_IP_CONFIG_ADDRESSES,              "ip4",                set_ip4_address,           NULL),
+		OPTION_INFO (IP6_CONFIG,   NM_SETTING_IP_CONFIG_ADDRESSES,              "ip6",                set_ip6_address,           NULL),
+		OPTION_INFO (PROXY,        NM_SETTING_PROXY_METHOD,                     "method",             NULL,                      gen_func_proxy_method),
+		OPTION_INFO (PROXY,        NM_SETTING_PROXY_BROWSER_ONLY,               "browser-only",       set_yes_no,                gen_func_bool_values_l10n),
+		{ 0 },
+	};
+	const char *property_name, *option;
+	const NMMetaSettingInfoEditor *setting_info;
+	const OptionInfo *candidate;
 
-static const OptionInfo option_info[] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_TYPE,             "type",         NM_META_PROPERTY_INF_FLAG_REQD, PROMPT_CON_TYPE, NULL,
-                                                                                                        set_connection_type, gen_connection_types },
-	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_ID,               "con-name",     NM_META_PROPERTY_INF_FLAG_DONT_ASK, NULL, NULL, NULL, NULL },
-	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_AUTOCONNECT,      "autoconnect",  NM_META_PROPERTY_INF_FLAG_DONT_ASK, NULL, NULL, NULL,
-                                                                                                        gen_func_bool_values_l10n },
-	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_INTERFACE_NAME,   "ifname",       NM_META_PROPERTY_INF_FLAG_REQD, PROMPT_IFNAME, NULL,
-                                                                                                        set_connection_iface, nmc_rl_gen_func_ifnames },
-	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_MASTER,           "master",       NM_META_PROPERTY_INF_FLAG_DONT_ASK, PROMPT_MASTER, NULL,
-                                                                                                        set_connection_master, gen_func_master_ifnames },
-	{ NM_SETTING_CONNECTION_SETTING_NAME,   NM_SETTING_CONNECTION_SLAVE_TYPE,       "slave-type",   NM_META_PROPERTY_INF_FLAG_DONT_ASK, NULL, NULL, NULL,
-                                                                                                        gen_func_slave_type },
-	{ NM_SETTING_PPPOE_SETTING_NAME,        NM_SETTING_PPPOE_USERNAME,              "username",     NM_META_PROPERTY_INF_FLAG_REQD, N_("PPPoE username"), NULL, NULL, NULL },
-	{ NM_SETTING_PPPOE_SETTING_NAME,        NM_SETTING_PPPOE_PASSWORD,              "password",     NM_META_PROPERTY_INF_FLAG_NONE, N_("Password [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_PPPOE_SETTING_NAME,        NM_SETTING_PPPOE_SERVICE,               "service",      NM_META_PROPERTY_INF_FLAG_NONE, N_("Service [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_WIRED_SETTING_NAME,        NM_SETTING_WIRED_MTU,                   "mtu",          NM_META_PROPERTY_INF_FLAG_NONE, N_("MTU [auto]"), NULL, NULL, NULL },
-	{ NM_SETTING_WIRED_SETTING_NAME,        NM_SETTING_WIRED_MAC_ADDRESS,           "mac",          NM_META_PROPERTY_INF_FLAG_NONE, N_("MAC [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_WIRED_SETTING_NAME,        NM_SETTING_WIRED_CLONED_MAC_ADDRESS,    "cloned-mac",   NM_META_PROPERTY_INF_FLAG_NONE, N_("Cloned MAC [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_INFINIBAND_SETTING_NAME,   NM_SETTING_INFINIBAND_MTU,              "mtu",          NM_META_PROPERTY_INF_FLAG_NONE, N_("MTU [auto]"), NULL, NULL, NULL },
-	{ NM_SETTING_INFINIBAND_SETTING_NAME,   NM_SETTING_INFINIBAND_MAC_ADDRESS,      "mac",          NM_META_PROPERTY_INF_FLAG_NONE, N_("MAC [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_INFINIBAND_SETTING_NAME,   NM_SETTING_INFINIBAND_TRANSPORT_MODE,   "transport-mode", NM_META_PROPERTY_INF_FLAG_NONE, PROMPT_IB_MODE, PROMPT_IB_MODE_CHOICES,
-                                                                                                        NULL, gen_func_ib_type },
-	{ NM_SETTING_INFINIBAND_SETTING_NAME,   NM_SETTING_INFINIBAND_PARENT,           "parent",       NM_META_PROPERTY_INF_FLAG_NONE, N_("Parent interface [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_INFINIBAND_SETTING_NAME,   NM_SETTING_INFINIBAND_P_KEY,            "p-key",        NM_META_PROPERTY_INF_FLAG_NONE, N_("P_KEY [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_WIRELESS_SETTING_NAME,     NM_SETTING_WIRELESS_SSID,               "ssid",         NM_META_PROPERTY_INF_FLAG_REQD, N_("SSID"), NULL, NULL, NULL },
-	{ NM_SETTING_WIRELESS_SETTING_NAME,     NM_SETTING_WIRELESS_MODE,               "mode",         NM_META_PROPERTY_INF_FLAG_NONE, PROMPT_WIFI_MODE, PROMPT_WIFI_MODE_CHOICES,
-                                                                                                        NULL, gen_func_wifi_mode },
-	{ NM_SETTING_WIRELESS_SETTING_NAME,     NM_SETTING_WIRELESS_MTU,                "mtu",          NM_META_PROPERTY_INF_FLAG_NONE, N_("MTU [auto]"), NULL, NULL, NULL },
-	{ NM_SETTING_WIRELESS_SETTING_NAME,     NM_SETTING_WIRELESS_MAC_ADDRESS,        "mac",          NM_META_PROPERTY_INF_FLAG_NONE, N_("MAC [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_WIRELESS_SETTING_NAME,     NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, "cloned-mac",   NM_META_PROPERTY_INF_FLAG_NONE, N_("Cloned MAC [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_WIMAX_SETTING_NAME,        NM_SETTING_WIMAX_NETWORK_NAME,          "nsp",          NM_META_PROPERTY_INF_FLAG_REQD, N_("WiMAX NSP name"), NULL, NULL, NULL },
-	{ NM_SETTING_WIMAX_SETTING_NAME,        NM_SETTING_WIMAX_MAC_ADDRESS,           "mac",          NM_META_PROPERTY_INF_FLAG_NONE, N_("MAC [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_GSM_SETTING_NAME,          NM_SETTING_GSM_APN,                     "apn",          NM_META_PROPERTY_INF_FLAG_REQD, N_("APN"), NULL, NULL, NULL },
-	{ NM_SETTING_GSM_SETTING_NAME,          NM_SETTING_GSM_USERNAME,                "user",         NM_META_PROPERTY_INF_FLAG_NONE, N_("Username [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_GSM_SETTING_NAME,          NM_SETTING_GSM_PASSWORD,                "password",     NM_META_PROPERTY_INF_FLAG_NONE, N_("Password [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_CDMA_SETTING_NAME,         NM_SETTING_CDMA_USERNAME,               "user",         NM_META_PROPERTY_INF_FLAG_NONE, N_("Username [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_CDMA_SETTING_NAME,         NM_SETTING_CDMA_PASSWORD,               "password",     NM_META_PROPERTY_INF_FLAG_NONE, N_("Password [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_BLUETOOTH_SETTING_NAME,    NM_SETTING_BLUETOOTH_BDADDR,            "addr",         NM_META_PROPERTY_INF_FLAG_REQD, N_("Bluetooth device address"), NULL, NULL, NULL },
-	{ NM_SETTING_BLUETOOTH_SETTING_NAME,    NM_SETTING_BLUETOOTH_TYPE,              "bt-type",      NM_META_PROPERTY_INF_FLAG_NONE, PROMPT_BT_TYPE, PROMPT_BT_TYPE_CHOICES,
-                                                                                                        set_bluetooth_type, gen_func_bt_type },
-	{ NM_SETTING_VLAN_SETTING_NAME,         NM_SETTING_VLAN_PARENT,                 "dev",          NM_META_PROPERTY_INF_FLAG_REQD, N_("VLAN parent device or connection UUID"), NULL,
-                                                                                                        NULL, nmc_rl_gen_func_ifnames },
-	{ NM_SETTING_VLAN_SETTING_NAME,         NM_SETTING_VLAN_ID,                     "id",           NM_META_PROPERTY_INF_FLAG_REQD, N_("VLAN ID (<0-4094>)"), NULL, NULL, NULL },
-	{ NM_SETTING_VLAN_SETTING_NAME,         NM_SETTING_VLAN_FLAGS,                  "flags",        NM_META_PROPERTY_INF_FLAG_NONE, N_("VLAN flags (<0-7>) [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_VLAN_SETTING_NAME,         NM_SETTING_VLAN_INGRESS_PRIORITY_MAP,   "ingress",      NM_META_PROPERTY_INF_FLAG_NONE, N_("Ingress priority maps [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_VLAN_SETTING_NAME,         NM_SETTING_VLAN_EGRESS_PRIORITY_MAP,    "egress",       NM_META_PROPERTY_INF_FLAG_NONE, N_("Egress priority maps [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "mode",         NM_META_PROPERTY_INF_FLAG_NONE, PROMPT_BOND_MODE, "[balance-rr]",
-                                                                                                        set_bond_option, gen_func_bond_mode },
-	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "primary",      NM_META_PROPERTY_INF_FLAG_DONT_ASK, N_("Bonding primary interface [none]"),
-                                                                                                        NULL, set_bond_option, nmc_rl_gen_func_ifnames },
-	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                NULL,           NM_META_PROPERTY_INF_FLAG_NONE, N_("Bonding monitoring mode"), PROMPT_BOND_MON_MODE_CHOICES,
-                                                                                                        set_bond_monitoring_mode, gen_func_bond_mon_mode },
-	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "miimon",       NM_META_PROPERTY_INF_FLAG_DONT_ASK, N_("Bonding miimon [100]"), NULL, set_bond_option, NULL },
-	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "downdelay",    NM_META_PROPERTY_INF_FLAG_DONT_ASK, N_("Bonding downdelay [0]"), NULL, set_bond_option, NULL },
-	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "updelay",      NM_META_PROPERTY_INF_FLAG_DONT_ASK, N_("Bonding updelay [0]"), NULL, set_bond_option, NULL },
-	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "arp-interval", NM_META_PROPERTY_INF_FLAG_DONT_ASK, N_("Bonding arp-interval [0]"), NULL,
-                                                                                                        set_bond_option, NULL },
-	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "arp-ip-target", NM_META_PROPERTY_INF_FLAG_DONT_ASK, N_("Bonding arp-ip-target [none]"),
-                                                                                                        NULL, set_bond_option, NULL },
-	{ NM_SETTING_BOND_SETTING_NAME,         NM_SETTING_BOND_OPTIONS,                "lacp-rate",    NM_META_PROPERTY_INF_FLAG_DONT_ASK, N_("LACP rate ('slow' or 'fast') [slow]"), NULL,
-                                                                                                        set_bond_option, gen_func_bond_lacp_rate },
-	{ NM_SETTING_TEAM_SETTING_NAME,         NM_SETTING_TEAM_CONFIG,                 "config",       NM_META_PROPERTY_INF_FLAG_NONE, N_("Team JSON configuration [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_TEAM_PORT_SETTING_NAME,    NM_SETTING_TEAM_PORT_CONFIG,            "config",       NM_META_PROPERTY_INF_FLAG_NONE, N_("Team JSON configuration [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_STP,                  "stp",          NM_META_PROPERTY_INF_FLAG_NONE, N_("Enable STP [no]"), NULL,
-                                                                                                        set_yes_no, gen_func_bool_values_l10n },
-	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_PRIORITY,             "priority",     NM_META_PROPERTY_INF_FLAG_NONE, N_("STP priority [32768]"), NULL, NULL, NULL },
-	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_FORWARD_DELAY,        "forward-delay", NM_META_PROPERTY_INF_FLAG_NONE, N_("Forward delay [15]"), NULL, NULL, NULL },
-	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_HELLO_TIME,           "hello-time",   NM_META_PROPERTY_INF_FLAG_NONE, N_("Hello time [2]"), NULL, NULL, NULL },
-	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_MAX_AGE,              "max-age",      NM_META_PROPERTY_INF_FLAG_NONE, N_("Max age [20]"), NULL, NULL, NULL },
-	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_AGEING_TIME,          "ageing-time",  NM_META_PROPERTY_INF_FLAG_NONE, N_("MAC address ageing time [300]"), NULL, NULL, NULL },
-	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_MULTICAST_SNOOPING,   "multicast-snooping", NM_META_PROPERTY_INF_FLAG_NONE, N_("Enable IGMP snooping [no]"), NULL,
-                                                                                                        set_yes_no, gen_func_bool_values_l10n },
-	{ NM_SETTING_BRIDGE_SETTING_NAME,       NM_SETTING_BRIDGE_MAC_ADDRESS,          "mac",          NM_META_PROPERTY_INF_FLAG_NONE, N_("MAC [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_BRIDGE_PORT_SETTING_NAME,  NM_SETTING_BRIDGE_PORT_PRIORITY,        "priority",     NM_META_PROPERTY_INF_FLAG_NONE, N_("Bridge port priority [32]"), NULL, NULL, NULL },
-	{ NM_SETTING_BRIDGE_PORT_SETTING_NAME,  NM_SETTING_BRIDGE_PORT_PATH_COST,       "path-cost",    NM_META_PROPERTY_INF_FLAG_NONE, N_("Bridge port STP path cost [100]"), NULL, NULL, NULL },
-	{ NM_SETTING_BRIDGE_PORT_SETTING_NAME,  NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE,    "hairpin",      NM_META_PROPERTY_INF_FLAG_NONE, N_("Hairpin [no]"), NULL,
-                                                                                                        set_yes_no, gen_func_bool_values_l10n },
-	{ NM_SETTING_VPN_SETTING_NAME,          NM_SETTING_VPN_SERVICE_TYPE,            "vpn-type",     NM_META_PROPERTY_INF_FLAG_REQD, PROMPT_VPN_TYPE, NULL, NULL, gen_func_vpn_types },
-	{ NM_SETTING_VPN_SETTING_NAME,          NM_SETTING_VPN_USER_NAME,               "user",         NM_META_PROPERTY_INF_FLAG_NONE, N_("Username [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_OLPC_MESH_SETTING_NAME,    NM_SETTING_OLPC_MESH_SSID,              "ssid",         NM_META_PROPERTY_INF_FLAG_REQD, N_("SSID"), NULL, NULL, NULL },
-	{ NM_SETTING_OLPC_MESH_SETTING_NAME,    NM_SETTING_OLPC_MESH_CHANNEL,           "channel",      NM_META_PROPERTY_INF_FLAG_NONE, N_("OLPC Mesh channel [1]"), NULL, NULL, NULL },
-	{ NM_SETTING_OLPC_MESH_SETTING_NAME,    NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS, "dhcp-anycast", NM_META_PROPERTY_INF_FLAG_NONE, N_("DHCP anycast MAC address [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_ADSL_SETTING_NAME,         NM_SETTING_ADSL_USERNAME,               "username",     NM_META_PROPERTY_INF_FLAG_REQD, N_("Username"), NULL, NULL, NULL },
-	{ NM_SETTING_ADSL_SETTING_NAME,         NM_SETTING_ADSL_PROTOCOL,               "protocol",     NM_META_PROPERTY_INF_FLAG_REQD, PROMPT_ADSL_PROTO, PROMPT_ADSL_PROTO_CHOICES,
-                                                                                                        NULL, gen_func_adsl_proto },
-	{ NM_SETTING_ADSL_SETTING_NAME,         NM_SETTING_ADSL_PASSWORD,               "password",     NM_META_PROPERTY_INF_FLAG_NONE, N_("Password [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_ADSL_SETTING_NAME,         NM_SETTING_ADSL_ENCAPSULATION,          "encapsulation", NM_META_PROPERTY_INF_FLAG_NONE, PROMPT_ADSL_ENCAP, PROMPT_ADSL_ENCAP_CHOICES,
-                                                                                                        NULL, gen_func_adsl_encap },
-	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_PARENT,               "dev",          NM_META_PROPERTY_INF_FLAG_REQD, N_("MACsec parent device or connection UUID"), NULL, NULL, NULL },
-	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_MODE,                 "mode",         NM_META_PROPERTY_INF_FLAG_REQD, PROMPT_MACSEC_MODE, PROMPT_MACSEC_MODE_CHOICES, NULL, gen_func_macsec_mode },
-	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_ENCRYPT,              "encrypt",      NM_META_PROPERTY_INF_FLAG_NONE, N_("Enable encryption [yes]"), NULL, set_yes_no, gen_func_bool_values_l10n },
-	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_MKA_CAK,              "cak",          NM_META_PROPERTY_INF_FLAG_NONE, N_("MKA CAK"), NULL, NULL, NULL },
-	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_MKA_CKN,              "ckn",          NM_META_PROPERTY_INF_FLAG_NONE, N_("MKA_CKN"), NULL, NULL, NULL },
-	{ NM_SETTING_MACSEC_SETTING_NAME,       NM_SETTING_MACSEC_PORT,                 "port",         NM_META_PROPERTY_INF_FLAG_NONE, N_("SCI port [1]"), NULL, NULL, NULL },
+	_meta_abstract_get (abstract_info, &setting_info, NULL, &property_name, &option, NULL, NULL, NULL);
 
-	{ NM_SETTING_MACVLAN_SETTING_NAME,      NM_SETTING_MACVLAN_PARENT,              "dev",          NM_META_PROPERTY_INF_FLAG_REQD, N_("MACVLAN parent device or connection UUID"), NULL,
-                                                                                                        NULL, nmc_rl_gen_func_ifnames },
-	{ NM_SETTING_MACVLAN_SETTING_NAME,      NM_SETTING_MACVLAN_MODE,                "mode",         NM_META_PROPERTY_INF_FLAG_REQD, PROMPT_MACVLAN_MODE, NULL,
-                                                                                                        NULL, gen_func_macvlan_mode },
-	{ NM_SETTING_MACVLAN_SETTING_NAME,      NM_SETTING_MACVLAN_TAP,                 "tap",          NM_META_PROPERTY_INF_FLAG_NONE, N_("Tap [no]"), NULL,
-                                                                                                        set_yes_no, gen_func_bool_values_l10n },
-	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_ID,                    "id",           NM_META_PROPERTY_INF_FLAG_REQD, N_("VXLAN ID"), NULL, NULL, NULL },
-	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_REMOTE,                "remote",       NM_META_PROPERTY_INF_FLAG_REQD, N_("Remote"), NULL, NULL, NULL },
-	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_PARENT,                "dev",          NM_META_PROPERTY_INF_FLAG_NONE, N_("Parent device [none]"), NULL,
-                                                                                                        NULL, nmc_rl_gen_func_ifnames },
-	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_LOCAL,                 "local",        NM_META_PROPERTY_INF_FLAG_NONE, N_("Local address [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_SOURCE_PORT_MIN,       "source-port-min", NM_META_PROPERTY_INF_FLAG_NONE, N_("Minimum source port [0]"), NULL, NULL, NULL },
-	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_SOURCE_PORT_MAX,       "source-port-max", NM_META_PROPERTY_INF_FLAG_NONE, N_("Maximum source port [0]"), NULL, NULL, NULL },
-	{ NM_SETTING_VXLAN_SETTING_NAME,        NM_SETTING_VXLAN_DESTINATION_PORT,      "destination-port", NM_META_PROPERTY_INF_FLAG_NONE, N_("Destination port [8472]"), NULL, NULL, NULL },
-	{ NM_SETTING_TUN_SETTING_NAME,          NM_SETTING_TUN_MODE,                    "mode",         NM_META_PROPERTY_INF_FLAG_NONE, PROMPT_TUN_MODE, PROMPT_TUN_MODE_CHOICES,
-                                                                                                        NULL, gen_func_tun_mode },
-	{ NM_SETTING_TUN_SETTING_NAME,          NM_SETTING_TUN_OWNER,                   "owner",        NM_META_PROPERTY_INF_FLAG_NONE, N_("User ID [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_TUN_SETTING_NAME,          NM_SETTING_TUN_GROUP,                   "group",        NM_META_PROPERTY_INF_FLAG_NONE, N_("Group ID [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_TUN_SETTING_NAME,          NM_SETTING_TUN_PI,                      "pi",           NM_META_PROPERTY_INF_FLAG_NONE, N_("Enable PI [no]"), NULL,
-                                                                                                        set_yes_no, gen_func_bool_values_l10n },
-	{ NM_SETTING_TUN_SETTING_NAME,          NM_SETTING_TUN_VNET_HDR,                "vnet-hdr",     NM_META_PROPERTY_INF_FLAG_NONE, N_("Enable VNET header [no]"), NULL,
-                                                                                                        set_yes_no, gen_func_bool_values_l10n },
-	{ NM_SETTING_TUN_SETTING_NAME,          NM_SETTING_TUN_MULTI_QUEUE,             "multi-queue",  NM_META_PROPERTY_INF_FLAG_NONE, N_("Enable multi queue [no]"), NULL,
-                                                                                                        set_yes_no, gen_func_bool_values_l10n },
-	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,    NM_SETTING_IP_TUNNEL_MODE,              "mode",         NM_META_PROPERTY_INF_FLAG_REQD, PROMPT_IP_TUNNEL_MODE, NULL, NULL, gen_func_ip_tunnel_mode },
-	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,    NM_SETTING_IP_TUNNEL_LOCAL,             "local",        NM_META_PROPERTY_INF_FLAG_NONE, N_("Local endpoint [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,    NM_SETTING_IP_TUNNEL_REMOTE,            "remote",       NM_META_PROPERTY_INF_FLAG_REQD, N_("Remote"), NULL, NULL, NULL },
-	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,    NM_SETTING_IP_TUNNEL_PARENT,            "dev",          NM_META_PROPERTY_INF_FLAG_NONE, N_("Parent device [none]"), NULL,
-                                                                                                        NULL, nmc_rl_gen_func_ifnames },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,   NM_SETTING_IP_CONFIG_ADDRESSES,         "ip4",          NM_META_PROPERTY_INF_FLAG_MULTI, N_("IPv4 address (IP[/plen]) [none]"), NULL,
-	                                                                                                set_ip4_address, NULL },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,   NM_SETTING_IP_CONFIG_GATEWAY,           "gw4",          NM_META_PROPERTY_INF_FLAG_NONE, N_("IPv4 gateway [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,   NM_SETTING_IP_CONFIG_ADDRESSES,         "ip6",          NM_META_PROPERTY_INF_FLAG_MULTI, N_("IPv6 address (IP[/plen]) [none]"), NULL,
-	                                                                                                set_ip6_address, NULL },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,   NM_SETTING_IP_CONFIG_GATEWAY,           "gw6",          NM_META_PROPERTY_INF_FLAG_NONE, N_("IPv6 gateway [none]"), NULL, NULL, NULL },
-	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_METHOD,                "method",       NM_META_PROPERTY_INF_FLAG_NONE, PROMPT_PROXY_METHOD, PROMPT_PROXY_METHOD_CHOICES, NULL, gen_func_proxy_method },
-	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_BROWSER_ONLY,          "browser-only", NM_META_PROPERTY_INF_FLAG_NONE, N_("Browser only [no]"), NULL,
-                                                                                                        set_yes_no, gen_func_bool_values_l10n },
-	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_PAC_URL,               "pac-url",      NM_META_PROPERTY_INF_FLAG_NONE, N_("PAC URL"), NULL, NULL, NULL },
-	{ NM_SETTING_PROXY_SETTING_NAME,        NM_SETTING_PROXY_PAC_SCRIPT,            "pac-script",   NM_META_PROPERTY_INF_FLAG_NONE, N_("PAC script"), NULL, NULL, NULL },
-	{ NULL, NULL, NULL, NM_META_PROPERTY_INF_FLAG_NONE, NULL, NULL, NULL, NULL },
-};
+	for (candidate = option_info; candidate->setting_info; candidate++) {
+		if (   candidate->setting_info == setting_info
+		    && nm_streq0 (candidate->property, property_name)
+		    && nm_streq0 (candidate->option, option)) {
+			return candidate;
+		}
+	}
+	return NULL;
+}
 
 static gboolean
-option_relevant (NMConnection *connection, const OptionInfo *option)
+option_relevant (NMConnection *connection, const NMMetaAbstractInfo *abstract_info)
 {
-	if (   (option->flags & NM_META_PROPERTY_INF_FLAG_DONT_ASK)
-	    && !(_options_get (option) & PROPERTY_INF_FLAG_ENABLED))
+	const char *setting_name;
+	NMMetaPropertyInfFlags inf_flags;
+
+	_meta_abstract_get (abstract_info, NULL, &setting_name, NULL, NULL, &inf_flags, NULL, NULL);
+
+	if (   (inf_flags & NM_META_PROPERTY_INF_FLAG_DONT_ASK)
+	    && !(_dynamic_options_get (abstract_info) & PROPERTY_INF_FLAG_ENABLED))
 		return FALSE;
-	if (_options_get (option) & PROPERTY_INF_FLAG_DISABLED)
+	if (_dynamic_options_get (abstract_info) & PROPERTY_INF_FLAG_DISABLED)
 		return FALSE;
-	if (!nm_connection_get_setting_by_name (connection, option->setting_name))
+	if (!nm_connection_get_setting_by_name (connection, setting_name))
 		return FALSE;
 	return TRUE;
 }
@@ -4379,7 +4393,7 @@ complete_property_name (NmCli *nmc, NMConnection *connection,
 	const char *slave_type = NULL;
 	gs_free char *slv_type = NULL;
 	gs_free char *word_list = NULL;
-	const OptionInfo *candidate;
+	NMMetaSettingType s;
 
 	connection_type = nm_connection_get_connection_type (connection);
 	s_con = nm_connection_get_setting_connection (connection);
@@ -4396,14 +4410,37 @@ complete_property_name (NmCli *nmc, NMConnection *connection,
 	if (modifier != '\0')
 		return;
 
-	for (candidate = option_info; candidate->setting_name; candidate++) {
-		if (!nm_connection_get_setting_by_name (connection, candidate->setting_name))
+	for (s = 0; s < _NM_META_SETTING_TYPE_NUM; s++) {
+		const NMMetaPropertyInfo *const*property_infos;
+		guint p;
+
+		if (!nm_connection_get_setting_by_name (connection, nm_meta_setting_infos_editor[s].general->setting_name))
 			continue;
-		if (!candidate->option)
-			continue;
-		if (!g_str_has_prefix (candidate->option, prefix))
-			continue;
-		g_print ("%s\n", candidate->option);
+
+		property_infos = nm_property_infos_for_setting_type (s);
+		for (p = 0; property_infos[p]; p++) {
+			const NMMetaPropertyInfo *property_info = property_infos[p];
+
+			if (_meta_property_needs_bond_hack (property_info)) {
+				guint i;
+
+				for (i = 0; i < nm_meta_property_typ_data_bond.nested_len; i++) {
+					const NMMetaNestedPropertyTypeInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
+
+					if (   !bi->field_name
+					    || !g_str_has_prefix (bi->field_name, prefix))
+						continue;
+					g_print ("%s\n", bi->field_name);
+				}
+			} else {
+				if (!property_info->is_cli_option)
+					continue;
+				if (   !property_info->property_alias
+				    || !g_str_has_prefix (property_info->property_alias, prefix))
+					continue;
+				g_print ("%s\n", property_info->property_alias);
+			}
+		}
 	}
 }
 
@@ -4422,10 +4459,13 @@ run_rl_generator (rl_compentry_func_t *generator_func, const char *prefix)
 }
 
 static void
-complete_option (const OptionInfo *option, const gchar *prefix)
+complete_option (const NMMetaAbstractInfo *abstract_info, const gchar *prefix)
 {
-	if (option->generator_func)
-		run_rl_generator (option->generator_func, prefix);
+	const OptionInfo *candidate;
+
+	candidate = _meta_abstract_get_option_info (abstract_info);
+	if (candidate && candidate->generator_func)
+		run_rl_generator (candidate->generator_func, prefix);
 }
 
 static void
@@ -4514,8 +4554,7 @@ nmc_read_connection_properties (NmCli *nmc,
 	 */
 	/* Go through arguments and set properties */
 	do {
-		const OptionInfo *candidate;
-		const OptionInfo *chosen = NULL;
+		const NMMetaAbstractInfo *chosen = NULL;
 		gs_strfreev gchar **strv = NULL;
 		const NameItem *type_settings, *slv_settings;
 		char modifier = '\0';
@@ -4569,20 +4608,59 @@ nmc_read_connection_properties (NmCli *nmc,
 			if (!set_property (connection, setting_name, strv[1], value, modifier, error))
 				return FALSE;
 		} else {
+			NMMetaSettingType s;
+			const char *chosen_setting_name = NULL;
+			const char *chosen_option = NULL;
+
 			/* Let's see if this is an property alias (such as "id", "mode", "type" or "con-name")*/
-			for (candidate = option_info; candidate->setting_name; candidate++) {
-				if (g_strcmp0 (candidate->option, option))
+			for (s = 0; s < _NM_META_SETTING_TYPE_NUM; s++) {
+				const NMMetaPropertyInfo *const*property_infos;
+				guint p;
+
+				if (!check_valid_name (nm_meta_setting_infos[s].setting_name,
+				                       type_settings, slv_settings, NULL))
 					continue;
-				if (!check_valid_name (candidate->setting_name, type_settings, slv_settings, NULL))
-					continue;
-				if (chosen) {
-					g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-						     _("Error: '%s' is ambiguous (%s.%s or %s.%s)."), option,
-						     chosen->setting_name, chosen->property,
-						     candidate->setting_name, candidate->property);
-					return FALSE;
+
+				property_infos = nm_property_infos_for_setting_type (s);
+				for (p = 0; property_infos[p]; p++) {
+					const NMMetaPropertyInfo *property_info = property_infos[p];
+
+					if (_meta_property_needs_bond_hack (property_info)) {
+						guint i;
+
+						for (i = 0; i < nm_meta_property_typ_data_bond.nested_len; i++) {
+							const NMMetaNestedPropertyTypeInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
+
+							if (!nm_streq0 (bi->field_name, option))
+								continue;
+							if (chosen) {
+								g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+								             _("Error: '%s' is ambiguous (%s.%s or %s.%s)."), option,
+								             chosen_setting_name, chosen_option,
+								             nm_meta_setting_infos[s].setting_name, option);
+								return FALSE;
+							}
+							chosen_setting_name = nm_meta_setting_infos[s].setting_name;
+							chosen_option = option;
+							chosen = (const NMMetaAbstractInfo *) bi;
+						}
+					} else {
+						if (!property_info->is_cli_option)
+							continue;
+						if (!nm_streq0 (property_info->property_alias, option))
+							continue;
+						if (chosen) {
+							g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+							             _("Error: '%s' is ambiguous (%s.%s or %s.%s)."), option,
+							             chosen_setting_name, chosen_option,
+							             nm_meta_setting_infos[s].setting_name, option);
+							return FALSE;
+						}
+						chosen_setting_name = nm_meta_setting_infos[s].setting_name;
+						chosen_option = option;
+						chosen = (const NMMetaAbstractInfo *) property_info;
+					}
 				}
-				chosen = candidate;
 			}
 
 			if (!chosen) {
@@ -4591,7 +4669,7 @@ nmc_read_connection_properties (NmCli *nmc,
 				if (*argc == 1 && nmc->complete)
 					complete_property_name (nmc, connection, modifier, option, NULL);
 				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-					     _("Error: invalid <setting>.<property> '%s'."), option);
+				             _("Error: invalid <setting>.<property> '%s'."), option);
 				return FALSE;
 			}
 
@@ -4702,37 +4780,37 @@ nmcli_con_add_tab_completion (const char *text, int start, int end)
 	if (!is_single_word (rl_line_buffer))
 		return NULL;
 
-	if (g_str_has_prefix (rl_prompt, PROMPT_CON_TYPE))
+	if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_CON_TYPE))
 		generator_func = gen_connection_types;
-	else if (g_str_has_prefix (rl_prompt, PROMPT_IFNAME))
+	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_IFNAME))
 		generator_func = nmc_rl_gen_func_ifnames;
-	else if (g_str_has_prefix (rl_prompt, PROMPT_VPN_TYPE))
+	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_VPN_TYPE))
 		generator_func = gen_func_vpn_types;
-	else if (g_str_has_prefix (rl_prompt, PROMPT_MASTER))
+	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_MASTER))
 		generator_func = gen_func_master_ifnames;
-	else if (g_str_has_prefix (rl_prompt, PROMPT_WIFI_MODE))
+	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_WIFI_MODE))
 		generator_func = gen_func_wifi_mode;
-	else if (g_str_has_prefix (rl_prompt, PROMPT_IB_MODE))
+	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_IB_MODE))
 		generator_func = gen_func_ib_type;
-	else if (g_str_has_prefix (rl_prompt, PROMPT_BT_TYPE))
+	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_BT_TYPE))
 		generator_func = gen_func_bt_type;
-	else if (g_str_has_prefix (rl_prompt, PROMPT_BOND_MODE))
+	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_BOND_MODE))
 		generator_func = gen_func_bond_mode;
-	else if (g_str_has_prefix (rl_prompt, PROMPT_BOND_MON_MODE))
+	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_BOND_MON_MODE))
 		generator_func = gen_func_bond_mon_mode;
-	else if (g_str_has_prefix (rl_prompt, PROMPT_ADSL_PROTO))
+	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_ADSL_PROTO))
 		generator_func = gen_func_adsl_proto;
-	else if (g_str_has_prefix (rl_prompt, PROMPT_ADSL_ENCAP))
+	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_ADSL_ENCAP))
 		generator_func = gen_func_adsl_encap;
-	else if (g_str_has_prefix (rl_prompt, PROMPT_TUN_MODE))
+	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_TUN_MODE))
 		generator_func = gen_func_tun_mode;
-	else if (g_str_has_prefix (rl_prompt, PROMPT_IP_TUNNEL_MODE))
+	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_IP_TUNNEL_MODE))
 		generator_func = gen_func_ip_tunnel_mode;
-	else if (g_str_has_prefix (rl_prompt, PROMPT_MACVLAN_MODE))
+	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_MACVLAN_MODE))
 		generator_func = gen_func_macvlan_mode;
-	else if (g_str_has_prefix (rl_prompt, PROMPT_MACSEC_MODE))
+	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_MACSEC_MODE))
 		generator_func = gen_func_macsec_mode;
-	else if (g_str_has_prefix (rl_prompt, PROMPT_PROXY_METHOD))
+	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_PROXY_METHOD))
 		generator_func = gen_func_proxy_method;
 	else if (   g_str_has_suffix (rl_prompt, yes)
 	         || g_str_has_suffix (rl_prompt, no))
@@ -4745,19 +4823,24 @@ nmcli_con_add_tab_completion (const char *text, int start, int end)
 }
 
 static void
-ask_option (NmCli *nmc, NMConnection *connection, const OptionInfo *option)
+ask_option (NmCli *nmc, NMConnection *connection, const NMMetaAbstractInfo *abstract_info)
 {
 	gchar *value;
 	GError *error = NULL;
 	gs_free gchar *prompt = NULL;
-	gboolean multi = option->flags & NM_META_PROPERTY_INF_FLAG_MULTI;
+	gboolean multi;
+	const char *opt_prompt, *opt_def_hint;
+	NMMetaPropertyInfFlags inf_flags;
 
+	_meta_abstract_get (abstract_info, NULL, NULL, NULL, NULL, &inf_flags, &opt_prompt, &opt_def_hint);
 	prompt = g_strjoin ("",
-	                    gettext (option->prompt),
-	                    option->def_hint ? " " : "",
-	                    option->def_hint ? option->def_hint : "",
+	                    gettext (opt_prompt),
+	                    opt_def_hint ? " " : "",
+	                    opt_def_hint ?: "",
 	                    ": ",
 	                    NULL);
+
+	multi = NM_FLAGS_HAS (inf_flags, NM_META_PROPERTY_INF_FLAG_MULTI);
 
 	if (multi)
 		g_print (_("You can specify this option more than once. Press <Enter> when you're done.\n"));
@@ -4767,7 +4850,7 @@ again:
 	if (multi && !value)
 		return;
 
-	if (!set_option (nmc, connection, option, value, &error)) {
+	if (!set_option (nmc, connection, abstract_info, value, &error)) {
 		g_printerr ("%s\n", error->message);
 		g_clear_error (&error);
 		goto again;
@@ -4780,15 +4863,39 @@ again:
 static void
 questionnaire_mandatory (NmCli *nmc, NMConnection *connection)
 {
-	const OptionInfo *candidate;
+	NMMetaSettingType s;
 
-	/* Mandatory settings. */
-	for (candidate = option_info; candidate->setting_name; candidate++) {
-		if (!option_relevant (connection, candidate))
-			continue;
-		if (   (candidate->flags & NM_META_PROPERTY_INF_FLAG_REQD)
-		    || (_options_get (candidate) & PROPERTY_INF_FLAG_ENABLED))
-			ask_option (nmc, connection, candidate);
+	for (s = 0; s < _NM_META_SETTING_TYPE_NUM; s++) {
+		const NMMetaPropertyInfo *const*property_infos;
+		guint p;
+
+		property_infos = nm_property_infos_for_setting_type (s);
+		for (p = 0; property_infos[p]; p++) {
+			const NMMetaPropertyInfo *property_info = property_infos[p];
+
+			if (_meta_property_needs_bond_hack (property_info)) {
+				guint i;
+
+				for (i = 0; i < nm_meta_property_typ_data_bond.nested_len; i++) {
+					const NMMetaNestedPropertyTypeInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
+
+					if (!option_relevant (connection, (const NMMetaAbstractInfo *) bi))
+						continue;
+					if (   (bi->inf_flags & NM_META_PROPERTY_INF_FLAG_REQD)
+					    || (_dynamic_options_get ((const NMMetaAbstractInfo *) bi) & PROPERTY_INF_FLAG_ENABLED))
+						ask_option (nmc, connection, (const NMMetaAbstractInfo *) bi);
+				}
+			} else {
+				if (!property_info->is_cli_option)
+					continue;
+
+				if (!option_relevant (connection, (const NMMetaAbstractInfo *) property_info))
+					continue;
+				if (   (property_info->inf_flags & NM_META_PROPERTY_INF_FLAG_REQD)
+				    || (_dynamic_options_get ((const NMMetaAbstractInfo *) property_info) & PROPERTY_INF_FLAG_ENABLED))
+					ask_option (nmc, connection, (const NMMetaAbstractInfo *) property_info);
+			}
+		}
 	}
 }
 
@@ -4812,98 +4919,74 @@ want_provide_opt_args (const char *type, int num)
 	return ret;
 }
 
-static const char *
-setting_name_to_name (const char *name)
-{
-	if (strcmp (name, NM_SETTING_WIRED_SETTING_NAME) == 0)
-		return _("Wired Ethernet");
-	if (strcmp (name, NM_SETTING_INFINIBAND_SETTING_NAME) == 0)
-		return _("InfiniBand connection");
-	if (strcmp (name, NM_SETTING_WIRELESS_SETTING_NAME) == 0)
-		return _("Wi-Fi connection");
-	if (strcmp (name, NM_SETTING_WIMAX_SETTING_NAME) == 0)
-		return _("WiMAX connection");
-	if (strcmp (name, NM_SETTING_PPPOE_SETTING_NAME) == 0)
-		return _("PPPoE");
-	if (strcmp (name, NM_SETTING_CDMA_SETTING_NAME) == 0)
-		return _("CDMA mobile broadband connection");
-	if (strcmp (name, NM_SETTING_GSM_SETTING_NAME) == 0)
-		return _("GSM mobile broadband connection");
-	if (strcmp (name, NM_SETTING_BLUETOOTH_SETTING_NAME) == 0)
-		return _("bluetooth connection");
-	if (strcmp (name, NM_SETTING_VLAN_SETTING_NAME) == 0)
-		return _("VLAN connection");
-	if (strcmp (name, NM_SETTING_BOND_SETTING_NAME) == 0)
-		return _("Bond device");
-	if (strcmp (name, NM_SETTING_TEAM_SETTING_NAME) == 0)
-		return _("Team device");
-	if (strcmp (name, NM_SETTING_TEAM_PORT_SETTING_NAME) == 0)
-		return _("Team port");
-	if (strcmp (name, NM_SETTING_BRIDGE_SETTING_NAME) == 0)
-		return _("Bridge device");
-	if (strcmp (name, NM_SETTING_BRIDGE_PORT_SETTING_NAME) == 0)
-		return _("Bridge port");
-	if (strcmp (name, NM_SETTING_VPN_SETTING_NAME) == 0)
-		return _("VPN connection");
-	if (strcmp (name, NM_SETTING_OLPC_MESH_SETTING_NAME) == 0)
-		return _("OLPC Mesh connection");
-	if (strcmp (name, NM_SETTING_ADSL_SETTING_NAME) == 0)
-		return _("ADSL connection");
-	if (strcmp (name, NM_SETTING_MACSEC_SETTING_NAME) == 0)
-		return _("MACsec connection");
-	if (strcmp (name, NM_SETTING_MACVLAN_SETTING_NAME) == 0)
-		return _("macvlan connection");
-	if (strcmp (name, NM_SETTING_VXLAN_SETTING_NAME) == 0)
-		return _("VXLAN connection");
-	if (strcmp (name, NM_SETTING_TUN_SETTING_NAME) == 0)
-		return _("Tun device");
-	if (strcmp (name, NM_SETTING_IP4_CONFIG_SETTING_NAME) == 0)
-		return _("IPv4 protocol");
-	if (strcmp (name, NM_SETTING_IP6_CONFIG_SETTING_NAME) == 0)
-		return _("IPv6 protocol");
-	if (strcmp (name, NM_SETTING_PROXY_SETTING_NAME) == 0)
-		return _("Proxy");
-
-	/* Should not happen; but let's still try to be somewhat sensible. */
-	return name;
-}
-
 static gboolean
 questionnaire_one_optional (NmCli *nmc, NMConnection *connection)
 {
-	const OptionInfo *candidate;
+	NMMetaSettingType s;
+	gs_unref_ptrarray GPtrArray *infos = NULL;
+	guint i;
+	gboolean already_confirmed = FALSE;
+	NMMetaSettingType s_asking = NM_META_SETTING_TYPE_UNKNOWN;
 
-	/* Optional settings. */
-	const gchar *setting_name = NULL;
-	int count = 0;
+	infos = g_ptr_array_new ();
 
 	/* Find first setting with relevant options and count them. */
-	for (candidate = option_info; candidate->setting_name; candidate++) {
-		if (!option_relevant (connection, candidate))
-			continue;
-		if (!setting_name)
-			setting_name = candidate->setting_name;
-		else if (strcmp (setting_name, candidate->setting_name))
-			break;
-		count++;
-	}
-	if (!setting_name)
-		return FALSE;
+again:
+	for (s = 0; s < _NM_META_SETTING_TYPE_NUM; s++) {
+		const NMMetaPropertyInfo *const*property_infos;
+		guint p;
 
-	/* Now ask for the settings. */
-	if (want_provide_opt_args (setting_name_to_name (setting_name), count)) {
-		for (candidate = option_info; candidate->setting_name; candidate++) {
-			if (!option_relevant (connection, candidate))
-				continue;
-			if (strcmp (setting_name, candidate->setting_name))
-				continue;
-			ask_option (nmc, connection, candidate);
+		if (   s_asking != NM_META_SETTING_TYPE_UNKNOWN
+		    && s != s_asking)
+			continue;
+
+		property_infos = nm_property_infos_for_setting_type (s);
+		for (p = 0; property_infos[p]; p++) {
+			const NMMetaPropertyInfo *property_info = property_infos[p];
+
+			if (_meta_property_needs_bond_hack (property_info)) {
+				for (i = 0; i < nm_meta_property_typ_data_bond.nested_len; i++) {
+					const NMMetaNestedPropertyTypeInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
+
+					if (!option_relevant (connection, (const NMMetaAbstractInfo *) bi))
+						continue;
+					g_ptr_array_add (infos, (gpointer) bi);
+				}
+			} else {
+				if (!property_info->is_cli_option)
+					continue;
+				if (!option_relevant (connection, (const NMMetaAbstractInfo *) property_info))
+					continue;
+				g_ptr_array_add (infos, (gpointer) property_info);
+			}
+		}
+		if (infos->len) {
+			s_asking = s;
+			break;
 		}
 	}
 
-	/* Make sure we won't ask again. */
-	disable_options (setting_name, NULL);
+	if (infos->len) {
+		const NMMetaSettingInfoEditor *setting_info = NULL;
 
+		_meta_abstract_get (infos->pdata[0], &setting_info, NULL, NULL, NULL, NULL, NULL, NULL);
+
+		/* Now ask for the settings. */
+		if (   already_confirmed
+			|| want_provide_opt_args (_(setting_info->pretty_name), infos->len)) {
+			ask_option (nmc, connection, infos->pdata[0]);
+			already_confirmed = TRUE;
+			/* asking for an option may enable other options. Create the list again. */
+			g_ptr_array_set_size (infos, 0);
+			goto again;
+		}
+	}
+
+	if (s_asking == NM_META_SETTING_TYPE_UNKNOWN)
+		return FALSE;
+
+	/* Make sure we won't ask again. */
+	disable_options (nm_meta_setting_infos[s_asking].setting_name, NULL);
 	return TRUE;
 }
 
@@ -4915,8 +4998,8 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 	GError *error = NULL;
 	AddConnectionInfo *info = NULL;
 	gboolean save_bool = TRUE;
-	const OptionInfo *candidate;
 	gboolean seen_dash_dash = FALSE;
+	NMMetaSettingType s;
 
 	next_arg (nmc, &argc, &argv, NULL);
 
@@ -5000,8 +5083,9 @@ read_properties:
 			const GPtrArray *connections;
 
 			connections = nm_client_get_connections (nmc->client);
-			try_name = ifname ? g_strdup_printf ("%s-%s", get_name_alias (type, slave_type, nmc_valid_connection_types), ifname)
-					  : g_strdup (get_name_alias (type, slave_type, nmc_valid_connection_types));
+			try_name = ifname
+			           ? g_strdup_printf ("%s-%s", get_name_alias (type, slave_type, nmc_valid_connection_types), ifname)
+			           : g_strdup (get_name_alias (type, slave_type, nmc_valid_connection_types));
 			default_name = nmc_unique_connection_name (connections, try_name);
 			g_free (try_name);
 			g_object_set (s_con, NM_SETTING_CONNECTION_ID, default_name, NULL);
@@ -5023,13 +5107,39 @@ read_properties:
 	 * from doing something that's not likely to make sense (such as missing ifname
 	 * on a bond/bridge/team, etc.). Added just to preserve traditional behavior, it
 	 * perhaps is a good idea to just remove this. */
-	for (candidate = option_info; candidate->setting_name; candidate++) {
-		if (!option_relevant (connection, candidate))
-			continue;
-		if (candidate->flags & NM_META_PROPERTY_INF_FLAG_REQD) {
-			g_string_printf (nmc->return_text, _("Error: '%s' argument is required."), candidate->option);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto finish;
+	for (s = 0; s < _NM_META_SETTING_TYPE_NUM; s++) {
+		const NMMetaPropertyInfo *const*property_infos;
+		guint p;
+
+		property_infos = nm_property_infos_for_setting_type (s);
+		for (p = 0; property_infos[p]; p++) {
+			const NMMetaPropertyInfo *property_info = property_infos[p];
+
+			if (_meta_property_needs_bond_hack (property_info)) {
+				guint i;
+
+				for (i = 0; i < nm_meta_property_typ_data_bond.nested_len; i++) {
+					const NMMetaNestedPropertyTypeInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
+
+					if (!option_relevant (connection, (const NMMetaAbstractInfo *) bi))
+						continue;
+					if (bi->inf_flags & NM_META_PROPERTY_INF_FLAG_REQD) {
+						g_string_printf (nmc->return_text, _("Error: '%s' argument is required."), bi->field_name);
+						nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+						goto finish;
+					}
+				}
+			} else {
+				if (!property_info->is_cli_option)
+					continue;
+				if (!option_relevant (connection, (const NMMetaAbstractInfo *) property_info))
+					continue;
+				if (property_info->inf_flags & NM_META_PROPERTY_INF_FLAG_REQD) {
+					g_string_printf (nmc->return_text, _("Error: '%s' argument is required."), property_info->property_alias);
+					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+					goto finish;
+				}
+			}
 		}
 	}
 
@@ -8541,7 +8651,7 @@ do_connection_load (NmCli *nmc, int argc, char **argv)
 }
 
 // FIXME: change the text when non-VPN connection types are supported
-#define PROMPT_IMPORT_TYPE PROMPT_VPN_TYPE
+#define PROMPT_IMPORT_TYPE NM_META_TEXT_PROMPT_VPN_TYPE
 #define PROMPT_IMPORT_FILE N_("File to import: ")
 
 static void
