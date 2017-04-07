@@ -477,6 +477,14 @@ nmc_team_check_config (const char *config, char **out_config, GError **error)
 	return TRUE;
 }
 
+static const char *
+_get_text_hidden (NMMetaAccessorGetType get_type)
+{
+	if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
+		return _(NM_META_TEXT_HIDDEN);
+	return NM_META_TEXT_HIDDEN;
+}
+
 /*****************************************************************************/
 
 G_GNUC_PRINTF (4, 5)
@@ -1677,7 +1685,7 @@ _get_fcn_802_1x_client_cert (ARGS_GET_FCN)
 		if (NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS))
 			cert_str = bytes_to_string (nm_setting_802_1x_get_client_cert_blob (s_8021X));
 		else
-			return _(NM_META_TEXT_HIDDEN);
+			return _get_text_hidden (get_type);
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		cert_str = g_strdup (nm_setting_802_1x_get_client_cert_path (s_8021X));
@@ -1730,7 +1738,7 @@ _get_fcn_802_1x_phase2_client_cert (ARGS_GET_FCN)
 		if (NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS))
 			cert_str = bytes_to_string (nm_setting_802_1x_get_phase2_client_cert_blob (s_8021X));
 		else
-			return _(NM_META_TEXT_HIDDEN);
+			return _get_text_hidden (get_type);
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		cert_str = g_strdup (nm_setting_802_1x_get_phase2_client_cert_path (s_8021X));
@@ -1767,7 +1775,7 @@ _get_fcn_802_1x_private_key (ARGS_GET_FCN)
 		if (NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS))
 			key_str = bytes_to_string (nm_setting_802_1x_get_private_key_blob (s_8021X));
 		else
-			return _(NM_META_TEXT_HIDDEN);
+			return _get_text_hidden (get_type);
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		key_str = g_strdup (nm_setting_802_1x_get_private_key_path (s_8021X));
@@ -1795,7 +1803,7 @@ _get_fcn_802_1x_phase2_private_key (ARGS_GET_FCN)
 		if (NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS))
 			key_str = bytes_to_string (nm_setting_802_1x_get_phase2_private_key_blob (s_8021X));
 		else
-			return _(NM_META_TEXT_HIDDEN);
+			return _get_text_hidden (get_type);
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		key_str = g_strdup (nm_setting_802_1x_get_phase2_private_key_path (s_8021X));
@@ -6746,11 +6754,8 @@ _meta_type_property_info_get_fcn (const NMMetaAbstractInfo *abstract_info,
 	nm_assert (out_to_free);
 
 	if (   info->is_secret
-	    && !NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS)) {
-		if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
-			return _(NM_META_TEXT_HIDDEN);
-		return NM_META_TEXT_HIDDEN;
-	}
+	    && !NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS))
+		return _get_text_hidden (get_type);
 
 	return info->property_type->get_fcn (info,
 	                                     environment,
