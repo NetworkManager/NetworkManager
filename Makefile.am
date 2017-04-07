@@ -528,12 +528,6 @@ $(libnm_core_libnm_core_la_OBJECTS):                                        $(li
 $(libnm_libnm_la_OBJECTS):                                                  $(libnm_core_lib_h_pub_mkenums)
 $(libnm_tests_libnm_vpn_plugin_utils_test_la_OBJECTS):                      $(libnm_core_lib_h_pub_mkenums)
 $(src_NetworkManager_OBJECTS):                                              $(libnm_core_lib_h_pub_mkenums)
-$(src_settings_plugins_ibft_libnms_ibft_core_la_OBJECTS):                   $(libnm_core_lib_h_pub_mkenums)
-$(src_settings_plugins_ibft_libnm_settings_plugin_ibft_la_OBJECTS):         $(libnm_core_lib_h_pub_mkenums)
-$(src_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_OBJECTS):           $(libnm_core_lib_h_pub_mkenums)
-if CONFIG_PLUGIN_IFCFG_RH
-$(src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-endif
 $(src_devices_adsl_libnm_device_plugin_adsl_la_OBJECTS):                    $(libnm_core_lib_h_pub_mkenums)
 $(src_devices_bluetooth_libnm_device_plugin_bluetooth_la_OBJECTS):          $(libnm_core_lib_h_pub_mkenums)
 $(src_devices_team_libnm_device_plugin_team_la_OBJECTS):                    $(libnm_core_lib_h_pub_mkenums)
@@ -1799,6 +1793,8 @@ src_settings_plugins_ibft_libnms_ibft_core_la_SOURCES = \
 	src/settings/plugins/ibft/nms-ibft-reader.c \
 	src/settings/plugins/ibft/nms-ibft-reader.h
 
+$(src_settings_plugins_ibft_libnms_ibft_core_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
 src_settings_plugins_ibft_libnm_settings_plugin_ibft_la_SOURCES = \
 	src/settings/plugins/ibft/nms-ibft-plugin.c \
 	src/settings/plugins/ibft/nms-ibft-plugin.h \
@@ -1813,6 +1809,8 @@ src_settings_plugins_ibft_libnm_settings_plugin_ibft_la_LDFLAGS = \
 
 src_settings_plugins_ibft_libnm_settings_plugin_ibft_la_LIBADD = \
 	src/settings/plugins/ibft/libnms-ibft-core.la
+
+$(src_settings_plugins_ibft_libnm_settings_plugin_ibft_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 check_programs += src/settings/plugins/ibft/tests/test-ibft
 
@@ -1904,8 +1902,6 @@ src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h: src/settings/plugins/ifcfg-rh/n
 src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.c: src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h
 	@true
 
-$(src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_OBJECTS): src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h
-
 ###############################################################################
 
 src_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_SOURCES = \
@@ -1920,6 +1916,8 @@ src_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_SOURCES = \
 	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-writer.h
 
 src_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_CPPFLAGS = $(src_settings_plugins_ifcfg_rh_cppflags)
+
+$(src_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_OBJECTS):           $(libnm_core_lib_h_pub_mkenums)
 
 ###############################################################################
 
@@ -1938,6 +1936,9 @@ src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_LDFLAGS = \
 src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_LIBADD = \
 	src/settings/plugins/ifcfg-rh/libnms-ifcfg-rh-core.la \
 	src/settings/plugins/ifcfg-rh/libnmdbus-ifcfg-rh.la
+
+$(src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_OBJECTS): src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h
+$(src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 check-local-symbols-settings-ifcfg-rh: src/settings/plugins/ifcfg-rh/libnm-settings-plugin-ifcfg-rh.la
 	$(call check_so_symbols,$(builddir)/src/settings/plugins/ifcfg-rh/.libs/libnm-settings-plugin-ifcfg-rh.so)
@@ -2210,6 +2211,8 @@ src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_LIBADD = \
 	src/settings/plugins/ifupdown/libnms-ifupdown-core.la \
 	$(LIBUDEV_LIBS)
 
+$(src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
 check-local-symbols-settings-ifupdown: src/settings/plugins/ifupdown/libnm-settings-plugin-ifupdown.la
 	$(call check_so_symbols,$(builddir)/src/settings/plugins/ifupdown/.libs/libnm-settings-plugin-ifupdown.so)
 
@@ -2237,6 +2240,8 @@ src_settings_plugins_ifupdown_tests_test_ifupdown_LDFLAGS = \
 src_settings_plugins_ifupdown_tests_test_ifupdown_LDADD = \
 	src/settings/plugins/ifupdown/libnms-ifupdown-core.la \
 	src/libNetworkManagerTest.la
+
+$(src_settings_plugins_ifupdown_tests_test_ifupdown_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 endif
 
