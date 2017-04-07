@@ -2794,8 +2794,7 @@ eap_tls_reader (const char *eap_method,
 	 * then nm_setting_802_1x_set_private_key() already set the client certificate
 	 * to the same value as the private key.
 	 */
-	if (   privkey_format == NM_SETTING_802_1X_CK_FORMAT_RAW_KEY
-	    || privkey_format == NM_SETTING_802_1X_CK_FORMAT_X509) {
+	if (privkey_format != NM_SETTING_802_1X_CK_FORMAT_PKCS12) {
 		gs_free char *real_cert_value = NULL;
 		gs_free char *client_cert = NULL;
 
