@@ -3935,50 +3935,6 @@ gen_func_tun_mode (const char *text, int state)
 }
 
 static char *
-gen_func_ip_tunnel_mode (const char *text, int state)
-{
-	gs_free const char **words = NULL;
-
-	words = nm_utils_enum_get_values (nm_ip_tunnel_mode_get_type (),
-	                                  NM_IP_TUNNEL_MODE_UNKNOWN + 1,
-	                                  G_MAXINT);
-	return nmc_rl_gen_func_basic (text, state, words);
-}
-
-static char *
-gen_func_macsec_mode (const char *text, int state)
-{
-	gs_free const char **words = NULL;
-
-	words = nm_utils_enum_get_values (nm_setting_macsec_mode_get_type (),
-	                                  G_MININT,
-	                                  G_MAXINT);
-	return nmc_rl_gen_func_basic (text, state, words);
-}
-
-static char *
-gen_func_macvlan_mode (const char *text, int state)
-{
-	gs_free const char **words = NULL;
-
-	words = nm_utils_enum_get_values (nm_setting_macvlan_mode_get_type(),
-	                                  NM_SETTING_MACVLAN_MODE_UNKNOWN + 1,
-	                                  G_MAXINT);
-	return nmc_rl_gen_func_basic (text, state, words);
-}
-
-static char *
-gen_func_proxy_method (const char *text, int state)
-{
-	gs_free const char **words = NULL;
-
-	words = nm_utils_enum_get_values (nm_setting_proxy_method_get_type (),
-	                                  G_MININT,
-	                                  G_MAXINT);
-	return nmc_rl_gen_func_basic (text, state, words);
-}
-
-static char *
 gen_func_master_ifnames (const char *text, int state)
 {
 	int i;
@@ -4313,16 +4269,12 @@ _meta_abstract_get_option_info (const NMMetaAbstractInfo *abstract_info)
 		OPTION_INFO (VPN,          NM_SETTING_VPN_SERVICE_TYPE,                 "vpn-type",           NULL,                      gen_func_vpn_types),
 		OPTION_INFO (ADSL,         NM_SETTING_ADSL_PROTOCOL,                    "protocol",           NULL,                      gen_func_adsl_proto),
 		OPTION_INFO (ADSL,         NM_SETTING_ADSL_ENCAPSULATION,               "encapsulation",      NULL,                      gen_func_adsl_encap),
-		OPTION_INFO (MACSEC,       NM_SETTING_MACSEC_MODE,                      "mode",               NULL,                      gen_func_macsec_mode),
 		OPTION_INFO (MACVLAN,      NM_SETTING_MACVLAN_PARENT,                   "dev",                NULL,                      nmc_rl_gen_func_ifnames),
-		OPTION_INFO (MACVLAN,      NM_SETTING_MACVLAN_MODE,                     "mode",               NULL,                      gen_func_macvlan_mode),
 		OPTION_INFO (VXLAN,        NM_SETTING_VXLAN_PARENT,                     "dev",                NULL,                      nmc_rl_gen_func_ifnames),
 		OPTION_INFO (TUN,          NM_SETTING_TUN_MODE,                         "mode",               NULL,                      gen_func_tun_mode),
-		OPTION_INFO (IP_TUNNEL,    NM_SETTING_IP_TUNNEL_MODE,                   "mode",               NULL,                      gen_func_ip_tunnel_mode),
 		OPTION_INFO (IP_TUNNEL,    NM_SETTING_IP_TUNNEL_PARENT,                 "dev",                NULL,                      nmc_rl_gen_func_ifnames),
 		OPTION_INFO (IP4_CONFIG,   NM_SETTING_IP_CONFIG_ADDRESSES,              "ip4",                set_ip4_address,           NULL),
 		OPTION_INFO (IP6_CONFIG,   NM_SETTING_IP_CONFIG_ADDRESSES,              "ip6",                set_ip6_address,           NULL),
-		OPTION_INFO (PROXY,        NM_SETTING_PROXY_METHOD,                     "method",             NULL,                      gen_func_proxy_method),
 		{ 0 },
 	};
 	const char *property_name, *option;
@@ -4501,14 +4453,10 @@ complete_property (const gchar *setting_name, const gchar *property, const gchar
 	           && strcmp (property, NM_SETTING_TUN_MODE) == 0)
 		run_rl_generator (gen_func_tun_mode, prefix);
 	else if (strcmp (setting_name, NM_SETTING_IP_TUNNEL_SETTING_NAME) == 0) {
-		if (strcmp (property, NM_SETTING_IP_TUNNEL_MODE) == 0)
-			run_rl_generator (gen_func_ip_tunnel_mode, prefix);
-		else if (strcmp (property, NM_SETTING_IP_TUNNEL_PARENT) == 0)
+		if (strcmp (property, NM_SETTING_IP_TUNNEL_PARENT) == 0)
 			run_rl_generator (nmc_rl_gen_func_ifnames, prefix);
 	} else if (strcmp (setting_name, NM_SETTING_MACVLAN_SETTING_NAME) == 0) {
-		if (strcmp (property, NM_SETTING_MACVLAN_MODE) == 0)
-			run_rl_generator (gen_func_macvlan_mode, prefix);
-		else if (strcmp (property, NM_SETTING_MACVLAN_PARENT) == 0)
+		if (strcmp (property, NM_SETTING_MACVLAN_PARENT) == 0)
 			run_rl_generator (nmc_rl_gen_func_ifnames, prefix);
 	} else if (   strcmp (setting_name, NM_SETTING_VXLAN_SETTING_NAME) == 0
 	           && strcmp (property, NM_SETTING_VXLAN_PARENT) == 0)
@@ -4838,14 +4786,6 @@ next:
 		generator_func = gen_func_adsl_encap;
 	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_TUN_MODE))
 		generator_func = gen_func_tun_mode;
-	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_IP_TUNNEL_MODE))
-		generator_func = gen_func_ip_tunnel_mode;
-	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_MACVLAN_MODE))
-		generator_func = gen_func_macvlan_mode;
-	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_MACSEC_MODE))
-		generator_func = gen_func_macsec_mode;
-	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_PROXY_METHOD))
-		generator_func = gen_func_proxy_method;
 	else if (   g_str_has_suffix (rl_prompt, yes)
 	         || g_str_has_suffix (rl_prompt, no))
 		generator_func = gen_func_bool_values_l10n;
