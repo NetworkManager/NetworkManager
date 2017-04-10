@@ -598,19 +598,29 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 static void
 ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 {
+	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
 	NMConnection *connection;
 	NMSettingWired *s_wired;
-	guint32 mtu;
+	guint32 mtu = 0;
+	int ifindex;
 
 	connection = nm_device_get_applied_connection (device);
 	g_assert (connection);
 
 	s_wired = nm_connection_get_setting_wired (connection);
-	if (s_wired) {
+	if (s_wired)
 		mtu = nm_setting_wired_get_mtu (s_wired);
-		if (mtu)
-			nm_ip4_config_set_mtu (config, mtu, NM_IP_CONFIG_SOURCE_USER);
+
+	if (!mtu && priv->parent) {
+		/* Inherit the MTU from parent device, if any */
+		ifindex = nm_device_get_ifindex (priv->parent);
+		if (ifindex > 0)
+			mtu = nm_platform_link_get_mtu (NM_PLATFORM_GET, ifindex);
 	}
+
+	if (mtu)
+		nm_ip4_config_set_mtu (config, mtu, NM_IP_CONFIG_SOURCE_USER);
+
 }
 
 /******************************************************************/
