@@ -3375,8 +3375,6 @@ normalized_master_for_slave (const GPtrArray *connections,
 
 #define WORD_YES "yes"
 #define WORD_NO  "no"
-#define WORD_LOC_YES _("yes")
-#define WORD_LOC_NO  _("no")
 static const char *
 prompt_yes_no (gboolean default_yes, char *delim)
 {
@@ -3386,8 +3384,8 @@ prompt_yes_no (gboolean default_yes, char *delim)
 		delim = "";
 
 	snprintf (prompt, sizeof (prompt), "(%s/%s) [%s]%s ",
-	          WORD_LOC_YES, WORD_LOC_NO,
-	          default_yes ? WORD_LOC_YES : WORD_LOC_NO, delim);
+	          WORD_YES, WORD_NO,
+	          default_yes ? WORD_YES : WORD_NO, delim);
 
 	return prompt;
 }
@@ -3858,7 +3856,7 @@ gen_func_vpn_types (const char *text, int state)
 static char *
 gen_func_bool_values_l10n (const char *text, int state)
 {
-	const char *words[] = { WORD_LOC_YES, WORD_LOC_NO, NULL };
+	const char *words[] = { WORD_YES, WORD_NO, NULL };
 	return nmc_rl_gen_func_basic (text, state, words);
 }
 
@@ -4231,17 +4229,6 @@ set_bluetooth_type (NmCli *nmc, NMConnection *con, const OptionInfo *option, con
 }
 
 static gboolean
-set_yes_no (NmCli *nmc, NMConnection *con, const OptionInfo *option, const char *value, GError **error)
-{
-	if (g_strcmp0 (value, _(WORD_LOC_YES)))
-		value = WORD_YES;
-	if (g_strcmp0 (value, _(WORD_LOC_NO)))
-		value = WORD_NO;
-
-	return set_property (con, option->setting_info->general->setting_name, option->property, value, '\0', error);
-}
-
-static gboolean
 set_ip4_address (NmCli *nmc, NMConnection *con, const OptionInfo *option, const char *value, GError **error)
 {
 	NMSettingIPConfig *s_ip4;
@@ -4296,7 +4283,6 @@ _meta_abstract_get_option_info (const NMMetaAbstractInfo *abstract_info)
 			.generator_func =      generator_func_, \
 		}
 		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_TYPE,                  "type",               set_connection_type,       gen_connection_types),
-		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_AUTOCONNECT,           "autoconnect",        NULL,                      gen_func_bool_values_l10n),
 		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_INTERFACE_NAME,        "ifname",             set_connection_iface,      nmc_rl_gen_func_ifnames),
 		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_MASTER,                "master",             set_connection_master,     gen_func_master_ifnames),
 		OPTION_INFO (INFINIBAND,   NM_SETTING_INFINIBAND_TRANSPORT_MODE,        "transport-mode",     NULL,                      gen_func_ib_type),
@@ -4312,28 +4298,19 @@ _meta_abstract_get_option_info (const NMMetaAbstractInfo *abstract_info)
 		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     "arp-interval",       set_bond_option,           NULL),
 		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     "arp-ip-target",      set_bond_option,           NULL),
 		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     "lacp-rate",          set_bond_option,           gen_func_bond_lacp_rate),
-		OPTION_INFO (BRIDGE,       NM_SETTING_BRIDGE_STP,                       "stp",                set_yes_no,                gen_func_bool_values_l10n),
-		OPTION_INFO (BRIDGE,       NM_SETTING_BRIDGE_MULTICAST_SNOOPING,        "multicast-snooping", set_yes_no,                gen_func_bool_values_l10n),
-		OPTION_INFO (BRIDGE_PORT,  NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE,         "hairpin",            set_yes_no,                gen_func_bool_values_l10n),
 		OPTION_INFO (VPN,          NM_SETTING_VPN_SERVICE_TYPE,                 "vpn-type",           NULL,                      gen_func_vpn_types),
 		OPTION_INFO (ADSL,         NM_SETTING_ADSL_PROTOCOL,                    "protocol",           NULL,                      gen_func_adsl_proto),
 		OPTION_INFO (ADSL,         NM_SETTING_ADSL_ENCAPSULATION,               "encapsulation",      NULL,                      gen_func_adsl_encap),
 		OPTION_INFO (MACSEC,       NM_SETTING_MACSEC_MODE,                      "mode",               NULL,                      gen_func_macsec_mode),
-		OPTION_INFO (MACSEC,       NM_SETTING_MACSEC_ENCRYPT,                   "encrypt",            set_yes_no,                gen_func_bool_values_l10n),
 		OPTION_INFO (MACVLAN,      NM_SETTING_MACVLAN_PARENT,                   "dev",                NULL,                      nmc_rl_gen_func_ifnames),
 		OPTION_INFO (MACVLAN,      NM_SETTING_MACVLAN_MODE,                     "mode",               NULL,                      gen_func_macvlan_mode),
-		OPTION_INFO (MACVLAN,      NM_SETTING_MACVLAN_TAP,                      "tap",                set_yes_no,                gen_func_bool_values_l10n),
 		OPTION_INFO (VXLAN,        NM_SETTING_VXLAN_PARENT,                     "dev",                NULL,                      nmc_rl_gen_func_ifnames),
 		OPTION_INFO (TUN,          NM_SETTING_TUN_MODE,                         "mode",               NULL,                      gen_func_tun_mode),
-		OPTION_INFO (TUN,          NM_SETTING_TUN_PI,                           "pi",                 set_yes_no,                gen_func_bool_values_l10n),
-		OPTION_INFO (TUN,          NM_SETTING_TUN_VNET_HDR,                     "vnet-hdr",           set_yes_no,                gen_func_bool_values_l10n),
-		OPTION_INFO (TUN,          NM_SETTING_TUN_MULTI_QUEUE,                  "multi-queue",        set_yes_no,                gen_func_bool_values_l10n),
 		OPTION_INFO (IP_TUNNEL,    NM_SETTING_IP_TUNNEL_MODE,                   "mode",               NULL,                      gen_func_ip_tunnel_mode),
 		OPTION_INFO (IP_TUNNEL,    NM_SETTING_IP_TUNNEL_PARENT,                 "dev",                NULL,                      nmc_rl_gen_func_ifnames),
 		OPTION_INFO (IP4_CONFIG,   NM_SETTING_IP_CONFIG_ADDRESSES,              "ip4",                set_ip4_address,           NULL),
 		OPTION_INFO (IP6_CONFIG,   NM_SETTING_IP_CONFIG_ADDRESSES,              "ip6",                set_ip6_address,           NULL),
 		OPTION_INFO (PROXY,        NM_SETTING_PROXY_METHOD,                     "method",             NULL,                      gen_func_proxy_method),
-		OPTION_INFO (PROXY,        NM_SETTING_PROXY_BROWSER_ONLY,               "browser-only",       set_yes_no,                gen_func_bool_values_l10n),
 		{ 0 },
 	};
 	const char *property_name, *option;
@@ -4450,7 +4427,7 @@ run_rl_generator (rl_compentry_func_t *generator_func, const char *prefix)
 	}
 }
 
-static void
+static gboolean
 complete_option (const NMMetaAbstractInfo *abstract_info, const gchar *prefix)
 {
 	const OptionInfo *candidate;
@@ -4461,17 +4438,29 @@ complete_option (const NMMetaAbstractInfo *abstract_info, const gchar *prefix)
 	if (values) {
 		for (; values[0]; values++)
 			g_print ("%s\n", values[0]);
-		return;
+		return TRUE;
 	}
 
 	candidate = _meta_abstract_get_option_info (abstract_info);
-	if (candidate && candidate->generator_func)
+	if (candidate && candidate->generator_func) {
 		run_rl_generator (candidate->generator_func, prefix);
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
 static void
 complete_property (const gchar *setting_name, const gchar *property, const gchar *prefix)
 {
+	const NMMetaPropertyInfo *property_info;
+
+	property_info = nm_meta_property_info_find_by_name (setting_name, property);
+	if (property_info) {
+		if (complete_option ((const NMMetaAbstractInfo *) property_info, prefix))
+			return;
+	}
+
 	if (strcmp (setting_name, NM_SETTING_CONNECTION_SETTING_NAME) == 0) {
 		if (strcmp (property, NM_SETTING_CONNECTION_TYPE) == 0)
 			run_rl_generator (gen_connection_types, prefix);
@@ -4509,8 +4498,6 @@ complete_property (const gchar *setting_name, const gchar *property, const gchar
 			run_rl_generator (gen_func_macvlan_mode, prefix);
 		else if (strcmp (property, NM_SETTING_MACVLAN_PARENT) == 0)
 			run_rl_generator (nmc_rl_gen_func_ifnames, prefix);
-		else if (strcmp (property, NM_SETTING_MACVLAN_TAP) == 0)
-			run_rl_generator (gen_func_bool_values_l10n, prefix);
 	} else if (   strcmp (setting_name, NM_SETTING_VXLAN_SETTING_NAME) == 0
 	           && strcmp (property, NM_SETTING_VXLAN_PARENT) == 0)
 		run_rl_generator (nmc_rl_gen_func_ifnames, prefix);
@@ -4913,7 +4900,7 @@ want_provide_opt_args (const char *type, int num)
 	                                 "Do you want to provide them? %s", num),
 	                       prompt_yes_no (TRUE, NULL));
 	answer = answer ? g_strstrip (answer) : NULL;
-	if (answer && !matches (answer, WORD_LOC_YES))
+	if (answer && !matches (answer, WORD_YES))
 		ret = FALSE;
 	g_free (answer);
 	return ret;
@@ -6663,7 +6650,7 @@ confirm_quit (void)
 	                         "Do you really want to quit? %s"),
 	                       prompt_yes_no (FALSE, NULL));
 	answer = answer ? g_strstrip (answer) : NULL;
-	if (answer && matches (answer, WORD_LOC_YES))
+	if (answer && matches (answer, WORD_YES))
 		want_quit = TRUE;
 
 	g_free (answer);
@@ -7015,7 +7002,7 @@ confirm_connection_saving (NMConnection *local, NMConnection *remote)
 		                         "That might result in an immediate activation of the connection.\n"
 		                         "Do you still want to save? %s"), prompt_yes_no (TRUE, NULL));
 		answer = answer ? g_strstrip (answer) : NULL;
-		if (!answer || matches (answer, WORD_LOC_YES))
+		if (!answer || matches (answer, WORD_YES))
 			confirmed = TRUE;
 		else
 			confirmed = FALSE;

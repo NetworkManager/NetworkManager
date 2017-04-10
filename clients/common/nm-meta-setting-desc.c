@@ -523,6 +523,9 @@ _env_warn_fcn (const NMMetaEnvironment *environment,
 #define ARGS_REMOVE_FCN \
 	const NMMetaPropertyInfo *property_info, const NMMetaEnvironment *environment, gpointer environment_user_data, NMSetting *setting, const char *value, guint32 idx, GError **error
 
+#define ARGS_COMPLETE_FCN \
+	const NMMetaPropertyInfo *property_info, const char *text, char ***out_to_free
+
 #define ARGS_VALUES_FCN \
 	const NMMetaPropertyInfo *property_info, char ***out_to_free
 
@@ -1080,6 +1083,28 @@ _values_fcn_gobject_enum (ARGS_VALUES_FCN)
 			*w = g_strdup (*w);
 	}
 	return (const char *const*) (*out_to_free = v);
+}
+
+/*****************************************************************************/
+
+static const char *const*
+_complete_fcn_gobject_bool (ARGS_COMPLETE_FCN)
+{
+	static const char *const v[] = {
+		"true",
+		"false",
+		"on",
+		"off",
+		"1",
+		"0",
+		"yes",
+		"no",
+		NULL,
+	};
+
+	if (!text || !text[0])
+		return &v[6];
+	return v;
 }
 
 /*****************************************************************************/
@@ -4680,6 +4705,7 @@ static const NMMetaPropertyType _pt_gobject_string = {
 static const NMMetaPropertyType _pt_gobject_bool = {
 	.get_fcn =                      _get_fcn_gobject,
 	.set_fcn =                      _set_fcn_gobject_bool,
+	.complete_fcn =                 _complete_fcn_gobject_bool,
 };
 
 static const NMMetaPropertyType _pt_gobject_int = {
