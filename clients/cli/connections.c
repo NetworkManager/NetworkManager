@@ -3864,20 +3864,6 @@ gen_func_bool_values_l10n (const char *text, int state)
 }
 
 static char *
-gen_func_wifi_mode (const char *text, int state)
-{
-	const char *words[] = { "infrastructure", "ap", "adhoc", NULL };
-	return nmc_rl_gen_func_basic (text, state, words);
-}
-
-static char *
-gen_func_ib_type (const char *text, int state)
-{
-	const char *words[] = { "datagram", "connected", NULL };
-	return nmc_rl_gen_func_basic (text, state, words);
-}
-
-static char *
 gen_func_bt_type (const char *text, int state)
 {
 	const char *words[] = { "panu", "dun-gsm", "dun-cdma", NULL };
@@ -3901,27 +3887,6 @@ static char *
 gen_func_bond_lacp_rate (const char *text, int state)
 {
 	const char *words[] = { "slow", "fast", NULL };
-	return nmc_rl_gen_func_basic (text, state, words);
-}
-
-static char *
-gen_func_adsl_proto (const char *text, int state)
-{
-	const char *words[] = { "pppoe", "pppoa", "ipoatm", NULL };
-	return nmc_rl_gen_func_basic (text, state, words);
-}
-
-static char *
-gen_func_adsl_encap (const char *text, int state)
-{
-	const char *words[] = { "vcmux", "llc", NULL };
-	return nmc_rl_gen_func_basic (text, state, words);
-}
-
-static char *
-gen_func_tun_mode (const char *text, int state)
-{
-	const char *words[] = { "tun", "tap", NULL };
 	return nmc_rl_gen_func_basic (text, state, words);
 }
 
@@ -4244,8 +4209,6 @@ _meta_abstract_get_option_info (const NMMetaAbstractInfo *abstract_info)
 		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_TYPE,                  "type",               set_connection_type,       gen_connection_types),
 		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_INTERFACE_NAME,        "ifname",             set_connection_iface,      nmc_rl_gen_func_ifnames),
 		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_MASTER,                "master",             set_connection_master,     gen_func_master_ifnames),
-		OPTION_INFO (INFINIBAND,   NM_SETTING_INFINIBAND_TRANSPORT_MODE,        "transport-mode",     NULL,                      gen_func_ib_type),
-		OPTION_INFO (WIRELESS,     NM_SETTING_WIRELESS_MODE,                    "mode",               NULL,                      gen_func_wifi_mode),
 		OPTION_INFO (BLUETOOTH,    NM_SETTING_BLUETOOTH_TYPE,                   "bt-type",            set_bluetooth_type,        gen_func_bt_type),
 		OPTION_INFO (VLAN,         NM_SETTING_VLAN_PARENT,                      "dev",                NULL,                      nmc_rl_gen_func_ifnames),
 		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     "mode",               set_bond_option,           gen_func_bond_mode),
@@ -4257,11 +4220,8 @@ _meta_abstract_get_option_info (const NMMetaAbstractInfo *abstract_info)
 		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     "arp-interval",       set_bond_option,           NULL),
 		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     "arp-ip-target",      set_bond_option,           NULL),
 		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     "lacp-rate",          set_bond_option,           gen_func_bond_lacp_rate),
-		OPTION_INFO (ADSL,         NM_SETTING_ADSL_PROTOCOL,                    "protocol",           NULL,                      gen_func_adsl_proto),
-		OPTION_INFO (ADSL,         NM_SETTING_ADSL_ENCAPSULATION,               "encapsulation",      NULL,                      gen_func_adsl_encap),
 		OPTION_INFO (MACVLAN,      NM_SETTING_MACVLAN_PARENT,                   "dev",                NULL,                      nmc_rl_gen_func_ifnames),
 		OPTION_INFO (VXLAN,        NM_SETTING_VXLAN_PARENT,                     "dev",                NULL,                      nmc_rl_gen_func_ifnames),
-		OPTION_INFO (TUN,          NM_SETTING_TUN_MODE,                         "mode",               NULL,                      gen_func_tun_mode),
 		OPTION_INFO (IP_TUNNEL,    NM_SETTING_IP_TUNNEL_PARENT,                 "dev",                NULL,                      nmc_rl_gen_func_ifnames),
 		OPTION_INFO (IP4_CONFIG,   NM_SETTING_IP_CONFIG_ADDRESSES,              "ip4",                set_ip4_address,           NULL),
 		OPTION_INFO (IP6_CONFIG,   NM_SETTING_IP_CONFIG_ADDRESSES,              "ip6",                set_ip6_address,           NULL),
@@ -4422,23 +4382,9 @@ complete_property (const gchar *setting_name, const gchar *property, const gchar
 			run_rl_generator (gen_func_master_ifnames, prefix);
 		else if (strcmp (property, NM_SETTING_CONNECTION_INTERFACE_NAME) == 0)
 			run_rl_generator (nmc_rl_gen_func_ifnames, prefix);
-	} else if (   strcmp (setting_name, NM_SETTING_WIRELESS_SETTING_NAME) == 0
-	         && strcmp (property, NM_SETTING_WIRELESS_MODE) == 0)
-		run_rl_generator (gen_func_wifi_mode, prefix);
-	else if (   strcmp (setting_name, NM_SETTING_INFINIBAND_SETTING_NAME) == 0
-	         && strcmp (property, NM_SETTING_INFINIBAND_TRANSPORT_MODE) == 0)
-		run_rl_generator (gen_func_ib_type, prefix);
-	else if (   strcmp (setting_name, NM_SETTING_BLUETOOTH_SETTING_NAME) == 0
+	} else if (   strcmp (setting_name, NM_SETTING_BLUETOOTH_SETTING_NAME) == 0
 	         && strcmp (property, NM_SETTING_BLUETOOTH_TYPE) == 0)
 		run_rl_generator (gen_func_bt_type, prefix);
-	else if (strcmp (setting_name, NM_SETTING_ADSL_SETTING_NAME) == 0) {
-		if (strcmp (property, NM_SETTING_ADSL_PROTOCOL) == 0)
-			run_rl_generator (gen_func_adsl_proto, prefix);
-		else if (strcmp (property, NM_SETTING_ADSL_ENCAPSULATION) == 0)
-			run_rl_generator (gen_func_adsl_encap, prefix);
-	} else if (   strcmp (setting_name, NM_SETTING_TUN_SETTING_NAME) == 0
-	           && strcmp (property, NM_SETTING_TUN_MODE) == 0)
-		run_rl_generator (gen_func_tun_mode, prefix);
 	else if (strcmp (setting_name, NM_SETTING_IP_TUNNEL_SETTING_NAME) == 0) {
 		if (strcmp (property, NM_SETTING_IP_TUNNEL_PARENT) == 0)
 			run_rl_generator (nmc_rl_gen_func_ifnames, prefix);
@@ -4755,22 +4701,12 @@ next:
 		generator_func = nmc_rl_gen_func_ifnames;
 	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_MASTER))
 		generator_func = gen_func_master_ifnames;
-	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_WIFI_MODE))
-		generator_func = gen_func_wifi_mode;
-	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_IB_MODE))
-		generator_func = gen_func_ib_type;
 	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_BT_TYPE))
 		generator_func = gen_func_bt_type;
 	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_BOND_MODE))
 		generator_func = gen_func_bond_mode;
 	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_BOND_MON_MODE))
 		generator_func = gen_func_bond_mon_mode;
-	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_ADSL_PROTO))
-		generator_func = gen_func_adsl_proto;
-	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_ADSL_ENCAP))
-		generator_func = gen_func_adsl_encap;
-	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_TUN_MODE))
-		generator_func = gen_func_tun_mode;
 	else if (   g_str_has_suffix (rl_prompt, yes)
 	         || g_str_has_suffix (rl_prompt, no))
 		generator_func = gen_func_bool_values_l10n;
