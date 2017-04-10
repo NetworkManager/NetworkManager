@@ -190,6 +190,11 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
 		.setting_name =             N_ (NM_SETTING_DUMMY_SETTING_NAME),
 		.get_setting_gtype =        nm_setting_dummy_get_type,
 	},
+	[NM_META_SETTING_TYPE_GENERIC] = {
+		.meta_type =                NM_META_SETTING_TYPE_GENERIC,
+		.setting_name =             N_ (NM_SETTING_GENERIC_SETTING_NAME),
+		.get_setting_gtype =        nm_setting_generic_get_type,
+	},
 	[NM_META_SETTING_TYPE_GSM] = {
 		.meta_type =                NM_META_SETTING_TYPE_GSM,
 		.setting_name =             N_ (NM_SETTING_GSM_SETTING_NAME),

@@ -7087,6 +7087,7 @@ static const NMMetaPropertyInfo property_infos_WIRELESS_SECURITY[] = {
 #define SETTING_PRETTY_NAME_CONNECTION          "General settings"
 #define SETTING_PRETTY_NAME_DCB                 "DCB settings"
 #define SETTING_PRETTY_NAME_DUMMY               "Dummy settings"
+#define SETTING_PRETTY_NAME_GENERIC             "Generic settings"
 #define SETTING_PRETTY_NAME_GSM                 "GSM mobile broadband connection"
 #define SETTING_PRETTY_NAME_INFINIBAND          "InfiniBand connection"
 #define SETTING_PRETTY_NAME_IP4_CONFIG          "IPv4 protocol"
@@ -7136,6 +7137,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 	SETTING_INFO (CONNECTION),
 	SETTING_INFO (DCB),
 	SETTING_INFO_EMPTY (DUMMY),
+	SETTING_INFO_EMPTY (GENERIC),
 	SETTING_INFO (GSM),
 	SETTING_INFO (INFINIBAND),
 	SETTING_INFO (IP4_CONFIG),
