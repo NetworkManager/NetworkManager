@@ -2775,216 +2775,232 @@ finish:
 
 typedef struct NameItem {
 	const char *name;
-	const char *alias;
 	const struct NameItem *settings;
 	gboolean mandatory;
 } NameItem;
 
+#define NAME_ITEM_SIMPLE(name_, mandatory_) \
+	{ \
+		.name = NM_SETTING_##name_##_SETTING_NAME, \
+		.mandatory = mandatory_, \
+	}
+
 static const NameItem nmc_generic_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
-	{ NULL, NULL, NULL, FALSE }
+	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
+	{ 0 }
 };
 
 static const NameItem nmc_ethernet_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
-	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, TRUE  },
-	{ NM_SETTING_802_1X_SETTING_NAME,     NULL,       NULL, FALSE },
-	{ NM_SETTING_DCB_SETTING_NAME,        NULL,       NULL, FALSE },
-	{ NULL, NULL, NULL, FALSE }
+	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
+	NAME_ITEM_SIMPLE (WIRED,       TRUE),
+	NAME_ITEM_SIMPLE (802_1X,      FALSE),
+	NAME_ITEM_SIMPLE (DCB,         FALSE),
+	{ 0 }
 };
 
 static const NameItem nmc_infiniband_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL, NULL, TRUE  },
-	{ NM_SETTING_INFINIBAND_SETTING_NAME, NULL, NULL, TRUE  },
-	{ NULL, NULL, NULL, FALSE }
+	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
+	NAME_ITEM_SIMPLE (INFINIBAND,  TRUE),
+	{ 0 }
 };
 
 static const NameItem nmc_wifi_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME,        NULL,       NULL, TRUE  },
-	{ NM_SETTING_WIRELESS_SETTING_NAME,          "wifi",     NULL, TRUE  },
-	{ NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, "wifi-sec", NULL, FALSE },
-	{ NM_SETTING_802_1X_SETTING_NAME,            NULL,       NULL, FALSE },
-	{ NULL, NULL, NULL, FALSE }
+	NAME_ITEM_SIMPLE (CONNECTION,         TRUE),
+	NAME_ITEM_SIMPLE (WIRELESS,           TRUE),
+	NAME_ITEM_SIMPLE (WIRELESS_SECURITY,  FALSE),
+	NAME_ITEM_SIMPLE (802_1X,             FALSE),
+	{ 0 }
 };
 
 static const NameItem nmc_wimax_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,   NULL, TRUE  },
-	{ NM_SETTING_WIMAX_SETTING_NAME,      NULL,   NULL, TRUE  },
-	{ NULL, NULL, NULL, FALSE }
+	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
+	NAME_ITEM_SIMPLE (WIMAX,       TRUE),
+	{ 0 }
 };
 
 static const NameItem nmc_gsm_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
-	{ NM_SETTING_GSM_SETTING_NAME,        NULL,       NULL, TRUE  },
-	{ NM_SETTING_SERIAL_SETTING_NAME,     NULL,       NULL, FALSE },
-	{ NM_SETTING_PPP_SETTING_NAME,        NULL,       NULL, FALSE },
-	{ NULL, NULL, NULL, FALSE }
+	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
+	NAME_ITEM_SIMPLE (GSM,         TRUE),
+	NAME_ITEM_SIMPLE (SERIAL,      FALSE),
+	NAME_ITEM_SIMPLE (PPP,         FALSE),
+	{ 0 }
 };
 
 static const NameItem nmc_cdma_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
-	{ NM_SETTING_CDMA_SETTING_NAME,       NULL,       NULL, TRUE  },
-	{ NM_SETTING_SERIAL_SETTING_NAME,     NULL,       NULL, FALSE },
-	{ NM_SETTING_PPP_SETTING_NAME,        NULL,       NULL, FALSE },
-	{ NULL, NULL, NULL, FALSE }
+	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
+	NAME_ITEM_SIMPLE (CDMA,        TRUE),
+	NAME_ITEM_SIMPLE (SERIAL,      FALSE),
+	NAME_ITEM_SIMPLE (PPP,         FALSE),
+	{ 0 }
 };
 
 static const NameItem nmc_bluetooth_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,   NULL, TRUE  },
-	{ NM_SETTING_BLUETOOTH_SETTING_NAME,  NULL,   NULL, TRUE  },
-	{ NULL, NULL, NULL, FALSE }
+	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
+	NAME_ITEM_SIMPLE (BLUETOOTH,   TRUE),
+	{ 0 }
 };
 
 static const NameItem nmc_adsl_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,   NULL, TRUE  },
-	{ NM_SETTING_ADSL_SETTING_NAME,       NULL,   NULL, TRUE  },
-	{ NULL, NULL, NULL, FALSE }
+	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
+	NAME_ITEM_SIMPLE (ADSL,        TRUE),
+	{ 0 }
 };
 
 /* PPPoE is a base connection type from historical reasons.
  * See libnm-core/nm-setting.c:_nm_setting_is_base_type()
  */
 static const NameItem nmc_pppoe_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
-	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, TRUE  },
-	{ NM_SETTING_PPPOE_SETTING_NAME,      NULL,       NULL, TRUE  },
-	{ NM_SETTING_PPP_SETTING_NAME,        NULL,       NULL, FALSE },
-	{ NM_SETTING_802_1X_SETTING_NAME,     NULL,       NULL, FALSE },
-	{ NULL, NULL, NULL, FALSE }
+	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
+	NAME_ITEM_SIMPLE (WIRED,       TRUE),
+	NAME_ITEM_SIMPLE (PPPOE,       TRUE),
+	NAME_ITEM_SIMPLE (PPP,         FALSE),
+	NAME_ITEM_SIMPLE (802_1X,      FALSE),
+	{ 0 }
 };
 
 static const NameItem nmc_olpc_mesh_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,        NULL, TRUE  },
-	{ NM_SETTING_OLPC_MESH_SETTING_NAME,  "olpc-mesh", NULL, TRUE  },
-	{ NULL, NULL, NULL, FALSE }
+	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
+	NAME_ITEM_SIMPLE (OLPC_MESH,   TRUE),
+	{ 0 }
 };
 
 static const NameItem nmc_vpn_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,   NULL, TRUE  },
-	{ NM_SETTING_VPN_SETTING_NAME,        NULL,   NULL, TRUE  },
-	{ NULL, NULL, NULL, FALSE }
+	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
+	NAME_ITEM_SIMPLE (VPN,         TRUE),
+	{ 0 }
 };
 
 static const NameItem nmc_vlan_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
-	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, FALSE },
-	{ NM_SETTING_VLAN_SETTING_NAME,       NULL,       NULL, TRUE  },
-	{ NULL, NULL, NULL, FALSE }
+	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
+	NAME_ITEM_SIMPLE (WIRED,       FALSE),
+	NAME_ITEM_SIMPLE (VLAN,        TRUE),
+	{ 0 }
 };
 
 static const NameItem nmc_bond_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
-	{ NM_SETTING_BOND_SETTING_NAME,       NULL,       NULL, TRUE  },
-	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, FALSE },
-	{ NULL, NULL, NULL, FALSE }
+	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
+	NAME_ITEM_SIMPLE (BOND,        TRUE),
+	NAME_ITEM_SIMPLE (WIRED,       FALSE),
+	{ 0 }
 };
 
 static const NameItem nmc_team_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
-	{ NM_SETTING_TEAM_SETTING_NAME,       NULL,       NULL, TRUE  },
-	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, FALSE },
-	{ NULL, NULL, NULL, FALSE }
+	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
+	NAME_ITEM_SIMPLE (TEAM,        TRUE),
+	NAME_ITEM_SIMPLE (WIRED,       FALSE),
+	{ 0 }
 };
 
 static const NameItem nmc_bridge_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
-	{ NM_SETTING_BRIDGE_SETTING_NAME,     NULL,       NULL, TRUE  },
-	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, FALSE },
-	{ NULL, NULL, NULL, FALSE }
+	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
+	NAME_ITEM_SIMPLE (BRIDGE,      TRUE),
+	NAME_ITEM_SIMPLE (WIRED,       FALSE),
+	{ 0 }
 };
 
 static const NameItem nmc_bond_slave_settings [] = {
-	{ NULL, NULL, NULL, FALSE }
+	{ 0 }
 };
 
 static const NameItem nmc_team_slave_settings [] = {
-	{ NM_SETTING_TEAM_PORT_SETTING_NAME,  NULL,       NULL, TRUE  },
-	{ NULL, NULL, NULL, FALSE }
+	NAME_ITEM_SIMPLE (TEAM_PORT,   TRUE),
+	{ 0 }
 };
 
 static const NameItem nmc_bridge_slave_settings [] = {
-	{ NM_SETTING_BRIDGE_PORT_SETTING_NAME, NULL,       NULL, TRUE  },
-	{ NULL, NULL, NULL, FALSE }
+	NAME_ITEM_SIMPLE (BRIDGE_PORT,  TRUE),
+	{ 0 }
 };
 
 static const NameItem nmc_no_slave_settings [] = {
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,   NULL, FALSE },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,   NULL, FALSE },
-	{ NM_SETTING_PROXY_SETTING_NAME,      NULL,   NULL, FALSE },
-	{ NULL, NULL, NULL, FALSE }
+	NAME_ITEM_SIMPLE (IP4_CONFIG,  FALSE),
+	NAME_ITEM_SIMPLE (IP6_CONFIG,  FALSE),
+	NAME_ITEM_SIMPLE (PROXY,       FALSE),
+	{ 0 }
 };
 
 static const NameItem nmc_tun_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
-	{ NM_SETTING_TUN_SETTING_NAME,        NULL,       NULL, TRUE  },
-	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, FALSE },
-	{ NULL, NULL, NULL, FALSE }
+	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
+	NAME_ITEM_SIMPLE (TUN,         TRUE),
+	NAME_ITEM_SIMPLE (WIRED,       FALSE),
+	{ 0 }
 };
 
 static const NameItem nmc_ip_tunnel_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
-	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,  NULL,       NULL, TRUE  },
-	{ NULL, NULL, NULL, FALSE }
+	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
+	NAME_ITEM_SIMPLE (IP_TUNNEL,   TRUE),
+	{ 0 }
 };
 
 static const NameItem nmc_macsec_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
-	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, FALSE },
-	{ NM_SETTING_802_1X_SETTING_NAME,     NULL,       NULL, FALSE },
-	{ NM_SETTING_MACSEC_SETTING_NAME,     NULL,       NULL, TRUE  },
-	{ NULL, NULL, NULL, FALSE }
+	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
+	NAME_ITEM_SIMPLE (WIRED,       FALSE),
+	NAME_ITEM_SIMPLE (802_1X,      FALSE),
+	NAME_ITEM_SIMPLE (MACSEC,      TRUE),
+	{ 0 }
 };
 
 static const NameItem nmc_macvlan_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
-	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, FALSE },
-	{ NM_SETTING_MACVLAN_SETTING_NAME,    NULL,       NULL, TRUE  },
-	{ NULL, NULL, NULL, FALSE }
+	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
+	NAME_ITEM_SIMPLE (WIRED,       FALSE),
+	NAME_ITEM_SIMPLE (MACVLAN,     TRUE),
+	{ 0 }
 };
 
 static const NameItem nmc_vxlan_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME,  NULL,       NULL, TRUE  },
-	{ NM_SETTING_VXLAN_SETTING_NAME,       NULL,       NULL, TRUE  },
-	{ NM_SETTING_WIRED_SETTING_NAME,       "ethernet", NULL, FALSE },
-	{ NULL, NULL, NULL, FALSE }
+	NAME_ITEM_SIMPLE (CONNECTION,   TRUE),
+	NAME_ITEM_SIMPLE (VXLAN,        TRUE),
+	NAME_ITEM_SIMPLE (WIRED,        FALSE),
+	{ 0 }
 };
 
 static const NameItem nmc_dummy_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME,  NULL,       NULL, TRUE  },
-	{ NM_SETTING_DUMMY_SETTING_NAME,       NULL,       NULL, TRUE  },
-	{ NM_SETTING_WIRED_SETTING_NAME,       "ethernet", NULL, FALSE },
-	{ NULL, NULL, NULL, FALSE }
+	NAME_ITEM_SIMPLE (CONNECTION,   TRUE),
+	NAME_ITEM_SIMPLE (DUMMY,        TRUE),
+	NAME_ITEM_SIMPLE (WIRED,        FALSE),
+	{ 0 }
 };
 
 static const NameItem nmc_valid_connection_types[] = {
-	{ NM_SETTING_GENERIC_SETTING_NAME,    NULL,        nmc_generic_settings      }, /* Needs to be first. */
-	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet",  nmc_ethernet_settings     },
-	{ NM_SETTING_PPPOE_SETTING_NAME,      NULL,        nmc_pppoe_settings        },
-	{ NM_SETTING_WIRELESS_SETTING_NAME,   "wifi",      nmc_wifi_settings         },
-	{ NM_SETTING_WIMAX_SETTING_NAME,      NULL,        nmc_wimax_settings        },
-	{ NM_SETTING_GSM_SETTING_NAME,        NULL,        nmc_gsm_settings          },
-	{ NM_SETTING_CDMA_SETTING_NAME,       NULL,        nmc_cdma_settings         },
-	{ NM_SETTING_INFINIBAND_SETTING_NAME, NULL,        nmc_infiniband_settings   },
-	{ NM_SETTING_ADSL_SETTING_NAME,       NULL,        nmc_adsl_settings         },
-	{ NM_SETTING_BLUETOOTH_SETTING_NAME,  NULL,        nmc_bluetooth_settings    },
-	{ NM_SETTING_VPN_SETTING_NAME,        NULL,        nmc_vpn_settings          },
-	{ NM_SETTING_OLPC_MESH_SETTING_NAME,  "olpc-mesh", nmc_olpc_mesh_settings    },
-	{ NM_SETTING_VLAN_SETTING_NAME,       NULL,        nmc_vlan_settings         },
-	{ NM_SETTING_BOND_SETTING_NAME,       NULL,        nmc_bond_settings         },
-	{ NM_SETTING_TEAM_SETTING_NAME,       NULL,        nmc_team_settings         },
-	{ NM_SETTING_BRIDGE_SETTING_NAME,     NULL,        nmc_bridge_settings       },
-	{ "bond-slave",                       NULL,        nmc_bond_slave_settings   },
-	{ "team-slave",                       NULL,        nmc_team_slave_settings   },
-	{ "bridge-slave",                     NULL,        nmc_bridge_slave_settings },
-	{ "no-slave",                         NULL,        nmc_no_slave_settings     },
-	{ NM_SETTING_TUN_SETTING_NAME,        NULL,        nmc_tun_settings          },
-	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,  NULL,        nmc_ip_tunnel_settings    },
-	{ NM_SETTING_MACSEC_SETTING_NAME,     NULL,        nmc_macsec_settings       },
-	{ NM_SETTING_MACVLAN_SETTING_NAME,    NULL,        nmc_macvlan_settings      },
-	{ NM_SETTING_VXLAN_SETTING_NAME,      NULL,        nmc_vxlan_settings        },
-	{ NM_SETTING_DUMMY_SETTING_NAME,      NULL,        nmc_dummy_settings        },
-	{ NULL, NULL, NULL }
+	{ NM_SETTING_GENERIC_SETTING_NAME,    nmc_generic_settings      }, /* Needs to be first. */
+	{ NM_SETTING_WIRED_SETTING_NAME,      nmc_ethernet_settings     },
+	{ NM_SETTING_PPPOE_SETTING_NAME,      nmc_pppoe_settings        },
+	{ NM_SETTING_WIRELESS_SETTING_NAME,   nmc_wifi_settings         },
+	{ NM_SETTING_WIMAX_SETTING_NAME,      nmc_wimax_settings        },
+	{ NM_SETTING_GSM_SETTING_NAME,        nmc_gsm_settings          },
+	{ NM_SETTING_CDMA_SETTING_NAME,       nmc_cdma_settings         },
+	{ NM_SETTING_INFINIBAND_SETTING_NAME, nmc_infiniband_settings   },
+	{ NM_SETTING_ADSL_SETTING_NAME,       nmc_adsl_settings         },
+	{ NM_SETTING_BLUETOOTH_SETTING_NAME,  nmc_bluetooth_settings    },
+	{ NM_SETTING_VPN_SETTING_NAME,        nmc_vpn_settings          },
+	{ NM_SETTING_OLPC_MESH_SETTING_NAME,  nmc_olpc_mesh_settings    },
+	{ NM_SETTING_VLAN_SETTING_NAME,       nmc_vlan_settings         },
+	{ NM_SETTING_BOND_SETTING_NAME,       nmc_bond_settings         },
+	{ NM_SETTING_TEAM_SETTING_NAME,       nmc_team_settings         },
+	{ NM_SETTING_BRIDGE_SETTING_NAME,     nmc_bridge_settings       },
+	{ "bond-slave",                       nmc_bond_slave_settings   },
+	{ "team-slave",                       nmc_team_slave_settings   },
+	{ "bridge-slave",                     nmc_bridge_slave_settings },
+	{ "no-slave",                         nmc_no_slave_settings     },
+	{ NM_SETTING_TUN_SETTING_NAME,        nmc_tun_settings          },
+	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,  nmc_ip_tunnel_settings    },
+	{ NM_SETTING_MACSEC_SETTING_NAME,     nmc_macsec_settings       },
+	{ NM_SETTING_MACVLAN_SETTING_NAME,    nmc_macvlan_settings      },
+	{ NM_SETTING_VXLAN_SETTING_NAME,      nmc_vxlan_settings        },
+	{ NM_SETTING_DUMMY_SETTING_NAME,      nmc_dummy_settings        },
+	{ 0 }
 };
+
+static const char *
+_name_item_get_alias (const NameItem *item)
+{
+	const NMMetaSettingInfoEditor *info;
+
+	info = nm_meta_setting_info_editor_find_by_name (item->name);
+	if (!info)
+		return NULL;
+	return info->alias;
+}
 
 /*
  * Return the most appropriate name for the connection of a type 'name' possibly with given 'slave_type'
@@ -3011,12 +3027,8 @@ get_name_alias (const char *name, const char *slave_type, const NameItem array[]
 	} else
 		return NULL;
 
-	if (iter) {
-		if (iter->alias)
-			return iter->alias;
-		else
-			return iter->name;
-	}
+	if (iter)
+		return _name_item_get_alias (iter) ?: iter->name;
 
 	return name;
 }
@@ -3038,10 +3050,13 @@ get_valid_options_string (const NameItem *array, const NameItem *array_slv)
 
 	for (i = 0; i < 2; i++, iter = array_slv) {
 		while (iter && iter->name) {
+			const char *alias;
+
 			if (str->len)
 				g_string_append (str, ", ");
-			if (iter->alias)
-				g_string_append_printf (str, "%s (%s)", iter->name, iter->alias);
+			alias = _name_item_get_alias (iter);
+			if (alias)
+				g_string_append_printf (str, "%s (%s)", iter->name, alias);
 			else
 				g_string_append (str, iter->name);
 			iter++;
@@ -3103,8 +3118,11 @@ get_valid_properties_string (const NameItem *array,
 
 	for (i = 0; i < 2; i++, iter = array_slv) {
 		while (!full_match && iter && iter->name) {
+			const char *alias = _name_item_get_alias (iter);
+
 			if (   !(g_str_has_prefix (iter->name, prefix))
-			    && (!(iter->alias) || !g_str_has_prefix (iter->alias, prefix))) {
+			    && (   !alias
+			        || !g_str_has_prefix (alias, prefix))) {
 				iter++;
 				continue;
 			}
@@ -3115,7 +3133,7 @@ get_valid_properties_string (const NameItem *array,
 				 * prefix and no check on ambiguity should be performed.
 				 * Moreover, erase previous matches from output string */
 				if (   nm_streq (prefix, iter->name)
-				    || nm_streq0 (prefix, iter->alias)) {
+				    || nm_streq0 (prefix, alias)) {
 					g_string_erase (str, 0, -1);
 					full_match = TRUE;
 				} else if (prop_name) {
@@ -3135,11 +3153,11 @@ get_valid_properties_string (const NameItem *array,
 				arg_name = setting_info->properties[j].property_name;
 
 				/* If required, expand the alias too */
-				if (!postfix && iter->alias) {
+				if (!postfix && alias) {
 					if (modifier)
 						g_string_append_c (str, modifier);
 					new = g_strdup_printf ("%s.%s\n",
-					                       iter->alias,
+					                       alias,
 					                       arg_name);
 					g_string_append (str, new);
 					g_free (new);
@@ -3187,9 +3205,11 @@ check_valid_name (const char *val, const NameItem *array, const NameItem *array_
 	iter = array;
 	for (i = 0; i < 2; i++, iter = array_slv) {
 		while (iter && iter->name) {
+			const char *alias;
 			g_ptr_array_add (tmp_arr, (gpointer) iter->name);
-			if (iter->alias)
-				g_ptr_array_add (tmp_arr, (gpointer) iter->alias);
+			alias = _name_item_get_alias (iter);
+			if (alias)
+				g_ptr_array_add (tmp_arr, (gpointer) alias);
 			iter++;
 		}
 	}
@@ -3216,7 +3236,7 @@ check_valid_name (const char *val, const NameItem *array, const NameItem *array_
 	for (i = 0; i < 2; i++, iter = array_slv) {
 		while (iter && iter->name) {
 			if (   nm_streq (iter->name, str)
-			    || nm_streq0 (iter->alias, str)) {
+			    || nm_streq0 (_name_item_get_alias (iter), str)) {
 				return iter->name;
 			}
 			iter++;
@@ -5191,8 +5211,10 @@ gen_connection_types (const char *text, int state)
 	}
 
 	while (nmc_valid_connection_types[list_idx].name) {
-		a_type = nmc_valid_connection_types[list_idx].alias;
-		c_type = nmc_valid_connection_types[list_idx].name;
+		const NameItem *item = &nmc_valid_connection_types[list_idx];
+
+		a_type = _name_item_get_alias (item);
+		c_type = item->name;
 		list_idx++;
 		if (a_type && !strncmp (text, a_type, len))
 			return g_strdup (a_type);
@@ -5224,8 +5246,10 @@ gen_setting_names (const char *text, int state)
 		if (!valid_settings_arr)
 			return NULL;
 		while (valid_settings_arr[list_idx].name) {
-			a_name = valid_settings_arr[list_idx].alias;
-			s_name = valid_settings_arr[list_idx].name;
+			const NameItem *item = &valid_settings_arr[list_idx];
+
+			a_name = _name_item_get_alias (item);
+			s_name = item->name;
 			list_idx++;
 			if (len == 0 && a_name)
 				return g_strdup_printf ("%s (%s)", s_name, a_name);
@@ -5249,8 +5273,10 @@ gen_setting_names (const char *text, int state)
 	g_free (slv_type);
 
 	while (valid_settings_arr[list_idx].name) {
-		a_name = valid_settings_arr[list_idx].alias;
-		s_name = valid_settings_arr[list_idx].name;
+		const NameItem *item = &valid_settings_arr[list_idx];
+
+		a_name = _name_item_get_alias (item);
+		s_name = item->name;
 		list_idx++;
 		if (len == 0 && a_name)
 			return g_strdup_printf ("%s (%s)", s_name, a_name);
@@ -7853,10 +7879,13 @@ static void
 nmc_complete_connection_type (const char *prefix, const NameItem *types)
 {
 	while (types->name) {
+		const char *alias;
+
 		if (!*prefix || matches (prefix, types->name))
 			g_print ("%s\n", types->name);
-		if (types->alias && (!*prefix || matches (prefix, types->alias)))
-			g_print ("%s\n", types->alias);
+		alias = _name_item_get_alias (types);
+		if (alias && (!*prefix || matches (prefix, alias)))
+			g_print ("%s\n", alias);
 		types++;
 	}
 }

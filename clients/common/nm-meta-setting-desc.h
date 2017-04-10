@@ -272,6 +272,7 @@ struct _NMMetaPropertyInfo {
 struct _NMMetaSettingInfoEditor {
 	const NMMetaType *meta_type;
 	const NMMetaSettingInfo *general;
+	const char *alias;
 	const char *pretty_name;
 	/* the order of the properties matter. The first *must* be the
 	 * "name", and then the order is as they are listed by default. */

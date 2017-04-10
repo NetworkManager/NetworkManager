@@ -7119,13 +7119,14 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 		.general =                          &nm_meta_setting_infos[NM_META_SETTING_TYPE_##type], \
 		.pretty_name =                      N_(SETTING_PRETTY_NAME_##type), \
 	}
-#define SETTING_INFO(type) \
+#define SETTING_INFO(type, ...) \
 	[NM_META_SETTING_TYPE_##type] = { \
 		.meta_type =                        &nm_meta_type_setting_info_editor, \
 		.general =                          &nm_meta_setting_infos[NM_META_SETTING_TYPE_##type], \
 		.properties =                       property_infos_##type, \
 		.properties_num =                   G_N_ELEMENTS (property_infos_##type), \
 		.pretty_name =                      N_(SETTING_PRETTY_NAME_##type), \
+		__VA_ARGS__ \
 	}
 	SETTING_INFO (802_1X),
 	SETTING_INFO (ADSL),
@@ -7145,7 +7146,9 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 	SETTING_INFO (IP_TUNNEL),
 	SETTING_INFO (MACSEC),
 	SETTING_INFO (MACVLAN),
-	SETTING_INFO (OLPC_MESH),
+	SETTING_INFO (OLPC_MESH,
+		.alias =                            "olpc-mesh",
+	),
 	SETTING_INFO (PPPOE),
 	SETTING_INFO (PPP),
 	SETTING_INFO (PROXY),
@@ -7158,9 +7161,15 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 	SETTING_INFO (VPN),
 	SETTING_INFO (VXLAN),
 	SETTING_INFO (WIMAX),
-	SETTING_INFO (WIRED),
-	SETTING_INFO (WIRELESS),
-	SETTING_INFO (WIRELESS_SECURITY),
+	SETTING_INFO (WIRED,
+		.alias =                            "ethernet",
+	),
+	SETTING_INFO (WIRELESS,
+		.alias =                            "wifi",
+	),
+	SETTING_INFO (WIRELESS_SECURITY,
+		.alias =                            "wifi-sec",
+	),
 };
 
 /*****************************************************************************/
