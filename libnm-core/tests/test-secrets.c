@@ -121,6 +121,12 @@ make_tls_connection (const char *detail, NMSetting8021xCKScheme scheme)
 	                                             &error);
 	nmtst_assert_success (success, error);
 
+	success = nm_setting_set_secret_flags (NM_SETTING (s_8021x),
+	                                       NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD,
+	                                       NM_SETTING_SECRET_FLAG_AGENT_OWNED,
+	                                       &error);
+	nmtst_assert_success (success, error);
+
 	/* IP4 setting */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
@@ -246,6 +252,13 @@ make_tls_phase2_connection (const char *detail, NMSetting8021xCKScheme scheme)
 	                                                    NULL,
 	                                                    &error);
 	nmtst_assert_success (success, error);
+
+	success = nm_setting_set_secret_flags (NM_SETTING (s_8021x),
+	                                       NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD,
+	                                       NM_SETTING_SECRET_FLAG_AGENT_OWNED,
+	                                       &error);
+	nmtst_assert_success (success, error);
+
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
