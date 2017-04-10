@@ -3857,15 +3857,6 @@ ensure_settings (NMConnection *connection, const NameItem *item)
 /*----------------------------------------------------------------------------*/
 
 static char *
-gen_func_vpn_types (const char *text, int state)
-{
-	gs_strfreev char **plugin_names = NULL;
-
-	plugin_names = nm_vpn_plugin_info_list_get_service_types (nm_vpn_get_plugin_infos (), FALSE, TRUE);
-	return nmc_rl_gen_func_basic (text, state, (const char **) plugin_names);
-}
-
-static char *
 gen_func_bool_values_l10n (const char *text, int state)
 {
 	const char *words[] = { WORD_YES, WORD_NO, NULL };
@@ -4266,7 +4257,6 @@ _meta_abstract_get_option_info (const NMMetaAbstractInfo *abstract_info)
 		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     "arp-interval",       set_bond_option,           NULL),
 		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     "arp-ip-target",      set_bond_option,           NULL),
 		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     "lacp-rate",          set_bond_option,           gen_func_bond_lacp_rate),
-		OPTION_INFO (VPN,          NM_SETTING_VPN_SERVICE_TYPE,                 "vpn-type",           NULL,                      gen_func_vpn_types),
 		OPTION_INFO (ADSL,         NM_SETTING_ADSL_PROTOCOL,                    "protocol",           NULL,                      gen_func_adsl_proto),
 		OPTION_INFO (ADSL,         NM_SETTING_ADSL_ENCAPSULATION,               "encapsulation",      NULL,                      gen_func_adsl_encap),
 		OPTION_INFO (MACVLAN,      NM_SETTING_MACVLAN_PARENT,                   "dev",                NULL,                      nmc_rl_gen_func_ifnames),
@@ -4432,10 +4422,7 @@ complete_property (const gchar *setting_name, const gchar *property, const gchar
 			run_rl_generator (gen_func_master_ifnames, prefix);
 		else if (strcmp (property, NM_SETTING_CONNECTION_INTERFACE_NAME) == 0)
 			run_rl_generator (nmc_rl_gen_func_ifnames, prefix);
-	} else if (   strcmp (setting_name, NM_SETTING_VPN_SETTING_NAME) == 0
-	           && strcmp (property, NM_SETTING_VPN_SERVICE_TYPE) == 0)
-		run_rl_generator (gen_func_vpn_types, prefix);
-	else if (   strcmp (setting_name, NM_SETTING_WIRELESS_SETTING_NAME) == 0
+	} else if (   strcmp (setting_name, NM_SETTING_WIRELESS_SETTING_NAME) == 0
 	         && strcmp (property, NM_SETTING_WIRELESS_MODE) == 0)
 		run_rl_generator (gen_func_wifi_mode, prefix);
 	else if (   strcmp (setting_name, NM_SETTING_INFINIBAND_SETTING_NAME) == 0
@@ -4766,8 +4753,6 @@ next:
 		generator_func = gen_connection_types;
 	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_IFNAME))
 		generator_func = nmc_rl_gen_func_ifnames;
-	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_VPN_TYPE))
-		generator_func = gen_func_vpn_types;
 	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_MASTER))
 		generator_func = gen_func_master_ifnames;
 	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_WIFI_MODE))
@@ -8624,25 +8609,7 @@ do_connection_load (NmCli *nmc, int argc, char **argv)
 	return nmc->return_value;
 }
 
-// FIXME: change the text when non-VPN connection types are supported
-#define PROMPT_IMPORT_TYPE NM_META_TEXT_PROMPT_VPN_TYPE
 #define PROMPT_IMPORT_FILE N_("File to import: ")
-
-static void
-nmc_complete_vpn_service (const char *prefix)
-{
-	char **services;
-	char **candidate;
-
-	services = nm_vpn_plugin_info_list_get_service_types (NULL, FALSE, TRUE);
-	for (candidate = services; *candidate; candidate++) {
-		if (!*prefix && g_str_has_prefix (*candidate, NM_DBUS_INTERFACE))
-			continue;
-		if (!*prefix || matches (prefix, *candidate))
-			g_print ("%s\n", *candidate);
-	}
-	g_strfreev (services);
-}
 
 static NMCResultCode
 do_connection_import (NmCli *nmc, int argc, char **argv)
@@ -8668,7 +8635,7 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 		g_assert (!nmc->complete);
 
 		if (nmc->ask) {
-			type_ask = nmc_readline (gettext (PROMPT_IMPORT_TYPE));
+			type_ask = nmc_readline (gettext (NM_META_TEXT_PROMPT_VPN_TYPE));
 			filename_ask = nmc_readline (gettext (PROMPT_IMPORT_FILE));
 			type = type_ask = type_ask ? g_strstrip (type_ask) : NULL;
 			filename = filename_ask = filename_ask ? g_strstrip (filename_ask) : NULL;
@@ -8693,7 +8660,7 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 			}
 
 			if (argc == 1 && nmc->complete)
-				nmc_complete_vpn_service (*argv);
+				complete_option ((const NMMetaAbstractInfo *) nm_meta_property_info_vpn_service_type, *argv);
 
 			if (!type)
 				type = *argv;
@@ -8968,8 +8935,8 @@ nmcli_con_tab_completion (const char *text, int start, int end)
 		generator_func = gen_func_connection_names;
 	} else if (g_strcmp0 (rl_prompt, PROMPT_ACTIVE_CONNECTIONS) == 0) {
 		generator_func = gen_func_active_connection_names;
-	} else if (g_strcmp0 (rl_prompt, PROMPT_IMPORT_TYPE) == 0) {
-		generator_func = gen_func_vpn_types;
+	} else if (g_strcmp0 (rl_prompt, NM_META_TEXT_PROMPT_VPN_TYPE) == 0) {
+		return _meta_abstract_complete ((const NMMetaAbstractInfo *) nm_meta_property_info_vpn_service_type, text);
 	} else if (g_strcmp0 (rl_prompt, PROMPT_IMPORT_FILE) == 0) {
 		rl_attempted_completion_over = 0;
 		rl_complete_with_tilde_expansion = 1;

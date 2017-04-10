@@ -237,6 +237,12 @@ typedef enum {
 	NM_META_PROPERTY_INF_FLAG_MULTI                     = 0x04, /* Ask multiple times, do an append instead of set. */
 } NMMetaPropertyInfFlags;
 
+enum {
+	_NM_META_PROPERTY_TYPE_VPN_SERVICE_TYPE                                 = 0,
+};
+
+#define nm_meta_property_info_vpn_service_type (&nm_meta_setting_infos_editor[NM_META_SETTING_TYPE_VPN].properties[_NM_META_PROPERTY_TYPE_VPN_SERVICE_TYPE])
+
 struct _NMMetaPropertyInfo {
 	const NMMetaType *meta_type;
 

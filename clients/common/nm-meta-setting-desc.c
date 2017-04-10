@@ -1619,6 +1619,34 @@ _set_fcn_vpn_service_type (ARGS_SET_FCN)
 	return TRUE;
 }
 
+static const char *const*
+_complete_fcn_vpn_service_type (ARGS_COMPLETE_FCN)
+{
+	gsize i, j;
+	char **values;
+
+	values = nm_vpn_plugin_info_list_get_service_types (nm_vpn_get_plugin_infos (), FALSE, TRUE);
+	if (!values)
+		return NULL;
+
+	if (!text || !*text) {
+		/* If the prompt text is empty or contains no '.',
+		 * filter out full names. */
+		for (i = 0, j = 0; values[i]; i++) {
+			if (strchr (values[i], '.')) {
+				g_free (values[i]);
+				continue;
+			}
+
+			if (i != j)
+				values[j] = values[i];
+			j++;
+		}
+		values[j++] = NULL;
+	}
+	return (const char *const*) (*out_to_free = values);
+}
+
 static gboolean
 nmc_util_is_domain (const char *domain)
 {
@@ -6538,7 +6566,7 @@ static const NMMetaPropertyInfo property_infos_VLAN[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_VPN
 static const NMMetaPropertyInfo property_infos_VPN[] = {
-	{
+	[_NM_META_PROPERTY_TYPE_VPN_SERVICE_TYPE] = {
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_VPN_SERVICE_TYPE),
 		.is_cli_option =                TRUE,
 		.property_alias =               "vpn-type",
@@ -6547,6 +6575,7 @@ static const NMMetaPropertyInfo property_infos_VPN[] = {
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
 			.set_fcn =                  _set_fcn_vpn_service_type,
+			.complete_fcn =             _complete_fcn_vpn_service_type,
 		),
 	},
 	{
