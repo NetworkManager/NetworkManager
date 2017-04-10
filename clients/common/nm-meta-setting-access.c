@@ -253,3 +253,68 @@ nm_meta_abstract_info_get (const NMMetaAbstractInfo *abstract_info,
 	                                          out_flags,
 	                                          out_to_free);
 }
+
+const char *const*
+nm_meta_abstract_info_complete (const NMMetaAbstractInfo *abstract_info,
+                                const char *text,
+                                char ***out_to_free)
+{
+	const char *const*values;
+	gsize i, j, text_len;
+
+	nm_assert (abstract_info);
+	nm_assert (abstract_info->meta_type);
+	nm_assert (out_to_free && !*out_to_free);
+
+	*out_to_free = NULL;
+
+	if (!abstract_info->meta_type->complete_fcn)
+		return NULL;
+
+	values = abstract_info->meta_type->complete_fcn (abstract_info,
+	                                                 text,
+	                                                 out_to_free);
+
+	nm_assert (!*out_to_free || values == (const char *const*) *out_to_free);
+
+	if (!text || !text[0] || !values || !values[0])
+		return values;
+
+	/* for convenience, we all the complete_fcn() implementations to
+	 * ignore "text". We filter out invalid matches here. */
+
+	text_len = strlen (text);
+
+	if (*out_to_free) {
+		char **v = *out_to_free;
+
+		for (i =0, j = 0; v[i]; i++) {
+			if (strncmp (v[i], text, text_len) != 0)
+				continue;
+			v[j++] = v[i];
+		}
+		v[j++] = NULL;
+		return (const char *const*) *out_to_free;
+	} else {
+		const char *const*v = values;
+		char **r;
+
+		for (i = 0, j = 0; v[i]; i++) {
+			if (strncmp (v[i], text, text_len) != 0)
+				continue;
+			j++;
+		}
+		if (j == i)
+			return values;
+
+		r = g_new (char *, j + 1);
+		v = values;
+		for (i = 0, j = 0; v[i]; i++) {
+			if (strncmp (v[i], text, text_len) != 0)
+				continue;
+			r[j++] = g_strdup (v[i]);
+		}
+		r[j++] = NULL;
+		return (const char *const*) (*out_to_free = r);
+	}
+}

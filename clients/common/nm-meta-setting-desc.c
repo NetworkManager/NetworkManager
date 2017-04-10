@@ -7210,6 +7210,33 @@ _meta_type_property_info_get_nested (const NMMetaAbstractInfo *abstract_info,
 	return NULL;
 }
 
+static const char *const*
+_meta_type_property_info_complete_fcn (const NMMetaAbstractInfo *abstract_info,
+                                       const char *text,
+                                       char ***out_to_free)
+{
+	const NMMetaPropertyInfo *info = (const NMMetaPropertyInfo *) abstract_info;
+
+	nm_assert (out_to_free && !*out_to_free);
+
+	if (info->property_type->complete_fcn) {
+		return info->property_type->complete_fcn (info,
+		                                          text,
+		                                          out_to_free);
+	}
+
+	if (info->property_type->values_fcn) {
+		return info->property_type->values_fcn (info,
+		                                        out_to_free);
+	}
+
+	if (   info->property_typ_data
+	    && info->property_typ_data->values_static)
+		return info->property_typ_data->values_static;
+
+	return NULL;
+}
+
 const NMMetaType nm_meta_type_setting_info_editor = {
 	.type_name =         "setting_info_editor",
 	.get_name =          _meta_type_setting_info_editor_get_name,
@@ -7222,6 +7249,7 @@ const NMMetaType nm_meta_type_property_info = {
 	.get_name =         _meta_type_property_info_get_name,
 	.get_nested =       _meta_type_property_info_get_nested,
 	.get_fcn =          _meta_type_property_info_get_fcn,
+	.complete_fcn =     _meta_type_property_info_complete_fcn,
 };
 
 const NMMetaType nm_meta_type_nested_property_info = {

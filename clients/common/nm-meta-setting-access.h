@@ -59,6 +59,10 @@ gconstpointer nm_meta_abstract_info_get (const NMMetaAbstractInfo *abstract_info
                                          NMMetaAccessorGetOutFlags *out_flags,
                                          gpointer *out_to_free);
 
+const char *const*nm_meta_abstract_info_complete (const NMMetaAbstractInfo *abstract_info,
+                                                  const char *text,
+                                                  char ***out_to_free);
+
 /*****************************************************************************/
 
 #endif /* _NM_META_SETTING_ACCESS_H__ */

@@ -195,6 +195,10 @@ struct _NMMetaPropertyType {
 
 	const char *const*(*values_fcn) (const NMMetaPropertyInfo *property_info,
 	                                 char ***out_to_free);
+
+	const char *const*(*complete_fcn) (const NMMetaPropertyInfo *property_info,
+	                                   const char *text,
+	                                   char ***out_to_free);
 };
 
 struct _NMUtilsEnumValueInfo;
@@ -284,6 +288,9 @@ struct _NMMetaType {
 	                          NMMetaAccessorGetFlags get_flags,
 	                          NMMetaAccessorGetOutFlags *out_flags,
 	                          gpointer *out_to_free);
+	const char *const*(*complete_fcn) (const NMMetaAbstractInfo *info,
+	                                   const char *text,
+	                                   char ***out_to_free);
 };
 
 struct _NMMetaAbstractInfo {

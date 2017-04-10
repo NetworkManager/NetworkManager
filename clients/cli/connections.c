@@ -3847,13 +3847,6 @@ ensure_settings (NMConnection *connection, const NameItem *item)
 /*----------------------------------------------------------------------------*/
 
 static char *
-gen_func_slave_type (const char *text, int state)
-{
-	const char *words[] = { "bond", "team", "bridge", NULL };
-	return nmc_rl_gen_func_basic (text, state, words);
-}
-
-static char *
 gen_func_vpn_types (const char *text, int state)
 {
 	gs_strfreev char **plugin_names = NULL;
@@ -4306,7 +4299,6 @@ _meta_abstract_get_option_info (const NMMetaAbstractInfo *abstract_info)
 		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_AUTOCONNECT,           "autoconnect",        NULL,                      gen_func_bool_values_l10n),
 		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_INTERFACE_NAME,        "ifname",             set_connection_iface,      nmc_rl_gen_func_ifnames),
 		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_MASTER,                "master",             set_connection_master,     gen_func_master_ifnames),
-		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_SLAVE_TYPE,            "slave-type",         NULL,                      gen_func_slave_type),
 		OPTION_INFO (INFINIBAND,   NM_SETTING_INFINIBAND_TRANSPORT_MODE,        "transport-mode",     NULL,                      gen_func_ib_type),
 		OPTION_INFO (WIRELESS,     NM_SETTING_WIRELESS_MODE,                    "mode",               NULL,                      gen_func_wifi_mode),
 		OPTION_INFO (BLUETOOTH,    NM_SETTING_BLUETOOTH_TYPE,                   "bt-type",            set_bluetooth_type,        gen_func_bt_type),
@@ -4462,6 +4454,15 @@ static void
 complete_option (const NMMetaAbstractInfo *abstract_info, const gchar *prefix)
 {
 	const OptionInfo *candidate;
+	const char *const*values;
+	gs_strfreev char **values_to_free = NULL;
+
+	values = nm_meta_abstract_info_complete (abstract_info, prefix, &values_to_free);
+	if (values) {
+		for (; values[0]; values++)
+			g_print ("%s\n", values[0]);
+		return;
+	}
 
 	candidate = _meta_abstract_get_option_info (abstract_info);
 	if (candidate && candidate->generator_func)
@@ -4513,7 +4514,6 @@ complete_property (const gchar *setting_name, const gchar *property, const gchar
 	} else if (   strcmp (setting_name, NM_SETTING_VXLAN_SETTING_NAME) == 0
 	           && strcmp (property, NM_SETTING_VXLAN_PARENT) == 0)
 		run_rl_generator (nmc_rl_gen_func_ifnames, prefix);
-
 }
 
 /*----------------------------------------------------------------------------*/
