@@ -3509,6 +3509,18 @@ _meta_property_needs_bond_hack (const NMMetaPropertyInfo *property_info)
 
 }
 
+static char **
+_meta_abstract_complete (const NMMetaAbstractInfo *abstract_info, const char *text)
+{
+	const char *const*values;
+	char **values_to_free = NULL;
+
+	values = nm_meta_abstract_info_complete (abstract_info, text, &values_to_free);
+	if (values)
+		return values_to_free ?: g_strdupv ((char **) values);
+	return NULL;
+}
+
 static void
 _meta_abstract_get (const NMMetaAbstractInfo *abstract_info,
                     const NMMetaSettingInfoEditor **out_setting_info,
@@ -4753,6 +4765,7 @@ is_single_word (const char* line)
 static char **
 nmcli_con_add_tab_completion (const char *text, int start, int end)
 {
+	NMMetaSettingType s;
 	char **match_array = NULL;
 	rl_compentry_func_t *generator_func = NULL;
 	gs_free char *no = g_strdup_printf ("[%s]: ", gettext ("no"));
@@ -4767,6 +4780,40 @@ nmcli_con_add_tab_completion (const char *text, int start, int end)
 	if (!is_single_word (rl_line_buffer))
 		return NULL;
 
+	for (s = 0; s < _NM_META_SETTING_TYPE_NUM; s++) {
+		const NMMetaPropertyInfo *const*property_infos;
+		guint p;
+
+		property_infos = nm_property_infos_for_setting_type (s);
+		for (p = 0; property_infos[p]; p++) {
+			const NMMetaPropertyInfo *property_info = property_infos[p];
+
+			if (_meta_property_needs_bond_hack (property_info)) {
+				guint i;
+
+				for (i = 0; i < nm_meta_property_typ_data_bond.nested_len; i++) {
+					const NMMetaNestedPropertyTypeInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
+
+					if (   bi->prompt
+					    && g_str_has_prefix (rl_prompt, bi->prompt)) {
+						goto next;
+					}
+				}
+			} else {
+				if (   property_info->prompt
+				    && g_str_has_prefix (rl_prompt, property_info->prompt)) {
+					char **values;
+
+					values = _meta_abstract_complete ((const NMMetaAbstractInfo *) property_info, text);
+					if (values)
+						return values;
+					goto next;
+				}
+			}
+		}
+	}
+
+next:
 	if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_CON_TYPE))
 		generator_func = gen_connection_types;
 	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_IFNAME))
