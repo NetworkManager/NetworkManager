@@ -2417,9 +2417,6 @@ device_removed (NMClient *client, NMDevice *device, NmCli *nmc)
 static NMCResultCode
 do_devices_monitor (NmCli *nmc, int argc, char **argv)
 {
-	GSList *queue = get_device_list (nmc, argc, argv);
-	GSList *iter;
-
 	if (nmc->complete)
 		return nmc->return_value;
 
@@ -2436,6 +2433,9 @@ do_devices_monitor (NmCli *nmc, int argc, char **argv)
 		nmc->should_wait++;
 		g_signal_connect (nmc->client, NM_CLIENT_DEVICE_ADDED, G_CALLBACK (device_added), nmc);
 	} else {
+		GSList *queue = get_device_list (nmc, argc, argv);
+		GSList *iter;
+
 		/* Monitor the specified devices. */
 		for (iter = queue; iter; iter = g_slist_next (iter))
 			device_watch (nmc, NM_DEVICE (iter->data));
