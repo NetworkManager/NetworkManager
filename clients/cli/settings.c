@@ -456,10 +456,35 @@ _env_warn_fcn_handle (const NMMetaEnvironment *environment,
 	g_print (_("Error: %s\n"), m);
 }
 
+static NMDevice *const*
+_env_get_nm_devices (const NMMetaEnvironment *environment,
+                     gpointer environment_user_data,
+                     guint *out_len)
+{
+	NmCli *nmc = environment_user_data;
+	const GPtrArray *devices;
+
+	nm_assert (nmc);
+
+	/* the returned list is *not* NULL terminated. Need to
+	 * provide and honor the out_len argument. */
+	nm_assert (out_len);
+
+	devices = nm_client_get_devices (nmc->client);
+	if (!devices) {
+		*out_len = 0;
+		return NULL;
+	}
+
+	*out_len = devices->len;
+	return (NMDevice *const*) devices->pdata;
+}
+
 /*****************************************************************************/
 
 const NMMetaEnvironment *const nmc_meta_environment = &((NMMetaEnvironment) {
 	.warn_fcn = _env_warn_fcn_handle,
+	.get_nm_devices = _env_get_nm_devices,
 });
 
 NmCli *const nmc_meta_environment_arg = &nm_cli;

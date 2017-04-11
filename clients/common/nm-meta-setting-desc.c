@@ -524,7 +524,7 @@ _env_warn_fcn (const NMMetaEnvironment *environment,
 	const NMMetaPropertyInfo *property_info, const NMMetaEnvironment *environment, gpointer environment_user_data, NMSetting *setting, const char *value, guint32 idx, GError **error
 
 #define ARGS_COMPLETE_FCN \
-	const NMMetaPropertyInfo *property_info, const char *text, char ***out_to_free
+	const NMMetaPropertyInfo *property_info, const NMMetaEnvironment *environment, gpointer environment_user_data, const char *text, char ***out_to_free
 
 #define ARGS_VALUES_FCN \
 	const NMMetaPropertyInfo *property_info, char ***out_to_free
@@ -1105,6 +1105,40 @@ _complete_fcn_gobject_bool (ARGS_COMPLETE_FCN)
 	if (!text || !text[0])
 		return &v[6];
 	return v;
+}
+
+static const char *const*
+_complete_fcn_gobject_devices (ARGS_COMPLETE_FCN)
+{
+	NMDevice *const*devices = NULL;
+	guint i, j;
+	guint len = 0;
+	char **ifnames;
+
+	if (   environment
+	    && environment->get_nm_devices) {
+		devices = environment->get_nm_devices (environment,
+		                                       environment_user_data,
+		                                       &len);
+	}
+
+	if (len == 0)
+		return NULL;
+
+	ifnames = g_new (char *, len + 1);
+	for (i = 0, j = 0; i < len; i++) {
+		const char *ifname;
+
+		nm_assert (NM_IS_DEVICE (devices[i]));
+
+		ifname = nm_device_get_iface (devices[i]);
+		if (ifname)
+			ifnames[j++] = g_strdup (ifname);
+	}
+	ifnames[j++] = NULL;
+
+	*out_to_free = ifnames;
+	return (const char *const*) ifnames;
 }
 
 /*****************************************************************************/
@@ -4772,6 +4806,12 @@ static const NMMetaPropertyType _pt_gobject_enum = {
 	.values_fcn =                   _values_fcn_gobject_enum,
 };
 
+static const NMMetaPropertyType _pt_gobject_devices = {
+	.get_fcn =                      _get_fcn_gobject,
+	.set_fcn =                      _set_fcn_gobject_string,
+	.complete_fcn =                 _complete_fcn_gobject_devices,
+};
+
 /*****************************************************************************/
 
 #include "settings-docs.c"
@@ -5346,6 +5386,7 @@ static const NMMetaPropertyInfo property_infos_CONNECTION[] = {
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
 			.set_fcn =                  _set_fcn_gobject_ifname,
+			.complete_fcn =             _complete_fcn_gobject_devices,
 		),
 	},
 	{
@@ -6040,7 +6081,7 @@ static const NMMetaPropertyInfo property_infos_IP_TUNNEL[] = {
 		.is_cli_option =                TRUE,
 		.property_alias =               "dev",
 		.prompt =                       N_("Parent device [none]"),
-		.property_type =                &_pt_gobject_string,
+		.property_type =                &_pt_gobject_devices,
 	},
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_IP_TUNNEL_LOCAL),
@@ -6173,7 +6214,7 @@ static const NMMetaPropertyInfo property_infos_MACVLAN[] = {
 		.property_alias =               "dev",
 		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
 		.prompt =                       N_("MACVLAN parent device or connection UUID"),
-		.property_type =                &_pt_gobject_string,
+		.property_type =                &_pt_gobject_devices,
 	},
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_MACVLAN_MODE),
@@ -6519,7 +6560,7 @@ static const NMMetaPropertyInfo property_infos_VLAN[] = {
 		.property_alias =               "dev",
 		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
 		.prompt =                       N_("VLAN parent device or connection UUID"),
-		.property_type =                &_pt_gobject_string,
+		.property_type =                &_pt_gobject_devices,
 	},
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_VLAN_ID),
@@ -6620,7 +6661,7 @@ static const NMMetaPropertyInfo property_infos_VXLAN[] = {
 		.is_cli_option =                TRUE,
 		.property_alias =               "dev",
 		.prompt =                       N_("Parent device [none]"),
-		.property_type =                &_pt_gobject_string,
+		.property_type =                &_pt_gobject_devices,
 	},
 	{
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_VXLAN_ID),
@@ -7467,6 +7508,8 @@ _meta_type_property_info_get_nested (const NMMetaAbstractInfo *abstract_info,
 
 static const char *const*
 _meta_type_property_info_complete_fcn (const NMMetaAbstractInfo *abstract_info,
+                                       const NMMetaEnvironment *environment,
+                                       gpointer environment_user_data,
                                        const char *text,
                                        char ***out_to_free)
 {
@@ -7476,6 +7519,8 @@ _meta_type_property_info_complete_fcn (const NMMetaAbstractInfo *abstract_info,
 
 	if (info->property_type->complete_fcn) {
 		return info->property_type->complete_fcn (info,
+		                                          environment,
+		                                          environment_user_data,
 		                                          text,
 		                                          out_to_free);
 	}

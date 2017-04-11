@@ -60,6 +60,8 @@ gconstpointer nm_meta_abstract_info_get (const NMMetaAbstractInfo *abstract_info
                                          gpointer *out_to_free);
 
 const char *const*nm_meta_abstract_info_complete (const NMMetaAbstractInfo *abstract_info,
+                                                  const NMMetaEnvironment *environment,
+                                                  gpointer environment_user_data,
                                                   const char *text,
                                                   char ***out_to_free);
 

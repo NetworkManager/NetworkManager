@@ -261,6 +261,8 @@ nm_meta_abstract_info_get (const NMMetaAbstractInfo *abstract_info,
 
 const char *const*
 nm_meta_abstract_info_complete (const NMMetaAbstractInfo *abstract_info,
+                                const NMMetaEnvironment *environment,
+                                gpointer environment_user_data,
                                 const char *text,
                                 char ***out_to_free)
 {
@@ -277,6 +279,8 @@ nm_meta_abstract_info_complete (const NMMetaAbstractInfo *abstract_info,
 		return NULL;
 
 	values = abstract_info->meta_type->complete_fcn (abstract_info,
+	                                                 environment,
+	                                                 environment_user_data,
 	                                                 text,
 	                                                 out_to_free);
 

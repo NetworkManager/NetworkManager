@@ -22,6 +22,8 @@
 
 #include "nm-meta-setting.h"
 
+struct _NMDevice;
+
 #define NM_META_TEXT_HIDDEN "<hidden>"
 
 #define NM_META_TEXT_PROMPT_ADSL_PROTO N_("Protocol")
@@ -197,6 +199,8 @@ struct _NMMetaPropertyType {
 	                                 char ***out_to_free);
 
 	const char *const*(*complete_fcn) (const NMMetaPropertyInfo *property_info,
+	                                   const NMMetaEnvironment *environment,
+	                                   gpointer environment_user_data,
 	                                   const char *text,
 	                                   char ***out_to_free);
 };
@@ -313,6 +317,8 @@ struct _NMMetaType {
 	                          NMMetaAccessorGetOutFlags *out_flags,
 	                          gpointer *out_to_free);
 	const char *const*(*complete_fcn) (const NMMetaAbstractInfo *info,
+	                                   const NMMetaEnvironment *environment,
+	                                   gpointer environment_user_data,
 	                                   const char *text,
 	                                   char ***out_to_free);
 };
@@ -348,6 +354,10 @@ struct _NMMetaEnvironment {
 	                  NMMetaEnvWarnLevel warn_level,
 	                  const char *fmt_l10n, /* the untranslated format string, but it is marked for translation using N_(). */
 	                  va_list ap);
+
+	struct _NMDevice *const*(*get_nm_devices) (const NMMetaEnvironment *environment,
+	                                           gpointer environment_user_data,
+	                                           guint *out_len);
 
 };
 

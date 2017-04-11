@@ -3347,7 +3347,11 @@ _meta_abstract_complete (const NMMetaAbstractInfo *abstract_info, const char *te
 	const char *const*values;
 	char **values_to_free = NULL;
 
-	values = nm_meta_abstract_info_complete (abstract_info, text, &values_to_free);
+	values = nm_meta_abstract_info_complete (abstract_info,
+	                                         nmc_meta_environment,
+	                                         nmc_meta_environment_arg,
+	                                         text,
+	                                         &values_to_free);
 	if (values)
 		return values_to_free ?: g_strdupv ((char **) values);
 	return NULL;
@@ -4031,10 +4035,9 @@ _meta_abstract_get_option_info (const NMMetaAbstractInfo *abstract_info)
 			.generator_func =      generator_func_, \
 		}
 		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_TYPE,                  "type",               set_connection_type,       gen_connection_types),
-		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_INTERFACE_NAME,        "ifname",             set_connection_iface,      nmc_rl_gen_func_ifnames),
+		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_INTERFACE_NAME,        "ifname",             set_connection_iface,      NULL),
 		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_MASTER,                "master",             set_connection_master,     gen_func_master_ifnames),
 		OPTION_INFO (BLUETOOTH,    NM_SETTING_BLUETOOTH_TYPE,                   "bt-type",            set_bluetooth_type,        gen_func_bt_type),
-		OPTION_INFO (VLAN,         NM_SETTING_VLAN_PARENT,                      "dev",                NULL,                      nmc_rl_gen_func_ifnames),
 		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     "mode",               set_bond_option,           gen_func_bond_mode),
 		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     "primary",            set_bond_option,           nmc_rl_gen_func_ifnames),
 		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     NULL,                 set_bond_monitoring_mode,  gen_func_bond_mon_mode),
@@ -4044,9 +4047,6 @@ _meta_abstract_get_option_info (const NMMetaAbstractInfo *abstract_info)
 		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     "arp-interval",       set_bond_option,           NULL),
 		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     "arp-ip-target",      set_bond_option,           NULL),
 		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     "lacp-rate",          set_bond_option,           gen_func_bond_lacp_rate),
-		OPTION_INFO (MACVLAN,      NM_SETTING_MACVLAN_PARENT,                   "dev",                NULL,                      nmc_rl_gen_func_ifnames),
-		OPTION_INFO (VXLAN,        NM_SETTING_VXLAN_PARENT,                     "dev",                NULL,                      nmc_rl_gen_func_ifnames),
-		OPTION_INFO (IP_TUNNEL,    NM_SETTING_IP_TUNNEL_PARENT,                 "dev",                NULL,                      nmc_rl_gen_func_ifnames),
 		OPTION_INFO (IP4_CONFIG,   NM_SETTING_IP_CONFIG_ADDRESSES,              "ip4",                set_ip4_address,           NULL),
 		OPTION_INFO (IP6_CONFIG,   NM_SETTING_IP_CONFIG_ADDRESSES,              "ip6",                set_ip6_address,           NULL),
 		{ 0 },
@@ -4170,7 +4170,11 @@ complete_option (const NMMetaAbstractInfo *abstract_info, const gchar *prefix)
 	const char *const*values;
 	gs_strfreev char **values_to_free = NULL;
 
-	values = nm_meta_abstract_info_complete (abstract_info, prefix, &values_to_free);
+	values = nm_meta_abstract_info_complete (abstract_info,
+	                                         nmc_meta_environment,
+	                                         nmc_meta_environment_arg,
+	                                         prefix,
+	                                         &values_to_free);
 	if (values) {
 		for (; values[0]; values++)
 			g_print ("%s\n", values[0]);
@@ -4202,20 +4206,9 @@ complete_property (const gchar *setting_name, const gchar *property, const gchar
 			run_rl_generator (gen_connection_types, prefix);
 		else if (strcmp (property, NM_SETTING_CONNECTION_MASTER) == 0)
 			run_rl_generator (gen_func_master_ifnames, prefix);
-		else if (strcmp (property, NM_SETTING_CONNECTION_INTERFACE_NAME) == 0)
-			run_rl_generator (nmc_rl_gen_func_ifnames, prefix);
 	} else if (   strcmp (setting_name, NM_SETTING_BLUETOOTH_SETTING_NAME) == 0
 	         && strcmp (property, NM_SETTING_BLUETOOTH_TYPE) == 0)
 		run_rl_generator (gen_func_bt_type, prefix);
-	else if (strcmp (setting_name, NM_SETTING_IP_TUNNEL_SETTING_NAME) == 0) {
-		if (strcmp (property, NM_SETTING_IP_TUNNEL_PARENT) == 0)
-			run_rl_generator (nmc_rl_gen_func_ifnames, prefix);
-	} else if (strcmp (setting_name, NM_SETTING_MACVLAN_SETTING_NAME) == 0) {
-		if (strcmp (property, NM_SETTING_MACVLAN_PARENT) == 0)
-			run_rl_generator (nmc_rl_gen_func_ifnames, prefix);
-	} else if (   strcmp (setting_name, NM_SETTING_VXLAN_SETTING_NAME) == 0
-	           && strcmp (property, NM_SETTING_VXLAN_PARENT) == 0)
-		run_rl_generator (nmc_rl_gen_func_ifnames, prefix);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4520,8 +4513,6 @@ nmcli_con_add_tab_completion (const char *text, int start, int end)
 next:
 	if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_CON_TYPE))
 		generator_func = gen_connection_types;
-	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_IFNAME))
-		generator_func = nmc_rl_gen_func_ifnames;
 	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_MASTER))
 		generator_func = gen_func_master_ifnames;
 	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_BT_TYPE))
