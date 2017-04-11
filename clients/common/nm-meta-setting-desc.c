@@ -524,7 +524,7 @@ _env_warn_fcn (const NMMetaEnvironment *environment,
 	const NMMetaPropertyInfo *property_info, const NMMetaEnvironment *environment, gpointer environment_user_data, NMSetting *setting, const char *value, guint32 idx, GError **error
 
 #define ARGS_COMPLETE_FCN \
-	const NMMetaPropertyInfo *property_info, const NMMetaEnvironment *environment, gpointer environment_user_data, const char *text, char ***out_to_free
+	const NMMetaPropertyInfo *property_info, const NMMetaEnvironment *environment, gpointer environment_user_data, const NMMetaOperationContext *operation_context, const char *text, char ***out_to_free
 
 #define ARGS_VALUES_FCN \
 	const NMMetaPropertyInfo *property_info, char ***out_to_free
@@ -2357,6 +2357,68 @@ _set_fcn_connection_master (ARGS_SET_FCN)
 	}
 	g_object_set (setting, property_info->property_name, value, NULL);
 	return TRUE;
+}
+
+static const char *const*
+_complete_fcn_connection_master (ARGS_COMPLETE_FCN)
+{
+	NMRemoteConnection *const*connections = NULL;
+	guint len = 0;
+	guint i, j;
+	char **result;
+	NMSettingConnection *s_con;
+	const char *expected_type = NULL;
+	gsize text_len;
+
+	if (   environment
+	    && environment->get_nm_connections) {
+		connections = environment->get_nm_connections (environment,
+		                                               environment_user_data,
+		                                               &len);
+	}
+	if (!len)
+		return NULL;
+
+	if (   (!text || !*text)
+	    && operation_context
+	    && operation_context->connection) {
+		/* if we have no text yet, initially only complete for matching
+		 * slave-type. */
+		s_con = nm_connection_get_setting_connection (operation_context->connection);
+		if (s_con)
+			expected_type = nm_setting_connection_get_slave_type (s_con);
+	}
+
+	text_len = strlen (text);
+
+	result = g_new (char *, (2 * len) + 1);
+	for (i = 0, j = 0; i < len; i++) {
+		const char *v;
+
+		s_con = nm_connection_get_setting_connection (NM_CONNECTION (connections[i]));
+		if (!s_con)
+			continue;
+
+		if (   expected_type
+		    && !nm_streq0 (nm_setting_connection_get_connection_type (s_con),
+		                   expected_type))
+			continue;
+
+		if (text && text[0]) {
+			/* if we have text, also complete for the UUID. */
+			v = nm_setting_connection_get_uuid (s_con);
+			if (v && (!text || strncmp (text, v, text_len) == 0))
+				result[j++] = g_strdup (v);
+		}
+
+		v = nm_setting_connection_get_interface_name (s_con);
+		if (v && (!text || strncmp (text, v, text_len) == 0))
+			result[j++] = g_strdup (v);
+	}
+	result[j++] = NULL;
+
+	*out_to_free = NULL;
+	return (const char *const*) result;
 }
 
 static gboolean
@@ -5452,6 +5514,7 @@ static const NMMetaPropertyInfo property_infos_CONNECTION[] = {
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
 			.set_fcn =                  _set_fcn_connection_master,
+			.complete_fcn =             _complete_fcn_connection_master,
 		),
 	},
 	{
@@ -7510,6 +7573,7 @@ static const char *const*
 _meta_type_property_info_complete_fcn (const NMMetaAbstractInfo *abstract_info,
                                        const NMMetaEnvironment *environment,
                                        gpointer environment_user_data,
+                                       const NMMetaOperationContext *operation_context,
                                        const char *text,
                                        char ***out_to_free)
 {
@@ -7521,6 +7585,7 @@ _meta_type_property_info_complete_fcn (const NMMetaAbstractInfo *abstract_info,
 		return info->property_type->complete_fcn (info,
 		                                          environment,
 		                                          environment_user_data,
+		                                          operation_context,
 		                                          text,
 		                                          out_to_free);
 	}

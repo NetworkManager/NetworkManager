@@ -3346,10 +3346,14 @@ _meta_abstract_complete (const NMMetaAbstractInfo *abstract_info, const char *te
 {
 	const char *const*values;
 	char **values_to_free = NULL;
+	const NMMetaOperationContext ctx = {
+		.connection = nmc_tab_completion.connection,
+	};
 
 	values = nm_meta_abstract_info_complete (abstract_info,
 	                                         nmc_meta_environment,
 	                                         nmc_meta_environment_arg,
+	                                         &ctx,
 	                                         text,
 	                                         &values_to_free);
 	if (values)
@@ -3717,42 +3721,6 @@ gen_func_bond_lacp_rate (const char *text, int state)
 	return nmc_rl_gen_func_basic (text, state, words);
 }
 
-static char *
-gen_func_master_ifnames (const char *text, int state)
-{
-	int i;
-	GPtrArray *ifnames;
-	char *ret;
-	NMConnection *con;
-	NMSettingConnection *s_con;
-	const char *con_type, *ifname;
-	const GPtrArray *connections;
-
-	connections = nm_client_get_connections (nm_cli.client);
-
-	/* Disable appending space after completion */
-	rl_completion_append_character = '\0';
-
-	ifnames = g_ptr_array_sized_new (20);
-	for (i = 0; i < connections->len; i++) {
-		con = NM_CONNECTION (connections->pdata[i]);
-		s_con = nm_connection_get_setting_connection (con);
-		g_assert (s_con);
-		con_type = nm_setting_connection_get_connection_type (s_con);
-		if (g_strcmp0 (con_type, nmc_tab_completion.con_type) != 0)
-			continue;
-		ifname = nm_connection_get_interface_name (con);
-		g_ptr_array_add (ifnames, (gpointer) ifname);
-	}
-	g_ptr_array_add (ifnames, (gpointer) NULL);
-
-	ret = nmc_rl_gen_func_basic (text, state, (const char **) ifnames->pdata);
-
-	g_ptr_array_free (ifnames, TRUE);
-	return ret;
-}
-
-
 /*----------------------------------------------------------------------------*/
 
 static gboolean
@@ -4036,7 +4004,7 @@ _meta_abstract_get_option_info (const NMMetaAbstractInfo *abstract_info)
 		}
 		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_TYPE,                  "type",               set_connection_type,       gen_connection_types),
 		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_INTERFACE_NAME,        "ifname",             set_connection_iface,      NULL),
-		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_MASTER,                "master",             set_connection_master,     gen_func_master_ifnames),
+		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_MASTER,                "master",             set_connection_master,     NULL),
 		OPTION_INFO (BLUETOOTH,    NM_SETTING_BLUETOOTH_TYPE,                   "bt-type",            set_bluetooth_type,        gen_func_bt_type),
 		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     "mode",               set_bond_option,           gen_func_bond_mode),
 		OPTION_INFO (BOND,         NM_SETTING_BOND_OPTIONS,                     "primary",            set_bond_option,           nmc_rl_gen_func_ifnames),
@@ -4164,15 +4132,19 @@ run_rl_generator (rl_compentry_func_t *generator_func, const char *prefix)
 }
 
 static gboolean
-complete_option (const NMMetaAbstractInfo *abstract_info, const gchar *prefix)
+complete_option (const NMMetaAbstractInfo *abstract_info, const gchar *prefix, NMConnection *context_connection)
 {
 	const OptionInfo *candidate;
 	const char *const*values;
 	gs_strfreev char **values_to_free = NULL;
+	const NMMetaOperationContext ctx = {
+		.connection = context_connection,
+	};
 
 	values = nm_meta_abstract_info_complete (abstract_info,
 	                                         nmc_meta_environment,
 	                                         nmc_meta_environment_arg,
+	                                         &ctx,
 	                                         prefix,
 	                                         &values_to_free);
 	if (values) {
@@ -4191,21 +4163,19 @@ complete_option (const NMMetaAbstractInfo *abstract_info, const gchar *prefix)
 }
 
 static void
-complete_property (const gchar *setting_name, const gchar *property, const gchar *prefix)
+complete_property (const gchar *setting_name, const gchar *property, const gchar *prefix, NMConnection *connection)
 {
 	const NMMetaPropertyInfo *property_info;
 
 	property_info = nm_meta_property_info_find_by_name (setting_name, property);
 	if (property_info) {
-		if (complete_option ((const NMMetaAbstractInfo *) property_info, prefix))
+		if (complete_option ((const NMMetaAbstractInfo *) property_info, prefix, connection))
 			return;
 	}
 
 	if (strcmp (setting_name, NM_SETTING_CONNECTION_SETTING_NAME) == 0) {
 		if (strcmp (property, NM_SETTING_CONNECTION_TYPE) == 0)
 			run_rl_generator (gen_connection_types, prefix);
-		else if (strcmp (property, NM_SETTING_CONNECTION_MASTER) == 0)
-			run_rl_generator (gen_func_master_ifnames, prefix);
 	} else if (   strcmp (setting_name, NM_SETTING_BLUETOOTH_SETTING_NAME) == 0
 	         && strcmp (property, NM_SETTING_BLUETOOTH_TYPE) == 0)
 		run_rl_generator (gen_func_bt_type, prefix);
@@ -4299,7 +4269,7 @@ nmc_read_connection_properties (NmCli *nmc,
 				return FALSE;
 
 			if (!*argc && nmc->complete)
-				complete_property (setting, strv[1], value ? value : "");
+				complete_property (setting, strv[1], value ? value : "", connection);
 
 			if (!set_property (connection, setting_name, strv[1], value, modifier, error))
 				return FALSE;
@@ -4378,7 +4348,7 @@ nmc_read_connection_properties (NmCli *nmc,
 				return FALSE;
 
 			if (!*argc && nmc->complete)
-				complete_option (chosen, value ? value : "");
+				complete_option (chosen, value ? value : "", connection);
 
 			if (!set_option (nmc, connection, chosen, value, error))
 				return FALSE;
@@ -4513,8 +4483,6 @@ nmcli_con_add_tab_completion (const char *text, int start, int end)
 next:
 	if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_CON_TYPE))
 		generator_func = gen_connection_types;
-	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_MASTER))
-		generator_func = gen_func_master_ifnames;
 	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_BT_TYPE))
 		generator_func = gen_func_bt_type;
 	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_BOND_MODE))
@@ -8422,7 +8390,7 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 			}
 
 			if (argc == 1 && nmc->complete)
-				complete_option ((const NMMetaAbstractInfo *) nm_meta_property_info_vpn_service_type, *argv);
+				complete_option ((const NMMetaAbstractInfo *) nm_meta_property_info_vpn_service_type, *argv, NULL);
 
 			if (!type)
 				type = *argv;

@@ -480,11 +480,36 @@ _env_get_nm_devices (const NMMetaEnvironment *environment,
 	return (NMDevice *const*) devices->pdata;
 }
 
+static NMRemoteConnection *const*
+_env_get_nm_connections (const NMMetaEnvironment *environment,
+                         gpointer environment_user_data,
+                         guint *out_len)
+{
+	NmCli *nmc = environment_user_data;
+	const GPtrArray *values;
+
+	nm_assert (nmc);
+
+	/* the returned list is *not* NULL terminated. Need to
+	 * provide and honor the out_len argument. */
+	nm_assert (out_len);
+
+	values = nm_client_get_connections (nmc->client);
+	if (!values) {
+		*out_len = 0;
+		return NULL;
+	}
+
+	*out_len = values->len;
+	return (NMRemoteConnection *const*) values->pdata;
+}
+
 /*****************************************************************************/
 
 const NMMetaEnvironment *const nmc_meta_environment = &((NMMetaEnvironment) {
 	.warn_fcn = _env_warn_fcn_handle,
 	.get_nm_devices = _env_get_nm_devices,
+	.get_nm_connections = _env_get_nm_connections,
 });
 
 NmCli *const nmc_meta_environment_arg = &nm_cli;

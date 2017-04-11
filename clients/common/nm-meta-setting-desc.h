@@ -168,6 +168,14 @@ typedef struct _NMMetaSettingInfoEditor     NMMetaSettingInfoEditor;
 typedef struct _NMMetaPropertyInfo          NMMetaPropertyInfo;
 typedef struct _NMMetaPropertyType          NMMetaPropertyType;
 typedef struct _NMMetaPropertyTypData       NMMetaPropertyTypData;
+typedef struct _NMMetaOperationContext      NMMetaOperationContext;
+
+/* this gives some context information for virtual functions.
+ * This command actually violates layering, and should be considered
+ * a hack. In the future, try to replace it's use. */
+struct _NMMetaOperationContext {
+	NMConnection *connection;
+};
 
 struct _NMMetaPropertyType {
 
@@ -201,6 +209,7 @@ struct _NMMetaPropertyType {
 	const char *const*(*complete_fcn) (const NMMetaPropertyInfo *property_info,
 	                                   const NMMetaEnvironment *environment,
 	                                   gpointer environment_user_data,
+	                                   const NMMetaOperationContext *operation_context,
 	                                   const char *text,
 	                                   char ***out_to_free);
 };
@@ -319,6 +328,7 @@ struct _NMMetaType {
 	const char *const*(*complete_fcn) (const NMMetaAbstractInfo *info,
 	                                   const NMMetaEnvironment *environment,
 	                                   gpointer environment_user_data,
+	                                   const NMMetaOperationContext *operation_context,
 	                                   const char *text,
 	                                   char ***out_to_free);
 };
@@ -358,6 +368,10 @@ struct _NMMetaEnvironment {
 	struct _NMDevice *const*(*get_nm_devices) (const NMMetaEnvironment *environment,
 	                                           gpointer environment_user_data,
 	                                           guint *out_len);
+
+	struct _NMRemoteConnection *const*(*get_nm_connections) (const NMMetaEnvironment *environment,
+	                                                         gpointer environment_user_data,
+	                                                         guint *out_len);
 
 };
 
