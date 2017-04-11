@@ -6977,7 +6977,7 @@ menu_switch_to_level1 (NmCli *nmc,
 }
 
 static gboolean
-editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_type)
+editor_menu_main (NmCli *nmc, NMConnection *connection)
 {
 	NMSettingConnection *s_con;
 	NMRemoteConnection *rem_con;
@@ -7005,7 +7005,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 		s_type = nm_setting_connection_get_slave_type (s_con);
 	slv_type = g_strdup_printf ("%s-slave", s_type ? s_type : "no");
 
-	valid_settings_main = get_valid_settings_array (connection_type);
+	valid_settings_main = get_valid_settings_array (nm_connection_get_connection_type (connection));
 	valid_settings_slave = get_valid_settings_array (slv_type);
 	g_free (slv_type);
 
@@ -8047,11 +8047,11 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 
 	/* Set global variables for use in TAB completion */
 	nmc_tab_completion.nmc = nmc;
-	nmc_tab_completion.con_type = g_strdup (connection_type);
+	nmc_tab_completion.con_type = g_strdup (nm_connection_get_connection_type (connection));
 	nmc_tab_completion.connection = connection;
 
 	/* Run menu loop */
-	editor_menu_main (nmc, connection, connection_type);
+	editor_menu_main (nmc, connection);
 
 	if (connection)
 		g_object_unref (connection);
