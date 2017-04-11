@@ -2773,262 +2773,26 @@ finish:
 
 /*----------------------------------------------------------------------------*/
 
-typedef struct NameItem {
-	const char *name;
-	const struct NameItem *settings;
-	gboolean mandatory;
-} NameItem;
-
-#define NAME_ITEM_SIMPLE(name_, mandatory_) \
-	{ \
-		.name = NM_SETTING_##name_##_SETTING_NAME, \
-		.mandatory = mandatory_, \
-	}
-
-static const NameItem nmc_generic_settings [] = {
-	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
-	{ 0 }
-};
-
-static const NameItem nmc_ethernet_settings [] = {
-	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
-	NAME_ITEM_SIMPLE (WIRED,       TRUE),
-	NAME_ITEM_SIMPLE (802_1X,      FALSE),
-	NAME_ITEM_SIMPLE (DCB,         FALSE),
-	{ 0 }
-};
-
-static const NameItem nmc_infiniband_settings [] = {
-	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
-	NAME_ITEM_SIMPLE (INFINIBAND,  TRUE),
-	{ 0 }
-};
-
-static const NameItem nmc_wifi_settings [] = {
-	NAME_ITEM_SIMPLE (CONNECTION,         TRUE),
-	NAME_ITEM_SIMPLE (WIRELESS,           TRUE),
-	NAME_ITEM_SIMPLE (WIRELESS_SECURITY,  FALSE),
-	NAME_ITEM_SIMPLE (802_1X,             FALSE),
-	{ 0 }
-};
-
-static const NameItem nmc_wimax_settings [] = {
-	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
-	NAME_ITEM_SIMPLE (WIMAX,       TRUE),
-	{ 0 }
-};
-
-static const NameItem nmc_gsm_settings [] = {
-	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
-	NAME_ITEM_SIMPLE (GSM,         TRUE),
-	NAME_ITEM_SIMPLE (SERIAL,      FALSE),
-	NAME_ITEM_SIMPLE (PPP,         FALSE),
-	{ 0 }
-};
-
-static const NameItem nmc_cdma_settings [] = {
-	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
-	NAME_ITEM_SIMPLE (CDMA,        TRUE),
-	NAME_ITEM_SIMPLE (SERIAL,      FALSE),
-	NAME_ITEM_SIMPLE (PPP,         FALSE),
-	{ 0 }
-};
-
-static const NameItem nmc_bluetooth_settings [] = {
-	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
-	NAME_ITEM_SIMPLE (BLUETOOTH,   TRUE),
-	{ 0 }
-};
-
-static const NameItem nmc_adsl_settings [] = {
-	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
-	NAME_ITEM_SIMPLE (ADSL,        TRUE),
-	{ 0 }
-};
-
-/* PPPoE is a base connection type from historical reasons.
- * See libnm-core/nm-setting.c:_nm_setting_is_base_type()
- */
-static const NameItem nmc_pppoe_settings [] = {
-	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
-	NAME_ITEM_SIMPLE (WIRED,       TRUE),
-	NAME_ITEM_SIMPLE (PPPOE,       TRUE),
-	NAME_ITEM_SIMPLE (PPP,         FALSE),
-	NAME_ITEM_SIMPLE (802_1X,      FALSE),
-	{ 0 }
-};
-
-static const NameItem nmc_olpc_mesh_settings [] = {
-	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
-	NAME_ITEM_SIMPLE (OLPC_MESH,   TRUE),
-	{ 0 }
-};
-
-static const NameItem nmc_vpn_settings [] = {
-	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
-	NAME_ITEM_SIMPLE (VPN,         TRUE),
-	{ 0 }
-};
-
-static const NameItem nmc_vlan_settings [] = {
-	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
-	NAME_ITEM_SIMPLE (WIRED,       FALSE),
-	NAME_ITEM_SIMPLE (VLAN,        TRUE),
-	{ 0 }
-};
-
-static const NameItem nmc_bond_settings [] = {
-	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
-	NAME_ITEM_SIMPLE (BOND,        TRUE),
-	NAME_ITEM_SIMPLE (WIRED,       FALSE),
-	{ 0 }
-};
-
-static const NameItem nmc_team_settings [] = {
-	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
-	NAME_ITEM_SIMPLE (TEAM,        TRUE),
-	NAME_ITEM_SIMPLE (WIRED,       FALSE),
-	{ 0 }
-};
-
-static const NameItem nmc_bridge_settings [] = {
-	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
-	NAME_ITEM_SIMPLE (BRIDGE,      TRUE),
-	NAME_ITEM_SIMPLE (WIRED,       FALSE),
-	{ 0 }
-};
-
-static const NameItem nmc_bond_slave_settings [] = {
-	{ 0 }
-};
-
-static const NameItem nmc_team_slave_settings [] = {
-	NAME_ITEM_SIMPLE (TEAM_PORT,   TRUE),
-	{ 0 }
-};
-
-static const NameItem nmc_bridge_slave_settings [] = {
-	NAME_ITEM_SIMPLE (BRIDGE_PORT,  TRUE),
-	{ 0 }
-};
-
-static const NameItem nmc_no_slave_settings [] = {
-	NAME_ITEM_SIMPLE (IP4_CONFIG,  FALSE),
-	NAME_ITEM_SIMPLE (IP6_CONFIG,  FALSE),
-	NAME_ITEM_SIMPLE (PROXY,       FALSE),
-	{ 0 }
-};
-
-static const NameItem nmc_tun_settings [] = {
-	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
-	NAME_ITEM_SIMPLE (TUN,         TRUE),
-	NAME_ITEM_SIMPLE (WIRED,       FALSE),
-	{ 0 }
-};
-
-static const NameItem nmc_ip_tunnel_settings [] = {
-	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
-	NAME_ITEM_SIMPLE (IP_TUNNEL,   TRUE),
-	{ 0 }
-};
-
-static const NameItem nmc_macsec_settings [] = {
-	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
-	NAME_ITEM_SIMPLE (WIRED,       FALSE),
-	NAME_ITEM_SIMPLE (802_1X,      FALSE),
-	NAME_ITEM_SIMPLE (MACSEC,      TRUE),
-	{ 0 }
-};
-
-static const NameItem nmc_macvlan_settings [] = {
-	NAME_ITEM_SIMPLE (CONNECTION,  TRUE),
-	NAME_ITEM_SIMPLE (WIRED,       FALSE),
-	NAME_ITEM_SIMPLE (MACVLAN,     TRUE),
-	{ 0 }
-};
-
-static const NameItem nmc_vxlan_settings [] = {
-	NAME_ITEM_SIMPLE (CONNECTION,   TRUE),
-	NAME_ITEM_SIMPLE (VXLAN,        TRUE),
-	NAME_ITEM_SIMPLE (WIRED,        FALSE),
-	{ 0 }
-};
-
-static const NameItem nmc_dummy_settings [] = {
-	NAME_ITEM_SIMPLE (CONNECTION,   TRUE),
-	NAME_ITEM_SIMPLE (DUMMY,        TRUE),
-	NAME_ITEM_SIMPLE (WIRED,        FALSE),
-	{ 0 }
-};
-
-static const NameItem nmc_valid_connection_types[] = {
-	{ NM_SETTING_GENERIC_SETTING_NAME,    nmc_generic_settings      }, /* Needs to be first. */
-	{ NM_SETTING_WIRED_SETTING_NAME,      nmc_ethernet_settings     },
-	{ NM_SETTING_PPPOE_SETTING_NAME,      nmc_pppoe_settings        },
-	{ NM_SETTING_WIRELESS_SETTING_NAME,   nmc_wifi_settings         },
-	{ NM_SETTING_WIMAX_SETTING_NAME,      nmc_wimax_settings        },
-	{ NM_SETTING_GSM_SETTING_NAME,        nmc_gsm_settings          },
-	{ NM_SETTING_CDMA_SETTING_NAME,       nmc_cdma_settings         },
-	{ NM_SETTING_INFINIBAND_SETTING_NAME, nmc_infiniband_settings   },
-	{ NM_SETTING_ADSL_SETTING_NAME,       nmc_adsl_settings         },
-	{ NM_SETTING_BLUETOOTH_SETTING_NAME,  nmc_bluetooth_settings    },
-	{ NM_SETTING_VPN_SETTING_NAME,        nmc_vpn_settings          },
-	{ NM_SETTING_OLPC_MESH_SETTING_NAME,  nmc_olpc_mesh_settings    },
-	{ NM_SETTING_VLAN_SETTING_NAME,       nmc_vlan_settings         },
-	{ NM_SETTING_BOND_SETTING_NAME,       nmc_bond_settings         },
-	{ NM_SETTING_TEAM_SETTING_NAME,       nmc_team_settings         },
-	{ NM_SETTING_BRIDGE_SETTING_NAME,     nmc_bridge_settings       },
-	{ "bond-slave",                       nmc_bond_slave_settings   },
-	{ "team-slave",                       nmc_team_slave_settings   },
-	{ "bridge-slave",                     nmc_bridge_slave_settings },
-	{ "no-slave",                         nmc_no_slave_settings     },
-	{ NM_SETTING_TUN_SETTING_NAME,        nmc_tun_settings          },
-	{ NM_SETTING_IP_TUNNEL_SETTING_NAME,  nmc_ip_tunnel_settings    },
-	{ NM_SETTING_MACSEC_SETTING_NAME,     nmc_macsec_settings       },
-	{ NM_SETTING_MACVLAN_SETTING_NAME,    nmc_macvlan_settings      },
-	{ NM_SETTING_VXLAN_SETTING_NAME,      nmc_vxlan_settings        },
-	{ NM_SETTING_DUMMY_SETTING_NAME,      nmc_dummy_settings        },
-	{ 0 }
-};
-
-static const char *
-_name_item_get_alias (const NameItem *item)
-{
-	const NMMetaSettingInfoEditor *info;
-
-	info = nm_meta_setting_info_editor_find_by_name (item->name);
-	if (!info)
-		return NULL;
-	return info->alias;
-}
-
 /*
  * Return the most appropriate name for the connection of a type 'name' possibly with given 'slave_type'
  * if exists, else return the 'name'. The returned string must not be freed.
  */
 static const char *
-get_name_alias (const char *name, const char *slave_type, const NameItem array[])
+get_name_alias_toplevel (const char *name, const char *slave_type)
 {
-	const NameItem *iter = &array[0];
+	const NMMetaSettingInfoEditor *setting_info;
 
 	if (slave_type) {
-		while (iter && iter->name) {
-			if (   g_str_has_prefix (iter->name, slave_type)
-			    && g_str_has_suffix (iter->name, "-slave"))
-				break;
-			iter++;
-		}
-	} else if (name) {
-		while (iter && iter->name) {
-			if (!strcmp (name, iter->name))
-				break;
-			iter++;
-		}
-	} else
-		return NULL;
+		const char *slave_name;
 
-	if (iter)
-		return _name_item_get_alias (iter) ?: iter->name;
+		if (nm_meta_setting_info_valid_parts_for_slave_type (slave_type, &slave_name))
+			return slave_name ?: name;
+		return name;
+	}
+
+	setting_info = nm_meta_setting_info_editor_find_by_name (name, FALSE);
+	if (setting_info)
+		return setting_info->alias ?: setting_info->general->setting_name;
 
 	return name;
 }
@@ -3040,47 +2804,62 @@ get_name_alias (const char *name, const char *slave_type, const NameItem array[]
  * Returns: string; the caller is responsible for freeing it.
  */
 static char *
-get_valid_options_string (const NameItem *array, const NameItem *array_slv)
+Get_valid_options_string (const NMMetaSettingValidPartItem *const*array, const NMMetaSettingValidPartItem *const*array_slv)
 {
-	const NameItem *iter = array;
+	const NMMetaSettingValidPartItem *const*iter = array;
 	GString *str;
 	int i;
 
 	str = g_string_sized_new (150);
 
 	for (i = 0; i < 2; i++, iter = array_slv) {
-		while (iter && iter->name) {
-			const char *alias;
+		for (; iter && *iter; iter++) {
+			const NMMetaSettingInfoEditor *setting_info = (*iter)->setting_info;
 
 			if (str->len)
 				g_string_append (str, ", ");
-			alias = _name_item_get_alias (iter);
-			if (alias)
-				g_string_append_printf (str, "%s (%s)", iter->name, alias);
+			if (setting_info->alias)
+				g_string_append_printf (str, "%s (%s)", setting_info->general->setting_name, setting_info->alias);
 			else
-				g_string_append (str, iter->name);
-			iter++;
+				g_string_append (str, setting_info->general->setting_name);
 		}
 	}
 	return g_string_free (str, FALSE);
 }
 
-static const NameItem *
+static char *
+get_valid_options_string_toplevel (void)
+{
+	GString *str;
+	int i;
+
+	str = g_string_sized_new (150);
+	for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
+		const NMMetaSettingInfoEditor *setting_info = &nm_meta_setting_infos_editor[i];
+
+		if (str->len)
+			g_string_append (str, ", ");
+		if (setting_info->alias)
+			g_string_append_printf (str, "%s (%s)", setting_info->general->setting_name, setting_info->alias);
+		else
+			g_string_append (str, setting_info->general->setting_name);
+	}
+	return g_string_free (str, FALSE);
+}
+
+static const NMMetaSettingValidPartItem *const*
 get_valid_settings_array (const char *con_type)
 {
-	guint i, num;
+	const NMMetaSettingInfoEditor *setting_info;
 
 	/* No connection type yet? Return settings for a generic connection
 	 * (just the "connection" setting), which always makes sense. */
 	if (!con_type)
-		return nmc_valid_connection_types[0].settings;
+		return nm_meta_setting_info_valid_parts_default;
 
-	num = G_N_ELEMENTS (nmc_valid_connection_types);
-	for (i = 0; i < num; i++) {
-		if (nm_streq0 (con_type, nmc_valid_connection_types[i].name))
-			return nmc_valid_connection_types[i].settings;
-	}
-
+	setting_info = nm_meta_setting_info_editor_find_by_name (con_type, FALSE);
+	if (setting_info)
+		return setting_info->valid_parts ?: NM_PTRARRAY_EMPTY (const NMMetaSettingValidPartItem *);
 	return NULL;
 }
 
@@ -3099,14 +2878,13 @@ get_valid_settings_array (const char *con_type)
  * Returns: list of property.arg elements
  */
 static char *
-get_valid_properties_string (const NameItem *array,
-                             const NameItem *array_slv,
+get_valid_properties_string (const NMMetaSettingValidPartItem *const*array,
+                             const NMMetaSettingValidPartItem *const*array_slv,
                              char modifier,
                              const char *prefix,
                              const char *postfix)
 {
-	const NameItem *iter = array;
-	const NMMetaSettingInfoEditor *setting_info;
+	const NMMetaSettingValidPartItem *const*iter = array;
 	const char *prop_name = NULL;
 	GString *str;
 	int i, j;
@@ -3117,35 +2895,32 @@ get_valid_properties_string (const NameItem *array,
 	str = g_string_sized_new (1024);
 
 	for (i = 0; i < 2; i++, iter = array_slv) {
-		while (!full_match && iter && iter->name) {
-			const char *alias = _name_item_get_alias (iter);
+		for(; !full_match && iter && *iter; iter++) {
+			const NMMetaSettingInfoEditor *setting_info = (*iter)->setting_info;
 
-			if (   !(g_str_has_prefix (iter->name, prefix))
-			    && (   !alias
-			        || !g_str_has_prefix (alias, prefix))) {
-				iter++;
+			if (   !(g_str_has_prefix (setting_info->general->setting_name, prefix))
+			    && (   !setting_info->alias
+			        || !g_str_has_prefix (setting_info->alias, prefix))) {
 				continue;
 			}
+
 			/* If postix (so prefix is terminated by a dot), check
 			 * that prefix is not ambiguous */
 			if (postfix) {
 				/* If we have a perfect match, no need to look for others
 				 * prefix and no check on ambiguity should be performed.
 				 * Moreover, erase previous matches from output string */
-				if (   nm_streq (prefix, iter->name)
-				    || nm_streq0 (prefix, alias)) {
+				if (   nm_streq (prefix, setting_info->general->setting_name)
+				    || nm_streq0 (prefix, setting_info->alias)) {
 					g_string_erase (str, 0, -1);
 					full_match = TRUE;
-				} else if (prop_name) {
+				} else if (prop_name)
 					return g_string_free (str, TRUE);
-				}
 				prop_name = prefix;
-			} else {
-				prop_name = iter->name;
-			}
+			} else
+				prop_name = setting_info->general->setting_name;
 
 			/* Search the array with the arguments of the current property */
-			setting_info = nm_meta_setting_info_editor_find_by_name (iter->name);
 			for (j = 0; j < setting_info->properties_num; j++) {
 				gchar *new;
 				const char *arg_name;
@@ -3153,11 +2928,11 @@ get_valid_properties_string (const NameItem *array,
 				arg_name = setting_info->properties[j].property_name;
 
 				/* If required, expand the alias too */
-				if (!postfix && alias) {
+				if (!postfix && setting_info->alias) {
 					if (modifier)
 						g_string_append_c (str, modifier);
 					new = g_strdup_printf ("%s.%s\n",
-					                       alias,
+					                       setting_info->alias,
 					                       arg_name);
 					g_string_append (str, new);
 					g_free (new);
@@ -3174,7 +2949,6 @@ get_valid_properties_string (const NameItem *array,
 				g_string_append (str, new);
 				g_free (new);
 			}
-			iter++;
 		}
 	}
 	return g_string_free (str, FALSE);
@@ -3190,9 +2964,9 @@ get_valid_properties_string (const NameItem *array,
  * The returned string must not be freed.
  */
 static const char *
-check_valid_name (const char *val, const NameItem *array, const NameItem *array_slv, GError **error)
+check_valid_name (const char *val, const NMMetaSettingValidPartItem *const*array, const NMMetaSettingValidPartItem *const*array_slv, GError **error)
 {
-	const NameItem *iter;
+	const NMMetaSettingValidPartItem *const*iter;
 	gs_unref_ptrarray GPtrArray *tmp_arr = NULL;
 	const char *str;
 	GError *tmp_err = NULL;
@@ -3204,13 +2978,12 @@ check_valid_name (const char *val, const NameItem *array, const NameItem *array_
 	tmp_arr = g_ptr_array_sized_new (32);
 	iter = array;
 	for (i = 0; i < 2; i++, iter = array_slv) {
-		while (iter && iter->name) {
-			const char *alias;
-			g_ptr_array_add (tmp_arr, (gpointer) iter->name);
-			alias = _name_item_get_alias (iter);
-			if (alias)
-				g_ptr_array_add (tmp_arr, (gpointer) alias);
-			iter++;
+		for (; iter && *iter; iter++) {
+			const NMMetaSettingInfoEditor *setting_info = (*iter)->setting_info;
+
+			g_ptr_array_add (tmp_arr, (gpointer) setting_info->general->setting_name);
+			if (setting_info->alias)
+				g_ptr_array_add (tmp_arr, (gpointer) setting_info->alias);
 		}
 	}
 	g_ptr_array_add (tmp_arr, (gpointer) NULL);
@@ -3222,10 +2995,10 @@ check_valid_name (const char *val, const NameItem *array, const NameItem *array_
 			g_propagate_error (error, tmp_err);
 		else {
 			/* We want to handle aliases, so construct own error message */
-			char *err_str = get_valid_options_string (array, array_slv);
+			gs_free char *err_str = NULL;
 
+			err_str = Get_valid_options_string (array, array_slv);
 			g_set_error (error, 1, 0, _("'%s' not among [%s]"), val, err_str);
-			g_free (err_str);
 			g_clear_error (&tmp_err);
 		}
 		return NULL;
@@ -3234,14 +3007,59 @@ check_valid_name (const char *val, const NameItem *array, const NameItem *array_
 	/* Return a pointer to the found string in passed 'array' */
 	iter = array;
 	for (i = 0; i < 2; i++, iter = array_slv) {
-		while (iter && iter->name) {
-			if (   nm_streq (iter->name, str)
-			    || nm_streq0 (_name_item_get_alias (iter), str)) {
-				return iter->name;
+		for (; iter && *iter; iter++) {
+			const NMMetaSettingInfoEditor *setting_info = (*iter)->setting_info;
+
+			if (   nm_streq (setting_info->general->setting_name, str)
+			    || nm_streq0 (setting_info->alias, str)) {
+				return setting_info->general->setting_name;
 			}
-			iter++;
 		}
 	}
+
+	/* We should not really come here */
+	g_set_error (error, 1, 0, _("Unknown error"));
+	return NULL;
+}
+
+static const char *
+check_valid_name_toplevel (const char *val, GError **error)
+{
+	gs_unref_ptrarray GPtrArray *tmp_arr = NULL;
+	const char *str;
+	GError *tmp_err = NULL;
+	int i;
+	const NMMetaSettingInfoEditor *setting_info;
+
+	/* Create a temporary array that can be used in nmc_string_is_valid() */
+	tmp_arr = g_ptr_array_sized_new (32);
+	for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
+		setting_info = &nm_meta_setting_infos_editor[i];
+		g_ptr_array_add (tmp_arr, (gpointer) setting_info->general->setting_name);
+		if (setting_info->alias)
+			g_ptr_array_add (tmp_arr, (gpointer) setting_info->alias);
+	}
+	g_ptr_array_add (tmp_arr, (gpointer) NULL);
+
+	/* Check string validity */
+	str = nmc_string_is_valid (val, (const char **) tmp_arr->pdata, &tmp_err);
+	if (!str) {
+		if (tmp_err->code == 1)
+			g_propagate_error (error, tmp_err);
+		else {
+			/* We want to handle aliases, so construct own error message */
+			char *err_str = get_valid_options_string_toplevel ();
+
+			g_set_error (error, 1, 0, _("'%s' not among [%s]"), val, err_str);
+			g_free (err_str);
+			g_clear_error (&tmp_err);
+		}
+		return NULL;
+	}
+
+	setting_info = nm_meta_setting_info_editor_find_by_name (str, TRUE);
+	if (setting_info)
+		return setting_info->general->setting_name;
 
 	/* We should not really come here */
 	g_set_error (error, 1, 0, _("Unknown error"));
@@ -3253,33 +3071,27 @@ is_setting_mandatory (NMConnection *connection, NMSetting *setting)
 {
 	NMSettingConnection *s_con;
 	const char *c_type;
-	const NameItem *item;
+	const NMMetaSettingValidPartItem *const*item;
 	const char *name;
 	const char *s_type;
-	char *slv_type;
+	guint i;
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 	c_type = nm_setting_connection_get_connection_type (s_con);
+	s_type = nm_setting_connection_get_slave_type (s_con);
 
 	name = nm_setting_get_name (setting);
 
-	item = get_valid_settings_array (c_type);
-	while (item && item->name) {
-		if (!strcmp (name, item->name))
-			return item->mandatory;
-		item++;
-	}
-
-	/* Let's give a try to parameters related to slave type */
-	s_type = nm_setting_connection_get_slave_type (s_con);
-	slv_type = g_strdup_printf ("%s-slave", s_type ? s_type : "no");
-	item = get_valid_settings_array (slv_type);
-	g_free (slv_type);
-	while (item && item->name) {
-		if (!strcmp (name, item->name))
-			return item->mandatory;
-		item++;
+	for (i = 0; i < 2; i++) {
+		if (i == 0)
+			item = get_valid_settings_array (c_type);
+		else
+			item = nm_meta_setting_info_valid_parts_for_slave_type (s_type, NULL);
+		for (; item && *item; item++) {
+			if (!strcmp (name, (*item)->setting_info->general->setting_name))
+				return (*item)->mandatory;
+		}
 	}
 
 	return FALSE;
@@ -3411,7 +3223,7 @@ prompt_yes_no (gboolean default_yes, char *delim)
 }
 
 static NMSetting *
-is_setting_valid (NMConnection *connection, const NameItem *valid_settings_main, const NameItem *valid_settings_slave, char *setting)
+is_setting_valid (NMConnection *connection, const NMMetaSettingValidPartItem *const*valid_settings_main, const NMMetaSettingValidPartItem *const*valid_settings_slave, char *setting)
 {
 	const char *setting_name;
 
@@ -3641,7 +3453,7 @@ disable_options (const gchar *setting_name, const gchar *property)
 	} else {
 		const NMMetaSettingInfoEditor *setting_info;
 
-		setting_info = nm_meta_setting_info_editor_find_by_name (setting_name);
+		setting_info = nm_meta_setting_info_editor_find_by_name (setting_name, FALSE);
 		if (!setting_info)
 			g_return_if_reached ();
 		property_infos = nm_property_infos_for_setting_type (setting_info->general->meta_type);
@@ -3811,10 +3623,9 @@ set_option (NmCli *nmc, NMConnection *connection, const NMMetaAbstractInfo *abst
  * and slave type.
  */
 static gboolean
-con_settings (NMConnection *connection, const NameItem **type_settings, const NameItem **slv_settings, GError **error)
+con_settings (NMConnection *connection, const NMMetaSettingValidPartItem *const**type_settings, const NMMetaSettingValidPartItem *const**slv_settings, GError **error)
 {
 	const char *con_type;
-	gs_free char *slv_type = NULL;
 	NMSettingConnection *s_con;
 
 	g_return_val_if_fail (type_settings, FALSE);
@@ -3824,18 +3635,11 @@ con_settings (NMConnection *connection, const NameItem **type_settings, const Na
 	g_assert (s_con);
 
 	con_type = nm_setting_connection_get_slave_type (s_con);
-	if (!con_type)
-		con_type = "no";
-	slv_type = g_strdup_printf ("%s-slave", con_type);
-	if (slv_type) {
-		*slv_settings = get_valid_settings_array (slv_type);
-		if (!*slv_settings) {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("Error: invalid slave type; %s."), slv_type);
-			return FALSE;
-		}
-	} else {
-		*slv_settings = NULL;
+	*slv_settings = nm_meta_setting_info_valid_parts_for_slave_type (con_type, NULL);
+	if (!*slv_settings) {
+		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+		             _("Error: invalid slave type; %s."), con_type);
+		return FALSE;
 	}
 
 	con_type = nm_setting_connection_get_connection_type (s_con);
@@ -3856,17 +3660,16 @@ con_settings (NMConnection *connection, const NameItem **type_settings, const Na
  * it's possible that a type is aready set).
  */
 static void
-ensure_settings (NMConnection *connection, const NameItem *item)
+ensure_settings (NMConnection *connection, const NMMetaSettingValidPartItem *const*item)
 {
-	const NameItem *setting_item;
 	NMSetting *setting;
 
-	for (setting_item = item; setting_item->name; setting_item++) {
-		if (!setting_item->mandatory)
+	for (; item && *item; item++) {
+		if (!(*item)->mandatory)
 			continue;
-		if (nm_connection_get_setting_by_name (connection, setting_item->name))
+		if (nm_connection_get_setting_by_name (connection, (*item)->setting_info->general->setting_name))
 			continue;
-		setting = nmc_setting_new_for_name (setting_item->name);
+		setting = nmc_setting_new_for_name ((*item)->setting_info->general->setting_name);
 		if (setting) {
 			nmc_setting_custom_init (setting);
 			nm_connection_add_setting (connection, setting);
@@ -3951,11 +3754,12 @@ gen_func_master_ifnames (const char *text, int state)
 static gboolean
 set_connection_type (NmCli *nmc, NMConnection *con, const OptionInfo *option, const char *value, GError **error)
 {
-	const NameItem *type_settings, *slv_settings;
+	const NMMetaSettingValidPartItem *const*type_settings;
+	const NMMetaSettingValidPartItem *const*slv_settings;
 	GError *local = NULL;
 	const gchar *master[] = { "master", NULL };
 
-	value = check_valid_name (value, nmc_valid_connection_types, NULL, &local);
+	value = check_valid_name_toplevel (value, &local);
 	if (!value) {
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 		             _("Error: bad connection type: %s."), local->message);
@@ -4290,11 +4094,10 @@ complete_property_name (NmCli *nmc, NMConnection *connection,
                         const gchar *postfix)
 {
 	NMSettingConnection *s_con;
-	const NameItem *valid_settings_main = NULL;
-	const NameItem *valid_settings_slave = NULL;
+	const NMMetaSettingValidPartItem *const*valid_settings_main;
+	const NMMetaSettingValidPartItem *const*valid_settings_slave;
 	const char *connection_type = NULL;
 	const char *slave_type = NULL;
-	gs_free char *slv_type = NULL;
 	gs_free char *word_list = NULL;
 	NMMetaSettingType s;
 
@@ -4302,9 +4105,8 @@ complete_property_name (NmCli *nmc, NMConnection *connection,
 	s_con = nm_connection_get_setting_connection (connection);
 	if (s_con)
 		slave_type = nm_setting_connection_get_slave_type (s_con);
-	slv_type = g_strdup_printf ("%s-slave", slave_type ? slave_type : "no");
 	valid_settings_main = get_valid_settings_array (connection_type);
-	valid_settings_slave = get_valid_settings_array (slv_type);
+	valid_settings_slave = nm_meta_setting_info_valid_parts_for_slave_type (slave_type, NULL);
 
 	word_list = get_valid_properties_string (valid_settings_main, valid_settings_slave, modifier, prefix, postfix);
 	if (word_list)
@@ -4456,7 +4258,8 @@ nmc_read_connection_properties (NmCli *nmc,
 	do {
 		const NMMetaAbstractInfo *chosen = NULL;
 		gs_strfreev gchar **strv = NULL;
-		const NameItem *type_settings, *slv_settings;
+		const NMMetaSettingValidPartItem *const*type_settings;
+		const NMMetaSettingValidPartItem *const*slv_settings;
 		char modifier = '\0';
 
 		if (!con_settings (connection, &type_settings, &slv_settings, error))
@@ -4999,8 +4802,8 @@ read_properties:
 
 			connections = nm_client_get_connections (nmc->client);
 			try_name = ifname
-			           ? g_strdup_printf ("%s-%s", get_name_alias (type, slave_type, nmc_valid_connection_types), ifname)
-			           : g_strdup (get_name_alias (type, slave_type, nmc_valid_connection_types));
+			           ? g_strdup_printf ("%s-%s", get_name_alias_toplevel (type, slave_type), ifname)
+			           : g_strdup (get_name_alias_toplevel (type, slave_type));
 			default_name = nmc_unique_connection_name (connections, try_name);
 			g_free (try_name);
 			g_object_set (s_con, NM_SETTING_CONNECTION_ID, default_name, NULL);
@@ -5203,23 +5006,29 @@ static char *
 gen_connection_types (const char *text, int state)
 {
 	static int list_idx, len;
-	const char *c_type, *a_type;
+	static int had_name;
 
 	if (!state) {
 		list_idx = 0;
 		len = strlen (text);
+		had_name = FALSE;
 	}
 
-	while (nmc_valid_connection_types[list_idx].name) {
-		const NameItem *item = &nmc_valid_connection_types[list_idx];
+	for (; list_idx < _NM_META_SETTING_TYPE_NUM; ) {
+		const NMMetaSettingInfoEditor *setting_info = &nm_meta_setting_infos_editor[list_idx];
 
-		a_type = _name_item_get_alias (item);
-		c_type = item->name;
+		if (!had_name) {
+			had_name = TRUE;
+			if (!text || strncmp (text, setting_info->general->setting_name, len) == 0)
+				return g_strdup (setting_info->general->setting_name);
+		}
+
+		had_name = FALSE;
 		list_idx++;
-		if (a_type && !strncmp (text, a_type, len))
-			return g_strdup (a_type);
-		if (c_type && !strncmp (text, c_type, len))
-			return g_strdup (c_type);
+		if (setting_info->alias) {
+			if (!text || strncmp (text, setting_info->alias, len) == 0)
+				return g_strdup (setting_info->alias);
+		}
 	}
 
 	return NULL;
@@ -5230,10 +5039,9 @@ gen_setting_names (const char *text, int state)
 {
 	static int list_idx, len, is_slv;
 	const char *s_name, *a_name;
-	const NameItem *valid_settings_arr;
+	const NMMetaSettingValidPartItem *const*valid_settings_arr;
 	NMSettingConnection *s_con;
 	const char *s_type = NULL;
-	char *slv_type;
 
 	if (!state) {
 		list_idx = 0;
@@ -5243,13 +5051,13 @@ gen_setting_names (const char *text, int state)
 
 	if (!is_slv) {
 		valid_settings_arr = get_valid_settings_array (nmc_tab_completion.con_type);
-		if (!valid_settings_arr)
+		if (list_idx >= NM_PTRARRAY_LEN (valid_settings_arr))
 			return NULL;
-		while (valid_settings_arr[list_idx].name) {
-			const NameItem *item = &valid_settings_arr[list_idx];
+		for (; valid_settings_arr[list_idx];) {
+			const NMMetaSettingInfoEditor *setting_info = valid_settings_arr[list_idx]->setting_info;
 
-			a_name = _name_item_get_alias (item);
-			s_name = item->name;
+			a_name = setting_info->alias;
+			s_name = setting_info->general->setting_name;
 			list_idx++;
 			if (len == 0 && a_name)
 				return g_strdup_printf ("%s (%s)", s_name, a_name);
@@ -5268,22 +5076,22 @@ gen_setting_names (const char *text, int state)
 	s_con = nm_connection_get_setting_connection (nmc_tab_completion.connection);
 	if (s_con)
 		s_type = nm_setting_connection_get_slave_type (s_con);
-	slv_type = g_strdup_printf ("%s-slave", s_type ? s_type : "no");
-	valid_settings_arr = get_valid_settings_array (slv_type);
-	g_free (slv_type);
+	valid_settings_arr = nm_meta_setting_info_valid_parts_for_slave_type (s_type, NULL);
 
-	while (valid_settings_arr[list_idx].name) {
-		const NameItem *item = &valid_settings_arr[list_idx];
+	if (list_idx < NM_PTRARRAY_LEN (valid_settings_arr)) {
+		while (valid_settings_arr[list_idx]) {
+			const NMMetaSettingInfoEditor *setting_info = valid_settings_arr[list_idx]->setting_info;
 
-		a_name = _name_item_get_alias (item);
-		s_name = item->name;
-		list_idx++;
-		if (len == 0 && a_name)
-			return g_strdup_printf ("%s (%s)", s_name, a_name);
-		if (a_name && !strncmp (text, a_name, len))
-			return g_strdup (a_name);
-		if (s_name && !strncmp (text, s_name, len))
-			return g_strdup (s_name);
+			a_name = setting_info->alias;
+			s_name = setting_info->general->setting_name;
+			list_idx++;
+			if (len == 0 && a_name)
+				return g_strdup_printf ("%s (%s)", s_name, a_name);
+			if (a_name && !strncmp (text, a_name, len))
+				return g_strdup (a_name);
+			if (s_name && !strncmp (text, s_name, len))
+				return g_strdup (s_name);
+		}
 	}
 
 	return NULL;
@@ -5298,8 +5106,8 @@ gen_property_names (const char *text, int state)
 	const char *line = rl_line_buffer;
 	const char *setting_name;
 	char **strv = NULL;
-	const NameItem *valid_settings_main;
-	const NameItem *valid_settings_slave;
+	const NMMetaSettingValidPartItem *const*valid_settings_main;
+	const NMMetaSettingValidPartItem *const*valid_settings_slave;
 	const char *p1;
 	const char *slv_type;
 
@@ -5309,7 +5117,7 @@ gen_property_names (const char *text, int state)
 		while (p1 > line && !g_ascii_isspace (*p1))
 			p1--;
 
-		strv = g_strsplit (p1+1, ".", 2);
+		strv = g_strsplit (p1 + 1, ".", 2);
 
 		valid_settings_main = get_valid_settings_array (nmc_tab_completion.con_type);
 
@@ -5317,12 +5125,12 @@ gen_property_names (const char *text, int state)
 		 * guessing the slave type from the setting name already
 		 * typed (or autocompleted) */
 		if (nm_streq0 (strv[0], NM_SETTING_TEAM_PORT_SETTING_NAME))
-			slv_type = "team-slave";
+			slv_type = NM_SETTING_TEAM_SETTING_NAME;
 		else if (nm_streq0 (strv[0], NM_SETTING_BRIDGE_PORT_SETTING_NAME))
-			slv_type = "bridge-slave";
+			slv_type = NM_SETTING_BRIDGE_SETTING_NAME;
 		else
-			slv_type = "no-slave";
-		valid_settings_slave = get_valid_settings_array (slv_type);
+			slv_type = NULL;
+		valid_settings_slave = nm_meta_setting_info_valid_parts_for_slave_type (slv_type, NULL);
 
 		setting_name = check_valid_name (strv[0],
 		                                 valid_settings_main,
@@ -5607,15 +5415,14 @@ static void
 get_setting_and_property (const char *prompt, const char *line,
                           NMSetting **setting_out, char**property_out)
 {
-	const NameItem *valid_settings_main;
-	const NameItem *valid_settings_slave;
+	const NMMetaSettingValidPartItem *const*valid_settings_main;
+	const NMMetaSettingValidPartItem *const*valid_settings_slave;
 	const char *setting_name;
 	NMSetting *setting = NULL;
 	char *property = NULL;
 	char *sett = NULL, *prop = NULL;
 	NMSettingConnection *s_con;
 	const char *s_type = NULL;
-	char *slv_type;
 
 	extract_setting_and_property (prompt, line, &sett, &prop);
 	if (sett) {
@@ -5623,11 +5430,9 @@ get_setting_and_property (const char *prompt, const char *line,
 		s_con = nm_connection_get_setting_connection (nmc_tab_completion.connection);
 		if (s_con)
 			s_type = nm_setting_connection_get_slave_type (s_con);
-		slv_type = g_strdup_printf ("%s-slave", s_type ? s_type : "no");
 
 		valid_settings_main = get_valid_settings_array (nmc_tab_completion.con_type);
-		valid_settings_slave = get_valid_settings_array (slv_type);
-		g_free (slv_type);
+		valid_settings_slave = nm_meta_setting_info_valid_parts_for_slave_type (s_type, NULL);
 
 		setting_name = check_valid_name (sett, valid_settings_main,
 		                                 valid_settings_slave,  NULL);
@@ -6826,7 +6631,7 @@ split_editor_main_cmd_args (const char *str, char **setting, char **property, ch
 }
 
 static NMSetting *
-create_setting_by_name (const char *name, const NameItem *valid_settings_main, const NameItem *valid_settings_slave)
+create_setting_by_name (const char *name, const NMMetaSettingValidPartItem *const*valid_settings_main, const NMMetaSettingValidPartItem *const*valid_settings_slave)
 {
 	const char *setting_name;
 	NMSetting *setting = NULL;
@@ -6845,8 +6650,8 @@ create_setting_by_name (const char *name, const NameItem *valid_settings_main, c
 
 static const char *
 ask_check_setting (const char *arg,
-                   const NameItem *valid_settings_main,
-                   const NameItem *valid_settings_slave,
+                   const NMMetaSettingValidPartItem *const*valid_settings_main,
+                   const NMMetaSettingValidPartItem *const*valid_settings_slave,
                    const char *valid_settings_str)
 {
 	char *setting_name_user;
@@ -7000,11 +6805,10 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	gboolean cmd_loop = TRUE;
 	char *cmd_arg = NULL;
 	char *cmd_arg_s, *cmd_arg_p, *cmd_arg_v;
-	const NameItem *valid_settings_main = NULL;
-	const NameItem *valid_settings_slave = NULL;
+	const NMMetaSettingValidPartItem *const*valid_settings_main;
+	const NMMetaSettingValidPartItem *const*valid_settings_slave;
 	char *valid_settings_str = NULL;
 	const char *s_type = NULL;
-	char *slv_type;
 	AddConnectionInfo *info = NULL;
 	gboolean dirty;
 	gboolean temp_changes;
@@ -7014,13 +6818,11 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	s_con = nm_connection_get_setting_connection (connection);
 	if (s_con)
 		s_type = nm_setting_connection_get_slave_type (s_con);
-	slv_type = g_strdup_printf ("%s-slave", s_type ? s_type : "no");
 
 	valid_settings_main = get_valid_settings_array (connection_type);
-	valid_settings_slave = get_valid_settings_array (slv_type);
-	g_free (slv_type);
+	valid_settings_slave = nm_meta_setting_info_valid_parts_for_slave_type (s_type, NULL);
 
-	valid_settings_str = get_valid_options_string (valid_settings_main, valid_settings_slave);
+	valid_settings_str = Get_valid_options_string (valid_settings_main, valid_settings_slave);
 	g_print (_("You may edit the following settings: %s\n"), valid_settings_str);
 
 	menu_ctx.level = 0;
@@ -7172,9 +6974,9 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				const char *user_arg = cmd_arg_s ? cmd_arg_s : cmd_arg_p;
 
 				setting_name = ask_check_setting (user_arg,
-								  valid_settings_main,
-								  valid_settings_slave,
-								  valid_settings_str);
+				                                  valid_settings_main,
+				                                  valid_settings_slave,
+				                                  valid_settings_str);
 				if (!setting_name)
 					break;
 
@@ -7260,19 +7062,20 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				user_s = descr_all ? cmd_arg_p : cmd_arg_s ? cmd_arg_s : NULL;
 				if (user_s) {
 					ss = is_setting_valid (connection,
-							       valid_settings_main,
-							       valid_settings_slave,
-							       user_s);
+					                       valid_settings_main,
+					                       valid_settings_slave,
+					                       user_s);
 					if (!ss) {
 						if (check_valid_name (user_s,
 						                      valid_settings_main,
 						                      valid_settings_slave,
-						                      NULL))
+						                      NULL)) {
 							g_print (_("Setting '%s' is not present in the connection.\n"),
-								 user_s);
-						else
+							         user_s);
+						} else {
 							g_print (_("Error: invalid setting argument '%s'; valid are [%s]\n"),
 							         user_s, valid_settings_str);
+						}
 						break;
 					}
 				} else
@@ -7300,9 +7103,9 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						/* If the string is not a property, try it as a setting */
 						NMSetting *s_tmp;
 						s_tmp = is_setting_valid (connection,
-									  valid_settings_main,
-									  valid_settings_slave,
-									  cmd_arg_p);
+						                          valid_settings_main,
+						                          valid_settings_slave,
+						                          cmd_arg_p);
 						if (s_tmp) {
 							/* Remove setting from the connection */
 							connection_remove_setting (connection, s_tmp);
@@ -7351,13 +7154,13 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				user_s = descr_all ? cmd_arg_p : cmd_arg_s ? cmd_arg_s : NULL;
 				if (user_s) {
 					ss = is_setting_valid (connection,
-							       valid_settings_main,
-							       valid_settings_slave,
-							       user_s);
+					                       valid_settings_main,
+					                       valid_settings_slave,
+					                       user_s);
 					if (!ss) {
 						ss = create_setting_by_name (user_s,
-									     valid_settings_main,
-									     valid_settings_slave);
+						                             valid_settings_main,
+						                             valid_settings_slave);
 						if (!ss) {
 							g_print (_("Error: invalid setting argument '%s'; valid are [%s]\n"),
 							         user_s, valid_settings_str);
@@ -7381,9 +7184,9 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						/* If the string is not a property, try it as a setting */
 						NMSetting *s_tmp;
 						s_tmp = is_setting_valid (connection,
-									  valid_settings_main,
-									  valid_settings_slave,
-									  cmd_arg_p);
+						                          valid_settings_main,
+						                          valid_settings_slave,
+						                          cmd_arg_p);
 						if (s_tmp)
 							print_setting_description (s_tmp);
 						else
@@ -7414,6 +7217,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					user_s = whole_setting ? cmd_arg_p : cmd_arg_s ? cmd_arg_s : NULL;
 					if (user_s) {
 						const char *s_name;
+
 						s_name = check_valid_name (user_s,
 						                           valid_settings_main,
 						                           valid_settings_slave,
@@ -7445,9 +7249,9 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 							/* If the string is not a property, try it as a setting */
 							NMSetting *s_tmp;
 							s_tmp = is_setting_valid (connection,
-										  valid_settings_main,
-										  valid_settings_slave,
-										  cmd_arg_p);
+							                          valid_settings_main,
+							                          valid_settings_slave,
+							                          cmd_arg_p);
 							if (s_tmp) {
 								/* Print the whole setting */
 								editor_show_setting (s_tmp, nmc);
@@ -7876,17 +7680,18 @@ editor_init_existing_connection (NMConnection *connection)
 }
 
 static void
-nmc_complete_connection_type (const char *prefix, const NameItem *types)
+nmc_complete_connection_type (const char *prefix)
 {
-	while (types->name) {
-		const char *alias;
+	guint i;
 
-		if (!*prefix || matches (prefix, types->name))
-			g_print ("%s\n", types->name);
-		alias = _name_item_get_alias (types);
-		if (alias && (!*prefix || matches (prefix, alias)))
-			g_print ("%s\n", alias);
-		types++;
+	for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
+		const NMMetaSettingInfoEditor *setting_info = &nm_meta_setting_infos_editor[i];
+
+		if (!*prefix || matches (prefix, setting_info->general->setting_name))
+			g_print ("%s\n", setting_info->general->setting_name);
+		if (   setting_info->alias
+		    && (!*prefix || matches (prefix, setting_info->alias)))
+			g_print ("%s\n", setting_info->alias);
 	}
 }
 
@@ -8003,12 +7808,12 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 		/* New connection */
 		if (nmc->complete) {
 			if (type && argc == 0)
-				nmc_complete_connection_type (type, nmc_valid_connection_types);
+				nmc_complete_connection_type (type);
 			goto error;
 		}
 
-		connection_type = check_valid_name (type, nmc_valid_connection_types, NULL, &err1);
-		tmp_str = get_valid_options_string (nmc_valid_connection_types, NULL);
+		connection_type = check_valid_name_toplevel (type, &err1);
+		tmp_str = get_valid_options_string_toplevel ();
 
 		while (!connection_type) {
 			if (!type)
@@ -8019,7 +7824,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 
 			type_ask = nmc_readline (EDITOR_PROMPT_CON_TYPE);
 			type = type_ask = type_ask ? g_strstrip (type_ask) : NULL;
-			connection_type = check_valid_name (type_ask, nmc_valid_connection_types, NULL, &err1);
+			connection_type = check_valid_name_toplevel (type_ask, &err1);
 			g_free (type_ask);
 		}
 		g_free (tmp_str);
@@ -8032,9 +7837,10 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 		uuid = nm_utils_uuid_generate ();
 		if (con_name)
 			default_name = g_strdup (con_name);
-		else
+		else {
 			default_name = nmc_unique_connection_name (connections,
-			                                           get_name_alias (connection_type, NULL, nmc_valid_connection_types));
+			                                           get_name_alias_toplevel (connection_type, NULL));
+		}
 
 		g_object_set (s_con,
 		              NM_SETTING_CONNECTION_ID, default_name,

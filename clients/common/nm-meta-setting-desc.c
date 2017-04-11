@@ -7112,12 +7112,22 @@ static const NMMetaPropertyInfo property_infos_WIRELESS_SECURITY[] = {
 #define SETTING_PRETTY_NAME_WIRELESS            "Wi-Fi connection"
 #define SETTING_PRETTY_NAME_WIRELESS_SECURITY   "Wi-Fi security settings"
 
+#define NM_META_SETTING_VALID_PARTS(...) \
+	((const NMMetaSettingValidPartItem *const[]) { __VA_ARGS__  NULL })
+
+#define NM_META_SETTING_VALID_PART_ITEM(type, mand) \
+	(&((const NMMetaSettingValidPartItem) { \
+		.setting_info =                     &nm_meta_setting_infos_editor[NM_META_SETTING_TYPE_##type], \
+		.mandatory =                        mand, \
+	}))
+
 const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
-#define SETTING_INFO_EMPTY(type) \
+#define SETTING_INFO_EMPTY(type, ...) \
 	[NM_META_SETTING_TYPE_##type] = { \
 		.meta_type =                        &nm_meta_type_setting_info_editor, \
 		.general =                          &nm_meta_setting_infos[NM_META_SETTING_TYPE_##type], \
 		.pretty_name =                      N_(SETTING_PRETTY_NAME_##type), \
+		__VA_ARGS__ \
 	}
 #define SETTING_INFO(type, ...) \
 	[NM_META_SETTING_TYPE_##type] = { \
@@ -7129,48 +7139,227 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 		__VA_ARGS__ \
 	}
 	SETTING_INFO (802_1X),
-	SETTING_INFO (ADSL),
-	SETTING_INFO (BLUETOOTH),
-	SETTING_INFO (BOND),
-	SETTING_INFO (BRIDGE),
+	SETTING_INFO (ADSL,
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (ADSL,                  TRUE),
+		),
+	),
+	SETTING_INFO (BLUETOOTH,
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (BLUETOOTH,             TRUE),
+		),
+	),
+	SETTING_INFO (BOND,
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (BOND,                  TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
+		),
+	),
+	SETTING_INFO (BRIDGE,
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (BRIDGE,                TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
+		),
+	),
 	SETTING_INFO (BRIDGE_PORT),
-	SETTING_INFO (CDMA),
+	SETTING_INFO (CDMA,
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (CDMA,                  TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (SERIAL,                FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (PPP,                   FALSE),
+		),
+	),
 	SETTING_INFO (CONNECTION),
 	SETTING_INFO (DCB),
-	SETTING_INFO_EMPTY (DUMMY),
-	SETTING_INFO_EMPTY (GENERIC),
-	SETTING_INFO (GSM),
-	SETTING_INFO (INFINIBAND),
+	SETTING_INFO_EMPTY (DUMMY,
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (DUMMY,                 TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
+		),
+	),
+	SETTING_INFO_EMPTY (GENERIC,
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (GENERIC,               TRUE),
+		),
+	),
+	SETTING_INFO (GSM,
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (GSM,                   TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (SERIAL,                FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (PPP,                   FALSE),
+		),
+	),
+	SETTING_INFO (INFINIBAND,
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (INFINIBAND,            TRUE),
+		),
+	),
 	SETTING_INFO (IP4_CONFIG),
 	SETTING_INFO (IP6_CONFIG),
-	SETTING_INFO (IP_TUNNEL),
-	SETTING_INFO (MACSEC),
-	SETTING_INFO (MACVLAN),
+	SETTING_INFO (IP_TUNNEL,
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (IP_TUNNEL,             TRUE),
+		),
+	),
+	SETTING_INFO (MACSEC,
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (MACSEC,                TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (802_1X,                FALSE),
+		),
+	),
+	SETTING_INFO (MACVLAN,
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (MACVLAN,               TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
+		),
+	),
 	SETTING_INFO (OLPC_MESH,
 		.alias =                            "olpc-mesh",
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (OLPC_MESH,             TRUE),
+		),
 	),
-	SETTING_INFO (PPPOE),
+	SETTING_INFO (PPPOE,
+		/* PPPoE is a base connection type from historical reasons.
+		 * See libnm-core/nm-setting.c:_nm_setting_is_base_type()
+		 */
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (PPPOE,                 TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (PPP,                   FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (802_1X,                FALSE),
+		),
+	),
 	SETTING_INFO (PPP),
 	SETTING_INFO (PROXY),
 	SETTING_INFO (SERIAL),
-	SETTING_INFO (TEAM),
+	SETTING_INFO (TEAM,
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (TEAM,                  TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
+		),
+	),
 	SETTING_INFO (TEAM_PORT),
-	SETTING_INFO (TUN),
+	SETTING_INFO (TUN,
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (TUN,                   TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
+		),
+	),
 	SETTING_INFO_EMPTY (USER),
-	SETTING_INFO (VLAN),
-	SETTING_INFO (VPN),
-	SETTING_INFO (VXLAN),
-	SETTING_INFO (WIMAX),
+	SETTING_INFO (VLAN,
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (VLAN,                  TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
+		),
+	),
+	SETTING_INFO (VPN,
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (VPN,                   TRUE),
+		),
+	),
+	SETTING_INFO (VXLAN,
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (VXLAN,                 TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
+		),
+	),
+	SETTING_INFO (WIMAX,
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (WIMAX,                 TRUE),
+		),
+	),
 	SETTING_INFO (WIRED,
 		.alias =                            "ethernet",
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (802_1X,                FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (DCB,                   FALSE),
+		),
 	),
 	SETTING_INFO (WIRELESS,
 		.alias =                            "wifi",
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (WIRELESS,              TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (WIRELESS_SECURITY,     FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (802_1X,                FALSE),
+		),
 	),
 	SETTING_INFO (WIRELESS_SECURITY,
 		.alias =                            "wifi-sec",
 	),
 };
+
+/*****************************************************************************/
+
+const NMMetaSettingValidPartItem *const nm_meta_setting_info_valid_parts_default[] = {
+	NM_META_SETTING_VALID_PART_ITEM (CONNECTION, TRUE),
+	NULL
+};
+
+/*****************************************************************************/
+
+static const NMMetaSettingValidPartItem *const valid_settings_noslave[] = {
+	NM_META_SETTING_VALID_PART_ITEM (IP4_CONFIG, FALSE),
+	NM_META_SETTING_VALID_PART_ITEM (IP6_CONFIG, FALSE),
+	NM_META_SETTING_VALID_PART_ITEM (PROXY,      FALSE),
+	NULL,
+};
+
+static const NMMetaSettingValidPartItem *const valid_settings_slave_bridge[] = {
+	NM_META_SETTING_VALID_PART_ITEM (BRIDGE_PORT, TRUE),
+	NULL,
+};
+
+static const NMMetaSettingValidPartItem *const valid_settings_slave_team[] = {
+	NM_META_SETTING_VALID_PART_ITEM (TEAM_PORT, TRUE),
+	NULL,
+};
+
+const NMMetaSettingValidPartItem *const*
+nm_meta_setting_info_valid_parts_for_slave_type (const char *slave_type, const char **out_slave_name)
+{
+	if (!slave_type) {
+		NM_SET_OUT (out_slave_name, NULL);
+		return valid_settings_noslave;
+	}
+	if (nm_streq (slave_type, NM_SETTING_BOND_SETTING_NAME)) {
+		NM_SET_OUT (out_slave_name, "bond-slave");
+		return NM_PTRARRAY_EMPTY (const NMMetaSettingValidPartItem *);
+	}
+	if (nm_streq (slave_type, NM_SETTING_BRIDGE_SETTING_NAME)) {
+		NM_SET_OUT (out_slave_name, "bridge-slave");
+		return valid_settings_slave_bridge;
+	}
+	if (nm_streq (slave_type, NM_SETTING_TEAM_SETTING_NAME)) {
+		NM_SET_OUT (out_slave_name, "team-slave");
+		return valid_settings_slave_team;
+	}
+	return NULL;
+}
 
 /*****************************************************************************/
 

@@ -269,6 +269,11 @@ struct _NMMetaPropertyInfo {
 	const NMMetaPropertyTypData *property_typ_data;
 };
 
+typedef struct _NMMetaSettingValidPartItem {
+	const NMMetaSettingInfoEditor *setting_info;
+	bool mandatory;
+} NMMetaSettingValidPartItem;
+
 struct _NMMetaSettingInfoEditor {
 	const NMMetaType *meta_type;
 	const NMMetaSettingInfo *general;
@@ -278,6 +283,18 @@ struct _NMMetaSettingInfoEditor {
 	 * "name", and then the order is as they are listed by default. */
 	const NMMetaPropertyInfo *properties;
 	guint properties_num;
+
+	/* a NMConnection has a main type (connection.type), which is a
+	 * main NMSetting instance. Depending on the type, a connection
+	 * may have a list of other allowed settings.
+	 *
+	 * For example, a connection of type "vlan" may have settings
+	 * of type "connection", "vlan", and "wired".
+	 *
+	 * Some setting types a not a main type (NMSettingProxy). They
+	 * don't have valid_settings but are usually referenced by other
+	 * settings to be valid for them. */
+	const NMMetaSettingValidPartItem *const*valid_parts;
 };
 
 struct _NMMetaType {
@@ -308,6 +325,10 @@ extern const NMMetaType nm_meta_type_setting_info_editor;
 extern const NMMetaType nm_meta_type_property_info;
 
 extern const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[_NM_META_SETTING_TYPE_NUM];
+
+extern const NMMetaSettingValidPartItem *const nm_meta_setting_info_valid_parts_default[];
+
+const NMMetaSettingValidPartItem *const*nm_meta_setting_info_valid_parts_for_slave_type (const char *slave_type, const char **out_slave_name);
 
 /*****************************************************************************/
 

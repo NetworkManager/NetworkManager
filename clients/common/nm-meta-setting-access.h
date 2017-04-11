@@ -25,7 +25,7 @@
 
 /*****************************************************************************/
 
-const NMMetaSettingInfoEditor *nm_meta_setting_info_editor_find_by_name (const char *setting_name);
+const NMMetaSettingInfoEditor *nm_meta_setting_info_editor_find_by_name (const char *setting_name, gboolean use_alias);
 const NMMetaSettingInfoEditor *nm_meta_setting_info_editor_find_by_gtype (GType gtype);
 const NMMetaSettingInfoEditor *nm_meta_setting_info_editor_find_by_setting (NMSetting *setting);
 

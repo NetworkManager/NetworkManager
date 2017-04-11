@@ -95,6 +95,29 @@ test_client_meta_check (void)
 			}
 		} else
 			g_assert (!info->properties);
+
+		if (info->valid_parts) {
+			gsize i, l;
+			gs_unref_hashtable GHashTable *dup = g_hash_table_new (NULL, NULL);
+
+			l = NM_PTRARRAY_LEN (info->valid_parts);
+			g_assert (l >= 2);
+
+			for (i = 0; info->valid_parts[i]; i++) {
+				g_assert (info->valid_parts[i]->setting_info);
+				g_assert (nm_g_hash_table_add (dup, (gpointer) info->valid_parts[i]->setting_info));
+
+				if (i == 0) {
+					g_assert (info->valid_parts[i]->setting_info == &nm_meta_setting_infos_editor[NM_META_SETTING_TYPE_CONNECTION]);
+					g_assert (info->valid_parts[i]->mandatory);
+				}
+				if (i == 1) {
+					g_assert (info->valid_parts[i]->setting_info == &nm_meta_setting_infos_editor[m]);
+					g_assert (info->valid_parts[i]->mandatory);
+				}
+			}
+			g_assert (i == l);
+		}
 	}
 
 	for (m = 0; m < _NM_META_SETTING_TYPE_NUM; m++) {
@@ -112,7 +135,7 @@ test_client_meta_check (void)
 	for (m = 0; m < _NM_META_SETTING_TYPE_NUM; m++) {
 		const NMMetaSettingInfoEditor *info = &nm_meta_setting_infos_editor[m];
 
-		g_assert (nm_meta_setting_info_editor_find_by_name (info->general->setting_name) == info);
+		g_assert (nm_meta_setting_info_editor_find_by_name (info->general->setting_name, FALSE) == info);
 		g_assert (nm_meta_setting_info_editor_find_by_gtype (info->general->get_setting_gtype ()) == info);
 
 		for (p = 0; p < info->properties_num; p++) {

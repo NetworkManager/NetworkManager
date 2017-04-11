@@ -24,26 +24,31 @@
 /*****************************************************************************/
 
 const NMMetaSettingInfoEditor *
-nm_meta_setting_info_editor_find_by_name (const char *setting_name)
+nm_meta_setting_info_editor_find_by_name (const char *setting_name, gboolean use_alias)
 {
 	const NMMetaSettingInfo *meta_setting_info;
 	const NMMetaSettingInfoEditor *setting_info;
+	guint i;
 
 	g_return_val_if_fail (setting_name, NULL);
 
 	meta_setting_info = nm_meta_setting_infos_by_name (setting_name);
-
-	if (!meta_setting_info)
-		return NULL;
-
-	g_return_val_if_fail (nm_streq0 (meta_setting_info->setting_name, setting_name), NULL);
-
-	if (meta_setting_info->meta_type >= G_N_ELEMENTS (nm_meta_setting_infos_editor))
-		return NULL;
-
-	setting_info = &nm_meta_setting_infos_editor[meta_setting_info->meta_type];
-
-	g_return_val_if_fail (setting_info->general == meta_setting_info, NULL);
+	setting_info = NULL;
+	if (meta_setting_info) {
+		nm_assert (nm_streq0 (meta_setting_info->setting_name, setting_name));
+		if (meta_setting_info->meta_type < G_N_ELEMENTS (nm_meta_setting_infos_editor)) {
+			setting_info = &nm_meta_setting_infos_editor[meta_setting_info->meta_type];
+			nm_assert (setting_info->general == meta_setting_info);
+		}
+	}
+	if (!setting_info && use_alias) {
+		for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
+			if (nm_streq0 (nm_meta_setting_infos_editor[i].alias, setting_name)) {
+				setting_info = &nm_meta_setting_infos_editor[i];
+				break;
+			}
+		}
+	}
 
 	return setting_info;
 }
@@ -81,7 +86,7 @@ nm_meta_setting_info_editor_find_by_setting (NMSetting *setting)
 
 	setting_info = nm_meta_setting_info_editor_find_by_gtype (G_OBJECT_TYPE (setting));
 
-	nm_assert (setting_info == nm_meta_setting_info_editor_find_by_name (nm_setting_get_name (setting)));
+	nm_assert (setting_info == nm_meta_setting_info_editor_find_by_name (nm_setting_get_name (setting), FALSE));
 	nm_assert (!setting_info || G_TYPE_CHECK_INSTANCE_TYPE (setting, setting_info->general->get_setting_gtype ()));
 
 	return setting_info;
@@ -111,7 +116,7 @@ nm_meta_property_info_find_by_name (const char *setting_name, const char *proper
 	const NMMetaSettingInfoEditor *setting_info;
 	const NMMetaPropertyInfo *property_info;
 
-	setting_info = nm_meta_setting_info_editor_find_by_name (setting_name);
+	setting_info = nm_meta_setting_info_editor_find_by_name (setting_name, FALSE);
 	if (!setting_info)
 		return NULL;
 
