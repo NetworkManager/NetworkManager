@@ -1126,6 +1126,38 @@ nmc_rl_gen_func_basic (const char *text, int state, const char *const*words)
 	return NULL;
 }
 
+static struct {
+	bool initialized;
+	guint idx;
+	char **values;
+} _rl_compentry_func_wrap = { 0 };
+
+static char *
+_rl_compentry_func_wrap_fcn (const char *text, int state)
+{
+	g_return_val_if_fail (_rl_compentry_func_wrap.initialized, NULL);
+
+	if (    !_rl_compentry_func_wrap.values
+	    ||  !_rl_compentry_func_wrap.values[_rl_compentry_func_wrap.idx]) {
+		g_strfreev (_rl_compentry_func_wrap.values);
+		_rl_compentry_func_wrap.values = NULL;
+		_rl_compentry_func_wrap.initialized = FALSE;
+		return NULL;
+	}
+
+	return g_strdup (_rl_compentry_func_wrap.values[_rl_compentry_func_wrap.idx++]);
+}
+
+NmcCompEntryFunc
+nmc_rl_compentry_func_wrap (const char *const*values)
+{
+	g_strfreev (_rl_compentry_func_wrap.values);
+	_rl_compentry_func_wrap.values = g_strdupv ((char **) values);
+	_rl_compentry_func_wrap.idx = 0;
+	_rl_compentry_func_wrap.initialized = TRUE;
+	return _rl_compentry_func_wrap_fcn;
+}
+
 char *
 nmc_rl_gen_func_ifnames (const char *text, int state)
 {

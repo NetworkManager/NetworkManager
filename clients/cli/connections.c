@@ -184,8 +184,6 @@ typedef struct {
 } TabCompletionInfo;
 static TabCompletionInfo nmc_tab_completion = {NULL, NULL, NULL, NULL};
 
-static char *gen_connection_types (const char *text, int state);
-
 static void
 usage (void)
 {
@@ -2771,7 +2769,7 @@ finish:
 	return nmc->return_value;
 }
 
-/*----------------------------------------------------------------------------*/
+/*****************************************************************************/
 
 /*
  * Return the most appropriate name for the connection of a type 'name' possibly with given 'slave_type'
@@ -3097,7 +3095,7 @@ is_setting_mandatory (NMConnection *connection, NMSetting *setting)
 	return FALSE;
 }
 
-/*----------------------------------------------------------------------------*/
+/*****************************************************************************/
 
 static const char *
 _strip_master_prefix (const char *master, const char *(**func)(NMConnection *))
@@ -3685,7 +3683,7 @@ ensure_settings (NMConnection *connection, const NMMetaSettingValidPartItem *con
 	}
 }
 
-/*----------------------------------------------------------------------------*/
+/*****************************************************************************/
 
 static char *
 gen_func_bool_values_l10n (const char *text, int state)
@@ -3721,7 +3719,7 @@ gen_func_bond_lacp_rate (const char *text, int state)
 	return nmc_rl_gen_func_basic (text, state, words);
 }
 
-/*----------------------------------------------------------------------------*/
+/*****************************************************************************/
 
 static gboolean
 set_connection_type (NmCli *nmc, NMConnection *con, const OptionInfo *option, const char *value, GError **error)
@@ -4002,7 +4000,7 @@ _meta_abstract_get_option_info (const NMMetaAbstractInfo *abstract_info)
 			.check_and_set =       check_and_set_, \
 			.generator_func =      generator_func_, \
 		}
-		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_TYPE,                  "type",               set_connection_type,       gen_connection_types),
+		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_TYPE,                  "type",               set_connection_type,       NULL),
 		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_INTERFACE_NAME,        "ifname",             set_connection_iface,      NULL),
 		OPTION_INFO (CONNECTION,   NM_SETTING_CONNECTION_MASTER,                "master",             set_connection_master,     NULL),
 		OPTION_INFO (BLUETOOTH,    NM_SETTING_BLUETOOTH_TYPE,                   "bt-type",            set_bluetooth_type,        gen_func_bt_type),
@@ -4053,7 +4051,7 @@ option_relevant (NMConnection *connection, const NMMetaAbstractInfo *abstract_in
 	return TRUE;
 }
 
-/*----------------------------------------------------------------------------*/
+/*****************************************************************************/
 
 static void
 complete_property_name (NmCli *nmc, NMConnection *connection,
@@ -4173,15 +4171,12 @@ complete_property (const gchar *setting_name, const gchar *property, const gchar
 			return;
 	}
 
-	if (strcmp (setting_name, NM_SETTING_CONNECTION_SETTING_NAME) == 0) {
-		if (strcmp (property, NM_SETTING_CONNECTION_TYPE) == 0)
-			run_rl_generator (gen_connection_types, prefix);
-	} else if (   strcmp (setting_name, NM_SETTING_BLUETOOTH_SETTING_NAME) == 0
+	if (   strcmp (setting_name, NM_SETTING_BLUETOOTH_SETTING_NAME) == 0
 	         && strcmp (property, NM_SETTING_BLUETOOTH_TYPE) == 0)
 		run_rl_generator (gen_func_bt_type, prefix);
 }
 
-/*----------------------------------------------------------------------------*/
+/*****************************************************************************/
 
 static gboolean
 get_value (const char **value, int *argc, char ***argv, const char *option, GError **error)
@@ -4481,9 +4476,7 @@ nmcli_con_add_tab_completion (const char *text, int start, int end)
 	}
 
 next:
-	if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_CON_TYPE))
-		generator_func = gen_connection_types;
-	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_BT_TYPE))
+	if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_BT_TYPE))
 		generator_func = gen_func_bt_type;
 	else if (g_str_has_prefix (rl_prompt, NM_META_TEXT_PROMPT_BOND_MODE))
 		generator_func = gen_func_bond_mode;
@@ -4841,7 +4834,7 @@ finish:
 	return nmc->return_value;
 }
 
-/*----------------------------------------------------------------------------*/
+/*****************************************************************************/
 /* Functions for readline TAB completion in editor */
 
 static void
@@ -4961,36 +4954,14 @@ gen_cmd_save (const char *text, int state)
 	return nmc_rl_gen_func_basic (text, state, words);
 }
 
-static char *
-gen_connection_types (const char *text, int state)
+static rl_compentry_func_t *
+gen_connection_types (const char *text)
 {
-	static int list_idx, len;
-	static int had_name;
+	gs_strfreev char **values = NULL;
 
-	if (!state) {
-		list_idx = 0;
-		len = strlen (text);
-		had_name = FALSE;
-	}
-
-	for (; list_idx < _NM_META_SETTING_TYPE_NUM; ) {
-		const NMMetaSettingInfoEditor *setting_info = &nm_meta_setting_infos_editor[list_idx];
-
-		if (!had_name) {
-			had_name = TRUE;
-			if (!text || strncmp (text, setting_info->general->setting_name, len) == 0)
-				return g_strdup (setting_info->general->setting_name);
-		}
-
-		had_name = FALSE;
-		list_idx++;
-		if (setting_info->alias) {
-			if (!text || strncmp (text, setting_info->alias, len) == 0)
-				return g_strdup (setting_info->alias);
-		}
-	}
-
-	return NULL;
+	values = _meta_abstract_complete ((const NMMetaAbstractInfo *) nm_meta_property_info_connection_type,
+	                                  text);
+	return nmc_rl_compentry_func_wrap ((const char *const*) values);
 }
 
 static char *
@@ -5586,7 +5557,7 @@ nmcli_editor_tab_completion (const char *text, int start, int end)
 
 	/* Choose the right generator function */
 	if (strcmp (prompt_tmp, EDITOR_PROMPT_CON_TYPE) == 0)
-		generator_func = gen_connection_types;
+		generator_func = gen_connection_types (text);
 	else if (strcmp (prompt_tmp, EDITOR_PROMPT_SETTING) == 0)
 		generator_func = gen_setting_names;
 	else if (strcmp (prompt_tmp, EDITOR_PROMPT_PROPERTY) == 0)
@@ -5772,7 +5743,7 @@ save_history_cmds (const char *uuid)
 	}
 }
 
-/*----------------------------------------------------------------------------*/
+/*****************************************************************************/
 
 static void
 editor_show_connection (NMConnection *connection, NmCli *nmc)
@@ -6125,7 +6096,7 @@ editor_sub_usage (const char *command)
 	}
 }
 
-/*----------------------------------------------------------------------------*/
+/*****************************************************************************/
 
 typedef struct {
 	NMDevice *device;
@@ -6250,7 +6221,7 @@ activate_connection_editor_cb (GObject *client,
 	g_clear_error (&error);
 }
 
-/*----------------------------------------------------------------------------*/
+/*****************************************************************************/
 
 static void
 print_property_description (NMSetting *setting, const char *prop_name)

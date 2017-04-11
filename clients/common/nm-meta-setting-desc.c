@@ -2272,6 +2272,37 @@ _set_fcn_connection_type (ARGS_SET_FCN)
 	return TRUE;
 }
 
+static const char *const*
+_complete_fcn_connection_type (ARGS_COMPLETE_FCN)
+{
+	guint i, j;
+	char **result;
+	gsize text_len;
+
+	result = g_new (char *, _NM_META_SETTING_TYPE_NUM * 2 + 1);
+
+	text_len = text ? strlen (text) : 0;
+
+	for (i = 0, j = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
+		const NMMetaSettingInfoEditor *setting_info = &nm_meta_setting_infos_editor[i];
+		const char *v;
+
+		v = setting_info->alias;
+		if (v) {
+			if (!text || strncmp (text, v, text_len) == 0)
+				result[j++] = g_strdup (v);
+		}
+		if (!text || !*text || !v) {
+			v = setting_info->general->setting_name;
+			if (!text || strncmp (text, v, text_len) == 0)
+				result[j++] = g_strdup (v);
+		}
+	}
+	result[j++] = NULL;
+
+	return (const char *const*) (*out_to_free = result);
+}
+
 /* define from libnm-core/nm-setting-connection.c */
 #define PERM_USER_PREFIX  "user:"
 
@@ -5451,7 +5482,7 @@ static const NMMetaPropertyInfo property_infos_CONNECTION[] = {
 			.complete_fcn =             _complete_fcn_gobject_devices,
 		),
 	},
-	{
+	[_NM_META_PROPERTY_TYPE_CONNECTION_TYPE] = {
 		PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_TYPE),
 		.is_cli_option =                TRUE,
 		.property_alias =               "type",
@@ -5460,6 +5491,7 @@ static const NMMetaPropertyInfo property_infos_CONNECTION[] = {
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
 			.set_fcn =                  _set_fcn_connection_type,
+			.complete_fcn =             _complete_fcn_connection_type,
 		),
 	},
 	{

@@ -32,6 +32,8 @@
 typedef gpointer NMPolkitListener;
 #endif
 
+typedef char *(*NmcCompEntryFunc) (const char *, int);
+
 /* nmcli exit codes */
 typedef enum {
 	/* Indicates successful execution */

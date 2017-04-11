@@ -53,6 +53,7 @@ char *nmc_unique_connection_name (const GPtrArray *connections,
 void nmc_cleanup_readline (void);
 char *nmc_readline (const char *prompt_fmt, ...) G_GNUC_PRINTF (1, 2);
 char *nmc_readline_echo (gboolean echo_on, const char *prompt_fmt, ...) G_GNUC_PRINTF (2, 3);
+NmcCompEntryFunc nmc_rl_compentry_func_wrap (const char *const*values);
 char *nmc_rl_gen_func_basic (const char *text, int state, const char *const*words);
 char *nmc_rl_gen_func_ifnames (const char *text, int state);
 gboolean nmc_get_in_readline (void);
