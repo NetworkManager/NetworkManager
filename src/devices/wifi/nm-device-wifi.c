@@ -119,7 +119,6 @@ typedef struct {
 	NMDeviceWifiCapabilities capabilities;
 
 	gint32 hw_addr_scan_expire;
-	char *hw_addr_scan;
 } NMDeviceWifiPrivate;
 
 struct _NMDeviceWifi
@@ -1138,7 +1137,9 @@ _hw_addr_set_scanning (NMDeviceWifi *self, gboolean do_reset)
 	                                                      TRUE, TRUE);
 
 	if (!randomize) {
-		g_clear_pointer (&priv->hw_addr_scan, g_free);
+		/* expire the temporary MAC address used during scanning */
+		priv->hw_addr_scan_expire = 0;
+
 		if (do_reset)
 			nm_device_hw_addr_reset (device, "scanning");
 		return;
@@ -1146,9 +1147,9 @@ _hw_addr_set_scanning (NMDeviceWifi *self, gboolean do_reset)
 
 	now = nm_utils_get_monotonic_timestamp_s ();
 
-	if (   !priv->hw_addr_scan
-	    || now >= priv->hw_addr_scan_expire) {
+	if (now >= priv->hw_addr_scan_expire) {
 		gs_free char *generate_mac_address_mask = NULL;
+		gs_free char *hw_addr_scan = NULL;
 
 		/* the random MAC address for scanning expires after a while.
 		 *
@@ -1162,12 +1163,10 @@ _hw_addr_set_scanning (NMDeviceWifi *self, gboolean do_reset)
 		                                                              device,
 		                                                              NULL);
 
-		g_free (priv->hw_addr_scan);
-		priv->hw_addr_scan = nm_utils_hw_addr_gen_random_eth (nm_device_get_initial_hw_address (device),
-		                                                      generate_mac_address_mask);
+		hw_addr_scan = nm_utils_hw_addr_gen_random_eth (nm_device_get_initial_hw_address (device),
+		                                                generate_mac_address_mask);
+		nm_device_hw_addr_set (device, hw_addr_scan, "scanning", TRUE);
 	}
-
-	nm_device_hw_addr_set (device, priv->hw_addr_scan, "scanning", TRUE);
 }
 
 static void
@@ -2454,8 +2453,8 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
-	/* forget the temporary MAC address used during scanning */
-	g_clear_pointer (&priv->hw_addr_scan, g_free);
+	/* expire the temporary MAC address used during scanning */
+	priv->hw_addr_scan_expire = 0;
 
 	/* Set spoof MAC to the interface */
 	if (!nm_device_hw_addr_set_cloned (device, connection, TRUE))
@@ -3220,8 +3219,6 @@ finalize (GObject *object)
 	nm_assert (g_hash_table_size (priv->aps) == 0);
 
 	g_hash_table_unref (priv->aps);
-
-	g_free (priv->hw_addr_scan);
 
 	G_OBJECT_CLASS (nm_device_wifi_parent_class)->finalize (object);
 }
