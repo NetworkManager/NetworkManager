@@ -116,6 +116,8 @@ nm_meta_property_info_find_by_name (const char *setting_name, const char *proper
 		return NULL;
 
 	property_info = nm_meta_setting_info_editor_get_property_info (setting_info, property_name);
+	if (!property_info)
+		return NULL;
 
 	nm_assert (property_info->setting_info == setting_info);
 
@@ -132,6 +134,8 @@ nm_meta_property_info_find_by_setting (NMSetting *setting, const char *property_
 	if (!setting_info)
 		return NULL;
 	property_info = nm_meta_setting_info_editor_get_property_info (setting_info, property_name);
+	if (!property_info)
+		return NULL;
 
 	nm_assert (property_info->setting_info == setting_info);
 	nm_assert (property_info == nm_meta_property_info_find_by_name (nm_setting_get_name (setting), property_name));
