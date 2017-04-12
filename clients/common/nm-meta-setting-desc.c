@@ -4766,71 +4766,92 @@ _set_fcn_wireless_security_psk (ARGS_SET_FCN)
 
 static const NMMetaPropertyInfo property_infos_BOND[];
 
-#define NESTED_PROPERTY_INFO_BOND \
-	.meta_type =                    &nm_meta_type_nested_property_info, \
-	.parent_info =                  &property_infos_BOND[0]
+#define NESTED_PROPERTY_INFO_BOND(...) \
+	.parent_info =                  &property_infos_BOND[0], \
+	.base = { \
+		.meta_type =                &nm_meta_type_nested_property_info, \
+		.setting_info =             &nm_meta_setting_infos_editor[NM_META_SETTING_TYPE_BOND], \
+		__VA_ARGS__ \
+	}
 
-static const NMMetaNestedPropertyTypeInfo meta_nested_property_type_infos_bond[] = {
+static const NMMetaNestedPropertyInfo meta_nested_property_infos_bond[] = {
 	{
-		NESTED_PROPERTY_INFO_BOND,
-		.field_name =                   "mode",
-		.prompt =                       NM_META_TEXT_PROMPT_BOND_MODE,
-		.def_hint =                     "[balance-rr]",
+		NESTED_PROPERTY_INFO_BOND (
+			.property_name =            NM_SETTING_BOND_OPTIONS,
+			.property_alias =           "mode",
+			.prompt =                   NM_META_TEXT_PROMPT_BOND_MODE,
+			.def_hint =                 "[balance-rr]",
+		)
 	},
 	{
-		NESTED_PROPERTY_INFO_BOND,
-		.field_name =                   "primary",
-		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_DONT_ASK,
-		.prompt =                       N_("Bonding primary interface [none]"),
+		NESTED_PROPERTY_INFO_BOND (
+			.property_name =            NM_SETTING_BOND_OPTIONS,
+			.property_alias =           "primary",
+			.inf_flags =                NM_META_PROPERTY_INF_FLAG_DONT_ASK,
+			.prompt =                   N_("Bonding primary interface [none]"),
+		)
 	},
 	{
-		NESTED_PROPERTY_INFO_BOND,
-		/* this is a virtual property, only needed during "ask" mode. */
-		.field_name =                  NULL,
-		.prompt =                       N_("Bonding monitoring mode"),
-		.def_hint =                     NM_META_TEXT_PROMPT_BOND_MON_MODE_CHOICES,
+		NESTED_PROPERTY_INFO_BOND (
+			.property_name =            NM_SETTING_BOND_OPTIONS,
+			/* this is a virtual property, only needed during "ask" mode. */
+			.prompt =                   N_("Bonding monitoring mode"),
+			.def_hint =                 NM_META_TEXT_PROMPT_BOND_MON_MODE_CHOICES,
+		)
 	},
 	{
-		NESTED_PROPERTY_INFO_BOND,
-		.field_name =                   "miimon",
-		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_DONT_ASK,
-		.prompt =                       N_("Bonding miimon [100]"),
+		NESTED_PROPERTY_INFO_BOND (
+			.property_name =            NM_SETTING_BOND_OPTIONS,
+			.property_alias =           "miimon",
+			.inf_flags =                NM_META_PROPERTY_INF_FLAG_DONT_ASK,
+			.prompt =                   N_("Bonding miimon [100]"),
+		)
 	},
 	{
-		NESTED_PROPERTY_INFO_BOND,
-		.field_name =                   "downdelay",
-		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_DONT_ASK,
-		.prompt =                       N_("Bonding downdelay [0]"),
+		NESTED_PROPERTY_INFO_BOND (
+			.property_name =            NM_SETTING_BOND_OPTIONS,
+			.property_alias =           "downdelay",
+			.inf_flags =                NM_META_PROPERTY_INF_FLAG_DONT_ASK,
+			.prompt =                   N_("Bonding downdelay [0]"),
+		)
 	},
 	{
-		NESTED_PROPERTY_INFO_BOND,
-		.field_name =                   "updelay",
-		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_DONT_ASK,
-		.prompt =                       N_("Bonding updelay [0]"),
+		NESTED_PROPERTY_INFO_BOND (
+			.property_name =            NM_SETTING_BOND_OPTIONS,
+			.property_alias =           "updelay",
+			.inf_flags =                NM_META_PROPERTY_INF_FLAG_DONT_ASK,
+			.prompt =                   N_("Bonding updelay [0]"),
+		)
 	},
 	{
-		NESTED_PROPERTY_INFO_BOND,
-		.field_name =                   "arp-interval",
-		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_DONT_ASK,
-		.prompt =                       N_("Bonding arp-interval [0]"),
+		NESTED_PROPERTY_INFO_BOND (
+			.property_name =            NM_SETTING_BOND_OPTIONS,
+			.property_alias =           "arp-interval",
+			.inf_flags =                NM_META_PROPERTY_INF_FLAG_DONT_ASK,
+			.prompt =                   N_("Bonding arp-interval [0]"),
+		)
 	},
 	{
-		NESTED_PROPERTY_INFO_BOND,
-		.field_name =                   "arp-ip-target",
-		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_DONT_ASK,
-		.prompt =                       N_("Bonding arp-ip-target [none]"),
+		NESTED_PROPERTY_INFO_BOND (
+			.property_name =            NM_SETTING_BOND_OPTIONS,
+			.property_alias =           "arp-ip-target",
+			.inf_flags =                NM_META_PROPERTY_INF_FLAG_DONT_ASK,
+			.prompt =                   N_("Bonding arp-ip-target [none]"),
+		)
 	},
 	{
-		NESTED_PROPERTY_INFO_BOND,
-		.field_name =                   "lacp-rate",
-		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_DONT_ASK,
-		.prompt =                       N_("LACP rate ('slow' or 'fast') [slow]"),
+		NESTED_PROPERTY_INFO_BOND (
+			.property_name =            NM_SETTING_BOND_OPTIONS,
+			.property_alias =           "lacp-rate",
+			.inf_flags =                NM_META_PROPERTY_INF_FLAG_DONT_ASK,
+			.prompt =                   N_("LACP rate ('slow' or 'fast') [slow]"),
+		)
 	},
 };
 
 const NMMetaPropertyTypDataNested nm_meta_property_typ_data_bond = {
-	.nested =               meta_nested_property_type_infos_bond,
-	.nested_len =           G_N_ELEMENTS (meta_nested_property_type_infos_bond),
+	.nested =               meta_nested_property_infos_bond,
+	.nested_len =           G_N_ELEMENTS (meta_nested_property_infos_bond),
 };
 
 /*****************************************************************************/
@@ -5327,8 +5348,8 @@ static const NMMetaPropertyInfo property_infos_BOND[] = {
 			.remove_fcn =               _remove_fcn_bond_options,
 			.values_fcn =               _values_fcn_bond_options,
 		),
-		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (nested,
-			.data =                     &nm_meta_property_typ_data_bond,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			.nested =                   &nm_meta_property_typ_data_bond,
 		),
 	},
 };

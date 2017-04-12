@@ -3319,7 +3319,7 @@ _meta_property_needs_bond_hack (const NMMetaPropertyInfo *property_info)
 	if (!property_info)
 		g_return_val_if_reached (FALSE);
 	return    property_info->property_typ_data
-	       && property_info->property_typ_data->subtype.nested.data == &nm_meta_property_typ_data_bond;
+	       && property_info->property_typ_data->nested == &nm_meta_property_typ_data_bond;
 
 }
 
@@ -3353,28 +3353,16 @@ _meta_abstract_get (const NMMetaAbstractInfo *abstract_info,
                     const char **out_prompt,
                     const char **out_def_hint)
 {
-	/* _meta_property_needs_bond_hack () */
-	if (abstract_info->meta_type == &nm_meta_type_nested_property_info) {
-		const NMMetaNestedPropertyTypeInfo *info = (const NMMetaNestedPropertyTypeInfo *) abstract_info;
+	const NMMetaPropertyInfo *info = (const NMMetaPropertyInfo *) abstract_info;
 
-		NM_SET_OUT (out_setting_info, info->parent_info->setting_info);
-		NM_SET_OUT (out_setting_name, info->parent_info->setting_info->general->setting_name);
-		NM_SET_OUT (out_property_name, info->parent_info->property_name);
-		NM_SET_OUT (out_option, info->field_name);
-		NM_SET_OUT (out_inf_flags, info->inf_flags);
-		NM_SET_OUT (out_prompt, info->prompt);
-		NM_SET_OUT (out_def_hint, info->def_hint);
-	} else {
-		const NMMetaPropertyInfo *info = (const NMMetaPropertyInfo *) abstract_info;
-
-		NM_SET_OUT (out_setting_info, info->setting_info);
-		NM_SET_OUT (out_setting_name, info->setting_info->general->setting_name);
-		NM_SET_OUT (out_property_name, info->property_name);
-		NM_SET_OUT (out_option, info->property_alias);
-		NM_SET_OUT (out_inf_flags, info->inf_flags);
-		NM_SET_OUT (out_prompt, info->prompt);
-		NM_SET_OUT (out_def_hint, info->def_hint);
-	}
+	NM_SET_OUT (out_option, info->property_alias);
+	NM_SET_OUT (out_setting_info, info->setting_info);
+	NM_SET_OUT (out_setting_name, info->setting_info->general->setting_name);
+	NM_SET_OUT (out_property_name, info->property_name);
+	NM_SET_OUT (out_option, info->property_alias);
+	NM_SET_OUT (out_inf_flags, info->inf_flags);
+	NM_SET_OUT (out_prompt, info->prompt);
+	NM_SET_OUT (out_def_hint, info->def_hint);
 }
 
 static const OptionInfo *_meta_abstract_get_option_info (const NMMetaAbstractInfo *abstract_info);
@@ -3397,11 +3385,11 @@ enable_options (const gchar *setting_name, const gchar *property, const gchar * 
 		guint i;
 
 		for (i = 0; i < nm_meta_property_typ_data_bond.nested_len; i++) {
-			const NMMetaNestedPropertyTypeInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
+			const NMMetaNestedPropertyInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
 
-			if (   bi->inf_flags & NM_META_PROPERTY_INF_FLAG_DONT_ASK
-			    && bi->field_name
-			    && g_strv_contains (opts, bi->field_name))
+			if (   bi->base.inf_flags & NM_META_PROPERTY_INF_FLAG_DONT_ASK
+			    && bi->base.property_alias
+			    && g_strv_contains (opts, bi->base.property_alias))
 				_dynamic_options_set ((const NMMetaAbstractInfo *) bi, PROPERTY_INF_FLAG_ENABLED, PROPERTY_INF_FLAG_ENABLED);
 		}
 		return;
@@ -3456,7 +3444,7 @@ disable_options (const gchar *setting_name, const gchar *property)
 			guint i;
 
 			for (i = 0; i < nm_meta_property_typ_data_bond.nested_len; i++) {
-				const NMMetaNestedPropertyTypeInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
+				const NMMetaNestedPropertyInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
 
 				_dynamic_options_set ((const NMMetaAbstractInfo *) bi, PROPERTY_INF_FLAG_DISABLED, PROPERTY_INF_FLAG_DISABLED);
 			}
@@ -3490,7 +3478,7 @@ reset_options (void)
 				guint i;
 
 				for (i = 0; i < nm_meta_property_typ_data_bond.nested_len; i++) {
-					const NMMetaNestedPropertyTypeInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
+					const NMMetaNestedPropertyInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
 
 					_dynamic_options_set ((const NMMetaAbstractInfo *) bi, PROPERTY_INF_FLAG_ALL, 0);
 				}
@@ -4070,12 +4058,12 @@ complete_property_name (NmCli *nmc, NMConnection *connection,
 				guint i;
 
 				for (i = 0; i < nm_meta_property_typ_data_bond.nested_len; i++) {
-					const NMMetaNestedPropertyTypeInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
+					const NMMetaNestedPropertyInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
 
-					if (   !bi->field_name
-					    || !g_str_has_prefix (bi->field_name, prefix))
+					if (   !bi->base.property_alias
+					    || !g_str_has_prefix (bi->base.property_alias, prefix))
 						continue;
-					g_print ("%s\n", bi->field_name);
+					g_print ("%s\n", bi->base.property_alias);
 				}
 			} else {
 				if (!property_info->is_cli_option)
@@ -4264,9 +4252,9 @@ nmc_read_connection_properties (NmCli *nmc,
 						guint i;
 
 						for (i = 0; i < nm_meta_property_typ_data_bond.nested_len; i++) {
-							const NMMetaNestedPropertyTypeInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
+							const NMMetaNestedPropertyInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
 
-							if (!nm_streq0 (bi->field_name, option))
+							if (!nm_streq0 (bi->base.property_alias, option))
 								continue;
 							if (chosen) {
 								g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
@@ -4428,10 +4416,10 @@ nmcli_con_add_tab_completion (const char *text, int start, int end)
 				guint i;
 
 				for (i = 0; i < nm_meta_property_typ_data_bond.nested_len; i++) {
-					const NMMetaNestedPropertyTypeInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
+					const NMMetaNestedPropertyInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
 
-					if (   bi->prompt
-					    && g_str_has_prefix (rl_prompt, bi->prompt)) {
+					if (   bi->base.prompt
+					    && g_str_has_prefix (rl_prompt, bi->base.prompt)) {
 						goto next;
 					}
 				}
@@ -4521,11 +4509,11 @@ questionnaire_mandatory (NmCli *nmc, NMConnection *connection)
 				guint i;
 
 				for (i = 0; i < nm_meta_property_typ_data_bond.nested_len; i++) {
-					const NMMetaNestedPropertyTypeInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
+					const NMMetaNestedPropertyInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
 
 					if (!option_relevant (connection, (const NMMetaAbstractInfo *) bi))
 						continue;
-					if (   (bi->inf_flags & NM_META_PROPERTY_INF_FLAG_REQD)
+					if (   (bi->base.inf_flags & NM_META_PROPERTY_INF_FLAG_REQD)
 					    || (_dynamic_options_get ((const NMMetaAbstractInfo *) bi) & PROPERTY_INF_FLAG_ENABLED))
 						ask_option (nmc, connection, (const NMMetaAbstractInfo *) bi);
 				}
@@ -4590,7 +4578,7 @@ again:
 
 			if (_meta_property_needs_bond_hack (property_info)) {
 				for (i = 0; i < nm_meta_property_typ_data_bond.nested_len; i++) {
-					const NMMetaNestedPropertyTypeInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
+					const NMMetaNestedPropertyInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
 
 					if (!option_relevant (connection, (const NMMetaAbstractInfo *) bi))
 						continue;
@@ -4763,12 +4751,12 @@ read_properties:
 				guint i;
 
 				for (i = 0; i < nm_meta_property_typ_data_bond.nested_len; i++) {
-					const NMMetaNestedPropertyTypeInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
+					const NMMetaNestedPropertyInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
 
 					if (!option_relevant (connection, (const NMMetaAbstractInfo *) bi))
 						continue;
-					if (bi->inf_flags & NM_META_PROPERTY_INF_FLAG_REQD) {
-						g_string_printf (nmc->return_text, _("Error: '%s' argument is required."), bi->field_name);
+					if (bi->base.inf_flags & NM_META_PROPERTY_INF_FLAG_REQD) {
+						g_string_printf (nmc->return_text, _("Error: '%s' argument is required."), bi->base.property_alias);
 						nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 						goto finish;
 					}
