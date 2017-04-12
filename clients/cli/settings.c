@@ -738,32 +738,32 @@ nmc_setting_get_property_desc (NMSetting *setting, const char *prop)
 	const char *nmcli_desc_title = "";
 	const char *nmcli_nl = "";
 	const NMMetaPropertyInfo *property_info;
+	const char *desc = NULL;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 
-	if ((property_info = nm_meta_property_info_find_by_setting (setting, prop))) {
-		const char *desc = NULL;
+	property_info = nm_meta_property_info_find_by_setting (setting, prop);
+	if (!property_info)
+		return NULL;
 
-		if (property_info->describe_doc) {
-			setting_desc = _(property_info->describe_doc);
-			setting_desc_title = _("[NM property description]");
-		}
-
-		if (property_info->is_name) {
-			/* Traditionally, the "name" property was not handled here.
-			 * For the moment, skip it from get_property_val(). */
-		} else if (property_info->property_type->describe_fcn) {
-			desc = property_info->property_type->describe_fcn (property_info, &desc_to_free);
-		} else
-			desc = property_info->describe_message;
-
-		if (desc) {
-			nmcli_desc = _(desc);
-			nmcli_desc_title = _("[nmcli specific description]");
-			nmcli_nl = "\n";
-		}
+	if (property_info->describe_doc) {
+		setting_desc = _(property_info->describe_doc);
+		setting_desc_title = _("[NM property description]");
 	}
 
+	if (property_info->is_name) {
+		/* Traditionally, the "name" property was not handled here.
+		 * For the moment, skip it from get_property_val(). */
+	} else if (property_info->property_type->describe_fcn) {
+		desc = property_info->property_type->describe_fcn (property_info, &desc_to_free);
+	} else
+		desc = property_info->describe_message;
+
+	if (desc) {
+		nmcli_desc = _(desc);
+		nmcli_desc_title = _("[nmcli specific description]");
+		nmcli_nl = "\n";
+	}
 
 	return g_strdup_printf ("%s\n%s\n%s%s%s%s",
 	                        setting_desc_title,

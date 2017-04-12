@@ -6446,8 +6446,10 @@ print_property_description (NMSetting *setting, const char *prop_name)
 	char *desc;
 
 	desc = nmc_setting_get_property_desc (setting, prop_name);
-	g_print ("\n=== [%s] ===\n%s\n", prop_name, desc);
-	g_free (desc);
+	if (desc) {
+		g_print ("\n=== [%s] ===\n%s\n", prop_name, desc);
+		g_free (desc);
+	}
 }
 
 static void
