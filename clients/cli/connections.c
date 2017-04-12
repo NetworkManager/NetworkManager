@@ -1314,8 +1314,8 @@ split_required_fields_for_con_show (const char *input,
 			else if (!strcasecmp (*iter, CON_SHOW_DETAIL_GROUP_ACTIVE))
 				group_active = TRUE;
 			else {
-				char *allowed1 = nmc_get_allowed_fields ((const NMMetaAbstractInfo *const*) nm_meta_setting_infos_editor_p (), NULL);
-				char *allowed2 = nmc_get_allowed_fields ((const NMMetaAbstractInfo *const*) nmc_fields_con_active_details_groups, NULL);
+				char *allowed1 = nm_meta_abstract_infos_get_names_str ((const NMMetaAbstractInfo *const*) nm_meta_setting_infos_editor_p (), NULL);
+				char *allowed2 = nm_meta_abstract_infos_get_names_str ((const NMMetaAbstractInfo *const*) nmc_fields_con_active_details_groups, NULL);
 				g_set_error (error, NMCLI_ERROR, 0, _("invalid field '%s'; allowed fields: %s and %s, or %s,%s"),
 				             *iter, allowed1, allowed2, CON_SHOW_DETAIL_GROUP_PROFILE, CON_SHOW_DETAIL_GROUP_ACTIVE);
 				g_free (allowed1);
