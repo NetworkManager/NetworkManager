@@ -56,19 +56,11 @@ _meta_type_nmc_generic_info_get_nested (const NMMetaAbstractInfo *abstract_info,
                                         gpointer *out_to_free)
 {
 	const NmcMetaGenericInfo *info;
-	guint n;
 
 	info = (const NmcMetaGenericInfo *) abstract_info;
 
-	if (out_len) {
-		n = 0;
-		if (info->nested) {
-			for (; info->nested[n]; n++) {
-			}
-		}
-		*out_len = n;
-	}
 	*out_to_free = NULL;
+	NM_SET_OUT (out_len, NM_PTRARRAY_LEN (info->nested));
 	return (const NMMetaAbstractInfo *const*) info->nested;
 }
 
@@ -842,6 +834,8 @@ _output_selection_select_one (const NMMetaAbstractInfo *const* fields_array,
 
 	for (i = 0; fields_array[i]; i++) {
 		const NMMetaAbstractInfo *fi = fields_array[i];
+		const NMMetaAbstractInfo *const*nested;
+		gs_free gpointer nested_to_free = NULL;
 
 		if (g_ascii_strcasecmp (i_name, nm_meta_abstract_info_get_name (fi, FALSE)) != 0)
 			continue;
@@ -851,20 +845,10 @@ _output_selection_select_one (const NMMetaAbstractInfo *const* fields_array,
 			break;
 		}
 
-		if (fi->meta_type == &nm_meta_type_setting_info_editor) {
-			const NMMetaSettingInfoEditor *fi_s = (const NMMetaSettingInfoEditor *) fi;
-
-			for (j = 0; j < fi_s->properties_num; j++) {
-				if (g_ascii_strcasecmp (right, fi_s->properties[j].property_name) == 0) {
-					found = TRUE;
-					break;
-				}
-			}
-		} else if (fi->meta_type == &nmc_meta_type_generic_info) {
-			const NmcMetaGenericInfo *fi_g = (const NmcMetaGenericInfo *) fi;
-
-			for (j = 0; fi_g->nested && fi_g->nested[j]; j++) {
-				if (g_ascii_strcasecmp (right, nm_meta_abstract_info_get_name ((const NMMetaAbstractInfo *) fi_g->nested[j], FALSE)) == 0) {
+		nested = nm_meta_abstract_info_get_nested (fi, NULL, &nested_to_free);
+		if (nested) {
+			for (j = 0; nested[j]; nested++) {
+				if (g_ascii_strcasecmp (right, nm_meta_abstract_info_get_name (nested[j], FALSE)) == 0) {
 					found = TRUE;
 					break;
 				}
