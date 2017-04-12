@@ -71,4 +71,33 @@ const char *const*nm_meta_abstract_info_complete (const NMMetaAbstractInfo *abst
 
 /*****************************************************************************/
 
+char *nm_meta_abstract_info_get_nested_names_str (const NMMetaAbstractInfo *abstract_info, const char *name_prefix);
+char *nm_meta_abstract_infos_get_names_str (const NMMetaAbstractInfo *const*fields_array, const char *name_prefix);
+
+/*****************************************************************************/
+
+typedef struct {
+	const NMMetaAbstractInfo *info;
+	const char *self_selection;
+	const char *sub_selection;
+	guint idx;
+} NMMetaSelectionItem;
+
+typedef struct {
+	const guint num;
+	const NMMetaSelectionItem items[];
+} NMMetaSelectionResultList;
+
+NMMetaSelectionResultList *nm_meta_selection_create_all (const NMMetaAbstractInfo *const* fields_array);
+NMMetaSelectionResultList *nm_meta_selection_create_parse_one (const NMMetaAbstractInfo *const* fields_array,
+                                                               const char *fields_prefix,
+                                                               const char *fields_str,
+                                                               gboolean validate_nested,
+                                                               GError **error);
+NMMetaSelectionResultList *nm_meta_selection_create_parse_list (const NMMetaAbstractInfo *const* fields_array,
+                                                                const char *fields_prefix,
+                                                                const char *fields_str,
+                                                                gboolean validate_nested,
+                                                                GError **error);
+
 #endif /* _NM_META_SETTING_ACCESS_H__ */

@@ -61,31 +61,11 @@ void set_val_color_all (NmcOutputField fields_array[], NMMetaTermColor color);
 void set_val_color_fmt_all (NmcOutputField fields_array[], NMMetaTermFormat format);
 void nmc_free_output_field_values (NmcOutputField fields_array[]);
 
-typedef struct {
-	const NMMetaAbstractInfo *info;
-	const char *self_selection;
-	const char *sub_selection;
-	guint idx;
-} NMMetaSelectionItem;
-
-typedef struct {
-	const guint num;
-	const NMMetaSelectionItem items[];
-} NMMetaSelectionResultList;
-
-NMMetaSelectionResultList *nm_meta_selection_create_parse_list (const NMMetaAbstractInfo *const* fields_array,
-                                                                const char *fields_prefix,
-                                                                const char *fields_str,
-                                                                gboolean validate_nested,
-                                                                GError **error);
-
 GArray *parse_output_fields (const char *fields_str,
                              const NMMetaAbstractInfo *const* fields_array,
                              gboolean parse_groups,
                              GPtrArray **group_fields,
                              GError **error);
-char *nm_meta_abstract_info_get_nested_names_str (const NMMetaAbstractInfo *abstract_info, const char *name_prefix);
-char *nm_meta_abstract_infos_get_names_str (const NMMetaAbstractInfo *const*fields_array, const char *name_prefix);
 NmcOutputField *nmc_dup_fields_array (const NMMetaAbstractInfo *const*fields, NmcOfFlags flags);
 void nmc_empty_output_fields (NmcOutputData *output_data);
 void print_required_fields (const NmcConfig *nmc_config,
