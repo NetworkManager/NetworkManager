@@ -36,18 +36,121 @@
 
 #include "utils.h"
 
-extern GMainLoop *loop;
+/*****************************************************************************/
 
-const NmcMetaGenericInfo *const nmc_fields_ip4_config[] = {
-	NMC_META_GENERIC ("GROUP"),     /* 0 */
-	NMC_META_GENERIC ("ADDRESS"),   /* 1 */
-	NMC_META_GENERIC ("GATEWAY"),   /* 2 */
-	NMC_META_GENERIC ("ROUTE"),     /* 3 */
-	NMC_META_GENERIC ("DNS"),       /* 4 */
-	NMC_META_GENERIC ("DOMAIN"),    /* 5 */
-	NMC_META_GENERIC ("WINS"),      /* 6 */
+static gconstpointer
+_metagen_ip4_config_get_fcn (const NMMetaEnvironment *environment,
+                             gpointer environment_user_data,
+                             const NmcMetaGenericInfo *info,
+                             gpointer target,
+                             NMMetaAccessorGetType get_type,
+                             NMMetaAccessorGetFlags get_flags,
+                             NMMetaAccessorGetOutFlags *out_flags,
+                             gpointer *out_to_free)
+{
+	NMIPConfig *cfg4 = target;
+	GPtrArray *ptr_array;
+	char **arr;
+	const char *const*arrc;
+	guint i = 0;
+
+	nm_assert (info->info_type < _NMC_GENERIC_INFO_TYPE_IP4_CONFIG_NUM);
+
+	NMC_HANDLE_TERMFORMAT (NM_META_TERM_COLOR_NORMAL);
+
+	switch (info->info_type) {
+	case NMC_GENERIC_INFO_TYPE_IP4_CONFIG_ADDRESS:
+		if (!NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
+			return NULL;
+		ptr_array = nm_ip_config_get_addresses (cfg4);
+		if (ptr_array) {
+			arr = g_new (char *, ptr_array->len + 1);
+			for (i = 0; i < ptr_array->len; i++) {
+				NMIPAddress *addr = g_ptr_array_index (ptr_array, i);
+
+				arr[i] = g_strdup_printf ("%s/%u",
+				                          nm_ip_address_get_address (addr),
+				                          nm_ip_address_get_prefix (addr));
+			}
+			arr[i] = NULL;
+		} else
+			arr = NULL;
+		goto arr_out;
+	case NMC_GENERIC_INFO_TYPE_IP4_CONFIG_GATEWAY:
+		return nm_ip_config_get_gateway (cfg4);
+	case NMC_GENERIC_INFO_TYPE_IP4_CONFIG_ROUTE:
+		if (!NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
+			return NULL;
+		ptr_array = nm_ip_config_get_routes (cfg4);
+		if (ptr_array) {
+			arr = g_new (char *, ptr_array->len + 1);
+			for (i = 0; i < ptr_array->len; i++) {
+				NMIPRoute *route = g_ptr_array_index (ptr_array, i);
+				const char *next_hop;
+
+				next_hop = nm_ip_route_get_next_hop (route);
+				if (!next_hop)
+					next_hop = "0.0.0.0";
+
+				arr[i] = g_strdup_printf ("dst = %s/%u, nh = %s%c mt = %u",
+				                          nm_ip_route_get_dest (route),
+				                          nm_ip_route_get_prefix (route),
+				                          next_hop,
+				                          nm_ip_route_get_metric (route) == -1 ? '\0' : ',',
+				                          (guint32) nm_ip_route_get_metric (route));
+			}
+			arr[i] = NULL;
+		} else
+			arr = NULL;
+		goto arr_out;
+	case NMC_GENERIC_INFO_TYPE_IP4_CONFIG_DNS:
+		if (!NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
+			return NULL;
+		arrc = nm_ip_config_get_nameservers (cfg4);
+		goto arrc_out;
+	case NMC_GENERIC_INFO_TYPE_IP4_CONFIG_DOMAIN:
+		if (!NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
+			return NULL;
+		arrc = nm_ip_config_get_domains (cfg4);
+		goto arrc_out;
+	case NMC_GENERIC_INFO_TYPE_IP4_CONFIG_WINS:
+		if (!NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
+			return NULL;
+		arrc = nm_ip_config_get_wins_servers (cfg4);
+		goto arrc_out;
+	default:
+		break;
+	}
+
+	g_return_val_if_reached (NULL);
+
+arrc_out:
+	*out_flags |= NM_META_ACCESSOR_GET_OUT_FLAGS_STRV;
+	return arrc;
+
+arr_out:
+	*out_flags |= NM_META_ACCESSOR_GET_OUT_FLAGS_STRV;
+	*out_to_free = arr;
+	return arr;
+}
+
+const NmcMetaGenericInfo *const metagen_ip4_config[_NMC_GENERIC_INFO_TYPE_IP4_CONFIG_NUM + 1] = {
+#define _METAGEN_IP4_CONFIG(type, name) \
+	[type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_ip4_config_get_fcn)
+	_METAGEN_IP4_CONFIG (NMC_GENERIC_INFO_TYPE_IP4_CONFIG_ADDRESS, "ADDRESS"),
+	_METAGEN_IP4_CONFIG (NMC_GENERIC_INFO_TYPE_IP4_CONFIG_GATEWAY, "GATEWAY"),
+	_METAGEN_IP4_CONFIG (NMC_GENERIC_INFO_TYPE_IP4_CONFIG_ROUTE,   "ROUTE"),
+	_METAGEN_IP4_CONFIG (NMC_GENERIC_INFO_TYPE_IP4_CONFIG_DNS,     "DNS"),
+	_METAGEN_IP4_CONFIG (NMC_GENERIC_INFO_TYPE_IP4_CONFIG_DOMAIN,  "DOMAIN"),
+	_METAGEN_IP4_CONFIG (NMC_GENERIC_INFO_TYPE_IP4_CONFIG_WINS,    "WINS"),
+};
+
+static const NmcMetaGenericInfo *const metagen_ip4_config_group[] = {
+	NMC_META_GENERIC_WITH_NESTED ("IP4", metagen_ip4_config, .name_header = N_("GROUP")),
 	NULL,
 };
+
+/*****************************************************************************/
 
 const NmcMetaGenericInfo *const nmc_fields_dhcp4_config[] = {
 	NMC_META_GENERIC ("GROUP"),    /* 0 */
@@ -74,87 +177,25 @@ const NmcMetaGenericInfo *const nmc_fields_dhcp6_config[] = {
 gboolean
 print_ip4_config (NMIPConfig *cfg4,
                   const NmcConfig *nmc_config,
-                  const char *group_prefix,
                   const char *one_field)
 {
-	GPtrArray *ptr_array;
-	char **addr_arr = NULL;
-	char **route_arr = NULL;
-	char **dns_arr = NULL;
-	char **domain_arr = NULL;
-	char **wins_arr = NULL;
-	int i = 0;
-	const NMMetaAbstractInfo *const*tmpl;
-	NmcOutputField *arr;
-	NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
+	gs_free_error GError *error = NULL;
+	gs_free char *field_str = NULL;
 
 	if (cfg4 == NULL)
 		return FALSE;
 
-	tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_ip4_config;
-	out_indices = parse_output_fields (one_field,
-	                                   tmpl, FALSE, NULL, NULL);
-	arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (out.output_data, arr);
+	if (one_field)
+		field_str = g_strdup_printf ("IP4.%s", one_field);
 
-	/* addresses */
-	ptr_array = nm_ip_config_get_addresses (cfg4);
-	if (ptr_array) {
-		addr_arr = g_new (char *, ptr_array->len + 1);
-		for (i = 0; i < ptr_array->len; i++) {
-			NMIPAddress *addr = (NMIPAddress *) g_ptr_array_index (ptr_array, i);
-
-			addr_arr[i] = g_strdup_printf ("%s/%u",
-			                               nm_ip_address_get_address (addr),
-			                               nm_ip_address_get_prefix (addr));
-		}
-		addr_arr[i] = NULL;
+	if (!nmc_print (nmc_config,
+	                (gpointer[]) { cfg4, NULL },
+	                NULL,
+	                (const NMMetaAbstractInfo *const*) metagen_ip4_config_group,
+	                field_str,
+	                &error)) {
+		return FALSE;
 	}
-
-	/* routes */
-	ptr_array = nm_ip_config_get_routes (cfg4);
-	if (ptr_array) {
-		route_arr = g_new (char *, ptr_array->len + 1);
-		for (i = 0; i < ptr_array->len; i++) {
-			NMIPRoute *route = (NMIPRoute *) g_ptr_array_index (ptr_array, i);
-			const char *next_hop;
-
-			next_hop = nm_ip_route_get_next_hop (route);
-			if (!next_hop)
-				next_hop = "0.0.0.0";
-
-			route_arr[i] = g_strdup_printf ("dst = %s/%u, nh = %s%c mt = %u",
-			                                nm_ip_route_get_dest (route),
-			                                nm_ip_route_get_prefix (route),
-			                                next_hop,
-			                                nm_ip_route_get_metric (route) == -1 ? '\0' : ',',
-			                                (guint32) nm_ip_route_get_metric (route));
-		}
-		route_arr[i] = NULL;
-	}
-
-	/* DNS */
-	dns_arr = g_strdupv ((char **) nm_ip_config_get_nameservers (cfg4));
-
-	/* domains */
-	domain_arr = g_strdupv ((char **) nm_ip_config_get_domains (cfg4));
-
-	/* WINS */
-	wins_arr = g_strdupv ((char **) nm_ip_config_get_wins_servers (cfg4));
-
-	arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_SECTION_PREFIX);
-	set_val_strc (arr, 0, group_prefix);
-	set_val_arr  (arr, 1, addr_arr);
-	set_val_strc (arr, 2, nm_ip_config_get_gateway (cfg4));
-	set_val_arr  (arr, 3, route_arr);
-	set_val_arr  (arr, 4, dns_arr);
-	set_val_arr  (arr, 5, domain_arr);
-	set_val_arr  (arr, 6, wins_arr);
-	g_ptr_array_add (out.output_data, arr);
-
-	print_data_prepare_width (out.output_data);
-	print_data (nmc_config, out_indices, NULL, 0, &out);
-
 	return TRUE;
 }
 
@@ -840,7 +881,7 @@ nmc_secrets_requested (NMSecretAgentSimple *agent,
 	}
 
 	success = get_secrets_from_user (request_id, title, msg, connection, nmc->nmc_config.in_editor || nmc->ask,
-	                                 nmc->show_secrets, nmc->pwds_hash, secrets);
+	                                 nmc->nmc_config.show_secrets, nmc->pwds_hash, secrets);
 	if (success)
 		nm_secret_agent_simple_response (agent, request_id, secrets);
 	else {
@@ -1085,6 +1126,38 @@ nmc_rl_gen_func_basic (const char *text, int state, const char *const*words)
 	return NULL;
 }
 
+static struct {
+	bool initialized;
+	guint idx;
+	char **values;
+} _rl_compentry_func_wrap = { 0 };
+
+static char *
+_rl_compentry_func_wrap_fcn (const char *text, int state)
+{
+	g_return_val_if_fail (_rl_compentry_func_wrap.initialized, NULL);
+
+	if (    !_rl_compentry_func_wrap.values
+	    ||  !_rl_compentry_func_wrap.values[_rl_compentry_func_wrap.idx]) {
+		g_strfreev (_rl_compentry_func_wrap.values);
+		_rl_compentry_func_wrap.values = NULL;
+		_rl_compentry_func_wrap.initialized = FALSE;
+		return NULL;
+	}
+
+	return g_strdup (_rl_compentry_func_wrap.values[_rl_compentry_func_wrap.idx++]);
+}
+
+NmcCompEntryFunc
+nmc_rl_compentry_func_wrap (const char *const*values)
+{
+	g_strfreev (_rl_compentry_func_wrap.values);
+	_rl_compentry_func_wrap.values = g_strdupv ((char **) values);
+	_rl_compentry_func_wrap.idx = 0;
+	_rl_compentry_func_wrap.initialized = TRUE;
+	return _rl_compentry_func_wrap_fcn;
+}
+
 char *
 nmc_rl_gen_func_ifnames (const char *text, int state)
 {
@@ -1169,8 +1242,6 @@ nmc_parse_lldp_capabilities (guint value)
 
 	return g_string_free (str, FALSE);
 }
-
-extern GMainLoop *loop;
 
 static void
 command_done (GObject *object, GAsyncResult *res, gpointer user_data)

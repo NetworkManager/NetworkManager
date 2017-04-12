@@ -25,7 +25,10 @@
 
 /*****************************************************************************/
 
-const NMMetaSettingInfoEditor *nm_meta_setting_info_editor_find_by_name (const char *setting_name);
+NMSetting *nm_meta_setting_info_editor_new_setting (const NMMetaSettingInfoEditor *setting_info,
+                                                    NMMetaAccessorSettingInitType init_type);
+
+const NMMetaSettingInfoEditor *nm_meta_setting_info_editor_find_by_name (const char *setting_name, gboolean use_alias);
 const NMMetaSettingInfoEditor *nm_meta_setting_info_editor_find_by_gtype (GType gtype);
 const NMMetaSettingInfoEditor *nm_meta_setting_info_editor_find_by_setting (NMSetting *setting);
 
@@ -44,11 +47,27 @@ const NMMetaSettingInfoEditor *const*nm_meta_setting_infos_editor_p (void);
 
 /*****************************************************************************/
 
-const char *nm_meta_abstract_info_get_name (const NMMetaAbstractInfo *abstract_info);
+const char *nm_meta_abstract_info_get_name (const NMMetaAbstractInfo *abstract_info, gboolean for_header);
 
 const NMMetaAbstractInfo *const*nm_meta_abstract_info_get_nested (const NMMetaAbstractInfo *abstract_info,
                                                                   guint *out_len,
                                                                   gpointer *nested_to_free);
+
+gconstpointer nm_meta_abstract_info_get (const NMMetaAbstractInfo *abstract_info,
+                                         const NMMetaEnvironment *environment,
+                                         gpointer environment_user_data,
+                                         gpointer target,
+                                         NMMetaAccessorGetType get_type,
+                                         NMMetaAccessorGetFlags get_flags,
+                                         NMMetaAccessorGetOutFlags *out_flags,
+                                         gpointer *out_to_free);
+
+const char *const*nm_meta_abstract_info_complete (const NMMetaAbstractInfo *abstract_info,
+                                                  const NMMetaEnvironment *environment,
+                                                  gpointer environment_user_data,
+                                                  const NMMetaOperationContext *operation_context,
+                                                  const char *text,
+                                                  char ***out_to_free);
 
 /*****************************************************************************/
 

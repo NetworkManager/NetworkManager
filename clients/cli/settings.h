@@ -27,7 +27,6 @@
 
 /*****************************************************************************/
 
-void nmc_setting_custom_init (NMSetting *setting);
 void nmc_setting_ip4_connect_handlers (NMSettingIPConfig *setting);
 void nmc_setting_ip6_connect_handlers (NMSettingIPConfig *setting);
 void nmc_setting_proxy_connect_handlers (NMSettingProxy *setting);
@@ -60,6 +59,6 @@ void nmc_property_set_default_value (NMSetting *setting, const char *prop);
 gboolean nmc_property_get_gvalue (NMSetting *setting, const char *prop, GValue *value);
 gboolean nmc_property_set_gvalue (NMSetting *setting, const char *prop, GValue *value);
 
-gboolean setting_details (const NmcConfig *nmc_config, NMSetting *setting, const char *one_prop, gboolean secrets);
+gboolean setting_details (const NmcConfig *nmc_config, NMSetting *setting, const char *one_prop);
 
 #endif /* NMC_SETTINGS_H */

@@ -92,8 +92,8 @@ nmc_string_to_uint (const char *str,
 gboolean
 nmc_string_to_bool (const char *str, gboolean *val_bool, GError **error)
 {
-	const char *s_true[] = { "true", "yes", "on", NULL };
-	const char *s_false[] = { "false", "no", "off", NULL };
+	const char *s_true[] = { "true", "yes", "on", "1", NULL };
+	const char *s_false[] = { "false", "no", "off", "0", NULL };
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 

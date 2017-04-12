@@ -209,6 +209,23 @@ NM_G_ERROR_MSG (GError *error)
 /* macro to return strlen() of a compile time string. */
 #define NM_STRLEN(str)     ( sizeof ("" str) - 1 )
 
+/* returns the length of a NULL terminated array of pointers,
+ * like g_strv_length() does. The difference is:
+ *  - it operats on arrays of pointers (of any kind, requiring no cast).
+ *  - it accepts NULL to return zero. */
+#define NM_PTRARRAY_LEN(array) \
+	({ \
+		typeof (*(array)) *const _array = (array); \
+		gsize _n = 0; \
+		\
+		if (_array) { \
+			_nm_unused typeof (*(_array[0])) *_array_check = _array[0]; \
+			while (_array[_n]) \
+				_n++; \
+		} \
+		_n; \
+	})
+
 /* Note: @value is only evaluated when *out_val is present.
  * Thus,
  *    NM_SET_OUT (out_str, g_strdup ("hallo"));

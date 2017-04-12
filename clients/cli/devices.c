@@ -208,7 +208,7 @@ const NmcMetaGenericInfo *const nmc_fields_dev_show_sections[] = {
 	NMC_META_GENERIC_WITH_NESTED ("WIRED-PROPERTIES",  nmc_fields_dev_show_wired_prop + 1),   /* 4 */
 	NMC_META_GENERIC_WITH_NESTED ("WIMAX-PROPERTIES",  nmc_fields_dev_show_wimax_prop + 1),   /* 5 */
 	NMC_META_GENERIC_WITH_NESTED ("NSP",               nmc_fields_dev_wimax_list + 1),        /* 6 */
-	NMC_META_GENERIC_WITH_NESTED ("IP4",               nmc_fields_ip4_config + 1),            /* 7 */
+	NMC_META_GENERIC_WITH_NESTED ("IP4",               metagen_ip4_config),                   /* 7 */
 	NMC_META_GENERIC_WITH_NESTED ("DHCP4",             nmc_fields_dhcp4_config + 1),          /* 8 */
 	NMC_META_GENERIC_WITH_NESTED ("IP6",               nmc_fields_ip6_config + 1),            /* 9 */
 	NMC_META_GENERIC_WITH_NESTED ("DHCP6",             nmc_fields_dhcp6_config + 1),          /* 10 */
@@ -244,9 +244,6 @@ const NmcMetaGenericInfo *const nmc_fields_dev_lldp_list[] = {
 };
 #define NMC_FIELDS_DEV_LLDP_LIST_COMMON  "DEVICE,CHASSIS-ID,PORT-ID,PORT-DESCRIPTION,SYSTEM-NAME,SYSTEM-DESCRIPTION," \
                                          "SYSTEM-CAPABILITIES"
-
-/* glib main loop variable - defined in nmcli.c */
-extern GMainLoop *loop;
 
 static guint progress_id = 0;  /* ID of event source for displaying progress */
 
@@ -450,7 +447,6 @@ usage_device_lldp (void)
 	              "used to list neighbors for a particular interface.\n\n"));
 }
 
-/* quit main loop */
 static void
 quit (void)
 {
@@ -459,7 +455,7 @@ quit (void)
 		nmc_terminal_erase_line ();
 	}
 
-	g_main_loop_quit (loop);  /* quit main loop */
+	g_main_loop_quit (loop);
 }
 
 static int
@@ -1273,7 +1269,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 
 		/* IP4 */
 		if (cfg4 && !strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[7]->name))
-			was_output = print_ip4_config (cfg4, &nmc->nmc_config, nmc_fields_dev_show_sections[7]->name, section_fld);
+			was_output = print_ip4_config (cfg4, &nmc->nmc_config, section_fld);
 
 		/* DHCP4 */
 		if (dhcp4 && !strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[8]->name))
@@ -3110,7 +3106,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	if (ap_flags & NM_802_11_AP_FLAGS_PRIVACY) {
 		/* Ask for missing password when one is expected and '--ask' is used */
 		if (!password && nmc->ask)
-			password = passwd_ask = nmc_readline_echo (nmc->show_secrets, _("Password: "));
+			password = passwd_ask = nmc_readline_echo (nmc->nmc_config.show_secrets, _("Password: "));
 
 		if (password) {
 			if (!connection)
@@ -3408,7 +3404,7 @@ do_device_wifi_hotspot (NmCli *nmc, int argc, char **argv)
 
 		next_arg (nmc, &argc, &argv, NULL);
 	}
-	show_password = nmc->show_secrets || show_password;
+	show_password = nmc->nmc_config.show_secrets || show_password;
 
 	if (nmc->complete)
 		return nmc->return_value;

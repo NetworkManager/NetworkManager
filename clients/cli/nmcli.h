@@ -32,6 +32,8 @@
 typedef gpointer NMPolkitListener;
 #endif
 
+typedef char *(*NmcCompEntryFunc) (const char *, int);
+
 /* nmcli exit codes */
 typedef enum {
 	/* Indicates successful execution */
@@ -111,9 +113,10 @@ typedef enum {
 typedef struct _NmcConfig {
 	NMCPrintOutput print_output;                      /* Output mode */
 	NmcColorOption use_colors;                        /* Whether to use colors for output: option '--color' */
-	gboolean multiline_output;                        /* Multiline output instead of default tabular */
-	gboolean escape_values;                           /* Whether to escape ':' and '\' in terse tabular mode */
-	gboolean in_editor;                               /* Whether running the editor - nmcli con edit' */
+	bool multiline_output;                            /* Multiline output instead of default tabular */
+	bool escape_values;                               /* Whether to escape ':' and '\' in terse tabular mode */
+	bool in_editor;                                   /* Whether running the editor - nmcli con edit' */
+	bool show_secrets;                                /* Whether to display secrets (both input and output): option '--show-secrets' */
 } NmcConfig;
 
 typedef struct _NmcOutputData {
@@ -143,11 +146,9 @@ typedef struct _NmCli {
 	char *required_fields;                            /* Required fields in output: '--fields' option */
 	gboolean ask;                                     /* Ask for missing parameters: option '--ask' */
 	gboolean complete;                                /* Autocomplete the command line */
-	gboolean show_secrets;                            /* Whether to display secrets (both input and output): option '--show-secrets' */
 	gboolean editor_status_line;                      /* Whether to display status line in connection editor */
 	gboolean editor_save_confirmation;                /* Whether to ask for confirmation on saving connections with 'autoconnect=yes' */
-	gboolean editor_show_secrets;                     /* Whether to display secrets in the editor' */
-	NMMetaTermColor editor_prompt_color;                 /* Color of prompt in connection editor */
+	NMMetaTermColor editor_prompt_color;              /* Color of prompt in connection editor */
 } NmCli;
 
 extern NmCli nm_cli;
@@ -155,6 +156,8 @@ extern NmCli nm_cli;
 /* Error quark for GError domain */
 #define NMCLI_ERROR (nmcli_error_quark ())
 GQuark nmcli_error_quark (void);
+
+extern GMainLoop *loop;
 
 gboolean nmc_seen_sigint (void);
 void     nmc_clear_sigint (void);

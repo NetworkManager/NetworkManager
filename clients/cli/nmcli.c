@@ -75,8 +75,6 @@ complete_field_setting (GHashTable *h, NMMetaSettingType setting_type)
 	guint i;
 
 	for (i = 0; i < setting_info->properties_num; i++) {
-		if (setting_info->properties[i].is_name)
-			continue;
 		g_hash_table_add (h, g_strdup_printf ("%s.%s",
 		                                      setting_info->general->setting_name,
 		                                      setting_info->properties[i].property_name));
@@ -119,7 +117,7 @@ complete_fields (const char *prefix)
 
 	h = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 
-	complete_field (h, nmc_fields_ip4_config);
+	complete_field (h, metagen_ip4_config);
 	complete_field (h, nmc_fields_dhcp4_config);
 	complete_field (h, nmc_fields_ip6_config);
 	complete_field (h, nmc_fields_dhcp6_config);
@@ -538,12 +536,11 @@ nmc_init (NmCli *nmc)
 	nmc->required_fields = NULL;
 	nmc->ask = FALSE;
 	nmc->complete = FALSE;
-	nmc->show_secrets = FALSE;
+	nmc->nmc_config_mutable.show_secrets = FALSE;
 	nmc->nmc_config_mutable.use_colors = NMC_USE_COLOR_AUTO;
 	nmc->nmc_config_mutable.in_editor = FALSE;
 	nmc->editor_status_line = FALSE;
 	nmc->editor_save_confirmation = TRUE;
-	nmc->editor_show_secrets = FALSE;
 	nmc->editor_prompt_color = NM_META_TERM_COLOR_NORMAL;
 }
 

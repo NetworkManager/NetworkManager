@@ -34,6 +34,9 @@ test_client_meta_check (void)
 	NMMetaSettingType m;
 	guint p;
 
+	G_STATIC_ASSERT (G_STRUCT_OFFSET (NMMetaAbstractInfo, meta_type) == G_STRUCT_OFFSET (NMMetaSettingInfoEditor, meta_type));
+	G_STATIC_ASSERT (G_STRUCT_OFFSET (NMMetaAbstractInfo, meta_type) == G_STRUCT_OFFSET (NMMetaPropertyInfo, meta_type));
+
 	for (m = 0; m < _NM_META_SETTING_TYPE_NUM; m++) {
 		const NMMetaSettingInfo *info = &nm_meta_setting_infos[m];
 		GType gtype;
@@ -68,7 +71,8 @@ test_client_meta_check (void)
 		g_assert (info->general);
 		g_assert (info->general == &nm_meta_setting_infos[m]);
 
-		g_assert (info->general->setting_name == info->meta_type->get_name ((const NMMetaAbstractInfo *) info));
+		g_assert_cmpstr (info->general->setting_name, ==, info->meta_type->get_name ((const NMMetaAbstractInfo *) info, FALSE));
+		g_assert_cmpstr ("name", ==, info->meta_type->get_name ((const NMMetaAbstractInfo *) info, TRUE));
 
 		if (info->properties_num) {
 			gs_unref_hashtable GHashTable *property_names = g_hash_table_new (g_str_hash, g_str_equal);
@@ -83,18 +87,37 @@ test_client_meta_check (void)
 
 				g_assert (nm_g_hash_table_add (property_names, (gpointer) pi->property_name));
 
-				g_assert (pi->property_name == pi->meta_type->get_name ((const NMMetaAbstractInfo *) pi));
-
-				if (pi->is_name)
-					g_assert (p == 0);
-				else
-					g_assert (p != 0);
+				g_assert_cmpstr (pi->property_name, ==, pi->meta_type->get_name ((const NMMetaAbstractInfo *) pi, FALSE));
+				g_assert_cmpstr (pi->property_name, ==, pi->meta_type->get_name ((const NMMetaAbstractInfo *) pi, TRUE));
 
 				g_assert (pi->property_type);
 				g_assert (pi->property_type->get_fcn);
 			}
 		} else
 			g_assert (!info->properties);
+
+		if (info->valid_parts) {
+			gsize i, l;
+			gs_unref_hashtable GHashTable *dup = g_hash_table_new (NULL, NULL);
+
+			l = NM_PTRARRAY_LEN (info->valid_parts);
+			g_assert (l >= 2);
+
+			for (i = 0; info->valid_parts[i]; i++) {
+				g_assert (info->valid_parts[i]->setting_info);
+				g_assert (nm_g_hash_table_add (dup, (gpointer) info->valid_parts[i]->setting_info));
+
+				if (i == 0) {
+					g_assert (info->valid_parts[i]->setting_info == &nm_meta_setting_infos_editor[NM_META_SETTING_TYPE_CONNECTION]);
+					g_assert (info->valid_parts[i]->mandatory);
+				}
+				if (i == 1) {
+					g_assert (info->valid_parts[i]->setting_info == &nm_meta_setting_infos_editor[m]);
+					g_assert (info->valid_parts[i]->mandatory);
+				}
+			}
+			g_assert (i == l);
+		}
 	}
 
 	for (m = 0; m < _NM_META_SETTING_TYPE_NUM; m++) {
@@ -112,7 +135,7 @@ test_client_meta_check (void)
 	for (m = 0; m < _NM_META_SETTING_TYPE_NUM; m++) {
 		const NMMetaSettingInfoEditor *info = &nm_meta_setting_infos_editor[m];
 
-		g_assert (nm_meta_setting_info_editor_find_by_name (info->general->setting_name) == info);
+		g_assert (nm_meta_setting_info_editor_find_by_name (info->general->setting_name, FALSE) == info);
 		g_assert (nm_meta_setting_info_editor_find_by_gtype (info->general->get_setting_gtype ()) == info);
 
 		for (p = 0; p < info->properties_num; p++) {
