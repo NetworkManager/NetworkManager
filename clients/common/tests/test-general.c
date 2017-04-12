@@ -74,13 +74,16 @@ test_client_meta_check (void)
 		g_assert_cmpstr (info->general->setting_name, ==, info->meta_type->get_name ((const NMMetaAbstractInfo *) info, FALSE));
 		g_assert_cmpstr ("name", ==, info->meta_type->get_name ((const NMMetaAbstractInfo *) info, TRUE));
 
+		g_assert (info->properties_num == NM_PTRARRAY_LEN (info->properties));
+
 		if (info->properties_num) {
 			gs_unref_hashtable GHashTable *property_names = g_hash_table_new (g_str_hash, g_str_equal);
 
 			g_assert (info->properties);
 			for (p = 0; p < info->properties_num; p++) {
-				const NMMetaPropertyInfo *pi = &info->properties[p];
+				const NMMetaPropertyInfo *pi = info->properties[p];
 
+				g_assert (pi);
 				g_assert (pi->meta_type == &nm_meta_type_property_info);
 				g_assert (pi->setting_info == info);
 				g_assert (pi->property_name);
@@ -93,6 +96,7 @@ test_client_meta_check (void)
 				g_assert (pi->property_type);
 				g_assert (pi->property_type->get_fcn);
 			}
+			g_assert (!info->properties[info->properties_num]);
 		} else
 			g_assert (!info->properties);
 
@@ -121,25 +125,13 @@ test_client_meta_check (void)
 	}
 
 	for (m = 0; m < _NM_META_SETTING_TYPE_NUM; m++) {
-		const NMMetaPropertyInfo *const*pis;
-		const NMMetaSettingInfoEditor *info = &nm_meta_setting_infos_editor[m];
-
-		pis = nm_property_infos_for_setting_type (m);
-		g_assert (pis);
-
-		for (p = 0; p < info->properties_num; p++)
-			g_assert (pis[p] == &info->properties[p]);
-		g_assert (!pis[p]);
-	}
-
-	for (m = 0; m < _NM_META_SETTING_TYPE_NUM; m++) {
 		const NMMetaSettingInfoEditor *info = &nm_meta_setting_infos_editor[m];
 
 		g_assert (nm_meta_setting_info_editor_find_by_name (info->general->setting_name, FALSE) == info);
 		g_assert (nm_meta_setting_info_editor_find_by_gtype (info->general->get_setting_gtype ()) == info);
 
 		for (p = 0; p < info->properties_num; p++) {
-			const NMMetaPropertyInfo *pi = &info->properties[p];
+			const NMMetaPropertyInfo *pi = info->properties[p];
 
 			g_assert (nm_meta_setting_info_editor_get_property_info (info, pi->property_name) == pi);
 			g_assert (nm_meta_property_info_find_by_name (info->general->setting_name, pi->property_name) == pi);

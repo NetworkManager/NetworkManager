@@ -258,8 +258,8 @@ enum {
 	_NM_META_PROPERTY_TYPE_CONNECTION_TYPE                                  = 4,
 };
 
-#define nm_meta_property_info_connection_type  (&nm_meta_setting_infos_editor[NM_META_SETTING_TYPE_CONNECTION].properties[_NM_META_PROPERTY_TYPE_CONNECTION_TYPE])
-#define nm_meta_property_info_vpn_service_type (&nm_meta_setting_infos_editor[NM_META_SETTING_TYPE_VPN].properties[_NM_META_PROPERTY_TYPE_VPN_SERVICE_TYPE])
+#define nm_meta_property_info_connection_type  (nm_meta_setting_infos_editor[NM_META_SETTING_TYPE_CONNECTION].properties[_NM_META_PROPERTY_TYPE_CONNECTION_TYPE])
+#define nm_meta_property_info_vpn_service_type (nm_meta_setting_infos_editor[NM_META_SETTING_TYPE_VPN].properties[_NM_META_PROPERTY_TYPE_VPN_SERVICE_TYPE])
 
 struct _NMMetaPropertyInfo {
 	const NMMetaType *meta_type;
@@ -297,9 +297,7 @@ struct _NMMetaSettingInfoEditor {
 	const NMMetaSettingInfo *general;
 	const char *alias;
 	const char *pretty_name;
-	/* the order of the properties matter. The first *must* be the
-	 * "name", and then the order is as they are listed by default. */
-	const NMMetaPropertyInfo *properties;
+	const NMMetaPropertyInfo *const*properties;
 	guint properties_num;
 
 	/* a NMConnection has a main type (connection.type), which is a

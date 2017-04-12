@@ -77,7 +77,7 @@ complete_field_setting (GHashTable *h, NMMetaSettingType setting_type)
 	for (i = 0; i < setting_info->properties_num; i++) {
 		g_hash_table_add (h, g_strdup_printf ("%s.%s",
 		                                      setting_info->general->setting_name,
-		                                      setting_info->properties[i].property_name));
+		                                      setting_info->properties[i]->property_name));
 	}
 }
 

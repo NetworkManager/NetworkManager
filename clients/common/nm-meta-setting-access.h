@@ -41,8 +41,6 @@ const NMMetaPropertyInfo *nm_meta_property_info_find_by_setting (NMSetting *sett
 
 /*****************************************************************************/
 
-const NMMetaPropertyInfo *const*nm_property_infos_for_setting_type (NMMetaSettingType setting_type);
-
 const NMMetaSettingInfoEditor *const*nm_meta_setting_infos_editor_p (void);
 
 /*****************************************************************************/

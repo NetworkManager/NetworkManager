@@ -2907,7 +2907,7 @@ get_valid_properties_string (const NMMetaSettingValidPartItem *const*array,
 				gchar *new;
 				const char *arg_name;
 
-				arg_name = setting_info->properties[j].property_name;
+				arg_name = setting_info->properties[j]->property_name;
 
 				/* If required, expand the alias too */
 				if (!postfix && setting_info->alias) {
@@ -3434,7 +3434,9 @@ disable_options (const gchar *setting_name, const gchar *property)
 		setting_info = nm_meta_setting_info_editor_find_by_name (setting_name, FALSE);
 		if (!setting_info)
 			g_return_if_reached ();
-		property_infos = nm_property_infos_for_setting_type (setting_info->general->meta_type);
+		property_infos = setting_info->properties;
+		if (!property_infos)
+			return;
 	}
 
 	for (p = 0; property_infos[p]; p++) {
@@ -3470,7 +3472,9 @@ reset_options (void)
 		const NMMetaPropertyInfo *const*property_infos;
 		guint p;
 
-		property_infos = nm_property_infos_for_setting_type (s);
+		property_infos = nm_meta_setting_infos_editor[s].properties;
+		if (!property_infos)
+			continue;
 		for (p = 0; property_infos[p]; p++) {
 			const NMMetaPropertyInfo *property_info = property_infos[p];
 
@@ -4050,7 +4054,9 @@ complete_property_name (NmCli *nmc, NMConnection *connection,
 		if (!nm_connection_get_setting_by_name (connection, nm_meta_setting_infos_editor[s].general->setting_name))
 			continue;
 
-		property_infos = nm_property_infos_for_setting_type (s);
+		property_infos = nm_meta_setting_infos_editor[s].properties;
+		if (!property_infos)
+			continue;
 		for (p = 0; property_infos[p]; p++) {
 			const NMMetaPropertyInfo *property_info = property_infos[p];
 
@@ -4244,7 +4250,9 @@ nmc_read_connection_properties (NmCli *nmc,
 				                       type_settings, slv_settings, NULL))
 					continue;
 
-				property_infos = nm_property_infos_for_setting_type (s);
+				property_infos = nm_meta_setting_infos_editor[s].properties;
+				if (!property_infos)
+					continue;
 				for (p = 0; property_infos[p]; p++) {
 					const NMMetaPropertyInfo *property_info = property_infos[p];
 
@@ -4408,7 +4416,9 @@ nmcli_con_add_tab_completion (const char *text, int start, int end)
 		const NMMetaPropertyInfo *const*property_infos;
 		guint p;
 
-		property_infos = nm_property_infos_for_setting_type (s);
+		property_infos = nm_meta_setting_infos_editor[s].properties;
+		if (!property_infos)
+			continue;
 		for (p = 0; property_infos[p]; p++) {
 			const NMMetaPropertyInfo *property_info = property_infos[p];
 
@@ -4501,7 +4511,9 @@ questionnaire_mandatory (NmCli *nmc, NMConnection *connection)
 		const NMMetaPropertyInfo *const*property_infos;
 		guint p;
 
-		property_infos = nm_property_infos_for_setting_type (s);
+		property_infos = nm_meta_setting_infos_editor[s].properties;
+		if (!property_infos)
+			continue;
 		for (p = 0; property_infos[p]; p++) {
 			const NMMetaPropertyInfo *property_info = property_infos[p];
 
@@ -4572,7 +4584,9 @@ again:
 		    && s != s_asking)
 			continue;
 
-		property_infos = nm_property_infos_for_setting_type (s);
+		property_infos = nm_meta_setting_infos_editor[s].properties;
+		if (!property_infos)
+			continue;
 		for (p = 0; property_infos[p]; p++) {
 			const NMMetaPropertyInfo *property_info = property_infos[p];
 
@@ -4743,7 +4757,9 @@ read_properties:
 		const NMMetaPropertyInfo *const*property_infos;
 		guint p;
 
-		property_infos = nm_property_infos_for_setting_type (s);
+		property_infos = nm_meta_setting_infos_editor[s].properties;
+		if (!property_infos)
+			continue;
 		for (p = 0; property_infos[p]; p++) {
 			const NMMetaPropertyInfo *property_info = property_infos[p];
 

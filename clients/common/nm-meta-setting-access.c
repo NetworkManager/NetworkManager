@@ -101,10 +101,10 @@ nm_meta_setting_info_editor_get_property_info (const NMMetaSettingInfoEditor *se
 	g_return_val_if_fail (property_name, NULL);
 
 	for (i = 0; i < setting_info->properties_num; i++) {
-		nm_assert (setting_info->properties[i].property_name);
-		nm_assert (setting_info->properties[i].setting_info == setting_info);
-		if (nm_streq (setting_info->properties[i].property_name, property_name))
-			return &setting_info->properties[i];
+		nm_assert (setting_info->properties[i]->property_name);
+		nm_assert (setting_info->properties[i]->setting_info == setting_info);
+		if (nm_streq (setting_info->properties[i]->property_name, property_name))
+			return setting_info->properties[i];
 	}
 
 	return NULL;
@@ -169,31 +169,6 @@ nm_meta_setting_info_editor_new_setting (const NMMetaSettingInfoEditor *setting_
 }
 
 /*****************************************************************************/
-
-/* this basically returns NMMetaSettingType.properties, but with type
- * (NMMetaPropertyInfo **) instead of (NMMetaPropertyInfo *), which is
- * required by some APIs. */
-const NMMetaPropertyInfo *const*
-nm_property_infos_for_setting_type (NMMetaSettingType setting_type)
-{
-	static const NMMetaPropertyInfo **cache[_NM_META_SETTING_TYPE_NUM] = { NULL };
-	const NMMetaPropertyInfo **p;
-	guint i;
-
-	nm_assert (setting_type < _NM_META_SETTING_TYPE_NUM);
-	nm_assert (setting_type == 0 || setting_type > 0);
-
-	if (G_UNLIKELY (!(p = cache[setting_type]))) {
-		const NMMetaSettingInfoEditor *setting_info = &nm_meta_setting_infos_editor[setting_type];
-
-		p = g_new (const NMMetaPropertyInfo *, setting_info->properties_num + 1);
-		for (i = 0; i < setting_info->properties_num; i++)
-			p[i] = &setting_info->properties[i];
-		p[i] = NULL;
-		cache[setting_type] = p;
-	}
-	return (const NMMetaPropertyInfo *const*) p;
-}
 
 const NMMetaSettingInfoEditor *const*
 nm_meta_setting_infos_editor_p (void)
