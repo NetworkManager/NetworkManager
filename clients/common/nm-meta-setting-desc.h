@@ -108,6 +108,11 @@ typedef enum {
 	NM_META_ACCESSOR_GET_TYPE_TERMFORMAT,
 } NMMetaAccessorGetType;
 
+typedef enum {
+	NM_META_ACCESSOR_SETTING_INIT_TYPE_DEFAULT,
+	NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI,
+} NMMetaAccessorSettingInitType;
+
 static inline void
 nm_meta_termformat_unpack (gconstpointer value, NMMetaTermColor *out_color, NMMetaTermFormat *out_format)
 {
@@ -310,6 +315,10 @@ struct _NMMetaSettingInfoEditor {
 	 * don't have valid_settings but are usually referenced by other
 	 * settings to be valid for them. */
 	const NMMetaSettingValidPartItem *const*valid_parts;
+
+	void (*setting_init_fcn) (const NMMetaSettingInfoEditor *setting_info,
+	                          NMSetting *setting,
+	                          NMMetaAccessorSettingInitType init_type);
 };
 
 struct _NMMetaType {

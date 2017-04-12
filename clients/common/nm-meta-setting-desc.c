@@ -529,6 +529,9 @@ _env_warn_fcn (const NMMetaEnvironment *environment,
 #define ARGS_VALUES_FCN \
 	const NMMetaPropertyInfo *property_info, char ***out_to_free
 
+#define ARGS_SETTING_INIT_FCN \
+	const NMMetaSettingInfoEditor *setting_info, NMSetting *setting, NMMetaAccessorSettingInitType init_type
+
 #define RETURN_UNSUPPORTED_GET_TYPE() \
 	G_STMT_START { \
 		if (!NM_IN_SET (get_type, \
@@ -7213,6 +7216,137 @@ static const NMMetaPropertyInfo property_infos_WIRELESS_SECURITY[] = {
 	},
 };
 
+/*****************************************************************************/
+
+static void
+_setting_init_fcn_adsl (ARGS_SETTING_INIT_FCN)
+{
+	if (init_type == NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI) {
+		/* Initialize a protocol */
+		g_object_set (NM_SETTING_ADSL (setting),
+		              NM_SETTING_ADSL_PROTOCOL, NM_SETTING_ADSL_PROTOCOL_PPPOE,
+		              NULL);
+	}
+}
+
+static void
+_setting_init_fcn_bluetooth (ARGS_SETTING_INIT_FCN)
+{
+	if (init_type == NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI) {
+		g_object_set (NM_SETTING_BLUETOOTH (setting),
+		              NM_SETTING_BLUETOOTH_TYPE, NM_SETTING_BLUETOOTH_TYPE_PANU,
+		              NULL);
+	}
+}
+
+static void
+_setting_init_fcn_cdma (ARGS_SETTING_INIT_FCN)
+{
+	if (init_type == NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI) {
+		/* Initialize 'number' so that 'cdma' is valid */
+		g_object_set (NM_SETTING_CDMA (setting),
+		              NM_SETTING_CDMA_NUMBER, "#777",
+		              NULL);
+	}
+}
+
+static void
+_setting_init_fcn_gsm (ARGS_SETTING_INIT_FCN)
+{
+	if (init_type == NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI) {
+		/* Initialize 'number' so that 'gsm' is valid */
+		g_object_set (NM_SETTING_GSM (setting),
+		              NM_SETTING_GSM_NUMBER, "*99#",
+		              NULL);
+	}
+}
+
+static void
+_setting_init_fcn_infiniband (ARGS_SETTING_INIT_FCN)
+{
+	if (init_type == NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI) {
+		/* Initialize 'transport-mode' so that 'infiniband' is valid */
+		g_object_set (NM_SETTING_INFINIBAND (setting),
+		              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram",
+		              NULL);
+	}
+}
+
+static void
+_setting_init_fcn_ip4_config (ARGS_SETTING_INIT_FCN)
+{
+	if (init_type == NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI) {
+		g_object_set (NM_SETTING_IP_CONFIG (setting),
+		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+		              NULL);
+	}
+}
+
+static void
+_setting_init_fcn_ip6_config (ARGS_SETTING_INIT_FCN)
+{
+	if (init_type == NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI) {
+		g_object_set (NM_SETTING_IP_CONFIG (setting),
+		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+		              NULL);
+	}
+}
+
+static void
+_setting_init_fcn_olpc_mesh (ARGS_SETTING_INIT_FCN)
+{
+	if (init_type == NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI) {
+		g_object_set (NM_SETTING_OLPC_MESH (setting),
+		              NM_SETTING_OLPC_MESH_CHANNEL, 1,
+		              NULL);
+	}
+}
+
+static void
+_setting_init_fcn_proxy (ARGS_SETTING_INIT_FCN)
+{
+	if (init_type == NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI) {
+		g_object_set (NM_SETTING_PROXY (setting),
+		              NM_SETTING_PROXY_METHOD, (int) NM_SETTING_PROXY_METHOD_NONE,
+		              NULL);
+	}
+}
+
+static void
+_setting_init_fcn_tun (ARGS_SETTING_INIT_FCN)
+{
+	if (init_type == NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI) {
+		g_object_set (NM_SETTING_TUN (setting),
+		              NM_SETTING_TUN_MODE, NM_SETTING_TUN_MODE_TUN,
+		              NULL);
+	}
+}
+
+static void
+_setting_init_fcn_vlan (ARGS_SETTING_INIT_FCN)
+{
+	if (init_type == NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI) {
+		g_object_set (setting,
+		              NM_SETTING_VLAN_ID, 1,
+		              NULL);
+	}
+}
+
+static void
+_setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
+{
+	if (init_type == NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI) {
+		/* For Wi-Fi set mode to "infrastructure". Even though mode == NULL
+		 * is regarded as "infrastructure", explicit value makes no doubts.
+		 */
+		g_object_set (NM_SETTING_WIRELESS (setting),
+		              NM_SETTING_WIRELESS_MODE, NM_SETTING_WIRELESS_MODE_INFRA,
+		              NULL);
+	}
+}
+
+/*****************************************************************************/
+
 #define SETTING_PRETTY_NAME_802_1X              "802-1x settings"
 #define SETTING_PRETTY_NAME_ADSL                "ADSL connection"
 #define SETTING_PRETTY_NAME_BLUETOOTH           "bluetooth connection"
@@ -7280,12 +7414,14 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (ADSL,                  TRUE),
 		),
+		.setting_init_fcn =             _setting_init_fcn_adsl,
 	),
 	SETTING_INFO (BLUETOOTH,
 		.valid_parts = NM_META_SETTING_VALID_PARTS (
 			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (BLUETOOTH,             TRUE),
 		),
+		.setting_init_fcn =             _setting_init_fcn_bluetooth,
 	),
 	SETTING_INFO (BOND,
 		.valid_parts = NM_META_SETTING_VALID_PARTS (
@@ -7309,6 +7445,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (SERIAL,                FALSE),
 			NM_META_SETTING_VALID_PART_ITEM (PPP,                   FALSE),
 		),
+		.setting_init_fcn =             _setting_init_fcn_cdma,
 	),
 	SETTING_INFO (CONNECTION),
 	SETTING_INFO (DCB),
@@ -7332,15 +7469,21 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (SERIAL,                FALSE),
 			NM_META_SETTING_VALID_PART_ITEM (PPP,                   FALSE),
 		),
+		.setting_init_fcn =             _setting_init_fcn_gsm,
 	),
 	SETTING_INFO (INFINIBAND,
 		.valid_parts = NM_META_SETTING_VALID_PARTS (
 			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (INFINIBAND,            TRUE),
 		),
+		.setting_init_fcn =             _setting_init_fcn_infiniband,
 	),
-	SETTING_INFO (IP4_CONFIG),
-	SETTING_INFO (IP6_CONFIG),
+	SETTING_INFO (IP4_CONFIG,
+		.setting_init_fcn =             _setting_init_fcn_ip4_config,
+	),
+	SETTING_INFO (IP6_CONFIG,
+		.setting_init_fcn =             _setting_init_fcn_ip6_config,
+	),
 	SETTING_INFO (IP_TUNNEL,
 		.valid_parts = NM_META_SETTING_VALID_PARTS (
 			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
@@ -7368,6 +7511,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (OLPC_MESH,             TRUE),
 		),
+		.setting_init_fcn =             _setting_init_fcn_olpc_mesh,
 	),
 	SETTING_INFO (PPPOE,
 		/* PPPoE is a base connection type from historical reasons.
@@ -7382,7 +7526,9 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 		),
 	),
 	SETTING_INFO (PPP),
-	SETTING_INFO (PROXY),
+	SETTING_INFO (PROXY,
+		.setting_init_fcn =             _setting_init_fcn_proxy,
+	),
 	SETTING_INFO (SERIAL),
 	SETTING_INFO (TEAM,
 		.valid_parts = NM_META_SETTING_VALID_PARTS (
@@ -7398,6 +7544,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (TUN,                   TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
 		),
+		.setting_init_fcn =             _setting_init_fcn_tun,
 	),
 	SETTING_INFO_EMPTY (USER),
 	SETTING_INFO (VLAN,
@@ -7406,6 +7553,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (VLAN,                  TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
 		),
+		.setting_init_fcn =             _setting_init_fcn_vlan,
 	),
 	SETTING_INFO (VPN,
 		.valid_parts = NM_META_SETTING_VALID_PARTS (
@@ -7443,6 +7591,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (WIRELESS_SECURITY,     FALSE),
 			NM_META_SETTING_VALID_PART_ITEM (802_1X,                FALSE),
 		),
+		.setting_init_fcn =             _setting_init_fcn_wireless,
 	),
 	SETTING_INFO (WIRELESS_SECURITY,
 		.alias =                            "wifi-sec",

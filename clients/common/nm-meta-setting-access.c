@@ -148,6 +148,26 @@ nm_meta_property_info_find_by_setting (NMSetting *setting, const char *property_
 	return property_info;
 }
 
+NMSetting *
+nm_meta_setting_info_editor_new_setting (const NMMetaSettingInfoEditor *setting_info,
+                                         NMMetaAccessorSettingInitType init_type)
+{
+	NMSetting *setting;
+
+	g_return_val_if_fail (setting_info, NULL);
+
+	setting = g_object_new (setting_info->general->get_setting_gtype (), NULL);
+
+	if (   setting_info->setting_init_fcn
+	    && init_type != NM_META_ACCESSOR_SETTING_INIT_TYPE_DEFAULT) {
+		setting_info->setting_init_fcn (setting_info,
+		                                setting,
+		                                init_type);
+	}
+
+	return setting;
+}
+
 /*****************************************************************************/
 
 /* this basically returns NMMetaSettingType.properties, but with type

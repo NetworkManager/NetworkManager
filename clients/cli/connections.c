@@ -495,22 +495,6 @@ usage_connection_export (void)
 	              "The data are directed to standard output or to a file if a name is given.\n\n"));
 }
 
-static NMSetting *
-nmc_setting_new_for_name (const char *name)
-{
-	GType stype;
-	NMSetting *setting = NULL;
-
-	if (name) {
-		stype = nm_setting_lookup_type (name);
-		if (stype != G_TYPE_INVALID) {
-			setting = g_object_new (stype, NULL);
-			g_warn_if_fail (NM_IS_SETTING (setting));
-		}
-	}
-	return setting;
-}
-
 static void
 quit (void)
 {
@@ -3531,16 +3515,8 @@ set_property (NMConnection *connection,
 
 	setting = nm_connection_get_setting_by_name (connection, setting_name);
 	if (!setting) {
-		setting = nmc_setting_new_for_name (setting_name);
-		if (!setting) {
-			g_assert (FALSE);
-			/* This should really not happen */
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_UNKNOWN,
-			             _("Error: don't know how to create '%s' setting."),
-			             setting_name);
-			return FALSE;
-		}
-		nmc_setting_custom_init (setting);
+		setting = nm_meta_setting_info_editor_new_setting (nm_meta_setting_info_editor_find_by_name (setting_name, FALSE),
+		                                                   NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI);
 		nm_connection_add_setting (connection, setting);
 	}
 
@@ -3675,11 +3651,9 @@ ensure_settings (NMConnection *connection, const NMMetaSettingValidPartItem *con
 			continue;
 		if (nm_connection_get_setting_by_name (connection, (*item)->setting_info->general->setting_name))
 			continue;
-		setting = nmc_setting_new_for_name ((*item)->setting_info->general->setting_name);
-		if (setting) {
-			nmc_setting_custom_init (setting);
-			nm_connection_add_setting (connection, setting);
-		}
+		setting = nm_meta_setting_info_editor_new_setting ((*item)->setting_info,
+		                                                   NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI);
+		nm_connection_add_setting (connection, setting);
 	}
 }
 
@@ -3926,8 +3900,8 @@ set_bluetooth_type (NmCli *nmc, NMConnection *con, const OptionInfo *option, con
 	if (   !strcmp (value, NM_SETTING_BLUETOOTH_TYPE_DUN)
 	    || !strcmp (value, NM_SETTING_BLUETOOTH_TYPE_DUN"-gsm")) {
 		value = NM_SETTING_BLUETOOTH_TYPE_DUN;
-		setting = nm_setting_gsm_new ();
-		nmc_setting_custom_init (setting);
+		setting = nm_meta_setting_info_editor_new_setting (&nm_meta_setting_infos_editor[NM_META_SETTING_TYPE_GSM],
+		                                                   NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI);
 		nm_connection_add_setting (con, setting);
 	} else if (!strcmp (value, NM_SETTING_BLUETOOTH_TYPE_DUN"-cdma")) {
 		value = NM_SETTING_BLUETOOTH_TYPE_DUN;
@@ -5066,7 +5040,8 @@ gen_property_names (const char *text, int state)
 		                                 valid_settings_main,
 		                                 valid_settings_slave,
 		                                 NULL);
-		setting = nmc_setting_new_for_name (setting_name);
+		setting = nm_meta_setting_info_editor_new_setting (nm_meta_setting_info_editor_find_by_name (setting_name, FALSE),
+		                                                   NM_META_ACCESSOR_SETTING_INIT_TYPE_DEFAULT);
 	} else {
 		/* Else take the current setting, if any */
 		setting = nmc_tab_completion.setting ? g_object_ref (nmc_tab_completion.setting) : NULL;
@@ -5366,7 +5341,8 @@ get_setting_and_property (const char *prompt, const char *line,
 
 		setting_name = check_valid_name (sett, valid_settings_main,
 		                                 valid_settings_slave,  NULL);
-		setting = nmc_setting_new_for_name (setting_name);
+		setting = nm_meta_setting_info_editor_new_setting (nm_meta_setting_info_editor_find_by_name (setting_name, FALSE),
+		                                                   NM_META_ACCESSOR_SETTING_INIT_TYPE_DEFAULT);
 	} else
 		setting = nmc_tab_completion.setting ? g_object_ref (nmc_tab_completion.setting) : NULL;
 
@@ -6570,10 +6546,8 @@ create_setting_by_name (const char *name, const NMMetaSettingValidPartItem *cons
 	setting_name = check_valid_name (name, valid_settings_main, valid_settings_slave, NULL);
 
 	if (setting_name) {
-		setting = nmc_setting_new_for_name (setting_name);
-		if (!setting)
-			return NULL; /* This should really not happen */
-		nmc_setting_custom_init (setting);
+		setting = nm_meta_setting_info_editor_new_setting (nm_meta_setting_info_editor_find_by_name (setting_name, FALSE),
+		                                                   NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI);
 	}
 	return setting;
 }
@@ -6912,12 +6886,16 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 				setting = nm_connection_get_setting_by_name (connection, setting_name);
 				if (!setting) {
-					setting = nmc_setting_new_for_name (setting_name);
-					if (!setting) {
+					const NMMetaSettingInfoEditor *setting_info;
+
+					setting_info = nm_meta_setting_info_editor_find_by_name (setting_name, FALSE);
+					if (!setting_info) {
 						g_print (_("Error: unknown setting '%s'\n"), setting_name);
 						break;
 					}
-					nmc_setting_custom_init (setting);
+
+					setting = nm_meta_setting_info_editor_new_setting (setting_info,
+					                                                   NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI);
 
 					if (NM_IS_SETTING_WIRELESS (setting))
 						nmc_setting_wireless_connect_handlers (NM_SETTING_WIRELESS (setting));
@@ -7548,11 +7526,14 @@ editor_init_new_connection (NmCli *nmc, NMConnection *connection)
 		              NM_SETTING_CONNECTION_SLAVE_TYPE, slave_type,
 		              NULL);
 	} else {
+		const NMMetaSettingInfoEditor *setting_info;
+
 		/* Add a "base" setting to the connection by default */
-		base_setting = nmc_setting_new_for_name (con_type);
-		if (!base_setting)
+		setting_info = nm_meta_setting_info_editor_find_by_name (con_type, FALSE);
+		if (!setting_info)
 			return;
-		nmc_setting_custom_init (base_setting);
+		base_setting = nm_meta_setting_info_editor_new_setting (setting_info,
+		                                                        NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI);
 		nm_connection_add_setting (connection, base_setting);
 
 		set_default_interface_name (nmc, s_con);
@@ -7567,18 +7548,16 @@ editor_init_new_connection (NmCli *nmc, NMConnection *connection)
 		}
 
 
-		/* Always add IPv4 and IPv6 settings for non-slave connections */
-		setting = nm_setting_ip4_config_new ();
-		nmc_setting_custom_init (setting);
+		setting = nm_meta_setting_info_editor_new_setting (&nm_meta_setting_infos_editor[NM_META_SETTING_TYPE_IP4_CONFIG],
+		                                                   NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI);
 		nm_connection_add_setting (connection, setting);
 
-		setting = nm_setting_ip6_config_new ();
-		nmc_setting_custom_init (setting);
+		setting = nm_meta_setting_info_editor_new_setting (&nm_meta_setting_infos_editor[NM_META_SETTING_TYPE_IP6_CONFIG],
+		                                                   NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI);
 		nm_connection_add_setting (connection, setting);
 
-		/* Also Proxy Setting */
-		setting = nm_setting_proxy_new ();
-		nmc_setting_custom_init (setting);
+		setting = nm_meta_setting_info_editor_new_setting (&nm_meta_setting_infos_editor[NM_META_SETTING_TYPE_PROXY],
+		                                                   NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI);
 		nm_connection_add_setting (connection, setting);
 	}
 }
