@@ -342,18 +342,19 @@ static int
 route_compare (NMIPRoute *route1, NMIPRoute *route2, gint64 default_metric)
 {
 	gint64 r, metric1, metric2;
+	int family;
+	guint plen;
+	NMIPAddr a1 = { 0 }, a2 = { 0 };
 
-	r = g_strcmp0 (nm_ip_route_get_dest (route1), nm_ip_route_get_dest (route2));
-	if (r)
-		return r;
-
-	r = nm_ip_route_get_prefix (route1) - nm_ip_route_get_prefix (route2);
+	family = nm_ip_route_get_family (route1);
+	r = family - nm_ip_route_get_family (route2);
 	if (r)
 		return r > 0 ? 1 : -1;
 
-	r = g_strcmp0 (nm_ip_route_get_next_hop (route1), nm_ip_route_get_next_hop (route2));
+	plen = nm_ip_route_get_prefix (route1);
+	r = plen - nm_ip_route_get_prefix (route2);
 	if (r)
-		return r;
+		return r > 0 ? 1 : -1;
 
 	metric1 = nm_ip_route_get_metric (route1) == -1 ? default_metric : nm_ip_route_get_metric (route1);
 	metric2 = nm_ip_route_get_metric (route2) == -1 ? default_metric : nm_ip_route_get_metric (route2);
@@ -362,9 +363,18 @@ route_compare (NMIPRoute *route1, NMIPRoute *route2, gint64 default_metric)
 	if (r)
 		return r > 0 ? 1 : -1;
 
-	r = nm_ip_route_get_family (route1) - nm_ip_route_get_family (route2);
+	r = g_strcmp0 (nm_ip_route_get_next_hop (route1), nm_ip_route_get_next_hop (route2));
 	if (r)
-		return r > 0 ? 1 : -1;
+		return r;
+
+	/* NMIPRoute validates family and dest. inet_pton() is not expected to fail. */
+	inet_pton (family, nm_ip_route_get_dest (route1), &a1);
+	inet_pton (family, nm_ip_route_get_dest (route2), &a2);
+	nm_utils_ipx_address_clear_host_address (family, &a1, &a1, plen);
+	nm_utils_ipx_address_clear_host_address (family, &a2, &a2, plen);
+	r = memcmp (&a1, &a2, sizeof (a1));
+	if (r)
+		return r;
 
 	return 0;
 }
