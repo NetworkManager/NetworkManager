@@ -646,7 +646,8 @@ _set_vpn_state (NMVpnConnection *self,
 		}
 
 		/* Tear down and clean up the connection */
-		call_plugin_disconnect (self);
+		if (priv->proxy)
+			call_plugin_disconnect (self);
 		vpn_cleanup (self, parent_dev);
 		/* fall through */
 	default:
