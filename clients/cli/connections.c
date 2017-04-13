@@ -3703,14 +3703,6 @@ set_connection_type (NmCli *nmc, NMConnection *con, const OptionInfo *option, co
 	GError *local = NULL;
 	const gchar *master[] = { "master", NULL };
 
-	value = check_valid_name_toplevel (value, &local);
-	if (!value) {
-		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-		             _("Error: bad connection type: %s."), local->message);
-		g_clear_error (&local);
-		return FALSE;
-	}
-
 	if (g_strcmp0 (value, "bond-slave") == 0) {
 		value = NM_SETTING_WIRED_SETTING_NAME;
 		if (!set_property (con, NM_SETTING_CONNECTION_SETTING_NAME,
@@ -3735,6 +3727,14 @@ set_connection_type (NmCli *nmc, NMConnection *con, const OptionInfo *option, co
 			return FALSE;
 		}
 		enable_options (NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_MASTER, master);
+	} else {
+		value = check_valid_name_toplevel (value, &local);
+		if (!value) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("Error: bad connection type: %s"), local->message);
+			g_clear_error (&local);
+			return FALSE;
+		}
 	}
 
 	/* ifname is mandatory for all connection types except virtual ones (bond, team, bridge, vlan) */
