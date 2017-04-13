@@ -805,12 +805,17 @@ _vt_cmd_plobj_id_equal (ip4_route, NMPlatformIP4Route,
                            obj1->ifindex == obj2->ifindex
                         && obj1->plen == obj2->plen
                         && obj1->metric == obj2->metric
-                        && obj1->network == obj2->network);
+                        && nm_utils_ip4_address_clear_host_address (obj1->network, obj1->plen) == nm_utils_ip4_address_clear_host_address (obj2->network, obj2->plen));
 _vt_cmd_plobj_id_equal (ip6_route, NMPlatformIP6Route,
                            obj1->ifindex == obj2->ifindex
                         && obj1->plen == obj2->plen
                         && obj1->metric == obj2->metric
-                        && IN6_ARE_ADDR_EQUAL( &obj1->network, &obj2->network));
+                        && ({
+                                struct in6_addr n1, n2;
+
+                                IN6_ARE_ADDR_EQUAL(nm_utils_ip6_address_clear_host_address (&n1, &obj1->network, obj1->plen),
+                                                   nm_utils_ip6_address_clear_host_address (&n2, &obj2->network, obj2->plen));
+                            }));
 
 guint
 nmp_object_id_hash (const NMPObject *obj)
@@ -864,14 +869,17 @@ _vt_cmd_plobj_id_hash (ip4_route, NMPlatformIP4Route, {
 	hash = hash      + ((guint) obj->ifindex);
 	hash = hash * 33 + ((guint) obj->plen);
 	hash = hash * 33 + ((guint) obj->metric);
-	hash = hash * 33 + ((guint) obj->network);
+	hash = hash * 33 + ((guint) nm_utils_ip4_address_clear_host_address (obj->network, obj->plen));
 })
 _vt_cmd_plobj_id_hash (ip6_route, NMPlatformIP6Route, {
 	hash = (guint) 3999787007u;
 	hash = hash      + ((guint) obj->ifindex);
 	hash = hash * 33 + ((guint) obj->plen);
 	hash = hash * 33 + ((guint) obj->metric);
-	hash = hash * 33 + _id_hash_ip6_addr (&obj->network);
+	hash = hash * 33 + ({
+	                        struct in6_addr n1;
+	                        _id_hash_ip6_addr (nm_utils_ip6_address_clear_host_address (&n1, &obj->network, obj->plen));
+	                    });
 })
 
 gboolean
