@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2006 - 2012 Red Hat, Inc.
+ * Copyright (C) 2006 - 2017 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -31,11 +31,12 @@
 #include "nm-core-internal.h"
 #include "nm-dbus-compat.h"
 
-#define WPAS_DBUS_IFACE_INTERFACE   WPAS_DBUS_INTERFACE ".Interface"
-#define WPAS_DBUS_IFACE_BSS         WPAS_DBUS_INTERFACE ".BSS"
-#define WPAS_DBUS_IFACE_NETWORK	    WPAS_DBUS_INTERFACE ".Network"
-#define WPAS_ERROR_INVALID_IFACE    WPAS_DBUS_INTERFACE ".InvalidInterface"
-#define WPAS_ERROR_EXISTS_ERROR     WPAS_DBUS_INTERFACE ".InterfaceExists"
+#define WPAS_DBUS_IFACE_INTERFACE       WPAS_DBUS_INTERFACE ".Interface"
+#define WPAS_DBUS_IFACE_INTERFACE_WPS   WPAS_DBUS_INTERFACE ".Interface.WPS"
+#define WPAS_DBUS_IFACE_BSS             WPAS_DBUS_INTERFACE ".BSS"
+#define WPAS_DBUS_IFACE_NETWORK         WPAS_DBUS_INTERFACE ".Network"
+#define WPAS_ERROR_INVALID_IFACE        WPAS_DBUS_INTERFACE ".InvalidInterface"
+#define WPAS_ERROR_EXISTS_ERROR         WPAS_DBUS_INTERFACE ".InterfaceExists"
 
 /*****************************************************************************/
 
@@ -69,6 +70,7 @@ enum {
 	BSS_REMOVED,         /* supplicant removed BSS from its scan list */
 	SCAN_DONE,           /* wifi scan is complete */
 	CREDENTIALS_REQUEST, /* 802.1x identity or password requested */
+	WPS_CREDENTIALS,     /* WPS credentials received */
 	LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -106,6 +108,9 @@ typedef struct {
 	GCancellable * init_cancellable;
 	GDBusProxy *   iface_proxy;
 	GCancellable * other_cancellable;
+
+	GDBusProxy *   wps_proxy; /* We only have a WPS proxy when the enrollment was initiated */
+	GCancellable * wps_cancellable; /* This can cancel the initiation, not the enrollment */
 
 	AssocData *    assoc_data;
 
@@ -578,6 +583,152 @@ nm_supplicant_interface_set_pmf_support (NMSupplicantInterface *self,
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
 	priv->pmf_support = pmf_support;
+}
+
+typedef struct {
+	NMSupplicantInterface *self;
+	const char *type;
+	char *bssid;
+	char *pin;
+} WpsEnrollStartData;
+
+static void
+wps_enroll_start_data_free (WpsEnrollStartData *data)
+{
+	g_free (data->pin);
+	g_free (data->bssid);
+	g_slice_free (WpsEnrollStartData, data);
+}
+
+static void
+wpas_iface_wps_credentials (GDBusProxy *proxy,
+                            GVariant *props,
+                            gpointer user_data)
+{
+	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
+
+	g_signal_emit (self, signals[WPS_CREDENTIALS], 0, props);
+}
+
+static void
+on_wps_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
+{
+	WpsEnrollStartData *data = user_data;
+	NMSupplicantInterface *self = data->self;
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	GVariantBuilder start_args;
+	guint8 bssid_buf[ETH_ALEN];
+	gs_free_error GError *error = NULL;
+
+	priv->wps_proxy = g_dbus_proxy_new_for_bus_finish (result, &error);
+	if (!priv->wps_proxy) {
+		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+			_LOGW ("failed to acquire WPS proxy: (%s)", error->message);
+			set_state (self, NM_SUPPLICANT_INTERFACE_STATE_DOWN);
+		}
+		wps_enroll_start_data_free (data);
+		return;
+	}
+
+	/* Enable Credentials processing. */
+	_nm_dbus_signal_connect (priv->wps_proxy, "Credentials", G_VARIANT_TYPE ("(a{sv})"),
+	                         G_CALLBACK (wpas_iface_wps_credentials), self);
+
+	g_dbus_proxy_call (priv->wps_proxy,
+	                   "org.freedesktop.DBus.Properties.Set",
+	                   g_variant_new ("(ssv)",
+	                                  WPAS_DBUS_IFACE_INTERFACE_WPS,
+	                                  "ProcessCredentials",
+	                                  g_variant_new_boolean (TRUE)),
+	                   G_DBUS_CALL_FLAGS_NONE,
+	                   -1,
+	                   NULL,
+	                   NULL,
+	                   NULL);
+
+	/* Initiate the enrollment. */
+	g_variant_builder_init (&start_args, G_VARIANT_TYPE_VARDICT);
+	g_variant_builder_add (&start_args, "{sv}", "Role", g_variant_new_string ("enrollee"));
+	g_variant_builder_add (&start_args, "{sv}", "Type", g_variant_new_string (data->type));
+	if (data->pin)
+		g_variant_builder_add (&start_args, "{sv}", "Pin", g_variant_new_string (data->pin));
+
+	if (data->bssid) {
+		/* The BSSID is in fact not mandatory. If it is not set the supplicant would
+		 * enroll with any BSS in range. */
+		if (!nm_utils_hwaddr_aton (data->bssid, bssid_buf, sizeof (bssid_buf)))
+			g_return_if_reached ();
+		g_variant_builder_add (&start_args, "{sv}", "Bssid",
+		                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, bssid_buf,
+		                                                  ETH_ALEN, sizeof (guint8)));
+		_LOGI ("starting '%s' WPS enrollment for BSSID '%s'", data->type, data->bssid);
+	} else {
+		_LOGI ("starting '%s' WPS enrollment", data->type);
+	}
+
+	g_dbus_proxy_call (priv->wps_proxy,
+	                   "Start",
+	                   g_variant_new ("(a{sv})", &start_args),
+	                   G_DBUS_CALL_FLAGS_NONE,
+	                   -1,
+	                   NULL,
+	                   NULL,
+	                   NULL);
+	wps_enroll_start_data_free (data);
+}
+
+void
+nm_supplicant_interface_enroll_wps (NMSupplicantInterface *self,
+                                    const char *type,
+                                    const char *bssid,
+                                    const char *pin)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	WpsEnrollStartData *data;
+
+	data = g_slice_new0 (WpsEnrollStartData);
+	data->self = self;
+	data->type = type;
+	data->bssid = g_strdup (bssid);
+	data->pin = g_strdup (pin);
+
+	/* Supersede any previous WPS initiations. */
+	nm_supplicant_interface_cancel_wps (self);
+
+	priv->wps_cancellable = g_cancellable_new ();
+
+	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
+	                          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
+	                          NULL,
+	                          WPAS_DBUS_SERVICE,
+	                          priv->object_path,
+	                          WPAS_DBUS_IFACE_INTERFACE_WPS,
+	                          priv->wps_cancellable,
+	                          (GAsyncReadyCallback) on_wps_proxy_acquired,
+	                          data);
+}
+
+void
+nm_supplicant_interface_cancel_wps (NMSupplicantInterface *self)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	nm_clear_g_cancellable (&priv->wps_cancellable);
+
+	if (!priv->wps_proxy)
+		return;
+
+	_LOGD ("cancelling WPS enrollment");
+	g_signal_handlers_disconnect_by_data (priv->wps_proxy, self);
+	g_dbus_proxy_call (priv->wps_proxy,
+	                   "Cancel",
+	                   NULL,
+	                   G_DBUS_CALL_FLAGS_NONE,
+	                   -1,
+	                   NULL,
+	                   NULL,
+	                   NULL);
+	g_clear_object (&priv->wps_proxy);
 }
 
 static void
@@ -1173,6 +1324,9 @@ nm_supplicant_interface_disconnect (NMSupplicantInterface * self)
 		g_free (priv->net_path);
 		priv->net_path = NULL;
 	}
+
+	/* Cancel any WPS enrollment, if any */
+	nm_supplicant_interface_cancel_wps (self);
 }
 
 static void
@@ -1636,6 +1790,8 @@ dispose (GObject *object)
 	g_clear_object (&priv->wpas_proxy);
 	g_clear_pointer (&priv->bss_proxies, (GDestroyNotify) g_hash_table_destroy);
 
+	nm_supplicant_interface_cancel_wps (self);
+
 	g_clear_pointer (&priv->net_path, g_free);
 	g_clear_pointer (&priv->dev, g_free);
 	g_clear_pointer (&priv->object_path, g_free);
@@ -1749,5 +1905,12 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 	                  0,
 	                  NULL, NULL, NULL,
 	                  G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
-}
 
+	signals[WPS_CREDENTIALS] =
+	    g_signal_new (NM_SUPPLICANT_INTERFACE_WPS_CREDENTIALS,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_LAST,
+	                  0,
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 1, G_TYPE_VARIANT);
+}

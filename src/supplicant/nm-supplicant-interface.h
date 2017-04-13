@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2006 - 2010 Red Hat, Inc.
+ * Copyright (C) 2006 - 2017 Red Hat, Inc.
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
@@ -69,6 +69,7 @@ typedef enum {
 #define NM_SUPPLICANT_INTERFACE_BSS_REMOVED      "bss-removed"
 #define NM_SUPPLICANT_INTERFACE_SCAN_DONE        "scan-done"
 #define NM_SUPPLICANT_INTERFACE_CREDENTIALS_REQUEST "credentials-request"
+#define NM_SUPPLICANT_INTERFACE_WPS_CREDENTIALS  "wps-credentials"
 
 typedef struct _NMSupplicantInterfaceClass NMSupplicantInterfaceClass;
 
@@ -131,4 +132,12 @@ void nm_supplicant_interface_set_fast_support (NMSupplicantInterface *self,
 
 void nm_supplicant_interface_set_pmf_support (NMSupplicantInterface *self,
                                               NMSupplicantFeature pmf_support);
+
+void nm_supplicant_interface_enroll_wps (NMSupplicantInterface *self,
+                                         const char *const type,
+                                         const char *bssid,
+                                         const char *pin);
+
+void nm_supplicant_interface_cancel_wps (NMSupplicantInterface *self);
+
 #endif /* __NM_SUPPLICANT_INTERFACE_H__ */
