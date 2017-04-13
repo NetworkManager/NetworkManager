@@ -2642,7 +2642,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 	NMActiveConnection *active;
 	ConnectionCbInfo *info = NULL;
 	const GPtrArray *active_cons;
-	GSList *queue = NULL, *iter;
+	GSList *queue = NULL, *iter, *next;
 	char **arg_arr = NULL;
 	char **arg_ptr;
 	int arg_num;
@@ -2735,17 +2735,36 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 		info->timeout_id = g_timeout_add_seconds (nmc->timeout, connection_op_timeout_cb, info);
 	}
 
-	for (iter = queue; iter; iter = g_slist_next (iter)) {
+	iter = queue;
+	while (iter) {
+		GError *error = NULL;
+
+		next = g_slist_next (iter);
 		active = iter->data;
 
-		if (info)
+		if (info) {
 			g_signal_connect (active,
 			                  "notify::" NM_ACTIVE_CONNECTION_STATE,
 			                  G_CALLBACK (down_active_connection_state_cb),
 			                  info);
+		}
 
 		/* Now deactivate the connection */
-		nm_client_deactivate_connection (nmc->client, active, NULL, NULL);
+		if (!nm_client_deactivate_connection (nmc->client, active, NULL, &error)) {
+			g_print (_("Connection '%s' deactivation failed: %s\n"),
+			         nm_active_connection_get_id (active), error->message);
+			g_error_free (error);
+
+			if (info) {
+				g_signal_handlers_disconnect_by_func (active,
+				                                      down_active_connection_state_cb,
+				                                      info);
+				/* Remove the active connection from @queue */
+				connection_cb_info_finish (info, active);
+			}
+		}
+
+		iter = next;
 	}
 
 finish:
