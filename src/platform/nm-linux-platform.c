@@ -2416,7 +2416,6 @@ _nl_msg_new_route (int nlmsg_type,
 		.rtm_dst_len = plen,
 		.rtm_src_len = src ? src_plen : 0,
 	};
-	NMIPAddr network_clean;
 
 	gsize addr_len;
 
@@ -2433,8 +2432,7 @@ _nl_msg_new_route (int nlmsg_type,
 
 	addr_len = family == AF_INET ? sizeof (in_addr_t) : sizeof (struct in6_addr);
 
-	nm_utils_ipx_address_clear_host_address (family, &network_clean, network, plen);
-	NLA_PUT (msg, RTA_DST, addr_len, &network_clean);
+	NLA_PUT (msg, RTA_DST, addr_len, network);
 
 	if (src)
 		NLA_PUT (msg, RTA_SRC, addr_len, src);
@@ -6030,6 +6028,8 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, guint8 p
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	NMPObject obj_id;
 
+	network = nm_utils_ip4_address_clear_host_address (network, plen);
+
 	nmp_object_stackinit_id_ip4_route (&obj_id, ifindex, network, plen, metric);
 
 	if (metric == 0) {
@@ -6095,6 +6095,8 @@ ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, gu
 	NMPObject obj_id;
 
 	metric = nm_utils_ip6_route_metric_normalize (metric);
+
+	nm_utils_ip6_address_clear_host_address (&network, &network, plen);
 
 	nlmsg = _nl_msg_new_route (RTM_DELROUTE,
 	                           0,
