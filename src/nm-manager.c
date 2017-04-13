@@ -2355,6 +2355,7 @@ _platform_link_cb_idle (PlatformLinkCbData *data)
 		device = nm_manager_get_device_by_ifindex (self, data->ifindex);
 		if (device) {
 			if (nm_device_is_software (device)) {
+				nm_device_sys_iface_state_set (device, NM_DEVICE_SYS_IFACE_STATE_REMOVED);
 				/* Our software devices stick around until their connection is removed */
 				if (!nm_device_unrealize (device, FALSE, &error)) {
 					_LOGW (LOGD_DEVICE, "(%s): failed to unrealize: %s",
