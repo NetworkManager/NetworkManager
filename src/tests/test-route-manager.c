@@ -806,7 +806,7 @@ _assert_route_check (const NMPlatformVTableRoute *vtable, gboolean has, const NM
 				c.r6 = route->r6;
 			c.rx.rt_source = nmp_utils_ip_config_source_round_trip_rtprot (c.rx.rt_source);
 		}
-		if (!r || vtable->route_cmp (r, &c) != 0) {
+		if (!r || vtable->route_cmp (r, &c, TRUE) != 0) {
 			g_error ("Invalid route. Expect %s, has %s",
 			         vtable->route_to_string (&c, NULL, 0),
 			         vtable->route_to_string (r, buf, sizeof (buf)));
