@@ -304,7 +304,7 @@ verify_request (NMSecretAgent *self,
 {
 	NMConnection *connection = NULL;
 
-	g_return_val_if_fail (out_connection, FALSE);
+	g_return_val_if_fail (!connection_hash || out_connection, FALSE);
 
 	if (!verify_sender (self, context, error))
 		return FALSE;
