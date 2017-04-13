@@ -101,10 +101,10 @@ nm_meta_setting_info_editor_get_property_info (const NMMetaSettingInfoEditor *se
 	g_return_val_if_fail (property_name, NULL);
 
 	for (i = 0; i < setting_info->properties_num; i++) {
-		nm_assert (setting_info->properties[i].property_name);
-		nm_assert (setting_info->properties[i].setting_info == setting_info);
-		if (nm_streq (setting_info->properties[i].property_name, property_name))
-			return &setting_info->properties[i];
+		nm_assert (setting_info->properties[i]->property_name);
+		nm_assert (setting_info->properties[i]->setting_info == setting_info);
+		if (nm_streq (setting_info->properties[i]->property_name, property_name))
+			return setting_info->properties[i];
 	}
 
 	return NULL;
@@ -169,31 +169,6 @@ nm_meta_setting_info_editor_new_setting (const NMMetaSettingInfoEditor *setting_
 }
 
 /*****************************************************************************/
-
-/* this basically returns NMMetaSettingType.properties, but with type
- * (NMMetaPropertyInfo **) instead of (NMMetaPropertyInfo *), which is
- * required by some APIs. */
-const NMMetaPropertyInfo *const*
-nm_property_infos_for_setting_type (NMMetaSettingType setting_type)
-{
-	static const NMMetaPropertyInfo **cache[_NM_META_SETTING_TYPE_NUM] = { NULL };
-	const NMMetaPropertyInfo **p;
-	guint i;
-
-	nm_assert (setting_type < _NM_META_SETTING_TYPE_NUM);
-	nm_assert (setting_type == 0 || setting_type > 0);
-
-	if (G_UNLIKELY (!(p = cache[setting_type]))) {
-		const NMMetaSettingInfoEditor *setting_info = &nm_meta_setting_infos_editor[setting_type];
-
-		p = g_new (const NMMetaPropertyInfo *, setting_info->properties_num + 1);
-		for (i = 0; i < setting_info->properties_num; i++)
-			p[i] = &setting_info->properties[i];
-		p[i] = NULL;
-		cache[setting_type] = p;
-	}
-	return (const NMMetaPropertyInfo *const*) p;
-}
 
 const NMMetaSettingInfoEditor *const*
 nm_meta_setting_infos_editor_p (void)
@@ -348,4 +323,299 @@ nm_meta_abstract_info_complete (const NMMetaAbstractInfo *abstract_info,
 		r[j++] = NULL;
 		return (const char *const*) (*out_to_free = r);
 	}
+}
+
+/*****************************************************************************/
+
+char *
+nm_meta_abstract_info_get_nested_names_str (const NMMetaAbstractInfo *abstract_info, const char *name_prefix)
+{
+	gs_free gpointer nested_to_free = NULL;
+	guint i;
+	const NMMetaAbstractInfo *const*nested;
+	GString *allowed_fields;
+
+	nested = nm_meta_abstract_info_get_nested (abstract_info, NULL, &nested_to_free);
+	if (!nested)
+		return NULL;
+
+	allowed_fields = g_string_sized_new (256);
+
+	if (!name_prefix)
+		name_prefix = nm_meta_abstract_info_get_name (abstract_info, FALSE);
+
+	for (i = 0; nested[i]; i++) {
+		g_string_append_printf (allowed_fields, "%s.%s,",
+		                        name_prefix, nm_meta_abstract_info_get_name (nested[i], FALSE));
+	}
+	g_string_truncate (allowed_fields, allowed_fields->len - 1);
+	return g_string_free (allowed_fields, FALSE);
+}
+
+char *
+nm_meta_abstract_infos_get_names_str (const NMMetaAbstractInfo *const*fields_array, const char *name_prefix)
+{
+	GString *allowed_fields;
+	guint i;
+
+	if (!fields_array || !fields_array[0])
+		return NULL;
+
+	allowed_fields = g_string_sized_new (256);
+	for (i = 0; fields_array[i]; i++) {
+		if (name_prefix)
+			g_string_append_printf (allowed_fields, "%s.", name_prefix);
+		g_string_append_printf (allowed_fields, "%s,", nm_meta_abstract_info_get_name (fields_array[i], FALSE));
+	}
+	g_string_truncate (allowed_fields, allowed_fields->len - 1);
+	return g_string_free (allowed_fields, FALSE);
+}
+
+/*****************************************************************************/
+
+typedef struct {
+	guint idx;
+	gsize self_offset_plus_1;
+	gsize sub_offset_plus_1;
+} OutputSelectionItem;
+
+static NMMetaSelectionResultList *
+_output_selection_pack (const NMMetaAbstractInfo *const* fields_array,
+                        GArray *array,
+                        GString *str)
+{
+	NMMetaSelectionResultList *result;
+	guint i;
+	guint len;
+
+	len = array ? array->len : 0;
+
+	/* re-organize the collected output data in one buffer that can be freed using
+	 * g_free(). This makes allocation more complicated, but saves us from special
+	 * handling for free. */
+	result = g_malloc0 (sizeof (NMMetaSelectionResultList) + (len * sizeof (NMMetaSelectionItem)) + (str ? str->len : 0));
+	*((guint *) &result->num) = len;
+	if (len > 0) {
+		char *pdata = &((char *) result)[sizeof (NMMetaSelectionResultList) + (len * sizeof (NMMetaSelectionItem))];
+
+		if (str)
+			memcpy (pdata, str->str, str->len);
+		for (i = 0; i < len; i++) {
+			const OutputSelectionItem *a = &g_array_index (array, OutputSelectionItem, i);
+			NMMetaSelectionItem *p = (NMMetaSelectionItem *) &result->items[i];
+
+			p->info = fields_array[a->idx];
+			p->idx = a->idx;
+			if (a->self_offset_plus_1 > 0)
+				p->self_selection = &pdata[a->self_offset_plus_1 - 1];
+			if (a->sub_offset_plus_1 > 0)
+				p->sub_selection = &pdata[a->sub_offset_plus_1 - 1];
+		}
+	}
+
+	return result;
+}
+
+static gboolean
+_output_selection_select_one (const NMMetaAbstractInfo *const* fields_array,
+                              const char *fields_prefix,
+                              const char *fields_str,
+                              gboolean validate_nested,
+                              GArray **p_array,
+                              GString **p_str,
+                              GError **error)
+{
+	guint i, j;
+	const char *i_name;
+	const char *right;
+	gboolean found = FALSE;
+	const NMMetaAbstractInfo *fields_array_failure = NULL;
+	gs_free char *fields_str_clone = NULL;
+
+	nm_assert (fields_str);
+	nm_assert (p_array);
+	nm_assert (p_str);
+	nm_assert (!error || !*error);
+
+	right = strchr (fields_str, '.');
+	if (right) {
+		fields_str_clone = g_strdup (fields_str);
+		fields_str_clone[right - fields_str] = '\0';
+		i_name = fields_str_clone;
+		right = &fields_str_clone[right - fields_str + 1];
+	} else
+		i_name = fields_str;
+
+	if (!fields_array)
+		goto not_found;
+
+	for (i = 0; fields_array[i]; i++) {
+		const NMMetaAbstractInfo *fi = fields_array[i];
+		const NMMetaAbstractInfo *const*nested;
+		gs_free gpointer nested_to_free = NULL;
+
+		if (g_ascii_strcasecmp (i_name, nm_meta_abstract_info_get_name (fi, FALSE)) != 0)
+			continue;
+
+		if (!right || !validate_nested) {
+			found = TRUE;
+			break;
+		}
+
+		nested = nm_meta_abstract_info_get_nested (fi, NULL, &nested_to_free);
+		if (nested) {
+			for (j = 0; nested[j]; nested++) {
+				if (g_ascii_strcasecmp (right, nm_meta_abstract_info_get_name (nested[j], FALSE)) == 0) {
+					found = TRUE;
+					break;
+				}
+			}
+		}
+		fields_array_failure = fields_array[i];
+		break;
+	}
+
+	if (!found) {
+not_found:
+		if (   !right
+		    && !fields_prefix
+		    && (   !g_ascii_strcasecmp (i_name, "all")
+		        || !g_ascii_strcasecmp (i_name, "common")))
+			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN, _("field '%s' has to be alone"), i_name);
+		else {
+			gs_free char *allowed_fields = NULL;
+
+			if (fields_array_failure) {
+				gs_free char *p = NULL;
+
+				if (fields_prefix) {
+					p = g_strdup_printf ("%s.%s", fields_prefix,
+					                     nm_meta_abstract_info_get_name (fields_array_failure, FALSE));
+				}
+				allowed_fields = nm_meta_abstract_info_get_nested_names_str (fields_array_failure, p);
+			} else
+				allowed_fields = nm_meta_abstract_infos_get_names_str (fields_array, NULL);
+
+			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN, _("invalid field '%s%s%s%s%s'; %s%s%s"),
+			             fields_prefix ?: "", fields_prefix ? "." : "",
+			             i_name, right ? "." : "", right ?: "",
+			             NM_PRINT_FMT_QUOTED (allowed_fields, "allowed fields: ", allowed_fields, "", "no fields"));
+		}
+		return FALSE;
+	}
+
+	{
+		GString *str;
+		OutputSelectionItem s = {
+			.idx = i,
+		};
+
+		if (!*p_str)
+			*p_str = g_string_sized_new (64);
+		str = *p_str;
+
+		s.self_offset_plus_1 = str->len + 1;
+		if (fields_prefix) {
+			g_string_append (str, fields_prefix);
+			g_string_append_c (str, '.');
+		}
+		g_string_append_len (str, i_name, strlen (i_name) + 1);
+
+		if (right) {
+			s.sub_offset_plus_1 = str->len + 1;
+			g_string_append_len (str, right, strlen (right) + 1);
+		}
+
+		if (!*p_array)
+			*p_array = g_array_new (FALSE, FALSE, sizeof (OutputSelectionItem));
+		g_array_append_val (*p_array, s);
+	}
+
+	return TRUE;
+}
+
+NMMetaSelectionResultList *
+nm_meta_selection_create_all (const NMMetaAbstractInfo *const* fields_array)
+{
+	gs_unref_array GArray *array = NULL;
+	guint i;
+
+	if (fields_array) {
+		array = g_array_new (FALSE, FALSE, sizeof (OutputSelectionItem));
+		for (i = 0; fields_array[i]; i++) {
+			OutputSelectionItem s = {
+				.idx = i,
+			};
+
+			g_array_append_val (array, s);
+		}
+	}
+
+	return _output_selection_pack (fields_array, array, NULL);
+}
+
+NMMetaSelectionResultList *
+nm_meta_selection_create_parse_one (const NMMetaAbstractInfo *const* fields_array,
+                                    const char *fields_prefix,
+                                    const char *fields_str, /* one field selector (contains no commas) and is already stripped of spaces. */
+                                    gboolean validate_nested,
+                                    GError **error)
+{
+	gs_unref_array GArray *array = NULL;
+	nm_auto_free_gstring GString *str = NULL;
+
+	g_return_val_if_fail (!error || !*error, NULL);
+	nm_assert (fields_str && !strchr (fields_str, ','));
+
+	if (!_output_selection_select_one (fields_array,
+	                                   fields_prefix,
+	                                   fields_str,
+	                                   validate_nested,
+	                                   &array,
+	                                   &str,
+	                                   error))
+		return NULL;
+	return _output_selection_pack (fields_array, array, str);
+
+}
+
+NMMetaSelectionResultList *
+nm_meta_selection_create_parse_list (const NMMetaAbstractInfo *const* fields_array,
+                                     const char *fields_prefix,
+                                     const char *fields_str, /* a comma separated list of selectors */
+                                     gboolean validate_nested,
+                                     GError **error)
+{
+	gs_unref_array GArray *array = NULL;
+	nm_auto_free_gstring GString *str = NULL;
+	gs_free char *fields_str_clone = NULL;
+	char *fields_str_cur;
+	char *fields_str_next;
+
+	g_return_val_if_fail (!error || !*error, NULL);
+
+	if (!fields_str)
+		return nm_meta_selection_create_all (fields_array);
+
+	fields_str_clone = g_strdup (fields_str);
+	for (fields_str_cur = fields_str_clone; fields_str_cur; fields_str_cur = fields_str_next) {
+		fields_str_cur = nm_str_skip_leading_spaces (fields_str_cur);
+		fields_str_next = strchr (fields_str_cur, ',');
+		if (fields_str_next)
+			*fields_str_next++ = '\0';
+
+		g_strchomp (fields_str_cur);
+		if (!fields_str_cur[0])
+			continue;
+		if (!_output_selection_select_one (fields_array,
+		                                   fields_prefix,
+		                                   fields_str_cur,
+		                                   validate_nested,
+		                                   &array,
+		                                   &str,
+		                                   error))
+			return NULL;
+	}
+
+	return _output_selection_pack (fields_array, array, str);
 }

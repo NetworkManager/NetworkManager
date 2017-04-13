@@ -41,8 +41,6 @@ const NMMetaPropertyInfo *nm_meta_property_info_find_by_setting (NMSetting *sett
 
 /*****************************************************************************/
 
-const NMMetaPropertyInfo *const*nm_property_infos_for_setting_type (NMMetaSettingType setting_type);
-
 const NMMetaSettingInfoEditor *const*nm_meta_setting_infos_editor_p (void);
 
 /*****************************************************************************/
@@ -70,5 +68,34 @@ const char *const*nm_meta_abstract_info_complete (const NMMetaAbstractInfo *abst
                                                   char ***out_to_free);
 
 /*****************************************************************************/
+
+char *nm_meta_abstract_info_get_nested_names_str (const NMMetaAbstractInfo *abstract_info, const char *name_prefix);
+char *nm_meta_abstract_infos_get_names_str (const NMMetaAbstractInfo *const*fields_array, const char *name_prefix);
+
+/*****************************************************************************/
+
+typedef struct {
+	const NMMetaAbstractInfo *info;
+	const char *self_selection;
+	const char *sub_selection;
+	guint idx;
+} NMMetaSelectionItem;
+
+typedef struct {
+	const guint num;
+	const NMMetaSelectionItem items[];
+} NMMetaSelectionResultList;
+
+NMMetaSelectionResultList *nm_meta_selection_create_all (const NMMetaAbstractInfo *const* fields_array);
+NMMetaSelectionResultList *nm_meta_selection_create_parse_one (const NMMetaAbstractInfo *const* fields_array,
+                                                               const char *fields_prefix,
+                                                               const char *fields_str,
+                                                               gboolean validate_nested,
+                                                               GError **error);
+NMMetaSelectionResultList *nm_meta_selection_create_parse_list (const NMMetaAbstractInfo *const* fields_array,
+                                                                const char *fields_prefix,
+                                                                const char *fields_str,
+                                                                gboolean validate_nested,
+                                                                GError **error);
 
 #endif /* _NM_META_SETTING_ACCESS_H__ */

@@ -56,19 +56,11 @@ _meta_type_nmc_generic_info_get_nested (const NMMetaAbstractInfo *abstract_info,
                                         gpointer *out_to_free)
 {
 	const NmcMetaGenericInfo *info;
-	guint n;
 
 	info = (const NmcMetaGenericInfo *) abstract_info;
 
-	if (out_len) {
-		n = 0;
-		if (info->nested) {
-			for (; info->nested[n]; n++) {
-			}
-		}
-		*out_len = n;
-	}
 	*out_to_free = NULL;
+	NM_SET_OUT (out_len, NM_PTRARRAY_LEN (info->nested));
 	return (const NMMetaAbstractInfo *const*) info->nested;
 }
 
@@ -764,224 +756,10 @@ nmc_free_output_field_values (NmcOutputField fields_array[])
 
 /*****************************************************************************/
 
-typedef struct {
-	guint idx;
-	gsize self_offset_plus_1;
-	gsize sub_offset_plus_1;
-} OutputSelectionItem;
-
-static NmcOutputSelection *
-_output_selection_pack (const NMMetaAbstractInfo *const* fields_array,
-                        GArray *array,
-                        GString *str)
-{
-	NmcOutputSelection *result;
-	guint i;
-	guint len;
-
-	len = array ? array->len : 0;
-
-	/* re-organize the collected output data in one buffer that can be freed using
-	 * g_free(). This makes allocation more complicated, but saves us from special
-	 * handling for free. */
-	result = g_malloc0 (sizeof (NmcOutputSelection) + (len * sizeof (NmcOutputSelectionItem)) + (str ? str->len : 0));
-	*((guint *) &result->num) = len;
-	if (len > 0) {
-		char *pdata = &((char *) result)[sizeof (NmcOutputSelection) + (len * sizeof (NmcOutputSelectionItem))];
-
-		if (str)
-			memcpy (pdata, str->str, str->len);
-		for (i = 0; i < len; i++) {
-			const OutputSelectionItem *a = &g_array_index (array, OutputSelectionItem, i);
-			NmcOutputSelectionItem *p = (NmcOutputSelectionItem *) &result->items[i];
-
-			p->info = fields_array[a->idx];
-			p->idx = a->idx;
-			if (a->self_offset_plus_1 > 0)
-				p->self_selection = &pdata[a->self_offset_plus_1 - 1];
-			if (a->sub_offset_plus_1 > 0)
-				p->sub_selection = &pdata[a->sub_offset_plus_1 - 1];
-		}
-	}
-
-	return result;
-}
-
-static gboolean
-_output_selection_select_one (const NMMetaAbstractInfo *const* fields_array,
-                              const char *fields_prefix,
-                              const char *fields_str,
-                              gboolean validate_nested,
-                              GArray **p_array,
-                              GString **p_str,
-                              GError **error)
-{
-	guint i, j;
-	const char *i_name;
-	const char *right;
-	gboolean found = FALSE;
-	const NMMetaAbstractInfo *fields_array_failure = NULL;
-	gs_free char *fields_str_clone = NULL;
-
-	nm_assert (fields_str);
-	nm_assert (p_array);
-	nm_assert (p_str);
-	nm_assert (!error || !*error);
-
-	right = strchr (fields_str, '.');
-	if (right) {
-		fields_str_clone = g_strdup (fields_str);
-		fields_str_clone[right - fields_str] = '\0';
-		i_name = fields_str_clone;
-		right = &fields_str_clone[right - fields_str + 1];
-	} else
-		i_name = fields_str;
-
-	if (!fields_array)
-		goto not_found;
-
-	for (i = 0; fields_array[i]; i++) {
-		const NMMetaAbstractInfo *fi = fields_array[i];
-
-		if (g_ascii_strcasecmp (i_name, nm_meta_abstract_info_get_name (fi, FALSE)) != 0)
-			continue;
-
-		if (!right || !validate_nested) {
-			found = TRUE;
-			break;
-		}
-
-		if (fi->meta_type == &nm_meta_type_setting_info_editor) {
-			const NMMetaSettingInfoEditor *fi_s = (const NMMetaSettingInfoEditor *) fi;
-
-			for (j = 0; j < fi_s->properties_num; j++) {
-				if (g_ascii_strcasecmp (right, fi_s->properties[j].property_name) == 0) {
-					found = TRUE;
-					break;
-				}
-			}
-		} else if (fi->meta_type == &nmc_meta_type_generic_info) {
-			const NmcMetaGenericInfo *fi_g = (const NmcMetaGenericInfo *) fi;
-
-			for (j = 0; fi_g->nested && fi_g->nested[j]; j++) {
-				if (g_ascii_strcasecmp (right, nm_meta_abstract_info_get_name ((const NMMetaAbstractInfo *) fi_g->nested[j], FALSE)) == 0) {
-					found = TRUE;
-					break;
-				}
-			}
-		}
-		fields_array_failure = fields_array[i];
-		break;
-	}
-
-	if (!found) {
-not_found:
-		if (   !right
-		    && !fields_prefix
-		    && (   !g_ascii_strcasecmp (i_name, "all")
-		        || !g_ascii_strcasecmp (i_name, "common")))
-			g_set_error (error, NMCLI_ERROR, 0, _("field '%s' has to be alone"), i_name);
-		else {
-			gs_free char *allowed_fields = NULL;
-
-			if (fields_array_failure) {
-				gs_free char *p = NULL;
-
-				if (fields_prefix) {
-					p = g_strdup_printf ("%s.%s", fields_prefix,
-					                     nm_meta_abstract_info_get_name (fields_array_failure, FALSE));
-				}
-				allowed_fields = nmc_get_allowed_fields_nested (fields_array_failure, p);
-			} else
-				allowed_fields = nmc_get_allowed_fields (fields_array, NULL);
-
-			g_set_error (error, NMCLI_ERROR, 1, _("invalid field '%s%s%s%s%s'; %s%s%s"),
-			             fields_prefix ?: "", fields_prefix ? "." : "",
-			             i_name, right ? "." : "", right ?: "",
-			             NM_PRINT_FMT_QUOTED (allowed_fields, "allowed fields: ", allowed_fields, "", "no fields"));
-		}
-		return FALSE;
-	}
-
-	{
-		GString *str;
-		OutputSelectionItem s = {
-			.idx = i,
-		};
-
-		if (!*p_str)
-			*p_str = g_string_sized_new (64);
-		str = *p_str;
-
-		s.self_offset_plus_1 = str->len + 1;
-		if (fields_prefix) {
-			g_string_append (str, fields_prefix);
-			g_string_append_c (str, '.');
-		}
-		g_string_append_len (str, i_name, strlen (i_name) + 1);
-
-		if (right) {
-			s.sub_offset_plus_1 = str->len + 1;
-			g_string_append_len (str, right, strlen (right) + 1);
-		}
-
-		if (!*p_array)
-			*p_array = g_array_new (FALSE, FALSE, sizeof (OutputSelectionItem));
-		g_array_append_val (*p_array, s);
-	}
-
-	return TRUE;
-}
-
-static NmcOutputSelection *
-_output_selection_create_all (const NMMetaAbstractInfo *const* fields_array)
-{
-	gs_unref_array GArray *array = NULL;
-	guint i;
-
-	if (fields_array) {
-		array = g_array_new (FALSE, FALSE, sizeof (OutputSelectionItem));
-		for (i = 0; fields_array[i]; i++) {
-			OutputSelectionItem s = {
-				.idx = i,
-			};
-
-			g_array_append_val (array, s);
-		}
-	}
-
-	return _output_selection_pack (fields_array, array, NULL);
-}
-
-static NmcOutputSelection *
-_output_selection_create_one (const NMMetaAbstractInfo *const* fields_array,
-                              const char *fields_prefix,
-                              const char *fields_str, /* one field selector (contains not commas) and is alrady stripped of spaces. */
-                              gboolean validate_nested,
-                              GError **error)
-{
-	gs_unref_array GArray *array = NULL;
-	nm_auto_free_gstring GString *str = NULL;
-
-	g_return_val_if_fail (!error || !*error, NULL);
-	nm_assert (fields_str && !strchr (fields_str, ','));
-
-	if (!_output_selection_select_one (fields_array,
-	                                   fields_prefix,
-	                                   fields_str,
-	                                   validate_nested,
-	                                   &array,
-	                                   &str,
-	                                   error))
-		return NULL;
-	return _output_selection_pack (fields_array, array, str);
-
-}
-
 #define PRINT_DATA_COL_PARENT_NIL (G_MAXUINT)
 
 typedef struct {
-	const NmcOutputSelectionItem *selection_item;
+	const NMMetaSelectionItem *selection_item;
 	guint parent_idx;
 	guint self_idx;
 	bool is_leaf;
@@ -991,7 +769,7 @@ static gboolean
 _output_selection_append (GArray *cols,
                           const char *fields_prefix,
                           guint parent_idx,
-                          const NmcOutputSelectionItem *selection_item,
+                          const NMMetaSelectionItem *selection_item,
                           GPtrArray *gfree_keeper,
                           GError **error)
 {
@@ -999,8 +777,8 @@ _output_selection_append (GArray *cols,
 	guint col_idx;
 	guint i;
 	const NMMetaAbstractInfo *const*nested;
-	NmcOutputSelection *selection;
-	const NmcOutputSelectionItem *si;
+	NMMetaSelectionResultList *selection;
+	const NMMetaSelectionItem *si;
 
 	col_idx = cols->len;
 
@@ -1022,7 +800,7 @@ _output_selection_append (GArray *cols,
 
 			if (parent_idx != PRINT_DATA_COL_PARENT_NIL) {
 				si = g_array_index (cols, PrintDataCol, parent_idx).selection_item;
-				allowed_fields = nmc_get_allowed_fields_nested (si->info, si->self_selection);
+				allowed_fields = nm_meta_abstract_info_get_nested_names_str (si->info, si->self_selection);
 			}
 			if (!allowed_fields) {
 				g_set_error (error, NMCLI_ERROR, 1, _("invalid field '%s%s%s'; no such field"),
@@ -1037,13 +815,13 @@ _output_selection_append (GArray *cols,
 			return FALSE;
 		}
 
-		selection = _output_selection_create_one (nested, selection_item->self_selection,
-		                                          selection_item->sub_selection, FALSE, error);
+		selection = nm_meta_selection_create_parse_one (nested, selection_item->self_selection,
+		                                                selection_item->sub_selection, FALSE, error);
 		if (!selection)
 			return FALSE;
 		nm_assert (selection->num == 1);
 	} else if (nested) {
-		selection = _output_selection_create_all (nested);
+		selection = nm_meta_selection_create_all (nested);
 		nm_assert (selection && selection->num > 0);
 	} else
 		selection = NULL;
@@ -1069,47 +847,6 @@ _output_selection_append (GArray *cols,
 
 /*****************************************************************************/
 
-NmcOutputSelection *
-nmc_output_selection_create (const NMMetaAbstractInfo *const* fields_array,
-                             const char *fields_prefix,
-                             const char *fields_str, /* a comma separated list of selectors */
-                             gboolean validate_nested,
-                             GError **error)
-{
-	gs_unref_array GArray *array = NULL;
-	nm_auto_free_gstring GString *str = NULL;
-	gs_free char *fields_str_clone = NULL;
-	char *fields_str_cur;
-	char *fields_str_next;
-
-	g_return_val_if_fail (!error || !*error, NULL);
-
-	if (!fields_str)
-		return _output_selection_create_all (fields_array);
-
-	fields_str_clone = g_strdup (fields_str);
-	for (fields_str_cur = fields_str_clone; fields_str_cur; fields_str_cur = fields_str_next) {
-		fields_str_cur = nm_str_skip_leading_spaces (fields_str_cur);
-		fields_str_next = strchr (fields_str_cur, ',');
-		if (fields_str_next)
-			*fields_str_next++ = '\0';
-
-		g_strchomp (fields_str_cur);
-		if (!fields_str_cur[0])
-			continue;
-		if (!_output_selection_select_one (fields_array,
-		                                   fields_prefix,
-		                                   fields_str_cur,
-		                                   validate_nested,
-		                                   &array,
-		                                   &str,
-		                                   error))
-			return NULL;
-	}
-
-	return _output_selection_pack (fields_array, array, str);
-}
-
 /**
  * _output_selection_parse:
  * @fields: a %NULL terminated array of meta-data fields
@@ -1133,12 +870,12 @@ _output_selection_parse (const NMMetaAbstractInfo *const*fields,
                          GPtrArray **out_gfree_keeper,
                          GError **error)
 {
-	NmcOutputSelection *selection;
+	NMMetaSelectionResultList *selection;
 	gs_unref_ptrarray GPtrArray *gfree_keeper = NULL;
 	gs_unref_array GArray *cols = NULL;
 	guint i;
 
-	selection = nmc_output_selection_create (fields, NULL, fields_str, FALSE, error);
+	selection = nm_meta_selection_create_parse_list (fields, NULL, fields_str, FALSE, error);
 	if (!selection)
 		return FALSE;
 
@@ -1153,7 +890,7 @@ _output_selection_parse (const NMMetaAbstractInfo *const*fields,
 	cols = g_array_new (FALSE, TRUE, sizeof (PrintDataCol));
 
 	for (i = 0; i < selection->num; i++) {
-		const NmcOutputSelectionItem *si = &selection->items[i];
+		const NMMetaSelectionItem *si = &selection->items[i];
 
 		if (!_output_selection_append (cols, NULL, PRINT_DATA_COL_PARENT_NIL,
 		                               si, gfree_keeper, error))
@@ -1194,7 +931,7 @@ parse_output_fields (const char *fields_str,
                      GPtrArray **out_group_fields,
                      GError **error)
 {
-	gs_free NmcOutputSelection *selection = NULL;
+	gs_free NMMetaSelectionResultList *selection = NULL;
 	GArray *array;
 	GPtrArray *group_fields = NULL;
 	guint i;
@@ -1202,7 +939,7 @@ parse_output_fields (const char *fields_str,
 	g_return_val_if_fail (!error || !*error, NULL);
 	g_return_val_if_fail (!out_group_fields || !*out_group_fields, NULL);
 
-	selection = nmc_output_selection_create (fields_array, NULL, fields_str, TRUE, error);
+	selection = nm_meta_selection_create_parse_list (fields_array, NULL, fields_str, TRUE, error);
 	if (!selection)
 		return NULL;
 
@@ -1221,50 +958,6 @@ parse_output_fields (const char *fields_str,
 	if (group_fields)
 		*out_group_fields = group_fields;
 	return array;
-}
-
-char *
-nmc_get_allowed_fields_nested (const NMMetaAbstractInfo *abstract_info, const char *name_prefix)
-{
-	gs_free gpointer nested_to_free = NULL;
-	guint i;
-	const NMMetaAbstractInfo *const*nested;
-	GString *allowed_fields;
-
-	nested = nm_meta_abstract_info_get_nested (abstract_info, NULL, &nested_to_free);
-	if (!nested)
-		return NULL;
-
-	allowed_fields = g_string_sized_new (256);
-
-	if (!name_prefix)
-		name_prefix = nm_meta_abstract_info_get_name (abstract_info, FALSE);
-
-	for (i = 0; nested[i]; i++) {
-		g_string_append_printf (allowed_fields, "%s.%s,",
-		                        name_prefix, nm_meta_abstract_info_get_name (nested[i], FALSE));
-	}
-	g_string_truncate (allowed_fields, allowed_fields->len - 1);
-	return g_string_free (allowed_fields, FALSE);
-}
-
-char *
-nmc_get_allowed_fields (const NMMetaAbstractInfo *const*fields_array, const char *name_prefix)
-{
-	GString *allowed_fields;
-	guint i;
-
-	if (!fields_array || !fields_array[0])
-		return NULL;
-
-	allowed_fields = g_string_sized_new (256);
-	for (i = 0; fields_array[i]; i++) {
-		if (name_prefix)
-			g_string_append_printf (allowed_fields, "%s.", name_prefix);
-		g_string_append_printf (allowed_fields, "%s,", nm_meta_abstract_info_get_name (fields_array[i], FALSE));
-	}
-	g_string_truncate (allowed_fields, allowed_fields->len - 1);
-	return g_string_free (allowed_fields, FALSE);
 }
 
 NmcOutputField *
@@ -1539,7 +1232,7 @@ static gboolean
 _print_skip_column (const NmcConfig *nmc_config,
                     const PrintDataHeaderCell *header_cell)
 {
-	const NmcOutputSelectionItem *selection_item;
+	const NMMetaSelectionItem *selection_item;
 	const NMMetaAbstractInfo *info;
 
 	selection_item = header_cell->col->selection_item;

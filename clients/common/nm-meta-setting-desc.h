@@ -174,6 +174,8 @@ typedef struct _NMMetaPropertyInfo          NMMetaPropertyInfo;
 typedef struct _NMMetaPropertyType          NMMetaPropertyType;
 typedef struct _NMMetaPropertyTypData       NMMetaPropertyTypData;
 typedef struct _NMMetaOperationContext      NMMetaOperationContext;
+typedef struct _NMMetaNestedPropertyInfo    NMMetaNestedPropertyInfo;
+typedef struct _NMMetaPropertyTypDataNested NMMetaPropertyTypDataNested;
 
 /* this gives some context information for virtual functions.
  * This command actually violates layering, and should be considered
@@ -221,8 +223,6 @@ struct _NMMetaPropertyType {
 
 struct _NMUtilsEnumValueInfo;
 
-struct _NMMetaPropertyTypDataNested;
-
 struct _NMMetaPropertyTypData {
 	union {
 		struct {
@@ -240,11 +240,9 @@ struct _NMMetaPropertyTypData {
 		struct {
 			NMMetaPropertyTypeMacMode mode;
 		} mac;
-		struct {
-			const struct _NMMetaPropertyTypDataNested *data;
-		} nested;
 	} subtype;
 	const char *const*values_static;
+	const NMMetaPropertyTypDataNested *nested;
 	NMMetaPropertyTypFlags typ_flags;
 };
 
@@ -260,8 +258,8 @@ enum {
 	_NM_META_PROPERTY_TYPE_CONNECTION_TYPE                                  = 4,
 };
 
-#define nm_meta_property_info_connection_type  (&nm_meta_setting_infos_editor[NM_META_SETTING_TYPE_CONNECTION].properties[_NM_META_PROPERTY_TYPE_CONNECTION_TYPE])
-#define nm_meta_property_info_vpn_service_type (&nm_meta_setting_infos_editor[NM_META_SETTING_TYPE_VPN].properties[_NM_META_PROPERTY_TYPE_VPN_SERVICE_TYPE])
+#define nm_meta_property_info_connection_type  (nm_meta_setting_infos_editor[NM_META_SETTING_TYPE_CONNECTION].properties[_NM_META_PROPERTY_TYPE_CONNECTION_TYPE])
+#define nm_meta_property_info_vpn_service_type (nm_meta_setting_infos_editor[NM_META_SETTING_TYPE_VPN].properties[_NM_META_PROPERTY_TYPE_VPN_SERVICE_TYPE])
 
 struct _NMMetaPropertyInfo {
 	const NMMetaType *meta_type;
@@ -299,9 +297,7 @@ struct _NMMetaSettingInfoEditor {
 	const NMMetaSettingInfo *general;
 	const char *alias;
 	const char *pretty_name;
-	/* the order of the properties matter. The first *must* be the
-	 * "name", and then the order is as they are listed by default. */
-	const NMMetaPropertyInfo *properties;
+	const NMMetaPropertyInfo *const*properties;
 	guint properties_num;
 
 	/* a NMConnection has a main type (connection.type), which is a
@@ -394,19 +390,18 @@ struct _NMMetaEnvironment {
 
 extern const NMMetaType nm_meta_type_nested_property_info;
 
-typedef struct _NMMetaNestedPropertyTypeInfo  {
-	const NMMetaType *meta_type;
+struct _NMMetaNestedPropertyInfo  {
+	union {
+		const NMMetaType *meta_type;
+		NMMetaPropertyInfo base;
+	};
 	const NMMetaPropertyInfo *parent_info;
-	const char *field_name;
-	NMMetaPropertyInfFlags inf_flags;
-	const char *prompt;
-	const char *def_hint;
-} NMMetaNestedPropertyTypeInfo;
+};
 
-typedef struct _NMMetaPropertyTypDataNested  {
-	const NMMetaNestedPropertyTypeInfo *nested;
+struct _NMMetaPropertyTypDataNested  {
+	const NMMetaNestedPropertyInfo *nested;
 	guint nested_len;
-} NMMetaPropertyTypDataNested;
+};
 
 const NMMetaPropertyTypDataNested nm_meta_property_typ_data_bond;
 
