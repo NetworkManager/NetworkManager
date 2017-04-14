@@ -44,16 +44,16 @@
 \
 		success = nm_connection_compare (src, expected, NM_SETTING_COMPARE_FLAG_EXACT); \
 		if (success == FALSE && DEBUG) { \
-			g_message ("\n- COMPLETED ---------------------------------\n"); \
+			g_print ("\n- COMPLETED ---------------------------------\n"); \
 			nm_connection_dump (src); \
-			g_message ("+ EXPECTED ++++++++++++++++++++++++++++++++++++\n"); \
+			g_print ("+ EXPECTED ++++++++++++++++++++++++++++++++++++\n"); \
 			nm_connection_dump (expected); \
-			g_message ("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"); \
+			g_print ("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"); \
 		} \
 		g_assert (success == TRUE); \
 	} else { \
 		if (success) { \
-			g_message ("\n- COMPLETED ---------------------------------\n"); \
+			g_print ("\n- COMPLETED ---------------------------------\n"); \
 			nm_connection_dump (src); \
 		} \
 		g_assert (success == FALSE); \
