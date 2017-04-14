@@ -2815,6 +2815,27 @@ update_device_from_platform_link (NMDevice *self, const NMPlatformLink *plink)
 }
 
 static void
+device_init_sriov_num_vfs (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gs_free char *value = NULL;
+	int num_vfs;
+
+	if (   priv->ifindex > 0
+	    && nm_device_has_capability (self, NM_DEVICE_CAP_SRIOV)) {
+		value = nm_config_data_get_device_config (NM_CONFIG_GET_DATA,
+		                                          "sriov-num-vfs",
+		                                          self,
+		                                          NULL);
+		num_vfs = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXINT32, -1);
+		if (num_vfs >= 0) {
+			nm_platform_link_set_sriov_num_vfs (nm_device_get_platform (self),
+			                                    priv->ifindex, num_vfs);
+		}
+	}
+}
+
+static void
 config_changed_update_ignore_carrier (NMConfig *config,
                                       NMConfigData *config_data,
                                       NMConfigChangeFlags changes,
@@ -2977,6 +2998,8 @@ realize_start_setup (NMDevice *self,
 		/* Fake online link when carrier detection is not available. */
 		priv->carrier = TRUE;
 	}
+
+	device_init_sriov_num_vfs (self);
 
 	nm_assert (!priv->stats.timeout_id);
 	real_rate = _stats_refresh_rate_real (priv->stats.refresh_rate_ms);
