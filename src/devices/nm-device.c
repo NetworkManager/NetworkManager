@@ -2934,6 +2934,9 @@ realize_start_setup (NMDevice *self,
 
 		if (nm_platform_check_support_user_ipv6ll (nm_device_get_platform (self)))
 			priv->nm_ipv6ll = nm_platform_link_get_user_ipv6ll_enabled (nm_device_get_platform (self), priv->ifindex);
+
+		if (nm_platform_link_supports_sriov (nm_device_get_platform (self), priv->ifindex))
+			capabilities |= NM_DEVICE_CAP_SRIOV;
 	}
 
 	if (klass->get_generic_capabilities)
