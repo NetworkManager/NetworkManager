@@ -359,21 +359,6 @@ disconnect_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 }
 
 static void
-call_plugin_disconnect (NMVpnConnection *self)
-{
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
-
-	g_dbus_proxy_call (priv->proxy,
-	                   "Disconnect",
-	                   NULL,
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   -1,
-	                   priv->cancellable,
-	                   (GAsyncReadyCallback) disconnect_cb,
-	                   g_object_ref (self));
-}
-
-static void
 fw_call_cleanup (NMVpnConnection *self)
 {
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
@@ -646,7 +631,17 @@ _set_vpn_state (NMVpnConnection *self,
 		}
 
 		/* Tear down and clean up the connection */
-		call_plugin_disconnect (self);
+		if (priv->proxy) {
+			g_dbus_proxy_call (priv->proxy,
+			                   "Disconnect",
+			                   NULL,
+			                   G_DBUS_CALL_FLAGS_NONE,
+			                   -1,
+			                   priv->cancellable,
+			                   (GAsyncReadyCallback) disconnect_cb,
+			                   g_object_ref (self));
+		}
+
 		vpn_cleanup (self, parent_dev);
 		/* fall through */
 	default:
