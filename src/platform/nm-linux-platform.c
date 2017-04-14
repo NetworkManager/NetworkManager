@@ -4604,6 +4604,30 @@ link_supports_vlans (NMPlatform *platform, int ifindex)
 	return nmp_utils_ethtool_supports_vlans (ifindex);
 }
 
+static gboolean
+link_supports_sriov (NMPlatform *platform, int ifindex)
+{
+	nm_auto_pop_netns NMPNetns *netns = NULL;
+	nm_auto_close int dirfd = -1;
+	char ifname[IFNAMSIZ];
+	int total = -1;
+
+	if (!nm_platform_netns_push (platform, &netns))
+		return FALSE;
+
+	dirfd = nm_platform_sysctl_open_netdir (platform, ifindex, ifname);
+	if (dirfd < 0)
+		return FALSE;
+
+	total = nm_platform_sysctl_get_int32 (platform,
+	                                      NMP_SYSCTL_PATHID_NETDIR (dirfd,
+	                                                                ifname,
+	                                                                "device/sriov_totalvfs"),
+	                                      -1);
+
+	return total > 0;
+}
+
 static NMPlatformError
 link_set_address (NMPlatform *platform, int ifindex, gconstpointer address, size_t length)
 {
@@ -4693,6 +4717,71 @@ link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 	return do_change_link (platform, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
+}
+
+static gboolean
+link_set_sriov_num_vfs (NMPlatform *platform, int ifindex, guint num_vfs)
+{
+	nm_auto_pop_netns NMPNetns *netns = NULL;
+	nm_auto_close int dirfd = -1;
+	int total, current;
+	char ifname[IFNAMSIZ];
+	char buf[64];
+
+	_LOGD ("link: change %d: num VFs: %u", ifindex, num_vfs);
+
+	if (!nm_platform_netns_push (platform, &netns))
+		return FALSE;
+
+	dirfd = nm_platform_sysctl_open_netdir (platform, ifindex, ifname);
+	if (!dirfd)
+		return FALSE;
+
+	total = nm_platform_sysctl_get_int32 (platform,
+	                                      NMP_SYSCTL_PATHID_NETDIR (dirfd,
+	                                                                ifname,
+	                                                                "device/sriov_totalvfs"),
+	                                      -1);
+	if (total < 1)
+		return FALSE;
+	if (num_vfs > total) {
+		_LOGW ("link: %d only supports %u VFs (requested %u)", ifindex, total, num_vfs);
+		num_vfs = total;
+	}
+
+	current = nm_platform_sysctl_get_int32 (platform,
+	                                        NMP_SYSCTL_PATHID_NETDIR (dirfd,
+	                                                                  ifname,
+	                                                                  "device/sriov_numvfs"),
+	                                        -1);
+	if (current == num_vfs)
+		return TRUE;
+
+	if (current != 0) {
+		/* We need to destroy all other VFs before changing the value */
+		if (!nm_platform_sysctl_set (NM_PLATFORM_GET,
+		                             NMP_SYSCTL_PATHID_NETDIR (dirfd,
+		                                                       ifname,
+		                                                      "device/sriov_numvfs"),
+		                             "0")) {
+			_LOGW ("link: couldn't set SR-IOV num_vfs to %d: %s", 0, strerror (errno));
+			return FALSE;
+		}
+		if (num_vfs == 0)
+			return TRUE;
+	}
+
+	/* Finally, set the desired value */
+	if (!nm_platform_sysctl_set (NM_PLATFORM_GET,
+	                             NMP_SYSCTL_PATHID_NETDIR (dirfd,
+	                                                       ifname,
+	                                                       "device/sriov_numvfs"),
+	                             nm_sprintf_buf (buf, "%d", num_vfs))) {
+		_LOGW ("link: couldn't set SR-IOV num_vfs to %d: %s", num_vfs, strerror (errno));
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 static char *
@@ -6845,6 +6934,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_set_address = link_set_address;
 	platform_class->link_get_permanent_address = link_get_permanent_address;
 	platform_class->link_set_mtu = link_set_mtu;
+	platform_class->link_set_sriov_num_vfs = link_set_sriov_num_vfs;
 
 	platform_class->link_get_physical_port_id = link_get_physical_port_id;
 	platform_class->link_get_dev_id = link_get_dev_id;
@@ -6853,6 +6943,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	platform_class->link_supports_carrier_detect = link_supports_carrier_detect;
 	platform_class->link_supports_vlans = link_supports_vlans;
+	platform_class->link_supports_sriov = link_supports_sriov;
 
 	platform_class->link_enslave = link_enslave;
 	platform_class->link_release = link_release;

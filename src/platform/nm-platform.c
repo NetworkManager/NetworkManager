@@ -1179,6 +1179,30 @@ nm_platform_link_supports_vlans (NMPlatform *self, int ifindex)
 	return klass->link_supports_vlans (self, ifindex);
 }
 
+gboolean
+nm_platform_link_supports_sriov (NMPlatform *self, int ifindex)
+{
+	_CHECK_SELF (self, klass, FALSE);
+
+	g_return_val_if_fail (ifindex >= 0, FALSE);
+
+	return klass->link_supports_sriov (self, ifindex);
+}
+
+gboolean
+nm_platform_link_set_sriov_num_vfs (NMPlatform *self, int ifindex, guint num_vfs)
+{
+	_CHECK_SELF (self, klass, FALSE);
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+
+	_LOGD ("link: setting %u VFs for %s (%d)",
+	       num_vfs,
+	       nm_strquote_a (25, nm_platform_link_get_name (self, ifindex)),
+	       ifindex);
+	return klass->link_set_sriov_num_vfs (self, ifindex, num_vfs);
+}
+
 /**
  * nm_platform_link_set_up:
  * @self: platform instance
