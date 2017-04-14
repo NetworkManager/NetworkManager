@@ -239,6 +239,7 @@ typedef enum {
  * @NM_DEVICE_CAP_NM_SUPPORTED: NetworkManager supports this device
  * @NM_DEVICE_CAP_CARRIER_DETECT: this device can indicate carrier status
  * @NM_DEVICE_CAP_IS_SOFTWARE: this device is a software device
+ * @NM_DEVICE_CAP_SRIOV: this device supports single-root I/O virtualization
  *
  * General device capability flags.
  **/
@@ -247,8 +248,8 @@ typedef enum { /*< flags >*/
 	NM_DEVICE_CAP_NM_SUPPORTED   = 0x00000001,
 	NM_DEVICE_CAP_CARRIER_DETECT = 0x00000002,
 	NM_DEVICE_CAP_IS_SOFTWARE    = 0x00000004,
+	NM_DEVICE_CAP_SRIOV          = 0x00000008,
 } NMDeviceCapabilities;
-
 
 /**
  * NMDeviceWifiCapabilities:
