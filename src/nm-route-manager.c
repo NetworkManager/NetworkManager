@@ -377,7 +377,7 @@ _route_equals_ignoring_ifindex (const VTableIP *vtable, const NMPlatformIPXRoute
 			r2_backup.rx.metric = (guint32) r2_metric;
 		r2 = &r2_backup;
 	}
-	return vtable->vt->route_cmp (r1, r2) == 0;
+	return vtable->vt->route_cmp (r1, r2, FALSE) == 0;
 }
 
 static NMPlatformIPXRoute *
@@ -536,6 +536,8 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 				memcpy (cur_ipx_route, cur_known_route, vtable->vt->sizeof_route);
 				cur_ipx_route->rx.ifindex = ifindex;
 				cur_ipx_route->rx.metric = vtable->vt->metric_normalize (cur_ipx_route->rx.metric);
+				nm_utils_ipx_address_clear_host_address (vtable->vt->addr_family, cur_ipx_route->rx.network_ptr,
+				                                         cur_ipx_route->rx.network_ptr, cur_ipx_route->rx.plen);
 				ipx_routes_changed = TRUE;
 				_LOGt (vtable->vt->addr_family, "%3d: STATE: update  #%u - %s", ifindex, i_ipx_routes,
 				       vtable->vt->route_to_string (cur_ipx_route, NULL, 0));
@@ -631,6 +633,8 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 				ipx_route = VTABLE_ROUTE_INDEX (vtable, ipx_routes->entries, ipx_routes->entries->len - 1);
 				ipx_route->rx.ifindex = ifindex;
 				ipx_route->rx.metric = vtable->vt->metric_normalize (ipx_route->rx.metric);
+				nm_utils_ipx_address_clear_host_address (vtable->vt->addr_family, ipx_route->rx.network_ptr,
+				                                         ipx_route->rx.network_ptr, ipx_route->rx.plen);
 
 				g_array_index (ipx_routes->effective_metrics_reverse, gint64, j++) = -1;
 

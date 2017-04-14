@@ -4291,11 +4291,16 @@ nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6A
 }
 
 int
-nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b)
+nm_platform_ip4_route_cmp_full (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b, gboolean consider_host_part)
 {
 	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, ifindex);
-	_CMP_FIELD (a, b, network);
+	if (consider_host_part)
+		_CMP_FIELD (a, b, network);
+	else {
+		_CMP_DIRECT (nm_utils_ip4_address_clear_host_address (a->network, a->plen),
+		             nm_utils_ip4_address_clear_host_address (b->network, b->plen));
+	}
 	_CMP_FIELD (a, b, plen);
 	_CMP_FIELD (a, b, metric);
 	_CMP_FIELD (a, b, gateway);
@@ -4319,11 +4324,19 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 }
 
 int
-nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b)
+nm_platform_ip6_route_cmp_full (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b, gboolean consider_host_part)
 {
 	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, ifindex);
-	_CMP_FIELD_MEMCMP (a, b, network);
+	if (consider_host_part)
+		_CMP_FIELD_MEMCMP (a, b, network);
+	else {
+		struct in6_addr n1, n2;
+
+		nm_utils_ip6_address_clear_host_address (&n1, &a->network, a->plen);
+		nm_utils_ip6_address_clear_host_address (&n2, &b->network, b->plen);
+		_CMP_DIRECT_MEMCMP (&n1, &n2, sizeof (struct in6_addr));
+	}
 	_CMP_FIELD (a, b, plen);
 	_CMP_FIELD (a, b, metric);
 	_CMP_FIELD_MEMCMP (a, b, gateway);
@@ -4541,7 +4554,7 @@ const NMPlatformVTableRoute nm_platform_vtable_route_v4 = {
 	.is_ip4                         = TRUE,
 	.addr_family                    = AF_INET,
 	.sizeof_route                   = sizeof (NMPlatformIP4Route),
-	.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b)) nm_platform_ip4_route_cmp,
+	.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, gboolean consider_host_part)) nm_platform_ip4_route_cmp_full,
 	.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route, char *buf, gsize len)) nm_platform_ip4_route_to_string,
 	.route_get_all                  = nm_platform_ip4_route_get_all,
 	.route_add                      = _vtr_v4_route_add,
@@ -4554,7 +4567,7 @@ const NMPlatformVTableRoute nm_platform_vtable_route_v6 = {
 	.is_ip4                         = FALSE,
 	.addr_family                    = AF_INET6,
 	.sizeof_route                   = sizeof (NMPlatformIP6Route),
-	.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b)) nm_platform_ip6_route_cmp,
+	.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, gboolean consider_host_part)) nm_platform_ip6_route_cmp_full,
 	.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route, char *buf, gsize len)) nm_platform_ip6_route_to_string,
 	.route_get_all                  = nm_platform_ip6_route_get_all,
 	.route_add                      = _vtr_v6_route_add,
