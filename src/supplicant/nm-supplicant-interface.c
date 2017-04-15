@@ -80,6 +80,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSupplicantInterface,
 	PROP_DRIVER,
 	PROP_FAST_SUPPORT,
 	PROP_AP_SUPPORT,
+	PROP_PMF_SUPPORT,
 );
 
 typedef struct {
@@ -88,6 +89,7 @@ typedef struct {
 	gboolean       has_credreq;  /* Whether querying 802.1x credentials is supported */
 	NMSupplicantFeature fast_support;
 	NMSupplicantFeature ap_support;   /* Lightweight AP mode support */
+	NMSupplicantFeature pmf_support;
 	guint32        max_scan_ssids;
 	guint32        ready_count;
 
@@ -470,6 +472,30 @@ iface_check_ready (NMSupplicantInterface *self)
 	}
 }
 
+static void
+set_pmf_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
+{
+	NMSupplicantInterface *self;
+	NMSupplicantInterfacePrivate *priv;
+	gs_unref_variant GVariant *reply = NULL;
+	gs_free_error GError *error = NULL;
+
+	reply = g_dbus_proxy_call_finish (proxy, result, &error);
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	self = NM_SUPPLICANT_INTERFACE (user_data);
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	if (!reply) {
+		g_dbus_error_strip_remote_error (error);
+		_LOGW ("couldn't enable PMF: %s", error->message);
+		return;
+	}
+
+	_LOGD ("PMF enabled");
+}
+
 gboolean
 nm_supplicant_interface_credentials_reply (NMSupplicantInterface *self,
                                            const char *field,
@@ -561,6 +587,15 @@ nm_supplicant_interface_set_fast_support (NMSupplicantInterface *self,
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
 	priv->fast_support = fast_support;
+}
+
+void
+nm_supplicant_interface_set_pmf_support (NMSupplicantInterface *self,
+                                         NMSupplicantFeature pmf_support)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	priv->pmf_support = pmf_support;
 }
 
 static void
@@ -784,7 +819,7 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 
 	/* Scan result aging parameters */
 	g_dbus_proxy_call (priv->iface_proxy,
-	                   "org.freedesktop.DBus.Properties.Set",
+	                   DBUS_INTERFACE_PROPERTIES ".Set",
 	                   g_variant_new ("(ssv)",
 	                                  WPAS_DBUS_IFACE_INTERFACE,
 	                                  "BSSExpireAge",
@@ -795,7 +830,7 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	                   NULL,
 	                   NULL);
 	g_dbus_proxy_call (priv->iface_proxy,
-	                   "org.freedesktop.DBus.Properties.Set",
+	                   DBUS_INTERFACE_PROPERTIES ".Set",
 	                   g_variant_new ("(ssv)",
 	                                  WPAS_DBUS_IFACE_INTERFACE,
 	                                  "BSSExpireCount",
@@ -805,6 +840,21 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	                   priv->init_cancellable,
 	                   NULL,
 	                   NULL);
+
+	if (   priv->pmf_support
+	    && priv->driver == NM_SUPPLICANT_DRIVER_WIRELESS) {
+		g_dbus_proxy_call (priv->iface_proxy,
+		                   DBUS_INTERFACE_PROPERTIES ".Set",
+		                   g_variant_new ("(ssv)",
+		                                  WPAS_DBUS_IFACE_INTERFACE,
+		                                  "Pmf",
+		                                  g_variant_new_uint32 (1)),
+		                   G_DBUS_CALL_FLAGS_NONE,
+		                   -1,
+		                   priv->init_cancellable,
+		                   (GAsyncReadyCallback) set_pmf_cb,
+		                   self);
+	}
 
 	/* Check whether NetworkReply and AP mode are supported */
 	priv->ready_count = 1;
@@ -1374,6 +1424,7 @@ nm_supplicant_interface_assoc (NMSupplicantInterface *self,
 {
 	NMSupplicantInterfacePrivate *priv;
 	AssocData *assoc_data;
+	GError *error = NULL;
 
 	g_return_if_fail (NM_IS_SUPPLICANT_INTERFACE (self));
 	g_return_if_fail (NM_IS_SUPPLICANT_CONFIG (cfg));
@@ -1389,6 +1440,14 @@ nm_supplicant_interface_assoc (NMSupplicantInterface *self,
 	assoc_data->cfg = g_object_ref (cfg);
 	assoc_data->callback = callback;
 	assoc_data->user_data = user_data;
+
+	if (   priv->driver == NM_SUPPLICANT_DRIVER_WIRELESS
+	    && priv->pmf_support == NM_SUPPLICANT_FEATURE_YES) {
+		if (!nm_supplicant_config_enable_pmf_akm (cfg, &error)) {
+			_LOGW ("could not enable PMF AKMs in config: %s", error->message);
+			g_error_free (error);
+		}
+	}
 
 	_LOGD ("assoc[%p]: starting association...", assoc_data);
 
@@ -1559,6 +1618,10 @@ set_property (GObject *object,
 		/* construct-only */
 		priv->ap_support = g_value_get_int (value);
 		break;
+	case PROP_PMF_SUPPORT:
+		/* construct-only */
+		priv->pmf_support = g_value_get_int (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1578,7 +1641,8 @@ NMSupplicantInterface *
 nm_supplicant_interface_new (const char *ifname,
                              NMSupplicantDriver driver,
                              NMSupplicantFeature fast_support,
-                             NMSupplicantFeature ap_support)
+                             NMSupplicantFeature ap_support,
+                             NMSupplicantFeature pmf_support)
 {
 	g_return_val_if_fail (ifname != NULL, NULL);
 
@@ -1587,6 +1651,7 @@ nm_supplicant_interface_new (const char *ifname,
 	                     NM_SUPPLICANT_INTERFACE_DRIVER, (guint) driver,
 	                     NM_SUPPLICANT_INTERFACE_FAST_SUPPORT, (int) fast_support,
 	                     NM_SUPPLICANT_INTERFACE_AP_SUPPORT, (int) ap_support,
+	                     NM_SUPPLICANT_INTERFACE_PMF_SUPPORT, (int) pmf_support,
 	                     NULL);
 }
 
@@ -1662,6 +1727,14 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 	                      G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_AP_SUPPORT] =
 	    g_param_spec_int (NM_SUPPLICANT_INTERFACE_AP_SUPPORT, "", "",
+	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
+	                      NM_SUPPLICANT_FEATURE_YES,
+	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
+	                      G_PARAM_WRITABLE |
+	                      G_PARAM_CONSTRUCT_ONLY |
+	                      G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_PMF_SUPPORT] =
+	    g_param_spec_int (NM_SUPPLICANT_INTERFACE_PMF_SUPPORT, "", "",
 	                      NM_SUPPLICANT_FEATURE_UNKNOWN,
 	                      NM_SUPPLICANT_FEATURE_YES,
 	                      NM_SUPPLICANT_FEATURE_UNKNOWN,

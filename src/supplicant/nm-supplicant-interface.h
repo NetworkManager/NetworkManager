@@ -60,6 +60,7 @@ typedef enum {
 #define NM_SUPPLICANT_INTERFACE_DRIVER           "driver"
 #define NM_SUPPLICANT_INTERFACE_FAST_SUPPORT     "fast-support"
 #define NM_SUPPLICANT_INTERFACE_AP_SUPPORT       "ap-support"
+#define NM_SUPPLICANT_INTERFACE_PMF_SUPPORT      "pmf-support"
 
 /* Signals */
 #define NM_SUPPLICANT_INTERFACE_STATE            "state"
@@ -76,7 +77,8 @@ GType nm_supplicant_interface_get_type (void);
 NMSupplicantInterface * nm_supplicant_interface_new (const char *ifname,
                                                      NMSupplicantDriver driver,
                                                      NMSupplicantFeature fast_support,
-                                                     NMSupplicantFeature ap_support);
+                                                     NMSupplicantFeature ap_support,
+                                                     NMSupplicantFeature pmf_support);
 
 void nm_supplicant_interface_set_supplicant_available (NMSupplicantInterface *self,
                                                        gboolean available);
@@ -126,4 +128,6 @@ void nm_supplicant_interface_set_ap_support (NMSupplicantInterface *self,
 void nm_supplicant_interface_set_fast_support (NMSupplicantInterface *self,
                                                NMSupplicantFeature fast_support);
 
+void nm_supplicant_interface_set_pmf_support (NMSupplicantInterface *self,
+                                              NMSupplicantFeature pmf_support);
 #endif /* __NM_SUPPLICANT_INTERFACE_H__ */
