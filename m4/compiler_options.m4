@@ -119,6 +119,12 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 		[int f () { int i = yolo; yolo; return i; }]
 	)
 
+	dnl clang 3.9 would like to see "{ { 0 } }" here, but that does not
+	dnl look too wise.
+	NM_COMPILER_WARNING([missing-braces],
+		[union { int a[1]; int b[2]; } c = { 0 }]
+	)
+
 	CFLAGS="$CFLAGS_MORE_WARNINGS $CFLAGS"
 else
 	AC_MSG_RESULT(no)
