@@ -101,7 +101,7 @@ typedef struct {
 		struct in6_addr addr6;
 
 		/* NMIPAddr is really a union for IP addresses.
-		 * However, as ethernet addresses fit in here nicely, ruse
+		 * However, as ethernet addresses fit in here nicely, use
 		 * it also for an ethernet MAC address. */
 		guint8 addr_eth[6 /*ETH_ALEN*/];
 	};
