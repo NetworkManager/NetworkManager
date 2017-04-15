@@ -970,6 +970,7 @@ _set_fcn_gobject_enum (ARGS_SET_FCN)
 	GType gtype_prop;
 	gboolean has_gtype = FALSE;
 	nm_auto_unset_gvalue GValue gval = G_VALUE_INIT;
+	nm_auto_unref_gtypeclass GTypeClass *gtype_class = NULL;
 	int v;
 
 	if (property_info->property_typ_data) {
@@ -982,17 +983,14 @@ _set_fcn_gobject_enum (ARGS_SET_FCN)
 	gtype_prop = _gobject_property_get_gtype (G_OBJECT (setting), property_info->property_name);
 
 	if (   gtype_prop == G_TYPE_INT
-	    || G_IS_ENUM_CLASS (gtype_prop)) {
-		if (gtype_prop == G_TYPE_INT) {
-			if (!has_gtype)
-				g_return_val_if_reached (FALSE);
-		}
-	} else if (   gtype_prop == G_TYPE_UINT
-	           || G_IS_FLAGS_CLASS (gtype_prop)) {
-		if (gtype_prop == G_TYPE_UINT) {
-			if (!has_gtype)
-				g_return_val_if_reached (FALSE);
-		}
+	    || gtype_prop == G_TYPE_UINT) {
+		if (!has_gtype)
+			g_return_val_if_reached (FALSE);
+	} else if (G_TYPE_IS_CLASSED (gtype_prop)) {
+		gtype_class = g_type_class_ref (gtype_prop);
+		if (   !G_IS_ENUM_CLASS (gtype_class)
+		    && !G_IS_FLAGS_CLASS (gtype_class))
+			g_return_val_if_reached (FALSE);
 	} else
 		g_return_val_if_reached (FALSE);
 
@@ -1006,19 +1004,17 @@ _set_fcn_gobject_enum (ARGS_SET_FCN)
 		goto fail;
 
 	g_value_init (&gval, gtype_prop);
-	if (   gtype_prop == G_TYPE_INT
-	    || G_IS_ENUM_CLASS (gtype_prop)) {
-		if (gtype_prop == G_TYPE_INT)
-			g_value_set_int (&gval, v);
-		else
-		    g_value_set_enum (&gval, v);
-	} else if (   gtype_prop == G_TYPE_UINT
-	           || G_IS_FLAGS_CLASS (gtype_prop)) {
-		if (gtype_prop == G_TYPE_UINT)
-			g_value_set_uint (&gval, v);
-		else
-		    g_value_set_flags (&gval, v);
-	}
+	if (gtype_prop == G_TYPE_INT)
+		g_value_set_int (&gval, v);
+	else if (gtype_prop == G_TYPE_UINT)
+		g_value_set_uint (&gval, v);
+	else if (G_IS_ENUM_CLASS (gtype_class))
+		g_value_set_enum (&gval, v);
+	else if (G_IS_FLAGS_CLASS (gtype_class))
+		g_value_set_flags (&gval, v);
+	else
+		g_return_val_if_reached (FALSE);
+
 	if (!nm_g_object_set_property (G_OBJECT (setting), property_info->property_name, &gval, NULL))
 		goto fail;
 
