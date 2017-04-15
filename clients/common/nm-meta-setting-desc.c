@@ -2507,8 +2507,10 @@ _get_fcn_connection_metered (ARGS_GET_FCN)
 	switch (nm_setting_connection_get_metered (s_conn)) {
 	case NM_METERED_YES:
 		s = N_("yes");
+		break;
 	case NM_METERED_NO:
 		s = N_("no");
+		break;
 	case NM_METERED_UNKNOWN:
 	default:
 		s = N_("unknown");
