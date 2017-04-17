@@ -42,6 +42,7 @@
 #include "nm-utils.h"
 #include "nm-setting-ip6-config.h"
 #include "systemd/nm-sd.h"
+#include "nm-route-manager.h"
 
 #if !defined(NM_DIST_VERSION)
 # define NM_DIST_VERSION VERSION
@@ -94,6 +95,10 @@ static struct {
     nm_log ((level), (domain), global_opt.ifname, NULL, \
             "iface-helper: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__) \
             _NM_UTILS_MACRO_REST (__VA_ARGS__))
+
+/*****************************************************************************/
+
+NM_DEFINE_SINGLETON_GETTER (NMRouteManager, nm_route_manager_get, NM_TYPE_ROUTE_MANAGER);
 
 /*****************************************************************************/
 

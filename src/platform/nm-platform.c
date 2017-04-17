@@ -62,9 +62,9 @@ G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OF
         if (nm_logging_enabled (__level, _NMLOG_DOMAIN)) { \
             char __prefix[32]; \
             const char *__p_prefix = _NMLOG_PREFIX_NAME; \
-            const void *const __self = (self); \
+            const NMPlatform *const __self = (self); \
             \
-            if (__self && __self != nm_platform_try_get ()) { \
+            if (__self && NM_PLATFORM_GET_PRIVATE (__self)->log_with_ptr) { \
                 g_snprintf (__prefix, sizeof (__prefix), "%s[%p]", _NMLOG_PREFIX_NAME, __self); \
                 __p_prefix = __prefix; \
             } \
@@ -83,17 +83,25 @@ static guint signals[_NM_PLATFORM_SIGNAL_ID_LAST] = { 0 };
 enum {
 	PROP_0,
 	PROP_NETNS_SUPPORT,
-	PROP_REGISTER_SINGLETON,
+	PROP_LOG_WITH_PTR,
 	LAST_PROP,
 };
 
 typedef struct _NMPlatformPrivate {
-	bool register_singleton:1;
+	bool log_with_ptr:1;
 } NMPlatformPrivate;
 
 G_DEFINE_TYPE (NMPlatform, nm_platform, G_TYPE_OBJECT)
 
 #define NM_PLATFORM_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR (self, NMPlatform, NM_IS_PLATFORM)
+
+/*****************************************************************************/
+
+gboolean
+nm_platform_get_log_with_ptr (NMPlatform *self)
+{
+	return NM_PLATFORM_GET_PRIVATE (self)->log_with_ptr;
+}
 
 /*****************************************************************************/
 
@@ -184,12 +192,6 @@ nm_platform_get ()
 {
 	g_assert (singleton_instance);
 
-	return singleton_instance;
-}
-
-NMPlatform *
-nm_platform_try_get (void)
-{
 	return singleton_instance;
 }
 
@@ -4596,26 +4598,14 @@ set_property (GObject *object, guint prop_id,
 				self->_netns = g_object_ref (netns);
 		}
 		break;
-	case PROP_REGISTER_SINGLETON:
+	case PROP_LOG_WITH_PTR:
 		/* construct-only */
-		priv->register_singleton = g_value_get_boolean (value);
+		priv->log_with_ptr = g_value_get_boolean (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
 	}
-}
-
-static void
-constructed (GObject *object)
-{
-	NMPlatform *self = NM_PLATFORM (object);
-	NMPlatformPrivate *priv =  NM_PLATFORM_GET_PRIVATE (self);
-
-	G_OBJECT_CLASS (nm_platform_parent_class)->constructed (object);
-
-	if (priv->register_singleton)
-		nm_platform_setup (self);
 }
 
 static void
@@ -4640,7 +4630,6 @@ nm_platform_class_init (NMPlatformClass *platform_class)
 	g_type_class_add_private (object_class, sizeof (NMPlatformPrivate));
 
 	object_class->set_property = set_property;
-	object_class->constructed = constructed;
 	object_class->finalize = finalize;
 
 	platform_class->wifi_set_powersave = wifi_set_powersave;
@@ -4654,8 +4643,8 @@ nm_platform_class_init (NMPlatformClass *platform_class)
 	                           G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
-	 (object_class, PROP_REGISTER_SINGLETON,
-	     g_param_spec_boolean (NM_PLATFORM_REGISTER_SINGLETON, "", "",
+	 (object_class, PROP_LOG_WITH_PTR,
+	     g_param_spec_boolean (NM_PLATFORM_LOG_WITH_PTR, "", "",
 	                           FALSE,
 	                           G_PARAM_WRITABLE |
 	                           G_PARAM_CONSTRUCT_ONLY |
