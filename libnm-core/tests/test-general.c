@@ -4966,7 +4966,7 @@ test_nm_utils_is_power_of_two (void)
 		if (i == -1)
 			xyes = 0;
 		else {
-			xyes = (1LL << i);
+			xyes = (((guint64) 1) << i);
 			g_assert (xyes != 0);
 		}
 
@@ -4977,7 +4977,7 @@ again:
 			 * by randomly setting bits. */
 			numbits = g_rand_int_range (rand, 1, 65);
 			while (xno != ~((guint64) 0) && numbits > 0) {
-				guint64 v = (1LL << g_rand_int_range (rand, 0, 64));
+				guint64 v = (((guint64) 1) << g_rand_int_range (rand, 0, 64));
 
 				if ((xno | v) != xno) {
 					xno |= v;
