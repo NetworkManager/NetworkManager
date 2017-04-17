@@ -37,7 +37,6 @@ typedef struct _NMDefaultRouteManagerClass NMDefaultRouteManagerClass;
 
 GType nm_default_route_manager_get_type (void);
 
-NMDefaultRouteManager *nm_default_route_manager_get (void);
 NMDefaultRouteManager *nm_default_route_manager_new (gboolean log_with_ptr, NMPlatform *platform);
 
 gboolean nm_default_route_manager_ip4_update_default_route (NMDefaultRouteManager *manager, gpointer source);

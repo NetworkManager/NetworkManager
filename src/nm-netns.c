@@ -62,20 +62,6 @@ NM_DEFINE_SINGLETON_GETTER (NMNetns, nm_netns_get, NM_TYPE_NETNS);
 
 /*****************************************************************************/
 
-NMRouteManager *
-nm_route_manager_get (void)
-{
-	return nm_netns_get_route_manager (NM_NETNS_GET);
-}
-
-NMDefaultRouteManager *
-nm_default_route_manager_get (void)
-{
-	return nm_netns_get_default_route_manager (NM_NETNS_GET);
-}
-
-/*****************************************************************************/
-
 NMPNetns *
 nm_netns_get_platform_netns (NMNetns *self)
 {
