@@ -35,7 +35,7 @@ typedef struct _NMLinuxPlatformClass NMLinuxPlatformClass;
 
 GType nm_linux_platform_get_type (void);
 
-NMPlatform *nm_linux_platform_new (gboolean netns_support);
+NMPlatform *nm_linux_platform_new (gboolean log_with_ptr, gboolean netns_support);
 
 void nm_linux_platform_setup (void);
 

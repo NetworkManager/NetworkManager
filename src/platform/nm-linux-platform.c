@@ -145,9 +145,9 @@
     G_STMT_START { \
         char __prefix[32]; \
         const char *__p_prefix = _NMLOG_PREFIX_NAME; \
-        const void *const __self = (self); \
+        NMPlatform *const __self = (self); \
         \
-        if (__self && __self != nm_platform_try_get ()) { \
+        if (__self && nm_platform_get_log_with_ptr (__self)) { \
             g_snprintf (__prefix, sizeof (__prefix), "%s[%p]", _NMLOG_PREFIX_NAME, __self); \
             __p_prefix = __prefix; \
         } \
@@ -2583,10 +2583,10 @@ G_DEFINE_TYPE (NMLinuxPlatform, nm_linux_platform, NM_TYPE_PLATFORM)
 #define NM_LINUX_PLATFORM_GET_PRIVATE(self) _NM_GET_PRIVATE_VOID(self, NMLinuxPlatform, NM_IS_LINUX_PLATFORM)
 
 NMPlatform *
-nm_linux_platform_new (gboolean netns_support)
+nm_linux_platform_new (gboolean log_with_ptr, gboolean netns_support)
 {
 	return g_object_new (NM_TYPE_LINUX_PLATFORM,
-	                     NM_PLATFORM_REGISTER_SINGLETON, FALSE,
+	                     NM_PLATFORM_LOG_WITH_PTR, log_with_ptr,
 	                     NM_PLATFORM_NETNS_SUPPORT, netns_support,
 	                     NULL);
 }
@@ -2594,10 +2594,7 @@ nm_linux_platform_new (gboolean netns_support)
 void
 nm_linux_platform_setup (void)
 {
-	g_object_new (NM_TYPE_LINUX_PLATFORM,
-	              NM_PLATFORM_REGISTER_SINGLETON, TRUE,
-	              NM_PLATFORM_NETNS_SUPPORT, FALSE,
-	              NULL);
+	nm_platform_setup (nm_linux_platform_new (FALSE, FALSE));
 }
 
 static void

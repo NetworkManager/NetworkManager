@@ -52,6 +52,7 @@
 #include "nm-connectivity.h"
 #include "dns/nm-dns-manager.h"
 #include "systemd/nm-sd.h"
+#include "nm-netns.h"
 
 #if !defined(NM_DIST_VERSION)
 # define NM_DIST_VERSION VERSION
@@ -371,6 +372,11 @@ main (int argc, char *argv[])
 #endif
 	             );
 
+	/* Set up platform interaction layer */
+	nm_linux_platform_setup ();
+
+	NM_UTILS_KEEP_ALIVE (config, nm_netns_get (), "NMConfig-depends-on-NMNetns");
+
 	nm_auth_manager_setup (nm_config_data_get_value_boolean (nm_config_get_data_orig (config),
 	                                                         NM_CONFIG_KEYFILE_GROUP_MAIN,
 	                                                         NM_CONFIG_KEYFILE_KEY_MAIN_AUTH_POLKIT,
@@ -388,10 +394,6 @@ main (int argc, char *argv[])
 		}
 	}
 
-	/* Set up platform interaction layer */
-	nm_linux_platform_setup ();
-
-	NM_UTILS_KEEP_ALIVE (config, NM_PLATFORM_GET, "NMConfig-depends-on-NMPlatform");
 #if WITH_CONCHECK
 	NM_UTILS_KEEP_ALIVE (nm_manager_get (), nm_connectivity_get (), "NMManager-depends-on-NMConnectivity");
 #endif
