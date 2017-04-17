@@ -410,6 +410,9 @@ typedef void (*NMDeviceAuthRequestFunc) (NMDevice *device,
 
 GType nm_device_get_type (void);
 
+NMNetns *nm_device_get_netns (NMDevice *self);
+NMPlatform *nm_device_get_platform (NMDevice *self);
+
 const char *    nm_device_get_udi               (NMDevice *dev);
 const char *    nm_device_get_iface             (NMDevice *dev);
 int             nm_device_get_ifindex           (NMDevice *dev);
