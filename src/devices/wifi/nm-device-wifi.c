@@ -2348,6 +2348,8 @@ build_supplicant_config (NMDeviceWifi *self,
 	NMSupplicantConfig *config = NULL;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wireless_sec;
+	NMSettingWirelessSecurityPmf pmf;
+	gs_free char *value = NULL;
 
 	g_return_val_if_fail (priv->sup_iface, NULL);
 
@@ -2378,12 +2380,46 @@ build_supplicant_config (NMDeviceWifi *self,
 		                                        nm_device_get_ifindex (NM_DEVICE (self)));
 
 		g_assert (con_uuid);
+
+		/* Configure PMF (802.11w) */
+		pmf = nm_setting_wireless_security_get_pmf (s_wireless_sec);
+		if (pmf == NM_SETTING_WIRELESS_SECURITY_PMF_DEFAULT) {
+			value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+			                                               "wifi-sec.pmf",
+			                                               NM_DEVICE (self));
+			pmf = _nm_utils_ascii_str_to_int64 (value, 10,
+			                                    NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE,
+			                                    NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED,
+			                                    NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL);
+		}
+
+		/* Don't try to enable PMF on non-WPA networks */
+		if (!NM_IN_STRSET (nm_setting_wireless_security_get_key_mgmt (s_wireless_sec),
+		                   "wpa-eap",
+		                   "wpa-psk"))
+			pmf = NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE;
+
+		/* Check if we actually support PMF */
+		if (nm_supplicant_interface_get_pmf_support (priv->sup_iface) != NM_SUPPLICANT_FEATURE_YES) {
+			if (pmf == NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED) {
+				g_set_error_literal (error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG,
+				                     "Supplicant does not support PMF");
+				goto error;
+			} else if (pmf == NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL) {
+				/* To be on the safe side, assume no support if we can't determine
+				 * capabilities.
+				 */
+				pmf = NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE;
+			}
+		}
+
 		s_8021x = nm_connection_get_setting_802_1x (connection);
 		if (!nm_supplicant_config_add_setting_wireless_security (config,
 		                                                         s_wireless_sec,
 		                                                         s_8021x,
 		                                                         con_uuid,
 		                                                         mtu,
+		                                                         pmf,
 		                                                         error)) {
 			g_prefix_error (error, "802-11-wireless-security: ");
 			goto error;

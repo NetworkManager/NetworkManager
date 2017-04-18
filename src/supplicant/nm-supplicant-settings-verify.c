@@ -151,6 +151,7 @@ static const struct Opt opt_table[] = {
 	{ "mka_cak",            TYPE_BYTES,   0, 65536, FALSE, NULL },
 	{ "mka_ckn",            TYPE_BYTES,   0, 65536, FALSE, NULL },
 	{ "macsec_port",        TYPE_INT,     1, 65534, FALSE, NULL },
+	{ "ieee80211w",         TYPE_INT,     0, 2, FALSE, NULL },
 };
 
 
