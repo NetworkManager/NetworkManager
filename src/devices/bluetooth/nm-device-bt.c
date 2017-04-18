@@ -328,7 +328,7 @@ complete_connection (NMDevice *device,
 		return FALSE;
 	}
 
-	nm_utils_complete_generic (NM_PLATFORM_GET,
+	nm_utils_complete_generic (nm_device_get_platform (device),
 	                           connection,
 	                           NM_SETTING_BLUETOOTH_SETTING_NAME,
 	                           existing_connections,

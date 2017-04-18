@@ -172,7 +172,7 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 	}
 
 	ifindex = nm_device_get_ifindex ((NMDevice *) self);
-	dev = nm_platform_link_get_udev_device (NM_PLATFORM_GET, ifindex);
+	dev = nm_platform_link_get_udev_device (nm_device_get_platform (NM_DEVICE (self)), ifindex);
 	if (!dev)
 		return;
 
@@ -209,7 +209,7 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 			gs_free char *path = NULL, *value = NULL;
 
 			path = g_strdup_printf ("%s/%s", parent_path, item);
-			value = nm_platform_sysctl_get (NM_PLATFORM_GET, NMP_SYSCTL_PATHID_ABSOLUTE (path));
+			value = nm_platform_sysctl_get (nm_device_get_platform (NM_DEVICE (self)), NMP_SYSCTL_PATHID_ABSOLUTE (path));
 
 			if (   !strcmp (item, "portname")
 			    && !g_strcmp0 (value, "no portname required")) {
@@ -304,7 +304,7 @@ get_generic_capabilities (NMDevice *device)
 	int ifindex = nm_device_get_ifindex (device);
 
 	if (ifindex > 0) {
-		if (nm_platform_link_supports_carrier_detect (NM_PLATFORM_GET, ifindex))
+		if (nm_platform_link_supports_carrier_detect (nm_device_get_platform (device), ifindex))
 			return NM_DEVICE_CAP_CARRIER_DETECT;
 		else {
 			_LOGI (LOGD_PLATFORM, "driver '%s' does not support carrier detection.",
@@ -569,7 +569,7 @@ build_supplicant_config (NMDeviceEthernet *self,
 	connection = nm_device_get_applied_connection (NM_DEVICE (self));
 	g_assert (connection);
 	con_uuid = nm_connection_get_uuid (connection);
-	mtu = nm_platform_link_get_mtu (NM_PLATFORM_GET,
+	mtu = nm_platform_link_get_mtu (nm_device_get_platform (NM_DEVICE (self)),
 	                                nm_device_get_ifindex (NM_DEVICE (self)));
 
 	config = nm_supplicant_config_new ();
@@ -828,7 +828,7 @@ link_negotiation_set (NMDevice *device)
 		}
 	}
 
-	if (!nm_platform_ethtool_get_link_settings (NM_PLATFORM_GET, nm_device_get_ifindex (device),
+	if (!nm_platform_ethtool_get_link_settings (nm_device_get_platform (device), nm_device_get_ifindex (device),
 	                                            &link_autoneg, &link_speed, &link_duplex)) {
 		_LOGW (LOGD_DEVICE, "set-link: unable to retrieve link negotiation");
 		return;
@@ -852,7 +852,7 @@ link_negotiation_set (NMDevice *device)
 		       duplex ? "" : "*");
 	}
 
-	if (!nm_platform_ethtool_set_link_settings (NM_PLATFORM_GET,
+	if (!nm_platform_ethtool_set_link_settings (nm_device_get_platform (device),
 	                                            nm_device_get_ifindex (device),
 	                                            autoneg,
 	                                            speed,
@@ -1124,7 +1124,7 @@ dcb_state (NMDevice *device, gboolean timeout)
 	g_return_if_fail (nm_device_get_state (device) == NM_DEVICE_STATE_CONFIG);
 
 
-	carrier = nm_platform_link_is_connected (NM_PLATFORM_GET, nm_device_get_ifindex (device));
+	carrier = nm_platform_link_is_connected (nm_device_get_platform (device), nm_device_get_ifindex (device));
 	_LOGD (LOGD_DCB, "dcb_state() wait %d carrier %d timeout %d", priv->dcb_wait, carrier, timeout);
 
 	switch (priv->dcb_wait) {
@@ -1242,7 +1242,7 @@ wake_on_lan_enable (NMDevice *device)
 	}
 	wol = NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE;
 found:
-	return nm_platform_ethtool_set_wake_on_lan (NM_PLATFORM_GET, nm_device_get_ifindex (device), wol, password);
+	return nm_platform_ethtool_set_wake_on_lan (nm_device_get_platform (device), nm_device_get_ifindex (device), wol, password);
 }
 
 /*****************************************************************************/
@@ -1285,7 +1285,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	s_dcb = (NMSettingDcb *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_DCB);
 	if (s_dcb) {
 		/* lldpad really really wants the carrier to be up */
-		if (nm_platform_link_is_connected (NM_PLATFORM_GET, nm_device_get_ifindex (device))) {
+		if (nm_platform_link_is_connected (nm_device_get_platform (device), nm_device_get_ifindex (device))) {
 			if (!dcb_enable (device)) {
 				NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_DCB_FCOE_FAILED);
 				return NM_ACT_STAGE_RETURN_FAILURE;
@@ -1321,7 +1321,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 			if (mxu) {
 				_LOGD (LOGD_PPP, "set MTU to %u (PPP interface MRU %u, MTU %u)",
 				       mxu + PPPOE_ENCAP_OVERHEAD, mru, mtu);
-				nm_platform_link_set_mtu (NM_PLATFORM_GET,
+				nm_platform_link_set_mtu (nm_device_get_platform (device),
 				                          nm_device_get_ifindex (device),
 				                          mxu + PPPOE_ENCAP_OVERHEAD);
 			}
@@ -1427,7 +1427,7 @@ complete_connection (NMDevice *device,
 	/* Default to an ethernet-only connection, but if a PPPoE setting was given
 	 * then PPPoE should be our connection type.
 	 */
-	nm_utils_complete_generic (NM_PLATFORM_GET,
+	nm_utils_complete_generic (nm_device_get_platform (device),
 	                           connection,
 	                           s_pppoe ? NM_SETTING_PPPOE_SETTING_NAME : NM_SETTING_WIRED_SETTING_NAME,
 	                           existing_connections,
@@ -1585,7 +1585,7 @@ get_link_speed (NMDevice *device)
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	guint32 speed;
 
-	if (!nm_platform_ethtool_get_link_settings (NM_PLATFORM_GET, nm_device_get_ifindex (device), NULL, &speed, NULL))
+	if (!nm_platform_ethtool_get_link_settings (nm_device_get_platform (device), nm_device_get_ifindex (device), NULL, &speed, NULL))
 		return;
 	if (priv->speed == speed)
 		return;

@@ -62,7 +62,7 @@ complete_connection (NMDevice *device,
 {
 	NMSettingDummy *s_dummy;
 
-	nm_utils_complete_generic (NM_PLATFORM_GET,
+	nm_utils_complete_generic (nm_device_get_platform (device),
 	                           connection,
 	                           NM_SETTING_DUMMY_SETTING_NAME,
 	                           existing_connections,
@@ -106,7 +106,7 @@ create_and_realize (NMDevice *device,
 	s_dummy = nm_connection_get_setting_dummy (connection);
 	g_assert (s_dummy);
 
-	plerr = nm_platform_link_dummy_add (NM_PLATFORM_GET, iface, out_plink);
+	plerr = nm_platform_link_dummy_add (nm_device_get_platform (device), iface, out_plink);
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to create dummy interface '%s' for '%s': %s",
