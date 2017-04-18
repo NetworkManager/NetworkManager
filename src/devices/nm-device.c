@@ -11984,7 +11984,7 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 	if (NM_DEVICE_GET_CLASS (self)->deactivate)
 		NM_DEVICE_GET_CLASS (self)->deactivate (self);
 
-	if (cleanup_type != CLEANUP_TYPE_KEEP) {
+	if (cleanup_type == CLEANUP_TYPE_DECONFIGURE) {
 		/* master: release slaves */
 		nm_device_master_release_slaves (self);
 
@@ -12378,7 +12378,8 @@ _set_state_full (NMDevice *self,
 	/* Cache the activation request for the dispatcher */
 	req = nm_g_object_ref (priv->act_request);
 
-	if (   state > NM_DEVICE_STATE_UNMANAGED
+	if (   state >  NM_DEVICE_STATE_UNMANAGED
+	    && state <= NM_DEVICE_STATE_ACTIVATED
 	    && nm_device_state_reason_check (reason) == NM_DEVICE_STATE_REASON_NOW_MANAGED
 	    && NM_IN_SET_TYPED (NMDeviceSysIfaceState,
 	                        priv->sys_iface_state,
@@ -13845,8 +13846,10 @@ set_property (GObject *object, guint prop_id,
 			managed = g_value_get_boolean (value);
 			if (managed)
 				reason = NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED;
-			else
+			else {
 				reason = NM_DEVICE_STATE_REASON_REMOVED;
+				nm_device_sys_iface_state_set (self, NM_DEVICE_SYS_IFACE_STATE_REMOVED);
+			}
 			nm_device_set_unmanaged_by_flags (self,
 			                                  NM_UNMANAGED_USER_EXPLICIT,
 			                                  !managed,
