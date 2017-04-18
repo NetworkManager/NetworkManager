@@ -1549,7 +1549,7 @@ nm_default_route_manager_class_init (NMDefaultRouteManagerClass *klass)
 
 	obj_properties[PROP_LOG_WITH_PTR] =
 	    g_param_spec_boolean (NM_DEFAULT_ROUTE_MANAGER_LOG_WITH_PTR, "", "",
-	                          FALSE,
+	                          TRUE,
 	                          G_PARAM_WRITABLE |
 	                          G_PARAM_CONSTRUCT_ONLY |
 	                          G_PARAM_STATIC_STRINGS);
