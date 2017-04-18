@@ -4645,7 +4645,7 @@ nm_platform_class_init (NMPlatformClass *platform_class)
 	g_object_class_install_property
 	 (object_class, PROP_LOG_WITH_PTR,
 	     g_param_spec_boolean (NM_PLATFORM_LOG_WITH_PTR, "", "",
-	                           FALSE,
+	                           TRUE,
 	                           G_PARAM_WRITABLE |
 	                           G_PARAM_CONSTRUCT_ONLY |
 	                           G_PARAM_STATIC_STRINGS));
