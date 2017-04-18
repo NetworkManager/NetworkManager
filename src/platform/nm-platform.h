@@ -45,7 +45,7 @@
 /*****************************************************************************/
 
 #define NM_PLATFORM_NETNS_SUPPORT      "netns-support"
-#define NM_PLATFORM_REGISTER_SINGLETON "register-singleton"
+#define NM_PLATFORM_LOG_WITH_PTR       "log-with-ptr"
 
 /*****************************************************************************/
 
@@ -719,7 +719,6 @@ GType nm_platform_get_type (void);
 
 void nm_platform_setup (NMPlatform *instance);
 NMPlatform *nm_platform_get (void);
-NMPlatform *nm_platform_try_get (void);
 
 #define NM_PLATFORM_GET (nm_platform_get ())
 
@@ -741,6 +740,8 @@ _nm_platform_uint8_inv (guint8 scope)
 {
 	return (guint8) ~scope;
 }
+
+gboolean nm_platform_get_log_with_ptr (NMPlatform *self);
 
 NMPNetns *nm_platform_netns_get (NMPlatform *self);
 gboolean nm_platform_netns_push (NMPlatform *platform, NMPNetns **netns);

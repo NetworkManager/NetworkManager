@@ -82,9 +82,9 @@ G_DEFINE_TYPE (NMFakePlatform, nm_fake_platform, NM_TYPE_PLATFORM)
         if (nm_logging_enabled (__level, __domain)) { \
             char __prefix[32]; \
             const char *__p_prefix = _NMLOG_PREFIX_NAME; \
-            const void *const __self = (self); \
+            NMPlatform *const __self = (self); \
             \
-            if (__self && __self != nm_platform_try_get ()) { \
+            if (__self && nm_platform_get_log_with_ptr (self)) { \
                 g_snprintf (__prefix, sizeof (__prefix), "%s[%p]", _NMLOG_PREFIX_NAME, __self); \
                 __p_prefix = __prefix; \
             } \
@@ -1400,7 +1400,9 @@ nm_fake_platform_setup (void)
 {
 	NMPlatform *platform;
 
-	platform = g_object_new (NM_TYPE_FAKE_PLATFORM, NULL);
+	platform = g_object_new (NM_TYPE_FAKE_PLATFORM,
+	                         NM_PLATFORM_LOG_WITH_PTR, FALSE,
+	                         NULL);
 
 	nm_platform_setup (platform);
 

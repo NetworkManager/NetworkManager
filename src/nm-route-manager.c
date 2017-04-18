@@ -70,6 +70,7 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_LOG_WITH_PTR,
 	PROP_PLATFORM,
 );
 
@@ -82,6 +83,8 @@ typedef struct {
 		GHashTable *entries;
 		guint gc_id;
 	} ip4_device_routes;
+
+	bool log_with_ptr;
 } NMRouteManagerPrivate;
 
 struct _NMRouteManager {
@@ -96,10 +99,6 @@ struct _NMRouteManagerClass {
 G_DEFINE_TYPE (NMRouteManager, nm_route_manager, G_TYPE_OBJECT);
 
 #define NM_ROUTE_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMRouteManager, NM_IS_ROUTE_MANAGER)
-
-/*****************************************************************************/
-
-NM_DEFINE_SINGLETON_GETTER (NMRouteManager, nm_route_manager_get, NM_TYPE_ROUTE_MANAGER);
 
 /*****************************************************************************/
 
@@ -156,7 +155,7 @@ static const VTableIP vtable_v4, vtable_v6;
             char __ch = __addr_family == AF_INET ? '4' : (__addr_family == AF_INET6 ? '6' : '-'); \
             char __prefix[30] = _NMLOG_PREFIX_NAME; \
             \
-            if ((self) != singleton_instance) \
+            if (NM_ROUTE_MANAGER_GET_PRIVATE (self)->log_with_ptr) \
                 g_snprintf (__prefix, sizeof (__prefix), "%s%c[%p]", _NMLOG_PREFIX_NAME, __ch, (self)); \
             else \
                 __prefix[NM_STRLEN (_NMLOG_PREFIX_NAME)] = __ch; \
@@ -1207,6 +1206,10 @@ set_property (GObject *object, guint prop_id,
 	NMRouteManagerPrivate *priv = NM_ROUTE_MANAGER_GET_PRIVATE (self);
 
 	switch (prop_id) {
+	case PROP_LOG_WITH_PTR:
+		/* construct-only */
+		priv->log_with_ptr = g_value_get_boolean (value);
+		break;
 	case PROP_PLATFORM:
 		/* construct-only */
 		priv->platform = g_value_get_object (value) ? : NM_PLATFORM_GET;
@@ -1242,9 +1245,10 @@ nm_route_manager_init (NMRouteManager *self)
 }
 
 NMRouteManager *
-nm_route_manager_new (NMPlatform *platform)
+nm_route_manager_new (gboolean log_with_ptr, NMPlatform *platform)
 {
 	return g_object_new (NM_TYPE_ROUTE_MANAGER,
+	                     NM_ROUTE_MANAGER_LOG_WITH_PTR, log_with_ptr,
 	                     NM_ROUTE_MANAGER_PLATFORM, platform,
 	                     NULL);
 }
@@ -1290,6 +1294,13 @@ nm_route_manager_class_init (NMRouteManagerClass *klass)
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
+
+	obj_properties[PROP_LOG_WITH_PTR] =
+	    g_param_spec_boolean (NM_ROUTE_MANAGER_LOG_WITH_PTR, "", "",
+	                          TRUE,
+	                          G_PARAM_WRITABLE |
+	                          G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_PLATFORM] =
 	    g_param_spec_object (NM_ROUTE_MANAGER_PLATFORM, "", "",

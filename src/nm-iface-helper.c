@@ -42,6 +42,7 @@
 #include "nm-utils.h"
 #include "nm-setting-ip6-config.h"
 #include "systemd/nm-sd.h"
+#include "nm-route-manager.h"
 
 #if !defined(NM_DIST_VERSION)
 # define NM_DIST_VERSION VERSION
@@ -97,6 +98,12 @@ static struct {
 
 /*****************************************************************************/
 
+NMRouteManager *route_manager_get (void);
+
+NM_DEFINE_SINGLETON_GETTER (NMRouteManager, route_manager_get, NM_TYPE_ROUTE_MANAGER);
+
+/*****************************************************************************/
+
 static void
 dhcp4_state_changed (NMDhcpClient *client,
                      NMDhcpState state,
@@ -115,12 +122,12 @@ dhcp4_state_changed (NMDhcpClient *client,
 	switch (state) {
 	case NM_DHCP_STATE_BOUND:
 		g_assert (ip4_config);
-		existing = nm_ip4_config_capture (gl.ifindex, FALSE);
+		existing = nm_ip4_config_capture (NM_PLATFORM_GET, gl.ifindex, FALSE);
 		if (last_config)
 			nm_ip4_config_subtract (existing, last_config);
 
 		nm_ip4_config_merge (existing, ip4_config, NM_IP_CONFIG_MERGE_DEFAULT);
-		if (!nm_ip4_config_commit (existing, gl.ifindex, TRUE, global_opt.priority_v4))
+		if (!nm_ip4_config_commit (existing, NM_PLATFORM_GET, route_manager_get (), gl.ifindex, TRUE, global_opt.priority_v4))
 			_LOGW (LOGD_DHCP4, "failed to apply DHCPv4 config");
 
 		if (last_config)
@@ -170,7 +177,7 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 		ifa_flags |= IFA_F_MANAGETEMPADDR;
 	}
 
-	existing = nm_ip6_config_capture (gl.ifindex, FALSE, global_opt.tempaddr);
+	existing = nm_ip6_config_capture (NM_PLATFORM_GET, gl.ifindex, FALSE, global_opt.tempaddr);
 	if (ndisc_config)
 		nm_ip6_config_subtract (existing, ndisc_config);
 	else
@@ -245,7 +252,7 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 	}
 
 	nm_ip6_config_merge (existing, ndisc_config, NM_IP_CONFIG_MERGE_DEFAULT);
-	if (!nm_ip6_config_commit (existing, gl.ifindex, TRUE))
+	if (!nm_ip6_config_commit (existing, NM_PLATFORM_GET, route_manager_get (), gl.ifindex, TRUE))
 		_LOGW (LOGD_IP6, "failed to apply IPv6 config");
 }
 

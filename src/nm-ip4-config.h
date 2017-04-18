@@ -59,8 +59,8 @@ NMIP4Config * nm_ip4_config_new (int ifindex);
 int nm_ip4_config_get_ifindex (const NMIP4Config *config);
 
 
-NMIP4Config *nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf);
-gboolean nm_ip4_config_commit (const NMIP4Config *config, int ifindex, gboolean routes_full_sync, gint64 default_route_metric);
+NMIP4Config *nm_ip4_config_capture (NMPlatform *platform, int ifindex, gboolean capture_resolv_conf);
+gboolean nm_ip4_config_commit (const NMIP4Config *config, NMPlatform *platform, NMRouteManager *route_manager, int ifindex, gboolean routes_full_sync, gint64 default_route_metric);
 void nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIPConfig *setting, guint32 default_route_metric);
 NMSetting *nm_ip4_config_create_setting (const NMIP4Config *config);
 
