@@ -40,6 +40,7 @@
 #include "NetworkManagerUtils.h"
 #include "settings/nm-settings-connection.h"
 #include "nm-dispatcher.h"
+#include "nm-netns.h"
 #include "settings/nm-agent-manager.h"
 #include "nm-core-internal.h"
 #include "nm-pacrunner-manager.h"
@@ -120,8 +121,8 @@ typedef struct {
 	/* Firewall */
 	NMFirewallManagerCallId fw_call;
 
-	NMDefaultRouteManager *default_route_manager;
-	NMRouteManager *route_manager;
+	NMNetns *netns;
+
 	GDBusProxy *proxy;
 	GCancellable *cancellable;
 	GVariant *connect_hash;
@@ -392,9 +393,9 @@ vpn_cleanup (NMVpnConnection *self, NMDevice *parent_dev)
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
 	if (priv->ip_ifindex) {
-		nm_platform_link_set_down (NM_PLATFORM_GET, priv->ip_ifindex);
-		nm_route_manager_route_flush (priv->route_manager, priv->ip_ifindex);
-		nm_platform_address_flush (NM_PLATFORM_GET, priv->ip_ifindex);
+		nm_platform_link_set_down (nm_netns_get_platform (priv->netns), priv->ip_ifindex);
+		nm_route_manager_route_flush (nm_netns_get_route_manager (priv->netns), priv->ip_ifindex);
+		nm_platform_address_flush (nm_netns_get_platform (priv->netns), priv->ip_ifindex);
 	}
 
 	remove_parent_device_config (self, parent_dev);
@@ -495,8 +496,8 @@ _set_vpn_state (NMVpnConnection *self,
 
 	dispatcher_cleanup (self);
 
-	nm_default_route_manager_ip4_update_default_route (priv->default_route_manager, self);
-	nm_default_route_manager_ip6_update_default_route (priv->default_route_manager, self);
+	nm_default_route_manager_ip4_update_default_route (nm_netns_get_default_route_manager (priv->netns), self);
+	nm_default_route_manager_ip6_update_default_route (nm_netns_get_default_route_manager (priv->netns), self);
 
 	/* The connection gets destroyed by the VPN manager when it enters the
 	 * disconnected/failed state, but we need to keep it around for a bit
@@ -1090,10 +1091,13 @@ nm_vpn_connection_apply_config (NMVpnConnection *self)
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
 	if (priv->ip_ifindex > 0) {
-		nm_platform_link_set_up (NM_PLATFORM_GET, priv->ip_ifindex, NULL);
+		nm_platform_link_set_up (nm_netns_get_platform (priv->netns), priv->ip_ifindex, NULL);
 
 		if (priv->ip4_config) {
-			if (!nm_ip4_config_commit (priv->ip4_config, priv->ip_ifindex,
+			if (!nm_ip4_config_commit (priv->ip4_config,
+			                           nm_netns_get_platform (priv->netns),
+			                           nm_netns_get_route_manager (priv->netns),
+			                           priv->ip_ifindex,
 			                           TRUE,
 			                           nm_vpn_connection_get_ip4_route_metric (self)))
 				return FALSE;
@@ -1101,19 +1105,21 @@ nm_vpn_connection_apply_config (NMVpnConnection *self)
 
 		if (priv->ip6_config) {
 			if (!nm_ip6_config_commit (priv->ip6_config,
+			                           nm_netns_get_platform (priv->netns),
+			                           nm_netns_get_route_manager (priv->netns),
 			                           priv->ip_ifindex,
 			                           TRUE))
 				return FALSE;
 		}
 
-		if (priv->mtu && priv->mtu != nm_platform_link_get_mtu (NM_PLATFORM_GET, priv->ip_ifindex))
-			nm_platform_link_set_mtu (NM_PLATFORM_GET, priv->ip_ifindex, priv->mtu);
+		if (priv->mtu && priv->mtu != nm_platform_link_get_mtu (nm_netns_get_platform (priv->netns), priv->ip_ifindex))
+			nm_platform_link_set_mtu (nm_netns_get_platform (priv->netns), priv->ip_ifindex, priv->mtu);
 	}
 
 	apply_parent_device_config (self);
 
-	nm_default_route_manager_ip4_update_default_route (priv->default_route_manager, self);
-	nm_default_route_manager_ip6_update_default_route (priv->default_route_manager, self);
+	nm_default_route_manager_ip4_update_default_route (nm_netns_get_default_route_manager (priv->netns), self);
+	nm_default_route_manager_ip6_update_default_route (nm_netns_get_default_route_manager (priv->netns), self);
 
 	_LOGI ("VPN connection: (IP Config Get) complete");
 	if (priv->vpn_state < STATE_PRE_UP)
@@ -1266,10 +1272,10 @@ process_generic_config (NMVpnConnection *self, GVariant *dict)
 
 	if (priv->ip_iface) {
 		/* Grab the interface index for address/routing operations */
-		priv->ip_ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, priv->ip_iface);
+		priv->ip_ifindex = nm_platform_link_get_ifindex (nm_netns_get_platform (priv->netns), priv->ip_iface);
 		if (priv->ip_ifindex <= 0) {
-			nm_platform_process_events (NM_PLATFORM_GET);
-			priv->ip_ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, priv->ip_iface);
+			nm_platform_process_events (nm_netns_get_platform (priv->netns));
+			priv->ip_ifindex = nm_platform_link_get_ifindex (nm_netns_get_platform (priv->netns), priv->ip_iface);
 		}
 		if (priv->ip_ifindex <= 0) {
 			_LOGE ("failed to look up VPN interface index for \"%s\"", priv->ip_iface);
@@ -2614,8 +2620,7 @@ nm_vpn_connection_init (NMVpnConnection *self)
 
 	priv->vpn_state = STATE_WAITING;
 	priv->secrets_idx = SECRETS_REQ_SYSTEM;
-	priv->default_route_manager = g_object_ref (nm_default_route_manager_get ());
-	priv->route_manager = g_object_ref (nm_route_manager_get ());
+	priv->netns = g_object_ref (nm_netns_get ());
 }
 
 static void
@@ -2645,9 +2650,6 @@ dispose (GObject *object)
 	fw_call_cleanup (self);
 
 	G_OBJECT_CLASS (nm_vpn_connection_parent_class)->dispose (object);
-
-	g_clear_object (&priv->default_route_manager);
-	g_clear_object (&priv->route_manager);
 }
 
 static void
@@ -2662,6 +2664,8 @@ finalize (GObject *object)
 	g_free (priv->ip6_external_gw);
 
 	G_OBJECT_CLASS (nm_vpn_connection_parent_class)->finalize (object);
+
+	g_clear_object (&priv->netns);
 }
 
 static gboolean

@@ -186,7 +186,7 @@ update_properties (NMDevice *device)
 	ifindex = nm_device_get_ifindex (device);
 
 	if (ifindex > 0)
-		plnk = nm_platform_link_get_lnk_vlan (NM_PLATFORM_GET, ifindex, &plink);
+		plnk = nm_platform_link_get_lnk_vlan (nm_device_get_platform (device), ifindex, &plink);
 
 	if (   plnk
 	    && plink->parent > 0)
@@ -249,7 +249,7 @@ create_and_realize (NMDevice *device,
 
 	vlan_id = nm_setting_vlan_get_id (s_vlan);
 
-	plerr = nm_platform_link_vlan_add (NM_PLATFORM_GET,
+	plerr = nm_platform_link_vlan_add (nm_device_get_platform (device),
 	                                   iface,
 	                                   parent_ifindex,
 	                                   vlan_id,
@@ -425,7 +425,7 @@ complete_connection (NMDevice *device,
 {
 	NMSettingVlan *s_vlan;
 
-	nm_utils_complete_generic (NM_PLATFORM_GET,
+	nm_utils_complete_generic (nm_device_get_platform (device),
 	                           connection,
 	                           NM_SETTING_VLAN_SETTING_NAME,
 	                           existing_connections,
@@ -472,7 +472,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 		nm_connection_add_setting (connection, (NMSetting *) s_vlan);
 	}
 
-	polnk = nm_platform_link_get_lnk (NM_PLATFORM_GET, ifindex, NM_LINK_TYPE_VLAN, &plink);
+	polnk = nm_platform_link_get_lnk (nm_device_get_platform (device), ifindex, NM_LINK_TYPE_VLAN, &plink);
 
 	if (polnk)
 		vlan_id = polnk->lnk_vlan.id;
@@ -556,7 +556,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		                                 &egress_map,
 		                                 &n_egress_map);
 
-		nm_platform_link_vlan_change (NM_PLATFORM_GET,
+		nm_platform_link_vlan_change (nm_device_get_platform (device),
 		                              nm_device_get_ifindex (device),
 		                              NM_VLAN_FLAGS_ALL,
 		                              nm_setting_vlan_get_flags (s_vlan),
@@ -584,7 +584,7 @@ get_configured_mtu (NMDevice *self, gboolean *out_is_user_config)
 	/* Inherit the MTU from parent device, if any */
 	ifindex = nm_device_parent_get_ifindex (self);
 	if (ifindex > 0)
-		mtu = nm_platform_link_get_mtu (NM_PLATFORM_GET, ifindex);
+		mtu = nm_platform_link_get_mtu (nm_device_get_platform (NM_DEVICE (self)), ifindex);
 
 	return mtu ?: NM_DEVICE_DEFAULT_MTU_WIRED;
 }

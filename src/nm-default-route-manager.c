@@ -36,12 +36,16 @@
 /*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_LOG_WITH_PTR,
 	PROP_PLATFORM,
 );
 
 typedef struct {
 	GPtrArray *entries_ip4;
 	GPtrArray *entries_ip6;
+
+	NMPlatform *platform;
+
 	struct {
 		guint guard;
 		guint backoff_wait_time_ms;
@@ -56,9 +60,9 @@ typedef struct {
 	 * pointers.
 	 * Guard every publicly accessible function to return early if the instance
 	 * is already disposing. */
-	gboolean disposed;
+	bool disposed;
 
-	NMPlatform *platform;
+	bool log_with_ptr;
 } NMDefaultRouteManagerPrivate;
 
 struct _NMDefaultRouteManager {
@@ -73,8 +77,6 @@ struct _NMDefaultRouteManagerClass {
 G_DEFINE_TYPE (NMDefaultRouteManager, nm_default_route_manager, G_TYPE_OBJECT)
 
 #define NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDefaultRouteManager, NM_IS_DEFAULT_ROUTE_MANAGER)
-
-NM_DEFINE_SINGLETON_GETTER (NMDefaultRouteManager, nm_default_route_manager_get, NM_TYPE_DEFAULT_ROUTE_MANAGER);
 
 /*****************************************************************************/
 
@@ -99,7 +101,7 @@ NM_DEFINE_SINGLETON_GETTER (NMDefaultRouteManager, nm_default_route_manager_get,
             \
             _nm_log (__level, __domain, 0, NULL, NULL, \
                      "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-                     self != singleton_instance \
+                     NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self)->log_with_ptr \
                         ? nm_sprintf_buf (__prefix_buf, "%s%c[%p]", \
                                           _NMLOG2_PREFIX_NAME, \
                                           __addr_family == AF_INET ? '4' : (__addr_family == AF_INET6 ? '6' : '-'), \
@@ -125,7 +127,7 @@ NM_DEFINE_SINGLETON_GETTER (NMDefaultRouteManager, nm_default_route_manager_get,
             \
             _nm_log (__level, __domain, 0, NULL, NULL, \
                      "%s: entry[%u/%s:%p:%s:%chas:%csync]: "_NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-                     self != singleton_instance \
+                     NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self)->log_with_ptr \
                         ? nm_sprintf_buf (__prefix_buf, "%s%c[%p]", \
                                           _NMLOG2_PREFIX_NAME, \
                                           __addr_family == AF_INET ? '4' : (__addr_family == AF_INET6 ? '6' : '-'), \
@@ -1454,6 +1456,10 @@ set_property (GObject *object, guint prop_id,
 	NMDefaultRouteManagerPrivate *priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
 
 	switch (prop_id) {
+	case PROP_LOG_WITH_PTR:
+		/* construct-only */
+		priv->log_with_ptr = g_value_get_boolean (value);
+		break;
 	case PROP_PLATFORM:
 		/* construct-only */
 		priv->platform = g_value_get_object (value) ? : NM_PLATFORM_GET;
@@ -1490,9 +1496,10 @@ constructed (GObject *object)
 }
 
 NMDefaultRouteManager *
-nm_default_route_manager_new (NMPlatform *platform)
+nm_default_route_manager_new (gboolean log_with_ptr, NMPlatform *platform)
 {
 	return g_object_new (NM_TYPE_DEFAULT_ROUTE_MANAGER,
+	                     NM_DEFAULT_ROUTE_MANAGER_LOG_WITH_PTR, log_with_ptr,
 	                     NM_DEFAULT_ROUTE_MANAGER_PLATFORM, platform,
 	                     NULL);
 }
@@ -1539,6 +1546,13 @@ nm_default_route_manager_class_init (NMDefaultRouteManagerClass *klass)
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->set_property = set_property;
+
+	obj_properties[PROP_LOG_WITH_PTR] =
+	    g_param_spec_boolean (NM_DEFAULT_ROUTE_MANAGER_LOG_WITH_PTR, "", "",
+	                          TRUE,
+	                          G_PARAM_WRITABLE |
+	                          G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_PLATFORM] =
 	    g_param_spec_object (NM_DEFAULT_ROUTE_MANAGER_PLATFORM, "", "",

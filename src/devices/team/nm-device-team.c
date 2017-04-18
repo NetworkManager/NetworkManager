@@ -127,7 +127,7 @@ complete_connection (NMDevice *device,
 {
 	NMSettingTeam *s_team;
 
-	nm_utils_complete_generic (NM_PLATFORM_GET,
+	nm_utils_complete_generic (nm_device_get_platform (device),
 	                           connection,
 	                           NM_SETTING_TEAM_SETTING_NAME,
 	                           existing_connections,
@@ -721,7 +721,7 @@ enslave_slave (NMDevice *device,
 				}
 			}
 		}
-		success = nm_platform_link_enslave (NM_PLATFORM_GET,
+		success = nm_platform_link_enslave (nm_device_get_platform (device),
 		                                    nm_device_get_ip_ifindex (device),
 		                                    nm_device_get_ip_ifindex (slave));
 		nm_device_bring_up (slave, TRUE, &no_firmware);
@@ -751,7 +751,7 @@ release_slave (NMDevice *device,
 	gboolean success, no_firmware = FALSE;
 
 	if (configure) {
-		success = nm_platform_link_release (NM_PLATFORM_GET,
+		success = nm_platform_link_release (nm_device_get_platform (device),
 		                                    nm_device_get_ip_ifindex (device),
 		                                    nm_device_get_ip_ifindex (slave));
 
@@ -786,7 +786,7 @@ create_and_realize (NMDevice *device,
 	const char *iface = nm_device_get_iface (device);
 	NMPlatformError plerr;
 
-	plerr = nm_platform_link_team_add (NM_PLATFORM_GET, iface, out_plink);
+	plerr = nm_platform_link_team_add (nm_device_get_platform (device), iface, out_plink);
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to create team master interface '%s' for '%s': %s",

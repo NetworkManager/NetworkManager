@@ -33,6 +33,7 @@
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device-private.h"
 #include "nm-route-manager.h"
+#include "nm-netns.h"
 #include "nm-act-request.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
@@ -685,7 +686,7 @@ nm_modem_ip4_pre_commit (NMModem *modem,
 
 		g_assert (address);
 		if (address->plen == 32)
-			nm_platform_link_set_noarp (NM_PLATFORM_GET, nm_device_get_ip_ifindex (device));
+			nm_platform_link_set_noarp (nm_device_get_platform (device), nm_device_get_ip_ifindex (device));
 	}
 }
 
@@ -1068,9 +1069,10 @@ deactivate_cleanup (NMModem *self, NMDevice *device)
 		    priv->ip6_method == NM_MODEM_IP_METHOD_AUTO) {
 			ifindex = nm_device_get_ip_ifindex (device);
 			if (ifindex > 0) {
-				nm_route_manager_route_flush (nm_route_manager_get (), ifindex);
-				nm_platform_address_flush (NM_PLATFORM_GET, ifindex);
-				nm_platform_link_set_down (NM_PLATFORM_GET, ifindex);
+				nm_route_manager_route_flush (nm_netns_get_route_manager (nm_device_get_netns (device)),
+				                              ifindex);
+				nm_platform_address_flush (nm_device_get_platform (device), ifindex);
+				nm_platform_link_set_down (nm_device_get_platform (device), ifindex);
 			}
 		}
 	}

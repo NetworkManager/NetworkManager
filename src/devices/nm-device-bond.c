@@ -101,7 +101,7 @@ complete_connection (NMDevice *device,
 {
 	NMSettingBond *s_bond;
 
-	nm_utils_complete_generic (NM_PLATFORM_GET,
+	nm_utils_complete_generic (nm_device_get_platform (device),
 	                           connection,
 	                           NM_SETTING_BOND_SETTING_NAME,
 	                           existing_connections,
@@ -131,7 +131,7 @@ set_bond_attr (NMDevice *device, NMBondMode mode, const char *attr, const char *
 	if (!_nm_setting_bond_option_supported (attr, mode))
 		return FALSE;
 
-	ret = nm_platform_sysctl_master_set_option (NM_PLATFORM_GET, ifindex, attr, value);
+	ret = nm_platform_sysctl_master_set_option (nm_device_get_platform (device), ifindex, attr, value);
 	if (!ret)
 		_LOGW (LOGD_PLATFORM, "failed to set bonding attribute '%s' to '%s'", attr, value);
 	return ret;
@@ -165,7 +165,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 	/* Read bond options from sysfs and update the Bond setting to match */
 	options = nm_setting_bond_get_valid_options (s_bond);
 	while (options && *options) {
-		gs_free char *value = nm_platform_sysctl_master_get_option (NM_PLATFORM_GET, ifindex, *options);
+		gs_free char *value = nm_platform_sysctl_master_get_option (nm_device_get_platform (device), ifindex, *options);
 		const char *defvalue = nm_setting_bond_get_option_default (s_bond, *options);
 		char *p;
 
@@ -328,7 +328,7 @@ apply_bonding_config (NMDevice *device)
 	set_bond_attr (device, mode, NM_SETTING_BOND_OPTION_PRIMARY, value ? value : "");
 
 	/* ARP targets: clear and initialize the list */
-	contents = nm_platform_sysctl_master_get_option (NM_PLATFORM_GET, ifindex,
+	contents = nm_platform_sysctl_master_get_option (nm_device_get_platform (device), ifindex,
 	                                                 NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
 	set_arp_targets (device, mode, contents, " \n", "-");
 	value = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
@@ -397,7 +397,7 @@ enslave_slave (NMDevice *device,
 
 	if (configure) {
 		nm_device_take_down (slave, TRUE);
-		success = nm_platform_link_enslave (NM_PLATFORM_GET,
+		success = nm_platform_link_enslave (nm_device_get_platform (device),
 		                                    nm_device_get_ip_ifindex (device),
 		                                    nm_device_get_ip_ifindex (slave));
 		nm_device_bring_up (slave, TRUE, &no_firmware);
@@ -416,7 +416,7 @@ enslave_slave (NMDevice *device,
 			if (s_bond) {
 				active = nm_setting_bond_get_option_by_name (s_bond, "active_slave");
 				if (active && nm_streq0 (active, nm_device_get_iface (slave))) {
-					nm_platform_sysctl_master_set_option (NM_PLATFORM_GET,
+					nm_platform_sysctl_master_set_option (nm_device_get_platform (device),
 					                                      nm_device_get_ifindex (device),
 					                                      "active_slave",
 					                                      active);
@@ -446,7 +446,7 @@ release_slave (NMDevice *device,
 		 */
 		address = g_strdup (nm_device_get_hw_address (device));
 
-		success = nm_platform_link_release (NM_PLATFORM_GET,
+		success = nm_platform_link_release (nm_device_get_platform (device),
 		                                    nm_device_get_ip_ifindex (device),
 		                                    nm_device_get_ip_ifindex (slave));
 
@@ -458,7 +458,7 @@ release_slave (NMDevice *device,
 			       nm_device_get_ip_iface (slave));
 		}
 
-		nm_platform_process_events (NM_PLATFORM_GET);
+		nm_platform_process_events (nm_device_get_platform (device));
 		if (nm_device_update_hw_address (device))
 			nm_device_hw_addr_set (device, address, "restore", FALSE);
 
@@ -486,7 +486,7 @@ create_and_realize (NMDevice *device,
 
 	g_assert (iface);
 
-	plerr = nm_platform_link_bond_add (NM_PLATFORM_GET, iface, out_plink);
+	plerr = nm_platform_link_bond_add (nm_device_get_platform (device), iface, out_plink);
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to create bond interface '%s' for '%s': %s",

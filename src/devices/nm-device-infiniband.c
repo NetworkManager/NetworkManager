@@ -75,7 +75,7 @@ get_generic_capabilities (NMDevice *device)
 }
 
 static NMActStageReturn
-act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *out_failure_reason)
+act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
 	nm_auto_close int dirfd = -1;
 	NMActStageReturn ret;
@@ -84,16 +84,16 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *out_failure_reason)
 	const char *transport_mode;
 	gboolean ok, no_firmware = FALSE;
 
-	ret = NM_DEVICE_CLASS (nm_device_infiniband_parent_class)->act_stage1_prepare (dev, out_failure_reason);
+	ret = NM_DEVICE_CLASS (nm_device_infiniband_parent_class)->act_stage1_prepare (device, out_failure_reason);
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
 		return ret;
 
-	s_infiniband = (NMSettingInfiniband *) nm_device_get_applied_setting (dev, NM_TYPE_SETTING_INFINIBAND);
+	s_infiniband = (NMSettingInfiniband *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_INFINIBAND);
 	g_return_val_if_fail (s_infiniband, NM_ACT_STAGE_RETURN_FAILURE);
 
 	transport_mode = nm_setting_infiniband_get_transport_mode (s_infiniband);
 
-	dirfd = nm_platform_sysctl_open_netdir (NM_PLATFORM_GET, nm_device_get_ifindex (dev), ifname_verified);
+	dirfd = nm_platform_sysctl_open_netdir (nm_device_get_platform (device), nm_device_get_ifindex (device), ifname_verified);
 	if (dirfd < 0) {
 		if (!strcmp (transport_mode, "datagram"))
 			return NM_ACT_STAGE_RETURN_SUCCESS;
@@ -104,9 +104,9 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *out_failure_reason)
 	}
 
 	/* With some drivers the interface must be down to set transport mode */
-	nm_device_take_down (dev, TRUE);
-	ok = nm_platform_sysctl_set (NM_PLATFORM_GET, NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname_verified, "mode"), transport_mode);
-	nm_device_bring_up (dev, TRUE, &no_firmware);
+	nm_device_take_down (device, TRUE);
+	ok = nm_platform_sysctl_set (nm_device_get_platform (device), NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname_verified, "mode"), transport_mode);
+	nm_device_bring_up (device, TRUE, &no_firmware);
 
 	if (!ok) {
 		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
@@ -184,7 +184,7 @@ complete_connection (NMDevice *device,
 	const char *setting_mac;
 	const char *hw_address;
 
-	nm_utils_complete_generic (NM_PLATFORM_GET,
+	nm_utils_complete_generic (nm_device_get_platform (device),
 	                           connection,
 	                           NM_SETTING_INFINIBAND_SETTING_NAME,
 	                           existing_connections,
@@ -240,7 +240,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 
 	ifindex = nm_device_get_ifindex (device);
 	if (ifindex > 0) {
-		if (!nm_platform_link_infiniband_get_properties (NM_PLATFORM_GET, ifindex, NULL, NULL, &transport_mode))
+		if (!nm_platform_link_infiniband_get_properties (nm_device_get_platform (device), ifindex, NULL, NULL, &transport_mode))
 			transport_mode = "datagram";
 	}
 	g_object_set (G_OBJECT (s_infiniband), NM_SETTING_INFINIBAND_TRANSPORT_MODE, transport_mode, NULL);
@@ -289,7 +289,7 @@ create_and_realize (NMDevice *device,
 		return FALSE;
 	}
 
-	plerr = nm_platform_link_infiniband_add (NM_PLATFORM_GET, priv->parent_ifindex, priv->p_key, out_plink);
+	plerr = nm_platform_link_infiniband_add (nm_device_get_platform (device), priv->parent_ifindex, priv->p_key, out_plink);
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to create InfiniBand P_Key interface '%s' for '%s': %s",
@@ -319,7 +319,7 @@ unrealize (NMDevice *device, GError **error)
 		return FALSE;
 	}
 
-	plerr = nm_platform_link_infiniband_delete (NM_PLATFORM_GET, priv->parent_ifindex, priv->p_key);
+	plerr = nm_platform_link_infiniband_delete (nm_device_get_platform (device), priv->parent_ifindex, priv->p_key);
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to remove InfiniBand P_Key interface '%s': %s",

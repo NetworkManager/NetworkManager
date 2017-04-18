@@ -185,9 +185,9 @@ update_properties (NMDevice *device)
 	const NMPlatformLink *plink;
 
 	if (priv->props.tap)
-		props = nm_platform_link_get_lnk_macvtap (NM_PLATFORM_GET, nm_device_get_ifindex (device), &plink);
+		props = nm_platform_link_get_lnk_macvtap (nm_device_get_platform (device), nm_device_get_ifindex (device), &plink);
 	else
-		props = nm_platform_link_get_lnk_macvlan (NM_PLATFORM_GET, nm_device_get_ifindex (device), &plink);
+		props = nm_platform_link_get_lnk_macvlan (nm_device_get_platform (device), nm_device_get_ifindex (device), &plink);
 
 	if (!props) {
 		_LOGW (LOGD_PLATFORM, "could not get %s properties", priv->props.tap ? "macvtap" : "macvlan");
@@ -251,7 +251,7 @@ create_and_realize (NMDevice *device,
 	lnk.no_promisc = !nm_setting_macvlan_get_promiscuous (s_macvlan);
 	lnk.tap = nm_setting_macvlan_get_tap (s_macvlan);
 
-	plerr = nm_platform_link_macvlan_add (NM_PLATFORM_GET, iface, parent_ifindex, &lnk, out_plink);
+	plerr = nm_platform_link_macvlan_add (nm_device_get_platform (device), iface, parent_ifindex, &lnk, out_plink);
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to create %s interface '%s' for '%s': %s",
@@ -399,7 +399,7 @@ complete_connection (NMDevice *device,
 {
 	NMSettingMacvlan *s_macvlan;
 
-	nm_utils_complete_generic (NM_PLATFORM_GET,
+	nm_utils_complete_generic (nm_device_get_platform (device),
 	                           connection,
 	                           NM_SETTING_MACVLAN_SETTING_NAME,
 	                           existing_connections,

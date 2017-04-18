@@ -69,7 +69,7 @@ update_properties (NMDevice *device)
 
 	ifindex = nm_device_get_ifindex (device);
 
-	if (!nm_platform_link_veth_get_properties (NM_PLATFORM_GET, ifindex, &peer_ifindex))
+	if (!nm_platform_link_veth_get_properties (nm_device_get_platform (device), ifindex, &peer_ifindex))
 		peer_ifindex = 0;
 
 	nm_device_parent_set_ifindex (device, peer_ifindex);
