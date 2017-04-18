@@ -573,6 +573,12 @@ link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 	return !!device;
 }
 
+static gboolean
+link_set_sriov_num_vfs (NMPlatform *platform, int ifindex, guint num_vfs)
+{
+	return TRUE;
+}
+
 static const char *
 link_get_udi (NMPlatform *platform, int ifindex)
 {
@@ -618,6 +624,22 @@ link_supports_carrier_detect (NMPlatform *platform, int ifindex)
 
 static gboolean
 link_supports_vlans (NMPlatform *platform, int ifindex)
+{
+	NMFakePlatformLink *device = link_get (platform, ifindex);
+
+	if (!device)
+		return FALSE;
+
+	switch (device->link.type) {
+	case NM_LINK_TYPE_LOOPBACK:
+		return FALSE;
+	default:
+		return TRUE;
+	}
+}
+
+static gboolean
+link_supports_sriov (NMPlatform *platform, int ifindex)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
 
@@ -1470,11 +1492,13 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 
 	platform_class->link_set_address = link_set_address;
 	platform_class->link_set_mtu = link_set_mtu;
+	platform_class->link_set_sriov_num_vfs = link_set_sriov_num_vfs;
 
 	platform_class->link_get_driver_info = link_get_driver_info;
 
 	platform_class->link_supports_carrier_detect = link_supports_carrier_detect;
 	platform_class->link_supports_vlans = link_supports_vlans;
+	platform_class->link_supports_sriov = link_supports_sriov;
 
 	platform_class->link_enslave = link_enslave;
 	platform_class->link_release = link_release;

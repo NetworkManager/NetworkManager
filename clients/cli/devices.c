@@ -95,6 +95,7 @@ const NmcMetaGenericInfo *const nmc_fields_dev_show_cap[] = {
 	NMC_META_GENERIC ("CARRIER-DETECT"),   /* 1 */
 	NMC_META_GENERIC ("SPEED"),            /* 2 */
 	NMC_META_GENERIC ("IS-SOFTWARE"),      /* 3 */
+	NMC_META_GENERIC ("SRIOV"),            /* 4 */
 	NULL,
 };
 #define NMC_FIELDS_DEV_SHOW_CAP_COMMON  "NAME,CARRIER-DETECT,SPEED,IS-SOFTWARE"
@@ -1156,6 +1157,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 			set_val_strc (arr, 1, (caps & NM_DEVICE_CAP_CARRIER_DETECT) ? _("yes") : _("no"));
 			set_val_str  (arr, 2, speed_str);
 			set_val_strc (arr, 3, (caps & NM_DEVICE_CAP_IS_SOFTWARE) ? _("yes") : _("no"));
+			set_val_strc (arr, 4, (caps & NM_DEVICE_CAP_SRIOV) ? _("yes") : _("no"));
 			g_ptr_array_add (out.output_data, arr);
 
 			print_data_prepare_width (out.output_data);
