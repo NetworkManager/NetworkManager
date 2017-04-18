@@ -34,6 +34,12 @@ typedef enum {
 	NM_DEVICE_SYS_IFACE_STATE_EXTERNAL,
 	NM_DEVICE_SYS_IFACE_STATE_ASSUME,
 	NM_DEVICE_SYS_IFACE_STATE_MANAGED,
+
+	/* the REMOVED state applies when the device is manually set to unmanaged
+	 * or the link was externally removed. In both cases, we move the device
+	 * to UNMANAGED state, without touching the link -- be it, because the link
+	 * is already gone or because we want to release it (give it up).
+	 */
 	NM_DEVICE_SYS_IFACE_STATE_REMOVED,
 } NMDeviceSysIfaceState;
 
