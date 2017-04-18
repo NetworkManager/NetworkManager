@@ -80,7 +80,7 @@ update_properties (NMDeviceTun *self)
 
 	ifindex = nm_device_get_ifindex (NM_DEVICE (self));
 	if (ifindex > 0) {
-		if (!nm_platform_link_tun_get_properties (NM_PLATFORM_GET, ifindex, &props)) {
+		if (!nm_platform_link_tun_get_properties (nm_device_get_platform (NM_DEVICE (self)), ifindex, &props)) {
 			_LOGD (LOGD_DEVICE, "tun-properties: cannot loading tun properties from platform for ifindex %d", ifindex);
 			ifindex = 0;
 		} else if (g_strcmp0 (priv->mode, props.mode) != 0) {
@@ -138,7 +138,7 @@ complete_connection (NMDevice *device,
 {
 	NMSettingTun *s_tun;
 
-	nm_utils_complete_generic (NM_PLATFORM_GET,
+	nm_utils_complete_generic (nm_device_get_platform (device),
 	                           connection,
 	                           NM_SETTING_TUN_SETTING_NAME,
 	                           existing_connections,
@@ -181,7 +181,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 		nm_connection_add_setting (connection, (NMSetting *) s_tun);
 	}
 
-	if (!nm_platform_link_tun_get_properties (NM_PLATFORM_GET, nm_device_get_ifindex (device), &props)) {
+	if (!nm_platform_link_tun_get_properties (nm_device_get_platform (device), nm_device_get_ifindex (device), &props)) {
 		_LOGW (LOGD_PLATFORM, "failed to get TUN interface info while updating connection.");
 		return;
 	}
@@ -232,7 +232,7 @@ create_and_realize (NMDevice *device,
 	user = _nm_utils_ascii_str_to_int64 (nm_setting_tun_get_owner (s_tun), 10, 0, G_MAXINT32, -1);
 	group = _nm_utils_ascii_str_to_int64 (nm_setting_tun_get_group (s_tun), 10, 0, G_MAXINT32, -1);
 
-	plerr = nm_platform_link_tun_add (NM_PLATFORM_GET, iface,
+	plerr = nm_platform_link_tun_add (nm_device_get_platform (device), iface,
 	                                  nm_setting_tun_get_mode (s_tun) == NM_SETTING_TUN_MODE_TAP,
 	                                  user, group,
 	                                  nm_setting_tun_get_pi (s_tun),

@@ -54,11 +54,11 @@ G_DEFINE_TYPE (NMDeviceGeneric, nm_device_generic, NM_TYPE_DEVICE)
 /*****************************************************************************/
 
 static NMDeviceCapabilities
-get_generic_capabilities (NMDevice *dev)
+get_generic_capabilities (NMDevice *device)
 {
-	int ifindex = nm_device_get_ifindex (dev);
+	int ifindex = nm_device_get_ifindex (device);
 
-	if (ifindex > 0 && nm_platform_link_supports_carrier_detect (NM_PLATFORM_GET, ifindex))
+	if (ifindex > 0 && nm_platform_link_supports_carrier_detect (nm_device_get_platform (device), ifindex))
 		return NM_DEVICE_CAP_CARRIER_DETECT;
 	else
 		return NM_DEVICE_CAP_NONE;
@@ -84,7 +84,7 @@ realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
 	g_clear_pointer (&priv->type_description, g_free);
 	ifindex = nm_device_get_ip_ifindex (NM_DEVICE (self));
 	if (ifindex > 0)
-		priv->type_description = g_strdup (nm_platform_link_get_type_name (NM_PLATFORM_GET, ifindex));
+		priv->type_description = g_strdup (nm_platform_link_get_type_name (nm_device_get_platform (device), ifindex));
 }
 
 static gboolean
