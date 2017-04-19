@@ -239,7 +239,11 @@ main (int argc, char *argv[])
 
 	main_loop = g_main_loop_new (NULL, FALSE);
 
-	config_cli = nm_config_cmd_line_options_new ();
+	/* we determine a first-start (contrary to a restart during the same boot)
+	 * based on the existence of NM_CONFIG_DEVICE_STATE_DIR directory. */
+	config_cli = nm_config_cmd_line_options_new (!g_file_test (NM_CONFIG_DEVICE_STATE_DIR,
+	                                                           G_FILE_TEST_IS_DIR));
+
 	do_early_setup (&argc, &argv, config_cli);
 
 	if (global_opt.g_fatal_warnings)
@@ -356,7 +360,8 @@ main (int argc, char *argv[])
 	                                                            NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY),
 	                           nm_config_get_is_debug (config));
 
-	nm_log_info (LOGD_CORE, "NetworkManager (version " NM_DIST_VERSION ") is starting...");
+	nm_log_info (LOGD_CORE, "NetworkManager (version " NM_DIST_VERSION ") is starting... (%s)",
+	             nm_config_get_first_start (config) ? "for the first time" : "after a restart");
 
 	nm_log_info (LOGD_CORE, "Read config: %s", nm_config_data_get_config_description (nm_config_get_data (config)));
 	nm_config_data_log (nm_config_get_data (config), "CONFIG: ", "  ", NULL);
