@@ -313,9 +313,9 @@ demarshal_dns_configuration (NMObject *object, GParamSpec *pspec, GVariant *valu
 		                          vpn);
 		g_free (domains);
 		g_free (nameservers);
+		g_variant_unref (entry_var);
 		if (!entry) {
 			g_warning ("Ignoring invalid DNS entry");
-			g_variant_unref (entry_var);
 			continue;
 		}
 
