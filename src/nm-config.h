@@ -125,13 +125,15 @@ const char *nm_config_get_log_domains (NMConfig *config);
 gboolean nm_config_get_configure_and_quit (NMConfig *config);
 gboolean nm_config_get_is_debug (NMConfig *config);
 
+gboolean nm_config_get_first_start (NMConfig *config);
+
 void nm_config_set_values (NMConfig *self,
                            GKeyFile *keyfile_intern_new,
                            gboolean allow_write,
                            gboolean force_rewrite);
 
 /* for main.c only */
-NMConfigCmdLineOptions *nm_config_cmd_line_options_new (void);
+NMConfigCmdLineOptions *nm_config_cmd_line_options_new (gboolean first_start);
 void                    nm_config_cmd_line_options_free (NMConfigCmdLineOptions *cli);
 void                    nm_config_cmd_line_options_add_to_entries (NMConfigCmdLineOptions *cli,
                                                                    GOptionContext *opt_ctx);

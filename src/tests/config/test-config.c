@@ -97,7 +97,7 @@ setup_config (GError **error, const char *config_file, const char *intern_config
 	argv = (char **)args->pdata;
 	argc = args->len;
 
-	cli = nm_config_cmd_line_options_new ();
+	cli = nm_config_cmd_line_options_new (FALSE);
 
 	context = g_option_context_new (NULL);
 	nm_config_cmd_line_options_add_to_entries (cli, context);
