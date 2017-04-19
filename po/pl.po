@@ -11,8 +11,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2017-04-16 14:40+0200\n"
+"POT-Creation-Date: 2017-04-19 17:30+0200\n"
+"PO-Revision-Date: 2017-04-19 16:58+0200\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <community-poland@mozilla.org>\n"
 "Language: pl\n"
@@ -1652,7 +1652,7 @@ msgstr "Błąd: nieznany typ połączenia; %s."
 #: ../clients/cli/connections.c:3745
 #, fuzzy, c-format
 msgid "Error: bad connection type: %s"
-msgstr "Błąd: błędny typ połączenia; %s."
+msgstr "Błąd: błędny typ połączenia: %s."
 
 #: ../clients/cli/connections.c:3783
 #, c-format
@@ -9805,6 +9805,9 @@ msgstr "Połączenie VPN"
 
 #~ msgid "SPEED"
 #~ msgstr "PRĘDKOŚĆ"
+
+#~ msgid "SRIOV"
+#~ msgstr "SRIOV"
 
 #~ msgid "CARRIER"
 #~ msgstr "OPERATOR"
