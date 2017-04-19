@@ -304,3 +304,8 @@ test-*.trs
 /libnm/nm-keyfile-docs.xml
 /libnm/nm-setting-docs.xml
 /libnm/nm-setting-docs-overrides.xml
+
+# The following names are present on newer upstream. Ignore them
+# also when switching branches
+/clients/common/settings-docs.c
+/clients/common/tests
