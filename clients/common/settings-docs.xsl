@@ -28,7 +28,7 @@
       <xsl:call-template name="escape_quotes">
         <xsl:with-param name="string" select="@description"/>
       </xsl:call-template>
-    </xsl:variable>#define DESCRIBE_DOC_NM_SETTING_<xsl:value-of select="$setting_name_upper"/>_<xsl:value-of select="@name_upper"/> "<xsl:value-of select="$docs"/>"
+    </xsl:variable>#define DESCRIBE_DOC_NM_SETTING_<xsl:value-of select="$setting_name_upper"/>_<xsl:value-of select="@name_upper"/> N_("<xsl:value-of select="$docs"/>")
 </xsl:template>
 
   <xsl:template match="setting" mode="settings">

@@ -4938,7 +4938,7 @@ static const NMMetaPropertyType _pt_gobject_devices = {
 		.meta_type =                    &nm_meta_type_property_info, \
 		.setting_info =                 &nm_meta_setting_infos_editor[_CURRENT_NM_META_SETTING_TYPE], \
 		.property_name =                N_(name), \
-		.describe_doc =                 N_(doc), \
+		.describe_doc =                 doc, \
 		__VA_ARGS__ \
 	}
 
