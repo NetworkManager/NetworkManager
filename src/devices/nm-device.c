@@ -2824,7 +2824,7 @@ device_init_sriov_num_vfs (NMDevice *self)
 	if (   priv->ifindex > 0
 	    && nm_device_has_capability (self, NM_DEVICE_CAP_SRIOV)) {
 		value = nm_config_data_get_device_config (NM_CONFIG_GET_DATA,
-		                                          "sriov-num-vfs",
+		                                          NM_CONFIG_KEYFILE_KEY_DEVICE_SRIOV_NUM_VFS,
 		                                          self,
 		                                          NULL);
 		num_vfs = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXINT32, -1);
