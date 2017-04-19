@@ -4963,12 +4963,12 @@ static const NMMetaPropertyType _pt_gobject_devices = {
 	((guint32 (*) (NMSetting *)) ((sizeof (func == ((guint32 (*) (type *)) func))) ? func : func) )
 
 #define TEAM_DESCRIBE_MESSAGE \
-	"nmcli can accepts both direct JSON configuration data and a file name containing " \
-	"the configuration. In the latter case the file is read and the contents is put " \
-	"into this property.\n\n" \
-	"Examples: set team.config " \
-	"{ \"device\": \"team0\", \"runner\": {\"name\": \"roundrobin\"}, \"ports\": {\"eth1\": {}, \"eth2\": {}} }\n" \
-	"          set team.config /etc/my-team.conf\n"
+	N_("nmcli can accepts both direct JSON configuration data and a file name containing " \
+	   "the configuration. In the latter case the file is read and the contents is put " \
+	   "into this property.\n\n" \
+	   "Examples: set team.config " \
+	   "{ \"device\": \"team0\", \"runner\": {\"name\": \"roundrobin\"}, \"ports\": {\"eth1\": {}, \"eth2\": {}} }\n" \
+	   "          set team.config /etc/my-team.conf\n")
 
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_802_1X
 static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
@@ -6379,7 +6379,7 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 		.is_cli_option =                TRUE,
 		.property_alias =               "config",
 		.prompt =                       N_("Team JSON configuration [none]"),
-		.describe_message =             N_(TEAM_DESCRIBE_MESSAGE),
+		.describe_message =             TEAM_DESCRIBE_MESSAGE,
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
 			.set_fcn =                  _set_fcn_team_config,
@@ -6395,7 +6395,7 @@ static const NMMetaPropertyInfo *const property_infos_TEAM_PORT[] = {
 		.is_cli_option =                TRUE,
 		.property_alias =               "config",
 		.prompt =                       N_("Team JSON configuration [none]"),
-		.describe_message =             N_(TEAM_DESCRIBE_MESSAGE),
+		.describe_message =             TEAM_DESCRIBE_MESSAGE,
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
 			.set_fcn =                  _set_fcn_team_config,
