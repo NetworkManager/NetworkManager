@@ -575,6 +575,7 @@ typedef struct {
 	                                        size_t *length);
 	NMPlatformError (*link_set_address) (NMPlatform *, int ifindex, gconstpointer address, size_t length);
 	gboolean (*link_set_mtu) (NMPlatform *, int ifindex, guint32 mtu);
+	gboolean (*link_set_sriov_num_vfs) (NMPlatform *, int ifindex, guint num_vfs);
 
 	char *   (*link_get_physical_port_id) (NMPlatform *, int ifindex);
 	guint    (*link_get_dev_id) (NMPlatform *, int ifindex);
@@ -587,6 +588,7 @@ typedef struct {
 
 	gboolean (*link_supports_carrier_detect) (NMPlatform *, int ifindex);
 	gboolean (*link_supports_vlans) (NMPlatform *, int ifindex);
+	gboolean (*link_supports_sriov) (NMPlatform *, int ifindex);
 
 	gboolean (*link_enslave) (NMPlatform *, int master, int slave);
 	gboolean (*link_release) (NMPlatform *, int master, int slave);
@@ -825,6 +827,7 @@ gboolean nm_platform_link_set_ipv6_token (NMPlatform *self, int ifindex, NMUtils
 gboolean nm_platform_link_get_permanent_address (NMPlatform *self, int ifindex, guint8 *buf, size_t *length);
 NMPlatformError nm_platform_link_set_address (NMPlatform *self, int ifindex, const void *address, size_t length);
 gboolean nm_platform_link_set_mtu (NMPlatform *self, int ifindex, guint32 mtu);
+gboolean nm_platform_link_set_sriov_num_vfs (NMPlatform *self, int ifindex, guint num_vfs);
 
 char    *nm_platform_link_get_physical_port_id (NMPlatform *self, int ifindex);
 guint    nm_platform_link_get_dev_id (NMPlatform *self, int ifindex);
@@ -837,6 +840,7 @@ gboolean nm_platform_link_get_driver_info (NMPlatform *self,
 
 gboolean nm_platform_link_supports_carrier_detect (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_supports_vlans (NMPlatform *self, int ifindex);
+gboolean nm_platform_link_supports_sriov (NMPlatform *self, int ifindex);
 
 gboolean nm_platform_link_enslave (NMPlatform *self, int master, int slave);
 gboolean nm_platform_link_release (NMPlatform *self, int master, int slave);

@@ -855,6 +855,16 @@ unmanaged=1
             </para>
           </listitem>
         </varlistentry>
+        <varlistentry id="sriov-num-vfs">
+          <term><varname>sriov-num-vfs</varname></term>
+          <listitem>
+            <para>
+              Specify the number of virtual functions (VF) to enable
+              for a PCI physical device that supports single-root I/O
+              virtualization (SR-IOV).
+            </para>
+          </listitem>
+        </varlistentry>
       </variablelist>
     </para>
     </refsect2>

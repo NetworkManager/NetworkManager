@@ -296,7 +296,7 @@ typedef struct _NMDevicePrivate {
 	guint           link_disconnected_id;
 	guint           carrier_defer_id;
 	guint           carrier_wait_id;
-	gulong          ignore_carrier_id;
+	gulong          config_changed_id;
 	guint32         mtu;
 	guint32         ip6_mtu;
 	guint32 mtu_initial;
@@ -2815,17 +2815,41 @@ update_device_from_platform_link (NMDevice *self, const NMPlatformLink *plink)
 }
 
 static void
-config_changed_update_ignore_carrier (NMConfig *config,
-                                      NMConfigData *config_data,
-                                      NMConfigChangeFlags changes,
-                                      NMConfigData *old_data,
-                                      NMDevice *self)
+device_init_sriov_num_vfs (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gs_free char *value = NULL;
+	int num_vfs;
+
+	if (   priv->ifindex > 0
+	    && nm_device_has_capability (self, NM_DEVICE_CAP_SRIOV)) {
+		value = nm_config_data_get_device_config (NM_CONFIG_GET_DATA,
+		                                          "sriov-num-vfs",
+		                                          self,
+		                                          NULL);
+		num_vfs = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXINT32, -1);
+		if (num_vfs >= 0) {
+			nm_platform_link_set_sriov_num_vfs (nm_device_get_platform (self),
+			                                    priv->ifindex, num_vfs);
+		}
+	}
+}
+
+static void
+config_changed (NMConfig *config,
+                NMConfigData *config_data,
+                NMConfigChangeFlags changes,
+                NMConfigData *old_data,
+                NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (   priv->state <= NM_DEVICE_STATE_DISCONNECTED
 	    || priv->state > NM_DEVICE_STATE_ACTIVATED)
 		priv->ignore_carrier = nm_config_data_get_ignore_carrier (config_data, self);
+
+	if (NM_FLAGS_HAS (changes, NM_CONFIG_CHANGE_VALUES))
+		device_init_sriov_num_vfs (self);
 }
 
 static void
@@ -2934,6 +2958,9 @@ realize_start_setup (NMDevice *self,
 
 		if (nm_platform_check_support_user_ipv6ll (nm_device_get_platform (self)))
 			priv->nm_ipv6ll = nm_platform_link_get_user_ipv6ll_enabled (nm_device_get_platform (self), priv->ifindex);
+
+		if (nm_platform_link_supports_sriov (nm_device_get_platform (self), priv->ifindex))
+			capabilities |= NM_DEVICE_CAP_SRIOV;
 	}
 
 	if (klass->get_generic_capabilities)
@@ -2957,10 +2984,10 @@ realize_start_setup (NMDevice *self,
 	/* Note: initial hardware address must be read before calling get_ignore_carrier() */
 	config = nm_config_get ();
 	priv->ignore_carrier = nm_config_data_get_ignore_carrier (nm_config_get_data (config), self);
-	if (!priv->ignore_carrier_id) {
-		priv->ignore_carrier_id = g_signal_connect (config,
+	if (!priv->config_changed_id) {
+		priv->config_changed_id = g_signal_connect (config,
 		                                            NM_CONFIG_SIGNAL_CONFIG_CHANGED,
-		                                            G_CALLBACK (config_changed_update_ignore_carrier),
+		                                            G_CALLBACK (config_changed),
 		                                            self);
 	}
 
@@ -2974,6 +3001,8 @@ realize_start_setup (NMDevice *self,
 		/* Fake online link when carrier detection is not available. */
 		priv->carrier = TRUE;
 	}
+
+	device_init_sriov_num_vfs (self);
 
 	nm_assert (!priv->stats.timeout_id);
 	real_rate = _stats_refresh_rate_real (priv->stats.refresh_rate_ms);
@@ -3176,7 +3205,7 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 		priv->capabilities |= NM_DEVICE_GET_CLASS (self)->get_generic_capabilities (self);
 	_notify (self, PROP_CAPABILITIES);
 
-	nm_clear_g_signal_handler (nm_config_get (), &priv->ignore_carrier_id);
+	nm_clear_g_signal_handler (nm_config_get (), &priv->config_changed_id);
 
 	priv->real = FALSE;
 	_notify (self, PROP_REAL);
@@ -13701,7 +13730,7 @@ dispose (GObject *object)
 
 	arp_cleanup (self);
 
-	nm_clear_g_signal_handler (nm_config_get (), &priv->ignore_carrier_id);
+	nm_clear_g_signal_handler (nm_config_get (), &priv->config_changed_id);
 
 	dispatcher_cleanup (self);
 
