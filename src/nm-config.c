@@ -1926,15 +1926,13 @@ _config_device_state_data_new (int ifindex, GKeyFile *kf)
 
 /**
  * nm_config_device_state_load:
- * @self: the NMConfig instance
  * @ifindex: the ifindex for which the state is to load
  *
  * Returns: (transfer full): a run state object.
  *   Must be freed with g_free().
  */
 NMConfigDeviceStateData *
-nm_config_device_state_load (NMConfig *self,
-                             int ifindex)
+nm_config_device_state_load (int ifindex)
 {
 	NMConfigDeviceStateData *device_state;
 	char path[NM_STRLEN (NM_CONFIG_DEVICE_STATE_DIR) + 60];
@@ -1972,8 +1970,7 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_device_state_managed_type_to_str, NMConfigDe
 );
 
 gboolean
-nm_config_device_state_write (NMConfig *self,
-                              int ifindex,
+nm_config_device_state_write (int ifindex,
                               NMConfigDeviceStateManagedType managed,
                               const char *perm_hw_addr_fake,
                               const char *connection_uuid)
@@ -1982,7 +1979,6 @@ nm_config_device_state_write (NMConfig *self,
 	GError *local = NULL;
 	gs_unref_keyfile GKeyFile *kf = NULL;
 
-	g_return_val_if_fail (NM_IS_CONFIG (self), FALSE);
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (!connection_uuid || *connection_uuid, FALSE);
 	g_return_val_if_fail (managed == NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_MANAGED || !connection_uuid, FALSE);
@@ -2027,8 +2023,7 @@ nm_config_device_state_write (NMConfig *self,
 }
 
 void
-nm_config_device_state_prune_unseen (NMConfig *self,
-                                     GHashTable *seen_ifindexes)
+nm_config_device_state_prune_unseen (GHashTable *seen_ifindexes)
 {
 	GDir *dir;
 	const char *fn;

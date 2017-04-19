@@ -2404,7 +2404,6 @@ platform_link_cb (NMPlatform *platform,
 static void
 platform_query_devices (NMManager *self)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GArray *links_array;
 	NMPlatformLink *links;
 	int i;
@@ -2414,8 +2413,7 @@ platform_query_devices (NMManager *self)
 	for (i = 0; i < links_array->len; i++) {
 		gs_free NMConfigDeviceStateData *dev_state = NULL;
 
-		dev_state = nm_config_device_state_load (priv->config,
-		                                         links[i].ifindex);
+		dev_state = nm_config_device_state_load (links[i].ifindex);
 
 		platform_link_added (self,
 		                     links[i].ifindex,
@@ -4976,16 +4974,14 @@ nm_manager_write_device_state (NMManager *self)
 		if (perm_hw_addr_fake && !perm_hw_addr_is_fake)
 			perm_hw_addr_fake = NULL;
 
-		if (nm_config_device_state_write (priv->config,
-		                                  ifindex,
+		if (nm_config_device_state_write (ifindex,
 		                                  managed_type,
 		                                  perm_hw_addr_fake,
 		                                  uuid))
 			g_hash_table_add (seen_ifindexes, GINT_TO_POINTER (ifindex));
 	}
 
-	nm_config_device_state_prune_unseen (priv->config,
-	                                     seen_ifindexes);
+	nm_config_device_state_prune_unseen (seen_ifindexes);
 }
 
 static gboolean

@@ -12997,7 +12997,7 @@ nm_device_update_permanent_hw_address (NMDevice *self, gboolean force_freeze)
 	{
 		gs_free NMConfigDeviceStateData *dev_state = NULL;
 
-		dev_state = nm_config_device_state_load (nm_config_get (), ifindex);
+		dev_state = nm_config_device_state_load (ifindex);
 		if (   dev_state
 		    && dev_state->perm_hw_addr_fake
 		    && nm_utils_hwaddr_aton (dev_state->perm_hw_addr_fake, buf, priv->hw_addr_len)
