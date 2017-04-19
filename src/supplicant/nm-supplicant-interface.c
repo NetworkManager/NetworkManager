@@ -841,7 +841,7 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	                   NULL,
 	                   NULL);
 
-	if (   priv->pmf_support
+	if (   priv->pmf_support == NM_SUPPLICANT_FEATURE_YES
 	    && priv->driver == NM_SUPPLICANT_DRIVER_WIRELESS) {
 		g_dbus_proxy_call (priv->iface_proxy,
 		                   DBUS_INTERFACE_PROPERTIES ".Set",
