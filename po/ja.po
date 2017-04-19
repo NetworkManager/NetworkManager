@@ -5,14 +5,13 @@
 # Satoru SATOH <ssato@redhat.com>, 2005-2007.
 # Kiyoto Hashida <khashida@redhat.com>, 2010.
 # Noriko Mizumoto <noriko@fedoraproject.org>, 2013 - 2014.
-# Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
-# Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 17:42+0200\n"
-"PO-Revision-Date: 2017-01-16 09:13-0500\n"
+"PO-Revision-Date: 2017-03-22 01:31-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Japanese <gnome-translation@gnome.gr.jp>\n"
 "Language: ja\n"
@@ -733,9 +732,8 @@ msgid "MACVLAN mode"
 msgstr "MACVLAN モード: "
 
 #: ../clients/cli/connections.c:111
-#, fuzzy
 msgid "MACsec mode"
-msgstr "MACVLAN モード: "
+msgstr ""
 
 #: ../clients/cli/connections.c:116
 msgid "Proxy method"
@@ -1154,7 +1152,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/connections.c:376
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection add { ARGUMENTS | help }\n"
 "\n"
@@ -1302,145 +1300,6 @@ msgid ""
 "                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n"
 "\n"
 msgstr ""
-"使い方: nmcli connection add { ARGUMENTS | help }\n"
-"\n"
-"ARGUMENTS := COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS SLAVE_OPTIONS IP_OPTIONS "
-"[-- ([+|-]<setting>.<property> <value>)+]\n"
-"\n"
-"  COMMON_OPTIONS:\n"
-"                  type <タイプ>\n"
-"                  ifname <インターフェース名> | \"*\"\n"
-"                  [con-name <接続名>]\n"
-"                  [autoconnect yes|no]\n"
-"                  [save yes|no]\n"
-"                  [master <マスター (ifname、接続、UUID、または名前)>]\n"
-"                  [slave-type <マスター接続タイプ>]\n"
-"\n"
-"  TYPE_SPECIFIC_OPTIONS:\n"
-"    ethernet:     [mac <MAC アドレス>]\n"
-"                  [cloned-mac <クローン MAC アドレス>]\n"
-"                  [mtu <MTU>]\n"
-"\n"
-"    wifi:         ssid <SSID>\n"
-"                  [mac <MAC アドレス>]\n"
-"                  [cloned-mac <クローン MAC アドレス>]\n"
-"                  [mtu <MTU>]\n"
-"                  [mode infrastructure|ap|adhoc]\n"
-"\n"
-"    wimax:        [mac <MAC アドレス>]\n"
-"                  [nsp <NSP>]\n"
-"\n"
-"    pppoe:        username <PPPoE ユーザー名>\n"
-"                  [password <PPPoE パスワード>]\n"
-"                  [service <PPPoE サービス名>]\n"
-"                  [mtu <MTU>]\n"
-"                  [mac <MAC アドレス>]\n"
-"\n"
-"    gsm:          apn <APN>\n"
-"                  [user <ユーザー名>]\n"
-"                  [password <パスワード>]\n"
-"\n"
-"    cdma:         [user <ユーザー名>]\n"
-"                  [password <パスワード>]\n"
-"\n"
-"    infiniband:   [mac <MAC アドレス>]\n"
-"                  [mtu <MTU>]\n"
-"                  [transport-mode datagram | connected]\n"
-"                  [parent <ifname>]\n"
-"                  [p-key <IPoIB P_Key>]\n"
-"\n"
-"    bluetooth:    [addr <bluetooth アドレス>]\n"
-"                  [bt-type panu|dun-gsm|dun-cdma]\n"
-"\n"
-"    vlan:         dev <親デバイス (接続 UUID、ifname、または MAC)>\n"
-"                  id <VLAN ID>\n"
-"                  [flags <VLAN フラグ>]\n"
-"                  [ingress <ingress 優先度マッピング>]\n"
-"                  [egress <egress 優先度マッピング>]\n"
-"                  [mtu <MTU>]\n"
-"\n"
-"    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) "
-"| broadcast (3) |\n"
-"                        802.3ad    (4) | balance-tlb   (5) | balance-alb "
-"(6)]\n"
-"                  [primary <ifname>]\n"
-"                  [miimon <数値>]\n"
-"                  [downdelay <数値>]\n"
-"                  [updelay <数値>]\n"
-"                  [arp-interval <数値>]\n"
-"                  [arp-ip-target <数値>]\n"
-"                  [lacp-rate slow (0) | fast (1)]\n"
-"\n"
-"    bond-slave:   master <マスター (ifname、接続 UUID、名前)>\n"
-"\n"
-"    team:         [config <ファイル>|<JSON 生データ>]\n"
-"\n"
-"    team-slave:   master <マスター (ifname、接続 UUID、または名前)>\n"
-"                  [config <ファイル>|<JSON 生データ>]\n"
-"\n"
-"    bridge:       [stp yes|no]\n"
-"                  [priority <数値>]\n"
-"                  [forward-delay <2-30>]\n"
-"                  [hello-time <1-10>]\n"
-"                  [max-age <6-40>]\n"
-"                  [ageing-time <0-1000000>]\n"
-"                  [multicast-snooping yes|no]\n"
-"                  [mac <MAC アドレス>]\n"
-"\n"
-"    bridge-slave: master <マスター (ifname、接続 UUID、または名前)>\n"
-"                  [priority <0-63>]\n"
-"                  [path-cost <1-65535>]\n"
-"                  [hairpin yes|no]\n"
-"\n"
-"    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan|libreswan|"
-"ssh|l2tp|iodine|...\n"
-"                  [user <ユーザー名>]\n"
-"\n"
-"    olpc-mesh:    ssid <SSID>\n"
-"                  [channel <1-13>]\n"
-"                  [dhcp-anycast <MAC アドレス>]\n"
-"\n"
-"    adsl:         username <ユーザー名>\n"
-"                  protocol pppoa|pppoe|ipoatm\n"
-"                  [password <パスワード>]\n"
-"                  [encapsulation vcmux|llc]\n"
-"\n"
-"    tun:          mode tun|tap\n"
-"                  [owner <UID>]\n"
-"                  [group <GID>]\n"
-"                  [pi yes|no]\n"
-"                  [vnet-hdr yes|no]\n"
-"                  [multi-queue yes|no]\n"
-"\n"
-"    ip-tunnel:    mode ipip|gre|sit|isatap|vti|ip6ip6|ipip6|ip6gre|vti6\n"
-"                  remote <リモートエンドポイント IP>\n"
-"                  [local <ローカルエンドポイント IP>]\n"
-"                  [dev <親デバイス (ifname または接続 UUID)>]\n"
-"\n"
-"    macvlan:      dev <親デバイス (接続 UUID、ifname、または MAC)>\n"
-"                  mode vepa|bridge|private|passthru|source\n"
-"                  [tap yes|no]\n"
-"\n"
-"    vxlan:        id <VXLAN ID>\n"
-"                  remote <マルチキャストグループの IP またはリモートアドレス"
-">\n"
-"                  [local <ソース IP>]\n"
-"                  [dev <親デバイス (ifname または接続 UUID)>]\n"
-"                  [source-port-min <0-65535>]\n"
-"                  [source-port-max <0-65535>]\n"
-"                  [destination-port <0-65535>]\n"
-"\n"
-"  SLAVE_OPTIONS:\n"
-"    bridge:       [priority <0-63>]\n"
-"                  [path-cost <1-65535>]\n"
-"                  [hairpin yes|no]\n"
-"\n"
-"    team:         [config <ファイル>|<JSON 生データ>]\n"
-"\n"
-"  IP_OPTIONS:\n"
-"                  [ip4 <IPv4 アドレス>] [gw4 <IPv4 ゲートウェイ>]\n"
-"                  [ip6 <IPv6 アドレス>] [gw6 <IPv6 ゲートウェイ>]\n"
-"\n"
 
 #: ../clients/cli/connections.c:493
 #, c-format
@@ -2274,9 +2133,8 @@ msgid "Username"
 msgstr "ユーザー名"
 
 #: ../clients/cli/connections.c:4347
-#, fuzzy
 msgid "MACsec parent device or connection UUID"
-msgstr "MACVLAN 親デバイスまたは接続 UUID: "
+msgstr ""
 
 #: ../clients/cli/connections.c:4349
 msgid "Enable encryption [yes]"
@@ -2536,9 +2394,8 @@ msgid "ADSL connection"
 msgstr "ADSL 接続"
 
 #: ../clients/cli/connections.c:4891
-#, fuzzy
 msgid "MACsec connection"
-msgstr "CDMA 接続"
+msgstr ""
 
 #: ../clients/cli/connections.c:4893
 #, fuzzy
@@ -6617,21 +6474,17 @@ msgid "A password is required to connect to '%s'."
 msgstr "'%s' への接続にはパスワードが必要です。"
 
 #: ../clients/common/nm-secret-agent-simple.c:515
-#, fuzzy, c-format
+#, c-format
 msgid "Secrets are required to access the MACsec network '%s'"
 msgstr ""
-"ワイヤレスネットワーク '%s' へのアクセスにはパスワードまたは暗号キーが必要で"
-"す。"
 
 #: ../clients/common/nm-secret-agent-simple.c:519
-#, fuzzy
 msgid "MACsec PSK authentication"
-msgstr "DSL 認証"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:528
-#, fuzzy
 msgid "MACsec EAP authentication"
-msgstr "認証"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:568
 msgid "VPN password required"
@@ -6691,14 +6544,14 @@ msgid "Connecting"
 msgstr "接続中"
 
 #: ../clients/nm-online.c:189
-#, fuzzy, c-format
+#, c-format
 msgid "Error: timeout creating NMClient object\n"
-msgstr "エラー: NMClient オブジェクトを作成できませんでした: %s。"
+msgstr ""
 
 #: ../clients/nm-online.c:209
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Could not create NMClient object: %s\n"
-msgstr "エラー: NMClient オブジェクトを作成できませんでした: %s。"
+msgstr ""
 
 #: ../clients/nm-online.c:235
 msgid ""
@@ -7125,7 +6978,7 @@ msgstr "(カスタムのルートなし)"
 #, c-format
 msgid "One custom route"
 msgid_plural "%d custom routes"
-msgstr[0] "%d つのカスタムルート"
+msgstr[0] ""
 
 #: ../clients/tui/nmt-page-ip4.c:128
 msgid "IPv4 CONFIGURATION"
@@ -8700,9 +8553,8 @@ msgid "a fixed TTL is allowed only when path MTU discovery is enabled"
 msgstr "固定 TTL は、パス MTU 検出が有効な場合のみ許可されます"
 
 #: ../libnm-core/nm-setting-macsec.c:235
-#, fuzzy
 msgid "the key is empty"
-msgstr "プロパティが空です"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:246
 #, c-format
@@ -8710,9 +8562,8 @@ msgid "the key must be %d characters"
 msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:254
-#, fuzzy
 msgid "the key contais non-hexadecimal characters"
-msgstr "IV は 16進法でない数字を含んでいます。"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:291 ../libnm-core/nm-setting-vlan.c:634
 #: ../libnm-util/nm-setting-vlan.c:556
@@ -8727,14 +8578,14 @@ msgid "property is not specified and neither is '%s:%s'"
 msgstr "プロパティ、'%s:%s' いずれも指定されていません"
 
 #: ../libnm-core/nm-setting-macsec.c:333
-#, fuzzy, c-format
+#, c-format
 msgid "EAP key management requires '%s' setting presence"
-msgstr "'%s' セキュリティには '%s' の設定が必要になります"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:344
-#, fuzzy, c-format
+#, c-format
 msgid "invalid port %d"
-msgstr "無効なルート: %s"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macvlan.c:192
 msgid "non promiscuous operation is allowed only in passthru mode"
@@ -10233,6 +10084,3 @@ msgstr "不明なログドメイン '%s'"
 #: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:107
 msgid "System"
 msgstr "システム"
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "'%d' はプロパティの有効な値ではありません (%d 以下となるはずです)"

@@ -3,14 +3,13 @@
 # Copyright (C) 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013. Free Software Foundation. Inc.
 #
 # Gabor Kelemen <kelemeng at gnome dot hu>, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013.
-# Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
-# Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 17:42+0200\n"
-"PO-Revision-Date: 2017-01-16 09:02-0500\n"
+"PO-Revision-Date: 2017-03-22 01:31-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Hungarian <gnome-hu-list at gnome dot org>\n"
 "Language: hu\n"
@@ -707,9 +706,8 @@ msgid "MACVLAN mode"
 msgstr "VLAN"
 
 #: ../clients/cli/connections.c:111
-#, fuzzy
 msgid "MACsec mode"
-msgstr "VLAN"
+msgstr ""
 
 #: ../clients/cli/connections.c:116
 msgid "Proxy method"
@@ -1914,9 +1912,8 @@ msgid "Username"
 msgstr "fájlnév"
 
 #: ../clients/cli/connections.c:4347
-#, fuzzy
 msgid "MACsec parent device or connection UUID"
-msgstr "nem található eszköz a(z) „%s” kapcsolathoz"
+msgstr ""
 
 #: ../clients/cli/connections.c:4349
 msgid "Enable encryption [yes]"
@@ -2164,9 +2161,8 @@ msgid "ADSL connection"
 msgstr "%d. ADSL kapcsolat"
 
 #: ../clients/cli/connections.c:4891
-#, fuzzy
 msgid "MACsec connection"
-msgstr "%d. CDMA kapcsolat"
+msgstr ""
 
 #: ../clients/cli/connections.c:4893
 #, fuzzy
@@ -5716,20 +5712,17 @@ msgid "A password is required to connect to '%s'."
 msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:515
-#, fuzzy, c-format
+#, c-format
 msgid "Secrets are required to access the MACsec network '%s'"
 msgstr ""
-"„%s” beállítás szükséges a kapcsolathoz, ha a tulajdonság be van állítva"
 
 #: ../clients/common/nm-secret-agent-simple.c:519
-#, fuzzy
 msgid "MACsec PSK authentication"
-msgstr "kapcsolódás (hitelesítés szükséges)"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:528
-#, fuzzy
 msgid "MACsec EAP authentication"
-msgstr "kapcsolódás (hitelesítés szükséges)"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:568
 msgid "VPN password required"
@@ -5787,14 +5780,14 @@ msgid "Connecting"
 msgstr "csatlakozás"
 
 #: ../clients/nm-online.c:189
-#, fuzzy, c-format
+#, c-format
 msgid "Error: timeout creating NMClient object\n"
-msgstr "Hiba: nem sikerült a NMClient objektumot létrehozni."
+msgstr ""
 
 #: ../clients/nm-online.c:209
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Could not create NMClient object: %s\n"
-msgstr "Hiba: nem sikerült a NMClient objektumot létrehozni."
+msgstr ""
 
 #: ../clients/nm-online.c:235
 #, fuzzy
@@ -7830,9 +7823,8 @@ msgid "a fixed TTL is allowed only when path MTU discovery is enabled"
 msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:235
-#, fuzzy
 msgid "the key is empty"
-msgstr "a tulajdonság üres"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:246
 #, c-format
@@ -7840,9 +7832,8 @@ msgid "the key must be %d characters"
 msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:254
-#, fuzzy
 msgid "the key contais non-hexadecimal characters"
-msgstr "Az IV nem hexadecimális számjegyeket tartalmaz."
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:291 ../libnm-core/nm-setting-vlan.c:634
 #: ../libnm-util/nm-setting-vlan.c:556
@@ -7857,14 +7848,14 @@ msgid "property is not specified and neither is '%s:%s'"
 msgstr "a tulajdonság nincs megadva és nem is „%s:%s”"
 
 #: ../libnm-core/nm-setting-macsec.c:333
-#, fuzzy, c-format
+#, c-format
 msgid "EAP key management requires '%s' setting presence"
-msgstr "„%s” biztonság megköveteli „%s” beállítás jelenlétét"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:344
-#, fuzzy, c-format
+#, c-format
 msgid "invalid port %d"
-msgstr "érvénytelen mező: „%s”"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macvlan.c:192
 msgid "non promiscuous operation is allowed only in passthru mode"
@@ -9396,6 +9387,3 @@ msgstr "Ismeretlen naplózási tartomány: „%s”"
 #: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:107
 msgid "System"
 msgstr "Rendszer"
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "„%d” nem érvényes érték a tulajdonsághoz (<= %d kellene legyen)"

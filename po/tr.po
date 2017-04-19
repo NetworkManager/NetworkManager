@@ -5,13 +5,13 @@
 # Alperen Yusuf Aybar <alperen@aybar.biz>, 2006.
 # Necdet Yücel <necdetyucel@gmail.com>, 2014, 2015.
 # Muhammet Kara <muhammetk@gmail.com>, 2012, 2015.
-# Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 17:42+0200\n"
-"PO-Revision-Date: 2016-06-22 06:56-0400\n"
+"PO-Revision-Date: 2017-03-22 01:35-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Türkçe <gnome-turk@gnome.org>\n"
 "Language: tr\n"
@@ -734,9 +734,8 @@ msgid "MACVLAN mode"
 msgstr "VLAN"
 
 #: ../clients/cli/connections.c:111
-#, fuzzy
 msgid "MACsec mode"
-msgstr "VLAN"
+msgstr ""
 
 #: ../clients/cli/connections.c:116
 msgid "Proxy method"
@@ -1122,7 +1121,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/connections.c:376
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection add { ARGUMENTS | help }\n"
 "\n"
@@ -1270,106 +1269,6 @@ msgid ""
 "                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n"
 "\n"
 msgstr ""
-"Kullanım: nmcli connection add { DEĞİŞKENLER | help }\n"
-"\n"
-"DEĞİŞKENLER := GENEL_SEÇENEKLER TÜRE_BAĞLI_SEÇENEKLER IP_SEÇENEKLERİ\n"
-"\n"
-"  GENEL_SEÇENEKLER:\n"
-"                  type <tür>\n"
-"                  ifname <arayüz adı> | \"*\"\n"
-"                  [con-name <bağlantı adı>]\n"
-"                  [autoconnect yes|no]\n"
-"\n"
-"                  [save yes|no]\n"
-"\n"
-"  TÜRE_BAĞLI_SEÇENEKLER:\n"
-"    ethernet:     [mac <MAC adresi>]\n"
-"                  [cloned-mac <klonlanmış MAC adresi>]\n"
-"                  [mtu <MTU>]\n"
-"\n"
-"    wifi:         ssid <SSID>\n"
-"                  [mac <MAC adresi>]\n"
-"                  [cloned-mac <klonlanmış MAC adresi>]\n"
-"                  [mtu <MTU>]\n"
-"                  [mode infrastructure|ap|adhoc]\n"
-"\n"
-"    wimax:        [mac <MAC adresi>]\n"
-"                  [nsp <NSP>]\n"
-"\n"
-"    pppoe:        username <PPPoE kullanıcı adı>\n"
-"                  [password <PPPoE parolası>]\n"
-"                  [service <PPPoE servis adı>]\n"
-"                  [mtu <MTU>]\n"
-"                  [mac <MAC adresi>]\n"
-"\n"
-"    gsm:          apn <APN>\n"
-"                  [user <kullanıcı adı>]\n"
-"                  [password <parola>]\n"
-"\n"
-"    cdma:         [user <kullanıcı adı>]\n"
-"                  [password <parola>]\n"
-"\n"
-"    infiniband:   [mac <MAC adresi>]\n"
-"                  [mtu <MTU>]\n"
-"                  [transport-mode datagram | connected]\n"
-"                  [parent <ifname>]\n"
-"                  [p-key <IPoIB P_Key>]\n"
-"\n"
-"    bluetooth:    [addr <bluetooth adresi>]\n"
-"                  [bt-type panu|dun-gsm|dun-cdma]\n"
-"\n"
-"    vlan:         dev <üst cihaz (bağlantı UUID, ifname veya MAC)>\n"
-"                  id <VLAN ID>\n"
-"                  [flags <VLAN bayrakları>]\n"
-"                  [ingress <giriş önceliği haritalaması>]\n"
-"                  [egress <çıkış önceliği haritalaması>]\n"
-"                  [mtu <MTU>]\n"
-"\n"
-"    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) "
-"| broadcast (3) |\n"
-"                        802.3ad    (4) | balance-tlb   (5) | balance-alb "
-"(6)]\n"
-"                  [primary <ifname>]\n"
-"                  [miimon <num>]\n"
-"                  [downdelay <num>]\n"
-"                  [updelay <num>]\n"
-"                  [arp-interval <num>]\n"
-"                  [arp-ip-target <num>]\n"
-"                  [lacp-rate slow (0) | fast (1)]\n"
-"\n"
-"    bond-slave:   master <master (ifname veya bağlantı UUID veya ismi)>\n"
-"\n"
-"    team:         [config <dosya>|<ham JSON verisi>]\n"
-"\n"
-"    team-slave:   master <master (ifname veya bağlantı UUID veya ismi)>\n"
-"                  [config <dosya>|<ham JSON verisi>]\n"
-"\n"
-"    bridge:       [stp yes|no]\n"
-"                  [priority <num>]\n"
-"                  [forward-delay <2-30>]\n"
-"                  [hello-time <1-10>]\n"
-"                  [max-age <6-40>]\n"
-"                  [ageing-time <0-1000000>]\n"
-"                  [multicast-snooping yes|no]\n"
-"                  [mac <MAC adresi>]\n"
-"\n"
-"    bridge-slave: master <master (ifname veya bağlantı UUID veya isim)>\n"
-"                  [priority <0-63>]\n"
-"                  [path-cost <1-65535>]\n"
-"                  [hairpin yes|no]\n"
-"\n"
-"    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan|libreswan|"
-"ssh|l2tp|iodine|...\n"
-"                  [user <kullanıcı adı>]\n"
-"\n"
-"    olpc-mesh:    ssid <SSID>\n"
-"                  [channel <1-13>]\n"
-"                  [dhcp-anycast <MAC adresi>]\n"
-"\n"
-"  IP_SEÇENEKLERİ:\n"
-"                  [ip4 <IPv4 adresi>] [gw4 <IPv4 ağ geçidi>]\n"
-"                  [ip6 <IPv6 adresi>] [gw6 <IPv6 ağ geçidi>]\n"
-"\n"
 
 #: ../clients/cli/connections.c:493
 #, c-format
@@ -2183,9 +2082,8 @@ msgid "Username"
 msgstr "Kullanıcı adı"
 
 #: ../clients/cli/connections.c:4347
-#, fuzzy
 msgid "MACsec parent device or connection UUID"
-msgstr "VLAN üst aygıtı veya bağlantı UUID: "
+msgstr ""
 
 #: ../clients/cli/connections.c:4349
 msgid "Enable encryption [yes]"
@@ -2441,9 +2339,8 @@ msgid "ADSL connection"
 msgstr "ADSL bağlantısı"
 
 #: ../clients/cli/connections.c:4891
-#, fuzzy
 msgid "MACsec connection"
-msgstr "CDMA bağlantısı"
+msgstr ""
 
 #: ../clients/cli/connections.c:4893
 #, fuzzy
@@ -6342,20 +6239,17 @@ msgid "A password is required to connect to '%s'."
 msgstr "'%s' ağına bağlanmak için parola gerekiyor."
 
 #: ../clients/common/nm-secret-agent-simple.c:515
-#, fuzzy, c-format
+#, c-format
 msgid "Secrets are required to access the MACsec network '%s'"
 msgstr ""
-"'%s' kablosuz ağına bağlanmak için parola veya şifreleme anahtarı gerekiyor."
 
 #: ../clients/common/nm-secret-agent-simple.c:519
-#, fuzzy
 msgid "MACsec PSK authentication"
-msgstr "DSL kimlik doğrulaması"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:528
-#, fuzzy
 msgid "MACsec EAP authentication"
-msgstr "Kimlik doğrulama"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:568
 #, fuzzy
@@ -6418,14 +6312,14 @@ msgid "Connecting"
 msgstr "Bağlanıyor"
 
 #: ../clients/nm-online.c:189
-#, fuzzy, c-format
+#, c-format
 msgid "Error: timeout creating NMClient object\n"
-msgstr "Hata: NMClient nesnesi oluşturulamadı: %s."
+msgstr ""
 
 #: ../clients/nm-online.c:209
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Could not create NMClient object: %s\n"
-msgstr "Hata: NMClient nesnesi oluşturulamadı: %s."
+msgstr ""
 
 #: ../clients/nm-online.c:235
 msgid ""
@@ -6849,7 +6743,7 @@ msgstr "(Özel bir yönlendirme yok)"
 #, c-format
 msgid "One custom route"
 msgid_plural "%d custom routes"
-msgstr[0] "%d özel yönlendirme"
+msgstr[0] ""
 
 #: ../clients/tui/nmt-page-ip4.c:128
 msgid "IPv4 CONFIGURATION"
@@ -8186,7 +8080,7 @@ msgstr "öğe geçersiz"
 
 #: ../libnm-core/nm-setting-dcb.c:581 ../libnm-util/nm-setting-dcb.c:653
 msgid "sum not 100%"
-msgstr "toplam %100 etmiyor"
+msgstr ""
 
 #: ../libnm-core/nm-setting-dcb.c:615 ../libnm-core/nm-setting-dcb.c:647
 #: ../libnm-util/nm-setting-dcb.c:687 ../libnm-util/nm-setting-dcb.c:719
@@ -8418,9 +8312,8 @@ msgid "a fixed TTL is allowed only when path MTU discovery is enabled"
 msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:235
-#, fuzzy
 msgid "the key is empty"
-msgstr "özellik boş"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:246
 #, c-format
@@ -8428,9 +8321,8 @@ msgid "the key must be %d characters"
 msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:254
-#, fuzzy
 msgid "the key contais non-hexadecimal characters"
-msgstr "IV, onaltılık olmayan sayılar barınırıyor."
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:291 ../libnm-core/nm-setting-vlan.c:634
 #: ../libnm-util/nm-setting-vlan.c:556
@@ -8445,14 +8337,14 @@ msgid "property is not specified and neither is '%s:%s'"
 msgstr "özellik belirtilmemiş ve '%s:%s' değil"
 
 #: ../libnm-core/nm-setting-macsec.c:333
-#, fuzzy, c-format
+#, c-format
 msgid "EAP key management requires '%s' setting presence"
-msgstr "'%s' güvenliği için '%s' ayarı gereklidir"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:344
-#, fuzzy, c-format
+#, c-format
 msgid "invalid port %d"
-msgstr "geçersiz yönlendirme: %s"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macvlan.c:192
 msgid "non promiscuous operation is allowed only in passthru mode"
@@ -9959,6 +9851,3 @@ msgstr "Bilinmeyen kayıt etki alanı '%s'"
 #: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:107
 msgid "System"
 msgstr "Sistem"
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "'%d' özellik için geçerli bir değere değil (<= %d olmalı)"

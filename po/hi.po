@@ -4,14 +4,13 @@
 # rajesh <rajesh>, 2012.
 # Rajesh Ranjan <rajeshkajha@yahoo.com>, 2012, 2013, 2014.
 # chandankumar <chandankumar.093047@gmail.com>, 2012.
-# Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
-# Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 17:42+0200\n"
-"PO-Revision-Date: 2017-01-16 08:58-0500\n"
+"PO-Revision-Date: 2017-03-22 01:30-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Hindi <kde-i18n-doc@kde.org>\n"
 "Language: hi\n"
@@ -707,9 +706,8 @@ msgid "MACVLAN mode"
 msgstr "VLAN"
 
 #: ../clients/cli/connections.c:111
-#, fuzzy
 msgid "MACsec mode"
-msgstr "VLAN"
+msgstr ""
 
 #: ../clients/cli/connections.c:116
 msgid "Proxy method"
@@ -1116,7 +1114,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/connections.c:376
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection add { ARGUMENTS | help }\n"
 "\n"
@@ -1264,103 +1262,6 @@ msgid ""
 "                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n"
 "\n"
 msgstr ""
-"प्रयोग: nmcli connection add { ARGUMENTS | help }\n"
-"\n"
-"ARGUMENTS := COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n"
-"\n"
-"  COMMON_OPTIONS:\n"
-"                  type <type>\n"
-"                  ifname <interface name> | \"*\"\n"
-"                  [con-name <connection name>]\n"
-"                  [autoconnect yes|no]\n"
-"\n"
-"                  [save yes|no]\n"
-"\n"
-"  TYPE_SPECIFIC_OPTIONS:\n"
-"    ethernet:     [mac <MAC address>]\n"
-"                  [cloned-mac <cloned MAC address>]\n"
-"                  [mtu <MTU>]\n"
-"\n"
-"    wifi:         ssid <SSID>\n"
-"                  [mac <MAC address>]\n"
-"                  [cloned-mac <cloned MAC address>]\n"
-"                  [mtu <MTU>]\n"
-"\n"
-"    wimax:        [mac <MAC address>]\n"
-"                  [nsp <NSP>]\n"
-"\n"
-"    pppoe:        username <PPPoE username>\n"
-"                  [password <PPPoE password>]\n"
-"                  [service <PPPoE service name>]\n"
-"                  [mtu <MTU>]\n"
-"                  [mac <MAC address>]\n"
-"\n"
-"    gsm:          apn <APN>\n"
-"                  [user <username>]\n"
-"                  [password <password>]\n"
-"\n"
-"    cdma:         [user <username>]\n"
-"                  [password <password>]\n"
-"\n"
-"    infiniband:   [mac <MAC address>]\n"
-"                  [mtu <MTU>]\n"
-"                  [transport-mode datagram | connected]\n"
-"                  [parent <ifname>]\n"
-"                  [p-key <IPoIB P_Key>]\n"
-"\n"
-"    bluetooth:    [addr <bluetooth address>]\n"
-"                  [bt-type panu|dun-gsm|dun-cdma]\n"
-"\n"
-"    vlan:         dev <parent device (connection  UUID, ifname, or MAC)>\n"
-"                  id <VLAN ID>\n"
-"                  [flags <VLAN flags>]\n"
-"                  [ingress <ingress priority mapping>]\n"
-"                  [egress <egress priority mapping>]\n"
-"                  [mtu <MTU>]\n"
-"\n"
-"    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) "
-"| broadcast (3) |\n"
-"                        802.3ad    (4) | balance-tlb   (5) | balance-alb "
-"(6)]\n"
-"                  [primary <ifname>]\n"
-"                  [miimon <num>]\n"
-"                  [downdelay <num>]\n"
-"                  [updelay <num>]\n"
-"                  [arp-interval <num>]\n"
-"                  [arp-ip-target <num>]\n"
-"\n"
-"    bond-slave:   master <master (ifname, or connection UUID or name)>\n"
-"\n"
-"    team:         [config <file>|<raw JSON data>]\n"
-"\n"
-"    team-slave:   master <master (ifname, or connection UUID or name)>\n"
-"                  [config <file>|<raw JSON data>]\n"
-"\n"
-"    bridge:       [stp yes|no]\n"
-"                  [priority <num>]\n"
-"                  [forward-delay <2-30>]\n"
-"                  [hello-time <1-10>]\n"
-"                  [max-age <6-40>]\n"
-"                  [ageing-time <0-1000000>]\n"
-"                  [mac <MAC address>]\n"
-"\n"
-"    bridge-slave: master <master (ifname, or connection UUID or name)>\n"
-"                  [priority <0-63>]\n"
-"                  [path-cost <1-65535>]\n"
-"                  [hairpin yes|no]\n"
-"\n"
-"    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan|libreswan|"
-"ssh|l2tp|iodine|...\n"
-"                  [user <username>]\n"
-"\n"
-"    olpc-mesh:    ssid <SSID>\n"
-"                  [channel <1-13>]\n"
-"                  [dhcp-anycast <MAC address>]\n"
-"\n"
-"  IP_OPTIONS:\n"
-"                  [ip4 <IPv4 address>] [gw4 <IPv4 gateway>]\n"
-"                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n"
-"\n"
 
 #: ../clients/cli/connections.c:493
 #, c-format
@@ -2174,9 +2075,8 @@ msgid "Username"
 msgstr "उपयोक्तानाम"
 
 #: ../clients/cli/connections.c:4347
-#, fuzzy
 msgid "MACsec parent device or connection UUID"
-msgstr "VLAN जनक युक्ति या कनेक्शन युक्ति UUID:"
+msgstr ""
 
 #: ../clients/cli/connections.c:4349
 msgid "Enable encryption [yes]"
@@ -2434,9 +2334,8 @@ msgid "ADSL connection"
 msgstr "ADSL कनेक्शन"
 
 #: ../clients/cli/connections.c:4891
-#, fuzzy
 msgid "MACsec connection"
-msgstr "CDMA कनेक्शन"
+msgstr ""
 
 #: ../clients/cli/connections.c:4893
 #, fuzzy
@@ -6395,19 +6294,17 @@ msgid "A password is required to connect to '%s'."
 msgstr "'%s' में कनेक्ट होने के लिए एक कूटशब्द जरूरी है."
 
 #: ../clients/common/nm-secret-agent-simple.c:515
-#, fuzzy, c-format
+#, c-format
 msgid "Secrets are required to access the MACsec network '%s'"
-msgstr "कूटशब्द या गोपन कुंजी बेतार संजाल '%s' की पहुँच के लिए जरूरी है."
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:519
-#, fuzzy
 msgid "MACsec PSK authentication"
-msgstr "डीएसएल सत्यापन"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:528
-#, fuzzy
 msgid "MACsec EAP authentication"
-msgstr "सत्यापन"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:568
 #, fuzzy
@@ -6470,14 +6367,14 @@ msgid "Connecting"
 msgstr "जुड़ रहा है"
 
 #: ../clients/nm-online.c:189
-#, fuzzy, c-format
+#, c-format
 msgid "Error: timeout creating NMClient object\n"
-msgstr "त्रुटि: NMClient ऑब्जेक्ट नहीं बना सका: %s."
+msgstr ""
 
 #: ../clients/nm-online.c:209
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Could not create NMClient object: %s\n"
-msgstr "त्रुटि: NMClient ऑब्जेक्ट नहीं बना सका: %s."
+msgstr ""
 
 #: ../clients/nm-online.c:235
 msgid ""
@@ -8477,9 +8374,8 @@ msgid "a fixed TTL is allowed only when path MTU discovery is enabled"
 msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:235
-#, fuzzy
 msgid "the key is empty"
-msgstr "गुण रिक्त है"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:246
 #, c-format
@@ -8487,9 +8383,8 @@ msgid "the key must be %d characters"
 msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:254
-#, fuzzy
 msgid "the key contais non-hexadecimal characters"
-msgstr "IV गैर हेक्साडेसीमेल अंक समाहित करता है."
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:291 ../libnm-core/nm-setting-vlan.c:634
 #: ../libnm-util/nm-setting-vlan.c:556
@@ -8504,14 +8399,14 @@ msgid "property is not specified and neither is '%s:%s'"
 msgstr "गुण निर्दिष्ट नहीं है और न ही '%s:%s'"
 
 #: ../libnm-core/nm-setting-macsec.c:333
-#, fuzzy, c-format
+#, c-format
 msgid "EAP key management requires '%s' setting presence"
-msgstr "'%s' सुरक्षा के लिए '%s' सेटिंग उपस्थिति चाहिए"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:344
-#, fuzzy, c-format
+#, c-format
 msgid "invalid port %d"
-msgstr "अवैध IPv4 रूट '%s'"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macvlan.c:192
 msgid "non promiscuous operation is allowed only in passthru mode"
@@ -10018,6 +9913,3 @@ msgstr "अज्ञात लॉग डोमेन '%s'"
 #: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:107
 msgid "System"
 msgstr "तंत्र"
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "'%d' गुण (होना चाहिए <= %d) के लिए वैध मान नहीं है"

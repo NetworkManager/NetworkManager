@@ -5,13 +5,13 @@
 #
 # Ani Peter <apeter@redhat.com>, 2010, 2012, 2013, 2014.
 # Mohammed <sadiqpkp@gmail.com>, 2012.
-# Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 17:42+0200\n"
-"PO-Revision-Date: 2016-06-22 06:31-0400\n"
+"PO-Revision-Date: 2017-03-22 01:32-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Malayalam <discuss@lists.smc.org.in>\n"
 "Language: ml\n"
@@ -708,9 +708,8 @@ msgid "MACVLAN mode"
 msgstr "VLAN"
 
 #: ../clients/cli/connections.c:111
-#, fuzzy
 msgid "MACsec mode"
-msgstr "VLAN"
+msgstr ""
 
 #: ../clients/cli/connections.c:116
 msgid "Proxy method"
@@ -1070,7 +1069,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/connections.c:376
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection add { ARGUMENTS | help }\n"
 "\n"
@@ -1218,99 +1217,6 @@ msgid ""
 "                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n"
 "\n"
 msgstr ""
-"ഉപയോഗിയ്ക്കേണ്ട വിധം: nmcli connection add { ARGUMENTS | help }\n"
-"\n"
-"ARGUMENTS := COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n"
-"\n"
-"  COMMON_OPTIONS:\n"
-"                  type <type>\n"
-"                  ifname <interface name> | \"*\"\n"
-"                  [con-name <connection name>]\n"
-"                  [autoconnect yes|no]\n"
-"\n"
-"  TYPE_SPECIFIC_OPTIONS:\n"
-"    ethernet:     [mac <MAC address>]\n"
-"                  [cloned-mac <cloned MAC address>]\n"
-"                  [mtu <MTU>]\n"
-"\n"
-"    wifi:         ssid <SSID>\n"
-"                  [mac <MAC address>]\n"
-"                  [cloned-mac <cloned MAC address>]\n"
-"                  [mtu <MTU>]\n"
-"\n"
-"    wimax:        [mac <MAC address>]\n"
-"                  [nsp <NSP>]\n"
-"\n"
-"    pppoe:        username <PPPoE username>\n"
-"                  [password <PPPoE password>]\n"
-"                  [service <PPPoE service name>]\n"
-"                  [mtu <MTU>]\n"
-"                  [mac <MAC address>]\n"
-"\n"
-"    gsm:          apn <APN>\n"
-"                  [user <username>]\n"
-"                  [password <password>]\n"
-"\n"
-"    cdma:         [user <username>]\n"
-"                  [password <password>]\n"
-"\n"
-"    infiniband:   [mac <MAC address>]\n"
-"                  [mtu <MTU>]\n"
-"                  [transport-mode datagram | connected]\n"
-"                  [parent <ifname>]\n"
-"                  [p-key <IPoIB P_Key>]\n"
-"\n"
-"    bluetooth:    [addr <bluetooth address>]\n"
-"                  [bt-type panu|dun-gsm|dun-cdma]\n"
-"\n"
-"    vlan:         dev <parent device (connection  UUID, ifname, or MAC)>\n"
-"                  id <VLAN ID>\n"
-"                  [flags <VLAN flags>]\n"
-"                  [ingress <ingress priority mapping>]\n"
-"                  [egress <egress priority mapping>]\n"
-"                  [mtu <MTU>]\n"
-"\n"
-"    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) "
-"| broadcast (3) |\n"
-"                        802.3ad    (4) | balance-tlb   (5) | balance-alb "
-"(6)]\n"
-"                  [primary <ifname>]\n"
-"                  [miimon <num>]\n"
-"                  [downdelay <num>]\n"
-"                  [updelay <num>]\n"
-"                  [arp-interval <num>]\n"
-"                  [arp-ip-target <num>]\n"
-"\n"
-"    bond-slave:   master <master (ifname or connection UUID)>\n"
-"\n"
-"    team:         [config <file>|<raw JSON data>]\n"
-"\n"
-"    team-slave:   master <master (ifname or connection UUID)>\n"
-"                  [config <file>|<raw JSON data>]\n"
-"\n"
-"    bridge:       [stp yes|no]\n"
-"                  [priority <num>]\n"
-"                  [forward-delay <2-30>]\n"
-"                  [hello-time <1-10>]\n"
-"                  [max-age <6-40>]\n"
-"                  [ageing-time <0-1000000>]\n"
-"\n"
-"    bridge-slave: master <master (ifname or connection UUID)>\n"
-"                  [priority <0-63>]\n"
-"                  [path-cost <1-65535>]\n"
-"                  [hairpin yes|no]\n"
-"\n"
-"    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan\n"
-"                  [user <username>]\n"
-"\n"
-"    olpc-mesh:    ssid <SSID>\n"
-"                  [channel <1-13>]\n"
-"                  [dhcp-anycast <MAC address>]\n"
-"\n"
-"  IP_OPTIONS:\n"
-"                  [ip4 <IPv4 address>] [gw4 <IPv4 gateway>]\n"
-"                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n"
-"\n"
 
 #: ../clients/cli/connections.c:493
 #, c-format
@@ -2104,9 +2010,8 @@ msgid "Username"
 msgstr "ഉപയോക്തൃനാമം"
 
 #: ../clients/cli/connections.c:4347
-#, fuzzy
 msgid "MACsec parent device or connection UUID"
-msgstr "വിഎല്‍എഎന്‍ പേരന്റ് ഡിവൈസ് അല്ലെങ്കില്‍ കണക്ഷന്‍ യുയുഐഡി:"
+msgstr ""
 
 #: ../clients/cli/connections.c:4349
 msgid "Enable encryption [yes]"
@@ -2367,9 +2272,8 @@ msgid "ADSL connection"
 msgstr "ADSL കണക്ഷന്‍ %d"
 
 #: ../clients/cli/connections.c:4891
-#, fuzzy
 msgid "MACsec connection"
-msgstr "CDMA കണക്ഷന്‍ %d"
+msgstr ""
 
 #: ../clients/cli/connections.c:4893
 #, fuzzy
@@ -6188,21 +6092,17 @@ msgid "A password is required to connect to '%s'."
 msgstr "'%s'-ലേക്കു് കണക്ട് ചെയ്യുന്നതിനു് ഒരു രഹസ്യവാക്ക് ആവശ്യമുണ്ടു്."
 
 #: ../clients/common/nm-secret-agent-simple.c:515
-#, fuzzy, c-format
+#, c-format
 msgid "Secrets are required to access the MACsec network '%s'"
 msgstr ""
-"'%s' വയര്‍ലെസ്സ് നെറ്റ്‌വര്‍ക്കിലേക്കു് പ്രവേശിയ്ക്കുന്നതിനായി രഹസ്യവാക്കുകള്‍ അല്ലെങ്കില്‍ എന്‍ക്രിപ്ഷന്‍ "
-"കീകള്‍ ആവശ്യമുണ്ടു്."
 
 #: ../clients/common/nm-secret-agent-simple.c:519
-#, fuzzy
 msgid "MACsec PSK authentication"
-msgstr "ഡിഎസ്എല്‍ ആധികാരികത ഉറപ്പാക്കല്‍"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:528
-#, fuzzy
 msgid "MACsec EAP authentication"
-msgstr "ആധികാരികത ഉറപ്പാക്കല്‍"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:568
 #, fuzzy
@@ -6264,14 +6164,14 @@ msgid "Connecting"
 msgstr "കണക്ട് ചെയ്യുന്നു"
 
 #: ../clients/nm-online.c:189
-#, fuzzy, c-format
+#, c-format
 msgid "Error: timeout creating NMClient object\n"
-msgstr "പിശക്: NMClient നിര്‍മ്മിക്കുവാന്‍ സാധമായില്ല"
+msgstr ""
 
 #: ../clients/nm-online.c:209
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Could not create NMClient object: %s\n"
-msgstr "പിശക്: NMClient നിര്‍മ്മിക്കുവാന്‍ സാധമായില്ല"
+msgstr ""
 
 #: ../clients/nm-online.c:235
 msgid ""
@@ -7243,7 +7143,7 @@ msgstr "സ്വകാര്യ കീ ഡീകോഡ് ചെയ്യുവ
 
 #: ../libnm-core/crypto.c:272 ../libnm-util/crypto.c:283
 msgid "Failed to find expected PKCS#8 start tag."
-msgstr "പ്രതീക്ഷിച്ച PKCS#8 തുടക്ക റ്റാഗ് '%s' കണ്ടുപിടിയ്ക്കന്നതില്‍ പരാജയം."
+msgstr ""
 
 #: ../libnm-core/crypto.c:280 ../libnm-util/crypto.c:291
 #, c-format
@@ -8277,9 +8177,8 @@ msgid "a fixed TTL is allowed only when path MTU discovery is enabled"
 msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:235
-#, fuzzy
 msgid "the key is empty"
-msgstr "വിശേഷത കാലിയാണു്"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:246
 #, c-format
@@ -8287,9 +8186,8 @@ msgid "the key must be %d characters"
 msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:254
-#, fuzzy
 msgid "the key contais non-hexadecimal characters"
-msgstr "IV-ല്‍ നോണ്‍-ഹെക്സാഡെസിമല്‍ അക്കങ്ങളുണ്ടു്."
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:291 ../libnm-core/nm-setting-vlan.c:634
 #: ../libnm-util/nm-setting-vlan.c:556
@@ -8304,14 +8202,14 @@ msgid "property is not specified and neither is '%s:%s'"
 msgstr "വിശേഷത നിഷ്കര്‍ഷിച്ചിട്ടില്ല, '%s:%s' ആകുകയുമില്ല"
 
 #: ../libnm-core/nm-setting-macsec.c:333
-#, fuzzy, c-format
+#, c-format
 msgid "EAP key management requires '%s' setting presence"
-msgstr "'%s' സുരക്ഷയ്ക്കു് '%s' സജ്ജീകരണത്തിന്റെ ആവശ്യമുണ്ടു്"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:344
-#, fuzzy, c-format
+#, c-format
 msgid "invalid port %d"
-msgstr "തെറ്റായ IPv4 റൂട്ട് '%s'"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macvlan.c:192
 msgid "non promiscuous operation is allowed only in passthru mode"
@@ -9828,6 +9726,3 @@ msgstr "അപരിചിതമായ ലോഗ് ഡൊമെയിന്‍ 
 #: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:107
 msgid "System"
 msgstr "സിസ്റ്റം"
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "വിശേഷതയ്ക്കുള്ള ശരിയായ മൂല്ല്യമല്ല '%d' (<= %d ആയിരിയ്ക്കണം)"

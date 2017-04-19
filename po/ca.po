@@ -6,14 +6,13 @@
 # David Planella <david.planella@gmail.com>, 2009.
 # Joan Duran <jodufi@gmail.com>, 2010.
 # Walter Garcia Fontes <walter.garcia@upf.edu>
-# Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
-# Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 17:42+0200\n"
-"PO-Revision-Date: 2017-01-16 08:38-0500\n"
+"PO-Revision-Date: 2017-03-22 01:29-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Catalan <tradgnome@softcatala.org>\n"
 "Language: ca\n"
@@ -736,9 +735,8 @@ msgid "MACVLAN mode"
 msgstr "Mode MACVLAN: "
 
 #: ../clients/cli/connections.c:111
-#, fuzzy
 msgid "MACsec mode"
-msgstr "Mode MACVLAN: "
+msgstr ""
 
 #: ../clients/cli/connections.c:116
 msgid "Proxy method"
@@ -1160,7 +1158,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/connections.c:376
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection add { ARGUMENTS | help }\n"
 "\n"
@@ -1308,144 +1306,6 @@ msgid ""
 "                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n"
 "\n"
 msgstr ""
-"Ús: nmcli connection add { ARGUMENTS | help }\n"
-"\n"
-"ARGUMENTS := OPCIONS_COMUNES OPCIONS_ESPECÍFIQUES_TIPUS OPCIONS_ESCLAVES "
-"OPCIONS_IP [-- ([+|-]<ajust>.<propietat> <valor>)+]\n"
-"\n"
-"  OPCIONS_COMUNES:\n"
-"                  type <tipus>\n"
-"                  ifname <nom de la interfície> | \"*\"\n"
-"                  [con-name <nom de la connexió>]\n"
-"                  [autoconnect yes|no]\n"
-"                  [save yes|no]\n"
-"                  [master <mestre (ifname, o UUID de la connexió o nom)>]\n"
-"                  [slave-type <tipus de la connexió mestra>]\n"
-"\n"
-"  OPCIONS_ESPECÍFIQUES_TIPUS:\n"
-"    ethernet:     [mac <adreça MAC>]\n"
-"                  [cloned-mac <adreça MAC clonada>]\n"
-"                  [mtu <MTU>]\n"
-"\n"
-"    wifi:         ssid <SSID>\n"
-"                  [mac <adreça MAC>]\n"
-"                  [cloned-mac <adreça MAC clonada>]\n"
-"                  [mtu <MTU>]\n"
-"                  [mode infrastructure|ap|adhoc]\n"
-"\n"
-"    wimax:        [mac <adreça MAC>]\n"
-"                  [nsp <NSP>]\n"
-"\n"
-"    pppoe:        username <nom d'usuari PPPoE>\n"
-"                  [password <contrasenya PPPoE>]\n"
-"                  [service <nom de servei PPPoE>]\n"
-"                  [mtu <MTU>]\n"
-"                  [mac <adreça MAC>]\n"
-"\n"
-"    gsm:          apn <APN>\n"
-"                  [user <nom d'usuari>]\n"
-"                  [password <contrasenya>]\n"
-"\n"
-"    cdma:         [user <nom de usuari>]\n"
-"                  [password <contrasenya>]\n"
-"\n"
-"    infiniband:   [mac <adreça MAC>]\n"
-"                  [mtu <MTU>]\n"
-"                  [transport-mode datagram | connected]\n"
-"                  [parent <ifname>]\n"
-"                  [p-key <IPoIB P_Key>]\n"
-"\n"
-"    bluetooth:    [addr <adreça bluetooth>]\n"
-"                  [bt-type panu|dun-gsm|dun-cdma]\n"
-"\n"
-"    vlan:         dev <dispositiu pare (UUID de la connexió, ifname o MAC)>\n"
-"                  id <VLAN ID>\n"
-"                  [flags <etiquetes del VLAN>]\n"
-"                  [ingress <assignació de prioritat ingress>]\n"
-"                  [egress <assignació de prioritat egress>]\n"
-"                  [mtu <MTU>]\n"
-"\n"
-"    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) "
-"| broadcast (3) |\n"
-"                        802.3ad    (4) | balance-tlb   (5) | balance-alb "
-"(6)]\n"
-"                  [primary <ifname>]\n"
-"                  [miimon <número>]\n"
-"                  [downdelay <número>]\n"
-"                  [updelay <número>]\n"
-"                  [arp-interval <número>]\n"
-"                  [arp-ip-target <número>]\n"
-"                  [lacp-rate slow (0) | fast (1)]\n"
-"\n"
-"    bond-slave:   master <mestre (ifname, o UUID de la  connexió o nom)>\n"
-"\n"
-"    team:         [config <fitxer>|<dades JSON en cru>]\n"
-"\n"
-"    team-slave:   master <mestre (ifname, o UUID de la connexió o nom)>\n"
-"                  [config <fitxer>|<dades JSON en cru>]\n"
-"\n"
-"    bridge:       [stp yes|no]\n"
-"                  [priority <número>]\n"
-"                  [forward-delay <2-30>]\n"
-"                  [hello-time <1-10>]\n"
-"                  [max-age <6-40>]\n"
-"                  [ageing-time <0-1000000>]\n"
-"                  [multicast-snooping yes|no]\n"
-"                  [mac <adreça MAC>]\n"
-"\n"
-"    bridge-slave: master <mestre (ifname, o UUID de la connexió o nom)>\n"
-"                  [priority <0-63>]\n"
-"                  [path-cost <1-65535>]\n"
-"                  [hairpin yes|no]\n"
-"\n"
-"    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan|libreswan|"
-"ssh|l2tp|iodine|...\n"
-"                  [user <nom d'usuari>]\n"
-"\n"
-"    olpc-mesh:    ssid <SSID>\n"
-"                  [channel <1-13>]\n"
-"                  [dhcp-anycast <adreça MAC>]\n"
-"\n"
-"    adsl:         username <nom d'usuari>\n"
-"                  protocol pppoa|pppoe|ipoatm\n"
-"                  [password <contrasenya>]\n"
-"                  [encapsulation vcmux|llc]\n"
-"\n"
-"    tun:          mode tun|tap\n"
-"                  [owner <UID>]\n"
-"                  [group <GID>]\n"
-"                  [pi yes|no]\n"
-"                  [vnet-hdr yes|no]\n"
-"                  [multi-queue yes|no]\n"
-"\n"
-"   ip-tunnel:    mode ipip|gre|sit|isatap|vti|ip6ip6|ipip6|ip6gre|vti6\n"
-"                  remote <IP extrem remot>\n"
-"                  [local <IP extrem local>]\n"
-"                  [dev <dispositiu pare (ifname o UUID de la connexió)>]\n"
-"\n"
-"    macvlan:      dev <dispositiu pare (UUID de la connexió, ifname o MAC)>\n"
-"                  mode vepa|bridge|private|passthru|source\n"
-"                  [tap yes|no]\n"
-"\n"
-"    vxlan:        id <Id. VXLAN>\n"
-"                  remote <IP del grup multicast o adreça remota>\n"
-"                  [local <source IP>]\n"
-"                  [dev <dispositiu pare (ifname o UUID de la connexió)>]\n"
-"                  [source-port-min <0-65535>]\n"
-"                  [source-port-max <0-65535>]\n"
-"                  [destination-port <0-65535>]\n"
-"\n"
-"  OPCIONS_ESCLAVES:\n"
-"    bridge:       [priority <0-63>]\n"
-"                  [path-cost <1-65535>]\n"
-"                  [hairpin yes|no]\n"
-"\n"
-"    team:         [config <fitxer>|dades JSON en cru>]\n"
-"\n"
-"  OPCIONS_IP:\n"
-"                  [ip4 <adreça IPv4>] [gw4 <passarel·la IPv4>]\n"
-"                  [ip6 <adreça IPv6>] [gw6 <passarel·la IPv6>]\n"
-"\n"
 
 #: ../clients/cli/connections.c:493
 #, c-format
@@ -2274,9 +2134,8 @@ msgid "Username"
 msgstr "Nom d'usuari"
 
 #: ../clients/cli/connections.c:4347
-#, fuzzy
 msgid "MACsec parent device or connection UUID"
-msgstr "Dispositiu pare MACVLAN o UUID de la connexió: "
+msgstr ""
 
 #: ../clients/cli/connections.c:4349
 msgid "Enable encryption [yes]"
@@ -2537,9 +2396,8 @@ msgid "ADSL connection"
 msgstr "Connexió ADSL"
 
 #: ../clients/cli/connections.c:4891
-#, fuzzy
 msgid "MACsec connection"
-msgstr "Connexió CDMA"
+msgstr ""
 
 #: ../clients/cli/connections.c:4893
 #, fuzzy
@@ -6651,21 +6509,17 @@ msgid "A password is required to connect to '%s'."
 msgstr "Es requereix una contrasenya per connectar a «%s»."
 
 #: ../clients/common/nm-secret-agent-simple.c:515
-#, fuzzy, c-format
+#, c-format
 msgid "Secrets are required to access the MACsec network '%s'"
 msgstr ""
-"Es requereixen contrasenyes o claus d'encriptació per accedir la xarxa sens "
-"fil «%s»."
 
 #: ../clients/common/nm-secret-agent-simple.c:519
-#, fuzzy
 msgid "MACsec PSK authentication"
-msgstr "Autenticació DSL"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:528
-#, fuzzy
 msgid "MACsec EAP authentication"
-msgstr "Autenticació"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:568
 msgid "VPN password required"
@@ -6725,14 +6579,14 @@ msgid "Connecting"
 msgstr "S'està connectant"
 
 #: ../clients/nm-online.c:189
-#, fuzzy, c-format
+#, c-format
 msgid "Error: timeout creating NMClient object\n"
-msgstr "Error: no s'ha pogut crear l'objecte NMClient: %s."
+msgstr ""
 
 #: ../clients/nm-online.c:209
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Could not create NMClient object: %s\n"
-msgstr "Error: no s'ha pogut crear l'objecte NMClient: %s."
+msgstr ""
 
 #: ../clients/nm-online.c:235
 msgid ""
@@ -7013,7 +6867,7 @@ msgstr "Adaptive Transmit Load Balancing (tlb)"
 
 #: ../clients/tui/nmt-page-bond.c:90
 msgid "Adaptive Load Balancing (alb)"
-msgstr "«%s» <"
+msgstr ""
 
 #: ../clients/tui/nmt-page-bond.c:96
 msgid "MII (recommended)"
@@ -8759,9 +8613,8 @@ msgstr ""
 "es permet una TTL fixa sols quan està establerta la descoberta de MTU de camí"
 
 #: ../libnm-core/nm-setting-macsec.c:235
-#, fuzzy
 msgid "the key is empty"
-msgstr "la propietat està buida"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:246
 #, c-format
@@ -8769,9 +8622,8 @@ msgid "the key must be %d characters"
 msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:254
-#, fuzzy
 msgid "the key contais non-hexadecimal characters"
-msgstr "El vector d'inicialització conté dígits que no són hexadecimals."
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:291 ../libnm-core/nm-setting-vlan.c:634
 #: ../libnm-util/nm-setting-vlan.c:556
@@ -8786,14 +8638,14 @@ msgid "property is not specified and neither is '%s:%s'"
 msgstr "la propietat no està especificada i no és tampoc «%s=%s»"
 
 #: ../libnm-core/nm-setting-macsec.c:333
-#, fuzzy, c-format
+#, c-format
 msgid "EAP key management requires '%s' setting presence"
-msgstr "la seguretat «%s» requereix la presència del paràmetre «%s»"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:344
-#, fuzzy, c-format
+#, c-format
 msgid "invalid port %d"
-msgstr "ruta no vàlida: %s"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macvlan.c:192
 msgid "non promiscuous operation is allowed only in passthru mode"
@@ -10321,6 +10173,3 @@ msgstr "Es desconeix el domini de registre «%s»"
 #: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:107
 msgid "System"
 msgstr "Sistema"
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "«%d» no és un valor vàlid per a la propietat (hauria de ser <= %d)"

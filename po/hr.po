@@ -3,14 +3,13 @@
 # This file is distributed under the same license as the NetworkManager package.
 #
 # Tomislav Vujec <tvujec@redhat.com>, 2005.
-# Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
-# Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 17:42+0200\n"
-"PO-Revision-Date: 2017-01-16 08:59-0500\n"
+"PO-Revision-Date: 2017-03-22 01:30-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Croatian <hr@li.org>\n"
 "Language: hr\n"
@@ -718,9 +717,8 @@ msgid "MACVLAN mode"
 msgstr "VPN spajanje"
 
 #: ../clients/cli/connections.c:111
-#, fuzzy
 msgid "MACsec mode"
-msgstr "VPN spajanje"
+msgstr ""
 
 #: ../clients/cli/connections.c:116
 msgid "Proxy method"
@@ -1929,9 +1927,8 @@ msgid "Username"
 msgstr ""
 
 #: ../clients/cli/connections.c:4347
-#, fuzzy
 msgid "MACsec parent device or connection UUID"
-msgstr "nije pronađen uređaj za vezu '%s'"
+msgstr ""
 
 #: ../clients/cli/connections.c:4349
 msgid "Enable encryption [yes]"
@@ -2180,9 +2177,8 @@ msgid "ADSL connection"
 msgstr "GSM veza %d"
 
 #: ../clients/cli/connections.c:4891
-#, fuzzy
 msgid "MACsec connection"
-msgstr "CDMA veza %d"
+msgstr ""
 
 #: ../clients/cli/connections.c:4893
 #, fuzzy
@@ -5689,23 +5685,17 @@ msgid "A password is required to connect to '%s'."
 msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:515
-#, fuzzy, c-format
+#, c-format
 msgid "Secrets are required to access the MACsec network '%s'"
 msgstr ""
-"<span weight=\"bold\" size=\"larger\">Potrebna je lozinka za bežičnu mrežu</"
-"span>\n"
-"\n"
-"Za pristup mreži '%s', potrebna je lozinka ili ključ."
 
 #: ../clients/common/nm-secret-agent-simple.c:519
-#, fuzzy
 msgid "MACsec PSK authentication"
-msgstr "spajanje (potrebna potvrda)"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:528
-#, fuzzy
 msgid "MACsec EAP authentication"
-msgstr "Orjentacija"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:568
 msgid "VPN password required"
@@ -5764,14 +5754,14 @@ msgid "Connecting"
 msgstr "spajanje"
 
 #: ../clients/nm-online.c:189
-#, fuzzy, c-format
+#, c-format
 msgid "Error: timeout creating NMClient object\n"
-msgstr "Greška: Neuspješno stvaranje NMClient objekta."
+msgstr ""
 
 #: ../clients/nm-online.c:209
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Could not create NMClient object: %s\n"
-msgstr "Greška: Neuspješno stvaranje NMClient objekta."
+msgstr ""
 
 #: ../clients/nm-online.c:235
 msgid ""
@@ -7790,9 +7780,8 @@ msgid "the key must be %d characters"
 msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:254
-#, fuzzy
 msgid "the key contais non-hexadecimal characters"
-msgstr "IV sadrži znamenke koje nisu heksadekadske."
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:291 ../libnm-core/nm-setting-vlan.c:634
 #: ../libnm-util/nm-setting-vlan.c:556
@@ -7812,9 +7801,9 @@ msgid "EAP key management requires '%s' setting presence"
 msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:344
-#, fuzzy, c-format
+#, c-format
 msgid "invalid port %d"
-msgstr "nevažeće polje '%s'"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macvlan.c:192
 msgid "non promiscuous operation is allowed only in passthru mode"

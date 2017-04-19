@@ -5,13 +5,13 @@
 # Miguel Anxo Bouzada <mbouzada@gmail.com>, 2010.
 # Fran Diéguez <frandieguez@gnome.org>, 2011.
 # Fran Dieguez <frandieguez@gnome.org>, 2012.
-# Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 17:42+0200\n"
-"PO-Revision-Date: 2016-06-22 07:07-0400\n"
+"PO-Revision-Date: 2017-03-22 01:36-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: gnome-l10n-gl@gnome.org\n"
 "Language: gl\n"
@@ -728,9 +728,8 @@ msgid "MACVLAN mode"
 msgstr "VLAN"
 
 #: ../clients/cli/connections.c:111
-#, fuzzy
 msgid "MACsec mode"
-msgstr "VLAN"
+msgstr ""
 
 #: ../clients/cli/connections.c:116
 msgid "Proxy method"
@@ -1953,9 +1952,8 @@ msgid "Username"
 msgstr "Nome de usuario"
 
 #: ../clients/cli/connections.c:4347
-#, fuzzy
 msgid "MACsec parent device or connection UUID"
-msgstr "non foi posíbel encontrar un dispositivo para a conexión «%s»"
+msgstr ""
 
 #: ../clients/cli/connections.c:4349
 msgid "Enable encryption [yes]"
@@ -2215,9 +2213,8 @@ msgid "ADSL connection"
 msgstr "Conexión ADSL %d"
 
 #: ../clients/cli/connections.c:4891
-#, fuzzy
 msgid "MACsec connection"
-msgstr "Conexión CDMA %d"
+msgstr ""
 
 #: ../clients/cli/connections.c:4893
 #, fuzzy
@@ -5704,14 +5701,12 @@ msgid "Secrets are required to access the MACsec network '%s'"
 msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:519
-#, fuzzy
 msgid "MACsec PSK authentication"
-msgstr "conectando (precisa autenticación)"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:528
-#, fuzzy
 msgid "MACsec EAP authentication"
-msgstr "Autenticación"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:568
 msgid "VPN password required"
@@ -5771,14 +5766,14 @@ msgid "Connecting"
 msgstr "Conectando"
 
 #: ../clients/nm-online.c:189
-#, fuzzy, c-format
+#, c-format
 msgid "Error: timeout creating NMClient object\n"
-msgstr "Erro: non é posíbel crear o obxecto NMClient."
+msgstr ""
 
 #: ../clients/nm-online.c:209
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Could not create NMClient object: %s\n"
-msgstr "Erro: non é posíbel crear o obxecto NMClient."
+msgstr ""
 
 #: ../clients/nm-online.c:235
 #, fuzzy
@@ -6739,7 +6734,7 @@ msgstr "Non puido ser decodificada a chave privada."
 
 #: ../libnm-core/crypto.c:272 ../libnm-util/crypto.c:283
 msgid "Failed to find expected PKCS#8 start tag."
-msgstr "Produciuse un fallo ao buscar a etiqueta de inicio «%s» de PKCS#8."
+msgstr ""
 
 #: ../libnm-core/crypto.c:280 ../libnm-util/crypto.c:291
 #, c-format
@@ -7781,9 +7776,8 @@ msgid "the key must be %d characters"
 msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:254
-#, fuzzy
 msgid "the key contais non-hexadecimal characters"
-msgstr "IV contén díxitos non hexadecimais."
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:291 ../libnm-core/nm-setting-vlan.c:634
 #: ../libnm-util/nm-setting-vlan.c:556
@@ -7803,9 +7797,9 @@ msgid "EAP key management requires '%s' setting presence"
 msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:344
-#, fuzzy, c-format
+#, c-format
 msgid "invalid port %d"
-msgstr "ruta non válida: %s"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macvlan.c:192
 msgid "non promiscuous operation is allowed only in passthru mode"

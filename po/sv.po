@@ -4,13 +4,13 @@
 # Daniel Nylander <po@danielnylander.se>, 2006, 2008, 2009, 2010, 2012.
 # Josef Andersson <josef.andersson@fripost.org>, 2014, 2015.
 # Anders Jonsson <anders.jonsson@norsjovallen.se>, 2015, 2016.
-# Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 17:42+0200\n"
-"PO-Revision-Date: 2016-06-22 06:49-0400\n"
+"PO-Revision-Date: 2017-03-22 01:34-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
 "Language: sv\n"
@@ -730,9 +730,8 @@ msgid "MACVLAN mode"
 msgstr "MACVLAN-läge: "
 
 #: ../clients/cli/connections.c:111
-#, fuzzy
 msgid "MACsec mode"
-msgstr "MACVLAN-läge: "
+msgstr ""
 
 #: ../clients/cli/connections.c:116
 msgid "Proxy method"
@@ -1114,7 +1113,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/connections.c:376
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection add { ARGUMENTS | help }\n"
 "\n"
@@ -1262,148 +1261,6 @@ msgid ""
 "                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n"
 "\n"
 msgstr ""
-"Användning: nmcli connection add { ARGUMENT | help }\n"
-"\n"
-"ARGUMENT := VANLIGA_FLAGGOR TYPSPECIFIKA_FLAGGOR SLAVFLAGGOR IP-FLAGGOR [-- "
-"([+|-]<inställning>.<egenskap> <värde>)+]\n"
-"\n"
-"  VANLIGA_FLAGGOR:\n"
-"                  type <typ>\n"
-"                  ifname <gränssnittsnamn> | \"*\"\n"
-"                  [con-name <anslutningsnamn>]\n"
-"                  [autoconnect yes|no]\n"
-"                  [save yes|no]\n"
-"                  [master <master (grnamn, anslutnings-ID eller namn)>]\n"
-"                  [slave-type <master-anslutningstyp>]\n"
-"\n"
-"  TYPSPECIFIKA_FLAGGOR:\n"
-"    ethernet:     [mac <MAC-adress>]\n"
-"                  [cloned-mac <klonad MAC-adress>]\n"
-"                  [mtu <MTU>]\n"
-"\n"
-"    wifi:         ssid <SSID>\n"
-"                  [mac <MAC-adress>]\n"
-"                  [cloned-mac <klonad MAC-adress>]\n"
-"                  [mtu <MTU>]\n"
-"                  [mode infrastructure|ap|adhoc]\n"
-"\n"
-"    wimax:        [mac <MAC-adress>]\n"
-"                  [nsp <NSP>]\n"
-"\n"
-"    pppoe:        username <PPPoE-användarnamn>\n"
-"                  [password <PPPoE-lösenord>]\n"
-"                  [service <PPPoE-tjänstenamn>]\n"
-"                  [mtu <MTU>]\n"
-"                  [mac <MAC-adress>]\n"
-"\n"
-"    gsm:          apn <APN>\n"
-"                  [user <användarnamn>]\n"
-"                  [password <lösenord>]\n"
-"\n"
-"    cdma:         [user <användarnamn>]\n"
-"                  [password <lösenord>]\n"
-"\n"
-"    infiniband:   [mac <MAC-adress>]\n"
-"                  [mtu <MTU>]\n"
-"                  [transport-mode datagram | connected]\n"
-"                  [parent <grnamn>]\n"
-"                  [p-key <IPoIB P_Key>]\n"
-"\n"
-"    bluetooth:    [addr <bluetoothadress>]\n"
-"                  [bt-type panu|dun-gsm|dun-cdma]\n"
-"\n"
-"    vlan:         dev <parent device (anslutnings-UUID, grnamn eller MAC)>\n"
-"                  id <VLAN-ID>\n"
-"                  [flags <VLAN-flaggor>]\n"
-"                  [ingress <inträdesprioritetshash>]\n"
-"                  [egress <utträdesprioritetshash>]\n"
-"                  [mtu <MTU>]\n"
-"\n"
-"    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) "
-"| broadcast (3) |\n"
-"                        802.3ad    (4) | balance-tlb   (5) | balance-alb "
-"(6)]\n"
-"                  [primary <grnamn>]\n"
-"                  [miimon <num>]\n"
-"                  [downdelay <num>]\n"
-"                  [updelay <num>]\n"
-"                  [arp-interval <num>]\n"
-"                  [arp-ip-target <num>]\n"
-"                  [lacp-rate slow (0) | fast (1)]\n"
-"\n"
-"    bond-slave:   master <master (grnamn, eller anslutnings-UUID eller "
-"namn)>\n"
-"\n"
-"    team:         [config <fil>|<rå JSON-data>]\n"
-"\n"
-"    team-slave:   master <master (grnamn, eller anslutnings-UUID eller "
-"namn)>\n"
-"                  [config <fil>|<rå JSON-data>]\n"
-"\n"
-"    bridge:       [stp yes|no]\n"
-"                  [priority <num>]\n"
-"                  [forward-delay <2-30>]\n"
-"                  [hello-time <1-10>]\n"
-"                  [max-age <6-40>]\n"
-"                  [ageing-time <0-1000000>]\n"
-"                  [multicast-snooping yes|no]\n"
-"                  [mac <MAC-adress>]\n"
-"\n"
-"    bridge-slave: master <master (grnamn, eller anslutnings-UUID eller "
-"namn)>\n"
-"                  [priority <0-63>]\n"
-"                  [path-cost <1-65535>]\n"
-"                  [hairpin yes|no]\n"
-"\n"
-"    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan|libreswan|"
-"ssh|l2tp|iodine|…\n"
-"                  [user <användarnamn>]\n"
-"\n"
-"    olpc-mesh:    ssid <SSID>\n"
-"                  [channel <1-13>]\n"
-"                  [dhcp-anycast <MAC-adress>]\n"
-"\n"
-"    adsl:         username <användarnamn>\n"
-"                  protocol pppoa|pppoe|ipoatm\n"
-"                  [password <lösenord>]\n"
-"                  [encapsulation vcmux|llc]\n"
-"\n"
-"    tun:          mode tun|tap\n"
-"                  [owner <UID>]\n"
-"                  [group <GID>]\n"
-"                  [pi yes|no]\n"
-"                  [vnet-hdr yes|no]\n"
-"                  [multi-queue yes|no]\n"
-"\n"
-"    ip-tunnel:    mode ipip|gre|sit|isatap|vti|ip6ip6|ipip6|ip6gre|vti6\n"
-"                  remote <IP för fjärrändpunkt>\n"
-"                  [local <IP för lokal ändpunkt>]\n"
-"                  [dev <överordnad enhet (grnamn eller anslutnings-UUID)>]\n"
-"\n"
-"    macvlan:      dev <överordnad enhet (anslutnings-UUID, grnamn eller "
-"MAC)>\n"
-"                  mode vepa|bridge|private|passthru|source\n"
-"                  [tap yes|no]\n"
-"\n"
-"    vxlan:        id <VXLAN-ID>\n"
-"                  remote <IP för multicast-grupp eller fjärradress>\n"
-"                  [local <käll-IP>]\n"
-"                  [dev <överordnad enhet (grnamn eller anslutnings-UUID)>]\n"
-"                  [source-port-min <0-65535>]\n"
-"                  [source-port-max <0-65535>]\n"
-"                  [destination-port <0-65535>]\n"
-"\n"
-"  SLAVFLAGGOR:\n"
-"    bridge:       [priority <0-63>]\n"
-"                  [path-cost <1-65535>]\n"
-"                  [hairpin yes|no]\n"
-"\n"
-"    team:         [config <file>|<rå JSON-data>]\n"
-"\n"
-"  IP-FLAGGOR:\n"
-"                  [ip4 <IPv4-adress>] [gw4 <IPv4-gateway>]\n"
-"                  [ip6 <IPv6-adress>] [gw6 <IPv6-gateway>]\n"
-"\n"
 
 #: ../clients/cli/connections.c:493
 #, c-format
@@ -2240,9 +2097,8 @@ msgid "Username"
 msgstr "Användarnamn"
 
 #: ../clients/cli/connections.c:4347
-#, fuzzy
 msgid "MACsec parent device or connection UUID"
-msgstr "Överordnad MACVLAN-enhet eller anslutnings-UUID: "
+msgstr ""
 
 #: ../clients/cli/connections.c:4349
 msgid "Enable encryption [yes]"
@@ -2503,9 +2359,8 @@ msgid "ADSL connection"
 msgstr "ADSL-anslutning"
 
 #: ../clients/cli/connections.c:4891
-#, fuzzy
 msgid "MACsec connection"
-msgstr "CDMA-anslutning"
+msgstr ""
 
 #: ../clients/cli/connections.c:4893
 #, fuzzy
@@ -6421,21 +6276,17 @@ msgid "A password is required to connect to '%s'."
 msgstr "Ett lösenord krävs för att ansluta till ”%s”."
 
 #: ../clients/common/nm-secret-agent-simple.c:515
-#, fuzzy, c-format
+#, c-format
 msgid "Secrets are required to access the MACsec network '%s'"
 msgstr ""
-"Lösenord eller krypteringsnycklar krävs för åtkomst till trådlösa nätverket "
-"”%s”."
 
 #: ../clients/common/nm-secret-agent-simple.c:519
-#, fuzzy
 msgid "MACsec PSK authentication"
-msgstr "DSL-autentisering"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:528
-#, fuzzy
 msgid "MACsec EAP authentication"
-msgstr "Autentisering"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:568
 msgid "VPN password required"
@@ -6496,14 +6347,14 @@ msgid "Connecting"
 msgstr "Ansluter"
 
 #: ../clients/nm-online.c:189
-#, fuzzy, c-format
+#, c-format
 msgid "Error: timeout creating NMClient object\n"
-msgstr "Fel: Kunde inte skapa NMClient-objektet: %s."
+msgstr ""
 
 #: ../clients/nm-online.c:209
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Could not create NMClient object: %s\n"
-msgstr "Fel: Kunde inte skapa NMClient-objektet: %s."
+msgstr ""
 
 #: ../clients/nm-online.c:235
 msgid ""
@@ -8500,9 +8351,8 @@ msgstr ""
 "en fast TTL är endast tillåten då sökvägs-MTU-upptäckt (PMTUD) är aktiverad"
 
 #: ../libnm-core/nm-setting-macsec.c:235
-#, fuzzy
 msgid "the key is empty"
-msgstr "egenskap är tom"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:246
 #, c-format
@@ -8510,9 +8360,8 @@ msgid "the key must be %d characters"
 msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:254
-#, fuzzy
 msgid "the key contais non-hexadecimal characters"
-msgstr "IV innehåller icke-hexadecimala siffror."
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:291 ../libnm-core/nm-setting-vlan.c:634
 #: ../libnm-util/nm-setting-vlan.c:556
@@ -8527,14 +8376,14 @@ msgid "property is not specified and neither is '%s:%s'"
 msgstr "egenskapen är inte angiven och det är inte heller ”%s:%s”"
 
 #: ../libnm-core/nm-setting-macsec.c:333
-#, fuzzy, c-format
+#, c-format
 msgid "EAP key management requires '%s' setting presence"
-msgstr "”%s”-säkerhet kräver en ”%s”-inställning"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:344
-#, fuzzy, c-format
+#, c-format
 msgid "invalid port %d"
-msgstr "ogiltig rutt: ”%s”"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macvlan.c:192
 msgid "non promiscuous operation is allowed only in passthru mode"
@@ -10036,6 +9885,3 @@ msgstr "Okänd loggdomän ”%s”"
 #: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:107
 msgid "System"
 msgstr "System"
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "”%d” är inte ett giltigt värde för egenskapen (ska vara <=%d)"

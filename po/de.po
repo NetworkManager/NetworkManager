@@ -16,14 +16,13 @@
 # Benjamin Steinwender <b@stbe.at>, 2014.
 # Hedda Peters <hpeters@redhat.com>, 2014.
 # Mario Blättermann <mario.blaettermann@gmail.com>, 2012, 2016.
-# Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
-# Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 17:42+0200\n"
-"PO-Revision-Date: 2017-01-16 10:24-0500\n"
+"PO-Revision-Date: 2017-03-22 01:38-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Deutsch <gnome-de@gnome.org>\n"
 "Language: de\n"
@@ -740,9 +739,8 @@ msgid "MACVLAN mode"
 msgstr "MACVLAN-Modus"
 
 #: ../clients/cli/connections.c:111
-#, fuzzy
 msgid "MACsec mode"
-msgstr "MACVLAN-Modus"
+msgstr ""
 
 #: ../clients/cli/connections.c:116
 msgid "Proxy method"
@@ -1162,7 +1160,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/connections.c:376
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection add { ARGUMENTS | help }\n"
 "\n"
@@ -1310,153 +1308,6 @@ msgid ""
 "                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n"
 "\n"
 msgstr ""
-"Aufruf: nmcli connection add { ARGUMENTE | help }\n"
-"\n"
-"  ARGUMENTE := NORMALE_OPTIONEN TYP_SPEZIFISCHE_OPTIONEN SLAVE_OPTIONEN "
-"IP_OPTIONEN [-- ([+|-]<Einstellung>.<Eigenschaft> <Wert>)+]\n"
-"\n"
-"  NORMALE_OPTIONEN:\n"
-"                  type <Typ>\n"
-"                  ifname <Schnittstellenname> | \"*\"\n"
-"                  [con-name <Verbindungsname>]\n"
-"                  [autoconnect yes|no]\n"
-"                  [save yes|no]\n"
-"                  [master <master (Schnittstellenname oder Vebindungs-UUID "
-"oder Name)>]\n"
-"                  [slave-type <master-Verbindungstyp>]\n"
-"\n"
-"  TYP_SPEZIFISCHE_OPTIONEN:\n"
-"    Ethernet:     [mac <MAC-Adresse>]\n"
-"                  [cloned-mac <geklonte MAC-Adresse>]\n"
-"                  [mtu <MTU>]\n"
-"\n"
-"    WLAN:         ssid <SSID>\n"
-"                  [mac <MAC-Adresse>]\n"
-"                  [cloned-mac <geklonte MAC-Adresse>]\n"
-"                  [mtu <MTU>]\n"
-"                  [mode infrastructure|ap|adhoc]\n"
-"\n"
-"    wimax:        [mac <MAC-Adresse>]\n"
-"                  [nsp <NSP>]\n"
-"\n"
-"    pppoe:        username <PPPoE-Benutzername>\n"
-"                  [password <PPPoE-Passwort>]\n"
-"                  [service <PPPoE-Dienstname>]\n"
-"                  [mtu <MTU>]\n"
-"                  [mac <MAC-Adresse>]\n"
-"\n"
-"    gsm:          apn <APN>]\n"
-"                  [user <Benutzername>]\n"
-"                  [password <Passwort>]\n"
-"\n"
-"    cdma:         [user <Benutzername>]\n"
-"                  [password <Passwort>]\n"
-"\n"
-"    infiniband:   [mac <MAC-Adresse>]\n"
-"                  [mtu <MTU>]\n"
-"                  [transport-mode datagram | connected]\n"
-"                  [parent <Schnittstellenname>]\n"
-"                  [p-key <IPoIB P_Key>]\n"
-"\n"
-"    Bluetooth:    [addr <Bluetooth-Adresse>]\n"
-"                  [bt-type panu|dun-gsm|dun-cdma]\n"
-"\n"
-"    vlan:         dev <Übergeordnetes Gerät (Verbindungs-UUID, "
-"Schnittstellenname oder MAC)\n"
-"                  id <VLAN-Kennung>\n"
-"                  [flags <VLAN-Flags>]\n"
-"                  [ingress <Prioritätsabbildung Eingangsverkehr>]\n"
-"                  [egress <Prioritätsabbildung Ausgangsverkehr>]\n"
-"                  [mtu <MTU>]\n"
-"\n"
-"    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) "
-"| broadcast (3) |\n"
-"                        802.3ad    (4) | balance-tlb   (5) | balance-alb "
-"(6)]\n"
-"                  [primary <Schnittstellenname>]\n"
-"                  [miimon <Zahl>]\n"
-"                  [downdelay <Zahl>]\n"
-"                  [updelay <Zahl>]\n"
-"                  [arp-interval <Zahl>]\n"
-"                  [arp-ip-target <Zahl>]\n"
-"                  [lacp-rate slow (0) | fast (1)]\n"
-"\n"
-"    bond-slave:   master <master (Schnittstellenname, Verbindungs-UUID oder "
-"Name)\n"
-"\n"
-"    team:         [config <Datei>|<Pure JSON-Daten>]\n"
-"\n"
-"    team-slave:   master <master (Schnittstellenname, Verbindungs-UUID oder "
-"Name)\n"
-"                  [config <Datei>|<Pure JSON-Daten>]\n"
-"\n"
-"    bridge:       [stp yes|no>]\n"
-"                  [priority <Zahl>]\n"
-"                  [forward-delay <2-30>]\n"
-"                  [hello-time <1-10>]\n"
-"                  [max-age <6-40>]\n"
-"                  [ageing-time <0-1000000>]\n"
-"                  [multicast-snooping yes|no]\n"
-"                  [mac <MAC-Adresse>]\n"
-"\n"
-"    bridge-slave: master <master (Schnittstellenname, Verbindungs-UUID oder "
-"Name)\n"
-"                  [priority <0-63>]\n"
-"                  [path-cost <1-65535>]\n"
-"                  [hairpin yes|no]\n"
-"\n"
-"    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan|libreswan|"
-"ssh|l2tp|iodine|…\n"
-"                  [user <Benutzername>]\n"
-"\n"
-"    olpc-mesh:    ssid <SSID>\n"
-"                  [channel <1-13>]\n"
-"                  [dhcp-anycast <MAC-Adresse>]\n"
-"\n"
-"    adsl:         username <Benutzername>\n"
-"                  protocol pppoa|pppoe|ipoatm\n"
-"                  [password <Passwort>]\n"
-"                  [encapsulation vcmux|llc]\n"
-"\n"
-"    tun:          mode tun|tap\n"
-"                  [owner <Benutzerkennung>]\n"
-"                  [group <Gruppenkennung>]\n"
-"                  [pi yes|no]\n"
-"                  [vnet-hdr yes|no]\n"
-"                  [multi-queue yes|no]\n"
-"\n"
-"    ip-tunnel:    mode ipip|gre|sit|isatap|vti|ip6ip6|ipip6|ip6gre|vti6\n"
-"                  remote <IP der Gegenstelle>\n"
-"                  [local <IP des lokalen Endpunkts>]\n"
-"                  [dev <parent device (Schnittstellenname oder Verbindungs-"
-"UUID)>]\n"
-"\n"
-"    macvlan:      dev <parent device (Verbindungs-UUID, Schnittstellenname, "
-"oder MAC)>\n"
-"                  mode vepa|bridge|private|passthru|source\n"
-"                  [tap yes|no]\n"
-"\n"
-"    vxlan:        id <VXLAN ID>\n"
-"                  remote <IP of multicast group or remote address>\n"
-"                  [local <source IP>]\n"
-"                  [dev <parent device (Schnittstellenname oder Verbindungs-"
-"UUID)>]\n"
-"                  [source-port-min <0-65535>]\n"
-"                  [source-port-max <0-65535>]\n"
-"                  [destination-port <0-65535>]\n"
-"\n"
-"\n"
-"  SLAVE_OPTIONEN:\n"
-"    bridge:       [priority <0-63>]\n"
-"                  [path-cost <1-65535>]\n"
-"                  [hairpin yes|no]\n"
-"\n"
-"    team:         [config <Datei>|<Pure JSON-Daten>]\n"
-"\n"
-"  IP_OPTIONEN:\n"
-"                  [ip4 <IPv4-Adresse>] [gw4 <IPv4-Gateway>]\n"
-"                  [ip6 <IPv6-Adresse>] [gw6 <IPv6-Gateway>]\n"
-"\n"
 
 #: ../clients/cli/connections.c:493
 #, c-format
@@ -2261,9 +2112,8 @@ msgid "Username"
 msgstr "Benutzername"
 
 #: ../clients/cli/connections.c:4347
-#, fuzzy
 msgid "MACsec parent device or connection UUID"
-msgstr "Übergeordnetes MACVLAN-Gerät oder UUID der Verbindung"
+msgstr ""
 
 #: ../clients/cli/connections.c:4349
 msgid "Enable encryption [yes]"
@@ -2359,19 +2209,16 @@ msgid "IPv6 gateway [none]"
 msgstr "IPv6-Gateway [keines]"
 
 #: ../clients/cli/connections.c:4390
-#, fuzzy
 msgid "Browser only [no]"
-msgstr "Nur Browser"
+msgstr ""
 
 #: ../clients/cli/connections.c:4392
-#, fuzzy
 msgid "PAC URL"
-msgstr "PAC-Adresse"
+msgstr ""
 
 #: ../clients/cli/connections.c:4393
-#, fuzzy
 msgid "PAC script"
-msgstr "PAC-Skript"
+msgstr ""
 
 #: ../clients/cli/connections.c:4528
 #, c-format
@@ -2499,9 +2346,8 @@ msgid "ADSL connection"
 msgstr "ADSL-Verbindung"
 
 #: ../clients/cli/connections.c:4891
-#, fuzzy
 msgid "MACsec connection"
-msgstr "CDMA-Verbindung"
+msgstr ""
 
 #: ../clients/cli/connections.c:4893
 msgid "macvlan connection"
@@ -6617,21 +6463,17 @@ msgid "A password is required to connect to '%s'."
 msgstr "Es wird ein Passwort benötigt, um sich mit »%s« zu verbinden."
 
 #: ../clients/common/nm-secret-agent-simple.c:515
-#, fuzzy, c-format
+#, c-format
 msgid "Secrets are required to access the MACsec network '%s'"
 msgstr ""
-"Passwörter oder Schlüssel sind erforderlich, um auf das Kabelnetzwerk »%s« "
-"zuzugreifen"
 
 #: ../clients/common/nm-secret-agent-simple.c:519
-#, fuzzy
 msgid "MACsec PSK authentication"
-msgstr "DSL-Legitimierung"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:528
-#, fuzzy
 msgid "MACsec EAP authentication"
-msgstr "Legitimierung"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:568
 msgid "VPN password required"
@@ -6692,14 +6534,14 @@ msgid "Connecting"
 msgstr "Wird verbunden"
 
 #: ../clients/nm-online.c:189
-#, fuzzy, c-format
+#, c-format
 msgid "Error: timeout creating NMClient object\n"
-msgstr "Fehler: NMClient-Objekt konnte nicht erstellt werden: %s."
+msgstr ""
 
 #: ../clients/nm-online.c:209
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Could not create NMClient object: %s\n"
-msgstr "Fehler: NMClient-Objekt konnte nicht erstellt werden: %s."
+msgstr ""
 
 #: ../clients/nm-online.c:235
 msgid ""
@@ -8713,9 +8555,8 @@ msgstr ""
 "eingeschaltet ist"
 
 #: ../libnm-core/nm-setting-macsec.c:235
-#, fuzzy
 msgid "the key is empty"
-msgstr "Eigenschaft ist leer"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:246
 #, c-format
@@ -8723,9 +8564,8 @@ msgid "the key must be %d characters"
 msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:254
-#, fuzzy
 msgid "the key contais non-hexadecimal characters"
-msgstr "IV enthält nicht-hexadezimale Zeichen."
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:291 ../libnm-core/nm-setting-vlan.c:634
 #: ../libnm-util/nm-setting-vlan.c:556
@@ -8740,14 +8580,14 @@ msgid "property is not specified and neither is '%s:%s'"
 msgstr "Eigenschaft ist nicht festgelegt und ebensowenig ist »%s:%s«"
 
 #: ../libnm-core/nm-setting-macsec.c:333
-#, fuzzy, c-format
+#, c-format
 msgid "EAP key management requires '%s' setting presence"
-msgstr "Sicherheit »%s« erfordert Vorhandensein der Einstellung »%s«"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:344
-#, fuzzy, c-format
+#, c-format
 msgid "invalid port %d"
-msgstr "Ungültige Route: %s"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macvlan.c:192
 msgid "non promiscuous operation is allowed only in passthru mode"
@@ -10291,6 +10131,3 @@ msgstr "Unbekannte Protokolldomäne »%s«"
 #: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:107
 msgid "System"
 msgstr "System"
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "»%d« ist kein gültiger Wert für die Eigenschaft (sollte <= %d sein)"

@@ -3,13 +3,13 @@
 # This file is distributed under the same license as the NetworkManager package.
 # Isriya Paireepairit <markpeak@gmail.com>, 2006.
 # Theppitak Karoonboonyanan <thep@linux.thai.net>, 2006-2007.
-# Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 17:42+0200\n"
-"PO-Revision-Date: 2016-06-22 06:53-0400\n"
+"PO-Revision-Date: 2017-03-22 01:35-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Thai <l10n@opentle.org>\n"
 "Language: th\n"
@@ -704,9 +704,8 @@ msgid "MACVLAN mode"
 msgstr "การเชื่อมต่อ VPN"
 
 #: ../clients/cli/connections.c:111
-#, fuzzy
 msgid "MACsec mode"
-msgstr "การเชื่อมต่อ VPN"
+msgstr ""
 
 #: ../clients/cli/connections.c:116
 msgid "Proxy method"
@@ -1909,9 +1908,8 @@ msgid "Username"
 msgstr "ชื่อผู้ใช้:"
 
 #: ../clients/cli/connections.c:4347
-#, fuzzy
 msgid "MACsec parent device or connection UUID"
-msgstr "การเชื่อมต่อ VPN"
+msgstr ""
 
 #: ../clients/cli/connections.c:4349
 msgid "Enable encryption [yes]"
@@ -2155,9 +2153,8 @@ msgid "ADSL connection"
 msgstr "การเชื่อมต่อ VPN"
 
 #: ../clients/cli/connections.c:4891
-#, fuzzy
 msgid "MACsec connection"
-msgstr "การเชื่อมต่อ VPN"
+msgstr ""
 
 #: ../clients/cli/connections.c:4893
 #, fuzzy
@@ -5617,19 +5614,17 @@ msgid "A password is required to connect to '%s'."
 msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:515
-#, fuzzy, c-format
+#, c-format
 msgid "Secrets are required to access the MACsec network '%s'"
-msgstr "คุณเชื่อมต่อกับเครือข่ายไร้สาย '%s' แล้ว"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:519
-#, fuzzy
 msgid "MACsec PSK authentication"
-msgstr "การยืนยันตัวบุคคล:"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:528
-#, fuzzy
 msgid "MACsec EAP authentication"
-msgstr "การยืนยันตัวบุคคล:"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:568
 msgid "VPN password required"
@@ -5696,9 +5691,9 @@ msgid "Error: timeout creating NMClient object\n"
 msgstr ""
 
 #: ../clients/nm-online.c:209
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Could not create NMClient object: %s\n"
-msgstr "ไม่สามารถเริ่มการเชื่อมต่อ VPN '%s'"
+msgstr ""
 
 #: ../clients/nm-online.c:235
 msgid ""
@@ -7736,9 +7731,9 @@ msgid "EAP key management requires '%s' setting presence"
 msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:344
-#, fuzzy, c-format
+#, c-format
 msgid "invalid port %d"
-msgstr " (รหัสยูนิโค้ดไม่ถูกต้อง)"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macvlan.c:192
 msgid "non promiscuous operation is allowed only in passthru mode"

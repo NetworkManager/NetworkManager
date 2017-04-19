@@ -5,13 +5,13 @@
 # Rimas Kudelis <rq@akl.lt>, 2010.
 # Algimantas Margevičius <margevicius.algimantas@gmail.com>, 2012.
 # Aurimas Černius <aurisc4@gmail.com>, 2010, 2013.
-# Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 17:42+0200\n"
-"PO-Revision-Date: 2016-06-22 07:10-0400\n"
+"PO-Revision-Date: 2017-03-22 01:36-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Lietuvių <gnome-lt@lists.akl.lt>\n"
 "Language: lt\n"
@@ -711,9 +711,8 @@ msgid "MACVLAN mode"
 msgstr "MACVLAN veiksena: "
 
 #: ../clients/cli/connections.c:111
-#, fuzzy
 msgid "MACsec mode"
-msgstr "MACVLAN veiksena: "
+msgstr ""
 
 #: ../clients/cli/connections.c:116
 msgid "Proxy method"
@@ -1048,7 +1047,7 @@ msgid ""
 msgstr ""
 
 #: ../clients/cli/connections.c:376
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection add { ARGUMENTS | help }\n"
 "\n"
@@ -1196,92 +1195,6 @@ msgid ""
 "                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n"
 "\n"
 msgstr ""
-"Naudojimas: nmcli connection add { PARAMETRAI | help }\n"
-"  PARAMETRAI := BENDRI_PARAMETRAI TIPUI_SPECIFINIAI_PARAMETRAI "
-"IP_PARAMETRAI\n"
-"\n"
-"  BENDRI_PARAMETRAI:\n"
-"                  type <tipas>\n"
-"                  ifname <sąsajos pav> | \"*\"\n"
-"                  [con-name <ryšio pav>]\n"
-"                  [autoconnect yes|no]\n"
-"\n"
-"  TIPUI_SPECIFINIAI_PARAMETRAI:\n"
-"    ethernet:     [mac <MAC adresas>]\n"
-"                  [cloned-mac <klonuotas MAC adresas>]\n"
-"                  [mtu <MTU>]\n"
-"\n"
-"    wifi:         [mac <MAC adresas>]\n"
-"                  [cloned-mac <klonuotas MAC adresas>]\n"
-"                  [mtu <MTU>]\n"
-"                  [ssid <SSID>]\n"
-"\n"
-"    wimax:        [mac <MAC adresas>]\n"
-"                  [nsp <NSP>]\n"
-"\n"
-"    gsm:          apn <APN>]\n"
-"                  [user <naudotojas>]\n"
-"                  [password <slaptažodis>]\n"
-"\n"
-"    cdma:         [user <naudotojas>]\n"
-"                  [password <slaptažodis>]\n"
-"\n"
-"    infiniband:   [mac <MAC adresas>]\n"
-"                  [mtu <MTU>]\n"
-"                  [transport-mode datagram | connected]\n"
-"\n"
-"                  [parent <ifname>]\n"
-"\n"
-"                  [p-key <IPoIB P_Key>]\n"
-"\n"
-"    bluetooth:    [addr <bluetooth adresas>]\n"
-"                  [bt-type panu|dun-gsm|dun-cdma]\n"
-"    vlan:         dev <tėvinis įrenginys (ryšio  UUID, ifname, arba MAC)\n"
-"                  [id <VLAN id>]\n"
-"                  [flags <VLAN flags>]\n"
-"                  [ingress <ingress prioritetų susiejimai>]\n"
-"                  [egress <egress prioritetų susiejimai>]\n"
-"                  [mtu <MTU>]\n"
-"\n"
-"    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) "
-"| broadcast (3) |\n"
-"                        802.3ad    (4) | balance-tlb   (5) | balance-alb "
-"(6)]\n"
-"                  [miimon <num>]\n"
-"                  [downdelay <num>]\n"
-"                  [updelay <num>]\n"
-"                  [arp-interval <num>]\n"
-"                  [arp-ip-target <num>]\n"
-"\n"
-"    bond-slave:   master <master (ifname arba ryšio UUID)\n"
-"\n"
-"    team:         [config <json konfigūracija>]\n"
-"\n"
-"    team-slave:   master <master (ifname arba ryšio UUID)\n"
-"                  [config <json konfigūracija>]\n"
-"\n"
-"    bridge:       [stp yes|no>]\n"
-"                  [priority <num>]\n"
-"                  [forward-delay <2-30>]\n"
-"                  [hello-time <1-10>]\n"
-"                  [max-age <6-40>]\n"
-"                  [ageing-time <0-1000000>]\n"
-"\n"
-"    bridge-slave: master <master (ifname arba ryšio UUID)\n"
-"                  [priority <0-63>]\n"
-"                  [path-cost <1-65535>]\n"
-"                  [hairpin yes|no]\n"
-"\n"
-"    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan\n"
-"                  [user <naudotojas>]\n"
-"\n"
-"    olpc-mesh:    ssid <SSID>\n"
-"                  [channel <1-13>]\n"
-"                  [dhcp-anycast <MAC adresas>]\n"
-"\n"
-"  IP_PARAMETRAI:\n"
-"                  [ip4 <IPv4 adresas>] [gw4 <IPv4 šliuzas>]\n"
-"                  [ip6 <IPv6 adresas>] [gw6 <IPv6 šliuzas>]\n"
 
 #: ../clients/cli/connections.c:493
 #, c-format
@@ -2007,9 +1920,8 @@ msgid "Username"
 msgstr "failo pavadinimas"
 
 #: ../clients/cli/connections.c:4347
-#, fuzzy
 msgid "MACsec parent device or connection UUID"
-msgstr "VLAN tėvinis įrenginys arba ryšio UUID: "
+msgstr ""
 
 #: ../clients/cli/connections.c:4349
 msgid "Enable encryption [yes]"
@@ -2268,9 +2180,8 @@ msgid "ADSL connection"
 msgstr "ADSL ryšys %d"
 
 #: ../clients/cli/connections.c:4891
-#, fuzzy
 msgid "MACsec connection"
-msgstr "CDMA ryšys %d"
+msgstr ""
 
 #: ../clients/cli/connections.c:4893
 #, fuzzy
@@ -5945,14 +5856,12 @@ msgid "Secrets are required to access the MACsec network '%s'"
 msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:519
-#, fuzzy
 msgid "MACsec PSK authentication"
-msgstr "jungiamasi (reikia nustatyti tapatybę)"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:528
-#, fuzzy
 msgid "MACsec EAP authentication"
-msgstr "jungiamasi (reikia nustatyti tapatybę)"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:568
 msgid "VPN password required"
@@ -6012,14 +5921,14 @@ msgid "Connecting"
 msgstr "Jungiamasi"
 
 #: ../clients/nm-online.c:189
-#, fuzzy, c-format
+#, c-format
 msgid "Error: timeout creating NMClient object\n"
-msgstr "Klaida: nepavyko sukurti NMClient objekto."
+msgstr ""
 
 #: ../clients/nm-online.c:209
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Could not create NMClient object: %s\n"
-msgstr "Klaida: nepavyko sukurti NMClient objekto."
+msgstr ""
 
 #: ../clients/nm-online.c:235
 msgid ""
@@ -8050,9 +7959,8 @@ msgid "a fixed TTL is allowed only when path MTU discovery is enabled"
 msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:235
-#, fuzzy
 msgid "the key is empty"
-msgstr "savybė yra tuščia"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:246
 #, c-format
@@ -8060,9 +7968,8 @@ msgid "the key must be %d characters"
 msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:254
-#, fuzzy
 msgid "the key contais non-hexadecimal characters"
-msgstr "IV yra ne šešioliktainių skaitmenų."
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:291 ../libnm-core/nm-setting-vlan.c:634
 #: ../libnm-util/nm-setting-vlan.c:556
@@ -8077,14 +7984,14 @@ msgid "property is not specified and neither is '%s:%s'"
 msgstr "savybė yra nenurodyta ir nėra „%s:%s“"
 
 #: ../libnm-core/nm-setting-macsec.c:333
-#, fuzzy, c-format
+#, c-format
 msgid "EAP key management requires '%s' setting presence"
-msgstr "„%s“ saugumas reikalauja „%s“ nustatymo"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:344
-#, fuzzy, c-format
+#, c-format
 msgid "invalid port %d"
-msgstr "netinkamas IPv4 kelias „%s“"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macvlan.c:192
 msgid "non promiscuous operation is allowed only in passthru mode"
@@ -9596,6 +9503,3 @@ msgstr "Nežinoma žurnalo sritis „%s“"
 #: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:107
 msgid "System"
 msgstr "Sistema"
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "„%d“ yra netinkama vertė savybei (turi būti <= %d)"

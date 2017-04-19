@@ -8,14 +8,13 @@
 # Jiří Eischmann <jiri@eischmann.cz>, 2008.
 # Vladimír Machat <atrament@seznam.cz>, 2010, 2011.
 # Marek Černocký <marek@manet.cz>, 2010, 2011.
-# Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
-# Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 17:42+0200\n"
-"PO-Revision-Date: 2017-01-16 08:39-0500\n"
+"PO-Revision-Date: 2017-03-22 01:29-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Czech <gnome-cs-list@gnome.org>\n"
 "Language: cs\n"
@@ -722,9 +721,8 @@ msgid "MACVLAN mode"
 msgstr "VPN se připojuje"
 
 #: ../clients/cli/connections.c:111
-#, fuzzy
 msgid "MACsec mode"
-msgstr "VPN se připojuje"
+msgstr ""
 
 #: ../clients/cli/connections.c:116
 msgid "Proxy method"
@@ -1929,9 +1927,8 @@ msgid "Username"
 msgstr ""
 
 #: ../clients/cli/connections.c:4347
-#, fuzzy
 msgid "MACsec parent device or connection UUID"
-msgstr "pro připojení „%s“ nebylo nalezeno žádné zařízení"
+msgstr ""
 
 #: ../clients/cli/connections.c:4349
 msgid "Enable encryption [yes]"
@@ -2179,9 +2176,8 @@ msgid "ADSL connection"
 msgstr "Připojení GSM %d"
 
 #: ../clients/cli/connections.c:4891
-#, fuzzy
 msgid "MACsec connection"
-msgstr "Připojení CDMA %d"
+msgstr ""
 
 #: ../clients/cli/connections.c:4893
 #, fuzzy
@@ -5670,19 +5666,17 @@ msgid "A password is required to connect to '%s'."
 msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:515
-#, fuzzy, c-format
+#, c-format
 msgid "Secrets are required to access the MACsec network '%s'"
-msgstr "pro připojení „%s“ nebylo nalezeno žádné zařízení"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:519
-#, fuzzy
 msgid "MACsec PSK authentication"
-msgstr "připojuje se (požadováno ověření)"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:528
-#, fuzzy
 msgid "MACsec EAP authentication"
-msgstr "připojuje se (požadováno ověření)"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:568
 msgid "VPN password required"
@@ -5741,14 +5735,14 @@ msgid "Connecting"
 msgstr "připojuje se"
 
 #: ../clients/nm-online.c:189
-#, fuzzy, c-format
+#, c-format
 msgid "Error: timeout creating NMClient object\n"
-msgstr "Chyba: Nelze vytvořit objekt NMClient."
+msgstr ""
 
 #: ../clients/nm-online.c:209
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Could not create NMClient object: %s\n"
-msgstr "Chyba: Nelze vytvořit objekt NMClient."
+msgstr ""
 
 #: ../clients/nm-online.c:235
 msgid ""
@@ -7769,9 +7763,8 @@ msgid "the key must be %d characters"
 msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:254
-#, fuzzy
 msgid "the key contais non-hexadecimal characters"
-msgstr "IV obsahuje jiné než šestnáctkové číslice."
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:291 ../libnm-core/nm-setting-vlan.c:634
 #: ../libnm-util/nm-setting-vlan.c:556
@@ -7791,9 +7784,9 @@ msgid "EAP key management requires '%s' setting presence"
 msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:344
-#, fuzzy, c-format
+#, c-format
 msgid "invalid port %d"
-msgstr "neplatné pole „%s“"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macvlan.c:192
 msgid "non promiscuous operation is allowed only in passthru mode"

@@ -3,14 +3,13 @@
 #
 # Yuri Chornoivan <yurchor@ukr.net>, 2011, 2012, 2013, 2014, 2015.
 # Yuri Chornoivan <yurchor@ukr.net>, 2011, 2012, 2013, 2014, 2015, 2016.
-# Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
-# Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 17:42+0200\n"
-"PO-Revision-Date: 2017-01-16 10:00-0500\n"
+"PO-Revision-Date: 2017-03-22 01:35-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Ukrainian <kde-i18n-uk@kde.org>\n"
 "Language: uk\n"
@@ -728,9 +727,8 @@ msgid "MACVLAN mode"
 msgstr "Режим MACVLAN"
 
 #: ../clients/cli/connections.c:111
-#, fuzzy
 msgid "MACsec mode"
-msgstr "Режим MACVLAN"
+msgstr ""
 
 #: ../clients/cli/connections.c:116
 msgid "Proxy method"
@@ -1146,7 +1144,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/connections.c:376
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection add { ARGUMENTS | help }\n"
 "\n"
@@ -1294,150 +1292,6 @@ msgid ""
 "                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n"
 "\n"
 msgstr ""
-"Користування: nmcli connection add { ПАРАМЕТРИ | help }\n"
-"  ПАРАМЕТРИ := ЗАГАЛЬНІ_ПАРАМЕТРИ СПЕЦИФІЧНІ_ДЛЯ_ТИПУ_ПАРАМЕТРИ "
-"ПАРАМЕТРИ_SLAVE ПАРАМЕТРИ_IP\n"
-"\n"
-"  ЗАГАЛЬНІ_ПАРАМЕТРИ:\n"
-"                  type <тип>\n"
-"                  ifname <назва інтерфейсу> | \"*\"\n"
-"                  [con-name <назва з’єднання>]\n"
-"                  [autoconnect yes|no]\n"
-"                  [save yes|no]\n"
-"                  [master <основний інтерфейс (назва або назва з’єднання чи "
-"його UUID)>]\n"
-"                  [slave-type <master connection type>]\n"
-"\n"
-"  СПЕЦИФІЧНІ_ДЛЯ_ТИПУ_ПАРАМЕТРИ:\n"
-"    ethernet:     [mac <MAC-адреса>]\n"
-"                  [cloned-mac <клонована MAC-адреса>]\n"
-"                  [mtu <MTU>]\n"
-"\n"
-"    wifi:         ssid <SSID>\n"
-"                  [mac <MAC-адреса>]\n"
-"                  [cloned-mac <клонована MAC-адреса>]\n"
-"                  [mtu <MTU>]\n"
-"                  [mode infrastructure|ap|adhoc]\n"
-"\n"
-"    wimax:        [mac <MAC-адреса>]\n"
-"                  [nsp <NSP>]\n"
-"\n"
-"    pppoe:        username <користувач PPPoE>\n"
-"                  [password <пароль PPPoE>]\n"
-"                  [service <назва служби PPPoE>]\n"
-"                  [mtu <MTU>]\n"
-"                  [mac <MAC-адреса>]\n"
-"\n"
-"    gsm:          apn <APN>\n"
-"                  [user <користувач>]\n"
-"                  [password <пароль>]\n"
-"\n"
-"    cdma:         [user <користувач>]\n"
-"                  [password <пароль>]\n"
-"\n"
-"    infiniband:   [mac <MAC-адреса>]\n"
-"                  [mtu <MTU>]\n"
-"                  [transport-mode datagram | connected]\n"
-"                  [parent <назва>]\n"
-"                  [p-key <IPoIB P_Key>]\n"
-"\n"
-"    bluetooth:    [addr <адреса_bluetooth>]\n"
-"                  [bt-type panu|dun-gsm|dun-cdma]\n"
-"\n"
-"    vlan:         dev <батьківський пристрій (UUID з’єднання, назва або MAC-"
-"адреса)>\n"
-"                  id <ідентифікатор VLAN>\n"
-"                  [flags <прапорці VLAN>]\n"
-"                  [ingress <відображення пріоритетності вхідного доступу>]\n"
-"                  [egress <відображення пріоритетності вихідного доступу>]\n"
-"                  [mtu <MTU>]\n"
-"\n"
-"    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) "
-"| broadcast (3) |\n"
-"                        802.3ad    (4) | balance-tlb   (5) | balance-alb "
-"(6)]\n"
-"                  [primary <назва>]\n"
-"                  [miimon <число>]\n"
-"                  [downdelay <число>]\n"
-"                  [updelay <число>]\n"
-"                  [arp-interval <число>]\n"
-"                  [arp-ip-target <число>]\n"
-"                  [lacp-rate slow (0) | fast (1)]\n"
-"    bond-slave:   master <основний інтерфейс (назва інтерфейсу чи назва або "
-"UUID з’єднання)>\n"
-"\n"
-"    team:         [config <файл>|<дані JSON>]\n"
-"\n"
-"    team-slave:   master <основний інтерфейс (назва інтерфейсу чи назва або "
-"UUID з’єднання)>\n"
-"                  [config <файл>|<дані JSON>]\n"
-"\n"
-"    bridge:       [stp yes|no>]\n"
-"                  [priority <число>]\n"
-"                  [forward-delay <2-30>]\n"
-"                  [hello-time <1-10>]\n"
-"                  [max-age <6-40>]\n"
-"                  [ageing-time <0-1000000>]\n"
-"                  [multicast-snooping yes|no]\n"
-"                  [mac <MAC-адреса>]\n"
-"\n"
-"    bridge-slave: master <основний інтерфейс (назва інтерфейсу чи назва або "
-"UUID з’єднання)>\n"
-"                  [priority <0-63>]\n"
-"                  [path-cost <1-65535>]\n"
-"                  [hairpin yes|no]\n"
-"\n"
-"    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan|libreswan|"
-"ssh|l2tp|iodine|...\n"
-"                  [user <користувач>]\n"
-"\n"
-"    olpc-mesh:    ssid <SSID>\n"
-"                  [channel <1-13>]\n"
-"                  [dhcp-anycast <MAC-адреса>]\n"
-"\n"
-"    adsl:         username <користувач>\n"
-"                  protocol pppoa|pppoe|ipoatm\n"
-"                  [password <пароль>]\n"
-"                  [encapsulation vcmux|llc]\n"
-"\n"
-"    tun:          mode tun|tap\n"
-"                  [owner <UID>]\n"
-"                  [group <GID>]\n"
-"                  [pi yes|no]\n"
-"                  [vnet-hdr yes|no]\n"
-"                  [multi-queue yes|no]\n"
-"\n"
-"    ip-tunnel:    mode ipip|gre|sit|isatap|vti|ip6ip6|ipip6|ip6gre|vti6\n"
-"                  remote <IP віддаленої кінцевої точки>\n"
-"                  [local <IP локальної кінцевої точки>]\n"
-"                  [dev <батьківський пристрій (назва інтерфейсу або UUID "
-"з’єднання)>]\n"
-"\n"
-"    macvlan:      dev <батьківський пристрій (назва інтерфейсу, MAC або UUID "
-"з’єднання)>\n"
-"                  mode vepa|bridge|private|passthru|source\n"
-"                  [tap yes|no]\n"
-"\n"
-"    vxlan:        id <ідентифікатор VXLAN>\n"
-"                  remote <IP групи трансляції або віддалена адреса>\n"
-"                  [local <IP джерела>]\n"
-"                  [dev <батьківський пристрій (назва інтерфейсу або UUID "
-"з’єднання)>]\n"
-"                  [source-port-min <0-65535>]\n"
-"                  [source-port-max <0-65535>]\n"
-"                  [destination-port <0-65535>]\n"
-"\n"
-"  ПАРАМЕТРИ_SLAVE:\n"
-"    bridge:       [priority <0-63>]\n"
-"                  [path-cost <1-65535>]\n"
-"                  [hairpin yes|no]\n"
-"\n"
-"    team:         [config <файл>|<необроблені дані JSON>]\n"
-"\n"
-"  ПАРАМЕТРИ_IP:\n"
-"                  [ip4 <адреса IPv4>] [gw4 <шлюз IPv4>]\n"
-"                  [ip6 <адреса IPv6>] [gw6 <шлюз IPv6>]\n"
-"\n"
 
 #: ../clients/cli/connections.c:493
 #, c-format
@@ -2238,9 +2092,8 @@ msgid "Username"
 msgstr "Користувач"
 
 #: ../clients/cli/connections.c:4347
-#, fuzzy
 msgid "MACsec parent device or connection UUID"
-msgstr "Батьківський пристрій MACVLAN або UUID з’єднання"
+msgstr ""
 
 #: ../clients/cli/connections.c:4349
 msgid "Enable encryption [yes]"
@@ -2477,9 +2330,8 @@ msgid "ADSL connection"
 msgstr "З’єднання ADSL"
 
 #: ../clients/cli/connections.c:4891
-#, fuzzy
 msgid "MACsec connection"
-msgstr "З’єднання CDMA"
+msgstr ""
 
 #: ../clients/cli/connections.c:4893
 msgid "macvlan connection"
@@ -6539,21 +6391,17 @@ msgid "A password is required to connect to '%s'."
 msgstr "Для встановлення з’єднання з «%s» слід вказати пароль."
 
 #: ../clients/common/nm-secret-agent-simple.c:515
-#, fuzzy, c-format
+#, c-format
 msgid "Secrets are required to access the MACsec network '%s'"
 msgstr ""
-"Для отримання доступу до бездротової мережі потрібні паролі або ключі "
-"шифрування «%s»."
 
 #: ../clients/common/nm-secret-agent-simple.c:519
-#, fuzzy
 msgid "MACsec PSK authentication"
-msgstr "Розпізнавання DSL"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:528
-#, fuzzy
 msgid "MACsec EAP authentication"
-msgstr "Розпізнавання"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:568
 msgid "VPN password required"
@@ -6613,14 +6461,14 @@ msgid "Connecting"
 msgstr "Встановлюється з’єднання"
 
 #: ../clients/nm-online.c:189
-#, fuzzy, c-format
+#, c-format
 msgid "Error: timeout creating NMClient object\n"
-msgstr "Помилка: не вдалося створити об’єкт NMClient: %s."
+msgstr ""
 
 #: ../clients/nm-online.c:209
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Could not create NMClient object: %s\n"
-msgstr "Помилка: не вдалося створити об’єкт NMClient: %s."
+msgstr ""
 
 #: ../clients/nm-online.c:235
 msgid ""
@@ -7047,10 +6895,10 @@ msgstr "(Немає нетипових маршрутів)"
 #, c-format
 msgid "One custom route"
 msgid_plural "%d custom routes"
-msgstr[0] "%d нетипове правило"
-msgstr[1] "%d нетипових правила"
-msgstr[2] "%d нетипових правил"
-msgstr[3] "Одне нетипове правило"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+msgstr[3] ""
 
 #: ../clients/tui/nmt-page-ip4.c:128
 msgid "IPv4 CONFIGURATION"
@@ -8024,8 +7872,6 @@ msgstr "некоректне значення ключа/сертифіката 
 #: ../libnm-core/nm-keyfile-reader.c:1168
 msgid "invalid key/cert value is not a valid blob"
 msgstr ""
-"некоректне значення ключа/сертифіката, не є коректним значення «%s» не є "
-"коректним великим бінарним об’єктом"
 
 #: ../libnm-core/nm-keyfile-reader.c:1173
 msgid "invalid key/cert value"
@@ -8629,9 +8475,8 @@ msgstr ""
 "шляхів"
 
 #: ../libnm-core/nm-setting-macsec.c:235
-#, fuzzy
 msgid "the key is empty"
-msgstr "властивість є порожньою"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:246
 #, c-format
@@ -8639,9 +8484,8 @@ msgid "the key must be %d characters"
 msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:254
-#, fuzzy
 msgid "the key contais non-hexadecimal characters"
-msgstr "ВІ містить не шістнадцяткові цифри."
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:291 ../libnm-core/nm-setting-vlan.c:634
 #: ../libnm-util/nm-setting-vlan.c:556
@@ -8656,14 +8500,14 @@ msgid "property is not specified and neither is '%s:%s'"
 msgstr "властивість не вказано і не визначено «%s:%s»"
 
 #: ../libnm-core/nm-setting-macsec.c:333
-#, fuzzy, c-format
+#, c-format
 msgid "EAP key management requires '%s' setting presence"
-msgstr "захист «%s» вимагає використання параметра «%s»"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:344
-#, fuzzy, c-format
+#, c-format
 msgid "invalid port %d"
-msgstr "некоректний маршрут: %s"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macvlan.c:192
 #, fuzzy
@@ -9241,7 +9085,7 @@ msgstr "%d. Адреса IPv6 має некоректний префікс"
 #: ../libnm-util/nm-setting-vpn.c:582
 #, c-format
 msgid "Failed to convert '%s' value '%s' to uint"
-msgstr "не вдалося перетворити значення «%2$s» «%1$s» на uint"
+msgstr ""
 
 #: ../libnm-util/nm-setting-vpn.c:589
 #, c-format
@@ -10199,6 +10043,3 @@ msgstr "Невідомий домен ведення журналу, «%s»"
 #: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:107
 msgid "System"
 msgstr "Система"
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "«%d» є некоректним значенням властивості (має бути <= %d)"

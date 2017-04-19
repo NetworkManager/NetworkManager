@@ -14,14 +14,13 @@
 # 주의:
 # - 이 프로그램의 이름인 "Network Manager"는 "네트워크 관리" 혹은
 #  "네트워크 관리 프로그램"으로 번역.
-# Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
-# Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 17:42+0200\n"
-"PO-Revision-Date: 2017-01-16 09:22-0500\n"
+"PO-Revision-Date: 2017-03-22 01:32-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: GNOME Korea <gnome-kr@googlegroups.com>\n"
 "Language: ko\n"
@@ -733,9 +732,8 @@ msgid "MACVLAN mode"
 msgstr "VLAN"
 
 #: ../clients/cli/connections.c:111
-#, fuzzy
 msgid "MACsec mode"
-msgstr "VLAN"
+msgstr ""
 
 #: ../clients/cli/connections.c:116
 msgid "Proxy method"
@@ -1115,7 +1113,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/connections.c:376
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection add { ARGUMENTS | help }\n"
 "\n"
@@ -1263,144 +1261,6 @@ msgid ""
 "                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n"
 "\n"
 msgstr ""
-"사용법: nmcli connection add { 인수 | help }\n"
-"\n"
-"인수 := COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS SLAVE_OPTIONS IP_OPTIONS [-- "
-"([+|-]<setting>.<property> <value>)+]\n"
-"\n"
-"  COMMON_OPTIONS:\n"
-"                  type <유형>\n"
-"                  ifname <인터페이스 이름> | \"*\"\n"
-"                  [con-name <연결 이름>]\n"
-"                  [autoconnect yes|no]\n"
-"                  [save yes|no]\n"
-"                  [master <마스터(ifname 또는 연결 UUID 또는 이름)>]\n"
-"                  [slave-type <마스터 연결 유형>]\n"
-"\n"
-"  TYPE_SPECIFIC_OPTIONS:\n"
-"    ethernet:     [mac <MAC address>]\n"
-"                  [cloned-mac <복제된 MAC 주소>]\n"
-"                  [mtu <MTU>]\n"
-"\n"
-"    wifi:         ssid <SSID>\n"
-"                  [mac <MAC 주소>]\n"
-"                  [cloned-mac <복제된 MAC 주소>]\n"
-"                  [mtu <MTU>]\n"
-"                  [mode infrastructure|ap|adhoc]\n"
-"\n"
-"    wimax:        [mac <MAC 주소>]\n"
-"                  [nsp <NSP>]\n"
-"\n"
-"    pppoe:        username <PPPoE 사용자 이름>\n"
-"                  [password <PPPoE 암호>]\n"
-"                  [service <PPPoE 서비스 이름>]\n"
-"                  [mtu <MTU>]\n"
-"                  [mac <MAC 주소>]\n"
-"\n"
-"    gsm:          apn <APN>\n"
-"                  [user <사용자 이름>]\n"
-"                  [password <암호>]\n"
-"\n"
-"    cdma:         [user <사용자 이름>]\n"
-"                  [password <암호>]\n"
-"\n"
-"    infiniband:   [mac <MAC 주소>]\n"
-"                  [mtu <MTU>]\n"
-"                  [transport-mode datagram | connected]\n"
-"                  [parent <ifname>]\n"
-"                  [p-key <IPoIB P_Key>]\n"
-"\n"
-"    bluetooth:    [addr <블루투스 주소>]\n"
-"                  [bt-type panu|dun-gsm|dun-cdma]\n"
-"\n"
-"    vlan:         dev <부모 장치(연결 UUID, ifname 또는 MAC)>\n"
-"                  id <VLAN ID>\n"
-"                  [flags <VLAN flags>]\n"
-"                  [ingress <ingress 우선 순위 매핑>]\n"
-"                  [egress <egress 우선 순위 매핑>]\n"
-"                  [mtu <MTU>]\n"
-"\n"
-"    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) "
-"| broadcast (3) |\n"
-"                        802.3ad    (4) | balance-tlb   (5) | balance-alb "
-"(6)]\n"
-"                  [primary <ifname>]\n"
-"                  [miimon <숫자>]\n"
-"                  [downdelay <숫자>]\n"
-"                  [updelay <숫자>]\n"
-"                  [arp-interval <숫자>]\n"
-"                  [arp-ip-target <숫자>]\n"
-"                  [lacp-rate slow (0) | fast (1)]\n"
-"\n"
-"    bond-slave:   master <마스터(ifname 또는 연결 UUID 또는 이름)>\n"
-"\n"
-"    team:         [config <file>|<원시 JSON 데이터>]\n"
-"\n"
-"    team-slave:   master <마스터(ifname 또는 연결 UUID 또는 이름)>\n"
-"                  [config <file>|<원시 JSON 데이터>]\n"
-"\n"
-"    bridge:       [stp yes|no]\n"
-"                  [priority <숫자>]\n"
-"                  [forward-delay <2-30>]\n"
-"                  [hello-time <1-10>]\n"
-"                  [max-age <6-40>]\n"
-"                  [ageing-time <0-1000000>]\n"
-"                  [multicast-snooping yes|no]\n"
-"                  [mac <MAC 주소>]\n"
-"\n"
-"    bridge-slave: master <마스터(ifname 또는 연결 UUID 또는 이름)>\n"
-"                  [priority <0-63>]\n"
-"                  [path-cost <1-65535>]\n"
-"                  [hairpin yes|no]\n"
-"\n"
-"    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan|libreswan|"
-"ssh|l2tp|iodine|...\n"
-"                  [user <사용자 이름>]\n"
-"\n"
-"    olpc-mesh:    ssid <SSID>\n"
-"                  [channel <1-13>]\n"
-"                  [dhcp-anycast <MAC 주쇼>]\n"
-"\n"
-"    adsl:         username <사용자 이름>\n"
-"                  protocol pppoa|pppoe|ipoatm\n"
-"                  [password <암호>]\n"
-"                  [encapsulation vcmux|llc]\n"
-"\n"
-"    tun:          mode tun|tap\n"
-"                  [owner <UID>]\n"
-"                  [group <GID>]\n"
-"                  [pi yes|no]\n"
-"                  [vnet-hdr yes|no]\n"
-"                  [multi-queue yes|no]\n"
-"\n"
-"    ip-tunnel:    mode ipip|gre|sit|isatap|vti|ip6ip6|ipip6|ip6gre|vti6\n"
-"                  remote <원격 끝점 IP>\n"
-"                  [local <로컬 끝점 IP>]\n"
-"                  [dev <부모 장치(ifname 또는 연결 UUID)>]\n"
-"\n"
-"    macvlan:      dev <부모 장치(연결 UUID, ifname 또는 MAC)>\n"
-"                  mode vepa|bridge|private|passthru|source\n"
-"                  [tap yes|no]\n"
-"\n"
-"    vxlan:        id <VXLAN ID>\n"
-"                  remote <멀티캐스트 그룹 또는 원격 주소의 IP>\n"
-"                  [local <소스 IP>]\n"
-"                  [dev <부모 장치(ifname 또는 연결 UUID)>]\n"
-"                  [source-port-min <0-65535>]\n"
-"                  [source-port-max <0-65535>]\n"
-"                  [destination-port <0-65535>]\n"
-"\n"
-"  SLAVE_OPTIONS:\n"
-"    bridge:       [priority <0-63>]\n"
-"                  [path-cost <1-65535>]\n"
-"                  [hairpin yes|no]\n"
-"\n"
-"    team:         [config <file>|<원시 JSON 데이터>]\n"
-"\n"
-"  IP_OPTIONS:\n"
-"                  [ip4 <IPv4 주소>] [gw4 <IPv4 게이트웨이>]\n"
-"                  [ip6 <IPv6 주소>] [gw6 <IPv6 게이트웨이>]\n"
-"\n"
 
 #: ../clients/cli/connections.c:493
 #, c-format
@@ -2228,9 +2088,8 @@ msgid "Username"
 msgstr "사용자 이름 "
 
 #: ../clients/cli/connections.c:4347
-#, fuzzy
 msgid "MACsec parent device or connection UUID"
-msgstr "VLAN 부모 장치 또는 연결 UUID: "
+msgstr ""
 
 #: ../clients/cli/connections.c:4349
 msgid "Enable encryption [yes]"
@@ -2485,9 +2344,8 @@ msgid "ADSL connection"
 msgstr "ADSL 연결"
 
 #: ../clients/cli/connections.c:4891
-#, fuzzy
 msgid "MACsec connection"
-msgstr "CDMA 연결"
+msgstr ""
 
 #: ../clients/cli/connections.c:4893
 #, fuzzy
@@ -6371,19 +6229,17 @@ msgid "A password is required to connect to '%s'."
 msgstr "'%s'에 연결하려면 암호가 필요합니다."
 
 #: ../clients/common/nm-secret-agent-simple.c:515
-#, fuzzy, c-format
+#, c-format
 msgid "Secrets are required to access the MACsec network '%s'"
-msgstr "'%s' 무선 네트워크에 연결하려면 암호 또는 암호화 키가 필요합니다."
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:519
-#, fuzzy
 msgid "MACsec PSK authentication"
-msgstr "DSL 인증 "
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:528
-#, fuzzy
 msgid "MACsec EAP authentication"
-msgstr "인증"
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:568
 msgid "VPN password required"
@@ -6443,14 +6299,14 @@ msgid "Connecting"
 msgstr "연결하는 중 "
 
 #: ../clients/nm-online.c:189
-#, fuzzy, c-format
+#, c-format
 msgid "Error: timeout creating NMClient object\n"
-msgstr "오류: NMClient 개체를 생성할 수 없음: %s."
+msgstr ""
 
 #: ../clients/nm-online.c:209
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Could not create NMClient object: %s\n"
-msgstr "오류: NMClient 개체를 생성할 수 없음: %s."
+msgstr ""
 
 #: ../clients/nm-online.c:235
 msgid ""
@@ -6871,7 +6727,7 @@ msgstr "(사용자 설정 라우트가 없음)"
 #, c-format
 msgid "One custom route"
 msgid_plural "%d custom routes"
-msgstr[0] "%d 개의 사용자 지정 경로 "
+msgstr[0] ""
 
 #: ../clients/tui/nmt-page-ip4.c:128
 msgid "IPv4 CONFIGURATION"
@@ -8438,9 +8294,8 @@ msgid "a fixed TTL is allowed only when path MTU discovery is enabled"
 msgstr "고정 TTL은 경로 MTU 검색이 활성화된 경우에만 허용됩니다"
 
 #: ../libnm-core/nm-setting-macsec.c:235
-#, fuzzy
 msgid "the key is empty"
-msgstr "속성이 비어 있습니다 "
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:246
 #, c-format
@@ -8448,9 +8303,8 @@ msgid "the key must be %d characters"
 msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:254
-#, fuzzy
 msgid "the key contais non-hexadecimal characters"
-msgstr "IV에 16진수 숫자가 아닌 문자가 있습니다."
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:291 ../libnm-core/nm-setting-vlan.c:634
 #: ../libnm-util/nm-setting-vlan.c:556
@@ -8465,14 +8319,14 @@ msgid "property is not specified and neither is '%s:%s'"
 msgstr "속성이 지정되어 있지 않고 '%s:%s'도 아닙니다 "
 
 #: ../libnm-core/nm-setting-macsec.c:333
-#, fuzzy, c-format
+#, c-format
 msgid "EAP key management requires '%s' setting presence"
-msgstr "'%s' 보안에는 '%s' 설정이 필요합니다 "
+msgstr ""
 
 #: ../libnm-core/nm-setting-macsec.c:344
-#, fuzzy, c-format
+#, c-format
 msgid "invalid port %d"
-msgstr "잘못된 라우팅: %s'"
+msgstr ""
 
 #: ../libnm-core/nm-setting-macvlan.c:192
 msgid "non promiscuous operation is allowed only in passthru mode"
@@ -9940,6 +9794,3 @@ msgstr "알려지지 않은 로그 영역 '%s'"
 #: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:107
 msgid "System"
 msgstr "시스템"
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "'%d'는 속성의 올바른 값이 아닙니다 (<= %d이어야 함)"
