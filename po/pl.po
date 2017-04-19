@@ -11,8 +11,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-04-19 12:10+0200\n"
-"PO-Revision-Date: 2017-04-16 14:40+0200\n"
+"POT-Creation-Date: 2017-04-19 16:57+0200\n"
+"PO-Revision-Date: 2017-04-19 16:58+0200\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <community-poland@mozilla.org>\n"
 "Language: pl\n"
@@ -2048,9 +2048,9 @@ msgid "Error: invalid connection type; %s."
 msgstr "Błąd: nieznany typ połączenia; %s."
 
 #: ../clients/cli/connections.c:3985
-#, fuzzy, c-format
+#, c-format
 msgid "Error: bad connection type: %s."
-msgstr "Błąd: błędny typ połączenia; %s."
+msgstr "Błąd: błędny typ połączenia: %s."
 
 #: ../clients/cli/connections.c:4048
 #, c-format
@@ -3592,7 +3592,7 @@ msgstr "PRĘDKOŚĆ"
 #. 3
 #: ../clients/cli/devices.c:104
 msgid "SRIOV"
-msgstr ""
+msgstr "SRIOV"
 
 #. 0
 #: ../clients/cli/devices.c:113
@@ -5642,7 +5642,7 @@ msgid "'%s' is not a valid flag number; use <0-%d>"
 msgstr "„%s” nie jest prawidłowym numerem flagi; należy użyć <0-%d>"
 
 #: ../clients/cli/settings.c:1621
-#, fuzzy, c-format
+#, c-format
 msgid "Warning: '%s' sum is higher than all flags => all flags set\n"
 msgstr ""
 "Ostrzeżenie: suma „%s” jest wyższa niż wszystkie flagi => wszystkie "
@@ -5972,7 +5972,7 @@ msgid "'%s' not a number between 0 and %u (inclusive)"
 msgstr "„%s” nie jest liczbą między 0 a %u (włącznie)"
 
 #: ../clients/cli/settings.c:3151
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Warning: changes will have no effect until '%s' includes 1 (enabled)\n"
 "\n"
@@ -6225,7 +6225,7 @@ msgid "index '%d' is not in the range of <0-%d>"
 msgstr "indeks „%d” jest poza zakresem <0-%d>"
 
 #: ../clients/cli/settings.c:4824
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Warning: only one mapping at a time is supported; taking the first one (%s)\n"
 msgstr ""
@@ -6336,12 +6336,12 @@ msgstr ""
 "właściwe %s."
 
 #: ../clients/cli/settings.c:5667
-#, fuzzy, c-format
+#, c-format
 msgid "WEP key is guessed to be of '%s'\n"
 msgstr "Klucz WEP jest prawdopodobnie typu „%s”\n"
 
 #: ../clients/cli/settings.c:5669
-#, fuzzy, c-format
+#, c-format
 msgid "WEP key index set to '%d'\n"
 msgstr "Ustawiono indeks klucza WEP na „%d”\n"
 
@@ -6352,7 +6352,7 @@ msgstr "„%s” nie jest jednym z [0 (unknown), 1 (key), 2 (passphrase)]"
 
 #: ../clients/cli/settings.c:5708 ../clients/cli/settings.c:5711
 #: ../clients/cli/settings.c:5714 ../clients/cli/settings.c:5717
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Warning: '%s' is not compatible with '%s' type, please change or delete the "
 "key.\n"
@@ -6461,7 +6461,7 @@ msgid "field '%s' has to be alone"
 msgstr "pole „%s” musi być same"
 
 #: ../clients/cli/utils.c:958
-#, fuzzy, c-format
+#, c-format
 msgid "invalid field '%s'; allowed fields: %s"
 msgstr "nieprawidłowe pole „%s”; dozwolone pola: %s"
 
@@ -10329,23 +10329,3 @@ msgstr "Nieznany poziom dziennika „%s”"
 #, c-format
 msgid "Unknown log domain '%s'"
 msgstr "Nieznana domena dziennika „%s”"
-
-#, fuzzy
-#~ msgid "Info: %s\n"
-#~ msgstr "Błąd: %s\n"
-
-#, fuzzy
-#~ msgid "invalid field '%s%s%s'; no such field"
-#~ msgstr "nieprawidłowe pole „%s”; dozwolone pola: %s"
-
-#, fuzzy
-#~ msgid "failure to select field"
-#~ msgstr "Wybranie podanego APN się nie powiodło"
-
-#, fuzzy
-#~ msgid "invalid field '%s%s%s%s%s'; %s%s%s"
-#~ msgstr "nieprawidłowe pole „%s”; dozwolone pola: %s"
-
-#, fuzzy
-#~ msgid "name"
-#~ msgstr "Nazwa użytkownika"
