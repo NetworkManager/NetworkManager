@@ -8,12 +8,13 @@
 # Ankit Patel <ankit@redhat.com>, 2014, 2015.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 # Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2017-01-16 08:55-0500\n"
+"PO-Revision-Date: 2017-03-22 09:41-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: American English <kde-i18n-doc@kde.org>\n"
 "Language: gu\n"
@@ -9666,24 +9667,3 @@ msgstr "VPN જોડાઇ રહ્યુ છે"
 #~ msgid ""
 #~ "Option '--terse' requires specific '--fields' option values , not '%s'"
 #~ msgstr "વિકલ્પ '--terse' ને ચોક્કસ '--fields' વિકલ્પ કિંમતોની જરૂર છે, '%s' ની નહિં"
-
-#~ msgid "invalid metric '%s'"
-#~ msgstr "અયોગ્ય મેટ્રીક '%s'"
-
-#~ msgid "the user was disconnected"
-#~ msgstr "વપરાશકર્તાનું જોડાણ તૂટી ગયુ હતુ"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "ભૂલ: જોડાણ સક્રિય કરવાનું નિષ્ફળ."
-
-#~ msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
-#~ msgstr "VPN જોડાણ સફળતાપૂર્વક સક્રિય થયેલ છે (D-Bus સક્રિય પાથ: %s)\n"
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "ભૂલ: જોડાણ સક્રિય કરવાનું નિષ્ફળ: %s."
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "'%d' એ એક ગુણધર્મ માટે યોગ્ય કિંમત છે (<= %d હોવી જોઇએ)"
-
-#~ msgid "System"
-#~ msgstr "સિસ્ટમ"

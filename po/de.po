@@ -18,12 +18,13 @@
 # Mario Blättermann <mario.blaettermann@gmail.com>, 2012, 2016.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 # Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2017-01-16 10:24-0500\n"
+"PO-Revision-Date: 2017-03-22 10:50-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Deutsch <gnome-de@gnome.org>\n"
 "Language: de\n"
@@ -10026,32 +10027,3 @@ msgstr "VPN-Verbindung"
 #~ msgid ""
 #~ "Option '--terse' requires specific '--fields' option values , not '%s'"
 #~ msgstr "Option »--terse« benötigt bestimmte »--fields«-Werte, nicht »%s«"
-
-#~ msgid ""
-#~ "the second component of route ('%s') is neither a next hop address nor a "
-#~ "metric"
-#~ msgstr ""
-#~ "Die zweite Komponente der Route (»%s«) ist weder eine Router-Adresse noch "
-#~ "eine Metrik"
-
-#~ msgid "invalid metric '%s'"
-#~ msgstr "Ungültige Metrik »%s«"
-
-#~ msgid "the user was disconnected"
-#~ msgstr "Der Benutzer wurde getrennt"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "Fehler: Aktivierung der Verbindung ist gescheitert."
-
-#~ msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
-#~ msgstr ""
-#~ "VPN-Verbindung wurde erfolgreich aktiviert (aktiver D-Bus-Pfad: %s)\n"
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "Fehler: Aktivierung der Verbindung ist gescheitert: %s."
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "»%d« ist kein gültiger Wert für die Eigenschaft (sollte <= %d sein)"
-
-#~ msgid "System"
-#~ msgstr "System"

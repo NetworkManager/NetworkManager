@@ -11,12 +11,13 @@
 # Sam Friedmann <sfriedma@redhat.com>, 2010, 2014.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 # Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2017-01-16 08:52-0500\n"
+"PO-Revision-Date: 2017-03-22 09:38-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: French <trans-fr@lists.fedoraproject.org>\n"
 "Language: fr\n"
@@ -10211,33 +10212,3 @@ msgstr "Connexion VPN"
 #~ msgstr ""
 #~ "L'option « --terse » requiert des valeurs d'options « --fields » "
 #~ "spécifiques, pas « %s »"
-
-#~ msgid ""
-#~ "the second component of route ('%s') is neither a next hop address nor a "
-#~ "metric"
-#~ msgstr ""
-#~ "le second composant de la route (« %s ») n'est ni une adresse de rebond, "
-#~ "ni une métrique"
-
-#~ msgid "invalid metric '%s'"
-#~ msgstr "métrique « %s » non valide"
-
-#~ msgid "the user was disconnected"
-#~ msgstr "l'utilisateur a été déconnecté"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "Erreur : échec de l'activation de la connexion."
-
-#~ msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
-#~ msgstr "Connexion VPN activée (chemin D-Bus actif : %s)\n"
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "Erreur : l'activation de la connexion a échoué : %s."
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr ""
-#~ "« %d » n'est pas une valeur valide pour la propriété (et devrait être <= "
-#~ "%d)"
-
-#~ msgid "System"
-#~ msgstr "Système"

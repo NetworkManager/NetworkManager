@@ -10,12 +10,13 @@
 # Marek Černocký <marek@manet.cz>, 2010, 2011.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 # Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2017-01-16 08:39-0500\n"
+"PO-Revision-Date: 2017-03-22 09:30-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Czech <gnome-cs-list@gnome.org>\n"
 "Language: cs\n"
@@ -8951,19 +8952,3 @@ msgstr "VPN se připojuje"
 #~ "Option '--terse' requires specific '--fields' option values , not '%s'"
 #~ msgstr ""
 #~ "Přepínač „--terse“ vyžaduje určité hodnoty přepínače „--fields“, ne „%s“"
-
-#, fuzzy
-#~ msgid "invalid metric '%s'"
-#~ msgstr "neplatné pole „%s“"
-
-#~ msgid "the user was disconnected"
-#~ msgstr "uživatel byl odpojen"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "Chyba: Selhala aktivace připojení."
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "Chyba: Selhala aktivace připojení: %s"
-
-#~ msgid "System"
-#~ msgstr "Systém"

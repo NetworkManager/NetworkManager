@@ -2,22 +2,24 @@
 # This file is distributed under the same license as the NetworkManager package.
 #
 # Yuri Chornoivan <yurchor@ukr.net>, 2011, 2012, 2013, 2014, 2015.
+# Yuri Chornoivan <yurchor@ukr.net>, 2011, 2012, 2013, 2014, 2015, 2016.
 # Yuri Chornoivan <yurchor@ukr.net>, 2011, 2012, 2013, 2014, 2015, 2016, 2017.
-# Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata.
-# Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata.
+# Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
+# Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
-"Project-Id-Version: \n"
+"Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2017-03-17 16:05+0200\n"
-"Last-Translator: Yuri Chornoivan <yurchor@ukr.net>\n"
+"PO-Revision-Date: 2017-03-22 10:31-0400\n"
+"Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Ukrainian <kde-i18n-uk@kde.org>\n"
 "Language: uk\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Lokalize 1.5\n"
+"X-Generator: Zanata 3.9.6\n"
 "Plural-Forms: nplurals=4; plural=n==1 ? 3 : n%10==1 && n%100!=11 ? 0 : n"
 "%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
 
@@ -1751,11 +1753,11 @@ msgstr ""
 
 #. Ask for optional arguments.
 #: ../clients/cli/connections.c:4572
-#, c-format
+#, fuzzy, c-format
 msgid "There is %d optional setting for %s.\n"
 msgid_plural "There are %d optional settings for %s.\n"
 msgstr[0] "Для з’єднань типу «%2$s» передбачено %1$d додатковий аргумент.\n"
-msgstr[1] "Для «%2$s» передбачено %1$d додатковий параметр.\n"
+msgstr[1] "Для з’єднань типу «%2$s» передбачено %1$d додаткових ПАРАМЕТРИ.\n"
 msgstr[2] "Для з’єднань типу «%2$s» передбачено %1$d додаткових аргументів.\n"
 msgstr[3] "Для з’єднань типу «%2$s» передбачено %1$d додатковий аргумент.\n"
 
@@ -7984,6 +7986,7 @@ msgid "invalid port %d"
 msgstr "некоректний порт %d"
 
 #: ../libnm-core/nm-setting-macvlan.c:192
+#, fuzzy
 msgid "non promiscuous operation is allowed only in passthru mode"
 msgstr "розбірливі дії можливі лише у режимі передавання (passthru)"
 
@@ -10146,28 +10149,3 @@ msgstr "З’єднання VPN"
 #~ "Option '--terse' requires specific '--fields' option values , not '%s'"
 #~ msgstr ""
 #~ "Параметр «--terse» потребує певних значень параметра «--fields», а не «%s»"
-
-#~ msgid "the user was disconnected"
-#~ msgstr "користувача від’єднано"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "Помилка: невдала спроба активації з’єднання."
-
-#~ msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
-#~ msgstr "З’єднання VPN успішно задіяно (активний шлях D-Bus: %s)\n"
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "Помилка: не вдалося активувати з’єднання: %s."
-
-#~ msgid ""
-#~ "the second component of route ('%s') is neither a next hop address nor a "
-#~ "metric"
-#~ msgstr ""
-#~ "другим компонентом маршруту («%s») не є ні наступна адреса переходу, ні "
-#~ "метрика"
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "«%d» є некоректним значенням властивості (має бути <= %d)"
-
-#~ msgid "System"
-#~ msgstr "Система"

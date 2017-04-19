@@ -12,12 +12,13 @@
 # Daniel Mustieles <daniel.mustieles@gmail.com>, 2012.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 # Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2017-01-16 10:19-0500\n"
+"PO-Revision-Date: 2017-03-22 10:47-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Español <gnome-es-list@gnome.org>\n"
 "Language: es\n"
@@ -9936,32 +9937,3 @@ msgstr "Conexión VPN"
 #~ "Option '--terse' requires specific '--fields' option values , not '%s'"
 #~ msgstr ""
 #~ "Opción «--terse» requiere valores de «--fields» específicos, no «%s»"
-
-#~ msgid ""
-#~ "the second component of route ('%s') is neither a next hop address nor a "
-#~ "metric"
-#~ msgstr ""
-#~ "El segundo componente de ruta ('%s') no es ni una dirección de salto ni "
-#~ "una métrica"
-
-#~ msgid "invalid metric '%s'"
-#~ msgstr "Métrica inválida '%s'"
-
-#~ msgid "the user was disconnected"
-#~ msgstr "el usuario estaba desconectado"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "Error: falló la activación de la conexión."
-
-# auto translated by TM merge from project: NetworkManager, version: 0.9.8.2, DocId: NetworkManager
-#~ msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
-#~ msgstr "Conexión VPN activada con éxito (D-Bus active path: %s)\n"
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "Error: falló la activación de la conexión: %s."
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "'%d' no es un valor válido para la propiedad (debe ser <= %d)"
-
-#~ msgid "System"
-#~ msgstr "Sistema"

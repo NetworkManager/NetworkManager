@@ -2,12 +2,13 @@
 # Vladimer Sichinava ვლადიმერ სიჭინავა <vsichi@gnome.org>, 2007.
 # Malkhaz Barkalaya მალზახ ბარკალაია <malxaz@gmail.com>
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2016-06-22 07:08-0400\n"
+"PO-Revision-Date: 2017-03-22 10:37-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Georgian <http://mail.gnome.org/mailman/listinfo/gnome-ge-"
 "list>\n"
@@ -8644,15 +8645,3 @@ msgstr "VPN-შეერთებები"
 #, fuzzy
 #~ msgid "AP"
 #~ msgstr "PEAP"
-
-#, fuzzy
-#~ msgid "the user was disconnected"
-#~ msgstr "ქსელური შეერთება გათიშულია."
-
-#, fuzzy
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "ვერ მოხერხდა შეერთება უკაბელო ქსელთან."
-
-#, fuzzy
-#~ msgid "System"
-#~ msgstr "ღია სისტემა "

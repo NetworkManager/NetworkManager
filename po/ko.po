@@ -16,12 +16,13 @@
 #  "네트워크 관리 프로그램"으로 번역.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 # Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2017-01-16 09:22-0500\n"
+"PO-Revision-Date: 2017-03-22 10:00-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: GNOME Korea <gnome-kr@googlegroups.com>\n"
 "Language: ko\n"
@@ -9673,29 +9674,3 @@ msgstr "VPN 연결"
 #~ "Option '--terse' requires specific '--fields' option values , not '%s'"
 #~ msgstr ""
 #~ "옵션 '--terse'는 '%s'이(가) 아닌 구체적인 '--fields' 값을 요구합니다"
-
-#~ msgid ""
-#~ "the second component of route ('%s') is neither a next hop address nor a "
-#~ "metric"
-#~ msgstr "라우팅('%s')의 두 번째 구성 요소가 다음 홉 주소나 메트릭이 아닙니다"
-
-#~ msgid "invalid metric '%s'"
-#~ msgstr "잘못된 메트릭스 '%s'"
-
-#~ msgid "the user was disconnected"
-#~ msgstr "사용자 연결이 끊어졌습니다"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "오류: 연결 활성화가 실패했습니다."
-
-#~ msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
-#~ msgstr "VPN 연결이 성공적으로 활성화되었습니다 (D-Bus 활성 경로: %s)\n"
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "오류: 연결 활성화가 실패했습니다: %s."
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "'%d'는 속성의 올바른 값이 아닙니다 (<= %d이어야 함)"
-
-#~ msgid "System"
-#~ msgstr "시스템"

@@ -6,12 +6,13 @@
 # chandankumar <chandankumar.093047@gmail.com>, 2012.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 # Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2017-01-16 08:58-0500\n"
+"PO-Revision-Date: 2017-03-22 09:43-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Hindi <kde-i18n-doc@kde.org>\n"
 "Language: hi\n"
@@ -9729,29 +9730,3 @@ msgstr "VPN कनेक्शन"
 #~ msgid ""
 #~ "Option '--terse' requires specific '--fields' option values , not '%s'"
 #~ msgstr "विकल्प '--terse' के लिए '--fields' विकल्प मान की जरूरत है, न कि '%s'"
-
-#~ msgid ""
-#~ "the second component of route ('%s') is neither a next hop address nor a "
-#~ "metric"
-#~ msgstr "रूट का दूसरा घटक ('%s') न तो अगला हॉप पता है या न ही मेट्रिक"
-
-#~ msgid "invalid metric '%s'"
-#~ msgstr "अमान्य मीट्रिक '%s'"
-
-#~ msgid "the user was disconnected"
-#~ msgstr "उपयोक्ता डिसकनेक्ट किया गया था"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "त्रुटि: कनेक्शन सक्रिय किया जाना विफल."
-
-#~ msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
-#~ msgstr "VPN कनेक्शन सफलतापूर्वक सक्रिय किया गया (डी बस सक्रिय पथ: %s)\n"
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "त्रुटि: कनेक्शन सक्रियकरण विफल: %s."
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "'%d' गुण (होना चाहिए <= %d) के लिए वैध मान नहीं है"
-
-#~ msgid "System"
-#~ msgstr "तंत्र"

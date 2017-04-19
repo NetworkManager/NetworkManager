@@ -5,12 +5,13 @@
 #
 # Krishna Babu K <kkrothap@redhat.com>, 2009, 2010, 2012, 2013, 2014.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2016-06-22 06:52-0400\n"
+"PO-Revision-Date: 2017-03-22 10:25-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Telugu <kde-i18n-doc@kde.org>\n"
 "Language: te\n"
@@ -9559,29 +9560,3 @@ msgstr "VPN అనుసంధానం"
 #~ "Option '--terse' requires specific '--fields' option values , not '%s'"
 #~ msgstr ""
 #~ "ఐచ్చికము '--terse' కు ప్రత్యేకించి '--fields' ఐచ్చికము విలువలు అవసరము , '%s' కాదు"
-
-#~ msgid ""
-#~ "the second component of route ('%s') is neither a next hop address nor a "
-#~ "metric"
-#~ msgstr "route ('%s') యొక్క రెండవ కాంపోనెంట్ తరువాతి హాప్ చిరునామా కాదు మెట్రిక్ కాదు"
-
-#~ msgid "invalid metric '%s'"
-#~ msgstr "చెల్లని మాట్రిక్ '%s'"
-
-#~ msgid "the user was disconnected"
-#~ msgstr "వినియోగదారి అననుసంధానింప బడినారు"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "దోషము: అనుసంధానము క్రియాశీలపరచుట విఫలమైంది."
-
-#~ msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
-#~ msgstr "VPN అనుసంధానం సఫలవంతంగా క్రియాశీలపరచబడెను (డి-బస్ క్రియాశీల పాత్: %s)\n"
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "దోషము: అనుసంధానము క్రియాశీలపరచుట విఫలమైంది: %s."
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "'%d' లక్షణంకు చెల్లునటువంటి విలువ కాదు (<= %d అయివుండాలి)"
-
-#~ msgid "System"
-#~ msgstr "సిస్టమ్"

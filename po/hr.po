@@ -5,12 +5,13 @@
 # Tomislav Vujec <tvujec@redhat.com>, 2005.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 # Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2017-01-16 08:59-0500\n"
+"PO-Revision-Date: 2017-03-22 09:45-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Croatian <hr@li.org>\n"
 "Language: hr\n"
@@ -8956,19 +8957,3 @@ msgstr "VPN spajanje"
 #~ msgstr ""
 #~ "Opcija '--terse' zahtijeva označene vrijednosti opcije '--fields', a ne "
 #~ "'%s'"
-
-#, fuzzy
-#~ msgid "invalid metric '%s'"
-#~ msgstr "nevažeće polje '%s'"
-
-#~ msgid "the user was disconnected"
-#~ msgstr "korisnik je odspojen"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "Greška: Aktivacija veze neuspješna."
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "Greška: Aktivacija veze neuspješna: %s."
-
-#~ msgid "System"
-#~ msgstr "Sustav"

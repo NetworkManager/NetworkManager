@@ -6,12 +6,13 @@
 # Runa Bhattacharjee <runab@redhat.com>, 2009, 2010, 2012.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 # Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2017-01-16 08:34-0500\n"
+"PO-Revision-Date: 2017-03-22 09:25-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Bengali (India) <kde-i18n-doc@kde.org>\n"
 "Language: bn-IN\n"
@@ -9775,29 +9776,3 @@ msgstr "VPN সংযোগ"
 #~ msgstr ""
 #~ "'--terse' বিকল্পের ক্ষেত্রে '--fields' বিকল্পের সুনির্দিষ্ট মান উল্লেখ করা আবশ্যক, "
 #~ "'%s' ব্যবহার করা যাবে না"
-
-#~ msgid ""
-#~ "the second component of route ('%s') is neither a next hop address nor a "
-#~ "metric"
-#~ msgstr "('%s') রাউটের দ্বিতীয় উপাদান একটি পরবর্তী হপ ঠিকানা বা মেট্রিক কিছুই নয়"
-
-#~ msgid "invalid metric '%s'"
-#~ msgstr "অবৈধ মেট্রিক `%s'"
-
-#~ msgid "the user was disconnected"
-#~ msgstr "ব্যবহারকারীর সাথে সংযোগ বিচ্ছিন্ন করা হয়েছে"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "ত্রুটি: সংযোগ সক্রিয় করতে ব্যর্থ।"
-
-#~ msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
-#~ msgstr "সাফল্যের সাথে VPN সংযোগ সক্রিয় করা হয়েছে (D-Bus-র সক্রিয় পাথ: %s)\n"
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "ত্রুটি: সংযোগ সক্রিয় করতে ব্যর্থ: %s।"
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "'%d' বিশিষ্টতার ক্ষেত্রে একটি বৈধ মান নয় (হতে হবে <= %d)"
-
-#~ msgid "System"
-#~ msgstr "সিস্টেম"

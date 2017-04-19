@@ -6,12 +6,13 @@
 # Shankar Prasad <svenkate@redhat.com>, 2009, 2010, 2012, 2013.
 # Shankar Prasad <svenkate@redhat.com>, 2009, 2010, 2012, 2013, 2014.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2016-06-22 06:25-0400\n"
+"PO-Revision-Date: 2017-03-22 09:57-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Kannada <kde-i18n-doc@kde.org>\n"
 "Language: kn\n"
@@ -9642,30 +9643,3 @@ msgstr "VPN ಸಂಪರ್ಕ"
 #~ msgstr ""
 #~ "'--terse' ಎಂಬ ಆಯ್ಕೆಗೆ ನಿಶ್ಚಿತವಾದ '--fields' ಆಯ್ಕೆಯ ಮೌಲ್ಯದ ಅಗತ್ಯವಿರುತ್ತದೆಯೆ "
 #~ "ಹೊರತು, '%s' ಎಂಬುದಲ್ಲ"
-
-#~ msgid ""
-#~ "the second component of route ('%s') is neither a next hop address nor a "
-#~ "metric"
-#~ msgstr ""
-#~ "ರೌಟ್‌ನ ಎರಡನೆ ಘಟಕವು ('%s') ಒಂದು ಮುಂದಿನ ಹಾಪ್ ವಿಳಾಸವಾಗಲಿ ಒಂದು ಮೆಟ್ರಿಕ್ ಆಗಲಿ ಆಗಿಲ್ಲ"
-
-#~ msgid "invalid metric '%s'"
-#~ msgstr "ಅಮಾನ್ಯವಾದ ಮೆಟ್ರಿಕ್ '%s'"
-
-#~ msgid "the user was disconnected"
-#~ msgstr "ಬಳಕೆದಾರರೊಂದಿಗೆ ಸಂಪರ್ಕ ಕಡಿದುಹೋಗಿದೆ"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "ದೋಷ: ಸಂಪರ್ಕವನ್ನು ಸಕ್ರಿಯಗೊಳಿಕೆಯು ವಿಫಲಗೊಂಡಿದೆ."
-
-#~ msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
-#~ msgstr "VPN ಸಂಪರ್ಕವನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಸಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ (D-ಬಸ್ ಸಕ್ರಿಯ ಮಾರ್ಗ: %s)\n"
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "ದೋಷ: ಸಂಪರ್ಕ ಸಕ್ರಿಯಗೊಳಿಕೆಯು ವಿಫಲಗೊಂಡಿದೆ: %s."
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "'%d' ಎನ್ನುವುದು ಗುಣದ ಒಂದು ಮಾನ್ಯವಾದ ಮೌಲ್ಯವಲ್ಲ (ಇದು <= %d ಆಗಿರಬೇಕು)"
-
-#~ msgid "System"
-#~ msgstr "ವ್ಯವಸ್ಥೆ"

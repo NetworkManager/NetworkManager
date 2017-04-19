@@ -6,12 +6,13 @@
 # Chris Leonard <cjl@laptop.org>, 2012.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 # Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2017-01-16 08:46-0500\n"
+"PO-Revision-Date: 2017-03-22 09:35-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Sugar Labs\n"
 "Language: en-GB\n"
@@ -9068,22 +9069,3 @@ msgstr "VPN connecting"
 #~ "Option '--terse' requires specific '--fields' option values , not '%s'"
 #~ msgstr ""
 #~ "Option '--terse' requires specific '--fields' option values , not '%s'"
-
-#, fuzzy
-#~ msgid "invalid metric '%s'"
-#~ msgstr "invalid field '%s'"
-
-#~ msgid "the user was disconnected"
-#~ msgstr "the user was disconnected"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "Error: Connection activation failed."
-
-#~ msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
-#~ msgstr "VPN connection successfully activated (D-Bus active path: %s)\n"
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "Error: Connection activation failed: %s."
-
-#~ msgid "System"
-#~ msgstr "System"

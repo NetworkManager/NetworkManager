@@ -4,12 +4,13 @@
 # Andika Triwidada <andika@gmail.com>, 2010, 2011, 2012.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 # Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2017-01-16 09:03-0500\n"
+"PO-Revision-Date: 2017-03-22 09:48-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: GNOME Indonesian Translation Team <gnome@i15n.org>\n"
 "Language: id\n"
@@ -9033,22 +9034,3 @@ msgstr "VPN sedang menyambung"
 #~ "Option '--terse' requires specific '--fields' option values , not '%s'"
 #~ msgstr ""
 #~ "Opsi '--terse' memerlukan nilai opsi '--fields' spesifik, bukan '%s'"
-
-#, fuzzy
-#~ msgid "invalid metric '%s'"
-#~ msgstr "ruas tak valid '%s'"
-
-#~ msgid "the user was disconnected"
-#~ msgstr "pengguna diputus"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "Galat: Aktivasi koneksi gagal."
-
-#~ msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
-#~ msgstr "Koneksi VPN sukses diaktifkan (path aktif D-Bus: %s)\n"
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "Galat: Aktivasi koneksi gagal: %s."
-
-#~ msgid "System"
-#~ msgstr "Sistem"

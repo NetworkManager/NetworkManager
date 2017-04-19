@@ -6,12 +6,13 @@
 # $Id: sk.po,v 1.47 2006/10/15 22:29:21 marcel Exp $
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 # Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2017-01-16 08:19-0500\n"
+"PO-Revision-Date: 2017-03-22 10:19-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Slovak <sk-i18n@lists.linux.sk>\n"
 "Language: sk\n"
@@ -8784,22 +8785,3 @@ msgstr "VPN spojenia"
 #, fuzzy
 #~ msgid "AP"
 #~ msgstr "PEAP"
-
-#~ msgid ""
-#~ "the second component of route ('%s') is neither a next hop address nor a "
-#~ "metric"
-#~ msgstr ""
-#~ "smerová adresa ('%s') nie je nasledovaná adresou ďalšieho uzla alebo "
-#~ "metrikou"
-
-#, fuzzy
-#~ msgid "the user was disconnected"
-#~ msgstr "Sieťové spojenie bolo rozpojené."
-
-#, fuzzy
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "Pripájanie k drôtovej sieti zlyhalo."
-
-#, fuzzy
-#~ msgid "System"
-#~ msgstr "Otvorený systém"

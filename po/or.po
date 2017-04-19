@@ -4,12 +4,13 @@
 #
 # Manoj Kumar Giri <mgiri@redhat.com>, 2008, 2010, 2012, 2013.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2016-06-22 06:37-0400\n"
+"PO-Revision-Date: 2017-03-22 10:09-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Oriya <oriya-it@googlegroups.com>\n"
 "Language: or\n"
@@ -9518,24 +9519,3 @@ msgstr "VPN ସଂଯୋଗ କରୁଅଛି"
 #~ "Option '--terse' requires specific '--fields' option values , not '%s'"
 #~ msgstr ""
 #~ "ବିକଳ୍ପ '--terse' ନିର୍ଦ୍ଦିଷ୍ଟ '--fields' ବିକଳ୍ପ ମୂଲ୍ୟଗୁଡ଼ିକୁ ଆବଶ୍ୟକ କରିଥାଏ , '%s' କୁ ନୁହଁ"
-
-#~ msgid "invalid metric '%s'"
-#~ msgstr "ଅବୈଧ ମେଟ୍ରିକ '%s'"
-
-#~ msgid "the user was disconnected"
-#~ msgstr "ଚାଳକଟି ସଂଯୋଗ ବିଚ୍ଛିନ୍ନ ହୋଇଥିଲା"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "ତ୍ରୁଟି: ସଂଯୋଗ ସକ୍ରିୟଣ ବିଫଳ ହୋଇଛି।"
-
-#~ msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
-#~ msgstr "VPN ସଂଯୋଗ ସଫଳତାର ସହିତ ସକ୍ରିୟ ହୋଇଛି (D-Bus ସକ୍ରିୟ ପଥ: %s)\n"
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "ତ୍ରୁଟି: ସଂଯୋଗ ସକ୍ରିୟଣ ବିଫଳ ହୋଇଛି: %s."
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "'%d' ଟି ଗୁଣଧର୍ମ ପାଇଁ ଏକ ବୈଧ ମୂଲ୍ୟ ନୁହଁ (<= %d ହେବା ଉଚିତ)"
-
-#~ msgid "System"
-#~ msgstr "ତନ୍ତ୍ର"

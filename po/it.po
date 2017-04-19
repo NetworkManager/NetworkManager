@@ -6,12 +6,13 @@
 # Milo Casagrande <milo@ubuntu.com>, 2011, 2012, 2013, 2014.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 # Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2017-01-16 09:08-0500\n"
+"PO-Revision-Date: 2017-03-22 09:51-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Italian <tp@lists.linux.it>\n"
 "Language: it\n"
@@ -10066,32 +10067,3 @@ msgstr "Connessione VPN"
 #~ msgstr ""
 #~ "L'opzione «--terse» richiede valori specifici dell'opzione «--fields», "
 #~ "non «%s»"
-
-#~ msgid ""
-#~ "the second component of route ('%s') is neither a next hop address nor a "
-#~ "metric"
-#~ msgstr ""
-#~ "il secondo componente di route (\"%s\") non è né l'indirizzo di un hop "
-#~ "successivo né una metrica"
-
-#~ msgid "invalid metric '%s'"
-#~ msgstr "metrica «%s» non valida"
-
-#~ msgid "the user was disconnected"
-#~ msgstr "l'utente è stato scollegato"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "Errore: attivazione connessione non riuscita."
-
-#~ msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
-#~ msgstr "Connessione VPN attivata con successo (percorso D-Bus attivo: %s)\n"
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "Errore: attivazione connessione non riuscita: %s."
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr ""
-#~ "«%d» non è un valore valido per la proprietà (dovrebbe essere <= %d)"
-
-#~ msgid "System"
-#~ msgstr "Sistema"

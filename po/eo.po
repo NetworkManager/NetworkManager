@@ -9,12 +9,13 @@
 # Michel MORONI < >, 2011.
 # Kristjan SCHMIDT <kristjan.schmidt@googlemail.com>, 2010, 2011, 2012.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2016-06-22 07:00-0400\n"
+"PO-Revision-Date: 2017-03-22 10:33-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Esperanto <gnome-l10n-eo@lists.launchpad.net>\n"
 "Language: eo\n"
@@ -8918,16 +8919,3 @@ msgstr "VPN konektas"
 #~ msgstr ""
 #~ "Opcio '--terse' postulas specifajn elektindajn valorojn de '--fields', ne "
 #~ "'%s'"
-
-#, fuzzy
-#~ msgid "invalid metric '%s'"
-#~ msgstr "nevalida kampo '%s'"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "Eraro: Enŝalto de konekto fiaskis."
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "Eraro: Enŝalto de konekto fiaskis: %s."
-
-#~ msgid "System"
-#~ msgstr "Sistemo"

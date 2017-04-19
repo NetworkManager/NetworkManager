@@ -3,12 +3,13 @@
 # Woodman Tuen <wmtuen@gmail.com>, 2005.
 # Chao-Hsiung Liao <j_h_liau@yahoo.com.tw>, 2008.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2016-06-22 07:39-0400\n"
+"PO-Revision-Date: 2017-03-22 12:58-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Chinese (Hong Kong) <community@linuxhall.org>\n"
 "Language: zh-HK\n"
@@ -8664,15 +8665,3 @@ msgstr "VPN 連線"
 
 #~ msgid "*"
 #~ msgstr "*"
-
-#, fuzzy
-#~ msgid "the user was disconnected"
-#~ msgstr "該網路連線已經斷線。"
-
-#, fuzzy
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "連接有線網路失敗。"
-
-#, fuzzy
-#~ msgid "System"
-#~ msgstr "開放系統"

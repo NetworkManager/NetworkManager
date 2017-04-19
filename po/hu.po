@@ -4,14 +4,16 @@
 #
 # Gabor Kelemen <kelemeng at gnome dot hu>, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
+# Balázs Meskó <meskobalazs@gmail.com>, 2017. #zanata
 # Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2017-01-16 09:02-0500\n"
-"Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
+"PO-Revision-Date: 2017-03-25 08:22-0400\n"
+"Last-Translator: Balázs Meskó <meskobalazs@gmail.com>\n"
 "Language-Team: Hungarian <gnome-hu-list at gnome dot org>\n"
 "Language: hu\n"
 "MIME-Version: 1.0\n"
@@ -22,16 +24,16 @@ msgstr ""
 "X-Generator: Zanata 3.9.6\n"
 
 #: ../clients/cli/agent.c:40
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli agent { COMMAND | help }\n"
 "\n"
 "COMMAND := { secret | polkit | all }\n"
 "\n"
 msgstr ""
-"Használat: nmcli networking { PARANCS | help }\n"
+"Használat: nmcli agent { PARANCS | help }\n"
 "\n"
-"  PARANCS := { [ on | off ] }\n"
+"PARANCS := { secret | polkit | all }\n"
 "\n"
 
 #: ../clients/cli/agent.c:48
@@ -73,14 +75,14 @@ msgid "nmcli successfully registered as a NetworkManager's secret agent.\n"
 msgstr ""
 
 #: ../clients/cli/agent.c:160
-#, fuzzy, c-format
+#, c-format
 msgid "Error: secret agent initialization failed"
-msgstr "A modem előkészítése sikertelen"
+msgstr ""
 
 #: ../clients/cli/agent.c:179
-#, fuzzy, c-format
+#, c-format
 msgid "Error: polkit agent initialization failed: %s"
-msgstr "Hiba: a kapcsolat aktiválása meghiúsult: %s"
+msgstr ""
 
 #: ../clients/cli/agent.c:187
 #, c-format
@@ -3646,9 +3648,9 @@ msgid "invalid prefix '%s'; <1-%d> allowed"
 msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:118
-#, fuzzy, c-format
+#, c-format
 msgid "invalid IP address: %s"
-msgstr "nem érvényes MAC cím"
+msgstr "Érvénytelen IP-cím: %s"
 
 #: ../clients/common/nm-meta-setting-desc.c:167
 #, c-format
@@ -3668,14 +3670,14 @@ msgid "the metric ('%s') must be before attributes"
 msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:227
-#, fuzzy, c-format
+#, c-format
 msgid "unrecognized option '%s'"
-msgstr "érvénytelen mező: „%s”"
+msgstr "ismeretlen kapcsoló: „%s”"
 
 #: ../clients/common/nm-meta-setting-desc.c:235
-#, fuzzy, c-format
+#, c-format
 msgid "invalid route: %s"
-msgstr "érvénytelen mező: „%s”"
+msgstr "érvénytelen útvonal: „%s”"
 
 #: ../clients/common/nm-meta-setting-desc.c:247
 msgid "default route cannot be added (NetworkManager handles it by itself)"
@@ -9149,25 +9151,3 @@ msgstr "VPN csatlakozás"
 #~ "Option '--terse' requires specific '--fields' option values , not '%s'"
 #~ msgstr ""
 #~ "A „--terse” adott „--fields” kapcsolóértékeket követel meg, nem ezt: „%s”."
-
-#, fuzzy
-#~ msgid "invalid metric '%s'"
-#~ msgstr "érvénytelen mező: „%s”"
-
-#~ msgid "the user was disconnected"
-#~ msgstr "felhasználó leválasztva"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "Hiba: a kapcsolat aktiválása meghiúsult."
-
-#~ msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
-#~ msgstr "A VPN kapcsolat sikeresen aktiválva (D-Bus aktív útvonal: %s)\n"
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "Hiba: a kapcsolat aktiválása meghiúsult: %s."
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "„%d” nem érvényes érték a tulajdonsághoz (<= %d kellene legyen)"
-
-#~ msgid "System"
-#~ msgstr "Rendszer"

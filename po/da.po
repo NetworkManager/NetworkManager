@@ -6,12 +6,13 @@
 # Lasse Bang Mikkelsen <lbm@fatalerror.dk>, 2005, 06, 07.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 # Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2017-01-16 08:41-0500\n"
+"PO-Revision-Date: 2017-03-22 09:31-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Danish <dansk@dansk-gruppen.dk>\n"
 "Language: da\n"
@@ -8945,16 +8946,3 @@ msgstr "VPN-forbinder"
 #~ msgstr ""
 #~ "Tilvalg '--terse' kræver specifikke tilvalgsværdier for '--fields', ikke "
 #~ "'%s'"
-
-#, fuzzy
-#~ msgid "invalid metric '%s'"
-#~ msgstr "ugyldigt felt '%s'"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "Fejl: Forbindelsesaktivering fejlede."
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "Fejl: Forbindelsesaktivering fejlede: %s."
-
-#~ msgid "System"
-#~ msgstr "System"

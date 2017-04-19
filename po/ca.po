@@ -8,12 +8,13 @@
 # Walter Garcia Fontes <walter.garcia@upf.edu>
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 # Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2017-01-16 08:38-0500\n"
+"PO-Revision-Date: 2017-03-22 09:28-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Catalan <tradgnome@softcatala.org>\n"
 "Language: ca\n"
@@ -10061,31 +10062,3 @@ msgstr "Connexió VPN"
 #~ msgstr ""
 #~ "L'opció «--terse» requereix valors específics de l'opció «--fields» i no "
 #~ "«%s»"
-
-#~ msgid ""
-#~ "the second component of route ('%s') is neither a next hop address nor a "
-#~ "metric"
-#~ msgstr ""
-#~ "el segon component de la ruta («%s») no és ni una adreça de salt següent "
-#~ "ni una mètrica"
-
-#~ msgid "invalid metric '%s'"
-#~ msgstr "mètrica «%s» no vàlida"
-
-#~ msgid "the user was disconnected"
-#~ msgstr "l'usuari s'ha desconnectat"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "Error: no s'ha pogut activar la connexió."
-
-#~ msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
-#~ msgstr "La connexió VPN s'ha activat correctament (camí actiu D-Bus: %s)\n"
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "Error: no s'ha pogut activar la connexió: %s."
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "«%d» no és un valor vàlid per a la propietat (hauria de ser <= %d)"
-
-#~ msgid "System"
-#~ msgstr "Sistema"

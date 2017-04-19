@@ -8,12 +8,13 @@
 # Christian Hellberg (https://launchpad.net/~christian-hellberg), Heikki Kulhia (https://launchpad.net/~hessuk), Heikki Mäntysaari <heikkim@gmail.com>, Jere Sokka (https://launchpad.net/~jerry-sokka), Jiri Grönroos <jiri.gronroos@iki.fi>, Joonas Pajuniva (https://launchpad.net/~joonas-pajuniva), Jussi Aalto, Lazy (https://launchpad.net/~ubuntu-bugs-oittaa), Matti Karnaattu (https://launchpad.net/~mattikarnaattu), Miko-Matias Grönvalli (https://launchpad.net/~matias-gronvall), Pasi Tarhonen (https://launchpad.net/~pasi-tarhonen), Sorkkarauta (https://launchpad.net/~sorkkarauta), Timo Jyrinki <timo.jyrinki@iki.fi>, Tomi Juntunen (https://launchpad.net/~tojuntu), Toni Lähdekorpi <toni@lygon.net>, vilQuri <vili.lehto@pp.inet.fi>.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 # Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2017-01-16 08:47-0500\n"
+"PO-Revision-Date: 2017-03-22 09:36-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Finnish <gnome-fi-laatu@lists.sourceforge.net>\n"
 "Language: fi\n"
@@ -8777,15 +8778,3 @@ msgstr "VPN yhdistää"
 #, fuzzy
 #~ msgid "invalid option '%s', use a combination of [%s]"
 #~ msgstr "Virhe: 'laitetila': %s; sallitut kentät: %s"
-
-#~ msgid "the user was disconnected"
-#~ msgstr "käyttäjän yhteys katkaistu"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "Virhe: Yhteyden aktivointi epäonnistui."
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "Virhe: Yhteyden aktivointi epäonnistui: %s"
-
-#~ msgid "System"
-#~ msgstr "Järjestelmä"

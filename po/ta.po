@@ -8,12 +8,13 @@
 # I Felix <ifelix@redhat.com>, 2010.
 # Shantha kumar <shkumar@redhat.com>, 2012, 2013, 2014.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2016-06-22 07:26-0400\n"
+"PO-Revision-Date: 2017-03-22 10:53-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Tamil <kde-i18n-doc@kde.org>\n"
 "Language: ta\n"
@@ -9652,30 +9653,3 @@ msgstr "VPN இணைப்பு"
 #~ "Option '--terse' requires specific '--fields' option values , not '%s'"
 #~ msgstr ""
 #~ "விருப்பம் '--terse'க்கு குறிப்பிட்ட '--fields' விருப்ப மதிப்புகள் தேவை, '%s' அல்ல"
-
-#~ msgid ""
-#~ "the second component of route ('%s') is neither a next hop address nor a "
-#~ "metric"
-#~ msgstr ""
-#~ "தடத்தின் இரண்டாவது கூறானது ('%s') அடுத்த ஹாப் முகவரியுமல்ல ஒரு மெட்ரிக்குமல்ல"
-
-#~ msgid "invalid metric '%s'"
-#~ msgstr "செல்லுபடியாகாத மெட்ரிக் '%s'"
-
-#~ msgid "the user was disconnected"
-#~ msgstr "பயனர் செயல்நீக்கப்பட்டார்"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "பிழை: இணைப்பை செயல்படுத்த முடியவில்லை."
-
-#~ msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
-#~ msgstr "VPN இணைப்பு வெற்றிகரமாக செயல்படுத்தப்பட்டது (டி-பஸ் செயல் பாதை: %s)\n"
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "பிழை: இணைப்பை செயல்படுத்த முடியவில்லை: %s."
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "'%d' ஆனது பண்புக்கான செல்லுபடியான மதிப்பல்ல (<= %d ஆக இருக்க வேண்டும்)"
-
-#~ msgid "System"
-#~ msgstr "கணினி"

@@ -17,12 +17,13 @@
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 # Dingzhong Chen <wsxy162@gmail.com>, 2017. #zanata
 # Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2017-02-10 08:38-0500\n"
+"PO-Revision-Date: 2017-04-11 04:36-0400\n"
 "Last-Translator: Dingzhong Chen <wsxy162@gmail.com>\n"
 "Language-Team: Chinese (simplified) <i18n-zh@googlegroups.com>\n"
 "Language: zh-CN\n"
@@ -4008,11 +4009,12 @@ msgid "invalid IP address: %s"
 msgstr "无效的 IP 地址：%s"
 
 #: ../clients/common/nm-meta-setting-desc.c:167
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "'%s' is not valid (the format is: ip[/prefix] [next-hop] [metric] [attr=val] "
 "[attr=val])"
-msgstr "'%s' 无效（格式为：ip[/prefix] [next-hop] [metric]）"
+msgstr ""
+"'%s' 无效（格式为：ip[/prefix] [next-hop] [metric] [attr=val] [attr=val]）"
 
 #: ../clients/common/nm-meta-setting-desc.c:189
 #, c-format
@@ -4025,9 +4027,9 @@ msgid "the metric ('%s') must be before attributes"
 msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:227
-#, fuzzy, c-format
+#, c-format
 msgid "unrecognized option '%s'"
-msgstr "无效选项“%s”"
+msgstr "未识别选项“%s”"
 
 #: ../clients/common/nm-meta-setting-desc.c:235
 #, c-format
@@ -4072,7 +4074,7 @@ msgstr "不是有效的 PAC 脚本"
 #: ../clients/common/nm-meta-setting-desc.c:447
 #, c-format
 msgid "cannot read team config from file '%s'"
-msgstr ""
+msgstr "无法从文件“%s”读取分组配置"
 
 #: ../clients/common/nm-meta-setting-desc.c:454
 #, c-format
@@ -9112,7 +9114,7 @@ msgstr "VPN 连接"
 
 #, fuzzy
 #~ msgid "Tun mode"
-#~ msgstr "隧道模式："
+#~ msgstr "隧道模式"
 
 #~ msgid "IP Tunnel mode"
 #~ msgstr "IP 隧道模式"
@@ -9573,29 +9575,3 @@ msgstr "VPN 连接"
 #~ msgid ""
 #~ "Option '--terse' requires specific '--fields' option values , not '%s'"
 #~ msgstr "选项 “--terse” 需要特定 “--fields” 选项值，不是 “%s”"
-
-#~ msgid ""
-#~ "the second component of route ('%s') is neither a next hop address nor a "
-#~ "metric"
-#~ msgstr "路由（'%s'）的第二个部分既不是下一个 hop 地址，也不是一个度量单位。"
-
-#~ msgid "invalid metric '%s'"
-#~ msgstr "无效跃点“%s”"
-
-#~ msgid "the user was disconnected"
-#~ msgstr "用户已断开连接"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "错误：激活连接失败。"
-
-#~ msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
-#~ msgstr "VPN 连接成功激活(D-Bus 活动路径：%s)\n"
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "错误：激活连接失败：%s。"
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "“%d”不是该属性的有效取值(应 <= %d)"
-
-#~ msgid "System"
-#~ msgstr "系统"

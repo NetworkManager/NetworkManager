@@ -7,12 +7,13 @@
 # A S Alam <aalam@users.sf.net>, 2007, 2010, 2012.
 # Jaswinder Singh <jsingh@redhat.com>, 2010.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2016-06-22 07:15-0400\n"
+"PO-Revision-Date: 2017-03-22 10:44-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Punjabi/Panjabi <punjabi-users@lists.sf.net>\n"
 "Language: pa\n"
@@ -9498,24 +9499,3 @@ msgstr "VPN ਕੁਨੈਕਟ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ"
 #~ "Option '--terse' requires specific '--fields' option values , not '%s'"
 #~ msgstr ""
 #~ "Option '--terse' requires specific '--fields' option values , not '%s'"
-
-#~ msgid "invalid metric '%s'"
-#~ msgstr "ਅਢੁਕਵਾਂ metric '%s'"
-
-#~ msgid "the user was disconnected"
-#~ msgstr "ਯੂਜ਼ਰ ਡਿਸ-ਕੁਨੈਕਟ ਹੋ ਗਿਆ"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "ਗਲਤੀ: ਕੁਨੈਕਸ਼ਨ ਚਾਲੂ ਕਰਨ ਲਈ ਫੇਲ੍ਹ ਹੈ।"
-
-#~ msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
-#~ msgstr "VPN ਕੁਨੈਕਸ਼ਨ ਠੀਕ ਤਰ੍ਹਾਂ ਸਰਗਰਮ ਕੀਤਾ ਗਿਆ (ਡੀ-ਬੱਸ ਐਕਟਿਵ ਪਾਥ: %s)\n"
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "ਗਲਤੀ: ਕੁਨੈਕਸ਼ਨ ਚਾਲੂ ਕਰਨ ਲਈ ਫੇਲ੍ਹ: %s।"
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "ਗੁਣ ਲਈ '%d' ਇੱਕ ਢੁਕਵਾਂ ਮੁੱਲ ਨਹੀਂ ਹੈ (<= %d ਹੋਣਾ ਚਾਹੀਦਾ ਹੈ)"
-
-#~ msgid "System"
-#~ msgstr "ਸਿਸਟਮ।"

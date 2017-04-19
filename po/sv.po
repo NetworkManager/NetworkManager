@@ -5,12 +5,13 @@
 # Josef Andersson <josef.andersson@fripost.org>, 2014, 2015.
 # Anders Jonsson <anders.jonsson@norsjovallen.se>, 2015, 2016.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2016-06-22 06:49-0400\n"
+"PO-Revision-Date: 2017-03-22 10:22-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
 "Language: sv\n"
@@ -9768,31 +9769,3 @@ msgstr "VPN-anslutning"
 #~ "Option '--terse' requires specific '--fields' option values , not '%s'"
 #~ msgstr ""
 #~ "Flaggan ”--terse” kräver angivna värden för ”--fields”-flaggan , inte ”%s”"
-
-#~ msgid ""
-#~ "the second component of route ('%s') is neither a next hop address nor a "
-#~ "metric"
-#~ msgstr ""
-#~ "andra komponenten på rutten (”%s”) är varken nästa hoppadress eller ett "
-#~ "mätvärde"
-
-#~ msgid "invalid metric '%s'"
-#~ msgstr "ogiltigt mätvärde ”%s”"
-
-#~ msgid "the user was disconnected"
-#~ msgstr "användaren kopplades från"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "Fel: Aktivering av anslutning misslyckades."
-
-#~ msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
-#~ msgstr "VPN-anslutning aktiverad (aktiv sökväg för D-Bus: %s)\n"
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "Fel: Aktivering av anslutning misslyckades: %s."
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "”%d” är inte ett giltigt värde för egenskapen (ska vara <=%d)"
-
-#~ msgid "System"
-#~ msgstr "System"

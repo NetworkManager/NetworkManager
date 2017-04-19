@@ -10,12 +10,13 @@
 # Terry Chuang <tchuang@redhat.com>, 2010.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 # Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2017-01-16 10:38-0500\n"
+"PO-Revision-Date: 2017-03-22 12:57-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Traditional Chinese <zh@li.org>\n"
 "Language: zh-TW\n"
@@ -9495,24 +9496,3 @@ msgstr "VPN 連線"
 #~ msgid ""
 #~ "Option '--terse' requires specific '--fields' option values , not '%s'"
 #~ msgstr "選項 '--terse' 需要特定的 '--fields' 選項值，而不是 '%s'"
-
-#~ msgid "invalid metric '%s'"
-#~ msgstr "無效的單位「%s」"
-
-#~ msgid "the user was disconnected"
-#~ msgstr "該使用者已經斷線"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "錯誤：啟動連線失敗。"
-
-#~ msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
-#~ msgstr "VPN 連線已成功啟用（D-Bus 啟用路徑：%s）\n"
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "錯誤：啟動連線失敗：%s。"
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "'%d' 不是屬性合於規定的值（應該 <= %d）"
-
-#~ msgid "System"
-#~ msgstr "系統"

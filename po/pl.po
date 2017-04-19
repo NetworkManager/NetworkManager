@@ -1,19 +1,32 @@
-# Polish translation for NetworkManager.
-# Copyright © 2007-2017 the NetworkManager authors.
-# This file is distributed under the same license as the NetworkManager package.
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# Aviary.pl
+# Jeśli masz jakiekolwiek uwagi odnoszące się do tłumaczenia lub chcesz
+# pomóc w jego rozwijaniu i pielęgnowaniu, napisz do nas:
+# gnomepl@aviary.pl
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 # Wadim Dziedzic <wdziedzic@aviary.pl>, 2007-2008.
 # Artur Flinta <aflinta@at.kernel.pl>, 2007.
 # Tomasz Dominikowski <dominikowski@gmail.com>, 2008-2010.
+# Piotr Drąg <piotrdrag@gmail.com>, 2009-2016.
+# Aviary.pl <gnomepl@aviary.pl>, 2007-2016.
+# Polish translation for NetworkManager.
+# Copyright © 2007-2016 the NetworkManager authors.
+# This file is distributed under the same license as the NetworkManager package.
+# Aviary.pl <community-poland@mozilla.org>, 2007-2016.
+# Copyright © 2007-2017 the NetworkManager authors.
 # Piotr Drąg <piotrdrag@gmail.com>, 2009-2017.
 # Aviary.pl <community-poland@mozilla.org>, 2007-2017.
-#
+# Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
+# Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Piotr Drąg <piotrdrag@gmail.com>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
-"Project-Id-Version: NetworkManager\n"
+"Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2017-03-19 22:01+0100\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"PO-Revision-Date: 2017-03-22 10:12-0400\n"
+"Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Polish <community-poland@mozilla.org>\n"
 "Language: pl\n"
 "MIME-Version: 1.0\n"
@@ -21,6 +34,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
 "%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2\n"
+"X-Generator: Zanata 3.9.6\n"
 
 #: ../clients/cli/agent.c:40
 #, c-format
@@ -6221,7 +6235,7 @@ msgstr "(Brak reguł użytkownika)"
 #, c-format
 msgid "One custom route"
 msgid_plural "%d custom routes"
-msgstr[0] "%d reguła użytkownika"
+msgstr[0] "Jedna reguła użytkownika"
 msgstr[1] "%d reguły użytkownika"
 msgstr[2] "%d reguł użytkownika"
 
@@ -8491,7 +8505,7 @@ msgstr "USB"
 #, c-format
 msgctxt "long device name"
 msgid "%s %s"
-msgstr "%2$s (%1$s)"
+msgstr "%s (%s)"
 
 #: ../libnm-glib/nm-remote-connection.c:149
 msgid "Disconnected by D-Bus"

@@ -7,12 +7,13 @@
 # Shiva Pokharel <shiva@mpp.org.np>, 2007.
 # Nabin Gautam <nabin@mpp.org.np>, 2008.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 11:04+0200\n"
-"PO-Revision-Date: 2016-06-22 07:39-0400\n"
+"PO-Revision-Date: 2017-03-22 12:57-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Nepali <info@mpp.org.np>\n"
 "Language: ne\n"
