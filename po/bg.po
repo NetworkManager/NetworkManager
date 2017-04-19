@@ -5,12 +5,13 @@
 # Damyan Ivanov <dam+gnome@ktnx.net>, 2010.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 # Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 12:10+0200\n"
-"PO-Revision-Date: 2017-01-16 08:31-0500\n"
+"PO-Revision-Date: 2017-03-22 09:23-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Bulgarian <dict@fsa-bg.org>\n"
 "Language: bg\n"
@@ -9534,16 +9535,3 @@ msgstr "Непознат домейн за съобщенията в журна�
 #~ "Option '--terse' requires specific '--fields' option values , not '%s'"
 #~ msgstr ""
 #~ "Опцията „--terse“ изисква конкретни стойности за „--fields“, а не „%s“"
-
-#, fuzzy
-#~ msgid "invalid metric '%s'"
-#~ msgstr "грешно поле „%s“"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "Грешка при активиране на връзката."
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "Грешка при активиране на връзката: %s."
-
-#~ msgid "System"
-#~ msgstr "Системна"

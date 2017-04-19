@@ -6,12 +6,13 @@
 # Ani Peter <apeter@redhat.com>, 2010, 2012, 2013, 2014.
 # Mohammed <sadiqpkp@gmail.com>, 2012.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
+# Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-04-19 12:10+0200\n"
-"PO-Revision-Date: 2016-06-22 06:31-0400\n"
+"PO-Revision-Date: 2017-03-22 10:03-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Malayalam <discuss@lists.smc.org.in>\n"
 "Language: ml\n"
@@ -9922,24 +9923,3 @@ msgstr "അപരിചിതമായ ലോഗ് ഡൊമെയിന്‍ 
 #~ msgid ""
 #~ "Option '--terse' requires specific '--fields' option values , not '%s'"
 #~ msgstr "'--terse' എന്ന ഐച്ഛികത്തിനു് പ്രത്യേക '--fields' ഐച്ഛികം ആവശ്യമുണ്ടു്, '%s' അല്ല"
-
-#~ msgid "invalid metric '%s'"
-#~ msgstr "തെറ്റായ മെട്രിക്ക് '%s'"
-
-#~ msgid "the user was disconnected"
-#~ msgstr "ഉപയോക്താവു് വിഛേദിച്ചിരിക്കുന്നു"
-
-#~ msgid "Error: Connection activation failed."
-#~ msgstr "പിശക്: കണക്ഷന്‍ സജീവമാക്കല്‍ പരാജയപ്പെട്ടു."
-
-#~ msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
-#~ msgstr "വിപിഎന്‍ കണക്ഷന്‍ വിജയകരമായി സജീവമാക്കിയിരിയ്ക്കുന്നു (ഡി-ബസ് സജീവ പാഥ്: %s)\n"
-
-#~ msgid "Error: Connection activation failed: %s."
-#~ msgstr "പിശക്: കണക്ഷന്‍ സജീവമാക്കല്‍ പരാജയപ്പെട്ടു: %s."
-
-#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
-#~ msgstr "വിശേഷതയ്ക്കുള്ള ശരിയായ മൂല്ല്യമല്ല '%d' (<= %d ആയിരിയ്ക്കണം)"
-
-#~ msgid "System"
-#~ msgstr "സിസ്റ്റം"
