@@ -3049,13 +3049,15 @@ check_valid_name (const char *val, const NMMetaSettingValidPartItem *const*array
 }
 
 static const char *
-check_valid_name_toplevel (const char *val, GError **error)
+check_valid_name_toplevel (const char *val, const char **slave_type, GError **error)
 {
 	gs_unref_ptrarray GPtrArray *tmp_arr = NULL;
 	const char *str;
 	GError *tmp_err = NULL;
 	int i;
 	const NMMetaSettingInfoEditor *setting_info;
+
+	NM_SET_OUT (slave_type, NULL);
 
 	/* Create a temporary array that can be used in nmc_string_is_valid() */
 	tmp_arr = g_ptr_array_sized_new (32);
@@ -3065,6 +3067,9 @@ check_valid_name_toplevel (const char *val, GError **error)
 		if (setting_info->alias)
 			g_ptr_array_add (tmp_arr, (gpointer) setting_info->alias);
 	}
+	g_ptr_array_add (tmp_arr, "bond-slave");
+	g_ptr_array_add (tmp_arr, "bridge-slave");
+	g_ptr_array_add (tmp_arr, "team-slave");
 	g_ptr_array_add (tmp_arr, (gpointer) NULL);
 
 	/* Check string validity */
@@ -3081,6 +3086,17 @@ check_valid_name_toplevel (const char *val, GError **error)
 			g_clear_error (&tmp_err);
 		}
 		return NULL;
+	}
+
+	if (nm_streq (str, "bond-slave")) {
+		NM_SET_OUT (slave_type, NM_SETTING_BOND_SETTING_NAME);
+		return NM_SETTING_WIRED_SETTING_NAME;
+	} else if (nm_streq (str, "bridge-slave")) {
+		NM_SET_OUT (slave_type, NM_SETTING_BRIDGE_SETTING_NAME);
+		return NM_SETTING_WIRED_SETTING_NAME;
+	} else if (nm_streq (str, "team-slave")) {
+		NM_SET_OUT (slave_type, NM_SETTING_TEAM_SETTING_NAME);
+		return NM_SETTING_WIRED_SETTING_NAME;
 	}
 
 	setting_info = nm_meta_setting_info_editor_find_by_name (str, TRUE);
@@ -3738,39 +3754,23 @@ set_connection_type (NmCli *nmc, NMConnection *con, const OptionInfo *option, co
 	const NMMetaSettingValidPartItem *const*slv_settings;
 	GError *local = NULL;
 	const gchar *master[] = { "master", NULL };
+	const char *slave_type = NULL;
 
-	if (g_strcmp0 (value, "bond-slave") == 0) {
-		value = NM_SETTING_WIRED_SETTING_NAME;
+	value = check_valid_name_toplevel (value, &slave_type, &local);
+	if (!value) {
+		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+		             _("Error: bad connection type: %s"), local->message);
+		g_clear_error (&local);
+		return FALSE;
+	}
+
+	if (slave_type) {
 		if (!set_property (con, NM_SETTING_CONNECTION_SETTING_NAME,
-		                   NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BOND_SETTING_NAME,
+		                   NM_SETTING_CONNECTION_SLAVE_TYPE, slave_type,
 		                   '\0', error)) {
 			return FALSE;
 		}
 		enable_options (NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_MASTER, master);
-	} else if (g_strcmp0 (value, "bridge-slave") == 0) {
-		value = NM_SETTING_WIRED_SETTING_NAME;
-		if (!set_property (con, NM_SETTING_CONNECTION_SETTING_NAME,
-		                   NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BRIDGE_SETTING_NAME,
-		                   '\0', error)) {
-			return FALSE;
-		}
-		enable_options (NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_MASTER, master);
-	} else if (g_strcmp0 (value, "team-slave") == 0) {
-		value = NM_SETTING_WIRED_SETTING_NAME;
-		if (!set_property (con, NM_SETTING_CONNECTION_SETTING_NAME,
-		                   NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_TEAM_SETTING_NAME,
-		                   '\0', error)) {
-			return FALSE;
-		}
-		enable_options (NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_MASTER, master);
-	} else {
-		value = check_valid_name_toplevel (value, &local);
-		if (!value) {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("Error: bad connection type: %s"), local->message);
-			g_clear_error (&local);
-			return FALSE;
-		}
 	}
 
 	/* ifname is mandatory for all connection types except virtual ones (bond, team, bridge, vlan) */
@@ -7539,12 +7539,11 @@ get_ethernet_device_name (NmCli *nmc)
 }
 
 static void
-editor_init_new_connection (NmCli *nmc, NMConnection *connection)
+editor_init_new_connection (NmCli *nmc, NMConnection *connection, const char *slave_type)
 {
 	NMSetting *setting, *base_setting;
 	NMSettingConnection *s_con;
 	const char *con_type;
-	const char *slave_type = NULL;
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -7553,13 +7552,6 @@ editor_init_new_connection (NmCli *nmc, NMConnection *connection)
 	/* Initialize new connection according to its type using sensible defaults. */
 
 	nmc_setting_connection_connect_handlers (s_con, connection);
-
-	if (g_strcmp0 (con_type, "bond-slave") == 0)
-		slave_type = NM_SETTING_BOND_SETTING_NAME;
-	if (g_strcmp0 (con_type, "team-slave") == 0)
-		slave_type = NM_SETTING_TEAM_SETTING_NAME;
-	if (g_strcmp0 (con_type, "bridge-slave") == 0)
-		slave_type = NM_SETTING_BRIDGE_SETTING_NAME;
 
 	if (slave_type) {
 		const char *dev_ifname = get_ethernet_device_name (nmc);
@@ -7762,6 +7754,8 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 
 		editor_init_existing_connection (connection);
 	} else {
+		const char *slave_type = NULL;
+
 		/* New connection */
 		if (nmc->complete) {
 			if (type && argc == 0)
@@ -7769,7 +7763,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 			goto error;
 		}
 
-		connection_type = check_valid_name_toplevel (type, &err1);
+		connection_type = check_valid_name_toplevel (type, &slave_type, &err1);
 		tmp_str = get_valid_options_string_toplevel ();
 
 		while (!connection_type) {
@@ -7781,7 +7775,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 
 			type_ask = nmc_readline (EDITOR_PROMPT_CON_TYPE);
 			type = type_ask = type_ask ? g_strstrip (type_ask) : NULL;
-			connection_type = check_valid_name_toplevel (type_ask, &err1);
+			connection_type = check_valid_name_toplevel (type_ask, &slave_type, &err1);
 			g_free (type_ask);
 		}
 		g_free (tmp_str);
@@ -7809,7 +7803,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 		nm_connection_add_setting (connection, NM_SETTING (s_con));
 
 		/* Initialize the new connection so that it is valid from the start */
-		editor_init_new_connection (nmc, connection);
+		editor_init_new_connection (nmc, connection, slave_type);
 	}
 
 	/* nmcli runs the editor */
