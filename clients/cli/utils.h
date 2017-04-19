@@ -145,7 +145,7 @@ struct _NmcMetaGenericInfo {
 #define NMC_META_GENERIC(n, ...) \
 	(&((NmcMetaGenericInfo) { \
 		.meta_type =                        &nmc_meta_type_generic_info, \
-		.name =                             N_ (n), \
+		.name =                             N_(n), \
 		__VA_ARGS__ \
 	}))
 

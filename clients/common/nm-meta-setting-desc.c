@@ -955,7 +955,7 @@ _set_fcn_gobject_secret_flags (ARGS_SET_FCN)
 		flags = ALL_SECRET_FLAGS;
 		_env_warn_fcn (environment, environment_user_data,
 		               NM_META_ENV_WARN_LEVEL_WARN,
-		               N_ ("'%s' sum is higher than all flags => all flags set"),
+		               N_("'%s' sum is higher than all flags => all flags set"),
 		               value);
 	}
 
@@ -2797,7 +2797,7 @@ dcb_check_feature_enabled (const NMMetaEnvironment *environment, gpointer *envir
 	if (!(flags & NM_SETTING_DCB_FLAG_ENABLE)) {
 		_env_warn_fcn (environment, environment_user_data,
 		               NM_META_ENV_WARN_LEVEL_WARN,
-		               N_ ("changes will have no effect until '%s' includes 1 (enabled)"),
+		               N_("changes will have no effect until '%s' includes 1 (enabled)"),
 		               flags_prop);
 	}
 }
@@ -4106,7 +4106,7 @@ _remove_vlan_xgress_priority_map (const NMMetaEnvironment *environment,
 		if (prio_map[1]) {
 			_env_warn_fcn (environment, environment_user_data,
 			               NM_META_ENV_WARN_LEVEL_WARN,
-			               N_ ("only one mapping at a time is supported; taking the first one (%s)"),
+			               N_("only one mapping at a time is supported; taking the first one (%s)"),
 			               prio_map[0]);
 		}
 		ret = nm_setting_vlan_remove_priority_str_by_value (NM_SETTING_VLAN (setting),
@@ -4685,12 +4685,12 @@ _set_fcn_wireless_wep_key (ARGS_SET_FCN)
 	idx = property_info->property_name[strlen (property_info->property_name) - 1] - '0';
 	_env_warn_fcn (environment, environment_user_data,
 	               NM_META_ENV_WARN_LEVEL_INFO,
-	               N_ ("WEP key is guessed to be of '%s'"),
+	               N_("WEP key is guessed to be of '%s'"),
 	               wep_key_type_to_string (guessed_type));
 	if (idx != prev_idx) {
 		_env_warn_fcn (environment, environment_user_data,
 		               NM_META_ENV_WARN_LEVEL_INFO,
-		               N_ ("WEP key index set to '%d'"),
+		               N_("WEP key index set to '%d'"),
 		               idx);
 	}
 
@@ -4739,7 +4739,7 @@ _set_fcn_wireless_security_wep_key_type (ARGS_SET_FCN)
 			if (key && !nm_utils_wep_key_valid (key, type)) {
 				_env_warn_fcn (environment, environment_user_data,
 				               NM_META_ENV_WARN_LEVEL_WARN,
-				               N_ ("'%s' is not compatible with '%s' type, please change or delete the key."),
+				               N_("'%s' is not compatible with '%s' type, please change or delete the key."),
 				               keynames[i], wep_key_type_to_string (type));
 			}
 		}
@@ -4937,8 +4937,8 @@ static const NMMetaPropertyType _pt_gobject_devices = {
 	{ \
 		.meta_type =                    &nm_meta_type_property_info, \
 		.setting_info =                 &nm_meta_setting_infos_editor[_CURRENT_NM_META_SETTING_TYPE], \
-		.property_name =                N_ (name), \
-		.describe_doc =                 N_ (doc), \
+		.property_name =                N_(name), \
+		.describe_doc =                 N_(doc), \
 		__VA_ARGS__ \
 	}
 
@@ -4993,10 +4993,10 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_CA_CERT,
 		.describe_message =
-		    N_ ("Enter file path to CA certificate (optionally prefixed with file://).\n"
-		        "  [file://]<file path>\n"
-		        "Note that nmcli does not support specifying certificates as raw blob data.\n"
-		        "Example: /home/cimrman/cacert.crt\n"),
+		    N_("Enter file path to CA certificate (optionally prefixed with file://).\n"
+		       "  [file://]<file path>\n"
+		       "Note that nmcli does not support specifying certificates as raw blob data.\n"
+		       "Example: /home/cimrman/cacert.crt\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_802_1x_ca_cert,
 			.set_fcn =                  _set_fcn_802_1x_ca_cert,
@@ -5027,10 +5027,10 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_CLIENT_CERT,
 		.describe_message =
-		    N_ ("Enter file path to client certificate (optionally prefixed with file://).\n"
-		         "  [file://]<file path>\n"
-		         "Note that nmcli does not support specifying certificates as raw blob data.\n"
-		         "Example: /home/cimrman/jara.crt\n"),
+		    N_("Enter file path to client certificate (optionally prefixed with file://).\n"
+		       "  [file://]<file path>\n"
+		       "Note that nmcli does not support specifying certificates as raw blob data.\n"
+		       "Example: /home/cimrman/jara.crt\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_802_1x_client_cert,
 			.set_fcn =                  _set_fcn_802_1x_client_cert,
@@ -5084,11 +5084,11 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PHASE2_CA_CERT,
 		.describe_message =
-		    N_ ("Enter file path to CA certificate for inner authentication (optionally prefixed\n"
-		        "with file://).\n"
-		        "  [file://]<file path>\n"
-		        "Note that nmcli does not support specifying certificates as raw blob data.\n"
-		        "Example: /home/cimrman/ca-zweite-phase.crt\n"),
+		    N_("Enter file path to CA certificate for inner authentication (optionally prefixed\n"
+		       "with file://).\n"
+		       "  [file://]<file path>\n"
+		       "Note that nmcli does not support specifying certificates as raw blob data.\n"
+		       "Example: /home/cimrman/ca-zweite-phase.crt\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_802_1x_phase2_ca_cert,
 			.set_fcn =                  _set_fcn_802_1x_phase2_ca_cert,
@@ -5119,11 +5119,11 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
 		.describe_message =
-		    N_ ("Enter file path to client certificate for inner authentication (optionally prefixed\n"
-		        "with file://).\n"
-		        "  [file://]<file path>\n"
-		        "Note that nmcli does not support specifying certificates as raw blob data.\n"
-		        "Example: /home/cimrman/jara-zweite-phase.crt\n"),
+		    N_("Enter file path to client certificate for inner authentication (optionally prefixed\n"
+		       "with file://).\n"
+		       "  [file://]<file path>\n"
+		       "Note that nmcli does not support specifying certificates as raw blob data.\n"
+		       "Example: /home/cimrman/jara-zweite-phase.crt\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_802_1x_phase2_client_cert,
 			.set_fcn =                  _set_fcn_802_1x_phase2_client_cert,
@@ -5146,13 +5146,13 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PASSWORD_RAW,
 		.is_secret =                    TRUE,
 		.describe_message =
-		    N_ ("Enter bytes as a list of hexadecimal values.\n"
-		        "Two formats are accepted:\n"
-		        "(a) a string of hexadecimal digits, where each two digits represent one byte\n"
-		        "(b) space-separated list of bytes written as hexadecimal digits "
-		        "(with optional 0x/0X prefix, and optional leading 0).\n\n"
-		        "Examples: ab0455a6ea3a74C2\n"
-		        "          ab 4 55 0xa6 ea 3a 74 C2\n"),
+		    N_("Enter bytes as a list of hexadecimal values.\n"
+		       "Two formats are accepted:\n"
+		       "(a) a string of hexadecimal digits, where each two digits represent one byte\n"
+		       "(b) space-separated list of bytes written as hexadecimal digits "
+		       "(with optional 0x/0X prefix, and optional leading 0).\n\n"
+		       "Examples: ab0455a6ea3a74C2\n"
+		       "          ab 4 55 0xa6 ea 3a 74 C2\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_802_1x_password_raw,
 			.set_fcn =                  _set_fcn_802_1x_password_raw,
@@ -5163,10 +5163,10 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PRIVATE_KEY,
 		.describe_message =
-		    N_ ("Enter path to a private key and the key password (if not set yet):\n"
-		        "  [file://]<file path> [<password>]\n"
-		        "Note that nmcli does not support specifying private key as raw blob data.\n"
-		        "Example: /home/cimrman/jara-priv-key Dardanely\n"),
+		    N_("Enter path to a private key and the key password (if not set yet):\n"
+		       "  [file://]<file path> [<password>]\n"
+		       "Note that nmcli does not support specifying private key as raw blob data.\n"
+		       "Example: /home/cimrman/jara-priv-key Dardanely\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_802_1x_private_key,
 			.set_fcn =                  _set_fcn_802_1x_private_key,
@@ -5181,10 +5181,10 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
 		.describe_message =
-		    N_ ("Enter path to a private key and the key password (if not set yet):\n"
-		        "  [file://]<file path> [<password>]\n"
-		        "Note that nmcli does not support specifying private key as raw blob data.\n"
-		        "Example: /home/cimrman/jara-priv-key Dardanely\n"),
+		    N_("Enter path to a private key and the key password (if not set yet):\n"
+		       "  [file://]<file path> [<password>]\n"
+		       "Note that nmcli does not support specifying private key as raw blob data.\n"
+		       "Example: /home/cimrman/jara-priv-key Dardanely\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_802_1x_phase2_private_key,
 			.set_fcn =                  _set_fcn_802_1x_phase2_private_key,
@@ -5481,10 +5481,10 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_PERMISSIONS,
 		.describe_message =
-		     N_ ("Enter a list of user permissions. This is a list of user names formatted as:\n"
-		         "  [user:]<user name 1>, [user:]<user name 2>,...\n"
-		         "The items can be separated by commas or spaces.\n\n"
-		         "Example: alice bob charlie\n"),
+		     N_("Enter a list of user permissions. This is a list of user names formatted as:\n"
+		        "  [user:]<user name 1>, [user:]<user name 2>,...\n"
+		        "The items can be separated by commas or spaces.\n\n"
+		        "Example: alice bob charlie\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_connection_permissions,
 			.set_fcn =                  _set_fcn_connection_permissions,
@@ -5524,12 +5524,12 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_SECONDARIES,
 		.describe_message =
-		    N_ ("Enter secondary connections that should be activated when this connection is\n"
-		         "activated. Connections can be specified either by UUID or ID (name). nmcli\n"
-		         "transparently translates names to UUIDs. Note that NetworkManager only supports\n"
-		         "VPNs as secondary connections at the moment.\n"
-		         "The items can be separated by commas or spaces.\n\n"
-		         "Example: private-openvpn, fe6ba5d8-c2fc-4aae-b2e3-97efddd8d9a7\n"),
+		    N_("Enter secondary connections that should be activated when this connection is\n"
+		       "activated. Connections can be specified either by UUID or ID (name). nmcli\n"
+		       "transparently translates names to UUIDs. Note that NetworkManager only supports\n"
+		       "VPNs as secondary connections at the moment.\n"
+		       "The items can be separated by commas or spaces.\n\n"
+		       "Example: private-openvpn, fe6ba5d8-c2fc-4aae-b2e3-97efddd8d9a7\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
 			.set_fcn =                  _set_fcn_connection_secondaries,
@@ -5541,11 +5541,11 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_METERED,
 		.describe_message =
-		    N_ ("Enter a value which indicates whether the connection is subject to a data\n"
-		        "quota, usage costs or other limitations. Accepted options are:\n"
-		        "'true','yes','on' to set the connection as metered\n"
-		        "'false','no','off' to set the connection as not metered\n"
-		        "'unknown' to let NetworkManager choose a value using some heuristics\n"),
+		    N_("Enter a value which indicates whether the connection is subject to a data\n"
+		       "quota, usage costs or other limitations. Accepted options are:\n"
+		       "'true','yes','on' to set the connection as metered\n"
+		       "'false','no','off' to set the connection as not metered\n"
+		       "'unknown' to let NetworkManager choose a value using some heuristics\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_connection_metered,
 			.set_fcn =                  _set_fcn_connection_metered,
@@ -5799,8 +5799,8 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DNS,
 		.describe_message =
-		    N_ ("Enter a list of IPv4 addresses of DNS servers.\n\n"
-		        "Example: 8.8.8.8, 8.8.4.4\n"),
+		    N_("Enter a list of IPv4 addresses of DNS servers.\n\n"
+		       "Example: 8.8.8.8, 8.8.4.4\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
 			.set_fcn =                  _set_fcn_ip4_config_dns,
@@ -5833,10 +5833,10 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_MULTI,
 		.prompt =                       N_("IPv4 address (IP[/plen]) [none]"),
 		.describe_message =
-		    N_ ("Enter a list of IPv4 addresses formatted as:\n"
-		        "  ip[/prefix], ip[/prefix],...\n"
-		        "Missing prefix is regarded as prefix of 32.\n\n"
-		        "Example: 192.168.1.5/24, 10.0.0.11/24\n"),
+		    N_("Enter a list of IPv4 addresses formatted as:\n"
+		       "  ip[/prefix], ip[/prefix],...\n"
+		       "Missing prefix is regarded as prefix of 32.\n\n"
+		       "Example: 192.168.1.5/24, 10.0.0.11/24\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_ip_config_addresses,
 			.set_fcn =                  _set_fcn_ip4_config_addresses,
@@ -5854,13 +5854,13 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_ROUTES, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_ROUTES,
 		.describe_message =
-		    N_ ("Enter a list of IPv4 routes formatted as:\n"
-		         "  ip[/prefix] [next-hop] [metric],...\n\n"
-		         "Missing prefix is regarded as a prefix of 32.\n"
-		         "Missing next-hop is regarded as 0.0.0.0.\n"
-		         "Missing metric means default (NM/kernel will set a default value).\n\n"
-		         "Examples: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
-		         "          10.1.2.0/24\n"),
+		    N_("Enter a list of IPv4 routes formatted as:\n"
+		       "  ip[/prefix] [next-hop] [metric],...\n\n"
+		       "Missing prefix is regarded as a prefix of 32.\n"
+		       "Missing next-hop is regarded as 0.0.0.0.\n"
+		       "Missing metric means default (NM/kernel will set a default value).\n\n"
+		       "Examples: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
+		       "          10.1.2.0/24\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_ip_config_routes,
 			.set_fcn =                  _set_fcn_ip4_config_routes,
@@ -5920,14 +5920,14 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_DNS,
 		.describe_message =
-		    N_ ("Enter a list of IPv6 addresses of DNS servers.  If the IPv6 "
-		        "configuration method is 'auto' these DNS servers are appended "
-		        "to those (if any) returned by automatic configuration.  DNS "
-		        "servers cannot be used with the 'shared' or 'link-local' IPv6 "
-		        "configuration methods, as there is no upstream network. In "
-		        "all other IPv6 configuration methods, these DNS "
-		        "servers are used as the only DNS servers for this connection.\n\n"
-		        "Example: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"),
+		    N_("Enter a list of IPv6 addresses of DNS servers.  If the IPv6 "
+		       "configuration method is 'auto' these DNS servers are appended "
+		       "to those (if any) returned by automatic configuration.  DNS "
+		       "servers cannot be used with the 'shared' or 'link-local' IPv6 "
+		       "configuration methods, as there is no upstream network. In "
+		       "all other IPv6 configuration methods, these DNS "
+		       "servers are used as the only DNS servers for this connection.\n\n"
+		       "Example: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
 			.set_fcn =                  _set_fcn_ip6_config_dns,
@@ -5960,10 +5960,10 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_MULTI,
 		.prompt =                       N_("IPv6 address (IP[/plen]) [none]"),
 		.describe_message =
-		    N_ ("Enter a list of IPv6 addresses formatted as:\n"
-		        "  ip[/prefix], ip[/prefix],...\n"
-		        "Missing prefix is regarded as prefix of 128.\n\n"
-		        "Example: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"),
+		    N_("Enter a list of IPv6 addresses formatted as:\n"
+		       "  ip[/prefix], ip[/prefix],...\n"
+		       "Missing prefix is regarded as prefix of 128.\n\n"
+		       "Example: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_ip_config_addresses,
 			.set_fcn =                  _set_fcn_ip6_config_addresses,
@@ -5981,13 +5981,13 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_ROUTES, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_ROUTES,
 		.describe_message =
-		    N_ ("Enter a list of IPv6 routes formatted as:\n"
-		        "  ip[/prefix] [next-hop] [metric],...\n\n"
-		        "Missing prefix is regarded as a prefix of 128.\n"
-		        "Missing next-hop is regarded as \"::\".\n"
-		        "Missing metric means default (NM/kernel will set a default value).\n\n"
-		         "Examples: 2001:db8:beef:2::/64 2001:db8:beef::2, 2001:db8:beef:3::/64 2001:db8:beef::3 2\n"
-		        "          abbe::/64 55\n"),
+		    N_("Enter a list of IPv6 routes formatted as:\n"
+		       "  ip[/prefix] [next-hop] [metric],...\n\n"
+		       "Missing prefix is regarded as a prefix of 128.\n"
+		       "Missing next-hop is regarded as \"::\".\n"
+		       "Missing metric means default (NM/kernel will set a default value).\n\n"
+		       "Examples: 2001:db8:beef:2::/64 2001:db8:beef::2, 2001:db8:beef:3::/64 2001:db8:beef::3 2\n"
+		       "          abbe::/64 55\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_ip_config_routes,
 			.set_fcn =                  _set_fcn_ip6_config_routes,
@@ -6379,7 +6379,7 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 		.is_cli_option =                TRUE,
 		.property_alias =               "config",
 		.prompt =                       N_("Team JSON configuration [none]"),
-		.describe_message =             N_ (TEAM_DESCRIBE_MESSAGE),
+		.describe_message =             N_(TEAM_DESCRIBE_MESSAGE),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
 			.set_fcn =                  _set_fcn_team_config,
@@ -6395,7 +6395,7 @@ static const NMMetaPropertyInfo *const property_infos_TEAM_PORT[] = {
 		.is_cli_option =                TRUE,
 		.property_alias =               "config",
 		.prompt =                       N_("Team JSON configuration [none]"),
-		.describe_message =             N_ (TEAM_DESCRIBE_MESSAGE),
+		.describe_message =             N_(TEAM_DESCRIBE_MESSAGE),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
 			.set_fcn =                  _set_fcn_team_config,
@@ -6725,8 +6725,8 @@ static const NMMetaPropertyInfo *const property_infos_WIRED[] = {
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRED_S390_SUBCHANNELS,
 		.describe_message =
-		    N_ ("Enter a list of subchannels (comma or space separated).\n\n"
-		        "Example: 0.0.0e20 0.0.0e21 0.0.0e22\n"),
+		    N_("Enter a list of subchannels (comma or space separated).\n\n"
+		       "Example: 0.0.0e20 0.0.0e21 0.0.0e22\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
 			.set_fcn =                  _set_fcn_wired_s390_subchannels,
@@ -6949,8 +6949,8 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE,
 		.describe_message =
-		    N_ ("Enter the type of WEP keys. The accepted values are: "
-		        "0 or unknown, 1 or key, and 2 or passphrase.\n"),
+		    N_("Enter the type of WEP keys. The accepted values are: "
+		       "0 or unknown, 1 or key, and 2 or passphrase.\n"),
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_wireless_security_wep_key_type,
 			.set_fcn =                  _set_fcn_wireless_security_wep_key_type,
