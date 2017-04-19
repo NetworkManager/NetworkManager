@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-01-16 16:07+0100\n"
+"POT-Creation-Date: 2017-04-19 17:42+0200\n"
 "PO-Revision-Date: 2017-01-16 09:13-0500\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Japanese <gnome-translation@gnome.gr.jp>\n"
@@ -111,7 +111,7 @@ msgstr "nmcli が polkit エージェントとして適切に登録されまし�
 
 #: ../clients/cli/common.c:40 ../clients/cli/common.c:53
 #: ../clients/cli/common.c:61 ../clients/cli/common.c:73
-#: ../clients/cli/connections.c:211 ../clients/cli/connections.c:233
+#: ../clients/cli/connections.c:223 ../clients/cli/connections.c:245
 msgid "GROUP"
 msgstr "グループ"
 
@@ -123,7 +123,7 @@ msgstr "アドレス"
 #. 1
 #. 2
 #: ../clients/cli/common.c:42 ../clients/cli/common.c:63
-#: ../clients/cli/connections.c:236
+#: ../clients/cli/connections.c:248
 msgid "GATEWAY"
 msgstr "ゲートウェイ"
 
@@ -225,7 +225,7 @@ msgstr "接続中（セカンダリ接続を開始）"
 msgid "connected"
 msgstr "接続済み"
 
-#: ../clients/cli/common.c:520 ../clients/cli/connections.c:628
+#: ../clients/cli/common.c:520 ../clients/cli/connections.c:645
 msgid "deactivating"
 msgstr "停止中"
 
@@ -234,25 +234,25 @@ msgid "connection failed"
 msgstr "接続に失敗"
 
 #: ../clients/cli/common.c:524 ../clients/cli/common.c:541
-#: ../clients/cli/connections.c:633 ../clients/cli/connections.c:656
-#: ../clients/cli/connections.c:2136 ../clients/cli/devices.c:1190
+#: ../clients/cli/connections.c:650 ../clients/cli/connections.c:673
+#: ../clients/cli/connections.c:2153 ../clients/cli/devices.c:1190
 #: ../clients/cli/devices.c:1231 ../clients/cli/devices.c:1233
 #: ../clients/cli/general.c:251 ../clients/cli/general.c:289
 #: ../clients/cli/general.c:437 ../clients/cli/general.c:452
-#: ../clients/cli/settings.c:869 ../clients/cli/settings.c:955
-#: ../clients/cli/settings.c:1402 ../clients/cli/settings.c:2065
-#: ../clients/cli/settings.c:3533
+#: ../clients/cli/settings.c:892 ../clients/cli/settings.c:978
+#: ../clients/cli/settings.c:2707 ../clients/cli/settings.c:2826
+#: ../clients/cli/settings.c:5198
 #, c-format
 msgid "unknown"
 msgstr "不明"
 
 #. "CAPABILITIES"
-#: ../clients/cli/common.c:533 ../clients/cli/connections.c:944
-#: ../clients/cli/connections.c:946 ../clients/cli/connections.c:948
-#: ../clients/cli/connections.c:983 ../clients/cli/connections.c:1053
-#: ../clients/cli/connections.c:1054 ../clients/cli/connections.c:1056
-#: ../clients/cli/connections.c:3471 ../clients/cli/connections.c:4673
-#: ../clients/cli/connections.c:6492 ../clients/cli/connections.c:6493
+#: ../clients/cli/common.c:533 ../clients/cli/connections.c:961
+#: ../clients/cli/connections.c:963 ../clients/cli/connections.c:965
+#: ../clients/cli/connections.c:1000 ../clients/cli/connections.c:1070
+#: ../clients/cli/connections.c:1071 ../clients/cli/connections.c:1073
+#: ../clients/cli/connections.c:3501 ../clients/cli/connections.c:4733
+#: ../clients/cli/connections.c:6560 ../clients/cli/connections.c:6561
 #: ../clients/cli/devices.c:868 ../clients/cli/devices.c:1155
 #: ../clients/cli/devices.c:1156 ../clients/cli/devices.c:1157
 #: ../clients/cli/devices.c:1158 ../clients/cli/devices.c:1159
@@ -262,16 +262,16 @@ msgstr "不明"
 #: ../clients/cli/devices.c:1228 ../clients/cli/devices.c:1229
 #: ../clients/cli/devices.c:1230 ../clients/cli/devices.c:1232
 #: ../clients/cli/devices.c:1234 ../clients/cli/general.c:446
-#: ../clients/cli/settings.c:3528
+#: ../clients/cli/settings.c:2702
 msgid "yes"
 msgstr "はい"
 
-#: ../clients/cli/common.c:535 ../clients/cli/connections.c:944
-#: ../clients/cli/connections.c:946 ../clients/cli/connections.c:948
-#: ../clients/cli/connections.c:1053 ../clients/cli/connections.c:1054
-#: ../clients/cli/connections.c:1056 ../clients/cli/connections.c:3472
-#: ../clients/cli/connections.c:4672 ../clients/cli/connections.c:6492
-#: ../clients/cli/connections.c:6493 ../clients/cli/devices.c:868
+#: ../clients/cli/common.c:535 ../clients/cli/connections.c:961
+#: ../clients/cli/connections.c:963 ../clients/cli/connections.c:965
+#: ../clients/cli/connections.c:1070 ../clients/cli/connections.c:1071
+#: ../clients/cli/connections.c:1073 ../clients/cli/connections.c:3502
+#: ../clients/cli/connections.c:4732 ../clients/cli/connections.c:6560
+#: ../clients/cli/connections.c:6561 ../clients/cli/devices.c:868
 #: ../clients/cli/devices.c:1155 ../clients/cli/devices.c:1156
 #: ../clients/cli/devices.c:1157 ../clients/cli/devices.c:1158
 #: ../clients/cli/devices.c:1159 ../clients/cli/devices.c:1194
@@ -280,7 +280,7 @@ msgstr "はい"
 #: ../clients/cli/devices.c:1227 ../clients/cli/devices.c:1228
 #: ../clients/cli/devices.c:1229 ../clients/cli/devices.c:1230
 #: ../clients/cli/devices.c:1232 ../clients/cli/devices.c:1234
-#: ../clients/cli/general.c:448 ../clients/cli/settings.c:3530
+#: ../clients/cli/general.c:448 ../clients/cli/settings.c:2704
 msgid "no"
 msgstr "いいえ"
 
@@ -297,7 +297,7 @@ msgid "No reason given"
 msgstr "原因不明"
 
 #. We should not really come here
-#: ../clients/cli/common.c:553 ../clients/cli/connections.c:3320
+#: ../clients/cli/common.c:553 ../clients/cli/connections.c:3350
 #, c-format
 msgid "Unknown error"
 msgstr "不明なエラー"
@@ -550,7 +550,7 @@ msgstr "デバイスの親の管理が変更されました"
 
 #. TRANSLATORS: Unknown reason for a device state change (NMDeviceStateReason)
 #: ../clients/cli/common.c:740 ../libnm-glib/nm-device.c:1898
-#: ../libnm/nm-device.c:1700
+#: ../libnm/nm-device.c:1705
 msgid "Unknown"
 msgstr "不明"
 
@@ -628,7 +628,7 @@ msgstr ""
 "警告: '%s' のパスワードが 'passwd-file' で提供されていません。nmcli は '--"
 "ask' オプションがないと尋ねることができません。\n"
 
-#: ../clients/cli/common.c:1609 ../clients/nm-online.c:159
+#: ../clients/cli/common.c:1609
 #, c-format
 msgid "Error: Could not create NMClient object: %s."
 msgstr "エラー: NMClient オブジェクトを作成できませんでした: %s。"
@@ -699,7 +699,7 @@ msgstr "Bluetooth タイプ %s"
 msgid "Bonding mode"
 msgstr "ボンディングモニタリングモード %s"
 
-#: ../clients/cli/connections.c:85 ../clients/cli/connections.c:4257
+#: ../clients/cli/connections.c:85 ../clients/cli/connections.c:4309
 #, fuzzy
 msgid "Bonding monitoring mode"
 msgstr "ボンディングモニタリングモード %s"
@@ -734,26 +734,35 @@ msgstr "MACVLAN モード: "
 
 #: ../clients/cli/connections.c:111
 #, fuzzy
+msgid "MACsec mode"
+msgstr "MACVLAN モード: "
+
+#: ../clients/cli/connections.c:116
+msgid "Proxy method"
+msgstr ""
+
+#: ../clients/cli/connections.c:121
+#, fuzzy
 msgid "Connection (name, UUID, or path)"
 msgstr "接続 (名前、UUID またはパス): "
 
-#: ../clients/cli/connections.c:112
+#: ../clients/cli/connections.c:122
 #, fuzzy
 msgid "VPN connection (name, UUID, or path)"
 msgstr "VPN 接続 (名前、UUID またはパス): "
 
-#: ../clients/cli/connections.c:113
+#: ../clients/cli/connections.c:123
 #, fuzzy
 msgid "Connection(s) (name, UUID, or path)"
 msgstr "接続 (名前、UUID またはパス): "
 
-#: ../clients/cli/connections.c:114
+#: ../clients/cli/connections.c:124
 #, fuzzy
 msgid "Connection(s) (name, UUID, path or apath)"
 msgstr "接続 (名前、UUID またはパス): "
 
 #. 0
-#: ../clients/cli/connections.c:120 ../clients/cli/connections.c:212
+#: ../clients/cli/connections.c:130 ../clients/cli/connections.c:224
 #: ../clients/cli/devices.c:56 ../clients/cli/devices.c:90
 #: ../clients/cli/devices.c:100 ../clients/cli/devices.c:111
 #: ../clients/cli/devices.c:121 ../clients/cli/devices.c:138
@@ -766,7 +775,7 @@ msgstr "名前"
 
 #. 0
 #. 1
-#: ../clients/cli/connections.c:121 ../clients/cli/connections.c:213
+#: ../clients/cli/connections.c:131 ../clients/cli/connections.c:225
 msgid "UUID"
 msgstr "UUID"
 
@@ -774,35 +783,35 @@ msgstr "UUID"
 #. 0
 #. 1
 #. 2
-#: ../clients/cli/connections.c:122 ../clients/cli/connections.c:234
+#: ../clients/cli/connections.c:132 ../clients/cli/connections.c:246
 #: ../clients/cli/devices.c:42 ../clients/cli/devices.c:58
 #: ../clients/cli/devices.c:180
 msgid "TYPE"
 msgstr "タイプ"
 
 #. 2
-#: ../clients/cli/connections.c:123
+#: ../clients/cli/connections.c:133
 msgid "TIMESTAMP"
 msgstr "タイムスタンプ"
 
 #. 3
-#: ../clients/cli/connections.c:124
+#: ../clients/cli/connections.c:134
 msgid "TIMESTAMP-REAL"
 msgstr "タイムスタンプ-リアル"
 
 #. 4
 #. 16
-#: ../clients/cli/connections.c:125 ../clients/cli/devices.c:73
+#: ../clients/cli/connections.c:135 ../clients/cli/devices.c:73
 msgid "AUTOCONNECT"
 msgstr "自動接続"
 
 #. 5
-#: ../clients/cli/connections.c:126
+#: ../clients/cli/connections.c:136
 msgid "AUTOCONNECT-PRIORITY"
 msgstr "AUTOCONNECT-PRIORITY"
 
 #. 6
-#: ../clients/cli/connections.c:127
+#: ../clients/cli/connections.c:137
 msgid "READONLY"
 msgstr "読み込み専用"
 
@@ -811,7 +820,7 @@ msgstr "読み込み専用"
 #. 2
 #. 15
 #. 5
-#: ../clients/cli/connections.c:128 ../clients/cli/connections.c:220
+#: ../clients/cli/connections.c:138 ../clients/cli/connections.c:232
 #: ../clients/cli/devices.c:44 ../clients/cli/devices.c:167
 #: ../clients/cli/devices.c:183
 msgid "DBUS-PATH"
@@ -820,7 +829,7 @@ msgstr "DBUS パス"
 #. 8
 #. 13
 #. 4
-#: ../clients/cli/connections.c:129 ../clients/cli/devices.c:165
+#: ../clients/cli/connections.c:139 ../clients/cli/devices.c:165
 #: ../clients/cli/devices.c:182
 msgid "ACTIVE"
 msgstr "アクティブ"
@@ -830,7 +839,7 @@ msgstr "アクティブ"
 #. 12
 #. 3
 #. 0
-#: ../clients/cli/connections.c:130 ../clients/cli/devices.c:41
+#: ../clients/cli/connections.c:140 ../clients/cli/devices.c:41
 #: ../clients/cli/devices.c:57 ../clients/cli/devices.c:164
 #: ../clients/cli/devices.c:181 ../clients/cli/devices.c:263
 msgid "DEVICE"
@@ -841,46 +850,46 @@ msgstr "デバイス"
 #. 1
 #. 10
 #. 1
-#: ../clients/cli/connections.c:131 ../clients/cli/connections.c:215
+#: ../clients/cli/connections.c:141 ../clients/cli/connections.c:227
 #: ../clients/cli/devices.c:43 ../clients/cli/devices.c:67
 #: ../clients/cli/general.c:39
 msgid "STATE"
 msgstr "状態"
 
 #. 11
-#: ../clients/cli/connections.c:132
+#: ../clients/cli/connections.c:142
 msgid "ACTIVE-PATH"
 msgstr "ACTIVE-PATH"
 
 #. 12
-#: ../clients/cli/connections.c:133
+#: ../clients/cli/connections.c:143
 #, fuzzy
 msgid "SLAVE"
 msgstr "スレーブ"
 
 #. 2
-#: ../clients/cli/connections.c:214
+#: ../clients/cli/connections.c:226
 msgid "DEVICES"
 msgstr "デバイス"
 
 #. 4
-#: ../clients/cli/connections.c:216
+#: ../clients/cli/connections.c:228
 msgid "DEFAULT"
 msgstr "デフォルト"
 
 #. 5
-#: ../clients/cli/connections.c:217
+#: ../clients/cli/connections.c:229
 msgid "DEFAULT6"
 msgstr "デフォルト6"
 
 #. 6
-#: ../clients/cli/connections.c:218
+#: ../clients/cli/connections.c:230
 msgid "SPEC-OBJECT"
 msgstr "スペックオブジェクト"
 
 #. 7
 #. 4
-#: ../clients/cli/connections.c:219 ../clients/cli/connections.c:257
+#: ../clients/cli/connections.c:231 ../clients/cli/connections.c:269
 #: ../clients/cli/general.c:1131 ../clients/tui/nm-editor-utils.c:241
 #: ../clients/tui/nmt-connect-connection-list.c:406
 msgid "VPN"
@@ -889,70 +898,70 @@ msgstr "VPN"
 #. 9
 #. 5
 #. 22
-#: ../clients/cli/connections.c:221 ../clients/cli/devices.c:47
+#: ../clients/cli/connections.c:233 ../clients/cli/devices.c:47
 #: ../clients/cli/devices.c:79
 msgid "CON-PATH"
 msgstr "CON パス"
 
 #. 10
-#: ../clients/cli/connections.c:222
+#: ../clients/cli/connections.c:234
 msgid "ZONE"
 msgstr "ゾーン"
 
 #. 11
-#: ../clients/cli/connections.c:223
+#: ../clients/cli/connections.c:235
 msgid "MASTER-PATH"
 msgstr "マスターパス"
 
 #. 1
-#: ../clients/cli/connections.c:235
+#: ../clients/cli/connections.c:247
 msgid "USERNAME"
 msgstr "ユーザー名"
 
 #. 3
-#: ../clients/cli/connections.c:237
+#: ../clients/cli/connections.c:249
 msgid "BANNER"
 msgstr "バナー"
 
 #. 4
-#: ../clients/cli/connections.c:238
+#: ../clients/cli/connections.c:250
 msgid "VPN-STATE"
 msgstr "VPN の状態"
 
 #. 5
-#: ../clients/cli/connections.c:239
+#: ../clients/cli/connections.c:251
 msgid "CFG"
 msgstr "CFG"
 
-#: ../clients/cli/connections.c:252 ../clients/cli/devices.c:236
+#: ../clients/cli/connections.c:264 ../clients/cli/devices.c:236
 msgid "GENERAL"
 msgstr "全般"
 
 #. 0
 #. 6
-#: ../clients/cli/connections.c:253 ../clients/cli/devices.c:243
+#: ../clients/cli/connections.c:265 ../clients/cli/devices.c:243
 msgid "IP4"
 msgstr "IP4"
 
 #. 1
 #. 7
-#: ../clients/cli/connections.c:254 ../clients/cli/devices.c:244
+#: ../clients/cli/connections.c:266 ../clients/cli/devices.c:244
 msgid "DHCP4"
 msgstr "DHCP4"
 
 #. 2
 #. 8
-#: ../clients/cli/connections.c:255 ../clients/cli/devices.c:245
+#: ../clients/cli/connections.c:267 ../clients/cli/devices.c:245
 msgid "IP6"
 msgstr "IP6"
 
 #. 3
 #. 9
-#: ../clients/cli/connections.c:256 ../clients/cli/devices.c:246
+#: ../clients/cli/connections.c:268 ../clients/cli/devices.c:246
 msgid "DHCP6"
 msgstr "DHCP6"
 
-#: ../clients/cli/connections.c:288
+#: ../clients/cli/connections.c:300
 #, fuzzy, c-format
 msgid ""
 "Usage: nmcli connection { COMMAND | help }\n"
@@ -1029,7 +1038,7 @@ msgstr ""
 "  export [id | uuid | path] <ID> [<output file>]\n"
 "\n"
 
-#: ../clients/cli/connections.c:310
+#: ../clients/cli/connections.c:322
 #, c-format
 msgid ""
 "Usage: nmcli connection show { ARGUMENTS | help }\n"
@@ -1078,7 +1087,7 @@ msgstr ""
 "関連するシークレットも表示する場合は、グローバルな --show-secrets オプション"
 "を使用します。\n"
 
-#: ../clients/cli/connections.c:331
+#: ../clients/cli/connections.c:343
 #, c-format
 msgid ""
 "Usage: nmcli connection up { ARGUMENTS | help }\n"
@@ -1122,7 +1131,7 @@ msgstr ""
 "passwd-file - 接続をアクティブにするのに必要なパスワードを含むファイル\n"
 "\n"
 
-#: ../clients/cli/connections.c:352
+#: ../clients/cli/connections.c:364
 #, c-format
 msgid ""
 "Usage: nmcli connection down { ARGUMENTS | help }\n"
@@ -1144,8 +1153,8 @@ msgstr ""
 "で識別します。\n"
 "\n"
 
-#: ../clients/cli/connections.c:364
-#, c-format
+#: ../clients/cli/connections.c:376
+#, fuzzy, c-format
 msgid ""
 "Usage: nmcli connection add { ARGUMENTS | help }\n"
 "\n"
@@ -1261,6 +1270,13 @@ msgid ""
 "                  remote <remote endpoint IP>\n"
 "                  [local <local endpoint IP>]\n"
 "                  [dev <parent device (ifname or connection UUID)>]\n"
+"\n"
+"    macsec:       dev <parent device (connection UUID, ifname, or MAC)>\n"
+"                  mode <psk|eap>\n"
+"                  [cak <key> ckn <key>]\n"
+"                  [encrypt yes|no]\n"
+"                  [port 1-65534]\n"
+"\n"
 "\n"
 "    macvlan:      dev <parent device (connection UUID, ifname, or MAC)>\n"
 "                  mode vepa|bridge|private|passthru|source\n"
@@ -1426,7 +1442,7 @@ msgstr ""
 "                  [ip6 <IPv6 アドレス>] [gw6 <IPv6 ゲートウェイ>]\n"
 "\n"
 
-#: ../clients/cli/connections.c:476
+#: ../clients/cli/connections.c:493
 #, c-format
 msgid ""
 "Usage: nmcli connection modify { ARGUMENTS | help }\n"
@@ -1472,7 +1488,7 @@ msgstr ""
 "nmcli con mod bond0 -bond.options downdelay\n"
 "\n"
 
-#: ../clients/cli/connections.c:499
+#: ../clients/cli/connections.c:516
 #, c-format
 msgid ""
 "Usage: nmcli connection clone { ARGUMENTS | help }\n"
@@ -1495,7 +1511,7 @@ msgstr ""
 "を除き <ID> の完全なコピーになります。\n"
 "\n"
 
-#: ../clients/cli/connections.c:511
+#: ../clients/cli/connections.c:528
 #, c-format
 msgid ""
 "Usage: nmcli connection edit { ARGUMENTS | help }\n"
@@ -1522,7 +1538,7 @@ msgstr ""
 "インテラクティブなエディタで新しい接続プロファイルを追加します。\n"
 "\n"
 
-#: ../clients/cli/connections.c:526
+#: ../clients/cli/connections.c:543
 #, c-format
 msgid ""
 "Usage: nmcli connection delete { ARGUMENTS | help }\n"
@@ -1541,7 +1557,7 @@ msgstr ""
 "プロファイルは名前、UUID、D-Bus パスで識別します。\n"
 "\n"
 
-#: ../clients/cli/connections.c:537
+#: ../clients/cli/connections.c:554
 #, c-format
 msgid ""
 "Usage: nmcli connection monitor { ARGUMENTS | help }\n"
@@ -1562,7 +1578,7 @@ msgstr ""
 "何も指定されない場合は、すべての接続プロファイルを監視します。\n"
 "\n"
 
-#: ../clients/cli/connections.c:549
+#: ../clients/cli/connections.c:566
 #, c-format
 msgid ""
 "Usage: nmcli connection reload { help }\n"
@@ -1574,7 +1590,7 @@ msgstr ""
 "\n"
 "ディスクからすべての接続ファイルを再読み込みします。\n"
 
-#: ../clients/cli/connections.c:557
+#: ../clients/cli/connections.c:574
 #, c-format
 msgid ""
 "Usage: nmcli connection load { ARGUMENTS | help }\n"
@@ -1596,7 +1612,7 @@ msgstr ""
 "状態を認識させるため必ずこのコマンドを使用してください。\n"
 "\n"
 
-#: ../clients/cli/connections.c:569
+#: ../clients/cli/connections.c:586
 #, c-format
 msgid ""
 "Usage: nmcli connection import { ARGUMENTS | help }\n"
@@ -1620,7 +1636,7 @@ msgstr ""
 "NetworkManager VPN プラグインによりインポートされます。\n"
 "\n"
 
-#: ../clients/cli/connections.c:582
+#: ../clients/cli/connections.c:599
 #, c-format
 msgid ""
 "Usage: nmcli connection export { ARGUMENTS | help }\n"
@@ -1639,122 +1655,122 @@ msgstr ""
 "データは標準出力またはファイル (名前が指定された場合) に送信されます。\n"
 "\n"
 
-#: ../clients/cli/connections.c:624
+#: ../clients/cli/connections.c:641
 msgid "activating"
 msgstr "アクティベート中"
 
-#: ../clients/cli/connections.c:626
+#: ../clients/cli/connections.c:643
 msgid "activated"
 msgstr "アクティベート済み"
 
-#: ../clients/cli/connections.c:630
+#: ../clients/cli/connections.c:647
 msgid "deactivated"
 msgstr "停止しました"
 
-#: ../clients/cli/connections.c:642
+#: ../clients/cli/connections.c:659
 msgid "VPN connecting (prepare)"
 msgstr "VPN 接続（準備）"
 
-#: ../clients/cli/connections.c:644
+#: ../clients/cli/connections.c:661
 msgid "VPN connecting (need authentication)"
 msgstr "VPN 接続（認証が必要）"
 
-#: ../clients/cli/connections.c:646
+#: ../clients/cli/connections.c:663
 msgid "VPN connecting"
 msgstr "VPN 接続"
 
-#: ../clients/cli/connections.c:648
+#: ../clients/cli/connections.c:665
 msgid "VPN connecting (getting IP configuration)"
 msgstr "VPN 接続（IP 設定を取得）"
 
-#: ../clients/cli/connections.c:650
+#: ../clients/cli/connections.c:667
 msgid "VPN connected"
 msgstr "VPN 接続済み"
 
-#: ../clients/cli/connections.c:652
+#: ../clients/cli/connections.c:669
 msgid "VPN connection failed"
 msgstr "VPN 接続失敗"
 
-#: ../clients/cli/connections.c:654
+#: ../clients/cli/connections.c:671
 msgid "VPN disconnected"
 msgstr "VPN 切断済み"
 
-#: ../clients/cli/connections.c:724
+#: ../clients/cli/connections.c:741
 #, c-format
 msgid "Error updating secrets for %s: %s\n"
 msgstr "%s のシークレットの更新中にエラーが発生しました: %s\n"
 
-#: ../clients/cli/connections.c:744
+#: ../clients/cli/connections.c:761
 msgid "Connection profile details"
 msgstr "接続プロファイルの詳細"
 
-#: ../clients/cli/connections.c:756 ../clients/cli/connections.c:1183
+#: ../clients/cli/connections.c:773 ../clients/cli/connections.c:1200
 #, c-format
 msgid "Error: 'connection show': %s"
 msgstr "エラー: 'connection show': %s"
 
-#: ../clients/cli/connections.c:943 ../clients/cli/settings.c:2061
+#: ../clients/cli/connections.c:960 ../clients/cli/settings.c:5194
 msgid "never"
 msgstr "しない"
 
-#: ../clients/cli/connections.c:1171
+#: ../clients/cli/connections.c:1188
 #, fuzzy
 msgid "Activate connection details"
 msgstr "アクティブな接続の詳細"
 
-#: ../clients/cli/connections.c:1407
+#: ../clients/cli/connections.c:1424
 #, c-format
 msgid "invalid field '%s'; allowed fields: %s and %s, or %s,%s"
 msgstr ""
 "無効なフィールド '%s'; 許可されたフィールド: %s および %s、または %s、%s"
 
-#: ../clients/cli/connections.c:1422 ../clients/cli/connections.c:1430
+#: ../clients/cli/connections.c:1439 ../clients/cli/connections.c:1447
 #, c-format
 msgid "'%s' has to be alone"
 msgstr "'%s' は孤立する必要があります"
 
-#: ../clients/cli/connections.c:1630
+#: ../clients/cli/connections.c:1647
 #, c-format
 msgid "incorrect string '%s' of '--order' option"
 msgstr "'--order' オプションの正しくない文字列 '%s'"
 
-#: ../clients/cli/connections.c:1656
+#: ../clients/cli/connections.c:1673
 #, c-format
 msgid "incorrect item '%s' in '--order' option"
 msgstr "'--order' オプションの正しくないアイテム '%s'"
 
-#: ../clients/cli/connections.c:1686
+#: ../clients/cli/connections.c:1703
 #, fuzzy
 msgid "No connection specified"
 msgstr "エラー: 接続が指定されていません。"
 
-#: ../clients/cli/connections.c:1699
+#: ../clients/cli/connections.c:1716
 #, fuzzy, c-format
 msgid "%s argument is missing"
 msgstr "エラー: %s 引数がありません。"
 
-#: ../clients/cli/connections.c:1709
+#: ../clients/cli/connections.c:1726
 #, fuzzy, c-format
 msgid "unknown connection '%s'"
 msgstr "エラー: 不明な接続 '%s'\n"
 
-#: ../clients/cli/connections.c:1750
+#: ../clients/cli/connections.c:1767
 msgid "'--order' argument is missing"
 msgstr "'--order' 引数がありません"
 
 #. Add headers
-#: ../clients/cli/connections.c:1792
+#: ../clients/cli/connections.c:1809
 msgid "NetworkManager active profiles"
 msgstr "NetworkManager のアクティブなプロファイル"
 
-#: ../clients/cli/connections.c:1793
+#: ../clients/cli/connections.c:1810
 msgid "NetworkManager connection profiles"
 msgstr "NetworkManager 接続プロファイル"
 
-#: ../clients/cli/connections.c:1844 ../clients/cli/connections.c:2625
-#: ../clients/cli/connections.c:2635 ../clients/cli/connections.c:2645
-#: ../clients/cli/connections.c:2812 ../clients/cli/connections.c:8517
-#: ../clients/cli/connections.c:8528 ../clients/cli/devices.c:2640
+#: ../clients/cli/connections.c:1861 ../clients/cli/connections.c:2642
+#: ../clients/cli/connections.c:2652 ../clients/cli/connections.c:2662
+#: ../clients/cli/connections.c:2833 ../clients/cli/connections.c:8588
+#: ../clients/cli/connections.c:8599 ../clients/cli/devices.c:2640
 #: ../clients/cli/devices.c:2648 ../clients/cli/devices.c:2883
 #: ../clients/cli/devices.c:2891 ../clients/cli/devices.c:2907
 #: ../clients/cli/devices.c:2914 ../clients/cli/devices.c:2933
@@ -1768,14 +1784,14 @@ msgstr "NetworkManager 接続プロファイル"
 msgid "Error: %s argument is missing."
 msgstr "エラー: %s 引数がありません。"
 
-#: ../clients/cli/connections.c:1863
+#: ../clients/cli/connections.c:1880
 #, c-format
 msgid "Error: %s - no such connection profile."
 msgstr "エラー: %s - そのような接続プロファイルはありません。"
 
-#: ../clients/cli/connections.c:1927 ../clients/cli/connections.c:2614
-#: ../clients/cli/connections.c:2673 ../clients/cli/connections.c:8042
-#: ../clients/cli/connections.c:8151 ../clients/cli/connections.c:8639
+#: ../clients/cli/connections.c:1944 ../clients/cli/connections.c:2631
+#: ../clients/cli/connections.c:2690 ../clients/cli/connections.c:8110
+#: ../clients/cli/connections.c:8219 ../clients/cli/connections.c:8710
 #: ../clients/cli/devices.c:1496 ../clients/cli/devices.c:1554
 #: ../clients/cli/devices.c:1840 ../clients/cli/devices.c:2008
 #: ../clients/cli/devices.c:2115 ../clients/cli/devices.c:2303
@@ -1788,85 +1804,85 @@ msgstr "エラー: %s - そのような接続プロファイルはありませ�
 msgid "Error: %s."
 msgstr "エラー: %s."
 
-#: ../clients/cli/connections.c:2025
+#: ../clients/cli/connections.c:2042
 #, c-format
 msgid "no active connection on device '%s'"
 msgstr "デバイス '%s' 上にアクティブな接続はありません"
 
-#: ../clients/cli/connections.c:2033
+#: ../clients/cli/connections.c:2050
 msgid "no active connection or device"
 msgstr "アクティブな接続またはデバイスがありません"
 
-#: ../clients/cli/connections.c:2053
+#: ../clients/cli/connections.c:2070
 #, fuzzy, c-format
 msgid "device '%s' not compatible with connection '%s':"
 msgstr "デバイス '%s' は接続 '%s' と互換性がありません"
 
-#: ../clients/cli/connections.c:2089
+#: ../clients/cli/connections.c:2106
 #, c-format
 msgid "device '%s' not compatible with connection '%s'"
 msgstr "デバイス '%s' は接続 '%s' と互換性がありません"
 
-#: ../clients/cli/connections.c:2092
+#: ../clients/cli/connections.c:2109
 #, c-format
 msgid "no device found for connection '%s'"
 msgstr "接続 '%s'用のデバイスが見つかりません"
 
-#: ../clients/cli/connections.c:2112
+#: ../clients/cli/connections.c:2129
 msgid "unknown reason"
 msgstr "不明な理由"
 
-#: ../clients/cli/connections.c:2114 ../clients/cli/general.c:280
+#: ../clients/cli/connections.c:2131 ../clients/cli/general.c:280
 msgid "none"
 msgstr "なし"
 
-#: ../clients/cli/connections.c:2116
+#: ../clients/cli/connections.c:2133
 msgid "the user was disconnected"
 msgstr "ユーザーの接続が切断されました。"
 
-#: ../clients/cli/connections.c:2118
+#: ../clients/cli/connections.c:2135
 msgid "the base network connection was interrupted"
 msgstr "基本ネットワーク接続が妨害されました。"
 
-#: ../clients/cli/connections.c:2120
+#: ../clients/cli/connections.c:2137
 msgid "the VPN service stopped unexpectedly"
 msgstr "VPN サービスが予期しない停止をしました"
 
-#: ../clients/cli/connections.c:2122
+#: ../clients/cli/connections.c:2139
 msgid "the VPN service returned invalid configuration"
 msgstr "VPN サービスは無効な設定を返しました"
 
-#: ../clients/cli/connections.c:2124
+#: ../clients/cli/connections.c:2141
 msgid "the connection attempt timed out"
 msgstr "接続試行は時間切れです"
 
-#: ../clients/cli/connections.c:2126
+#: ../clients/cli/connections.c:2143
 msgid "the VPN service did not start in time"
 msgstr "VPN サービスは時間内に開始していません"
 
-#: ../clients/cli/connections.c:2128
+#: ../clients/cli/connections.c:2145
 msgid "the VPN service failed to start"
 msgstr "VPN サービスの開始は失敗しました"
 
-#: ../clients/cli/connections.c:2130
+#: ../clients/cli/connections.c:2147
 msgid "no valid VPN secrets"
 msgstr "有効な VPN シークレットはありません"
 
-#: ../clients/cli/connections.c:2132
+#: ../clients/cli/connections.c:2149
 msgid "invalid VPN secrets"
 msgstr "無効な VPN シークレット"
 
-#: ../clients/cli/connections.c:2134
+#: ../clients/cli/connections.c:2151
 msgid "the connection was removed"
 msgstr "接続は削除されました"
 
-#: ../clients/cli/connections.c:2156 ../clients/cli/connections.c:2193
-#: ../clients/cli/connections.c:2372 ../clients/cli/connections.c:6382
+#: ../clients/cli/connections.c:2173 ../clients/cli/connections.c:2210
+#: ../clients/cli/connections.c:2389 ../clients/cli/connections.c:6450
 #, c-format
 msgid "Connection successfully activated (D-Bus active path: %s)\n"
 msgstr "接続が正常にアクティベートされました (D-Bus アクティブパス: %s)\n"
 
-#: ../clients/cli/connections.c:2164
+#: ../clients/cli/connections.c:2181
 #, c-format
 msgid ""
 "Connection successfully activated (master waiting for slaves) (D-Bus active "
@@ -1875,373 +1891,373 @@ msgstr ""
 "接続が正常にアクティベートされました (マスターはスレーブを待機しています) (D-"
 "Bus アクティブパス: %s)\n"
 
-#: ../clients/cli/connections.c:2176 ../clients/cli/connections.c:2197
+#: ../clients/cli/connections.c:2193 ../clients/cli/connections.c:2214
 #, c-format
 msgid "Error: Connection activation failed."
 msgstr "エラー: 接続のアクティベートに失敗しました。"
 
-#: ../clients/cli/connections.c:2245
+#: ../clients/cli/connections.c:2262
 #, c-format
 msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
 msgstr "VPN 接続が正常にアクティベートされました (D-Bus アクティブパス: %s)\n"
 
-#: ../clients/cli/connections.c:2252
+#: ../clients/cli/connections.c:2269
 #, c-format
 msgid "Error: Connection activation failed: %s."
 msgstr "エラー: 接続のアクティベートに失敗しました: %s。"
 
-#: ../clients/cli/connections.c:2266
+#: ../clients/cli/connections.c:2283
 #, fuzzy, c-format
 msgid "Error: Timeout expired (%d seconds)"
 msgstr "エラー: 制限時間の %d 秒が経過"
 
-#: ../clients/cli/connections.c:2352
+#: ../clients/cli/connections.c:2369
 #, c-format
 msgid "Error: Connection activation failed: %s"
 msgstr "エラー: 接続のアクティベーションに失敗: %s"
 
-#: ../clients/cli/connections.c:2441
+#: ../clients/cli/connections.c:2458
 #, c-format
 msgid "failed to read passwd-file '%s': %s"
 msgstr "passwd-file '%s'の読み込みに失敗: %s"
 
-#: ../clients/cli/connections.c:2453
+#: ../clients/cli/connections.c:2470
 #, c-format
 msgid "missing colon in 'password' entry '%s'"
 msgstr "'password' エントリー '%s' にコロンがありません"
 
-#: ../clients/cli/connections.c:2461
+#: ../clients/cli/connections.c:2478
 #, c-format
 msgid "missing dot in 'password' entry '%s'"
 msgstr "'password' エントリー '%s' にドットがありません"
 
-#: ../clients/cli/connections.c:2474
+#: ../clients/cli/connections.c:2491
 #, c-format
 msgid "invalid setting name in 'password' entry '%s'"
 msgstr "'password' エントリー '%s' の設定名が無効です"
 
-#: ../clients/cli/connections.c:2530
+#: ../clients/cli/connections.c:2547
 #, c-format
 msgid "unknown device '%s'."
 msgstr "不明なデバイス '%s' です。"
 
-#: ../clients/cli/connections.c:2535
+#: ../clients/cli/connections.c:2552
 msgid "neither a valid connection nor device given"
 msgstr "有効な接続、デバイスいずれも指定されていません"
 
-#: ../clients/cli/connections.c:2655 ../clients/cli/devices.c:1502
+#: ../clients/cli/connections.c:2672 ../clients/cli/devices.c:1502
 #: ../clients/cli/devices.c:2655 ../clients/cli/devices.c:2969
 #: ../clients/cli/devices.c:3562
 #, c-format
 msgid "Unknown parameter: %s\n"
 msgstr "不明なパラメーター: %s\n"
 
-#: ../clients/cli/connections.c:2681
+#: ../clients/cli/connections.c:2698
 msgid "preparing"
 msgstr "準備中"
 
-#: ../clients/cli/connections.c:2700
+#: ../clients/cli/connections.c:2718
 #, c-format
 msgid "Connection '%s' (%s) successfully deleted.\n"
 msgstr "接続 '%s' (%s) が正常に削除されました。\n"
 
-#: ../clients/cli/connections.c:2716
+#: ../clients/cli/connections.c:2734
 #, c-format
 msgid "Connection '%s' successfully deactivated (D-Bus active path: %s)\n"
 msgstr ""
 "接続 '%s' が正常に非アクティブ化されました (D-Bus アクティブパス: %s)\n"
 
-#: ../clients/cli/connections.c:2790 ../clients/cli/connections.c:8260
-#: ../clients/cli/connections.c:8292 ../clients/cli/connections.c:8445
+#: ../clients/cli/connections.c:2811 ../clients/cli/connections.c:8330
+#: ../clients/cli/connections.c:8362 ../clients/cli/connections.c:8516
 #, c-format
 msgid "Error: No connection specified."
 msgstr "エラー: 接続が指定されていません。"
 
-#: ../clients/cli/connections.c:2829
+#: ../clients/cli/connections.c:2850
 #, c-format
 msgid "Error: '%s' is not an active connection.\n"
 msgstr "エラー: '%s' はアクティブな接続ではありません。\n"
 
-#: ../clients/cli/connections.c:2830
+#: ../clients/cli/connections.c:2851
 #, c-format
 msgid "Error: not all active connections found."
 msgstr "エラー: アクティブな一部の接続が見つかりません。"
 
-#: ../clients/cli/connections.c:2839
+#: ../clients/cli/connections.c:2860
 #, c-format
 msgid "Error: no active connection provided."
 msgstr "エラー: アクティブな接続がありません。"
 
-#: ../clients/cli/connections.c:3300 ../clients/cli/utils.c:646
+#: ../clients/cli/connections.c:3330 ../clients/cli/utils.c:646
 #, c-format
 msgid "'%s' not among [%s]"
 msgstr "'%s' は [%s] にはありません"
 
-#: ../clients/cli/connections.c:3460
+#: ../clients/cli/connections.c:3490
 #, c-format
 msgid "Warning: master='%s' doesn't refer to any existing profile.\n"
 msgstr "警告: master='%s' は既存のプロファイルを参照しません。\n"
 
-#: ../clients/cli/connections.c:3634
+#: ../clients/cli/connections.c:3664
 #, c-format
 msgid "Error: don't know how to create '%s' setting."
 msgstr "エラー: '%s' 設定を作成する方法がわかりません。"
 
-#: ../clients/cli/connections.c:3645
+#: ../clients/cli/connections.c:3675
 #, c-format
 msgid "Error: invalid property '%s': %s."
 msgstr "エラー: 無効なプロパティ '%s': %s。"
 
-#: ../clients/cli/connections.c:3662
+#: ../clients/cli/connections.c:3692
 #, c-format
 msgid "Error: failed to modify %s.%s: %s."
 msgstr "エラー: %s.%s の変更に失敗しました: %s。"
 
-#: ../clients/cli/connections.c:3681
+#: ../clients/cli/connections.c:3711
 #, c-format
 msgid "Error: failed to remove a value from %s.%s: %s."
 msgstr "エラー: '%s' の値の削除に失敗しました、%s: %s。"
 
-#: ../clients/cli/connections.c:3707
+#: ../clients/cli/connections.c:3737
 #, fuzzy, c-format
 msgid "Error: '%s' is mandatory."
 msgstr "エラー: '%s' を繰り返すことはできません。"
 
-#: ../clients/cli/connections.c:3739
+#: ../clients/cli/connections.c:3769
 #, fuzzy, c-format
 msgid "Error: invalid slave type; %s."
 msgstr "エラー: 無効な接続タイプ; %s。"
 
-#: ../clients/cli/connections.c:3752
+#: ../clients/cli/connections.c:3782
 #, c-format
 msgid "Error: invalid connection type; %s."
 msgstr "エラー: 無効な接続タイプ; %s。"
 
-#: ../clients/cli/connections.c:3939
+#: ../clients/cli/connections.c:3991
 #, fuzzy, c-format
 msgid "Error: bad connection type: %s."
 msgstr "エラー: 無効な接続タイプ; %s。"
 
-#: ../clients/cli/connections.c:4002
+#: ../clients/cli/connections.c:4054
 #, fuzzy, c-format
 msgid "Error: '%s': %s"
 msgstr "エラー: %s: %s。"
 
-#: ../clients/cli/connections.c:4023
+#: ../clients/cli/connections.c:4075
 #, fuzzy
 msgid "Error: master is required"
 msgstr "エラー: 'マスター' が必要です。"
 
-#: ../clients/cli/connections.c:4082
+#: ../clients/cli/connections.c:4134
 #, fuzzy, c-format
 msgid "Error: error adding bond option '%s=%s'."
 msgstr "エラー: 不明な接続 '%s' です。"
 
-#: ../clients/cli/connections.c:4113
+#: ../clients/cli/connections.c:4165
 #, c-format
 msgid "Error: '%s' is not a valid monitoring mode; use '%s' or '%s'.\n"
 msgstr ""
 "エラー: '%s' は無効なモニタリングモードです; '%s' または '%s' を使用してくだ"
 "さい。\n"
 
-#: ../clients/cli/connections.c:4144
+#: ../clients/cli/connections.c:4196
 #, c-format
 msgid "Error: 'bt-type': '%s' not valid; use [%s, %s (%s), %s]."
 msgstr ""
 "エラー: 'bt-type': '%s' は無効です; [%s, %s (%s), %s] を使用してください。"
 
-#: ../clients/cli/connections.c:4219
+#: ../clients/cli/connections.c:4271
 #, fuzzy
 msgid "PPPoE username"
 msgstr "PPPoE ユーザー名: "
 
-#: ../clients/cli/connections.c:4220 ../clients/cli/connections.c:4241
-#: ../clients/cli/connections.c:4243 ../clients/cli/connections.c:4292
+#: ../clients/cli/connections.c:4272 ../clients/cli/connections.c:4293
+#: ../clients/cli/connections.c:4295 ../clients/cli/connections.c:4344
 #, fuzzy
 msgid "Password [none]"
 msgstr "パスワード [none]: "
 
-#: ../clients/cli/connections.c:4221
+#: ../clients/cli/connections.c:4273
 #, fuzzy
 msgid "Service [none]"
 msgstr "サービス [none]: "
 
-#: ../clients/cli/connections.c:4222 ../clients/cli/connections.c:4225
-#: ../clients/cli/connections.c:4234
+#: ../clients/cli/connections.c:4274 ../clients/cli/connections.c:4277
+#: ../clients/cli/connections.c:4286
 #, fuzzy
 msgid "MTU [auto]"
 msgstr "MTU [auto]: "
 
-#: ../clients/cli/connections.c:4223 ../clients/cli/connections.c:4226
-#: ../clients/cli/connections.c:4235 ../clients/cli/connections.c:4238
-#: ../clients/cli/connections.c:4279
+#: ../clients/cli/connections.c:4275 ../clients/cli/connections.c:4278
+#: ../clients/cli/connections.c:4287 ../clients/cli/connections.c:4290
+#: ../clients/cli/connections.c:4331
 #, fuzzy
 msgid "MAC [none]"
 msgstr "MAC [none]: "
 
-#: ../clients/cli/connections.c:4224 ../clients/cli/connections.c:4236
+#: ../clients/cli/connections.c:4276 ../clients/cli/connections.c:4288
 #, fuzzy
 msgid "Cloned MAC [none]"
 msgstr "クローンの MAC [none]: "
 
-#: ../clients/cli/connections.c:4229
+#: ../clients/cli/connections.c:4281
 #, fuzzy
 msgid "Parent interface [none]"
 msgstr "親インターフェース [none]: "
 
-#: ../clients/cli/connections.c:4230
+#: ../clients/cli/connections.c:4282
 #, fuzzy
 msgid "P_KEY [none]"
 msgstr "P_KEY [none]: "
 
 #. 0
-#: ../clients/cli/connections.c:4231 ../clients/cli/connections.c:4286
+#: ../clients/cli/connections.c:4283 ../clients/cli/connections.c:4338
 #: ../clients/cli/devices.c:152 ../clients/tui/nmt-page-wifi.c:224
 msgid "SSID"
 msgstr "SSID"
 
-#: ../clients/cli/connections.c:4237
+#: ../clients/cli/connections.c:4289
 #, fuzzy
 msgid "WiMAX NSP name"
 msgstr "WiMAX NSP 名: "
 
-#: ../clients/cli/connections.c:4239
+#: ../clients/cli/connections.c:4291
 #, fuzzy
 msgid "APN"
 msgstr "AP"
 
-#: ../clients/cli/connections.c:4240 ../clients/cli/connections.c:4242
-#: ../clients/cli/connections.c:4285
+#: ../clients/cli/connections.c:4292 ../clients/cli/connections.c:4294
+#: ../clients/cli/connections.c:4337
 #, fuzzy
 msgid "Username [none]"
 msgstr "ユーザー名 [none]: "
 
-#: ../clients/cli/connections.c:4244
+#: ../clients/cli/connections.c:4296
 #, fuzzy
 msgid "Bluetooth device address"
 msgstr "Bluetooth デバイスアドレス: "
 
-#: ../clients/cli/connections.c:4247
+#: ../clients/cli/connections.c:4299
 #, fuzzy
 msgid "VLAN parent device or connection UUID"
 msgstr "VLAN 親デバイスまたは接続 UUID: "
 
-#: ../clients/cli/connections.c:4249
+#: ../clients/cli/connections.c:4301
 #, fuzzy
 msgid "VLAN ID (<0-4094>)"
 msgstr "VLAN ID <0-4094>: "
 
-#: ../clients/cli/connections.c:4250
+#: ../clients/cli/connections.c:4302
 #, fuzzy
 msgid "VLAN flags (<0-7>) [none]"
 msgstr "VLAN フラグ (<0-7>) [none]: "
 
-#: ../clients/cli/connections.c:4251
+#: ../clients/cli/connections.c:4303
 #, fuzzy
 msgid "Ingress priority maps [none]"
 msgstr "イングレス優先度マップ [none]: "
 
-#: ../clients/cli/connections.c:4252
+#: ../clients/cli/connections.c:4304
 #, fuzzy
 msgid "Egress priority maps [none]"
 msgstr "イーグレス優先度マップ [none]: "
 
-#: ../clients/cli/connections.c:4255
+#: ../clients/cli/connections.c:4307
 #, fuzzy
 msgid "Bonding primary interface [none]"
 msgstr "ボンドのプライマリインターフェース [none]:"
 
-#: ../clients/cli/connections.c:4259
+#: ../clients/cli/connections.c:4311
 #, fuzzy
 msgid "Bonding miimon [100]"
 msgstr "ボンドの miimon [100]:"
 
-#: ../clients/cli/connections.c:4260
+#: ../clients/cli/connections.c:4312
 #, fuzzy
 msgid "Bonding downdelay [0]"
 msgstr "ボンドの downdelay [0]: "
 
-#: ../clients/cli/connections.c:4261
+#: ../clients/cli/connections.c:4313
 #, fuzzy
 msgid "Bonding updelay [0]"
 msgstr "ボンドの updelay [0]: "
 
-#: ../clients/cli/connections.c:4262
+#: ../clients/cli/connections.c:4314
 #, fuzzy
 msgid "Bonding arp-interval [0]"
 msgstr "ボンドの arp-interval [0]: "
 
-#: ../clients/cli/connections.c:4264
+#: ../clients/cli/connections.c:4316
 #, fuzzy
 msgid "Bonding arp-ip-target [none]"
 msgstr "ボンドの arp-ip-target [none]: "
 
-#: ../clients/cli/connections.c:4266
+#: ../clients/cli/connections.c:4318
 #, fuzzy
 msgid "LACP rate ('slow' or 'fast') [slow]"
 msgstr "LACP レート ('低速' または '高速') [低速]: "
 
-#: ../clients/cli/connections.c:4268 ../clients/cli/connections.c:4269
+#: ../clients/cli/connections.c:4320 ../clients/cli/connections.c:4321
 #, fuzzy
 msgid "Team JSON configuration [none]"
 msgstr "team  JSON 設定 [none]: "
 
-#: ../clients/cli/connections.c:4270
+#: ../clients/cli/connections.c:4322
 #, fuzzy
 msgid "Enable STP [no]"
 msgstr "STP %s の有効化 "
 
-#: ../clients/cli/connections.c:4272
+#: ../clients/cli/connections.c:4324
 #, fuzzy
 msgid "STP priority [32768]"
 msgstr "STP の優先度 [32768]: "
 
-#: ../clients/cli/connections.c:4273
+#: ../clients/cli/connections.c:4325
 #, fuzzy
 msgid "Forward delay [15]"
 msgstr "フォワード遅延 [15]:"
 
-#: ../clients/cli/connections.c:4274
+#: ../clients/cli/connections.c:4326
 #, fuzzy
 msgid "Hello time [2]"
 msgstr "Hello タイム [2]: "
 
-#: ../clients/cli/connections.c:4275
+#: ../clients/cli/connections.c:4327
 #, fuzzy
 msgid "Max age [20]"
 msgstr "最大エイジ [20]: "
 
-#: ../clients/cli/connections.c:4276
+#: ../clients/cli/connections.c:4328
 #, fuzzy
 msgid "MAC address ageing time [300]"
 msgstr "MAC アドレスのエージングタイム [300]:"
 
-#: ../clients/cli/connections.c:4277
+#: ../clients/cli/connections.c:4329
 #, fuzzy
 msgid "Enable IGMP snooping [no]"
 msgstr "IGMP スヌーピングの有効化"
 
-#: ../clients/cli/connections.c:4280
+#: ../clients/cli/connections.c:4332
 #, fuzzy
 msgid "Bridge port priority [32]"
 msgstr "ブリッジポートの優先度 [32]:"
 
-#: ../clients/cli/connections.c:4281
+#: ../clients/cli/connections.c:4333
 #, fuzzy
 msgid "Bridge port STP path cost [100]"
 msgstr "ブリッジポートの STP パスコスト [100]: "
 
-#: ../clients/cli/connections.c:4282
+#: ../clients/cli/connections.c:4334
 #, fuzzy
 msgid "Hairpin [no]"
 msgstr "ヘアピンモード"
 
-#: ../clients/cli/connections.c:4287
+#: ../clients/cli/connections.c:4339
 #, fuzzy
 msgid "OLPC Mesh channel [1]"
 msgstr "OLPC メッシュチャンネル [1]: "
 
-#: ../clients/cli/connections.c:4288
+#: ../clients/cli/connections.c:4340
 #, fuzzy
 msgid "DHCP anycast MAC address [none]"
 msgstr "DHCP anycast MAC アドレス [none]: "
@@ -2250,301 +2266,324 @@ msgstr "DHCP anycast MAC アドレス [none]: "
 #. * is not visible here since we only care about phase2 authentication
 #. * (and don't even care of which one)
 #.
-#: ../clients/cli/connections.c:4289
+#: ../clients/cli/connections.c:4341
 #: ../clients/common/nm-secret-agent-simple.c:223
 #: ../clients/common/nm-secret-agent-simple.c:328
 #: ../clients/tui/nmt-page-dsl.c:66 ../clients/tui/nmt-page-wifi.c:332
 msgid "Username"
 msgstr "ユーザー名"
 
-#: ../clients/cli/connections.c:4295
+#: ../clients/cli/connections.c:4347
+#, fuzzy
+msgid "MACsec parent device or connection UUID"
+msgstr "MACVLAN 親デバイスまたは接続 UUID: "
+
+#: ../clients/cli/connections.c:4349
+msgid "Enable encryption [yes]"
+msgstr ""
+
+#: ../clients/cli/connections.c:4350
+#: ../clients/common/nm-secret-agent-simple.c:520
+msgid "MKA CAK"
+msgstr ""
+
+#: ../clients/cli/connections.c:4351
+msgid "MKA_CKN"
+msgstr ""
+
+#: ../clients/cli/connections.c:4352
+msgid "SCI port [1]"
+msgstr ""
+
+#: ../clients/cli/connections.c:4354
 #, fuzzy
 msgid "MACVLAN parent device or connection UUID"
 msgstr "MACVLAN 親デバイスまたは接続 UUID: "
 
-#: ../clients/cli/connections.c:4299
+#: ../clients/cli/connections.c:4358
 msgid "Tap [no]"
 msgstr ""
 
-#: ../clients/cli/connections.c:4301
+#: ../clients/cli/connections.c:4360
 #, fuzzy
 msgid "VXLAN ID"
 msgstr "VXLAN ID: "
 
-#: ../clients/cli/connections.c:4302 ../clients/cli/connections.c:4321
+#: ../clients/cli/connections.c:4361 ../clients/cli/connections.c:4380
 #, fuzzy
 msgid "Remote"
 msgstr "リモート: "
 
-#: ../clients/cli/connections.c:4303 ../clients/cli/connections.c:4322
+#: ../clients/cli/connections.c:4362 ../clients/cli/connections.c:4381
 #, fuzzy
 msgid "Parent device [none]"
 msgstr "親デバイス [none]: "
 
-#: ../clients/cli/connections.c:4305
+#: ../clients/cli/connections.c:4364
 #, fuzzy
 msgid "Local address [none]"
 msgstr "ローカルアドレス [none]: "
 
-#: ../clients/cli/connections.c:4306
+#: ../clients/cli/connections.c:4365
 #, fuzzy
 msgid "Minimum source port [0]"
 msgstr "最小ソースポート [0]: "
 
-#: ../clients/cli/connections.c:4307
+#: ../clients/cli/connections.c:4366
 #, fuzzy
 msgid "Maximum source port [0]"
 msgstr "最小ソースポート [0]: "
 
-#: ../clients/cli/connections.c:4308
+#: ../clients/cli/connections.c:4367
 #, fuzzy
 msgid "Destination port [8472]"
 msgstr "送信先ポート [8472]: "
 
-#: ../clients/cli/connections.c:4311
+#: ../clients/cli/connections.c:4370
 #, fuzzy
 msgid "User ID [none]"
 msgstr "ユーザー ID [none]: "
 
-#: ../clients/cli/connections.c:4312
+#: ../clients/cli/connections.c:4371
 #, fuzzy
 msgid "Group ID [none]"
 msgstr "グループ ID [none]: "
 
-#: ../clients/cli/connections.c:4313
+#: ../clients/cli/connections.c:4372
 #, fuzzy
 msgid "Enable PI [no]"
 msgstr "PI %s の有効化"
 
-#: ../clients/cli/connections.c:4315
+#: ../clients/cli/connections.c:4374
 #, fuzzy
 msgid "Enable VNET header [no]"
 msgstr "VNET ヘッダー %s の有効化"
 
-#: ../clients/cli/connections.c:4317
+#: ../clients/cli/connections.c:4376
 #, fuzzy
 msgid "Enable multi queue [no]"
 msgstr "複数のキュー %s の有効化"
 
-#: ../clients/cli/connections.c:4320
+#: ../clients/cli/connections.c:4379
 #, fuzzy
 msgid "Local endpoint [none]"
 msgstr "ローカルエンドポイント [none]: "
 
-#: ../clients/cli/connections.c:4324
+#: ../clients/cli/connections.c:4383
 #, fuzzy
 msgid "IPv4 address (IP[/plen]) [none]"
 msgstr "IPv4 アドレス (IP[/plen]) [none]: "
 
-#: ../clients/cli/connections.c:4326
+#: ../clients/cli/connections.c:4385
 #, fuzzy
 msgid "IPv4 gateway [none]"
 msgstr "IPv4 ゲートウェイ [none]: "
 
-#: ../clients/cli/connections.c:4327
+#: ../clients/cli/connections.c:4386
 #, fuzzy
 msgid "IPv6 address (IP[/plen]) [none]"
 msgstr "IPv6 アドレス (IP[/plen]) [none]: "
 
-#: ../clients/cli/connections.c:4329
+#: ../clients/cli/connections.c:4388
 #, fuzzy
 msgid "IPv6 gateway [none]"
 msgstr "IPv6 ゲートウェイ [none]: "
 
-#: ../clients/cli/connections.c:4330
-msgid "Proxy method"
+#: ../clients/cli/connections.c:4390
+msgid "Browser only [no]"
 msgstr ""
 
-#: ../clients/cli/connections.c:4331
-msgid "Browser Only"
+#: ../clients/cli/connections.c:4392
+msgid "PAC URL"
 msgstr ""
 
-#: ../clients/cli/connections.c:4332
-msgid "PAC Url"
+#: ../clients/cli/connections.c:4393
+msgid "PAC script"
 msgstr ""
 
-#: ../clients/cli/connections.c:4333
-msgid "PAC Script"
-msgstr ""
-
-#: ../clients/cli/connections.c:4468
+#: ../clients/cli/connections.c:4528
 #, c-format
 msgid "Error: value for '%s' is missing."
 msgstr "エラー: '%s' の値が不明です。"
 
-#: ../clients/cli/connections.c:4513
+#: ../clients/cli/connections.c:4573
 msgid "Error: <setting>.<property> argument is missing."
 msgstr "エラー: <setting>.<property> 引数がありません。"
 
-#: ../clients/cli/connections.c:4536
+#: ../clients/cli/connections.c:4596
 #, c-format
 msgid "Error: invalid or not allowed setting '%s': %s."
 msgstr "エラー: 無効または許可されていない設定 '%s' です: %s。"
 
-#: ../clients/cli/connections.c:4560
+#: ../clients/cli/connections.c:4620
 #, fuzzy, c-format
 msgid "Error: '%s' is ambiguous (%s.%s or %s.%s)."
 msgstr "'%s' が不明瞭です (%s x %s)"
 
-#: ../clients/cli/connections.c:4574
+#: ../clients/cli/connections.c:4634
 #, c-format
 msgid "Error: invalid <setting>.<property> '%s'."
 msgstr "エラー: 無効な <setting>.<property> '%s' です。"
 
-#: ../clients/cli/connections.c:4615 ../clients/cli/connections.c:8093
+#: ../clients/cli/connections.c:4675 ../clients/cli/connections.c:8161
 #, c-format
 msgid "Error: Failed to add '%s' connection: %s"
 msgstr "エラー: '%s' 接続の追加に失敗しました: %s"
 
-#: ../clients/cli/connections.c:4620
+#: ../clients/cli/connections.c:4680
 #, c-format
 msgid "Connection '%s' (%s) successfully added.\n"
 msgstr "接続 '%s' (%s) が正常に追加されました。\n"
 
-#: ../clients/cli/connections.c:4738
+#: ../clients/cli/connections.c:4802
 #, c-format
 msgid ""
 "You can specify this option more than once. Press <Enter> when you're done.\n"
 msgstr ""
 
 #. Ask for optional arguments.
-#: ../clients/cli/connections.c:4776
+#: ../clients/cli/connections.c:4840
 #, fuzzy, c-format
 msgid "There is %d optional setting for %s.\n"
 msgid_plural "There are %d optional settings for %s.\n"
 msgstr[0] "'%2$s' 接続タイプには %1$d 種類のオプション引数があります。\n"
 
-#: ../clients/cli/connections.c:4779
+#: ../clients/cli/connections.c:4843
 #, c-format
 msgid "Do you want to provide it? %s"
 msgid_plural "Do you want to provide them? %s"
 msgstr[0] "指定しますか? %s"
 
-#: ../clients/cli/connections.c:4793
+#: ../clients/cli/connections.c:4857
 #, fuzzy
 msgid "Wired Ethernet"
 msgstr "Ethernet"
 
-#: ../clients/cli/connections.c:4795 ../src/devices/nm-device-infiniband.c:186
+#: ../clients/cli/connections.c:4859 ../src/devices/nm-device-infiniband.c:194
 msgid "InfiniBand connection"
 msgstr "InfiniBand 接続"
 
-#: ../clients/cli/connections.c:4797
+#: ../clients/cli/connections.c:4861
 #, fuzzy
 msgid "Wi-Fi connection"
 msgstr "Wi-Fi 接続 %d"
 
-#: ../clients/cli/connections.c:4799
+#: ../clients/cli/connections.c:4863
 #, fuzzy
 msgid "WiMAX connection"
 msgstr "CDMA 接続"
 
-#: ../clients/cli/connections.c:4801
+#: ../clients/cli/connections.c:4865
 msgid "PPPoE"
 msgstr "PPPoE"
 
-#: ../clients/cli/connections.c:4803
+#: ../clients/cli/connections.c:4867
 #, fuzzy
 msgid "CDMA mobile broadband connection"
 msgstr "モバイルブロードバンド接続 %d"
 
-#: ../clients/cli/connections.c:4805
+#: ../clients/cli/connections.c:4869
 #, fuzzy
 msgid "GSM mobile broadband connection"
 msgstr "モバイルブロードバンド接続 %d"
 
-#: ../clients/cli/connections.c:4807
+#: ../clients/cli/connections.c:4871
 #, fuzzy
 msgid "bluetooth connection"
 msgstr "ボンド接続"
 
-#: ../clients/cli/connections.c:4809 ../src/devices/nm-device-vlan.c:432
+#: ../clients/cli/connections.c:4873 ../src/devices/nm-device-vlan.c:432
 msgid "VLAN connection"
 msgstr "VLAN 接続"
 
-#: ../clients/cli/connections.c:4811
+#: ../clients/cli/connections.c:4875
 #, fuzzy
 msgid "Bond device"
 msgstr "Ethernet デバイス"
 
-#: ../clients/cli/connections.c:4813
+#: ../clients/cli/connections.c:4877
 #, fuzzy
 msgid "Team device"
 msgstr "TUN デバイスモード"
 
-#: ../clients/cli/connections.c:4815
+#: ../clients/cli/connections.c:4879
 #, fuzzy
 msgid "Team port"
 msgstr "team "
 
-#: ../clients/cli/connections.c:4817
+#: ../clients/cli/connections.c:4881
 #, fuzzy
 msgid "Bridge device"
 msgstr "Ethernet デバイス"
 
-#: ../clients/cli/connections.c:4819
+#: ../clients/cli/connections.c:4883
 #, fuzzy
 msgid "Bridge port"
 msgstr "ブリッジ"
 
-#: ../clients/cli/connections.c:4821 ../src/nm-manager.c:3824
+#: ../clients/cli/connections.c:4885 ../src/nm-manager.c:3838
 #, fuzzy
 msgid "VPN connection"
 msgstr "VPN 接続"
 
-#: ../clients/cli/connections.c:4823
+#: ../clients/cli/connections.c:4887
 #, fuzzy
 msgid "OLPC Mesh connection"
 msgstr "CDMA 接続"
 
-#: ../clients/cli/connections.c:4825 ../src/devices/adsl/nm-device-adsl.c:137
+#: ../clients/cli/connections.c:4889 ../src/devices/adsl/nm-device-adsl.c:137
 msgid "ADSL connection"
 msgstr "ADSL 接続"
 
-#: ../clients/cli/connections.c:4827
+#: ../clients/cli/connections.c:4891
+#, fuzzy
+msgid "MACsec connection"
+msgstr "CDMA 接続"
+
+#: ../clients/cli/connections.c:4893
 #, fuzzy
 msgid "macvlan connection"
 msgstr "ボンド接続"
 
-#: ../clients/cli/connections.c:4829 ../src/devices/nm-device-vxlan.c:369
+#: ../clients/cli/connections.c:4895 ../src/devices/nm-device-vxlan.c:369
 msgid "VXLAN connection"
 msgstr "VXLAN 接続"
 
-#: ../clients/cli/connections.c:4831
+#: ../clients/cli/connections.c:4897
 #, fuzzy
 msgid "Tun device"
 msgstr "TUN デバイスモード"
 
-#: ../clients/cli/connections.c:4833
+#: ../clients/cli/connections.c:4899
 #, fuzzy
 msgid "IPv4 protocol"
 msgstr "ADSL プロトコル"
 
-#: ../clients/cli/connections.c:4835
+#: ../clients/cli/connections.c:4901
 #, fuzzy
 msgid "IPv6 protocol"
 msgstr "ADSL プロトコル"
 
-#: ../clients/cli/connections.c:4837
+#: ../clients/cli/connections.c:4903
 msgid "Proxy"
 msgstr ""
 
-#: ../clients/cli/connections.c:4920 ../clients/cli/utils.c:122
+#: ../clients/cli/connections.c:4986 ../clients/cli/utils.c:122
 #, c-format
 msgid "Error: value for '%s' argument is required."
 msgstr "エラー: '%s' 引数の値が必要です。"
 
-#: ../clients/cli/connections.c:4926
+#: ../clients/cli/connections.c:4992
 #, c-format
 msgid "Error: 'save': %s."
 msgstr "エラー: 'save': %s。"
 
-#: ../clients/cli/connections.c:4998
+#: ../clients/cli/connections.c:5064
 #, fuzzy, c-format
 msgid "Error: '%s' argument is required."
 msgstr "エラー: 'タイプ' 引数が必要です。"
 
-#: ../clients/cli/connections.c:5968
+#: ../clients/cli/connections.c:6036
 #, c-format
 msgid "['%s' setting values]\n"
 msgstr "['%s' 設定値]\n"
@@ -2552,7 +2591,7 @@ msgstr "['%s' 設定値]\n"
 #. TRANSLATORS: do not translate command names and keywords before ::
 #. *              However, you should translate terms enclosed in <>.
 #.
-#: ../clients/cli/connections.c:6050
+#: ../clients/cli/connections.c:6118
 #, c-format
 msgid ""
 "---[ Main menu ]---\n"
@@ -2585,7 +2624,7 @@ msgstr ""
 "nmcli    <conf-option> <value>       :: nmcli 設定\n"
 "quit                                 :: nmcli を終了する\n"
 
-#: ../clients/cli/connections.c:6077
+#: ../clients/cli/connections.c:6145
 #, c-format
 msgid ""
 "goto <setting>[.<prop>] | <prop>  :: enter setting/property for editing\n"
@@ -2604,7 +2643,7 @@ msgstr ""
 "          nmcli connection> goto secondaries\n"
 "          nmcli> goto ipv4.addresses\n"
 
-#: ../clients/cli/connections.c:6084
+#: ../clients/cli/connections.c:6152
 #, c-format
 msgid ""
 "remove <setting>[.<prop>]  :: remove setting or reset property value\n"
@@ -2625,7 +2664,7 @@ msgstr ""
 "例: nmcli> remove wifi-sec\n"
 "          nmcli> remove eth.mtu\n"
 
-#: ../clients/cli/connections.c:6091
+#: ../clients/cli/connections.c:6159
 #, c-format
 msgid ""
 "set [<setting>.<prop> <value>]  :: set property value\n"
@@ -2640,7 +2679,7 @@ msgstr ""
 "\n"
 "例: nmcli> set con.id My connection\n"
 
-#: ../clients/cli/connections.c:6096
+#: ../clients/cli/connections.c:6164
 #, c-format
 msgid ""
 "describe [<setting>.<prop>]  :: describe property\n"
@@ -2653,7 +2692,7 @@ msgstr ""
 "プロパティ詳細を表示します。NM の設定およびプロパティの全詳細については nm-"
 "settings(5) の man ページを参照してください。\n"
 
-#: ../clients/cli/connections.c:6101
+#: ../clients/cli/connections.c:6169
 #, c-format
 msgid ""
 "print [all]  :: print setting or connection values\n"
@@ -2668,7 +2707,7 @@ msgstr ""
 "\n"
 "例: nmcli ipv4> print all\n"
 
-#: ../clients/cli/connections.c:6106
+#: ../clients/cli/connections.c:6174
 #, c-format
 msgid ""
 "verify [all | fix]  :: verify setting or connection validity\n"
@@ -2693,7 +2732,7 @@ msgstr ""
 "          nmcli> verify fix\n"
 "          nmcli bond> verify\n"
 
-#: ../clients/cli/connections.c:6115
+#: ../clients/cli/connections.c:6183
 #, c-format
 msgid ""
 "save [persistent|temporary]  :: save the connection\n"
@@ -2719,7 +2758,7 @@ msgstr ""
 "永続的な接続を完全に削除する場合は、接続プロファイルを削除する\n"
 "必要があります。\n"
 
-#: ../clients/cli/connections.c:6126
+#: ../clients/cli/connections.c:6194
 #, c-format
 msgid ""
 "activate [<ifname>] [/<ap>|<nsp>]  :: activate the connection\n"
@@ -2740,7 +2779,7 @@ msgstr ""
 "/<ap>|<nsp> - AP (Wi-Fi) または NSP (WiMAX) (<ifname> が指定されていない場合"
 "は / を先頭に付ける)\n"
 
-#: ../clients/cli/connections.c:6133 ../clients/cli/connections.c:6292
+#: ../clients/cli/connections.c:6201 ../clients/cli/connections.c:6360
 #, c-format
 msgid ""
 "back  :: go to upper menu level\n"
@@ -2749,7 +2788,7 @@ msgstr ""
 "back  :: 一つ上のメニューレベルに移動\n"
 "\n"
 
-#: ../clients/cli/connections.c:6136
+#: ../clients/cli/connections.c:6204
 #, c-format
 msgid ""
 "help/? [<command>]  :: help for the nmcli commands\n"
@@ -2758,7 +2797,7 @@ msgstr ""
 "help/? [<command>]  :: nmcli コマンドのヘルプ\n"
 "\n"
 
-#: ../clients/cli/connections.c:6139
+#: ../clients/cli/connections.c:6207
 #, c-format
 msgid ""
 "nmcli [<conf-option> <value>]  :: nmcli configuration\n"
@@ -2785,7 +2824,7 @@ msgstr ""
 "          nmcli> nmcli save-confirmation no\n"
 "          nmcli> nmcli prompt-color 3\n"
 
-#: ../clients/cli/connections.c:6161 ../clients/cli/connections.c:6298
+#: ../clients/cli/connections.c:6229 ../clients/cli/connections.c:6366
 #, c-format
 msgid ""
 "quit  :: exit nmcli\n"
@@ -2798,8 +2837,8 @@ msgstr ""
 "nmcli を終了します。変更した接続の保存を行なっていない場合、この動作の確認が"
 "求められます。\n"
 
-#: ../clients/cli/connections.c:6166 ../clients/cli/connections.c:6303
-#: ../clients/cli/connections.c:6723 ../clients/cli/connections.c:7675
+#: ../clients/cli/connections.c:6234 ../clients/cli/connections.c:6371
+#: ../clients/cli/connections.c:6791 ../clients/cli/connections.c:7743
 #, c-format
 msgid "Unknown command: '%s'\n"
 msgstr "不明なコマンド: '%s'\n"
@@ -2807,7 +2846,7 @@ msgstr "不明なコマンド: '%s'\n"
 #. TRANSLATORS: do not translate command names and keywords before ::
 #. *              However, you should translate terms enclosed in <>.
 #.
-#: ../clients/cli/connections.c:6232
+#: ../clients/cli/connections.c:6300
 #, c-format
 msgid ""
 "---[ Property menu ]---\n"
@@ -2833,7 +2872,7 @@ msgstr ""
 "help/?   [<command>]             :: このヘルプまたはコマンドの詳細を表示\n"
 "quit                             :: nmcli の終了\n"
 
-#: ../clients/cli/connections.c:6257
+#: ../clients/cli/connections.c:6325
 #, c-format
 msgid ""
 "set [<value>]  :: set new value\n"
@@ -2844,7 +2883,7 @@ msgstr ""
 "\n"
 "このプロパティに指定した <value> を設定します。\n"
 
-#: ../clients/cli/connections.c:6261
+#: ../clients/cli/connections.c:6329
 #, c-format
 msgid ""
 "add [<value>]  :: append new value to the property\n"
@@ -2859,7 +2898,7 @@ msgstr ""
 "<value> がこのプロパティーに追加されます。単一値のプロパティーの場合は、その"
 "プロパティー値が置換されます ('set' の場合と同じ)。\n"
 
-#: ../clients/cli/connections.c:6267
+#: ../clients/cli/connections.c:6335
 #, c-format
 msgid ""
 "change  :: change current value\n"
@@ -2870,7 +2909,7 @@ msgstr ""
 "\n"
 "現在の値を表示し、その値を変更することができます。\n"
 
-#: ../clients/cli/connections.c:6271
+#: ../clients/cli/connections.c:6339
 #, c-format
 msgid ""
 "remove [<value>|<index>|<option name>]  :: delete the value\n"
@@ -2905,7 +2944,7 @@ msgstr ""
 "          nmcli bond.options> remove downdelay\n"
 "\n"
 
-#: ../clients/cli/connections.c:6282
+#: ../clients/cli/connections.c:6350
 #, c-format
 msgid ""
 "describe  :: describe property\n"
@@ -2918,7 +2957,7 @@ msgstr ""
 "プロパティの詳細を表示します。NM 設定とプロパティの全詳細は nm-settings(5) "
 "man ページを参照してください。\n"
 
-#: ../clients/cli/connections.c:6287
+#: ../clients/cli/connections.c:6355
 #, c-format
 msgid ""
 "print [property|setting|connection]  :: print property (setting, connection) "
@@ -2932,7 +2971,7 @@ msgstr ""
 "プロパティ値を表示します。引数を指定すると、設定または接続全体の値を表示させ"
 "ることもできます。\n"
 
-#: ../clients/cli/connections.c:6295
+#: ../clients/cli/connections.c:6363
 #, c-format
 msgid ""
 "help/? [<command>]  :: help for nmcli commands\n"
@@ -2941,28 +2980,28 @@ msgstr ""
 "help/? [<command>]  :: nmcli コマンドのヘルプ\n"
 "\n"
 
-#: ../clients/cli/connections.c:6388
+#: ../clients/cli/connections.c:6456
 #, c-format
 msgid "Error: Connection activation failed.\n"
 msgstr "エラー: 接続のアクティベートに失敗しました。\n"
 
-#: ../clients/cli/connections.c:6472
+#: ../clients/cli/connections.c:6540
 #, c-format
 msgid "Error: setting '%s' is mandatory and cannot be removed.\n"
 msgstr "エラー: 設定 '%s' は必須のため削除できません。\n"
 
 #. TRANSLATORS: status line in nmcli connection editor
-#: ../clients/cli/connections.c:6490
+#: ../clients/cli/connections.c:6558
 #, c-format
 msgid "[ Type: %s | Name: %s | UUID: %s | Dirty: %s | Temp: %s ]\n"
 msgstr "[ タイプ: %s | 名前: %s | UUID: %s | Dirty: %s | Temp: %s ]\n"
 
-#: ../clients/cli/connections.c:6526
+#: ../clients/cli/connections.c:6594
 #, c-format
 msgid "The connection is not saved. Do you really want to quit? %s"
 msgstr "この接続は保存されません。本当に終了しますか? %s"
 
-#: ../clients/cli/connections.c:6575
+#: ../clients/cli/connections.c:6643
 #, c-format
 msgid ""
 "The connection profile has been removed from another client. You may type "
@@ -2971,66 +3010,66 @@ msgstr ""
 "この接続プロファイルは別のクライアントからは削除されています。メインメニュー"
 "で「save」と入力すると元に戻すことができます。\n"
 
-#: ../clients/cli/connections.c:6600 ../clients/cli/connections.c:7021
-#: ../clients/cli/connections.c:7079
+#: ../clients/cli/connections.c:6668 ../clients/cli/connections.c:7089
+#: ../clients/cli/connections.c:7147
 #, c-format
 msgid "Allowed values for '%s' property: %s\n"
 msgstr "'%s' プロパティに対して許可されている値: %s\n"
 
-#: ../clients/cli/connections.c:6604 ../clients/cli/connections.c:7025
-#: ../clients/cli/connections.c:7083
+#: ../clients/cli/connections.c:6672 ../clients/cli/connections.c:7093
+#: ../clients/cli/connections.c:7151
 #, c-format
 msgid "Enter '%s' value: "
 msgstr "'%s' 値を入力してください: "
 
-#: ../clients/cli/connections.c:6619 ../clients/cli/connections.c:6641
-#: ../clients/cli/connections.c:7029 ../clients/cli/connections.c:7088
+#: ../clients/cli/connections.c:6687 ../clients/cli/connections.c:6709
+#: ../clients/cli/connections.c:7097 ../clients/cli/connections.c:7156
 #, c-format
 msgid "Error: failed to set '%s' property: %s\n"
 msgstr "エラー: '%s' プロパティの設定に失敗しました: %s\n"
 
-#: ../clients/cli/connections.c:6635
+#: ../clients/cli/connections.c:6703
 #, c-format
 msgid "Edit '%s' value: "
 msgstr "'%s' 値の編集: "
 
-#: ../clients/cli/connections.c:6664
+#: ../clients/cli/connections.c:6732
 #, c-format
 msgid "Error: %s\n"
 msgstr "エラー: %s\n"
 
-#: ../clients/cli/connections.c:6670 ../clients/cli/connections.c:7180
-#: ../clients/cli/connections.c:7228
+#: ../clients/cli/connections.c:6738 ../clients/cli/connections.c:7248
+#: ../clients/cli/connections.c:7296
 #, c-format
 msgid "Error: failed to remove value of '%s': %s\n"
 msgstr "エラー: '%s' の値の削除に失敗しました: %s\n"
 
-#: ../clients/cli/connections.c:6691
+#: ../clients/cli/connections.c:6759
 #, c-format
 msgid "Unknown command argument: '%s'\n"
 msgstr "不明なコマンド引数: '%s'\n"
 
-#: ../clients/cli/connections.c:6796
+#: ../clients/cli/connections.c:6864
 #, c-format
 msgid "Available settings: %s\n"
 msgstr "使用可能な設定: %s\n"
 
-#: ../clients/cli/connections.c:6808
+#: ../clients/cli/connections.c:6876
 #, c-format
 msgid "Error: invalid setting name; %s\n"
 msgstr "エラー: 無効な設定名; %s\n"
 
-#: ../clients/cli/connections.c:6825
+#: ../clients/cli/connections.c:6893
 #, c-format
 msgid "Available properties: %s\n"
 msgstr "使用可能なプロパティ: %s\n"
 
-#: ../clients/cli/connections.c:6833
+#: ../clients/cli/connections.c:6901
 #, c-format
 msgid "Error: property %s\n"
 msgstr "エラー: プロパティ %s\n"
 
-#: ../clients/cli/connections.c:6874
+#: ../clients/cli/connections.c:6942
 #, c-format
 msgid ""
 "Saving the connection with 'autoconnect=yes'. That might result in an "
@@ -3041,12 +3080,12 @@ msgstr ""
 "ベートされる可能性があります。\n"
 "本当に保存しますか? %s"
 
-#: ../clients/cli/connections.c:6963
+#: ../clients/cli/connections.c:7031
 #, c-format
 msgid "You may edit the following settings: %s\n"
 msgstr "次の設定を変更することができます: %s\n"
 
-#: ../clients/cli/connections.c:6991
+#: ../clients/cli/connections.c:7059
 #, c-format
 msgid ""
 "The connection profile has been removed from another client. You may type "
@@ -3055,409 +3094,409 @@ msgstr ""
 "この接続プロファイルは別のクライアントからは削除されています。「save」と入力"
 "すると元に戻すことができます。\n"
 
-#: ../clients/cli/connections.c:7033 ../clients/cli/connections.c:7273
+#: ../clients/cli/connections.c:7101 ../clients/cli/connections.c:7341
 #, c-format
 msgid "Error: no setting selected; valid are [%s]\n"
 msgstr "エラー: 設定が選択されていません; 有効な設定は [%s] になります\n"
 
-#: ../clients/cli/connections.c:7034
+#: ../clients/cli/connections.c:7102
 #, c-format
 msgid "use 'goto <setting>' first, or 'set <setting>.<property>'\n"
 msgstr ""
 "まず先に 'goto <setting>' を使用するか、'set <setting>.<property>' を使用して"
 "ください。\n"
 
-#: ../clients/cli/connections.c:7048 ../clients/cli/connections.c:7207
-#: ../clients/cli/connections.c:7295
+#: ../clients/cli/connections.c:7116 ../clients/cli/connections.c:7275
+#: ../clients/cli/connections.c:7363
 #, c-format
 msgid "Error: invalid setting argument '%s'; valid are [%s]\n"
 msgstr "エラー: 無効な設定引数 %s です; [%s] が有効な引数になります\n"
 
-#: ../clients/cli/connections.c:7058
+#: ../clients/cli/connections.c:7126
 #, c-format
 msgid "Error: missing setting for '%s' property\n"
 msgstr "エラー: '%s' プロパティ用の設定がありません\n"
 
-#: ../clients/cli/connections.c:7065
+#: ../clients/cli/connections.c:7133
 #, c-format
 msgid "Error: invalid property: %s\n"
 msgstr "エラー: 無効なプロパティ: %s\n"
 
-#: ../clients/cli/connections.c:7118
+#: ../clients/cli/connections.c:7186
 #, c-format
 msgid "Error: unknown setting '%s'\n"
 msgstr "エラー: 不明な設定 '%s'\n"
 
-#: ../clients/cli/connections.c:7141
+#: ../clients/cli/connections.c:7209
 #, c-format
 msgid "You may edit the following properties: %s\n"
 msgstr "変更できるのは次のプロパティになります: %s\n"
 
-#: ../clients/cli/connections.c:7185
+#: ../clients/cli/connections.c:7253
 #, c-format
 msgid "Error: no argument given; valid are [%s]\n"
 msgstr "エラー: 引数が指定されていません; [%s] が有効な引数になります\n"
 
-#: ../clients/cli/connections.c:7204
+#: ../clients/cli/connections.c:7272
 #, c-format
 msgid "Setting '%s' is not present in the connection.\n"
 msgstr "この接続には設定 '%s' はありません。\n"
 
-#: ../clients/cli/connections.c:7249
+#: ../clients/cli/connections.c:7317
 #, c-format
 msgid "Error: %s properties, nor it is a setting name.\n"
 msgstr "エラー: %s プロパティ、設定名でもありません。\n"
 
-#: ../clients/cli/connections.c:7274
+#: ../clients/cli/connections.c:7342
 #, c-format
 msgid "use 'goto <setting>' first, or 'describe <setting>.<property>'\n"
 msgstr ""
 "まず先に 'goto <setting>' を使用するか、'describe <setting>.<property>' を使"
 "用してください\n"
 
-#: ../clients/cli/connections.c:7323
+#: ../clients/cli/connections.c:7391
 #, c-format
 msgid "Error: invalid property: %s, neither a valid setting name.\n"
 msgstr "エラー: 無効なプロパティ: %s、有効な設定名でもありません。\n"
 
-#: ../clients/cli/connections.c:7355
+#: ../clients/cli/connections.c:7423
 #, c-format
 msgid "Error: unknown setting: '%s'\n"
 msgstr "エラー: 不明な設定: '%s'\n"
 
-#: ../clients/cli/connections.c:7360
+#: ../clients/cli/connections.c:7428
 #, c-format
 msgid "Error: '%s' setting not present in the connection\n"
 msgstr "エラー: この接続には設定 '%s' はありません。\n"
 
-#: ../clients/cli/connections.c:7388
+#: ../clients/cli/connections.c:7456
 #, c-format
 msgid "Error: invalid property: %s%s\n"
 msgstr "エラー: 無効なプロパティ: %s%s\n"
 
-#: ../clients/cli/connections.c:7390
+#: ../clients/cli/connections.c:7458
 msgid ", neither a valid setting name"
 msgstr "有効な設定名でもありません。"
 
-#: ../clients/cli/connections.c:7407
+#: ../clients/cli/connections.c:7475
 #, c-format
 msgid "Invalid verify option: %s\n"
 msgstr "無効な検証オプション: %s\n"
 
-#: ../clients/cli/connections.c:7415
+#: ../clients/cli/connections.c:7483
 #, c-format
 msgid "Verify setting '%s': %s\n"
 msgstr "設定 '%s' の確認: %s\n"
 
-#: ../clients/cli/connections.c:7430
+#: ../clients/cli/connections.c:7498
 #, c-format
 msgid "Verify connection: %s\n"
 msgstr "接続の確認: %s\n"
 
-#: ../clients/cli/connections.c:7433
+#: ../clients/cli/connections.c:7501
 #, c-format
 msgid "The error cannot be fixed automatically.\n"
 msgstr "エラーを自動的に修正できません\n"
 
-#: ../clients/cli/connections.c:7450
+#: ../clients/cli/connections.c:7518
 #, c-format
 msgid "Error: invalid argument '%s'\n"
 msgstr "エラー: 無効な引数 '%s'\n"
 
-#: ../clients/cli/connections.c:7482
+#: ../clients/cli/connections.c:7550
 #, c-format
 msgid "Error: Failed to save '%s' (%s) connection: %s\n"
 msgstr "エラー: '%s' (%s) 接続の保存に失敗しました: %s\n"
 
-#: ../clients/cli/connections.c:7489
+#: ../clients/cli/connections.c:7557
 #, c-format
 msgid "Connection '%s' (%s) successfully saved.\n"
 msgstr "接続 '%s' (%s) が正常に保存されました。\n"
 
-#: ../clients/cli/connections.c:7490
+#: ../clients/cli/connections.c:7558
 #, c-format
 msgid "Connection '%s' (%s) successfully updated.\n"
 msgstr "接続 '%s' (%s) が正常に更新されました。\n"
 
-#: ../clients/cli/connections.c:7522
+#: ../clients/cli/connections.c:7590
 #, c-format
 msgid "Error: connection verification failed: %s\n"
 msgstr "エラー: 接続の確認に失敗しました: %s\n"
 
-#: ../clients/cli/connections.c:7523
+#: ../clients/cli/connections.c:7591
 msgid "(unknown error)"
 msgstr "(不明なエラー)"
 
-#: ../clients/cli/connections.c:7524
+#: ../clients/cli/connections.c:7592
 #, c-format
 msgid "You may try running 'verify fix' to fix errors.\n"
 msgstr "エラーを修正するために 'verify fix' の実行を試行できます。\n"
 
-#: ../clients/cli/connections.c:7546
+#: ../clients/cli/connections.c:7614
 #, c-format
 msgid "Error: connection is not saved. Type 'save' first.\n"
 msgstr "エラー: 接続は保存されていません。まず 'save' と入力します。\n"
 
-#: ../clients/cli/connections.c:7550
+#: ../clients/cli/connections.c:7618
 #, c-format
 msgid "Error: connection is not valid: %s\n"
 msgstr "エラー: 接続は無効です: %s\n"
 
-#: ../clients/cli/connections.c:7560
+#: ../clients/cli/connections.c:7628
 #, c-format
 msgid "Error: Cannot activate connection: %s.\n"
 msgstr "エラー: 接続をアクティベートできません: %s。\n"
 
-#: ../clients/cli/connections.c:7569
+#: ../clients/cli/connections.c:7637
 #, c-format
 msgid "Error: Failed to activate '%s' (%s) connection: %s\n"
 msgstr "エラー: '%s' (%s) 接続のアクティベートに失敗しました: %s\n"
 
-#: ../clients/cli/connections.c:7575
+#: ../clients/cli/connections.c:7643
 msgid "Monitoring connection activation (press any key to continue)\n"
 msgstr "モニタリング接続のアクティベート (いずれかのキーを押して続行する)\n"
 
-#: ../clients/cli/connections.c:7611
+#: ../clients/cli/connections.c:7679
 #, c-format
 msgid "Error: status-line: %s\n"
 msgstr "エラー: status-line: %s\n"
 
-#: ../clients/cli/connections.c:7619
+#: ../clients/cli/connections.c:7687
 #, c-format
 msgid "Error: save-confirmation: %s\n"
 msgstr "エラー: save-confirmation: %s\n"
 
-#: ../clients/cli/connections.c:7627
+#: ../clients/cli/connections.c:7695
 #, c-format
 msgid "Error: show-secrets: %s\n"
 msgstr "エラー: show-secrets: %s\n"
 
-#: ../clients/cli/connections.c:7636
+#: ../clients/cli/connections.c:7704
 #, c-format
 msgid "Error: bad color: %s\n"
 msgstr "エラー: 不正な色: %s\n"
 
-#: ../clients/cli/connections.c:7650
+#: ../clients/cli/connections.c:7718
 #, c-format
 msgid "Current nmcli configuration:\n"
 msgstr "現在の nmcli 設定:\n"
 
-#: ../clients/cli/connections.c:7660
+#: ../clients/cli/connections.c:7728
 #, c-format
 msgid "Invalid configuration option '%s'; allowed [%s]\n"
 msgstr "無効な設定オプション '%s'; [%s] が許可されています\n"
 
-#: ../clients/cli/connections.c:7877
+#: ../clients/cli/connections.c:7945
 #, c-format
 msgid "Error: only one of 'id', uuid, or 'path' can be provided."
 msgstr "エラー: 指定できるのは 'id'、uuid、'path' のいずれか一つになります。"
 
-#: ../clients/cli/connections.c:7889 ../clients/cli/connections.c:8050
+#: ../clients/cli/connections.c:7957 ../clients/cli/connections.c:8118
 #, c-format
 msgid "Error: Unknown connection '%s'."
 msgstr "エラー: 不明な接続 '%s' です。"
 
-#: ../clients/cli/connections.c:7907
+#: ../clients/cli/connections.c:7975
 #, c-format
 msgid "Warning: editing existing connection '%s'; 'type' argument is ignored\n"
 msgstr "警告: 既存の接続 '%s' を編集しています;  'タイプ' 引数は無視されます\n"
 
-#: ../clients/cli/connections.c:7910
+#: ../clients/cli/connections.c:7978
 #, c-format
 msgid ""
 "Warning: editing existing connection '%s'; 'con-name' argument is ignored\n"
 msgstr "警告: 既存の接続 '%s' を編集しています; 'con 名' 引数は無視されます\n"
 
-#: ../clients/cli/connections.c:7924
+#: ../clients/cli/connections.c:7992
 #, c-format
 msgid "Valid connection types: %s\n"
 msgstr "有効な接続タイプ: %s\n"
 
-#: ../clients/cli/connections.c:7926
+#: ../clients/cli/connections.c:7994
 #, c-format
 msgid "Error: invalid connection type; %s\n"
 msgstr "エラー: 無効な接続タイプ; %s\n"
 
-#: ../clients/cli/connections.c:7965
+#: ../clients/cli/connections.c:8033
 #, c-format
 msgid "===| nmcli interactive connection editor |==="
 msgstr "===| nmcli インテラクティブ接続エディター |==="
 
-#: ../clients/cli/connections.c:7968
+#: ../clients/cli/connections.c:8036
 #, c-format
 msgid "Editing existing '%s' connection: '%s'"
 msgstr "既存の '%s' 接続を編集中: '%s'"
 
-#: ../clients/cli/connections.c:7970
+#: ../clients/cli/connections.c:8038
 #, c-format
 msgid "Adding a new '%s' connection"
 msgstr "新規の '%s' 接続を追加中"
 
-#: ../clients/cli/connections.c:7972
+#: ../clients/cli/connections.c:8040
 #, c-format
 msgid "Type 'help' or '?' for available commands."
 msgstr "使用できるコマンドを表示するには 'help' または '?' を入力します。"
 
-#: ../clients/cli/connections.c:7974
+#: ../clients/cli/connections.c:8042
 #, c-format
 msgid "Type 'describe [<setting>.<prop>]' for detailed property description."
 msgstr ""
 "プロパティ詳細を表示するには 'describe [<setting>.<prop>]' を入力します。"
 
-#: ../clients/cli/connections.c:8009
+#: ../clients/cli/connections.c:8077
 #, c-format
 msgid "Error: Failed to modify connection '%s': %s"
 msgstr "エラー: 接続 '%s' の変更に失敗しました: %s"
 
-#: ../clients/cli/connections.c:8016
+#: ../clients/cli/connections.c:8084
 #, c-format
 msgid "Connection '%s' (%s) successfully modified.\n"
 msgstr "接続 '%s' (%s) が正常に変更されました。\n"
 
-#: ../clients/cli/connections.c:8098
+#: ../clients/cli/connections.c:8166
 #, c-format
 msgid "%s (%s) cloned as %s (%s).\n"
 msgstr "%s (%s) が %s (%s) としてクローンされました。\n"
 
-#: ../clients/cli/connections.c:8162
+#: ../clients/cli/connections.c:8230
 msgid "New connection name: "
 msgstr "新規の接続名:"
 
-#: ../clients/cli/connections.c:8164
+#: ../clients/cli/connections.c:8232
 #, c-format
 msgid "Error: <new name> argument is missing."
 msgstr "エラー: <new name> 引数がありません。"
 
-#: ../clients/cli/connections.c:8170 ../clients/cli/connections.c:8653
+#: ../clients/cli/connections.c:8238 ../clients/cli/connections.c:8724
 #, c-format
 msgid "Error: unknown extra argument: '%s'."
 msgstr "エラー: 不明な追加の引数: '%s'。"
 
-#: ../clients/cli/connections.c:8219
+#: ../clients/cli/connections.c:8289
 #, c-format
 msgid "Error: not all connections deleted."
 msgstr "エラー: 一部の接続が削除されていません。"
 
-#: ../clients/cli/connections.c:8220
+#: ../clients/cli/connections.c:8290
 #, c-format
 msgid "Error: Connection deletion failed: %s"
 msgstr "エラー: 接続の削除に失敗しました: %s"
 
-#: ../clients/cli/connections.c:8277 ../clients/cli/connections.c:8400
+#: ../clients/cli/connections.c:8347 ../clients/cli/connections.c:8471
 #, fuzzy, c-format
 msgid "Error: %s.\n"
 msgstr "エラー: %s."
 
-#: ../clients/cli/connections.c:8278 ../clients/cli/connections.c:8401
+#: ../clients/cli/connections.c:8348 ../clients/cli/connections.c:8472
 #, c-format
 msgid "Error: not all connections found."
 msgstr "エラー: 一部の接続が見つかりません。"
 
 #. truncate trailing ", "
-#: ../clients/cli/connections.c:8320
+#: ../clients/cli/connections.c:8391
 #, c-format
 msgid "Error: cannot delete unknown connection(s): %s."
 msgstr "エラー: 不明な接続を削除できません: %s。"
 
-#: ../clients/cli/connections.c:8332
+#: ../clients/cli/connections.c:8403
 #, c-format
 msgid "%s: connection profile changed\n"
 msgstr "%s: 接続プロファイルが変更されました\n"
 
-#: ../clients/cli/connections.c:8358
+#: ../clients/cli/connections.c:8429
 #, c-format
 msgid "%s: connection profile created\n"
 msgstr "%s: 接続プロファイルが作成されました\n"
 
-#: ../clients/cli/connections.c:8367
+#: ../clients/cli/connections.c:8438
 #, c-format
 msgid "%s: connection profile removed\n"
 msgstr "%s: 接続プロファイルが削除されました\n"
 
-#: ../clients/cli/connections.c:8428
+#: ../clients/cli/connections.c:8499
 #, c-format
 msgid "Error: failed to reload connections: %s."
 msgstr "エラー: 接続のリロードに失敗しました: %s。"
 
-#: ../clients/cli/connections.c:8460
+#: ../clients/cli/connections.c:8531
 #, c-format
 msgid "Error: failed to load connection: %s."
 msgstr "エラー: 接続のロードに失敗しました: %s。"
 
-#: ../clients/cli/connections.c:8468
+#: ../clients/cli/connections.c:8539
 #, c-format
 msgid "Could not load file '%s'\n"
 msgstr "'%s' ファイルを読み込めませんでした。\n"
 
-#: ../clients/cli/connections.c:8477
+#: ../clients/cli/connections.c:8548
 msgid "File to import: "
 msgstr "インポートするファイル:"
 
-#: ../clients/cli/connections.c:8501
+#: ../clients/cli/connections.c:8572
 #, c-format
 msgid "Error: No arguments provided."
 msgstr "エラー: 引数がありません。"
 
-#: ../clients/cli/connections.c:8524
+#: ../clients/cli/connections.c:8595
 #, c-format
 msgid "Warning: 'type' already specified, ignoring extra one.\n"
 msgstr "警告: 'type' はすでに指定されています。追加のものは無視されます。\n"
 
-#: ../clients/cli/connections.c:8537
+#: ../clients/cli/connections.c:8608
 #, c-format
 msgid "Warning: 'file' already specified, ignoring extra one.\n"
 msgstr "警告: 'file' はすでに指定されています。追加のものは無視されます。\n"
 
-#: ../clients/cli/connections.c:8539
+#: ../clients/cli/connections.c:8610
 #, c-format
 msgid "Unknown parameter: %s"
 msgstr "不明なパラメーター: %s"
 
-#: ../clients/cli/connections.c:8552
+#: ../clients/cli/connections.c:8623
 #, c-format
 msgid "Error: 'type' argument is required."
 msgstr "エラー: 'タイプ' 引数が必要です。"
 
-#: ../clients/cli/connections.c:8557
+#: ../clients/cli/connections.c:8628
 #, c-format
 msgid "Error: 'file' argument is required."
 msgstr "エラー: 'file' 引数が必要です。"
 
-#: ../clients/cli/connections.c:8564
+#: ../clients/cli/connections.c:8635
 #, fuzzy, c-format
 msgid "Error: failed to find VPN plugin for %s."
 msgstr "エラー: VPN プラグインのロードに失敗しました: %s。"
 
-#: ../clients/cli/connections.c:8572 ../clients/cli/connections.c:8669
+#: ../clients/cli/connections.c:8643 ../clients/cli/connections.c:8740
 #, c-format
 msgid "Error: failed to load VPN plugin: %s."
 msgstr "エラー: VPN プラグインのロードに失敗しました: %s。"
 
-#: ../clients/cli/connections.c:8580
+#: ../clients/cli/connections.c:8651
 #, c-format
 msgid "Error: failed to import '%s': %s."
 msgstr "エラー: '%s' のインポートに失敗しました: %s。"
 
-#: ../clients/cli/connections.c:8650
+#: ../clients/cli/connections.c:8721
 msgid "Output file name: "
 msgstr "出力ファイル名:"
 
-#: ../clients/cli/connections.c:8660
+#: ../clients/cli/connections.c:8731
 #, c-format
 msgid "Error: the connection is not VPN."
 msgstr "エラー: 接続は VPN ではありません。"
 
-#: ../clients/cli/connections.c:8681
+#: ../clients/cli/connections.c:8752
 #, c-format
 msgid "Error: failed to create temporary file %s."
 msgstr "エラー: 一時ファイル %s の作成に失敗しました。"
 
-#: ../clients/cli/connections.c:8690
+#: ../clients/cli/connections.c:8761
 #, c-format
 msgid "Error: failed to export '%s': %s."
 msgstr "エラー: '%s' のエクスポートに失敗しました: %s。"
 
-#: ../clients/cli/connections.c:8701
+#: ../clients/cli/connections.c:8772
 #, c-format
 msgid "Error: failed to read temporary file '%s': %s."
 msgstr "エラー: 一時ファイル '%s' の読み取りに失敗しました: %s。"
@@ -3798,9 +3837,9 @@ msgstr "ブリッジ"
 
 #. 13
 #: ../clients/cli/devices.c:250 ../clients/tui/nm-editor-utils.c:217
-#: ../clients/tui/nmt-page-vlan.c:94 ../libnm-core/nm-connection.c:1897
+#: ../clients/tui/nmt-page-vlan.c:94 ../libnm-core/nm-connection.c:1898
 #: ../libnm-glib/nm-device.c:1879 ../libnm-util/nm-connection.c:1632
-#: ../libnm/nm-device.c:1681
+#: ../libnm/nm-device.c:1684
 msgid "VLAN"
 msgstr "VLAN"
 
@@ -5476,405 +5515,197 @@ msgstr "認証エラー: %s\n"
 msgid "Warning: polkit agent initialization failed: %s\n"
 msgstr "警告: polkit エージェントの初期化に失敗しました: %s\n"
 
-#: ../clients/cli/settings.c:820
+#: ../clients/cli/settings.c:843
 #, c-format
 msgid "%d (key)"
 msgstr "%d (key)"
 
-#: ../clients/cli/settings.c:822
+#: ../clients/cli/settings.c:845
 #, c-format
 msgid "%d (passphrase)"
 msgstr "%d (パスフレーズ)"
 
-#: ../clients/cli/settings.c:825 ../clients/cli/settings.c:911
+#: ../clients/cli/settings.c:848 ../clients/cli/settings.c:934
 #, c-format
 msgid "%d (unknown)"
 msgstr "%d (不明)"
 
-#: ../clients/cli/settings.c:854
+#: ../clients/cli/settings.c:877
 msgid "0 (NONE)"
 msgstr "0 (なし)"
 
-#: ../clients/cli/settings.c:860
+#: ../clients/cli/settings.c:883
 msgid "REORDER_HEADERS, "
 msgstr "ヘッダーの順序変更、"
 
-#: ../clients/cli/settings.c:862
+#: ../clients/cli/settings.c:885
 msgid "GVRP, "
 msgstr "GVRP、"
 
-#: ../clients/cli/settings.c:864
+#: ../clients/cli/settings.c:887
 msgid "LOOSE_BINDING, "
 msgstr "結合を緩める、"
 
-#: ../clients/cli/settings.c:866
+#: ../clients/cli/settings.c:889
 msgid "MVRP, "
 msgstr "MVRP、"
 
-#: ../clients/cli/settings.c:905
+#: ../clients/cli/settings.c:928
 #, c-format
 msgid "%d (disabled)"
 msgstr "%d (無効)"
 
-#: ../clients/cli/settings.c:907
+#: ../clients/cli/settings.c:930
 #, c-format
 msgid "%d (enabled, prefer public IP)"
 msgstr "%d (有効、パブリック IP 優先)"
 
-#: ../clients/cli/settings.c:909
+#: ../clients/cli/settings.c:932
 #, c-format
 msgid "%d (enabled, prefer temporary IP)"
 msgstr "%d (有効、テンポラリ IP を優先)"
 
-#: ../clients/cli/settings.c:924
+#: ../clients/cli/settings.c:947
 #, c-format
 msgid "%d (no)"
 msgstr "%d (no)"
 
-#: ../clients/cli/settings.c:926
+#: ../clients/cli/settings.c:949
 #, c-format
 msgid "%d (yes)"
 msgstr "%d (yes)"
 
-#: ../clients/cli/settings.c:929 ../clients/cli/settings.c:1340
-#: ../clients/cli/settings.c:1692
+#: ../clients/cli/settings.c:952 ../clients/cli/settings.c:2388
+#: ../clients/cli/settings.c:3514
 #, c-format
 msgid "%d (default)"
 msgstr "%d (default)"
 
-#: ../clients/cli/settings.c:942
+#: ../clients/cli/settings.c:965
 msgid "0 (none)"
 msgstr "0 (なし)"
 
-#: ../clients/cli/settings.c:948
+#: ../clients/cli/settings.c:971
 msgid "agent-owned, "
 msgstr "エージェント所有、 "
 
-#: ../clients/cli/settings.c:950
+#: ../clients/cli/settings.c:973
 msgid "not saved, "
 msgstr "未保存、 "
 
-#: ../clients/cli/settings.c:952
+#: ../clients/cli/settings.c:975
 msgid "not required, "
 msgstr "不必要、 "
 
-#: ../clients/cli/settings.c:1001 ../clients/tui/nmt-mtu-entry.c:84
+#: ../clients/cli/settings.c:1024 ../clients/tui/nmt-mtu-entry.c:84
 msgid "(default)"
 msgstr "(デフォルト)"
 
-#. ----------------------------------------------------------------------------
-#: ../clients/cli/settings.c:1093 ../clients/cli/settings.c:1150
-#: ../clients/cli/settings.c:1191 ../clients/cli/settings.c:1225
-#: ../clients/cli/settings.c:8301
-msgid "<hidden>"
-msgstr "<hidden>"
-
-#: ../clients/cli/settings.c:1342
-#, fuzzy, c-format
-msgid "%d (forever)"
-msgstr "%d (no)"
-
-#: ../clients/cli/settings.c:1389
-msgid "0 (disabled)"
-msgstr "0 (無効)"
-
-#: ../clients/cli/settings.c:1395
-msgid "enabled, "
-msgstr "有効、"
-
-#: ../clients/cli/settings.c:1397
-msgid "advertise, "
-msgstr "公表、"
-
-#: ../clients/cli/settings.c:1399
-msgid "willing, "
-msgstr "用意がある、"
-
-#: ../clients/cli/settings.c:1427
-msgid "-1 (unset)"
-msgstr "-1 (未設定)"
-
-#: ../clients/cli/settings.c:1559 ../clients/cli/settings.c:1887
-#: ../clients/cli/settings.c:2028
-msgid "auto"
-msgstr "自動"
-
-#: ../clients/cli/settings.c:1572 ../clients/cli/settings.c:2059
-msgid "default"
-msgstr "デフォルト"
-
-#: ../clients/cli/settings.c:1694
-#, c-format
-msgid "%d (off)"
-msgstr "%d (off)"
-
-#: ../clients/cli/settings.c:1933
-#, c-format
-msgid ""
-"invalid option '%s', use a combination of [%s] or 'ignore', 'default' or "
-"'none'"
-msgstr ""
-"無効なオプション '%s' です。[%s]、'ignore'、'default'、または 'none' の組み合"
-"わせを使用してください"
-
-#: ../clients/cli/settings.c:1944
-msgid "'default' and 'ignore' are incompatible with other flags"
-msgstr "'default' と 'ignore' は他のフラグと使用できません"
-
-#: ../clients/cli/settings.c:1980
-#, c-format
-msgid "invalid mode '%s', use one of %s"
-msgstr "無効なモード '%s' です。%s のいずれかを使用してください"
-
-#: ../clients/cli/settings.c:2063
-#, c-format
-msgid "always"
-msgstr "always"
-
-#: ../clients/cli/settings.c:2163 ../clients/cli/settings.c:3618
-#: ../clients/cli/settings.c:4803 ../clients/cli/settings.c:5307
-#: ../libnm-core/nm-keyfile-reader.c:579
-#, c-format
-msgid "invalid option '%s', use one of [%s]"
-msgstr "無効なオプション '%s' です。[%s] のいずれかを使用してください"
-
-#: ../clients/cli/settings.c:2236
-#, fuzzy, c-format
-msgid "invalid method '%s', use one of %s"
-msgstr "無効なモード '%s' です。%s のいずれかを使用してください"
-
-#: ../clients/cli/settings.c:2332
-#, c-format
-msgid "Do you also want to set '%s' to '%s'? [yes]: "
-msgstr "'%s' を '%s' に設定しますか? [yes]: "
-
-#: ../clients/cli/settings.c:2334
-#, c-format
-msgid "Do you also want to clear '%s'? [yes]: "
-msgstr "'%s' も消去しますか? [yes]: "
-
-#: ../clients/cli/settings.c:2510
-#, c-format
-msgid ""
-"Warning: %s.%s set to '%s', but it might be ignored in infrastructure mode\n"
-msgstr ""
-"警告: %s.%s が '%s' に設定されましたが、インフラストラクチャモードでは無視さ"
-"れることがあります\n"
-
-#: ../clients/cli/settings.c:2529
-#, c-format
-msgid "Warning: setting %s.%s requires removing ipv4 and ipv6 settings\n"
-msgstr ""
-"警告: %s.%s を設定するには、ipv4 と ipv6 の設定を削除する必要があります\n"
-
-#: ../clients/cli/settings.c:2531
-msgid "Do you want to remove them? [yes] "
-msgstr "削除しますか? [yes] "
-
-#: ../clients/cli/settings.c:2677 ../clients/cli/settings.c:3072
-#: ../clients/cli/settings.c:5508
-#, c-format
-msgid "'%s' is not valid"
-msgstr "'%s' は無効です"
-
-#: ../clients/cli/settings.c:2700
-#, c-format
-msgid "'%d' is not valid; use <%d-%d>"
-msgstr "'%d' は無効です; <%d-%d> を使用してください"
-
-#: ../clients/cli/settings.c:2722
-#, c-format
-msgid "'%lld' is not valid; use <%lld-%lld>"
-msgstr "'%lld' は有効ではありません。<%lld-%lld> を使用してください"
-
-#: ../clients/cli/settings.c:2744
-#, c-format
-msgid "'%u' is not valid; use <%u-%u>"
-msgstr "'%u' は有効ではありません。<%u-%u> を使用してください"
-
-#: ../clients/cli/settings.c:2783
-#, c-format
-msgid "'%u' flags are not valid; use combination of %s"
-msgstr "'%u' フラグは有効ではありません。%s の組み合わせを使用してください"
-
-#: ../clients/cli/settings.c:2850
+#: ../clients/cli/settings.c:1090
 #, c-format
 msgid "'%s' is not valid; use <option>=<value>"
 msgstr "'%s' は無効です; <option>=<value> を使用してください"
 
-#: ../clients/cli/settings.c:2884
+#: ../clients/cli/settings.c:1124
 #, c-format
 msgid "index '%s' is not valid"
 msgstr "インデックス '%s' は無効です"
 
-#: ../clients/cli/settings.c:2889 ../clients/cli/settings.c:2914
+#: ../clients/cli/settings.c:1129 ../clients/cli/settings.c:1154
 msgid "no item to remove"
 msgstr "削除するアイテムがありません"
 
-#: ../clients/cli/settings.c:2893 ../clients/cli/settings.c:2918
+#: ../clients/cli/settings.c:1133 ../clients/cli/settings.c:1158
 #, c-format
 msgid "index '%d' is not in range <0-%d>"
 msgstr "インデックス '%d' は範囲内にありません <0-%d>"
 
-#: ../clients/cli/settings.c:2933
+#: ../clients/cli/settings.c:1173
 #, c-format
 msgid "invalid option '%s'"
 msgstr "無効なオプション '%s'"
 
-#: ../clients/cli/settings.c:2935
+#: ../clients/cli/settings.c:1175
 msgid "missing option"
 msgstr "足りないオプション"
 
-#: ../clients/cli/settings.c:2962 ../clients/cli/settings.c:2982
-#: ../clients/cli/settings.c:3002 ../clients/cli/settings.c:3022
+#: ../clients/cli/settings.c:1209
+#, c-format
+msgid "'%s' is not a valid MAC"
+msgstr "'%s' は有効な MAC ではありません"
+
+#: ../clients/cli/settings.c:1239 ../clients/cli/settings.c:1499
+#: ../clients/cli/settings.c:5555
+#, c-format
+msgid "'%s' is not valid"
+msgstr "'%s' は無効です"
+
+#: ../clients/cli/settings.c:1262
+#, c-format
+msgid "'%d' is not valid; use <%d-%d>"
+msgstr "'%d' は無効です; <%d-%d> を使用してください"
+
+#: ../clients/cli/settings.c:1284
+#, c-format
+msgid "'%lld' is not valid; use <%lld-%lld>"
+msgstr "'%lld' は有効ではありません。<%lld-%lld> を使用してください"
+
+#: ../clients/cli/settings.c:1306
+#, c-format
+msgid "'%u' is not valid; use <%u-%u>"
+msgstr "'%u' は有効ではありません。<%u-%u> を使用してください"
+
+#: ../clients/cli/settings.c:1345
+#, c-format
+msgid "'%u' flags are not valid; use combination of %s"
+msgstr "'%u' フラグは有効ではありません。%s の組み合わせを使用してください"
+
+#: ../clients/cli/settings.c:1389 ../clients/cli/settings.c:1409
+#: ../clients/cli/settings.c:1429 ../clients/cli/settings.c:1449
 #, c-format
 msgid "'%s' is not a valid number (or out of range)"
 msgstr "'%s' は有効な数字ではありません (または範囲外になります)"
 
-#: ../clients/cli/settings.c:3056
+#: ../clients/cli/settings.c:1483
 #, c-format
 msgid "'%s' is not a valid value; use -1, 0 or 1"
 msgstr "'%s' は有効な値ではありません。-1、0、または 1 を使用してください"
 
-#: ../clients/cli/settings.c:3089
+#: ../clients/cli/settings.c:1516
 #, c-format
 msgid "'%s' is not a valid Ethernet MAC"
 msgstr "'%s' は有効な Ethernet MAC ではありません"
 
-#: ../clients/cli/settings.c:3148
+#: ../clients/cli/settings.c:1575
 #, c-format
 msgid "'%s' is not a valid flag number; use <0-%d>"
 msgstr "'%s' は有効なフラグ番号ではありません。<0-%d> を使用してください"
 
-#: ../clients/cli/settings.c:3160
+#: ../clients/cli/settings.c:1587
 #, c-format
 msgid "Warning: '%s' sum is higher than all flags => all flags set\n"
 msgstr ""
 "警告: 合計 '%s' がすべてのフラグよりも大きいです => すべてのフラグが設定され"
 "ています\n"
 
-#: ../clients/cli/settings.c:3211
+#: ../clients/cli/settings.c:1638
 #, c-format
 msgid "'%s' is not a valid hex character"
 msgstr "'%s' は有効な 16 進文字ではありません"
 
-#: ../clients/cli/settings.c:3241
-#, c-format
-msgid "'%s' is not a valid MAC"
-msgstr "'%s' は有効な MAC ではありません"
+#. ----------------------------------------------------------------------------
+#: ../clients/cli/settings.c:1723 ../clients/cli/settings.c:1780
+#: ../clients/cli/settings.c:1821 ../clients/cli/settings.c:1855
+#: ../clients/cli/settings.c:8475
+msgid "<hidden>"
+msgstr "<hidden>"
 
-#. Don't allow setting type unless the connection is brand new.
-#. * Just because it's a bad idea and the user wouldn't probably want that.
-#. * No technical reason, really.
-#. * Also, using uuid to see if the connection is brand new is a bit
-#. * hacky: we can not see if the type is already set, because
-#. * nmc_setting_set_property() is called only after the property
-#. * we're setting (type) has been removed.
-#: ../clients/cli/settings.c:3269
-#, fuzzy, c-format
-msgid "Can not change the connection type"
-msgstr "不明な/未処理の Bluetooth 接続タイプ"
-
-#: ../clients/cli/settings.c:3293 ../libnm-core/nm-setting-connection.c:887
-#: ../libnm-util/nm-setting-connection.c:791
-#, c-format
-msgid "'%s' is not a valid UUID"
-msgstr "'%s' は有効な UUID ではありません"
-
-#: ../clients/cli/settings.c:3360
-#, c-format
-msgid "the property doesn't contain permission '%s'"
-msgstr "プロパティーにはパーミッション '%s' が含まれません"
-
-#: ../clients/cli/settings.c:3372
-msgid ""
-"Enter a list of user permissions. This is a list of user names formatted "
-"as:\n"
-"  [user:]<user name 1>, [user:]<user name 2>,...\n"
-"The items can be separated by commas or spaces.\n"
-"\n"
-"Example: alice bob charlie\n"
-msgstr ""
-"ユーザーのパーミッション一覧を入力します。ユーザー名の一覧で、\n"
-" [user:]<user name 1>, [user:]<user name 2>,... のような形式をとります。\n"
-"コンマか空白で区切ることで複数のアイテムを記載できます。\n"
-"\n"
-"例: alice bob charlie\n"
-
-#: ../clients/cli/settings.c:3391
-#, c-format
-msgid "'%s' is not valid master; use ifname or connection UUID"
-msgstr ""
-"'%s' は 有効なマスターではありません: ifname か接続 UUID を使用してください。"
-
-#: ../clients/cli/settings.c:3436
-#, c-format
-msgid "Warning: %s is not an UUID of any existing connection profile\n"
-msgstr "警告: %s は既存の接続プロファイルの UUID ではありません\n"
-
-#: ../clients/cli/settings.c:3440 ../clients/cli/settings.c:3455
-#, c-format
-msgid "'%s' is not a VPN connection profile"
-msgstr "'%s' は VPN 接続プロファイルではありません"
-
-#: ../clients/cli/settings.c:3448
-#, c-format
-msgid "'%s' is not a name of any exiting profile"
-msgstr "'%s' は既存のプロファイルの名前ではありません"
-
-#: ../clients/cli/settings.c:3482
-#, c-format
-msgid "the value '%s' is not a valid UUID"
-msgstr "値 '%s' は有効な UUID ではありません"
-
-#: ../clients/cli/settings.c:3489
-#, c-format
-msgid "the property doesn't contain UUID '%s'"
-msgstr "プロパティーには UUID '%s' が含まれません"
-
-#: ../clients/cli/settings.c:3501
-msgid ""
-"Enter secondary connections that should be activated when this connection "
-"is\n"
-"activated. Connections can be specified either by UUID or ID (name). nmcli\n"
-"transparently translates names to UUIDs. Note that NetworkManager only "
-"supports\n"
-"VPNs as secondary connections at the moment.\n"
-"The items can be separated by commas or spaces.\n"
-"\n"
-"Example: private-openvpn, fe6ba5d8-c2fc-4aae-b2e3-97efddd8d9a7\n"
-msgstr ""
-"この接続がアクティベートされたときにアクティベートする必要がある\n"
-"セカンダリー接続を入力してください。接続は UUID または ID (名前) のいずれかで"
-"指定できます。nmcli\n"
-"は名前を透過的に UUID に変換します。NetworkManager は現時点では VPN をセカン"
-"ダリー接続\n"
-"としてのみサポートします。\n"
-"項目はカンマまたはスペースで区切ることができます。\n"
-"\n"
-"例: private-openvpn, fe6ba5d8-c2fc-4aae-b2e3-97efddd8d9a7\n"
-
-#: ../clients/cli/settings.c:3568
-msgid ""
-"Enter a value which indicates whether the connection is subject to a data\n"
-"quota, usage costs or other limitations. Accepted options are:\n"
-"'true','yes','on' to set the connection as metered\n"
-"'false','no','off' to set the connection as not metered\n"
-"'unknown' to let NetworkManager choose a value using some heuristics\n"
-msgstr ""
-"接続がデータクォータ、使用コスト、または他の制限に基づくかどうかを\n"
-"示す値を入力します。使用できるオプション:\n"
-"接続を測定対象として設定する場合は 'true'、'yes'、'on'\n"
-"接続を非測定として設定する場合は 'false'、'no'、'off'\n"
-"NetworkManager でヒューリスティックを使用して値を選択できるようにする場合は "
-"'unknown'\n"
-
-#: ../clients/cli/settings.c:3717
+#: ../clients/cli/settings.c:1961
 #, c-format
 msgid "the property doesn't contain EAP method '%s'"
 msgstr "プロパティーには EAP メソッド '%s' が含まれません"
 
-#: ../clients/cli/settings.c:3734
+#: ../clients/cli/settings.c:1978
 msgid ""
 "Enter file path to CA certificate (optionally prefixed with file://).\n"
 "  [file://]<file path>\n"
@@ -5888,12 +5719,12 @@ msgstr ""
 "い。\n"
 "例: /home/cimrman/cacert.crt\n"
 
-#: ../clients/cli/settings.c:3753
+#: ../clients/cli/settings.c:1997
 #, c-format
 msgid "the property doesn't contain alternative subject match '%s'"
 msgstr "プロパティーには代替のサブジェクトマッチ '%s' が含まれません"
 
-#: ../clients/cli/settings.c:3769
+#: ../clients/cli/settings.c:2013
 msgid ""
 "Enter file path to client certificate (optionally prefixed with file://).\n"
 "  [file://]<file path>\n"
@@ -5907,7 +5738,7 @@ msgstr ""
 "い。\n"
 "例: /home/cimrman/jara.crt\n"
 
-#: ../clients/cli/settings.c:3781
+#: ../clients/cli/settings.c:2025
 msgid ""
 "Enter file path to CA certificate for inner authentication (optionally "
 "prefixed\n"
@@ -5924,13 +5755,13 @@ msgstr ""
 "い。\n"
 "例: /home/cimrman/ca-zweite-phase.crt\n"
 
-#: ../clients/cli/settings.c:3801
+#: ../clients/cli/settings.c:2045
 #, c-format
 msgid "the property doesn't contain \"phase2\" alternative subject match '%s'"
 msgstr ""
 "プロパティーには代替の  \"phase2\" サブジェクトマッチ '%s' が含まれません"
 
-#: ../clients/cli/settings.c:3817
+#: ../clients/cli/settings.c:2061
 msgid ""
 "Enter file path to client certificate for inner authentication (optionally "
 "prefixed\n"
@@ -5947,7 +5778,7 @@ msgstr ""
 "い。\n"
 "例: /home/cimrman/jara-zweite-phase.crt\n"
 
-#: ../clients/cli/settings.c:3837
+#: ../clients/cli/settings.c:2081
 msgid ""
 "Enter path to a private key and the key password (if not set yet):\n"
 "  [file://]<file path> [<password>]\n"
@@ -5961,7 +5792,7 @@ msgstr ""
 "ください。\n"
 "例: /home/cimrman/jara-priv-key Dardanely\n"
 
-#: ../clients/cli/settings.c:3908
+#: ../clients/cli/settings.c:2152
 msgid ""
 "Enter bytes as a list of hexadecimal values.\n"
 "Two formats are accepted:\n"
@@ -5982,7 +5813,7 @@ msgstr ""
 "例: ab0455a6ea3a74C2\n"
 "          ab 4 55 0xa6 ea 3a 74 C2\n"
 
-#: ../clients/cli/settings.c:4029
+#: ../clients/cli/settings.c:2316
 #, c-format
 msgid ""
 "Enter a list of bonding options formatted as:\n"
@@ -6013,32 +5844,234 @@ msgstr ""
 "\n"
 "例: mode=2,miimon=120\n"
 
-#: ../clients/cli/settings.c:4060
+#: ../clients/cli/settings.c:2390
+#, fuzzy, c-format
+msgid "%d (forever)"
+msgstr "%d (no)"
+
+#. Don't allow setting type unless the connection is brand new.
+#. * Just because it's a bad idea and the user wouldn't probably want that.
+#. * No technical reason, really.
+#. * Also, using uuid to see if the connection is brand new is a bit
+#. * hacky: we can not see if the type is already set, because
+#. * nmc_setting_set_property() is called only after the property
+#. * we're setting (type) has been removed.
+#: ../clients/cli/settings.c:2443
+#, fuzzy, c-format
+msgid "Can not change the connection type"
+msgstr "不明な/未処理の Bluetooth 接続タイプ"
+
+#: ../clients/cli/settings.c:2467 ../libnm-core/nm-setting-connection.c:887
+#: ../libnm-util/nm-setting-connection.c:791
+#, c-format
+msgid "'%s' is not a valid UUID"
+msgstr "'%s' は有効な UUID ではありません"
+
+#: ../clients/cli/settings.c:2534
+#, c-format
+msgid "the property doesn't contain permission '%s'"
+msgstr "プロパティーにはパーミッション '%s' が含まれません"
+
+#: ../clients/cli/settings.c:2546
+msgid ""
+"Enter a list of user permissions. This is a list of user names formatted "
+"as:\n"
+"  [user:]<user name 1>, [user:]<user name 2>,...\n"
+"The items can be separated by commas or spaces.\n"
+"\n"
+"Example: alice bob charlie\n"
+msgstr ""
+"ユーザーのパーミッション一覧を入力します。ユーザー名の一覧で、\n"
+" [user:]<user name 1>, [user:]<user name 2>,... のような形式をとります。\n"
+"コンマか空白で区切ることで複数のアイテムを記載できます。\n"
+"\n"
+"例: alice bob charlie\n"
+
+#: ../clients/cli/settings.c:2565
+#, c-format
+msgid "'%s' is not valid master; use ifname or connection UUID"
+msgstr ""
+"'%s' は 有効なマスターではありません: ifname か接続 UUID を使用してください。"
+
+#: ../clients/cli/settings.c:2610
+#, c-format
+msgid "Warning: %s is not an UUID of any existing connection profile\n"
+msgstr "警告: %s は既存の接続プロファイルの UUID ではありません\n"
+
+#: ../clients/cli/settings.c:2614 ../clients/cli/settings.c:2629
+#, c-format
+msgid "'%s' is not a VPN connection profile"
+msgstr "'%s' は VPN 接続プロファイルではありません"
+
+#: ../clients/cli/settings.c:2622
+#, c-format
+msgid "'%s' is not a name of any exiting profile"
+msgstr "'%s' は既存のプロファイルの名前ではありません"
+
+#: ../clients/cli/settings.c:2656
+#, c-format
+msgid "the value '%s' is not a valid UUID"
+msgstr "値 '%s' は有効な UUID ではありません"
+
+#: ../clients/cli/settings.c:2663
+#, c-format
+msgid "the property doesn't contain UUID '%s'"
+msgstr "プロパティーには UUID '%s' が含まれません"
+
+#: ../clients/cli/settings.c:2675
+msgid ""
+"Enter secondary connections that should be activated when this connection "
+"is\n"
+"activated. Connections can be specified either by UUID or ID (name). nmcli\n"
+"transparently translates names to UUIDs. Note that NetworkManager only "
+"supports\n"
+"VPNs as secondary connections at the moment.\n"
+"The items can be separated by commas or spaces.\n"
+"\n"
+"Example: private-openvpn, fe6ba5d8-c2fc-4aae-b2e3-97efddd8d9a7\n"
+msgstr ""
+"この接続がアクティベートされたときにアクティベートする必要がある\n"
+"セカンダリー接続を入力してください。接続は UUID または ID (名前) のいずれかで"
+"指定できます。nmcli\n"
+"は名前を透過的に UUID に変換します。NetworkManager は現時点では VPN をセカン"
+"ダリー接続\n"
+"としてのみサポートします。\n"
+"項目はカンマまたはスペースで区切ることができます。\n"
+"\n"
+"例: private-openvpn, fe6ba5d8-c2fc-4aae-b2e3-97efddd8d9a7\n"
+
+#: ../clients/cli/settings.c:2742
+msgid ""
+"Enter a value which indicates whether the connection is subject to a data\n"
+"quota, usage costs or other limitations. Accepted options are:\n"
+"'true','yes','on' to set the connection as metered\n"
+"'false','no','off' to set the connection as not metered\n"
+"'unknown' to let NetworkManager choose a value using some heuristics\n"
+msgstr ""
+"接続がデータクォータ、使用コスト、または他の制限に基づくかどうかを\n"
+"示す値を入力します。使用できるオプション:\n"
+"接続を測定対象として設定する場合は 'true'、'yes'、'on'\n"
+"接続を非測定として設定する場合は 'false'、'no'、'off'\n"
+"NetworkManager でヒューリスティックを使用して値を選択できるようにする場合は "
+"'unknown'\n"
+
+#: ../clients/cli/settings.c:2791 ../clients/cli/settings.c:4214
+#: ../clients/cli/settings.c:4260 ../clients/cli/settings.c:4297
+#: ../clients/cli/settings.c:4356 ../clients/cli/settings.c:5305
+#: ../libnm-core/nm-keyfile-reader.c:579
+#, c-format
+msgid "invalid option '%s', use one of [%s]"
+msgstr "無効なオプション '%s' です。[%s] のいずれかを使用してください"
+
+#: ../clients/cli/settings.c:2813
+msgid "0 (disabled)"
+msgstr "0 (無効)"
+
+#: ../clients/cli/settings.c:2819
+msgid "enabled, "
+msgstr "有効、"
+
+#: ../clients/cli/settings.c:2821
+msgid "advertise, "
+msgstr "公表、"
+
+#: ../clients/cli/settings.c:2823
+msgid "willing, "
+msgstr "用意がある、"
+
+#: ../clients/cli/settings.c:2851
+msgid "-1 (unset)"
+msgstr "-1 (未設定)"
+
+#: ../clients/cli/settings.c:2961
+#, c-format
+msgid "'%s' is not a valid DCB flag"
+msgstr "'%s' は有効な DCB フラグではありません"
+
+#: ../clients/cli/settings.c:2984
+#, c-format
+msgid "'%s' is not a DCB app priority"
+msgstr "'%s' は DCB アプリケーションの優先度ではありません"
+
+#: ../clients/cli/settings.c:3010
+msgid "must contain 8 comma-separated numbers"
+msgstr "コンマで区切った 8 つの番号を含ませてください"
+
+#: ../clients/cli/settings.c:3027
+#, c-format
+msgid "'%s' not a number between 0 and %u (inclusive) or %u"
+msgstr "'%s' は 0 と %u (含む) または %u の間の数ではありません"
+
+#: ../clients/cli/settings.c:3030
+#, c-format
+msgid "'%s' not a number between 0 and %u (inclusive)"
+msgstr "'%s' は 0 と %u (含む) の間の数ではありません"
+
+#: ../clients/cli/settings.c:3052
+#, c-format
+msgid ""
+"Warning: changes will have no effect until '%s' includes 1 (enabled)\n"
+"\n"
+msgstr ""
+"警告: 変更は '%s' に 1 (有効) を含ませるまで効果はありません\n"
+"\n"
+
+#: ../clients/cli/settings.c:3105
+#, c-format
+msgid "bandwidth percentages must total 100%%"
+msgstr "帯域幅のパーセンテージの合計は 100%% にならなければなりません"
+
+#: ../clients/cli/settings.c:3206 ../clients/cli/settings.c:3212
+msgid "SIM operator ID must be a 5 or 6 number MCCMNC code"
+msgstr ""
+"SIM オペレーター IDは、5 桁または 6 桁の数字の MCCMNC コードである必要があり"
+"ます"
+
+#: ../clients/cli/settings.c:3235
 #, c-format
 msgid "'%s' is not a valid InfiniBand MAC"
 msgstr "'%s' は有効な InfiniBand MAC ではありません"
 
-#: ../clients/cli/settings.c:4097
+#: ../clients/cli/settings.c:3272
 #, c-format
 msgid "'%s' is not a valid IBoIP P_Key"
 msgstr "'%s' は有効な IBoIP P_Key ではありません"
 
-#: ../clients/cli/settings.c:4128
+#: ../clients/cli/settings.c:3289 ../clients/cli/settings.c:4912
+#: ../clients/cli/settings.c:5161
+msgid "auto"
+msgstr "自動"
+
+#: ../clients/cli/settings.c:3302 ../clients/cli/settings.c:5192
+msgid "default"
+msgstr "デフォルト"
+
+#: ../clients/cli/settings.c:3351
+#, c-format
+msgid "invalid mode '%s', use one of %s"
+msgstr "無効なモード '%s' です。%s のいずれかを使用してください"
+
+#: ../clients/cli/settings.c:3390
 #, c-format
 msgid "'%s' is not valid (the format is: ip[/prefix] [next-hop] [metric])"
 msgstr "'%s' は無効です (書式: ip[/prefix] [next-hop] [metric])"
 
-#: ../clients/cli/settings.c:4176 ../clients/cli/settings.c:4195
+#: ../clients/cli/settings.c:3516
+#, c-format
+msgid "%d (off)"
+msgstr "%d (off)"
+
+#: ../clients/cli/settings.c:3557 ../clients/cli/settings.c:3576
 #, c-format
 msgid "invalid IPv4 address '%s'"
 msgstr "無効な IPv4 アドレス '%s'"
 
-#: ../clients/cli/settings.c:4201 ../clients/cli/settings.c:4509
+#: ../clients/cli/settings.c:3582 ../clients/cli/settings.c:3920
 #, c-format
 msgid "the property doesn't contain DNS server '%s'"
 msgstr "プロパティーには DNS サーバー '%s' が含まれません"
 
-#: ../clients/cli/settings.c:4213
+#: ../clients/cli/settings.c:3594
 msgid ""
 "Enter a list of IPv4 addresses of DNS servers.\n"
 "\n"
@@ -6048,22 +6081,22 @@ msgstr ""
 "\n"
 "例: 8.8.8.8, 8.8.4.4\n"
 
-#: ../clients/cli/settings.c:4249 ../clients/cli/settings.c:4563
+#: ../clients/cli/settings.c:3630 ../clients/cli/settings.c:3974
 #, c-format
 msgid "the property doesn't contain DNS search domain '%s'"
 msgstr "プロパティーには DNS 検索ドメイン '%s' が含まれません"
 
-#: ../clients/cli/settings.c:4287 ../clients/cli/settings.c:4601
+#: ../clients/cli/settings.c:3668 ../clients/cli/settings.c:4012
 #, c-format
 msgid "the property doesn't contain DNS option '%s'"
 msgstr "プロパティーには DNS オプション '%s' が含まれません"
 
-#: ../clients/cli/settings.c:4341 ../clients/cli/settings.c:4654
+#: ../clients/cli/settings.c:3722 ../clients/cli/settings.c:4065
 #, c-format
 msgid "the property doesn't contain IP address '%s'"
 msgstr "プロパティーには IP アドレス '%s' が含まれません"
 
-#: ../clients/cli/settings.c:4354
+#: ../clients/cli/settings.c:3735
 msgid ""
 "Enter a list of IPv4 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -6077,17 +6110,17 @@ msgstr ""
 "\n"
 "例: 192.168.1.5/24, 10.0.0.11/24\n"
 
-#: ../clients/cli/settings.c:4370 ../clients/cli/settings.c:4683
+#: ../clients/cli/settings.c:3751 ../clients/cli/settings.c:4094
 #, c-format
 msgid "invalid gateway address '%s'"
 msgstr "無効なゲートウェイアドレス '%s'"
 
-#: ../clients/cli/settings.c:4425 ../clients/cli/settings.c:4738
+#: ../clients/cli/settings.c:3806 ../clients/cli/settings.c:4149
 #, c-format
 msgid "the property doesn't contain route '%s'"
 msgstr "プロパティーにはルート '%s' が含まれません"
 
-#: ../clients/cli/settings.c:4438
+#: ../clients/cli/settings.c:3819
 msgid ""
 "Enter a list of IPv4 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -6110,12 +6143,12 @@ msgstr ""
 "例: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
 "          10.1.2.0/24\n"
 
-#: ../clients/cli/settings.c:4484 ../clients/cli/settings.c:4503
+#: ../clients/cli/settings.c:3895 ../clients/cli/settings.c:3914
 #, c-format
 msgid "invalid IPv6 address '%s'"
 msgstr "無効な IPv6 アドレス '%s'"
 
-#: ../clients/cli/settings.c:4521
+#: ../clients/cli/settings.c:3932
 msgid ""
 "Enter a list of IPv6 addresses of DNS servers.  If the IPv6 configuration "
 "method is 'auto' these DNS servers are appended to those (if any) returned "
@@ -6134,7 +6167,7 @@ msgstr ""
 "\n"
 "例: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"
 
-#: ../clients/cli/settings.c:4667
+#: ../clients/cli/settings.c:4078
 msgid ""
 "Enter a list of IPv6 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -6148,7 +6181,7 @@ msgstr ""
 "\n"
 "例: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"
 
-#: ../clients/cli/settings.c:4751
+#: ../clients/cli/settings.c:4162
 msgid ""
 "Enter a list of IPv6 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -6173,28 +6206,33 @@ msgstr ""
 "beef::3 2\n"
 "          abbe::/64 55\n"
 
-#: ../clients/cli/settings.c:4768 ../libnm-core/nm-setting-gsm.c:363
+#: ../clients/cli/settings.c:4179 ../libnm-core/nm-setting-gsm.c:363
 #: ../libnm-util/nm-setting-gsm.c:364
 #, c-format
 msgid "'%s' is not a number"
 msgstr "'%s' は数字ではありません"
 
-#: ../clients/cli/settings.c:4775
+#: ../clients/cli/settings.c:4186
 #, c-format
 msgid "'%s' is not valid; use 0, 1, or 2"
 msgstr "'%s' は無効です; 0、1、2 のいずれかを使用してください。"
 
-#: ../clients/cli/settings.c:4822
+#: ../clients/cli/settings.c:4399
 #, c-format
 msgid "'%s' is not a valid channel; use <1-13>"
 msgstr "'%s' は有効なチャンネルではありません; <1-13> を使用してください"
 
-#: ../clients/cli/settings.c:4859
+#: ../clients/cli/settings.c:4468
+#, fuzzy, c-format
+msgid "invalid method '%s', use one of %s"
+msgstr "無効なモード '%s' です。%s のいずれかを使用してください"
+
+#: ../clients/cli/settings.c:4533
 #, c-format
 msgid "'%s' is not valid; use [e, o, n]"
 msgstr "'%s' は無効です; [e, o, n] を使用してください"
 
-#: ../clients/cli/settings.c:4887
+#: ../clients/cli/settings.c:4563
 msgid ""
 "nmcli can accepts both direct JSON configuration data and a file name "
 "containing the configuration. In the latter case the file is read and the "
@@ -6212,33 +6250,51 @@ msgstr ""
 "\"roundrobin\"}, \"ports\": {\"eth1\": {}, \"eth2\": {}} }\n"
 "          set team.config /etc/my-team.conf\n"
 
-#: ../clients/cli/settings.c:4927
+#: ../clients/cli/settings.c:4615
+#, c-format
+msgid "invalid option '%s', use '%s' or '%s'"
+msgstr "無効なオプション '%s' です。'%s' または '%s' を使用してください"
+
+#: ../clients/cli/settings.c:4686
 msgid "no priority to remove"
 msgstr "削除する優先度がありません"
 
-#: ../clients/cli/settings.c:4931
+#: ../clients/cli/settings.c:4690
 #, c-format
 msgid "index '%d' is not in the range of <0-%d>"
 msgstr "インデックス '%d' は <0-%d> の範囲内にありません"
 
-#: ../clients/cli/settings.c:4970
+#: ../clients/cli/settings.c:4729
 #, c-format
 msgid ""
 "Warning: only one mapping at a time is supported; taking the first one (%s)\n"
 msgstr ""
 "警告: マッピングは一度に 1 つだけ行えます。最初のマッピング (%s) を行います\n"
 
-#: ../clients/cli/settings.c:4977
+#: ../clients/cli/settings.c:4736
 #, c-format
 msgid "the property doesn't contain mapping '%s'"
 msgstr "プロパティーにはマッピング '%s' が含まれません"
 
-#: ../clients/cli/settings.c:5025
+#: ../clients/cli/settings.c:4815
 #, c-format
 msgid "'%s' cannot be empty"
 msgstr "'%s' を空白にすることはできません"
 
-#: ../clients/cli/settings.c:5100 ../clients/cli/settings.c:5267
+#: ../clients/cli/settings.c:4958
+#, c-format
+msgid ""
+"invalid option '%s', use a combination of [%s] or 'ignore', 'default' or "
+"'none'"
+msgstr ""
+"無効なオプション '%s' です。[%s]、'ignore'、'default'、または 'none' の組み合"
+"わせを使用してください"
+
+#: ../clients/cli/settings.c:4969
+msgid "'default' and 'ignore' are incompatible with other flags"
+msgstr "'default' と 'ignore' は他のフラグと使用できません"
+
+#: ../clients/cli/settings.c:5020 ../clients/cli/settings.c:5265
 #: ../libnm-core/nm-setting-wired.c:662 ../libnm-core/nm-setting-wireless.c:857
 #: ../libnm-core/nm-setting-wireless.c:869 ../libnm-util/nm-setting-wired.c:646
 #: ../libnm-util/nm-setting-wireless.c:859
@@ -6247,17 +6303,17 @@ msgstr "'%s' を空白にすることはできません"
 msgid "'%s' is not a valid MAC address"
 msgstr "'%s' は有効な MAC アドレスではありません"
 
-#: ../clients/cli/settings.c:5106 ../clients/cli/settings.c:5273
+#: ../clients/cli/settings.c:5026 ../clients/cli/settings.c:5271
 #, c-format
 msgid "the property doesn't contain MAC address '%s'"
 msgstr "プロパティーには MAC アドレス '%s' が含まれません"
 
-#: ../clients/cli/settings.c:5125
+#: ../clients/cli/settings.c:5045
 #, c-format
 msgid "'%s' is not valid; 2 or 3 strings should be provided"
 msgstr "'%s' は無効です; 2  文字または 3 文字の文字列を入力してください"
 
-#: ../clients/cli/settings.c:5139
+#: ../clients/cli/settings.c:5059
 msgid ""
 "Enter a list of subchannels (comma or space separated).\n"
 "\n"
@@ -6267,12 +6323,12 @@ msgstr ""
 "\n"
 "例: 0.0.0e20 0.0.0e21 0.0.0e22\n"
 
-#: ../clients/cli/settings.c:5161
+#: ../clients/cli/settings.c:5081
 #, c-format
 msgid "'%s' string value should consist of 1 - 199 characters"
 msgstr "'%s' 文字列値は 1〜199 の文字で構成される必要があります"
 
-#: ../clients/cli/settings.c:5193
+#: ../clients/cli/settings.c:5113
 #, c-format
 msgid ""
 "Enter a list of S/390 options formatted as:\n"
@@ -6283,30 +6339,35 @@ msgstr ""
 "  option = <value>, option = <value>,...\n"
 "次が有効なオプションになります: %s\n"
 
-#: ../clients/cli/settings.c:5239
+#: ../clients/cli/settings.c:5196
+#, c-format
+msgid "always"
+msgstr "always"
+
+#: ../clients/cli/settings.c:5237
 #, c-format
 msgid "'%s' is not a valid channel"
 msgstr "'%s' は有効なチャンネルではありません"
 
-#: ../clients/cli/settings.c:5245
+#: ../clients/cli/settings.c:5243
 #, c-format
 msgid "'%ld' is not a valid channel"
 msgstr "'%ld' は有効なチャンネルではありません"
 
-#: ../clients/cli/settings.c:5339
+#: ../clients/cli/settings.c:5337
 #, c-format
 msgid "invalid option '%s', use 'default', 'never' or 'always'"
 msgstr ""
 "無効なオプション '%s' です。'default'、'never'、または 'always' を使用してく"
 "ださい"
 
-#: ../clients/cli/settings.c:5400 ../clients/cli/settings.c:5439
-#: ../clients/cli/settings.c:5478
+#: ../clients/cli/settings.c:5447 ../clients/cli/settings.c:5486
+#: ../clients/cli/settings.c:5525
 #, c-format
 msgid "the property doesn't contain protocol '%s'"
 msgstr "プロパティーにはプロトコル '%s' が含まれません"
 
-#: ../clients/cli/settings.c:5517
+#: ../clients/cli/settings.c:5564
 #, c-format
 msgid ""
 "'%s' not compatible with %s '%s', please change the key or set the right %s "
@@ -6315,23 +6376,23 @@ msgstr ""
 "'%s' と %s '%s' は互換性がありません。キーを変更するか、適切な %s を最初に設"
 "定してください。"
 
-#: ../clients/cli/settings.c:5525
+#: ../clients/cli/settings.c:5572
 #, c-format
 msgid "WEP key is guessed to be of '%s'\n"
 msgstr "WEP キーは '%s' であると仮定しています\n"
 
-#: ../clients/cli/settings.c:5527
+#: ../clients/cli/settings.c:5574
 #, c-format
 msgid "WEP key index set to '%d'\n"
 msgstr "WEP キーインデックスは '%d' に設定されます\n"
 
-#: ../clients/cli/settings.c:5550
+#: ../clients/cli/settings.c:5597
 #, c-format
 msgid "'%s' not among [0 (unknown), 1 (key), 2 (passphrase)]"
 msgstr "'%s' は [0 (unknown), 1 (key), 2 (passphrase)] にはありません"
 
-#: ../clients/cli/settings.c:5566 ../clients/cli/settings.c:5569
-#: ../clients/cli/settings.c:5572 ../clients/cli/settings.c:5575
+#: ../clients/cli/settings.c:5613 ../clients/cli/settings.c:5616
+#: ../clients/cli/settings.c:5619 ../clients/cli/settings.c:5622
 #, c-format
 msgid ""
 "Warning: '%s' is not compatible with '%s' type, please change or delete the "
@@ -6340,7 +6401,7 @@ msgstr ""
 "警告: '%s' と '%s' タイプは互換性がありません。キーを変更するか、キーを削除し"
 "てください。\n"
 
-#: ../clients/cli/settings.c:5588
+#: ../clients/cli/settings.c:5635
 #, c-format
 msgid ""
 "Enter the type of WEP keys. The accepted values are: 0 or unknown, 1 or key, "
@@ -6349,73 +6410,52 @@ msgstr ""
 "WEP キーのタイプを入力します。使用できる値は、0 または unknown、1 または "
 "key、2 または passphrase です。\n"
 
-#: ../clients/cli/settings.c:5601
+#: ../clients/cli/settings.c:5648
 #, c-format
 msgid "'%s' is not a valid PSK"
 msgstr "'%s' は有効な PSK ではありません"
 
-#: ../clients/cli/settings.c:5645
+#: ../clients/cli/settings.c:5725
 #, c-format
-msgid "'%s' is not a valid DCB flag"
-msgstr "'%s' は有効な DCB フラグではありません"
+msgid "Do you also want to set '%s' to '%s'? [yes]: "
+msgstr "'%s' を '%s' に設定しますか? [yes]: "
 
-#: ../clients/cli/settings.c:5668
+#: ../clients/cli/settings.c:5727
 #, c-format
-msgid "'%s' is not a DCB app priority"
-msgstr "'%s' は DCB アプリケーションの優先度ではありません"
+msgid "Do you also want to clear '%s'? [yes]: "
+msgstr "'%s' も消去しますか? [yes]: "
 
-#: ../clients/cli/settings.c:5694
-msgid "must contain 8 comma-separated numbers"
-msgstr "コンマで区切った 8 つの番号を含ませてください"
-
-#: ../clients/cli/settings.c:5711
-#, c-format
-msgid "'%s' not a number between 0 and %u (inclusive) or %u"
-msgstr "'%s' は 0 と %u (含む) または %u の間の数ではありません"
-
-#: ../clients/cli/settings.c:5714
-#, c-format
-msgid "'%s' not a number between 0 and %u (inclusive)"
-msgstr "'%s' は 0 と %u (含む) の間の数ではありません"
-
-#: ../clients/cli/settings.c:5736
+#: ../clients/cli/settings.c:5903
 #, c-format
 msgid ""
-"Warning: changes will have no effect until '%s' includes 1 (enabled)\n"
-"\n"
+"Warning: %s.%s set to '%s', but it might be ignored in infrastructure mode\n"
 msgstr ""
-"警告: 変更は '%s' に 1 (有効) を含ませるまで効果はありません\n"
-"\n"
+"警告: %s.%s が '%s' に設定されましたが、インフラストラクチャモードでは無視さ"
+"れることがあります\n"
 
-#: ../clients/cli/settings.c:5789
+#: ../clients/cli/settings.c:5922
 #, c-format
-msgid "bandwidth percentages must total 100%%"
-msgstr "帯域幅のパーセンテージの合計は 100%% にならなければなりません"
-
-#: ../clients/cli/settings.c:5875 ../clients/cli/settings.c:5881
-msgid "SIM operator ID must be a 5 or 6 number MCCMNC code"
+msgid "Warning: setting %s.%s requires removing ipv4 and ipv6 settings\n"
 msgstr ""
-"SIM オペレーター IDは、5 桁または 6 桁の数字の MCCMNC コードである必要があり"
-"ます"
+"警告: %s.%s を設定するには、ipv4 と ipv6 の設定を削除する必要があります\n"
 
 #: ../clients/cli/settings.c:5924
-#, c-format
-msgid "invalid option '%s', use '%s' or '%s'"
-msgstr "無効なオプション '%s' です。'%s' または '%s' を使用してください"
+msgid "Do you want to remove them? [yes] "
+msgstr "削除しますか? [yes] "
 
-#: ../clients/cli/settings.c:8049
+#: ../clients/cli/settings.c:8223
 msgid "don't know how to get the property value"
 msgstr "プロパティ値の取得方法がわかりません"
 
-#: ../clients/cli/settings.c:8102 ../clients/cli/settings.c:8142
+#: ../clients/cli/settings.c:8276 ../clients/cli/settings.c:8316
 msgid "the property can't be changed"
 msgstr "このプロパティは変更できません"
 
-#: ../clients/cli/settings.c:8247
+#: ../clients/cli/settings.c:8421
 msgid "[NM property description]"
 msgstr "[NM プロパティの詳細]"
 
-#: ../clients/cli/settings.c:8252
+#: ../clients/cli/settings.c:8426
 msgid "[nmcli specific description]"
 msgstr "[nmcli 固有の詳細]"
 
@@ -6488,8 +6528,8 @@ msgstr "認証セッションはすでに実行されています。"
 #: ../clients/common/nm-secret-agent-simple.c:303
 #: ../clients/common/nm-secret-agent-simple.c:342
 #: ../clients/common/nm-secret-agent-simple.c:504
-#: ../clients/common/nm-secret-agent-simple.c:519
-#: ../clients/common/nm-secret-agent-simple.c:537
+#: ../clients/common/nm-secret-agent-simple.c:538
+#: ../clients/common/nm-secret-agent-simple.c:556
 #: ../clients/common/nm-vpn-helpers.c:119
 #: ../clients/common/nm-vpn-helpers.c:120
 #: ../clients/common/nm-vpn-helpers.c:124
@@ -6563,20 +6603,37 @@ msgid "PIN"
 msgstr "PIN"
 
 #: ../clients/common/nm-secret-agent-simple.c:500
-#: ../clients/common/nm-secret-agent-simple.c:515
-#: ../clients/common/nm-secret-agent-simple.c:533
+#: ../clients/common/nm-secret-agent-simple.c:534
+#: ../clients/common/nm-secret-agent-simple.c:552
 msgid "Mobile broadband network password"
 msgstr "モバイルブロードバンドのネットワークパスワード"
 
 #: ../clients/common/nm-secret-agent-simple.c:501
-#: ../clients/common/nm-secret-agent-simple.c:516
-#: ../clients/common/nm-secret-agent-simple.c:534
-#: ../clients/common/nm-secret-agent-simple.c:554
+#: ../clients/common/nm-secret-agent-simple.c:535
+#: ../clients/common/nm-secret-agent-simple.c:553
+#: ../clients/common/nm-secret-agent-simple.c:573
 #, c-format
 msgid "A password is required to connect to '%s'."
 msgstr "'%s' への接続にはパスワードが必要です。"
 
-#: ../clients/common/nm-secret-agent-simple.c:549
+#: ../clients/common/nm-secret-agent-simple.c:515
+#, fuzzy, c-format
+msgid "Secrets are required to access the MACsec network '%s'"
+msgstr ""
+"ワイヤレスネットワーク '%s' へのアクセスにはパスワードまたは暗号キーが必要で"
+"す。"
+
+#: ../clients/common/nm-secret-agent-simple.c:519
+#, fuzzy
+msgid "MACsec PSK authentication"
+msgstr "DSL 認証"
+
+#: ../clients/common/nm-secret-agent-simple.c:528
+#, fuzzy
+msgid "MACsec EAP authentication"
+msgstr "認証"
+
+#: ../clients/common/nm-secret-agent-simple.c:568
 msgid "VPN password required"
 msgstr "PIN パスワードが必要です"
 
@@ -6629,11 +6686,21 @@ msgstr "クッキー"
 msgid "Gateway certificate hash"
 msgstr "ゲートウェイ証明書ハッシュ"
 
-#: ../clients/nm-online.c:114
+#: ../clients/nm-online.c:91
 msgid "Connecting"
 msgstr "接続中"
 
-#: ../clients/nm-online.c:181
+#: ../clients/nm-online.c:189
+#, fuzzy, c-format
+msgid "Error: timeout creating NMClient object\n"
+msgstr "エラー: NMClient オブジェクトを作成できませんでした: %s。"
+
+#: ../clients/nm-online.c:209
+#, fuzzy, c-format
+msgid "Error: Could not create NMClient object: %s\n"
+msgstr "エラー: NMClient オブジェクトを作成できませんでした: %s。"
+
+#: ../clients/nm-online.c:235
 msgid ""
 "Time to wait for a connection, in seconds (without the option, default value "
 "is 30)"
@@ -6641,26 +6708,26 @@ msgstr ""
 "接続を待機する時間を秒単位で指定する (オプションなしの場合、デフォルト値は "
 "30)"
 
-#: ../clients/nm-online.c:182
+#: ../clients/nm-online.c:236
 msgid "Exit immediately if NetworkManager is not running or connecting"
 msgstr "NetworkManager が実行中または接続中でない場合は直ちに終了します"
 
-#: ../clients/nm-online.c:183
+#: ../clients/nm-online.c:237
 msgid "Don't print anything"
 msgstr "出力を抑制する"
 
-#: ../clients/nm-online.c:184
+#: ../clients/nm-online.c:238
 msgid "Wait for NetworkManager startup instead of a connection"
 msgstr "接続の代わりに NetworkManager の起動を待機します"
 
-#: ../clients/nm-online.c:204
+#: ../clients/nm-online.c:260
 msgid ""
 "Waits for NetworkManager to finish activating startup network connections."
 msgstr ""
 "NetworkManager によりスタートアップネットワーク接続のアクティベートが完了され"
 "るのを待機します。"
 
-#: ../clients/nm-online.c:211 ../clients/nm-online.c:217
+#: ../clients/nm-online.c:267 ../clients/nm-online.c:273
 msgid "Invalid option.  Please use --help to see a list of valid options."
 msgstr ""
 "無効なオプションです。--help を使用して有効なオプションの一覧を確認してくださ"
@@ -6700,7 +6767,7 @@ msgid "Could not re-read file: %s"
 msgstr "ファイルの再読み込みができませんでした: %s"
 
 #: ../clients/tui/nm-editor-utils.c:146 ../libnm-glib/nm-device.c:1859
-#: ../libnm/nm-device.c:1661
+#: ../libnm/nm-device.c:1664
 msgid "Ethernet"
 msgstr "Ethernet"
 
@@ -6710,7 +6777,7 @@ msgid "Ethernet connection %d"
 msgstr "イーサネット接続 %d"
 
 #: ../clients/tui/nm-editor-utils.c:154 ../libnm-glib/nm-device.c:1861
-#: ../libnm/nm-device.c:1663
+#: ../libnm/nm-device.c:1666
 msgid "Wi-Fi"
 msgstr "Wi-Fi"
 
@@ -6719,8 +6786,8 @@ msgstr "Wi-Fi"
 msgid "Wi-Fi connection %d"
 msgstr "Wi-Fi 接続 %d"
 
-#: ../clients/tui/nm-editor-utils.c:163 ../libnm-core/nm-connection.c:1899
-#: ../libnm-glib/nm-device.c:1871 ../libnm/nm-device.c:1673
+#: ../clients/tui/nm-editor-utils.c:163 ../libnm-core/nm-connection.c:1900
+#: ../libnm-glib/nm-device.c:1871 ../libnm/nm-device.c:1676
 msgid "InfiniBand"
 msgstr "InfiniBand"
 
@@ -6730,7 +6797,7 @@ msgid "InfiniBand connection %d"
 msgstr "InfiniBand 接続 %d"
 
 #: ../clients/tui/nm-editor-utils.c:172 ../libnm-glib/nm-device.c:1869
-#: ../libnm/nm-device.c:1671
+#: ../libnm/nm-device.c:1674
 msgid "Mobile Broadband"
 msgstr "モバイルブロードバンド"
 
@@ -6748,9 +6815,9 @@ msgstr "DSL"
 msgid "DSL connection %d"
 msgstr "DSL 接続 %d"
 
-#: ../clients/tui/nm-editor-utils.c:190 ../libnm-core/nm-connection.c:1891
+#: ../clients/tui/nm-editor-utils.c:190 ../libnm-core/nm-connection.c:1892
 #: ../libnm-glib/nm-device.c:1873 ../libnm-util/nm-connection.c:1626
-#: ../libnm/nm-device.c:1675
+#: ../libnm/nm-device.c:1678
 #: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4308
 msgid "Bond"
 msgstr "ボンド"
@@ -6760,9 +6827,9 @@ msgstr "ボンド"
 msgid "Bond connection %d"
 msgstr "ボンド接続 %d"
 
-#: ../clients/tui/nm-editor-utils.c:199 ../libnm-core/nm-connection.c:1895
+#: ../clients/tui/nm-editor-utils.c:199 ../libnm-core/nm-connection.c:1896
 #: ../libnm-glib/nm-device.c:1877 ../libnm-util/nm-connection.c:1630
-#: ../libnm/nm-device.c:1679
+#: ../libnm/nm-device.c:1682
 #: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4605
 msgid "Bridge"
 msgstr "ブリッジ"
@@ -6772,9 +6839,9 @@ msgstr "ブリッジ"
 msgid "Bridge connection %d"
 msgstr "ブリッジ接続 %d"
 
-#: ../clients/tui/nm-editor-utils.c:208 ../libnm-core/nm-connection.c:1893
+#: ../clients/tui/nm-editor-utils.c:208 ../libnm-core/nm-connection.c:1894
 #: ../libnm-glib/nm-device.c:1875 ../libnm-util/nm-connection.c:1628
-#: ../libnm/nm-device.c:1677
+#: ../libnm/nm-device.c:1680
 #: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4414
 msgid "Team"
 msgstr "team "
@@ -7866,12 +7933,12 @@ msgstr "接続を確認するときの予期しない障害"
 msgid "Unexpected failure to normalize the connection"
 msgstr "接続を正規化するときの予期しない障害"
 
-#: ../libnm-core/nm-connection.c:1759 ../libnm-core/nm-setting-8021x.c:2654
-#: ../libnm-core/nm-setting-8021x.c:2671 ../libnm-core/nm-setting-8021x.c:2702
-#: ../libnm-core/nm-setting-8021x.c:2719 ../libnm-core/nm-setting-8021x.c:2761
-#: ../libnm-core/nm-setting-8021x.c:2773 ../libnm-core/nm-setting-8021x.c:2791
-#: ../libnm-core/nm-setting-8021x.c:2803 ../libnm-core/nm-setting-8021x.c:2827
-#: ../libnm-core/nm-setting-8021x.c:2992 ../libnm-core/nm-setting-adsl.c:189
+#: ../libnm-core/nm-connection.c:1759 ../libnm-core/nm-setting-8021x.c:2653
+#: ../libnm-core/nm-setting-8021x.c:2670 ../libnm-core/nm-setting-8021x.c:2701
+#: ../libnm-core/nm-setting-8021x.c:2718 ../libnm-core/nm-setting-8021x.c:2760
+#: ../libnm-core/nm-setting-8021x.c:2772 ../libnm-core/nm-setting-8021x.c:2790
+#: ../libnm-core/nm-setting-8021x.c:2802 ../libnm-core/nm-setting-8021x.c:2826
+#: ../libnm-core/nm-setting-8021x.c:2991 ../libnm-core/nm-setting-adsl.c:189
 #: ../libnm-core/nm-setting-bluetooth.c:120
 #: ../libnm-core/nm-setting-bluetooth.c:138 ../libnm-core/nm-setting-cdma.c:141
 #: ../libnm-core/nm-setting-connection.c:871
@@ -7906,7 +7973,7 @@ msgstr "接続を正規化するときの予期しない障害"
 msgid "property is missing"
 msgstr "プロパティがありません"
 
-#: ../libnm-core/nm-connection.c:1902
+#: ../libnm-core/nm-connection.c:1903
 msgid "IP Tunnel"
 msgstr "IP トンネル"
 
@@ -8104,25 +8171,25 @@ msgstr "file:// URI が有効な UTF-8 ではありません"
 msgid "CA certificate must be in X.509 format"
 msgstr "CA 証明書は X.509 形式である必要があります"
 
-#: ../libnm-core/nm-setting-8021x.c:1101 ../libnm-core/nm-setting-8021x.c:1405
-#: ../libnm-core/nm-setting-8021x.c:1781 ../libnm-util/nm-setting-8021x.c:957
+#: ../libnm-core/nm-setting-8021x.c:1101 ../libnm-core/nm-setting-8021x.c:1404
+#: ../libnm-core/nm-setting-8021x.c:1780 ../libnm-util/nm-setting-8021x.c:957
 #: ../libnm-util/nm-setting-8021x.c:1220 ../libnm-util/nm-setting-8021x.c:1543
 msgid "invalid certificate format"
 msgstr "無効な証明書形式"
 
-#: ../libnm-core/nm-setting-8021x.c:2098 ../libnm-util/nm-setting-8021x.c:1812
+#: ../libnm-core/nm-setting-8021x.c:2097 ../libnm-util/nm-setting-8021x.c:1812
 msgid "invalid private key"
 msgstr "無効なプライベートキー"
 
-#: ../libnm-core/nm-setting-8021x.c:2445 ../libnm-util/nm-setting-8021x.c:2123
+#: ../libnm-core/nm-setting-8021x.c:2444 ../libnm-util/nm-setting-8021x.c:2123
 msgid "invalid phase2 private key"
 msgstr "無効な phase2 プライベートキー"
 
-#: ../libnm-core/nm-setting-8021x.c:2661 ../libnm-core/nm-setting-8021x.c:2678
-#: ../libnm-core/nm-setting-8021x.c:2709 ../libnm-core/nm-setting-8021x.c:2726
-#: ../libnm-core/nm-setting-8021x.c:2767 ../libnm-core/nm-setting-8021x.c:2779
-#: ../libnm-core/nm-setting-8021x.c:2797 ../libnm-core/nm-setting-8021x.c:2809
-#: ../libnm-core/nm-setting-8021x.c:2834 ../libnm-core/nm-setting-adsl.c:196
+#: ../libnm-core/nm-setting-8021x.c:2660 ../libnm-core/nm-setting-8021x.c:2677
+#: ../libnm-core/nm-setting-8021x.c:2708 ../libnm-core/nm-setting-8021x.c:2725
+#: ../libnm-core/nm-setting-8021x.c:2766 ../libnm-core/nm-setting-8021x.c:2778
+#: ../libnm-core/nm-setting-8021x.c:2796 ../libnm-core/nm-setting-8021x.c:2808
+#: ../libnm-core/nm-setting-8021x.c:2833 ../libnm-core/nm-setting-adsl.c:196
 #: ../libnm-core/nm-setting-cdma.c:148 ../libnm-core/nm-setting-cdma.c:157
 #: ../libnm-core/nm-setting-connection.c:878
 #: ../libnm-core/nm-setting-connection.c:923 ../libnm-core/nm-setting-gsm.c:281
@@ -8154,19 +8221,19 @@ msgstr "無効な phase2 プライベートキー"
 msgid "property is empty"
 msgstr "プロパティが空です"
 
-#: ../libnm-core/nm-setting-8021x.c:2691 ../libnm-core/nm-setting-8021x.c:2739
+#: ../libnm-core/nm-setting-8021x.c:2690 ../libnm-core/nm-setting-8021x.c:2738
 #: ../libnm-util/nm-setting-8021x.c:2360 ../libnm-util/nm-setting-8021x.c:2372
 #: ../libnm-util/nm-setting-8021x.c:2418 ../libnm-util/nm-setting-8021x.c:2430
 #, c-format
 msgid "has to match '%s' property for PKCS#12"
 msgstr "PKCS#12 の '%s' プロパティと一致しなければなりません"
 
-#: ../libnm-core/nm-setting-8021x.c:2966
+#: ../libnm-core/nm-setting-8021x.c:2965
 #, c-format
 msgid "certificate is invalid: %s"
 msgstr "証明書が無効です: %s"
 
-#: ../libnm-core/nm-setting-8021x.c:3001
+#: ../libnm-core/nm-setting-8021x.c:3000
 #: ../libnm-core/nm-setting-bluetooth.c:129
 #: ../libnm-core/nm-setting-infiniband.c:192
 #: ../libnm-core/nm-setting-infiniband.c:207
@@ -8207,9 +8274,9 @@ msgstr "証明書が無効です: %s"
 msgid "property is invalid"
 msgstr "プロパティが無効です"
 
-#: ../libnm-core/nm-setting-8021x.c:3026 ../libnm-core/nm-setting-8021x.c:3036
-#: ../libnm-core/nm-setting-8021x.c:3046 ../libnm-core/nm-setting-8021x.c:3056
-#: ../libnm-core/nm-setting-8021x.c:3066 ../libnm-core/nm-setting-adsl.c:208
+#: ../libnm-core/nm-setting-8021x.c:3025 ../libnm-core/nm-setting-8021x.c:3035
+#: ../libnm-core/nm-setting-8021x.c:3045 ../libnm-core/nm-setting-8021x.c:3055
+#: ../libnm-core/nm-setting-8021x.c:3065 ../libnm-core/nm-setting-adsl.c:208
 #: ../libnm-core/nm-setting-adsl.c:220 ../libnm-core/nm-setting-bluetooth.c:146
 #: ../libnm-core/nm-setting-wireless-security.c:870
 #: ../libnm-util/nm-setting-8021x.c:2714 ../libnm-util/nm-setting-8021x.c:2724
@@ -8300,21 +8367,13 @@ msgstr "'%s' と '%s' の値は同じである必要があります"
 msgid "'%s' option should be string"
 msgstr "'%s' オプションは文字列である必要があります"
 
-#: ../libnm-core/nm-setting-bridge-port.c:124
-#: ../libnm-core/nm-setting-bridge-port.c:136
-#: ../libnm-util/nm-setting-bridge-port.c:154
-#: ../libnm-util/nm-setting-bridge-port.c:166
-#, c-format
-msgid "'%d' is not a valid value for the property (should be <= %d)"
-msgstr "'%d' はプロパティの有効な値ではありません (%d 以下となるはずです)"
-
-#: ../libnm-core/nm-setting-bridge-port.c:154
+#: ../libnm-core/nm-setting-bridge-port.c:127
 #: ../libnm-core/nm-setting-team-port.c:99
 #, c-format
 msgid "missing setting"
 msgstr "不明な設定"
 
-#: ../libnm-core/nm-setting-bridge-port.c:165
+#: ../libnm-core/nm-setting-bridge-port.c:138
 #: ../libnm-core/nm-setting-team-port.c:110
 #, c-format
 msgid ""
@@ -8613,8 +8672,9 @@ msgid "'%d' is not a valid tunnel mode"
 msgstr "'%d' は有効なトンネルモードではありません"
 
 #: ../libnm-core/nm-setting-ip-tunnel.c:330
-#: ../libnm-core/nm-setting-macvlan.c:167 ../libnm-core/nm-setting-vlan.c:645
-#: ../libnm-core/nm-setting-vxlan.c:403 ../libnm-util/nm-setting-vlan.c:567
+#: ../libnm-core/nm-setting-macsec.c:302 ../libnm-core/nm-setting-macvlan.c:167
+#: ../libnm-core/nm-setting-vlan.c:645 ../libnm-core/nm-setting-vxlan.c:403
+#: ../libnm-util/nm-setting-vlan.c:567
 #, c-format
 msgid "'%s' is neither an UUID nor an interface name"
 msgstr "'%s' は UUID、インターフェース名のいずれでもありません"
@@ -8639,11 +8699,42 @@ msgstr "'%s' は有効なトンネルキーではありません"
 msgid "a fixed TTL is allowed only when path MTU discovery is enabled"
 msgstr "固定 TTL は、パス MTU 検出が有効な場合のみ許可されます"
 
-#: ../libnm-core/nm-setting-macvlan.c:181 ../libnm-core/nm-setting-vlan.c:659
-#: ../libnm-util/nm-setting-vlan.c:580
+#: ../libnm-core/nm-setting-macsec.c:235
+#, fuzzy
+msgid "the key is empty"
+msgstr "プロパティが空です"
+
+#: ../libnm-core/nm-setting-macsec.c:246
+#, c-format
+msgid "the key must be %d characters"
+msgstr ""
+
+#: ../libnm-core/nm-setting-macsec.c:254
+#, fuzzy
+msgid "the key contais non-hexadecimal characters"
+msgstr "IV は 16進法でない数字を含んでいます。"
+
+#: ../libnm-core/nm-setting-macsec.c:291 ../libnm-core/nm-setting-vlan.c:634
+#: ../libnm-util/nm-setting-vlan.c:556
+#, c-format
+msgid "'%s' value doesn't match '%s=%s'"
+msgstr "'%s' の値は '%s=%s' と一致しません"
+
+#: ../libnm-core/nm-setting-macsec.c:316 ../libnm-core/nm-setting-macvlan.c:181
+#: ../libnm-core/nm-setting-vlan.c:659 ../libnm-util/nm-setting-vlan.c:580
 #, c-format
 msgid "property is not specified and neither is '%s:%s'"
 msgstr "プロパティ、'%s:%s' いずれも指定されていません"
+
+#: ../libnm-core/nm-setting-macsec.c:333
+#, fuzzy, c-format
+msgid "EAP key management requires '%s' setting presence"
+msgstr "'%s' セキュリティには '%s' の設定が必要になります"
+
+#: ../libnm-core/nm-setting-macsec.c:344
+#, fuzzy, c-format
+msgid "invalid port %d"
+msgstr "無効なルート: %s"
 
 #: ../libnm-core/nm-setting-macvlan.c:192
 msgid "non promiscuous operation is allowed only in passthru mode"
@@ -8718,11 +8809,6 @@ msgstr "'%s': 無効なユーザー ID"
 #, c-format
 msgid "'%s': invalid group ID"
 msgstr "'%s': 無効なグループ ID"
-
-#: ../libnm-core/nm-setting-vlan.c:634 ../libnm-util/nm-setting-vlan.c:556
-#, c-format
-msgid "'%s' value doesn't match '%s=%s'"
-msgstr "'%s' の値は '%s=%s' と一致しません"
 
 #: ../libnm-core/nm-setting-vlan.c:670 ../libnm-util/nm-setting-vlan.c:600
 #, c-format
@@ -8901,103 +8987,103 @@ msgstr "シークレットが見つかりません"
 msgid "secret is not set"
 msgstr "シークレットが設定されていません"
 
-#: ../libnm-core/nm-utils.c:2488
+#: ../libnm-core/nm-utils.c:2490
 #, c-format
 msgid "failed stat file %s: %s"
 msgstr "ファイル %s に対する stat の実行に失敗しました: %s"
 
-#: ../libnm-core/nm-utils.c:2497
+#: ../libnm-core/nm-utils.c:2499
 #, c-format
 msgid "not a file (%s)"
 msgstr "ファイルではありません (%s)"
 
-#: ../libnm-core/nm-utils.c:2508
+#: ../libnm-core/nm-utils.c:2510
 #, fuzzy, c-format
 msgid "invalid file owner %d for %s"
 msgstr "'%s' は無効なフィールドです; 許可されているのは次のフィールドです: %s"
 
-#: ../libnm-core/nm-utils.c:2519
+#: ../libnm-core/nm-utils.c:2521
 #, c-format
 msgid "file permissions for %s"
 msgstr "%s のファイルパーミッション"
 
-#: ../libnm-core/nm-utils.c:2529
+#: ../libnm-core/nm-utils.c:2531
 #, c-format
 msgid "reject %s"
 msgstr "%s の拒否"
 
-#: ../libnm-core/nm-utils.c:2549
+#: ../libnm-core/nm-utils.c:2551
 #, c-format
 msgid "path is not absolute (%s)"
 msgstr "パスが絶対パスではありません (%s)"
 
-#: ../libnm-core/nm-utils.c:2563
+#: ../libnm-core/nm-utils.c:2565
 #, c-format
 msgid "Plugin file does not exist (%s)"
 msgstr "プラグインファイルが存在しません (%s)"
 
-#: ../libnm-core/nm-utils.c:2571
+#: ../libnm-core/nm-utils.c:2573
 #, c-format
 msgid "Plugin is not a valid file (%s)"
 msgstr "プラグインが有効なファイルではありません (%s)"
 
-#: ../libnm-core/nm-utils.c:2581
+#: ../libnm-core/nm-utils.c:2583
 #, c-format
 msgid "libtool archives are not supported (%s)"
 msgstr "libtool アーカイブはサポートされていません (%s)"
 
-#: ../libnm-core/nm-utils.c:2663 ../libnm-util/nm-utils.c:1803
+#: ../libnm-core/nm-utils.c:2665 ../libnm-util/nm-utils.c:1803
 #, c-format
 msgid "Could not find \"%s\" binary"
 msgstr "\"%s\" バイナリーを見つけることができませんでした"
 
-#: ../libnm-core/nm-utils.c:3709
+#: ../libnm-core/nm-utils.c:3711
 #, fuzzy, c-format
 msgid "not a valid ethernet MAC address for mask at position %lld"
 msgstr "'%s' は '%s' オプション用の有効な IPv4 アドレスではありません"
 
-#: ../libnm-core/nm-utils.c:3724
+#: ../libnm-core/nm-utils.c:3726
 #, c-format
 msgid "not a valid ethernet MAC address #%u at position %lld"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:3758
+#: ../libnm-core/nm-utils.c:3760
 #, fuzzy
 msgid "interface name is too short"
 msgstr "インターフェース名 [*]: "
 
-#: ../libnm-core/nm-utils.c:3764
+#: ../libnm-core/nm-utils.c:3766
 msgid "interface name is longer than 15 characters"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:3770
+#: ../libnm-core/nm-utils.c:3772
 #, fuzzy
 msgid "interface name is reserved"
 msgstr "インターフェース名と UUID が’必要です\n"
 
-#: ../libnm-core/nm-utils.c:3777
+#: ../libnm-core/nm-utils.c:3779
 msgid "interface name contains an invalid character"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:4495 ../libnm-core/nm-utils.c:4629
+#: ../libnm-core/nm-utils.c:4497 ../libnm-core/nm-utils.c:4631
 msgid "value is NULL"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:4495 ../libnm-core/nm-utils.c:4629
+#: ../libnm-core/nm-utils.c:4497 ../libnm-core/nm-utils.c:4631
 #, fuzzy
 msgid "value is empty"
 msgstr "シークレット値が空でした"
 
-#: ../libnm-core/nm-utils.c:4504
+#: ../libnm-core/nm-utils.c:4506
 #, fuzzy, c-format
 msgid "invalid JSON at position %d (%s)"
 msgstr "無効なオプション '%s'"
 
-#: ../libnm-core/nm-utils.c:4516 ../libnm-core/nm-utils.c:4648
+#: ../libnm-core/nm-utils.c:4518 ../libnm-core/nm-utils.c:4650
 msgid "is not a JSON object"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:4618
+#: ../libnm-core/nm-utils.c:4620
 msgid "not valid utf-8"
 msgstr ""
 
@@ -9083,51 +9169,51 @@ msgstr "VPN プラグイン情報の不明な名前"
 msgid "missing service for VPN plugin info"
 msgstr "VPN プラグイン情報の不明なサービス"
 
-#: ../libnm-glib/nm-device.c:1863 ../libnm/nm-device.c:1665
+#: ../libnm-glib/nm-device.c:1863 ../libnm/nm-device.c:1668
 msgid "Bluetooth"
 msgstr "Bluetooth"
 
-#: ../libnm-glib/nm-device.c:1865 ../libnm/nm-device.c:1667
+#: ../libnm-glib/nm-device.c:1865 ../libnm/nm-device.c:1670
 msgid "OLPC Mesh"
 msgstr "OLPC メッシュ"
 
-#: ../libnm-glib/nm-device.c:1867 ../libnm/nm-device.c:1669
+#: ../libnm-glib/nm-device.c:1867 ../libnm/nm-device.c:1672
 msgid "WiMAX"
 msgstr "WiMAX"
 
-#: ../libnm-glib/nm-device.c:1881 ../libnm/nm-device.c:1683
+#: ../libnm-glib/nm-device.c:1881 ../libnm/nm-device.c:1686
 msgid "ADSL"
 msgstr "ADSL"
 
-#: ../libnm-glib/nm-device.c:1883 ../libnm/nm-device.c:1685
+#: ../libnm-glib/nm-device.c:1883 ../libnm/nm-device.c:1688
 msgid "MACVLAN"
 msgstr "MACVLAN"
 
-#: ../libnm-glib/nm-device.c:1885 ../libnm/nm-device.c:1687
+#: ../libnm-glib/nm-device.c:1885 ../libnm/nm-device.c:1690
 msgid "VXLAN"
 msgstr "VXLAN"
 
-#: ../libnm-glib/nm-device.c:1887 ../libnm/nm-device.c:1689
+#: ../libnm-glib/nm-device.c:1887 ../libnm/nm-device.c:1692
 msgid "IPTunnel"
 msgstr "IPTunnel"
 
-#: ../libnm-glib/nm-device.c:1889 ../libnm/nm-device.c:1691
+#: ../libnm-glib/nm-device.c:1889 ../libnm/nm-device.c:1694
 msgid "Tun"
 msgstr "Tun"
 
-#: ../libnm-glib/nm-device.c:1891 ../libnm/nm-device.c:1693
+#: ../libnm-glib/nm-device.c:1891 ../libnm/nm-device.c:1696
 msgid "Veth"
 msgstr "Veth"
 
-#: ../libnm-glib/nm-device.c:1923 ../libnm/nm-device.c:1725
+#: ../libnm-glib/nm-device.c:1923 ../libnm/nm-device.c:1730
 msgid "Wired"
 msgstr "有線"
 
-#: ../libnm-glib/nm-device.c:1954 ../libnm/nm-device.c:1756
+#: ../libnm-glib/nm-device.c:1954 ../libnm/nm-device.c:1761
 msgid "PCI"
 msgstr "PCI"
 
-#: ../libnm-glib/nm-device.c:1956 ../libnm/nm-device.c:1758
+#: ../libnm-glib/nm-device.c:1956 ../libnm/nm-device.c:1763
 msgid "USB"
 msgstr "USB"
 
@@ -9137,8 +9223,8 @@ msgstr "USB"
 #. * "%2$s (%1$s)" if there's no grammatical way to combine
 #. * the strings otherwise.
 #.
-#: ../libnm-glib/nm-device.c:2052 ../libnm-glib/nm-device.c:2071
-#: ../libnm/nm-device.c:1852 ../libnm/nm-device.c:1871
+#: ../libnm-glib/nm-device.c:2053 ../libnm-glib/nm-device.c:2072
+#: ../libnm/nm-device.c:1858 ../libnm/nm-device.c:1877
 #, c-format
 msgctxt "long device name"
 msgid "%s %s"
@@ -9385,12 +9471,16 @@ msgstr "デバイスには接続に必要な WPA2/RSN 機能がありません�
 msgid "The connection was not a WiMAX connection."
 msgstr "接続は WiMAX 接続ではありませんでした。"
 
-#: ../libnm/nm-device.c:2583
+#: ../libnm/nm-device.c:1698
+msgid "MACsec"
+msgstr ""
+
+#: ../libnm/nm-device.c:2589
 #, c-format
 msgid "The connection was not valid: %s"
 msgstr "接続は有効ではありませんでした: %s"
 
-#: ../libnm/nm-device.c:2592
+#: ../libnm/nm-device.c:2598
 #, c-format
 msgid "The interface names of the device and the connection didn't match."
 msgstr "デバイスと接続のインターフェース名が一致しませんでした。"
@@ -9708,11 +9798,11 @@ msgstr "%s はすでに実行中です (pid %ld)\n"
 msgid "You must be root to run %s!\n"
 msgstr "%s! を実行するには root になる必要があります!\n"
 
-#: ../src/dhcp/nm-dhcp-dhclient-utils.c:252
+#: ../src/dhcp/nm-dhcp-dhclient-utils.c:286
 msgid "# Created by NetworkManager\n"
 msgstr "# NetworkManager で作成されています\n"
 
-#: ../src/dhcp/nm-dhcp-dhclient-utils.c:261
+#: ../src/dhcp/nm-dhcp-dhclient-utils.c:296
 #, c-format
 msgid ""
 "# Merged from %s\n"
@@ -9747,12 +9837,12 @@ msgid "DUN connection must include a GSM or CDMA setting"
 msgstr "DUN 接続には GSM または CDMA 設定が含まれる必要があります"
 
 #: ../src/devices/bluetooth/nm-device-bt.c:314
-#: ../src/devices/wwan/nm-modem-broadband.c:706
+#: ../src/devices/wwan/nm-modem-broadband.c:704
 msgid "GSM connection"
 msgstr "GSM 接続"
 
 #: ../src/devices/bluetooth/nm-device-bt.c:318
-#: ../src/devices/wwan/nm-modem-broadband.c:730
+#: ../src/devices/wwan/nm-modem-broadband.c:728
 msgid "CDMA connection"
 msgstr "CDMA 接続"
 
@@ -9761,9 +9851,9 @@ msgid "Unknown/unhandled Bluetooth connection type"
 msgstr "不明な/未処理の Bluetooth 接続タイプ"
 
 #: ../src/devices/bluetooth/nm-device-bt.c:347
-#: ../src/devices/nm-device-ethernet.c:1508
-#: ../src/devices/nm-device-infiniband.c:204
-#: ../src/devices/wifi/nm-device-wifi.c:910
+#: ../src/devices/nm-device-ethernet.c:1452
+#: ../src/devices/nm-device-infiniband.c:212
+#: ../src/devices/wifi/nm-device-wifi.c:929
 msgid "connection does not match device"
 msgstr "接続がデバイスに一致しません"
 
@@ -9775,11 +9865,11 @@ msgstr "ボンド接続"
 msgid "Bridge connection"
 msgstr "ブリッジ接続"
 
-#: ../src/devices/nm-device-ethernet.c:1489
+#: ../src/devices/nm-device-ethernet.c:1433
 msgid "PPPoE connection"
 msgstr "PPPoE 接続"
 
-#: ../src/devices/nm-device-ethernet.c:1489
+#: ../src/devices/nm-device-ethernet.c:1433
 msgid "Wired connection"
 msgstr "有線接続"
 
@@ -9808,7 +9898,7 @@ msgstr "team 接続"
 msgid "Mesh"
 msgstr "メッシュ"
 
-#: ../src/devices/wifi/nm-device-wifi.c:877
+#: ../src/devices/wifi/nm-device-wifi.c:896
 msgid "WPA Ad-Hoc disabled due to kernel bugs"
 msgstr "WPA アドホックはカーネルバグのため無効になりました"
 
@@ -9968,7 +10058,7 @@ msgstr "WPA 認証は共有キー認証と互換性がありません"
 msgid "Failed to determine AP security information"
 msgstr "AP セキュリティー情報の決定に失敗しました。"
 
-#: ../src/devices/wwan/nm-modem-broadband.c:692
+#: ../src/devices/wwan/nm-modem-broadband.c:690
 msgid "GSM mobile broadband connection requires a 'gsm' setting"
 msgstr "GSM モバイルブロードバンド接続には 'gsm' 設定が必要です"
 
@@ -10143,3 +10233,6 @@ msgstr "不明なログドメイン '%s'"
 #: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:107
 msgid "System"
 msgstr "システム"
+
+#~ msgid "'%d' is not a valid value for the property (should be <= %d)"
+#~ msgstr "'%d' はプロパティの有効な値ではありません (%d 以下となるはずです)"
