@@ -1834,6 +1834,23 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 		g_free (nmc->required_fields);
 		nmc->required_fields = NULL;
 
+		/* Before printing the connections check if we have a "--show-secret"
+		 * option after the connection ids */
+		if (!nmc->nmc_config.show_secrets && !nmc->complete) {
+			int argc_cp = argc;
+			char **argv_cp = argv;
+
+			do {
+				if (   nm_streq (*argv_cp, "id")
+				    || nm_streq (*argv_cp, "uuid")
+				    || nm_streq (*argv_cp, "path")
+				    || nm_streq (*argv_cp, "apath")) {
+					argc_cp--;
+					argv_cp++;
+				}
+			} while (next_arg (nmc, &argc_cp, &argv_cp, NULL) != -1);
+		}
+
 		while (argc > 0) {
 			const GPtrArray *connections;
 			gboolean res;
