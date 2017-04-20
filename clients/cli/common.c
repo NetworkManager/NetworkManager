@@ -1137,8 +1137,13 @@ _rl_compentry_func_wrap_fcn (const char *text, int state)
 {
 	g_return_val_if_fail (_rl_compentry_func_wrap.initialized, NULL);
 
-	if (    !_rl_compentry_func_wrap.values
-	    ||  !_rl_compentry_func_wrap.values[_rl_compentry_func_wrap.idx]) {
+	while (   _rl_compentry_func_wrap.values
+	       && _rl_compentry_func_wrap.values[_rl_compentry_func_wrap.idx]
+	       && !g_str_has_prefix (_rl_compentry_func_wrap.values[_rl_compentry_func_wrap.idx], text))
+		_rl_compentry_func_wrap.idx++;
+
+	if (   !_rl_compentry_func_wrap.values
+	    || !_rl_compentry_func_wrap.values[_rl_compentry_func_wrap.idx]) {
 		g_strfreev (_rl_compentry_func_wrap.values);
 		_rl_compentry_func_wrap.values = NULL;
 		_rl_compentry_func_wrap.initialized = FALSE;
