@@ -2855,6 +2855,9 @@ get_valid_options_string_toplevel (void)
 	for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
 		const NMMetaSettingInfoEditor *setting_info = &nm_meta_setting_infos_editor[i];
 
+		if (!setting_info->valid_parts)
+			continue;
+
 		if (str->len)
 			g_string_append (str, ", ");
 		if (setting_info->alias)
@@ -2862,6 +2865,11 @@ get_valid_options_string_toplevel (void)
 		else
 			g_string_append (str, setting_info->general->setting_name);
 	}
+
+	if (str->len)
+		g_string_append (str, ", ");
+	g_string_append (str, "bond-slave, bridge-slave, team-slave");
+
 	return g_string_free (str, FALSE);
 }
 
