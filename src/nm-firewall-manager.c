@@ -70,6 +70,7 @@ typedef enum {
 
 typedef enum {
 	CB_INFO_MODE_IDLE = 1,
+	CB_INFO_MODE_DBUS_WAITING,
 	CB_INFO_MODE_DBUS,
 	CB_INFO_MODE_DBUS_COMPLETED,
 } CBInfoMode;
@@ -169,15 +170,14 @@ _cb_info_create (NMFirewallManager *self,
 	info->callback = callback;
 	info->user_data = user_data;
 
-	if (priv->running) {
-		info->mode_mutable = CB_INFO_MODE_DBUS;
-		info->dbus.cancellable = g_cancellable_new ();
+	if (priv->running || priv->proxy_cancellable) {
+		info->mode_mutable = CB_INFO_MODE_DBUS_WAITING;
 		info->dbus.arg = g_variant_new ("(ss)", zone ? zone : "", iface);
 	} else
 		info->mode_mutable = CB_INFO_MODE_IDLE;
 
 	if (!nm_g_hash_table_add (priv->pending_calls, info))
-		g_return_val_if_reached (NULL);
+		nm_assert_not_reached ();
 
 	return info;
 }
@@ -188,7 +188,7 @@ _cb_info_free (CBInfo *info)
 	if (info->mode != CB_INFO_MODE_IDLE) {
 		if (info->dbus.arg)
 			g_variant_unref (info->dbus.arg);
-		g_object_unref (info->dbus.cancellable);
+		g_clear_object (&info->dbus.cancellable);
 	}
 	g_free (info->iface);
 	if (info->self)
@@ -286,6 +286,10 @@ _handle_dbus_start (NMFirewallManager *self,
 	const char *dbus_method;
 	GVariant *arg;
 
+	nm_assert (info);
+	nm_assert (priv->running);
+	nm_assert (info->mode == CB_INFO_MODE_DBUS_WAITING);
+
 	switch (info->ops_type) {
 	case CB_INFO_OPS_ADD:
 		dbus_method = "addInterface";
@@ -305,6 +309,9 @@ _handle_dbus_start (NMFirewallManager *self,
 	info->dbus.arg = NULL;
 
 	nm_assert (arg && g_variant_is_floating (arg));
+
+	info->mode_mutable = CB_INFO_MODE_DBUS;
+	info->dbus.cancellable = g_cancellable_new ();
 
 	g_dbus_proxy_call (priv->proxy,
 	                   dbus_method,
@@ -337,10 +344,15 @@ _start_request (NMFirewallManager *self,
 	       _ops_type_to_string (info->ops_type),
 	       iface,
 	       NM_PRINT_FMT_QUOTED (zone, "\"", zone, "\"", "default"),
-	       info->mode == CB_INFO_MODE_IDLE ? " (not running, simulate success)" : "");
+	       info->mode == CB_INFO_MODE_IDLE
+	         ? " (not running, simulate success)"
+	         : (!priv->running
+	              ? " (waiting to initialize)"
+	              : ""));
 
-	if (info->mode != CB_INFO_MODE_IDLE) {
-		_handle_dbus_start (self, info);
+	if (info->mode == CB_INFO_MODE_DBUS_WAITING) {
+		if (priv->running)
+			_handle_dbus_start (self, info);
 		if (!info->callback) {
 			/* if the user did not provide a callback, the call_id is useless.
 			 * Especially, the user cannot use the call-id to cancel the request,
@@ -350,15 +362,18 @@ _start_request (NMFirewallManager *self,
 			 * (the request will always be started). */
 			return NULL;
 		}
-	} else if (!info->callback) {
-		/* if the user did not provide a callback and firewalld is not running,
-		 * there is no point in scheduling an idle-request to fake success. Just
-		 * return right away. */
-		_LOGD (info, "complete: drop request simulating success");
-		_cb_info_complete_normal (info, NULL);
-		return NULL;
+	} else if (info->mode == CB_INFO_MODE_IDLE) {
+		if (!info->callback) {
+			/* if the user did not provide a callback and firewalld is not running,
+			 * there is no point in scheduling an idle-request to fake success. Just
+			 * return right away. */
+			_LOGD (info, "complete: drop request simulating success");
+			_cb_info_complete_normal (info, NULL);
+			return NULL;
+		} else
+			info->idle.id = g_idle_add (_handle_idle, info);
 	} else
-		info->idle.id = g_idle_add (_handle_idle, info);
+		nm_assert_not_reached ();
 
 	return info;
 }
@@ -417,7 +432,9 @@ nm_firewall_manager_cancel_call (NMFirewallManagerCallId call)
 
 	_cb_info_callback (info, error);
 
-	if (info->mode == CB_INFO_MODE_IDLE) {
+	if (info->mode == CB_INFO_MODE_DBUS_WAITING)
+		_cb_info_free (info);
+	else if (info->mode == CB_INFO_MODE_IDLE) {
 		g_source_remove (info->idle.id);
 		_cb_info_free (info);
 	} else {
@@ -429,7 +446,7 @@ nm_firewall_manager_cancel_call (NMFirewallManagerCallId call)
 
 /*****************************************************************************/
 
-static void
+static gboolean
 name_owner_changed (NMFirewallManager *self)
 {
 	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
@@ -440,11 +457,11 @@ name_owner_changed (NMFirewallManager *self)
 	now_running = !!owner;
 
 	if (now_running == priv->running)
-		return;
+		return FALSE;
 
 	priv->running = now_running;
 	_LOGD (NULL, "firewall %s", now_running ? "started" : "stopped");
-	g_signal_emit (self, signals[STATE_CHANGED], 0);
+	return TRUE;
 }
 
 static void
@@ -452,11 +469,14 @@ name_owner_changed_cb (GObject    *object,
                        GParamSpec *pspec,
                        gpointer    user_data)
 {
-	nm_assert (NM_IS_FIREWALL_MANAGER (user_data));
-	nm_assert (G_IS_DBUS_PROXY (object));
-	nm_assert (NM_FIREWALL_MANAGER_GET_PRIVATE (NM_FIREWALL_MANAGER (user_data))->proxy == G_DBUS_PROXY (object));
+	NMFirewallManager *self = user_data;
 
-	name_owner_changed (NM_FIREWALL_MANAGER (user_data));
+	nm_assert (NM_IS_FIREWALL_MANAGER (self));
+	nm_assert (G_IS_DBUS_PROXY (object));
+	nm_assert (NM_FIREWALL_MANAGER_GET_PRIVATE (self)->proxy == G_DBUS_PROXY (object));
+
+	if (name_owner_changed (self))
+		g_signal_emit (self, signals[STATE_CHANGED], 0, FALSE);
 }
 
 static void
@@ -468,6 +488,8 @@ _proxy_new_cb (GObject *source_object,
 	NMFirewallManagerPrivate *priv;
 	GDBusProxy *proxy;
 	gs_free_error GError *error = NULL;
+	GHashTableIter iter;
+	CBInfo *info;
 
 	proxy = g_dbus_proxy_new_for_bus_finish (result, &error);
 	if (   !proxy
@@ -487,7 +509,29 @@ _proxy_new_cb (GObject *source_object,
 	g_signal_connect (priv->proxy, "notify::g-name-owner",
 	                  G_CALLBACK (name_owner_changed_cb), self);
 
-	name_owner_changed (self);
+	if (!name_owner_changed (self))
+		_LOGD (NULL, "firewall %s", "initialized (not running)");
+
+again:
+	g_hash_table_iter_init (&iter, priv->pending_calls);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &info, NULL)) {
+		if (info->mode != CB_INFO_MODE_DBUS_WAITING)
+			continue;
+		if (priv->running) {
+			_LOGD (info, "make D-Bus call");
+			_handle_dbus_start (self, info);
+		} else {
+			_LOGD (info, "complete: fake success");
+			g_hash_table_iter_remove (&iter);
+			_cb_info_callback (info, NULL);
+			_cb_info_free (info);
+			goto again;
+		}
+	}
+
+	/* we always emit a state-changed signal, even if the
+	 * "running" property is still false. */
+	g_signal_emit (self, signals[STATE_CHANGED], 0, TRUE);
 }
 
 /*****************************************************************************/
@@ -556,6 +600,7 @@ nm_firewall_manager_class_init (NMFirewallManagerClass *klass)
 	                  G_SIGNAL_RUN_FIRST,
 	                  0,
 	                  NULL, NULL,
-	                  g_cclosure_marshal_VOID__VOID,
-	                  G_TYPE_NONE, 0);
+	                  g_cclosure_marshal_VOID__BOOLEAN,
+	                  G_TYPE_NONE, 1,
+	                  G_TYPE_BOOLEAN /* initialized_now */);
 }

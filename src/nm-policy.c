@@ -2057,11 +2057,19 @@ connection_added (NMSettings *settings,
 
 static void
 firewall_state_changed (NMFirewallManager *manager,
+                        gboolean initialized_now,
                         gpointer user_data)
 {
 	NMPolicy *self = (NMPolicy *) user_data;
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	const GSList *iter;
+
+	if (initialized_now) {
+		/* the firewall manager was initializing, but all requests
+		 * so fare were queued and are already sent. No need to
+		 * re-update the firewall zone of the devices. */
+		return;
+	}
 
 	if (!nm_firewall_manager_get_running (manager))
 		return;
