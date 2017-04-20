@@ -77,7 +77,10 @@ typedef enum {
 struct _NMFirewallManagerCallId {
 	NMFirewallManager *self;
 	CBInfoOpsType ops_type;
-	CBInfoMode mode;
+	union {
+		const CBInfoMode mode;
+		CBInfoMode mode_mutable;
+	};
 	char *iface;
 	NMFirewallManagerAddRemoveCallback callback;
 	gpointer user_data;
@@ -127,7 +130,7 @@ _ops_type_to_string (CBInfoOpsType ops_type)
                      __info \
                         ? ({ \
                                 g_snprintf (__prefix_info, sizeof (__prefix_info), "[%p,%s%s:%s%s%s]: ", __info, \
-                                            _ops_type_to_string (__info->ops_type), _cb_info_is_idle (__info) ? "*" : "", \
+                                            _ops_type_to_string (__info->ops_type), __info->mode == CB_INFO_MODE_IDLE ? "*" : "", \
                                             NM_PRINT_FMT_QUOTE_STRING (__info->iface)); \
                                 __prefix_info; \
                            }) \
@@ -148,12 +151,6 @@ nm_firewall_manager_get_running (NMFirewallManager *self)
 
 /*****************************************************************************/
 
-static gboolean
-_cb_info_is_idle (CBInfo *info)
-{
-	return info->mode == CB_INFO_MODE_IDLE;
-}
-
 static CBInfo *
 _cb_info_create (NMFirewallManager *self,
                  CBInfoOpsType ops_type,
@@ -173,11 +170,11 @@ _cb_info_create (NMFirewallManager *self,
 	info->user_data = user_data;
 
 	if (priv->running) {
-		info->mode = CB_INFO_MODE_DBUS;
+		info->mode_mutable = CB_INFO_MODE_DBUS;
 		info->dbus.cancellable = g_cancellable_new ();
 		info->dbus.arg = g_variant_new ("(ss)", zone ? zone : "", iface);
 	} else
-		info->mode = CB_INFO_MODE_IDLE;
+		info->mode_mutable = CB_INFO_MODE_IDLE;
 
 	if (!nm_g_hash_table_add (priv->pending_calls, info))
 		g_return_val_if_reached (NULL);
@@ -188,7 +185,7 @@ _cb_info_create (NMFirewallManager *self,
 static void
 _cb_info_free (CBInfo *info)
 {
-	if (!_cb_info_is_idle (info)) {
+	if (info->mode != CB_INFO_MODE_IDLE) {
 		if (info->dbus.arg)
 			g_variant_unref (info->dbus.arg);
 		g_object_unref (info->dbus.cancellable);
@@ -340,9 +337,9 @@ _start_request (NMFirewallManager *self,
 	       _ops_type_to_string (info->ops_type),
 	       iface,
 	       NM_PRINT_FMT_QUOTED (zone, "\"", zone, "\"", "default"),
-	       _cb_info_is_idle (info) ? " (not running, simulate success)" : "");
+	       info->mode == CB_INFO_MODE_IDLE ? " (not running, simulate success)" : "");
 
-	if (!_cb_info_is_idle (info)) {
+	if (info->mode != CB_INFO_MODE_IDLE) {
 		_handle_dbus_start (self, info);
 		if (!info->callback) {
 			/* if the user did not provide a callback, the call_id is useless.
@@ -420,11 +417,11 @@ nm_firewall_manager_cancel_call (NMFirewallManagerCallId call)
 
 	_cb_info_callback (info, error);
 
-	if (_cb_info_is_idle (info)) {
+	if (info->mode == CB_INFO_MODE_IDLE) {
 		g_source_remove (info->idle.id);
 		_cb_info_free (info);
 	} else {
-		info->mode = CB_INFO_MODE_DBUS_COMPLETED;
+		info->mode_mutable = CB_INFO_MODE_DBUS_COMPLETED;
 		g_cancellable_cancel (info->dbus.cancellable);
 		g_clear_object (&info->self);
 	}
