@@ -4937,7 +4937,7 @@ static const NMMetaPropertyType _pt_gobject_devices = {
 	{ \
 		.meta_type =                    &nm_meta_type_property_info, \
 		.setting_info =                 &nm_meta_setting_infos_editor[_CURRENT_NM_META_SETTING_TYPE], \
-		.property_name =                N_(name), \
+		.property_name =                name, \
 		.describe_doc =                 doc, \
 		__VA_ARGS__ \
 	}
@@ -7444,8 +7444,6 @@ _meta_type_setting_info_editor_get_fcn (const NMMetaAbstractInfo *abstract_info,
 
 	nm_assert (out_to_free);
 
-	if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
-		return _(info->general->setting_name);
 	return info->general->setting_name;
 }
 
