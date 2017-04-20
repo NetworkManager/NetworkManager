@@ -40,10 +40,11 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
-	GDBusProxy *    proxy;
-	gboolean        running;
+	GDBusProxy     *proxy;
+	GCancellable   *proxy_cancellable;
 
 	GHashTable     *pending_calls;
+	bool            running;
 } NMFirewallManagerPrivate;
 
 struct _NMFirewallManager {
@@ -417,14 +418,12 @@ set_running (NMFirewallManager *self, gboolean now_running)
 }
 
 static void
-name_owner_changed (GObject    *object,
-                    GParamSpec *pspec,
-                    gpointer    user_data)
+name_owner_changed (NMFirewallManager *self)
 {
-	NMFirewallManager *self = NM_FIREWALL_MANAGER (user_data);
+	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
 	gs_free char *owner = NULL;
 
-	owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (object));
+	owner = g_dbus_proxy_get_name_owner (priv->proxy);
 	if (owner) {
 		_LOGD (NULL, "firewall started");
 		set_running (self, TRUE);
@@ -433,6 +432,49 @@ name_owner_changed (GObject    *object,
 		_LOGD (NULL, "firewall stopped");
 		set_running (self, FALSE);
 	}
+}
+
+static void
+name_owner_changed_cb (GObject    *object,
+                       GParamSpec *pspec,
+                       gpointer    user_data)
+{
+	nm_assert (NM_IS_FIREWALL_MANAGER (user_data));
+	nm_assert (G_IS_DBUS_PROXY (object));
+	nm_assert (NM_FIREWALL_MANAGER_GET_PRIVATE (NM_FIREWALL_MANAGER (user_data))->proxy == G_DBUS_PROXY (object));
+
+	name_owner_changed (NM_FIREWALL_MANAGER (user_data));
+}
+
+static void
+_proxy_new_cb (GObject *source_object,
+               GAsyncResult *result,
+               gpointer user_data)
+{
+	NMFirewallManager *self;
+	NMFirewallManagerPrivate *priv;
+	GDBusProxy *proxy;
+	gs_free_error GError *error = NULL;
+
+	proxy = g_dbus_proxy_new_for_bus_finish (result, &error);
+	if (   !proxy
+	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	self = user_data;
+	priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
+	g_clear_object (&priv->proxy_cancellable);
+
+	if (!proxy) {
+		_LOGW (NULL, "could not connect to system D-Bus (%s)", error->message);
+		return;
+	}
+
+	priv->proxy = proxy;
+	g_signal_connect (priv->proxy, "notify::g-name-owner",
+	                  G_CALLBACK (name_owner_changed_cb), self);
+
+	name_owner_changed (self);
 }
 
 /*****************************************************************************/
@@ -465,28 +507,21 @@ constructed (GObject *object)
 {
 	NMFirewallManager *self = (NMFirewallManager *) object;
 	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
-	gs_free char *owner = NULL;
-	gs_free_error GError *error = NULL;
+
+	priv->proxy_cancellable = g_cancellable_new ();
+
+	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
+	                            G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES
+	                          | G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS,
+	                          NULL,
+	                          FIREWALL_DBUS_SERVICE,
+	                          FIREWALL_DBUS_PATH,
+	                          FIREWALL_DBUS_INTERFACE_ZONE,
+	                          priv->proxy_cancellable,
+	                          _proxy_new_cb,
+	                          self);
 
 	G_OBJECT_CLASS (nm_firewall_manager_parent_class)->constructed (object);
-
-	priv->proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
-	                                             G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES |
-	                                                 G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS,
-	                                             NULL,
-	                                             FIREWALL_DBUS_SERVICE,
-	                                             FIREWALL_DBUS_PATH,
-	                                             FIREWALL_DBUS_INTERFACE_ZONE,
-	                                             NULL, &error);
-	if (priv->proxy) {
-		g_signal_connect (priv->proxy, "notify::g-name-owner",
-		                  G_CALLBACK (name_owner_changed), self);
-		owner = g_dbus_proxy_get_name_owner (priv->proxy);
-		priv->running = (owner != NULL);
-	} else
-		_LOGW (NULL, "could not connect to system D-Bus (%s)", error->message);
-
-	_LOGD (NULL, "firewall constructed (%srunning)", priv->running ? "" : "not");
 }
 
 static void
@@ -503,6 +538,7 @@ dispose (GObject *object)
 		priv->pending_calls = NULL;
 	}
 
+	nm_clear_g_cancellable (&priv->proxy_cancellable);
 	g_clear_object (&priv->proxy);
 
 	G_OBJECT_CLASS (nm_firewall_manager_parent_class)->dispose (object);
