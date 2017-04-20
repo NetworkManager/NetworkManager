@@ -4979,10 +4979,29 @@ gen_cmd_save (const char *text, int state)
 static rl_compentry_func_t *
 gen_connection_types (const char *text)
 {
-	gs_strfreev char **values = NULL;
+	gs_free char **values = NULL;
+	const NMMetaSettingInfoEditor *editor;
+	GPtrArray *array;
+	int i;
 
-	values = _meta_abstract_complete ((const NMMetaAbstractInfo *) nm_meta_property_info_connection_type,
-	                                  text);
+	array = g_ptr_array_new ();
+
+	for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
+		editor = &nm_meta_setting_infos_editor[i];
+		if (!editor->valid_parts)
+			continue;
+		g_ptr_array_add (array, (gpointer) nm_meta_setting_infos[i].setting_name);
+		if (editor->alias)
+			g_ptr_array_add (array, (gpointer) editor->alias);
+	}
+
+	g_ptr_array_add (array, "bond-slave");
+	g_ptr_array_add (array, "bridge-slave");
+	g_ptr_array_add (array, "team-slave");
+	g_ptr_array_add (array, NULL);
+
+	values = (char **) g_ptr_array_free (array, FALSE);
+
 	return nmc_rl_compentry_func_wrap ((const char *const*) values);
 }
 
