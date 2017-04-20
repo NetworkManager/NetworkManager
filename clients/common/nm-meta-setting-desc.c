@@ -7107,40 +7107,40 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 
 /*****************************************************************************/
 
-#define SETTING_PRETTY_NAME_802_1X              "802-1x settings"
-#define SETTING_PRETTY_NAME_ADSL                "ADSL connection"
-#define SETTING_PRETTY_NAME_BLUETOOTH           "bluetooth connection"
-#define SETTING_PRETTY_NAME_BOND                "Bond device"
-#define SETTING_PRETTY_NAME_BRIDGE              "Bridge device"
-#define SETTING_PRETTY_NAME_BRIDGE_PORT         "Bridge port"
-#define SETTING_PRETTY_NAME_CDMA                "CDMA mobile broadband connection"
-#define SETTING_PRETTY_NAME_CONNECTION          "General settings"
-#define SETTING_PRETTY_NAME_DCB                 "DCB settings"
-#define SETTING_PRETTY_NAME_DUMMY               "Dummy settings"
-#define SETTING_PRETTY_NAME_GENERIC             "Generic settings"
-#define SETTING_PRETTY_NAME_GSM                 "GSM mobile broadband connection"
-#define SETTING_PRETTY_NAME_INFINIBAND          "InfiniBand connection"
-#define SETTING_PRETTY_NAME_IP4_CONFIG          "IPv4 protocol"
-#define SETTING_PRETTY_NAME_IP6_CONFIG          "IPv6 protocol"
-#define SETTING_PRETTY_NAME_IP_TUNNEL           "IP-tunnel settings"
-#define SETTING_PRETTY_NAME_MACSEC              "MACsec connection"
-#define SETTING_PRETTY_NAME_MACVLAN             "macvlan connection"
-#define SETTING_PRETTY_NAME_OLPC_MESH           "OLPC Mesh connection"
-#define SETTING_PRETTY_NAME_PPP                 "PPP settings"
-#define SETTING_PRETTY_NAME_PPPOE               "PPPoE"
-#define SETTING_PRETTY_NAME_PROXY               "Proxy"
-#define SETTING_PRETTY_NAME_SERIAL              "Serial settings"
-#define SETTING_PRETTY_NAME_TEAM                "Team device"
-#define SETTING_PRETTY_NAME_TEAM_PORT           "Team port"
-#define SETTING_PRETTY_NAME_TUN                 "Tun device"
-#define SETTING_PRETTY_NAME_USER                "User settings"
-#define SETTING_PRETTY_NAME_VLAN                "VLAN connection"
-#define SETTING_PRETTY_NAME_VPN                 "VPN connection"
-#define SETTING_PRETTY_NAME_VXLAN               "VXLAN connection"
-#define SETTING_PRETTY_NAME_WIMAX               "WiMAX connection"
-#define SETTING_PRETTY_NAME_WIRED               "Wired Ethernet"
-#define SETTING_PRETTY_NAME_WIRELESS            "Wi-Fi connection"
-#define SETTING_PRETTY_NAME_WIRELESS_SECURITY   "Wi-Fi security settings"
+#define SETTING_PRETTY_NAME_802_1X              N_("802-1x settings")
+#define SETTING_PRETTY_NAME_ADSL                N_("ADSL connection")
+#define SETTING_PRETTY_NAME_BLUETOOTH           N_("bluetooth connection")
+#define SETTING_PRETTY_NAME_BOND                N_("Bond device")
+#define SETTING_PRETTY_NAME_BRIDGE              N_("Bridge device")
+#define SETTING_PRETTY_NAME_BRIDGE_PORT         N_("Bridge port")
+#define SETTING_PRETTY_NAME_CDMA                N_("CDMA mobile broadband connection")
+#define SETTING_PRETTY_NAME_CONNECTION          N_("General settings")
+#define SETTING_PRETTY_NAME_DCB                 N_("DCB settings")
+#define SETTING_PRETTY_NAME_DUMMY               N_("Dummy settings")
+#define SETTING_PRETTY_NAME_GENERIC             N_("Generic settings")
+#define SETTING_PRETTY_NAME_GSM                 N_("GSM mobile broadband connection")
+#define SETTING_PRETTY_NAME_INFINIBAND          N_("InfiniBand connection")
+#define SETTING_PRETTY_NAME_IP4_CONFIG          N_("IPv4 protocol")
+#define SETTING_PRETTY_NAME_IP6_CONFIG          N_("IPv6 protocol")
+#define SETTING_PRETTY_NAME_IP_TUNNEL           N_("IP-tunnel settings")
+#define SETTING_PRETTY_NAME_MACSEC              N_("MACsec connection")
+#define SETTING_PRETTY_NAME_MACVLAN             N_("macvlan connection")
+#define SETTING_PRETTY_NAME_OLPC_MESH           N_("OLPC Mesh connection")
+#define SETTING_PRETTY_NAME_PPP                 N_("PPP settings")
+#define SETTING_PRETTY_NAME_PPPOE               N_("PPPoE")
+#define SETTING_PRETTY_NAME_PROXY               N_("Proxy")
+#define SETTING_PRETTY_NAME_SERIAL              N_("Serial settings")
+#define SETTING_PRETTY_NAME_TEAM                N_("Team device")
+#define SETTING_PRETTY_NAME_TEAM_PORT           N_("Team port")
+#define SETTING_PRETTY_NAME_TUN                 N_("Tun device")
+#define SETTING_PRETTY_NAME_USER                N_("User settings")
+#define SETTING_PRETTY_NAME_VLAN                N_("VLAN connection")
+#define SETTING_PRETTY_NAME_VPN                 N_("VPN connection")
+#define SETTING_PRETTY_NAME_VXLAN               N_("VXLAN connection")
+#define SETTING_PRETTY_NAME_WIMAX               N_("WiMAX connection")
+#define SETTING_PRETTY_NAME_WIRED               N_("Wired Ethernet")
+#define SETTING_PRETTY_NAME_WIRELESS            N_("Wi-Fi connection")
+#define SETTING_PRETTY_NAME_WIRELESS_SECURITY   N_("Wi-Fi security settings")
 
 #define NM_META_SETTING_VALID_PARTS(...) \
 	((const NMMetaSettingValidPartItem *const[]) { __VA_ARGS__  NULL })
@@ -7156,7 +7156,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 	[NM_META_SETTING_TYPE_##type] = { \
 		.meta_type =                        &nm_meta_type_setting_info_editor, \
 		.general =                          &nm_meta_setting_infos[NM_META_SETTING_TYPE_##type], \
-		.pretty_name =                      N_(SETTING_PRETTY_NAME_##type), \
+		.pretty_name =                      SETTING_PRETTY_NAME_##type, \
 		__VA_ARGS__ \
 	}
 #define SETTING_INFO(type, ...) \
@@ -7165,7 +7165,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 		.general =                          &nm_meta_setting_infos[NM_META_SETTING_TYPE_##type], \
 		.properties =                       property_infos_##type, \
 		.properties_num =                   G_N_ELEMENTS (property_infos_##type) - 1, \
-		.pretty_name =                      N_(SETTING_PRETTY_NAME_##type), \
+		.pretty_name =                      SETTING_PRETTY_NAME_##type, \
 		__VA_ARGS__ \
 	}
 	SETTING_INFO (802_1X),
