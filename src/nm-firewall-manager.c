@@ -28,12 +28,8 @@
 
 /*****************************************************************************/
 
-NM_GOBJECT_PROPERTIES_DEFINE (NMFirewallManager,
-	PROP_AVAILABLE,
-);
-
 enum {
-	STARTED,
+	STATE_CHANGED,
 	LAST_SIGNAL
 };
 
@@ -138,6 +134,16 @@ _ops_type_to_string (CBInfoOpsType ops_type)
                      _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
         } \
     } G_STMT_END
+
+/*****************************************************************************/
+
+gboolean
+nm_firewall_manager_get_running (NMFirewallManager *self)
+{
+	g_return_val_if_fail (NM_IS_FIREWALL_MANAGER (self), FALSE);
+
+	return NM_FIREWALL_MANAGER_GET_PRIVATE (self)->running;
+}
 
 /*****************************************************************************/
 
@@ -407,31 +413,21 @@ nm_firewall_manager_cancel_call (NMFirewallManagerCallId call)
 /*****************************************************************************/
 
 static void
-set_running (NMFirewallManager *self, gboolean now_running)
-{
-	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
-	gboolean old_running = priv->running;
-
-	priv->running = now_running;
-	if (old_running != priv->running)
-		_notify (self, PROP_AVAILABLE);
-}
-
-static void
 name_owner_changed (NMFirewallManager *self)
 {
 	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
 	gs_free char *owner = NULL;
+	gboolean now_running;
 
 	owner = g_dbus_proxy_get_name_owner (priv->proxy);
-	if (owner) {
-		_LOGD (NULL, "firewall started");
-		set_running (self, TRUE);
-		g_signal_emit (self, signals[STARTED], 0);
-	} else {
-		_LOGD (NULL, "firewall stopped");
-		set_running (self, FALSE);
-	}
+	now_running = !!owner;
+
+	if (now_running == priv->running)
+		return;
+
+	priv->running = now_running;
+	_LOGD (NULL, "firewall %s", now_running ? "started" : "stopped");
+	g_signal_emit (self, signals[STATE_CHANGED], 0);
 }
 
 static void
@@ -475,21 +471,6 @@ _proxy_new_cb (GObject *source_object,
 	                  G_CALLBACK (name_owner_changed_cb), self);
 
 	name_owner_changed (self);
-}
-
-/*****************************************************************************/
-
-static void
-get_property (GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-	switch (prop_id) {
-	case PROP_AVAILABLE:
-		g_value_set_boolean (value, NM_FIREWALL_MANAGER_GET_PRIVATE ((NMFirewallManager *) object)->running);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
 }
 
 /*****************************************************************************/
@@ -550,19 +531,10 @@ nm_firewall_manager_class_init (NMFirewallManagerClass *klass)
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
 	object_class->constructed = constructed;
-	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 
-	obj_properties[PROP_AVAILABLE] =
-	     g_param_spec_boolean (NM_FIREWALL_MANAGER_AVAILABLE, "", "",
-	                           FALSE,
-	                           G_PARAM_READABLE |
-	                           G_PARAM_STATIC_STRINGS);
-
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
-
-	signals[STARTED] =
-	    g_signal_new (NM_FIREWALL_MANAGER_STARTED,
+	signals[STATE_CHANGED] =
+	    g_signal_new (NM_FIREWALL_MANAGER_STATE_CHANGED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0,
