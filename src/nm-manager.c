@@ -450,6 +450,8 @@ _get_activatable_connections_filter (NMSettings *settings,
                                      NMSettingsConnection *connection,
                                      gpointer user_data)
 {
+	if (nm_settings_connection_get_volatile (connection))
+		return FALSE;
 	return !active_connection_find_first (user_data, connection, NULL, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING);
 }
 
@@ -1677,16 +1679,12 @@ done:
 	g_clear_error (&error);
 }
 
-static gboolean
-match_connection_filter (NMConnection *connection, gpointer user_data)
-{
-	return nm_device_check_connection_compatible (NM_DEVICE (user_data), connection);
-}
-
 /**
  * get_existing_connection:
  * @manager: #NMManager instance
  * @device: #NMDevice instance
+ * @guess_assume: whether to employ a heuristic to search for a matching
+ *   connection to assume.
  * @assume_connection_uuid: if present, try to assume a connection with this
  *   UUID. If no uuid is given or no matching connection is found, we
  *   only do external activation.
@@ -1698,6 +1696,7 @@ match_connection_filter (NMConnection *connection, gpointer user_data)
 static NMSettingsConnection *
 get_existing_connection (NMManager *self,
                          NMDevice *device,
+                         gboolean guess_assume,
                          const char *assume_connection_uuid,
                          gboolean *out_generated)
 {
@@ -1708,6 +1707,7 @@ get_existing_connection (NMManager *self,
 	NMDevice *master = NULL;
 	int ifindex = nm_device_get_ifindex (device);
 	NMSettingsConnection *matched;
+	NMSettingsConnection *connection_checked = NULL;
 
 	if (out_generated)
 		*out_generated = FALSE;
@@ -1752,11 +1752,12 @@ get_existing_connection (NMManager *self,
 	 * the generated connection instead.
 	 */
 	if (   assume_connection_uuid
-	    && (matched = nm_settings_get_connection_by_uuid (priv->settings, assume_connection_uuid))
-	    && !active_connection_find_first (self, matched, NULL,
-	                                      NM_ACTIVE_CONNECTION_STATE_DEACTIVATING)) {
+	    && (connection_checked = nm_settings_get_connection_by_uuid (priv->settings, assume_connection_uuid))
+	    && !active_connection_find_first (self, connection_checked, NULL,
+	                                      NM_ACTIVE_CONNECTION_STATE_DEACTIVATING)
+	    && nm_device_check_connection_compatible (device, NM_CONNECTION (connection_checked))) {
 		NMConnection *const connections[] = {
-			NM_CONNECTION (matched),
+			NM_CONNECTION (connection_checked),
 			NULL,
 		};
 
@@ -1765,15 +1766,48 @@ get_existing_connection (NMManager *self,
 		                                                             nm_device_has_carrier (device),
 		                                                             nm_device_get_ip4_route_metric (device),
 		                                                             nm_device_get_ip6_route_metric (device),
-		                                                             match_connection_filter,
-		                                                             device));
-		if (matched) {
-			_LOGI (LOGD_DEVICE, "(%s): found matching connection '%s'",
-			       nm_device_get_iface (device),
-			       nm_settings_connection_get_id (matched));
-			g_object_unref (connection);
-			return matched;
+		                                                             NULL, NULL));
+	} else
+		matched = NULL;
+
+	if (!matched && guess_assume) {
+		gs_free NMSettingsConnection **connections = NULL;
+		guint len, i, j;
+
+		/* the state file doesn't indicate a connection UUID to assume. Search the
+		 * persistent connections for a matching candidate. */
+		connections = nm_manager_get_activatable_connections (self, &len, FALSE);
+		if (len > 0) {
+			for (i = 0, j = 0; i < len; i++) {
+				NMConnection *con = NM_CONNECTION (connections[i]);
+
+				if (   con != NM_CONNECTION (connection_checked)
+				    && nm_device_check_connection_compatible (device, con))
+					connections[j++] = connections[i];
+			}
+			connections[j] = NULL;
+			len = j;
+			g_qsort_with_data (connections, len, sizeof (connections[0]),
+			                   nm_settings_connection_cmp_timestamp_p_with_data, NULL);
+
+			matched = NM_SETTINGS_CONNECTION (nm_utils_match_connection ((NMConnection *const*) connections,
+			                                                             connection,
+			                                                             nm_device_has_carrier (device),
+			                                                             nm_device_get_ip4_route_metric (device),
+			                                                             nm_device_get_ip6_route_metric (device),
+			                                                             NULL, NULL));
 		}
+	}
+
+	if (matched) {
+		_LOGI (LOGD_DEVICE, "(%s): found matching connection '%s' (%s)%s",
+		       nm_device_get_iface (device),
+		       nm_settings_connection_get_id (matched),
+		       nm_settings_connection_get_uuid (matched),
+		       assume_connection_uuid && nm_streq (assume_connection_uuid, nm_settings_connection_get_uuid (matched))
+		           ? " (indicated)" : " (guessed)");
+		g_object_unref (connection);
+		return matched;
 	}
 
 	_LOGD (LOGD_DEVICE, "(%s): generated connection '%s'",
@@ -1803,6 +1837,7 @@ get_existing_connection (NMManager *self,
 static gboolean
 recheck_assume_connection (NMManager *self,
                            NMDevice *device,
+                           gboolean guess_assume,
                            const char *assume_connection_uuid)
 {
 	NMSettingsConnection *connection;
@@ -1826,7 +1861,7 @@ recheck_assume_connection (NMManager *self,
 	if (nm_device_sys_iface_state_get (device) != NM_DEVICE_SYS_IFACE_STATE_EXTERNAL)
 		return FALSE;
 
-	connection = get_existing_connection (self, device, assume_connection_uuid, &generated);
+	connection = get_existing_connection (self, device, guess_assume, assume_connection_uuid, &generated);
 	if (!connection) {
 		_LOGD (LOGD_DEVICE, "(%s): can't assume; no connection",
 		       nm_device_get_iface (device));
@@ -1906,7 +1941,7 @@ recheck_assume_connection (NMManager *self,
 static void
 recheck_assume_connection_cb (NMDevice *device, gpointer user_data)
 {
-	recheck_assume_connection (user_data, device, NULL);
+	recheck_assume_connection (user_data, device, FALSE, NULL);
 }
 
 static void
@@ -2000,6 +2035,7 @@ static void
 _device_realize_finish (NMManager *self,
                         NMDevice *device,
                         const NMPlatformLink *plink,
+                        gboolean guess_assume,
                         const char *connection_uuid_to_assume)
 {
 	g_return_if_fail (NM_IS_MANAGER (self));
@@ -2010,7 +2046,7 @@ _device_realize_finish (NMManager *self,
 	if (!nm_device_get_managed (device, FALSE))
 		return;
 
-	if (recheck_assume_connection (self, device, connection_uuid_to_assume))
+	if (recheck_assume_connection (self, device, guess_assume, connection_uuid_to_assume))
 		return;
 
 	/* if we failed to assume a connection for the managed device, but the device
@@ -2168,7 +2204,7 @@ factory_device_added_cb (NMDeviceFactory *factory,
 	                             NULL,
 	                             &error)) {
 		add_device (self, device, NULL);
-		_device_realize_finish (self, device, NULL, NULL);
+		_device_realize_finish (self, device, NULL, FALSE, NULL);
 	} else {
 		_LOGW (LOGD_DEVICE, "(%s): failed to realize device: %s",
 		       nm_device_get_iface (device), error->message);
@@ -2214,6 +2250,7 @@ static void
 platform_link_added (NMManager *self,
                      int ifindex,
                      const NMPlatformLink *plink,
+                     gboolean guess_assume,
                      const NMConfigDeviceStateData *dev_state)
 {
 	NMDeviceFactory *factory;
@@ -2245,7 +2282,7 @@ platform_link_added (NMManager *self,
 		                                    &compatible,
 		                                    &error)) {
 			/* Success */
-			_device_realize_finish (self, candidate, plink, NULL);
+			_device_realize_finish (self, candidate, plink, FALSE, NULL);
 			return;
 		}
 
@@ -2317,6 +2354,7 @@ platform_link_added (NMManager *self,
 		                             &error)) {
 			add_device (self, device, NULL);
 			_device_realize_finish (self, device, plink,
+			                        guess_assume,
 			                        dev_state ? dev_state->connection_uuid : NULL);
 		} else {
 			_LOGW (LOGD_DEVICE, "%s: failed to realize device: %s",
@@ -2347,7 +2385,7 @@ _platform_link_cb_idle (PlatformLinkCbData *data)
 		NMPlatformLink pllink;
 
 		pllink = *l; /* make a copy of the link instance */
-		platform_link_added (self, data->ifindex, &pllink, NULL);
+		platform_link_added (self, data->ifindex, &pllink, FALSE, NULL);
 	} else {
 		NMDevice *device;
 		GError *error = NULL;
@@ -2404,22 +2442,24 @@ platform_link_cb (NMPlatform *platform,
 static void
 platform_query_devices (NMManager *self)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GArray *links_array;
 	NMPlatformLink *links;
 	int i;
+	gboolean guess_assume;
+
+	guess_assume = nm_config_get_first_start (nm_config_get ());
 
 	links_array = nm_platform_link_get_all (NM_PLATFORM_GET);
 	links = (NMPlatformLink *) links_array->data;
 	for (i = 0; i < links_array->len; i++) {
 		gs_free NMConfigDeviceStateData *dev_state = NULL;
 
-		dev_state = nm_config_device_state_load (priv->config,
-		                                         links[i].ifindex);
+		dev_state = nm_config_device_state_load (links[i].ifindex);
 
 		platform_link_added (self,
 		                     links[i].ifindex,
 		                     &links[i],
+		                     guess_assume && (!dev_state || !dev_state->connection_uuid),
 		                     dev_state);
 	}
 
@@ -4976,16 +5016,14 @@ nm_manager_write_device_state (NMManager *self)
 		if (perm_hw_addr_fake && !perm_hw_addr_is_fake)
 			perm_hw_addr_fake = NULL;
 
-		if (nm_config_device_state_write (priv->config,
-		                                  ifindex,
+		if (nm_config_device_state_write (ifindex,
 		                                  managed_type,
 		                                  perm_hw_addr_fake,
 		                                  uuid))
 			g_hash_table_add (seen_ifindexes, GINT_TO_POINTER (ifindex));
 	}
 
-	nm_config_device_state_prune_unseen (priv->config,
-	                                     seen_ifindexes);
+	nm_config_device_state_prune_unseen (seen_ifindexes);
 }
 
 static gboolean
