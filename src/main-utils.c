@@ -149,6 +149,9 @@ nm_main_utils_ensure_rundir ()
 		exit (1);
 	}
 
+	/* NM_CONFIG_DEVICE_STATE_DIR is used to determine whether NM is restarted or not.
+	 * It is important to set NMConfigCmdLineOptions.first_start before creating
+	 * the directory. */
 	nm_assert (g_str_has_prefix (NM_CONFIG_DEVICE_STATE_DIR, NMRUNDIR"/"));
 	if (g_mkdir (NM_CONFIG_DEVICE_STATE_DIR, 0755) != 0) {
 		errsv = errno;

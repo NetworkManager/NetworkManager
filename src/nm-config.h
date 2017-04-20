@@ -125,13 +125,15 @@ const char *nm_config_get_log_domains (NMConfig *config);
 gboolean nm_config_get_configure_and_quit (NMConfig *config);
 gboolean nm_config_get_is_debug (NMConfig *config);
 
+gboolean nm_config_get_first_start (NMConfig *config);
+
 void nm_config_set_values (NMConfig *self,
                            GKeyFile *keyfile_intern_new,
                            gboolean allow_write,
                            gboolean force_rewrite);
 
 /* for main.c only */
-NMConfigCmdLineOptions *nm_config_cmd_line_options_new (void);
+NMConfigCmdLineOptions *nm_config_cmd_line_options_new (gboolean first_start);
 void                    nm_config_cmd_line_options_free (NMConfigCmdLineOptions *cli);
 void                    nm_config_cmd_line_options_add_to_entries (NMConfigCmdLineOptions *cli,
                                                                    GOptionContext *opt_ctx);
@@ -204,14 +206,12 @@ struct _NMConfigDeviceStateData {
 	const char *perm_hw_addr_fake;
 };
 
-NMConfigDeviceStateData *nm_config_device_state_load (NMConfig *self,
-                                                      int ifindex);
-gboolean nm_config_device_state_write (NMConfig *self,
-                                       int ifindex,
+NMConfigDeviceStateData *nm_config_device_state_load (int ifindex);
+gboolean nm_config_device_state_write (int ifindex,
                                        NMConfigDeviceStateManagedType managed,
                                        const char *perm_hw_addr_fake,
                                        const char *connection_uuid);
-void nm_config_device_state_prune_unseen (NMConfig *self, GHashTable *seen_ifindexes);
+void nm_config_device_state_prune_unseen (GHashTable *seen_ifindexes);
 
 /*****************************************************************************/
 

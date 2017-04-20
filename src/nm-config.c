@@ -60,6 +60,15 @@ struct NMConfigCmdLineOptions {
 	 */
 	int connectivity_interval;
 	char *connectivity_response;
+
+	/* @first_start is not provided by command line. It is a convenient hack
+	 * to pass in an argument to NMConfig. This makes NMConfigCmdLineOptions a
+	 * misnomer.
+	 *
+	 * It is true, if NM is started the first time -- contrary to a restart
+	 * during the same boot up. That is determined by the content of the
+	 * /var/run/NetworManager state directory. */
+	bool first_start;
 };
 
 typedef struct {
@@ -291,6 +300,12 @@ nm_config_get_is_debug (NMConfig *config)
 	return NM_CONFIG_GET_PRIVATE (config)->cli.is_debug;
 }
 
+gboolean
+nm_config_get_first_start (NMConfig *config)
+{
+	return NM_CONFIG_GET_PRIVATE (config)->cli.first_start;
+}
+
 /*****************************************************************************/
 
 static char **
@@ -412,6 +427,7 @@ _nm_config_cmd_line_options_clear (NMConfigCmdLineOptions *cli)
 	g_clear_pointer (&cli->connectivity_uri, g_free);
 	g_clear_pointer (&cli->connectivity_response, g_free);
 	cli->connectivity_interval = -1;
+	cli->first_start = FALSE;
 }
 
 static void
@@ -434,14 +450,18 @@ _nm_config_cmd_line_options_copy (const NMConfigCmdLineOptions *cli, NMConfigCmd
 	dst->connectivity_uri = g_strdup (cli->connectivity_uri);
 	dst->connectivity_response = g_strdup (cli->connectivity_response);
 	dst->connectivity_interval = cli->connectivity_interval;
+	dst->first_start = cli->first_start;
 }
 
 NMConfigCmdLineOptions *
-nm_config_cmd_line_options_new ()
+nm_config_cmd_line_options_new (gboolean first_start)
 {
 	NMConfigCmdLineOptions *cli = g_new0 (NMConfigCmdLineOptions, 1);
 
 	_nm_config_cmd_line_options_clear (cli);
+
+	cli->first_start = first_start;
+
 	return cli;
 }
 
@@ -1926,15 +1946,13 @@ _config_device_state_data_new (int ifindex, GKeyFile *kf)
 
 /**
  * nm_config_device_state_load:
- * @self: the NMConfig instance
  * @ifindex: the ifindex for which the state is to load
  *
  * Returns: (transfer full): a run state object.
  *   Must be freed with g_free().
  */
 NMConfigDeviceStateData *
-nm_config_device_state_load (NMConfig *self,
-                             int ifindex)
+nm_config_device_state_load (int ifindex)
 {
 	NMConfigDeviceStateData *device_state;
 	char path[NM_STRLEN (NM_CONFIG_DEVICE_STATE_DIR) + 60];
@@ -1972,8 +1990,7 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_device_state_managed_type_to_str, NMConfigDe
 );
 
 gboolean
-nm_config_device_state_write (NMConfig *self,
-                              int ifindex,
+nm_config_device_state_write (int ifindex,
                               NMConfigDeviceStateManagedType managed,
                               const char *perm_hw_addr_fake,
                               const char *connection_uuid)
@@ -1982,7 +1999,6 @@ nm_config_device_state_write (NMConfig *self,
 	GError *local = NULL;
 	gs_unref_keyfile GKeyFile *kf = NULL;
 
-	g_return_val_if_fail (NM_IS_CONFIG (self), FALSE);
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (!connection_uuid || *connection_uuid, FALSE);
 	g_return_val_if_fail (managed == NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_MANAGED || !connection_uuid, FALSE);
@@ -2027,8 +2043,7 @@ nm_config_device_state_write (NMConfig *self,
 }
 
 void
-nm_config_device_state_prune_unseen (NMConfig *self,
-                                     GHashTable *seen_ifindexes)
+nm_config_device_state_prune_unseen (GHashTable *seen_ifindexes)
 {
 	GDir *dir;
 	const char *fn;
