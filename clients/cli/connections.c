@@ -1836,7 +1836,7 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 
 		/* Before printing the connections check if we have a "--show-secret"
 		 * option after the connection ids */
-		if (!nmc->nmc_config.show_secrets && !nmc->complete) {
+		if (!nmc->show_secrets && !nmc->complete) {
 			int argc_cp = argc;
 			char **argv_cp = argv;
 
