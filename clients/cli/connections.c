@@ -2822,7 +2822,7 @@ get_name_alias_toplevel (const char *name, const char *slave_type)
  * Returns: string; the caller is responsible for freeing it.
  */
 static char *
-Get_valid_options_string (const NMMetaSettingValidPartItem *const*array, const NMMetaSettingValidPartItem *const*array_slv)
+get_valid_options_string (const NMMetaSettingValidPartItem *const*array, const NMMetaSettingValidPartItem *const*array_slv)
 {
 	const NMMetaSettingValidPartItem *const*iter = array;
 	GString *str;
@@ -3015,7 +3015,7 @@ check_valid_name (const char *val, const NMMetaSettingValidPartItem *const*array
 			/* We want to handle aliases, so construct own error message */
 			gs_free char *err_str = NULL;
 
-			err_str = Get_valid_options_string (array, array_slv);
+			err_str = get_valid_options_string (array, array_slv);
 			g_set_error (error, 1, 0, _("'%s' not among [%s]"), val, err_str);
 			g_clear_error (&tmp_err);
 		}
@@ -6766,7 +6766,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	valid_settings_main = get_valid_settings_array (connection_type);
 	valid_settings_slave = nm_meta_setting_info_valid_parts_for_slave_type (s_type, NULL);
 
-	valid_settings_str = Get_valid_options_string (valid_settings_main, valid_settings_slave);
+	valid_settings_str = get_valid_options_string (valid_settings_main, valid_settings_slave);
 	g_print (_("You may edit the following settings: %s\n"), valid_settings_str);
 
 	menu_ctx.level = 0;
