@@ -85,6 +85,7 @@ struct _NMFirewallManagerCallId {
 	union {
 		struct {
 			GCancellable *cancellable;
+			GVariant *arg;
 		} dbus;
 		struct {
 			guint id;
@@ -157,6 +158,7 @@ static CBInfo *
 _cb_info_create (NMFirewallManager *self,
                  CBInfoOpsType ops_type,
                  const char *iface,
+                 const char *zone,
                  NMFirewallManagerAddRemoveCallback callback,
                  gpointer user_data)
 {
@@ -173,6 +175,7 @@ _cb_info_create (NMFirewallManager *self,
 	if (priv->running) {
 		info->mode = CB_INFO_MODE_DBUS;
 		info->dbus.cancellable = g_cancellable_new ();
+		info->dbus.arg = g_variant_new ("(ss)", zone ? zone : "", iface);
 	} else
 		info->mode = CB_INFO_MODE_IDLE;
 
@@ -185,8 +188,11 @@ _cb_info_create (NMFirewallManager *self,
 static void
 _cb_info_free (CBInfo *info)
 {
-	if (!_cb_info_is_idle (info))
+	if (!_cb_info_is_idle (info)) {
+		if (info->dbus.arg)
+			g_variant_unref (info->dbus.arg);
 		g_object_unref (info->dbus.cancellable);
+	}
 	g_free (info->iface);
 	if (info->self)
 		g_object_unref (info->self);
@@ -275,6 +281,43 @@ _handle_dbus (GObject *proxy, GAsyncResult *result, gpointer user_data)
 	_cb_info_complete_normal (info, error);
 }
 
+static void
+_handle_dbus_start (NMFirewallManager *self,
+                    CBInfo *info)
+{
+	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
+	const char *dbus_method;
+	GVariant *arg;
+
+	switch (info->ops_type) {
+	case CB_INFO_OPS_ADD:
+		dbus_method = "addInterface";
+		break;
+	case CB_INFO_OPS_CHANGE:
+		dbus_method = "changeZone";
+		break;
+	case CB_INFO_OPS_REMOVE:
+		dbus_method = "removeInterface";
+		break;
+	default:
+		nm_assert_not_reached ();
+		break;
+	}
+
+	arg = info->dbus.arg;
+	info->dbus.arg = NULL;
+
+	nm_assert (arg && g_variant_is_floating (arg));
+
+	g_dbus_proxy_call (priv->proxy,
+	                   dbus_method,
+	                   arg,
+	                   G_DBUS_CALL_FLAGS_NONE, 10000,
+	                   info->dbus.cancellable,
+	                   _handle_dbus,
+	                   info);
+}
+
 static NMFirewallManagerCallId
 _start_request (NMFirewallManager *self,
                 CBInfoOpsType ops_type,
@@ -285,14 +328,13 @@ _start_request (NMFirewallManager *self,
 {
 	NMFirewallManagerPrivate *priv;
 	CBInfo *info;
-	const char *dbus_method;
 
 	g_return_val_if_fail (NM_IS_FIREWALL_MANAGER (self), NULL);
 	g_return_val_if_fail (iface && *iface, NULL);
 
 	priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
 
-	info = _cb_info_create (self, ops_type, iface, callback, user_data);
+	info = _cb_info_create (self, ops_type, iface, zone, callback, user_data);
 
 	_LOGD (info, "firewall zone %s %s:%s%s%s%s",
 	       _ops_type_to_string (info->ops_type),
@@ -301,29 +343,7 @@ _start_request (NMFirewallManager *self,
 	       _cb_info_is_idle (info) ? " (not running, simulate success)" : "");
 
 	if (!_cb_info_is_idle (info)) {
-
-		switch (ops_type) {
-		case CB_INFO_OPS_ADD:
-			dbus_method = "addInterface";
-			break;
-		case CB_INFO_OPS_CHANGE:
-			dbus_method = "changeZone";
-			break;
-		case CB_INFO_OPS_REMOVE:
-			dbus_method = "removeInterface";
-			break;
-		default:
-			g_assert_not_reached ();
-		}
-
-		g_dbus_proxy_call (priv->proxy,
-		                   dbus_method,
-		                   g_variant_new ("(ss)", zone ? zone : "", iface),
-		                   G_DBUS_CALL_FLAGS_NONE, 10000,
-		                   info->dbus.cancellable,
-		                   _handle_dbus,
-		                   info);
-
+		_handle_dbus_start (self, info);
 		if (!info->callback) {
 			/* if the user did not provide a callback, the call_id is useless.
 			 * Especially, the user cannot use the call-id to cancel the request,
