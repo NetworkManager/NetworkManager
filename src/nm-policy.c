@@ -71,8 +71,6 @@ typedef struct {
 
 	GSList *pending_secondaries;
 
-	gulong fw_started_id;
-
 	NMSettings *settings;
 
 	NMDevice *default_device4, *activating_device4;
@@ -2058,12 +2056,23 @@ connection_added (NMSettings *settings,
 }
 
 static void
-firewall_started (NMFirewallManager *manager,
-                  gpointer user_data)
+firewall_state_changed (NMFirewallManager *manager,
+                        gboolean initialized_now,
+                        gpointer user_data)
 {
 	NMPolicy *self = (NMPolicy *) user_data;
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	const GSList *iter;
+
+	if (initialized_now) {
+		/* the firewall manager was initializing, but all requests
+		 * so fare were queued and are already sent. No need to
+		 * re-update the firewall zone of the devices. */
+		return;
+	}
+
+	if (!nm_firewall_manager_get_running (manager))
+		return;
 
 	/* add interface of each device to correct zone */
 	for (iter = nm_manager_get_devices (priv->manager); iter; iter = g_slist_next (iter))
@@ -2328,9 +2337,8 @@ constructed (GObject *object)
 	}
 
 	priv->firewall_manager = g_object_ref (nm_firewall_manager_get ());
-
-	priv->fw_started_id = g_signal_connect (priv->firewall_manager, NM_FIREWALL_MANAGER_STARTED,
-	                                        G_CALLBACK (firewall_started), self);
+	g_signal_connect (priv->firewall_manager, NM_FIREWALL_MANAGER_STATE_CHANGED,
+	                  G_CALLBACK (firewall_state_changed), self);
 
 	priv->dns_manager = g_object_ref (nm_dns_manager_get ());
 	nm_dns_manager_set_initial_hostname (priv->dns_manager, priv->orig_hostname);
@@ -2389,8 +2397,7 @@ dispose (GObject *object)
 	priv->pending_secondaries = NULL;
 
 	if (priv->firewall_manager) {
-		g_assert (priv->fw_started_id);
-		nm_clear_g_signal_handler (priv->firewall_manager, &priv->fw_started_id);
+		g_signal_handlers_disconnect_by_func (priv->firewall_manager, firewall_state_changed, self);
 		g_clear_object (&priv->firewall_manager);
 	}
 
