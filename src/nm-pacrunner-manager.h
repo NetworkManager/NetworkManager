@@ -15,7 +15,8 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2016 Atul Anand <atulhjp@gmail.com>.
+ * Copyright 2016 Atul Anand <atulhjp@gmail.com>.
+ * Copyright 2016 - 2017 Red Hat, Inc.
  */
 
 #ifndef __NETWORKMANAGER_PACRUNNER_MANAGER_H__
@@ -30,17 +31,22 @@
 
 typedef struct _NMPacrunnerManagerClass NMPacrunnerManagerClass;
 
+typedef struct _NMPacrunnerCallId NMPacrunnerCallId;
+
 GType nm_pacrunner_manager_get_type (void);
 
 NMPacrunnerManager *nm_pacrunner_manager_get (void);
 
-void nm_pacrunner_manager_send (NMPacrunnerManager *self,
-                                const char *iface,
-                                const char *tag,
-                                NMProxyConfig *proxy_config,
-                                NMIP4Config *ip4_config,
-                                NMIP6Config *ip6_config);
+NMPacrunnerCallId *nm_pacrunner_manager_send (NMPacrunnerManager *self,
+                                              const char *iface,
+                                              NMProxyConfig *proxy_config,
+                                              NMIP4Config *ip4_config,
+                                              NMIP6Config *ip6_config);
 
-void nm_pacrunner_manager_remove (NMPacrunnerManager *self, const char *tag);
+void nm_pacrunner_manager_remove (NMPacrunnerManager *self,
+                                  NMPacrunnerCallId *call_id);
+
+gboolean nm_pacrunner_manager_remove_clear (NMPacrunnerManager *self,
+                                            NMPacrunnerCallId **p_call_id);
 
 #endif /* __NETWORKMANAGER_PACRUNNER_MANAGER_H__ */
