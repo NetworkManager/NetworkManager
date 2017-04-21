@@ -982,18 +982,21 @@ set_mm_running (NMDeviceBt *self, gboolean running)
 }
 
 static void
-mm_name_owner_changed (GObject *object,
-                       GParamSpec *pspec,
-                       NMDeviceBt *self)
+mm_name_owner_changed (NMDeviceBt *self)
 {
-	char *owner;
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
+	gs_free char *owner = NULL;
 
-	owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (object));
-	if (owner) {
-		set_mm_running (self, TRUE);
-		g_free (owner);
-	} else
-		set_mm_running (self, FALSE);
+	owner = g_dbus_proxy_get_name_owner (priv->mm_proxy);
+	set_mm_running (self, owner != NULL);
+}
+
+static void
+mm_name_owner_changed_cb (GObject *object,
+                          GParamSpec *pspec,
+                          NMDeviceBt *self)
+{
+	mm_name_owner_changed (self);
 }
 
 /*****************************************************************************/
@@ -1073,9 +1076,9 @@ constructed (GObject *object)
 	                                                NULL, &error);
 	if (priv->mm_proxy) {
 		g_signal_connect (priv->mm_proxy, "notify::g-name-owner",
-		                  G_CALLBACK (mm_name_owner_changed),
+		                  G_CALLBACK (mm_name_owner_changed_cb),
 		                  self);
-		mm_name_owner_changed (G_OBJECT (priv->mm_proxy), NULL, self);
+		mm_name_owner_changed (self);
 	} else {
 		_LOGW (LOGD_MB, "Could not create proxy for '%s': %s",
 		       NM_MODEM_MANAGER_MM_DBUS_SERVICE, error->message);
@@ -1135,7 +1138,7 @@ dispose (GObject *object)
 	g_signal_handlers_disconnect_matched (priv->bt_device, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, object);
 
 	if (priv->mm_proxy) {
-		g_signal_handlers_disconnect_by_func (priv->mm_proxy, G_CALLBACK (mm_name_owner_changed), object);
+		g_signal_handlers_disconnect_by_func (priv->mm_proxy, G_CALLBACK (mm_name_owner_changed_cb), object);
 		g_clear_object (&priv->mm_proxy);
 	}
 
