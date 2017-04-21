@@ -33,9 +33,7 @@
 #define NM_IS_FIREWALL_MANAGER_CLASS(klass)     (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_FIREWALL_MANAGER))
 #define NM_FIREWALL_MANAGER_GET_CLASS(obj)      (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_FIREWALL_MANAGER, NMFirewallManagerClass))
 
-#define NM_FIREWALL_MANAGER_AVAILABLE "available"
-
-#define NM_FIREWALL_MANAGER_STARTED "started"
+#define NM_FIREWALL_MANAGER_STATE_CHANGED "state-changed"
 
 typedef struct _NMFirewallManagerCallId *NMFirewallManagerCallId;
 
@@ -45,6 +43,8 @@ typedef struct _NMFirewallManagerClass NMFirewallManagerClass;
 GType nm_firewall_manager_get_type (void);
 
 NMFirewallManager *nm_firewall_manager_get (void);
+
+gboolean nm_firewall_manager_get_running (NMFirewallManager *self);
 
 typedef void (*NMFirewallManagerAddRemoveCallback) (NMFirewallManager *self,
                                                     NMFirewallManagerCallId call_id,
