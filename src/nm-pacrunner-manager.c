@@ -75,6 +75,16 @@ NM_DEFINE_SINGLETON_GETTER (NMPacrunnerManager, nm_pacrunner_manager_get, NM_TYP
 #define _NMLOG_DOMAIN      LOGD_PROXY
 #define _NMLOG(level, ...) __NMLOG_DEFAULT (level, _NMLOG_DOMAIN, "pacrunner", __VA_ARGS__)
 
+#define _NMLOG2_PREFIX_NAME "pacrunner"
+#define _NMLOG2(level, config, ...) \
+	G_STMT_START { \
+		nm_log ((level), _NMLOG_DOMAIN, NULL, NULL, \
+		        "%s%p]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+		        "pacrunner: call[", \
+		        (config) \
+		        _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+	} G_STMT_END
+
 /*****************************************************************************/
 
 static Config *
@@ -231,13 +241,13 @@ pacrunner_send_done (GDBusProxy *proxy, GAsyncResult *res, gpointer user_data)
 	self = NM_PACRUNNER_MANAGER (config->manager);
 	priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
 
-	if (!variant) {
-		_LOGD ("send config for '%p' failed: %s", config, error->message);
-	} else {
+	if (!variant)
+		_LOG2D (config, "sending failed: %s", error->message);
+	else {
 		g_variant_get (variant, "(&o)", &path);
 
 		config->path = g_strdup (path);
-		_LOGD ("successfully sent config for '%p'", config);
+		_LOG2D (config, "sent");
 
 		if (config->removed) {
 			g_dbus_proxy_call (priv->pacrunner,
@@ -259,10 +269,7 @@ pacrunner_send_config (NMPacrunnerManager *self, Config *config)
 	NMPacrunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
 
 	if (priv->pacrunner) {
-		gs_free char *args_str = NULL;
-
-		_LOGT ("sending proxy config for '%p': %s", config,
-		       (args_str = g_variant_print (config->args, FALSE)));
+		_LOG2T (config, "sending...");
 
 		config_ref (config);
 		g_clear_pointer (&config->path, g_free);
@@ -409,6 +416,13 @@ nm_pacrunner_manager_send (NMPacrunnerManager *self,
 	config = config_new (self, g_variant_new ("(a{sv})", &proxy_data));
 	priv->configs = g_list_append (priv->configs, config);
 
+	{
+		gs_free char *args_str = NULL;
+
+		_LOG2D (config, "send: new config %s",
+		        (args_str = g_variant_print (config->args, FALSE)));
+	}
+
 	/* Send if pacrunner is available on bus, otherwise
 	 * config has already been appended above to be
 	 * sent when pacrunner appears.
@@ -435,9 +449,9 @@ pacrunner_remove_done (GDBusProxy *proxy, GAsyncResult *res, gpointer user_data)
 	self = NM_PACRUNNER_MANAGER (config->manager);
 
 	if (!ret)
-		_LOGD ("couldn't remove config for '%p': %s", config, error->message);
+		_LOG2D (config, "remove failed: %s", error->message);
 	else
-		_LOGD ("successfully removed config for '%p'", config);
+		_LOG2D (config, "removed");
 
 	config_unref (config);
 }
@@ -460,7 +474,7 @@ nm_pacrunner_manager_remove (NMPacrunnerManager *self, NMPacrunnerCallId *call_i
 	config = call_id;
 	priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
 
-	_LOGT ("removing config for '%p'", config);
+	_LOG2T (config, "removing...");
 
 	list = g_list_find (priv->configs, config);
 	if (!list)
