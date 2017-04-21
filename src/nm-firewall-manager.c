@@ -263,14 +263,16 @@ _handle_dbus (GObject *proxy, GAsyncResult *result, gpointer user_data)
 			non_error = "UNKNOWN_INTERFACE";
 			break;
 		}
-		if (!g_strcmp0 (error->message, non_error)) {
+		if (   error->message
+		    && non_error
+		    && g_str_has_prefix (error->message, non_error)
+		    && NM_IN_SET (error->message[strlen (non_error)], '\0', ':')) {
 			_LOGD (info, "complete: request failed with a non-error (%s)", error->message);
 
 			/* The operation failed with an error reason that we don't want
 			 * to propagate. Instead, signal success. */
 			g_clear_error (&error);
-		}
-		else
+		} else
 			_LOGW (info, "complete: request failed (%s)", error->message);
 	} else
 		_LOGD (info, "complete: success");
