@@ -1038,7 +1038,8 @@ set_property (GObject *object, guint prop_id,
 	case PROP_BT_DEVICE:
 		/* construct-only */
 		priv->bt_device = g_value_dup_object (value);
-		g_signal_connect (priv->bt_device, "removed", G_CALLBACK (bluez_device_removed), object);
+		if (!priv->bt_device)
+			g_return_if_reached ();
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1051,8 +1052,15 @@ set_property (GObject *object, guint prop_id,
 static void
 nm_device_bt_init (NMDeviceBt *self)
 {
+}
+
+static void
+constructed (GObject *object)
+{
+	NMDeviceBt *self = NM_DEVICE_BT (object);
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
-	GError *error = NULL;
+	const char *my_hwaddr;
+	gs_free_error GError *error = NULL;
 
 	priv->mm_proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
 	                                                G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES |
@@ -1073,24 +1081,22 @@ nm_device_bt_init (NMDeviceBt *self)
 		       NM_MODEM_MANAGER_MM_DBUS_SERVICE, error->message);
 		g_clear_error (&error);
 	}
-}
-
-static void
-constructed (GObject *object)
-{
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE ((NMDeviceBt *) object);
-	const char *my_hwaddr;
 
 	G_OBJECT_CLASS (nm_device_bt_parent_class)->constructed (object);
 
-	my_hwaddr = nm_device_get_hw_address (NM_DEVICE (object));
-	g_assert (my_hwaddr);
-	priv->bdaddr = g_strdup (my_hwaddr);
+	if (priv->bt_device) {
+		/* Watch for BT device property changes */
+		g_signal_connect (priv->bt_device, "notify::" NM_BLUEZ_DEVICE_CONNECTED,
+		                  G_CALLBACK (bluez_connected_changed),
+		                  object);
+		g_signal_connect (priv->bt_device, "removed", G_CALLBACK (bluez_device_removed), object);
+	}
 
-	/* Watch for BT device property changes */
-	g_signal_connect (priv->bt_device, "notify::" NM_BLUEZ_DEVICE_CONNECTED,
-	                  G_CALLBACK (bluez_connected_changed),
-	                  object);
+	my_hwaddr = nm_device_get_hw_address (NM_DEVICE (object));
+	if (my_hwaddr)
+		priv->bdaddr = g_strdup (my_hwaddr);
+	else
+		g_warn_if_reached ();
 }
 
 NMDevice *
