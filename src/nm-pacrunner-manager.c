@@ -286,16 +286,13 @@ pacrunner_send_config (NMPacrunnerManager *self, Config *config)
 }
 
 static void
-name_owner_changed (GObject *object,
-                    GParamSpec *pspec,
-                    gpointer user_data)
+name_owner_changed (NMPacrunnerManager *self)
 {
-	NMPacrunnerManager *self = NM_PACRUNNER_MANAGER (user_data);
 	NMPacrunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
 	gs_free char *owner = NULL;
 	GList *iter = NULL;
 
-	owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (object));
+	owner = g_dbus_proxy_get_name_owner (priv->pacrunner);
 	if (owner) {
 		_LOGD ("name owner appeared (%s)", owner);
 		for (iter = g_list_first (priv->configs); iter; iter = g_list_next (iter))
@@ -303,6 +300,14 @@ name_owner_changed (GObject *object,
 	} else {
 		_LOGD ("name owner disappeared");
 	}
+}
+
+static void
+name_owner_changed_cb (GObject *object,
+                       GParamSpec *pspec,
+                       gpointer user_data)
+{
+	name_owner_changed (user_data);
 }
 
 static void
@@ -327,7 +332,8 @@ pacrunner_proxy_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	nm_clear_g_cancellable (&priv->pacrunner_cancellable);
 
 	g_signal_connect (priv->pacrunner, "notify::g-name-owner",
-	                  G_CALLBACK (name_owner_changed), self);
+	                  G_CALLBACK (name_owner_changed_cb), self);
+	name_owner_changed (self);
 }
 
 /**
