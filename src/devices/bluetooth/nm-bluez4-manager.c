@@ -47,6 +47,7 @@ typedef struct {
 	NMSettings *settings;
 
 	GDBusProxy *proxy;
+	GCancellable *proxy_cancellable;
 
 	NMBluez4Adapter *adapter;
 } NMBluez4ManagerPrivate;
@@ -176,42 +177,62 @@ default_adapter_changed (GDBusProxy *proxy, const char *path, NMBluez4Manager *s
 static void
 default_adapter_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 {
-	NMBluez4Manager *self = NM_BLUEZ4_MANAGER (user_data);
-	NMBluez4ManagerPrivate *priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
-	GVariant *ret;
-	GError *err = NULL;
+	NMBluez4Manager *self;
+	NMBluez4ManagerPrivate *priv;
+	gs_unref_variant GVariant *ret = NULL;
+	gs_free_error GError *error = NULL;
+	const char *default_adapter;
 
 	ret = _nm_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), result,
-	                                  G_VARIANT_TYPE ("(o)"), &err);
-	if (ret) {
-		const char *default_adapter;
+	                                  G_VARIANT_TYPE ("(o)"), &error);
+	if (   !ret
+	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
 
-		g_variant_get (ret, "(&o)", &default_adapter);
-		default_adapter_changed (priv->proxy, default_adapter, self);
-		g_variant_unref (ret);
-	} else {
+	self = NM_BLUEZ4_MANAGER (user_data);
+	priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
+
+	g_clear_object (&priv->proxy_cancellable);
+
+	if (!ret) {
 		/* Ignore "No such adapter" errors; just means bluetooth isn't active */
-		if (   !_nm_dbus_error_has_name (err, "org.bluez.Error.NoSuchAdapter")
-		    && !_nm_dbus_error_has_name (err, "org.freedesktop.systemd1.LoadFailed")
-		    && !g_error_matches (err, G_DBUS_ERROR, G_DBUS_ERROR_SERVICE_UNKNOWN)) {
-			g_dbus_error_strip_remote_error (err);
+		if (   !_nm_dbus_error_has_name (error, "org.bluez.Error.NoSuchAdapter")
+		    && !_nm_dbus_error_has_name (error, "org.freedesktop.systemd1.LoadFailed")
+		    && !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SERVICE_UNKNOWN)) {
+			g_dbus_error_strip_remote_error (error);
 			nm_log_warn (LOGD_BT, "bluez error getting default adapter: %s",
-			             err->message);
+			             error->message);
 		}
-		g_error_free (err);
+		return;
 	}
+
+	g_variant_get (ret, "(&o)", &default_adapter);
+	default_adapter_changed (priv->proxy, default_adapter, self);
 }
 
 static void
-query_default_adapter (NMBluez4Manager *self)
+name_owner_changed (NMBluez4Manager *self)
 {
 	NMBluez4ManagerPrivate *priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
+	gs_free char *owner = NULL;
+
+	nm_clear_g_cancellable (&priv->proxy_cancellable);
+
+	owner = g_dbus_proxy_get_name_owner (priv->proxy);
+	if (!owner) {
+		/* Throwing away the adapter removes all devices too */
+		g_clear_object (&priv->adapter);
+		return;
+	}
+
+	priv->proxy_cancellable = g_cancellable_new ();
 
 	g_dbus_proxy_call (priv->proxy, "DefaultAdapter",
 	                   NULL,
 	                   G_DBUS_CALL_FLAGS_NONE, -1,
-	                   NULL,
-	                   default_adapter_cb, self);
+	                   priv->proxy_cancellable,
+	                   default_adapter_cb,
+	                   self);
 }
 
 static void
@@ -219,18 +240,43 @@ name_owner_changed_cb (GObject *object,
                        GParamSpec *pspec,
                        gpointer user_data)
 {
-	NMBluez4Manager *self = NM_BLUEZ4_MANAGER (user_data);
-	NMBluez4ManagerPrivate *priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
-	char *owner;
+	name_owner_changed (user_data);
+}
 
-	owner = g_dbus_proxy_get_name_owner (priv->proxy);
-	if (owner) {
-		query_default_adapter (self);
-		g_free (owner);
-	} else {
-		/* Throwing away the adapter removes all devices too */
-		g_clear_object (&priv->adapter);
+static void
+_proxy_new_cb (GObject *source_object,
+               GAsyncResult *result,
+               gpointer user_data)
+{
+	NMBluez4Manager *self;
+	NMBluez4ManagerPrivate *priv;
+	gs_free_error GError *error = NULL;
+	GDBusProxy *proxy;
+
+	proxy = g_dbus_proxy_new_for_bus_finish (result, &error);
+	if (   !proxy
+	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	self = user_data;
+	priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
+
+	if (!proxy) {
+		nm_log_warn (LOGD_BT, "bluez error creating D-Bus proxy: %s", error->message);
+		g_clear_object (&priv->proxy_cancellable);
+		return;
 	}
+
+	priv->proxy = proxy;
+
+	_nm_dbus_signal_connect (priv->proxy, "AdapterRemoved", G_VARIANT_TYPE ("(o)"),
+	                         G_CALLBACK (adapter_removed), self);
+	_nm_dbus_signal_connect (priv->proxy, "DefaultAdapterChanged", G_VARIANT_TYPE ("(o)"),
+	                         G_CALLBACK (default_adapter_changed), self);
+	g_signal_connect (priv->proxy, "notify::g-name-owner",
+	                  G_CALLBACK (name_owner_changed_cb), self);
+
+	name_owner_changed (self);
 }
 
 /*****************************************************************************/
@@ -240,21 +286,17 @@ nm_bluez4_manager_init (NMBluez4Manager *self)
 {
 	NMBluez4ManagerPrivate *priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
 
-	priv->proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
-	                                             G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
-	                                             NULL,
-	                                             BLUEZ_SERVICE,
-	                                             BLUEZ_MANAGER_PATH,
-	                                             BLUEZ4_MANAGER_INTERFACE,
-	                                             NULL, NULL);
-	_nm_dbus_signal_connect (priv->proxy, "AdapterRemoved", G_VARIANT_TYPE ("(o)"),
-	                         G_CALLBACK (adapter_removed), self);
-	_nm_dbus_signal_connect (priv->proxy, "DefaultAdapterChanged", G_VARIANT_TYPE ("(o)"),
-	                         G_CALLBACK (default_adapter_changed), self);
-	g_signal_connect (priv->proxy, "notify::g-name-owner",
-	                  G_CALLBACK (name_owner_changed_cb), self);
+	priv->proxy_cancellable = g_cancellable_new ();
 
-	query_default_adapter (self);
+	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
+	                          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
+	                          NULL,
+	                          BLUEZ_SERVICE,
+	                          BLUEZ_MANAGER_PATH,
+	                          BLUEZ4_MANAGER_INTERFACE,
+	                          priv->proxy_cancellable,
+	                          _proxy_new_cb,
+	                          self);
 }
 
 NMBluez4Manager *
@@ -275,7 +317,13 @@ dispose (GObject *object)
 	NMBluez4Manager *self = NM_BLUEZ4_MANAGER (object);
 	NMBluez4ManagerPrivate *priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
 
-	g_clear_object (&priv->proxy);
+	nm_clear_g_cancellable (&priv->proxy_cancellable);
+
+	if (priv->proxy) {
+		g_signal_handlers_disconnect_by_data (priv->proxy, self);
+		g_clear_object (&priv->proxy);
+	}
+
 	g_clear_object (&priv->adapter);
 
 	G_OBJECT_CLASS (nm_bluez4_manager_parent_class)->dispose (object);
