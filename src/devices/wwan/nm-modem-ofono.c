@@ -46,6 +46,8 @@ typedef struct {
 	GDBusProxy *context_proxy;
 	GDBusProxy *sim_proxy;
 
+	GCancellable *sim_proxy_cancellable;
+
 	GError *property_error;
 
 	char *context_path;
@@ -375,22 +377,35 @@ sim_property_changed (GDBusProxy *proxy,
 }
 
 static void
-sim_get_properties_done (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
+sim_get_properties_done (GObject *source,
+                         GAsyncResult *result,
+                         gpointer user_data)
 {
-	gs_unref_object NMModemOfono *self = NM_MODEM_OFONO (user_data);
-	GError *error = NULL;
-	GVariant *v_properties, *v_dict, *v;
+	NMModemOfono *self;
+	NMModemOfonoPrivate *priv;
+	gs_free_error GError *error = NULL;
+	gs_unref_variant GVariant *v_properties = NULL;
+	gs_unref_variant GVariant *v_dict = NULL;
+	GVariant *v;
 	GVariantIter i;
 	const char *property;
 
-	v_properties = _nm_dbus_proxy_call_finish (proxy,
+	v_properties = _nm_dbus_proxy_call_finish (G_DBUS_PROXY (source),
 	                                           result,
 	                                           G_VARIANT_TYPE ("(a{sv})"),
 	                                           &error);
+	if (   !v_properties
+	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	self = NM_MODEM_OFONO (user_data);
+	priv = NM_MODEM_OFONO_GET_PRIVATE (self);
+
+	g_clear_object (&priv->sim_proxy_cancellable);
+
 	if (!v_properties) {
 		g_dbus_error_strip_remote_error (error);
 		_LOGW ("error getting sim properties: %s", error->message);
-		g_error_free (error);
 		return;
 	}
 
@@ -418,9 +433,49 @@ sim_get_properties_done (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 		handle_sim_property (NULL, property, v, self);
 		g_variant_unref (v);
 	}
+}
 
-	g_variant_unref (v_dict);
-	g_variant_unref (v_properties);
+static void
+_sim_proxy_new_cb (GObject *source,
+                   GAsyncResult *result,
+                   gpointer user_data)
+{
+	NMModemOfono *self;
+	NMModemOfonoPrivate *priv;
+	gs_free_error GError *error = NULL;
+	GDBusProxy *proxy;
+
+	proxy = g_dbus_proxy_new_for_bus_finish (result, &error);
+	if (   !proxy
+	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	self = user_data;
+	priv = NM_MODEM_OFONO_GET_PRIVATE (self);
+
+	if (!proxy) {
+		_LOGW ("failed to create SimManager proxy: %s", error->message);
+		g_clear_object (&priv->sim_proxy_cancellable);
+		return;
+	}
+
+	priv->sim_proxy = proxy;
+
+	/* Watch for custom ofono PropertyChanged signals */
+	_nm_dbus_signal_connect (priv->sim_proxy,
+	                         "PropertyChanged",
+	                         G_VARIANT_TYPE ("(sv)"),
+	                         G_CALLBACK (sim_property_changed),
+	                         self);
+
+	g_dbus_proxy_call (priv->sim_proxy,
+	                   "GetProperties",
+	                   NULL,
+	                   G_DBUS_CALL_FLAGS_NONE,
+	                   20000,
+	                   priv->sim_proxy_cancellable,
+	                   sim_get_properties_done,
+	                   self);
 }
 
 static void
@@ -430,47 +485,30 @@ handle_sim_iface (NMModemOfono *self, gboolean found)
 
 	_LOGD ("SimManager interface %sfound", found ? "" : "not ");
 
-	if (!found && priv->sim_proxy) {
+	if (!found && (priv->sim_proxy || priv->sim_proxy_cancellable)) {
 		_LOGI ("SimManager interface disappeared");
-		g_signal_handlers_disconnect_by_data (priv->sim_proxy, NM_MODEM_OFONO (self));
-		g_clear_object (&priv->sim_proxy);
+		nm_clear_g_cancellable (&priv->sim_proxy_cancellable);
+		if (priv->sim_proxy) {
+			g_signal_handlers_disconnect_by_data (priv->sim_proxy, self);
+			g_clear_object (&priv->sim_proxy);
+		}
 		g_clear_pointer (&priv->imsi, g_free);
 		update_modem_state (self);
-	} else if (found && !priv->sim_proxy) {
-		GError *error = NULL;
-
+	} else if (found && (!priv->sim_proxy && !priv->sim_proxy_cancellable)) {
 		_LOGI ("found new SimManager interface");
 
-		priv->sim_proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
-		                                                 G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES
-		                                                 | G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
-		                                                 NULL, /* GDBusInterfaceInfo */
-		                                                 OFONO_DBUS_SERVICE,
-		                                                 nm_modem_get_path (NM_MODEM (self)),
-		                                                 OFONO_DBUS_INTERFACE_SIM_MANAGER,
-		                                                 NULL, /* GCancellable */
-		                                                 &error);
-		if (priv->sim_proxy == NULL) {
-			_LOGW ("failed to create SimManager proxy: %s", error->message);
-			g_error_free (error);
-			return;
-		}
+		priv->sim_proxy_cancellable = g_cancellable_new ();
 
-		/* Watch for custom ofono PropertyChanged signals */
-		_nm_dbus_signal_connect (priv->sim_proxy,
-		                         "PropertyChanged",
-		                         G_VARIANT_TYPE ("(sv)"),
-		                         G_CALLBACK (sim_property_changed),
-		                         self);
-
-		g_dbus_proxy_call (priv->sim_proxy,
-		                   "GetProperties",
-		                   NULL,
-		                   G_DBUS_CALL_FLAGS_NONE,
-		                   20000,
-		                   NULL,
-		                   (GAsyncReadyCallback) sim_get_properties_done,
-		                   g_object_ref (self));
+		g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
+		                            G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES
+		                          | G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
+		                          NULL, /* GDBusInterfaceInfo */
+		                          OFONO_DBUS_SERVICE,
+		                          nm_modem_get_path (NM_MODEM (self)),
+		                          OFONO_DBUS_INTERFACE_SIM_MANAGER,
+		                          priv->sim_proxy_cancellable, /* GCancellable */
+		                          _sim_proxy_new_cb,
+		                          self);
 	}
 }
 
@@ -1163,6 +1201,8 @@ dispose (GObject *object)
 	NMModemOfono *self = NM_MODEM_OFONO (object);
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
 
+	nm_clear_g_cancellable (&priv->sim_proxy_cancellable);
+
 	if (priv->connect_properties) {
 		g_hash_table_destroy (priv->connect_properties);
 		priv->connect_properties = NULL;
@@ -1179,7 +1219,7 @@ dispose (GObject *object)
 	g_clear_object (&priv->context_proxy);
 
 	if (priv->sim_proxy) {
-		g_signal_handlers_disconnect_by_data (priv->sim_proxy, NM_MODEM_OFONO (self));
+		g_signal_handlers_disconnect_by_data (priv->sim_proxy, self);
 		g_clear_object (&priv->sim_proxy);
 	}
 
