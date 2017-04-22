@@ -82,6 +82,11 @@ G_DEFINE_TYPE (NMModemManager, nm_modem_manager, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
+#define _NMLOG_DOMAIN      LOGD_MB
+#define _NMLOG(level, ...) __NMLOG_DEFAULT (level, _NMLOG_DOMAIN, "modem-manager", __VA_ARGS__)
+
+/*****************************************************************************/
+
 static void
 handle_new_modem (NMModemManager *self, NMModem *modem)
 {
@@ -133,20 +138,20 @@ modem_object_added (MMManager *modem_manager,
 	/* Ensure we don't have the same modem already */
 	path = mm_object_get_path (modem_object);
 	if (g_hash_table_lookup (priv->modems, path)) {
-		nm_log_warn (LOGD_MB, "modem with path %s already exists, ignoring", path);
+		_LOGW ("modem with path %s already exists, ignoring", path);
 		return;
 	}
 
 	/* Ensure we have the 'Modem' interface at least */
 	modem_iface = mm_object_peek_modem (modem_object);
 	if (!modem_iface) {
-		nm_log_warn (LOGD_MB, "modem with path %s doesn't have the Modem interface, ignoring", path);
+		_LOGW ("modem with path %s doesn't have the Modem interface, ignoring", path);
 		return;
 	}
 
 	/* Ensure we have a primary port reported */
 	if (!mm_modem_get_primary_port (modem_iface)) {
-		nm_log_warn (LOGD_MB, "modem with path %s has unknown primary port, ignoring", path);
+		_LOGW ("modem with path %s has unknown primary port, ignoring", path);
 		return;
 	}
 
@@ -154,10 +159,8 @@ modem_object_added (MMManager *modem_manager,
 	modem = nm_modem_broadband_new (G_OBJECT (modem_object), &error);
 	if (modem)
 		handle_new_modem (self, modem);
-	else {
-		nm_log_warn (LOGD_MB, "failed to create modem: %s",
-		             error->message);
-	}
+	else
+		_LOGW ("failed to create modem: %s", error->message);
 	g_clear_error (&error);
 }
 
@@ -185,7 +188,7 @@ modem_manager_available (NMModemManager *self)
 	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
 	GList *modems, *l;
 
-	nm_log_info (LOGD_MB, "ModemManager available in the bus");
+	_LOGI ("ModemManager available in the bus");
 
 	/* Update initial modems list */
 	modems = g_dbus_object_manager_get_objects (G_DBUS_OBJECT_MANAGER (priv->modem_manager));
@@ -211,7 +214,7 @@ modem_manager_name_owner_changed (MMManager *modem_manager,
 
 	name_owner = g_dbus_object_manager_client_get_name_owner (G_DBUS_OBJECT_MANAGER_CLIENT (modem_manager));
 	if (!name_owner) {
-		nm_log_info (LOGD_MB, "ModemManager disappeared from bus");
+		_LOGI ("ModemManager disappeared from bus");
 
 		/* If not managed by systemd, schedule relaunch */
 		if (!sd_booted ())
@@ -253,7 +256,7 @@ ofono_create_modem (NMModemManager *self, const char *path)
 		if (modem)
 			handle_new_modem (self, modem);
 		else
-			nm_log_warn (LOGD_MB, "Failed to create oFono modem for %s", path);
+			_LOGW ("Failed to create oFono modem for %s", path);
 	}
 }
 
@@ -271,21 +274,21 @@ ofono_signal_cb (GDBusProxy *proxy,
 
 	if (g_strcmp0 (signal_name, "ModemAdded") == 0) {
 		g_variant_get (parameters, "(oa{sv})", &object_path, NULL);
-		nm_log_info (LOGD_MB, "oFono modem appeared: %s", object_path);
+		_LOGI ("oFono modem appeared: %s", object_path);
 
 		ofono_create_modem (NM_MODEM_MANAGER (user_data), object_path);
 		g_free (object_path);
 	} else if (g_strcmp0 (signal_name, "ModemRemoved") == 0) {
 		g_variant_get (parameters, "(o)", &object_path);
-		nm_log_info (LOGD_MB, "oFono modem removed: %s", object_path);
+		_LOGI ("oFono modem removed: %s", object_path);
 
 		modem = (NMModem *) g_hash_table_lookup (priv->modems, object_path);
 		if (modem) {
 			nm_modem_emit_removed (modem);
 			g_hash_table_remove (priv->modems, object_path);
 		} else {
-			nm_log_warn (LOGD_MB, "could not remove modem %s, not found in table",
-			             object_path);
+			_LOGW ("could not remove modem %s, not found in table",
+			       object_path);
 		}
 		g_free (object_path);
 	}
@@ -301,18 +304,17 @@ ofono_enumerate_devices_done (GDBusProxy *proxy, GAsyncResult *res, gpointer use
 	const char *path;
 
 	results = g_dbus_proxy_call_finish (proxy, res, &error);
-	if (results) {
-		g_variant_get (results, "(a(oa{sv}))", &iter);
-		while (g_variant_iter_loop (iter, "(&oa{sv})", &path, NULL))
-			ofono_create_modem (manager, path);
-		g_variant_iter_free (iter);
-		g_variant_unref (results);
+	if (!results) {
+		_LOGW ("failed to enumerate oFono devices: %s",
+		       error->message);
+		return;
 	}
 
-	if (error) {
-		nm_log_warn (LOGD_MB, "failed to enumerate oFono devices: %s",
-		             error->message);
-	}
+	g_variant_get (results, "(a(oa{sv}))", &iter);
+	while (g_variant_iter_loop (iter, "(&oa{sv})", &path, NULL))
+		ofono_create_modem (manager, path);
+	g_variant_iter_free (iter);
+	g_variant_unref (results);
 }
 
 static void
@@ -323,7 +325,7 @@ ofono_check_name_owner (NMModemManager *self)
 
 	name_owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (priv->ofono_proxy));
 	if (name_owner) {
-		nm_log_info (LOGD_MB, "oFono is now available");
+		_LOGI ("oFono is now available");
 
 		g_dbus_proxy_call (priv->ofono_proxy,
 		                   "GetModems",
@@ -337,7 +339,7 @@ ofono_check_name_owner (NMModemManager *self)
 		GHashTableIter iter;
 		NMModem *modem;
 
-		nm_log_info (LOGD_MB, "oFono disappeared from bus");
+		_LOGI ("oFono disappeared from bus");
 
 		/* Remove any oFono modems that might be left around */
 		g_hash_table_iter_init (&iter, priv->modems);
@@ -367,7 +369,7 @@ ofono_proxy_new_cb (GObject *source_object, GAsyncResult *res, gpointer user_dat
 
 	priv->ofono_proxy = g_dbus_proxy_new_finish (res, &error);
 	if (error) {
-		nm_log_warn (LOGD_MB, "error getting oFono bus proxy: %s", error->message);
+		_LOGW ("error getting oFono bus proxy: %s", error->message);
 		return;
 	}
 
@@ -413,8 +415,7 @@ modem_manager_poke_cb (GObject *connection,
 
 	result = g_dbus_connection_call_finish (G_DBUS_CONNECTION (connection), res, &error);
 	if (error) {
-		nm_log_warn (LOGD_MB, "error poking ModemManager: %s",
-		             error->message);
+		_LOGW ("error poking ModemManager: %s", error->message);
 
 		/* Don't reschedule poke is MM service doesn't exist. */
 		if (   !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SERVICE_UNKNOWN)
@@ -480,7 +481,7 @@ manager_new_ready (GObject *source,
 		/* We're not really supposed to get any error here. If we do get one,
 		 * though, just re-schedule the MMManager creation after some time.
 		 * During this period, name-owner changes won't be followed. */
-		nm_log_warn (LOGD_MB, "error creating ModemManager client: %s", error->message);
+		_LOGW ("error creating ModemManager client: %s", error->message);
 		/* Setup timeout to relaunch */
 		schedule_modem_manager_relaunch (self, MODEM_POKE_INTERVAL);
 		return;
@@ -564,7 +565,7 @@ bus_get_ready (GObject *source,
 
 	priv->dbus_connection = g_bus_get_finish (res, &error);
 	if (!priv->dbus_connection) {
-		nm_log_warn (LOGD_MB, "error getting bus connection: %s", error->message);
+		_LOGW ("error getting bus connection: %s", error->message);
 		return;
 	}
 
