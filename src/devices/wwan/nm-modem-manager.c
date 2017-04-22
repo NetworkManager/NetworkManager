@@ -45,6 +45,10 @@
 
 /*****************************************************************************/
 
+NM_GOBJECT_PROPERTIES_DEFINE (NMModemManager,
+	PROP_NAME_OWNER,
+);
+
 enum {
 	MODEM_ADDED,
 	LAST_SIGNAL,
@@ -65,6 +69,11 @@ typedef struct {
 		gulong handle_object_added_id;
 		gulong handle_object_removed_id;
 		guint relaunch_id;
+
+		GDBusProxy *proxy;
+		GCancellable *proxy_cancellable;
+		guint proxy_ref_count;
+		char *proxy_name_owner;
 	} modm;
 
 #if WITH_OFONO
@@ -435,6 +444,129 @@ modm_schedule_manager_relaunch (NMModemManager *self,
 
 /*****************************************************************************/
 
+static void
+modm_proxy_name_owner_reset (NMModemManager *self)
+{
+	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
+	char *name = NULL;
+
+	if (priv->modm.proxy)
+		name = g_dbus_proxy_get_name_owner (priv->modm.proxy);
+
+	if (nm_streq0 (priv->modm.proxy_name_owner, name)) {
+		g_free (name);
+		return;
+	}
+	g_free (priv->modm.proxy_name_owner);
+	priv->modm.proxy_name_owner = name;
+
+	_notify (self, PROP_NAME_OWNER);
+}
+
+static void
+modm_proxy_name_owner_changed_cb (GObject    *object,
+                                  GParamSpec *pspec,
+                                  gpointer    user_data)
+{
+	modm_proxy_name_owner_reset (user_data);
+}
+
+static void
+modm_proxy_new_cb (GObject *source_object,
+                   GAsyncResult *result,
+                   gpointer user_data)
+{
+	NMModemManager *self;
+	NMModemManagerPrivate *priv;
+	GDBusProxy *proxy;
+	gs_free_error GError *error = NULL;
+
+	proxy = g_dbus_proxy_new_for_bus_finish (result, &error);
+	if (   !proxy
+	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	self = user_data;
+	priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
+
+	g_clear_object (&priv->modm.proxy_cancellable);
+
+	if (!proxy) {
+		_LOGW ("could not obtain D-Bus proxy for ModemManager: %s", error->message);
+		return;
+	}
+
+	priv->modm.proxy = proxy;
+	g_signal_connect (priv->modm.proxy, "notify::g-name-owner",
+	                  G_CALLBACK (modm_proxy_name_owner_changed_cb), self);
+
+	modm_proxy_name_owner_reset (self);
+}
+
+void
+nm_modem_manager_name_owner_ref (NMModemManager *self)
+{
+	NMModemManagerPrivate *priv;
+
+	g_return_if_fail (NM_IS_MODEM_MANAGER (self));
+
+	priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
+
+	if (priv->modm.proxy_ref_count++ > 0) {
+		/* only try once to create the proxy. If proxy creation
+		 * for the first "ref" failed, it's unclear what to do.
+		 * The proxy is hosed. */
+		return;
+	}
+
+	nm_assert (!priv->modm.proxy && !priv->modm.proxy_cancellable);
+
+	priv->modm.proxy_cancellable = g_cancellable_new ();
+
+	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
+	                            G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES
+	                          | G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS
+	                          | G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
+	                          NULL,
+	                          NM_MODEM_MANAGER_MM_DBUS_SERVICE,
+	                          NM_MODEM_MANAGER_MM_DBUS_PATH,
+	                          NM_MODEM_MANAGER_MM_DBUS_INTERFACE,
+	                          priv->modm.proxy_cancellable,
+	                          modm_proxy_new_cb,
+	                          self);
+}
+
+void
+nm_modem_manager_name_owner_unref (NMModemManager *self)
+{
+	NMModemManagerPrivate *priv;
+
+	g_return_if_fail (NM_IS_MODEM_MANAGER (self));
+
+	priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
+
+	g_return_if_fail (priv->modm.proxy_ref_count > 0);
+
+	if (--priv->modm.proxy_ref_count > 0)
+		return;
+
+	nm_clear_g_cancellable (&priv->modm.proxy_cancellable);
+	g_clear_object (&priv->modm.proxy);
+
+	modm_proxy_name_owner_reset (self);
+}
+
+const char *
+nm_modem_manager_name_owner_get (NMModemManager *self)
+{
+	g_return_val_if_fail (NM_IS_MODEM_MANAGER (self), NULL);
+	nm_assert (NM_MODEM_MANAGER_GET_PRIVATE (self)->modm.proxy_ref_count > 0);
+
+	return NM_MODEM_MANAGER_GET_PRIVATE (self)->modm.proxy_name_owner;
+}
+
+/*****************************************************************************/
+
 #if WITH_OFONO
 
 static void
@@ -670,6 +802,25 @@ bus_get_ready (GObject *source,
 /*****************************************************************************/
 
 static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMModemManager *self = NM_MODEM_MANAGER (object);
+	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
+
+	switch (prop_id) {
+	case PROP_NAME_OWNER:
+		g_value_set_string (value, priv->modm.proxy_name_owner);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+/*****************************************************************************/
+
+static void
 nm_modem_manager_init (NMModemManager *self)
 {
 	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
@@ -694,6 +845,10 @@ dispose (GObject *object)
 	nm_clear_g_cancellable (&priv->modm.poke_cancellable);
 
 	nm_clear_g_source (&priv->modm.relaunch_id);
+
+	nm_clear_g_cancellable (&priv->modm.proxy_cancellable);
+	g_clear_object (&priv->modm.proxy);
+	nm_clear_g_free (&priv->modm.proxy_name_owner);
 
 	modm_clear_manager (self);
 
@@ -723,6 +878,15 @@ nm_modem_manager_class_init (NMModemManagerClass *klass)
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
 	object_class->dispose = dispose;
+	object_class->get_property = get_property;
+
+	obj_properties[PROP_NAME_OWNER] =
+	     g_param_spec_string (NM_MODEM_MANAGER_NAME_OWNER, "", "",
+	                          NULL,
+	                          G_PARAM_READABLE
+	                          | G_PARAM_STATIC_STRINGS);
+
+	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
 	signals[MODEM_ADDED] =
 	    g_signal_new (NM_MODEM_MANAGER_MODEM_ADDED,

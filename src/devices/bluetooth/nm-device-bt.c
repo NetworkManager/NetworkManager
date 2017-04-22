@@ -64,7 +64,8 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
-	GDBusProxy *mm_proxy;
+	NMModemManager *modem_manager;
+
 	gboolean mm_running;
 
 	NMBluezDevice *bt_device;
@@ -966,9 +967,12 @@ is_available (NMDevice *dev, NMDeviceCheckDevAvailableFlags flags)
 }
 
 static void
-set_mm_running (NMDeviceBt *self, gboolean running)
+set_mm_running (NMDeviceBt *self)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
+	gboolean running;
+
+	running = (nm_modem_manager_name_owner_get (priv->modem_manager) != NULL);
 
 	if (priv->mm_running != running) {
 		_LOGD (LOGD_BT, "ModemManager now %s",
@@ -982,21 +986,11 @@ set_mm_running (NMDeviceBt *self, gboolean running)
 }
 
 static void
-mm_name_owner_changed (NMDeviceBt *self)
-{
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
-	gs_free char *owner = NULL;
-
-	owner = g_dbus_proxy_get_name_owner (priv->mm_proxy);
-	set_mm_running (self, owner != NULL);
-}
-
-static void
 mm_name_owner_changed_cb (GObject *object,
                           GParamSpec *pspec,
-                          NMDeviceBt *self)
+                          gpointer user_data)
 {
-	mm_name_owner_changed (self);
+	set_mm_running (user_data);
 }
 
 /*****************************************************************************/
@@ -1063,29 +1057,17 @@ constructed (GObject *object)
 	NMDeviceBt *self = NM_DEVICE_BT (object);
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
 	const char *my_hwaddr;
-	gs_free_error GError *error = NULL;
-
-	priv->mm_proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
-	                                                G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES |
-	                                                    G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS |
-	                                                    G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
-	                                                NULL,
-	                                                NM_MODEM_MANAGER_MM_DBUS_SERVICE,
-	                                                NM_MODEM_MANAGER_MM_DBUS_PATH,
-	                                                NM_MODEM_MANAGER_MM_DBUS_INTERFACE,
-	                                                NULL, &error);
-	if (priv->mm_proxy) {
-		g_signal_connect (priv->mm_proxy, "notify::g-name-owner",
-		                  G_CALLBACK (mm_name_owner_changed_cb),
-		                  self);
-		mm_name_owner_changed (self);
-	} else {
-		_LOGW (LOGD_MB, "Could not create proxy for '%s': %s",
-		       NM_MODEM_MANAGER_MM_DBUS_SERVICE, error->message);
-		g_clear_error (&error);
-	}
 
 	G_OBJECT_CLASS (nm_device_bt_parent_class)->constructed (object);
+
+	priv->modem_manager = g_object_ref (nm_modem_manager_get ());
+
+	nm_modem_manager_name_owner_ref (priv->modem_manager);
+
+	g_signal_connect (priv->modem_manager,
+	                  "notify::"NM_MODEM_MANAGER_NAME_OWNER,
+	                  G_CALLBACK (mm_name_owner_changed_cb),
+	                  self);
 
 	if (priv->bt_device) {
 		/* Watch for BT device property changes */
@@ -1100,6 +1082,8 @@ constructed (GObject *object)
 		priv->bdaddr = g_strdup (my_hwaddr);
 	else
 		g_warn_if_reached ();
+
+	set_mm_running (self);
 }
 
 NMDevice *
@@ -1137,9 +1121,10 @@ dispose (GObject *object)
 
 	g_signal_handlers_disconnect_matched (priv->bt_device, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, object);
 
-	if (priv->mm_proxy) {
-		g_signal_handlers_disconnect_by_func (priv->mm_proxy, G_CALLBACK (mm_name_owner_changed_cb), object);
-		g_clear_object (&priv->mm_proxy);
+	if (priv->modem_manager) {
+		g_signal_handlers_disconnect_by_func (priv->modem_manager, G_CALLBACK (mm_name_owner_changed_cb), object);
+		nm_modem_manager_name_owner_unref (priv->modem_manager);
+		g_clear_object (&priv->modem_manager);
 	}
 
 	modem_cleanup (NM_DEVICE_BT (object));
