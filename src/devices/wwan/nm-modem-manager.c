@@ -403,32 +403,27 @@ ensure_ofono_client (NMModemManager *self)
 #endif
 
 static void
-modem_manager_poke_cb (GDBusConnection *connection,
+modem_manager_poke_cb (GObject *connection,
                        GAsyncResult *res,
-                       NMModemManager *self)
+                       gpointer user_data)
 {
-	GError *error = NULL;
-	GVariant *result;
+	gs_free_error GError *error = NULL;
+	gs_unref_variant GVariant *result = NULL;
+	gs_unref_object NMModemManager *self = user_data;
 
-	result = g_dbus_connection_call_finish (connection, res, &error);
+	result = g_dbus_connection_call_finish (G_DBUS_CONNECTION (connection), res, &error);
 	if (error) {
 		nm_log_warn (LOGD_MB, "error poking ModemManager: %s",
-					error ? error->message : "");
+		             error->message);
 
 		/* Don't reschedule poke is MM service doesn't exist. */
-		if (!g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SERVICE_UNKNOWN)
+		if (   !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SERVICE_UNKNOWN)
 			&& !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SPAWN_SERVICE_NOT_FOUND)) {
 
 			/* Setup timeout to relaunch */
 			schedule_modem_manager_relaunch (self, MODEM_POKE_INTERVAL);
 		}
-
-		g_error_free (error);
-	} else
-		g_variant_unref (result);
-
-	/* Balance refcount */
-	g_object_unref (self);
+	}
 }
 
 static void
@@ -447,7 +442,7 @@ modem_manager_poke (NMModemManager *self)
 	                        G_DBUS_CALL_FLAGS_NONE,
 	                        -1,
 	                        NULL, /* cancellable */
-	                        (GAsyncReadyCallback)modem_manager_poke_cb, /* callback */
+	                        modem_manager_poke_cb, /* callback */
 	                        g_object_ref (self)); /* user_data */
 }
 
@@ -472,12 +467,11 @@ modem_manager_check_name_owner (NMModemManager *self)
 static void
 manager_new_ready (GObject *source,
                    GAsyncResult *res,
-                   NMModemManager *self)
+                   gpointer user_data)
 {
+	gs_unref_object NMModemManager *self = user_data;
 	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
-	GError *error = NULL;
-
-	/* Note we always get an extra reference to self here */
+	gs_free_error GError *error = NULL;
 
 	g_return_if_fail (!priv->modem_manager);
 
@@ -487,32 +481,29 @@ manager_new_ready (GObject *source,
 		 * though, just re-schedule the MMManager creation after some time.
 		 * During this period, name-owner changes won't be followed. */
 		nm_log_warn (LOGD_MB, "error creating ModemManager client: %s", error->message);
-		g_error_free (error);
 		/* Setup timeout to relaunch */
 		schedule_modem_manager_relaunch (self, MODEM_POKE_INTERVAL);
-	} else {
-		/* Setup signals in the GDBusObjectManagerClient */
-		priv->mm_name_owner_changed_id =
-		    g_signal_connect (priv->modem_manager,
-		                      "notify::name-owner",
-		                      G_CALLBACK (modem_manager_name_owner_changed),
-		                      self);
-		priv->mm_object_added_id =
-		    g_signal_connect (priv->modem_manager,
-		                      "object-added",
-		                      G_CALLBACK (modem_object_added),
-		                      self);
-		priv->mm_object_removed_id =
-		    g_signal_connect (priv->modem_manager,
-		                      "object-removed",
-		                      G_CALLBACK (modem_object_removed),
-		                      self);
-
-		modem_manager_check_name_owner (self);
+		return;
 	}
 
-	/* Balance refcount */
-	g_object_unref (self);
+	/* Setup signals in the GDBusObjectManagerClient */
+	priv->mm_name_owner_changed_id =
+	    g_signal_connect (priv->modem_manager,
+	                      "notify::name-owner",
+	                      G_CALLBACK (modem_manager_name_owner_changed),
+	                      self);
+	priv->mm_object_added_id =
+	    g_signal_connect (priv->modem_manager,
+	                      "object-added",
+	                      G_CALLBACK (modem_object_added),
+	                      self);
+	priv->mm_object_removed_id =
+	    g_signal_connect (priv->modem_manager,
+	                      "object-removed",
+	                      G_CALLBACK (modem_object_removed),
+	                      self);
+
+	modem_manager_check_name_owner (self);
 }
 
 static void
@@ -529,7 +520,7 @@ ensure_modem_manager (NMModemManager *self)
 		mm_manager_new (priv->dbus_connection,
 		                G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
 		                NULL,
-		                (GAsyncReadyCallback)manager_new_ready,
+		                manager_new_ready,
 		                g_object_ref (self));
 		return;
 	}
@@ -622,6 +613,7 @@ dispose (GObject *object)
 	if (priv->modems) {
 		g_hash_table_foreach_remove (priv->modems, remove_one_modem, object);
 		g_hash_table_destroy (priv->modems);
+		priv->modems = NULL;
 	}
 
 	G_OBJECT_CLASS (nm_modem_manager_parent_class)->dispose (object);
