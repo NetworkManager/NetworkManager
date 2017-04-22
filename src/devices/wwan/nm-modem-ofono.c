@@ -48,6 +48,7 @@ typedef struct {
 
 	GCancellable *modem_proxy_cancellable;
 	GCancellable *connman_proxy_cancellable;
+	GCancellable *context_proxy_cancellable;
 	GCancellable *sim_proxy_cancellable;
 
 	GError *property_error;
@@ -796,15 +797,26 @@ modem_get_properties_done (GObject *source,
 }
 
 static void
-stage1_prepare_done (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
+stage1_prepare_done (GObject *source,
+                     GAsyncResult *result,
+                     gpointer user_data)
 {
-	gs_unref_object NMModemOfono *self = NM_MODEM_OFONO (user_data);
-	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
-	GError *error = NULL;
+	NMModemOfono *self;
+	NMModemOfonoPrivate *priv;
+	gs_free_error GError *error = NULL;
+	gs_unref_variant GVariant *v = NULL;
+
+	v = g_dbus_proxy_call_finish (G_DBUS_PROXY (source), result, &error);
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	self = NM_MODEM_OFONO (user_data);
+	priv = NM_MODEM_OFONO_GET_PRIVATE (self);
+
+	g_clear_object (&priv->context_proxy_cancellable);
 
 	g_clear_pointer (&priv->connect_properties, g_hash_table_destroy);
 
-	g_dbus_proxy_call_finish (proxy, result, &error);
 	if (error) {
 		_LOGW ("connection failed: %s", error->message);
 
@@ -816,8 +828,6 @@ stage1_prepare_done (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data
 		 * leading to the connection being disabled, and a 5m
 		 * timeout...
 		 */
-
-		g_clear_error (&error);
 	}
 }
 
@@ -1030,21 +1040,33 @@ static_stage3_ip4_config_start (NMModem *modem,
 }
 
 static void
-context_proxy_new_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
+context_proxy_new_cb (GObject *source, GAsyncResult *result, gpointer user_data)
 {
-	gs_unref_object NMModemOfono *self = NM_MODEM_OFONO (user_data);
-	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
-	GError *error = NULL;
+	NMModemOfono *self;
+	NMModemOfonoPrivate *priv;
+	gs_free_error GError *error = NULL;
+	GDBusProxy *proxy;
 
-	priv->context_proxy = g_dbus_proxy_new_for_bus_finish (result, &error);
-	if (error) {
+	proxy = g_dbus_proxy_new_for_bus_finish (result, &error);
+	if (   !proxy
+	    || g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	self = NM_MODEM_OFONO (user_data);
+	priv = NM_MODEM_OFONO_GET_PRIVATE (self);
+
+	if (!proxy) {
 		_LOGE ("failed to create ofono ConnectionContext DBus proxy: %s", error->message);
+		g_clear_object (&priv->context_proxy_cancellable);
 		nm_modem_emit_prepare_result (NM_MODEM (self), FALSE,
 		                              NM_DEVICE_STATE_REASON_MODEM_BUSY);
 		return;
 	}
 
+	priv->context_proxy = proxy;
+
 	if (!priv->gprs_attached) {
+		g_clear_object (&priv->context_proxy_cancellable);
 		nm_modem_emit_prepare_result (NM_MODEM (self), FALSE,
 		                              NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER);
 		return;
@@ -1056,7 +1078,6 @@ context_proxy_new_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_dat
 	 */
 	g_clear_object (&priv->ip4_config);
 
-	/* Watch for custom ofono PropertyChanged signals */
 	_nm_dbus_signal_connect (priv->context_proxy,
 	                         "PropertyChanged",
 	                         G_VARIANT_TYPE ("(sv)"),
@@ -1070,9 +1091,9 @@ context_proxy_new_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_dat
 	                                   g_variant_new ("b", TRUE)),
 	                   G_DBUS_CALL_FLAGS_NONE,
 	                   20000,
-	                   NULL,
-	                   (GAsyncReadyCallback) stage1_prepare_done,
-	                   g_object_ref (self));
+	                   priv->context_proxy_cancellable,
+	                   stage1_prepare_done,
+	                   self);
 }
 
 static void
@@ -1082,16 +1103,20 @@ do_context_activate (NMModemOfono *self)
 
 	g_return_if_fail (NM_IS_MODEM_OFONO (self));
 
+	nm_clear_g_cancellable (&priv->context_proxy_cancellable);
 	g_clear_object (&priv->context_proxy);
+
+	priv->context_proxy_cancellable = g_cancellable_new ();
+
 	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
 	                          G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
 	                          NULL,
 	                          OFONO_DBUS_SERVICE,
 	                          priv->context_path,
 	                          OFONO_DBUS_INTERFACE_CONNECTION_CONTEXT,
-	                          NULL,
-	                          (GAsyncReadyCallback) context_proxy_new_cb,
-	                          g_object_ref (self));
+	                          priv->context_proxy_cancellable,
+	                          context_proxy_new_cb,
+	                          self);
 }
 
 static GHashTable *
@@ -1264,6 +1289,7 @@ dispose (GObject *object)
 
 	nm_clear_g_cancellable (&priv->modem_proxy_cancellable);
 	nm_clear_g_cancellable (&priv->connman_proxy_cancellable);
+	nm_clear_g_cancellable (&priv->context_proxy_cancellable);
 	nm_clear_g_cancellable (&priv->sim_proxy_cancellable);
 
 	if (priv->connect_properties) {
@@ -1283,7 +1309,10 @@ dispose (GObject *object)
 		g_clear_object (&priv->connman_proxy);
 	}
 
-	g_clear_object (&priv->context_proxy);
+	if (priv->context_proxy) {
+		g_signal_handlers_disconnect_by_data (priv->context_proxy, self);
+		g_clear_object (&priv->context_proxy);
+	}
 
 	if (priv->sim_proxy) {
 		g_signal_handlers_disconnect_by_data (priv->sim_proxy, self);
