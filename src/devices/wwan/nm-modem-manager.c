@@ -296,8 +296,8 @@ modm_manager_poke (NMModemManager *self)
 
 	/* If there is no current owner right away, ensure we poke to get one */
 	g_dbus_connection_call (priv->dbus_connection,
-	                        "org.freedesktop.ModemManager1",
-	                        "/org/freedesktop/ModemManager1",
+	                        NM_MODEM_MANAGER_MM_DBUS_SERVICE,
+	                        NM_MODEM_MANAGER_MM_DBUS_PATH,
 	                        DBUS_INTERFACE_PEER,
 	                        "Ping",
 	                        NULL,

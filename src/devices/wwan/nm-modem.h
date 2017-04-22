@@ -105,10 +105,12 @@ typedef enum {  /*< underscore_name=nm_modem_state >*/
 
 struct _NMModemPrivate;
 
-typedef struct {
+struct _NMModem {
 	GObject parent;
 	struct _NMModemPrivate *_priv;
-} NMModem;
+};
+
+typedef struct _NMModem NMModem;
 
 typedef struct {
 	GObjectClass parent;

@@ -34,6 +34,10 @@
 
 #define NM_MODEM_MANAGER_MODEM_ADDED "modem-added"
 
+#define NM_MODEM_MANAGER_MM_DBUS_SERVICE   "org.freedesktop.ModemManager1"
+#define NM_MODEM_MANAGER_MM_DBUS_PATH      "/org/freedesktop/ModemManager1"
+#define NM_MODEM_MANAGER_MM_DBUS_INTERFACE "org.freedesktop.ModemManager1"
+
 typedef struct _NMModemManager NMModemManager;
 typedef struct _NMModemManagerClass NMModemManagerClass;
 

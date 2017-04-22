@@ -40,14 +40,13 @@
 #include "nm-bt-error.h"
 #include "platform/nm-platform.h"
 
+#include "devices/wwan/nm-modem-manager.h"
+#include "devices/wwan/nm-modem.h"
+
 #include "introspection/org.freedesktop.NetworkManager.Device.Bluetooth.h"
 
 #include "devices/nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceBt);
-
-#define MM_DBUS_SERVICE   "org.freedesktop.ModemManager1"
-#define MM_DBUS_PATH      "/org/freedesktop/ModemManager1"
-#define MM_DBUS_INTERFACE "org.freedesktop.ModemManager1"
 
 /*****************************************************************************/
 
@@ -1060,9 +1059,9 @@ nm_device_bt_init (NMDeviceBt *self)
 	                                                    G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS |
 	                                                    G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
 	                                                NULL,
-	                                                MM_DBUS_SERVICE,
-	                                                MM_DBUS_PATH,
-	                                                MM_DBUS_INTERFACE,
+	                                                NM_MODEM_MANAGER_MM_DBUS_SERVICE,
+	                                                NM_MODEM_MANAGER_MM_DBUS_PATH,
+	                                                NM_MODEM_MANAGER_MM_DBUS_INTERFACE,
 	                                                NULL, &error);
 	if (priv->mm_proxy) {
 		g_signal_connect (priv->mm_proxy, "notify::g-name-owner",
@@ -1071,7 +1070,7 @@ nm_device_bt_init (NMDeviceBt *self)
 		mm_name_owner_changed (G_OBJECT (priv->mm_proxy), NULL, self);
 	} else {
 		_LOGW (LOGD_MB, "Could not create proxy for '%s': %s",
-		       MM_DBUS_SERVICE, error->message);
+		       NM_MODEM_MANAGER_MM_DBUS_SERVICE, error->message);
 		g_clear_error (&error);
 	}
 }

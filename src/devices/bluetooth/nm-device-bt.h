@@ -24,8 +24,6 @@
 #include "devices/nm-device.h"
 #include "nm-bluez-device.h"
 
-#include "devices/wwan/nm-modem.h"
-
 #define NM_TYPE_DEVICE_BT                   (nm_device_bt_get_type ())
 #define NM_DEVICE_BT(obj)                   (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE_BT, NMDeviceBt))
 #define NM_DEVICE_BT_CLASS(klass)           (G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_DEVICE_BT, NMDeviceBtClass))
@@ -52,8 +50,10 @@ NMDevice *nm_device_bt_new (NMBluezDevice *bt_device,
 
 guint32 nm_device_bt_get_capabilities (NMDeviceBt *device);
 
+struct _NMModem;
+
 gboolean nm_device_bt_modem_added (NMDeviceBt *device,
-                                   NMModem *modem,
+                                   struct _NMModem *modem,
                                    const char *driver);
 
 #endif /* __NETWORKMANAGER_DEVICE_BT_H__ */
