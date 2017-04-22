@@ -252,6 +252,183 @@ modm_handle_name_owner_changed (MMManager *modem_manager,
 	 */
 }
 
+static void
+modm_manager_poke_cb (GObject *connection,
+                      GAsyncResult *res,
+                      gpointer user_data)
+{
+	NMModemManager *self;
+	NMModemManagerPrivate *priv;
+	gs_free_error GError *error = NULL;
+	gs_unref_variant GVariant *result = NULL;
+
+	result = g_dbus_connection_call_finish (G_DBUS_CONNECTION (connection), res, &error);
+
+	if (   !result
+	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	self = user_data;
+	priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
+
+	g_clear_object (&priv->modm.poke_cancellable);
+
+	if (error) {
+		_LOGW ("error poking ModemManager: %s", error->message);
+
+		/* Don't reschedule poke is MM service doesn't exist. */
+		if (   !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SERVICE_UNKNOWN)
+			&& !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SPAWN_SERVICE_NOT_FOUND)) {
+
+			/* Setup timeout to relaunch */
+			modm_schedule_manager_relaunch (self, MODEM_POKE_INTERVAL);
+		}
+	}
+}
+
+static void
+modm_manager_poke (NMModemManager *self)
+{
+	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
+
+	nm_clear_g_cancellable (&priv->modm.poke_cancellable);
+	priv->modm.poke_cancellable = g_cancellable_new ();
+
+	/* If there is no current owner right away, ensure we poke to get one */
+	g_dbus_connection_call (priv->dbus_connection,
+	                        "org.freedesktop.ModemManager1",
+	                        "/org/freedesktop/ModemManager1",
+	                        DBUS_INTERFACE_PEER,
+	                        "Ping",
+	                        NULL,
+	                        NULL,
+	                        G_DBUS_CALL_FLAGS_NONE,
+	                        -1,
+	                        priv->modm.poke_cancellable,
+	                        modm_manager_poke_cb,
+	                        self);
+}
+
+static void
+modm_manager_check_name_owner (NMModemManager *self)
+{
+	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
+	gs_free gchar *name_owner = NULL;
+
+	name_owner = g_dbus_object_manager_client_get_name_owner (G_DBUS_OBJECT_MANAGER_CLIENT (priv->modm.manager));
+	if (name_owner) {
+		modm_manager_available (self);
+		return;
+	}
+
+	/* If the lifecycle is not managed by systemd, poke */
+	if (!sd_booted ())
+		modm_manager_poke (self);
+}
+
+static void
+modm_manager_new_cb (GObject *source,
+                     GAsyncResult *res,
+                     gpointer user_data)
+{
+	NMModemManager *self;
+	NMModemManagerPrivate *priv;
+	gs_free_error GError *error = NULL;
+	MMManager *modem_manager;
+
+	modem_manager = mm_manager_new_finish (res, &error);
+	if (   !modem_manager
+	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	self = user_data;
+	priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
+
+	nm_assert (!priv->modm.manager);
+
+	g_clear_object (&priv->main_cancellable);
+
+	if (!modem_manager) {
+		/* We're not really supposed to get any error here. If we do get one,
+		 * though, just re-schedule the MMManager creation after some time.
+		 * During this period, name-owner changes won't be followed. */
+		_LOGW ("error creating ModemManager client: %s", error->message);
+		/* Setup timeout to relaunch */
+		modm_schedule_manager_relaunch (self, MODEM_POKE_INTERVAL);
+		return;
+	}
+
+	priv->modm.manager = modem_manager;
+
+	/* Setup signals in the GDBusObjectManagerClient */
+	priv->modm.handle_name_owner_changed_id =
+	    g_signal_connect (priv->modm.manager,
+	                      "notify::name-owner",
+	                      G_CALLBACK (modm_handle_name_owner_changed),
+	                      self);
+	priv->modm.handle_object_added_id =
+	    g_signal_connect (priv->modm.manager,
+	                      "object-added",
+	                      G_CALLBACK (modm_handle_object_added),
+	                      self);
+	priv->modm.handle_object_removed_id =
+	    g_signal_connect (priv->modm.manager,
+	                      "object-removed",
+	                      G_CALLBACK (modm_handle_object_removed),
+	                      self);
+
+	modm_manager_check_name_owner (self);
+}
+
+static void
+modm_ensure_manager (NMModemManager *self)
+{
+	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
+
+	g_assert (priv->dbus_connection);
+
+	/* Create the GDBusObjectManagerClient. We do not request to autostart, as
+	 * we don't really want the MMManager creation to fail. We can always poke
+	 * later on if we want to request the autostart */
+	if (!priv->modm.manager) {
+		if (!priv->main_cancellable)
+			priv->main_cancellable = g_cancellable_new ();
+		mm_manager_new (priv->dbus_connection,
+		                G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
+		                priv->main_cancellable,
+		                modm_manager_new_cb,
+		                self);
+		return;
+	}
+
+	/* If already available, recheck name owner! */
+	modm_manager_check_name_owner (self);
+}
+
+static gboolean
+modm_schedule_manager_relaunch_cb (NMModemManager *self)
+{
+	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
+
+	priv->modm.relaunch_id = 0;
+	modm_ensure_manager (self);
+	return G_SOURCE_REMOVE;
+}
+
+static void
+modm_schedule_manager_relaunch (NMModemManager *self,
+                                guint n_seconds)
+{
+	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
+
+	/* No need to pass an extra reference to self; timeout/idle will be
+	 * cancelled if the object gets disposed. */
+	if (n_seconds)
+		priv->modm.relaunch_id = g_timeout_add_seconds (n_seconds, (GSourceFunc)modm_schedule_manager_relaunch_cb, self);
+	else
+		priv->modm.relaunch_id = g_idle_add ((GSourceFunc)modm_schedule_manager_relaunch_cb, self);
+}
+
 /*****************************************************************************/
 
 #if WITH_OFONO
@@ -452,185 +629,6 @@ ofono_init_proxy (NMModemManager *self)
 	                  self);
 }
 #endif
-
-/*****************************************************************************/
-
-static void
-modm_manager_poke_cb (GObject *connection,
-                      GAsyncResult *res,
-                      gpointer user_data)
-{
-	NMModemManager *self;
-	NMModemManagerPrivate *priv;
-	gs_free_error GError *error = NULL;
-	gs_unref_variant GVariant *result = NULL;
-
-	result = g_dbus_connection_call_finish (G_DBUS_CONNECTION (connection), res, &error);
-
-	if (   !result
-	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-		return;
-
-	self = user_data;
-	priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
-
-	g_clear_object (&priv->modm.poke_cancellable);
-
-	if (error) {
-		_LOGW ("error poking ModemManager: %s", error->message);
-
-		/* Don't reschedule poke is MM service doesn't exist. */
-		if (   !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SERVICE_UNKNOWN)
-			&& !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SPAWN_SERVICE_NOT_FOUND)) {
-
-			/* Setup timeout to relaunch */
-			modm_schedule_manager_relaunch (self, MODEM_POKE_INTERVAL);
-		}
-	}
-}
-
-static void
-modm_manager_poke (NMModemManager *self)
-{
-	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
-
-	nm_clear_g_cancellable (&priv->modm.poke_cancellable);
-	priv->modm.poke_cancellable = g_cancellable_new ();
-
-	/* If there is no current owner right away, ensure we poke to get one */
-	g_dbus_connection_call (priv->dbus_connection,
-	                        "org.freedesktop.ModemManager1",
-	                        "/org/freedesktop/ModemManager1",
-	                        DBUS_INTERFACE_PEER,
-	                        "Ping",
-	                        NULL,
-	                        NULL,
-	                        G_DBUS_CALL_FLAGS_NONE,
-	                        -1,
-	                        priv->modm.poke_cancellable,
-	                        modm_manager_poke_cb,
-	                        self);
-}
-
-static void
-modm_manager_check_name_owner (NMModemManager *self)
-{
-	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
-	gs_free gchar *name_owner = NULL;
-
-	name_owner = g_dbus_object_manager_client_get_name_owner (G_DBUS_OBJECT_MANAGER_CLIENT (priv->modm.manager));
-	if (name_owner) {
-		modm_manager_available (self);
-		return;
-	}
-
-	/* If the lifecycle is not managed by systemd, poke */
-	if (!sd_booted ())
-		modm_manager_poke (self);
-}
-
-static void
-modm_manager_new_cb (GObject *source,
-                     GAsyncResult *res,
-                     gpointer user_data)
-{
-	NMModemManager *self;
-	NMModemManagerPrivate *priv;
-	gs_free_error GError *error = NULL;
-	MMManager *modem_manager;
-
-	modem_manager = mm_manager_new_finish (res, &error);
-	if (   !modem_manager
-	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-		return;
-
-	self = user_data;
-	priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
-
-	nm_assert (!priv->modm.manager);
-
-	g_clear_object (&priv->main_cancellable);
-
-	if (!modem_manager) {
-		/* We're not really supposed to get any error here. If we do get one,
-		 * though, just re-schedule the MMManager creation after some time.
-		 * During this period, name-owner changes won't be followed. */
-		_LOGW ("error creating ModemManager client: %s", error->message);
-		/* Setup timeout to relaunch */
-		modm_schedule_manager_relaunch (self, MODEM_POKE_INTERVAL);
-		return;
-	}
-
-	priv->modm.manager = modem_manager;
-
-	/* Setup signals in the GDBusObjectManagerClient */
-	priv->modm.handle_name_owner_changed_id =
-	    g_signal_connect (priv->modm.manager,
-	                      "notify::name-owner",
-	                      G_CALLBACK (modm_handle_name_owner_changed),
-	                      self);
-	priv->modm.handle_object_added_id =
-	    g_signal_connect (priv->modm.manager,
-	                      "object-added",
-	                      G_CALLBACK (modm_handle_object_added),
-	                      self);
-	priv->modm.handle_object_removed_id =
-	    g_signal_connect (priv->modm.manager,
-	                      "object-removed",
-	                      G_CALLBACK (modm_handle_object_removed),
-	                      self);
-
-	modm_manager_check_name_owner (self);
-}
-
-static void
-modm_ensure_manager (NMModemManager *self)
-{
-	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
-
-	g_assert (priv->dbus_connection);
-
-	/* Create the GDBusObjectManagerClient. We do not request to autostart, as
-	 * we don't really want the MMManager creation to fail. We can always poke
-	 * later on if we want to request the autostart */
-	if (!priv->modm.manager) {
-		if (!priv->main_cancellable)
-			priv->main_cancellable = g_cancellable_new ();
-		mm_manager_new (priv->dbus_connection,
-		                G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
-		                priv->main_cancellable,
-		                modm_manager_new_cb,
-		                self);
-		return;
-	}
-
-	/* If already available, recheck name owner! */
-	modm_manager_check_name_owner (self);
-}
-
-static gboolean
-modm_schedule_manager_relaunch_cb (NMModemManager *self)
-{
-	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
-
-	priv->modm.relaunch_id = 0;
-	modm_ensure_manager (self);
-	return G_SOURCE_REMOVE;
-}
-
-static void
-modm_schedule_manager_relaunch (NMModemManager *self,
-                                guint n_seconds)
-{
-	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
-
-	/* No need to pass an extra reference to self; timeout/idle will be
-	 * cancelled if the object gets disposed. */
-	if (n_seconds)
-		priv->modm.relaunch_id = g_timeout_add_seconds (n_seconds, (GSourceFunc)modm_schedule_manager_relaunch_cb, self);
-	else
-		priv->modm.relaunch_id = g_idle_add ((GSourceFunc)modm_schedule_manager_relaunch_cb, self);
-}
 
 /*****************************************************************************/
 
