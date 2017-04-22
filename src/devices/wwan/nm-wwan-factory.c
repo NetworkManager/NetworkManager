@@ -127,8 +127,8 @@ start (NMDeviceFactory *factory)
 	NMWwanFactory *self = NM_WWAN_FACTORY (factory);
 	NMWwanFactoryPrivate *priv = NM_WWAN_FACTORY_GET_PRIVATE (self);
 
-	priv->mm = g_object_new (NM_TYPE_MODEM_MANAGER, NULL);
-	g_assert (priv->mm);
+	priv->mm = g_object_ref (nm_modem_manager_get ());
+
 	g_signal_connect (priv->mm,
 	                  NM_MODEM_MANAGER_MODEM_ADDED,
 	                  G_CALLBACK (modem_added_cb),

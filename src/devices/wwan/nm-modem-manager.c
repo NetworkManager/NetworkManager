@@ -97,6 +97,10 @@ G_DEFINE_TYPE (NMModemManager, nm_modem_manager, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
+NM_DEFINE_SINGLETON_GETTER (NMModemManager, nm_modem_manager_get, NM_TYPE_MODEM_MANAGER);
+
+/*****************************************************************************/
+
 static void modm_schedule_manager_relaunch (NMModemManager *self,
                                             guint n_seconds);
 static void modm_ensure_manager (NMModemManager *self);

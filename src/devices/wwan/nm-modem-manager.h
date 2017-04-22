@@ -43,4 +43,6 @@ typedef struct _NMModemManagerClass NMModemManagerClass;
 
 GType nm_modem_manager_get_type (void);
 
+NMModemManager *nm_modem_manager_get (void);
+
 #endif /* __NETWORKMANAGER_MODEM_MANAGER_H__ */
