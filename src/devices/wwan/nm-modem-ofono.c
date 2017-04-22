@@ -170,26 +170,14 @@ typedef struct {
 static void
 disconnect_context_complete (DisconnectContext *ctx)
 {
-	g_simple_async_result_complete_in_idle (ctx->result);
 	if (ctx->cancellable)
 		g_object_unref (ctx->cancellable);
-	g_object_unref (ctx->result);
+	if (ctx->result) {
+		g_simple_async_result_complete_in_idle (ctx->result);
+		g_object_unref (ctx->result);
+	}
 	g_object_unref (ctx->self);
 	g_slice_free (DisconnectContext, ctx);
-}
-
-static gboolean
-disconnect_context_complete_if_cancelled (DisconnectContext *ctx)
-{
-	GError *error = NULL;
-
-	if (g_cancellable_set_error_if_cancelled (ctx->cancellable, &error)) {
-		g_simple_async_result_take_error (ctx->result, error);
-		disconnect_context_complete (ctx);
-		return TRUE;
-	}
-
-	return FALSE;
 }
 
 static gboolean
@@ -201,25 +189,25 @@ disconnect_finish (NMModem *self,
 }
 
 static void
-disconnect_done (GDBusProxy *proxy,
+disconnect_done (GObject *source,
                  GAsyncResult *result,
                  gpointer user_data)
 {
 	DisconnectContext *ctx = (DisconnectContext*) user_data;
 	NMModemOfono *self = ctx->self;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
+	gs_unref_variant GVariant *v = NULL;
 
-	g_dbus_proxy_call_finish (proxy, result, &error);
+	v = g_dbus_proxy_call_finish (G_DBUS_PROXY (source), result, &error);
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
-		_LOGD ("disconnect cancelled");
+		if (ctx->result)
+			g_simple_async_result_take_error (ctx->result, g_steal_pointer (&error));
+		disconnect_context_complete (ctx);
 		return;
 	}
 
-	if (error) {
-		if (ctx->warn)
-			_LOGW ("failed to disconnect modem: %s", error->message);
-		g_clear_error (&error);
-	}
+	if (error && ctx->warn)
+		_LOGW ("failed to disconnect modem: %s", error->message);
 
 	_LOGD ("modem disconnected");
 
@@ -238,18 +226,15 @@ disconnect (NMModem *modem,
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
 	DisconnectContext *ctx;
 	NMModemState state = nm_modem_get_state (NM_MODEM (self));
+	GError *error = NULL;
 
 	_LOGD ("warn: %s modem_state: %s",
 	       warn ? "TRUE" : "FALSE",
 	       nm_modem_state_to_string (state));
 
-	if (state != NM_MODEM_STATE_CONNECTED)
-		return;
-
-	ctx = g_slice_new (DisconnectContext);
+	ctx = g_slice_new0 (DisconnectContext);
 	ctx->self = g_object_ref (self);
 	ctx->warn = warn;
-
 	if (callback) {
 		ctx->result = g_simple_async_result_new (G_OBJECT (self),
 		                                         callback,
@@ -257,9 +242,28 @@ disconnect (NMModem *modem,
 		                                         disconnect);
 	}
 
-	ctx->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
-	if (disconnect_context_complete_if_cancelled (ctx))
+	if (state != NM_MODEM_STATE_CONNECTED) {
+		if (ctx->result) {
+			g_set_error_literal (&error,
+			                     NM_UTILS_ERROR,
+			                     NM_UTILS_ERROR_UNKNOWN,
+			                     ("modem is currently not connected"));
+			g_simple_async_result_take_error (ctx->result, error);
+		}
+		disconnect_context_complete (ctx);
 		return;
+	}
+
+	if (g_cancellable_set_error_if_cancelled (cancellable, &error)) {
+		if (ctx->result)
+			g_simple_async_result_take_error (ctx->result, error);
+		else
+			g_clear_error (&error);
+		disconnect_context_complete (ctx);
+		return;
+	}
+
+	ctx->cancellable = nm_g_object_ref (cancellable);
 
 	nm_modem_set_state (NM_MODEM (self),
 	                    NM_MODEM_STATE_DISCONNECTING,
@@ -272,8 +276,8 @@ disconnect (NMModem *modem,
 	                                  g_variant_new ("b", warn)),
 	                   G_DBUS_CALL_FLAGS_NONE,
 	                   20000,
-	                   NULL,
-	                   (GAsyncReadyCallback) disconnect_done,
+	                   ctx->cancellable,
+	                   disconnect_done,
 	                   ctx);
 }
 
