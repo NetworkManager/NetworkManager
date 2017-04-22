@@ -197,8 +197,8 @@ disconnect_finish (NMModem *self,
 
 static void
 disconnect_done (GDBusProxy *proxy,
-				 GAsyncResult *result,
-				 gpointer user_data)
+                 GAsyncResult *result,
+                 gpointer user_data)
 {
 	DisconnectContext *ctx = (DisconnectContext*) user_data;
 	NMModemOfono *self = ctx->self;

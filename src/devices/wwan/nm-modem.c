@@ -1451,6 +1451,7 @@ set_property (GObject *object, guint prop_id,
 	case PROP_PATH:
 		/* construct-only */
 		priv->path = g_value_dup_string (value);
+		g_return_if_fail (priv->path);
 		break;
 	case PROP_DRIVER:
 		/* construct-only */
@@ -1512,37 +1513,16 @@ nm_modem_init (NMModem *self)
 	self->_priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_MODEM, NMModemPrivate);
 }
 
-static GObject*
-constructor (GType type,
-             guint n_construct_params,
-             GObjectConstructParam *construct_params)
+static void
+constructed (GObject *object)
 {
-	GObject *object;
 	NMModemPrivate *priv;
 
-	object = G_OBJECT_CLASS (nm_modem_parent_class)->constructor (type,
-	                                                              n_construct_params,
-	                                                              construct_params);
-	if (!object)
-		return NULL;
+	G_OBJECT_CLASS (nm_modem_parent_class)->constructed (object);
 
-	priv = NM_MODEM_GET_PRIVATE ((NMModem *) object);
+	priv = NM_MODEM_GET_PRIVATE (NM_MODEM (object));
 
-	if (!priv->data_port && !priv->control_port) {
-		nm_log_err (LOGD_PLATFORM, "neither modem command nor data interface provided");
-		goto err;
-	}
-
-	if (!priv->path) {
-		nm_log_err (LOGD_PLATFORM, "D-Bus path not provided");
-		goto err;
-	}
-
-	return object;
-
-err:
-	g_object_unref (object);
-	return NULL;
+	g_return_if_fail (priv->data_port || priv->control_port);
 }
 
 /*****************************************************************************/
@@ -1552,10 +1532,7 @@ dispose (GObject *object)
 {
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE ((NMModem *) object);
 
-	if (priv->act_request) {
-		g_object_unref (priv->act_request);
-		priv->act_request = NULL;
-	}
+	g_clear_object (&priv->act_request);
 
 	G_OBJECT_CLASS (nm_modem_parent_class)->dispose (object);
 }
@@ -1584,7 +1561,7 @@ nm_modem_class_init (NMModemClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMModemPrivate));
 
-	object_class->constructor = constructor;
+	object_class->constructed = constructed;
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
