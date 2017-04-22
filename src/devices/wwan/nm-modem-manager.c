@@ -70,6 +70,15 @@ typedef struct {
 		gulong handle_object_removed_id;
 		guint relaunch_id;
 
+		/* this only has one use: that the <info> logging line about
+		 * ModemManager available distinguishes between first-time
+		 * and later name-owner-changed. */
+		enum {
+			LOG_AVAILABLE_NOT_INITIALIZED = 0,
+			LOG_AVAILABLE_YES,
+			LOG_AVAILABLE_NO,
+		} log_available:3;
+
 		GDBusProxy *proxy;
 		GCancellable *proxy_cancellable;
 		guint proxy_ref_count;
@@ -219,7 +228,10 @@ modm_manager_available (NMModemManager *self)
 	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
 	GList *modems, *l;
 
-	_LOGI ("ModemManager available in the bus");
+	if (priv->modm.log_available != LOG_AVAILABLE_YES) {
+		_LOGI ("ModemManager %savailable", priv->modm.log_available ? "now " : "");
+		priv->modm.log_available = LOG_AVAILABLE_YES;
+	}
 
 	/* Update initial modems list */
 	modems = g_dbus_object_manager_get_objects (G_DBUS_OBJECT_MANAGER (priv->modm.manager));
@@ -241,7 +253,10 @@ modm_handle_name_owner_changed (MMManager *modem_manager,
 
 	name_owner = g_dbus_object_manager_client_get_name_owner (G_DBUS_OBJECT_MANAGER_CLIENT (modem_manager));
 	if (!name_owner) {
-		_LOGI ("ModemManager disappeared from bus");
+		if (priv->modm.log_available != LOG_AVAILABLE_NO) {
+			_LOGI ("ModemManager %savailable", priv->modm.log_available ? "no longer " : "not ");
+			priv->modm.log_available = LOG_AVAILABLE_NO;
+		}
 
 		/* If not managed by systemd, schedule relaunch */
 		if (!sd_booted ())
@@ -659,14 +674,14 @@ ofono_enumerate_devices_done (GObject *proxy,
 }
 
 static void
-ofono_check_name_owner (NMModemManager *self)
+ofono_check_name_owner (NMModemManager *self, gboolean first_invocation)
 {
 	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
 	gs_free char *name_owner = NULL;
 
 	name_owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (priv->ofono.proxy));
 	if (name_owner) {
-		_LOGI ("oFono is now available");
+		_LOGI ("oFono is %savailable", first_invocation ? "" : "now ");
 
 		nm_clear_g_cancellable (&priv->ofono.cancellable);
 		priv->ofono.cancellable = g_cancellable_new ();
@@ -683,7 +698,7 @@ ofono_check_name_owner (NMModemManager *self)
 		GHashTableIter iter;
 		NMModem *modem;
 
-		_LOGI ("oFono disappeared from bus");
+		_LOGI ("oFono is %savailable", first_invocation ? "not " : "no longer ");
 
 		/* Remove any oFono modems that might be left around */
 		g_hash_table_iter_init (&iter, priv->modems);
@@ -701,7 +716,7 @@ ofono_name_owner_changed (GDBusProxy *ofono_proxy,
                           GParamSpec *pspec,
                           NMModemManager *self)
 {
-	ofono_check_name_owner (self);
+	ofono_check_name_owner (self, FALSE);
 }
 
 static void
@@ -741,7 +756,7 @@ ofono_proxy_new_cb (GObject *source_object,
 	                  G_CALLBACK (ofono_signal_cb),
 	                  self);
 
-	ofono_check_name_owner (self);
+	ofono_check_name_owner (self, TRUE);
 }
 
 static void
