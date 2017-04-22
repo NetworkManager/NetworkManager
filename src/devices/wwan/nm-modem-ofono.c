@@ -46,6 +46,7 @@ typedef struct {
 	GDBusProxy *context_proxy;
 	GDBusProxy *sim_proxy;
 
+	GCancellable *modem_proxy_cancellable;
 	GCancellable *connman_proxy_cancellable;
 	GCancellable *sim_proxy_cancellable;
 
@@ -740,22 +741,35 @@ modem_property_changed (GDBusProxy *proxy,
 }
 
 static void
-modem_get_properties_done (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
+modem_get_properties_done (GObject *source,
+                           GAsyncResult *result,
+                           gpointer user_data)
 {
-	gs_unref_object NMModemOfono *self = NM_MODEM_OFONO (user_data);
-	GError *error = NULL;
-	GVariant *v_properties, *v_dict, *v;
+	NMModemOfono *self;
+	NMModemOfonoPrivate *priv;
+	gs_free_error GError *error = NULL;
+	gs_unref_variant GVariant *v_properties = NULL;
+	gs_unref_variant GVariant *v_dict = NULL;
+	GVariant *v;
 	GVariantIter i;
 	const char *property;
 
-	v_properties = _nm_dbus_proxy_call_finish (proxy,
+	v_properties = _nm_dbus_proxy_call_finish (G_DBUS_PROXY (source),
 	                                           result,
 	                                           G_VARIANT_TYPE ("(a{sv})"),
 	                                           &error);
+	if (   !v_properties
+	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	self = NM_MODEM_OFONO (user_data);
+	priv = NM_MODEM_OFONO_GET_PRIVATE (self);
+
+	g_clear_object (&priv->modem_proxy_cancellable);
+
 	if (!v_properties) {
 		g_dbus_error_strip_remote_error (error);
 		_LOGW ("error getting modem properties: %s", error->message);
-		g_error_free (error);
 		return;
 	}
 
@@ -779,9 +793,6 @@ modem_get_properties_done (GDBusProxy *proxy, GAsyncResult *result, gpointer use
 		handle_modem_property (NULL, property, v, self);
 		g_variant_unref (v);
 	}
-
-	g_variant_unref (v_dict);
-	g_variant_unref (v_properties);
 }
 
 static void
@@ -1154,19 +1165,29 @@ act_stage1_prepare (NMModem *modem,
 }
 
 static void
-modem_proxy_new_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
+modem_proxy_new_cb (GObject *source, GAsyncResult *result, gpointer user_data)
 {
-	gs_unref_object NMModemOfono *self = NM_MODEM_OFONO (user_data);
-	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
-	GError *error = NULL;
+	NMModemOfono *self;
+	NMModemOfonoPrivate *priv;
+	gs_free_error GError *error = NULL;
+	GDBusProxy *proxy;
 
-	priv->modem_proxy = g_dbus_proxy_new_for_bus_finish (result, &error);
-	if (error) {
+	proxy = g_dbus_proxy_new_for_bus_finish (result, &error);
+	if (   !proxy
+	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	self = NM_MODEM_OFONO (user_data);
+	priv = NM_MODEM_OFONO_GET_PRIVATE (self);
+
+	if (!proxy) {
 		_LOGE ("failed to create ofono modem DBus proxy: %s", error->message);
+		g_clear_object (&priv->modem_proxy_cancellable);
 		return;
 	}
 
-	/* Watch for custom ofono PropertyChanged signals */
+	priv->modem_proxy = proxy;
+
 	_nm_dbus_signal_connect (priv->modem_proxy,
 	                         "PropertyChanged",
 	                         G_VARIANT_TYPE ("(sv)"),
@@ -1178,9 +1199,9 @@ modem_proxy_new_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	                   NULL,
 	                   G_DBUS_CALL_FLAGS_NONE,
 	                   20000,
-	                   NULL,
-	                   (GAsyncReadyCallback) modem_get_properties_done,
-	                   g_object_ref (self));
+	                   priv->modem_proxy_cancellable,
+	                   modem_get_properties_done,
+	                   self);
 }
 
 /*****************************************************************************/
@@ -1194,6 +1215,9 @@ static void
 constructed (GObject *object)
 {
 	NMModemOfono *self = NM_MODEM_OFONO (object);
+	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
+
+	priv->modem_proxy_cancellable = g_cancellable_new ();
 
 	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
 	                          G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
@@ -1201,9 +1225,11 @@ constructed (GObject *object)
 	                          OFONO_DBUS_SERVICE,
 	                          nm_modem_get_path (NM_MODEM (self)),
 	                          OFONO_DBUS_INTERFACE_MODEM,
-	                          NULL,
-	                          (GAsyncReadyCallback) modem_proxy_new_cb,
-	                          g_object_ref (self));
+	                          priv->modem_proxy_cancellable,
+	                          modem_proxy_new_cb,
+	                          self);
+
+	G_OBJECT_CLASS (nm_modem_ofono_parent_class)->constructed (object);
 }
 
 NMModem *
@@ -1236,6 +1262,7 @@ dispose (GObject *object)
 	NMModemOfono *self = NM_MODEM_OFONO (object);
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
 
+	nm_clear_g_cancellable (&priv->modem_proxy_cancellable);
 	nm_clear_g_cancellable (&priv->connman_proxy_cancellable);
 	nm_clear_g_cancellable (&priv->sim_proxy_cancellable);
 
@@ -1247,7 +1274,7 @@ dispose (GObject *object)
 	g_clear_object (&priv->ip4_config);
 
 	if (priv->modem_proxy) {
-		g_signal_handlers_disconnect_by_data (priv->modem_proxy, NM_MODEM_OFONO (self));
+		g_signal_handlers_disconnect_by_data (priv->modem_proxy, self);
 		g_clear_object (&priv->modem_proxy);
 	}
 
