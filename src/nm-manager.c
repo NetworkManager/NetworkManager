@@ -1412,7 +1412,10 @@ system_hostname_changed_cb (NMSettings *settings,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	char *hostname;
 
-	hostname = nm_settings_get_hostname (priv->settings);
+	g_object_get (priv->settings,
+	              NM_SETTINGS_HOSTNAME,
+	              &hostname,
+	              NULL);
 
 	/* nm_settings_get_hostname() does not return an empty hostname. */
 	nm_assert (!hostname || *hostname);

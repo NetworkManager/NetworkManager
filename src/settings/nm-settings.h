@@ -119,20 +119,10 @@ gboolean nm_settings_has_connection (NMSettings *self, NMSettingsConnection *con
 
 const GSList *nm_settings_get_unmanaged_specs (NMSettings *self);
 
-char *nm_settings_get_hostname (NMSettings *self);
-
 void nm_settings_device_added (NMSettings *self, NMDevice *device);
 
 void nm_settings_device_removed (NMSettings *self, NMDevice *device, gboolean quitting);
 
 gboolean nm_settings_get_startup_complete (NMSettings *self);
-
-void nm_settings_set_transient_hostname (NMSettings *self,
-                                         const char *hostname,
-                                         NMSettingsSetHostnameCb cb,
-                                         gpointer user_data);
-
-gboolean nm_settings_get_transient_hostname (NMSettings *self,
-                                             char **hostname);
 
 #endif  /* __NM_SETTINGS_H__ */

@@ -49,6 +49,7 @@
 #include "nm-dhcp6-config.h"
 #include "nm-config.h"
 #include "nm-netns.h"
+#include "nm-hostname-manager.h"
 
 /*****************************************************************************/
 
@@ -72,6 +73,8 @@ typedef struct {
 	GSList *pending_secondaries;
 
 	NMSettings *settings;
+
+	NMHostnameManager *hostname_manager;
 
 	NMDevice *default_device4, *activating_device4;
 	NMDevice *default_device6, *activating_device6;
@@ -460,7 +463,7 @@ _get_hostname (NMPolicy *self, char **hostname)
 	}
 
 	/* try to get the hostname via dbus... */
-	if (nm_settings_get_transient_hostname (priv->settings, hostname)) {
+	if (nm_hostname_manager_get_transient_hostname (priv->hostname_manager, hostname)) {
 		_LOGT (LOGD_DNS, "get-hostname: \"%s\" (from dbus)", *hostname);
 		return *hostname;
 	}
@@ -549,10 +552,10 @@ _set_hostname (NMPolicy *self,
 
 	/* Ask NMSettings to update the transient hostname using its
 	 * systemd-hostnamed proxy */
-	nm_settings_set_transient_hostname (priv->settings,
-	                                    name,
-	                                    settings_set_hostname_cb,
-	                                    g_object_ref (self));
+	nm_hostname_manager_set_transient_hostname (priv->hostname_manager,
+	                                            name,
+	                                            settings_set_hostname_cb,
+	                                            g_object_ref (self));
 }
 
 static void
@@ -2299,6 +2302,8 @@ nm_policy_init (NMPolicy *self)
 	const char *hostname_mode;
 
 	priv->netns = g_object_ref (nm_netns_get ());
+
+	priv->hostname_manager = g_object_ref (nm_hostname_manager_get ());
 
 	hostname_mode = nm_config_data_get_value (NM_CONFIG_GET_DATA_ORIG,
 	                                          NM_CONFIG_KEYFILE_GROUP_MAIN,
