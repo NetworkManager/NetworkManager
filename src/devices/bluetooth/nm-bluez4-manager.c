@@ -67,6 +67,11 @@ G_DEFINE_TYPE (NMBluez4Manager, nm_bluez4_manager, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
+#define _NMLOG_DOMAIN      LOGD_BT
+#define _NMLOG(level, ...) __NMLOG_DEFAULT (level, _NMLOG_DOMAIN, "bluez4-manager", __VA_ARGS__)
+
+/*****************************************************************************/
+
 static void
 emit_bdaddr_added (NMBluez4Manager *self, NMBluezDevice *device)
 {
@@ -200,8 +205,8 @@ default_adapter_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 		    && !_nm_dbus_error_has_name (error, "org.freedesktop.systemd1.LoadFailed")
 		    && !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SERVICE_UNKNOWN)) {
 			g_dbus_error_strip_remote_error (error);
-			nm_log_warn (LOGD_BT, "bluez error getting default adapter: %s",
-			             error->message);
+			_LOGW ("bluez error getting default adapter: %s",
+			       error->message);
 		}
 		return;
 	}
@@ -262,7 +267,7 @@ _proxy_new_cb (GObject *source_object,
 	priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
 
 	if (!proxy) {
-		nm_log_warn (LOGD_BT, "bluez error creating D-Bus proxy: %s", error->message);
+		_LOGW ("bluez error creating D-Bus proxy: %s", error->message);
 		g_clear_object (&priv->proxy_cancellable);
 		return;
 	}
