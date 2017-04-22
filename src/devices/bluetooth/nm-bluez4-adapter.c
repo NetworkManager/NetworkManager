@@ -74,6 +74,11 @@ G_DEFINE_TYPE (NMBluez4Adapter, nm_bluez4_adapter, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
+#define _NMLOG_DOMAIN      LOGD_BT
+#define _NMLOG(level, ...) __NMLOG_DEFAULT (level, _NMLOG_DOMAIN, "bluez4-adapter", __VA_ARGS__)
+
+/*****************************************************************************/
+
 static void device_do_remove (NMBluez4Adapter *self, NMBluezDevice *device);
 
 /*****************************************************************************/
@@ -120,8 +125,8 @@ nm_bluez4_adapter_get_devices (NMBluez4Adapter *self)
 static void
 emit_device_removed (NMBluez4Adapter *self, NMBluezDevice *device)
 {
-	nm_log_dbg (LOGD_BT, "(%s): bluez device now unusable",
-	            nm_bluez_device_get_path (device));
+	_LOGD ("(%s): bluez device now unusable",
+	       nm_bluez_device_get_path (device));
 	g_signal_emit (self, signals[DEVICE_REMOVED], 0, device);
 }
 
@@ -131,9 +136,9 @@ device_usable (NMBluezDevice *device, GParamSpec *pspec, gpointer user_data)
 	NMBluez4Adapter *self = NM_BLUEZ4_ADAPTER (user_data);
 
 	if (nm_bluez_device_get_usable (device)) {
-		nm_log_dbg (LOGD_BT, "(%s): bluez device now usable (device address is %s)",
-		            nm_bluez_device_get_path (device),
-		            nm_bluez_device_get_address (device));
+		_LOGD ("(%s): bluez device now usable (device address is %s)",
+		       nm_bluez_device_get_path (device),
+		       nm_bluez_device_get_address (device));
 		g_signal_emit (self, signals[DEVICE_ADDED], 0, device);
 	} else
 		emit_device_removed (self, device);
@@ -144,9 +149,9 @@ device_initialized (NMBluezDevice *device, gboolean success, gpointer user_data)
 {
 	NMBluez4Adapter *self = NM_BLUEZ4_ADAPTER (user_data);
 
-	nm_log_dbg (LOGD_BT, "(%s): bluez device %s",
-	            nm_bluez_device_get_path (device),
-	            success ? "initialized" : "failed to initialize");
+	_LOGD ("(%s): bluez device %s",
+	       nm_bluez_device_get_path (device),
+	       success ? "initialized" : "failed to initialize");
 	if (!success)
 		device_do_remove (self, device);
 }
@@ -179,7 +184,7 @@ device_created (GDBusProxy *proxy, const char *path, gpointer user_data)
 	g_signal_connect (device, "notify::usable", G_CALLBACK (device_usable), self);
 	g_hash_table_insert (priv->devices, (gpointer) nm_bluez_device_get_path (device), device);
 
-	nm_log_dbg (LOGD_BT, "(%s): new bluez device found", path);
+	_LOGD ("(%s): new bluez device found", path);
 }
 
 static void
@@ -189,7 +194,7 @@ device_removed (GDBusProxy *proxy, const char *path, gpointer user_data)
 	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (self);
 	NMBluezDevice *device;
 
-	nm_log_dbg (LOGD_BT, "(%s): bluez device removed", path);
+	_LOGD ("(%s): bluez device removed", path);
 
 	device = g_hash_table_lookup (priv->devices, path);
 	if (device)
@@ -220,7 +225,7 @@ get_properties_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 
 	if (!ret) {
 		g_dbus_error_strip_remote_error (error);
-		nm_log_warn (LOGD_BT, "bluez error getting adapter properties: %s", error->message);
+		_LOGW ("bluez error getting adapter properties: %s", error->message);
 		goto done;
 	}
 
@@ -261,7 +266,7 @@ _proxy_new_cb (GObject *source_object,
 	priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (self);
 
 	if (!proxy) {
-		nm_log_warn (LOGD_BT, "bluez error creating D-Bus proxy: %s", error->message);
+		_LOGW ("bluez error creating D-Bus proxy: %s", error->message);
 		g_clear_object (&priv->proxy_cancellable);
 		g_signal_emit (self, signals[INITIALIZED], 0, priv->initialized);
 		return;
