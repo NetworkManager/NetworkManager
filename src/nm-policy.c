@@ -2241,6 +2241,15 @@ nm_policy_get_activating_ip6_device (NMPolicy *self)
 
 /*****************************************************************************/
 
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_hostname_mode_to_string, NMPolicyHostnameMode,
+	NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT ("unknown"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_POLICY_HOSTNAME_MODE_NONE,  "none"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_POLICY_HOSTNAME_MODE_DHCP,  "dhcp"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_POLICY_HOSTNAME_MODE_FULL,  "full"),
+);
+
+/*****************************************************************************/
+
 static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
@@ -2314,7 +2323,6 @@ nm_policy_init (NMPolicy *self)
 	else /* default - full mode */
 		priv->hostname_mode = NM_POLICY_HOSTNAME_MODE_FULL;
 
-	_LOGI (LOGD_DNS, "hostname management mode: %s", hostname_mode ? hostname_mode : "default");
 	priv->devices = g_hash_table_new (NULL, NULL);
 	priv->ip6_prefix_delegations = g_array_new (FALSE, FALSE, sizeof (IP6PrefixDelegation));
 	g_array_set_clear_func (priv->ip6_prefix_delegations, clear_ip6_prefix_delegation);
@@ -2364,6 +2372,8 @@ constructed (GObject *object)
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_AGENT_REGISTERED,              (GCallback) secret_agent_registered, priv);
 
 	G_OBJECT_CLASS (nm_policy_parent_class)->constructed (object);
+
+	_LOGD (LOGD_DNS, "hostname-mode: %s", _hostname_mode_to_string (priv->hostname_mode));
 }
 
 NMPolicy *
