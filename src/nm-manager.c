@@ -35,6 +35,7 @@
 #include "devices/nm-device.h"
 #include "devices/nm-device-generic.h"
 #include "platform/nm-platform.h"
+#include "nm-hostname-manager.h"
 #include "nm-rfkill-manager.h"
 #include "dhcp/nm-dhcp-manager.h"
 #include "settings/nm-settings.h"
@@ -122,6 +123,8 @@ typedef struct {
 
 	NMPolicy *policy;
 
+	NMHostnameManager *hostname_manager;
+
 	NMBusManager  *dbus_mgr;
 	struct {
 		GDBusConnection *connection;
@@ -132,7 +135,6 @@ typedef struct {
 	NMCheckpointManager *checkpoint_mgr;
 
 	NMSettings *settings;
-	char *hostname;
 
 	RadioState radio_states[RFKILL_TYPE_MAX];
 	NMVpnManager *vpn_manager;
@@ -211,7 +213,6 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMManager,
 	PROP_ALL_DEVICES,
 
 	/* Not exported */
-	PROP_HOSTNAME,
 	PROP_SLEEPING,
 );
 
@@ -1404,38 +1405,17 @@ system_unmanaged_devices_changed_cb (NMSettings *settings,
 }
 
 static void
-system_hostname_changed_cb (NMSettings *settings,
-                            GParamSpec *pspec,
-                            gpointer user_data)
+hostname_changed_cb (NMHostnameManager *hostname_manager,
+                     GParamSpec *pspec,
+                     NMManager *self)
 {
-	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	char *hostname;
+	const char *hostname;
 
-	g_object_get (priv->settings,
-	              NM_SETTINGS_HOSTNAME,
-	              &hostname,
-	              NULL);
+	hostname = nm_hostname_manager_get_hostname (priv->hostname_manager);
 
-	/* nm_settings_get_hostname() does not return an empty hostname. */
-	nm_assert (!hostname || *hostname);
-
-	if (!hostname && !priv->hostname)
-		return;
-	if (hostname && priv->hostname && !strcmp (hostname, priv->hostname)) {
-		g_free (hostname);
-		return;
-	}
-
-	/* realloc, to free possibly trailing data after NUL. */
-	if (hostname)
-		hostname = g_realloc (hostname, strlen (hostname) + 1);
-
-	g_free (priv->hostname);
-	priv->hostname = hostname;
-	_notify (self, PROP_HOSTNAME);
-
-	nm_dhcp_manager_set_default_hostname (nm_dhcp_manager_get (), priv->hostname);
+	nm_dispatcher_call_hostname (NULL, NULL, NULL);
+	nm_dhcp_manager_set_default_hostname (nm_dhcp_manager_get (), hostname);
 }
 
 /*****************************************************************************/
@@ -5090,7 +5070,7 @@ nm_manager_start (NMManager *self, GError **error)
 	       priv->net_enabled ? "enabled" : "disabled");
 
 	system_unmanaged_devices_changed_cb (priv->settings, NULL, self);
-	system_hostname_changed_cb (priv->settings, NULL, self);
+	hostname_changed_cb (priv->hostname_manager, NULL, self);
 
 	/* Start device factories */
 	nm_device_factory_manager_load_factories (_register_device_factory, self);
@@ -5986,12 +5966,15 @@ constructed (GObject *object)
 	                  G_CALLBACK (settings_startup_complete_changed), self);
 	g_signal_connect (priv->settings, "notify::" NM_SETTINGS_UNMANAGED_SPECS,
 	                  G_CALLBACK (system_unmanaged_devices_changed_cb), self);
-	g_signal_connect (priv->settings, "notify::" NM_SETTINGS_HOSTNAME,
-	                  G_CALLBACK (system_hostname_changed_cb), self);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_ADDED,
 	                  G_CALLBACK (connection_added_cb), self);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,
 	                  G_CALLBACK (connection_updated_cb), self);
+
+	priv->hostname_manager = g_object_ref (nm_hostname_manager_get ());
+	g_signal_connect (priv->hostname_manager, "notify::" NM_HOSTNAME_MANAGER_HOSTNAME,
+	                  G_CALLBACK (hostname_changed_cb), self);
+
 	/*
 	 * Do not delete existing virtual devices to keep connectivity up.
 	 * Virtual devices are reused when NetworkManager is restarted.
@@ -6188,9 +6171,6 @@ get_property (GObject *object, guint prop_id,
 	case PROP_ACTIVATING_CONNECTION:
 		nm_utils_g_value_set_object_path (value, priv->activating_connection);
 		break;
-	case PROP_HOSTNAME:
-		g_value_set_string (value, priv->hostname);
-		break;
 	case PROP_SLEEPING:
 		g_value_set_boolean (value, priv->sleeping);
 		break;
@@ -6299,8 +6279,6 @@ dispose (GObject *object)
 		g_clear_object (&priv->config);
 	}
 
-	g_free (priv->hostname);
-
 	if (priv->policy) {
 		g_signal_handlers_disconnect_by_func (priv->policy, policy_default_device_changed, manager);
 		g_signal_handlers_disconnect_by_func (priv->policy, policy_activating_device_changed, manager);
@@ -6310,10 +6288,14 @@ dispose (GObject *object)
 	if (priv->settings) {
 		g_signal_handlers_disconnect_by_func (priv->settings, settings_startup_complete_changed, manager);
 		g_signal_handlers_disconnect_by_func (priv->settings, system_unmanaged_devices_changed_cb, manager);
-		g_signal_handlers_disconnect_by_func (priv->settings, system_hostname_changed_cb, manager);
 		g_signal_handlers_disconnect_by_func (priv->settings, connection_added_cb, manager);
 		g_signal_handlers_disconnect_by_func (priv->settings, connection_updated_cb, manager);
 		g_clear_object (&priv->settings);
+	}
+
+	if (priv->hostname_manager) {
+		g_signal_handlers_disconnect_by_func (priv->hostname_manager, hostname_changed_cb, manager);
+		g_clear_object (&priv->hostname_manager);
 	}
 
 	g_clear_object (&priv->vpn_manager);
@@ -6473,13 +6455,6 @@ nm_manager_class_init (NMManagerClass *manager_class)
 
 	obj_properties[PROP_ACTIVATING_CONNECTION] =
 	    g_param_spec_string (NM_MANAGER_ACTIVATING_CONNECTION, "", "",
-	                         NULL,
-	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS);
-
-	/* Hostname is not exported over D-Bus */
-	obj_properties[PROP_HOSTNAME] =
-	    g_param_spec_string (NM_MANAGER_HOSTNAME, "", "",
 	                         NULL,
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);

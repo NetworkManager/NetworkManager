@@ -44,7 +44,9 @@ GType nm_hostname_manager_get_type (void);
 
 NMHostnameManager *nm_hostname_manager_get (void);
 
-char *nm_hostname_manager_get_hostname (NMHostnameManager *self);
+const char *nm_hostname_manager_get_hostname (NMHostnameManager *self);
+
+char *nm_hostname_manager_read_hostname (NMHostnameManager *self);
 
 gboolean nm_hostname_manager_write_hostname (NMHostnameManager *self, const char *hostname);
 

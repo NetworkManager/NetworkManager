@@ -587,7 +587,7 @@ static void
 update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const char *msg)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	char *configured_hostname = NULL;
+	const char *configured_hostname;
 	gs_free char *temp_hostname = NULL;
 	const char *dhcp_hostname, *p;
 	NMIP4Config *ip4_config;
@@ -638,14 +638,12 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const 
 	 */
 
 	/* Try a persistent hostname first */
-	g_object_get (G_OBJECT (priv->manager), NM_MANAGER_HOSTNAME, &configured_hostname, NULL);
+	configured_hostname = nm_hostname_manager_get_hostname (priv->hostname_manager);
 	if (configured_hostname && nm_utils_is_specific_hostname (configured_hostname)) {
 		_set_hostname (self, configured_hostname, "from system configuration");
 		priv->dhcp_hostname = FALSE;
-		g_free (configured_hostname);
 		return;
 	}
-	g_free (configured_hostname);
 
 	/* Try automatically determined hostname from the best device's IP config */
 	if (!best4)
@@ -1251,7 +1249,7 @@ process_secondaries (NMPolicy *self,
 }
 
 static void
-hostname_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
+hostname_changed (NMHostnameManager *hostname_manager, GParamSpec *pspec, gpointer user_data)
 {
 	NMPolicyPrivate *priv = user_data;
 	NMPolicy *self = _PRIV_TO_SELF (priv);
@@ -2350,7 +2348,8 @@ constructed (GObject *object)
 
 	priv->resolver = g_resolver_get_default ();
 
-	g_signal_connect (priv->manager, "notify::" NM_MANAGER_HOSTNAME,           (GCallback) hostname_changed, priv);
+	g_signal_connect (priv->hostname_manager, "notify::" NM_HOSTNAME_MANAGER_HOSTNAME, (GCallback) hostname_changed, priv);
+
 	g_signal_connect (priv->manager, "notify::" NM_MANAGER_SLEEPING,           (GCallback) sleeping_changed, priv);
 	g_signal_connect (priv->manager, "notify::" NM_MANAGER_NETWORKING_ENABLED, (GCallback) sleeping_changed, priv);
 	g_signal_connect (priv->manager, NM_MANAGER_INTERNAL_DEVICE_ADDED,         (GCallback) device_added, priv);
@@ -2428,6 +2427,11 @@ dispose (GObject *object)
 	g_clear_pointer (&priv->orig_hostname, g_free);
 	g_clear_pointer (&priv->cur_hostname, g_free);
 	g_clear_pointer (&priv->last_hostname, g_free);
+
+	if (priv->hostname_manager) {
+		g_signal_handlers_disconnect_by_data (priv->hostname_manager, priv);
+		g_clear_object (&priv->hostname_manager);
+	}
 
 	if (priv->settings) {
 		g_signal_handlers_disconnect_by_data (priv->settings, priv);

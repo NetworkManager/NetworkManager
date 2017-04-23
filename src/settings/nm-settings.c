@@ -156,7 +156,6 @@ typedef struct {
 	gboolean started;
 	gboolean startup_complete;
 
-	char *hostname;
 	NMHostnameManager *hostname_manager;
 
 } NMSettingsPrivate;
@@ -1795,26 +1794,11 @@ nm_settings_get_startup_complete (NMSettings *self)
 /*****************************************************************************/
 
 static void
-_hostname_changed (NMSettings *self)
-{
-	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	gs_free char *hostname = NULL;
-
-	hostname = nm_hostname_manager_get_hostname (priv->hostname_manager);
-
-	if (nm_streq0 (hostname, priv->hostname))
-		return;
-	g_free (priv->hostname);
-	priv->hostname = g_steal_pointer (&hostname);
-	_notify (self, PROP_HOSTNAME);
-}
-
-static void
 _hostname_changed_cb (NMHostnameManager *hostname_manager,
                       GParamSpec *pspec,
                       gpointer user_data)
 {
-	_hostname_changed (NM_SETTINGS (user_data));
+	_notify (user_data, PROP_HOSTNAME);
 }
 
 /*****************************************************************************/
@@ -1843,7 +1827,9 @@ nm_settings_start (NMSettings *self, GError **error)
 	                  "notify::"NM_HOSTNAME_MANAGER_HOSTNAME,
 	                  G_CALLBACK (_hostname_changed_cb),
 	                  self);
-	_hostname_changed (self);
+	if (nm_hostname_manager_get_hostname (priv->hostname_manager))
+		_notify (self, PROP_HOSTNAME);
+
 	return TRUE;
 }
 
@@ -1870,10 +1856,10 @@ get_property (GObject *object, guint prop_id,
 		g_value_take_boxed (value, (char **) g_ptr_array_free (array, FALSE));
 		break;
 	case PROP_HOSTNAME:
-		if (priv->hostname)
-			g_value_set_string (value, priv->hostname);
-		else
-			g_value_set_static_string (value, "");
+		g_value_set_string (value,
+		                    priv->hostname_manager
+		                      ? nm_hostname_manager_get_hostname (priv->hostname_manager)
+		                      : NULL);
 		break;
 	case PROP_CAN_MODIFY:
 		g_value_set_boolean (value, !!get_plugin (self, NM_SETTINGS_PLUGIN_CAP_MODIFY_CONNECTIONS));
@@ -1956,8 +1942,6 @@ finalize (GObject *object)
 	g_slist_free_full (priv->unrecognized_specs, g_free);
 
 	g_slist_free_full (priv->plugins, g_object_unref);
-
-	g_free (priv->hostname);
 
 	g_clear_object (&priv->config);
 
