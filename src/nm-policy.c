@@ -584,6 +584,19 @@ lookup_callback (GObject *source,
 }
 
 static void
+lookup_by_address (NMPolicy *self)
+{
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+
+	nm_clear_g_cancellable (&priv->lookup_cancellable);
+	priv->lookup_cancellable = g_cancellable_new ();
+	g_resolver_lookup_by_address_async (priv->resolver,
+	                                    priv->lookup_addr,
+	                                    priv->lookup_cancellable,
+	                                    lookup_callback, self);
+}
+
+static void
 update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const char *msg)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
@@ -754,11 +767,7 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const 
 		return;
 	}
 
-	priv->lookup_cancellable = g_cancellable_new ();
-	g_resolver_lookup_by_address_async (priv->resolver,
-	                                    priv->lookup_addr,
-	                                    priv->lookup_cancellable,
-	                                    lookup_callback, self);
+	lookup_by_address (self);
 }
 
 static void
@@ -2108,11 +2117,7 @@ dns_config_changed (NMDnsManager *dns_manager, gpointer user_data)
 		       (str = g_inet_address_to_string (priv->lookup_addr)));
 		g_free (str);
 
-		priv->lookup_cancellable = g_cancellable_new ();
-		g_resolver_lookup_by_address_async (priv->resolver,
-		                                    priv->lookup_addr,
-		                                    priv->lookup_cancellable,
-		                                    lookup_callback, self);
+		lookup_by_address (self);
 	}
 }
 
