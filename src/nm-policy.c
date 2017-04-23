@@ -449,50 +449,46 @@ settings_set_hostname_cb (const char *hostname,
 #define HOST_NAME_BUFSIZE (HOST_NAME_MAX + 2)
 
 static char *
-_get_hostname (NMPolicy *self, char **hostname)
+_get_hostname (NMPolicy *self)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	char *buf;
-
-	g_assert (hostname && *hostname == NULL);
+	char *hostname = NULL;
 
 	/* If there is an in-progress hostname change, return
 	 * the last hostname set as would be set soon...
 	 */
 	if (priv->changing_hostname) {
 		_LOGT (LOGD_DNS, "get-hostname: \"%s\" (last on set)", priv->last_hostname);
-		*hostname = g_strdup (priv->last_hostname);
-		return *hostname;
+		return g_strdup (priv->last_hostname);
 	}
 
 	/* try to get the hostname via dbus... */
-	if (nm_hostname_manager_get_transient_hostname (priv->hostname_manager, hostname)) {
-		_LOGT (LOGD_DNS, "get-hostname: \"%s\" (from dbus)", *hostname);
-		return *hostname;
+	if (nm_hostname_manager_get_transient_hostname (priv->hostname_manager, &hostname)) {
+		_LOGT (LOGD_DNS, "get-hostname: \"%s\" (from dbus)", hostname);
+		return hostname;
 	}
 
 	/* ...or retrieve it by yourself */
-	buf = g_malloc (HOST_NAME_BUFSIZE);
-	if (gethostname (buf, HOST_NAME_BUFSIZE -1) != 0) {
+	hostname = g_malloc (HOST_NAME_BUFSIZE);
+	if (gethostname (hostname, HOST_NAME_BUFSIZE -1) != 0) {
 		int errsv = errno;
 
 		_LOGT (LOGD_DNS, "get-hostname: couldn't get the system hostname: (%d) %s",
 		       errsv, g_strerror (errsv));
-		g_free (buf);
+		g_free (hostname);
 		return NULL;
 	}
 
 	/* the name may be truncated... */
-	buf[HOST_NAME_BUFSIZE - 1] = '\0';
-	if (strlen (buf) >= HOST_NAME_BUFSIZE -1) {
-		_LOGT (LOGD_DNS, "get-hostname: system hostname too long: \"%s\"", buf);
-		g_free (buf);
+	hostname[HOST_NAME_BUFSIZE - 1] = '\0';
+	if (strlen (hostname) >= HOST_NAME_BUFSIZE -1) {
+		_LOGT (LOGD_DNS, "get-hostname: system hostname too long: \"%s\"", hostname);
+		g_free (hostname);
 		return NULL;
 	}
 
-	_LOGT (LOGD_DNS, "get-hostname: \"%s\"", buf);
-	*hostname = buf;
-	return *hostname;
+	_LOGT (LOGD_DNS, "get-hostname: \"%s\"", hostname);
+	return hostname;
 }
 
 static void
@@ -540,7 +536,7 @@ _set_hostname (NMPolicy *self,
 		name = new_hostname;
 
 	/* Don't set the hostname if it isn't actually changing */
-	if (   _get_hostname (self, &old_hostname)
+	if (   (old_hostname = _get_hostname (self))
 	    && (nm_streq (name, old_hostname))) {
 		_LOGT (LOGD_DNS, "set-hostname: hostname already set to '%s' (%s)", name, msg);
 		return;
@@ -624,7 +620,7 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const 
 	/* Check if the hostname was set externally to NM, so that in that case
 	 * we can avoid to fallback to the one we got when we started.
 	 * Consider "not specific" hostnames as equal. */
-	if (   _get_hostname (self, &temp_hostname)
+	if (   (temp_hostname = _get_hostname (self))
 	    && !nm_streq0 (temp_hostname, priv->last_hostname)
 	    && (   nm_utils_is_specific_hostname (temp_hostname)
 	        || nm_utils_is_specific_hostname (priv->last_hostname))) {
@@ -636,10 +632,9 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const 
 		if (!nm_streq0 (temp_hostname, priv->orig_hostname)) {
 			/* Update original (fallback) hostname */
 			g_free (priv->orig_hostname);
-			if (nm_utils_is_specific_hostname (temp_hostname)) {
-				priv->orig_hostname = temp_hostname;
-				temp_hostname = NULL;
-			} else
+			if (nm_utils_is_specific_hostname (temp_hostname))
+				priv->orig_hostname = g_steal_pointer (&temp_hostname);
+			else
 				priv->orig_hostname = NULL;
 		}
 	}
@@ -2109,7 +2104,7 @@ dns_config_changed (NMDnsManager *dns_manager, gpointer user_data)
 		gs_free char *hostname = NULL;
 
 		/* Check if the hostname was externally set */
-		if (   _get_hostname (self, &hostname)
+		if (   (hostname = _get_hostname (self))
 		    && nm_utils_is_specific_hostname (hostname)
 		    && !nm_streq0 (hostname, priv->last_hostname)) {
 			g_clear_object (&priv->lookup.addr);
@@ -2344,7 +2339,7 @@ constructed (GObject *object)
 	char *hostname = NULL;
 
 	/* Grab hostname on startup and use that if nothing provides one */
-	if (_get_hostname (self, &hostname)) {
+	if ((hostname = _get_hostname (self))) {
 		/* init last_hostname */
 		priv->last_hostname = hostname;
 
