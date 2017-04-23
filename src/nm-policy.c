@@ -490,26 +490,24 @@ lookup_callback (GObject *source,
                  GAsyncResult *result,
                  gpointer user_data)
 {
-	NMPolicy *self = (NMPolicy *) user_data;
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	const char *hostname;
-	GError *error = NULL;
+	NMPolicy *self;
+	NMPolicyPrivate *priv;
+	gs_free char *hostname = NULL;
+	gs_free_error GError *error = NULL;
 
 	hostname = g_resolver_lookup_by_address_finish (G_RESOLVER (source), result, &error);
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
-		/* Don't touch policy; it may have been freed already */
-		g_error_free (error);
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
-	}
+
+	self = user_data;
+	priv = NM_POLICY_GET_PRIVATE (self);
+
+	g_clear_object (&priv->lookup_cancellable);
 
 	if (hostname)
 		_set_hostname (self, hostname, "from address lookup");
-	else {
+	else
 		_set_hostname (self, NULL, error->message);
-		g_error_free (error);
-	}
-
-	g_clear_object (&priv->lookup_cancellable);
 }
 
 static void
