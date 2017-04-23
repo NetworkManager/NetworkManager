@@ -732,10 +732,10 @@ nmc_setting_get_property_desc (NMSetting *setting, const char *prop)
 	if (property_info->property_type->describe_fcn) {
 		desc = property_info->property_type->describe_fcn (property_info, &desc_to_free);
 	} else
-		desc = property_info->describe_message;
+		desc = _(property_info->describe_message);
 
 	if (desc) {
-		nmcli_desc = _(desc);
+		nmcli_desc = desc;
 		nmcli_desc_title = _("[nmcli specific description]");
 		nmcli_nl = "\n";
 	}

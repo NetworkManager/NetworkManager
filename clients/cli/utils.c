@@ -98,13 +98,8 @@ _meta_type_nmc_generic_info_get_fcn (const NMMetaAbstractInfo *abstract_info,
 	}
 
 	if (info->nested) {
-		const char *s;
-
 		NMC_HANDLE_TERMFORMAT (NM_META_TERM_COLOR_NORMAL);
-		s = info->name;
-		if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
-			return _(s);
-		return s;
+		return info->name;
 	}
 
 	g_return_val_if_reached (NULL);
@@ -1083,7 +1078,6 @@ _print_fill (const NmcConfig *nmc_config,
 		PrintDataHeaderCell *header_cell;
 		guint col_idx;
 		const NMMetaAbstractInfo *info;
-		gboolean translate_title;
 
 		col = &cols[i_col];
 		if (!col->is_leaf)
@@ -1099,8 +1093,6 @@ _print_fill (const NmcConfig *nmc_config,
 		header_cell->col_idx = col_idx;
 		header_cell->col = col;
 
-		translate_title = pretty;
-
 		header_cell->title = nm_meta_abstract_info_get_name (info, TRUE);
 		if (   nmc_config->multiline_output
 		    && col->parent_idx != PRINT_DATA_COL_PARENT_NIL
@@ -1111,9 +1103,6 @@ _print_fill (const NmcConfig *nmc_config,
 			                                      nm_meta_abstract_info_get_name (cols[col->parent_idx].selection_item->info, FALSE),
 			                                      header_cell->title);
 			header_cell->title_to_free = TRUE;
-		} else {
-			if (translate_title)
-				header_cell->title = _(header_cell->title);
 		}
 	}
 
@@ -1476,7 +1465,7 @@ get_value_to_print (NmcColorOption color_option,
 	nm_assert (out_to_free && !*out_to_free);
 
 	if (field_name)
-		value = _(nm_meta_abstract_info_get_name (field->info, FALSE));
+		value = nm_meta_abstract_info_get_name (field->info, FALSE);
 	else {
 		value = field->value
 		            ? (is_array
@@ -1584,7 +1573,7 @@ print_required_fields (const NmcConfig *nmc_config,
 					tmp = g_strdup_printf ("%s%s%s[%d]:",
 					                       section_prefix ? (const char*) field_values[0].value : "",
 					                       section_prefix ? "." : "",
-					                       _(nm_meta_abstract_info_get_name (field_values[idx].info, FALSE)),
+					                       nm_meta_abstract_info_get_name (field_values[idx].info, FALSE),
 					                       j);
 					width1 = strlen (tmp);
 					width2 = nmc_string_screen_width (tmp, NULL);
@@ -1605,7 +1594,7 @@ print_required_fields (const NmcConfig *nmc_config,
 				tmp = g_strdup_printf ("%s%s%s:",
 				                       section_prefix ? hdr_name : "",
 				                       section_prefix ? "." : "",
-				                       _(nm_meta_abstract_info_get_name (field_values[idx].info, FALSE)));
+				                       nm_meta_abstract_info_get_name (field_values[idx].info, FALSE));
 				width1 = strlen (tmp);
 				width2 = nmc_string_screen_width (tmp, NULL);
 				g_print ("%-*s%s\n", (int) (terse ? 0 : ML_VALUE_INDENT+width1-width2), tmp, print_val);

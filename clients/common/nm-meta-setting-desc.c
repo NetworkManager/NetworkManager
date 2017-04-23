@@ -4937,8 +4937,8 @@ static const NMMetaPropertyType _pt_gobject_devices = {
 	{ \
 		.meta_type =                    &nm_meta_type_property_info, \
 		.setting_info =                 &nm_meta_setting_infos_editor[_CURRENT_NM_META_SETTING_TYPE], \
-		.property_name =                N_(name), \
-		.describe_doc =                 N_(doc), \
+		.property_name =                name, \
+		.describe_doc =                 doc, \
 		__VA_ARGS__ \
 	}
 
@@ -4963,12 +4963,12 @@ static const NMMetaPropertyType _pt_gobject_devices = {
 	((guint32 (*) (NMSetting *)) ((sizeof (func == ((guint32 (*) (type *)) func))) ? func : func) )
 
 #define TEAM_DESCRIBE_MESSAGE \
-	"nmcli can accepts both direct JSON configuration data and a file name containing " \
-	"the configuration. In the latter case the file is read and the contents is put " \
-	"into this property.\n\n" \
-	"Examples: set team.config " \
-	"{ \"device\": \"team0\", \"runner\": {\"name\": \"roundrobin\"}, \"ports\": {\"eth1\": {}, \"eth2\": {}} }\n" \
-	"          set team.config /etc/my-team.conf\n"
+	N_("nmcli can accepts both direct JSON configuration data and a file name containing " \
+	   "the configuration. In the latter case the file is read and the contents is put " \
+	   "into this property.\n\n" \
+	   "Examples: set team.config " \
+	   "{ \"device\": \"team0\", \"runner\": {\"name\": \"roundrobin\"}, \"ports\": {\"eth1\": {}, \"eth2\": {}} }\n" \
+	   "          set team.config /etc/my-team.conf\n")
 
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_802_1X
 static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
@@ -6379,7 +6379,7 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 		.is_cli_option =                TRUE,
 		.property_alias =               "config",
 		.prompt =                       N_("Team JSON configuration [none]"),
-		.describe_message =             N_(TEAM_DESCRIBE_MESSAGE),
+		.describe_message =             TEAM_DESCRIBE_MESSAGE,
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
 			.set_fcn =                  _set_fcn_team_config,
@@ -6395,7 +6395,7 @@ static const NMMetaPropertyInfo *const property_infos_TEAM_PORT[] = {
 		.is_cli_option =                TRUE,
 		.property_alias =               "config",
 		.prompt =                       N_("Team JSON configuration [none]"),
-		.describe_message =             N_(TEAM_DESCRIBE_MESSAGE),
+		.describe_message =             TEAM_DESCRIBE_MESSAGE,
 		.property_type = DEFINE_PROPERTY_TYPE (
 			.get_fcn =                  _get_fcn_gobject,
 			.set_fcn =                  _set_fcn_team_config,
@@ -7107,40 +7107,40 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 
 /*****************************************************************************/
 
-#define SETTING_PRETTY_NAME_802_1X              "802-1x settings"
-#define SETTING_PRETTY_NAME_ADSL                "ADSL connection"
-#define SETTING_PRETTY_NAME_BLUETOOTH           "bluetooth connection"
-#define SETTING_PRETTY_NAME_BOND                "Bond device"
-#define SETTING_PRETTY_NAME_BRIDGE              "Bridge device"
-#define SETTING_PRETTY_NAME_BRIDGE_PORT         "Bridge port"
-#define SETTING_PRETTY_NAME_CDMA                "CDMA mobile broadband connection"
-#define SETTING_PRETTY_NAME_CONNECTION          "General settings"
-#define SETTING_PRETTY_NAME_DCB                 "DCB settings"
-#define SETTING_PRETTY_NAME_DUMMY               "Dummy settings"
-#define SETTING_PRETTY_NAME_GENERIC             "Generic settings"
-#define SETTING_PRETTY_NAME_GSM                 "GSM mobile broadband connection"
-#define SETTING_PRETTY_NAME_INFINIBAND          "InfiniBand connection"
-#define SETTING_PRETTY_NAME_IP4_CONFIG          "IPv4 protocol"
-#define SETTING_PRETTY_NAME_IP6_CONFIG          "IPv6 protocol"
-#define SETTING_PRETTY_NAME_IP_TUNNEL           "IP-tunnel settings"
-#define SETTING_PRETTY_NAME_MACSEC              "MACsec connection"
-#define SETTING_PRETTY_NAME_MACVLAN             "macvlan connection"
-#define SETTING_PRETTY_NAME_OLPC_MESH           "OLPC Mesh connection"
-#define SETTING_PRETTY_NAME_PPP                 "PPP settings"
-#define SETTING_PRETTY_NAME_PPPOE               "PPPoE"
-#define SETTING_PRETTY_NAME_PROXY               "Proxy"
-#define SETTING_PRETTY_NAME_SERIAL              "Serial settings"
-#define SETTING_PRETTY_NAME_TEAM                "Team device"
-#define SETTING_PRETTY_NAME_TEAM_PORT           "Team port"
-#define SETTING_PRETTY_NAME_TUN                 "Tun device"
-#define SETTING_PRETTY_NAME_USER                "User settings"
-#define SETTING_PRETTY_NAME_VLAN                "VLAN connection"
-#define SETTING_PRETTY_NAME_VPN                 "VPN connection"
-#define SETTING_PRETTY_NAME_VXLAN               "VXLAN connection"
-#define SETTING_PRETTY_NAME_WIMAX               "WiMAX connection"
-#define SETTING_PRETTY_NAME_WIRED               "Wired Ethernet"
-#define SETTING_PRETTY_NAME_WIRELESS            "Wi-Fi connection"
-#define SETTING_PRETTY_NAME_WIRELESS_SECURITY   "Wi-Fi security settings"
+#define SETTING_PRETTY_NAME_802_1X              N_("802-1x settings")
+#define SETTING_PRETTY_NAME_ADSL                N_("ADSL connection")
+#define SETTING_PRETTY_NAME_BLUETOOTH           N_("bluetooth connection")
+#define SETTING_PRETTY_NAME_BOND                N_("Bond device")
+#define SETTING_PRETTY_NAME_BRIDGE              N_("Bridge device")
+#define SETTING_PRETTY_NAME_BRIDGE_PORT         N_("Bridge port")
+#define SETTING_PRETTY_NAME_CDMA                N_("CDMA mobile broadband connection")
+#define SETTING_PRETTY_NAME_CONNECTION          N_("General settings")
+#define SETTING_PRETTY_NAME_DCB                 N_("DCB settings")
+#define SETTING_PRETTY_NAME_DUMMY               N_("Dummy settings")
+#define SETTING_PRETTY_NAME_GENERIC             N_("Generic settings")
+#define SETTING_PRETTY_NAME_GSM                 N_("GSM mobile broadband connection")
+#define SETTING_PRETTY_NAME_INFINIBAND          N_("InfiniBand connection")
+#define SETTING_PRETTY_NAME_IP4_CONFIG          N_("IPv4 protocol")
+#define SETTING_PRETTY_NAME_IP6_CONFIG          N_("IPv6 protocol")
+#define SETTING_PRETTY_NAME_IP_TUNNEL           N_("IP-tunnel settings")
+#define SETTING_PRETTY_NAME_MACSEC              N_("MACsec connection")
+#define SETTING_PRETTY_NAME_MACVLAN             N_("macvlan connection")
+#define SETTING_PRETTY_NAME_OLPC_MESH           N_("OLPC Mesh connection")
+#define SETTING_PRETTY_NAME_PPP                 N_("PPP settings")
+#define SETTING_PRETTY_NAME_PPPOE               N_("PPPoE")
+#define SETTING_PRETTY_NAME_PROXY               N_("Proxy")
+#define SETTING_PRETTY_NAME_SERIAL              N_("Serial settings")
+#define SETTING_PRETTY_NAME_TEAM                N_("Team device")
+#define SETTING_PRETTY_NAME_TEAM_PORT           N_("Team port")
+#define SETTING_PRETTY_NAME_TUN                 N_("Tun device")
+#define SETTING_PRETTY_NAME_USER                N_("User settings")
+#define SETTING_PRETTY_NAME_VLAN                N_("VLAN connection")
+#define SETTING_PRETTY_NAME_VPN                 N_("VPN connection")
+#define SETTING_PRETTY_NAME_VXLAN               N_("VXLAN connection")
+#define SETTING_PRETTY_NAME_WIMAX               N_("WiMAX connection")
+#define SETTING_PRETTY_NAME_WIRED               N_("Wired Ethernet")
+#define SETTING_PRETTY_NAME_WIRELESS            N_("Wi-Fi connection")
+#define SETTING_PRETTY_NAME_WIRELESS_SECURITY   N_("Wi-Fi security settings")
 
 #define NM_META_SETTING_VALID_PARTS(...) \
 	((const NMMetaSettingValidPartItem *const[]) { __VA_ARGS__  NULL })
@@ -7156,7 +7156,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 	[NM_META_SETTING_TYPE_##type] = { \
 		.meta_type =                        &nm_meta_type_setting_info_editor, \
 		.general =                          &nm_meta_setting_infos[NM_META_SETTING_TYPE_##type], \
-		.pretty_name =                      N_(SETTING_PRETTY_NAME_##type), \
+		.pretty_name =                      SETTING_PRETTY_NAME_##type, \
 		__VA_ARGS__ \
 	}
 #define SETTING_INFO(type, ...) \
@@ -7165,7 +7165,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 		.general =                          &nm_meta_setting_infos[NM_META_SETTING_TYPE_##type], \
 		.properties =                       property_infos_##type, \
 		.properties_num =                   G_N_ELEMENTS (property_infos_##type) - 1, \
-		.pretty_name =                      N_(SETTING_PRETTY_NAME_##type), \
+		.pretty_name =                      SETTING_PRETTY_NAME_##type, \
 		__VA_ARGS__ \
 	}
 	SETTING_INFO (802_1X),
@@ -7444,8 +7444,6 @@ _meta_type_setting_info_editor_get_fcn (const NMMetaAbstractInfo *abstract_info,
 
 	nm_assert (out_to_free);
 
-	if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
-		return _(info->general->setting_name);
 	return info->general->setting_name;
 }
 

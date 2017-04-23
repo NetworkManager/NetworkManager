@@ -24,7 +24,7 @@
 
 struct _NMDevice;
 
-#define NM_META_TEXT_HIDDEN "<hidden>"
+#define NM_META_TEXT_HIDDEN N_("<hidden>")
 
 #define NM_META_TEXT_PROMPT_ADSL_PROTO N_("Protocol")
 #define NM_META_TEXT_PROMPT_ADSL_PROTO_CHOICES "(" NM_SETTING_ADSL_PROTOCOL_PPPOA "/" NM_SETTING_ADSL_PROTOCOL_PPPOE "/" NM_SETTING_ADSL_PROTOCOL_IPOATM ")"
@@ -186,8 +186,10 @@ struct _NMMetaOperationContext {
 
 struct _NMMetaPropertyType {
 
+	/* should return a translated string */
 	const char *(*describe_fcn) (const NMMetaPropertyInfo *property_info,
 	                             char **out_to_free);
+
 	gconstpointer (*get_fcn) (const NMMetaPropertyInfo *property_info,
 	                          const NMMetaEnvironment *environment,
 	                          gpointer environment_user_data,
@@ -281,6 +283,7 @@ struct _NMMetaPropertyInfo {
 
 	const char *describe_doc;
 
+	/* a non-translated but translatable static description (marked with N_()). */
 	const char *describe_message;
 
 	const NMMetaPropertyType    *property_type;
