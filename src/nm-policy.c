@@ -629,13 +629,14 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const 
 		       temp_hostname);
 		priv->dhcp_hostname = FALSE;
 
+		if (!nm_utils_is_specific_hostname (temp_hostname))
+			nm_clear_g_free (&temp_hostname);
 		if (!nm_streq0 (temp_hostname, priv->orig_hostname)) {
 			/* Update original (fallback) hostname */
 			g_free (priv->orig_hostname);
-			if (nm_utils_is_specific_hostname (temp_hostname))
-				priv->orig_hostname = g_steal_pointer (&temp_hostname);
-			else
-				priv->orig_hostname = NULL;
+			priv->orig_hostname = g_steal_pointer (&temp_hostname);
+			_LOGT (LOGD_DNS, "hostname-original: update to %s%s%s",
+			       NM_PRINT_FMT_QUOTE_STRING (priv->orig_hostname));
 		}
 	}
 
@@ -2347,6 +2348,8 @@ constructed (GObject *object)
 		if (nm_utils_is_specific_hostname (hostname))
 			priv->orig_hostname = g_strdup (hostname);
 	}
+	_LOGT (LOGD_DNS, "hostname-original: set to %s%s%s",
+	       NM_PRINT_FMT_QUOTE_STRING (priv->orig_hostname));
 
 	priv->firewall_manager = g_object_ref (nm_firewall_manager_get ());
 	g_signal_connect (priv->firewall_manager, NM_FIREWALL_MANAGER_STATE_CHANGED,
