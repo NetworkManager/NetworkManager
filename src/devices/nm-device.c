@@ -323,7 +323,7 @@ typedef struct _NMDevicePrivate {
 	/* Proxy Configuration */
 	NMProxyConfig *proxy_config;
 	NMPacrunnerManager *pacrunner_manager;
-	bool proxy_config_sent;
+	NMPacrunnerCallId *pacrunner_call_id;
 
 	/* IP4 configuration info */
 	NMIP4Config *   ip4_config;     /* Combined config from VPN, settings, and device */
@@ -8880,23 +8880,32 @@ nm_device_reactivate_ip6_config (NMDevice *self,
 }
 
 static void
+_pacrunner_manager_send (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	nm_pacrunner_manager_remove_clear (priv->pacrunner_manager,
+	                                   &priv->pacrunner_call_id);
+
+	if (!priv->pacrunner_manager)
+		priv->pacrunner_manager = g_object_ref (nm_pacrunner_manager_get ());
+
+	priv->pacrunner_call_id = nm_pacrunner_manager_send (priv->pacrunner_manager,
+	                                                     nm_device_get_ip_iface (self),
+	                                                     priv->proxy_config,
+	                                                     NULL,
+	                                                     NULL);
+}
+
+static void
 reactivate_proxy_config (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (!priv->proxy_config_sent)
+	if (!priv->pacrunner_call_id)
 		return;
-
-	nm_pacrunner_manager_remove (priv->pacrunner_manager,
-	                             nm_device_get_ip_iface (self));
-
 	nm_device_set_proxy_config (self, priv->dhcp4.pac_url);
-	nm_pacrunner_manager_send (priv->pacrunner_manager,
-	                           nm_device_get_ip_iface (self),
-	                           nm_device_get_ip_iface (self),
-	                           priv->proxy_config,
-	                           NULL,
-	                           NULL);
+	_pacrunner_manager_send (self);
 }
 
 static gboolean
@@ -12565,11 +12574,8 @@ _set_state_full (NMDevice *self,
 			}
 		}
 
-		if (priv->proxy_config_sent) {
-			nm_pacrunner_manager_remove (priv->pacrunner_manager,
-			                             nm_device_get_ip_iface (self));
-			priv->proxy_config_sent = FALSE;
-		}
+		nm_pacrunner_manager_remove_clear (priv->pacrunner_manager,
+		                                   &priv->pacrunner_call_id);
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
 		if (   priv->queued_act_request
@@ -12594,15 +12600,8 @@ _set_state_full (NMDevice *self,
 		                           req,
 		                           NULL, NULL, NULL);
 
-		if (priv->proxy_config) {
-			nm_pacrunner_manager_send (priv->pacrunner_manager,
-			                           nm_device_get_ip_iface (self),
-			                           nm_device_get_ip_iface (self),
-			                           priv->proxy_config,
-			                           NULL,
-			                           NULL);
-			priv->proxy_config_sent = TRUE;
-		}
+		if (priv->proxy_config)
+			_pacrunner_manager_send (self);
 		break;
 	case NM_DEVICE_STATE_FAILED:
 		/* Usually upon failure the activation chain is interrupted in
@@ -13608,8 +13607,6 @@ nm_device_init (NMDevice *self)
 	priv->ip6_saved_properties = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
 	priv->sys_iface_state = NM_DEVICE_SYS_IFACE_STATE_EXTERNAL;
 
-	priv->pacrunner_manager = g_object_ref (nm_pacrunner_manager_get ());
-
 	priv->default_route.v4_is_assumed = TRUE;
 	priv->default_route.v6_is_assumed = TRUE;
 
@@ -13734,6 +13731,8 @@ dispose (GObject *object)
 
 	dispatcher_cleanup (self);
 
+	nm_pacrunner_manager_remove_clear (priv->pacrunner_manager,
+	                                   &priv->pacrunner_call_id);
 	g_clear_object (&priv->pacrunner_manager);
 
 	_cleanup_generic_pre (self, CLEANUP_TYPE_KEEP);
