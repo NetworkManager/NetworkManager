@@ -3339,6 +3339,16 @@ make_wpa_setting (shvarFile *ifcfg,
 	if (!wpa_psk && !wpa_eap && !ieee8021x)
 		goto error; /* Not WPA or Dynamic WEP */
 
+	/* WPS */
+	i_val = NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DEFAULT;
+	if (!svGetValueEnum (ifcfg, "WPS_METHOD",
+	                     nm_setting_wireless_security_wps_method_get_type (),
+	                     &i_val, error))
+		goto error;
+	g_object_set (wsec,
+	              NM_SETTING_WIRELESS_SECURITY_WPS_METHOD, (guint) i_val,
+	              NULL);
+
 	/* Pairwise and Group ciphers (only relevant for WPA/RSN) */
 	if (wpa_psk || wpa_eap) {
 		fill_wpa_ciphers (ifcfg, wsec, FALSE, adhoc);
