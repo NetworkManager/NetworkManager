@@ -3328,6 +3328,7 @@ make_wpa_setting (shvarFile *ifcfg,
 	char *value, *psk, *lower;
 	gboolean wpa_psk = FALSE, wpa_eap = FALSE, ieee8021x = FALSE;
 	int i_val;
+	GError *local = NULL;
 
 	wsec = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
 
@@ -3371,12 +3372,14 @@ make_wpa_setting (shvarFile *ifcfg,
 
 		/* Read PSK if it's system-owned */
 		if (psk_flags == NM_SETTING_SECRET_FLAG_NONE) {
-			psk = parse_wpa_psk (ifcfg, file, ssid, error);
+			psk = parse_wpa_psk (ifcfg, file, ssid, &local);
 			if (psk) {
 				g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_PSK, psk, NULL);
 				g_free (psk);
-			} else if (error)
+			} else if (local) {
+				g_propagate_error (error, local);
 				goto error;
+			}
 		}
 
 		if (adhoc)
