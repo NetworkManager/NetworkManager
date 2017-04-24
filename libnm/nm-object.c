@@ -172,6 +172,32 @@ _nm_object_get_proxy (NMObject   *object,
 	return proxy;
 }
 
+static void
+_proxy_disconnect (NMObject *self, GDBusProxy *proxy)
+{
+	nm_assert (NM_IS_OBJECT (self));
+	nm_assert (G_IS_DBUS_PROXY (proxy));
+
+	g_signal_handlers_disconnect_by_data (proxy, self);
+}
+
+static void
+_proxy_add (NMObject *self, GHashTable *proxies, const char *interface, GDBusProxy *new_proxy)
+{
+	GDBusProxy *proxy;
+
+	nm_assert (NM_IS_OBJECT (self));
+	nm_assert (G_IS_DBUS_PROXY (new_proxy));
+	nm_assert (proxies);
+	nm_assert (interface);
+
+	proxy = g_hash_table_lookup (proxies, interface);
+	if (proxy)
+		_proxy_disconnect (self, proxy);
+
+	g_hash_table_insert (proxies, (char *) interface, new_proxy);
+}
+
 typedef enum {
 	NOTIFY_SIGNAL_PENDING_NONE,
 	NOTIFY_SIGNAL_PENDING_ADDED,
@@ -1581,7 +1607,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 		                                           cancellable, error);
 		if (!proxy)
 			return FALSE;
-		g_hash_table_insert (priv->proxies, (char *) interface, proxy);
+		_proxy_add (self, priv->proxies, interface, proxy);
 	}
 
 	priv->properties_proxy = _nm_dbus_new_proxy_for_connection (priv->connection,
@@ -1644,7 +1670,7 @@ init_async_got_proxy (GObject *object, GAsyncResult *result, gpointer user_data)
 			if (!strcmp (interface, DBUS_INTERFACE_PROPERTIES))
 				priv->properties_proxy = proxy;
 			else
-				g_hash_table_insert (priv->proxies, (char *) interface, proxy);
+				_proxy_add (self, priv->proxies, interface, proxy);
 		}
 	}
 
@@ -1801,7 +1827,8 @@ get_property (GObject *object, guint prop_id,
 static void
 dispose (GObject *object)
 {
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+	NMObject *self = NM_OBJECT (object);
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
 
 	nm_clear_g_source (&priv->notify_id);
 
@@ -1809,7 +1836,15 @@ dispose (GObject *object)
 	priv->notify_items = NULL;
 
 	g_slist_free_full (priv->waiters, odata_free);
-	g_clear_pointer (&priv->proxies, g_hash_table_unref);
+	if (priv->proxies) {
+		GHashTableIter iter;
+		GDBusProxy *proxy;
+
+		g_hash_table_iter_init (&iter, priv->proxies);
+		while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &proxy))
+			_proxy_disconnect (self, proxy);
+		g_clear_pointer (&priv->proxies, g_hash_table_unref);
+	}
 	g_clear_object (&priv->properties_proxy);
 
 	g_clear_object (&priv->connection);
