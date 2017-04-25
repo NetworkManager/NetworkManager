@@ -1,0 +1,13 @@
+ESSID=blahblah
+MODE=Managed
+MAC_ADDRESS_RANDOMIZATION=default
+TYPE=Wireless
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=dhcp
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME="random wifi connection"
+UUID=${UUID}
+ONBOOT=yes
