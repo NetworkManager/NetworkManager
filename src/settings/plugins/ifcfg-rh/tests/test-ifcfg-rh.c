@@ -141,19 +141,6 @@ _assert_reread_same_FIXME (NMConnection *connection, NMConnection *reread)
 		g_assert (_reread_same); \
 	} G_STMT_END
 
-#define _writer_update_connection_FIXME(connection, ifcfg_dir, filename) \
-	G_STMT_START { \
-		gs_unref_object NMConnection *_reread = NULL; \
-		NMConnection *_c = (connection); \
-		gboolean _reread_same = FALSE; \
-		\
-		/* FIXME: this should not happen. Fix to use _writer_update_connection() */ \
-		\
-		_writer_update_connection_reread (_c, ifcfg_dir, filename, &_reread, &_reread_same); \
-		_assert_reread_same_FIXME (_c, _reread); \
-		g_assert (!_reread_same); \
-	} G_STMT_END
-
 static NMConnection *
 _connection_from_file (const char *filename,
                        const char *network_file,
