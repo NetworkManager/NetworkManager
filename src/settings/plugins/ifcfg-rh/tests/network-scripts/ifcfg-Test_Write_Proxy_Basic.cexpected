@@ -1,0 +1,15 @@
+TYPE=Ethernet
+PROXY_METHOD=auto
+PAC_URL=https://wpad.neverland.org/wpad.dat
+BROWSER_ONLY=no
+BOOTPROTO=dhcp
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME="Test Write Proxy Basic"
+UUID=${UUID}
+ONBOOT=yes
