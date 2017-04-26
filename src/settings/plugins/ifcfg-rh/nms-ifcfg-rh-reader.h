@@ -28,8 +28,6 @@ NMConnection *connection_from_file (const char *filename,
                                     GError **error,
                                     gboolean *out_ignore_error);
 
-char *uuid_from_file (const char *filename);
-
 guint devtimeout_from_file (const char *filename);
 
 /* for test-ifcfg-rh */

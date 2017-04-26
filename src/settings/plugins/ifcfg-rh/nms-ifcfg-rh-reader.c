@@ -5100,32 +5100,6 @@ create_unhandled_connection (const char *filename, shvarFile *ifcfg,
 	return NULL;
 }
 
-char *
-uuid_from_file (const char *filename)
-{
-	const char *ifcfg_name = NULL;
-	shvarFile *ifcfg;
-	char *uuid;
-
-	g_return_val_if_fail (filename != NULL, NULL);
-
-	ifcfg_name = utils_get_ifcfg_name (filename, TRUE);
-	if (!ifcfg_name)
-		return NULL;
-
-	ifcfg = svOpenFile (filename, NULL);
-	if (!ifcfg)
-		return NULL;
-
-	/* Try for a UUID key before falling back to hashing the file name */
-	uuid = svGetValueStr_cp (ifcfg, "UUID");
-	if (!uuid)
-		uuid = nm_utils_uuid_generate_from_string (svFileGetName (ifcfg), -1, NM_UTILS_UUID_TYPE_LEGACY, NULL);
-
-	svCloseFile (ifcfg);
-	return uuid;
-}
-
 static void
 check_dns_search_domains (shvarFile *ifcfg, NMSetting *s_ip4, NMSetting *s_ip6)
 {
