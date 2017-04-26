@@ -2096,11 +2096,17 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		return TRUE;
 	}
 
+	num = nm_setting_ip_config_get_num_addresses (s_ip4);
+
 	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO))
 		svSetValueStr (ifcfg, "BOOTPROTO", "dhcp");
-	else if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL))
-		svSetValueStr (ifcfg, "BOOTPROTO", "none");
-	else if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL))
+	else if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
+		/* Preserve the archaic form of "static" if there actually
+		 * is static configuration. */
+		if (g_strcmp0 (svGetValue (ifcfg, "BOOTPROTO", &tmp), "static") || !num)
+			svSetValueStr (ifcfg, "BOOTPROTO", "none");
+		g_free (tmp);
+	} else if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL))
 		svSetValueStr (ifcfg, "BOOTPROTO", "autoip");
 	else if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
 		svSetValueStr (ifcfg, "BOOTPROTO", "shared");
@@ -2119,7 +2125,6 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	/* Write out IPADDR<n>, PREFIX<n>, GATEWAY<n> for current IP addresses
 	 * without labels. Unset obsolete NETMASK<n>.
 	 */
-	num = nm_setting_ip_config_get_num_addresses (s_ip4);
 	for (i = n = 0; i < num; i++) {
 		NMIPAddress *addr;
 
