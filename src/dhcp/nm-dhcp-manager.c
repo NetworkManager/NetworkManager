@@ -163,7 +163,7 @@ client_start (NMDhcpManager *self,
               guint32 timeout,
               const char *dhcp_anycast_addr,
               const char *hostname,
-              const char *fqdn,
+              gboolean hostname_use_fqdn,
               gboolean info_only,
               NMSettingIP6ConfigPrivacy privacy,
               const char *last_ip4_address,
@@ -209,7 +209,7 @@ client_start (NMDhcpManager *self,
 	if (ipv6)
 		success = nm_dhcp_client_start_ip6 (client, dhcp_anycast_addr, ipv6_ll_addr, hostname, info_only, privacy, needed_prefixes);
 	else
-		success = nm_dhcp_client_start_ip4 (client, dhcp_client_id, dhcp_anycast_addr, hostname, fqdn, last_ip4_address);
+		success = nm_dhcp_client_start_ip4 (client, dhcp_client_id, dhcp_anycast_addr, hostname, hostname_use_fqdn, last_ip4_address);
 
 	if (!success) {
 		remove_client (self, client);
@@ -245,17 +245,21 @@ nm_dhcp_manager_start_ip4 (NMDhcpManager *self,
                            const char *last_ip_address)
 {
 	const char *hostname = NULL;
-	const char *fqdn = NULL;
+	gboolean use_fqdn = FALSE;
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
 
 	if (send_hostname) {
-		hostname = get_send_hostname (self, dhcp_hostname);
-		fqdn = dhcp_fqdn;
+		if (dhcp_fqdn) {
+			hostname = dhcp_fqdn;
+			use_fqdn = TRUE;
+		} else
+			hostname = get_send_hostname (self, dhcp_hostname);
 	}
+
 	return client_start (self, iface, ifindex, hwaddr, uuid, priority, FALSE, NULL,
 	                     dhcp_client_id, timeout, dhcp_anycast_addr, hostname,
-	                     fqdn, FALSE, 0, last_ip_address, 0);
+	                     use_fqdn, FALSE, 0, last_ip_address, 0);
 }
 
 /* Caller owns a reference to the NMDhcpClient on return */
@@ -282,7 +286,7 @@ nm_dhcp_manager_start_ip6 (NMDhcpManager *self,
 	if (send_hostname)
 		hostname = get_send_hostname (self, dhcp_hostname);
 	return client_start (self, iface, ifindex, hwaddr, uuid, priority, TRUE,
-	                     ll_addr, NULL, timeout, dhcp_anycast_addr, hostname, NULL, info_only,
+	                     ll_addr, NULL, timeout, dhcp_anycast_addr, hostname, TRUE, info_only,
 	                     privacy, NULL, needed_prefixes);
 }
 
