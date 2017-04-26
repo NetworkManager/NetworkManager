@@ -2127,6 +2127,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	 */
 	for (i = n = 0; i < num; i++) {
 		NMIPAddress *addr;
+		guint prefix;
 
 		addr = nm_setting_ip_config_get_address (s_ip4, i);
 
@@ -2157,11 +2158,19 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 
 		svSetValueStr (ifcfg, addr_key, nm_ip_address_get_address (addr));
 
-		tmp = g_strdup_printf ("%u", nm_ip_address_get_prefix (addr));
+		prefix = nm_ip_address_get_prefix (addr);
+		tmp = g_strdup_printf ("%u", prefix);
 		svSetValueStr (ifcfg, prefix_key, tmp);
 		g_free (tmp);
 
-		svUnsetValue (ifcfg, netmask_key);
+		/* If the legacy "NETMASK" is present, keep it. */
+		if (svGetValue (ifcfg, netmask_key, &tmp)) {
+			char buf[INET_ADDRSTRLEN];
+
+			g_free (tmp);
+			svSetValueStr (ifcfg, netmask_key, nm_utils_inet4_ntop (prefix, buf));
+		}
+
 		svUnsetValue (ifcfg, gw_key);
 		n++;
 	}
