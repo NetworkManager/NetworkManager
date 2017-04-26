@@ -93,29 +93,31 @@ grab_request_options (GPtrArray *store, const char* line)
 
 
 static void
-add_hostname4 (GString *str, const char *hostname, const char *fqdn)
+add_hostname4 (GString *str, const char *hostname, gboolean use_fqdn)
 {
 	char *plain_hostname, *dot;
 
-	if (fqdn) {
-		g_string_append_printf (str, FQDN_FORMAT "\n", fqdn);
-		g_string_append (str,
-		                 "send fqdn.encoded on;\n"
-		                 "send fqdn.server-update on;\n");
-	} else if (hostname) {
-		plain_hostname = g_strdup (hostname);
-		dot = strchr (plain_hostname, '.');
-		/* get rid of the domain */
-		if (dot)
-			*dot = '\0';
+	if (hostname) {
+		if (use_fqdn) {
+			g_string_append_printf (str, FQDN_FORMAT "\n", hostname);
+			g_string_append (str,
+			                 "send fqdn.encoded on;\n"
+			                 "send fqdn.server-update on;\n");
+		} else {
+			plain_hostname = g_strdup (hostname);
+			dot = strchr (plain_hostname, '.');
+			/* get rid of the domain */
+			if (dot)
+				*dot = '\0';
 
-		g_string_append_printf (str, HOSTNAME4_FORMAT "\n", plain_hostname);
-		g_free (plain_hostname);
+			g_string_append_printf (str, HOSTNAME4_FORMAT "\n", plain_hostname);
+			g_free (plain_hostname);
+		}
 	}
 }
 
 static void
-add_ip4_config (GString *str, GBytes *client_id, const char *hostname, const char *fqdn)
+add_ip4_config (GString *str, GBytes *client_id, const char *hostname, gboolean use_fqdn)
 {
 	if (client_id) {
 		const char *p;
@@ -150,7 +152,7 @@ add_ip4_config (GString *str, GBytes *client_id, const char *hostname, const cha
 		g_string_append (str, "; # added by NetworkManager\n");
 	}
 
-	add_hostname4 (str, hostname, fqdn);
+	add_hostname4 (str, hostname, use_fqdn);
 
 	g_string_append_c (str, '\n');
 
@@ -271,7 +273,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
                                 GBytes *client_id,
                                 const char *anycast_addr,
                                 const char *hostname,
-                                const char *fqdn,
+                                gboolean use_fqdn,
                                 const char *orig_path,
                                 const char *orig_contents,
                                 GBytes **out_new_client_id)
@@ -328,7 +330,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
 			}
 
 			/* Override config file hostname and use one from the connection */
-			if (hostname || fqdn) {
+			if (hostname) {
 				if (strncmp (p, HOSTNAME4_TAG, strlen (HOSTNAME4_TAG)) == 0)
 					continue;
 				if (strncmp (p, FQDN_TAG, strlen (FQDN_TAG)) == 0)
@@ -388,7 +390,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
 		add_request (reqs, "dhcp6.domain-search");
 		add_request (reqs, "dhcp6.client-id");
 	} else {
-		add_ip4_config (new_contents, client_id, hostname, fqdn);
+		add_ip4_config (new_contents, client_id, hostname, use_fqdn);
 		add_request (reqs, "rfc3442-classless-static-routes");
 		add_request (reqs, "ms-classless-static-routes");
 		add_request (reqs, "static-routes");

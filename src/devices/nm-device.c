@@ -12207,7 +12207,7 @@ nm_device_spawn_iface_helper (NMDevice *self)
 			g_ptr_array_add (argv, g_strdup ("--dhcp4-required"));
 
 		if (priv->dhcp4.client) {
-			const char *hostname, *fqdn;
+			const char *hostname;
 			GBytes *client_id;
 
 			client_id = nm_dhcp_client_get_client_id (priv->dhcp4.client);
@@ -12221,14 +12221,11 @@ nm_device_spawn_iface_helper (NMDevice *self)
 
 			hostname = nm_dhcp_client_get_hostname (priv->dhcp4.client);
 			if (hostname) {
-				g_ptr_array_add (argv, g_strdup ("--dhcp4-hostname"));
+				if (nm_dhcp_client_get_use_fqdn (priv->dhcp4.client))
+					g_ptr_array_add (argv, g_strdup ("--dhcp4-fqdn"));
+				else
+					g_ptr_array_add (argv, g_strdup ("--dhcp4-hostname"));
 				g_ptr_array_add (argv, g_strdup (hostname));
-			}
-
-			fqdn = nm_dhcp_client_get_fqdn (priv->dhcp4.client);
-			if (fqdn) {
-				g_ptr_array_add (argv, g_strdup ("--dhcp4-fqdn"));
-				g_ptr_array_add (argv, g_strdup (fqdn));
 			}
 		}
 
