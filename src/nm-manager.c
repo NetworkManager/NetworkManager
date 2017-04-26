@@ -1103,6 +1103,11 @@ nm_manager_get_connection_iface (NMManager *self,
 
 	factory = nm_device_factory_manager_find_factory_for_connection (connection);
 	if (!factory) {
+		if (nm_streq0 (nm_connection_get_connection_type (connection), NM_SETTING_GENERIC_SETTING_NAME)) {
+			/* the generic type doesn't have a factory. */
+			goto return_ifname_fom_connection;
+		}
+
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_FAILED,
@@ -1114,15 +1119,7 @@ nm_manager_get_connection_iface (NMManager *self,
 	if (   !out_parent
 	    && !NM_DEVICE_FACTORY_GET_INTERFACE (factory)->get_connection_iface) {
 		/* optimization. Shortcut lookup of the partent device. */
-		iface = g_strdup (nm_connection_get_interface_name (connection));
-		if (!iface) {
-			g_set_error (error,
-			             NM_MANAGER_ERROR,
-			             NM_MANAGER_ERROR_FAILED,
-			             "failed to determine interface name: error determine name for %s",
-			             nm_connection_get_connection_type (connection));
-		}
-		return iface;
+		goto return_ifname_fom_connection;
 	}
 
 	parent = find_parent_device_for_connection (self, connection, factory);
@@ -1135,6 +1132,17 @@ nm_manager_get_connection_iface (NMManager *self,
 
 	if (out_parent)
 		*out_parent = parent;
+	return iface;
+
+return_ifname_fom_connection:
+	iface = g_strdup (nm_connection_get_interface_name (connection));
+	if (!iface) {
+		g_set_error (error,
+		             NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_FAILED,
+		             "failed to determine interface name: error determine name for %s",
+		             nm_connection_get_connection_type (connection));
+	}
 	return iface;
 }
 
