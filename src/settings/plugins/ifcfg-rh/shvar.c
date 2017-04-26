@@ -897,8 +897,19 @@ _svGetValue (shvarFile *s, const char *key, char **to_free)
 	}
 	if (last) {
 		line = last->data;
-		if (line->line)
-			return svUnescape (line->line, to_free);
+		if (line->line) {
+			const char *v;
+
+			v = svUnescape (line->line, to_free);
+			if (!v) {
+				/* a wrongly quoted value is treated like the empty string.
+				 * See also svWriteFile(), which handles unparsable values
+				 * that way. */
+				nm_assert (!*to_free);
+				return "";
+			}
+			return v;
+		}
 	}
 	*to_free = NULL;
 	return NULL;
