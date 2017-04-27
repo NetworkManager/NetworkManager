@@ -411,7 +411,7 @@ gboolean nm_utils_ipv6_addr_set_stable_privacy_impl (NMUtilsStableType stable_ty
                                                      struct in6_addr *addr,
                                                      const char *ifname,
                                                      const char *network_id,
-                                                     guint dad_counter,
+                                                     guint32 dad_counter,
                                                      guint8 *secret_key,
                                                      gsize key_len,
                                                      GError **error);
@@ -420,7 +420,7 @@ gboolean nm_utils_ipv6_addr_set_stable_privacy (NMUtilsStableType id_type,
                                                 struct in6_addr *addr,
                                                 const char *ifname,
                                                 const char *network_id,
-                                                guint dad_counter,
+                                                guint32 dad_counter,
                                                 GError **error);
 
 char *nm_utils_hw_addr_gen_random_eth (const char *current_mac_address,
