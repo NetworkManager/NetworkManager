@@ -268,7 +268,7 @@ _nm_utils_enum_get_values (GType type, gint from, gint to)
 
 		for (i = 0; i < flags_class->n_values; i++) {
 			flags_value = &flags_class->values[i];
-			if (flags_value->value >= from && flags_value->value <= to) {
+			if (flags_value->value >= (guint) from && flags_value->value <= (guint) to) {
 				if (_enum_is_valid_flags_nick (flags_value->value_nick))
 					g_ptr_array_add (array, (gpointer) flags_value->value_nick);
 				else
