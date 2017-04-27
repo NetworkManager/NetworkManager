@@ -395,7 +395,7 @@ nm_setting_bond_remove_option (NMSettingBond *setting,
 
 /**
  * nm_setting_bond_get_valid_options:
- * @setting: (allow none): the #NMSettingBond
+ * @setting: (allow-none): the #NMSettingBond
  *
  * Returns a list of valid bond options.
  *
