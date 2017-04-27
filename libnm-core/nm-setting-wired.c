@@ -565,7 +565,7 @@ nm_setting_wired_remove_s390_option (NMSettingWired *setting,
 
 /**
  * nm_setting_wired_get_valid_s390_options:
- * @setting: (allow none): the #NMSettingWired
+ * @setting: (allow-none): the #NMSettingWired
  *
  * Returns a list of valid s390 options.
  *
