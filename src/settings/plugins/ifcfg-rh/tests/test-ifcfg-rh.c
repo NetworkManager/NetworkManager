@@ -5529,7 +5529,7 @@ test_write_wifi_wep_104_ascii (void)
 
 	_writer_new_connec_exp (connection,
 	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        TEST_SCRATCH_DIR "/network-scripts/ifcfg-Test_Write_Wifi_WEP_104_ASCII.cexpected",
+	                        TEST_IFCFG_DIR "/network-scripts/ifcfg-Test_Write_Wifi_WEP_104_ASCII.cexpected",
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
