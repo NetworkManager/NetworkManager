@@ -90,6 +90,25 @@ GETTER (void) \
 
 /*****************************************************************************/
 
+typedef struct {
+	union {
+		guint8 addr_ptr[1];
+		in_addr_t addr4;
+		struct in6_addr addr6;
+
+		/* NMIPAddr is really a union for IP addresses.
+		 * However, as ethernet addresses fit in here nicely, use
+		 * it also for an ethernet MAC address. */
+		guint8 addr_eth[6 /*ETH_ALEN*/];
+	};
+} NMIPAddr;
+
+extern const NMIPAddr nm_ip_addr_zero;
+
+#define NMIPAddrInit { .addr6 = IN6ADDR_ANY_INIT }
+
+/*****************************************************************************/
+
 gboolean nm_ethernet_address_is_valid (gconstpointer addr, gssize len);
 
 gconstpointer nm_utils_ipx_address_clear_host_address (int family, gpointer dst, gconstpointer src, guint8 plen);

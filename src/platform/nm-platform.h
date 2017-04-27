@@ -93,24 +93,6 @@ typedef enum { /*< skip >*/
 	NM_PLATFORM_ERROR_OPNOTSUPP,
 } NMPlatformError;
 
-
-typedef struct {
-	union {
-		guint8 addr_ptr[1];
-		in_addr_t addr4;
-		struct in6_addr addr6;
-
-		/* NMIPAddr is really a union for IP addresses.
-		 * However, as ethernet addresses fit in here nicely, use
-		 * it also for an ethernet MAC address. */
-		guint8 addr_eth[6 /*ETH_ALEN*/];
-	};
-} NMIPAddr;
-
-extern const NMIPAddr nm_ip_addr_zero;
-
-#define NMIPAddrInit { .addr6 = IN6ADDR_ANY_INIT }
-
 #define NM_PLATFORM_LINK_OTHER_NETNS    (-1)
 
 #define __NMPlatformObject_COMMON \
