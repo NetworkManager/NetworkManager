@@ -3329,7 +3329,7 @@ nm_utils_ipv6_interface_identifier_get_from_addr (NMUtilsIPv6IfaceId *iid,
  */
 gboolean
 nm_utils_ipv6_interface_identifier_get_from_token (NMUtilsIPv6IfaceId *iid,
-                                                  const char *token)
+                                                   const char *token)
 {
 	struct in6_addr i6_token;
 
@@ -3578,7 +3578,7 @@ _set_stable_privacy (NMUtilsStableType stable_type,
                      struct in6_addr *addr,
                      const char *ifname,
                      const char *network_id,
-                     guint dad_counter,
+                     guint32 dad_counter,
                      guint8 *secret_key,
                      gsize key_len,
                      GError **error)
@@ -3653,7 +3653,7 @@ nm_utils_ipv6_addr_set_stable_privacy_impl (NMUtilsStableType stable_type,
                                             struct in6_addr *addr,
                                             const char *ifname,
                                             const char *network_id,
-                                            guint dad_counter,
+                                            guint32 dad_counter,
                                             guint8 *secret_key,
                                             gsize key_len,
                                             GError **error)
@@ -3675,7 +3675,7 @@ nm_utils_ipv6_addr_set_stable_privacy (NMUtilsStableType stable_type,
                                        struct in6_addr *addr,
                                        const char *ifname,
                                        const char *network_id,
-                                       guint dad_counter,
+                                       guint32 dad_counter,
                                        GError **error)
 {
 	gs_free guint8 *secret_key = NULL;

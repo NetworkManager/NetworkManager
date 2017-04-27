@@ -1358,7 +1358,7 @@ nm_device_get_ip_iface_identifier (NMDevice *self, NMUtilsIPv6IfaceId *iid, gboo
 
 	if (!ignore_token) {
 		s_ip6 = (NMSettingIP6Config *)
-			nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP6_CONFIG);
+		    nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP6_CONFIG);
 		g_return_val_if_fail (s_ip6, FALSE);
 		token = nm_setting_ip6_config_get_token (s_ip6);
 	}
