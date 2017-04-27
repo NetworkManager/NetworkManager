@@ -1052,6 +1052,7 @@ _values_fcn_gobject_enum (ARGS_VALUES_FCN)
 {
 	GType gtype = 0;
 	gboolean has_gtype = FALSE;
+	gboolean has_minmax = FALSE;
 	int min = G_MININT;
 	int max = G_MAXINT;
 	char **v, **w;
@@ -1061,6 +1062,7 @@ _values_fcn_gobject_enum (ARGS_VALUES_FCN)
 		    || property_info->property_typ_data->subtype.gobject_enum.max) {
 			min = property_info->property_typ_data->subtype.gobject_enum.min;
 			max = property_info->property_typ_data->subtype.gobject_enum.max;
+			has_minmax = TRUE;
 		}
 		if (property_info->property_typ_data->subtype.gobject_enum.get_gtype) {
 			gtype = property_info->property_typ_data->subtype.gobject_enum.get_gtype ();
@@ -1071,6 +1073,17 @@ _values_fcn_gobject_enum (ARGS_VALUES_FCN)
 	if (!has_gtype) {
 		gtype = _gtype_property_get_gtype (property_info->setting_info->general->get_setting_gtype (),
 		                                   property_info->property_name);
+	}
+
+	if (   !has_minmax
+	    && G_TYPE_IS_CLASSED (gtype)) {
+		nm_auto_unref_gtypeclass GTypeClass *class = NULL;
+
+		class = g_type_class_ref (gtype);
+		if (G_IS_FLAGS_CLASS (class)) {
+			min = 0;
+			max = (gint) G_MAXUINT;
+		}
 	}
 
 	/* the gobject_enum.value_infos are currently ignored for the list of
