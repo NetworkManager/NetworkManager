@@ -9895,6 +9895,7 @@ nm_device_set_ip6_config (NMDevice *self,
 	} else if (old_config) {
 		has_changes = TRUE;
 		priv->ip6_config = NULL;
+		priv->needs_ip6_subnet = FALSE;
 		_LOGD (LOGD_IP6, "ip6-config: clear IP6Config instance (%s)",
 		       nm_exported_object_get_path (NM_EXPORTED_OBJECT (old_config)));
 	}
@@ -11956,7 +11957,9 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 	g_slist_free_full (priv->vpn6_configs, g_object_unref);
 	priv->vpn6_configs = NULL;
 
-	priv->needs_ip6_subnet = FALSE;
+	/* We no longer accept the delegations. nm_device_set_ip6_config(NULL)
+	 * above disables them. */
+	nm_assert (priv->needs_ip6_subnet == FALSE);
 
 	if (priv->act_request) {
 		nm_active_connection_set_default (NM_ACTIVE_CONNECTION (priv->act_request), FALSE);
