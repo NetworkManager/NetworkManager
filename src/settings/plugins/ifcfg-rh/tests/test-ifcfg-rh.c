@@ -9053,7 +9053,7 @@ test_write_unknown (gconstpointer test_data)
 
 	if (g_str_has_suffix (testfile, "ifcfg-test-write-unknown-4")) {
 		_svGetValue_check (sv, "NAME", "l4x");
-		_svGetValue_check (sv, "NAME2", NULL);
+		_svGetValue_check (sv, "NAME2", "");
 		_svGetValue_check (sv, "NAME3", "name3-value");
 
 		svSetValue (sv, "NAME", "set-by-test1");
