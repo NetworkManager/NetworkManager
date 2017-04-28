@@ -49,10 +49,13 @@ struct _AddNetworkData;
 
 typedef struct {
 	NMSupplicantInterface *self;
-	const char *type;
+	char *type;
 	char *bssid;
 	char *pin;
-} WpsEnrollStartData;
+	GDBusProxy *proxy;
+	GCancellable *cancellable;
+	bool is_cancelling;
+} WpsData;
 
 typedef struct {
 	NMSupplicantInterface *self;
@@ -116,8 +119,7 @@ typedef struct {
 	GDBusProxy *   iface_proxy;
 	GCancellable * other_cancellable;
 
-	GDBusProxy *   wps_proxy; /* We only have a WPS proxy when the enrollment was initiated */
-	GCancellable * wps_cancellable; /* This can cancel the initiation, not the enrollment */
+	WpsData *wps_data;
 
 	AssocData *    assoc_data;
 
@@ -597,60 +599,86 @@ nm_supplicant_interface_set_pmf_support (NMSupplicantInterface *self,
 /*****************************************************************************/
 
 static void
-wps_enroll_start_data_free (WpsEnrollStartData *data)
+_wps_data_free (WpsData *data)
 {
+	g_free (data->type);
 	g_free (data->pin);
 	g_free (data->bssid);
-	g_slice_free (WpsEnrollStartData, data);
+	g_clear_object (&data->cancellable);
+	if (data->proxy && data->self)
+		g_signal_handlers_disconnect_by_data (data->proxy, data->self);
+	g_clear_object (&data->proxy);
+	g_slice_free (WpsData, data);
 }
 
 static void
-wpas_iface_wps_credentials (GDBusProxy *proxy,
-                            GVariant *props,
-                            gpointer user_data)
+_wps_credentials_changed_cb (GDBusProxy *proxy,
+                             GVariant *props,
+                             gpointer user_data)
 {
 	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
 
+	_LOGT ("wps: new credentials");
 	g_signal_emit (self, signals[WPS_CREDENTIALS], 0, props);
 }
 
 static void
-on_wps_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
+_wps_handle_start_cb (GObject *source_object,
+                      GAsyncResult *res,
+                      gpointer user_data)
 {
-	WpsEnrollStartData *data = user_data;
-	NMSupplicantInterface *self = data->self;
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	GVariantBuilder start_args;
-	guint8 bssid_buf[ETH_ALEN];
+	NMSupplicantInterface *self;
+	WpsData *data;
+	gs_unref_variant GVariant *result = NULL;
 	gs_free_error GError *error = NULL;
 
-	priv->wps_proxy = g_dbus_proxy_new_for_bus_finish (result, &error);
-	if (!priv->wps_proxy) {
-		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
-			_LOGW ("failed to acquire WPS proxy: (%s)", error->message);
-			set_state (self, NM_SUPPLICANT_INTERFACE_STATE_DOWN);
-		}
-		wps_enroll_start_data_free (data);
+	result = g_dbus_proxy_call_finish (G_DBUS_PROXY (source_object), res, &error);
+	if (   !result
+	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
-	}
 
-	/* Enable Credentials processing. */
-	_nm_dbus_signal_connect (priv->wps_proxy, "Credentials", G_VARIANT_TYPE ("(a{sv})"),
-	                         G_CALLBACK (wpas_iface_wps_credentials), self);
+	data = user_data;
+	self = data->self;
 
-	g_dbus_proxy_call (priv->wps_proxy,
-	                   "org.freedesktop.DBus.Properties.Set",
-	                   g_variant_new ("(ssv)",
-	                                  WPAS_DBUS_IFACE_INTERFACE_WPS,
-	                                  "ProcessCredentials",
-	                                  g_variant_new_boolean (TRUE)),
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   -1,
-	                   NULL,
-	                   NULL,
-	                   NULL);
+	if (result)
+		_LOGT ("wps: started with success");
+	else
+		_LOGW ("wps: start failed with %s", error->message);
 
-	/* Initiate the enrollment. */
+	g_clear_object (&data->cancellable);
+	nm_clear_g_free (&data->type);
+	nm_clear_g_free (&data->pin);
+	nm_clear_g_free (&data->bssid);
+}
+
+static void
+_wps_handle_set_pc_cb (GObject *source_object,
+                       GAsyncResult *res,
+                       gpointer user_data)
+{
+	WpsData *data;
+	NMSupplicantInterface *self;
+	gs_unref_variant GVariant *result = NULL;
+	gs_free_error GError *error = NULL;
+	GVariantBuilder start_args;
+	guint8 bssid_buf[ETH_ALEN];
+
+	result = g_dbus_proxy_call_finish (G_DBUS_PROXY (source_object), res, &error);
+	if (   !result
+	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	data = user_data;
+	self = data->self;
+
+	if (result)
+		_LOGT ("wps: ProcessCredentials successfully set, starting...");
+	else
+		_LOGW ("wps: ProcessCredentials failed to set (%s), starting...", error->message);
+
+	_nm_dbus_signal_connect (data->proxy, "Credentials", G_VARIANT_TYPE ("(a{sv})"),
+	                         G_CALLBACK (_wps_credentials_changed_cb), self);
+
 	g_variant_builder_init (&start_args, G_VARIANT_TYPE_VARDICT);
 	g_variant_builder_add (&start_args, "{sv}", "Role", g_variant_new_string ("enrollee"));
 	g_variant_builder_add (&start_args, "{sv}", "Type", g_variant_new_string (data->type));
@@ -661,24 +689,194 @@ on_wps_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_da
 		/* The BSSID is in fact not mandatory. If it is not set the supplicant would
 		 * enroll with any BSS in range. */
 		if (!nm_utils_hwaddr_aton (data->bssid, bssid_buf, sizeof (bssid_buf)))
-			g_return_if_reached ();
+			nm_assert_not_reached ();
 		g_variant_builder_add (&start_args, "{sv}", "Bssid",
 		                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, bssid_buf,
 		                                                  ETH_ALEN, sizeof (guint8)));
-		_LOGI ("starting '%s' WPS enrollment for BSSID '%s'", data->type, data->bssid);
-	} else {
-		_LOGI ("starting '%s' WPS enrollment", data->type);
 	}
 
-	g_dbus_proxy_call (priv->wps_proxy,
+	g_dbus_proxy_call (data->proxy,
 	                   "Start",
 	                   g_variant_new ("(a{sv})", &start_args),
 	                   G_DBUS_CALL_FLAGS_NONE,
 	                   -1,
+	                   data->cancellable,
+	                   _wps_handle_start_cb,
+	                   data);
+}
+
+static void
+_wps_call_set_pc (WpsData *data)
+{
+	g_dbus_proxy_call (data->proxy,
+	                   "org.freedesktop.DBus.Properties.Set",
+	                   g_variant_new ("(ssv)",
+	                                  WPAS_DBUS_IFACE_INTERFACE_WPS,
+	                                  "ProcessCredentials",
+	                                  g_variant_new_boolean (TRUE)),
+	                   G_DBUS_CALL_FLAGS_NONE,
+	                   -1,
+	                   data->cancellable,
+	                   _wps_handle_set_pc_cb,
+	                   data);
+}
+
+static void
+_wps_handle_proxy_cb (GObject *source_object,
+                      GAsyncResult *res,
+                      gpointer user_data)
+{
+	NMSupplicantInterface *self;
+	NMSupplicantInterfacePrivate *priv;
+	WpsData *data;
+	gs_free_error GError *error = NULL;
+	GDBusProxy *proxy;
+
+	proxy = g_dbus_proxy_new_for_bus_finish (res, &error);
+	if (   !proxy
+	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	data = user_data;
+	self = data->self;
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	if (!proxy) {
+		_LOGW ("wps: failure to create D-Bus proxy: %s", error->message);
+		_wps_data_free (data);
+		priv->wps_data = NULL;
+		return;
+	}
+
+	data->proxy = proxy;
+	_LOGT ("wps: D-Bus proxy created. set ProcessCredentials...");
+	_wps_call_set_pc (data);
+}
+
+static void
+_wps_handle_cancel_cb (GObject *source_object,
+                       GAsyncResult *res,
+                       gpointer user_data)
+{
+	NMSupplicantInterface *self;
+	NMSupplicantInterfacePrivate *priv;
+	WpsData *data;
+	gs_unref_variant GVariant *result = NULL;
+	gs_free_error GError *error = NULL;
+
+	result = g_dbus_proxy_call_finish (G_DBUS_PROXY (source_object), res, &error);
+	if (   !result
+	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	data = user_data;
+	self = data->self;
+
+	if (!self) {
+		_wps_data_free (data);
+		if (result)
+			_LOGT ("wps: cancel completed successfully, after supplicant interface is gone");
+		else
+			_LOGW ("wps: cancel failed (%s), after supplicant interface is gone", error->message);
+		return;
+	}
+
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	data->is_cancelling = FALSE;
+
+	if (!data->type) {
+		priv->wps_data = NULL;
+		_wps_data_free (data);
+		if (result)
+			_LOGT ("wps: cancel completed successfully");
+		else
+			_LOGW ("wps: cancel failed (%s)", error->message);
+		return;
+	}
+
+	if (result)
+		_LOGT ("wps: cancel completed successfully, setting ProcessCredentials now...");
+	else
+		_LOGW ("wps: cancel failed (%s), setting ProcessCredentials now...", error->message);
+	_wps_call_set_pc (data);
+}
+
+static void
+_wps_start (NMSupplicantInterface *self,
+            const char *type,
+            const char *bssid,
+            const char *pin)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	WpsData *data = priv->wps_data;
+
+	if (type)
+		_LOGI ("wps: type %s start...", type);
+
+	if (!data) {
+		if (!type)
+			return;
+
+		data = g_slice_new0 (WpsData);
+		data->self = self;
+		data->type = g_strdup (type);
+		data->bssid = g_strdup (bssid);
+		data->pin = g_strdup (pin);
+		data->cancellable = g_cancellable_new ();
+
+		priv->wps_data = data;
+
+		_LOGT ("wps: create D-Bus proxy...");
+
+		g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
+		                          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
+		                          NULL,
+		                          WPAS_DBUS_SERVICE,
+		                          priv->object_path,
+		                          WPAS_DBUS_IFACE_INTERFACE_WPS,
+		                          data->cancellable,
+		                          _wps_handle_proxy_cb,
+		                          data);
+		return;
+	}
+
+	g_free (data->type);
+	g_free (data->bssid);
+	g_free (data->pin);
+	data->type = g_strdup (type);
+	data->bssid = g_strdup (bssid);
+	data->pin = g_strdup (pin);
+
+	if (!data->proxy) {
+		if (!type) {
+			nm_clear_g_cancellable (&data->cancellable);
+			priv->wps_data = NULL;
+			_wps_data_free (data);
+
+			_LOGT ("wps: abort creation of D-Bus proxy");
+		} else
+			_LOGT ("wps: new enrollment. Wait for D-Bus proxy...");
+		return;
+	}
+
+	if (data->is_cancelling)
+		return;
+
+	_LOGT ("wps: cancel previous enrollment...");
+
+	data->is_cancelling = TRUE;
+	if (!data->cancellable)
+		data->cancellable = g_cancellable_new ();
+	g_signal_handlers_disconnect_by_data (data->proxy, self);
+	g_dbus_proxy_call (data->proxy,
+	                   "Cancel",
 	                   NULL,
-	                   NULL,
-	                   NULL);
-	wps_enroll_start_data_free (data);
+	                   G_DBUS_CALL_FLAGS_NONE,
+	                   -1,
+	                   data->cancellable,
+	                   _wps_handle_cancel_cb,
+	                   data);
 }
 
 void
@@ -687,53 +885,16 @@ nm_supplicant_interface_enroll_wps (NMSupplicantInterface *self,
                                     const char *bssid,
                                     const char *pin)
 {
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	WpsEnrollStartData *data;
-
-	data = g_slice_new0 (WpsEnrollStartData);
-	data->self = self;
-	data->type = type;
-	data->bssid = g_strdup (bssid);
-	data->pin = g_strdup (pin);
-
-	/* Supersede any previous WPS initiations. */
-	nm_supplicant_interface_cancel_wps (self);
-
-	priv->wps_cancellable = g_cancellable_new ();
-
-	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
-	                          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
-	                          NULL,
-	                          WPAS_DBUS_SERVICE,
-	                          priv->object_path,
-	                          WPAS_DBUS_IFACE_INTERFACE_WPS,
-	                          priv->wps_cancellable,
-	                          (GAsyncReadyCallback) on_wps_proxy_acquired,
-	                          data);
+	_wps_start (self, type, bssid, pin);
 }
 
 void
 nm_supplicant_interface_cancel_wps (NMSupplicantInterface *self)
 {
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	nm_clear_g_cancellable (&priv->wps_cancellable);
-
-	if (!priv->wps_proxy)
-		return;
-
-	_LOGD ("cancelling WPS enrollment");
-	g_signal_handlers_disconnect_by_data (priv->wps_proxy, self);
-	g_dbus_proxy_call (priv->wps_proxy,
-	                   "Cancel",
-	                   NULL,
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   -1,
-	                   NULL,
-	                   NULL,
-	                   NULL);
-	g_clear_object (&priv->wps_proxy);
+	_wps_start (self, NULL, NULL, NULL);
 }
+
+/*****************************************************************************/
 
 static void
 iface_introspect_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
@@ -1777,6 +1938,16 @@ dispose (GObject *object)
 	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (object);
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
+	nm_supplicant_interface_cancel_wps (self);
+	if (priv->wps_data) {
+		/* we shut down, but an asynchronous Cancel request is pending.
+		 * We don't want to cancel it, so mark wps-data that @self is gone.
+		 * This way, _wps_handle_cancel_cb() knows it must no longer touch
+		 * @self */
+		priv->wps_data->self = NULL;
+		priv->wps_data = NULL;
+	}
+
 	if (priv->assoc_data) {
 		gs_free GError *error = NULL;
 
@@ -1793,8 +1964,6 @@ dispose (GObject *object)
 
 	g_clear_object (&priv->wpas_proxy);
 	g_clear_pointer (&priv->bss_proxies, (GDestroyNotify) g_hash_table_destroy);
-
-	nm_supplicant_interface_cancel_wps (self);
 
 	g_clear_pointer (&priv->net_path, g_free);
 	g_clear_pointer (&priv->dev, g_free);
