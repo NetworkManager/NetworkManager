@@ -95,24 +95,14 @@ grab_request_options (GPtrArray *store, const char* line)
 static void
 add_hostname4 (GString *str, const char *hostname, gboolean use_fqdn)
 {
-	char *plain_hostname, *dot;
-
 	if (hostname) {
 		if (use_fqdn) {
 			g_string_append_printf (str, FQDN_FORMAT "\n", hostname);
 			g_string_append (str,
 			                 "send fqdn.encoded on;\n"
 			                 "send fqdn.server-update on;\n");
-		} else {
-			plain_hostname = g_strdup (hostname);
-			dot = strchr (plain_hostname, '.');
-			/* get rid of the domain */
-			if (dot)
-				*dot = '\0';
-
-			g_string_append_printf (str, HOSTNAME4_FORMAT "\n", plain_hostname);
-			g_free (plain_hostname);
-		}
+		} else
+			g_string_append_printf (str, HOSTNAME4_FORMAT "\n", hostname);
 	}
 }
 
