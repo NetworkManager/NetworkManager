@@ -3294,7 +3294,9 @@ make_wpa_setting (shvarFile *ifcfg,
 {
 	NMSettingWirelessSecurity *wsec;
 	char *value, *psk, *lower;
+	const char *cvalue;
 	gboolean wpa_psk = FALSE, wpa_eap = FALSE, ieee8021x = FALSE;
+	guint pmf = NM_SETTING_WIRELESS_SECURITY_PMF_DEFAULT;
 
 	wsec = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
 
@@ -3372,6 +3374,24 @@ make_wpa_setting (shvarFile *ifcfg,
 	}
 
 	g_free (value);
+
+	cvalue = svGetValue (ifcfg, "PMF", &value);
+	if (cvalue) {
+		int i_pmf;
+
+		if (!nm_utils_enum_from_str (nm_setting_wireless_security_pmf_get_type (),
+		                             cvalue,
+		                             &i_pmf,
+		                             NULL)) {
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "Invalid PMF value '%s'", cvalue);
+			g_free (value);
+			goto error;
+		}
+		pmf = i_pmf;
+		g_free (value);
+	}
+	g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_PMF, pmf, NULL);
 
 	value = svGetValueStr_cp (ifcfg, "SECURITYMODE");
 	if (NM_IN_STRSET (value, NULL, "open"))

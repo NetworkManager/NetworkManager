@@ -701,6 +701,11 @@ ipv6.ip6-privacy=0
           <listitem><para>If left unspecified, the default value
           "<literal>ignore</literal>" will be used.</para></listitem>
         </varlistentry>
+        <varlistentry>
+          <term><varname>wifi-sec.pmf</varname></term>
+          <listitem><para>If left unspecified, the default value
+          "<literal>optional</literal>" will be used.</para></listitem>
+        </varlistentry>
       </variablelist>
     </para>
     </refsect2>

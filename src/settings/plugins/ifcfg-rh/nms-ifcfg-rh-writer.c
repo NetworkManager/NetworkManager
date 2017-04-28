@@ -707,6 +707,17 @@ write_wireless_security_setting (NMConnection *connection,
 	            "WPA_PSK_FLAGS",
 	            wpa ? nm_setting_wireless_security_get_psk_flags (s_wsec) : NM_SETTING_SECRET_FLAG_NONE);
 
+
+	if (nm_setting_wireless_security_get_pmf (s_wsec) == NM_SETTING_WIRELESS_SECURITY_PMF_DEFAULT)
+		svUnsetValue (ifcfg, "PMF");
+	else {
+		gs_free char * value = NULL;
+
+		value = nm_utils_enum_to_str (nm_setting_wireless_security_pmf_get_type(),
+		                              nm_setting_wireless_security_get_pmf (s_wsec));
+		svSetValueStr (ifcfg, "PMF", value);
+	}
+
 	return TRUE;
 }
 

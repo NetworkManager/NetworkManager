@@ -121,6 +121,7 @@ gboolean nm_supplicant_interface_credentials_reply (NMSupplicantInterface *self,
                                                     GError **error);
 
 NMSupplicantFeature nm_supplicant_interface_get_ap_support (NMSupplicantInterface *self);
+NMSupplicantFeature nm_supplicant_interface_get_pmf_support (NMSupplicantInterface *self);
 
 void nm_supplicant_interface_set_ap_support (NMSupplicantInterface *self,
                                              NMSupplicantFeature apmode);

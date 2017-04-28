@@ -65,6 +65,7 @@ typedef struct {
 	GSList *proto; /* GSList of strings */
 	GSList *pairwise; /* GSList of strings */
 	GSList *group; /* GSList of strings */
+	guint pmf;
 
 	/* LEAP */
 	char *leap_username;
@@ -93,6 +94,7 @@ enum {
 	PROP_PROTO,
 	PROP_PAIRWISE,
 	PROP_GROUP,
+	PROP_PMF,
 	PROP_LEAP_USERNAME,
 	PROP_WEP_KEY0,
 	PROP_WEP_KEY1,
@@ -573,6 +575,22 @@ nm_setting_wireless_security_clear_groups (NMSettingWirelessSecurity *setting)
 	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_GROUP);
 }
 
+/*
+ * nm_setting_wireless_security_get_pmf:
+ * @setting: the #NMSettingWirelessSecurity
+ *
+ * Returns: the #NMSettingWirelessSecurity:pmf property of the setting
+ *
+ * Since: 1.10
+ **/
+NMSettingWirelessSecurityPmf
+nm_setting_wireless_security_get_pmf (NMSettingWirelessSecurity *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), 0);
+
+	return NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->pmf;
+}
+
 /**
  * nm_setting_wireless_security_get_psk:
  * @setting: the #NMSettingWirelessSecurity
@@ -1013,6 +1031,30 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
+	if (priv->pmf > NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("property is invalid"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NM_SETTING_WIRELESS_SECURITY_PMF);
+		return FALSE;
+	}
+
+	if (   NM_IN_SET (priv->pmf,
+	                  NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL,
+	                  NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED)
+	    && !NM_IN_STRSET (priv->key_mgmt, "wpa-eap", "wpa-psk")) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("'%s' can only be used with '%s=%s or '%s=%s'"),
+		             priv->pmf == NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL ? "optional" : "required",
+		             NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-eap",
+		             NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk");
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NM_SETTING_WIRELESS_SECURITY_PMF);
+		return FALSE;
+	}
+
 	return TRUE;
 }
 
@@ -1198,6 +1240,9 @@ set_property (GObject *object, guint prop_id,
 		g_slist_free_full (priv->group, g_free);
 		priv->group = _nm_utils_strv_to_slist (g_value_get_boxed (value), TRUE);
 		break;
+	case PROP_PMF:
+		priv->pmf = g_value_get_uint (value);
+		break;
 	case PROP_LEAP_USERNAME:
 		g_free (priv->leap_username);
 		priv->leap_username = g_value_dup_string (value);
@@ -1269,6 +1314,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_GROUP:
 		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->group, TRUE));
+		break;
+	case PROP_PMF:
+		g_value_set_uint (value, nm_setting_wireless_security_get_pmf (setting));
 		break;
 	case PROP_LEAP_USERNAME:
 		g_value_set_string (value, priv->leap_username);
@@ -1466,6 +1514,37 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 		                     G_TYPE_STRV,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingWirelessSecurity:pmf:
+	 *
+	 * Indicates whether Protected Management Frames (802.11w) must be enabled
+	 * for the connection.  One of %NM_SETTING_WIRELESS_SECURITY_PMF_DEFAULT
+	 * (use global default value), %NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE
+	 * (disable PMF), %NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL (enable PMF if
+	 * the supplicant and the access point support it) or
+	 * %NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED (enable PMF and fail if not
+	 * supported).  When set to %NM_SETTING_WIRELESS_SECURITY_PMF_DEFAULT and no
+	 * global default is set, PMF will be optionally enabled.
+	 *
+	 * Since: 1.10
+	 **/
+	/* ---ifcfg-rh---
+	 * property: pmf
+	 * variable: PMF(+)
+	 * values: default, disable, optional, required
+	 * description: Enables or disables PMF (802.11w)
+	 * example: PMF=required
+	 * ---end---
+	 */
+	g_object_class_install_property
+		(object_class, PROP_PMF,
+		 g_param_spec_uint (NM_SETTING_WIRELESS_SECURITY_PMF, "", "",
+		                    0, G_MAXUINT32, 0,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT |
+		                    NM_SETTING_PARAM_FUZZY_IGNORE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWirelessSecurity:leap-username:

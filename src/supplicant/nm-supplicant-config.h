@@ -60,6 +60,7 @@ gboolean nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig 
                                                              NMSetting8021x *setting_8021x,
                                                              const char *con_uuid,
                                                              guint32 mtu,
+                                                             NMSettingWirelessSecurityPmf pmf,
                                                              GError **error);
 
 gboolean nm_supplicant_config_add_no_security (NMSupplicantConfig *self,

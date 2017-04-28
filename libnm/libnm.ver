@@ -1177,3 +1177,9 @@ global:
 	nm_utils_format_variant_attributes;
 	nm_utils_parse_variant_attributes;
 } libnm_1_6_0;
+
+libnm_1_10_0 {
+global:
+	nm_setting_wireless_security_get_pmf;
+	nm_setting_wireless_security_pmf_get_type;
+} libnm_1_8_0;

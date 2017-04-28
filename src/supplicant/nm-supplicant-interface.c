@@ -472,30 +472,6 @@ iface_check_ready (NMSupplicantInterface *self)
 	}
 }
 
-static void
-set_pmf_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
-{
-	NMSupplicantInterface *self;
-	NMSupplicantInterfacePrivate *priv;
-	gs_unref_variant GVariant *reply = NULL;
-	gs_free_error GError *error = NULL;
-
-	reply = g_dbus_proxy_call_finish (proxy, result, &error);
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-		return;
-
-	self = NM_SUPPLICANT_INTERFACE (user_data);
-	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	if (!reply) {
-		g_dbus_error_strip_remote_error (error);
-		_LOGW ("couldn't enable PMF: %s", error->message);
-		return;
-	}
-
-	_LOGD ("PMF enabled");
-}
-
 gboolean
 nm_supplicant_interface_credentials_reply (NMSupplicantInterface *self,
                                            const char *field,
@@ -565,6 +541,12 @@ NMSupplicantFeature
 nm_supplicant_interface_get_ap_support (NMSupplicantInterface *self)
 {
 	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->ap_support;
+}
+
+NMSupplicantFeature
+nm_supplicant_interface_get_pmf_support (NMSupplicantInterface *self)
+{
+	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->pmf_support;
 }
 
 void
@@ -840,21 +822,6 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	                   priv->init_cancellable,
 	                   NULL,
 	                   NULL);
-
-	if (   priv->pmf_support == NM_SUPPLICANT_FEATURE_YES
-	    && priv->driver == NM_SUPPLICANT_DRIVER_WIRELESS) {
-		g_dbus_proxy_call (priv->iface_proxy,
-		                   DBUS_INTERFACE_PROPERTIES ".Set",
-		                   g_variant_new ("(ssv)",
-		                                  WPAS_DBUS_IFACE_INTERFACE,
-		                                  "Pmf",
-		                                  g_variant_new_uint32 (1)),
-		                   G_DBUS_CALL_FLAGS_NONE,
-		                   -1,
-		                   priv->init_cancellable,
-		                   (GAsyncReadyCallback) set_pmf_cb,
-		                   self);
-	}
 
 	/* Check whether NetworkReply and AP mode are supported */
 	priv->ready_count = 1;
@@ -1424,7 +1391,6 @@ nm_supplicant_interface_assoc (NMSupplicantInterface *self,
 {
 	NMSupplicantInterfacePrivate *priv;
 	AssocData *assoc_data;
-	GError *error = NULL;
 
 	g_return_if_fail (NM_IS_SUPPLICANT_INTERFACE (self));
 	g_return_if_fail (NM_IS_SUPPLICANT_CONFIG (cfg));
@@ -1440,14 +1406,6 @@ nm_supplicant_interface_assoc (NMSupplicantInterface *self,
 	assoc_data->cfg = g_object_ref (cfg);
 	assoc_data->callback = callback;
 	assoc_data->user_data = user_data;
-
-	if (   priv->driver == NM_SUPPLICANT_DRIVER_WIRELESS
-	    && priv->pmf_support == NM_SUPPLICANT_FEATURE_YES) {
-		if (!nm_supplicant_config_enable_pmf_akm (cfg, &error)) {
-			_LOGW ("could not enable PMF AKMs in config: %s", error->message);
-			g_error_free (error);
-		}
-	}
 
 	_LOGD ("assoc[%p]: starting association...", assoc_data);
 
