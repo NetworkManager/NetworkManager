@@ -219,15 +219,6 @@ client_start (NMDhcpManager *self,
 	return client;
 }
 
-static const char *
-get_send_hostname (NMDhcpManager *self, const char *setting_hostname)
-{
-	NMDhcpManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
-
-	/* Always prefer the explicit dhcp-send-hostname if given */
-	return setting_hostname ? setting_hostname : priv->default_hostname;
-}
-
 /* Caller owns a reference to the NMDhcpClient on return */
 NMDhcpClient *
 nm_dhcp_manager_start_ip4 (NMDhcpManager *self,
@@ -244,17 +235,36 @@ nm_dhcp_manager_start_ip4 (NMDhcpManager *self,
                            const char *dhcp_anycast_addr,
                            const char *last_ip_address)
 {
+	NMDhcpManagerPrivate *priv;
 	const char *hostname = NULL;
+	gs_free char *hostname_tmp = NULL;
 	gboolean use_fqdn = FALSE;
+	char *dot;
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
+	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 
 	if (send_hostname) {
+		/* Use, in order of preference:
+		 *  1. FQDN from configuration
+		 *  2. hostname from configuration
+		 *  3. system hostname (only host part)
+		 */
 		if (dhcp_fqdn) {
 			hostname = dhcp_fqdn;
 			use_fqdn = TRUE;
-		} else
-			hostname = get_send_hostname (self, dhcp_hostname);
+		} else if (dhcp_hostname)
+			hostname = dhcp_hostname;
+		else {
+			hostname = priv->default_hostname;
+			if (hostname) {
+				hostname_tmp = g_strdup (hostname);
+				dot = strchr (hostname_tmp, '.');
+				if (dot)
+					*dot = '\0';
+				hostname = hostname_tmp;
+			}
+		}
 	}
 
 	return client_start (self, iface, ifindex, hwaddr, uuid, priority, FALSE, NULL,
@@ -279,12 +289,16 @@ nm_dhcp_manager_start_ip6 (NMDhcpManager *self,
                            NMSettingIP6ConfigPrivacy privacy,
                            guint needed_prefixes)
 {
+	NMDhcpManagerPrivate *priv;
 	const char *hostname = NULL;
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
+	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 
-	if (send_hostname)
-		hostname = get_send_hostname (self, dhcp_hostname);
+	if (send_hostname) {
+		/* Always prefer the explicit dhcp-hostname if given */
+		hostname = dhcp_hostname ? dhcp_hostname : priv->default_hostname;
+	}
 	return client_start (self, iface, ifindex, hwaddr, uuid, priority, TRUE,
 	                     ll_addr, NULL, timeout, dhcp_anycast_addr, hostname, TRUE, info_only,
 	                     privacy, NULL, needed_prefixes);

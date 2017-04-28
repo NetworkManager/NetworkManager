@@ -88,9 +88,8 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 	GPtrArray *argv = NULL;
 	pid_t pid = -1;
 	GError *error = NULL;
-	char *pid_contents = NULL, *binary_name, *cmd_str, *dot;
+	char *pid_contents = NULL, *binary_name, *cmd_str;
 	const char *iface, *dhcpcd_path, *hostname;
-	gs_free char *prefix = NULL;
 
 	g_return_val_if_fail (priv->pid_file == NULL, FALSE);
 
@@ -146,14 +145,8 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 			g_ptr_array_add (argv, (gpointer) "-F");
 			g_ptr_array_add (argv, (gpointer) "both");
 		} else {
-			prefix = strdup (hostname);
-			dot = strchr (prefix, '.');
-			/* get rid of the domain */
-			if (dot)
-				*dot = '\0';
-
-			g_ptr_array_add (argv, (gpointer) "-h");	/* Send hostname to DHCP server */
-			g_ptr_array_add (argv, (gpointer) prefix);
+			g_ptr_array_add (argv, (gpointer) "-h");
+			g_ptr_array_add (argv, (gpointer) hostname);
 		}
 	}
 
