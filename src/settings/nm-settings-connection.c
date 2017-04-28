@@ -974,6 +974,31 @@ get_cmp_flags (NMSettingsConnection *self, /* only needed for logging */
 	}
 }
 
+gboolean
+nm_settings_connection_new_secrets (NMSettingsConnection *self,
+                                    NMConnection *applied_connection,
+                                    const char *setting_name,
+                                    GVariant *secrets,
+                                    GError **error)
+{
+	if (!nm_settings_connection_has_unmodified_applied_connection (self, applied_connection,
+	                                                              NM_SETTING_COMPARE_FLAG_NONE)) {
+		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+		                     "The connection was modified since activation");
+		return FALSE;
+	}
+
+	if (!nm_connection_update_secrets (NM_CONNECTION (self), setting_name, secrets, error))
+		return FALSE;
+
+	update_system_secrets_cache (self);
+	update_agent_secrets_cache (self, NULL);
+	nm_settings_connection_commit_changes (self, NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
+	                                       new_secrets_commit_cb, NULL);
+
+	return TRUE;
+}
+
 static void
 get_secrets_done_cb (NMAgentManager *manager,
                      NMAgentManagerCallId call_id_a,

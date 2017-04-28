@@ -163,6 +163,12 @@ typedef void (*NMSettingsConnectionSecretsFunc) (NMSettingsConnection *self,
                                                  GError *error,
                                                  gpointer user_data);
 
+gboolean nm_settings_connection_new_secrets (NMSettingsConnection *self,
+                                             NMConnection *applied_connection,
+                                             const char *setting_name,
+                                             GVariant *secrets,
+                                             GError **error);
+
 NMSettingsConnectionCallId nm_settings_connection_get_secrets (NMSettingsConnection *self,
                                                                NMConnection *applied_connection,
                                                                NMAuthSubject *subject,
