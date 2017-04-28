@@ -375,7 +375,7 @@ test_wifi_wpa_psk (const char *detail,
 	g_object_set (s_wsec,
 	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk",
 	              NM_SETTING_WIRELESS_SECURITY_PSK, key_data,
-	              NM_SETTING_WIRELESS_SECURITY_PMF, NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL,
+	              NM_SETTING_WIRELESS_SECURITY_PMF, (int) NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL,
 	              NULL);
 
 	nm_setting_wireless_security_add_proto (s_wsec, "wpa");

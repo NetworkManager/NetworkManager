@@ -65,7 +65,7 @@ typedef struct {
 	GSList *proto; /* GSList of strings */
 	GSList *pairwise; /* GSList of strings */
 	GSList *group; /* GSList of strings */
-	guint pmf;
+	NMSettingWirelessSecurityPmf pmf;
 
 	/* LEAP */
 	char *leap_username;
@@ -1031,7 +1031,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
-	if (priv->pmf > NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED) {
+	if (   priv->pmf < 0
+	    || priv->pmf > NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -1241,7 +1242,7 @@ set_property (GObject *object, guint prop_id,
 		priv->group = _nm_utils_strv_to_slist (g_value_get_boxed (value), TRUE);
 		break;
 	case PROP_PMF:
-		priv->pmf = g_value_get_uint (value);
+		priv->pmf = g_value_get_int (value);
 		break;
 	case PROP_LEAP_USERNAME:
 		g_free (priv->leap_username);
@@ -1316,7 +1317,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->group, TRUE));
 		break;
 	case PROP_PMF:
-		g_value_set_uint (value, nm_setting_wireless_security_get_pmf (setting));
+		g_value_set_int (value, nm_setting_wireless_security_get_pmf (setting));
 		break;
 	case PROP_LEAP_USERNAME:
 		g_value_set_string (value, priv->leap_username);
@@ -1539,12 +1540,12 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 */
 	g_object_class_install_property
 		(object_class, PROP_PMF,
-		 g_param_spec_uint (NM_SETTING_WIRELESS_SECURITY_PMF, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    NM_SETTING_PARAM_FUZZY_IGNORE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_int (NM_SETTING_WIRELESS_SECURITY_PMF, "", "",
+		                   G_MININT32, G_MAXINT32, 0,
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_CONSTRUCT |
+		                   NM_SETTING_PARAM_FUZZY_IGNORE |
+		                   G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWirelessSecurity:leap-username:

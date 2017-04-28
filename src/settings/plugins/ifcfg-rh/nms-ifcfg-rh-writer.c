@@ -452,11 +452,9 @@ write_8021x_setting (NMConnection *connection,
 	if (auth_flags == NM_SETTING_802_1X_AUTH_FLAGS_NONE) {
 		svUnsetValue (ifcfg, "IEEE_8021X_PHASE1_AUTH_FLAGS");
 	} else {
-		gs_free char *flags_str = NULL;
-
-		flags_str = _nm_utils_enum_to_str_full (nm_setting_802_1x_auth_flags_get_type (),
-		                                        auth_flags, " ");
-		svSetValueStr (ifcfg, "IEEE_8021X_PHASE1_AUTH_FLAGS", flags_str);
+		svSetValueEnum (ifcfg, "IEEE_8021X_PHASE1_AUTH_FLAGS",
+		                nm_setting_802_1x_auth_flags_get_type(),
+		                auth_flags);
 	}
 
 	svSetValueStr (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS",
@@ -711,11 +709,8 @@ write_wireless_security_setting (NMConnection *connection,
 	if (nm_setting_wireless_security_get_pmf (s_wsec) == NM_SETTING_WIRELESS_SECURITY_PMF_DEFAULT)
 		svUnsetValue (ifcfg, "PMF");
 	else {
-		gs_free char * value = NULL;
-
-		value = nm_utils_enum_to_str (nm_setting_wireless_security_pmf_get_type(),
-		                              nm_setting_wireless_security_get_pmf (s_wsec));
-		svSetValueStr (ifcfg, "PMF", value);
+		svSetValueEnum (ifcfg, "PMF", nm_setting_wireless_security_pmf_get_type (),
+		                nm_setting_wireless_security_get_pmf (s_wsec));
 	}
 
 	return TRUE;
@@ -2653,10 +2648,8 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	/* IPv6 Address generation mode */
 	addr_gen_mode = nm_setting_ip6_config_get_addr_gen_mode (NM_SETTING_IP6_CONFIG (s_ip6));
 	if (addr_gen_mode != NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64) {
-		tmp = nm_utils_enum_to_str (nm_setting_ip6_config_addr_gen_mode_get_type (),
-		                            addr_gen_mode);
-		svSetValueStr (ifcfg, "IPV6_ADDR_GEN_MODE", tmp);
-		g_free (tmp);
+		svSetValueEnum (ifcfg, "IPV6_ADDR_GEN_MODE", nm_setting_ip6_config_addr_gen_mode_get_type (),
+		                addr_gen_mode);
 	} else {
 		svUnsetValue (ifcfg, "IPV6_ADDR_GEN_MODE");
 	}

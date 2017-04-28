@@ -64,6 +64,10 @@ gint svGetValueBoolean (shvarFile *s, const char *key, gint def);
 
 gint64 svGetValueInt64 (shvarFile *s, const char *key, guint base, gint64 min, gint64 max, gint64 fallback);
 
+gboolean svGetValueEnum (shvarFile *s, const char *key,
+                         GType gtype, int *out_value,
+                         GError **error);
+
 /* Set the variable <key> equal to the value <value>.
  * If <key> does not exist, and the <current> pointer is set, append
  * the key=value pair after that line.  Otherwise, prepend the pair
@@ -73,6 +77,7 @@ void svSetValue (shvarFile *s, const char *key, const char *value);
 void svSetValueStr (shvarFile *s, const char *key, const char *value);
 void svSetValueBoolean (shvarFile *s, const char *key, gboolean value);
 void svSetValueInt64 (shvarFile *s, const char *key, gint64 value);
+void svSetValueEnum (shvarFile *s, const char *key, GType gtype, int value);
 
 void svUnsetValue (shvarFile *s, const char *key);
 
