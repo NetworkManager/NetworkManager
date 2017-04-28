@@ -1533,12 +1533,13 @@ make_ip6_setting (shvarFile *ifcfg,
 	char *ipv6addr, *ipv6addr_secondaries;
 	char **list = NULL, **iter;
 	guint32 i;
+	int i_val;
+	GError *local = NULL;
 	gint priority;
 	shvarFile *network_ifcfg;
 	gboolean never_default = FALSE;
 	gboolean ip6_privacy = FALSE, ip6_privacy_prefer_public_ip;
 	NMSettingIP6ConfigPrivacy ip6_privacy_val;
-	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
 
 	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 
@@ -1730,21 +1731,14 @@ make_ip6_setting (shvarFile *ifcfg,
 		}
 	}
 
-	/* IPv6 addressing mode configuration */
-	str_value = svGetValueStr_cp (ifcfg, "IPV6_ADDR_GEN_MODE");
-	if (str_value) {
-		if (nm_utils_enum_from_str (nm_setting_ip6_config_addr_gen_mode_get_type (), str_value,
-		                            (int *) &addr_gen_mode, NULL))
-			g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE, addr_gen_mode, NULL);
-		else
-			PARSE_WARNING ("Invalid IPV6_ADDR_GEN_MODE");
-		g_free (str_value);
-	} else {
-		g_object_set (s_ip6,
-		              NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
-		              NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
-		              NULL);
+	i_val = NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64;
+	if (!svGetValueEnum (ifcfg, "IPV6_ADDR_GEN_MODE",
+	                     nm_setting_ip6_config_addr_gen_mode_get_type (),
+	                     &i_val, &local)) {
+		PARSE_WARNING ("%s", local->message);
+		g_clear_error (&local);
 	}
+	g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE, i_val, NULL);
 
 	/* IPv6 tokenized interface identifier */
 	str_value = svGetValueStr_cp (ifcfg, "IPV6_TOKEN");
@@ -3170,6 +3164,7 @@ fill_8021x (shvarFile *ifcfg,
 	char *value;
 	char **list = NULL, **iter;
 	gint64 timeout;
+	int i_val;
 
 	value = svGetValueStr_cp (ifcfg, "IEEE_8021X_EAP_METHODS");
 	if (!value) {
@@ -3240,23 +3235,12 @@ next:
 	g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_SUBJECT_MATCH, value, NULL);
 	g_free (value);
 
-	value = svGetValueStr_cp (ifcfg, "IEEE_8021X_PHASE1_AUTH_FLAGS");
-	if (value) {
-		NMSetting8021xAuthFlags flags;
-		char *token;
-
-		if (nm_utils_enum_from_str (nm_setting_802_1x_auth_flags_get_type (), value,
-		                            (int *) &flags, &token)) {
-			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE1_AUTH_FLAGS, flags, NULL);
-		} else {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Invalid IEEE_8021X_PHASE1_AUTH_FLAGS flag '%s'", token);
-			g_free (token);
-			g_free (value);
-			goto error;
-		}
-		g_free (value);
-	}
+	i_val = NM_SETTING_802_1X_AUTH_FLAGS_NONE;
+	if (!svGetValueEnum (ifcfg, "IEEE_8021X_PHASE1_AUTH_FLAGS",
+	                     nm_setting_802_1x_auth_flags_get_type (),
+	                     &i_val, error))
+		goto error;
+	g_object_set (s_8021x, NM_SETTING_802_1X_PHASE1_AUTH_FLAGS, (guint) i_val, NULL);
 
 	read_8021x_list_value (ifcfg, "IEEE_8021X_ALTSUBJECT_MATCHES",
 	                       s_8021x, NM_SETTING_802_1X_ALTSUBJECT_MATCHES);
@@ -3294,9 +3278,8 @@ make_wpa_setting (shvarFile *ifcfg,
 {
 	NMSettingWirelessSecurity *wsec;
 	char *value, *psk, *lower;
-	const char *cvalue;
 	gboolean wpa_psk = FALSE, wpa_eap = FALSE, ieee8021x = FALSE;
-	guint pmf = NM_SETTING_WIRELESS_SECURITY_PMF_DEFAULT;
+	int i_val;
 
 	wsec = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
 
@@ -3375,23 +3358,12 @@ make_wpa_setting (shvarFile *ifcfg,
 
 	g_free (value);
 
-	cvalue = svGetValue (ifcfg, "PMF", &value);
-	if (cvalue) {
-		int i_pmf;
-
-		if (!nm_utils_enum_from_str (nm_setting_wireless_security_pmf_get_type (),
-		                             cvalue,
-		                             &i_pmf,
-		                             NULL)) {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Invalid PMF value '%s'", cvalue);
-			g_free (value);
-			goto error;
-		}
-		pmf = i_pmf;
-		g_free (value);
-	}
-	g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_PMF, pmf, NULL);
+	i_val = NM_SETTING_WIRELESS_SECURITY_PMF_DEFAULT;
+	if (!svGetValueEnum (ifcfg, "PMF",
+	                     nm_setting_wireless_security_pmf_get_type (),
+	                     &i_val, error))
+		goto error;
+	g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_PMF, (guint) i_val, NULL);
 
 	value = svGetValueStr_cp (ifcfg, "SECURITYMODE");
 	if (NM_IN_STRSET (value, NULL, "open"))
