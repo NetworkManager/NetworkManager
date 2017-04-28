@@ -73,6 +73,7 @@ void svSetValue (shvarFile *s, const char *key, const char *value);
 void svSetValueStr (shvarFile *s, const char *key, const char *value);
 void svSetValueBoolean (shvarFile *s, const char *key, gboolean value);
 void svSetValueInt64 (shvarFile *s, const char *key, gint64 value);
+void svSetValueEnum (shvarFile *s, const char *key, GType gtype, int value);
 
 void svUnsetValue (shvarFile *s, const char *key);
 

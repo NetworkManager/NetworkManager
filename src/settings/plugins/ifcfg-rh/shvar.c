@@ -38,6 +38,7 @@
 
 #include "nm-core-internal.h"
 #include "nm-core-utils.h"
+#include "nm-utils/nm-enum-utils.h"
 
 /*****************************************************************************/
 
@@ -1125,6 +1126,15 @@ void
 svSetValueBoolean (shvarFile *s, const char *key, gboolean value)
 {
 	svSetValue (s, key, value ? "yes" : "no");
+}
+
+void
+svSetValueEnum (shvarFile *s, const char *key, GType gtype, int value)
+{
+	gs_free char *v = NULL;
+
+	v = _nm_utils_enum_to_str_full (gtype, value, " ");
+	svSetValueStr (s, key, v);
 }
 
 void
