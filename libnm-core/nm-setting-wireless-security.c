@@ -1031,8 +1031,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
-	if (   priv->pmf < 0
-	    || priv->pmf > NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED) {
+	G_STATIC_ASSERT_EXPR (((NMSettingWirelessSecurityPmf) -1) > 0);
+	if (priv->pmf > NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
