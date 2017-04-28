@@ -3362,7 +3362,7 @@ make_wpa_setting (shvarFile *ifcfg,
 	                     nm_setting_wireless_security_pmf_get_type (),
 	                     &i_val, error))
 		goto error;
-	g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_PMF, (guint) i_val, NULL);
+	g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_PMF, i_val, NULL);
 
 	value = svGetValueStr_cp (ifcfg, "SECURITYMODE");
 	if (NM_IN_STRSET (value, NULL, "open"))

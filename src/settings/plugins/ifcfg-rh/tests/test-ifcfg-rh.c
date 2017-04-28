@@ -5768,7 +5768,7 @@ test_write_wifi_wpa_psk (gconstpointer test_data)
 	g_object_set (s_wsec,
 	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk",
 	              NM_SETTING_WIRELESS_SECURITY_PSK, args.psk,
-	              NM_SETTING_WIRELESS_SECURITY_PMF, (guint) NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED,
+	              NM_SETTING_WIRELESS_SECURITY_PMF, (int) NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED,
 	              NULL);
 
 	if (GPOINTER_TO_INT (args.wep_group_p)) {
