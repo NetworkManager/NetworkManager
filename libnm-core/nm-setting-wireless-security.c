@@ -16,7 +16,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2007 - 2014 Red Hat, Inc.
+ * Copyright 2007 - 2017 Red Hat, Inc.
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -84,6 +84,9 @@ typedef struct {
 	/* WPA-PSK */
 	char *psk;
 	NMSettingSecretFlags psk_flags;
+
+	/* WPS */
+	NMSettingWirelessSecurityWpsMethod wps_method;
 } NMSettingWirelessSecurityPrivate;
 
 enum {
@@ -106,6 +109,7 @@ enum {
 	PROP_PSK_FLAGS,
 	PROP_LEAP_PASSWORD,
 	PROP_LEAP_PASSWORD_FLAGS,
+	PROP_WPS_METHOD,
 
 	LAST_PROP
 };
@@ -793,6 +797,23 @@ nm_setting_wireless_security_get_wep_key_type (NMSettingWirelessSecurity *settin
 	return NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->wep_key_type;
 }
 
+/**
+ * nm_setting_wireless_security_get_wps_method:
+ * @setting: the #NMSettingWirelessSecurity
+ *
+ * Returns: the #NMSettingWirelessSecurity:wps-method property of the setting
+ *
+ * Since: 1.10
+ **/
+NMSettingWirelessSecurityWpsMethod
+nm_setting_wireless_security_get_wps_method (NMSettingWirelessSecurity *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting),
+	                      NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DISABLED);
+
+	return NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->wps_method;
+}
+
 static GPtrArray *
 need_secrets (NMSetting *setting)
 {
@@ -1056,6 +1077,25 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
+	/* WPS */
+	if (priv->wps_method > NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("property is invalid"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NM_SETTING_WIRELESS_SECURITY_WPS_METHOD);
+		return FALSE;
+	}
+
+	if (priv->wps_method & NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DISABLED && priv->wps_method != NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DISABLED) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("can't be simultaneously disabled and enabled"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NM_SETTING_WIRELESS_SECURITY_WPS_METHOD);
+		return FALSE;
+	}
+
 	return TRUE;
 }
 
@@ -1284,6 +1324,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_WEP_KEY_TYPE:
 		priv->wep_key_type = g_value_get_enum (value);
 		break;
+	case PROP_WPS_METHOD:
+		priv->wps_method = g_value_get_uint (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1351,6 +1394,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_WEP_KEY_TYPE:
 		g_value_set_enum (value, priv->wep_key_type);
+		break;
+	case PROP_WPS_METHOD:
+		g_value_set_uint (value, priv->wps_method);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1788,4 +1834,26 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	                                      G_VARIANT_TYPE_UINT32,
 	                                      wep_key_type_to_dbus,
 	                                      NULL);
+	/**
+	 * NMSettingWirelessSecurity:wps-method:
+	 *
+	 * Flags indicating which mode of WPS is to be used if any.
+	 *
+	 * There's little point in changing the default setting as NetworkManager will
+	 * automatically determine whether it's feasible to start WPS enrollment from
+	 * the Access Point capabilities.
+	 *
+	 * WPS can by disabled by setting this property to a value of 1.
+	 *
+	 * Since: 1.10
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_WPS_METHOD,
+		 g_param_spec_uint (NM_SETTING_WIRELESS_SECURITY_WPS_METHOD, "", "",
+		                    0, G_MAXUINT32, NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DEFAULT,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT |
+		                    NM_SETTING_PARAM_FUZZY_IGNORE |
+		                    G_PARAM_STATIC_STRINGS));
+
 }

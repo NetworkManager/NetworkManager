@@ -16,7 +16,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2007 - 2014 Red Hat, Inc.
+ * Copyright 2007 - 2017 Red Hat, Inc.
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -89,6 +89,26 @@ typedef enum {
 	NM_SETTING_WIRELESS_SECURITY_PMF_LAST          =  _NM_SETTING_WIRELESS_SECURITY_PMF_NUM - 1, /*< skip >*/
 } NMSettingWirelessSecurityPmf;
 
+/**
+ * NMSettingWirelessSecurityWpsMethod:
+ * @NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DEFAULT: Attempt whichever method AP supports
+ * @NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DISABLED: WPS can not be used.
+ * @NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_AUTO: Use WPS, any method
+ * @NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PBC: use WPS push-buthon method
+ * @NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN: use PIN method
+ *
+ * Configure the use of WPS by a connection while it activates.
+ *
+ * Since: 1.10
+ **/
+typedef enum {
+	NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DEFAULT     = 0x00000000,
+	NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DISABLED    = 0x00000001,
+	NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_AUTO        = 0x00000002,
+	NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PBC         = 0x00000004,
+	NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN         = 0x00000008,
+} NMSettingWirelessSecurityWpsMethod;
+
 #define NM_SETTING_WIRELESS_SECURITY_KEY_MGMT "key-mgmt"
 #define NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX "wep-tx-keyidx"
 #define NM_SETTING_WIRELESS_SECURITY_AUTH_ALG "auth-alg"
@@ -107,6 +127,7 @@ typedef enum {
 #define NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS "psk-flags"
 #define NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD "leap-password"
 #define NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS "leap-password-flags"
+#define NM_SETTING_WIRELESS_SECURITY_WPS_METHOD "wps-method"
 
 /**
  * NMSettingWirelessSecurity:
@@ -168,6 +189,9 @@ const char *nm_setting_wireless_security_get_auth_alg      (NMSettingWirelessSec
 
 NMSettingSecretFlags nm_setting_wireless_security_get_wep_key_flags (NMSettingWirelessSecurity *setting);
 NMWepKeyType nm_setting_wireless_security_get_wep_key_type (NMSettingWirelessSecurity *setting);
+
+NM_AVAILABLE_IN_1_10
+NMSettingWirelessSecurityWpsMethod nm_setting_wireless_security_get_wps_method (NMSettingWirelessSecurity *setting);
 
 G_END_DECLS
 
