@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2011 Red Hat, Inc.
+ * Copyright (C) 2004 - 2017 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -789,6 +789,18 @@ nm_wifi_ap_update_from_properties (NMWifiAP *ap,
 
 	if (g_variant_lookup (properties, "Privacy", "b", &b) && b)
 		changed |= nm_wifi_ap_set_flags (ap, priv->flags | NM_802_11_AP_FLAGS_PRIVACY);
+
+	v = g_variant_lookup_value (properties, "WPS", G_VARIANT_TYPE_VARDICT);
+	if (v) {
+		if (g_variant_lookup (v, "Type", "&s", &s)) {
+			changed |= nm_wifi_ap_set_flags (ap, priv->flags | NM_802_11_AP_FLAGS_WPS);
+			if (strcmp (s, "pbc") == 0)
+				changed |= nm_wifi_ap_set_flags (ap, priv->flags | NM_802_11_AP_FLAGS_WPS_PBC);
+			else if (strcmp (s, "pin") == 0)
+				changed |= nm_wifi_ap_set_flags (ap, priv->flags | NM_802_11_AP_FLAGS_WPS_PIN);
+		}
+		g_variant_unref (v);
+	}
 
 	if (g_variant_lookup (properties, "Mode", "&s", &s)) {
 		if (!g_strcmp0 (s, "infrastructure"))
