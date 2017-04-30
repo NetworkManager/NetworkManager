@@ -376,6 +376,14 @@ nm_wifi_ap_set_fake (NMWifiAP *ap, gboolean fake)
 	return FALSE;
 }
 
+NM80211ApFlags
+nm_wifi_ap_get_flags (const NMWifiAP *ap)
+{
+	g_return_val_if_fail (NM_IS_WIFI_AP (ap), NM_802_11_AP_FLAGS_NONE);
+
+	return NM_WIFI_AP_GET_PRIVATE (ap)->flags;
+}
+
 static gboolean
 nm_wifi_ap_set_last_seen (NMWifiAP *ap, gint32 last_seen)
 {
