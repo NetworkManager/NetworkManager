@@ -8499,11 +8499,14 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 
 		/* Check if we have to wait for DAD */
 		if (priv->ip6_state == IP_CONF && !priv->dad6_ip6_config) {
-			priv->dad6_ip6_config = dad6_get_pending_addresses (self);
+			if (!priv->carrier && priv->ignore_carrier && get_ip_config_may_fail (self, AF_INET6))
+				_LOGI (LOGD_DEVICE | LOGD_IP6, "IPv6 DAD: carrier missing and ignored, not delaying activation");
+			else
+				priv->dad6_ip6_config = dad6_get_pending_addresses (self);
+
 			if (priv->dad6_ip6_config) {
-				_LOGD (LOGD_DEVICE | LOGD_IP6, "IPv6 DAD: waiting termination");
+				_LOGD (LOGD_DEVICE | LOGD_IP6, "IPv6 DAD: awaiting termination");
 			} else {
-				/* No tentative addresses, proceed right away */
 				_set_ip_state (self, AF_INET6, IP_DONE);
 				check_ip_state (self, FALSE);
 			}
