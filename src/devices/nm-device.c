@@ -1496,15 +1496,22 @@ nm_device_get_priority (NMDevice *self)
 	return 11000;
 }
 
-static int
-default_route_penalty (NMDevice *self)
+static guint32
+route_metric_with_penalty (NMDevice *self, guint32 metric)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	const guint32 PENALTY = 20000;
 
-	if (priv->connectivity_state != NM_CONNECTIVITY_FULL)
-		return 20000;
-	else
-		return 0;
+	/* Beware: for IPv6, a metric of 0 effectively means 1024.
+	 * Only pass a normalized IPv6 metric (nm_utils_ip6_route_metric_normalize). */
+
+	if (priv->connectivity_state != NM_CONNECTIVITY_FULL) {
+		if (metric >= G_MAXUINT32 - PENALTY)
+			return G_MAXUINT32;
+		return metric + PENALTY;
+	}
+
+	return metric;
 }
 
 static guint32
@@ -1853,9 +1860,9 @@ nm_device_check_connectivity (NMDevice *self,
 NMConnectivityState
 nm_device_get_connectivity_state (NMDevice *self)
 {
-        g_return_val_if_fail (NM_IS_DEVICE (self), NM_CONNECTIVITY_UNKNOWN);
+	g_return_val_if_fail (NM_IS_DEVICE (self), NM_CONNECTIVITY_UNKNOWN);
 
-        return NM_DEVICE_GET_PRIVATE (self)->connectivity_state;
+	return NM_DEVICE_GET_PRIVATE (self)->connectivity_state;
 }
 
 #if WITH_CONCHECK
@@ -5552,7 +5559,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 	memset (&priv->default_route.v4, 0, sizeof (priv->default_route.v4));
 	priv->default_route.v4.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	priv->default_route.v4.gateway = gateway;
-	priv->default_route.v4.metric = default_route_metric + default_route_penalty (self);
+	priv->default_route.v4.metric = route_metric_with_penalty (self, default_route_metric);
 	priv->default_route.v4.mss = nm_ip4_config_get_mss (composite);
 
 	if (!has_direct_route) {
@@ -6299,7 +6306,8 @@ ip6_config_merge_and_apply (NMDevice *self,
 	memset (&priv->default_route.v6, 0, sizeof (priv->default_route.v6));
 	priv->default_route.v6.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	priv->default_route.v6.gateway = *gateway;
-	priv->default_route.v6.metric = nm_device_get_ip6_route_metric (self) + default_route_penalty (self);
+	priv->default_route.v6.metric = route_metric_with_penalty (self,
+	                                                           nm_device_get_ip6_route_metric (self));
 	priv->default_route.v6.mss = nm_ip6_config_get_mss (composite);
 
 	if (!has_direct_route) {
