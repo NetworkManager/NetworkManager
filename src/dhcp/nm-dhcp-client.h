@@ -117,6 +117,8 @@ const GByteArray *nm_dhcp_client_get_hw_addr (NMDhcpClient *self);
 
 guint32 nm_dhcp_client_get_priority (NMDhcpClient *self);
 
+guint32 nm_dhcp_client_get_timeout (NMDhcpClient *self);
+
 GBytes *nm_dhcp_client_get_client_id (NMDhcpClient *self);
 
 const char *nm_dhcp_client_get_hostname (NMDhcpClient *self);

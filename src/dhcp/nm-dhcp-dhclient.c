@@ -342,6 +342,8 @@ dhclient_start (NMDhcpClient *client,
 	char *binary_name, *cmd_str, *pid_file = NULL, *system_bus_address_env = NULL;
 	gboolean ipv6, success;
 	char *escaped, *preferred_leasefile_path = NULL;
+	guint32 timeout;
+	char timeout_str[64];
 
 	g_return_val_if_fail (priv->pid_file == NULL, FALSE);
 
@@ -442,6 +444,17 @@ dhclient_start (NMDhcpClient *client,
 	if (priv->conf_file) {
 		g_ptr_array_add (argv, (gpointer) "-cf");	/* Set interface config file */
 		g_ptr_array_add (argv, (gpointer) priv->conf_file);
+	}
+
+	/* Specify a timeout longer than configuration's one,
+	 * so that dhclient doesn't send back a FAIL event before
+	 * that time.
+	 */
+	timeout = nm_dhcp_client_get_timeout (client);
+	if (timeout >= 60) {
+		timeout = timeout < G_MAXINT32 ? timeout + 1 : G_MAXINT32;
+		g_ptr_array_add (argv, (gpointer) "-timeout");
+		g_ptr_array_add (argv, (gpointer) nm_sprintf_buf (timeout_str, "%u", (unsigned) timeout));
 	}
 
 	/* Usually the system bus address is well-known; but if it's supposed

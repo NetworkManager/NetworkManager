@@ -147,6 +147,14 @@ nm_dhcp_client_get_priority (NMDhcpClient *self)
 	return NM_DHCP_CLIENT_GET_PRIVATE (self)->priority;
 }
 
+guint32
+nm_dhcp_client_get_timeout (NMDhcpClient *self)
+{
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), 0);
+
+	return NM_DHCP_CLIENT_GET_PRIVATE (self)->timeout;
+}
+
 GBytes *
 nm_dhcp_client_get_client_id (NMDhcpClient *self)
 {
