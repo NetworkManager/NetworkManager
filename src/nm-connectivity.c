@@ -498,7 +498,7 @@ nm_connectivity_init (NMConnectivity *self)
 		priv->curl_mhandle = curl_multi_init ();
 
 	if (priv->curl_mhandle == NULL) {
-		 _LOGE ("cnable to init cURL, connectivity check will not work");
+		 _LOGE ("unable to init cURL, connectivity check will not work");
 		return;
 	}
 
