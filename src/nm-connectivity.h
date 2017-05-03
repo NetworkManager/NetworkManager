@@ -48,5 +48,6 @@ void                 nm_connectivity_check_async  (NMConnectivity       *self,
 NMConnectivityState  nm_connectivity_check_finish (NMConnectivity       *self,
                                                    GAsyncResult         *result,
                                                    GError              **error);
+gboolean nm_connectivity_check_enabled (NMConnectivity *self);
 
 #endif /* __NETWORKMANAGER_CONNECTIVITY_H__ */

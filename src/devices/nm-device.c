@@ -1499,18 +1499,20 @@ nm_device_get_priority (NMDevice *self)
 static guint32
 route_metric_with_penalty (NMDevice *self, guint32 metric)
 {
+#if WITH_CONCHECK
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	const guint32 PENALTY = 20000;
 
 	/* Beware: for IPv6, a metric of 0 effectively means 1024.
 	 * Only pass a normalized IPv6 metric (nm_utils_ip6_route_metric_normalize). */
 
-	if (priv->connectivity_state != NM_CONNECTIVITY_FULL) {
+	if (   priv->connectivity_state != NM_CONNECTIVITY_FULL
+	    && nm_connectivity_check_enabled (nm_connectivity_get ())) {
 		if (metric >= G_MAXUINT32 - PENALTY)
 			return G_MAXUINT32;
 		return metric + PENALTY;
 	}
-
+#endif
 	return metric;
 }
 

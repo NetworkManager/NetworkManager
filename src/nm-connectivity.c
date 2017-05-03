@@ -395,6 +395,14 @@ nm_connectivity_check_finish (NMConnectivity  *self,
 	return (NMConnectivityState) g_simple_async_result_get_op_res_gssize (simple);
 }
 
+gboolean
+nm_connectivity_check_enabled (NMConnectivity *self)
+{
+	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
+
+	return (priv->uri && priv->interval && priv->curl_mhandle);
+}
+
 /*****************************************************************************/
 
 static gboolean
