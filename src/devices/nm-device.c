@@ -7775,6 +7775,12 @@ nm_device_activate_stage3_ip4_start (NMDevice *self)
 
 	g_assert (priv->ip4_state == IP_WAIT);
 
+	/* Slaves stay in IP_CONFIG state until master is ready, and then
+	 * they go directly to SECONDARIES without configuring IPv4.
+	 */
+	if (nm_active_connection_get_master (NM_ACTIVE_CONNECTION (priv->act_request)))
+		return TRUE;
+
 	_set_ip_state (self, AF_INET, IP_CONF);
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage3_ip4_config_start (self, &ip4_config, &failure_reason);
 	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
@@ -7815,6 +7821,12 @@ nm_device_activate_stage3_ip6_start (NMDevice *self)
 	NMIP6Config *ip6_config = NULL;
 
 	g_assert (priv->ip6_state == IP_WAIT);
+
+	/* Slaves stay in IP_CONFIG state until master is ready, and then
+	 * they go directly to SECONDARIES without configuring IPv6.
+	 */
+	if (nm_active_connection_get_master (NM_ACTIVE_CONNECTION (priv->act_request)))
+		return TRUE;
 
 	_set_ip_state (self, AF_INET6, IP_CONF);
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage3_ip6_config_start (self, &ip6_config, &failure_reason);
