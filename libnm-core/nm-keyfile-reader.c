@@ -35,6 +35,8 @@
 #include "nm-core-internal.h"
 #include "nm-keyfile-utils.h"
 
+#include "nm-setting-user.h"
+
 typedef struct {
 	NMConnection *connection;
 	GKeyFile *keyfile;
@@ -716,33 +718,56 @@ read_hash_of_string (GKeyFile *file, NMSetting *setting, const char *key)
 {
 	gs_strfreev char **keys = NULL;
 	const char *const*iter;
-	char *value;
 	const char *setting_name = nm_setting_get_name (setting);
+	gboolean is_vpn;
 
 	keys = nm_keyfile_plugin_kf_get_keys (file, setting_name, NULL, NULL);
 	if (!keys || !*keys)
 		return;
 
-	for (iter = (const char *const*) keys; *iter; iter++) {
-		gs_free char *to_free = NULL;
-		const char *name;
+	if (   (is_vpn = NM_IS_SETTING_VPN (setting))
+	    || NM_IS_SETTING_BOND (setting)) {
+		for (iter = (const char *const*) keys; *iter; iter++) {
+			gs_free char *to_free = NULL;
+			gs_free char *value = NULL;
+			const char *name;
 
-		value = nm_keyfile_plugin_kf_get_string (file, setting_name, *iter, NULL);
-		if (!value)
-			continue;
+			value = nm_keyfile_plugin_kf_get_string (file, setting_name, *iter, NULL);
+			if (!value)
+				continue;
 
-		name = nm_keyfile_key_decode (*iter, &to_free);
+			name = nm_keyfile_key_decode (*iter, &to_free);
 
-		if (NM_IS_SETTING_VPN (setting)) {
-			/* Add any item that's not a class property to the data hash */
-			if (!g_object_class_find_property (G_OBJECT_GET_CLASS (setting), name))
-				nm_setting_vpn_add_data_item (NM_SETTING_VPN (setting), name, value);
+			if (is_vpn) {
+				/* Add any item that's not a class property to the data hash */
+				if (!g_object_class_find_property (G_OBJECT_GET_CLASS (setting), name))
+					nm_setting_vpn_add_data_item (NM_SETTING_VPN (setting), name, value);
+			} else {
+				if (strcmp (name, "interface-name"))
+					nm_setting_bond_add_option (NM_SETTING_BOND (setting), name, value);
+			}
 		}
-		if (NM_IS_SETTING_BOND (setting)) {
-			if (strcmp (name, "interface-name"))
-				nm_setting_bond_add_option (NM_SETTING_BOND (setting), name, value);
+		return;
+	}
+
+	if (NM_IS_SETTING_USER (setting)) {
+		gs_unref_hashtable GHashTable *data = NULL;
+
+		data = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+		for (iter = (const char *const*) keys; *iter; iter++) {
+			gs_free char *to_free = NULL;
+			char *value = NULL;
+			const char *name;
+
+			value = nm_keyfile_plugin_kf_get_string (file, setting_name, *iter, NULL);
+			if (!value)
+				continue;
+			name = nm_keyfile_key_decode (*iter, &to_free);
+			g_hash_table_insert (data,
+			                     g_steal_pointer (&to_free) ?: g_strdup (name),
+			                     value);
 		}
-		g_free (value);
+		g_object_set (setting, NM_SETTING_USER_DATA, data, NULL);
 	}
 }
 
@@ -1458,6 +1483,9 @@ read_one_setting_value (NMSetting *setting,
 
 	/* VPN properties don't have the exact key name */
 	if (NM_IS_SETTING_VPN (setting))
+		check_for_key = FALSE;
+
+	if (NM_IS_SETTING_USER (setting))
 		check_for_key = FALSE;
 
 	/* Bonding 'options' don't have the exact key name. The options are right under [bond] group. */

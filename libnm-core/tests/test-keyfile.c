@@ -28,6 +28,7 @@
 #include "nm-setting-wired.h"
 #include "nm-setting-8021x.h"
 #include "nm-setting-team.h"
+#include "nm-setting-user.h"
 #include "nm-setting-proxy.h"
 
 #include "nm-utils/nm-test-utils.h"
@@ -646,6 +647,73 @@ test_team_conf_read_invalid (void)
 
 /*****************************************************************************/
 
+static void
+test_user_1 (void)
+{
+	gs_unref_keyfile GKeyFile *keyfile = NULL;
+	gs_unref_object NMConnection *con = NULL;
+	NMSettingUser *s_user;
+
+	con = nmtst_create_connection_from_keyfile (
+	      "[connection]\n"
+	      "id=t\n"
+	      "type=ethernet\n"
+	      "\n"
+	      "[user]\n"
+	      "my-value.x=value1\n"
+	      "",
+	      "/test_user_1/invalid", NULL);
+	g_assert (con);
+	s_user = NM_SETTING_USER (nm_connection_get_setting (con, NM_TYPE_SETTING_USER));
+	g_assert (s_user);
+	g_assert_cmpstr (nm_setting_user_get_data (s_user, "my-value.x"), ==, "value1");
+
+	CLEAR (&con, &keyfile);
+
+	con = nmtst_create_minimal_connection ("user-2", "8b85fb8d-3070-48ba-93d9-53eee231d9a2", NM_SETTING_WIRED_SETTING_NAME, NULL);
+	s_user = NM_SETTING_USER (nm_setting_user_new ());
+
+#define _USER_SET_DATA(s_user, key, val) \
+	G_STMT_START { \
+		GError *_error = NULL; \
+		gboolean _success; \
+		\
+		_success = nm_setting_user_set_data ((s_user), (key), (val), &_error); \
+		nmtst_assert_success (_success, _error); \
+	} G_STMT_END
+
+#define _USER_SET_DATA_X(s_user, key) \
+	_USER_SET_DATA (s_user, key, "val="key"")
+
+	_USER_SET_DATA (s_user, "my.val1", "");
+	_USER_SET_DATA_X (s_user, "my.val2");
+	_USER_SET_DATA_X (s_user, "my.v__al3");
+	_USER_SET_DATA_X (s_user, "my._v");
+	_USER_SET_DATA_X (s_user, "my.v+");
+	_USER_SET_DATA_X (s_user, "my.Av");
+	_USER_SET_DATA_X (s_user, "MY.AV");
+	_USER_SET_DATA_X (s_user, "MY.8V");
+	_USER_SET_DATA_X (s_user, "MY.8-V");
+	_USER_SET_DATA_X (s_user, "MY.8_V");
+	_USER_SET_DATA_X (s_user, "MY.8+V");
+	_USER_SET_DATA_X (s_user, "MY.8/V");
+	_USER_SET_DATA_X (s_user, "MY.8=V");
+	_USER_SET_DATA_X (s_user, "MY.-");
+	_USER_SET_DATA_X (s_user, "MY._");
+	_USER_SET_DATA_X (s_user, "MY.+");
+	_USER_SET_DATA_X (s_user, "MY./");
+	_USER_SET_DATA_X (s_user, "MY.=");
+	_USER_SET_DATA_X (s_user, "my.keys.1");
+	_USER_SET_DATA_X (s_user, "my.other.KEY.42");
+
+	nm_connection_add_setting (con, NM_SETTING (s_user));
+	nmtst_connection_normalize (con);
+
+	_keyfile_convert (&con, &keyfile, NULL, NULL, NULL, NULL, NULL, NULL, FALSE);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -657,6 +725,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/keyfile/test_8021x_cert_read", test_8021x_cert_read);
 	g_test_add_func ("/core/keyfile/test_team_conf_read/valid", test_team_conf_read_valid);
 	g_test_add_func ("/core/keyfile/test_team_conf_read/invalid", test_team_conf_read_invalid);
+	g_test_add_func ("/core/keyfile/test_user/1", test_user_1);
 
 	return g_test_run ();
 }
