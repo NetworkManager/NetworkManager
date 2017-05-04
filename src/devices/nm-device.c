@@ -12666,7 +12666,7 @@ _set_state_full (NMDevice *self,
 		applied_connection = nm_device_get_applied_connection (self);
 
 		if (   applied_connection
-		    && priv->ifindex != priv->ip_ifindex
+		    && priv->ip_iface
 		    && !nm_device_sys_iface_state_is_external (self)) {
 			NMSettingConnection *s_con;
 			const char *zone;
