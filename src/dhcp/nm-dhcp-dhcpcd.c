@@ -88,9 +88,8 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 	GPtrArray *argv = NULL;
 	pid_t pid = -1;
 	GError *error = NULL;
-	char *pid_contents = NULL, *binary_name, *cmd_str, *dot;
-	const char *iface, *dhcpcd_path, *hostname, *fqdn;
-	gs_free char *prefix = NULL;
+	char *pid_contents = NULL, *binary_name, *cmd_str;
+	const char *iface, *dhcpcd_path, *hostname;
 
 	g_return_val_if_fail (priv->pid_file == NULL, FALSE);
 
@@ -138,22 +137,17 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 #endif
 
 	hostname = nm_dhcp_client_get_hostname (client);
-	fqdn = nm_dhcp_client_get_fqdn (client);
 
-	if (fqdn) {
-		g_ptr_array_add (argv, (gpointer) "-h");
-		g_ptr_array_add (argv, (gpointer) fqdn);
-		g_ptr_array_add (argv, (gpointer) "-F");
-		g_ptr_array_add (argv, (gpointer) "both");
-	} else if (hostname) {
-		prefix = strdup (hostname);
-		dot = strchr (prefix, '.');
-		/* get rid of the domain */
-		if (dot)
-			*dot = '\0';
-
-		g_ptr_array_add (argv, (gpointer) "-h");	/* Send hostname to DHCP server */
-		g_ptr_array_add (argv, (gpointer) prefix);
+	if (hostname) {
+		if (nm_dhcp_client_get_use_fqdn (client)) {
+			g_ptr_array_add (argv, (gpointer) "-h");
+			g_ptr_array_add (argv, (gpointer) hostname);
+			g_ptr_array_add (argv, (gpointer) "-F");
+			g_ptr_array_add (argv, (gpointer) "both");
+		} else {
+			g_ptr_array_add (argv, (gpointer) "-h");
+			g_ptr_array_add (argv, (gpointer) hostname);
+		}
 	}
 
 	g_ptr_array_add (argv, (gpointer) iface);
