@@ -355,6 +355,7 @@ typedef struct _NMDevicePrivate {
 		guint           restart_id;
 		guint           num_tries_left;
 		char *          pac_url;
+		bool            was_active;
 	} dhcp4;
 
 	struct {
@@ -424,6 +425,7 @@ typedef struct _NMDevicePrivate {
 		guint            restart_id;
 		guint            num_tries_left;
 		guint            needed_prefixes;
+		bool             was_active;
 	} dhcp6;
 
 	gboolean needs_ip6_subnet;
@@ -5661,19 +5663,11 @@ dhcp4_fail (NMDevice *self, gboolean timeout)
 		return;
 	}
 
-	/* Instead of letting an assumed connection fail (which means that the
-	 * device will transition to the ACTIVATED state without IP configuration),
-	 * retry DHCP again.
-	 */
-	if (nm_device_sys_iface_state_is_external_or_assume (self)) {
-		dhcp_schedule_restart (self, AF_INET, "connection is assumed");
-		return;
-	}
-
 	if (   priv->dhcp4.num_tries_left == DHCP_NUM_TRIES_MAX
-	    && (timeout || (priv->ip4_state == IP_CONF)))
+	    && (timeout || (priv->ip4_state == IP_CONF))
+	    && !priv->dhcp4.was_active)
 		nm_device_activate_schedule_ip4_config_timeout (self);
-	else if (priv->ip4_state == IP_DONE) {
+	else if (priv->ip4_state == IP_DONE || priv->dhcp4.was_active) {
 		/* Don't fail immediately when the lease expires but try to
 		 * restart DHCP for a predefined number of times.
 		 */
@@ -5841,6 +5835,9 @@ dhcp4_start (NMDevice *self,
 	                                            self);
 
 	nm_device_add_pending_action (self, NM_PENDING_ACTION_DHCP4, TRUE);
+
+	if (nm_device_sys_iface_state_get (self) == NM_DEVICE_SYS_IFACE_STATE_ASSUME)
+		priv->dhcp4.was_active = TRUE;
 
 	/* DHCP devices will be notified by the DHCP manager when stuff happens */
 	return NM_ACT_STAGE_RETURN_POSTPONE;
@@ -6456,19 +6453,11 @@ dhcp6_fail (NMDevice *self, gboolean timeout)
 			return;
 		}
 
-		/* Instead of letting an assumed connection fail (which means that the
-		 * device will transition to the ACTIVATED state without IP configuration),
-		 * retry DHCP again.
-		 */
-		if (nm_device_sys_iface_state_is_external_or_assume (self)) {
-			dhcp_schedule_restart (self, AF_INET6, "connection is assumed");
-			return;
-		}
-
 		if (   priv->dhcp6.num_tries_left == DHCP_NUM_TRIES_MAX
-		    && (timeout || (priv->ip6_state == IP_CONF)))
+		    && (timeout || (priv->ip6_state == IP_CONF))
+		    && !priv->dhcp6.was_active)
 			nm_device_activate_schedule_ip6_config_timeout (self);
-		else if (priv->ip6_state == IP_DONE) {
+		else if (priv->ip6_state == IP_DONE || priv->dhcp6.was_active) {
 			/* Don't fail immediately when the lease expires but try to
 			 * restart DHCP for a predefined number of times.
 			 */
@@ -6647,6 +6636,9 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 		                                             G_CALLBACK (dhcp6_prefix_delegated),
 		                                             self);
 	}
+
+	if (nm_device_sys_iface_state_get (self) == NM_DEVICE_SYS_IFACE_STATE_ASSUME)
+		priv->dhcp6.was_active = TRUE;
 
 	return !!priv->dhcp6.client;
 }
