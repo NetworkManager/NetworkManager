@@ -1852,6 +1852,7 @@ recheck_assume_connection (NMManager *self,
 	gboolean was_unmanaged = FALSE;
 	gboolean generated = FALSE;
 	NMDeviceState state;
+	NMDeviceSysIfaceState if_state;
 
 	g_return_val_if_fail (NM_IS_MANAGER (self), FALSE);
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
@@ -1866,7 +1867,10 @@ recheck_assume_connection (NMManager *self,
 	if (state > NM_DEVICE_STATE_DISCONNECTED)
 		return FALSE;
 
-	if (nm_device_sys_iface_state_get (device) != NM_DEVICE_SYS_IFACE_STATE_EXTERNAL)
+	if_state = nm_device_sys_iface_state_get (device);
+	if (if_state == NM_DEVICE_SYS_IFACE_STATE_MANAGED)
+		nm_assert (!guess_assume && (assume_connection_uuid == NULL));
+	else if (if_state != NM_DEVICE_SYS_IFACE_STATE_EXTERNAL)
 		return FALSE;
 
 	connection = get_existing_connection (self, device, guess_assume, assume_connection_uuid, &generated);
