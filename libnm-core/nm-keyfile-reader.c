@@ -715,7 +715,8 @@ mac_address_parser_INFINIBAND (KeyfileReaderInfo *info, NMSetting *setting, cons
 static void
 read_hash_of_string (GKeyFile *file, NMSetting *setting, const char *key)
 {
-	char **keys, **iter;
+	gs_strfreev char **keys = NULL;
+	const char *const*iter;
 	char *value;
 	const char *setting_name = nm_setting_get_name (setting);
 
@@ -723,7 +724,7 @@ read_hash_of_string (GKeyFile *file, NMSetting *setting, const char *key)
 	if (!keys || !*keys)
 		return;
 
-	for (iter = keys; *iter; iter++) {
+	for (iter = (const char *const*) keys; *iter; iter++) {
 		value = nm_keyfile_plugin_kf_get_string (file, setting_name, *iter, NULL);
 		if (!value)
 			continue;
@@ -739,7 +740,6 @@ read_hash_of_string (GKeyFile *file, NMSetting *setting, const char *key)
 		}
 		g_free (value);
 	}
-	g_strfreev (keys);
 }
 
 static gsize
