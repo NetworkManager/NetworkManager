@@ -43,6 +43,7 @@
 #include "nm-setting-ip6-config.h"
 #include "nm-setting-pppoe.h"
 #include "nm-setting-vlan.h"
+#include "nm-setting-user.h"
 #include "nm-setting-team.h"
 #include "nm-setting-team-port.h"
 #include "nm-utils.h"
@@ -2003,6 +2004,39 @@ write_proxy_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 }
 
 static gboolean
+write_user_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
+{
+	NMSettingUser *s_user;
+	guint i, len;
+	const char *const*keys;
+
+	s_user = NM_SETTING_USER (nm_connection_get_setting (connection, NM_TYPE_SETTING_USER));
+
+	svUnsetValuesWithPrefix (ifcfg, "NM_USER_");
+
+	if (!s_user)
+		return TRUE;
+
+	keys = nm_setting_user_get_keys (s_user, &len);
+	if (len) {
+		nm_auto_free_gstring GString *str = g_string_sized_new (100);
+
+		for (i = 0; i < len; i++) {
+			const char *key = keys[i];
+
+			g_string_set_size (str, 0);
+			g_string_append (str, "NM_USER_");
+			nms_ifcfg_rh_utils_user_key_encode (key, str);
+			svSetValue (ifcfg,
+			            str->str,
+			            nm_setting_user_get_data (s_user, key));
+		}
+	}
+
+	return TRUE;
+}
+
+static gboolean
 write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 {
 	NMSettingIPConfig *s_ip4;
@@ -2880,6 +2914,9 @@ write_connection (NMConnection *connection,
 		return FALSE;
 
 	if (!write_proxy_setting (connection, ifcfg, error))
+		return FALSE;
+
+	if (!write_user_setting (connection, ifcfg, error))
 		return FALSE;
 
 	svUnsetValue (ifcfg, "DHCP_HOSTNAME");

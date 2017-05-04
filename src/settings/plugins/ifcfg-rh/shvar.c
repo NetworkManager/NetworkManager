@@ -42,7 +42,7 @@
 
 /*****************************************************************************/
 
-typedef struct {
+struct _shvarLine {
 	/* There are three cases:
 	 *
 	 * 1) the line is not a valid variable assignment (that is, it doesn't
@@ -62,7 +62,9 @@ typedef struct {
 	char *line;
 	const char *key;
 	char *key_with_prefix;
-} shvarLine;
+};
+
+typedef struct _shvarLine shvarLine;
 
 struct _shvarFile {
 	char      *fileName;
@@ -880,6 +882,30 @@ shlist_find (const GList *current, const char *key)
 
 /*****************************************************************************/
 
+GHashTable *
+svGetKeys (shvarFile *s)
+{
+	GHashTable *keys = NULL;
+	const GList *current;
+	const shvarLine *line;
+
+	nm_assert (s);
+
+	for (current = s->lineList; current; current = current->next) {
+		line = current->data;
+		if (line->key && line->line) {
+			/* we don't clone the keys. The keys are only valid
+			 * until @s gets modified. */
+			if (!keys)
+				keys = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, NULL);
+			g_hash_table_add (keys, (gpointer) line->key);
+		}
+	}
+	return keys;
+}
+
+/*****************************************************************************/
+
 static const char *
 _svGetValue (shvarFile *s, const char *key, char **to_free)
 {
@@ -1169,6 +1195,27 @@ void
 svUnsetValue (shvarFile *s, const char *key)
 {
 	svSetValue (s, key, NULL);
+}
+
+void
+svUnsetValuesWithPrefix (shvarFile *s, const char *prefix)
+{
+	GList *current;
+
+	g_return_if_fail (s);
+	g_return_if_fail (prefix);
+
+	for (current = s->lineList; current; current = current->next) {
+		shvarLine *line = current->data;
+
+		ASSERT_shvarLine (line);
+		if (   line->key
+		    && g_str_has_prefix (line->key, prefix)) {
+			if (nm_clear_g_free (&line->line))
+				s->modified = TRUE;
+		}
+		ASSERT_shvarLine (line);
+	}
 }
 
 /*****************************************************************************/
