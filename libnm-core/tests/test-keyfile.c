@@ -36,6 +36,69 @@
 #define TEST_WIRED_TLS_CA_CERT     TEST_CERT_DIR"/test-ca-cert.pem"
 #define TEST_WIRED_TLS_PRIVKEY     TEST_CERT_DIR"/test-key-and-cert.pem"
 
+/*****************************************************************************/
+
+static void
+do_test_encode_key_full (GKeyFile *kf, const char *name, const char *key, const char *key_decode_encode)
+{
+	gs_free char *to_free1 = NULL;
+	gs_free char *to_free2 = NULL;
+	const char *key2;
+	const char *name2;
+
+	g_assert (key);
+
+	if (name) {
+		key2 = nm_keyfile_key_encode (name, &to_free1);
+		g_assert (key2);
+		g_assert (NM_STRCHAR_ALL (key2, ch, (guchar) ch < 127));
+		g_assert_cmpstr (key2, ==, key);
+
+		/* try to add the encoded key to the keyfile. We expect
+		 * no g_critical warning about invalid key. */
+		g_key_file_set_value (kf, "group", key, "dummy");
+	}
+
+	name2 = nm_keyfile_key_decode (key, &to_free2);
+	if (name)
+		g_assert_cmpstr (name2, ==, name);
+	else {
+		key2 = nm_keyfile_key_encode (name2, &to_free1);
+		g_assert (key2);
+		g_assert (NM_STRCHAR_ALL (key2, ch, (guchar) ch < 127));
+		if (key_decode_encode)
+			g_assert_cmpstr (key2, ==, key_decode_encode);
+		g_key_file_set_value (kf, "group", key2, "dummy");
+	}
+}
+
+#define do_test_encode_key_bijection(kf, name, key)                      do_test_encode_key_full (kf, ""name, ""key,  NULL)
+#define do_test_encode_key_identity(kf, name)                            do_test_encode_key_full (kf, ""name, ""name, NULL)
+#define do_test_encode_key_decode_surjection(kf, key, key_decode_encode) do_test_encode_key_full (kf, NULL,   ""key,  ""key_decode_encode)
+
+static void
+test_encode_key (void)
+{
+	gs_unref_keyfile GKeyFile *kf = g_key_file_new ();
+
+	do_test_encode_key_identity (kf, "a");
+	do_test_encode_key_bijection (kf, "", "\\00");
+	do_test_encode_key_bijection (kf, " ", "\\20");
+	do_test_encode_key_bijection (kf, "\\ ", "\\\\20");
+	do_test_encode_key_identity (kf, "\\0");
+	do_test_encode_key_identity (kf, "\\a");
+	do_test_encode_key_identity (kf, "\\0g");
+	do_test_encode_key_bijection (kf, "\\0f", "\\5C0f");
+	do_test_encode_key_bijection (kf, "\\0f ", "\\5C0f\\20");
+	do_test_encode_key_bijection (kf, " \\0f ", "\\20\\5C0f\\20");
+	do_test_encode_key_bijection (kf, "\xF5", "\\F5");
+	do_test_encode_key_bijection (kf, "\x7F", "\\7F");
+	do_test_encode_key_bijection (kf, "\x1f", "\\1F");
+	do_test_encode_key_bijection (kf, "  ", "\\20\\20");
+	do_test_encode_key_bijection (kf, "   ", "\\20 \\20");
+	do_test_encode_key_decode_surjection (kf, "f\\20c", "f c");
+	do_test_encode_key_decode_surjection (kf, "\\20\\20\\20", "\\20 \\20");
+}
 
 /*****************************************************************************/
 
@@ -589,6 +652,7 @@ int main (int argc, char **argv)
 {
 	nmtst_init (&argc, &argv, TRUE);
 
+	g_test_add_func ("/core/keyfile/encode_key", test_encode_key);
 	g_test_add_func ("/core/keyfile/test_8021x_cert", test_8021x_cert);
 	g_test_add_func ("/core/keyfile/test_8021x_cert_read", test_8021x_cert_read);
 	g_test_add_func ("/core/keyfile/test_team_conf_read/valid", test_team_conf_read_valid);

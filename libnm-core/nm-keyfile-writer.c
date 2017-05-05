@@ -300,8 +300,12 @@ write_hash_of_string (GKeyFile *file,
 		}
 
 		if (write_item) {
+			gs_free char *to_free = NULL;
+
 			data = g_hash_table_lookup (hash, property);
-			nm_keyfile_plugin_kf_set_string (file, group_name, property, data);
+			nm_keyfile_plugin_kf_set_string (file, group_name,
+			                                 nm_keyfile_key_encode (property, &to_free),
+			                                 data);
 		}
 	}
 }
