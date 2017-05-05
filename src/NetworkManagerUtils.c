@@ -599,7 +599,7 @@ check_connection_cloned_mac_address (NMConnection *orig,
 	if (s_wired_cand)
 		cand_mac = nm_setting_wired_get_cloned_mac_address (s_wired_cand);
 
-	/* special cloned mac address entires are accepted. */
+	/* special cloned mac address entries are accepted. */
 	if (NM_CLONED_MAC_IS_SPECIAL (orig_mac))
 		orig_mac = NULL;
 	if (NM_CLONED_MAC_IS_SPECIAL (cand_mac))

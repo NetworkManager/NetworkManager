@@ -286,7 +286,7 @@ nm_setting_vlan_add_priority_str (NMSettingVlan *setting,
  * @setting: the #NMSettingVlan
  * @map: the type of priority map
  *
- * Returns the number of entires in the
+ * Returns the number of entries in the
  * #NMSettingVlan:ingress_priority_map or #NMSettingVlan:egress_priority_map
  * properties of this setting.
  *
@@ -499,7 +499,7 @@ nm_setting_vlan_remove_priority_str_by_value (NMSettingVlan *setting,
  * @setting: the #NMSettingVlan
  * @map: the type of priority map
  *
- * Clear all the entires from #NMSettingVlan:ingress_priority_map or
+ * Clear all the entries from #NMSettingVlan:ingress_priority_map or
  * #NMSettingVlan:egress_priority_map properties.
  */
 void

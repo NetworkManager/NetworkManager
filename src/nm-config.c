@@ -571,14 +571,14 @@ _sort_groups_cmp (const char **pa, const char **pb, gpointer dummy)
 	b_is_connection = g_str_has_prefix (b, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION);
 
 	if (a_is_connection != b_is_connection) {
-		/* one is a [connection*] entry, the other not. We sort [connection*] entires
+		/* one is a [connection*] entry, the other not. We sort [connection*] entries
 		 * after.  */
 		if (a_is_connection)
 			return 1;
 		return -1;
 	}
 	if (a_is_connection) {
-		/* both are [connection.\+] entires. Reverse their order.
+		/* both are [connection.\+] entries. Reverse their order.
 		 * One of the sections might be literally [connection]. That section
 		 * is special and it's order will be fixed later. It doesn't actually
 		 * matter here how it compares with [connection.\+] sections. */
@@ -589,14 +589,14 @@ _sort_groups_cmp (const char **pa, const char **pb, gpointer dummy)
 	b_is_device = g_str_has_prefix (b, NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE);
 
 	if (a_is_device != b_is_device) {
-		/* one is a [device*] entry, the other not. We sort [device*] entires
+		/* one is a [device*] entry, the other not. We sort [device*] entries
 		 * after.  */
 		if (a_is_device)
 			return 1;
 		return -1;
 	}
 	if (a_is_device) {
-		/* both are [device.\+] entires. Reverse their order.
+		/* both are [device.\+] entries. Reverse their order.
 		 * One of the sections might be literally [device]. That section
 		 * is special and it's order will be fixed later. It doesn't actually
 		 * matter here how it compares with [device.\+] sections. */

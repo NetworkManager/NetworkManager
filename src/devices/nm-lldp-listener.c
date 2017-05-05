@@ -697,7 +697,7 @@ process_lldp_neighbor (NMLldpListener *self, sd_lldp_neighbor *neighbor_sd, gboo
 		return;
 	}
 
-	/* ensure that we have at most MAX_NEIGHBORS entires */
+	/* ensure that we have at most MAX_NEIGHBORS entries */
 	if (   !neigh_old /* only matters in the "add" case. */
 	    && (g_hash_table_size (priv->lldp_neighbors) + 1 > MAX_NEIGHBORS)) {
 		_LOGT ("process: ignore neighbor due to overall limit of %d", MAX_NEIGHBORS);

@@ -327,7 +327,7 @@ nm_setting_user_set_data (NMSettingUser *setting,
 		if (g_hash_table_size (priv->data) > 256) {
 			/* limit the number of valid keys */
 			g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("maximum number of user data entires reached"));
+			                     _("maximum number of user data entries reached"));
 			return FALSE;
 		}
 

@@ -5290,7 +5290,7 @@ _vlan_change_vlan_qos_mapping_create (gboolean is_ingress_map,
 	if (current_n_map) {
 		if (is_ingress_map) {
 			/* For the ingress-map, there are only 8 entries (0 to 7).
-			 * When the user requests to reset all entires, we don't actually
+			 * When the user requests to reset all entries, we don't actually
 			 * need the cached entries, we can just explicitly clear all possible
 			 * ones.
 			 *
