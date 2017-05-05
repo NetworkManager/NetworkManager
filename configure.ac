@@ -1263,24 +1263,24 @@ AM_CONDITIONAL(BUILD_DOCS, test "$build_docs" = "yes")
 AM_CONDITIONAL(HAVE_DOCS, test "$build_docs" = "yes" -o "$use_pregen_docs" = "yes")
 
 AC_CONFIG_FILES([
-                 Makefile
-                 shared/nm-version-macros.h
-                 libnm/libnm.pc
-                 libnm-util/libnm-util.pc
-                 libnm-glib/libnm-glib.pc
-                 libnm-glib/libnm-glib-vpn.pc
-                 po/Makefile.in
-                 data/org.freedesktop.NetworkManager.policy.in
-                 docs/api/Makefile
-                 docs/api/version.xml
-                 docs/libnm-glib/Makefile
-                 docs/libnm-glib/version.xml
-                 docs/libnm-util/Makefile
-                 docs/libnm-util/version.xml
-                 docs/libnm/Makefile
-                 docs/libnm/version.xml
-                 NetworkManager.pc
-                ])
+Makefile
+shared/nm-version-macros.h
+libnm/libnm.pc
+libnm-util/libnm-util.pc
+libnm-glib/libnm-glib.pc
+libnm-glib/libnm-glib-vpn.pc
+po/Makefile.in
+data/org.freedesktop.NetworkManager.policy.in
+docs/api/Makefile
+docs/api/version.xml
+docs/libnm-glib/Makefile
+docs/libnm-glib/version.xml
+docs/libnm-util/Makefile
+docs/libnm-util/version.xml
+docs/libnm/Makefile
+docs/libnm/version.xml
+NetworkManager.pc
+])
 AC_OUTPUT
 
 # Print build configuration
