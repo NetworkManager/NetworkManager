@@ -289,10 +289,10 @@ nm_setting_connection_get_connection_type (NMSettingConnection *setting)
  * nm_setting_connection_get_num_permissions:
  * @setting: the #NMSettingConnection
  *
- * Returns the number of entires in the #NMSettingConnection:permissions
+ * Returns the number of entries in the #NMSettingConnection:permissions
  * property of this setting.
  *
- * Returns: the number of permissions entires
+ * Returns: the number of permissions entries
  */
 guint32
 nm_setting_connection_get_num_permissions (NMSettingConnection *setting)

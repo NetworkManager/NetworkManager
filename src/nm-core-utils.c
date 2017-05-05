@@ -1638,7 +1638,7 @@ nm_match_spec_config (const GSList *specs, guint cur_nm_version, const char *env
  * @value: the string of device specs
  *
  * Splits the specs from the string and returns them as individual
- * entires in a #GSList.
+ * entries in a #GSList.
  *
  * It does not validate any specs, it basically just does a special
  * strsplit with ',' or ';' as separators and supporting '\\' as
@@ -3910,7 +3910,7 @@ debug_key_matches (const gchar *key,
  * nm_utils_parse_debug_string:
  * @string: the string to parse
  * @keys: the debug keys
- * @nkeys: number of entires in @keys
+ * @nkeys: number of entries in @keys
  *
  * Similar to g_parse_debug_string(), but does not special
  * case "help" or "all".
