@@ -133,6 +133,13 @@ typedef enum {
 	HW_ADDR_TYPE_GENERATED,
 } HwAddrType;
 
+typedef enum {
+	FIREWALL_STATE_UNMANAGED = 0,
+	FIREWALL_STATE_INITIALIZED,
+	FIREWALL_STATE_WAIT_STAGE_3,
+	FIREWALL_STATE_WAIT_IP_CONFIG,
+} FirewallState;
+
 /*****************************************************************************/
 
 enum {
@@ -373,7 +380,8 @@ typedef struct _NMDevicePrivate {
 	gulong            dnsmasq_state_id;
 
 	/* Firewall */
-	bool fw_ready;
+	FirewallState fw_state:4;
+	NMFirewallManager *fw_mgr;
 	NMFirewallManagerCallId fw_call;
 
 	/* IPv4LL stuff */
@@ -7909,60 +7917,72 @@ activate_stage3_ip_config_start (NMDevice *self)
 	check_ip_state (self, TRUE);
 }
 
-static gboolean
-fw_change_zone_handle (NMDevice *self,
-                       NMFirewallManagerCallId call_id,
-                       GError *error)
+static void
+fw_change_zone_cb (NMFirewallManager *firewall_manager,
+                   NMFirewallManagerCallId call_id,
+                   GError *error,
+                   gpointer user_data)
 {
+	NMDevice *self = user_data;
 	NMDevicePrivate *priv;
 
-	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+	g_return_if_fail (NM_IS_DEVICE (self));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	g_return_val_if_fail (priv->fw_call == call_id, FALSE);
+	if (priv->fw_call != call_id)
+		g_return_if_reached ();
 	priv->fw_call = NULL;
 
-	return !nm_utils_error_is_cancelled (error, FALSE);
+	if (nm_utils_error_is_cancelled (error, FALSE))
+		return;
+
+	switch (priv->fw_state) {
+	case FIREWALL_STATE_WAIT_STAGE_3:
+		priv->fw_state = FIREWALL_STATE_INITIALIZED;
+		nm_device_activate_schedule_stage3_ip_config_start (self);
+		break;
+	case FIREWALL_STATE_WAIT_IP_CONFIG:
+		priv->fw_state = FIREWALL_STATE_INITIALIZED;
+		if (priv->ip4_state == IP_DONE || priv->ip6_state == IP_DONE)
+			nm_device_start_ip_check (self);
+		break;
+	case FIREWALL_STATE_INITIALIZED:
+		break;
+	default:
+		g_return_if_reached ();
+	}
 }
 
 static void
-fw_change_zone_cb_stage2 (NMFirewallManager *firewall_manager,
-                          NMFirewallManagerCallId call_id,
-                          GError *error,
-                          gpointer user_data)
+fw_change_zone (NMDevice *self)
 {
-	NMDevice *self = user_data;
-	NMDevicePrivate *priv;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMConnection *applied_connection;
+	NMSettingConnection *s_con;
 
-	if (!fw_change_zone_handle (self, call_id, error))
-		return;
+	nm_assert (priv->fw_state >= FIREWALL_STATE_INITIALIZED);
 
-	/* FIXME: fail the device on error? */
+	applied_connection = nm_device_get_applied_connection (self);
+	nm_assert (applied_connection);
 
-	priv = NM_DEVICE_GET_PRIVATE (self);
-	priv->fw_ready = TRUE;
+	s_con = nm_connection_get_setting_connection (applied_connection);
+	nm_assert (s_con);
 
-	nm_device_activate_schedule_stage3_ip_config_start (self);
-}
+	if (priv->fw_call) {
+		nm_firewall_manager_cancel_call (priv->fw_call);
+		nm_assert (!priv->fw_call);
+	}
 
-static void
-fw_change_zone_cb_ip_check (NMFirewallManager *firewall_manager,
-                            NMFirewallManagerCallId call_id,
-                            GError *error,
-                            gpointer user_data)
-{
-	NMDevice *self = user_data;
-	NMDevicePrivate *priv;
+	if (G_UNLIKELY (!priv->fw_mgr))
+		priv->fw_mgr = g_object_ref (nm_firewall_manager_get ());
 
-	if (!fw_change_zone_handle (self, call_id, error))
-		return;
-
-	/* FIXME: fail the device on error? */
-
-	priv = NM_DEVICE_GET_PRIVATE (self);
-	if (priv->ip4_state == IP_DONE || priv->ip6_state == IP_DONE)
-		nm_device_start_ip_check (self);
+	priv->fw_call = nm_firewall_manager_add_or_change_zone (priv->fw_mgr,
+	                                                        nm_device_get_ip_iface (self),
+	                                                        nm_setting_connection_get_zone (s_con),
+	                                                        FALSE, /* change zone */
+	                                                        fw_change_zone_cb,
+	                                                        self);
 }
 
 /*
@@ -7974,9 +7994,6 @@ void
 nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
 {
 	NMDevicePrivate *priv;
-	NMConnection *connection;
-	NMSettingConnection *s_con = NULL;
-	const char *zone;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -7984,28 +8001,21 @@ nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
 	g_return_if_fail (priv->act_request);
 
 	/* Add the interface to the specified firewall zone */
-	connection = nm_device_get_applied_connection (self);
-	g_assert (connection);
-	s_con = nm_connection_get_setting_connection (connection);
-
-	if (!priv->fw_ready) {
-		if (nm_device_sys_iface_state_is_external (self))
-			priv->fw_ready = TRUE;
-		else {
-			if (!priv->fw_call) {
-				zone = nm_setting_connection_get_zone (s_con);
-
-				_LOGD (LOGD_DEVICE, "Activation: setting firewall zone '%s'", zone ? zone : "default");
-				priv->fw_call = nm_firewall_manager_add_or_change_zone (nm_firewall_manager_get (),
-				                                                        nm_device_get_ip_iface (self),
-				                                                        zone,
-				                                                        FALSE,
-				                                                        fw_change_zone_cb_stage2,
-				                                                        self);
-			}
+	if (priv->fw_state == FIREWALL_STATE_UNMANAGED) {
+		if (!nm_device_sys_iface_state_is_external (self)) {
+			priv->fw_state = FIREWALL_STATE_WAIT_STAGE_3;
+			fw_change_zone (self);
 			return;
 		}
+
+		/* fake success. */
+		priv->fw_state = FIREWALL_STATE_INITIALIZED;
+	} else if (priv->fw_state == FIREWALL_STATE_WAIT_STAGE_3) {
+		/* a firewall call for stage3 is pending. Return and wait. */
+		return;
 	}
+
+	nm_assert (priv->fw_state == FIREWALL_STATE_INITIALIZED);
 
 	activation_source_schedule (self, activate_stage3_ip_config_start, AF_INET);
 }
@@ -11401,25 +11411,15 @@ nm_device_reapply_settings_immediately (NMDevice *self)
 void
 nm_device_update_firewall_zone (NMDevice *self)
 {
-	NMConnection *applied_connection;
-	NMSettingConnection *s_con;
+	NMDevicePrivate *priv;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
-	applied_connection = nm_device_get_applied_connection (self);
-	if (!applied_connection)
-		return;
+	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	s_con = nm_connection_get_setting_connection (applied_connection);
-	if (   nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED
-	    && !nm_device_sys_iface_state_is_external (self)) {
-		nm_firewall_manager_add_or_change_zone (nm_firewall_manager_get (),
-		                                        nm_device_get_ip_iface (self),
-		                                        nm_setting_connection_get_zone (s_con),
-		                                        FALSE, /* change zone */
-		                                        NULL,
-		                                        NULL);
-	}
+	if (   priv->fw_state >= FIREWALL_STATE_INITIALIZED
+	    && !nm_device_sys_iface_state_is_external (self))
+		fw_change_zone (self);
 }
 
 void
@@ -11888,13 +11888,12 @@ _cancel_activation (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	/* Clean up when device was deactivated during call to firewall */
 	if (priv->fw_call) {
 		nm_firewall_manager_cancel_call (priv->fw_call);
-		g_warn_if_fail (!priv->fw_call);
+		nm_assert (!priv->fw_call);
 		priv->fw_call = NULL;
+		priv->fw_state = FIREWALL_STATE_INITIALIZED;
 	}
-	priv->fw_ready = FALSE;
 
 	ip_check_gw_ping_cleanup (self);
 
@@ -11906,20 +11905,22 @@ _cancel_activation (NMDevice *self)
 static void
 _cleanup_generic_pre (NMDevice *self, CleanupType cleanup_type)
 {
-	NMConnection *connection;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	_cancel_activation (self);
 
-	connection = nm_device_get_applied_connection (self);
 	if (   cleanup_type == CLEANUP_TYPE_DECONFIGURE
-	    && connection
+	    && priv->fw_state >= FIREWALL_STATE_INITIALIZED
+	    && priv->fw_mgr
 	    && !nm_device_sys_iface_state_is_external (self)) {
-		nm_firewall_manager_remove_from_zone (nm_firewall_manager_get (),
+		nm_firewall_manager_remove_from_zone (priv->fw_mgr,
 		                                      nm_device_get_ip_iface (self),
 		                                      NULL,
 		                                      NULL,
 		                                      NULL);
 	}
+	priv->fw_state = FIREWALL_STATE_UNMANAGED;
+	g_clear_object (&priv->fw_mgr);
 
 	queued_state_clear (self);
 
@@ -12379,7 +12380,6 @@ _set_state_full (NMDevice *self,
 	NMActRequest *req;
 	gboolean no_firmware = FALSE;
 	NMSettingsConnection *connection;
-	NMConnection *applied_connection;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -12657,26 +12657,11 @@ _set_state_full (NMDevice *self,
 		nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
 		break;
 	case NM_DEVICE_STATE_IP_CHECK:
-		/* Now that IP config has completed, check if the firewall
-		 * zone must be set again for the IP interface.
-		 */
-		applied_connection = nm_device_get_applied_connection (self);
-
-		if (   applied_connection
-		    && priv->ifindex != priv->ip_ifindex
+		if (   priv->fw_state >= FIREWALL_STATE_INITIALIZED
+		    && priv->ip_iface
 		    && !nm_device_sys_iface_state_is_external (self)) {
-			NMSettingConnection *s_con;
-			const char *zone;
-
-			s_con = nm_connection_get_setting_connection (applied_connection);
-			zone = nm_setting_connection_get_zone (s_con);
-			g_assert (!priv->fw_call);
-			priv->fw_call = nm_firewall_manager_add_or_change_zone (nm_firewall_manager_get (),
-			                                                        nm_device_get_ip_iface (self),
-			                                                        zone,
-			                                                        FALSE,
-			                                                        fw_change_zone_cb_ip_check,
-			                                                        self);
+			priv->fw_state = FIREWALL_STATE_WAIT_IP_CONFIG;
+			fw_change_zone (self);
 		} else
 			nm_device_start_ip_check (self);
 
