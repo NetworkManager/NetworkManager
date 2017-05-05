@@ -973,10 +973,14 @@ else
 fi
 AM_CONDITIONAL(WITH_LIBPSL, test "$with_libpsl" != "no")
 
-AC_ARG_ENABLE(concheck, AS_HELP_STRING([--enable-concheck], [enable connectivity checking support]),
-                     [enable_concheck=${enableval}], [enable_concheck=${with_libcurl}])
-if (test "${enable_concheck}" = "yes"); then
-	PKG_CHECK_MODULES(LIBCURL, [libcurl >= 7.24.0])
+PKG_CHECK_MODULES(LIBCURL, [libcurl >= 7.24.0], [have_libcurl=yes], [have_libcurl=no])
+AC_ARG_ENABLE(concheck,
+              AS_HELP_STRING([--enable-concheck], [enable connectivity checking support]),
+              [enable_concheck=${enableval}], [enable_concheck=${have_libcurl}])
+if test "${enable_concheck}" = "yes"; then
+	if test "$have_libcurl" != "yes"; then
+		AC_MSG_ERROR(Cannot find libcurl library required by concheck)
+	fi
 	AC_DEFINE(WITH_CONCHECK, 1, [Define if you want connectivity checking support])
 else
 	enable_concheck=no
