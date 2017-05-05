@@ -531,6 +531,7 @@ static void realize_start_setup (NMDevice *self,
 static void _commit_mtu (NMDevice *self, const NMIP4Config *config);
 static void dhcp_schedule_restart (NMDevice *self, int family, const char *reason);
 static void _cancel_activation (NMDevice *self);
+static void update_ip6_config (NMDevice *self, gboolean initial, gboolean check_ll);
 
 /*****************************************************************************/
 
@@ -7718,6 +7719,13 @@ act_stage3_ip6_config_start (NMDevice *self,
 	/* Re-enable IPv6 on the interface */
 	set_disable_ipv6 (self, "0");
 
+	/* Synchronize IPv6 configuration with kernel, since linklocal6_start()
+	 * uses the information there to determine if we can proceed with the
+	 * selected method (SLAAC, DHCP, link-local).
+	 */
+	nm_platform_process_events (nm_device_get_platform (self));
+	update_ip6_config (self, FALSE, FALSE);
+
 	ip6_privacy = _ip6_privacy_get (self);
 
 	if (   strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0
@@ -10649,7 +10657,7 @@ _ip6_config_subtract (gpointer value, gpointer user_data)
 }
 
 static void
-update_ip6_config (NMDevice *self, gboolean initial)
+update_ip6_config (NMDevice *self, gboolean initial, gboolean check_ll)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ifindex;
@@ -10714,7 +10722,8 @@ update_ip6_config (NMDevice *self, gboolean initial)
 		ip6_config_merge_and_apply (self, FALSE);
 	}
 
-	if (   priv->linklocal6_timeout_id
+	if (   check_ll
+	    && priv->linklocal6_timeout_id
 	    && priv->ext_ip6_config_captured
 	    && nm_ip6_config_get_address_first_nontentative (priv->ext_ip6_config_captured, TRUE)) {
 		/* linklocal6 is ready now, do the state transition... we are also
@@ -10728,7 +10737,7 @@ void
 nm_device_capture_initial_config (NMDevice *self)
 {
 	update_ip4_config (self, TRUE);
-	update_ip6_config (self, TRUE);
+	update_ip6_config (self, TRUE, TRUE);
 }
 
 static gboolean
@@ -10774,7 +10783,7 @@ queued_ip6_config_change (gpointer user_data)
 		return TRUE;
 
 	priv->queued_ip6_config_id = 0;
-	update_ip6_config (self, FALSE);
+	update_ip6_config (self, FALSE, TRUE);
 
 	if (priv->state < NM_DEVICE_STATE_DEACTIVATING
 	    && nm_platform_link_get (nm_device_get_platform (self), priv->ifindex)) {
