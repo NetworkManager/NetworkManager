@@ -361,3 +361,205 @@ _nm_keyfile_has_values (GKeyFile *keyfile)
 	groups = g_key_file_get_groups (keyfile, NULL);
 	return groups && groups[0];
 }
+
+/*****************************************************************************/
+
+static const char *
+_keyfile_key_encode (const char *name,
+                     char **out_to_free)
+{
+	gsize len, i;
+	GString *str;
+
+	nm_assert (name);
+	nm_assert (out_to_free && !*out_to_free);
+
+	/* See g_key_file_is_key_name().
+	 *
+	 * GKeyfile allows all UTF-8 characters (even non-well formed sequences),
+	 * except:
+	 *  - no empty keys
+	 *  - no leading/trailing ' '
+	 *  - no '=', '[', ']'
+	 *
+	 * We do something more strict here. All non-ASCII characters, all non-printable
+	 * characters, and all invalid characters are escaped with "\\XX".
+	 *
+	 * We don't escape \\, unless it is followed by two hex digits.
+	 */
+
+	if (!name[0]) {
+		/* empty keys are are backslash encoded. Note that usually
+		 * \\00 is not a valid encode, the only exception is the empty
+		 * word. */
+		return "\\00";
+	}
+
+	/* find the first character that needs escaping. */
+	i = 0;
+	if (name[0] != ' ') {
+		for (;; i++) {
+			const guchar ch = (guchar) name[i];
+
+			if (ch == '\0')
+				return name;
+
+			if (   ch < 0x20
+			    || ch >= 127
+			    || NM_IN_SET (ch, '=', '[', ']')
+			    || (   ch == '\\'
+			        && g_ascii_isxdigit (name[i + 1])
+			        && g_ascii_isxdigit (name[i + 2]))
+			    || (   ch == ' '
+			        && name[i + 1] == '\0'))
+				break;
+		}
+	} else if (name[1] == '\0')
+		return "\\20";
+
+	len = i + strlen (&name[i]);
+	nm_assert (len == strlen (name));
+	str = g_string_sized_new (len + 15);
+
+	if (name[0] == ' ') {
+		nm_assert (i == 0);
+		g_string_append (str, "\\20");
+		i = 1;
+	} else
+		g_string_append_len (str, name, i);
+
+	for (;; i++) {
+		const guchar ch = (guchar) name[i];
+
+		if (ch == '\0')
+			break;
+
+		if (   ch < 0x20
+		    || ch >= 127
+		    || NM_IN_SET (ch, '=', '[', ']')
+		    || (   ch == '\\'
+		        && g_ascii_isxdigit (name[i + 1])
+		        && g_ascii_isxdigit (name[i + 2]))
+		    || (   ch == ' '
+		        && name[i + 1] == '\0'))
+			g_string_append_printf (str, "\\%2X", ch);
+		else
+			g_string_append_c (str, (char) ch);
+	}
+
+	return (*out_to_free = g_string_free (str, FALSE));
+}
+
+static const char *
+_keyfile_key_decode (const char *key,
+                     char **out_to_free)
+{
+	gsize i, len;
+	GString *str;
+
+	nm_assert (key);
+	nm_assert (out_to_free && !*out_to_free);
+
+	if (!key[0])
+		return "";
+
+	for (i = 0; TRUE; i++) {
+		const char ch = key[i];
+
+		if (ch == '\0')
+			return key;
+		if (   ch == '\\'
+		    && g_ascii_isxdigit (key[i + 1])
+		    && g_ascii_isxdigit (key[i + 2]))
+			break;
+	}
+
+	len = i + strlen (&key[i]);
+
+	if (   len == 3
+	    && nm_streq (key, "\\00"))
+		return "";
+
+	nm_assert (len == strlen (key));
+	str = g_string_sized_new (len + 3);
+
+	g_string_append_len (str, key, i);
+	for (;;) {
+		const char ch = key[i];
+		char ch1, ch2;
+		unsigned v;
+
+		if (ch == '\0')
+			break;
+
+		if (   ch == '\\'
+		    && g_ascii_isxdigit ((ch1 = key[i + 1]))
+		    && g_ascii_isxdigit ((ch2 = key[i + 2]))) {
+			v = (g_ascii_xdigit_value (ch1) << 4) + g_ascii_xdigit_value (ch2);
+			if (v != 0) {
+				g_string_append_c (str, (char) v);
+				i += 3;
+				continue;
+			}
+		}
+		g_string_append_c (str, ch);
+		i++;
+	}
+
+	return (*out_to_free = g_string_free (str, FALSE));
+}
+
+/*****************************************************************************/
+
+const char *
+nm_keyfile_key_encode (const char *name,
+                       char **out_to_free)
+{
+	const char *key;
+
+	key = _keyfile_key_encode (name, out_to_free);
+#if NM_MORE_ASSERTS > 5
+	nm_assert (key);
+	nm_assert (!*out_to_free || key == *out_to_free);
+	nm_assert (!*out_to_free || !nm_streq0 (name, key));
+	{
+		gs_free char *to_free2 = NULL;
+		const char *name2;
+
+		name2 = _keyfile_key_decode (key, &to_free2);
+		/* name2, the result of encode()+decode() is identical to name.
+		 * That is because
+		 *   - encode() is a injective function.
+		 *   - decode() is a surjective function, however for output
+		 *     values of encode() is behaves injective too. */
+		nm_assert (nm_streq0 (name2, name));
+	}
+#endif
+	return key;
+}
+
+const char *
+nm_keyfile_key_decode (const char *key,
+                       char **out_to_free)
+{
+	const char *name;
+
+	name = _keyfile_key_decode (key, out_to_free);
+#if NM_MORE_ASSERTS > 5
+	nm_assert (name);
+	nm_assert (!*out_to_free || name == *out_to_free);
+	{
+		gs_free char *to_free2 = NULL;
+		const char *key2;
+
+		key2 = _keyfile_key_encode (name, &to_free2);
+		/* key2, the result of decode+encode may not be idential
+		 * to the original key. That is, decode() is a surjective
+		 * function mapping different keys to the same name.
+		 * However, decode() behaves injective for input that
+		 * are valid output of encode(). */
+		nm_assert (key2);
+	}
+#endif
+	return name;
+}

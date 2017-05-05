@@ -724,18 +724,23 @@ read_hash_of_string (GKeyFile *file, NMSetting *setting, const char *key)
 		return;
 
 	for (iter = (const char *const*) keys; *iter; iter++) {
+		gs_free char *to_free = NULL;
+		const char *name;
+
 		value = nm_keyfile_plugin_kf_get_string (file, setting_name, *iter, NULL);
 		if (!value)
 			continue;
 
+		name = nm_keyfile_key_decode (*iter, &to_free);
+
 		if (NM_IS_SETTING_VPN (setting)) {
 			/* Add any item that's not a class property to the data hash */
-			if (!g_object_class_find_property (G_OBJECT_GET_CLASS (setting), *iter))
-				nm_setting_vpn_add_data_item (NM_SETTING_VPN (setting), *iter, value);
+			if (!g_object_class_find_property (G_OBJECT_GET_CLASS (setting), name))
+				nm_setting_vpn_add_data_item (NM_SETTING_VPN (setting), name, value);
 		}
 		if (NM_IS_SETTING_BOND (setting)) {
-			if (strcmp (*iter, "interface-name"))
-				nm_setting_bond_add_option (NM_SETTING_BOND (setting), *iter, value);
+			if (strcmp (name, "interface-name"))
+				nm_setting_bond_add_option (NM_SETTING_BOND (setting), name, value);
 		}
 		g_free (value);
 	}
