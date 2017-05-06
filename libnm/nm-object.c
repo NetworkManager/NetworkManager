@@ -85,7 +85,7 @@ typedef struct {
 	guint reload_remaining;
 	GError *reload_error;
 
-	GSList *pending;        /* ordered list of pending property updates. */
+	CList pending;          /* ordered list of pending property updates. */
 	GPtrArray *proxies;
 } NMObjectPrivate;
 
@@ -330,6 +330,7 @@ _nm_object_queue_notify (NMObject *object, const char *property)
 }
 
 typedef struct {
+	CList lst_pending;
 	NMObject *self;
 	PropertyInfo *pi;
 
@@ -345,6 +346,7 @@ odata_free (gpointer data)
 {
 	ObjectCreatedData *odata = data;
 
+	c_list_unlink (&odata->lst_pending);
 	g_object_unref (odata->self);
 	g_free (odata->objects);
 	g_slice_free (ObjectCreatedData, odata);
@@ -451,9 +453,10 @@ object_property_maybe_complete (NMObject *self)
 	/* The odata may hold the last reference. */
 	_nm_unused gs_unref_object NMObject *self_keep_alive = g_object_ref (self);
 	int i;
+	CList *iter, *safe;
 
-	while (priv->pending) {
-		ObjectCreatedData *odata = priv->pending->data;
+	c_list_for_each_safe (iter, safe, &priv->pending) {
+		ObjectCreatedData *odata = c_list_entry (iter, ObjectCreatedData, lst_pending);
 		PropertyInfo *pi = odata->pi;
 		gboolean different = TRUE;
 
@@ -511,16 +514,16 @@ object_property_maybe_complete (NMObject *self)
 				/* Emit added & removed */
 				for (i = 0; i < removed->len; i++) {
 					queue_added_removed_signal (self,
-								    pi->signal_prefix,
-								    g_ptr_array_index (removed, i),
-								    FALSE);
+					                            pi->signal_prefix,
+					                            g_ptr_array_index (removed, i),
+					                            FALSE);
 				}
 
 				for (i = 0; i < added->len; i++) {
 					queue_added_removed_signal (self,
-								    pi->signal_prefix,
-								    g_ptr_array_index (added, i),
-								    TRUE);
+					                            pi->signal_prefix,
+					                            g_ptr_array_index (added, i),
+					                            TRUE);
 				}
 
 				different = removed->len || added->len;
@@ -553,7 +556,6 @@ object_property_maybe_complete (NMObject *self)
 		if (--priv->reload_remaining == 0)
 			reload_complete (self, TRUE);
 
-		priv->pending = g_slist_remove (priv->pending, odata);
 		odata_free (odata);
 	}
 }
@@ -594,7 +596,8 @@ handle_object_property (NMObject *self, const char *property_name, GVariant *val
 	odata->array = FALSE;
 	odata->property_name = property_name;
 
-	priv->pending = g_slist_append (priv->pending, odata);
+	c_list_link_tail (&priv->pending, &odata->lst_pending);
+
 	priv->reload_remaining++;
 
 	path = g_variant_get_string (value, NULL);
@@ -650,7 +653,8 @@ handle_object_array_property (NMObject *self, const char *property_name, GVarian
 	odata->array = TRUE;
 	odata->property_name = property_name;
 
-	priv->pending = g_slist_append (priv->pending, odata);
+	c_list_link_tail (&priv->pending, &odata->lst_pending);
+
 	priv->reload_remaining++;
 
 	if (npaths == 0) {
@@ -950,7 +954,7 @@ _nm_object_register_properties (NMObject *object,
 
 	proxy = _nm_object_get_proxy (object, interface);
 	g_signal_connect (proxy, "g-properties-changed",
-		          G_CALLBACK (properties_changed), object);
+	                  G_CALLBACK (properties_changed), object);
 	g_ptr_array_add (priv->proxies, proxy);
 
 	instance = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
@@ -1203,6 +1207,7 @@ nm_object_init (NMObject *object)
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 
 	c_list_init (&priv->notify_items);
+	c_list_init (&priv->pending);
 	priv->proxies = g_ptr_array_new ();
 }
 
