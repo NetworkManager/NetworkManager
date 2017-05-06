@@ -34,6 +34,7 @@
 #include "nm-active-connection.h"
 #include "nm-vpn-connection.h"
 #include "nm-dbus-helpers.h"
+#include "nm-utils/c-list.h"
 
 #include "introspection/org.freedesktop.NetworkManager.h"
 
@@ -71,7 +72,7 @@ typedef struct {
 	/* Activations waiting for their NMActiveConnection
 	 * to appear and then their callback to be called.
 	 */
-	GSList *pending_activations;
+	CList pending_activations;
 
 	gboolean networking_enabled;
 	gboolean wireless_enabled;
@@ -127,6 +128,8 @@ static void
 nm_manager_init (NMManager *manager)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+
+	c_list_init (&priv->pending_activations);
 
 	priv->state = NM_STATE_UNKNOWN;
 	priv->connectivity = NM_CONNECTIVITY_UNKNOWN;
@@ -735,6 +738,7 @@ nm_manager_get_activating_connection (NMManager *manager)
 }
 
 typedef struct {
+	CList lst;
 	NMManager *manager;
 	GSimpleAsyncResult *simple;
 	GCancellable *cancellable;
@@ -748,15 +752,13 @@ activate_info_complete (ActivateInfo *info,
                         NMActiveConnection *active,
                         GError *error)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (info->manager);
-
 	if (active)
 		g_simple_async_result_set_op_res_gpointer (info->simple, g_object_ref (active), g_object_unref);
 	else
 		g_simple_async_result_set_from_error (info->simple, error);
 	g_simple_async_result_complete (info->simple);
 
-	priv->pending_activations = g_slist_remove (priv->pending_activations, info);
+	c_list_unlink (&info->lst);
 
 	g_free (info->active_path);
 	g_free (info->new_connection_path);
@@ -790,7 +792,7 @@ static void
 recheck_pending_activations (NMManager *self)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *iter, *next;
+	CList *iter, *safe;
 	NMActiveConnection *candidate;
 	const GPtrArray *devices;
 	NMDevice *device;
@@ -804,11 +806,9 @@ recheck_pending_activations (NMManager *self)
 	 * device have both updated their properties to point to each other, and
 	 * call the pending connection's callback.
 	 */
-	for (iter = priv->pending_activations; iter; iter = next) {
-		ActivateInfo *info = iter->data;
+	c_list_for_each_safe (iter, safe, &priv->pending_activations) {
+		ActivateInfo *info = c_list_entry (iter, ActivateInfo, lst);
 		gs_unref_object GDBusObject *dbus_obj = NULL;
-
-		next = g_slist_next (iter);
 
 		if (!info->active_path)
 			continue;
@@ -901,14 +901,15 @@ nm_manager_activate_connection_async (NMManager *manager,
 	if (connection)
 		g_return_if_fail (NM_IS_CONNECTION (connection));
 
+	priv = NM_MANAGER_GET_PRIVATE (manager);
+
 	info = g_slice_new0 (ActivateInfo);
 	info->manager = manager;
 	info->simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
 	                                          nm_manager_activate_connection_async);
 	info->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
 
-	priv = NM_MANAGER_GET_PRIVATE (manager);
-	priv->pending_activations = g_slist_prepend (priv->pending_activations, info);
+	c_list_link_tail (&priv->pending_activations, &info->lst);
 
 	nmdbus_manager_call_activate_connection (priv->proxy,
 	                                         connection ? nm_connection_get_path (connection) : "/",
@@ -977,14 +978,15 @@ nm_manager_add_and_activate_connection_async (NMManager *manager,
 	if (partial)
 		g_return_if_fail (NM_IS_CONNECTION (partial));
 
+	priv = NM_MANAGER_GET_PRIVATE (manager);
+
 	info = g_slice_new0 (ActivateInfo);
 	info->manager = manager;
 	info->simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
 	                                          nm_manager_add_and_activate_connection_async);
 	info->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
 
-	priv = NM_MANAGER_GET_PRIVATE (manager);
-	priv->pending_activations = g_slist_prepend (priv->pending_activations, info);
+	c_list_link_tail (&priv->pending_activations, &info->lst);
 
 	if (partial)
 		dict = nm_connection_to_dbus (partial, NM_CONNECTION_SERIALIZE_ALL);
@@ -1294,7 +1296,7 @@ dispose (GObject *object)
 	/* Each activation should hold a ref on @manager, so if we're being disposed,
 	 * there shouldn't be any pending.
 	 */
-	g_warn_if_fail (priv->pending_activations == NULL);
+	g_warn_if_fail (c_list_is_empty (&priv->pending_activations));
 
 	g_hash_table_destroy (priv->permissions);
 	priv->permissions = NULL;
