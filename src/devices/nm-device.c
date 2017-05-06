@@ -6832,7 +6832,8 @@ linklocal6_complete (NMDevice *self)
 	const char *method;
 
 	g_assert (priv->linklocal6_timeout_id);
-	g_assert (nm_ip6_config_get_address_first_nontentative (priv->ip6_config, TRUE));
+	g_assert (priv->ext_ip6_config_captured);
+	g_assert (nm_ip6_config_get_address_first_nontentative (priv->ext_ip6_config_captured, TRUE));
 
 	linklocal6_cleanup (self);
 
@@ -6956,8 +6957,8 @@ linklocal6_start (NMDevice *self)
 
 	linklocal6_cleanup (self);
 
-	if (   priv->ip6_config
-	    && nm_ip6_config_get_address_first_nontentative (priv->ip6_config, TRUE))
+	if (   priv->ext_ip6_config_captured
+	    && nm_ip6_config_get_address_first_nontentative (priv->ext_ip6_config_captured, TRUE))
 		return NM_ACT_STAGE_RETURN_SUCCESS;
 
 	connection = nm_device_get_applied_connection (self);
@@ -7717,6 +7718,17 @@ act_stage3_ip6_config_start (NMDevice *self,
 
 	/* Re-enable IPv6 on the interface */
 	set_disable_ipv6 (self, "0");
+
+	/* Synchronize external IPv6 configuration with kernel, since
+	 * linklocal6_start() uses the information there to determine if we can
+	 * proceed with the selected method (SLAAC, DHCP, link-local).
+	 */
+	nm_platform_process_events (nm_device_get_platform (self));
+	g_clear_object (&priv->ext_ip6_config_captured);
+	priv->ext_ip6_config_captured = nm_ip6_config_capture (nm_device_get_platform (self),
+	                                                       nm_device_get_ifindex (self),
+	                                                       FALSE,
+	                                                       NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
 
 	ip6_privacy = _ip6_privacy_get (self);
 
