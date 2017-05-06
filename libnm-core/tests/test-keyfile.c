@@ -28,6 +28,7 @@
 #include "nm-setting-wired.h"
 #include "nm-setting-8021x.h"
 #include "nm-setting-team.h"
+#include "nm-setting-user.h"
 #include "nm-setting-proxy.h"
 
 #include "nm-utils/nm-test-utils.h"
@@ -36,6 +37,69 @@
 #define TEST_WIRED_TLS_CA_CERT     TEST_CERT_DIR"/test-ca-cert.pem"
 #define TEST_WIRED_TLS_PRIVKEY     TEST_CERT_DIR"/test-key-and-cert.pem"
 
+/*****************************************************************************/
+
+static void
+do_test_encode_key_full (GKeyFile *kf, const char *name, const char *key, const char *key_decode_encode)
+{
+	gs_free char *to_free1 = NULL;
+	gs_free char *to_free2 = NULL;
+	const char *key2;
+	const char *name2;
+
+	g_assert (key);
+
+	if (name) {
+		key2 = nm_keyfile_key_encode (name, &to_free1);
+		g_assert (key2);
+		g_assert (NM_STRCHAR_ALL (key2, ch, (guchar) ch < 127));
+		g_assert_cmpstr (key2, ==, key);
+
+		/* try to add the encoded key to the keyfile. We expect
+		 * no g_critical warning about invalid key. */
+		g_key_file_set_value (kf, "group", key, "dummy");
+	}
+
+	name2 = nm_keyfile_key_decode (key, &to_free2);
+	if (name)
+		g_assert_cmpstr (name2, ==, name);
+	else {
+		key2 = nm_keyfile_key_encode (name2, &to_free1);
+		g_assert (key2);
+		g_assert (NM_STRCHAR_ALL (key2, ch, (guchar) ch < 127));
+		if (key_decode_encode)
+			g_assert_cmpstr (key2, ==, key_decode_encode);
+		g_key_file_set_value (kf, "group", key2, "dummy");
+	}
+}
+
+#define do_test_encode_key_bijection(kf, name, key)                      do_test_encode_key_full (kf, ""name, ""key,  NULL)
+#define do_test_encode_key_identity(kf, name)                            do_test_encode_key_full (kf, ""name, ""name, NULL)
+#define do_test_encode_key_decode_surjection(kf, key, key_decode_encode) do_test_encode_key_full (kf, NULL,   ""key,  ""key_decode_encode)
+
+static void
+test_encode_key (void)
+{
+	gs_unref_keyfile GKeyFile *kf = g_key_file_new ();
+
+	do_test_encode_key_identity (kf, "a");
+	do_test_encode_key_bijection (kf, "", "\\00");
+	do_test_encode_key_bijection (kf, " ", "\\20");
+	do_test_encode_key_bijection (kf, "\\ ", "\\\\20");
+	do_test_encode_key_identity (kf, "\\0");
+	do_test_encode_key_identity (kf, "\\a");
+	do_test_encode_key_identity (kf, "\\0g");
+	do_test_encode_key_bijection (kf, "\\0f", "\\5C0f");
+	do_test_encode_key_bijection (kf, "\\0f ", "\\5C0f\\20");
+	do_test_encode_key_bijection (kf, " \\0f ", "\\20\\5C0f\\20");
+	do_test_encode_key_bijection (kf, "\xF5", "\\F5");
+	do_test_encode_key_bijection (kf, "\x7F", "\\7F");
+	do_test_encode_key_bijection (kf, "\x1f", "\\1F");
+	do_test_encode_key_bijection (kf, "  ", "\\20\\20");
+	do_test_encode_key_bijection (kf, "   ", "\\20 \\20");
+	do_test_encode_key_decode_surjection (kf, "f\\20c", "f c");
+	do_test_encode_key_decode_surjection (kf, "\\20\\20\\20", "\\20 \\20");
+}
 
 /*****************************************************************************/
 
@@ -583,16 +647,85 @@ test_team_conf_read_invalid (void)
 
 /*****************************************************************************/
 
+static void
+test_user_1 (void)
+{
+	gs_unref_keyfile GKeyFile *keyfile = NULL;
+	gs_unref_object NMConnection *con = NULL;
+	NMSettingUser *s_user;
+
+	con = nmtst_create_connection_from_keyfile (
+	      "[connection]\n"
+	      "id=t\n"
+	      "type=ethernet\n"
+	      "\n"
+	      "[user]\n"
+	      "my-value.x=value1\n"
+	      "",
+	      "/test_user_1/invalid", NULL);
+	g_assert (con);
+	s_user = NM_SETTING_USER (nm_connection_get_setting (con, NM_TYPE_SETTING_USER));
+	g_assert (s_user);
+	g_assert_cmpstr (nm_setting_user_get_data (s_user, "my-value.x"), ==, "value1");
+
+	CLEAR (&con, &keyfile);
+
+	con = nmtst_create_minimal_connection ("user-2", "8b85fb8d-3070-48ba-93d9-53eee231d9a2", NM_SETTING_WIRED_SETTING_NAME, NULL);
+	s_user = NM_SETTING_USER (nm_setting_user_new ());
+
+#define _USER_SET_DATA(s_user, key, val) \
+	G_STMT_START { \
+		GError *_error = NULL; \
+		gboolean _success; \
+		\
+		_success = nm_setting_user_set_data ((s_user), (key), (val), &_error); \
+		nmtst_assert_success (_success, _error); \
+	} G_STMT_END
+
+#define _USER_SET_DATA_X(s_user, key) \
+	_USER_SET_DATA (s_user, key, "val="key"")
+
+	_USER_SET_DATA (s_user, "my.val1", "");
+	_USER_SET_DATA_X (s_user, "my.val2");
+	_USER_SET_DATA_X (s_user, "my.v__al3");
+	_USER_SET_DATA_X (s_user, "my._v");
+	_USER_SET_DATA_X (s_user, "my.v+");
+	_USER_SET_DATA_X (s_user, "my.Av");
+	_USER_SET_DATA_X (s_user, "MY.AV");
+	_USER_SET_DATA_X (s_user, "MY.8V");
+	_USER_SET_DATA_X (s_user, "MY.8-V");
+	_USER_SET_DATA_X (s_user, "MY.8_V");
+	_USER_SET_DATA_X (s_user, "MY.8+V");
+	_USER_SET_DATA_X (s_user, "MY.8/V");
+	_USER_SET_DATA_X (s_user, "MY.8=V");
+	_USER_SET_DATA_X (s_user, "MY.-");
+	_USER_SET_DATA_X (s_user, "MY._");
+	_USER_SET_DATA_X (s_user, "MY.+");
+	_USER_SET_DATA_X (s_user, "MY./");
+	_USER_SET_DATA_X (s_user, "MY.=");
+	_USER_SET_DATA_X (s_user, "my.keys.1");
+	_USER_SET_DATA_X (s_user, "my.other.KEY.42");
+
+	nm_connection_add_setting (con, NM_SETTING (s_user));
+	nmtst_connection_normalize (con);
+
+	_keyfile_convert (&con, &keyfile, NULL, NULL, NULL, NULL, NULL, NULL, FALSE);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
 {
 	nmtst_init (&argc, &argv, TRUE);
 
+	g_test_add_func ("/core/keyfile/encode_key", test_encode_key);
 	g_test_add_func ("/core/keyfile/test_8021x_cert", test_8021x_cert);
 	g_test_add_func ("/core/keyfile/test_8021x_cert_read", test_8021x_cert_read);
 	g_test_add_func ("/core/keyfile/test_team_conf_read/valid", test_team_conf_read_valid);
 	g_test_add_func ("/core/keyfile/test_team_conf_read/invalid", test_team_conf_read_invalid);
+	g_test_add_func ("/core/keyfile/test_user/1", test_user_1);
 
 	return g_test_run ();
 }

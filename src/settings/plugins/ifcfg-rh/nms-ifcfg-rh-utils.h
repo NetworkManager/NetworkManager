@@ -54,5 +54,7 @@ gboolean utils_is_ifcfg_alias_file (const char *alias, const char *ifcfg);
 
 char *utils_detect_ifcfg_path (const char *path, gboolean only_ifcfg);
 
-#endif  /* _UTILS_H_ */
+void nms_ifcfg_rh_utils_user_key_encode (const char *key, GString *str_buffer);
+gboolean nms_ifcfg_rh_utils_user_key_decode (const char *name, GString *str_buffer);
 
+#endif  /* _UTILS_H_ */

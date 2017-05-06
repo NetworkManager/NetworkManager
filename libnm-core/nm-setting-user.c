@@ -35,6 +35,8 @@
  * arbitrary user data to #NMConnection objects.
  **/
 
+#define MAX_NUM_KEYS 256
+
 /*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMSettingUser,
@@ -43,6 +45,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingUser,
 
 typedef struct {
 	GHashTable *data;
+	GHashTable *data_invalid;
 	const char **keys;
 } NMSettingUserPrivate;
 
@@ -282,7 +285,8 @@ nm_setting_user_get_data (NMSettingUser *setting, const char *key)
  * nm_setting_user_set_data:
  * @setting: the #NMSettingUser instance
  * @key: the key to set
- * @val: the value to set or %NULL to clear a key.
+ * @val: (allow-none): the value to set or %NULL to clear a key.
+ * @error: (allow-none): optional error argument
  *
  * Since: 1.8
  *
@@ -298,11 +302,16 @@ nm_setting_user_set_data (NMSettingUser *setting,
 {
 	NMSettingUser *self = setting;
 	NMSettingUserPrivate *priv;
+	gboolean changed = FALSE;
 
 	g_return_val_if_fail (NM_IS_SETTING (self), FALSE);
 	g_return_val_if_fail (!error || !*error, FALSE);
 
 	if (!nm_setting_user_check_key (key, error))
+		return FALSE;
+
+	if (   val
+	    && !nm_setting_user_check_val (val, error))
 		return FALSE;
 
 	priv = NM_SETTING_USER_GET_PRIVATE (self);
@@ -311,35 +320,42 @@ nm_setting_user_set_data (NMSettingUser *setting,
 		if (   priv->data
 		    && g_hash_table_remove (priv->data, key)) {
 			nm_clear_g_free (&priv->keys);
-			_notify (self, PROP_DATA);
+			changed = TRUE;
 		}
-		return TRUE;
+		goto out;
 	}
 
-	if (!nm_setting_user_check_val (val, error))
-		return FALSE;
-
-	if (!priv->data)
-		priv->data = _create_data_hash ();
-	else {
+	if (priv->data) {
 		const char *key2, *val2;
-
-		if (g_hash_table_size (priv->data) > 256) {
-			/* limit the number of valid keys */
-			g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("maximum number of user data entries reached"));
-			return FALSE;
-		}
 
 		if (g_hash_table_lookup_extended (priv->data, key, (gpointer *) &key2, (gpointer *) &val2)) {
 			if (nm_streq (val, val2))
-				return TRUE;
-		} else
+				goto out;
+		} else {
+			if (g_hash_table_size (priv->data) >= MAX_NUM_KEYS) {
+				/* limit the number of valid keys */
+				g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				                     _("maximum number of user data entries reached"));
+				return FALSE;
+			}
+
 			nm_clear_g_free (&priv->keys);
-	}
+		}
+	} else
+		priv->data = _create_data_hash ();
 
 	g_hash_table_insert (priv->data, g_strdup (key), g_strdup (val));
-	_notify (self, PROP_DATA);
+	changed = TRUE;
+
+out:
+	if (priv->data_invalid) {
+		/* setting a value purges all invalid values that were set
+		 * via GObject property. */
+		changed = TRUE;
+		g_clear_pointer (&priv->data_invalid, g_hash_table_unref);
+	}
+	if (changed)
+		_notify (self, PROP_DATA);
 	return TRUE;
 }
 
@@ -348,11 +364,68 @@ nm_setting_user_set_data (NMSettingUser *setting,
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
-	g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
-	                     _("setting user-data is not yet implemented"));
-	return FALSE;
+	NMSettingUser *self = NM_SETTING_USER (setting);
+	NMSettingUserPrivate *priv = NM_SETTING_USER_GET_PRIVATE (self);
+
+	if (priv->data_invalid) {
+		const char *key, *val;
+		GHashTableIter iter;
+		gs_free_error GError *local = NULL;
+
+		g_hash_table_iter_init (&iter, priv->data_invalid);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &val)) {
+			if (!nm_setting_user_check_key (key, &local)) {
+				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+				             _("invalid key \"%s\": %s"),
+				             key, local->message);
+			} else if (!nm_setting_user_check_val (val, &local)) {
+				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+				             _("invalid value for \"%s\": %s"),
+				             key, local->message);
+			} else {
+				nm_assert_not_reached ();
+				continue;
+			}
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_USER_SETTING_NAME, NM_SETTING_USER_DATA);
+			return FALSE;
+		}
+		nm_assert_not_reached ();
+	}
+
+	if (   priv->data
+	    && g_hash_table_size (priv->data) > MAX_NUM_KEYS) {
+		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("maximum number of user data entries reached (%u instead of %u)"),
+		             g_hash_table_size (priv->data), (unsigned) MAX_NUM_KEYS);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_USER_SETTING_NAME, NM_SETTING_USER_DATA);
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
+static gboolean
+hash_table_equal (GHashTable *a, GHashTable *b)
+{
+	guint n;
+	GHashTableIter iter;
+	const char *key, *value, *valu2;
+
+	n = a ? g_hash_table_size (a) : 0;
+	if (n != (b ? g_hash_table_size (b) : 0))
+		return FALSE;
+	if (n > 0) {
+		g_hash_table_iter_init (&iter, a);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
+			if (!g_hash_table_lookup_extended (b, key, NULL, (gpointer *) &valu2))
+				return FALSE;
+			if (!nm_streq (value, valu2))
+				return FALSE;
+		}
+	}
+	return TRUE;
+
+}
 
 static gboolean
 compare_property (NMSetting *setting,
@@ -361,9 +434,6 @@ compare_property (NMSetting *setting,
                   NMSettingCompareFlags flags)
 {
 	NMSettingUserPrivate *priv, *pri2;
-	guint n;
-	GHashTableIter iter;
-	const char *key, *value, *valu2;
 
 	g_return_val_if_fail (NM_IS_SETTING_USER (setting), FALSE);
 	g_return_val_if_fail (NM_IS_SETTING_USER (other), FALSE);
@@ -374,18 +444,12 @@ compare_property (NMSetting *setting,
 	priv = NM_SETTING_USER_GET_PRIVATE (NM_SETTING_USER (setting));
 	pri2 = NM_SETTING_USER_GET_PRIVATE (NM_SETTING_USER (other));
 
-	n = priv->data ? g_hash_table_size (priv->data) : 0;
-	if (n != (pri2->data ? g_hash_table_size (pri2->data) : 0))
+	if (!hash_table_equal (priv->data, pri2->data))
 		return FALSE;
-	if (n > 0) {
-		g_hash_table_iter_init (&iter, priv->data);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
-			if (!g_hash_table_lookup_extended (pri2->data, key, NULL, (gpointer *) &valu2))
-				return FALSE;
-			if (!nm_streq (value, valu2))
-				return FALSE;
-		}
-	}
+
+	if (!hash_table_equal (priv->data_invalid, pri2->data_invalid))
+		return FALSE;
+
 	return TRUE;
 
 call_parent:
@@ -412,6 +476,11 @@ get_property (GObject *object, guint prop_id,
 			while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &val))
 				g_hash_table_insert (data, g_strdup (key), g_strdup (val));
 		}
+		if (priv->data_invalid) {
+			g_hash_table_iter_init (&iter, priv->data_invalid);
+			while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &val))
+				g_hash_table_insert (data, g_strdup (key), g_strdup (val));
+		}
 		g_value_take_boxed (value, data);
 		break;
 	default:
@@ -432,27 +501,38 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_DATA:
+		nm_clear_g_free (&priv->keys);
+
 		data = g_value_get_boxed (value);
 		if (!data || !g_hash_table_size (data)) {
 			g_clear_pointer (&priv->data, g_hash_table_unref);
-			nm_clear_g_free (&priv->keys);
+			g_clear_pointer (&priv->data_invalid, g_hash_table_unref);
 			return;
 		}
-		g_hash_table_iter_init (&iter, data);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &val)) {
-			if (!nm_setting_user_check_key (key, NULL))
-				g_return_if_reached ();
-			if (!nm_setting_user_check_val (val, NULL))
-				g_return_if_reached ();
-		}
-		nm_clear_g_free (&priv->keys);
+
 		if (priv->data)
 			g_hash_table_remove_all (priv->data);
 		else
 			priv->data = _create_data_hash ();
-		g_hash_table_iter_init (&iter, priv->data);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &val))
-			g_hash_table_insert (priv->data, (gpointer) key, (gpointer) val);
+
+		if (priv->data_invalid)
+			g_hash_table_remove_all (priv->data_invalid);
+
+		g_hash_table_iter_init (&iter, data);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &val)) {
+			if (   nm_setting_user_check_key (key, NULL)
+			    && nm_setting_user_check_val (val, NULL))
+				g_hash_table_insert (priv->data, g_strdup (key), g_strdup (val));
+			else {
+				if (!priv->data_invalid)
+					priv->data_invalid = _create_data_hash ();
+				g_hash_table_insert (priv->data_invalid, g_strdup (key), g_strdup (val));
+			}
+		}
+		if (   priv->data_invalid
+		    && !g_hash_table_size (priv->data_invalid))
+			g_clear_pointer (&priv->data_invalid, g_hash_table_unref);
+
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -488,6 +568,8 @@ finalize (GObject *object)
 	g_free (priv->keys);
 	if (priv->data)
 		g_hash_table_unref (priv->data);
+	if (priv->data_invalid)
+		g_hash_table_unref (priv->data_invalid);
 
 	G_OBJECT_CLASS (nm_setting_user_parent_class)->finalize (object);
 }

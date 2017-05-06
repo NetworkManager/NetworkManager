@@ -163,16 +163,17 @@ EXTRA_DIST += \
 	examples/python/dbus/create-bond.py \
 	examples/python/dbus/wifi-active-ap.py\
 	\
-	examples/python/gi/list-connections.py \
+	examples/python/gi/README \
+	examples/python/gi/add_connection.py \
+	examples/python/gi/deactivate-all.py \
 	examples/python/gi/device-state-ip4config.py \
 	examples/python/gi/firewall-zone.py \
-	examples/python/gi/show-wifi-networks.py \
-	examples/python/gi/get_ips.py \
-	examples/python/gi/add_connection.py \
 	examples/python/gi/get-active-connections.py \
+	examples/python/gi/get_ips.py \
+	examples/python/gi/list-connections.py \
+	examples/python/gi/setting-user-data.py \
+	examples/python/gi/show-wifi-networks.py \
 	examples/python/gi/update-ip4-method.py \
-	examples/python/gi/deactivate-all.py \
-	examples/python/gi/README \
 	\
 	examples/python/python-networkmanager/README \
 	\

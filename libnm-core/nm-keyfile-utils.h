@@ -81,5 +81,11 @@ gboolean nm_keyfile_plugin_kf_has_key     (GKeyFile *kf,
                                            const char *key,
                                            GError **error);
 
+const char *nm_keyfile_key_encode (const char *name,
+                                   char **out_to_free);
+
+const char *nm_keyfile_key_decode (const char *key,
+                                   char **out_to_free);
+
 #endif  /* __NM_KEYFILE_UTILS_H__ */
 

@@ -365,3 +365,117 @@ utils_detect_ifcfg_path (const char *path, gboolean only_ifcfg)
 		return NULL;
 	return utils_get_ifcfg_path (path);
 }
+
+void
+nms_ifcfg_rh_utils_user_key_encode (const char *key, GString *str_buffer)
+{
+	gsize i;
+
+	nm_assert (key);
+	nm_assert (str_buffer);
+
+	for (i = 0; key[i]; i++) {
+		char ch = key[i];
+
+		/* we encode the key in only upper case letters, digits, and underscore.
+		 * As we expect lower-case letters to be more common, we encode lower-case
+		 * letters as upper case, and upper-case letters with a leading underscore. */
+
+		if (ch >= '0' && ch <= '9') {
+			g_string_append_c (str_buffer, ch);
+			continue;
+		}
+		if (ch >= 'a' && ch <= 'z') {
+			g_string_append_c (str_buffer, ch - 'a' + 'A');
+			continue;
+		}
+		if (ch == '.') {
+			g_string_append (str_buffer, "__");
+			continue;
+		}
+		if (ch >= 'A' && ch <= 'Z') {
+			g_string_append_c (str_buffer, '_');
+			g_string_append_c (str_buffer, ch);
+			continue;
+		}
+		g_string_append_printf (str_buffer, "_%03o", (unsigned) ch);
+	}
+}
+
+gboolean
+nms_ifcfg_rh_utils_user_key_decode (const char *name, GString *str_buffer)
+{
+	gsize i;
+
+	nm_assert (name);
+	nm_assert (str_buffer);
+
+	if (!name[0])
+		return FALSE;
+
+	for (i = 0; name[i]; ) {
+		char ch = name[i];
+
+		if (ch >= '0' && ch <= '9') {
+			g_string_append_c (str_buffer, ch);
+			i++;
+			continue;
+		}
+		if (ch >= 'A' && ch <= 'Z') {
+			g_string_append_c (str_buffer, ch - 'A' + 'a');
+			i++;
+			continue;
+		}
+
+		if (ch == '_') {
+			ch = name[i + 1];
+			if (ch == '_') {
+				g_string_append_c (str_buffer, '.');
+				i += 2;
+				continue;
+			}
+			if (ch >= 'A' && ch <= 'Z') {
+				g_string_append_c (str_buffer, ch);
+				i += 2;
+				continue;
+			}
+			if (ch >= '0' && ch <= '7') {
+				char ch2, ch3;
+				unsigned v;
+
+				ch2 = name[i + 2];
+				if (!(ch2 >= '0' && ch2 <= '7'))
+					return FALSE;
+
+				ch3 = name[i + 3];
+				if (!(ch3 >= '0' && ch3 <= '7'))
+					return FALSE;
+
+#define OCTAL_VALUE(ch) ((unsigned) ((ch) - '0'))
+				v = (OCTAL_VALUE (ch)  << 6) +
+				    (OCTAL_VALUE (ch2) << 3) +
+				     OCTAL_VALUE (ch3);
+				if (   v > 0xFF
+				    || v == 0)
+					return FALSE;
+				ch = (char) v;
+				if (   (ch >= 'A' && ch <= 'Z')
+				    || (ch >= '0' && ch <= '9')
+				    || (ch == '.')
+				    || (ch >= 'a' && ch <= 'z')) {
+					/* such characters are not expected to be encoded via
+					 * octal representation. The encoding is invalid. */
+					return FALSE;
+				}
+				g_string_append_c (str_buffer, ch);
+				i += 4;
+				continue;
+			}
+			return FALSE;
+		}
+
+		return FALSE;
+	}
+
+	return TRUE;
+}
