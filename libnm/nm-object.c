@@ -33,6 +33,7 @@
 #include "nm-dbus-helpers.h"
 #include "nm-client.h"
 #include "nm-core-internal.h"
+#include "nm-utils/c-list.h"
 
 static gboolean debug = FALSE;
 #define dbgmsg(f,...) if (G_UNLIKELY (debug)) { g_message (f, ## __VA_ARGS__ ); }
@@ -77,7 +78,7 @@ typedef struct {
 	GSList *waiters;        /* if async init did not finish, users of this object need
 	                         * to defer their notifications by adding themselves here. */
 
-	GSList *notify_items;
+	CList notify_items;
 	guint32 notify_id;
 
 	GSList *reload_results;
@@ -152,6 +153,7 @@ typedef enum {
 } NotifySignalPending;
 
 typedef struct {
+	CList lst;
 	const char *property;
 	const char *signal_prefix;
 	NotifySignalPending pending;
@@ -161,6 +163,7 @@ typedef struct {
 static void
 notify_item_free (NotifyItem *item)
 {
+	c_list_unlink (&item->lst);
 	g_clear_object (&item->changed);
 	g_slice_free (NotifyItem, item);
 }
@@ -171,7 +174,8 @@ deferred_notify_cb (gpointer data)
 	NMObject *object = NM_OBJECT (data);
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 	NMObjectClass *object_class = NM_OBJECT_GET_CLASS (object);
-	GSList *props, *iter;
+	CList props;
+	CList *iter, *safe;
 
 	priv->notify_id = 0;
 
@@ -184,16 +188,16 @@ deferred_notify_cb (gpointer data)
 	 * during the g_object_notify() call separately from the property
 	 * list we're iterating.
 	 */
-	props = g_slist_reverse (priv->notify_items);
-	priv->notify_items = NULL;
+	c_list_link_after (&priv->notify_items, &props);
+	c_list_unlink_init (&priv->notify_items);
 
 	g_object_ref (object);
 
 	/* Emit added/removed signals first since some of our internal objects
 	 * use the added/removed signals for new object processing.
 	 */
-	for (iter = props; iter; iter = g_slist_next (iter)) {
-		NotifyItem *item = iter->data;
+	c_list_for_each (iter, &props) {
+		NotifyItem *item = c_list_entry (iter, NotifyItem, lst);
 		char buf[50];
 		gint ret = 0;
 
@@ -219,8 +223,8 @@ deferred_notify_cb (gpointer data)
 	}
 
 	/* Emit property change notifications second */
-	for (iter = props; iter; iter = g_slist_next (iter)) {
-		NotifyItem *item = iter->data;
+	c_list_for_each (iter, &props) {
+		NotifyItem *item = c_list_entry (iter, NotifyItem, lst);
 
 		if (item->property)
 			g_object_notify (G_OBJECT (object), item->property);
@@ -228,7 +232,9 @@ deferred_notify_cb (gpointer data)
 
 	g_object_unref (object);
 
-	g_slist_free_full (props, (GDestroyNotify) notify_item_free);
+	c_list_for_each_safe (iter, safe, &props)
+		notify_item_free (c_list_entry (iter, NotifyItem, lst));
+
 	return G_SOURCE_REMOVE;
 }
 
@@ -250,7 +256,7 @@ _nm_object_queue_notify_full (NMObject *object,
 {
 	NMObjectPrivate *priv;
 	NotifyItem *item;
-	GSList *iter;
+	CList *iter;
 
 	g_return_if_fail (NM_IS_OBJECT (object));
 	g_return_if_fail (!signal_prefix != !property);
@@ -261,8 +267,8 @@ _nm_object_queue_notify_full (NMObject *object,
 
 	property = g_intern_string (property);
 	signal_prefix = g_intern_string (signal_prefix);
-	for (iter = priv->notify_items; iter; iter = g_slist_next (iter)) {
-		item = iter->data;
+	c_list_for_each (iter, &priv->notify_items) {
+		item = c_list_entry (iter, NotifyItem, lst);
 
 		if (property && (property == item->property))
 			return;
@@ -314,7 +320,7 @@ _nm_object_queue_notify_full (NMObject *object,
 		item->pending = added ? NOTIFY_SIGNAL_PENDING_ADDED : NOTIFY_SIGNAL_PENDING_REMOVED;
 		item->changed = changed ? g_object_ref (changed) : NULL;
 	}
-	priv->notify_items = g_slist_prepend (priv->notify_items, item);
+	c_list_link_tail (&priv->notify_items, &item->lst);
 }
 
 void
@@ -1194,7 +1200,10 @@ nm_object_async_initable_iface_init (GAsyncInitableIface *iface)
 static void
 nm_object_init (NMObject *object)
 {
-	NM_OBJECT_GET_PRIVATE (object)->proxies = g_ptr_array_new ();
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+
+	c_list_init (&priv->notify_items);
+	priv->proxies = g_ptr_array_new ();
 }
 
 static void
@@ -1249,12 +1258,13 @@ static void
 dispose (GObject *object)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+	CList *iter, *safe;
 	guint i;
 
 	nm_clear_g_source (&priv->notify_id);
 
-	g_slist_free_full (priv->notify_items, (GDestroyNotify) notify_item_free);
-	priv->notify_items = NULL;
+	c_list_for_each_safe (iter, safe, &priv->notify_items)
+		notify_item_free (c_list_entry (iter, NotifyItem, lst));
 
 	g_slist_free_full (priv->waiters, odata_free);
 
