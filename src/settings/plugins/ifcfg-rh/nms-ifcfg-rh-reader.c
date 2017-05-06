@@ -48,6 +48,7 @@
 #include "nm-setting-bridge.h"
 #include "nm-setting-bridge-port.h"
 #include "nm-setting-dcb.h"
+#include "nm-setting-user.h"
 #include "nm-setting-proxy.h"
 #include "nm-setting-generic.h"
 #include "nm-core-internal.h"
@@ -1021,6 +1022,54 @@ error:
 	g_regex_unref (regex_metric);
 
 	return success;
+}
+
+static NMSetting *
+make_user_setting (shvarFile *ifcfg, GError **error)
+{
+	gboolean has_user_data = FALSE;
+	gs_unref_object NMSettingUser *s_user = NULL;
+	gs_unref_hashtable GHashTable *keys = NULL;
+	GHashTableIter iter;
+	const char *key;
+	nm_auto_free_gstring GString *str = NULL;
+
+	keys = svGetKeys (ifcfg);
+	if (!keys)
+		return NULL;
+
+	g_hash_table_iter_init (&iter, keys);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &key, NULL)) {
+		const char *value;
+		gs_free char *value_to_free = NULL;
+
+		if (!g_str_has_prefix (key, "NM_USER_"))
+			continue;
+
+		value = svGetValue (ifcfg, key, &value_to_free);
+
+		if (!value)
+			continue;
+
+		if (!str)
+			str = g_string_sized_new (100);
+		else
+			g_string_set_size (str, 0);
+
+		if (!nms_ifcfg_rh_utils_user_key_decode (key + NM_STRLEN ("NM_USER_"), str))
+			continue;
+
+		if (!s_user)
+			s_user = NM_SETTING_USER (nm_setting_user_new ());
+
+		if (nm_setting_user_set_data (s_user, str->str,
+		                              value, NULL))
+			has_user_data = TRUE;
+	}
+
+	return has_user_data
+	       ? g_steal_pointer (&s_user)
+	       : NULL;
 }
 
 static NMSetting *
@@ -5183,7 +5232,7 @@ connection_from_file_full (const char *filename,
 	gs_unref_object NMConnection *connection = NULL;
 	gs_free char *type = NULL;
 	char *devtype, *bootproto;
-	NMSetting *s_ip4, *s_ip6, *s_proxy, *s_port, *s_dcb = NULL;
+	NMSetting *s_ip4, *s_ip6, *s_proxy, *s_port, *s_dcb = NULL, *s_user;
 	const char *ifcfg_name = NULL;
 	gboolean has_ip4_defroute = FALSE;
 
@@ -5422,6 +5471,10 @@ connection_from_file_full (const char *filename,
 	s_proxy = make_proxy_setting (parsed, error);
 	if (s_proxy)
 		nm_connection_add_setting (connection, s_proxy);
+
+	s_user = make_user_setting (parsed, error);
+	if (s_user)
+		nm_connection_add_setting (connection, s_user);
 
 	/* Bridge port? */
 	s_port = make_bridge_port_setting (parsed);

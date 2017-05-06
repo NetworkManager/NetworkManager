@@ -56,6 +56,8 @@ char *svGetValueStr_cp (shvarFile *s, const char *key);
 
 gint svParseBoolean (const char *value, gint def);
 
+GHashTable *svGetKeys (shvarFile *s);
+
 /* return TRUE if <key> resolves to any truth value (e.g. "yes", "y", "true")
  * return FALSE if <key> resolves to any non-truth value (e.g. "no", "n", "false")
  * return <def> otherwise
@@ -75,6 +77,8 @@ void svSetValueBoolean (shvarFile *s, const char *key, gboolean value);
 void svSetValueInt64 (shvarFile *s, const char *key, gint64 value);
 
 void svUnsetValue (shvarFile *s, const char *key);
+
+void svUnsetValuesWithPrefix (shvarFile *s, const char *prefix);
 
 /* Write the current contents iff modified.  Returns FALSE on error
  * and TRUE on success.  Do not write if no values have been modified.

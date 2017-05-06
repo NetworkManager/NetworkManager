@@ -33,6 +33,7 @@
 #include "nm-utils.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wired.h"
+#include "nm-setting-user.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-ip4-config.h"
@@ -1094,6 +1095,62 @@ test_read_wired_obsolete_gateway_n (void)
 	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "1.1.1.1");
 
 	g_object_unref (connection);
+}
+
+static void
+test_user_1 (void)
+{
+	nmtst_auto_unlinkfile char *testfile = NULL;
+	gs_unref_object NMConnection *connection = NULL;
+	gs_unref_object NMConnection *reread = NULL;
+	NMSettingUser *s_user;
+
+	connection = nmtst_create_minimal_connection ("Test User 1", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+	s_user = NM_SETTING_USER (nm_setting_user_new ());
+
+#define _USER_SET_DATA(s_user, key, val) \
+	G_STMT_START { \
+		GError *_error = NULL; \
+		gboolean _success; \
+		\
+		_success = nm_setting_user_set_data ((s_user), (key), (val), &_error); \
+		nmtst_assert_success (_success, _error); \
+	} G_STMT_END
+
+#define _USER_SET_DATA_X(s_user, key) \
+	_USER_SET_DATA (s_user, key, "val="key"")
+
+	_USER_SET_DATA (s_user, "my.val1", "");
+	_USER_SET_DATA_X (s_user, "my.val2");
+	_USER_SET_DATA_X (s_user, "my.v__al3");
+	_USER_SET_DATA_X (s_user, "my._v");
+	_USER_SET_DATA_X (s_user, "my.v+");
+	_USER_SET_DATA_X (s_user, "my.Av");
+	_USER_SET_DATA_X (s_user, "MY.AV");
+	_USER_SET_DATA_X (s_user, "MY.8V");
+	_USER_SET_DATA_X (s_user, "MY.8-V");
+	_USER_SET_DATA_X (s_user, "MY.8_V");
+	_USER_SET_DATA_X (s_user, "MY.8+V");
+	_USER_SET_DATA_X (s_user, "MY.8/V");
+	_USER_SET_DATA_X (s_user, "MY.8=V");
+	_USER_SET_DATA_X (s_user, "MY.-");
+	_USER_SET_DATA_X (s_user, "MY._");
+	_USER_SET_DATA_X (s_user, "MY.+");
+	_USER_SET_DATA_X (s_user, "MY./");
+	_USER_SET_DATA_X (s_user, "MY.=");
+	_USER_SET_DATA_X (s_user, "my.keys.1");
+	_USER_SET_DATA_X (s_user, "my.other.KEY.42");
+
+	nm_connection_add_setting (connection, NM_SETTING (s_user));
+
+	_writer_new_connec_exp (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_IFCFG_DIR "/network-scripts/ifcfg-Test_User_1.cexpected",
+	                        &testfile);
+
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
+
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 }
 
 static void
@@ -9309,6 +9366,8 @@ int main (int argc, char **argv)
 	nmtst_add_test_func (TPATH "wired/read/manual/2", test_read_wired_ipv4_manual, TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-ipv4-manual-2", "System test-wired-ipv4-manual-2");
 	nmtst_add_test_func (TPATH "wired/read/manual/3", test_read_wired_ipv4_manual, TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-ipv4-manual-3", "System test-wired-ipv4-manual-3");
 	nmtst_add_test_func (TPATH "wired/read/manual/4", test_read_wired_ipv4_manual, TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-ipv4-manual-4", "System test-wired-ipv4-manual-4");
+
+	g_test_add_func (TPATH "user/1", test_user_1);
 
 	g_test_add_func (TPATH "wired/ipv6-manual", test_read_wired_ipv6_manual);
 
