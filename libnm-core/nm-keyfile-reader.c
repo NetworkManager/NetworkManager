@@ -668,7 +668,6 @@ mac_address_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key
 			buf_arr = g_new (guint8, buf_len);
 			for (i = 0; i < length; i++) {
 				int val = tmp_list[i];
-				const guint8 v = (guint8) (val & 0xFF);
 
 				if (val < 0 || val > 255) {
 					handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
@@ -676,7 +675,7 @@ mac_address_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key
 					             val);
 					return;
 				}
-				buf_arr[i] = v;
+				buf_arr[i] = (guint8) val;
 			}
 		}
 	}
