@@ -81,9 +81,7 @@ typedef struct {
 	CList notify_items;
 	guint32 notify_id;
 
-	GSList *reload_results;
 	guint reload_remaining;
-	GError *reload_error;
 
 	CList pending;          /* ordered list of pending property updates. */
 	GPtrArray *proxies;
@@ -1014,34 +1012,12 @@ static void
 reload_complete (NMObject *object, gboolean emit_now)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
-	GSimpleAsyncResult *simple;
-	GSList *results, *iter;
-	GError *error;
 
 	if (emit_now) {
 		nm_clear_g_source (&priv->notify_id);
 		deferred_notify_cb (object);
 	} else
 		_nm_object_defer_notify (object);
-
-	results = priv->reload_results;
-	priv->reload_results = NULL;
-	error = priv->reload_error;
-	priv->reload_error = NULL;
-
-	for (iter = results; iter; iter = iter->next) {
-		simple = iter->data;
-
-		if (error)
-			g_simple_async_result_set_from_error (simple, error);
-		else
-			g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-
-		g_simple_async_result_complete (simple);
-		g_object_unref (simple);
-	}
-	g_slist_free (results);
-	g_clear_error (&error);
 }
 
 GDBusObjectManager *
