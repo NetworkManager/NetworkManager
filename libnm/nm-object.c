@@ -79,7 +79,7 @@ typedef struct {
 	                         * to defer their notifications by adding themselves here. */
 
 	CList notify_items;
-	guint32 notify_id;
+	guint notify_id;
 
 	guint reload_remaining;
 
