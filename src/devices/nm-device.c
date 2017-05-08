@@ -12040,11 +12040,6 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 		/* master: release slaves */
 		nm_device_master_release_slaves (self);
 
-		/* slave: mark no longer enslaved */
-		if (   priv->master
-		    && nm_platform_link_get_master (nm_device_get_platform (self), priv->ifindex) <= 0)
-			nm_device_master_release_one_slave (priv->master, self, FALSE, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
-
 		/* Take out any entries in the routing table and any IP address the device had. */
 		ifindex = nm_device_get_ip_ifindex (self);
 		if (ifindex > 0) {
@@ -12052,6 +12047,11 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 			nm_platform_address_flush (nm_device_get_platform (self), ifindex);
 		}
 	}
+
+	/* slave: mark no longer enslaved */
+	if (   priv->master
+	    && nm_platform_link_get_master (nm_device_get_platform (self), priv->ifindex) <= 0)
+		nm_device_master_release_one_slave (priv->master, self, FALSE, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
 
 	if (priv->lldp_listener)
 		nm_lldp_listener_stop (priv->lldp_listener);
