@@ -155,6 +155,7 @@ nmc_parse_and_build_route (int family,
 	gs_free char *dest = NULL;
 	gs_unref_hashtable GHashTable *attrs = NULL;
 	GHashTable *tmp_attrs;
+	const char *syntax = _("The valid syntax is: 'ip[/prefix] [next-hop] [metric] [attribute=val]... [,ip[/prefix] ...]'");
 
 	g_return_val_if_fail (family == AF_INET || family == AF_INET6, FALSE);
 	g_return_val_if_fail (str, FALSE);
@@ -164,8 +165,8 @@ nmc_parse_and_build_route (int family,
 	routev = nmc_strsplit_set (g_strstrip (value), " \t", 0);
 	len = g_strv_length (routev);
 	if (len < 1) {
-		g_set_error (error, 1, 0, _("'%s' is not valid (the format is: ip[/prefix] [next-hop] [metric] [attr=val] [attr=val])"),
-		             str);
+		g_set_error (error, 1, 0, "%s", syntax);
+		g_prefix_error (error, "'%s' is not valid. ", str);
 		goto finish;
 	}
 
@@ -224,15 +225,15 @@ nmc_parse_and_build_route (int family,
 			}
 			g_hash_table_unref (tmp_attrs);
 		} else {
-			g_set_error (error, 1, 0, _("unrecognized option '%s'"), routev[i]);
+			g_set_error (error, 1, 0, "%s", syntax);
 			goto finish;
 		}
 	}
 
 	route = nm_ip_route_new (family, dest, prefix, next_hop, metric, &local);
 	if (!route) {
-		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
-		             _("invalid route: %s"), local->message);
+		g_set_error (error, 1, 0, "%s", syntax);
+		g_prefix_error (error, _("invalid route: %s. "), local->message);
 		g_clear_error (&local);
 		goto finish;
 	}
