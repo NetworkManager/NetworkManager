@@ -7418,16 +7418,15 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 	g_assert (s_ip6);
 
 	stable_id = _get_stable_id (self, connection, &stable_type);
-	if (stable_id) {
-		priv->ndisc = nm_lndp_ndisc_new (nm_device_get_platform (self),
-		                                 nm_device_get_ip_ifindex (self),
-		                                 nm_device_get_ip_iface (self),
-		                                 stable_type,
-		                                 stable_id,
-		                                 nm_setting_ip6_config_get_addr_gen_mode (s_ip6),
-		                                 ndisc_node_type (self),
-		                                 &error);
-	}
+	g_assert (stable_id);
+	priv->ndisc = nm_lndp_ndisc_new (nm_device_get_platform (self),
+	                                 nm_device_get_ip_ifindex (self),
+	                                 nm_device_get_ip_iface (self),
+	                                 stable_type,
+	                                 stable_id,
+	                                 nm_setting_ip6_config_get_addr_gen_mode (s_ip6),
+	                                 ndisc_node_type (self),
+	                                 &error);
 	if (!priv->ndisc) {
 		_LOGE (LOGD_IP6, "addrconf6: failed to start neighbor discovery: %s", error->message);
 		g_error_free (error);
