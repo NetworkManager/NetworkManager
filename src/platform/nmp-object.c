@@ -489,7 +489,7 @@ _vt_cmd_obj_to_string_link (const NMPObject *obj, NMPObjectToStringMode to_strin
 static const char *
 _vt_cmd_obj_to_string_lnk_vlan (const NMPObject *obj, NMPObjectToStringMode to_string_mode, char *buf, gsize buf_size)
 {
-	const NMPClass *klass = NMP_OBJECT_GET_CLASS (obj);
+	const NMPClass *klass;
 	char buf2[sizeof (_nm_utils_to_string_buffer)];
 	char *b;
 	gsize l;
