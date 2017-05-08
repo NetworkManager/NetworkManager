@@ -5844,7 +5844,7 @@ dhcp4_start (NMDevice *self,
 
 	nm_device_add_pending_action (self, NM_PENDING_ACTION_DHCP4, TRUE);
 
-	if (nm_device_sys_iface_state_get (self) == NM_DEVICE_SYS_IFACE_STATE_ASSUME)
+	if (nm_device_sys_iface_state_is_external_or_assume (self))
 		priv->dhcp4.was_active = TRUE;
 
 	/* DHCP devices will be notified by the DHCP manager when stuff happens */
@@ -6645,8 +6645,8 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 		                                             self);
 	}
 
-	if (nm_device_sys_iface_state_get (self) == NM_DEVICE_SYS_IFACE_STATE_ASSUME)
-		priv->dhcp6.was_active = TRUE;
+	if (nm_device_sys_iface_state_is_external_or_assume (self))
+		priv->dhcp4.was_active = TRUE;
 
 	return !!priv->dhcp6.client;
 }
