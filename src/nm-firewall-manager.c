@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include "NetworkManagerUtils.h"
+#include "nm-utils/c-list.h"
 
 /*****************************************************************************/
 
@@ -39,7 +40,7 @@ typedef struct {
 	GDBusProxy     *proxy;
 	GCancellable   *proxy_cancellable;
 
-	GHashTable     *pending_calls;
+	CList           pending_calls;
 	bool            running;
 } NMFirewallManagerPrivate;
 
@@ -76,6 +77,7 @@ typedef enum {
 } CBInfoMode;
 
 struct _NMFirewallManagerCallId {
+	CList lst;
 	NMFirewallManager *self;
 	CBInfoOpsType ops_type;
 	union {
@@ -176,8 +178,7 @@ _cb_info_create (NMFirewallManager *self,
 	} else
 		info->mode_mutable = CB_INFO_MODE_IDLE;
 
-	if (!nm_g_hash_table_add (priv->pending_calls, info))
-		nm_assert_not_reached ();
+	c_list_link_tail (&priv->pending_calls, &info->lst);
 
 	return info;
 }
@@ -185,6 +186,7 @@ _cb_info_create (NMFirewallManager *self,
 static void
 _cb_info_free (CBInfo *info)
 {
+	c_list_unlink (&info->lst);
 	if (info->mode != CB_INFO_MODE_IDLE) {
 		if (info->dbus.arg)
 			g_variant_unref (info->dbus.arg);
@@ -209,8 +211,9 @@ _cb_info_complete_normal (CBInfo *info, GError *error)
 {
 	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (info->self);
 
-	if (!g_hash_table_remove (priv->pending_calls, info))
-		g_return_if_reached ();
+	nm_assert (c_list_contains (&priv->pending_calls, &info->lst));
+
+	c_list_unlink_init (&info->lst);
 
 	_cb_info_callback (info, error);
 	_cb_info_free (info);
@@ -423,8 +426,9 @@ nm_firewall_manager_cancel_call (NMFirewallManagerCallId call)
 	self = info->self;
 	priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
 
-	if (!g_hash_table_remove (priv->pending_calls, info))
-		g_return_if_reached ();
+	nm_assert (c_list_contains (&priv->pending_calls, &info->lst));
+
+	c_list_unlink_init (&info->lst);
 
 	nm_utils_error_set_cancelled (&error, FALSE, "NMFirewallManager");
 
@@ -488,8 +492,8 @@ _proxy_new_cb (GObject *source_object,
 	NMFirewallManagerPrivate *priv;
 	GDBusProxy *proxy;
 	gs_free_error GError *error = NULL;
-	GHashTableIter iter;
 	CBInfo *info;
+	CList *iter;
 
 	proxy = g_dbus_proxy_new_for_bus_finish (result, &error);
 	if (   !proxy
@@ -513,8 +517,9 @@ _proxy_new_cb (GObject *source_object,
 		_LOGD (NULL, "firewall %s", "initialized (not running)");
 
 again:
-	g_hash_table_iter_init (&iter, priv->pending_calls);
-	while (g_hash_table_iter_next (&iter, (gpointer *) &info, NULL)) {
+	c_list_for_each (iter, &priv->pending_calls) {
+		info = c_list_entry (iter, CBInfo, lst);
+
 		if (info->mode != CB_INFO_MODE_DBUS_WAITING)
 			continue;
 		if (priv->running) {
@@ -522,7 +527,7 @@ again:
 			_handle_dbus_start (self, info);
 		} else {
 			_LOGD (info, "complete: fake success");
-			g_hash_table_iter_remove (&iter);
+			c_list_unlink_init (&info->lst);
 			_cb_info_callback (info, NULL);
 			_cb_info_free (info);
 			goto again;
@@ -541,7 +546,7 @@ nm_firewall_manager_init (NMFirewallManager * self)
 {
 	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
 
-	priv->pending_calls = g_hash_table_new (g_direct_hash, g_direct_equal);
+	c_list_init (&priv->pending_calls);
 }
 
 static void
@@ -572,13 +577,9 @@ dispose (GObject *object)
 	NMFirewallManager *self = NM_FIREWALL_MANAGER (object);
 	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
 
-	if (priv->pending_calls) {
-		/* as every pending operation takes a reference to the manager,
-		 * we don't expect pending operations at this point. */
-		g_assert (g_hash_table_size (priv->pending_calls) == 0);
-		g_hash_table_unref (priv->pending_calls);
-		priv->pending_calls = NULL;
-	}
+	/* as every pending operation takes a reference to the manager,
+	 * we don't expect pending operations at this point. */
+	nm_assert (c_list_is_empty (&priv->pending_calls));
 
 	nm_clear_g_cancellable (&priv->proxy_cancellable);
 	g_clear_object (&priv->proxy);
