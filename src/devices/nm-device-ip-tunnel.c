@@ -124,8 +124,8 @@ update_properties_from_ifindex (NMDevice *device, int ifindex)
 	NMDeviceIPTunnel *self = NM_DEVICE_IP_TUNNEL (device);
 	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE (self);
 	int parent_ifindex = 0;
-	in_addr_t local4, remote4;
-	struct in6_addr local6, remote6;
+	in_addr_t local4 = 0, remote4 = 0;
+	struct in6_addr local6 = { 0 }, remote6 = { 0 };
 	guint8 ttl = 0, tos = 0, encap_limit = 0;
 	gboolean pmtud = FALSE;
 	guint32 flow_label = 0;
