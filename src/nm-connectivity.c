@@ -465,7 +465,8 @@ update_config (NMConnectivity *self, NMConfigData *config_data)
 
 	if (changed) {
 		nm_clear_g_source (&priv->periodic_check_id);
-		priv->periodic_check_id = g_timeout_add_seconds (priv->interval, periodic_check, self);
+		if (nm_connectivity_check_enabled (self))
+			priv->periodic_check_id = g_timeout_add_seconds (priv->interval, periodic_check, self);
 	}
 }
 
