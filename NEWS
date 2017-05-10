@@ -1,12 +1,9 @@
 ============================================
-NetworkManager-1.7.90 (1.8-rc3)
+NetworkManager-1.8
 Overview of changes since NetworkManager-1.6
 ============================================
 
-This is a snapshot of NetworkManager 1.8 development series.
-USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
-
-Notable changes included in this snapshot so far include:
+This is a new stable release of NetworkManager.  Notable changes include:
 
 * Default routes set by devices that failed connectivity checks are now
     penalized with a higher metric
@@ -15,12 +12,24 @@ Notable changes included in this snapshot so far include:
     enslaved in a stable order, making the automatic MAC address for Bonding
     devices more predictable.
 * Hostname management is now more flexibly configured
+* Support for additional route options (pref-src, src, tos, window, cwnd,
+    initcwnd, initrwnd, mtu, lock-window, lock-cwnd, lock-initcwnd, lock-initrwnd,
+    and lock-mtu).
 * Fixed detection of EAP-FAST support in wpa_supplicant
 * Support for handling PINs for PKCS#11 tokens as secrets
 * GSM and CDMA connections now have a MTU property
 * An option to disable selected TLS versions during EAP phase 1 authentication
 * The 802.1x authentication timeout is now configurable to allow a faster
     fallback to other connections
+* Persist managed state of device until reboot. This improves seamless take over
+    of a previously managed device after restart of NetworkManager.
+* Better handle devices that are externally managed by somebody else by
+    consistently generating an in-memory connection to reflect the external
+    state.
+* Expose SRIOV capability of a device on D-Bus and support configuring the
+    number of virtual functions via NetworkManager.conf.
+* Support matching networking devices via new "driver:" device spec in
+    NetworkManager.conf.
 * Introduced support for creating and managing dummy links
 * The teaming devices now support setting a hardcoded MAC address
 * Settings of bonding devices can now be modified on-the-fly, without the
@@ -34,6 +43,10 @@ Notable changes included in this snapshot so far include:
     a smaller dependency footprint
 * With DNS mode "rc-manager=symlink", don't write /etc/resolv.conf as
     a symlink if it already exists as a regular file.
+* Support attaching user-data in form of key-value pairs to connection profiles.
+* Fix accpeting fully qualified name for ipv4.dhcp-hostname setting.
+* Make NetworkManager more forgiving to failure to change the MAC address during
+    scanning.
 * Many bug fixes and improvements
 
 ============================================
@@ -503,6 +516,8 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Add support for ModemManager 0.7/0.8
 * Allow more human-readable formatting of IP address in keyfile connections
 * Drop support for dhclient v3
+* Move PPP support to a separate plugin, so that it can be packaged separately
+    and reduce the dependency on the core package.
 * Add support for DHCPv6 server-side Dynamic DNS
 * Add support for bridge master devices and bridge ports
 * Fix canceling secrets requests in GUI agents
