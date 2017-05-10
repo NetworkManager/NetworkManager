@@ -151,7 +151,7 @@ nm_strquote (char *buf, gsize buf_len, const char *str)
 		switch (buf_len) {
 		case 2:
 			*(buf++) = '^';
-			/* fall-through*/
+			/* fall-through */
 		case 1:
 			*(buf++) = '\0';
 			break;

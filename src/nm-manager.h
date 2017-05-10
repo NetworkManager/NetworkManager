@@ -54,6 +54,7 @@
 #define NM_MANAGER_METERED "metered"
 #define NM_MANAGER_GLOBAL_DNS_CONFIGURATION "global-dns-configuration"
 #define NM_MANAGER_ALL_DEVICES "all-devices"
+#define NM_MANAGER_CHECKPOINTS "checkpoints"
 
 /* Not exported */
 #define NM_MANAGER_SLEEPING "sleeping"

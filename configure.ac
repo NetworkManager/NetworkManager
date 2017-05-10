@@ -2,8 +2,8 @@ AC_PREREQ([2.63])
 
 dnl The NM version number
 m4_define([nm_major_version], [1])
-m4_define([nm_minor_version], [10])
-m4_define([nm_micro_version], [0])
+m4_define([nm_minor_version], [11])
+m4_define([nm_micro_version], [1])
 m4_define([nm_version],
           [nm_major_version.nm_minor_version.nm_micro_version])
 
@@ -322,9 +322,12 @@ GLIB_CFLAGS="$GLIB_CFLAGS -DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_32 -DGLIB_V
 AC_SUBST(GLIB_CFLAGS)
 AC_SUBST(GLIB_LIBS)
 
+GOBJECT_INTROSPECTION_CHECK([0.9.6])
+
 AC_ARG_WITH(libnm-glib,
             AS_HELP_STRING([--without-libnm-glib],
-                           [don't build legacy libraries]))
+                           [don"'"t build legacy libraries]))
+fake_typelibs=no
 if test "$with_libnm_glib" != "no"; then
 	PKG_CHECK_MODULES(DBUS, dbus-1 >= 1.1 dbus-glib-1 >= 0.94, :,
 	                  [AC_MSG_FAILURE([$DBUS_PKG_ERRORS
@@ -333,12 +336,23 @@ Configure with --without-libnm-glib if you do not need the legacy libraries])
 	                  ])
 
 	with_libnm_glib=yes
+
+	if test "${found_introspection}" = "yes"; then
+		AC_PATH_PROG(GLIB_COMPILE_RESOURCES, glib-compile-resources)
+		if ! test x"$GLIB_COMPILE_RESOURCES" = x""; then
+			fake_typelibs=yes
+		fi
+	fi
 fi
 AM_CONDITIONAL(WITH_LEGACY_LIBRARIES, test "$with_libnm_glib" != "no")
+if test "$fake_typelibs" = "yes"; then
+	AC_DEFINE(WITH_FAKE_TYPELIBS, 1, [Define for libnm to prevent GIR from loading libnm-glib])
+else
+	AC_DEFINE(WITH_FAKE_TYPELIBS, 0, [Define for libnm to prevent GIR from loading libnm-glib])
+fi
+AM_CONDITIONAL(WITH_FAKE_TYPELIBS, test "${fake_typelibs}" = "yes")
 
 PKG_CHECK_MODULES([LIBUDEV], [libudev >= 175])
-
-GOBJECT_INTROSPECTION_CHECK([0.9.6])
 
 # Qt4
 PKG_CHECK_MODULES(QT, [QtCore >= 4 QtDBus QtNetwork], [have_qt=yes],[have_qt=no])
@@ -1212,6 +1226,22 @@ if test -n "$sanitizers"; then
 fi
 
 AC_SUBST(SANITIZERS, [$sanitizers])
+
+AC_MSG_CHECKING([CC support C11 _Generic()])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[int foo(void); int foo() { int a = 0; int b = _Generic (a, int: 4); return b + a; }]],
+                                   [[foo();]])],
+                  [cc_support_generic=1],
+                  [cc_support_generic=0])
+AC_MSG_RESULT($cc_support_generic)
+AC_DEFINE_UNQUOTED(_NM_CC_SUPPORT_GENERIC, $cc_support_generic, [Define whether the compiler supports C11 _Generic()])
+
+AC_MSG_CHECKING([CC support gcc __auto_type])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[int foo(void); int foo() { int a = 0; __auto_type b = a; return b + a; }]],
+                                   [[foo();]])],
+                  [cc_support_auto_type=1],
+                  [cc_support_auto_type=0])
+AC_MSG_RESULT($cc_support_auto_type)
+AC_DEFINE_UNQUOTED(_NM_CC_SUPPORT_AUTO_TYPE, $cc_support_auto_type, [Define whether the compiler support gcc __auto_type])
 
 dnl -------------------------
 dnl Vala bindings

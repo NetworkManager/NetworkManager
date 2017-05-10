@@ -197,19 +197,6 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_config_type_to_string, NMDnsIPConfigType,
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_IP_CONFIG_TYPE_VPN, "vpn"),
 );
 
-int
-nm_dns_ip_config_data_get_dns_priority (const NMDnsIPConfigData *config)
-{
-	g_return_val_if_fail (config, 0);
-
-	if (NM_IS_IP4_CONFIG (config->config))
-		return nm_ip4_config_get_dns_priority (config->config);
-	else if (NM_IS_IP6_CONFIG (config->config))
-		return nm_ip6_config_get_dns_priority (config->config);
-	else
-		g_return_val_if_reached (0);
-}
-
 static NMDnsIPConfigData *
 ip_config_data_new (gpointer config, NMDnsIPConfigType type, const char *iface)
 {
@@ -241,8 +228,8 @@ ip_config_data_compare (const NMDnsIPConfigData *a, const NMDnsIPConfigData *b)
 {
 	int a_prio, b_prio;
 
-	a_prio = nm_dns_ip_config_data_get_dns_priority (a);
-	b_prio = nm_dns_ip_config_data_get_dns_priority (b);
+	a_prio = nm_ip_config_get_dns_priority (a->config);
+	b_prio = nm_ip_config_get_dns_priority (b->config);
 
 	/* Configurations with lower priority value first */
 	if (a_prio < b_prio)
@@ -288,135 +275,83 @@ add_string_item (GPtrArray *array, const char *str)
 }
 
 static void
-add_dns_option_item (GPtrArray *array, const char *str, gboolean ipv6)
+add_dns_option_item (GPtrArray *array, const char *str)
 {
 	if (_nm_utils_dns_option_find_idx (array, str) < 0)
 		g_ptr_array_add (array, g_strdup (str));
 }
 
 static void
-merge_one_ip4_config (NMResolvConfData *rc, NMIP4Config *src)
+merge_one_ip_config (NMResolvConfData *rc,
+                     const NMIPConfig *config,
+                     const char *iface)
 {
-	guint32 num, num_domains, num_searches, i;
+	int addr_family;
+	guint num, num_domains, num_searches, i;
+	char buf[NM_UTILS_INET_ADDRSTRLEN + 50];
+	const char *str;
 
-	num = nm_ip4_config_get_num_nameservers (src);
+	addr_family = nm_ip_config_get_addr_family (config);
+
+	nm_assert_addr_family (addr_family);
+
+	num = nm_ip_config_get_num_nameservers (config);
 	for (i = 0; i < num; i++) {
-		add_string_item (rc->nameservers,
-		                 nm_utils_inet4_ntop (nm_ip4_config_get_nameserver (src, i), NULL));
-	}
+		const NMIPAddr *addr;
 
-	num_domains = nm_ip4_config_get_num_domains (src);
-	num_searches = nm_ip4_config_get_num_searches (src);
-
-	for (i = 0; i < num_searches; i++) {
-		const char *search;
-
-		search = nm_ip4_config_get_search (src, i);
-		if (!domain_is_valid (search, FALSE))
-			continue;
-		add_string_item (rc->searches, search);
-	}
-
-	if (num_domains > 1 || !num_searches) {
-		for (i = 0; i < num_domains; i++) {
-			const char *domain;
-
-			domain = nm_ip4_config_get_domain (src, i);
-			if (!domain_is_valid (domain, FALSE))
-				continue;
-			add_string_item (rc->searches, domain);
-		}
-	}
-
-	num = nm_ip4_config_get_num_dns_options (src);
-	for (i = 0; i < num; i++) {
-		const char *option;
-
-		option = nm_ip4_config_get_dns_option (src, i);
-		add_dns_option_item (rc->options, option, FALSE);
-	}
-
-	/* NIS stuff */
-	num = nm_ip4_config_get_num_nis_servers (src);
-	for (i = 0; i < num; i++) {
-		add_string_item (rc->nis_servers,
-		                 nm_utils_inet4_ntop (nm_ip4_config_get_nis_server (src, i), NULL));
-	}
-
-	if (nm_ip4_config_get_nis_domain (src)) {
-		/* FIXME: handle multiple domains */
-		if (!rc->nis_domain)
-			rc->nis_domain = nm_ip4_config_get_nis_domain (src);
-	}
-}
-
-static void
-merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src, const char *iface)
-{
-	guint32 num, num_domains, num_searches, i;
-
-	num = nm_ip6_config_get_num_nameservers (src);
-	for (i = 0; i < num; i++) {
-		const struct in6_addr *addr;
-		char buf[NM_UTILS_INET_ADDRSTRLEN + 50];
-
-		addr = nm_ip6_config_get_nameserver (src, i);
-
-		/* inet_ntop is probably supposed to do this for us, but it doesn't */
-		if (IN6_IS_ADDR_V4MAPPED (addr))
-			nm_utils_inet4_ntop (addr->s6_addr32[3], buf);
+		addr = nm_ip_config_get_nameserver (config, i);
+		if (addr_family == AF_INET)
+			nm_utils_inet_ntop (addr_family, addr, buf);
+		else if (IN6_IS_ADDR_V4MAPPED (addr))
+			nm_utils_inet4_ntop (addr->addr6.s6_addr32[3], buf);
 		else {
-			nm_utils_inet6_ntop (addr, buf);
+			nm_utils_inet6_ntop (&addr->addr6, buf);
 			if (IN6_IS_ADDR_LINKLOCAL (addr)) {
 				g_strlcat (buf, "%", sizeof (buf));
 				g_strlcat (buf, iface, sizeof (buf));
 			}
 		}
+
 		add_string_item (rc->nameservers, buf);
 	}
 
-	num_domains = nm_ip6_config_get_num_domains (src);
-	num_searches = nm_ip6_config_get_num_searches (src);
-
+	num_domains = nm_ip_config_get_num_domains (config);
+	num_searches = nm_ip_config_get_num_searches (config);
 	for (i = 0; i < num_searches; i++) {
-		const char *search;
-
-		search = nm_ip6_config_get_search (src, i);
-		if (!domain_is_valid (search, FALSE))
-			continue;
-		add_string_item (rc->searches, search);
+		str = nm_ip_config_get_search (config, i);
+		if (domain_is_valid (str, FALSE))
+			add_string_item (rc->searches, str);
 	}
-
 	if (num_domains > 1 || !num_searches) {
 		for (i = 0; i < num_domains; i++) {
-			const char *domain;
-
-			domain = nm_ip6_config_get_domain (src, i);
-			if (!domain_is_valid (domain, FALSE))
-				continue;
-			add_string_item (rc->searches, domain);
+			str = nm_ip_config_get_domain (config, i);
+			if (domain_is_valid (str, FALSE))
+				add_string_item (rc->searches, str);
 		}
 	}
 
-	num = nm_ip6_config_get_num_dns_options (src);
+	num = nm_ip_config_get_num_dns_options (config);
 	for (i = 0; i < num; i++) {
-		const char *option;
-
-		option = nm_ip6_config_get_dns_option (src, i);
-		add_dns_option_item (rc->options, option, TRUE);
+		add_dns_option_item (rc->options,
+		                     nm_ip_config_get_dns_option (config, i));
 	}
-}
 
-static void
-merge_one_ip_config_data (NMResolvConfData *rc,
-                          NMDnsIPConfigData *data)
-{
-	if (NM_IS_IP4_CONFIG (data->config))
-		merge_one_ip4_config (rc, (NMIP4Config *) data->config);
-	else if (NM_IS_IP6_CONFIG (data->config))
-		merge_one_ip6_config (rc, (NMIP6Config *) data->config, data->iface);
-	else
-		g_return_if_reached ();
+	if (addr_family == AF_INET) {
+		const NMIP4Config *config4 = (const NMIP4Config *) config;
+
+		/* NIS stuff */
+		num = nm_ip4_config_get_num_nis_servers (config4);
+		for (i = 0; i < num; i++) {
+			add_string_item (rc->nis_servers,
+			                 nm_utils_inet4_ntop (nm_ip4_config_get_nis_server (config4, i), buf));
+		}
+
+		if (nm_ip4_config_get_nis_domain (config4)) {
+			/* FIXME: handle multiple domains */
+			if (!rc->nis_domain)
+				rc->nis_domain = nm_ip4_config_get_nis_domain (config4);
+		}
+	}
 }
 
 static GPid
@@ -940,39 +875,27 @@ merge_global_dns_config (NMResolvConfData *rc, NMGlobalDnsConfig *global_conf)
 }
 
 static const char *
-get_nameserver_list (void *config, GString **str)
+get_nameserver_list (const NMIPConfig *config, GString **str)
 {
-	NMIP4Config *ip4;
-	NMIP6Config *ip6;
 	guint num, i;
-
-	nm_assert (str);
+	char buf[NM_UTILS_INET_ADDRSTRLEN];
+	int addr_family;
 
 	if (*str)
 		g_string_truncate (*str, 0);
 	else
 		*str = g_string_sized_new (64);
 
-	if (NM_IS_IP4_CONFIG (config)) {
-		ip4 = (NMIP4Config *) config;
-		num = nm_ip4_config_get_num_nameservers (ip4);
-		for (i = 0; i < num; i++) {
-			g_string_append (*str,
-			                 nm_utils_inet4_ntop (nm_ip4_config_get_nameserver (ip4, i),
-			                                      NULL));
+	addr_family = nm_ip_config_get_addr_family (config);
+	num = nm_ip_config_get_num_nameservers (config);
+	for (i = 0; i < num; i++) {
+		nm_utils_inet_ntop (addr_family,
+		                    nm_ip_config_get_nameserver (config, i),
+		                    buf);
+		if (i > 0)
 			g_string_append_c (*str, ' ');
-		}
-	} else if (NM_IS_IP6_CONFIG (config)) {
-		ip6 = (NMIP6Config *) config;
-		num = nm_ip6_config_get_num_nameservers (ip6);
-		for (i = 0; i < num; i++) {
-			g_string_append (*str,
-			                 nm_utils_inet6_ntop (nm_ip6_config_get_nameserver (ip6, i),
-			                                      NULL));
-			g_string_append_c (*str, ' ');
-		}
-	} else
-		g_return_val_if_reached (NULL);
+		g_string_append (*str, buf);
+	}
 
 	return (*str)->str;
 }
@@ -1011,34 +934,31 @@ _collect_resolv_conf_data (NMDnsManager *self, /* only for logging context, no o
 		nm_auto_free_gstring GString *tmp_gstring = NULL;
 		int prio, first_prio = 0;
 		NMDnsIPConfigData *current;
-		gboolean v4;
 
 		for (i = 0, j = 0; i < configs->len; i++) {
 			gboolean skip = FALSE;
 
 			current = configs->pdata[i];
 
-			prio = nm_dns_ip_config_data_get_dns_priority (current);
+			prio = nm_ip_config_get_dns_priority (current->config);
 
 			if (i == 0)
 				first_prio = prio;
 			else if (first_prio < 0 && first_prio != prio)
 				skip = TRUE;
 
-			v4 = NM_IS_IP4_CONFIG (current->config);
-			if (   ( v4 && nm_ip4_config_get_num_nameservers ((NMIP4Config *) current->config))
-			    || (!v4 && nm_ip6_config_get_num_nameservers ((NMIP6Config *) current->config))) {
+			if (nm_ip_config_get_num_nameservers (current->config)) {
 				_LOGT ("config: %8d %-7s v%c %-16s %s: %s",
 				       prio,
 				       _config_type_to_string (current->type),
-				       v4 ? '4' : '6',
+				       nm_utils_addr_family_to_char (nm_ip_config_get_addr_family (current->config)),
 				       current->iface,
 				       skip ? "<SKIP>" : "",
 				       get_nameserver_list (current->config, &tmp_gstring));
 			}
 
 			if (!skip)
-				merge_one_ip_config_data (&rc, current);
+				merge_one_ip_config (&rc, current->config, current->iface);
 		}
 	}
 
@@ -1305,7 +1225,7 @@ forget_data (NMDnsManager *self, NMDnsIPConfigData *data)
 	g_signal_handlers_disconnect_by_func (data->config, ip_config_dns_priority_changed, self);
 }
 
-static gboolean
+gboolean
 nm_dns_manager_add_ip_config (NMDnsManager *self,
                               const char *iface,
                               gpointer config,
@@ -1320,6 +1240,7 @@ nm_dns_manager_add_ip_config (NMDnsManager *self,
 	g_return_val_if_fail (NM_IS_DNS_MANAGER (self), FALSE);
 	g_return_val_if_fail (config, FALSE);
 	g_return_val_if_fail (iface && iface[0], FALSE);
+	nm_assert (NM_IS_IP_CONFIG (config));
 
 	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
@@ -1368,24 +1289,6 @@ nm_dns_manager_add_ip_config (NMDnsManager *self,
 }
 
 gboolean
-nm_dns_manager_add_ip4_config (NMDnsManager *self,
-                               const char *iface,
-                               NMIP4Config *config,
-                               NMDnsIPConfigType cfg_type)
-{
-	return nm_dns_manager_add_ip_config (self, iface, config, cfg_type);
-}
-
-gboolean
-nm_dns_manager_add_ip6_config (NMDnsManager *self,
-                               const char *iface,
-                               NMIP6Config *config,
-                               NMDnsIPConfigType cfg_type)
-{
-	return nm_dns_manager_add_ip_config (self, iface, config, cfg_type);
-}
-
-static gboolean
 nm_dns_manager_remove_ip_config (NMDnsManager *self, gpointer config)
 {
 	NMDnsManagerPrivate *priv;
@@ -1395,6 +1298,7 @@ nm_dns_manager_remove_ip_config (NMDnsManager *self, gpointer config)
 
 	g_return_val_if_fail (NM_IS_DNS_MANAGER (self), FALSE);
 	g_return_val_if_fail (config, FALSE);
+	nm_assert (NM_IS_IP_CONFIG (config));
 
 	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
@@ -1414,18 +1318,6 @@ nm_dns_manager_remove_ip_config (NMDnsManager *self, gpointer config)
 		}
 	}
 	return FALSE;
-}
-
-gboolean
-nm_dns_manager_remove_ip4_config (NMDnsManager *self, NMIP4Config *config)
-{
-	return nm_dns_manager_remove_ip_config (self, config);
-}
-
-gboolean
-nm_dns_manager_remove_ip6_config (NMDnsManager *self, NMIP6Config *config)
-{
-	return nm_dns_manager_remove_ip_config (self, config);
 }
 
 void
@@ -1926,92 +1818,46 @@ _get_config_variant (NMDnsManager *self)
 
 	for (i = 0; i < priv->configs->len; i++) {
 		NMDnsIPConfigData *current = priv->configs->pdata[i];
+		const NMIPConfig *config = current->config;
 		GVariantBuilder entry_builder;
 		GVariantBuilder strv_builder;
-		gboolean v4 = NM_IS_IP4_CONFIG (current->config);
-		gint priority;
+		guint num;
+		const int addr_family = nm_ip_config_get_addr_family (config);
+		char buf[NM_UTILS_INET_ADDRSTRLEN];
+		const NMIPAddr *addr;
 
-		if (v4) {
-			NMIP4Config *config = NM_IP4_CONFIG (current->config);
-			guint num = nm_ip4_config_get_num_nameservers (config);
-			guint32 ns;
+		num = nm_ip_config_get_num_nameservers (config);
+		if (!num)
+			continue;
 
-			if (!num)
-				continue;
+		g_variant_builder_init (&entry_builder, G_VARIANT_TYPE ("a{sv}"));
 
-			g_variant_builder_init (&entry_builder, G_VARIANT_TYPE ("a{sv}"));
+		g_variant_builder_init (&strv_builder, G_VARIANT_TYPE ("as"));
+		for (j = 0; j < num; j++) {
+			addr = nm_ip_config_get_nameserver (config, j);
+			g_variant_builder_add (&strv_builder,
+			                       "s",
+			                       nm_utils_inet_ntop (addr_family, addr, buf));
+		}
+		g_variant_builder_add (&entry_builder,
+		                       "{sv}",
+		                       "nameservers",
+		                       g_variant_builder_end (&strv_builder));
 
-			/* Add nameservers */
+		num = nm_ip_config_get_num_domains (config);
+		if (num > 0) {
 			g_variant_builder_init (&strv_builder, G_VARIANT_TYPE ("as"));
 			for (j = 0; j < num; j++) {
-				ns = nm_ip4_config_get_nameserver (config, j);
 				g_variant_builder_add (&strv_builder,
 				                       "s",
-				                       nm_utils_inet4_ntop (ns, NULL));
+				                       nm_ip_config_get_domain (config, j));
 			}
 			g_variant_builder_add (&entry_builder,
 			                       "{sv}",
-			                       "nameservers",
+			                       "domains",
 			                       g_variant_builder_end (&strv_builder));
-
-			/* Add domains */
-			num = nm_ip4_config_get_num_domains (config);
-			if (num > 0) {
-				g_variant_builder_init (&strv_builder, G_VARIANT_TYPE ("as"));
-				for (j = 0; j < num; j++) {
-					g_variant_builder_add (&strv_builder,
-					                       "s",
-					                       nm_ip4_config_get_domain (config, j));
-				}
-				g_variant_builder_add (&entry_builder,
-				                       "{sv}",
-				                       "domains",
-				                       g_variant_builder_end (&strv_builder));
-			}
-
-			priority = nm_ip4_config_get_dns_priority (config);
-		} else {
-			NMIP6Config *config = NM_IP6_CONFIG (current->config);
-			guint num = nm_ip6_config_get_num_nameservers (config);
-			const struct in6_addr *ns;
-
-			if (!num)
-				continue;
-
-			g_variant_builder_init (&entry_builder, G_VARIANT_TYPE ("a{sv}"));
-
-			/* Add nameservers */
-			g_variant_builder_init (&strv_builder, G_VARIANT_TYPE ("as"));
-			for (j = 0; j < num; j++) {
-				ns = nm_ip6_config_get_nameserver (config, j);
-				g_variant_builder_add (&strv_builder,
-				                       "s",
-				                       nm_utils_inet6_ntop (ns, NULL));
-			}
-			g_variant_builder_add (&entry_builder,
-			                       "{sv}",
-			                       "nameservers",
-			                       g_variant_builder_end (&strv_builder));
-
-			/* Add domains */
-			num = nm_ip6_config_get_num_domains (config);
-			if (num > 0) {
-				g_variant_builder_init (&strv_builder, G_VARIANT_TYPE ("as"));
-				for (j = 0; j < num; j++) {
-					g_variant_builder_add (&strv_builder,
-					                       "s",
-					                       nm_ip6_config_get_domain (config, j));
-				}
-				g_variant_builder_add (&entry_builder,
-				                       "{sv}",
-				                       "domains",
-				                       g_variant_builder_end (&strv_builder));
-			}
-
-			priority = nm_ip6_config_get_dns_priority (config);
 		}
 
-		/* Add device */
 		if (current->iface) {
 			g_variant_builder_add (&entry_builder,
 			                       "{sv}",
@@ -2019,13 +1865,11 @@ _get_config_variant (NMDnsManager *self)
 			                       g_variant_new_string (current->iface));
 		}
 
-		/* Add priority */
 		g_variant_builder_add (&entry_builder,
 		                       "{sv}",
 		                       "priority",
-		                       g_variant_new_int32 (priority));
+		                       g_variant_new_int32 (nm_ip_config_get_dns_priority (config)));
 
-		/* Add VPN */
 		g_variant_builder_add (&entry_builder,
 		                       "{sv}",
 		                       "vpn",

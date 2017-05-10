@@ -113,6 +113,11 @@ const NMDedupMultiEntry *_nm_ip_config_lookup_ip_route (const NMDedupMultiIndex 
                                                         const NMPObject *needle,
                                                         NMPlatformIPRouteCmpType cmp_type);
 
+void _nm_ip_config_merge_route_attributes (int addr_family,
+                                           NMIPRoute *s_route,
+                                           NMPlatformIPRoute *r,
+                                           guint32 route_table);
+
 /*****************************************************************************/
 
 #define NM_TYPE_IP4_CONFIG (nm_ip4_config_get_type ())
@@ -216,6 +221,7 @@ void nm_ip4_config_add_nameserver (NMIP4Config *self, guint32 nameserver);
 void nm_ip4_config_del_nameserver (NMIP4Config *self, guint i);
 guint nm_ip4_config_get_num_nameservers (const NMIP4Config *self);
 guint32 nm_ip4_config_get_nameserver (const NMIP4Config *self, guint i);
+const in_addr_t *_nm_ip4_config_get_nameserver (const NMIP4Config *self, guint i);
 
 void nm_ip4_config_reset_domains (NMIP4Config *self);
 void nm_ip4_config_add_domain (NMIP4Config *self, const char *domain);
@@ -266,5 +272,136 @@ gboolean nm_ip4_config_nmpobj_remove (NMIP4Config *self,
 
 void nm_ip4_config_hash (const NMIP4Config *self, GChecksum *sum, gboolean dns_only);
 gboolean nm_ip4_config_equal (const NMIP4Config *a, const NMIP4Config *b);
+
+/*****************************************************************************/
+
+#include "nm-ip6-config.h"
+
+static inline gboolean
+NM_IS_IP_CONFIG (gconstpointer config)
+{
+	return NM_IS_IP4_CONFIG (config) || NM_IS_IP6_CONFIG (config);
+}
+
+#if _NM_CC_SUPPORT_GENERIC
+/* _NM_IS_IP_CONFIG() is a bit unusual. If _Generic() is supported,
+ * it checks whether @config is either NM_IS_IP4_CONFIG() or NM_IS_IP6_CONFIG(),
+ * depending on the pointer type of @config.
+ *
+ * For example, with _Generic() support, the following assertions would fail:
+ *    NMIP6Config *ptr = (NMIP6Config *) nm_ip4_config_new(...);
+ *    g_assert (_NM_IS_IP_CONFIG (ptr, ptr));
+ * but the following would pass:
+ *    NMIP4Config *ptr = nm_ip4_config_new(...);
+ *    g_assert (_NM_IS_IP_CONFIG (ptr, ptr));
+ */
+#define _NM_IS_IP_CONFIG(typeexpr, config) \
+	({ \
+		const void *const _config = (config); \
+		_Generic ((typeexpr), \
+		          const void        *const: (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+		          const void        *     : (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+		                void        *const: (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+		                void        *     : (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+		          const NMIPConfig  *const: (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+		          const NMIPConfig  *     : (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+		                NMIPConfig  *const: (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+		                NMIPConfig  *     : (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+		          const NMIP4Config *const: (NM_IS_IP4_CONFIG (_config)), \
+		          const NMIP4Config *     : (NM_IS_IP4_CONFIG (_config)), \
+		                NMIP4Config *const: (NM_IS_IP4_CONFIG (_config)), \
+		                NMIP4Config *     : (NM_IS_IP4_CONFIG (_config)), \
+		          const NMIP6Config *const: (NM_IS_IP6_CONFIG (_config)), \
+		          const NMIP6Config *     : (NM_IS_IP6_CONFIG (_config)), \
+		                NMIP6Config *const: (NM_IS_IP6_CONFIG (_config)), \
+		                NMIP6Config *     : (NM_IS_IP6_CONFIG (_config))); \
+	})
+#else
+#define _NM_IS_IP_CONFIG(typeexpr, config) NM_IS_IP_CONFIG(config)
+#endif
+
+#define NM_IP_CONFIG_CAST(config) \
+	({ \
+		const void *const _configx = (config); \
+		\
+		nm_assert (!_configx || _NM_IS_IP_CONFIG ((config), _configx)); \
+		NM_CONSTCAST_FULL (NMIPConfig, (config), _configx, NMIP4Config, NMIP6Config); \
+	})
+
+static inline int
+nm_ip_config_get_addr_family (const NMIPConfig *config)
+{
+	if (NM_IS_IP4_CONFIG (config))
+		return AF_INET;
+	if (NM_IS_IP6_CONFIG (config))
+		return AF_INET6;
+	g_return_val_if_reached (AF_UNSPEC);
+}
+
+#define _NM_IP_CONFIG_DISPATCH(config, v4_func, v6_func, dflt, ...) \
+	G_STMT_START { \
+		gconstpointer _config = (config); \
+		\
+		if (NM_IS_IP4_CONFIG (_config)) { \
+			return v4_func ((NMIP4Config *) _config, ##__VA_ARGS__); \
+		} else { \
+			nm_assert (NM_IS_IP6_CONFIG (_config)); \
+			return v6_func ((NMIP6Config *) _config, ##__VA_ARGS__); \
+		} \
+	} G_STMT_END
+
+static inline int
+nm_ip_config_get_dns_priority (const NMIPConfig *self)
+{
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_dns_priority, nm_ip6_config_get_dns_priority, 0);
+}
+
+static inline guint
+nm_ip_config_get_num_nameservers (const NMIPConfig *self)
+{
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_num_nameservers, nm_ip6_config_get_num_nameservers, 0);
+}
+
+static inline gconstpointer
+nm_ip_config_get_nameserver (const NMIPConfig *self, guint i)
+{
+	_NM_IP_CONFIG_DISPATCH (self, _nm_ip4_config_get_nameserver, nm_ip6_config_get_nameserver, 0, i);
+}
+
+static inline guint
+nm_ip_config_get_num_domains (const NMIPConfig *self)
+{
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_num_domains, nm_ip6_config_get_num_domains, 0);
+}
+
+static inline const char *
+nm_ip_config_get_domain (const NMIPConfig *self, guint i)
+{
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_domain, nm_ip6_config_get_domain, NULL, i);
+}
+
+static inline guint
+nm_ip_config_get_num_searches (const NMIPConfig *self)
+{
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_num_searches, nm_ip6_config_get_num_searches, 0);
+}
+
+static inline const char *
+nm_ip_config_get_search (const NMIPConfig *self, guint i)
+{
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_search, nm_ip6_config_get_search, NULL, i);
+}
+
+static inline guint
+nm_ip_config_get_num_dns_options (const NMIPConfig *self)
+{
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_num_dns_options, nm_ip6_config_get_num_dns_options, 0);
+}
+
+static inline const char *
+nm_ip_config_get_dns_option (const NMIPConfig *self, guint i)
+{
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_dns_option, nm_ip6_config_get_dns_option, NULL, i);
+}
 
 #endif /* __NETWORKMANAGER_IP4_CONFIG_H__ */

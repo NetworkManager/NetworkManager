@@ -263,32 +263,116 @@ NM_G_ERROR_MSG (GError *error)
 
 /*****************************************************************************/
 
-#if (defined (__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 9 ))) || (defined (__clang__))
+#ifndef _NM_CC_SUPPORT_AUTO_TYPE
+#if (defined (__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9 )))
+#define _NM_CC_SUPPORT_AUTO_TYPE 1
+#else
+#define _NM_CC_SUPPORT_AUTO_TYPE 0
+#endif
+#endif
+
+#ifndef _NM_CC_SUPPORT_GENERIC
+#if (defined (__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9 ))) || (defined (__clang__))
 #define _NM_CC_SUPPORT_GENERIC 1
 #else
 #define _NM_CC_SUPPORT_GENERIC 0
 #endif
+#endif
+
+#if _NM_CC_SUPPORT_AUTO_TYPE
+#define _nm_auto_type __auto_type
+#endif
 
 #if _NM_CC_SUPPORT_GENERIC
-#define _NM_CONSTCAST(type, obj) \
-	(_Generic ((obj), \
-	           void *           : ((type *) (obj)), \
-	           void *const      : ((type *) (obj)), \
-	           const void *     : ((const type *) (obj)), \
-	           const void *const: ((const type *) (obj)), \
-	           const type *     : (obj), \
-	           const type *const: (obj), \
-	           type *           : (obj), \
-	           type *const      : (obj)))
+#define _NM_CONSTCAST_FULL_1(type, obj_expr, obj) \
+	(_Generic ((obj_expr), \
+	           const void        *const: ((const type *) (obj)), \
+	           const void        *     : ((const type *) (obj)), \
+	                 void        *const: ((      type *) (obj)), \
+	                 void        *     : ((      type *) (obj)), \
+	           const type        *const: ((const type *) (obj)), \
+	           const type        *     : ((const type *) (obj)), \
+	                 type        *const: ((      type *) (obj)), \
+	                 type        *     : ((      type *) (obj))))
+#define _NM_CONSTCAST_FULL_2(type, obj_expr, obj, alias_type2) \
+	(_Generic ((obj_expr), \
+	           const void        *const: ((const type *) (obj)), \
+	           const void        *     : ((const type *) (obj)), \
+	                 void        *const: ((      type *) (obj)), \
+	                 void        *     : ((      type *) (obj)), \
+	           const alias_type2 *const: ((const type *) (obj)), \
+	           const alias_type2 *     : ((const type *) (obj)), \
+	                 alias_type2 *const: ((      type *) (obj)), \
+	                 alias_type2 *     : ((      type *) (obj)), \
+	           const type        *const: ((const type *) (obj)), \
+	           const type        *     : ((const type *) (obj)), \
+	                 type        *const: ((      type *) (obj)), \
+	                 type        *     : ((      type *) (obj))))
+#define _NM_CONSTCAST_FULL_3(type, obj_expr, obj, alias_type2, alias_type3) \
+	(_Generic ((obj_expr), \
+	           const void        *const: ((const type *) (obj)), \
+	           const void        *     : ((const type *) (obj)), \
+	                 void        *const: ((      type *) (obj)), \
+	                 void        *     : ((      type *) (obj)), \
+	           const alias_type2 *const: ((const type *) (obj)), \
+	           const alias_type2 *     : ((const type *) (obj)), \
+	                 alias_type2 *const: ((      type *) (obj)), \
+	                 alias_type2 *     : ((      type *) (obj)), \
+	           const alias_type3 *const: ((const type *) (obj)), \
+	           const alias_type3 *     : ((const type *) (obj)), \
+	                 alias_type3 *const: ((      type *) (obj)), \
+	                 alias_type3 *     : ((      type *) (obj)), \
+	           const type        *const: ((const type *) (obj)), \
+	           const type        *     : ((const type *) (obj)), \
+	                 type        *const: ((      type *) (obj)), \
+	                 type        *     : ((      type *) (obj))))
+#define _NM_CONSTCAST_FULL_4(type, obj_expr, obj, alias_type2, alias_type3, alias_type4) \
+	(_Generic ((obj_expr), \
+	           const void        *const: ((const type *) (obj)), \
+	           const void        *     : ((const type *) (obj)), \
+	                 void        *const: ((      type *) (obj)), \
+	                 void        *     : ((      type *) (obj)), \
+	           const alias_type2 *const: ((const type *) (obj)), \
+	           const alias_type2 *     : ((const type *) (obj)), \
+	                 alias_type2 *const: ((      type *) (obj)), \
+	                 alias_type2 *     : ((      type *) (obj)), \
+	           const alias_type3 *const: ((const type *) (obj)), \
+	           const alias_type3 *     : ((const type *) (obj)), \
+	                 alias_type3 *const: ((      type *) (obj)), \
+	                 alias_type3 *     : ((      type *) (obj)), \
+	           const alias_type4 *const: ((const type *) (obj)), \
+	           const alias_type4 *     : ((const type *) (obj)), \
+	                 alias_type4 *const: ((      type *) (obj)), \
+	                 alias_type4 *     : ((      type *) (obj)), \
+	           const type        *const: ((const type *) (obj)), \
+	           const type        *     : ((const type *) (obj)), \
+	                 type        *const: ((      type *) (obj)), \
+	                 type        *     : ((      type *) (obj))))
+#define _NM_CONSTCAST_FULL_x(type, obj_expr, obj, n, ...)   (_NM_CONSTCAST_FULL_##n (type, obj_expr, obj,                        ##__VA_ARGS__))
+#define _NM_CONSTCAST_FULL_y(type, obj_expr, obj, n, ...)   (_NM_CONSTCAST_FULL_x   (type, obj_expr, obj, n,                     ##__VA_ARGS__))
+#define NM_CONSTCAST_FULL(   type, obj_expr, obj,    ...)   (_NM_CONSTCAST_FULL_y   (type, obj_expr, obj, NM_NARG (dummy, ##__VA_ARGS__), ##__VA_ARGS__))
 #else
-/* _NM_CONSTCAST() is there to preserve constness of a pointer.
- * It uses C11's _Generic(). If that is not supported, we fall back
- * to casting away constness. So, with _Generic, we get some additional
- * static type checking by preserving constness, without, we cast it
- * to a non-const pointer. */
-#define _NM_CONSTCAST(type, obj) \
-	((type *) (obj))
+#define NM_CONSTCAST_FULL(   type, obj_expr, obj,    ...)   ((type *) (obj))
 #endif
+
+#define NM_CONSTCAST(type, obj, ...) \
+	NM_CONSTCAST_FULL(type, (obj), (obj), ##__VA_ARGS__)
+
+#define NM_GOBJECT_CAST(type, obj, is_check, ...) \
+	({ \
+		const void *_obj = (obj); \
+		\
+		nm_assert (_obj || (is_check (_obj))); \
+		NM_CONSTCAST_FULL (type, (obj), _obj, GObject, ##__VA_ARGS__); \
+	})
+
+#define NM_GOBJECT_CAST_NON_NULL(type, obj, is_check, ...) \
+	({ \
+		const void *_obj = (obj); \
+		\
+		nm_assert (is_check (_obj)); \
+		NM_CONSTCAST_FULL (type, (obj), _obj, GObject, ##__VA_ARGS__); \
+	})
 
 #if _NM_CC_SUPPORT_GENERIC
 /* returns @value, if the type of @value matches @type.
@@ -300,6 +384,16 @@ NM_G_ERROR_MSG (GError *error)
 #define _NM_ENSURE_TYPE(type, value) (_Generic ((value), type: (value)))
 #else
 #define _NM_ENSURE_TYPE(type, value) (value)
+#endif
+
+#if _NM_CC_SUPPORT_GENERIC
+#define NM_PROPAGATE_CONST(test_expr, ptr) \
+	(_Generic ((test_expr), \
+	           const typeof (*(test_expr)) *: ((const typeof (*(ptr)) *) (ptr)), \
+	                                 default: (_Generic ((test_expr), \
+	                                                     typeof (*(test_expr)) *: (ptr)))))
+#else
+#define NM_PROPAGATE_CONST(test_expr, ptr) (ptr)
 #endif
 
 /*****************************************************************************/
@@ -581,39 +675,17 @@ _notify (obj_type *obj, _PropertyEnums prop) \
 
 /*****************************************************************************/
 
-/* these are implemented as a macro, because they accept self
- * as both (type*) and (const type*), and return a const
- * private pointer accordingly. */
-#define __NM_GET_PRIVATE(self, type, is_check, addrop) \
+#define _NM_GET_PRIVATE(self, type, is_check, ...) (&(NM_GOBJECT_CAST_NON_NULL (type, (self), is_check, ##__VA_ARGS__)->_priv))
+#if _NM_CC_SUPPORT_AUTO_TYPE
+#define _NM_GET_PRIVATE_PTR(self, type, is_check, ...) \
 	({ \
-		/* preserve the const-ness of self. Unfortunately, that
-		 * way, @self cannot be a void pointer */ \
-		typeof (self) _self = (self); \
+		_nm_auto_type _self = NM_GOBJECT_CAST_NON_NULL (type, (self), is_check, ##__VA_ARGS__); \
 		\
-		/* Get compiler error if variable is of wrong type */ \
-		_nm_unused const type *const _self2 = (_self); \
-		\
-		nm_assert (is_check (_self)); \
-		( addrop ( _NM_CONSTCAST (type, _self)->_priv) ); \
+		NM_PROPAGATE_CONST (_self, _self->_priv); \
 	})
-
-#define _NM_GET_PRIVATE(self, type, is_check)     __NM_GET_PRIVATE(self, type, is_check, &)
-#define _NM_GET_PRIVATE_PTR(self, type, is_check) __NM_GET_PRIVATE(self, type, is_check,  )
-
-#define __NM_GET_PRIVATE_VOID(self, type, is_check, result_cmd) \
-	({ \
-		/* (self) can be any non-const pointer. It will be cast to "type *".
-		 * We don't explicitly cast but assign first to (void *) which
-		 * will fail if @self is pointing to const. */ \
-		void *const _self1 = (self); \
-		type *const _self = _self1; \
-		\
-		nm_assert (is_check (_self)); \
-		( result_cmd ); \
-	})
-
-#define _NM_GET_PRIVATE_VOID(self, type, is_check)     __NM_GET_PRIVATE_VOID(self, type, is_check, &_self->_priv)
-#define _NM_GET_PRIVATE_PTR_VOID(self, type, is_check) __NM_GET_PRIVATE_VOID(self, type, is_check,  _self->_priv)
+#else
+#define _NM_GET_PRIVATE_PTR(self, type, is_check, ...) (NM_GOBJECT_CAST_NON_NULL (type, (self), is_check, ##__VA_ARGS__)->_priv)
+#endif
 
 /*****************************************************************************/
 

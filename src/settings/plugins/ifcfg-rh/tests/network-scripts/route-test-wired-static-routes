@@ -7,3 +7,9 @@ NETMASK1=255.255.255.255
 GATEWAY1=192.168.1.7
 METRIC1=3
 OPTIONS1="mtu lock 9000 cwnd 12 src 1.1.1.1 tos 0x28 window 30000 initcwnd lock 13 initrwnd 14"
+
+ADDRESS2=44.55.66.78
+NETMASK2=255.255.255.255
+GATEWAY2=192.168.1.8
+METRIC2=3
+OPTIONS2="mtu lock 9000 cwnd 12 src 1.1.1.1 tos 0x28 onlink window 30000 initcwnd lock 13 initrwnd 14"

@@ -1221,3 +1221,41 @@ global:
 	nm_setting_wireless_security_pmf_get_type;
 	nm_setting_wireless_security_wps_method_get_type;
 } libnm_1_8_0;
+
+libnm_1_12_0 {
+global:
+	nm_checkpoint_get_created;
+	nm_checkpoint_get_devices;
+	nm_checkpoint_get_rollback_timeout;
+	nm_checkpoint_get_type;
+	nm_client_checkpoint_create_async;
+	nm_client_checkpoint_create_finish;
+	nm_client_checkpoint_destroy_async;
+	nm_client_checkpoint_destroy_finish;
+	nm_client_checkpoint_rollback_async;
+	nm_client_checkpoint_rollback_finish;
+	nm_client_get_checkpoints;
+	nm_setting_team_add_runner_tx_hash;
+	nm_setting_team_get_mcast_rejoin_count;
+	nm_setting_team_get_mcast_rejoin_interval;
+	nm_setting_team_get_notify_peers_count;
+	nm_setting_team_get_notify_peers_interval;
+	nm_setting_team_get_num_runner_tx_hash;
+	nm_setting_team_get_runner;
+	nm_setting_team_get_runner_hwaddr_policy;
+	nm_setting_team_get_runner_tx_balancer;
+	nm_setting_team_get_runner_tx_balancer_interval;
+	nm_setting_team_get_runner_tx_hash;
+	nm_setting_team_get_runner_active;
+	nm_setting_team_get_runner_fast_rate;
+	nm_setting_team_get_runner_sys_prio;
+	nm_setting_team_get_runner_min_ports;
+	nm_setting_team_get_runner_agg_select_policy;
+	nm_setting_team_port_get_queue_id;
+	nm_setting_team_port_get_prio;
+	nm_setting_team_port_get_sticky;
+	nm_setting_team_port_get_lacp_prio;
+	nm_setting_team_port_get_lacp_key;
+	nm_setting_team_remove_runner_tx_hash;
+	nm_setting_team_remove_runner_tx_hash_by_value;
+} libnm_1_10_0;

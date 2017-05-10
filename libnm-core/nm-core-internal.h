@@ -429,11 +429,24 @@ NMSettingBluetooth *_nm_connection_get_setting_bluetooth_for_nap (NMConnection *
 
 /*****************************************************************************/
 
+const char *nm_utils_inet_ntop (int addr_family, gconstpointer addr, char *dst);
+
 gboolean _nm_utils_inet6_is_token (const struct in6_addr *in6addr);
 
 /*****************************************************************************/
 
-gboolean    _nm_utils_team_config_equal (const char *conf1, const char *conf2, gboolean port);
+gboolean _nm_utils_team_config_equal (const char *conf1, const char *conf2, gboolean port);
+GValue *_nm_utils_team_config_get (const char *conf,
+                                   const char *key,
+                                   const char *key2,
+                                   const char *key3,
+                                   gboolean port_config);
+
+gboolean _nm_utils_team_config_set (char **conf,
+                                    const char *key,
+                                    const char *key2,
+                                    const char *key3,
+                                    const GValue *value);
 
 /*****************************************************************************/
 

@@ -76,6 +76,7 @@
 #define NM_DBUS_INTERFACE_DEVICE_GRE           NM_DBUS_INTERFACE_DEVICE ".Gre"
 #define NM_DBUS_INTERFACE_DEVICE_IP_TUNNEL     NM_DBUS_INTERFACE_DEVICE ".IPTunnel"
 #define NM_DBUS_INTERFACE_DEVICE_STATISTICS    NM_DBUS_INTERFACE_DEVICE ".Statistics"
+#define NM_DBUS_INTERFACE_CHECKPOINT           NM_DBUS_INTERFACE ".Checkpoint"
 
 #define NM_DBUS_INTERFACE_SETTINGS        "org.freedesktop.NetworkManager.Settings"
 #define NM_DBUS_PATH_SETTINGS             "/org/freedesktop/NetworkManager/Settings"
@@ -551,6 +552,7 @@ typedef enum {
  * @NM_DEVICE_STATE_REASON_PARENT_CHANGED: the device's parent changed
  * @NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED: the device parent's management changed
  * @NM_DEVICE_STATE_REASON_OVSDB_FAILED: problem communicating with OpenVSwitch database
+ * @NM_DEVICE_STATE_REASON_IP_ADDRESS_DUPLICATE: a duplicate IP address was detected
  *
  * Device state change reason codes
  */
@@ -619,6 +621,7 @@ typedef enum {
 	NM_DEVICE_STATE_REASON_PARENT_CHANGED                 = 61,
 	NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED         = 62,
 	NM_DEVICE_STATE_REASON_OVSDB_FAILED                   = 63,
+	NM_DEVICE_STATE_REASON_IP_ADDRESS_DUPLICATE           = 64,
 } NMDeviceStateReason;
 
 /**

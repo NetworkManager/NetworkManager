@@ -568,12 +568,14 @@ update (NMDnsPlugin *plugin,
 		add_global_config (self, &servers, global_config);
 	else {
 		for (i = 0; i < configs->len; i++) {
-			prio = nm_dns_ip_config_data_get_dns_priority (configs->pdata[i]);
+			const NMDnsIPConfigData *data = configs->pdata[i];
+
+			prio = nm_ip_config_get_dns_priority (data->config);
 			if (i == 0)
 				first_prio = prio;
 			else if (first_prio < 0 && first_prio != prio)
 				break;
-			add_ip_config_data (self, &servers, configs->pdata[i]);
+			add_ip_config_data (self, &servers, data);
 		}
 	}
 

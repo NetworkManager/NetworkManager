@@ -38,6 +38,8 @@ build_test_config (void)
 	/* Build up the config to subtract */
 	config = nmtst_ip4_config_new (1);
 
+	nm_assert (NM_IP_CONFIG_CAST (config));
+
 	addr = *nmtst_platform_ip4_address ("192.168.1.10", "1.2.3.4", 24);
 	nm_ip4_config_add_address (config, &addr);
 

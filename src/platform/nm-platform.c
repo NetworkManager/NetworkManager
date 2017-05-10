@@ -4976,6 +4976,40 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address, char *bu
 	return buf;
 }
 
+NM_UTILS_FLAGS2STR_DEFINE_STATIC (_rtm_flags_to_string, unsigned,
+	NM_UTILS_FLAGS2STR (RTNH_F_DEAD,                   "dead"),
+	NM_UTILS_FLAGS2STR (RTNH_F_PERVASIVE,              "pervasive"),
+	NM_UTILS_FLAGS2STR (RTNH_F_ONLINK,                 "onlink"),
+	NM_UTILS_FLAGS2STR (8  /*RTNH_F_OFFLOAD*/,         "offload"),
+	NM_UTILS_FLAGS2STR (16 /*RTNH_F_LINKDOWN*/,        "linkdown"),
+	NM_UTILS_FLAGS2STR (32 /*RTNH_F_UNRESOLVED*/,      "unresolved"),
+
+	NM_UTILS_FLAGS2STR (RTM_F_NOTIFY,                  "notify"),
+	NM_UTILS_FLAGS2STR (RTM_F_CLONED,                  "cloned"),
+	NM_UTILS_FLAGS2STR (RTM_F_EQUALIZE,                "equalize"),
+	NM_UTILS_FLAGS2STR (RTM_F_PREFIX,                  "prefix"),
+	NM_UTILS_FLAGS2STR (0x1000 /*RTM_F_LOOKUP_TABLE*/, "lookup-table"),
+	NM_UTILS_FLAGS2STR (0x2000 /*RTM_F_FIB_MATCH*/,    "fib-match"),
+);
+
+#define _RTM_FLAGS_TO_STRING_MAXLEN 200
+
+static const char *
+_rtm_flags_to_string_full (char *buf, gsize buf_size, unsigned rtm_flags)
+{
+	const char *buf0 = buf;
+
+	nm_assert (buf_size >= _RTM_FLAGS_TO_STRING_MAXLEN);
+
+	if (!rtm_flags)
+		return "";
+
+	nm_utils_strbuf_append_str (&buf, &buf_size, " rtm_flags ");
+	_rtm_flags_to_string (rtm_flags, buf, buf_size);
+	nm_assert (strlen (buf) < buf_size);
+	return buf0;
+}
+
 /**
  * nm_platform_ip4_route_to_string:
  * @route: pointer to NMPlatformIP4Route route structure
@@ -4997,6 +5031,7 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsi
 	char str_table[30];
 	char str_scope[30], s_source[50];
 	char str_tos[32], str_window[32], str_cwnd[32], str_initcwnd[32], str_initrwnd[32], str_mtu[32];
+	char str_rtm_flags[_RTM_FLAGS_TO_STRING_MAXLEN];
 
 	if (!nm_utils_to_string_buffer_init_null (route, &buf, &len))
 		return buf;
@@ -5015,7 +5050,7 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsi
 	            " metric %"G_GUINT32_FORMAT
 	            " mss %"G_GUINT32_FORMAT
 	            " rt-src %s" /* protocol */
-	            "%s" /* cloned */
+	            "%s" /* rtm_flags */
 	            "%s%s" /* scope */
 	            "%s%s" /* pref-src */
 	            "%s" /* tos */
@@ -5033,7 +5068,7 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsi
 	            route->metric,
 	            route->mss,
 	            nmp_utils_ip_config_source_to_string (route->rt_source, s_source, sizeof (s_source)),
-	            route->rt_cloned ? " cloned" : "",
+	            _rtm_flags_to_string_full (str_rtm_flags, sizeof (str_rtm_flags), route->r_rtm_flags),
 	            route->scope_inv ? " scope " : "",
 	            route->scope_inv ? (nm_platform_route_scope2str (nm_platform_route_scope_inv (route->scope_inv), str_scope, sizeof (str_scope))) : "",
 	            route->pref_src ? " pref-src " : "",
@@ -5069,6 +5104,7 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	char str_pref2[30];
 	char str_dev[TO_STRING_DEV_BUF_SIZE], s_source[50];
 	char str_window[32], str_cwnd[32], str_initcwnd[32], str_initrwnd[32], str_mtu[32];
+	char str_rtm_flags[_RTM_FLAGS_TO_STRING_MAXLEN];
 
 	if (!nm_utils_to_string_buffer_init_null (route, &buf, &len))
 		return buf;
@@ -5092,7 +5128,7 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	            " mss %"G_GUINT32_FORMAT
 	            " rt-src %s" /* protocol */
 	            "%s" /* source */
-	            "%s" /* cloned */
+	            "%s" /* rtm_flags */
 	            "%s%s" /* pref-src */
 	            "%s" /* window */
 	            "%s" /* cwnd */
@@ -5112,7 +5148,7 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	            route->src_plen || !IN6_IS_ADDR_UNSPECIFIED (&route->src)
 	              ? nm_sprintf_buf (s_src_all, " src %s/%u", nm_utils_inet6_ntop (&route->src, s_src), (unsigned) route->src_plen)
 	              : "",
-	            route->rt_cloned ? " cloned" : "",
+	            _rtm_flags_to_string_full (str_rtm_flags, sizeof (str_rtm_flags), route->r_rtm_flags),
 	            s_pref_src[0] ? " pref-src " : "",
 	            s_pref_src[0] ? s_pref_src : "",
 	            route->window   || route->lock_window   ? nm_sprintf_buf (str_window,   " window %s%"G_GUINT32_FORMAT,   route->lock_window   ? "lock " : "", route->window)   : "",
@@ -5538,6 +5574,7 @@ nm_platform_ip4_route_hash_update (const NMPlatformIP4Route *obj, NMPlatformIPRo
 		                     obj->initcwnd,
 		                     obj->initrwnd,
 		                     obj->mtu,
+		                     obj->r_rtm_flags & RTNH_F_ONLINK,
 		                     NM_HASH_COMBINE_BOOLS (guint8,
 		                                            obj->lock_window,
 		                                            obj->lock_cwnd,
@@ -5563,8 +5600,8 @@ nm_platform_ip4_route_hash_update (const NMPlatformIP4Route *obj, NMPlatformIPRo
 		                     obj->initcwnd,
 		                     obj->initrwnd,
 		                     obj->mtu,
+		                     obj->r_rtm_flags & (RTM_F_CLONED | RTNH_F_ONLINK),
 		                     NM_HASH_COMBINE_BOOLS (guint8,
-		                                            obj->rt_cloned,
 		                                            obj->lock_window,
 		                                            obj->lock_cwnd,
 		                                            obj->lock_initcwnd,
@@ -5589,8 +5626,8 @@ nm_platform_ip4_route_hash_update (const NMPlatformIP4Route *obj, NMPlatformIPRo
 		                     obj->initcwnd,
 		                     obj->initrwnd,
 		                     obj->mtu,
+		                     obj->r_rtm_flags,
 		                     NM_HASH_COMBINE_BOOLS (guint8,
-		                                            obj->rt_cloned,
 		                                            obj->lock_window,
 		                                            obj->lock_cwnd,
 		                                            obj->lock_initcwnd,
@@ -5627,6 +5664,8 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 			NM_CMP_FIELD (a, b, initcwnd);
 			NM_CMP_FIELD (a, b, initrwnd);
 			NM_CMP_FIELD (a, b, mtu);
+			NM_CMP_DIRECT (a->r_rtm_flags & RTNH_F_ONLINK,
+			               b->r_rtm_flags & RTNH_F_ONLINK);
 			NM_CMP_FIELD_UNSAFE (a, b, lock_window);
 			NM_CMP_FIELD_UNSAFE (a, b, lock_cwnd);
 			NM_CMP_FIELD_UNSAFE (a, b, lock_initcwnd);
@@ -5660,7 +5699,11 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 		}
 		NM_CMP_FIELD (a, b, mss);
 		NM_CMP_FIELD (a, b, pref_src);
-		NM_CMP_FIELD_UNSAFE (a, b, rt_cloned);
+		if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
+			NM_CMP_DIRECT (a->r_rtm_flags & (RTM_F_CLONED | RTNH_F_ONLINK),
+			               b->r_rtm_flags & (RTM_F_CLONED | RTNH_F_ONLINK));
+		} else
+			NM_CMP_FIELD (a, b, r_rtm_flags);
 		NM_CMP_FIELD (a, b, tos);
 		NM_CMP_FIELD_UNSAFE (a, b, lock_window);
 		NM_CMP_FIELD_UNSAFE (a, b, lock_cwnd);
@@ -5717,8 +5760,8 @@ nm_platform_ip6_route_hash_update (const NMPlatformIP6Route *obj, NMPlatformIPRo
 		                     obj->src_plen,
 		                     nmp_utils_ip_config_source_round_trip_rtprot (obj->rt_source),
 		                     obj->mss,
+		                     obj->r_rtm_flags & RTM_F_CLONED,
 		                     NM_HASH_COMBINE_BOOLS (guint8,
-		                                            obj->rt_cloned,
 		                                            obj->lock_window,
 		                                            obj->lock_cwnd,
 		                                            obj->lock_initcwnd,
@@ -5744,8 +5787,8 @@ nm_platform_ip6_route_hash_update (const NMPlatformIP6Route *obj, NMPlatformIPRo
 		                     obj->src_plen,
 		                     obj->rt_source,
 		                     obj->mss,
+		                     obj->r_rtm_flags,
 		                     NM_HASH_COMBINE_BOOLS (guint8,
-		                                            obj->rt_cloned,
 		                                            obj->lock_window,
 		                                            obj->lock_cwnd,
 		                                            obj->lock_initcwnd,
@@ -5810,7 +5853,11 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 			NM_CMP_FIELD (a, b, rt_source);
 		}
 		NM_CMP_FIELD (a, b, mss);
-		NM_CMP_FIELD_UNSAFE (a, b, rt_cloned);
+		if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
+			NM_CMP_DIRECT (a->r_rtm_flags & RTM_F_CLONED,
+			               b->r_rtm_flags & RTM_F_CLONED);
+		} else
+			NM_CMP_FIELD (a, b, r_rtm_flags);
 		NM_CMP_FIELD_UNSAFE (a, b, lock_window);
 		NM_CMP_FIELD_UNSAFE (a, b, lock_cwnd);
 		NM_CMP_FIELD_UNSAFE (a, b, lock_initcwnd);

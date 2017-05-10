@@ -737,6 +737,7 @@ libnm_lib_h_pub_real = \
 	libnm/NetworkManager.h \
 	libnm/nm-access-point.h \
 	libnm/nm-active-connection.h \
+	libnm/nm-checkpoint.h \
 	libnm/nm-client.h \
 	libnm/nm-device-adsl.h \
 	libnm/nm-device-bond.h \
@@ -792,6 +793,7 @@ libnm_lib_h_priv = \
 libnm_lib_c_real = \
 	libnm/nm-access-point.c \
 	libnm/nm-active-connection.c \
+	libnm/nm-checkpoint.c \
 	libnm/nm-client.c \
 	libnm/nm-dbus-helpers.c \
 	libnm/nm-device-adsl.c \
@@ -858,6 +860,7 @@ nodist_libnminclude_HEADERS += \
 noinst_LTLIBRARIES += libnm/libnm-utils.la
 
 libnm_libnm_utils_la_CPPFLAGS = \
+	$(INTROSPECTION_CFLAGS) \
 	$(libnm_lib_cppflags)
 
 libnm_libnm_utils_la_SOURCES = \
@@ -956,7 +959,33 @@ libnm/libnm.typelib: libnm/libnm.gir
 	$(INTROSPECTION_COMPILER) --includedir=$(srcdir)/libnm-core --includedir=$(builddir)/libnm-core --includedir=$(srcdir)/libnm --includedir=$(builddir)/libnm $< -o $@
 
 INTROSPECTION_GIRS += libnm/NM-1.0.gir
+
+if WITH_FAKE_TYPELIBS
+
+libnm/fake-typelib/NetworkManager.typelib: libnm/fake-typelib/NetworkManager.gir libnm/fake-typelib/.dirstamp
+	$(AM_V_GEN)  $(INTROSPECTION_COMPILER) $< -o $@
+
+libnm/fake-typelib/NMClient.typelib: libnm/fake-typelib/NMClient.gir libnm/fake-typelib/.dirstamp
+	$(AM_V_GEN) $(INTROSPECTION_COMPILER) $< -o $@
+
+libnm/fake-typelib/typelibs.c: libnm/fake-typelib/typelibs.gresource.xml libnm/fake-typelib/NetworkManager.typelib libnm/fake-typelib/NMClient.typelib
+	$(AM_V_GEN) $(GLIB_COMPILE_RESOURCES) $< --target=$@ --sourcedir=$(builddir)/libnm/fake-typelib --generate-source --manual-register
+
+nodist_libnm_libnm_utils_la_SOURCES = \
+	libnm/fake-typelib/typelibs.c
+
+CLEANFILES += \
+	libnm/fake-typelib/typelibs.c \
+	libnm/fake-typelib/NMClient.typelib \
+	libnm/fake-typelib/NetworkManager.typelib
 endif
+
+endif
+
+EXTRA_DIST += \
+	libnm/fake-typelib/NetworkManager.gir \
+	libnm/fake-typelib/NMClient.gir \
+	libnm/fake-typelib/typelibs.gresource.xml
 
 if HAVE_INTROSPECTION
 
@@ -2075,6 +2104,7 @@ EXTRA_DIST += \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Wifi_LEAP.cexpected \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Wifi_WEP_104_ASCII.cexpected \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Wired_Auto-Negotiate.cexpected \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Wired_Static_Routes.cexpected \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Wired_Wake-on-LAN.cexpected \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Vlan_test-vlan-interface.cexpected \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-dcb-test.cexpected \
@@ -4537,6 +4567,7 @@ EXTRA_DIST += \
 	shared/nm-utils/c-list-util.h \
 	shared/nm-utils/gsystem-local-alloc.h \
 	shared/nm-utils/nm-glib.h \
+	shared/nm-utils/nm-jansson.h \
 	shared/nm-utils/nm-obj.h \
 	shared/nm-utils/nm-macros-internal.h \
 	shared/nm-utils/nm-shared-utils.c \

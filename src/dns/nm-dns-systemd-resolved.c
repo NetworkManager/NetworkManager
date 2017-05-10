@@ -289,14 +289,15 @@ update (NMDnsPlugin *plugin,
 	int prio, first_prio = 0;
 
 	for (i = 0; i < configs->len; i++) {
+		const NMDnsIPConfigData *data = configs->pdata[i];
 		gboolean skip = FALSE;
 
-		prio = nm_dns_ip_config_data_get_dns_priority (configs->pdata[i]);
+		prio = nm_ip_config_get_dns_priority (data->config);
 		if (i == 0)
 			first_prio = prio;
 		else if (first_prio < 0 && first_prio != prio)
 			skip = TRUE;
-		add_interface_configuration (self, interfaces, configs->pdata[i], skip);
+		add_interface_configuration (self, interfaces, data, skip);
 	}
 
 	free_pending_updates (self);

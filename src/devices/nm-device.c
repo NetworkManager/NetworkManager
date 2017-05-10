@@ -648,6 +648,7 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_reason_to_string, NMDeviceStateReason,
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_REASON_PARENT_CHANGED,                 "parent-changed"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED,         "parent-managed-changed"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_REASON_OVSDB_FAILED,                   "ovsdb-failed"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_REASON_IP_ADDRESS_DUPLICATE,           "ip-address-duplicate"),
 );
 
 #define reason_to_string(reason) \
@@ -1163,9 +1164,9 @@ nm_device_get_ip_iface (NMDevice *self)
 }
 
 int
-nm_device_get_ip_ifindex (NMDevice *self)
+nm_device_get_ip_ifindex (const NMDevice *self)
 {
-	NMDevicePrivate *priv;
+	const NMDevicePrivate *priv;
 
 	g_return_val_if_fail (self != NULL, 0);
 
@@ -5396,7 +5397,7 @@ ipv4_manual_method_apply (NMDevice *self, NMIP4Config **configs, gboolean succes
 		g_object_unref (empty);
 	} else {
 		nm_device_ip_method_failed (self, AF_INET,
-		                            NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+		                            NM_DEVICE_STATE_REASON_IP_ADDRESS_DUPLICATE);
 	}
 }
 
@@ -5977,7 +5978,7 @@ dhcp4_dad_cb (NMDevice *self, NMIP4Config **configs, gboolean success)
 		nm_device_activate_schedule_ip4_config_result (self, configs[1]);
 	else {
 		nm_device_ip_method_failed (self, AF_INET,
-		                            NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+		                            NM_DEVICE_STATE_REASON_IP_ADDRESS_DUPLICATE);
 	}
 }
 
@@ -7001,7 +7002,7 @@ nm_device_copy_ip6_dns_config (NMDevice *self, NMDevice *from_device)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMIP6Config *from_config = NULL;
-	int i;
+	guint i, len;
 
 	if (priv->ac_ip6_config) {
 		nm_ip6_config_reset_nameservers (priv->ac_ip6_config);
@@ -7014,14 +7015,16 @@ nm_device_copy_ip6_dns_config (NMDevice *self, NMDevice *from_device)
 	if (!from_config)
 		return;
 
-	for (i = 0; i < nm_ip6_config_get_num_nameservers (from_config); i++) {
+	len = nm_ip6_config_get_num_nameservers (from_config);
+	for (i = 0; i < len; i++) {
 		nm_ip6_config_add_nameserver (priv->ac_ip6_config,
 		                              nm_ip6_config_get_nameserver (from_config, i));
 	}
 
-	for (i = 0; i < nm_ip6_config_get_num_searches (from_config); i++) {
+	len = nm_ip6_config_get_num_searches (from_config);
+	for (i = 0; i < len; i++) {
 		nm_ip6_config_add_search (priv->ac_ip6_config,
-		                              nm_ip6_config_get_search (from_config, i));
+		                          nm_ip6_config_get_search (from_config, i));
 	}
 
 	if (!ip6_config_merge_and_apply (self, TRUE))

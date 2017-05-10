@@ -133,6 +133,8 @@ EXTRA_DIST += \
 	examples/dispatcher/10-ifcfg-rh-routes.sh \
 	examples/dispatcher/70-wifi-wired-exclusive.sh \
 	\
+	examples/js/get_ips.js \
+	\
 	examples/lua/lgi/add-connection.lua \
 	examples/lua/lgi/list-connections.lua \
 	examples/lua/lgi/list-devices.lua \
