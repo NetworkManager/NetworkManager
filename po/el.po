@@ -14,7 +14,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-04-19 12:10+0200\n"
+"POT-Creation-Date: 2017-05-10 10:43+0200\n"
 "PO-Revision-Date: 2017-03-22 09:33-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: team@lists.gnome.gr\n"
@@ -131,7 +131,7 @@ msgstr "WINS"
 msgid "OPTION"
 msgstr "ΕΠΙΛΟΓΗ"
 
-#: ../clients/cli/common.c:378 ../clients/cli/common.c:448
+#: ../clients/cli/common.c:378 ../clients/cli/common.c:449
 #, c-format
 msgid "invalid prefix '%s'; <1-%d> allowed"
 msgstr "άκυρο πρόθεμα '%s'· επιτρεπόμενο <1-%d>"
@@ -141,90 +141,85 @@ msgstr "άκυρο πρόθεμα '%s'· επιτρεπόμενο <1-%d>"
 msgid "invalid IP address: %s"
 msgstr "άκυρη διεύθυνση IPv4 του '%s'"
 
-#: ../clients/cli/common.c:435
-#, fuzzy, c-format
+#: ../clients/cli/common.c:426
+#, fuzzy
 msgid ""
-"'%s' is not valid (the format is: ip[/prefix] [next-hop] [metric] [attr=val] "
-"[attr=val])"
+"The valid syntax is: 'ip[/prefix] [next-hop] [metric] [attribute=val]... [,"
+"ip[/prefix] ...]'"
 msgstr ""
 "το '%s' δεν είναι έγκυρο ( η μορφή είναι: ip[/πρόθεμα] [επόμενη-μεταπήδηση] "
 "[μετρικό])"
 
-#: ../clients/cli/common.c:457
+#: ../clients/cli/common.c:458
 #, c-format
 msgid "the next hop ('%s') must be first"
 msgstr ""
 
-#: ../clients/cli/common.c:463
+#: ../clients/cli/common.c:464
 #, c-format
 msgid "the metric ('%s') must be before attributes"
 msgstr ""
 
-#: ../clients/cli/common.c:495
+#: ../clients/cli/common.c:504
 #, fuzzy, c-format
-msgid "unrecognized option '%s'"
+msgid "invalid route: %s. "
 msgstr "άκυρη επιλογή '%s'"
 
-#: ../clients/cli/common.c:503
-#, fuzzy, c-format
-msgid "invalid route: %s"
-msgstr "άκυρη επιλογή '%s'"
-
-#: ../clients/cli/common.c:515
+#: ../clients/cli/common.c:516
 msgid "default route cannot be added (NetworkManager handles it by itself)"
 msgstr ""
 "η προεπιλεγμένη διαδρομή δεν μπορεί να προστεθεί (ο διαχειριστής δικτύου τη "
 "χειρίζεται ο ίδιος)"
 
-#: ../clients/cli/common.c:541
+#: ../clients/cli/common.c:542
 msgid "unmanaged"
 msgstr "χωρίς διαχείριση"
 
-#: ../clients/cli/common.c:543
+#: ../clients/cli/common.c:544
 msgid "unavailable"
 msgstr "μη διαθέσιμη"
 
-#: ../clients/cli/common.c:545 ../clients/cli/general.c:248
+#: ../clients/cli/common.c:546 ../clients/cli/general.c:248
 msgid "disconnected"
 msgstr "αποσυνδέθηκε"
 
-#: ../clients/cli/common.c:547
+#: ../clients/cli/common.c:548
 msgid "connecting (prepare)"
 msgstr "σύνδεση (προετοιμασία)"
 
-#: ../clients/cli/common.c:549
+#: ../clients/cli/common.c:550
 msgid "connecting (configuring)"
 msgstr "σύνδεση (διαμόρφωση)"
 
-#: ../clients/cli/common.c:551
+#: ../clients/cli/common.c:552
 msgid "connecting (need authentication)"
 msgstr "σύνδεση (απαιτείται πιστοποίηση)"
 
-#: ../clients/cli/common.c:553
+#: ../clients/cli/common.c:554
 msgid "connecting (getting IP configuration)"
 msgstr "σύνδεση (γίνεται λήψη ρυθμίσεων IP)"
 
-#: ../clients/cli/common.c:555
+#: ../clients/cli/common.c:556
 msgid "connecting (checking IP connectivity)"
 msgstr "σύνδεση (γίνεται έλεγχος συνδεσιμότητας της IP)"
 
-#: ../clients/cli/common.c:557
+#: ../clients/cli/common.c:558
 msgid "connecting (starting secondary connections)"
 msgstr "σύνδεση (γίνεται εκκίνηση των δευτερευουσών συνδέσεων)"
 
-#: ../clients/cli/common.c:559 ../clients/cli/general.c:244
+#: ../clients/cli/common.c:560 ../clients/cli/general.c:244
 msgid "connected"
 msgstr "συνδέθηκε"
 
-#: ../clients/cli/common.c:561 ../clients/cli/connections.c:647
+#: ../clients/cli/common.c:562 ../clients/cli/connections.c:647
 msgid "deactivating"
 msgstr "απενεργοποίηση"
 
-#: ../clients/cli/common.c:563
+#: ../clients/cli/common.c:564
 msgid "connection failed"
 msgstr "αποτυχία σύνδεσης"
 
-#: ../clients/cli/common.c:565 ../clients/cli/common.c:582
+#: ../clients/cli/common.c:566 ../clients/cli/common.c:583
 #: ../clients/cli/connections.c:652 ../clients/cli/connections.c:675
 #: ../clients/cli/devices.c:1193 ../clients/cli/devices.c:1235
 #: ../clients/cli/devices.c:1237 ../clients/cli/general.c:251
@@ -237,12 +232,12 @@ msgid "unknown"
 msgstr "άγνωστη"
 
 #. "CAPABILITIES"
-#: ../clients/cli/common.c:574 ../clients/cli/connections.c:963
+#: ../clients/cli/common.c:575 ../clients/cli/connections.c:963
 #: ../clients/cli/connections.c:965 ../clients/cli/connections.c:967
 #: ../clients/cli/connections.c:1002 ../clients/cli/connections.c:1072
 #: ../clients/cli/connections.c:1073 ../clients/cli/connections.c:1075
-#: ../clients/cli/connections.c:3495 ../clients/cli/connections.c:4730
-#: ../clients/cli/connections.c:6561 ../clients/cli/connections.c:6562
+#: ../clients/cli/connections.c:3512 ../clients/cli/connections.c:4747
+#: ../clients/cli/connections.c:6578 ../clients/cli/connections.c:6579
 #: ../clients/cli/devices.c:869 ../clients/cli/devices.c:1158
 #: ../clients/cli/devices.c:1159 ../clients/cli/devices.c:1160
 #: ../clients/cli/devices.c:1161 ../clients/cli/devices.c:1162
@@ -256,12 +251,12 @@ msgstr "άγνωστη"
 msgid "yes"
 msgstr "ναι"
 
-#: ../clients/cli/common.c:576 ../clients/cli/connections.c:963
+#: ../clients/cli/common.c:577 ../clients/cli/connections.c:963
 #: ../clients/cli/connections.c:965 ../clients/cli/connections.c:967
 #: ../clients/cli/connections.c:1072 ../clients/cli/connections.c:1073
-#: ../clients/cli/connections.c:1075 ../clients/cli/connections.c:3496
-#: ../clients/cli/connections.c:4729 ../clients/cli/connections.c:6561
-#: ../clients/cli/connections.c:6562 ../clients/cli/devices.c:869
+#: ../clients/cli/connections.c:1075 ../clients/cli/connections.c:3513
+#: ../clients/cli/connections.c:4746 ../clients/cli/connections.c:6578
+#: ../clients/cli/connections.c:6579 ../clients/cli/devices.c:869
 #: ../clients/cli/devices.c:1158 ../clients/cli/devices.c:1159
 #: ../clients/cli/devices.c:1160 ../clients/cli/devices.c:1161
 #: ../clients/cli/devices.c:1162 ../clients/cli/devices.c:1197
@@ -275,373 +270,373 @@ msgstr "ναι"
 msgid "no"
 msgstr "όχι"
 
-#: ../clients/cli/common.c:578
+#: ../clients/cli/common.c:579
 msgid "yes (guessed)"
 msgstr ""
 
-#: ../clients/cli/common.c:580
+#: ../clients/cli/common.c:581
 msgid "no (guessed)"
 msgstr ""
 
-#: ../clients/cli/common.c:591
+#: ../clients/cli/common.c:592
 msgid "No reason given"
 msgstr "Δε δόθηκε αιτία"
 
 #. We should not really come here
-#: ../clients/cli/common.c:594 ../clients/cli/connections.c:3344
+#: ../clients/cli/common.c:595 ../clients/cli/connections.c:3361
 #, c-format
 msgid "Unknown error"
 msgstr "Άγνωστο σφάλμα"
 
-#: ../clients/cli/common.c:597
+#: ../clients/cli/common.c:598
 msgid "Device is now managed"
 msgstr "Η συσκευή είναι τώρα με διαχείριση"
 
-#: ../clients/cli/common.c:600
+#: ../clients/cli/common.c:601
 msgid "Device is now unmanaged"
 msgstr "Η συσκευή είναι τώρα χωρίς διαχείριση"
 
-#: ../clients/cli/common.c:603
+#: ../clients/cli/common.c:604
 msgid "The device could not be readied for configuration"
 msgstr "Η συσκευή δεν μπόρεσε να διαβαστεί για τη διαμόρφωση"
 
-#: ../clients/cli/common.c:606
+#: ../clients/cli/common.c:607
 msgid ""
 "IP configuration could not be reserved (no available address, timeout, etc.)"
 msgstr ""
 "Η διαμόρφωση IP δε μπόρεσε να δεσμευτεί (δεν υπάρχει διαθέσιμη διεύθυνση, "
 "χρονικό όριο, κ.λ.π.)"
 
-#: ../clients/cli/common.c:609
+#: ../clients/cli/common.c:610
 msgid "The IP configuration is no longer valid"
 msgstr "Η διαμόρφωση IP δεν είναι πια έγκυρη"
 
-#: ../clients/cli/common.c:612
+#: ../clients/cli/common.c:613
 msgid "Secrets were required, but not provided"
 msgstr "Τα μυστικά απαιτήθηκαν, αλλά δεν προσφέρθηκαν"
 
-#: ../clients/cli/common.c:615
+#: ../clients/cli/common.c:616
 msgid "802.1X supplicant disconnected"
 msgstr "Αποσυνδέθηκε η αίτηση άδειας πρόσβασης 802.1X"
 
-#: ../clients/cli/common.c:618
+#: ../clients/cli/common.c:619
 msgid "802.1X supplicant configuration failed"
 msgstr "Αποτυχία διαμόρφωσης αίτησης άδειας πρόσβασης 802.1X"
 
-#: ../clients/cli/common.c:621
+#: ../clients/cli/common.c:622
 msgid "802.1X supplicant failed"
 msgstr "Αποτυχία αίτησης άδειας πρόσβασης 802.1X"
 
-#: ../clients/cli/common.c:624
+#: ../clients/cli/common.c:625
 msgid "802.1X supplicant took too long to authenticate"
 msgstr ""
 "Η αίτηση άδειας πρόσβασης 802.1x πήρε υπερβολικά πολύ ώρα για να πιστοποιηθεί"
 
-#: ../clients/cli/common.c:627
+#: ../clients/cli/common.c:628
 msgid "PPP service failed to start"
 msgstr "Αποτυχία εκκίνησης της υπηρεσίας PPP"
 
-#: ../clients/cli/common.c:630
+#: ../clients/cli/common.c:631
 msgid "PPP service disconnected"
 msgstr "Αποσυνδέθηκε η υπηρεσία PPP"
 
-#: ../clients/cli/common.c:633
+#: ../clients/cli/common.c:634
 msgid "PPP failed"
 msgstr "Το PPP απέτυχε"
 
-#: ../clients/cli/common.c:636
+#: ../clients/cli/common.c:637
 msgid "DHCP client failed to start"
 msgstr "Αποτυχία εκκίνησης του πελάτη DHCP"
 
-#: ../clients/cli/common.c:639
+#: ../clients/cli/common.c:640
 msgid "DHCP client error"
 msgstr "Σφάλμα πελάτη DHCP"
 
-#: ../clients/cli/common.c:642
+#: ../clients/cli/common.c:643
 msgid "DHCP client failed"
 msgstr "Αποτυχία του πελάτη DHCP"
 
-#: ../clients/cli/common.c:645
+#: ../clients/cli/common.c:646
 msgid "Shared connection service failed to start"
 msgstr "Αποτυχία εκκίνησης υπηρεσίας της κοινόχρηστης σύνδεσης"
 
-#: ../clients/cli/common.c:648
+#: ../clients/cli/common.c:649
 msgid "Shared connection service failed"
 msgstr "Αποτυχία υπηρεσίας της κοινόχρηστης σύνδεσης"
 
-#: ../clients/cli/common.c:651
+#: ../clients/cli/common.c:652
 msgid "AutoIP service failed to start"
 msgstr "Αποτυχία εκκίνησης της υπηρεσίας AutoIP"
 
-#: ../clients/cli/common.c:654
+#: ../clients/cli/common.c:655
 msgid "AutoIP service error"
 msgstr "Σφάλμα υπηρεσίας AutoIP"
 
-#: ../clients/cli/common.c:657
+#: ../clients/cli/common.c:658
 msgid "AutoIP service failed"
 msgstr "Αποτυχία υπηρεσίας AutoIP"
 
-#: ../clients/cli/common.c:660
+#: ../clients/cli/common.c:661
 msgid "The line is busy"
 msgstr "Η γραμμή είναι απασχολημένη"
 
-#: ../clients/cli/common.c:663
+#: ../clients/cli/common.c:664
 msgid "No dial tone"
 msgstr "Χωρίς ήχο κλήσης"
 
-#: ../clients/cli/common.c:666
+#: ../clients/cli/common.c:667
 msgid "No carrier could be established"
 msgstr "Δεν μπόρεσε να προσδιοριστεί μεταφορέας"
 
-#: ../clients/cli/common.c:669
+#: ../clients/cli/common.c:670
 msgid "The dialing request timed out"
 msgstr "Έληξε το αίτημα κλήσης"
 
-#: ../clients/cli/common.c:672
+#: ../clients/cli/common.c:673
 msgid "The dialing attempt failed"
 msgstr "Απέτυχε η προσπάθεια κλήσης"
 
-#: ../clients/cli/common.c:675
+#: ../clients/cli/common.c:676
 msgid "Modem initialization failed"
 msgstr "Απέτυχε η προετοιμασία του μόντεμ"
 
-#: ../clients/cli/common.c:678
+#: ../clients/cli/common.c:679
 msgid "Failed to select the specified APN"
 msgstr "Αποτυχία επιλογής του συγκεκριμένου APN"
 
-#: ../clients/cli/common.c:681
+#: ../clients/cli/common.c:682
 msgid "Not searching for networks"
 msgstr "Δεν ψάχνει για δίκτυα"
 
-#: ../clients/cli/common.c:684
+#: ../clients/cli/common.c:685
 msgid "Network registration denied"
 msgstr "Άρνηση εγγραφής του δικτύου"
 
-#: ../clients/cli/common.c:687
+#: ../clients/cli/common.c:688
 msgid "Network registration timed out"
 msgstr "Έληξε η εγγραφή του δικτύου"
 
-#: ../clients/cli/common.c:690
+#: ../clients/cli/common.c:691
 msgid "Failed to register with the requested network"
 msgstr "Αποτυχία εγγραφής με το ζητούμενο δίκτυο"
 
-#: ../clients/cli/common.c:693
+#: ../clients/cli/common.c:694
 msgid "PIN check failed"
 msgstr "Απέτυχε ο έλεγχος του PIN"
 
-#: ../clients/cli/common.c:696
+#: ../clients/cli/common.c:697
 msgid "Necessary firmware for the device may be missing"
 msgstr "Μπορεί να λείπει το απαραίτητο υλικολογισμικό για τη συσκευή"
 
-#: ../clients/cli/common.c:699
+#: ../clients/cli/common.c:700
 msgid "The device was removed"
 msgstr "Αφαιρέθηκε η συσκευή"
 
-#: ../clients/cli/common.c:702
+#: ../clients/cli/common.c:703
 msgid "NetworkManager went to sleep"
 msgstr "Ο διαχειριστής δικτύου πήγε σε ύπνωση"
 
-#: ../clients/cli/common.c:705
+#: ../clients/cli/common.c:706
 msgid "The device's active connection disappeared"
 msgstr "Εξαφανίστηκε η ενεργή σύνδεση της συσκευής"
 
-#: ../clients/cli/common.c:708
+#: ../clients/cli/common.c:709
 msgid "Device disconnected by user or client"
 msgstr "Η συσκευή αποσυνδέθηκε από τον χρήστη ή τον πελάτη"
 
-#: ../clients/cli/common.c:711
+#: ../clients/cli/common.c:712
 msgid "Carrier/link changed"
 msgstr "Άλλαξε ο μεταφορέας/σύνδεσμος"
 
-#: ../clients/cli/common.c:714
+#: ../clients/cli/common.c:715
 msgid "The device's existing connection was assumed"
 msgstr "Θεωρήθηκε η υφιστάμενη σύνδεση της συσκευής"
 
-#: ../clients/cli/common.c:717
+#: ../clients/cli/common.c:718
 msgid "The supplicant is now available"
 msgstr "Η αίτηση άδειας πρόσβασης είναι τώρα διαθέσιμη"
 
-#: ../clients/cli/common.c:720
+#: ../clients/cli/common.c:721
 msgid "The modem could not be found"
 msgstr "Το μόντεμ δεν μπόρεσε να βρεθεί"
 
-#: ../clients/cli/common.c:723
+#: ../clients/cli/common.c:724
 msgid "The Bluetooth connection failed or timed out"
 msgstr "Απέτυχε ή έληξε η σύνδεση μπλουτούθ"
 
-#: ../clients/cli/common.c:726
+#: ../clients/cli/common.c:727
 msgid "GSM Modem's SIM card not inserted"
 msgstr "Δεν εισήχθη η κάρτα SIM του GSM μόντεμ"
 
-#: ../clients/cli/common.c:729
+#: ../clients/cli/common.c:730
 msgid "GSM Modem's SIM PIN required"
 msgstr "Απαιτείται το PIN SIM του GSM μόντεμ"
 
-#: ../clients/cli/common.c:732
+#: ../clients/cli/common.c:733
 msgid "GSM Modem's SIM PUK required"
 msgstr "Απαιτείται το PUK SIM του GSM μόντεμ"
 
-#: ../clients/cli/common.c:735
+#: ../clients/cli/common.c:736
 msgid "GSM Modem's SIM wrong"
 msgstr "Εσφαλμένο SIM του GSM Modem"
 
-#: ../clients/cli/common.c:738
+#: ../clients/cli/common.c:739
 msgid "InfiniBand device does not support connected mode"
 msgstr "Η συσκευή InfiniBand δεν υποστηρίζει συνδεδεμένη λειτουργία"
 
-#: ../clients/cli/common.c:741
+#: ../clients/cli/common.c:742
 msgid "A dependency of the connection failed"
 msgstr "Μια εξάρτηση της σύνδεσης απέτυχε"
 
-#: ../clients/cli/common.c:744
+#: ../clients/cli/common.c:745
 msgid "A problem with the RFC 2684 Ethernet over ADSL bridge"
 msgstr "Πρόβλημα με το RFC 2684 Ethernet μέσω γέφυρας ADSL"
 
-#: ../clients/cli/common.c:747
+#: ../clients/cli/common.c:748
 msgid "ModemManager is unavailable"
 msgstr "Ο διαχειριστής μόντεμ δεν είναι διαθέσιμος"
 
-#: ../clients/cli/common.c:750
+#: ../clients/cli/common.c:751
 msgid "The Wi-Fi network could not be found"
 msgstr "Το ασύρματο δίκτυο δεν μπόρεσε να βρεθεί"
 
-#: ../clients/cli/common.c:753
+#: ../clients/cli/common.c:754
 msgid "A secondary connection of the base connection failed"
 msgstr "Μια δευτερεύουσα σύνδεση της βασικής σύνδεσης απέτυχε"
 
-#: ../clients/cli/common.c:756
+#: ../clients/cli/common.c:757
 msgid "DCB or FCoE setup failed"
 msgstr "Η ρύθμιση DCB ή FCoE απέτυχε"
 
-#: ../clients/cli/common.c:759
+#: ../clients/cli/common.c:760
 msgid "teamd control failed"
 msgstr "αποτυχία ελέγχου teamd"
 
-#: ../clients/cli/common.c:762
+#: ../clients/cli/common.c:763
 msgid "Modem failed or no longer available"
 msgstr "Το μόντεμ απέτυχε ή δεν είναι πια διαθέσιμο"
 
-#: ../clients/cli/common.c:765
+#: ../clients/cli/common.c:766
 msgid "Modem now ready and available"
 msgstr "Το μόντεμ τώρα είναι έτοιμο και διαθέσιμο"
 
-#: ../clients/cli/common.c:768
+#: ../clients/cli/common.c:769
 msgid "SIM PIN was incorrect"
 msgstr "Το PIN του SIM ήταν εσφαλμένο"
 
-#: ../clients/cli/common.c:771
+#: ../clients/cli/common.c:772
 #, fuzzy
 msgid "New connection activation was enqueued"
 msgstr "Σφάλμα: Αποτυχία ενεργοποίησης σύνδεσης."
 
-#: ../clients/cli/common.c:774
+#: ../clients/cli/common.c:775
 #, fuzzy
 msgid "The device's parent changed"
 msgstr "Αφαιρέθηκε η συσκευή"
 
-#: ../clients/cli/common.c:777
+#: ../clients/cli/common.c:778
 #, fuzzy
 msgid "The device parent's management changed"
 msgstr "Αφαιρέθηκε η συσκευή"
 
 #. TRANSLATORS: Unknown reason for a device state change (NMDeviceStateReason)
-#: ../clients/cli/common.c:781 ../libnm-glib/nm-device.c:1860
+#: ../clients/cli/common.c:782 ../libnm-glib/nm-device.c:1860
 #: ../libnm/nm-device.c:1660
 msgid "Unknown"
 msgstr "Άγνωστο"
 
-#: ../clients/cli/common.c:823
+#: ../clients/cli/common.c:824
 #, c-format
 msgid "invalid priority map '%s'"
 msgstr "άκυρη χαρτογράφηση προτεραιότητας '%s'"
 
-#: ../clients/cli/common.c:830 ../clients/cli/common.c:836
+#: ../clients/cli/common.c:831 ../clients/cli/common.c:837
 #, c-format
 msgid "priority '%s' is not valid (<0-%ld>)"
 msgstr "η προτεραιότητα '%s' δεν είναι έγκυρη (<0-%ld>)"
 
-#: ../clients/cli/common.c:910
+#: ../clients/cli/common.c:911
 #, c-format
 msgid "cannot read team config from file '%s'"
 msgstr ""
 
-#: ../clients/cli/common.c:917
+#: ../clients/cli/common.c:918
 #, c-format
 msgid "team config file '%s' contains non-valid utf-8"
 msgstr ""
 
-#: ../clients/cli/common.c:929
+#: ../clients/cli/common.c:930
 #, fuzzy, c-format
 msgid "'%s' does not contain a valid team configuration"
 msgstr "το '%s' δεν είναι έγκυρη διαμόρφωση ομάδας ή όνομα αρχείου."
 
-#: ../clients/cli/common.c:932
+#: ../clients/cli/common.c:933
 #, c-format
 msgid "team configuration must be a JSON object"
 msgstr ""
 
-#: ../clients/cli/common.c:985
+#: ../clients/cli/common.c:986
 #, c-format
 msgid "cannot read pac-script from file '%s'"
 msgstr ""
 
-#: ../clients/cli/common.c:992
+#: ../clients/cli/common.c:993
 #, fuzzy, c-format
 msgid "file '%s' contains non-valid utf-8"
 msgstr "ο δείκτης '%s' δεν είναι έγκυρος"
 
-#: ../clients/cli/common.c:1005
+#: ../clients/cli/common.c:1006
 #, fuzzy, c-format
 msgid "'%s' does not contain a valid PAC Script"
 msgstr "το '%s' δεν είναι έγκυρο PSK"
 
-#: ../clients/cli/common.c:1008
+#: ../clients/cli/common.c:1009
 #, fuzzy, c-format
 msgid "Not a valid PAC Script"
 msgstr "δεν είναι μια έγκυρη διεύθυνση MAC"
 
-#: ../clients/cli/common.c:1131
+#: ../clients/cli/common.c:1132
 #, fuzzy, c-format
 msgid "Error: openconnect failed: %s\n"
 msgstr "Σφάλμα: Αποτυχία πιστοποίησης σύνδεσης: %s\n"
 
-#: ../clients/cli/common.c:1138
+#: ../clients/cli/common.c:1139
 #, fuzzy, c-format
 msgid "Error: openconnect failed with status %d\n"
 msgstr "Αποτυχία επεξεργασίας με την κατάσταση %d"
 
-#: ../clients/cli/common.c:1140
+#: ../clients/cli/common.c:1141
 #, fuzzy, c-format
 msgid "Error: openconnect failed with signal %d\n"
 msgstr "Αποτυχία επεξεργασίας με το σήμα %d"
 
-#: ../clients/cli/common.c:1221
+#: ../clients/cli/common.c:1222
 #, c-format
 msgid ""
 "Warning: password for '%s' not given in 'passwd-file' and nmcli cannot ask "
 "without '--ask' option.\n"
 msgstr ""
 
-#: ../clients/cli/common.c:1650
+#: ../clients/cli/common.c:1651
 #, fuzzy, c-format
 msgid "Error: Could not create NMClient object: %s."
 msgstr "Σφάλμα: Αδυναμία δημιουργίας αντικειμένου NMClient."
 
-#: ../clients/cli/common.c:1670
+#: ../clients/cli/common.c:1671
 msgid "Error: NetworkManager is not running."
 msgstr "Σφάλμα: Δεν εκτελείται ο διαχειριστής δικτύου."
 
-#: ../clients/cli/common.c:1767
+#: ../clients/cli/common.c:1768
 #, c-format
 msgid "Error: argument '%s' not understood. Try passing --help instead."
 msgstr ""
 
-#: ../clients/cli/common.c:1777
+#: ../clients/cli/common.c:1778
 #, fuzzy
 msgid "Error: missing argument. Try passing --help."
 msgstr "Σφάλμα: απουσίας ορίσματος για τηνη επιλογή '%s'."
 
-#: ../clients/cli/common.c:1830
+#: ../clients/cli/common.c:1831
 msgid "access denied"
 msgstr ""
 
@@ -693,7 +688,7 @@ msgstr "Τύπος μπλουτούθ %s"
 msgid "Bonding mode"
 msgstr "κατάσταση παρακολούθησης δεσμού %s"
 
-#: ../clients/cli/connections.c:85 ../clients/cli/connections.c:4303
+#: ../clients/cli/connections.c:85 ../clients/cli/connections.c:4320
 #, fuzzy
 msgid "Bonding monitoring mode"
 msgstr "κατάσταση παρακολούθησης δεσμού %s"
@@ -1612,10 +1607,10 @@ msgstr "Ενεργές κατατομές διαχειριστή δικτύου"
 msgid "NetworkManager connection profiles"
 msgstr "Κατατομές σύνδεσης διαχειριστή δικτύου"
 
-#: ../clients/cli/connections.c:1855 ../clients/cli/connections.c:2600
-#: ../clients/cli/connections.c:2612 ../clients/cli/connections.c:2624
-#: ../clients/cli/connections.c:2800 ../clients/cli/connections.c:8639
-#: ../clients/cli/connections.c:8656 ../clients/cli/devices.c:2652
+#: ../clients/cli/connections.c:1872 ../clients/cli/connections.c:2617
+#: ../clients/cli/connections.c:2629 ../clients/cli/connections.c:2641
+#: ../clients/cli/connections.c:2817 ../clients/cli/connections.c:8656
+#: ../clients/cli/connections.c:8673 ../clients/cli/devices.c:2652
 #: ../clients/cli/devices.c:2662 ../clients/cli/devices.c:2898
 #: ../clients/cli/devices.c:2908 ../clients/cli/devices.c:2926
 #: ../clients/cli/devices.c:2935 ../clients/cli/devices.c:2956
@@ -1629,14 +1624,14 @@ msgstr "Κατατομές σύνδεσης διαχειριστή δικτύο�
 msgid "Error: %s argument is missing."
 msgstr "Σφάλμα: λείπει το όρισμα %s."
 
-#: ../clients/cli/connections.c:1874
+#: ../clients/cli/connections.c:1891
 #, c-format
 msgid "Error: %s - no such connection profile."
 msgstr "Σφάλμα: %s - δεν υπάρχει τέτοια κατατομή σύνδεσης."
 
-#: ../clients/cli/connections.c:1938 ../clients/cli/connections.c:2587
-#: ../clients/cli/connections.c:2651 ../clients/cli/connections.c:8131
-#: ../clients/cli/connections.c:8242 ../clients/cli/connections.c:8770
+#: ../clients/cli/connections.c:1955 ../clients/cli/connections.c:2604
+#: ../clients/cli/connections.c:2668 ../clients/cli/connections.c:8148
+#: ../clients/cli/connections.c:8259 ../clients/cli/connections.c:8787
 #: ../clients/cli/devices.c:1554 ../clients/cli/devices.c:1841
 #: ../clients/cli/devices.c:2010 ../clients/cli/devices.c:2118
 #: ../clients/cli/devices.c:2307 ../clients/cli/devices.c:3553
@@ -1646,124 +1641,124 @@ msgstr "Σφάλμα: %s - δεν υπάρχει τέτοια κατατομή �
 msgid "Error: %s."
 msgstr "Σφάλμα: %s."
 
-#: ../clients/cli/connections.c:2036
+#: ../clients/cli/connections.c:2053
 #, c-format
 msgid "no active connection on device '%s'"
 msgstr "δεν υπάρχει ενεργή σύνδεση στη συσκευή '%s'"
 
-#: ../clients/cli/connections.c:2044
+#: ../clients/cli/connections.c:2061
 msgid "no active connection or device"
 msgstr "δεν υπάρχει ενεργή σύνδεση ή συσκευή"
 
-#: ../clients/cli/connections.c:2064
+#: ../clients/cli/connections.c:2081
 #, fuzzy, c-format
 msgid "device '%s' not compatible with connection '%s':"
 msgstr "η συσκευή '%s' δεν είναι συμβατή με τη σύνδεση '%s'"
 
-#: ../clients/cli/connections.c:2100
+#: ../clients/cli/connections.c:2117
 #, c-format
 msgid "device '%s' not compatible with connection '%s'"
 msgstr "η συσκευή '%s' δεν είναι συμβατή με τη σύνδεση '%s'"
 
-#: ../clients/cli/connections.c:2103
+#: ../clients/cli/connections.c:2120
 #, c-format
 msgid "no device found for connection '%s'"
 msgstr "δεν βρέθηκε συσκευή για τη σύνδεση '%s'"
 
-#: ../clients/cli/connections.c:2123
+#: ../clients/cli/connections.c:2140
 #, fuzzy
 msgid "Unknown reason"
 msgstr "άγνωστη αιτία"
 
-#: ../clients/cli/connections.c:2125
+#: ../clients/cli/connections.c:2142
 #, fuzzy
 msgid "The connection was disconnected"
 msgstr "σύνδεση (γίνεται εκκίνηση των δευτερευουσών συνδέσεων)"
 
-#: ../clients/cli/connections.c:2127
+#: ../clients/cli/connections.c:2144
 #, fuzzy
 msgid "Disconnected by user"
 msgstr "Αποσυνδέθηκε από τον δίαυλο δεδομένων"
 
-#: ../clients/cli/connections.c:2129
+#: ../clients/cli/connections.c:2146
 #, fuzzy
 msgid "The base network connection was interrupted"
 msgstr "η βασική σύνδεση δικτύου διακόπηκε"
 
-#: ../clients/cli/connections.c:2131
+#: ../clients/cli/connections.c:2148
 #, fuzzy
 msgid "The VPN service stopped unexpectedly"
 msgstr "η υπηρεσία VPN σταμάτησε απροσδόκητα"
 
-#: ../clients/cli/connections.c:2133
+#: ../clients/cli/connections.c:2150
 #, fuzzy
 msgid "The VPN service returned invalid configuration"
 msgstr "η υπηρεσία VPN επέστρεψε άκυρη διαμόρφωση"
 
-#: ../clients/cli/connections.c:2135
+#: ../clients/cli/connections.c:2152
 #, fuzzy
 msgid "The connection attempt timed out"
 msgstr "έληξε το χρονικό όριο απόπειρας σύνδεσης"
 
-#: ../clients/cli/connections.c:2137
+#: ../clients/cli/connections.c:2154
 #, fuzzy
 msgid "The VPN service did not start in time"
 msgstr "η υπηρεσία VPN δεν ξεκίνησε εγκαίρως"
 
-#: ../clients/cli/connections.c:2139
+#: ../clients/cli/connections.c:2156
 #, fuzzy
 msgid "The VPN service failed to start"
 msgstr "η υπηρεσία VPN απέτυχε να εκκινήσει"
 
-#: ../clients/cli/connections.c:2141
+#: ../clients/cli/connections.c:2158
 #, fuzzy
 msgid "No valid secrets"
 msgstr "δεν υπάρχουν έγκυρα μυστικά VPN"
 
-#: ../clients/cli/connections.c:2143
+#: ../clients/cli/connections.c:2160
 #, fuzzy
 msgid "Invalid secrets"
 msgstr "μη έγκυρα μυστικά VPN"
 
-#: ../clients/cli/connections.c:2145
+#: ../clients/cli/connections.c:2162
 #, fuzzy
 msgid "The connection was removed"
 msgstr "η σύνδεση αφαιρέθηκε"
 
-#: ../clients/cli/connections.c:2147
+#: ../clients/cli/connections.c:2164
 #, fuzzy
 msgid "Master connection failed"
 msgstr "αποτυχία σύνδεσης"
 
-#: ../clients/cli/connections.c:2149
+#: ../clients/cli/connections.c:2166
 #, fuzzy
 msgid "Could not create a software link"
 msgstr "Αδύνατη η δημιουργία προσωρινού αρχείου: %s"
 
-#: ../clients/cli/connections.c:2151
+#: ../clients/cli/connections.c:2168
 #, fuzzy
 msgid "The device disappeared"
 msgstr "Εξαφανίστηκε η ενεργή σύνδεση της συσκευής"
 
-#: ../clients/cli/connections.c:2154
+#: ../clients/cli/connections.c:2171
 #, fuzzy
 msgid "Invalid reason"
 msgstr "άκυρη επιλογή '%s'"
 
-#: ../clients/cli/connections.c:2179 ../clients/cli/connections.c:2349
-#: ../clients/cli/connections.c:6451
+#: ../clients/cli/connections.c:2196 ../clients/cli/connections.c:2366
+#: ../clients/cli/connections.c:6468
 #, c-format
 msgid "Connection successfully activated (D-Bus active path: %s)\n"
 msgstr ""
 "Ενεργοποιήθηκε επιτυχώς η σύνδεση (ενεργή διαδρομή διαύλου δεδομένων: %s)\n"
 
-#: ../clients/cli/connections.c:2185 ../clients/cli/connections.c:2194
-#: ../clients/cli/connections.c:2329
+#: ../clients/cli/connections.c:2202 ../clients/cli/connections.c:2211
+#: ../clients/cli/connections.c:2346
 #, c-format
 msgid "Error: Connection activation failed: %s"
 msgstr "Σφάλμα: Αποτυχία ενεργοποίησης σύνδεσης: %s"
 
-#: ../clients/cli/connections.c:2219
+#: ../clients/cli/connections.c:2236
 #, fuzzy, c-format
 msgid ""
 "Connection successfully activated (master waiting for slaves) (D-Bus active "
@@ -1771,359 +1766,359 @@ msgid ""
 msgstr ""
 "Ενεργοποιήθηκε επιτυχώς η σύνδεση (ενεργή διαδρομή διαύλου δεδομένων: %s)\n"
 
-#: ../clients/cli/connections.c:2244
+#: ../clients/cli/connections.c:2261
 #, fuzzy, c-format
 msgid "Error: Timeout expired (%d seconds)"
 msgstr "Σφάλμα: Έληξε το χρονικό όριο %d δευτερολέπτων."
 
-#: ../clients/cli/connections.c:2410
+#: ../clients/cli/connections.c:2427
 #, fuzzy, c-format
 msgid "failed to read passwd-file '%s': %s"
 msgstr "Σφάλμα: αποτυχία αφαίρεσης της τιμής του '%s': %s\n"
 
-#: ../clients/cli/connections.c:2422
+#: ../clients/cli/connections.c:2439
 #, c-format
 msgid "missing colon in 'password' entry '%s'"
 msgstr ""
 
-#: ../clients/cli/connections.c:2430
+#: ../clients/cli/connections.c:2447
 #, c-format
 msgid "missing dot in 'password' entry '%s'"
 msgstr ""
 
-#: ../clients/cli/connections.c:2443
+#: ../clients/cli/connections.c:2460
 #, c-format
 msgid "invalid setting name in 'password' entry '%s'"
 msgstr ""
 
-#: ../clients/cli/connections.c:2499
+#: ../clients/cli/connections.c:2516
 #, c-format
 msgid "unknown device '%s'."
 msgstr "άγνωστη συσκευή '%s'."
 
-#: ../clients/cli/connections.c:2504
+#: ../clients/cli/connections.c:2521
 msgid "neither a valid connection nor device given"
 msgstr "δεν υπάρχει ούτε έγκυρη σύνδεση ούτε δεδομένη συσκευή"
 
-#: ../clients/cli/connections.c:2634 ../clients/cli/devices.c:1502
+#: ../clients/cli/connections.c:2651 ../clients/cli/devices.c:1502
 #: ../clients/cli/devices.c:2669 ../clients/cli/devices.c:2998
 #: ../clients/cli/devices.c:3607
 #, c-format
 msgid "Unknown parameter: %s\n"
 msgstr "Άγνωστη παράμετρος: %s\n"
 
-#: ../clients/cli/connections.c:2659
+#: ../clients/cli/connections.c:2676
 msgid "preparing"
 msgstr "προετοιμασία"
 
-#: ../clients/cli/connections.c:2679
+#: ../clients/cli/connections.c:2696
 #, fuzzy, c-format
 msgid "Connection '%s' (%s) successfully deleted.\n"
 msgstr "Η σύνδεση '%s' (%s) ενημερώθηκε με επιτυχία.\n"
 
-#: ../clients/cli/connections.c:2695
+#: ../clients/cli/connections.c:2712
 #, fuzzy, c-format
 msgid "Connection '%s' successfully deactivated (D-Bus active path: %s)\n"
 msgstr ""
 "Ενεργοποιήθηκε επιτυχώς η σύνδεση (ενεργή διαδρομή διαύλου δεδομένων: %s)\n"
 
-#: ../clients/cli/connections.c:2776 ../clients/cli/connections.c:8357
-#: ../clients/cli/connections.c:8389 ../clients/cli/connections.c:8546
+#: ../clients/cli/connections.c:2793 ../clients/cli/connections.c:8374
+#: ../clients/cli/connections.c:8406 ../clients/cli/connections.c:8563
 #, c-format
 msgid "Error: No connection specified."
 msgstr "Σφάλμα: Δεν ορίστηκε σύνδεση."
 
-#: ../clients/cli/connections.c:2817
+#: ../clients/cli/connections.c:2834
 #, fuzzy, c-format
 msgid "Error: '%s' is not an active connection.\n"
 msgstr "Σφάλμα: η '%s' δεν είναι μια ενεργή σύνδεση."
 
-#: ../clients/cli/connections.c:2818
+#: ../clients/cli/connections.c:2835
 #, fuzzy, c-format
 msgid "Error: not all active connections found."
 msgstr "Σφάλμα: η '%s' δεν είναι μια ενεργή σύνδεση."
 
-#: ../clients/cli/connections.c:2827
+#: ../clients/cli/connections.c:2844
 #, fuzzy, c-format
 msgid "Error: no active connection provided."
 msgstr "Σφάλμα: %s - δεν υπάρχει τέτοια κατατομή σύνδεσης."
 
-#: ../clients/cli/connections.c:2861
+#: ../clients/cli/connections.c:2878
 #, fuzzy, c-format
 msgid "Connection '%s' deactivation failed: %s\n"
 msgstr "Σφάλμα: Αποτυχία ενεργοποίησης σύνδεσης: %s"
 
-#: ../clients/cli/connections.c:3324 ../clients/cli/utils.c:710
+#: ../clients/cli/connections.c:3341 ../clients/cli/utils.c:710
 #, c-format
 msgid "'%s' not among [%s]"
 msgstr "το '%s' δεν είναι μεταξύ των [%s]"
 
-#: ../clients/cli/connections.c:3484
+#: ../clients/cli/connections.c:3501
 #, c-format
 msgid "Warning: master='%s' doesn't refer to any existing profile.\n"
 msgstr ""
 "Προειδοποίηση: κύριο='%s' δεν αναφέρεται σε καμιά υφιστάμενη κατατομή.\n"
 
-#: ../clients/cli/connections.c:3658
+#: ../clients/cli/connections.c:3675
 #, fuzzy, c-format
 msgid "Error: don't know how to create '%s' setting."
 msgstr "Σφάλμα: Αδύνατη η λήψη ρυθμίσεων συστήματος."
 
-#: ../clients/cli/connections.c:3669
+#: ../clients/cli/connections.c:3686
 #, c-format
 msgid "Error: invalid property '%s': %s."
 msgstr "Σφάλμα: άκυρη ιδιότητα '%s': %s."
 
-#: ../clients/cli/connections.c:3686
+#: ../clients/cli/connections.c:3703
 #, c-format
 msgid "Error: failed to modify %s.%s: %s."
 msgstr "Σφάλμα: αποτυχία τροποποίησης του %s.%s: %s."
 
-#: ../clients/cli/connections.c:3705
+#: ../clients/cli/connections.c:3722
 #, c-format
 msgid "Error: failed to remove a value from %s.%s: %s."
 msgstr "Σφάλμα: αποτυχία αφαίρεσης μιας τιμής από %s.%s: %s."
 
-#: ../clients/cli/connections.c:3731
+#: ../clients/cli/connections.c:3748
 #, fuzzy, c-format
 msgid "Error: '%s' is mandatory."
 msgstr "Σφάλμα: απαιτείται το 'nsp'."
 
-#: ../clients/cli/connections.c:3763
+#: ../clients/cli/connections.c:3780
 #, fuzzy, c-format
 msgid "Error: invalid slave type; %s."
 msgstr "Σφάλμα: άκυρος τύπος σύνδεσης· %s."
 
-#: ../clients/cli/connections.c:3776
+#: ../clients/cli/connections.c:3793
 #, c-format
 msgid "Error: invalid connection type; %s."
 msgstr "Σφάλμα: άκυρος τύπος σύνδεσης· %s."
 
-#: ../clients/cli/connections.c:3985
+#: ../clients/cli/connections.c:4002
 #, fuzzy, c-format
 msgid "Error: bad connection type: %s."
 msgstr "Σφάλμα: άκυρος τύπος σύνδεσης· %s."
 
-#: ../clients/cli/connections.c:4048
+#: ../clients/cli/connections.c:4065
 #, fuzzy, c-format
 msgid "Error: '%s': %s"
 msgstr "Σφάλμα: %s: %s."
 
-#: ../clients/cli/connections.c:4069
+#: ../clients/cli/connections.c:4086
 #, fuzzy
 msgid "Error: master is required"
 msgstr "Σφάλμα: απαιτείται 'κύριο'."
 
-#: ../clients/cli/connections.c:4128
+#: ../clients/cli/connections.c:4145
 #, fuzzy, c-format
 msgid "Error: error adding bond option '%s=%s'."
 msgstr "Σφάλμα: Άγνωστη σύνδεση: '%s'."
 
-#: ../clients/cli/connections.c:4159
+#: ../clients/cli/connections.c:4176
 #, c-format
 msgid "Error: '%s' is not a valid monitoring mode; use '%s' or '%s'.\n"
 msgstr ""
 "Σφάλμα: το '%s' δεν είναι έγκυρη κατάσταση παρακολούθησης· χρησιμοποιήστε "
 "'%s' ή '%s'.\n"
 
-#: ../clients/cli/connections.c:4190
+#: ../clients/cli/connections.c:4207
 #, c-format
 msgid "Error: 'bt-type': '%s' not valid; use [%s, %s (%s), %s]."
 msgstr ""
 "Σφάλμα: 'τύπος bt': το '%s' δεν είναι έγκυρο· χρησιμοποιήστε [%s, %s (%s), "
 "%s]."
 
-#: ../clients/cli/connections.c:4265
+#: ../clients/cli/connections.c:4282
 #, fuzzy
 msgid "PPPoE username"
 msgstr "Όνομα χρήστη PPPoE: "
 
-#: ../clients/cli/connections.c:4266 ../clients/cli/connections.c:4287
-#: ../clients/cli/connections.c:4289 ../clients/cli/connections.c:4338
+#: ../clients/cli/connections.c:4283 ../clients/cli/connections.c:4304
+#: ../clients/cli/connections.c:4306 ../clients/cli/connections.c:4355
 #, fuzzy
 msgid "Password [none]"
 msgstr "Κωδικός πρόσβασης [κανένας]: "
 
-#: ../clients/cli/connections.c:4267
+#: ../clients/cli/connections.c:4284
 #, fuzzy
 msgid "Service [none]"
 msgstr "Υπηρεσία [καμία]: "
 
-#: ../clients/cli/connections.c:4268 ../clients/cli/connections.c:4271
-#: ../clients/cli/connections.c:4280
+#: ../clients/cli/connections.c:4285 ../clients/cli/connections.c:4288
+#: ../clients/cli/connections.c:4297
 #, fuzzy
 msgid "MTU [auto]"
 msgstr "MTU [αυτόματο]: "
 
-#: ../clients/cli/connections.c:4269 ../clients/cli/connections.c:4272
-#: ../clients/cli/connections.c:4281 ../clients/cli/connections.c:4284
-#: ../clients/cli/connections.c:4325
+#: ../clients/cli/connections.c:4286 ../clients/cli/connections.c:4289
+#: ../clients/cli/connections.c:4298 ../clients/cli/connections.c:4301
+#: ../clients/cli/connections.c:4342
 #, fuzzy
 msgid "MAC [none]"
 msgstr "MAC [κανένα]: "
 
-#: ../clients/cli/connections.c:4270 ../clients/cli/connections.c:4282
+#: ../clients/cli/connections.c:4287 ../clients/cli/connections.c:4299
 #, fuzzy
 msgid "Cloned MAC [none]"
 msgstr "Κλωνοποιημένο MAC [κανένα]: "
 
-#: ../clients/cli/connections.c:4275
+#: ../clients/cli/connections.c:4292
 #, fuzzy
 msgid "Parent interface [none]"
 msgstr "Γονική διεπαφή [καμία]:"
 
-#: ../clients/cli/connections.c:4276
+#: ../clients/cli/connections.c:4293
 #, fuzzy
 msgid "P_KEY [none]"
 msgstr "P_KEY [κανένα]: "
 
 #. 0
-#: ../clients/cli/connections.c:4277 ../clients/cli/connections.c:4332
+#: ../clients/cli/connections.c:4294 ../clients/cli/connections.c:4349
 #: ../clients/cli/devices.c:153 ../clients/tui/nmt-page-wifi.c:224
 msgid "SSID"
 msgstr "SSID"
 
-#: ../clients/cli/connections.c:4283
+#: ../clients/cli/connections.c:4300
 #, fuzzy
 msgid "WiMAX NSP name"
 msgstr "Όνομα NSP WiMAX: "
 
-#: ../clients/cli/connections.c:4285
+#: ../clients/cli/connections.c:4302
 #, fuzzy
 msgid "APN"
 msgstr "AP"
 
-#: ../clients/cli/connections.c:4286 ../clients/cli/connections.c:4288
-#: ../clients/cli/connections.c:4331
+#: ../clients/cli/connections.c:4303 ../clients/cli/connections.c:4305
+#: ../clients/cli/connections.c:4348
 #, fuzzy
 msgid "Username [none]"
 msgstr "Όνομα χρήστη [κανένα]: "
 
-#: ../clients/cli/connections.c:4290
+#: ../clients/cli/connections.c:4307
 #, fuzzy
 msgid "Bluetooth device address"
 msgstr "Διεύθυνση συσκευής μπλουτούθ: "
 
-#: ../clients/cli/connections.c:4293
+#: ../clients/cli/connections.c:4310
 #, fuzzy
 msgid "VLAN parent device or connection UUID"
 msgstr "Γονική συσκευή VLAN ή σύνδεση UUID: "
 
-#: ../clients/cli/connections.c:4295
+#: ../clients/cli/connections.c:4312
 #, fuzzy
 msgid "VLAN ID (<0-4094>)"
 msgstr "Αναγνωριστικό VLAN <0-4095>: "
 
-#: ../clients/cli/connections.c:4296
+#: ../clients/cli/connections.c:4313
 #, fuzzy
 msgid "VLAN flags (<0-7>) [none]"
 msgstr "Σημαίες VLAN (<0-7>) [καμία]: "
 
-#: ../clients/cli/connections.c:4297
+#: ../clients/cli/connections.c:4314
 #, fuzzy
 msgid "Ingress priority maps [none]"
 msgstr "Απεικονίσεις προτεραιοτήτων εισόδου [καμία]"
 
-#: ../clients/cli/connections.c:4298
+#: ../clients/cli/connections.c:4315
 #, fuzzy
 msgid "Egress priority maps [none]"
 msgstr "Απεικονίσεις προτεραιοτήτων εξόδου [καμία]:"
 
-#: ../clients/cli/connections.c:4301
+#: ../clients/cli/connections.c:4318
 #, fuzzy
 msgid "Bonding primary interface [none]"
 msgstr "πρωτεύουσα διεπαφή δεσμού [καμία]:"
 
-#: ../clients/cli/connections.c:4305
+#: ../clients/cli/connections.c:4322
 #, fuzzy
 msgid "Bonding miimon [100]"
 msgstr "Δεσμός miimon [100]:"
 
-#: ../clients/cli/connections.c:4306
+#: ../clients/cli/connections.c:4323
 #, fuzzy
 msgid "Bonding downdelay [0]"
 msgstr "Καθυστέρηση απενεργοποίησης δεσμού [0]: "
 
-#: ../clients/cli/connections.c:4307
+#: ../clients/cli/connections.c:4324
 #, fuzzy
 msgid "Bonding updelay [0]"
 msgstr "Καθυστέρηση ενεργοποίησης δεσμού [0]: "
 
-#: ../clients/cli/connections.c:4308
+#: ../clients/cli/connections.c:4325
 #, fuzzy
 msgid "Bonding arp-interval [0]"
 msgstr "Χρόνος arp δεσμού [0]: "
 
-#: ../clients/cli/connections.c:4310
+#: ../clients/cli/connections.c:4327
 #, fuzzy
 msgid "Bonding arp-ip-target [none]"
 msgstr "Στόχος arp-ip δεσμού [κανένα]: "
 
-#: ../clients/cli/connections.c:4312
+#: ../clients/cli/connections.c:4329
 msgid "LACP rate ('slow' or 'fast') [slow]"
 msgstr ""
 
-#: ../clients/cli/connections.c:4314 ../clients/cli/connections.c:4315
+#: ../clients/cli/connections.c:4331 ../clients/cli/connections.c:4332
 #, fuzzy
 msgid "Team JSON configuration [none]"
 msgstr "Διαμόρφωση JSON ομάδας [καμία]:"
 
-#: ../clients/cli/connections.c:4316
+#: ../clients/cli/connections.c:4333
 #, fuzzy
 msgid "Enable STP [no]"
 msgstr "Ενεργοποίηση STP %s"
 
-#: ../clients/cli/connections.c:4318
+#: ../clients/cli/connections.c:4335
 #, fuzzy
 msgid "STP priority [32768]"
 msgstr "Προτεραιότητα STP [32768]: "
 
-#: ../clients/cli/connections.c:4319
+#: ../clients/cli/connections.c:4336
 #, fuzzy
 msgid "Forward delay [15]"
 msgstr "Καθυστέρηση προώθησης [15]: "
 
-#: ../clients/cli/connections.c:4320
+#: ../clients/cli/connections.c:4337
 #, fuzzy
 msgid "Hello time [2]"
 msgstr "Χρόνος χαιρετισμού [2]: "
 
-#: ../clients/cli/connections.c:4321
+#: ../clients/cli/connections.c:4338
 #, fuzzy
 msgid "Max age [20]"
 msgstr "Μέγιστη ωρίμανση [20]: "
 
-#: ../clients/cli/connections.c:4322
+#: ../clients/cli/connections.c:4339
 #, fuzzy
 msgid "MAC address ageing time [300]"
 msgstr "Χρόνος ωρίμανσης διεύθυνσης MAC [300]: "
 
-#: ../clients/cli/connections.c:4323
+#: ../clients/cli/connections.c:4340
 #, fuzzy
 msgid "Enable IGMP snooping [no]"
 msgstr "Ενεργοποίηση STP %s"
 
-#: ../clients/cli/connections.c:4326
+#: ../clients/cli/connections.c:4343
 #, fuzzy
 msgid "Bridge port priority [32]"
 msgstr "Προτεραιότητα θύρας γέφυρας [32]: "
 
-#: ../clients/cli/connections.c:4327
+#: ../clients/cli/connections.c:4344
 #, fuzzy
 msgid "Bridge port STP path cost [100]"
 msgstr "Κόστος διαδρομής STP θύρας γέφυρας [100]: "
 
-#: ../clients/cli/connections.c:4328
+#: ../clients/cli/connections.c:4345
 #, fuzzy
 msgid "Hairpin [no]"
 msgstr "Κατάσταση φουρκέτας"
 
-#: ../clients/cli/connections.c:4333
+#: ../clients/cli/connections.c:4350
 #, fuzzy
 msgid "OLPC Mesh channel [1]"
 msgstr "Κανάλι πλέγματος OLPC [1]: "
 
-#: ../clients/cli/connections.c:4334
+#: ../clients/cli/connections.c:4351
 #, fuzzy
 msgid "DHCP anycast MAC address [none]"
 msgstr "Διεύθυνση MAC οποιασδήποτε εκπομπής DHCP [καμία]: "
@@ -2132,323 +2127,323 @@ msgstr "Διεύθυνση MAC οποιασδήποτε εκπομπής DHCP [�
 #. * is not visible here since we only care about phase2 authentication
 #. * (and don't even care of which one)
 #.
-#: ../clients/cli/connections.c:4335
+#: ../clients/cli/connections.c:4352
 #: ../clients/common/nm-secret-agent-simple.c:223
 #: ../clients/common/nm-secret-agent-simple.c:328
 #: ../clients/tui/nmt-page-dsl.c:66 ../clients/tui/nmt-page-wifi.c:332
 msgid "Username"
 msgstr "Όνομα χρήστη"
 
-#: ../clients/cli/connections.c:4341
+#: ../clients/cli/connections.c:4358
 msgid "MACsec parent device or connection UUID"
 msgstr ""
 
-#: ../clients/cli/connections.c:4343
+#: ../clients/cli/connections.c:4360
 msgid "Enable encryption [yes]"
 msgstr ""
 
-#: ../clients/cli/connections.c:4344
+#: ../clients/cli/connections.c:4361
 #: ../clients/common/nm-secret-agent-simple.c:520
 msgid "MKA CAK"
 msgstr ""
 
-#: ../clients/cli/connections.c:4345
+#: ../clients/cli/connections.c:4362
 msgid "MKA_CKN"
 msgstr ""
 
-#: ../clients/cli/connections.c:4346
+#: ../clients/cli/connections.c:4363
 msgid "SCI port [1]"
 msgstr ""
 
-#: ../clients/cli/connections.c:4348
+#: ../clients/cli/connections.c:4365
 #, fuzzy
 msgid "MACVLAN parent device or connection UUID"
 msgstr "Γονική συσκευή VLAN ή σύνδεση UUID: "
 
-#: ../clients/cli/connections.c:4352
+#: ../clients/cli/connections.c:4369
 msgid "Tap [no]"
 msgstr ""
 
-#: ../clients/cli/connections.c:4354
+#: ../clients/cli/connections.c:4371
 #, fuzzy
 msgid "VXLAN ID"
 msgstr "Αναγνωριστικό VLAN <0-4095>: "
 
-#: ../clients/cli/connections.c:4355 ../clients/cli/connections.c:4374
+#: ../clients/cli/connections.c:4372 ../clients/cli/connections.c:4391
 #, fuzzy
 msgid "Remote"
 msgstr "Αφαίρεση"
 
-#: ../clients/cli/connections.c:4356 ../clients/cli/connections.c:4375
+#: ../clients/cli/connections.c:4373 ../clients/cli/connections.c:4392
 #, fuzzy
 msgid "Parent device [none]"
 msgstr "Γονική διεπαφή [καμία]:"
 
-#: ../clients/cli/connections.c:4358
+#: ../clients/cli/connections.c:4375
 #, fuzzy
 msgid "Local address [none]"
 msgstr "Διεύθυνση MAC οποιασδήποτε εκπομπής DHCP [καμία]: "
 
-#: ../clients/cli/connections.c:4359
+#: ../clients/cli/connections.c:4376
 msgid "Minimum source port [0]"
 msgstr ""
 
-#: ../clients/cli/connections.c:4360
+#: ../clients/cli/connections.c:4377
 msgid "Maximum source port [0]"
 msgstr ""
 
-#: ../clients/cli/connections.c:4361
+#: ../clients/cli/connections.c:4378
 #, fuzzy
 msgid "Destination port [8472]"
 msgstr "Προορισμός"
 
-#: ../clients/cli/connections.c:4364
+#: ../clients/cli/connections.c:4381
 #, fuzzy
 msgid "User ID [none]"
 msgstr "Όνομα χρήστη [κανένα]: "
 
-#: ../clients/cli/connections.c:4365
+#: ../clients/cli/connections.c:4382
 #, fuzzy
 msgid "Group ID [none]"
 msgstr "MAC [κανένα]: "
 
-#: ../clients/cli/connections.c:4366
+#: ../clients/cli/connections.c:4383
 #, fuzzy
 msgid "Enable PI [no]"
 msgstr "Ενεργοποίηση STP %s"
 
-#: ../clients/cli/connections.c:4368
+#: ../clients/cli/connections.c:4385
 #, fuzzy
 msgid "Enable VNET header [no]"
 msgstr "Ενεργοποίηση STP %s"
 
-#: ../clients/cli/connections.c:4370
+#: ../clients/cli/connections.c:4387
 msgid "Enable multi queue [no]"
 msgstr ""
 
-#: ../clients/cli/connections.c:4373
+#: ../clients/cli/connections.c:4390
 #, fuzzy
 msgid "Local endpoint [none]"
 msgstr "Γονική διεπαφή [καμία]:"
 
-#: ../clients/cli/connections.c:4377
+#: ../clients/cli/connections.c:4394
 #, fuzzy
 msgid "IPv4 address (IP[/plen]) [none]"
 msgstr "Διεύθυνση IPv4 (IP[/plen] [πύλη δικτύου]) [καμία]: "
 
-#: ../clients/cli/connections.c:4379
+#: ../clients/cli/connections.c:4396
 #, fuzzy
 msgid "IPv4 gateway [none]"
 msgstr "Διεύθυνση IPv4 (IP[/plen] [πύλη δικτύου]) [καμία]: "
 
-#: ../clients/cli/connections.c:4380
+#: ../clients/cli/connections.c:4397
 #, fuzzy
 msgid "IPv6 address (IP[/plen]) [none]"
 msgstr "Διεύθυνση IPv6 (IP[/plen] [πύλη δικτύου]) [καμία]: "
 
-#: ../clients/cli/connections.c:4382
+#: ../clients/cli/connections.c:4399
 #, fuzzy
 msgid "IPv6 gateway [none]"
 msgstr "Διεύθυνση IPv6 (IP[/plen] [πύλη δικτύου]) [καμία]: "
 
-#: ../clients/cli/connections.c:4384
+#: ../clients/cli/connections.c:4401
 msgid "Browser only [no]"
 msgstr ""
 
-#: ../clients/cli/connections.c:4386
+#: ../clients/cli/connections.c:4403
 msgid "PAC URL"
 msgstr ""
 
-#: ../clients/cli/connections.c:4387
+#: ../clients/cli/connections.c:4404
 msgid "PAC script"
 msgstr ""
 
-#: ../clients/cli/connections.c:4522
+#: ../clients/cli/connections.c:4539
 #, c-format
 msgid "Error: value for '%s' is missing."
 msgstr "Σφάλμα: λείπει η τιμή για το '%s'."
 
-#: ../clients/cli/connections.c:4568
+#: ../clients/cli/connections.c:4585
 msgid "Error: <setting>.<property> argument is missing."
 msgstr "Σφάλμα: λείπει το όρισμα <setting>.<property>."
 
-#: ../clients/cli/connections.c:4591
+#: ../clients/cli/connections.c:4608
 #, c-format
 msgid "Error: invalid or not allowed setting '%s': %s."
 msgstr "Σφάλμα: άκυρη ή μη επιτρεπόμενη ρύθμιση '%s': %s."
 
-#: ../clients/cli/connections.c:4616
+#: ../clients/cli/connections.c:4633
 #, fuzzy, c-format
 msgid "Error: '%s' is ambiguous (%s.%s or %s.%s)."
 msgstr "το '%s' είναι διφορούμενο (%s x %s)"
 
-#: ../clients/cli/connections.c:4630
+#: ../clients/cli/connections.c:4647
 #, c-format
 msgid "Error: invalid <setting>.<property> '%s'."
 msgstr "Σφάλμα: άκυρο <setting>.<property> '%s'."
 
-#: ../clients/cli/connections.c:4672 ../clients/cli/connections.c:8182
+#: ../clients/cli/connections.c:4689 ../clients/cli/connections.c:8199
 #, fuzzy, c-format
 msgid "Error: Failed to add '%s' connection: %s"
 msgstr "Σφάλμα: Αποτυχία προσθήκης σύνδεσης '%s': (%d) %s"
 
-#: ../clients/cli/connections.c:4677
+#: ../clients/cli/connections.c:4694
 #, c-format
 msgid "Connection '%s' (%s) successfully added.\n"
 msgstr "Η σύνδεση '%s' (%s) προστέθηκε με επιτυχία.\n"
 
-#: ../clients/cli/connections.c:4799
+#: ../clients/cli/connections.c:4816
 #, c-format
 msgid ""
 "You can specify this option more than once. Press <Enter> when you're done.\n"
 msgstr ""
 
 #. Ask for optional arguments.
-#: ../clients/cli/connections.c:4837
+#: ../clients/cli/connections.c:4854
 #, fuzzy, c-format
 msgid "There is %d optional setting for %s.\n"
 msgid_plural "There are %d optional settings for %s.\n"
 msgstr[0] "Υπάρχει %d προαιρετικό όρισμα για τον τύπο σύνδεσης '%s'.\n"
 msgstr[1] "Υπάρχουν %d προαιρετικά ορίσματα για τον τύπο σύνδεσης '%s'.\n"
 
-#: ../clients/cli/connections.c:4840
+#: ../clients/cli/connections.c:4857
 #, c-format
 msgid "Do you want to provide it? %s"
 msgid_plural "Do you want to provide them? %s"
 msgstr[0] "Θέλετε να το δώσετε; %s"
 msgstr[1] "Θέλετε να τα δώσετε; %s"
 
-#: ../clients/cli/connections.c:4854
+#: ../clients/cli/connections.c:4871
 #, fuzzy
 msgid "Wired Ethernet"
 msgstr "Ethernet"
 
-#: ../clients/cli/connections.c:4856 ../src/devices/nm-device-infiniband.c:192
+#: ../clients/cli/connections.c:4873 ../src/devices/nm-device-infiniband.c:192
 #, fuzzy
 msgid "InfiniBand connection"
 msgstr "Σύνδεση InfiniBand %d"
 
-#: ../clients/cli/connections.c:4858
+#: ../clients/cli/connections.c:4875
 #, fuzzy
 msgid "Wi-Fi connection"
 msgstr "Ασύρματη σύνδεση %d"
 
-#: ../clients/cli/connections.c:4860
+#: ../clients/cli/connections.c:4877
 #, fuzzy
 msgid "WiMAX connection"
 msgstr "Σύνδεση CDMA %d"
 
-#: ../clients/cli/connections.c:4862
+#: ../clients/cli/connections.c:4879
 msgid "PPPoE"
 msgstr "PPPoE"
 
-#: ../clients/cli/connections.c:4864
+#: ../clients/cli/connections.c:4881
 #, fuzzy
 msgid "CDMA mobile broadband connection"
 msgstr "Κινητή ευρυζωνική σύνδεση %d"
 
-#: ../clients/cli/connections.c:4866
+#: ../clients/cli/connections.c:4883
 #, fuzzy
 msgid "GSM mobile broadband connection"
 msgstr "Κινητή ευρυζωνική σύνδεση %d"
 
-#: ../clients/cli/connections.c:4868
+#: ../clients/cli/connections.c:4885
 #, fuzzy
 msgid "bluetooth connection"
 msgstr "Σύνδεση Bond %d"
 
-#: ../clients/cli/connections.c:4870 ../src/devices/nm-device-vlan.c:433
+#: ../clients/cli/connections.c:4887 ../src/devices/nm-device-vlan.c:433
 #, fuzzy
 msgid "VLAN connection"
 msgstr "Σύνδεση VLAN %d"
 
-#: ../clients/cli/connections.c:4872
+#: ../clients/cli/connections.c:4889
 #, fuzzy
 msgid "Bond device"
 msgstr "Ethernet"
 
-#: ../clients/cli/connections.c:4874
+#: ../clients/cli/connections.c:4891
 #, fuzzy
 msgid "Team device"
 msgstr "Αφαιρέθηκε η συσκευή"
 
-#: ../clients/cli/connections.c:4876
+#: ../clients/cli/connections.c:4893
 #, fuzzy
 msgid "Team port"
 msgstr "Ομάδα"
 
-#: ../clients/cli/connections.c:4878
+#: ../clients/cli/connections.c:4895
 #, fuzzy
 msgid "Bridge device"
 msgstr "Ethernet"
 
-#: ../clients/cli/connections.c:4880
+#: ../clients/cli/connections.c:4897
 #, fuzzy
 msgid "Bridge port"
 msgstr "Γέφυρα"
 
-#: ../clients/cli/connections.c:4882 ../src/nm-manager.c:4027
+#: ../clients/cli/connections.c:4899 ../src/nm-manager.c:4080
 #, fuzzy
 msgid "VPN connection"
 msgstr "Συνδέεται το VPN"
 
-#: ../clients/cli/connections.c:4884
+#: ../clients/cli/connections.c:4901
 #, fuzzy
 msgid "OLPC Mesh connection"
 msgstr "Σύνδεση CDMA %d"
 
-#: ../clients/cli/connections.c:4886 ../src/devices/adsl/nm-device-adsl.c:137
+#: ../clients/cli/connections.c:4903 ../src/devices/adsl/nm-device-adsl.c:137
 #, fuzzy
 msgid "ADSL connection"
 msgstr "Σύνδεση ADSL %d"
 
-#: ../clients/cli/connections.c:4888
+#: ../clients/cli/connections.c:4905
 msgid "MACsec connection"
 msgstr ""
 
-#: ../clients/cli/connections.c:4890
+#: ../clients/cli/connections.c:4907
 #, fuzzy
 msgid "macvlan connection"
 msgstr "Σύνδεση Bond %d"
 
-#: ../clients/cli/connections.c:4892 ../src/devices/nm-device-vxlan.c:369
+#: ../clients/cli/connections.c:4909 ../src/devices/nm-device-vxlan.c:369
 #, fuzzy
 msgid "VXLAN connection"
 msgstr "Σύνδεση VLAN %d"
 
-#: ../clients/cli/connections.c:4894
+#: ../clients/cli/connections.c:4911
 #, fuzzy
 msgid "Tun device"
 msgstr "Αφαιρέθηκε η συσκευή"
 
-#: ../clients/cli/connections.c:4896
+#: ../clients/cli/connections.c:4913
 msgid "IPv4 protocol"
 msgstr ""
 
-#: ../clients/cli/connections.c:4898
+#: ../clients/cli/connections.c:4915
 msgid "IPv6 protocol"
 msgstr ""
 
-#: ../clients/cli/connections.c:4900
+#: ../clients/cli/connections.c:4917
 msgid "Proxy"
 msgstr ""
 
-#: ../clients/cli/connections.c:4987 ../clients/cli/utils.c:186
+#: ../clients/cli/connections.c:5004 ../clients/cli/utils.c:186
 #, c-format
 msgid "Error: value for '%s' argument is required."
 msgstr "Σφάλμα: απαιτείται τιμή για το όρισμα '%s'."
 
-#: ../clients/cli/connections.c:4993
+#: ../clients/cli/connections.c:5010
 #, c-format
 msgid "Error: 'save': %s."
 msgstr "Σφάλμα: 'αποθήκευση': %s."
 
-#: ../clients/cli/connections.c:5065
+#: ../clients/cli/connections.c:5082
 #, fuzzy, c-format
 msgid "Error: '%s' argument is required."
 msgstr "Σφάλμα: απαιτείται το όρισμα 'τύπος'."
 
-#: ../clients/cli/connections.c:6037
+#: ../clients/cli/connections.c:6054
 #, c-format
 msgid "['%s' setting values]\n"
 msgstr "[τιμές ρύθμισης '%s']\n"
@@ -2456,7 +2451,7 @@ msgstr "[τιμές ρύθμισης '%s']\n"
 #. TRANSLATORS: do not translate command names and keywords before ::
 #. *              However, you should translate terms enclosed in <>.
 #.
-#: ../clients/cli/connections.c:6119
+#: ../clients/cli/connections.c:6136
 #, fuzzy, c-format
 msgid ""
 "---[ Main menu ]---\n"
@@ -2489,7 +2484,7 @@ msgstr ""
 "nmcli    <conf-option> <value>       :: διαμόρφωση nmcli\n"
 "quit                                 :: έξοδος nmcli\n"
 
-#: ../clients/cli/connections.c:6146
+#: ../clients/cli/connections.c:6163
 #, c-format
 msgid ""
 "goto <setting>[.<prop>] | <prop>  :: enter setting/property for editing\n"
@@ -2509,7 +2504,7 @@ msgstr ""
 "              nmcli connection> goto secondaries\n"
 "              nmcli> goto ipv4.addresses\n"
 
-#: ../clients/cli/connections.c:6153
+#: ../clients/cli/connections.c:6170
 #, c-format
 msgid ""
 "remove <setting>[.<prop>]  :: remove setting or reset property value\n"
@@ -2530,7 +2525,7 @@ msgstr ""
 "Παραδείγματα: nmcli> remove wifi-sec\n"
 "              nmcli> remove eth.mtu\n"
 
-#: ../clients/cli/connections.c:6160
+#: ../clients/cli/connections.c:6177
 #, c-format
 msgid ""
 "set [<setting>.<prop> <value>]  :: set property value\n"
@@ -2545,7 +2540,7 @@ msgstr ""
 "\n"
 "Παράδειγμα: nmcli> set con.id My connection\n"
 
-#: ../clients/cli/connections.c:6165
+#: ../clients/cli/connections.c:6182
 #, c-format
 msgid ""
 "describe [<setting>.<prop>]  :: describe property\n"
@@ -2559,7 +2554,7 @@ msgstr ""
 "εγχειριδίου nm-settings(5) για να δείτε όλες τις ρυθμίσεις NM και τις "
 "ιδιότητες.\n"
 
-#: ../clients/cli/connections.c:6170
+#: ../clients/cli/connections.c:6187
 #, c-format
 msgid ""
 "print [all]  :: print setting or connection values\n"
@@ -2574,7 +2569,7 @@ msgstr ""
 "\n"
 "Παράδειγμα: nmcli ipv4> print all\n"
 
-#: ../clients/cli/connections.c:6175
+#: ../clients/cli/connections.c:6192
 #, fuzzy, c-format
 msgid ""
 "verify [all | fix]  :: verify setting or connection validity\n"
@@ -2596,7 +2591,7 @@ msgstr ""
 "Παραδείγματα: nmcli> verify\n"
 "              nmcli bond> verify\n"
 
-#: ../clients/cli/connections.c:6184
+#: ../clients/cli/connections.c:6201
 #, c-format
 msgid ""
 "save [persistent|temporary]  :: save the connection\n"
@@ -2626,7 +2621,7 @@ msgstr ""
 "να\n"
 "διαγραφεί η μόνιμη κατατομή.\n"
 
-#: ../clients/cli/connections.c:6195
+#: ../clients/cli/connections.c:6212
 #, c-format
 msgid ""
 "activate [<ifname>] [/<ap>|<nsp>]  :: activate the connection\n"
@@ -2647,7 +2642,7 @@ msgstr ""
 "/<ap>|<nsp> - AP (Wi-Fi) ή NSP (WiMAX) (πρόταξη με / όταν το <ifname> δεν "
 "ορίζεται)\n"
 
-#: ../clients/cli/connections.c:6202 ../clients/cli/connections.c:6361
+#: ../clients/cli/connections.c:6219 ../clients/cli/connections.c:6378
 #, c-format
 msgid ""
 "back  :: go to upper menu level\n"
@@ -2656,7 +2651,7 @@ msgstr ""
 "back  :: μετάβαση στο ανώτερο επίπεδο μενού\n"
 "\n"
 
-#: ../clients/cli/connections.c:6205
+#: ../clients/cli/connections.c:6222
 #, c-format
 msgid ""
 "help/? [<command>]  :: help for the nmcli commands\n"
@@ -2665,7 +2660,7 @@ msgstr ""
 "help/? [<command>]  :: βοήθεια για τις εντολές nmcli\n"
 "\n"
 
-#: ../clients/cli/connections.c:6208
+#: ../clients/cli/connections.c:6225
 #, fuzzy, c-format
 msgid ""
 "nmcli [<conf-option> <value>]  :: nmcli configuration\n"
@@ -2691,7 +2686,7 @@ msgstr ""
 "              nmcli> nmcli save-confirmation no\n"
 "              nmcli> nmcli prompt-color 3\n"
 
-#: ../clients/cli/connections.c:6230 ../clients/cli/connections.c:6367
+#: ../clients/cli/connections.c:6247 ../clients/cli/connections.c:6384
 #, c-format
 msgid ""
 "quit  :: exit nmcli\n"
@@ -2704,8 +2699,8 @@ msgstr ""
 "Με αυτή η εντολή φεύγει από το nmcli. Όταν η επεξεργαζόμενη σύνδεση δεν "
 "αποθηκεύεται, ζητάται από τον χρήστη να επιβεβαιώσει την ενέργεια.\n"
 
-#: ../clients/cli/connections.c:6235 ../clients/cli/connections.c:6372
-#: ../clients/cli/connections.c:6792 ../clients/cli/connections.c:7744
+#: ../clients/cli/connections.c:6252 ../clients/cli/connections.c:6389
+#: ../clients/cli/connections.c:6809 ../clients/cli/connections.c:7761
 #, c-format
 msgid "Unknown command: '%s'\n"
 msgstr "Άγνωστη εντολή: '%s'\n"
@@ -2713,7 +2708,7 @@ msgstr "Άγνωστη εντολή: '%s'\n"
 #. TRANSLATORS: do not translate command names and keywords before ::
 #. *              However, you should translate terms enclosed in <>.
 #.
-#: ../clients/cli/connections.c:6301
+#: ../clients/cli/connections.c:6318
 #, c-format
 msgid ""
 "---[ Property menu ]---\n"
@@ -2741,7 +2736,7 @@ msgstr ""
 "εντολής\n"
 "quit                             :: έξοδος από το nmcli\n"
 
-#: ../clients/cli/connections.c:6326
+#: ../clients/cli/connections.c:6343
 #, c-format
 msgid ""
 "set [<value>]  :: set new value\n"
@@ -2752,7 +2747,7 @@ msgstr ""
 "\n"
 "Αυτή η εντολή ορίζει την παρεχόμενη <value> στην ιδιότητά της\n"
 
-#: ../clients/cli/connections.c:6330
+#: ../clients/cli/connections.c:6347
 #, c-format
 msgid ""
 "add [<value>]  :: append new value to the property\n"
@@ -2767,7 +2762,7 @@ msgstr ""
 "ιδιότητα είναι του τύπου περιέκτη. Για ιδιότητες με μοναδική τιμή η τιμή της "
 "ιδιότητας αντικαθίσταται (ίδιο όπως στο 'set').\n"
 
-#: ../clients/cli/connections.c:6336
+#: ../clients/cli/connections.c:6353
 #, c-format
 msgid ""
 "change  :: change current value\n"
@@ -2778,7 +2773,7 @@ msgstr ""
 "\n"
 "Εμφανίζει την τρέχουσα τιμή και επιτρέπει την επεξεργασία της.\n"
 
-#: ../clients/cli/connections.c:6340
+#: ../clients/cli/connections.c:6357
 #, c-format
 msgid ""
 "remove [<value>|<index>|<option name>]  :: delete the value\n"
@@ -2813,7 +2808,7 @@ msgstr ""
 "              nmcli bond.options> remove downdelay\n"
 "\n"
 
-#: ../clients/cli/connections.c:6351
+#: ../clients/cli/connections.c:6368
 #, c-format
 msgid ""
 "describe  :: describe property\n"
@@ -2827,7 +2822,7 @@ msgstr ""
 "του εγχειριδίου nm-settings(5) για να δείτε όλες τις ρυθμίσεις NM και τις "
 "ιδιότητες.\n"
 
-#: ../clients/cli/connections.c:6356
+#: ../clients/cli/connections.c:6373
 #, c-format
 msgid ""
 "print [property|setting|connection]  :: print property (setting, connection) "
@@ -2842,7 +2837,7 @@ msgstr ""
 "Εμφανίζει την τιμή ιδιότητας. Παρέχοντας ένα όρισμα μπορείτε επίσης να "
 "εμφανίσετε τιμές για όλη τη ρύθμιση ή σύνδεση.\n"
 
-#: ../clients/cli/connections.c:6364
+#: ../clients/cli/connections.c:6381
 #, c-format
 msgid ""
 "help/? [<command>]  :: help for nmcli commands\n"
@@ -2851,29 +2846,29 @@ msgstr ""
 "help/? [<command>]  :: βοήθεια για τις εντολές nmcli\n"
 "\n"
 
-#: ../clients/cli/connections.c:6457
+#: ../clients/cli/connections.c:6474
 #, c-format
 msgid "Error: Connection activation failed.\n"
 msgstr "Σφάλμα: Αποτυχία ενεργοποίησης σύνδεσης.\n"
 
-#: ../clients/cli/connections.c:6541
+#: ../clients/cli/connections.c:6558
 #, c-format
 msgid "Error: setting '%s' is mandatory and cannot be removed.\n"
 msgstr ""
 "Σφάλμα: η ρύθμιση '%s' είναι υποχρεωτική και δεν μπορεί να αφαιρεθεί.\n"
 
 #. TRANSLATORS: status line in nmcli connection editor
-#: ../clients/cli/connections.c:6559
+#: ../clients/cli/connections.c:6576
 #, c-format
 msgid "[ Type: %s | Name: %s | UUID: %s | Dirty: %s | Temp: %s ]\n"
 msgstr "[ Τύπος: %s | Όνομα: %s | UUID: %s | Βρόμικα: %s | Θερμ: %s ]\n"
 
-#: ../clients/cli/connections.c:6595
+#: ../clients/cli/connections.c:6612
 #, c-format
 msgid "The connection is not saved. Do you really want to quit? %s"
 msgstr "Η σύνδεση δεν αποθηκεύτηκε. Θέλετε πραγματικά να εξέλθετε; %s"
 
-#: ../clients/cli/connections.c:6644
+#: ../clients/cli/connections.c:6661
 #, c-format
 msgid ""
 "The connection profile has been removed from another client. You may type "
@@ -2882,66 +2877,66 @@ msgstr ""
 "Η κατατομή της σύνδεσης έχει αφαιρεθεί από έναν άλλο πελάτη. Μπορείτε να "
 "πληκτρολογήσετε 'save' στο κυρίως μενού για να το επαναφέρετε.\n"
 
-#: ../clients/cli/connections.c:6669 ../clients/cli/connections.c:7090
-#: ../clients/cli/connections.c:7148
+#: ../clients/cli/connections.c:6686 ../clients/cli/connections.c:7107
+#: ../clients/cli/connections.c:7165
 #, c-format
 msgid "Allowed values for '%s' property: %s\n"
 msgstr "Επιτρεπόμενες τιμές για την ιδιότητα '%s': %s\n"
 
-#: ../clients/cli/connections.c:6673 ../clients/cli/connections.c:7094
-#: ../clients/cli/connections.c:7152
+#: ../clients/cli/connections.c:6690 ../clients/cli/connections.c:7111
+#: ../clients/cli/connections.c:7169
 #, c-format
 msgid "Enter '%s' value: "
 msgstr "Εισαγωγή της τιμής '%s': "
 
-#: ../clients/cli/connections.c:6688 ../clients/cli/connections.c:6710
-#: ../clients/cli/connections.c:7098 ../clients/cli/connections.c:7157
+#: ../clients/cli/connections.c:6705 ../clients/cli/connections.c:6727
+#: ../clients/cli/connections.c:7115 ../clients/cli/connections.c:7174
 #, c-format
 msgid "Error: failed to set '%s' property: %s\n"
 msgstr "Σφάλμα: αποτυχία ορισμού της ιδιότητας '%s': %s\n"
 
-#: ../clients/cli/connections.c:6704
+#: ../clients/cli/connections.c:6721
 #, c-format
 msgid "Edit '%s' value: "
 msgstr "Επεξεργασία τιμής '%s': "
 
-#: ../clients/cli/connections.c:6733
+#: ../clients/cli/connections.c:6750
 #, c-format
 msgid "Error: %s\n"
 msgstr "Σφάλμα: %s\n"
 
-#: ../clients/cli/connections.c:6739 ../clients/cli/connections.c:7249
-#: ../clients/cli/connections.c:7297
+#: ../clients/cli/connections.c:6756 ../clients/cli/connections.c:7266
+#: ../clients/cli/connections.c:7314
 #, c-format
 msgid "Error: failed to remove value of '%s': %s\n"
 msgstr "Σφάλμα: αποτυχία αφαίρεσης της τιμής του '%s': %s\n"
 
-#: ../clients/cli/connections.c:6760
+#: ../clients/cli/connections.c:6777
 #, c-format
 msgid "Unknown command argument: '%s'\n"
 msgstr "Άγνωστο όρισμα εντολής: '%s'\n"
 
-#: ../clients/cli/connections.c:6865
+#: ../clients/cli/connections.c:6882
 #, c-format
 msgid "Available settings: %s\n"
 msgstr "Διαθέσιμες ρυθμίσεις: %s\n"
 
-#: ../clients/cli/connections.c:6877
+#: ../clients/cli/connections.c:6894
 #, c-format
 msgid "Error: invalid setting name; %s\n"
 msgstr "Σφάλμα: άκυρο όνομα ρύθμισης· %s\n"
 
-#: ../clients/cli/connections.c:6894
+#: ../clients/cli/connections.c:6911
 #, c-format
 msgid "Available properties: %s\n"
 msgstr "Διαθέσιμες ιδιότητες: %s\n"
 
-#: ../clients/cli/connections.c:6902
+#: ../clients/cli/connections.c:6919
 #, c-format
 msgid "Error: property %s\n"
 msgstr "Σφάλμα: ιδιότητα %s\n"
 
-#: ../clients/cli/connections.c:6943
+#: ../clients/cli/connections.c:6960
 #, c-format
 msgid ""
 "Saving the connection with 'autoconnect=yes'. That might result in an "
@@ -2952,12 +2947,12 @@ msgstr ""
 "αποτέλεσμα μια άμεση ενεργοποίηση της σύνδεσης.\n"
 "Θέλετε ακόμα να την αποθηκεύσετε; %s"
 
-#: ../clients/cli/connections.c:7032
+#: ../clients/cli/connections.c:7049
 #, c-format
 msgid "You may edit the following settings: %s\n"
 msgstr "Μπορείτε να επεξεργαστείτε τις παρακάτω ρυθμίσεις: %s\n"
 
-#: ../clients/cli/connections.c:7060
+#: ../clients/cli/connections.c:7077
 #, c-format
 msgid ""
 "The connection profile has been removed from another client. You may type "
@@ -2966,217 +2961,217 @@ msgstr ""
 "Η κατατομή της σύνδεσης έχει αφαιρεθεί από έναν άλλο πελάτη. Μπορείτε να "
 "πληκτρολογήσετε 'save' για να την επαναφέρετε.\n"
 
-#: ../clients/cli/connections.c:7102 ../clients/cli/connections.c:7342
+#: ../clients/cli/connections.c:7119 ../clients/cli/connections.c:7359
 #, c-format
 msgid "Error: no setting selected; valid are [%s]\n"
 msgstr "Σφάλμα: δεν επιλέχτηκε ρύθμιση· έγκυρες είναι οι [%s]\n"
 
-#: ../clients/cli/connections.c:7103
+#: ../clients/cli/connections.c:7120
 #, c-format
 msgid "use 'goto <setting>' first, or 'set <setting>.<property>'\n"
 msgstr "χρησιμοποιήστε 'goto <setting>' πρώτα, ή 'set <setting>.<property>'\n"
 
-#: ../clients/cli/connections.c:7117 ../clients/cli/connections.c:7276
-#: ../clients/cli/connections.c:7364
+#: ../clients/cli/connections.c:7134 ../clients/cli/connections.c:7293
+#: ../clients/cli/connections.c:7381
 #, c-format
 msgid "Error: invalid setting argument '%s'; valid are [%s]\n"
 msgstr "Σφάλμα: άκυρο όρισμα ρύθμισης '%s'· έγκυρα είναι τα [%s]\n"
 
-#: ../clients/cli/connections.c:7127
+#: ../clients/cli/connections.c:7144
 #, c-format
 msgid "Error: missing setting for '%s' property\n"
 msgstr "Σφάλμα: λείπει η ρύθμιση για την ιδιότητα '%s'\n"
 
-#: ../clients/cli/connections.c:7134
+#: ../clients/cli/connections.c:7151
 #, c-format
 msgid "Error: invalid property: %s\n"
 msgstr "Σφάλμα: άκυρη ιδιότητα: %s\n"
 
-#: ../clients/cli/connections.c:7187
+#: ../clients/cli/connections.c:7204
 #, c-format
 msgid "Error: unknown setting '%s'\n"
 msgstr "Σφάλμα: άγνωστη ρύθμιση '%s'\n"
 
-#: ../clients/cli/connections.c:7210
+#: ../clients/cli/connections.c:7227
 #, c-format
 msgid "You may edit the following properties: %s\n"
 msgstr "Μπορείτε να επεξεργαστείτε τις παρακάτω ιδιότητες: %s\n"
 
-#: ../clients/cli/connections.c:7254
+#: ../clients/cli/connections.c:7271
 #, c-format
 msgid "Error: no argument given; valid are [%s]\n"
 msgstr "Σφάλμα: δεν δόθηκε όρισμα· έγκυρα είναι τα [%s]\n"
 
-#: ../clients/cli/connections.c:7273
+#: ../clients/cli/connections.c:7290
 #, c-format
 msgid "Setting '%s' is not present in the connection.\n"
 msgstr "Η ρύθμιση '%s' δεν είναι παρούσα στη σύνδεση.\n"
 
-#: ../clients/cli/connections.c:7318
+#: ../clients/cli/connections.c:7335
 #, c-format
 msgid "Error: %s properties, nor it is a setting name.\n"
 msgstr "Σφάλμα: ιδιότητες %s, ούτε είναι όνομα ρύθμισης.\n"
 
-#: ../clients/cli/connections.c:7343
+#: ../clients/cli/connections.c:7360
 #, c-format
 msgid "use 'goto <setting>' first, or 'describe <setting>.<property>'\n"
 msgstr ""
 "χρησιμοποιήστε 'goto <setting>' πρώτα, ή 'describe <setting>.<property>'\n"
 
-#: ../clients/cli/connections.c:7392
+#: ../clients/cli/connections.c:7409
 #, c-format
 msgid "Error: invalid property: %s, neither a valid setting name.\n"
 msgstr "Σφάλμα: άκυρη ιδιότητα: %s, ούτε είναι ένα έγκυρο όνομα ρύθμισης.\n"
 
-#: ../clients/cli/connections.c:7424
+#: ../clients/cli/connections.c:7441
 #, c-format
 msgid "Error: unknown setting: '%s'\n"
 msgstr "Σφάλμα: άγνωστη ρύθμιση: '%s'\n"
 
-#: ../clients/cli/connections.c:7429
+#: ../clients/cli/connections.c:7446
 #, c-format
 msgid "Error: '%s' setting not present in the connection\n"
 msgstr "Σφάλμα: η ρύθμιση '%s' δεν εμφανίζεται στη σύνδεση\n"
 
-#: ../clients/cli/connections.c:7457
+#: ../clients/cli/connections.c:7474
 #, c-format
 msgid "Error: invalid property: %s%s\n"
 msgstr "Σφάλμα: άκυρη ιδιότητα: %s%s\n"
 
-#: ../clients/cli/connections.c:7459
+#: ../clients/cli/connections.c:7476
 msgid ", neither a valid setting name"
 msgstr ", ούτε είναι έγκυρο όνομα ρύθμισης"
 
-#: ../clients/cli/connections.c:7476
+#: ../clients/cli/connections.c:7493
 #, fuzzy, c-format
 msgid "Invalid verify option: %s\n"
 msgstr "άκυρη επιλογή '%s'"
 
-#: ../clients/cli/connections.c:7484
+#: ../clients/cli/connections.c:7501
 #, c-format
 msgid "Verify setting '%s': %s\n"
 msgstr "Επιβεβαίωση ρύθμισης '%s': %s\n"
 
-#: ../clients/cli/connections.c:7499
+#: ../clients/cli/connections.c:7516
 #, c-format
 msgid "Verify connection: %s\n"
 msgstr "Επιβεβαίωση σύνδεσης: %s\n"
 
-#: ../clients/cli/connections.c:7502
+#: ../clients/cli/connections.c:7519
 #, c-format
 msgid "The error cannot be fixed automatically.\n"
 msgstr ""
 
-#: ../clients/cli/connections.c:7519
+#: ../clients/cli/connections.c:7536
 #, c-format
 msgid "Error: invalid argument '%s'\n"
 msgstr "Σφάλμα: άκυρη παράμετρος '%s'\n"
 
-#: ../clients/cli/connections.c:7551
+#: ../clients/cli/connections.c:7568
 #, fuzzy, c-format
 msgid "Error: Failed to save '%s' (%s) connection: %s\n"
 msgstr "Σφάλμα: Αποτυχία αποθήκευσης της σύνδεσης '%s' (%s): (%d) %s\n"
 
-#: ../clients/cli/connections.c:7558
+#: ../clients/cli/connections.c:7575
 #, c-format
 msgid "Connection '%s' (%s) successfully saved.\n"
 msgstr "Η σύνδεση '%s' (%s) αποθηκεύτηκε με επιτυχία.\n"
 
-#: ../clients/cli/connections.c:7559
+#: ../clients/cli/connections.c:7576
 #, c-format
 msgid "Connection '%s' (%s) successfully updated.\n"
 msgstr "Η σύνδεση '%s' (%s) ενημερώθηκε με επιτυχία.\n"
 
-#: ../clients/cli/connections.c:7591
+#: ../clients/cli/connections.c:7608
 #, c-format
 msgid "Error: connection verification failed: %s\n"
 msgstr "Σφάλμα: Αποτυχία πιστοποίησης σύνδεσης: %s\n"
 
-#: ../clients/cli/connections.c:7592
+#: ../clients/cli/connections.c:7609
 msgid "(unknown error)"
 msgstr "(άγνωστο σφάλμα)"
 
-#: ../clients/cli/connections.c:7593
+#: ../clients/cli/connections.c:7610
 #, c-format
 msgid "You may try running 'verify fix' to fix errors.\n"
 msgstr ""
 
-#: ../clients/cli/connections.c:7615
+#: ../clients/cli/connections.c:7632
 #, c-format
 msgid "Error: connection is not saved. Type 'save' first.\n"
 msgstr "Σφάλμα: η σύνδεση δεν αποθηκεύτηκε. Πληκτρολογήστε 'save' πρώτα.\n"
 
-#: ../clients/cli/connections.c:7619
+#: ../clients/cli/connections.c:7636
 #, c-format
 msgid "Error: connection is not valid: %s\n"
 msgstr "Σφάλμα: η σύνδεση δεν είναι έγκυρη: %s\n"
 
-#: ../clients/cli/connections.c:7629
+#: ../clients/cli/connections.c:7646
 #, c-format
 msgid "Error: Cannot activate connection: %s.\n"
 msgstr "Σφάλμα: Αδύνατη η ενεργοποίηση της σύνδεσης: %s.\n"
 
-#: ../clients/cli/connections.c:7638
+#: ../clients/cli/connections.c:7655
 #, fuzzy, c-format
 msgid "Error: Failed to activate '%s' (%s) connection: %s\n"
 msgstr "Σφάλμα: Αποτυχία ενεργοποίησης της σύνδεσης '%s' (%s): (%d) %s\n"
 
-#: ../clients/cli/connections.c:7644
+#: ../clients/cli/connections.c:7661
 msgid "Monitoring connection activation (press any key to continue)\n"
 msgstr ""
 "Ενεργοποίηση παρακολούθησης της σύνδεσης (πατήστε οποιοδήποτε πλήκτρο για "
 "συνεχίσετε)\n"
 
-#: ../clients/cli/connections.c:7680
+#: ../clients/cli/connections.c:7697
 #, c-format
 msgid "Error: status-line: %s\n"
 msgstr "Σφάλμα: γραμμή κατάστασης: %s\n"
 
-#: ../clients/cli/connections.c:7688
+#: ../clients/cli/connections.c:7705
 #, c-format
 msgid "Error: save-confirmation: %s\n"
 msgstr "Σφάλμα: επιβεβαίωση αποθήκευσης: %s\n"
 
-#: ../clients/cli/connections.c:7696
+#: ../clients/cli/connections.c:7713
 #, fuzzy, c-format
 msgid "Error: show-secrets: %s\n"
 msgstr "Σφάλμα: ιδιότητα %s\n"
 
-#: ../clients/cli/connections.c:7705
+#: ../clients/cli/connections.c:7722
 #, fuzzy, c-format
 msgid "Error: bad color: %s\n"
 msgstr "Σφάλμα: άκυρη ιδιότητα: %s\n"
 
-#: ../clients/cli/connections.c:7719
+#: ../clients/cli/connections.c:7736
 #, c-format
 msgid "Current nmcli configuration:\n"
 msgstr "Τρέχουσα διαμόρφωση nmcli:\n"
 
-#: ../clients/cli/connections.c:7729
+#: ../clients/cli/connections.c:7746
 #, c-format
 msgid "Invalid configuration option '%s'; allowed [%s]\n"
 msgstr "Άκυρη επιλογή διαμόρφωσης '%s'· επιτρέπεται [%s]\n"
 
-#: ../clients/cli/connections.c:7958
+#: ../clients/cli/connections.c:7975
 #, c-format
 msgid "Error: only one of 'id', uuid, or 'path' can be provided."
 msgstr ""
 "Σφάλμα: μόνο ένα από τα 'αναγνωριστικό', uuid ή 'διαδρομή' μπορεί να "
 "παρασχεθεί."
 
-#: ../clients/cli/connections.c:7973 ../clients/cli/connections.c:8139
+#: ../clients/cli/connections.c:7990 ../clients/cli/connections.c:8156
 #, c-format
 msgid "Error: Unknown connection '%s'."
 msgstr "Σφάλμα: Άγνωστη σύνδεση: '%s'."
 
-#: ../clients/cli/connections.c:7991
+#: ../clients/cli/connections.c:8008
 #, c-format
 msgid "Warning: editing existing connection '%s'; 'type' argument is ignored\n"
 msgstr ""
 "Προειδοποίηση: επεξεργασία υφιστάμενης σύνδεσης '%s'· το όρισμα 'τύπος' "
 "αγνοείται\n"
 
-#: ../clients/cli/connections.c:7994
+#: ../clients/cli/connections.c:8011
 #, c-format
 msgid ""
 "Warning: editing existing connection '%s'; 'con-name' argument is ignored\n"
@@ -3184,200 +3179,200 @@ msgstr ""
 "Προειδοποίηση: επεξεργασία υφιστάμενης σύνδεσης '%s'· το όρισμα 'con-name "
 "(όνομα σύνδεσης)' αγνοείται\n"
 
-#: ../clients/cli/connections.c:8014
+#: ../clients/cli/connections.c:8031
 #, c-format
 msgid "Valid connection types: %s\n"
 msgstr "Έγκυροι τύποι σύνδεσης: %s\n"
 
-#: ../clients/cli/connections.c:8016
+#: ../clients/cli/connections.c:8033
 #, c-format
 msgid "Error: invalid connection type; %s\n"
 msgstr "Σφάλμα: άκυρος τύπος σύνδεσης· %s\n"
 
-#: ../clients/cli/connections.c:8055
+#: ../clients/cli/connections.c:8072
 #, c-format
 msgid "===| nmcli interactive connection editor |==="
 msgstr "===| Επεξεργαστής διαδραστικής σύνδεσης nmcli |==="
 
-#: ../clients/cli/connections.c:8058
+#: ../clients/cli/connections.c:8075
 #, c-format
 msgid "Editing existing '%s' connection: '%s'"
 msgstr "Επεξεργασία υφιστάμενης σύνδεσης '%s': '%s'"
 
-#: ../clients/cli/connections.c:8060
+#: ../clients/cli/connections.c:8077
 #, c-format
 msgid "Adding a new '%s' connection"
 msgstr "Προσθήκη νέας σύνδεσης '%s'"
 
-#: ../clients/cli/connections.c:8062
+#: ../clients/cli/connections.c:8079
 #, c-format
 msgid "Type 'help' or '?' for available commands."
 msgstr "Πληκτρολογήστε 'help' ή '?' για διαθέσιμες εντολές."
 
-#: ../clients/cli/connections.c:8064
+#: ../clients/cli/connections.c:8081
 #, c-format
 msgid "Type 'describe [<setting>.<prop>]' for detailed property description."
 msgstr ""
 "Πληκτρολογήστε 'describe [<setting>.<prop>]' για λεπτομερή περιγραφή "
 "ιδιότητας."
 
-#: ../clients/cli/connections.c:8099
+#: ../clients/cli/connections.c:8116
 #, fuzzy, c-format
 msgid "Error: Failed to modify connection '%s': %s"
 msgstr "Σφάλμα: Αποτυχία τροποποίησης σύνδεσης '%s': (%d) %s"
 
-#: ../clients/cli/connections.c:8106
+#: ../clients/cli/connections.c:8123
 #, c-format
 msgid "Connection '%s' (%s) successfully modified.\n"
 msgstr "Η σύνδεση '%s' (%s) τροποποιήθηκε με επιτυχία.\n"
 
-#: ../clients/cli/connections.c:8187
+#: ../clients/cli/connections.c:8204
 #, c-format
 msgid "%s (%s) cloned as %s (%s).\n"
 msgstr ""
 
-#: ../clients/cli/connections.c:8253
+#: ../clients/cli/connections.c:8270
 #, fuzzy
 msgid "New connection name: "
 msgstr "Νέα σύνδεση"
 
-#: ../clients/cli/connections.c:8255
+#: ../clients/cli/connections.c:8272
 #, fuzzy, c-format
 msgid "Error: <new name> argument is missing."
 msgstr "Σφάλμα: λείπει το όρισμα %s."
 
-#: ../clients/cli/connections.c:8261 ../clients/cli/connections.c:8781
+#: ../clients/cli/connections.c:8278 ../clients/cli/connections.c:8798
 #, fuzzy, c-format
 msgid "Error: unknown extra argument: '%s'."
 msgstr "Σφάλμα: άκυρη πρόσθετη παράμετρος '%s'."
 
-#: ../clients/cli/connections.c:8312
+#: ../clients/cli/connections.c:8329
 #, fuzzy, c-format
 msgid "Error: not all connections deleted."
 msgstr "Σφάλμα: Δεν ορίστηκε σύνδεση."
 
-#: ../clients/cli/connections.c:8313
+#: ../clients/cli/connections.c:8330
 #, c-format
 msgid "Error: Connection deletion failed: %s"
 msgstr "Σφάλμα: Αποτυχία διαγραφής της σύνδεσης: %s"
 
-#: ../clients/cli/connections.c:8374 ../clients/cli/connections.c:8499
+#: ../clients/cli/connections.c:8391 ../clients/cli/connections.c:8516
 #, fuzzy, c-format
 msgid "Error: %s.\n"
 msgstr "Σφάλμα: %s."
 
-#: ../clients/cli/connections.c:8375 ../clients/cli/connections.c:8500
+#: ../clients/cli/connections.c:8392 ../clients/cli/connections.c:8517
 #, fuzzy, c-format
 msgid "Error: not all connections found."
 msgstr "Σφάλμα: η '%s' δεν είναι ενεργή εντολή 'σύνδεσης'."
 
 #. truncate trailing ", "
-#: ../clients/cli/connections.c:8418
+#: ../clients/cli/connections.c:8435
 #, c-format
 msgid "Error: cannot delete unknown connection(s): %s."
 msgstr "Σφάλμα: αδύνατη η διαγραφή άγνωστων συνδέσεων: %s."
 
-#: ../clients/cli/connections.c:8430
+#: ../clients/cli/connections.c:8447
 #, fuzzy, c-format
 msgid "%s: connection profile changed\n"
 msgstr "Λεπτομέρειες κατατομής σύνδεσης"
 
-#: ../clients/cli/connections.c:8456
+#: ../clients/cli/connections.c:8473
 #, fuzzy, c-format
 msgid "%s: connection profile created\n"
 msgstr "Λεπτομέρειες κατατομής σύνδεσης"
 
-#: ../clients/cli/connections.c:8465
+#: ../clients/cli/connections.c:8482
 #, fuzzy, c-format
 msgid "%s: connection profile removed\n"
 msgstr "η σύνδεση αφαιρέθηκε"
 
-#: ../clients/cli/connections.c:8528
+#: ../clients/cli/connections.c:8545
 #, fuzzy, c-format
 msgid "Error: failed to reload connections: %s."
 msgstr "Σφάλμα: Αποτυχία προσθήκης σύνδεσης '%s': (%d) %s"
 
-#: ../clients/cli/connections.c:8561
+#: ../clients/cli/connections.c:8578
 #, fuzzy, c-format
 msgid "Error: failed to load connection: %s."
 msgstr "Σφάλμα: Αποτυχία προσθήκης σύνδεσης '%s': (%d) %s"
 
-#: ../clients/cli/connections.c:8569
+#: ../clients/cli/connections.c:8586
 #, c-format
 msgid "Could not load file '%s'\n"
 msgstr "Αδύνατη η φόρτωση αρχείου '%s'\n"
 
-#: ../clients/cli/connections.c:8578
+#: ../clients/cli/connections.c:8595
 #, fuzzy
 msgid "File to import: "
 msgstr "Αποτυχία κρυπτογράφησης: %d."
 
-#: ../clients/cli/connections.c:8625
+#: ../clients/cli/connections.c:8642
 #, c-format
 msgid "Error: No arguments provided."
 msgstr "Σφάλμα: Δεν παρέχονται ορίσματα."
 
-#: ../clients/cli/connections.c:8650
+#: ../clients/cli/connections.c:8667
 #, c-format
 msgid "Warning: 'type' already specified, ignoring extra one.\n"
 msgstr ""
 
-#: ../clients/cli/connections.c:8665
+#: ../clients/cli/connections.c:8682
 #, c-format
 msgid "Warning: 'file' already specified, ignoring extra one.\n"
 msgstr ""
 
-#: ../clients/cli/connections.c:8667
+#: ../clients/cli/connections.c:8684
 #, fuzzy, c-format
 msgid "Unknown parameter: %s"
 msgstr "Άγνωστη παράμετρος: %s\n"
 
-#: ../clients/cli/connections.c:8679
+#: ../clients/cli/connections.c:8696
 #, c-format
 msgid "Error: 'type' argument is required."
 msgstr "Σφάλμα: απαιτείται το όρισμα 'τύπος'."
 
-#: ../clients/cli/connections.c:8684
+#: ../clients/cli/connections.c:8701
 #, fuzzy, c-format
 msgid "Error: 'file' argument is required."
 msgstr "Σφάλμα: απαιτείται το όρισμα 'ifname'."
 
-#: ../clients/cli/connections.c:8691
+#: ../clients/cli/connections.c:8708
 #, fuzzy, c-format
 msgid "Error: failed to find VPN plugin for %s."
 msgstr "Σφάλμα: αποτυχία τροποποίησης του %s.%s: %s."
 
-#: ../clients/cli/connections.c:8699 ../clients/cli/connections.c:8800
+#: ../clients/cli/connections.c:8716 ../clients/cli/connections.c:8817
 #, fuzzy, c-format
 msgid "Error: failed to load VPN plugin: %s."
 msgstr "Σφάλμα: αποτυχία τροποποίησης του %s.%s: %s."
 
-#: ../clients/cli/connections.c:8707
+#: ../clients/cli/connections.c:8724
 #, fuzzy, c-format
 msgid "Error: failed to import '%s': %s."
 msgstr "Σφάλμα: αποτυχία τροποποίησης του %s.%s: %s."
 
-#: ../clients/cli/connections.c:8787
+#: ../clients/cli/connections.c:8804
 #, fuzzy
 msgid "Output file name: "
 msgstr "όνομα αρχείου"
 
-#: ../clients/cli/connections.c:8791
+#: ../clients/cli/connections.c:8808
 #, fuzzy, c-format
 msgid "Error: the connection is not VPN."
 msgstr "Σφάλμα: η σύνδεση δεν είναι έγκυρη: %s\n"
 
-#: ../clients/cli/connections.c:8812
+#: ../clients/cli/connections.c:8829
 #, fuzzy, c-format
 msgid "Error: failed to create temporary file %s."
 msgstr "Αδύνατη η δημιουργία προσωρινού αρχείου: %s"
 
-#: ../clients/cli/connections.c:8821
+#: ../clients/cli/connections.c:8838
 #, fuzzy, c-format
 msgid "Error: failed to export '%s': %s."
 msgstr "Σφάλμα: αποτυχία ορισμού της ιδιότητας '%s': %s\n"
 
-#: ../clients/cli/connections.c:8832
+#: ../clients/cli/connections.c:8849
 #, fuzzy, c-format
 msgid "Error: failed to read temporary file '%s': %s."
 msgstr "Σφάλμα: αποτυχία αφαίρεσης της τιμής του '%s': %s\n"
@@ -5799,7 +5794,7 @@ msgstr ""
 #: ../clients/cli/settings.c:2890 ../clients/cli/settings.c:4309
 #: ../clients/cli/settings.c:4355 ../clients/cli/settings.c:4392
 #: ../clients/cli/settings.c:4451 ../clients/cli/settings.c:5400
-#: ../libnm-core/nm-keyfile-reader.c:610
+#: ../libnm-core/nm-keyfile-reader.c:612
 #, fuzzy, c-format
 msgid "invalid option '%s', use one of [%s]"
 msgstr "άκυρη επιλογή '%s' ή τιμή της '%s'"
@@ -6646,7 +6641,7 @@ msgstr "Σύνδεση DSL %d"
 #: ../clients/tui/nm-editor-utils.c:190 ../libnm-core/nm-connection.c:1931
 #: ../libnm-glib/nm-device.c:1835 ../libnm-util/nm-connection.c:1626
 #: ../libnm/nm-device.c:1631
-#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4450
+#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4499
 msgid "Bond"
 msgstr "Bond"
 
@@ -6658,7 +6653,7 @@ msgstr "Σύνδεση Bond %d"
 #: ../clients/tui/nm-editor-utils.c:199 ../libnm-core/nm-connection.c:1935
 #: ../libnm-glib/nm-device.c:1839 ../libnm-util/nm-connection.c:1630
 #: ../libnm/nm-device.c:1635
-#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4740
+#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4789
 msgid "Bridge"
 msgstr "Γέφυρα"
 
@@ -6670,7 +6665,7 @@ msgstr "Σύνδεση γέφυρας %d"
 #: ../clients/tui/nm-editor-utils.c:208 ../libnm-core/nm-connection.c:1933
 #: ../libnm-glib/nm-device.c:1837 ../libnm-util/nm-connection.c:1628
 #: ../libnm/nm-device.c:1633
-#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4553
+#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4602
 msgid "Team"
 msgstr "Ομάδα"
 
@@ -7827,167 +7822,168 @@ msgstr "Σύνδεση έθερνετ %d"
 msgid "Method returned type '%s', but expected '%s'"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:142
+#: ../libnm-core/nm-keyfile-reader.c:144
 msgid "ignoring missing number"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:151
+#: ../libnm-core/nm-keyfile-reader.c:153
 #, fuzzy, c-format
 msgid "ignoring invalid number '%s'"
 msgstr "άκυρο μετρικό '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:171
+#: ../libnm-core/nm-keyfile-reader.c:173
 #, fuzzy, c-format
 msgid "ignoring invalid %s address: %s"
 msgstr "άκυρη διεύθυνση IPv4 του '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:211
+#: ../libnm-core/nm-keyfile-reader.c:213
 #, fuzzy, c-format
 msgid "ignoring invalid gateway '%s' for %s route"
 msgstr "άκυρη πύλη δικτύου '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:231
+#: ../libnm-core/nm-keyfile-reader.c:233
 #, fuzzy, c-format
 msgid "ignoring invalid %s route: %s"
 msgstr "Σφάλμα: άκυρη ιδιότητα: %s\n"
 
-#: ../libnm-core/nm-keyfile-reader.c:349
+#: ../libnm-core/nm-keyfile-reader.c:351
 #, c-format
 msgid "unexpected character '%c' for address %s: '%s' (position %td)"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:359
+#: ../libnm-core/nm-keyfile-reader.c:361
 #, c-format
 msgid "unexpected character '%c' for %s: '%s' (position %td)"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:368
+#: ../libnm-core/nm-keyfile-reader.c:370
 #, c-format
 msgid "unexpected character '%c' in prefix length for %s: '%s' (position %td)"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:379
+#: ../libnm-core/nm-keyfile-reader.c:381
 #, c-format
 msgid "garbage at the end of value %s: '%s'"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:385
+#: ../libnm-core/nm-keyfile-reader.c:387
 #, c-format
 msgid "deprecated semicolon at the end of value %s: '%s'"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:400
+#: ../libnm-core/nm-keyfile-reader.c:402
 #, c-format
 msgid "invalid prefix length for %s '%s', defaulting to %d"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:407
+#: ../libnm-core/nm-keyfile-reader.c:409
 #, c-format
 msgid "missing prefix length for %s '%s', defaulting to %d"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:541
+#: ../libnm-core/nm-keyfile-reader.c:543
 #, fuzzy, c-format
 msgid "ignoring invalid DNS server IPv4 address '%s'"
 msgstr "άκυρη διεύθυνση IPv4 του '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:580
+#: ../libnm-core/nm-keyfile-reader.c:582
 #, fuzzy, c-format
 msgid "ignoring invalid DNS server IPv6 address '%s'"
 msgstr "άκυρη διεύθυνση IPv6 '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:675 ../libnm-core/nm-keyfile-reader.c:1571
+#: ../libnm-core/nm-keyfile-reader.c:676 ../libnm-core/nm-keyfile-reader.c:1603
 #, c-format
 msgid "ignoring invalid byte element '%d' (not between 0 and 255 inclusive)"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:686
+#: ../libnm-core/nm-keyfile-reader.c:687
 #, fuzzy
 msgid "ignoring invalid MAC address"
 msgstr "δεν είναι μια έγκυρη διεύθυνση MAC"
 
-#: ../libnm-core/nm-keyfile-reader.c:895
+#: ../libnm-core/nm-keyfile-reader.c:924
 msgid "ignoring invalid SSID"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:911
+#: ../libnm-core/nm-keyfile-reader.c:940
 msgid "ignoring invalid raw password"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:986 ../libnm-core/nm-keyfile-reader.c:1162
+#: ../libnm-core/nm-keyfile-reader.c:1015
+#: ../libnm-core/nm-keyfile-reader.c:1191
 #, c-format
 msgid "certificate or key file '%s' does not exist"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:991
+#: ../libnm-core/nm-keyfile-reader.c:1020
 #, fuzzy, c-format
 msgid "invalid key/cert value path \"%s\""
 msgstr "άκυρο '%s' ή η τιμή του '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:1001
+#: ../libnm-core/nm-keyfile-reader.c:1030
 #, c-format
 msgid "invalid PKCS#11 URI \"%s\""
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:1039
+#: ../libnm-core/nm-keyfile-reader.c:1068
 msgid "invalid key/cert value data:;base64, is not base64"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:1052
+#: ../libnm-core/nm-keyfile-reader.c:1081
 msgid "invalid key/cert value data:;base64,file://"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:1199
+#: ../libnm-core/nm-keyfile-reader.c:1228
 #, fuzzy
 msgid "invalid key/cert value is not a valid blob"
 msgstr "η τιμή '%s' δεν είναι έγκυρο UUID"
 
-#: ../libnm-core/nm-keyfile-reader.c:1204
+#: ../libnm-core/nm-keyfile-reader.c:1233
 #, fuzzy
 msgid "invalid key/cert value"
 msgstr "άκυρο '%s' ή η τιμή του '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:1251
+#: ../libnm-core/nm-keyfile-reader.c:1280
 #, fuzzy, c-format
 msgid "invalid parity value '%s'"
 msgstr "άκυρο '%s' ή η τιμή του '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:1269
+#: ../libnm-core/nm-keyfile-reader.c:1298
 #, fuzzy, c-format
 msgid "ignoring invalid team configuration: %s"
 msgstr "Σφάλμα: άκυρη ιδιότητα: %s\n"
 
-#: ../libnm-core/nm-keyfile-reader.c:1472
+#: ../libnm-core/nm-keyfile-reader.c:1504
 #, fuzzy, c-format
 msgid "error loading setting value: %s"
 msgstr "Σφάλμα: άκυρο όνομα ρύθμισης· %s\n"
 
-#: ../libnm-core/nm-keyfile-reader.c:1504
+#: ../libnm-core/nm-keyfile-reader.c:1536
 #, fuzzy, c-format
 msgid "invalid negative value (%i)"
 msgstr "άκυρη πύλη δικτύου '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:1525
+#: ../libnm-core/nm-keyfile-reader.c:1557
 #, fuzzy, c-format
 msgid "invalid char value (%i)"
 msgstr "άκυρο '%s' ή η τιμή του '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:1548
+#: ../libnm-core/nm-keyfile-reader.c:1580
 #, fuzzy, c-format
 msgid "invalid int64 value (%s)"
 msgstr "άκυρο '%s' ή η τιμή του '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:1607
+#: ../libnm-core/nm-keyfile-reader.c:1639
 #, c-format
 msgid "too large FLAGS property '%s' (%llu)"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:1620
+#: ../libnm-core/nm-keyfile-reader.c:1652
 #, fuzzy, c-format
 msgid "unhandled setting property type '%s'"
 msgstr "Σφάλμα: άκυρο <setting>.<property> '%s'."
 
-#: ../libnm-core/nm-keyfile-reader.c:1651
+#: ../libnm-core/nm-keyfile-reader.c:1683
 #, fuzzy, c-format
 msgid "invalid setting name '%s'"
 msgstr "Σφάλμα: άκυρο όνομα ρύθμισης· %s\n"
@@ -8702,54 +8698,65 @@ msgstr "το '%s' δεν είναι έγκυρο UUID"
 msgid "'%s': invalid group ID"
 msgstr "το '%s' δεν είναι έγκυρο UUID"
 
-#: ../libnm-core/nm-setting-user.c:108
+#: ../libnm-core/nm-setting-user.c:111
 #, fuzzy
 msgid "missing key"
 msgstr "λείπει επιλογή"
 
-#: ../libnm-core/nm-setting-user.c:114
+#: ../libnm-core/nm-setting-user.c:117
 #, fuzzy
 msgid "key is too long"
 msgstr "Σφάλμα: απαιτείται 'ssid'."
 
-#: ../libnm-core/nm-setting-user.c:119
+#: ../libnm-core/nm-setting-user.c:122
 msgid "key must be UTF8"
 msgstr ""
 
-#: ../libnm-core/nm-setting-user.c:142
+#: ../libnm-core/nm-setting-user.c:145
 msgid "key requires a '.' for a namespace"
 msgstr ""
 
-#: ../libnm-core/nm-setting-user.c:155
+#: ../libnm-core/nm-setting-user.c:158
 msgid "key cannot contain \"..\""
 msgstr ""
 
-#: ../libnm-core/nm-setting-user.c:160
+#: ../libnm-core/nm-setting-user.c:163
 #, fuzzy
 msgid "key contains invalid characters"
 msgstr "Το IV περιέχει μη δεκαεξαδικά ψηφία."
 
-#: ../libnm-core/nm-setting-user.c:185
+#: ../libnm-core/nm-setting-user.c:188
 #, fuzzy
 msgid "value is missing"
 msgstr "Σφάλμα: λείπει το όρισμα %s."
 
-#: ../libnm-core/nm-setting-user.c:192
+#: ../libnm-core/nm-setting-user.c:195
 #, fuzzy
 msgid "value is too large"
 msgstr "η ιδιότητα είναι κενή"
 
-#: ../libnm-core/nm-setting-user.c:198
+#: ../libnm-core/nm-setting-user.c:201
 #, fuzzy
 msgid "value is not valid UTF8"
 msgstr "ο δείκτης '%s' δεν είναι έγκυρος"
 
-#: ../libnm-core/nm-setting-user.c:330
-msgid "maximum number of user data entires reached"
+#: ../libnm-core/nm-setting-user.c:338
+msgid "maximum number of user data entries reached"
 msgstr ""
 
-#: ../libnm-core/nm-setting-user.c:352
-msgid "setting user-data is not yet implemented"
+#: ../libnm-core/nm-setting-user.c:379
+#, fuzzy, c-format
+msgid "invalid key \"%s\": %s"
+msgstr "άκυρη επιλογή '%s'"
+
+#: ../libnm-core/nm-setting-user.c:383
+#, fuzzy, c-format
+msgid "invalid value for \"%s\": %s"
+msgstr "το '%s' δεν είναι έγκυρη τιμή για το '%s'"
+
+#: ../libnm-core/nm-setting-user.c:398
+#, c-format
+msgid "maximum number of user data entries reached (%u instead of %u)"
 msgstr ""
 
 #: ../libnm-core/nm-setting-vlan.c:670 ../libnm-util/nm-setting-vlan.c:600
@@ -9710,7 +9717,7 @@ msgctxt "connection id fallback"
 msgid "%s %d"
 msgstr "%s %s"
 
-#: ../src/main.c:176 ../src/main.c:311
+#: ../src/main.c:176 ../src/main.c:315
 #, fuzzy, c-format
 msgid "Failed to read configuration: %s\n"
 msgstr "Αποτυχία ανάγνωσης των ρυθμίσεων: (%d) %s\n"
@@ -9761,33 +9768,33 @@ msgstr ""
 "υπολογιστή\n"
 "πρέπει να συνδεθούν."
 
-#: ../src/main.c:296 ../src/main-utils.c:283 ../src/nm-iface-helper.c:414
+#: ../src/main.c:300 ../src/main-utils.c:286 ../src/nm-iface-helper.c:414
 #, c-format
 msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr ""
 "%s. Παρακαλώ χρησιμοποιήστε την επιλογή --help για να δείτε τη λίστα των "
 "έγκυρων επιλογών.\n"
 
-#: ../src/main.c:301 ../src/nm-iface-helper.c:419
+#: ../src/main.c:305 ../src/nm-iface-helper.c:419
 #, c-format
 msgid "Ignoring unrecognized log domain(s) '%s' passed on command line.\n"
 msgstr ""
 "Παραβλέπονται μη αναγνωρίσιμοι τομείς σύνδεσης το '%s' πέρασε στη γραμμή "
 "εντολών.\n"
 
-#: ../src/main.c:326
+#: ../src/main.c:330
 #, c-format
 msgid "Error in configuration file: %s.\n"
 msgstr "Σφάλμα στο αρχείο ρυθμίσεων: %s.\n"
 
-#: ../src/main.c:331
+#: ../src/main.c:335
 #, c-format
 msgid "Ignoring unrecognized log domain(s) '%s' from config files.\n"
 msgstr ""
 "Παραβλέπονται μη αναγνωρίσιμοι τομείς σύνδεσης το '%s' από τα αρχεία "
 "ρυθμίσεων.\n"
 
-#: ../src/main.c:342 ../src/nm-iface-helper.c:429
+#: ../src/main.c:346 ../src/nm-iface-helper.c:429
 #, c-format
 msgid "Could not daemonize: %s [error %u]\n"
 msgstr "Αδύνατη η δημιουργία δαίμονα: %s [σφάλμα %u]\n"
@@ -9807,26 +9814,26 @@ msgstr "Η εγγραφή στο %s απέτυχε: %s\n"
 msgid "Closing %s failed: %s\n"
 msgstr "Το κλείσιμο του %s απέτυχε: %s\n"
 
-#: ../src/main-utils.c:148 ../src/main-utils.c:156
+#: ../src/main-utils.c:148 ../src/main-utils.c:159
 #, c-format
 msgid "Cannot create '%s': %s"
 msgstr ""
 
-#: ../src/main-utils.c:209
+#: ../src/main-utils.c:212
 #, fuzzy, c-format
 msgid "%s is already running (pid %ld)\n"
 msgstr "Ο NetworkManager εκτελείται ήδη (pid %ld)\n"
 
-#: ../src/main-utils.c:219
+#: ../src/main-utils.c:222
 #, fuzzy, c-format
 msgid "You must be root to run %s!\n"
 msgstr "Πρέπει να είστε υπερχρήστης για να εκτελέσετε το  NetworkManager!\n"
 
-#: ../src/dhcp/nm-dhcp-dhclient-utils.c:286
+#: ../src/dhcp/nm-dhcp-dhclient-utils.c:278
 msgid "# Created by NetworkManager\n"
 msgstr "# Δημιουργήθηκε από το NetworkManager\n"
 
-#: ../src/dhcp/nm-dhcp-dhclient-utils.c:296
+#: ../src/dhcp/nm-dhcp-dhclient-utils.c:288
 #, c-format
 msgid ""
 "# Merged from %s\n"
@@ -10104,55 +10111,55 @@ msgstr "Απέτυχε ο ορισμός συμμετρικού κλειδιού
 msgid "GSM mobile broadband connection requires a 'gsm' setting"
 msgstr "Κινητή ευρυζωνική σύνδεση %d"
 
-#: ../src/nm-config.c:466
+#: ../src/nm-config.c:486
 msgid "Config file location"
 msgstr "Τοποθεσία αρχείου ρυθμίσεων"
 
-#: ../src/nm-config.c:467
+#: ../src/nm-config.c:487
 msgid "Config directory location"
 msgstr "Τοποθεσία αρχείου ρυθμίσεων"
 
-#: ../src/nm-config.c:468
+#: ../src/nm-config.c:488
 #, fuzzy
 msgid "System config directory location"
 msgstr "Τοποθεσία αρχείου ρυθμίσεων"
 
-#: ../src/nm-config.c:469
+#: ../src/nm-config.c:489
 #, fuzzy
 msgid "Internal config file location"
 msgstr "Τοποθεσία αρχείου ρυθμίσεων"
 
-#: ../src/nm-config.c:470
+#: ../src/nm-config.c:490
 msgid "State file location"
 msgstr "Τοποθεσία αρχείου κατάστασης"
 
-#: ../src/nm-config.c:471
+#: ../src/nm-config.c:491
 msgid "State file for no-auto-default devices"
 msgstr ""
 
-#: ../src/nm-config.c:472
+#: ../src/nm-config.c:492
 msgid "List of plugins separated by ','"
 msgstr "Κατάλογος πρόσθετων χωρισμένων με ','"
 
-#: ../src/nm-config.c:473
+#: ../src/nm-config.c:493
 #, fuzzy
 msgid "Quit after initial configuration"
 msgstr "Τρέχουσα διαμόρφωση nmcli:\n"
 
-#: ../src/nm-config.c:474 ../src/nm-iface-helper.c:311
+#: ../src/nm-config.c:494 ../src/nm-iface-helper.c:311
 msgid "Don't become a daemon, and log to stderr"
 msgstr "Να μην γίνει δαίμονας και να συνδεθεί στο τυπικό σφάλμα"
 
 #. These three are hidden for now, and should eventually just go away.
-#: ../src/nm-config.c:477
+#: ../src/nm-config.c:497
 msgid "An http(s) address for checking internet connectivity"
 msgstr "Μια διεύθυνση http(s) για τον έλεγχο της συνδεσιμότητας στο διαδίκτυο"
 
-#: ../src/nm-config.c:478
+#: ../src/nm-config.c:498
 msgid "The interval between connectivity checks (in seconds)"
 msgstr "Το διάστημα μεταξύ των ελέγχων συνδεσιμότητας (σε δευτερόλεπτα)"
 
-#: ../src/nm-config.c:479
+#: ../src/nm-config.c:499
 msgid "The expected start of the response"
 msgstr "Η αναμενόμενη έναρξη της απάντησης"
 
@@ -10276,6 +10283,10 @@ msgstr "Άγνωστο επίπεδο καταγραφής '%s'"
 #, c-format
 msgid "Unknown log domain '%s'"
 msgstr "Άγνωστος τομέας καταγραφής '%s'"
+
+#, fuzzy
+#~ msgid "unrecognized option '%s'"
+#~ msgstr "άκυρη επιλογή '%s'"
 
 #~ msgid "Option '--terse' requires specifying '--fields'"
 #~ msgstr "Η επιλογή '--terse' απαιτεί να καθορισθούν '--fields'"

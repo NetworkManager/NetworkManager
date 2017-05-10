@@ -12,7 +12,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-04-19 12:10+0200\n"
+"POT-Creation-Date: 2017-05-10 10:43+0200\n"
 "PO-Revision-Date: 2017-03-22 10:44-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Punjabi/Panjabi <punjabi-users@lists.sf.net>\n"
@@ -128,7 +128,7 @@ msgstr "WINS"
 msgid "OPTION"
 msgstr "ਚੋਣ"
 
-#: ../clients/cli/common.c:378 ../clients/cli/common.c:448
+#: ../clients/cli/common.c:378 ../clients/cli/common.c:449
 #, fuzzy, c-format
 msgid "invalid prefix '%s'; <1-%d> allowed"
 msgstr "ਅਢੁਕਵਾਂ ਅਗੇਤਰ '%s'; <1-32> ਮਨਜੂਰ ਕੀਤਾ ਗਿਆ"
@@ -138,86 +138,81 @@ msgstr "ਅਢੁਕਵਾਂ ਅਗੇਤਰ '%s'; <1-32> ਮਨਜੂਰ ਕ�
 msgid "invalid IP address: %s"
 msgstr "ਅਢੁਕਵਾਂ IPv4 ਐਡਰੈਸ '%s'"
 
-#: ../clients/cli/common.c:435
-#, fuzzy, c-format
+#: ../clients/cli/common.c:426
+#, fuzzy
 msgid ""
-"'%s' is not valid (the format is: ip[/prefix] [next-hop] [metric] [attr=val] "
-"[attr=val])"
+"The valid syntax is: 'ip[/prefix] [next-hop] [metric] [attribute=val]... [,"
+"ip[/prefix] ...]'"
 msgstr "'%s' ਢੁਕਵਾਂ ਨਹੀਂ ਹੈ (ip/[prefix] next-hop [metric] ਵਰਤੋ)"
 
-#: ../clients/cli/common.c:457
+#: ../clients/cli/common.c:458
 #, c-format
 msgid "the next hop ('%s') must be first"
 msgstr ""
 
-#: ../clients/cli/common.c:463
+#: ../clients/cli/common.c:464
 #, c-format
 msgid "the metric ('%s') must be before attributes"
 msgstr ""
 
-#: ../clients/cli/common.c:495
+#: ../clients/cli/common.c:504
 #, fuzzy, c-format
-msgid "unrecognized option '%s'"
-msgstr "ਅਢੁਕਵੀਂ ਚੋਣ '%s'"
-
-#: ../clients/cli/common.c:503
-#, c-format
-msgid "invalid route: %s"
+msgid "invalid route: %s. "
 msgstr "ਅਢੁਕਵਾਂ IPv4 ਰੂਟ '%s'"
 
-#: ../clients/cli/common.c:515
+#: ../clients/cli/common.c:516
 msgid "default route cannot be added (NetworkManager handles it by itself)"
 msgstr ""
 
-#: ../clients/cli/common.c:541
+#: ../clients/cli/common.c:542
 msgid "unmanaged"
 msgstr "ਬਿਨ-ਪਰਬੰਧ"
 
-#: ../clients/cli/common.c:543
+#: ../clients/cli/common.c:544
 msgid "unavailable"
 msgstr "ਨਾ-ਉਪਲੱਬਧ"
 
-#: ../clients/cli/common.c:545 ../clients/cli/general.c:248
+#: ../clients/cli/common.c:546 ../clients/cli/general.c:248
 msgid "disconnected"
 msgstr "ਡਿਸ-ਕੁਨੈਕਟ ਕੀਤਾ"
 
-#: ../clients/cli/common.c:547
+#: ../clients/cli/common.c:548
 msgid "connecting (prepare)"
 msgstr "ਕੁਨੈਕਟ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ (ਤਿਆਰੀ)"
 
-#: ../clients/cli/common.c:549
+#: ../clients/cli/common.c:550
 msgid "connecting (configuring)"
 msgstr "ਕੁਨੈਕਟ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ (ਸੰਰਚਨਾ ਜਾਰੀ)"
 
-#: ../clients/cli/common.c:551
+#: ../clients/cli/common.c:552
 msgid "connecting (need authentication)"
 msgstr "ਕੁਨੈਕਟ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ (ਪਰਮਾਣਿਕਤਾ ਦੀ ਲੋੜ)"
 
-#: ../clients/cli/common.c:553
+#: ../clients/cli/common.c:554
 msgid "connecting (getting IP configuration)"
 msgstr "ਕੁਨੈਕਟ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ (IP ਸੰਰਚਨਾ ਲਈ ਜਾ ਰਹੀ ਹੈ)"
 
-#: ../clients/cli/common.c:555
+#: ../clients/cli/common.c:556
 msgid "connecting (checking IP connectivity)"
 msgstr "ਕੁਨੈਕਟ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ (IP ਕੁਨੈਕਸ਼ਨ ਜਾਂਚਿਆ ਜਾ ਰਿਹਾ ਹੈ)"
 
-#: ../clients/cli/common.c:557
+#: ../clients/cli/common.c:558
 msgid "connecting (starting secondary connections)"
 msgstr "ਕੁਨੈਕਟ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ (ਸੈਕੰਡਰੀ ਕੁਨੈਕਸ਼ਨ ਸ਼ੁਰੂ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ)"
 
-#: ../clients/cli/common.c:559 ../clients/cli/general.c:244
+#: ../clients/cli/common.c:560 ../clients/cli/general.c:244
 msgid "connected"
 msgstr "ਕੁਨੈਕਟ ਹੋਇਆ"
 
-#: ../clients/cli/common.c:561 ../clients/cli/connections.c:647
+#: ../clients/cli/common.c:562 ../clients/cli/connections.c:647
 msgid "deactivating"
 msgstr "ਅਕਿਰਿਆਸ਼ੀਲ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ"
 
-#: ../clients/cli/common.c:563
+#: ../clients/cli/common.c:564
 msgid "connection failed"
 msgstr "ਸੰਪਰਕ ਅਸਫਲ ਹੋਇਆ"
 
-#: ../clients/cli/common.c:565 ../clients/cli/common.c:582
+#: ../clients/cli/common.c:566 ../clients/cli/common.c:583
 #: ../clients/cli/connections.c:652 ../clients/cli/connections.c:675
 #: ../clients/cli/devices.c:1193 ../clients/cli/devices.c:1235
 #: ../clients/cli/devices.c:1237 ../clients/cli/general.c:251
@@ -230,12 +225,12 @@ msgid "unknown"
 msgstr "ਅਣਜਾਣ"
 
 #. "CAPABILITIES"
-#: ../clients/cli/common.c:574 ../clients/cli/connections.c:963
+#: ../clients/cli/common.c:575 ../clients/cli/connections.c:963
 #: ../clients/cli/connections.c:965 ../clients/cli/connections.c:967
 #: ../clients/cli/connections.c:1002 ../clients/cli/connections.c:1072
 #: ../clients/cli/connections.c:1073 ../clients/cli/connections.c:1075
-#: ../clients/cli/connections.c:3495 ../clients/cli/connections.c:4730
-#: ../clients/cli/connections.c:6561 ../clients/cli/connections.c:6562
+#: ../clients/cli/connections.c:3512 ../clients/cli/connections.c:4747
+#: ../clients/cli/connections.c:6578 ../clients/cli/connections.c:6579
 #: ../clients/cli/devices.c:869 ../clients/cli/devices.c:1158
 #: ../clients/cli/devices.c:1159 ../clients/cli/devices.c:1160
 #: ../clients/cli/devices.c:1161 ../clients/cli/devices.c:1162
@@ -249,12 +244,12 @@ msgstr "ਅਣਜਾਣ"
 msgid "yes"
 msgstr "ਹਾਂ"
 
-#: ../clients/cli/common.c:576 ../clients/cli/connections.c:963
+#: ../clients/cli/common.c:577 ../clients/cli/connections.c:963
 #: ../clients/cli/connections.c:965 ../clients/cli/connections.c:967
 #: ../clients/cli/connections.c:1072 ../clients/cli/connections.c:1073
-#: ../clients/cli/connections.c:1075 ../clients/cli/connections.c:3496
-#: ../clients/cli/connections.c:4729 ../clients/cli/connections.c:6561
-#: ../clients/cli/connections.c:6562 ../clients/cli/devices.c:869
+#: ../clients/cli/connections.c:1075 ../clients/cli/connections.c:3513
+#: ../clients/cli/connections.c:4746 ../clients/cli/connections.c:6578
+#: ../clients/cli/connections.c:6579 ../clients/cli/devices.c:869
 #: ../clients/cli/devices.c:1158 ../clients/cli/devices.c:1159
 #: ../clients/cli/devices.c:1160 ../clients/cli/devices.c:1161
 #: ../clients/cli/devices.c:1162 ../clients/cli/devices.c:1197
@@ -268,372 +263,372 @@ msgstr "ਹਾਂ"
 msgid "no"
 msgstr "ਨਹੀਂ"
 
-#: ../clients/cli/common.c:578
+#: ../clients/cli/common.c:579
 msgid "yes (guessed)"
 msgstr ""
 
-#: ../clients/cli/common.c:580
+#: ../clients/cli/common.c:581
 msgid "no (guessed)"
 msgstr ""
 
-#: ../clients/cli/common.c:591
+#: ../clients/cli/common.c:592
 msgid "No reason given"
 msgstr "ਕੋਈ ਕਾਰਨ ਨਹੀਂ ਦਿੱਤਾ ਹੈ।"
 
 #. We should not really come here
-#: ../clients/cli/common.c:594 ../clients/cli/connections.c:3344
+#: ../clients/cli/common.c:595 ../clients/cli/connections.c:3361
 #, c-format
 msgid "Unknown error"
 msgstr "ਅਣਪਛਾਤੀ ਗਲਤੀ"
 
-#: ../clients/cli/common.c:597
+#: ../clients/cli/common.c:598
 msgid "Device is now managed"
 msgstr "ਜੰਤਰ ਹੁਣ ਪ੍ਰਬੰਧ ਅਧੀਨ ਹੈ"
 
-#: ../clients/cli/common.c:600
+#: ../clients/cli/common.c:601
 msgid "Device is now unmanaged"
 msgstr "ਜੰਤਰ ਹੁਣ ਪਰਬੰਧ ਅਧੀਨ ਨਹੀਂ ਹੈ"
 
-#: ../clients/cli/common.c:603
+#: ../clients/cli/common.c:604
 msgid "The device could not be readied for configuration"
 msgstr "ਜੰਤਰ ਨੂੰ ਸੰਰਚਨਾ ਲਈ ਤਿਆਰ ਨਹੀਂ ਕੀਤ ਜਾ ਸਕਿਆ"
 
-#: ../clients/cli/common.c:606
+#: ../clients/cli/common.c:607
 msgid ""
 "IP configuration could not be reserved (no available address, timeout, etc.)"
 msgstr ""
 "IP ਸੰਰਚਨਾ ਨੂੰ ਰਾਖਵਾਂ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ (ਕੋਈ ਐਡਰੈਸ ਉਪਲੱਬਧ ਨਹੀਂ, ਸਮਾਂ ਸਮਾਪਤ ਹੋਣਾ ਆਦਿ)"
 
-#: ../clients/cli/common.c:609
+#: ../clients/cli/common.c:610
 msgid "The IP configuration is no longer valid"
 msgstr "IP ਸੰਰਚਨਾ ਹੁਣ ਢੁੱਕਵੀਂ ਨਹੀਂ ਹੈ"
 
-#: ../clients/cli/common.c:612
+#: ../clients/cli/common.c:613
 msgid "Secrets were required, but not provided"
 msgstr "ਭੇਦ ਦੀ ਲੋੜ ਸੀ, ਪਰ ਦਿੱਤਾ ਨਹੀਂ ਗਿਆ"
 
-#: ../clients/cli/common.c:615
+#: ../clients/cli/common.c:616
 msgid "802.1X supplicant disconnected"
 msgstr "802.1X ਸਪਲੀਕੈਂਟ ਡਿਸ-ਕੁਨੈਕਟ ਹੈ"
 
-#: ../clients/cli/common.c:618
+#: ../clients/cli/common.c:619
 msgid "802.1X supplicant configuration failed"
 msgstr "802.1X ਸਪਲੀਕੈਂਟ ਸੰਰਚਨਾ ਫੇਲ੍ਹ ਹੈ"
 
-#: ../clients/cli/common.c:621
+#: ../clients/cli/common.c:622
 msgid "802.1X supplicant failed"
 msgstr "802.1X ਸਪਲੀਕੈਂਟ ਫੇਲ੍ਹ ਹੈ"
 
-#: ../clients/cli/common.c:624
+#: ../clients/cli/common.c:625
 msgid "802.1X supplicant took too long to authenticate"
 msgstr "802.1X ਸਪਲੀਕੈਂਟ ਨੇ ਪਰਮਾਣਿਤ ਹੋਣ ਲਈ ਬਹੁਤ ਲੰਮਾ ਸਮਾਂ ਲੈ ਲਿਆ ਹੈ"
 
-#: ../clients/cli/common.c:627
+#: ../clients/cli/common.c:628
 msgid "PPP service failed to start"
 msgstr "PPP ਸਰਵਿਸ ਸ਼ੁਰੂ ਕਰਨ ਲਈ ਫੇਲ੍ਹ"
 
-#: ../clients/cli/common.c:630
+#: ../clients/cli/common.c:631
 msgid "PPP service disconnected"
 msgstr "PPP ਸਰਵਿਸ ਡਿਸ-ਕੁਨੈਕਟ ਹੈ"
 
-#: ../clients/cli/common.c:633
+#: ../clients/cli/common.c:634
 msgid "PPP failed"
 msgstr "PPP ਫੇਲ੍ਹ ਹੈ"
 
-#: ../clients/cli/common.c:636
+#: ../clients/cli/common.c:637
 msgid "DHCP client failed to start"
 msgstr "DHCP ਕਲਾਈਂਟ ਸ਼ੁਰੂ ਹੋਣ ਵਿੱਚ ਅਸਫਲ"
 
-#: ../clients/cli/common.c:639
+#: ../clients/cli/common.c:640
 msgid "DHCP client error"
 msgstr "DHCP ਕਲਾਈਂਟ ਗਲਤੀ"
 
-#: ../clients/cli/common.c:642
+#: ../clients/cli/common.c:643
 msgid "DHCP client failed"
 msgstr "DHCP ਕਲਾਈਂਟ ਅਸਫਲ ਹੋਇਆ"
 
-#: ../clients/cli/common.c:645
+#: ../clients/cli/common.c:646
 msgid "Shared connection service failed to start"
 msgstr "ਸਾਂਝੀ ਸੰਪਰਕ ਸੇਵਾ ਸ਼ੁਰੂ ਹੋਣ ਵਿੱਚ ਅਸਫਲ"
 
-#: ../clients/cli/common.c:648
+#: ../clients/cli/common.c:649
 msgid "Shared connection service failed"
 msgstr "ਸਾਂਝੀ ਸੰਪਰਕ ਸੇਵਾ ਅਸਫਲ ਹੋਈ"
 
-#: ../clients/cli/common.c:651
+#: ../clients/cli/common.c:652
 msgid "AutoIP service failed to start"
 msgstr "ਆਟੋ-IP ਸਰਵਿਸ ਸ਼ੁਰੂ ਕਰਨ ਲਈ ਫੇਲ੍ਹ"
 
-#: ../clients/cli/common.c:654
+#: ../clients/cli/common.c:655
 msgid "AutoIP service error"
 msgstr "ਆਟੋ-IP ਸਰਵਿਸ ਗਲਤੀ"
 
-#: ../clients/cli/common.c:657
+#: ../clients/cli/common.c:658
 msgid "AutoIP service failed"
 msgstr "ਆਟੋ-IP ਸਰਵਿਸ ਫੇਲ੍ਹ ਹੋਈ"
 
-#: ../clients/cli/common.c:660
+#: ../clients/cli/common.c:661
 msgid "The line is busy"
 msgstr "ਲਾਈਨ ਰੁੱਝੀ ਹੋਈ ਹੈ"
 
-#: ../clients/cli/common.c:663
+#: ../clients/cli/common.c:664
 msgid "No dial tone"
 msgstr "ਕੋਈ ਡਾਇਲ ਟੋਨ ਨਹੀਂ"
 
-#: ../clients/cli/common.c:666
+#: ../clients/cli/common.c:667
 msgid "No carrier could be established"
 msgstr "ਕੋਈ ਕੈਰੀਅਰ ਤਿਆਰ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ"
 
-#: ../clients/cli/common.c:669
+#: ../clients/cli/common.c:670
 msgid "The dialing request timed out"
 msgstr "ਡਾਇਲ ਕਰਨ ਦੀ ਮੰਗ ਲਈ ਸਮਾਂ ਸਮਾਪਤ"
 
-#: ../clients/cli/common.c:672
+#: ../clients/cli/common.c:673
 msgid "The dialing attempt failed"
 msgstr "ਡਾਇਲ ਕਰਨ ਦੀ ਕੋਸ਼ਿਸ਼ ਫੇਲ੍ਹ ਹੋਈ"
 
-#: ../clients/cli/common.c:675
+#: ../clients/cli/common.c:676
 msgid "Modem initialization failed"
 msgstr "ਮਾਡਮ ਸ਼ੁਰੂਆਤ ਕਰਨ ਲਈ ਫੇਲ੍ਹ"
 
-#: ../clients/cli/common.c:678
+#: ../clients/cli/common.c:679
 msgid "Failed to select the specified APN"
 msgstr "ਦਿੱਤੇ APN ਨੂੰ ਚੁਣਨ ਲਈ ਫੇਲ੍ਹ ਹੈ"
 
-#: ../clients/cli/common.c:681
+#: ../clients/cli/common.c:682
 msgid "Not searching for networks"
 msgstr "ਨੈੱਟਵਰਕ ਲਈ ਖੋਜ ਨਹੀਂ ਕੀਤੀ ਜਾ ਰਹੀ"
 
-#: ../clients/cli/common.c:684
+#: ../clients/cli/common.c:685
 msgid "Network registration denied"
 msgstr "ਨੈੱਟਵਰਕ ਰਜਿਸਟਰੇਸ਼ਨ ਉੱਤੇ ਪਾਬੰਦੀ"
 
-#: ../clients/cli/common.c:687
+#: ../clients/cli/common.c:688
 msgid "Network registration timed out"
 msgstr "ਨੈੱਟਵਰਕ ਰਜਿਸਟਰ ਲਈ ਸਮਾਂ-ਸਮਾਪਤ"
 
-#: ../clients/cli/common.c:690
+#: ../clients/cli/common.c:691
 msgid "Failed to register with the requested network"
 msgstr "ਮੰਗੇ ਗਏ ਨੈੱਟਵਰਕ ਉੱਤੇ ਰਜਿਸਟਰ ਕਰਨ ਲਈ ਫੇਲ੍ਹ"
 
-#: ../clients/cli/common.c:693
+#: ../clients/cli/common.c:694
 msgid "PIN check failed"
 msgstr "PIN ਚੈਕ ਫੇਲ੍ਹ ਹੈ"
 
-#: ../clients/cli/common.c:696
+#: ../clients/cli/common.c:697
 msgid "Necessary firmware for the device may be missing"
 msgstr "ਜੰਤਰ ਲਈ ਲੋੜੀਦਾ ਫਿਰਮਵੇਅਰ ਸ਼ਾਇਦ ਮੌਜੂਦ ਨਹੀਂ"
 
-#: ../clients/cli/common.c:699
+#: ../clients/cli/common.c:700
 msgid "The device was removed"
 msgstr "ਜੰਤਰ ਹਟਾਇਆ ਗਿਆ ਸੀ"
 
-#: ../clients/cli/common.c:702
+#: ../clients/cli/common.c:703
 msgid "NetworkManager went to sleep"
 msgstr "ਨੈੱਟਵਰਕਮੈਨੇਜਰ ਸਲੀਪ ਮੋਡ ਵਿੱਚ ਗਿਆ"
 
-#: ../clients/cli/common.c:705
+#: ../clients/cli/common.c:706
 msgid "The device's active connection disappeared"
 msgstr "ਜੰਤਰ ਦਾ ਸਰਗਰਮ ਕੁਨੈਕਸ਼ਨ ਅਲੋਪ ਹੋਇਆ"
 
-#: ../clients/cli/common.c:708
+#: ../clients/cli/common.c:709
 msgid "Device disconnected by user or client"
 msgstr "ਜੰਤਰ ਯੂਜ਼ਰ ਜਾਂ ਕਲਾਇਟ ਵਲੋਂ ਡਿਸ-ਕੁਨੈਕਟ ਕੀਤਾ ਗਿਆ ਹੈ"
 
-#: ../clients/cli/common.c:711
+#: ../clients/cli/common.c:712
 msgid "Carrier/link changed"
 msgstr "ਕੈਰੀਅਰ/ਲਿੰਕ ਬਦਲਿਆ"
 
-#: ../clients/cli/common.c:714
+#: ../clients/cli/common.c:715
 msgid "The device's existing connection was assumed"
 msgstr "ਜੰਤਰ ਦਾ ਮੌਜੂਦਾ ਕੁਨੈਕਸ਼ਨ ਮੁੜ-ਪ੍ਰਾਪਤ ਕੀਤਾ ਗਿਆ"
 
-#: ../clients/cli/common.c:717
+#: ../clients/cli/common.c:718
 msgid "The supplicant is now available"
 msgstr "ਸਪਲੀਕੈਂਟ ਹੁਣ ਉਪਲੱਬਧ ਹੈ"
 
-#: ../clients/cli/common.c:720
+#: ../clients/cli/common.c:721
 msgid "The modem could not be found"
 msgstr "ਮਾਡਮ ਨਹੀਂ ਲੱਭਿਆ ਜਾ ਸਕਿਆ"
 
-#: ../clients/cli/common.c:723
+#: ../clients/cli/common.c:724
 msgid "The Bluetooth connection failed or timed out"
 msgstr "ਬਲਿਊਟੁੱਥ ਕੁਨੈਕਸ਼ਨ ਫੇਲ੍ਹ ਹੋਇਆ ਜਾਂ ਸਮਾਂ ਸਮਾਪਤ"
 
-#: ../clients/cli/common.c:726
+#: ../clients/cli/common.c:727
 msgid "GSM Modem's SIM card not inserted"
 msgstr "GSM ਦਾ ਸਿਮ ਕਾਰਡ ਨਹੀਂ ਪਾਇਆ ਗਿਆ ਹੈ"
 
-#: ../clients/cli/common.c:729
+#: ../clients/cli/common.c:730
 msgid "GSM Modem's SIM PIN required"
 msgstr "GSM ਮਾਡਮ ਦਾ ਸਿਮ ਪਿੰਨ ਚਾਹੀਦਾ ਹੈ"
 
-#: ../clients/cli/common.c:732
+#: ../clients/cli/common.c:733
 msgid "GSM Modem's SIM PUK required"
 msgstr "GSM ਮਾਡਮ ਦਾ ਸਿਮ PUK ਚਾਹੀਦਾ ਹੈ"
 
-#: ../clients/cli/common.c:735
+#: ../clients/cli/common.c:736
 msgid "GSM Modem's SIM wrong"
 msgstr "GSM ਮਾਡਮ ਦਾ ਗਲਤ ਸਿਮ (SIM)"
 
-#: ../clients/cli/common.c:738
+#: ../clients/cli/common.c:739
 msgid "InfiniBand device does not support connected mode"
 msgstr "ਇੰਫੀਬੀਮ ਜੰਤਰ ਕੁਨੈਕਟ ਕੀਤੇ ਮੋਡ ਵਿੱਚ ਸਹਾਇਕ ਨਹੀਂ ਹੈ"
 
-#: ../clients/cli/common.c:741
+#: ../clients/cli/common.c:742
 msgid "A dependency of the connection failed"
 msgstr "ਕੁਨੈਕਸ਼ਨ ਦੀ ਨਿਰਭਰਤਾ ਫੇਲ੍ਹ ਹੋਇਆ"
 
-#: ../clients/cli/common.c:744
+#: ../clients/cli/common.c:745
 msgid "A problem with the RFC 2684 Ethernet over ADSL bridge"
 msgstr "ADSL ਬਰਿੱਜ਼ ਉੱਤੇ RFC 2684 ਈਥਰਨੈੱਟ ਨਾਲ ਸਮੱਸਿਆ ਆਈ ਹੈ"
 
-#: ../clients/cli/common.c:747
+#: ../clients/cli/common.c:748
 msgid "ModemManager is unavailable"
 msgstr "ਮਾਡਮਮੈਨੇਜਰ ਉਪਲੱਬਧ ਨਹੀਂ ਹੈ"
 
-#: ../clients/cli/common.c:750
+#: ../clients/cli/common.c:751
 msgid "The Wi-Fi network could not be found"
 msgstr "ਵਾਈ-ਫਾਈ ਨੈੱਟਵਰਕ ਲੱਭਿਆ ਨਹੀਂ ਜਾ ਸਕਿਆ"
 
-#: ../clients/cli/common.c:753
+#: ../clients/cli/common.c:754
 msgid "A secondary connection of the base connection failed"
 msgstr "ਬੇਸ ਕੁਨੈਕਸ਼ਨ ਦਾ ਸੈਕੰਡਰੀ ਕੁਨੈਕਸ਼ਨ ਫੇਲ੍ਹ ਹੋਇਆ ਹੈ"
 
-#: ../clients/cli/common.c:756
+#: ../clients/cli/common.c:757
 msgid "DCB or FCoE setup failed"
 msgstr "DCB ਜਾਂ FCoE ਸੈੱਟਅਪ ਅਸਫਲ ਹੋਇਆ"
 
-#: ../clients/cli/common.c:759
+#: ../clients/cli/common.c:760
 msgid "teamd control failed"
 msgstr "teamd ਕੰਟਰੋਲ ਅਸਫਲ ਹੋਇਆ"
 
-#: ../clients/cli/common.c:762
+#: ../clients/cli/common.c:763
 #, fuzzy
 msgid "Modem failed or no longer available"
 msgstr "ਮਾਡਮਮੈਨੇਜਰ ਉਪਲੱਬਧ ਨਹੀਂ ਹੈ"
 
-#: ../clients/cli/common.c:765
+#: ../clients/cli/common.c:766
 #, fuzzy
 msgid "Modem now ready and available"
 msgstr "ਮਾਡਮਮੈਨੇਜਰ ਉਪਲੱਬਧ ਨਹੀਂ ਹੈ"
 
-#: ../clients/cli/common.c:768
+#: ../clients/cli/common.c:769
 msgid "SIM PIN was incorrect"
 msgstr ""
 
-#: ../clients/cli/common.c:771
+#: ../clients/cli/common.c:772
 #, fuzzy
 msgid "New connection activation was enqueued"
 msgstr "ਗਲਤੀ: ਕੁਨੈਕਸ਼ਨ ਚਾਲੂ ਕਰਨ ਲਈ ਫੇਲ੍ਹ ਹੈ।"
 
-#: ../clients/cli/common.c:774
+#: ../clients/cli/common.c:775
 #, fuzzy
 msgid "The device's parent changed"
 msgstr "ਜੰਤਰ ਹਟਾਇਆ ਗਿਆ ਸੀ"
 
-#: ../clients/cli/common.c:777
+#: ../clients/cli/common.c:778
 #, fuzzy
 msgid "The device parent's management changed"
 msgstr "ਜੰਤਰ ਹਟਾਇਆ ਗਿਆ ਸੀ"
 
 #. TRANSLATORS: Unknown reason for a device state change (NMDeviceStateReason)
-#: ../clients/cli/common.c:781 ../libnm-glib/nm-device.c:1860
+#: ../clients/cli/common.c:782 ../libnm-glib/nm-device.c:1860
 #: ../libnm/nm-device.c:1660
 msgid "Unknown"
 msgstr "ਅਣਜਾਣ"
 
-#: ../clients/cli/common.c:823
+#: ../clients/cli/common.c:824
 #, c-format
 msgid "invalid priority map '%s'"
 msgstr "ਅਢੁਕਵਾਂ ਤਰਜੀਹ ਨਕਸ਼ਾ '%s'"
 
-#: ../clients/cli/common.c:830 ../clients/cli/common.c:836
+#: ../clients/cli/common.c:831 ../clients/cli/common.c:837
 #, c-format
 msgid "priority '%s' is not valid (<0-%ld>)"
 msgstr "ਤਰਜੀਹ '%s' ਢੁਕਵੀਂ ਨਹੀਂ ਹੈ (<0-%ld>)"
 
-#: ../clients/cli/common.c:910
+#: ../clients/cli/common.c:911
 #, c-format
 msgid "cannot read team config from file '%s'"
 msgstr ""
 
-#: ../clients/cli/common.c:917
+#: ../clients/cli/common.c:918
 #, c-format
 msgid "team config file '%s' contains non-valid utf-8"
 msgstr ""
 
-#: ../clients/cli/common.c:929
+#: ../clients/cli/common.c:930
 #, c-format
 msgid "'%s' does not contain a valid team configuration"
 msgstr ""
 
-#: ../clients/cli/common.c:932
+#: ../clients/cli/common.c:933
 #, c-format
 msgid "team configuration must be a JSON object"
 msgstr ""
 
-#: ../clients/cli/common.c:985
+#: ../clients/cli/common.c:986
 #, c-format
 msgid "cannot read pac-script from file '%s'"
 msgstr ""
 
-#: ../clients/cli/common.c:992
+#: ../clients/cli/common.c:993
 #, c-format
 msgid "file '%s' contains non-valid utf-8"
 msgstr ""
 
-#: ../clients/cli/common.c:1005
+#: ../clients/cli/common.c:1006
 #, c-format
 msgid "'%s' does not contain a valid PAC Script"
 msgstr ""
 
-#: ../clients/cli/common.c:1008
+#: ../clients/cli/common.c:1009
 #, c-format
 msgid "Not a valid PAC Script"
 msgstr ""
 
-#: ../clients/cli/common.c:1131
+#: ../clients/cli/common.c:1132
 #, fuzzy, c-format
 msgid "Error: openconnect failed: %s\n"
 msgstr "ਗਲਤੀ: ਸੰਪਰਕ ਪੜਤਾਲ ਅਸਫਲ ਹੋਈ: %s\n"
 
-#: ../clients/cli/common.c:1138
+#: ../clients/cli/common.c:1139
 #, c-format
 msgid "Error: openconnect failed with status %d\n"
 msgstr "ਗਲਤੀ: ਓਪਨਕਨੈਕਟ %d ਹਾਲਤ ਨਾਲ ਫੇਲ੍ਹ ਹੈ\n"
 
-#: ../clients/cli/common.c:1140
+#: ../clients/cli/common.c:1141
 #, fuzzy, c-format
 msgid "Error: openconnect failed with signal %d\n"
 msgstr "ਗਲਤੀ: ਸੰਪਰਕ ਢੁਕਵਾਂ ਨਹੀਂ ਹੈ: %s\n"
 
-#: ../clients/cli/common.c:1221
+#: ../clients/cli/common.c:1222
 #, c-format
 msgid ""
 "Warning: password for '%s' not given in 'passwd-file' and nmcli cannot ask "
 "without '--ask' option.\n"
 msgstr ""
 
-#: ../clients/cli/common.c:1650
+#: ../clients/cli/common.c:1651
 #, fuzzy, c-format
 msgid "Error: Could not create NMClient object: %s."
 msgstr "ਗਲਤੀ: NMClient ਆਬਜੈਕਟ ਪਰਾਕਸੀ ਨਹੀਂ ਬਣਾਇਆ ਜਾ ਸਕਿਆ।"
 
-#: ../clients/cli/common.c:1670
+#: ../clients/cli/common.c:1671
 msgid "Error: NetworkManager is not running."
 msgstr "ਗਲਤੀ: ਨੈੱਟਵਰਕਮੈਨੇਜਰ ਚੱਲ ਨਹੀਂ ਰਿਹਾ ਹੈ।"
 
-#: ../clients/cli/common.c:1767
+#: ../clients/cli/common.c:1768
 #, c-format
 msgid "Error: argument '%s' not understood. Try passing --help instead."
 msgstr ""
 
-#: ../clients/cli/common.c:1777
+#: ../clients/cli/common.c:1778
 msgid "Error: missing argument. Try passing --help."
 msgstr ""
 
-#: ../clients/cli/common.c:1830
+#: ../clients/cli/common.c:1831
 msgid "access denied"
 msgstr ""
 
@@ -685,7 +680,7 @@ msgstr "ਬਲੂਟੁੱਥ"
 msgid "Bonding mode"
 msgstr "ਲਿੰਕ ਮੌਨੀਟਰਿੰਗ"
 
-#: ../clients/cli/connections.c:85 ../clients/cli/connections.c:4303
+#: ../clients/cli/connections.c:85 ../clients/cli/connections.c:4320
 #, fuzzy
 msgid "Bonding monitoring mode"
 msgstr "ਲਿੰਕ ਮੌਨੀਟਰਿੰਗ"
@@ -1525,10 +1520,10 @@ msgstr "ਨੈੱਟਵਰਕਮੈਨੇਜਰ ਹਾਲਤ"
 msgid "NetworkManager connection profiles"
 msgstr "ਨੈੱਟਵਰਕਮੈਨੇਜਰ ਸਲੀਪ ਮੋਡ ਵਿੱਚ ਗਿਆ"
 
-#: ../clients/cli/connections.c:1855 ../clients/cli/connections.c:2600
-#: ../clients/cli/connections.c:2612 ../clients/cli/connections.c:2624
-#: ../clients/cli/connections.c:2800 ../clients/cli/connections.c:8639
-#: ../clients/cli/connections.c:8656 ../clients/cli/devices.c:2652
+#: ../clients/cli/connections.c:1872 ../clients/cli/connections.c:2617
+#: ../clients/cli/connections.c:2629 ../clients/cli/connections.c:2641
+#: ../clients/cli/connections.c:2817 ../clients/cli/connections.c:8656
+#: ../clients/cli/connections.c:8673 ../clients/cli/devices.c:2652
 #: ../clients/cli/devices.c:2662 ../clients/cli/devices.c:2898
 #: ../clients/cli/devices.c:2908 ../clients/cli/devices.c:2926
 #: ../clients/cli/devices.c:2935 ../clients/cli/devices.c:2956
@@ -1542,14 +1537,14 @@ msgstr "ਨੈੱਟਵਰਕਮੈਨੇਜਰ ਸਲੀਪ ਮੋਡ ਵਿੱ
 msgid "Error: %s argument is missing."
 msgstr "ਗਲਤੀ: %s ਆਰਗੂਮੈਂਟ ਮੌਜੂਦ ਨਹੀਂ ਹੈ।"
 
-#: ../clients/cli/connections.c:1874
+#: ../clients/cli/connections.c:1891
 #, fuzzy, c-format
 msgid "Error: %s - no such connection profile."
 msgstr "ਗਲਤੀ: %s - ਇੰਝ ਦਾ ਕੋਈ ਕੁਨੈਕਸ਼ਨ ਨਹੀਂ ਹੈ"
 
-#: ../clients/cli/connections.c:1938 ../clients/cli/connections.c:2587
-#: ../clients/cli/connections.c:2651 ../clients/cli/connections.c:8131
-#: ../clients/cli/connections.c:8242 ../clients/cli/connections.c:8770
+#: ../clients/cli/connections.c:1955 ../clients/cli/connections.c:2604
+#: ../clients/cli/connections.c:2668 ../clients/cli/connections.c:8148
+#: ../clients/cli/connections.c:8259 ../clients/cli/connections.c:8787
 #: ../clients/cli/devices.c:1554 ../clients/cli/devices.c:1841
 #: ../clients/cli/devices.c:2010 ../clients/cli/devices.c:2118
 #: ../clients/cli/devices.c:2307 ../clients/cli/devices.c:3553
@@ -1559,475 +1554,475 @@ msgstr "ਗਲਤੀ: %s - ਇੰਝ ਦਾ ਕੋਈ ਕੁਨੈਕਸ਼ਨ �
 msgid "Error: %s."
 msgstr "ਗਲਤੀ: %s"
 
-#: ../clients/cli/connections.c:2036
+#: ../clients/cli/connections.c:2053
 #, c-format
 msgid "no active connection on device '%s'"
 msgstr "ਜੰਤਰ '%s' ਉੱਤੇ ਕੋਈ ਚਾਲੂ ਕੁਨੈਕਸ਼ਨ ਨਹੀਂ ਹੈ"
 
-#: ../clients/cli/connections.c:2044
+#: ../clients/cli/connections.c:2061
 msgid "no active connection or device"
 msgstr "ਕੋਈ ਚਾਲੂ ਕੁਨੈਕਸ਼ਨ ਜਾਂ ਜੰਤਰ ਨਹੀਂ ਹੈ"
 
-#: ../clients/cli/connections.c:2064
+#: ../clients/cli/connections.c:2081
 #, c-format
 msgid "device '%s' not compatible with connection '%s':"
 msgstr ""
 
-#: ../clients/cli/connections.c:2100
+#: ../clients/cli/connections.c:2117
 #, c-format
 msgid "device '%s' not compatible with connection '%s'"
 msgstr "ਜੰਤਰ '%s' ਕੁਨੈਕਸ਼ਨ '%s' ਨਾਲ ਅਨੁਕੂਲ ਨਹੀਂ ਹੈ"
 
-#: ../clients/cli/connections.c:2103
+#: ../clients/cli/connections.c:2120
 #, c-format
 msgid "no device found for connection '%s'"
 msgstr "ਕੁਨੈਕਸ਼ਨ '%s' ਲਈ ਕੋਈ ਜੰਤਰ ਨਹੀਂ ਲੱਭਿਆ"
 
-#: ../clients/cli/connections.c:2123
+#: ../clients/cli/connections.c:2140
 #, fuzzy
 msgid "Unknown reason"
 msgstr "ਅਣਜਾਣ ਕਾਰਨ"
 
-#: ../clients/cli/connections.c:2125
+#: ../clients/cli/connections.c:2142
 #, fuzzy
 msgid "The connection was disconnected"
 msgstr "ਕੁਨੈਕਟ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ (ਸੈਕੰਡਰੀ ਕੁਨੈਕਸ਼ਨ ਸ਼ੁਰੂ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ)"
 
-#: ../clients/cli/connections.c:2127
+#: ../clients/cli/connections.c:2144
 #, fuzzy
 msgid "Disconnected by user"
 msgstr "ਡਿਸ-ਕੁਨੈਕਟ ਕੀਤਾ"
 
-#: ../clients/cli/connections.c:2129
+#: ../clients/cli/connections.c:2146
 #, fuzzy
 msgid "The base network connection was interrupted"
 msgstr "ਬੇਸ ਨੈੱਟਵਰਕ ਕੁਨੈਕਸ਼ਨ 'ਚ ਰੁਕਾਵਟ"
 
-#: ../clients/cli/connections.c:2131
+#: ../clients/cli/connections.c:2148
 #, fuzzy
 msgid "The VPN service stopped unexpectedly"
 msgstr "VPN ਸਰਵਿਸ ਅਚਾਨਕ ਰੁਕ ਗਈ"
 
-#: ../clients/cli/connections.c:2133
+#: ../clients/cli/connections.c:2150
 #, fuzzy
 msgid "The VPN service returned invalid configuration"
 msgstr "VPN ਸਰਵਿਸ ਨੇ ਅਢੁੱਕਵੀਂ ਸੰਰਚਨਾ ਵਾਪਸ ਕੀਤੀ"
 
-#: ../clients/cli/connections.c:2135
+#: ../clients/cli/connections.c:2152
 #, fuzzy
 msgid "The connection attempt timed out"
 msgstr "ਕੁਨੈਕਸ਼ਨ ਕੋਸ਼ਿਸ਼ ਦੌਰਾਨ ਸਮਾਂ ਸਮਾਪਤ ਹੋ ਗਿਆ"
 
-#: ../clients/cli/connections.c:2137
+#: ../clients/cli/connections.c:2154
 #, fuzzy
 msgid "The VPN service did not start in time"
 msgstr "VPN ਸਰਵਿਸ ਸਮੇਂ 'ਚ ਸ਼ੁਰੂ ਨਹੀਂ ਹੋਈ"
 
-#: ../clients/cli/connections.c:2139
+#: ../clients/cli/connections.c:2156
 #, fuzzy
 msgid "The VPN service failed to start"
 msgstr "VPN ਸਰਵਿਸ ਸ਼ੁਰੂ ਹੋਣ ਲਈ ਫੇਲ੍ਹ ਹੋਈ"
 
-#: ../clients/cli/connections.c:2141
+#: ../clients/cli/connections.c:2158
 #, fuzzy
 msgid "No valid secrets"
 msgstr "ਕੋਈ ਢੁੱਕਵਾਂ VPN ਭੇਦ  ਨਹੀਂ"
 
-#: ../clients/cli/connections.c:2143
+#: ../clients/cli/connections.c:2160
 #, fuzzy
 msgid "Invalid secrets"
 msgstr "ਅਢੁੱਕਵਾਂ VPN ਭੇਦ"
 
-#: ../clients/cli/connections.c:2145
+#: ../clients/cli/connections.c:2162
 #, fuzzy
 msgid "The connection was removed"
 msgstr "ਕੁਨੈਕਸ਼ਨ ਹਟਾਇਆ ਗਿਆ"
 
-#: ../clients/cli/connections.c:2147
+#: ../clients/cli/connections.c:2164
 #, fuzzy
 msgid "Master connection failed"
 msgstr "ਸੰਪਰਕ ਅਸਫਲ ਹੋਇਆ"
 
-#: ../clients/cli/connections.c:2149
+#: ../clients/cli/connections.c:2166
 #, fuzzy
 msgid "Could not create a software link"
 msgstr "ਆਰਜੀ ਫਾਈਲ ਨਹੀਂ ਬਣਾ ਸਕਿਆ: %s"
 
-#: ../clients/cli/connections.c:2151
+#: ../clients/cli/connections.c:2168
 #, fuzzy
 msgid "The device disappeared"
 msgstr "ਜੰਤਰ ਦਾ ਸਰਗਰਮ ਕੁਨੈਕਸ਼ਨ ਅਲੋਪ ਹੋਇਆ"
 
-#: ../clients/cli/connections.c:2154
+#: ../clients/cli/connections.c:2171
 #, fuzzy
 msgid "Invalid reason"
 msgstr "ਅਢੁਕਵਾਂ IPv4 ਰੂਟ '%s'"
 
-#: ../clients/cli/connections.c:2179 ../clients/cli/connections.c:2349
-#: ../clients/cli/connections.c:6451
+#: ../clients/cli/connections.c:2196 ../clients/cli/connections.c:2366
+#: ../clients/cli/connections.c:6468
 #, c-format
 msgid "Connection successfully activated (D-Bus active path: %s)\n"
 msgstr "ਕੁਨੈਕਸ਼ਨ ਠੀਕ ਤਰ੍ਹਾਂ ਸਰਗਰਮ ਕੀਤਾ ਗਿਆ (ਡੀ-ਬੱਸ ਐਕਟਿਵ ਪਾਥ: %s)\n"
 
-#: ../clients/cli/connections.c:2185 ../clients/cli/connections.c:2194
-#: ../clients/cli/connections.c:2329
+#: ../clients/cli/connections.c:2202 ../clients/cli/connections.c:2211
+#: ../clients/cli/connections.c:2346
 #, c-format
 msgid "Error: Connection activation failed: %s"
 msgstr "ਗਲਤੀ: ਕੁਨੈਕਸ਼ਨ ਚਾਲੂ ਕਰਨ ਲਈ ਫੇਲ੍ਹ: %s"
 
-#: ../clients/cli/connections.c:2219
+#: ../clients/cli/connections.c:2236
 #, fuzzy, c-format
 msgid ""
 "Connection successfully activated (master waiting for slaves) (D-Bus active "
 "path: %s)\n"
 msgstr "ਕੁਨੈਕਸ਼ਨ ਠੀਕ ਤਰ੍ਹਾਂ ਸਰਗਰਮ ਕੀਤਾ ਗਿਆ (ਡੀ-ਬੱਸ ਐਕਟਿਵ ਪਾਥ: %s)\n"
 
-#: ../clients/cli/connections.c:2244
+#: ../clients/cli/connections.c:2261
 #, c-format
 msgid "Error: Timeout expired (%d seconds)"
 msgstr ""
 
-#: ../clients/cli/connections.c:2410
+#: ../clients/cli/connections.c:2427
 #, fuzzy, c-format
 msgid "failed to read passwd-file '%s': %s"
 msgstr "ਗਲਤੀ: '%s' ਦਾ ਮੁੱਲ ਹਟਾਉਣ ਵਿੱਚ ਅਸਫਲ: %s\n"
 
-#: ../clients/cli/connections.c:2422
+#: ../clients/cli/connections.c:2439
 #, c-format
 msgid "missing colon in 'password' entry '%s'"
 msgstr ""
 
-#: ../clients/cli/connections.c:2430
+#: ../clients/cli/connections.c:2447
 #, c-format
 msgid "missing dot in 'password' entry '%s'"
 msgstr ""
 
-#: ../clients/cli/connections.c:2443
+#: ../clients/cli/connections.c:2460
 #, c-format
 msgid "invalid setting name in 'password' entry '%s'"
 msgstr ""
 
-#: ../clients/cli/connections.c:2499
+#: ../clients/cli/connections.c:2516
 #, c-format
 msgid "unknown device '%s'."
 msgstr "ਅਣਪਛਾਤਾ ਯੰਤਰ '%s'।"
 
-#: ../clients/cli/connections.c:2504
+#: ../clients/cli/connections.c:2521
 msgid "neither a valid connection nor device given"
 msgstr "ਨਾ ਤਾਂ ਕੋਈ ਢੁਕਵਾਂ ਸੰਪਰਕ ਤੇ ਨਾ ਹੀ ਯੰਤਰ ਦਿੱਤਾ ਗਿਆ ਹੈ"
 
-#: ../clients/cli/connections.c:2634 ../clients/cli/devices.c:1502
+#: ../clients/cli/connections.c:2651 ../clients/cli/devices.c:1502
 #: ../clients/cli/devices.c:2669 ../clients/cli/devices.c:2998
 #: ../clients/cli/devices.c:3607
 #, c-format
 msgid "Unknown parameter: %s\n"
 msgstr "ਅਣਜਾਣ ਪੈਰਾਮੀਟਰ: %s\n"
 
-#: ../clients/cli/connections.c:2659
+#: ../clients/cli/connections.c:2676
 msgid "preparing"
 msgstr "ਤਿਆਰ ਹੋ ਰਿਹਾ"
 
-#: ../clients/cli/connections.c:2679
+#: ../clients/cli/connections.c:2696
 #, fuzzy, c-format
 msgid "Connection '%s' (%s) successfully deleted.\n"
 msgstr "ਸੰਪਰਕ '%s' (%s) ਸਫਲਤਾਪੂਰਵਕ ਜੋੜਿਆ ਗਿਆ।\n"
 
-#: ../clients/cli/connections.c:2695
+#: ../clients/cli/connections.c:2712
 #, fuzzy, c-format
 msgid "Connection '%s' successfully deactivated (D-Bus active path: %s)\n"
 msgstr "ਕੁਨੈਕਸ਼ਨ ਠੀਕ ਤਰ੍ਹਾਂ ਸਰਗਰਮ ਕੀਤਾ ਗਿਆ (ਡੀ-ਬੱਸ ਐਕਟਿਵ ਪਾਥ: %s)\n"
 
-#: ../clients/cli/connections.c:2776 ../clients/cli/connections.c:8357
-#: ../clients/cli/connections.c:8389 ../clients/cli/connections.c:8546
+#: ../clients/cli/connections.c:2793 ../clients/cli/connections.c:8374
+#: ../clients/cli/connections.c:8406 ../clients/cli/connections.c:8563
 #, c-format
 msgid "Error: No connection specified."
 msgstr "ਗਲਤੀ: ਕੋਈ ਸੰਪਰਕ ਦਰਸਾਇਆ ਨਹੀਂ ਗਿਆ।"
 
-#: ../clients/cli/connections.c:2817
+#: ../clients/cli/connections.c:2834
 #, fuzzy, c-format
 msgid "Error: '%s' is not an active connection.\n"
 msgstr "ਗਲਤੀ: '%s' ਸਰਗਰਮ ਕੁਨੈਕਸ਼ਨ ਨਹੀਂ ਹੈ।"
 
-#: ../clients/cli/connections.c:2818
+#: ../clients/cli/connections.c:2835
 #, fuzzy, c-format
 msgid "Error: not all active connections found."
 msgstr "ਗਲਤੀ: '%s' ਸਰਗਰਮ ਕੁਨੈਕਸ਼ਨ ਨਹੀਂ ਹੈ।"
 
-#: ../clients/cli/connections.c:2827
+#: ../clients/cli/connections.c:2844
 #, fuzzy, c-format
 msgid "Error: no active connection provided."
 msgstr "ਗਲਤੀ: ਸੰਪਰਕ ਨੂੰ ਕਿਰਿਆਸ਼ੀਲ ਨਹੀਂ ਕਰ ਸਕਦਾ: %s।\n"
 
-#: ../clients/cli/connections.c:2861
+#: ../clients/cli/connections.c:2878
 #, fuzzy, c-format
 msgid "Connection '%s' deactivation failed: %s\n"
 msgstr "ਗਲਤੀ: ਕੁਨੈਕਸ਼ਨ ਚਾਲੂ ਕਰਨ ਲਈ ਫੇਲ੍ਹ: %s"
 
-#: ../clients/cli/connections.c:3324 ../clients/cli/utils.c:710
+#: ../clients/cli/connections.c:3341 ../clients/cli/utils.c:710
 #, c-format
 msgid "'%s' not among [%s]"
 msgstr "'%s' [%s] ਵਿੱਚ ਨਹੀਂ ਹੈ"
 
-#: ../clients/cli/connections.c:3484
+#: ../clients/cli/connections.c:3501
 #, c-format
 msgid "Warning: master='%s' doesn't refer to any existing profile.\n"
 msgstr ""
 
-#: ../clients/cli/connections.c:3658
+#: ../clients/cli/connections.c:3675
 #, fuzzy, c-format
 msgid "Error: don't know how to create '%s' setting."
 msgstr "ਗਲਤੀ: ਸਿਸਟਮ ਸੈਟਿੰਗ ਨਹੀਂ ਲਈ ਜਾ ਸਕੀ।"
 
-#: ../clients/cli/connections.c:3669
+#: ../clients/cli/connections.c:3686
 #, c-format
 msgid "Error: invalid property '%s': %s."
 msgstr "ਗਲਤੀ: ਅਢੁਕਵਾਂ ਗੁਣ '%s': %s।"
 
-#: ../clients/cli/connections.c:3686
+#: ../clients/cli/connections.c:3703
 #, c-format
 msgid "Error: failed to modify %s.%s: %s."
 msgstr "ਗਲਤੀ: %s.%s ਨੂੰ ਸੁਧਾਰਨ ਵਿੱਚ ਅਸਫਲ: %s।"
 
-#: ../clients/cli/connections.c:3705
+#: ../clients/cli/connections.c:3722
 #, fuzzy, c-format
 msgid "Error: failed to remove a value from %s.%s: %s."
 msgstr "ਗਲਤੀ: '%s' ਦਾ ਮੁੱਲ ਹਟਾਉਣ ਵਿੱਚ ਅਸਫਲ: %s\n"
 
-#: ../clients/cli/connections.c:3731
+#: ../clients/cli/connections.c:3748
 #, fuzzy, c-format
 msgid "Error: '%s' is mandatory."
 msgstr "ਗਲਤੀ: '%s' ਸੈਟਿੰਗ ਮੌਜੂਦ ਨਹੀਂ ਹੈ\n"
 
-#: ../clients/cli/connections.c:3763
+#: ../clients/cli/connections.c:3780
 #, fuzzy, c-format
 msgid "Error: invalid slave type; %s."
 msgstr "ਗਲਤੀ: ਅਢੁਕਵੀਂ ਸੰਪਰਕ ਕਿਸਮ; %s।"
 
-#: ../clients/cli/connections.c:3776
+#: ../clients/cli/connections.c:3793
 #, c-format
 msgid "Error: invalid connection type; %s."
 msgstr "ਗਲਤੀ: ਅਢੁਕਵੀਂ ਸੰਪਰਕ ਕਿਸਮ; %s।"
 
-#: ../clients/cli/connections.c:3985
+#: ../clients/cli/connections.c:4002
 #, fuzzy, c-format
 msgid "Error: bad connection type: %s."
 msgstr "ਗਲਤੀ: ਅਢੁਕਵੀਂ ਸੰਪਰਕ ਕਿਸਮ; %s।"
 
-#: ../clients/cli/connections.c:4048
+#: ../clients/cli/connections.c:4065
 #, c-format
 msgid "Error: '%s': %s"
 msgstr ""
 
-#: ../clients/cli/connections.c:4069
+#: ../clients/cli/connections.c:4086
 #, fuzzy
 msgid "Error: master is required"
 msgstr "ਗਲਤੀ: 'master' ਲੋੜੀਂਦਾ ਹੈ।"
 
-#: ../clients/cli/connections.c:4128
+#: ../clients/cli/connections.c:4145
 #, fuzzy, c-format
 msgid "Error: error adding bond option '%s=%s'."
 msgstr "ਗਲਤੀ: ਅਣਪਛਾਤਾ ਸੰਪਰਕ '%s'।"
 
-#: ../clients/cli/connections.c:4159
+#: ../clients/cli/connections.c:4176
 #, c-format
 msgid "Error: '%s' is not a valid monitoring mode; use '%s' or '%s'.\n"
 msgstr "ਗਲਤੀ: '%s' ਇੱਕ ਢੁਕਵਾਂ ਮੌਨੀਟਰ ਕਰਨ ਵਾਲਾ ਮੋਡ ਨਹੀਂ ਹੈ; '%s' ਜਾਂ '%s' ਵਰਤੋ।\n"
 
-#: ../clients/cli/connections.c:4190
+#: ../clients/cli/connections.c:4207
 #, c-format
 msgid "Error: 'bt-type': '%s' not valid; use [%s, %s (%s), %s]."
 msgstr "ਗਲਤੀ: 'bt-type': '%s' ਢੁਕਵੀਂ ਨਹੀਂ; [%s, %s (%s), %s] ਵਰਤੋ।"
 
-#: ../clients/cli/connections.c:4265
+#: ../clients/cli/connections.c:4282
 #, fuzzy
 msgid "PPPoE username"
 msgstr "PPPoE ਯੂਜ਼ਰ-ਨਾਂ: "
 
-#: ../clients/cli/connections.c:4266 ../clients/cli/connections.c:4287
-#: ../clients/cli/connections.c:4289 ../clients/cli/connections.c:4338
+#: ../clients/cli/connections.c:4283 ../clients/cli/connections.c:4304
+#: ../clients/cli/connections.c:4306 ../clients/cli/connections.c:4355
 #, fuzzy
 msgid "Password [none]"
 msgstr "ਗੁਪਤ-ਸ਼ਬਦ [ਕੋਈ ਨਹੀਂ]: "
 
-#: ../clients/cli/connections.c:4267
+#: ../clients/cli/connections.c:4284
 #, fuzzy
 msgid "Service [none]"
 msgstr "ਸੇਵਾ [ਕੋਈ ਨਹੀਂ]: "
 
-#: ../clients/cli/connections.c:4268 ../clients/cli/connections.c:4271
-#: ../clients/cli/connections.c:4280
+#: ../clients/cli/connections.c:4285 ../clients/cli/connections.c:4288
+#: ../clients/cli/connections.c:4297
 #, fuzzy
 msgid "MTU [auto]"
 msgstr "MTU [ਸ੍ਵੈ-ਚਲਿਤ]: "
 
-#: ../clients/cli/connections.c:4269 ../clients/cli/connections.c:4272
-#: ../clients/cli/connections.c:4281 ../clients/cli/connections.c:4284
-#: ../clients/cli/connections.c:4325
+#: ../clients/cli/connections.c:4286 ../clients/cli/connections.c:4289
+#: ../clients/cli/connections.c:4298 ../clients/cli/connections.c:4301
+#: ../clients/cli/connections.c:4342
 #, fuzzy
 msgid "MAC [none]"
 msgstr "MAC [ਕੋਈ ਨਹੀਂ]: "
 
-#: ../clients/cli/connections.c:4270 ../clients/cli/connections.c:4282
+#: ../clients/cli/connections.c:4287 ../clients/cli/connections.c:4299
 #, fuzzy
 msgid "Cloned MAC [none]"
 msgstr "ਕਲੋਨ ਕੀਤਾ MAC [ਕੋਈ ਨਹੀਂ]: "
 
-#: ../clients/cli/connections.c:4275
+#: ../clients/cli/connections.c:4292
 #, fuzzy
 msgid "Parent interface [none]"
 msgstr "ਪ੍ਰਮੁੱਖ ਇੰਟਰਫੇਸ [ਕੋਈ ਨਹੀਂ]: "
 
-#: ../clients/cli/connections.c:4276
+#: ../clients/cli/connections.c:4293
 #, fuzzy
 msgid "P_KEY [none]"
 msgstr "P_KEY [ਕੋਈ ਨਹੀਂ]: "
 
 #. 0
-#: ../clients/cli/connections.c:4277 ../clients/cli/connections.c:4332
+#: ../clients/cli/connections.c:4294 ../clients/cli/connections.c:4349
 #: ../clients/cli/devices.c:153 ../clients/tui/nmt-page-wifi.c:224
 msgid "SSID"
 msgstr "SSID"
 
-#: ../clients/cli/connections.c:4283
+#: ../clients/cli/connections.c:4300
 #, fuzzy
 msgid "WiMAX NSP name"
 msgstr "ਵਾਈਮੈਕਸ NSP ਨਾਂ: "
 
-#: ../clients/cli/connections.c:4285
+#: ../clients/cli/connections.c:4302
 #, fuzzy
 msgid "APN"
 msgstr "AP"
 
-#: ../clients/cli/connections.c:4286 ../clients/cli/connections.c:4288
-#: ../clients/cli/connections.c:4331
+#: ../clients/cli/connections.c:4303 ../clients/cli/connections.c:4305
+#: ../clients/cli/connections.c:4348
 #, fuzzy
 msgid "Username [none]"
 msgstr "ਯੂਜ਼ਰ-ਨਾਂ [ਕੋਈ ਨਹੀਂ]: "
 
-#: ../clients/cli/connections.c:4290
+#: ../clients/cli/connections.c:4307
 #, fuzzy
 msgid "Bluetooth device address"
 msgstr "ਬਲੂਟੁੱਥ ਯੰਤਰ ਪਤਾ: "
 
-#: ../clients/cli/connections.c:4293
+#: ../clients/cli/connections.c:4310
 #, fuzzy
 msgid "VLAN parent device or connection UUID"
 msgstr "VLAN ਪ੍ਰਮੁੱਖ ਯੰਤਰ ਜਾਂ ਸੰਪਰਕ UUID: "
 
-#: ../clients/cli/connections.c:4295
+#: ../clients/cli/connections.c:4312
 #, fuzzy
 msgid "VLAN ID (<0-4094>)"
 msgstr "VLAN ID <0-4095>: "
 
-#: ../clients/cli/connections.c:4296
+#: ../clients/cli/connections.c:4313
 #, fuzzy
 msgid "VLAN flags (<0-7>) [none]"
 msgstr "VLAN ਫਲੈਗ (<0-7>) [ਕੋਈ ਨਹੀਂ]: "
 
-#: ../clients/cli/connections.c:4297
+#: ../clients/cli/connections.c:4314
 #, fuzzy
 msgid "Ingress priority maps [none]"
 msgstr "Ingress ਤਰਜੀਹੀ ਨਕਸ਼ੇ [ਕੋਈ ਨਹੀਂ]: "
 
-#: ../clients/cli/connections.c:4298
+#: ../clients/cli/connections.c:4315
 #, fuzzy
 msgid "Egress priority maps [none]"
 msgstr "Egress ਤਰਜੀਹੀ ਨਕਸ਼ੇ [ਕੋਈ ਨਹੀਂ]: "
 
-#: ../clients/cli/connections.c:4301
+#: ../clients/cli/connections.c:4318
 #, fuzzy
 msgid "Bonding primary interface [none]"
 msgstr "ਬੌਂਡਿੰਗ ਪ੍ਰਮੁੱਖ ਇੰਟਰਫੇਸ [ਕੋਈ ਨਹੀਂ]: "
 
-#: ../clients/cli/connections.c:4305
+#: ../clients/cli/connections.c:4322
 #, fuzzy
 msgid "Bonding miimon [100]"
 msgstr "Bonding miimon [100]: "
 
-#: ../clients/cli/connections.c:4306
+#: ../clients/cli/connections.c:4323
 #, fuzzy
 msgid "Bonding downdelay [0]"
 msgstr "Bonding downdelay [0]: "
 
-#: ../clients/cli/connections.c:4307
+#: ../clients/cli/connections.c:4324
 #, fuzzy
 msgid "Bonding updelay [0]"
 msgstr "Bonding updelay [0]: "
 
-#: ../clients/cli/connections.c:4308
+#: ../clients/cli/connections.c:4325
 #, fuzzy
 msgid "Bonding arp-interval [0]"
 msgstr "ਬੌਂਡ ਕਰਨ ਵਾਲਾ arp-ਅੰਤਰਾਲ [0]: "
 
-#: ../clients/cli/connections.c:4310
+#: ../clients/cli/connections.c:4327
 #, fuzzy
 msgid "Bonding arp-ip-target [none]"
 msgstr "Bonding arp-ip-target [ਕੋਈ ਨਹੀਂ]: "
 
-#: ../clients/cli/connections.c:4312
+#: ../clients/cli/connections.c:4329
 msgid "LACP rate ('slow' or 'fast') [slow]"
 msgstr ""
 
-#: ../clients/cli/connections.c:4314 ../clients/cli/connections.c:4315
+#: ../clients/cli/connections.c:4331 ../clients/cli/connections.c:4332
 #, fuzzy
 msgid "Team JSON configuration [none]"
 msgstr "JSON ਟੋਲੀ ਸੰਰਚਨਾ [ਕੋਈ ਨਹੀਂ]: "
 
-#: ../clients/cli/connections.c:4316
+#: ../clients/cli/connections.c:4333
 #, fuzzy
 msgid "Enable STP [no]"
 msgstr "STP ਯੋਗ ਕਰੋ (ਹਾਂ/ਨਹੀਂ) [ਹਾਂ]: "
 
-#: ../clients/cli/connections.c:4318
+#: ../clients/cli/connections.c:4335
 #, fuzzy
 msgid "STP priority [32768]"
 msgstr "STP ਤਰਜੀਹ [128]: "
 
-#: ../clients/cli/connections.c:4319
+#: ../clients/cli/connections.c:4336
 #, fuzzy
 msgid "Forward delay [15]"
 msgstr "ਅੱਗੇ ਨੂੰ ਦੇਰੀ [15]: "
 
-#: ../clients/cli/connections.c:4320
+#: ../clients/cli/connections.c:4337
 #, fuzzy
 msgid "Hello time [2]"
 msgstr "ਹੈਲੋ ਸਮਾਂ [2]: "
 
-#: ../clients/cli/connections.c:4321
+#: ../clients/cli/connections.c:4338
 #, fuzzy
 msgid "Max age [20]"
 msgstr "ਵੱਧ ਤੋਂ ਵੱਧ ਉਮਰ [20]: "
 
-#: ../clients/cli/connections.c:4322
+#: ../clients/cli/connections.c:4339
 #, fuzzy
 msgid "MAC address ageing time [300]"
 msgstr "MAC ਪਤਾ ਉਮਰ ਸਮਾਂ [300]: "
 
-#: ../clients/cli/connections.c:4323
+#: ../clients/cli/connections.c:4340
 msgid "Enable IGMP snooping [no]"
 msgstr ""
 
-#: ../clients/cli/connections.c:4326
+#: ../clients/cli/connections.c:4343
 #, fuzzy
 msgid "Bridge port priority [32]"
 msgstr "ਬਰਿੱਜ ਪੋਰਟ ਤਰਜੀਹ [32]: "
 
-#: ../clients/cli/connections.c:4327
+#: ../clients/cli/connections.c:4344
 #, fuzzy
 msgid "Bridge port STP path cost [100]"
 msgstr "ਬਰਿੱਜ ਪੋਰਟ STP ਰਾਹ ਕੀਮਤ [100]: "
 
-#: ../clients/cli/connections.c:4328
+#: ../clients/cli/connections.c:4345
 #, fuzzy
 msgid "Hairpin [no]"
 msgstr "ਹੇਅਰਪਿੰਨ ਮੋਡ"
 
-#: ../clients/cli/connections.c:4333
+#: ../clients/cli/connections.c:4350
 #, fuzzy
 msgid "OLPC Mesh channel [1]"
 msgstr "OLPC ਮੈਸ਼ ਚੈਨਲ [1]: "
 
-#: ../clients/cli/connections.c:4334
+#: ../clients/cli/connections.c:4351
 #, fuzzy
 msgid "DHCP anycast MAC address [none]"
 msgstr "DHCP anycast MAC ਪਤਾ [ਕੋਈ ਨਹੀਂ]: "
@@ -2036,322 +2031,322 @@ msgstr "DHCP anycast MAC ਪਤਾ [ਕੋਈ ਨਹੀਂ]: "
 #. * is not visible here since we only care about phase2 authentication
 #. * (and don't even care of which one)
 #.
-#: ../clients/cli/connections.c:4335
+#: ../clients/cli/connections.c:4352
 #: ../clients/common/nm-secret-agent-simple.c:223
 #: ../clients/common/nm-secret-agent-simple.c:328
 #: ../clients/tui/nmt-page-dsl.c:66 ../clients/tui/nmt-page-wifi.c:332
 msgid "Username"
 msgstr "ਯੂਜ਼ਰ-ਨਾਂ"
 
-#: ../clients/cli/connections.c:4341
+#: ../clients/cli/connections.c:4358
 msgid "MACsec parent device or connection UUID"
 msgstr ""
 
-#: ../clients/cli/connections.c:4343
+#: ../clients/cli/connections.c:4360
 msgid "Enable encryption [yes]"
 msgstr ""
 
-#: ../clients/cli/connections.c:4344
+#: ../clients/cli/connections.c:4361
 #: ../clients/common/nm-secret-agent-simple.c:520
 msgid "MKA CAK"
 msgstr ""
 
-#: ../clients/cli/connections.c:4345
+#: ../clients/cli/connections.c:4362
 msgid "MKA_CKN"
 msgstr ""
 
-#: ../clients/cli/connections.c:4346
+#: ../clients/cli/connections.c:4363
 msgid "SCI port [1]"
 msgstr ""
 
-#: ../clients/cli/connections.c:4348
+#: ../clients/cli/connections.c:4365
 #, fuzzy
 msgid "MACVLAN parent device or connection UUID"
 msgstr "VLAN ਪ੍ਰਮੁੱਖ ਯੰਤਰ ਜਾਂ ਸੰਪਰਕ UUID: "
 
-#: ../clients/cli/connections.c:4352
+#: ../clients/cli/connections.c:4369
 msgid "Tap [no]"
 msgstr ""
 
-#: ../clients/cli/connections.c:4354
+#: ../clients/cli/connections.c:4371
 #, fuzzy
 msgid "VXLAN ID"
 msgstr "VLAN ID <0-4095>: "
 
-#: ../clients/cli/connections.c:4355 ../clients/cli/connections.c:4374
+#: ../clients/cli/connections.c:4372 ../clients/cli/connections.c:4391
 #, fuzzy
 msgid "Remote"
 msgstr "ਹਟਾਉ"
 
-#: ../clients/cli/connections.c:4356 ../clients/cli/connections.c:4375
+#: ../clients/cli/connections.c:4373 ../clients/cli/connections.c:4392
 #, fuzzy
 msgid "Parent device [none]"
 msgstr "ਪ੍ਰਮੁੱਖ ਇੰਟਰਫੇਸ [ਕੋਈ ਨਹੀਂ]: "
 
-#: ../clients/cli/connections.c:4358
+#: ../clients/cli/connections.c:4375
 #, fuzzy
 msgid "Local address [none]"
 msgstr "DHCP anycast MAC ਪਤਾ [ਕੋਈ ਨਹੀਂ]: "
 
-#: ../clients/cli/connections.c:4359
+#: ../clients/cli/connections.c:4376
 msgid "Minimum source port [0]"
 msgstr ""
 
-#: ../clients/cli/connections.c:4360
+#: ../clients/cli/connections.c:4377
 msgid "Maximum source port [0]"
 msgstr ""
 
-#: ../clients/cli/connections.c:4361
+#: ../clients/cli/connections.c:4378
 #, fuzzy
 msgid "Destination port [8472]"
 msgstr "ਟਿਕਾਣਾ"
 
-#: ../clients/cli/connections.c:4364
+#: ../clients/cli/connections.c:4381
 #, fuzzy
 msgid "User ID [none]"
 msgstr "ਯੂਜ਼ਰ-ਨਾਂ [ਕੋਈ ਨਹੀਂ]: "
 
-#: ../clients/cli/connections.c:4365
+#: ../clients/cli/connections.c:4382
 #, fuzzy
 msgid "Group ID [none]"
 msgstr "MAC [ਕੋਈ ਨਹੀਂ]: "
 
-#: ../clients/cli/connections.c:4366
+#: ../clients/cli/connections.c:4383
 #, fuzzy
 msgid "Enable PI [no]"
 msgstr "STP ਯੋਗ ਕਰੋ (ਹਾਂ/ਨਹੀਂ) [ਹਾਂ]: "
 
-#: ../clients/cli/connections.c:4368
+#: ../clients/cli/connections.c:4385
 msgid "Enable VNET header [no]"
 msgstr ""
 
-#: ../clients/cli/connections.c:4370
+#: ../clients/cli/connections.c:4387
 msgid "Enable multi queue [no]"
 msgstr ""
 
-#: ../clients/cli/connections.c:4373
+#: ../clients/cli/connections.c:4390
 #, fuzzy
 msgid "Local endpoint [none]"
 msgstr "ਪ੍ਰਮੁੱਖ ਇੰਟਰਫੇਸ [ਕੋਈ ਨਹੀਂ]: "
 
-#: ../clients/cli/connections.c:4377
+#: ../clients/cli/connections.c:4394
 #, fuzzy
 msgid "IPv4 address (IP[/plen]) [none]"
 msgstr "IPv4 ਪਤਾ (IP[/plen] [ਗੇਟਵੇਅ]) [ਕੋਈ ਨਹੀਂ]: "
 
-#: ../clients/cli/connections.c:4379
+#: ../clients/cli/connections.c:4396
 #, fuzzy
 msgid "IPv4 gateway [none]"
 msgstr "IPv4 ਪਤਾ (IP[/plen] [ਗੇਟਵੇਅ]) [ਕੋਈ ਨਹੀਂ]: "
 
-#: ../clients/cli/connections.c:4380
+#: ../clients/cli/connections.c:4397
 #, fuzzy
 msgid "IPv6 address (IP[/plen]) [none]"
 msgstr "IPv6 ਪਤਾ (IP[/plen] [ਗੇਟਵੇਅ]) [ਕੋਈ ਨਹੀਂ]: "
 
-#: ../clients/cli/connections.c:4382
+#: ../clients/cli/connections.c:4399
 #, fuzzy
 msgid "IPv6 gateway [none]"
 msgstr "IPv6 ਪਤਾ (IP[/plen] [ਗੇਟਵੇਅ]) [ਕੋਈ ਨਹੀਂ]: "
 
-#: ../clients/cli/connections.c:4384
+#: ../clients/cli/connections.c:4401
 msgid "Browser only [no]"
 msgstr ""
 
-#: ../clients/cli/connections.c:4386
+#: ../clients/cli/connections.c:4403
 msgid "PAC URL"
 msgstr ""
 
-#: ../clients/cli/connections.c:4387
+#: ../clients/cli/connections.c:4404
 msgid "PAC script"
 msgstr ""
 
-#: ../clients/cli/connections.c:4522
+#: ../clients/cli/connections.c:4539
 #, fuzzy, c-format
 msgid "Error: value for '%s' is missing."
 msgstr "ਗਲਤੀ: fields for '%s' options are missing."
 
-#: ../clients/cli/connections.c:4568
+#: ../clients/cli/connections.c:4585
 msgid "Error: <setting>.<property> argument is missing."
 msgstr "ਗਲਤੀ: <setting>.<property> ਆਰਗੂਮੈਂਟ ਗੁੰਮ ਹੈ।"
 
-#: ../clients/cli/connections.c:4591
+#: ../clients/cli/connections.c:4608
 #, c-format
 msgid "Error: invalid or not allowed setting '%s': %s."
 msgstr "ਗਲਤੀ: ਅਢੁਕਵੀਂ ਜਾਂ ਨਾਂਮਨਜ਼ੂਰ ਸੈਟਿੰਗ '%s': %s।"
 
-#: ../clients/cli/connections.c:4616
+#: ../clients/cli/connections.c:4633
 #, fuzzy, c-format
 msgid "Error: '%s' is ambiguous (%s.%s or %s.%s)."
 msgstr "'%s' ਅਸਪਸ਼ਟ ਹੈ (%s x %s)"
 
-#: ../clients/cli/connections.c:4630
+#: ../clients/cli/connections.c:4647
 #, c-format
 msgid "Error: invalid <setting>.<property> '%s'."
 msgstr "ਗਲਤੀ: ਅਢੁਕਵੀਂ <setting>.<property> '%s'।"
 
-#: ../clients/cli/connections.c:4672 ../clients/cli/connections.c:8182
+#: ../clients/cli/connections.c:4689 ../clients/cli/connections.c:8199
 #, fuzzy, c-format
 msgid "Error: Failed to add '%s' connection: %s"
 msgstr "ਗਲਤੀ: ਸੰਪਰਕ '%s' ਜੋੜਨ ਵਿੱਚ ਅਸਫਲ ਹੋਇਆ: (%d) %s"
 
-#: ../clients/cli/connections.c:4677
+#: ../clients/cli/connections.c:4694
 #, c-format
 msgid "Connection '%s' (%s) successfully added.\n"
 msgstr "ਸੰਪਰਕ '%s' (%s) ਸਫਲਤਾਪੂਰਵਕ ਜੋੜਿਆ ਗਿਆ।\n"
 
-#: ../clients/cli/connections.c:4799
+#: ../clients/cli/connections.c:4816
 #, c-format
 msgid ""
 "You can specify this option more than once. Press <Enter> when you're done.\n"
 msgstr ""
 
 #. Ask for optional arguments.
-#: ../clients/cli/connections.c:4837
+#: ../clients/cli/connections.c:4854
 #, fuzzy, c-format
 msgid "There is %d optional setting for %s.\n"
 msgid_plural "There are %d optional settings for %s.\n"
 msgstr[0] "'%s' ਸੰਪਰਕ ਕਿਸਮ ਲਈ 1 ਵਿਕਲਪਿਕ ਆਰਗੂਮੈਂਟ ਹੈ।\n"
 msgstr[1] "'%s' ਸੰਪਰਕ ਕਿਸਮ ਲਈ 1 ਵਿਕਲਪਿਕ ਆਰਗੂਮੈਂਟ ਹੈ।\n"
 
-#: ../clients/cli/connections.c:4840
+#: ../clients/cli/connections.c:4857
 #, fuzzy, c-format
 msgid "Do you want to provide it? %s"
 msgid_plural "Do you want to provide them? %s"
 msgstr[0] "ਕੀ ਤੁਸੀਂ ਇਹ ਮੁਹੱਈਆ ਕਰਵਾਉਣਾ ਚਾਹੁੰਦੇ ਹੋ? (ਹਾਂ/ਨਹੀਂ) [ਹਾਂ] "
 msgstr[1] "ਕੀ ਤੁਸੀਂ ਇਹ ਮੁਹੱਈਆ ਕਰਵਾਉਣਾ ਚਾਹੁੰਦੇ ਹੋ? (ਹਾਂ/ਨਹੀਂ) [ਹਾਂ] "
 
-#: ../clients/cli/connections.c:4854
+#: ../clients/cli/connections.c:4871
 #, fuzzy
 msgid "Wired Ethernet"
 msgstr "ਈਥਰਨੈੱਟ"
 
-#: ../clients/cli/connections.c:4856 ../src/devices/nm-device-infiniband.c:192
+#: ../clients/cli/connections.c:4873 ../src/devices/nm-device-infiniband.c:192
 #, fuzzy
 msgid "InfiniBand connection"
 msgstr "ਇਫੀਂਬੈਂਡ ਕੁਨੈਕਸ਼ਨ %d"
 
-#: ../clients/cli/connections.c:4858
+#: ../clients/cli/connections.c:4875
 #, fuzzy
 msgid "Wi-Fi connection"
 msgstr "Wi-Fi ਸੰਪਰਕ %d"
 
-#: ../clients/cli/connections.c:4860
+#: ../clients/cli/connections.c:4877
 #, fuzzy
 msgid "WiMAX connection"
 msgstr "CDMA ਕੁਨੈਕਸ਼ਨ %d"
 
-#: ../clients/cli/connections.c:4862
+#: ../clients/cli/connections.c:4879
 msgid "PPPoE"
 msgstr ""
 
-#: ../clients/cli/connections.c:4864
+#: ../clients/cli/connections.c:4881
 #, fuzzy
 msgid "CDMA mobile broadband connection"
 msgstr "ਮੋਬਾਇਲ ਬਰੌਡਬੈਂਡ ਸੰਪਰਕ %d"
 
-#: ../clients/cli/connections.c:4866
+#: ../clients/cli/connections.c:4883
 #, fuzzy
 msgid "GSM mobile broadband connection"
 msgstr "ਮੋਬਾਇਲ ਬਰੌਡਬੈਂਡ ਸੰਪਰਕ %d"
 
-#: ../clients/cli/connections.c:4868
+#: ../clients/cli/connections.c:4885
 #, fuzzy
 msgid "bluetooth connection"
 msgstr "ਬੌਂਡ ਕੁਨੈਕਸ਼ਨ %d"
 
-#: ../clients/cli/connections.c:4870 ../src/devices/nm-device-vlan.c:433
+#: ../clients/cli/connections.c:4887 ../src/devices/nm-device-vlan.c:433
 #, fuzzy
 msgid "VLAN connection"
 msgstr "VLAN ਕੁਨੈਕਸ਼ਨ %d"
 
-#: ../clients/cli/connections.c:4872
+#: ../clients/cli/connections.c:4889
 #, fuzzy
 msgid "Bond device"
 msgstr "ਈਥਰਨੈੱਟ"
 
-#: ../clients/cli/connections.c:4874
+#: ../clients/cli/connections.c:4891
 #, fuzzy
 msgid "Team device"
 msgstr "ਜੰਤਰ ਹਟਾਇਆ ਗਿਆ ਸੀ"
 
-#: ../clients/cli/connections.c:4876
+#: ../clients/cli/connections.c:4893
 #, fuzzy
 msgid "Team port"
 msgstr "ਟੀਮ"
 
-#: ../clients/cli/connections.c:4878
+#: ../clients/cli/connections.c:4895
 #, fuzzy
 msgid "Bridge device"
 msgstr "ਈਥਰਨੈੱਟ"
 
-#: ../clients/cli/connections.c:4880
+#: ../clients/cli/connections.c:4897
 #, fuzzy
 msgid "Bridge port"
 msgstr "ਬਰਿੱਜ"
 
-#: ../clients/cli/connections.c:4882 ../src/nm-manager.c:4027
+#: ../clients/cli/connections.c:4899 ../src/nm-manager.c:4080
 #, fuzzy
 msgid "VPN connection"
 msgstr "VPN ਕੁਨੈਕਟ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ"
 
-#: ../clients/cli/connections.c:4884
+#: ../clients/cli/connections.c:4901
 #, fuzzy
 msgid "OLPC Mesh connection"
 msgstr "CDMA ਕੁਨੈਕਸ਼ਨ %d"
 
-#: ../clients/cli/connections.c:4886 ../src/devices/adsl/nm-device-adsl.c:137
+#: ../clients/cli/connections.c:4903 ../src/devices/adsl/nm-device-adsl.c:137
 #, fuzzy
 msgid "ADSL connection"
 msgstr "ADSL ਕੁਨੈਕਸ਼ਨ %d"
 
-#: ../clients/cli/connections.c:4888
+#: ../clients/cli/connections.c:4905
 msgid "MACsec connection"
 msgstr ""
 
-#: ../clients/cli/connections.c:4890
+#: ../clients/cli/connections.c:4907
 #, fuzzy
 msgid "macvlan connection"
 msgstr "ਬੌਂਡ ਕੁਨੈਕਸ਼ਨ %d"
 
-#: ../clients/cli/connections.c:4892 ../src/devices/nm-device-vxlan.c:369
+#: ../clients/cli/connections.c:4909 ../src/devices/nm-device-vxlan.c:369
 #, fuzzy
 msgid "VXLAN connection"
 msgstr "VLAN ਕੁਨੈਕਸ਼ਨ %d"
 
-#: ../clients/cli/connections.c:4894
+#: ../clients/cli/connections.c:4911
 #, fuzzy
 msgid "Tun device"
 msgstr "ਜੰਤਰ ਹਟਾਇਆ ਗਿਆ ਸੀ"
 
-#: ../clients/cli/connections.c:4896
+#: ../clients/cli/connections.c:4913
 msgid "IPv4 protocol"
 msgstr ""
 
-#: ../clients/cli/connections.c:4898
+#: ../clients/cli/connections.c:4915
 msgid "IPv6 protocol"
 msgstr ""
 
-#: ../clients/cli/connections.c:4900
+#: ../clients/cli/connections.c:4917
 msgid "Proxy"
 msgstr ""
 
-#: ../clients/cli/connections.c:4987 ../clients/cli/utils.c:186
+#: ../clients/cli/connections.c:5004 ../clients/cli/utils.c:186
 #, c-format
 msgid "Error: value for '%s' argument is required."
 msgstr "ਗਲਤੀ: ਆਰਗੂਮੈਂਟ '%s' ਦਾ ਮੁੱਲ ਲੋੜੀਂਦਾ ਹੈ।"
 
-#: ../clients/cli/connections.c:4993
+#: ../clients/cli/connections.c:5010
 #, fuzzy, c-format
 msgid "Error: 'save': %s."
 msgstr "ਗਲਤੀ: 'stp': %s।"
 
-#: ../clients/cli/connections.c:5065
+#: ../clients/cli/connections.c:5082
 #, fuzzy, c-format
 msgid "Error: '%s' argument is required."
 msgstr "ਗਲਤੀ: 'type' ਆਰਗੂਮੈਂਟ ਲੋੜੀਂਦਾ ਹੈ।"
 
-#: ../clients/cli/connections.c:6037
+#: ../clients/cli/connections.c:6054
 #, c-format
 msgid "['%s' setting values]\n"
 msgstr "['%s' ਸੈਟਿੰਗ ਮੁੱਲ]\n"
@@ -2359,7 +2354,7 @@ msgstr "['%s' ਸੈਟਿੰਗ ਮੁੱਲ]\n"
 #. TRANSLATORS: do not translate command names and keywords before ::
 #. *              However, you should translate terms enclosed in <>.
 #.
-#: ../clients/cli/connections.c:6119
+#: ../clients/cli/connections.c:6136
 #, fuzzy, c-format
 msgid ""
 "---[ Main menu ]---\n"
@@ -2391,7 +2386,7 @@ msgstr ""
 "nmcli    <conf-option> <value>       :: nmcli ਸੰਰਚਨਾ\n"
 "quit                                 :: nmcli ਤੋਂ ਬਾਹਰ ਆਉ\n"
 
-#: ../clients/cli/connections.c:6146
+#: ../clients/cli/connections.c:6163
 #, c-format
 msgid ""
 "goto <setting>[.<prop>] | <prop>  :: enter setting/property for editing\n"
@@ -2410,7 +2405,7 @@ msgstr ""
 "          nmcli connection> goto secondaries\n"
 "          nmcli> goto ipv4.addresses\n"
 
-#: ../clients/cli/connections.c:6153
+#: ../clients/cli/connections.c:6170
 #, c-format
 msgid ""
 "remove <setting>[.<prop>]  :: remove setting or reset property value\n"
@@ -2430,7 +2425,7 @@ msgstr ""
 "ਉਦਾਹਰਣਾਂ: nmcli> remove wifi-sec\n"
 "          nmcli> remove eth.mtu\n"
 
-#: ../clients/cli/connections.c:6160
+#: ../clients/cli/connections.c:6177
 #, c-format
 msgid ""
 "set [<setting>.<prop> <value>]  :: set property value\n"
@@ -2445,7 +2440,7 @@ msgstr ""
 "\n"
 "ਉਦਾਹਰਣਾਂ: nmcli> set con.id ਮੇਰਾ ਸੰਪਰਕ\n"
 
-#: ../clients/cli/connections.c:6165
+#: ../clients/cli/connections.c:6182
 #, c-format
 msgid ""
 "describe [<setting>.<prop>]  :: describe property\n"
@@ -2458,7 +2453,7 @@ msgstr ""
 "ਗੁਣ ਵੇਰਵਾ ਵਿਖਾਉ। ਤੁਸੀਂ ਸਾਰੀਆਂ NM ਸਾਰੀਆਂ ਸੈੱਟਿੰਗਾਂ ਅਤੇ ਗੁਣਾਂ ਲਈ nm-settings(5) ਹਦਾਇਤ "
 "ਕਿਤਾਬਚਾ ਵੇਖ ਸਕਦੇ ਹੋ।\n"
 
-#: ../clients/cli/connections.c:6170
+#: ../clients/cli/connections.c:6187
 #, c-format
 msgid ""
 "print [all]  :: print setting or connection values\n"
@@ -2473,7 +2468,7 @@ msgstr ""
 "\n"
 "ਉਦਾਹਰਣ: nmcli ipv4> print all\n"
 
-#: ../clients/cli/connections.c:6175
+#: ../clients/cli/connections.c:6192
 #, fuzzy, c-format
 msgid ""
 "verify [all | fix]  :: verify setting or connection validity\n"
@@ -2495,7 +2490,7 @@ msgstr ""
 "ਉਦਾਹਰਣਾਂ: nmcli> verify\n"
 "          nmcli bond> verify\n"
 
-#: ../clients/cli/connections.c:6184
+#: ../clients/cli/connections.c:6201
 #, c-format
 msgid ""
 "save [persistent|temporary]  :: save the connection\n"
@@ -2511,7 +2506,7 @@ msgid ""
 "profile must be deleted.\n"
 msgstr ""
 
-#: ../clients/cli/connections.c:6195
+#: ../clients/cli/connections.c:6212
 #, c-format
 msgid ""
 "activate [<ifname>] [/<ap>|<nsp>]  :: activate the connection\n"
@@ -2532,7 +2527,7 @@ msgstr ""
 "/<ap>|<nsp> - AP (Wi-Fi) ਜਾਂ NSP (WiMAX) (ਪਹਿਲਾਂ / ਜੋੜੋ ਜਦੋਂ <ifname> ਦਰਸਾਇਆ ਨਹੀਂ "
 "ਗਿਆ ਹੈ)\n"
 
-#: ../clients/cli/connections.c:6202 ../clients/cli/connections.c:6361
+#: ../clients/cli/connections.c:6219 ../clients/cli/connections.c:6378
 #, c-format
 msgid ""
 "back  :: go to upper menu level\n"
@@ -2541,7 +2536,7 @@ msgstr ""
 "back  :: ਉੱਪਰਲੇ ਮੇਨੂ ਪੱਧਰ ਤੇ ਜਾਂਦਾ ਹੈ\n"
 "\n"
 
-#: ../clients/cli/connections.c:6205
+#: ../clients/cli/connections.c:6222
 #, c-format
 msgid ""
 "help/? [<command>]  :: help for the nmcli commands\n"
@@ -2550,7 +2545,7 @@ msgstr ""
 "help/? [<command>]  :: nmcli ਕਮਾਂਡਾਂ ਲਈ ਮਦਦ\n"
 "\n"
 
-#: ../clients/cli/connections.c:6208
+#: ../clients/cli/connections.c:6225
 #, fuzzy, c-format
 msgid ""
 "nmcli [<conf-option> <value>]  :: nmcli configuration\n"
@@ -2576,7 +2571,7 @@ msgstr ""
 "          nmcli> nmcli save-confirmation no\n"
 "          nmcli> nmcli prompt-color 3\n"
 
-#: ../clients/cli/connections.c:6230 ../clients/cli/connections.c:6367
+#: ../clients/cli/connections.c:6247 ../clients/cli/connections.c:6384
 #, c-format
 msgid ""
 "quit  :: exit nmcli\n"
@@ -2589,8 +2584,8 @@ msgstr ""
 "ਇਹ ਕਮਾਂਡ nmcli ਤੋਂ ਬਾਹਰ ਕੱਢ ਦਿੰਦੀ ਹੈ। ਜਦੋਂ ਸੋਧਿਆ ਜਾਣ ਵਾਲਾ ਸੰਪਰਕ ਸੰਭਾਲਿਆ ਨਹੀਂ ਗਿਆ ਹੁੰਦਾ, "
 "ਯੂਜ਼ਰ ਨੂੰ ਕਾਰਵਾਈ ਦੀ ਪੁਸ਼ਟੀ ਕਰਨ ਲਈ ਕਿਹਾ ਜਾਂਦਾ ਹੈ।\n"
 
-#: ../clients/cli/connections.c:6235 ../clients/cli/connections.c:6372
-#: ../clients/cli/connections.c:6792 ../clients/cli/connections.c:7744
+#: ../clients/cli/connections.c:6252 ../clients/cli/connections.c:6389
+#: ../clients/cli/connections.c:6809 ../clients/cli/connections.c:7761
 #, c-format
 msgid "Unknown command: '%s'\n"
 msgstr "ਅਣਪਛਾਤੀ ਕਮਾਂਡ: '%s'\n"
@@ -2598,7 +2593,7 @@ msgstr "ਅਣਪਛਾਤੀ ਕਮਾਂਡ: '%s'\n"
 #. TRANSLATORS: do not translate command names and keywords before ::
 #. *              However, you should translate terms enclosed in <>.
 #.
-#: ../clients/cli/connections.c:6301
+#: ../clients/cli/connections.c:6318
 #, c-format
 msgid ""
 "---[ Property menu ]---\n"
@@ -2624,7 +2619,7 @@ msgstr ""
 "help/?   [<command>]             :: ਇਹ ਮਦਦ ਜਾਂ ਕਮਾਂਡ ਵੇਰਵਾ ਛਾਪੋ\n"
 "quit                             :: nmcli ਤੋਂ ਬਾਹਰ ਹੋਵੋ\n"
 
-#: ../clients/cli/connections.c:6326
+#: ../clients/cli/connections.c:6343
 #, c-format
 msgid ""
 "set [<value>]  :: set new value\n"
@@ -2635,7 +2630,7 @@ msgstr ""
 "\n"
 "ਇਹ ਕਮਾਂਡ ਮੁਹੱਈਆ ਕੀਤੇ ਗਏ <value> ਨੂੰ ਇਸ ਗੁਣ ਤੇ ਸੈੱਟ ਕਰਦੀ ਹੈ\n"
 
-#: ../clients/cli/connections.c:6330
+#: ../clients/cli/connections.c:6347
 #, fuzzy, c-format
 msgid ""
 "add [<value>]  :: append new value to the property\n"
@@ -2649,7 +2644,7 @@ msgstr ""
 "ਇਹ ਕਮਾਂਡ ਮੁਹੱਈਆ ਕੀਤਾ ਗਏ <value> ਨੂੰ ਇਸ ਗੁਣ ਵਿੱਚ ਜੋੜਦੀ ਹੈ, ਜੇ ਗੁਣ ਕਿਸੇ ਕੰਟੇਨਰ ਕਿਸਮ ਦਾ ਹੈ। "
 "ਇਕਹਿਰੇ ਮੁੱਲ ਵਾਲੇ ਗੁਣਾਂ ਲਈ ਇਹ ਮੁੱਲ ਵਟਾ ਦਿੰਦਾ ਹੈ ('set' ਦੇ ਵਾਂਗ)।\n"
 
-#: ../clients/cli/connections.c:6336
+#: ../clients/cli/connections.c:6353
 #, c-format
 msgid ""
 "change  :: change current value\n"
@@ -2660,7 +2655,7 @@ msgstr ""
 "\n"
 "ਮੌਜੂਦਾ ਮੁੱਲ ਪ੍ਰਦਰਸ਼ਿਤ ਕਰਦਾ ਹੈ ਅਤੇ ਇਸ ਦੀ ਸੋਧ ਦੀ ਵੀ ਮਨਜ਼ੂਰੀ ਦਿੰਦਾ ਹੈ।\n"
 
-#: ../clients/cli/connections.c:6340
+#: ../clients/cli/connections.c:6357
 #, c-format
 msgid ""
 "remove [<value>|<index>|<option name>]  :: delete the value\n"
@@ -2680,7 +2675,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: ../clients/cli/connections.c:6351
+#: ../clients/cli/connections.c:6368
 #, c-format
 msgid ""
 "describe  :: describe property\n"
@@ -2693,7 +2688,7 @@ msgstr ""
 "ਗੁਣ ਦਾ ਵੇਰਵਾ ਦੱਸਦਾ ਹੈ। ਤੁਸੀਂ ਸਾਰੀਆ NM ਸੈਟਿੰਗਾਂ ਅਤੇ ਗੁਣਾਂ ਲਈ nm-settings(5) ਹਦਾਇਤ ਕਿਤਾਬਚਾ "
 "ਸਫ੍ਹਾ ਦੇਖ ਸਕਦੇ ਹੋ।\n"
 
-#: ../clients/cli/connections.c:6356
+#: ../clients/cli/connections.c:6373
 #, c-format
 msgid ""
 "print [property|setting|connection]  :: print property (setting, connection) "
@@ -2707,7 +2702,7 @@ msgstr ""
 "ਗੁਣ ਮੁੱਲ ਵਿਖਾਉਂਦਾ ਹੈ। ਇੱਕ ਆਰਗੂਮੈਂਟ ਮੁਹੱਈਆ ਕਰਵਾਉਣ ਨਾਲ ਤੁਸੀ ਸਾਰੀ ਸੈਟਿੰਗ ਜਾਂ ਸੰਪਰਕ ਲਈ ਮੁੱਲ "
 "ਪ੍ਰਦਰਸ਼ਿਤ ਕਰ ਸਕਦੇ ਹੋ।\n"
 
-#: ../clients/cli/connections.c:6364
+#: ../clients/cli/connections.c:6381
 #, c-format
 msgid ""
 "help/? [<command>]  :: help for nmcli commands\n"
@@ -2716,28 +2711,28 @@ msgstr ""
 "help/? [<command>]  :: nmcli ਕਮਾਂਡਾਂ ਲਈ ਮਦਦ\n"
 "\n"
 
-#: ../clients/cli/connections.c:6457
+#: ../clients/cli/connections.c:6474
 #, c-format
 msgid "Error: Connection activation failed.\n"
 msgstr "ਗਲਤੀ: ਸੰਪਰਕ ਕਿਰਿਆਸ਼ੀਲ ਕਰਨ ਵਿੱਚ ਅਸਫਲ।\n"
 
-#: ../clients/cli/connections.c:6541
+#: ../clients/cli/connections.c:6558
 #, c-format
 msgid "Error: setting '%s' is mandatory and cannot be removed.\n"
 msgstr "ਗਲਤੀ: ਸੈਟਿੰਗ '%s' ਲਾਜਮੀ ਹੈ ਅਤੇ ਹਟਾਈ ਨਹੀਂ ਜਾ ਸਕਦੀ।\n"
 
 #. TRANSLATORS: status line in nmcli connection editor
-#: ../clients/cli/connections.c:6559
+#: ../clients/cli/connections.c:6576
 #, fuzzy, c-format
 msgid "[ Type: %s | Name: %s | UUID: %s | Dirty: %s | Temp: %s ]\n"
 msgstr "[ ਸੰਪਰਕ ਕਿਸਮ: %s | ਨਾਂ: %s | UUID: %s | dirty: %s ]\n"
 
-#: ../clients/cli/connections.c:6595
+#: ../clients/cli/connections.c:6612
 #, fuzzy, c-format
 msgid "The connection is not saved. Do you really want to quit? %s"
 msgstr "ਸੰਪਰਕ ਸੰਭਾਲਿਆ ਨਹੀਂ ਗਿਆ ਹੈ। ਕੀ ਤੁਸੀਂ ਯਕੀਨਨ ਛੱਡ ਕੇ ਬਾਹਰ ਹੋਣਾ ਚਾਹੁੰਦੇ ਹੋ? [y/n]\n"
 
-#: ../clients/cli/connections.c:6644
+#: ../clients/cli/connections.c:6661
 #, c-format
 msgid ""
 "The connection profile has been removed from another client. You may type "
@@ -2746,66 +2741,66 @@ msgstr ""
 "ਸੰਪਰਕ ਪਰੋਫਾਈਲ ਕਿਸੇ ਹੋਰ ਕਲਾਈਂਟ ਤੋਂ ਹਟਾਇਆ ਗਿਆ ਹੈ। ਇਸ ਨੂੰ ਮੁੜ ਬਹਾਲ ਕਰਨ ਲਈ ਤੁਸੀਂ ਮੁੱਖ ਮੇਨੂ ਵਿੱਚ "
 "'ਸੰਭਾਲੋ' ਲਿਖ ਸਕਦੇ ਹੋ।\n"
 
-#: ../clients/cli/connections.c:6669 ../clients/cli/connections.c:7090
-#: ../clients/cli/connections.c:7148
+#: ../clients/cli/connections.c:6686 ../clients/cli/connections.c:7107
+#: ../clients/cli/connections.c:7165
 #, c-format
 msgid "Allowed values for '%s' property: %s\n"
 msgstr "'%s' ਗੁਣ ਦੇ ਮਨਜ਼ੂਰ ਮੁੱਲ: %s\n"
 
-#: ../clients/cli/connections.c:6673 ../clients/cli/connections.c:7094
-#: ../clients/cli/connections.c:7152
+#: ../clients/cli/connections.c:6690 ../clients/cli/connections.c:7111
+#: ../clients/cli/connections.c:7169
 #, c-format
 msgid "Enter '%s' value: "
 msgstr "'%s' ਮੁੱਲ ਭਰੋ: "
 
-#: ../clients/cli/connections.c:6688 ../clients/cli/connections.c:6710
-#: ../clients/cli/connections.c:7098 ../clients/cli/connections.c:7157
+#: ../clients/cli/connections.c:6705 ../clients/cli/connections.c:6727
+#: ../clients/cli/connections.c:7115 ../clients/cli/connections.c:7174
 #, c-format
 msgid "Error: failed to set '%s' property: %s\n"
 msgstr "ਗਲਤੀ: '%s' ਗੁਣ ਨੂੰ ਸੈੱਟ ਕਰਨ ਵਿੱਚ ਅਸਫਲ: %s\n"
 
-#: ../clients/cli/connections.c:6704
+#: ../clients/cli/connections.c:6721
 #, c-format
 msgid "Edit '%s' value: "
 msgstr "'%s' ਮੁੱਲ ਸੋਧੋ: "
 
-#: ../clients/cli/connections.c:6733
+#: ../clients/cli/connections.c:6750
 #, c-format
 msgid "Error: %s\n"
 msgstr "ਗਲਤੀ: %s\n"
 
-#: ../clients/cli/connections.c:6739 ../clients/cli/connections.c:7249
-#: ../clients/cli/connections.c:7297
+#: ../clients/cli/connections.c:6756 ../clients/cli/connections.c:7266
+#: ../clients/cli/connections.c:7314
 #, c-format
 msgid "Error: failed to remove value of '%s': %s\n"
 msgstr "ਗਲਤੀ: '%s' ਦਾ ਮੁੱਲ ਹਟਾਉਣ ਵਿੱਚ ਅਸਫਲ: %s\n"
 
-#: ../clients/cli/connections.c:6760
+#: ../clients/cli/connections.c:6777
 #, c-format
 msgid "Unknown command argument: '%s'\n"
 msgstr "ਅਣਪਛਾਤਾ ਕਮਾਂਡ ਆਰਗੂਮੈਂਟ: '%s'\n"
 
-#: ../clients/cli/connections.c:6865
+#: ../clients/cli/connections.c:6882
 #, c-format
 msgid "Available settings: %s\n"
 msgstr "ਉਪਲੱਬਧ ਸੈਟਿੰਗਾਂ: %s\n"
 
-#: ../clients/cli/connections.c:6877
+#: ../clients/cli/connections.c:6894
 #, c-format
 msgid "Error: invalid setting name; %s\n"
 msgstr "ਗਲਤੀ: ਅਢੁਕਵਾਂ ਸੈਟਿੰਗ ਨਾਂ; %s\n"
 
-#: ../clients/cli/connections.c:6894
+#: ../clients/cli/connections.c:6911
 #, c-format
 msgid "Available properties: %s\n"
 msgstr "ਉਪਲਬੱਧ ਗੁਣ: %s\n"
 
-#: ../clients/cli/connections.c:6902
+#: ../clients/cli/connections.c:6919
 #, c-format
 msgid "Error: property %s\n"
 msgstr "ਗਲਤੀ: ਗੁਣ %s\n"
 
-#: ../clients/cli/connections.c:6943
+#: ../clients/cli/connections.c:6960
 #, fuzzy, c-format
 msgid ""
 "Saving the connection with 'autoconnect=yes'. That might result in an "
@@ -2816,12 +2811,12 @@ msgstr ""
 "ਕਿਰਿਆਸ਼ੀਲਤਾ ਵਿੱਚ ਹੋ ਸਕਦਾ ਹੈ।\n"
 "ਕੀ ਤੁਸੀਂ ਅਜੇ ਵੀ ਸੰਭਾਲਣਾ ਚਾਹੁੰਦੇ ਹੋ? [yes] "
 
-#: ../clients/cli/connections.c:7032
+#: ../clients/cli/connections.c:7049
 #, c-format
 msgid "You may edit the following settings: %s\n"
 msgstr "ਤੁਸੀਂ ਹੇਠਲੀਆਂ ਸੈਟਿੰਗਾਂ ਸੋਧ ਸਕਦੇ ਹੋ: %s\n"
 
-#: ../clients/cli/connections.c:7060
+#: ../clients/cli/connections.c:7077
 #, c-format
 msgid ""
 "The connection profile has been removed from another client. You may type "
@@ -2830,409 +2825,409 @@ msgstr ""
 "ਸੰਪਰਕ ਪਰੋਫਾਈਲ ਕਿਸੇ ਹੋਰ ਕਲਾਈਂਟ ਤੋਂ ਹਟਾਇਆ ਗਿਆ ਹੈ। ਇਸ ਨੂੰ ਮੁੜ ਬਹਾਲ ਕਰਨ ਲਈ ਤੁਸੀਂ 'ਸੰਭਾਲੋ' ਲਿਖ "
 "ਸਕਦੇ ਹੋ।\n"
 
-#: ../clients/cli/connections.c:7102 ../clients/cli/connections.c:7342
+#: ../clients/cli/connections.c:7119 ../clients/cli/connections.c:7359
 #, c-format
 msgid "Error: no setting selected; valid are [%s]\n"
 msgstr "ਗਲਤੀ: ਕੋਈ ਸੈਟਿੰਗ ਚੁਣੀ ਨਹੀਂ ਹੋਈ; ਢੁਕਵੇਂ ਹਨ [%s]\n"
 
-#: ../clients/cli/connections.c:7103
+#: ../clients/cli/connections.c:7120
 #, c-format
 msgid "use 'goto <setting>' first, or 'set <setting>.<property>'\n"
 msgstr "ਪਹਿਲਾਂ 'goto <setting>' ਵਰਤੋ, ਜਾਂ 'set <setting>.<property>'\n"
 
-#: ../clients/cli/connections.c:7117 ../clients/cli/connections.c:7276
-#: ../clients/cli/connections.c:7364
+#: ../clients/cli/connections.c:7134 ../clients/cli/connections.c:7293
+#: ../clients/cli/connections.c:7381
 #, c-format
 msgid "Error: invalid setting argument '%s'; valid are [%s]\n"
 msgstr "ਗਲਤੀ: ਅਢੁਕਵਾਂ ਸੈਟਿੰਗ ਆਰਗੂਮੈਂਟ '%s'; ਢੁਕਵੇਂ ਹਨ [%s]\n"
 
-#: ../clients/cli/connections.c:7127
+#: ../clients/cli/connections.c:7144
 #, c-format
 msgid "Error: missing setting for '%s' property\n"
 msgstr "ਗਲਤੀ: '%s' ਗੁਣ ਲਈ ਸੈਟਿੰਗ ਗੁੰਮ\n"
 
-#: ../clients/cli/connections.c:7134
+#: ../clients/cli/connections.c:7151
 #, c-format
 msgid "Error: invalid property: %s\n"
 msgstr "ਗਲਤੀ: ਅਢੁਕਵਾਂ ਗੁਣ: %s\n"
 
-#: ../clients/cli/connections.c:7187
+#: ../clients/cli/connections.c:7204
 #, c-format
 msgid "Error: unknown setting '%s'\n"
 msgstr "ਗਲਤੀ: ਅਣਪਛਾਤੀ ਸੈਟਿੰਗ '%s'\n"
 
-#: ../clients/cli/connections.c:7210
+#: ../clients/cli/connections.c:7227
 #, c-format
 msgid "You may edit the following properties: %s\n"
 msgstr "ਤੁਸੀਂ ਹੇਠਾਂ ਦਿੱਤੇ ਗੁਣ ਸੋਧ ਸਕਦੇ ਹੋ: %s\n"
 
-#: ../clients/cli/connections.c:7254
+#: ../clients/cli/connections.c:7271
 #, c-format
 msgid "Error: no argument given; valid are [%s]\n"
 msgstr "ਗਲਤੀ: ਕੋਈ ਆਰਗੂਮੈਂਟ ਦਿੱਤਾ ਨਹੀਂ ਗਿਆ; ਢੁਕਵੇਂ ਹਨ [%s]\n"
 
-#: ../clients/cli/connections.c:7273
+#: ../clients/cli/connections.c:7290
 #, c-format
 msgid "Setting '%s' is not present in the connection.\n"
 msgstr "ਸੰਪਰਕ ਵਿੱਚ ਸੈਟਿੰਗ '%s' ਮੌਜੂਦ ਨਹੀਂ ਹੈ।\n"
 
-#: ../clients/cli/connections.c:7318
+#: ../clients/cli/connections.c:7335
 #, c-format
 msgid "Error: %s properties, nor it is a setting name.\n"
 msgstr "ਗਲਤੀ: %s ਗੁਣ, ਨਾ ਹੀ ਇਹ ਇੱਕ ਸੈਟਿੰਗ ਨਾਂ ਹੈ।\n"
 
-#: ../clients/cli/connections.c:7343
+#: ../clients/cli/connections.c:7360
 #, c-format
 msgid "use 'goto <setting>' first, or 'describe <setting>.<property>'\n"
 msgstr "ਪਹਿਲਾਂ 'goto <setting>' ਵਰਤੋ, ਜਾਂ 'describe <setting>.<property>'\n"
 
-#: ../clients/cli/connections.c:7392
+#: ../clients/cli/connections.c:7409
 #, c-format
 msgid "Error: invalid property: %s, neither a valid setting name.\n"
 msgstr "ਗਲਤੀ: ਅਢੁਕਵਾਂ ਗੁਣ: %s, ਨਾ ਤਾਂ ਇੱਕ ਢੁਕਵਾਂ ਸੈਟਿੰਗ ਨਾਂ।\n"
 
-#: ../clients/cli/connections.c:7424
+#: ../clients/cli/connections.c:7441
 #, c-format
 msgid "Error: unknown setting: '%s'\n"
 msgstr "ਗਲਤੀ: ਅਣਪਛਾਤੀ ਸੈਟਿੰਗ: '%s'\n"
 
-#: ../clients/cli/connections.c:7429
+#: ../clients/cli/connections.c:7446
 #, fuzzy, c-format
 msgid "Error: '%s' setting not present in the connection\n"
 msgstr "ਸੰਪਰਕ ਵਿੱਚ ਸੈਟਿੰਗ '%s' ਮੌਜੂਦ ਨਹੀਂ ਹੈ।\n"
 
-#: ../clients/cli/connections.c:7457
+#: ../clients/cli/connections.c:7474
 #, fuzzy, c-format
 msgid "Error: invalid property: %s%s\n"
 msgstr "ਗਲਤੀ: ਅਢੁਕਵਾਂ ਗੁਣ: %s\n"
 
-#: ../clients/cli/connections.c:7459
+#: ../clients/cli/connections.c:7476
 #, fuzzy
 msgid ", neither a valid setting name"
 msgstr "ਗਲਤੀ: ਅਢੁਕਵਾਂ ਗੁਣ: %s, ਨਾ ਤਾਂ ਇੱਕ ਢੁਕਵਾਂ ਸੈਟਿੰਗ ਨਾਂ।\n"
 
-#: ../clients/cli/connections.c:7476
+#: ../clients/cli/connections.c:7493
 #, fuzzy, c-format
 msgid "Invalid verify option: %s\n"
 msgstr "ਅਢੁਕਵੀਂ ਚੋਣ '%s'"
 
-#: ../clients/cli/connections.c:7484
+#: ../clients/cli/connections.c:7501
 #, c-format
 msgid "Verify setting '%s': %s\n"
 msgstr "ਸੈਟਿੰਗ '%s' ਦੀ ਪੁਸ਼ਟੀ ਕਰੋ: %s\n"
 
-#: ../clients/cli/connections.c:7499
+#: ../clients/cli/connections.c:7516
 #, c-format
 msgid "Verify connection: %s\n"
 msgstr "ਸੰਪਰਕ ਦੀ ਪੜਤਾਲ ਕਰੋ: %s\n"
 
-#: ../clients/cli/connections.c:7502
+#: ../clients/cli/connections.c:7519
 #, c-format
 msgid "The error cannot be fixed automatically.\n"
 msgstr ""
 
-#: ../clients/cli/connections.c:7519
+#: ../clients/cli/connections.c:7536
 #, fuzzy, c-format
 msgid "Error: invalid argument '%s'\n"
 msgstr "ਗਲਤੀ: ਅਢੁਕਵਾਂ ਵਾਧੂ ਆਰਗੂਮੈਂਟ '%s'।"
 
-#: ../clients/cli/connections.c:7551
+#: ../clients/cli/connections.c:7568
 #, fuzzy, c-format
 msgid "Error: Failed to save '%s' (%s) connection: %s\n"
 msgstr "ਗਲਤੀ: ਸੰਪਰਕ '%s' (%s) ਨੂੰ ਸੰਭਾਲਣ ਵਿੱਚ ਅਸਫਲ: (%d) %s\n"
 
-#: ../clients/cli/connections.c:7558
+#: ../clients/cli/connections.c:7575
 #, c-format
 msgid "Connection '%s' (%s) successfully saved.\n"
 msgstr "ਸੰਪਰਕ '%s' (%s) ਸਫਲਤਾਪੂਰਵਕ ਸੰਭਾਲਿਆ ਗਿਆ।\n"
 
-#: ../clients/cli/connections.c:7559
+#: ../clients/cli/connections.c:7576
 #, fuzzy, c-format
 msgid "Connection '%s' (%s) successfully updated.\n"
 msgstr "ਸੰਪਰਕ '%s' (%s) ਸਫਲਤਾਪੂਰਵਕ ਜੋੜਿਆ ਗਿਆ।\n"
 
-#: ../clients/cli/connections.c:7591
+#: ../clients/cli/connections.c:7608
 #, c-format
 msgid "Error: connection verification failed: %s\n"
 msgstr "ਗਲਤੀ: ਸੰਪਰਕ ਪੜਤਾਲ ਅਸਫਲ ਹੋਈ: %s\n"
 
-#: ../clients/cli/connections.c:7592
+#: ../clients/cli/connections.c:7609
 msgid "(unknown error)"
 msgstr "(ਅਣਪਛਾਤੀ ਗਲਤੀ)"
 
-#: ../clients/cli/connections.c:7593
+#: ../clients/cli/connections.c:7610
 #, c-format
 msgid "You may try running 'verify fix' to fix errors.\n"
 msgstr ""
 
-#: ../clients/cli/connections.c:7615
+#: ../clients/cli/connections.c:7632
 #, c-format
 msgid "Error: connection is not saved. Type 'save' first.\n"
 msgstr "ਗਲਤੀ: ਸੰਪਰਕ ਸੰਭਾਲਿਆ ਨਹੀਂ ਹੈ। ਪਹਿਲਾਂ 'save' ਲਿਖੋ।\n"
 
-#: ../clients/cli/connections.c:7619
+#: ../clients/cli/connections.c:7636
 #, c-format
 msgid "Error: connection is not valid: %s\n"
 msgstr "ਗਲਤੀ: ਸੰਪਰਕ ਢੁਕਵਾਂ ਨਹੀਂ ਹੈ: %s\n"
 
-#: ../clients/cli/connections.c:7629
+#: ../clients/cli/connections.c:7646
 #, c-format
 msgid "Error: Cannot activate connection: %s.\n"
 msgstr "ਗਲਤੀ: ਸੰਪਰਕ ਨੂੰ ਕਿਰਿਆਸ਼ੀਲ ਨਹੀਂ ਕਰ ਸਕਦਾ: %s।\n"
 
-#: ../clients/cli/connections.c:7638
+#: ../clients/cli/connections.c:7655
 #, fuzzy, c-format
 msgid "Error: Failed to activate '%s' (%s) connection: %s\n"
 msgstr "ਗਲਤੀ: ਸੰਪਰਕ '%s' (%s) ਨੂੰ ਕਿਰਿਆਸ਼ੀਲ ਕਰਨ ਵਿੱਚ ਅਸਫਲ: (%d) %s\n"
 
-#: ../clients/cli/connections.c:7644
+#: ../clients/cli/connections.c:7661
 msgid "Monitoring connection activation (press any key to continue)\n"
 msgstr "ਸੰਪਰਕ ਕਿਰਿਆਸ਼ੀਲਤਾ ਨੂੰ ਮੌਨੀਟਰ ਕਰ ਰਿਹਾ (ਜਾਰੀ ਰਹਿਣ ਲਈ ਕੋਈ ਬਟਨ ਦੱਬੋ)\n"
 
-#: ../clients/cli/connections.c:7680
+#: ../clients/cli/connections.c:7697
 #, c-format
 msgid "Error: status-line: %s\n"
 msgstr "ਗਲਤੀ: ਹਾਲਾਤ-ਸਤਰ੍ਹ: %s\n"
 
-#: ../clients/cli/connections.c:7688
+#: ../clients/cli/connections.c:7705
 #, c-format
 msgid "Error: save-confirmation: %s\n"
 msgstr "ਗਲਤੀ: ਸੰਰਚਨਾ-ਸੰਭਾਲੋ: %s\n"
 
-#: ../clients/cli/connections.c:7696
+#: ../clients/cli/connections.c:7713
 #, fuzzy, c-format
 msgid "Error: show-secrets: %s\n"
 msgstr "ਗਲਤੀ: 'ਸਰਗਰਮ ਵਿਖਾਉ': %s"
 
-#: ../clients/cli/connections.c:7705
+#: ../clients/cli/connections.c:7722
 #, fuzzy, c-format
 msgid "Error: bad color: %s\n"
 msgstr "ਗਲਤੀ: ਅਢੁਕਵਾਂ ਗੁਣ: %s\n"
 
-#: ../clients/cli/connections.c:7719
+#: ../clients/cli/connections.c:7736
 #, c-format
 msgid "Current nmcli configuration:\n"
 msgstr "ਮੌਜੂਦਾ nmcli ਸੰਰਚਨਾ:\n"
 
-#: ../clients/cli/connections.c:7729
+#: ../clients/cli/connections.c:7746
 #, c-format
 msgid "Invalid configuration option '%s'; allowed [%s]\n"
 msgstr "ਅਢੁਕਵੀਂ ਸੰਰਚਨਾ ਚੋਣ '%s'; ਮਨਜੂਰ [%s] ਹੈ\n"
 
-#: ../clients/cli/connections.c:7958
+#: ../clients/cli/connections.c:7975
 #, c-format
 msgid "Error: only one of 'id', uuid, or 'path' can be provided."
 msgstr "ਗਲਤੀ: 'id', uuid, ਜਾਂ 'path' ਵਿੱਚੋਂ ਸਿਰਫ ਇੱਕ ਮੁਹੱਈਆ ਕਰਵਾਇਆ ਜਾ ਸਕਦਾ ਹੈ।"
 
-#: ../clients/cli/connections.c:7973 ../clients/cli/connections.c:8139
+#: ../clients/cli/connections.c:7990 ../clients/cli/connections.c:8156
 #, c-format
 msgid "Error: Unknown connection '%s'."
 msgstr "ਗਲਤੀ: ਅਣਪਛਾਤਾ ਸੰਪਰਕ '%s'।"
 
-#: ../clients/cli/connections.c:7991
+#: ../clients/cli/connections.c:8008
 #, c-format
 msgid "Warning: editing existing connection '%s'; 'type' argument is ignored\n"
 msgstr "ਚੇਤਾਵਨੀ: ਮੌਜੂਦਾ ਸੰਪਰਕ '%s' ਨੂੰ ਸੋਧ ਰਿਹਾ; 'type' ਆਰਗੂਮੈਂਟ ਨੂੰ ਅਣਗੌਲਿਆ ਕੀਤਾ ਗਿਆ ਹੈ\n"
 
-#: ../clients/cli/connections.c:7994
+#: ../clients/cli/connections.c:8011
 #, c-format
 msgid ""
 "Warning: editing existing connection '%s'; 'con-name' argument is ignored\n"
 msgstr ""
 "ਚੇਤਾਵਨੀ: ਮੌਜੂਦਾ ਸੰਪਰਕ '%s' ਨੂੰ ਸੋਧ ਰਿਹਾ; 'con-name' ਆਰਗੂਮੈਂਟ ਨੂੰ ਅਣਗੌਲਿਆ ਕੀਤਾ ਗਿਆ ਹੈ\n"
 
-#: ../clients/cli/connections.c:8014
+#: ../clients/cli/connections.c:8031
 #, c-format
 msgid "Valid connection types: %s\n"
 msgstr "ਢੁਕਵੀਆਂ ਸੰਪਰਕ ਕਿਸਮਾਂ: %s\n"
 
-#: ../clients/cli/connections.c:8016
+#: ../clients/cli/connections.c:8033
 #, c-format
 msgid "Error: invalid connection type; %s\n"
 msgstr "ਗਲਤੀ: ਅਢੁਕਵੀਂ ਸੰਪਰਕ ਕਿਸਮ; %s\n"
 
-#: ../clients/cli/connections.c:8055
+#: ../clients/cli/connections.c:8072
 #, c-format
 msgid "===| nmcli interactive connection editor |==="
 msgstr "===| nmcli ਇੰਟਰਐਕਟਿਵ ਸੰਪਰਕ ਸੰਪਾਦਕ |==="
 
-#: ../clients/cli/connections.c:8058
+#: ../clients/cli/connections.c:8075
 #, c-format
 msgid "Editing existing '%s' connection: '%s'"
 msgstr "ਮੌਜੂਦਾ ਸੰਪਰਕ '%s' ਸੋਧ ਰਿਹਾ: '%s'"
 
-#: ../clients/cli/connections.c:8060
+#: ../clients/cli/connections.c:8077
 #, c-format
 msgid "Adding a new '%s' connection"
 msgstr "ਇੱਕ ਨਵਾਂ ਸੰਪਰਕ '%s' ਜੋੜ ਰਿਹਾ ਹੈ"
 
-#: ../clients/cli/connections.c:8062
+#: ../clients/cli/connections.c:8079
 #, c-format
 msgid "Type 'help' or '?' for available commands."
 msgstr "ਉਪਲੱਬਧ ਕਮਾਂਡਾਂ ਲਈ 'help' ਜਾਂ '?' ਲਿਖੋ।"
 
-#: ../clients/cli/connections.c:8064
+#: ../clients/cli/connections.c:8081
 #, c-format
 msgid "Type 'describe [<setting>.<prop>]' for detailed property description."
 msgstr "ਵੇਰਵੇਵਾਰ ਗੁਣ ਬਿਉਰੇ ਲਈ 'describe [<setting>.<prop>]' ਲਿਖੋ।"
 
-#: ../clients/cli/connections.c:8099
+#: ../clients/cli/connections.c:8116
 #, fuzzy, c-format
 msgid "Error: Failed to modify connection '%s': %s"
 msgstr "ਗਲਤੀ: ਸੰਪਰਕ '%s' ਨੂੰ ਸੁਧਾਰਨ ਵਿੱਚ ਅਸਫਲ: (%d) %s"
 
-#: ../clients/cli/connections.c:8106
+#: ../clients/cli/connections.c:8123
 #, c-format
 msgid "Connection '%s' (%s) successfully modified.\n"
 msgstr "ਸੰਪਰਕ '%s' (%s) ਸਫਲਤਾਪੂਰਵਕ ਸੁਧਾਰਿਆ ਗਿਆ।\n"
 
-#: ../clients/cli/connections.c:8187
+#: ../clients/cli/connections.c:8204
 #, c-format
 msgid "%s (%s) cloned as %s (%s).\n"
 msgstr ""
 
-#: ../clients/cli/connections.c:8253
+#: ../clients/cli/connections.c:8270
 #, fuzzy
 msgid "New connection name: "
 msgstr "ਨਵਾਂ ਸੰਪਰਕ"
 
-#: ../clients/cli/connections.c:8255
+#: ../clients/cli/connections.c:8272
 #, fuzzy, c-format
 msgid "Error: <new name> argument is missing."
 msgstr "ਗਲਤੀ: %s ਆਰਗੂਮੈਂਟ ਮੌਜੂਦ ਨਹੀਂ ਹੈ।"
 
-#: ../clients/cli/connections.c:8261 ../clients/cli/connections.c:8781
+#: ../clients/cli/connections.c:8278 ../clients/cli/connections.c:8798
 #, fuzzy, c-format
 msgid "Error: unknown extra argument: '%s'."
 msgstr "ਗਲਤੀ: ਅਢੁਕਵਾਂ ਵਾਧੂ ਆਰਗੂਮੈਂਟ '%s'।"
 
-#: ../clients/cli/connections.c:8312
+#: ../clients/cli/connections.c:8329
 #, fuzzy, c-format
 msgid "Error: not all connections deleted."
 msgstr "ਗਲਤੀ: ਕੋਈ ਸੰਪਰਕ ਦਰਸਾਇਆ ਨਹੀਂ ਗਿਆ।"
 
-#: ../clients/cli/connections.c:8313
+#: ../clients/cli/connections.c:8330
 #, c-format
 msgid "Error: Connection deletion failed: %s"
 msgstr "ਗਲਤੀ: ਕੁਨੈਕਸ਼ਨ ਹਟਾਉਣ ਲਈ ਫੇਲ੍ਹ: %s"
 
-#: ../clients/cli/connections.c:8374 ../clients/cli/connections.c:8499
+#: ../clients/cli/connections.c:8391 ../clients/cli/connections.c:8516
 #, c-format
 msgid "Error: %s.\n"
 msgstr ""
 
-#: ../clients/cli/connections.c:8375 ../clients/cli/connections.c:8500
+#: ../clients/cli/connections.c:8392 ../clients/cli/connections.c:8517
 #, fuzzy, c-format
 msgid "Error: not all connections found."
 msgstr "ਗਲਤੀ: '%s' ਢੁਕਵੀਂ 'connection' ਕਮਾਂਡ ਨਹੀਂ ਹੈ।"
 
 #. truncate trailing ", "
-#: ../clients/cli/connections.c:8418
+#: ../clients/cli/connections.c:8435
 #, c-format
 msgid "Error: cannot delete unknown connection(s): %s."
 msgstr "ਗਲਤੀ: ਅਣਪਛਾਤੇ ਸੰਪਰਕ ਮਿਟਾ ਨਹੀਂ ਸਕਦਾ: %s।"
 
-#: ../clients/cli/connections.c:8430
+#: ../clients/cli/connections.c:8447
 #, fuzzy, c-format
 msgid "%s: connection profile changed\n"
 msgstr "ਸੰਪਰਕ ਅਸਫਲ ਹੋਇਆ"
 
-#: ../clients/cli/connections.c:8456
+#: ../clients/cli/connections.c:8473
 #, fuzzy, c-format
 msgid "%s: connection profile created\n"
 msgstr "ਸੰਪਰਕ ਅਸਫਲ ਹੋਇਆ"
 
-#: ../clients/cli/connections.c:8465
+#: ../clients/cli/connections.c:8482
 #, fuzzy, c-format
 msgid "%s: connection profile removed\n"
 msgstr "ਕੁਨੈਕਸ਼ਨ ਹਟਾਇਆ ਗਿਆ"
 
-#: ../clients/cli/connections.c:8528
+#: ../clients/cli/connections.c:8545
 #, fuzzy, c-format
 msgid "Error: failed to reload connections: %s."
 msgstr "ਗਲਤੀ: ਸੰਪਰਕ '%s' ਜੋੜਨ ਵਿੱਚ ਅਸਫਲ ਹੋਇਆ: (%d) %s"
 
-#: ../clients/cli/connections.c:8561
+#: ../clients/cli/connections.c:8578
 #, fuzzy, c-format
 msgid "Error: failed to load connection: %s."
 msgstr "ਗਲਤੀ: ਸੰਪਰਕ '%s' ਜੋੜਨ ਵਿੱਚ ਅਸਫਲ ਹੋਇਆ: (%d) %s"
 
-#: ../clients/cli/connections.c:8569
+#: ../clients/cli/connections.c:8586
 #, c-format
 msgid "Could not load file '%s'\n"
 msgstr "ਫਾਈਲ '%s' ਲੋਡ ਨਹੀਂ ਕਰ ਸਕਿਆ\n"
 
-#: ../clients/cli/connections.c:8578
+#: ../clients/cli/connections.c:8595
 #, fuzzy
 msgid "File to import: "
 msgstr "ਇੰਕ੍ਰਿਪਟ ਕਰਨ ਲਈ ਫੇਲ੍ਹ: %d"
 
-#: ../clients/cli/connections.c:8625
+#: ../clients/cli/connections.c:8642
 #, c-format
 msgid "Error: No arguments provided."
 msgstr "ਗਲਤੀ: ਕੋਈ ਆਰਗੂਮੈਂਟ ਮੁਹੱਈਆ ਕਰਵਾਏ ਗਏ।"
 
-#: ../clients/cli/connections.c:8650
+#: ../clients/cli/connections.c:8667
 #, c-format
 msgid "Warning: 'type' already specified, ignoring extra one.\n"
 msgstr ""
 
-#: ../clients/cli/connections.c:8665
+#: ../clients/cli/connections.c:8682
 #, c-format
 msgid "Warning: 'file' already specified, ignoring extra one.\n"
 msgstr ""
 
-#: ../clients/cli/connections.c:8667
+#: ../clients/cli/connections.c:8684
 #, fuzzy, c-format
 msgid "Unknown parameter: %s"
 msgstr "ਅਣਜਾਣ ਪੈਰਾਮੀਟਰ: %s\n"
 
-#: ../clients/cli/connections.c:8679
+#: ../clients/cli/connections.c:8696
 #, c-format
 msgid "Error: 'type' argument is required."
 msgstr "ਗਲਤੀ: 'type' ਆਰਗੂਮੈਂਟ ਲੋੜੀਂਦਾ ਹੈ।"
 
-#: ../clients/cli/connections.c:8684
+#: ../clients/cli/connections.c:8701
 #, fuzzy, c-format
 msgid "Error: 'file' argument is required."
 msgstr "ਗਲਤੀ: 'ifname' ਆਰਗੂਮੈਂਟ ਲੋੜੀਂਦਾ ਹੈ।"
 
-#: ../clients/cli/connections.c:8691
+#: ../clients/cli/connections.c:8708
 #, fuzzy, c-format
 msgid "Error: failed to find VPN plugin for %s."
 msgstr "ਗਲਤੀ: %s.%s ਨੂੰ ਸੁਧਾਰਨ ਵਿੱਚ ਅਸਫਲ: %s।"
 
-#: ../clients/cli/connections.c:8699 ../clients/cli/connections.c:8800
+#: ../clients/cli/connections.c:8716 ../clients/cli/connections.c:8817
 #, fuzzy, c-format
 msgid "Error: failed to load VPN plugin: %s."
 msgstr "ਗਲਤੀ: %s.%s ਨੂੰ ਸੁਧਾਰਨ ਵਿੱਚ ਅਸਫਲ: %s।"
 
-#: ../clients/cli/connections.c:8707
+#: ../clients/cli/connections.c:8724
 #, fuzzy, c-format
 msgid "Error: failed to import '%s': %s."
 msgstr "ਗਲਤੀ: %s.%s ਨੂੰ ਸੁਧਾਰਨ ਵਿੱਚ ਅਸਫਲ: %s।"
 
-#: ../clients/cli/connections.c:8787
+#: ../clients/cli/connections.c:8804
 #, fuzzy
 msgid "Output file name: "
 msgstr "ਫਾਇਲਨਾਂ"
 
-#: ../clients/cli/connections.c:8791
+#: ../clients/cli/connections.c:8808
 #, fuzzy, c-format
 msgid "Error: the connection is not VPN."
 msgstr "ਗਲਤੀ: ਸੰਪਰਕ ਢੁਕਵਾਂ ਨਹੀਂ ਹੈ: %s\n"
 
-#: ../clients/cli/connections.c:8812
+#: ../clients/cli/connections.c:8829
 #, fuzzy, c-format
 msgid "Error: failed to create temporary file %s."
 msgstr "ਆਰਜੀ ਫਾਈਲ ਨਹੀਂ ਬਣਾ ਸਕਿਆ: %s"
 
-#: ../clients/cli/connections.c:8821
+#: ../clients/cli/connections.c:8838
 #, fuzzy, c-format
 msgid "Error: failed to export '%s': %s."
 msgstr "ਗਲਤੀ: '%s' ਗੁਣ ਨੂੰ ਸੈੱਟ ਕਰਨ ਵਿੱਚ ਅਸਫਲ: %s\n"
 
-#: ../clients/cli/connections.c:8832
+#: ../clients/cli/connections.c:8849
 #, fuzzy, c-format
 msgid "Error: failed to read temporary file '%s': %s."
 msgstr "ਗਲਤੀ: '%s' ਦਾ ਮੁੱਲ ਹਟਾਉਣ ਵਿੱਚ ਅਸਫਲ: %s\n"
@@ -5487,7 +5482,7 @@ msgstr ""
 #: ../clients/cli/settings.c:2890 ../clients/cli/settings.c:4309
 #: ../clients/cli/settings.c:4355 ../clients/cli/settings.c:4392
 #: ../clients/cli/settings.c:4451 ../clients/cli/settings.c:5400
-#: ../libnm-core/nm-keyfile-reader.c:610
+#: ../libnm-core/nm-keyfile-reader.c:612
 #, fuzzy, c-format
 msgid "invalid option '%s', use one of [%s]"
 msgstr "ਚੋਣ '%s' ਜਾਂ ਇਸਦਾ ਮੁੱਲ '%s' ਅਢੁਕਵੇਂ"
@@ -6305,7 +6300,7 @@ msgstr "DSL ਸੰਪਰਕ %d"
 #: ../clients/tui/nm-editor-utils.c:190 ../libnm-core/nm-connection.c:1931
 #: ../libnm-glib/nm-device.c:1835 ../libnm-util/nm-connection.c:1626
 #: ../libnm/nm-device.c:1631
-#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4450
+#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4499
 msgid "Bond"
 msgstr "ਬੌਂਡ"
 
@@ -6317,7 +6312,7 @@ msgstr "ਬੌਂਡ ਕੁਨੈਕਸ਼ਨ %d"
 #: ../clients/tui/nm-editor-utils.c:199 ../libnm-core/nm-connection.c:1935
 #: ../libnm-glib/nm-device.c:1839 ../libnm-util/nm-connection.c:1630
 #: ../libnm/nm-device.c:1635
-#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4740
+#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4789
 msgid "Bridge"
 msgstr "ਬਰਿੱਜ"
 
@@ -6329,7 +6324,7 @@ msgstr "ਸੰਪਰਕ %d ਨੂੰ ਬਰਿੱਜ ਕਰੋ"
 #: ../clients/tui/nm-editor-utils.c:208 ../libnm-core/nm-connection.c:1933
 #: ../libnm-glib/nm-device.c:1837 ../libnm-util/nm-connection.c:1628
 #: ../libnm/nm-device.c:1633
-#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4553
+#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4602
 msgid "Team"
 msgstr "ਟੀਮ"
 
@@ -7476,166 +7471,167 @@ msgstr ""
 msgid "Method returned type '%s', but expected '%s'"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:142
+#: ../libnm-core/nm-keyfile-reader.c:144
 msgid "ignoring missing number"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:151
+#: ../libnm-core/nm-keyfile-reader.c:153
 #, fuzzy, c-format
 msgid "ignoring invalid number '%s'"
 msgstr "ਅਢੁਕਵਾਂ metric '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:171
+#: ../libnm-core/nm-keyfile-reader.c:173
 #, fuzzy, c-format
 msgid "ignoring invalid %s address: %s"
 msgstr "ਅਢੁਕਵਾਂ IPv4 ਪਤਾ '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:211
+#: ../libnm-core/nm-keyfile-reader.c:213
 #, fuzzy, c-format
 msgid "ignoring invalid gateway '%s' for %s route"
 msgstr "ਅਢੁਕਵਾਂ ਗੇਟਵੇਅ '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:231
+#: ../libnm-core/nm-keyfile-reader.c:233
 #, fuzzy, c-format
 msgid "ignoring invalid %s route: %s"
 msgstr "ਅਢੁਕਵਾਂ IPv4 ਰਾਹ '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:349
+#: ../libnm-core/nm-keyfile-reader.c:351
 #, c-format
 msgid "unexpected character '%c' for address %s: '%s' (position %td)"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:359
+#: ../libnm-core/nm-keyfile-reader.c:361
 #, c-format
 msgid "unexpected character '%c' for %s: '%s' (position %td)"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:368
+#: ../libnm-core/nm-keyfile-reader.c:370
 #, c-format
 msgid "unexpected character '%c' in prefix length for %s: '%s' (position %td)"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:379
+#: ../libnm-core/nm-keyfile-reader.c:381
 #, c-format
 msgid "garbage at the end of value %s: '%s'"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:385
+#: ../libnm-core/nm-keyfile-reader.c:387
 #, c-format
 msgid "deprecated semicolon at the end of value %s: '%s'"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:400
+#: ../libnm-core/nm-keyfile-reader.c:402
 #, c-format
 msgid "invalid prefix length for %s '%s', defaulting to %d"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:407
+#: ../libnm-core/nm-keyfile-reader.c:409
 #, c-format
 msgid "missing prefix length for %s '%s', defaulting to %d"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:541
+#: ../libnm-core/nm-keyfile-reader.c:543
 #, fuzzy, c-format
 msgid "ignoring invalid DNS server IPv4 address '%s'"
 msgstr "ਅਢੁਕਵਾਂ IPv4 ਪਤਾ '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:580
+#: ../libnm-core/nm-keyfile-reader.c:582
 #, fuzzy, c-format
 msgid "ignoring invalid DNS server IPv6 address '%s'"
 msgstr "ਅਢੁਕਵਾਂ IPv6 ਪਤਾ '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:675 ../libnm-core/nm-keyfile-reader.c:1571
+#: ../libnm-core/nm-keyfile-reader.c:676 ../libnm-core/nm-keyfile-reader.c:1603
 #, c-format
 msgid "ignoring invalid byte element '%d' (not between 0 and 255 inclusive)"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:686
+#: ../libnm-core/nm-keyfile-reader.c:687
 #, fuzzy
 msgid "ignoring invalid MAC address"
 msgstr "ਇੱਕ ਢੁਕਵਾਂ MAC ਪਤਾ ਨਹੀਂ ਹੈ"
 
-#: ../libnm-core/nm-keyfile-reader.c:895
+#: ../libnm-core/nm-keyfile-reader.c:924
 msgid "ignoring invalid SSID"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:911
+#: ../libnm-core/nm-keyfile-reader.c:940
 msgid "ignoring invalid raw password"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:986 ../libnm-core/nm-keyfile-reader.c:1162
+#: ../libnm-core/nm-keyfile-reader.c:1015
+#: ../libnm-core/nm-keyfile-reader.c:1191
 #, c-format
 msgid "certificate or key file '%s' does not exist"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:991
+#: ../libnm-core/nm-keyfile-reader.c:1020
 #, fuzzy, c-format
 msgid "invalid key/cert value path \"%s\""
 msgstr "ਅਢੁਕਵਾਂ '%s' ਜਾਂ ਇਸਦਾ ਮੁੱਲ '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:1001
+#: ../libnm-core/nm-keyfile-reader.c:1030
 #, c-format
 msgid "invalid PKCS#11 URI \"%s\""
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:1039
+#: ../libnm-core/nm-keyfile-reader.c:1068
 msgid "invalid key/cert value data:;base64, is not base64"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:1052
+#: ../libnm-core/nm-keyfile-reader.c:1081
 msgid "invalid key/cert value data:;base64,file://"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:1199
+#: ../libnm-core/nm-keyfile-reader.c:1228
 msgid "invalid key/cert value is not a valid blob"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:1204
+#: ../libnm-core/nm-keyfile-reader.c:1233
 #, fuzzy
 msgid "invalid key/cert value"
 msgstr "ਅਢੁਕਵਾਂ '%s' ਜਾਂ ਇਸਦਾ ਮੁੱਲ '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:1251
+#: ../libnm-core/nm-keyfile-reader.c:1280
 #, fuzzy, c-format
 msgid "invalid parity value '%s'"
 msgstr "ਅਢੁਕਵਾਂ '%s' ਜਾਂ ਇਸਦਾ ਮੁੱਲ '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:1269
+#: ../libnm-core/nm-keyfile-reader.c:1298
 #, c-format
 msgid "ignoring invalid team configuration: %s"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:1472
+#: ../libnm-core/nm-keyfile-reader.c:1504
 #, fuzzy, c-format
 msgid "error loading setting value: %s"
 msgstr "ਗਲਤੀ: ਅਢੁਕਵਾਂ ਸੈਟਿੰਗ ਨਾਂ; %s\n"
 
-#: ../libnm-core/nm-keyfile-reader.c:1504
+#: ../libnm-core/nm-keyfile-reader.c:1536
 #, fuzzy, c-format
 msgid "invalid negative value (%i)"
 msgstr "ਅਢੁਕਵਾਂ ਗੇਟਵੇਅ '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:1525
+#: ../libnm-core/nm-keyfile-reader.c:1557
 #, fuzzy, c-format
 msgid "invalid char value (%i)"
 msgstr "ਅਢੁਕਵਾਂ '%s' ਜਾਂ ਇਸਦਾ ਮੁੱਲ '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:1548
+#: ../libnm-core/nm-keyfile-reader.c:1580
 #, fuzzy, c-format
 msgid "invalid int64 value (%s)"
 msgstr "ਅਢੁਕਵਾਂ '%s' ਜਾਂ ਇਸਦਾ ਮੁੱਲ '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:1607
+#: ../libnm-core/nm-keyfile-reader.c:1639
 #, c-format
 msgid "too large FLAGS property '%s' (%llu)"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:1620
+#: ../libnm-core/nm-keyfile-reader.c:1652
 #, fuzzy, c-format
 msgid "unhandled setting property type '%s'"
 msgstr "ਗਲਤੀ: ਅਢੁਕਵੀਂ <setting>.<property> '%s'।"
 
-#: ../libnm-core/nm-keyfile-reader.c:1651
+#: ../libnm-core/nm-keyfile-reader.c:1683
 #, fuzzy, c-format
 msgid "invalid setting name '%s'"
 msgstr "ਗਲਤੀ: ਅਢੁਕਵਾਂ ਸੈਟਿੰਗ ਨਾਂ; %s\n"
@@ -8349,54 +8345,65 @@ msgstr "'%s' ਇੱਕ ਢੁਕਵਾਂ UUID ਨਹੀਂ ਹੈ"
 msgid "'%s': invalid group ID"
 msgstr "'%s' ਇੱਕ ਢੁਕਵਾਂ UUID ਨਹੀਂ ਹੈ"
 
-#: ../libnm-core/nm-setting-user.c:108
+#: ../libnm-core/nm-setting-user.c:111
 #, fuzzy
 msgid "missing key"
 msgstr "ਗੁੰਮ ਚੋਣ"
 
-#: ../libnm-core/nm-setting-user.c:114
+#: ../libnm-core/nm-setting-user.c:117
 #, fuzzy
 msgid "key is too long"
 msgstr "ਗਲਤੀ: 'ssid' ਲੋੜੀਂਦਾ ਹੈ।"
 
-#: ../libnm-core/nm-setting-user.c:119
+#: ../libnm-core/nm-setting-user.c:122
 msgid "key must be UTF8"
 msgstr ""
 
-#: ../libnm-core/nm-setting-user.c:142
+#: ../libnm-core/nm-setting-user.c:145
 msgid "key requires a '.' for a namespace"
 msgstr ""
 
-#: ../libnm-core/nm-setting-user.c:155
+#: ../libnm-core/nm-setting-user.c:158
 msgid "key cannot contain \"..\""
 msgstr ""
 
-#: ../libnm-core/nm-setting-user.c:160
+#: ../libnm-core/nm-setting-user.c:163
 #, fuzzy
 msgid "key contains invalid characters"
 msgstr "IV ਵਿੱਚ ਗ਼ੈਰ-ਹੈਕਸਾਡੈਸੀਮਲ ਅੰਕ ਹਨ।"
 
-#: ../libnm-core/nm-setting-user.c:185
+#: ../libnm-core/nm-setting-user.c:188
 #, fuzzy
 msgid "value is missing"
 msgstr "ਗੁਣ ਗੁੰਮ ਹੈ"
 
-#: ../libnm-core/nm-setting-user.c:192
+#: ../libnm-core/nm-setting-user.c:195
 #, fuzzy
 msgid "value is too large"
 msgstr "'%d' ਮੁੱਲ ਹੱਦ <0-3> ਤੋਂ ਬਾਹਰ ਹੈ"
 
-#: ../libnm-core/nm-setting-user.c:198
+#: ../libnm-core/nm-setting-user.c:201
 #, fuzzy
 msgid "value is not valid UTF8"
 msgstr "'%s' ਇੱਕ ਢੁਕਵਾਂ UUID ਨਹੀਂ ਹੈ"
 
-#: ../libnm-core/nm-setting-user.c:330
-msgid "maximum number of user data entires reached"
+#: ../libnm-core/nm-setting-user.c:338
+msgid "maximum number of user data entries reached"
 msgstr ""
 
-#: ../libnm-core/nm-setting-user.c:352
-msgid "setting user-data is not yet implemented"
+#: ../libnm-core/nm-setting-user.c:379
+#, fuzzy, c-format
+msgid "invalid key \"%s\": %s"
+msgstr "ਅਢੁਕਵਾਂ IPv4 ਰੂਟ '%s'"
+
+#: ../libnm-core/nm-setting-user.c:383
+#, fuzzy, c-format
+msgid "invalid value for \"%s\": %s"
+msgstr "'%s' ਇੱਕ ਢੁਕਵਾਂ ਮੁੱਲ ਨਹੀਂ '%s' ਲਈ"
+
+#: ../libnm-core/nm-setting-user.c:398
+#, c-format
+msgid "maximum number of user data entries reached (%u instead of %u)"
 msgstr ""
 
 #: ../libnm-core/nm-setting-vlan.c:670 ../libnm-util/nm-setting-vlan.c:600
@@ -9325,7 +9332,7 @@ msgctxt "connection id fallback"
 msgid "%s %d"
 msgstr "%s %s"
 
-#: ../src/main.c:176 ../src/main.c:311
+#: ../src/main.c:176 ../src/main.c:315
 #, fuzzy, c-format
 msgid "Failed to read configuration: %s\n"
 msgstr "ਸੰਰਚਨਾ ਪੜ੍ਹਨ ਲਈ ਗਲਤੀ: (%d) %s\n"
@@ -9374,27 +9381,27 @@ msgstr ""
 "ਪੁਆਇੰਟ ਦੇਣ ਲਈ ਵੀ ਸਹਾਇਕ ਹੈ, ਜਿਸ ਨਾਲ ਕੰਪਿਊਟਰ ਵਿਚਲੇ ਬੇਤਾਰ ਕਾਰਡ\n"
 "ਸਬੰਧਿਤ ਹੋਣੇ ਚਾਹੀਦੇ ਹਨ।"
 
-#: ../src/main.c:296 ../src/main-utils.c:283 ../src/nm-iface-helper.c:414
+#: ../src/main.c:300 ../src/main-utils.c:286 ../src/nm-iface-helper.c:414
 #, c-format
 msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr "%s। ਢੁੱਕਵੀਆਂ ਚੋਣਾਂ ਦੀ ਲਿਸਟ ਵੇਖਣ ਲਈ --help ਵਰਤੋਂ ਜੀ।\n"
 
-#: ../src/main.c:301 ../src/nm-iface-helper.c:419
+#: ../src/main.c:305 ../src/nm-iface-helper.c:419
 #, c-format
 msgid "Ignoring unrecognized log domain(s) '%s' passed on command line.\n"
 msgstr "ਕਮਾਂਡ ਲਾਈਨ ਤੇ ਪਾਸ ਕੀਤੀ (ਕੀਤੀਆਂ) ਬੇਪਛਾਣ ਡੋਮੇਨ(ਡੋਮੇਨਾਂ) '%s' ਨੂੰ ਅਣਗੌਲਿਆਂ ਕਰ ਰਿਹਾ।\n"
 
-#: ../src/main.c:326
+#: ../src/main.c:330
 #, c-format
 msgid "Error in configuration file: %s.\n"
 msgstr "ਸੰਰਚਨਾ ਫਾਈਲ ਵਿੱਚ ਗਲਤੀ: %s।\n"
 
-#: ../src/main.c:331
+#: ../src/main.c:335
 #, c-format
 msgid "Ignoring unrecognized log domain(s) '%s' from config files.\n"
 msgstr "ਸੰਰਚਨਾ ਫਾਈਲਾਂ ਤੋਂ ਬੇਪਛਾਣ ਡੋਮੇਨ(ਡੋਮੇਨਾਂ) '%s' ਨੂੰ ਅਣਗੌਲਿਆਂ ਕਰ ਰਿਹਾ।\n"
 
-#: ../src/main.c:342 ../src/nm-iface-helper.c:429
+#: ../src/main.c:346 ../src/nm-iface-helper.c:429
 #, c-format
 msgid "Could not daemonize: %s [error %u]\n"
 msgstr "ਡੈਮਨ ਨਹੀਂ ਬਣਾਇਆ ਜਾ ਸਕਿਆ: %s [ਗਲਤੀ %u]\n"
@@ -9414,26 +9421,26 @@ msgstr "'%s' ਲਿਖਣ ਲਈ ਫੇਲ੍ਹ: %s\n"
 msgid "Closing %s failed: %s\n"
 msgstr "%s ਬੰਦ ਕਰਨ ਲਈ ਫੇਲ੍ਹ ਹੈ: %s\n"
 
-#: ../src/main-utils.c:148 ../src/main-utils.c:156
+#: ../src/main-utils.c:148 ../src/main-utils.c:159
 #, c-format
 msgid "Cannot create '%s': %s"
 msgstr ""
 
-#: ../src/main-utils.c:209
+#: ../src/main-utils.c:212
 #, fuzzy, c-format
 msgid "%s is already running (pid %ld)\n"
 msgstr "ਨੈੱਟਵਰਕਮੈਨੇਜਰ ਪਹਿਲਾਂ ਹੀ ਚੱਲ ਰਿਹਾ ਹੈ (pid %ld)\n"
 
-#: ../src/main-utils.c:219
+#: ../src/main-utils.c:222
 #, fuzzy, c-format
 msgid "You must be root to run %s!\n"
 msgstr "ਨੈੱਟਵਰਕਮੈਨੇਜਰ ਚਲਾਉਣ ਲਈ ਤੁਹਾਡਾ ਰੂਟ (root) ਹੋਣਾ ਲਾਜ਼ਮੀ ਹੈ!\n"
 
-#: ../src/dhcp/nm-dhcp-dhclient-utils.c:286
+#: ../src/dhcp/nm-dhcp-dhclient-utils.c:278
 msgid "# Created by NetworkManager\n"
 msgstr "#ਨੈੱਟਵਰਕ ਮੈਨੇਜਰ ਵਲੋਂ ਬਣਾਈ\n"
 
-#: ../src/dhcp/nm-dhcp-dhclient-utils.c:296
+#: ../src/dhcp/nm-dhcp-dhclient-utils.c:288
 #, c-format
 msgid ""
 "# Merged from %s\n"
@@ -9711,55 +9718,55 @@ msgstr "ਡਿਕ੍ਰਿਪਸ਼ਨ ਲਈ ਸਮਮਿਤੀ ਕੁੰਜੀ
 msgid "GSM mobile broadband connection requires a 'gsm' setting"
 msgstr "ਮੋਬਾਇਲ ਬਰੌਡਬੈਂਡ ਸੰਪਰਕ %d"
 
-#: ../src/nm-config.c:466
+#: ../src/nm-config.c:486
 msgid "Config file location"
 msgstr "ਸੰਰਚਨਾ ਫਾਇਲ ਟਿਕਾਣਾ"
 
-#: ../src/nm-config.c:467
+#: ../src/nm-config.c:487
 msgid "Config directory location"
 msgstr "Config ਡਾਇਰੈਕਟਰੀ ਸਥਿਤੀ"
 
-#: ../src/nm-config.c:468
+#: ../src/nm-config.c:488
 #, fuzzy
 msgid "System config directory location"
 msgstr "Config ਡਾਇਰੈਕਟਰੀ ਸਥਿਤੀ"
 
-#: ../src/nm-config.c:469
+#: ../src/nm-config.c:489
 #, fuzzy
 msgid "Internal config file location"
 msgstr "ਸੰਰਚਨਾ ਫਾਇਲ ਟਿਕਾਣਾ"
 
-#: ../src/nm-config.c:470
+#: ../src/nm-config.c:490
 msgid "State file location"
 msgstr "ਹਾਲਤ ਫਾਇਲ ਟਿਕਾਣਾ"
 
-#: ../src/nm-config.c:471
+#: ../src/nm-config.c:491
 msgid "State file for no-auto-default devices"
 msgstr ""
 
-#: ../src/nm-config.c:472
+#: ../src/nm-config.c:492
 msgid "List of plugins separated by ','"
 msgstr "',' ਰਾਹੀਂ ਵੱਖ ਕਰਕੇ ਪਲੱਗਇਨ ਦੀ ਲਿਸਟ ਦਿਓ"
 
-#: ../src/nm-config.c:473
+#: ../src/nm-config.c:493
 #, fuzzy
 msgid "Quit after initial configuration"
 msgstr "ਮੌਜੂਦਾ nmcli ਸੰਰਚਨਾ:\n"
 
-#: ../src/nm-config.c:474 ../src/nm-iface-helper.c:311
+#: ../src/nm-config.c:494 ../src/nm-iface-helper.c:311
 msgid "Don't become a daemon, and log to stderr"
 msgstr "ਇੱਕ ਡੈਮਨ ਨਾ ਬਣੋ, ਅਤੇ stderr ਤੇ ਦਰਜ ਕਰੋ"
 
 #. These three are hidden for now, and should eventually just go away.
-#: ../src/nm-config.c:477
+#: ../src/nm-config.c:497
 msgid "An http(s) address for checking internet connectivity"
 msgstr "ਇੰਟਰਨੈੱਟ ਕੁਨੈਕਸ਼ਨ ਜਾਂਚਣ ਲਈ http(s) ਐਡਰੈਸ"
 
-#: ../src/nm-config.c:478
+#: ../src/nm-config.c:498
 msgid "The interval between connectivity checks (in seconds)"
 msgstr "ਕੁਨੈਕਟਵਿਟੀ ਚੈੱਕਕ ਰਨ ਲਈ ਅੰਤਰਾਲ (ਸਕਿੰਟਾਂ ਵਿੱਚ)"
 
-#: ../src/nm-config.c:479
+#: ../src/nm-config.c:499
 msgid "The expected start of the response"
 msgstr "ਜਵਾਬ ਲਈ ਲੋੜੀਦੀ ਸ਼ੁਰੂਆਤ"
 
@@ -9882,6 +9889,10 @@ msgstr "ਅਣਜਾਣ ਲਾਗ ਲੈਵਲ '%s'"
 #, c-format
 msgid "Unknown log domain '%s'"
 msgstr "ਅਣਜਾਣ ਲਾਗ ਡੋਮੇਨ '%s'"
+
+#, fuzzy
+#~ msgid "unrecognized option '%s'"
+#~ msgstr "ਅਢੁਕਵੀਂ ਚੋਣ '%s'"
 
 #~ msgid "Option '--terse' requires specifying '--fields'"
 #~ msgstr "Option '--terse' requires specifying '--fields'"
