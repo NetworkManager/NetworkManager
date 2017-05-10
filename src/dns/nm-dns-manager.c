@@ -1647,27 +1647,28 @@ _resolvconf_resolved_managed (void)
 		"/lib/systemd/resolv.conf",
 		"/usr/lib/systemd/resolv.conf",
 	};
-	GFile *f;
-	GFileInfo *info;
-	gboolean ret = FALSE;
+	struct stat etc_resconf_st;
+	int i;
 
-	f = g_file_new_for_path (_PATH_RESCONF);
-	info = g_file_query_info (f,
-	                          G_FILE_ATTRIBUTE_STANDARD_IS_SYMLINK","\
-	                          G_FILE_ATTRIBUTE_STANDARD_SYMLINK_TARGET,
-	                          G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
-	                          NULL, NULL);
+	if (stat (_PATH_RESCONF, &etc_resconf_st) != 0)
+		/* /etc/resolv.conf does not exist or is a broken link.
+		 * NetworkManager.service starts
+		 * After=systemd-resolved.service, so the target in /run will
+		 * always be in place before this test executes. */
+		return FALSE;
 
-	if (info && g_file_info_get_is_symlink (info)) {
-		ret = nm_utils_strv_find_first ((gchar **) resolved_paths,
-		                                G_N_ELEMENTS (resolved_paths),
-		                                g_file_info_get_symlink_target (info)) >= 0;
+	for (i = 0; i < G_N_ELEMENTS (resolved_paths); i++) {
+		struct stat systemd_resconf_st;
+
+		if (stat (resolved_paths[i], &systemd_resconf_st) != 0) {
+			return FALSE;
+		}
+
+		if (etc_resconf_st.st_dev == systemd_resconf_st.st_dev && etc_resconf_st.st_ino == systemd_resconf_st.st_ino)
+			return TRUE;
 	}
 
-	g_clear_object(&info);
-	g_clear_object(&f);
-
-	return ret;
+	return FALSE;
 }
 
 static void

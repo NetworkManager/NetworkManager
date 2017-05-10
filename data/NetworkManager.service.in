@@ -2,7 +2,7 @@
 Description=Network Manager
 Documentation=man:NetworkManager(8)
 Wants=network.target
-After=network-pre.target dbus.service
+After=network-pre.target dbus.service systemd-resolved.service
 Before=network.target @DISTRO_NETWORK_SERVICE@
 
 [Service]
