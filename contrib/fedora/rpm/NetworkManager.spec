@@ -405,9 +405,9 @@ intltoolize --automake --copy --force
 	--enable-modify-system=yes \
 	--enable-concheck \
 %if 0%{?fedora}
-	--enable-libpsl \
+	--with-libpsl \
 %else
-	--disable-libpsl \
+	--without-libpsl \
 %endif
 	--with-session-tracking=systemd \
 	--with-suspend-resume=systemd \
