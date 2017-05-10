@@ -450,43 +450,6 @@ nm_dhcp_utils_ip4_config_from_options (int ifindex,
 		}
 	}
 
-	/*
-	 * RFC 2132, section 9.7
-	 *   DHCP clients use the contents of the 'server identifier' field
-	 *   as the destination address for any DHCP messages unicast to
-	 *   the DHCP server.
-	 *
-	 * Some ISP's provide leases from central servers that are on
-	 * different subnets that the address offered.  If the host
-	 * does not configure the interface as the default route, the
-	 * dhcp server may not be reachable via unicast, and a host
-	 * specific route is needed.
-	 **/
-	str = g_hash_table_lookup (options, "dhcp_server_identifier");
-	if (str) {
-		if (inet_pton (AF_INET, str, &tmp_addr) > 0) {
-
-			_LOG2I (LOGD_DHCP4, iface, "  server identifier %s", str);
-			if (   nm_utils_ip4_address_clear_host_address(tmp_addr, address.plen) != nm_utils_ip4_address_clear_host_address(address.address, address.plen)
-			    && !nm_ip4_config_get_direct_route_for_host (ip4_config, tmp_addr)) {
-				/* DHCP server not on assigned subnet and the no direct route was returned. Add route */
-				NMPlatformIP4Route route = { 0 };
-
-				route.network = tmp_addr;
-				route.plen = 32;
-				/* this will be a device route if gwaddr is 0 */
-				route.gateway = gwaddr;
-				route.rt_source = NM_IP_CONFIG_SOURCE_DHCP;
-				route.metric = priority;
-				nm_ip4_config_add_route (ip4_config, &route);
-				_LOG2D (LOGD_IP, iface, "adding route for server identifier: %s",
-				        nm_platform_ip4_route_to_string (&route, NULL, 0));
-			}
-		}
-		else
-			_LOG2W (LOGD_DHCP4, iface, "ignoring invalid server identifier '%s'", str);
-	}
-
 	str = g_hash_table_lookup (options, "dhcp_lease_time");
 	if (str) {
 		address.lifetime = address.preferred = strtoul (str, NULL, 10);
