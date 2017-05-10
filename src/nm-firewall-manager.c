@@ -285,7 +285,7 @@ _handle_dbus_start (NMFirewallManager *self,
                     CBInfo *info)
 {
 	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
-	const char *dbus_method;
+	const char *dbus_method = NULL;
 	GVariant *arg;
 
 	nm_assert (info);
@@ -302,10 +302,8 @@ _handle_dbus_start (NMFirewallManager *self,
 	case CB_INFO_OPS_REMOVE:
 		dbus_method = "removeInterface";
 		break;
-	default:
-		nm_assert_not_reached ();
-		break;
 	}
+	nm_assert (dbus_method);
 
 	arg = info->dbus.arg;
 	info->dbus.arg = NULL;
