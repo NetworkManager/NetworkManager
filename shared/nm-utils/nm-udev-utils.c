@@ -144,7 +144,7 @@ nm_udev_utils_enumerate (struct udev *uclient,
 		for (n = 0; subsystems[n]; n++) {
 			const char *subsystem;
 			const char *devtype;
-			gs_free char *to_free;
+			gs_free char *to_free = NULL;
 
 			_subsystem_split (subsystems[n], &subsystem, &devtype, &to_free);
 
@@ -240,7 +240,7 @@ nm_udev_client_new (const char *const*subsystems,
 			/* install subsystem filters to only wake up for certain events */
 			for (n = 0; self->subsystems[n]; n++) {
 				if (self->monitor) {
-					gs_free char *to_free;
+					gs_free char *to_free = NULL;
 					const char *subsystem;
 					const char *devtype;
 
