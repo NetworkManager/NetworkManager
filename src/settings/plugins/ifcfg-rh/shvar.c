@@ -38,6 +38,7 @@
 
 #include "nm-core-internal.h"
 #include "nm-core-utils.h"
+#include "nm-utils/nm-enum-utils.h"
 
 /*****************************************************************************/
 
@@ -1082,6 +1083,34 @@ svGetValueInt64 (shvarFile *s, const char *key, guint base, gint64 min, gint64 m
 	return result;
 }
 
+gboolean
+svGetValueEnum (shvarFile *s, const char *key,
+                GType gtype, int *out_value,
+                GError **error)
+{
+	gs_free char *to_free = NULL;
+	const char *svalue;
+	gs_free char *err_token = NULL;
+	int value;
+
+	svalue = _svGetValue (s, key, &to_free);
+	if (!svalue) {
+		/* don't touch out_value. The caller is supposed
+		 * to initialize it with the default value. */
+		return TRUE;
+	}
+
+	if (!nm_utils_enum_from_str (gtype, svalue, &value, &err_token)) {
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		             "Invalid token \"%s\" in \"%s\" for %s",
+		             err_token, svalue, key);
+		return FALSE;
+	}
+
+	NM_SET_OUT (out_value, value);
+	return TRUE;
+}
+
 /*****************************************************************************/
 
 /* Same as svSetValueStr() but it preserves empty @value -- contrary to
@@ -1151,6 +1180,15 @@ void
 svSetValueBoolean (shvarFile *s, const char *key, gboolean value)
 {
 	svSetValue (s, key, value ? "yes" : "no");
+}
+
+void
+svSetValueEnum (shvarFile *s, const char *key, GType gtype, int value)
+{
+	gs_free char *v = NULL;
+
+	v = _nm_utils_enum_to_str_full (gtype, value, " ");
+	svSetValueStr (s, key, v);
 }
 
 void

@@ -483,20 +483,20 @@ nm_config_cmd_line_options_add_to_entries (NMConfigCmdLineOptions *cli,
 
 	{
 		GOptionEntry config_options[] = {
-			{ "config", 0, 0, G_OPTION_ARG_FILENAME, &cli->config_main_file, N_("Config file location"), N_(DEFAULT_CONFIG_MAIN_FILE) },
-			{ "config-dir", 0, 0, G_OPTION_ARG_FILENAME, &cli->config_dir, N_("Config directory location"), N_(DEFAULT_CONFIG_DIR) },
-			{ "system-config-dir", 0, 0, G_OPTION_ARG_FILENAME, &cli->system_config_dir, N_("System config directory location"), N_(DEFAULT_SYSTEM_CONFIG_DIR) },
-			{ "intern-config", 0, 0, G_OPTION_ARG_FILENAME, &cli->intern_config_file, N_("Internal config file location"), N_(DEFAULT_INTERN_CONFIG_FILE) },
-			{ "state-file", 0, 0, G_OPTION_ARG_FILENAME, &cli->state_file, N_("State file location"), N_(DEFAULT_STATE_FILE) },
-			{ "no-auto-default", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_FILENAME, &cli->no_auto_default_file, N_("State file for no-auto-default devices"), N_(DEFAULT_NO_AUTO_DEFAULT_FILE) },
-			{ "plugins", 0, 0, G_OPTION_ARG_STRING, &cli->plugins, N_("List of plugins separated by ','"), N_(NM_CONFIG_DEFAULT_MAIN_PLUGINS) },
+			{ "config", 0, 0, G_OPTION_ARG_FILENAME, &cli->config_main_file, N_("Config file location"), DEFAULT_CONFIG_MAIN_FILE },
+			{ "config-dir", 0, 0, G_OPTION_ARG_FILENAME, &cli->config_dir, N_("Config directory location"), DEFAULT_CONFIG_DIR },
+			{ "system-config-dir", 0, 0, G_OPTION_ARG_FILENAME, &cli->system_config_dir, N_("System config directory location"), DEFAULT_SYSTEM_CONFIG_DIR },
+			{ "intern-config", 0, 0, G_OPTION_ARG_FILENAME, &cli->intern_config_file, N_("Internal config file location"), DEFAULT_INTERN_CONFIG_FILE },
+			{ "state-file", 0, 0, G_OPTION_ARG_FILENAME, &cli->state_file, N_("State file location"), DEFAULT_STATE_FILE },
+			{ "no-auto-default", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_FILENAME, &cli->no_auto_default_file, N_("State file for no-auto-default devices"), DEFAULT_NO_AUTO_DEFAULT_FILE },
+			{ "plugins", 0, 0, G_OPTION_ARG_STRING, &cli->plugins, N_("List of plugins separated by ','"), NM_CONFIG_DEFAULT_MAIN_PLUGINS },
 			{ "configure-and-quit", 0, 0, G_OPTION_ARG_NONE, &cli->configure_and_quit, N_("Quit after initial configuration"), NULL },
 			{ "debug", 'd', 0, G_OPTION_ARG_NONE, &cli->is_debug, N_("Don't become a daemon, and log to stderr"), NULL },
 
 				/* These three are hidden for now, and should eventually just go away. */
 			{ "connectivity-uri", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_STRING, &cli->connectivity_uri, N_("An http(s) address for checking internet connectivity"), "http://example.com" },
 			{ "connectivity-interval", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_INT, &cli->connectivity_interval, N_("The interval between connectivity checks (in seconds)"), G_STRINGIFY (NM_CONFIG_DEFAULT_CONNECTIVITY_INTERVAL) },
-			{ "connectivity-response", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_STRING, &cli->connectivity_response, N_("The expected start of the response"), N_(NM_CONFIG_DEFAULT_CONNECTIVITY_RESPONSE) },
+			{ "connectivity-response", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_STRING, &cli->connectivity_response, N_("The expected start of the response"), NM_CONFIG_DEFAULT_CONNECTIVITY_RESPONSE },
 			{ 0 },
 		};
 

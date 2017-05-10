@@ -76,6 +76,12 @@ constants = {
     'NULL': 'NULL' }
 setting_names = {}
 
+def get_setting_name_define(setting):
+    n = setting.attrib[symbol_prefix_key]
+    if n and n.startswith("setting_"):
+        return n[8:].upper()
+    raise Exception("Unexpected symbol_prefix_key \"%s\"" % (n))
+
 def init_constants(girxml, settings):
     for const in girxml.findall('./gi:namespace/gi:constant', ns_map):
         cname = const.attrib['{%s}type' % ns_map['c']]
@@ -98,7 +104,7 @@ def init_constants(girxml, settings):
 
     for setting in settings:
         setting_type_name = 'NM' + setting.attrib['name'];
-        setting_name_symbol = 'NM_' + setting.attrib[symbol_prefix_key].upper() + '_SETTING_NAME'
+        setting_name_symbol = 'NM_SETTING_' + get_setting_name_define(setting) + '_SETTING_NAME'
         if setting_name_symbol in constants:
             setting_name = constants[setting_name_symbol]
             setting_names[setting_type_name] = setting_name
@@ -215,7 +221,7 @@ for settingxml in settings:
     class_desc = get_docs(settingxml)
     if class_desc is None:
         raise Exception("%s needs a gtk-doc block with one-line description" % setting.props.name)
-    outfile.write("  <setting name=\"%s\" description=\"%s\">\n" % (setting.props.name, class_desc))
+    outfile.write("  <setting name=\"%s\" description=\"%s\" name_upper=\"%s\" >\n" % (setting.props.name, class_desc, get_setting_name_define (settingxml)))
 
     setting_properties = { prop.name: prop for prop in GObject.list_properties(setting) }
     if args.overrides is None:
@@ -249,12 +255,14 @@ for settingxml in settings:
             if override.attrib['description'] != '':
                 value_desc = override.attrib['description']
 
+        prop_upper = prop.upper().replace('-', '_')
+
         if default_value is not None:
-            outfile.write("    <property name=\"%s\" type=\"%s\" default=\"%s\" description=\"%s\" />\n" %
-                          (prop, value_type, escape(default_value), escape(value_desc)))
+            outfile.write("    <property name=\"%s\" name_upper=\"%s\" type=\"%s\" default=\"%s\" description=\"%s\" />\n" %
+                          (prop, prop_upper, value_type, escape(default_value), escape(value_desc)))
         else:
-            outfile.write("    <property name=\"%s\" type=\"%s\" description=\"%s\" />\n" %
-                          (prop, value_type, escape(value_desc)))
+            outfile.write("    <property name=\"%s\" name_upper=\"%s\" type=\"%s\" description=\"%s\" />\n" %
+                          (prop, prop_upper, value_type, escape(value_desc)))
 
     outfile.write("  </setting>\n")
 

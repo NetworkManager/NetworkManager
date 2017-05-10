@@ -684,9 +684,10 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
                                                     NMSetting8021x *setting_8021x,
                                                     const char *con_uuid,
                                                     guint32 mtu,
+                                                    NMSettingWirelessSecurityPmf pmf,
                                                     GError **error)
 {
-	const char *key_mgmt, *auth_alg;
+	const char *key_mgmt, *key_mgmt_conf, *auth_alg;
 	const char *psk;
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
@@ -694,8 +695,19 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 	g_return_val_if_fail (con_uuid != NULL, FALSE);
 	g_return_val_if_fail (!error || !*error, FALSE);
 
-	key_mgmt = nm_setting_wireless_security_get_key_mgmt (setting);
-	if (!add_string_val (self, key_mgmt, "key_mgmt", TRUE, NULL, error))
+	key_mgmt = key_mgmt_conf = nm_setting_wireless_security_get_key_mgmt (setting);
+	if (pmf == NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL) {
+		if (nm_streq (key_mgmt_conf, "wpa-psk"))
+			key_mgmt_conf = "wpa-psk wpa-psk-sha256";
+		else if (nm_streq (key_mgmt_conf, "wpa-eap"))
+			key_mgmt_conf = "wpa-eap wpa-eap-sha256";
+	} else if (pmf == NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED) {
+		if (nm_streq (key_mgmt_conf, "wpa-psk"))
+			key_mgmt_conf = "wpa-psk-sha256";
+		else if (nm_streq (key_mgmt_conf, "wpa-eap"))
+			key_mgmt_conf = "wpa-eap-sha256";
+	}
+	if (!add_string_val (self, key_mgmt_conf, "key_mgmt", TRUE, NULL, error))
 		return FALSE;
 
 	auth_alg = nm_setting_wireless_security_get_auth_alg (setting);
@@ -750,6 +762,19 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 			return FALSE;
 		if (!ADD_STRING_LIST_VAL (self, setting, wireless_security, group, groups, "group", ' ', TRUE, NULL, error))
 			return FALSE;
+
+		if (   !nm_streq (key_mgmt, "wpa-none")
+		    && NM_IN_SET (pmf,
+		                  NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL,
+		                  NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED)) {
+			if (!nm_supplicant_config_add_option (self,
+			                                      "ieee80211w",
+			                                      pmf == NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL ? "1" : "2",
+			                                      -1,
+			                                      NULL,
+			                                      error))
+				return FALSE;
+		}
 	}
 
 	/* WEP keys if required */
@@ -866,11 +891,11 @@ add_pkcs11_uri_with_pin (NMSupplicantConfig *self,
 	}
 
 	tmp = g_strdup_printf ("%s%s%s", split[0],
-	                       (pin_qattr ? "&" : ""),
+	                       (pin_qattr ? "?" : ""),
 	                       (pin_qattr ? pin_qattr : ""));
 
 	tmp_log = g_strdup_printf ("%s%s%s", split[0],
-	                           (pin_qattr ? "&" : ""),
+	                           (pin_qattr ? "?" : ""),
 	                           (pin_qattr ? "pin-value=<hidden>" : ""));
 
 	return add_string_val (self, tmp, name, FALSE, tmp_log, error);

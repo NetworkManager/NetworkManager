@@ -8,7 +8,7 @@
 <config xmlns="http://zanata.org/namespace/config/">
 	<url>https://translate.zanata.org/</url>
 	<project>NetworkManager</project>
-	<project-version>nm-1-8</project-version>
+	<project-version>master</project-version>
 	<project-type>gettext</project-type>
 	<src-dir>po</src-dir>
 	<trans-dir>po</trans-dir>

@@ -203,9 +203,6 @@ merge_dhclient_config (NMDhcpDhclient *self,
 		}
 	}
 
-	if (is_ip6 && hostname && !strchr (hostname, '.'))
-		_LOGW ("hostname is not a FQDN, it will be ignored");
-
 	new = nm_dhcp_dhclient_create_config (iface, is_ip6, client_id, anycast_addr, hostname, use_fqdn, orig_path, orig, out_new_client_id);
 	g_assert (new);
 	success = g_file_set_contents (conf_file, new, -1, error);

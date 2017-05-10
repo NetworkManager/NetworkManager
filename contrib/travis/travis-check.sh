@@ -8,6 +8,10 @@ print_test_logs() {
     echo ">>>> PRINT TEST LOGS $1 (done)"
 }
 
+# travis is known to generate the settings doc differently.
+# Don't compare.
+export NMTST_NO_CHECK_SETTINGS_DOCS=yes
+
 if ! make check -j 4 -k ; then
 
     print_test_logs "first-test"

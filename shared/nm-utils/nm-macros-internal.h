@@ -56,6 +56,14 @@ _nm_auto_unset_gvalue_impl (GValue *v)
 #define nm_auto_unset_gvalue nm_auto(_nm_auto_unset_gvalue_impl)
 
 static inline void
+_nm_auto_unref_gtypeclass (GTypeClass **v)
+{
+	if (v && *v)
+		g_type_class_unref (*v);
+}
+#define nm_auto_unref_gtypeclass nm_auto(_nm_auto_unref_gtypeclass)
+
+static inline void
 _nm_auto_free_gstring_impl (GString **str)
 {
 	if (*str)
@@ -200,6 +208,23 @@ NM_G_ERROR_MSG (GError *error)
 
 /* macro to return strlen() of a compile time string. */
 #define NM_STRLEN(str)     ( sizeof ("" str) - 1 )
+
+/* returns the length of a NULL terminated array of pointers,
+ * like g_strv_length() does. The difference is:
+ *  - it operats on arrays of pointers (of any kind, requiring no cast).
+ *  - it accepts NULL to return zero. */
+#define NM_PTRARRAY_LEN(array) \
+	({ \
+		typeof (*(array)) *const _array = (array); \
+		gsize _n = 0; \
+		\
+		if (_array) { \
+			_nm_unused typeof (*(_array[0])) *_array_check = _array[0]; \
+			while (_array[_n]) \
+				_n++; \
+		} \
+		_n; \
+	})
 
 /* Note: @value is only evaluated when *out_val is present.
  * Thus,
@@ -621,6 +646,50 @@ nm_clear_g_cancellable (GCancellable **cancellable)
 		    (    (((typeof(__x)) -1) > ((typeof(__x)) 0)) \
 		      || (__x > 0 || __x == 0) ) \
 		 && ((__x & (__x - 1)) == 0); \
+	})
+
+/*****************************************************************************/
+
+#define NM_UTILS_LOOKUP_DEFAULT(v)            return (v)
+#define NM_UTILS_LOOKUP_DEFAULT_WARN(v)       g_return_val_if_reached (v)
+#define NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT(v)  { nm_assert_not_reached (); return (v); }
+#define NM_UTILS_LOOKUP_ITEM(v, n)            (void) 0; case v: return (n); (void) 0
+#define NM_UTILS_LOOKUP_STR_ITEM(v, n)        NM_UTILS_LOOKUP_ITEM(v, ""n"")
+#define NM_UTILS_LOOKUP_ITEM_IGNORE(v)        (void) 0; case v: break; (void) 0
+#define NM_UTILS_LOOKUP_ITEM_IGNORE_OTHER()   (void) 0; default: break; (void) 0
+
+#define _NM_UTILS_LOOKUP_DEFINE(scope, fcn_name, lookup_type, result_type, unknown_val, ...) \
+scope result_type \
+fcn_name (lookup_type val) \
+{ \
+	switch (val) { \
+		(void) 0, \
+		__VA_ARGS__ \
+		(void) 0; \
+	}; \
+	{ unknown_val; } \
+}
+
+#define NM_UTILS_LOOKUP_STR_DEFINE(fcn_name, lookup_type, unknown_val, ...) \
+	_NM_UTILS_LOOKUP_DEFINE (, fcn_name, lookup_type, const char *, unknown_val, __VA_ARGS__)
+#define NM_UTILS_LOOKUP_STR_DEFINE_STATIC(fcn_name, lookup_type, unknown_val, ...) \
+	_NM_UTILS_LOOKUP_DEFINE (static, fcn_name, lookup_type, const char *, unknown_val, __VA_ARGS__)
+
+/* Call the string-lookup-table function @fcn_name. If the function returns
+ * %NULL, the numeric index is converted to string using a alloca() buffer.
+ * Beware: this macro uses alloca(). */
+#define NM_UTILS_LOOKUP_STR(fcn_name, idx) \
+	({ \
+		typeof (idx) _idx = (idx); \
+		const char *_s; \
+		\
+		_s = fcn_name (_idx); \
+		if (!_s) { \
+			_s = g_alloca (30); \
+			\
+			g_snprintf ((char *) _s, 30, "(%lld)", (long long) _idx); \
+		} \
+		_s; \
 	})
 
 /*****************************************************************************/

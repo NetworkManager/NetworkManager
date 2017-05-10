@@ -278,6 +278,7 @@ test_wifi_wep_key (const char *detail,
 	                                                              NULL,
 	                                                              "376aced7-b28c-46be-9a62-fcdf072571da",
 	                                                              1500,
+	                                                              0,
 	                                                              &error));
 	g_assert_no_error (error);
 	g_test_assert_expected_messages ();
@@ -374,6 +375,7 @@ test_wifi_wpa_psk (const char *detail,
 	g_object_set (s_wsec,
 	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk",
 	              NM_SETTING_WIRELESS_SECURITY_PSK, key_data,
+	              NM_SETTING_WIRELESS_SECURITY_PMF, (int) NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL,
 	              NULL);
 
 	nm_setting_wireless_security_add_proto (s_wsec, "wpa");
@@ -411,7 +413,7 @@ test_wifi_wpa_psk (const char *detail,
 	g_test_assert_expected_messages ();
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
-	                       "*added 'key_mgmt' value 'WPA-PSK'");
+	                       "*added 'key_mgmt' value 'WPA-PSK WPA-PSK-SHA256'");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'psk' value *");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
@@ -420,11 +422,14 @@ test_wifi_wpa_psk (const char *detail,
 	                       "*added 'pairwise' value 'TKIP CCMP'");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
 	                       "*added 'group' value 'TKIP CCMP'");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO,
+	                       "*added 'ieee80211w' value '1'");
 	g_assert (nm_supplicant_config_add_setting_wireless_security (config,
 	                                                              s_wsec,
 	                                                              NULL,
 	                                                              "376aced7-b28c-46be-9a62-fcdf072571da",
 	                                                              1500,
+	                                                              NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL,
 	                                                              &error));
 	g_assert_no_error (error);
 	g_test_assert_expected_messages ();
@@ -435,7 +440,7 @@ test_wifi_wpa_psk (const char *detail,
 	validate_opt (detail, config_dict, "scan_ssid", TYPE_INT, GINT_TO_POINTER (1), -1);
 	validate_opt (detail, config_dict, "ssid", TYPE_BYTES, ssid_data, sizeof (ssid_data));
 	validate_opt (detail, config_dict, "bssid", TYPE_KEYWORD, bssid_str, -1);
-	validate_opt (detail, config_dict, "key_mgmt", TYPE_KEYWORD, "WPA-PSK", -1);
+	validate_opt (detail, config_dict, "key_mgmt", TYPE_KEYWORD, "WPA-PSK WPA-PSK-SHA256", -1);
 	validate_opt (detail, config_dict, "proto", TYPE_KEYWORD, "WPA RSN", -1);
 	validate_opt (detail, config_dict, "pairwise", TYPE_KEYWORD, "TKIP CCMP", -1);
 	validate_opt (detail, config_dict, "group", TYPE_KEYWORD, "TKIP CCMP", -1);
@@ -580,6 +585,7 @@ test_wifi_eap (void)
 	                                                              s_8021x,
 	                                                              "d5b488af-9cab-41ed-bad4-97709c58430f",
 	                                                              mtu,
+	                                                              NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE,
 	                                                              &error));
 	g_assert_no_error (error);
 	g_test_assert_expected_messages ();

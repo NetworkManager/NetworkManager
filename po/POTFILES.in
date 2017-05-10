@@ -10,9 +10,13 @@ clients/cli/nmcli.c
 clients/cli/polkit-agent.c
 clients/cli/settings.c
 clients/cli/utils.c
+clients/common/nm-client-utils.c
+clients/common/nm-meta-setting-access.c
+clients/common/nm-meta-setting-desc.c
 clients/common/nm-polkit-listener.c
 clients/common/nm-secret-agent-simple.c
 clients/common/nm-vpn-helpers.c
+clients/common/settings-docs.c.in
 clients/nm-online.c
 clients/tui/newt/nmt-newt-utils.c
 clients/tui/nm-editor-utils.c

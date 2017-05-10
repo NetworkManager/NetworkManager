@@ -24,6 +24,10 @@
 
 /*****************************************************************************/
 
+extern const void *const _NM_PTRARRAY_EMPTY[1];
+
+#define NM_PTRARRAY_EMPTY(type) ((type const*) _NM_PTRARRAY_EMPTY)
+
 static inline void
 _nm_utils_strbuf_init (char *buf, gsize len, char **p_buf_ptr, gsize *p_buf_len)
 {
@@ -45,6 +49,11 @@ void nm_utils_strbuf_append_str (char **buf, gsize *len, const char *str);
 
 gssize nm_utils_strv_find_first (char **list, gssize len, const char *needle);
 
+char **_nm_utils_strv_cleanup (char **strv,
+                               gboolean strip_whitespace,
+                               gboolean skip_empty,
+                               gboolean skip_repeated);
+
 /*****************************************************************************/
 
 gint64 _nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max, gint64 fallback);
@@ -62,10 +71,12 @@ gint _nm_utils_ascii_str_to_bool (const char *str,
  *   error reason. Depending on the usage, this might indicate a bug because
  *   usually the target object should stay alive as long as there are pending
  *   operations.
+ * @NM_UTILS_ERROR_INVALID_ARGUMENT: invalid argument.
  */
 typedef enum {
 	NM_UTILS_ERROR_UNKNOWN = 0,                 /*< nick=Unknown >*/
 	NM_UTILS_ERROR_CANCELLED_DISPOSING,         /*< nick=CancelledDisposing >*/
+	NM_UTILS_ERROR_INVALID_ARGUMENT,            /*< nick=InvalidArgument >*/
 } NMUtilsError;
 
 #define NM_UTILS_ERROR (nm_utils_error_quark ())

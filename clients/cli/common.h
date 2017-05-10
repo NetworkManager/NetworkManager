@@ -25,26 +25,14 @@
 #include "nmcli.h"
 #include "nm-secret-agent-simple.h"
 
-gboolean print_ip4_config (NMIPConfig *cfg4, NmCli *nmc, const char *group_prefix, const char *one_field);
-gboolean print_ip6_config (NMIPConfig *cfg6, NmCli *nmc, const char *group_prefix, const char *one_field);
-gboolean print_dhcp4_config (NMDhcpConfig *dhcp4, NmCli *nmc, const char *group_prefix, const char *one_field);
-gboolean print_dhcp6_config (NMDhcpConfig *dhcp6, NmCli *nmc, const char *group_prefix, const char *one_field);
-
-NMIPAddress *nmc_parse_and_build_address (int family, const char *ip_str, GError **error);
-NMIPRoute *nmc_parse_and_build_route (int family, const char *str, GError **error);
+gboolean print_ip4_config (NMIPConfig *cfg4, const NmcConfig *nmc_config, const char *one_field);
+gboolean print_ip6_config (NMIPConfig *cfg6, const NmcConfig *nmc_config, const char *group_prefix, const char *one_field);
+gboolean print_dhcp4_config (NMDhcpConfig *dhcp4, const NmcConfig *nmc_config, const char *group_prefix, const char *one_field);
+gboolean print_dhcp6_config (NMDhcpConfig *dhcp6, const NmcConfig *nmc_config, const char *group_prefix, const char *one_field);
 
 const char * nmc_device_state_to_string (NMDeviceState state);
 const char * nmc_device_reason_to_string (NMDeviceStateReason reason);
 const char * nmc_device_metered_to_string (NMMetered value);
-
-char **
-nmc_vlan_parse_priority_maps (const char *priority_map,
-                              NMVlanPriorityMap map_type,
-                              GError **error);
-
-const char *nmc_bond_validate_mode (const char *mode, GError **error);
-gboolean nmc_team_check_config (const char *config, char **out_config, GError **error);
-gboolean nmc_proxy_check_script (const char *script, char **out_script, GError **error);
 
 NMConnection *nmc_find_connection (const GPtrArray *connections,
                                    const char *filter_type,
@@ -65,7 +53,8 @@ char *nmc_unique_connection_name (const GPtrArray *connections,
 void nmc_cleanup_readline (void);
 char *nmc_readline (const char *prompt_fmt, ...) G_GNUC_PRINTF (1, 2);
 char *nmc_readline_echo (gboolean echo_on, const char *prompt_fmt, ...) G_GNUC_PRINTF (2, 3);
-char *nmc_rl_gen_func_basic (const char *text, int state, const char **words);
+NmcCompEntryFunc nmc_rl_compentry_func_wrap (const char *const*values);
+char *nmc_rl_gen_func_basic (const char *text, int state, const char *const*words);
 char *nmc_rl_gen_func_ifnames (const char *text, int state);
 gboolean nmc_get_in_readline (void);
 void nmc_set_in_readline (gboolean in_readline);
@@ -92,9 +81,9 @@ void nmc_complete_bool (const char *prefix);
 
 const char *nmc_error_get_simple_message (GError *error);
 
-extern NmcOutputField nmc_fields_ip4_config[];
-extern NmcOutputField nmc_fields_dhcp4_config[];
-extern NmcOutputField nmc_fields_ip6_config[];
-extern NmcOutputField nmc_fields_dhcp6_config[];
+extern const NmcMetaGenericInfo *const metagen_ip4_config[];
+extern const NmcMetaGenericInfo *const nmc_fields_dhcp4_config[];
+extern const NmcMetaGenericInfo *const nmc_fields_ip6_config[];
+extern const NmcMetaGenericInfo *const nmc_fields_dhcp6_config[];
 
 #endif /* NMC_COMMON_H */

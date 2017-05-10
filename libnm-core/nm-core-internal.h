@@ -175,11 +175,6 @@ gssize _nm_utils_ptrarray_find_first (gconstpointer *list, gssize len, gconstpoi
 gssize _nm_utils_ptrarray_find_binary_search (gconstpointer *list, gsize len, gconstpointer needle, GCompareDataFunc cmpfcn, gpointer user_data);
 gssize _nm_utils_array_find_binary_search (gconstpointer list, gsize elem_size, gsize len, gconstpointer needle, GCompareDataFunc cmpfcn, gpointer user_data);
 
-char **_nm_utils_strv_cleanup (char **strv,
-                               gboolean strip_whitespace,
-                               gboolean skip_empty,
-                               gboolean skip_repeated);
-
 char **     _nm_utils_strsplit_set (const char *str,
                                     const char *delimiters,
                                     int max_tokens);
@@ -203,8 +198,6 @@ gboolean _nm_utils_check_module_file (const char *name,
                                       NMUtilsCheckFilePredicate check_file,
                                       gpointer user_data,
                                       GError **error);
-
-char *_nm_utils_enum_to_str_full (GType type, int value, const char *sep);
 
 #define NM_UTILS_UUID_TYPE_LEGACY            0
 #define NM_UTILS_UUID_TYPE_VARIANT3          1

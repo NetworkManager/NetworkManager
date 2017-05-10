@@ -21,6 +21,8 @@
 
 #include "nm-default.h"
 
+#include "agent.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -31,7 +33,6 @@
 #include "utils.h"
 #include "nm-secret-agent-simple.h"
 #include "polkit-agent.h"
-#include "agent.h"
 
 static void
 usage (void)
@@ -125,7 +126,7 @@ secrets_requested (NMSecretAgentSimple *agent,
 	NmCli *nmc = (NmCli *) user_data;
 	gboolean success = FALSE;
 
-	if (nmc->print_output == NMC_PRINT_PRETTY)
+	if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
 		nmc_terminal_erase_line ();
 
 	success = get_secrets_from_user (request_id, title, msg, secrets);

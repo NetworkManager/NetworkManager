@@ -58,7 +58,7 @@ test-*.trs
 /dispatcher/tests/test-dispatcher-envp
 
 /clients/cli/nmcli
-/clients/cli/settings-docs.c
+/clients/common/settings-docs.c
 /clients/tui/newt/libnmt-newt.a
 /clients/tui/nmtui
 /clients/nm-online
@@ -271,6 +271,8 @@ test-*.trs
 /src/tests/test-utils
 /src/tests/test-wired-defname
 
+/clients/common/tests/test-general
+
 /vapi/*.vapi
 
 # The following names are no longer present on this branch,
@@ -304,8 +306,4 @@ test-*.trs
 /libnm/nm-keyfile-docs.xml
 /libnm/nm-setting-docs.xml
 /libnm/nm-setting-docs-overrides.xml
-
-# The following names are present on newer upstream. Ignore them
-# also when switching branches
-/clients/common/settings-docs.c
-/clients/common/tests
+/clients/cli/settings-docs.c
