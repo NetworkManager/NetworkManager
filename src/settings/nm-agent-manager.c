@@ -155,6 +155,54 @@ _request_type_to_string (RequestType request_type, gboolean verbose)
 
 /*****************************************************************************/
 
+struct _NMAgentManagerCallId {
+	NMAgentManager *self;
+
+	RequestType request_type;
+
+	char *detail;
+
+	NMAuthSubject *subject;
+
+	/* Current agent being asked for secrets */
+	NMSecretAgent *current;
+	NMSecretAgentCallId current_call_id;
+
+	/* Stores the sorted list of NMSecretAgents which will be asked for secrets */
+	GSList *pending;
+
+	guint idle_id;
+
+	union {
+		struct {
+			char *path;
+			NMConnection *connection;
+
+			NMAuthChain *chain;
+
+			/* Whether the agent currently being asked for secrets
+			 * has the system.modify privilege.
+			 */
+			gboolean current_has_modify;
+
+			union {
+				struct {
+					NMSecretAgentGetSecretsFlags flags;
+					char *setting_name;
+					char **hints;
+
+					GVariant *existing_secrets;
+
+					NMAgentSecretsResultFunc callback;
+					gpointer callback_data;
+				} get;
+			};
+		} con;
+	};
+};
+
+/*****************************************************************************/
+
 static gboolean
 remove_agent (NMAgentManager *self, const char *owner)
 {
@@ -449,52 +497,6 @@ done:
 }
 
 /*****************************************************************************/
-
-struct _NMAgentManagerCallId {
-	NMAgentManager *self;
-
-	RequestType request_type;
-
-	char *detail;
-
-	NMAuthSubject *subject;
-
-	/* Current agent being asked for secrets */
-	NMSecretAgent *current;
-	NMSecretAgentCallId current_call_id;
-
-	/* Stores the sorted list of NMSecretAgents which will be asked for secrets */
-	GSList *pending;
-
-	guint idle_id;
-
-	union {
-		struct {
-			char *path;
-			NMConnection *connection;
-
-			NMAuthChain *chain;
-
-			/* Whether the agent currently being asked for secrets
-			 * has the system.modify privilege.
-			 */
-			gboolean current_has_modify;
-
-			union {
-				struct {
-					NMSecretAgentGetSecretsFlags flags;
-					char *setting_name;
-					char **hints;
-
-					GVariant *existing_secrets;
-
-					NMAgentSecretsResultFunc callback;
-					gpointer callback_data;
-				} get;
-			};
-		} con;
-	};
-};
 
 static Request *
 request_new (NMAgentManager *self,
