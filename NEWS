@@ -476,6 +476,8 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Add support for ModemManager 0.7/0.8
 * Allow more human-readable formatting of IP address in keyfile connections
 * Drop support for dhclient v3
+* Move PPP support to a separate plugin, so that it can be packaged separately
+    and reduce the dependency on the core package.
 * Add support for DHCPv6 server-side Dynamic DNS
 * Add support for bridge master devices and bridge ports
 * Fix canceling secrets requests in GUI agents
