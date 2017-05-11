@@ -269,7 +269,7 @@ gboolean nm_logging_syslog_enabled (void);
 /*****************************************************************************/
 
 /* Some implementation define a second set of logging macros, for a separate
- * use. As with the _LOGD() macro familiy above, the exact implementation
+ * use. As with the _LOGD() macro family above, the exact implementation
  * depends on the file that uses them.
  * Still, it encourages a common pattern to have the common set of macros
  * like _LOG2D(), _LOG2I(), etc. and have _LOG2t() which by default

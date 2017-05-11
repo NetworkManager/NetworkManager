@@ -573,7 +573,7 @@ nm_platform_link_get_all (NMPlatform *self)
  * Returns: %NULL, if such a link exists or the internal
  * platform link object. Do not modify the returned value.
  * Also, be aware that any subsequent platform call might
- * invalidated/modify the returned instance.
+ * invalidate/modify the returned instance.
  **/
 const NMPlatformLink *
 nm_platform_link_get (NMPlatform *self, int ifindex)
@@ -1461,7 +1461,7 @@ nm_platform_link_release (NMPlatform *self, int master, int slave)
  * @self: platform instance
  * @slave: Interface index of the slave.
  *
- * Returns: Interfase index of the slave's master.
+ * Returns: Interface index of the slave's master.
  */
 int
 nm_platform_link_get_master (NMPlatform *self, int slave)

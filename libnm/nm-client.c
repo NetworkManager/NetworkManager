@@ -1006,7 +1006,7 @@ activate_cb (GObject *object,
  * picks the best available connection for the device and activates it.
  *
  * Note that the callback is invoked when NetworkManager has started activating
- * the new connection, not when it finishes. You can used the returned
+ * the new connection, not when it finishes. You can use the returned
  * #NMActiveConnection object (in particular, #NMActiveConnection:state) to
  * track the activation to its completion.
  **/
