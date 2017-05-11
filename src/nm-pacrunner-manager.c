@@ -330,7 +330,6 @@ pacrunner_proxy_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	priv = NM_PACRUNNER_MANAGER_GET_PRIVATE (self);
 
 	priv->pacrunner = proxy;
-	nm_clear_g_cancellable (&priv->pacrunner_cancellable);
 
 	g_signal_connect (priv->pacrunner, "notify::g-name-owner",
 	                  G_CALLBACK (name_owner_changed_cb), self);
