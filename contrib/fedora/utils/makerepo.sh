@@ -278,6 +278,7 @@ detect_build_type 'initscripts-[0-9]*' initscripts.spec
 detect_build_type 'libqmi-[0-9]*' libqmi.spec
 detect_build_type 'libibverbs-[0-9]*' libibverbs.spec
 detect_build_type 'iproute2-*' iproute.spec
+detect_build_type 'glib-2*' glib2.spec
 detect_build_type 'vpnc-*' vpnc.spec
 detect_build_type 'gnome-control-center-*' control-center.spec gnome-control-center
 
@@ -368,6 +369,9 @@ pushd "$DIRNAME"
     elif [[ "$BUILD_TYPE" == "NetworkManager-vpnc" ]]; then
         git remote add origin "git://git.gnome.org/network-manager-vpnc";
         git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-vpnc"
+    elif [[ "$BUILD_TYPE" == "glib2" ]]; then
+        git remote add origin "git://git.gnome.org/glib"
+        git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/glib"
     elif [[ "$BUILD_TYPE" == "wpa_supplicant" ]]; then
         git remote add origin "git://w1.fi/hostap.git"
         git remote add nm "https://github.com/NetworkManager/hostap.git"
@@ -423,6 +427,8 @@ pushd "$DIRNAME"
             RELEASE_BASE_COMMIT="$(sed -n 's/^LIBNL_GIT_SHA=\(.*\)/\1/p' configure 2>/dev/null)"
         elif [[ "$BUILD_TYPE" == "network-manager-applet" ]]; then
             RELEASE_BASE_COMMIT="$(sed -n 's/^NMA_GIT_SHA=\(.*\)/\1/p' configure 2>/dev/null)"
+        elif [[ "$BUILD_TYPE" == "glib2" ]]; then
+            RELEASE_BASE_COMMIT="$(git rev-parse --verify -q "$(sed 's/.*\<glib-\([0-9]\+\.[0-9]\+\.[0-9]\+\)\.[a-z0-9_.]\+ *$/\1/' ../sources)^{commit}" 2>/dev/null)"
         elif [[ "$BUILD_TYPE" == "iproute" ]]; then
             RELEASE_BASE_COMMIT="$(git rev-parse --verify -q "$(sed 's/.*\<iproute2-\([0-9]\+\.[0-9]\+\.[0-9]\+\)\..*/v\1/' ../sources)^{commit}" 2>/dev/null)"
         elif [[ "$BUILD_TYPE" == "NetworkManager-openvpn" ]]; then
