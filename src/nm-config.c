@@ -1894,21 +1894,23 @@ _config_device_state_data_new (int ifindex, GKeyFile *kf)
 	nm_assert (ifindex > 0);
 
 	if (kf) {
-		gboolean managed;
-
-		managed = nm_config_keyfile_get_boolean (kf,
-		                                         DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
-		                                         DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_MANAGED,
-		                                         FALSE);
-		managed_type = managed
-		               ? NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_MANAGED
-		               : NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_UNMANAGED;
-
-		if (managed) {
+		switch (nm_config_keyfile_get_boolean (kf,
+		                                       DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
+		                                       DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_MANAGED,
+		                                       -1)) {
+		case TRUE:
+			managed_type = NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_MANAGED;
 			connection_uuid = nm_config_keyfile_get_value (kf,
 			                                               DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
 			                                               DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_CONNECTION_UUID,
 			                                               NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY);
+			break;
+		case FALSE:
+			managed_type = NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_UNMANAGED;
+			break;
+		case -1:
+			/* missing property in keyfile. */
+			break;
 		}
 
 		perm_hw_addr_fake = nm_config_keyfile_get_value (kf,
