@@ -2195,24 +2195,33 @@ carrier_changed (NMDevice *self, gboolean carrier)
 		return;
 
 	if (priv->is_master) {
-		/* Bridge/bond/team carrier does not affect its own activation,
-		 * but when carrier comes on, if there are slaves waiting,
-		 * it will restart them.
-		 */
-		if (!carrier)
-			return;
-
-		if (nm_device_activate_ip4_state_in_wait (self))
-			nm_device_activate_stage3_ip4_start (self);
-		if (nm_device_activate_ip6_state_in_wait (self))
-			nm_device_activate_stage3_ip6_start (self);
-
-		return;
-	} else if (priv->is_enslaved && !carrier) {
-		/* Slaves don't deactivate when they lose carrier; for
-		 * bonds/teams in particular that would be actively
-		 * counterproductive.
-		 */
+		if (carrier) {
+			/* Force master to retry getting ip addresses when carrier
+			 * is restored.
+			 */
+			if (priv->state == NM_DEVICE_STATE_ACTIVATED) {
+				nm_device_update_dynamic_ip_setup (self);
+			} else {
+				if (nm_device_activate_ip4_state_in_wait (self))
+					nm_device_activate_stage3_ip4_start (self);
+				if (nm_device_activate_ip6_state_in_wait (self))
+					nm_device_activate_stage3_ip6_start (self);
+			}
+		} else {
+			/* Put master device into DISCONNECTED state if there is
+			 * no carrier. This would mean that all slaves are still
+			 * enslaved. This is nessesary to be able to reconnect
+			 * when carrier appears.
+			 */
+			if (priv->state == NM_DEVICE_STATE_DISCONNECTED) {
+				if (   priv->queued_state.id
+					&& priv->queued_state.state >= NM_DEVICE_STATE_PREPARE)
+					queued_state_clear (self);
+			} else {
+				nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED,
+									   NM_DEVICE_STATE_REASON_CARRIER);
+			}
+		}
 		return;
 	}
 
@@ -3693,7 +3702,12 @@ is_available (NMDevice *self, NMDeviceCheckDevAvailableFlags flags)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->carrier || priv->ignore_carrier)
+	/* Device is available if:
+     * - carrier is present, or
+     * - carrier is ignored, or
+     * - device is master - master devices are always avaulable.
+	 */
+	if (priv->carrier || priv->ignore_carrier || priv->is_master)
 		return TRUE;
 
 	if (NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_DEV_AVAILABLE_IGNORE_CARRIER))
@@ -11590,9 +11604,13 @@ check_connection_available (NMDevice *self,
 
 	/* Connections which require a network connection are not available when
 	 * the device has no carrier, even with ignore-carrer=TRUE.
+	 * If this is master connection we assume it is available even if it
+	 * doesn't have carrier. Making connection non-available would for
+	 * NM to un-enslave slaves which is not desired.
 	 */
 	if (   priv->carrier
-	    || !connection_requires_carrier (connection))
+		|| priv->is_master
+		|| !connection_requires_carrier (connection))
 		return TRUE;
 
 	if (   NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER)

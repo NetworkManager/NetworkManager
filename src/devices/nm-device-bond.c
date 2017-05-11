@@ -58,24 +58,6 @@ get_generic_capabilities (NMDevice *dev)
 }
 
 static gboolean
-is_available (NMDevice *dev, NMDeviceCheckDevAvailableFlags flags)
-{
-	return TRUE;
-}
-
-static gboolean
-check_connection_available (NMDevice *device,
-                            NMConnection *connection,
-                            NMDeviceCheckConAvailableFlags flags,
-                            const char *specific_object)
-{
-	/* Connections are always available because the carrier state is determined
-	 * by the slave carrier states, not the bonds's state.
-	 */
-	return TRUE;
-}
-
-static gboolean
 check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
 	NMSettingBond *s_bond;
@@ -623,9 +605,7 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_BOND_SETTING_NAME, NM_LINK_TYPE_BOND)
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->is_available = is_available;
 	parent_class->check_connection_compatible = check_connection_compatible;
-	parent_class->check_connection_available = check_connection_available;
 	parent_class->complete_connection = complete_connection;
 
 	parent_class->update_connection = update_connection;
