@@ -356,6 +356,7 @@ pushd "$DIRNAME"
         git_remote_add_github thom311/libnl
     elif [[ "$BUILD_TYPE" == "network-manager-applet" ||
             "$BUILD_TYPE" == "gnome-control-center" ||
+            "$BUILD_TYPE" == "libnma" ||
             "$BUILD_TYPE" == "NetworkManager-fortisslvpn" ||
             "$BUILD_TYPE" == "NetworkManager-libreswan" ||
             "$BUILD_TYPE" == "NetworkManager-openconnect" ||
@@ -421,7 +422,8 @@ pushd "$DIRNAME"
             if [[ "$RELEASE_BASE_COMMIT" == "23c44dad998f72f39fd1fc24aa9579fd0a7f05c0" ]]; then
                 RELEASE_BASE_COMMIT="e01b9df629e2f4f833fdc4fe0bda460bb738d136"
             fi
-        elif [[ "$BUILD_TYPE" == "network-manager-applet" ]]; then
+        elif [[ "$BUILD_TYPE" == "network-manager-applet" ||
+                "$BUILD_TYPE" == "libnma" ]]; then
             RELEASE_BASE_COMMIT="$(sed -n 's/^NMA_GIT_SHA=\(.*\)/\1/p' configure 2>/dev/null)"
             if [[ "$RELEASE_BASE_COMMIT" == "8d8e34f22d5fae476eda96cf36d828c3ae8b63d3" ]]; then
                 RELEASE_BASE_COMMIT="a2377d7534780b96a32405cce2e5548e81bbd081"
