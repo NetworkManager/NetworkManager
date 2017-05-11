@@ -213,6 +213,10 @@ _internal_write_connection (NMConnection *connection,
 	if (!data)
 		return FALSE;
 
+
+	if (!g_file_test (keyfile_dir, G_FILE_TEST_IS_DIR))
+		g_mkdir_with_parents (keyfile_dir, 0755);
+
 	/* If we have existing file path, use it. Else generate one from
 	 * connection's ID.
 	 */
