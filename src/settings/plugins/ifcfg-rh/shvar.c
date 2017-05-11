@@ -39,10 +39,14 @@
 #include "nm-core-internal.h"
 #include "nm-core-utils.h"
 #include "nm-utils/nm-enum-utils.h"
+#include "nm-utils/c-list.h"
 
 /*****************************************************************************/
 
 struct _shvarLine {
+
+	CList lst;
+
 	/* There are three cases:
 	 *
 	 * 1) the line is not a valid variable assignment (that is, it doesn't
@@ -69,7 +73,7 @@ typedef struct _shvarLine shvarLine;
 struct _shvarFile {
 	char      *fileName;
 	int        fd;
-	GList     *lineList;
+	CList      lst_head;
 	gboolean   modified;
 };
 
@@ -628,6 +632,7 @@ svFile_new (const char *name)
 	s = g_slice_new0 (shvarFile);
 	s->fd = -1;
 	s->fileName = g_strdup (name);
+	c_list_init (&s->lst_head);
 	return s;
 }
 
@@ -688,6 +693,7 @@ line_new_parse (const char *value, gsize len)
 	nm_assert (value);
 
 	line = g_slice_new0 (shvarLine);
+	c_list_init (&line->lst);
 
 	for (k = 0; k < len; k++) {
 		if (g_ascii_isspace (value[k]))
@@ -725,6 +731,7 @@ line_new_build (const char *key, const char *value)
 	value = svEscape (value, &value_escaped);
 
 	line = g_slice_new (shvarLine);
+	c_list_init (&line->lst);
 	line->line = value_escaped ?: g_strdup (value);
 	line->key_with_prefix = g_strdup (key);
 	line->key = line->key_with_prefix;
@@ -769,6 +776,7 @@ line_free (shvarLine *line)
 	ASSERT_shvarLine (line);
 	g_free (line->line);
 	g_free (line->key_with_prefix);
+	c_list_unlink (&line->lst);
 	g_slice_free (shvarLine, line);
 }
 
@@ -788,7 +796,6 @@ svOpenFileInternal (const char *name, gboolean create, GError **error)
 	const char *p, *q;
 	GError *local = NULL;
 	nm_auto_close int fd = -1;
-	GList *lineList = NULL;
 
 	if (create)
 		fd = open (name, O_RDWR | O_CLOEXEC); /* NOT O_CREAT */
@@ -824,15 +831,13 @@ svOpenFileInternal (const char *name, gboolean create, GError **error)
 		return NULL;
 	}
 
-	for (p = arena; (q = strchr (p, '\n')) != NULL; p = q + 1)
-		lineList = g_list_prepend (lineList, line_new_parse (p, q - p));
-	if (p[0])
-		lineList = g_list_prepend (lineList, line_new_parse (p, strlen (p)));
-	g_free (arena);
-	lineList = g_list_reverse (lineList);
-
 	s = svFile_new (name);
-	s->lineList = lineList;
+
+	for (p = arena; (q = strchr (p, '\n')) != NULL; p = q + 1)
+		c_list_link_tail (&s->lst_head, &line_new_parse (p, q - p)->lst);
+	if (p[0])
+		c_list_link_tail (&s->lst_head, &line_new_parse (p, strlen (p))->lst);
+	g_free (arena);
 
 	/* closefd is set if we opened the file read-only, so go ahead and
 	 * close it, because we can't write to it anyway */
@@ -862,37 +867,17 @@ svCreateFile (const char *name)
 
 /*****************************************************************************/
 
-static const GList *
-shlist_find (const GList *current, const char *key)
-{
-	nm_assert (_shell_is_name (key, -1));
-
-	if (current) {
-		do {
-			shvarLine *line = current->data;
-
-			ASSERT_shvarLine (line);
-			if (line->key && nm_streq (line->key, key))
-				return current;
-			current = current->next;
-		} while (current);
-	}
-	return NULL;
-}
-
-/*****************************************************************************/
-
 GHashTable *
 svGetKeys (shvarFile *s)
 {
 	GHashTable *keys = NULL;
-	const GList *current;
+	CList *current;
 	const shvarLine *line;
 
 	nm_assert (s);
 
-	for (current = s->lineList; current; current = current->next) {
-		line = current->data;
+	c_list_for_each (current, &s->lst_head) {
+		line = c_list_entry (current, shvarLine, lst);
 		if (line->key && line->line) {
 			/* we don't clone the keys. The keys are only valid
 			 * until @s gets modified. */
@@ -909,34 +894,31 @@ svGetKeys (shvarFile *s)
 static const char *
 _svGetValue (shvarFile *s, const char *key, char **to_free)
 {
-	const GList *current, *last;
-	const shvarLine *line;
+	CList *current;
+	const shvarLine *line, *l;
+	const char *v;
 
 	nm_assert (s);
 	nm_assert (_shell_is_name (key, -1));
 	nm_assert (to_free);
 
-	last = NULL;
-	current = s->lineList;
-	while ((current = shlist_find (current, key))) {
-		last = current;
-		current = current->next;
+	line = NULL;
+	c_list_for_each (current, &s->lst_head) {
+		l = c_list_entry (current, shvarLine, lst);
+		if (l->key && nm_streq (l->key, key))
+			line = l;
 	}
-	if (last) {
-		line = last->data;
-		if (line->line) {
-			const char *v;
 
-			v = svUnescape (line->line, to_free);
-			if (!v) {
-				/* a wrongly quoted value is treated like the empty string.
-				 * See also svWriteFile(), which handles unparsable values
-				 * that way. */
-				nm_assert (!*to_free);
-				return "";
-			}
-			return v;
+	if (line && line->line) {
+		v = svUnescape (line->line, to_free);
+		if (!v) {
+			/* a wrongly quoted value is treated like the empty string.
+			 * See also svWriteFile(), which handles unparsable values
+			 * that way. */
+			nm_assert (!*to_free);
+			return "";
 		}
+		return v;
 	}
 	*to_free = NULL;
 	return NULL;
@@ -1118,40 +1100,39 @@ svGetValueEnum (shvarFile *s, const char *key,
 void
 svSetValue (shvarFile *s, const char *key, const char *value)
 {
-	GList *current, *last;
+	CList *current;
+	shvarLine *line, *l;
 
 	g_return_if_fail (s != NULL);
 	g_return_if_fail (key != NULL);
 
 	nm_assert (_shell_is_name (key, -1));
 
-	last = NULL;
-	current = s->lineList;
-	while ((current = (GList *) shlist_find (current, key))) {
-		if (last) {
-			/* if we find multiple entries for the same key, we can
-			 * delete all but the last. */
-			line_free (last->data);
-			s->lineList = g_list_delete_link (s->lineList, last);
-			s->modified = TRUE;
+	line = NULL;
+	c_list_for_each (current, &s->lst_head) {
+		l = c_list_entry (current, shvarLine, lst);
+		if (l->key && nm_streq (l->key, key)) {
+			if (line) {
+				/* if we find multiple entries for the same key, we can
+				 * delete all but the last. */
+				line_free (line);
+				s->modified = TRUE;
+			}
+			line = l;
 		}
-		last = current;
-		current = current->next;
 	}
 
 	if (!value) {
-		if (last) {
-			shvarLine *line = last->data;
-
+		if (line) {
 			if (nm_clear_g_free (&line->line))
 				s->modified = TRUE;
 		}
 	} else {
-		if (!last) {
-			s->lineList = g_list_append (s->lineList, line_new_build (key, value));
+		if (!line) {
+			c_list_link_tail (&s->lst_head, &line_new_build (key, value)->lst);
 			s->modified = TRUE;
 		} else {
-			if (line_set (last->data, value))
+			if (line_set (line, value))
 				s->modified = TRUE;
 		}
 	}
@@ -1200,13 +1181,13 @@ svUnsetValue (shvarFile *s, const char *key)
 void
 svUnsetValuesWithPrefix (shvarFile *s, const char *prefix)
 {
-	GList *current;
+	CList *current;
 
 	g_return_if_fail (s);
 	g_return_if_fail (prefix);
 
-	for (current = s->lineList; current; current = current->next) {
-		shvarLine *line = current->data;
+	c_list_for_each (current, &s->lst_head) {
+		shvarLine *line = c_list_entry (current, shvarLine, lst);
 
 		ASSERT_shvarLine (line);
 		if (   line->key
@@ -1231,7 +1212,7 @@ svWriteFile (shvarFile *s, int mode, GError **error)
 {
 	FILE *f;
 	int tmpfd;
-	const GList *current;
+	CList *current;
 
 	if (s->modified) {
 		if (s->fd == -1)
@@ -1264,8 +1245,8 @@ svWriteFile (shvarFile *s, int mode, GError **error)
 		}
 		f = fdopen (tmpfd, "w");
 		fseek (f, 0, SEEK_SET);
-		for (current = s->lineList; current; current = current->next) {
-			const shvarLine *line = current->data;
+		c_list_for_each (current, &s->lst_head) {
+			const shvarLine *line = c_list_entry (current, shvarLine, lst);
 			const char *str;
 			char *s_tmp;
 			gboolean valid_value;
@@ -1304,11 +1285,14 @@ svWriteFile (shvarFile *s, int mode, GError **error)
 void
 svCloseFile (shvarFile *s)
 {
+	CList *current, *safe;
+
 	g_return_if_fail (s != NULL);
 
 	if (s->fd != -1)
 		close (s->fd);
 	g_free (s->fileName);
-	g_list_free_full (s->lineList, (GDestroyNotify) line_free);
+	c_list_for_each_safe (current, safe, &s->lst_head)
+		line_free (c_list_entry (current, shvarLine, lst));
 	g_slice_free (shvarFile, s);
 }

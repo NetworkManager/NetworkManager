@@ -30,6 +30,7 @@
 #include "nm-auth-subject.h"
 #include "nm-simple-connection.h"
 #include "NetworkManagerUtils.h"
+#include "nm-utils/c-list.h"
 
 #include "introspection/org.freedesktop.NetworkManager.SecretAgent.h"
 
@@ -58,7 +59,7 @@ typedef struct {
 	gboolean connection_is_private;
 	gulong on_disconnected_id;
 
-	GHashTable *requests;
+	CList requests;
 } NMSecretAgentPrivate;
 
 struct _NMSecretAgent {
@@ -99,6 +100,7 @@ G_DEFINE_TYPE (NMSecretAgent, nm_secret_agent, G_TYPE_OBJECT)
 /*****************************************************************************/
 
 struct _NMSecretAgentCallId {
+	CList lst;
 	NMSecretAgent *agent;
 	GCancellable *cancellable;
 	char *path;
@@ -129,6 +131,8 @@ request_new (NMSecretAgent *self,
 	r->callback = callback;
 	r->callback_data = callback_data;
 	r->cancellable = g_cancellable_new ();
+	c_list_link_tail (&NM_SECRET_AGENT_GET_PRIVATE (self)->requests,
+	                  &r->lst);
 	_LOGt ("request "LOG_REQ_FMT": created", LOG_REQ_ARG (r));
 	return r;
 }
@@ -140,6 +144,7 @@ request_free (Request *r)
 	NMSecretAgent *self = r->agent;
 
 	_LOGt ("request "LOG_REQ_FMT": destroyed", LOG_REQ_ARG (r));
+	c_list_unlink (&r->lst);
 	g_free (r->path);
 	g_free (r->setting_name);
 	if (r->cancellable)
@@ -150,17 +155,15 @@ request_free (Request *r)
 static gboolean
 request_check_return (Request *r)
 {
-	NMSecretAgentPrivate *priv;
-
 	if (!r->cancellable)
 		return FALSE;
 
 	g_return_val_if_fail (NM_IS_SECRET_AGENT (r->agent), FALSE);
 
-	priv = NM_SECRET_AGENT_GET_PRIVATE (r->agent);
+	nm_assert (c_list_contains (&NM_SECRET_AGENT_GET_PRIVATE (r->agent)->requests,
+	                            &r->lst));
 
-	if (!g_hash_table_remove (priv->requests, r))
-		g_return_val_if_reached (FALSE);
+	c_list_unlink_init (&r->lst);
 
 	return TRUE;
 }
@@ -373,7 +376,6 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
 
 	r = request_new (self, "GetSecrets", path, setting_name, callback, callback_data);
 	r->is_get_secrets = TRUE;
-	g_hash_table_add (priv->requests, r);
 
 	/* Increase the timeout only for this call */
 	g_dbus_proxy_set_default_timeout (G_DBUS_PROXY (priv->proxy), 120000);
@@ -467,15 +469,15 @@ do_cancel_secrets (NMSecretAgent *self, Request *r, gboolean disposing)
 void
 nm_secret_agent_cancel_secrets (NMSecretAgent *self, NMSecretAgentCallId call_id)
 {
-	NMSecretAgentPrivate *priv;
 	Request *r = call_id;
 
 	g_return_if_fail (NM_IS_SECRET_AGENT (self));
 	g_return_if_fail (r);
 
-	priv = NM_SECRET_AGENT_GET_PRIVATE (self);
-	if (!g_hash_table_remove (priv->requests, r))
-		g_return_if_reached ();
+	nm_assert (c_list_contains (&NM_SECRET_AGENT_GET_PRIVATE (self)->requests,
+	                            &r->lst));
+
+	c_list_unlink_init (&r->lst);
 
 	do_cancel_secrets (self, r, FALSE);
 }
@@ -523,7 +525,6 @@ nm_secret_agent_save_secrets (NMSecretAgent *self,
 	dict = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
 
 	r = request_new (self, "SaveSecrets", path, NULL, callback, callback_data);
-	g_hash_table_add (priv->requests, r);
 	nmdbus_secret_agent_call_save_secrets (priv->proxy,
 	                                       dict,
 	                                       path,
@@ -576,7 +577,6 @@ nm_secret_agent_delete_secrets (NMSecretAgent *self,
 	dict = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_NO_SECRETS);
 
 	r = request_new (self, "DeleteSecrets", path, NULL, callback, callback_data);
-	g_hash_table_add (priv->requests, r);
 	nmdbus_secret_agent_call_delete_secrets (priv->proxy,
 	                                         dict,
 	                                         path,
@@ -747,7 +747,7 @@ nm_secret_agent_init (NMSecretAgent *self)
 {
 	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
 
-	priv->requests = g_hash_table_new (g_direct_hash, g_direct_equal);
+	c_list_init (&priv->requests);
 }
 
 static void
@@ -755,13 +755,13 @@ dispose (GObject *object)
 {
 	NMSecretAgent *self = NM_SECRET_AGENT (object);
 	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
-	GHashTableIter iter;
-	Request *r;
+	CList *iter;
 
-	g_hash_table_iter_init (&iter, priv->requests);
-	while (g_hash_table_iter_next (&iter, (gpointer *) &r, NULL)) {
-		g_hash_table_iter_remove (&iter);
-		do_cancel_secrets (self, r, TRUE);
+again:
+	c_list_for_each (iter, &priv->requests) {
+		c_list_unlink_init (iter);
+		do_cancel_secrets (self, c_list_entry (iter, Request, lst), TRUE);
+		goto again;
 	}
 
 	_on_disconnected_cleanup (priv);
@@ -783,7 +783,6 @@ finalize (GObject *object)
 	g_free (priv->dbus_owner);
 
 	g_slist_free_full (priv->permissions, g_free);
-	g_hash_table_destroy (priv->requests);
 
 	G_OBJECT_CLASS (nm_secret_agent_parent_class)->finalize (object);
 
