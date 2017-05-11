@@ -1529,6 +1529,23 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	if (!obj->link.name[0])
 		goto errout;
 
+	if (!tb[IFLA_MTU]) {
+		/* Kernel has two places that send RTM_GETLINK messages:
+		 * net/core/rtnetlink.c and net/wireless/ext-core.c.
+		 * Unfotunatelly ext-core.c sets only IFLA_WIRELESS and
+		 * IFLA_IFNAME. This confuses code in this function, because
+		 * it cannot get complete set of data for the interface and
+		 * later incomplete object this function creates is used to
+		 * overwrite existing data in NM's cache.
+		 * Since ext-core.c doesn't set IFLA_MTU we can use it as a
+		 * signal to ignore incoming message.
+		 * To some extent this is a hack and correct approach is to
+		 * merge objects per-field.
+		 */
+		goto errout;
+	}
+	obj->link.mtu = nla_get_u32 (tb[IFLA_MTU]);
+
 	if (tb[IFLA_LINKINFO]) {
 		err = nla_parse_nested (li, IFLA_INFO_MAX, tb[IFLA_LINKINFO], policy_link_info);
 		if (err < 0)
@@ -1608,9 +1625,6 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 			}
 		}
 	}
-
-	if (tb[IFLA_MTU])
-		obj->link.mtu = nla_get_u32 (tb[IFLA_MTU]);
 
 	switch (obj->link.type) {
 	case NM_LINK_TYPE_GRE:
