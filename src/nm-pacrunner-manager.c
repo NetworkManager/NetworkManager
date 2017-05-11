@@ -250,6 +250,7 @@ pacrunner_send_done (GDBusProxy *proxy, GAsyncResult *res, gpointer user_data)
 		_LOG2D (config, "sent");
 
 		if (config->removed) {
+			config_ref (config);
 			g_dbus_proxy_call (priv->pacrunner,
 			                   "DestroyProxyConfiguration",
 			                   g_variant_new ("(o)", config->path),
