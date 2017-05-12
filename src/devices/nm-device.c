@@ -2287,19 +2287,23 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 		carrier_disconnected_action_cancel (self);
 		carrier_changed (self, TRUE);
 
-		if (nm_clear_g_source (&priv->carrier_wait_id)) {
-			nm_device_remove_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, TRUE);
+		if (priv->carrier_wait_id) {
+			nm_device_remove_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
 			_carrier_wait_check_queued_act_request (self);
 		}
-	} else if (   state <= NM_DEVICE_STATE_DISCONNECTED
-	           && !priv->queued_act_request) {
-		_LOGD (LOGD_DEVICE, "link disconnected");
-		carrier_changed (self, FALSE);
 	} else {
-		priv->carrier_defer_id = g_timeout_add_seconds (LINK_DISCONNECT_DELAY,
-		                                                carrier_disconnected_action_cb, self);
-		_LOGD (LOGD_DEVICE, "link disconnected (deferring action for %d seconds) (id=%u)",
-		       LINK_DISCONNECT_DELAY, priv->carrier_defer_id);
+		if (priv->carrier_wait_id)
+			nm_device_add_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
+		if (   state <= NM_DEVICE_STATE_DISCONNECTED
+		    && !priv->queued_act_request) {
+			_LOGD (LOGD_DEVICE, "link disconnected");
+			carrier_changed (self, FALSE);
+		} else {
+			priv->carrier_defer_id = g_timeout_add_seconds (LINK_DISCONNECT_DELAY,
+			                                                carrier_disconnected_action_cb, self);
+			_LOGD (LOGD_DEVICE, "link disconnected (deferring action for %d seconds) (id=%u)",
+			       LINK_DISCONNECT_DELAY, priv->carrier_defer_id);
+		}
 	}
 }
 
@@ -10297,12 +10301,12 @@ static gboolean
 carrier_wait_timeout (gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	NM_DEVICE_GET_PRIVATE (self)->carrier_wait_id = 0;
-	nm_device_remove_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, TRUE);
-
-	_carrier_wait_check_queued_act_request (self);
-
+	priv->carrier_wait_id = 0;
+	nm_device_remove_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
+	if (!priv->carrier)
+		_carrier_wait_check_queued_act_request (self);
 	return G_SOURCE_REMOVE;
 }
 
@@ -10379,8 +10383,14 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 	 * a timeout is reached.
 	 */
 	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
-		if (!nm_clear_g_source (&priv->carrier_wait_id))
-			nm_device_add_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, TRUE);
+		/* we start a grace period of 5 seconds during which we will schedule
+		 * a pending action whenever we have no carrier.
+		 *
+		 * If during that time carrier goes away, we declare the interface
+		 * as not ready. */
+		nm_clear_g_source (&priv->carrier_wait_id);
+		if (!priv->carrier)
+			nm_device_add_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
 		priv->carrier_wait_id = g_timeout_add_seconds (5, carrier_wait_timeout, self);
 	}
 
@@ -13792,7 +13802,8 @@ dispose (GObject *object)
 
 	available_connections_del_all (self);
 
-	nm_clear_g_source (&priv->carrier_wait_id);
+	if (nm_clear_g_source (&priv->carrier_wait_id))
+		nm_device_remove_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
 
 	_clear_queued_act_request (priv);
 
