@@ -11821,7 +11821,7 @@ nm_device_add_pending_action (NMDevice *self, const char *action, gboolean asser
 				       count + g_slist_length (iter), action);
 				g_return_val_if_reached (FALSE);
 			} else {
-				_LOGD (LOGD_DEVICE, "add_pending_action (%d): '%s' already pending (expected)",
+				_LOGT (LOGD_DEVICE, "add_pending_action (%d): '%s' already pending (expected)",
 				       count + g_slist_length (iter), action);
 			}
 			return FALSE;
@@ -11882,7 +11882,7 @@ nm_device_remove_pending_action (NMDevice *self, const char *action, gboolean as
 		_LOGW (LOGD_DEVICE, "remove_pending_action (%d): '%s' not pending", count, action);
 		g_return_val_if_reached (FALSE);
 	} else
-		_LOGD (LOGD_DEVICE, "remove_pending_action (%d): '%s' not pending (expected)", count, action);
+		_LOGT (LOGD_DEVICE, "remove_pending_action (%d): '%s' not pending (expected)", count, action);
 
 	return FALSE;
 }
