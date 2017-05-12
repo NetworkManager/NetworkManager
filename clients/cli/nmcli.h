@@ -88,7 +88,7 @@ typedef enum {
 	NMC_OF_FLAG_MAIN_HEADER_ONLY   = 0x00000008,   /* Print main header only */
 } NmcOfFlags;
 
-extern const const NMMetaType nmc_meta_type_generic_info;
+extern const NMMetaType nmc_meta_type_generic_info;
 
 typedef struct _NmcOutputField NmcOutputField;
 typedef struct _NmcMetaGenericInfo NmcMetaGenericInfo;
