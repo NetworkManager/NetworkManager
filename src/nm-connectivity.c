@@ -144,7 +144,7 @@ curl_check_connectivity (CURLM *mhandle, CURLMcode ret)
 			continue;
 
 		/* Here we have completed a session. Check easy session result. */
-		eret = curl_easy_getinfo (msg->easy_handle, CURLINFO_PRIVATE, &cb_data);
+		eret = curl_easy_getinfo (msg->easy_handle, CURLINFO_PRIVATE, (char **) &cb_data);
 		if (eret != CURLE_OK) {
 			_LOG2E ("curl cannot extract cb_data for easy handle %p, skipping msg", msg->easy_handle);
 			continue;
