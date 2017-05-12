@@ -5487,8 +5487,15 @@ ip4_config_merge_and_apply (NMDevice *self,
 	composite = nm_ip4_config_new (nm_device_get_ip_ifindex (self));
 	init_ip4_config_dns_priority (self, composite);
 
-	if (commit)
+	if (commit) {
 		ensure_con_ip4_config (self);
+		if (priv->queued_ip4_config_id) {
+			g_clear_object (&priv->ext_ip4_config);
+			priv->ext_ip4_config = nm_ip4_config_capture (nm_device_get_platform (self),
+			                                              nm_device_get_ifindex (self),
+			                                              FALSE);
+		}
+	}
 
 	if (priv->dev_ip4_config) {
 		nm_ip4_config_merge (composite, priv->dev_ip4_config,
@@ -6223,8 +6230,18 @@ ip6_config_merge_and_apply (NMDevice *self,
 	                           NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
 	init_ip6_config_dns_priority (self, composite);
 
-	if (commit)
+	if (commit) {
 		ensure_con_ip6_config (self);
+		if (priv->queued_ip6_config_id) {
+			g_clear_object (&priv->ext_ip6_config);
+			g_clear_object (&priv->ext_ip6_config_captured);
+			priv->ext_ip6_config_captured = nm_ip6_config_capture (nm_device_get_platform (self),
+			                                                       nm_device_get_ifindex (self),
+			                                                       FALSE,
+			                                                       NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
+			priv->ext_ip6_config = nm_ip6_config_new_cloned (priv->ext_ip6_config_captured);
+		}
+	}
 
 	/* Merge all the IP configs into the composite config */
 	if (priv->ac_ip6_config) {
