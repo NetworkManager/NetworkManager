@@ -2257,9 +2257,7 @@ carrier_disconnected_action_cb (gpointer user_data)
 	_LOGD (LOGD_DEVICE, "link disconnected (calling deferred action) (id=%u)", priv->carrier_defer_id);
 
 	priv->carrier_defer_id = 0;
-
 	carrier_changed (self, FALSE);
-
 	return FALSE;
 }
 
@@ -2267,11 +2265,11 @@ static void
 carrier_disconnected_action_cancel (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	guint id = priv->carrier_defer_id;
 
-	if (priv->carrier_defer_id) {
-		g_source_remove (priv->carrier_defer_id);
-		_LOGD (LOGD_DEVICE, "link disconnected (canceling deferred action) (id=%u)", priv->carrier_defer_id);
-		priv->carrier_defer_id = 0;
+	if (nm_clear_g_source (&priv->carrier_defer_id)) {
+		_LOGD (LOGD_DEVICE, "link disconnected (canceling deferred action) (id=%u)",
+		       id);
 	}
 }
 
