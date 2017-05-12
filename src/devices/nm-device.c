@@ -2167,6 +2167,8 @@ nm_device_update_dynamic_ip_setup (NMDevice *self)
 	}
 }
 
+/*****************************************************************************/
+
 static void
 carrier_changed_notify (NMDevice *self, gboolean carrier)
 {
@@ -2244,7 +2246,7 @@ carrier_changed (NMDevice *self, gboolean carrier)
 #define LINK_DISCONNECT_DELAY 4
 
 static gboolean
-link_disconnect_action_cb (gpointer user_data)
+carrier_disconnected_action_cb (gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -2259,7 +2261,7 @@ link_disconnect_action_cb (gpointer user_data)
 }
 
 static void
-link_disconnect_action_cancel (NMDevice *self)
+carrier_disconnected_action_cancel (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
@@ -2284,7 +2286,7 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 
 	if (priv->carrier) {
 		_LOGI (LOGD_DEVICE, "link connected");
-		link_disconnect_action_cancel (self);
+		carrier_disconnected_action_cancel (self);
 		carrier_changed (self, TRUE);
 
 		if (nm_clear_g_source (&priv->carrier_wait_id)) {
@@ -2297,11 +2299,13 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 		carrier_changed (self, FALSE);
 	} else {
 		priv->carrier_defer_id = g_timeout_add_seconds (LINK_DISCONNECT_DELAY,
-		                                                link_disconnect_action_cb, self);
+		                                                carrier_disconnected_action_cb, self);
 		_LOGD (LOGD_DEVICE, "link disconnected (deferring action for %d seconds) (id=%u)",
 		       LINK_DISCONNECT_DELAY, priv->carrier_defer_id);
 	}
 }
+
+/*****************************************************************************/
 
 static void
 device_recheck_slave_status (NMDevice *self, const NMPlatformLink *plink)
@@ -13774,7 +13778,7 @@ dispose (GObject *object)
 
 	nm_clear_g_source (&priv->stats.timeout_id);
 
-	link_disconnect_action_cancel (self);
+	carrier_disconnected_action_cancel (self);
 
 	if (priv->ifindex > 0) {
 		priv->ifindex = 0;
