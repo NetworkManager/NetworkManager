@@ -2168,9 +2168,17 @@ nm_device_update_dynamic_ip_setup (NMDevice *self)
 }
 
 static void
+carrier_changed_notify (NMDevice *self, gboolean carrier)
+{
+	/* stub */
+}
+
+static void
 carrier_changed (NMDevice *self, gboolean carrier)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	NM_DEVICE_GET_CLASS (self)->carrier_changed_notify (self, carrier);
 
 	if (priv->state <= NM_DEVICE_STATE_UNMANAGED)
 		return;
@@ -2245,7 +2253,7 @@ link_disconnect_action_cb (gpointer user_data)
 
 	priv->carrier_defer_id = 0;
 
-	NM_DEVICE_GET_CLASS (self)->carrier_changed (self, FALSE);
+	carrier_changed (self, FALSE);
 
 	return FALSE;
 }
@@ -2266,7 +2274,6 @@ void
 nm_device_set_carrier (NMDevice *self, gboolean carrier)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (self);
 	NMDeviceState state = nm_device_get_state (self);
 
 	if (priv->carrier == carrier)
@@ -2278,7 +2285,7 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 	if (priv->carrier) {
 		_LOGI (LOGD_DEVICE, "link connected");
 		link_disconnect_action_cancel (self);
-		klass->carrier_changed (self, TRUE);
+		carrier_changed (self, TRUE);
 
 		if (nm_clear_g_source (&priv->carrier_wait_id)) {
 			nm_device_remove_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, TRUE);
@@ -2287,7 +2294,7 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 	} else if (   state <= NM_DEVICE_STATE_DISCONNECTED
 	           && !priv->queued_act_request) {
 		_LOGD (LOGD_DEVICE, "link disconnected");
-		klass->carrier_changed (self, FALSE);
+		carrier_changed (self, FALSE);
 	} else {
 		priv->carrier_defer_id = g_timeout_add_seconds (LINK_DISCONNECT_DELAY,
 		                                                link_disconnect_action_cb, self);
@@ -14161,7 +14168,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->can_unmanaged_external_down = can_unmanaged_external_down;
 	klass->realize_start_notify = realize_start_notify;
 	klass->unrealize_notify = unrealize_notify;
-	klass->carrier_changed = carrier_changed;
+	klass->carrier_changed_notify = carrier_changed_notify;
 	klass->get_ip_iface_identifier = get_ip_iface_identifier;
 	klass->unmanaged_on_quit = unmanaged_on_quit;
 	klass->deactivate_reset_hw_addr = deactivate_reset_hw_addr;
