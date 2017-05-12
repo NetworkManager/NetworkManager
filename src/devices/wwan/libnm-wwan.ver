@@ -20,7 +20,11 @@ global:
 	nm_modem_get_type;
 	nm_modem_get_uid;
 	nm_modem_ip4_pre_commit;
+	nm_modem_manager_get;
 	nm_modem_manager_get_type;
+	nm_modem_manager_name_owner_get;
+	nm_modem_manager_name_owner_ref;
+	nm_modem_manager_name_owner_unref;
 	nm_modem_owns_port;
 	nm_modem_set_mm_enabled;
 	nm_modem_stage3_ip4_config_start;

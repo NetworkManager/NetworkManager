@@ -54,7 +54,6 @@
 #define NM_MANAGER_ALL_DEVICES "all-devices"
 
 /* Not exported */
-#define NM_MANAGER_HOSTNAME "hostname"
 #define NM_MANAGER_SLEEPING "sleeping"
 
 /* signals */

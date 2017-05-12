@@ -34,9 +34,22 @@
 
 #define NM_MODEM_MANAGER_MODEM_ADDED "modem-added"
 
+#define NM_MODEM_MANAGER_NAME_OWNER "name-owner"
+
+#define NM_MODEM_MANAGER_MM_DBUS_SERVICE   "org.freedesktop.ModemManager1"
+#define NM_MODEM_MANAGER_MM_DBUS_PATH      "/org/freedesktop/ModemManager1"
+#define NM_MODEM_MANAGER_MM_DBUS_INTERFACE "org.freedesktop.ModemManager1"
+
 typedef struct _NMModemManager NMModemManager;
 typedef struct _NMModemManagerClass NMModemManagerClass;
 
 GType nm_modem_manager_get_type (void);
+
+NMModemManager *nm_modem_manager_get (void);
+
+void nm_modem_manager_name_owner_ref (NMModemManager *self);
+void nm_modem_manager_name_owner_unref (NMModemManager *self);
+
+const char *nm_modem_manager_name_owner_get (NMModemManager *self);
 
 #endif /* __NETWORKMANAGER_MODEM_MANAGER_H__ */

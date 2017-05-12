@@ -49,6 +49,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 typedef struct {
 	char *path;
 	GDBusProxy *proxy;
+	GCancellable *proxy_cancellable;
 	gboolean initialized;
 
 	char *address;
@@ -70,6 +71,11 @@ struct _NMBluez4AdapterClass {
 G_DEFINE_TYPE (NMBluez4Adapter, nm_bluez4_adapter, G_TYPE_OBJECT)
 
 #define NM_BLUEZ4_ADAPTER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMBluez4Adapter, NM_IS_BLUEZ4_ADAPTER)
+
+/*****************************************************************************/
+
+#define _NMLOG_DOMAIN      LOGD_BT
+#define _NMLOG(level, ...) __NMLOG_DEFAULT (level, _NMLOG_DOMAIN, "bluez4-adapter", __VA_ARGS__)
 
 /*****************************************************************************/
 
@@ -119,8 +125,8 @@ nm_bluez4_adapter_get_devices (NMBluez4Adapter *self)
 static void
 emit_device_removed (NMBluez4Adapter *self, NMBluezDevice *device)
 {
-	nm_log_dbg (LOGD_BT, "(%s): bluez device now unusable",
-	            nm_bluez_device_get_path (device));
+	_LOGD ("(%s): bluez device now unusable",
+	       nm_bluez_device_get_path (device));
 	g_signal_emit (self, signals[DEVICE_REMOVED], 0, device);
 }
 
@@ -130,9 +136,9 @@ device_usable (NMBluezDevice *device, GParamSpec *pspec, gpointer user_data)
 	NMBluez4Adapter *self = NM_BLUEZ4_ADAPTER (user_data);
 
 	if (nm_bluez_device_get_usable (device)) {
-		nm_log_dbg (LOGD_BT, "(%s): bluez device now usable (device address is %s)",
-		            nm_bluez_device_get_path (device),
-		            nm_bluez_device_get_address (device));
+		_LOGD ("(%s): bluez device now usable (device address is %s)",
+		       nm_bluez_device_get_path (device),
+		       nm_bluez_device_get_address (device));
 		g_signal_emit (self, signals[DEVICE_ADDED], 0, device);
 	} else
 		emit_device_removed (self, device);
@@ -143,9 +149,9 @@ device_initialized (NMBluezDevice *device, gboolean success, gpointer user_data)
 {
 	NMBluez4Adapter *self = NM_BLUEZ4_ADAPTER (user_data);
 
-	nm_log_dbg (LOGD_BT, "(%s): bluez device %s",
-	            nm_bluez_device_get_path (device),
-	            success ? "initialized" : "failed to initialize");
+	_LOGD ("(%s): bluez device %s",
+	       nm_bluez_device_get_path (device),
+	       success ? "initialized" : "failed to initialize");
 	if (!success)
 		device_do_remove (self, device);
 }
@@ -178,7 +184,7 @@ device_created (GDBusProxy *proxy, const char *path, gpointer user_data)
 	g_signal_connect (device, "notify::usable", G_CALLBACK (device_usable), self);
 	g_hash_table_insert (priv->devices, (gpointer) nm_bluez_device_get_path (device), device);
 
-	nm_log_dbg (LOGD_BT, "(%s): new bluez device found", path);
+	_LOGD ("(%s): new bluez device found", path);
 }
 
 static void
@@ -188,7 +194,7 @@ device_removed (GDBusProxy *proxy, const char *path, gpointer user_data)
 	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (self);
 	NMBluezDevice *device;
 
-	nm_log_dbg (LOGD_BT, "(%s): bluez device removed", path);
+	_LOGD ("(%s): bluez device removed", path);
 
 	device = g_hash_table_lookup (priv->devices, path);
 	if (device)
@@ -198,19 +204,28 @@ device_removed (GDBusProxy *proxy, const char *path, gpointer user_data)
 static void
 get_properties_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 {
-	NMBluez4Adapter *self = NM_BLUEZ4_ADAPTER (user_data);
-	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (self);
-	GError *err = NULL;
+	NMBluez4Adapter *self;
+	NMBluez4AdapterPrivate *priv;
+	gs_free_error GError *error = NULL;
 	GVariant *ret, *properties;
 	char **devices;
 	int i;
 
 	ret = _nm_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), result,
-	                                  G_VARIANT_TYPE ("(a{sv})"), &err);
+	                                  G_VARIANT_TYPE ("(a{sv})"), &error);
+
+	if (   !ret
+	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	self = NM_BLUEZ4_ADAPTER (user_data);
+	priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (self);
+
+	g_clear_object (&priv->proxy_cancellable);
+
 	if (!ret) {
-		g_dbus_error_strip_remote_error (err);
-		nm_log_warn (LOGD_BT, "bluez error getting adapter properties: %s", err->message);
-		g_error_free (err);
+		g_dbus_error_strip_remote_error (error);
+		_LOGW ("bluez error getting adapter properties: %s", error->message);
 		goto done;
 	}
 
@@ -233,15 +248,43 @@ done:
 }
 
 static void
-query_properties (NMBluez4Adapter *self)
+_proxy_new_cb (GObject *source_object,
+               GAsyncResult *result,
+               gpointer user_data)
 {
-	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (self);
+	NMBluez4Adapter *self;
+	NMBluez4AdapterPrivate *priv;
+	gs_free_error GError *error = NULL;
+	GDBusProxy *proxy;
+
+	proxy = g_dbus_proxy_new_for_bus_finish (result, &error);
+	if (   !proxy
+	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	self = user_data;
+	priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (self);
+
+	if (!proxy) {
+		_LOGW ("bluez error creating D-Bus proxy: %s", error->message);
+		g_clear_object (&priv->proxy_cancellable);
+		g_signal_emit (self, signals[INITIALIZED], 0, priv->initialized);
+		return;
+	}
+
+	priv->proxy = proxy;
+
+	_nm_dbus_signal_connect (priv->proxy, "DeviceCreated", G_VARIANT_TYPE ("(o)"),
+	                         G_CALLBACK (device_created), self);
+	_nm_dbus_signal_connect (priv->proxy, "DeviceRemoved", G_VARIANT_TYPE ("(o)"),
+	                         G_CALLBACK (device_removed), self);
 
 	g_dbus_proxy_call (priv->proxy, "GetProperties",
 	                   NULL,
 	                   G_DBUS_CALL_FLAGS_NONE, -1,
-	                   NULL,
-	                   get_properties_cb, self);
+	                   priv->proxy_cancellable,
+	                   get_properties_cb,
+	                   self);
 }
 
 /*****************************************************************************/
@@ -316,19 +359,17 @@ nm_bluez4_adapter_new (const char *path, NMSettings *settings)
 
 	priv->settings = g_object_ref (settings);
 
-	priv->proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
-	                                             G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
-	                                             NULL,
-	                                             BLUEZ_SERVICE,
-	                                             priv->path,
-	                                             BLUEZ4_ADAPTER_INTERFACE,
-	                                             NULL, NULL);
-	_nm_dbus_signal_connect (priv->proxy, "DeviceCreated", G_VARIANT_TYPE ("(o)"),
-	                         G_CALLBACK (device_created), self);
-	_nm_dbus_signal_connect (priv->proxy, "DeviceRemoved", G_VARIANT_TYPE ("(o)"),
-	                         G_CALLBACK (device_removed), self);
+	priv->proxy_cancellable = g_cancellable_new ();
 
-	query_properties (self);
+	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
+	                          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
+	                          NULL,
+	                          BLUEZ_SERVICE,
+	                          priv->path,
+	                          BLUEZ4_ADAPTER_INTERFACE,
+	                          priv->proxy_cancellable,
+	                          _proxy_new_cb,
+	                          self);
 	return self;
 }
 
@@ -339,8 +380,15 @@ dispose (GObject *object)
 	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (self);
 	NMBluezDevice *device;
 
+	nm_clear_g_cancellable (&priv->proxy_cancellable);
+
 	while ((device = g_hash_table_find (priv->devices, _find_all, NULL)))
 		device_do_remove (self, device);
+
+	if (priv->proxy) {
+		g_signal_handlers_disconnect_by_data (priv->proxy, self);
+		g_clear_object (&priv->proxy);
+	}
 
 	G_OBJECT_CLASS (nm_bluez4_adapter_parent_class)->dispose (object);
 }
@@ -348,12 +396,12 @@ dispose (GObject *object)
 static void
 finalize (GObject *object)
 {
-	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE ((NMBluez4Adapter *) object);
+	NMBluez4Adapter *self = NM_BLUEZ4_ADAPTER (object);
+	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (self);
 
 	g_hash_table_destroy (priv->devices);
 	g_free (priv->address);
 	g_free (priv->path);
-	g_object_unref (priv->proxy);
 
 	G_OBJECT_CLASS (nm_bluez4_adapter_parent_class)->finalize (object);
 

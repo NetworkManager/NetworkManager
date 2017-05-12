@@ -1435,6 +1435,7 @@ nm_dns_manager_set_initial_hostname (NMDnsManager *self,
 {
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
+	g_free (priv->hostname);
 	priv->hostname = g_strdup (hostname);
 }
 

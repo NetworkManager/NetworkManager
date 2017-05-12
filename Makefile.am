@@ -1391,6 +1391,9 @@ src_libNetworkManager_la_SOURCES = \
 	src/ppp/nm-ppp-manager.h \
 	src/ppp/nm-ppp-status.h \
 	\
+	src/nm-hostname-manager.c \
+	src/nm-hostname-manager.h \
+	\
 	src/settings/nm-agent-manager.c \
 	src/settings/nm-agent-manager.h \
 	src/settings/nm-inotify-helper.c \

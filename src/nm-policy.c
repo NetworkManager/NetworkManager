@@ -49,6 +49,7 @@
 #include "nm-dhcp6-config.h"
 #include "nm-config.h"
 #include "nm-netns.h"
+#include "nm-hostname-manager.h"
 
 /*****************************************************************************/
 
@@ -73,12 +74,17 @@ typedef struct {
 
 	NMSettings *settings;
 
+	NMHostnameManager *hostname_manager;
+
 	NMDevice *default_device4, *activating_device4;
 	NMDevice *default_device6, *activating_device6;
 
-	GResolver *resolver;
-	GInetAddress *lookup_addr;
-	GCancellable *lookup_cancellable;
+	struct {
+		GInetAddress *addr;
+		GResolver *resolver;
+		GCancellable *cancellable;
+	} lookup;
+
 	NMDnsManager *dns_manager;
 	gulong config_changed_id;
 
@@ -443,50 +449,46 @@ settings_set_hostname_cb (const char *hostname,
 #define HOST_NAME_BUFSIZE (HOST_NAME_MAX + 2)
 
 static char *
-_get_hostname (NMPolicy *self, char **hostname)
+_get_hostname (NMPolicy *self)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	char *buf;
-
-	g_assert (hostname && *hostname == NULL);
+	char *hostname = NULL;
 
 	/* If there is an in-progress hostname change, return
 	 * the last hostname set as would be set soon...
 	 */
 	if (priv->changing_hostname) {
 		_LOGT (LOGD_DNS, "get-hostname: \"%s\" (last on set)", priv->last_hostname);
-		*hostname = g_strdup (priv->last_hostname);
-		return *hostname;
+		return g_strdup (priv->last_hostname);
 	}
 
 	/* try to get the hostname via dbus... */
-	if (nm_settings_get_transient_hostname (priv->settings, hostname)) {
-		_LOGT (LOGD_DNS, "get-hostname: \"%s\" (from dbus)", *hostname);
-		return *hostname;
+	if (nm_hostname_manager_get_transient_hostname (priv->hostname_manager, &hostname)) {
+		_LOGT (LOGD_DNS, "get-hostname: \"%s\" (from dbus)", hostname);
+		return hostname;
 	}
 
 	/* ...or retrieve it by yourself */
-	buf = g_malloc (HOST_NAME_BUFSIZE);
-	if (gethostname (buf, HOST_NAME_BUFSIZE -1) != 0) {
+	hostname = g_malloc (HOST_NAME_BUFSIZE);
+	if (gethostname (hostname, HOST_NAME_BUFSIZE -1) != 0) {
 		int errsv = errno;
 
 		_LOGT (LOGD_DNS, "get-hostname: couldn't get the system hostname: (%d) %s",
 		       errsv, g_strerror (errsv));
-		g_free (buf);
+		g_free (hostname);
 		return NULL;
 	}
 
 	/* the name may be truncated... */
-	buf[HOST_NAME_BUFSIZE - 1] = '\0';
-	if (strlen (buf) >= HOST_NAME_BUFSIZE -1) {
-		_LOGT (LOGD_DNS, "get-hostname: system hostname too long: \"%s\"", buf);
-		g_free (buf);
+	hostname[HOST_NAME_BUFSIZE - 1] = '\0';
+	if (strlen (hostname) >= HOST_NAME_BUFSIZE -1) {
+		_LOGT (LOGD_DNS, "get-hostname: system hostname too long: \"%s\"", hostname);
+		g_free (hostname);
 		return NULL;
 	}
 
-	_LOGT (LOGD_DNS, "get-hostname: \"%s\"", buf);
-	*hostname = buf;
-	return *hostname;
+	_LOGT (LOGD_DNS, "get-hostname: \"%s\"", hostname);
+	return hostname;
 }
 
 static void
@@ -508,7 +510,7 @@ _set_hostname (NMPolicy *self,
 	 * restart the reverse lookup thread later.
 	 */
 	if (new_hostname)
-		g_clear_object (&priv->lookup_addr);
+		g_clear_object (&priv->lookup.addr);
 
 	/* Update the DNS only if the hostname is actually
 	 * going to change.
@@ -534,7 +536,7 @@ _set_hostname (NMPolicy *self,
 		name = new_hostname;
 
 	/* Don't set the hostname if it isn't actually changing */
-	if (   _get_hostname (self, &old_hostname)
+	if (   (old_hostname = _get_hostname (self))
 	    && (nm_streq (name, old_hostname))) {
 		_LOGT (LOGD_DNS, "set-hostname: hostname already set to '%s' (%s)", name, msg);
 		return;
@@ -549,10 +551,10 @@ _set_hostname (NMPolicy *self,
 
 	/* Ask NMSettings to update the transient hostname using its
 	 * systemd-hostnamed proxy */
-	nm_settings_set_transient_hostname (priv->settings,
-	                                    name,
-	                                    settings_set_hostname_cb,
-	                                    g_object_ref (self));
+	nm_hostname_manager_set_transient_hostname (priv->hostname_manager,
+	                                            name,
+	                                            settings_set_hostname_cb,
+	                                            g_object_ref (self));
 }
 
 static void
@@ -572,7 +574,7 @@ lookup_callback (GObject *source,
 	self = user_data;
 	priv = NM_POLICY_GET_PRIVATE (self);
 
-	g_clear_object (&priv->lookup_cancellable);
+	g_clear_object (&priv->lookup.cancellable);
 
 	if (hostname)
 		_set_hostname (self, hostname, "from address lookup");
@@ -581,10 +583,23 @@ lookup_callback (GObject *source,
 }
 
 static void
+lookup_by_address (NMPolicy *self)
+{
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+
+	nm_clear_g_cancellable (&priv->lookup.cancellable);
+	priv->lookup.cancellable = g_cancellable_new ();
+	g_resolver_lookup_by_address_async (priv->lookup.resolver,
+	                                    priv->lookup.addr,
+	                                    priv->lookup.cancellable,
+	                                    lookup_callback, self);
+}
+
+static void
 update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const char *msg)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	char *configured_hostname = NULL;
+	const char *configured_hostname;
 	gs_free char *temp_hostname = NULL;
 	const char *dhcp_hostname, *p;
 	NMIP4Config *ip4_config;
@@ -600,12 +615,12 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const 
 
 	_LOGT (LOGD_DNS, "set-hostname: updating hostname (%s)", msg);
 
-	nm_clear_g_cancellable (&priv->lookup_cancellable);
+	nm_clear_g_cancellable (&priv->lookup.cancellable);
 
 	/* Check if the hostname was set externally to NM, so that in that case
 	 * we can avoid to fallback to the one we got when we started.
 	 * Consider "not specific" hostnames as equal. */
-	if (   _get_hostname (self, &temp_hostname)
+	if (   (temp_hostname = _get_hostname (self))
 	    && !nm_streq0 (temp_hostname, priv->last_hostname)
 	    && (   nm_utils_is_specific_hostname (temp_hostname)
 	        || nm_utils_is_specific_hostname (priv->last_hostname))) {
@@ -614,14 +629,14 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const 
 		       temp_hostname);
 		priv->dhcp_hostname = FALSE;
 
+		if (!nm_utils_is_specific_hostname (temp_hostname))
+			nm_clear_g_free (&temp_hostname);
 		if (!nm_streq0 (temp_hostname, priv->orig_hostname)) {
 			/* Update original (fallback) hostname */
 			g_free (priv->orig_hostname);
-			if (nm_utils_is_specific_hostname (temp_hostname)) {
-				priv->orig_hostname = temp_hostname;
-				temp_hostname = NULL;
-			} else
-				priv->orig_hostname = NULL;
+			priv->orig_hostname = g_steal_pointer (&temp_hostname);
+			_LOGT (LOGD_DNS, "hostname-original: update to %s%s%s",
+			       NM_PRINT_FMT_QUOTE_STRING (priv->orig_hostname));
 		}
 	}
 
@@ -635,14 +650,12 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const 
 	 */
 
 	/* Try a persistent hostname first */
-	g_object_get (G_OBJECT (priv->manager), NM_MANAGER_HOSTNAME, &configured_hostname, NULL);
+	configured_hostname = nm_hostname_manager_get_hostname (priv->hostname_manager);
 	if (configured_hostname && nm_utils_is_specific_hostname (configured_hostname)) {
 		_set_hostname (self, configured_hostname, "from system configuration");
 		priv->dhcp_hostname = FALSE;
-		g_free (configured_hostname);
 		return;
 	}
-	g_free (configured_hostname);
 
 	/* Try automatically determined hostname from the best device's IP config */
 	if (!best4)
@@ -737,15 +750,15 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const 
 		const NMPlatformIP4Address *addr4;
 
 		addr4 = nm_ip4_config_get_address (ip4_config, 0);
-		g_clear_object (&priv->lookup_addr);
-		priv->lookup_addr = g_inet_address_new_from_bytes ((guint8 *) &addr4->address,
+		g_clear_object (&priv->lookup.addr);
+		priv->lookup.addr = g_inet_address_new_from_bytes ((guint8 *) &addr4->address,
 		                                                   G_SOCKET_FAMILY_IPV4);
 	} else if (ip6_config && nm_ip6_config_get_num_addresses (ip6_config) > 0) {
 		const NMPlatformIP6Address *addr6;
 
 		addr6 = nm_ip6_config_get_address (ip6_config, 0);
-		g_clear_object (&priv->lookup_addr);
-		priv->lookup_addr = g_inet_address_new_from_bytes ((guint8 *) &addr6->address,
+		g_clear_object (&priv->lookup.addr);
+		priv->lookup.addr = g_inet_address_new_from_bytes ((guint8 *) &addr6->address,
 		                                                   G_SOCKET_FAMILY_IPV6);
 	} else {
 		/* No valid IP config; fall back to localhost.localdomain */
@@ -753,11 +766,7 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const 
 		return;
 	}
 
-	priv->lookup_cancellable = g_cancellable_new ();
-	g_resolver_lookup_by_address_async (priv->resolver,
-	                                    priv->lookup_addr,
-	                                    priv->lookup_cancellable,
-	                                    lookup_callback, self);
+	lookup_by_address (self);
 }
 
 static void
@@ -1248,7 +1257,7 @@ process_secondaries (NMPolicy *self,
 }
 
 static void
-hostname_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
+hostname_changed (NMHostnameManager *hostname_manager, GParamSpec *pspec, gpointer user_data)
 {
 	NMPolicyPrivate *priv = user_data;
 	NMPolicy *self = _PRIV_TO_SELF (priv);
@@ -2088,30 +2097,26 @@ dns_config_changed (NMDnsManager *dns_manager, gpointer user_data)
 	 * (race in updating DNS and doing the reverse lookup).
 	 */
 
-	nm_clear_g_cancellable (&priv->lookup_cancellable);
+	nm_clear_g_cancellable (&priv->lookup.cancellable);
 
 	/* Re-start the hostname lookup thread if we don't have hostname yet. */
-	if (priv->lookup_addr) {
+	if (priv->lookup.addr) {
 		char *str = NULL;
 		gs_free char *hostname = NULL;
 
 		/* Check if the hostname was externally set */
-		if (   _get_hostname (self, &hostname)
+		if (   (hostname = _get_hostname (self))
 		    && nm_utils_is_specific_hostname (hostname)
 		    && !nm_streq0 (hostname, priv->last_hostname)) {
-			g_clear_object (&priv->lookup_addr);
+			g_clear_object (&priv->lookup.addr);
 			return;
 		}
 
 		_LOGD (LOGD_DNS, "restarting reverse-lookup thread for address %s",
-		       (str = g_inet_address_to_string (priv->lookup_addr)));
+		       (str = g_inet_address_to_string (priv->lookup.addr)));
 		g_free (str);
 
-		priv->lookup_cancellable = g_cancellable_new ();
-		g_resolver_lookup_by_address_async (priv->resolver,
-		                                    priv->lookup_addr,
-		                                    priv->lookup_cancellable,
-		                                    lookup_callback, self);
+		lookup_by_address (self);
 	}
 }
 
@@ -2240,6 +2245,15 @@ nm_policy_get_activating_ip6_device (NMPolicy *self)
 
 /*****************************************************************************/
 
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_hostname_mode_to_string, NMPolicyHostnameMode,
+	NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT ("unknown"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_POLICY_HOSTNAME_MODE_NONE,  "none"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_POLICY_HOSTNAME_MODE_DHCP,  "dhcp"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_POLICY_HOSTNAME_MODE_FULL,  "full"),
+);
+
+/*****************************************************************************/
+
 static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
@@ -2300,6 +2314,8 @@ nm_policy_init (NMPolicy *self)
 
 	priv->netns = g_object_ref (nm_netns_get ());
 
+	priv->hostname_manager = g_object_ref (nm_hostname_manager_get ());
+
 	hostname_mode = nm_config_data_get_value (NM_CONFIG_GET_DATA_ORIG,
 	                                          NM_CONFIG_KEYFILE_GROUP_MAIN,
 	                                          NM_CONFIG_KEYFILE_KEY_MAIN_HOSTNAME_MODE,
@@ -2311,7 +2327,6 @@ nm_policy_init (NMPolicy *self)
 	else /* default - full mode */
 		priv->hostname_mode = NM_POLICY_HOSTNAME_MODE_FULL;
 
-	_LOGI (LOGD_DNS, "hostname management mode: %s", hostname_mode ? hostname_mode : "default");
 	priv->devices = g_hash_table_new (NULL, NULL);
 	priv->ip6_prefix_delegations = g_array_new (FALSE, FALSE, sizeof (IP6PrefixDelegation));
 	g_array_set_clear_func (priv->ip6_prefix_delegations, clear_ip6_prefix_delegation);
@@ -2325,7 +2340,7 @@ constructed (GObject *object)
 	char *hostname = NULL;
 
 	/* Grab hostname on startup and use that if nothing provides one */
-	if (_get_hostname (self, &hostname)) {
+	if ((hostname = _get_hostname (self))) {
 		/* init last_hostname */
 		priv->last_hostname = hostname;
 
@@ -2333,6 +2348,8 @@ constructed (GObject *object)
 		if (nm_utils_is_specific_hostname (hostname))
 			priv->orig_hostname = g_strdup (hostname);
 	}
+	_LOGT (LOGD_DNS, "hostname-original: set to %s%s%s",
+	       NM_PRINT_FMT_QUOTE_STRING (priv->orig_hostname));
 
 	priv->firewall_manager = g_object_ref (nm_firewall_manager_get ());
 	g_signal_connect (priv->firewall_manager, NM_FIREWALL_MANAGER_STATE_CHANGED,
@@ -2343,9 +2360,10 @@ constructed (GObject *object)
 	priv->config_changed_id = g_signal_connect (priv->dns_manager, NM_DNS_MANAGER_CONFIG_CHANGED,
 	                                            G_CALLBACK (dns_config_changed), self);
 
-	priv->resolver = g_resolver_get_default ();
+	priv->lookup.resolver = g_resolver_get_default ();
 
-	g_signal_connect (priv->manager, "notify::" NM_MANAGER_HOSTNAME,           (GCallback) hostname_changed, priv);
+	g_signal_connect (priv->hostname_manager, "notify::" NM_HOSTNAME_MANAGER_HOSTNAME, (GCallback) hostname_changed, priv);
+
 	g_signal_connect (priv->manager, "notify::" NM_MANAGER_SLEEPING,           (GCallback) sleeping_changed, priv);
 	g_signal_connect (priv->manager, "notify::" NM_MANAGER_NETWORKING_ENABLED, (GCallback) sleeping_changed, priv);
 	g_signal_connect (priv->manager, NM_MANAGER_INTERNAL_DEVICE_ADDED,         (GCallback) device_added, priv);
@@ -2360,6 +2378,8 @@ constructed (GObject *object)
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_AGENT_REGISTERED,              (GCallback) secret_agent_registered, priv);
 
 	G_OBJECT_CLASS (nm_policy_parent_class)->constructed (object);
+
+	_LOGD (LOGD_DNS, "hostname-mode: %s", _hostname_mode_to_string (priv->hostname_mode));
 }
 
 NMPolicy *
@@ -2383,10 +2403,9 @@ dispose (GObject *object)
 	GHashTableIter h_iter;
 	NMDevice *device;
 
-	nm_clear_g_cancellable (&priv->lookup_cancellable);
-
-	g_clear_object (&priv->lookup_addr);
-	g_clear_object (&priv->resolver);
+	nm_clear_g_cancellable (&priv->lookup.cancellable);
+	g_clear_object (&priv->lookup.addr);
+	g_clear_object (&priv->lookup.resolver);
 
 	while (priv->pending_activation_checks)
 		activate_data_free (priv->pending_activation_checks->data);
@@ -2423,6 +2442,11 @@ dispose (GObject *object)
 	g_clear_pointer (&priv->orig_hostname, g_free);
 	g_clear_pointer (&priv->cur_hostname, g_free);
 	g_clear_pointer (&priv->last_hostname, g_free);
+
+	if (priv->hostname_manager) {
+		g_signal_handlers_disconnect_by_data (priv->hostname_manager, priv);
+		g_clear_object (&priv->hostname_manager);
+	}
 
 	if (priv->settings) {
 		g_signal_handlers_disconnect_by_data (priv->settings, priv);
