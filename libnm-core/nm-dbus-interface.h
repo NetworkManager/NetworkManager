@@ -720,6 +720,9 @@ typedef enum {
  *   initiated by user-requested action via the D-Bus interface, as opposed to
  *   automatically initiated by NetworkManager in response to (for example) scan
  *   results or carrier changes.
+ * @NM_SECRET_AGENT_GET_SECRETS_FLAG_WPS_PBC_ACTIVE: indicates that WPS enrollment
+ *   is active with PBC method. The agent may suggest that the user pushes a button
+ *   on the router instead of supplying a PSK.
  * @NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM: Internal flag, not part of
  *   the D-Bus API.
  * @NM_SECRET_AGENT_GET_SECRETS_FLAG_NO_ERRORS: Internal flag, not part of
@@ -732,6 +735,7 @@ typedef enum { /*< flags >*/
 	NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION = 0x1,
 	NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW       = 0x2,
 	NM_SECRET_AGENT_GET_SECRETS_FLAG_USER_REQUESTED    = 0x4,
+	NM_SECRET_AGENT_GET_SECRETS_FLAG_WPS_PBC_ACTIVE    = 0x8,
 
 	/* Internal to NM; not part of the D-Bus API */
 	NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM       = 0x80000000,
