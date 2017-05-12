@@ -1,4 +1,8 @@
 language: c
+compiler:
+  - gcc
+  - clang
+
 before_install:
   - sudo apt-get update
   - sudo apt-get install autoconf libtool pkg-config intltool libdbus-glib-1-dev libdbus-1-dev libiw-dev libglib2.0-dev
