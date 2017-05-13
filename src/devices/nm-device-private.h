@@ -93,8 +93,6 @@ void nm_device_recheck_available_connections (NMDevice *device);
 
 gboolean nm_device_get_enslaved (NMDevice *device);
 
-NMDevice *nm_device_master_get_slave_by_ifindex (NMDevice *dev, int ifindex);
-
 void nm_device_master_check_slave_physical_port (NMDevice *self, NMDevice *slave,
                                                  NMLogDomain log_domain);
 

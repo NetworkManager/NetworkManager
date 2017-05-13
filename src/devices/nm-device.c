@@ -3446,29 +3446,6 @@ nm_device_master_get_slaves (NMDevice *self)
 }
 
 /**
- * nm_device_master_get_slave_by_ifindex:
- * @self: the master device
- * @ifindex: the slave's interface index
- *
- * Returns: the slave with the given @ifindex of which @self is the master,
- *   or %NULL if no device with @ifindex is a slave of @self.
- */
-NMDevice *
-nm_device_master_get_slave_by_ifindex (NMDevice *self, int ifindex)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	CList *iter;
-
-	c_list_for_each (iter, &priv->slaves) {
-		SlaveInfo *info = c_list_entry (iter, SlaveInfo, lst_slave);
-
-		if (nm_device_get_ip_ifindex (info->slave) == ifindex)
-			return info->slave;
-	}
-	return NULL;
-}
-
-/**
  * nm_device_master_check_slave_physical_port:
  * @self: the master device
  * @slave: a slave device
