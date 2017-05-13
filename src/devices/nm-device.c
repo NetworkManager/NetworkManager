@@ -59,6 +59,7 @@
 #include "nm-netns.h"
 #include "nm-dispatcher.h"
 #include "nm-config.h"
+#include "nm-utils/c-list.h"
 #include "dns/nm-dns-manager.h"
 #include "nm-core-internal.h"
 #include "nm-default-route-manager.h"
@@ -106,6 +107,7 @@ typedef enum {
 } IpState;
 
 typedef struct {
+	CList lst_slave;
 	NMDevice *slave;
 	gulong watch_id;
 	bool slave_is_enslaved;
@@ -450,7 +452,7 @@ typedef struct _NMDevicePrivate {
 
 	/* slave management */
 	bool            is_master;
-	GSList *        slaves;    /* list of SlaveInfo */
+	CList           slaves;    /* list of SlaveInfo */
 
 	NMMetered       metered;
 
@@ -1921,11 +1923,11 @@ static SlaveInfo *
 find_slave_info (NMDevice *self, NMDevice *slave)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	CList *iter;
 	SlaveInfo *info;
-	GSList *iter;
 
-	for (iter = priv->slaves; iter; iter = g_slist_next (iter)) {
-		info = iter->data;
+	c_list_for_each (iter, &priv->slaves) {
+		info = c_list_entry (iter, SlaveInfo, lst_slave);
 		if (info->slave == slave)
 			return info;
 	}
@@ -2045,7 +2047,7 @@ nm_device_master_release_one_slave (NMDevice *self, NMDevice *slave, gboolean co
 	 * Transfers ownership from slave_priv->master.  */
 	self_free = self;
 
-	priv->slaves = g_slist_remove (priv->slaves, info);
+	c_list_unlink_init (&info->lst_slave);
 	slave_priv->master = NULL;
 
 	g_signal_handler_disconnect (slave, info->watch_id);
@@ -2085,7 +2087,8 @@ is_unmanaged_external_down (NMDevice *self, gboolean consider_can)
 	/* Manage externally-created software interfaces only when they are IFF_UP */
 	if (   priv->ifindex <= 0
 	    || !priv->up
-	    || !(priv->slaves || nm_platform_link_can_assume (nm_device_get_platform (self), priv->ifindex)))
+	    || !(   !c_list_is_empty (&priv->slaves)
+	         || nm_platform_link_can_assume (nm_device_get_platform (self), priv->ifindex)))
 		return NM_UNMAN_FLAG_OP_SET_UNMANAGED;
 
 	return NM_UNMAN_FLAG_OP_SET_MANAGED;
@@ -3349,7 +3352,8 @@ slave_state_changed (NMDevice *slave,
 		                                    priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_MANAGED,
 		                                    reason);
 		/* Bridge/bond/team interfaces are left up until manually deactivated */
-		if (priv->slaves == NULL && priv->state == NM_DEVICE_STATE_ACTIVATED)
+		if (   c_list_is_empty (&priv->slaves)
+		    && priv->state == NM_DEVICE_STATE_ACTIVATED)
 			_LOGD (LOGD_DEVICE, "last slave removed; remaining activated");
 	}
 }
@@ -3400,7 +3404,7 @@ nm_device_master_add_slave (NMDevice *self, NMDevice *slave, gboolean configure)
 		info->watch_id = g_signal_connect (slave,
 		                                   NM_DEVICE_STATE_CHANGED,
 		                                   G_CALLBACK (slave_state_changed), self);
-		priv->slaves = g_slist_append (priv->slaves, info);
+		c_list_link_tail (&priv->slaves, &info->lst_slave);
 		slave_priv->master = g_object_ref (self);
 
 		/* no need to emit
@@ -3432,10 +3436,11 @@ static GSList *
 nm_device_master_get_slaves (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	GSList *slaves = NULL, *iter;
+	CList *iter;
+	GSList *slaves = NULL;
 
-	for (iter = priv->slaves; iter; iter = g_slist_next (iter))
-		slaves = g_slist_prepend (slaves, ((SlaveInfo *) iter->data)->slave);
+	c_list_for_each (iter, &priv->slaves)
+		slaves = g_slist_prepend (slaves, c_list_entry (iter, SlaveInfo, lst_slave)->slave);
 
 	return slaves;
 }
@@ -3451,10 +3456,11 @@ nm_device_master_get_slaves (NMDevice *self)
 NMDevice *
 nm_device_master_get_slave_by_ifindex (NMDevice *self, int ifindex)
 {
-	GSList *iter;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	CList *iter;
 
-	for (iter = NM_DEVICE_GET_PRIVATE (self)->slaves; iter; iter = g_slist_next (iter)) {
-		SlaveInfo *info = iter->data;
+	c_list_for_each (iter, &priv->slaves) {
+		SlaveInfo *info = c_list_entry (iter, SlaveInfo, lst_slave);
 
 		if (nm_device_get_ip_ifindex (info->slave) == ifindex)
 			return info->slave;
@@ -3478,14 +3484,14 @@ nm_device_master_check_slave_physical_port (NMDevice *self, NMDevice *slave,
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	const char *slave_physical_port_id, *existing_physical_port_id;
 	SlaveInfo *info;
-	GSList *iter;
+	CList *iter;
 
 	slave_physical_port_id = nm_device_get_physical_port_id (slave);
 	if (!slave_physical_port_id)
 		return;
 
-	for (iter = priv->slaves; iter; iter = iter->next) {
-		info = iter->data;
+	c_list_for_each (iter, &priv->slaves) {
+		info = c_list_entry (iter, SlaveInfo, lst_slave);
 		if (info->slave == slave)
 			continue;
 
@@ -3511,6 +3517,7 @@ nm_device_master_release_slaves (NMDevice *self)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMDeviceStateReason reason;
 	gboolean configure = TRUE;
+	CList *iter, *safe;
 
 	/* Don't release the slaves if this connection doesn't belong to NM. */
 	if (nm_device_sys_iface_state_is_external (self))
@@ -3523,8 +3530,8 @@ nm_device_master_release_slaves (NMDevice *self)
 	if (!nm_platform_link_get (nm_device_get_platform (self), priv->ifindex))
 		configure = FALSE;
 
-	while (priv->slaves) {
-		SlaveInfo *info = priv->slaves->data;
+	c_list_for_each_safe (iter, safe, &priv->slaves) {
+		SlaveInfo *info = c_list_entry (iter, SlaveInfo, lst_slave);
 
 		nm_device_master_release_one_slave (self, info->slave, configure, reason);
 	}
@@ -3960,7 +3967,8 @@ device_has_config (NMDevice *self)
 		return TRUE;
 
 	/* Master-slave relationship is also a configuration */
-	if (priv->slaves || nm_platform_link_get_master (nm_device_get_platform (self), priv->ifindex) > 0)
+	if (   !c_list_is_empty (&priv->slaves)
+	    || nm_platform_link_get_master (nm_device_get_platform (self), priv->ifindex) > 0)
 		return TRUE;
 
 	return FALSE;
@@ -4101,7 +4109,7 @@ nm_device_generate_connection (NMDevice *self, NMDevice *master)
 	if (   g_strcmp0 (ip4_method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0
 	    && g_strcmp0 (ip6_method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0
 	    && !nm_setting_connection_get_master (NM_SETTING_CONNECTION (s_con))
-	    && !priv->slaves) {
+	    && c_list_is_empty (&priv->slaves)) {
 		_LOGD (LOGD_DEVICE, "ignoring generated connection (no IP and not in master-slave relationship)");
 		g_object_unref (connection);
 		connection = NULL;
@@ -4114,7 +4122,7 @@ nm_device_generate_connection (NMDevice *self, NMDevice *master)
 	    && g_strcmp0 (ip4_method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0
 	    && g_strcmp0 (ip6_method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0
 	    && !nm_setting_connection_get_master (NM_SETTING_CONNECTION (s_con))
-	    && !priv->slaves
+	    && c_list_is_empty (&priv->slaves)
 	    && !nm_config_data_get_assume_ipv6ll_only (NM_CONFIG_GET_DATA, self)) {
 		_LOGD (LOGD_DEVICE, "ignoring generated connection (IPv6LL-only and not in master-slave relationship)");
 		g_object_unref (connection);
@@ -4730,7 +4738,7 @@ activate_stage2_device_config (NMDevice *self)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActStageReturn ret;
 	gboolean no_firmware = FALSE;
-	GSList *iter;
+	CList *iter;
 
 	nm_device_state_changed (self, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 
@@ -4757,8 +4765,8 @@ activate_stage2_device_config (NMDevice *self)
 	}
 
 	/* If we have slaves that aren't yet enslaved, do that now */
-	for (iter = priv->slaves; iter; iter = g_slist_next (iter)) {
-		SlaveInfo *info = iter->data;
+	c_list_for_each (iter, &priv->slaves) {
+		SlaveInfo *info = c_list_entry (iter, SlaveInfo, lst_slave);
 		NMDeviceState slave_state = nm_device_get_state (info->slave);
 
 		if (slave_state == NM_DEVICE_STATE_IP_CONFIG)
@@ -13606,6 +13614,8 @@ nm_device_init (NMDevice *self)
 
 	self->_priv = priv;
 
+	c_list_init (&priv->slaves);
+
 	priv->netns = g_object_ref (NM_NETNS_GET);
 
 	priv->type = NM_DEVICE_TYPE_UNKNOWN;
@@ -13750,7 +13760,7 @@ dispose (GObject *object)
 
 	_cleanup_generic_pre (self, CLEANUP_TYPE_KEEP);
 
-	g_warn_if_fail (priv->slaves == NULL);
+	g_warn_if_fail (c_list_is_empty (&priv->slaves));
 	g_assert (priv->master_ready_id == 0);
 
 	/* Let the kernel manage IPv6LL again */
@@ -14088,13 +14098,15 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, nm_device_is_real (self));
 		break;
 	case PROP_SLAVES: {
-		GSList *slave_iter;
+		CList *slave_iter;
 		char **slave_list;
-		guint i;
+		gsize i, n;
 
-		slave_list = g_new (char *, g_slist_length (priv->slaves) + 1);
-		for (slave_iter = priv->slaves, i = 0; slave_iter; slave_iter = slave_iter->next) {
-			SlaveInfo *info = slave_iter->data;
+		n = c_list_length (&priv->slaves);
+		slave_list = g_new (char *, n + 1);
+		i = 0;
+		c_list_for_each (slave_iter, &priv->slaves) {
+			SlaveInfo *info = c_list_entry (slave_iter, SlaveInfo, lst_slave);
 			const char *path;
 
 			if (!NM_DEVICE_GET_PRIVATE (info->slave)->is_enslaved)
@@ -14103,6 +14115,7 @@ get_property (GObject *object, guint prop_id,
 			if (path)
 				slave_list[i++] = g_strdup (path);
 		}
+		nm_assert (i <= n);
 		slave_list[i] = NULL;
 		g_value_take_boxed (value, slave_list);
 		break;
