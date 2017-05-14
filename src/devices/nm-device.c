@@ -3427,25 +3427,6 @@ nm_device_master_add_slave (NMDevice *self, NMDevice *slave, gboolean configure)
 }
 
 /**
- * nm_device_master_get_slaves:
- * @self: the master device
- *
- * Returns: any slaves of which @self is the master.  Caller owns returned list.
- */
-static GSList *
-nm_device_master_get_slaves (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	CList *iter;
-	GSList *slaves = NULL;
-
-	c_list_for_each (iter, &priv->slaves)
-		slaves = g_slist_prepend (slaves, c_list_entry (iter, SlaveInfo, lst_slave)->slave);
-
-	return slaves;
-}
-
-/**
  * nm_device_master_check_slave_physical_port:
  * @self: the master device
  * @slave: a slave device
@@ -5987,16 +5968,19 @@ connection_requires_carrier (NMConnection *connection)
 }
 
 static gboolean
-have_any_ready_slaves (NMDevice *self, const GSList *slaves)
+have_any_ready_slaves (NMDevice *self)
 {
-	const GSList *iter;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	SlaveInfo *info;
+	CList *iter;
 
 	/* Any enslaved slave is "ready" in the generic case as it's
 	 * at least >= NM_DEVCIE_STATE_IP_CONFIG and has had Layer 2
 	 * properties set up.
 	 */
-	for (iter = slaves; iter; iter = g_slist_next (iter)) {
-		if (NM_DEVICE_GET_PRIVATE (NM_DEVICE (iter->data))->is_enslaved)
+	c_list_for_each (iter, &priv->slaves) {
+		info = c_list_entry (iter, SlaveInfo, lst_slave);
+		if (NM_DEVICE_GET_PRIVATE (info->slave)->is_enslaved)
 			return TRUE;
 	}
 	return FALSE;
@@ -6020,8 +6004,6 @@ act_stage3_ip4_config_start (NMDevice *self,
 	NMConnection *connection;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	const char *method;
-	GSList *slaves;
-	gboolean ready_slaves;
 
 	connection = nm_device_get_applied_connection (self);
 	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
@@ -6038,11 +6020,7 @@ act_stage3_ip4_config_start (NMDevice *self,
 		/* If the master has no ready slaves, and depends on slaves for
 		 * a successful IPv4 attempt, then postpone IPv4 addressing.
 		 */
-		slaves = nm_device_master_get_slaves (self);
-		ready_slaves = NM_DEVICE_GET_CLASS (self)->have_any_ready_slaves (self, slaves);
-		g_slist_free (slaves);
-
-		if (ready_slaves == FALSE) {
+		if (!have_any_ready_slaves (self)) {
 			_LOGI (LOGD_DEVICE | LOGD_IP4,
 			       "IPv4 config waiting until slaves are ready");
 			return NM_ACT_STAGE_RETURN_IP_WAIT;
@@ -7624,8 +7602,6 @@ act_stage3_ip6_config_start (NMDevice *self,
 	const char *method;
 	NMSettingIP6ConfigPrivacy ip6_privacy = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
 	const char *ip6_privacy_str = "0";
-	GSList *slaves;
-	gboolean ready_slaves;
 
 	connection = nm_device_get_applied_connection (self);
 	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
@@ -7642,11 +7618,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 		/* If the master has no ready slaves, and depends on slaves for
 		 * a successful IPv6 attempt, then postpone IPv6 addressing.
 		 */
-		slaves = nm_device_master_get_slaves (self);
-		ready_slaves = NM_DEVICE_GET_CLASS (self)->have_any_ready_slaves (self, slaves);
-		g_slist_free (slaves);
-
-		if (ready_slaves == FALSE) {
+		if (!have_any_ready_slaves (self)) {
 			_LOGI (LOGD_DEVICE | LOGD_IP6,
 			       "IPv6 config waiting until slaves are ready");
 			return NM_ACT_STAGE_RETURN_IP_WAIT;
@@ -14128,7 +14100,6 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->act_stage3_ip6_config_start = act_stage3_ip6_config_start;
 	klass->act_stage4_ip4_config_timeout = act_stage4_ip4_config_timeout;
 	klass->act_stage4_ip6_config_timeout = act_stage4_ip6_config_timeout;
-	klass->have_any_ready_slaves = have_any_ready_slaves;
 
 	klass->get_type_description = get_type_description;
 	klass->get_autoconnect_allowed = get_autoconnect_allowed;

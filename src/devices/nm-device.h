@@ -364,9 +364,6 @@ typedef struct {
 	                                   NMDevice *slave,
 	                                   gboolean configure);
 
-	gboolean        (* have_any_ready_slaves) (NMDevice *self,
-	                                           const GSList *slaves);
-
 	void            (* parent_changed_notify) (NMDevice *self,
 	                                           int old_ifindex,
 	                                           NMDevice *old_parent,
