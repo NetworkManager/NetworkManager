@@ -91,8 +91,6 @@ gboolean nm_device_dhcp6_renew (NMDevice *device, gboolean release);
 
 void nm_device_recheck_available_connections (NMDevice *device);
 
-gboolean nm_device_get_enslaved (NMDevice *device);
-
 void nm_device_master_check_slave_physical_port (NMDevice *self, NMDevice *slave,
                                                  NMLogDomain log_domain);
 

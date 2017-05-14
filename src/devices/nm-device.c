@@ -2198,7 +2198,7 @@ carrier_changed (NMDevice *self, gboolean carrier)
 			nm_device_activate_stage3_ip6_start (self);
 
 		return;
-	} else if (nm_device_get_enslaved (self) && !carrier) {
+	} else if (priv->is_enslaved && !carrier) {
 		/* Slaves don't deactivate when they lose carrier; for
 		 * bonds/teams in particular that would be actively
 		 * counterproductive.
@@ -3651,19 +3651,6 @@ nm_device_slave_notify_release (NMDevice *self, NMDeviceStateReason reason)
 		_notify (self, PROP_MASTER);
 		_notify (priv->master, PROP_SLAVES);
 	}
-}
-
-/**
- * nm_device_get_enslaved:
- * @self: the #NMDevice
- *
- * Returns: %TRUE if the device is enslaved to a master device (eg bridge or
- * bond or team), %FALSE if not
- */
-gboolean
-nm_device_get_enslaved (NMDevice *self)
-{
-	return NM_DEVICE_GET_PRIVATE (self)->is_enslaved;
 }
 
 /**
@@ -6009,7 +5996,7 @@ have_any_ready_slaves (NMDevice *self, const GSList *slaves)
 	 * properties set up.
 	 */
 	for (iter = slaves; iter; iter = g_slist_next (iter)) {
-		if (nm_device_get_enslaved (iter->data))
+		if (NM_DEVICE_GET_PRIVATE (NM_DEVICE (iter->data))->is_enslaved)
 			return TRUE;
 	}
 	return FALSE;
