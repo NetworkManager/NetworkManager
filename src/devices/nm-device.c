@@ -2167,10 +2167,20 @@ nm_device_update_dynamic_ip_setup (NMDevice *self)
 	}
 }
 
+/*****************************************************************************/
+
+static void
+carrier_changed_notify (NMDevice *self, gboolean carrier)
+{
+	/* stub */
+}
+
 static void
 carrier_changed (NMDevice *self, gboolean carrier)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	NM_DEVICE_GET_CLASS (self)->carrier_changed_notify (self, carrier);
 
 	if (priv->state <= NM_DEVICE_STATE_UNMANAGED)
 		return;
@@ -2236,7 +2246,7 @@ carrier_changed (NMDevice *self, gboolean carrier)
 #define LINK_DISCONNECT_DELAY 4
 
 static gboolean
-link_disconnect_action_cb (gpointer user_data)
+carrier_disconnected_action_cb (gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -2244,21 +2254,19 @@ link_disconnect_action_cb (gpointer user_data)
 	_LOGD (LOGD_DEVICE, "link disconnected (calling deferred action) (id=%u)", priv->carrier_defer_id);
 
 	priv->carrier_defer_id = 0;
-
-	NM_DEVICE_GET_CLASS (self)->carrier_changed (self, FALSE);
-
+	carrier_changed (self, FALSE);
 	return FALSE;
 }
 
 static void
-link_disconnect_action_cancel (NMDevice *self)
+carrier_disconnected_action_cancel (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	guint id = priv->carrier_defer_id;
 
-	if (priv->carrier_defer_id) {
-		g_source_remove (priv->carrier_defer_id);
-		_LOGD (LOGD_DEVICE, "link disconnected (canceling deferred action) (id=%u)", priv->carrier_defer_id);
-		priv->carrier_defer_id = 0;
+	if (nm_clear_g_source (&priv->carrier_defer_id)) {
+		_LOGD (LOGD_DEVICE, "link disconnected (canceling deferred action) (id=%u)",
+		       id);
 	}
 }
 
@@ -2266,7 +2274,6 @@ void
 nm_device_set_carrier (NMDevice *self, gboolean carrier)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (self);
 	NMDeviceState state = nm_device_get_state (self);
 
 	if (priv->carrier == carrier)
@@ -2277,24 +2284,50 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 
 	if (priv->carrier) {
 		_LOGI (LOGD_DEVICE, "link connected");
-		link_disconnect_action_cancel (self);
-		klass->carrier_changed (self, TRUE);
+		carrier_disconnected_action_cancel (self);
+		carrier_changed (self, TRUE);
 
-		if (nm_clear_g_source (&priv->carrier_wait_id)) {
-			nm_device_remove_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, TRUE);
+		if (priv->carrier_wait_id) {
+			nm_device_remove_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
 			_carrier_wait_check_queued_act_request (self);
 		}
-	} else if (   state <= NM_DEVICE_STATE_DISCONNECTED
-	           && !priv->queued_act_request) {
-		_LOGD (LOGD_DEVICE, "link disconnected");
-		klass->carrier_changed (self, FALSE);
 	} else {
-		priv->carrier_defer_id = g_timeout_add_seconds (LINK_DISCONNECT_DELAY,
-		                                                link_disconnect_action_cb, self);
-		_LOGD (LOGD_DEVICE, "link disconnected (deferring action for %d seconds) (id=%u)",
-		       LINK_DISCONNECT_DELAY, priv->carrier_defer_id);
+		if (priv->carrier_wait_id)
+			nm_device_add_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
+		if (   state <= NM_DEVICE_STATE_DISCONNECTED
+		    && !priv->queued_act_request) {
+			_LOGD (LOGD_DEVICE, "link disconnected");
+			carrier_changed (self, FALSE);
+		} else {
+			priv->carrier_defer_id = g_timeout_add_seconds (LINK_DISCONNECT_DELAY,
+			                                                carrier_disconnected_action_cb, self);
+			_LOGD (LOGD_DEVICE, "link disconnected (deferring action for %d seconds) (id=%u)",
+			       LINK_DISCONNECT_DELAY, priv->carrier_defer_id);
+		}
 	}
 }
+
+static void
+nm_device_set_carrier_from_platform (NMDevice *self)
+{
+	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
+		if (!nm_device_has_capability (self, NM_DEVICE_CAP_NONSTANDARD_CARRIER)) {
+			nm_device_set_carrier (self,
+			                       nm_platform_link_is_connected (nm_device_get_platform (self),
+			                                                      nm_device_get_ip_ifindex (self)));
+		}
+	} else {
+		NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+		/* Fake online link when carrier detection is not available. */
+		if (!priv->carrier) {
+			priv->carrier = TRUE;
+			_notify (self, PROP_CARRIER);
+		}
+	}
+}
+
+/*****************************************************************************/
 
 static void
 device_recheck_slave_status (NMDevice *self, const NMPlatformLink *plink)
@@ -2872,15 +2905,6 @@ config_changed (NMConfig *config,
 }
 
 static void
-check_carrier (NMDevice *self)
-{
-	int ifindex = nm_device_get_ip_ifindex (self);
-
-	if (!nm_device_has_capability (self, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
-		nm_device_set_carrier (self, nm_platform_link_is_connected (nm_device_get_platform (self), ifindex));
-}
-
-static void
 realize_start_notify (NMDevice *self,
                       const NMPlatformLink *pllink)
 {
@@ -3010,16 +3034,7 @@ realize_start_setup (NMDevice *self,
 		                                            self);
 	}
 
-	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
-		check_carrier (self);
-		_LOGD (LOGD_PLATFORM,
-		       "carrier is %s%s",
-		       priv->carrier ? "ON" : "OFF",
-		       priv->ignore_carrier ? " (but ignored)" : "");
-	} else {
-		/* Fake online link when carrier detection is not available. */
-		priv->carrier = TRUE;
-	}
+	nm_device_set_carrier_from_platform (self);
 
 	device_init_sriov_num_vfs (self);
 
@@ -10286,12 +10301,12 @@ static gboolean
 carrier_wait_timeout (gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	NM_DEVICE_GET_PRIVATE (self)->carrier_wait_id = 0;
-	nm_device_remove_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, TRUE);
-
-	_carrier_wait_check_queued_act_request (self);
-
+	priv->carrier_wait_id = 0;
+	nm_device_remove_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
+	if (!priv->carrier)
+		_carrier_wait_check_queued_act_request (self);
 	return G_SOURCE_REMOVE;
 }
 
@@ -10333,8 +10348,7 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 	}
 
 	/* Store carrier immediately. */
-	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT))
-		check_carrier (self);
+	nm_device_set_carrier_from_platform (self);
 
 	device_is_up = nm_device_is_up (self);
 	if (block && !device_is_up) {
@@ -10369,8 +10383,14 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 	 * a timeout is reached.
 	 */
 	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
-		if (!nm_clear_g_source (&priv->carrier_wait_id))
-			nm_device_add_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, TRUE);
+		/* we start a grace period of 5 seconds during which we will schedule
+		 * a pending action whenever we have no carrier.
+		 *
+		 * If during that time carrier goes away, we declare the interface
+		 * as not ready. */
+		nm_clear_g_source (&priv->carrier_wait_id);
+		if (!priv->carrier)
+			nm_device_add_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
 		priv->carrier_wait_id = g_timeout_add_seconds (5, carrier_wait_timeout, self);
 	}
 
@@ -11812,7 +11832,7 @@ nm_device_add_pending_action (NMDevice *self, const char *action, gboolean asser
 				       count + g_slist_length (iter), action);
 				g_return_val_if_reached (FALSE);
 			} else {
-				_LOGD (LOGD_DEVICE, "add_pending_action (%d): '%s' already pending (expected)",
+				_LOGT (LOGD_DEVICE, "add_pending_action (%d): '%s' already pending (expected)",
 				       count + g_slist_length (iter), action);
 			}
 			return FALSE;
@@ -11873,7 +11893,7 @@ nm_device_remove_pending_action (NMDevice *self, const char *action, gboolean as
 		_LOGW (LOGD_DEVICE, "remove_pending_action (%d): '%s' not pending", count, action);
 		g_return_val_if_reached (FALSE);
 	} else
-		_LOGD (LOGD_DEVICE, "remove_pending_action (%d): '%s' not pending (expected)", count, action);
+		_LOGT (LOGD_DEVICE, "remove_pending_action (%d): '%s' not pending (expected)", count, action);
 
 	return FALSE;
 }
@@ -13767,7 +13787,7 @@ dispose (GObject *object)
 
 	nm_clear_g_source (&priv->stats.timeout_id);
 
-	link_disconnect_action_cancel (self);
+	carrier_disconnected_action_cancel (self);
 
 	if (priv->ifindex > 0) {
 		priv->ifindex = 0;
@@ -13782,7 +13802,8 @@ dispose (GObject *object)
 
 	available_connections_del_all (self);
 
-	nm_clear_g_source (&priv->carrier_wait_id);
+	if (nm_clear_g_source (&priv->carrier_wait_id))
+		nm_device_remove_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
 
 	_clear_queued_act_request (priv);
 
@@ -14161,7 +14182,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->can_unmanaged_external_down = can_unmanaged_external_down;
 	klass->realize_start_notify = realize_start_notify;
 	klass->unrealize_notify = unrealize_notify;
-	klass->carrier_changed = carrier_changed;
+	klass->carrier_changed_notify = carrier_changed_notify;
 	klass->get_ip_iface_identifier = get_ip_iface_identifier;
 	klass->unmanaged_on_quit = unmanaged_on_quit;
 	klass->deactivate_reset_hw_addr = deactivate_reset_hw_addr;
