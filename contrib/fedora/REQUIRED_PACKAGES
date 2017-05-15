@@ -9,40 +9,41 @@
 # This is a generous list of related packages.
 
 yum install \
-    git \
-    bzip2 \
-    intltool \
-    bash-completion \
-    cscope \
-    gtk-doc \
-    libnl3-devel \
-    libndp-devel \
-    libtool \
-    gettext-devel \
-    dbus-devel \
-    dbus-glib-devel \
-    libuuid-devel \
-    nss-devel \
-    ppp-devel \
-    valgrind \
-    systemd-devel \
     ModemManager-devel \
     ModemManager-glib-devel \
+    audit-libs-devel \
+    bash-completion \
+    bluez-libs-devel \
+    bzip2 \
+    cscope \
+    dbus-devel \
+    dbus-glib-devel \
+    dbus-python \
+    dbus-x11 \
+    gettext-devel \
+    git \
+    gobject-introspection-devel \
+    gtk-doc \
+    intltool \
+    jansson-devel \
+    libcurl-devel \
+    libndp-devel \
+    libnl3-devel \
+    libpsl-devel \
+    libselinux-devel \
+    libtool \
+    libuuid-devel \
     newt-devel \
+    nss-devel \
+    polkit-devel \
+    ppp-devel \
+    pygobject3-base \
+    readline-devel \
+    rpm-build \
+    systemd-devel \
+    teamd-devel \
     vala-devel \
     vala-tools \
-    dbus-x11 \
-    wireless-tools-devel \
-    polkit-devel \
-    libpsl-devel \
-    libcurl-devel \
-    readline-devel \
-    teamd-devel \
-    rpm-build \
-    audit-libs-devel \
-    bluez-libs-devel \
-    dbus-python \
-    libselinux-devel \
-    pygobject3-base \
-    jansson-devel \
+    valgrind \
+    wireless-tools-devel
 
