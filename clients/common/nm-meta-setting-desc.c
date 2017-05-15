@@ -755,7 +755,7 @@ _get_fcn_gobject_enum (ARGS_GET_FCN)
 		        && !G_IS_ENUM_CLASS (gtype_class ?: (gtype_class = g_type_class_ref (gtype))))
 		    ? g_strdup_printf ("0x%"G_GINT64_FORMAT, v)
 		    : g_strdup_printf ("%"G_GINT64_FORMAT, v);
-		RETURN_STR_TO_FREE (s);
+		RETURN_STR_TO_FREE (g_steal_pointer (&s));
 	}
 
 	/* the gobject_enum.value_infos are currently ignored for the getter. They
