@@ -3328,6 +3328,7 @@ make_wpa_setting (shvarFile *ifcfg,
 	char *value, *psk, *lower;
 	gboolean wpa_psk = FALSE, wpa_eap = FALSE, ieee8021x = FALSE;
 	int i_val;
+	GError *local = NULL;
 
 	wsec = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
 
@@ -3337,6 +3338,16 @@ make_wpa_setting (shvarFile *ifcfg,
 	ieee8021x = !g_strcmp0 (value, "IEEE8021X");
 	if (!wpa_psk && !wpa_eap && !ieee8021x)
 		goto error; /* Not WPA or Dynamic WEP */
+
+	/* WPS */
+	i_val = NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DEFAULT;
+	if (!svGetValueEnum (ifcfg, "WPS_METHOD",
+	                     nm_setting_wireless_security_wps_method_get_type (),
+	                     &i_val, error))
+		goto error;
+	g_object_set (wsec,
+	              NM_SETTING_WIRELESS_SECURITY_WPS_METHOD, (guint) i_val,
+	              NULL);
 
 	/* Pairwise and Group ciphers (only relevant for WPA/RSN) */
 	if (wpa_psk || wpa_eap) {
@@ -3371,12 +3382,14 @@ make_wpa_setting (shvarFile *ifcfg,
 
 		/* Read PSK if it's system-owned */
 		if (psk_flags == NM_SETTING_SECRET_FLAG_NONE) {
-			psk = parse_wpa_psk (ifcfg, file, ssid, error);
+			psk = parse_wpa_psk (ifcfg, file, ssid, &local);
 			if (psk) {
 				g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_PSK, psk, NULL);
 				g_free (psk);
-			} else if (error)
+			} else if (local) {
+				g_propagate_error (error, local);
 				goto error;
+			}
 		}
 
 		if (adhoc)

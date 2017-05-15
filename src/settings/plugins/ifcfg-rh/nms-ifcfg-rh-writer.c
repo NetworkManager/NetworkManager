@@ -527,6 +527,7 @@ write_wireless_security_setting (NMConnection *connection,
 	const char *key_mgmt, *auth_alg, *key, *proto, *cipher;
 	const char *psk = NULL;
 	gboolean wep = FALSE, wpa = FALSE, dynamic_wep = FALSE;
+	NMSettingWirelessSecurityWpsMethod wps_method;
 	char *tmp;
 	guint32 i, num;
 	GString *str;
@@ -579,6 +580,13 @@ write_wireless_security_setting (NMConnection *connection,
 			*no_8021x = TRUE;
 		}
 	}
+
+	/* WPS */
+	wps_method = nm_setting_wireless_security_get_wps_method (s_wsec);
+	if (wps_method == NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DEFAULT)
+		svUnsetValue (ifcfg, "WPS_METHOD");
+	else
+		svSetValueEnum (ifcfg, "WPS_METHOD", nm_setting_wireless_security_wps_method_get_type (), wps_method);
 
 	/* WEP keys */
 

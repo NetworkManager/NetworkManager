@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2004 - 2014 Red Hat, Inc.
+ * Copyright 2004 - 2017 Red Hat, Inc.
  */
 
 /* Definitions related to NetworkManager's D-Bus interfaces.
@@ -289,12 +289,18 @@ typedef enum { /*< flags >*/
  * @NM_802_11_AP_FLAGS_NONE: access point has no special capabilities
  * @NM_802_11_AP_FLAGS_PRIVACY: access point requires authentication and
  * encryption (usually means WEP)
+ * @NM_802_11_AP_FLAGS_WPS: access point supports some WPS method
+ * @NM_802_11_AP_FLAGS_WPS_PBC: access point supports push-button WPS
+ * @NM_802_11_AP_FLAGS_WPS_PIN: access point supports PIN-based WPS
  *
  * 802.11 access point flags.
  **/
 typedef enum { /*< underscore_name=nm_802_11_ap_flags, flags >*/
 	NM_802_11_AP_FLAGS_NONE    = 0x00000000,
 	NM_802_11_AP_FLAGS_PRIVACY = 0x00000001,
+	NM_802_11_AP_FLAGS_WPS     = 0x00000002,
+	NM_802_11_AP_FLAGS_WPS_PBC = 0x00000004,
+	NM_802_11_AP_FLAGS_WPS_PIN = 0x00000008,
 } NM80211ApFlags;
 
 /**
@@ -714,6 +720,9 @@ typedef enum {
  *   initiated by user-requested action via the D-Bus interface, as opposed to
  *   automatically initiated by NetworkManager in response to (for example) scan
  *   results or carrier changes.
+ * @NM_SECRET_AGENT_GET_SECRETS_FLAG_WPS_PBC_ACTIVE: indicates that WPS enrollment
+ *   is active with PBC method. The agent may suggest that the user pushes a button
+ *   on the router instead of supplying a PSK.
  * @NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM: Internal flag, not part of
  *   the D-Bus API.
  * @NM_SECRET_AGENT_GET_SECRETS_FLAG_NO_ERRORS: Internal flag, not part of
@@ -726,6 +735,7 @@ typedef enum { /*< flags >*/
 	NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION = 0x1,
 	NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW       = 0x2,
 	NM_SECRET_AGENT_GET_SECRETS_FLAG_USER_REQUESTED    = 0x4,
+	NM_SECRET_AGENT_GET_SECRETS_FLAG_WPS_PBC_ACTIVE    = 0x8,
 
 	/* Internal to NM; not part of the D-Bus API */
 	NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM       = 0x80000000,

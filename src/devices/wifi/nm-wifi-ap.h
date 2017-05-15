@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2011 Red Hat, Inc.
+ * Copyright (C) 2004 - 2017 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -88,6 +88,7 @@ gboolean          nm_wifi_ap_set_max_bitrate          (NMWifiAP *ap,
 gboolean          nm_wifi_ap_get_fake                 (const NMWifiAP *ap);
 gboolean          nm_wifi_ap_set_fake                 (NMWifiAP *ap,
                                                        gboolean fake);
+NM80211ApFlags    nm_wifi_ap_get_flags                (const NMWifiAP *self);
 
 const char       *nm_wifi_ap_to_string                (const NMWifiAP *self,
                                                        char *str_buf,
