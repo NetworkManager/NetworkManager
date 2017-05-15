@@ -437,7 +437,8 @@ nm_platform_sysctl_get_int_checked (NMPlatform *self, const char *pathid, int di
 
 static int
 _link_get_all_presort (gconstpointer  p_a,
-                       gconstpointer  p_b)
+                       gconstpointer  p_b,
+                       gpointer       sort_by_name)
 {
 	const NMPlatformLink *a = p_a;
 	const NMPlatformLink *b = p_b;
@@ -448,13 +449,16 @@ _link_get_all_presort (gconstpointer  p_a,
 	if (b->ifindex == 1)
 		return 1;
 
-	/* Initialized links first */
-	if (a->initialized > b->initialized)
-		return -1;
-	if (a->initialized < b->initialized)
-		return 1;
+	if (GPOINTER_TO_INT (sort_by_name)) {
+		/* Initialized links first */
+		if (a->initialized > b->initialized)
+			return -1;
+		if (a->initialized < b->initialized)
+			return 1;
 
-	return strcmp (a->name, b->name);
+		return strcmp (a->name, b->name);
+	} else
+		return a->ifindex - b->ifindex;
 }
 
 /**
@@ -465,7 +469,7 @@ _link_get_all_presort (gconstpointer  p_a,
  * owned by the caller and should be freed with g_array_unref().
  */
 GArray *
-nm_platform_link_get_all (NMPlatform *self)
+nm_platform_link_get_all (NMPlatform *self, gboolean sort_by_name)
 {
 	GArray *links, *result;
 	guint i, j, nresult;
@@ -479,9 +483,9 @@ nm_platform_link_get_all (NMPlatform *self)
 	if (!links || links->len == 0)
 		return links;
 
-	/* first sort the links by their ifindex. Below we will sort further by moving
-	 * children/slaves to the end. */
-	g_array_sort (links, _link_get_all_presort);
+	/* first sort the links by their ifindex or name. Below we will sort
+	 * further by moving children/slaves to the end. */
+	g_array_sort_with_data (links, _link_get_all_presort, GINT_TO_POINTER (sort_by_name));
 
 	unseen = g_hash_table_new (g_direct_hash, g_direct_equal);
 	for (i = 0; i < links->len; i++) {
