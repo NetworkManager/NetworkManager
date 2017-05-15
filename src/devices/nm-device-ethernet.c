@@ -1597,12 +1597,11 @@ get_link_speed (NMDevice *device)
 }
 
 static void
-carrier_changed (NMDevice *device, gboolean carrier)
+carrier_changed_notify (NMDevice *device, gboolean carrier)
 {
 	if (carrier)
 		get_link_speed (device);
-
-	NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->carrier_changed (device, carrier);
+	NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->carrier_changed_notify (device, carrier);
 }
 
 static void
@@ -1764,7 +1763,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->deactivate = deactivate;
 	parent_class->get_s390_subchannels = get_s390_subchannels;
 	parent_class->update_connection = update_connection;
-	parent_class->carrier_changed = carrier_changed;
+	parent_class->carrier_changed_notify = carrier_changed_notify;
 	parent_class->link_changed = link_changed;
 	parent_class->is_available = is_available;
 	parent_class->can_reapply_change = can_reapply_change;
