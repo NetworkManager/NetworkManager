@@ -2306,10 +2306,20 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 static void
 nm_device_set_carrier_from_platform (NMDevice *self)
 {
-	if (!nm_device_has_capability (self, NM_DEVICE_CAP_NONSTANDARD_CARRIER)) {
-		nm_device_set_carrier (self,
-		                       nm_platform_link_is_connected (nm_device_get_platform (self),
-		                                                      nm_device_get_ip_ifindex (self)));
+	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
+		if (!nm_device_has_capability (self, NM_DEVICE_CAP_NONSTANDARD_CARRIER)) {
+			nm_device_set_carrier (self,
+			                       nm_platform_link_is_connected (nm_device_get_platform (self),
+			                                                      nm_device_get_ip_ifindex (self)));
+		}
+	} else {
+		NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+		/* Fake online link when carrier detection is not available. */
+		if (!priv->carrier) {
+			priv->carrier = TRUE;
+			_notify (self, PROP_CARRIER);
+		}
 	}
 }
 
@@ -3020,16 +3030,7 @@ realize_start_setup (NMDevice *self,
 		                                            self);
 	}
 
-	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
-		nm_device_set_carrier_from_platform (self);
-		_LOGD (LOGD_PLATFORM,
-		       "carrier is %s%s",
-		       priv->carrier ? "ON" : "OFF",
-		       priv->ignore_carrier ? " (but ignored)" : "");
-	} else {
-		/* Fake online link when carrier detection is not available. */
-		priv->carrier = TRUE;
-	}
+	nm_device_set_carrier_from_platform (self);
 
 	device_init_sriov_num_vfs (self);
 
@@ -10343,8 +10344,7 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 	}
 
 	/* Store carrier immediately. */
-	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT))
-		nm_device_set_carrier_from_platform (self);
+	nm_device_set_carrier_from_platform (self);
 
 	device_is_up = nm_device_is_up (self);
 	if (block && !device_is_up) {
