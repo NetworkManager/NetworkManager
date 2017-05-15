@@ -409,6 +409,19 @@ no-auto-default=*
         </listitem>
       </varlistentry>
 
+      <varlistentry>
+        <term><varname>slaves-order</varname></term>
+        <listitem>
+          <para>
+            This key specifies in which order slave connections are
+            auto-activated on boot or when the master activates
+            them. Allowed values are <literal>name</literal> (order
+            connection by interface name, the default), or
+            <literal>index</literal> (order slaves by their kernel
+            index).
+          </para>
+        </listitem>
+      </varlistentry>
     </variablelist>
   </refsect1>
 

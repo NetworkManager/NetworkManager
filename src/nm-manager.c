@@ -2459,10 +2459,14 @@ platform_query_devices (NMManager *self)
 	NMPlatformLink *links;
 	int i;
 	gboolean guess_assume;
+	const char *order;
 
 	guess_assume = nm_config_get_first_start (nm_config_get ());
-
-	links_array = nm_platform_link_get_all (NM_PLATFORM_GET);
+	order = nm_config_data_get_value_cached (NM_CONFIG_GET_DATA,
+	                                         NM_CONFIG_KEYFILE_GROUP_MAIN,
+	                                         NM_CONFIG_KEYFILE_KEY_MAIN_SLAVES_ORDER,
+	                                         NM_CONFIG_GET_VALUE_STRIP);
+	links_array = nm_platform_link_get_all (NM_PLATFORM_GET, !nm_streq0 (order, "index"));
 	links = (NMPlatformLink *) links_array->data;
 	for (i = 0; i < links_array->len; i++) {
 		gs_free NMConfigDeviceStateData *dev_state = NULL;
@@ -3016,7 +3020,7 @@ out:
 }
 
 static gint
-compare_slaves (gconstpointer a, gconstpointer b, gpointer _unused)
+compare_slaves (gconstpointer a, gconstpointer b, gpointer sort_by_name)
 {
 	const SlaveConnectionInfo *a_info = a;
 	const SlaveConnectionInfo *b_info = b;
@@ -3027,8 +3031,12 @@ compare_slaves (gconstpointer a, gconstpointer b, gpointer _unused)
 	if (!b_info->device)
 		return -1;
 
-	return g_strcmp0 (nm_device_get_iface (a_info->device),
-	                  nm_device_get_iface (b_info->device));
+	if (GPOINTER_TO_INT (sort_by_name)) {
+		return g_strcmp0 (nm_device_get_iface (a_info->device),
+		                  nm_device_get_iface (b_info->device));
+	}
+
+	return nm_device_get_ifindex (a_info->device) - nm_device_get_ifindex (b_info->device);
 }
 
 static void
@@ -3042,11 +3050,17 @@ autoconnect_slaves (NMManager *self,
 	if (should_connect_slaves (NM_CONNECTION (master_connection), master_device)) {
 		gs_free SlaveConnectionInfo *slaves = NULL;
 		guint i, n_slaves = 0;
+		const char *value;
 
 		slaves = find_slaves (self, master_connection, master_device, &n_slaves);
 		if (n_slaves > 1) {
+			value = nm_config_data_get_value_cached (NM_CONFIG_GET_DATA,
+			                                         NM_CONFIG_KEYFILE_GROUP_MAIN,
+			                                         NM_CONFIG_KEYFILE_KEY_MAIN_SLAVES_ORDER,
+			                                         NM_CONFIG_GET_VALUE_STRIP);
 			g_qsort_with_data (slaves, n_slaves, sizeof (slaves[0]),
-			                   compare_slaves, NULL);
+			                   compare_slaves,
+			                   GINT_TO_POINTER (!nm_streq0 (value, "index")));
 		}
 
 		for (i = 0; i < n_slaves; i++) {

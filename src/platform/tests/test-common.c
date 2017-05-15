@@ -185,7 +185,7 @@ link_callback (NMPlatform *platform, int obj_type_i, int ifindex, NMPlatformLink
 
 	/* Check the data */
 	g_assert (received->ifindex > 0);
-	links = nm_platform_link_get_all (NM_PLATFORM_GET);
+	links = nm_platform_link_get_all (NM_PLATFORM_GET, TRUE);
 	for (i = 0; i < links->len; i++) {
 		cached = &g_array_index (links, NMPlatformLink, i);
 		if (cached->ifindex == received->ifindex) {

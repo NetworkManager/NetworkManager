@@ -48,7 +48,7 @@ test_link_get_all (void)
 
 	platform = nm_linux_platform_new (TRUE, NM_PLATFORM_NETNS_SUPPORT_DEFAULT);
 
-	links = nm_platform_link_get_all (platform);
+	links = nm_platform_link_get_all (platform, TRUE);
 }
 
 /*****************************************************************************/
