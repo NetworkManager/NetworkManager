@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2010 - 2015 Red Hat, Inc.
+ * Copyright 2010 - 2017 Red Hat, Inc.
  */
 
 #ifndef NMC_UTILS_H
@@ -40,6 +40,8 @@ gboolean nmc_parse_args (nmc_arg_t *arg_arr, gboolean last, int *argc, char ***a
 char *ssid_to_hex (const char *str, gsize len);
 void nmc_terminal_erase_line (void);
 void nmc_terminal_show_progress (const char *str);
+void nmc_terminal_spawn_pager (const NmcConfig *nmc_config);
+gboolean nmc_term_use_colors (NmcColorOption color_option);
 const char *nmc_term_color_sequence (NMMetaTermColor color);
 const char *nmc_term_format_sequence (NMMetaTermFormat format);
 NMMetaTermColor nmc_term_color_parse_string (const char *str, GError **error);

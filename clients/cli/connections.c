@@ -796,8 +796,33 @@ nmc_active_connection_state_to_color (NMActiveConnectionState state, NMMetaTermC
 		*color = NM_META_TERM_COLOR_RED;
 }
 
+/* Essentially a version of nm_setting_connection_get_connection_type() that
+ * prefers an alias instead of the settings name when in pretty print mode.
+ * That is so that we print "wifi" instead of "802-11-wireless" in "nmcli c". */
+static const char *
+connection_type_pretty (const char *type, NMCPrintOutput print_output)
+{
+	const NMMetaSettingInfoEditor *editor;
+	int i;
+
+	if (print_output == NMC_PRINT_TERSE)
+		return type;
+
+	for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
+		editor = &nm_meta_setting_infos_editor[i];
+		if (strcmp (type, editor->general->setting_name) == 0) {
+			if (editor->alias)
+				return editor->alias;
+			break;
+		}
+	}
+
+	return type;
+}
+
 static void
-fill_output_connection (NMConnection *connection, NMClient *client, GPtrArray *output_data, gboolean active_only)
+fill_output_connection (NMConnection *connection, NMClient *client, NMCPrintOutput print_output,
+                        GPtrArray *output_data, gboolean active_only)
 {
 	NMSettingConnection *s_con;
 	guint64 timestamp;
@@ -845,7 +870,7 @@ fill_output_connection (NMConnection *connection, NMClient *client, GPtrArray *o
 
 	set_val_strc (arr, 0, nm_setting_connection_get_id (s_con));
 	set_val_strc (arr, 1, nm_setting_connection_get_uuid (s_con));
-	set_val_strc (arr, 2, nm_setting_connection_get_connection_type (s_con));
+	set_val_strc (arr, 2, connection_type_pretty (nm_setting_connection_get_connection_type (s_con), print_output));
 	set_val_str  (arr, 3, timestamp_str);
 	set_val_str  (arr, 4, timestamp ? timestamp_real_str : g_strdup (_("never")));
 	set_val_strc (arr, 5, nm_setting_connection_get_autoconnect (s_con) ? _("yes") : _("no"));
@@ -862,7 +887,7 @@ fill_output_connection (NMConnection *connection, NMClient *client, GPtrArray *o
 }
 
 static void
-fill_output_connection_for_invisible (NMActiveConnection *ac, GPtrArray *output_data)
+fill_output_connection_for_invisible (NMActiveConnection *ac, NMCPrintOutput print_output, GPtrArray *output_data)
 {
 	NmcOutputField *arr;
 	const char *ac_path = NULL;
@@ -878,7 +903,7 @@ fill_output_connection_for_invisible (NMActiveConnection *ac, GPtrArray *output_
 
 	set_val_str  (arr, 0, name);
 	set_val_strc (arr, 1, nm_active_connection_get_uuid (ac));
-	set_val_strc (arr, 2, nm_active_connection_get_connection_type (ac));
+	set_val_strc (arr, 2, connection_type_pretty (nm_active_connection_get_connection_type (ac), print_output));
 	set_val_strc (arr, 3, NULL);
 	set_val_strc (arr, 4, NULL);
 	set_val_strc (arr, 5, NULL);
@@ -1696,14 +1721,14 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 		 * (e.g. private connections of a different user). Show them as well. */
 		invisibles = get_invisible_active_connections (nmc);
 		for (i = 0; i < invisibles->len; i++)
-			fill_output_connection_for_invisible (invisibles->pdata[i], out.output_data);
+			fill_output_connection_for_invisible (invisibles->pdata[i], nmc->nmc_config.print_output, out.output_data);
 		g_ptr_array_free (invisibles, TRUE);
 
 		/* Sort the connections and fill the output data */
 		connections = nm_client_get_connections (nmc->client);
 		sorted_cons = sort_connections (connections, nmc, order);
 		for (i = 0; i < sorted_cons->len; i++)
-			fill_output_connection (sorted_cons->pdata[i], nmc->client, out.output_data, active_only);
+			fill_output_connection (sorted_cons->pdata[i], nmc->client, nmc->nmc_config.print_output, out.output_data, active_only);
 		g_ptr_array_free (sorted_cons, TRUE);
 
 		print_data_prepare_width (out.output_data);

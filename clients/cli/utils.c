@@ -14,7 +14,8 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2010 - 2015 Red Hat, Inc.
+ * Copyright 2010 Lennart Poettering
+ * Copyright 2010 - 2017 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -28,6 +29,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/prctl.h>
 
 #include "nm-client-utils.h"
 #include "nm-meta-setting-access.h"
@@ -122,7 +124,7 @@ use_colors (NmcColorOption color_option)
 
 		if (G_UNLIKELY (cached == NMC_USE_COLOR_AUTO)) {
 			if (   g_strcmp0 (g_getenv ("TERM"), "dumb") == 0
-				|| !isatty (fileno (stdout)))
+				|| !isatty (STDOUT_FILENO))
 				cached = NMC_USE_COLOR_NO;
 			else
 				cached = NMC_USE_COLOR_YES;
@@ -1450,6 +1452,109 @@ nmc_print (const NmcConfig *nmc_config,
 
 /*****************************************************************************/
 
+static void
+pager_fallback (void)
+{
+	char buf[64];
+	int rb;
+
+	do {
+		rb = read (STDIN_FILENO, buf, sizeof (buf));
+		if (rb == -1) {
+			if (errno == EINTR) {
+				continue;
+			} else {
+				g_printerr (_("Error reading nmcli output: %s\n"), strerror (errno));
+				_exit(EXIT_FAILURE);
+			}
+		}
+		if (write (STDOUT_FILENO, buf, rb) == -1) {
+			g_printerr (_("Error writing nmcli output: %s\n"), strerror (errno));
+			_exit(EXIT_FAILURE);
+		}
+	} while (rb > 0);
+
+	_exit(EXIT_SUCCESS);
+}
+
+void
+nmc_terminal_spawn_pager (const NmcConfig *nmc_config)
+{
+	const char *pager = getenv ("PAGER");
+	pid_t parent_pid;
+	int fd[2];
+
+	if (   nm_cli.pager_pid > 0
+	    || nmc_config->print_output == NMC_PRINT_TERSE
+	    || !use_colors (nmc_config->use_colors)
+	    || g_strcmp0 (pager, "") == 0)
+		return;
+
+	if (pipe (fd) == -1) {
+		g_printerr (_("Failed to create pager pipe: %s\n"), strerror (errno));
+		return;
+	}
+
+	parent_pid = getpid ();
+
+	nm_cli.pager_pid = fork ();
+	if (nm_cli.pager_pid == -1) {
+		g_printerr (_("Failed to fork pager: %s\n"), strerror (errno));
+		close (fd[0]);
+		close (fd[1]);
+		return;
+	}
+
+	/* In the child start the pager */
+	if (nm_cli.pager_pid == 0) {
+		dup2 (fd[0], STDIN_FILENO);
+		close (fd[0]);
+		close (fd[1]);
+
+		setenv ("LESS", "FRSXMK", 1);
+		setenv ("LESSCHARSET", "utf-8", 1);
+
+		/* Make sure the pager goes away when the parent dies */
+		if (prctl (PR_SET_PDEATHSIG, SIGTERM) < 0)
+			_exit (EXIT_FAILURE);
+
+		/* Check whether our parent died before we were able
+		 * to set the death signal */
+		if (getppid () != parent_pid)
+			_exit (EXIT_SUCCESS);
+
+		if (pager) {
+			execlp (pager, pager, NULL);
+			execl ("/bin/sh", "sh", "-c", pager, NULL);
+		}
+
+		/* Debian's alternatives command for pagers is
+		 * called 'pager'. Note that we do not call
+		 * sensible-pagers here, since that is just a
+		 * shell script that implements a logic that
+		 * is similar to this one anyway, but is
+		 * Debian-specific. */
+		execlp ("pager", "pager", NULL);
+
+		execlp ("less", "less", NULL);
+		execlp ("more", "more", NULL);
+
+		pager_fallback ();
+		/* not reached */
+	}
+
+	/* Return in the parent */
+	if (dup2 (fd[1], STDOUT_FILENO) < 0)
+		g_printerr (_("Failed to duplicate pager pipe: %s\n"), strerror (errno));
+	if (dup2 (fd[1], STDERR_FILENO) < 0)
+		g_printerr (_("Failed to duplicate pager pipe: %s\n"), strerror (errno));
+
+	close (fd[0]);
+	close (fd[1]);
+}
+
+/*****************************************************************************/
+
 static const char *
 get_value_to_print (NmcColorOption color_option,
                     const NmcOutputField *field,
@@ -1513,6 +1618,9 @@ print_required_fields (const NmcConfig *nmc_config,
 	gboolean main_header_only = of_flags & NMC_OF_FLAG_MAIN_HEADER_ONLY;
 	gboolean field_names = of_flags & NMC_OF_FLAG_FIELD_NAMES;
 	gboolean section_prefix = of_flags & NMC_OF_FLAG_SECTION_PREFIX;
+
+	/* Optionally start paging the output. */
+	nmc_terminal_spawn_pager (nmc_config);
 
 	/* --- Main header --- */
 	if ((main_header_add || main_header_only) && pretty) {

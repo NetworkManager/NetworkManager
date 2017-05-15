@@ -16,7 +16,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2010 - 2015 Red Hat, Inc.
+ * Copyright 2010 - 2017 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -93,7 +93,9 @@ complete_field (GHashTable *h, const NmcMetaGenericInfo *const*field)
 static void
 complete_one (gpointer key, gpointer value, gpointer user_data)
 {
-	const char *prefix = user_data;
+	const char **option_with_value = user_data;
+	const char *option = option_with_value[0];
+	const char *prefix = option_with_value[1];
 	const char *name = key;
 	const char *last;
 
@@ -104,16 +106,23 @@ complete_one (gpointer key, gpointer value, gpointer user_data)
 		last = prefix;
 
 	if ((!*last && !strchr (name, '.')) || matches (last, name)) {
+		if (option != prefix) {
+			/* value prefix was not a standalone argument,
+			 * it was part of --option=<value> argument.
+			 * Repeat the part leading to "=". */
+			g_print ("%s=", option);
+		}
 		g_print ("%.*s%s%s\n", (int)(last-prefix), prefix, name,
 		                       strcmp (last, name) == 0 ? "," : "");
 	}
 }
 
 static void
-complete_fields (const char *prefix)
+complete_fields (const char *option, const char *prefix)
 {
 	guint i;
 	GHashTable *h;
+	const char *option_with_value[2] = { option, prefix };
 
 	h = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 
@@ -144,10 +153,30 @@ complete_fields (const char *prefix)
 	for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++)
 		complete_field_setting (h, i);
 
-	g_hash_table_foreach (h, complete_one, (gpointer) prefix);
+	g_hash_table_foreach (h, complete_one, (gpointer) &option_with_value[0]);
 	g_hash_table_destroy (h);
 }
 
+static void
+complete_option_with_value (const char *option, const char *prefix, ...)
+{
+	va_list args;
+	const char *candidate;
+
+	va_start (args, prefix);
+	while ((candidate = va_arg (args, const char *))) {
+		if (!*prefix || matches (prefix, candidate)) {
+			if (option != prefix) {
+				/* value prefix was not a standalone argument,
+				 * it was part of --option=<value> argument.
+				 * Repeat the part leading to "=". */
+				g_print ("%s=", option);
+			}
+			g_print ("%s\n", candidate);
+		}
+	}
+	va_end (args);
+}
 
 static void
 usage (void)
@@ -191,6 +220,57 @@ static const NMCCommand nmcli_cmds[] = {
 };
 
 static gboolean
+matches_arg (NmCli *nmc, int *argc, char ***argv, const char *pattern, char **arg)
+{
+	char *opt = *argv[0];
+
+	if (nmc->return_value != NMC_RESULT_SUCCESS) {
+		/* Don't process further matches if there has been an error. */
+		return FALSE;
+	}
+
+	if (opt[1] == '-') {
+		/* We know one '-' was already seen by the caller.
+		 * Skip it if there's a second one*/
+		opt++;
+	}
+
+	if (arg) {
+		/* If there's a "=" separator, replace it with NUL so that matches()
+		 * works and consider the part after it to be the arguemnt's value. */
+		*arg = strchr (opt, '=');
+		if (*arg) {
+			**arg = '\0';
+			(*arg)++;
+		}
+	}
+
+	if (!matches (opt, pattern)) {
+		if (arg && *arg) {
+			/* Back off the replacement of "=". */
+			(*arg)--;
+			**arg = '=';
+		}
+		return FALSE;
+	}
+
+	if (arg && !*arg) {
+		/* We need a value, but the option didn't contain a "=<value>" part.
+		 * Proceed to the next argument. */
+		(*argc)--;
+		(*argv)++;
+		if (!*argc) {
+			g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			return FALSE;
+		}
+		*arg = *argv[0];
+	}
+
+	return TRUE;
+}
+
+static gboolean
 process_command_line (NmCli *nmc, int argc, char **argv)
 {
 	char *base;
@@ -209,26 +289,24 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 
 	/* parse options */
 	while (argc) {
-		char *opt = argv[0];
-		if (opt[0] != '-')
+		char *value;
+
+		if (argv[0][0] != '-')
 			break;
 
 		if (argc == 1 && nmc->complete) {
-			nmc_complete_strings (opt, "--terse", "--pretty", "--mode", "--colors", "--escape",
+			nmc_complete_strings (argv[0], "--terse", "--pretty", "--mode", "--colors", "--escape",
 			                           "--fields", "--nocheck", "--get-values",
 			                            "--wait", "--version", "--help", NULL);
 		}
 
-		if (opt[1] == '-') {
-			opt++;
+		if (argv[0][1] == '-' && argv[0][2] == '\0') {
 			/* '--' ends options */
-			if (opt[1] == '\0') {
-				next_arg (nmc, &argc, &argv, NULL);
-				break;
-			}
+			next_arg (nmc, &argc, &argv, NULL);
+			break;
 		}
 
-		if (matches (opt, "-terse")) {
+		if (matches_arg (nmc, &argc, &argv, "-terse", NULL)) {
 			if (nmc->nmc_config.print_output == NMC_PRINT_TERSE) {
 				g_string_printf (nmc->return_text, _("Error: Option '--terse' is specified the second time."));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
@@ -241,7 +319,7 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 			}
 			else
 				nmc->nmc_config_mutable.print_output = NMC_PRINT_TERSE;
-		} else if (matches (opt, "-pretty")) {
+		} else if (matches_arg (nmc, &argc, &argv, "-pretty", NULL)) {
 			if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY) {
 				g_string_printf (nmc->return_text, _("Error: Option '--pretty' is specified the second time."));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
@@ -254,126 +332,86 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 			}
 			else
 				nmc->nmc_config_mutable.print_output = NMC_PRINT_PRETTY;
-		} else if (matches (opt, "-mode")) {
+		} else if (matches_arg (nmc, &argc, &argv, "-mode", &value)) {
 			nmc->mode_specified = TRUE;
-			argc--;
-			argv++;
-			if (!argc) {
-				g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				return FALSE;
-			}
 			if (argc == 1 && nmc->complete)
-				nmc_complete_strings (argv[0], "tabular", "multiline", NULL);
-			if (matches (argv[0], "tabular"))
+				complete_option_with_value (argv[0], value, "tabular", "multiline", NULL);
+			if (matches (value, "tabular"))
 				nmc->nmc_config_mutable.multiline_output = FALSE;
-			else if (matches (argv[0], "multiline"))
+			else if (matches (value, "multiline"))
 				nmc->nmc_config_mutable.multiline_output = TRUE;
 			else {
-				g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[0], opt);
+				g_string_printf (nmc->return_text, _("Error: '%s' is not a valid argument for '%s' option."), value, argv[0]);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return FALSE;
 			}
-		} else if (matches (opt, "-colors")) {
-			argc--;
-			argv++;
-			if (!argc) {
-				g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				return FALSE;
-			}
+		} else if (matches_arg (nmc, &argc, &argv, "-colors", &value)) {
 			if (argc == 1 && nmc->complete)
-				nmc_complete_strings (argv[0], "yes", "no", "auto", NULL);
-			if (matches (argv[0], "auto"))
+				complete_option_with_value (argv[0], value, "yes", "no", "auto", NULL);
+			if (matches (value, "auto"))
 				nmc->nmc_config_mutable.use_colors = NMC_USE_COLOR_AUTO;
-			else if (matches (argv[0], "yes"))
+			else if (matches (value, "yes"))
 				nmc->nmc_config_mutable.use_colors = NMC_USE_COLOR_YES;
-			else if (matches (argv[0], "no"))
+			else if (matches (value, "no"))
 				nmc->nmc_config_mutable.use_colors = NMC_USE_COLOR_NO;
 			else {
-				g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[0], opt);
+				g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), value, argv[0]);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return FALSE;
 			}
-		} else if (matches (opt, "-escape")) {
-			argc--;
-			argv++;
-			if (!argc) {
-				g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				return FALSE;
-			}
+		} else if (matches_arg (nmc, &argc, &argv, "-escape", &value)) {
 			if (argc == 1 && nmc->complete)
-				nmc_complete_strings (argv[0], "yes", "no", NULL);
-			if (matches (argv[0], "yes"))
+				complete_option_with_value (argv[0], value, "yes", "no", NULL);
+			if (matches (value, "yes"))
 				nmc->nmc_config_mutable.escape_values = TRUE;
-			else if (matches (argv[0], "no"))
+			else if (matches (value, "no"))
 				nmc->nmc_config_mutable.escape_values = FALSE;
 			else {
-				g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[0], opt);
+				g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), value, argv[0]);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return FALSE;
 			}
-		} else if (matches (opt, "-fields")) {
-			argc--;
-			argv++;
-			if (!argc) {
-				g_string_printf (nmc->return_text, _("Error: fields for '%s' options are missing."), opt);
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				return FALSE;
-			}
+		} else if (matches_arg (nmc, &argc, &argv, "-fields", &value)) {
 			if (argc == 1 && nmc->complete)
-				complete_fields (argv[0]);
-			nmc->required_fields = g_strdup (argv[0]);
-		} else if (matches (opt, "-get-values")) {
-			argc--;
-			argv++;
-			if (!argc) {
-				g_string_printf (nmc->return_text, _("Error: fields for '%s' options are missing."), opt);
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				return FALSE;
-			}
+				complete_fields (argv[0], value);
+			nmc->required_fields = g_strdup (value);
+		} else if (matches_arg (nmc, &argc, &argv, "-get-values", &value)) {
 			if (argc == 1 && nmc->complete)
-				complete_fields (argv[0]);
-			nmc->required_fields = g_strdup (argv[0]);
+				complete_fields (argv[0], value);
+			nmc->required_fields = g_strdup (value);
 			nmc->nmc_config_mutable.print_output = NMC_PRINT_TERSE;
 			/* We want fixed tabular mode here, but just set the mode specified and rely on the initialization
 			 * in nmc_init: in this way we allow use of "-m multiline" to swap the output mode also if placed
 			 * before the "-g <field>" option (-g may be still more practical and easy to remember than -t -f).
 			*/
 			nmc->mode_specified = TRUE;
-		} else if (matches (opt, "-nocheck")) {
+		} else if (matches_arg (nmc, &argc, &argv, "-nocheck", NULL)) {
 			/* ignore for backward compatibility */
-		} else if (matches (opt, "-wait")) {
+		} else if (matches_arg (nmc, &argc, &argv, "-wait", &value)) {
 			unsigned long timeout;
 
-			argc--;
-			argv++;
-			if (!argc) {
-				g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				return FALSE;
-			}
-			if (!nmc_string_to_uint (argv[0], TRUE, 0, G_MAXINT, &timeout)) {
-				g_string_printf (nmc->return_text, _("Error: '%s' is not a valid timeout for '%s' option."),
-						 argv[0], opt);
+			if (!nmc_string_to_uint (value, TRUE, 0, G_MAXINT, &timeout)) {
+				g_string_printf (nmc->return_text, _("Error: '%s' is not a valid timeout."), value);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return FALSE;
 			}
 			nmc->timeout = (int) timeout;
-		} else if (matches (opt, "-version")) {
+		} else if (matches_arg (nmc, &argc, &argv, "-version", NULL)) {
 			if (!nmc->complete)
 				g_print (_("nmcli tool, version %s\n"), NMCLI_VERSION);
 			return NMC_RESULT_SUCCESS;
-		} else if (matches (opt, "-help")) {
+		} else if (matches_arg (nmc, &argc, &argv, "-help", NULL)) {
 			if (!nmc->complete)
 				usage ();
 			return NMC_RESULT_SUCCESS;
 		} else {
-			g_string_printf (nmc->return_text, _("Error: Option '%s' is unknown, try 'nmcli -help'."), opt);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			if (nmc->return_value == NMC_RESULT_SUCCESS) {
+				g_string_printf (nmc->return_text, _("Error: Option '%s' is unknown, try 'nmcli -help'."), argv[0]);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			}
 			return FALSE;
 		}
+
 		next_arg (nmc, &argc, &argv, NULL);
 	}
 
@@ -547,7 +585,9 @@ nmc_init (NmCli *nmc)
 static void
 nmc_cleanup (NmCli *nmc)
 {
-	if (nmc->client) g_object_unref (nmc->client);
+	pid_t ret;
+
+	g_clear_object (&nmc->client);
 
 	g_string_free (nmc->return_text, TRUE);
 
@@ -560,6 +600,15 @@ nmc_cleanup (NmCli *nmc)
 		g_hash_table_destroy (nmc->pwds_hash);
 
 	g_free (nmc->required_fields);
+
+	if (nmc->pager_pid > 0) {
+		fclose (stdout);
+		fclose (stderr);
+		do {
+			ret = waitpid (nmc->pager_pid, NULL, 0);
+		} while (ret == -1 && errno == EINTR);
+		nmc->pager_pid = 0;
+	}
 
 	nmc_polkit_agent_fini (nmc);
 }
