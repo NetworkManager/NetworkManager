@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2010 - 2015 Red Hat, Inc.
+ * Copyright 2010 - 2017 Red Hat, Inc.
  */
 
 #ifndef NMC_NMCLI_H
@@ -129,6 +129,7 @@ typedef struct _NmCli {
 
 	NMCResultCode return_value;                       /* Return code of nmcli */
 	GString *return_text;                             /* Reason text */
+	pid_t pager_pid;                                  /* PID of a pager, if one was spawned */
 
 	int timeout;                                      /* Operation timeout */
 

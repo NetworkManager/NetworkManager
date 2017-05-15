@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2010 - 2015 Red Hat, Inc.
+ * Copyright 2010 - 2017 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -1295,6 +1295,9 @@ do_overview (NmCli *nmc, int argc, char **argv)
 
 	/* Register polkit agent */
 	nmc_start_polkit_agent_start_try (nmc);
+
+	/* Optionally start paging the output. */
+	nmc_terminal_spawn_pager (&nmc->nmc_config);
 
 	/* The VPN connections don't have devices (yet?). */
 	p = nm_client_get_active_connections (nmc->client);

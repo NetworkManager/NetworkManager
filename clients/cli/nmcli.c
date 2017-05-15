@@ -16,7 +16,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2010 - 2015 Red Hat, Inc.
+ * Copyright 2010 - 2017 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -147,7 +147,6 @@ complete_fields (const char *prefix)
 	g_hash_table_foreach (h, complete_one, (gpointer) prefix);
 	g_hash_table_destroy (h);
 }
-
 
 static void
 usage (void)
@@ -547,7 +546,9 @@ nmc_init (NmCli *nmc)
 static void
 nmc_cleanup (NmCli *nmc)
 {
-	if (nmc->client) g_object_unref (nmc->client);
+	pid_t ret;
+
+	g_clear_object (&nmc->client);
 
 	g_string_free (nmc->return_text, TRUE);
 
@@ -560,6 +561,15 @@ nmc_cleanup (NmCli *nmc)
 		g_hash_table_destroy (nmc->pwds_hash);
 
 	g_free (nmc->required_fields);
+
+	if (nmc->pager_pid > 0) {
+		fclose (stdout);
+		fclose (stderr);
+		do {
+			ret = waitpid (nmc->pager_pid, NULL, 0);
+		} while (ret == -1 && errno == EINTR);
+		nmc->pager_pid = 0;
+	}
 
 	nmc_polkit_agent_fini (nmc);
 }
