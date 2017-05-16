@@ -5323,6 +5323,100 @@ static void test_nm_utils_enum (void)
 
 /*****************************************************************************/
 
+static void
+do_test_utils_str_utf8safe (const char *str, const char *expected, NMUtilsStrUtf8SafeFlags flags)
+{
+	const char *str_safe, *s;
+	gs_free char *str2 = NULL;
+	gs_free char *str3 = NULL;
+
+	str_safe = nm_utils_str_utf8safe_escape (str, flags, &str2);
+
+	str3 = nm_utils_str_utf8safe_escape_cp (str, flags);
+	g_assert_cmpstr (str3, ==, str_safe);
+	g_assert ((!str && !str3) || (str != str3));
+	g_clear_pointer (&str3, g_free);
+
+	if (expected == NULL) {
+		g_assert (str_safe == str);
+		g_assert (!str2);
+		if (str) {
+			g_assert (!strchr (str, '\\'));
+			g_assert (g_utf8_validate (str, -1, NULL));
+		}
+
+		g_assert (str == nm_utils_str_utf8safe_unescape (str_safe, &str3));
+		g_assert (!str3);
+
+		str3 = nm_utils_str_utf8safe_unescape_cp (str_safe);
+		if (str) {
+			g_assert (str3 != str);
+			g_assert_cmpstr (str3, ==, str);
+		} else
+			g_assert (!str3);
+		g_clear_pointer (&str3, g_free);
+		return;
+	}
+
+	g_assert (str);
+	g_assert (str_safe != str);
+	g_assert (str_safe == str2);
+	g_assert (   strchr (str, '\\')
+	          || !g_utf8_validate (str, -1, NULL)
+	          || (   NM_FLAGS_HAS (flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII)
+	              && NM_STRCHAR_ANY (str, ch, (guchar) ch >= 127))
+	          || (   NM_FLAGS_HAS (flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL)
+	              && NM_STRCHAR_ANY (str, ch, (guchar) ch < ' ')));
+	g_assert (g_utf8_validate (str_safe, -1, NULL));
+
+	str3 = g_strcompress (str_safe);
+	g_assert_cmpstr (str, ==, str3);
+	g_clear_pointer (&str3, g_free);
+
+	str3 = nm_utils_str_utf8safe_unescape_cp (str_safe);
+	g_assert (str3 != str);
+	g_assert_cmpstr (str3, ==, str);
+	g_clear_pointer (&str3, g_free);
+
+	s = nm_utils_str_utf8safe_unescape (str_safe, &str3);
+	g_assert (str3 != str);
+	g_assert (s == str3);
+	g_assert_cmpstr (str3, ==, str);
+	g_clear_pointer (&str3, g_free);
+
+	g_assert_cmpstr (str_safe, ==, expected);
+}
+
+static void
+test_utils_str_utf8safe (void)
+{
+	do_test_utils_str_utf8safe (NULL, NULL,                                       NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("", NULL,                                         NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("\314", "\\314",                                  NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("\314\315x\315\315x", "\\314\\315x\\315\\315x",   NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("\314\315xx", "\\314\\315xx",                     NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("\314xx", "\\314xx",                              NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("\xa0", "\\240",                                  NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("\xe2\x91\xa0", NULL,                             NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("\xe2\xe2\x91\xa0", "\\342\xe2\x91\xa0",          NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("\xe2\xe2\x91\xa0\xa0", "\\342\xe2\x91\xa0\\240", NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("a", NULL,                                        NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("ab", NULL,                                       NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("ab\314", "ab\\314",                              NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("ab\314adsf", "ab\\314adsf",                      NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("abadsf", NULL,                                   NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("abäb", NULL,                                     NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("x\xa0", "x\\240",                                NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("Ä\304ab\\äb", "Ä\\304ab\\\\äb",                  NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("Äab\\äb", "Äab\\\\äb",                           NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("ÄÄab\\äb", "ÄÄab\\\\äb",                         NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("㈞abä㈞b", NULL,                                 NM_UTILS_STR_UTF8_SAFE_FLAG_NONE);
+	do_test_utils_str_utf8safe ("abäb", "ab\\303\\244b",                          NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII);
+	do_test_utils_str_utf8safe ("ab\ab", "ab\\007b",                              NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL);
+}
+
+/*****************************************************************************/
+
 static int
 _test_nm_in_set_get (int *call_counter, gboolean allow_called, int value)
 {
@@ -5680,6 +5774,7 @@ int main (int argc, char **argv)
 	nmtst_init (&argc, &argv, TRUE);
 
 	/* The tests */
+	g_test_add_func ("/core/general/test_utils_str_utf8safe", test_utils_str_utf8safe);
 	g_test_add_func ("/core/general/test_nm_in_set", test_nm_in_set);
 	g_test_add_func ("/core/general/test_nm_in_strset", test_nm_in_strset);
 	g_test_add_func ("/core/general/test_setting_vpn_items", test_setting_vpn_items);
