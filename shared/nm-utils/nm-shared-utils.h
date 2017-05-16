@@ -86,4 +86,20 @@ gboolean nm_g_object_set_property (GObject *object,
 
 /*****************************************************************************/
 
+typedef enum {
+	NM_UTILS_STR_UTF8_SAFE_FLAG_NONE                = 0,
+	NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL         = 0x0001,
+	NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII    = 0x0002,
+} NMUtilsStrUtf8SafeFlags;
+
+const char *nm_utils_str_utf8safe_escape   (const char *str, NMUtilsStrUtf8SafeFlags flags, char **to_free);
+const char *nm_utils_str_utf8safe_unescape (const char *str, char **to_free);
+
+char *nm_utils_str_utf8safe_escape_cp   (const char *str, NMUtilsStrUtf8SafeFlags flags);
+char *nm_utils_str_utf8safe_unescape_cp (const char *str);
+
+char *nm_utils_str_utf8safe_escape_take (char *str, NMUtilsStrUtf8SafeFlags flags);
+
+/*****************************************************************************/
+
 #endif /* __NM_SHARED_UTILS_H__ */
