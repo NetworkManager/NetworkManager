@@ -13992,28 +13992,43 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_UDI:
-		g_value_set_string (value, priv->udi);
+		/* UDI is (depending on the device type) a path to sysfs and can contain
+		 * non-UTF-8.
+		 *   ip link add name $'d\xccf\\c' type dummy  */
+		g_value_take_string (value,
+		                     nm_utils_str_utf8safe_escape_cp (priv->udi,
+		                                                      NM_UTILS_STR_UTF8_SAFE_FLAG_NONE));
 		break;
 	case PROP_IFACE:
-		g_value_set_string (value, priv->iface);
+		g_value_take_string (value,
+		                     nm_utils_str_utf8safe_escape_cp (priv->iface,
+		                                                      NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL));
 		break;
 	case PROP_IP_IFACE:
-		if (ip_config_valid (priv->state))
-			g_value_set_string (value, nm_device_get_ip_iface (self));
-		else
+		if (ip_config_valid (priv->state)) {
+			g_value_take_string (value,
+			                     nm_utils_str_utf8safe_escape_cp (nm_device_get_ip_iface (self),
+			                                                      NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL));
+		} else
 			g_value_set_string (value, NULL);
 		break;
 	case PROP_IFINDEX:
 		g_value_set_int (value, priv->ifindex);
 		break;
 	case PROP_DRIVER:
-		g_value_set_string (value, priv->driver);
+		g_value_take_string (value,
+		                     nm_utils_str_utf8safe_escape_cp (priv->driver,
+		                                                      NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL));
 		break;
 	case PROP_DRIVER_VERSION:
-		g_value_set_string (value, priv->driver_version);
+		g_value_take_string (value,
+		                     nm_utils_str_utf8safe_escape_cp (priv->driver_version,
+		                                                      NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL));
 		break;
 	case PROP_FIRMWARE_VERSION:
-		g_value_set_string (value, priv->firmware_version);
+		g_value_take_string (value,
+		                     nm_utils_str_utf8safe_escape_cp (priv->firmware_version,
+		                                                      NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL));
 		break;
 	case PROP_CAPABILITIES:
 		g_value_set_uint (value, (priv->capabilities & ~NM_DEVICE_CAP_INTERNAL_MASK));
