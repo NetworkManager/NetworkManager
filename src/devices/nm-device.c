@@ -6239,7 +6239,8 @@ ip6_config_merge_and_apply (NMDevice *self,
 			                                                       nm_device_get_ifindex (self),
 			                                                       FALSE,
 			                                                       NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
-			priv->ext_ip6_config = nm_ip6_config_new_cloned (priv->ext_ip6_config_captured);
+			if (priv->ext_ip6_config_captured)
+				priv->ext_ip6_config = nm_ip6_config_new_cloned (priv->ext_ip6_config_captured);
 		}
 	}
 
