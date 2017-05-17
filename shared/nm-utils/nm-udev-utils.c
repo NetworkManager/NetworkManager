@@ -89,6 +89,7 @@ nm_udev_utils_property_decode (const char *uproperty, char **to_free)
 		return uproperty;
 	}
 
+	*n++ = '\0';
 	return (*to_free = unescaped);
 }
 
