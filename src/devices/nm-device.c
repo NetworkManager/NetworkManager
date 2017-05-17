@@ -13893,14 +13893,11 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_UDI:
-		if (g_value_get_string (value)) {
-			g_free (priv->udi);
-			priv->udi = g_value_dup_string (value);
-		}
+		/* construct-only */
+		priv->udi = g_value_dup_string (value);
 		break;
 	case PROP_IFACE:
 		/* construct-only */
-		g_return_if_fail (!priv->iface);
 		priv->iface = g_value_dup_string (value);
 		break;
 	case PROP_DRIVER:
@@ -14211,7 +14208,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	obj_properties[PROP_UDI] =
 	    g_param_spec_string (NM_DEVICE_UDI, "", "",
 	                         NULL,
-	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_IFACE] =
 	    g_param_spec_string (NM_DEVICE_IFACE, "", "",
