@@ -67,8 +67,9 @@ nm_udev_utils_property_decode (const char *uproperty, char **to_free)
 		if (   p[0] == '\\'
 		    && p[1] == 'x'
 		    && (a = g_ascii_xdigit_value (p[2])) >= 0
-		    && (b = g_ascii_xdigit_value (p[3])) >= 0) {
-			if (!unescaped) {
+		    && (b = g_ascii_xdigit_value (p[3])) >= 0
+		    && (a || b)) {
+			if (!n) {
 				gssize l = p - uproperty;
 
 				unescaped = g_malloc (l + strlen (p) + 1 - 3);
@@ -84,7 +85,7 @@ nm_udev_utils_property_decode (const char *uproperty, char **to_free)
 		}
 	}
 
-	if (!unescaped) {
+	if (!n) {
 		*to_free = NULL;
 		return uproperty;
 	}
