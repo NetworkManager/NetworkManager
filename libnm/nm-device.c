@@ -81,7 +81,7 @@ typedef struct {
 	GPtrArray *available_connections;
 
 	struct udev *udev;
-	char *product, *short_product;
+	char *product;
 	char *vendor, *short_vendor;
 	char *description, *bus_name;
 
@@ -320,7 +320,6 @@ finalize (GObject *object)
 	g_free (priv->driver_version);
 	g_free (priv->firmware_version);
 	g_free (priv->product);
-	g_free (priv->short_product);
 	g_free (priv->vendor);
 	g_free (priv->short_vendor);
 	g_free (priv->description);
@@ -1357,6 +1356,17 @@ _get_udev_property (NMDevice *device,
 	return db_value;
 }
 
+static char *
+_get_udev_property_utf8safe (NMDevice *device,
+                             const char *enc_prop,  /* ID_XXX_ENC */
+                             const char *db_prop)   /* ID_XXX_FROM_DATABASE */
+{
+	return nm_utils_str_utf8safe_escape_take (_get_udev_property (device,
+	                                                              enc_prop,
+	                                                              db_prop),
+	                                          NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL);
+}
+
 /**
  * nm_device_get_product:
  * @device: a #NMDevice
@@ -1365,6 +1375,9 @@ _get_udev_property (NMDevice *device,
  *
  * Returns: the product name of the device. This is the internal string used by the
  * device, and must not be modified.
+ *
+ * The string is backslash escaped (C escaping) for invalid characters. The escaping
+ * can be reverted with g_strcompress(), however the result may not be valid UTF-8.
  **/
 const char *
 nm_device_get_product (NMDevice *device)
@@ -1374,15 +1387,16 @@ nm_device_get_product (NMDevice *device)
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
 	priv = NM_DEVICE_GET_PRIVATE (device);
-	if (!priv->product)
-		priv->product = _get_udev_property (device, "ID_MODEL_ENC", "ID_MODEL_FROM_DATABASE");
+	if (!priv->product) {
+		priv->product = _get_udev_property_utf8safe (device, "ID_MODEL_ENC", "ID_MODEL_FROM_DATABASE");
 
-	/* Sometimes ID_PRODUCT_FROM_DATABASE is used? */
-	if (!priv->product)
-		priv->product = _get_udev_property (device, "ID_MODEL_ENC", "ID_PRODUCT_FROM_DATABASE");
+		/* Sometimes ID_PRODUCT_FROM_DATABASE is used? */
+		if (!priv->product)
+			priv->product = _get_udev_property_utf8safe (device, "ID_MODEL_ENC", "ID_PRODUCT_FROM_DATABASE");
 
-	if (!priv->product)
-		priv->product = g_strdup ("");
+		if (!priv->product)
+			priv->product = g_strdup ("");
+	}
 
 	return priv->product;
 }
@@ -1395,6 +1409,9 @@ nm_device_get_product (NMDevice *device)
  *
  * Returns: the vendor name of the device. This is the internal string used by the
  * device, and must not be modified.
+ *
+ * The string is backslash escaped (C escaping) for invalid characters. The escaping
+ * can be reverted with g_strcompress(), however the result may not be valid UTF-8.
  **/
 const char *
 nm_device_get_vendor (NMDevice *device)
@@ -1406,7 +1423,7 @@ nm_device_get_vendor (NMDevice *device)
 	priv = NM_DEVICE_GET_PRIVATE (device);
 
 	if (!priv->vendor)
-		priv->vendor = _get_udev_property (device, "ID_VENDOR_ENC", "ID_VENDOR_FROM_DATABASE");
+		priv->vendor = _get_udev_property_utf8safe (device, "ID_VENDOR_ENC", "ID_VENDOR_FROM_DATABASE");
 
 	if (!priv->vendor)
 		priv->vendor = g_strdup ("");
@@ -1414,128 +1431,146 @@ nm_device_get_vendor (NMDevice *device)
 	return priv->vendor;
 }
 
-static const char * const ignored_words[] = {
-	"Semiconductor",
-	"Components",
-	"Corporation",
-	"Communications",
-	"Company",
-	"Corp.",
-	"Corp",
-	"Co.",
-	"Inc.",
-	"Inc",
-	"Incorporated",
-	"Ltd.",
-	"Limited.",
-	"Intel?",
-	"chipset",
-	"adapter",
-	"[hex]",
-	"NDIS",
-	"Module",
-	NULL
-};
-
-static const char * const ignored_phrases[] = {
-	"Multiprotocol MAC/baseband processor",
-	"Wireless LAN Controller",
-	"Wireless LAN Adapter",
-	"Wireless Adapter",
-	"Network Connection",
-	"Wireless Cardbus Adapter",
-	"Wireless CardBus Adapter",
-	"54 Mbps Wireless PC Card",
-	"Wireless PC Card",
-	"Wireless PC",
-	"PC Card with XJACK(r) Antenna",
-	"Wireless cardbus",
-	"Wireless LAN PC Card",
-	"Technology Group Ltd.",
-	"Communication S.p.A.",
-	"Business Mobile Networks BV",
-	"Mobile Broadband Minicard Composite Device",
-	"Mobile Communications AB",
-	"(PC-Suite Mode)",
-	NULL
-};
-
 static char *
 fixup_desc_string (const char *desc)
 {
-	char *p, *temp;
-	char **words, **item;
-	GString *str;
+	static const char *const IGNORED_PHRASES[] = {
+		"Multiprotocol MAC/baseband processor",
+		"Wireless LAN Controller",
+		"Wireless LAN Adapter",
+		"Wireless Adapter",
+		"Network Connection",
+		"Wireless Cardbus Adapter",
+		"Wireless CardBus Adapter",
+		"54 Mbps Wireless PC Card",
+		"Wireless PC Card",
+		"Wireless PC",
+		"PC Card with XJACK(r) Antenna",
+		"Wireless cardbus",
+		"Wireless LAN PC Card",
+		"Technology Group Ltd.",
+		"Communication S.p.A.",
+		"Business Mobile Networks BV",
+		"Mobile Broadband Minicard Composite Device",
+		"Mobile Communications AB",
+		"(PC-Suite Mode)",
+	};
+	static const char *const IGNORED_WORDS[] = {
+		"Semiconductor",
+		"Components",
+		"Corporation",
+		"Communications",
+		"Company",
+		"Corp.",
+		"Corp",
+		"Co.",
+		"Inc.",
+		"Inc",
+		"Incorporated",
+		"Ltd.",
+		"Limited.",
+		"Intel?",
+		"chipset",
+		"adapter",
+		"[hex]",
+		"NDIS",
+		"Module",
+	};
+	char *desc_full;
+	char *p, *q;
 	int i;
 
-	if (!desc)
+	if (!desc || !desc[0])
 		return NULL;
 
-	p = temp = g_strdup (desc);
-	while (*p) {
-		if (*p == '_' || *p == ',')
+	/* restore original non-UTF-8-safe text. */
+	desc_full = nm_utils_str_utf8safe_unescape_cp (desc);
+
+	/* replace all invalid UTF-8 bytes with space. */
+	p = desc_full;
+	while (!g_utf8_validate (p, -1, (const char **) &q)) {
+		/* the byte is invalid UTF-8. Replace it with space and proceed. */
+		*q = ' ';
+		p = q + 1;
+	}
+
+	/* replace '_', ',', and ASCII controll characters with space. */
+	for (p = desc_full; p[0]; p++) {
+		if (   NM_IN_SET (*p, '_', ',')
+		    || *p < ' ')
 			*p = ' ';
-		p++;
 	}
 
 	/* Attempt to shorten ID by ignoring certain phrases */
-	for (i = 0; ignored_phrases[i]; i++) {
-		p = strstr (temp, ignored_phrases[i]);
+	for (i = 0; i < G_N_ELEMENTS (IGNORED_PHRASES); i++) {
+		p = strstr (desc_full, IGNORED_PHRASES[i]);
 		if (p) {
-			guint32 ignored_len = strlen (ignored_phrases[i]);
+			const char *eow = &p[strlen (IGNORED_PHRASES[i])];
 
-			memmove (p, p + ignored_len, strlen (p + ignored_len) + 1); /* +1 for the \0 */
+			memmove (p, eow, strlen (eow) + 1); /* +1 for the \0 */
 		}
 	}
 
-	/* Attempt to shorten ID by ignoring certain individual words */
-	words = g_strsplit (temp, " ", 0);
-	str = g_string_new_len (NULL, strlen (temp));
-	g_free (temp);
+	/* Attempt to shorten ID by ignoring certain individual words.
+	 * - word-split the description at spaces
+	 * - coalesce multiple spaces
+	 * - skip over IGNORED_WORDS */
+	p = desc_full;
+	q = desc_full;
+	for (;;) {
+		char *eow;
+		gsize l;
 
-	for (item = words; *item; item++) {
-		gboolean ignore = FALSE;
+		/* skip leading spaces. */
+		while (p[0] == ' ')
+			p++;
 
-		if (**item == '\0')
-			continue;
+		if (!p[0])
+			break;
 
-		for (i = 0; ignored_words[i]; i++) {
-			if (!strcmp (*item, ignored_words[i])) {
-				ignore = TRUE;
-				break;
-			}
+		/* split leading word on first space */
+		eow = strchr (p, ' ');
+		if (eow)
+			*eow = '\0';
+
+		if (nm_utils_strv_find_first ((char **) IGNORED_WORDS,
+		                              G_N_ELEMENTS (IGNORED_WORDS),
+		                              p) < 0)
+			goto next;
+
+		l = strlen (p);
+		if (q != p) {
+			if (q != desc_full)
+				*q++ = ' ';
+			memmove (q, p, l);
 		}
+		q += l;
 
-		if (!ignore) {
-			if (str->len)
-				g_string_append_c (str, ' ');
-			g_string_append (str, *item);
-		}
+next:
+		if (!eow)
+			break;
+		p = eow + 1;
 	}
-	g_strfreev (words);
 
-	temp = str->str;
-	g_string_free (str, FALSE);
+	*q++ = '\0';
 
-	return temp;
+	if (!desc_full[0]) {
+		g_free (desc_full);
+		return NULL;
+	}
+
+	nm_assert (g_utf8_validate (desc_full, -1, NULL));
+	return desc_full;
 }
 
 static void
-get_description (NMDevice *device)
+ensure_description (NMDevice *device)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
-	const char *dev_product;
-	const char *dev_vendor;
-	char *pdown;
-	char *vdown;
-	GString *str;
 	GParamSpec *name_prop;
+	gs_free char *short_product = NULL;
 
-	dev_product = nm_device_get_product (device);
-	priv->short_product = fixup_desc_string (dev_product);
-
-	dev_vendor = nm_device_get_vendor (device);
-	priv->short_vendor = fixup_desc_string (dev_vendor);
+	priv->short_vendor = nm_str_realloc (fixup_desc_string (nm_device_get_vendor (device)));
 
 	/* Grab device's preferred name, if any */
 	name_prop = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (device)), "name");
@@ -1546,28 +1581,24 @@ get_description (NMDevice *device)
 		g_clear_pointer (&priv->description, g_free);
 	}
 
-	if (!dev_product || !dev_vendor) {
-		priv->description = g_strdup (nm_device_get_iface (device));
+	if (   !priv->short_vendor
+	    || !(short_product = fixup_desc_string (nm_device_get_product (device)))) {
+		priv->description = g_strdup (nm_device_get_iface (device) ?: "");
 		return;
 	}
-
-	str = g_string_new_len (NULL, strlen (priv->short_vendor) + strlen (priv->short_product) + 1);
 
 	/* Another quick hack; if all of the fixed up vendor string
 	 * is found in product, ignore the vendor.
 	 */
-	pdown = g_ascii_strdown (priv->short_product, -1);
-	vdown = g_ascii_strdown (priv->short_vendor, -1);
-	if (!strstr (pdown, vdown)) {
-		g_string_append (str, priv->short_vendor);
-		g_string_append_c (str, ' ');
+	{
+		gs_free char *pdown = g_ascii_strdown (short_product, -1);
+		gs_free char *vdown = g_ascii_strdown (priv->short_vendor, -1);
+
+		if (!strstr (pdown, vdown))
+			priv->description = g_strconcat (priv->short_vendor, " ", short_product, NULL);
+		else
+			priv->description = g_steal_pointer (&short_product);
 	}
-	g_free (pdown);
-	g_free (vdown);
-
-	g_string_append (str, priv->short_product);
-
-	priv->description = g_string_free (str, FALSE);
 }
 
 static const char *
@@ -1580,7 +1611,7 @@ get_short_vendor (NMDevice *device)
 	priv = NM_DEVICE_GET_PRIVATE (device);
 
 	if (!priv->description)
-		get_description (device);
+		ensure_description (device);
 
 	return priv->short_vendor;
 }
@@ -1604,7 +1635,7 @@ nm_device_get_description (NMDevice *device)
 	priv = NM_DEVICE_GET_PRIVATE (device);
 
 	if (!priv->description)
-		get_description (device);
+		ensure_description (device);
 
 	return priv->description;
 }
