@@ -12591,15 +12591,11 @@ _set_state_full (NMDevice *self,
 		if (   priv->queued_act_request
 		    && !priv->queued_act_request_is_waiting_for_carrier) {
 			NMActRequest *queued_req;
-			gboolean success;
 
 			queued_req = priv->queued_act_request;
 			priv->queued_act_request = NULL;
-			success = _device_activate (self, queued_req);
+			_device_activate (self, queued_req);
 			g_object_unref (queued_req);
-			if (success)
-				break;
-			/* fall through */
 		}
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
