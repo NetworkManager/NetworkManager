@@ -2463,7 +2463,7 @@ device_link_changed (NMDevice *self)
 	info = *pllink;
 
 	udi = nm_platform_link_get_udi (nm_device_get_platform (self), info.ifindex);
-	if (udi && g_strcmp0 (udi, priv->udi)) {
+	if (udi && !nm_streq0 (udi, priv->udi)) {
 		/* Update UDI to what udev gives us */
 		g_free (priv->udi);
 		priv->udi = g_strdup (udi);
@@ -2844,7 +2844,7 @@ update_device_from_platform_link (NMDevice *self, const NMPlatformLink *plink)
 	g_return_if_fail (plink != NULL);
 
 	udi = nm_platform_link_get_udi (nm_device_get_platform (self), plink->ifindex);
-	if (udi && !g_strcmp0 (udi, priv->udi)) {
+	if (udi && !nm_streq0 (udi, priv->udi)) {
 		g_free (priv->udi);
 		priv->udi = g_strdup (udi);
 		_notify (self, PROP_UDI);
