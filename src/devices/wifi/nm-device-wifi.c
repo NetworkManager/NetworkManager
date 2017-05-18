@@ -1852,7 +1852,7 @@ supplicant_iface_wps_credentials_cb (NMSupplicantInterface *iface,
 	val = g_variant_lookup_value (credentials, "Key", G_VARIANT_TYPE_BYTESTRING);
 	if (val) {
 		array = g_variant_get_fixed_array (val, &psk_len, 1);
-		if (psk_len >= 8 || psk_len <= 63) {
+		if (psk_len >= 8 && psk_len <= 63) {
 			memcpy (psk, array, psk_len);
 			psk[psk_len] = '\0';
 			secrets = g_variant_new_parsed ("[{%s, [{%s, <%s>}]}]",
