@@ -70,11 +70,13 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 		      -Wimplicit-fallthrough \
 		      -Wimplicit-function-declaration \
 		      -Winit-self \
+		      -Wlogical-op \
 		      -Wmissing-declarations \
 		      -Wmissing-include-dirs \
 		      -Wmissing-prototypes \
 		      -Wpointer-arith \
 		      -Wshadow \
+		      -Wshift-negative-value \
 		      -Wstrict-prototypes \
 		      -Wundef \
 		      -Wno-duplicate-decl-specifier \
