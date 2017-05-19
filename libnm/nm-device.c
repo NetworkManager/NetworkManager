@@ -1507,7 +1507,11 @@ fixup_desc_string (const char *desc)
 		if (p) {
 			const char *eow = &p[strlen (IGNORED_PHRASES[i])];
 
-			memmove (p, eow, strlen (eow) + 1); /* +1 for the \0 */
+			/* require that the phrase is delimited by space, or
+			 * at the beginning or end of the description. */
+			if (   (p == desc_full || p[-1] == ' ')
+			    && NM_IN_SET (eow[0], '\0', ' '))
+				memmove (p, eow, strlen (eow) + 1); /* +1 for the \0 */
 		}
 	}
 
