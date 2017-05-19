@@ -21,6 +21,6 @@
 #ifndef __NM_LIBNM_UTILS_H__
 #define __NM_LIBNM_UTILS_H__
 
-
+char *nm_utils_fixup_desc_string (const char *desc);
 
 #endif /* __NM_LIBNM_UTILS_H__ */

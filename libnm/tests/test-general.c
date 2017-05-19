@@ -20,7 +20,40 @@
 
 #include "nm-default.h"
 
+#include "nm-libnm-utils.h"
+
 #include "nm-utils/nm-test-utils.h"
+
+/*****************************************************************************/
+
+static void
+do_test_fixup_desc_string (const char *desc, const char *expected)
+{
+	gs_free char *result = NULL;
+
+	result = nm_utils_fixup_desc_string (desc);
+	g_assert_cmpstr (result, ==, expected);
+}
+
+#define do_test_fixup_desc_string_same(desc) (do_test_fixup_desc_string (""desc"", ""desc""))
+
+static void
+test_fixup_desc_string (void)
+{
+	do_test_fixup_desc_string (NULL, NULL);
+	do_test_fixup_desc_string ("", NULL);
+	do_test_fixup_desc_string_same ("a");
+	do_test_fixup_desc_string_same ("a b");
+	do_test_fixup_desc_string ("a b ", "a b");
+	do_test_fixup_desc_string ("  a   bbc ", "a bbc");
+	do_test_fixup_desc_string ("  a \xcc  bbc ", "a bbc");
+	do_test_fixup_desc_string ("  a\xcc  bbc ", "a bbc");
+	do_test_fixup_desc_string ("  a\xcc""bbc Wireless PC", "a bbc");
+	do_test_fixup_desc_string ("  a\xcc""bbc Wireless PC ", "a bbc");
+	do_test_fixup_desc_string ("  a\xcc""bbcWireless PC ", "a bbcWireless PC");
+	do_test_fixup_desc_string ("  a\xcc""bbc Wireless PCx", "a bbc Wireless PCx");
+	do_test_fixup_desc_string ("  a\xcc""bbc Inc Wireless PC ", "a bbc");
+}
 
 /*****************************************************************************/
 
@@ -29,6 +62,8 @@ NMTST_DEFINE ();
 int main (int argc, char **argv)
 {
 	nmtst_init (&argc, &argv, TRUE);
+
+	g_test_add_func ("/libnm/general/fixup_desc_string", test_fixup_desc_string);
 
 	return g_test_run ();
 }
