@@ -737,6 +737,7 @@ libnm_lib_h_pub_nointrospect = \
 libnm_lib_h_pub_mkenums = \
 	libnm/nm-enum-types.h
 libnm_lib_h_priv = \
+	libnm/nm-libnm-utils.h \
 	libnm/nm-dbus-helpers.h \
 	libnm/nm-device-private.h \
 	libnm/nm-dhcp4-config.h \
@@ -793,12 +794,37 @@ libnm_lib_c_real = \
 libnm_lib_c_mkenums = \
 	libnm/nm-enum-types.c
 
+libnm_lib_cppflags = \
+	$(dflt_cppflags_libnm_core) \
+	-I$(srcdir)/libnm \
+	-I$(builddir)/libnm \
+	-DG_LOG_DOMAIN=\""libnm"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB \
+	-DNMRUNDIR=\"$(nmrundir)\"
+
 libnminclude_HEADERS += \
 	$(libnm_lib_h_pub_real) \
 	$(libnm_lib_h_pub_nointrospect)
 
 nodist_libnminclude_HEADERS += \
 	$(libnm_lib_h_pub_mkenums)
+
+###############################################################################
+
+lib_LTLIBRARIES += libnm/libnm-utils.la
+
+libnm_libnm_utils_la_CPPFLAGS = \
+	$(libnm_lib_cppflags)
+
+libnm_libnm_utils_la_SOURCES = \
+	libnm/nm-libnm-utils.c
+
+libnm_libnm_utils_la_LIBADD = \
+	libnm-core/libnm-core.la \
+	introspection/libnmdbus.la \
+	$(GLIB_LIBS)
+
+$(libnm_libnm_utils_la_OBJECTS) : $(libnm_lib_h_pub_mkenums)
 
 ###############################################################################
 
@@ -820,13 +846,8 @@ $(libnm_libnm_la_OBJECTS):                              $(libnm_lib_h_pub_mkenum
 $(libnm_tests_libnm_vpn_plugin_utils_test_la_OBJECTS):  $(libnm_core_lib_h_pub_mkenums)
 
 libnm_libnm_la_CPPFLAGS = \
-	$(dflt_cppflags_libnm_core) \
-	-I$(srcdir)/libnm \
-	-I$(builddir)/libnm \
-	$(LIBUDEV_CFLAGS) \
-	-DG_LOG_DOMAIN=\""libnm"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB \
-	-DNMRUNDIR=\"$(nmrundir)\"
+	$(libnm_lib_cppflags) \
+	$(LIBUDEV_CFLAGS)
 
 libnm_libnm_la_SOURCES = \
 	$(libnm_lib_h_pub_real) \
@@ -844,6 +865,7 @@ EXTRA_libnm_libnm_la_DEPENDENCIES = \
 libnm_libnm_la_LIBADD = \
 	libnm-core/libnm-core.la \
 	introspection/libnmdbus.la \
+	libnm/libnm-utils.la \
 	$(DL_LIBS) \
 	$(GLIB_LIBS) \
 	$(UUID_LIBS) \
@@ -950,6 +972,7 @@ EXTRA_DIST += \
 ###############################################################################
 
 libnm_tests_programs = \
+	libnm/tests/test-general \
 	libnm/tests/test-nm-client \
 	libnm/tests/test-remote-settings-client \
 	libnm/tests/test-secret-agent
@@ -967,9 +990,13 @@ libnm_tests_ldadd = \
 	libnm/libnm.la \
 	$(GLIB_LIBS)
 
+libnm_tests_test_general_CPPFLAGS = $(libnm_tests_cppflags)
 libnm_tests_test_nm_client_CPPFLAGS = $(libnm_tests_cppflags)
 libnm_tests_test_remote_settings_client_CPPFLAGS = $(libnm_tests_cppflags)
 libnm_tests_test_secret_agent_CPPFLAGS = $(libnm_tests_cppflags)
+
+libnm_tests_test_general_SOURCES = \
+	libnm/tests/test-general.c
 
 libnm_tests_test_nm_client_SOURCES = \
 	shared/nm-test-utils-impl.c \
@@ -986,10 +1013,14 @@ libnm_tests_test_secret_agent_SOURCES = \
 	shared/nm-test-libnm-utils.h \
 	libnm/tests/test-secret-agent.c
 
+libnm_tests_test_general_LDADD = \
+	libnm/libnm-utils.la \
+	$(libnm_tests_ldadd)
 libnm_tests_test_nm_client_LDADD = $(libnm_tests_ldadd)
 libnm_tests_test_remote_settings_client_LDADD = $(libnm_tests_ldadd)
 libnm_tests_test_secret_agent_LDADD = $(libnm_tests_ldadd)
 
+$(libnm_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(libnm_tests_test_nm_client_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(libnm_tests_test_remote_settings_client_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(libnm_tests_test_secret_agent_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
