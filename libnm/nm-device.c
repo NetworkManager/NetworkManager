@@ -26,6 +26,7 @@
 #include <string.h>
 #include <libudev.h>
 
+#include "nm-libnm-utils.h"
 #include "nm-dbus-interface.h"
 #include "nm-active-connection.h"
 #include "nm-device-bt.h"
@@ -1431,138 +1432,6 @@ nm_device_get_vendor (NMDevice *device)
 	return priv->vendor;
 }
 
-static char *
-fixup_desc_string (const char *desc)
-{
-	static const char *const IGNORED_PHRASES[] = {
-		"Multiprotocol MAC/baseband processor",
-		"Wireless LAN Controller",
-		"Wireless LAN Adapter",
-		"Wireless Adapter",
-		"Network Connection",
-		"Wireless Cardbus Adapter",
-		"Wireless CardBus Adapter",
-		"54 Mbps Wireless PC Card",
-		"Wireless PC Card",
-		"Wireless PC",
-		"PC Card with XJACK(r) Antenna",
-		"Wireless cardbus",
-		"Wireless LAN PC Card",
-		"Technology Group Ltd.",
-		"Communication S.p.A.",
-		"Business Mobile Networks BV",
-		"Mobile Broadband Minicard Composite Device",
-		"Mobile Communications AB",
-		"(PC-Suite Mode)",
-	};
-	static const char *const IGNORED_WORDS[] = {
-		"Semiconductor",
-		"Components",
-		"Corporation",
-		"Communications",
-		"Company",
-		"Corp.",
-		"Corp",
-		"Co.",
-		"Inc.",
-		"Inc",
-		"Incorporated",
-		"Ltd.",
-		"Limited.",
-		"Intel?",
-		"chipset",
-		"adapter",
-		"[hex]",
-		"NDIS",
-		"Module",
-	};
-	char *desc_full;
-	char *p, *q;
-	int i;
-
-	if (!desc || !desc[0])
-		return NULL;
-
-	/* restore original non-UTF-8-safe text. */
-	desc_full = nm_utils_str_utf8safe_unescape_cp (desc);
-
-	/* replace all invalid UTF-8 bytes with space. */
-	p = desc_full;
-	while (!g_utf8_validate (p, -1, (const char **) &q)) {
-		/* the byte is invalid UTF-8. Replace it with space and proceed. */
-		*q = ' ';
-		p = q + 1;
-	}
-
-	/* replace '_', ',', and ASCII controll characters with space. */
-	for (p = desc_full; p[0]; p++) {
-		if (   NM_IN_SET (*p, '_', ',')
-		    || *p < ' ')
-			*p = ' ';
-	}
-
-	/* Attempt to shorten ID by ignoring certain phrases */
-	for (i = 0; i < G_N_ELEMENTS (IGNORED_PHRASES); i++) {
-		p = strstr (desc_full, IGNORED_PHRASES[i]);
-		if (p) {
-			const char *eow = &p[strlen (IGNORED_PHRASES[i])];
-
-			memmove (p, eow, strlen (eow) + 1); /* +1 for the \0 */
-		}
-	}
-
-	/* Attempt to shorten ID by ignoring certain individual words.
-	 * - word-split the description at spaces
-	 * - coalesce multiple spaces
-	 * - skip over IGNORED_WORDS */
-	p = desc_full;
-	q = desc_full;
-	for (;;) {
-		char *eow;
-		gsize l;
-
-		/* skip leading spaces. */
-		while (p[0] == ' ')
-			p++;
-
-		if (!p[0])
-			break;
-
-		/* split leading word on first space */
-		eow = strchr (p, ' ');
-		if (eow)
-			*eow = '\0';
-
-		if (nm_utils_strv_find_first ((char **) IGNORED_WORDS,
-		                              G_N_ELEMENTS (IGNORED_WORDS),
-		                              p) < 0)
-			goto next;
-
-		l = strlen (p);
-		if (q != p) {
-			if (q != desc_full)
-				*q++ = ' ';
-			memmove (q, p, l);
-		}
-		q += l;
-
-next:
-		if (!eow)
-			break;
-		p = eow + 1;
-	}
-
-	*q++ = '\0';
-
-	if (!desc_full[0]) {
-		g_free (desc_full);
-		return NULL;
-	}
-
-	nm_assert (g_utf8_validate (desc_full, -1, NULL));
-	return desc_full;
-}
-
 static void
 ensure_description (NMDevice *device)
 {
@@ -1570,7 +1439,7 @@ ensure_description (NMDevice *device)
 	GParamSpec *name_prop;
 	gs_free char *short_product = NULL;
 
-	priv->short_vendor = nm_str_realloc (fixup_desc_string (nm_device_get_vendor (device)));
+	priv->short_vendor = nm_str_realloc (nm_utils_fixup_desc_string (nm_device_get_vendor (device)));
 
 	/* Grab device's preferred name, if any */
 	name_prop = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (device)), "name");
@@ -1582,7 +1451,7 @@ ensure_description (NMDevice *device)
 	}
 
 	if (   !priv->short_vendor
-	    || !(short_product = fixup_desc_string (nm_device_get_product (device)))) {
+	    || !(short_product = nm_utils_fixup_desc_string (nm_device_get_product (device)))) {
 		priv->description = g_strdup (nm_device_get_iface (device) ?: "");
 		return;
 	}
