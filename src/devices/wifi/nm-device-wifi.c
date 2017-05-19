@@ -1860,6 +1860,7 @@ supplicant_iface_wps_credentials_cb (NMSupplicantInterface *iface,
 				secrets = g_variant_new_parsed ("[{%s, [{%s, <%s>}]}]",
 				                                NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 				                                NM_SETTING_WIRELESS_SECURITY_PSK, psk);
+				g_variant_ref_sink (secrets);
 			}
 		}
 		if (!secrets)
