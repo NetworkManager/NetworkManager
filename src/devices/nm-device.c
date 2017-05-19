@@ -13858,9 +13858,14 @@ set_property (GObject *object, guint prop_id,
 			NMDeviceStateReason reason;
 
 			managed = g_value_get_boolean (value);
-			if (managed)
+			if (managed) {
 				reason = NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED;
-			else {
+				if (NM_IN_SET_TYPED (NMDeviceSysIfaceState,
+				                     priv->sys_iface_state,
+				                     NM_DEVICE_SYS_IFACE_STATE_EXTERNAL,
+				                     NM_DEVICE_SYS_IFACE_STATE_REMOVED))
+					nm_device_sys_iface_state_set (self, NM_DEVICE_SYS_IFACE_STATE_ASSUME);
+			} else {
 				reason = NM_DEVICE_STATE_REASON_REMOVED;
 				nm_device_sys_iface_state_set (self, NM_DEVICE_SYS_IFACE_STATE_REMOVED);
 			}
