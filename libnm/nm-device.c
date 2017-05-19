@@ -1535,7 +1535,7 @@ fixup_desc_string (const char *desc)
 
 		if (nm_utils_strv_find_first ((char **) IGNORED_WORDS,
 		                              G_N_ELEMENTS (IGNORED_WORDS),
-		                              p) < 0)
+		                              p) >= 0)
 			goto next;
 
 		l = strlen (p);
