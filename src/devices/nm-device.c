@@ -6172,7 +6172,6 @@ ip6_config_merge_and_apply (NMDevice *self,
 		}
 	}
 
-	/* If no config was passed in, create a new one */
 	composite = nm_ip6_config_new (nm_device_get_ip_ifindex (self));
 	nm_ip6_config_set_privacy (composite,
 	                           priv->ndisc ?
@@ -12393,24 +12392,20 @@ _set_state_full (NMDevice *self,
 	if (   (priv->state == state)
 	    && (   state != NM_DEVICE_STATE_UNAVAILABLE
 	        || !priv->firmware_missing)) {
-		_LOGD (LOGD_DEVICE, "state change: %s -> %s (reason '%s') [%d %d %d]%s",
+		_LOGD (LOGD_DEVICE, "state change: %s -> %s (reason '%s', internal state '%s'%s)",
 		       state_to_string (old_state),
 		       state_to_string (state),
 		       reason_to_string (reason),
-		       old_state,
-		       state,
-		       reason,
-		       priv->firmware_missing ? " (missing firmware)" : "");
+		       _sys_iface_state_to_str (priv->sys_iface_state),
+		       priv->firmware_missing ? ", missing firmware" : "");
 		return;
 	}
 
-	_LOGI (LOGD_DEVICE, "state change: %s -> %s (reason '%s') [%d %d %d]",
+	_LOGI (LOGD_DEVICE, "state change: %s -> %s (reason '%s', internal state '%s')",
 	       state_to_string (old_state),
 	       state_to_string (state),
 	       reason_to_string (reason),
-	       old_state,
-	       state,
-	       reason);
+	       _sys_iface_state_to_str (priv->sys_iface_state));
 
 	priv->in_state_changed = TRUE;
 
