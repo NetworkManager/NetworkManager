@@ -2460,7 +2460,7 @@ device_link_changed (NMDevice *self)
 	info = *pllink;
 
 	udi = nm_platform_link_get_udi (nm_device_get_platform (self), info.ifindex);
-	if (udi && g_strcmp0 (udi, priv->udi)) {
+	if (udi && !nm_streq0 (udi, priv->udi)) {
 		/* Update UDI to what udev gives us */
 		g_free (priv->udi);
 		priv->udi = g_strdup (udi);
@@ -2841,7 +2841,7 @@ update_device_from_platform_link (NMDevice *self, const NMPlatformLink *plink)
 	g_return_if_fail (plink != NULL);
 
 	udi = nm_platform_link_get_udi (nm_device_get_platform (self), plink->ifindex);
-	if (udi && !g_strcmp0 (udi, priv->udi)) {
+	if (udi && !nm_streq0 (udi, priv->udi)) {
 		g_free (priv->udi);
 		priv->udi = g_strdup (udi);
 		_notify (self, PROP_UDI);
@@ -13893,14 +13893,11 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_UDI:
-		if (g_value_get_string (value)) {
-			g_free (priv->udi);
-			priv->udi = g_value_dup_string (value);
-		}
+		/* construct-only */
+		priv->udi = g_value_dup_string (value);
 		break;
 	case PROP_IFACE:
 		/* construct-only */
-		g_return_if_fail (!priv->iface);
 		priv->iface = g_value_dup_string (value);
 		break;
 	case PROP_DRIVER:
@@ -13995,28 +13992,43 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_UDI:
-		g_value_set_string (value, priv->udi);
+		/* UDI is (depending on the device type) a path to sysfs and can contain
+		 * non-UTF-8.
+		 *   ip link add name $'d\xccf\\c' type dummy  */
+		g_value_take_string (value,
+		                     nm_utils_str_utf8safe_escape_cp (priv->udi,
+		                                                      NM_UTILS_STR_UTF8_SAFE_FLAG_NONE));
 		break;
 	case PROP_IFACE:
-		g_value_set_string (value, priv->iface);
+		g_value_take_string (value,
+		                     nm_utils_str_utf8safe_escape_cp (priv->iface,
+		                                                      NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL));
 		break;
 	case PROP_IP_IFACE:
-		if (ip_config_valid (priv->state))
-			g_value_set_string (value, nm_device_get_ip_iface (self));
-		else
+		if (ip_config_valid (priv->state)) {
+			g_value_take_string (value,
+			                     nm_utils_str_utf8safe_escape_cp (nm_device_get_ip_iface (self),
+			                                                      NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL));
+		} else
 			g_value_set_string (value, NULL);
 		break;
 	case PROP_IFINDEX:
 		g_value_set_int (value, priv->ifindex);
 		break;
 	case PROP_DRIVER:
-		g_value_set_string (value, priv->driver);
+		g_value_take_string (value,
+		                     nm_utils_str_utf8safe_escape_cp (priv->driver,
+		                                                      NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL));
 		break;
 	case PROP_DRIVER_VERSION:
-		g_value_set_string (value, priv->driver_version);
+		g_value_take_string (value,
+		                     nm_utils_str_utf8safe_escape_cp (priv->driver_version,
+		                                                      NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL));
 		break;
 	case PROP_FIRMWARE_VERSION:
-		g_value_set_string (value, priv->firmware_version);
+		g_value_take_string (value,
+		                     nm_utils_str_utf8safe_escape_cp (priv->firmware_version,
+		                                                      NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL));
 		break;
 	case PROP_CAPABILITIES:
 		g_value_set_uint (value, (priv->capabilities & ~NM_DEVICE_CAP_INTERNAL_MASK));
@@ -14211,7 +14223,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	obj_properties[PROP_UDI] =
 	    g_param_spec_string (NM_DEVICE_UDI, "", "",
 	                         NULL,
-	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_IFACE] =
 	    g_param_spec_string (NM_DEVICE_IFACE, "", "",

@@ -21,6 +21,9 @@
         each device in your application, use the object path. If you're looking
         for a way to track a specific piece of hardware across reboot or hotplug,
         use a MAC address or USB serial number.
+
+        Note that non-UTF-8 characters are backslash escaped. Use g_strcompress()
+        to obtain the true (non-UTF-8) string.
     -->
     <property name="Udi" type="s" access="read"/>
 
@@ -28,6 +31,9 @@
         Interface:
 
         The name of the device's control (and often data) interface.
+        Note that non UTF-8 characters are backslash escaped, so the
+        resulting name may be longer then 15 characters. Use g_strcompress()
+        to revert the escaping.
     -->
     <property name="Interface" type="s" access="read"/>
 
@@ -38,6 +44,9 @@
         not refer to the actual data interface until the device has successfully
         established a data connection, indicated by the device's State becoming
         ACTIVATED.
+        Note that non UTF-8 characters are backslash escaped, so the
+        resulting name may be longer then 15 characters. Use g_strcompress()
+        to revert the escaping.
     -->
     <property name="IpInterface" type="s" access="read"/>
 
@@ -45,6 +54,8 @@
         Driver:
 
         The driver handling the device.
+        Non-UTF-8 sequences are backslash escaped. Use g_strcompress()
+        to revert.
     -->
     <property name="Driver" type="s" access="read"/>
 
@@ -52,6 +63,8 @@
         DriverVersion:
 
         The version of the driver handling the device.
+        Non-UTF-8 sequences are backslash escaped. Use g_strcompress()
+        to revert.
     -->
     <property name="DriverVersion" type="s" access="read"/>
 
@@ -59,6 +72,8 @@
         FirmwareVersion:
 
         The firmware version for the device.
+        Non-UTF-8 sequences are backslash escaped. Use g_strcompress()
+        to revert.
     -->
     <property name="FirmwareVersion" type="s" access="read"/>
 
