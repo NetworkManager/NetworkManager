@@ -811,7 +811,7 @@ nodist_libnminclude_HEADERS += \
 
 ###############################################################################
 
-lib_LTLIBRARIES += libnm/libnm-utils.la
+noinst_LTLIBRARIES += libnm/libnm-utils.la
 
 libnm_libnm_utils_la_CPPFLAGS = \
 	$(libnm_lib_cppflags)
