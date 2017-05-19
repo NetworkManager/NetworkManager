@@ -860,8 +860,6 @@ EXTRA_libnm_libnm_la_DEPENDENCIES = \
 	libnm/libnm.ver
 
 libnm_libnm_la_LIBADD = \
-	libnm-core/libnm-core.la \
-	introspection/libnmdbus.la \
 	libnm/libnm-utils.la \
 	$(DL_LIBS) \
 	$(GLIB_LIBS) \
