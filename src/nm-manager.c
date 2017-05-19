@@ -3155,6 +3155,8 @@ unmanaged_to_disconnected (NMDevice *device)
 	 * and force the device to be managed. */
 	nm_device_set_unmanaged_by_flags (device, NM_UNMANAGED_PLATFORM_INIT, FALSE, NM_DEVICE_STATE_REASON_USER_REQUESTED);
 
+	if (nm_device_sys_iface_state_get (device)  == NM_DEVICE_SYS_IFACE_STATE_REMOVED)
+		nm_device_sys_iface_state_set (device, NM_DEVICE_SYS_IFACE_STATE_ASSUME);
 	nm_device_set_unmanaged_by_flags (device, NM_UNMANAGED_USER_EXPLICIT, FALSE, NM_DEVICE_STATE_REASON_USER_REQUESTED);
 
 	g_return_if_fail (nm_device_get_managed (device, FALSE));
