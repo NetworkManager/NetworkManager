@@ -114,79 +114,69 @@ _parse_ip_address (int family, const char *address, GError **error)
 	return addr;
 }
 
-/*
- * nmc_parse_and_build_route:
- * @family: AF_INET or AF_INET6
- * @str: route string to be parsed
- * @error: location to store GError
- *
- * Parse route from string and return an #NMIPRoute
- *
- * Returns: a new #NMIPRoute or %NULL on error
- */
 static NMIPRoute *
-nmc_parse_and_build_route (int family,
-                           const char *str,
-                           GError **error)
+_parse_ip_route (int family,
+                 const char *str,
+                 GError **error)
 {
-	int max_prefix = (family == AF_INET) ? 32 : 128;
+	const int MAX_PREFIX = (family == AF_INET) ? 32 : 128;
 	char *plen = NULL;
 	const char *next_hop = NULL;
 	const char *canon_dest;
-	long int prefix = max_prefix;
-	unsigned long int tmp_ulong;
+	int prefix;
 	NMIPRoute *route = NULL;
-	gboolean success = FALSE;
 	GError *local = NULL;
 	gint64 metric = -1;
-	guint i, len;
+	guint i;
 	gs_strfreev char **routev = NULL;
-	gs_free char *value = NULL;
-	gs_free char *dest = NULL;
+	gs_free char *str_clean = NULL;
+	char *dest;
 	gs_unref_hashtable GHashTable *attrs = NULL;
 	GHashTable *tmp_attrs;
-	const char *syntax = _("The valid syntax is: 'ip[/prefix] [next-hop] [metric] [attribute=val]... [,ip[/prefix] ...]'");
+#define ROUTE_SYNTAX _("The valid syntax is: 'ip[/prefix] [next-hop] [metric] [attribute=val]... [,ip[/prefix] ...]'")
 
-	g_return_val_if_fail (family == AF_INET || family == AF_INET6, FALSE);
-	g_return_val_if_fail (str, FALSE);
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (NM_IN_SET (family, AF_INET, AF_INET6));
+	nm_assert (str);
+	nm_assert (!error || !*error);
 
-	value = g_strdup (str);
-	routev = nmc_strsplit_set (g_strstrip (value), " \t", 0);
-	len = g_strv_length (routev);
-	if (len < 1) {
-		g_set_error (error, 1, 0, "%s", syntax);
-		g_prefix_error (error, "'%s' is not valid. ", str);
-		goto finish;
+	str_clean = g_strstrip (g_strdup (str));
+	routev = nmc_strsplit_set (str_clean, " \t", 0);
+	if (!routev || !routev[0]) {
+		g_set_error (error, 1, 0,
+		             "'%s' is not valid. %s",
+		             str, ROUTE_SYNTAX);
+		return NULL;
 	}
 
-	dest = g_strdup (routev[0]);
+	dest = routev[0];
 	plen = strchr (dest, '/');  /* prefix delimiter */
 	if (plen)
 		*plen++ = '\0';
-
+	prefix = MAX_PREFIX;
 	if (plen) {
-		if (!nmc_string_to_int (plen, TRUE, 1, max_prefix, &prefix)) {
+		if ((prefix = _nm_utils_ascii_str_to_int64 (plen, 10, 1, MAX_PREFIX, -1)) == -1) {
 			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
 			             _("invalid prefix '%s'; <1-%d> allowed"),
-			             plen, max_prefix);
-			goto finish;
+			             plen, MAX_PREFIX);
+			return NULL;
 		}
 	}
 
-	for (i = 1; i < len; i++) {
+	for (i = 1; routev[i]; i++) {
+		gint64 tmp64;
+
 		if (nm_utils_ipaddr_valid (family, routev[i])) {
 			if (metric != -1 || attrs) {
 				g_set_error (error, 1, 0, _("the next hop ('%s') must be first"), routev[i]);
-				goto finish;
+				return NULL;
 			}
 			next_hop = routev[i];
-		} else if (nmc_string_to_uint (routev[i], TRUE, 0, G_MAXUINT32, &tmp_ulong)) {
+		} else if ((tmp64 = _nm_utils_ascii_str_to_int64 (routev[i], 10, 0, G_MAXUINT32, -1)) != -1) {
 			if (attrs) {
 				g_set_error (error, 1, 0, _("the metric ('%s') must be before attributes"), routev[i]);
-				goto finish;
+				return NULL;
 			}
-			metric = tmp_ulong;
+			metric = tmp64;
 		} else if (strchr (routev[i], '=')) {
 			GHashTableIter iter;
 			char *iter_key;
@@ -197,7 +187,7 @@ nmc_parse_and_build_route (int family,
 			                                               error);
 			if (!tmp_attrs) {
 				g_prefix_error (error, "invalid option '%s': ", routev[i]);
-				goto finish;
+				return NULL;
 			}
 
 			if (!attrs)
@@ -208,24 +198,24 @@ nmc_parse_and_build_route (int family,
 				if (!nm_ip_route_attribute_validate (iter_key, iter_value, family, NULL, error)) {
 					g_prefix_error (error, "%s: ", iter_key);
 					g_hash_table_unref (tmp_attrs);
-					goto finish;
+					return NULL;
 				}
 				g_hash_table_insert (attrs, iter_key, iter_value);
 				g_hash_table_iter_steal (&iter);
 			}
 			g_hash_table_unref (tmp_attrs);
 		} else {
-			g_set_error (error, 1, 0, "%s", syntax);
-			goto finish;
+			g_set_error (error, 1, 0, "%s", ROUTE_SYNTAX);
+			return NULL;
 		}
 	}
 
 	route = nm_ip_route_new (family, dest, prefix, next_hop, metric, &local);
 	if (!route) {
-		g_set_error (error, 1, 0, "%s", syntax);
-		g_prefix_error (error, _("invalid route: %s. "), local->message);
+		g_set_error (error, 1, 0,
+		             _("invalid route: %s. %s"), local->message, ROUTE_SYNTAX);
 		g_clear_error (&local);
-		goto finish;
+		return NULL;
 	}
 
 	/* We don't accept default routes as NetworkManager handles it
@@ -237,7 +227,7 @@ nmc_parse_and_build_route (int family,
 		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
 		                     _("default route cannot be added (NetworkManager handles it by itself)"));
 		g_clear_pointer (&route, nm_ip_route_unref);
-		goto finish;
+		return NULL;
 	}
 
 	if (attrs) {
@@ -250,9 +240,6 @@ nmc_parse_and_build_route (int family,
 			nm_ip_route_set_attribute (route, name, variant);
 	}
 
-	success = TRUE;
-
-finish:
 	return route;
 }
 
@@ -3350,31 +3337,21 @@ _set_fcn_ip4_config_gateway (ARGS_SET_FCN)
 	return TRUE;
 }
 
-static NMIPRoute *
-_parse_ipv4_route (const char *route, GError **error)
-{
-	return nmc_parse_and_build_route (AF_INET, route, error);
-}
-
 static gboolean
 _set_fcn_ip4_config_routes (ARGS_SET_FCN)
 {
-	char **strv = NULL, **iter;
+	gs_strfreev char **strv = NULL;
+	const char *const*iter;
 	NMIPRoute *ip4route;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
 	strv = nmc_strsplit_set (value, ",", 0);
-	for (iter = strv; iter && *iter; iter++) {
-		ip4route = _parse_ipv4_route (*iter, error);
-		if (!ip4route) {
-			g_strfreev (strv);
+	for (iter = (const char *const*) strv; *iter; iter++) {
+		ip4route = _parse_ip_route (AF_INET, *iter, error);
+		if (!ip4route)
 			return FALSE;
-		}
 		nm_setting_ip_config_add_route (NM_SETTING_IP_CONFIG (setting), ip4route);
 		nm_ip_route_unref (ip4route);
 	}
-	g_strfreev (strv);
 	return TRUE;
 }
 
@@ -3386,7 +3363,7 @@ _validate_and_remove_ipv4_route (NMSettingIPConfig *setting,
 	NMIPRoute *ip4route;
 	gboolean ret;
 
-	ip4route = _parse_ipv4_route (route, error);
+	ip4route = _parse_ip_route (AF_INET, route, error);
 	if (!ip4route)
 		return FALSE;
 
@@ -3614,31 +3591,21 @@ _set_fcn_ip6_config_gateway (ARGS_SET_FCN)
 	return TRUE;
 }
 
-static NMIPRoute *
-_parse_ipv6_route (const char *route, GError **error)
-{
-	return nmc_parse_and_build_route (AF_INET6, route, error);
-}
-
 static gboolean
 _set_fcn_ip6_config_routes (ARGS_SET_FCN)
 {
-	char **strv = NULL, **iter;
+	gs_strfreev char **strv = NULL;
+	const char *const*iter;
 	NMIPRoute *ip6route;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
 	strv = nmc_strsplit_set (value, ",", 0);
-	for (iter = strv; iter && *iter; iter++) {
-		ip6route = _parse_ipv6_route (*iter, error);
-		if (!ip6route) {
-			g_strfreev (strv);
+	for (iter = (const char *const*) strv; *iter; iter++) {
+		ip6route = _parse_ip_route (AF_INET6, *iter, error);
+		if (!ip6route)
 			return FALSE;
-		}
 		nm_setting_ip_config_add_route (NM_SETTING_IP_CONFIG (setting), ip6route);
 		nm_ip_route_unref (ip6route);
 	}
-	g_strfreev (strv);
 	return TRUE;
 }
 
@@ -3650,7 +3617,7 @@ _validate_and_remove_ipv6_route (NMSettingIPConfig *setting,
 	NMIPRoute *ip6route;
 	gboolean ret;
 
-	ip6route = _parse_ipv6_route (route, error);
+	ip6route = _parse_ip_route (AF_INET6, route, error);
 	if (!ip6route)
 		return FALSE;
 
