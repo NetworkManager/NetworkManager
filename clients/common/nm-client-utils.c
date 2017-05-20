@@ -25,7 +25,7 @@
  * Convert string to signed integer.
  * If required, the resulting number is checked to be in the <min,max> range.
  */
-gboolean
+static gboolean
 nmc_string_to_int_base (const char *str,
                         int base,
                         gboolean range_check,
@@ -49,7 +49,7 @@ nmc_string_to_int_base (const char *str,
  * Convert string to unsigned integer.
  * If required, the resulting number is checked to be in the <min,max> range.
  */
-gboolean
+static gboolean
 nmc_string_to_uint_base (const char *str,
                          int base,
                          gboolean range_check,

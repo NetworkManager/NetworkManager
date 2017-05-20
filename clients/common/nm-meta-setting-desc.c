@@ -1707,7 +1707,6 @@ nmc_property_set_bytes (NMSetting *setting, const char *prop, const char *value,
 	gs_strfreev char **strv = NULL;
 	const char *delimiters = " \t,";
 	char **iter;
-	long int val_int;
 	GBytes *bytes;
 	GByteArray *array = NULL;
 	gboolean success = TRUE;
@@ -1725,15 +1724,17 @@ nmc_property_set_bytes (NMSetting *setting, const char *prop, const char *value,
 	strv = nmc_strsplit_set (val_strip, delimiters, 0);
 	array = g_byte_array_sized_new (g_strv_length (strv));
 	for (iter = strv; iter && *iter; iter++) {
+		int v;
 		guint8 v8;
 
-		if (!nmc_string_to_int_base (g_strstrip (*iter), 16, TRUE, 0, 255, &val_int)) {
+		v = _nm_utils_ascii_str_to_int64 (*iter, 16, 0, 255, -1);
+		if (v == -1) {
 			g_set_error (error, 1, 0, _("'%s' is not a valid hex character"), *iter);
 			g_byte_array_free (array, TRUE);
 			success = FALSE;
 			goto done;
 		}
-		v8 = val_int;
+		v8 = v;
 		g_byte_array_append (array, &v8, 1);
 	}
 	bytes = g_byte_array_free_to_bytes (array);
@@ -2697,14 +2698,14 @@ _set_fcn_dcb_flags (ARGS_SET_FCN)
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
 	/* Check for overall hex numeric value */
-	if (nmc_string_to_int_base (value, 0, TRUE, 0, DCB_ALL_FLAGS, &t))
+	t = _nm_utils_ascii_str_to_int64 (value, 0, 0, DCB_ALL_FLAGS, -1);
+	if (t != -1)
 		flags = (guint) t;
 	else {
 		/* Check for individual flag numbers */
 		strv = nmc_strsplit_set (value, " \t,", 0);
 		for (iter = strv; iter && *iter; iter++) {
-			if (!nmc_string_to_int_base (*iter, 0, TRUE, 0, DCB_ALL_FLAGS, &t))
-				t = -1;
+			t = _nm_utils_ascii_str_to_int64 (*iter, 0, 0, DCB_ALL_FLAGS, -1);
 
 			if (   g_ascii_strcasecmp (*iter, "enable") == 0
 			    || g_ascii_strcasecmp (*iter, "enabled") == 0
@@ -2763,46 +2764,43 @@ dcb_parse_uint_array (const char *val,
                       guint *out_array,
                       GError **error)
 {
-	char **items, **iter;
-	guint i = 0;
+	gs_strfreev char **items = NULL;
+	char **iter;
+	gsize i;
 
-	g_return_val_if_fail (out_array != NULL, FALSE);
+	nm_assert (out_array);
 
 	items = g_strsplit_set (val, ",", -1);
 	if (g_strv_length (items) != 8) {
 		g_set_error_literal (error, 1, 0, _("must contain 8 comma-separated numbers"));
-		goto error;
+		return FALSE;
 	}
 
-	for (iter = items; iter && *iter; iter++) {
-		long int num = 0;
-		gboolean success;
+	i = 0;
+	for (iter = items; *iter; iter++) {
+		gint64 num;
 
 		*iter = g_strstrip (*iter);
-		success = nmc_string_to_int_base (*iter, 10, TRUE, 0, other ? other : max, &num);
+
+		num = _nm_utils_ascii_str_to_int64 (*iter, 10, 0, other ? other : max, -1);
 
 		/* If number is greater than 'max' it must equal 'other' */
-		if (success && other && (num > max) && (num != other))
-			success = FALSE;
-
-		if (!success) {
+		if (   num == -1
+		    || (other && (num > max) && (num != other))) {
 			if (other) {
 				g_set_error (error, 1, 0, _("'%s' not a number between 0 and %u (inclusive) or %u"),
-					     *iter, max, other);
+				             *iter, max, other);
 			} else {
 				g_set_error (error, 1, 0, _("'%s' not a number between 0 and %u (inclusive)"),
-					     *iter, max);
+				             *iter, max);
 			}
-			goto error;
+			return FALSE;
 		}
+		nm_assert (i < 8);
 		out_array[i++] = (guint) num;
 	}
 
 	return TRUE;
-
-error:
-	g_strfreev (items);
-	return FALSE;
 }
 
 static void
@@ -2962,25 +2960,22 @@ _set_fcn_gsm_sim_operator_id (ARGS_SET_FCN)
 static gboolean
 _set_fcn_infiniband_p_key (ARGS_SET_FCN)
 {
-	gboolean p_key_valid = FALSE;
-	long p_key_int;
+	const gint64 INVALID = G_MININT64;
+	gint64 p_key;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	if (!strncasecmp (value, "0x", 2))
-		p_key_valid = nmc_string_to_int_base (value + 2, 16, TRUE, 0, G_MAXUINT16, &p_key_int);
-	else
-		p_key_valid = nmc_string_to_int (value, TRUE, -1, G_MAXUINT16, &p_key_int);
-
-	if (!p_key_valid) {
-		if (strcmp (value, "default") == 0)
-			p_key_int = -1;
-		else {
+	if (nm_streq (value, "default"))
+		p_key = -1;
+	else {
+		p_key = _nm_utils_ascii_str_to_int64 (value, 0, -1, G_MAXUINT16, INVALID);
+		if (p_key == INVALID) {
 			g_set_error (error, 1, 0, _("'%s' is not a valid IBoIP P_Key"), value);
 			return FALSE;
 		}
 	}
-	g_object_set (setting, property_info->property_name, (gint) p_key_int, NULL);
+
+	g_object_set (setting, property_info->property_name, (int) p_key, NULL);
 	return TRUE;
 }
 
