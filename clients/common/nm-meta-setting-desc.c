@@ -4253,29 +4253,6 @@ _get_fcn_wireless_ssid (ARGS_GET_FCN)
 	RETURN_STR_TO_FREE (ssid_str);
 }
 
-static gconstpointer
-_get_fcn_wireless_mac_address_randomization (ARGS_GET_FCN)
-{
-	NMSettingWireless *s_wifi = NM_SETTING_WIRELESS (setting);
-	NMSettingMacRandomization randomization = nm_setting_wireless_get_mac_address_randomization (s_wifi);
-	const char *s;
-
-	RETURN_UNSUPPORTED_GET_TYPE ();
-
-	if (randomization == NM_SETTING_MAC_RANDOMIZATION_DEFAULT)
-		s = N_("default");
-	else if (randomization == NM_SETTING_MAC_RANDOMIZATION_NEVER)
-		s = N_("never");
-	else if (randomization == NM_SETTING_MAC_RANDOMIZATION_ALWAYS)
-		s = N_("always");
-	else
-		s = N_("unknown");
-
-	if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
-		return _(s);
-	return s;
-}
-
 static gboolean
 _set_fcn_wireless_channel (ARGS_SET_FCN)
 {
@@ -4325,36 +4302,6 @@ DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_wireless_mac_address_blacklist,
                                nm_setting_wireless_get_num_mac_blacklist_items,
                                nm_setting_wireless_remove_mac_blacklist_item,
                                _validate_and_remove_wifi_mac_blacklist_item)
-
-static gboolean
-_set_fcn_wireless_mac_address_randomization (ARGS_SET_FCN)
-{
-	NMSettingMacRandomization randomization;
-	gs_free char *err_token = NULL;
-	gboolean ret;
-	long int t;
-
-	if (nmc_string_to_int_base (value, 0, TRUE,
-	                            NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
-	                            NM_SETTING_MAC_RANDOMIZATION_ALWAYS,
-	                            &t))
-		randomization = (NMSettingMacRandomization) t;
-	else {
-		ret = nm_utils_enum_from_str (nm_setting_mac_randomization_get_type (),
-		                              value,
-		                              (int *) &randomization,
-		                              &err_token);
-
-		if (!ret) {
-			g_set_error (error, 1, 0, _("invalid option '%s', use 'default', 'never' or 'always'"),
-			             err_token);
-			return FALSE;
-		}
-	}
-
-	g_object_set (setting, property_info->property_name, (guint) randomization, NULL);
-	return TRUE;
-}
 
 static gconstpointer
 _get_fcn_wireless_security_wep_key0 (ARGS_GET_FCN)
@@ -6706,9 +6653,13 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS[] = {
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_wireless_mac_address_randomization,
-			.set_fcn =                  _set_fcn_wireless_mac_address_randomization,
+		.property_type =                &_pt_gobject_enum,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
+				.get_gtype =            nm_setting_mac_randomization_get_type,
+			),
+			.typ_flags =                  NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_TEXT
+			                            | NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_MTU,
