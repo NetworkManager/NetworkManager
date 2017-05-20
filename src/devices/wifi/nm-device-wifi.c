@@ -1856,7 +1856,7 @@ supplicant_iface_wps_credentials_cb (NMSupplicantInterface *iface,
 		if (psk_len >= 8 && psk_len <= 63) {
 			memcpy (psk, array, psk_len);
 			psk[psk_len] = '\0';
-			if (g_utf8_validate (psk, -1, NULL)) {
+			if (g_utf8_validate (psk, psk_len, NULL)) {
 				secrets = g_variant_new_parsed ("[{%s, [{%s, <%s>}]}]",
 				                                NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 				                                NM_SETTING_WIRELESS_SECURITY_PSK, psk);
