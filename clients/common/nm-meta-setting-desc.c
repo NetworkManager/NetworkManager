@@ -3949,50 +3949,6 @@ _set_fcn_team_config (ARGS_SET_FCN)
 }
 
 static gconstpointer
-_get_fcn_tun_mode (ARGS_GET_FCN)
-{
-	NMSettingTun *s_tun = NM_SETTING_TUN (setting);
-	NMSettingTunMode mode;
-	char *tmp, *str;
-
-	RETURN_UNSUPPORTED_GET_TYPE ();
-
-	mode = nm_setting_tun_get_mode (s_tun);
-	tmp = nm_utils_enum_to_str (nm_setting_tun_mode_get_type (), mode);
-	if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY)
-		str = tmp ?: g_strdup ("");
-	else {
-		str = g_strdup_printf ("%d (%s)", mode, tmp ? tmp : "");
-		g_free (tmp);
-	}
-	RETURN_STR_TO_FREE (str);
-}
-
-static gboolean
-_set_fcn_tun_mode (ARGS_SET_FCN)
-{
-	NMSettingTunMode mode;
-	gboolean ret;
-	long int t;
-
-	if (nmc_string_to_int_base (value, 0, TRUE, 0, NM_SETTING_TUN_MODE_TAP, &t))
-		mode = (NMSettingTunMode) t;
-	else {
-		ret = nm_utils_enum_from_str (nm_setting_tun_mode_get_type (), value,
-		                              (int *) &mode, NULL);
-
-		if (!ret) {
-			g_set_error (error, 1, 0, _("invalid option '%s', use '%s' or '%s'"),
-			             value, "tun", "tap");
-			return FALSE;
-		}
-	}
-
-	g_object_set (setting, property_info->property_name, (guint) mode, NULL);
-	return TRUE;
-}
-
-static gconstpointer
 _get_fcn_vlan_flags (ARGS_GET_FCN)
 {
 	NMSettingVlan *s_vlan = NM_SETTING_VLAN (setting);
@@ -6397,12 +6353,11 @@ static const NMMetaPropertyInfo *const property_infos_TUN[] = {
 		.property_alias =               "mode",
 		.prompt =                       NM_META_TEXT_PROMPT_TUN_MODE,
 		.def_hint =                     NM_META_TEXT_PROMPT_TUN_MODE_CHOICES,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_tun_mode,
-			.set_fcn =                  _set_fcn_tun_mode,
-		),
-		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			.values_static =            VALUES_STATIC ("tun", "tap", "unknown"),
+		.property_type =                &_pt_gobject_enum,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
+			.get_gtype =                nm_setting_tun_mode_get_type,
+			.min =                      NM_SETTING_TUN_MODE_UNKNOWN + 1,
+			.max =                      G_MAXINT,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TUN_OWNER,
