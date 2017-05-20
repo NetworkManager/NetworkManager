@@ -4142,67 +4142,6 @@ DEFINE_REMOVER_OPTION (_remove_fcn_vpn_secrets,
                        NM_SETTING_VPN,
                        nm_setting_vpn_remove_secret)
 
-static gconstpointer
-_get_fcn_wired_wake_on_lan (ARGS_GET_FCN)
-{
-	NMSettingWired *s_wired = NM_SETTING_WIRED (setting);
-	NMSettingWiredWakeOnLan wol;
-	char *tmp, *str;
-
-	RETURN_UNSUPPORTED_GET_TYPE ();
-
-	wol = nm_setting_wired_get_wake_on_lan (s_wired);
-	tmp = nm_utils_enum_to_str (nm_setting_wired_wake_on_lan_get_type (), wol);
-	if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY)
-		str = g_strdup_printf ("%s", tmp && *tmp ? tmp : "none");
-	else
-		str = g_strdup_printf ("%d (%s)", wol, tmp && *tmp ? tmp : "none");
-	g_free (tmp);
-	RETURN_STR_TO_FREE (str);
-}
-
-static gboolean
-_set_fcn_wired_wake_on_lan (ARGS_SET_FCN)
-{
-	NMSettingWiredWakeOnLan wol;
-	gs_free char *err_token = NULL;
-	gboolean ret;
-	long int t;
-
-	if (nmc_string_to_int_base (value, 0, TRUE, 0,
-	                            NM_SETTING_WIRED_WAKE_ON_LAN_ALL
-	                            | NM_SETTING_WIRED_WAKE_ON_LAN_EXCLUSIVE_FLAGS,
-	                            &t))
-		wol = (NMSettingWiredWakeOnLan) t;
-	else {
-		ret = nm_utils_enum_from_str (nm_setting_wired_wake_on_lan_get_type (), value,
-		                              (int *) &wol, &err_token);
-
-		if (!ret) {
-			if (   g_ascii_strcasecmp (err_token, "none") == 0
-			    || g_ascii_strcasecmp (err_token, "disable") == 0
-			    || g_ascii_strcasecmp (err_token, "disabled") == 0)
-				wol = NM_SETTING_WIRED_WAKE_ON_LAN_NONE;
-			else {
-				g_set_error (error, 1, 0, _("invalid option '%s', use a combination of [%s] or 'ignore', 'default' or 'none'"),
-				             err_token,
-				             nm_utils_enum_to_str (nm_setting_wired_wake_on_lan_get_type (),
-				                                   NM_SETTING_WIRED_WAKE_ON_LAN_ALL));
-				return FALSE;
-			}
-		}
-	}
-
-	if (   NM_FLAGS_ANY (wol, NM_SETTING_WIRED_WAKE_ON_LAN_EXCLUSIVE_FLAGS)
-	    && !nm_utils_is_power_of_two (wol)) {
-		g_set_error_literal (error, 1, 0, _("'default' and 'ignore' are incompatible with other flags"));
-		return FALSE;
-	}
-
-	g_object_set (setting, property_info->property_name, (guint) wol, NULL);
-	return TRUE;
-}
-
 DEFINE_SETTER_MAC_BLACKLIST (_set_fcn_wired_mac_address_blacklist,
                              NM_SETTING_WIRED,
                              nm_setting_wired_add_mac_blacklist_item)
@@ -6664,9 +6603,27 @@ static const NMMetaPropertyInfo *const property_infos_WIRED[] = {
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRED_WAKE_ON_LAN,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_wired_wake_on_lan,
-			.set_fcn =                  _set_fcn_wired_wake_on_lan,
+		.property_type =                &_pt_gobject_enum,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
+				.get_gtype =            nm_setting_wired_wake_on_lan_get_type,
+				.value_infos =          ENUM_VALUE_INFOS (
+					{
+						.value = NM_SETTING_WIRED_WAKE_ON_LAN_NONE,
+						.nick = "none",
+					},
+					{
+						.value = NM_SETTING_WIRED_WAKE_ON_LAN_NONE,
+						.nick = "disable",
+					},
+					{
+						.value = NM_SETTING_WIRED_WAKE_ON_LAN_NONE,
+						.nick = "disabled",
+					}
+				),
+			),
+			.typ_flags =                  NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_TEXT
+			                            | NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD,
