@@ -3809,58 +3809,6 @@ _set_fcn_macsec_validation (ARGS_SET_FCN)
 }
 
 static gconstpointer
-_get_fcn_macvlan_mode (ARGS_GET_FCN)
-{
-	NMSettingMacvlan *s_macvlan = NM_SETTING_MACVLAN (setting);
-	NMSettingMacvlanMode mode;
-	char *tmp, *str;
-
-	RETURN_UNSUPPORTED_GET_TYPE ();
-
-	mode = nm_setting_macvlan_get_mode (s_macvlan);
-	tmp = nm_utils_enum_to_str (nm_setting_macvlan_mode_get_type (), mode);
-
-	if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY)
-		str = tmp ?: g_strdup ("");
-	else {
-		str = g_strdup_printf ("%d (%s)", mode, tmp ?: "");
-		g_free (tmp);
-	}
-
-	RETURN_STR_TO_FREE (str);
-}
-
-static gboolean
-_set_fcn_macvlan_mode (ARGS_SET_FCN)
-{
-	NMSettingMacvlanMode mode;
-	gs_free const char **options = NULL;
-	gs_free char *options_str = NULL;
-	long int t;
-	gboolean ret;
-
-	if (nmc_string_to_int_base (value, 0, TRUE, 0, _NM_SETTING_MACVLAN_MODE_NUM - 1, &t))
-		mode = (NMSettingMacvlanMode) t;
-	else {
-		ret = nm_utils_enum_from_str (nm_setting_macvlan_mode_get_type (), value,
-		                              (int *) &mode, NULL);
-
-		if (!ret) {
-				options = nm_utils_enum_get_values (nm_setting_macvlan_mode_get_type(),
-				                                    NM_SETTING_MACVLAN_MODE_UNKNOWN + 1,
-				                                    G_MAXINT);
-				options_str = g_strjoinv (",", (char **) options);
-				g_set_error (error, 1, 0, _("invalid option '%s', use one of [%s]"),
-				             value, options_str);
-				return FALSE;
-			}
-		}
-
-	g_object_set (setting, property_info->property_name, (guint) mode, NULL);
-	return TRUE;
-}
-
-static gconstpointer
 _get_fcn_olpc_mesh_ssid (ARGS_GET_FCN)
 {
 	NMSettingOlpcMesh *s_olpc_mesh = NM_SETTING_OLPC_MESH (setting);
@@ -6200,11 +6148,7 @@ static const NMMetaPropertyInfo *const property_infos_MACVLAN[] = {
 		.property_alias =               "mode",
 		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
 		.prompt =                       NM_META_TEXT_PROMPT_MACVLAN_MODE,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_macvlan_mode,
-			.set_fcn =                  _set_fcn_macvlan_mode,
-			.values_fcn =               _values_fcn_gobject_enum,
-		),
+		.property_type =                &_pt_gobject_enum,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
 			.get_gtype =                nm_setting_macvlan_mode_get_type,
 			.min =                      NM_SETTING_MACVLAN_MODE_UNKNOWN + 1,
