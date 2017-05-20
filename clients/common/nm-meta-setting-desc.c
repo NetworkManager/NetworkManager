@@ -78,49 +78,39 @@ _gtype_property_get_gtype (GType gtype, const char *property_name)
 
 /*****************************************************************************/
 
-/*
- * Parse IP address from string to NMIPAddress stucture.
- * ip_str is the IP address in the form address/prefix
- */
 static NMIPAddress *
-nmc_parse_and_build_address (int family, const char *ip_str, GError **error)
+_parse_ip_address (int family, const char *address, GError **error)
 {
-	int max_prefix = (family == AF_INET) ? 32 : 128;
-	NMIPAddress *addr = NULL;
-	const char *ip;
-	char *tmp;
+	gs_free char *ip_str = NULL;
+	const int MAX_PREFIX = (family == AF_INET) ? 32 : 128;
+	NMIPAddress *addr;
 	char *plen;
-	long int prefix;
+	int prefix;
 	GError *local = NULL;
 
-	g_return_val_if_fail (ip_str != NULL, NULL);
-	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+	g_return_val_if_fail (address, NULL);
+	g_return_val_if_fail (!error || !*error, NULL);
 
-	tmp = g_strdup (ip_str);
-	plen = strchr (tmp, '/');  /* prefix delimiter */
-	if (plen)
-		*plen++ = '\0';
+	ip_str = g_strstrip (g_strdup (address));
 
-	ip = tmp;
+	prefix = MAX_PREFIX;
 
-	prefix = max_prefix;
+	plen = strchr (ip_str, '/');
 	if (plen) {
-		if (!nmc_string_to_int (plen, TRUE, 1, max_prefix, &prefix)) {
+		*plen++ = '\0';
+		if ((prefix = _nm_utils_ascii_str_to_int64 (plen, 10, 1, MAX_PREFIX, -1)) == -1) {
 			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
-			             _("invalid prefix '%s'; <1-%d> allowed"), plen, max_prefix);
-			goto finish;
+			             _("invalid prefix '%s'; <1-%d> allowed"), plen, MAX_PREFIX);
+			return NULL;
 		}
 	}
 
-	addr = nm_ip_address_new (family, ip, (guint32) prefix, &local);
+	addr = nm_ip_address_new (family, ip_str, prefix, &local);
 	if (!addr) {
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
 		             _("invalid IP address: %s"), local->message);
 		g_clear_error (&local);
 	}
-
-finish:
-	g_free (tmp);
 	return addr;
 }
 
@@ -3037,17 +3027,6 @@ _set_fcn_ip_tunnel_mode (ARGS_SET_FCN)
 	return TRUE;
 }
 
-static NMIPAddress *
-_parse_ip_address (int family, const char *address, GError **error)
-{
-	char *value = g_strdup (address);
-	NMIPAddress *ipaddr;
-
-	ipaddr = nmc_parse_and_build_address (family, g_strstrip (value), error);
-	g_free (value);
-	return ipaddr;
-}
-
 static gconstpointer
 _get_fcn_ip_config_addresses (ARGS_GET_FCN)
 {
@@ -3311,31 +3290,21 @@ DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ipv4_config_dns_options,
                                nm_setting_ip_config_remove_dns_option,
                                _validate_and_remove_ipv4_dns_option)
 
-static NMIPAddress *
-_parse_ipv4_address (const char *address, GError **error)
-{
-	return _parse_ip_address (AF_INET, address, error);
-}
-
 static gboolean
 _set_fcn_ip4_config_addresses (ARGS_SET_FCN)
 {
-	char **strv = NULL, **iter;
+	gs_strfreev char **strv = NULL;
+	const char *const*iter;
 	NMIPAddress *ip4addr;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
 	strv = nmc_strsplit_set (value, ",", 0);
-	for (iter = strv; iter && *iter; iter++) {
-		ip4addr = _parse_ipv4_address (*iter, error);
-		if (!ip4addr) {
-			g_strfreev (strv);
+	for (iter = (const char *const*) strv; *iter; iter++) {
+		ip4addr = _parse_ip_address (AF_INET, *iter, error);
+		if (!ip4addr)
 			return FALSE;
-		}
 		nm_setting_ip_config_add_address (NM_SETTING_IP_CONFIG (setting), ip4addr);
 		nm_ip_address_unref (ip4addr);
 	}
-	g_strfreev (strv);
 	return TRUE;
 }
 
@@ -3347,14 +3316,15 @@ _validate_and_remove_ipv4_address (NMSettingIPConfig *setting,
 	NMIPAddress *ip4addr;
 	gboolean ret;
 
-	ip4addr = _parse_ipv4_address (address, error);
+	ip4addr = _parse_ip_address (AF_INET, address, error);
 	if (!ip4addr)
 		return FALSE;
 
 	ret = nm_setting_ip_config_remove_address_by_value (setting, ip4addr);
-	if (!ret)
+	if (!ret) {
 		g_set_error (error, 1, 0,
 		             _("the property doesn't contain IP address '%s'"), address);
+	}
 	nm_ip_address_unref (ip4addr);
 	return ret;
 }
@@ -3367,21 +3337,16 @@ DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ipv4_config_addresses,
 static gboolean
 _set_fcn_ip4_config_gateway (ARGS_SET_FCN)
 {
-	NMIPAddress *ip4addr;
+	gs_free char *addr = NULL;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	addr = g_strstrip (g_strdup (value));
 
-	if (strchr (value, '/')) {
-		g_set_error (error, 1, 0,
-	                     _("invalid gateway address '%s'"), value);
+	if (!nm_utils_ipaddr_valid (AF_INET, addr)) {
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
+	                 _("invalid gateway address '%s'"), value);
 		return FALSE;
 	}
-	ip4addr = _parse_ipv4_address (value, error);
-	if (!ip4addr)
-		return FALSE;
-
-	g_object_set (setting, property_info->property_name, value, NULL);
-	nm_ip_address_unref (ip4addr);
+	g_object_set (setting, property_info->property_name, addr, NULL);
 	return TRUE;
 }
 
@@ -3589,31 +3554,21 @@ DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ipv6_config_dns_options,
                                nm_setting_ip_config_remove_dns_option,
                                _validate_and_remove_ipv6_dns_option)
 
-static NMIPAddress *
-_parse_ipv6_address (const char *address, GError **error)
-{
-	return _parse_ip_address (AF_INET6, address, error);
-}
-
 static gboolean
 _set_fcn_ip6_config_addresses (ARGS_SET_FCN)
 {
-	char **strv = NULL, **iter;
+	gs_strfreev char **strv = NULL;
+	const char *const*iter;
 	NMIPAddress *ip6addr;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
 	strv = nmc_strsplit_set (value, ",", 0);
-	for (iter = strv; iter && *iter; iter++) {
-		ip6addr = _parse_ipv6_address (*iter, error);
-		if (!ip6addr) {
-			g_strfreev (strv);
+	for (iter = (const char *const*) strv; *iter; iter++) {
+		ip6addr = _parse_ip_address (AF_INET6, *iter, error);
+		if (!ip6addr)
 			return FALSE;
-		}
 		nm_setting_ip_config_add_address (NM_SETTING_IP_CONFIG (setting), ip6addr);
 		nm_ip_address_unref (ip6addr);
 	}
-	g_strfreev (strv);
 	return TRUE;
 }
 
@@ -3625,7 +3580,7 @@ _validate_and_remove_ipv6_address (NMSettingIPConfig *setting,
 	NMIPAddress *ip6addr;
 	gboolean ret;
 
-	ip6addr = _parse_ipv6_address (address, error);
+	ip6addr = _parse_ip_address (AF_INET6, address, error);
 	if (!ip6addr)
 		return FALSE;
 
@@ -3644,21 +3599,18 @@ DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ipv6_config_addresses,
 static gboolean
 _set_fcn_ip6_config_gateway (ARGS_SET_FCN)
 {
-	NMIPAddress *ip6addr;
+	gs_free char *addr = NULL;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	addr = g_strstrip (g_strdup (value));
 
-	if (strchr (value, '/')) {
-		g_set_error (error, 1, 0,
-	                     _("invalid gateway address '%s'"), value);
+	if (!nm_utils_ipaddr_valid (AF_INET6, addr)) {
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
+		             _("invalid gateway address '%s'"),
+		             addr);
 		return FALSE;
 	}
-	ip6addr = _parse_ipv6_address (value, error);
-	if (!ip6addr)
-		return FALSE;
 
-	g_object_set (setting, property_info->property_name, value, NULL);
-	nm_ip_address_unref (ip6addr);
+	g_object_set (setting, property_info->property_name, addr, NULL);
 	return TRUE;
 }
 
