@@ -789,21 +789,6 @@ _set_fcn_gobject_bool (ARGS_SET_FCN)
 }
 
 static gboolean
-_set_fcn_gobject_trilean (ARGS_SET_FCN)
-{
-	const int INVALID = G_MININT;
-	int v;
-
-	v = _nm_utils_ascii_str_to_int64 (value, 10, -1, 1, INVALID);
-	if (v == INVALID) {
-		g_set_error (error, 1, 0, _("'%s' is not a valid value; use -1, 0 or 1"), value);
-		return FALSE;
-	}
-	g_object_set (setting, property_info->property_name, v, NULL);
-	return TRUE;
-}
-
-static gboolean
 _set_fcn_gobject_int (ARGS_SET_FCN)
 {
 	const gint64 INVALID = G_MININT64;
@@ -1232,24 +1217,6 @@ ip6_privacy_to_string (NMSettingIP6ConfigPrivacy ip6_privacy, NMMetaAccessorGetT
 		return g_strdup_printf (_("%d (enabled, prefer temporary IP)"), ip6_privacy);
 	default:
 		return g_strdup_printf (_("%d (unknown)"), ip6_privacy);
-	}
-}
-
-static char *
-autoconnect_slaves_to_string (NMSettingConnectionAutoconnectSlaves autoconnect_slaves,
-                              NMMetaAccessorGetType get_type)
-{
-	if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY)
-		return g_strdup_printf ("%d", autoconnect_slaves);
-
-	switch (autoconnect_slaves) {
-	case NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_NO:
-		return g_strdup_printf (_("%d (no)"), autoconnect_slaves);
-	case NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_YES:
-		return g_strdup_printf (_("%d (yes)"), autoconnect_slaves);
-	case NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT:
-	default:
-		return g_strdup_printf (_("%d (default)"), autoconnect_slaves);
 	}
 }
 
@@ -2230,14 +2197,6 @@ _get_fcn_connection_permissions (ARGS_GET_FCN)
 	/* No value from get_permission */
 	g_string_free (perm, TRUE);
 	return NULL;
-}
-
-static gconstpointer
-_get_fcn_connection_autoconnect_slaves (ARGS_GET_FCN)
-{
-	NMSettingConnection *s_con = NM_SETTING_CONNECTION (setting);
-	RETURN_UNSUPPORTED_GET_TYPE ();
-	RETURN_STR_TO_FREE (autoconnect_slaves_to_string (nm_setting_connection_get_autoconnect_slaves (s_con), get_type));
 }
 
 static gboolean
@@ -5237,9 +5196,9 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_connection_autoconnect_slaves,
-			.set_fcn =                  _set_fcn_gobject_trilean,
+		.property_type =                &_pt_gobject_enum,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
+			.get_gtype =                nm_setting_connection_autoconnect_slaves_get_type,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_SECONDARIES,
