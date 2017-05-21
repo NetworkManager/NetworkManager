@@ -3648,44 +3648,6 @@ _validate_fcn_proxy_pac_script (const char *value, char **out_to_free, GError **
 	RETURN_STR_TO_FREE (script);
 }
 
-static gconstpointer
-_get_fcn_serial_parity (ARGS_GET_FCN)
-{
-	NMSettingSerial *s_serial = NM_SETTING_SERIAL (setting);
-
-	RETURN_UNSUPPORTED_GET_TYPE ();
-
-	switch (nm_setting_serial_get_parity (s_serial)) {
-	case NM_SETTING_SERIAL_PARITY_EVEN:
-		return "even";
-	case NM_SETTING_SERIAL_PARITY_ODD:
-		return "odd";
-	default:
-	case NM_SETTING_SERIAL_PARITY_NONE:
-		return "none";
-	}
-}
-
-static gboolean
-_set_fcn_serial_parity (ARGS_SET_FCN)
-{
-	NMSettingSerialParity parity;
-
-	if (value[0] == 'E' || value[0] == 'e')
-		parity = NM_SETTING_SERIAL_PARITY_EVEN;
-	else if (value[0] == 'O' || value[0] == 'o')
-		parity = NM_SETTING_SERIAL_PARITY_ODD;
-	else if (value[0] == 'N' || value[0] == 'n')
-		parity = NM_SETTING_SERIAL_PARITY_NONE;
-	else {
-		g_set_error (error, 1, 0, _("'%s' is not valid; use [e, o, n]"), value);
-		return FALSE;
-	}
-
-	g_object_set (setting, property_info->property_name, parity, NULL);
-	return TRUE;
-}
-
 static gboolean
 _set_fcn_team_config (ARGS_SET_FCN)
 {
@@ -5954,9 +5916,39 @@ static const NMMetaPropertyInfo *const property_infos_SERIAL[] = {
 		.property_type =                &_pt_gobject_int,
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_SERIAL_PARITY,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_serial_parity,
-			.set_fcn =                  _set_fcn_serial_parity,
+		.property_type =                &_pt_gobject_enum,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
+				.get_gtype =            nm_setting_serial_parity_get_type,
+				.value_infos =          ENUM_VALUE_INFOS (
+					{
+						.value = NM_SETTING_SERIAL_PARITY_EVEN,
+						.nick = "E",
+					},
+					{
+						.value = NM_SETTING_SERIAL_PARITY_EVEN,
+						.nick = "e",
+					},
+					{
+						.value = NM_SETTING_SERIAL_PARITY_ODD,
+						.nick = "O",
+					},
+					{
+						.value = NM_SETTING_SERIAL_PARITY_ODD,
+						.nick = "o",
+					},
+					{
+						.value = NM_SETTING_SERIAL_PARITY_NONE,
+						.nick = "N",
+					},
+					{
+						.value = NM_SETTING_SERIAL_PARITY_NONE,
+						.nick = "n",
+					}
+				),
+			),
+			.typ_flags =                  NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_TEXT
+			                            | NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_SERIAL_STOPBITS,
