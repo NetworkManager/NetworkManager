@@ -2934,45 +2934,6 @@ _get_fcn_infiniband_p_key (ARGS_GET_FCN)
 }
 
 static gconstpointer
-_get_fcn_ip_tunnel_mode (ARGS_GET_FCN)
-{
-	NMSettingIPTunnel *s_ip_tunnel = NM_SETTING_IP_TUNNEL (setting);
-	NMIPTunnelMode mode;
-
-	RETURN_UNSUPPORTED_GET_TYPE ();
-
-	mode = nm_setting_ip_tunnel_get_mode (s_ip_tunnel);
-	RETURN_STR_TO_FREE (nm_utils_enum_to_str (nm_ip_tunnel_mode_get_type (), mode));
-}
-
-static gboolean
-_set_fcn_ip_tunnel_mode (ARGS_SET_FCN)
-{
-	NMIPTunnelMode mode;
-	gboolean ret;
-
-	ret = nm_utils_enum_from_str (nm_ip_tunnel_mode_get_type(), value,
-	                              (int *) &mode, NULL);
-
-	if (!ret) {
-		gs_free const char **values = NULL;
-		gs_free char *values_str = NULL;
-
-		values = nm_utils_enum_get_values (nm_ip_tunnel_mode_get_type (),
-		                                   NM_IP_TUNNEL_MODE_UNKNOWN + 1,
-		                                   G_MAXINT);
-		values_str = g_strjoinv (",", (char **) values);
-		g_set_error (error, 1, 0, _("invalid mode '%s', use one of %s"),
-		             value, values_str);
-
-		return FALSE;
-	}
-
-	g_object_set (setting, property_info->property_name, mode, NULL);
-	return TRUE;
-}
-
-static gconstpointer
 _get_fcn_ip_config_addresses (ARGS_GET_FCN)
 {
 	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
@@ -5724,15 +5685,15 @@ static const NMMetaPropertyInfo *const property_infos_IP_TUNNEL[] = {
 		.property_alias =               "mode",
 		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
 		.prompt =                       NM_META_TEXT_PROMPT_IP_TUNNEL_MODE,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_ip_tunnel_mode,
-			.set_fcn =                  _set_fcn_ip_tunnel_mode,
-			.values_fcn =               _values_fcn_gobject_enum,
-		),
-		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
-			.get_gtype =        nm_ip_tunnel_mode_get_type,
-			.min =              NM_IP_TUNNEL_MODE_UNKNOWN + 1,
-			.max =              G_MAXINT,
+		.property_type =                &_pt_gobject_enum,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
+				.get_gtype =            nm_ip_tunnel_mode_get_type,
+				.min =                  NM_IP_TUNNEL_MODE_UNKNOWN + 1,
+				.max =                  G_MAXINT,
+			),
+			.typ_flags =                  NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_TEXT
+			                            | NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_IP_TUNNEL_PARENT,
