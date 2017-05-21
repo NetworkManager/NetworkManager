@@ -5492,7 +5492,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 		if (priv->queued_ip4_config_id) {
 			g_clear_object (&priv->ext_ip4_config);
 			priv->ext_ip4_config = nm_ip4_config_capture (nm_device_get_platform (self),
-			                                              nm_device_get_ifindex (self),
+			                                              nm_device_get_ip_ifindex (self),
 			                                              FALSE);
 		}
 	}
@@ -6236,7 +6236,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 			g_clear_object (&priv->ext_ip6_config);
 			g_clear_object (&priv->ext_ip6_config_captured);
 			priv->ext_ip6_config_captured = nm_ip6_config_capture (nm_device_get_platform (self),
-			                                                       nm_device_get_ifindex (self),
+			                                                       nm_device_get_ip_ifindex (self),
 			                                                       FALSE,
 			                                                       NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
 			if (priv->ext_ip6_config_captured)
