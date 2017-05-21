@@ -237,6 +237,11 @@ struct _NMMetaPropertyTypData {
 			const struct _NMUtilsEnumValueInfo *value_infos;
 		} gobject_enum;
 		struct {
+			gint64 min;
+			gint64 max;
+			guint base;
+		} gobject_int;
+		struct {
 			const char *(*validate_fcn) (const char *value, char **out_to_free, GError **error);
 		} gobject_string;
 		struct {
