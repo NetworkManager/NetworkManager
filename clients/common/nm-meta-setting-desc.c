@@ -252,9 +252,9 @@ _parse_ip_route (int family,
  * Caller is responsible for freeing the array.
  */
 static char **
-nmc_vlan_parse_priority_maps (const char *priority_map,
-                              NMVlanPriorityMap map_type,
-                              GError **error)
+_parse_vlan_priority_maps (const char *priority_map,
+                           NMVlanPriorityMap map_type,
+                           GError **error)
 {
 	char **mapping = NULL, **iter;
 	unsigned long from, to, from_max, to_max;
@@ -3738,7 +3738,7 @@ _set_vlan_xgress_priority_map (NMSetting *setting,
 {
 	char **prio_map, **p;
 
-	prio_map = nmc_vlan_parse_priority_maps (value, map_type, error);
+	prio_map = _parse_vlan_priority_maps (value, map_type, error);
 	if (!prio_map)
 		return FALSE;
 
@@ -3779,7 +3779,7 @@ _remove_vlan_xgress_priority_map (const NMMetaEnvironment *environment,
 		char **prio_map;
 		gs_free char *v = g_strdup (value);
 
-		prio_map = nmc_vlan_parse_priority_maps (v, map_type, error);
+		prio_map = _parse_vlan_priority_maps (v, map_type, error);
 		if (!prio_map)
 			return FALSE;
 		if (prio_map[1]) {
