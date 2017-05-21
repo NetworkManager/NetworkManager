@@ -3638,19 +3638,14 @@ _set_fcn_olpc_mesh_channel (ARGS_SET_FCN)
 	return TRUE;
 }
 
-static gboolean
-_set_fcn_proxy_pac_script (ARGS_SET_FCN)
+static const char *
+_validate_fcn_proxy_pac_script (const char *value, char **out_to_free, GError **error)
 {
 	char *script = NULL;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if (!nmc_proxy_check_script (value, &script, error)) {
-		return FALSE;
-	}
-	g_object_set (setting, property_info->property_name, script, NULL);
-	g_free (script);
-	return TRUE;
+	if (!nmc_proxy_check_script (value, &script, error))
+		return NULL;
+	RETURN_STR_TO_FREE (script);
 }
 
 static gconstpointer
@@ -5909,9 +5904,9 @@ static const NMMetaPropertyInfo *const property_infos_PROXY[] = {
 		.is_cli_option =                TRUE,
 		.property_alias =               "pac-script",
 		.prompt =                       N_("PAC script"),
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_proxy_pac_script,
+		.property_type =                &_pt_gobject_string,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_string,
+			.validate_fcn =             _validate_fcn_proxy_pac_script,
 		),
 	),
 	NULL
