@@ -3674,45 +3674,6 @@ _set_fcn_olpc_mesh_channel (ARGS_SET_FCN)
 	return TRUE;
 }
 
-static gconstpointer
-_get_fcn_proxy_method (ARGS_GET_FCN)
-{
-	NMSettingProxy *s_proxy = NM_SETTING_PROXY (setting);
-	NMSettingProxyMethod method;
-
-	RETURN_UNSUPPORTED_GET_TYPE ();
-
-	method = nm_setting_proxy_get_method (s_proxy);
-	RETURN_STR_TO_FREE (nm_utils_enum_to_str (nm_setting_proxy_method_get_type (), method));
-}
-
-static gboolean
-_set_fcn_proxy_method (ARGS_SET_FCN)
-{
-	int method;
-	gboolean ret;
-
-	ret = nm_utils_enum_from_str (nm_setting_proxy_method_get_type(), value,
-	                              &method, NULL);
-
-	if (!ret) {
-		gs_free const char **values = NULL;
-		gs_free char *values_str = NULL;
-
-		values = nm_utils_enum_get_values (nm_setting_proxy_method_get_type (),
-		                                   NM_SETTING_PROXY_METHOD_NONE,
-		                                   G_MAXINT);
-		values_str = g_strjoinv (",", (char **) values);
-		g_set_error (error, 1, 0, _("invalid method '%s', use one of %s"),
-		             value, values_str);
-
-		return FALSE;
-	}
-
-	g_object_set (setting, property_info->property_name, method, NULL);
-	return TRUE;
-}
-
 static gboolean
 _set_fcn_proxy_pac_script (ARGS_SET_FCN)
 {
@@ -5973,15 +5934,13 @@ static const NMMetaPropertyInfo *const property_infos_PROXY[] = {
 		.property_alias =               "method",
 		.prompt =                       NM_META_TEXT_PROMPT_PROXY_METHOD,
 		.def_hint =                     NM_META_TEXT_PROMPT_PROXY_METHOD_CHOICES,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_proxy_method,
-			.set_fcn =                  _set_fcn_proxy_method,
-			.values_fcn =               _values_fcn_gobject_enum,
-		),
-		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
-			.get_gtype =                nm_setting_proxy_method_get_type,
-			.min =                      NM_SETTING_PROXY_METHOD_NONE,
-			.max =                      G_MAXINT,
+		.property_type =                &_pt_gobject_enum,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
+				.get_gtype =            nm_setting_proxy_method_get_type,
+			),
+			.typ_flags =                  NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_TEXT
+			                            | NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_PROXY_BROWSER_ONLY,
