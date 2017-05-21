@@ -237,6 +237,9 @@ struct _NMMetaPropertyTypData {
 			const struct _NMUtilsEnumValueInfo *value_infos;
 		} gobject_enum;
 		struct {
+			const char *(*validate_fcn) (const char *value, char **out_to_free, GError **error);
+		} gobject_string;
+		struct {
 			guint32 (*get_fcn) (NMSetting *setting);
 		} mtu;
 		struct {

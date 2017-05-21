@@ -764,13 +764,20 @@ _get_fcn_gobject_enum (ARGS_GET_FCN)
 static gboolean
 _set_fcn_gobject_string (ARGS_SET_FCN)
 {
-	if (   property_info->property_typ_data
-	    && property_info->property_typ_data->values_static) {
-		value = nmc_string_is_valid (value,
-		                             (const char **) property_info->property_typ_data->values_static,
-		                             error);
-		if (!value)
-			return FALSE;
+	gs_free char *to_free = NULL;
+
+	if (property_info->property_typ_data) {
+		if (property_info->property_typ_data->subtype.gobject_string.validate_fcn) {
+			value = property_info->property_typ_data->subtype.gobject_string.validate_fcn (value, &to_free, error);
+			if (!value)
+				return FALSE;
+		} else if (property_info->property_typ_data->values_static) {
+			value = nmc_string_is_valid (value,
+			                             (const char **) property_info->property_typ_data->values_static,
+			                             error);
+			if (!value)
+				return FALSE;
+		}
 	}
 	g_object_set (setting, property_info->property_name, value, NULL);
 	return TRUE;
@@ -4284,15 +4291,14 @@ _set_fcn_wireless_security_wep_key_type (ARGS_SET_FCN)
 	return TRUE;
 }
 
-static gboolean
-_set_fcn_wireless_security_psk (ARGS_SET_FCN)
+static const char *
+_validate_fcn_wireless_security_psk (const char *value, char **out_to_free, GError **error)
 {
 	if (!nm_utils_wpa_psk_valid (value)) {
 		g_set_error (error, 1, 0, _("'%s' is not a valid PSK"), value);
-		return FALSE;
+		return NULL;
 	}
-	g_object_set (setting, property_info->property_name, value, NULL);
-	return TRUE;
+	return value;
 }
 
 /*****************************************************************************/
@@ -6516,9 +6522,9 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_PSK,
 		.is_secret =                    TRUE,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_wireless_security_psk,
+		.property_type =                &_pt_gobject_string,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_string,
+			.validate_fcn =             _validate_fcn_wireless_security_psk,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS,
