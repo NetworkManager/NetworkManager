@@ -648,6 +648,20 @@ _get_fcn_gobject_int (ARGS_GET_FCN)
 }
 
 static gconstpointer
+_get_fcn_gobject_dcb_priority (ARGS_GET_FCN)
+{
+	static const NMMetaUtilsIntValueInfo value_infos[] = {
+		{
+			.value = -1,
+			.nick = "unset",
+		},
+		{ 0 },
+	};
+
+	return _get_fcn_gobject_int_impl (property_info, setting, get_type, value_infos, out_to_free);
+}
+
+static gconstpointer
 _get_fcn_gobject_mtu (ARGS_GET_FCN)
 {
 	guint32 mtu;
@@ -1548,27 +1562,6 @@ verify_string_list (char **strv,
 		}
 	}
 	return TRUE;
-}
-
-static gboolean
-validate_int (NMSetting *setting, const char* prop, gint val, GError **error)
-{
-	GParamSpec *pspec;
-	GValue value = G_VALUE_INIT;
-	gboolean success = TRUE;
-
-	g_value_init (&value, G_TYPE_INT);
-	g_value_set_int (&value, val);
-	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)), prop);
-	g_assert (G_IS_PARAM_SPEC (pspec));
-	if (g_param_value_validate (pspec, &value)) {
-		GParamSpecInt *pspec_int = (GParamSpecInt *) pspec;
-		g_set_error (error, 1, 0, _("'%d' is not valid; use <%d-%d>"),
-		             val, pspec_int->minimum, pspec_int->maximum);
-		success = FALSE;
-	}
-	g_value_unset (&value);
-	return success;
 }
 
 static char *
@@ -2621,27 +2614,6 @@ dcb_flags_to_string (NMSettingDcbFlags flags)
 		RETURN_STR_TO_FREE (dcb_flags_to_string (v)); \
 	}
 
-static char *
-dcb_app_priority_to_string (gint priority)
-{
-	return (priority == -1) ? g_strdup (_("-1 (unset)")) : g_strdup_printf ("%d", priority);
-}
-
-#define DEFINE_DCB_APP_PRIORITY_GETTER(func_name, property_name) \
-	static gconstpointer \
-	func_name (ARGS_GET_FCN) \
-	{ \
-		int v; \
-		GValue val = G_VALUE_INIT; \
-		\
-		RETURN_UNSUPPORTED_GET_TYPE (); \
-		g_value_init (&val, G_TYPE_INT); \
-		g_object_get_property (G_OBJECT (setting), property_name, &val); \
-		v = g_value_get_int (&val); \
-		g_value_unset (&val); \
-		RETURN_STR_TO_FREE (dcb_app_priority_to_string (v)); \
-	}
-
 #define DEFINE_DCB_BOOL_GETTER(func_name, getter_func_name) \
 	static gconstpointer \
 	func_name (ARGS_GET_FCN) \
@@ -2686,11 +2658,8 @@ dcb_app_priority_to_string (gint priority)
 	}
 
 DEFINE_DCB_FLAGS_GETTER (_get_fcn_dcb_app_fcoe_flags, NM_SETTING_DCB_APP_FCOE_FLAGS)
-DEFINE_DCB_APP_PRIORITY_GETTER (_get_fcn_dcb_app_fcoe_priority, NM_SETTING_DCB_APP_FCOE_PRIORITY)
 DEFINE_DCB_FLAGS_GETTER (_get_fcn_dcb_app_iscsi_flags, NM_SETTING_DCB_APP_ISCSI_FLAGS)
-DEFINE_DCB_APP_PRIORITY_GETTER (_get_fcn_dcb_app_iscsi_priority, NM_SETTING_DCB_APP_ISCSI_PRIORITY)
 DEFINE_DCB_FLAGS_GETTER (_get_fcn_dcb_app_fip_flags, NM_SETTING_DCB_APP_FIP_FLAGS)
-DEFINE_DCB_APP_PRIORITY_GETTER (_get_fcn_dcb_app_fip_priority, NM_SETTING_DCB_APP_FIP_PRIORITY)
 
 DEFINE_DCB_FLAGS_GETTER (_get_fcn_dcb_priority_flow_control_flags, NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS)
 DEFINE_DCB_BOOL_GETTER (_get_fcn_dcb_priority_flow_control, nm_setting_dcb_get_priority_flow_control)
@@ -2750,25 +2719,6 @@ _set_fcn_dcb_flags (ARGS_SET_FCN)
 		return FALSE;
 
 	g_object_set (setting, property_info->property_name, (guint) flags, NULL);
-	return TRUE;
-}
-
-static gboolean
-_set_fcn_dcb_priority (ARGS_SET_FCN)
-{
-	const int INVALID = G_MININT;
-	int v;
-
-	v = _nm_utils_ascii_str_to_int64 (value, 10, -1, 7, INVALID);
-	if (v == INVALID) {
-		g_set_error (error, 1, 0, _("'%s' is not a DCB app priority"), value);
-		return FALSE;
-	}
-
-	if (!validate_int (setting, property_info->property_name, v, error))
-		return FALSE;
-
-	g_object_set (setting, property_info->property_name, v, NULL);
 	return TRUE;
 }
 
@@ -4509,6 +4459,11 @@ static const NMMetaPropertyType _pt_gobject_mtu = {
 	.set_fcn =                      _set_fcn_gobject_mtu,
 };
 
+static const NMMetaPropertyType _pt_gobject_dcb_priority = {
+	.get_fcn =                      _get_fcn_gobject_dcb_priority,
+	.set_fcn =                      _set_fcn_gobject_int,
+};
+
 static const NMMetaPropertyType _pt_gobject_mac = {
 	.get_fcn =                      _get_fcn_gobject,
 	.set_fcn =                      _set_fcn_gobject_mac,
@@ -5188,10 +5143,7 @@ static const NMMetaPropertyInfo *const property_infos_DCB[] = {
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_APP_FCOE_PRIORITY,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_dcb_app_fcoe_priority,
-			.set_fcn =                  _set_fcn_dcb_priority,
-		),
+		.property_type =                &_pt_gobject_dcb_priority,
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_APP_FCOE_MODE,
 		.property_type =                &_pt_gobject_string,
@@ -5207,10 +5159,7 @@ static const NMMetaPropertyInfo *const property_infos_DCB[] = {
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_APP_ISCSI_PRIORITY,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_dcb_app_iscsi_priority,
-			.set_fcn =                  _set_fcn_dcb_priority,
-		),
+		.property_type =                &_pt_gobject_dcb_priority,
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_APP_FIP_FLAGS,
 		.property_type = DEFINE_PROPERTY_TYPE (
@@ -5219,10 +5168,7 @@ static const NMMetaPropertyInfo *const property_infos_DCB[] = {
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_APP_FIP_PRIORITY,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_dcb_app_fip_priority,
-			.set_fcn =                  _set_fcn_dcb_priority,
-		),
+		.property_type =                &_pt_gobject_dcb_priority,
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS,
 		.property_type = DEFINE_PROPERTY_TYPE (
