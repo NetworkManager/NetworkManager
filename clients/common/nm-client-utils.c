@@ -22,30 +22,6 @@
 #include "nm-client-utils.h"
 
 /*
- * Convert string to signed integer.
- * If required, the resulting number is checked to be in the <min,max> range.
- */
-static gboolean
-nmc_string_to_int_base (const char *str,
-                        int base,
-                        gboolean range_check,
-                        long int min,
-                        long int max,
-                        long int *value)
-{
-	char *end;
-	long int tmp;
-
-	errno = 0;
-	tmp = strtol (str, &end, base);
-	if (errno || *end != '\0' || (range_check && (tmp < min || tmp > max))) {
-		return FALSE;
-	}
-	*value = tmp;
-	return TRUE;
-}
-
-/*
  * Convert string to unsigned integer.
  * If required, the resulting number is checked to be in the <min,max> range.
  */
@@ -67,16 +43,6 @@ nmc_string_to_uint_base (const char *str,
 	}
 	*value = tmp;
 	return TRUE;
-}
-
-gboolean
-nmc_string_to_int (const char *str,
-                   gboolean range_check,
-                   long int min,
-                   long int max,
-                   long int *value)
-{
-	return nmc_string_to_int_base (str, 10, range_check, min, max, value);
 }
 
 gboolean

@@ -791,54 +791,54 @@ _set_fcn_gobject_bool (ARGS_SET_FCN)
 static gboolean
 _set_fcn_gobject_trilean (ARGS_SET_FCN)
 {
-	long int val_int;
+	const int INVALID = G_MININT;
+	int v;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if (!nmc_string_to_int (value, TRUE, -1, 1, &val_int)) {
+	v = _nm_utils_ascii_str_to_int64 (value, 10, -1, 1, INVALID);
+	if (v == INVALID) {
 		g_set_error (error, 1, 0, _("'%s' is not a valid value; use -1, 0 or 1"), value);
 		return FALSE;
 	}
-
-	g_object_set (setting, property_info->property_name, val_int, NULL);
+	g_object_set (setting, property_info->property_name, v, NULL);
 	return TRUE;
 }
 
 static gboolean
 _set_fcn_gobject_int (ARGS_SET_FCN)
 {
-	long int val_int;
+	const gint64 INVALID = G_MININT64;
+	gint64 v;
 
-	if (!nmc_string_to_int (value, TRUE, G_MININT, G_MAXINT, &val_int)) {
+	v = _nm_utils_ascii_str_to_int64 (value, 10, G_MININT, G_MAXINT, INVALID);
+	if (v == INVALID) {
 		g_set_error (error, 1, 0, _("'%s' is not a valid number (or out of range)"), value);
 		return FALSE;
 	}
 
 	/* Validate the number according to the property spec */
-	if (!validate_int (setting, property_info->property_name, (gint) val_int, error))
+	if (!validate_int (setting, property_info->property_name, v, error))
 		return FALSE;
 
-	g_object_set (setting, property_info->property_name, (gint) val_int, NULL);
+	g_object_set (setting, property_info->property_name, (int) v, NULL);
 	return TRUE;
 }
 
 static gboolean
 _set_fcn_gobject_int64 (ARGS_SET_FCN)
 {
-	long val_int;
+	gint64 v;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if (!nmc_string_to_int (value, FALSE, 0, 0, &val_int)) {
+	v = _nm_utils_ascii_str_to_int64 (value, 10, G_MININT64, G_MAXINT64, 0);
+	if (errno) {
 		g_set_error (error, 1, 0, _("'%s' is not a valid number (or out of range)"), value);
 		return FALSE;
 	}
 
 	/* Validate the number according to the property spec */
-	if (!validate_int64 (setting, property_info->property_name, (gint64) val_int, error))
+	if (!validate_int64 (setting, property_info->property_name, v, error))
 		return FALSE;
 
-	g_object_set (setting, property_info->property_name, (gint64) val_int, NULL);
+	g_object_set (setting, property_info->property_name, v, NULL);
 	return TRUE;
 }
 
@@ -2717,20 +2717,19 @@ _set_fcn_dcb_flags (ARGS_SET_FCN)
 static gboolean
 _set_fcn_dcb_priority (ARGS_SET_FCN)
 {
-	long int priority = 0;
+	const int INVALID = G_MININT;
+	int v;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if (!nmc_string_to_int (value, FALSE, -1, 7, &priority)) {
+	v = _nm_utils_ascii_str_to_int64 (value, 10, -1, 7, INVALID);
+	if (v == INVALID) {
 		g_set_error (error, 1, 0, _("'%s' is not a DCB app priority"), value);
 		return FALSE;
 	}
 
-	/* Validate the number according to the property spec */
-	if (!validate_int (setting, property_info->property_name, (gint) priority, error))
+	if (!validate_int (setting, property_info->property_name, v, error))
 		return FALSE;
 
-	g_object_set (setting, property_info->property_name, (gint) priority, NULL);
+	g_object_set (setting, property_info->property_name, v, NULL);
 	return TRUE;
 }
 
