@@ -590,6 +590,64 @@ _get_fcn_gobject (ARGS_GET_FCN)
 }
 
 static gconstpointer
+_get_fcn_gobject_int_impl (const NMMetaPropertyInfo *property_info,
+                           NMSetting *setting,
+                           NMMetaAccessorGetType get_type,
+                           const NMMetaUtilsIntValueInfo *value_infos,
+                           gpointer *out_to_free)
+{
+	const GParamSpec *pspec;
+	nm_auto_unset_gvalue GValue gval = G_VALUE_INIT;
+	gint64 v;
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
+
+	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)), property_info->property_name);
+	if (!G_IS_PARAM_SPEC (pspec))
+		g_return_val_if_reached (FALSE);
+
+	g_value_init (&gval, pspec->value_type);
+	g_object_get_property (G_OBJECT (setting), property_info->property_name, &gval);
+	switch (pspec->value_type) {
+	case G_TYPE_INT:
+		v = g_value_get_int (&gval);
+		break;
+	case G_TYPE_UINT:
+		v = g_value_get_uint (&gval);
+		break;
+	case G_TYPE_INT64:
+		v = g_value_get_int64 (&gval);
+		break;
+	default:
+		g_return_val_if_reached (NULL);
+		break;
+	}
+
+	if (   get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY
+	    && value_infos) {
+		for (; value_infos->nick; value_infos++) {
+			if (value_infos->value == v) {
+				RETURN_STR_TO_FREE (g_strdup_printf ("%lli (%s)",
+				                                     (long long) v,
+				                                     value_infos->nick));
+			}
+		}
+	}
+
+	RETURN_STR_TO_FREE (g_strdup_printf ("%"G_GINT64_FORMAT, v));
+}
+
+static gconstpointer
+_get_fcn_gobject_int (ARGS_GET_FCN)
+{
+	return _get_fcn_gobject_int_impl (property_info, setting, get_type,
+	                                  property_info->property_typ_data
+	                                      ? property_info->property_typ_data->subtype.gobject_int.value_infos
+	                                      : NULL,
+	                                  out_to_free);
+}
+
+static gconstpointer
 _get_fcn_gobject_mtu (ARGS_GET_FCN)
 {
 	guint32 mtu;
@@ -801,13 +859,35 @@ _set_fcn_gobject_int_impl (const NMMetaPropertyInfo *property_info,
 	int errsv;
 	const GParamSpec *pspec;
 	nm_auto_unset_gvalue GValue gval = G_VALUE_INIT;
-	gint64 v;
+	gint64 v = 0;
 	gboolean has_minmax = FALSE;
 	gint64 min = G_MININT64;
 	gint64 max = G_MAXINT64;
 	guint base = 10;
+	const NMMetaUtilsIntValueInfo *value_infos = NULL;
+	gboolean has_value = FALSE;
 
 	if (property_info->property_typ_data) {
+
+		if (   value
+		    && (value_infos = property_info->property_typ_data->subtype.gobject_int.value_infos)) {
+			gs_free char *vv_stripped = NULL;
+			const char *vv = nm_str_skip_leading_spaces (value);
+
+			if (vv[0] && g_ascii_isspace (vv[strlen (vv) - 1])) {
+				vv_stripped = g_strstrip (g_strdup (vv));
+				vv = vv_stripped;
+			}
+
+			for (; value_infos->nick; value_infos++) {
+				if (nm_streq (value_infos->nick, vv)) {
+					v = value_infos->value;
+					has_value = TRUE;
+					break;
+				}
+			}
+		}
+
 		if (property_info->property_typ_data->subtype.gobject_int.base > 0)
 			base = property_info->property_typ_data->subtype.gobject_int.base;
 		if (   property_info->property_typ_data->subtype.gobject_int.min
@@ -850,7 +930,9 @@ _set_fcn_gobject_int_impl (const NMMetaPropertyInfo *property_info,
 		g_return_val_if_reached (FALSE);
 	}
 
-	v = _nm_utils_ascii_str_to_int64 (value, base, min, max, 0);
+	if (!has_value)
+		v = _nm_utils_ascii_str_to_int64 (value, base, min, max, 0);
+
 	if ((errsv = errno) != 0) {
 		if (errsv == ERANGE) {
 			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
@@ -4418,7 +4500,7 @@ static const NMMetaPropertyType _pt_gobject_bool = {
 };
 
 static const NMMetaPropertyType _pt_gobject_int = {
-	.get_fcn =                      _get_fcn_gobject,
+	.get_fcn =                      _get_fcn_gobject_int,
 	.set_fcn =                      _set_fcn_gobject_int,
 };
 
@@ -4473,6 +4555,7 @@ static const NMMetaPropertyType _pt_gobject_devices = {
 #define VALUES_STATIC(...)  (((const char *[]) { __VA_ARGS__, NULL }))
 
 #define ENUM_VALUE_INFOS(...)  (((const NMUtilsEnumValueInfo []) { __VA_ARGS__, { 0 } }))
+#define INT_VALUE_INFOS(...)  (((const NMMetaUtilsIntValueInfo []) { __VA_ARGS__, { 0 } }))
 
 #define GET_FCN_WITH_DEFAULT(type, func) \
 	/* macro that returns @func as const (gboolean(*)(NMSetting*)) type, but checks

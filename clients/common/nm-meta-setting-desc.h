@@ -225,6 +225,11 @@ struct _NMMetaPropertyType {
 
 struct _NMUtilsEnumValueInfo;
 
+typedef struct {
+	const char *nick;
+	gint64 value;
+} NMMetaUtilsIntValueInfo;
+
 struct _NMMetaPropertyTypData {
 	union {
 		struct {
@@ -240,6 +245,7 @@ struct _NMMetaPropertyTypData {
 			gint64 min;
 			gint64 max;
 			guint base;
+			const NMMetaUtilsIntValueInfo *value_infos;
 		} gobject_int;
 		struct {
 			const char *(*validate_fcn) (const char *value, char **out_to_free, GError **error);
