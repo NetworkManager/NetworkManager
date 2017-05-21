@@ -3576,39 +3576,6 @@ _set_fcn_ip6_config_ip6_privacy (ARGS_SET_FCN)
 }
 
 static gconstpointer
-_get_fcn_macsec_mode (ARGS_GET_FCN)
-{
-	NMSettingMacsec *s_macsec = NM_SETTING_MACSEC (setting);
-	NMSettingMacsecMode mode;
-
-	RETURN_UNSUPPORTED_GET_TYPE ();
-
-	mode = nm_setting_macsec_get_mode (s_macsec);
-	RETURN_STR_TO_FREE (nm_utils_enum_to_str (nm_setting_macsec_mode_get_type (), mode));
-}
-
-static gboolean
-_set_fcn_macsec_mode (ARGS_SET_FCN)
-{
-	NMSettingMacsecMode mode;
-	gs_free char *options = NULL;
-
-	if (!nm_utils_enum_from_str (nm_setting_macsec_mode_get_type (), value,
-	                             (int *) &mode, NULL)) {
-		options = g_strjoinv (",",
-		                      (char **) nm_utils_enum_get_values (nm_setting_macsec_mode_get_type (),
-		                                                          G_MININT,
-		                                                          G_MAXINT));
-		g_set_error (error, 1, 0, _("invalid option '%s', use one of [%s]"),
-		             value, options);
-			return FALSE;
-	}
-
-	g_object_set (setting, property_info->property_name, mode, NULL);
-	return TRUE;
-}
-
-static gconstpointer
 _get_fcn_olpc_mesh_ssid (ARGS_GET_FCN)
 {
 	NMSettingOlpcMesh *s_olpc_mesh = NM_SETTING_OLPC_MESH (setting);
@@ -5686,13 +5653,13 @@ static const NMMetaPropertyInfo *const property_infos_MACSEC[] = {
 		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
 		.prompt =                       NM_META_TEXT_PROMPT_MACSEC_MODE,
 		.def_hint =                     NM_META_TEXT_PROMPT_MACSEC_MODE_CHOICES,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_macsec_mode,
-			.set_fcn =                  _set_fcn_macsec_mode,
-			.values_fcn =               _values_fcn_gobject_enum,
-		),
-		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
-			.get_gtype =                nm_setting_macsec_mode_get_type,
+		.property_type =                &_pt_gobject_enum,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
+				.get_gtype =            nm_setting_macsec_mode_get_type,
+			),
+			.typ_flags =                  NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_TEXT
+			                            | NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_MACSEC_ENCRYPT,
