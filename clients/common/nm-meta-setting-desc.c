@@ -3648,19 +3648,14 @@ _validate_fcn_proxy_pac_script (const char *value, char **out_to_free, GError **
 	RETURN_STR_TO_FREE (script);
 }
 
-static gboolean
-_set_fcn_team_config (ARGS_SET_FCN)
+static const char *
+_validate_fcn_team_config (const char *value, char **out_to_free, GError **error)
 {
 	char *json = NULL;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if (!nmc_team_check_config (value, &json, error)) {
-		return FALSE;
-	}
-	g_object_set (setting, property_info->property_name, json, NULL);
-	g_free (json);
-	return TRUE;
+	if (!nmc_team_check_config (value, &json, error))
+		return NULL;
+	RETURN_STR_TO_FREE (json);
 }
 
 static gconstpointer
@@ -5882,9 +5877,9 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 		.property_alias =               "config",
 		.prompt =                       N_("Team JSON configuration [none]"),
 		.describe_message =             TEAM_DESCRIBE_MESSAGE,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_team_config,
+		.property_type =                &_pt_gobject_string,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_string,
+			.validate_fcn =             _validate_fcn_team_config,
 		),
 	),
 	NULL
@@ -5898,9 +5893,9 @@ static const NMMetaPropertyInfo *const property_infos_TEAM_PORT[] = {
 		.property_alias =               "config",
 		.prompt =                       N_("Team JSON configuration [none]"),
 		.describe_message =             TEAM_DESCRIBE_MESSAGE,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_team_config,
+		.property_type =                &_pt_gobject_string,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_string,
+			.validate_fcn =             _validate_fcn_team_config,
 		),
 	),
 	NULL
