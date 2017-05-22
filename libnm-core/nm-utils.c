@@ -3896,8 +3896,8 @@ _nm_utils_inet6_is_token (const struct in6_addr *in6addr)
 gboolean
 nm_utils_check_virtual_device_compatibility (GType virtual_type, GType other_type)
 {
-	g_return_val_if_fail (_nm_setting_type_is_base_type (virtual_type), FALSE);
-	g_return_val_if_fail (_nm_setting_type_is_base_type (other_type), FALSE);
+	g_return_val_if_fail (_nm_setting_type_get_base_type_priority (virtual_type), FALSE);
+	g_return_val_if_fail (_nm_setting_type_get_base_type_priority (other_type), FALSE);
 
 	if (virtual_type == NM_TYPE_SETTING_BOND) {
 		return (   other_type == NM_TYPE_SETTING_INFINIBAND

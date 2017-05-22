@@ -3492,7 +3492,7 @@ _test_connection_normalize_type_normalizable_setting (const char *type,
 
 	base_type = nm_setting_lookup_type (type);
 	g_assert (base_type != G_TYPE_INVALID);
-	g_assert (_nm_setting_type_is_base_type (base_type));
+	g_assert (_nm_setting_type_get_base_type_priority (base_type));
 
 	con = nmtst_create_minimal_connection (id, NULL, NULL, &s_con);
 
@@ -3522,7 +3522,7 @@ _test_connection_normalize_type_unnormalizable_setting (const char *type)
 
 	base_type = nm_setting_lookup_type (type);
 	g_assert (base_type != G_TYPE_INVALID);
-	g_assert (_nm_setting_type_is_base_type (base_type));
+	g_assert (_nm_setting_type_get_base_type_priority (base_type));
 
 	con = nmtst_create_minimal_connection (id, NULL, NULL, &s_con);
 
@@ -3545,7 +3545,7 @@ _test_connection_normalize_type_normalizable_type (const char *type,
 
 	base_type = nm_setting_lookup_type (type);
 	g_assert (base_type != G_TYPE_INVALID);
-	g_assert (_nm_setting_type_is_base_type (base_type));
+	g_assert (_nm_setting_type_get_base_type_priority (base_type));
 
 	con = nmtst_create_minimal_connection (id, NULL, NULL, &s_con);
 

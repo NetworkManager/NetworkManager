@@ -36,8 +36,8 @@ void _nm_register_setting (const char *name,
 		_nm_register_setting (NM_SETTING_ ## name ## _SETTING_NAME "", g_define_type_id, priority); \
 	} G_STMT_END
 
-gboolean _nm_setting_is_base_type (NMSetting *setting);
-gboolean _nm_setting_type_is_base_type (GType type);
+guint32 _nm_setting_get_base_type_priority (NMSetting *setting);
+guint32 _nm_setting_type_get_base_type_priority (GType type);
 gint _nm_setting_compare_priority (gconstpointer a, gconstpointer b);
 
 typedef enum NMSettingUpdateSecretResult {

@@ -211,8 +211,8 @@ _nm_setting_get_setting_priority (NMSetting *setting)
 	return priv->info->priority;
 }
 
-gboolean
-_nm_setting_type_is_base_type (GType type)
+guint32
+_nm_setting_type_get_base_type_priority (GType type)
 {
 	guint32 priority;
 
@@ -222,13 +222,16 @@ _nm_setting_type_is_base_type (GType type)
 	 * base type.
 	 */
 	priority = _get_setting_type_priority (type);
-	return (priority == 1 || priority == 2 || (type == NM_TYPE_SETTING_PPPOE));
+	if (priority == 1 || priority == 2 || (type == NM_TYPE_SETTING_PPPOE))
+		return priority;
+	else
+		return 0;
 }
 
-gboolean
-_nm_setting_is_base_type (NMSetting *setting)
+guint32
+_nm_setting_get_base_type_priority (NMSetting *setting)
 {
-	return _nm_setting_type_is_base_type (G_OBJECT_TYPE (setting));
+	return _nm_setting_type_get_base_type_priority (G_OBJECT_TYPE (setting));
 }
 
 /**
