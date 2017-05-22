@@ -7758,7 +7758,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 	nm_platform_process_events (nm_device_get_platform (self));
 	g_clear_object (&priv->ext_ip6_config_captured);
 	priv->ext_ip6_config_captured = nm_ip6_config_capture (nm_device_get_platform (self),
-	                                                       nm_device_get_ifindex (self),
+	                                                       nm_device_get_ip_ifindex (self),
 	                                                       FALSE,
 	                                                       NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
 
