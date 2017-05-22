@@ -634,18 +634,13 @@ nm_clear_g_cancellable (GCancellable **cancellable)
 /*****************************************************************************/
 
 /* Determine whether @x is a power of two (@x being an integer type).
- * For the special cases @x equals zero or one, it also returns true.
- * In case @x being a signed type, for negative @x always return FALSE. */
+ * Basically, this returns TRUE, if @x has exactly one bit set.
+ * For negative values and zero, this always returns FALSE. */
 #define nm_utils_is_power_of_two(x) ({ \
 		typeof(x) __x = (x); \
 		\
-		/* Check if the value is negative. In that case, return FALSE.
-		 * The first expression is a compile time constant, depending on whether
-		 * the type is signed. The second expression is a clumsy way for (__x >= 0),
-		 * which otherwise causes a compiler warning for unsigned types. */ \
-		    (    (((typeof(__x)) -1) > ((typeof(__x)) 0)) \
-		      || (__x > 0 || (__x == 0 && 1)) ) \
-		 && ((__x & (__x - 1)) == 0); \
+		(    (__x > ((typeof(__x)) 0)) \
+		 && ((__x & (__x - (((typeof(__x)) 1)))) == ((typeof(__x)) 0))); \
 	})
 
 /*****************************************************************************/
