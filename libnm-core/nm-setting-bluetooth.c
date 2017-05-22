@@ -25,6 +25,7 @@
 #include <string.h>
 #include <net/ethernet.h>
 
+#include "nm-connection-private.h"
 #include "nm-setting-bluetooth.h"
 #include "nm-setting-cdma.h"
 #include "nm-setting-gsm.h"
@@ -113,16 +114,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingBluetoothPrivate *priv = NM_SETTING_BLUETOOTH_GET_PRIVATE (setting);
 
-	if (!priv->bdaddr) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
-		                     _("property is missing"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME, NM_SETTING_BLUETOOTH_BDADDR);
-		return FALSE;
-	}
-
-	if (!nm_utils_hwaddr_valid (priv->bdaddr, ETH_ALEN)) {
+	if (priv->bdaddr && !nm_utils_hwaddr_valid (priv->bdaddr, ETH_ALEN)) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -176,6 +168,31 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	/* PANU doesn't need a 'type' setting since no further configuration
 	 * is required at the interface level.
 	 */
+
+	/* NAP mode needs a bridge setting, and a bridge needs a name. */
+	if (!strcmp (priv->type, NM_SETTING_BLUETOOTH_TYPE_NAP)) {
+		if (!_nm_connection_verify_required_interface_name (connection, error))
+			return FALSE;
+		if (connection && !nm_connection_get_setting_bridge (connection)) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_SETTING,
+			             _("'%s' connection requires '%s' setting"),
+			             NM_SETTING_BLUETOOTH_TYPE_NAP,
+			             NM_SETTING_BRIDGE_SETTING_NAME);
+			g_prefix_error (error, "%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME);
+			return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+		}
+	} else {
+		if (!priv->bdaddr) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
+			                     _("property is missing"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME, NM_SETTING_BLUETOOTH_BDADDR);
+			return FALSE;
+		}
+	}
 
 	return TRUE;
 }

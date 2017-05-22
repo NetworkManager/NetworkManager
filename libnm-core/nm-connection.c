@@ -1002,13 +1002,25 @@ _normalize_team_port_config (NMConnection *self, GHashTable *parameters)
 static gboolean
 _normalize_required_settings (NMConnection *self, GHashTable *parameters)
 {
+	NMSettingBluetooth *s_bt = nm_connection_get_setting_bluetooth (self);
+	NMSetting *s_bridge;
+	gboolean changed = FALSE;
+
 	if (nm_connection_get_setting_vlan (self)) {
 		if (!nm_connection_get_setting_wired (self)) {
 			nm_connection_add_setting (self, nm_setting_wired_new ());
-			return TRUE;
+			changed = TRUE;
 		}
 	}
-	return FALSE;
+	if (s_bt && nm_streq0 (nm_setting_bluetooth_get_connection_type (s_bt), NM_SETTING_BLUETOOTH_TYPE_NAP)) {
+		if (!nm_connection_get_setting_bridge (self)) {
+			s_bridge = nm_setting_bridge_new ();
+			g_object_set (s_bridge, NM_SETTING_BRIDGE_STP, FALSE, NULL);
+			nm_connection_add_setting (self, s_bridge);
+			changed = TRUE;
+		}
+	}
+	return changed;
 }
 
 static gboolean
