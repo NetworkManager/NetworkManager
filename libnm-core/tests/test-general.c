@@ -4867,14 +4867,23 @@ enum TEST_IS_POWER_OF_TWP_ENUM_UNSIGNED_64 {
 		typeof (x) x1 = (x); \
 		type x2 = (type) x1; \
 		\
-		if (((typeof (x1)) x2) == x1 && (x2 > 0 || (x2 == 0 && 1))) { \
+		g_assert_cmpint (expect, ==, nm_utils_is_power_of_two (x1)); \
+		if (   ((typeof (x1)) x2) == x1 \
+		    && ((typeof (x2)) x1) == x2 \
+		    && x2 > 0) { \
 			/* x2 equals @x, and is positive. Compare to @expect */ \
 			g_assert_cmpint (expect, ==, nm_utils_is_power_of_two (x2)); \
-		} else if (!(x2 > 0) && (!(x2 == 0) && 1)) { \
-			/* a (signed) negative value is always FALSE. */ \
-			g_assert_cmpint (FALSE, ==, nm_utils_is_power_of_two (x2));\
+		} else if (!(x2 > 0)) { \
+			/* a non positive value is always FALSE. */ \
+			g_assert_cmpint (FALSE, ==, nm_utils_is_power_of_two (x2)); \
 		} \
-		g_assert_cmpint (expect, ==, nm_utils_is_power_of_two (x1)); \
+		if (x2) { \
+			x2 = -x2; \
+			if (!(x2 > 0)) { \
+				/* for negative values, we return FALSE. */ \
+				g_assert_cmpint (FALSE, ==, nm_utils_is_power_of_two (x2)); \
+			} \
+		} \
 	} G_STMT_END
 
 static void
@@ -4917,7 +4926,7 @@ again:
 			gboolean expect = j == 0;
 			guint64 x = expect ? xyes : xno;
 
-			if (!expect && xno == 0)
+			if (expect && xyes == 0)
 				continue;
 
 			/* check if @x is as @expect, when casted to a certain data type. */
