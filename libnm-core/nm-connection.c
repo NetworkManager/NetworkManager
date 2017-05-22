@@ -592,10 +592,12 @@ _nm_connection_find_base_type_setting (NMConnection *connection)
 			continue;
 
 		if (setting) {
-			/* FIXME: currently, if there is more than one matching base type,
-			 * we cannot detect the base setting.
-			 * See: https://bugzilla.gnome.org/show_bug.cgi?id=696936#c8 */
-			return NULL;
+			NMSettingConnection *s_con = nm_connection_get_setting_connection (connection);
+
+			if (!s_con)
+				return NULL;
+			return nm_connection_get_setting_by_name (connection,
+			       nm_setting_connection_get_connection_type (s_con));
 		}
 		setting = s_iter;
 	}
@@ -1609,19 +1611,16 @@ nm_connection_to_dbus (NMConnection *connection,
 gboolean
 nm_connection_is_type (NMConnection *connection, const char *type)
 {
-	NMSettingConnection *s_con;
-	const char *type2;
+	NMSetting *setting;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (type != NULL, FALSE);
 
-	s_con = nm_connection_get_setting_connection (connection);
-	if (!s_con)
+	setting = nm_connection_get_setting_by_name (connection, type);
+	if (!setting)
 		return FALSE;
 
-	type2 = nm_setting_connection_get_connection_type (s_con);
-
-	return (g_strcmp0 (type2, type) == 0);
+	return _nm_setting_is_base_type (setting);
 }
 
 static int
@@ -1850,22 +1849,19 @@ nm_connection_get_id (NMConnection *connection)
  * nm_connection_get_connection_type:
  * @connection: the #NMConnection
  *
- * A shortcut to return the type from the connection's #NMSettingConnection.
- *
- * Returns: the type from the connection's 'connection' setting
+ * Returns: the connection's base type.
  **/
 const char *
 nm_connection_get_connection_type (NMConnection *connection)
 {
-	NMSettingConnection *s_con;
+	NMSetting *setting;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
-	s_con = nm_connection_get_setting_connection (connection);
-	if (!s_con)
+	setting = _nm_connection_find_base_type_setting (connection);
+	if (!setting)
 		return NULL;
-
-	return nm_setting_connection_get_connection_type (s_con);
+	return nm_setting_get_name (setting);
 }
 
 /**
@@ -1880,9 +1876,8 @@ nm_connection_get_connection_type (NMConnection *connection)
 gboolean
 nm_connection_is_virtual (NMConnection *connection)
 {
-	const char *type;
+	const char *type = nm_connection_get_connection_type (connection);
 
-	type = nm_connection_get_connection_type (connection);
 	g_return_val_if_fail (type != NULL, FALSE);
 
 	if (   !strcmp (type, NM_SETTING_BOND_SETTING_NAME)

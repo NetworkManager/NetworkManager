@@ -3558,7 +3558,7 @@ _test_connection_normalize_type_normalizable_type (const char *type,
 		nm_connection_add_setting (con, s_base);
 	}
 
-	g_assert (!nm_connection_get_connection_type (con));
+	g_assert (!nm_setting_connection_get_connection_type (s_con));
 	g_assert (nm_connection_get_setting_by_name (con, type) == s_base);
 
 	nmtst_assert_connection_verifies_after_normalization (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY);
