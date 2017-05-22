@@ -40,7 +40,7 @@
  **/
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingTeamPort, nm_setting_team_port, NM_TYPE_SETTING,
-                         _nm_register_setting (TEAM_PORT, 3))
+                         _nm_register_setting (TEAM_PORT, 4))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_TEAM_PORT)
 
 #define NM_SETTING_TEAM_PORT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_TEAM_PORT, NMSettingTeamPortPrivate))
