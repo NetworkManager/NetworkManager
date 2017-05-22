@@ -4817,7 +4817,6 @@ static const NMMetaPropertyInfo *const property_infos_BLUETOOTH[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_BLUETOOTH_BDADDR,
 		.is_cli_option =                TRUE,
 		.property_alias =               "addr",
-		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
 		.prompt =                       N_("Bluetooth device address"),
 		.property_type =                &_pt_gobject_mac,
 	),
@@ -4829,7 +4828,8 @@ static const NMMetaPropertyInfo *const property_infos_BLUETOOTH[] = {
 		.property_type =                &_pt_gobject_string,
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			.values_static =            VALUES_STATIC (NM_SETTING_BLUETOOTH_TYPE_DUN,
-			                                           NM_SETTING_BLUETOOTH_TYPE_PANU),
+			                                           NM_SETTING_BLUETOOTH_TYPE_PANU,
+			                                           NM_SETTING_BLUETOOTH_TYPE_NAP),
 		),
 	),
 	NULL
