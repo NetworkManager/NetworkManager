@@ -644,7 +644,7 @@ nm_clear_g_cancellable (GCancellable **cancellable)
 		 * the type is signed. The second expression is a clumsy way for (__x >= 0),
 		 * which otherwise causes a compiler warning for unsigned types. */ \
 		    (    (((typeof(__x)) -1) > ((typeof(__x)) 0)) \
-		      || (__x > 0 || __x == 0) ) \
+		      || (__x > 0 || (__x == 0 && 1)) ) \
 		 && ((__x & (__x - 1)) == 0); \
 	})
 
