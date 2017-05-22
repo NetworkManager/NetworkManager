@@ -80,8 +80,8 @@ NMSetting *nm_setting_bluetooth_new (void)
  * Returns the connection method for communicating with the remote device (i.e.
  * either DUN to a DUN-capable device or PANU to a NAP-capable device).
  *
- * Returns: the type, either %NM_SETTING_BLUETOOTH_TYPE_PANU or
- * %NM_SETTING_BLUETOOTH_TYPE_DUN
+ * Returns: the type, either %NM_SETTING_BLUETOOTH_TYPE_PANU,
+ * %NM_SETTING_BLUETOOTH_TYPE_NAP or %NM_SETTING_BLUETOOTH_TYPE_DUN
  **/
 const char *
 nm_setting_bluetooth_get_connection_type (NMSettingBluetooth *setting)
@@ -139,6 +139,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME, NM_SETTING_BLUETOOTH_TYPE);
 		return FALSE;
 	} else if (!g_str_equal (priv->type, NM_SETTING_BLUETOOTH_TYPE_DUN) &&
+	           !g_str_equal (priv->type, NM_SETTING_BLUETOOTH_TYPE_NAP) &&
 	           !g_str_equal (priv->type, NM_SETTING_BLUETOOTH_TYPE_PANU)) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
