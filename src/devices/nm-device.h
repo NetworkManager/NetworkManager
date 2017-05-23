@@ -705,4 +705,16 @@ void nm_device_check_connectivity (NMDevice *self,
                                    gpointer user_data);
 NMConnectivityState nm_device_get_connectivity_state (NMDevice *self);
 
+typedef struct _NMBtVTableNetworkServer NMBtVTableNetworkServer;
+struct _NMBtVTableNetworkServer {
+	gboolean (*is_available) (const NMBtVTableNetworkServer *vtable,
+	                          const char *addr);
+	gboolean (*register_bridge) (const NMBtVTableNetworkServer *vtable,
+	                             const char *addr, const char *uuid, NMDevice *device);
+	gboolean (*unregister_bridge) (const NMBtVTableNetworkServer *vtable,
+	                               NMDevice *device);
+};
+
+extern const NMBtVTableNetworkServer *nm_bt_vtable_network_server;
+
 #endif /* __NETWORKMANAGER_DEVICE_H__ */
