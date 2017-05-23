@@ -1107,6 +1107,15 @@ _set_fcn_gobject_enum (ARGS_SET_FCN)
 	                                       : NULL))
 		goto fail;
 
+	if (   property_info->property_typ_data
+	    && property_info->property_typ_data->subtype.gobject_enum.pre_set_notify) {
+		property_info->property_typ_data->subtype.gobject_enum.pre_set_notify (property_info,
+		                                                                       environment,
+		                                                                       environment_user_data,
+		                                                                       setting,
+		                                                                       v);
+	}
+
 	g_value_init (&gval, gtype_prop);
 	if (gtype_prop == G_TYPE_INT)
 		g_value_set_int (&gval, v);
@@ -4068,13 +4077,6 @@ _get_fcn_wireless_security_wep_key3 (ARGS_GET_FCN)
 	RETURN_STR_TO_FREE (g_strdup (nm_setting_wireless_security_get_wep_key (s_wireless_sec, 3)));
 }
 
-static gconstpointer
-_get_fcn_wireless_security_wep_key_type (ARGS_GET_FCN)
-{
-	RETURN_UNSUPPORTED_GET_TYPE ();
-	RETURN_STR_TO_FREE (wep_key_type_to_string (nm_setting_wireless_security_get_wep_key_type (NM_SETTING_WIRELESS_SECURITY (setting))));
-}
-
 static const char *wifi_sec_valid_protos[] = { "wpa", "rsn", NULL };
 
 DEFINE_SETTER_STR_LIST_MULTI (check_and_add_wifi_sec_proto,
@@ -4237,52 +4239,38 @@ _set_fcn_wireless_wep_key (ARGS_SET_FCN)
 	return TRUE;
 }
 
-static gboolean
-_set_fcn_wireless_security_wep_key_type (ARGS_SET_FCN)
+static void
+_gobject_enum_pre_set_notify_fcn_wireless_security_wep_key_type (const NMMetaPropertyInfo *property_info,
+                                                                 const NMMetaEnvironment *environment,
+                                                                 gpointer environment_user_data,
+                                                                 NMSetting *setting,
+                                                                 int value)
 {
-	unsigned long  type_int;
-	const char *valid_wep_types[] = { "unknown", "key", "passphrase", NULL };
-	const char *type_str = NULL;
-	NMWepKeyType type = NM_WEP_KEY_TYPE_UNKNOWN;
-
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if (!nmc_string_to_uint (value, TRUE, 0, 2, &type_int)) {
-		if (!(type_str = nmc_string_is_valid (value, valid_wep_types, NULL))) {
-			g_set_error (error, 1, 0, _("'%s' not among [0 (unknown), 1 (key), 2 (passphrase)]"), value);
-			return FALSE;
-		}
-		if (type_str == valid_wep_types[1])
-			type = NM_WEP_KEY_TYPE_KEY;
-		else if (type_str == valid_wep_types[2])
-			type = NM_WEP_KEY_TYPE_PASSPHRASE;
-	} else
-		type = (NMWepKeyType) type_int;
+	guint i;
+	const char *key;
+	const char *keynames[] = {
+		NM_SETTING_WIRELESS_SECURITY_WEP_KEY0,
+		NM_SETTING_WIRELESS_SECURITY_WEP_KEY1,
+		NM_SETTING_WIRELESS_SECURITY_WEP_KEY2,
+		NM_SETTING_WIRELESS_SECURITY_WEP_KEY3,
+	};
 
 	/* Check type compatibility with set keys */
-	{
-		guint i;
-		const char *key;
-		const char *keynames[] = {
-			NM_SETTING_WIRELESS_SECURITY_WEP_KEY0,
-			NM_SETTING_WIRELESS_SECURITY_WEP_KEY1,
-			NM_SETTING_WIRELESS_SECURITY_WEP_KEY2,
-			NM_SETTING_WIRELESS_SECURITY_WEP_KEY3,
-		};
+	if (!NM_IN_SET (value,
+	                NM_WEP_KEY_TYPE_UNKNOWN,
+	                NM_WEP_KEY_TYPE_KEY,
+	                NM_WEP_KEY_TYPE_PASSPHRASE))
+		return;
 
-		for (i = 0; i < 4; i++) {
-			key = nm_setting_wireless_security_get_wep_key (NM_SETTING_WIRELESS_SECURITY (setting), i);
-			if (key && !nm_utils_wep_key_valid (key, type)) {
-				_env_warn_fcn (environment, environment_user_data,
-				               NM_META_ENV_WARN_LEVEL_WARN,
-				               N_("'%s' is not compatible with '%s' type, please change or delete the key."),
-				               keynames[i], wep_key_type_to_string (type));
-			}
+	for (i = 0; i < 4; i++) {
+		key = nm_setting_wireless_security_get_wep_key (NM_SETTING_WIRELESS_SECURITY (setting), i);
+		if (key && !nm_utils_wep_key_valid (key, value)) {
+			_env_warn_fcn (environment, environment_user_data,
+			               NM_META_ENV_WARN_LEVEL_WARN,
+			               N_("'%s' is not compatible with '%s' type, please change or delete the key."),
+			               keynames[i], wep_key_type_to_string (value));
 		}
 	}
-
-	g_object_set (setting, property_info->property_name, type, NULL);
-	return TRUE;
 }
 
 static const char *
@@ -6526,9 +6514,13 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
 		.describe_message =
 		    N_("Enter the type of WEP keys. The accepted values are: "
 		       "0 or unknown, 1 or key, and 2 or passphrase.\n"),
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_wireless_security_wep_key_type,
-			.set_fcn =                  _set_fcn_wireless_security_wep_key_type,
+		.property_type =                &_pt_gobject_enum,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
+				.pre_set_notify =       _gobject_enum_pre_set_notify_fcn_wireless_security_wep_key_type,
+			),
+			.typ_flags =                  NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_TEXT
+			                            | NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_PSK,

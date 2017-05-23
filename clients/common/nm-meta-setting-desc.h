@@ -240,6 +240,11 @@ struct _NMMetaPropertyTypData {
 			int min;
 			int max;
 			const struct _NMUtilsEnumValueInfo *value_infos;
+			void (*pre_set_notify) (const NMMetaPropertyInfo *property_info,
+			                        const NMMetaEnvironment *environment,
+			                        gpointer environment_user_data,
+			                        NMSetting *setting,
+			                        int value);
 		} gobject_enum;
 		struct {
 			gint64 min;
