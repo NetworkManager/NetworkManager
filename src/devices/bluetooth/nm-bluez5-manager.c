@@ -230,10 +230,7 @@ get_managed_objects_cb (GDBusProxy *proxy,
 	}
 	g_variant_iter_init (&i, g_variant_get_child_value (variant, 0));
 	while ((g_variant_iter_next (&i, "{&o*}", &path, &ifaces))) {
-		if (g_variant_lookup_value (ifaces, NM_BLUEZ5_DEVICE_INTERFACE,
-		                            G_VARIANT_TYPE_DICTIONARY)) {
-			device_added (proxy, path, self);
-		}
+		object_manager_interfaces_added (proxy, path, ifaces, self);
 		g_variant_unref (ifaces);
 	}
 
