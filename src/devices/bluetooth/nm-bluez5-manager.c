@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2013 Red Hat, Inc.
+ * Copyright (C) 2007 - 2017 Red Hat, Inc.
  * Copyright (C) 2013 Intel Corporation.
  */
 
@@ -30,14 +30,17 @@
 
 #include "nm-core-internal.h"
 
+#include "nm-utils/c-list.h"
 #include "nm-bluez-device.h"
 #include "nm-bluez-common.h"
+#include "devices/nm-device.h"
 #include "settings/nm-settings.h"
 
 /*****************************************************************************/
 
 enum {
 	BDADDR_ADDED,
+	NETWORK_SERVER_ADDED,
 	LAST_SIGNAL,
 };
 
@@ -49,10 +52,13 @@ typedef struct {
 	GDBusProxy *proxy;
 
 	GHashTable *devices;
+
+	CList network_servers;
 } NMBluez5ManagerPrivate;
 
 struct _NMBluez5Manager {
 	GObject parent;
+	NMBtVTableNetworkServer network_server_vtable;
 	NMBluez5ManagerPrivate _priv;
 };
 
@@ -64,6 +70,10 @@ G_DEFINE_TYPE (NMBluez5Manager, nm_bluez5_manager, G_TYPE_OBJECT)
 
 #define NM_BLUEZ5_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMBluez5Manager, NM_IS_BLUEZ5_MANAGER)
 
+#define NM_BLUEZ5_MANAGER_GET_NETWORK_SERVER_VTABLE(self) (&(self)->network_server_vtable)
+#define NETWORK_SERVER_VTABLE_GET_NM_BLUEZ5_MANAGER(vtable) \
+	NM_BLUEZ5_MANAGER(((char *)(vtable)) - offsetof (struct _NMBluez5Manager, network_server_vtable))
+
 /*****************************************************************************/
 
 #define _NMLOG_DOMAIN LOGD_BT
@@ -73,6 +83,174 @@ G_DEFINE_TYPE (NMBluez5Manager, nm_bluez5_manager, G_TYPE_OBJECT)
 
 static void device_initialized (NMBluezDevice *device, gboolean success, NMBluez5Manager *self);
 static void device_usable (NMBluezDevice *device, GParamSpec *pspec, NMBluez5Manager *self);
+
+/*****************************************************************************/
+
+typedef struct {
+	char *path;
+	char *addr;
+	char *uuid;
+	NMDevice *device;
+	CList network_servers;
+} NetworkServer;
+
+static NetworkServer*
+_find_network_server (NMBluez5Manager *self,
+                      const gchar *path, const gchar *addr, NMDevice *device)
+{
+	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
+	NetworkServer *network_server;
+	CList *iter;
+
+	c_list_for_each (iter, &priv->network_servers) {
+		network_server = c_list_entry (iter, NetworkServer, network_servers);
+
+		/* Device and path matches are exact. */
+		if (   (path && !strcmp (network_server->path, path))
+		    || (device && network_server->device == device))
+			return network_server;
+
+		/* The address lookups need a server not assigned to a device
+		 * and tolerate an empty address as a wildcard for "any". */
+		if (   (!path && !device)
+		    && !network_server->device
+		    && (!addr || !strcmp (network_server->addr, addr)))
+			return network_server;
+	}
+
+	return NULL;
+}
+
+static void
+_network_server_unregister (NMBluez5Manager *self, NetworkServer *network_server)
+{
+	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
+
+	if (!network_server->uuid) {
+		/* Not connected. */
+		return;
+	}
+
+	_LOGI ("NAP: unregistering %s from %s",
+	       nm_device_get_iface (network_server->device),
+	       network_server->addr);
+
+	g_dbus_connection_call (g_dbus_proxy_get_connection (priv->proxy),
+	                        NM_BLUEZ_SERVICE,
+	                        network_server->path,
+	                        NM_BLUEZ5_NETWORK_SERVER_INTERFACE,
+	                        "Unregister",
+	                        g_variant_new ("(s)", network_server->uuid),
+	                        NULL,
+	                        G_DBUS_CALL_FLAGS_NONE,
+	                        -1, NULL, NULL, NULL);
+
+	g_clear_pointer (&network_server->uuid, g_free);
+	g_clear_object (&network_server->device);
+}
+
+static void
+_network_server_free (NMBluez5Manager *self, NetworkServer *network_server)
+{
+	_network_server_unregister (self, network_server);
+	c_list_unlink (&network_server->network_servers);
+	g_free (network_server->path);
+	g_free (network_server->addr);
+	g_slice_free (NetworkServer, network_server);
+}
+
+static gboolean
+network_server_is_available (const NMBtVTableNetworkServer *vtable,
+                             const char *addr)
+{
+	NMBluez5Manager *self = NETWORK_SERVER_VTABLE_GET_NM_BLUEZ5_MANAGER (vtable);
+
+	return !!_find_network_server (self, NULL, addr, NULL);
+}
+
+static gboolean
+network_server_register_bridge (const NMBtVTableNetworkServer *vtable,
+                                const char *addr, const char *uuid, NMDevice *device)
+{
+	NMBluez5Manager *self = NETWORK_SERVER_VTABLE_GET_NM_BLUEZ5_MANAGER (vtable);
+	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
+	NetworkServer *network_server = _find_network_server (self, NULL, addr, NULL);
+
+	if (!network_server) {
+		/* The device checked that a network server is available, before
+		 * starting the activation, but for some reason it no longer is.
+		 * Indicate that the activation should not proceed. */
+		_LOGI ("NAP: %s is not available for %s", addr, nm_device_get_iface (device));
+		return FALSE;
+	}
+
+	_LOGI ("NAP: registering %s on %s", nm_device_get_iface (device), network_server->addr);
+
+	g_dbus_connection_call (g_dbus_proxy_get_connection (priv->proxy),
+	                        NM_BLUEZ_SERVICE,
+	                        network_server->path,
+	                        NM_BLUEZ5_NETWORK_SERVER_INTERFACE,
+	                        "Register",
+	                        g_variant_new ("(ss)", uuid, nm_device_get_iface (device)),
+	                        NULL,
+	                        G_DBUS_CALL_FLAGS_NONE,
+	                        -1, NULL, NULL, NULL);
+
+	network_server->device = g_object_ref (device);
+	network_server->uuid = g_strdup (uuid);
+
+	return TRUE;
+}
+
+static gboolean
+network_server_unregister_bridge (const NMBtVTableNetworkServer *vtable,
+                                  NMDevice *device)
+{
+	NMBluez5Manager *self = NETWORK_SERVER_VTABLE_GET_NM_BLUEZ5_MANAGER (vtable);
+	NetworkServer *network_server = _find_network_server (self, NULL, NULL, device);
+
+	if (network_server)
+		_network_server_unregister (self, network_server);
+
+	return TRUE;
+}
+
+static void
+network_server_removed (GDBusProxy *proxy, const gchar *path, NMBluez5Manager *self)
+{
+	NetworkServer *network_server;
+
+	network_server = _find_network_server (self, path, NULL, NULL);
+	if (!network_server)
+		return;
+
+	if (network_server->device) {
+		nm_device_queue_state (network_server->device, NM_DEVICE_STATE_DISCONNECTED,
+		                       NM_DEVICE_STATE_REASON_BT_FAILED);
+	}
+	_LOGI ("NAP: removed interface %s", network_server->addr);
+	_network_server_free (self, network_server);
+}
+
+static void
+network_server_added (GDBusProxy *proxy, const gchar *path, const char *addr, NMBluez5Manager *self)
+{
+	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
+	NetworkServer *network_server;
+
+	/* If BlueZ messes up and announces a single network server twice,
+	 * make sure we get rid of the older instance first. */
+	network_server_removed (proxy, path, self);
+
+	network_server = g_slice_new0 (NetworkServer);
+	network_server->path = g_strdup (path);
+	network_server->addr = g_strdup (addr);
+	c_list_link_before (&priv->network_servers, &network_server->network_servers);
+
+	_LOGI ("NAP: added interface %s", addr);
+
+	g_signal_emit (self, signals[NETWORK_SERVER_ADDED], 0);
+}
 
 /*****************************************************************************/
 
@@ -193,6 +371,14 @@ object_manager_interfaces_added (GDBusProxy      *proxy,
 {
 	if (g_variant_lookup (dict, NM_BLUEZ5_DEVICE_INTERFACE, "a{sv}", NULL))
 		device_added (proxy, path, self);
+	if (g_variant_lookup (dict, NM_BLUEZ5_NETWORK_SERVER_INTERFACE, "a{sv}", NULL)) {
+		GVariant *adapter = g_variant_lookup_value (dict, NM_BLUEZ5_ADAPTER_INTERFACE, G_VARIANT_TYPE_DICTIONARY);
+		const char *address;
+
+		g_variant_lookup (adapter, "Address", "&s", &address);
+		network_server_added (proxy, path, address, self);
+		g_variant_unref (adapter);
+	}
 }
 
 static void
@@ -203,6 +389,8 @@ object_manager_interfaces_removed (GDBusProxy       *proxy,
 {
 	if (ifaces && g_strv_contains (ifaces, NM_BLUEZ5_DEVICE_INTERFACE))
 		device_removed (proxy, path, self);
+	if (ifaces && g_strv_contains (ifaces, NM_BLUEZ5_NETWORK_SERVER_INTERFACE))
+		network_server_removed (proxy, path, self);
 }
 
 static void
@@ -314,11 +502,20 @@ static void
 nm_bluez5_manager_init (NMBluez5Manager *self)
 {
 	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
+	NMBtVTableNetworkServer *network_server_vtable = NM_BLUEZ5_MANAGER_GET_NETWORK_SERVER_VTABLE (self);
 
 	bluez_connect (self);
 
 	priv->devices = g_hash_table_new_full (g_str_hash, g_str_equal,
 	                                       NULL, g_object_unref);
+
+	c_list_init (&priv->network_servers);
+
+	nm_assert (!nm_bt_vtable_network_server);
+	network_server_vtable->is_available = network_server_is_available;
+	network_server_vtable->register_bridge = network_server_register_bridge;
+	network_server_vtable->unregister_bridge = network_server_unregister_bridge;
+	nm_bt_vtable_network_server = network_server_vtable;
 }
 
 NMBluez5Manager *
@@ -338,6 +535,10 @@ dispose (GObject *object)
 {
 	NMBluez5Manager *self = NM_BLUEZ5_MANAGER (object);
 	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
+	CList *iter, *safe;
+
+	c_list_for_each_safe (iter, safe, &priv->network_servers)
+		_network_server_free (self, c_list_entry (iter, NetworkServer, network_servers));
 
 	if (priv->proxy) {
 		g_signal_handlers_disconnect_by_func (priv->proxy, G_CALLBACK (name_owner_changed_cb), self);
@@ -352,7 +553,8 @@ dispose (GObject *object)
 static void
 finalize (GObject *object)
 {
-	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE ((NMBluez5Manager *) object);
+	NMBluez5Manager *self = NM_BLUEZ5_MANAGER (object);
+	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
 
 	g_hash_table_destroy (priv->devices);
 
@@ -376,4 +578,11 @@ nm_bluez5_manager_class_init (NMBluez5ManagerClass *klass)
 	                  0, NULL, NULL, NULL,
 	                  G_TYPE_NONE, 5, G_TYPE_OBJECT, G_TYPE_STRING,
 	                  G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT);
+
+	signals[NETWORK_SERVER_ADDED] =
+	    g_signal_new (NM_BLUEZ_MANAGER_NETWORK_SERVER_ADDED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 0);
 }
