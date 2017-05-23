@@ -1187,7 +1187,11 @@ dispose (GObject *object)
 	g_slist_free_full (priv->connections, g_object_unref);
 	priv->connections = NULL;
 
-	g_clear_object (&priv->adapter5);
+	if (priv->adapter5) {
+		g_signal_handlers_disconnect_by_func (priv->adapter5, adapter5_on_properties_changed, self);
+		g_clear_object (&priv->adapter5);
+	}
+
 	g_clear_object (&priv->dbus_connection);
 
 	G_OBJECT_CLASS (nm_bluez_device_parent_class)->dispose (object);
