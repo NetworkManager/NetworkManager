@@ -2947,13 +2947,16 @@ nmc_property_set_bytes (NMSetting *setting, const char *prop, const char *val, G
 	strv = nmc_strsplit_set (val_strip, delimiters, 0);
 	array = g_byte_array_sized_new (g_strv_length (strv));
 	for (iter = strv; iter && *iter; iter++) {
+		guint8 v8;
+
 		if (!nmc_string_to_int_base (g_strstrip (*iter), 16, TRUE, 0, 255, &val_int)) {
 			g_set_error (error, 1, 0, _("'%s' is not a valid hex character"), *iter);
 			g_byte_array_free (array, TRUE);
 			success = FALSE;
 			goto done;
 		}
-		g_byte_array_append (array, (const guint8 *) &val_int, 1);
+		v8 = val_int;
+		g_byte_array_append (array, &v8, 1);
 	}
 	bytes = g_byte_array_free_to_bytes (array);
 
