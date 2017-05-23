@@ -51,6 +51,7 @@
 %bcond_without regen_docs
 %bcond_with    debug
 %bcond_without test
+%bcond_with    sanitizer
 
 ###############################################################################
 
@@ -365,6 +366,13 @@ intltoolize --automake --copy --force
 	--with-dhcpcd=no \
 	--with-crypto=nss \
 	--enable-more-warnings=error \
+%if %{with sanitizer}
+	--enable-address-sanitizer \
+	--enable-undefined-sanitizer \
+%else
+	--disable-address-sanitizer \
+	--disable-undefined-sanitizer \
+%endif
 %if %{with debug}
 	--with-more-logging \
 	--with-more-asserts=10000 \
@@ -485,11 +493,11 @@ fi
 %systemd_postun
 
 
-%post	glib -p /sbin/ldconfig
-%postun	glib -p /sbin/ldconfig
+%post   glib -p /sbin/ldconfig
+%postun glib -p /sbin/ldconfig
 
-%post	libnm -p /sbin/ldconfig
-%postun	libnm -p /sbin/ldconfig
+%post   libnm -p /sbin/ldconfig
+%postun libnm -p /sbin/ldconfig
 
 
 %files
