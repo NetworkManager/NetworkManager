@@ -1643,11 +1643,12 @@ nmc_util_is_domain (const char *domain)
 }
 
 static gboolean
-nmc_property_set_byte_array (NMSetting *setting, const char *prop, const char *val, GError **error)
+nmc_property_set_bytes (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
-	char **strv = NULL, **iter;
-	char *val_strip;
+	gs_free char *val_strip = NULL;
+	gs_strfreev char **strv = NULL;
 	const char *delimiters = " \t,";
+	char **iter;
 	long int val_int;
 	GBytes *bytes;
 	GByteArray *array = NULL;
@@ -1659,10 +1660,8 @@ nmc_property_set_byte_array (NMSetting *setting, const char *prop, const char *v
 
 	/* First try hex string in the format of AAbbCCDd */
 	bytes = nm_utils_hexstr2bin (val_strip);
-	if (bytes) {
-		array = g_bytes_unref_to_array (bytes);
+	if (bytes)
 		goto done;
-	}
 
 	/* Otherwise, consider the following format: AA b 0xCc D */
 	strv = nmc_strsplit_set (val_strip, delimiters, 0);
@@ -1670,19 +1669,21 @@ nmc_property_set_byte_array (NMSetting *setting, const char *prop, const char *v
 	for (iter = strv; iter && *iter; iter++) {
 		if (!nmc_string_to_int_base (g_strstrip (*iter), 16, TRUE, 0, 255, &val_int)) {
 			g_set_error (error, 1, 0, _("'%s' is not a valid hex character"), *iter);
+			g_byte_array_free (array, TRUE);
 			success = FALSE;
 			goto done;
 		}
 		g_byte_array_append (array, (const guint8 *) &val_int, 1);
 	}
+	bytes = g_byte_array_free_to_bytes (array);
 
 done:
 	if (success)
-		g_object_set (setting, prop, array, NULL);
+		g_object_set (setting, prop, bytes, NULL);
 
-	g_strfreev (strv);
-	if (array)
-		g_byte_array_free (array, TRUE);
+	if (bytes)
+		g_bytes_unref (bytes);
+
 	return success;
 }
 
@@ -2186,7 +2187,7 @@ DEFINE_ALLOWED_VAL_FUNC (nmc_property_802_1X_allowed_phase2_autheap, _802_1X_val
 static gboolean
 nmc_property_802_1X_set_password_raw (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
-	return nmc_property_set_byte_array (setting, prop, val, error);
+	return nmc_property_set_bytes (setting, prop, val, error);
 }
 
 static const char *
