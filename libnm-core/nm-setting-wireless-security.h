@@ -68,7 +68,7 @@ typedef enum {
 	NM_WEP_KEY_TYPE_KEY = 1,          /* Hex or ASCII */
 	NM_WEP_KEY_TYPE_PASSPHRASE = 2,   /* 104/128-bit Passphrase */
 
-	NM_WEP_KEY_TYPE_LAST = NM_WEP_KEY_TYPE_PASSPHRASE
+	NM_WEP_KEY_TYPE_LAST = NM_WEP_KEY_TYPE_PASSPHRASE, /*< skip >*/
 } NMWepKeyType;
 
 /**
