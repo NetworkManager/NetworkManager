@@ -243,7 +243,7 @@ Summary: PPP plugin for NetworkManager
 Group: System Environment/Base
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: ppp = %{ppp_version}
-Provides: NetworkManager = %{epoch}:%{version}-%{release}
+Requires: NetworkManager = %{epoch}:%{version}-%{release}
 Obsoletes: NetworkManager < %{obsoletes_ppp_plugin}
 
 %description ppp
@@ -271,8 +271,8 @@ Requires: %{name}-glib%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: glib2-devel
 Requires: pkgconfig
 Requires: dbus-glib-devel >= %{dbus_glib_version}
-Provides: %{name}-devel = %{epoch}:%{version}-%{release}
-Provides: %{name}-devel%{?_isa} = %{epoch}:%{version}-%{release}
+Requires: %{name}-devel = %{epoch}:%{version}-%{release}
+Requires: %{name}-devel%{?_isa} = %{epoch}:%{version}-%{release}
 Obsoletes: %{name}-devel < %{epoch}:%{version}-%{release}
 
 %description glib-devel
