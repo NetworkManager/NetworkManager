@@ -32,13 +32,6 @@
 
 G_DEFINE_TYPE (NmtPageVlan, nmt_page_vlan, NMT_TYPE_EDITOR_PAGE_DEVICE)
 
-#define NMT_PAGE_VLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_PAGE_VLAN, NmtPageVlanPrivate))
-
-typedef struct {
-	NMSettingWired *s_wired;
-
-} NmtPageVlanPrivate;
-
 NmtEditorPage *
 nmt_page_vlan_new (NMConnection   *conn,
                    NmtDeviceEntry *deventry)
@@ -67,7 +60,6 @@ static void
 nmt_page_vlan_constructed (GObject *object)
 {
 	NmtPageVlan *vlan = NMT_PAGE_VLAN (object);
-	NmtPageVlanPrivate *priv = NMT_PAGE_VLAN_GET_PRIVATE (vlan);
 	NmtEditorSection *section;
 	NmtEditorGrid *grid;
 	NMSettingWired *s_wired;
@@ -83,13 +75,9 @@ nmt_page_vlan_constructed (GObject *object)
 	}
 	s_wired = nm_connection_get_setting_wired (conn);
 	if (!s_wired) {
-		/* It makes things simpler if we always have a NMSettingWired;
-		 * we'll hold a ref on one, and add it to and remove it from
-		 * the connection as needed.
-		 */
-		s_wired = NM_SETTING_WIRED (nm_setting_wired_new ());
+		nm_connection_add_setting (conn, nm_setting_wired_new ());
+		s_wired = nm_connection_get_setting_wired (conn);
 	}
-	priv->s_wired = g_object_ref_sink (s_wired);
 
 	section = nmt_editor_section_new (_("VLAN"), NULL, TRUE);
 	grid = nmt_editor_section_get_body (section);
@@ -133,23 +121,10 @@ nmt_page_vlan_constructed (GObject *object)
 }
 
 static void
-nmt_page_vlan_finalize (GObject *object)
-{
-	NmtPageVlanPrivate *priv = NMT_PAGE_VLAN_GET_PRIVATE (object);
-
-	g_clear_object (&priv->s_wired);
-
-	G_OBJECT_CLASS (nmt_page_vlan_parent_class)->finalize (object);
-}
-
-static void
 nmt_page_vlan_class_init (NmtPageVlanClass *vlan_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (vlan_class);
 
-	g_type_class_add_private (vlan_class, sizeof (NmtPageVlanPrivate));
-
 	/* virtual methods */
 	object_class->constructed = nmt_page_vlan_constructed;
-	object_class->finalize    = nmt_page_vlan_finalize;
 }

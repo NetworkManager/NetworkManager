@@ -38,13 +38,6 @@
 
 G_DEFINE_TYPE (NmtPageWifi, nmt_page_wifi, NMT_TYPE_EDITOR_PAGE_DEVICE)
 
-#define NMT_PAGE_WIFI_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_PAGE_WIFI, NmtPageWifiPrivate))
-
-typedef struct {
-	NMSettingWirelessSecurity *s_wsec;
-
-} NmtPageWifiPrivate;
-
 NmtEditorPage *
 nmt_page_wifi_new (NMConnection   *conn,
                    NmtDeviceEntry *deventry)
@@ -177,7 +170,6 @@ ssid_transform_from_entry (GBinding     *binding,
 static void
 nmt_page_wifi_constructed (GObject *object)
 {
-	NmtPageWifiPrivate *priv = NMT_PAGE_WIFI_GET_PRIVATE (object);
 	NmtPageWifi *wifi = NMT_PAGE_WIFI (object);
 	NmtDeviceEntry *deventry;
 	NmtEditorSection *section;
@@ -198,13 +190,10 @@ nmt_page_wifi_constructed (GObject *object)
 
 	s_wsec = nm_connection_get_setting_wireless_security (conn);
 	if (!s_wsec) {
-		/* It makes things simpler if we always have a
-		 * NMSettingWirelessSecurity; we'll hold a ref on one, and add
-		 * it to and remove it from the connection as needed.
-		 */
-		s_wsec = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
+		nm_connection_add_setting (conn, nm_setting_wireless_security_new ());
+		s_wsec = nm_connection_get_setting_wireless_security (conn);
 	}
-	priv->s_wsec = g_object_ref_sink (s_wsec);
+	s_wsec = nm_connection_get_setting_wireless_security (conn);
 
 	deventry = nmt_editor_page_device_get_device_entry (NMT_EDITOR_PAGE_DEVICE (object));
 	g_object_bind_property (s_wireless, NM_SETTING_WIRELESS_MAC_ADDRESS,
@@ -375,23 +364,9 @@ nmt_page_wifi_constructed (GObject *object)
 }
 
 static void
-nmt_page_wifi_finalize (GObject *object)
-{
-	NmtPageWifiPrivate *priv = NMT_PAGE_WIFI_GET_PRIVATE (object);
-
-	g_clear_object (&priv->s_wsec);
-
-	G_OBJECT_CLASS (nmt_page_wifi_parent_class)->finalize (object);
-}
-
-
-static void
 nmt_page_wifi_class_init (NmtPageWifiClass *wifi_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (wifi_class);
 
-	g_type_class_add_private (wifi_class, sizeof (NmtPageWifiPrivate));
-
 	object_class->constructed = nmt_page_wifi_constructed;
-	object_class->finalize    = nmt_page_wifi_finalize;
 }
