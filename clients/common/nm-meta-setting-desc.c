@@ -1071,6 +1071,7 @@ _set_fcn_gobject_enum (ARGS_SET_FCN)
 	gboolean has_gtype = FALSE;
 	nm_auto_unset_gvalue GValue gval = G_VALUE_INIT;
 	nm_auto_unref_gtypeclass GTypeClass *gtype_class = NULL;
+	gboolean is_flags;
 	int v;
 
 	if (property_info->property_typ_data) {
@@ -1082,20 +1083,23 @@ _set_fcn_gobject_enum (ARGS_SET_FCN)
 
 	gtype_prop = _gobject_property_get_gtype (G_OBJECT (setting), property_info->property_name);
 
-	if (   gtype_prop == G_TYPE_INT
-	    || gtype_prop == G_TYPE_UINT) {
-		if (!has_gtype)
-			g_return_val_if_reached (FALSE);
-	} else if (G_TYPE_IS_CLASSED (gtype_prop)) {
-		gtype_class = g_type_class_ref (gtype_prop);
-		if (   !G_IS_ENUM_CLASS (gtype_class)
-		    && !G_IS_FLAGS_CLASS (gtype_class))
-			g_return_val_if_reached (FALSE);
+	if (   has_gtype
+	    && NM_IN_SET (gtype_prop,
+	                  G_TYPE_INT,
+	                  G_TYPE_UINT)
+	    && G_TYPE_IS_CLASSED (gtype)
+	    && (gtype_class = g_type_class_ref (gtype))
+	    && (   (is_flags = G_IS_FLAGS_CLASS (gtype_class))
+	        || G_IS_ENUM_CLASS (gtype_class))) {
+		/* valid */
+	} else if (   !has_gtype
+	           && G_TYPE_IS_CLASSED (gtype_prop)
+	           && (gtype_class = g_type_class_ref (gtype_prop))
+	           && (   (is_flags = G_IS_FLAGS_CLASS (gtype_class))
+	               || G_IS_ENUM_CLASS (gtype_class))) {
+		gtype = gtype_prop;
 	} else
 		g_return_val_if_reached (FALSE);
-
-	if (!has_gtype)
-		gtype = gtype_prop;
 
 	if (!_nm_utils_enum_from_str_full (gtype, value, &v, NULL,
 	                                   property_info->property_typ_data
@@ -1124,6 +1128,7 @@ fail:
 	if (error) {
 		gs_free const char **valid_all = NULL;
 		gs_free const char *valid_str = NULL;
+		gboolean has_minmax = FALSE;
 		int min = G_MININT;
 		int max = G_MAXINT;
 
@@ -1132,14 +1137,28 @@ fail:
 			    || property_info->property_typ_data->subtype.gobject_enum.max) {
 				min = property_info->property_typ_data->subtype.gobject_enum.min;
 				max = property_info->property_typ_data->subtype.gobject_enum.max;
+				has_minmax = TRUE;
 			}
 		}
+
+		if (!has_minmax && is_flags) {
+			min = 0;
+			max = (gint) G_MAXUINT;
+		}
+
 		valid_all = nm_utils_enum_get_values (gtype, min, max);
 		valid_str = g_strjoinv (",", (char **) valid_all);
-		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
-		             _("invalid option '%s', use one of [%s]"),
-		             value,
-		             valid_str);
+		if (is_flags) {
+			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
+			             _("invalid option '%s', use a combination of [%s]"),
+			             value,
+			             valid_str);
+		} else {
+			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
+			             _("invalid option '%s', use one of [%s]"),
+			             value,
+			             valid_str);
+		}
 	}
 	return FALSE;
 }
