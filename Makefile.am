@@ -4422,5 +4422,6 @@ cscope:
 
 ###############################################################################
 
+.PRECIOUS: test-suite.log
 .DELETE_ON_ERROR:
 .PHONY: cscope dist-configure-check $(check_local) $(dist_hook)
