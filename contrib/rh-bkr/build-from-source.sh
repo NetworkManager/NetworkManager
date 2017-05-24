@@ -9,6 +9,7 @@ BUILD_REPO="${BUILD_REPO-https://github.com/NetworkManager/NetworkManager.git}"
 BUILD_REPO2="${BUILD_REPO2-git://github.com/NetworkManager/NetworkManager.git}"
 ARCH="${ARCH:-`arch`}"
 WITH_DEBUG="$WITH_DEBUG"
+WITH_SANITIZER="$WITH_SANITIZER"
 DO_TEST_BUILD="${DO_TEST_BUILD:-yes}"
 DO_TEST_PACKAGE="${DO_TEST_PACKAGE:-yes}"
 DO_INSTALL="${DO_INSTALL:-yes}"
@@ -117,6 +118,13 @@ if [[ "$DO_TEST_PACKAGE" == yes || "$DO_INSTALL" == yes ]]; then
     A=()
     if [[ "$WITH_DEBUG" == yes ]]; then
         A=("${A[@]}" --with debug)
+    else
+        A=("${A[@]}" --without debug)
+    fi
+    if [[ "$WITH_SANITIZER" == yes ]]; then
+        A=("${A[@]}" --with sanitizer)
+    else
+        A=("${A[@]}" --without sanitizer)
     fi
     ./contrib/fedora/rpm/build_clean.sh -c "${A[@]}"
 fi
