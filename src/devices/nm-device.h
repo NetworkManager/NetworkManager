@@ -375,10 +375,10 @@ typedef struct {
 	 * @self: the #NMDevice
 	 * @component: the component (device, modem, etc) which was added
 	 *
-	 * Notifies @self that a new component was added to the Manager.  This
-	 * may include any kind of %GObject subclass, and the device is expected
-	 * to match only specific components they care about, like %NMModem objects
-	 * or %NMDevice objects.
+	 * Notifies @self that a new component that a device might be interested
+	 * in was detected by some device factory. It may include an object of
+	 * %GObject subclass to help the devices decide whether it claims that
+	 * particular object itself and the emitting factory should not.
 	 *
 	 * Returns: %TRUE if the component was claimed exclusively and no further
 	 * devices should be notified of the new component.  %FALSE to indicate
