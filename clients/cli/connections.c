@@ -2096,8 +2096,9 @@ check_activated (ActivateConnectionInfo *info)
 	NMDevice *device = info->device;
 	NMActiveConnection *active = info->active;
 	NMActiveConnectionStateReason ac_reason;
-	NMDeviceState dev_state;
-	NMDeviceStateReason dev_reason;
+	NMDeviceState dev_state = NM_DEVICE_STATE_UNKNOWN;
+	NMDeviceStateReason dev_reason = NM_DEVICE_STATE_REASON_UNKNOWN;
+	const char *reason;
 
 	ac_reason = nm_active_connection_get_state_reason (active);
 
@@ -2117,20 +2118,33 @@ check_activated (ActivateConnectionInfo *info)
 		break;
 
 	case NM_ACTIVE_CONNECTION_STATE_DEACTIVATED:
-		if (   device
-		    && ac_reason == NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED) {
-			if (dev_state == NM_DEVICE_STATE_FAILED || dev_state == NM_DEVICE_STATE_DISCONNECTED) {
-				g_string_printf (nmc->return_text, _("Error: Connection activation failed: %s"),
-				                 nmc_device_reason_to_string (dev_reason));
-				nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
-				activate_connection_info_finish (info);
-			} else {
-				/* Just wait for the device to go failed. We'll get a better error message. */
-				return;
-			}
+
+		if (   !device
+		    || ac_reason != NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED
+		    || nm_device_get_active_connection (device) != active) {
+			/* (1)
+			 * - we have no device,
+			 * - or, @ac_reason is specific
+			 * - or, @device no longer references the current @active
+			 * >> we complete with @ac_reason. */
+			reason = active_connection_state_reason_to_string (ac_reason);
+		} else if (   dev_state <= NM_DEVICE_STATE_DISCONNECTED
+		           || dev_state >= NM_DEVICE_STATE_FAILED) {
+			/* (2)
+			 * - not (1)
+			 * - and, the device is no longer in an activated state,
+			 * >> we complete with @dev_reason. */
+			reason = nmc_device_reason_to_string (dev_reason);
 		} else {
+			/* (3)
+			 * we wait for the device go disconnect. We will get a better
+			 * failure reason from the device (2). */
+			reason = NULL;
+		}
+
+		if (reason) {
 			g_string_printf (nmc->return_text, _("Error: Connection activation failed: %s"),
-			                 active_connection_state_reason_to_string (ac_reason));
+			                 reason);
 			nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 			activate_connection_info_finish (info);
 		}
