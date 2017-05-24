@@ -110,6 +110,7 @@ _init_nm_debug (NMConfig *config)
 	flags  = nm_utils_parse_debug_string (env, keys, G_N_ELEMENTS (keys));
 	flags |= nm_utils_parse_debug_string (debug, keys, G_N_ELEMENTS (keys));
 
+#if ! defined (__SANITIZE_ADDRESS__)
 	if (NM_FLAGS_HAS (flags, D_RLIMIT_CORE)) {
 		/* only enable this, if explicitly requested, because it might
 		 * expose sensitive data. */
@@ -120,6 +121,8 @@ _init_nm_debug (NMConfig *config)
 		};
 		setrlimit (RLIMIT_CORE, &limit);
 	}
+#endif
+
 	if (NM_FLAGS_HAS (flags, D_FATAL_WARNINGS))
 		_set_g_fatal_warnings ();
 }
