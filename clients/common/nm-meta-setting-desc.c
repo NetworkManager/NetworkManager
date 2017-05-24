@@ -2246,7 +2246,7 @@ _values_fcn_bond_options (ARGS_VALUES_FCN)
 }
 
 static gconstpointer
-_get_fcn_connection_autoconnect_retires (ARGS_GET_FCN)
+_get_fcn_connection_autoconnect_retries (ARGS_GET_FCN)
 {
 	NMSettingConnection *s_con = NM_SETTING_CONNECTION (setting);
 	gint retries;
@@ -4988,7 +4988,7 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES,
 		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_connection_autoconnect_retires,
+			.get_fcn =                  _get_fcn_connection_autoconnect_retries,
 			.set_fcn =                  _set_fcn_gobject_int,
 		),
 	),
