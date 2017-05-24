@@ -2095,12 +2095,10 @@ check_activated (ActivateConnectionInfo *info)
 	NmCli *nmc = info->nmc;
 	NMDevice *device = info->device;
 	NMActiveConnection *active = info->active;
-	NMActiveConnectionState ac_state;
 	NMActiveConnectionStateReason ac_reason;
 	NMDeviceState dev_state;
 	NMDeviceStateReason dev_reason;
 
-	ac_state = nm_active_connection_get_state (active);
 	ac_reason = nm_active_connection_get_state_reason (active);
 
 	if (device) {
@@ -2108,14 +2106,19 @@ check_activated (ActivateConnectionInfo *info)
 		dev_reason = nm_device_get_state_reason (device);
 	}
 
-	if (ac_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
+	switch (nm_active_connection_get_state (active)) {
+
+	case NM_ACTIVE_CONNECTION_STATE_ACTIVATED:
 		if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
 			nmc_terminal_erase_line ();
 		g_print (_("Connection successfully activated (D-Bus active path: %s)\n"),
 		         nm_object_get_path (NM_OBJECT (active)));
 		activate_connection_info_finish (info);
-	} else if (ac_state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED) {
-		if (device && ac_reason == NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED) {
+		break;
+
+	case NM_ACTIVE_CONNECTION_STATE_DEACTIVATED:
+		if (   device
+		    && ac_reason == NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED) {
 			if (dev_state == NM_DEVICE_STATE_FAILED || dev_state == NM_DEVICE_STATE_DISCONNECTED) {
 				g_string_printf (nmc->return_text, _("Error: Connection activation failed: %s"),
 				                 nmc_device_reason_to_string (dev_reason));
@@ -2131,7 +2134,9 @@ check_activated (ActivateConnectionInfo *info)
 			nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 			activate_connection_info_finish (info);
 		}
-	} else if (ac_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING) {
+		break;
+
+	case NM_ACTIVE_CONNECTION_STATE_ACTIVATING:
 		/* activating master connection does not automatically activate any slaves, so their
 		 * active connection state will not progress beyond ACTIVATING state.
 		 * Monitor the device instead. */
@@ -2147,14 +2152,18 @@ check_activated (ActivateConnectionInfo *info)
 		    && (   NM_IS_DEVICE_BOND (device)
 		        || NM_IS_DEVICE_TEAM (device)
 		        || NM_IS_DEVICE_BRIDGE (device))
-	            && dev_state >= NM_DEVICE_STATE_IP_CONFIG
-	            && dev_state <= NM_DEVICE_STATE_ACTIVATED) {
+		    && dev_state >= NM_DEVICE_STATE_IP_CONFIG
+		    && dev_state <= NM_DEVICE_STATE_ACTIVATED) {
 			if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
 				nmc_terminal_erase_line ();
 			g_print (_("Connection successfully activated (master waiting for slaves) (D-Bus active path: %s)\n"),
 			          nm_object_get_path (NM_OBJECT (active)));
 			activate_connection_info_finish (info);
 		}
+		break;
+
+	default:
+		break;
 	}
 }
 
