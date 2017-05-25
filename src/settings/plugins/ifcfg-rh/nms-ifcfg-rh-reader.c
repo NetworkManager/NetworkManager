@@ -302,30 +302,6 @@ read_ip4_address (shvarFile *ifcfg,
 	return TRUE;
 }
 
-static void
-_numbered_tag (char *buf, gsize buf_len, const char *tag_name, int which)
-{
-	gsize l;
-
-	l = g_strlcpy (buf, tag_name, buf_len);
-	nm_assert (l < buf_len);
-	if (which != -1) {
-		buf_len -= l;
-		l = g_snprintf (&buf[l], buf_len, "%d", which);
-		nm_assert (l < buf_len);
-	}
-}
-#define numbered_tag(buf, tag_name, which) \
-	({ \
-		_nm_unused char *const _buf = (buf); \
-		\
-		/* some static assert trying to ensure that the buffer is statically allocated.
-		 * It disallows a buffer size of sizeof(gpointer) to catch that. */ \
-		G_STATIC_ASSERT (G_N_ELEMENTS (buf) == sizeof (buf) && sizeof (buf) != sizeof (char *) && sizeof (buf) < G_MAXINT); \
-		_numbered_tag (buf, sizeof (buf), ""tag_name"", (which)); \
-		buf; \
-	})
-
 static gboolean
 is_any_ip4_address_defined (shvarFile *ifcfg, int *idx)
 {
