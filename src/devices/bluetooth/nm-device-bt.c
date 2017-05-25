@@ -647,7 +647,7 @@ component_added (NMDevice *device, GObject *component)
 	NMDeviceState state;
 	NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
 
-	if (!NM_IS_MODEM (component))
+	if (!component || !NM_IS_MODEM (component))
 		return FALSE;
 	modem = NM_MODEM (component);
 
