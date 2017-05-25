@@ -2196,7 +2196,8 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 			char buf[INET_ADDRSTRLEN];
 
 			g_free (tmp);
-			svSetValueStr (ifcfg, netmask_key, nm_utils_inet4_ntop (prefix, buf));
+			svSetValueStr (ifcfg, netmask_key,
+			               nm_utils_inet4_ntop (nm_utils_ip4_prefix_to_netmask (prefix), buf));
 		}
 
 		svUnsetValue (ifcfg, gw_key);
