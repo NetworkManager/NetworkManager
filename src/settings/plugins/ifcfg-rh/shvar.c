@@ -905,6 +905,28 @@ svGetKeys (shvarFile *s)
 
 /*****************************************************************************/
 
+const char *
+svFindFirstKeyWithPrefix (shvarFile *s, const char *key_prefix)
+{
+	const GList *current;
+	const shvarLine *l;
+
+	g_return_val_if_fail (s, NULL);
+	g_return_val_if_fail (key_prefix, NULL);
+
+	for (current = s->lineList; current; current = current->next) {
+		l = current->data;
+		if (   l->key
+		    && l->line
+		    && g_str_has_prefix (l->key, key_prefix))
+			return l->key;
+	}
+
+	return NULL;
+}
+
+/*****************************************************************************/
+
 static const char *
 _svGetValue (shvarFile *s, const char *key, char **to_free)
 {
