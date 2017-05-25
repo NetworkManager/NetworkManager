@@ -30,6 +30,9 @@
 #define SIGNAL_DATA_FMT "'%s-%s' ifindex %d%s%s%s (%d times received)"
 #define SIGNAL_DATA_ARG(data) (data)->name, nm_platform_signal_change_type_to_string ((data)->change_type), (data)->ifindex, (data)->ifname ? " ifname '" : "", (data)->ifname ? (data)->ifname : "", (data)->ifname ? "'" : "", (data)->received_count
 
+int NMTSTP_ENV1_IFINDEX = -1;
+int NMTSTP_ENV1_EX = -1;
+
 /*****************************************************************************/
 
 void

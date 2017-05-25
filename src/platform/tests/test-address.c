@@ -30,8 +30,8 @@
 #define IP6_ADDRESS "2001:db8:a:b:1:2:3:4"
 #define IP6_PLEN 64
 
-static int DEVICE_IFINDEX = -1;
-static int EX = -1;
+#define DEVICE_IFINDEX NMTSTP_ENV1_IFINDEX
+#define EX             NMTSTP_ENV1_EX
 
 /*****************************************************************************/
 
@@ -366,62 +366,16 @@ _nmtstp_init_tests (int *argc, char ***argv)
  * SETUP TESTS
  *****************************************************************************/
 
-typedef struct {
-	const char *testpath;
-	GTestFunc test_func;
-} TestSetup;
-
-static void
-_g_test_run (gconstpointer user_data)
-{
-	const TestSetup *s = user_data;
-	int ifindex;
-
-	_LOGT ("TEST: start %s", s->testpath);
-
-	nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME));
-	g_assert (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, DEVICE_NAME));
-	g_assert_cmpint (nm_platform_link_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL), ==, NM_PLATFORM_ERROR_SUCCESS);
-
-	ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME);
-	g_assert_cmpint (ifindex, >, 0);
-	g_assert_cmpint (DEVICE_IFINDEX, ==, -1);
-
-	DEVICE_IFINDEX = ifindex;
-	EX = nmtstp_run_command_check_external_global ();
-
-	s->test_func ();
-
-	g_assert_cmpint (DEVICE_IFINDEX, ==, ifindex);
-	DEVICE_IFINDEX = -1;
-
-	g_assert_cmpint (ifindex, ==, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME));
-	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
-	_LOGT ("TEST: finished %s", s->testpath);
-}
-
-static void
-_g_test_add_func (const char *testpath,
-                  GTestFunc   test_func)
-{
-	TestSetup *s;
-
-	s = g_new0 (TestSetup, 1);
-	s->testpath = testpath;
-	s->test_func = test_func;
-
-	g_test_add_data_func_full (testpath, s, _g_test_run, g_free);
-}
-
 void
 _nmtstp_setup_tests (void)
 {
-	_g_test_add_func ("/address/ipv4/general", test_ip4_address_general);
-	_g_test_add_func ("/address/ipv6/general", test_ip6_address_general);
+#define add_test_func(testpath, test_func) nmtstp_env1_add_test_func(testpath, test_func, FALSE)
+	add_test_func ("/address/ipv4/general", test_ip4_address_general);
+	add_test_func ("/address/ipv6/general", test_ip6_address_general);
 
-	_g_test_add_func ("/address/ipv4/general-2", test_ip4_address_general_2);
-	_g_test_add_func ("/address/ipv6/general-2", test_ip6_address_general_2);
+	add_test_func ("/address/ipv4/general-2", test_ip4_address_general_2);
+	add_test_func ("/address/ipv6/general-2", test_ip6_address_general_2);
 
-	_g_test_add_func ("/address/ipv4/peer", test_ip4_address_peer);
-	_g_test_add_func ("/address/ipv4/peer/zero", test_ip4_address_peer_zero);
+	add_test_func ("/address/ipv4/peer", test_ip4_address_peer);
+	add_test_func ("/address/ipv4/peer/zero", test_ip4_address_peer_zero);
 }
