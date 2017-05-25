@@ -306,22 +306,6 @@ name_owner_changed_cb (GObject *object,
 	}
 }
 
-static void
-bluez_cleanup (NMBluez5Manager *self, gboolean do_signal)
-{
-	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
-
-	if (priv->proxy) {
-		g_signal_handlers_disconnect_by_func (priv->proxy, G_CALLBACK (name_owner_changed_cb), self);
-		g_clear_object (&priv->proxy);
-	}
-
-	if (do_signal)
-		remove_all_devices (self);
-	else
-		g_hash_table_remove_all (priv->devices);
-}
-
 /*****************************************************************************/
 
 static void
@@ -351,8 +335,14 @@ static void
 dispose (GObject *object)
 {
 	NMBluez5Manager *self = NM_BLUEZ5_MANAGER (object);
+	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
 
-	bluez_cleanup (self, FALSE);
+	if (priv->proxy) {
+		g_signal_handlers_disconnect_by_func (priv->proxy, G_CALLBACK (name_owner_changed_cb), self);
+		g_clear_object (&priv->proxy);
+	}
+
+	g_hash_table_remove_all (priv->devices);
 
 	G_OBJECT_CLASS (nm_bluez5_manager_parent_class)->dispose (object);
 }
