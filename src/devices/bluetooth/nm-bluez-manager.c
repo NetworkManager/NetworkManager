@@ -146,7 +146,7 @@ cleanup_checking (NMBluezManager *self, gboolean do_unwatch_name)
 
 
 static void
-manager_bdaddr_added_cb (NMBluez4Manager *bluez_mgr,
+manager_bdaddr_added_cb (GObject *manager,
                          NMBluezDevice *bt_device,
                          const char *bdaddr,
                          const char *name,
@@ -177,6 +177,13 @@ manager_bdaddr_added_cb (NMBluez4Manager *bluez_mgr,
 	       has_nap ? "NAP" : "");
 	g_signal_emit_by_name (self, NM_DEVICE_FACTORY_DEVICE_ADDED, device);
 	g_object_unref (device);
+}
+
+static void
+manager_network_server_added_cb (GObject *manager,
+                                 gpointer user_data)
+{
+	nm_device_factory_emit_component_added (NM_DEVICE_FACTORY (user_data), NULL);
 }
 
 static void
@@ -227,6 +234,10 @@ setup_bluez5 (NMBluezManager *self)
 	g_signal_connect (manager,
 	                  NM_BLUEZ_MANAGER_BDADDR_ADDED,
 	                  G_CALLBACK (manager_bdaddr_added_cb),
+	                  self);
+	g_signal_connect (manager,
+	                  NM_BLUEZ_MANAGER_NETWORK_SERVER_ADDED,
+	                  G_CALLBACK (manager_network_server_added_cb),
 	                  self);
 
 	nm_bluez5_manager_query_devices (manager);
@@ -427,7 +438,7 @@ dispose (GObject *object)
 		g_clear_object (&priv->manager4);
 	}
 	if (priv->manager5) {
-		g_signal_handlers_disconnect_by_func (priv->manager5, manager_bdaddr_added_cb, self);
+		g_signal_handlers_disconnect_by_data (priv->manager5, self);
 		g_clear_object (&priv->manager5);
 	}
 
