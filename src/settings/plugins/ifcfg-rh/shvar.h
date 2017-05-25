@@ -75,13 +75,13 @@ gboolean svGetValueEnum (shvarFile *s, const char *key,
  * the key=value pair after that line.  Otherwise, prepend the pair
  * to the top of the file.
  */
-void svSetValue (shvarFile *s, const char *key, const char *value);
-void svSetValueStr (shvarFile *s, const char *key, const char *value);
-void svSetValueBoolean (shvarFile *s, const char *key, gboolean value);
-void svSetValueInt64 (shvarFile *s, const char *key, gint64 value);
-void svSetValueEnum (shvarFile *s, const char *key, GType gtype, int value);
+gboolean svSetValue (shvarFile *s, const char *key, const char *value);
+gboolean svSetValueStr (shvarFile *s, const char *key, const char *value);
+gboolean svSetValueBoolean (shvarFile *s, const char *key, gboolean value);
+gboolean svSetValueInt64 (shvarFile *s, const char *key, gint64 value);
+gboolean svSetValueEnum (shvarFile *s, const char *key, GType gtype, int value);
 
-void svUnsetValue (shvarFile *s, const char *key);
+gboolean svUnsetValue (shvarFile *s, const char *key);
 
 void svUnsetValuesWithPrefix (shvarFile *s, const char *prefix);
 

@@ -1097,14 +1097,15 @@ svGetValueEnum (shvarFile *s, const char *key,
 
 /* Same as svSetValueStr() but it preserves empty @value -- contrary to
  * svSetValueStr() for which "" effectively means to remove the value. */
-void
+gboolean
 svSetValue (shvarFile *s, const char *key, const char *value)
 {
 	CList *current;
 	shvarLine *line, *l;
+	gboolean changed = FALSE;
 
-	g_return_if_fail (s != NULL);
-	g_return_if_fail (key != NULL);
+	g_return_val_if_fail (s, FALSE);
+	g_return_val_if_fail (key, FALSE);
 
 	nm_assert (_shell_is_name (key, -1));
 
@@ -1116,7 +1117,7 @@ svSetValue (shvarFile *s, const char *key, const char *value)
 				/* if we find multiple entries for the same key, we can
 				 * delete all but the last. */
 				line_free (line);
-				s->modified = TRUE;
+				changed = TRUE;
 			}
 			line = l;
 		}
@@ -1124,18 +1125,23 @@ svSetValue (shvarFile *s, const char *key, const char *value)
 
 	if (!value) {
 		if (line) {
-			if (nm_clear_g_free (&line->line))
-				s->modified = TRUE;
+			if (nm_clear_g_free (&line->line)) {
+				changed = TRUE;
+			}
 		}
 	} else {
 		if (!line) {
 			c_list_link_tail (&s->lst_head, &line_new_build (key, value)->lst);
-			s->modified = TRUE;
+			changed = TRUE;
 		} else {
 			if (line_set (line, value))
-				s->modified = TRUE;
+				changed = TRUE;
 		}
 	}
+
+	if (changed)
+		s->modified = TRUE;
+	return changed;
 }
 
 /* Set the variable <key> equal to the value <value>.
@@ -1143,39 +1149,39 @@ svSetValue (shvarFile *s, const char *key, const char *value)
  * the key=value pair after that line.  Otherwise, append the pair
  * to the bottom of the file.
  */
-void
+gboolean
 svSetValueStr (shvarFile *s, const char *key, const char *value)
 {
-	svSetValue (s, key, value && value[0] ? value : NULL);
+	return svSetValue (s, key, value && value[0] ? value : NULL);
 }
 
-void
+gboolean
 svSetValueInt64 (shvarFile *s, const char *key, gint64 value)
 {
 	char buf[NM_DECIMAL_STR_MAX (value)];
 
-	svSetValue (s, key, nm_sprintf_buf (buf, "%"G_GINT64_FORMAT, value));
+	return svSetValue (s, key, nm_sprintf_buf (buf, "%"G_GINT64_FORMAT, value));
 }
 
-void
+gboolean
 svSetValueBoolean (shvarFile *s, const char *key, gboolean value)
 {
-	svSetValue (s, key, value ? "yes" : "no");
+	return svSetValue (s, key, value ? "yes" : "no");
 }
 
-void
+gboolean
 svSetValueEnum (shvarFile *s, const char *key, GType gtype, int value)
 {
 	gs_free char *v = NULL;
 
 	v = _nm_utils_enum_to_str_full (gtype, value, " ");
-	svSetValueStr (s, key, v);
+	return svSetValueStr (s, key, v);
 }
 
-void
+gboolean
 svUnsetValue (shvarFile *s, const char *key)
 {
-	svSetValue (s, key, NULL);
+	return svSetValue (s, key, NULL);
 }
 
 void
