@@ -399,6 +399,48 @@ _writer_new_connection_fail (NMConnection *connection,
 
 /*****************************************************************************/
 
+static void
+test_read_netmask_1 (void)
+{
+	nmtst_auto_unlinkfile char *testfile = NULL;
+	gs_unref_object NMConnection *connection = NULL;
+	gs_unref_object NMConnection *reread = NULL;
+	gs_free char *content = NULL;
+	NMSettingConnection *s_con;
+	NMSettingIPConfig *s_ip4;
+	NMIPAddress *ip4_addr;
+	const char *FILENAME = TEST_IFCFG_DIR "/network-scripts/ifcfg-netmask-1";
+
+	connection = _connection_from_file (FILENAME, NULL, TYPE_ETHERNET, NULL);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System netmask-1");
+
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	g_assert (s_ip4);
+	g_assert_cmpuint (nm_setting_ip_config_get_num_dns (s_ip4), ==, 1);
+	ip4_addr = nm_setting_ip_config_get_address (s_ip4, 0);
+	g_assert (ip4_addr);
+	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "102.0.2.2");
+	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 15);
+
+	nmtst_assert_connection_verifies_without_normalization (connection);
+
+	content = nmtst_file_get_contents (FILENAME);
+
+	testfile = g_strdup (TEST_SCRATCH_DIR "/network-scripts/ifcfg-netmask-1.copy");
+
+	nmtst_file_set_contents (testfile, content);
+
+	_writer_update_connection (connection,
+	                           TEST_SCRATCH_DIR "/network-scripts/",
+	                           testfile,
+	                           TEST_IFCFG_DIR "/network-scripts/ifcfg-netmask-1.cexpected");
+}
+
+/*****************************************************************************/
+
 static gboolean
 verify_cert_or_key (NMSetting8021x *s_compare,
                     const char *file,
@@ -9347,6 +9389,8 @@ int main (int argc, char **argv)
 
 	nmtst_add_test_func (TPATH "read-static",           test_read_wired_static, TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static",           "System test-wired-static",           GINT_TO_POINTER (TRUE));
 	nmtst_add_test_func (TPATH "read-static-bootproto", test_read_wired_static, TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static-bootproto", "System test-wired-static-bootproto", GINT_TO_POINTER (FALSE));
+
+	g_test_add_func (TPATH "read-netmask-1", test_read_netmask_1);
 
 	g_test_add_func (TPATH "read-dhcp", test_read_wired_dhcp);
 	g_test_add_func (TPATH "read-dhcp-plus-ip", test_read_wired_dhcp_plus_ip);
