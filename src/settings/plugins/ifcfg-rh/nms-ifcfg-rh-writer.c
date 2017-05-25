@@ -2056,6 +2056,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	int timeout;
 	GString *searches;
 	const char *method = NULL;
+	gboolean has_netmask;
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	if (!s_ip4) {
@@ -2128,16 +2129,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	else if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
 		svSetValueStr (ifcfg, "BOOTPROTO", "shared");
 
-	/* Clear out un-numbered IP address fields */
-	svUnsetValue (ifcfg, "IPADDR");
-	svUnsetValue (ifcfg, "PREFIX");
-	svUnsetValue (ifcfg, "NETMASK");
-	svUnsetValue (ifcfg, "GATEWAY");
-	/* Clear out zero-indexed IP address fields */
-	svUnsetValue (ifcfg, "IPADDR0");
-	svUnsetValue (ifcfg, "PREFIX0");
-	svUnsetValue (ifcfg, "NETMASK0");
-	svUnsetValue (ifcfg, "GATEWAY0");
+	has_netmask = !!svFindFirstKeyWithPrefix (ifcfg, "NETMASK");
 
 	/* Write out IPADDR<n>, PREFIX<n>, GATEWAY<n> for current IP addresses
 	 * without labels. Unset obsolete NETMASK<n>.
@@ -2179,20 +2171,30 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		svSetValueInt64 (ifcfg, prefix_key, prefix);
 
 		/* If the legacy "NETMASK" is present, keep it. */
-		if (svGetValue (ifcfg, netmask_key, &tmp)) {
+		if (has_netmask) {
 			char buf[INET_ADDRSTRLEN];
 
-			g_free (tmp);
 			svSetValueStr (ifcfg, netmask_key,
 			               nm_utils_inet4_ntop (nm_utils_ip4_prefix_to_netmask (prefix), buf));
-		}
+		} else
+			svUnsetValue (ifcfg, netmask_key);
 
 		svUnsetValue (ifcfg, gw_key);
 		n++;
 	}
 
-	/* Clear remaining IPADDR<n..255>, etc */
-	for (i = n; i < 256; i++) {
+	svUnsetValue (ifcfg, "IPADDR0");
+	svUnsetValue (ifcfg, "PREFIX0");
+	svUnsetValue (ifcfg, "NETMASK0");
+	svUnsetValue (ifcfg, "GATEWAY0");
+	if (n == 0) {
+		svUnsetValue (ifcfg, "IPADDR");
+		svUnsetValue (ifcfg, "PREFIX");
+		svUnsetValue (ifcfg, "NETMASK");
+		i = 1;
+	} else
+		i = n;
+	for (; i < 256; i++) {
 		nm_sprintf_buf (addr_key, "IPADDR%u", i);
 		nm_sprintf_buf (prefix_key, "PREFIX%u", i);
 		nm_sprintf_buf (netmask_key, "NETMASK%u", i);
