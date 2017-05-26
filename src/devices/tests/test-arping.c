@@ -40,9 +40,8 @@ static void
 fixture_setup (test_fixture *fixture, gconstpointer user_data)
 {
 	/* create veth pair. */
-	nmtstp_run_command_check ("ip link add dev %s type veth peer name %s", IFACE_VETH0, IFACE_VETH1);
-	fixture->ifindex0 = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, IFACE_VETH0, NM_LINK_TYPE_VETH, 100)->ifindex;
-	fixture->ifindex1 = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, IFACE_VETH1, NM_LINK_TYPE_VETH, 100)->ifindex;
+	fixture->ifindex0 = nmtstp_link_veth_add (NM_PLATFORM_GET, -1, IFACE_VETH0, IFACE_VETH1)->ifindex;
+	fixture->ifindex1 = nmtstp_link_get_typed (NM_PLATFORM_GET, -1, IFACE_VETH1, NM_LINK_TYPE_VETH)->ifindex;
 
 	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, fixture->ifindex0, NULL));
 	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, fixture->ifindex1, NULL));

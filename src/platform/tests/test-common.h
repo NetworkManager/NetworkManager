@@ -197,6 +197,10 @@ void nmtstp_link_set_updown (NMPlatform *platform,
                              int ifindex,
                              gboolean up);
 
+const NMPlatformLink *nmtstp_link_veth_add (NMPlatform *platform,
+                                            gboolean external_command,
+                                            const char *name,
+                                            const char *peer);
 const NMPlatformLink *nmtstp_link_dummy_add (NMPlatform *platform,
                                              gboolean external_command,
                                              const char *name);
