@@ -22,8 +22,6 @@
 
 #include "test-common.h"
 
-#define DEVICE_NAME "nm-test-device"
-
 static void
 test_cleanup_internal (void)
 {

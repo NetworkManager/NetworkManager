@@ -22,7 +22,6 @@
 
 #include "test-common.h"
 
-#define DEVICE_NAME "nm-test-device"
 #define IP4_ADDRESS "192.0.2.1"
 #define IP4_ADDRESS_PEER "192.0.2.2"
 #define IP4_ADDRESS_PEER2 "192.0.3.1"

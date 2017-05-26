@@ -27,9 +27,8 @@
 
 #include "test-common.h"
 
-#define DEVICE_NAME "nm-test-device"
-
-static int EX = -1;
+#define DEVICE_IFINDEX NMTSTP_ENV1_IFINDEX
+#define EX             NMTSTP_ENV1_EX
 
 static void
 ip4_route_callback (NMPlatform *platform, int obj_type_i, int ifindex, const NMPlatformIP4Route *received, int change_type_i, SignalData *data)
@@ -543,23 +542,15 @@ _nmtstp_init_tests (int *argc, char ***argv)
 void
 _nmtstp_setup_tests (void)
 {
-	SignalData *link_added = add_signal_ifname (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_ADDED, link_callback, DEVICE_NAME);
-
-	nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME));
-	g_assert (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, DEVICE_NAME));
-	g_assert (nm_platform_link_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL) == NM_PLATFORM_ERROR_SUCCESS);
-	accept_signal (link_added);
-	free_signal (link_added);
-
-	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME), NULL));
-
-	g_test_add_func ("/route/ip4", test_ip4_route);
-	g_test_add_func ("/route/ip6", test_ip6_route);
-	g_test_add_func ("/route/ip4_metric0", test_ip4_route_metric0);
-	g_test_add_func ("/route/ip4_options", test_ip4_route_options);
-	g_test_add_data_func ("/route/ip6_options/1", GINT_TO_POINTER (1), test_ip6_route_options);
-	g_test_add_data_func ("/route/ip6_options/2", GINT_TO_POINTER (2), test_ip6_route_options);
+#define add_test_func(testpath, test_func) nmtstp_env1_add_test_func(testpath, test_func, TRUE)
+#define add_test_func_data(testpath, test_func, arg) nmtstp_env1_add_test_func_data(testpath, test_func, arg, TRUE)
+	add_test_func ("/route/ip4", test_ip4_route);
+	add_test_func ("/route/ip6", test_ip6_route);
+	add_test_func ("/route/ip4_metric0", test_ip4_route_metric0);
+	add_test_func ("/route/ip4_options", test_ip4_route_options);
+	add_test_func_data ("/route/ip6_options/1", test_ip6_route_options, GINT_TO_POINTER (1));
+	add_test_func_data ("/route/ip6_options/2", test_ip6_route_options, GINT_TO_POINTER (2));
 
 	if (nmtstp_is_root_test ())
-		g_test_add_func ("/route/ip4_zero_gateway", test_ip4_zero_gateway);
+		add_test_func ("/route/ip4_zero_gateway", test_ip4_zero_gateway);
 }
