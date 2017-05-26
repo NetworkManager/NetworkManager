@@ -37,12 +37,8 @@ _LOG_DECLARE_SELF(NMDeviceVeth);
 
 /*****************************************************************************/
 
-typedef struct {
-} NMDeviceVethPrivate;
-
 struct _NMDeviceVeth {
 	NMDeviceEthernet parent;
-	NMDeviceVethPrivate _priv;
 };
 
 struct _NMDeviceVethClass {
@@ -56,8 +52,6 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceVeth,
 /*****************************************************************************/
 
 G_DEFINE_TYPE (NMDeviceVeth, nm_device_veth, NM_TYPE_DEVICE_ETHERNET)
-
-#define NM_DEVICE_VETH_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceVeth, NM_IS_DEVICE_VETH)
 
 /*****************************************************************************/
 
