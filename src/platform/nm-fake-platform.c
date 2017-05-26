@@ -323,12 +323,14 @@ static gboolean
 link_add (NMPlatform *platform,
           const char *name,
           NMLinkType type,
+          const char *veth_peer,
           const void *address,
           size_t address_len,
           const NMPlatformLink **out_link)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
 	NMFakePlatformLink device;
+	NMFakePlatformLink device_veth = { };
 	NMFakePlatformLink *new_device;
 
 	link_init (&device, priv->links->len, type, name);
@@ -342,14 +344,29 @@ link_add (NMPlatform *platform,
 	g_array_append_val (priv->links, device);
 	new_device = &g_array_index (priv->links, NMFakePlatformLink, priv->links->len - 1);
 
+	if (veth_peer) {
+		link_init (&device_veth, priv->links->len, type, veth_peer);
+		g_array_append_val (priv->links, device_veth);
+		new_device = &g_array_index (priv->links, NMFakePlatformLink, priv->links->len - 2);
+	} else
+		g_assert (type != NM_LINK_TYPE_VETH);
+
+
+	if (out_link)
+		*out_link = &new_device->link;
+
 	if (device.link.ifindex) {
 		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, (int) NMP_OBJECT_TYPE_LINK, device.link.ifindex, &device, (int) NM_PLATFORM_SIGNAL_ADDED);
+
+		link_changed (platform, new_device, FALSE);
+	}
+
+	if (veth_peer) {
+		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, (int) NMP_OBJECT_TYPE_LINK, device_veth.link.ifindex, &device_veth, (int) NM_PLATFORM_SIGNAL_ADDED);
 
 		link_changed (platform, &g_array_index (priv->links, NMFakePlatformLink, priv->links->len - 1), FALSE);
 	}
 
-	if (out_link)
-		*out_link = &new_device->link;
 	return TRUE;
 }
 
@@ -702,7 +719,7 @@ vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint
 {
 	NMFakePlatformLink *device;
 
-	if (!link_add (platform, name, NM_LINK_TYPE_VLAN, NULL, 0, out_link))
+	if (!link_add (platform, name, NM_LINK_TYPE_VLAN, NULL, NULL, 0, out_link))
 		return FALSE;
 
 	device = link_get (platform, nm_platform_link_get_ifindex (platform, name));
@@ -742,7 +759,7 @@ link_vxlan_add (NMPlatform *platform,
 {
 	NMFakePlatformLink *device;
 
-	if (!link_add (platform, name, NM_LINK_TYPE_VXLAN, NULL, 0, out_link))
+	if (!link_add (platform, name, NM_LINK_TYPE_VXLAN, NULL, NULL, 0, out_link))
 		return FALSE;
 
 	device = link_get (platform, nm_platform_link_get_ifindex (platform, name));
@@ -770,7 +787,7 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key, const NMP
 
 	nm_utils_new_infiniband_name (name, parent_device->link.name, p_key);
 
-	if (!link_add (platform, name, NM_LINK_TYPE_INFINIBAND, NULL, 0, out_link))
+	if (!link_add (platform, name, NM_LINK_TYPE_INFINIBAND, NULL, NULL, 0, out_link))
 		return FALSE;
 
 	device = link_get (platform, nm_platform_link_get_ifindex (platform, name));
@@ -1428,15 +1445,15 @@ nm_fake_platform_setup (void)
 	nm_platform_setup (platform);
 
 	/* skip zero element */
-	link_add (platform, NULL, NM_LINK_TYPE_NONE, NULL, 0, NULL);
+	link_add (platform, NULL, NM_LINK_TYPE_NONE, NULL, NULL, 0, NULL);
 
 	/* add loopback interface */
-	link_add (platform, "lo", NM_LINK_TYPE_LOOPBACK, NULL, 0, NULL);
+	link_add (platform, "lo", NM_LINK_TYPE_LOOPBACK, NULL, NULL, 0, NULL);
 
 	/* add some ethernets */
-	link_add (platform, "eth0", NM_LINK_TYPE_ETHERNET, NULL, 0, NULL);
-	link_add (platform, "eth1", NM_LINK_TYPE_ETHERNET, NULL, 0, NULL);
-	link_add (platform, "eth2", NM_LINK_TYPE_ETHERNET, NULL, 0, NULL);
+	link_add (platform, "eth0", NM_LINK_TYPE_ETHERNET, NULL, NULL, 0, NULL);
+	link_add (platform, "eth1", NM_LINK_TYPE_ETHERNET, NULL, NULL, 0, NULL);
+	link_add (platform, "eth2", NM_LINK_TYPE_ETHERNET, NULL, NULL, 0, NULL);
 }
 
 static void
