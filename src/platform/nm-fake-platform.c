@@ -1117,7 +1117,7 @@ ip4_address_get (NMPlatform *platform, int ifindex, in_addr_t addr, guint8 plen,
 }
 
 static const NMPlatformIP6Address *
-ip6_address_get (NMPlatform *platform, int ifindex, struct in6_addr addr, guint8 plen)
+ip6_address_get (NMPlatform *platform, int ifindex, struct in6_addr addr)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
 	int i;
@@ -1126,7 +1126,6 @@ ip6_address_get (NMPlatform *platform, int ifindex, struct in6_addr addr, guint8
 		NMPlatformIP6Address *address = &g_array_index (priv->ip6_addresses, NMPlatformIP6Address, i);
 
 		if (   address->ifindex == ifindex
-		    && address->plen == plen
 		    && IN6_ARE_ADDR_EQUAL (&address->address, &addr))
 			return address;
 	}

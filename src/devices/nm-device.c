@@ -8399,8 +8399,7 @@ dad6_get_pending_addresses (NMDevice *self)
 				addr = nm_ip6_config_get_address (confs[i], j);
 				pl_addr = nm_platform_ip6_address_get (nm_device_get_platform (self),
 				                                       ifindex,
-				                                       addr->address,
-				                                       addr->plen);
+				                                       addr->address);
 				if (   pl_addr
 				    && NM_FLAGS_HAS (pl_addr->n_ifa_flags, IFA_F_TENTATIVE)
 				    && !NM_FLAGS_HAS (pl_addr->n_ifa_flags, IFA_F_DADFAILED)

@@ -2776,13 +2776,11 @@ nm_platform_ip4_address_get (NMPlatform *self, int ifindex, in_addr_t address, g
 }
 
 const NMPlatformIP6Address *
-nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr address, guint8 plen)
+nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr address)
 {
 	_CHECK_SELF (self, klass, NULL);
 
-	g_return_val_if_fail (plen <= 128, NULL);
-
-	return klass->ip6_address_get (self, ifindex, address, plen);
+	return klass->ip6_address_get (self, ifindex, address);
 }
 
 static const NMPlatformIP4Address *

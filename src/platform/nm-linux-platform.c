@@ -5906,7 +5906,7 @@ ip6_address_add (NMPlatform *platform,
 	                             preferred,
 	                             NULL);
 
-	nmp_object_stackinit_id_ip6_address (&obj_id, ifindex, &addr, plen);
+	nmp_object_stackinit_id_ip6_address (&obj_id, ifindex, &addr);
 	return do_add_addrroute (platform, &obj_id, nlmsg);
 }
 
@@ -5956,7 +5956,7 @@ ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, gui
 	if (!nlmsg)
 		g_return_val_if_reached (FALSE);
 
-	nmp_object_stackinit_id_ip6_address (&obj_id, ifindex, &addr, plen);
+	nmp_object_stackinit_id_ip6_address (&obj_id, ifindex, &addr);
 	return do_delete_object (platform, &obj_id, nlmsg);
 }
 
@@ -5974,12 +5974,12 @@ ip4_address_get (NMPlatform *platform, int ifindex, in_addr_t addr, guint8 plen,
 }
 
 static const NMPlatformIP6Address *
-ip6_address_get (NMPlatform *platform, int ifindex, struct in6_addr addr, guint8 plen)
+ip6_address_get (NMPlatform *platform, int ifindex, struct in6_addr addr)
 {
 	NMPObject obj_id;
 	const NMPObject *obj;
 
-	nmp_object_stackinit_id_ip6_address (&obj_id, ifindex, &addr, plen);
+	nmp_object_stackinit_id_ip6_address (&obj_id, ifindex, &addr);
 	obj = nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, &obj_id);
 	if (nmp_object_is_visible (obj))
 		return &obj->ip6_address;

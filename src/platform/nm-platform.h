@@ -663,7 +663,7 @@ typedef struct {
 	gboolean (*ip4_address_delete) (NMPlatform *, int ifindex, in_addr_t address, guint8 plen, in_addr_t peer_address);
 	gboolean (*ip6_address_delete) (NMPlatform *, int ifindex, struct in6_addr address, guint8 plen);
 	const NMPlatformIP4Address *(*ip4_address_get) (NMPlatform *, int ifindex, in_addr_t address, guint8 plen, in_addr_t peer_address);
-	const NMPlatformIP6Address *(*ip6_address_get) (NMPlatform *, int ifindex, struct in6_addr address, guint8 plen);
+	const NMPlatformIP6Address *(*ip6_address_get) (NMPlatform *, int ifindex, struct in6_addr address);
 
 	GArray * (*ip4_route_get_all) (NMPlatform *, int ifindex, NMPlatformGetRouteFlags flags);
 	GArray * (*ip6_route_get_all) (NMPlatform *, int ifindex, NMPlatformGetRouteFlags flags);
@@ -938,7 +938,7 @@ NMPlatformError nm_platform_link_sit_add (NMPlatform *self,
                                           const NMPlatformLnkSit *props,
                                           const NMPlatformLink **out_link);
 
-const NMPlatformIP6Address *nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr address, guint8 plen);
+const NMPlatformIP6Address *nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr address);
 GArray *nm_platform_ip4_address_get_all (NMPlatform *self, int ifindex);
 GArray *nm_platform_ip6_address_get_all (NMPlatform *self, int ifindex);
 gboolean nm_platform_ip4_address_add (NMPlatform *self,

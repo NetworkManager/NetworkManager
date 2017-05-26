@@ -268,7 +268,7 @@ test_ip6_route (void)
 
 		nmtstp_wait_for_signal (NM_PLATFORM_GET, 50);
 		nm_platform_process_events (NM_PLATFORM_GET);
-		plt_addr = nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, pref_src, 128);
+		plt_addr = nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, pref_src);
 		if (plt_addr && !NM_FLAGS_HAS (plt_addr->n_ifa_flags, IFA_F_TENTATIVE))
 			break;
 	});

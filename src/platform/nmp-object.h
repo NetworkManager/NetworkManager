@@ -390,7 +390,7 @@ const NMPObject *nmp_object_stackinit (NMPObject *obj, NMPObjectType obj_type, c
 const NMPObject *nmp_object_stackinit_id  (NMPObject *obj, const NMPObject *src);
 const NMPObject *nmp_object_stackinit_id_link (NMPObject *obj, int ifindex);
 const NMPObject *nmp_object_stackinit_id_ip4_address (NMPObject *obj, int ifindex, guint32 address, guint8 plen, guint32 peer_address);
-const NMPObject *nmp_object_stackinit_id_ip6_address (NMPObject *obj, int ifindex, const struct in6_addr *address, guint8 plen);
+const NMPObject *nmp_object_stackinit_id_ip6_address (NMPObject *obj, int ifindex, const struct in6_addr *address);
 const NMPObject *nmp_object_stackinit_id_ip4_route (NMPObject *obj, int ifindex, guint32 network, guint8 plen, guint32 metric);
 const NMPObject *nmp_object_stackinit_id_ip6_route (NMPObject *obj, int ifindex, const struct in6_addr *network, guint8 plen, guint32 metric);
 

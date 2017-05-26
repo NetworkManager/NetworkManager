@@ -357,20 +357,19 @@ _vt_cmd_obj_stackinit_id_ip4_address (NMPObject *obj, const NMPObject *src)
 }
 
 const NMPObject *
-nmp_object_stackinit_id_ip6_address (NMPObject *obj, int ifindex, const struct in6_addr *address, guint8 plen)
+nmp_object_stackinit_id_ip6_address (NMPObject *obj, int ifindex, const struct in6_addr *address)
 {
 	nmp_object_stackinit (obj, NMP_OBJECT_TYPE_IP6_ADDRESS, NULL);
 	obj->ip4_address.ifindex = ifindex;
 	if (address)
 		obj->ip6_address.address = *address;
-	obj->ip6_address.plen = plen;
 	return obj;
 }
 
 static void
 _vt_cmd_obj_stackinit_id_ip6_address (NMPObject *obj, const NMPObject *src)
 {
-	nmp_object_stackinit_id_ip6_address (obj, src->ip_address.ifindex, &src->ip6_address.address, src->ip_address.plen);
+	nmp_object_stackinit_id_ip6_address (obj, src->ip_address.ifindex, &src->ip6_address.address);
 }
 
 const NMPObject *

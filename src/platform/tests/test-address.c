@@ -143,9 +143,9 @@ test_ip6_address_general (void)
 	inet_pton (AF_INET6, IP6_ADDRESS, &addr);
 
 	/* Add address */
-	g_assert (!nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, addr, IP6_PLEN));
+	g_assert (!nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, addr));
 	nmtstp_ip6_address_add (NULL, EX, ifindex, addr, IP6_PLEN, in6addr_any, lifetime, preferred, flags);
-	g_assert (nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, addr, IP6_PLEN));
+	g_assert (nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, addr));
 	accept_signal (address_added);
 
 	/* Add address again (aka update) */
@@ -164,7 +164,7 @@ test_ip6_address_general (void)
 
 	/* Remove address */
 	nmtstp_ip6_address_del (NULL, EX, ifindex, addr, IP6_PLEN);
-	g_assert (!nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, addr, IP6_PLEN));
+	g_assert (!nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, addr));
 	accept_signal (address_removed);
 
 	/* Remove address again */
@@ -229,20 +229,20 @@ test_ip6_address_general_2 (void)
 	/* Add/delete notification */
 	nmtstp_ip6_address_add (NULL, EX, ifindex, addr, IP6_PLEN, in6addr_any, lifetime, preferred, 0);
 	accept_signal (address_added);
-	g_assert (nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, addr, IP6_PLEN));
+	g_assert (nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, addr));
 
 	nmtstp_ip6_address_del (NULL, EX, ifindex, addr, IP6_PLEN);
 	accept_signal (address_removed);
-	g_assert (!nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, addr, IP6_PLEN));
+	g_assert (!nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, addr));
 
 	/* Add/delete conflict */
 	nmtstp_ip6_address_add (NULL, EX, ifindex, addr, IP6_PLEN, in6addr_any, lifetime, preferred, 0);
 	accept_signal (address_added);
-	g_assert (nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, addr, IP6_PLEN));
+	g_assert (nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, addr));
 
 	nmtstp_ip6_address_add (NULL, EX, ifindex, addr, IP6_PLEN, in6addr_any, lifetime, preferred, flags);
 	ensure_no_signal (address_added);
-	g_assert (nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, addr, IP6_PLEN));
+	g_assert (nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, addr));
 
 	free_signal (address_added);
 	free_signal (address_removed);
