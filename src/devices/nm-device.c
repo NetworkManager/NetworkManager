@@ -5389,15 +5389,6 @@ dhcp4_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 	}
 }
 
-static void
-_ip4_config_merge_default (gpointer value, gpointer user_data)
-{
-	NMIP4Config *src = (NMIP4Config *) value;
-	NMIP4Config *dst = (NMIP4Config *) user_data;
-
-	nm_ip4_config_merge (dst, src, NM_IP_CONFIG_MERGE_DEFAULT);
-}
-
 static gboolean
 ip4_config_merge_and_apply (NMDevice *self,
                             NMIP4Config *config,
@@ -5415,6 +5406,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 	gboolean ignore_auto_routes = FALSE;
 	gboolean ignore_auto_dns = FALSE;
 	gboolean auto_method = FALSE;
+	GSList *iter;
 
 	/* Merge all the configs into the composite config */
 	if (config) {
@@ -5456,7 +5448,8 @@ ip4_config_merge_and_apply (NMDevice *self,
 		                     | (ignore_auto_dns ? NM_IP_CONFIG_MERGE_NO_DNS : 0));
 	}
 
-	g_slist_foreach (priv->vpn4_configs, _ip4_config_merge_default, composite);
+	for (iter = priv->vpn4_configs; iter; iter = iter->next)
+		nm_ip4_config_merge (composite, iter->data, NM_IP_CONFIG_MERGE_DEFAULT);
 
 	if (priv->ext_ip4_config)
 		nm_ip4_config_merge (composite, priv->ext_ip4_config, NM_IP_CONFIG_MERGE_DEFAULT);
@@ -6125,15 +6118,6 @@ dhcp6_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 	}
 }
 
-static void
-_ip6_config_merge_default (gpointer value, gpointer user_data)
-{
-	NMIP6Config *src = (NMIP6Config *) value;
-	NMIP6Config *dst = (NMIP6Config *) user_data;
-
-	nm_ip6_config_merge (dst, src, NM_IP_CONFIG_MERGE_DEFAULT);
-}
-
 static gboolean
 ip6_config_merge_and_apply (NMDevice *self,
                             gboolean commit)
@@ -6150,6 +6134,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 	gboolean ignore_auto_dns = FALSE;
 	gboolean auto_method = FALSE;
 	const char *token = NULL;
+	GSList *iter;
 
 	/* Apply ignore-auto-routes and ignore-auto-dns settings */
 	connection = nm_device_get_applied_connection (self);
@@ -6205,7 +6190,8 @@ ip6_config_merge_and_apply (NMDevice *self,
 		                     | (ignore_auto_dns ? NM_IP_CONFIG_MERGE_NO_DNS : 0));
 	}
 
-	g_slist_foreach (priv->vpn6_configs, _ip6_config_merge_default, composite);
+	for (iter = priv->vpn6_configs; iter; iter = iter->next)
+		nm_ip6_config_merge (composite, iter->data, NM_IP_CONFIG_MERGE_DEFAULT);
 
 	if (priv->ext_ip6_config)
 		nm_ip6_config_merge (composite, priv->ext_ip6_config, NM_IP_CONFIG_MERGE_DEFAULT);
@@ -10532,29 +10518,12 @@ capture_lease_config (NMDevice *self,
 }
 
 static void
-_ip4_config_intersect (gpointer value, gpointer user_data)
-{
-	NMIP4Config *dst = (NMIP4Config *) value;
-	NMIP4Config *src = (NMIP4Config *) user_data;
-
-	nm_ip4_config_intersect (dst, src);
-}
-
-static void
-_ip4_config_subtract (gpointer value, gpointer user_data)
-{
-	NMIP4Config *dst = (NMIP4Config *) user_data;
-	NMIP4Config *src = (NMIP4Config *) value;
-
-	nm_ip4_config_subtract (dst, src);
-}
-
-static void
 update_ip4_config (NMDevice *self, gboolean initial)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ifindex;
 	gboolean capture_resolv_conf;
+	GSList *iter;
 
 	/* If a commit is scheduled, this function would potentially interfere with
 	 * it changing IP configurations before they are applied. Postpone the
@@ -10601,11 +10570,10 @@ update_ip4_config (NMDevice *self, gboolean initial)
 			nm_ip4_config_intersect (priv->con_ip4_config, priv->ext_ip4_config);
 		if (priv->dev_ip4_config)
 			nm_ip4_config_intersect (priv->dev_ip4_config, priv->ext_ip4_config);
-
-		g_slist_foreach (priv->vpn4_configs, _ip4_config_intersect, priv->ext_ip4_config);
-
 		if (priv->wwan_ip4_config)
 			nm_ip4_config_intersect (priv->wwan_ip4_config, priv->ext_ip4_config);
+		for (iter = priv->vpn4_configs; iter; iter = iter->next)
+			nm_ip4_config_intersect (iter->data, priv->ext_ip4_config);
 
 		/* Remove parts from ext_ip4_config to only contain the information that
 		 * was configured externally -- we already have the same configuration from
@@ -10614,32 +10582,13 @@ update_ip4_config (NMDevice *self, gboolean initial)
 			nm_ip4_config_subtract (priv->ext_ip4_config, priv->con_ip4_config);
 		if (priv->dev_ip4_config)
 			nm_ip4_config_subtract (priv->ext_ip4_config, priv->dev_ip4_config);
-
-		g_slist_foreach (priv->vpn4_configs, _ip4_config_subtract, priv->ext_ip4_config);
-
 		if (priv->wwan_ip4_config)
 			nm_ip4_config_subtract (priv->ext_ip4_config, priv->wwan_ip4_config);
+		for (iter = priv->vpn4_configs; iter; iter = iter->next)
+			nm_ip4_config_subtract (priv->ext_ip4_config, iter->data);
 
 		ip4_config_merge_and_apply (self, NULL, FALSE);
 	}
-}
-
-static void
-_ip6_config_intersect (gpointer value, gpointer user_data)
-{
-	NMIP6Config *dst = (NMIP6Config *) value;
-	NMIP6Config *src = (NMIP6Config *) user_data;
-
-	nm_ip6_config_intersect (dst, src);
-}
-
-static void
-_ip6_config_subtract (gpointer value, gpointer user_data)
-{
-	NMIP6Config *dst = (NMIP6Config *) user_data;
-	NMIP6Config *src = (NMIP6Config *) value;
-
-	nm_ip6_config_subtract (dst, src);
 }
 
 static void
@@ -10648,6 +10597,7 @@ update_ip6_config (NMDevice *self, gboolean initial)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ifindex;
 	gboolean capture_resolv_conf;
+	GSList *iter;
 
 	/* If a commit is scheduled, this function would potentially interfere with
 	 * it changing IP configurations before they are applied. Postpone the
@@ -10690,7 +10640,8 @@ update_ip6_config (NMDevice *self, gboolean initial)
 			nm_ip6_config_intersect (priv->dhcp6.ip6_config, priv->ext_ip6_config);
 		if (priv->wwan_ip6_config)
 			nm_ip6_config_intersect (priv->wwan_ip6_config, priv->ext_ip6_config);
-		g_slist_foreach (priv->vpn6_configs, _ip6_config_intersect, priv->ext_ip6_config);
+		for (iter = priv->vpn6_configs; iter; iter = iter->next)
+			nm_ip6_config_intersect (iter->data, priv->ext_ip6_config);
 
 		/* Remove parts from ext_ip6_config to only contain the information that
 		 * was configured externally -- we already have the same configuration from
@@ -10703,7 +10654,8 @@ update_ip6_config (NMDevice *self, gboolean initial)
 			nm_ip6_config_subtract (priv->ext_ip6_config, priv->dhcp6.ip6_config);
 		if (priv->wwan_ip6_config)
 			nm_ip6_config_subtract (priv->ext_ip6_config, priv->wwan_ip6_config);
-		g_slist_foreach (priv->vpn6_configs, _ip6_config_subtract, priv->ext_ip6_config);
+		for (iter = priv->vpn6_configs; iter; iter = iter->next)
+			nm_ip6_config_subtract (priv->ext_ip6_config, iter->data);
 
 		ip6_config_merge_and_apply (self, FALSE);
 	}
