@@ -996,9 +996,35 @@ _set_fcn_gobject_int (ARGS_SET_FCN)
 static gboolean
 _set_fcn_gobject_mtu (ARGS_SET_FCN)
 {
+	nm_auto_unset_gvalue GValue gval = G_VALUE_INIT;
+	const GParamSpec *pspec;
+	gint64 v;
+
 	if (nm_streq0 (value, "auto"))
 		value = "0";
-	return _set_fcn_gobject_int_impl (property_info, setting, value, error);
+
+	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)),
+	                                      property_info->property_name);
+	if (!pspec || pspec->value_type != G_TYPE_UINT)
+		g_return_val_if_reached (FALSE);
+
+	v = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT32, -1);
+	if (v < 0) {
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
+		             _("'%s' is out of range [0, %u]"), value, (unsigned) G_MAXUINT32);
+		return FALSE;
+	}
+
+	g_value_init (&gval, pspec->value_type);
+	g_value_set_uint (&gval, v);
+
+	if (!nm_g_object_set_property (G_OBJECT (setting),
+	                               property_info->property_name,
+	                               &gval,
+	                               error))
+		g_return_val_if_reached (FALSE);
+
+	return TRUE;
 }
 
 static gboolean
