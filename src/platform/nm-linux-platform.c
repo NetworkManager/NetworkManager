@@ -2135,12 +2135,14 @@ nla_put_failure:
 
 static gboolean
 _nl_msg_new_link_set_linkinfo (struct nl_msg *msg,
-                               NMLinkType link_type)
+                               NMLinkType link_type,
+                               const char *veth_peer)
 {
 	struct nlattr *info;
 	const char *kind;
 
 	nm_assert (msg);
+	nm_assert (!!veth_peer == (link_type == NM_LINK_TYPE_VETH));
 
 	kind = nm_link_type_to_rtnl_type_string (link_type);
 	if (!kind)
@@ -2151,11 +2153,26 @@ _nl_msg_new_link_set_linkinfo (struct nl_msg *msg,
 
 	NLA_PUT_STRING (msg, IFLA_INFO_KIND, kind);
 
+	if (veth_peer) {
+		struct ifinfomsg ifi = { };
+		struct nlattr *data, *info_peer;
+
+		if (!(data = nla_nest_start (msg, IFLA_INFO_DATA)))
+			goto nla_put_failure;
+		if (!(info_peer = nla_nest_start (msg, 1 /*VETH_INFO_PEER*/)))
+			goto nla_put_failure;
+		if (nlmsg_append (msg, &ifi, sizeof (ifi), NLMSG_ALIGNTO) < 0)
+			goto nla_put_failure;
+		NLA_PUT_STRING (msg, IFLA_IFNAME, veth_peer);
+		nla_nest_end (msg, info_peer);
+		nla_nest_end (msg, data);
+	}
+
 	nla_nest_end (msg, info);
 
 	return TRUE;
 nla_put_failure:
-	return FALSE;
+	g_return_val_if_reached (FALSE);
 }
 
 static gboolean
@@ -4319,6 +4336,7 @@ static gboolean
 link_add (NMPlatform *platform,
           const char *name,
           NMLinkType type,
+          const char *veth_peer,
           const void *address,
           size_t address_len,
           const NMPlatformLink **out_link)
@@ -4352,7 +4370,7 @@ link_add (NMPlatform *platform,
 	if (address && address_len)
 		NLA_PUT (nlmsg, IFLA_ADDRESS, address_len, address);
 
-	if (!_nl_msg_new_link_set_linkinfo (nlmsg, type))
+	if (!_nl_msg_new_link_set_linkinfo (nlmsg, type, veth_peer))
 		return FALSE;
 
 	return do_add_link_with_lookup (platform, type, name, nlmsg, out_link);

@@ -647,13 +647,18 @@ nmtst_test_quick (void)
 
 typedef struct _NmtstTestData NmtstTestData;
 
-typedef void (*NmtstTestDataRelease) (const NmtstTestData *test_data);
+typedef void (*NmtstTestHandler) (const NmtstTestData *test_data);
 
 struct _NmtstTestData {
-	const char *testpath;
-	NmtstTestDataRelease fcn_release;
+	union {
+		const char *testpath;
+		char *_testpath;
+	};
 	gsize n_args;
-	gpointer args[1];
+	gpointer *args;
+	NmtstTestHandler _func_setup;
+	GTestDataFunc _func_test;
+	NmtstTestHandler _func_teardown;
 };
 
 static inline void
@@ -670,8 +675,8 @@ _nmtst_test_data_unpack (const NmtstTestData *test_data, gsize n_args, ...)
 	for (i = 0; i < n_args; i++) {
 		p = va_arg (ap, gpointer *);
 
-		g_assert (p);
-		*p = test_data->args[i];
+		if (p)
+			*p = test_data->args[i];
 	}
 	va_end (ap);
 }
@@ -684,25 +689,42 @@ _nmtst_test_data_free (gpointer data)
 
 	g_assert (test_data);
 
-	if (test_data->fcn_release)
-		test_data->fcn_release (test_data);
-
-	g_free ((gpointer) test_data->testpath);
+	g_free (test_data->_testpath);
 	g_free (test_data);
 }
 
 static inline void
-_nmtst_add_test_func_full (const char *testpath, GTestDataFunc test_func, NmtstTestDataRelease fcn_release, gsize n_args, ...)
+_nmtst_test_run (gconstpointer data)
+{
+	const NmtstTestData *test_data = data;
+
+	if (test_data->_func_setup)
+		test_data->_func_setup (test_data);
+
+	test_data->_func_test (test_data);
+
+	if (test_data->_func_teardown)
+		test_data->_func_teardown (test_data);
+}
+
+static inline void
+_nmtst_add_test_func_full (const char *testpath, GTestDataFunc func_test, NmtstTestHandler func_setup, NmtstTestHandler func_teardown, gsize n_args, ...)
 {
 	gsize i;
 	NmtstTestData *data;
 	va_list ap;
 
-	data = g_malloc (G_STRUCT_OFFSET (NmtstTestData, args) + sizeof (gpointer) * (n_args + 1));
+	g_assert (testpath && testpath[0]);
+	g_assert (func_test);
 
-	data->testpath = g_strdup (testpath);
-	data->fcn_release = fcn_release;
+	data = g_malloc0 (sizeof (NmtstTestData) + (sizeof (gpointer) * (n_args + 1)));
+
+	data->_testpath = g_strdup (testpath);
+	data->_func_test = func_test;
+	data->_func_setup = func_setup;
+	data->_func_teardown = func_teardown;
 	data->n_args = n_args;
+	data->args = (gpointer) &data[1];
 	va_start (ap, n_args);
 	for (i = 0; i < n_args; i++)
 		data->args[i] = va_arg (ap, gpointer);
@@ -711,11 +733,11 @@ _nmtst_add_test_func_full (const char *testpath, GTestDataFunc test_func, NmtstT
 
 	g_test_add_data_func_full (testpath,
 	                           data,
-	                           test_func,
+	                           _nmtst_test_run,
 	                           _nmtst_test_data_free);
 }
-#define nmtst_add_test_func_full(testpath, test_func, fcn_release, ...) _nmtst_add_test_func_full(testpath, test_func, fcn_release, NM_NARG (__VA_ARGS__), ##__VA_ARGS__)
-#define nmtst_add_test_func(testpath, test_func, ...) nmtst_add_test_func_full(testpath, test_func, NULL, ##__VA_ARGS__)
+#define nmtst_add_test_func_full(testpath, func_test, func_setup, func_teardown, ...) _nmtst_add_test_func_full(testpath, func_test, func_setup, func_teardown, NM_NARG (__VA_ARGS__), ##__VA_ARGS__)
+#define nmtst_add_test_func(testpath, func_test, ...) nmtst_add_test_func_full(testpath, func_test, NULL, NULL, ##__VA_ARGS__)
 
 /*****************************************************************************/
 

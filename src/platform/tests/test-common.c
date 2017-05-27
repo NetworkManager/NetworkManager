@@ -30,6 +30,9 @@
 #define SIGNAL_DATA_FMT "'%s-%s' ifindex %d%s%s%s (%d times received)"
 #define SIGNAL_DATA_ARG(data) (data)->name, nm_platform_signal_change_type_to_string ((data)->change_type), (data)->ifindex, (data)->ifname ? " ifname '" : "", (data)->ifname ? (data)->ifname : "", (data)->ifname ? "'" : "", (data)->received_count
 
+int NMTSTP_ENV1_IFINDEX = -1;
+int NMTSTP_ENV1_EX = -1;
+
 /*****************************************************************************/
 
 void
@@ -972,6 +975,36 @@ nmtstp_ip6_address_del (NMPlatform *platform,
 			g_assert (!nmtstp_link_get (platform, 0, (name))); \
 		} \
 	} G_STMT_END
+
+const NMPlatformLink *
+nmtstp_link_veth_add (NMPlatform *platform,
+                      gboolean external_command,
+                      const char *name,
+                      const char *peer)
+{
+	const NMPlatformLink *pllink = NULL;
+	gboolean success;
+
+	g_assert (nm_utils_is_valid_iface_name (name, NULL));
+
+	external_command = nmtstp_run_command_check_external (external_command);
+
+	_init_platform (&platform, external_command);
+
+	if (external_command) {
+		success = !nmtstp_run_command ("ip link add dev %s type veth peer name %s",
+		                                name, peer);
+		if (success) {
+			pllink = nmtstp_assert_wait_for_link (platform, name, NM_LINK_TYPE_VETH, 100);
+			nmtstp_assert_wait_for_link (platform, peer, NM_LINK_TYPE_VETH, 10);
+		}
+	} else
+		success = nm_platform_link_veth_add (platform, name, peer, &pllink) == NM_PLATFORM_ERROR_SUCCESS;
+
+	g_assert (success);
+	_assert_pllink (platform, success, pllink, name, NM_LINK_TYPE_VETH);
+	return pllink;
+}
 
 const NMPlatformLink *
 nmtstp_link_dummy_add (NMPlatform *platform,
