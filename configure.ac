@@ -1240,22 +1240,22 @@ fi
 # check for pregenerated manpages and documentation to be installed
 use_pregen_docs=no
 if test "$build_docs" != "yes" -a \
-        -f man/NetworkManager.8 -a \
-        -f man/NetworkManager.conf.5 -a \
-        -f man/nm-online.1 -a \
-        -f man/nmcli-examples.7 -a \
-        -f man/nmcli.1 -a \
-        -f man/nmtui.1 -a \
+        -f "$srcdir"/man/NetworkManager.8 -a \
+        -f "$srcdir"/man/NetworkManager.conf.5 -a \
+        -f "$srcdir"/man/nm-online.1 -a \
+        -f "$srcdir"/man/nmcli-examples.7 -a \
+        -f "$srcdir"/man/nmcli.1 -a \
+        -f "$srcdir"/man/nmtui.1 -a \
         \
-        -f man/nm-settings-ifcfg-rh.5 -a \
-        -f man/nm-settings-keyfile.5 -a \
-        -f man/nm-settings.5 -a \
+        -f "$srcdir"/man/nm-settings-ifcfg-rh.5 -a \
+        -f "$srcdir"/man/nm-settings-keyfile.5 -a \
+        -f "$srcdir"/man/nm-settings.5 -a \
         \
-        -f man/nm-settings.xml -a \
-        -f man/nm-settings-keyfile.xml -a \
-        -f man/nm-settings-ifcfg-rh.xml -a \
+        -f "$srcdir"/man/nm-settings.xml -a \
+        -f "$srcdir"/man/nm-settings-keyfile.xml -a \
+        -f "$srcdir"/man/nm-settings-ifcfg-rh.xml -a \
         \
-        -f docs/api/settings-spec.xml; then
+        -f "$srcdir"/docs/api/settings-spec.xml; then
 	use_pregen_docs=yes
 fi
 
