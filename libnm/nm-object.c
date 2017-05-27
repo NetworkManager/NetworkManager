@@ -1034,14 +1034,15 @@ init_dbus (NMObject *object)
 }
 
 static void
-init_if (GDBusInterface *interface, gpointer user_data)
+init_if (GDBusProxy *proxy, NMObject *self)
 {
-	NMObject *self = NM_OBJECT (user_data);
-	GDBusProxy *proxy = G_DBUS_PROXY (interface);
 	gchar **props;
 	char **prop;
 	GVariant *val;
 	gchar *str;
+
+	nm_assert (G_IS_DBUS_PROXY (proxy));
+	nm_assert (NM_IS_OBJECT (self));
 
 	props = g_dbus_proxy_get_cached_property_names (proxy);
 
