@@ -1204,7 +1204,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * NMSettingIP6Config:route-metric:
 	 *
 	 * The default metric for routes that don't explicitly specify a metric.
-	 * The default value -1 means that the metric is choosen automatically
+	 * The default value -1 means that the metric is chosen automatically
 	 * based on the device type.
 	 * The metric applies to dynamic routes, manual (static) routes that
 	 * don't have an explicit metric setting, address prefix routes, and

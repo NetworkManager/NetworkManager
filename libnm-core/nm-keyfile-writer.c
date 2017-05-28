@@ -47,7 +47,7 @@ typedef struct {
  * NMSettingConnection's 'type' property (which specifies the base type of the
  * connection, eg ethernet or wifi) or the 802-11-wireless setting's
  * 'security' property which specifies whether or not the AP requires
- * encrpytion.  This function handles translating those properties' values
+ * encryption.  This function handles translating those properties' values
  * from the real setting name to the more-readable alias.
  */
 static void

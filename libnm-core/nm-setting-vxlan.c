@@ -598,7 +598,7 @@ nm_setting_vxlan_class_init (NMSettingVxlanClass *setting_class)
 	/**
 	 * NMSettingVxlan:id:
 	 *
-	 * Specifies the VXLAN Network Identifer (or VXLAN Segment Identifier) to
+	 * Specifies the VXLAN Network Identifier (or VXLAN Segment Identifier) to
 	 * use.
 	 *
 	 * Since: 1.2

@@ -76,7 +76,7 @@ typedef struct {
 	 * @factory: the #NMDeviceFactory
 	 * @connection: the #NMConnection to return the parent name for, if supported
 	 *
-	 * Given a connection, returns the a parent interface name, parent connection
+	 * Given a connection, returns the parent interface name, parent connection
 	 * UUID, or parent device permanent hardware address for @connection.
 	 *
 	 * Returns: the parent interface name, parent connection UUID, parent

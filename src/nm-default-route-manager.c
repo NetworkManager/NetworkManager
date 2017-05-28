@@ -178,7 +178,7 @@ typedef struct {
 	 *     is enforced. NMDefaultRouteManager will actively remove any default
 	 *     route on such ifindexes.
 	 *     Also, for VPN sources in addition we track them so that a never-default
-	 *     VPN connection can be choosen by get_best_config() to receive the DNS configuration.
+	 *     VPN connection can be chosen by get_best_config() to receive the DNS configuration.
 	 *
 	 * (!synced &&  never_default): this combination makes no sense.
 	 */
@@ -272,7 +272,7 @@ _platform_route_sync_add (const VTableIP *vtable, NMDefaultRouteManager *self, g
 	gboolean success;
 
 	/* Find the entries for the given metric.
-	 * The effective metric for synced entries is choosen in a way that it
+	 * The effective metric for synced entries is chosen in a way that it
 	 * is unique (except for G_MAXUINT32, where a clash is not solvable). */
 	for (i = 0; i < entries->len; i++) {
 		Entry *e = g_ptr_array_index (entries, i);

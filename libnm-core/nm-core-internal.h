@@ -204,7 +204,7 @@ gboolean _nm_utils_check_module_file (const char *name,
 
 char *nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_type, gpointer type_args);
 
-/* arbitrarily choosen namespace UUID for _nm_utils_uuid_generate_from_strings() */
+/* arbitrarily chosen namespace UUID for _nm_utils_uuid_generate_from_strings() */
 #define NM_UTILS_UUID_NS "b425e9fb-7598-44b4-9e3b-5a2e3aaa4905"
 
 char *_nm_utils_uuid_generate_from_strings (const char *string1, ...) G_GNUC_NULL_TERMINATED;

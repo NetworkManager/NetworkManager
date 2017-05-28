@@ -1462,7 +1462,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * hosts/devices yields different addresses.
 	 *
 	 * If the value is unset, an ID unique for the connection is used.
-	 * Specifing a stable-id allows multiple connections to generate the
+	 * Specifying a stable-id allows multiple connections to generate the
 	 * same addresses. Another use is to generate IDs at runtime via
 	 * dynamic substitutions.
 	 *
@@ -1642,7 +1642,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	/**
 	 * NMSettingConnection:autoconnect-retries:
 	 *
-	 * The number of times a connection should be tried when autoctivating before
+	 * The number of times a connection should be tried when autoactivating before
 	 * giving up. Zero means forever, -1 means the global default (4 times if not
 	 * overridden).
 	 */

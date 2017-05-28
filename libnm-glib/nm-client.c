@@ -1776,7 +1776,7 @@ nm_client_new_finish (GAsyncResult *result, GError **error)
 }
 
 /*
- * constructor() shouldn't be overriden in most cases, rather constructed()
+ * constructor() shouldn't be overridden in most cases, rather constructed()
  * method is preferred and more useful.
  * But, this serves as a workaround for bindings (use) calling the constructor()
  * directly instead of nm_client_new() function, and neither providing

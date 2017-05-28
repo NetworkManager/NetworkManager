@@ -1069,7 +1069,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("'%s' can only be used with '%s=%s or '%s=%s'"),
+		             _("'%s' can only be used with '%s=%s' or '%s=%s'"),
 		             priv->pmf == NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL ? "optional" : "required",
 		             NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-eap",
 		             NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk");

@@ -41,7 +41,7 @@
  * NMTST_SEED_RAND environment variable:
  *   Tests that use random numbers from nmtst_get_rand() get seeded randomly at each start.
  *   You can specify the seed by setting NMTST_SEED_RAND. Also, tests will print the seed
- *   to stdout, so that you know the choosen seed.
+ *   to stdout, so that you know the chosen seed.
  *
  *
  * NMTST_DEBUG environment variable:

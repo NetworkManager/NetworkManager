@@ -933,7 +933,7 @@ nm_setting_vpn_class_init (NMSettingVpnClass *setting_class)
 	 *
 	 * Timeout for the VPN service to establish the connection. Some services
 	 * may take quite a long time to connect.
-	 * Value of 0 means a default timeout, which is 60 seconds (unless overriden
+	 * Value of 0 means a default timeout, which is 60 seconds (unless overridden
 	 * by vpn.timeout in configuration file). Values greater than zero mean
 	 * timeout in seconds.
 	 *

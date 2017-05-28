@@ -1353,7 +1353,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_wireless_class)
 	 * If specified, request that the device use this MAC address instead.
 	 * This is known as MAC cloning or spoofing.
 	 *
-	 * Beside explicitly specifing a MAC address, the special values "preserve", "permanent",
+	 * Beside explicitly specifying a MAC address, the special values "preserve", "permanent",
 	 * "random" and "stable" are supported.
 	 * "preserve" means not to touch the MAC address on activation.
 	 * "permanent" means to use the permanent hardware address of the device.

@@ -2138,7 +2138,7 @@ out:
  * @callback: callback to be called when the reapply operation completes
  * @user_data: caller-specific data passed to @callback
  *
- * Asynchronously begins an get the a currently applied connection.
+ * Asynchronously begins and gets the currently applied connection.
  *
  * Since: 1.2
  **/

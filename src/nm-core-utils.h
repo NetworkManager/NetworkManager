@@ -304,7 +304,7 @@ guint8 *nm_utils_secret_key_read (gsize *out_key_len, GError **error);
 
 const char *nm_utils_get_boot_id (void);
 
-/* IPv6 Interface Identifer helpers */
+/* IPv6 Interface Identifier helpers */
 
 /**
  * NMUtilsIPv6IfaceId:

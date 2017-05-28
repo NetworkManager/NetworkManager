@@ -287,7 +287,7 @@ test_merge_subtract_mss_mtu (void)
 	g_assert_cmpuint (nm_ip4_config_get_mtu (cfg1), ==, expected_mtu2);
 
 	nm_ip4_config_merge (cfg1, cfg3, NM_IP_CONFIG_MERGE_DEFAULT);
-	/* ensure again the MSS and MTU in cfg1 got overriden */
+	/* ensure again the MSS and MTU in cfg1 got overridden */
 	g_assert_cmpuint (nm_ip4_config_get_mss (cfg1), ==, expected_mss3);
 	g_assert_cmpuint (nm_ip4_config_get_mtu (cfg1), ==, expected_mtu3);
 

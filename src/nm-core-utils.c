@@ -3505,7 +3505,7 @@ nm_utils_stable_id_parse (const char *stable_id,
 			_stable_id_append (str, bootid ?: nm_utils_get_boot_id ());
 		else if (g_str_has_prefix (&stable_id[i], "${RANDOM}")) {
 			/* RANDOM makes not so much sense for cloned-mac-address
-			 * as the result is simmilar to specifing "cloned-mac-address=random".
+			 * as the result is simmilar to specyifing "cloned-mac-address=random".
 			 * It makes however sense for RFC 7217 Stable Privacy IPv6 addresses
 			 * where this is effectively the only way to generate a different
 			 * (random) host identifier for each connect.
