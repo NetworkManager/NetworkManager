@@ -2999,7 +2999,7 @@ msgstr "Ad-Hoc"
 
 #: ../clients/cli/devices.c:816
 msgid "Infra"
-msgstr "Υπέρυθρο"
+msgstr "Υποδομή"
 
 #: ../clients/cli/devices.c:817
 msgid "N/A"
