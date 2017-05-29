@@ -1984,7 +1984,7 @@ msgstr "エラー: アクティブな接続がありません。"
 #: ../clients/cli/connections.c:2878
 #, c-format
 msgid "Connection '%s' deactivation failed: %s\n"
-msgstr "接続 '%s' の非アクティブ化に失敗しました: %s"
+msgstr "接続 '%s' の非アクティブ化に失敗しました: %s\n"
 
 #: ../clients/cli/connections.c:3341 ../clients/cli/utils.c:710
 #, c-format
