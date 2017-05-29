@@ -14,8 +14,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-05-29 15:36+0200\n"
-"PO-Revision-Date: 2017-04-21 05:16-0400\n"
+"POT-Creation-Date: 2017-05-29 17:27+0200\n"
+"PO-Revision-Date: 2017-05-29 11:19-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: team@lists.gnome.gr\n"
 "Language: el\n"
@@ -145,7 +145,10 @@ msgstr "αποτυχία σύνδεσης"
 #: ../clients/cli/devices.c:1153 ../clients/cli/devices.c:1197
 #: ../clients/cli/devices.c:1199 ../clients/cli/general.c:41
 #: ../clients/cli/general.c:79 ../clients/cli/general.c:144
-#: ../clients/cli/general.c:149
+#: ../clients/cli/general.c:149 ../clients/common/nm-meta-setting-desc.c:1368
+#: ../clients/common/nm-meta-setting-desc.c:1436
+#: ../clients/common/nm-meta-setting-desc.c:2593
+#: ../clients/common/nm-meta-setting-desc.c:2647
 msgid "unknown"
 msgstr "άγνωστη"
 
@@ -165,6 +168,8 @@ msgstr "άγνωστη"
 #: ../clients/cli/devices.c:1194 ../clients/cli/devices.c:1195
 #: ../clients/cli/devices.c:1196 ../clients/cli/devices.c:1198
 #: ../clients/cli/devices.c:1200 ../clients/cli/general.c:150
+#: ../clients/common/nm-meta-setting-desc.c:574
+#: ../clients/common/nm-meta-setting-desc.c:2586
 msgid "yes"
 msgstr "ναι"
 
@@ -182,7 +187,8 @@ msgstr "ναι"
 #: ../clients/cli/devices.c:1193 ../clients/cli/devices.c:1194
 #: ../clients/cli/devices.c:1195 ../clients/cli/devices.c:1196
 #: ../clients/cli/devices.c:1198 ../clients/cli/devices.c:1200
-#: ../clients/cli/general.c:151
+#: ../clients/cli/general.c:151 ../clients/common/nm-meta-setting-desc.c:574
+#: ../clients/common/nm-meta-setting-desc.c:2589
 msgid "no"
 msgstr "όχι"
 
@@ -1435,6 +1441,7 @@ msgid "Connection '%s' deactivation failed: %s\n"
 msgstr "Σφάλμα: Αποτυχία ενεργοποίησης σύνδεσης: %s"
 
 #: ../clients/cli/connections.c:3075 ../clients/cli/connections.c:3132
+#: ../clients/common/nm-client-utils.c:165
 #, c-format
 msgid "'%s' not among [%s]"
 msgstr "το '%s' δεν είναι μεταξύ των [%s]"
@@ -4147,19 +4154,1427 @@ msgstr ""
 msgid "Failed to duplicate pager pipe: %s\n"
 msgstr ""
 
-#: ../clients/common/nm-polkit-listener.c:212
-msgid "An authentication session is already underway."
+#. Translators: the first %s is the partial value entered by
+#. * the user, the second %s a list of compatible values.
+#.
+#: ../clients/common/nm-client-utils.c:71
+#: ../clients/common/nm-client-utils.c:102
+#, fuzzy, c-format
+msgid "'%s' is ambiguous (%s)"
+msgstr "το '%s' είναι διφορούμενο (%s x %s)"
+
+#: ../clients/common/nm-client-utils.c:81
+#, c-format
+msgid "'%s' is not valid; use [%s] or [%s]"
+msgstr "το '%s' δεν είναι έγκυρο· χρησιμοποιήστε [%s] ή [%s]"
+
+#: ../clients/common/nm-client-utils.c:114
+#, fuzzy, c-format
+msgid "'%s' is not valid; use [%s], [%s] or [%s]"
+msgstr "το '%s' δεν είναι έγκυρο· χρησιμοποιήστε [%s] ή [%s]"
+
+#: ../clients/common/nm-client-utils.c:151
+#, c-format
+msgid "'%s' is ambiguous (%s x %s)"
+msgstr "το '%s' είναι διφορούμενο (%s x %s)"
+
+#: ../clients/common/nm-client-utils.c:163
+#, c-format
+msgid "missing name, try one of [%s]"
+msgstr "λείπει όνομα, δοκιμάστε ένα από τα [%s]"
+
+#: ../clients/common/nm-meta-setting-access.c:484
+#, c-format
+msgid "field '%s' has to be alone"
+msgstr "το πεδίο '%s' πρέπει να είναι μόνο του"
+
+#: ../clients/common/nm-meta-setting-access.c:499
+#, fuzzy, c-format
+msgid "invalid field '%s%s%s%s%s'; %s%s%s"
+msgstr "άκυρο πεδίο '%s'· επιτρεπόμενα πεδία: %s"
+
+#: ../clients/common/nm-meta-setting-desc.c:100
+#: ../clients/common/nm-meta-setting-desc.c:156
+#, c-format
+msgid "invalid prefix '%s'; <1-%d> allowed"
+msgstr "άκυρο πρόθεμα '%s'· επιτρεπόμενο <1-%d>"
+
+#: ../clients/common/nm-meta-setting-desc.c:108
+#, fuzzy, c-format
+msgid "invalid IP address: %s"
+msgstr "άκυρη διεύθυνση IPv4 του '%s'"
+
+#: ../clients/common/nm-meta-setting-desc.c:133
+msgid ""
+"The valid syntax is: 'ip[/prefix] [next-hop] [metric] [attribute=val]... [,"
+"ip[/prefix] ...]'"
 msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:167
+#, c-format
+msgid "the next hop ('%s') must be first"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:173
+#, c-format
+msgid "the metric ('%s') must be before attributes"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:213
+#, c-format
+msgid "invalid route: %s. %s"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:225
+msgid "default route cannot be added (NetworkManager handles it by itself)"
+msgstr ""
+"η προεπιλεγμένη διαδρομή δεν μπορεί να προστεθεί (ο διαχειριστής δικτύου τη "
+"χειρίζεται ο ίδιος)"
+
+#: ../clients/common/nm-meta-setting-desc.c:280
+#, c-format
+msgid "invalid priority map '%s'"
+msgstr "άκυρη χαρτογράφηση προτεραιότητας '%s'"
+
+#: ../clients/common/nm-meta-setting-desc.c:287
+#: ../clients/common/nm-meta-setting-desc.c:293
+#, c-format
+msgid "priority '%s' is not valid (<0-%ld>)"
+msgstr "η προτεραιότητα '%s' δεν είναι έγκυρη (<0-%ld>)"
+
+#: ../clients/common/nm-meta-setting-desc.c:345
+#, c-format
+msgid "cannot read pac-script from file '%s'"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:352
+#, fuzzy, c-format
+msgid "file '%s' contains non-valid utf-8"
+msgstr "ο δείκτης '%s' δεν είναι έγκυρος"
+
+#: ../clients/common/nm-meta-setting-desc.c:365
+#, fuzzy, c-format
+msgid "'%s' does not contain a valid PAC Script"
+msgstr "το '%s' δεν είναι έγκυρο PSK"
+
+#: ../clients/common/nm-meta-setting-desc.c:368
+#, fuzzy, c-format
+msgid "Not a valid PAC Script"
+msgstr "δεν είναι μια έγκυρη διεύθυνση MAC"
+
+#: ../clients/common/nm-meta-setting-desc.c:422
+#, c-format
+msgid "cannot read team config from file '%s'"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:429
+#, c-format
+msgid "team config file '%s' contains non-valid utf-8"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:441
+#, fuzzy, c-format
+msgid "'%s' does not contain a valid team configuration"
+msgstr "το '%s' δεν είναι έγκυρη διαμόρφωση ομάδας ή όνομα αρχείου."
+
+#: ../clients/common/nm-meta-setting-desc.c:444
+#, c-format
+msgid "team configuration must be a JSON object"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:537
+#: ../clients/tui/nmt-mtu-entry.c:84
+msgid "(default)"
+msgstr "(προεπιλογή)"
+
+#: ../clients/common/nm-meta-setting-desc.c:678
+msgid "auto"
+msgstr "αυτόματα"
+
+#: ../clients/common/nm-meta-setting-desc.c:826
+#, c-format
+msgid "%s (%s)"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:953
+#, c-format
+msgid "'%s' is out of range [%lli, %lli]"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:959
+#, c-format
+msgid "'%s' is not a valid number"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:1014
+#, c-format
+msgid "'%s' is out of range [0, %u]"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:1051
+#, c-format
+msgid "'%s' is not a valid Ethernet MAC"
+msgstr "το '%s' δεν είναι έγκυρο έθερνετ MAC"
+
+#: ../clients/common/nm-meta-setting-desc.c:1070
+#, fuzzy, c-format
+msgid "'%s' is not a valid flag number; use <0-%d>"
+msgstr "το '%s' δεν είναι έγκυρο κανάλι· χρησιμοποιήστε <1-13>"
+
+#: ../clients/common/nm-meta-setting-desc.c:1084
+#, c-format
+msgid "'%s' sum is higher than all flags => all flags set"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:1188
+#, fuzzy, c-format
+msgid "invalid option '%s', use a combination of [%s]"
+msgstr "άκυρη επιλογή '%s' ή τιμή της '%s'"
+
+#: ../clients/common/nm-meta-setting-desc.c:1193
+#: ../libnm-core/nm-keyfile-reader.c:612
+#, fuzzy, c-format
+msgid "invalid option '%s', use one of [%s]"
+msgstr "άκυρη επιλογή '%s' ή τιμή της '%s'"
+
+#: ../clients/common/nm-meta-setting-desc.c:1316
+#, c-format
+msgid "%d (key)"
+msgstr "%d (πλήκτρο)"
+
+#: ../clients/common/nm-meta-setting-desc.c:1318
+#, c-format
+msgid "%d (passphrase)"
+msgstr "%d (συνθηματικό)"
+
+#: ../clients/common/nm-meta-setting-desc.c:1321
+#: ../clients/common/nm-meta-setting-desc.c:1410
+#, c-format
+msgid "%d (unknown)"
+msgstr "%d (άγνωστο)"
+
+#: ../clients/common/nm-meta-setting-desc.c:1353
+msgid "0 (NONE)"
+msgstr "0 (ΚΑΝΕΝΑ)"
+
+#: ../clients/common/nm-meta-setting-desc.c:1359
+msgid "REORDER_HEADERS, "
+msgstr "REORDER_HEADERS, "
+
+#: ../clients/common/nm-meta-setting-desc.c:1361
+msgid "GVRP, "
+msgstr "GVRP, "
+
+#: ../clients/common/nm-meta-setting-desc.c:1363
+msgid "LOOSE_BINDING, "
+msgstr "LOOSE_BINDING, "
+
+#: ../clients/common/nm-meta-setting-desc.c:1365
+#, fuzzy
+msgid "MVRP, "
+msgstr "GVRP, "
+
+#: ../clients/common/nm-meta-setting-desc.c:1404
+#, c-format
+msgid "%d (disabled)"
+msgstr "%d (απενεργοποιημένο)"
+
+#: ../clients/common/nm-meta-setting-desc.c:1406
+#, c-format
+msgid "%d (enabled, prefer public IP)"
+msgstr "%d (ενεργοποιημένο, προτιμήστε δημόσια διεύθυνση IP)"
+
+#: ../clients/common/nm-meta-setting-desc.c:1408
+#, c-format
+msgid "%d (enabled, prefer temporary IP)"
+msgstr "%d (ενεργοποιημένο, προτιμήστε προσωρινή διεύθυνση IP)"
+
+#: ../clients/common/nm-meta-setting-desc.c:1423
+msgid "0 (none)"
+msgstr "0 (κανένα)"
+
+#: ../clients/common/nm-meta-setting-desc.c:1429
+msgid "agent-owned, "
+msgstr "του διαμεσολαβητή,"
+
+#: ../clients/common/nm-meta-setting-desc.c:1431
+msgid "not saved, "
+msgstr "μη αποθηκευμένο, "
+
+#: ../clients/common/nm-meta-setting-desc.c:1433
+msgid "not required, "
+msgstr "μη απαιτούμενο, "
+
+#: ../clients/common/nm-meta-setting-desc.c:1495
+#, c-format
+msgid "'%s' is not valid; use <option>=<value>"
+msgstr "το '%s' δεν είναι έγκυρο· χρησιμοποιήστε <option>=<value>"
+
+#: ../clients/common/nm-meta-setting-desc.c:1537
+msgid "no item to remove"
+msgstr "δεν υπάρχει στοιχείο για αφαίρεση"
+
+#: ../clients/common/nm-meta-setting-desc.c:1541
+#, c-format
+msgid "index '%d' is not in range <0-%d>"
+msgstr "ο δείκτης '%d' δεν είναι στην περιοχή <0-%d>"
+
+#: ../clients/common/nm-meta-setting-desc.c:1556
+#, c-format
+msgid "invalid option '%s'"
+msgstr "άκυρη επιλογή '%s'"
+
+#: ../clients/common/nm-meta-setting-desc.c:1558
+msgid "missing option"
+msgstr "λείπει επιλογή"
+
+#: ../clients/common/nm-meta-setting-desc.c:1582
+#, c-format
+msgid "'%s' is not a valid MAC"
+msgstr "το '%s' δεν είναι έγκυρο MAC"
+
+#: ../clients/common/nm-meta-setting-desc.c:1612
+#: ../clients/common/nm-meta-setting-desc.c:1708
+#: ../clients/common/nm-meta-setting-desc.c:4233
+#, c-format
+msgid "'%s' is not valid"
+msgstr "το '%s' δεν είναι έγκυρο"
+
+#: ../clients/common/nm-meta-setting-desc.c:1652
+#, fuzzy, c-format
+msgid "'%u' flags are not valid; use combination of %s"
+msgstr "το '%s' δεν είναι έγκυρο· χρησιμοποιήστε [%s] ή [%s]"
+
+#: ../clients/common/nm-meta-setting-desc.c:1688
+#, c-format
+msgid "'%s' is not a valid number (or out of range)"
+msgstr "το '%s' δεν είναι έγκυρος αριθμός (ή εκτός εμβέλειας)"
+
+#: ../clients/common/nm-meta-setting-desc.c:1803
+#, c-format
+msgid "'%s' is not a valid hex character"
+msgstr "το '%s' δεν είναι έγκυρος δεκαεξαδικός χαρακτήρας"
+
+#: ../clients/common/nm-meta-setting-desc.c:2083
+#, c-format
+msgid "the property doesn't contain EAP method '%s'"
+msgstr "η ιδιότητα δεν περιέχει τη μέθοδο EAP '%s'"
+
+#: ../clients/common/nm-meta-setting-desc.c:2106
+#, c-format
+msgid "the property doesn't contain alternative subject match '%s'"
+msgstr "η ιδιότητα δεν περιέχει την εναλλακτική συμφωνία θέματος '%s'"
+
+#: ../clients/common/nm-meta-setting-desc.c:2132
+#, c-format
+msgid "the property doesn't contain \"phase2\" alternative subject match '%s'"
+msgstr ""
+"η ιδιότητα δεν περιέχει την εναλλακτική συμφωνία θέματος \"phase2\" '%s'"
+
+#: ../clients/common/nm-meta-setting-desc.c:2253
+#, c-format
+msgid ""
+"Enter a list of bonding options formatted as:\n"
+"  option = <value>, option = <value>,... \n"
+"Valid options are: %s\n"
+"'mode' can be provided as a name or a number:\n"
+"balance-rr    = 0\n"
+"active-backup = 1\n"
+"balance-xor   = 2\n"
+"broadcast     = 3\n"
+"802.3ad       = 4\n"
+"balance-tlb   = 5\n"
+"balance-alb   = 6\n"
+"\n"
+"Example: mode=2,miimon=120\n"
+msgstr ""
+"Εισάγετε έναν κατάλογο επιλογών δεσμών μορφοποιημένων ως:\n"
+"  option = <value>, option = <value>,... \n"
+"Έγκυρες επιλογές είναι: %s\n"
+"η 'κατάσταση' μπορεί να δοθεί ως όνομα ή αριθμός:\n"
+"balance-rr    = 0\n"
+"active-backup = 1\n"
+"balance-xor   = 2\n"
+"broadcast     = 3\n"
+"802.3ad       = 4\n"
+"balance-tlb   = 5\n"
+"balance-alb   = 6\n"
+"\n"
+"Παράδειγμα: mode=2,miimon=120\n"
+
+#: ../clients/common/nm-meta-setting-desc.c:2289
+#: ../clients/common/nm-meta-setting-desc.c:3132
+#, fuzzy, c-format
+msgid "%d (default)"
+msgstr "(προεπιλογή)"
+
+#: ../clients/common/nm-meta-setting-desc.c:2292
+#, fuzzy, c-format
+msgid "%d (forever)"
+msgstr "%d (άγνωστο)"
+
+#. Don't allow setting type unless the connection is brand new.
+#. * Just because it's a bad idea and the user wouldn't probably want that.
+#. * No technical reason, really.
+#. * Also, using uuid to see if the connection is brand new is a bit
+#. * hacky: we can not see if the type is already set, because
+#. * nmc_setting_set_property() is called only after the property
+#. * we're setting (type) has been removed.
+#: ../clients/common/nm-meta-setting-desc.c:2342
+#, fuzzy, c-format
+msgid "Can not change the connection type"
+msgstr "Εισαγωγή τύπου σύνδεσης: "
+
+#: ../clients/common/nm-meta-setting-desc.c:2444
+#, c-format
+msgid "the property doesn't contain permission '%s'"
+msgstr "η ιδιότητα δεν περιέχει δικαίωμα '%s'"
+
+#: ../clients/common/nm-meta-setting-desc.c:2465
+#, c-format
+msgid "'%s' is not valid master; use ifname or connection UUID"
+msgstr "το '%s' δεν είναι έγκυρο κύριο· χρησιμοποιήστε ifname ή σύνδεση UUID"
+
+#: ../clients/common/nm-meta-setting-desc.c:2560
+#, c-format
+msgid "the value '%s' is not a valid UUID"
+msgstr "η τιμή '%s' δεν είναι έγκυρο UUID"
+
+#: ../clients/common/nm-meta-setting-desc.c:2567
+#, c-format
+msgid "the property doesn't contain UUID '%s'"
+msgstr "η ιδιότητα δεν περιέχει το UUID '%s'"
+
+#: ../clients/common/nm-meta-setting-desc.c:2634
+msgid "0 (disabled)"
+msgstr "0 (απενεργοποιημένο)"
+
+#: ../clients/common/nm-meta-setting-desc.c:2640
+msgid "enabled, "
+msgstr "ενεργοποιημένο, "
+
+#: ../clients/common/nm-meta-setting-desc.c:2642
+msgid "advertise, "
+msgstr "γνωστοποίηση, "
+
+#: ../clients/common/nm-meta-setting-desc.c:2644
+msgid "willing, "
+msgstr "πρόθυμο, "
+
+#: ../clients/common/nm-meta-setting-desc.c:2764
+#, c-format
+msgid "'%s' is not a valid DCB flag"
+msgstr "το '%s' δεν είναι έγκυρη σημαία DCB"
+
+#: ../clients/common/nm-meta-setting-desc.c:2794
+msgid "must contain 8 comma-separated numbers"
+msgstr "πρέπει να περιέχει 8 αριθμούς χωριζόμενους με κόμμα"
+
+#: ../clients/common/nm-meta-setting-desc.c:2810
+#, c-format
+msgid "'%s' not a number between 0 and %u (inclusive) or %u"
+msgstr ""
+"το '%s' δεν είναι ένας αριθμός μεταξύ 0 και %u (συμπεριλαμβανόμενου) ή %u"
+
+#: ../clients/common/nm-meta-setting-desc.c:2813
+#, c-format
+msgid "'%s' not a number between 0 and %u (inclusive)"
+msgstr "το '%s' δεν είναι ένας αριθμός μεταξύ 0 και %u (συμπεριλαμβανόμενου)"
+
+#: ../clients/common/nm-meta-setting-desc.c:2834
+#, fuzzy, c-format
+msgid "changes will have no effect until '%s' includes 1 (enabled)"
+msgstr ""
+"Προειδοποίηση: οι αλλαγές δεν θα έχουν καμιά επίδραση μέχρι το '%s' να "
+"συμπεριλάβει το 1 (ενεργοποιημένο)\n"
+"\n"
+
+#: ../clients/common/nm-meta-setting-desc.c:2889
+#, c-format
+msgid "bandwidth percentages must total 100%%"
+msgstr "τα ποσοστά εύρους ζώνης πρέπει να είναι συνολικά 100%%"
+
+#: ../clients/common/nm-meta-setting-desc.c:2962
+#: ../clients/common/nm-meta-setting-desc.c:2968
+msgid "SIM operator ID must be a 5 or 6 number MCCMNC code"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:2992
+#, c-format
+msgid "'%s' is not a valid IBoIP P_Key"
+msgstr "το '%s' δεν είναι έγκυρο P_Key IBoIP"
+
+#: ../clients/common/nm-meta-setting-desc.c:3015
+msgid "default"
+msgstr "προεπιλογή"
+
+#: ../clients/common/nm-meta-setting-desc.c:3134
+#, fuzzy, c-format
+msgid "%d (off)"
+msgstr "%d (άγνωστο)"
+
+#: ../clients/common/nm-meta-setting-desc.c:3171
+#: ../clients/common/nm-meta-setting-desc.c:3190
+#, c-format
+msgid "invalid IPv4 address '%s'"
+msgstr "άκυρη διεύθυνση IPv4 του '%s'"
+
+#: ../clients/common/nm-meta-setting-desc.c:3196
+#: ../clients/common/nm-meta-setting-desc.c:3450
+#, c-format
+msgid "the property doesn't contain DNS server '%s'"
+msgstr "η ιδιότητα δεν περιέχει τον διακομιστή DNS '%s'"
+
+#: ../clients/common/nm-meta-setting-desc.c:3236
+#: ../clients/common/nm-meta-setting-desc.c:3490
+#, c-format
+msgid "the property doesn't contain DNS search domain '%s'"
+msgstr "η ιδιότητα δεν περιέχει τομέα αναζήτησης DNS '%s'"
+
+#: ../clients/common/nm-meta-setting-desc.c:3273
+#: ../clients/common/nm-meta-setting-desc.c:3527
+#, fuzzy, c-format
+msgid "the property doesn't contain DNS option '%s'"
+msgstr "η ιδιότητα δεν περιέχει την απεικόνιση '%s'"
+
+#: ../clients/common/nm-meta-setting-desc.c:3316
+#: ../clients/common/nm-meta-setting-desc.c:3569
+#, c-format
+msgid "the property doesn't contain IP address '%s'"
+msgstr "η ιδιότητα δεν περιέχει τη διεύθυνση IP '%s'"
+
+#: ../clients/common/nm-meta-setting-desc.c:3336
+#: ../clients/common/nm-meta-setting-desc.c:3588
+#, fuzzy, c-format
+msgid "invalid gateway address '%s'"
+msgstr "άκυρη πύλη δικτύου '%s'"
+
+#: ../clients/common/nm-meta-setting-desc.c:3375
+#: ../clients/common/nm-meta-setting-desc.c:3629
+#, c-format
+msgid "the property doesn't contain route '%s'"
+msgstr "η ιδιότητα δεν περιέχει τη διαδρομή '%s'"
+
+#: ../clients/common/nm-meta-setting-desc.c:3425
+#: ../clients/common/nm-meta-setting-desc.c:3444
+#, c-format
+msgid "invalid IPv6 address '%s'"
+msgstr "άκυρη διεύθυνση IPv6 '%s'"
+
+#: ../clients/common/nm-meta-setting-desc.c:3647
+#: ../libnm-core/nm-setting-gsm.c:381 ../libnm-util/nm-setting-gsm.c:364
+#, c-format
+msgid "'%s' is not a number"
+msgstr "το '%s' δεν είναι αριθμός"
+
+#: ../clients/common/nm-meta-setting-desc.c:3654
+#, c-format
+msgid "'%s' is not valid; use 0, 1, or 2"
+msgstr "το '%s' δεν είναι έγκυρο· χρησιμοποιήστε 0, 1, ή 2"
+
+#: ../clients/common/nm-meta-setting-desc.c:3688
+#, c-format
+msgid "'%s' is not a valid channel; use <1-13>"
+msgstr "το '%s' δεν είναι έγκυρο κανάλι· χρησιμοποιήστε <1-13>"
+
+#: ../clients/common/nm-meta-setting-desc.c:3794
+#, fuzzy, c-format
+msgid "only one mapping at a time is supported; taking the first one (%s)"
+msgstr ""
+"Προειδοποίηση: μόνο μια απεικόνιση τη φορά υποστηρίζεται· λαμβάνεται η πρώτη "
+"απεικόνιση (%s)\n"
+
+#: ../clients/common/nm-meta-setting-desc.c:3802
+#, c-format
+msgid "the property doesn't contain mapping '%s'"
+msgstr "η ιδιότητα δεν περιέχει την απεικόνιση '%s'"
+
+#: ../clients/common/nm-meta-setting-desc.c:3810
+msgid "no priority to remove"
+msgstr "δεν υπάρχει προτεραιότητα για αφαίρεση"
+
+#: ../clients/common/nm-meta-setting-desc.c:3814
+#, c-format
+msgid "index '%d' is not in the range of <0-%d>"
+msgstr "ο δείκτης '%d' δεν είναι στην περιοχή <0-%d>"
+
+#: ../clients/common/nm-meta-setting-desc.c:3883
+#, fuzzy, c-format
+msgid "'%s' cannot be empty"
+msgstr "η επιλογή '%s' είναι κενή"
+
+#: ../clients/common/nm-meta-setting-desc.c:3922
+#: ../clients/common/nm-meta-setting-desc.c:4055
+#: ../libnm-core/nm-setting-wired.c:664 ../libnm-core/nm-setting-wireless.c:857
+#: ../libnm-core/nm-setting-wireless.c:869 ../libnm-util/nm-setting-wired.c:646
+#: ../libnm-util/nm-setting-wireless.c:859
+#: ../libnm-util/nm-setting-wireless.c:873
+#, c-format
+msgid "'%s' is not a valid MAC address"
+msgstr "το '%s' δεν είναι έγκυρη διεύθυνση MAC"
+
+#: ../clients/common/nm-meta-setting-desc.c:3928
+#: ../clients/common/nm-meta-setting-desc.c:4061
+#, c-format
+msgid "the property doesn't contain MAC address '%s'"
+msgstr "η ιδιότητα δεν περιέχει τη διεύθυνση MAC '%s'"
+
+#: ../clients/common/nm-meta-setting-desc.c:3946
+#, fuzzy, c-format
+msgid "'%s' is not valid; 2 or 3 strings should be provided"
+msgstr "το '%s' δεν είναι έγκυρο· πρέπει να παρασχεθούν 3 συμβολοσειρές"
+
+#: ../clients/common/nm-meta-setting-desc.c:3962
+#, c-format
+msgid "'%s' string value should consist of 1 - 199 characters"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:3994
+#, c-format
+msgid ""
+"Enter a list of S/390 options formatted as:\n"
+"  option = <value>, option = <value>,...\n"
+"Valid options are: %s\n"
+msgstr ""
+"Εισάγετε έναν κατάλογο επιλογών S/390 μορφοποιημένων ως:\n"
+"  option = <value>, option = <value>,...\n"
+"Έγκυρες επιλογές είναι: %s\n"
+
+#: ../clients/common/nm-meta-setting-desc.c:4028
+#, c-format
+msgid "'%s' is not a valid channel"
+msgstr "το '%s' δεν είναι ενεργό κανάλι"
+
+#: ../clients/common/nm-meta-setting-desc.c:4034
+#, c-format
+msgid "'%ld' is not a valid channel"
+msgstr "το '%ld' δεν είναι έγκυρο κανάλι"
+
+#: ../clients/common/nm-meta-setting-desc.c:4133
+#: ../clients/common/nm-meta-setting-desc.c:4169
+#: ../clients/common/nm-meta-setting-desc.c:4205
+#, c-format
+msgid "the property doesn't contain protocol '%s'"
+msgstr "η ιδιότητα δεν περιέχει πρωτόκολλο '%s'"
+
+#: ../clients/common/nm-meta-setting-desc.c:4242
+#, c-format
+msgid ""
+"'%s' not compatible with %s '%s', please change the key or set the right %s "
+"first."
+msgstr ""
+"το '%s' δεν είναι συμβατό με το %s '%s', παρακαλούμε αλλάξτε το κλειδί ή "
+"ορίστε το σωστό %s πρώτα."
+
+#: ../clients/common/nm-meta-setting-desc.c:4252
+#, fuzzy, c-format
+msgid "WEP key is guessed to be of '%s'"
+msgstr "το κλειδί WEP εικάζεται ότι είναι το '%s'\n"
+
+#: ../clients/common/nm-meta-setting-desc.c:4257
+#, fuzzy, c-format
+msgid "WEP key index set to '%d'"
+msgstr "ο δείκτης κλειδιού WEP ορίζεται σε '%d'\n"
+
+#: ../clients/common/nm-meta-setting-desc.c:4296
+#, fuzzy, c-format
+msgid "'%s' is not compatible with '%s' type, please change or delete the key."
+msgstr ""
+"Προειδοποίηση: το '%s' δεν είναι συμβατό με τον τύπο '%s', παρακαλούμε "
+"αλλάξτε ή διαγράψτε το κλειδί.\n"
+
+#: ../clients/common/nm-meta-setting-desc.c:4306
+#, c-format
+msgid "'%s' is not a valid PSK"
+msgstr "το '%s' δεν είναι έγκυρο PSK"
+
+#: ../clients/common/nm-meta-setting-desc.c:4338
+#, fuzzy
+msgid "Bonding primary interface [none]"
+msgstr "πρωτεύουσα διεπαφή δεσμού [καμία]:"
+
+#. this is a virtual property, only needed during "ask" mode.
+#: ../clients/common/nm-meta-setting-desc.c:4345
+#, fuzzy
+msgid "Bonding monitoring mode"
+msgstr "κατάσταση παρακολούθησης δεσμού %s"
+
+#: ../clients/common/nm-meta-setting-desc.c:4354
+#, fuzzy
+msgid "Bonding miimon [100]"
+msgstr "Δεσμός miimon [100]:"
+
+#: ../clients/common/nm-meta-setting-desc.c:4362
+#, fuzzy
+msgid "Bonding downdelay [0]"
+msgstr "Καθυστέρηση απενεργοποίησης δεσμού [0]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:4370
+#, fuzzy
+msgid "Bonding updelay [0]"
+msgstr "Καθυστέρηση ενεργοποίησης δεσμού [0]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:4378
+#, fuzzy
+msgid "Bonding arp-interval [0]"
+msgstr "Χρόνος arp δεσμού [0]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:4386
+#, fuzzy
+msgid "Bonding arp-ip-target [none]"
+msgstr "Στόχος arp-ip δεσμού [κανένα]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:4394
+msgid "LACP rate ('slow' or 'fast') [slow]"
+msgstr ""
+
+#. macro that returns @func as const (gboolean(*)(NMSetting*)) type, but checks
+#. * that the actual type is (gboolean(*)(type *)).
+#. macro that returns @func as const (guint32(*)(NMSetting*)) type, but checks
+#. * that the actual type is (guint32(*)(type *)).
+#: ../clients/common/nm-meta-setting-desc.c:4511
+msgid ""
+"nmcli can accepts both direct JSON configuration data and a file name "
+"containing the configuration. In the latter case the file is read and the "
+"contents is put into this property.\n"
+"\n"
+"Examples: set team.config { \"device\": \"team0\", \"runner\": {\"name\": "
+"\"roundrobin\"}, \"ports\": {\"eth1\": {}, \"eth2\": {}} }\n"
+"          set team.config /etc/my-team.conf\n"
+msgstr ""
+"Το nmcli μπορεί να αποδεχθεί και άμεσα δεδομένα διαμόρφωσης JSON και ένα "
+"όνομα αρχείου που περιέχει τη διαμόρφωση. Στη δεύτερη περίπτωση το αρχείο "
+"διαβάζεται και τα περιεχόμενα τοποθετούνται σε αυτήν την ιδιότητα.\n"
+"\n"
+"Παραδείγματα: set team.config { \"device\": \"team0\", \"runner\": {\"name"
+"\": \"roundrobin\"}, \"ports\": {\"eth1\": {}, \"eth2\": {}} }\n"
+"          set team.config /etc/my-team.conf\n"
+
+#: ../clients/common/nm-meta-setting-desc.c:4541
+msgid ""
+"Enter file path to CA certificate (optionally prefixed with file://).\n"
+"  [file://]<file path>\n"
+"Note that nmcli does not support specifying certificates as raw blob data.\n"
+"Example: /home/cimrman/cacert.crt\n"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:4575
+msgid ""
+"Enter file path to client certificate (optionally prefixed with file://).\n"
+"  [file://]<file path>\n"
+"Note that nmcli does not support specifying certificates as raw blob data.\n"
+"Example: /home/cimrman/jara.crt\n"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:4632
+msgid ""
+"Enter file path to CA certificate for inner authentication (optionally "
+"prefixed\n"
+"with file://).\n"
+"  [file://]<file path>\n"
+"Note that nmcli does not support specifying certificates as raw blob data.\n"
+"Example: /home/cimrman/ca-zweite-phase.crt\n"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:4667
+msgid ""
+"Enter file path to client certificate for inner authentication (optionally "
+"prefixed\n"
+"with file://).\n"
+"  [file://]<file path>\n"
+"Note that nmcli does not support specifying certificates as raw blob data.\n"
+"Example: /home/cimrman/jara-zweite-phase.crt\n"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:4694
+msgid ""
+"Enter bytes as a list of hexadecimal values.\n"
+"Two formats are accepted:\n"
+"(a) a string of hexadecimal digits, where each two digits represent one "
+"byte\n"
+"(b) space-separated list of bytes written as hexadecimal digits (with "
+"optional 0x/0X prefix, and optional leading 0).\n"
+"\n"
+"Examples: ab0455a6ea3a74C2\n"
+"          ab 4 55 0xa6 ea 3a 74 C2\n"
+msgstr ""
+"Εισάγετε ψηφιολέξεις (bytes) ως έναν κατάλογο δεκαεξαδικών τιμών.\n"
+"Δύο μορφές είναι αποδεκτές:\n"
+"(α) μια συμβολοσειρά δεκαεξαδικών ψηφίων, όπου κάθε δύο ψηφία αντιστοιχούν "
+"σε μια ψηφιολέξη\n"
+"(β) κατάλογο που χωρίζεται με κενά των ψηφιολέξεων που είναι γραμμένες ως "
+"δεκαεξαδικά ψηφία (με προαιρετικό πρόθεμα 0x/0X και προαιρετικό "
+"προπορευόμενο 0).\n"
+"\n"
+"Παραδείγματα: ab0455a6ea3a74C2\n"
+"          ab 4 55 0xa6 ea 3a 74 C2\n"
+
+#: ../clients/common/nm-meta-setting-desc.c:4711
+#: ../clients/common/nm-meta-setting-desc.c:4729
+#, fuzzy
+msgid ""
+"Enter path to a private key and the key password (if not set yet):\n"
+"  [file://]<file path> [<password>]\n"
+"Note that nmcli does not support specifying private key as raw blob data.\n"
+"Example: /home/cimrman/jara-priv-key Dardanely\n"
+msgstr ""
+"Εισάγετε τη διαδρομή για ένα ιδιωτικό κλειδί και τον κωδικό πρόσβασης του "
+"κλειδιού (αν δεν έχει ήδη οριστεί):\n"
+"  <file path> [<password>]\n"
+"Παράδειγμα: /home/cimrman/jara-priv-key Dardanely\n"
 
 #. TTLS and PEAP are actually much more complicated, but this complication
 #. * is not visible here since we only care about phase2 authentication
 #. * (and don't even care of which one)
 #.
+#: ../clients/common/nm-meta-setting-desc.c:4768
 #: ../clients/common/nm-secret-agent-simple.c:223
 #: ../clients/common/nm-secret-agent-simple.c:328
 #: ../clients/tui/nmt-page-dsl.c:66 ../clients/tui/nmt-page-wifi.c:321
 msgid "Username"
 msgstr "Όνομα χρήστη"
+
+#: ../clients/common/nm-meta-setting-desc.c:4774
+#: ../clients/common/nm-meta-setting-desc.c:4952
+#: ../clients/common/nm-meta-setting-desc.c:5221
+#: ../clients/common/nm-meta-setting-desc.c:5788
+#, fuzzy
+msgid "Password [none]"
+msgstr "Κωδικός πρόσβασης [κανένας]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:4821
+#, fuzzy
+msgid "Bluetooth device address"
+msgstr "Διεύθυνση συσκευής μπλουτούθ: "
+
+#: ../clients/common/nm-meta-setting-desc.c:4865
+#: ../clients/common/nm-meta-setting-desc.c:5275
+#: ../clients/common/nm-meta-setting-desc.c:6213
+#: ../clients/common/nm-meta-setting-desc.c:6251
+#: ../clients/common/nm-meta-setting-desc.c:6388
+#, fuzzy
+msgid "MAC [none]"
+msgstr "MAC [κανένα]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:4871
+#, fuzzy
+msgid "Enable STP [no]"
+msgstr "Ενεργοποίηση STP %s"
+
+#: ../clients/common/nm-meta-setting-desc.c:4877
+#, fuzzy
+msgid "STP priority [32768]"
+msgstr "Προτεραιότητα STP [32768]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:4883
+#, fuzzy
+msgid "Forward delay [15]"
+msgstr "Καθυστέρηση προώθησης [15]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:4889
+#, fuzzy
+msgid "Hello time [2]"
+msgstr "Χρόνος χαιρετισμού [2]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:4895
+#, fuzzy
+msgid "Max age [20]"
+msgstr "Μέγιστη ωρίμανση [20]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:4901
+#, fuzzy
+msgid "MAC address ageing time [300]"
+msgstr "Χρόνος ωρίμανσης διεύθυνσης MAC [300]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:4907
+#, fuzzy
+msgid "Enable IGMP snooping [no]"
+msgstr "Ενεργοποίηση STP %s"
+
+#: ../clients/common/nm-meta-setting-desc.c:4919
+#, fuzzy
+msgid "Bridge port priority [32]"
+msgstr "Προτεραιότητα θύρας γέφυρας [32]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:4925
+#, fuzzy
+msgid "Bridge port STP path cost [100]"
+msgstr "Κόστος διαδρομής STP θύρας γέφυρας [100]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:4931
+#, fuzzy
+msgid "Hairpin [no]"
+msgstr "Κατάσταση φουρκέτας"
+
+#: ../clients/common/nm-meta-setting-desc.c:4946
+#: ../clients/common/nm-meta-setting-desc.c:5215
+#: ../clients/common/nm-meta-setting-desc.c:6103
+#, fuzzy
+msgid "Username [none]"
+msgstr "Όνομα χρήστη [κανένα]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:5029
+msgid ""
+"Enter a list of user permissions. This is a list of user names formatted "
+"as:\n"
+"  [user:]<user name 1>, [user:]<user name 2>,...\n"
+"The items can be separated by commas or spaces.\n"
+"\n"
+"Example: alice bob charlie\n"
+msgstr ""
+"Εισάγετε έναν κατάλογο δικαιωμάτων χρήστη. Αυτός είναι ένας κατάλογος "
+"ονομάτων χρήστη μορφοποιημένων ως:\n"
+"  [user:]<user name 1>, [user:]<user name 2>,...\n"
+"Τα στοιχεία μπορούν να διαχωριστούν με κόμματα ή κενά.\n"
+"\n"
+"Παράδειγμα: Αλίκη Πέτρος Γιώργος\n"
+
+#: ../clients/common/nm-meta-setting-desc.c:5069
+msgid ""
+"Enter secondary connections that should be activated when this connection "
+"is\n"
+"activated. Connections can be specified either by UUID or ID (name). nmcli\n"
+"transparently translates names to UUIDs. Note that NetworkManager only "
+"supports\n"
+"VPNs as secondary connections at the moment.\n"
+"The items can be separated by commas or spaces.\n"
+"\n"
+"Example: private-openvpn, fe6ba5d8-c2fc-4aae-b2e3-97efddd8d9a7\n"
+msgstr ""
+"Εισάγετε δευτερεύουσες συνδέσεις που πρέπει να ενεργοποιηθούν όταν αυτή η "
+"σύνδεση ενεργοποιηθεί.\n"
+"Οι συνδέσεις μπορούν να οριστούν είτε με UUID ή με ID (όνομα). Το nmcli\n"
+"μεταφράζει καθαρά ονόματα σε UUIDs. Σημειώστε ότι ο NetworkManager "
+"υποστηρίζει μόνο\n"
+"VPNs ως δευτερεύουσες συνδέσεις προς το παρόν.\n"
+"Τα στοιχεία μπορούν να διαχωριστούν με κόμματα ή κενά.\n"
+"\n"
+"Παράδειγμα: private-openvpn, fe6ba5d8-c2fc-4aae-b2e3-97efddd8d9a7\n"
+
+#: ../clients/common/nm-meta-setting-desc.c:5086
+msgid ""
+"Enter a value which indicates whether the connection is subject to a data\n"
+"quota, usage costs or other limitations. Accepted options are:\n"
+"'true','yes','on' to set the connection as metered\n"
+"'false','no','off' to set the connection as not metered\n"
+"'unknown' to let NetworkManager choose a value using some heuristics\n"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:5232
+#, fuzzy
+msgid "APN"
+msgstr "AP"
+
+#: ../clients/common/nm-meta-setting-desc.c:5284
+#: ../clients/common/nm-meta-setting-desc.c:6276
+#: ../clients/common/nm-meta-setting-desc.c:6422
+#, fuzzy
+msgid "MTU [auto]"
+msgstr "MTU [αυτόματο]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:5303
+#, fuzzy
+msgid "P_KEY [none]"
+msgstr "P_KEY [κανένα]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:5312
+#, fuzzy
+msgid "Parent interface [none]"
+msgstr "Γονική διεπαφή [καμία]:"
+
+#: ../clients/common/nm-meta-setting-desc.c:5335
+msgid ""
+"Enter a list of IPv4 addresses of DNS servers.\n"
+"\n"
+"Example: 8.8.8.8, 8.8.4.4\n"
+msgstr ""
+"Εισάγετε έναν κατάλογο των διευθύνσεων IPv4 των διακομιστών DNS.\n"
+"\n"
+"παράδειγμα: 8.8.8.8, 8.8.4.4\n"
+
+#: ../clients/common/nm-meta-setting-desc.c:5367
+#, fuzzy
+msgid "IPv4 address (IP[/plen]) [none]"
+msgstr "Διεύθυνση IPv4 (IP[/plen] [πύλη δικτύου]) [καμία]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:5369
+#, fuzzy
+msgid ""
+"Enter a list of IPv4 addresses formatted as:\n"
+"  ip[/prefix], ip[/prefix],...\n"
+"Missing prefix is regarded as prefix of 32.\n"
+"\n"
+"Example: 192.168.1.5/24, 10.0.0.11/24\n"
+msgstr ""
+"Εισάγετε έναν κατάλογο των διευθύνσεων IPv4 μορφοποιημένων ως:\n"
+"  ip[/πρόθεμα] [πύλη], ip[/πρόθεμα] [πύλη],...\n"
+"Πρόθεμα που λείπει θεωρείται ως πρόθεμα του 32.\n"
+"\n"
+"Παράδειγμα: 192.168.1.5/24 192.168.1.1, 10.0.0.11/24\n"
+
+#: ../clients/common/nm-meta-setting-desc.c:5382
+#, fuzzy
+msgid "IPv4 gateway [none]"
+msgstr "Διεύθυνση IPv4 (IP[/plen] [πύλη δικτύου]) [καμία]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:5390
+#, fuzzy
+msgid ""
+"Enter a list of IPv4 routes formatted as:\n"
+"  ip[/prefix] [next-hop] [metric],...\n"
+"\n"
+"Missing prefix is regarded as a prefix of 32.\n"
+"Missing next-hop is regarded as 0.0.0.0.\n"
+"Missing metric means default (NM/kernel will set a default value).\n"
+"\n"
+"Examples: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
+"          10.1.2.0/24\n"
+msgstr ""
+"Εισάγετε έναν κατάλογο των διαδρομών IPv4 μορφοποιημένων ως:\n"
+"  ip[/πρόθεμα] [επόμενη-μεταπήδηση] [μετρικό],...\n"
+"\n"
+"Ελλείπον πρόθεμα θεωρείται ως πρόθεμα του 32.\n"
+"Ελλείπουσα επόμενη μεταπήδηση θεωρείται ως 0.0.0.0.\n"
+"Ελλείπον μετρικό ή 0 σημαίνει προεπιλεγμένο μετρικό (NM/ο πυρήνας θα οριστεί "
+"σε προεπιλεγμένη τιμή).\n"
+"\n"
+"Παραδείγματα: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
+"          10.1.2.0/24\n"
+
+#: ../clients/common/nm-meta-setting-desc.c:5456
+msgid ""
+"Enter a list of IPv6 addresses of DNS servers.  If the IPv6 configuration "
+"method is 'auto' these DNS servers are appended to those (if any) returned "
+"by automatic configuration.  DNS servers cannot be used with the 'shared' or "
+"'link-local' IPv6 configuration methods, as there is no upstream network. In "
+"all other IPv6 configuration methods, these DNS servers are used as the only "
+"DNS servers for this connection.\n"
+"\n"
+"Example: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"
+msgstr ""
+"Εισάγετε έναν κατάλογο διευθύνσεων IPv6 των διακομιστών DNS. Αν η μέθοδος "
+"διαμόρφωσης IPv6 είναι 'αυτόματα' αυτοί οι διακομιστές DNS προσαρτώνται σε "
+"αυτούς που επιστρέφονται (αν υπάρχουν) από την αυτόματη διαμόρφωση. Οι "
+"διακομιστές DNS δεν μπορούν να χρησιμοποιηθούν με τις μεθόδους διαμόρφωσης "
+"IPv6 'κοινόχρηστο' ή 'τοπικός σύνδεσμος', επειδή δεν υπάρχει ανοδικό δίκτυο. "
+"Σε όλες τις άλλες τις μεθόδους διαμόρφωσης IPv6, αυτοί οι διακομιστές DNS "
+"χρησιμοποιούνται ως οι μόνοι διακομιστές DNS για αυτήν τη σύνδεση.\n"
+"\n"
+"Παράδειγμα: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"
+
+#: ../clients/common/nm-meta-setting-desc.c:5494
+#, fuzzy
+msgid "IPv6 address (IP[/plen]) [none]"
+msgstr "Διεύθυνση IPv6 (IP[/plen] [πύλη δικτύου]) [καμία]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:5496
+#, fuzzy
+msgid ""
+"Enter a list of IPv6 addresses formatted as:\n"
+"  ip[/prefix], ip[/prefix],...\n"
+"Missing prefix is regarded as prefix of 128.\n"
+"\n"
+"Example: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"
+msgstr ""
+"Εισάγετε έναν κατάλογο των διευθύνσεων IPv6 μορφοποιημένων ως:\n"
+"  ip[/πρόθεμα] [πύλη], ip[/πρόθεμα] [πύλη],...\n"
+"Πρόθεμα που λείπει θεωρείται ως πρόθεμα του 128.\n"
+"\n"
+"Παράδειγμα: 2607:f0d0:1002:51::4/64 2607:f0d0:1002:51::1, "
+"1050:0:0:0:5:600:300c:326b\n"
+
+#: ../clients/common/nm-meta-setting-desc.c:5509
+#, fuzzy
+msgid "IPv6 gateway [none]"
+msgstr "Διεύθυνση IPv6 (IP[/plen] [πύλη δικτύου]) [καμία]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:5517
+#, fuzzy
+msgid ""
+"Enter a list of IPv6 routes formatted as:\n"
+"  ip[/prefix] [next-hop] [metric],...\n"
+"\n"
+"Missing prefix is regarded as a prefix of 128.\n"
+"Missing next-hop is regarded as \"::\".\n"
+"Missing metric means default (NM/kernel will set a default value).\n"
+"\n"
+"Examples: 2001:db8:beef:2::/64 2001:db8:beef::2, 2001:db8:beef:3::/64 2001:"
+"db8:beef::3 2\n"
+"          abbe::/64 55\n"
+msgstr ""
+"Εισάγετε έναν κατάλογο διαδρομών IPv6 μορφοποιημένων ως:\n"
+"  ip[/πρόθεμα] [επόμενη-μεταπήδηση] [μετρικό],...\n"
+"\n"
+"Ελλείπον πρόθεμα θεωρείται ως πρόθεμα του 128.\n"
+"Ελλείπουσα επόμενη μεταπήδηση θεωρείται ως \"::\".\n"
+"Ελλείπον μετρικό ή 0 σημαίνει προεπιλεγμένο μετρικό (NM/ο πυρήνας θα ορίσει "
+"μια προεπιλεγμένη τιμή).\n"
+"\n"
+"Παραδείγματα: 2001:db8:beef:2::/64 2001:db8:beef::2, 2001:db8:beef:3::/64 "
+"2001:db8:beef::3 2\n"
+"          abbe::/64 55\n"
+
+#: ../clients/common/nm-meta-setting-desc.c:5595
+#: ../clients/common/nm-meta-setting-desc.c:6136
+#, fuzzy
+msgid "Parent device [none]"
+msgstr "Γονική διεπαφή [καμία]:"
+
+#: ../clients/common/nm-meta-setting-desc.c:5601
+#, fuzzy
+msgid "Local endpoint [none]"
+msgstr "Γονική διεπαφή [καμία]:"
+
+#: ../clients/common/nm-meta-setting-desc.c:5608
+#: ../clients/common/nm-meta-setting-desc.c:6156
+#, fuzzy
+msgid "Remote"
+msgstr "Αφαίρεση"
+
+#: ../clients/common/nm-meta-setting-desc.c:5645
+msgid "MACsec parent device or connection UUID"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:5666
+msgid "Enable encryption [yes]"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:5672
+#: ../clients/common/nm-secret-agent-simple.c:520
+msgid "MKA CAK"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:5682
+msgid "MKA_CKN"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:5688
+msgid "SCI port [1]"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:5711
+#, fuzzy
+msgid "MACVLAN parent device or connection UUID"
+msgstr "Γονική συσκευή VLAN ή σύνδεση UUID: "
+
+#: ../clients/common/nm-meta-setting-desc.c:5732
+msgid "Tap [no]"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:5745
+#: ../clients/common/nm-meta-setting-desc.c:6343
+#: ../clients/tui/nmt-page-wifi.c:213
+msgid "SSID"
+msgstr "SSID"
+
+#: ../clients/common/nm-meta-setting-desc.c:5754
+#, fuzzy
+msgid "OLPC Mesh channel [1]"
+msgstr "Κανάλι πλέγματος OLPC [1]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:5763
+#, fuzzy
+msgid "DHCP anycast MAC address [none]"
+msgstr "Διεύθυνση MAC οποιασδήποτε εκπομπής DHCP [καμία]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:5775
+#, fuzzy
+msgid "Service [none]"
+msgstr "Υπηρεσία [καμία]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:5782
+#, fuzzy
+msgid "PPPoE username"
+msgstr "Όνομα χρήστη PPPoE: "
+
+#: ../clients/common/nm-meta-setting-desc.c:5881
+msgid "Browser only [no]"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:5887
+msgid "PAC URL"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:5893
+msgid "PAC script"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:5908
+#: ../clients/common/nm-meta-setting-desc.c:5924
+#, fuzzy
+msgid "Team JSON configuration [none]"
+msgstr "Διαμόρφωση JSON ομάδας [καμία]:"
+
+#: ../clients/common/nm-meta-setting-desc.c:6006
+#, fuzzy
+msgid "User ID [none]"
+msgstr "Όνομα χρήστη [κανένα]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:6012
+#, fuzzy
+msgid "Group ID [none]"
+msgstr "MAC [κανένα]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:6018
+#, fuzzy
+msgid "Enable PI [no]"
+msgstr "Ενεργοποίηση STP %s"
+
+#: ../clients/common/nm-meta-setting-desc.c:6024
+#, fuzzy
+msgid "Enable VNET header [no]"
+msgstr "Ενεργοποίηση STP %s"
+
+#: ../clients/common/nm-meta-setting-desc.c:6030
+msgid "Enable multi queue [no]"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:6043
+#, fuzzy
+msgid "VLAN parent device or connection UUID"
+msgstr "Γονική συσκευή VLAN ή σύνδεση UUID: "
+
+#: ../clients/common/nm-meta-setting-desc.c:6050
+#, fuzzy
+msgid "VLAN ID (<0-4094>)"
+msgstr "Αναγνωριστικό VLAN <0-4095>: "
+
+#: ../clients/common/nm-meta-setting-desc.c:6056
+#, fuzzy
+msgid "VLAN flags (<0-7>) [none]"
+msgstr "Σημαίες VLAN (<0-7>) [καμία]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:6065
+#, fuzzy
+msgid "Ingress priority maps [none]"
+msgstr "Απεικονίσεις προτεραιοτήτων εισόδου [καμία]"
+
+#: ../clients/common/nm-meta-setting-desc.c:6075
+#, fuzzy
+msgid "Egress priority maps [none]"
+msgstr "Απεικονίσεις προτεραιοτήτων εξόδου [καμία]:"
+
+#: ../clients/common/nm-meta-setting-desc.c:6143
+#, fuzzy
+msgid "VXLAN ID"
+msgstr "Αναγνωριστικό VLAN <0-4095>: "
+
+#: ../clients/common/nm-meta-setting-desc.c:6149
+#, fuzzy
+msgid "Local address [none]"
+msgstr "Διεύθυνση MAC οποιασδήποτε εκπομπής DHCP [καμία]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:6162
+msgid "Minimum source port [0]"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:6168
+msgid "Maximum source port [0]"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:6174
+#, fuzzy
+msgid "Destination port [8472]"
+msgstr "Προορισμός"
+
+#: ../clients/common/nm-meta-setting-desc.c:6220
+#, fuzzy
+msgid "WiMAX NSP name"
+msgstr "Όνομα NSP WiMAX: "
+
+#: ../clients/common/nm-meta-setting-desc.c:6257
+#: ../clients/common/nm-meta-setting-desc.c:6393
+#, fuzzy
+msgid "Cloned MAC [none]"
+msgstr "Κλωνοποιημένο MAC [κανένα]: "
+
+#: ../clients/common/nm-meta-setting-desc.c:6284
+#, fuzzy
+msgid ""
+"Enter a list of subchannels (comma or space separated).\n"
+"\n"
+"Example: 0.0.0e20 0.0.0e21 0.0.0e22\n"
+msgstr ""
+"Εισάγετε έναν κατάλογο τριών καναλιών (που χωρίζονται με κόμμα ή κενό).\n"
+"\n"
+"Παράδειγμα: 0.0.0e20 0.0.0e21 0.0.0e22\n"
+
+#: ../clients/common/nm-meta-setting-desc.c:6538
+msgid ""
+"Enter the type of WEP keys. The accepted values are: 0 or unknown, 1 or key, "
+"and 2 or passphrase.\n"
+msgstr ""
+"Εισάγετε τον τύπο των κλειδιών WEP. Οι αποδεκτές τιμές είναι: 0 ή άγνωστο, 1 "
+"ή κλειδί και 2 ή συνθηματικό.\n"
+
+#. ***************************************************************************
+#: ../clients/common/nm-meta-setting-desc.c:6708
+msgid "802-1x settings"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:6709
+#: ../src/devices/adsl/nm-device-adsl.c:137
+#, fuzzy
+msgid "ADSL connection"
+msgstr "Σύνδεση ADSL %d"
+
+#: ../clients/common/nm-meta-setting-desc.c:6710
+#, fuzzy
+msgid "bluetooth connection"
+msgstr "Σύνδεση Bond %d"
+
+#: ../clients/common/nm-meta-setting-desc.c:6711
+#, fuzzy
+msgid "Bond device"
+msgstr "Ethernet"
+
+#: ../clients/common/nm-meta-setting-desc.c:6712
+#, fuzzy
+msgid "Bridge device"
+msgstr "Ethernet"
+
+#: ../clients/common/nm-meta-setting-desc.c:6713
+#, fuzzy
+msgid "Bridge port"
+msgstr "Γέφυρα"
+
+#: ../clients/common/nm-meta-setting-desc.c:6714
+#, fuzzy
+msgid "CDMA mobile broadband connection"
+msgstr "Κινητή ευρυζωνική σύνδεση %d"
+
+#: ../clients/common/nm-meta-setting-desc.c:6715
+msgid "General settings"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:6716
+msgid "DCB settings"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:6717
+msgid "Dummy settings"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:6718
+msgid "Generic settings"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:6719
+#, fuzzy
+msgid "GSM mobile broadband connection"
+msgstr "Κινητή ευρυζωνική σύνδεση %d"
+
+#: ../clients/common/nm-meta-setting-desc.c:6720
+#: ../src/devices/nm-device-infiniband.c:192
+#, fuzzy
+msgid "InfiniBand connection"
+msgstr "Σύνδεση InfiniBand %d"
+
+#: ../clients/common/nm-meta-setting-desc.c:6721
+msgid "IPv4 protocol"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:6722
+msgid "IPv6 protocol"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:6723
+msgid "IP-tunnel settings"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:6724
+msgid "MACsec connection"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:6725
+#, fuzzy
+msgid "macvlan connection"
+msgstr "Σύνδεση Bond %d"
+
+#: ../clients/common/nm-meta-setting-desc.c:6726
+#, fuzzy
+msgid "OLPC Mesh connection"
+msgstr "Σύνδεση CDMA %d"
+
+#: ../clients/common/nm-meta-setting-desc.c:6727
+msgid "PPP settings"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:6728
+msgid "PPPoE"
+msgstr "PPPoE"
+
+#: ../clients/common/nm-meta-setting-desc.c:6729
+msgid "Proxy"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:6730
+msgid "Serial settings"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:6731
+#, fuzzy
+msgid "Team device"
+msgstr "Αφαιρέθηκε η συσκευή"
+
+#: ../clients/common/nm-meta-setting-desc.c:6732
+#, fuzzy
+msgid "Team port"
+msgstr "Ομάδα"
+
+#: ../clients/common/nm-meta-setting-desc.c:6733
+#, fuzzy
+msgid "Tun device"
+msgstr "Αφαιρέθηκε η συσκευή"
+
+#: ../clients/common/nm-meta-setting-desc.c:6734
+msgid "User settings"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:6735
+#: ../src/devices/nm-device-vlan.c:433
+#, fuzzy
+msgid "VLAN connection"
+msgstr "Σύνδεση VLAN %d"
+
+#: ../clients/common/nm-meta-setting-desc.c:6736 ../src/nm-manager.c:4079
+#, fuzzy
+msgid "VPN connection"
+msgstr "Συνδέεται το VPN"
+
+#: ../clients/common/nm-meta-setting-desc.c:6737
+#: ../src/devices/nm-device-vxlan.c:369
+#, fuzzy
+msgid "VXLAN connection"
+msgstr "Σύνδεση VLAN %d"
+
+#: ../clients/common/nm-meta-setting-desc.c:6738
+#, fuzzy
+msgid "WiMAX connection"
+msgstr "Σύνδεση CDMA %d"
+
+#: ../clients/common/nm-meta-setting-desc.c:6739
+#, fuzzy
+msgid "Wired Ethernet"
+msgstr "Ethernet"
+
+#: ../clients/common/nm-meta-setting-desc.c:6740
+#, fuzzy
+msgid "Wi-Fi connection"
+msgstr "Ασύρματη σύνδεση %d"
+
+#: ../clients/common/nm-meta-setting-desc.c:6741
+msgid "Wi-Fi security settings"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:7013
+#, fuzzy
+msgid "name"
+msgstr "Όνομα χρήστη"
+
+#: ../clients/common/nm-polkit-listener.c:212
+msgid "An authentication session is already underway."
+msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:230
 #: ../clients/common/nm-secret-agent-simple.c:273
@@ -4263,10 +5678,6 @@ msgstr ""
 msgid "MACsec PSK authentication"
 msgstr ""
 
-#: ../clients/common/nm-secret-agent-simple.c:520
-msgid "MKA CAK"
-msgstr ""
-
 #: ../clients/common/nm-secret-agent-simple.c:528
 msgid "MACsec EAP authentication"
 msgstr ""
@@ -4326,6 +5737,2039 @@ msgstr ""
 #, fuzzy
 msgid "Gateway certificate hash"
 msgstr "άκυρη μορφή πιστοποιητικού"
+
+#. Generated file. Do not edit.
+#: ../clients/common/settings-docs.c.in:3
+msgid "Channel on which the mesh network to join is located."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:4
+msgid ""
+"Anycast DHCP MAC address used when requesting an IP address via DHCP. The "
+"specific anycast address used determines which DHCP server class answers the "
+"request."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:5
+#: ../clients/common/settings-docs.c.in:18
+#: ../clients/common/settings-docs.c.in:30
+#: ../clients/common/settings-docs.c.in:57
+#: ../clients/common/settings-docs.c.in:96
+#: ../clients/common/settings-docs.c.in:105
+#: ../clients/common/settings-docs.c.in:113
+#: ../clients/common/settings-docs.c.in:115
+#: ../clients/common/settings-docs.c.in:123
+#: ../clients/common/settings-docs.c.in:127
+#: ../clients/common/settings-docs.c.in:131
+#: ../clients/common/settings-docs.c.in:146
+#: ../clients/common/settings-docs.c.in:163
+#: ../clients/common/settings-docs.c.in:172
+#: ../clients/common/settings-docs.c.in:173
+#: ../clients/common/settings-docs.c.in:178
+#: ../clients/common/settings-docs.c.in:190
+#: ../clients/common/settings-docs.c.in:200
+#: ../clients/common/settings-docs.c.in:223
+#: ../clients/common/settings-docs.c.in:243
+#: ../clients/common/settings-docs.c.in:253
+#: ../clients/common/settings-docs.c.in:258
+#: ../clients/common/settings-docs.c.in:269
+#: ../clients/common/settings-docs.c.in:281
+#: ../clients/common/settings-docs.c.in:288
+#: ../clients/common/settings-docs.c.in:293
+#: ../clients/common/settings-docs.c.in:298
+#: ../clients/common/settings-docs.c.in:300
+#: ../clients/common/settings-docs.c.in:304
+#: ../clients/common/settings-docs.c.in:309
+#: ../clients/common/settings-docs.c.in:314
+#: ../clients/common/settings-docs.c.in:317
+#: ../clients/common/settings-docs.c.in:331
+#: ../clients/common/settings-docs.c.in:341
+msgid ""
+"The setting's name, which uniquely identifies the setting within the "
+"connection.  Each setting type has a name unique to that type, for example "
+"\"ppp\" or \"wireless\" or \"wired\"."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:6
+msgid "SSID of the mesh network to join."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:7
+msgid ""
+"802.11 frequency band of the network.  One of \"a\" for 5GHz 802.11a or \"bg"
+"\" for 2.4GHz 802.11.  This will lock associations to the Wi-Fi network to "
+"the specific band, i.e. if \"a\" is specified, the device will not associate "
+"with the same network in the 2.4GHz band even if the network's settings are "
+"compatible.  This setting depends on specific driver capability and may not "
+"work with all drivers."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:8
+msgid ""
+"If specified, directs the device to only associate with the given access "
+"point.  This capability is highly driver dependent and not supported by all "
+"devices.  Note: this property does not control the BSSID used when creating "
+"an Ad-Hoc network and is unlikely to in the future."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:9
+msgid ""
+"Wireless channel to use for the Wi-Fi connection.  The device will only join "
+"(or create for Ad-Hoc networks) a Wi-Fi network on the specified channel.  "
+"Because channel numbers overlap between bands, this property also requires "
+"the \"band\" property to be set."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:10
+#: ../clients/common/settings-docs.c.in:90
+msgid ""
+"If specified, request that the device use this MAC address instead. This is "
+"known as MAC cloning or spoofing. Beside explicitly specifying a MAC "
+"address, the special values \"preserve\", \"permanent\", \"random\" and "
+"\"stable\" are supported. \"preserve\" means not to touch the MAC address on "
+"activation. \"permanent\" means to use the permanent hardware address of the "
+"device. \"random\" creates a random MAC address on each connect. \"stable\" "
+"creates a hashed MAC address based on connection.stable-id and a machine "
+"dependent key. If unspecified, the value can be overwritten via global "
+"defaults, see manual of NetworkManager.conf. If still unspecified, it "
+"defaults to \"preserve\" (older versions of NetworkManager may use a "
+"different default value). On D-Bus, this field is expressed as \"assigned-"
+"mac-address\" or the deprecated \"cloned-mac-address\"."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:11
+#: ../clients/common/settings-docs.c.in:92
+msgid ""
+"With \"cloned-mac-address\" setting \"random\" or \"stable\", by default all "
+"bits of the MAC address are scrambled and a locally-administered, unicast "
+"MAC address is created. This property allows to specify that certain bits "
+"are fixed. Note that the least significant bit of the first MAC address will "
+"always be unset to create a unicast MAC address. If the property is NULL, it "
+"is eligible to be overwritten by a default connection setting. If the value "
+"is still NULL or an empty string, the default is to create a locally-"
+"administered, unicast MAC address. If the value contains one MAC address, "
+"this address is used as mask. The set bits of the mask are to be filled with "
+"the current MAC address of the device, while the unset bits are subject to "
+"randomization. Setting \"FE:FF:FF:00:00:00\" means to preserve the OUI of "
+"the current MAC address and only randomize the lower 3 bytes using the "
+"\"random\" or \"stable\" algorithm. If the value contains one additional MAC "
+"address after the mask, this address is used instead of the current MAC "
+"address to fill the bits that shall not be randomized. For example, a value "
+"of \"FE:FF:FF:00:00:00 68:F7:28:00:00:00\" will set the OUI of the MAC "
+"address to 68:F7:28, while the lower bits are randomized. A value of "
+"\"02:00:00:00:00:00 00:00:00:00:00:00\" will create a fully scrambled "
+"globally-administered, burned-in MAC address. If the value contains more "
+"then one additional MAC addresses, one of them is chosen randomly. For "
+"example, \"02:00:00:00:00:00 00:00:00:00:00:00 02:00:00:00:00:00\" will "
+"create a fully scrambled MAC address, randomly locally or globally "
+"administered."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:12
+msgid ""
+"If TRUE, indicates this network is a non-broadcasting network that hides its "
+"SSID.  In this case various workarounds may take place, such as probe-"
+"scanning the SSID for more reliable network discovery.  However, these "
+"workarounds expose inherent insecurities with hidden SSID networks, and thus "
+"hidden SSID networks should be used with caution."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:13
+msgid ""
+"If specified, this connection will only apply to the Wi-Fi device whose "
+"permanent MAC address matches. This property does not change the MAC address "
+"of the device (i.e. MAC spoofing)."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:14
+msgid ""
+"A list of permanent MAC addresses of Wi-Fi devices to which this connection "
+"should never apply.  Each MAC address should be given in the standard hex-"
+"digits-and-colons notation (eg \"00:11:22:33:44:55\")."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:15
+msgid ""
+"One of NM_SETTING_MAC_RANDOMIZATION_DEFAULT (0) (never randomize unless the "
+"user has set a global default to randomize and the supplicant supports "
+"randomization),  NM_SETTING_MAC_RANDOMIZATION_NEVER (1) (never randomize the "
+"MAC address), or NM_SETTING_MAC_RANDOMIZATION_ALWAYS (2) (always randomize "
+"the MAC address). This property is deprecated for 'cloned-mac-address'. "
+"Deprecated: 1"
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:16
+msgid ""
+"Wi-Fi network mode; one of \"infrastructure\", \"adhoc\" or \"ap\".  If "
+"blank, infrastructure is assumed."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:17
+#: ../clients/common/settings-docs.c.in:95
+msgid ""
+"If non-zero, only transmit packets of the specified size or smaller, "
+"breaking larger packets up into multiple Ethernet frames."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:19
+msgid ""
+"One of NM_SETTING_WIRELESS_POWERSAVE_DISABLE (2) (disable Wi-Fi power "
+"saving), NM_SETTING_WIRELESS_POWERSAVE_ENABLE (3) (enable Wi-Fi power "
+"saving), NM_SETTING_WIRELESS_POWERSAVE_IGNORE (1) (don't touch currently "
+"configure setting) or NM_SETTING_WIRELESS_POWERSAVE_DEFAULT (0) (use the "
+"globally configured value). All other values are reserved."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:20
+msgid ""
+"If non-zero, directs the device to only use the specified bitrate for "
+"communication with the access point.  Units are in Kb/s, ie 5500 = 5.5 Mbit/"
+"s.  This property is highly driver dependent and not all devices support "
+"setting a static bitrate."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:21
+msgid ""
+"A list of BSSIDs (each BSSID formatted as a MAC address like "
+"\"00:11:22:33:44:55\") that have been detected as part of the Wi-Fi "
+"network.  NetworkManager internally tracks previously seen BSSIDs. The "
+"property is only meant for reading and reflects the BSSID list of "
+"NetworkManager. The changes you make to this property will not be preserved."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:22
+msgid "SSID of the Wi-Fi network. Must be specified."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:23
+msgid ""
+"If non-zero, directs the device to use the specified transmit power. Units "
+"are dBm.  This property is highly driver dependent and not all devices "
+"support setting a static transmit power."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:24
+msgid ""
+"When WEP is used (ie, key-mgmt = \"none\" or \"ieee8021x\") indicate the "
+"802.11 authentication algorithm required by the AP here.  One of \"open\" "
+"for Open System, \"shared\" for Shared Key, or \"leap\" for Cisco LEAP.  "
+"When using Cisco LEAP (ie, key-mgmt = \"ieee8021x\" and auth-alg = \"leap\") "
+"the \"leap-username\" and \"leap-password\" properties must be specified."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:25
+msgid ""
+"A list of group/broadcast encryption algorithms which prevents connections "
+"to Wi-Fi networks that do not utilize one of the algorithms in the list.  "
+"For maximum compatibility leave this property empty.  Each list element may "
+"be one of \"wep40\", \"wep104\", \"tkip\", or \"ccmp\"."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:26
+msgid ""
+"Key management used for the connection.  One of \"none\" (WEP), \"ieee8021x"
+"\" (Dynamic WEP), \"wpa-none\" (Ad-Hoc WPA-PSK), \"wpa-psk\" (infrastructure "
+"WPA-PSK), or \"wpa-eap\" (WPA-Enterprise).  This property must be set for "
+"any Wi-Fi connection that uses security."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:27
+msgid ""
+"The login password for legacy LEAP connections (ie, key-mgmt = \"ieee8021x\" "
+"and auth-alg = \"leap\")."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:28
+msgid "Flags indicating how to handle the \"leap-password\" property."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:29
+msgid ""
+"The login username for legacy LEAP connections (ie, key-mgmt = \"ieee8021x\" "
+"and auth-alg = \"leap\")."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:31
+msgid ""
+"A list of pairwise encryption algorithms which prevents connections to Wi-Fi "
+"networks that do not utilize one of the algorithms in the list. For maximum "
+"compatibility leave this property empty.  Each list element may be one of "
+"\"tkip\" or \"ccmp\"."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:32
+msgid ""
+"Indicates whether Protected Management Frames (802.11w) must be enabled for "
+"the connection.  One of NM_SETTING_WIRELESS_SECURITY_PMF_DEFAULT (0) (use "
+"global default value), NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE (1) (disable "
+"PMF), NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL (2) (enable PMF if the "
+"supplicant and the access point support it) or "
+"NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED (3) (enable PMF and fail if not "
+"supported).  When set to NM_SETTING_WIRELESS_SECURITY_PMF_DEFAULT (0) and no "
+"global default is set, PMF will be optionally enabled."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:33
+msgid ""
+"List of strings specifying the allowed WPA protocol versions to use. Each "
+"element may be one \"wpa\" (allow WPA) or \"rsn\" (allow WPA2/RSN).  If not "
+"specified, both WPA and RSN connections are allowed."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:34
+msgid ""
+"Pre-Shared-Key for WPA networks.  If the key is 64-characters long, it must "
+"contain only hexadecimal characters and is interpreted as a hexadecimal WPA "
+"key.  Otherwise, the key must be between 8 and 63 ASCII characters (as "
+"specified in the 802.11i standard) and is interpreted as a WPA passphrase, "
+"and is hashed to derive the actual WPA-PSK used when connecting to the Wi-Fi "
+"network."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:35
+msgid "Flags indicating how to handle the \"psk\" property."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:36
+msgid ""
+"Flags indicating how to handle the \"wep-key0\", \"wep-key1\", \"wep-key2\", "
+"and \"wep-key3\" properties."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:37
+msgid ""
+"Controls the interpretation of WEP keys.  Allowed values are "
+"NM_WEP_KEY_TYPE_KEY (1), in which case the key is either a 10- or 26-"
+"character hexadecimal string, or a 5- or 13-character ASCII password; or "
+"NM_WEP_KEY_TYPE_PASSPHRASE (2), in which case the passphrase is provided as "
+"a string and will be hashed using the de-facto MD5 method to derive the "
+"actual WEP key."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:38
+msgid ""
+"Index 0 WEP key.  This is the WEP key used in most networks.  See the \"wep-"
+"key-type\" property for a description of how this key is interpreted."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:39
+msgid ""
+"Index 1 WEP key.  This WEP index is not used by most networks.  See the "
+"\"wep-key-type\" property for a description of how this key is interpreted."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:40
+msgid ""
+"Index 2 WEP key.  This WEP index is not used by most networks.  See the "
+"\"wep-key-type\" property for a description of how this key is interpreted."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:41
+msgid ""
+"Index 3 WEP key.  This WEP index is not used by most networks.  See the "
+"\"wep-key-type\" property for a description of how this key is interpreted."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:42
+msgid ""
+"When static WEP is used (ie, key-mgmt = \"none\") and a non-default WEP key "
+"index is used by the AP, put that WEP key index here.  Valid values are 0 "
+"(default key) through 3.  Note that some consumer access points (like the "
+"Linksys WRT54G) number the keys 1 - 4."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:43
+msgid ""
+"Flags indicating which mode of WPS is to be used if any. There's little "
+"point in changing the default setting as NetworkManager will automatically "
+"determine whether it's feasible to start WPS enrollment from the Access "
+"Point capabilities. WPS can by disabled by setting this property to a value "
+"of 1."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:44
+msgid ""
+"List of strings to be matched against the altSubjectName of the certificate "
+"presented by the authentication server. If the list is empty, no "
+"verification of the server certificate's altSubjectName is performed."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:45
+msgid ""
+"Anonymous identity string for EAP authentication methods.  Used as the "
+"unencrypted identity with EAP types that support different tunneled identity "
+"like EAP-TTLS."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:46
+msgid ""
+"A timeout for the authentication. Zero means the global default; if the "
+"global default is not set, the authentication timeout is 25 seconds."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:47
+msgid ""
+"Contains the CA certificate if used by the EAP method specified in the \"eap"
+"\" property. Certificate data is specified using a \"scheme\"; two are "
+"currently supported: blob and path. When using the blob scheme (which is "
+"backwards compatible with NM 0.7.x) this property should be set to the "
+"certificate's DER encoded data. When using the path scheme, this property "
+"should be set to the full UTF-8 encoded path of the certificate, prefixed "
+"with the string \"file://\" and ending with a terminating NUL byte. This "
+"property can be unset even if the EAP method supports CA certificates, but "
+"this allows man-in-the-middle attacks and is NOT recommended."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:48
+msgid ""
+"The password used to access the CA certificate stored in \"ca-cert\" "
+"property. Only makes sense if the certificate is stored on a PKCS#11 token "
+"that requires a login."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:49
+msgid "Flags indicating how to handle the \"ca-cert-password\" property."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:50
+msgid ""
+"UTF-8 encoded path to a directory containing PEM or DER formatted "
+"certificates to be added to the verification chain in addition to the "
+"certificate specified in the \"ca-cert\" property."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:51
+msgid ""
+"Contains the client certificate if used by the EAP method specified in the "
+"\"eap\" property. Certificate data is specified using a \"scheme\"; two are "
+"currently supported: blob and path. When using the blob scheme (which is "
+"backwards compatible with NM 0.7.x) this property should be set to the "
+"certificate's DER encoded data. When using the path scheme, this property "
+"should be set to the full UTF-8 encoded path of the certificate, prefixed "
+"with the string \"file://\" and ending with a terminating NUL byte."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:52
+msgid ""
+"The password used to access the client certificate stored in \"client-cert\" "
+"property. Only makes sense if the certificate is stored on a PKCS#11 token "
+"that requires a login."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:53
+msgid "Flags indicating how to handle the \"client-cert-password\" property."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:54
+msgid ""
+"Constraint for server domain name. If set, this FQDN is used as a suffix "
+"match requirement for dNSName element(s) of the certificate presented by the "
+"authentication server.  If a matching dNSName is found, this constraint is "
+"met.  If no dNSName values are present, this constraint is matched against "
+"SubjectName CN using same suffix match comparison."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:55
+msgid ""
+"The allowed EAP method to be used when authenticating to the network with "
+"802.1x.  Valid methods are: \"leap\", \"md5\", \"tls\", \"peap\", \"ttls\", "
+"\"pwd\", and \"fast\".  Each method requires different configuration using "
+"the properties of this setting; refer to wpa_supplicant documentation for "
+"the allowed combinations."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:56
+msgid ""
+"Identity string for EAP authentication methods.  Often the user's user or "
+"login name."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:58
+msgid "UTF-8 encoded file path containing PAC for EAP-FAST."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:59
+msgid ""
+"UTF-8 encoded password used for EAP authentication methods. If both the "
+"\"password\" property and the \"password-raw\" property are specified, "
+"\"password\" is preferred."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:60
+#: ../clients/common/settings-docs.c.in:107
+#: ../clients/common/settings-docs.c.in:134
+#: ../clients/common/settings-docs.c.in:182
+#: ../clients/common/settings-docs.c.in:283
+msgid "Flags indicating how to handle the \"password\" property."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:61
+msgid ""
+"Password used for EAP authentication methods, given as a byte array to allow "
+"passwords in other encodings than UTF-8 to be used. If both the \"password\" "
+"property and the \"password-raw\" property are specified, \"password\" is "
+"preferred."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:62
+msgid "Flags indicating how to handle the \"password-raw\" property."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:63
+msgid ""
+"Specifies authentication flags to use in \"phase 1\" outer authentication "
+"using NMSetting8021xAuthFlags options. The individual TLS versions can be "
+"explicitly disabled. If a certain TLS disable flag is not set, it is up to "
+"the supplicant to allow or forbid it. The TLS options map to "
+"tls_disable_tlsv1_x settings. See the wpa_supplicant documentation for more "
+"details."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:64
+msgid ""
+"Enables or disables in-line provisioning of EAP-FAST credentials when FAST "
+"is specified as the EAP method in the \"eap\" property. Recognized values "
+"are \"0\" (disabled), \"1\" (allow unauthenticated provisioning), "
+"\"2\" (allow authenticated provisioning), and \"3\" (allow both "
+"authenticated and unauthenticated provisioning).  See the wpa_supplicant "
+"documentation for more details."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:65
+msgid ""
+"Forces use of the new PEAP label during key derivation.  Some RADIUS servers "
+"may require forcing the new PEAP label to interoperate with PEAPv1.  Set to "
+"\"1\" to force use of the new PEAP label.  See the wpa_supplicant "
+"documentation for more details."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:66
+msgid ""
+"Forces which PEAP version is used when PEAP is set as the EAP method in the "
+"\"eap\" property.  When unset, the version reported by the server will be "
+"used.  Sometimes when using older RADIUS servers, it is necessary to force "
+"the client to use a particular PEAP version.  To do so, this property may be "
+"set to \"0\" or \"1\" to force that specific PEAP version."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:67
+msgid ""
+"List of strings to be matched against the altSubjectName of the certificate "
+"presented by the authentication server during the inner \"phase 2\" "
+"authentication. If the list is empty, no verification of the server "
+"certificate's altSubjectName is performed."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:68
+msgid ""
+"Specifies the allowed \"phase 2\" inner non-EAP authentication methods when "
+"an EAP method that uses an inner TLS tunnel is specified in the \"eap\" "
+"property.  Recognized non-EAP \"phase 2\" methods are \"pap\", \"chap\", "
+"\"mschap\", \"mschapv2\", \"gtc\", \"otp\", \"md5\", and \"tls\". Each "
+"\"phase 2\" inner method requires specific parameters for successful "
+"authentication; see the wpa_supplicant documentation for more details."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:69
+msgid ""
+"Specifies the allowed \"phase 2\" inner EAP-based authentication methods "
+"when an EAP method that uses an inner TLS tunnel is specified in the \"eap\" "
+"property.  Recognized EAP-based \"phase 2\" methods are \"md5\", "
+"\"mschapv2\", \"otp\", \"gtc\", and \"tls\". Each \"phase 2\" inner method "
+"requires specific parameters for successful authentication; see the "
+"wpa_supplicant documentation for more details."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:70
+msgid ""
+"Contains the \"phase 2\" CA certificate if used by the EAP method specified "
+"in the \"phase2-auth\" or \"phase2-autheap\" properties. Certificate data is "
+"specified using a \"scheme\"; two are currently supported: blob and path. "
+"When using the blob scheme (which is backwards compatible with NM 0.7.x) "
+"this property should be set to the certificate's DER encoded data. When "
+"using the path scheme, this property should be set to the full UTF-8 encoded "
+"path of the certificate, prefixed with the string \"file://\" and ending "
+"with a terminating NUL byte. This property can be unset even if the EAP "
+"method supports CA certificates, but this allows man-in-the-middle attacks "
+"and is NOT recommended."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:71
+msgid ""
+"The password used to access the \"phase2\" CA certificate stored in \"phase2-"
+"ca-cert\" property. Only makes sense if the certificate is stored on a "
+"PKCS#11 token that requires a login."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:72
+msgid ""
+"Flags indicating how to handle the \"phase2-ca-cert-password\" property."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:73
+msgid ""
+"UTF-8 encoded path to a directory containing PEM or DER formatted "
+"certificates to be added to the verification chain in addition to the "
+"certificate specified in the \"phase2-ca-cert\" property."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:74
+msgid ""
+"Contains the \"phase 2\" client certificate if used by the EAP method "
+"specified in the \"phase2-auth\" or \"phase2-autheap\" properties. "
+"Certificate data is specified using a \"scheme\"; two are currently "
+"supported: blob and path. When using the blob scheme (which is backwards "
+"compatible with NM 0.7.x) this property should be set to the certificate's "
+"DER encoded data. When using the path scheme, this property should be set to "
+"the full UTF-8 encoded path of the certificate, prefixed with the string "
+"\"file://\" and ending with a terminating NUL byte. This property can be "
+"unset even if the EAP method supports CA certificates, but this allows man-"
+"in-the-middle attacks and is NOT recommended."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:75
+msgid ""
+"The password used to access the \"phase2\" client certificate stored in "
+"\"phase2-client-cert\" property. Only makes sense if the certificate is "
+"stored on a PKCS#11 token that requires a login."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:76
+msgid ""
+"Flags indicating how to handle the \"phase2-client-cert-password\" property."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:77
+msgid ""
+"Constraint for server domain name. If set, this FQDN is used as a suffix "
+"match requirement for dNSName element(s) of the certificate presented by the "
+"authentication server during the inner \"phase 2\" authentication.  If a "
+"matching dNSName is found, this constraint is met.  If no dNSName values are "
+"present, this constraint is matched against SubjectName CN using same suffix "
+"match comparison."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:78
+msgid ""
+"Contains the \"phase 2\" inner private key when the \"phase2-auth\" or "
+"\"phase2-autheap\" property is set to \"tls\". Key data is specified using a "
+"\"scheme\"; two are currently supported: blob and path. When using the blob "
+"scheme and private keys, this property should be set to the key's encrypted "
+"PEM encoded data. When using private keys with the path scheme, this "
+"property should be set to the full UTF-8 encoded path of the key, prefixed "
+"with the string \"file://\" and ending with a terminating NUL byte. When "
+"using PKCS#12 format private keys and the blob scheme, this property should "
+"be set to the PKCS#12 data and the \"phase2-private-key-password\" property "
+"must be set to password used to decrypt the PKCS#12 certificate and key. "
+"When using PKCS#12 files and the path scheme, this property should be set to "
+"the full UTF-8 encoded path of the key, prefixed with the string \"file://\" "
+"and ending with a terminating NUL byte, and as with the blob scheme the "
+"\"phase2-private-key-password\" property must be set to the password used to "
+"decode the PKCS#12 private key and certificate."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:79
+msgid ""
+"The password used to decrypt the \"phase 2\" private key specified in the "
+"\"phase2-private-key\" property when the private key either uses the path "
+"scheme, or is a PKCS#12 format key."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:80
+msgid ""
+"Flags indicating how to handle the \"phase2-private-key-password\" property."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:81
+msgid ""
+"Substring to be matched against the subject of the certificate presented by "
+"the authentication server during the inner \"phase 2\" authentication. When "
+"unset, no verification of the authentication server certificate's subject is "
+"performed.  This property provides little security, if any, and its use is "
+"deprecated in favor of NMSetting8021x:phase2-domain-suffix-match."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:82
+msgid "PIN used for EAP authentication methods."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:83
+#: ../clients/common/settings-docs.c.in:184
+msgid "Flags indicating how to handle the \"pin\" property."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:84
+msgid ""
+"Contains the private key when the \"eap\" property is set to \"tls\". Key "
+"data is specified using a \"scheme\"; two are currently supported: blob and "
+"path. When using the blob scheme and private keys, this property should be "
+"set to the key's encrypted PEM encoded data. When using private keys with "
+"the path scheme, this property should be set to the full UTF-8 encoded path "
+"of the key, prefixed with the string \"file://\" and ending with a "
+"terminating NUL byte. When using PKCS#12 format private keys and the blob "
+"scheme, this property should be set to the PKCS#12 data and the \"private-"
+"key-password\" property must be set to password used to decrypt the PKCS#12 "
+"certificate and key. When using PKCS#12 files and the path scheme, this "
+"property should be set to the full UTF-8 encoded path of the key, prefixed "
+"with the string \"file://\" and ending with a terminating NUL byte, and as "
+"with the blob scheme the \"private-key-password\" property must be set to "
+"the password used to decode the PKCS#12 private key and certificate. "
+"WARNING: \"private-key\" is not a \"secret\" property, and thus unencrypted "
+"private key data using the BLOB scheme may be readable by unprivileged "
+"users.  Private keys should always be encrypted with a private key password "
+"to prevent unauthorized access to unencrypted private key data."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:85
+msgid ""
+"The password used to decrypt the private key specified in the \"private-key"
+"\" property when the private key either uses the path scheme, or if the "
+"private key is a PKCS#12 format key."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:86
+msgid "Flags indicating how to handle the \"private-key-password\" property."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:87
+msgid ""
+"Substring to be matched against the subject of the certificate presented by "
+"the authentication server. When unset, no verification of the authentication "
+"server certificate's subject is performed.  This property provides little "
+"security, if any, and its use is deprecated in favor of NMSetting8021x:"
+"domain-suffix-match."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:88
+msgid ""
+"When TRUE, overrides the \"ca-path\" and \"phase2-ca-path\" properties using "
+"the system CA directory specified at configure time with the --system-ca-"
+"path switch.  The certificates in this directory are added to the "
+"verification chain in addition to any certificates specified by the \"ca-cert"
+"\" and \"phase2-ca-cert\" properties. If the path provided with --system-ca-"
+"path is rather a file name (bundle of trusted CA certificates), it overrides "
+"\"ca-cert\" and \"phase2-ca-cert\" properties instead (sets ca_cert/ca_cert2 "
+"options for wpa_supplicant)."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:89
+msgid ""
+"If TRUE, enforce auto-negotiation of port speed and duplex mode.  If FALSE, "
+"\"speed\" and \"duplex\" properties should be both set or link configuration "
+"will be skipped."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:91
+msgid ""
+"Can be specified only when \"auto-negotiate\" is \"off\". In that case, "
+"statically configures the device to use that specified duplex mode, either "
+"\"half\" or \"full\". Must be set together with the \"speed\" property if "
+"specified. Before specifying a duplex mode be sure your device supports it."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:93
+msgid ""
+"If specified, this connection will only apply to the Ethernet device whose "
+"permanent MAC address matches. This property does not change the MAC address "
+"of the device (i.e. MAC spoofing)."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:94
+msgid ""
+"If specified, this connection will never apply to the Ethernet device whose "
+"permanent MAC address matches an address in the list.  Each MAC address is "
+"in the standard hex-digits-and-colons notation (00:11:22:33:44:55)."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:97
+msgid ""
+"Specific port type to use if multiple the device supports multiple "
+"attachment methods.  One of \"tp\" (Twisted Pair), \"aui\" (Attachment Unit "
+"Interface), \"bnc\" (Thin Ethernet) or \"mii\" (Media Independent Interface. "
+"If the device supports only one port type, this setting is ignored."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:98
+msgid ""
+"s390 network device type; one of \"qeth\", \"lcs\", or \"ctc\", representing "
+"the different types of virtual network devices available on s390 systems."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:99
+msgid ""
+"Dictionary of key/value pairs of s390-specific device options.  Both keys "
+"and values must be strings.  Allowed keys include \"portno\", \"layer2\", "
+"\"portname\", \"protocol\", among others.  Key names must contain only "
+"alphanumeric characters (ie, [a-zA-Z0-9])."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:100
+msgid ""
+"Identifies specific subchannels that this network device uses for "
+"communication with z/VM or s390 host.  Like the \"mac-address\" property for "
+"non-z/VM devices, this property can be used to ensure this connection only "
+"applies to the network device that uses these subchannels.  The list should "
+"contain exactly 3 strings, and each string may only be composed of "
+"hexadecimal characters and the period (.) character."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:101
+msgid ""
+"Can be set to a value grater than zero only when \"auto-negotiate\" is \"off"
+"\". In that case, statically configures the device to use that specified "
+"speed. In Mbit/s, ie 100 == 100Mbit/s. Must be set together with the \"duplex"
+"\" property when non-zero. Before specifying a speed value be sure your "
+"device supports it."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:102
+msgid ""
+"The NMSettingWiredWakeOnLan options to enable. Not all devices support all "
+"options. May be any combination of NM_SETTING_WIRED_WAKE_ON_LAN_PHY (0x2), "
+"NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST (0x4), "
+"NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST (0x8), "
+"NM_SETTING_WIRED_WAKE_ON_LAN_BROADCAST (0x10), "
+"NM_SETTING_WIRED_WAKE_ON_LAN_ARP (0x20), NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC "
+"(0x40) or the special values NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT (0x1) (to "
+"use global settings) and NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE (0x8000) (to "
+"disable management of Wake-on-LAN in NetworkManager)."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:103
+msgid ""
+"If specified, the password used with magic-packet-based Wake-on-LAN, "
+"represented as an Ethernet MAC address.  If NULL, no password will be "
+"required."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:104
+msgid "Encapsulation of ADSL connection.  Can be \"vcmux\" or \"llc\"."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:106
+msgid "Password used to authenticate with the ADSL service."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:108
+msgid "ADSL connection protocol.  Can be \"pppoa\", \"pppoe\" or \"ipoatm\"."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:109
+msgid "Username used to authenticate with the ADSL service."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:110
+msgid "VCI of ADSL connection"
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:111
+msgid "VPI of ADSL connection"
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:112
+msgid "The Bluetooth address of the device."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:114
+msgid ""
+"Either \"dun\" for Dial-Up Networking connections or \"panu\" for Personal "
+"Area Networking connections to devices supporting the NAP profile."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:116
+msgid ""
+"Dictionary of key/value pairs of bonding options.  Both keys and values must "
+"be strings. Option names must contain only alphanumeric characters (ie, [a-"
+"zA-Z0-9])."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:117
+msgid "The Ethernet MAC address aging time, in seconds."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:118
+msgid "The Spanning Tree Protocol (STP) forwarding delay, in seconds."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:119
+msgid "The Spanning Tree Protocol (STP) hello time, in seconds."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:120
+msgid ""
+"If specified, the MAC address of bridge. When creating a new bridge, this "
+"MAC address will be set. When matching an existing (outside NetworkManager "
+"created) bridge, this MAC address must match."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:121
+msgid "The Spanning Tree Protocol (STP) maximum message age, in seconds."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:122
+msgid ""
+"Controls whether IGMP snooping is enabled for this bridge. Note that if "
+"snooping was automatically disabled due to hash collisions, the system may "
+"refuse to enable the feature until the collisions are resolved."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:124
+msgid ""
+"Sets the Spanning Tree Protocol (STP) priority for this bridge.  Lower "
+"values are \"better\"; the lowest priority bridge will be elected the root "
+"bridge."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:125
+msgid ""
+"Controls whether Spanning Tree Protocol (STP) is enabled for this bridge."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:126
+msgid ""
+"Enables or disabled \"hairpin mode\" for the port, which allows frames to be "
+"sent back out through the port the frame was received on."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:128
+msgid ""
+"The Spanning Tree Protocol (STP) port cost for destinations via this port."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:129
+msgid "The Spanning Tree Protocol (STP) priority of this bridge port."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:130
+#: ../clients/common/settings-docs.c.in:177
+#: ../clients/common/settings-docs.c.in:189
+msgid ""
+"If non-zero, only transmit packets of the specified size or smaller, "
+"breaking larger packets up into multiple frames."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:132
+msgid ""
+"The number to dial to establish the connection to the CDMA-based mobile "
+"broadband network, if any.  If not specified, the default number (#777) is "
+"used when required."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:133
+#: ../clients/common/settings-docs.c.in:181
+msgid ""
+"The password used to authenticate with the network, if required.  Many "
+"providers do not require a password, or accept any password.  But if a "
+"password is required, it is specified here."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:135
+#: ../clients/common/settings-docs.c.in:187
+msgid ""
+"The username used to authenticate with the network, if required.  Many "
+"providers do not require a username, or accept any username.  But if a "
+"username is required, it is specified here."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:136
+msgid ""
+"Whether or not the connection should be automatically connected by "
+"NetworkManager when the resources for the connection are available. TRUE to "
+"automatically activate the connection, FALSE to require manual intervention "
+"to activate the connection."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:137
+msgid ""
+"The autoconnect priority. If the connection is set to autoconnect, "
+"connections with higher priority will be preferred. Defaults to 0. The "
+"higher number means higher priority."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:138
+msgid ""
+"The number of times a connection should be tried when autoactivating before "
+"giving up. Zero means forever, -1 means the global default (4 times if not "
+"overridden)."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:139
+msgid ""
+"Whether or not slaves of this connection should be automatically brought up "
+"when NetworkManager activates this connection. This only has a real effect "
+"for master connections. The permitted values are: 0: leave slave connections "
+"untouched, 1: activate all the slave connections with this connection, -1: "
+"default. If -1 (default) is set, global connection.autoconnect-slaves is "
+"read to determine the real value. If it is default as well, this fallbacks "
+"to 0."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:140
+msgid ""
+"If greater than zero, delay success of IP addressing until either the "
+"timeout is reached, or an IP gateway replies to a ping."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:141
+msgid ""
+"A human readable unique identifier for the connection, like \"Work Wi-Fi\" "
+"or \"T-Mobile 3G\"."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:142
+msgid ""
+"The name of the network interface this connection is bound to. If not set, "
+"then the connection can be attached to any interface of the appropriate type "
+"(subject to restrictions imposed by other settings). For software devices "
+"this specifies the name of the created device. For connection types where "
+"interface names cannot easily be made persistent (e.g. mobile broadband or "
+"USB Ethernet), this property should not be used. Setting this property "
+"restricts the interfaces a connection can be used with, and if interface "
+"names change or are reordered the connection may be applied to the wrong "
+"interface."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:143
+msgid "Whether LLDP is enabled for the connection."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:144
+msgid "Interface name of the master device or UUID of the master connection."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:145
+msgid ""
+"Whether the connection is metered. When updating this property on a "
+"currently activated connection, the change takes effect immediately."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:147
+msgid ""
+"An array of strings defining what access a given user has to this "
+"connection.  If this is NULL or empty, all users are allowed to access this "
+"connection.  Otherwise a user is allowed to access this connection if and "
+"only if they are in this list. Each entry is of the form \"[type]:[id]:"
+"[reserved]\"; for example, \"user:dcbw:blah\". At this time only the \"user"
+"\" [type] is allowed.  Any other values are ignored and reserved for future "
+"use.  [id] is the username that this permission refers to, which may not "
+"contain the \":\" character. Any [reserved] information present must be "
+"ignored and is reserved for future use.  All of [type], [id], and [reserved] "
+"must be valid UTF-8."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:148
+msgid ""
+"FALSE if the connection can be modified using the provided settings "
+"service's D-Bus interface with the right privileges, or TRUE if the "
+"connection is read-only and cannot be modified."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:149
+msgid ""
+"List of connection UUIDs that should be activated when the base connection "
+"itself is activated. Currently only VPN connections are supported."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:150
+msgid ""
+"Setting name of the device type of this slave's master connection (eg, \"bond"
+"\"), or NULL if this connection is not a slave."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:151
+msgid ""
+"Token to generate stable IDs for the connection. The stable-id is used for "
+"generating IPv6 stable private addresses with ipv6.addr-gen-mode=stable-"
+"privacy. It is also used to seed the generated cloned MAC address for "
+"ethernet.cloned-mac-address=stable and wifi.cloned-mac-address=stable. Note "
+"that also the interface name of the activating connection and a per-host "
+"secret key is included into the address generation so that the same stable-"
+"id on different hosts/devices yields different addresses. If the value is "
+"unset, an ID unique for the connection is used. Specifying a stable-id "
+"allows multiple connections to generate the same addresses. Another use is "
+"to generate IDs at runtime via dynamic substitutions. The '$' character is "
+"treated special to perform dynamic substitutions at runtime. Currently "
+"supported are \"${CONNECTION}\", \"${BOOT}\", \"${RANDOM}\". These "
+"effectively create unique IDs per-connection, per-boot, or every time. Any "
+"unrecognized patterns following '$' are treated verbatim, however are "
+"reserved for future use. You are thus advised to avoid '$' or escape it as "
+"\"$$\". For example, set it to \"${CONNECTION}/${BOOT}\" to create a unique "
+"id for this connection that changes with every reboot. Note that two "
+"connections only use the same effective id if their stable-id is also "
+"identical before performing dynamic substitutions."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:152
+msgid ""
+"The time, in seconds since the Unix Epoch, that the connection was last "
+"_successfully_ fully activated. NetworkManager updates the connection "
+"timestamp periodically when the connection is active to ensure that an "
+"active connection has the latest timestamp. The property is only meant for "
+"reading (changes to this property will not be preserved)."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:153
+msgid ""
+"Base type of the connection. For hardware-dependent connections, should "
+"contain the setting name of the hardware-type specific setting (ie, \"802-3-"
+"ethernet\" or \"802-11-wireless\" or \"bluetooth\", etc), and for non-"
+"hardware dependent connections like VPN or otherwise, should contain the "
+"setting name of that setting type (ie, \"vpn\" or \"bridge\", etc)."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:154
+msgid ""
+"A universally unique identifier for the connection, for example generated "
+"with libuuid.  It should be assigned when the connection is created, and "
+"never changed as long as the connection still applies to the same network.  "
+"For example, it should not be changed when the \"id\" property or "
+"NMSettingIP4Config changes, but might need to be re-created when the Wi-Fi "
+"SSID, mobile broadband network provider, or \"type\" property changes. The "
+"UUID must be in the format \"2815492f-7e56-435e-b2e9-246bd7cdc664\" (ie, "
+"contains only hexadecimal characters and \"-\")."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:155
+msgid ""
+"The trust level of a the connection.  Free form case-insensitive string (for "
+"example \"Home\", \"Work\", \"Public\").  NULL or unspecified zone means the "
+"connection will be placed in the default zone as defined by the firewall. "
+"When updating this property on a currently activated connection, the change "
+"takes effect immediately."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:156
+msgid ""
+"Specifies the NMSettingDcbFlags for the DCB FCoE application.  Flags may be "
+"any combination of NM_SETTING_DCB_FLAG_ENABLE (0x1), "
+"NM_SETTING_DCB_FLAG_ADVERTISE (0x2), and NM_SETTING_DCB_FLAG_WILLING (0x4)."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:157
+msgid "The FCoE controller mode; either \"fabric\" (default) or \"vn2vn\"."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:158
+msgid ""
+"The highest User Priority (0 - 7) which FCoE frames should use, or -1 for "
+"default priority.  Only used when the \"app-fcoe-flags\" property includes "
+"the NM_SETTING_DCB_FLAG_ENABLE (0x1) flag."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:159
+msgid ""
+"Specifies the NMSettingDcbFlags for the DCB FIP application.  Flags may be "
+"any combination of NM_SETTING_DCB_FLAG_ENABLE (0x1), "
+"NM_SETTING_DCB_FLAG_ADVERTISE (0x2), and NM_SETTING_DCB_FLAG_WILLING (0x4)."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:160
+msgid ""
+"The highest User Priority (0 - 7) which FIP frames should use, or -1 for "
+"default priority.  Only used when the \"app-fip-flags\" property includes "
+"the NM_SETTING_DCB_FLAG_ENABLE (0x1) flag."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:161
+msgid ""
+"Specifies the NMSettingDcbFlags for the DCB iSCSI application.  Flags may be "
+"any combination of NM_SETTING_DCB_FLAG_ENABLE (0x1), "
+"NM_SETTING_DCB_FLAG_ADVERTISE (0x2), and NM_SETTING_DCB_FLAG_WILLING (0x4)."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:162
+msgid ""
+"The highest User Priority (0 - 7) which iSCSI frames should use, or -1 for "
+"default priority. Only used when the \"app-iscsi-flags\" property includes "
+"the NM_SETTING_DCB_FLAG_ENABLE (0x1) flag."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:164
+msgid ""
+"An array of 8 uint values, where the array index corresponds to the User "
+"Priority (0 - 7) and the value indicates the percentage of bandwidth of the "
+"priority's assigned group that the priority may use.  The sum of all "
+"percentages for priorities which belong to the same group must total 100 "
+"percent."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:165
+msgid ""
+"An array of 8 boolean values, where the array index corresponds to the User "
+"Priority (0 - 7) and the value indicates whether or not the corresponding "
+"priority should transmit priority pause."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:166
+msgid ""
+"Specifies the NMSettingDcbFlags for DCB Priority Flow Control (PFC). Flags "
+"may be any combination of NM_SETTING_DCB_FLAG_ENABLE (0x1), "
+"NM_SETTING_DCB_FLAG_ADVERTISE (0x2), and NM_SETTING_DCB_FLAG_WILLING (0x4)."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:167
+msgid ""
+"An array of 8 uint values, where the array index corresponds to the Priority "
+"Group ID (0 - 7) and the value indicates the percentage of link bandwidth "
+"allocated to that group.  Allowed values are 0 - 100, and the sum of all "
+"values must total 100 percent."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:168
+msgid ""
+"Specifies the NMSettingDcbFlags for DCB Priority Groups.  Flags may be any "
+"combination of NM_SETTING_DCB_FLAG_ENABLE (0x1), "
+"NM_SETTING_DCB_FLAG_ADVERTISE (0x2), and NM_SETTING_DCB_FLAG_WILLING (0x4)."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:169
+msgid ""
+"An array of 8 uint values, where the array index corresponds to the User "
+"Priority (0 - 7) and the value indicates the Priority Group ID.  Allowed "
+"Priority Group ID values are 0 - 7 or 15 for the unrestricted group."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:170
+msgid ""
+"An array of 8 boolean values, where the array index corresponds to the User "
+"Priority (0 - 7) and the value indicates whether or not the priority may use "
+"all of the bandwidth allocated to its assigned group."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:171
+msgid ""
+"An array of 8 uint values, where the array index corresponds to the User "
+"Priority (0 - 7) and the value indicates the traffic class (0 - 7) to which "
+"the priority is mapped."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:174
+msgid ""
+"The GPRS Access Point Name specifying the APN used when establishing a data "
+"session with the GSM-based network.  The APN often determines how the user "
+"will be billed for their network usage and whether the user has access to "
+"the Internet or just a provider-specific walled-garden, so it is important "
+"to use the correct APN for the user's mobile broadband plan. The APN may "
+"only be composed of the characters a-z, 0-9, ., and - per GSM 03.60 Section "
+"14.9."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:175
+msgid ""
+"The device unique identifier (as given by the WWAN management service) which "
+"this connection applies to.  If given, the connection will only apply to the "
+"specified device."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:176
+msgid ""
+"When TRUE, only connections to the home network will be allowed. Connections "
+"to roaming networks will not be made."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:179
+msgid ""
+"The Network ID (GSM LAI format, ie MCC-MNC) to force specific network "
+"registration.  If the Network ID is specified, NetworkManager will attempt "
+"to force the device to register only on the specified network. This can be "
+"used to ensure that the device does not roam when direct roaming control of "
+"the device is not otherwise possible."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:180
+msgid ""
+"Number to dial when establishing a PPP data session with the GSM-based "
+"mobile broadband network.  Many modems do not require PPP for connections to "
+"the mobile network and thus this property should be left blank, which allows "
+"NetworkManager to select the appropriate settings automatically."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:183
+msgid ""
+"If the SIM is locked with a PIN it must be unlocked before any other "
+"operations are requested.  Specify the PIN here to allow operation of the "
+"device."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:185
+msgid ""
+"The SIM card unique identifier (as given by the WWAN management service) "
+"which this connection applies to.  If given, the connection will apply to "
+"any device also allowed by \"device-id\" which contains a SIM card matching "
+"the given identifier."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:186
+msgid ""
+"A MCC/MNC string like \"310260\" or \"21601\" identifying the specific "
+"mobile network operator which this connection applies to.  If given, the "
+"connection will apply to any device also allowed by \"device-id\" and \"sim-"
+"id\" which contains a SIM card provisioined by the given operator."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:188
+msgid ""
+"If specified, this connection will only apply to the IPoIB device whose "
+"permanent MAC address matches. This property does not change the MAC address "
+"of the device (i.e. MAC spoofing)."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:191
+msgid ""
+"The InfiniBand P_Key to use for this device. A value of -1 means to use the "
+"default P_Key (aka \"the P_Key at index 0\").  Otherwise it is a 16-bit "
+"unsigned integer, whose high bit is set if it is a \"full membership\" P_Key."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:192
+msgid ""
+"The interface name of the parent device of this device. Normally NULL, but "
+"if the \"p_key\" property is set, then you must specify the base device by "
+"setting either this property or \"mac-address\"."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:193
+msgid ""
+"The IP-over-InfiniBand transport mode. Either \"datagram\" or \"connected\"."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:194
+msgid ""
+"How many additional levels of encapsulation are permitted to be prepended to "
+"packets. This property applies only to IPv6 tunnels."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:195
+msgid ""
+"The flow label to assign to tunnel packets. This property applies only to "
+"IPv6 tunnels."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:196
+msgid ""
+"The key used for tunnel input packets; the property is valid only for "
+"certain tunnel modes (GRE, IP6GRE). If empty, no key is used."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:197
+msgid ""
+"The local endpoint of the tunnel; the value can be empty, otherwise it must "
+"contain an IPv4 or IPv6 address."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:198
+msgid ""
+"The tunneling mode, for example NM_IP_TUNNEL_MODE_IPIP (1) or "
+"NM_IP_TUNNEL_MODE_GRE (2)."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:199
+msgid "None"
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:201
+msgid ""
+"The key used for tunnel output packets; the property is valid only for "
+"certain tunnel modes (GRE, IP6GRE). If empty, no key is used."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:202
+msgid ""
+"If given, specifies the parent interface name or parent connection UUID the "
+"new device will be bound to so that tunneled packets will only be routed via "
+"that interface."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:203
+msgid "Whether to enable Path MTU Discovery on this tunnel."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:204
+msgid ""
+"The remote endpoint of the tunnel; the value must contain an IPv4 or IPv6 "
+"address."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:205
+msgid ""
+"The type of service (IPv4) or traffic class (IPv6) field to be set on "
+"tunneled packets."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:206
+msgid ""
+"The TTL to assign to tunneled packets. 0 is a special value meaning that "
+"packets inherit the TTL value."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:207
+#: ../clients/common/settings-docs.c.in:228
+msgid "Array of IP addresses."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:208
+#: ../clients/common/settings-docs.c.in:229
+msgid ""
+"Timeout in milliseconds used to check for the presence of duplicate IP "
+"addresses on the network.  If an address conflict is detected, the "
+"activation will fail.  A zero value means that no duplicate address "
+"detection is performed, -1 means the default value (either configuration "
+"ipvx.dad-timeout override or 3 seconds).  A value greater than zero is a "
+"timeout in milliseconds."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:209
+msgid ""
+"A string sent to the DHCP server to identify the local machine which the "
+"DHCP server may use to customize the DHCP lease and options."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:210
+msgid ""
+"If the \"dhcp-send-hostname\" property is TRUE, then the specified FQDN will "
+"be sent to the DHCP server when acquiring a lease. This property and \"dhcp-"
+"hostname\" are mutually exclusive and cannot be set at the same time."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:211
+#: ../clients/common/settings-docs.c.in:230
+msgid ""
+"If the \"dhcp-send-hostname\" property is TRUE, then the specified name will "
+"be sent to the DHCP server when acquiring a lease. This property and \"dhcp-"
+"fqdn\" are mutually exclusive and cannot be set at the same time."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:212
+#: ../clients/common/settings-docs.c.in:231
+msgid ""
+"If TRUE, a hostname is sent to the DHCP server when acquiring a lease. Some "
+"DHCP servers use this hostname to update DNS databases, essentially "
+"providing a static hostname for the computer.  If the \"dhcp-hostname\" "
+"property is NULL and this property is TRUE, the current persistent hostname "
+"of the computer is sent."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:213
+#: ../clients/common/settings-docs.c.in:232
+msgid "A timeout for a DHCP transaction in seconds."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:214
+#: ../clients/common/settings-docs.c.in:233
+msgid "Array of IP addresses of DNS servers."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:215
+#: ../clients/common/settings-docs.c.in:234
+msgid ""
+"Array of DNS options as described in man 5 resolv.conf. NULL means that the "
+"options are unset and left at the default. In this case NetworkManager will "
+"use default options. This is distinct from an empty list of properties."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:216
+#: ../clients/common/settings-docs.c.in:235
+msgid ""
+"Intra-connection DNS priority. The relative priority to be used when "
+"determining the order of DNS servers in resolv.conf.  A lower value means "
+"that servers will be on top of the file.  Zero selects the default value, "
+"which is 50 for VPNs and 100 for other connections.  Note that the priority "
+"is to order DNS settings for multiple active connections. It does not "
+"disambiguate multiple DNS servers within the same connection profile. For "
+"that, just specify the DNS servers in the desired order. When multiple "
+"devices have configurations with the same priority, the one with an active "
+"default route will be preferred. Note that when using dns=dnsmasq the order "
+"is meaningless since dnsmasq forwards queries to all known servers at the "
+"same time. Negative values have the special effect of excluding other "
+"configurations with a greater priority value; so in presence of at least a "
+"negative priority, only DNS servers from connections with the lowest "
+"priority value will be used."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:217
+#: ../clients/common/settings-docs.c.in:236
+msgid "Array of DNS search domains."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:218
+#: ../clients/common/settings-docs.c.in:237
+msgid ""
+"The gateway associated with this configuration. This is only meaningful if "
+"\"addresses\" is also set."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:219
+#: ../clients/common/settings-docs.c.in:238
+msgid ""
+"When \"method\" is set to \"auto\" and this property to TRUE, automatically "
+"configured nameservers and search domains are ignored and only nameservers "
+"and search domains specified in the \"dns\" and \"dns-search\" properties, "
+"if any, are used."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:220
+#: ../clients/common/settings-docs.c.in:239
+msgid ""
+"When \"method\" is set to \"auto\" and this property to TRUE, automatically "
+"configured routes are ignored and only routes specified in the \"routes\" "
+"property, if any, are used."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:221
+#: ../clients/common/settings-docs.c.in:241
+msgid ""
+"If TRUE, allow overall network configuration to proceed even if the "
+"configuration specified by this property times out.  Note that at least one "
+"IP configuration must succeed or overall network configuration will still "
+"fail.  For example, in IPv6-only networks, setting this property to TRUE on "
+"the NMSettingIP4Config allows the overall network configuration to succeed "
+"if IPv4 configuration fails but IPv6 configuration completes successfully."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:222
+#: ../clients/common/settings-docs.c.in:242
+msgid ""
+"IP configuration method. NMSettingIP4Config and NMSettingIP6Config both "
+"support \"auto\", \"manual\", and \"link-local\". See the subclass-specific "
+"documentation for other values. In general, for the \"auto\" method, "
+"properties such as \"dns\" and \"routes\" specify information that is added "
+"on to the information returned from automatic configuration.  The \"ignore-"
+"auto-routes\" and \"ignore-auto-dns\" properties modify this behavior. For "
+"methods that imply no upstream network, such as \"shared\" or \"link-local"
+"\", these properties must be empty. For IPv4 method \"shared\", the IP "
+"subnet can be configured by adding one manual IPv4 address or otherwise "
+"10.42.x.0/24 is chosen."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:224
+#: ../clients/common/settings-docs.c.in:244
+msgid ""
+"If TRUE, this connection will never be the default connection for this IP "
+"type, meaning it will never be assigned the default route by NetworkManager."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:225
+#: ../clients/common/settings-docs.c.in:245
+msgid ""
+"The default metric for routes that don't explicitly specify a metric. The "
+"default value -1 means that the metric is chosen automatically based on the "
+"device type. The metric applies to dynamic routes, manual (static) routes "
+"that don't have an explicit metric setting, address prefix routes, and the "
+"default route. Note that for IPv6, the kernel accepts zero (0) but coerces "
+"it to 1024 (user default). Hence, setting this property to zero effectively "
+"mean setting it to 1024. For IPv4, zero is a regular value for the metric."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:226
+#: ../clients/common/settings-docs.c.in:246
+msgid "Array of IP routes."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:227
+msgid ""
+"Configure method for creating the address for use with RFC4862 IPv6 "
+"Stateless Address Autoconfiguration. The permitted values are: \"eui64\", or "
+"\"stable-privacy\". If the property is set to \"eui64\", the addresses will "
+"be generated using the interface tokens derived from  hardware address. This "
+"makes the host part of the address to stay constant, making it possible to "
+"track host's presence when it changes networks. The address changes when the "
+"interface hardware is replaced. The value of \"stable-privacy\" enables use "
+"of cryptographically secure hash of a secret host-specific key along with "
+"the connection's stable-id and the network address as specified by RFC7217. "
+"This makes it impossible to use the address track host's presence, and makes "
+"the address stable when the network interface hardware is replaced. On D-"
+"Bus, the absence of an addr-gen-mode setting equals enabling \"stable-privacy"
+"\". For keyfile plugin, the absence of the setting on disk means \"eui64\" "
+"so that the property doesn't change on upgrade from older versions. Note "
+"that this setting is distinct from the Privacy Extensions as configured by "
+"\"ip6-privacy\" property and it does not affect the temporary addresses "
+"configured with this option."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:240
+msgid ""
+"Configure IPv6 Privacy Extensions for SLAAC, described in RFC4941.  If "
+"enabled, it makes the kernel generate a temporary IPv6 address in addition "
+"to the public one generated from MAC address via modified EUI-64.  This "
+"enhances privacy, but could cause problems in some applications, on the "
+"other hand.  The permitted values are: -1: unknown, 0: disabled, 1: enabled "
+"(prefer public address), 2: enabled (prefer temporary addresses). Having a "
+"per-connection setting set to \"-1\" (unknown) means fallback to global "
+"configuration \"ipv6.ip6-privacy\". If also global configuration is "
+"unspecified or set to \"-1\", fallback to read \"/proc/sys/net/ipv6/conf/"
+"default/use_tempaddr\". Note that this setting is distinct from the Stable "
+"Privacy addresses that can be enabled with the \"addr-gen-mode\" property's "
+"\"stable-privacy\" setting as another way of avoiding host tracking with "
+"IPv6 addresses."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:247
+msgid ""
+"Configure the token for draft-chown-6man-tokenised-ipv6-identifiers-02 IPv6 "
+"tokenized interface identifiers. Useful with eui64 addr-gen-mode."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:248
+msgid "Whether the transmitted traffic must be encrypted."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:249
+msgid ""
+"The pre-shared CAK (Connectivity Association Key) for MACsec Key Agreement."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:250
+msgid "Flags indicating how to handle the \"mka-cak\" property."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:251
+msgid ""
+"The pre-shared CKN (Connectivity-association Key Name) for MACsec Key "
+"Agreement."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:252
+msgid ""
+"Specifies how the CAK (Connectivity Association Key) for MKA (MACsec Key "
+"Agreement) is obtained."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:254
+msgid ""
+"If given, specifies the parent interface name or parent connection UUID from "
+"which this MACSEC interface should be created.  If this property is not "
+"specified, the connection must contain an \"802-3-ethernet\" setting with a "
+"\"mac-address\" property."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:255
+msgid ""
+"The port component of the SCI (Secure Channel Identifier), between 1 and "
+"65534."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:256
+msgid "Specifies the validation mode for incoming frames."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:257
+msgid ""
+"The macvlan mode, which specifies the communication mechanism between "
+"multiple macvlans on the same lower device."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:259
+msgid ""
+"If given, specifies the parent interface name or parent connection UUID from "
+"which this MAC-VLAN interface should be created.  If this property is not "
+"specified, the connection must contain an \"802-3-ethernet\" setting with a "
+"\"mac-address\" property."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:260
+msgid "Whether the interface should be put in promiscuous mode."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:261
+msgid "Whether the interface should be a MACVTAP."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:262
+msgid ""
+"If non-zero, instruct pppd to set the serial port to the specified "
+"baudrate.  This value should normally be left as 0 to automatically choose "
+"the speed."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:263
+msgid ""
+"If TRUE, specify that pppd should set the serial port to use hardware flow "
+"control with RTS and CTS signals.  This value should normally be set to "
+"FALSE."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:264
+msgid ""
+"If non-zero, instruct pppd to presume the connection to the peer has failed "
+"if the specified number of LCP echo-requests go unanswered by the peer.  The "
+"\"lcp-echo-interval\" property must also be set to a non-zero value if this "
+"property is used."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:265
+msgid ""
+"If non-zero, instruct pppd to send an LCP echo-request frame to the peer "
+"every n seconds (where n is the specified value).  Note that some PPP peers "
+"will respond to echo requests and some will not, and it is not possible to "
+"autodetect this."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:266
+msgid ""
+"If TRUE, stateful MPPE is used.  See pppd documentation for more information "
+"on stateful MPPE."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:267
+msgid ""
+"If non-zero, instruct pppd to request that the peer send packets no larger "
+"than the specified size.  If non-zero, the MRU should be between 128 and "
+"16384."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:268
+msgid ""
+"If non-zero, instruct pppd to send packets no larger than the specified size."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:270
+msgid "If TRUE, Van Jacobsen TCP header compression will not be requested."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:271
+msgid ""
+"If TRUE, do not require the other side (usually the PPP server) to "
+"authenticate itself to the client.  If FALSE, require authentication from "
+"the remote side.  In almost all cases, this should be TRUE."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:272
+msgid "If TRUE, BSD compression will not be requested."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:273
+msgid "If TRUE, \"deflate\" compression will not be requested."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:274
+msgid "If TRUE, the CHAP authentication method will not be used."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:275
+msgid "If TRUE, the EAP authentication method will not be used."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:276
+msgid "If TRUE, the MSCHAP authentication method will not be used."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:277
+msgid "If TRUE, the MSCHAPv2 authentication method will not be used."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:278
+msgid "If TRUE, the PAP authentication method will not be used."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:279
+msgid ""
+"If TRUE, MPPE (Microsoft Point-to-Point Encryption) will be required for the "
+"PPP session.  If either 64-bit or 128-bit MPPE is not available the session "
+"will fail.  Note that MPPE is not used on mobile broadband connections."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:280
+msgid ""
+"If TRUE, 128-bit MPPE (Microsoft Point-to-Point Encryption) will be required "
+"for the PPP session, and the \"require-mppe\" property must also be set to "
+"TRUE.  If 128-bit MPPE is not available the session will fail."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:282
+msgid "Password used to authenticate with the PPPoE service."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:284
+msgid ""
+"If specified, instruct PPPoE to only initiate sessions with access "
+"concentrators that provide the specified service.  For most providers, this "
+"should be left blank.  It is only required if there are multiple access "
+"concentrators or a specific service is known to be required."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:285
+msgid "Username used to authenticate with the PPPoE service."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:286
+msgid "Whether the proxy configuration is for browser only."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:287
+msgid ""
+"Method for proxy configuration, Default is NM_SETTING_PROXY_METHOD_NONE (0)"
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:289
+msgid "PAC script for the connection."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:290
+msgid "PAC URL for obtaining PAC file."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:291
+msgid ""
+"Speed to use for communication over the serial port.  Note that this value "
+"usually has no effect for mobile broadband modems as they generally ignore "
+"speed settings and use the highest available speed."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:292
+msgid "Byte-width of the serial communication. The 8 in \"8n1\" for example."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:294
+msgid "Parity setting of the serial port."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:295
+msgid "Time to delay between each byte sent to the modem, in microseconds."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:296
+msgid ""
+"Number of stop bits for communication on the serial port.  Either 1 or 2. "
+"The 1 in \"8n1\" for example."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:297
+msgid ""
+"The JSON configuration for the team network interface.  The property should "
+"contain raw JSON configuration data suitable for teamd, because the value is "
+"passed directly to teamd. If not specified, the default configuration is "
+"used.  See man teamd.conf for the format details."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:299
+msgid ""
+"The JSON configuration for the team port. The property should contain raw "
+"JSON configuration data suitable for teamd, because the value is passed "
+"directly to teamd. If not specified, the default configuration is used. See "
+"man teamd.conf for the format details."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:301
+msgid ""
+"The group ID which will own the device. If set to NULL everyone will be able "
+"to use the device."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:302
+msgid ""
+"The operating mode of the virtual device. Allowed values are "
+"NM_SETTING_TUN_MODE_TUN (1) to create a layer 3 device and "
+"NM_SETTING_TUN_MODE_TAP (2) to create an Ethernet-like layer 2 one."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:303
+msgid ""
+"If the property is set to TRUE, the interface will support multiple file "
+"descriptors (queues) to parallelize packet sending or receiving. Otherwise, "
+"the interface will only support a single queue."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:305
+msgid ""
+"The user ID which will own the device. If set to NULL everyone will be able "
+"to use the device."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:306
+msgid ""
+"If TRUE the interface will prepend a 4 byte header describing the physical "
+"interface to the packets."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:307
+msgid ""
+"If TRUE the IFF_VNET_HDR the tunnel packets will include a virtio network "
+"header."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:308
+msgid ""
+"A dictionary of key/value pairs with user data. This data is ignored by "
+"NetworkManager and can be used at the users discretion. The keys only "
+"support a strict ascii format, but the values can be arbitrary UTF8 strings "
+"up to a certain length."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:310
+msgid ""
+"For outgoing packets, a list of mappings from Linux SKB priorities to 802.1p "
+"priorities.  The mapping is given in the format \"from:to\" where both \"from"
+"\" and \"to\" are unsigned integers, ie \"7:3\"."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:311
+msgid ""
+"One or more flags which control the behavior and features of the VLAN "
+"interface.  Flags include NM_VLAN_FLAG_REORDER_HEADERS (0x1) (reordering of "
+"output packet headers), NM_VLAN_FLAG_GVRP (0x2) (use of the GVRP protocol), "
+"and NM_VLAN_FLAG_LOOSE_BINDING (0x4) (loose binding of the interface to its "
+"master device's operating state). NM_VLAN_FLAG_MVRP (0x8) (use of the MVRP "
+"protocol). The default value of this property is "
+"NM_VLAN_FLAG_REORDER_HEADERS, but it used to be 0. To preserve backward "
+"compatibility, the default-value in the D-Bus API continues to be 0 and a "
+"missing property on D-Bus is still considered as 0."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:312
+msgid ""
+"The VLAN identifier that the interface created by this connection should be "
+"assigned. The valid range is from 0 to 4094, without the reserved id 4095."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:313
+msgid ""
+"For incoming packets, a list of mappings from 802.1p priorities to Linux SKB "
+"priorities.  The mapping is given in the format \"from:to\" where both \"from"
+"\" and \"to\" are unsigned integers, ie \"7:3\"."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:315
+msgid ""
+"If given, specifies the parent interface name or parent connection UUID from "
+"which this VLAN interface should be created.  If this property is not "
+"specified, the connection must contain an \"802-3-ethernet\" setting with a "
+"\"mac-address\" property."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:316
+msgid ""
+"Dictionary of key/value pairs of VPN plugin specific data.  Both keys and "
+"values must be strings."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:318
+msgid ""
+"If the VPN service supports persistence, and this property is TRUE, the VPN "
+"will attempt to stay connected across link changes and outages, until "
+"explicitly disconnected."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:319
+msgid ""
+"Dictionary of key/value pairs of VPN plugin specific secrets like passwords "
+"or private keys.  Both keys and values must be strings."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:320
+msgid ""
+"D-Bus service name of the VPN plugin that this setting uses to connect to "
+"its network.  i.e. org.freedesktop.NetworkManager.vpnc for the vpnc plugin."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:321
+msgid ""
+"Timeout for the VPN service to establish the connection. Some services may "
+"take quite a long time to connect. Value of 0 means a default timeout, which "
+"is 60 seconds (unless overridden by vpn.timeout in configuration file). "
+"Values greater than zero mean timeout in seconds."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:322
+msgid ""
+"If the VPN connection requires a user name for authentication, that name "
+"should be provided here.  If the connection is available to more than one "
+"user, and the VPN requires each user to supply a different name, then leave "
+"this property empty.  If this property is empty, NetworkManager will "
+"automatically supply the username of the user which requested the VPN "
+"connection."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:323
+msgid "Specifies the lifetime in seconds of FDB entries learnt by the kernel."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:324
+msgid ""
+"Specifies the UDP destination port to communicate to the remote VXLAN tunnel "
+"endpoint."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:325
+msgid ""
+"Specifies the VXLAN Network Identifier (or VXLAN Segment Identifier) to use."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:326
+msgid "Specifies whether netlink LL ADDR miss notifications are generated."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:327
+msgid "Specifies whether netlink IP ADDR miss notifications are generated."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:328
+msgid ""
+"Specifies whether unknown source link layer addresses and IP addresses are "
+"entered into the VXLAN device forwarding database."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:329
+msgid ""
+"Specifies the maximum number of FDB entries. A value of zero means that the "
+"kernel will store unlimited entries."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:330
+msgid "If given, specifies the source IP address to use in outgoing packets."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:332
+msgid ""
+"If given, specifies the parent interface name or parent connection UUID."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:333
+msgid "Specifies whether ARP proxy is turned on."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:334
+msgid ""
+"Specifies the unicast destination IP address to use in outgoing packets when "
+"the destination link layer address is not known in the VXLAN device "
+"forwarding database, or the multicast IP address to join."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:335
+msgid "Specifies whether route short circuit is turned on."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:336
+msgid ""
+"Specifies the maximum UDP source port to communicate to the remote VXLAN "
+"tunnel endpoint."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:337
+msgid ""
+"Specifies the minimum UDP source port to communicate to the remote VXLAN "
+"tunnel endpoint."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:338
+msgid "Specifies the TOS value to use in outgoing packets."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:339
+msgid "Specifies the time-to-live value to use in outgoing packets."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:340
+msgid ""
+"If specified, this connection will only apply to the WiMAX device whose MAC "
+"address matches. This property does not change the MAC address of the device "
+"(known as MAC spoofing). Deprecated: 1"
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:342
+msgid ""
+"Network Service Provider (NSP) name of the WiMAX network this connection "
+"should use. Deprecated: 1"
+msgstr ""
 
 #: ../clients/nm-online.c:91
 msgid "Connecting"
@@ -4596,10 +8040,6 @@ msgstr "Διαθέσιμη σε όλους τους χρήστες"
 #: ../clients/tui/nmtui-edit.c:530 ../clients/tui/nmtui-hostname.c:67
 msgid "Cancel"
 msgstr "Άκυρο"
-
-#: ../clients/tui/nmt-mtu-entry.c:84
-msgid "(default)"
-msgstr "(προεπιλογή)"
 
 #: ../clients/tui/nmt-mtu-entry.c:86 ../clients/tui/nmt-mtu-entry.c:117
 msgid "bytes"
@@ -5069,10 +8509,6 @@ msgstr "Κοινόχρηστο κλειδί"
 #: ../clients/tui/nmt-page-wifi.c:203
 msgid "WI-FI"
 msgstr "WI-FI"
-
-#: ../clients/tui/nmt-page-wifi.c:213
-msgid "SSID"
-msgstr "SSID"
 
 #: ../clients/tui/nmt-page-wifi.c:245
 msgid "Channel"
@@ -5750,11 +9186,6 @@ msgstr "άκυρη διεύθυνση IPv4 του '%s'"
 msgid "ignoring invalid DNS server IPv6 address '%s'"
 msgstr "άκυρη διεύθυνση IPv6 '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:612
-#, fuzzy, c-format
-msgid "invalid option '%s', use one of [%s]"
-msgstr "άκυρη επιλογή '%s' ή τιμή της '%s'"
-
 #: ../libnm-core/nm-keyfile-reader.c:676 ../libnm-core/nm-keyfile-reader.c:1603
 #, c-format
 msgid "ignoring invalid byte element '%d' (not between 0 and 255 inclusive)"
@@ -6217,11 +9648,6 @@ msgstr "το '%s' περιέχει άκυρους χαρακτήρες (χρησ
 #, c-format
 msgid "'%s' length is invalid (should be 5 or 6 digits)"
 msgstr "το μήκος '%s' είναι άκυρο (πρέπει να έχει 5 ή 6 ψηφία)"
-
-#: ../libnm-core/nm-setting-gsm.c:381 ../libnm-util/nm-setting-gsm.c:364
-#, c-format
-msgid "'%s' is not a number"
-msgstr "το '%s' δεν είναι αριθμός"
 
 #: ../libnm-core/nm-setting-gsm.c:415
 #, fuzzy
@@ -6700,14 +10126,6 @@ msgstr "το '%s' δεν είναι έγκυρη τιμή θύρας έθερν�
 #, c-format
 msgid "'%s' is not a valid duplex value"
 msgstr "το '%s' δεν είναι έγκυρη αμφίδρομη τιμή"
-
-#: ../libnm-core/nm-setting-wired.c:664 ../libnm-core/nm-setting-wireless.c:857
-#: ../libnm-core/nm-setting-wireless.c:869 ../libnm-util/nm-setting-wired.c:646
-#: ../libnm-util/nm-setting-wireless.c:859
-#: ../libnm-util/nm-setting-wireless.c:873
-#, c-format
-msgid "'%s' is not a valid MAC address"
-msgstr "το '%s' δεν είναι έγκυρη διεύθυνση MAC"
 
 #: ../libnm-core/nm-setting-wired.c:701 ../libnm-util/nm-setting-wired.c:680
 #, c-format
@@ -7736,11 +11154,6 @@ msgstr ""
 "# Συγχωνεύθηκαν από το %s\n"
 "\n"
 
-#: ../src/devices/adsl/nm-device-adsl.c:137
-#, fuzzy
-msgid "ADSL connection"
-msgstr "Σύνδεση ADSL %d"
-
 #: ../src/devices/bluetooth/nm-bluez-device.c:210
 #, c-format
 msgid "%s Network"
@@ -7821,11 +11234,6 @@ msgstr "Ενσύρματη σύνδεση %d"
 msgid "Wired connection %d"
 msgstr "Ενσύρματη σύνδεση %d"
 
-#: ../src/devices/nm-device-infiniband.c:192
-#, fuzzy
-msgid "InfiniBand connection"
-msgstr "Σύνδεση InfiniBand %d"
-
 #: ../src/devices/nm-device-ip-tunnel.c:340
 #, fuzzy
 msgid "IP tunnel connection"
@@ -7840,16 +11248,6 @@ msgstr "Σύνδεση VLAN %d"
 #, fuzzy
 msgid "TUN connection"
 msgstr "Σύνδεση DUN %d"
-
-#: ../src/devices/nm-device-vlan.c:433
-#, fuzzy
-msgid "VLAN connection"
-msgstr "Σύνδεση VLAN %d"
-
-#: ../src/devices/nm-device-vxlan.c:369
-#, fuzzy
-msgid "VXLAN connection"
-msgstr "Σύνδεση VLAN %d"
 
 #: ../src/devices/team/nm-device-team.c:135
 #, fuzzy
@@ -8197,8 +11595,3 @@ msgstr "Άγνωστο επίπεδο καταγραφής '%s'"
 #, c-format
 msgid "Unknown log domain '%s'"
 msgstr "Άγνωστος τομέας καταγραφής '%s'"
-
-#: ../src/nm-manager.c:4079
-#, fuzzy
-msgid "VPN connection"
-msgstr "Συνδέεται το VPN"
