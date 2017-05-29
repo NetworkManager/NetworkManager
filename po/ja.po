@@ -5,17 +5,14 @@
 # Satoru SATOH <ssato@redhat.com>, 2005-2007.
 # Kiyoto Hashida <khashida@redhat.com>, 2010.
 # Noriko Mizumoto <noriko@fedoraproject.org>, 2013 - 2014.
-# #-#-#-#-#  ja.po (PACKAGE VERSION)  #-#-#-#-#
-# #-#-#-#-#  ja.po (PACKAGE VERSION)  #-#-#-#-#
-# Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
-# Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
-# Thomas Haller <thaller@redhat.com>, 2017. #zanata
+# kmoriguc <kmoriguc@redhat.com>, 2017. #zanata
+# lrintel <lrintel@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-05-29 17:27+0200\n"
-"PO-Revision-Date: 2017-05-29 10:15-0400\n"
+"POT-Creation-Date: 2017-05-29 17:44+0200\n"
+"PO-Revision-Date: 2017-03-22 09:54-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Japanese <gnome-translation@gnome.gr.jp>\n"
 "Language: ja\n"
@@ -23,7 +20,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Zanata 3.9.6\n"
+"X-Generator: Zanata 4.1.1\n"
 
 #: ../clients/cli/agent.c:40
 #, c-format
@@ -33,7 +30,7 @@ msgid ""
 "COMMAND := { secret | polkit | all }\n"
 "\n"
 msgstr ""
-"Usage: nmcli agent { COMMAND | help }\n"
+"使い方: nmcli agent { COMMAND | help }\n"
 "\n"
 "COMMAND := { secret | polkit | all }\n"
 "\n"
@@ -1326,7 +1323,6 @@ msgid "never"
 msgstr "しない"
 
 #: ../clients/cli/connections.c:1097
-#, fuzzy
 msgid "Activate connection details"
 msgstr "アクティブな接続の詳細"
 
@@ -1435,7 +1431,6 @@ msgid "no device found for connection '%s'"
 msgstr "接続 '%s'用のデバイスが見つかりません"
 
 #: ../clients/cli/connections.c:2058
-#, fuzzy
 msgid "Unknown reason"
 msgstr "不明な理由"
 
@@ -1480,7 +1475,6 @@ msgid "Invalid secrets"
 msgstr "無効なシークレット"
 
 #: ../clients/cli/connections.c:2080
-#, fuzzy
 msgid "The connection was removed"
 msgstr "接続は削除されました"
 
@@ -1598,9 +1592,9 @@ msgid "Error: no active connection provided."
 msgstr "エラー: アクティブな接続がありません。"
 
 #: ../clients/cli/connections.c:2819
-#, fuzzy, c-format
+#, c-format
 msgid "Connection '%s' deactivation failed: %s\n"
-msgstr "エラー: 接続のアクティベーションに失敗: %s\n"
+msgstr "接続 '%s' の非アクティブ化に失敗しました: %s\n"
 
 #: ../clients/cli/connections.c:3075 ../clients/cli/connections.c:3132
 #: ../clients/common/nm-client-utils.c:165
@@ -1646,7 +1640,7 @@ msgstr "エラー: 無効な接続タイプ; %s。"
 #: ../clients/cli/connections.c:3810
 #, fuzzy, c-format
 msgid "Error: bad connection type: %s"
-msgstr "エラー: 無効な接続タイプ; %s。"
+msgstr "エラー: 問題のある接続タイプ; %s。"
 
 #: ../clients/cli/connections.c:3856
 #, c-format
@@ -2669,7 +2663,6 @@ msgid "Interface: "
 msgstr "インターフェース: "
 
 #: ../clients/cli/devices.c:40
-#, fuzzy
 msgid "Interface(s): "
 msgstr "インターフェース: "
 
@@ -2794,9 +2787,9 @@ msgid ""
 "The command lists details for all devices, or for a given device.\n"
 "\n"
 msgstr ""
-"使い方: nmcli device show { 引数 | help }\n"
+"使い方: nmcli device show { ARGUMENTS | help }\n"
 "\n"
-"引数 := [<ifname>]\n"
+"ARGUMENTS := [<ifname>]\n"
 "\n"
 "デバイスの詳細を表示します。\n"
 "このコマンドですべてのデバイスまたは指定デバイスの詳細を表示させます。\n"
@@ -2815,9 +2808,9 @@ msgid ""
 "It will also consider connections that are not set to auto-connect.\n"
 "\n"
 msgstr ""
-"使い方: nmcli device connect { 引数 | help }\n"
+"使い方: nmcli device connect { ARGUMENTS | help }\n"
 "\n"
-"引数 := <ifname>\n"
+"ARGUMENTS := <ifname>\n"
 "\n"
 "デバイスを接続します。\n"
 "NetworkManager により適した接続が検索され、アクティベートされます。\n"
@@ -2895,9 +2888,9 @@ msgid ""
 "further connections without user/manual intervention.\n"
 "\n"
 msgstr ""
-"使い方: nmcli device disconnect { 引数 | help }\n"
+"使い方: nmcli device disconnect { ARGUMENTS | help }\n"
 "\n"
-"引数 := <ifname> ...\n"
+"ARGUMENTS := <ifname> ...\n"
 "\n"
 "デバイスの接続を切断します。\n"
 "このコマンドにより、デバイスの接続が切断され、ユーザーまたは手作業による介入"
@@ -2918,9 +2911,9 @@ msgid ""
 "command.\n"
 "\n"
 msgstr ""
-"使い方: nmcli device delete { 引数 | help }\n"
+"使い方: nmcli device delete { ARGUMENTS | help }\n"
 "\n"
-"引数 := <ifname> ...\n"
+"ARGUMENTS := <ifname> ...\n"
 "\n"
 "ソフトウェアデバイスを削除します。\n"
 "このコマンドにより、インターフェースが削除されます。ソフトウェアデバイス\n"
@@ -2941,11 +2934,11 @@ msgid ""
 "Modify device properties.\n"
 "\n"
 msgstr ""
-"使い方: nmcli device set { 引数 | help }\n"
+"使い方: nmcli device set { ARGUMENTS | help }\n"
 "\n"
-"引数 := デバイス { プロパティー [ プロパティー ... ] }\n"
-"デバイス    := [ifname] <ifname> \n"
-"プロパティー  := { autoconnect { yes | no } |\n"
+"ARGUMENTS := DEVICE { PROPERTY [ PROPERTY ... ] }\n"
+"DEVICE    := [ifname] <ifname> \n"
+"PROPERTY  := { autoconnect { yes | no } |\n"
 "             { managed { yes | no }\n"
 "\n"
 "デバイスプロパティーを変更します。\n"
@@ -2963,9 +2956,9 @@ msgid ""
 "Monitors all devices in case no interface is specified.\n"
 "\n"
 msgstr ""
-"使い方: nmcli device monitor { 引数 | help }\n"
+"使い方: nmcli device monitor { ARGUMENTS | help }\n"
 "\n"
-"引数 := [<ifname>] ...\n"
+"ARGUMENTS := [<ifname>] ...\n"
 "\n"
 "デバイスアクティビティーを監視します。\n"
 "このコマンドにより、指定されたデバイスの状態が変わるたびに行が出力されま"
@@ -3097,9 +3090,9 @@ msgid ""
 "used to list neighbors for a particular interface.\n"
 "\n"
 msgstr ""
-"使い方: nmcli device lldp { 引数 | help }\n"
+"使い方: nmcli device lldp { ARGUMENTS | help }\n"
 "\n"
-"引数 := [list [ifname <ifname>]]\n"
+"ARGUMENTS := [list [ifname <ifname>]]\n"
 "\n"
 "LLDP を介して検出された近接デバイスを一覧表示します。'ifname' オプションを使"
 "用すると、\n"
@@ -4155,9 +4148,9 @@ msgid "Error: Option '--pretty' is mutually exclusive with '--terse'."
 msgstr "エラー: オプション '--pretty' は '--terse' と相互に排他的です。"
 
 #: ../clients/cli/nmcli.c:344
-#, c-format
+#, fuzzy, c-format
 msgid "Error: '%s' is not a valid argument for '%s' option."
-msgstr ""
+msgstr "エラー: '%s' は '%s' オプション用の有効な引数ではありません。"
 
 #: ../clients/cli/nmcli.c:358 ../clients/cli/nmcli.c:370
 #, c-format
@@ -4165,9 +4158,9 @@ msgid "Error: '%s' is not valid argument for '%s' option."
 msgstr "エラー: '%s' は '%s' オプション用の有効な引数ではありません。"
 
 #: ../clients/cli/nmcli.c:394
-#, c-format
+#, fuzzy, c-format
 msgid "Error: '%s' is not a valid timeout."
-msgstr ""
+msgstr "エラー: '%s' は '%s' オプションの有効なタイムアウトではありません。"
 
 #: ../clients/cli/nmcli.c:401
 #, c-format
@@ -4299,29 +4292,29 @@ msgid "failure to select field"
 msgstr "指定された APN の選択に失敗しました"
 
 #: ../clients/cli/utils.c:1467
-#, c-format
+#, fuzzy, c-format
 msgid "Error reading nmcli output: %s\n"
-msgstr ""
+msgstr "エラー: 不正な色: %s\n"
 
 #: ../clients/cli/utils.c:1472
-#, c-format
+#, fuzzy, c-format
 msgid "Error writing nmcli output: %s\n"
-msgstr ""
+msgstr "エラー: 無効なプロパティ: %s\n"
 
 #: ../clients/cli/utils.c:1494
-#, c-format
+#, fuzzy, c-format
 msgid "Failed to create pager pipe: %s\n"
-msgstr ""
+msgstr "プロパティーの設定に失敗しました: %s"
 
 #: ../clients/cli/utils.c:1502
-#, c-format
+#, fuzzy, c-format
 msgid "Failed to fork pager: %s\n"
-msgstr ""
+msgstr "プロパティーの設定に失敗しました: %s"
 
 #: ../clients/cli/utils.c:1548 ../clients/cli/utils.c:1550
-#, c-format
+#, fuzzy, c-format
 msgid "Failed to duplicate pager pipe: %s\n"
-msgstr ""
+msgstr "プライベートキーの復号に失敗しました: %d"
 
 #. Translators: the first %s is the partial value entered by
 #. * the user, the second %s a list of compatible values.
@@ -4378,21 +4371,23 @@ msgid ""
 "The valid syntax is: 'ip[/prefix] [next-hop] [metric] [attribute=val]... [,"
 "ip[/prefix] ...]'"
 msgstr ""
+"有効な構文は以下のようになります: 'ip[/prefix] [next-hop] [metric] "
+"[attribute=val]... [,ip[/prefix] ...]'"
 
 #: ../clients/common/nm-meta-setting-desc.c:167
 #, c-format
 msgid "the next hop ('%s') must be first"
-msgstr ""
+msgstr "次のホップ ('%s') が初回である必要があります"
 
 #: ../clients/common/nm-meta-setting-desc.c:173
 #, c-format
 msgid "the metric ('%s') must be before attributes"
-msgstr ""
+msgstr "メトリック ('%s') が属性の前にある必要があります"
 
 #: ../clients/common/nm-meta-setting-desc.c:213
-#, c-format
+#, fuzzy, c-format
 msgid "invalid route: %s. %s"
-msgstr ""
+msgstr "無効なルート: %s。"
 
 #: ../clients/common/nm-meta-setting-desc.c:225
 msgid "default route cannot be added (NetworkManager handles it by itself)"
@@ -4412,42 +4407,42 @@ msgstr "'%s' は有効な優先度ではありません (<0-%ld>)"
 #: ../clients/common/nm-meta-setting-desc.c:345
 #, c-format
 msgid "cannot read pac-script from file '%s'"
-msgstr ""
+msgstr "ファイル '%s' から pac-script を読み込めません"
 
 #: ../clients/common/nm-meta-setting-desc.c:352
-#, fuzzy, c-format
+#, c-format
 msgid "file '%s' contains non-valid utf-8"
-msgstr "インデックス '%s' は無効です"
+msgstr "ファイル '%s' には無効な utf-8 が含まれています"
 
 #: ../clients/common/nm-meta-setting-desc.c:365
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' does not contain a valid PAC Script"
-msgstr "'%s' は有効な PSK ではありません"
+msgstr "'%s' には有効な PAC スクリプトが含まれていません"
 
 #: ../clients/common/nm-meta-setting-desc.c:368
-#, fuzzy, c-format
+#, c-format
 msgid "Not a valid PAC Script"
-msgstr "は有効な MAC アドレスではありません"
+msgstr "有効な PAC スクリプトではありません"
 
 #: ../clients/common/nm-meta-setting-desc.c:422
 #, c-format
 msgid "cannot read team config from file '%s'"
-msgstr ""
+msgstr "ファイル '%s' から team 設定を読み込めません"
 
 #: ../clients/common/nm-meta-setting-desc.c:429
 #, c-format
 msgid "team config file '%s' contains non-valid utf-8"
-msgstr ""
+msgstr "team 設定ファイル '%s' には無効な utf-8 が含まれています"
 
 #: ../clients/common/nm-meta-setting-desc.c:441
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' does not contain a valid team configuration"
-msgstr "'%s' は有効な team 設定でもファイル名でもありません"
+msgstr "'%s' には有効な team 設定が含まれていません"
 
 #: ../clients/common/nm-meta-setting-desc.c:444
 #, c-format
 msgid "team configuration must be a JSON object"
-msgstr ""
+msgstr "team 設定は JSON オブジェクトである必要があります"
 
 #: ../clients/common/nm-meta-setting-desc.c:537
 #: ../clients/tui/nmt-mtu-entry.c:84
@@ -4464,19 +4459,19 @@ msgid "%s (%s)"
 msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:953
-#, c-format
+#, fuzzy, c-format
 msgid "'%s' is out of range [%lli, %lli]"
-msgstr ""
+msgstr "値 '%d' は <%d-%d> の範囲外です"
 
 #: ../clients/common/nm-meta-setting-desc.c:959
-#, c-format
+#, fuzzy, c-format
 msgid "'%s' is not a valid number"
-msgstr ""
+msgstr "'%s' は数字ではありません"
 
 #: ../clients/common/nm-meta-setting-desc.c:1014
-#, c-format
+#, fuzzy, c-format
 msgid "'%s' is out of range [0, %u]"
-msgstr ""
+msgstr "'%d' の値は <0-3> の範囲外になります"
 
 #: ../clients/common/nm-meta-setting-desc.c:1051
 #, c-format
@@ -4496,9 +4491,9 @@ msgstr ""
 "ています\n"
 
 #: ../clients/common/nm-meta-setting-desc.c:1188
-#, fuzzy, c-format
+#, c-format
 msgid "invalid option '%s', use a combination of [%s]"
-msgstr "無効なオプション '%s' です。[%s] のいずれかを使用してください"
+msgstr "無効なオプション '%s' です。[%s] の組み合わせを使用してください"
 
 #: ../clients/common/nm-meta-setting-desc.c:1193
 #: ../libnm-core/nm-keyfile-reader.c:612
@@ -4677,9 +4672,9 @@ msgid "%d (default)"
 msgstr "%d (default)"
 
 #: ../clients/common/nm-meta-setting-desc.c:2292
-#, fuzzy, c-format
+#, c-format
 msgid "%d (forever)"
-msgstr "%d (no)"
+msgstr "%d (forever)"
 
 #. Don't allow setting type unless the connection is brand new.
 #. * Just because it's a bad idea and the user wouldn't probably want that.
@@ -4689,9 +4684,9 @@ msgstr "%d (no)"
 #. * nmc_setting_set_property() is called only after the property
 #. * we're setting (type) has been removed.
 #: ../clients/common/nm-meta-setting-desc.c:2342
-#, fuzzy, c-format
+#, c-format
 msgid "Can not change the connection type"
-msgstr "不明な/未処理の Bluetooth 接続タイプ"
+msgstr "接続タイプを変更できません"
 
 #: ../clients/common/nm-meta-setting-desc.c:2444
 #, c-format
@@ -4957,45 +4952,37 @@ msgid "'%s' is not a valid PSK"
 msgstr "'%s' は有効な PSK ではありません"
 
 #: ../clients/common/nm-meta-setting-desc.c:4338
-#, fuzzy
 msgid "Bonding primary interface [none]"
-msgstr "ボンドのプライマリインターフェース [none]:"
+msgstr "ボンドのプライマリインターフェース [none]"
 
 #. this is a virtual property, only needed during "ask" mode.
 #: ../clients/common/nm-meta-setting-desc.c:4345
-#, fuzzy
 msgid "Bonding monitoring mode"
-msgstr "ボンディングモニタリングモード %s"
+msgstr "ボンディングモニタリングモード"
 
 #: ../clients/common/nm-meta-setting-desc.c:4354
-#, fuzzy
 msgid "Bonding miimon [100]"
-msgstr "ボンドの miimon [100]:"
+msgstr "ボンドの miimon [100]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4362
-#, fuzzy
 msgid "Bonding downdelay [0]"
-msgstr "ボンドの downdelay [0]: "
+msgstr "ボンドの downdelay [0]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4370
-#, fuzzy
 msgid "Bonding updelay [0]"
-msgstr "ボンドの updelay [0]: "
+msgstr "ボンドの updelay [0]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4378
-#, fuzzy
 msgid "Bonding arp-interval [0]"
-msgstr "ボンドの arp-interval [0]: "
+msgstr "ボンドの arp-interval [0]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4386
-#, fuzzy
 msgid "Bonding arp-ip-target [none]"
-msgstr "ボンドの arp-ip-target [none]: "
+msgstr "ボンドの arp-ip-target [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4394
-#, fuzzy
 msgid "LACP rate ('slow' or 'fast') [slow]"
-msgstr "LACP レート ('低速' または '高速') [低速]: "
+msgstr "LACP レート ('slow' または 'fast') [slow]"
 
 #. macro that returns @func as const (gboolean(*)(NMSetting*)) type, but checks
 #. * that the actual type is (gboolean(*)(type *)).
@@ -5132,80 +5119,66 @@ msgstr "ユーザー名"
 #: ../clients/common/nm-meta-setting-desc.c:4952
 #: ../clients/common/nm-meta-setting-desc.c:5221
 #: ../clients/common/nm-meta-setting-desc.c:5788
-#, fuzzy
 msgid "Password [none]"
-msgstr "パスワード [none]: "
+msgstr "パスワード [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4821
-#, fuzzy
 msgid "Bluetooth device address"
-msgstr "Bluetooth デバイスアドレス: "
+msgstr "Bluetooth デバイスアドレス"
 
 #: ../clients/common/nm-meta-setting-desc.c:4865
 #: ../clients/common/nm-meta-setting-desc.c:5275
 #: ../clients/common/nm-meta-setting-desc.c:6213
 #: ../clients/common/nm-meta-setting-desc.c:6251
 #: ../clients/common/nm-meta-setting-desc.c:6388
-#, fuzzy
 msgid "MAC [none]"
-msgstr "MAC [none]: "
+msgstr "MAC [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4871
-#, fuzzy
 msgid "Enable STP [no]"
-msgstr "STP %s の有効化 "
+msgstr "STP の有効化 [no]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4877
-#, fuzzy
 msgid "STP priority [32768]"
-msgstr "STP の優先度 [32768]: "
+msgstr "STP の優先度 [32768]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4883
-#, fuzzy
 msgid "Forward delay [15]"
-msgstr "フォワード遅延 [15]:"
+msgstr "フォワード遅延 [15]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4889
-#, fuzzy
 msgid "Hello time [2]"
-msgstr "Hello タイム [2]: "
+msgstr "Hello タイム [2]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4895
-#, fuzzy
 msgid "Max age [20]"
-msgstr "最大エイジ [20]: "
+msgstr "最大エイジ [20]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4901
-#, fuzzy
 msgid "MAC address ageing time [300]"
-msgstr "MAC アドレスのエージングタイム [300]:"
+msgstr "MAC アドレスのエージングタイム [300]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4907
-#, fuzzy
 msgid "Enable IGMP snooping [no]"
-msgstr "IGMP スヌーピングの有効化"
+msgstr "IGMP スヌーピングの有効化 [no]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4919
-#, fuzzy
 msgid "Bridge port priority [32]"
-msgstr "ブリッジポートの優先度 [32]:"
+msgstr "ブリッジポートの優先度 [32]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4925
-#, fuzzy
 msgid "Bridge port STP path cost [100]"
-msgstr "ブリッジポートの STP パスコスト [100]: "
+msgstr "ブリッジポートの STP パスコスト [100]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4931
-#, fuzzy
 msgid "Hairpin [no]"
-msgstr "ヘアピンモード"
+msgstr "ヘアピン [no]"
 
 #: ../clients/common/nm-meta-setting-desc.c:4946
 #: ../clients/common/nm-meta-setting-desc.c:5215
 #: ../clients/common/nm-meta-setting-desc.c:6103
-#, fuzzy
 msgid "Username [none]"
-msgstr "ユーザー名 [none]: "
+msgstr "ユーザー名 [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5029
 msgid ""
@@ -5260,26 +5233,22 @@ msgstr ""
 "'unknown'\n"
 
 #: ../clients/common/nm-meta-setting-desc.c:5232
-#, fuzzy
 msgid "APN"
-msgstr "AP"
+msgstr "APN"
 
 #: ../clients/common/nm-meta-setting-desc.c:5284
 #: ../clients/common/nm-meta-setting-desc.c:6276
 #: ../clients/common/nm-meta-setting-desc.c:6422
-#, fuzzy
 msgid "MTU [auto]"
-msgstr "MTU [auto]: "
+msgstr "MTU [auto]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5303
-#, fuzzy
 msgid "P_KEY [none]"
-msgstr "P_KEY [none]: "
+msgstr "P_KEY [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5312
-#, fuzzy
 msgid "Parent interface [none]"
-msgstr "親インターフェース [none]: "
+msgstr "親インターフェース [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5335
 msgid ""
@@ -5292,9 +5261,8 @@ msgstr ""
 "例: 8.8.8.8, 8.8.4.4\n"
 
 #: ../clients/common/nm-meta-setting-desc.c:5367
-#, fuzzy
 msgid "IPv4 address (IP[/plen]) [none]"
-msgstr "IPv4 アドレス (IP[/plen]) [none]: "
+msgstr "IPv4 アドレス (IP[/plen]) [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5369
 msgid ""
@@ -5311,9 +5279,8 @@ msgstr ""
 "例: 192.168.1.5/24, 10.0.0.11/24\n"
 
 #: ../clients/common/nm-meta-setting-desc.c:5382
-#, fuzzy
 msgid "IPv4 gateway [none]"
-msgstr "IPv4 ゲートウェイ [none]: "
+msgstr "IPv4 ゲートウェイ [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5390
 msgid ""
@@ -5358,9 +5325,8 @@ msgstr ""
 "例: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"
 
 #: ../clients/common/nm-meta-setting-desc.c:5494
-#, fuzzy
 msgid "IPv6 address (IP[/plen]) [none]"
-msgstr "IPv6 アドレス (IP[/plen]) [none]: "
+msgstr "IPv6 アドレス (IP[/plen]) [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5496
 msgid ""
@@ -5377,9 +5343,8 @@ msgstr ""
 "例: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"
 
 #: ../clients/common/nm-meta-setting-desc.c:5509
-#, fuzzy
 msgid "IPv6 gateway [none]"
-msgstr "IPv6 ゲートウェイ [none]: "
+msgstr "IPv6 ゲートウェイ [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5517
 msgid ""
@@ -5408,28 +5373,25 @@ msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:5595
 #: ../clients/common/nm-meta-setting-desc.c:6136
-#, fuzzy
 msgid "Parent device [none]"
-msgstr "親デバイス [none]: "
+msgstr "親デバイス [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5601
-#, fuzzy
 msgid "Local endpoint [none]"
-msgstr "ローカルエンドポイント [none]: "
+msgstr "ローカルエンドポイント [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5608
 #: ../clients/common/nm-meta-setting-desc.c:6156
-#, fuzzy
 msgid "Remote"
-msgstr "リモート: "
+msgstr "リモート"
 
 #: ../clients/common/nm-meta-setting-desc.c:5645
 msgid "MACsec parent device or connection UUID"
-msgstr ""
+msgstr "MACsec 親デバイスまたは接続 UUID"
 
 #: ../clients/common/nm-meta-setting-desc.c:5666
 msgid "Enable encryption [yes]"
-msgstr ""
+msgstr "暗号化の有効化 [yes]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5672
 #: ../clients/common/nm-secret-agent-simple.c:520
@@ -5438,20 +5400,19 @@ msgstr "MKA CAK"
 
 #: ../clients/common/nm-meta-setting-desc.c:5682
 msgid "MKA_CKN"
-msgstr ""
+msgstr "MKA_CKN"
 
 #: ../clients/common/nm-meta-setting-desc.c:5688
 msgid "SCI port [1]"
-msgstr ""
+msgstr "SCI ポート [1]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5711
-#, fuzzy
 msgid "MACVLAN parent device or connection UUID"
-msgstr "MACVLAN 親デバイスまたは接続 UUID: "
+msgstr "MACVLAN 親デバイスまたは接続 UUID"
 
 #: ../clients/common/nm-meta-setting-desc.c:5732
 msgid "Tap [no]"
-msgstr ""
+msgstr "Tap [no]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5745
 #: ../clients/common/nm-meta-setting-desc.c:6343
@@ -5460,128 +5421,106 @@ msgid "SSID"
 msgstr "SSID"
 
 #: ../clients/common/nm-meta-setting-desc.c:5754
-#, fuzzy
 msgid "OLPC Mesh channel [1]"
-msgstr "OLPC メッシュチャンネル [1]: "
+msgstr "OLPC メッシュチャンネル [1]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5763
-#, fuzzy
 msgid "DHCP anycast MAC address [none]"
-msgstr "DHCP anycast MAC アドレス [none]: "
+msgstr "DHCP anycast MAC アドレス [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5775
-#, fuzzy
 msgid "Service [none]"
-msgstr "サービス [none]: "
+msgstr "サービス [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5782
-#, fuzzy
 msgid "PPPoE username"
-msgstr "PPPoE ユーザー名: "
+msgstr "PPPoE ユーザー名"
 
 #: ../clients/common/nm-meta-setting-desc.c:5881
 msgid "Browser only [no]"
-msgstr ""
+msgstr "ブラウザー専用 [no]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5887
 msgid "PAC URL"
-msgstr ""
+msgstr "PAC URL"
 
 #: ../clients/common/nm-meta-setting-desc.c:5893
 msgid "PAC script"
-msgstr ""
+msgstr "PAC スクリプト"
 
 #: ../clients/common/nm-meta-setting-desc.c:5908
 #: ../clients/common/nm-meta-setting-desc.c:5924
-#, fuzzy
 msgid "Team JSON configuration [none]"
-msgstr "team  JSON 設定 [none]: "
+msgstr "team  JSON 設定 [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6006
-#, fuzzy
 msgid "User ID [none]"
-msgstr "ユーザー ID [none]: "
+msgstr "ユーザー ID [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6012
-#, fuzzy
 msgid "Group ID [none]"
-msgstr "グループ ID [none]: "
+msgstr "グループ ID [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6018
-#, fuzzy
 msgid "Enable PI [no]"
-msgstr "PI %s の有効化"
+msgstr "PI の有効化 [no]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6024
-#, fuzzy
 msgid "Enable VNET header [no]"
-msgstr "VNET ヘッダー %s の有効化"
+msgstr "VNET ヘッダー の有効化 [no]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6030
-#, fuzzy
 msgid "Enable multi queue [no]"
-msgstr "複数のキュー %s の有効化"
+msgstr "複数のキューの有効化 [no]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6043
-#, fuzzy
 msgid "VLAN parent device or connection UUID"
-msgstr "VLAN 親デバイスまたは接続 UUID: "
+msgstr "VLAN 親デバイスまたは接続 UUID"
 
 #: ../clients/common/nm-meta-setting-desc.c:6050
-#, fuzzy
 msgid "VLAN ID (<0-4094>)"
-msgstr "VLAN ID <0-4094>: "
+msgstr "VLAN ID (<0-4094>)"
 
 #: ../clients/common/nm-meta-setting-desc.c:6056
-#, fuzzy
 msgid "VLAN flags (<0-7>) [none]"
-msgstr "VLAN フラグ (<0-7>) [none]: "
+msgstr "VLAN フラグ (<0-7>) [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6065
-#, fuzzy
 msgid "Ingress priority maps [none]"
-msgstr "イングレス優先度マップ [none]: "
+msgstr "イングレス優先度マップ [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6075
-#, fuzzy
 msgid "Egress priority maps [none]"
-msgstr "イーグレス優先度マップ [none]: "
+msgstr "イーグレス優先度マップ [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6143
-#, fuzzy
 msgid "VXLAN ID"
-msgstr "VXLAN ID: "
+msgstr "VXLAN ID"
 
 #: ../clients/common/nm-meta-setting-desc.c:6149
-#, fuzzy
 msgid "Local address [none]"
-msgstr "ローカルアドレス [none]: "
+msgstr "ローカルアドレス [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6162
-#, fuzzy
 msgid "Minimum source port [0]"
-msgstr "最小ソースポート [0]: "
+msgstr "最小ソースポート数 [0]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6168
-#, fuzzy
 msgid "Maximum source port [0]"
-msgstr "最小ソースポート [0]: "
+msgstr "最大ソースポート数 [0]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6174
-#, fuzzy
 msgid "Destination port [8472]"
-msgstr "送信先ポート [8472]: "
+msgstr "接続先ポート [8472]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6220
-#, fuzzy
 msgid "WiMAX NSP name"
-msgstr "WiMAX NSP 名: "
+msgstr "WiMAX NSP 名"
 
 #: ../clients/common/nm-meta-setting-desc.c:6257
 #: ../clients/common/nm-meta-setting-desc.c:6393
-#, fuzzy
 msgid "Cloned MAC [none]"
-msgstr "クローンの MAC [none]: "
+msgstr "クローンしたMAC [none]"
 
 #: ../clients/common/nm-meta-setting-desc.c:6284
 msgid ""
@@ -5612,50 +5551,47 @@ msgid "ADSL connection"
 msgstr "ADSL 接続"
 
 #: ../clients/common/nm-meta-setting-desc.c:6710
-#, fuzzy
 msgid "bluetooth connection"
-msgstr "ボンド接続"
+msgstr "bluetooth 接続"
 
 #: ../clients/common/nm-meta-setting-desc.c:6711
-#, fuzzy
 msgid "Bond device"
-msgstr "Ethernet デバイス"
+msgstr "Bond デバイス"
 
 #: ../clients/common/nm-meta-setting-desc.c:6712
-#, fuzzy
 msgid "Bridge device"
-msgstr "Ethernet デバイス"
+msgstr "ブリッジデバイス"
 
 #: ../clients/common/nm-meta-setting-desc.c:6713
-#, fuzzy
 msgid "Bridge port"
-msgstr "ブリッジ"
+msgstr "ブリッジポート"
 
 #: ../clients/common/nm-meta-setting-desc.c:6714
-#, fuzzy
 msgid "CDMA mobile broadband connection"
-msgstr "モバイルブロードバンド接続 %d"
+msgstr "CDMA モバイルブロードバンド接続"
 
 #: ../clients/common/nm-meta-setting-desc.c:6715
 msgid "General settings"
 msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:6716
+#, fuzzy
 msgid "DCB settings"
-msgstr ""
+msgstr "起動中"
 
 #: ../clients/common/nm-meta-setting-desc.c:6717
+#, fuzzy
 msgid "Dummy settings"
-msgstr ""
+msgstr "ダミー接続"
 
 #: ../clients/common/nm-meta-setting-desc.c:6718
+#, fuzzy
 msgid "Generic settings"
-msgstr ""
+msgstr "設定 '%s' の確認: %s\n"
 
 #: ../clients/common/nm-meta-setting-desc.c:6719
-#, fuzzy
 msgid "GSM mobile broadband connection"
-msgstr "モバイルブロードバンド接続 %d"
+msgstr "GSM モバイルブロードバンド接続"
 
 #: ../clients/common/nm-meta-setting-desc.c:6720
 #: ../src/devices/nm-device-infiniband.c:192
@@ -5663,36 +5599,34 @@ msgid "InfiniBand connection"
 msgstr "InfiniBand 接続"
 
 #: ../clients/common/nm-meta-setting-desc.c:6721
-#, fuzzy
 msgid "IPv4 protocol"
-msgstr "ADSL プロトコル"
+msgstr "IPv4 プロトコル"
 
 #: ../clients/common/nm-meta-setting-desc.c:6722
-#, fuzzy
 msgid "IPv6 protocol"
-msgstr "ADSL プロトコル"
+msgstr "IPv6 プロトコル"
 
 #: ../clients/common/nm-meta-setting-desc.c:6723
+#, fuzzy
 msgid "IP-tunnel settings"
-msgstr ""
+msgstr "IP トンネル接続"
 
 #: ../clients/common/nm-meta-setting-desc.c:6724
 msgid "MACsec connection"
-msgstr ""
+msgstr "MACsec 接続"
 
 #: ../clients/common/nm-meta-setting-desc.c:6725
-#, fuzzy
 msgid "macvlan connection"
-msgstr "ボンド接続"
+msgstr "macvlan 接続"
 
 #: ../clients/common/nm-meta-setting-desc.c:6726
-#, fuzzy
 msgid "OLPC Mesh connection"
-msgstr "CDMA 接続"
+msgstr "OLPC Mesh 接続"
 
 #: ../clients/common/nm-meta-setting-desc.c:6727
+#, fuzzy
 msgid "PPP settings"
-msgstr ""
+msgstr "起動中"
 
 #: ../clients/common/nm-meta-setting-desc.c:6728
 msgid "PPPoE"
@@ -5700,30 +5634,29 @@ msgstr "PPPoE"
 
 #: ../clients/common/nm-meta-setting-desc.c:6729
 msgid "Proxy"
-msgstr ""
+msgstr "プロキシ"
 
 #: ../clients/common/nm-meta-setting-desc.c:6730
+#, fuzzy
 msgid "Serial settings"
-msgstr ""
+msgstr "使用可能な設定: %s\n"
 
 #: ../clients/common/nm-meta-setting-desc.c:6731
-#, fuzzy
 msgid "Team device"
-msgstr "TUN デバイスモード"
+msgstr "Team デバイス"
 
 #: ../clients/common/nm-meta-setting-desc.c:6732
-#, fuzzy
 msgid "Team port"
-msgstr "team "
+msgstr "Team ポート"
 
 #: ../clients/common/nm-meta-setting-desc.c:6733
-#, fuzzy
 msgid "Tun device"
-msgstr "TUN デバイスモード"
+msgstr "TUN デバイス"
 
 #: ../clients/common/nm-meta-setting-desc.c:6734
+#, fuzzy
 msgid "User settings"
-msgstr ""
+msgstr "不明な設定"
 
 #: ../clients/common/nm-meta-setting-desc.c:6735
 #: ../src/devices/nm-device-vlan.c:433
@@ -5731,7 +5664,6 @@ msgid "VLAN connection"
 msgstr "VLAN 接続"
 
 #: ../clients/common/nm-meta-setting-desc.c:6736 ../src/nm-manager.c:4079
-#, fuzzy
 msgid "VPN connection"
 msgstr "VPN 接続"
 
@@ -5741,19 +5673,16 @@ msgid "VXLAN connection"
 msgstr "VXLAN 接続"
 
 #: ../clients/common/nm-meta-setting-desc.c:6738
-#, fuzzy
 msgid "WiMAX connection"
-msgstr "CDMA 接続"
+msgstr "WiMAX 接続"
 
 #: ../clients/common/nm-meta-setting-desc.c:6739
-#, fuzzy
 msgid "Wired Ethernet"
-msgstr "Ethernet"
+msgstr "有線イーサネット"
 
 #: ../clients/common/nm-meta-setting-desc.c:6740
-#, fuzzy
 msgid "Wi-Fi connection"
-msgstr "Wi-Fi 接続 %d"
+msgstr "Wi-Fi 接続"
 
 #: ../clients/common/nm-meta-setting-desc.c:6741
 msgid "Wi-Fi security settings"
@@ -5874,7 +5803,7 @@ msgstr "MACsec EAP 認証"
 
 #: ../clients/common/nm-secret-agent-simple.c:568
 msgid "VPN password required"
-msgstr "PIN パスワードが必要です"
+msgstr "VPN パスワードが必要です"
 
 #: ../clients/common/nm-vpn-helpers.c:48
 #, c-format
@@ -6125,8 +6054,9 @@ msgid ""
 msgstr ""
 
 #: ../clients/common/settings-docs.c.in:22
+#, fuzzy
 msgid "SSID of the Wi-Fi network. Must be specified."
-msgstr ""
+msgstr "Wi-Fi ネットワークが見つかりませんでした"
 
 #: ../clients/common/settings-docs.c.in:23
 msgid ""
@@ -6577,8 +6507,9 @@ msgid ""
 msgstr ""
 
 #: ../clients/common/settings-docs.c.in:82
+#, fuzzy
 msgid "PIN used for EAP authentication methods."
-msgstr ""
+msgstr "許可された認証方法:"
 
 #: ../clients/common/settings-docs.c.in:83
 #: ../clients/common/settings-docs.c.in:184
@@ -6746,16 +6677,19 @@ msgid "Username used to authenticate with the ADSL service."
 msgstr ""
 
 #: ../clients/common/settings-docs.c.in:110
+#, fuzzy
 msgid "VCI of ADSL connection"
-msgstr ""
+msgstr "ADSL 接続"
 
 #: ../clients/common/settings-docs.c.in:111
+#, fuzzy
 msgid "VPI of ADSL connection"
-msgstr ""
+msgstr "ADSL 接続"
 
 #: ../clients/common/settings-docs.c.in:112
+#, fuzzy
 msgid "The Bluetooth address of the device."
-msgstr ""
+msgstr "デバイスと接続の Bluetooth アドレスが一致しませんでした。"
 
 #: ../clients/common/settings-docs.c.in:114
 msgid ""
@@ -6917,12 +6851,14 @@ msgid ""
 msgstr ""
 
 #: ../clients/common/settings-docs.c.in:143
+#, fuzzy
 msgid "Whether LLDP is enabled for the connection."
-msgstr ""
+msgstr "デバイス MAC (%s) は接続によりブラックリスト化されています。"
 
 #: ../clients/common/settings-docs.c.in:144
+#, fuzzy
 msgid "Interface name of the master device or UUID of the master connection."
-msgstr ""
+msgstr "デバイスと接続のインターフェース名が一致しませんでした。"
 
 #: ../clients/common/settings-docs.c.in:145
 msgid ""
@@ -7251,8 +7187,9 @@ msgid ""
 msgstr ""
 
 #: ../clients/common/settings-docs.c.in:199
+#, fuzzy
 msgid "None"
-msgstr ""
+msgstr "なし"
 
 #: ../clients/common/settings-docs.c.in:201
 msgid ""
@@ -7343,8 +7280,12 @@ msgstr ""
 
 #: ../clients/common/settings-docs.c.in:214
 #: ../clients/common/settings-docs.c.in:233
+#, fuzzy
 msgid "Array of IP addresses of DNS servers."
 msgstr ""
+"DNS サーバーの IPv4 アドレス一覧を入力してください。\n"
+"\n"
+"例: 8.8.8.8, 8.8.4.4\n"
 
 #: ../clients/common/settings-docs.c.in:215
 #: ../clients/common/settings-docs.c.in:234
@@ -7375,8 +7316,9 @@ msgstr ""
 
 #: ../clients/common/settings-docs.c.in:217
 #: ../clients/common/settings-docs.c.in:236
+#, fuzzy
 msgid "Array of DNS search domains."
-msgstr ""
+msgstr "検索ドメイン"
 
 #: ../clients/common/settings-docs.c.in:218
 #: ../clients/common/settings-docs.c.in:237
@@ -7679,8 +7621,9 @@ msgid "Username used to authenticate with the PPPoE service."
 msgstr ""
 
 #: ../clients/common/settings-docs.c.in:286
+#, fuzzy
 msgid "Whether the proxy configuration is for browser only."
-msgstr ""
+msgstr "この IP 設定は無効になりました"
 
 #: ../clients/common/settings-docs.c.in:287
 msgid ""
@@ -7688,8 +7631,9 @@ msgid ""
 msgstr ""
 
 #: ../clients/common/settings-docs.c.in:289
+#, fuzzy
 msgid "PAC script for the connection."
-msgstr ""
+msgstr "OLPC Mesh 接続"
 
 #: ../clients/common/settings-docs.c.in:290
 msgid "PAC URL for obtaining PAC file."
@@ -8135,7 +8079,6 @@ msgid "VLAN connection %d"
 msgstr "VLAN 接続 %d"
 
 #: ../clients/tui/nm-editor-utils.c:225 ../clients/tui/nmt-page-ip-tunnel.c:136
-#, fuzzy
 msgid "IP tunnel"
 msgstr "IP トンネル"
 
@@ -8187,7 +8130,6 @@ msgid "Could not create editor for invalid connection '%s'."
 msgstr "無効な接続 '%s' のエディタを作成できませんでした。"
 
 #: ../clients/tui/nmt-editor.c:112
-#, fuzzy
 msgid "Edit Connection"
 msgstr "接続の編集"
 
@@ -9862,12 +9804,12 @@ msgid "Missing IPv6 address"
 msgstr "不明な IPv6 アドレス"
 
 #: ../libnm-core/nm-setting-ip-config.c:138
-#, fuzzy, c-format
+#, c-format
 msgid "Invalid IPv4 address '%s'"
 msgstr "無効な IPv4 アドレス '%s'"
 
 #: ../libnm-core/nm-setting-ip-config.c:138
-#, fuzzy, c-format
+#, c-format
 msgid "Invalid IPv6 address '%s'"
 msgstr "無効な IPv6 アドレス '%s'"
 
@@ -10341,9 +10283,9 @@ msgid "'%s' can only be used with '%s=%s' (WEP)"
 msgstr "'%s' は '%s=%s' (WEP) でしか使用できません"
 
 #: ../libnm-core/nm-setting-wireless-security.c:1072
-#, c-format
+#, fuzzy, c-format
 msgid "'%s' can only be used with '%s=%s' or '%s=%s'"
-msgstr ""
+msgstr "'%s' は '%s=%s' (WEP) でしか使用できません"
 
 #: ../libnm-core/nm-setting-wireless-security.c:1094
 msgid "can't be simultaneously disabled and enabled"
@@ -11688,3 +11630,492 @@ msgstr "不明なログレベル '%s'"
 #, c-format
 msgid "Unknown log domain '%s'"
 msgstr "不明なログドメイン '%s'"
+
+#~ msgid "ADDRESS"
+#~ msgstr "アドレス"
+
+#~ msgid "GATEWAY"
+#~ msgstr "ゲートウェイ"
+
+#~ msgid "ROUTE"
+#~ msgstr "ルート"
+
+#~ msgid "DNS"
+#~ msgstr "DNS"
+
+#~ msgid "DOMAIN"
+#~ msgstr "ドメイン"
+
+#~ msgid "WINS"
+#~ msgstr "WINS"
+
+#~ msgid "OPTION"
+#~ msgstr "オプション"
+
+#~ msgid "Connection type"
+#~ msgstr "接続タイプ"
+
+#~ msgid "Interface name [*]"
+#~ msgstr "インターフェース名 [*]"
+
+#~ msgid "VPN type"
+#~ msgstr "VPN タイプ"
+
+#~ msgid "Master"
+#~ msgstr "マスター"
+
+#~ msgid "Bluetooth type"
+#~ msgstr "Bluetooth タイプ"
+
+#~ msgid "Bonding mode"
+#~ msgstr "ボンディングモード"
+
+#~ msgid "Protocol"
+#~ msgstr "プロトコル"
+
+#~ msgid "Wi-Fi mode"
+#~ msgstr "Wi-Fi モード"
+
+#~ msgid "ADSL encapsulation"
+#~ msgstr "ADSL カプセル化"
+
+#~ msgid "Tun mode"
+#~ msgstr "トンネルモード"
+
+#~ msgid "IP Tunnel mode"
+#~ msgstr "IP トンネルモード"
+
+#~ msgid "MACVLAN mode"
+#~ msgstr "MACVLAN モード"
+
+#~ msgid "MACsec mode"
+#~ msgstr "MACsec モード"
+
+#~ msgid "Proxy method"
+#~ msgstr "プロキシメソッド"
+
+#~ msgid "NAME"
+#~ msgstr "名前"
+
+#~ msgid "UUID"
+#~ msgstr "UUID"
+
+#~ msgid "TYPE"
+#~ msgstr "タイプ"
+
+#~ msgid "TIMESTAMP"
+#~ msgstr "タイムスタンプ"
+
+#~ msgid "TIMESTAMP-REAL"
+#~ msgstr "タイムスタンプ-リアル"
+
+#~ msgid "AUTOCONNECT"
+#~ msgstr "自動接続"
+
+#~ msgid "AUTOCONNECT-PRIORITY"
+#~ msgstr "AUTOCONNECT-PRIORITY"
+
+#~ msgid "READONLY"
+#~ msgstr "読み込み専用"
+
+#~ msgid "DBUS-PATH"
+#~ msgstr "DBUS パス"
+
+#~ msgid "ACTIVE"
+#~ msgstr "アクティブ"
+
+#~ msgid "DEVICE"
+#~ msgstr "デバイス"
+
+#~ msgid "STATE"
+#~ msgstr "状態"
+
+#~ msgid "ACTIVE-PATH"
+#~ msgstr "ACTIVE-PATH"
+
+#~ msgid "SLAVE"
+#~ msgstr "スレーブ"
+
+#~ msgid "DEVICES"
+#~ msgstr "デバイス"
+
+#~ msgid "DEFAULT"
+#~ msgstr "デフォルト"
+
+#~ msgid "DEFAULT6"
+#~ msgstr "デフォルト6"
+
+#~ msgid "SPEC-OBJECT"
+#~ msgstr "スペックオブジェクト"
+
+#~ msgid "CON-PATH"
+#~ msgstr "CON パス"
+
+#~ msgid "ZONE"
+#~ msgstr "ゾーン"
+
+#~ msgid "MASTER-PATH"
+#~ msgstr "マスターパス"
+
+#~ msgid "USERNAME"
+#~ msgstr "ユーザー名"
+
+#~ msgid "BANNER"
+#~ msgstr "バナー"
+
+#~ msgid "VPN-STATE"
+#~ msgstr "VPN の状態"
+
+#~ msgid "CFG"
+#~ msgstr "CFG"
+
+#~ msgid "GENERAL"
+#~ msgstr "全般"
+
+#~ msgid "IP4"
+#~ msgstr "IP4"
+
+#~ msgid "DHCP4"
+#~ msgstr "DHCP4"
+
+#~ msgid "IP6"
+#~ msgstr "IP6"
+
+#~ msgid "DHCP6"
+#~ msgstr "DHCP6"
+
+#~ msgid "Error: don't know how to create '%s' setting."
+#~ msgstr "エラー: '%s' 設定を作成する方法がわかりません。"
+
+#~ msgid "CONNECTION"
+#~ msgstr "接続"
+
+#~ msgid "CON-UUID"
+#~ msgstr "接続 UUID"
+
+#~ msgid "NM-TYPE"
+#~ msgstr "NM-TYPE"
+
+#~ msgid "VENDOR"
+#~ msgstr "ベンダー"
+
+#~ msgid "PRODUCT"
+#~ msgstr "製品"
+
+#~ msgid "DRIVER"
+#~ msgstr "ドライバー"
+
+#~ msgid "DRIVER-VERSION"
+#~ msgstr "ドライバーバージョン"
+
+#~ msgid "FIRMWARE-VERSION"
+#~ msgstr "ファームウェアバージョン"
+
+#~ msgid "HWADDR"
+#~ msgstr "ハードウェアアドレス"
+
+#~ msgid "REASON"
+#~ msgstr "原因"
+
+#~ msgid "UDI"
+#~ msgstr "UDI"
+
+#~ msgid "IP-IFACE"
+#~ msgstr "IP-IFACE"
+
+#~ msgid "IS-SOFTWARE"
+#~ msgstr "IS-SOFTWARE"
+
+#~ msgid "NM-MANAGED"
+#~ msgstr "NM 管理"
+
+#~ msgid "FIRMWARE-MISSING"
+#~ msgstr "ファームウェア不足"
+
+#~ msgid "NM-PLUGIN-MISSING"
+#~ msgstr "NM-PLUGIN-MISSING"
+
+#~ msgid "PHYS-PORT-ID"
+#~ msgstr "PHYS-PORT-ID"
+
+#~ msgid "METERED"
+#~ msgstr "METERED"
+
+#~ msgid "AVAILABLE-CONNECTION-PATHS"
+#~ msgstr "使用可能な接続パス"
+
+#~ msgid "AVAILABLE-CONNECTIONS"
+#~ msgstr "使用可能な接続"
+
+#~ msgid "CARRIER-DETECT"
+#~ msgstr "キャリア検出"
+
+#~ msgid "SPEED"
+#~ msgstr "速度"
+
+#~ msgid "SRIOV"
+#~ msgstr "SRIOV"
+
+#~ msgid "CARRIER"
+#~ msgstr "キャリア"
+
+#~ msgid "S390-SUBCHANNELS"
+#~ msgstr "S390-SUBCHANNELS"
+
+#~ msgid "WPA"
+#~ msgstr "WPA"
+
+#~ msgid "TKIP"
+#~ msgstr "TKIP"
+
+#~ msgid "CCMP"
+#~ msgstr "CCMP"
+
+#~ msgid "AP"
+#~ msgstr "AP"
+
+#~ msgid "ADHOC"
+#~ msgstr "アドホック"
+
+#~ msgid "2GHZ"
+#~ msgstr "2GHZ"
+
+#~ msgid "5GHZ"
+#~ msgstr "5GHZ"
+
+#~ msgid "CTR-FREQ"
+#~ msgstr "中心周波数"
+
+#~ msgid "RSSI"
+#~ msgstr "RSSI"
+
+#~ msgid "CINR"
+#~ msgstr "CINR"
+
+#~ msgid "TX-POW"
+#~ msgstr "TX-POW"
+
+#~ msgid "BSID"
+#~ msgstr "BSID"
+
+#~ msgid "SSID-HEX"
+#~ msgstr "SSID-HEX"
+
+#~ msgid "MODE"
+#~ msgstr "モード"
+
+#~ msgid "CHAN"
+#~ msgstr "CHAN"
+
+#~ msgid "FREQ"
+#~ msgstr "周波数"
+
+#~ msgid "RATE"
+#~ msgstr "レート"
+
+#~ msgid "SIGNAL"
+#~ msgstr "信号"
+
+#~ msgid "BARS"
+#~ msgstr "バー"
+
+#~ msgid "SECURITY"
+#~ msgstr "セキュリティ"
+
+#~ msgid "WPA-FLAGS"
+#~ msgstr "WPA-フラグ"
+
+#~ msgid "RSN-FLAGS"
+#~ msgstr "RSN-フラグ"
+
+#~ msgid "*"
+#~ msgstr "*"
+
+#~ msgid "NSP"
+#~ msgstr "NSP"
+
+#~ msgid "SLAVES"
+#~ msgstr "スレーブ"
+
+#~ msgid "CONFIG"
+#~ msgstr "CONFIG"
+
+#~ msgid "PARENT"
+#~ msgstr "PARENT"
+
+#~ msgid "ID"
+#~ msgstr "ID"
+
+#~ msgid "CAPABILITIES"
+#~ msgstr "能力"
+
+#~ msgid "WIFI-PROPERTIES"
+#~ msgstr "WIFI-プロパティ"
+
+#~ msgid "WIRED-PROPERTIES"
+#~ msgstr "有線接続-プロパティ"
+
+#~ msgid "WIMAX-PROPERTIES"
+#~ msgstr "WIMAX-プロパティ"
+
+#~ msgid "BLUETOOTH"
+#~ msgstr "BLUETOOTH"
+
+#~ msgid "CONNECTIONS"
+#~ msgstr "接続"
+
+#~ msgid "CHASSIS-ID"
+#~ msgstr "CHASSIS-ID"
+
+#~ msgid "PORT-ID"
+#~ msgstr "PORT-ID"
+
+#~ msgid "PORT-DESCRIPTION"
+#~ msgstr "PORT-DESCRIPTION"
+
+#~ msgid "SYSTEM-NAME"
+#~ msgstr "SYSTEM-NAME"
+
+#~ msgid "SYSTEM-DESCRIPTION"
+#~ msgstr "SYSTEM-DESCRIPTION"
+
+#~ msgid "SYSTEM-CAPABILITIES"
+#~ msgstr "SYSTEM-CAPABILITIES"
+
+#~ msgid "IEEE-802-1-PVID"
+#~ msgstr "IEEE-802-1-PVID"
+
+#~ msgid "IEEE-802-1-PPVID"
+#~ msgstr "IEEE-802-1-PPVID"
+
+#~ msgid "IEEE-802-1-PPVID-FLAGS"
+#~ msgstr "IEEE-802-1-PPVID-FLAGS"
+
+#~ msgid "IEEE-802-1-VID"
+#~ msgstr "IEEE-802-1-VID"
+
+#~ msgid "IEEE-802-1-VLAN-NAME"
+#~ msgstr "IEEE-802-1-VLAN-NAME"
+
+#~ msgid "DESTINATION"
+#~ msgstr "DESTINATION"
+
+#~ msgid "CHASSIS-ID-TYPE"
+#~ msgstr "CHASSIS-ID-TYPE"
+
+#~ msgid "PORT-ID-TYPE"
+#~ msgstr "PORT-ID-TYPE"
+
+#~ msgid "RUNNING"
+#~ msgstr "実行中"
+
+#~ msgid "VERSION"
+#~ msgstr "バージョン"
+
+#~ msgid "STARTUP"
+#~ msgstr "スタートアップ"
+
+#~ msgid "CONNECTIVITY"
+#~ msgstr "接続性"
+
+#~ msgid "NETWORKING"
+#~ msgstr "ネットワーキング"
+
+#~ msgid "WIFI-HW"
+#~ msgstr "WIFI ハードウェア"
+
+#~ msgid "WIFI"
+#~ msgstr "WIFI"
+
+#~ msgid "WWAN-HW"
+#~ msgstr "WWAN ハードウェア"
+
+#~ msgid "WWAN"
+#~ msgstr "WWAN"
+
+#~ msgid "WIMAX-HW"
+#~ msgstr "WIMAX ハードウェア"
+
+#~ msgid "WIMAX"
+#~ msgstr "WIMAX"
+
+#~ msgid "PERMISSION"
+#~ msgstr "パーミッション"
+
+#~ msgid "VALUE"
+#~ msgstr "値"
+
+#~ msgid "LEVEL"
+#~ msgstr "レベル"
+
+#~ msgid "DOMAINS"
+#~ msgstr "ドメイン"
+
+#~ msgid "Error: fields for '%s' options are missing."
+#~ msgstr "エラー: '%s' オプション用のフィールドがありません。"
+
+#~ msgid "%d (no)"
+#~ msgstr "%d (no)"
+
+#~ msgid "%d (yes)"
+#~ msgstr "%d (yes)"
+
+#~ msgid "index '%s' is not valid"
+#~ msgstr "インデックス '%s' は無効です"
+
+#~ msgid "'%d' is not valid; use <%d-%d>"
+#~ msgstr "'%d' は無効です; <%d-%d> を使用してください"
+
+#~ msgid "'%lld' is not valid; use <%lld-%lld>"
+#~ msgstr "'%lld' は有効ではありません。<%lld-%lld> を使用してください"
+
+#~ msgid "'%u' is not valid; use <%u-%u>"
+#~ msgstr "'%u' は有効ではありません。<%u-%u> を使用してください"
+
+#~ msgid "'%s' is not a valid value; use -1, 0 or 1"
+#~ msgstr "'%s' は有効な値ではありません。-1、0、または 1 を使用してください"
+
+#~ msgid "<hidden>"
+#~ msgstr "<hidden>"
+
+#~ msgid "-1 (unset)"
+#~ msgstr "-1 (未設定)"
+
+#~ msgid "'%s' is not a DCB app priority"
+#~ msgstr "'%s' は DCB アプリケーションの優先度ではありません"
+
+#~ msgid "'%s' is not a valid InfiniBand MAC"
+#~ msgstr "'%s' は有効な InfiniBand MAC ではありません"
+
+#~ msgid "invalid mode '%s', use one of %s"
+#~ msgstr "無効なモード '%s' です。%s のいずれかを使用してください"
+
+#~ msgid "invalid method '%s', use one of %s"
+#~ msgstr "無効なメソッド '%s' です。%s のいずれかを使用してください"
+
+#~ msgid "'%s' is not valid; use [e, o, n]"
+#~ msgstr "'%s' は無効です; [e, o, n] を使用してください"
+
+#~ msgid "invalid option '%s', use '%s' or '%s'"
+#~ msgstr "無効なオプション '%s' です。'%s' または '%s' を使用してください"
+
+#~ msgid ""
+#~ "invalid option '%s', use a combination of [%s] or 'ignore', 'default' or "
+#~ "'none'"
+#~ msgstr ""
+#~ "無効なオプション '%s' です。[%s]、'ignore'、'default'、または 'none' の組"
+#~ "み合わせを使用してください"
+
+#~ msgid "'default' and 'ignore' are incompatible with other flags"
+#~ msgstr "'default' と 'ignore' は他のフラグと使用できません"
+
+#~ msgid "always"
+#~ msgstr "always"
+
+#~ msgid "invalid option '%s', use 'default', 'never' or 'always'"
+#~ msgstr ""
+#~ "無効なオプション '%s' です。'default'、'never'、または 'always' を使用して"
+#~ "ください"
+
+#~ msgid "'%s' not among [0 (unknown), 1 (key), 2 (passphrase)]"
+#~ msgstr "'%s' は [0 (unknown), 1 (key), 2 (passphrase)] にはありません"
