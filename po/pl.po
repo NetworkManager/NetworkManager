@@ -8374,7 +8374,7 @@ msgstr "(Brak reguł użytkownika)"
 #, c-format
 msgid "One custom route"
 msgid_plural "%d custom routes"
-msgstr[0] "Jedna reguła użytkownika"
+msgstr[0] "%d reguła użytkownika"
 msgstr[1] "%d reguły użytkownika"
 msgstr[2] "%d reguł użytkownika"
 
@@ -10660,7 +10660,7 @@ msgstr "USB"
 #, c-format
 msgctxt "long device name"
 msgid "%s %s"
-msgstr "%s (%s)"
+msgstr "%2$s (%1$s)"
 
 #: ../libnm-glib/nm-remote-connection.c:149
 msgid "Disconnected by D-Bus"
@@ -11550,7 +11550,7 @@ msgstr ""
 #. These three are hidden for now, and should eventually just go away.
 #: ../src/nm-config.c:497
 msgid "An http(s) address for checking internet connectivity"
-msgstr "Adres http(s) do sprawdzania łączności internetowej"
+msgstr "Adres HTTP(S) do sprawdzania łączności internetowej"
 
 #: ../src/nm-config.c:498
 msgid "The interval between connectivity checks (in seconds)"
