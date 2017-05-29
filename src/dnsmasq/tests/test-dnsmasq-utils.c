@@ -29,58 +29,138 @@
 static void
 test_address_ranges (void)
 {
-	NMPlatformIP4Address addr;
-	char first[INET_ADDRSTRLEN];
-	char last[INET_ADDRSTRLEN];
-	char *error_desc = NULL;
+#define _test_address_range(addr, plen, expected_first, expected_last) \
+	G_STMT_START { \
+		char *_error_desc = NULL; \
+		char _first[INET_ADDRSTRLEN]; \
+		char _last[INET_ADDRSTRLEN]; \
+		\
+		if (!nm_dnsmasq_utils_get_range (nmtst_platform_ip4_address ((addr""), NULL, (plen)), \
+		                                 _first, _last, &_error_desc)) \
+			g_assert_not_reached (); \
+		g_assert (!_error_desc); \
+		g_assert_cmpstr (_first, ==, (expected_first"")); \
+		g_assert_cmpstr (_last, ==, (expected_last"")); \
+		g_assert_cmpint ((ntohl (nmtst_inet4_from_string (_last)) - ntohl (nmtst_inet4_from_string (_first))), <=, 244); \
+	} G_STMT_END
 
-	addr = *nmtst_platform_ip4_address ("192.168.0.1", NULL, 24);
-	g_assert (nm_dnsmasq_utils_get_range (&addr, first, last, &error_desc));
-	g_assert (error_desc == NULL);
-	g_assert_cmpstr (first, ==, "192.168.0.10");
-	g_assert_cmpstr (last, ==, "192.168.0.254");
+#define _test_address_range_fail(addr, plen) \
+	G_STMT_START { \
+		char *_error_desc = NULL; \
+		char _first[INET_ADDRSTRLEN]; \
+		char _last[INET_ADDRSTRLEN]; \
+		\
+		if (nm_dnsmasq_utils_get_range (nmtst_platform_ip4_address ((addr""), NULL, (plen)), \
+		                                _first, _last, &_error_desc)) \
+			g_assert_not_reached (); \
+		g_assert (_error_desc); \
+		g_free (_error_desc); \
+	} G_STMT_END
 
-	addr = *nmtst_platform_ip4_address ("192.168.0.99", NULL, 24);
-	g_assert (nm_dnsmasq_utils_get_range (&addr, first, last, &error_desc));
-	g_assert (error_desc == NULL);
-	g_assert_cmpstr (first, ==, "192.168.0.108");
-	g_assert_cmpstr (last, ==, "192.168.0.254");
+	_test_address_range_fail ("1.2.3.1", 31);
 
-	addr = *nmtst_platform_ip4_address ("192.168.0.254", NULL, 24);
-	g_assert (nm_dnsmasq_utils_get_range (&addr, first, last, &error_desc));
-	g_assert (error_desc == NULL);
-	g_assert_cmpstr (first, ==, "192.168.0.1");
-	g_assert_cmpstr (last, ==, "192.168.0.245");
+	_test_address_range ("0.0.0.0", 30, "0.0.0.2",  "0.0.0.2");
+	_test_address_range ("0.0.0.1", 30, "0.0.0.2",  "0.0.0.2");
+	_test_address_range ("0.0.0.2", 30, "0.0.0.1",  "0.0.0.1");
+	_test_address_range ("0.0.0.3", 30, "0.0.0.1",  "0.0.0.1");
+	_test_address_range ("1.2.3.0", 30, "1.2.3.2",  "1.2.3.2");
+	_test_address_range ("1.2.3.1", 30, "1.2.3.2",  "1.2.3.2");
+	_test_address_range ("1.2.3.2", 30, "1.2.3.1",  "1.2.3.1");
+	_test_address_range ("1.2.3.3", 30, "1.2.3.1",  "1.2.3.1");
+	_test_address_range ("1.2.3.4", 30, "1.2.3.6",  "1.2.3.6");
+	_test_address_range ("1.2.3.5", 30, "1.2.3.6",  "1.2.3.6");
+	_test_address_range ("1.2.3.6", 30, "1.2.3.5",  "1.2.3.5");
+	_test_address_range ("1.2.3.7", 30, "1.2.3.5",  "1.2.3.5");
+	_test_address_range ("1.2.3.8", 30, "1.2.3.10", "1.2.3.10");
+	_test_address_range ("1.2.3.9", 30, "1.2.3.10", "1.2.3.10");
+	_test_address_range ("255.255.255.0", 30, "255.255.255.2",  "255.255.255.2");
+	_test_address_range ("255.255.255.1", 30, "255.255.255.2",  "255.255.255.2");
+	_test_address_range ("255.255.255.2", 30, "255.255.255.1",  "255.255.255.1");
+	_test_address_range ("255.255.255.3", 30, "255.255.255.1",  "255.255.255.1");
+	_test_address_range ("255.255.255.248", 30, "255.255.255.250",  "255.255.255.250");
+	_test_address_range ("255.255.255.249", 30, "255.255.255.250",  "255.255.255.250");
+	_test_address_range ("255.255.255.250", 30, "255.255.255.249",  "255.255.255.249");
+	_test_address_range ("255.255.255.251", 30, "255.255.255.249",  "255.255.255.249");
+	_test_address_range ("255.255.255.252", 30, "255.255.255.254",  "255.255.255.254");
+	_test_address_range ("255.255.255.253", 30, "255.255.255.254",  "255.255.255.254");
+	_test_address_range ("255.255.255.254", 30, "255.255.255.253",  "255.255.255.253");
+	_test_address_range ("255.255.255.255", 30, "255.255.255.253",  "255.255.255.253");
 
-	/* Smaller networks */
-	addr = *nmtst_platform_ip4_address ("1.2.3.1", NULL, 30);
-	g_assert (nm_dnsmasq_utils_get_range (&addr, first, last, &error_desc));
-	g_assert (error_desc == NULL);
-	g_assert_cmpstr (first, ==, "1.2.3.2");
-	g_assert_cmpstr (last, ==, "1.2.3.2");
+	_test_address_range ("0.0.0.0", 29, "0.0.0.2",  "0.0.0.6");
+	_test_address_range ("0.0.0.1", 29, "0.0.0.2",  "0.0.0.6");
+	_test_address_range ("0.0.0.2", 29, "0.0.0.3",  "0.0.0.6");
+	_test_address_range ("0.0.0.3", 29, "0.0.0.4",  "0.0.0.6");
+	_test_address_range ("0.0.0.4", 29, "0.0.0.1",  "0.0.0.3");
+	_test_address_range ("0.0.0.5", 29, "0.0.0.1",  "0.0.0.4");
+	_test_address_range ("0.0.0.6", 29, "0.0.0.1",  "0.0.0.5");
+	_test_address_range ("0.0.0.7", 29, "0.0.0.1",  "0.0.0.5");
+	_test_address_range ("0.0.0.8", 29, "0.0.0.10", "0.0.0.14");
+	_test_address_range ("0.0.0.9", 29, "0.0.0.10", "0.0.0.14");
+	_test_address_range ("1.2.3.0", 29, "1.2.3.2",  "1.2.3.6");
+	_test_address_range ("1.2.3.1", 29, "1.2.3.2",  "1.2.3.6");
+	_test_address_range ("1.2.3.2", 29, "1.2.3.3",  "1.2.3.6");
+	_test_address_range ("1.2.3.3", 29, "1.2.3.4",  "1.2.3.6");
+	_test_address_range ("1.2.3.4", 29, "1.2.3.1",  "1.2.3.3");
+	_test_address_range ("1.2.3.5", 29, "1.2.3.1",  "1.2.3.4");
+	_test_address_range ("1.2.3.6", 29, "1.2.3.1",  "1.2.3.5");
+	_test_address_range ("1.2.3.7", 29, "1.2.3.1",  "1.2.3.5");
+	_test_address_range ("1.2.3.8", 29, "1.2.3.10", "1.2.3.14");
+	_test_address_range ("1.2.3.9", 29, "1.2.3.10", "1.2.3.14");
+	_test_address_range ("255.255.255.248", 29, "255.255.255.250",  "255.255.255.254");
+	_test_address_range ("255.255.255.249", 29, "255.255.255.250",  "255.255.255.254");
+	_test_address_range ("255.255.255.250", 29, "255.255.255.251",  "255.255.255.254");
+	_test_address_range ("255.255.255.251", 29, "255.255.255.252",  "255.255.255.254");
+	_test_address_range ("255.255.255.252", 29, "255.255.255.249",  "255.255.255.251");
+	_test_address_range ("255.255.255.253", 29, "255.255.255.249",  "255.255.255.252");
+	_test_address_range ("255.255.255.254", 29, "255.255.255.249",  "255.255.255.253");
+	_test_address_range ("255.255.255.255", 29, "255.255.255.249",  "255.255.255.253");
 
-	addr = *nmtst_platform_ip4_address ("1.2.3.1", NULL, 29);
-	g_assert (nm_dnsmasq_utils_get_range (&addr, first, last, &error_desc));
-	g_assert (error_desc == NULL);
-	g_assert_cmpstr (first, ==, "1.2.3.2");
-	g_assert_cmpstr (last, ==, "1.2.3.6");
+	_test_address_range ("1.2.3.1", 29, "1.2.3.2", "1.2.3.6");
+	_test_address_range ("1.2.3.1", 28, "1.2.3.3", "1.2.3.14");
+	_test_address_range ("1.2.3.1", 26, "1.2.3.8", "1.2.3.62");
 
-	addr = *nmtst_platform_ip4_address ("1.2.3.1", NULL, 28);
-	g_assert (nm_dnsmasq_utils_get_range (&addr, first, last, &error_desc));
-	g_assert (error_desc == NULL);
-	g_assert_cmpstr (first, ==, "1.2.3.3");
-	g_assert_cmpstr (last, ==, "1.2.3.14");
+	_test_address_range ("192.167.255.255", 24, "192.167.255.1", "192.167.255.245");
+	_test_address_range ("192.168.0.0",     24, "192.168.0.10",  "192.168.0.254");
+	_test_address_range ("192.168.0.1",     24, "192.168.0.10",  "192.168.0.254");
+	_test_address_range ("192.168.0.2",     24, "192.168.0.11",  "192.168.0.254");
+	_test_address_range ("192.168.0.99",    24, "192.168.0.108", "192.168.0.254");
+	_test_address_range ("192.168.0.126",   24, "192.168.0.135", "192.168.0.254");
+	_test_address_range ("192.168.0.127",   24, "192.168.0.136", "192.168.0.254");
+	_test_address_range ("192.168.0.128",   24, "192.168.0.1",   "192.168.0.119");
+	_test_address_range ("192.168.0.129",   24, "192.168.0.1",   "192.168.0.120");
+	_test_address_range ("192.168.0.130",   24, "192.168.0.1",   "192.168.0.121");
+	_test_address_range ("192.168.0.254",   24, "192.168.0.1",   "192.168.0.245");
+	_test_address_range ("192.168.0.255",   24, "192.168.0.1",   "192.168.0.245");
+	_test_address_range ("192.168.1.0",     24, "192.168.1.10",  "192.168.1.254");
+	_test_address_range ("192.168.1.1",     24, "192.168.1.10",  "192.168.1.254");
+	_test_address_range ("192.168.1.2",     24, "192.168.1.11",  "192.168.1.254");
+	_test_address_range ("192.168.1.10",    24, "192.168.1.19",  "192.168.1.254");
+	_test_address_range ("192.168.15.253",  24, "192.168.15.1",  "192.168.15.244");
+	_test_address_range ("192.168.15.254",  24, "192.168.15.1",  "192.168.15.245");
+	_test_address_range ("192.168.15.255",  24, "192.168.15.1",  "192.168.15.245");
+	_test_address_range ("192.168.16.0",    24, "192.168.16.10", "192.168.16.254");
+	_test_address_range ("192.168.16.1",    24, "192.168.16.10", "192.168.16.254");
 
-	addr = *nmtst_platform_ip4_address ("1.2.3.1", NULL, 26);
-	g_assert (nm_dnsmasq_utils_get_range (&addr, first, last, &error_desc));
-	g_assert (error_desc == NULL);
-	g_assert_cmpstr (first, ==, "1.2.3.8");
-	g_assert_cmpstr (last, ==, "1.2.3.62");
-
-	addr = *nmtst_platform_ip4_address ("1.2.3.1", NULL, 31);
-	g_assert (nm_dnsmasq_utils_get_range (&addr, first, last, &error_desc) == FALSE);
-	g_assert (error_desc);
-	g_free (error_desc);
+	_test_address_range ("192.167.255.255", 20, "192.167.255.1", "192.167.255.245");
+	_test_address_range ("192.168.0.0",     20, "192.168.0.10",  "192.168.0.254");
+	_test_address_range ("192.168.0.1",     20, "192.168.0.10",  "192.168.0.254");
+	_test_address_range ("192.168.0.2",     20, "192.168.0.11",  "192.168.0.254");
+	_test_address_range ("192.168.0.126",   20, "192.168.0.135", "192.168.0.254");
+	_test_address_range ("192.168.0.127",   20, "192.168.0.136", "192.168.0.254");
+	_test_address_range ("192.168.0.128",   20, "192.168.0.1",   "192.168.0.119");
+	_test_address_range ("192.168.0.129",   20, "192.168.0.1",   "192.168.0.120");
+	_test_address_range ("192.168.0.130",   20, "192.168.0.1",   "192.168.0.121");
+	_test_address_range ("192.168.0.254",   20, "192.168.0.1",   "192.168.0.245");
+	_test_address_range ("192.168.0.255",   20, "192.168.0.1",   "192.168.0.245");
+	_test_address_range ("192.168.1.0",     20, "192.168.1.10",  "192.168.1.254");
+	_test_address_range ("192.168.1.1",     20, "192.168.1.10",  "192.168.1.254");
+	_test_address_range ("192.168.1.2",     20, "192.168.1.11",  "192.168.1.254");
+	_test_address_range ("192.168.1.10",    20, "192.168.1.19",  "192.168.1.254");
+	_test_address_range ("192.168.15.253",  20, "192.168.15.1",  "192.168.15.244");
+	_test_address_range ("192.168.15.254",  20, "192.168.15.1",  "192.168.15.245");
+	_test_address_range ("192.168.15.255",  20, "192.168.15.1",  "192.168.15.245");
+	_test_address_range ("192.168.16.0",    20, "192.168.16.10", "192.168.16.254");
+	_test_address_range ("192.168.16.1",    20, "192.168.16.10", "192.168.16.254");
 }
 
 /*****************************************************************************/
