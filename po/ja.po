@@ -1600,7 +1600,7 @@ msgstr "エラー: アクティブな接続がありません。"
 #: ../clients/cli/connections.c:2819
 #, fuzzy, c-format
 msgid "Connection '%s' deactivation failed: %s\n"
-msgstr "エラー: 接続のアクティベーションに失敗: %s"
+msgstr "エラー: 接続のアクティベーションに失敗: %s\n"
 
 #: ../clients/cli/connections.c:3075 ../clients/cli/connections.c:3132
 #: ../clients/common/nm-client-utils.c:165
