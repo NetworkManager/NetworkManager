@@ -1183,6 +1183,15 @@ nmtst_file_get_contents (const char *filename)
 	return contents;
 }
 
+#define nmtst_file_set_contents(filename, content) \
+	G_STMT_START { \
+		GError *_error = NULL; \
+		gboolean _success; \
+		\
+		_success = g_file_set_contents ((filename), (content), -1, &_error); \
+		nmtst_assert_success (_success, _error); \
+	} G_STMT_END
+
 /*****************************************************************************/
 
 static inline void
