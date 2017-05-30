@@ -621,7 +621,6 @@ nmt_connect_connection_list_get_connection (NmtConnectConnectionList  *list,
 	NmtConnectDevice *nmtdev;
 	NmtConnectConnection *nmtconn = NULL;
 	NMConnection *conn = NULL;
-	const char *iface = NULL;
 
 	g_return_val_if_fail (identifier, FALSE);
 
@@ -640,22 +639,21 @@ nmt_connect_connection_list_get_connection (NmtConnectConnectionList  *list,
 			if (conn) {
 				if (conn == nmtconn->conn)
 					goto found;
-			} else if (nmtconn->ssid && !strcmp (identifier, nmtconn->ssid))
+			} else if (nm_streq0 (identifier, nmtconn->ssid))
 				goto found;
 		}
 
-		if (!conn && nmtdev->device) {
-			iface = nm_device_get_ip_iface (nmtdev->device);
-			if (iface && !strcmp (identifier, iface)) {
-				nmtconn = nmtdev->conns->data;
-				goto found;
-			}
+		if (   !conn
+		    && nmtdev->device
+		    && nm_streq0 (identifier, nm_device_get_ip_iface (nmtdev->device))) {
+			nmtconn = nmtdev->conns->data;
+			goto found;
 		}
 	}
 
 	return FALSE;
 
- found:
+found:
 	if (connection)
 		*connection = nmtconn->conn;
 	if (device)
