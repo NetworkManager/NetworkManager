@@ -1186,6 +1186,15 @@ svSetValueInt64 (shvarFile *s, const char *key, gint64 value)
 }
 
 gboolean
+svSetValueInt64_cond (shvarFile *s, const char *key, gboolean do_set, gint64 value)
+{
+	if (do_set)
+		return svSetValueInt64 (s, key, value);
+	else
+		return svUnsetValue (s, key);
+}
+
+gboolean
 svSetValueBoolean (shvarFile *s, const char *key, gboolean value)
 {
 	return svSetValue (s, key, value ? "yes" : "no");
