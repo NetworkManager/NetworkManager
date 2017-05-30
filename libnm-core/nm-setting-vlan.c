@@ -670,6 +670,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		             _("the vlan id must be in range 0-4094 but is %u"),
 		             priv->id);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_VLAN_SETTING_NAME, NM_SETTING_VLAN_ID);
+		return FALSE;
 	}
 
 	if (priv->flags & ~NM_VLAN_FLAGS_ALL) {
