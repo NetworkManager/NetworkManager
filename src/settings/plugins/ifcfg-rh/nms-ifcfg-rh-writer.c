@@ -768,10 +768,8 @@ write_wireless_setting (NMConnection *connection,
 		g_free (blacklist_str);
 	}
 
-	svUnsetValue (ifcfg, "MTU");
 	mtu = nm_setting_wireless_get_mtu (s_wireless);
-	if (mtu)
-		svSetValueInt64 (ifcfg, "MTU", mtu);
+	svSetValueInt64_cond (ifcfg, "MTU", mtu != 0, mtu);
 
 	ssid = nm_setting_wireless_get_ssid (s_wireless);
 	if (!ssid) {
@@ -954,10 +952,8 @@ write_infiniband_setting (NMConnection *connection, shvarFile *ifcfg, GError **e
 	mac = nm_setting_infiniband_get_mac_address (s_infiniband);
 	svSetValueStr (ifcfg, "HWADDR", mac);
 
-	svUnsetValue (ifcfg, "MTU");
 	mtu = nm_setting_infiniband_get_mtu (s_infiniband);
-	if (mtu)
-		svSetValueInt64 (ifcfg, "MTU", mtu);
+	svSetValueInt64_cond (ifcfg, "MTU", mtu != 0, mtu);
 
 	transport_mode = nm_setting_infiniband_get_transport_mode (s_infiniband);
 	svSetValueBoolean (ifcfg, "CONNECTED_MODE", nm_streq (transport_mode, "connected"));
@@ -1018,10 +1014,8 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		g_free (blacklist_str);
 	}
 
-	svUnsetValue (ifcfg, "MTU");
 	mtu = nm_setting_wired_get_mtu (s_wired);
-	if (mtu)
-		svSetValueInt64 (ifcfg, "MTU", mtu);
+	svSetValueInt64 (ifcfg, "MTU", mtu != 0, mtu);
 
 	svUnsetValue (ifcfg, "SUBCHANNELS");
 	s390_subchannels = nm_setting_wired_get_s390_subchannels (s_wired);
@@ -1189,10 +1183,7 @@ write_wired_for_virtual (NMConnection *connection, shvarFile *ifcfg)
 		               nm_setting_wired_get_generate_mac_address_mask (s_wired));
 
 		mtu = nm_setting_wired_get_mtu (s_wired);
-		if (mtu)
-			svSetValueInt64 (ifcfg, "MTU", mtu);
-		else
-			svUnsetValue (ifcfg, "MTU");
+		svSetValueInt64_cond (ifcfg, "MTU", mtu != 0, mtu);
 	}
 	return has_wired;
 }
