@@ -205,13 +205,18 @@ struct _NMConfigDeviceStateData {
 	const char *connection_uuid;
 
 	const char *perm_hw_addr_fake;
+
+	/* whether the device was nm-owned (0/1) or -1 for
+	 * non-software devices. */
+	gint nm_owned;
 };
 
 NMConfigDeviceStateData *nm_config_device_state_load (int ifindex);
 gboolean nm_config_device_state_write (int ifindex,
                                        NMConfigDeviceStateManagedType managed,
                                        const char *perm_hw_addr_fake,
-                                       const char *connection_uuid);
+                                       const char *connection_uuid,
+                                       gint nm_owned);
 void nm_config_device_state_prune_unseen (GHashTable *seen_ifindexes);
 
 /*****************************************************************************/
