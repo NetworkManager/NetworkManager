@@ -493,6 +493,22 @@ test_ip6_route_options (gconstpointer test_data)
 		                                       addr[i].n_ifa_flags));
 	}
 
+	/* Wait that the addresses become non-tentative.  Dummy interfaces are NOARP
+	 * and thus don't do DAD, but the kernel sets the address as tentative for a
+	 * small amount of time, which prevents the immediate addition of the route
+	 * with RTA_PREFSRC */
+	for (i = 0; i < addr_n; i++) {
+		NMTST_WAIT_ASSERT (200, {
+			const NMPlatformIP6Address *plt_addr;
+
+			nmtstp_wait_for_signal (NM_PLATFORM_GET, 50);
+			nm_platform_process_events (NM_PLATFORM_GET);
+			plt_addr = nm_platform_ip6_address_get (NM_PLATFORM_GET, addr[i].ifindex, addr[i].address);
+			if (plt_addr && !NM_FLAGS_HAS (plt_addr->n_ifa_flags, IFA_F_TENTATIVE))
+				break;
+		});
+	}
+
 	for (i = 0; i < rts_n; i++)
 		g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, &rts_add[i]));
 
