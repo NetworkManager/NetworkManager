@@ -1015,7 +1015,7 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	}
 
 	mtu = nm_setting_wired_get_mtu (s_wired);
-	svSetValueInt64 (ifcfg, "MTU", mtu != 0, mtu);
+	svSetValueInt64_cond (ifcfg, "MTU", mtu != 0, mtu);
 
 	svUnsetValue (ifcfg, "SUBCHANNELS");
 	s390_subchannels = nm_setting_wired_get_s390_subchannels (s_wired);
