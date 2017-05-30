@@ -1872,6 +1872,7 @@ _nm_config_state_set (NMConfig *self,
 #define DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_MANAGED             "managed"
 #define DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_PERM_HW_ADDR_FAKE   "perm-hw-addr-fake"
 #define DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_CONNECTION_UUID     "connection-uuid"
+#define DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_NM_OWNED            "nm-owned"
 
 NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_device_state_managed_type_to_str, NMConfigDeviceStateManagedType,
 	NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT ("unknown"),
@@ -1889,6 +1890,7 @@ _config_device_state_data_new (int ifindex, GKeyFile *kf)
 	gs_free char *perm_hw_addr_fake = NULL;
 	gsize connection_uuid_len;
 	gsize perm_hw_addr_fake_len;
+	gint nm_owned = -1;
 	char *p;
 
 	nm_assert (ifindex > 0);
@@ -1924,6 +1926,11 @@ _config_device_state_data_new (int ifindex, GKeyFile *kf)
 			g_free (perm_hw_addr_fake);
 			perm_hw_addr_fake = normalized;
 		}
+
+		nm_owned = nm_config_keyfile_get_boolean (kf,
+		                                          DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
+		                                          DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_NM_OWNED,
+		                                          -1);
 	}
 
 	connection_uuid_len = connection_uuid ? strlen (connection_uuid) + 1 : 0;
@@ -1937,6 +1944,7 @@ _config_device_state_data_new (int ifindex, GKeyFile *kf)
 	device_state->managed = managed_type;
 	device_state->connection_uuid = NULL;
 	device_state->perm_hw_addr_fake = NULL;
+	device_state->nm_owned = nm_owned;
 
 	p = (char *) (&device_state[1]);
 	if (connection_uuid) {
@@ -1966,6 +1974,7 @@ nm_config_device_state_load (int ifindex)
 	NMConfigDeviceStateData *device_state;
 	char path[NM_STRLEN (NM_CONFIG_DEVICE_STATE_DIR) + 60];
 	gs_unref_keyfile GKeyFile *kf = NULL;
+	const char *nm_owned_str;
 
 	g_return_val_if_fail (ifindex > 0, NULL);
 
@@ -1976,13 +1985,18 @@ nm_config_device_state_load (int ifindex)
 		g_clear_pointer (&kf, g_key_file_unref);
 
 	device_state = _config_device_state_data_new (ifindex, kf);
+	nm_owned_str = device_state->nm_owned == TRUE ?
+	               ", nm-owned=1" :
+	               (device_state->nm_owned == FALSE ? ", nm-owned=0" : "");
 
-	_LOGT ("device-state: %s #%d (%s); managed=%s%s%s%s%s%s%s",
+
+	_LOGT ("device-state: %s #%d (%s); managed=%s%s%s%s%s%s%s%s",
 	       kf ? "read" : "miss",
 	       ifindex, path,
 	       _device_state_managed_type_to_str (device_state->managed),
 	       NM_PRINT_FMT_QUOTED (device_state->connection_uuid, ", connection-uuid=", device_state->connection_uuid, "", ""),
-	       NM_PRINT_FMT_QUOTED (device_state->perm_hw_addr_fake, ", perm-hw-addr-fake=", device_state->perm_hw_addr_fake, "", ""));
+	       NM_PRINT_FMT_QUOTED (device_state->perm_hw_addr_fake, ", perm-hw-addr-fake=", device_state->perm_hw_addr_fake, "", ""),
+	       nm_owned_str);
 
 	return device_state;
 }
@@ -1991,7 +2005,8 @@ gboolean
 nm_config_device_state_write (int ifindex,
                               NMConfigDeviceStateManagedType managed,
                               const char *perm_hw_addr_fake,
-                              const char *connection_uuid)
+                              const char *connection_uuid,
+                              gint nm_owned)
 {
 	char path[NM_STRLEN (NM_CONFIG_DEVICE_STATE_DIR) + 60];
 	GError *local = NULL;
@@ -2026,6 +2041,13 @@ nm_config_device_state_write (int ifindex,
 		                       DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_CONNECTION_UUID,
 		                       connection_uuid);
 	}
+	if (nm_owned >= 0) {
+		g_key_file_set_boolean (kf,
+		                        DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
+		                        DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_NM_OWNED,
+		                        nm_owned);
+	}
+
 
 	if (!g_key_file_save_to_file (kf, path, &local)) {
 		_LOGW ("device-state: write #%d (%s) failed: %s", ifindex, path, local->message);

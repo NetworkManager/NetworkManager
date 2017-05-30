@@ -5050,7 +5050,8 @@ nm_manager_write_device_state (NMManager *self)
 		if (nm_config_device_state_write (ifindex,
 		                                  managed_type,
 		                                  perm_hw_addr_fake,
-		                                  uuid))
+		                                  uuid,
+		                                  -1))
 			g_hash_table_add (seen_ifindexes, GINT_TO_POINTER (ifindex));
 	}
 
