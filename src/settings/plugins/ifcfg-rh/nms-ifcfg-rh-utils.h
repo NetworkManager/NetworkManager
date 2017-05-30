@@ -57,4 +57,28 @@ char *utils_detect_ifcfg_path (const char *path, gboolean only_ifcfg);
 void nms_ifcfg_rh_utils_user_key_encode (const char *key, GString *str_buffer);
 gboolean nms_ifcfg_rh_utils_user_key_decode (const char *name, GString *str_buffer);
 
+static inline const char *
+_nms_ifcfg_rh_utils_numbered_tag (char *buf, gsize buf_len, const char *tag_name, int which)
+{
+	gsize l;
+
+	l = g_strlcpy (buf, tag_name, buf_len);
+	nm_assert (l < buf_len);
+	if (which != -1) {
+		buf_len -= l;
+		l = g_snprintf (&buf[l], buf_len, "%d", which);
+		nm_assert (l < buf_len);
+	}
+	return buf;
+}
+#define numbered_tag(buf, tag_name, which) \
+	({ \
+		_nm_unused char *const _buf = (buf); \
+		\
+		/* some static assert trying to ensure that the buffer is statically allocated.
+		 * It disallows a buffer size of sizeof(gpointer) to catch that. */ \
+		G_STATIC_ASSERT (G_N_ELEMENTS (buf) == sizeof (buf) && sizeof (buf) != sizeof (char *) && sizeof (buf) < G_MAXINT); \
+		_nms_ifcfg_rh_utils_numbered_tag (buf, sizeof (buf), ""tag_name"", (which)); \
+	})
+
 #endif  /* _UTILS_H_ */
