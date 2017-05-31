@@ -387,8 +387,7 @@ nmtstp_wait_for_signal (NMPlatform *platform, guint timeout_ms)
 	id_ip4_route   = g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, G_CALLBACK (_wait_for_signal_cb), &data);
 	id_ip6_route   = g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, G_CALLBACK (_wait_for_signal_cb), &data);
 
-	if (timeout_ms != 0)
-		data.id = g_timeout_add (timeout_ms, _wait_for_signal_timeout, &data);
+	data.id = g_timeout_add (timeout_ms, _wait_for_signal_timeout, &data);
 
 	g_main_loop_run (data.loop);
 
@@ -417,7 +416,7 @@ nmtstp_wait_for_signal_until (NMPlatform *platform, gint64 until_ms)
 		if (until_ms < now)
 			return 0;
 
-		signal_counts = nmtstp_wait_for_signal (platform, MAX (1, until_ms - now));
+		signal_counts = nmtstp_wait_for_signal (platform, MAX (0, until_ms - now));
 		if (signal_counts)
 			return signal_counts;
 	}
@@ -448,7 +447,7 @@ nmtstp_wait_for_link_until (NMPlatform *platform, const char *ifname, NMLinkType
 		if (until_ms < now)
 			return NULL;
 
-		nmtstp_wait_for_signal (platform, MAX (1, until_ms - now));
+		nmtstp_wait_for_signal (platform, MAX (0, until_ms - now));
 	}
 }
 
