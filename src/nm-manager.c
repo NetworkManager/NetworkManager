@@ -5008,6 +5008,7 @@ nm_manager_write_device_state (NMManager *self)
 	const GSList *devices;
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	gs_unref_hashtable GHashTable *seen_ifindexes = NULL;
+	gint nm_owned;
 
 	seen_ifindexes = g_hash_table_new (NULL, NULL);
 
@@ -5047,11 +5048,13 @@ nm_manager_write_device_state (NMManager *self)
 		if (perm_hw_addr_fake && !perm_hw_addr_is_fake)
 			perm_hw_addr_fake = NULL;
 
+		nm_owned = nm_device_is_software (device) ? nm_device_is_nm_owned (device) : -1;
+
 		if (nm_config_device_state_write (ifindex,
 		                                  managed_type,
 		                                  perm_hw_addr_fake,
 		                                  uuid,
-		                                  -1))
+		                                  nm_owned))
 			g_hash_table_add (seen_ifindexes, GINT_TO_POINTER (ifindex));
 	}
 
