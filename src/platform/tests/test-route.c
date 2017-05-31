@@ -49,7 +49,7 @@ _wait_for_ipv6_addr_non_tentative (NMPlatform *platform,
 		const NMPlatformIP6Address *plt_addr;
 
 		for (i = 0; i < addr_n; i++) {
-			plt_addr = nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, addrs[i]);
+			plt_addr = nm_platform_ip6_address_get (platform, ifindex, addrs[i]);
 			if (   !plt_addr
 			    || NM_FLAGS_HAS (plt_addr->n_ifa_flags, IFA_F_TENTATIVE)) {
 				should_wait = TRUE;
@@ -58,7 +58,7 @@ _wait_for_ipv6_addr_non_tentative (NMPlatform *platform,
 		}
 		if (!should_wait)
 			return;
-		nmtstp_assert_wait_for_signal (NM_PLATFORM_GET,
+		nmtstp_assert_wait_for_signal (platform,
 		                               (nmtst_wait_end_us - g_get_monotonic_time ()) / 1000);
 	});
 }
