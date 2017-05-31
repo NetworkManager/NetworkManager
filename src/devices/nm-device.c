@@ -70,7 +70,6 @@
 #include "nm-arping-manager.h"
 #include "nm-connectivity.h"
 #include "nm-dbus-interface.h"
-#include "bluetooth/nm-bluez-common.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF (NMDevice);
@@ -4405,7 +4404,6 @@ bt_network_server_register (NMDevice *self)
 		return FALSE;
 	return nm_bt_vtable_network_server->register_bridge (nm_bt_vtable_network_server,
 	                                                     nm_setting_bluetooth_get_bdaddr (s_bt),
-	                                                     BLUETOOTH_CONNECT_NAP,
 	                                                     self);
 }
 

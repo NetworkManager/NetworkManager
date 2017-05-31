@@ -710,7 +710,8 @@ struct _NMBtVTableNetworkServer {
 	gboolean (*is_available) (const NMBtVTableNetworkServer *vtable,
 	                          const char *addr);
 	gboolean (*register_bridge) (const NMBtVTableNetworkServer *vtable,
-	                             const char *addr, const char *uuid, NMDevice *device);
+	                             const char *addr,
+	                             NMDevice *device);
 	gboolean (*unregister_bridge) (const NMBtVTableNetworkServer *vtable,
 	                               NMDevice *device);
 };

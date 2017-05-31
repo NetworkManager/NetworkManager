@@ -89,7 +89,6 @@ static void device_usable (NMBluezDevice *device, GParamSpec *pspec, NMBluez5Man
 typedef struct {
 	char *path;
 	char *addr;
-	char *uuid;
 	NMDevice *device;
 	CList network_servers;
 } NetworkServer;
@@ -126,7 +125,7 @@ _network_server_unregister (NMBluez5Manager *self, NetworkServer *network_server
 {
 	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
 
-	if (!network_server->uuid) {
+	if (!network_server->device) {
 		/* Not connected. */
 		return;
 	}
@@ -140,12 +139,11 @@ _network_server_unregister (NMBluez5Manager *self, NetworkServer *network_server
 	                        network_server->path,
 	                        NM_BLUEZ5_NETWORK_SERVER_INTERFACE,
 	                        "Unregister",
-	                        g_variant_new ("(s)", network_server->uuid),
+	                        g_variant_new ("(s)", BLUETOOTH_CONNECT_NAP),
 	                        NULL,
 	                        G_DBUS_CALL_FLAGS_NONE,
 	                        -1, NULL, NULL, NULL);
 
-	g_clear_pointer (&network_server->uuid, g_free);
 	g_clear_object (&network_server->device);
 }
 
@@ -170,7 +168,8 @@ network_server_is_available (const NMBtVTableNetworkServer *vtable,
 
 static gboolean
 network_server_register_bridge (const NMBtVTableNetworkServer *vtable,
-                                const char *addr, const char *uuid, NMDevice *device)
+                                const char *addr,
+                                NMDevice *device)
 {
 	NMBluez5Manager *self = NETWORK_SERVER_VTABLE_GET_NM_BLUEZ5_MANAGER (vtable);
 	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
@@ -191,13 +190,12 @@ network_server_register_bridge (const NMBtVTableNetworkServer *vtable,
 	                        network_server->path,
 	                        NM_BLUEZ5_NETWORK_SERVER_INTERFACE,
 	                        "Register",
-	                        g_variant_new ("(ss)", uuid, nm_device_get_iface (device)),
+	                        g_variant_new ("(ss)", BLUETOOTH_CONNECT_NAP, nm_device_get_iface (device)),
 	                        NULL,
 	                        G_DBUS_CALL_FLAGS_NONE,
 	                        -1, NULL, NULL, NULL);
 
 	network_server->device = g_object_ref (device);
-	network_server->uuid = g_strdup (uuid);
 
 	return TRUE;
 }
