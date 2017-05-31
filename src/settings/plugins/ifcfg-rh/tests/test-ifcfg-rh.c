@@ -404,7 +404,6 @@ test_read_netmask_1 (void)
 {
 	nmtst_auto_unlinkfile char *testfile = NULL;
 	gs_unref_object NMConnection *connection = NULL;
-	gs_unref_object NMConnection *reread = NULL;
 	gs_free char *content = NULL;
 	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
