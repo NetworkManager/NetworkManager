@@ -645,7 +645,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
-	if (nm_connection_get_setting_infiniband (connection)) {
+	if (connection && nm_connection_get_setting_infiniband (connection)) {
 		if (strcmp (mode_new, "active-backup") != 0) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,

@@ -1787,6 +1787,9 @@ _nm_connection_verify_required_interface_name (NMConnection *connection,
 {
 	const char *interface_name;
 
+	if (!connection)
+		return TRUE;
+
 	interface_name = nm_connection_get_interface_name (connection);
 	if (interface_name)
 		return TRUE;
