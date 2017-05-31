@@ -372,7 +372,7 @@ _wait_for_signal_timeout (gpointer user_data)
 }
 
 guint
-nmtstp_wait_for_signal (NMPlatform *platform, guint timeout_ms)
+nmtstp_wait_for_signal (NMPlatform *platform, gint64 timeout_ms)
 {
 	WaitForSignalData data = { 0 };
 	gulong id_link, id_ip4_address, id_ip6_address, id_ip4_route, id_ip6_route;
@@ -387,8 +387,18 @@ nmtstp_wait_for_signal (NMPlatform *platform, guint timeout_ms)
 	id_ip4_route   = g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, G_CALLBACK (_wait_for_signal_cb), &data);
 	id_ip6_route   = g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, G_CALLBACK (_wait_for_signal_cb), &data);
 
-	if (timeout_ms != 0)
-		data.id = g_timeout_add (timeout_ms, _wait_for_signal_timeout, &data);
+	/* if timeout_ms is negative, it means the wait-time already expired.
+	 * Maybe, we should do nothing and return right away, without even
+	 * processing events from platform. However, that inconsistency (of not
+	 * processing events from mainloop) is inconvenient.
+	 *
+	 * It's better that on the return of nmtstp_wait_for_signal(), we always
+	 * have no events pending. So, a negative timeout is treated the same as
+	 * a zero timeout: we check whether there are any events pending in platform,
+	 * and quite the mainloop immediately afterwards. But we always check. */
+
+	data.id = g_timeout_add (CLAMP (timeout_ms, 0, G_MAXUINT32),
+	                         _wait_for_signal_timeout, &data);
 
 	g_main_loop_run (data.loop);
 
@@ -417,14 +427,14 @@ nmtstp_wait_for_signal_until (NMPlatform *platform, gint64 until_ms)
 		if (until_ms < now)
 			return 0;
 
-		signal_counts = nmtstp_wait_for_signal (platform, MAX (1, until_ms - now));
+		signal_counts = nmtstp_wait_for_signal (platform, until_ms - now);
 		if (signal_counts)
 			return signal_counts;
 	}
 }
 
 const NMPlatformLink *
-nmtstp_wait_for_link (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, guint timeout_ms)
+nmtstp_wait_for_link (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, gint64 timeout_ms)
 {
 	return nmtstp_wait_for_link_until (platform, ifname, expected_link_type, nm_utils_get_monotonic_timestamp_ms () + timeout_ms);
 }
@@ -448,7 +458,7 @@ nmtstp_wait_for_link_until (NMPlatform *platform, const char *ifname, NMLinkType
 		if (until_ms < now)
 			return NULL;
 
-		nmtstp_wait_for_signal (platform, MAX (1, until_ms - now));
+		nmtstp_wait_for_signal (platform, until_ms - now);
 	}
 }
 

@@ -93,9 +93,9 @@ int nmtstp_run_command (const char *format, ...) _nm_printf (1, 2);
 
 /*****************************************************************************/
 
-guint nmtstp_wait_for_signal (NMPlatform *platform, guint timeout_ms);
+guint nmtstp_wait_for_signal (NMPlatform *platform, gint64 timeout_ms);
 guint nmtstp_wait_for_signal_until (NMPlatform *platform, gint64 until_ms);
-const NMPlatformLink *nmtstp_wait_for_link (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, guint timeout_ms);
+const NMPlatformLink *nmtstp_wait_for_link (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, gint64 timeout_ms);
 const NMPlatformLink *nmtstp_wait_for_link_until (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, gint64 until_ms);
 
 #define nmtstp_assert_wait_for_signal(platform, timeout_ms) \
