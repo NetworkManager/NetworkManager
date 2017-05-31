@@ -138,12 +138,13 @@
 #define NMTST_WAIT(max_wait_ms, wait) \
 	({ \
 		gboolean _not_expired = TRUE; \
-		gint64 _nmtst_end, _nmtst_max_wait_us = (max_wait_ms) * 1000L; \
+		const gint64 nmtst_wait_start_us = g_get_monotonic_time (); \
+		const gint64 nmtst_wait_duration_us = (max_wait_ms) * 1000L; \
+		const gint64 nmtst_wait_end_us = nmtst_wait_start_us + nmtst_wait_duration_us; \
 		\
-		_nmtst_end = g_get_monotonic_time () + _nmtst_max_wait_us; \
 		while (TRUE) { \
 			{ wait }; \
-			if (g_get_monotonic_time () > _nmtst_end) { \
+			if (g_get_monotonic_time () > nmtst_wait_end_us) { \
 				_not_expired = FALSE; \
 				break; \
 			} \
