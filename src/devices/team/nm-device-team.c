@@ -568,7 +568,7 @@ teamd_start (NMDevice *device, NMConnection *connection)
 		/* Inject the hwaddr property into the JSON configuration.
 		 * While doing so, detect potential conflicts */
 
-		json = json_loads (config ?: "{}", 0, &jerror);
+		json = json_loads (config ?: "{}", JSON_REJECT_DUPLICATES, &jerror);
 		g_return_val_if_fail (json, FALSE);
 
 		hwaddr = json_object_get (json, "hwaddr");

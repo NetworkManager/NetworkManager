@@ -4317,7 +4317,7 @@ nm_utils_is_json_object (const char *str, GError **error)
 		return FALSE;
 	}
 
-	json = json_loads (str, 0, &jerror);
+	json = json_loads (str, JSON_REJECT_DUPLICATES, &jerror);
 	if (!json) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
@@ -4369,9 +4369,9 @@ _nm_utils_team_config_equal (const char *conf1,
 		return TRUE;
 
 	/* A NULL configuration is equivalent to default value '{}' */
-	json1 = json_loads (conf1 ?: "{}", 0, &jerror);
+	json1 = json_loads (conf1 ?: "{}", JSON_REJECT_DUPLICATES, &jerror);
 	if (json1)
-		json2 = json_loads (conf2 ?: "{}", 0, &jerror);
+		json2 = json_loads (conf2 ?: "{}", JSON_REJECT_DUPLICATES, &jerror);
 
 	if (!json1 || !json2) {
 		ret = FALSE;
