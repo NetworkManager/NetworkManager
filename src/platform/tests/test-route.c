@@ -31,6 +31,40 @@
 #define EX             NMTSTP_ENV1_EX
 
 static void
+_wait_for_ipv6_addr_non_tentative (NMPlatform *platform,
+                                   gint64 timeout_ms,
+                                   int ifindex,
+                                   guint addr_n,
+                                   const struct in6_addr *addrs)
+{
+	guint i;
+
+	/* Wait that the addresses become non-tentative.  Dummy interfaces are NOARP
+	 * and thus don't do DAD, but the kernel sets the address as tentative for a
+	 * small amount of time, which prevents the immediate addition of the route
+	 * with RTA_PREFSRC */
+
+	NMTST_WAIT_ASSERT (400, {
+		gboolean should_wait = FALSE;
+		const NMPlatformIP6Address *plt_addr;
+
+		for (i = 0; i < addr_n; i++) {
+			plt_addr = nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, addrs[i]);
+			if (   !plt_addr
+			    || NM_FLAGS_HAS (plt_addr->n_ifa_flags, IFA_F_TENTATIVE)) {
+				should_wait = TRUE;
+				break;
+			}
+		}
+		if (!should_wait)
+			return;
+		nmtstp_assert_wait_for_signal (NM_PLATFORM_GET,
+		                               (nmtst_wait_end_us - g_get_monotonic_time ()) / 1000);
+	});
+}
+
+
+static void
 ip4_route_callback (NMPlatform *platform, int obj_type_i, int ifindex, const NMPlatformIP4Route *received, int change_type_i, SignalData *data)
 {
 	const NMPObjectType obj_type = obj_type_i;
@@ -260,19 +294,7 @@ test_ip6_route (void)
 	                                       NM_PLATFORM_LIFETIME_PERMANENT, NM_PLATFORM_LIFETIME_PERMANENT, 0));
 	accept_signals (route_added, 0, 1);
 
-	/* Wait that the address becomes non-tentative.  Dummy interfaces are NOARP
-	 * and thus don't do DAD, but the kernel sets the address as tentative for a
-	 * small amount of time, which prevents the immediate addition of the route
-	 * with RTA_PREFSRC */
-	NMTST_WAIT_ASSERT (200, {
-		const NMPlatformIP6Address *plt_addr;
-
-		nmtstp_wait_for_signal (NM_PLATFORM_GET, 50);
-		nm_platform_process_events (NM_PLATFORM_GET);
-		plt_addr = nm_platform_ip6_address_get (NM_PLATFORM_GET, ifindex, pref_src);
-		if (plt_addr && !NM_FLAGS_HAS (plt_addr->n_ifa_flags, IFA_F_TENTATIVE))
-			break;
-	});
+	_wait_for_ipv6_addr_non_tentative (NM_PLATFORM_GET, 200, ifindex, 1, &pref_src);
 
 	/* Add route to gateway */
 	nmtstp_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, gateway, 128, in6addr_any, in6addr_any, metric, mss);
@@ -370,7 +392,6 @@ test_ip4_zero_gateway (void)
 	nmtstp_run_command_check ("ip route flush dev %s", DEVICE_NAME);
 
 	nmtstp_wait_for_signal (NM_PLATFORM_GET, 50);
-	nm_platform_process_events (NM_PLATFORM_GET);
 }
 
 static void
@@ -438,6 +459,7 @@ test_ip6_route_options (gconstpointer test_data)
 	NMPlatformIP6Route rts_add[RTS_MAX] = { };
 	NMPlatformIP6Route rts_cmp[RTS_MAX] = { };
 	NMPlatformIP6Address addr[1] = { };
+	struct in6_addr addr_in6[G_N_ELEMENTS (addr)] = { };
 	guint rts_n = 0;
 	guint addr_n = 0;
 	guint i;
@@ -484,7 +506,10 @@ test_ip6_route_options (gconstpointer test_data)
 	}
 
 	for (i = 0; i < addr_n; i++) {
-		g_assert (nm_platform_ip6_address_add (NM_PLATFORM_GET, IFINDEX,
+		g_assert (addr[i].ifindex == IFINDEX);
+		addr_in6[i] = addr[i].address;
+		g_assert (nm_platform_ip6_address_add (NM_PLATFORM_GET,
+		                                       IFINDEX,
 		                                       addr[i].address,
 		                                       addr[i].plen,
 		                                       addr[i].peer_address,
@@ -493,21 +518,7 @@ test_ip6_route_options (gconstpointer test_data)
 		                                       addr[i].n_ifa_flags));
 	}
 
-	/* Wait that the addresses become non-tentative.  Dummy interfaces are NOARP
-	 * and thus don't do DAD, but the kernel sets the address as tentative for a
-	 * small amount of time, which prevents the immediate addition of the route
-	 * with RTA_PREFSRC */
-	for (i = 0; i < addr_n; i++) {
-		NMTST_WAIT_ASSERT (200, {
-			const NMPlatformIP6Address *plt_addr;
-
-			nmtstp_wait_for_signal (NM_PLATFORM_GET, 50);
-			nm_platform_process_events (NM_PLATFORM_GET);
-			plt_addr = nm_platform_ip6_address_get (NM_PLATFORM_GET, addr[i].ifindex, addr[i].address);
-			if (plt_addr && !NM_FLAGS_HAS (plt_addr->n_ifa_flags, IFA_F_TENTATIVE))
-				break;
-		});
-	}
+	_wait_for_ipv6_addr_non_tentative (NM_PLATFORM_GET, 400, IFINDEX, addr_n, addr_in6);
 
 	for (i = 0; i < rts_n; i++)
 		g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, &rts_add[i]));
