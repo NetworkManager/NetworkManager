@@ -4366,23 +4366,10 @@ dnsmasq_state_changed_cb (NMDnsMasqManager *manager, guint32 status, gpointer us
 
 const NMBtVTableNetworkServer *nm_bt_vtable_network_server = NULL;
 
-static NMSettingBluetooth *
-_setting_bluetooth_for_bt_nap (NMConnection *connection)
-{
-	NMSettingBluetooth *s_bt = nm_connection_get_setting_bluetooth (connection);
-
-	if (!s_bt)
-		return NULL;
-	if (!nm_streq0 (nm_setting_bluetooth_get_connection_type (s_bt), NM_SETTING_BLUETOOTH_TYPE_NAP))
-		return NULL;
-
-	return s_bt;
-}
-
 static gboolean
 bt_network_server_available (NMConnection *connection)
 {
-	NMSettingBluetooth *s_bt = _setting_bluetooth_for_bt_nap (connection);
+	NMSettingBluetooth *s_bt = _nm_connection_get_setting_bluetooth_for_nap (connection);
 
 	if (!s_bt)
 		return TRUE;
@@ -4396,7 +4383,7 @@ static gboolean
 bt_network_server_register (NMDevice *self)
 {
 	NMConnection *connection = nm_device_get_applied_connection (self);
-	NMSettingBluetooth *s_bt = _setting_bluetooth_for_bt_nap (connection);
+	NMSettingBluetooth *s_bt = _nm_connection_get_setting_bluetooth_for_nap (connection);
 
 	if (!s_bt)
 		return TRUE;
@@ -4415,7 +4402,7 @@ bt_network_server_unregister (NMDevice *self)
 
 	if (!connection)
 		return;
-	s_bt = _setting_bluetooth_for_bt_nap (connection);
+	s_bt = _nm_connection_get_setting_bluetooth_for_nap (connection);
 	if (!s_bt)
 		return;
 

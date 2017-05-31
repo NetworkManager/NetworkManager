@@ -2518,6 +2518,17 @@ nm_connection_get_setting_vlan (NMConnection *connection)
 	return (NMSettingVlan *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VLAN);
 }
 
+NMSettingBluetooth *
+_nm_connection_get_setting_bluetooth_for_nap (NMConnection *connection)
+{
+	NMSettingBluetooth *s_bt = nm_connection_get_setting_bluetooth (connection);
+
+	if (   s_bt
+	    && nm_streq0 (nm_setting_bluetooth_get_connection_type (s_bt), NM_SETTING_BLUETOOTH_TYPE_NAP))
+		return s_bt;
+	return NULL;
+}
+
 /*****************************************************************************/
 
 static void
