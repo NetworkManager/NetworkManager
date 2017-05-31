@@ -3012,6 +3012,19 @@ realize_start_setup (NMDevice *self,
 
 	_add_capabilities (self, capabilities);
 
+	/* Update nm-owned flag according to state file */
+	if (   !priv->nm_owned
+	    && priv->ifindex > 0
+	    && nm_device_is_software (self)) {
+		gs_free NMConfigDeviceStateData *dev_state = NULL;
+
+		dev_state = nm_config_device_state_load (priv->ifindex);
+		if (dev_state && dev_state->nm_owned == TRUE) {
+			priv->nm_owned = TRUE;
+			_LOGD (LOGD_DEVICE, "set nm-owned from state file");
+		}
+	}
+
 	if (!priv->udi) {
 		/* Use a placeholder UDI until we get a real one */
 		priv->udi = g_strdup_printf ("/virtual/device/placeholder/%d", id++);
