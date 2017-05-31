@@ -66,6 +66,11 @@ G_DEFINE_TYPE (NMBluez5Manager, nm_bluez5_manager, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
+#define _NMLOG_DOMAIN LOGD_BT
+#define _NMLOG(level, ...) __NMLOG_DEFAULT (level, _NMLOG_DOMAIN, "bluez5", __VA_ARGS__)
+
+/*****************************************************************************/
+
 static void device_initialized (NMBluezDevice *device, gboolean success, NMBluez5Manager *self);
 static void device_usable (NMBluezDevice *device, GParamSpec *pspec, NMBluez5Manager *self);
 
@@ -125,14 +130,14 @@ device_usable (NMBluezDevice *device, GParamSpec *pspec, NMBluez5Manager *self)
 {
 	gboolean usable = nm_bluez_device_get_usable (device);
 
-	nm_log_dbg (LOGD_BT, "(%s): bluez device now %s",
-	            nm_bluez_device_get_path (device),
-	            usable ? "usable" : "unusable");
+	_LOGD ("(%s): bluez device now %s",
+	       nm_bluez_device_get_path (device),
+	       usable ? "usable" : "unusable");
 
 	if (usable) {
-		nm_log_dbg (LOGD_BT, "(%s): bluez device address %s",
-				    nm_bluez_device_get_path (device),
-				    nm_bluez_device_get_address (device));
+		_LOGD ("(%s): bluez device address %s",
+		       nm_bluez_device_get_path (device),
+		       nm_bluez_device_get_address (device));
 		emit_bdaddr_added (self, device);
 	} else
 		g_signal_emit_by_name (device, NM_BLUEZ_DEVICE_REMOVED);
@@ -143,9 +148,9 @@ device_initialized (NMBluezDevice *device, gboolean success, NMBluez5Manager *se
 {
 	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
 
-	nm_log_dbg (LOGD_BT, "(%s): bluez device %s",
-	            nm_bluez_device_get_path (device),
-	            success ? "initialized" : "failed to initialize");
+	_LOGD ("(%s): bluez device %s",
+	       nm_bluez_device_get_path (device),
+	       success ? "initialized" : "failed to initialize");
 	if (!success)
 		g_hash_table_remove (priv->devices, nm_bluez_device_get_path (device));
 }
@@ -161,7 +166,7 @@ device_added (GDBusProxy *proxy, const gchar *path, NMBluez5Manager *self)
 	g_signal_connect (device, "notify::usable", G_CALLBACK (device_usable), self);
 	g_hash_table_insert (priv->devices, (gpointer) nm_bluez_device_get_path (device), device);
 
-	nm_log_dbg (LOGD_BT, "(%s): new bluez device found", path);
+	_LOGD ("(%s): new bluez device found", path);
 }
 
 static void
@@ -170,7 +175,7 @@ device_removed (GDBusProxy *proxy, const gchar *path, NMBluez5Manager *self)
 	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
 	NMBluezDevice *device;
 
-	nm_log_dbg (LOGD_BT, "(%s): bluez device removed", path);
+	_LOGD ("(%s): bluez device removed", path);
 
 	device = g_hash_table_lookup (priv->devices, path);
 	if (device) {
@@ -215,10 +220,10 @@ get_managed_objects_cb (GDBusProxy *proxy,
 	                                      &error);
 	if (!variant) {
 		if (g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD))
-			nm_log_warn (LOGD_BT, "Couldn't get managed objects: not running Bluez5?");
+			_LOGW ("Couldn't get managed objects: not running Bluez5?");
 		else {
 			g_dbus_error_strip_remote_error (error);
-			nm_log_warn (LOGD_BT, "Couldn't get managed objects: %s", error->message);
+			_LOGW ("Couldn't get managed objects: %s", error->message);
 		}
 		g_clear_error (&error);
 		return;
@@ -248,7 +253,7 @@ on_proxy_acquired (GObject *object,
 	priv->proxy = g_dbus_proxy_new_for_bus_finish (res, &error);
 
 	if (!priv->proxy) {
-		nm_log_warn (LOGD_BT, "Couldn't acquire object manager proxy: %s", error->message);
+		_LOGW ("Couldn't acquire object manager proxy: %s", error->message);
 		g_clear_error (&error);
 		return;
 	}
