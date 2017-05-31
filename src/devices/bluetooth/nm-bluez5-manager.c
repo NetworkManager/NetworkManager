@@ -186,7 +186,7 @@ object_manager_interfaces_added (GDBusProxy      *proxy,
                                  GVariant        *dict,
                                  NMBluez5Manager *self)
 {
-	if (g_variant_lookup (dict, BLUEZ5_DEVICE_INTERFACE, "a{sv}", NULL))
+	if (g_variant_lookup (dict, NM_BLUEZ5_DEVICE_INTERFACE, "a{sv}", NULL))
 		device_added (proxy, path, self);
 }
 
@@ -196,7 +196,7 @@ object_manager_interfaces_removed (GDBusProxy       *proxy,
                                    const char      **ifaces,
                                    NMBluez5Manager  *self)
 {
-	if (ifaces && g_strv_contains (ifaces, BLUEZ5_DEVICE_INTERFACE))
+	if (ifaces && g_strv_contains (ifaces, NM_BLUEZ5_DEVICE_INTERFACE))
 		device_removed (proxy, path, self);
 }
 
@@ -225,7 +225,7 @@ get_managed_objects_cb (GDBusProxy *proxy,
 	}
 	g_variant_iter_init (&i, g_variant_get_child_value (variant, 0));
 	while ((g_variant_iter_next (&i, "{&o*}", &path, &ifaces))) {
-		if (g_variant_lookup_value (ifaces, BLUEZ5_DEVICE_INTERFACE,
+		if (g_variant_lookup_value (ifaces, NM_BLUEZ5_DEVICE_INTERFACE,
 		                            G_VARIANT_TYPE_DICTIONARY)) {
 			device_added (proxy, path, self);
 		}
@@ -281,9 +281,9 @@ bluez_connect (NMBluez5Manager *self)
 	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
 	                          G_DBUS_PROXY_FLAGS_NONE,
 	                          NULL,
-	                          BLUEZ_SERVICE,
-	                          BLUEZ_MANAGER_PATH,
-	                          OBJECT_MANAGER_INTERFACE,
+	                          NM_BLUEZ_SERVICE,
+	                          NM_BLUEZ_MANAGER_PATH,
+	                          NM_OBJECT_MANAGER_INTERFACE,
 	                          NULL,
 	                          (GAsyncReadyCallback) on_proxy_acquired,
 	                          self);

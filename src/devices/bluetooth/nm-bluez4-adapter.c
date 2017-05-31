@@ -364,9 +364,9 @@ nm_bluez4_adapter_new (const char *path, NMSettings *settings)
 	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
 	                          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
 	                          NULL,
-	                          BLUEZ_SERVICE,
+	                          NM_BLUEZ_SERVICE,
 	                          priv->path,
-	                          BLUEZ4_ADAPTER_INTERFACE,
+	                          NM_BLUEZ4_ADAPTER_INTERFACE,
 	                          priv->proxy_cancellable,
 	                          _proxy_new_cb,
 	                          self);

@@ -264,7 +264,7 @@ check_bluez_and_try_setup_final_step (NMBluezManager *self, int bluez_version, c
 		cleanup_checking (self, FALSE);
 		if (!priv->watch_name_id) {
 			priv->watch_name_id = g_bus_watch_name (G_BUS_TYPE_SYSTEM,
-			                                        BLUEZ_SERVICE,
+			                                        NM_BLUEZ_SERVICE,
 			                                        G_BUS_NAME_WATCHER_FLAGS_NONE,
 			                                        watch_name_on_appeared,
 			                                        NULL,
@@ -317,7 +317,7 @@ check_bluez_and_try_setup_do_introspect (GObject *source_object,
 	/* might not be the best approach to detect the version, but it's good enough in practice. */
 	if (strstr (xml_data, "org.freedesktop.DBus.ObjectManager"))
 		bluez_version = 5;
-	else if (strstr (xml_data, BLUEZ4_MANAGER_INTERFACE))
+	else if (strstr (xml_data, NM_BLUEZ4_MANAGER_INTERFACE))
 		bluez_version = 4;
 	else
 		reason = "unexpected introspect result";
@@ -380,7 +380,7 @@ check_bluez_and_try_setup (NMBluezManager *self)
 	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
 	                          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES | G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
 	                          NULL,
-	                          BLUEZ_SERVICE,
+	                          NM_BLUEZ_SERVICE,
 	                          "/",
 	                          DBUS_INTERFACE_INTROSPECTABLE,
 	                          priv->async_cancellable,
