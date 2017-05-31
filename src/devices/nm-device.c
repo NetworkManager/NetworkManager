@@ -263,7 +263,7 @@ typedef struct _NMDevicePrivate {
 
 	NMUtilsStableType current_stable_id_type:3;
 
-	bool          is_nm_owned:1; /* whether the device is a device owned and created by NM */
+	bool          nm_owned:1; /* whether the device is a device owned and created by NM */
 
 	GHashTable *  available_connections;
 	char *        hw_addr;
@@ -2069,7 +2069,7 @@ nm_device_master_release_one_slave (NMDevice *self, NMDevice *slave, gboolean co
 static gboolean
 can_unmanaged_external_down (NMDevice *self)
 {
-	return    !NM_DEVICE_GET_PRIVATE (self)->is_nm_owned
+	return    !NM_DEVICE_GET_PRIVATE (self)->nm_owned
 	       && nm_device_is_software (self);
 }
 
@@ -2810,9 +2810,9 @@ nm_device_create_and_realize (NMDevice *self,
 	const NMPlatformLink *plink = NULL;
 
 	/* Must be set before device is realized */
-	priv->is_nm_owned = !nm_platform_link_get_by_ifname (nm_device_get_platform (self), priv->iface);
+	priv->nm_owned = !nm_platform_link_get_by_ifname (nm_device_get_platform (self), priv->iface);
 
-	_LOGD (LOGD_DEVICE, "create (is %snm-owned)", priv->is_nm_owned ? "" : "not ");
+	_LOGD (LOGD_DEVICE, "create (is %snm-owned)", priv->nm_owned ? "" : "not ");
 
 	/* Create any resources the device needs */
 	if (NM_DEVICE_GET_CLASS (self)->create_and_realize) {
@@ -8619,9 +8619,9 @@ _update_ip4_address (NMDevice *self)
 }
 
 gboolean
-nm_device_get_is_nm_owned (NMDevice *self)
+nm_device_is_nm_owned (NMDevice *self)
 {
-	return NM_DEVICE_GET_PRIVATE (self)->is_nm_owned;
+	return NM_DEVICE_GET_PRIVATE (self)->nm_owned;
 }
 
 /*
@@ -8682,7 +8682,7 @@ delete_on_deactivate_check_and_schedule (NMDevice *self, int ifindex)
 
 	if (ifindex <= 0)
 		return;
-	if (!priv->is_nm_owned)
+	if (!priv->nm_owned)
 		return;
 	if (priv->queued_act_request)
 		return;
