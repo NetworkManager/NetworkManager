@@ -82,7 +82,8 @@
  *   Whether long-running tests are enabled is determined as follows (highest priority first):
  *     - specifying the value in NMTST_DEBUG has highest priority
  *     - respect g_test_quick(), if the command line contains '-mslow', '-mquick', '-mthorough'.
- *     - use compile time default
+ *     - use compile time default (CFLAGS=-DNMTST_TEST_QUICK=TRUE)
+ *     - enable slow tests by default
  *
  * "p=PATH"|"s=PATH": passes the path to g_test_init() as "-p" and "-s", respectively.
  *   Unfortunately, these options conflict with "--tap" which our makefile passes to the
