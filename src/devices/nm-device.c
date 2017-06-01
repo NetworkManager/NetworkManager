@@ -188,7 +188,6 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDevice,
 	PROP_IFINDEX,
 	PROP_AVAILABLE_CONNECTIONS,
 	PROP_PHYSICAL_PORT_ID,
-	PROP_IS_MASTER,
 	PROP_MASTER,
 	PROP_PARENT,
 	PROP_HW_ADDRESS,
@@ -451,7 +450,6 @@ typedef struct _NMDevicePrivate {
 	gulong          master_ready_id;
 
 	/* slave management */
-	bool            is_master;
 	CList           slaves;    /* list of SlaveInfo */
 
 	NMMetered       metered;
@@ -2192,7 +2190,7 @@ carrier_changed (NMDevice *self, gboolean carrier)
 	if (priv->ignore_carrier && !carrier)
 		return;
 
-	if (priv->is_master) {
+	if (nm_device_is_master (self)) {
 		/* Bridge/bond/team carrier does not affect its own activation,
 		 * but when carrier comes on, if there are slaves waiting,
 		 * it will restart them.
@@ -3531,7 +3529,9 @@ nm_device_master_release_slaves (NMDevice *self)
 gboolean
 nm_device_is_master (NMDevice *self)
 {
-	return NM_DEVICE_GET_PRIVATE (self)->is_master;
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	return NM_DEVICE_GET_CLASS (self)->is_master;
 }
 
 /**
@@ -4190,7 +4190,7 @@ nm_device_check_slave_connection_compatible (NMDevice *self, NMConnection *slave
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (!priv->is_master)
+	if (!nm_device_is_master (self))
 		return FALSE;
 
 	/* All masters should have connection type set */
@@ -6033,14 +6033,14 @@ act_stage3_ip4_config_start (NMDevice *self,
 	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
 
 	if (   connection_ip4_method_requires_carrier (connection, NULL)
-	    && priv->is_master
+	    && nm_device_is_master (self)
 	    && !priv->carrier) {
 		_LOGI (LOGD_IP4 | LOGD_DEVICE,
 		       "IPv4 config waiting until carrier is on");
 		return NM_ACT_STAGE_RETURN_IP_WAIT;
 	}
 
-	if (priv->is_master && ip4_requires_slaves (connection)) {
+	if (nm_device_is_master (self) && ip4_requires_slaves (connection)) {
 		/* If the master has no ready slaves, and depends on slaves for
 		 * a successful IPv4 attempt, then postpone IPv4 addressing.
 		 */
@@ -7634,14 +7634,14 @@ act_stage3_ip6_config_start (NMDevice *self,
 	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
 
 	if (   connection_ip6_method_requires_carrier (connection, NULL)
-	    && priv->is_master
+	    && nm_device_is_master (self)
 	    && !priv->carrier) {
 		_LOGI (LOGD_IP6 | LOGD_DEVICE,
 		       "IPv6 config waiting until carrier is on");
 		return NM_ACT_STAGE_RETURN_IP_WAIT;
 	}
 
-	if (priv->is_master && ip6_requires_slaves (connection)) {
+	if (nm_device_is_master (self) && ip6_requires_slaves (connection)) {
 		/* If the master has no ready slaves, and depends on slaves for
 		 * a successful IPv6 attempt, then postpone IPv6 addressing.
 		 */
@@ -13880,10 +13880,6 @@ set_property (GObject *object, guint prop_id,
 		/* construct-only */
 		priv->rfkill_type = g_value_get_uint (value);
 		break;
-	case PROP_IS_MASTER:
-		/* construct-only */
-		priv->is_master = g_value_get_boolean (value);
-		break;
 	case PROP_PERM_HW_ADDRESS:
 		/* construct-only */
 		priv->hw_addr_perm = g_value_dup_string (value);
@@ -14017,9 +14013,6 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PHYSICAL_PORT_ID:
 		g_value_set_string (value, priv->physical_port_id);
-		break;
-	case PROP_IS_MASTER:
-		g_value_set_boolean (value, priv->is_master);
 		break;
 	case PROP_MASTER:
 		g_value_set_object (value, nm_device_get_master (self));
@@ -14283,11 +14276,6 @@ nm_device_class_init (NMDeviceClass *klass)
 	                         NULL,
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
-	obj_properties[PROP_IS_MASTER] =
-	    g_param_spec_boolean (NM_DEVICE_IS_MASTER, "", "",
-	                          FALSE,
-	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-	                          G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_MASTER] =
 	    g_param_spec_object (NM_DEVICE_MASTER, "", "",
 	                         NM_TYPE_DEVICE,

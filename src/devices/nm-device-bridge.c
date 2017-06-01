@@ -494,6 +494,7 @@ create_and_realize (NMDevice *device,
 static void
 nm_device_bridge_init (NMDeviceBridge * self)
 {
+	nm_assert (nm_device_is_master (NM_DEVICE (self)));
 }
 
 static void
@@ -503,6 +504,7 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_BRIDGE_SETTING_NAME, NM_LINK_TYPE_BRIDGE)
 
+	parent_class->is_master = TRUE;
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->is_available = is_available;
 	parent_class->check_connection_compatible = check_connection_compatible;
@@ -543,7 +545,6 @@ create_device (NMDeviceFactory *factory,
 	                                  NM_DEVICE_TYPE_DESC, "Bridge",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_BRIDGE,
 	                                  NM_DEVICE_LINK_TYPE, NM_LINK_TYPE_BRIDGE,
-	                                  NM_DEVICE_IS_MASTER, TRUE,
 	                                  NULL);
 }
 
