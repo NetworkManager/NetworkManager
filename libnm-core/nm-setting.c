@@ -132,22 +132,17 @@ _nm_register_setting_impl (const char *name,
 {
 	SettingInfo *info;
 
-	g_return_if_fail (name != NULL && *name);
-	g_return_if_fail (type != G_TYPE_INVALID);
-	g_return_if_fail (type != G_TYPE_NONE);
+	nm_assert (name && *name);
+	nm_assert (!NM_IN_SET (type, G_TYPE_INVALID, G_TYPE_NONE));
+	nm_assert (priority != NM_SETTING_PRIORITY_INVALID);
 
 	_ensure_registered ();
 
-	if (G_LIKELY ((info = g_hash_table_lookup (registered_settings, name)))) {
-		g_return_if_fail (info->type == type);
-		g_return_if_fail (info->priority == priority);
-		g_return_if_fail (g_strcmp0 (info->name, name) == 0);
-		return;
-	}
-	g_return_if_fail (g_hash_table_lookup (registered_settings_by_type, &type) == NULL);
+	nm_assert (!g_hash_table_lookup (registered_settings, name));
+	nm_assert (!g_hash_table_lookup (registered_settings_by_type, &type));
 
-	if (priority == NM_SETTING_PRIORITY_CONNECTION)
-		g_assert_cmpstr (name, ==, NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_assert (   priority != NM_SETTING_PRIORITY_CONNECTION
+	           || nm_streq (name, NM_SETTING_CONNECTION_SETTING_NAME));
 
 	info = g_slice_new0 (SettingInfo);
 	info->type = type;
