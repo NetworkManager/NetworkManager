@@ -3830,6 +3830,14 @@ nm_device_is_available (NMDevice *self, NMDeviceCheckDevAvailableFlags flags)
 }
 
 gboolean
+nm_device_ignore_carrier_by_default (NMDevice *self)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	return FALSE;
+}
+
+gboolean
 nm_device_get_enabled (NMDevice *self)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);

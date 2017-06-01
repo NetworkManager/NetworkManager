@@ -493,6 +493,8 @@ NMSetting *     nm_device_get_applied_setting   (NMDevice *dev, GType setting_ty
 
 void            nm_device_removed               (NMDevice *self, gboolean unconfigure_ip_config);
 
+gboolean        nm_device_ignore_carrier_by_default (NMDevice *self);
+
 gboolean        nm_device_is_available          (NMDevice *dev, NMDeviceCheckDevAvailableFlags flags);
 gboolean        nm_device_has_carrier           (NMDevice *dev);
 
