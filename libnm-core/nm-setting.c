@@ -118,7 +118,7 @@ _ensure_registered_constructor (void)
 /*****************************************************************************/
 
 /*
- * _nm_register_setting:
+ * _nm_register_setting_impl:
  * @name: the name of the #NMSetting object to register
  * @type: the #GType of the #NMSetting
  * @priority: the sort priority of the setting, see below
@@ -151,9 +151,9 @@ _ensure_registered_constructor (void)
  * 10: NMSettingUser
  */
 void
-(_nm_register_setting) (const char *name,
-                        const GType type,
-                        const guint32 priority)
+_nm_register_setting_impl (const char *name,
+                           const GType type,
+                           const guint32 priority)
 {
 	SettingInfo *info;
 

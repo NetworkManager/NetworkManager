@@ -27,13 +27,13 @@
 
 #include "nm-core-internal.h"
 
-void _nm_register_setting (const char *name,
-                           const GType type,
-                           const guint32 priority);
+void _nm_register_setting_impl (const char *name,
+                                const GType type,
+                                const guint32 priority);
 
 #define _nm_register_setting(name, priority) \
 	G_STMT_START { \
-		_nm_register_setting (NM_SETTING_ ## name ## _SETTING_NAME "", g_define_type_id, priority); \
+		_nm_register_setting_impl ("" NM_SETTING_ ## name ## _SETTING_NAME "", g_define_type_id, priority); \
 	} G_STMT_END
 
 guint32 _nm_setting_get_base_type_priority (NMSetting *setting);
