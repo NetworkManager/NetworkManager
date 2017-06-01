@@ -598,11 +598,14 @@ _nm_connection_find_base_type_setting (NMConnection *connection)
 				continue;
 			} else if (s_iter_prio == setting_prio) {
 				NMSettingConnection *s_con = nm_connection_get_setting_connection (connection);
+				const char *type;
 
-				if (!s_con)
-					return NULL;
-				return nm_connection_get_setting_by_name (connection,
-					nm_setting_connection_get_connection_type (s_con));
+				if (s_con) {
+					type = nm_setting_connection_get_connection_type (s_con);
+					if (type)
+						return nm_connection_get_setting_by_name (connection, type);
+				}
+				return NULL;
 			}
 		}
 		setting = s_iter;
