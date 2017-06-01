@@ -142,7 +142,45 @@ NMConnection *_nm_simple_connection_new_from_dbus (GVariant      *dict,
                                                    NMSettingParseFlags parse_flags,
                                                    GError       **error);
 
-guint32 _nm_setting_get_setting_priority (NMSetting *setting);
+/*
+ * A setting's priority should roughly follow the OSI layer model, but it also
+ * controls which settings get asked for secrets first.  Thus settings which
+ * relate to things that must be working first, like hardware, should get a
+ * higher priority than things which layer on top of the hardware.  For example,
+ * the GSM/CDMA settings should provide secrets before the PPP setting does,
+ * because a PIN is required to unlock the device before PPP can even start.
+ * Even settings without secrets should be assigned the right priority.
+ *
+ * 0: reserved for the Connection setting
+ *
+ * 1,2: hardware-related settings like Ethernet, Wi-Fi, InfiniBand, Bridge, etc.
+ * These priority 1 settings are also "base types", which means that at least
+ * one of them is required for the connection to be valid, and their name is
+ * valid in the 'type' property of the Connection setting.
+ *
+ * 3: hardware-related auxiliary settings that require a base setting to be
+ * successful first, like Wi-Fi security, 802.1x, etc.
+ *
+ * 4: hardware-independent settings that are required before IP connectivity
+ * can be established, like PPP, PPPoE, etc.
+ *
+ * 5: IP-level stuff
+ *
+ * 10: NMSettingUser
+ */
+typedef enum { /*< skip >*/
+	NM_SETTING_PRIORITY_CONNECTION  = 0,
+	NM_SETTING_PRIORITY_HW_BASE     = 1,
+	NM_SETTING_PRIORITY_HW_NON_BASE = 2,
+	NM_SETTING_PRIORITY_HW_AUX      = 3,
+	NM_SETTING_PRIORITY_AUX         = 4,
+	NM_SETTING_PRIORITY_IP          = 5,
+	NM_SETTING_PRIORITY_USER        = 10,
+
+	NM_SETTING_PRIORITY_INVALID     = 0,
+} NMSettingPriority;
+
+NMSettingPriority _nm_setting_get_setting_priority (NMSetting *setting);
 
 gboolean _nm_setting_get_property (NMSetting *setting, const char *name, GValue *value);
 

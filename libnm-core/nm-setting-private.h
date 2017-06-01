@@ -28,16 +28,16 @@
 #include "nm-core-internal.h"
 
 void _nm_register_setting_impl (const char *name,
-                                const GType type,
-                                const guint32 priority);
+                                GType type,
+                                NMSettingPriority priority);
 
 #define _nm_register_setting(name, priority) \
 	G_STMT_START { \
 		_nm_register_setting_impl ("" NM_SETTING_ ## name ## _SETTING_NAME "", g_define_type_id, priority); \
 	} G_STMT_END
 
-guint32 _nm_setting_get_base_type_priority (NMSetting *setting);
-guint32 _nm_setting_type_get_base_type_priority (GType type);
+NMSettingPriority _nm_setting_get_base_type_priority (NMSetting *setting);
+NMSettingPriority _nm_setting_type_get_base_type_priority (GType type);
 gint _nm_setting_compare_priority (gconstpointer a, gconstpointer b);
 
 typedef enum NMSettingUpdateSecretResult {

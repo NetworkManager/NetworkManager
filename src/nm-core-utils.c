@@ -2292,7 +2292,7 @@ _log_connection_sort_hashes_fcn (gconstpointer a, gconstpointer b)
 {
 	const LogConnectionSettingData *v1 = a;
 	const LogConnectionSettingData *v2 = b;
-	guint32 p1, p2;
+	NMSettingPriority p1, p2;
 	NMSetting *s1, *s2;
 
 	s1 = v1->setting ? v1->setting : v1->diff_base_setting;

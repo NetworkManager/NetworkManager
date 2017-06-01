@@ -585,12 +585,12 @@ _nm_connection_find_base_type_setting (NMConnection *connection)
 	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (connection);
 	GHashTableIter iter;
 	NMSetting *setting = NULL, *s_iter;
-	guint32 setting_prio, s_iter_prio;
+	NMSettingPriority setting_prio, s_iter_prio;
 
 	g_hash_table_iter_init (&iter, priv->settings);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &s_iter)) {
 		s_iter_prio = _nm_setting_get_base_type_priority (s_iter);
-		if (!s_iter_prio)
+		if (s_iter_prio == NM_SETTING_PRIORITY_INVALID)
 			continue;
 
 		if (setting) {
@@ -1670,7 +1670,7 @@ nm_connection_is_type (NMConnection *connection, const char *type)
 	if (!setting)
 		return FALSE;
 
-	return !!_nm_setting_get_base_type_priority (setting);
+	return _nm_setting_get_base_type_priority (setting) != NM_SETTING_PRIORITY_INVALID;
 }
 
 static int

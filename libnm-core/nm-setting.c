@@ -60,7 +60,7 @@ G_DEFINE_ABSTRACT_TYPE (NMSetting, nm_setting, G_TYPE_OBJECT)
 typedef struct {
 	const char *name;
 	GType type;
-	guint32 priority;
+	NMSettingPriority priority;
 } SettingInfo;
 
 typedef struct {
@@ -121,39 +121,14 @@ _ensure_registered_constructor (void)
  * _nm_register_setting_impl:
  * @name: the name of the #NMSetting object to register
  * @type: the #GType of the #NMSetting
- * @priority: the sort priority of the setting, see below
+ * @priority: the sort priority of the setting, see #NMSettingPriority
  *
  * INTERNAL ONLY: registers a setting's internal properties with libnm.
- *
- * A setting's priority should roughly follow the OSI layer model, but it also
- * controls which settings get asked for secrets first.  Thus settings which
- * relate to things that must be working first, like hardware, should get a
- * higher priority than things which layer on top of the hardware.  For example,
- * the GSM/CDMA settings should provide secrets before the PPP setting does,
- * because a PIN is required to unlock the device before PPP can even start.
- * Even settings without secrets should be assigned the right priority.
- *
- * 0: reserved for the Connection setting
- *
- * 1,2: hardware-related settings like Ethernet, Wi-Fi, InfiniBand, Bridge, etc.
- * These priority 1 settings are also "base types", which means that at least
- * one of them is required for the connection to be valid, and their name is
- * valid in the 'type' property of the Connection setting.
- *
- * 3: hardware-related auxiliary settings that require a base setting to be
- * successful first, like Wi-Fi security, 802.1x, etc.
- *
- * 4: hardware-independent settings that are required before IP connectivity
- * can be established, like PPP, PPPoE, etc.
- *
- * 5: IP-level stuff
- *
- * 10: NMSettingUser
  */
 void
 _nm_register_setting_impl (const char *name,
-                           const GType type,
-                           const guint32 priority)
+                           GType type,
+                           NMSettingPriority priority)
 {
 	SettingInfo *info;
 
@@ -171,7 +146,7 @@ _nm_register_setting_impl (const char *name,
 	}
 	g_return_if_fail (g_hash_table_lookup (registered_settings_by_type, &type) == NULL);
 
-	if (priority == 0)
+	if (priority == NM_SETTING_PRIORITY_CONNECTION)
 		g_assert_cmpstr (name, ==, NM_SETTING_CONNECTION_SETTING_NAME);
 
 	info = g_slice_new0 (SettingInfo);
@@ -189,7 +164,7 @@ _nm_setting_lookup_setting_by_type (GType type)
 	return g_hash_table_lookup (registered_settings_by_type, &type);
 }
 
-static guint32
+static NMSettingPriority
 _get_setting_type_priority (GType type)
 {
 	const SettingInfo *info;
@@ -200,7 +175,7 @@ _get_setting_type_priority (GType type)
 	return info->priority;
 }
 
-guint32
+NMSettingPriority
 _nm_setting_get_setting_priority (NMSetting *setting)
 {
 	NMSettingPrivate *priv;
@@ -211,10 +186,10 @@ _nm_setting_get_setting_priority (NMSetting *setting)
 	return priv->info->priority;
 }
 
-guint32
+NMSettingPriority
 _nm_setting_type_get_base_type_priority (GType type)
 {
-	guint32 priority;
+	NMSettingPriority priority;
 
 	/* Historical oddity: PPPoE is a base-type even though it's not
 	 * priority 1.  It needs to be sorted *after* lower-level stuff like
@@ -222,13 +197,16 @@ _nm_setting_type_get_base_type_priority (GType type)
 	 * base type.
 	 */
 	priority = _get_setting_type_priority (type);
-	if (priority == 1 || priority == 2 || (type == NM_TYPE_SETTING_PPPOE))
+	if (   NM_IN_SET (priority,
+	                  NM_SETTING_PRIORITY_HW_BASE,
+	                  NM_SETTING_PRIORITY_HW_NON_BASE)
+	    || type == NM_TYPE_SETTING_PPPOE)
 		return priority;
 	else
-		return 0;
+		return NM_SETTING_PRIORITY_INVALID;
 }
 
-guint32
+NMSettingPriority
 _nm_setting_get_base_type_priority (NMSetting *setting)
 {
 	return _nm_setting_type_get_base_type_priority (G_OBJECT_TYPE (setting));
@@ -259,7 +237,7 @@ nm_setting_lookup_type (const char *name)
 gint
 _nm_setting_compare_priority (gconstpointer a, gconstpointer b)
 {
-	guint32 prio_a, prio_b;
+	NMSettingPriority prio_a, prio_b;
 
 	prio_a = _nm_setting_get_setting_priority ((NMSetting *) a);
 	prio_b = _nm_setting_get_setting_priority ((NMSetting *) b);
