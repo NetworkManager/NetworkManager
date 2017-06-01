@@ -1867,8 +1867,10 @@ recheck_assume_connection (NMManager *self,
 	_LOGD (LOGD_DEVICE, "(%s): will attempt to assume connection",
 	       nm_device_get_iface (device));
 
-	if (!generated)
-		nm_device_sys_iface_state_set (device, NM_DEVICE_SYS_IFACE_STATE_ASSUME);
+	nm_device_sys_iface_state_set (device,
+	                               generated
+	                                   ? NM_DEVICE_SYS_IFACE_STATE_EXTERNAL
+	                                   : NM_DEVICE_SYS_IFACE_STATE_ASSUME);
 
 	/* Move device to DISCONNECTED to activate the connection */
 	if (state == NM_DEVICE_STATE_UNMANAGED) {
