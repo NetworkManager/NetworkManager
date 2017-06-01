@@ -151,33 +151,34 @@ NMConnection *_nm_simple_connection_new_from_dbus (GVariant      *dict,
  * because a PIN is required to unlock the device before PPP can even start.
  * Even settings without secrets should be assigned the right priority.
  *
- * 0: reserved for the Connection setting
+ * 0: reserved for invalid
  *
- * 1,2: hardware-related settings like Ethernet, Wi-Fi, InfiniBand, Bridge, etc.
+ * 1: reserved for the Connection setting
+ *
+ * 2,3: hardware-related settings like Ethernet, Wi-Fi, InfiniBand, Bridge, etc.
  * These priority 1 settings are also "base types", which means that at least
  * one of them is required for the connection to be valid, and their name is
  * valid in the 'type' property of the Connection setting.
  *
- * 3: hardware-related auxiliary settings that require a base setting to be
+ * 4: hardware-related auxiliary settings that require a base setting to be
  * successful first, like Wi-Fi security, 802.1x, etc.
  *
- * 4: hardware-independent settings that are required before IP connectivity
+ * 5: hardware-independent settings that are required before IP connectivity
  * can be established, like PPP, PPPoE, etc.
  *
- * 5: IP-level stuff
+ * 6: IP-level stuff
  *
  * 10: NMSettingUser
  */
 typedef enum { /*< skip >*/
-	NM_SETTING_PRIORITY_CONNECTION  = 0,
-	NM_SETTING_PRIORITY_HW_BASE     = 1,
-	NM_SETTING_PRIORITY_HW_NON_BASE = 2,
-	NM_SETTING_PRIORITY_HW_AUX      = 3,
-	NM_SETTING_PRIORITY_AUX         = 4,
-	NM_SETTING_PRIORITY_IP          = 5,
-	NM_SETTING_PRIORITY_USER        = 10,
-
 	NM_SETTING_PRIORITY_INVALID     = 0,
+	NM_SETTING_PRIORITY_CONNECTION  = 1,
+	NM_SETTING_PRIORITY_HW_BASE     = 2,
+	NM_SETTING_PRIORITY_HW_NON_BASE = 3,
+	NM_SETTING_PRIORITY_HW_AUX      = 4,
+	NM_SETTING_PRIORITY_AUX         = 5,
+	NM_SETTING_PRIORITY_IP          = 6,
+	NM_SETTING_PRIORITY_USER        = 10,
 } NMSettingPriority;
 
 NMSettingPriority _nm_setting_get_setting_priority (NMSetting *setting);
