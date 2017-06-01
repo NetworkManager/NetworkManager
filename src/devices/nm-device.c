@@ -4364,56 +4364,6 @@ dnsmasq_state_changed_cb (NMDnsMasqManager *manager, guint32 status, gpointer us
 
 /*****************************************************************************/
 
-const NMBtVTableNetworkServer *nm_bt_vtable_network_server = NULL;
-
-static gboolean
-bt_network_server_available (NMConnection *connection)
-{
-	NMSettingBluetooth *s_bt = _nm_connection_get_setting_bluetooth_for_nap (connection);
-
-	if (!s_bt)
-		return TRUE;
-	if (!nm_bt_vtable_network_server)
-		return FALSE;
-	return nm_bt_vtable_network_server->is_available (nm_bt_vtable_network_server,
-	                                                  nm_setting_bluetooth_get_bdaddr (s_bt));
-}
-
-static gboolean
-bt_network_server_register (NMDevice *self)
-{
-	NMConnection *connection = nm_device_get_applied_connection (self);
-	NMSettingBluetooth *s_bt = _nm_connection_get_setting_bluetooth_for_nap (connection);
-
-	if (!s_bt)
-		return TRUE;
-	if (!nm_bt_vtable_network_server)
-		return FALSE;
-	return nm_bt_vtable_network_server->register_bridge (nm_bt_vtable_network_server,
-	                                                     nm_setting_bluetooth_get_bdaddr (s_bt),
-	                                                     self);
-}
-
-static void
-bt_network_server_unregister (NMDevice *self)
-{
-	NMConnection *connection = nm_device_get_applied_connection (self);
-	NMSettingBluetooth *s_bt;
-
-	if (!connection)
-		return;
-	s_bt = _nm_connection_get_setting_bluetooth_for_nap (connection);
-	if (!s_bt)
-		return;
-
-	if (!nm_bt_vtable_network_server)
-		return;
-	nm_bt_vtable_network_server->unregister_bridge (nm_bt_vtable_network_server,
-	                                                self);
-}
-
-/*****************************************************************************/
-
 static gboolean
 activation_source_handle_cb4 (gpointer user_data)
 {
@@ -4797,12 +4747,6 @@ activate_stage2_device_config (NMDevice *self)
 		         && nm_device_sys_iface_state_is_external (self)
 		         && slave_state <= NM_DEVICE_STATE_DISCONNECTED)
 			nm_device_queue_recheck_assume (info->slave);
-	}
-
-	if (!bt_network_server_register (self)) {
-		/* The HCI we could use is no longer present. */
-		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_REMOVED);
-		return;
 	}
 
 	lldp_init (self, TRUE);
@@ -11494,9 +11438,6 @@ _nm_device_check_connection_available (NMDevice *self,
 {
 	NMDeviceState state;
 
-	if (!bt_network_server_available (connection))
-		return FALSE;
-
 	/* an unrealized software device is always available, hardware devices never. */
 	if (!nm_device_is_real (self)) {
 		if (nm_device_is_software (self))
@@ -11937,8 +11878,6 @@ _cleanup_generic_pre (NMDevice *self, CleanupType cleanup_type)
 	g_clear_object (&priv->fw_mgr);
 
 	queued_state_clear (self);
-
-	bt_network_server_unregister (self);
 
 	_cleanup_ip4_pre (self, cleanup_type);
 	_cleanup_ip6_pre (self, cleanup_type);

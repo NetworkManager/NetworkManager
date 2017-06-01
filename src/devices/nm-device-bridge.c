@@ -49,6 +49,56 @@ G_DEFINE_TYPE (NMDeviceBridge, nm_device_bridge, NM_TYPE_DEVICE)
 
 /*****************************************************************************/
 
+const NMBtVTableNetworkServer *nm_bt_vtable_network_server = NULL;
+
+static gboolean
+bt_network_server_available (NMConnection *connection)
+{
+	NMSettingBluetooth *s_bt = _nm_connection_get_setting_bluetooth_for_nap (connection);
+
+	if (!s_bt)
+		return TRUE;
+	if (!nm_bt_vtable_network_server)
+		return FALSE;
+	return nm_bt_vtable_network_server->is_available (nm_bt_vtable_network_server,
+	                                                  nm_setting_bluetooth_get_bdaddr (s_bt));
+}
+
+static gboolean
+bt_network_server_register (NMDevice *self)
+{
+	NMConnection *connection = nm_device_get_applied_connection (self);
+	NMSettingBluetooth *s_bt = _nm_connection_get_setting_bluetooth_for_nap (connection);
+
+	if (!s_bt)
+		return TRUE;
+	if (!nm_bt_vtable_network_server)
+		return FALSE;
+	return nm_bt_vtable_network_server->register_bridge (nm_bt_vtable_network_server,
+	                                                     nm_setting_bluetooth_get_bdaddr (s_bt),
+	                                                     self);
+}
+
+static void
+bt_network_server_unregister (NMDevice *self)
+{
+	NMConnection *connection = nm_device_get_applied_connection (self);
+	NMSettingBluetooth *s_bt;
+
+	if (!connection)
+		return;
+	s_bt = _nm_connection_get_setting_bluetooth_for_nap (connection);
+	if (!s_bt)
+		return;
+
+	if (!nm_bt_vtable_network_server)
+		return;
+	nm_bt_vtable_network_server->unregister_bridge (nm_bt_vtable_network_server,
+	                                                self);
+}
+
+/*****************************************************************************/
+
 static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *dev)
 {
@@ -67,6 +117,9 @@ check_connection_available (NMDevice *device,
                             NMDeviceCheckConAvailableFlags flags,
                             const char *specific_object)
 {
+	if (!bt_network_server_available (connection))
+		return FALSE;
+
 	/* Connections are always available because the carrier state is determined
 	 * by the bridge port carrier states, not the bridge's state.
 	 */
@@ -324,6 +377,24 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
+static NMActStageReturn
+act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
+{
+	if (!bt_network_server_register (device)) {
+		/* The HCI we could use is no longer present. */
+		*out_failure_reason = NM_DEVICE_STATE_REASON_REMOVED;
+		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
+
+	return NM_ACT_STAGE_RETURN_SUCCESS;
+}
+
+static void
+deactivate (NMDevice *device)
+{
+	bt_network_server_unregister (device);
+}
+
 static gboolean
 enslave_slave (NMDevice *device,
                NMDevice *slave,
@@ -443,6 +514,8 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 
 	parent_class->create_and_realize = create_and_realize;
 	parent_class->act_stage1_prepare = act_stage1_prepare;
+	parent_class->act_stage2_config = act_stage2_config;
+	parent_class->deactivate = deactivate;
 	parent_class->enslave_slave = enslave_slave;
 	parent_class->release_slave = release_slave;
 	parent_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;

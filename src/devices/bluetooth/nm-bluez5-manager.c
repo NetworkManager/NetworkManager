@@ -33,7 +33,7 @@
 #include "nm-utils/c-list.h"
 #include "nm-bluez-device.h"
 #include "nm-bluez-common.h"
-#include "devices/nm-device.h"
+#include "devices/nm-device-bridge.h"
 #include "settings/nm-settings.h"
 
 /*****************************************************************************/

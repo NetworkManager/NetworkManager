@@ -716,6 +716,4 @@ struct _NMBtVTableNetworkServer {
 	                               NMDevice *device);
 };
 
-extern const NMBtVTableNetworkServer *nm_bt_vtable_network_server;
-
 #endif /* __NETWORKMANAGER_DEVICE_H__ */
