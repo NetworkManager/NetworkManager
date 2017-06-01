@@ -331,12 +331,10 @@ nm_device_factory_manager_for_each_factory (NMDeviceFactoryManagerFactoryFunc ca
 
 static gboolean
 _add_factory (NMDeviceFactory *factory,
-              gboolean check_duplicates,
               const char *path,
               NMDeviceFactoryManagerFactoryFunc callback,
               gpointer user_data)
 {
-	NMDeviceFactory *found = NULL;
 	const NMLinkType *link_types = NULL;
 	const char *const*setting_types = NULL;
 	int i;
@@ -345,16 +343,6 @@ _add_factory (NMDeviceFactory *factory,
 	g_return_val_if_fail (factories_by_setting, FALSE);
 
 	nm_device_factory_get_supported_types (factory, &link_types, &setting_types);
-	if (check_duplicates) {
-		found = find_factory (link_types, setting_types);
-		if (found) {
-			nm_log_warn (LOGD_PLATFORM, "Loading device plugin failed: multiple plugins "
-			             "for same type (using '%s' instead of '%s')",
-			             (char *) g_object_get_qdata (G_OBJECT (found), plugin_path_quark ()),
-			             path);
-			return FALSE;
-		}
-	}
 
 	g_object_set_qdata_full (G_OBJECT (factory), plugin_path_quark (), g_strdup (path), g_free);
 	for (i = 0; link_types && link_types[i] > NM_LINK_TYPE_UNKNOWN; i++)
@@ -376,7 +364,7 @@ _load_internal_factory (GType factory_gtype,
 	NMDeviceFactory *factory;
 
 	factory = (NMDeviceFactory *) g_object_new (factory_gtype, NULL);
-	_add_factory (factory, FALSE, "internal", callback, user_data);
+	_add_factory (factory, "internal", callback, user_data);
 }
 
 void
@@ -451,7 +439,7 @@ nm_device_factory_manager_load_factories (NMDeviceFactoryManagerFactoryFunc call
 		}
 		g_clear_error (&error);
 
-		_add_factory (factory, TRUE, g_module_name (plugin), callback, user_data);
+		_add_factory (factory, g_module_name (plugin), callback, user_data);
 
 		g_object_unref (factory);
 	}
