@@ -13464,6 +13464,12 @@ nm_device_get_initial_hw_address (NMDevice *self)
 gboolean
 nm_device_spec_match_list (NMDevice *self, const GSList *specs)
 {
+	return nm_device_spec_match_list_full (self, specs, FALSE);
+}
+
+int
+nm_device_spec_match_list_full (NMDevice *self, const GSList *specs, int no_match_value)
+{
 	NMDeviceClass *klass;
 	NMMatchSpecMatchType m;
 
@@ -13478,7 +13484,17 @@ nm_device_spec_match_list (NMDevice *self, const GSList *specs)
 	                          nm_device_get_driver_version (self),
 	                          nm_device_get_permanent_hw_address (self),
 	                          klass->get_s390_subchannels ? klass->get_s390_subchannels (self) : NULL);
-	return m == NM_MATCH_SPEC_MATCH;
+
+	switch (m) {
+	case NM_MATCH_SPEC_MATCH:
+		return TRUE;
+	case NM_MATCH_SPEC_NEG_MATCH:
+		return FALSE;
+	case NM_MATCH_SPEC_NO_MATCH:
+		return no_match_value;
+	}
+	nm_assert_not_reached ();
+	return no_match_value;
 }
 
 guint

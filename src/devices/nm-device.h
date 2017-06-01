@@ -507,6 +507,7 @@ gboolean nm_device_check_slave_connection_compatible (NMDevice *device, NMConnec
 gboolean nm_device_unmanage_on_quit (NMDevice *self);
 
 gboolean nm_device_spec_match_list (NMDevice *device, const GSList *specs);
+int      nm_device_spec_match_list_full (NMDevice *self, const GSList *specs, int no_match_value);
 
 gboolean nm_device_is_activating (NMDevice *dev);
 gboolean nm_device_autoconnect_allowed (NMDevice *self);
