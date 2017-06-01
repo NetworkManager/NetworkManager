@@ -8268,7 +8268,7 @@ arp_announce (NMDevice *self)
 }
 
 static void
-activate_stage5_ip4_config_commit (NMDevice *self)
+activate_stage5_ip4_config_result (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActRequest *req;
@@ -8340,7 +8340,7 @@ nm_device_activate_schedule_ip4_config_result (NMDevice *self, NMIP4Config *conf
 	if (config)
 		priv->dev_ip4_config = g_object_ref (config);
 
-	activation_source_schedule (self, activate_stage5_ip4_config_commit, AF_INET);
+	activation_source_schedule (self, activate_stage5_ip4_config_result, AF_INET);
 }
 
 gboolean
@@ -10540,7 +10540,7 @@ update_ip4_config (NMDevice *self, gboolean initial)
 	 */
 	if (   !initial
 	    && activation_source_is_scheduled (self,
-	                                       activate_stage5_ip4_config_commit,
+	                                       activate_stage5_ip4_config_result,
 	                                       AF_INET)) {
 		priv->queued_ip4_config_pending = FALSE;
 		priv->queued_ip4_config_id = g_idle_add (queued_ip4_config_change, self);
@@ -13523,7 +13523,7 @@ _activation_func_to_string (ActivationHandleFunc func)
 	FUNC_TO_STRING_CHECK_AND_RETURN (func, activate_stage3_ip_config_start);
 	FUNC_TO_STRING_CHECK_AND_RETURN (func, activate_stage4_ip4_config_timeout);
 	FUNC_TO_STRING_CHECK_AND_RETURN (func, activate_stage4_ip6_config_timeout);
-	FUNC_TO_STRING_CHECK_AND_RETURN (func, activate_stage5_ip4_config_commit);
+	FUNC_TO_STRING_CHECK_AND_RETURN (func, activate_stage5_ip4_config_result);
 	FUNC_TO_STRING_CHECK_AND_RETURN (func, activate_stage5_ip6_config_commit);
 	g_return_val_if_reached ("unknown");
 }
