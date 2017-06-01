@@ -1804,10 +1804,10 @@ property as well.
       <row>
         <entry align="left">bt-type</entry>
         <entry align="left"><link linkend="nm-settings.property.bluetooth.type">bluetooth.type</link></entry>
-        <entry align="left" valign="top">Apart from the usual <literal>dun</literal> and
-<literal>panu</literal> options, the values of <literal>dun-gsm</literal>
-and <literal>dun-cdma</literal> can be used for compatibility with older
-versions. They are equivalent to using <literal>dun</literal> and setting
+        <entry align="left" valign="top">Apart from the usual <literal>panu</literal>,
+<literal>nap</literal> and <literal>dun</literal> options, the values of
+<literal>dun-gsm</literal> and <literal>dun-cdma</literal> can be used for compatibility
+with older versions. They are equivalent to using <literal>dun</literal> and setting
 appropriate <literal>gsm.*</literal> or <literal>cdma.*</literal> properties.</entry>
       </row>
     </tbody>

@@ -140,11 +140,15 @@ typedef struct {
 	 * @factory: the #NMDeviceFactory
 	 * @component: a new component which existing devices may wish to claim
 	 *
-	 * The factory emits this signal when it finds a new component.  For example,
-	 * the WWAN factory may indicate that a new modem is available, which an
-	 * existing Bluetooth device may wish to claim.  If no device claims the
-	 * component, the plugin is allowed to create a new #NMDevice instance for
-	 * that component and emit the "device-added" signal.
+	 * The factory emits this signal when an appearance of some component
+	 * native to it could be interesting to some of the already existing devices.
+	 * The devices then indicate if they took interest in claiming the component.
+	 *
+	 * For example, the WWAN factory may indicate that a new modem is available,
+	 * which an existing Bluetooth device may wish to claim. It emits a signal
+	 * passing the modem instance around to see if any device claims it.
+	 * If no device claims the component, the plugin is allowed to create a new
+	 * #NMDevice instance for that component and emit the "device-added" signal.
 	 *
 	 * Returns: %TRUE if the component was claimed by a device, %FALSE if not
 	 */

@@ -35,4 +35,6 @@ typedef struct _NMDeviceBridgeClass NMDeviceBridgeClass;
 
 GType nm_device_bridge_get_type (void);
 
+extern const NMBtVTableNetworkServer *nm_bt_vtable_network_server;
+
 #endif /* __NETWORKMANAGER_DEVICE_BRIDGE_H__ */

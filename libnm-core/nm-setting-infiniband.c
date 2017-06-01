@@ -181,7 +181,7 @@ nm_setting_infiniband_get_virtual_interface_name (NMSettingInfiniband *setting)
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
-	NMSettingConnection *s_con;
+	NMSettingConnection *s_con = NULL;
 	NMSettingInfinibandPrivate *priv = NM_SETTING_INFINIBAND_GET_PRIVATE (setting);
 	guint32 normerr_max_mtu = 0;
 
@@ -241,7 +241,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
-	s_con = nm_connection_get_setting_connection (connection);
+	if (connection)
+		s_con = nm_connection_get_setting_connection (connection);
 	if (s_con) {
 		const char *interface_name = nm_setting_connection_get_interface_name (s_con);
 		GError *tmp_error = NULL;

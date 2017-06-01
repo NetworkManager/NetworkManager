@@ -3291,13 +3291,25 @@ gboolean
 nm_device_notify_component_added (NMDevice *self, GObject *component)
 {
 	NMDeviceClass *klass;
+	NMDevicePrivate *priv;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
-	g_return_val_if_fail (G_IS_OBJECT (component), FALSE);
 
+	priv = NM_DEVICE_GET_PRIVATE (self);
 	klass = NM_DEVICE_GET_CLASS (self);
+
+	if (priv->state == NM_DEVICE_STATE_DISCONNECTED) {
+		/* A device could have stayed disconnected because it would
+		 * want to register with a network server that now become
+		 * available. */
+		nm_device_recheck_available_connections (self);
+		if (g_hash_table_size (priv->available_connections) > 0)
+			nm_device_emit_recheck_auto_activate (self);
+	}
+
 	if (klass->component_added)
 		return klass->component_added (self, component);
+
 	return FALSE;
 }
 

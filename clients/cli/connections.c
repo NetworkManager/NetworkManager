@@ -301,7 +301,7 @@ usage_connection_add (void)
 	              "                  [parent <ifname>]\n"
 	              "                  [p-key <IPoIB P_Key>]\n\n"
 	              "    bluetooth:    [addr <bluetooth address>]\n"
-	              "                  [bt-type panu|dun-gsm|dun-cdma]\n\n"
+	              "                  [bt-type panu|nap|dun-gsm|dun-cdma]\n\n"
 	              "    vlan:         dev <parent device (connection UUID, ifname, or MAC)>\n"
 	              "                  id <VLAN ID>\n"
 	              "                  [flags <VLAN flags>]\n"
@@ -3769,7 +3769,7 @@ gen_func_bool_values_l10n (const char *text, int state)
 static char *
 gen_func_bt_type (const char *text, int state)
 {
-	const char *words[] = { "panu", "dun-gsm", "dun-cdma", NULL };
+	const char *words[] = { "panu", "nap", "dun-gsm", "dun-cdma", NULL };
 	return nmc_rl_gen_func_basic (text, state, words);
 }
 
@@ -3991,13 +3991,14 @@ set_bluetooth_type (NmCli *nmc, NMConnection *con, const OptionInfo *option, con
 		value = NM_SETTING_BLUETOOTH_TYPE_DUN;
 		setting = nm_setting_cdma_new ();
 		nm_connection_add_setting (con, setting);
-	} else if (!strcmp (value, NM_SETTING_BLUETOOTH_TYPE_PANU)) {
+	} else if (!strcmp (value, NM_SETTING_BLUETOOTH_TYPE_PANU) || !strcmp (value, NM_SETTING_BLUETOOTH_TYPE_NAP)) {
 		/* no op */
 	} else {
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-		             _("Error: 'bt-type': '%s' not valid; use [%s, %s (%s), %s]."),
-		             value, NM_SETTING_BLUETOOTH_TYPE_PANU, NM_SETTING_BLUETOOTH_TYPE_DUN,
-		             NM_SETTING_BLUETOOTH_TYPE_DUN"-gsm", NM_SETTING_BLUETOOTH_TYPE_DUN"-cdma");
+		             _("Error: 'bt-type': '%s' not valid; use [%s, %s, %s (%s), %s]."),
+		             value, NM_SETTING_BLUETOOTH_TYPE_PANU, NM_SETTING_BLUETOOTH_TYPE_NAP,
+		             NM_SETTING_BLUETOOTH_TYPE_DUN, NM_SETTING_BLUETOOTH_TYPE_DUN"-gsm",
+		             NM_SETTING_BLUETOOTH_TYPE_DUN"-cdma");
 		return FALSE;
 	}
 

@@ -38,7 +38,7 @@
  **/
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingSerial, nm_setting_serial, NM_TYPE_SETTING,
-                         _nm_register_setting (SERIAL, 2))
+                         _nm_register_setting (SERIAL, 3))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_SERIAL)
 
 #define NM_SETTING_SERIAL_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_SERIAL, NMSettingSerialPrivate))

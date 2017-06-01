@@ -25,6 +25,7 @@
 #include <string.h>
 #include <net/ethernet.h>
 
+#include "nm-connection-private.h"
 #include "nm-setting-bluetooth.h"
 #include "nm-setting-cdma.h"
 #include "nm-setting-gsm.h"
@@ -43,7 +44,7 @@
  **/
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingBluetooth, nm_setting_bluetooth, NM_TYPE_SETTING,
-                         _nm_register_setting (BLUETOOTH, 1))
+                         _nm_register_setting (BLUETOOTH, 2))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_BLUETOOTH)
 
 #define NM_SETTING_BLUETOOTH_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BLUETOOTH, NMSettingBluetoothPrivate))
@@ -80,8 +81,8 @@ NMSetting *nm_setting_bluetooth_new (void)
  * Returns the connection method for communicating with the remote device (i.e.
  * either DUN to a DUN-capable device or PANU to a NAP-capable device).
  *
- * Returns: the type, either %NM_SETTING_BLUETOOTH_TYPE_PANU or
- * %NM_SETTING_BLUETOOTH_TYPE_DUN
+ * Returns: the type, either %NM_SETTING_BLUETOOTH_TYPE_PANU,
+ * %NM_SETTING_BLUETOOTH_TYPE_NAP or %NM_SETTING_BLUETOOTH_TYPE_DUN
  **/
 const char *
 nm_setting_bluetooth_get_connection_type (NMSettingBluetooth *setting)
@@ -113,16 +114,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingBluetoothPrivate *priv = NM_SETTING_BLUETOOTH_GET_PRIVATE (setting);
 
-	if (!priv->bdaddr) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
-		                     _("property is missing"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME, NM_SETTING_BLUETOOTH_BDADDR);
-		return FALSE;
-	}
-
-	if (!nm_utils_hwaddr_valid (priv->bdaddr, ETH_ALEN)) {
+	if (priv->bdaddr && !nm_utils_hwaddr_valid (priv->bdaddr, ETH_ALEN)) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -139,6 +131,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME, NM_SETTING_BLUETOOTH_TYPE);
 		return FALSE;
 	} else if (!g_str_equal (priv->type, NM_SETTING_BLUETOOTH_TYPE_DUN) &&
+	           !g_str_equal (priv->type, NM_SETTING_BLUETOOTH_TYPE_NAP) &&
 	           !g_str_equal (priv->type, NM_SETTING_BLUETOOTH_TYPE_PANU)) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
@@ -175,6 +168,31 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	/* PANU doesn't need a 'type' setting since no further configuration
 	 * is required at the interface level.
 	 */
+
+	/* NAP mode needs a bridge setting, and a bridge needs a name. */
+	if (!strcmp (priv->type, NM_SETTING_BLUETOOTH_TYPE_NAP)) {
+		if (!_nm_connection_verify_required_interface_name (connection, error))
+			return FALSE;
+		if (connection && !nm_connection_get_setting_bridge (connection)) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_SETTING,
+			             _("'%s' connection requires '%s' setting"),
+			             NM_SETTING_BLUETOOTH_TYPE_NAP,
+			             NM_SETTING_BRIDGE_SETTING_NAME);
+			g_prefix_error (error, "%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME);
+			return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+		}
+	} else {
+		if (!priv->bdaddr) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
+			                     _("property is missing"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME, NM_SETTING_BLUETOOTH_BDADDR);
+			return FALSE;
+		}
+	}
 
 	return TRUE;
 }

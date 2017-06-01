@@ -135,18 +135,18 @@ _ensure_registered_constructor (void)
  *
  * 0: reserved for the Connection setting
  *
- * 1: hardware-related settings like Ethernet, Wi-Fi, InfiniBand, Bridge, etc.
+ * 1,2: hardware-related settings like Ethernet, Wi-Fi, InfiniBand, Bridge, etc.
  * These priority 1 settings are also "base types", which means that at least
  * one of them is required for the connection to be valid, and their name is
  * valid in the 'type' property of the Connection setting.
  *
- * 2: hardware-related auxiliary settings that require a base setting to be
+ * 3: hardware-related auxiliary settings that require a base setting to be
  * successful first, like Wi-Fi security, 802.1x, etc.
  *
- * 3: hardware-independent settings that are required before IP connectivity
+ * 4: hardware-independent settings that are required before IP connectivity
  * can be established, like PPP, PPPoE, etc.
  *
- * 4: IP-level stuff
+ * 5: IP-level stuff
  *
  * 10: NMSettingUser
  */
@@ -211,21 +211,27 @@ _nm_setting_get_setting_priority (NMSetting *setting)
 	return priv->info->priority;
 }
 
-gboolean
-_nm_setting_type_is_base_type (GType type)
+guint32
+_nm_setting_type_get_base_type_priority (GType type)
 {
+	guint32 priority;
+
 	/* Historical oddity: PPPoE is a base-type even though it's not
 	 * priority 1.  It needs to be sorted *after* lower-level stuff like
 	 * Wi-Fi security or 802.1x for secrets, but it's still allowed as a
 	 * base type.
 	 */
-	return _get_setting_type_priority (type) == 1 || (type == NM_TYPE_SETTING_PPPOE);
+	priority = _get_setting_type_priority (type);
+	if (priority == 1 || priority == 2 || (type == NM_TYPE_SETTING_PPPOE))
+		return priority;
+	else
+		return 0;
 }
 
-gboolean
-_nm_setting_is_base_type (NMSetting *setting)
+guint32
+_nm_setting_get_base_type_priority (NMSetting *setting)
 {
-	return _nm_setting_type_is_base_type (G_OBJECT_TYPE (setting));
+	return _nm_setting_type_get_base_type_priority (G_OBJECT_TYPE (setting));
 }
 
 /**

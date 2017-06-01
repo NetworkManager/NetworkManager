@@ -61,7 +61,7 @@
  **/
 
 G_DEFINE_TYPE_WITH_CODE (NMSetting8021x, nm_setting_802_1x, NM_TYPE_SETTING,
-                         _nm_register_setting (802_1X, 2))
+                         _nm_register_setting (802_1X, 3))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_802_1X)
 
 #define NM_SETTING_802_1X_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_802_1X, NMSetting8021xPrivate))

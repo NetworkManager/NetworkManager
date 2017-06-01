@@ -585,19 +585,28 @@ _nm_connection_find_base_type_setting (NMConnection *connection)
 	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (connection);
 	GHashTableIter iter;
 	NMSetting *setting = NULL, *s_iter;
+	guint32 setting_prio, s_iter_prio;
 
 	g_hash_table_iter_init (&iter, priv->settings);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &s_iter)) {
-		if (!_nm_setting_is_base_type (s_iter))
+		s_iter_prio = _nm_setting_get_base_type_priority (s_iter);
+		if (!s_iter_prio)
 			continue;
 
 		if (setting) {
-			/* FIXME: currently, if there is more than one matching base type,
-			 * we cannot detect the base setting.
-			 * See: https://bugzilla.gnome.org/show_bug.cgi?id=696936#c8 */
-			return NULL;
+			if (s_iter_prio > setting_prio) {
+				continue;
+			} else if (s_iter_prio == setting_prio) {
+				NMSettingConnection *s_con = nm_connection_get_setting_connection (connection);
+
+				if (!s_con)
+					return NULL;
+				return nm_connection_get_setting_by_name (connection,
+					nm_setting_connection_get_connection_type (s_con));
+			}
 		}
 		setting = s_iter;
+		setting_prio = s_iter_prio;
 	}
 	return setting;
 }
@@ -993,13 +1002,25 @@ _normalize_team_port_config (NMConnection *self, GHashTable *parameters)
 static gboolean
 _normalize_required_settings (NMConnection *self, GHashTable *parameters)
 {
+	NMSettingBluetooth *s_bt = nm_connection_get_setting_bluetooth (self);
+	NMSetting *s_bridge;
+	gboolean changed = FALSE;
+
 	if (nm_connection_get_setting_vlan (self)) {
 		if (!nm_connection_get_setting_wired (self)) {
 			nm_connection_add_setting (self, nm_setting_wired_new ());
-			return TRUE;
+			changed = TRUE;
 		}
 	}
-	return FALSE;
+	if (s_bt && nm_streq0 (nm_setting_bluetooth_get_connection_type (s_bt), NM_SETTING_BLUETOOTH_TYPE_NAP)) {
+		if (!nm_connection_get_setting_bridge (self)) {
+			s_bridge = nm_setting_bridge_new ();
+			g_object_set (s_bridge, NM_SETTING_BRIDGE_STP, FALSE, NULL);
+			nm_connection_add_setting (self, s_bridge);
+			changed = TRUE;
+		}
+	}
+	return changed;
 }
 
 static gboolean
@@ -1609,19 +1630,16 @@ nm_connection_to_dbus (NMConnection *connection,
 gboolean
 nm_connection_is_type (NMConnection *connection, const char *type)
 {
-	NMSettingConnection *s_con;
-	const char *type2;
+	NMSetting *setting;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (type != NULL, FALSE);
 
-	s_con = nm_connection_get_setting_connection (connection);
-	if (!s_con)
+	setting = nm_connection_get_setting_by_name (connection, type);
+	if (!setting)
 		return FALSE;
 
-	type2 = nm_setting_connection_get_connection_type (s_con);
-
-	return (g_strcmp0 (type2, type) == 0);
+	return !!_nm_setting_get_base_type_priority (setting);
 }
 
 static int
@@ -1787,6 +1805,9 @@ _nm_connection_verify_required_interface_name (NMConnection *connection,
 {
 	const char *interface_name;
 
+	if (!connection)
+		return TRUE;
+
 	interface_name = nm_connection_get_interface_name (connection);
 	if (interface_name)
 		return TRUE;
@@ -1847,22 +1868,19 @@ nm_connection_get_id (NMConnection *connection)
  * nm_connection_get_connection_type:
  * @connection: the #NMConnection
  *
- * A shortcut to return the type from the connection's #NMSettingConnection.
- *
- * Returns: the type from the connection's 'connection' setting
+ * Returns: the connection's base type.
  **/
 const char *
 nm_connection_get_connection_type (NMConnection *connection)
 {
-	NMSettingConnection *s_con;
+	NMSetting *setting;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
-	s_con = nm_connection_get_setting_connection (connection);
-	if (!s_con)
+	setting = _nm_connection_find_base_type_setting (connection);
+	if (!setting)
 		return NULL;
-
-	return nm_setting_connection_get_connection_type (s_con);
+	return nm_setting_get_name (setting);
 }
 
 /**
@@ -1877,9 +1895,8 @@ nm_connection_get_connection_type (NMConnection *connection)
 gboolean
 nm_connection_is_virtual (NMConnection *connection)
 {
-	const char *type;
+	const char *type = nm_connection_get_connection_type (connection);
 
-	type = nm_connection_get_connection_type (connection);
 	g_return_val_if_fail (type != NULL, FALSE);
 
 	if (   !strcmp (type, NM_SETTING_BOND_SETTING_NAME)
@@ -2499,6 +2516,17 @@ nm_connection_get_setting_vlan (NMConnection *connection)
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingVlan *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VLAN);
+}
+
+NMSettingBluetooth *
+_nm_connection_get_setting_bluetooth_for_nap (NMConnection *connection)
+{
+	NMSettingBluetooth *s_bt = nm_connection_get_setting_bluetooth (connection);
+
+	if (   s_bt
+	    && nm_streq0 (nm_setting_bluetooth_get_connection_type (s_bt), NM_SETTING_BLUETOOTH_TYPE_NAP))
+		return s_bt;
+	return NULL;
 }
 
 /*****************************************************************************/

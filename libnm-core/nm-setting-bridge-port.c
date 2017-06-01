@@ -41,7 +41,7 @@
  **/
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingBridgePort, nm_setting_bridge_port, NM_TYPE_SETTING,
-                         _nm_register_setting (BRIDGE_PORT, 3))
+                         _nm_register_setting (BRIDGE_PORT, 4))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_BRIDGE_PORT)
 
 #define NM_SETTING_BRIDGE_PORT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BRIDGE_PORT, NMSettingBridgePortPrivate))

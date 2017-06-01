@@ -55,7 +55,6 @@ nm_device_factory_emit_component_added (NMDeviceFactory *factory, GObject *compo
 	gboolean consumed = FALSE;
 
 	g_return_val_if_fail (NM_IS_DEVICE_FACTORY (factory), FALSE);
-	g_return_val_if_fail (G_IS_OBJECT (component), FALSE);
 
 	g_signal_emit (factory, signals[COMPONENT_ADDED], 0, component, &consumed);
 	return consumed;

@@ -296,9 +296,9 @@ nm_bluez4_manager_init (NMBluez4Manager *self)
 	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
 	                          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
 	                          NULL,
-	                          BLUEZ_SERVICE,
-	                          BLUEZ_MANAGER_PATH,
-	                          BLUEZ4_MANAGER_INTERFACE,
+	                          NM_BLUEZ_SERVICE,
+	                          NM_BLUEZ_MANAGER_PATH,
+	                          NM_BLUEZ4_MANAGER_INTERFACE,
 	                          priv->proxy_cancellable,
 	                          _proxy_new_cb,
 	                          self);

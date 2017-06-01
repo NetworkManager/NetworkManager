@@ -465,7 +465,7 @@ nm_bluez_device_disconnect (NMBluezDevice *self)
 			if (!priv->b4_iface)
 				goto out;
 			args = g_variant_new ("(s)", priv->b4_iface),
-			dbus_iface = BLUEZ4_SERIAL_INTERFACE;
+			dbus_iface = NM_BLUEZ4_SERIAL_INTERFACE;
 		} else if (priv->bluez_version == 5) {
 #if WITH_BLUEZ5_DUN
 			nm_bluez5_dun_cleanup (priv->b5_dun_context);
@@ -475,16 +475,16 @@ nm_bluez_device_disconnect (NMBluezDevice *self)
 		}
 	} else if (priv->connection_bt_type == NM_BT_CAPABILITY_NAP) {
 		if (priv->bluez_version == 4)
-			dbus_iface = BLUEZ4_NETWORK_INTERFACE;
+			dbus_iface = NM_BLUEZ4_NETWORK_INTERFACE;
 		else if (priv->bluez_version == 5)
-			dbus_iface = BLUEZ5_NETWORK_INTERFACE;
+			dbus_iface = NM_BLUEZ5_NETWORK_INTERFACE;
 		else
 			g_assert_not_reached ();
 	} else
 		g_assert_not_reached ();
 
 	g_dbus_connection_call (priv->dbus_connection,
-	                        BLUEZ_SERVICE,
+	                        NM_BLUEZ_SERVICE,
 	                        priv->path,
 	                        dbus_iface,
 	                        "Disconnect",
@@ -577,13 +577,13 @@ nm_bluez_device_connect_async (NMBluezDevice *self,
 	if (connection_bt_type == NM_BT_CAPABILITY_NAP) {
 		connect_type = BLUETOOTH_CONNECT_NAP;
 		if (priv->bluez_version == 4)
-			dbus_iface = BLUEZ4_NETWORK_INTERFACE;
+			dbus_iface = NM_BLUEZ4_NETWORK_INTERFACE;
 		else if (priv->bluez_version == 5)
-			dbus_iface = BLUEZ5_NETWORK_INTERFACE;
+			dbus_iface = NM_BLUEZ5_NETWORK_INTERFACE;
 	} else if (connection_bt_type == NM_BT_CAPABILITY_DUN) {
 		connect_type = BLUETOOTH_CONNECT_DUN;
 		if (priv->bluez_version == 4)
-			dbus_iface = BLUEZ4_SERIAL_INTERFACE;
+			dbus_iface = NM_BLUEZ4_SERIAL_INTERFACE;
 		else if (priv->bluez_version == 5) {
 #if WITH_BLUEZ5_DUN
 			if (priv->b5_dun_context == NULL)
@@ -602,7 +602,7 @@ nm_bluez_device_connect_async (NMBluezDevice *self,
 		g_assert_not_reached ();
 
 	g_dbus_connection_call (priv->dbus_connection,
-	                        BLUEZ_SERVICE,
+	                        NM_BLUEZ_SERVICE,
 	                        priv->path,
 	                        dbus_iface,
 	                        "Connect",
@@ -972,9 +972,9 @@ query_properties (NMBluezDevice *self)
 			g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
 			                          G_DBUS_PROXY_FLAGS_NONE,
 			                          NULL,
-			                          BLUEZ_SERVICE,
+			                          NM_BLUEZ_SERVICE,
 			                          g_variant_get_string (v, NULL),
-			                          BLUEZ5_ADAPTER_INTERFACE,
+			                          NM_BLUEZ5_ADAPTER_INTERFACE,
 			                          NULL,
 			                          (GAsyncReadyCallback) adapter5_on_acquired,
 			                          g_object_ref (self));
@@ -1134,17 +1134,17 @@ nm_bluez_device_new (const char *path,
 
 	switch (priv->bluez_version) {
 	case 4:
-		interface_name = BLUEZ4_DEVICE_INTERFACE;
+		interface_name = NM_BLUEZ4_DEVICE_INTERFACE;
 		break;
 	case 5:
-		interface_name = BLUEZ5_DEVICE_INTERFACE;
+		interface_name = NM_BLUEZ5_DEVICE_INTERFACE;
 		break;
 	}
 
 	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
 	                          G_DBUS_PROXY_FLAGS_NONE,
 	                          NULL,
-	                          BLUEZ_SERVICE,
+	                          NM_BLUEZ_SERVICE,
 	                          priv->path,
 	                          interface_name,
 	                          NULL,

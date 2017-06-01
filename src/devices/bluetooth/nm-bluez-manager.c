@@ -146,7 +146,7 @@ cleanup_checking (NMBluezManager *self, gboolean do_unwatch_name)
 
 
 static void
-manager_bdaddr_added_cb (NMBluez4Manager *bluez_mgr,
+manager_bdaddr_added_cb (GObject *manager,
                          NMBluezDevice *bt_device,
                          const char *bdaddr,
                          const char *name,
@@ -177,6 +177,13 @@ manager_bdaddr_added_cb (NMBluez4Manager *bluez_mgr,
 	       has_nap ? "NAP" : "");
 	g_signal_emit_by_name (self, NM_DEVICE_FACTORY_DEVICE_ADDED, device);
 	g_object_unref (device);
+}
+
+static void
+manager_network_server_added_cb (GObject *manager,
+                                 gpointer user_data)
+{
+	nm_device_factory_emit_component_added (NM_DEVICE_FACTORY (user_data), NULL);
 }
 
 static void
@@ -228,6 +235,10 @@ setup_bluez5 (NMBluezManager *self)
 	                  NM_BLUEZ_MANAGER_BDADDR_ADDED,
 	                  G_CALLBACK (manager_bdaddr_added_cb),
 	                  self);
+	g_signal_connect (manager,
+	                  NM_BLUEZ_MANAGER_NETWORK_SERVER_ADDED,
+	                  G_CALLBACK (manager_network_server_added_cb),
+	                  self);
 
 	nm_bluez5_manager_query_devices (manager);
 }
@@ -264,7 +275,7 @@ check_bluez_and_try_setup_final_step (NMBluezManager *self, int bluez_version, c
 		cleanup_checking (self, FALSE);
 		if (!priv->watch_name_id) {
 			priv->watch_name_id = g_bus_watch_name (G_BUS_TYPE_SYSTEM,
-			                                        BLUEZ_SERVICE,
+			                                        NM_BLUEZ_SERVICE,
 			                                        G_BUS_NAME_WATCHER_FLAGS_NONE,
 			                                        watch_name_on_appeared,
 			                                        NULL,
@@ -317,7 +328,7 @@ check_bluez_and_try_setup_do_introspect (GObject *source_object,
 	/* might not be the best approach to detect the version, but it's good enough in practice. */
 	if (strstr (xml_data, "org.freedesktop.DBus.ObjectManager"))
 		bluez_version = 5;
-	else if (strstr (xml_data, BLUEZ4_MANAGER_INTERFACE))
+	else if (strstr (xml_data, NM_BLUEZ4_MANAGER_INTERFACE))
 		bluez_version = 4;
 	else
 		reason = "unexpected introspect result";
@@ -380,7 +391,7 @@ check_bluez_and_try_setup (NMBluezManager *self)
 	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
 	                          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES | G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
 	                          NULL,
-	                          BLUEZ_SERVICE,
+	                          NM_BLUEZ_SERVICE,
 	                          "/",
 	                          DBUS_INTERFACE_INTROSPECTABLE,
 	                          priv->async_cancellable,
@@ -427,7 +438,7 @@ dispose (GObject *object)
 		g_clear_object (&priv->manager4);
 	}
 	if (priv->manager5) {
-		g_signal_handlers_disconnect_by_func (priv->manager5, manager_bdaddr_added_cb, self);
+		g_signal_handlers_disconnect_by_data (priv->manager5, self);
 		g_clear_object (&priv->manager5);
 	}
 

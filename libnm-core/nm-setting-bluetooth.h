@@ -54,10 +54,18 @@ G_BEGIN_DECLS
 /**
  * NM_SETTING_BLUETOOTH_TYPE_PANU:
  *
- * Connection type describing a connection to devices that support the Bluetooth
- * NAP (Network Access Point) protocol, which accepts connections via PANU.
+ * Connection type describing PANU connection to a Bluetooth NAP (Network
+ * Access Point).
  */
 #define NM_SETTING_BLUETOOTH_TYPE_PANU "panu"
+
+/**
+ * NM_SETTING_BLUETOOTH_TYPE_NAP:
+ *
+ * Connection type describing a Bluetooth NAP (Network Access Point),
+ * which accepts PANU clients.
+ */
+#define NM_SETTING_BLUETOOTH_TYPE_NAP "nap"
 
 /**
  * NMSettingBluetooth:
