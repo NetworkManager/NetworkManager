@@ -38,6 +38,7 @@ AC_PROG_MKDIR_P
 # Prefer gcc-* variants; the ones libtool would choose don't work with LTO
 AC_CHECK_TOOLS(AR, [gcc-ar ar], false)
 AC_CHECK_TOOLS(RANLIB, [gcc-ranlib ranlib], :)
+AC_CHECK_TOOLS(NM, [$BINUTILS_NM gcc-nm nm])
 
 dnl Initialize libtool
 LT_PREREQ([2.2])
@@ -1198,8 +1199,6 @@ else
 	fi
 fi
 AC_SUBST(NM_LOG_COMPILER, 'LOG_COMPILER = "$(top_srcdir)/tools/run-nm-test.sh" --called-from-make "$(LIBTOOL)" "$(with_valgrind)" "'"$with_valgrind_suppressions"'" --launch-dbus=auto')
-
-AC_PATH_TOOL(BINUTILS_NM, nm, nm)
 
 AM_PATH_PYTHON([], [], [PYTHON=python])
 AC_SUBST(PYTHON, [$PYTHON])
