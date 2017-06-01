@@ -136,8 +136,16 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 		return FALSE;
 
 	s_bridge = nm_connection_get_setting_bridge (connection);
-	if (!s_bridge || !nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME))
+	if (!s_bridge)
 		return FALSE;
+
+	if (!nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME)) {
+		if (   nm_connection_is_type (connection, NM_SETTING_BLUETOOTH_SETTING_NAME)
+		    && _nm_connection_get_setting_bluetooth_for_nap (connection)) {
+			/* a bluetooth NAP connection is handled by the bridge */
+		} else
+			return FALSE;
+	}
 
 	mac_address = nm_setting_bridge_get_mac_address (s_bridge);
 	if (mac_address && nm_device_is_real (device)) {

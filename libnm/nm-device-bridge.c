@@ -107,9 +107,14 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 		return FALSE;
 
 	if (!nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME)) {
-		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
-		                     _("The connection was not a bridge connection."));
-		return FALSE;
+		if (   _nm_connection_get_setting_bluetooth_for_nap (connection)
+		    && nm_connection_is_type (connection, NM_SETTING_BLUETOOTH_SETTING_NAME)) {
+			/* a bluetooth NAP setting is a compatible connection for a bridge. */
+		} else {
+			g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+			                     _("The connection was not a bridge connection."));
+			return FALSE;
+		}
 	}
 
 	/* FIXME: check ports? */

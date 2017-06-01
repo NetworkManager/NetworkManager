@@ -1664,16 +1664,9 @@ nm_connection_to_dbus (NMConnection *connection,
 gboolean
 nm_connection_is_type (NMConnection *connection, const char *type)
 {
-	NMSetting *setting;
+	g_return_val_if_fail (type, FALSE);
 
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
-	g_return_val_if_fail (type != NULL, FALSE);
-
-	setting = nm_connection_get_setting_by_name (connection, type);
-	if (!setting)
-		return FALSE;
-
-	return _nm_setting_get_base_type_priority (setting) != NM_SETTING_PRIORITY_INVALID;
+	return nm_streq0 (type, nm_connection_get_connection_type (connection));
 }
 
 static int
@@ -1902,19 +1895,22 @@ nm_connection_get_id (NMConnection *connection)
  * nm_connection_get_connection_type:
  * @connection: the #NMConnection
  *
- * Returns: the connection's base type.
+ * A shortcut to return the type from the connection's #NMSettingConnection.
+ *
+ * Returns: the type from the connection's 'connection' setting
  **/
 const char *
 nm_connection_get_connection_type (NMConnection *connection)
 {
-	NMSetting *setting;
+	NMSettingConnection *s_con;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
-	setting = _nm_connection_find_base_type_setting (connection);
-	if (!setting)
+	s_con = nm_connection_get_setting_connection (connection);
+	if (!s_con)
 		return NULL;
-	return nm_setting_get_name (setting);
+
+	return nm_setting_connection_get_connection_type (s_con);
 }
 
 /**
@@ -1949,9 +1945,11 @@ nm_connection_is_virtual (NMConnection *connection)
 		NMSettingInfiniband *s_ib;
 
 		s_ib = nm_connection_get_setting_infiniband (connection);
-		g_return_val_if_fail (s_ib != NULL, FALSE);
-		return nm_setting_infiniband_get_virtual_interface_name (s_ib) != NULL;
+		return s_ib && nm_setting_infiniband_get_virtual_interface_name (s_ib);
 	}
+
+	if (nm_streq (type, NM_SETTING_BLUETOOTH_SETTING_NAME))
+		return !!_nm_connection_get_setting_bluetooth_for_nap (connection);
 
 	return FALSE;
 }

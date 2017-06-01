@@ -343,6 +343,10 @@ connection_compatible (NMBluezDevice *self, NMConnection *connection)
 		return FALSE;
 
 	bt_type = nm_setting_bluetooth_get_connection_type (s_bt);
+
+	if (nm_streq (bt_type, NM_SETTING_BLUETOOTH_TYPE_NAP))
+		return FALSE;
+
 	if (   g_str_equal (bt_type, NM_SETTING_BLUETOOTH_TYPE_DUN)
 	    && !(priv->capabilities & NM_BT_CAPABILITY_DUN))
 		return FALSE;

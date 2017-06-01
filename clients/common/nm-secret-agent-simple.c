@@ -543,23 +543,30 @@ request_secrets_from_ui (NMSecretAgentSimpleRequest *request)
 		                                            TRUE);
 		g_ptr_array_add (secrets, secret);
 	} else if (nm_connection_is_type (request->connection, NM_SETTING_BLUETOOTH_SETTING_NAME)) {
-		NMSetting *setting;
+		NMSetting *setting = NULL;
 
-		setting = nm_connection_get_setting_by_name (request->connection, NM_SETTING_GSM_SETTING_NAME);
-		if (!setting)
-			setting = nm_connection_get_setting_by_name (request->connection, NM_SETTING_CDMA_SETTING_NAME);
+		setting = nm_connection_get_setting_by_name (request->connection, NM_SETTING_BLUETOOTH_SETTING_NAME);
+		if (   setting
+		    && !nm_streq0 (nm_setting_bluetooth_get_connection_type (NM_SETTING_BLUETOOTH (setting)), NM_SETTING_BLUETOOTH_TYPE_NAP)) {
+			setting = nm_connection_get_setting_by_name (request->connection, NM_SETTING_GSM_SETTING_NAME);
+			if (!setting)
+				setting = nm_connection_get_setting_by_name (request->connection, NM_SETTING_CDMA_SETTING_NAME);
+		}
 
-		title = _("Mobile broadband network password");
-		msg = g_strdup_printf (_("A password is required to connect to '%s'."),
-		                       nm_connection_get_id (request->connection));
+		if (setting) {
+			title = _("Mobile broadband network password");
+			msg = g_strdup_printf (_("A password is required to connect to '%s'."),
+			                       nm_connection_get_id (request->connection));
 
-		secret = nm_secret_agent_simple_secret_new (_("Password"),
-		                                            setting,
-		                                            "password",
-		                                            NULL,
-		                                            NULL,
-		                                            TRUE);
-		g_ptr_array_add (secrets, secret);
+			secret = nm_secret_agent_simple_secret_new (_("Password"),
+			                                            setting,
+			                                            "password",
+			                                            NULL,
+			                                            NULL,
+			                                            TRUE);
+			g_ptr_array_add (secrets, secret);
+		} else
+			ok = FALSE;
 	} else if (nm_connection_is_type (request->connection, NM_SETTING_VPN_SETTING_NAME)) {
 		NMSettingConnection *s_con;
 
