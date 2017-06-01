@@ -221,7 +221,7 @@ nm_setting_lookup_type (const char *name)
 {
 	SettingInfo *info;
 
-	g_return_val_if_fail (name != NULL, G_TYPE_INVALID);
+	g_return_val_if_fail (name, G_TYPE_INVALID);
 
 	_ensure_registered ();
 
