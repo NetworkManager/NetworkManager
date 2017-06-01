@@ -2432,12 +2432,26 @@ nm_utils_log_connection_diff (NMConnection *connection, NMConnection *diff_base,
 	if (!name)
 		name = "";
 
-	connection_diff_are_same = nm_connection_diff (connection, diff_base, NM_SETTING_COMPARE_FLAG_EXACT | NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT, &connection_diff);
+	connection_diff_are_same = nm_connection_diff (connection, diff_base,
+	                                               NM_SETTING_COMPARE_FLAG_EXACT | NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT,
+	                                               &connection_diff);
 	if (connection_diff_are_same) {
-		if (diff_base)
-			nm_log (level, domain, NULL, NULL, "%sconnection '%s' (%p/%s and %p/%s): no difference", prefix, name, connection, G_OBJECT_TYPE_NAME (connection), diff_base, G_OBJECT_TYPE_NAME (diff_base));
-		else
-			nm_log (level, domain, NULL, NULL, "%sconnection '%s' (%p/%s): no properties set", prefix, name, connection, G_OBJECT_TYPE_NAME (connection));
+		const char *t1, *t2;
+
+		t1 = nm_connection_get_connection_type (connection);
+		if (diff_base) {
+			t2 = nm_connection_get_connection_type (diff_base);
+			nm_log (level, domain, NULL, NULL,
+			        "%sconnection '%s' (%p/%s/%s%s%s and %p/%s/%s%s%s): no difference",
+			        prefix, name,
+			        connection, G_OBJECT_TYPE_NAME (connection), NM_PRINT_FMT_QUOTE_STRING (t1),
+			        diff_base, G_OBJECT_TYPE_NAME (diff_base), NM_PRINT_FMT_QUOTE_STRING (t2));
+		} else {
+			nm_log (level, domain, NULL, NULL,
+			        "%sconnection '%s' (%p/%s/%s%s%s): no properties set",
+			        prefix, name,
+			        connection, G_OBJECT_TYPE_NAME (connection), NM_PRINT_FMT_QUOTE_STRING (t1));
+		}
 		g_assert (!connection_diff);
 		return;
 	}
@@ -2471,12 +2485,20 @@ nm_utils_log_connection_diff (NMConnection *connection, NMConnection *diff_base,
 			if (print_header) {
 				GError *err_verify = NULL;
 				const char *path = nm_connection_get_path (connection);
+				const char *t1, *t2;
 
+				t1 = nm_connection_get_connection_type (connection);
 				if (diff_base) {
-					nm_log (level, domain, NULL, NULL, "%sconnection '%s' (%p/%s < %p/%s)%s%s%s:", prefix, name, connection, G_OBJECT_TYPE_NAME (connection), diff_base, G_OBJECT_TYPE_NAME (diff_base),
+					t2 = nm_connection_get_connection_type (diff_base);
+					nm_log (level, domain, NULL, NULL, "%sconnection '%s' (%p/%s/%s%s%s < %p/%s/%s%s%s)%s%s%s:",
+					        prefix, name,
+					        connection, G_OBJECT_TYPE_NAME (connection), NM_PRINT_FMT_QUOTE_STRING (t1),
+					        diff_base, G_OBJECT_TYPE_NAME (diff_base), NM_PRINT_FMT_QUOTE_STRING (t2),
 					        NM_PRINT_FMT_QUOTED (path, " [", path, "]", ""));
 				} else {
-					nm_log (level, domain, NULL, NULL, "%sconnection '%s' (%p/%s):%s%s%s", prefix, name, connection, G_OBJECT_TYPE_NAME (connection),
+					nm_log (level, domain, NULL, NULL, "%sconnection '%s' (%p/%s/%s%s%s):%s%s%s",
+					        prefix, name,
+					        connection, G_OBJECT_TYPE_NAME (connection), NM_PRINT_FMT_QUOTE_STRING (t1),
 					        NM_PRINT_FMT_QUOTED (path, " [", path, "]", ""));
 				}
 				print_header = FALSE;
