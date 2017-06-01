@@ -84,24 +84,6 @@ get_generic_capabilities (NMDevice *device)
 }
 
 static gboolean
-is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
-{
-	return TRUE;
-}
-
-static gboolean
-check_connection_available (NMDevice *device,
-                            NMConnection *connection,
-                            NMDeviceCheckConAvailableFlags flags,
-                            const char *specific_object)
-{
-	/* Connections are always available because the carrier state is determined
-	 * by the team port carrier states, not the team's state.
-	 */
-	return TRUE;
-}
-
-static gboolean
 check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
 	NMSettingTeam *s_team;
@@ -890,9 +872,7 @@ nm_device_team_class_init (NMDeviceTeamClass *klass)
 	parent_class->is_master = TRUE;
 	parent_class->create_and_realize = create_and_realize;
 	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->is_available = is_available;
 	parent_class->check_connection_compatible = check_connection_compatible;
-	parent_class->check_connection_available = check_connection_available;
 	parent_class->complete_connection = complete_connection;
 	parent_class->update_connection = update_connection;
 	parent_class->master_update_slave_connection = master_update_slave_connection;

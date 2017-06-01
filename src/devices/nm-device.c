@@ -3790,10 +3790,15 @@ is_available (NMDevice *self, NMDeviceCheckDevAvailableFlags flags)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->carrier || priv->ignore_carrier)
+	if (   priv->carrier
+	    || priv->ignore_carrier)
 		return TRUE;
 
 	if (NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_DEV_AVAILABLE_IGNORE_CARRIER))
+		return TRUE;
+
+	/* master types are always available even without carrier. */
+	if (nm_device_is_master (self))
 		return TRUE;
 
 	return FALSE;
@@ -11680,6 +11685,12 @@ check_connection_available (NMDevice *self,
 		 * for an explicit user-request. */
 		return TRUE;
 	}
+
+	/* master types are always available even without carrier.
+	 * Making connection non-available would un-enslave slaves which
+	 * is not desired. */
+	if (nm_device_is_master (self))
+		return TRUE;
 
 	return FALSE;
 }
