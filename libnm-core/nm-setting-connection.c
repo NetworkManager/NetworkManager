@@ -46,7 +46,7 @@
  **/
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingConnection, nm_setting_connection, NM_TYPE_SETTING,
-                         _nm_register_setting (CONNECTION, 0))
+                         _nm_register_setting (CONNECTION, NM_SETTING_PRIORITY_CONNECTION))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_CONNECTION)
 
 #define NM_SETTING_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_CONNECTION, NMSettingConnectionPrivate))

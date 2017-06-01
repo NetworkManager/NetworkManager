@@ -41,7 +41,7 @@
  **/
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingDcb, nm_setting_dcb, NM_TYPE_SETTING,
-                         _nm_register_setting (DCB, 3))
+                         _nm_register_setting (DCB, NM_SETTING_PRIORITY_HW_AUX))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_DCB)
 
 #define NM_SETTING_DCB_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_DCB, NMSettingDcbPrivate))

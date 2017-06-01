@@ -64,7 +64,7 @@ struct _NMSettingUserClass {
 };
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingUser, nm_setting_user, NM_TYPE_SETTING,
-                         _nm_register_setting (USER, 10))
+                         _nm_register_setting (USER, NM_SETTING_PRIORITY_USER))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_USER)
 
 #define NM_SETTING_USER_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMSettingUser, NM_IS_SETTING_USER)

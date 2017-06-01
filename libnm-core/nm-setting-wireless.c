@@ -41,7 +41,7 @@
  **/
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingWireless, nm_setting_wireless, NM_TYPE_SETTING,
-                         _nm_register_setting (WIRELESS, 1))
+                         _nm_register_setting (WIRELESS, NM_SETTING_PRIORITY_HW_BASE))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_WIRELESS)
 
 #define NM_SETTING_WIRELESS_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_WIRELESS, NMSettingWirelessPrivate))
