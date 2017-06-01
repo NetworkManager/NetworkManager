@@ -60,7 +60,7 @@ nm_device_factory_emit_component_added (NMDeviceFactory *factory, GObject *compo
 	return consumed;
 }
 
-void
+static void
 nm_device_factory_get_supported_types (NMDeviceFactory *factory,
                                        const NMLinkType **out_link_types,
                                        const char *const**out_setting_types)
