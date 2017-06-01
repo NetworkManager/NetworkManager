@@ -2246,25 +2246,20 @@ carrier_changed (NMDevice *self, gboolean carrier)
 		return;
 
 	if (nm_device_is_master (self)) {
-		/* Bridge/bond/team carrier does not affect its own activation,
-		 * but when carrier comes on, if there are slaves waiting,
-		 * it will restart them.
-		 */
-		if (!carrier)
+		if (carrier) {
+			/* Force master to retry getting ip addresses when carrier
+			* is restored. */
+			if (priv->state == NM_DEVICE_STATE_ACTIVATED)
+				nm_device_update_dynamic_ip_setup (self);
+			else {
+				if (nm_device_activate_ip4_state_in_wait (self))
+					nm_device_activate_stage3_ip4_start (self);
+				if (nm_device_activate_ip6_state_in_wait (self))
+					nm_device_activate_stage3_ip6_start (self);
+			}
 			return;
-
-		/* Force master to retry getting ip addresses when carrier
-		 * is restored. */
-		if (priv->state == NM_DEVICE_STATE_ACTIVATED)
-			nm_device_update_dynamic_ip_setup (self);
-		else {
-			if (nm_device_activate_ip4_state_in_wait (self))
-				nm_device_activate_stage3_ip4_start (self);
-			if (nm_device_activate_ip6_state_in_wait (self))
-				nm_device_activate_stage3_ip6_start (self);
 		}
-
-		return;
+		/* fall-through and change state of device */
 	} else if (priv->is_enslaved && !carrier) {
 		/* Slaves don't deactivate when they lose carrier; for
 		 * bonds/teams in particular that would be actively
@@ -3843,9 +3838,8 @@ nm_device_is_available (NMDevice *self, NMDeviceCheckDevAvailableFlags flags)
 gboolean
 nm_device_ignore_carrier_by_default (NMDevice *self)
 {
-	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
-
-	return FALSE;
+	/* master types ignore-carrier by default. */
+	return nm_device_is_master (self);
 }
 
 gboolean
