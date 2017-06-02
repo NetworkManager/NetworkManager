@@ -2183,8 +2183,6 @@ carrier_changed (NMDevice *self, gboolean carrier)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	NM_DEVICE_GET_CLASS (self)->carrier_changed_notify (self, carrier);
-
 	if (priv->state <= NM_DEVICE_STATE_UNMANAGED)
 		return;
 
@@ -2288,6 +2286,7 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 	if (priv->carrier) {
 		_LOGI (LOGD_DEVICE, "link connected");
 		carrier_disconnected_action_cancel (self);
+		NM_DEVICE_GET_CLASS (self)->carrier_changed_notify (self, carrier);
 		carrier_changed (self, TRUE);
 
 		if (priv->carrier_wait_id) {
@@ -2297,6 +2296,7 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 	} else {
 		if (priv->carrier_wait_id)
 			nm_device_add_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
+		NM_DEVICE_GET_CLASS (self)->carrier_changed_notify (self, carrier);
 		if (   state <= NM_DEVICE_STATE_DISCONNECTED
 		    && !priv->queued_act_request) {
 			_LOGD (LOGD_DEVICE, "link disconnected");
