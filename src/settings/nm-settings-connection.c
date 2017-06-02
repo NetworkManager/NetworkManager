@@ -2316,33 +2316,35 @@ void
 nm_settings_connection_read_and_fill_timestamp (NMSettingsConnection *self)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+	gs_unref_keyfile GKeyFile *timestamps_file = NULL;
+	gs_free_error GError *error = NULL;
+	gs_free char *tmp_str = NULL;
 	const char *connection_uuid;
-	guint64 timestamp = 0;
-	GKeyFile *timestamps_file;
-	GError *err = NULL;
-	char *tmp_str;
+	gint64 timestamp;
 
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
 
-	/* Get timestamp from database file */
 	timestamps_file = g_key_file_new ();
-	g_key_file_load_from_file (timestamps_file, SETTINGS_TIMESTAMPS_FILE, G_KEY_FILE_KEEP_COMMENTS, NULL);
-	connection_uuid = nm_settings_connection_get_uuid (self);
-	tmp_str = g_key_file_get_value (timestamps_file, "timestamps", connection_uuid, &err);
-	if (tmp_str) {
-		timestamp = g_ascii_strtoull (tmp_str, NULL, 10);
-		g_free (tmp_str);
+	if (!g_key_file_load_from_file (timestamps_file, SETTINGS_TIMESTAMPS_FILE, G_KEY_FILE_KEEP_COMMENTS, &error)) {
+		_LOGD ("failed to read connection timestamp: %s", error->message);
+		return;
 	}
 
-	/* Update connection's timestamp */
-	if (!err) {
-		priv->timestamp = timestamp;
-		priv->timestamp_set = TRUE;
-	} else {
-		_LOGD ("failed to read connection timestamp: %s", err->message);
-		g_clear_error (&err);
+	connection_uuid = nm_settings_connection_get_uuid (self);
+	tmp_str = g_key_file_get_value (timestamps_file, "timestamps", connection_uuid, &error);
+	if (!tmp_str) {
+		_LOGD ("failed to read connection timestamp: %s", error->message);
+		return;
 	}
-	g_key_file_free (timestamps_file);
+
+	timestamp = _nm_utils_ascii_str_to_int64 (tmp_str, 10, 0, G_MAXINT64, -1);
+	if (timestamp < 0) {
+		_LOGD ("failed to read connection timestamp: %s", "invalid number");
+		return;
+	}
+
+	priv->timestamp = timestamp;
+	priv->timestamp_set = TRUE;
 }
 
 /**
