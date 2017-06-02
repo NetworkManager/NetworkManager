@@ -2252,7 +2252,7 @@ carrier_disconnected_action_cb (gpointer user_data)
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	_LOGD (LOGD_DEVICE, "link disconnected (calling deferred action) (id=%u)", priv->carrier_defer_id);
+	_LOGD (LOGD_DEVICE, "carrier: link disconnected (calling deferred action) (id=%u)", priv->carrier_defer_id);
 
 	priv->carrier_defer_id = 0;
 	carrier_changed (self, FALSE);
@@ -2266,7 +2266,7 @@ carrier_disconnected_action_cancel (NMDevice *self)
 	guint id = priv->carrier_defer_id;
 
 	if (nm_clear_g_source (&priv->carrier_defer_id)) {
-		_LOGD (LOGD_DEVICE, "link disconnected (canceling deferred action) (id=%u)",
+		_LOGD (LOGD_DEVICE, "carrier: link disconnected (canceling deferred action) (id=%u)",
 		       id);
 	}
 }
@@ -2284,7 +2284,7 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 	_notify (self, PROP_CARRIER);
 
 	if (priv->carrier) {
-		_LOGI (LOGD_DEVICE, "link connected");
+		_LOGI (LOGD_DEVICE, "carrier: link connected");
 		carrier_disconnected_action_cancel (self);
 		NM_DEVICE_GET_CLASS (self)->carrier_changed_notify (self, carrier);
 		carrier_changed (self, TRUE);
@@ -2299,12 +2299,12 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 		NM_DEVICE_GET_CLASS (self)->carrier_changed_notify (self, carrier);
 		if (   state <= NM_DEVICE_STATE_DISCONNECTED
 		    && !priv->queued_act_request) {
-			_LOGD (LOGD_DEVICE, "link disconnected");
+			_LOGD (LOGD_DEVICE, "carrier: link disconnected");
 			carrier_changed (self, FALSE);
 		} else {
 			priv->carrier_defer_id = g_timeout_add_seconds (LINK_DISCONNECT_DELAY,
 			                                                carrier_disconnected_action_cb, self);
-			_LOGD (LOGD_DEVICE, "link disconnected (deferring action for %d seconds) (id=%u)",
+			_LOGD (LOGD_DEVICE, "carrier: link disconnected (deferring action for %d seconds) (id=%u)",
 			       LINK_DISCONNECT_DELAY, priv->carrier_defer_id);
 		}
 	}
