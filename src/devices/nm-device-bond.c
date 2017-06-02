@@ -613,6 +613,7 @@ reapply_connection (NMDevice *device, NMConnection *con_old, NMConnection *con_n
 static void
 nm_device_bond_init (NMDeviceBond * self)
 {
+	nm_assert (nm_device_is_master (NM_DEVICE (self)));
 }
 
 static void
@@ -622,6 +623,7 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_BOND_SETTING_NAME, NM_LINK_TYPE_BOND)
 
+	parent_class->is_master = TRUE;
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->is_available = is_available;
 	parent_class->check_connection_compatible = check_connection_compatible;
@@ -662,7 +664,6 @@ create_device (NMDeviceFactory *factory,
 	                                  NM_DEVICE_TYPE_DESC, "Bond",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_BOND,
 	                                  NM_DEVICE_LINK_TYPE, NM_LINK_TYPE_BOND,
-	                                  NM_DEVICE_IS_MASTER, TRUE,
 	                                  NULL);
 }
 

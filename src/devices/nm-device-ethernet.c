@@ -115,7 +115,8 @@ typedef struct _NMDeviceEthernetPrivate {
 	/* DCB */
 	DcbWait       dcb_wait;
 	guint         dcb_timeout_id;
-	gulong        dcb_carrier_id;
+
+	bool          dcb_handle_carrier_changes:1;
 } NMDeviceEthernetPrivate;
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceEthernet,
@@ -1133,7 +1134,7 @@ dcb_state (NMDevice *device, gboolean timeout)
 			_LOGD (LOGD_DCB, "dcb_state() enabling DCB");
 			nm_clear_g_source (&priv->dcb_timeout_id);
 			if (!dcb_enable (device)) {
-				nm_clear_g_signal_handler (device, &priv->dcb_carrier_id);
+				priv->dcb_handle_carrier_changes = FALSE;
 				nm_device_state_changed (device,
 				                         NM_DEVICE_STATE_FAILED,
 				                         NM_DEVICE_STATE_REASON_DCB_FCOE_FAILED);
@@ -1157,7 +1158,7 @@ dcb_state (NMDevice *device, gboolean timeout)
 			_LOGD (LOGD_DCB, "dcb_state() preconfig up configuring DCB");
 			nm_clear_g_source (&priv->dcb_timeout_id);
 			if (!dcb_configure (device)) {
-				nm_clear_g_signal_handler (device, &priv->dcb_carrier_id);
+				priv->dcb_handle_carrier_changes = FALSE;
 				nm_device_state_changed (device,
 				                         NM_DEVICE_STATE_FAILED,
 				                         NM_DEVICE_STATE_REASON_DCB_FCOE_FAILED);
@@ -1180,27 +1181,13 @@ dcb_state (NMDevice *device, gboolean timeout)
 		if (timeout || carrier) {
 			_LOGD (LOGD_DCB, "dcb_state() postconfig up starting IP");
 			nm_clear_g_source (&priv->dcb_timeout_id);
-			nm_clear_g_signal_handler (device, &priv->dcb_carrier_id);
+			priv->dcb_handle_carrier_changes = FALSE;
 			priv->dcb_wait = DCB_WAIT_UNKNOWN;
 			nm_device_activate_schedule_stage3_ip_config_start (device);
 		}
 		break;
 	default:
 		g_assert_not_reached ();
-	}
-}
-
-static void
-dcb_carrier_changed (NMDevice *device, GParamSpec *pspec, gpointer unused)
-{
-	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-
-	g_return_if_fail (nm_device_get_state (device) == NM_DEVICE_STATE_CONFIG);
-
-	if (priv->dcb_timeout_id) {
-		_LOGD (LOGD_DCB, "carrier_changed() calling dcb_state()");
-		dcb_state (device, FALSE);
 	}
 }
 
@@ -1262,7 +1249,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	g_return_val_if_fail (s_con, NM_ACT_STAGE_RETURN_FAILURE);
 
 	nm_clear_g_source (&priv->dcb_timeout_id);
-	nm_clear_g_signal_handler (device, &priv->dcb_carrier_id);
+	priv->dcb_handle_carrier_changes = FALSE;
 
 	/* 802.1x has to run before any IP configuration since the 802.1x auth
 	 * process opens the port up for normal traffic.
@@ -1296,13 +1283,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 			priv->dcb_timeout_id = g_timeout_add_seconds (4, dcb_carrier_timeout, device);
 		}
 
-		/* Watch carrier independently of NMDeviceClass::carrier_changed so
-		 * we get instant notifications of disconnection that aren't deferred.
-		 */
-		priv->dcb_carrier_id = g_signal_connect (device,
-		                                         "notify::" NM_DEVICE_CARRIER,
-		                                         G_CALLBACK (dcb_carrier_changed),
-		                                         NULL);
+		priv->dcb_handle_carrier_changes = TRUE;
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	}
 
@@ -1386,7 +1367,7 @@ deactivate (NMDevice *device)
 
 	priv->dcb_wait = DCB_WAIT_UNKNOWN;
 	nm_clear_g_source (&priv->dcb_timeout_id);
-	nm_clear_g_signal_handler (device, &priv->dcb_carrier_id);
+	priv->dcb_handle_carrier_changes = FALSE;
 
 	/* Tear down DCB/FCoE if it was enabled */
 	s_dcb = (NMSettingDcb *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_DCB);
@@ -1579,7 +1560,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 }
 
 static void
-get_link_speed (NMDevice *device)
+link_speed_update (NMDevice *device)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
@@ -1591,16 +1572,28 @@ get_link_speed (NMDevice *device)
 		return;
 
 	priv->speed = speed;
-	_notify (self, PROP_SPEED);
-
 	_LOGD (LOGD_PLATFORM | LOGD_ETHER, "speed is now %d Mb/s", speed);
+	_notify (self, PROP_SPEED);
 }
 
 static void
 carrier_changed_notify (NMDevice *device, gboolean carrier)
 {
+	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+
+	if (priv->dcb_handle_carrier_changes) {
+		nm_assert (nm_device_get_state (device) == NM_DEVICE_STATE_CONFIG);
+
+		if (priv->dcb_timeout_id) {
+			_LOGD (LOGD_DCB, "carrier_changed() calling dcb_state()");
+			dcb_state (device, FALSE);
+		}
+	}
+
 	if (carrier)
-		get_link_speed (device);
+		link_speed_update (device);
+
 	NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->carrier_changed_notify (device, carrier);
 }
 
@@ -1682,7 +1675,6 @@ dispose (GObject *object)
 	nm_clear_g_source (&priv->pppoe_wait_id);
 
 	nm_clear_g_source (&priv->dcb_timeout_id);
-	nm_clear_g_signal_handler (self, &priv->dcb_carrier_id);
 
 	G_OBJECT_CLASS (nm_device_ethernet_parent_class)->dispose (object);
 }

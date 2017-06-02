@@ -120,7 +120,6 @@ nm_device_state_reason_check (NMDeviceStateReason reason)
 #define NM_DEVICE_TYPE_DESC        "type-desc"      /* Internal only */
 #define NM_DEVICE_RFKILL_TYPE      "rfkill-type"    /* Internal only */
 #define NM_DEVICE_IFINDEX          "ifindex"        /* Internal only */
-#define NM_DEVICE_IS_MASTER        "is-master"      /* Internal only */
 #define NM_DEVICE_MASTER           "master"         /* Internal only */
 #define NM_DEVICE_HAS_PENDING_ACTION "has-pending-action" /* Internal only */
 
@@ -195,6 +194,10 @@ typedef struct {
 
 	const char *connection_type;
 	const NMLinkType *link_types;
+
+	/* Whether the device type is a master-type. This depends purely on the
+	 * type (NMDeviceClass), not the actual device instance. */
+	bool is_master:1;
 
 	void (*state_changed) (NMDevice *device,
 	                       NMDeviceState new_state,
@@ -507,6 +510,7 @@ gboolean nm_device_check_slave_connection_compatible (NMDevice *device, NMConnec
 gboolean nm_device_unmanage_on_quit (NMDevice *self);
 
 gboolean nm_device_spec_match_list (NMDevice *device, const GSList *specs);
+int      nm_device_spec_match_list_full (NMDevice *self, const GSList *specs, int no_match_value);
 
 gboolean nm_device_is_activating (NMDevice *dev);
 gboolean nm_device_autoconnect_allowed (NMDevice *self);

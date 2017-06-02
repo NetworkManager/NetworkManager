@@ -188,7 +188,6 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDevice,
 	PROP_IFINDEX,
 	PROP_AVAILABLE_CONNECTIONS,
 	PROP_PHYSICAL_PORT_ID,
-	PROP_IS_MASTER,
 	PROP_MASTER,
 	PROP_PARENT,
 	PROP_HW_ADDRESS,
@@ -451,7 +450,6 @@ typedef struct _NMDevicePrivate {
 	gulong          master_ready_id;
 
 	/* slave management */
-	bool            is_master;
 	CList           slaves;    /* list of SlaveInfo */
 
 	NMMetered       metered;
@@ -2183,8 +2181,6 @@ carrier_changed (NMDevice *self, gboolean carrier)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	NM_DEVICE_GET_CLASS (self)->carrier_changed_notify (self, carrier);
-
 	if (priv->state <= NM_DEVICE_STATE_UNMANAGED)
 		return;
 
@@ -2194,7 +2190,7 @@ carrier_changed (NMDevice *self, gboolean carrier)
 	if (priv->ignore_carrier && !carrier)
 		return;
 
-	if (priv->is_master) {
+	if (nm_device_is_master (self)) {
 		/* Bridge/bond/team carrier does not affect its own activation,
 		 * but when carrier comes on, if there are slaves waiting,
 		 * it will restart them.
@@ -2254,7 +2250,7 @@ carrier_disconnected_action_cb (gpointer user_data)
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	_LOGD (LOGD_DEVICE, "link disconnected (calling deferred action) (id=%u)", priv->carrier_defer_id);
+	_LOGD (LOGD_DEVICE, "carrier: link disconnected (calling deferred action) (id=%u)", priv->carrier_defer_id);
 
 	priv->carrier_defer_id = 0;
 	carrier_changed (self, FALSE);
@@ -2268,7 +2264,7 @@ carrier_disconnected_action_cancel (NMDevice *self)
 	guint id = priv->carrier_defer_id;
 
 	if (nm_clear_g_source (&priv->carrier_defer_id)) {
-		_LOGD (LOGD_DEVICE, "link disconnected (canceling deferred action) (id=%u)",
+		_LOGD (LOGD_DEVICE, "carrier: link disconnected (canceling deferred action) (id=%u)",
 		       id);
 	}
 }
@@ -2286,8 +2282,9 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 	_notify (self, PROP_CARRIER);
 
 	if (priv->carrier) {
-		_LOGI (LOGD_DEVICE, "link connected");
+		_LOGI (LOGD_DEVICE, "carrier: link connected");
 		carrier_disconnected_action_cancel (self);
+		NM_DEVICE_GET_CLASS (self)->carrier_changed_notify (self, carrier);
 		carrier_changed (self, TRUE);
 
 		if (priv->carrier_wait_id) {
@@ -2297,14 +2294,15 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 	} else {
 		if (priv->carrier_wait_id)
 			nm_device_add_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
+		NM_DEVICE_GET_CLASS (self)->carrier_changed_notify (self, carrier);
 		if (   state <= NM_DEVICE_STATE_DISCONNECTED
 		    && !priv->queued_act_request) {
-			_LOGD (LOGD_DEVICE, "link disconnected");
+			_LOGD (LOGD_DEVICE, "carrier: link disconnected");
 			carrier_changed (self, FALSE);
 		} else {
 			priv->carrier_defer_id = g_timeout_add_seconds (LINK_DISCONNECT_DELAY,
 			                                                carrier_disconnected_action_cb, self);
-			_LOGD (LOGD_DEVICE, "link disconnected (deferring action for %d seconds) (id=%u)",
+			_LOGD (LOGD_DEVICE, "carrier: link disconnected (deferring action for %d seconds) (id=%u)",
 			       LINK_DISCONNECT_DELAY, priv->carrier_defer_id);
 		}
 	}
@@ -3531,7 +3529,9 @@ nm_device_master_release_slaves (NMDevice *self)
 gboolean
 nm_device_is_master (NMDevice *self)
 {
-	return NM_DEVICE_GET_PRIVATE (self)->is_master;
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	return NM_DEVICE_GET_CLASS (self)->is_master;
 }
 
 /**
@@ -4190,7 +4190,7 @@ nm_device_check_slave_connection_compatible (NMDevice *self, NMConnection *slave
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (!priv->is_master)
+	if (!nm_device_is_master (self))
 		return FALSE;
 
 	/* All masters should have connection type set */
@@ -6033,14 +6033,14 @@ act_stage3_ip4_config_start (NMDevice *self,
 	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
 
 	if (   connection_ip4_method_requires_carrier (connection, NULL)
-	    && priv->is_master
+	    && nm_device_is_master (self)
 	    && !priv->carrier) {
 		_LOGI (LOGD_IP4 | LOGD_DEVICE,
 		       "IPv4 config waiting until carrier is on");
 		return NM_ACT_STAGE_RETURN_IP_WAIT;
 	}
 
-	if (priv->is_master && ip4_requires_slaves (connection)) {
+	if (nm_device_is_master (self) && ip4_requires_slaves (connection)) {
 		/* If the master has no ready slaves, and depends on slaves for
 		 * a successful IPv4 attempt, then postpone IPv4 addressing.
 		 */
@@ -7634,14 +7634,14 @@ act_stage3_ip6_config_start (NMDevice *self,
 	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
 
 	if (   connection_ip6_method_requires_carrier (connection, NULL)
-	    && priv->is_master
+	    && nm_device_is_master (self)
 	    && !priv->carrier) {
 		_LOGI (LOGD_IP6 | LOGD_DEVICE,
 		       "IPv6 config waiting until carrier is on");
 		return NM_ACT_STAGE_RETURN_IP_WAIT;
 	}
 
-	if (priv->is_master && ip6_requires_slaves (connection)) {
+	if (nm_device_is_master (self) && ip6_requires_slaves (connection)) {
 		/* If the master has no ready slaves, and depends on slaves for
 		 * a successful IPv6 attempt, then postpone IPv6 addressing.
 		 */
@@ -8268,7 +8268,7 @@ arp_announce (NMDevice *self)
 }
 
 static void
-activate_stage5_ip4_config_commit (NMDevice *self)
+activate_stage5_ip4_config_result (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActRequest *req;
@@ -8340,7 +8340,7 @@ nm_device_activate_schedule_ip4_config_result (NMDevice *self, NMIP4Config *conf
 	if (config)
 		priv->dev_ip4_config = g_object_ref (config);
 
-	activation_source_schedule (self, activate_stage5_ip4_config_commit, AF_INET);
+	activation_source_schedule (self, activate_stage5_ip4_config_result, AF_INET);
 }
 
 gboolean
@@ -10540,7 +10540,7 @@ update_ip4_config (NMDevice *self, gboolean initial)
 	 */
 	if (   !initial
 	    && activation_source_is_scheduled (self,
-	                                       activate_stage5_ip4_config_commit,
+	                                       activate_stage5_ip4_config_result,
 	                                       AF_INET)) {
 		priv->queued_ip4_config_pending = FALSE;
 		priv->queued_ip4_config_id = g_idle_add (queued_ip4_config_change, self);
@@ -13464,6 +13464,12 @@ nm_device_get_initial_hw_address (NMDevice *self)
 gboolean
 nm_device_spec_match_list (NMDevice *self, const GSList *specs)
 {
+	return nm_device_spec_match_list_full (self, specs, FALSE);
+}
+
+int
+nm_device_spec_match_list_full (NMDevice *self, const GSList *specs, int no_match_value)
+{
 	NMDeviceClass *klass;
 	NMMatchSpecMatchType m;
 
@@ -13478,7 +13484,17 @@ nm_device_spec_match_list (NMDevice *self, const GSList *specs)
 	                          nm_device_get_driver_version (self),
 	                          nm_device_get_permanent_hw_address (self),
 	                          klass->get_s390_subchannels ? klass->get_s390_subchannels (self) : NULL);
-	return m == NM_MATCH_SPEC_MATCH;
+
+	switch (m) {
+	case NM_MATCH_SPEC_MATCH:
+		return TRUE;
+	case NM_MATCH_SPEC_NEG_MATCH:
+		return FALSE;
+	case NM_MATCH_SPEC_NO_MATCH:
+		return no_match_value;
+	}
+	nm_assert_not_reached ();
+	return no_match_value;
 }
 
 guint
@@ -13523,7 +13539,7 @@ _activation_func_to_string (ActivationHandleFunc func)
 	FUNC_TO_STRING_CHECK_AND_RETURN (func, activate_stage3_ip_config_start);
 	FUNC_TO_STRING_CHECK_AND_RETURN (func, activate_stage4_ip4_config_timeout);
 	FUNC_TO_STRING_CHECK_AND_RETURN (func, activate_stage4_ip6_config_timeout);
-	FUNC_TO_STRING_CHECK_AND_RETURN (func, activate_stage5_ip4_config_commit);
+	FUNC_TO_STRING_CHECK_AND_RETURN (func, activate_stage5_ip4_config_result);
 	FUNC_TO_STRING_CHECK_AND_RETURN (func, activate_stage5_ip6_config_commit);
 	g_return_val_if_reached ("unknown");
 }
@@ -13864,10 +13880,6 @@ set_property (GObject *object, guint prop_id,
 		/* construct-only */
 		priv->rfkill_type = g_value_get_uint (value);
 		break;
-	case PROP_IS_MASTER:
-		/* construct-only */
-		priv->is_master = g_value_get_boolean (value);
-		break;
 	case PROP_PERM_HW_ADDRESS:
 		/* construct-only */
 		priv->hw_addr_perm = g_value_dup_string (value);
@@ -14001,9 +14013,6 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PHYSICAL_PORT_ID:
 		g_value_set_string (value, priv->physical_port_id);
-		break;
-	case PROP_IS_MASTER:
-		g_value_set_boolean (value, priv->is_master);
 		break;
 	case PROP_MASTER:
 		g_value_set_object (value, nm_device_get_master (self));
@@ -14267,11 +14276,6 @@ nm_device_class_init (NMDeviceClass *klass)
 	                         NULL,
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
-	obj_properties[PROP_IS_MASTER] =
-	    g_param_spec_boolean (NM_DEVICE_IS_MASTER, "", "",
-	                          FALSE,
-	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-	                          G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_MASTER] =
 	    g_param_spec_object (NM_DEVICE_MASTER, "", "",
 	                         NM_TYPE_DEVICE,

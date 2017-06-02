@@ -822,6 +822,7 @@ get_property (GObject *object, guint prop_id,
 static void
 nm_device_team_init (NMDeviceTeam * self)
 {
+	nm_assert (nm_device_is_master (NM_DEVICE (self)));
 }
 
 static void
@@ -854,7 +855,6 @@ nm_device_team_new (const char *iface)
 	                                  NM_DEVICE_TYPE_DESC, "Team",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_TEAM,
 	                                  NM_DEVICE_LINK_TYPE, NM_LINK_TYPE_TEAM,
-	                                  NM_DEVICE_IS_MASTER, TRUE,
 	                                  NULL);
 }
 
@@ -887,6 +887,7 @@ nm_device_team_class_init (NMDeviceTeamClass *klass)
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
 
+	parent_class->is_master = TRUE;
 	parent_class->create_and_realize = create_and_realize;
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->is_available = is_available;
