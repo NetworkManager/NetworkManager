@@ -1560,7 +1560,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 }
 
 static void
-get_link_speed (NMDevice *device)
+link_speed_update (NMDevice *device)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
@@ -1572,9 +1572,8 @@ get_link_speed (NMDevice *device)
 		return;
 
 	priv->speed = speed;
-	_notify (self, PROP_SPEED);
-
 	_LOGD (LOGD_PLATFORM | LOGD_ETHER, "speed is now %d Mb/s", speed);
+	_notify (self, PROP_SPEED);
 }
 
 static void
@@ -1593,7 +1592,7 @@ carrier_changed_notify (NMDevice *device, gboolean carrier)
 	}
 
 	if (carrier)
-		get_link_speed (device);
+		link_speed_update (device);
 
 	NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->carrier_changed_notify (device, carrier);
 }
