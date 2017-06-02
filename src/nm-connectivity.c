@@ -486,27 +486,28 @@ nm_connectivity_init (NMConnectivity *self)
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 	CURLcode retv;
 
+	retv = curl_global_init (CURL_GLOBAL_ALL);
+	if (retv == CURLE_OK)
+		priv->curl_mhandle = curl_multi_init ();
+
+	if (!priv->curl_mhandle)
+		 _LOGE ("unable to init cURL, connectivity check will not work");
+	else {
+		curl_multi_setopt (priv->curl_mhandle, CURLMOPT_SOCKETFUNCTION, multi_socket_cb);
+		curl_multi_setopt (priv->curl_mhandle, CURLMOPT_SOCKETDATA, self);
+		curl_multi_setopt (priv->curl_mhandle, CURLMOPT_TIMERFUNCTION, multi_timer_cb);
+		curl_multi_setopt (priv->curl_mhandle, CURLMOPT_TIMERDATA, self);
+		curl_multi_setopt (priv->curl_mhandle, CURLOPT_VERBOSE, 1);
+	}
+
 	priv->config = g_object_ref (nm_config_get ());
+
 	update_config (self, nm_config_get_data (priv->config));
 	g_signal_connect (G_OBJECT (priv->config),
 	                  NM_CONFIG_SIGNAL_CONFIG_CHANGED,
 	                  G_CALLBACK (config_changed_cb),
 	                  self);
 
-	retv = curl_global_init (CURL_GLOBAL_ALL);
-	if (retv == CURLE_OK)
-		priv->curl_mhandle = curl_multi_init ();
-
-	if (priv->curl_mhandle == NULL) {
-		 _LOGE ("unable to init cURL, connectivity check will not work");
-		return;
-	}
-
-	curl_multi_setopt (priv->curl_mhandle, CURLMOPT_SOCKETFUNCTION, multi_socket_cb);
-	curl_multi_setopt (priv->curl_mhandle, CURLMOPT_SOCKETDATA, self);
-	curl_multi_setopt (priv->curl_mhandle, CURLMOPT_TIMERFUNCTION, multi_timer_cb);
-	curl_multi_setopt (priv->curl_mhandle, CURLMOPT_TIMERDATA, self);
-	curl_multi_setopt (priv->curl_mhandle, CURLOPT_VERBOSE, 1);
 }
 
 static void
