@@ -228,15 +228,17 @@ bss_proxy_acquired_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_da
 	GVariant *props = NULL;
 	const char *object_path;
 	BssData *bss_data;
+	gboolean success;
 
-	g_async_initable_init_finish (G_ASYNC_INITABLE (proxy), result, &error);
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+	success = g_async_initable_init_finish (G_ASYNC_INITABLE (proxy), result, &error);
+	if (   !success
+	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
 
 	self = NM_SUPPLICANT_INTERFACE (user_data);
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-	if (error) {
+	if (!success) {
 		_LOGD ("failed to acquire BSS proxy: (%s)", error->message);
 		g_hash_table_remove (priv->bss_proxies,
 		                     g_dbus_proxy_get_object_path (proxy));
