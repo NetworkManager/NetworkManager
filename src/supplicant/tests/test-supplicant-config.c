@@ -525,7 +525,7 @@ test_wifi_eap (void)
 	nm_connection_add_setting (connection, NM_SETTING (s_8021x));
 	nm_setting_802_1x_add_eap_method (s_8021x, "tls");
 	nm_setting_802_1x_set_client_cert (s_8021x, TEST_CERT_DIR "/test-cert.p12", NM_SETTING_802_1X_CK_SCHEME_PATH, NULL, NULL);
-	nm_setting_802_1x_set_ca_cert (s_8021x, TEST_CERT_DIR "/test-ca-cert.pem", NM_SETTING_802_1X_CK_SCHEME_PATH, NULL, NULL);
+	g_assert (nm_setting_802_1x_set_ca_cert (s_8021x, TEST_CERT_DIR "/test-ca-cert.pem", NM_SETTING_802_1X_CK_SCHEME_PATH, NULL, NULL));
 	nm_setting_802_1x_set_private_key (s_8021x, TEST_CERT_DIR "/test-cert.p12", NULL, NM_SETTING_802_1X_CK_SCHEME_PATH, NULL, NULL);
 
 	/* IP4 setting */
