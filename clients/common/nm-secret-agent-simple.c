@@ -576,6 +576,15 @@ request_secrets_from_ui (NMSecretAgentSimpleRequest *request)
 		ok = FALSE;
 
 	if (!ok) {
+		gs_free_error GError *error = NULL;
+
+		error = g_error_new (NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED,
+		                     "Cannot service a secrets request %s for a %s connection",
+		                     request->request_id,
+		                     nm_connection_get_connection_type (request->connection));
+		request->callback (NM_SECRET_AGENT_OLD (request->self), request->connection,
+		                   NULL, error, request->callback_data);
+		g_hash_table_remove (priv->requests, request->request_id);
 		g_ptr_array_unref (secrets);
 		return;
 	}
