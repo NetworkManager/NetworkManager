@@ -4970,15 +4970,16 @@ test_write_wired_aliases (void)
 			if (!g_strcmp0 (addrstr, ip[j]))
 				break;
 		}
-		g_assert (j < num_addresses);
-
-		g_assert_cmpint (nm_ip_address_get_prefix (addr), ==, 24);
-		if (label[j])
-			g_assert_cmpstr (g_variant_get_string (nm_ip_address_get_attribute (addr, "label"), NULL), ==, label[j]);
-		else
-			g_assert (nm_ip_address_get_attribute (addr, "label") == NULL);
-
-		ip[j] = NULL;
+		if (j >= num_addresses)
+			g_assert_not_reached ();
+		else {
+			g_assert_cmpint (nm_ip_address_get_prefix (addr), ==, 24);
+			if (label[j])
+				g_assert_cmpstr (g_variant_get_string (nm_ip_address_get_attribute (addr, "label"), NULL), ==, label[j]);
+			else
+				g_assert (nm_ip_address_get_attribute (addr, "label") == NULL);
+			ip[j] = NULL;
+		}
 	}
 
 	for (i = 0; i < num_addresses; i++)
