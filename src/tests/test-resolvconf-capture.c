@@ -46,32 +46,14 @@ test_capture_empty (void)
 	g_array_free (ns6, TRUE);
 }
 
-static void
-assert_dns4_entry (const GArray *a, guint i, const char *s)
-{
-	guint32 n, m;
+#define assert_dns4_entry(a, i, s) \
+	g_assert_cmpint ((g_array_index ((a), guint32, (i))), ==, nmtst_inet4_from_string (s));
 
-	g_assert (inet_aton (s, (void *) &n) != 0);
-	m = g_array_index (a, guint32, i);
-	g_assert_cmpint (m, ==, n);
-}
+#define assert_dns6_entry(a, i, s) \
+	g_assert (IN6_ARE_ADDR_EQUAL (&g_array_index ((a), struct in6_addr, (i)), nmtst_inet6_from_string (s)))
 
-static void
-assert_dns6_entry (const GArray *a, guint i, const char *s)
-{
-	struct in6_addr n = IN6ADDR_ANY_INIT;
-	struct in6_addr *m;
-
-	g_assert (inet_pton (AF_INET6, s, (void *) &n) == 1);
-	m = &g_array_index (a, struct in6_addr, i);
-	g_assert (IN6_ARE_ADDR_EQUAL (&n, m));
-}
-
-static void
-assert_dns_option (GPtrArray *a, guint i, const char *s)
-{
-	g_assert_cmpstr (a->pdata[i], ==, s);
-}
+#define assert_dns_option(a, i, s) \
+	g_assert_cmpstr ((a)->pdata[(i)], ==, (s));
 
 static void
 test_capture_basic4 (void)

@@ -258,19 +258,34 @@ validate_list (const char *name, const char *value, const BondDefault *def)
 static gboolean
 validate_ip (const char *name, const char *value)
 {
-	char **ips, **iter;
-	gboolean success = TRUE;
+	gs_free char *value_clone = NULL;
 	struct in_addr addr;
 
 	if (!value || !value[0])
 		return FALSE;
 
-	ips = g_strsplit_set (value, ",", 0);
-	for (iter = ips; iter && *iter && success; iter++)
-		success = !!inet_aton (*iter, &addr);
-	g_strfreev (ips);
+	value_clone = g_strdup (value);
+	value = value_clone;
+	for (;;) {
+		char *eow;
 
-	return success;
+		/* we do not skip over empty words. E.g
+		 * "192.168.1.1," is an error.
+		 *
+		 * ... for no particular reason. */
+
+		eow = strchr (value, ',');
+		if (eow)
+			*eow = '\0';
+
+		if (inet_pton (AF_INET, value, &addr) != 1)
+			return FALSE;
+
+		if (!eow)
+			break;
+		value = eow + 1;
+	}
+	return TRUE;
 }
 
 static gboolean

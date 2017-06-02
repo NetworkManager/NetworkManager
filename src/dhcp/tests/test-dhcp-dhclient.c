@@ -863,19 +863,19 @@ test_read_lease_ip4_config_basic (void)
 
 	/* Address */
 	g_assert_cmpint (nm_ip4_config_get_num_addresses (config), ==, 1);
-	g_assert (inet_aton ("192.168.1.180", (struct in_addr *) &expected_addr));
+	expected_addr = nmtst_inet4_from_string ("192.168.1.180");
 	addr = nm_ip4_config_get_address (config, 0);
 	g_assert_cmpint (addr->address, ==, expected_addr);
 	g_assert_cmpint (addr->peer_address, ==, expected_addr);
 	g_assert_cmpint (addr->plen, ==, 24);
 
 	/* Gateway */
-	g_assert (inet_aton ("192.168.1.1", (struct in_addr *) &expected_addr));
+	expected_addr = nmtst_inet4_from_string ("192.168.1.1");
 	g_assert_cmpint (nm_ip4_config_get_gateway (config), ==, expected_addr);
 
 	/* DNS */
 	g_assert_cmpint (nm_ip4_config_get_num_nameservers (config), ==, 1);
-	g_assert (inet_aton ("192.168.1.1", (struct in_addr *) &expected_addr));
+	expected_addr = nmtst_inet4_from_string ("192.168.1.1");
 	g_assert_cmpint (nm_ip4_config_get_nameserver (config, 0), ==, expected_addr);
 
 	g_assert_cmpint (nm_ip4_config_get_num_domains (config), ==, 0);
@@ -886,21 +886,21 @@ test_read_lease_ip4_config_basic (void)
 
 	/* Address */
 	g_assert_cmpint (nm_ip4_config_get_num_addresses (config), ==, 1);
-	g_assert (inet_aton ("10.77.52.141", (struct in_addr *) &expected_addr));
+	expected_addr = nmtst_inet4_from_string ("10.77.52.141");
 	addr = nm_ip4_config_get_address (config, 0);
 	g_assert_cmpint (addr->address, ==, expected_addr);
 	g_assert_cmpint (addr->peer_address, ==, expected_addr);
 	g_assert_cmpint (addr->plen, ==, 8);
 
 	/* Gateway */
-	g_assert (inet_aton ("10.77.52.254", (struct in_addr *) &expected_addr));
+	expected_addr = nmtst_inet4_from_string ("10.77.52.254");
 	g_assert_cmpint (nm_ip4_config_get_gateway (config), ==, expected_addr);
 
 	/* DNS */
 	g_assert_cmpint (nm_ip4_config_get_num_nameservers (config), ==, 2);
-	g_assert (inet_aton ("8.8.8.8", (struct in_addr *) &expected_addr));
+	expected_addr = nmtst_inet4_from_string ("8.8.8.8");
 	g_assert_cmpint (nm_ip4_config_get_nameserver (config, 0), ==, expected_addr);
-	g_assert (inet_aton ("8.8.4.4", (struct in_addr *) &expected_addr));
+	expected_addr = nmtst_inet4_from_string ("8.8.4.4");
 	g_assert_cmpint (nm_ip4_config_get_nameserver (config, 1), ==, expected_addr);
 
 	/* Domains */
