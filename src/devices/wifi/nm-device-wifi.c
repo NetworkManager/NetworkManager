@@ -1364,8 +1364,12 @@ hidden_filter_func (NMSettings *settings,
 
 	if (!nm_connection_is_type (NM_CONNECTION (connection), NM_SETTING_WIRELESS_SETTING_NAME))
 		return FALSE;
-	s_wifi = (NMSettingWireless *) nm_connection_get_setting_wireless (NM_CONNECTION (connection));
-	return s_wifi ? nm_setting_wireless_get_hidden (s_wifi) : FALSE;
+	s_wifi = nm_connection_get_setting_wireless (NM_CONNECTION (connection));
+	if (!s_wifi)
+		return FALSE;
+	if (nm_streq0 (nm_setting_wireless_get_mode (s_wifi), NM_SETTING_WIRELESS_MODE_AP))
+		return FALSE;
+	return nm_setting_wireless_get_hidden (s_wifi);
 }
 
 static GPtrArray *
