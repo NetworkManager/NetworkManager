@@ -1505,7 +1505,7 @@ request_wireless_scan (NMDeviceWifi *self, gboolean force_if_scanning, GVariant 
 					      ? nm_utils_ssid_to_utf8 (ssid->data, ssid->len)
 					      : NULL;
 					_LOGD (LOGD_WIFI, "wifi-scan: (%u) probe scanning SSID %s%s%s",
-					       i, NM_PRINT_FMT_QUOTED (foo, "\"", foo, "\"", "<hidden>"));
+					       i, NM_PRINT_FMT_QUOTED (foo, "\"", foo, "\"", "*any*"));
 					g_free (foo);
 				}
 			} else
