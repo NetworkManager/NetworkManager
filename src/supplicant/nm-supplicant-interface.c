@@ -49,6 +49,13 @@ struct _AddNetworkData;
 
 typedef struct {
 	NMSupplicantInterface *self;
+	const char *type;
+	char *bssid;
+	char *pin;
+} WpsEnrollStartData;
+
+typedef struct {
+	NMSupplicantInterface *self;
 	NMSupplicantConfig *cfg;
 	GCancellable *cancellable;
 	NMSupplicantInterfaceAssocCb callback;
@@ -587,12 +594,7 @@ nm_supplicant_interface_set_pmf_support (NMSupplicantInterface *self,
 	priv->pmf_support = pmf_support;
 }
 
-typedef struct {
-	NMSupplicantInterface *self;
-	const char *type;
-	char *bssid;
-	char *pin;
-} WpsEnrollStartData;
+/*****************************************************************************/
 
 static void
 wps_enroll_start_data_free (WpsEnrollStartData *data)
