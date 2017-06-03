@@ -90,7 +90,7 @@ typedef struct {
 	char *path;
 	char *addr;
 	NMDevice *device;
-	CList network_servers;
+	CList lst_ns;
 } NetworkServer;
 
 static NetworkServer *
@@ -101,7 +101,7 @@ _find_network_server (NMBluez5Manager *self, const char *path, NMDevice *device)
 
 	nm_assert (path || NM_IS_DEVICE (device));
 
-	c_list_for_each_entry (network_server, &priv->network_servers, network_servers) {
+	c_list_for_each_entry (network_server, &priv->network_servers, lst_ns) {
 		if (path && !nm_streq (network_server->path, path))
 			continue;
 		if (device && network_server->device != device)
@@ -117,7 +117,7 @@ _find_network_server_for_addr (NMBluez5Manager *self, const char *addr)
 	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
 	NetworkServer *network_server;
 
-	c_list_for_each_entry (network_server, &priv->network_servers, network_servers) {
+	c_list_for_each_entry (network_server, &priv->network_servers, lst_ns) {
 		/* The address lookups need a server not assigned to a device
 		 * and tolerate an empty address as a wildcard for "any". */
 		if (   !network_server->device
@@ -158,7 +158,7 @@ static void
 _network_server_free (NMBluez5Manager *self, NetworkServer *network_server)
 {
 	_network_server_unregister (self, network_server);
-	c_list_unlink (&network_server->network_servers);
+	c_list_unlink (&network_server->lst_ns);
 	g_free (network_server->path);
 	g_free (network_server->addr);
 	g_slice_free (NetworkServer, network_server);
@@ -250,7 +250,7 @@ network_server_added (GDBusProxy *proxy, const gchar *path, const char *addr, NM
 	network_server = g_slice_new0 (NetworkServer);
 	network_server->path = g_strdup (path);
 	network_server->addr = g_strdup (addr);
-	c_list_link_before (&priv->network_servers, &network_server->network_servers);
+	c_list_link_before (&priv->network_servers, &network_server->lst_ns);
 
 	_LOGI ("NAP: added interface %s", addr);
 
@@ -543,7 +543,7 @@ dispose (GObject *object)
 	CList *iter, *safe;
 
 	c_list_for_each_safe (iter, safe, &priv->network_servers)
-		_network_server_free (self, c_list_entry (iter, NetworkServer, network_servers));
+		_network_server_free (self, c_list_entry (iter, NetworkServer, lst_ns));
 
 	if (priv->proxy) {
 		g_signal_handlers_disconnect_by_func (priv->proxy, G_CALLBACK (name_owner_changed_cb), self);
