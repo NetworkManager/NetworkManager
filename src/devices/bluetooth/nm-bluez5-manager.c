@@ -93,30 +93,37 @@ typedef struct {
 	CList network_servers;
 } NetworkServer;
 
-static NetworkServer*
-_find_network_server (NMBluez5Manager *self,
-                      const gchar *path, const gchar *addr, NMDevice *device)
+static NetworkServer *
+_find_network_server (NMBluez5Manager *self, const char *path, NMDevice *device)
 {
 	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
 	NetworkServer *network_server;
-	CList *iter;
 
-	c_list_for_each (iter, &priv->network_servers) {
-		network_server = c_list_entry (iter, NetworkServer, network_servers);
+	nm_assert (path || NM_IS_DEVICE (device));
 
-		/* Device and path matches are exact. */
-		if (   (path && !strcmp (network_server->path, path))
-		    || (device && network_server->device == device))
-			return network_server;
+	c_list_for_each_entry (network_server, &priv->network_servers, network_servers) {
+		if (path && !nm_streq (network_server->path, path))
+			continue;
+		if (device && network_server->device != device)
+			continue;
+		return network_server;
+	}
+	return NULL;
+}
 
+static NetworkServer *
+_find_network_server_for_addr (NMBluez5Manager *self, const char *addr)
+{
+	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
+	NetworkServer *network_server;
+
+	c_list_for_each_entry (network_server, &priv->network_servers, network_servers) {
 		/* The address lookups need a server not assigned to a device
 		 * and tolerate an empty address as a wildcard for "any". */
-		if (   (!path && !device)
-		    && !network_server->device
-		    && (!addr || !strcmp (network_server->addr, addr)))
+		if (   !network_server->device
+		    && (!addr || nm_streq (network_server->addr, addr)))
 			return network_server;
 	}
-
 	return NULL;
 }
 
@@ -163,7 +170,7 @@ network_server_is_available (const NMBtVTableNetworkServer *vtable,
 {
 	NMBluez5Manager *self = NETWORK_SERVER_VTABLE_GET_NM_BLUEZ5_MANAGER (vtable);
 
-	return !!_find_network_server (self, NULL, addr, NULL);
+	return !!_find_network_server_for_addr (self, addr);
 }
 
 static gboolean
@@ -173,7 +180,7 @@ network_server_register_bridge (const NMBtVTableNetworkServer *vtable,
 {
 	NMBluez5Manager *self = NETWORK_SERVER_VTABLE_GET_NM_BLUEZ5_MANAGER (vtable);
 	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
-	NetworkServer *network_server = _find_network_server (self, NULL, addr, NULL);
+	NetworkServer *network_server = _find_network_server_for_addr (self, addr);
 
 	if (!network_server) {
 		/* The device checked that a network server is available, before
@@ -205,7 +212,7 @@ network_server_unregister_bridge (const NMBtVTableNetworkServer *vtable,
                                   NMDevice *device)
 {
 	NMBluez5Manager *self = NETWORK_SERVER_VTABLE_GET_NM_BLUEZ5_MANAGER (vtable);
-	NetworkServer *network_server = _find_network_server (self, NULL, NULL, device);
+	NetworkServer *network_server = _find_network_server (self, NULL, device);
 
 	if (network_server)
 		_network_server_unregister (self, network_server);
@@ -218,7 +225,7 @@ network_server_removed (GDBusProxy *proxy, const gchar *path, NMBluez5Manager *s
 {
 	NetworkServer *network_server;
 
-	network_server = _find_network_server (self, path, NULL, NULL);
+	network_server = _find_network_server (self, path, NULL);
 	if (!network_server)
 		return;
 
