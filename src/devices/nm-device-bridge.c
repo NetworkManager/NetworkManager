@@ -51,52 +51,6 @@ G_DEFINE_TYPE (NMDeviceBridge, nm_device_bridge, NM_TYPE_DEVICE)
 
 const NMBtVTableNetworkServer *nm_bt_vtable_network_server = NULL;
 
-static gboolean
-bt_network_server_available (NMConnection *connection)
-{
-	NMSettingBluetooth *s_bt = _nm_connection_get_setting_bluetooth_for_nap (connection);
-
-	if (!s_bt)
-		return TRUE;
-	if (!nm_bt_vtable_network_server)
-		return FALSE;
-	return nm_bt_vtable_network_server->is_available (nm_bt_vtable_network_server,
-	                                                  nm_setting_bluetooth_get_bdaddr (s_bt));
-}
-
-static gboolean
-bt_network_server_register (NMDevice *self)
-{
-	NMConnection *connection = nm_device_get_applied_connection (self);
-	NMSettingBluetooth *s_bt = _nm_connection_get_setting_bluetooth_for_nap (connection);
-
-	if (!s_bt)
-		return TRUE;
-	if (!nm_bt_vtable_network_server)
-		return FALSE;
-	return nm_bt_vtable_network_server->register_bridge (nm_bt_vtable_network_server,
-	                                                     nm_setting_bluetooth_get_bdaddr (s_bt),
-	                                                     self);
-}
-
-static void
-bt_network_server_unregister (NMDevice *self)
-{
-	NMConnection *connection = nm_device_get_applied_connection (self);
-	NMSettingBluetooth *s_bt;
-
-	if (!connection)
-		return;
-	s_bt = _nm_connection_get_setting_bluetooth_for_nap (connection);
-	if (!s_bt)
-		return;
-
-	if (!nm_bt_vtable_network_server)
-		return;
-	nm_bt_vtable_network_server->unregister_bridge (nm_bt_vtable_network_server,
-	                                                self);
-}
-
 /*****************************************************************************/
 
 static NMDeviceCapabilities
@@ -117,8 +71,14 @@ check_connection_available (NMDevice *device,
                             NMDeviceCheckConAvailableFlags flags,
                             const char *specific_object)
 {
-	if (!bt_network_server_available (connection))
-		return FALSE;
+	NMSettingBluetooth *s_bt;
+
+	s_bt = _nm_connection_get_setting_bluetooth_for_nap (connection);
+	if (s_bt) {
+		return    nm_bt_vtable_network_server
+		       && nm_bt_vtable_network_server->is_available (nm_bt_vtable_network_server,
+		                                                     nm_setting_bluetooth_get_bdaddr (s_bt));
+	}
 
 	/* Connections are always available because the carrier state is determined
 	 * by the bridge port carrier states, not the bridge's state.
@@ -388,10 +348,21 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 static NMActStageReturn
 act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-	if (!bt_network_server_register (device)) {
-		/* The HCI we could use is no longer present. */
-		*out_failure_reason = NM_DEVICE_STATE_REASON_REMOVED;
-		return NM_ACT_STAGE_RETURN_FAILURE;
+	NMConnection *connection;
+	NMSettingBluetooth *s_bt;
+
+	connection = nm_device_get_applied_connection (device);
+
+	s_bt = _nm_connection_get_setting_bluetooth_for_nap (connection);
+	if (s_bt) {
+		if (   !nm_bt_vtable_network_server
+		    || !nm_bt_vtable_network_server->register_bridge (nm_bt_vtable_network_server,
+		                                                      nm_setting_bluetooth_get_bdaddr (s_bt),
+		                                                      device)) {
+			/* The HCI we could use is no longer present. */
+			*out_failure_reason = NM_DEVICE_STATE_REASON_REMOVED;
+			return NM_ACT_STAGE_RETURN_FAILURE;
+		}
 	}
 
 	return NM_ACT_STAGE_RETURN_SUCCESS;
@@ -400,7 +371,12 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 static void
 deactivate (NMDevice *device)
 {
-	bt_network_server_unregister (device);
+	if (nm_bt_vtable_network_server) {
+		/* always call unregister. It does nothing if the device
+		 * isn't registered as a hotspot bridge. */
+		nm_bt_vtable_network_server->unregister_bridge (nm_bt_vtable_network_server,
+		                                                device);
+	}
 }
 
 static gboolean
