@@ -182,6 +182,9 @@ network_server_register_bridge (const NMBtVTableNetworkServer *vtable,
 	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
 	NetworkServer *network_server = _find_network_server_for_addr (self, addr);
 
+	nm_assert (NM_IS_DEVICE (device));
+	nm_assert (!_find_network_server (self, NULL, device));
+
 	if (!network_server) {
 		/* The device checked that a network server is available, before
 		 * starting the activation, but for some reason it no longer is.
