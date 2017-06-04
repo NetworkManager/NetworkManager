@@ -21,6 +21,7 @@
 #ifndef __NMP_OBJECT_H__
 #define __NMP_OBJECT_H__
 
+#include "nm-utils/nm-obj.h"
 #include "nm-platform.h"
 #include "nm-multi-index.h"
 
@@ -138,13 +139,14 @@ struct _NMPCacheId {
 };
 
 typedef struct {
+	NMObjBaseClass parent;
+	const char *obj_type_name;
+	int sizeof_data;
+	int sizeof_public;
 	NMPObjectType obj_type;
 	int addr_family;
 	int rtm_gettype;
-	int sizeof_data;
-	int sizeof_public;
 	NMPlatformSignalIdType signal_type_id;
-	const char *obj_type_name;
 	const char *signal_type;
 
 	const guint8 *supported_cache_ids;
@@ -266,8 +268,11 @@ typedef struct {
 } NMPObjectIP6Route;
 
 struct _NMPObject {
-	const NMPClass *_class;
-	int _ref_count;
+	union {
+		NMObjBaseInst parent;
+		const NMPClass *_class;
+	};
+	guint _ref_count;
 	bool is_cached;
 	union {
 		NMPlatformObject        object;
@@ -326,8 +331,6 @@ NMP_CLASS_IS_VALID (const NMPClass *klass)
 	    && ((((char *) klass) - ((char *) _nmp_classes)) % (sizeof (_nmp_classes[0]))) == 0;
 }
 
-#define NMP_REF_COUNT_STACKINIT (G_MAXINT)
-
 static inline NMPObject *
 NMP_OBJECT_UP_CAST(const NMPlatformObject *plobj)
 {
@@ -358,7 +361,7 @@ NMP_OBJECT_IS_STACKINIT (const NMPObject *obj)
 {
 	nm_assert (!obj || NMP_OBJECT_IS_VALID (obj));
 
-	return obj && obj->_ref_count == NMP_REF_COUNT_STACKINIT;
+	return obj && obj->_ref_count == NM_OBJ_REF_COUNT_STACKINIT;
 }
 
 static inline const NMPClass *

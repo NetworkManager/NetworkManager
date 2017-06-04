@@ -208,7 +208,7 @@ NMPObject *
 nmp_object_ref (NMPObject *obj)
 {
 	g_return_val_if_fail (NMP_OBJECT_IS_VALID (obj), NULL);
-	g_return_val_if_fail (obj->_ref_count != NMP_REF_COUNT_STACKINIT, NULL);
+	g_return_val_if_fail (obj->_ref_count != NM_OBJ_REF_COUNT_STACKINIT, NULL);
 	obj->_ref_count++;
 
 	return obj;
@@ -219,7 +219,7 @@ nmp_object_unref (NMPObject *obj)
 {
 	if (obj) {
 		g_return_if_fail (obj->_ref_count > 0);
-		g_return_if_fail (obj->_ref_count != NMP_REF_COUNT_STACKINIT);
+		g_return_if_fail (obj->_ref_count != NM_OBJ_REF_COUNT_STACKINIT);
 		if (--obj->_ref_count <= 0) {
 			const NMPClass *klass = obj->_class;
 
@@ -294,7 +294,7 @@ _nmp_object_stackinit_from_class (NMPObject *obj, const NMPClass *klass)
 
 	memset (obj, 0, sizeof (NMPObject));
 	obj->_class = klass;
-	obj->_ref_count = NMP_REF_COUNT_STACKINIT;
+	obj->_ref_count = NM_OBJ_REF_COUNT_STACKINIT;
 	return obj;
 }
 
@@ -434,7 +434,7 @@ nmp_object_to_string (const NMPObject *obj, NMPObjectToStringMode to_string_mode
 		return klass->cmd_plobj_to_string_id (&obj->object, buf, buf_size);
 	case NMP_OBJECT_TO_STRING_ALL:
 		g_snprintf (buf, buf_size,
-		            "[%s,%p,%d,%ccache,%calive,%cvisible; %s]",
+		            "[%s,%p,%u,%ccache,%calive,%cvisible; %s]",
 		            klass->obj_type_name, obj, obj->_ref_count,
 		            obj->is_cached ? '+' : '-',
 		            nmp_object_is_alive (obj) ? '+' : '-',
@@ -461,7 +461,7 @@ _vt_cmd_obj_to_string_link (const NMPObject *obj, NMPObjectToStringMode to_strin
 		return klass->cmd_plobj_to_string_id (&obj->object, buf, buf_size);
 	case NMP_OBJECT_TO_STRING_ALL:
 		g_snprintf (buf, buf_size,
-		            "[%s,%p,%d,%ccache,%calive,%cvisible,%cin-nl,%p; %s]",
+		            "[%s,%p,%u,%ccache,%calive,%cvisible,%cin-nl,%p; %s]",
 		            klass->obj_type_name, obj, obj->_ref_count,
 		            obj->is_cached ? '+' : '-',
 		            nmp_object_is_alive (obj) ? '+' : '-',
@@ -502,7 +502,7 @@ _vt_cmd_obj_to_string_lnk_vlan (const NMPObject *obj, NMPObjectToStringMode to_s
 	case NMP_OBJECT_TO_STRING_ALL:
 
 		g_snprintf (buf, buf_size,
-		            "[%s,%p,%d,%ccache,%calive,%cvisible; %s]",
+		            "[%s,%p,%u,%ccache,%calive,%cvisible; %s]",
 		            klass->obj_type_name, obj, obj->_ref_count,
 		            obj->is_cached ? '+' : '-',
 		            nmp_object_is_alive (obj) ? '+' : '-',

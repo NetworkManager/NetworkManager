@@ -33,6 +33,56 @@ struct {
 
 /*****************************************************************************/
 
+static void
+test_obj_base (void)
+{
+	static const GObject *g = NULL;
+	static const GTypeClass *k = NULL;
+	static const NMPObject *o = NULL;
+	static const NMPClass *c = NULL;
+
+	NMObjBaseInst *obj;
+	gs_unref_object GCancellable *obj_cancellable = g_cancellable_new ();
+	nm_auto_nmpobj NMPObject *obj_link = nmp_object_new_link (10);
+
+#define STATIC_ASSERT(cond) \
+	G_STMT_START { \
+		G_STATIC_ASSERT (cond); \
+		G_STATIC_ASSERT_EXPR (cond); \
+		g_assert (cond); \
+	} G_STMT_END
+
+	STATIC_ASSERT (&g->g_type_instance              == (void *) &o->_class);
+	STATIC_ASSERT (&g->g_type_instance.g_class      == (void *) &o->_class);
+	STATIC_ASSERT (&g->ref_count                    == (void *) &o->_ref_count);
+
+	STATIC_ASSERT (sizeof (o->parent)               == sizeof (GTypeInstance));
+
+	STATIC_ASSERT (&c->parent                       == (void *) c);
+	STATIC_ASSERT (&c->parent.g_type_class          == (void *) c);
+	STATIC_ASSERT (&c->parent.g_type                == (void *) c);
+	STATIC_ASSERT (&c->parent.g_type                == &k->g_type);
+
+	STATIC_ASSERT (sizeof (c->parent)               == sizeof (GTypeClass));
+
+	STATIC_ASSERT (&o->parent                       == (void *) o);
+	STATIC_ASSERT (&o->parent.klass                 == (void *) &o->_class);
+
+	STATIC_ASSERT (G_STRUCT_OFFSET (NMPObject, _ref_count) == sizeof (NMObjBaseInst));
+	STATIC_ASSERT (G_STRUCT_OFFSET (NMPClass, obj_type_name) == sizeof (NMObjBaseClass));
+
+	obj = (NMObjBaseInst *) obj_cancellable;
+	g_assert (!NMP_CLASS_IS_VALID ((NMPClass *) obj->klass));
+	g_assert (G_TYPE_CHECK_INSTANCE_TYPE (obj, G_TYPE_CANCELLABLE));
+
+	obj = (NMObjBaseInst *) obj_link;
+	g_assert (NMP_CLASS_IS_VALID ((NMPClass *) obj->klass));
+	g_assert (!G_TYPE_CHECK_INSTANCE_TYPE (obj, G_TYPE_CANCELLABLE));
+
+}
+
+/*****************************************************************************/
+
 static gboolean
 _nmp_object_id_equal (const NMPObject *a, const NMPObject *b)
 {
@@ -429,6 +479,7 @@ main (int argc, char **argv)
 		udev_enumerate_unref (enumerator);
 	}
 
+	g_test_add_func ("/nmp-object/obj-base", test_obj_base);
 	g_test_add_func ("/nmp-object/cache_link", test_cache_link);
 
 	result = g_test_run ();
