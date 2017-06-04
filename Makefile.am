@@ -415,6 +415,7 @@ libnm_core_lib_h_pub_real = \
 libnm_core_lib_h_pub_mkenums = \
 	libnm-core/nm-core-enum-types.h
 libnm_core_lib_h_priv = \
+	shared/nm-utils/nm-dedup-multi.h \
 	shared/nm-utils/nm-enum-utils.h \
 	shared/nm-utils/nm-shared-utils.h \
 	shared/nm-utils/nm-udev-utils.h \
@@ -429,6 +430,7 @@ libnm_core_lib_h_priv = \
 	libnm-core/nm-setting-private.h \
 	libnm-core/nm-utils-private.h
 libnm_core_lib_c_real = \
+	shared/nm-utils/nm-dedup-multi.c \
 	shared/nm-utils/nm-enum-utils.c \
 	shared/nm-utils/nm-shared-utils.c \
 	shared/nm-utils/nm-udev-utils.c \
@@ -1271,6 +1273,7 @@ $(src_libsystemd_nm_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 src_libNetworkManagerBase_la_CPPFLAGS = $(src_cppflags)
 
 src_libNetworkManagerBase_la_SOURCES = \
+	\
 	src/nm-core-utils.c \
 	src/nm-core-utils.h \
 	src/nm-logging.c \
