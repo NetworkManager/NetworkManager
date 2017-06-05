@@ -557,6 +557,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	const char *arp_ip_target = NULL;
 	const char *lacp_rate;
 	const char *primary;
+	NMBondMode bond_mode;
 
 	g_hash_table_iter_init (&iter, priv->options);
 	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &value)) {
@@ -789,6 +790,23 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		             NM_SETTING_BOND_OPTION_MODE);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
 		return NM_SETTING_VERIFY_NORMALIZABLE;
+	}
+
+	/* normalize unsupported options for the current mode */
+	bond_mode = _nm_setting_bond_mode_from_string (mode_new);
+	g_hash_table_iter_init (&iter, priv->options);
+	while (g_hash_table_iter_next (&iter, (gpointer) &key, NULL)) {
+		if (nm_streq (key, "mode"))
+			continue;
+		if (!_nm_setting_bond_option_supported (key, bond_mode)) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("'%s' option is not valid with mode '%s'"),
+			             key, mode_new);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
+			return NM_SETTING_VERIFY_NORMALIZABLE;
+		}
 	}
 
 	return TRUE;
