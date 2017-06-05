@@ -791,14 +791,17 @@ complete_connection (NMDevice *device,
 	NMSettingWireless *s_wifi;
 	const char *setting_mac;
 	char *str_ssid = NULL;
-	NMWifiAP *ap = NULL;
+	NMWifiAP *ap;
 	const GByteArray *ssid = NULL;
 	GByteArray *tmp_ssid = NULL;
 	GBytes *setting_ssid = NULL;
 	gboolean hidden = FALSE;
 	const char *perm_hw_addr;
+	const char *mode;
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
+
+	mode = s_wifi ? nm_setting_wireless_get_mode (s_wifi) : NULL;
 
 	if (!specific_object) {
 		/* If not given a specific object, we need at minimum an SSID */
@@ -819,19 +822,29 @@ complete_connection (NMDevice *device,
 			return FALSE;
 		}
 
-		/* Find a compatible AP in the scan list */
-		ap = find_first_compatible_ap (self, connection, FALSE);
+		if (!nm_streq0 (mode, NM_SETTING_WIRELESS_MODE_AP)) {
+			/* Find a compatible AP in the scan list */
+			ap = find_first_compatible_ap (self, connection, FALSE);
 
-		/* If we still don't have an AP, then the WiFI settings needs to be
-		 * fully specified by the client.  Might not be able to find an AP
-		 * if the network isn't broadcasting the SSID for example.
-		 */
-		if (!ap) {
+			/* If we still don't have an AP, then the WiFI settings needs to be
+			 * fully specified by the client.  Might not be able to find an AP
+			 * if the network isn't broadcasting the SSID for example.
+			 */
+			if (!ap) {
+				if (!nm_setting_verify (NM_SETTING (s_wifi), connection, error))
+					return FALSE;
+
+				hidden = TRUE;
+			}
+		} else {
 			if (!nm_setting_verify (NM_SETTING (s_wifi), connection, error))
 				return FALSE;
-
-			hidden = TRUE;
+			ap = NULL;
 		}
+	} else if (nm_streq0 (mode, NM_SETTING_WIRELESS_MODE_AP)) {
+		if (!nm_setting_verify (NM_SETTING (s_wifi), connection, error))
+			return FALSE;
+		ap = NULL;
 	} else {
 		ap = get_ap_by_path (self, specific_object);
 		if (!ap) {
@@ -1364,8 +1377,12 @@ hidden_filter_func (NMSettings *settings,
 
 	if (!nm_connection_is_type (NM_CONNECTION (connection), NM_SETTING_WIRELESS_SETTING_NAME))
 		return FALSE;
-	s_wifi = (NMSettingWireless *) nm_connection_get_setting_wireless (NM_CONNECTION (connection));
-	return s_wifi ? nm_setting_wireless_get_hidden (s_wifi) : FALSE;
+	s_wifi = nm_connection_get_setting_wireless (NM_CONNECTION (connection));
+	if (!s_wifi)
+		return FALSE;
+	if (nm_streq0 (nm_setting_wireless_get_mode (s_wifi), NM_SETTING_WIRELESS_MODE_AP))
+		return FALSE;
+	return nm_setting_wireless_get_hidden (s_wifi);
 }
 
 static GPtrArray *
@@ -1488,7 +1505,7 @@ request_wireless_scan (NMDeviceWifi *self, gboolean force_if_scanning, GVariant 
 					      ? nm_utils_ssid_to_utf8 (ssid->data, ssid->len)
 					      : NULL;
 					_LOGD (LOGD_WIFI, "wifi-scan: (%u) probe scanning SSID %s%s%s",
-					       i, NM_PRINT_FMT_QUOTED (foo, "\"", foo, "\"", "<hidden>"));
+					       i, NM_PRINT_FMT_QUOTED (foo, "\"", foo, "\"", "*any*"));
 					g_free (foo);
 				}
 			} else
