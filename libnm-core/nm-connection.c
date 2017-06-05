@@ -922,6 +922,36 @@ _normalize_bond_mode (NMConnection *self, GHashTable *parameters)
 }
 
 static gboolean
+_normalize_bond_options (NMConnection *self, GHashTable *parameters)
+{
+	NMSettingBond *s_bond = nm_connection_get_setting_bond (self);
+	gboolean changed = FALSE;
+	const char *name, *mode_str;
+	NMBondMode mode;
+	guint32 num, i;
+
+	/* Strip away unsupported options for current mode */
+	if (s_bond) {
+		mode_str = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_MODE);
+		mode = _nm_setting_bond_mode_from_string (mode_str);
+		if (mode == NM_BOND_MODE_UNKNOWN)
+			return FALSE;
+again:
+		num = nm_setting_bond_get_num_options (s_bond);
+		for (i = 0; i < num; i++) {
+			if (   nm_setting_bond_get_option (s_bond, i, &name, NULL)
+			    && !_nm_setting_bond_option_supported (name, mode)) {
+				nm_setting_bond_remove_option (s_bond, name);
+				changed = TRUE;
+				goto again;
+			}
+		}
+	}
+
+	return changed;
+}
+
+static gboolean
 _normalize_wireless_mac_address_randomization (NMConnection *self, GHashTable *parameters)
 {
 	NMSettingWireless *s_wifi = nm_connection_get_setting_wireless (self);
@@ -1296,6 +1326,7 @@ nm_connection_normalize (NMConnection *connection,
 	was_modified |= _normalize_ethernet_link_neg (connection);
 	was_modified |= _normalize_infiniband_mtu (connection, parameters);
 	was_modified |= _normalize_bond_mode (connection, parameters);
+	was_modified |= _normalize_bond_options (connection, parameters);
 	was_modified |= _normalize_wireless_mac_address_randomization (connection, parameters);
 	was_modified |= _normalize_team_config (connection, parameters);
 	was_modified |= _normalize_team_port_config (connection, parameters);

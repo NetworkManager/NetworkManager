@@ -155,6 +155,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 {
 	NMSettingBond *s_bond = nm_connection_get_setting_bond (connection);
 	int ifindex = nm_device_get_ifindex (device);
+	NMBondMode mode = NM_BOND_MODE_UNKNOWN;
 	const char **options;
 
 	if (!s_bond) {
@@ -164,7 +165,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 
 	/* Read bond options from sysfs and update the Bond setting to match */
 	options = nm_setting_bond_get_valid_options (s_bond);
-	while (options && *options) {
+	for (; *options; options++) {
 		gs_free char *value = nm_platform_sysctl_master_get_option (nm_device_get_platform (device), ifindex, *options);
 		const char *defvalue = nm_setting_bond_get_option_default (s_bond, *options);
 		char *p;
@@ -175,6 +176,12 @@ update_connection (NMDevice *device, NMConnection *connection)
 			if (p)
 				*p = '\0';
 		}
+
+		if (nm_streq (*options, NM_SETTING_BOND_OPTION_MODE))
+			mode = _nm_setting_bond_mode_from_string (value);
+
+		if (!_nm_setting_bond_option_supported (*options, mode))
+			continue;
 
 		if (   value
 		    && value[0]
@@ -190,7 +197,6 @@ update_connection (NMDevice *device, NMConnection *connection)
 
 			nm_setting_bond_add_option (s_bond, *options, value);
 		}
-		options++;
 	}
 }
 
