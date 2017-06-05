@@ -182,6 +182,54 @@ test_compare (void)
 	                      ((const char *[]){ "num_unsol_na", "4", "num_grat_arp", "4", NULL }));
 }
 
+static void
+test_normalize_options (const char **opts1, const char **opts2)
+{
+	gs_unref_object NMConnection *con = NULL;
+	NMSettingBond *s_bond;
+	GError *error = NULL;
+	gboolean success;
+	const char **p;
+	int num = 0;
+
+	create_bond_connection (&con, &s_bond);
+
+	for (p = opts1; p[0] && p[1]; p += 2)
+		g_assert (nm_setting_bond_add_option (s_bond, p[0], p[1]));
+
+	nmtst_assert_connection_verifies_and_normalizable (con);
+	nmtst_connection_normalize (con);
+	success = nm_setting_verify ((NMSetting *) s_bond, con, &error);
+	nmtst_assert_success (success, error);
+
+	for (p = opts2; p[0] && p[1]; p += 2) {
+		g_assert_cmpstr (nm_setting_bond_get_option_by_name (s_bond, p[0]), ==, p[1]);
+		num++;
+	}
+
+	g_assert_cmpint (num, ==, nm_setting_bond_get_num_options (s_bond));
+}
+
+static void
+test_normalize (void)
+{
+	test_normalize_options (
+		((const char *[]){ "mode", "802.3ad", "ad_actor_system", "00:02:03:04:05:06", NULL }),
+		((const char *[]){ "mode", "802.3ad", "ad_actor_system", "00:02:03:04:05:06", NULL }));
+	test_normalize_options (
+		((const char *[]){ "mode", "1", "miimon", "1", NULL }),
+		((const char *[]){ "mode", "active-backup", "miimon", "1", NULL }));
+	test_normalize_options (
+		((const char *[]){ "mode", "balance-alb", "tlb_dynamic_lb", "1", NULL }),
+		((const char *[]){ "mode", "balance-alb", NULL }));
+	test_normalize_options (
+		((const char *[]){ "mode", "balance-tlb", "tlb_dynamic_lb", "1", NULL }),
+		((const char *[]){ "mode", "balance-tlb", "tlb_dynamic_lb", "1", NULL }));
+	test_normalize_options (
+		((const char *[]){ "mode", "balance-rr", "ad_actor_sys_prio", "4", "packets_per_slave", "3", NULL }),
+		((const char *[]){ "mode", "balance-rr", "packets_per_slave", "3", NULL }));
+}
+
 #define TPATH "/libnm/settings/bond/"
 
 NMTST_DEFINE ();
@@ -193,6 +241,7 @@ main (int argc, char **argv)
 
 	g_test_add_func (TPATH "verify", test_verify);
 	g_test_add_func (TPATH "compare", test_compare);
+	g_test_add_func (TPATH "normalize", test_normalize);
 
 	return g_test_run ();
 }
