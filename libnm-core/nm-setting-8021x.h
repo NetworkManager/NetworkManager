@@ -175,7 +175,7 @@ typedef enum { /*< underscore_name=nm_setting_802_1x_auth_flags >*/
 /**
  * NMSetting8021x:
  *
- * AIEEE 802.1x Authentication Settings
+ * IEEE 802.1x Authentication Settings
  */
 struct _NMSetting8021x {
 	NMSetting parent;
