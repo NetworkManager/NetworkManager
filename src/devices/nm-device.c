@@ -1555,6 +1555,8 @@ nm_device_get_priority (NMDevice *self)
 		return 425;
 	case NM_DEVICE_TYPE_TUN:
 		return 450;
+	case NM_DEVICE_TYPE_PPP:
+		return 460;
 	case NM_DEVICE_TYPE_VXLAN:
 		return 500;
 	case NM_DEVICE_TYPE_DUMMY:

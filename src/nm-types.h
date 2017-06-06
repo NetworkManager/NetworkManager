@@ -142,7 +142,8 @@ typedef enum {
 	NM_LINK_TYPE_WIMAX,
 
 	/* Software types */
-	NM_LINK_TYPE_DUMMY = 0x10000,
+	NM_LINK_TYPE_BNEP = 0x10000,   /* Bluetooth Ethernet emulation */
+	NM_LINK_TYPE_DUMMY,
 	NM_LINK_TYPE_GRE,
 	NM_LINK_TYPE_GRETAP,
 	NM_LINK_TYPE_IFB,
@@ -153,13 +154,13 @@ typedef enum {
 	NM_LINK_TYPE_MACVLAN,
 	NM_LINK_TYPE_MACVTAP,
 	NM_LINK_TYPE_OPENVSWITCH,
+	NM_LINK_TYPE_PPP,
 	NM_LINK_TYPE_SIT,
 	NM_LINK_TYPE_TAP,
 	NM_LINK_TYPE_TUN,
 	NM_LINK_TYPE_VETH,
 	NM_LINK_TYPE_VLAN,
 	NM_LINK_TYPE_VXLAN,
-	NM_LINK_TYPE_BNEP,   /* Bluetooth Ethernet emulation */
 
 	/* Software types with slaves */
 	NM_LINK_TYPE_BRIDGE = 0x10000 | 0x20000,

@@ -380,6 +380,7 @@ static const LinkDesc linktypes[] = {
 	{ NM_LINK_TYPE_WWAN_NET,      "wwan",        NULL,          "wwan" },
 	{ NM_LINK_TYPE_WIMAX,         "wimax",       "wimax",       "wimax" },
 
+	{ NM_LINK_TYPE_BNEP,          "bluetooth",   NULL,          "bluetooth" },
 	{ NM_LINK_TYPE_DUMMY,         "dummy",       "dummy",       NULL },
 	{ NM_LINK_TYPE_GRE,           "gre",         "gre",         NULL },
 	{ NM_LINK_TYPE_GRETAP,        "gretap",      "gretap",      NULL },
@@ -391,13 +392,13 @@ static const LinkDesc linktypes[] = {
 	{ NM_LINK_TYPE_MACVLAN,       "macvlan",     "macvlan",     NULL },
 	{ NM_LINK_TYPE_MACVTAP,       "macvtap",     "macvtap",     NULL },
 	{ NM_LINK_TYPE_OPENVSWITCH,   "openvswitch", "openvswitch", NULL },
+	{ NM_LINK_TYPE_PPP,           "ppp",         NULL,          "ppp" },
 	{ NM_LINK_TYPE_SIT,           "sit",         "sit",         NULL },
 	{ NM_LINK_TYPE_TAP,           "tap",         NULL,          NULL },
 	{ NM_LINK_TYPE_TUN,           "tun",         NULL,          NULL },
 	{ NM_LINK_TYPE_VETH,          "veth",        "veth",        NULL },
 	{ NM_LINK_TYPE_VLAN,          "vlan",        "vlan",        "vlan" },
 	{ NM_LINK_TYPE_VXLAN,         "vxlan",       "vxlan",       "vxlan" },
-	{ NM_LINK_TYPE_BNEP,          "bluetooth",   NULL,          "bluetooth" },
 
 	{ NM_LINK_TYPE_BRIDGE,        "bridge",      "bridge",      "bridge" },
 	{ NM_LINK_TYPE_BOND,          "bond",        "bond",        "bond" },
@@ -696,6 +697,8 @@ _linktype_get_type (NMPlatform *platform,
 		return NM_LINK_TYPE_SIT;
 	else if (arptype == ARPHRD_TUNNEL6)
 		return NM_LINK_TYPE_IP6TNL;
+	else if (arptype == ARPHRD_PPP)
+		return NM_LINK_TYPE_PPP;
 
 	{
 		NMPUtilsEthtoolDriverInfo driver_info;
