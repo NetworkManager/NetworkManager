@@ -34,11 +34,21 @@ _nm_device_log_self_to_device (t *self) \
 #undef  _NMLOG_ENABLED
 #define _NMLOG_ENABLED(level, domain) ( nm_logging_enabled ((level), (domain)) )
 #define _NMLOG(level, domain, ...) \
-    nm_log_obj ((level), (domain), \
-                (self) ? nm_device_get_iface (_nm_device_log_self_to_device (self)) : NULL, \
-                NULL, (self), "device", \
-                "(%s): " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-                (self) ? (nm_device_get_iface (_nm_device_log_self_to_device (self)) ?: "(null)") : "(none)" \
-                _NM_UTILS_MACRO_REST(__VA_ARGS__))
+	G_STMT_START { \
+		const NMLogLevel _level = (level); \
+		const NMLogDomain _domain = (domain); \
+		\
+		if (nm_logging_enabled (_level, _domain)) { \
+			typeof (*self) *const _self = (self); \
+			const char *const _ifname = _self ? nm_device_get_iface (_nm_device_log_self_to_device (_self)) : NULL; \
+			\
+			nm_log_obj (_level, _domain, \
+			            _ifname, NULL, \
+			            _self, "device", \
+			            "%s%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+			            NM_PRINT_FMT_QUOTED (_ifname, "(", _ifname, ")", "[null]") \
+			            _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+		} \
+	} G_STMT_END
 
 #endif /* __NETWORKMANAGER_DEVICE_LOGGING_H__ */
