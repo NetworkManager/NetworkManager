@@ -40,7 +40,7 @@ _nm_device_log_self_to_device (t *self) \
 		\
 		if (nm_logging_enabled (_level, _domain)) { \
 			typeof (*self) *const _self = (self); \
-			const char *const _ifname = _self ? nm_device_get_iface (_nm_device_log_self_to_device (_self)) : NULL; \
+			const char *const _ifname = _nm_device_get_iface (_nm_device_log_self_to_device (_self)); \
 			\
 			nm_log_obj (_level, _domain, \
 			            _ifname, NULL, \
