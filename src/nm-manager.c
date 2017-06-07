@@ -1901,22 +1901,27 @@ recheck_assume_connection (NMManager *self,
 
 	if (!nm_device_get_managed (device, FALSE)) {
 		nm_device_assume_state_reset (device);
+		_LOG2D (LOGD_DEVICE, device, "assume: don't assume because %s", "not managed");
 		return FALSE;
 	}
 
 	state = nm_device_get_state (device);
 	if (state > NM_DEVICE_STATE_DISCONNECTED) {
 		nm_device_assume_state_reset (device);
+		_LOG2D (LOGD_DEVICE, device, "assume: don't assume due to device state %s",
+		        nm_device_state_to_str (state));
 		return FALSE;
 	}
 
 	connection = get_existing_connection (self, device, &generated);
 	if (!connection) {
-		_LOG2D (LOGD_DEVICE, device, "can't assume; no connection");
+		_LOG2D (LOGD_DEVICE, device, "assume: don't assume because %s", "no connection was generated");
 		return FALSE;
 	}
 
-	_LOG2D (LOGD_DEVICE, device, "will attempt to assume connection");
+	_LOG2D (LOGD_DEVICE, device, "assume: will attempt to assume %sconnection %s",
+	        generated ? "generated " : "",
+	        nm_connection_get_uuid (NM_CONNECTION (connection)));
 
 	nm_device_sys_iface_state_set (device,
 	                               generated
@@ -1951,7 +1956,7 @@ recheck_assume_connection (NMManager *self,
 		                                 &error);
 
 		if (!active) {
-			_LOGW (LOGD_DEVICE, "assumed connection %s failed to activate: %s",
+			_LOGW (LOGD_DEVICE, "assume: assumed connection %s failed to activate: %s",
 			       nm_connection_get_path (NM_CONNECTION (connection)),
 			       error->message);
 			g_error_free (error);
@@ -1963,7 +1968,7 @@ recheck_assume_connection (NMManager *self,
 			}
 
 			if (generated) {
-				_LOG2D (LOGD_DEVICE, device, "connection assumption failed. Deleting generated connection");
+				_LOG2D (LOGD_DEVICE, device, "assume: deleting generated connection after assuming failed");
 				nm_settings_connection_delete (connection, NULL, NULL);
 			} else {
 				if (nm_device_sys_iface_state_get (device) == NM_DEVICE_SYS_IFACE_STATE_ASSUME)
