@@ -3724,10 +3724,11 @@ validate_activation_request (NMManager *self,
 		device = nm_manager_get_best_device_for_connection (self, connection, TRUE, NULL);
 
 	if (!device && !vpn) {
-		gboolean is_software = nm_connection_is_virtual (connection);
+		gs_free char *iface = NULL;
 
-		/* VPN and software-device connections don't need a device yet */
-		if (!is_software) {
+		/* VPN and software-device connections don't need a device yet,
+		 * but non-virtual connections do ... */
+		if (!nm_connection_is_virtual (connection)) {
 			g_set_error_literal (error,
 			                     NM_MANAGER_ERROR,
 			                     NM_MANAGER_ERROR_UNKNOWN_DEVICE,
@@ -3735,17 +3736,12 @@ validate_activation_request (NMManager *self,
 			goto error;
 		}
 
-		if (is_software) {
-			char *iface;
+		/* Look for an existing device with the connection's interface name */
+		iface = nm_manager_get_connection_iface (self, connection, NULL, error);
+		if (!iface)
+			goto error;
 
-			/* Look for an existing device with the connection's interface name */
-			iface = nm_manager_get_connection_iface (self, connection, NULL, error);
-			if (!iface)
-				goto error;
-
-			device = find_device_by_iface (self, iface, connection, NULL);
-			g_free (iface);
-		}
+		device = find_device_by_iface (self, iface, connection, NULL);
 	}
 
 	if ((!vpn || device_path) && !device) {
@@ -3840,8 +3836,8 @@ impl_manager_activate_connection (NMManager *self,
 		connection = nm_settings_get_connection_by_path (priv->settings, connection_path);
 		if (!connection) {
 			error = g_error_new_literal (NM_MANAGER_ERROR,
-						     NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
-						     "Connection could not be found.");
+			                             NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
+			                             "Connection could not be found.");
 			goto error;
 		}
 	} else {

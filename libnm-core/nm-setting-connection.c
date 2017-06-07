@@ -46,7 +46,7 @@
  **/
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingConnection, nm_setting_connection, NM_TYPE_SETTING,
-                         _nm_register_setting (CONNECTION, 0))
+                         _nm_register_setting (CONNECTION, NM_SETTING_PRIORITY_CONNECTION))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_CONNECTION)
 
 #define NM_SETTING_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_CONNECTION, NMSettingConnectionPrivate))
@@ -926,7 +926,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 
 		base_type = nm_setting_lookup_type (priv->type);
-		if (base_type == G_TYPE_INVALID || !_nm_setting_type_get_base_type_priority (base_type)) {
+		if (   base_type == G_TYPE_INVALID
+		    || _nm_setting_type_get_base_type_priority (base_type) == NM_SETTING_PRIORITY_INVALID) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,

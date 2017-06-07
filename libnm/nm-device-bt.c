@@ -131,9 +131,16 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	if (!NM_DEVICE_CLASS (nm_device_bt_parent_class)->connection_compatible (device, connection, error))
 		return FALSE;
 
-	if (!nm_connection_is_type (connection, NM_SETTING_BLUETOOTH_SETTING_NAME)) {
+	if (   !nm_connection_is_type (connection, NM_SETTING_BLUETOOTH_SETTING_NAME)
+	    || !(s_bt = nm_connection_get_setting_bluetooth (connection))) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
 		             _("The connection was not a Bluetooth connection."));
+		return FALSE;
+	}
+
+	if (nm_streq0 (nm_setting_bluetooth_get_connection_type (s_bt), NM_SETTING_BLUETOOTH_TYPE_NAP)) {
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+		             _("The connection is of Bluetooth NAP type."));
 		return FALSE;
 	}
 
@@ -145,7 +152,6 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 			                     _("Invalid device Bluetooth address."));
 			return FALSE;
 		}
-		s_bt = nm_connection_get_setting_bluetooth (connection);
 		setting_addr = nm_setting_bluetooth_get_bdaddr (s_bt);
 		if (setting_addr && !nm_utils_hwaddr_matches (setting_addr, -1, hw_addr, -1)) {
 			g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,

@@ -178,10 +178,6 @@ typedef NMDeviceFactory * (*NMDeviceFactoryCreateFunc) (GError **error);
 
 /*****************************************************************************/
 
-void       nm_device_factory_get_supported_types (NMDeviceFactory *factory,
-                                                  const NMLinkType **out_link_types,
-                                                  const char *const**out_setting_types);
-
 const char *nm_device_factory_get_connection_parent (NMDeviceFactory *factory,
                                                      NMConnection *connection);
 

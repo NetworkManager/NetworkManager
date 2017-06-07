@@ -30,6 +30,8 @@
 
 #include "platform/nm-platform.h"
 #include "nm-utils.h"
+#include "nm-core-internal.h"
+#include "nm-setting-bluetooth.h"
 
 #define PLUGIN_PREFIX "libnm-device-plugin-"
 
@@ -60,7 +62,7 @@ nm_device_factory_emit_component_added (NMDeviceFactory *factory, GObject *compo
 	return consumed;
 }
 
-void
+static void
 nm_device_factory_get_supported_types (NMDeviceFactory *factory,
                                        const NMLinkType **out_link_types,
                                        const char *const**out_setting_types)
@@ -90,56 +92,26 @@ nm_device_factory_create_device (NMDeviceFactory *factory,
                                  GError **error)
 {
 	NMDeviceFactoryClass *klass;
-	const NMLinkType *link_types = NULL;
-	const char *const*setting_types = NULL;
-	int i;
 	NMDevice *device;
 	gboolean ignore = FALSE;
 
 	g_return_val_if_fail (factory, NULL);
 	g_return_val_if_fail (iface && *iface, NULL);
-	g_return_val_if_fail (plink || connection, NULL);
-	g_return_val_if_fail (!plink || !connection, NULL);
-
-	nm_device_factory_get_supported_types (factory, &link_types, &setting_types);
-
-	NM_SET_OUT (out_ignore, FALSE);
-
 	if (plink) {
+		g_return_val_if_fail (!connection, NULL);
 		g_return_val_if_fail (strcmp (iface, plink->name) == 0, NULL);
-
-		for (i = 0; link_types[i] > NM_LINK_TYPE_UNKNOWN; i++) {
-			if (plink->type == link_types[i])
-				break;
-		}
-
-		if (link_types[i] == NM_LINK_TYPE_UNKNOWN) {
-			g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
-			             "Device factory %s does not support link type %s (%d)",
-			             G_OBJECT_TYPE_NAME (factory),
-			             plink->kind, plink->type);
-			return NULL;
-		}
-	} else if (connection) {
-		for (i = 0; setting_types && setting_types[i]; i++) {
-			if (nm_connection_is_type (connection, setting_types[i]))
-				break;
-		}
-
-		if (!setting_types[i]) {
-			g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
-			             "Device factory %s does not support connection type %s",
-			             G_OBJECT_TYPE_NAME (factory),
-			             nm_connection_get_connection_type (connection));
-			return NULL;
-		}
-	}
+		nm_assert (factory == nm_device_factory_manager_find_factory_for_link_type (plink->type));
+	} else if (connection)
+		nm_assert (factory == nm_device_factory_manager_find_factory_for_connection (connection));
+	else
+		g_return_val_if_reached (NULL);
 
 	klass = NM_DEVICE_FACTORY_GET_CLASS (factory);
 	if (!klass->create_device) {
 		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
 		             "Device factory %s cannot manage new devices",
 		             G_OBJECT_TYPE_NAME (factory));
+		NM_SET_OUT (out_ignore, FALSE);
 		return NULL;
 	}
 
@@ -252,51 +224,45 @@ _cleanup (void)
 	g_clear_pointer (&factories_by_setting, g_hash_table_unref);
 }
 
-static NMDeviceFactory *
-find_factory (const NMLinkType *needle_link_types,
-              const char *const*needle_setting_types)
-{
-	NMDeviceFactory *found;
-	guint i;
-
-	g_return_val_if_fail (factories_by_link, NULL);
-	g_return_val_if_fail (factories_by_setting, NULL);
-
-	/* NMLinkType search */
-	for (i = 0; needle_link_types && needle_link_types[i] > NM_LINK_TYPE_UNKNOWN; i++) {
-		found = g_hash_table_lookup (factories_by_link, GUINT_TO_POINTER (needle_link_types[i]));
-		if (found)
-			return found;
-	}
-
-	/* NMSetting name search */
-	for (i = 0; needle_setting_types && needle_setting_types[i]; i++) {
-		found = g_hash_table_lookup (factories_by_setting, needle_setting_types[i]);
-		if (found)
-			return found;
-	}
-
-	return NULL;
-}
-
 NMDeviceFactory *
 nm_device_factory_manager_find_factory_for_link_type (NMLinkType link_type)
 {
-	const NMLinkType ltypes[2] = { link_type, NM_LINK_TYPE_NONE };
+	g_return_val_if_fail (factories_by_link, NULL);
 
-	if (link_type == NM_LINK_TYPE_UNKNOWN)
-		return NULL;
-	g_return_val_if_fail (link_type > NM_LINK_TYPE_UNKNOWN, NULL);
-	return find_factory (ltypes, NULL);
+	return g_hash_table_lookup (factories_by_link, GUINT_TO_POINTER (link_type));
 }
 
 NMDeviceFactory *
 nm_device_factory_manager_find_factory_for_connection (NMConnection *connection)
 {
-	const char *const stypes[2] = { nm_connection_get_connection_type (connection), NULL };
+	const char *type;
 
-	g_assert (stypes[0]);
-	return find_factory (NULL, stypes);
+	g_return_val_if_fail (factories_by_setting, NULL);
+
+	type = nm_connection_get_connection_type (connection);
+
+	if (   nm_streq (type, NM_SETTING_BLUETOOTH_SETTING_NAME)
+	    && _nm_connection_get_setting_bluetooth_for_nap (connection)) {
+		/* for Bluetooth NAP connections, we return the bridge factory
+		 * instead of the bluetooth factory.
+		 *
+		 * In a way, this is a hack. The more orthodox solution would
+		 * be that device factories don't only announce supported setting
+		 * types, but instead match on a full fledged NMConnection.
+		 *
+		 * However, our device-factories are known at compile time.
+		 * There is no need to keep this generic. We *know* which
+		 * factory to choose. Making this generic would not make it
+		 * cleaner. */
+		if (!g_hash_table_lookup (factories_by_setting, type)) {
+			/* we need both the bluetooth and the bridge factory
+			 * to make this work. */
+			return NULL;
+		}
+		type = NM_SETTING_BRIDGE_SETTING_NAME;
+	}
+
+	return g_hash_table_lookup (factories_by_setting, type);
 }
 
 void
@@ -331,12 +297,10 @@ nm_device_factory_manager_for_each_factory (NMDeviceFactoryManagerFactoryFunc ca
 
 static gboolean
 _add_factory (NMDeviceFactory *factory,
-              gboolean check_duplicates,
               const char *path,
               NMDeviceFactoryManagerFactoryFunc callback,
               gpointer user_data)
 {
-	NMDeviceFactory *found = NULL;
 	const NMLinkType *link_types = NULL;
 	const char *const*setting_types = NULL;
 	int i;
@@ -345,16 +309,6 @@ _add_factory (NMDeviceFactory *factory,
 	g_return_val_if_fail (factories_by_setting, FALSE);
 
 	nm_device_factory_get_supported_types (factory, &link_types, &setting_types);
-	if (check_duplicates) {
-		found = find_factory (link_types, setting_types);
-		if (found) {
-			nm_log_warn (LOGD_PLATFORM, "Loading device plugin failed: multiple plugins "
-			             "for same type (using '%s' instead of '%s')",
-			             (char *) g_object_get_qdata (G_OBJECT (found), plugin_path_quark ()),
-			             path);
-			return FALSE;
-		}
-	}
 
 	g_object_set_qdata_full (G_OBJECT (factory), plugin_path_quark (), g_strdup (path), g_free);
 	for (i = 0; link_types && link_types[i] > NM_LINK_TYPE_UNKNOWN; i++)
@@ -376,7 +330,7 @@ _load_internal_factory (GType factory_gtype,
 	NMDeviceFactory *factory;
 
 	factory = (NMDeviceFactory *) g_object_new (factory_gtype, NULL);
-	_add_factory (factory, FALSE, "internal", callback, user_data);
+	_add_factory (factory, "internal", callback, user_data);
 }
 
 void
@@ -451,7 +405,7 @@ nm_device_factory_manager_load_factories (NMDeviceFactoryManagerFactoryFunc call
 		}
 		g_clear_error (&error);
 
-		_add_factory (factory, TRUE, g_module_name (plugin), callback, user_data);
+		_add_factory (factory, g_module_name (plugin), callback, user_data);
 
 		g_object_unref (factory);
 	}

@@ -39,7 +39,7 @@
  **/
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingBridge, nm_setting_bridge, NM_TYPE_SETTING,
-                         _nm_register_setting (BRIDGE, 1))
+                         _nm_register_setting (BRIDGE, NM_SETTING_PRIORITY_HW_BASE))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_BRIDGE)
 
 #define NM_SETTING_BRIDGE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BRIDGE, NMSettingBridgePrivate))

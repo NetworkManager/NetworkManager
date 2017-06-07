@@ -35,7 +35,7 @@
  **/
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingDummy, nm_setting_dummy, NM_TYPE_SETTING,
-                         _nm_register_setting (DUMMY, 1))
+                         _nm_register_setting (DUMMY, NM_SETTING_PRIORITY_HW_BASE))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_DUMMY)
 
 /**

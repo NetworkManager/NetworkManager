@@ -38,7 +38,7 @@
  **/
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingInfiniband, nm_setting_infiniband, NM_TYPE_SETTING,
-                         _nm_register_setting (INFINIBAND, 1))
+                         _nm_register_setting (INFINIBAND, NM_SETTING_PRIORITY_HW_BASE))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_INFINIBAND)
 
 #define NM_SETTING_INFINIBAND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_INFINIBAND, NMSettingInfinibandPrivate))

@@ -44,7 +44,7 @@
  **/
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingBluetooth, nm_setting_bluetooth, NM_TYPE_SETTING,
-                         _nm_register_setting (BLUETOOTH, 2))
+                         _nm_register_setting (BLUETOOTH, NM_SETTING_PRIORITY_HW_NON_BASE))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_BLUETOOTH)
 
 #define NM_SETTING_BLUETOOTH_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BLUETOOTH, NMSettingBluetoothPrivate))
