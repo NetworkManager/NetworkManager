@@ -1744,7 +1744,7 @@ get_existing_connection (NMManager *self,
                          gboolean *out_generated)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMConnection *connection = NULL;
+	gs_unref_object NMConnection *connection = NULL;
 	NMSettingsConnection *added = NULL;
 	GError *error = NULL;
 	NMDevice *master = NULL;
@@ -1766,13 +1766,15 @@ get_existing_connection (NMManager *self,
 		if (master_ifindex) {
 			master = nm_manager_get_device_by_ifindex (self, master_ifindex);
 			if (!master) {
-				_LOG2D (LOGD_DEVICE, device, "cannot generate connection for slave before its master (%s/%d)",
-				       nm_platform_link_get_name (NM_PLATFORM_GET, master_ifindex), master_ifindex);
+				_LOG2D (LOGD_DEVICE, device, "assume: don't assume because "
+				        "cannot generate connection for slave before its master (%s/%d)",
+				        nm_platform_link_get_name (NM_PLATFORM_GET, master_ifindex), master_ifindex);
 				return NULL;
 			}
 			if (!nm_device_get_act_request (master)) {
-				_LOG2D (LOGD_DEVICE, device, "cannot generate connection for slave before master %s activates",
-				       nm_device_get_iface (master));
+				_LOG2D (LOGD_DEVICE, device, "assume: don't assume because "
+				        "cannot generate connection for slave before master %s activates",
+				        nm_device_get_iface (master));
 				return NULL;
 			}
 		}
@@ -1788,6 +1790,7 @@ get_existing_connection (NMManager *self,
 	if (!connection) {
 		if (!maybe_later)
 			nm_device_assume_state_reset (device);
+		_LOG2D (LOGD_DEVICE, device, "assume: don't assume due to failure to generate connection");
 		return NULL;
 	}
 
@@ -1853,38 +1856,36 @@ get_existing_connection (NMManager *self,
 	}
 
 	if (matched) {
-		_LOG2I (LOGD_DEVICE, device, "found matching connection '%s' (%s)%s",
+		_LOG2I (LOGD_DEVICE, device, "assume: will attempt to assume matching connection '%s' (%s)%s",
 		        nm_settings_connection_get_id (matched),
 		        nm_settings_connection_get_uuid (matched),
 		        assume_state_connection_uuid && nm_streq (assume_state_connection_uuid, nm_settings_connection_get_uuid (matched))
 		            ? " (indicated)" : " (guessed)");
-		g_object_unref (connection);
 		nm_device_assume_state_reset (device);
 		return matched;
 	}
 
-	_LOG2D (LOGD_DEVICE, device, "generated connection '%s'",
-	        nm_connection_get_id (connection));
+	_LOG2D (LOGD_DEVICE, device, "assume: generated connection '%s' (%s)",
+	        nm_connection_get_id (connection),
+	        nm_connection_get_uuid (connection));
 
 	nm_device_assume_state_reset (device);
 
 	added = nm_settings_add_connection (priv->settings, connection, FALSE, &error);
-	if (added) {
-		nm_settings_connection_set_flags (NM_SETTINGS_CONNECTION (added),
-		                                  NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED |
-		                                  NM_SETTINGS_CONNECTION_FLAGS_VOLATILE,
-		                                  TRUE);
-		if (out_generated)
-			*out_generated = TRUE;
-	} else {
-		_LOG2W (LOGD_SETTINGS, device, "Couldn't save generated connection '%s': %s",
+	if (!added) {
+		_LOG2W (LOGD_SETTINGS, device, "assume: failure to save generated connection '%s': %s",
 		       nm_connection_get_id (connection),
 		       error->message);
-		g_clear_error (&error);
+		g_error_free (error);
+		return NULL;
 	}
-	g_object_unref (connection);
 
-	return added ? added : NULL;
+	nm_settings_connection_set_flags (NM_SETTINGS_CONNECTION (added),
+	                                  NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED |
+	                                  NM_SETTINGS_CONNECTION_FLAGS_VOLATILE,
+	                                  TRUE);
+	NM_SET_OUT (out_generated, TRUE);
+	return added;
 }
 
 static gboolean
@@ -1914,14 +1915,9 @@ recheck_assume_connection (NMManager *self,
 	}
 
 	connection = get_existing_connection (self, device, &generated);
-	if (!connection) {
-		_LOG2D (LOGD_DEVICE, device, "assume: don't assume because %s", "no connection was generated");
+	/* log  no reason. get_existing_connection() already does it. */
+	if (!connection)
 		return FALSE;
-	}
-
-	_LOG2D (LOGD_DEVICE, device, "assume: will attempt to assume %sconnection %s",
-	        generated ? "generated " : "",
-	        nm_connection_get_uuid (NM_CONNECTION (connection)));
 
 	nm_device_sys_iface_state_set (device,
 	                               generated
