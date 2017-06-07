@@ -306,6 +306,37 @@ gboolean nm_logging_syslog_enabled (void);
 #define _LOG2t_err(errsv, ...) G_STMT_START { if (FALSE) { _NMLOG2_err (errsv, LOGL_TRACE, __VA_ARGS__); } } G_STMT_END
 #endif
 
+#define _NMLOG3_ENABLED(level) ( nm_logging_enabled ((level), (_NMLOG3_DOMAIN)) )
+
+#define _LOG3T(...)          _NMLOG3 (LOGL_TRACE, __VA_ARGS__)
+#define _LOG3D(...)          _NMLOG3 (LOGL_DEBUG, __VA_ARGS__)
+#define _LOG3I(...)          _NMLOG3 (LOGL_INFO , __VA_ARGS__)
+#define _LOG3W(...)          _NMLOG3 (LOGL_WARN , __VA_ARGS__)
+#define _LOG3E(...)          _NMLOG3 (LOGL_ERR  , __VA_ARGS__)
+
+#define _LOG3T_ENABLED(...)  _NMLOG3_ENABLED (LOGL_TRACE, ##__VA_ARGS__)
+#define _LOG3D_ENABLED(...)  _NMLOG3_ENABLED (LOGL_DEBUG, ##__VA_ARGS__)
+#define _LOG3I_ENABLED(...)  _NMLOG3_ENABLED (LOGL_INFO , ##__VA_ARGS__)
+#define _LOG3W_ENABLED(...)  _NMLOG3_ENABLED (LOGL_WARN , ##__VA_ARGS__)
+#define _LOG3E_ENABLED(...)  _NMLOG3_ENABLED (LOGL_ERR  , ##__VA_ARGS__)
+
+#define _LOG3T_err(errsv, ...) _NMLOG3_err (errsv, LOGL_TRACE, __VA_ARGS__)
+#define _LOG3D_err(errsv, ...) _NMLOG3_err (errsv, LOGL_DEBUG, __VA_ARGS__)
+#define _LOG3I_err(errsv, ...) _NMLOG3_err (errsv, LOGL_INFO , __VA_ARGS__)
+#define _LOG3W_err(errsv, ...) _NMLOG3_err (errsv, LOGL_WARN , __VA_ARGS__)
+#define _LOG3E_err(errsv, ...) _NMLOG3_err (errsv, LOGL_ERR  , __VA_ARGS__)
+
+#ifdef NM_MORE_LOGGING
+#define _LOG3t_ENABLED(...)    _NMLOG3_ENABLED (LOGL_TRACE, ##__VA_ARGS__)
+#define _LOG3t(...)            _NMLOG3 (LOGL_TRACE, __VA_ARGS__)
+#define _LOG3t_err(errsv, ...) _NMLOG3_err (errsv, LOGL_TRACE, __VA_ARGS__)
+#else
+/* still call the logging macros to get compile time checks, but they will be optimized out. */
+#define _LOG3t_ENABLED(...)    ( FALSE && (_NMLOG3_ENABLED (LOGL_TRACE, ##__VA_ARGS__)) )
+#define _LOG3t(...)            G_STMT_START { if (FALSE) { _NMLOG3 (LOGL_TRACE, __VA_ARGS__); } } G_STMT_END
+#define _LOG3t_err(errsv, ...) G_STMT_START { if (FALSE) { _NMLOG3_err (errsv, LOGL_TRACE, __VA_ARGS__); } } G_STMT_END
+#endif
+
 extern void (*_nm_logging_clear_platform_logging_cache) (void);
 
 /*****************************************************************************/
