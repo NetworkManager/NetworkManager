@@ -1,0 +1,121 @@
+<job $JOBTYPE>
+	<whiteboard>
+		$WHITEBOARD $UUID
+	</whiteboard>
+	<recipeSet priority="Normal">
+		<recipe kernel_options="$SELINUX_DISABLED" kernel_options_post="" ks_meta="" role="None" whiteboard="$WHITEBOARD $UUID $ARGV $ARGV_PROFILE">
+			<autopick random="true"/>
+			<watchdog panic="None"/>
+			<packages/>
+			<ks_appends>
+				<ks_append><![CDATA[
+%packages
+# SELinux forbids dumping cores to /, ABRT comes to the rescue
+# and collects them
+abrt-tui
+abrt-addon-ccpp
+libreport-rhel-bugzilla
+NetworkManager
+NetworkManager-wifi
+NetworkManager-tui
+NetworkManager-adsl
+$VALGRIND
+%end
+
+%post --log=/dev/console --erroronfail
+set -x
+set -e
+
+# Allow ABRT to collect cores from our poor unsigned packages
+sed 's/^OpenGPGCheck.*/OpenGPGCheck = no/' -i /etc/abrt/abrt-action-save-package-data.conf
+
+sed -i -e 's/^ *\(Storage\|SystemMaxUse\|RateLimitBurst\|RateLimitInterval\)=.*/#\0/' \
+	-e '$$a\Storage=persistent' \
+	-e '$$a\SystemMaxUse=2G' \
+	-e '$$a\RateLimitBurst=0/' \
+	-e '$$a\RateLimitInterval=0/' \
+	/etc/systemd/journald.conf ;
+
+mkdir -p /etc/NetworkManager/conf.d/
+cat >/etc/NetworkManager/conf.d/85-beaker-test-setup.conf <<EOF
+[main]
+debug=$CONF_DEBUG
+dhcp=$CONF_DHCP
+
+[logging]
+level=$CONF_LOGLEVEL
+domains=ALL
+EOF
+
+#A workaround for rdma machine post-deploy script woes, suggested by honli
+sed -e '/^\s*linux16\s*\/vmlinuz/ s/$/ $SELINUX_DISABLED/' -i /boot/grub2/grub.cfg || :
+rm -f /etc/sysconfig/network-scripts/ifcfg-mlx*
+
+if [[ -n "$RPM_LIST" ]]; then
+
+    yum downgrade -y $RPM_LIST || :
+    yum install -y $RPM_LIST
+
+fi
+%end
+]]>
+				</ks_append>
+			</ks_appends>
+			<repos/>
+			<distroRequires>
+				<and>
+					$DISTROREQUIRES
+					<distro_variant op="=" value="$DISTRO_VARIANT"/>
+					<distro_method op="=" value="$DISTRO_METHOD"/>
+					<distro_arch op="=" value="$ARCH"/>
+				</and>
+			</distroRequires>
+			<hostRequires>
+				<and>
+					<arch op="=" value="$ARCH"/>
+					<!-- default -->    <!-- <group op="=" value="desktopqe-net"/> -->
+					<!-- veth -->       <!-- <group op="=" value="desktop"/> -->
+					<!-- dcb -->        <!-- <hostname op="=" value="wsfd-netdev7.lab.bos.redhat.com"/> -->
+					<!-- infiniband --> <!-- <group op="=" value="RDMA - ib0"/> -->
+					<!-- wifi -->       <!-- <group op="=" value="wireless"/><hostname op="like" value="wlan-r2%.wlan.rhts.eng.bos.redhat.com"/> -->
+					<!-- wifi -->       <!-- <hostname op="=" value="wlan-r2s26.wlan.rhts.eng.bos.redhat.com"/> -->
+					$HOSTREQUIRES
+				</and>
+				<system_type value="Machine"/>
+			</hostRequires>
+			<partitions/>
+			<task name="/distribution/pkginstall" role="STANDALONE">
+				<params>
+					<param name="PKGARGNAME" value="python-setuptools python-netaddr pexpect bash-completion iw net-tools teamd radvd wireshark git firewalld psmisc bridge-utils"/>
+				</params>
+			</task>
+			<task name="/distribution/command" role="STANDALONE">
+				<params>
+					<param name="CMDS_TO_RUN" value="test -n '$BUILD_ID' || exit 0; wget 'http://cgit.freedesktop.org/NetworkManager/NetworkManager/plain/contrib/rh-bkr/build-from-source.sh?id=automation' -O /tmp/nm-build-from-source.sh &amp;&amp; BUILD_ID='$BUILD_ID' ARCH='$ARCH' sh /tmp/nm-build-from-source.sh"/>
+				</params>
+			</task>
+			<task name="/distribution/command" role="STANDALONE">
+				<params>
+					<param name="CMDS_TO_RUN" value="test -n '$VALGRIND' || exit 0; sed &quot;s,\(ExecStart=\)\(.*\),\1/bin/bash -c 'G_SLICE=always-malloc G_DEBUG=gc-friendly LOGNAME=root HOSTNAME=localhost exec -a /usr/sbin/NetworkManager /usr/bin/valgrind --num-callers=100 --vgdb=yes --suppressions=/mnt/tests/NetworkManager/runtime.suppressions --suppressions=$(ls /usr/src/debug/NetworkManager-*/valgrind.suppressions) \2',&quot; /usr/lib/systemd/system/NetworkManager.service &gt; /etc/systemd/system/NetworkManager-valgrind.service" />
+				</params>
+			</task>
+			<task name="/qe/desktop/simpletestharness" role="STANDALONE">
+				<params>
+					<param name="GIT_URL" value="$GIT_TEST_REPO"/>
+					<param name="GIT_TARGETBRANCH" value="$GIT_TEST_BRANCH"/>
+					<param name="TESTS" value="$TESTS"/>
+					<param name="TEST_MAPPER" value="True"/>
+					<param name="COMPONENT" value="NetworkManager"/>
+					<param name="TYPE" value="TEST"/>
+				</params>
+			</task>
+			<task name="/distribution/command" role="STANDALONE">
+				<params>
+					<param name="CMDS_TO_RUN" value="journalctl -b &gt; /tmp/journal_all.log; rhts-submit-log -l '/tmp/journal_all.log'"/>
+				</params>
+			</task>
+			$RESERVESYS
+		</recipe>
+	</recipeSet>
+</job>
+

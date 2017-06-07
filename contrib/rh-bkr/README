@@ -1,0 +1,111 @@
+These are utility scripts to interact with the beaker installation
+of Red Hat to run tests of NetworkManager.
+
+
+./bkr.py:
+=========
+
+Quick-Setup:
+
+yum install kobo python-nitrate python-termcolor
+yum install beaker-client
+
+$ cat ~/.nitrate
+[nitrate]
+url = https://tcms.engineering.redhat.com/xmlrpc/
+
+$ cat ~/.beaker_client/config
+HUB_URL = "https://beaker.engineering.redhat.com"
+AUTH_METHOD = "krbv"
+
+Find $DISTRO_NAME at
+  https://beaker.engineering.redhat.com/distrotrees/?simplesearch=RHEL-7.1
+
+
+
+Examples:
+
+  kinit
+  export TEST_URL="http://download.eng.brq.redhat.com/scratch/$USER/NetworkManager-rhel-7.tar.gz"
+  ./bkr submit --no-test -j job.xml -r 'file://NetworkManager*.rpm'
+  ./bkr submit --no-test -j job.xml -r 'jenkins://429/.*rpm'
+  ./bkr submit --no-test -j job.xml -r NetworkManager.rpm
+  ./bkr submit -r NetworkManager.rpm -r http://somewhere.com/NetworkManager-glib.rpm
+
+Requirements:
+
+  - install and configure 'beaker-client'
+    http://beaker-project.org/docs/user-guide/bkr-client.html
+    Also adjust your /etc/beaker/client.conf
+
+  - configure your kerberos authentication properly and ensure,
+    that your user is authenticated to schedule jobs on beaker.
+
+Important: run kinit otherwise the script won't work.
+
+
+
+Currently the script only supports one command: 'submit' to submit
+a job to beaker. See the available options with:
+
+    ./bkr.py submit --help
+
+To submit a job, you must provide a beaker XML job configuration.
+This file must be passed to the submit command with the '-j/--job'
+argument.
+
+The job file can contain placeholders such as $NAME that will be replaced
+by the script before submitting the job. Currently the following placeholders
+are supported:
+
+  - $RPM_LIST a whitespace separated list of all RPM URLs
+
+  - $$ a single $ symbol
+
+If a placeholder cannot be found, it will try to look into the environment
+variables to find a match. So, you can set additional variables by setting
+the environtment. As last attempt, it will lookup for a hard coded list of
+default values. If the name for a placeholder cannot be substituted, it
+will be replaced by the empty word "". You can wrap the name in braces to
+separate it from the following text (${NAME}).
+
+
+You can specify any number of RPMs to the script using the '-r/--rpm'
+argument. These names are expected to be an URL that is reachable by the
+beaker instance, so that it can download the RPM from there.
+
+Currently the following types are supported:
+
+  - http:// and https:// parameters are passed on unmodified
+
+  - file://[glob] a file glob for a local file. The files will be uploaded to
+    the public_html directory of file.brq.redhat.com using rsync/ssh. Afterwards
+    the url to http://file.brq.redhat.com/~username/filename will be used. For this
+    you must have a kerberos ticket. The username is parsed from the ticket
+    name as returned by klist.
+
+  - jenkins://[BUILDNR](/[URIREGEX]): the jenkins build server builds
+    RPM packages for RHEL-7.0 and stores them as artifacts. By using this
+    URI, it will resolve the URLs for the build number BUILDNR.
+    If URIREGEX is specified, this regex is used to restrict the number of
+    found files. Otherwise, a default regex is used that relevant packages.
+
+  - brew://[ID](/[URIREGEX]): fetches URLs from
+    https://brewweb.engineering.redhat.com/brew/buildinfo?buildID=ID, i.e. from
+    the officially build packages.
+
+  - brewtask://[ID](/[URIREGEX]): fetches URLs from
+    https://brewweb.engineering.redhat.com/brew/kinfo?taskID=ID, i.e. the builds
+    when doing a scratch build with rhpkg.
+
+  - repo:<baseurl>[/<regex-wildcard>.rpm]: fetches from a RPMMD (Yum) repository
+    Useful with official Fedora repositories or COPRs
+
+You can provide arbitrarily many -r flags and they will be joined together to
+form $RPM_LIST.
+
+
+Unless called with --no-test, no files are really uploaded and the beaker job is not
+scheduled. Instead it prints only, what would be done and creates the processed job xml
+file.
+
