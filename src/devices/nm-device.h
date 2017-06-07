@@ -421,6 +421,15 @@ NMPlatform *nm_device_get_platform (NMDevice *self);
 
 const char *    nm_device_get_udi               (NMDevice *dev);
 const char *    nm_device_get_iface             (NMDevice *dev);
+
+static inline const char *
+_nm_device_get_iface (NMDevice *device)
+{
+	/* like nm_device_get_iface(), but gracefully accept NULL without
+	 * asserting. */
+	return device ? nm_device_get_iface (device) : NULL;
+}
+
 int             nm_device_get_ifindex           (NMDevice *dev);
 gboolean        nm_device_is_software           (NMDevice *dev);
 gboolean        nm_device_is_real               (NMDevice *dev);

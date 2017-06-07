@@ -222,19 +222,41 @@ NM_DEFINE_SINGLETON_INSTANCE (NMManager);
 #define _NMLOG_PREFIX_NAME      "manager"
 #define _NMLOG(level, domain, ...) \
     G_STMT_START { \
-        const NMLogLevel __level = (level); \
-        const NMLogDomain __domain = (domain); \
+        const NMLogLevel _level = (level); \
+        const NMLogDomain _domain = (domain); \
         \
-        if (nm_logging_enabled (__level, __domain)) { \
-            const NMManager *const __self = (self); \
-            char __sbuf[32]; \
+        if (nm_logging_enabled (_level, _domain)) { \
+            const NMManager *const _self = (self); \
+            char _sbuf[32]; \
             \
-            _nm_log (__level, __domain, 0, NULL, NULL, \
+            _nm_log (_level, _domain, 0, NULL, NULL, \
                      "%s%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
                      _NMLOG_PREFIX_NAME, \
-                     (__self && __self != singleton_instance) \
-                         ? nm_sprintf_buf (__sbuf, "[%p]", __self) \
-                         : "" \
+                     ((_self && _self != singleton_instance) \
+                         ? nm_sprintf_buf (_sbuf, "[%p]", _self) \
+                         : "") \
+                     _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+        } \
+    } G_STMT_END
+
+#define _NMLOG2(level, domain, device, ...) \
+    G_STMT_START { \
+        const NMLogLevel _level = (level); \
+        const NMLogDomain _domain = (domain); \
+        \
+        if (nm_logging_enabled (_level, _domain)) { \
+            const NMManager *const _self = (self); \
+            const char *const _ifname = _nm_device_get_iface (device); \
+            char _sbuf[32]; \
+            \
+            _nm_log (_level, _domain, 0, \
+                     _ifname, NULL, \
+                     "%s%s: %s%s%s" _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+                     _NMLOG_PREFIX_NAME, \
+                     ((_self && _self != singleton_instance) \
+                         ? nm_sprintf_buf (_sbuf, "[%p]", _self) \
+                         : ""), \
+                     NM_PRINT_FMT_QUOTED (_ifname, "(", _ifname, "): ", "") \
                      _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
         } \
     } G_STMT_END
@@ -983,8 +1005,8 @@ remove_device (NMManager *self,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	gboolean unmanage = FALSE;
 
-	_LOGD (LOGD_DEVICE, "(%s): removing device (allow_unmanage %d, managed %d)",
-	       nm_device_get_iface (device), allow_unmanage, nm_device_get_managed (device, FALSE));
+	_LOG2D (LOGD_DEVICE, device, "removing device (allow_unmanage %d, managed %d)",
+	        allow_unmanage, nm_device_get_managed (device, FALSE));
 
 	if (allow_unmanage && nm_device_get_managed (device, FALSE)) {
 
@@ -1481,9 +1503,7 @@ manager_update_radio_enabled (NMManager *self,
 		NMDevice *device = NM_DEVICE (iter->data);
 
 		if (nm_device_get_rfkill_type (device) == rstate->rtype) {
-			_LOGD (LOGD_RFKILL, "(%s): setting radio %s",
-			       nm_device_get_iface (device),
-			       enabled ? "enabled" : "disabled");
+			_LOG2D (LOGD_RFKILL, device, "setting radio %s", enabled ? "enabled" : "disabled");
 			nm_device_set_enabled (device, enabled);
 		}
 	}
@@ -1724,13 +1744,13 @@ get_existing_connection (NMManager *self,
 		if (master_ifindex) {
 			master = nm_manager_get_device_by_ifindex (self, master_ifindex);
 			if (!master) {
-				_LOGD (LOGD_DEVICE, "(%s): cannot generate connection for slave before its master (%s/%d)",
-				       nm_device_get_iface (device), nm_platform_link_get_name (NM_PLATFORM_GET, master_ifindex), master_ifindex);
+				_LOG2D (LOGD_DEVICE, device, "cannot generate connection for slave before its master (%s/%d)",
+				       nm_platform_link_get_name (NM_PLATFORM_GET, master_ifindex), master_ifindex);
 				return NULL;
 			}
 			if (!nm_device_get_act_request (master)) {
-				_LOGD (LOGD_DEVICE, "(%s): cannot generate connection for slave before master %s activates",
-				       nm_device_get_iface (device), nm_device_get_iface (master));
+				_LOG2D (LOGD_DEVICE, device, "cannot generate connection for slave before master %s activates",
+				       nm_device_get_iface (master));
 				return NULL;
 			}
 		}
@@ -1811,20 +1831,18 @@ get_existing_connection (NMManager *self,
 	}
 
 	if (matched) {
-		_LOGI (LOGD_DEVICE, "(%s): found matching connection '%s' (%s)%s",
-		       nm_device_get_iface (device),
-		       nm_settings_connection_get_id (matched),
-		       nm_settings_connection_get_uuid (matched),
-		       assume_state_connection_uuid && nm_streq (assume_state_connection_uuid, nm_settings_connection_get_uuid (matched))
-		           ? " (indicated)" : " (guessed)");
+		_LOG2I (LOGD_DEVICE, device, "found matching connection '%s' (%s)%s",
+		        nm_settings_connection_get_id (matched),
+		        nm_settings_connection_get_uuid (matched),
+		        assume_state_connection_uuid && nm_streq (assume_state_connection_uuid, nm_settings_connection_get_uuid (matched))
+		            ? " (indicated)" : " (guessed)");
 		g_object_unref (connection);
 		nm_device_assume_state_reset (device);
 		return matched;
 	}
 
-	_LOGD (LOGD_DEVICE, "(%s): generated connection '%s'",
-	       nm_device_get_iface (device),
-	       nm_connection_get_id (connection));
+	_LOG2D (LOGD_DEVICE, device, "generated connection '%s'",
+	        nm_connection_get_id (connection));
 
 	nm_device_assume_state_reset (device);
 
@@ -1837,8 +1855,7 @@ get_existing_connection (NMManager *self,
 		if (out_generated)
 			*out_generated = TRUE;
 	} else {
-		_LOGW (LOGD_SETTINGS, "(%s) Couldn't save generated connection '%s': %s",
-		       nm_device_get_iface (device),
+		_LOG2W (LOGD_SETTINGS, device, "Couldn't save generated connection '%s': %s",
 		       nm_connection_get_id (connection),
 		       error->message);
 		g_clear_error (&error);
@@ -1873,13 +1890,11 @@ recheck_assume_connection (NMManager *self,
 
 	connection = get_existing_connection (self, device, &generated);
 	if (!connection) {
-		_LOGD (LOGD_DEVICE, "(%s): can't assume; no connection",
-		       nm_device_get_iface (device));
+		_LOG2D (LOGD_DEVICE, device, "can't assume; no connection");
 		return FALSE;
 	}
 
-	_LOGD (LOGD_DEVICE, "(%s): will attempt to assume connection",
-	       nm_device_get_iface (device));
+	_LOG2D (LOGD_DEVICE, device, "will attempt to assume connection");
 
 	nm_device_sys_iface_state_set (device,
 	                               generated
@@ -1926,9 +1941,7 @@ recheck_assume_connection (NMManager *self,
 			}
 
 			if (generated) {
-				_LOGD (LOGD_DEVICE, "(%s): connection assumption failed. Deleting generated connection",
-				       nm_device_get_iface (device));
-
+				_LOG2D (LOGD_DEVICE, device, "connection assumption failed. Deleting generated connection");
 				nm_settings_connection_delete (connection, NULL, NULL);
 			} else {
 				if (nm_device_sys_iface_state_get (device) == NM_DEVICE_SYS_IFACE_STATE_ASSUME)
@@ -2182,7 +2195,7 @@ add_device (NMManager *self, NMDevice *device, GError **error)
 	                               manager_sleeping (self));
 
 	dbus_path = nm_exported_object_export (NM_EXPORTED_OBJECT (device));
-	_LOGI (LOGD_DEVICE, "(%s): new %s device (%s)", iface, type_desc, dbus_path);
+	_LOG2I (LOGD_DEVICE, device, "new %s device (%s)", type_desc, dbus_path);
 
 	nm_settings_device_added (priv->settings, device);
 	g_signal_emit (self, signals[INTERNAL_DEVICE_ADDED], 0, device);
@@ -2221,8 +2234,7 @@ factory_device_added_cb (NMDeviceFactory *factory,
 		add_device (self, device, NULL);
 		_device_realize_finish (self, device, NULL);
 	} else {
-		_LOGW (LOGD_DEVICE, "(%s): failed to realize device: %s",
-		       nm_device_get_iface (device), error->message);
+		_LOG2W (LOGD_DEVICE, device, "failed to realize device: %s", error->message);
 		g_error_free (error);
 	}
 }
@@ -2414,9 +2426,7 @@ _platform_link_cb_idle (PlatformLinkCbData *data)
 				nm_device_sys_iface_state_set (device, NM_DEVICE_SYS_IFACE_STATE_REMOVED);
 				/* Our software devices stick around until their connection is removed */
 				if (!nm_device_unrealize (device, FALSE, &error)) {
-					_LOGW (LOGD_DEVICE, "(%s): failed to unrealize: %s",
-					       nm_device_get_iface (device),
-					       error->message);
+					_LOG2W (LOGD_DEVICE, device, "failed to unrealize: %s", error->message);
 					g_clear_error (&error);
 					remove_device (self, device, FALSE, TRUE);
 				}
@@ -5174,8 +5184,7 @@ handle_firmware_changed (gpointer user_data)
 
 		if (   nm_device_get_firmware_missing (candidate)
 		    && (state == NM_DEVICE_STATE_UNAVAILABLE)) {
-			_LOGI (LOGD_CORE, "(%s): firmware may now be available",
-			       nm_device_get_iface (candidate));
+			_LOG2I (LOGD_CORE, candidate, "firmware may now be available");
 
 			/* Re-set unavailable state to try bringing the device up again */
 			nm_device_state_changed (candidate,
