@@ -527,6 +527,7 @@ static gboolean dhcp6_start (NMDevice *self, gboolean wait_for_ll);
 static void nm_device_start_ip_check (NMDevice *self);
 static void realize_start_setup (NMDevice *self,
                                  const NMPlatformLink *plink,
+                                 gboolean set_nm_owned,
                                  NMUnmanFlagOp unmanaged_user_explicit);
 static void _commit_mtu (NMDevice *self, const NMIP4Config *config);
 static void dhcp_schedule_restart (NMDevice *self, int family, const char *reason);
@@ -2741,6 +2742,7 @@ link_type_compatible (NMDevice *self,
  * nm_device_realize_start():
  * @self: the #NMDevice
  * @plink: an existing platform link or %NULL
+ * @set_nm_owned: for software device, if TRUE set nm-owned.
  * @unmanaged_user_explicit: the user-explicit unmanaged flag to apply
  *   on the device initially.
  * @out_compatible: %TRUE on return if @self is compatible with @plink
@@ -2758,6 +2760,7 @@ link_type_compatible (NMDevice *self,
 gboolean
 nm_device_realize_start (NMDevice *self,
                          const NMPlatformLink *plink,
+                         gboolean set_nm_owned,
                          NMUnmanFlagOp unmanaged_user_explicit,
                          gboolean *out_compatible,
                          GError **error)
@@ -2782,7 +2785,7 @@ nm_device_realize_start (NMDevice *self,
 		plink_copy = *plink;
 		plink = &plink_copy;
 	}
-	realize_start_setup (self, plink, unmanaged_user_explicit);
+	realize_start_setup (self, plink, set_nm_owned, unmanaged_user_explicit);
 
 	return TRUE;
 }
@@ -2822,7 +2825,7 @@ nm_device_create_and_realize (NMDevice *self,
 		plink = &plink_copy;
 	}
 
-	realize_start_setup (self, plink, NM_UNMAN_FLAG_OP_FORGET);
+	realize_start_setup (self, plink, FALSE, NM_UNMAN_FLAG_OP_FORGET);
 	nm_device_realize_finish (self, plink);
 
 	if (nm_device_get_managed (self, FALSE)) {
@@ -2918,6 +2921,8 @@ realize_start_notify (NMDevice *self,
  * realize_start_setup():
  * @self: the #NMDevice
  * @plink: the #NMPlatformLink if backed by a kernel netdevice
+ * @set_nm_owned: if TRUE and device is a software-device, set nm-owned.
+ *    TRUE.
  * @unmanaged_user_explicit: the user-explict unmanaged flag to set.
  *
  * Update the device from backing resource properties (like hardware
@@ -2929,6 +2934,7 @@ realize_start_notify (NMDevice *self,
 static void
 realize_start_setup (NMDevice *self,
                      const NMPlatformLink *plink,
+                     gboolean set_nm_owned,
                      NMUnmanFlagOp unmanaged_user_explicit)
 {
 	NMDevicePrivate *priv;
@@ -3012,17 +3018,11 @@ realize_start_setup (NMDevice *self,
 
 	_add_capabilities (self, capabilities);
 
-	/* Update nm-owned flag according to state file */
 	if (   !priv->nm_owned
-	    && priv->ifindex > 0
+	    && set_nm_owned
 	    && nm_device_is_software (self)) {
-		gs_free NMConfigDeviceStateData *dev_state = NULL;
-
-		dev_state = nm_config_device_state_load (priv->ifindex);
-		if (dev_state && dev_state->nm_owned == TRUE) {
-			priv->nm_owned = TRUE;
-			_LOGD (LOGD_DEVICE, "set nm-owned from state file");
-		}
+		priv->nm_owned = TRUE;
+		_LOGD (LOGD_DEVICE, "set nm-owned from state file");
 	}
 
 	if (!priv->udi) {

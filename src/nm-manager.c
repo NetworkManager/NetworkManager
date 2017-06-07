@@ -2198,6 +2198,7 @@ factory_device_added_cb (NMDeviceFactory *factory,
 
 	if (nm_device_realize_start (device,
 	                             NULL,
+	                             FALSE,
 	                             NM_UNMAN_FLAG_OP_FORGET,
 	                             NULL,
 	                             &error)) {
@@ -2276,6 +2277,7 @@ platform_link_added (NMManager *self,
 			return;
 		} else if (nm_device_realize_start (candidate,
 		                                    plink,
+		                                    FALSE,
 		                                    NM_UNMAN_FLAG_OP_FORGET,
 		                                    &compatible,
 		                                    &error)) {
@@ -2347,6 +2349,7 @@ platform_link_added (NMManager *self,
 
 		if (nm_device_realize_start (device,
 		                             plink,
+		                             dev_state ? (dev_state->nm_owned == 1) : FALSE,
 		                             unmanaged_user_explicit,
 		                             NULL,
 		                             &error)) {
