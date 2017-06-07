@@ -129,7 +129,10 @@ typedef enum {
 	} G_STMT_END
 
 struct _NmcMetaGenericInfo {
-	const NMMetaType *meta_type;
+	union {
+		NMObjBaseInst parent;
+		const NMMetaType *meta_type;
+	};
 	NmcGenericInfoType info_type;
 	const char *name;
 	const char *name_header;
