@@ -365,7 +365,7 @@ impl_ppp_manager_set_state (NMPPPManager *manager,
                             GDBusMethodInvocation *context,
                             guint32 state)
 {
-	g_signal_emit (manager, signals[STATE_CHANGED], 0, state);
+	g_signal_emit (manager, signals[STATE_CHANGED], 0, (guint) state);
 
 	g_dbus_method_invocation_return_value (context, NULL);
 }
@@ -692,7 +692,7 @@ ppp_watch_cb (GPid pid, gint status, gpointer user_data)
 	_LOGD ("pppd pid %d cleaned up", priv->pid);
 	priv->pid = 0;
 	priv->ppp_watch_id = 0;
-	g_signal_emit (manager, signals[STATE_CHANGED], 0, NM_PPP_STATUS_DEAD);
+	g_signal_emit (manager, signals[STATE_CHANGED], 0, (guint) NM_PPP_STATUS_DEAD);
 }
 
 static gboolean
@@ -704,7 +704,7 @@ pppd_timed_out (gpointer data)
 	_ppp_cleanup (manager);
 	_ppp_kill (manager);
 
-	g_signal_emit (manager, signals[STATE_CHANGED], 0, NM_PPP_STATUS_DEAD);
+	g_signal_emit (manager, signals[STATE_CHANGED], 0, (guint) NM_PPP_STATUS_DEAD);
 
 	return FALSE;
 }
