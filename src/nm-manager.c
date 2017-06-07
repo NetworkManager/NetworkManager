@@ -1769,11 +1769,13 @@ get_existing_connection (NMManager *self,
 	 * update_connection() implemented, otherwise nm_device_generate_connection()
 	 * returns NULL.
 	 */
-	connection = nm_device_generate_connection (device, master, &maybe_later);
+	connection = nm_device_generate_connection (device, master, &maybe_later, &error);
 	if (!connection) {
 		if (!maybe_later)
 			nm_device_assume_state_reset (device);
-		_LOG2D (LOGD_DEVICE, device, "assume: don't assume due to failure to generate connection");
+		_LOG2D (LOGD_DEVICE, device, "assume: cannot generate connection: %s",
+		        error->message);
+		g_error_free (error);
 		return NULL;
 	}
 

@@ -498,7 +498,8 @@ gboolean        nm_device_has_carrier           (NMDevice *dev);
 
 NMConnection * nm_device_generate_connection (NMDevice *self,
                                               NMDevice *master,
-                                              gboolean *out_maybe_later);
+                                              gboolean *out_maybe_later,
+                                              GError **error);
 
 gboolean nm_device_master_update_slave_connection (NMDevice *master,
                                                    NMDevice *slave,
