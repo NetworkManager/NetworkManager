@@ -261,6 +261,29 @@ NM_DEFINE_SINGLETON_INSTANCE (NMManager);
         } \
     } G_STMT_END
 
+#define _NMLOG3(level, domain, connection, ...) \
+    G_STMT_START { \
+        const NMLogLevel _level = (level); \
+        const NMLogDomain _domain = (domain); \
+        \
+        if (nm_logging_enabled (_level, _domain)) { \
+            const NMManager *const _self = (self); \
+            NMConnection *const _connection = (connection); \
+            const char *const _con_id = _nm_connection_get_id (_connection); \
+            char _sbuf[32]; \
+            \
+            _nm_log (_level, _domain, 0, \
+                     NULL, _nm_connection_get_uuid (_connection), \
+                     "%s%s: %s%s%s" _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+                     _NMLOG_PREFIX_NAME, \
+                     ((_self && _self != singleton_instance) \
+                         ? nm_sprintf_buf (_sbuf, "[%p]", _self) \
+                         : ""), \
+                     NM_PRINT_FMT_QUOTED (_con_id, "(", _con_id, ") ", "") \
+                     _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+        } \
+    } G_STMT_END
+
 /*****************************************************************************/
 
 static NM_CACHED_QUARK_FCN ("autoconnect-root", autoconnect_root_quark)
@@ -1260,8 +1283,8 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 
 	iface = nm_manager_get_connection_iface (self, connection, &parent, &error);
 	if (!iface) {
-		_LOGD (LOGD_DEVICE, "(%s) can't get a name of a virtual device: %s",
-		       nm_connection_get_id (connection), error->message);
+		_LOG3D (LOGD_DEVICE, connection, "can't get a name of a virtual device: %s",
+		        error->message);
 		g_error_free (error);
 		return NULL;
 	}
@@ -1272,8 +1295,8 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 
 		if (nm_device_check_connection_compatible (candidate, connection)) {
 			if (nm_device_is_real (candidate)) {
-				_LOGD (LOGD_DEVICE, "(%s) already created virtual interface name %s",
-				       nm_connection_get_id (connection), iface);
+				_LOG3D (LOGD_DEVICE, connection, "already created virtual interface name %s",
+				       iface);
 				return NULL;
 			}
 
@@ -1287,27 +1310,26 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 
 		factory = nm_device_factory_manager_find_factory_for_connection (connection);
 		if (!factory) {
-			_LOGE (LOGD_DEVICE, "(%s:%s) NetworkManager plugin for '%s' unavailable",
-			       nm_connection_get_id (connection), iface,
+			_LOG3E (LOGD_DEVICE, connection, "(%s) NetworkManager plugin for '%s' unavailable",
+			       iface,
 			       nm_connection_get_connection_type (connection));
 			return NULL;
 		}
 
 		device = nm_device_factory_create_device (factory, iface, NULL, connection, NULL, &error);
 		if (!device) {
-			_LOGW (LOGD_DEVICE, "(%s) factory can't create the device: %s",
-			       nm_connection_get_id (connection), error->message);
+			_LOG3W (LOGD_DEVICE, connection, "factory can't create the device: %s",
+			        error->message);
 			g_error_free (error);
 			return NULL;
 		}
 
-		_LOGD (LOGD_DEVICE, "(%s) create virtual device %s",
-		       nm_connection_get_id (connection),
+		_LOG3D (LOGD_DEVICE, connection, "create virtual device %s",
 		       nm_device_get_iface (device));
 
 		if (!add_device (self, device, &error)) {
-			_LOGW (LOGD_DEVICE, "(%s) can't register the device with manager: %s",
-			       nm_connection_get_id (connection), error->message);
+			_LOG3W (LOGD_DEVICE, connection, "can't register the device with manager: %s",
+			        error->message);
 			g_error_free (error);
 			g_object_unref (device);
 			return NULL;
@@ -1335,8 +1357,8 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 
 		/* Create any backing resources the device needs */
 		if (!nm_device_create_and_realize (device, connection, parent, &error)) {
-			_LOGW (LOGD_DEVICE, "(%s) couldn't create the device: %s",
-			       nm_connection_get_id (connection), error->message);
+			_LOG3W (LOGD_DEVICE, connection, "couldn't create the device: %s",
+			        error->message);
 			g_error_free (error);
 			remove_device (self, device, FALSE, TRUE);
 			return NULL;

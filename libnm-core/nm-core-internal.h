@@ -343,6 +343,24 @@ _nm_setting_bond_get_option_type (NMSettingBond *setting, const char *name);
 
 /*****************************************************************************/
 
+/* nm_connection_get_uuid() asserts against NULL, which is the right thing to
+ * do in order to catch bugs. However, sometimes that behavior is inconvenient.
+ * Just try or return NULL. */
+
+static inline const char *
+_nm_connection_get_id (NMConnection *connection)
+{
+	return connection ? nm_connection_get_id (connection) : NULL;
+}
+
+static inline const char *
+_nm_connection_get_uuid (NMConnection *connection)
+{
+	return connection ? nm_connection_get_uuid (connection) : NULL;
+}
+
+/*****************************************************************************/
+
 typedef enum {
 	NM_BOND_MODE_UNKNOWN = 0,
 	NM_BOND_MODE_ROUNDROBIN,
