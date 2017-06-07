@@ -722,4 +722,7 @@ void nm_device_check_connectivity (NMDevice *self,
                                    gpointer user_data);
 NMConnectivityState nm_device_get_connectivity_state (NMDevice *self);
 
+
+const char *nm_device_state_to_str (NMDeviceState state);
+
 #endif /* __NETWORKMANAGER_DEVICE_H__ */
