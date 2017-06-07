@@ -1484,7 +1484,8 @@ nmc_terminal_spawn_pager (const NmcConfig *nmc_config)
 	pid_t parent_pid;
 	int fd[2];
 
-	if (   nm_cli.pager_pid > 0
+	if (   nm_cli.nmc_config.in_editor
+	    || nm_cli.pager_pid > 0
 	    || nmc_config->print_output == NMC_PRINT_TERSE
 	    || !use_colors (nmc_config->use_colors)
 	    || g_strcmp0 (pager, "") == 0)
