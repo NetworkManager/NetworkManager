@@ -487,7 +487,9 @@ void            nm_device_removed               (NMDevice *self, gboolean unconf
 gboolean        nm_device_is_available          (NMDevice *dev, NMDeviceCheckDevAvailableFlags flags);
 gboolean        nm_device_has_carrier           (NMDevice *dev);
 
-NMConnection * nm_device_generate_connection (NMDevice *self, NMDevice *master);
+NMConnection * nm_device_generate_connection (NMDevice *self,
+                                              NMDevice *master,
+                                              gboolean *out_maybe_later);
 
 gboolean nm_device_master_update_slave_connection (NMDevice *master,
                                                    NMDevice *slave,
@@ -609,8 +611,19 @@ gboolean nm_device_is_nm_owned (NMDevice *device);
 
 gboolean nm_device_has_capability (NMDevice *self, NMDeviceCapabilities caps);
 
+/*****************************************************************************/
+
+void nm_device_assume_state_get (NMDevice *self,
+                                 gboolean *out_assume_state_guess_assume,
+                                 const char **out_assume_state_connection_uuid);
+void nm_device_assume_state_reset (NMDevice *self);
+
+/*****************************************************************************/
+
 gboolean nm_device_realize_start      (NMDevice *device,
                                        const NMPlatformLink *plink,
+                                       gboolean assume_state_guess_assume,
+                                       const char *assume_state_connection_uuid,
                                        gboolean set_nm_owned,
                                        NMUnmanFlagOp unmanaged_user_explicit,
                                        gboolean *out_compatible,

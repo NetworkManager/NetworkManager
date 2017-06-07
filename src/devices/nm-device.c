@@ -264,6 +264,9 @@ typedef struct _NMDevicePrivate {
 
 	bool          nm_owned:1; /* whether the device is a device owned and created by NM */
 
+	bool          assume_state_guess_assume:1;
+	char *        assume_state_connection_uuid;
+
 	GHashTable *  available_connections;
 	char *        hw_addr;
 	char *        hw_addr_perm;
@@ -527,6 +530,8 @@ static gboolean dhcp6_start (NMDevice *self, gboolean wait_for_ll);
 static void nm_device_start_ip_check (NMDevice *self);
 static void realize_start_setup (NMDevice *self,
                                  const NMPlatformLink *plink,
+                                 gboolean assume_state_guess_assume,
+                                 const char *assume_state_connection_uuid,
                                  gboolean set_nm_owned,
                                  NMUnmanFlagOp unmanaged_user_explicit);
 static void _commit_mtu (NMDevice *self, const NMIP4Config *config);
@@ -707,6 +712,52 @@ nm_device_sys_iface_state_set (NMDevice *self,
 	 * If you change this, make sure that all callers are fine with such actions. */
 
 	nm_assert (priv->sys_iface_state == sys_iface_state);
+}
+
+/*****************************************************************************/
+
+void
+nm_device_assume_state_get (NMDevice *self,
+                            gboolean *out_assume_state_guess_assume,
+                            const char **out_assume_state_connection_uuid)
+{
+	NMDevicePrivate *priv;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	NM_SET_OUT (out_assume_state_guess_assume, priv->assume_state_guess_assume);
+	NM_SET_OUT (out_assume_state_connection_uuid, priv->assume_state_connection_uuid);
+}
+
+static void
+_assume_state_set (NMDevice *self,
+                   gboolean assume_state_guess_assume,
+                   const char *assume_state_connection_uuid)
+{
+	NMDevicePrivate *priv;
+
+	nm_assert (NM_IS_DEVICE (self));
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	if (   priv->assume_state_guess_assume == !!assume_state_guess_assume
+	    && nm_streq0 (priv->assume_state_connection_uuid, assume_state_connection_uuid))
+		return;
+
+	_LOGD (LOGD_DEVICE, "assume-state: set guess-assume=%c, connection=%s%s%s",
+	       assume_state_guess_assume ? '1' : '0',
+	       NM_PRINT_FMT_QUOTE_STRING (assume_state_connection_uuid));
+	priv->assume_state_guess_assume = assume_state_guess_assume;
+	g_free (priv->assume_state_connection_uuid);
+	priv->assume_state_connection_uuid = g_strdup (assume_state_connection_uuid);
+}
+
+void
+nm_device_assume_state_reset (NMDevice *self)
+{
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	_assume_state_set (self, FALSE, NULL);
 }
 
 /*****************************************************************************/
@@ -2741,6 +2792,8 @@ link_type_compatible (NMDevice *self,
  * nm_device_realize_start():
  * @self: the #NMDevice
  * @plink: an existing platform link or %NULL
+ * @assume_state_guess_assume: set the guess_assume state.
+ * @assume_state_connection_uuid: set the connection uuid to assume.
  * @set_nm_owned: for software device, if TRUE set nm-owned.
  * @unmanaged_user_explicit: the user-explicit unmanaged flag to apply
  *   on the device initially.
@@ -2759,6 +2812,8 @@ link_type_compatible (NMDevice *self,
 gboolean
 nm_device_realize_start (NMDevice *self,
                          const NMPlatformLink *plink,
+                         gboolean assume_state_guess_assume,
+                         const char *assume_state_connection_uuid,
                          gboolean set_nm_owned,
                          NMUnmanFlagOp unmanaged_user_explicit,
                          gboolean *out_compatible,
@@ -2784,8 +2839,11 @@ nm_device_realize_start (NMDevice *self,
 		plink_copy = *plink;
 		plink = &plink_copy;
 	}
-	realize_start_setup (self, plink, set_nm_owned, unmanaged_user_explicit);
-
+	realize_start_setup (self, plink,
+	                     assume_state_guess_assume,
+	                     assume_state_connection_uuid,
+	                     set_nm_owned,
+	                     unmanaged_user_explicit);
 	return TRUE;
 }
 
@@ -2824,7 +2882,10 @@ nm_device_create_and_realize (NMDevice *self,
 		plink = &plink_copy;
 	}
 
-	realize_start_setup (self, plink, FALSE, NM_UNMAN_FLAG_OP_FORGET);
+	realize_start_setup (self, plink,
+	                     FALSE, /* assume_state_guess_assume */
+	                     NULL,  /* assume_state_connection_uuid */
+	                     FALSE, NM_UNMAN_FLAG_OP_FORGET);
 	nm_device_realize_finish (self, plink);
 
 	if (nm_device_get_managed (self, FALSE)) {
@@ -2920,6 +2981,8 @@ realize_start_notify (NMDevice *self,
  * realize_start_setup():
  * @self: the #NMDevice
  * @plink: the #NMPlatformLink if backed by a kernel netdevice
+ * @assume_state_guess_assume: set the guess_assume state.
+ * @assume_state_connection_uuid: set the connection uuid to assume.
  * @set_nm_owned: if TRUE and device is a software-device, set nm-owned.
  *    TRUE.
  * @unmanaged_user_explicit: the user-explict unmanaged flag to set.
@@ -2933,6 +2996,8 @@ realize_start_notify (NMDevice *self,
 static void
 realize_start_setup (NMDevice *self,
                      const NMPlatformLink *plink,
+                     gboolean assume_state_guess_assume,
+                     const char *assume_state_connection_uuid,
                      gboolean set_nm_owned,
                      NMUnmanFlagOp unmanaged_user_explicit)
 {
@@ -2971,6 +3036,8 @@ realize_start_setup (NMDevice *self,
 		priv->mtu = 0;
 		_notify (self, PROP_MTU);
 	}
+
+	_assume_state_set (self, assume_state_guess_assume, assume_state_connection_uuid);
 
 	nm_device_sys_iface_state_set (self, NM_DEVICE_SYS_IFACE_STATE_EXTERNAL);
 
@@ -3192,6 +3259,8 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 	ifindex = nm_device_get_ifindex (self);
 
 	_LOGD (LOGD_DEVICE, "unrealize (ifindex %d)", ifindex > 0 ? ifindex : 0);
+
+	nm_device_assume_state_reset (self);
 
 	if (remove_resources) {
 		if (NM_DEVICE_GET_CLASS (self)->unrealize) {
@@ -4042,7 +4111,7 @@ nm_device_master_update_slave_connection (NMDevice *self,
 }
 
 NMConnection *
-nm_device_generate_connection (NMDevice *self, NMDevice *master)
+nm_device_generate_connection (NMDevice *self, NMDevice *master, gboolean *out_maybe_later)
 {
 	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (self);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -4055,6 +4124,8 @@ nm_device_generate_connection (NMDevice *self, NMDevice *master)
 	const char *ip4_method, *ip6_method;
 	GError *error = NULL;
 	const NMPlatformLink *pllink;
+
+	NM_SET_OUT (out_maybe_later, FALSE);
 
 	/* If update_connection() is not implemented, just fail. */
 	if (!klass->update_connection)
@@ -4131,6 +4202,7 @@ nm_device_generate_connection (NMDevice *self, NMDevice *master)
 	    && !nm_setting_connection_get_master (NM_SETTING_CONNECTION (s_con))
 	    && !priv->slaves) {
 		_LOGD (LOGD_DEVICE, "ignoring generated connection (no IP and not in master-slave relationship)");
+		NM_SET_OUT (out_maybe_later, TRUE);
 		g_object_unref (connection);
 		connection = NULL;
 	}
@@ -4145,6 +4217,7 @@ nm_device_generate_connection (NMDevice *self, NMDevice *master)
 	    && !priv->slaves
 	    && !nm_config_data_get_assume_ipv6ll_only (NM_CONFIG_GET_DATA, self)) {
 		_LOGD (LOGD_DEVICE, "ignoring generated connection (IPv6LL-only and not in master-slave relationship)");
+		NM_SET_OUT (out_maybe_later, TRUE);
 		g_object_unref (connection);
 		connection = NULL;
 	}
@@ -12499,6 +12572,9 @@ _set_state_full (NMDevice *self,
 	                        NM_DEVICE_SYS_IFACE_STATE_ASSUME))
 		nm_device_sys_iface_state_set (self, NM_DEVICE_SYS_IFACE_STATE_MANAGED);
 
+	if (state > NM_DEVICE_STATE_DISCONNECTED)
+		nm_device_assume_state_reset (self);
+
 	if (state <= NM_DEVICE_STATE_UNAVAILABLE) {
 		if (available_connections_del_all (self))
 			_notify (self, PROP_AVAILABLE_CONNECTIONS);
@@ -13771,6 +13847,8 @@ dispose (GObject *object)
 	_LOGD (LOGD_DEVICE, "disposing");
 
 	nm_clear_g_cancellable (&priv->deactivating_cancellable);
+
+	nm_device_assume_state_reset (self);
 
 	_parent_set_ifindex (self, 0, FALSE);
 
