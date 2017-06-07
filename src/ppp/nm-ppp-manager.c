@@ -1234,7 +1234,11 @@ static void
 dispose (GObject *object)
 {
 	NMPPPManager *self = (NMPPPManager *) object;
+	NMExportedObject *exported = NM_EXPORTED_OBJECT (self);
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (self);
+
+	if (nm_exported_object_is_exported (exported))
+		nm_exported_object_unexport (exported);
 
 	_ppp_cleanup (self);
 	_ppp_kill (self);
