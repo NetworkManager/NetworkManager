@@ -1508,7 +1508,7 @@ manager_update_radio_enabled (NMManager *self,
 		NMDevice *device = NM_DEVICE (iter->data);
 
 		if (nm_device_get_rfkill_type (device) == rstate->rtype) {
-			_LOG2D (LOGD_RFKILL, device, "setting radio %s", enabled ? "enabled" : "disabled");
+			_LOG2D (LOGD_RFKILL, device, "rfkill: setting radio %s", enabled ? "enabled" : "disabled");
 			nm_device_set_enabled (device, enabled);
 		}
 	}
@@ -1553,14 +1553,14 @@ manager_rfkill_update_one_type (NMManager *self,
 
 	/* Print out all states affecting device enablement */
 	if (rstate->desc) {
-		_LOGD (LOGD_RFKILL, "%s hw-enabled %d sw-enabled %d",
+		_LOGD (LOGD_RFKILL, "rfkill: %s hw-enabled %d sw-enabled %d",
 		       rstate->desc, rstate->hw_enabled, rstate->sw_enabled);
 	}
 
 	/* Log new killswitch state */
 	new_rfkilled = rstate->hw_enabled && rstate->sw_enabled;
 	if (old_rfkilled != new_rfkilled) {
-		_LOGI (LOGD_RFKILL, "%s now %s by radio killswitch",
+		_LOGI (LOGD_RFKILL, "rfkill: %s now %s by radio killswitch",
 		       rstate->desc,
 		       new_rfkilled ? "enabled" : "disabled");
 	}
@@ -4512,7 +4512,7 @@ do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 				gboolean enabled = radio_enabled_for_rstate (rstate, TRUE);
 
 				if (rstate->desc) {
-					_LOGD (LOGD_RFKILL, "%s %s devices (hw_enabled %d, sw_enabled %d, user_enabled %d)",
+					_LOGD (LOGD_RFKILL, "rfkill: %s %s devices (hw_enabled %d, sw_enabled %d, user_enabled %d)",
 					       enabled ? "enabling" : "disabling",
 					       rstate->desc, rstate->hw_enabled, rstate->sw_enabled, rstate->user_enabled);
 				}
@@ -5109,7 +5109,7 @@ nm_manager_start (NMManager *self, GError **error)
 		update_rstate_from_rfkill (priv->rfkill_mgr, rstate);
 
 		if (rstate->desc) {
-			_LOGI (LOGD_RFKILL, "%s %s by radio killswitch; %s by state file",
+			_LOGI (LOGD_RFKILL, "rfkill: %s %s by radio killswitch; %s by state file",
 			       rstate->desc,
 			       (rstate->hw_enabled && rstate->sw_enabled) ? "enabled" : "disabled",
 			       rstate->user_enabled ? "enabled" : "disabled");
@@ -5817,12 +5817,12 @@ rfkill_change (NMManager *self, const char *desc, RfKillType rtype, gboolean ena
 	fd = open ("/dev/rfkill", O_RDWR | O_CLOEXEC);
 	if (fd < 0) {
 		if (errno == EACCES)
-			_LOGW (LOGD_RFKILL, "(%s): failed to open killswitch device", desc);
+			_LOGW (LOGD_RFKILL, "rfkill: (%s): failed to open killswitch device", desc);
 		return;
 	}
 
 	if (fcntl (fd, F_SETFL, O_NONBLOCK) < 0) {
-		_LOGW (LOGD_RFKILL, "(%s): failed to set killswitch device for "
+		_LOGW (LOGD_RFKILL, "rfkill: (%s): failed to set killswitch device for "
 		       "non-blocking operation", desc);
 		close (fd);
 		return;
@@ -5844,14 +5844,14 @@ rfkill_change (NMManager *self, const char *desc, RfKillType rtype, gboolean ena
 
 	len = write (fd, &event, sizeof (event));
 	if (len < 0) {
-		_LOGW (LOGD_RFKILL, "(%s): failed to change WiFi killswitch state: (%d) %s",
+		_LOGW (LOGD_RFKILL, "rfkill: (%s): failed to change WiFi killswitch state: (%d) %s",
 		       desc, errno, g_strerror (errno));
 	} else if (len == sizeof (event)) {
-		_LOGI (LOGD_RFKILL, "%s hardware radio set %s",
+		_LOGI (LOGD_RFKILL, "rfkill: %s hardware radio set %s",
 		       desc, enabled ? "enabled" : "disabled");
 	} else {
 		/* Failed to write full structure */
-		_LOGW (LOGD_RFKILL, "(%s): failed to change WiFi killswitch state", desc);
+		_LOGW (LOGD_RFKILL, "rfkill: (%s): failed to change WiFi killswitch state", desc);
 	}
 
 	close (fd);
@@ -5870,7 +5870,7 @@ manager_radio_user_toggled (NMManager *self,
 		return;
 
 	if (rstate->desc) {
-		_LOGD (LOGD_RFKILL, "(%s): setting radio %s by user",
+		_LOGD (LOGD_RFKILL, "rfkill: (%s): setting radio %s by user",
 		       rstate->desc,
 		       enabled ? "enabled" : "disabled");
 	}
