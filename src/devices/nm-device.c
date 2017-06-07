@@ -1827,10 +1827,13 @@ update_connectivity_state (NMDevice *self, NMConnectivityState state)
 		priv->connectivity_state = state;
 		_notify (self, PROP_CONNECTIVITY);
 
-		if (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED) {
-			if (!ip4_config_merge_and_apply (self, NULL, TRUE))
+		if (   priv->state == NM_DEVICE_STATE_ACTIVATED
+		    && !nm_device_sys_iface_state_is_external (self)) {
+			if (   priv->default_route.v4_has
+			    && !ip4_config_merge_and_apply (self, NULL, TRUE))
 				_LOGW (LOGD_IP4, "Failed to update IPv4 default route metric");
-			if (!ip6_config_merge_and_apply (self, TRUE))
+			if (   priv->default_route.v6_has
+			    && !ip6_config_merge_and_apply (self, TRUE))
 				_LOGW (LOGD_IP6, "Failed to update IPv6 default route metric");
 		}
 	}
