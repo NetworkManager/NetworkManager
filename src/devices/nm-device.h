@@ -734,4 +734,6 @@ struct _NMBtVTableNetworkServer {
 	                               NMDevice *device);
 };
 
+const char *nm_device_state_to_str (NMDeviceState state);
+
 #endif /* __NETWORKMANAGER_DEVICE_H__ */

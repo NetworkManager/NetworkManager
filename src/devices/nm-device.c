@@ -557,8 +557,8 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (queued_state_to_string, NMDeviceState,
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_FAILED,       NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "failed"),
 );
 
-static const char *
-state_to_string (NMDeviceState state)
+const char *
+nm_device_state_to_str (NMDeviceState state)
 {
 	return queued_state_to_string (state) + NM_STRLEN (NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE);
 }
@@ -3436,9 +3436,9 @@ slave_state_changed (NMDevice *slave,
 	_LOGD (LOGD_DEVICE, "slave %s state change %d (%s) -> %d (%s)",
 	       nm_device_get_iface (slave),
 	       slave_old_state,
-	       state_to_string (slave_old_state),
+	       nm_device_state_to_str (slave_old_state),
 	       slave_new_state,
-	       state_to_string (slave_new_state));
+	       nm_device_state_to_str (slave_new_state));
 
 	/* Don't try to enslave slaves until the master is ready */
 	if (priv->state < NM_DEVICE_STATE_CONFIG)
@@ -4399,7 +4399,7 @@ recheck_available (gpointer user_data)
 		_LOGD (LOGD_DEVICE, "is %savailable, %s %s",
 		       now_available ? "" : "not ",
 		       new_state == NM_DEVICE_STATE_UNAVAILABLE ? "no change required for" : "will transition to",
-		       state_to_string (new_state == NM_DEVICE_STATE_UNAVAILABLE ? state : new_state));
+		       nm_device_state_to_str (new_state == NM_DEVICE_STATE_UNAVAILABLE ? state : new_state));
 
 		priv->recheck_available.available_reason = NM_DEVICE_STATE_REASON_NONE;
 		priv->recheck_available.unavailable_reason = NM_DEVICE_STATE_REASON_NONE;
@@ -12439,8 +12439,8 @@ _set_state_full (NMDevice *self,
 	    && (   state != NM_DEVICE_STATE_UNAVAILABLE
 	        || !priv->firmware_missing)) {
 		_LOGD (LOGD_DEVICE, "state change: %s -> %s (reason '%s', internal state '%s'%s)",
-		       state_to_string (old_state),
-		       state_to_string (state),
+		       nm_device_state_to_str (old_state),
+		       nm_device_state_to_str (state),
 		       reason_to_string (reason),
 		       _sys_iface_state_to_str (priv->sys_iface_state),
 		       priv->firmware_missing ? ", missing firmware" : "");
@@ -12448,8 +12448,8 @@ _set_state_full (NMDevice *self,
 	}
 
 	_LOGI (LOGD_DEVICE, "state change: %s -> %s (reason '%s', internal state '%s')",
-	       state_to_string (old_state),
-	       state_to_string (state),
+	       nm_device_state_to_str (old_state),
+	       nm_device_state_to_str (state),
 	       reason_to_string (reason),
 	       _sys_iface_state_to_str (priv->sys_iface_state));
 
@@ -12767,7 +12767,7 @@ queued_state_set (gpointer user_data)
 	nm_assert (priv->queued_state.id);
 
 	_LOGD (LOGD_DEVICE, "queue-state[%s, reason:%s, id:%u]: %s",
-	       state_to_string (priv->queued_state.state),
+	       nm_device_state_to_str (priv->queued_state.state),
 	       reason_to_string (priv->queued_state.reason),
 	       priv->queued_state.id,
 	       "change state");
@@ -12798,7 +12798,7 @@ nm_device_queue_state (NMDevice *self,
 
 	if (priv->queued_state.id && priv->queued_state.state == state) {
 		_LOGD (LOGD_DEVICE, "queue-state[%s, reason:%s, id:%u]: %s%s%s%s",
-		       state_to_string (priv->queued_state.state),
+		       nm_device_state_to_str (priv->queued_state.state),
 		       reason_to_string (priv->queued_state.reason),
 		       priv->queued_state.id,
 		       "ignore queuing same state change",
@@ -12814,7 +12814,7 @@ nm_device_queue_state (NMDevice *self,
 	/* We should only ever have one delayed state transition at a time */
 	if (priv->queued_state.id) {
 		_LOGW (LOGD_DEVICE, "queue-state[%s, reason:%s, id:%u]: %s",
-		       state_to_string (priv->queued_state.state),
+		       nm_device_state_to_str (priv->queued_state.state),
 		       reason_to_string (priv->queued_state.reason),
 		       priv->queued_state.id,
 		       "replace previously queued state change");
@@ -12827,7 +12827,7 @@ nm_device_queue_state (NMDevice *self,
 	priv->queued_state.id = g_idle_add (queued_state_set, self);
 
 	_LOGD (LOGD_DEVICE, "queue-state[%s, reason:%s, id:%u]: %s",
-	       state_to_string (state),
+	       nm_device_state_to_str (state),
 	       reason_to_string (reason),
 	       priv->queued_state.id,
 	       "queue state change");
@@ -12842,7 +12842,7 @@ queued_state_clear (NMDevice *self)
 		return;
 
 	_LOGD (LOGD_DEVICE, "queue-state[%s, reason:%s, id:%u]: %s",
-	       state_to_string (priv->queued_state.state),
+	       nm_device_state_to_str (priv->queued_state.state),
 	       reason_to_string (priv->queued_state.reason),
 	       priv->queued_state.id,
 	       "clear queued state change");
