@@ -1858,7 +1858,7 @@ nm_device_check_connectivity (NMDevice *self,
 
 		/* Kick off a real connectivity check. */
 		nm_connectivity_check_async (nm_connectivity_get (),
-		                             nm_device_get_iface (self),
+		                             nm_device_get_ip_iface (self),
 		                             concheck_cb,
 		                             data);
 		return;
