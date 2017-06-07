@@ -4111,29 +4111,37 @@ nm_device_master_update_slave_connection (NMDevice *self,
 }
 
 NMConnection *
-nm_device_generate_connection (NMDevice *self, NMDevice *master, gboolean *out_maybe_later)
+nm_device_generate_connection (NMDevice *self,
+                               NMDevice *master,
+                               gboolean *out_maybe_later,
+                               GError **error)
 {
 	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (self);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	const char *ifname = nm_device_get_iface (self);
-	NMConnection *connection;
+	gs_unref_object NMConnection *connection = NULL;
 	NMSetting *s_con;
 	NMSetting *s_ip4;
 	NMSetting *s_ip6;
 	char uuid[37];
 	const char *ip4_method, *ip6_method;
-	GError *error = NULL;
+	GError *local = NULL;
 	const NMPlatformLink *pllink;
 
 	NM_SET_OUT (out_maybe_later, FALSE);
 
 	/* If update_connection() is not implemented, just fail. */
-	if (!klass->update_connection)
+	if (!klass->update_connection) {
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+		             "device class %s does not support generating a connection",
+		             G_OBJECT_TYPE_NAME (self));
 		return NULL;
+	}
 
 	/* Return NULL if device is unconfigured. */
 	if (!device_has_config (self)) {
-		_LOGD (LOGD_DEVICE, "device has no existing configuration");
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+		             "device has no existing configuration");
 		return NULL;
 	}
 
@@ -4156,12 +4164,11 @@ nm_device_generate_connection (NMDevice *self, NMDevice *master, gboolean *out_m
 		if (!nm_device_master_update_slave_connection (master,
 		                                               self,
 		                                               connection,
-		                                               &error))
-		{
-			_LOGE (LOGD_DEVICE, "master device '%s' failed to update slave connection: %s",
-			       nm_device_get_iface (master), error->message);
-			g_error_free (error);
-			g_object_unref (connection);
+		                                               &local)) {
+			g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+			             "master device '%s' failed to update slave connection: %s",
+			             nm_device_get_iface (master), local->message);
+			g_error_free (local);
 			return NULL;
 		}
 	} else {
@@ -4174,7 +4181,6 @@ nm_device_generate_connection (NMDevice *self, NMDevice *master, gboolean *out_m
 
 		pllink = nm_platform_link_get (nm_device_get_platform (self), priv->ifindex);
 		if (pllink && pllink->inet6_token.id) {
-			_LOGD (LOGD_IP6, "IPv6 tokenized identifier present");
 			g_object_set (s_ip6,
 			              NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE, NM_IN6_ADDR_GEN_MODE_EUI64,
 			              NM_SETTING_IP6_CONFIG_TOKEN, nm_utils_inet6_interface_identifier_to_token (pllink->inet6_token, NULL),
@@ -4184,11 +4190,11 @@ nm_device_generate_connection (NMDevice *self, NMDevice *master, gboolean *out_m
 
 	klass->update_connection (self, connection);
 
-	/* Check the connection in case of update_connection() bug. */
-	if (!nm_connection_verify (connection, &error)) {
-		_LOGE (LOGD_DEVICE, "Generated connection does not verify: %s", error->message);
-		g_clear_error (&error);
-		g_object_unref (connection);
+	if (!nm_connection_verify (connection, &local)) {
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+		             "generated connection does not verify: %s",
+		             local->message);
+		g_error_free (local);
 		return NULL;
 	}
 
@@ -4201,28 +4207,28 @@ nm_device_generate_connection (NMDevice *self, NMDevice *master, gboolean *out_m
 	    && g_strcmp0 (ip6_method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0
 	    && !nm_setting_connection_get_master (NM_SETTING_CONNECTION (s_con))
 	    && !priv->slaves) {
-		_LOGD (LOGD_DEVICE, "ignoring generated connection (no IP and not in master-slave relationship)");
 		NM_SET_OUT (out_maybe_later, TRUE);
-		g_object_unref (connection);
-		connection = NULL;
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+		                     "ignoring generated connection (no IP and not in master-slave relationship)");
+		return NULL;
 	}
 
 	/* Ignore any IPv6LL-only, not master connections without slaves,
 	 * unless they are in the assume-ipv6ll-only list.
 	 */
-	if (   connection
-	    && g_strcmp0 (ip4_method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0
+	if (   g_strcmp0 (ip4_method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0
 	    && g_strcmp0 (ip6_method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0
 	    && !nm_setting_connection_get_master (NM_SETTING_CONNECTION (s_con))
 	    && !priv->slaves
 	    && !nm_config_data_get_assume_ipv6ll_only (NM_CONFIG_GET_DATA, self)) {
 		_LOGD (LOGD_DEVICE, "ignoring generated connection (IPv6LL-only and not in master-slave relationship)");
 		NM_SET_OUT (out_maybe_later, TRUE);
-		g_object_unref (connection);
-		connection = NULL;
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+		                    "ignoring generated connection (IPv6LL-only and not in master-slave relationship)");
+		return NULL;
 	}
 
-	return connection;
+	return g_steal_pointer (&connection);
 }
 
 gboolean
