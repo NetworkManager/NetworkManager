@@ -177,7 +177,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 				*p = '\0';
 		}
 
-		if (nm_streq (*options, NM_SETTING_BOND_OPTION_MODE))
+		if (value && nm_streq (*options, NM_SETTING_BOND_OPTION_MODE))
 			mode = _nm_setting_bond_mode_from_string (value);
 
 		if (!_nm_setting_bond_option_supported (*options, mode))
