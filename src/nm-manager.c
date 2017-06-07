@@ -1858,9 +1858,6 @@ recheck_assume_connection (NMManager *self,
 	g_return_val_if_fail (NM_IS_MANAGER (self), FALSE);
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
-	if (nm_device_is_nm_owned (device))
-		return FALSE;
-
 	if (!nm_device_get_managed (device, FALSE))
 		return FALSE;
 
