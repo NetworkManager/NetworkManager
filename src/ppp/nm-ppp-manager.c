@@ -589,74 +589,37 @@ nm_cmd_line_add_int (NMCmdLine *cmd, int i)
 
 /*****************************************************************************/
 
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (pppd_exit_code_to_str, int,
+	NM_UTILS_LOOKUP_DEFAULT ("Unknown error"),
+	NM_UTILS_LOOKUP_STR_ITEM ( 1, "Fatal pppd error");
+	NM_UTILS_LOOKUP_STR_ITEM ( 2, "pppd options error"),
+	NM_UTILS_LOOKUP_STR_ITEM ( 3, "No root priv error"),
+	NM_UTILS_LOOKUP_STR_ITEM ( 4, "No ppp module error"),
+	NM_UTILS_LOOKUP_STR_ITEM ( 5, "pppd received a signal"),
+	NM_UTILS_LOOKUP_STR_ITEM ( 6, "Serial port lock failed"),
+	NM_UTILS_LOOKUP_STR_ITEM ( 7, "Serial port open failed"),
+	NM_UTILS_LOOKUP_STR_ITEM ( 8, "Connect script failed"),
+	NM_UTILS_LOOKUP_STR_ITEM ( 9, "Pty program error"),
+	NM_UTILS_LOOKUP_STR_ITEM (10, "PPP negotiation failed"),
+	NM_UTILS_LOOKUP_STR_ITEM (11, "Peer didn't authenticatie itself"),
+	NM_UTILS_LOOKUP_STR_ITEM (12, "Link idle: Idle Seconds reached."),
+	NM_UTILS_LOOKUP_STR_ITEM (13, "Connect time limit reached."),
+	NM_UTILS_LOOKUP_STR_ITEM (14, "Callback negotiated, call should come back."),
+	NM_UTILS_LOOKUP_STR_ITEM (15, "Lack of LCP echo responses"),
+	NM_UTILS_LOOKUP_STR_ITEM (16, "A modem hung up the phone"),
+	NM_UTILS_LOOKUP_STR_ITEM (17, "Loopback detected"),
+	NM_UTILS_LOOKUP_STR_ITEM (18, "The init script failed"),
+	NM_UTILS_LOOKUP_STR_ITEM (19, "Authentication error.\n"
+	                              "We failed to authenticate ourselves to the peer.\n"
+	                              "Maybe bad account or password?"),
+);
+
 static void
 ppp_exit_code (guint pppd_exit_status, GPid pid)
 {
 	const char *msg;
 
-	switch (pppd_exit_status) {
-	case  1:
-		msg = "Fatal pppd error";
-		break;
-	case  2:
-		msg = "pppd options error";
-		break;
-	case  3:
-		msg = "No root priv error";
-		break;
-	case  4:
-		msg = "No ppp module error";
-		break;
-	case  5:
-		msg = "pppd received a signal";
-		break;
-	case  6:
-		msg = "Serial port lock failed";
-		break;
-	case  7:
-		msg = "Serial port open failed";
-		break;
-	case  8:
-		msg = "Connect script failed";
-		break;
-	case  9:
-		msg = "Pty program error";
-		break;
-	case 10:
-		msg = "PPP negotiation failed";
-		break;
-	case 11:
-		msg = "Peer didn't authenticatie itself";
-		break;
-	case 12:
-		msg = "Link idle: Idle Seconds reached.";
-		break;
-	case 13:
-		msg = "Connect time limit reached.";
-		break;
-	case 14:
-		msg = "Callback negotiated, call should come back.";
-		break;
-	case 15:
-		msg = "Lack of LCP echo responses";
-		break;
-	case 16:
-		msg = "A modem hung up the phone";
-		break;
-	case 17:
-		msg = "Loopback detected";
-		break;
-	case 18:
-		msg = "The init script failed";
-		break;
-	case 19:
-		msg = "Authentication error.\n"
-		      "We failed to authenticate ourselves to the peer.\n"
-		      "Maybe bad account or password?";
-		break;
-	default:
-		msg = "Unknown error";
-	}
+	msg = pppd_exit_code_to_str (pppd_exit_status);
 
 	_LOGW ("pppd pid %d exited with error: %s", pid, msg);
 }
