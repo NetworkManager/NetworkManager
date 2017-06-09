@@ -643,6 +643,7 @@ ppp_watch_cb (GPid pid, int status, gpointer user_data)
 
 	priv->pid = 0;
 	priv->ppp_watch_id = 0;
+	_ppp_cleanup (manager);
 	g_signal_emit (manager, signals[STATE_CHANGED], 0, (guint) NM_PPP_STATUS_DEAD);
 }
 
