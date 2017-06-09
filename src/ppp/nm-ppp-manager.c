@@ -609,8 +609,8 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (pppd_exit_code_to_str, int,
 	NM_UTILS_LOOKUP_STR_ITEM (16, "A modem hung up the phone"),
 	NM_UTILS_LOOKUP_STR_ITEM (17, "Loopback detected"),
 	NM_UTILS_LOOKUP_STR_ITEM (18, "The init script failed"),
-	NM_UTILS_LOOKUP_STR_ITEM (19, "Authentication error.\n"
-	                              "We failed to authenticate ourselves to the peer.\n"
+	NM_UTILS_LOOKUP_STR_ITEM (19, "Authentication error. "
+	                              "We failed to authenticate ourselves to the peer. "
 	                              "Maybe bad account or password?"),
 );
 
