@@ -179,14 +179,6 @@ monitor_stats (NMPPPManager *manager)
 /*****************************************************************************/
 
 static void
-remove_timeout_handler (NMPPPManager *manager)
-{
-	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
-
-	nm_clear_g_source (&priv->ppp_timeout_handler);
-}
-
-static void
 cancel_get_secrets (NMPPPManager *self)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (self);
@@ -415,7 +407,7 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 
 	_LOGI ("(IPv4 Config Get) reply received.");
 
-	remove_timeout_handler (manager);
+	nm_clear_g_source (&priv->ppp_timeout_handler);
 
 	config = nm_ip4_config_new (nm_platform_link_get_ifindex (NM_PLATFORM_GET, priv->ip_iface));
 
@@ -511,7 +503,7 @@ impl_ppp_manager_set_ip6_config (NMPPPManager *manager,
 
 	_LOGI ("(IPv6 Config Get) reply received.");
 
-	remove_timeout_handler (manager);
+	nm_clear_g_source (&priv->ppp_timeout_handler);
 
 	config = nm_ip6_config_new (nm_platform_link_get_ifindex (NM_PLATFORM_GET, priv->ip_iface));
 
