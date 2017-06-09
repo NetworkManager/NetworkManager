@@ -179,14 +179,6 @@ monitor_stats (NMPPPManager *manager)
 /*****************************************************************************/
 
 static void
-remove_timeout_handler (NMPPPManager *manager)
-{
-	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
-
-	nm_clear_g_source (&priv->ppp_timeout_handler);
-}
-
-static void
 cancel_get_secrets (NMPPPManager *self)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (self);
@@ -415,7 +407,7 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 
 	_LOGI ("(IPv4 Config Get) reply received.");
 
-	remove_timeout_handler (manager);
+	nm_clear_g_source (&priv->ppp_timeout_handler);
 
 	config = nm_ip4_config_new (nm_platform_link_get_ifindex (NM_PLATFORM_GET, priv->ip_iface));
 
@@ -511,7 +503,7 @@ impl_ppp_manager_set_ip6_config (NMPPPManager *manager,
 
 	_LOGI ("(IPv6 Config Get) reply received.");
 
-	remove_timeout_handler (manager);
+	nm_clear_g_source (&priv->ppp_timeout_handler);
 
 	config = nm_ip6_config_new (nm_platform_link_get_ifindex (NM_PLATFORM_GET, priv->ip_iface));
 
@@ -597,101 +589,61 @@ nm_cmd_line_add_int (NMCmdLine *cmd, int i)
 
 /*****************************************************************************/
 
-static void
-ppp_exit_code (guint pppd_exit_status, GPid pid)
-{
-	const char *msg;
-
-	switch (pppd_exit_status) {
-	case  1: 
-		msg = "Fatal pppd error"; 
-		break;
-	case  2: 
-		msg = "pppd options error"; 
-		break;
-	case  3: 
-		msg = "No root priv error"; 
-		break;
-	case  4: 
-		msg = "No ppp module error"; 
-		break;
-	case  5: 
-		msg = "pppd received a signal"; 
-		break;
-	case  6: 
-		msg = "Serial port lock failed"; 
-		break;
-	case  7: 
-		msg = "Serial port open failed"; 
-		break;
-	case  8: 
-		msg = "Connect script failed"; 
-		break;
-	case  9: 
-		msg = "Pty program error"; 
-		break;
-	case 10: 
-		msg = "PPP negotiation failed"; 
-		break;
-	case 11: 
-		msg = "Peer didn't authenticatie itself"; 
-		break;
-	case 12: 
-		msg = "Link idle: Idle Seconds reached."; 
-		break;
-	case 13: 
-		msg = "Connect time limit reached."; 
-		break;
-	case 14: 
-		msg = "Callback negotiated, call should come back.";
-		break;
-	case 15: 
-		msg = "Lack of LCP echo responses"; 
-		break;
-	case 16: 
-		msg = "A modem hung up the phone"; 
-		break;
-	case 17: 
-		msg = "Loopback detected"; 
-		break;
-	case 18: 
-		msg = "The init script failed"; 
-		break;
-	case 19: 
-		msg = "Authentication error.\n"
-			"We failed to authenticate ourselves to the peer.\n"
-			"Maybe bad account or password?";
-		break;
-	default:
-		msg = "Unknown error";
-	}
-
-	_LOGW ("pppd pid %d exited with error: %s", pid, msg);
-}
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (pppd_exit_code_to_str, int,
+	NM_UTILS_LOOKUP_DEFAULT ("Unknown error"),
+	NM_UTILS_LOOKUP_STR_ITEM ( 1, "Fatal pppd error");
+	NM_UTILS_LOOKUP_STR_ITEM ( 2, "pppd options error"),
+	NM_UTILS_LOOKUP_STR_ITEM ( 3, "No root priv error"),
+	NM_UTILS_LOOKUP_STR_ITEM ( 4, "No ppp module error"),
+	NM_UTILS_LOOKUP_STR_ITEM ( 5, "pppd received a signal"),
+	NM_UTILS_LOOKUP_STR_ITEM ( 6, "Serial port lock failed"),
+	NM_UTILS_LOOKUP_STR_ITEM ( 7, "Serial port open failed"),
+	NM_UTILS_LOOKUP_STR_ITEM ( 8, "Connect script failed"),
+	NM_UTILS_LOOKUP_STR_ITEM ( 9, "Pty program error"),
+	NM_UTILS_LOOKUP_STR_ITEM (10, "PPP negotiation failed"),
+	NM_UTILS_LOOKUP_STR_ITEM (11, "Peer didn't authenticatie itself"),
+	NM_UTILS_LOOKUP_STR_ITEM (12, "Link idle: Idle Seconds reached."),
+	NM_UTILS_LOOKUP_STR_ITEM (13, "Connect time limit reached."),
+	NM_UTILS_LOOKUP_STR_ITEM (14, "Callback negotiated, call should come back."),
+	NM_UTILS_LOOKUP_STR_ITEM (15, "Lack of LCP echo responses"),
+	NM_UTILS_LOOKUP_STR_ITEM (16, "A modem hung up the phone"),
+	NM_UTILS_LOOKUP_STR_ITEM (17, "Loopback detected"),
+	NM_UTILS_LOOKUP_STR_ITEM (18, "The init script failed"),
+	NM_UTILS_LOOKUP_STR_ITEM (19, "Authentication error. "
+	                              "We failed to authenticate ourselves to the peer. "
+	                              "Maybe bad account or password?"),
+);
 
 static void
-ppp_watch_cb (GPid pid, gint status, gpointer user_data)
+ppp_watch_cb (GPid pid, int status, gpointer user_data)
 {
 	NMPPPManager *manager = NM_PPP_MANAGER (user_data);
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
-	guint err;
+	int err;
+	const long long lpid = (long long) pid;
 
-	g_assert (pid == priv->pid);
+	g_return_if_fail (pid == priv->pid);
 
 	if (WIFEXITED (status)) {
 		err = WEXITSTATUS (status);
-		if (err != 0)
-			ppp_exit_code (err, priv->pid);
+		if (err) {
+			_LOGW ("pppd pid %lld exited with error %d: %s",
+			       lpid, err,
+			       pppd_exit_code_to_str (err));
+		} else
+			_LOGD ("pppd pid %lld exited with success", lpid);
 	} else if (WIFSTOPPED (status)) {
-		_LOGI ("pppd pid %d stopped unexpectedly with signal %d", priv->pid, WSTOPSIG (status));
+		_LOGW ("pppd pid %lld stopped unexpectedly with signal %d",
+		       lpid, WSTOPSIG (status));
 	} else if (WIFSIGNALED (status)) {
-		_LOGI ("pppd pid %d died with signal %d", priv->pid, WTERMSIG (status));
+		_LOGW ("pppd pid %lld died with signal %d",
+		       lpid, WTERMSIG (status));
 	} else
-		_LOGI ("pppd pid %d died from an unknown cause", priv->pid);
+		_LOGW ("pppd pid %lld died from an unknown cause", lpid);
 
-	_LOGD ("pppd pid %d cleaned up", priv->pid);
 	priv->pid = 0;
 	priv->ppp_watch_id = 0;
+	_ppp_cleanup (manager);
 	g_signal_emit (manager, signals[STATE_CHANGED], 0, (guint) NM_PPP_STATUS_DEAD);
 }
 
@@ -1016,7 +968,7 @@ _ppp_manager_start (NMPPPManager *manager,
 		goto out;
 	}
 
-	_LOGI ("pppd started with pid %d", priv->pid);
+	_LOGI ("pppd started with pid %lld", (long long) priv->pid);
 
 	priv->ppp_watch_id = g_child_watch_add (priv->pid, (GChildWatchFunc) ppp_watch_cb, manager);
 	priv->ppp_timeout_handler = g_timeout_add_seconds (timeout_secs, pppd_timed_out, manager);
