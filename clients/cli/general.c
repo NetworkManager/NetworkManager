@@ -1194,10 +1194,10 @@ device_overview (NmCli *nmc, NMDevice *device)
 	else
 		g_string_append_printf (outbuf, "%s, ", _("hw"));
 
-	if (   nm_device_get_ip_iface (device)
-	    && g_strcmp0 (nm_device_get_ip_iface (device), nm_device_get_iface (device))
-	    && g_strcmp0 (nm_device_get_ip_iface (device), ""))
-		g_string_append_printf (outbuf, "%s %s,", _("iface"), nm_device_get_ip_iface (device));
+	if (!NM_IN_STRSET (nm_device_get_ip_iface (device),
+	                   NULL,
+	                   nm_device_get_iface (device)))
+		g_string_append_printf (outbuf, "%s %s, ", _("iface"), nm_device_get_ip_iface (device));
 
 	if (nm_device_get_physical_port_id (device))
 		g_string_append_printf (outbuf, "%s %s, ", _("port"), nm_device_get_physical_port_id (device));
