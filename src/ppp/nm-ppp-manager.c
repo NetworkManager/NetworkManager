@@ -615,36 +615,32 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (pppd_exit_code_to_str, int,
 );
 
 static void
-ppp_exit_code (guint pppd_exit_status, GPid pid)
-{
-	const char *msg;
-
-	msg = pppd_exit_code_to_str (pppd_exit_status);
-
-	_LOGW ("pppd pid %d exited with error: %s", pid, msg);
-}
-
-static void
-ppp_watch_cb (GPid pid, gint status, gpointer user_data)
+ppp_watch_cb (GPid pid, int status, gpointer user_data)
 {
 	NMPPPManager *manager = NM_PPP_MANAGER (user_data);
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
-	guint err;
+	int err;
+	const long long lpid = (long long) pid;
 
-	g_assert (pid == priv->pid);
+	g_return_if_fail (pid == priv->pid);
 
 	if (WIFEXITED (status)) {
 		err = WEXITSTATUS (status);
-		if (err != 0)
-			ppp_exit_code (err, priv->pid);
+		if (err) {
+			_LOGW ("pppd pid %lld exited with error %d: %s",
+			       lpid, err,
+			       pppd_exit_code_to_str (err));
+		} else
+			_LOGD ("pppd pid %lld exited with success", lpid);
 	} else if (WIFSTOPPED (status)) {
-		_LOGI ("pppd pid %d stopped unexpectedly with signal %d", priv->pid, WSTOPSIG (status));
+		_LOGW ("pppd pid %lld stopped unexpectedly with signal %d",
+		       lpid, WSTOPSIG (status));
 	} else if (WIFSIGNALED (status)) {
-		_LOGI ("pppd pid %d died with signal %d", priv->pid, WTERMSIG (status));
+		_LOGW ("pppd pid %lld died with signal %d",
+		       lpid, WTERMSIG (status));
 	} else
-		_LOGI ("pppd pid %d died from an unknown cause", priv->pid);
+		_LOGW ("pppd pid %lld died from an unknown cause", lpid);
 
-	_LOGD ("pppd pid %d cleaned up", priv->pid);
 	priv->pid = 0;
 	priv->ppp_watch_id = 0;
 	g_signal_emit (manager, signals[STATE_CHANGED], 0, (guint) NM_PPP_STATUS_DEAD);
@@ -971,7 +967,7 @@ _ppp_manager_start (NMPPPManager *manager,
 		goto out;
 	}
 
-	_LOGI ("pppd started with pid %d", priv->pid);
+	_LOGI ("pppd started with pid %lld", (long long) priv->pid);
 
 	priv->ppp_watch_id = g_child_watch_add (priv->pid, (GChildWatchFunc) ppp_watch_cb, manager);
 	priv->ppp_timeout_handler = g_timeout_add_seconds (timeout_secs, pppd_timed_out, manager);
