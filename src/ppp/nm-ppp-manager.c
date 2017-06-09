@@ -595,64 +595,64 @@ ppp_exit_code (guint pppd_exit_status, GPid pid)
 	const char *msg;
 
 	switch (pppd_exit_status) {
-	case  1: 
-		msg = "Fatal pppd error"; 
+	case  1:
+		msg = "Fatal pppd error";
 		break;
-	case  2: 
-		msg = "pppd options error"; 
+	case  2:
+		msg = "pppd options error";
 		break;
-	case  3: 
-		msg = "No root priv error"; 
+	case  3:
+		msg = "No root priv error";
 		break;
-	case  4: 
-		msg = "No ppp module error"; 
+	case  4:
+		msg = "No ppp module error";
 		break;
-	case  5: 
-		msg = "pppd received a signal"; 
+	case  5:
+		msg = "pppd received a signal";
 		break;
-	case  6: 
-		msg = "Serial port lock failed"; 
+	case  6:
+		msg = "Serial port lock failed";
 		break;
-	case  7: 
-		msg = "Serial port open failed"; 
+	case  7:
+		msg = "Serial port open failed";
 		break;
-	case  8: 
-		msg = "Connect script failed"; 
+	case  8:
+		msg = "Connect script failed";
 		break;
-	case  9: 
-		msg = "Pty program error"; 
+	case  9:
+		msg = "Pty program error";
 		break;
-	case 10: 
-		msg = "PPP negotiation failed"; 
+	case 10:
+		msg = "PPP negotiation failed";
 		break;
-	case 11: 
-		msg = "Peer didn't authenticatie itself"; 
+	case 11:
+		msg = "Peer didn't authenticatie itself";
 		break;
-	case 12: 
-		msg = "Link idle: Idle Seconds reached."; 
+	case 12:
+		msg = "Link idle: Idle Seconds reached.";
 		break;
-	case 13: 
-		msg = "Connect time limit reached."; 
+	case 13:
+		msg = "Connect time limit reached.";
 		break;
-	case 14: 
+	case 14:
 		msg = "Callback negotiated, call should come back.";
 		break;
-	case 15: 
-		msg = "Lack of LCP echo responses"; 
+	case 15:
+		msg = "Lack of LCP echo responses";
 		break;
-	case 16: 
-		msg = "A modem hung up the phone"; 
+	case 16:
+		msg = "A modem hung up the phone";
 		break;
-	case 17: 
-		msg = "Loopback detected"; 
+	case 17:
+		msg = "Loopback detected";
 		break;
-	case 18: 
-		msg = "The init script failed"; 
+	case 18:
+		msg = "The init script failed";
 		break;
-	case 19: 
+	case 19:
 		msg = "Authentication error.\n"
-			"We failed to authenticate ourselves to the peer.\n"
-			"Maybe bad account or password?";
+		      "We failed to authenticate ourselves to the peer.\n"
+		      "Maybe bad account or password?";
 		break;
 	default:
 		msg = "Unknown error";
