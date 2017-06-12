@@ -1024,6 +1024,11 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 	return nm_platform_ip6_route_cmp_full (a, b, TRUE);
 }
 
+guint nm_platform_ip4_address_hash (const NMPlatformIP4Address *obj);
+guint nm_platform_ip6_address_hash (const NMPlatformIP6Address *obj);
+guint nm_platform_ip4_route_hash (const NMPlatformIP4Route *obj);
+guint nm_platform_ip6_route_hash (const NMPlatformIP6Route *obj);
+
 gboolean nm_platform_check_support_kernel_extended_ifa_flags (NMPlatform *self);
 gboolean nm_platform_check_support_user_ipv6ll (NMPlatform *self);
 

@@ -4290,6 +4290,26 @@ nm_platform_lnk_vxlan_cmp (const NMPlatformLnkVxlan *a, const NMPlatformLnkVxlan
 	return 0;
 }
 
+guint
+nm_platform_ip4_address_hash (const NMPlatformIP4Address *obj)
+{
+	guint h = 469681301;
+
+	if (obj) {
+		h = NM_HASH_COMBINE (h, obj->ifindex);
+		h = NM_HASH_COMBINE (h, obj->address);
+		h = NM_HASH_COMBINE (h, obj->plen);
+		h = NM_HASH_COMBINE (h, obj->peer_address);
+		h = NM_HASH_COMBINE (h, obj->addr_source);
+		h = NM_HASH_COMBINE (h, obj->timestamp);
+		h = NM_HASH_COMBINE (h, obj->lifetime);
+		h = NM_HASH_COMBINE (h, obj->preferred);
+		h = NM_HASH_COMBINE (h, obj->n_ifa_flags);
+		h = NM_HASH_COMBINE (h, g_str_hash (obj->label));
+	}
+	return h;
+}
+
 int
 nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b)
 {
@@ -4305,6 +4325,25 @@ nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4A
 	_CMP_FIELD (a, b, n_ifa_flags);
 	_CMP_FIELD_STR (a, b, label);
 	return 0;
+}
+
+guint
+nm_platform_ip6_address_hash (const NMPlatformIP6Address *obj)
+{
+	guint h = 605908909;
+
+	if (obj) {
+		h = NM_HASH_COMBINE (h, obj->ifindex);
+		h = NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&obj->address));
+		h = NM_HASH_COMBINE (h, obj->plen);
+		h = NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&obj->peer_address));
+		h = NM_HASH_COMBINE (h, obj->addr_source);
+		h = NM_HASH_COMBINE (h, obj->timestamp);
+		h = NM_HASH_COMBINE (h, obj->lifetime);
+		h = NM_HASH_COMBINE (h, obj->preferred);
+		h = NM_HASH_COMBINE (h, obj->n_ifa_flags);
+	}
+	return h;
 }
 
 int
@@ -4325,6 +4364,37 @@ nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6A
 	_CMP_FIELD (a, b, preferred);
 	_CMP_FIELD (a, b, n_ifa_flags);
 	return 0;
+}
+
+guint
+nm_platform_ip4_route_hash (const NMPlatformIP4Route *obj)
+{
+	guint h = 1228913327;
+
+	if (obj) {
+		h = NM_HASH_COMBINE (h, obj->ifindex);
+		h = NM_HASH_COMBINE (h, obj->network);
+		h = NM_HASH_COMBINE (h, obj->plen);
+		h = NM_HASH_COMBINE (h, obj->metric);
+		h = NM_HASH_COMBINE (h, obj->gateway);
+		h = NM_HASH_COMBINE (h, obj->rt_source);
+		h = NM_HASH_COMBINE (h, obj->mss);
+		h = NM_HASH_COMBINE (h, obj->scope_inv);
+		h = NM_HASH_COMBINE (h, obj->pref_src);
+		h = NM_HASH_COMBINE (h, obj->rt_cloned);
+		h = NM_HASH_COMBINE (h, obj->tos);
+		h = NM_HASH_COMBINE (h, obj->lock_window);
+		h = NM_HASH_COMBINE (h, obj->lock_cwnd);
+		h = NM_HASH_COMBINE (h, obj->lock_initcwnd);
+		h = NM_HASH_COMBINE (h, obj->lock_initrwnd);
+		h = NM_HASH_COMBINE (h, obj->lock_mtu);
+		h = NM_HASH_COMBINE (h, obj->window);
+		h = NM_HASH_COMBINE (h, obj->cwnd);
+		h = NM_HASH_COMBINE (h, obj->initcwnd);
+		h = NM_HASH_COMBINE (h, obj->initrwnd);
+		h = NM_HASH_COMBINE (h, obj->mtu);
+	}
+	return h;
 }
 
 int
@@ -4358,6 +4428,38 @@ nm_platform_ip4_route_cmp_full (const NMPlatformIP4Route *a, const NMPlatformIP4
 	_CMP_FIELD (a, b, initrwnd);
 	_CMP_FIELD (a, b, mtu);
 	return 0;
+}
+
+guint
+nm_platform_ip6_route_hash (const NMPlatformIP6Route *obj)
+{
+	guint h = 1053326051;
+
+	if (obj) {
+		h = NM_HASH_COMBINE (h, obj->ifindex);
+		h = NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&obj->network));
+		h = NM_HASH_COMBINE (h, obj->plen);
+		h = NM_HASH_COMBINE (h, obj->metric);
+		h = NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&obj->gateway));
+		h = NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&obj->pref_src));
+		h = NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&obj->src));
+		h = NM_HASH_COMBINE (h, obj->src_plen);
+		h = NM_HASH_COMBINE (h, obj->rt_source);
+		h = NM_HASH_COMBINE (h, obj->mss);
+		h = NM_HASH_COMBINE (h, obj->rt_cloned);
+		h = NM_HASH_COMBINE (h, obj->tos);
+		h = NM_HASH_COMBINE (h, obj->lock_window);
+		h = NM_HASH_COMBINE (h, obj->lock_cwnd);
+		h = NM_HASH_COMBINE (h, obj->lock_initcwnd);
+		h = NM_HASH_COMBINE (h, obj->lock_initrwnd);
+		h = NM_HASH_COMBINE (h, obj->lock_mtu);
+		h = NM_HASH_COMBINE (h, obj->window);
+		h = NM_HASH_COMBINE (h, obj->cwnd);
+		h = NM_HASH_COMBINE (h, obj->initcwnd);
+		h = NM_HASH_COMBINE (h, obj->initrwnd);
+		h = NM_HASH_COMBINE (h, obj->mtu);
+	}
+	return h;
 }
 
 int

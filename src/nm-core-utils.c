@@ -190,6 +190,19 @@ nm_utils_exp10 (gint16 ex)
 
 /*****************************************************************************/
 
+guint
+nm_utils_in6_addr_hash (const struct in6_addr *addr)
+{
+	guint hash = (guint) 0x897da53981a13ULL;
+	int i;
+
+	for (i = 0; i < sizeof (*addr); i++)
+		hash = NM_HASH_COMBINE (hash, ((const guint8 *) addr)[i]);
+	return hash;
+}
+
+/*****************************************************************************/
+
 /*
  * nm_ethernet_address_is_valid:
  * @addr: pointer to a binary or ASCII Ethernet address

@@ -22,6 +22,7 @@
 #define __NMP_OBJECT_H__
 
 #include "nm-utils/nm-obj.h"
+#include "nm-utils/nm-dedup-multi.h"
 #include "nm-platform.h"
 #include "nm-multi-index.h"
 
@@ -139,7 +140,7 @@ struct _NMPCacheId {
 };
 
 typedef struct {
-	NMObjBaseClass parent;
+	NMDedupMultiObjClass parent;
 	const char *obj_type_name;
 	int sizeof_data;
 	int sizeof_public;
@@ -158,6 +159,7 @@ typedef struct {
 	 * initialize @id and set @out_id to it. Otherwise, @out_id is NULL. */
 	gboolean (*cmd_obj_init_cache_id) (const NMPObject *obj, NMPCacheIdType id_type, NMPCacheId *id, const NMPCacheId **out_id);
 
+	guint (*cmd_obj_hash) (const NMPObject *obj);
 	int (*cmd_obj_cmp) (const NMPObject *obj1, const NMPObject *obj2);
 	void (*cmd_obj_copy) (NMPObject *dst, const NMPObject *src);
 	void (*cmd_obj_stackinit_id) (NMPObject *obj, const NMPObject *src);
@@ -172,6 +174,7 @@ typedef struct {
 	guint (*cmd_plobj_id_hash) (const NMPlatformObject *obj);
 	const char *(*cmd_plobj_to_string_id) (const NMPlatformObject *obj, char *buf, gsize buf_size);
 	const char *(*cmd_plobj_to_string) (const NMPlatformObject *obj, char *buf, gsize len);
+	guint (*cmd_plobj_hash) (const NMPlatformObject *obj);
 	int (*cmd_plobj_cmp) (const NMPlatformObject *obj1, const NMPlatformObject *obj2);
 } NMPClass;
 
@@ -269,7 +272,7 @@ typedef struct {
 
 struct _NMPObject {
 	union {
-		NMObjBaseInst parent;
+		NMDedupMultiObj parent;
 		const NMPClass *_class;
 	};
 	guint _ref_count;
@@ -398,6 +401,7 @@ const NMPObject *nmp_object_stackinit_id_ip4_route (NMPObject *obj, int ifindex,
 const NMPObject *nmp_object_stackinit_id_ip6_route (NMPObject *obj, int ifindex, const struct in6_addr *network, guint8 plen, guint32 metric);
 
 const char *nmp_object_to_string (const NMPObject *obj, NMPObjectToStringMode to_string_mode, char *buf, gsize buf_size);
+guint nmp_object_hash (const NMPObject *obj);
 int nmp_object_cmp (const NMPObject *obj1, const NMPObject *obj2);
 gboolean nmp_object_equal (const NMPObject *obj1, const NMPObject *obj2);
 void nmp_object_copy (NMPObject *dst, const NMPObject *src, gboolean id_only);

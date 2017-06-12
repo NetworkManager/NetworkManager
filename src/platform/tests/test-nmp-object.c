@@ -59,17 +59,14 @@ test_obj_base (void)
 	STATIC_ASSERT (sizeof (o->parent)               == sizeof (GTypeInstance));
 
 	STATIC_ASSERT (&c->parent                       == (void *) c);
-	STATIC_ASSERT (&c->parent.g_type_class          == (void *) c);
-	STATIC_ASSERT (&c->parent.g_type                == (void *) c);
-	STATIC_ASSERT (&c->parent.g_type                == &k->g_type);
+	STATIC_ASSERT (&c->parent.parent.g_type_class   == (void *) c);
+	STATIC_ASSERT (&c->parent.parent.g_type         == (void *) c);
+	STATIC_ASSERT (&c->parent.parent.g_type         == &k->g_type);
 
-	STATIC_ASSERT (sizeof (c->parent)               == sizeof (GTypeClass));
+	STATIC_ASSERT (sizeof (c->parent.parent)        == sizeof (GTypeClass));
 
 	STATIC_ASSERT (&o->parent                       == (void *) o);
 	STATIC_ASSERT (&o->parent.klass                 == (void *) &o->_class);
-
-	STATIC_ASSERT (G_STRUCT_OFFSET (NMPObject, _ref_count) == sizeof (NMObjBaseInst));
-	STATIC_ASSERT (G_STRUCT_OFFSET (NMPClass, obj_type_name) == sizeof (NMObjBaseClass));
 
 	obj = (NMObjBaseInst *) obj_cancellable;
 	g_assert (!NMP_CLASS_IS_VALID ((NMPClass *) obj->klass));

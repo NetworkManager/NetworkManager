@@ -109,6 +109,8 @@ extern const NMIPAddr nm_ip_addr_zero;
 
 /*****************************************************************************/
 
+guint nm_utils_in6_addr_hash (const struct in6_addr *addr);
+
 gboolean nm_ethernet_address_is_valid (gconstpointer addr, gssize len);
 
 gconstpointer nm_utils_ipx_address_clear_host_address (int family, gpointer dst, gconstpointer src, guint8 plen);
