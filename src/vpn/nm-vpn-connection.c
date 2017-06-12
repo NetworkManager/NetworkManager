@@ -942,6 +942,7 @@ print_vpn_config (NMVpnConnection *self)
 	char *dns_domain = NULL;
 	guint32 num, i;
 	char buf[NM_UTILS_INET_ADDRSTRLEN];
+	NMDedupMultiIter ipconf_iter;
 
 	if (priv->ip4_external_gw) {
 		_LOGI ("Data: VPN Gateway: %s",
@@ -954,6 +955,8 @@ print_vpn_config (NMVpnConnection *self)
 	_LOGI ("Data: Tunnel Device: %s%s%s", NM_PRINT_FMT_QUOTE_STRING (priv->ip_iface));
 
 	if (priv->ip4_config) {
+		const NMPlatformIP4Route *route;
+
 		_LOGI ("Data: IPv4 configuration:");
 
 		address4 = nm_ip4_config_get_address (priv->ip4_config, 0);
@@ -965,10 +968,7 @@ print_vpn_config (NMVpnConnection *self)
 		_LOGI ("Data:   Internal Point-to-Point Address: %s", nm_utils_inet4_ntop (address4->peer_address, NULL));
 		_LOGI ("Data:   Maximum Segment Size (MSS): %d", nm_ip4_config_get_mss (priv->ip4_config));
 
-		num = nm_ip4_config_get_num_routes (priv->ip4_config);
-		for (i = 0; i < num; i++) {
-			const NMPlatformIP4Route *route = nm_ip4_config_get_route (priv->ip4_config, i);
-
+		nm_ip4_config_iter_ip4_route_for_each (&ipconf_iter, priv->ip4_config, &route) {
 			_LOGI ("Data:   Static Route: %s/%d   Next Hop: %s",
 			       nm_utils_inet4_ntop (route->network, NULL),
 			       route->plen,
@@ -1404,7 +1404,6 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 	const char *str;
 	GVariant *v;
 	gboolean b;
-	guint i, n;
 	int ip_ifindex;
 
 	g_return_if_fail (dict && g_variant_is_of_type (dict, G_VARIANT_TYPE_VARDICT));
@@ -1505,9 +1504,11 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 	if (   g_variant_lookup (dict, NM_VPN_PLUGIN_IP4_CONFIG_PRESERVE_ROUTES, "b", &b)
 	    && b) {
 		if (priv->ip4_config) {
-			n = nm_ip4_config_get_num_routes (priv->ip4_config);
-			for (i = 0; i < n; i++)
-				nm_ip4_config_add_route (config, nm_ip4_config_get_route (priv->ip4_config, i));
+			NMDedupMultiIter ipconf_iter;
+			const NMPlatformIP4Route *route;
+
+			nm_ip4_config_iter_ip4_route_for_each (&ipconf_iter, priv->ip4_config, &route)
+				nm_ip4_config_add_route (config, route);
 		}
 	} else if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP4_CONFIG_ROUTES, "aau", &iter)) {
 		while (g_variant_iter_next (iter, "@au", &v)) {

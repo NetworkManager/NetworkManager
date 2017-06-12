@@ -168,8 +168,10 @@ add_proxy_config (GVariantBuilder *proxy_data, const NMProxyConfig *proxy_config
 static void
 get_ip4_domains (GPtrArray *domains, NMIP4Config *ip4)
 {
+	NMDedupMultiIter ipconf_iter;
 	char *cidr;
-	int i;
+	const NMPlatformIP4Route *routes;
+	guint i;
 
 	/* Extract searches */
 	for (i = 0; i < nm_ip4_config_get_num_searches (ip4); i++)
@@ -189,9 +191,7 @@ get_ip4_domains (GPtrArray *domains, NMIP4Config *ip4)
 		g_ptr_array_add (domains, cidr);
 	}
 
-	for (i = 0; i < nm_ip4_config_get_num_routes (ip4); i++) {
-		const NMPlatformIP4Route *routes = nm_ip4_config_get_route (ip4, i);
-
+	nm_ip4_config_iter_ip4_route_for_each (&ipconf_iter, ip4, &routes) {
 		cidr = g_strdup_printf ("%s/%u",
 		                        nm_utils_inet4_ntop (routes->network, NULL),
 		                        routes->plen);
