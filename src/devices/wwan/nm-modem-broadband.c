@@ -910,7 +910,8 @@ static_stage3_ip4_done (NMModemBroadband *self)
 
 	data_port = mm_bearer_get_interface (self->_priv.bearer);
 	g_assert (data_port);
-	config = nm_ip4_config_new (nm_platform_link_get_ifindex (NM_PLATFORM_GET, data_port));
+	config = nm_ip4_config_new (nm_platform_get_multi_idx (NM_PLATFORM_GET),
+	                            nm_platform_link_get_ifindex (NM_PLATFORM_GET, data_port));
 
 	memset (&address, 0, sizeof (address));
 	address.address = address_network;
@@ -1004,7 +1005,8 @@ stage3_ip6_done (NMModemBroadband *self)
 
 	data_port = mm_bearer_get_interface (self->_priv.bearer);
 	g_assert (data_port);
-	config = nm_ip6_config_new (nm_platform_link_get_ifindex (NM_PLATFORM_GET, data_port));
+	config = nm_ip6_config_new (nm_platform_get_multi_idx (NM_PLATFORM_GET),
+	                            nm_platform_link_get_ifindex (NM_PLATFORM_GET, data_port));
 
 	address.plen = mm_bearer_ip_config_get_prefix (self->_priv.ipv6_config);
 	if (address.plen <= 128)

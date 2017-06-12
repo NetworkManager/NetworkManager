@@ -46,6 +46,7 @@ void           nm_dhcp_manager_set_default_hostname (NMDhcpManager *manager,
                                                      const char *hostname);
 
 NMDhcpClient * nm_dhcp_manager_start_ip4     (NMDhcpManager *manager,
+                                              struct _NMDedupMultiIndex *multi_idx,
                                               const char *iface,
                                               int ifindex,
                                               const GByteArray *hwaddr,
@@ -60,6 +61,7 @@ NMDhcpClient * nm_dhcp_manager_start_ip4     (NMDhcpManager *manager,
                                               const char *last_ip_address);
 
 NMDhcpClient * nm_dhcp_manager_start_ip6     (NMDhcpManager *manager,
+                                              struct _NMDedupMultiIndex *multi_idx,
                                               const char *iface,
                                               int ifindex,
                                               const GByteArray *hwaddr,
@@ -75,6 +77,7 @@ NMDhcpClient * nm_dhcp_manager_start_ip6     (NMDhcpManager *manager,
                                               guint needed_prefixes);
 
 GSList *       nm_dhcp_manager_get_lease_ip_configs (NMDhcpManager *self,
+                                                     struct _NMDedupMultiIndex *multi_idx,
                                                      const char *iface,
                                                      int ifindex,
                                                      const char *uuid,

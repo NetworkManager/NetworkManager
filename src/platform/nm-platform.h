@@ -1043,4 +1043,6 @@ gboolean nm_platform_ethtool_set_wake_on_lan (NMPlatform *self, int ifindex, NMS
 gboolean nm_platform_ethtool_set_link_settings (NMPlatform *self, int ifindex, gboolean autoneg, guint32 speed, NMPlatformLinkDuplexType duplex);
 gboolean nm_platform_ethtool_get_link_settings (NMPlatform *self, int ifindex, gboolean *out_autoneg, guint32 *out_speed, NMPlatformLinkDuplexType *out_duplex);
 
+struct _NMDedupMultiIndex *nm_platform_get_multi_idx (NMPlatform *self);
+
 #endif /* __NETWORKMANAGER_PLATFORM_H__ */

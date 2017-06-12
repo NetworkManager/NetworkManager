@@ -38,6 +38,7 @@
 #define NM_DHCP_CLIENT_UUID      "uuid"
 #define NM_DHCP_CLIENT_PRIORITY  "priority"
 #define NM_DHCP_CLIENT_TIMEOUT   "timeout"
+#define NM_DHCP_CLIENT_MULTI_IDX "multi-idx"
 
 #define NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED "state-changed"
 #define NM_DHCP_CLIENT_SIGNAL_PREFIX_DELEGATED "prefix-delegated"
@@ -100,6 +101,8 @@ typedef struct {
 } NMDhcpClientClass;
 
 GType nm_dhcp_client_get_type (void);
+
+struct _NMDedupMultiIndex *nm_dhcp_client_get_multi_idx (NMDhcpClient *self);
 
 pid_t nm_dhcp_client_get_pid (NMDhcpClient *self);
 
@@ -173,7 +176,8 @@ typedef struct {
 	GType (*get_type)(void);
 	const char *name;
 	const char *(*get_path) (void);
-	GSList *(*get_lease_ip_configs) (const char *iface,
+	GSList *(*get_lease_ip_configs) (struct _NMDedupMultiIndex *multi_idx,
+	                                 const char *iface,
 	                                 int ifindex,
 	                                 const char *uuid,
 	                                 gboolean ipv6,

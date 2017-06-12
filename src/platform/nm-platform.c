@@ -35,6 +35,7 @@
 
 #include "nm-utils.h"
 #include "nm-core-internal.h"
+#include "nm-utils/nm-dedup-multi.h"
 
 #include "nm-core-utils.h"
 #include "nm-platform-utils.h"
@@ -85,6 +86,7 @@ enum {
 
 typedef struct _NMPlatformPrivate {
 	bool log_with_ptr:1;
+	NMDedupMultiIndex *multi_idx;
 } NMPlatformPrivate;
 
 G_DEFINE_TYPE (NMPlatform, nm_platform, G_TYPE_OBJECT)
@@ -189,6 +191,23 @@ nm_platform_get ()
 	g_assert (singleton_instance);
 
 	return singleton_instance;
+}
+
+/*****************************************************************************/
+
+NMDedupMultiIndex *
+nm_platform_get_multi_idx (NMPlatform *self)
+{
+	NMPlatformPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_PLATFORM (self), NULL);
+
+	priv = NM_PLATFORM_GET_PRIVATE (self);
+
+	if (G_UNLIKELY (!priv->multi_idx))
+		priv->multi_idx = nm_dedup_multi_index_new ();
+
+	return priv->multi_idx;
 }
 
 /*****************************************************************************/
@@ -4755,7 +4774,10 @@ static void
 finalize (GObject *object)
 {
 	NMPlatform *self = NM_PLATFORM (object);
+	NMPlatformPrivate *priv = NM_PLATFORM_GET_PRIVATE (self);
 
+	if (priv->multi_idx)
+		nm_dedup_multi_index_unref (priv->multi_idx);
 	g_clear_object (&self->_netns);
 }
 

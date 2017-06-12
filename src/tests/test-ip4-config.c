@@ -36,7 +36,7 @@ build_test_config (void)
 	NMPlatformIP4Route route;
 
 	/* Build up the config to subtract */
-	config = nm_ip4_config_new (1);
+	config = nmtst_ip4_config_new (1);
 
 	addr = *nmtst_platform_ip4_address ("192.168.1.10", "1.2.3.4", 24);
 	nm_ip4_config_add_address (config, &addr);
@@ -156,8 +156,8 @@ test_compare_with_source (void)
 	NMPlatformIP4Address addr;
 	NMPlatformIP4Route route;
 
-	a = nm_ip4_config_new (1);
-	b = nm_ip4_config_new (2);
+	a = nmtst_ip4_config_new (1);
+	b = nmtst_ip4_config_new (2);
 
 	/* Address */
 	addr = *nmtst_platform_ip4_address ("1.2.3.4", NULL, 24);
@@ -189,7 +189,7 @@ test_add_address_with_source (void)
 	NMPlatformIP4Address addr;
 	const NMPlatformIP4Address *test_addr;
 
-	a = nm_ip4_config_new (1);
+	a = nmtst_ip4_config_new (1);
 
 	/* Test that a higher priority source is not overwritten */
 	addr = *nmtst_platform_ip4_address ("1.2.3.4", NULL, 24);
@@ -229,7 +229,7 @@ test_add_route_with_source (void)
 	NMPlatformIP4Route route;
 	const NMPlatformIP4Route *test_route;
 
-	a = nm_ip4_config_new (1);
+	a = nmtst_ip4_config_new (1);
 
 	/* Test that a higher priority source is not overwritten */
 	route = *nmtst_platform_ip4_route ("1.2.3.4", 24, "1.2.3.1");
@@ -306,7 +306,7 @@ test_strip_search_trailing_dot (void)
 {
 	NMIP4Config *config;
 
-	config = nm_ip4_config_new (1);
+	config = nmtst_ip4_config_new (1);
 
 	nm_ip4_config_add_search (config, ".");
 	nm_ip4_config_add_search (config, "foo");

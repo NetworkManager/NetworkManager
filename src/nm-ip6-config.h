@@ -36,6 +36,7 @@
 typedef struct _NMIP6ConfigClass NMIP6ConfigClass;
 
 /* internal */
+#define NM_IP6_CONFIG_MULTI_IDX "multi-idx"
 #define NM_IP6_CONFIG_IFINDEX "ifindex"
 
 /* public */
@@ -55,13 +56,15 @@ typedef struct _NMIP6ConfigClass NMIP6ConfigClass;
 GType nm_ip6_config_get_type (void);
 
 
-NMIP6Config * nm_ip6_config_new (int ifindex);
+NMIP6Config * nm_ip6_config_new (struct _NMDedupMultiIndex *multi_idx, int ifindex);
 NMIP6Config * nm_ip6_config_new_cloned (const NMIP6Config *src);
 
 int nm_ip6_config_get_ifindex (const NMIP6Config *config);
 
+struct _NMDedupMultiIndex *nm_ip6_config_get_multi_idx (const NMIP6Config *self);
 
-NMIP6Config *nm_ip6_config_capture (NMPlatform *platform, int ifindex, gboolean capture_resolv_conf, NMSettingIP6ConfigPrivacy use_temporary);
+NMIP6Config *nm_ip6_config_capture (struct _NMDedupMultiIndex *multi_idx, NMPlatform *platform, int ifindex,
+                                    gboolean capture_resolv_conf, NMSettingIP6ConfigPrivacy use_temporary);
 gboolean nm_ip6_config_commit (const NMIP6Config *config,
                                NMPlatform *platform,
                                NMRouteManager *route_manager,

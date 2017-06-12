@@ -22,6 +22,8 @@
 
 #include "nm-netns.h"
 
+#include "nm-utils/nm-dedup-multi.h"
+
 #include "platform/nm-platform.h"
 #include "platform/nmp-netns.h"
 #include "nm-route-manager.h"
@@ -72,6 +74,12 @@ NMPlatform *
 nm_netns_get_platform (NMNetns *self)
 {
 	return NM_NETNS_GET_PRIVATE (self)->platform;
+}
+
+NMDedupMultiIndex *
+nm_netns_get_multi_idx (NMNetns *self)
+{
+	return nm_platform_get_multi_idx (NM_NETNS_GET_PRIVATE (self)->platform);
 }
 
 NMDefaultRouteManager *

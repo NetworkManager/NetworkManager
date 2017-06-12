@@ -416,6 +416,7 @@ typedef void (*NMDeviceAuthRequestFunc) (NMDevice *device,
 
 GType nm_device_get_type (void);
 
+struct _NMDedupMultiIndex *nm_device_get_multi_index (NMDevice *self);
 NMNetns *nm_device_get_netns (NMDevice *self);
 NMPlatform *nm_device_get_platform (NMDevice *self);
 

@@ -265,13 +265,24 @@ nmtst_platform_ip6_routes_equal (const NMPlatformIP6Route *a, const NMPlatformIP
 
 #ifdef __NETWORKMANAGER_IP4_CONFIG_H__
 
+#include "nm-utils/nm-dedup-multi.h"
+
+static inline NMIP4Config *
+nmtst_ip4_config_new (int ifindex)
+{
+	nm_auto_unref_dedup_multi_index NMDedupMultiIndex *multi_idx = nm_dedup_multi_index_new ();
+
+	return nm_ip4_config_new (multi_idx, ifindex);
+}
+
 static inline NMIP4Config *
 nmtst_ip4_config_clone (NMIP4Config *config)
 {
-	NMIP4Config *copy = nm_ip4_config_new (-1);
+	NMIP4Config *copy;
 
-	g_assert (copy);
 	g_assert (config);
+	copy = nm_ip4_config_new (nm_ip4_config_get_multi_idx (config), -1);
+	g_assert (copy);
 	nm_ip4_config_replace (copy, config, NULL);
 	return copy;
 }
@@ -281,13 +292,24 @@ nmtst_ip4_config_clone (NMIP4Config *config)
 
 #ifdef __NETWORKMANAGER_IP6_CONFIG_H__
 
+#include "nm-utils/nm-dedup-multi.h"
+
+static inline NMIP6Config *
+nmtst_ip6_config_new (int ifindex)
+{
+	nm_auto_unref_dedup_multi_index NMDedupMultiIndex *multi_idx = nm_dedup_multi_index_new ();
+
+	return nm_ip6_config_new (multi_idx, ifindex);
+}
+
 static inline NMIP6Config *
 nmtst_ip6_config_clone (NMIP6Config *config)
 {
-	NMIP6Config *copy = nm_ip6_config_new (-1);
+	NMIP6Config *copy;
 
-	g_assert (copy);
 	g_assert (config);
+	copy = nm_ip6_config_new (nm_ip6_config_get_multi_idx (config), -1);
+	g_assert (copy);
 	nm_ip6_config_replace (copy, config, NULL);
 	return copy;
 }

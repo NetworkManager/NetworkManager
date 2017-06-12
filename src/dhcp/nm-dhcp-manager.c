@@ -34,6 +34,8 @@
 #include <fcntl.h>
 #include <stdio.h>
 
+#include "nm-utils/nm-dedup-multi.h"
+
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"
 
@@ -152,6 +154,7 @@ client_state_changed (NMDhcpClient *client,
 
 static NMDhcpClient *
 client_start (NMDhcpManager *self,
+              NMDedupMultiIndex *multi_idx,
               const char *iface,
               int ifindex,
               const GByteArray *hwaddr,
@@ -195,6 +198,7 @@ client_start (NMDhcpManager *self,
 
 	/* And make a new one */
 	client = g_object_new (priv->client_factory->get_type (),
+	                       NM_DHCP_CLIENT_MULTI_IDX, multi_idx,
 	                       NM_DHCP_CLIENT_INTERFACE, iface,
 	                       NM_DHCP_CLIENT_IFINDEX, ifindex,
 	                       NM_DHCP_CLIENT_HWADDR, hwaddr,
@@ -222,6 +226,7 @@ client_start (NMDhcpManager *self,
 /* Caller owns a reference to the NMDhcpClient on return */
 NMDhcpClient *
 nm_dhcp_manager_start_ip4 (NMDhcpManager *self,
+                           NMDedupMultiIndex *multi_idx,
                            const char *iface,
                            int ifindex,
                            const GByteArray *hwaddr,
@@ -267,7 +272,7 @@ nm_dhcp_manager_start_ip4 (NMDhcpManager *self,
 		}
 	}
 
-	return client_start (self, iface, ifindex, hwaddr, uuid, priority, FALSE, NULL,
+	return client_start (self, multi_idx, iface, ifindex, hwaddr, uuid, priority, FALSE, NULL,
 	                     dhcp_client_id, timeout, dhcp_anycast_addr, hostname,
 	                     use_fqdn, FALSE, 0, last_ip_address, 0);
 }
@@ -275,6 +280,7 @@ nm_dhcp_manager_start_ip4 (NMDhcpManager *self,
 /* Caller owns a reference to the NMDhcpClient on return */
 NMDhcpClient *
 nm_dhcp_manager_start_ip6 (NMDhcpManager *self,
+                           NMDedupMultiIndex *multi_idx,
                            const char *iface,
                            int ifindex,
                            const GByteArray *hwaddr,
@@ -299,7 +305,7 @@ nm_dhcp_manager_start_ip6 (NMDhcpManager *self,
 		/* Always prefer the explicit dhcp-hostname if given */
 		hostname = dhcp_hostname ? dhcp_hostname : priv->default_hostname;
 	}
-	return client_start (self, iface, ifindex, hwaddr, uuid, priority, TRUE,
+	return client_start (self, multi_idx, iface, ifindex, hwaddr, uuid, priority, TRUE,
 	                     ll_addr, NULL, timeout, dhcp_anycast_addr, hostname, TRUE, info_only,
 	                     privacy, NULL, needed_prefixes);
 }
@@ -320,6 +326,7 @@ nm_dhcp_manager_set_default_hostname (NMDhcpManager *manager, const char *hostna
 
 GSList *
 nm_dhcp_manager_get_lease_ip_configs (NMDhcpManager *self,
+                                      NMDedupMultiIndex *multi_idx,
                                       const char *iface,
                                       int ifindex,
                                       const char *uuid,
@@ -336,7 +343,7 @@ nm_dhcp_manager_get_lease_ip_configs (NMDhcpManager *self,
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 	if (   priv->client_factory
 	    && priv->client_factory->get_lease_ip_configs)
-		return priv->client_factory->get_lease_ip_configs (iface, ifindex, uuid, ipv6, default_route_metric);
+		return priv->client_factory->get_lease_ip_configs (multi_idx, iface, ifindex, uuid, ipv6, default_route_metric);
 	return NULL;
 }
 

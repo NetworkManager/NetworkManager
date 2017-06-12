@@ -42,7 +42,8 @@ gboolean nm_dhcp_dhclient_save_duid (const char *leasefile,
                                      const char *escaped_duid,
                                      GError **error);
 
-GSList *nm_dhcp_dhclient_read_lease_ip_configs (const char *iface,
+GSList *nm_dhcp_dhclient_read_lease_ip_configs (struct _NMDedupMultiIndex *multi_idx,
+                                                const char *iface,
                                                 int ifindex,
                                                 const char *contents,
                                                 gboolean ipv6,

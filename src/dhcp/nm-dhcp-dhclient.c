@@ -38,6 +38,8 @@
 #include <arpa/inet.h>
 #include <ctype.h>
 
+#include "nm-utils/nm-dedup-multi.h"
+
 #include "nm-utils.h"
 #include "nm-dhcp-dhclient-utils.h"
 #include "nm-dhcp-manager.h"
@@ -148,7 +150,8 @@ get_dhclient_leasefile (const char *iface,
 }
 
 static GSList *
-nm_dhcp_dhclient_get_lease_ip_configs (const char *iface,
+nm_dhcp_dhclient_get_lease_ip_configs (NMDedupMultiIndex *multi_idx,
+                                       const char *iface,
                                        int ifindex,
                                        const char *uuid,
                                        gboolean ipv6,
@@ -166,7 +169,7 @@ nm_dhcp_dhclient_get_lease_ip_configs (const char *iface,
 	    && g_file_get_contents (leasefile, &contents, NULL, NULL)
 	    && contents
 	    && contents[0])
-		leases = nm_dhcp_dhclient_read_lease_ip_configs (iface, ifindex, contents, ipv6, NULL);
+		leases = nm_dhcp_dhclient_read_lease_ip_configs (multi_idx, iface, ifindex, contents, ipv6, NULL);
 
 	g_free (leasefile);
 	g_free (contents);

@@ -1046,10 +1046,14 @@ apply_parent_device_config (NMVpnConnection *self)
 	NMIP6Config *vpn6_parent_config = NULL;
 
 	if (priv->ip_ifindex > 0) {
-		if (priv->ip4_config)
-			vpn4_parent_config = nm_ip4_config_new (priv->ip_ifindex);
-		if (priv->ip6_config)
-			vpn6_parent_config = nm_ip6_config_new (priv->ip_ifindex);
+		if (priv->ip4_config) {
+			vpn4_parent_config = nm_ip4_config_new (nm_netns_get_multi_idx (priv->netns),
+			                                        priv->ip_ifindex);
+		}
+		if (priv->ip6_config) {
+			vpn6_parent_config = nm_ip6_config_new (nm_netns_get_multi_idx (priv->netns),
+			                                        priv->ip_ifindex);
+		}
 	} else {
 		int ifindex;
 
@@ -1063,11 +1067,13 @@ apply_parent_device_config (NMVpnConnection *self)
 		 * default route. */
 		ifindex = nm_device_get_ip_ifindex (parent_dev);
 		if (priv->ip4_config) {
-			vpn4_parent_config = nm_ip4_config_new (ifindex);
+			vpn4_parent_config = nm_ip4_config_new (nm_netns_get_multi_idx (priv->netns),
+			                                        ifindex);
 			nm_ip4_config_merge (vpn4_parent_config, priv->ip4_config, NM_IP_CONFIG_MERGE_NO_DNS);
 		}
 		if (priv->ip6_config) {
-			vpn6_parent_config = nm_ip6_config_new (ifindex);
+			vpn6_parent_config = nm_ip6_config_new (nm_netns_get_multi_idx (priv->netns),
+			                                        ifindex);
 			nm_ip6_config_merge (vpn6_parent_config, priv->ip6_config, NM_IP_CONFIG_MERGE_NO_DNS);
 			nm_ip6_config_set_gateway (vpn6_parent_config, NULL);
 		}
@@ -1436,7 +1442,8 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 	if (ip_ifindex <= 0)
 		g_return_if_reached ();
 
-	config = nm_ip4_config_new (ip_ifindex);
+	config = nm_ip4_config_new (nm_netns_get_multi_idx (priv->netns),
+	                            ip_ifindex);
 	nm_ip4_config_set_dns_priority (config, NM_DNS_PRIORITY_DEFAULT_VPN);
 
 	memset (&address, 0, sizeof (address));
@@ -1595,7 +1602,8 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 	if (ip_ifindex <= 0)
 		g_return_if_reached ();
 
-	config = nm_ip6_config_new (ip_ifindex);
+	config = nm_ip6_config_new (nm_netns_get_multi_idx (priv->netns),
+	                            ip_ifindex);
 	nm_ip6_config_set_dns_priority (config, NM_DNS_PRIORITY_DEFAULT_VPN);
 
 	memset (&address, 0, sizeof (address));

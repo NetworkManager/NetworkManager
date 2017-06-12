@@ -122,7 +122,8 @@ dhcp4_state_changed (NMDhcpClient *client,
 	switch (state) {
 	case NM_DHCP_STATE_BOUND:
 		g_assert (ip4_config);
-		existing = nm_ip4_config_capture (NM_PLATFORM_GET, gl.ifindex, FALSE);
+		existing = nm_ip4_config_capture (nm_platform_get_multi_idx (NM_PLATFORM_GET),
+		                                  NM_PLATFORM_GET, gl.ifindex, FALSE);
 		if (last_config)
 			nm_ip4_config_subtract (existing, last_config);
 
@@ -132,7 +133,8 @@ dhcp4_state_changed (NMDhcpClient *client,
 
 		if (last_config)
 			g_object_unref (last_config);
-		last_config = nm_ip4_config_new (nm_dhcp_client_get_ifindex (client));
+		last_config = nm_ip4_config_new (nm_platform_get_multi_idx (NM_PLATFORM_GET),
+		                                 nm_dhcp_client_get_ifindex (client));
 		nm_ip4_config_replace (last_config, ip4_config, NULL);
 		break;
 	case NM_DHCP_STATE_TIMEOUT:
@@ -177,11 +179,14 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 		ifa_flags |= IFA_F_MANAGETEMPADDR;
 	}
 
-	existing = nm_ip6_config_capture (NM_PLATFORM_GET, gl.ifindex, FALSE, global_opt.tempaddr);
+	existing = nm_ip6_config_capture (nm_platform_get_multi_idx (NM_PLATFORM_GET),
+	                                  NM_PLATFORM_GET, gl.ifindex, FALSE, global_opt.tempaddr);
 	if (ndisc_config)
 		nm_ip6_config_subtract (existing, ndisc_config);
-	else
-		ndisc_config = nm_ip6_config_new (gl.ifindex);
+	else {
+		ndisc_config = nm_ip6_config_new (nm_platform_get_multi_idx (NM_PLATFORM_GET),
+		                                  gl.ifindex);
+	}
 
 	if (changed & NM_NDISC_CONFIG_GATEWAYS) {
 		/* Use the first gateway as ordered in neighbor discovery cache. */
@@ -469,6 +474,7 @@ main (int argc, char *argv[])
 		nm_platform_sysctl_set (NM_PLATFORM_GET, NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_ip4_property_path (global_opt.ifname, "promote_secondaries")), "1");
 
 		dhcp4_client = nm_dhcp_manager_start_ip4 (nm_dhcp_manager_get (),
+		                                          nm_platform_get_multi_idx (NM_PLATFORM_GET),
 		                                          global_opt.ifname,
 		                                          gl.ifindex,
 		                                          hwaddr,

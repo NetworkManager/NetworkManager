@@ -34,6 +34,7 @@
 typedef struct _NMIP4ConfigClass NMIP4ConfigClass;
 
 /* internal */
+#define NM_IP4_CONFIG_MULTI_IDX "multi-idx"
 #define NM_IP4_CONFIG_IFINDEX "ifindex"
 
 /* public*/
@@ -54,12 +55,14 @@ typedef struct _NMIP4ConfigClass NMIP4ConfigClass;
 GType nm_ip4_config_get_type (void);
 
 
-NMIP4Config * nm_ip4_config_new (int ifindex);
+NMIP4Config * nm_ip4_config_new (struct _NMDedupMultiIndex *multi_idx,
+                                 int ifindex);
 
 int nm_ip4_config_get_ifindex (const NMIP4Config *config);
 
+struct _NMDedupMultiIndex *nm_ip4_config_get_multi_idx (const NMIP4Config *self);
 
-NMIP4Config *nm_ip4_config_capture (NMPlatform *platform, int ifindex, gboolean capture_resolv_conf);
+NMIP4Config *nm_ip4_config_capture (struct _NMDedupMultiIndex *multi_idx, NMPlatform *platform, int ifindex, gboolean capture_resolv_conf);
 gboolean nm_ip4_config_commit (const NMIP4Config *config, NMPlatform *platform, NMRouteManager *route_manager, int ifindex, gboolean routes_full_sync, gint64 default_route_metric);
 void nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIPConfig *setting, guint32 default_route_metric);
 NMSetting *nm_ip4_config_create_setting (const NMIP4Config *config);

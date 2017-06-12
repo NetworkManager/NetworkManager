@@ -26,6 +26,8 @@
 #include <string.h>
 #include <arpa/inet.h>
 
+#include "nm-utils/nm-dedup-multi.h"
+
 #include "nm-utils.h"
 #include "platform/nm-platform.h"
 #include "platform/nm-platform-utils.h"
@@ -44,6 +46,7 @@ G_STATIC_ASSERT (G_MAXUINT >= 0xFFFFFFFF);
 /*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMIP4Config,
+	PROP_MULTI_IDX,
 	PROP_IFINDEX,
 	PROP_ADDRESS_DATA,
 	PROP_ADDRESSES,
@@ -80,6 +83,7 @@ typedef struct {
 	GArray *wins;
 	GVariant *address_data_variant;
 	GVariant *addresses_variant;
+	NMDedupMultiIndex *multi_idx;
 } NMIP4ConfigPrivate;
 
 struct _NMIP4Config {
@@ -101,6 +105,12 @@ int
 nm_ip4_config_get_ifindex (const NMIP4Config *config)
 {
 	return NM_IP4_CONFIG_GET_PRIVATE (config)->ifindex;
+}
+
+NMDedupMultiIndex *
+nm_ip4_config_get_multi_idx (const NMIP4Config *config)
+{
+	return NM_IP4_CONFIG_GET_PRIVATE (config)->multi_idx;
 }
 
 /*****************************************************************************/
@@ -259,7 +269,7 @@ sort_captured_addresses (gconstpointer a, gconstpointer b)
 }
 
 NMIP4Config *
-nm_ip4_config_capture (NMPlatform *platform, int ifindex, gboolean capture_resolv_conf)
+nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int ifindex, gboolean capture_resolv_conf)
 {
 	NMIP4Config *config;
 	NMIP4ConfigPrivate *priv;
@@ -272,7 +282,7 @@ nm_ip4_config_capture (NMPlatform *platform, int ifindex, gboolean capture_resol
 	if (nm_platform_link_get_master (platform, ifindex) > 0)
 		return NULL;
 
-	config = nm_ip4_config_new (ifindex);
+	config = nm_ip4_config_new (multi_idx, ifindex);
 	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
 	g_array_unref (priv->addresses);
@@ -2467,6 +2477,13 @@ set_property (GObject *object,
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
 
 	switch (prop_id) {
+	case PROP_MULTI_IDX:
+		/* construct-only */
+		priv->multi_idx = g_value_get_pointer (value);
+		if (!priv->multi_idx)
+			g_return_if_reached ();
+		nm_dedup_multi_index_ref (priv->multi_idx);
+		break;
 	case PROP_IFINDEX:
 		/* construct-only */
 		priv->ifindex = g_value_get_int (value);
@@ -2496,10 +2513,11 @@ nm_ip4_config_init (NMIP4Config *config)
 }
 
 NMIP4Config *
-nm_ip4_config_new (int ifindex)
+nm_ip4_config_new (NMDedupMultiIndex *multi_idx, int ifindex)
 {
 	g_return_val_if_fail (ifindex >= -1, NULL);
 	return (NMIP4Config *) g_object_new (NM_TYPE_IP4_CONFIG,
+	                                     NM_IP4_CONFIG_MULTI_IDX, multi_idx,
 	                                     NM_IP4_CONFIG_IFINDEX, ifindex,
 	                                     NULL);
 }
@@ -2523,6 +2541,8 @@ finalize (GObject *object)
 	g_array_unref (priv->wins);
 
 	G_OBJECT_CLASS (nm_ip4_config_parent_class)->finalize (object);
+
+	nm_dedup_multi_index_unref (priv->multi_idx);
 }
 
 static void
@@ -2537,6 +2557,11 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	object_class->set_property = set_property;
 	object_class->finalize = finalize;
 
+	obj_properties[PROP_MULTI_IDX] =
+	    g_param_spec_pointer (NM_IP4_CONFIG_MULTI_IDX, "", "",
+	                            G_PARAM_WRITABLE
+	                          | G_PARAM_CONSTRUCT_ONLY
+	                          | G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_IFINDEX] =
 	    g_param_spec_int (NM_IP4_CONFIG_IFINDEX, "", "",
 	                      -1, G_MAXINT, -1,
