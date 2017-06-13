@@ -586,7 +586,7 @@ get_configured_mtu (NMDevice *self, gboolean *out_is_user_config)
 	if (ifindex > 0)
 		mtu = nm_platform_link_get_mtu (nm_device_get_platform (NM_DEVICE (self)), ifindex);
 
-	return mtu ?: NM_DEVICE_DEFAULT_MTU_WIRED;
+	return mtu;
 }
 
 /*****************************************************************************/

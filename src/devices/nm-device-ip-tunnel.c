@@ -767,7 +767,7 @@ get_configured_mtu (NMDevice *self, gboolean *out_is_user_config)
 		}
 	}
 	*out_is_user_config = (mtu != 0);
-	return mtu ?: NM_DEVICE_DEFAULT_MTU_WIRED;
+	return mtu;
 }
 
 static NMDeviceCapabilities
