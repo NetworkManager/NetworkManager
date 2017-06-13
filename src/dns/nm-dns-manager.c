@@ -197,6 +197,19 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_config_type_to_string, NMDnsIPConfigType,
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_IP_CONFIG_TYPE_VPN, "vpn"),
 );
 
+int
+nm_dns_ip_config_data_get_dns_priority (const NMDnsIPConfigData *config)
+{
+	g_return_val_if_fail (config, 0);
+
+	if (NM_IS_IP4_CONFIG (config->config))
+		return nm_ip4_config_get_dns_priority (config->config);
+	else if (NM_IS_IP6_CONFIG (config->config))
+		return nm_ip6_config_get_dns_priority (config->config);
+	else
+		g_return_val_if_reached (0);
+}
+
 static NMDnsIPConfigData *
 ip_config_data_new (gpointer config, NMDnsIPConfigType type, const char *iface)
 {
@@ -226,19 +239,10 @@ ip_config_data_destroy (gpointer ptr)
 static gint
 ip_config_data_compare (const NMDnsIPConfigData *a, const NMDnsIPConfigData *b)
 {
-	gboolean a_v4, b_v4;
-	gint a_prio, b_prio;
+	int a_prio, b_prio;
 
-	a_v4 = NM_IS_IP4_CONFIG (a->config);
-	b_v4 = NM_IS_IP4_CONFIG (b->config);
-
-	a_prio = a_v4 ?
-		nm_ip4_config_get_dns_priority ((NMIP4Config *) a->config) :
-		nm_ip6_config_get_dns_priority ((NMIP6Config *) a->config);
-
-	b_prio = b_v4 ?
-		nm_ip4_config_get_dns_priority ((NMIP4Config *) b->config) :
-		nm_ip6_config_get_dns_priority ((NMIP6Config *) b->config);
+	a_prio = nm_dns_ip_config_data_get_dns_priority (a);
+	b_prio = nm_dns_ip_config_data_get_dns_priority (b);
 
 	/* Configurations with lower priority value first */
 	if (a_prio < b_prio)
@@ -1017,17 +1021,15 @@ _collect_resolv_conf_data (NMDnsManager *self, /* only for logging context, no o
 			gboolean skip = FALSE;
 
 			current = configs->pdata[i];
-			v4 = NM_IS_IP4_CONFIG (current->config);
 
-			prio = v4
-			       ? nm_ip4_config_get_dns_priority ((NMIP4Config *) current->config)
-			       : nm_ip6_config_get_dns_priority ((NMIP6Config *) current->config);
+			prio = nm_dns_ip_config_data_get_dns_priority (current);
 
 			if (i == 0)
 				first_prio = prio;
 			else if (first_prio < 0 && first_prio != prio)
 				skip = TRUE;
 
+			v4 = NM_IS_IP4_CONFIG (current->config);
 			if (   ( v4 && nm_ip4_config_get_num_nameservers ((NMIP4Config *) current->config))
 			    || (!v4 && nm_ip6_config_get_num_nameservers ((NMIP6Config *) current->config))) {
 				_LOGT ("config: %8d %-7s v%c %-16s %s: %s",
