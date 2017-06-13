@@ -288,13 +288,13 @@ send_updates (NMDnsSystemdResolved *self)
 
 static gboolean
 update (NMDnsPlugin *plugin,
-        const NMDnsIPConfigData **configs,
+        const NMDnsIPConfigData *const*configs,
         const NMGlobalDnsConfig *global_config,
         const char *hostname)
 {
 	NMDnsSystemdResolved *self = NM_DNS_SYSTEMD_RESOLVED (plugin);
 	GArray *interfaces = g_array_new (TRUE, TRUE, sizeof (InterfaceConfig));
-	const NMDnsIPConfigData **c;
+	const NMDnsIPConfigData *const*c;
 	int i;
 
 	for (c = configs; *c != NULL; c++)
