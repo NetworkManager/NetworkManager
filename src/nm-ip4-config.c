@@ -248,6 +248,16 @@ notify_addresses (NMIP4Config *self)
 	_notify (self, PROP_ADDRESSES);
 }
 
+static gint
+sort_captured_addresses (gconstpointer a, gconstpointer b)
+{
+	const NMPlatformIP4Address *addr_a = a, *addr_b = b;
+
+	/* Primary addresses first */
+	return NM_FLAGS_HAS (addr_a->n_ifa_flags, IFA_F_SECONDARY) -
+	       NM_FLAGS_HAS (addr_b->n_ifa_flags, IFA_F_SECONDARY);
+}
+
 NMIP4Config *
 nm_ip4_config_capture (NMPlatform *platform, int ifindex, gboolean capture_resolv_conf)
 {
@@ -269,6 +279,8 @@ nm_ip4_config_capture (NMPlatform *platform, int ifindex, gboolean capture_resol
 	g_array_unref (priv->routes);
 
 	priv->addresses = nm_platform_ip4_address_get_all (platform, ifindex);
+	g_array_sort (priv->addresses, sort_captured_addresses);
+
 	priv->routes = nm_platform_ip4_route_get_all (platform, ifindex, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
 
 	/* Extract gateway from default route */
