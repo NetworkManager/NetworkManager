@@ -1041,10 +1041,10 @@ _collect_resolv_conf_data (NMDnsManager *self, /* only for logging context, no o
 				       get_nameserver_list (current->config, &tmp_gstring));
 			}
 
-			if (!skip) {
+			if (!skip)
 				merge_one_ip_config_data (&rc, current);
-				plugin_confs[j++] = current;
-			}
+
+			plugin_confs[j++] = current;
 		}
 		plugin_confs[j++] = NULL;
 	}
