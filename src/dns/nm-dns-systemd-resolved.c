@@ -107,7 +107,6 @@ add_interface_configuration (NMDnsSystemdResolved *self,
 	int i;
 	InterfaceConfig *ic = NULL;
 	int ifindex;
-	NMDevice *device;
 
 	if (NM_IS_IP4_CONFIG (data->config))
 		ifindex = nm_ip4_config_get_ifindex (data->config);
@@ -115,8 +114,6 @@ add_interface_configuration (NMDnsSystemdResolved *self,
 		ifindex = nm_ip6_config_get_ifindex (data->config);
 	else
 		g_return_if_reached ();
-
-	device = nm_manager_get_device_by_ifindex (nm_manager_get (), ifindex);
 
 	for (i = 0; i < interfaces->len; i++) {
 		InterfaceConfig *tic = &g_array_index (interfaces, InterfaceConfig, i);
