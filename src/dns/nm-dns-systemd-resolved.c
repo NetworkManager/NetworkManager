@@ -102,7 +102,8 @@ call_done (GObject *source, GAsyncResult *r, gpointer user_data)
 static void
 add_interface_configuration (NMDnsSystemdResolved *self,
                              GArray *interfaces,
-                             const NMDnsIPConfigData *data)
+                             const NMDnsIPConfigData *data,
+                             gboolean skip)
 {
 	int i;
 	InterfaceConfig *ic = NULL;
@@ -130,7 +131,8 @@ add_interface_configuration (NMDnsSystemdResolved *self,
 		ic->ifindex = ifindex;
 	}
 
-	ic->configs = g_list_append (ic->configs, data->config);
+	if (!skip)
+		ic->configs = g_list_append (ic->configs, data->config);
 }
 
 static void
@@ -294,11 +296,19 @@ update (NMDnsPlugin *plugin,
 {
 	NMDnsSystemdResolved *self = NM_DNS_SYSTEMD_RESOLVED (plugin);
 	GArray *interfaces = g_array_new (TRUE, TRUE, sizeof (InterfaceConfig));
-	const NMDnsIPConfigData *const*c;
-	int i;
+	guint i;
+	int prio, first_prio = 0;
 
-	for (c = configs; *c != NULL; c++)
-		add_interface_configuration (self, interfaces, *c);
+	for (i = 0; configs[i]; i++) {
+		gboolean skip = FALSE;
+
+		prio = nm_dns_ip_config_data_get_dns_priority (configs[i]);
+		if (i == 0)
+			first_prio = prio;
+		else if (first_prio < 0 && first_prio != prio)
+			skip = TRUE;
+		add_interface_configuration (self, interfaces, configs[i], skip);
+	}
 
 	free_pending_updates (self);
 

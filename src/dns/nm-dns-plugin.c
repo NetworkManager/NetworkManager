@@ -84,7 +84,7 @@ nm_dns_plugin_update (NMDnsPlugin *self,
 	g_return_val_if_fail (NM_DNS_PLUGIN_GET_CLASS (self)->update != NULL, FALSE);
 
 	return NM_DNS_PLUGIN_GET_CLASS (self)->update (self,
-	                                               configs,
+	                                               configs ?: NM_PTRARRAY_EMPTY (const NMDnsIPConfigData *),
 	                                               global_config,
 	                                               hostname);
 }
