@@ -139,7 +139,7 @@ get_configured_mtu (NMDevice *device, gboolean *out_is_user_config)
 		}
 	}
 	*out_is_user_config = (mtu != 0);
-	return mtu ?: NM_DEVICE_DEFAULT_MTU_INFINIBAND;
+	return mtu;
 }
 
 static gboolean

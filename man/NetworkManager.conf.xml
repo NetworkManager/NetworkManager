@@ -655,7 +655,7 @@ ipv6.ip6-privacy=0
         </varlistentry>
         <varlistentry>
           <term><varname>ethernet.mtu</varname></term>
-          <listitem><para>If configured explicitly to 0, the MTU is not reconfigured during device activation unless it is required due to IPv6 constraints. If left unspecified, a DHCP/IPv6 SLAAC provided value is used or a default of 1500.</para></listitem>
+          <listitem><para>If configured explicitly to 0, the MTU is not reconfigured during device activation unless it is required due to IPv6 constraints. If left unspecified, a DHCP/IPv6 SLAAC provided value is used or the MTU is not reconfigured during activation.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>ethernet.wake-on-lan</varname></term>

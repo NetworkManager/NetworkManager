@@ -7094,7 +7094,7 @@ nm_device_get_configured_mtu_for_wired (NMDevice *self, gboolean *out_is_user_co
 	}
 
 	*out_is_user_config = FALSE;
-	return NM_DEVICE_DEFAULT_MTU_WIRED;
+	return 0;
 }
 
 /*****************************************************************************/
