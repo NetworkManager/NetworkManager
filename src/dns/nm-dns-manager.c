@@ -994,7 +994,7 @@ _collect_resolv_conf_data (NMDnsManager *self, /* only for logging context, no o
                            NMDnsIPConfigData ***out_plugin_confs)
 {
 	NMDnsIPConfigData **plugin_confs = NULL;
-	guint i, num, len;
+	guint i, j, num, len;
 	NMResolvConfData rc = {
 		.nameservers = g_ptr_array_new (),
 		.searches = g_ptr_array_new (),
@@ -1007,26 +1007,26 @@ _collect_resolv_conf_data (NMDnsManager *self, /* only for logging context, no o
 		merge_global_dns_config (&rc, global_config);
 	else {
 		nm_auto_free_gstring GString *tmp_gstring = NULL;
-		int prio, prev_prio = 0;
+		int prio, first_prio = 0;
 		NMDnsIPConfigData *current;
-		gboolean skip = FALSE, v4;
+		gboolean v4;
 
 		plugin_confs = g_new (NMDnsIPConfigData *, configs->len + 1);
 
-		for (i = 0; i < configs->len; i++) {
+		for (i = 0, j = 0; i < configs->len; i++) {
+			gboolean skip = FALSE;
+
 			current = configs->pdata[i];
 			v4 = NM_IS_IP4_CONFIG (current->config);
 
-			prio = v4 ?
-				nm_ip4_config_get_dns_priority ((NMIP4Config *) current->config) :
-				nm_ip6_config_get_dns_priority ((NMIP6Config *) current->config);
+			prio = v4
+			       ? nm_ip4_config_get_dns_priority ((NMIP4Config *) current->config)
+			       : nm_ip6_config_get_dns_priority ((NMIP6Config *) current->config);
 
-			if (prev_prio < 0 && prio != prev_prio) {
+			if (i == 0)
+				first_prio = prio;
+			else if (first_prio < 0 && first_prio != prio)
 				skip = TRUE;
-				plugin_confs[i] = NULL;
-			}
-
-			prev_prio = prio;
 
 			if (   ( v4 && nm_ip4_config_get_num_nameservers ((NMIP4Config *) current->config))
 			    || (!v4 && nm_ip6_config_get_num_nameservers ((NMIP6Config *) current->config))) {
@@ -1041,10 +1041,10 @@ _collect_resolv_conf_data (NMDnsManager *self, /* only for logging context, no o
 
 			if (!skip) {
 				merge_one_ip_config_data (&rc, current);
-				plugin_confs[i] = current;
+				plugin_confs[j++] = current;
 			}
 		}
-		plugin_confs[i] = NULL;
+		plugin_confs[j++] = NULL;
 	}
 
 	/* If the hostname is a FQDN ("dcbw.example.com"), then add the domain part of it
