@@ -994,10 +994,8 @@ _collect_resolv_conf_data (NMDnsManager *self, /* only for logging context, no o
                            char ***out_options,
                            char ***out_nameservers,
                            char ***out_nis_servers,
-                           const char **out_nis_domain,
-                           NMDnsIPConfigData ***out_plugin_confs)
+                           const char **out_nis_domain)
 {
-	NMDnsIPConfigData **plugin_confs = NULL;
 	guint i, j, num, len;
 	NMResolvConfData rc = {
 		.nameservers = g_ptr_array_new (),
@@ -1014,8 +1012,6 @@ _collect_resolv_conf_data (NMDnsManager *self, /* only for logging context, no o
 		int prio, first_prio = 0;
 		NMDnsIPConfigData *current;
 		gboolean v4;
-
-		plugin_confs = g_new (NMDnsIPConfigData *, configs->len + 1);
 
 		for (i = 0, j = 0; i < configs->len; i++) {
 			gboolean skip = FALSE;
@@ -1043,10 +1039,7 @@ _collect_resolv_conf_data (NMDnsManager *self, /* only for logging context, no o
 
 			if (!skip)
 				merge_one_ip_config_data (&rc, current);
-
-			plugin_confs[j++] = current;
 		}
-		plugin_confs[j++] = NULL;
 	}
 
 	/* If the hostname is a FQDN ("dcbw.example.com"), then add the domain part of it
@@ -1080,7 +1073,6 @@ _collect_resolv_conf_data (NMDnsManager *self, /* only for logging context, no o
 	}
 	g_ptr_array_set_size (rc.searches, i);
 
-	*out_plugin_confs = plugin_confs;
 	*out_searches = _ptrarray_to_strv (rc.searches);
 	*out_options = _ptrarray_to_strv (rc.options);
 	*out_nameservers = _ptrarray_to_strv (rc.nameservers);
@@ -1104,7 +1096,6 @@ update_dns (NMDnsManager *self,
 	SpawnResult result = SR_ERROR;
 	NMConfigData *data;
 	NMGlobalDnsConfig *global_config;
-	gs_free NMDnsIPConfigData **plugin_confs = NULL;
 
 	g_return_val_if_fail (!error || !*error, FALSE);
 
@@ -1138,8 +1129,7 @@ update_dns (NMDnsManager *self,
 	compute_hash (self, global_config, priv->hash);
 
 	_collect_resolv_conf_data (self, global_config, priv->configs, priv->hostname,
-	                           &searches, &options, &nameservers, &nis_servers, &nis_domain,
-	                           &plugin_confs);
+	                           &searches, &options, &nameservers, &nis_servers, &nis_domain);
 
 	/* Let any plugins do their thing first */
 	if (priv->plugin) {
@@ -1157,7 +1147,7 @@ update_dns (NMDnsManager *self,
 
 		_LOGD ("update-dns: updating plugin %s", plugin_name);
 		if (!nm_dns_plugin_update (plugin,
-		                           (const NMDnsIPConfigData **) plugin_confs,
+		                           priv->configs,
 		                           global_config,
 		                           priv->hostname)) {
 			_LOGW ("update-dns: plugin %s update failed", plugin_name);
