@@ -79,7 +79,6 @@ G_DEFINE_TYPE (NMDhcpSystemd, nm_dhcp_systemd, NM_TYPE_DHCP_CLIENT)
 
 #define DHCP_OPTION_NIS_DOMAIN         40
 #define DHCP_OPTION_NIS_SERVERS        41
-#define DHCP_OPTION_DOMAIN_SEARCH     119
 #define DHCP_OPTION_MS_ROUTES         249
 #define DHCP_OPTION_WPAD              252
 
@@ -118,7 +117,7 @@ static const ReqOption dhcp4_requests[] = {
 	{ DHCP_OPTION_NIS_SERVERS,               REQPREFIX "nis_servers",                     TRUE },
 	{ SD_DHCP_OPTION_NTP_SERVER,             REQPREFIX "ntp_servers",                     TRUE },
 	{ SD_DHCP_OPTION_SERVER_IDENTIFIER,      REQPREFIX "dhcp_server_identifier",          TRUE },
-	{ DHCP_OPTION_DOMAIN_SEARCH,             REQPREFIX "domain_search",                   TRUE },
+	{ SD_DHCP_OPTION_DOMAIN_SEARCH_LIST,     REQPREFIX "domain_search",                   TRUE },
 	{ SD_DHCP_OPTION_CLASSLESS_STATIC_ROUTE, REQPREFIX "rfc3442_classless_static_routes", TRUE },
 	{ DHCP_OPTION_MS_ROUTES,                 REQPREFIX "ms_classless_static_routes",      TRUE },
 	{ DHCP_OPTION_WPAD,                      REQPREFIX "wpad",                            TRUE },
@@ -234,6 +233,7 @@ lease_to_ip4_config (const char *iface,
 	NMPlatformIP4Address address;
 	nm_auto_free_gstring GString *str = NULL;
 	gs_free sd_dhcp_route **routes = NULL;
+	const char *const*search_domains = NULL;
 	guint16 mtu;
 	int r, num;
 	guint64 end_time;
@@ -292,6 +292,18 @@ lease_to_ip4_config (const char *iface,
 		}
 		if (str->len)
 			add_option (options, dhcp4_requests, SD_DHCP_OPTION_DOMAIN_NAME_SERVER, str->str);
+	}
+
+	/* Search domains */
+	num = sd_dhcp_lease_get_search_domains (lease, (char ***) &search_domains);
+	if (num > 0) {
+		nm_gstring_prepare (&str);
+		for (i = 0; i < num; i++) {
+			nm_ip4_config_add_search (ip4_config, search_domains[i]);
+			g_string_append_printf (str, "%s%s", str->len ? " " : "", search_domains[i]);
+			LOG_LEASE (LOGD_DHCP4, "domain search '%s'", search_domains[i]);
+		}
+		add_option (options, dhcp4_requests, SD_DHCP_OPTION_DOMAIN_SEARCH_LIST, str->str);
 	}
 
 	/* Domain Name */
