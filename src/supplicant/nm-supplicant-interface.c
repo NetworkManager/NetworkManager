@@ -866,8 +866,8 @@ _wps_start (NMSupplicantInterface *self,
 	_LOGT ("wps: cancel previous enrollment...");
 
 	data->is_cancelling = TRUE;
-	if (!data->cancellable)
-		data->cancellable = g_cancellable_new ();
+	nm_clear_g_cancellable (&data->cancellable);
+	data->cancellable = g_cancellable_new ();
 	g_signal_handlers_disconnect_by_data (data->proxy, self);
 	g_dbus_proxy_call (data->proxy,
 	                   "Cancel",
