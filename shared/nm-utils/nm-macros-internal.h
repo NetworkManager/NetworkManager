@@ -420,6 +420,16 @@ fcn (void) \
 
 /*****************************************************************************/
 
+static inline GString *
+nm_gstring_prepare (GString **l)
+{
+	if (*l)
+		g_string_set_size (*l, 0);
+	else
+		*l = g_string_sized_new (30);
+	return *l;
+}
+
 static inline const char *
 nm_str_not_empty (const char *str)
 {
