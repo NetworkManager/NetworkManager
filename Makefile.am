@@ -613,6 +613,9 @@ GLIB_GENERATED += \
 	libnm-core/tests/nm-core-tests-enum-types.c
 nm_core_tests_enum_types_sources = libnm-core/tests/test-general-enums.h
 
+libnm-core/tests/nm-core-tests-enum-types.h.stamp: libnm-core/tests/.dirstamp
+libnm-core/tests/nm-core-tests-enum-types.c.stamp: libnm-core/tests/.dirstamp
+
 $(libnm_core_tests_test_general_OBJECTS): libnm-core/tests/nm-core-tests-enum-types.h
 
 libnm_core_tests_cppflags = \
