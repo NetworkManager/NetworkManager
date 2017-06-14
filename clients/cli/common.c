@@ -1383,8 +1383,10 @@ read_again:
 	/* If Ctrl-C was detected, complete the line */
 	if (nmc_seen_sigint ()) {
 		rl_echo_signal_char (SIGINT);
-		rl_stuff_char ('\n');
-		rl_callback_read_char ();
+		if (!rl_got_line) {
+			rl_stuff_char ('\n');
+			rl_callback_read_char ();
+		}
 	}
 
 	/* Add string to the history */
