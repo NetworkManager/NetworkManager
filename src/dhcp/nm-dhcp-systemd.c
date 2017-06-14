@@ -232,7 +232,7 @@ lease_to_ip4_config (const char *iface,
 	const char *s;
 	guint32 lifetime = 0, i;
 	NMPlatformIP4Address address;
-	GString *str;
+	nm_auto_free_gstring GString *str = NULL;
 	gs_free sd_dhcp_route **routes = NULL;
 	guint16 mtu;
 	int r, num;
@@ -281,7 +281,7 @@ lease_to_ip4_config (const char *iface,
 	/* DNS Servers */
 	num = sd_dhcp_lease_get_dns (lease, &addr_list);
 	if (num > 0) {
-		str = g_string_sized_new (30);
+		nm_gstring_prepare (&str);
 		for (i = 0; i < num; i++) {
 			if (addr_list[i].s_addr) {
 				nm_ip4_config_add_nameserver (ip4_config, addr_list[i].s_addr);
@@ -292,7 +292,6 @@ lease_to_ip4_config (const char *iface,
 		}
 		if (str->len)
 			add_option (options, dhcp4_requests, SD_DHCP_OPTION_DOMAIN_NAME_SERVER, str->str);
-		g_string_free (str, TRUE);
 	}
 
 	/* Domain Name */
@@ -321,7 +320,7 @@ lease_to_ip4_config (const char *iface,
 	/* Routes */
 	num = sd_dhcp_lease_get_routes (lease, &routes);
 	if (num > 0) {
-		str = g_string_sized_new (30);
+		nm_gstring_prepare (&str);
 		for (i = 0; i < num; i++) {
 			NMPlatformIP4Route route = { 0 };
 			const char *gw_str;
@@ -364,7 +363,6 @@ lease_to_ip4_config (const char *iface,
 		}
 		if (str->len)
 			add_option (options, dhcp4_requests, SD_DHCP_OPTION_CLASSLESS_STATIC_ROUTE, str->str);
-		g_string_free (str, TRUE);
 	}
 
 	/* If the DHCP server returns both a Classless Static Routes option and a
@@ -394,14 +392,13 @@ lease_to_ip4_config (const char *iface,
 	/* NTP servers */
 	num = sd_dhcp_lease_get_ntp (lease, &addr_list);
 	if (num > 0) {
-		str = g_string_sized_new (30);
+		nm_gstring_prepare (&str);
 		for (i = 0; i < num; i++) {
 			s = nm_utils_inet4_ntop (addr_list[i].s_addr, buf);
 			LOG_LEASE (LOGD_DHCP4, "  ntp server '%s'", s);
 			g_string_append_printf (str, "%s%s", str->len ? " " : "", s);
 		}
 		add_option (options, dhcp4_requests, SD_DHCP_OPTION_NTP_SERVER, str->str);
-		g_string_free (str, TRUE);
 	}
 
 	r = sd_dhcp_lease_get_vendor_specific (lease, &data, &data_len);
@@ -729,17 +726,17 @@ lease_to_ip6_config (const char *iface,
 	NMIP6Config *ip6_config;
 	const char *addr_str;
 	char **domains;
-	GString *str;
+	nm_auto_free_gstring GString *str = NULL;
 	int num, i;
 	gint32 ts;
 
 	g_return_val_if_fail (lease, NULL);
 	ip6_config = nm_ip6_config_new (ifindex);
 	ts = nm_utils_get_monotonic_timestamp_s ();
-	str = g_string_sized_new (30);
 
 	/* Addresses */
 	sd_dhcp6_lease_reset_address_iter (lease);
+	nm_gstring_prepare (&str);
 	while (sd_dhcp6_lease_get_address (lease, &tmp_addr, &lft_pref, &lft_valid) >= 0) {
 		NMPlatformIP6Address address = {
 			.plen = 128,
@@ -760,13 +757,10 @@ lease_to_ip6_config (const char *iface,
 		           nm_platform_ip6_address_to_string (&address, NULL, 0));
 	};
 
-	if (str->len) {
+	if (str->len)
 		add_option (options, dhcp6_requests, DHCP6_OPTION_IP_ADDRESS, str->str);
-		g_string_set_size (str , 0);
-	}
 
 	if (!info_only && nm_ip6_config_get_num_addresses (ip6_config) == 0) {
-		g_string_free (str, TRUE);
 		g_object_unref (ip6_config);
 		g_set_error_literal (error,
 		                     NM_MANAGER_ERROR,
@@ -778,6 +772,7 @@ lease_to_ip6_config (const char *iface,
 	/* DNS servers */
 	num = sd_dhcp6_lease_get_dns (lease, &dns);
 	if (num > 0) {
+		nm_gstring_prepare (&str);
 		for (i = 0; i < num; i++) {
 			nm_ip6_config_add_nameserver (ip6_config, &dns[i]);
 			addr_str = nm_utils_inet6_ntop (&dns[i], NULL);
@@ -785,22 +780,19 @@ lease_to_ip6_config (const char *iface,
 			LOG_LEASE (LOGD_DHCP6, "  nameserver %s", addr_str);
 		}
 		add_option (options, dhcp6_requests, SD_DHCP6_OPTION_DNS_SERVERS, str->str);
-		g_string_set_size (str, 0);
 	}
 
 	/* Search domains */
 	num = sd_dhcp6_lease_get_domains (lease, &domains);
 	if (num > 0) {
+		nm_gstring_prepare (&str);
 		for (i = 0; i < num; i++) {
 			nm_ip6_config_add_search (ip6_config, domains[i]);
 			g_string_append_printf (str, "%s%s", str->len ? " " : "", domains[i]);
 			LOG_LEASE (LOGD_DHCP6, "  domain name '%s'", domains[i]);
 		}
 		add_option (options, dhcp6_requests, SD_DHCP6_OPTION_DOMAIN_LIST, str->str);
-		g_string_set_size (str, 0);
 	}
-
-	g_string_free (str, TRUE);
 
 	return ip6_config;
 }
