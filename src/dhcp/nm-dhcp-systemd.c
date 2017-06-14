@@ -229,10 +229,10 @@ lease_to_ip4_config (const char *iface,
 	struct in_addr tmp_addr;
 	const struct in_addr *addr_list;
 	char buf[INET_ADDRSTRLEN];
-	const char *str;
+	const char *s;
 	guint32 lifetime = 0, i;
 	NMPlatformIP4Address address;
-	GString *l;
+	GString *str;
 	gs_free sd_dhcp_route **routes = NULL;
 	guint16 mtu;
 	int r, num;
@@ -251,9 +251,9 @@ lease_to_ip4_config (const char *iface,
 	memset (&address, 0, sizeof (address));
 	address.address = tmp_addr.s_addr;
 	address.peer_address = tmp_addr.s_addr;
-	str = nm_utils_inet4_ntop (tmp_addr.s_addr, NULL);
-	LOG_LEASE (LOGD_DHCP4, "  address %s", str);
-	add_option (options, dhcp4_requests, DHCP_OPTION_IP_ADDRESS, str);
+	s = nm_utils_inet4_ntop (tmp_addr.s_addr, NULL);
+	LOG_LEASE (LOGD_DHCP4, "  address %s", s);
+	add_option (options, dhcp4_requests, DHCP_OPTION_IP_ADDRESS, s);
 
 	/* Prefix/netmask */
 	sd_dhcp_lease_get_netmask (lease, &tmp_addr);
@@ -281,47 +281,47 @@ lease_to_ip4_config (const char *iface,
 	/* DNS Servers */
 	num = sd_dhcp_lease_get_dns (lease, &addr_list);
 	if (num > 0) {
-		l = g_string_sized_new (30);
+		str = g_string_sized_new (30);
 		for (i = 0; i < num; i++) {
 			if (addr_list[i].s_addr) {
 				nm_ip4_config_add_nameserver (ip4_config, addr_list[i].s_addr);
-				str = nm_utils_inet4_ntop (addr_list[i].s_addr, NULL);
-				LOG_LEASE (LOGD_DHCP4, "  nameserver '%s'", str);
-				g_string_append_printf (l, "%s%s", l->len ? " " : "", str);
+				s = nm_utils_inet4_ntop (addr_list[i].s_addr, NULL);
+				LOG_LEASE (LOGD_DHCP4, "  nameserver '%s'", s);
+				g_string_append_printf (str, "%s%s", str->len ? " " : "", s);
 			}
 		}
-		if (l->len)
-			add_option (options, dhcp4_requests, SD_DHCP_OPTION_DOMAIN_NAME_SERVER, l->str);
-		g_string_free (l, TRUE);
+		if (str->len)
+			add_option (options, dhcp4_requests, SD_DHCP_OPTION_DOMAIN_NAME_SERVER, str->str);
+		g_string_free (str, TRUE);
 	}
 
 	/* Domain Name */
-	r = sd_dhcp_lease_get_domainname (lease, &str);
+	r = sd_dhcp_lease_get_domainname (lease, &s);
 	if (r == 0) {
 		/* Multiple domains sometimes stuffed into option 15 "Domain Name".
 		 * As systemd escapes such characters, split them at \\032. */
-		char **domains = g_strsplit (str, "\\032", 0);
-		char **s;
+		char **domains = g_strsplit (s, "\\032", 0);
+		char **d;
 
-		for (s = domains; *s; s++) {
-			LOG_LEASE (LOGD_DHCP4, "  domain name '%s'", *s);
-			nm_ip4_config_add_domain (ip4_config, *s);
+		for (d = domains; *d; d++) {
+			LOG_LEASE (LOGD_DHCP4, "  domain name '%s'", *d);
+			nm_ip4_config_add_domain (ip4_config, *d);
 		}
 		g_strfreev (domains);
-		add_option (options, dhcp4_requests, SD_DHCP_OPTION_DOMAIN_NAME, str);
+		add_option (options, dhcp4_requests, SD_DHCP_OPTION_DOMAIN_NAME, s);
 	}
 
 	/* Hostname */
-	r = sd_dhcp_lease_get_hostname (lease, &str);
+	r = sd_dhcp_lease_get_hostname (lease, &s);
 	if (r == 0) {
-		LOG_LEASE (LOGD_DHCP4, "  hostname '%s'", str);
-		add_option (options, dhcp4_requests, SD_DHCP_OPTION_HOST_NAME, str);
+		LOG_LEASE (LOGD_DHCP4, "  hostname '%s'", s);
+		add_option (options, dhcp4_requests, SD_DHCP_OPTION_HOST_NAME, s);
 	}
 
 	/* Routes */
 	num = sd_dhcp_lease_get_routes (lease, &routes);
 	if (num > 0) {
-		l = g_string_sized_new (30);
+		str = g_string_sized_new (30);
 		for (i = 0; i < num; i++) {
 			NMPlatformIP4Route route = { 0 };
 			const char *gw_str;
@@ -346,25 +346,25 @@ lease_to_ip4_config (const char *iface,
 				route.metric = default_priority;
 				nm_ip4_config_add_route (ip4_config, &route);
 
-				str = nm_utils_inet4_ntop (route.network, buf);
+				s = nm_utils_inet4_ntop (route.network, buf);
 				gw_str = nm_utils_inet4_ntop (route.gateway, NULL);
-				LOG_LEASE (LOGD_DHCP4, "  static route %s/%d gw %s", str, route.plen, gw_str);
+				LOG_LEASE (LOGD_DHCP4, "  static route %s/%d gw %s", s, route.plen, gw_str);
 
-				g_string_append_printf (l, "%s%s/%d %s", l->len ? " " : "", str, route.plen, gw_str);
+				g_string_append_printf (str, "%s%s/%d %s", str->len ? " " : "", s, route.plen, gw_str);
 			} else {
 				if (!static_default_gateway) {
 					static_default_gateway = TRUE;
 					nm_ip4_config_set_gateway (ip4_config, route.gateway);
 
-					str = nm_utils_inet4_ntop (route.gateway, NULL);
-					LOG_LEASE (LOGD_DHCP4, "  gateway %s", str);
-					add_option (options, dhcp4_requests, SD_DHCP_OPTION_ROUTER, str);
+					s = nm_utils_inet4_ntop (route.gateway, NULL);
+					LOG_LEASE (LOGD_DHCP4, "  gateway %s", s);
+					add_option (options, dhcp4_requests, SD_DHCP_OPTION_ROUTER, s);
 				}
 			}
 		}
-		if (l->len)
-			add_option (options, dhcp4_requests, SD_DHCP_OPTION_CLASSLESS_STATIC_ROUTE, l->str);
-		g_string_free (l, TRUE);
+		if (str->len)
+			add_option (options, dhcp4_requests, SD_DHCP_OPTION_CLASSLESS_STATIC_ROUTE, str->str);
+		g_string_free (str, TRUE);
 	}
 
 	/* If the DHCP server returns both a Classless Static Routes option and a
@@ -377,9 +377,9 @@ lease_to_ip4_config (const char *iface,
 		r = sd_dhcp_lease_get_router (lease, &tmp_addr);
 		if (r == 0) {
 			nm_ip4_config_set_gateway (ip4_config, tmp_addr.s_addr);
-			str = nm_utils_inet4_ntop (tmp_addr.s_addr, NULL);
-			LOG_LEASE (LOGD_DHCP4, "  gateway %s", str);
-			add_option (options, dhcp4_requests, SD_DHCP_OPTION_ROUTER, str);
+			s = nm_utils_inet4_ntop (tmp_addr.s_addr, NULL);
+			LOG_LEASE (LOGD_DHCP4, "  gateway %s", s);
+			add_option (options, dhcp4_requests, SD_DHCP_OPTION_ROUTER, s);
 		}
 	}
 
@@ -394,14 +394,14 @@ lease_to_ip4_config (const char *iface,
 	/* NTP servers */
 	num = sd_dhcp_lease_get_ntp (lease, &addr_list);
 	if (num > 0) {
-		l = g_string_sized_new (30);
+		str = g_string_sized_new (30);
 		for (i = 0; i < num; i++) {
-			str = nm_utils_inet4_ntop (addr_list[i].s_addr, buf);
-			LOG_LEASE (LOGD_DHCP4, "  ntp server '%s'", str);
-			g_string_append_printf (l, "%s%s", l->len ? " " : "", str);
+			s = nm_utils_inet4_ntop (addr_list[i].s_addr, buf);
+			LOG_LEASE (LOGD_DHCP4, "  ntp server '%s'", s);
+			g_string_append_printf (str, "%s%s", str->len ? " " : "", s);
 		}
-		add_option (options, dhcp4_requests, SD_DHCP_OPTION_NTP_SERVER, l->str);
-		g_string_free (l, TRUE);
+		add_option (options, dhcp4_requests, SD_DHCP_OPTION_NTP_SERVER, str->str);
+		g_string_free (str, TRUE);
 	}
 
 	r = sd_dhcp_lease_get_vendor_specific (lease, &data, &data_len);
