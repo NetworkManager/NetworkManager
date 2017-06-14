@@ -37,7 +37,7 @@
 static inline NMLogLevel
 _slog_level_to_nm (int slevel)
 {
-    switch (slevel) {
+    switch (LOG_PRI (slevel)) {
     case LOG_DEBUG:   return LOGL_DEBUG;
 	case LOG_WARNING: return LOGL_WARN;
 	case LOG_CRIT:
@@ -48,7 +48,9 @@ _slog_level_to_nm (int slevel)
 	}
 }
 
-#define log_internal(level, error, file, line, func, format, ...) \
+#define log_get_max_level_realm(realm) (LOG_DEBUG)
+
+#define log_internal_realm(level, error, file, line, func, format, ...) \
 ({ \
 	const int _nm_e = (error); \
 	const NMLogLevel _nm_l = _slog_level_to_nm ((level)); \
@@ -59,11 +61,6 @@ _slog_level_to_nm (int slevel)
 		_nm_log_impl (_nm_location ? _nm_location + 1 : (""file), (line), (func), _nm_l, LOGD_DHCP, _nm_e, NULL, NULL, ("%s"format), "libsystemd: ", ## __VA_ARGS__); \
 	} \
 	(_nm_e > 0 ? -_nm_e : _nm_e); \
-})
-
-#define log_full_errno(level, error, ...) \
-({ \
-	log_internal(level, error, __FILE__, __LINE__, __func__, __VA_ARGS__); \
 })
 
 #define log_assert_failed(text, file, line, func) \
