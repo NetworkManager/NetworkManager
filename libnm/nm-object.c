@@ -1224,12 +1224,6 @@ get_property (GObject *object, guint prop_id,
 	case PROP_DBUS_CONNECTION:
 		g_value_set_object (value, g_dbus_object_manager_client_get_connection (G_DBUS_OBJECT_MANAGER_CLIENT (priv->object_manager)));
 		break;
-	case PROP_DBUS_OBJECT:
-		g_value_set_object (value, priv->object);
-		break;
-	case PROP_DBUS_OBJECT_MANAGER:
-		g_value_set_object (value, priv->object_manager);
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1327,7 +1321,7 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 	    (object_class, PROP_DBUS_OBJECT,
 	     g_param_spec_object (NM_OBJECT_DBUS_OBJECT, "", "",
 	                          G_TYPE_DBUS_OBJECT,
-	                          G_PARAM_READWRITE |
+	                          G_PARAM_WRITABLE |
 	                          G_PARAM_CONSTRUCT_ONLY |
 	                          G_PARAM_STATIC_STRINGS));
 
@@ -1340,7 +1334,7 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 	    (object_class, PROP_DBUS_OBJECT_MANAGER,
 	     g_param_spec_object (NM_OBJECT_DBUS_OBJECT_MANAGER, "", "",
 	                          G_TYPE_DBUS_OBJECT_MANAGER,
-	                          G_PARAM_READWRITE |
+	                          G_PARAM_WRITABLE |
 	                          G_PARAM_CONSTRUCT_ONLY |
 	                          G_PARAM_STATIC_STRINGS));
 }
