@@ -2424,10 +2424,8 @@ got_object_manager (GObject *object, GAsyncResult *result, gpointer user_data)
 
 	object_manager = g_dbus_object_manager_client_new_for_bus_finish (result, &error);
 	if (object_manager == NULL) {
-		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
-			g_simple_async_result_take_error (init_data->result, error);
-			init_async_complete (init_data);
-		}
+		g_simple_async_result_take_error (init_data->result, error);
+		init_async_complete (init_data);
 		return;
 	}
 
