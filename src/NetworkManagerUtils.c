@@ -773,6 +773,10 @@ check_possible_match (NMConnection *orig,
  * @connections: a (optionally pre-sorted) list of connections from which to
  * find a matching connection to @original based on "inferrable" properties
  * @original: the #NMConnection to find a match for from @connections
+ * @indicated: whether the match is already hinted/indicated. That is the
+ *   case when we found the connection in the state file from a previous run.
+ *   In this case, we perform a relexed check, as we have a good hint
+ *   that the connection actually matches.
  * @device_has_carrier: pass %TRUE if the device that generated @original has
  * a carrier, %FALSE if not
  * @match_filter_func: a function to check whether each connection from @connections
@@ -792,6 +796,7 @@ check_possible_match (NMConnection *orig,
 NMConnection *
 nm_utils_match_connection (NMConnection *const*connections,
                            NMConnection *original,
+                           gboolean indicated,
                            gboolean device_has_carrier,
                            gint64 default_v4_metric,
                            gint64 default_v6_metric,
@@ -812,7 +817,24 @@ nm_utils_match_connection (NMConnection *const*connections,
 				continue;
 		}
 
-		if (!nm_connection_diff (original, candidate, NM_SETTING_COMPARE_FLAG_INFERRABLE, &diffs)) {
+		if (indicated) {
+			NMSettingConnection *s_orig, *s_cand;
+
+			s_orig = nm_connection_get_setting_connection (original);
+			s_cand = nm_connection_get_setting_connection (candidate);
+
+			/* It is indicated that this connection matches. Assume we have
+			 * a match, but check for particular differences that let us
+			 * reject the candidate. */
+			if (!nm_streq0 (nm_setting_connection_get_connection_type (s_orig),
+			                nm_setting_connection_get_connection_type (s_cand)))
+				continue;
+			if (!nm_streq0 (nm_setting_connection_get_slave_type (s_orig),
+			                nm_setting_connection_get_slave_type (s_cand)))
+				continue;
+
+			/* this is good enough for a match */
+		} else if (!nm_connection_diff (original, candidate, NM_SETTING_COMPARE_FLAG_INFERRABLE, &diffs)) {
 			if (!best_match) {
 				best_match = check_possible_match (original, candidate, diffs, device_has_carrier,
 				                                   default_v4_metric, default_v6_metric);
