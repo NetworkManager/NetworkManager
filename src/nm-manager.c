@@ -3580,9 +3580,35 @@ _internal_activation_auth_done (NMActiveConnection *active,
 {
 	NMManager *self = user_data1;
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMActiveConnection *candidate;
 	GError *error = NULL;
+	GSList *iter;
 
 	priv->authorizing_connections = g_slist_remove (priv->authorizing_connections, active);
+
+	/* Don't continue with the activation if an equivalent active connection
+	 * already exists.  We also check this earlier, but there we may fail to
+	 * detect a duplicate if the existing active connection is undergoing
+	 * authorization in impl_manager_activate_connection().
+	 */
+	if (success && nm_auth_subject_is_internal (nm_active_connection_get_subject (active))) {
+		for (iter = priv->active_connections; iter; iter = iter->next) {
+			candidate = iter->data;
+			if (   nm_active_connection_get_device (candidate) == nm_active_connection_get_device (active)
+			    && nm_active_connection_get_settings_connection (candidate) == nm_active_connection_get_settings_connection (active)
+			    && NM_IN_SET (nm_active_connection_get_state (candidate),
+			                  NM_ACTIVE_CONNECTION_STATE_ACTIVATING,
+			                  NM_ACTIVE_CONNECTION_STATE_ACTIVATED)) {
+				g_set_error (&error,
+				             NM_MANAGER_ERROR,
+				             NM_MANAGER_ERROR_CONNECTION_ALREADY_ACTIVE,
+				             "Connection '%s' is already active",
+				             nm_active_connection_get_settings_connection_id (active));
+				success = FALSE;
+				break;
+			}
+		}
+	}
 
 	if (success) {
 		if (_internal_activate_generic (self, active, &error)) {
