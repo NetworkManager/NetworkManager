@@ -700,6 +700,9 @@ const NMPlatformIP6Route *nm_device_get_ip6_default_route (NMDevice *self, gbool
 
 void nm_device_spawn_iface_helper (NMDevice *self);
 
+gboolean nm_device_reapply (NMDevice *self,
+                            NMConnection *connection,
+                            GError **error);
 void nm_device_reapply_settings_immediately (NMDevice *self);
 
 void nm_device_update_firewall_zone (NMDevice *self);

@@ -793,6 +793,8 @@ _settings_connection_notify_flags (NMSettingsConnection *settings_connection,
                                    GParamSpec *param,
                                    NMActiveConnection *self)
 {
+	GError *error = NULL;
+
 	nm_assert (NM_IS_ACTIVE_CONNECTION (self));
 	nm_assert (NM_IS_SETTINGS_CONNECTION (settings_connection));
 	nm_assert (nm_active_connection_get_activation_type (self) == NM_ACTIVATION_TYPE_EXTERNAL);
@@ -802,7 +804,13 @@ _settings_connection_notify_flags (NMSettingsConnection *settings_connection,
 		return;
 
 	_set_activation_type_managed (self);
-	nm_device_reapply_settings_immediately (nm_active_connection_get_device (self));
+	if (!nm_device_reapply (nm_active_connection_get_device (self),
+	                        NM_CONNECTION (nm_active_connection_get_settings_connection (self)),
+	                        &error)) {
+		_LOGW ("failed to reapply new device settings on previously externally managed device: %s",
+		       error->message);
+		g_error_free (error);
+	}
 }
 
 /*****************************************************************************/
