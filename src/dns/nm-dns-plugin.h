@@ -50,7 +50,7 @@ typedef struct {
 	 * configuration.
 	 */
 	gboolean (*update) (NMDnsPlugin *self,
-	                    const NMDnsIPConfigData **configs,
+	                    const GPtrArray *configs,
 	                    const NMGlobalDnsConfig *global_config,
 	                    const char *hostname);
 
@@ -80,7 +80,7 @@ gboolean nm_dns_plugin_is_caching (NMDnsPlugin *self);
 const char *nm_dns_plugin_get_name (NMDnsPlugin *self);
 
 gboolean nm_dns_plugin_update (NMDnsPlugin *self,
-                               const NMDnsIPConfigData **configs,
+                               const GPtrArray *configs,
                                const NMGlobalDnsConfig *global_config,
                                const char *hostname);
 
