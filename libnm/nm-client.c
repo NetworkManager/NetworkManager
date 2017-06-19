@@ -2321,6 +2321,7 @@ typedef struct {
 	GCancellable *cancellable;
 	GSimpleAsyncResult *result;
 	int pending_init;
+	guint idle_init_id;
 } NMClientInitData;
 
 static void
@@ -2329,6 +2330,7 @@ init_async_complete (NMClientInitData *init_data)
 	g_simple_async_result_complete (init_data->result);
 	g_object_unref (init_data->result);
 	g_clear_object (&init_data->cancellable);
+	nm_clear_g_source (&init_data->idle_init_id);
 	g_slice_free (NMClientInitData, init_data);
 }
 
@@ -2411,8 +2413,8 @@ new_object_manager (GObject *source_object, GAsyncResult *res, gpointer user_dat
 	g_clear_object (&priv->new_object_manager_cancellable);
 }
 
-static void
-got_object_manager (GObject *object, GAsyncResult *result, gpointer user_data)
+static gboolean
+got_object_manager (gpointer user_data)
 {
 	NMClientInitData *init_data = user_data;
 	NMClient *client;
@@ -2422,14 +2424,21 @@ got_object_manager (GObject *object, GAsyncResult *result, gpointer user_data)
 	GError *error = NULL;
 	GDBusObjectManager *object_manager;
 
-	object_manager = g_dbus_object_manager_client_new_for_bus_finish (result, &error);
-	if (object_manager == NULL) {
-		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
-			g_simple_async_result_take_error (init_data->result, error);
-			init_async_complete (init_data);
-		}
-		return;
-	}
+	init_data->idle_init_id = 0;
+
+	if (g_cancellable_set_error_if_cancelled (init_data->cancellable,
+	                                          &error))
+		goto out_take_error;
+
+	object_manager = g_dbus_object_manager_client_new_for_bus_sync (_nm_dbus_bus_type (),
+	                                                                G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
+	                                                                "org.freedesktop.NetworkManager",
+	                                                                "/org/freedesktop",
+	                                                                proxy_type, NULL, NULL,
+	                                                                init_data->cancellable,
+	                                                                &error);
+	if (!object_manager)
+		goto out_take_error;
 
 	client = init_data->client;
 	priv = NM_CLIENT_GET_PRIVATE (client);
@@ -2438,11 +2447,8 @@ got_object_manager (GObject *object, GAsyncResult *result, gpointer user_data)
 	name_owner = g_dbus_object_manager_client_get_name_owner (G_DBUS_OBJECT_MANAGER_CLIENT (priv->object_manager));
 	if (name_owner) {
 		g_free (name_owner);
-		if (!objects_created (client, priv->object_manager, &error)) {
-			g_simple_async_result_take_error (init_data->result, error);
-			init_async_complete (init_data);
-			return;
-		}
+		if (!objects_created (client, priv->object_manager, &error))
+			goto out_take_error;
 
 		objects = g_dbus_object_manager_get_objects (priv->object_manager);
 		for (iter = objects; iter; iter = iter->next) {
@@ -2464,6 +2470,12 @@ got_object_manager (GObject *object, GAsyncResult *result, gpointer user_data)
 
 	g_signal_connect (priv->object_manager, "notify::name-owner",
 	                  G_CALLBACK (name_owner_changed), client);
+	return G_SOURCE_REMOVE;
+
+out_take_error:
+	g_simple_async_result_take_error (init_data->result, error);
+	init_async_complete (init_data);
+	return G_SOURCE_REMOVE;
 }
 
 static void
@@ -2481,14 +2493,7 @@ prepare_object_manager (NMClient *client,
 	                                               user_data, init_async);
 	g_simple_async_result_set_op_res_gboolean (init_data->result, TRUE);
 
-	g_dbus_object_manager_client_new_for_bus (_nm_dbus_bus_type (),
-	                                          G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
-	                                          "org.freedesktop.NetworkManager",
-	                                          "/org/freedesktop",
-	                                          proxy_type, NULL, NULL,
-	                                          init_data->cancellable,
-	                                          got_object_manager,
-	                                          init_data);
+	init_data->idle_init_id = g_idle_add (got_object_manager, init_data);
 }
 
 static void
