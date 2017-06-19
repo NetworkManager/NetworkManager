@@ -2129,6 +2129,7 @@ nm_settings_connection_set_flags_all (NMSettingsConnection *self, NMSettingsConn
 
 	old_flags = priv->flags;
 	if (old_flags != flags) {
+		_LOGT ("update settings-connection flags to 0x%x (was 0x%x)", (guint) flags, (guint) priv->flags);
 		priv->flags = flags;
 		_notify (self, PROP_FLAGS);
 		if (NM_FLAGS_HAS (old_flags, NM_SETTINGS_CONNECTION_FLAGS_UNSAVED) != NM_FLAGS_HAS (flags, NM_SETTINGS_CONNECTION_FLAGS_UNSAVED))

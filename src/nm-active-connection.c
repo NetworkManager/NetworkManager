@@ -111,8 +111,7 @@ static void _device_cleanup (NMActiveConnection *self);
 static void _settings_connection_notify_flags (NMSettingsConnection *settings_connection,
                                                GParamSpec *param,
                                                NMActiveConnection *self);
-static void _set_activation_type (NMActiveConnection *self,
-                                  NMActivationType activation_type);
+static void _set_activation_type_managed (NMActiveConnection *self);
 
 /*****************************************************************************/
 
@@ -236,7 +235,7 @@ nm_active_connection_set_state (NMActiveConnection *self,
 		/* assuming connections mean to gracefully take over an externally
 		 * configured device. Once activation is complete, an assumed
 		 * activation *is* the same as a full activation. */
-		_set_activation_type (self, NM_ACTIVATION_TYPE_MANAGED);
+		_set_activation_type_managed (self);
 	}
 
 	old_state = priv->state;
@@ -755,13 +754,31 @@ _set_activation_type (NMActiveConnection *self,
 	if (priv->activation_type == activation_type)
 		return;
 
-	_LOGD ("update activation type from %s to %s",
-	       nm_activation_type_to_string (priv->activation_type),
-	       nm_activation_type_to_string (activation_type));
 	priv->activation_type = activation_type;
 
-	if (   priv->activation_type == NM_ACTIVATION_TYPE_MANAGED
-	    && priv->device
+	if (priv->settings_connection) {
+		if (activation_type == NM_ACTIVATION_TYPE_EXTERNAL)
+			g_signal_connect (priv->settings_connection, "notify::"NM_SETTINGS_CONNECTION_FLAGS, (GCallback) _settings_connection_notify_flags, self);
+		else
+			g_signal_handlers_disconnect_by_func (priv->settings_connection, _settings_connection_notify_flags, self);
+	}
+}
+
+static void
+_set_activation_type_managed (NMActiveConnection *self)
+{
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+
+	if (priv->activation_type == NM_ACTIVATION_TYPE_MANAGED)
+		return;
+
+	_LOGD ("update activation type from %s to %s",
+	       nm_activation_type_to_string (priv->activation_type),
+	       nm_activation_type_to_string (NM_ACTIVATION_TYPE_MANAGED));
+
+	_set_activation_type (self, NM_ACTIVATION_TYPE_MANAGED);
+
+	if (   priv->device
 	    && self == NM_ACTIVE_CONNECTION (nm_device_get_act_request (priv->device))
 	    && NM_IN_SET (nm_device_sys_iface_state_get (priv->device),
 	                  NM_DEVICE_SYS_IFACE_STATE_EXTERNAL,
@@ -776,6 +793,8 @@ _settings_connection_notify_flags (NMSettingsConnection *settings_connection,
                                    GParamSpec *param,
                                    NMActiveConnection *self)
 {
+	GError *error = NULL;
+
 	nm_assert (NM_IS_ACTIVE_CONNECTION (self));
 	nm_assert (NM_IS_SETTINGS_CONNECTION (settings_connection));
 	nm_assert (nm_active_connection_get_activation_type (self) == NM_ACTIVATION_TYPE_EXTERNAL);
@@ -784,9 +803,14 @@ _settings_connection_notify_flags (NMSettingsConnection *settings_connection,
 	if (nm_settings_connection_get_nm_generated (settings_connection))
 		return;
 
-	g_signal_handlers_disconnect_by_func (settings_connection, _settings_connection_notify_flags, self);
-	_set_activation_type (self, NM_ACTIVATION_TYPE_MANAGED);
-	nm_device_reapply_settings_immediately (nm_active_connection_get_device (self));
+	_set_activation_type_managed (self);
+	if (!nm_device_reapply (nm_active_connection_get_device (self),
+	                        NM_CONNECTION (nm_active_connection_get_settings_connection (self)),
+	                        &error)) {
+		_LOGW ("failed to reapply new device settings on previously externally managed device: %s",
+		       error->message);
+		g_error_free (error);
+	}
 }
 
 /*****************************************************************************/
@@ -1147,7 +1171,7 @@ set_property (GObject *object, guint prop_id,
 		                   NM_ACTIVATION_TYPE_ASSUME,
 		                   NM_ACTIVATION_TYPE_EXTERNAL))
 			g_return_if_reached ();
-		priv->activation_type = (NMActivationType) i;
+		_set_activation_type (self, (NMActivationType) i);
 		break;
 	case PROP_SPECIFIC_OBJECT:
 		tmp = g_value_get_string (value);
