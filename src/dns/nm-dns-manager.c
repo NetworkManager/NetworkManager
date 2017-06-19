@@ -197,6 +197,19 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_config_type_to_string, NMDnsIPConfigType,
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_IP_CONFIG_TYPE_VPN, "vpn"),
 );
 
+int
+nm_dns_ip_config_data_get_dns_priority (const NMDnsIPConfigData *config)
+{
+	g_return_val_if_fail (config, 0);
+
+	if (NM_IS_IP4_CONFIG (config->config))
+		return nm_ip4_config_get_dns_priority (config->config);
+	else if (NM_IS_IP6_CONFIG (config->config))
+		return nm_ip6_config_get_dns_priority (config->config);
+	else
+		g_return_val_if_reached (0);
+}
+
 static NMDnsIPConfigData *
 ip_config_data_new (gpointer config, NMDnsIPConfigType type, const char *iface)
 {
@@ -226,19 +239,10 @@ ip_config_data_destroy (gpointer ptr)
 static gint
 ip_config_data_compare (const NMDnsIPConfigData *a, const NMDnsIPConfigData *b)
 {
-	gboolean a_v4, b_v4;
-	gint a_prio, b_prio;
+	int a_prio, b_prio;
 
-	a_v4 = NM_IS_IP4_CONFIG (a->config);
-	b_v4 = NM_IS_IP4_CONFIG (b->config);
-
-	a_prio = a_v4 ?
-		nm_ip4_config_get_dns_priority ((NMIP4Config *) a->config) :
-		nm_ip6_config_get_dns_priority ((NMIP6Config *) a->config);
-
-	b_prio = b_v4 ?
-		nm_ip4_config_get_dns_priority ((NMIP4Config *) b->config) :
-		nm_ip6_config_get_dns_priority ((NMIP6Config *) b->config);
+	a_prio = nm_dns_ip_config_data_get_dns_priority (a);
+	b_prio = nm_dns_ip_config_data_get_dns_priority (b);
 
 	/* Configurations with lower priority value first */
 	if (a_prio < b_prio)
@@ -990,11 +994,9 @@ _collect_resolv_conf_data (NMDnsManager *self, /* only for logging context, no o
                            char ***out_options,
                            char ***out_nameservers,
                            char ***out_nis_servers,
-                           const char **out_nis_domain,
-                           NMDnsIPConfigData ***out_plugin_confs)
+                           const char **out_nis_domain)
 {
-	NMDnsIPConfigData **plugin_confs = NULL;
-	guint i, num, len;
+	guint i, j, num, len;
 	NMResolvConfData rc = {
 		.nameservers = g_ptr_array_new (),
 		.searches = g_ptr_array_new (),
@@ -1007,27 +1009,23 @@ _collect_resolv_conf_data (NMDnsManager *self, /* only for logging context, no o
 		merge_global_dns_config (&rc, global_config);
 	else {
 		nm_auto_free_gstring GString *tmp_gstring = NULL;
-		int prio, prev_prio = 0;
+		int prio, first_prio = 0;
 		NMDnsIPConfigData *current;
-		gboolean skip = FALSE, v4;
+		gboolean v4;
 
-		plugin_confs = g_new (NMDnsIPConfigData *, configs->len + 1);
+		for (i = 0, j = 0; i < configs->len; i++) {
+			gboolean skip = FALSE;
 
-		for (i = 0; i < configs->len; i++) {
 			current = configs->pdata[i];
-			v4 = NM_IS_IP4_CONFIG (current->config);
 
-			prio = v4 ?
-				nm_ip4_config_get_dns_priority ((NMIP4Config *) current->config) :
-				nm_ip6_config_get_dns_priority ((NMIP6Config *) current->config);
+			prio = nm_dns_ip_config_data_get_dns_priority (current);
 
-			if (prev_prio < 0 && prio != prev_prio) {
+			if (i == 0)
+				first_prio = prio;
+			else if (first_prio < 0 && first_prio != prio)
 				skip = TRUE;
-				plugin_confs[i] = NULL;
-			}
 
-			prev_prio = prio;
-
+			v4 = NM_IS_IP4_CONFIG (current->config);
 			if (   ( v4 && nm_ip4_config_get_num_nameservers ((NMIP4Config *) current->config))
 			    || (!v4 && nm_ip6_config_get_num_nameservers ((NMIP6Config *) current->config))) {
 				_LOGT ("config: %8d %-7s v%c %-16s %s: %s",
@@ -1039,12 +1037,9 @@ _collect_resolv_conf_data (NMDnsManager *self, /* only for logging context, no o
 				       get_nameserver_list (current->config, &tmp_gstring));
 			}
 
-			if (!skip) {
+			if (!skip)
 				merge_one_ip_config_data (&rc, current);
-				plugin_confs[i] = current;
-			}
 		}
-		plugin_confs[i] = NULL;
 	}
 
 	/* If the hostname is a FQDN ("dcbw.example.com"), then add the domain part of it
@@ -1078,7 +1073,6 @@ _collect_resolv_conf_data (NMDnsManager *self, /* only for logging context, no o
 	}
 	g_ptr_array_set_size (rc.searches, i);
 
-	*out_plugin_confs = plugin_confs;
 	*out_searches = _ptrarray_to_strv (rc.searches);
 	*out_options = _ptrarray_to_strv (rc.options);
 	*out_nameservers = _ptrarray_to_strv (rc.nameservers);
@@ -1102,7 +1096,6 @@ update_dns (NMDnsManager *self,
 	SpawnResult result = SR_ERROR;
 	NMConfigData *data;
 	NMGlobalDnsConfig *global_config;
-	gs_free NMDnsIPConfigData **plugin_confs = NULL;
 
 	g_return_val_if_fail (!error || !*error, FALSE);
 
@@ -1136,8 +1129,7 @@ update_dns (NMDnsManager *self,
 	compute_hash (self, global_config, priv->hash);
 
 	_collect_resolv_conf_data (self, global_config, priv->configs, priv->hostname,
-	                           &searches, &options, &nameservers, &nis_servers, &nis_domain,
-	                           &plugin_confs);
+	                           &searches, &options, &nameservers, &nis_servers, &nis_domain);
 
 	/* Let any plugins do their thing first */
 	if (priv->plugin) {
@@ -1155,7 +1147,7 @@ update_dns (NMDnsManager *self,
 
 		_LOGD ("update-dns: updating plugin %s", plugin_name);
 		if (!nm_dns_plugin_update (plugin,
-		                           (const NMDnsIPConfigData **) plugin_confs,
+		                           priv->configs,
 		                           global_config,
 		                           priv->hostname)) {
 			_LOGW ("update-dns: plugin %s update failed", plugin_name);

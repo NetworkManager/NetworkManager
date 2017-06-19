@@ -77,7 +77,7 @@ G_DEFINE_TYPE_EXTENDED (NMDnsPlugin, nm_dns_plugin, G_TYPE_OBJECT, G_TYPE_FLAG_A
 
 gboolean
 nm_dns_plugin_update (NMDnsPlugin *self,
-                      const NMDnsIPConfigData **configs,
+                      const GPtrArray *configs,
                       const NMGlobalDnsConfig *global_config,
                       const char *hostname)
 {

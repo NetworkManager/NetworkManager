@@ -554,13 +554,15 @@ start_dnsmasq (NMDnsDnsmasq *self)
 
 static gboolean
 update (NMDnsPlugin *plugin,
-        const NMDnsIPConfigData **configs,
+        const GPtrArray *configs,
         const NMGlobalDnsConfig *global_config,
         const char *hostname)
 {
 	NMDnsDnsmasq *self = NM_DNS_DNSMASQ (plugin);
 	NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE (self);
 	GVariantBuilder servers;
+	guint i;
+	int prio, first_prio;
 
 	start_dnsmasq (self);
 
@@ -569,9 +571,13 @@ update (NMDnsPlugin *plugin,
 	if (global_config)
 		add_global_config (self, &servers, global_config);
 	else {
-		while (*configs) {
-			add_ip_config_data (self, &servers, *configs);
-			configs++;
+		for (i = 0; i < configs->len; i++) {
+			prio = nm_dns_ip_config_data_get_dns_priority (configs->pdata[i]);
+			if (i == 0)
+				first_prio = prio;
+			else if (first_prio < 0 && first_prio != prio)
+				break;
+			add_ip_config_data (self, &servers, configs->pdata[i]);
 		}
 	}
 

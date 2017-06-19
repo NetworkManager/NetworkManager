@@ -102,12 +102,12 @@ call_done (GObject *source, GAsyncResult *r, gpointer user_data)
 static void
 add_interface_configuration (NMDnsSystemdResolved *self,
                              GArray *interfaces,
-                             const NMDnsIPConfigData *data)
+                             const NMDnsIPConfigData *data,
+                             gboolean skip)
 {
 	int i;
 	InterfaceConfig *ic = NULL;
 	int ifindex;
-	NMDevice *device;
 
 	if (NM_IS_IP4_CONFIG (data->config))
 		ifindex = nm_ip4_config_get_ifindex (data->config);
@@ -115,8 +115,6 @@ add_interface_configuration (NMDnsSystemdResolved *self,
 		ifindex = nm_ip6_config_get_ifindex (data->config);
 	else
 		g_return_if_reached ();
-
-	device = nm_manager_get_device_by_ifindex (nm_manager_get (), ifindex);
 
 	for (i = 0; i < interfaces->len; i++) {
 		InterfaceConfig *tic = &g_array_index (interfaces, InterfaceConfig, i);
@@ -133,7 +131,8 @@ add_interface_configuration (NMDnsSystemdResolved *self,
 		ic->ifindex = ifindex;
 	}
 
-	ic->configs = g_list_append (ic->configs, data->config);
+	if (!skip)
+		ic->configs = g_list_append (ic->configs, data->config);
 }
 
 static void
@@ -291,17 +290,25 @@ send_updates (NMDnsSystemdResolved *self)
 
 static gboolean
 update (NMDnsPlugin *plugin,
-        const NMDnsIPConfigData **configs,
+        const GPtrArray *configs,
         const NMGlobalDnsConfig *global_config,
         const char *hostname)
 {
 	NMDnsSystemdResolved *self = NM_DNS_SYSTEMD_RESOLVED (plugin);
 	GArray *interfaces = g_array_new (TRUE, TRUE, sizeof (InterfaceConfig));
-	const NMDnsIPConfigData **c;
-	int i;
+	guint i;
+	int prio, first_prio = 0;
 
-	for (c = configs; *c != NULL; c++)
-		add_interface_configuration (self, interfaces, *c);
+	for (i = 0; i < configs->len; i++) {
+		gboolean skip = FALSE;
+
+		prio = nm_dns_ip_config_data_get_dns_priority (configs->pdata[i]);
+		if (i == 0)
+			first_prio = prio;
+		else if (first_prio < 0 && first_prio != prio)
+			skip = TRUE;
+		add_interface_configuration (self, interfaces, configs->pdata[i], skip);
+	}
 
 	free_pending_updates (self);
 
