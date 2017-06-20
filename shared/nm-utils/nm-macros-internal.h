@@ -381,6 +381,15 @@ _NM_IN_STRSET_streq (const char *x, const char *s)
 
 /*****************************************************************************/
 
+static inline guint
+NM_HASH_COMBINE (guint h, guint val)
+{
+	/* see g_str_hash() for reasons */
+	return (h << 5) + h + val;
+}
+
+/*****************************************************************************/
+
 /* NM_CACHED_QUARK() returns the GQuark for @string, but caches
  * it in a static variable to speed up future lookups.
  *
