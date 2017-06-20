@@ -2408,8 +2408,8 @@ new_object_manager (GObject *source_object, GAsyncResult *res, gpointer user_dat
 	NMClient *self = NM_CLIENT (user_data);
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
 
-	g_object_notify (G_OBJECT (user_data), NM_CLIENT_NM_RUNNING);
 	g_clear_object (&priv->new_object_manager_cancellable);
+	g_object_notify (G_OBJECT (user_data), NM_CLIENT_NM_RUNNING);
 }
 
 static void
