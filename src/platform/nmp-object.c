@@ -81,7 +81,7 @@ _id_hash_ip6_addr (const struct in6_addr *addr)
 	int i;
 
 	for (i = 0; i < sizeof (*addr); i++)
-		hash = (hash * 33) + ((const guint8 *) addr)[i];
+		hash = NM_HASH_COMBINE (hash, ((const guint8 *) addr)[i]);
 	return hash;
 }
 
@@ -846,39 +846,39 @@ _vt_cmd_plobj_id_hash_##type (const NMPlatformObject *_obj) \
 }
 _vt_cmd_plobj_id_hash (link, NMPlatformLink, {
 	hash = (guint) 3982791431u;
-	hash = hash      + ((guint) obj->ifindex);
+	hash = hash + ((guint) obj->ifindex);
 })
 _vt_cmd_plobj_id_hash (ip4_address, NMPlatformIP4Address, {
 	hash = (guint) 3591309853u;
-	hash = hash      + ((guint) obj->ifindex);
-	hash = hash * 33 + ((guint) obj->plen);
-	hash = hash * 33 + ((guint) obj->address);
-
+	hash = hash + ((guint) obj->ifindex);
+	hash = NM_HASH_COMBINE (hash, obj->plen);
+	hash = NM_HASH_COMBINE (hash, obj->address);
 	/* for IPv4 we must also consider the net-part of the peer-address (IFA_ADDRESS) */
-	hash = hash * 33 + ((guint) (obj->peer_address & nm_utils_ip4_prefix_to_netmask (obj->plen)));
+	hash = NM_HASH_COMBINE (hash, (obj->peer_address & nm_utils_ip4_prefix_to_netmask (obj->plen)));
 })
 _vt_cmd_plobj_id_hash (ip6_address, NMPlatformIP6Address, {
 	hash = (guint) 2907861637u;
-	hash = hash      + ((guint) obj->ifindex);
+	hash = hash + ((guint) obj->ifindex);
 	/* for IPv6 addresses, the prefix length is not part of the primary identifier. */
-	hash = hash * 33 + _id_hash_ip6_addr (&obj->address);
+	hash = NM_HASH_COMBINE (hash, _id_hash_ip6_addr (&obj->address));
 })
 _vt_cmd_plobj_id_hash (ip4_route, NMPlatformIP4Route, {
 	hash = (guint) 2569857221u;
-	hash = hash      + ((guint) obj->ifindex);
-	hash = hash * 33 + ((guint) obj->plen);
-	hash = hash * 33 + ((guint) obj->metric);
-	hash = hash * 33 + ((guint) nm_utils_ip4_address_clear_host_address (obj->network, obj->plen));
+	hash = hash + ((guint) obj->ifindex);
+	hash = NM_HASH_COMBINE (hash, obj->plen);
+	hash = NM_HASH_COMBINE (hash, obj->metric);
+	hash = NM_HASH_COMBINE (hash, nm_utils_ip4_address_clear_host_address (obj->network, obj->plen));
 })
 _vt_cmd_plobj_id_hash (ip6_route, NMPlatformIP6Route, {
 	hash = (guint) 3999787007u;
-	hash = hash      + ((guint) obj->ifindex);
-	hash = hash * 33 + ((guint) obj->plen);
-	hash = hash * 33 + ((guint) obj->metric);
-	hash = hash * 33 + ({
-	                        struct in6_addr n1;
-	                        _id_hash_ip6_addr (nm_utils_ip6_address_clear_host_address (&n1, &obj->network, obj->plen));
-	                    });
+	hash = hash + ((guint) obj->ifindex);
+	hash = NM_HASH_COMBINE (hash, obj->plen);
+	hash = NM_HASH_COMBINE (hash, obj->metric);
+	hash = NM_HASH_COMBINE (hash,
+	                        ({
+	                            struct in6_addr n1;
+	                            _id_hash_ip6_addr (nm_utils_ip6_address_clear_host_address (&n1, &obj->network, obj->plen));
+	                        }));
 })
 
 gboolean
@@ -989,7 +989,7 @@ nmp_cache_id_hash (const NMPCacheId *id)
 
 	n = _nmp_cache_id_size_by_type (id->_id_type);
 	for (i = 0; i < n; i++)
-		hash = ((hash << 5) + hash) + ((char *) id)[i]; /* hash * 33 + c */
+		hash = NM_HASH_COMBINE (hash, ((char *) id)[i]);
 	return hash;
 }
 
