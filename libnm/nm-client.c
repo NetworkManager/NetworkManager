@@ -2504,8 +2504,7 @@ name_owner_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 	if (name_owner) {
 		g_free (name_owner);
 		g_clear_object (&priv->object_manager);
-		if (priv->new_object_manager_cancellable)
-			g_cancellable_cancel (priv->new_object_manager_cancellable);
+		nm_clear_g_cancellable (&priv->new_object_manager_cancellable);
 		priv->new_object_manager_cancellable = g_cancellable_new ();
 		prepare_object_manager (self, priv->new_object_manager_cancellable,
 		                        new_object_manager, self);
