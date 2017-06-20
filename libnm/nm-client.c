@@ -2497,10 +2497,12 @@ name_owner_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 	GDBusObjectManager *object_manager = G_DBUS_OBJECT_MANAGER (object);
 	gchar *name_owner;
 
+	nm_assert (object_manager == priv->object_manager);
+
 	name_owner = g_dbus_object_manager_client_get_name_owner (G_DBUS_OBJECT_MANAGER_CLIENT (object));
 	if (name_owner) {
 		g_free (name_owner);
-		g_object_unref (object_manager);
+		g_clear_object (&priv->object_manager);
 		if (priv->new_object_manager_cancellable)
 			g_cancellable_cancel (priv->new_object_manager_cancellable);
 		priv->new_object_manager_cancellable = g_cancellable_new ();
