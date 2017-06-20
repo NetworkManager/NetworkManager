@@ -2405,7 +2405,8 @@ unhook_om (NMClient *self)
 static void
 new_object_manager (GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (source_object);
+	NMClient *self = NM_CLIENT (user_data);
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
 
 	g_object_notify (G_OBJECT (user_data), NM_CLIENT_NM_RUNNING);
 	g_clear_object (&priv->new_object_manager_cancellable);
@@ -2507,7 +2508,7 @@ name_owner_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 			g_cancellable_cancel (priv->new_object_manager_cancellable);
 		priv->new_object_manager_cancellable = g_cancellable_new ();
 		prepare_object_manager (self, priv->new_object_manager_cancellable,
-		                        new_object_manager, user_data);
+		                        new_object_manager, self);
 	} else {
 		g_signal_handlers_disconnect_by_func (object_manager, object_added, self);
 		unhook_om (self);
