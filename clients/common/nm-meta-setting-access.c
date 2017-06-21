@@ -294,13 +294,18 @@ nm_meta_abstract_info_complete (const NMMetaAbstractInfo *abstract_info,
 	if (*out_to_free) {
 		char **v = *out_to_free;
 
-		for (i =0, j = 0; v[i]; i++) {
+		for (i = 0, j = 0; v[i]; i++) {
 			if (strncmp (v[i], text, text_len) != 0)
 				continue;
 			v[j++] = v[i];
 		}
-		v[j++] = NULL;
-		return (const char *const*) *out_to_free;
+		if (j)
+			v[j++] = NULL;
+		else {
+			g_free (v);
+			v = NULL;
+		}
+		return (const char *const*) v;
 	} else {
 		const char *const*v = values;
 		char **r;
@@ -312,6 +317,8 @@ nm_meta_abstract_info_complete (const NMMetaAbstractInfo *abstract_info,
 		}
 		if (j == i)
 			return values;
+		else if (!j)
+			return NULL;
 
 		r = g_new (char *, j + 1);
 		v = values;

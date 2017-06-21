@@ -1759,7 +1759,12 @@ _complete_fcn_vpn_service_type (ARGS_COMPLETE_FCN)
 				values[j] = values[i];
 			j++;
 		}
-		values[j++] = NULL;
+		if (j)
+			values[j++] = NULL;
+		else {
+			g_free (values);
+			values = NULL;
+		}
 	}
 	return (const char *const*) (*out_to_free = values);
 }
@@ -2378,7 +2383,12 @@ _complete_fcn_connection_type (ARGS_COMPLETE_FCN)
 				result[j++] = g_strdup (v);
 		}
 	}
-	result[j++] = NULL;
+	if (j)
+		result[j++] = NULL;
+	else {
+		g_free (result);
+		result = NULL;
+	}
 
 	return (const char *const*) (*out_to_free = result);
 }
@@ -2526,10 +2536,14 @@ _complete_fcn_connection_master (ARGS_COMPLETE_FCN)
 		if (v && (!text || strncmp (text, v, text_len) == 0))
 			result[j++] = g_strdup (v);
 	}
-	result[j++] = NULL;
+	if (j)
+		result[j++] = NULL;
+	else {
+		g_free (result);
+		result = NULL;
+	}
 
-	*out_to_free = NULL;
-	return (const char *const*) result;
+	return (const char *const*) (*out_to_free = result);
 }
 
 static gboolean
