@@ -24,7 +24,6 @@
 #include "nm-utils/nm-obj.h"
 #include "nm-utils/nm-dedup-multi.h"
 #include "nm-platform.h"
-#include "nm-multi-index.h"
 
 struct udev_device;
 
@@ -60,7 +59,14 @@ typedef enum { /*< skip >*/
 typedef enum { /*< skip >*/
 	NMP_CACHE_ID_TYPE_NONE,
 
-	/* all the objects of a certain type */
+	/* all the objects of a certain type.
+	 *
+	 * This index is special. It is the only one that contains *all* object.
+	 * Other indexes may consider some object as non "partitionable", hence
+	 * they don't track all objects.
+	 *
+	 * Hence, this index type is used when looking at all objects (still
+	 * partitioned by type). */
 	NMP_CACHE_ID_TYPE_OBJECT_TYPE,
 
 	/* index for the link objects by ifname. */
@@ -76,7 +82,7 @@ typedef enum { /*< skip >*/
 	/* all the visible addresses/routes (by object-type) for an ifindex. */
 	NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX,
 
-	/* three indeces for the visible routes, per ifindex. */
+	/* indeces for the visible routes, per ifindex. */
 	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_NO_DEFAULT,
 	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_ONLY_DEFAULT,
 
@@ -95,50 +101,6 @@ typedef enum { /*< skip >*/
 	NMP_CACHE_ID_TYPE_MAX = __NMP_CACHE_ID_TYPE_MAX - 1,
 } NMPCacheIdType;
 
-typedef struct _NMPCacheId NMPCacheId;
-
-struct _NMPCacheId {
-	union {
-		NMMultiIndexId base;
-		guint8 _id_type; /* NMPCacheIdType as guint8 */
-		struct _nm_packed {
-			/* NMP_CACHE_ID_TYPE_OBJECT_TYPE */
-			/* NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY */
-			/* NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_NO_DEFAULT */
-			/* NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_ONLY_DEFAULT */
-			guint8 _id_type;
-			guint8 obj_type; /* NMPObjectType as guint8 */
-		} object_type;
-		struct _nm_packed {
-			/* NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX */
-			/* NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_NO_DEFAULT */
-			/* NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_ONLY_DEFAULT */
-			guint8 _id_type;
-			guint8 obj_type; /* NMPObjectType as guint8 */
-			int _misaligned_ifindex;
-		} object_type_by_ifindex;
-		struct _nm_packed {
-			/* NMP_CACHE_ID_TYPE_LINK_BY_IFNAME */
-			guint8 _id_type;
-			char ifname_short[IFNAMSIZ - 1]; /* don't include the trailing NUL so the struct fits in 4 bytes. */
-		} link_by_ifname;
-		struct _nm_packed {
-			/* NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP4 */
-			guint8 _id_type;
-			guint8 plen;
-			guint32 _misaligned_metric;
-			guint32 _misaligned_network;
-		} routes_by_destination_ip4;
-		struct _nm_packed {
-			/* NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP6 */
-			guint8 _id_type;
-			guint8 plen;
-			guint32 _misaligned_metric;
-			struct in6_addr _misaligned_network;
-		} routes_by_destination_ip6;
-	};
-};
-
 typedef struct {
 	NMDedupMultiObjClass parent;
 	const char *obj_type_name;
@@ -154,10 +116,6 @@ typedef struct {
 
 	/* Only for NMPObjectLnk* types. */
 	NMLinkType lnk_link_type;
-
-	/* returns %FALSE, if the obj type would never have an entry for index type @id_type. If @obj has an index,
-	 * initialize @id and set @out_id to it. Otherwise, @out_id is NULL. */
-	gboolean (*cmd_obj_init_cache_id) (const NMPObject *obj, NMPCacheIdType id_type, NMPCacheId *id, const NMPCacheId **out_id);
 
 	guint (*cmd_obj_hash) (const NMPObject *obj);
 	int (*cmd_obj_cmp) (const NMPObject *obj1, const NMPObject *obj2);
@@ -276,7 +234,6 @@ struct _NMPObject {
 		const NMPClass *_class;
 	};
 	guint _ref_count;
-	bool is_cached;
 	union {
 		NMPlatformObject        object;
 
@@ -387,8 +344,8 @@ NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 
 const NMPClass *nmp_class_from_type (NMPObjectType obj_type);
 
-NMPObject *nmp_object_ref (NMPObject *object);
-void nmp_object_unref (NMPObject *object);
+const NMPObject *nmp_object_ref (const NMPObject *object);
+void nmp_object_unref (const NMPObject *object);
 NMPObject *nmp_object_new (NMPObjectType obj_type, const NMPlatformObject *plob);
 NMPObject *nmp_object_new_link (int ifindex);
 
@@ -411,13 +368,13 @@ guint nmp_object_id_hash (const NMPObject *obj);
 gboolean nmp_object_is_alive (const NMPObject *obj);
 gboolean nmp_object_is_visible (const NMPObject *obj);
 
-void _nmp_object_fixup_link_udev_fields (NMPObject *obj, gboolean use_udev);
+void _nmp_object_fixup_link_udev_fields (NMPObject **obj_new, NMPObject *obj_orig, gboolean use_udev);
 
 #define nm_auto_nmpobj __attribute__((cleanup(_nm_auto_nmpobj_cleanup)))
 static inline void
-_nm_auto_nmpobj_cleanup (NMPObject **pobj)
+_nm_auto_nmpobj_cleanup (gpointer p)
 {
-	nmp_object_unref (*pobj);
+	nmp_object_unref (*((const NMPObject **) p));
 }
 
 typedef struct _NMPCache NMPCache;
@@ -425,22 +382,89 @@ typedef struct _NMPCache NMPCache;
 typedef void (*NMPCachePreHook) (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMPCacheOpsType ops_type, gpointer user_data);
 typedef gboolean (*NMPObjectMatchFn) (const NMPObject *obj, gpointer user_data);
 
-gboolean nmp_cache_id_equal (const NMPCacheId *a, const NMPCacheId *b);
-guint nmp_cache_id_hash (const NMPCacheId *id);
-NMPCacheId *nmp_cache_id_clone (const NMPCacheId *id);
-void nmp_cache_id_destroy (NMPCacheId *id);
+const NMDedupMultiEntry *nmp_cache_lookup_entry_link (const NMPCache *cache, int ifindex);
 
-NMPCacheId *nmp_cache_id_init_object_type (NMPCacheId *id, NMPObjectType obj_type, gboolean visible_only);
-NMPCacheId *nmp_cache_id_init_addrroute_visible_by_ifindex (NMPCacheId *id, NMPObjectType obj_type, int ifindex);
-NMPCacheId *nmp_cache_id_init_routes_visible (NMPCacheId *id, NMPObjectType obj_type, gboolean with_default, gboolean with_non_default, int ifindex);
-NMPCacheId *nmp_cache_id_init_link_by_ifname (NMPCacheId *id, const char *ifname);
-NMPCacheId *nmp_cache_id_init_routes_by_destination_ip4 (NMPCacheId *id, guint32 network, guint8 plen, guint32 metric);
-NMPCacheId *nmp_cache_id_init_routes_by_destination_ip6 (NMPCacheId *id, const struct in6_addr *network, guint8 plen, guint32 metric);
-
-const NMPlatformObject *const *nmp_cache_lookup_multi (const NMPCache *cache, const NMPCacheId *cache_id, guint *out_len);
-GArray *nmp_cache_lookup_multi_to_array (const NMPCache *cache, NMPObjectType obj_type, const NMPCacheId *cache_id);
 const NMPObject *nmp_cache_lookup_obj (const NMPCache *cache, const NMPObject *obj);
 const NMPObject *nmp_cache_lookup_link (const NMPCache *cache, int ifindex);
+
+typedef struct {
+	NMPCacheIdType cache_id_type;
+	NMPObject selector_obj;
+} NMPLookup;
+
+const NMDedupMultiHeadEntry *nmp_cache_lookup_all (const NMPCache *cache,
+                                                   NMPCacheIdType cache_id_type,
+                                                   const NMPObject *select_obj);
+
+static inline const NMDedupMultiHeadEntry *
+nmp_cache_lookup (const NMPCache *cache,
+                  const NMPLookup *lookup)
+{
+	return nmp_cache_lookup_all (cache, lookup->cache_id_type, &lookup->selector_obj);
+}
+
+const NMPLookup *nmp_lookup_init_obj_type (NMPLookup *lookup,
+                                           NMPObjectType obj_type,
+                                           gboolean visible_only);
+const NMPLookup *nmp_lookup_init_link (NMPLookup *lookup,
+                                       gboolean visible_only);
+const NMPLookup *nmp_lookup_init_link_by_ifname (NMPLookup *lookup,
+                                                 const char *ifname);
+const NMPLookup *nmp_lookup_init_addrroute (NMPLookup *lookup,
+                                            NMPObjectType obj_type,
+                                            int ifindex,
+                                            gboolean visible_only);
+const NMPLookup *nmp_lookup_init_route_visible (NMPLookup *lookup,
+                                                NMPObjectType obj_type,
+                                                int ifindex,
+                                                gboolean with_default,
+                                                gboolean with_non_default);
+const NMPLookup *nmp_lookup_init_route_by_dest (NMPLookup *lookup,
+                                                int addr_family,
+                                                gconstpointer network,
+                                                guint plen,
+                                                guint32 metric);
+
+GArray *nmp_cache_lookup_to_array (const NMDedupMultiHeadEntry *head_entry,
+                                   NMPObjectType obj_type);
+
+static inline gboolean
+nmp_cache_iter_next (NMDedupMultiIter *iter, const NMPObject **out_obj)
+{
+	gboolean has_next;
+
+	has_next = nm_dedup_multi_iter_next (iter);
+	if (has_next) {
+		nm_assert (NMP_OBJECT_IS_VALID (iter->current->box->obj));
+		NM_SET_OUT (out_obj, iter->current->box->obj);
+	}
+	return has_next;
+}
+
+static inline gboolean
+nmp_cache_iter_next_link (NMDedupMultiIter *iter, const NMPlatformLink **out_obj)
+{
+	gboolean has_next;
+
+	has_next = nm_dedup_multi_iter_next (iter);
+	if (has_next) {
+		nm_assert (NMP_OBJECT_GET_TYPE (iter->current->box->obj) == NMP_OBJECT_TYPE_LINK);
+		NM_SET_OUT (out_obj, &(((const NMPObject *) iter->current->box->obj)->link));
+	}
+	return has_next;
+}
+
+#define nmp_cache_iter_for_each(iter, head, obj) \
+	for (nm_dedup_multi_iter_init ((iter), \
+	                               (head)); \
+	     nmp_cache_iter_next ((iter), (obj)); \
+	     )
+
+#define nmp_cache_iter_for_each_link(iter, head, obj) \
+	for (nm_dedup_multi_iter_init ((iter), \
+	                               (head)); \
+	     nmp_cache_iter_next_link ((iter), (obj)); \
+	     )
 
 const NMPObject *nmp_cache_find_other_route_for_same_destination (const NMPCache *cache, const NMPObject *route);
 
@@ -451,9 +475,6 @@ const NMPObject *nmp_cache_lookup_link_full (const NMPCache *cache,
                                              NMLinkType link_type,
                                              NMPObjectMatchFn match_fn,
                                              gpointer user_data);
-GHashTable *nmp_cache_lookup_all_to_hash (const NMPCache *cache,
-                                          NMPCacheId *cache_id,
-                                          GHashTable *hash);
 
 gboolean nmp_cache_link_connected_needs_toggle (const NMPCache *cache, const NMPObject *master, const NMPObject *potential_slave, const NMPObject *ignore_slave);
 const NMPObject *nmp_cache_link_connected_needs_toggle_by_ifindex (const NMPCache *cache, int master_ifindex, const NMPObject *potential_slave, const NMPObject *ignore_slave);
@@ -462,13 +483,71 @@ gboolean nmp_cache_use_udev_get (const NMPCache *cache);
 
 void ASSERT_nmp_cache_is_consistent (const NMPCache *cache);
 
-NMPCacheOpsType nmp_cache_remove (NMPCache *cache, const NMPObject *obj, gboolean equals_by_ptr, NMPObject **out_obj, gboolean *out_was_visible, NMPCachePreHook pre_hook, gpointer user_data);
-NMPCacheOpsType nmp_cache_remove_netlink (NMPCache *cache, const NMPObject *obj, NMPObject **out_obj, gboolean *out_was_visible, NMPCachePreHook pre_hook, gpointer user_data);
-NMPCacheOpsType nmp_cache_update_netlink (NMPCache *cache, NMPObject *obj, NMPObject **out_obj, gboolean *out_was_visible, NMPCachePreHook pre_hook, gpointer user_data);
-NMPCacheOpsType nmp_cache_update_link_udev (NMPCache *cache, int ifindex, struct udev_device *udevice, NMPObject **out_obj, gboolean *out_was_visible, NMPCachePreHook pre_hook, gpointer user_data);
-NMPCacheOpsType nmp_cache_update_link_master_connected (NMPCache *cache, int ifindex, NMPObject **out_obj, gboolean *out_was_visible, NMPCachePreHook pre_hook, gpointer user_data);
+NMPCacheOpsType nmp_cache_remove (NMPCache *cache,
+                                  const NMPObject *obj_needle,
+                                  gboolean equals_by_ptr,
+                                  const NMPObject **out_obj_old);
+NMPCacheOpsType nmp_cache_remove_netlink (NMPCache *cache,
+                                          const NMPObject *obj_needle,
+                                          const NMPObject **out_obj_old,
+                                          const NMPObject **out_obj_new);
+NMPCacheOpsType nmp_cache_update_netlink (NMPCache *cache,
+                                          NMPObject *obj,
+                                          const NMPObject **out_obj_old,
+                                          const NMPObject **out_obj_new);
+NMPCacheOpsType nmp_cache_update_link_udev (NMPCache *cache,
+                                            int ifindex,
+                                            struct udev_device *udevice,
+                                            const NMPObject **out_obj_old,
+                                            const NMPObject **out_obj_new);
+NMPCacheOpsType nmp_cache_update_link_master_connected (NMPCache *cache,
+                                                        int ifindex,
+                                                        const NMPObject **out_obj_old,
+                                                        const NMPObject **out_obj_new);
 
-NMPCache *nmp_cache_new (gboolean use_udev);
+void nmp_cache_dirty_set_all (NMPCache *cache, NMPObjectType obj_type);
+
+NMPCache *nmp_cache_new (NMDedupMultiIndex *multi_idx, gboolean use_udev);
 void nmp_cache_free (NMPCache *cache);
+
+static inline void
+ASSERT_nmp_cache_ops (const NMPCache *cache,
+                      NMPCacheOpsType ops_type,
+                      const NMPObject *obj_old,
+                      const NMPObject *obj_new)
+{
+#if NM_MORE_ASSERTS
+	nm_assert (cache);
+	nm_assert (obj_old || obj_new);
+	nm_assert (!obj_old || (   NMP_OBJECT_IS_VALID (obj_old)
+	                        && !NMP_OBJECT_IS_STACKINIT (obj_old)
+	                        && nmp_object_is_alive (obj_old)));
+	nm_assert (!obj_new || (   NMP_OBJECT_IS_VALID (obj_new)
+	                        && !NMP_OBJECT_IS_STACKINIT (obj_new)
+	                        && nmp_object_is_alive (obj_new)));
+
+	switch (ops_type) {
+	case NMP_CACHE_OPS_UNCHANGED:
+		nm_assert (obj_old == obj_new);
+		break;
+	case NMP_CACHE_OPS_ADDED:
+		nm_assert (!obj_old && obj_new);
+		break;
+	case NMP_CACHE_OPS_UPDATED:
+		nm_assert (obj_old &&  obj_new && obj_old != obj_new);
+		break;
+	case NMP_CACHE_OPS_REMOVED:
+		nm_assert (obj_old && !obj_new);
+		break;
+	default:
+		nm_assert_not_reached ();
+	}
+
+	nm_assert (obj_new == NULL || obj_old == NULL || nmp_object_id_equal (obj_new, obj_old));
+	nm_assert (!obj_old || !obj_new || NMP_OBJECT_GET_CLASS (obj_old) == NMP_OBJECT_GET_CLASS (obj_new));
+
+	nm_assert (obj_new == nmp_cache_lookup_obj (cache, obj_new ?: obj_old));
+#endif
+}
 
 #endif /* __NMP_OBJECT_H__ */

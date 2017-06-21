@@ -4149,6 +4149,39 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
             return c < 0 ? -1 : 1;                          \
     } G_STMT_END
 
+guint
+nm_platform_link_hash (const NMPlatformLink *obj)
+{
+	guint h = 99413953;
+	guint8 i8;
+
+	h = NM_HASH_COMBINE (h, obj->ifindex);
+	h = NM_HASH_COMBINE (h, obj->type);
+	h = NM_HASH_COMBINE (h, g_str_hash (obj->name));
+	h = NM_HASH_COMBINE (h, obj->master);
+	h = NM_HASH_COMBINE (h, obj->parent);
+	h = NM_HASH_COMBINE (h, obj->n_ifi_flags);
+	h = NM_HASH_COMBINE (h, obj->connected);
+	h = NM_HASH_COMBINE (h, obj->mtu);
+	h = NM_HASH_COMBINE (h, !!obj->initialized);
+	h = NM_HASH_COMBINE (h, obj->arptype);
+	h = NM_HASH_COMBINE (h, obj->addr.len);
+	h = NM_HASH_COMBINE (h, obj->inet6_addr_gen_mode_inv);
+	if (obj->kind)
+		h = NM_HASH_COMBINE (h, g_str_hash (obj->kind));
+	if (obj->driver)
+		h = NM_HASH_COMBINE (h, g_str_hash (obj->driver));
+	for (i8 = 0; i8 < obj->addr.len; i8++)
+		h = NM_HASH_COMBINE (h, obj->addr.data[i8]);
+	for (i8 = 0; i8 < sizeof (obj->inet6_token); i8++)
+		h = NM_HASH_COMBINE (h, obj->inet6_token.id_u8[i8]);
+	h = NM_HASH_COMBINE (h, obj->rx_packets);
+	h = NM_HASH_COMBINE (h, obj->rx_bytes);
+	h = NM_HASH_COMBINE (h, obj->tx_packets);
+	h = NM_HASH_COMBINE (h, obj->tx_bytes);
+	return h;
+}
+
 int
 nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 {

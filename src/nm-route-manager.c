@@ -1173,7 +1173,7 @@ nm_route_manager_ip4_route_register_device_route_purge_list (NMRouteManager *sel
 		                                      ? "update" : "new",
 		                                  nmp_object_to_string (entry->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 		g_hash_table_replace (priv->ip4_device_routes.entries,
-		                      nmp_object_ref (entry->obj),
+		                      (NMPObject *) nmp_object_ref (entry->obj),
 		                      entry);
 	}
 	if (priv->ip4_device_routes.gc_id == 0) {

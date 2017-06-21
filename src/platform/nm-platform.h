@@ -1024,6 +1024,7 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 	return nm_platform_ip6_route_cmp_full (a, b, TRUE);
 }
 
+guint nm_platform_link_hash (const NMPlatformLink *obj);
 guint nm_platform_ip4_address_hash (const NMPlatformIP4Address *obj);
 guint nm_platform_ip6_address_hash (const NMPlatformIP6Address *obj);
 guint nm_platform_ip4_route_hash (const NMPlatformIP4Route *obj);
