@@ -2338,14 +2338,14 @@ async_inited_obj_nm (GObject *object, GAsyncResult *result, gpointer user_data)
 	NMClientInitData *init_data = user_data;
 	GError *error = NULL;
 
+	nm_assert (init_data && init_data->pending_init > 0);
+
 	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (object), result, &error))
 		g_simple_async_result_take_error (init_data->result, error);
 
-	if (init_data) {
-		init_data->pending_init--;
-		if (init_data->pending_init == 0)
-			init_async_complete (init_data);
-	}
+	init_data->pending_init--;
+	if (init_data->pending_init == 0)
+		init_async_complete (init_data);
 }
 
 static void
