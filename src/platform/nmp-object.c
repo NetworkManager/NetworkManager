@@ -1858,10 +1858,8 @@ nmp_cache_update_netlink (NMPCache *cache, NMPObject *obj, NMPObject **out_obj, 
 
 	old = g_hash_table_lookup (cache->idx_main, obj);
 
-	if (out_obj)
-		*out_obj = NULL;
-	if (out_was_visible)
-		*out_was_visible = FALSE;
+	NM_SET_OUT (out_obj, NULL);
+	NM_SET_OUT (out_was_visible, FALSE);
 
 	if (!old) {
 		if (!nmp_object_is_alive (obj))
@@ -1872,8 +1870,7 @@ nmp_cache_update_netlink (NMPCache *cache, NMPObject *obj, NMPObject **out_obj, 
 			_nmp_object_fixup_link_udev_fields (obj, cache->use_udev);
 		}
 
-		if (out_obj)
-			*out_obj = nmp_object_ref (obj);
+		NM_SET_OUT (out_obj, nmp_object_ref (obj));
 
 		if (pre_hook)
 			pre_hook (cache, NULL, obj, NMP_CACHE_OPS_ADDED, user_data);
@@ -1904,15 +1901,12 @@ nmp_cache_update_netlink (NMPCache *cache, NMPObject *obj, NMPObject **out_obj, 
 
 		nm_assert (old->is_cached);
 
-		if (out_obj)
-			*out_obj = nmp_object_ref (old);
-		if (out_was_visible)
-			*out_was_visible = nmp_object_is_visible (old);
-
 		if (NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LINK) {
 			if (!obj->_link.netlink.is_in_netlink) {
 				if (!old->_link.netlink.is_in_netlink) {
 					nm_assert (old->_link.udev.device);
+					NM_SET_OUT (out_obj, nmp_object_ref (old));
+					NM_SET_OUT (out_was_visible, nmp_object_is_visible (old));
 					return NMP_CACHE_OPS_UNCHANGED;
 				}
 				if (old->_link.udev.device) {
@@ -1941,6 +1935,9 @@ nmp_cache_update_netlink (NMPCache *cache, NMPObject *obj, NMPObject **out_obj, 
 		} else
 			is_alive = nmp_object_is_alive (obj);
 
+		NM_SET_OUT (out_obj, nmp_object_ref (old));
+		NM_SET_OUT (out_was_visible, nmp_object_is_visible (old));
+
 		if (!is_alive) {
 			/* the update would make @old invalid. Remove it. */
 			if (pre_hook)
@@ -1967,10 +1964,8 @@ nmp_cache_update_link_udev (NMPCache *cache, int ifindex, struct udev_device *ud
 
 	old = (NMPObject *) nmp_cache_lookup_link (cache, ifindex);
 
-	if (out_obj)
-		*out_obj = NULL;
-	if (out_was_visible)
-		*out_was_visible = FALSE;
+	NM_SET_OUT (out_obj, NULL);
+	NM_SET_OUT (out_was_visible, FALSE);
 
 	if (!old) {
 		if (!udevice)
@@ -1994,10 +1989,8 @@ nmp_cache_update_link_udev (NMPCache *cache, int ifindex, struct udev_device *ud
 	} else {
 		nm_assert (old->is_cached);
 
-		if (out_obj)
-			*out_obj = nmp_object_ref (old);
-		if (out_was_visible)
-			*out_was_visible = nmp_object_is_visible (old);
+		NM_SET_OUT (out_obj, nmp_object_ref (old));
+		NM_SET_OUT (out_was_visible, nmp_object_is_visible (old));
 
 		if (old->_link.udev.device == udevice)
 			return NMP_CACHE_OPS_UNCHANGED;
@@ -2035,20 +2028,16 @@ nmp_cache_update_link_master_connected (NMPCache *cache, int ifindex, NMPObject 
 	old = (NMPObject *) nmp_cache_lookup_link (cache, ifindex);
 
 	if (!old) {
-		if (out_obj)
-			*out_obj = NULL;
-		if (out_was_visible)
-			*out_was_visible = FALSE;
+		NM_SET_OUT (out_obj, NULL);
+		NM_SET_OUT (out_was_visible, FALSE);
 
 		return NMP_CACHE_OPS_UNCHANGED;
 	}
 
 	nm_assert (old->is_cached);
 
-	if (out_obj)
-		*out_obj = nmp_object_ref (old);
-	if (out_was_visible)
-		*out_was_visible = nmp_object_is_visible (old);
+	NM_SET_OUT (out_obj, nmp_object_ref (old));
+	NM_SET_OUT (out_was_visible, nmp_object_is_visible (old));
 
 	if (!nmp_cache_link_connected_needs_toggle (cache, old, NULL, NULL))
 		return NMP_CACHE_OPS_UNCHANGED;
