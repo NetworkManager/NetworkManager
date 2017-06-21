@@ -2326,6 +2326,8 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 static void
 init_async_complete (NMClientInitData *init_data)
 {
+	if (init_data->pending_init > 0)
+		return;
 	g_simple_async_result_complete (init_data->result);
 	g_object_unref (init_data->result);
 	g_clear_object (&init_data->cancellable);
@@ -2344,8 +2346,7 @@ async_inited_obj_nm (GObject *object, GAsyncResult *result, gpointer user_data)
 		g_simple_async_result_take_error (init_data->result, error);
 
 	init_data->pending_init--;
-	if (init_data->pending_init == 0)
-		init_async_complete (init_data);
+	init_async_complete (init_data);
 }
 
 static void
@@ -2459,8 +2460,7 @@ got_object_manager (GObject *object, GAsyncResult *result, gpointer user_data)
 		g_list_free_full (objects, g_object_unref);
 	}
 
-	if (init_data->pending_init == 0)
-		init_async_complete (init_data);
+	init_async_complete (init_data);
 
 	g_signal_connect (priv->object_manager, "notify::name-owner",
 	                  G_CALLBACK (name_owner_changed), client);
