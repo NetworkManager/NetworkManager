@@ -92,6 +92,13 @@ G_DEFINE_TYPE_WITH_CODE (NMClient, nm_client, G_TYPE_OBJECT,
 #define NM_CLIENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CLIENT, NMClientPrivate))
 
 typedef struct {
+	NMClient *client;
+	GCancellable *cancellable;
+	GSimpleAsyncResult *result;
+	int pending_init;
+} NMClientInitData;
+
+typedef struct {
 	NMManager *manager;
 	NMRemoteSettings *settings;
 	NMDnsManager *dns_manager;
@@ -2315,13 +2322,6 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 }
 
 /* Asynchronous initialization. */
-
-typedef struct {
-	NMClient *client;
-	GCancellable *cancellable;
-	GSimpleAsyncResult *result;
-	int pending_init;
-} NMClientInitData;
 
 static void
 init_async_complete (NMClientInitData *init_data)
