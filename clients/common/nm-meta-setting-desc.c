@@ -1759,7 +1759,12 @@ _complete_fcn_vpn_service_type (ARGS_COMPLETE_FCN)
 				values[j] = values[i];
 			j++;
 		}
-		values[j++] = NULL;
+		if (j)
+			values[j++] = NULL;
+		else {
+			g_free (values);
+			values = NULL;
+		}
 	}
 	return (const char *const*) (*out_to_free = values);
 }
@@ -2378,7 +2383,12 @@ _complete_fcn_connection_type (ARGS_COMPLETE_FCN)
 				result[j++] = g_strdup (v);
 		}
 	}
-	result[j++] = NULL;
+	if (j)
+		result[j++] = NULL;
+	else {
+		g_free (result);
+		result = NULL;
+	}
 
 	return (const char *const*) (*out_to_free = result);
 }
@@ -2526,10 +2536,14 @@ _complete_fcn_connection_master (ARGS_COMPLETE_FCN)
 		if (v && (!text || strncmp (text, v, text_len) == 0))
 			result[j++] = g_strdup (v);
 	}
-	result[j++] = NULL;
+	if (j)
+		result[j++] = NULL;
+	else {
+		g_free (result);
+		result = NULL;
+	}
 
-	*out_to_free = NULL;
-	return (const char *const*) result;
+	return (const char *const*) (*out_to_free = result);
 }
 
 static gboolean
@@ -4980,6 +4994,18 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_STABLE_ID,
 		.property_type =                &_pt_gobject_string,
 	),
+[_NM_META_PROPERTY_TYPE_CONNECTION_TYPE] =
+		PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_TYPE,
+			.is_cli_option =                TRUE,
+			.property_alias =               "type",
+			.inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
+			.prompt =                       NM_META_TEXT_PROMPT_CON_TYPE,
+			.property_type = DEFINE_PROPERTY_TYPE (
+				.get_fcn =                  _get_fcn_gobject,
+				.set_fcn =                  _set_fcn_connection_type,
+				.complete_fcn =             _complete_fcn_connection_type,
+			),
+		),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_INTERFACE_NAME,
 		.is_cli_option =                TRUE,
 		.property_alias =               "ifname",
@@ -4989,18 +5015,6 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
 			.get_fcn =                  _get_fcn_gobject,
 			.set_fcn =                  _set_fcn_gobject_ifname,
 			.complete_fcn =             _complete_fcn_gobject_devices,
-		),
-	),
-[_NM_META_PROPERTY_TYPE_CONNECTION_TYPE] =
-	PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_TYPE,
-		.is_cli_option =                TRUE,
-		.property_alias =               "type",
-		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
-		.prompt =                       NM_META_TEXT_PROMPT_CON_TYPE,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_gobject,
-			.set_fcn =                  _set_fcn_connection_type,
-			.complete_fcn =             _complete_fcn_connection_type,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_AUTOCONNECT,

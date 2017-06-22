@@ -277,7 +277,7 @@ typedef enum {
 
 enum {
 	_NM_META_PROPERTY_TYPE_VPN_SERVICE_TYPE                                 = 0,
-	_NM_META_PROPERTY_TYPE_CONNECTION_TYPE                                  = 4,
+	_NM_META_PROPERTY_TYPE_CONNECTION_TYPE                                  = 3,
 };
 
 #define nm_meta_property_info_connection_type  (nm_meta_setting_infos_editor[NM_META_SETTING_TYPE_CONNECTION].properties[_NM_META_PROPERTY_TYPE_CONNECTION_TYPE])
