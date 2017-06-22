@@ -2246,19 +2246,20 @@ carrier_changed (NMDevice *self, gboolean carrier)
 		return;
 
 	if (nm_device_is_master (self)) {
-		/* Bridge/bond/team carrier does not affect its own activation,
-		 * but when carrier comes on, if there are slaves waiting,
-		 * it will restart them.
-		 */
-		if (!carrier)
+		if (carrier) {
+			/* Force master to retry getting ip addresses when carrier
+			* is restored. */
+			if (priv->state == NM_DEVICE_STATE_ACTIVATED)
+				nm_device_update_dynamic_ip_setup (self);
+			else {
+				if (nm_device_activate_ip4_state_in_wait (self))
+					nm_device_activate_stage3_ip4_start (self);
+				if (nm_device_activate_ip6_state_in_wait (self))
+					nm_device_activate_stage3_ip6_start (self);
+			}
 			return;
-
-		if (nm_device_activate_ip4_state_in_wait (self))
-			nm_device_activate_stage3_ip4_start (self);
-		if (nm_device_activate_ip6_state_in_wait (self))
-			nm_device_activate_stage3_ip6_start (self);
-
-		return;
+		}
+		/* fall-through and change state of device */
 	} else if (priv->is_enslaved && !carrier) {
 		/* Slaves don't deactivate when they lose carrier; for
 		 * bonds/teams in particular that would be actively
@@ -3790,10 +3791,15 @@ is_available (NMDevice *self, NMDeviceCheckDevAvailableFlags flags)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->carrier || priv->ignore_carrier)
+	if (   priv->carrier
+	    || priv->ignore_carrier)
 		return TRUE;
 
 	if (NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_DEV_AVAILABLE_IGNORE_CARRIER))
+		return TRUE;
+
+	/* master types are always available even without carrier. */
+	if (nm_device_is_master (self))
 		return TRUE;
 
 	return FALSE;
@@ -3827,6 +3833,13 @@ nm_device_is_available (NMDevice *self, NMDeviceCheckDevAvailableFlags flags)
 		return FALSE;
 
 	return NM_DEVICE_GET_CLASS (self)->is_available (self, flags);
+}
+
+gboolean
+nm_device_ignore_carrier_by_default (NMDevice *self)
+{
+	/* master types ignore-carrier by default. */
+	return nm_device_is_master (self);
 }
 
 gboolean
@@ -11672,6 +11685,12 @@ check_connection_available (NMDevice *self,
 		 * for an explicit user-request. */
 		return TRUE;
 	}
+
+	/* master types are always available even without carrier.
+	 * Making connection non-available would un-enslave slaves which
+	 * is not desired. */
+	if (nm_device_is_master (self))
+		return TRUE;
 
 	return FALSE;
 }

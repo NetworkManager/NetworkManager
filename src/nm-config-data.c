@@ -304,15 +304,22 @@ nm_config_data_get_ignore_carrier (const NMConfigData *self, NMDevice *device)
 {
 	gs_free char *value = NULL;
 	gboolean has_match;
+	int m;
 
 	g_return_val_if_fail (NM_IS_CONFIG_DATA (self), FALSE);
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
 	value = nm_config_data_get_device_config (self, NM_CONFIG_KEYFILE_KEY_DEVICE_IGNORE_CARRIER, device, &has_match);
 	if (has_match)
-		return nm_config_parse_boolean (value, FALSE);
+		m = nm_config_parse_boolean (value, -1);
+	else
+		m = nm_device_spec_match_list_full (device, NM_CONFIG_DATA_GET_PRIVATE (self)->ignore_carrier, -1);
 
-	return nm_device_spec_match_list (device, NM_CONFIG_DATA_GET_PRIVATE (self)->ignore_carrier);
+	if (NM_IN_SET (m, TRUE, FALSE))
+		return m;
+
+	/* if ignore-carrier is not explicitly configed, then it depends on the device (type). */
+	return nm_device_ignore_carrier_by_default (device);
 }
 
 gboolean
