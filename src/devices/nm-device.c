@@ -2967,6 +2967,7 @@ concheck_start (NMDevice *self,
 	       is_periodic ? ", periodic-check" : "");
 
 	handle->c_handle = nm_connectivity_check_start (concheck_get_mgr (self),
+	                                                nm_device_get_ip_ifindex (self),
 	                                                nm_device_get_ip_iface (self),
 	                                                concheck_cb,
 	                                                handle);
