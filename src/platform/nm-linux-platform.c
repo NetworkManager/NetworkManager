@@ -255,7 +255,7 @@ static void delayed_action_schedule (NMPlatform *platform, DelayedActionType act
 static gboolean delayed_action_handle_all (NMPlatform *platform, gboolean read_netlink);
 static void do_request_link_no_delayed_actions (NMPlatform *platform, int ifindex, const char *name);
 static void do_request_all_no_delayed_actions (NMPlatform *platform, DelayedActionType action_type);
-static void cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMPCacheOpsType ops_type, gpointer user_data);
+static void cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMPCacheOpsType cache_op, gpointer user_data);
 static void cache_prune_candidates_prune (NMPlatform *platform);
 static gboolean event_handler_read_netlink (NMPlatform *platform, gboolean wait_for_acks);
 static void ASSERT_NETNS_CURRENT (NMPlatform *platform);
@@ -2925,7 +2925,7 @@ process_events (NMPlatform *platform)
 /*****************************************************************************/
 
 static void
-do_emit_signal (NMPlatform *platform, const NMPObject *obj, NMPCacheOpsType cache_op, gboolean was_visible)
+do_emit_signal (NMPlatform *platform, const NMPObject *obj_new, NMPCacheOpsType cache_op, gboolean was_visible)
 {
 	gboolean is_visible;
 	NMPObject obj_clone;
@@ -2933,24 +2933,24 @@ do_emit_signal (NMPlatform *platform, const NMPObject *obj, NMPCacheOpsType cach
 
 	nm_assert (NM_IN_SET ((NMPlatformSignalChangeType) cache_op, (NMPlatformSignalChangeType) NMP_CACHE_OPS_UNCHANGED, NM_PLATFORM_SIGNAL_ADDED, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_SIGNAL_REMOVED));
 
-	nm_assert (obj || cache_op == NMP_CACHE_OPS_UNCHANGED);
-	nm_assert (!obj || cache_op == NMP_CACHE_OPS_REMOVED || obj == nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, obj));
-	nm_assert (!obj || cache_op != NMP_CACHE_OPS_REMOVED || obj != nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, obj));
+	nm_assert (obj_new || cache_op == NMP_CACHE_OPS_UNCHANGED);
+	nm_assert (!obj_new || cache_op == NMP_CACHE_OPS_REMOVED || obj_new == nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, obj_new));
+	nm_assert (!obj_new || cache_op != NMP_CACHE_OPS_REMOVED || obj_new != nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, obj_new));
 
 	ASSERT_NETNS_CURRENT (platform);
 
 	switch (cache_op) {
 	case NMP_CACHE_OPS_ADDED:
-		if (!nmp_object_is_visible (obj))
+		if (!nmp_object_is_visible (obj_new))
 			return;
 		break;
 	case NMP_CACHE_OPS_UPDATED:
-		is_visible = nmp_object_is_visible (obj);
+		is_visible = nmp_object_is_visible (obj_new);
 		if (!was_visible && is_visible)
 			cache_op = NMP_CACHE_OPS_ADDED;
 		else if (was_visible && !is_visible) {
 			/* This is a bit ugly. The object was visible and changed in a way that it became invisible.
-			 * We raise a removed signal, but contrary to a real 'remove', @obj is already changed to be
+			 * We raise a removed signal, but contrary to a real 'remove', @obj_new is already changed to be
 			 * different from what it was when the user saw it the last time.
 			 *
 			 * The more correct solution would be to have cache_pre_hook() create a clone of the original
@@ -2972,16 +2972,16 @@ do_emit_signal (NMPlatform *platform, const NMPObject *obj, NMPCacheOpsType cach
 		return;
 	}
 
-	klass = NMP_OBJECT_GET_CLASS (obj);
+	klass = NMP_OBJECT_GET_CLASS (obj_new);
 
 	_LOGt ("emit signal %s %s: %s",
 	       klass->signal_type,
 	       nm_platform_signal_change_type_to_string ((NMPlatformSignalChangeType) cache_op),
-	       nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+	       nmp_object_to_string (obj_new, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 
-	/* don't expose @obj directly, but clone the public fields. A signal handler might
-	 * call back into NMPlatform which could invalidate (or modify) @obj. */
-	memcpy (&obj_clone.object, &obj->object, klass->sizeof_public);
+	/* don't expose @obj_new directly, but clone the public fields. A signal handler might
+	 * call back into NMPlatform which could invalidate (or modify) @obj_new. */
+	memcpy (&obj_clone.object, &obj_new->object, klass->sizeof_public);
 	g_signal_emit (platform,
 	               _nm_platform_signal_id_get (klass->signal_type_id),
 	               0,
@@ -3428,7 +3428,7 @@ cache_prune_candidates_prune (NMPlatform *platform)
 }
 
 static void
-cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMPCacheOpsType ops_type, gpointer user_data)
+cache_pre_hook (NMPCache *cache, const NMPObject *obj_old, const NMPObject *obj_new, NMPCacheOpsType cache_op, gpointer user_data)
 {
 	NMPlatform *platform = user_data;
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
@@ -3436,63 +3436,63 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 	char str_buf[sizeof (_nm_utils_to_string_buffer)];
 	char str_buf2[sizeof (_nm_utils_to_string_buffer)];
 
-	nm_assert (old || new);
-	nm_assert (NM_IN_SET (ops_type, NMP_CACHE_OPS_ADDED, NMP_CACHE_OPS_REMOVED, NMP_CACHE_OPS_UPDATED));
-	nm_assert (ops_type != NMP_CACHE_OPS_ADDED   || (old == NULL && NMP_OBJECT_IS_VALID (new) && nmp_object_is_alive (new)));
-	nm_assert (ops_type != NMP_CACHE_OPS_REMOVED || (new == NULL && NMP_OBJECT_IS_VALID (old) && nmp_object_is_alive (old)));
-	nm_assert (ops_type != NMP_CACHE_OPS_UPDATED || (NMP_OBJECT_IS_VALID (old) && nmp_object_is_alive (old) && NMP_OBJECT_IS_VALID (new) && nmp_object_is_alive (new)));
-	nm_assert (new == NULL || old == NULL || nmp_object_id_equal (new, old));
-	nm_assert (!old || !new || NMP_OBJECT_GET_CLASS (old) == NMP_OBJECT_GET_CLASS (new));
+	nm_assert (obj_old || obj_new);
+	nm_assert (NM_IN_SET (cache_op, NMP_CACHE_OPS_ADDED, NMP_CACHE_OPS_REMOVED, NMP_CACHE_OPS_UPDATED));
+	nm_assert (cache_op != NMP_CACHE_OPS_ADDED   || (obj_old == NULL && NMP_OBJECT_IS_VALID (obj_new) && nmp_object_is_alive (obj_new)));
+	nm_assert (cache_op != NMP_CACHE_OPS_REMOVED || (obj_new == NULL && NMP_OBJECT_IS_VALID (obj_old) && nmp_object_is_alive (obj_old)));
+	nm_assert (cache_op != NMP_CACHE_OPS_UPDATED || (NMP_OBJECT_IS_VALID (obj_old) && nmp_object_is_alive (obj_old) && NMP_OBJECT_IS_VALID (obj_new) && nmp_object_is_alive (obj_new)));
+	nm_assert (obj_new == NULL || obj_old == NULL || nmp_object_id_equal (obj_new, obj_old));
+	nm_assert (!obj_old || !obj_new || NMP_OBJECT_GET_CLASS (obj_old) == NMP_OBJECT_GET_CLASS (obj_new));
 
-	klass = old ? NMP_OBJECT_GET_CLASS (old) : NMP_OBJECT_GET_CLASS (new);
+	klass = obj_old ? NMP_OBJECT_GET_CLASS (obj_old) : NMP_OBJECT_GET_CLASS (obj_new);
 
-	nm_assert (klass == (new ? NMP_OBJECT_GET_CLASS (new) : NMP_OBJECT_GET_CLASS (old)));
+	nm_assert (klass == (obj_new ? NMP_OBJECT_GET_CLASS (obj_new) : NMP_OBJECT_GET_CLASS (obj_old)));
 
 	_LOGt ("update-cache-%s: %s: %s%s%s",
 	       klass->obj_type_name,
-	       (ops_type == NMP_CACHE_OPS_UPDATED
+	       (cache_op == NMP_CACHE_OPS_UPDATED
 	           ? "UPDATE"
-	           : (ops_type == NMP_CACHE_OPS_REMOVED
+	           : (cache_op == NMP_CACHE_OPS_REMOVED
 	                 ? "REMOVE"
-	                 : (ops_type == NMP_CACHE_OPS_ADDED) ? "ADD" : "???")),
-	       (ops_type != NMP_CACHE_OPS_ADDED
-	           ? nmp_object_to_string (old, NMP_OBJECT_TO_STRING_ALL, str_buf2, sizeof (str_buf2))
-	           : nmp_object_to_string (new, NMP_OBJECT_TO_STRING_ALL, str_buf2, sizeof (str_buf2))),
-	       (ops_type == NMP_CACHE_OPS_UPDATED) ? " -> " : "",
-	       (ops_type == NMP_CACHE_OPS_UPDATED
-	           ? nmp_object_to_string (new, NMP_OBJECT_TO_STRING_ALL, str_buf, sizeof (str_buf))
+	                 : (cache_op == NMP_CACHE_OPS_ADDED) ? "ADD" : "???")),
+	       (cache_op != NMP_CACHE_OPS_ADDED
+	           ? nmp_object_to_string (obj_old, NMP_OBJECT_TO_STRING_ALL, str_buf2, sizeof (str_buf2))
+	           : nmp_object_to_string (obj_new, NMP_OBJECT_TO_STRING_ALL, str_buf2, sizeof (str_buf2))),
+	       (cache_op == NMP_CACHE_OPS_UPDATED) ? " -> " : "",
+	       (cache_op == NMP_CACHE_OPS_UPDATED
+	           ? nmp_object_to_string (obj_new, NMP_OBJECT_TO_STRING_ALL, str_buf, sizeof (str_buf))
 	           : ""));
 
 	switch (klass->obj_type) {
 	case NMP_OBJECT_TYPE_LINK:
 		{
 			/* check whether changing a slave link can cause a master link (bridge or bond) to go up/down */
-			if (   old
-			    && nmp_cache_link_connected_needs_toggle_by_ifindex (priv->cache, old->link.master, new, old))
-				delayed_action_schedule (platform, DELAYED_ACTION_TYPE_MASTER_CONNECTED, GINT_TO_POINTER (old->link.master));
-			if (   new
-			    && (!old || old->link.master != new->link.master)
-			    && nmp_cache_link_connected_needs_toggle_by_ifindex (priv->cache, new->link.master, new, old))
-				delayed_action_schedule (platform, DELAYED_ACTION_TYPE_MASTER_CONNECTED, GINT_TO_POINTER (new->link.master));
+			if (   obj_old
+			    && nmp_cache_link_connected_needs_toggle_by_ifindex (priv->cache, obj_old->link.master, obj_new, obj_old))
+				delayed_action_schedule (platform, DELAYED_ACTION_TYPE_MASTER_CONNECTED, GINT_TO_POINTER (obj_old->link.master));
+			if (   obj_new
+			    && (!obj_old || obj_old->link.master != obj_new->link.master)
+			    && nmp_cache_link_connected_needs_toggle_by_ifindex (priv->cache, obj_new->link.master, obj_new, obj_old))
+				delayed_action_schedule (platform, DELAYED_ACTION_TYPE_MASTER_CONNECTED, GINT_TO_POINTER (obj_new->link.master));
 		}
 		{
 			/* check whether we are about to change a master link that needs toggling connected state. */
-			if (   new /* <-- nonsensical, make coverity happy */
-			    && nmp_cache_link_connected_needs_toggle (cache, new, new, old))
-				delayed_action_schedule (platform, DELAYED_ACTION_TYPE_MASTER_CONNECTED, GINT_TO_POINTER (new->link.ifindex));
+			if (   obj_new /* <-- nonsensical, make coverity happy */
+			    && nmp_cache_link_connected_needs_toggle (cache, obj_new, obj_new, obj_old))
+				delayed_action_schedule (platform, DELAYED_ACTION_TYPE_MASTER_CONNECTED, GINT_TO_POINTER (obj_new->link.ifindex));
 		}
 		{
 			int ifindex = 0;
 
 			/* if we remove a link (from netlink), we must refresh the addresses and routes */
-			if (   ops_type == NMP_CACHE_OPS_REMOVED
-			    && old /* <-- nonsensical, make coverity happy */)
-				ifindex = old->link.ifindex;
-			else if (   ops_type == NMP_CACHE_OPS_UPDATED
-			         && old && new /* <-- nonsensical, make coverity happy */
-			         && !new->_link.netlink.is_in_netlink
-			         && new->_link.netlink.is_in_netlink != old->_link.netlink.is_in_netlink)
-				ifindex = new->link.ifindex;
+			if (   cache_op == NMP_CACHE_OPS_REMOVED
+			    && obj_old /* <-- nonsensical, make coverity happy */)
+				ifindex = obj_old->link.ifindex;
+			else if (   cache_op == NMP_CACHE_OPS_UPDATED
+			         && obj_old && obj_new /* <-- nonsensical, make coverity happy */
+			         && !obj_new->_link.netlink.is_in_netlink
+			         && obj_new->_link.netlink.is_in_netlink != obj_old->_link.netlink.is_in_netlink)
+				ifindex = obj_new->link.ifindex;
 
 			if (ifindex > 0) {
 				delayed_action_schedule (platform,
@@ -3511,15 +3511,15 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 			 * Currently, kernel misses to sent us a notification in this case
 			 * (https://bugzilla.redhat.com/show_bug.cgi?id=1262908). */
 
-			if (   ops_type == NMP_CACHE_OPS_REMOVED
-			    && old /* <-- nonsensical, make coverity happy */
-			    && old->_link.netlink.is_in_netlink)
-				ifindex = old->link.ifindex;
-			else if (   ops_type == NMP_CACHE_OPS_UPDATED
-			         && old && new /* <-- nonsensical, make coverity happy */
-			         && old->_link.netlink.is_in_netlink
-			         && !new->_link.netlink.is_in_netlink)
-				ifindex = new->link.ifindex;
+			if (   cache_op == NMP_CACHE_OPS_REMOVED
+			    && obj_old /* <-- nonsensical, make coverity happy */
+			    && obj_old->_link.netlink.is_in_netlink)
+				ifindex = obj_old->link.ifindex;
+			else if (   cache_op == NMP_CACHE_OPS_UPDATED
+			         && obj_old && obj_new /* <-- nonsensical, make coverity happy */
+			         && obj_old->_link.netlink.is_in_netlink
+			         && !obj_new->_link.netlink.is_in_netlink)
+				ifindex = obj_new->link.ifindex;
 
 			if (ifindex > 0) {
 				const NMPlatformLink *const *links;
@@ -3537,14 +3537,14 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 		}
 		{
 			/* if a link goes down, we must refresh routes */
-			if (   ops_type == NMP_CACHE_OPS_UPDATED
-			    && old && new /* <-- nonsensical, make coverity happy */
-			    && old->_link.netlink.is_in_netlink
-			    && new->_link.netlink.is_in_netlink
-			    && (   (   NM_FLAGS_HAS (old->link.n_ifi_flags, IFF_UP)
-			            && !NM_FLAGS_HAS (new->link.n_ifi_flags, IFF_UP))
-			        || (   NM_FLAGS_HAS (old->link.n_ifi_flags, IFF_LOWER_UP)
-			            && !NM_FLAGS_HAS (new->link.n_ifi_flags, IFF_LOWER_UP)))) {
+			if (   cache_op == NMP_CACHE_OPS_UPDATED
+			    && obj_old && obj_new /* <-- nonsensical, make coverity happy */
+			    && obj_old->_link.netlink.is_in_netlink
+			    && obj_new->_link.netlink.is_in_netlink
+			    && (   (   NM_FLAGS_HAS (obj_old->link.n_ifi_flags, IFF_UP)
+			            && !NM_FLAGS_HAS (obj_new->link.n_ifi_flags, IFF_UP))
+			        || (   NM_FLAGS_HAS (obj_old->link.n_ifi_flags, IFF_LOWER_UP)
+			            && !NM_FLAGS_HAS (obj_new->link.n_ifi_flags, IFF_LOWER_UP)))) {
 				/* FIXME: I suspect that IFF_LOWER_UP must not be considered, and I
 				 * think kernel does send RTM_DELROUTE events for IPv6 routes, so
 				 * we might not need to refresh IPv6 routes. */
@@ -3554,17 +3554,17 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 				                         NULL);
 			}
 		}
-		if (   NM_IN_SET (ops_type, NMP_CACHE_OPS_ADDED, NMP_CACHE_OPS_UPDATED)
-		    && (new && new->_link.netlink.is_in_netlink)
-		    && (!old || !old->_link.netlink.is_in_netlink))
+		if (   NM_IN_SET (cache_op, NMP_CACHE_OPS_ADDED, NMP_CACHE_OPS_UPDATED)
+		    && (obj_new && obj_new->_link.netlink.is_in_netlink)
+		    && (!obj_old || !obj_old->_link.netlink.is_in_netlink))
 		{
-			if (!new->_link.netlink.lnk) {
+			if (!obj_new->_link.netlink.lnk) {
 				/* certain link-types also come with a IFLA_INFO_DATA/lnk_data. It may happen that
 				 * kernel didn't send this notification, thus when we first learn about a link
 				 * that lacks an lnk_data we re-request it again.
 				 *
 				 * For example https://bugzilla.redhat.com/show_bug.cgi?id=1284001 */
-				switch (new->link.type) {
+				switch (obj_new->link.type) {
 				case NM_LINK_TYPE_GRE:
 				case NM_LINK_TYPE_IP6TNL:
 				case NM_LINK_TYPE_INFINIBAND:
@@ -3575,23 +3575,23 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 				case NM_LINK_TYPE_VXLAN:
 					delayed_action_schedule (platform,
 					                         DELAYED_ACTION_TYPE_REFRESH_LINK,
-					                         GINT_TO_POINTER (new->link.ifindex));
+					                         GINT_TO_POINTER (obj_new->link.ifindex));
 					break;
 				default:
 					break;
 				}
 			}
-			if (   new->link.type == NM_LINK_TYPE_VETH
-			    && new->link.parent == 0) {
+			if (   obj_new->link.type == NM_LINK_TYPE_VETH
+			    && obj_new->link.parent == 0) {
 				/* the initial notification when adding a veth pair can lack the parent/IFLA_LINK
 				 * (https://bugzilla.redhat.com/show_bug.cgi?id=1285827).
 				 * Request it again. */
 				delayed_action_schedule (platform,
 				                         DELAYED_ACTION_TYPE_REFRESH_LINK,
-				                         GINT_TO_POINTER (new->link.ifindex));
+				                         GINT_TO_POINTER (obj_new->link.ifindex));
 			}
-			if (   new->link.type == NM_LINK_TYPE_ETHERNET
-			    && new->link.addr.len == 0) {
+			if (   obj_new->link.type == NM_LINK_TYPE_ETHERNET
+			    && obj_new->link.addr.len == 0) {
 				/* Due to a kernel bug, we sometimes receive spurious NEWLINK
 				 * messages after a wifi interface has disappeared. Since the
 				 * link is not present anymore we can't determine its type and
@@ -3601,7 +3601,7 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 				 */
 				delayed_action_schedule (platform,
 				                         DELAYED_ACTION_TYPE_REFRESH_LINK,
-				                         GINT_TO_POINTER (new->link.ifindex));
+				                         GINT_TO_POINTER (obj_new->link.ifindex));
 			}
 		}
 		{
@@ -3609,14 +3609,14 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 			int ifindex1 = 0, ifindex2 = 0;
 			gboolean changed_master, changed_connected;
 
-			changed_master =    (new && new->_link.netlink.is_in_netlink && new->link.master > 0 ? new->link.master : 0)
-			                 != (old && old->_link.netlink.is_in_netlink && old->link.master > 0 ? old->link.master : 0);
-			changed_connected =    (new && new->_link.netlink.is_in_netlink ? NM_FLAGS_HAS (new->link.n_ifi_flags, IFF_LOWER_UP) : 2)
-			                    != (old && old->_link.netlink.is_in_netlink ? NM_FLAGS_HAS (old->link.n_ifi_flags, IFF_LOWER_UP) : 2);
+			changed_master =    (obj_new && obj_new->_link.netlink.is_in_netlink && obj_new->link.master > 0 ? obj_new->link.master : 0)
+			                 != (obj_old && obj_old->_link.netlink.is_in_netlink && obj_old->link.master > 0 ? obj_old->link.master : 0);
+			changed_connected =    (obj_new && obj_new->_link.netlink.is_in_netlink ? NM_FLAGS_HAS (obj_new->link.n_ifi_flags, IFF_LOWER_UP) : 2)
+			                    != (obj_old && obj_old->_link.netlink.is_in_netlink ? NM_FLAGS_HAS (obj_old->link.n_ifi_flags, IFF_LOWER_UP) : 2);
 
 			if (changed_master || changed_connected) {
-				ifindex1 = (old && old->_link.netlink.is_in_netlink && old->link.master > 0) ? old->link.master : 0;
-				ifindex2 = (new && new->_link.netlink.is_in_netlink && new->link.master > 0) ? new->link.master : 0;
+				ifindex1 = (obj_old && obj_old->_link.netlink.is_in_netlink && obj_old->link.master > 0) ? obj_old->link.master : 0;
+				ifindex2 = (obj_new && obj_new->_link.netlink.is_in_netlink && obj_new->link.master > 0) ? obj_new->link.master : 0;
 
 				if (ifindex1 > 0)
 					delayed_action_schedule (platform, DELAYED_ACTION_TYPE_REFRESH_LINK, GINT_TO_POINTER (ifindex1));
@@ -3625,19 +3625,19 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 			}
 		}
 		{
-			if (   (       (ops_type == NMP_CACHE_OPS_REMOVED)
-			        || (   (ops_type == NMP_CACHE_OPS_UPDATED)
-			            && new
-			            && !new->_link.netlink.is_in_netlink))
-			    && old
-			    && old->_link.netlink.is_in_netlink
-			    && old->link.master) {
+			if (   (       (cache_op == NMP_CACHE_OPS_REMOVED)
+			        || (   (cache_op == NMP_CACHE_OPS_UPDATED)
+			            && obj_new
+			            && !obj_new->_link.netlink.is_in_netlink))
+			    && obj_old
+			    && obj_old->_link.netlink.is_in_netlink
+			    && obj_old->link.master) {
 				/* sometimes we receive a wrong RTM_DELLINK message when unslaving
 				 * a device. Refetch the link again to check whether the device
 				 * is really gone.
 				 *
 				 * https://bugzilla.redhat.com/show_bug.cgi?id=1285719#c2 */
-				delayed_action_schedule (platform, DELAYED_ACTION_TYPE_REFRESH_LINK, GINT_TO_POINTER (old->link.ifindex));
+				delayed_action_schedule (platform, DELAYED_ACTION_TYPE_REFRESH_LINK, GINT_TO_POINTER (obj_old->link.ifindex));
 			}
 		}
 		break;
@@ -3646,7 +3646,7 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 		{
 			/* Address deletion is sometimes accompanied by route deletion. We need to
 			 * check all routes belonging to the same interface. */
-			if (ops_type == NMP_CACHE_OPS_REMOVED) {
+			if (cache_op == NMP_CACHE_OPS_REMOVED) {
 				delayed_action_schedule (platform,
 				                         (klass->obj_type == NMP_OBJECT_TYPE_IP4_ADDRESS)
 				                             ? DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES
