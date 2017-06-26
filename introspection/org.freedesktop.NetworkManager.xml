@@ -213,11 +213,10 @@
 
     <!--
         CheckpointCreate:
-
-        @devices: a list of device paths for which a checkpoint should be created. An empty list means all devices.
-        @rollback_timeout: the time in seconds until NetworkManager will automatically rollback to the checkpoint. Set to zero for infinite.
-        @flags: optional flags that influence the creation.
-        @checkpoint: on success, returns the path of the checkpoint.
+        @devices: A list of device paths for which a checkpoint should be created. An empty list means all devices.
+        @rollback_timeout: The time in seconds until NetworkManager will automatically rollback to the checkpoint. Set to zero for infinite.
+        @flags: (<link linkend="NMCheckpointCreateFlags">NMCheckpointCreateFlags</link>) Flags for the creation.
+        @checkpoint: On success, the path of the new checkpoint.
 
         Create a checkpoint of the current networking configuration
         for given interfaces. If @rollback_timeout is not zero, a
@@ -232,7 +231,7 @@
 
     <!--
         CheckpointDestroy:
-        @checkpoint: the checkpoint to be destroyed. Set to empty to cancel all pending checkpoints.
+        @checkpoint: The checkpoint to be destroyed. Set to empty to cancel all pending checkpoints.
 
         Destroy a previously created checkpoint.
     -->
@@ -242,8 +241,8 @@
 
     <!--
         CheckpointRollback:
-        @checkpoint: the checkpoint to be rolled back.
-        @result: on return, a dictionary of devices and results. Devices are represented by their original D-Bus path; each result is a <link linkend="NMRollbackResult">RollbackResult</link>.
+        @checkpoint: The checkpoint to be rolled back.
+        @result: On return, a dictionary of devices and results. Devices are represented by their original D-Bus path; each result is a <link linkend="NMRollbackResult">RollbackResult</link>.
 
         Rollback a checkpoint before the timeout is reached.
     -->
