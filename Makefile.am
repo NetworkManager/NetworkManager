@@ -1279,8 +1279,6 @@ src_libNetworkManagerBase_la_SOURCES = \
 	src/nm-logging.c \
 	src/nm-logging.h \
 	\
-	src/nm-multi-index.c \
-	src/nm-multi-index.h \
 	src/NetworkManagerUtils.c \
 	src/NetworkManagerUtils.h \
 	\
