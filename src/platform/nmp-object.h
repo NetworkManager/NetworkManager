@@ -75,16 +75,16 @@ typedef enum { /*< skip >*/
 	/* all the visible objects of a certain type */
 	NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY,
 
-	/* indeces for the visible routes, ignoring ifindex. */
-	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_NO_DEFAULT,
-	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_ONLY_DEFAULT,
+	/* indeces for the visible routes, ignoring ifindex.
+	 * The index separates default routes from non-default routes. */
+	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_DEFAULT,
 
 	/* all the visible addresses/routes (by object-type) for an ifindex. */
 	NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX,
 
-	/* indeces for the visible routes, per ifindex. */
-	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_NO_DEFAULT,
-	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_ONLY_DEFAULT,
+	/* indeces for the visible routes, per ifindex.
+	 * The index separates default routes from non-default routes. */
+	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_WITH_DEFAULT,
 
 	/* Consider all the destination fields of a route, that is, the ID without the ifindex
 	 * and gateway (meaning: network/plen,metric).
