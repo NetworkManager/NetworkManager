@@ -95,9 +95,6 @@ EXPORT(nm_settings_connection_replace_and_commit)
 
 /*****************************************************************************/
 
-#define IFCFG_DIR                    SYSCONFDIR "/sysconfig/network"
-#define CONF_DHCP                    IFCFG_DIR "/dhcp"
-
 static NM_CACHED_QUARK_FCN ("plugin-module-path", plugin_module_path_quark)
 
 #if (defined(HOSTNAME_PERSIST_SUSE) + defined(HOSTNAME_PERSIST_SLACKWARE) + defined(HOSTNAME_PERSIST_GENTOO)) > 1
