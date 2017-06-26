@@ -94,8 +94,7 @@ typedef enum { /*< skip >*/
 	 * sends one RTM_NEWADDR notification without notifying about the deletion. We detect
 	 * that by having this index to contain overlapping routes which require special
 	 * cache-resync. */
-	NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP4,
-	NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP6,
+	NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION,
 
 	__NMP_CACHE_ID_TYPE_MAX,
 	NMP_CACHE_ID_TYPE_MAX = __NMP_CACHE_ID_TYPE_MAX - 1,

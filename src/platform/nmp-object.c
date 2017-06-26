@@ -132,6 +132,7 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
                const NMPObject *obj_b)
 {
 	guint h;
+	NMPObjectType obj_type;
 
 	/* the hash/equals functions are strongly related. So, keep them
 	 * side-by-side and do it all in _idx_obj_part(). */
@@ -249,42 +250,30 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 		}
 		return 1;
 
-	case NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP4:
-		if (   !NM_IN_SET (NMP_OBJECT_GET_TYPE (obj_a), NMP_OBJECT_TYPE_IP4_ROUTE)
+	case NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION:
+		obj_type = NMP_OBJECT_GET_TYPE (obj_a);
+		if (   !NM_IN_SET (obj_type, NMP_OBJECT_TYPE_IP4_ROUTE,
+		                             NMP_OBJECT_TYPE_IP6_ROUTE)
 		    || obj_a->object.ifindex <= 0)
 			return 0;
 		if (obj_b) {
-			return    NMP_OBJECT_GET_TYPE (obj_a) == NMP_OBJECT_GET_TYPE (obj_b)
+			return    obj_type == NMP_OBJECT_GET_TYPE (obj_b)
 			       && obj_b->object.ifindex > 0
 			       && obj_a->ip_route.plen == obj_b->ip_route.plen
 			       && obj_a->ip_route.metric == obj_b->ip_route.metric
-			       && obj_a->ip4_route.network == obj_b->ip4_route.network;
+			       && (obj_type == NMP_OBJECT_TYPE_IP4_ROUTE
+			             ? obj_a->ip4_route.network == obj_b->ip4_route.network
+			             : IN6_ARE_ADDR_EQUAL (&obj_a->ip6_route.network, &obj_b->ip6_route.network));
 		}
 		if (request_hash) {
 			h = (guint) idx_type->cache_id_type;
 			h = NM_HASH_COMBINE (h, obj_a->ip_route.plen);
 			h = NM_HASH_COMBINE (h, obj_a->ip_route.metric);
-			h = NM_HASH_COMBINE (h, obj_a->ip4_route.network);
-			return _HASH_NON_ZERO (h);
-		}
-		return 1;
-
-	case NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP6:
-		if (   !NM_IN_SET (NMP_OBJECT_GET_TYPE (obj_a), NMP_OBJECT_TYPE_IP6_ROUTE)
-		    || obj_a->object.ifindex <= 0)
-			return 0;
-		if (obj_b) {
-			return    NMP_OBJECT_GET_TYPE (obj_a) == NMP_OBJECT_GET_TYPE (obj_b)
-			       && obj_b->object.ifindex > 0
-			       && obj_a->ip_route.plen == obj_b->ip_route.plen
-			       && obj_a->ip_route.metric == obj_b->ip_route.metric
-			       && IN6_ARE_ADDR_EQUAL (&obj_a->ip6_route.network, &obj_b->ip6_route.network);
-		}
-		if (request_hash) {
-			h = (guint) idx_type->cache_id_type;
-			h = NM_HASH_COMBINE (h, obj_a->ip_route.plen);
-			h = NM_HASH_COMBINE (h, obj_a->ip_route.metric);
-			h = NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&obj_a->ip6_route.network));
+			h = NM_HASH_COMBINE (h, obj_type);
+			if (obj_type == NMP_OBJECT_TYPE_IP4_ROUTE)
+				h = NM_HASH_COMBINE (h, obj_a->ip4_route.network);
+			else
+				h = NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&obj_a->ip6_route.network));
 			return _HASH_NON_ZERO (h);
 		}
 		return 1;
@@ -1318,23 +1307,13 @@ static const guint8 _supported_cache_ids_ipx_address[] = {
 	0,
 };
 
-static const guint8 _supported_cache_ids_ip4_route[] = {
+static const guint8 _supported_cache_ids_ipx_route[] = {
 	NMP_CACHE_ID_TYPE_OBJECT_TYPE,
 	NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY,
 	NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX,
 	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_DEFAULT,
 	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_WITH_DEFAULT,
-	NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP4,
-	0,
-};
-
-static const guint8 _supported_cache_ids_ip6_route[] = {
-	NMP_CACHE_ID_TYPE_OBJECT_TYPE,
-	NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY,
-	NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX,
-	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_DEFAULT,
-	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_WITH_DEFAULT,
-	NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP6,
+	NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION,
 	0,
 };
 
@@ -1727,7 +1706,7 @@ nmp_lookup_init_route_by_dest (NMPLookup *lookup,
 		o->ip_route.metric = metric;
 		if (network)
 			o->ip4_route.network = *((in_addr_t *) network);
-		lookup->cache_id_type = NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP4;
+		lookup->cache_id_type = NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION;
 		break;
 	case AF_INET6:
 		o = _nmp_object_stackinit_from_type (&lookup->selector_obj, NMP_OBJECT_TYPE_IP6_ROUTE);
@@ -1736,7 +1715,7 @@ nmp_lookup_init_route_by_dest (NMPLookup *lookup,
 		o->ip_route.metric = metric;
 		if (network)
 			o->ip6_route.network = *((struct in6_addr *) network);
-		lookup->cache_id_type = NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION_IP6;
+		lookup->cache_id_type = NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION;
 		break;
 	default:
 		nm_assert_not_reached ();
@@ -2510,7 +2489,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.rtm_gettype                        = RTM_GETROUTE,
 		.signal_type_id                     = NM_PLATFORM_SIGNAL_ID_IP4_ROUTE,
 		.signal_type                        = NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,
-		.supported_cache_ids                = _supported_cache_ids_ip4_route,
+		.supported_cache_ids                = _supported_cache_ids_ipx_route,
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip4_route,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_route,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_ip4_route,
@@ -2531,7 +2510,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.rtm_gettype                        = RTM_GETROUTE,
 		.signal_type_id                     = NM_PLATFORM_SIGNAL_ID_IP6_ROUTE,
 		.signal_type                        = NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED,
-		.supported_cache_ids                = _supported_cache_ids_ip6_route,
+		.supported_cache_ids                = _supported_cache_ids_ipx_route,
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip6_route,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_route,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_ip6_route,
