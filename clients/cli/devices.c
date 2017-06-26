@@ -464,6 +464,12 @@ compare_devices (const void *a, const void *b)
 {
 	NMDevice *da = *(NMDevice **)a;
 	NMDevice *db = *(NMDevice **)b;
+	NMActiveConnection *da_ac;
+	NMActiveConnection *db_ac;
+	NMIPConfig *da_ip;
+	NMIPConfig *db_ip;
+	int da_num_addrs;
+	int db_num_addrs;
 	int cmp;
 
 	/* Sort by later device states first */
@@ -471,6 +477,57 @@ compare_devices (const void *a, const void *b)
 	if (cmp != 0)
 		return cmp;
 
+	da_ac = nm_device_get_active_connection (da);
+	db_ac = nm_device_get_active_connection (db);
+
+	/* Prioritize devices with active connections */
+	if (da_ac)
+		cmp++;
+	if (db_ac)
+		cmp--;
+	if (cmp != 0)
+		return cmp;
+
+	/* VPNs go on the top if possible */
+	if (da_ac && !nm_active_connection_get_vpn (da_ac))
+		cmp++;
+	if (db_ac && !nm_active_connection_get_vpn (db_ac))
+		cmp--;
+	if (cmp != 0)
+		return cmp;
+
+	/* Default devices are prioritized */
+	if (da_ac && !nm_active_connection_get_default (da_ac))
+		cmp++;
+	if (db_ac && !nm_active_connection_get_default (db_ac))
+		cmp--;
+	if (cmp != 0)
+		return cmp;
+
+	/* Default IPv6 devices are prioritized */
+	if (da_ac && !nm_active_connection_get_default6 (da_ac))
+		cmp++;
+	if (db_ac && !nm_active_connection_get_default6 (db_ac))
+		cmp--;
+	if (cmp != 0)
+		return cmp;
+
+	/* Sort by number of addresses. */
+	da_ip = da_ac ? nm_active_connection_get_ip4_config (da_ac) : NULL;
+	da_num_addrs = da_ip ? nm_ip_config_get_addresses (da_ip)->len : 0;
+	db_ip = db_ac ? nm_active_connection_get_ip4_config (db_ac) : NULL;
+	db_num_addrs = db_ip ? nm_ip_config_get_addresses (db_ip)->len : 0;
+
+	da_ip = da_ac ? nm_active_connection_get_ip6_config (da_ac) : NULL;
+	da_num_addrs += da_ip ? nm_ip_config_get_addresses (da_ip)->len : 0;
+	db_ip = db_ac ? nm_active_connection_get_ip6_config (db_ac) : NULL;
+	db_num_addrs += db_ip ? nm_ip_config_get_addresses (db_ip)->len : 0;
+
+	cmp = db_num_addrs - da_num_addrs;
+	if (cmp != 0)
+		return cmp;
+
+	/* Fall back to alphanumeric sort by description and interface. */
 	cmp = g_strcmp0 (nm_device_get_type_description (da),
 	                 nm_device_get_type_description (db));
 	if (cmp != 0)
