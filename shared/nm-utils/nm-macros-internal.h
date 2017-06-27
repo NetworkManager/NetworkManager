@@ -388,6 +388,12 @@ NM_HASH_COMBINE (guint h, guint val)
 	return (h << 5) + h + val;
 }
 
+static inline guint
+NM_HASH_COMBINE_UINT64 (guint h, guint64 val)
+{
+	return NM_HASH_COMBINE (h, (((guint) val) & 0xFFFFFFFFu) + ((guint) (val >> 32)));
+}
+
 /*****************************************************************************/
 
 /* NM_CACHED_QUARK() returns the GQuark for @string, but caches

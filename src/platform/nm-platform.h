@@ -426,7 +426,7 @@ typedef struct {
 
 typedef struct {
 	int parent_ifindex;
-	guint64 sci;	/* host byte order */
+	guint64 sci;                    /* host byte order */
 	guint64 cipher_suite;
 	guint32 window;
 	guint8 icv_length;
@@ -1029,6 +1029,15 @@ guint nm_platform_ip4_address_hash (const NMPlatformIP4Address *obj);
 guint nm_platform_ip6_address_hash (const NMPlatformIP6Address *obj);
 guint nm_platform_ip4_route_hash (const NMPlatformIP4Route *obj);
 guint nm_platform_ip6_route_hash (const NMPlatformIP6Route *obj);
+guint nm_platform_lnk_gre_hash (const NMPlatformLnkGre *obj);
+guint nm_platform_lnk_infiniband_hash (const NMPlatformLnkInfiniband *obj);
+guint nm_platform_lnk_ip6tnl_hash (const NMPlatformLnkIp6Tnl *obj);
+guint nm_platform_lnk_ipip_hash (const NMPlatformLnkIpIp *obj);
+guint nm_platform_lnk_macsec_hash (const NMPlatformLnkMacsec *obj);
+guint nm_platform_lnk_macvlan_hash (const NMPlatformLnkMacvlan *obj);
+guint nm_platform_lnk_sit_hash (const NMPlatformLnkSit *obj);
+guint nm_platform_lnk_vlan_hash (const NMPlatformLnkVlan *obj);
+guint nm_platform_lnk_vxlan_hash (const NMPlatformLnkVxlan *obj);
 
 gboolean nm_platform_check_support_kernel_extended_ifa_flags (NMPlatform *self);
 gboolean nm_platform_check_support_user_ipv6ll (NMPlatform *self);

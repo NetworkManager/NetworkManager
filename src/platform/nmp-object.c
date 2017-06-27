@@ -335,6 +335,20 @@ _dedup_multi_idx_type_init (DedupMultiIdxType *idx_type, NMPCacheIdType cache_id
 
 /*****************************************************************************/
 
+static guint
+_vlan_xgress_qos_mappings_hash (guint n_map,
+                                const NMVlanQosMapping *map)
+{
+	guint h = 1453577309;
+	guint i;
+
+	for (i = 0; i < n_map; i++) {
+		h = NM_HASH_COMBINE (h, map[i].from);
+		h = NM_HASH_COMBINE (h, map[i].to);
+	}
+	return h;
+}
+
 static int
 _vlan_xgress_qos_mappings_cmp (guint n_map,
                                const NMVlanQosMapping *map1,
@@ -887,16 +901,25 @@ _vt_cmd_obj_hash_link (const NMPObject *obj)
 
 	h = NM_HASH_COMBINE (h, nm_platform_link_hash (&obj->link));
 	h = NM_HASH_COMBINE (h, obj->_link.netlink.is_in_netlink);
-	/* TODO: properly hash lnk objects. */
-	h = NM_HASH_COMBINE (h, !!obj->_link.netlink.lnk);
+	if (obj->_link.netlink.lnk)
+		h = NM_HASH_COMBINE (h, nmp_object_hash (obj->_link.netlink.lnk));
 	h = NM_HASH_COMBINE (h, GPOINTER_TO_UINT (obj->_link.udev.device));
 	return h;
 }
 
 static guint
-_vt_cmd_plobj_hash_not_implemented (const NMPlatformObject *obj)
+_vt_cmd_obj_hash_lnk_vlan (const NMPObject *obj)
 {
-	g_return_val_if_reached (0);
+	guint h = 914932607;
+
+	nm_assert (NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LNK_VLAN);
+
+	h = NM_HASH_COMBINE (h, nm_platform_lnk_vlan_hash (&obj->lnk_vlan));
+	h = NM_HASH_COMBINE (h, _vlan_xgress_qos_mappings_hash (obj->_lnk_vlan.n_ingress_qos_map,
+	                                                        obj->_lnk_vlan.ingress_qos_map));
+	h = NM_HASH_COMBINE (h, _vlan_xgress_qos_mappings_hash (obj->_lnk_vlan.n_egress_qos_map,
+	                                                        obj->_lnk_vlan.egress_qos_map));
+	return h;
 }
 
 int
@@ -2431,7 +2454,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_id_hash                  = _vt_cmd_plobj_id_hash_link,
 		.cmd_plobj_to_string_id             = _vt_cmd_plobj_to_string_id_link,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_link_to_string,
-		.cmd_plobj_hash                     = _vt_cmd_plobj_hash_not_implemented,
+		.cmd_plobj_hash                     = (guint (*) (const NMPlatformObject *obj)) nm_platform_link_hash,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_link_cmp,
 	},
 	[NMP_OBJECT_TYPE_IP4_ADDRESS - 1] = {
@@ -2525,7 +2548,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.obj_type_name                      = "gre",
 		.lnk_link_type                      = NM_LINK_TYPE_GRE,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_gre_to_string,
-		.cmd_plobj_hash                     = _vt_cmd_plobj_hash_not_implemented,
+		.cmd_plobj_hash                     = (guint (*) (const NMPlatformObject *obj)) nm_platform_lnk_gre_hash,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_gre_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_INFINIBAND - 1] = {
@@ -2535,7 +2558,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.obj_type_name                      = "infiniband",
 		.lnk_link_type                      = NM_LINK_TYPE_INFINIBAND,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_infiniband_to_string,
-		.cmd_plobj_hash                     = _vt_cmd_plobj_hash_not_implemented,
+		.cmd_plobj_hash                     = (guint (*) (const NMPlatformObject *obj)) nm_platform_lnk_infiniband_hash,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_infiniband_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_IP6TNL - 1] = {
@@ -2545,7 +2568,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.obj_type_name                      = "ip6tnl",
 		.lnk_link_type                      = NM_LINK_TYPE_IP6TNL,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_ip6tnl_to_string,
-		.cmd_plobj_hash                     = _vt_cmd_plobj_hash_not_implemented,
+		.cmd_plobj_hash                     = (guint (*) (const NMPlatformObject *obj)) nm_platform_lnk_ip6tnl_hash,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_ip6tnl_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_IPIP - 1] = {
@@ -2555,7 +2578,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.obj_type_name                      = "ipip",
 		.lnk_link_type                      = NM_LINK_TYPE_IPIP,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_ipip_to_string,
-		.cmd_plobj_hash                     = _vt_cmd_plobj_hash_not_implemented,
+		.cmd_plobj_hash                     = (guint (*) (const NMPlatformObject *obj)) nm_platform_lnk_ipip_hash,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_ipip_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_MACSEC - 1] = {
@@ -2565,7 +2588,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.obj_type_name                      = "macsec",
 		.lnk_link_type                      = NM_LINK_TYPE_MACSEC,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_macsec_to_string,
-		.cmd_plobj_hash                     = _vt_cmd_plobj_hash_not_implemented,
+		.cmd_plobj_hash                     = (guint (*) (const NMPlatformObject *obj)) nm_platform_lnk_macsec_hash,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_macsec_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_MACVLAN - 1] = {
@@ -2575,7 +2598,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.obj_type_name                      = "macvlan",
 		.lnk_link_type                      = NM_LINK_TYPE_MACVLAN,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_macvlan_to_string,
-		.cmd_plobj_hash                     = _vt_cmd_plobj_hash_not_implemented,
+		.cmd_plobj_hash                     = (guint (*) (const NMPlatformObject *obj)) nm_platform_lnk_macvlan_hash,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_macvlan_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_MACVTAP - 1] = {
@@ -2585,7 +2608,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.obj_type_name                      = "macvtap",
 		.lnk_link_type                      = NM_LINK_TYPE_MACVTAP,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_macvlan_to_string,
-		.cmd_plobj_hash                     = _vt_cmd_plobj_hash_not_implemented,
+		.cmd_plobj_hash                     = (guint (*) (const NMPlatformObject *obj)) nm_platform_lnk_macvlan_hash,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_macvlan_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_SIT - 1] = {
@@ -2595,7 +2618,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.obj_type_name                      = "sit",
 		.lnk_link_type                      = NM_LINK_TYPE_SIT,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_sit_to_string,
-		.cmd_plobj_hash                     = _vt_cmd_plobj_hash_not_implemented,
+		.cmd_plobj_hash                     = (guint (*) (const NMPlatformObject *obj)) nm_platform_lnk_sit_hash,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_sit_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_VLAN - 1] = {
@@ -2604,13 +2627,13 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.sizeof_public                      = sizeof (NMPlatformLnkVlan),
 		.obj_type_name                      = "vlan",
 		.lnk_link_type                      = NM_LINK_TYPE_VLAN,
-		.cmd_obj_hash                       = _vt_cmd_obj_hash_not_implemented,
+		.cmd_obj_hash                       = _vt_cmd_obj_hash_lnk_vlan,
 		.cmd_obj_cmp                        = _vt_cmd_obj_cmp_lnk_vlan,
 		.cmd_obj_copy                       = _vt_cmd_obj_copy_lnk_vlan,
 		.cmd_obj_dispose                    = _vt_cmd_obj_dispose_lnk_vlan,
 		.cmd_obj_to_string                  = _vt_cmd_obj_to_string_lnk_vlan,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_vlan_to_string,
-		.cmd_plobj_hash                     = _vt_cmd_plobj_hash_not_implemented,
+		.cmd_plobj_hash                     = (guint (*) (const NMPlatformObject *obj)) nm_platform_lnk_vlan_hash,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_vlan_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_VXLAN - 1] = {
@@ -2620,7 +2643,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.obj_type_name                      = "vxlan",
 		.lnk_link_type                      = NM_LINK_TYPE_VXLAN,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_vxlan_to_string,
-		.cmd_plobj_hash                     = _vt_cmd_plobj_hash_not_implemented,
+		.cmd_plobj_hash                     = (guint (*) (const NMPlatformObject *obj)) nm_platform_lnk_vxlan_hash,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_vxlan_cmp,
 	},
 };

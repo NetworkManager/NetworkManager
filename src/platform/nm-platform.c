@@ -4210,6 +4210,24 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 	return 0;
 }
 
+guint
+nm_platform_lnk_gre_hash (const NMPlatformLnkGre *obj)
+{
+	guint h = 1887023311;
+
+	h = NM_HASH_COMBINE (h, obj->parent_ifindex);
+	h = NM_HASH_COMBINE (h, obj->input_flags);
+	h = NM_HASH_COMBINE (h, obj->output_flags);
+	h = NM_HASH_COMBINE (h, obj->input_key);
+	h = NM_HASH_COMBINE (h, obj->output_key);
+	h = NM_HASH_COMBINE (h, obj->local);
+	h = NM_HASH_COMBINE (h, obj->remote);
+	h = NM_HASH_COMBINE (h, obj->ttl);
+	h = NM_HASH_COMBINE (h, obj->tos);
+	h = NM_HASH_COMBINE (h, !obj->path_mtu_discovery);
+	return h;
+}
+
 int
 nm_platform_lnk_gre_cmp (const NMPlatformLnkGre *a, const NMPlatformLnkGre *b)
 {
@@ -4227,6 +4245,17 @@ nm_platform_lnk_gre_cmp (const NMPlatformLnkGre *a, const NMPlatformLnkGre *b)
 	return 0;
 }
 
+guint
+nm_platform_lnk_infiniband_hash (const NMPlatformLnkInfiniband *obj)
+{
+	guint h = 1748638583;
+
+	h = NM_HASH_COMBINE (h, obj->p_key);
+	if (obj->mode)
+		h = NM_HASH_COMBINE (h, g_str_hash (obj->mode));
+	return h;
+}
+
 int
 nm_platform_lnk_infiniband_cmp (const NMPlatformLnkInfiniband *a, const NMPlatformLnkInfiniband *b)
 {
@@ -4234,6 +4263,22 @@ nm_platform_lnk_infiniband_cmp (const NMPlatformLnkInfiniband *a, const NMPlatfo
 	_CMP_FIELD (a, b, p_key);
 	_CMP_FIELD_STR_INTERNED (a, b, mode);
 	return 0;
+}
+
+guint
+nm_platform_lnk_ip6tnl_hash (const NMPlatformLnkIp6Tnl *obj)
+{
+	guint h = 1651660009;
+
+	h = NM_HASH_COMBINE (h, obj->parent_ifindex);
+	h = NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&obj->local));
+	h = NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&obj->remote));
+	h = NM_HASH_COMBINE (h, obj->ttl);
+	h = NM_HASH_COMBINE (h, obj->tclass);
+	h = NM_HASH_COMBINE (h, obj->encap_limit);
+	h = NM_HASH_COMBINE (h, obj->flow_label);
+	h = NM_HASH_COMBINE (h, obj->proto);
+	return h;
 }
 
 int
@@ -4251,6 +4296,20 @@ nm_platform_lnk_ip6tnl_cmp (const NMPlatformLnkIp6Tnl *a, const NMPlatformLnkIp6
 	return 0;
 }
 
+guint
+nm_platform_lnk_ipip_hash (const NMPlatformLnkIpIp *obj)
+{
+	guint h = 861934429;
+
+	h = NM_HASH_COMBINE (h, obj->parent_ifindex);
+	h = NM_HASH_COMBINE (h, obj->local);
+	h = NM_HASH_COMBINE (h, obj->remote);
+	h = NM_HASH_COMBINE (h, obj->ttl);
+	h = NM_HASH_COMBINE (h, obj->tos);
+	h = NM_HASH_COMBINE (h, obj->path_mtu_discovery);
+	return h;
+}
+
 int
 nm_platform_lnk_ipip_cmp (const NMPlatformLnkIpIp *a, const NMPlatformLnkIpIp *b)
 {
@@ -4262,6 +4321,26 @@ nm_platform_lnk_ipip_cmp (const NMPlatformLnkIpIp *a, const NMPlatformLnkIpIp *b
 	_CMP_FIELD (a, b, tos);
 	_CMP_FIELD_BOOL (a, b, path_mtu_discovery);
 	return 0;
+}
+
+guint
+nm_platform_lnk_macsec_hash (const NMPlatformLnkMacsec *obj)
+{
+	guint h = 226984267;
+
+	h = NM_HASH_COMBINE (h, obj->sci);
+	h = NM_HASH_COMBINE_UINT64 (h, obj->icv_length);
+	h = NM_HASH_COMBINE_UINT64 (h, obj->cipher_suite);
+	h = NM_HASH_COMBINE (h, obj->window);
+	h = NM_HASH_COMBINE (h, obj->encoding_sa);
+	h = NM_HASH_COMBINE (h, obj->validation);
+	h = NM_HASH_COMBINE (h, obj->encrypt);
+	h = NM_HASH_COMBINE (h, obj->protect);
+	h = NM_HASH_COMBINE (h, obj->include_sci);
+	h = NM_HASH_COMBINE (h, obj->es);
+	h = NM_HASH_COMBINE (h, obj->scb);
+	h = NM_HASH_COMBINE (h, obj->replay_protect);
+	return h;
 }
 
 int
@@ -4283,6 +4362,17 @@ nm_platform_lnk_macsec_cmp (const NMPlatformLnkMacsec *a, const NMPlatformLnkMac
 	return 0;
 }
 
+guint
+nm_platform_lnk_macvlan_hash (const NMPlatformLnkMacvlan *obj)
+{
+	guint h = 771014989;
+
+	h = NM_HASH_COMBINE (h, obj->mode);
+	h = NM_HASH_COMBINE (h, obj->no_promisc);
+	h = NM_HASH_COMBINE (h, obj->tap);
+	return h;
+}
+
 int
 nm_platform_lnk_macvlan_cmp (const NMPlatformLnkMacvlan *a, const NMPlatformLnkMacvlan *b)
 {
@@ -4291,6 +4381,22 @@ nm_platform_lnk_macvlan_cmp (const NMPlatformLnkMacvlan *a, const NMPlatformLnkM
 	_CMP_FIELD (a, b, no_promisc);
 	_CMP_FIELD (a, b, tap);
 	return 0;
+}
+
+guint
+nm_platform_lnk_sit_hash (const NMPlatformLnkSit *obj)
+{
+	guint h = 1690154969;
+
+	h = NM_HASH_COMBINE (h, obj->parent_ifindex);
+	h = NM_HASH_COMBINE (h, obj->local);
+	h = NM_HASH_COMBINE (h, obj->remote);
+	h = NM_HASH_COMBINE (h, obj->ttl);
+	h = NM_HASH_COMBINE (h, obj->tos);
+	h = NM_HASH_COMBINE (h, obj->path_mtu_discovery);
+	h = NM_HASH_COMBINE (h, obj->flags);
+	h = NM_HASH_COMBINE (h, obj->proto);
+	return h;
 }
 
 int
@@ -4308,6 +4414,16 @@ nm_platform_lnk_sit_cmp (const NMPlatformLnkSit *a, const NMPlatformLnkSit *b)
 	return 0;
 }
 
+guint
+nm_platform_lnk_vlan_hash (const NMPlatformLnkVlan *obj)
+{
+	guint h = 58751383;
+
+	h = NM_HASH_COMBINE (h, obj->id);
+	h = NM_HASH_COMBINE (h, obj->flags);
+	return h;
+}
+
 int
 nm_platform_lnk_vlan_cmp (const NMPlatformLnkVlan *a, const NMPlatformLnkVlan *b)
 {
@@ -4315,6 +4431,32 @@ nm_platform_lnk_vlan_cmp (const NMPlatformLnkVlan *a, const NMPlatformLnkVlan *b
 	_CMP_FIELD (a, b, id);
 	_CMP_FIELD (a, b, flags);
 	return 0;
+}
+
+guint
+nm_platform_lnk_vxlan_hash (const NMPlatformLnkVxlan *obj)
+{
+	guint h = 461041297;
+
+	h = NM_HASH_COMBINE (h, obj->parent_ifindex);
+	h = NM_HASH_COMBINE (h, obj->id);
+	h = NM_HASH_COMBINE (h, obj->group);
+	h = NM_HASH_COMBINE (h, obj->local);
+	h = NM_HASH_COMBINE_IN6_ADDR (h, &obj->group6);
+	h = NM_HASH_COMBINE_IN6_ADDR (h, &obj->local6);
+	h = NM_HASH_COMBINE (h, obj->tos);
+	h = NM_HASH_COMBINE (h, obj->ttl);
+	h = NM_HASH_COMBINE (h, obj->learning);
+	h = NM_HASH_COMBINE (h, obj->ageing);
+	h = NM_HASH_COMBINE (h, obj->limit);
+	h = NM_HASH_COMBINE (h, obj->dst_port);
+	h = NM_HASH_COMBINE (h, obj->src_port_min);
+	h = NM_HASH_COMBINE (h, obj->src_port_max);
+	h = NM_HASH_COMBINE (h, obj->proxy);
+	h = NM_HASH_COMBINE (h, obj->rsc);
+	h = NM_HASH_COMBINE (h, obj->l2miss);
+	h = NM_HASH_COMBINE (h, obj->l3miss);
+	return h;
 }
 
 int
