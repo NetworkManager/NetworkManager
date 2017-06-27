@@ -4236,7 +4236,8 @@ nm_platform_lnk_macvlan_cmp (const NMPlatformLnkMacvlan *a, const NMPlatformLnkM
 {
 	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, mode);
-	_CMP_FIELD_BOOL (a, b, no_promisc);
+	_CMP_FIELD (a, b, no_promisc);
+	_CMP_FIELD (a, b, tap);
 	return 0;
 }
 
