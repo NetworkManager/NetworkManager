@@ -1122,7 +1122,7 @@ nm_supplicant_interface_disconnect (NMSupplicantInterface * self)
 
 	/* Cancel all pending calls related to a prior connection attempt */
 	if (priv->assoc_data) {
-		gs_free GError *error = NULL;
+		gs_free_error GError *error = NULL;
 
 		nm_utils_error_set_cancelled (&error, FALSE, "NMSupplicantInterface");
 		assoc_return (self, error, "abort due to disconnect");
@@ -1599,7 +1599,7 @@ dispose (GObject *object)
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
 	if (priv->assoc_data) {
-		gs_free GError *error = NULL;
+		gs_free_error GError *error = NULL;
 
 		nm_utils_error_set_cancelled (&error, TRUE, "NMSupplicantInterface");
 		assoc_return (self, error, "cancelled due to dispose of supplicant interface");
