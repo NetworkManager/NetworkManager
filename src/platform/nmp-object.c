@@ -1110,10 +1110,20 @@ nmp_cache_id_init_routes_visible (NMPCacheId *id,
 				return nmp_cache_id_init_object_type (id, obj_type, TRUE);
 			return nmp_cache_id_init_addrroute_visible_by_ifindex (id, obj_type, ifindex);
 		}
+		if (ifindex <= 0) {
+			_nmp_cache_id_init (id, NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_ONLY_DEFAULT);
+			id->object_type.obj_type = obj_type;
+			return id;
+		}
 		_nmp_cache_id_init (id, NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_ONLY_DEFAULT);
-	} else if (with_non_default)
+	} else if (with_non_default) {
+		if (ifindex <= 0) {
+			_nmp_cache_id_init (id, NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_NO_DEFAULT);
+			id->object_type.obj_type = obj_type;
+			return id;
+		}
 		_nmp_cache_id_init (id, NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_NO_DEFAULT);
-	else
+	} else
 		g_return_val_if_reached (NULL);
 
 	id->object_type_by_ifindex.obj_type = obj_type;
