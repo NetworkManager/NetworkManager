@@ -2772,13 +2772,18 @@ need_secrets_sim (NMSetting8021x *self,
 
 static gboolean
 need_private_key_password (GBytes *blob,
+                           NMSetting8021xCKScheme scheme,
                            const char *path,
                            const char *password,
                            NMSettingSecretFlags flags)
 {
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 
-	if (flags == NM_SETTING_SECRET_FLAG_NONE || flags & NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
+	if (flags & NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
+		return FALSE;
+
+	if (   scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11
+	    && flags == NM_SETTING_SECRET_FLAG_NONE)
 		return FALSE;
 
 	/* Private key password is required */
@@ -2815,7 +2820,7 @@ need_secrets_tls (NMSetting8021x *self,
 		else if (scheme != NM_SETTING_802_1X_CK_SCHEME_PKCS11)
 			g_warning ("%s: unknown phase2 private key scheme %d", __func__, scheme);
 
-		if (need_private_key_password (blob, path,
+		if (need_private_key_password (blob, scheme, path,
 		                               priv->phase2_private_key_password,
 		                               priv->phase2_private_key_password_flags))
 			g_ptr_array_add (secrets, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD);
@@ -2842,7 +2847,7 @@ need_secrets_tls (NMSetting8021x *self,
 		else if (scheme != NM_SETTING_802_1X_CK_SCHEME_PKCS11)
 			g_warning ("%s: unknown private key scheme %d", __func__, scheme);
 
-		if (need_private_key_password (blob, path,
+		if (need_private_key_password (blob, scheme, path,
 		                               priv->private_key_password,
 		                               priv->private_key_password_flags))
 			g_ptr_array_add (secrets, NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD);
