@@ -580,7 +580,7 @@ constructed (GObject *object)
 	NMHostnameManagerPrivate *priv = NM_HOSTNAME_MANAGER_GET_PRIVATE (self);
 	GDBusProxy *proxy;
 	GVariant *variant;
-	gs_free GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
 	proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM, 0, NULL,
 	                                       HOSTNAMED_SERVICE_NAME, HOSTNAMED_SERVICE_PATH,

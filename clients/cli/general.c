@@ -655,7 +655,7 @@ show_general_logging (NmCli *nmc)
 {
 	gs_free char *level_cache = NULL;
 	gs_free char *domains_cache = NULL;
-	gs_free GError *error = NULL;
+	gs_free_error GError *error = NULL;
 	const char *fields_str = NULL;
 	GetGeneralLoggingData d = {
 		.level = &level_cache,
