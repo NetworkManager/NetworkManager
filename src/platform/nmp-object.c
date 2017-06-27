@@ -860,6 +860,7 @@ guint
 nmp_object_hash (const NMPObject *obj)
 {
 	const NMPClass *klass;
+	guint h;
 
 	if (!obj)
 		return 0;
@@ -869,16 +870,12 @@ nmp_object_hash (const NMPObject *obj)
 	klass = NMP_OBJECT_GET_CLASS (obj);
 
 	if (klass->cmd_obj_hash)
-		return klass->cmd_obj_hash (obj);
-	if (klass->cmd_plobj_hash)
-		return klass->cmd_plobj_hash (&obj->object);
-	return GPOINTER_TO_UINT (obj);
-}
-
-static guint
-_vt_cmd_obj_hash_not_implemented (const NMPObject *obj)
-{
-	g_return_val_if_reached (0);
+		h = klass->cmd_obj_hash (obj);
+	else if (klass->cmd_plobj_hash)
+		h = klass->cmd_plobj_hash (&obj->object);
+	else
+		return GPOINTER_TO_UINT (obj);
+	return NM_HASH_COMBINE (h, klass->obj_type);
 }
 
 static guint
