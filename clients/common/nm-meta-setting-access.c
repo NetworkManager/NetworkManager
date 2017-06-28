@@ -283,10 +283,18 @@ nm_meta_abstract_info_complete (const NMMetaAbstractInfo *abstract_info,
 
 	nm_assert (!*out_to_free || values == (const char *const*) *out_to_free);
 
-	if (!text || !text[0] || !values || !values[0])
+	if (!values)
+		return NULL;
+
+	if (!values[0]) {
+		nm_clear_g_free (out_to_free);
+		return NULL;
+	}
+
+	if (!text || !text[0])
 		return values;
 
-	/* for convenience, we all the complete_fcn() implementations to
+	/* for convenience, we allow the complete_fcn() implementations to
 	 * ignore "text". We filter out invalid matches here. */
 
 	text_len = strlen (text);
