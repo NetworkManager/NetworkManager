@@ -2427,8 +2427,11 @@ got_object_manager (gpointer user_data)
 	init_data->idle_init_id = 0;
 
 	if (g_cancellable_set_error_if_cancelled (init_data->cancellable,
-	                                          &error))
-		goto out_take_error;
+	                                          &error)) {
+		g_simple_async_result_take_error (init_data->result, error);
+		init_async_complete (init_data);
+		return G_SOURCE_REMOVE;
+	}
 
 	object_manager = g_dbus_object_manager_client_new_for_bus_sync (_nm_dbus_bus_type (),
 	                                                                G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
@@ -2437,8 +2440,11 @@ got_object_manager (gpointer user_data)
 	                                                                proxy_type, NULL, NULL,
 	                                                                init_data->cancellable,
 	                                                                &error);
-	if (!object_manager)
-		goto out_take_error;
+	if (object_manager == NULL) {
+		g_simple_async_result_take_error (init_data->result, error);
+		init_async_complete (init_data);
+		return G_SOURCE_REMOVE;
+	}
 
 	client = init_data->client;
 	priv = NM_CLIENT_GET_PRIVATE (client);
@@ -2447,8 +2453,11 @@ got_object_manager (gpointer user_data)
 	name_owner = g_dbus_object_manager_client_get_name_owner (G_DBUS_OBJECT_MANAGER_CLIENT (priv->object_manager));
 	if (name_owner) {
 		g_free (name_owner);
-		if (!objects_created (client, priv->object_manager, &error))
-			goto out_take_error;
+		if (!objects_created (client, priv->object_manager, &error)) {
+			g_simple_async_result_take_error (init_data->result, error);
+			init_async_complete (init_data);
+			return G_SOURCE_REMOVE;
+		}
 
 		objects = g_dbus_object_manager_get_objects (priv->object_manager);
 		for (iter = objects; iter; iter = iter->next) {
@@ -2470,11 +2479,6 @@ got_object_manager (gpointer user_data)
 
 	g_signal_connect (priv->object_manager, "notify::name-owner",
 	                  G_CALLBACK (name_owner_changed), client);
-	return G_SOURCE_REMOVE;
-
-out_take_error:
-	g_simple_async_result_take_error (init_data->result, error);
-	init_async_complete (init_data);
 	return G_SOURCE_REMOVE;
 }
 
