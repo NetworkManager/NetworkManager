@@ -295,15 +295,17 @@ nm_meta_abstract_info_complete (const NMMetaAbstractInfo *abstract_info,
 		char **v = *out_to_free;
 
 		for (i = 0, j = 0; v[i]; i++) {
-			if (strncmp (v[i], text, text_len) != 0)
+			if (strncmp (v[i], text, text_len) != 0) {
+				g_free (v[i]);
 				continue;
+			}
 			v[j++] = v[i];
 		}
 		if (j)
 			v[j++] = NULL;
 		else {
 			g_free (v);
-			v = NULL;
+			*out_to_free = v = NULL;
 		}
 		return (const char *const*) v;
 	} else {
