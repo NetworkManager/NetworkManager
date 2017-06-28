@@ -36,7 +36,7 @@ call_nm() {
 
 get_symbols_nm () {
     call_nm ./src/.libs/libNetworkManager.a |
-        sed -n 's/^[tTDRB] //p' |
+        sed -n 's/^[tTDGRBS] //p' |
         _sort
 }
 
