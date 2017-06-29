@@ -4795,6 +4795,74 @@ log_ip6_route (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatform
 
 /*****************************************************************************/
 
+void
+nm_platform_cache_update_emit_signal (NMPlatform *self,
+                                      NMPCacheOpsType cache_op,
+                                      const NMPObject *obj_old,
+                                      const NMPObject *obj_new)
+{
+	gboolean visible_new;
+	gboolean visible_old;
+	const NMPObject *o;
+	const NMPClass *klass;
+
+	nm_assert (NM_IN_SET ((NMPlatformSignalChangeType) cache_op, (NMPlatformSignalChangeType) NMP_CACHE_OPS_UNCHANGED, NM_PLATFORM_SIGNAL_ADDED, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_SIGNAL_REMOVED));
+
+	ASSERT_nmp_cache_ops (nm_platform_get_cache (self), cache_op, obj_old, obj_new);
+
+	NMTST_ASSERT_PLATFORM_NETNS_CURRENT (self);
+
+	switch (cache_op) {
+	case NMP_CACHE_OPS_ADDED:
+		if (!nmp_object_is_visible (obj_new))
+			return;
+		o = obj_new;
+		break;
+	case NMP_CACHE_OPS_UPDATED:
+		visible_old = nmp_object_is_visible (obj_old);
+		visible_new = nmp_object_is_visible (obj_new);
+		if (!visible_old && visible_new) {
+			o = obj_new;
+			cache_op = NMP_CACHE_OPS_ADDED;
+		} else if (visible_old && !visible_new) {
+			o = obj_old;
+			cache_op = NMP_CACHE_OPS_REMOVED;
+		} else if (!visible_new) {
+			/* it was invisible and stayed invisible. Nothing to do. */
+			return;
+		} else
+			o = obj_new;
+		break;
+	case NMP_CACHE_OPS_REMOVED:
+		if (!nmp_object_is_visible (obj_old))
+			return;
+		o = obj_old;
+		break;
+	default:
+		nm_assert (cache_op == NMP_CACHE_OPS_UNCHANGED);
+		return;
+	}
+
+	klass = NMP_OBJECT_GET_CLASS (o);
+
+	_LOGt ("emit signal %s %s: %s",
+	       klass->signal_type,
+	       nm_platform_signal_change_type_to_string ((NMPlatformSignalChangeType) cache_op),
+	       nmp_object_to_string (o, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+
+	nmp_object_ref (o);
+	g_signal_emit (self,
+	               _nm_platform_signal_id_get (klass->signal_type_id),
+	               0,
+	               (int) klass->obj_type,
+	               o->object.ifindex,
+	               &o->object,
+	               (int) cache_op);
+	nmp_object_unref (o);
+}
+
+/*****************************************************************************/
+
 NMPCache *
 nm_platform_get_cache (NMPlatform *self)
 {
