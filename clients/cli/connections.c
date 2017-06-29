@@ -5201,9 +5201,13 @@ gen_property_names (const char *text, int state)
 		                                 valid_settings_main,
 		                                 valid_settings_slave,
 		                                 NULL);
-		setting = nm_meta_setting_info_editor_new_setting (nm_meta_setting_info_editor_find_by_name (setting_name, FALSE),
-		                                                   NM_META_ACCESSOR_SETTING_INIT_TYPE_DEFAULT);
-	} else {
+		if (setting_name) {
+			setting = nm_meta_setting_info_editor_new_setting (nm_meta_setting_info_editor_find_by_name (setting_name, FALSE),
+			                                                   NM_META_ACCESSOR_SETTING_INIT_TYPE_DEFAULT);
+		}
+	}
+
+	if (!setting) {
 		/* Else take the current setting, if any */
 		setting = nmc_tab_completion.setting ? g_object_ref (nmc_tab_completion.setting) : NULL;
 	}
