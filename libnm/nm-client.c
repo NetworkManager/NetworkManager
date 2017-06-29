@@ -92,6 +92,13 @@ G_DEFINE_TYPE_WITH_CODE (NMClient, nm_client, G_TYPE_OBJECT,
 #define NM_CLIENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CLIENT, NMClientPrivate))
 
 typedef struct {
+	NMClient *client;
+	GCancellable *cancellable;
+	GSimpleAsyncResult *result;
+	int pending_init;
+} NMClientInitData;
+
+typedef struct {
 	NMManager *manager;
 	NMRemoteSettings *settings;
 	NMDnsManager *dns_manager;
@@ -2268,12 +2275,22 @@ objects_created (NMClient *client, GDBusObjectManager *object_manager, GError **
 static void name_owner_changed (GObject *object, GParamSpec *pspec, gpointer user_data);
 
 static gboolean
+_om_has_name_owner (GDBusObjectManager *object_manager)
+{
+	gs_free char *name_owner = NULL;
+
+	nm_assert (G_IS_DBUS_OBJECT_MANAGER_CLIENT (object_manager));
+
+	name_owner = g_dbus_object_manager_client_get_name_owner (G_DBUS_OBJECT_MANAGER_CLIENT (object_manager));
+	return !!name_owner;
+}
+
+static gboolean
 init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 {
 	NMClient *client = NM_CLIENT (initable);
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
 	GList *objects, *iter;
-	gchar *name_owner;
 
 	priv->object_manager = g_dbus_object_manager_client_new_for_bus_sync (_nm_dbus_bus_type (),
 	                                                                      G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
@@ -2285,9 +2302,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	if (!priv->object_manager)
 		return FALSE;
 
-	name_owner = g_dbus_object_manager_client_get_name_owner (G_DBUS_OBJECT_MANAGER_CLIENT (priv->object_manager));
-	if (name_owner) {
-		g_free (name_owner);
+	if (_om_has_name_owner (priv->object_manager)) {
 		if (!objects_created (client, priv->object_manager, error))
 			return FALSE;
 
@@ -2316,21 +2331,14 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 
 /* Asynchronous initialization. */
 
-typedef struct {
-	NMClient *client;
-	GCancellable *cancellable;
-	GSimpleAsyncResult *result;
-	int pending_init;
-	guint idle_init_id;
-} NMClientInitData;
-
 static void
 init_async_complete (NMClientInitData *init_data)
 {
+	if (init_data->pending_init > 0)
+		return;
 	g_simple_async_result_complete (init_data->result);
 	g_object_unref (init_data->result);
 	g_clear_object (&init_data->cancellable);
-	nm_clear_g_source (&init_data->idle_init_id);
 	g_slice_free (NMClientInitData, init_data);
 }
 
@@ -2340,14 +2348,13 @@ async_inited_obj_nm (GObject *object, GAsyncResult *result, gpointer user_data)
 	NMClientInitData *init_data = user_data;
 	GError *error = NULL;
 
+	nm_assert (init_data && init_data->pending_init > 0);
+
 	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (object), result, &error))
 		g_simple_async_result_take_error (init_data->result, error);
 
-	if (init_data) {
-		init_data->pending_init--;
-		if (init_data->pending_init == 0)
-			init_async_complete (init_data);
-	}
+	init_data->pending_init--;
+	init_async_complete (init_data);
 }
 
 static void
@@ -2407,48 +2414,40 @@ unhook_om (NMClient *self)
 static void
 new_object_manager (GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (source_object);
+	NMClient *self = NM_CLIENT (user_data);
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
 
-	g_object_notify (G_OBJECT (user_data), NM_CLIENT_NM_RUNNING);
 	g_clear_object (&priv->new_object_manager_cancellable);
+	g_object_notify (G_OBJECT (user_data), NM_CLIENT_NM_RUNNING);
 }
 
-static gboolean
-got_object_manager (gpointer user_data)
+static void
+got_object_manager (GObject *object, GAsyncResult *result, gpointer user_data)
 {
 	NMClientInitData *init_data = user_data;
 	NMClient *client;
 	NMClientPrivate *priv;
 	GList *objects, *iter;
-	gchar *name_owner;
 	GError *error = NULL;
 	GDBusObjectManager *object_manager;
 
-	init_data->idle_init_id = 0;
-
-	if (g_cancellable_set_error_if_cancelled (init_data->cancellable,
-	                                          &error))
-		goto out_take_error;
-
-	object_manager = g_dbus_object_manager_client_new_for_bus_sync (_nm_dbus_bus_type (),
-	                                                                G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
-	                                                                "org.freedesktop.NetworkManager",
-	                                                                "/org/freedesktop",
-	                                                                proxy_type, NULL, NULL,
-	                                                                init_data->cancellable,
-	                                                                &error);
-	if (!object_manager)
-		goto out_take_error;
+	object_manager = g_dbus_object_manager_client_new_for_bus_finish (result, &error);
+	if (object_manager == NULL) {
+		g_simple_async_result_take_error (init_data->result, error);
+		init_async_complete (init_data);
+		return;
+	}
 
 	client = init_data->client;
 	priv = NM_CLIENT_GET_PRIVATE (client);
 	priv->object_manager = object_manager;
 
-	name_owner = g_dbus_object_manager_client_get_name_owner (G_DBUS_OBJECT_MANAGER_CLIENT (priv->object_manager));
-	if (name_owner) {
-		g_free (name_owner);
-		if (!objects_created (client, priv->object_manager, &error))
-			goto out_take_error;
+	if (_om_has_name_owner (priv->object_manager)) {
+		if (!objects_created (client, priv->object_manager, &error)) {
+			g_simple_async_result_take_error (init_data->result, error);
+			init_async_complete (init_data);
+			return;
+		}
 
 		objects = g_dbus_object_manager_get_objects (priv->object_manager);
 		for (iter = objects; iter; iter = iter->next) {
@@ -2464,18 +2463,12 @@ got_object_manager (gpointer user_data)
 			                             async_inited_obj_nm, init_data);
 		}
 		g_list_free_full (objects, g_object_unref);
+	}
 
-	} else
-		init_async_complete (init_data);
+	init_async_complete (init_data);
 
 	g_signal_connect (priv->object_manager, "notify::name-owner",
 	                  G_CALLBACK (name_owner_changed), client);
-	return G_SOURCE_REMOVE;
-
-out_take_error:
-	g_simple_async_result_take_error (init_data->result, error);
-	init_async_complete (init_data);
-	return G_SOURCE_REMOVE;
 }
 
 static void
@@ -2493,7 +2486,14 @@ prepare_object_manager (NMClient *client,
 	                                               user_data, init_async);
 	g_simple_async_result_set_op_res_gboolean (init_data->result, TRUE);
 
-	init_data->idle_init_id = g_idle_add (got_object_manager, init_data);
+	g_dbus_object_manager_client_new_for_bus (_nm_dbus_bus_type (),
+	                                          G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
+	                                          "org.freedesktop.NetworkManager",
+	                                          "/org/freedesktop",
+	                                          proxy_type, NULL, NULL,
+	                                          init_data->cancellable,
+	                                          got_object_manager,
+	                                          init_data);
 }
 
 static void
@@ -2502,17 +2502,15 @@ name_owner_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 	NMClient *self = user_data;
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
 	GDBusObjectManager *object_manager = G_DBUS_OBJECT_MANAGER (object);
-	gchar *name_owner;
 
-	name_owner = g_dbus_object_manager_client_get_name_owner (G_DBUS_OBJECT_MANAGER_CLIENT (object));
-	if (name_owner) {
-		g_free (name_owner);
-		g_object_unref (object_manager);
-		if (priv->new_object_manager_cancellable)
-			g_cancellable_cancel (priv->new_object_manager_cancellable);
+	nm_assert (object_manager == priv->object_manager);
+
+	if (_om_has_name_owner (object_manager)) {
+		g_clear_object (&priv->object_manager);
+		nm_clear_g_cancellable (&priv->new_object_manager_cancellable);
 		priv->new_object_manager_cancellable = g_cancellable_new ();
 		prepare_object_manager (self, priv->new_object_manager_cancellable,
-		                        new_object_manager, user_data);
+		                        new_object_manager, self);
 	} else {
 		g_signal_handlers_disconnect_by_func (object_manager, object_added, self);
 		unhook_om (self);
