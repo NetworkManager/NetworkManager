@@ -2651,6 +2651,14 @@ nm_platform_ethtool_get_link_settings (NMPlatform *self, int ifindex, gboolean *
 
 /*****************************************************************************/
 
+const NMDedupMultiHeadEntry *
+nm_platform_lookup (NMPlatform *platform,
+                    const NMPLookup *lookup)
+{
+	return nmp_cache_lookup (nm_platform_get_cache (platform),
+	                         lookup);
+}
+
 void
 nm_platform_ip4_address_set_addr (NMPlatformIP4Address *addr, in_addr_t address, guint8 plen)
 {

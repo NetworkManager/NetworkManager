@@ -386,10 +386,12 @@ const NMDedupMultiEntry *nmp_cache_lookup_entry_link (const NMPCache *cache, int
 const NMPObject *nmp_cache_lookup_obj (const NMPCache *cache, const NMPObject *obj);
 const NMPObject *nmp_cache_lookup_link (const NMPCache *cache, int ifindex);
 
-typedef struct {
+typedef struct _NMPLookup NMPLookup;
+
+struct _NMPLookup {
 	NMPCacheIdType cache_id_type;
 	NMPObject selector_obj;
-} NMPLookup;
+};
 
 const NMDedupMultiHeadEntry *nmp_cache_lookup_all (const NMPCache *cache,
                                                    NMPCacheIdType cache_id_type,
@@ -547,6 +549,75 @@ ASSERT_nmp_cache_ops (const NMPCache *cache,
 
 	nm_assert (obj_new == nmp_cache_lookup_obj (cache, obj_new ?: obj_old));
 #endif
+}
+
+static inline const NMDedupMultiHeadEntry *
+nm_platform_lookup_obj_type (NMPlatform *platform,
+                             NMPObjectType obj_type,
+                             gboolean visible_only)
+{
+	NMPLookup lookup;
+
+	nmp_lookup_init_obj_type (&lookup, obj_type, visible_only);
+	return nm_platform_lookup (platform, &lookup);
+}
+
+static inline const NMDedupMultiHeadEntry *
+nm_platform_lookup_link (NMPlatform *platform,
+                         gboolean visible_only)
+{
+	NMPLookup lookup;
+
+	nmp_lookup_init_link (&lookup, visible_only);
+	return nm_platform_lookup (platform, &lookup);
+}
+
+static inline const NMDedupMultiHeadEntry *
+nm_platform_lookup_link_by_ifname (NMPlatform *platform,
+                                   const char *ifname)
+{
+	NMPLookup lookup;
+
+	nmp_lookup_init_link_by_ifname (&lookup, ifname);
+	return nm_platform_lookup (platform, &lookup);
+}
+
+static inline const NMDedupMultiHeadEntry *
+nm_platform_lookup_addrroute (NMPlatform *platform,
+                              NMPObjectType obj_type,
+                              int ifindex,
+                              gboolean visible_only)
+{
+	NMPLookup lookup;
+
+	nmp_lookup_init_addrroute (&lookup, obj_type, ifindex, visible_only);
+	return nm_platform_lookup (platform, &lookup);
+}
+
+static inline const NMDedupMultiHeadEntry *
+nm_platform_lookup_route_visible (NMPlatform *platform,
+                                  NMPObjectType obj_type,
+                                  int ifindex,
+                                  gboolean with_default,
+                                  gboolean with_non_default)
+{
+	NMPLookup lookup;
+
+	nmp_lookup_init_route_visible (&lookup, obj_type, ifindex, with_default, with_non_default);
+	return nm_platform_lookup (platform, &lookup);
+}
+
+static inline const NMDedupMultiHeadEntry *
+nm_platform_lookup_route_by_dest (NMPlatform *platform,
+                                  int addr_family,
+                                  gconstpointer network,
+                                  guint plen,
+                                  guint32 metric)
+{
+	NMPLookup lookup;
+
+	nmp_lookup_init_route_by_dest (&lookup, addr_family, network, plen, metric);
+	return nm_platform_lookup (platform, &lookup);
 }
 
 #endif /* __NMP_OBJECT_H__ */

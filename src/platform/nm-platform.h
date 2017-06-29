@@ -777,6 +777,11 @@ gboolean nm_platform_link_delete (NMPlatform *self, int ifindex);
 
 gboolean nm_platform_link_set_netns (NMPlatform *self, int ifindex, int netns_fd);
 
+struct _NMDedupMultiHeadEntry;
+struct _NMPLookup;
+const struct _NMDedupMultiHeadEntry *nm_platform_lookup (NMPlatform *platform,
+                                                         const struct _NMPLookup *lookup);
+
 /* convienience methods to lookup the link and access fields of NMPlatformLink. */
 int nm_platform_link_get_ifindex (NMPlatform *self, const char *name);
 const char *nm_platform_link_get_name (NMPlatform *self, int ifindex);
