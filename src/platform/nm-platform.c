@@ -80,11 +80,13 @@ static guint signals[_NM_PLATFORM_SIGNAL_ID_LAST] = { 0 };
 enum {
 	PROP_0,
 	PROP_NETNS_SUPPORT,
+	PROP_USE_UDEV,
 	PROP_LOG_WITH_PTR,
 	LAST_PROP,
 };
 
 typedef struct _NMPlatformPrivate {
+	bool use_udev:1;
 	bool log_with_ptr:1;
 	NMDedupMultiIndex *multi_idx;
 } NMPlatformPrivate;
@@ -94,6 +96,12 @@ G_DEFINE_TYPE (NMPlatform, nm_platform, G_TYPE_OBJECT)
 #define NM_PLATFORM_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR (self, NMPlatform, NM_IS_PLATFORM)
 
 /*****************************************************************************/
+
+gboolean
+nm_platform_get_use_udev (NMPlatform *self)
+{
+	return NM_PLATFORM_GET_PRIVATE (self)->use_udev;
+}
 
 gboolean
 nm_platform_get_log_with_ptr (NMPlatform *self)
@@ -4929,6 +4937,10 @@ set_property (GObject *object, guint prop_id,
 				self->_netns = g_object_ref (netns);
 		}
 		break;
+	case PROP_USE_UDEV:
+		/* construct-only */
+		priv->use_udev = g_value_get_boolean (value);
+		break;
 	case PROP_LOG_WITH_PTR:
 		/* construct-only */
 		priv->log_with_ptr = g_value_get_boolean (value);
@@ -4972,6 +4984,14 @@ nm_platform_class_init (NMPlatformClass *platform_class)
 	 (object_class, PROP_NETNS_SUPPORT,
 	     g_param_spec_boolean (NM_PLATFORM_NETNS_SUPPORT, "", "",
 	                           NM_PLATFORM_NETNS_SUPPORT_DEFAULT,
+	                           G_PARAM_WRITABLE |
+	                           G_PARAM_CONSTRUCT_ONLY |
+	                           G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property
+	 (object_class, PROP_USE_UDEV,
+	     g_param_spec_boolean (NM_PLATFORM_USE_UDEV, "", "",
+	                           FALSE,
 	                           G_PARAM_WRITABLE |
 	                           G_PARAM_CONSTRUCT_ONLY |
 	                           G_PARAM_STATIC_STRINGS));

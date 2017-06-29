@@ -2619,8 +2619,15 @@ G_DEFINE_TYPE (NMLinuxPlatform, nm_linux_platform, NM_TYPE_PLATFORM)
 NMPlatform *
 nm_linux_platform_new (gboolean log_with_ptr, gboolean netns_support)
 {
+	gboolean use_udev = FALSE;
+
+	if (   nmp_netns_is_initial ()
+	    && access ("/sys", W_OK) == 0)
+		use_udev = TRUE;
+
 	return g_object_new (NM_TYPE_LINUX_PLATFORM,
 	                     NM_PLATFORM_LOG_WITH_PTR, log_with_ptr,
+	                     NM_PLATFORM_USE_UDEV, use_udev,
 	                     NM_PLATFORM_NETNS_SUPPORT, netns_support,
 	                     NULL);
 }
@@ -6723,12 +6730,6 @@ nm_linux_platform_init (NMLinuxPlatform *self)
 	priv->delayed_action.list_refresh_link = g_ptr_array_new ();
 	priv->delayed_action.list_wait_for_nl_response = g_array_new (FALSE, TRUE, sizeof (DelayedActionWaitForNlResponseData));
 	priv->wifi_data = g_hash_table_new_full (NULL, NULL, NULL, (GDestroyNotify) wifi_utils_deinit);
-
-	if (   nmp_netns_is_initial ()
-	    && access ("/sys", W_OK) == 0) {
-		priv->udev_client = nm_udev_client_new ((const char *[]) { "net", NULL },
-		                                        handle_udev_event, self);
-	}
 }
 
 static void
@@ -6741,6 +6742,11 @@ constructed (GObject *_object)
 	int nle;
 
 	nm_assert (!platform->_netns || platform->_netns == nmp_netns_get_current ());
+
+	if (nm_platform_get_use_udev (platform)) {
+		priv->udev_client = nm_udev_client_new ((const char *[]) { "net", NULL },
+		                                        handle_udev_event, platform);
+	}
 
 	priv->cache = nmp_cache_new (nm_platform_get_multi_idx (platform),
 	                             priv->udev_client != NULL);

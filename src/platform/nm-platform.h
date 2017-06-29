@@ -45,6 +45,7 @@
 /*****************************************************************************/
 
 #define NM_PLATFORM_NETNS_SUPPORT      "netns-support"
+#define NM_PLATFORM_USE_UDEV           "use-udev"
 #define NM_PLATFORM_LOG_WITH_PTR       "log-with-ptr"
 
 /*****************************************************************************/
@@ -726,6 +727,7 @@ _nm_platform_uint8_inv (guint8 scope)
 	return (guint8) ~scope;
 }
 
+gboolean nm_platform_get_use_udev (NMPlatform *self);
 gboolean nm_platform_get_log_with_ptr (NMPlatform *self);
 
 NMPNetns *nm_platform_netns_get (NMPlatform *self);
