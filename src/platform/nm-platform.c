@@ -39,6 +39,7 @@
 
 #include "nm-core-utils.h"
 #include "nm-platform-utils.h"
+#include "nm-platform-private.h"
 #include "nmp-object.h"
 #include "nmp-netns.h"
 
@@ -89,6 +90,7 @@ typedef struct _NMPlatformPrivate {
 	bool use_udev:1;
 	bool log_with_ptr:1;
 	NMDedupMultiIndex *multi_idx;
+	NMPCache *cache;
 } NMPlatformPrivate;
 
 G_DEFINE_TYPE (NMPlatform, nm_platform, G_TYPE_OBJECT)
@@ -206,16 +208,9 @@ nm_platform_get ()
 NMDedupMultiIndex *
 nm_platform_get_multi_idx (NMPlatform *self)
 {
-	NMPlatformPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_PLATFORM (self), NULL);
 
-	priv = NM_PLATFORM_GET_PRIVATE (self);
-
-	if (G_UNLIKELY (!priv->multi_idx))
-		priv->multi_idx = nm_dedup_multi_index_new ();
-
-	return priv->multi_idx;
+	return NM_PLATFORM_GET_PRIVATE (self)->multi_idx;
 }
 
 /*****************************************************************************/
@@ -4800,6 +4795,12 @@ log_ip6_route (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatform
 
 /*****************************************************************************/
 
+NMPCache *
+nm_platform_get_cache (NMPlatform *self)
+{
+	return NM_PLATFORM_GET_PRIVATE (self)->cache;
+}
+
 NMPNetns *
 nm_platform_netns_get (NMPlatform *self)
 {
@@ -4957,15 +4958,37 @@ nm_platform_init (NMPlatform *self)
 	self->_priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_PLATFORM, NMPlatformPrivate);
 }
 
+static GObject *
+constructor (GType type,
+             guint n_construct_params,
+             GObjectConstructParam *construct_params)
+{
+	GObject *object;
+	NMPlatform *self;
+	NMPlatformPrivate *priv;
+
+	object = G_OBJECT_CLASS (nm_platform_parent_class)->constructor (type,
+	                                                                 n_construct_params,
+	                                                                 construct_params);
+	self = NM_PLATFORM (object);
+	priv = NM_PLATFORM_GET_PRIVATE (self);
+
+	priv->multi_idx = nm_dedup_multi_index_new ();
+
+	priv->cache = nmp_cache_new (nm_platform_get_multi_idx (self),
+	                             priv->use_udev);
+	return object;
+}
+
 static void
 finalize (GObject *object)
 {
 	NMPlatform *self = NM_PLATFORM (object);
 	NMPlatformPrivate *priv = NM_PLATFORM_GET_PRIVATE (self);
 
-	if (priv->multi_idx)
-		nm_dedup_multi_index_unref (priv->multi_idx);
 	g_clear_object (&self->_netns);
+	nm_dedup_multi_index_unref (priv->multi_idx);
+	nmp_cache_free (priv->cache);
 }
 
 static void
@@ -4975,6 +4998,7 @@ nm_platform_class_init (NMPlatformClass *platform_class)
 
 	g_type_class_add_private (object_class, sizeof (NMPlatformPrivate));
 
+	object_class->constructor = constructor;
 	object_class->set_property = set_property;
 	object_class->finalize = finalize;
 

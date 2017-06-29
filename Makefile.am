@@ -1290,6 +1290,7 @@ src_libNetworkManagerBase_la_SOURCES = \
 	src/platform/nm-platform-utils.h \
 	src/platform/nm-platform.c \
 	src/platform/nm-platform.h \
+	src/platform/nm-platform-private.h \
 	src/platform/nm-linux-platform.c \
 	src/platform/nm-linux-platform.h \
 	src/platform/wifi/wifi-utils-nl80211.c \
