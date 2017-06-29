@@ -386,11 +386,12 @@ nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 {
 	NMIP4Config *config;
 	NMIP4ConfigPrivate *priv;
-	guint i;
-	guint32 lowest_metric = G_MAXUINT32;
+	guint32 lowest_metric;
 	guint32 old_gateway = 0;
 	gboolean old_has_gateway = FALSE;
-	gs_unref_array GArray *routes = NULL;
+	const NMDedupMultiHeadEntry *pl_head_entry;
+	NMDedupMultiIter iter;
+	const NMPObject *plobj = NULL;
 
 	/* Slaves have no IP configuration */
 	if (nm_platform_link_get_master (platform, ifindex) > 0)
@@ -404,49 +405,55 @@ nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 	priv->addresses = nm_platform_ip4_address_get_all (platform, ifindex);
 	g_array_sort (priv->addresses, sort_captured_addresses);
 
-	routes = nm_platform_ip4_route_get_all (platform, ifindex, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
+	pl_head_entry = nm_platform_lookup_route_visible (platform,
+	                                                  NMP_OBJECT_TYPE_IP4_ROUTE,
+	                                                  ifindex,
+	                                                  TRUE,
+	                                                  TRUE);
 
 	/* Extract gateway from default route */
 	old_gateway = priv->gateway;
 	old_has_gateway = priv->has_gateway;
-	for (i = 0; i < routes->len; ) {
-		const NMPlatformIP4Route *route = &g_array_index (routes, NMPlatformIP4Route, i);
 
-		if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)) {
+	lowest_metric = G_MAXUINT32;
+	priv->has_gateway = FALSE;
+	nmp_cache_iter_for_each (&iter, pl_head_entry, &plobj) {
+		const NMPlatformIP4Route *route = NMP_OBJECT_CAST_IP4_ROUTE (plobj);
+
+		if (   NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)
+		    && route->rt_source != NM_IP_CONFIG_SOURCE_RTPROT_KERNEL) {
 			if (route->metric < lowest_metric) {
 				priv->gateway = route->gateway;
 				lowest_metric = route->metric;
 			}
 			priv->has_gateway = TRUE;
-			/* Remove the default route from the list */
-			g_array_remove_index_fast (routes, i);
-			continue;
 		}
-		i++;
 	}
 
 	/* we detect the route metric based on the default route. All non-default
 	 * routes have their route metrics explicitly set. */
 	priv->route_metric = priv->has_gateway ? (gint64) lowest_metric : (gint64) -1;
 
-	/* If there is a host route to the gateway, ignore that route.  It is
-	 * automatically added by NetworkManager when needed.
-	 */
-	if (priv->has_gateway) {
-		for (i = 0; i < routes->len; i++) {
-			const NMPlatformIP4Route *route = &g_array_index (routes, NMPlatformIP4Route, i);
+	nm_dedup_multi_iter_rewind (&iter);
+	nmp_cache_iter_for_each (&iter, pl_head_entry, &plobj) {
+		const NMPlatformIP4Route *route = NMP_OBJECT_CAST_IP4_ROUTE (plobj);
 
-			if (   (route->plen == 32)
-			    && (route->network == priv->gateway)
-			    && (route->gateway == 0)) {
-				g_array_remove_index (routes, i);
-				i--;
-			}
+		if (route->rt_source == NM_IP_CONFIG_SOURCE_RTPROT_KERNEL)
+			continue;
+		if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route))
+			continue;
+
+		if (   priv->has_gateway
+		    && route->plen == 32
+		    && route->network == priv->gateway
+		    && route->gateway == 0) {
+			/* If there is a host route to the gateway, ignore that route.  It is
+			 * automatically added by NetworkManager when needed.
+			 */
+			continue;
 		}
+		_add_route (config, plobj, NULL);
 	}
-
-	for (i = 0; i < routes->len; i++)
-		_add_route (config, NULL, &g_array_index (routes, NMPlatformIP4Route, i));
 
 	/* If the interface has the default route, and has IPv4 addresses, capture
 	 * nameservers from /etc/resolv.conf.

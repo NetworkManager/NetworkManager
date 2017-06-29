@@ -2659,6 +2659,64 @@ nm_platform_lookup (NMPlatform *platform,
 	                         lookup);
 }
 
+gboolean
+nm_platform_lookup_predicate_routes_skip_rtprot_kernel (const NMPObject *obj,
+                                                        gpointer user_data)
+{
+	nm_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ROUTE,
+	                                                 NMP_OBJECT_TYPE_IP6_ROUTE));
+	return obj->ip_route.rt_source != NM_IP_CONFIG_SOURCE_RTPROT_KERNEL;
+}
+
+/**
+ * nm_platform_lookup_clone:
+ * @platform:
+ * @lookup:
+ * @predicate: if given, only objects for which @predicate returns %TRUE are included
+ *   in the result.
+ * @user_data: user data for @predicate
+ *
+ * Returns the result of lookup in a GPtrArray. The result array contains
+ * references objects from the cache, it's destroy function will unref them.
+ *
+ * The user must unref the GPtrArray, which will also unref the NMPObject
+ * elements.
+ *
+ * The elements in the array *must* not be modified.
+ *
+ * Returns: the result of the lookup.
+ */
+GPtrArray *
+nm_platform_lookup_clone (NMPlatform *platform,
+                          const NMPLookup *lookup,
+                          gboolean (*predicate) (const NMPObject *obj, gpointer user_data),
+                          gpointer user_data)
+{
+	const NMDedupMultiHeadEntry *head_entry;
+	GPtrArray *result;
+	NMDedupMultiIter iter;
+	const NMPObject *plobj = NULL;
+
+	head_entry = nm_platform_lookup (platform, lookup);
+	if (!head_entry)
+		return NULL;
+
+	result = g_ptr_array_new_full (head_entry->len,
+	                               (GDestroyNotify) nmp_object_unref);
+	nmp_cache_iter_for_each (&iter, head_entry, &plobj) {
+		if (   predicate
+		    && !predicate (plobj, user_data))
+			continue;
+		g_ptr_array_add (result, (gpointer) nmp_object_ref (plobj));
+	}
+
+	if (result->len == 0) {
+		g_ptr_array_unref (result);
+		return NULL;
+	}
+	return result;
+}
+
 void
 nm_platform_ip4_address_set_addr (NMPlatformIP4Address *addr, in_addr_t address, guint8 plen)
 {
@@ -3198,16 +3256,6 @@ ipx_route_get_all (NMPlatform *platform, int ifindex, NMPObjectType obj_type, NM
 			g_array_append_vals (array, &o->ip_route, 1);
 	}
 	return array;
-}
-
-GArray *
-nm_platform_ip4_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteFlags flags)
-{
-	_CHECK_SELF (self, klass, NULL);
-
-	g_return_val_if_fail (ifindex >= 0, NULL);
-
-	return ipx_route_get_all (self, ifindex, NMP_OBJECT_TYPE_IP4_ROUTE, flags);
 }
 
 GArray *
@@ -5026,11 +5074,11 @@ _vtr_v6_route_delete_default (NMPlatform *self, int ifindex, guint32 metric)
 
 const NMPlatformVTableRoute nm_platform_vtable_route_v4 = {
 	.is_ip4                         = TRUE,
+	.obj_type                       = NMP_OBJECT_TYPE_IP4_ROUTE,
 	.addr_family                    = AF_INET,
 	.sizeof_route                   = sizeof (NMPlatformIP4Route),
 	.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, gboolean consider_host_part)) nm_platform_ip4_route_cmp_full,
 	.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route, char *buf, gsize len)) nm_platform_ip4_route_to_string,
-	.route_get_all                  = nm_platform_ip4_route_get_all,
 	.route_add                      = _vtr_v4_route_add,
 	.route_delete                   = _vtr_v4_route_delete,
 	.route_delete_default           = _vtr_v4_route_delete_default,
@@ -5039,11 +5087,11 @@ const NMPlatformVTableRoute nm_platform_vtable_route_v4 = {
 
 const NMPlatformVTableRoute nm_platform_vtable_route_v6 = {
 	.is_ip4                         = FALSE,
+	.obj_type                       = NMP_OBJECT_TYPE_IP6_ROUTE,
 	.addr_family                    = AF_INET6,
 	.sizeof_route                   = sizeof (NMPlatformIP6Route),
 	.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, gboolean consider_host_part)) nm_platform_ip6_route_cmp_full,
 	.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route, char *buf, gsize len)) nm_platform_ip6_route_to_string,
-	.route_get_all                  = nm_platform_ip6_route_get_all,
 	.route_add                      = _vtr_v6_route_add,
 	.route_delete                   = _vtr_v6_route_delete,
 	.route_delete_default           = _vtr_v6_route_delete_default,

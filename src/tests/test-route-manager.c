@@ -145,15 +145,38 @@ update_dev0_ip4 (int ifindex)
 static GArray *
 ip4_routes (test_fixture *fixture)
 {
-	GArray *routes = nm_platform_ip4_route_get_all (NM_PLATFORM_GET,
-	                                                fixture->ifindex0,
-	                                                NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
-	GArray *routes1 = nm_platform_ip4_route_get_all (NM_PLATFORM_GET,
-	                                                 fixture->ifindex1,
-	                                                 NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
+	GArray *routes;
+	const NMDedupMultiHeadEntry *pl_head_entry;
+	NMDedupMultiIter iter;
+	const NMPObject *plobj = NULL;
+	guint i;
 
-	g_array_append_vals (routes, routes1->data, routes1->len);
-	g_array_free (routes1, TRUE);
+	routes = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Route));
+
+	for (i = 0; i < 2; i++) {
+		int ifindex;
+
+		if (i == 0)
+			ifindex = fixture->ifindex0;
+		else
+			ifindex = fixture->ifindex1;
+
+		pl_head_entry = nm_platform_lookup_route_visible (NM_PLATFORM_GET,
+		                                                  NMP_OBJECT_TYPE_IP4_ROUTE,
+		                                                  ifindex,
+		                                                  FALSE,
+		                                                  TRUE);
+		nmp_cache_iter_for_each (&iter, pl_head_entry, &plobj) {
+			const NMPlatformIP4Route *r = NMP_OBJECT_CAST_IP4_ROUTE (plobj);
+
+			if (r->rt_source == NM_IP_CONFIG_SOURCE_RTPROT_KERNEL)
+				continue;
+			g_assert (!NM_PLATFORM_IP_ROUTE_IS_DEFAULT (r));
+			g_assert (r->ifindex == ifindex);
+			g_assert (nmp_object_is_visible (plobj));
+			g_array_append_vals (routes, r, 1);
+		}
+	}
 
 	return routes;
 }

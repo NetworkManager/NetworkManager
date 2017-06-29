@@ -226,6 +226,25 @@ nmtst_platform_ip4_routes_equal (const NMPlatformIP4Route *a, const NMPlatformIP
 	}
 }
 
+#ifdef __NMP_OBJECT_H__
+
+static inline void
+nmtst_platform_ip4_routes_equal_aptr (const NMPObject *const*a, const NMPlatformIP4Route *b, gsize len, gboolean ignore_order)
+{
+	gsize i;
+	gs_free NMPlatformIP4Route *c_a = NULL;
+
+	g_assert (len > 0);
+	g_assert (a);
+
+	c_a = g_new (NMPlatformIP4Route, len);
+	for (i = 0; i < len; i++)
+		c_a[i] = *NMP_OBJECT_CAST_IP4_ROUTE (a[i]);
+	nmtst_platform_ip4_routes_equal (c_a, b, len, ignore_order);
+}
+
+#endif
+
 static inline int
 _nmtst_platform_ip6_routes_equal_sort (gconstpointer a, gconstpointer b, gpointer user_data)
 {
@@ -259,6 +278,25 @@ nmtst_platform_ip6_routes_equal (const NMPlatformIP6Route *a, const NMPlatformIP
 		}
 	}
 }
+
+#ifdef __NMP_OBJECT_H__
+
+static inline void
+nmtst_platform_ip6_routes_equal_aptr (const NMPObject *const*a, const NMPlatformIP6Route *b, gsize len, gboolean ignore_order)
+{
+	gsize i;
+	gs_free NMPlatformIP6Route *c_a = NULL;
+
+	g_assert (len > 0);
+	g_assert (a);
+
+	c_a = g_new (NMPlatformIP6Route, len);
+	for (i = 0; i < len; i++)
+		c_a[i] = *NMP_OBJECT_CAST_IP6_ROUTE (a[i]);
+	nmtst_platform_ip6_routes_equal (c_a, b, len, ignore_order);
+}
+
+#endif
 
 #endif
 

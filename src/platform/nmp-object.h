@@ -339,6 +339,24 @@ NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 	return obj ? obj->_class->obj_type : NMP_OBJECT_TYPE_UNKNOWN;
 }
 
+#define NMP_OBJECT_CAST_IPX_ROUTE(obj) \
+	({ \
+		typeof (*(obj)) *_obj = (obj); \
+		_nm_unused const NMPObject *_obj_type_check = _obj; \
+		\
+		nm_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (_obj), NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE)); \
+		&_obj->ipx_route; \
+	})
+
+#define NMP_OBJECT_CAST_IP_ROUTE(obj) \
+	({ \
+		typeof (*(obj)) *_obj = (obj); \
+		_nm_unused const NMPObject *_obj_type_check = _obj; \
+		\
+		nm_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (_obj), NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE)); \
+		&_obj->ip_route; \
+	})
+
 #define NMP_OBJECT_CAST_IP4_ROUTE(obj) \
 	({ \
 		typeof (*(obj)) *_obj = (obj); \
@@ -621,6 +639,21 @@ nm_platform_lookup_route_visible (NMPlatform *platform,
 
 	nmp_lookup_init_route_visible (&lookup, obj_type, ifindex, with_default, with_non_default);
 	return nm_platform_lookup (platform, &lookup);
+}
+
+static inline GPtrArray *
+nm_platform_lookup_route_visible_clone (NMPlatform *platform,
+                                        NMPObjectType obj_type,
+                                        int ifindex,
+                                        gboolean with_default,
+                                        gboolean with_non_default,
+                                        gboolean (*predicate) (const NMPObject *obj, gpointer user_data),
+                                        gpointer user_data)
+{
+	NMPLookup lookup;
+
+	nmp_lookup_init_route_visible (&lookup, obj_type, ifindex, with_default, with_non_default);
+	return nm_platform_lookup_clone (platform, &lookup, predicate, user_data);
 }
 
 static inline const NMDedupMultiHeadEntry *

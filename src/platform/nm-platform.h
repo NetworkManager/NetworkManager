@@ -373,11 +373,11 @@ typedef union {
 
 typedef struct {
 	gboolean is_ip4;
+	NMPObjectType obj_type;
 	int addr_family;
 	gsize sizeof_route;
 	int (*route_cmp) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, gboolean consider_host_part);
 	const char *(*route_to_string) (const NMPlatformIPXRoute *route, char *buf, gsize len);
-	GArray *(*route_get_all) (NMPlatform *self, int ifindex, NMPlatformGetRouteFlags flags);
 	gboolean (*route_add) (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route, gint64 metric);
 	gboolean (*route_delete) (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route);
 	gboolean (*route_delete_default) (NMPlatform *self, int ifindex, guint32 metric);
@@ -778,6 +778,14 @@ struct _NMPLookup;
 const struct _NMDedupMultiHeadEntry *nm_platform_lookup (NMPlatform *platform,
                                                          const struct _NMPLookup *lookup);
 
+gboolean nm_platform_lookup_predicate_routes_skip_rtprot_kernel (const NMPObject *obj,
+                                                                 gpointer user_data);
+
+GPtrArray *nm_platform_lookup_clone (NMPlatform *platform,
+                                     const struct _NMPLookup *lookup,
+                                     gboolean (*predicate) (const NMPObject *obj, gpointer user_data),
+                                     gpointer user_data);
+
 /* convienience methods to lookup the link and access fields of NMPlatformLink. */
 int nm_platform_link_get_ifindex (NMPlatform *self, const char *name);
 const char *nm_platform_link_get_name (NMPlatform *self, int ifindex);
@@ -972,7 +980,6 @@ gboolean nm_platform_address_flush (NMPlatform *self, int ifindex);
 
 const NMPlatformIP4Route *nm_platform_ip4_route_get (NMPlatform *self, int ifindex, in_addr_t network, guint8 plen, guint32 metric);
 const NMPlatformIP6Route *nm_platform_ip6_route_get (NMPlatform *self, int ifindex, struct in6_addr network, guint8 plen, guint32 metric);
-GArray *nm_platform_ip4_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteFlags flags);
 GArray *nm_platform_ip6_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteFlags flags);
 gboolean nm_platform_ip4_route_add (NMPlatform *self, const NMPlatformIP4Route *route);
 gboolean nm_platform_ip6_route_add (NMPlatform *self, const NMPlatformIP6Route *route);

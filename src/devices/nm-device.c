@@ -42,6 +42,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-manager.h"
 #include "platform/nm-platform.h"
+#include "platform/nmp-object.h"
 #include "ndisc/nm-ndisc.h"
 #include "ndisc/nm-lndp-ndisc.h"
 #include "dhcp/nm-dhcp-manager.h"
@@ -5405,45 +5406,46 @@ ipv4ll_start (NMDevice *self)
 static gboolean
 _device_get_default_route_from_platform (NMDevice *self, int addr_family, NMPlatformIPRoute *out_route)
 {
-	gboolean success = FALSE;
 	int ifindex = nm_device_get_ip_ifindex (self);
-	GArray *routes;
+	const NMDedupMultiHeadEntry *pl_head_entry;
+	NMDedupMultiIter iter;
+	const NMPObject *plobj = NULL;
+	const NMPlatformIPRoute *route = NULL;
+	guint32 route_metric = G_MAXUINT32;
 
-	if (addr_family == AF_INET)
-		routes = nm_platform_ip4_route_get_all (nm_device_get_platform (self), ifindex, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT);
-	else
-		routes = nm_platform_ip6_route_get_all (nm_device_get_platform (self), ifindex, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT);
+	pl_head_entry = nm_platform_lookup_route_visible (nm_device_get_platform (self),
+	                                                  addr_family == AF_INET
+	                                                    ? NMP_OBJECT_TYPE_IP4_ROUTE
+	                                                    : NMP_OBJECT_TYPE_IP6_ROUTE,
+	                                                  ifindex,
+	                                                  TRUE,
+	                                                  FALSE);
+	nmp_cache_iter_for_each (&iter, pl_head_entry, &plobj) {
+		guint32 m;
+		const NMPlatformIPRoute *r = NMP_OBJECT_CAST_IP_ROUTE (plobj);
 
-	if (routes) {
-		guint route_metric = G_MAXUINT32, m;
-		const NMPlatformIPRoute *route = NULL, *r;
-		guint i;
+		if (r->rt_source == NM_IP_CONFIG_SOURCE_RTPROT_KERNEL)
+			continue;
 
 		/* if there are several default routes, find the one with the best metric */
-		for (i = 0; i < routes->len; i++) {
-			if (addr_family == AF_INET) {
-				r = (const NMPlatformIPRoute *) &g_array_index (routes, NMPlatformIP4Route, i);
-				m = r->metric;
-			} else {
-				r = (const NMPlatformIPRoute *) &g_array_index (routes, NMPlatformIP6Route, i);
-				m = nm_utils_ip6_route_metric_normalize (r->metric);
-			}
-			if (!route || m < route_metric) {
-				route = r;
-				route_metric = m;
-			}
-		}
+		m = r->metric;
+		if (addr_family != AF_INET)
+			m = nm_utils_ip6_route_metric_normalize (r->metric);
 
-		if (route) {
-			if (addr_family == AF_INET)
-				*((NMPlatformIP4Route *) out_route) = *((NMPlatformIP4Route *) route);
-			else
-				*((NMPlatformIP6Route *) out_route) = *((NMPlatformIP6Route *) route);
-			success = TRUE;
+		if (!route || m < route_metric) {
+			route = NMP_OBJECT_CAST_IP_ROUTE (plobj);
+			route_metric = m;
 		}
-		g_array_free (routes, TRUE);
 	}
-	return success;
+
+	if (route) {
+		if (addr_family == AF_INET)
+			*((NMPlatformIP4Route *) out_route) = *((NMPlatformIP4Route *) route);
+		else
+			*((NMPlatformIP6Route *) out_route) = *((NMPlatformIP6Route *) route);
+		return TRUE;
+	}
+	return FALSE;
 }
 
 /*****************************************************************************/
