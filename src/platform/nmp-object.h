@@ -339,7 +339,23 @@ NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 	return obj ? obj->_class->obj_type : NMP_OBJECT_TYPE_UNKNOWN;
 }
 
+#define NMP_OBJECT_CAST_IP4_ROUTE(obj) \
+	({ \
+		typeof (*(obj)) *_obj = (obj); \
+		_nm_unused const NMPObject *_obj_type_check = _obj; \
+		\
+		nm_assert (NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_IP4_ROUTE); \
+		&_obj->ip4_route; \
+	})
 
+#define NMP_OBJECT_CAST_IP6_ROUTE(obj) \
+	({ \
+		typeof (*(obj)) *_obj = (obj); \
+		_nm_unused const NMPObject *_obj_type_check = _obj; \
+		\
+		nm_assert (NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_IP6_ROUTE); \
+		&_obj->ip6_route; \
+	})
 
 const NMPClass *nmp_class_from_type (NMPObjectType obj_type);
 

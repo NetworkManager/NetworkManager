@@ -3160,6 +3160,46 @@ nm_platform_address_flush (NMPlatform *self, int ifindex)
 
 /*****************************************************************************/
 
+static GArray *
+ipx_route_get_all (NMPlatform *platform, int ifindex, NMPObjectType obj_type, NMPlatformGetRouteFlags flags)
+{
+	NMDedupMultiIter iter;
+	NMPLookup lookup;
+	const NMDedupMultiHeadEntry *head_entry;
+	GArray *array;
+	const NMPClass *klass;
+	const NMPObject *o;
+	gboolean with_rtprot_kernel;
+
+	nm_assert (NM_IN_SET (obj_type, NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
+
+	if (!NM_FLAGS_ANY (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT))
+		flags |= NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT;
+
+	klass = nmp_class_from_type (obj_type);
+
+	head_entry = nmp_cache_lookup (nm_platform_get_cache (platform),
+	                               nmp_lookup_init_route_visible (&lookup,
+	                                                              obj_type,
+	                                                              ifindex,
+	                                                              NM_FLAGS_HAS (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT),
+	                                                              NM_FLAGS_HAS (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT)));
+
+	array = g_array_sized_new (FALSE, FALSE, klass->sizeof_public, head_entry ? head_entry->len : 0);
+
+	with_rtprot_kernel = NM_FLAGS_HAS (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_RTPROT_KERNEL);
+
+	nmp_cache_iter_for_each (&iter,
+	                         head_entry,
+	                         &o) {
+		nm_assert (NMP_OBJECT_GET_CLASS (o) == klass);
+		if (   with_rtprot_kernel
+		    || o->ip_route.rt_source != NM_IP_CONFIG_SOURCE_RTPROT_KERNEL)
+			g_array_append_vals (array, &o->ip_route, 1);
+	}
+	return array;
+}
+
 GArray *
 nm_platform_ip4_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteFlags flags)
 {
@@ -3167,7 +3207,7 @@ nm_platform_ip4_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRoute
 
 	g_return_val_if_fail (ifindex >= 0, NULL);
 
-	return klass->ip4_route_get_all (self, ifindex, flags);
+	return ipx_route_get_all (self, ifindex, NMP_OBJECT_TYPE_IP4_ROUTE, flags);
 }
 
 GArray *
@@ -3177,7 +3217,7 @@ nm_platform_ip6_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRoute
 
 	g_return_val_if_fail (ifindex >= 0, NULL);
 
-	return klass->ip6_route_get_all (self, ifindex, flags);
+	return ipx_route_get_all (self, ifindex, NMP_OBJECT_TYPE_IP6_ROUTE, flags);
 }
 
 /**
@@ -3258,17 +3298,33 @@ nm_platform_ip6_route_delete (NMPlatform *self, int ifindex, struct in6_addr net
 const NMPlatformIP4Route *
 nm_platform_ip4_route_get (NMPlatform *self, int ifindex, in_addr_t network, guint8 plen, guint32 metric)
 {
+	NMPObject obj_id;
+	const NMPObject *obj;
+
 	_CHECK_SELF (self, klass, FALSE);
 
-	return klass->ip4_route_get (self ,ifindex, network, plen, metric);
+	nmp_object_stackinit_id_ip4_route (&obj_id, ifindex, network, plen, metric);
+	obj = nmp_cache_lookup_obj (nm_platform_get_cache (self), &obj_id);
+	if (nmp_object_is_visible (obj))
+		return &obj->ip4_route;
+	return NULL;
 }
 
 const NMPlatformIP6Route *
 nm_platform_ip6_route_get (NMPlatform *self, int ifindex, struct in6_addr network, guint8 plen, guint32 metric)
 {
+	NMPObject obj_id;
+	const NMPObject *obj;
+
 	_CHECK_SELF (self, klass, FALSE);
 
-	return klass->ip6_route_get (self, ifindex, network, plen, metric);
+	metric = nm_utils_ip6_route_metric_normalize (metric);
+
+	nmp_object_stackinit_id_ip6_route (&obj_id, ifindex, &network, plen, metric);
+	obj = nmp_cache_lookup_obj (nm_platform_get_cache (self), &obj_id);
+	if (nmp_object_is_visible (obj))
+		return &obj->ip6_route;
+	return NULL;
 }
 
 /*****************************************************************************/
