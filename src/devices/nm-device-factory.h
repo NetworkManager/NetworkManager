@@ -72,6 +72,14 @@ typedef struct {
 	void (*start)                 (NMDeviceFactory *factory);
 
 	/**
+	 * match_connection:
+	 * @connection: the #NMConnection
+	 *
+	 * Check if the factory supports the given connection.
+	 */
+	gboolean (*match_connection)  (NMDeviceFactory *factory, NMConnection *connection);
+
+	/**
 	 * get_connection_parent:
 	 * @factory: the #NMDeviceFactory
 	 * @connection: the #NMConnection to return the parent name for, if supported

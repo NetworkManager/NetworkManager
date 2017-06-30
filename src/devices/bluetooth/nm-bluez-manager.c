@@ -26,6 +26,7 @@
 #include <gmodule.h>
 
 #include "devices/nm-device-factory.h"
+#include "devices/nm-device-bridge.h"
 #include "nm-setting-bluetooth.h"
 #include "settings/nm-settings.h"
 #include "nm-bluez4-manager.h"
@@ -417,6 +418,21 @@ create_device (NMDeviceFactory *factory,
 	return NULL;
 }
 
+static gboolean
+match_connection (NMDeviceFactory *factory,
+                  NMConnection *connection)
+{
+	const char *type = nm_connection_get_connection_type (connection);
+
+	nm_assert (nm_streq (type, NM_SETTING_BLUETOOTH_SETTING_NAME));
+
+	if (   nm_bt_vtable_network_server
+	    && _nm_connection_get_setting_bluetooth_for_nap (connection))
+		return FALSE;    /* handled by the bridge factory */
+
+	return TRUE;
+}
+
 /*****************************************************************************/
 
 static void
@@ -461,5 +477,6 @@ nm_bluez_manager_class_init (NMBluezManagerClass *klass)
 
 	factory_class->get_supported_types = get_supported_types;
 	factory_class->create_device = create_device;
+	factory_class->match_connection = match_connection;
 	factory_class->start = start;
 }
