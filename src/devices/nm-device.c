@@ -2911,8 +2911,10 @@ nm_device_create_and_realize (NMDevice *self,
 	if (NM_DEVICE_GET_CLASS (self)->create_and_realize) {
 		if (!NM_DEVICE_GET_CLASS (self)->create_and_realize (self, connection, parent, &plink, error))
 			return FALSE;
-		plink_copy = *plink;
-		plink = &plink_copy;
+		if (plink) {
+			plink_copy = *plink;
+			plink = &plink_copy;
+		}
 	}
 
 	realize_start_setup (self, plink,
