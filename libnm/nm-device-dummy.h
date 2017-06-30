@@ -36,6 +36,8 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_DUMMY_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DEVICE_DUMMY))
 #define NM_DEVICE_DUMMY_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_DUMMY, NMDeviceDummyClass))
 
+#define NM_DEVICE_DUMMY_HW_ADDRESS  "hw-address"
+
 /**
  * NMDeviceDummy:
  */
@@ -51,6 +53,8 @@ typedef struct {
 } NMDeviceDummyClass;
 
 GType nm_device_dummy_get_type (void);
+NM_AVAILABLE_IN_1_10
+const char *nm_device_dummy_get_hw_address (NMDeviceDummy *device);
 
 G_END_DECLS
 

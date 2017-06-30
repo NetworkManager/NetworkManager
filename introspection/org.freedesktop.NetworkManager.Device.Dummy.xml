@@ -8,6 +8,13 @@
   <interface name="org.freedesktop.NetworkManager.Device.Dummy">
 
     <!--
+        HwAddress:
+
+        Hardware address of the device.
+    -->
+    <property name="HwAddress" type="s" access="read"/>
+
+    <!--
         PropertiesChanged:
         @properties: A dictionary mapping property names to variant boxed values
 
