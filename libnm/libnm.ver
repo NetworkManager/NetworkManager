@@ -1182,6 +1182,7 @@ libnm_1_10_0 {
 global:
 	nm_device_dummy_get_hw_address;
 	nm_setting_bridge_get_group_forward_mask;
+	nm_setting_pppoe_get_parent;
 	nm_setting_wireless_security_get_pmf;
 	nm_setting_wireless_security_get_wps_method;
 	nm_setting_wireless_security_pmf_get_type;

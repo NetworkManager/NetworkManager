@@ -5789,6 +5789,12 @@ static const NMMetaPropertyInfo *const property_infos_OLPC_MESH[] = {
 #undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_PPPOE
 static const NMMetaPropertyInfo *const property_infos_PPPOE[] = {
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_PPPOE_PARENT,
+		.is_cli_option =                TRUE,
+		.property_alias =               "parent",
+		.prompt =                       N_("PPPoE parent device"),
+		.property_type =                &_pt_gobject_string,
+	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_PPPOE_SERVICE,
 		.is_cli_option =                TRUE,
 		.property_alias =               "service",
