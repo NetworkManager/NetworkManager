@@ -78,7 +78,6 @@ G_STATIC_ASSERT (sizeof (bool) <= sizeof (int));
 
 typedef struct {
 	NMDedupMultiObj parent;
-	int ref_count;
 	guint val;
 	guint other;
 } DedupObj;
@@ -93,39 +92,34 @@ _dedup_obj_assert (const NMDedupMultiObj *obj)
 	g_assert (obj);
 	o = (DedupObj *) obj;
 	g_assert (o->parent.klass == &dedup_obj_class);
-	g_assert (o->ref_count > 0);
+	g_assert (o->parent._ref_count > 0);
 	g_assert (o->val > 0);
 	return o;
 }
 
-static NMDedupMultiObj *
-_dedup_obj_get_ref (const NMDedupMultiObj *obj)
+static const NMDedupMultiObj *
+_dedup_obj_clone (const NMDedupMultiObj *obj)
 {
 	DedupObj *o, *o2;
 
 	o = _dedup_obj_assert (obj);
-	if (o->ref_count == NM_OBJ_REF_COUNT_STACKINIT) {
-		o2 = g_slice_new0 (DedupObj);
-		o2->parent.klass = &dedup_obj_class;
-		o2->ref_count = 1;
-		o2->val = o->val;
-		o2->other = o->other;
-		return (NMDedupMultiObj *) o2;
-	}
-
-	o->ref_count++;
-	return (NMDedupMultiObj *) o;
+	o2 = g_slice_new0 (DedupObj);
+	o2->parent.klass = &dedup_obj_class;
+	o2->parent._ref_count = 1;
+	o2->val = o->val;
+	o2->other = o->other;
+	return (NMDedupMultiObj *) o2;
 }
 
 static void
-_dedup_obj_put_ref (NMDedupMultiObj *obj)
+_dedup_obj_destroy (NMDedupMultiObj *obj)
 {
-	DedupObj *o;
+	DedupObj *o = (DedupObj *) obj;
 
+	nm_assert (o->parent._ref_count == 0);
+	o->parent._ref_count = 1;
 	o = _dedup_obj_assert (obj);
-	g_assert (o->ref_count != NM_OBJ_REF_COUNT_STACKINIT);
-	if (--o->ref_count == 0)
-		g_slice_free (DedupObj, o);
+	g_slice_free (DedupObj, o);
 }
 
 static guint
@@ -149,8 +143,8 @@ _dedup_obj_full_equal (const NMDedupMultiObj *obj_a,
 }
 
 static const NMDedupMultiObjClass dedup_obj_class = {
-	.obj_get_ref = _dedup_obj_get_ref,
-	.obj_put_ref = _dedup_obj_put_ref,
+	.obj_clone = _dedup_obj_clone,
+	.obj_destroy = _dedup_obj_destroy,
 	.obj_full_equality_allows_different_class = FALSE,
 	.obj_full_hash = _dedup_obj_full_hash,
 	.obj_full_equal = _dedup_obj_full_equal,
@@ -160,8 +154,8 @@ static const NMDedupMultiObjClass dedup_obj_class = {
 	(&((DedupObj) { \
 		.parent = { \
 			.klass = &dedup_obj_class, \
+			._ref_count = NM_OBJ_REF_COUNT_STACKINIT, \
 		}, \
-		.ref_count = NM_OBJ_REF_COUNT_STACKINIT, \
 		.val = (val_val), \
 		.other = (other_other), \
 	}))
@@ -295,7 +289,7 @@ _dedup_entry_assert (const NMDedupMultiEntry *entry)
 	g_assert (!entry->is_head);
 	g_assert (entry->head != (gpointer) entry);
 	_dedup_head_entry_assert (entry->head);
-	return _dedup_obj_assert (entry->box->obj);
+	return _dedup_obj_assert (entry->obj);
 }
 
 static const DedupIdxType *
@@ -341,8 +335,8 @@ _dedup_entry_assert_all (const NMDedupMultiEntry *entry, gssize expected_idx, co
 		if (expected_idx == i)
 			g_assert (entry_current == entry);
 		g_assert (idx_type->parent.klass->idx_obj_partition_equal (&idx_type->parent,
-		                                                           entry_current->box->obj,
-		                                                           c_list_entry (entry->head->lst_entries_head.next, NMDedupMultiEntry, lst_entries)->box->obj));
+		                                                           entry_current->obj,
+		                                                           c_list_entry (entry->head->lst_entries_head.next, NMDedupMultiEntry, lst_entries)->obj));
 		i++;
 	}
 }
@@ -361,14 +355,14 @@ test_dedup_multi (void)
 	g_assert (_dedup_idx_add (idx, IDX_20_3_a, DEDUP_OBJ_INIT (1, 1), NM_DEDUP_MULTI_IDX_MODE_APPEND, &entry1));
 	_dedup_entry_assert_all (entry1, 0, DEDUP_OBJ_INIT (1, 1));
 
-	g_assert (nm_dedup_multi_box_find (idx, (NMDedupMultiObj *) DEDUP_OBJ_INIT (1, 1)));
-	g_assert (!nm_dedup_multi_box_find (idx, (NMDedupMultiObj *) DEDUP_OBJ_INIT (1, 2)));
+	g_assert (nm_dedup_multi_index_obj_find (idx, (NMDedupMultiObj *) DEDUP_OBJ_INIT (1, 1)));
+	g_assert (!nm_dedup_multi_index_obj_find (idx, (NMDedupMultiObj *) DEDUP_OBJ_INIT (1, 2)));
 
 	g_assert (_dedup_idx_add (idx, IDX_20_3_a, DEDUP_OBJ_INIT (1, 2), NM_DEDUP_MULTI_IDX_MODE_APPEND, &entry1));
 	_dedup_entry_assert_all (entry1, 0, DEDUP_OBJ_INIT (1, 2));
 
-	g_assert (!nm_dedup_multi_box_find (idx, (NMDedupMultiObj *) DEDUP_OBJ_INIT (1, 1)));
-	g_assert (nm_dedup_multi_box_find (idx, (NMDedupMultiObj *) DEDUP_OBJ_INIT (1, 2)));
+	g_assert (!nm_dedup_multi_index_obj_find (idx, (NMDedupMultiObj *) DEDUP_OBJ_INIT (1, 1)));
+	g_assert (nm_dedup_multi_index_obj_find (idx, (NMDedupMultiObj *) DEDUP_OBJ_INIT (1, 2)));
 
 	g_assert (_dedup_idx_add (idx, IDX_20_3_a, DEDUP_OBJ_INIT (2, 2), NM_DEDUP_MULTI_IDX_MODE_APPEND, &entry1));
 	_dedup_entry_assert_all (entry1, 1, DEDUP_OBJ_INIT (1, 2), DEDUP_OBJ_INIT (2, 2));

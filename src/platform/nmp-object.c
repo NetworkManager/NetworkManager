@@ -491,38 +491,6 @@ nmp_class_from_type (NMPObjectType obj_type)
 
 /*****************************************************************************/
 
-const NMPObject *
-nmp_object_ref (const NMPObject *obj)
-{
-	/* ref and unref accept const pointers. NMPObject is supposed to be shared
-	 * and kept immutable. Disallowing to take/retrun a reference to a const
-	 * NMPObject is cumbersome, because callers are precisely expected to
-	 * keep a ref on the otherwise immutable object. */
-	g_return_val_if_fail (NMP_OBJECT_IS_VALID (obj), NULL);
-	g_return_val_if_fail (obj->_ref_count != NM_OBJ_REF_COUNT_STACKINIT, NULL);
-	((NMPObject *) obj)->_ref_count++;
-
-	return obj;
-}
-
-void
-nmp_object_unref (const NMPObject *obj)
-{
-	if (obj) {
-		NMPObject *o = (NMPObject *) obj;
-
-		g_return_if_fail (o->_ref_count > 0);
-		g_return_if_fail (o->_ref_count != NM_OBJ_REF_COUNT_STACKINIT);
-		if (--o->_ref_count <= 0) {
-			const NMPClass *klass = o->_class;
-
-			if (klass->cmd_obj_dispose)
-				klass->cmd_obj_dispose (o);
-			g_slice_free1 (klass->sizeof_data + G_STRUCT_OFFSET (NMPObject, object), o);
-		}
-	}
-}
-
 static void
 _vt_cmd_obj_dispose_link (NMPObject *obj)
 {
@@ -551,7 +519,7 @@ _nmp_object_new_from_class (const NMPClass *klass)
 
 	obj = g_slice_alloc0 (klass->sizeof_data + G_STRUCT_OFFSET (NMPObject, object));
 	obj->_class = klass;
-	obj->_ref_count = 1;
+	obj->parent._ref_count = 1;
 	return obj;
 }
 
@@ -587,7 +555,7 @@ _nmp_object_stackinit_from_class (NMPObject *obj, const NMPClass *klass)
 
 	memset (obj, 0, sizeof (NMPObject));
 	obj->_class = klass;
-	obj->_ref_count = NM_OBJ_REF_COUNT_STACKINIT;
+	obj->parent._ref_count = NM_OBJ_REF_COUNT_STACKINIT;
 }
 
 static NMPObject *
@@ -601,7 +569,7 @@ _nmp_object_stackinit_from_type (NMPObject *obj, NMPObjectType obj_type)
 
 	memset (obj, 0, sizeof (NMPObject));
 	obj->_class = klass;
-	obj->_ref_count = NM_OBJ_REF_COUNT_STACKINIT;
+	obj->parent._ref_count = NM_OBJ_REF_COUNT_STACKINIT;
 	return obj;
 }
 
@@ -742,7 +710,7 @@ nmp_object_to_string (const NMPObject *obj, NMPObjectToStringMode to_string_mode
 	case NMP_OBJECT_TO_STRING_ALL:
 		g_snprintf (buf, buf_size,
 		            "[%s,%p,%u,%calive,%cvisible; %s]",
-		            klass->obj_type_name, obj, obj->_ref_count,
+		            klass->obj_type_name, obj, obj->parent._ref_count,
 		            nmp_object_is_alive (obj) ? '+' : '-',
 		            nmp_object_is_visible (obj) ? '+' : '-',
 		            NMP_OBJECT_GET_CLASS (obj)->cmd_plobj_to_string (&obj->object, buf2, sizeof (buf2)));
@@ -768,7 +736,7 @@ _vt_cmd_obj_to_string_link (const NMPObject *obj, NMPObjectToStringMode to_strin
 	case NMP_OBJECT_TO_STRING_ALL:
 		g_snprintf (buf, buf_size,
 		            "[%s,%p,%u,%calive,%cvisible,%cin-nl,%p; %s]",
-		            klass->obj_type_name, obj, obj->_ref_count,
+		            klass->obj_type_name, obj, obj->parent._ref_count,
 		            nmp_object_is_alive (obj) ? '+' : '-',
 		            nmp_object_is_visible (obj) ? '+' : '-',
 		            obj->_link.netlink.is_in_netlink ? '+' : '-',
@@ -808,7 +776,7 @@ _vt_cmd_obj_to_string_lnk_vlan (const NMPObject *obj, NMPObjectToStringMode to_s
 
 		g_snprintf (buf, buf_size,
 		            "[%s,%p,%u,%calive,%cvisible; %s]",
-		            klass->obj_type_name, obj, obj->_ref_count,
+		            klass->obj_type_name, obj, obj->parent._ref_count,
 		            nmp_object_is_alive (obj) ? '+' : '-',
 		            nmp_object_is_visible (obj) ? '+' : '-',
 		            nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, buf2, sizeof (buf2)));
@@ -1339,22 +1307,25 @@ static const guint8 _supported_cache_ids_ipx_route[] = {
 
 /*****************************************************************************/
 
-static NMDedupMultiObj *
-_vt_dedup_obj_get_ref (const NMDedupMultiObj *obj)
+static void
+_vt_dedup_obj_destroy (NMDedupMultiObj *obj)
 {
 	NMPObject *o = (NMPObject *) obj;
+	const NMPClass *klass;
 
-	if (NMP_OBJECT_IS_STACKINIT (o)) {
-		return (NMDedupMultiObj *) nmp_object_new (NMP_OBJECT_GET_TYPE (o),
-		                                           &o->object);
-	}
-	return (NMDedupMultiObj *) nmp_object_ref (o);
+	nm_assert (o->parent._ref_count == 0);
+	nm_assert (!o->parent._multi_idx);
+
+	klass = o->_class;
+	if (klass->cmd_obj_dispose)
+		klass->cmd_obj_dispose (o);
+	g_slice_free1 (klass->sizeof_data + G_STRUCT_OFFSET (NMPObject, object), o);
 }
 
-static void
-_vt_dedup_obj_put_ref (NMDedupMultiObj *obj)
+static const NMDedupMultiObj *
+_vt_dedup_obj_clone (const NMDedupMultiObj *obj)
 {
-	nmp_object_unref ((NMPObject *) obj);
+	return (const NMDedupMultiObj *) nmp_object_clone ((const NMPObject *) obj, FALSE);
 }
 
 static guint
@@ -1373,8 +1344,8 @@ _vt_dedup_obj_full_equal (const NMDedupMultiObj *obj_a,
 
 #define DEDUP_MULTI_OBJ_CLASS_INIT() \
 	{ \
-		.obj_get_ref                    = _vt_dedup_obj_get_ref, \
-		.obj_put_ref                    = _vt_dedup_obj_put_ref, \
+		.obj_clone                      = _vt_dedup_obj_clone, \
+		.obj_destroy                    = _vt_dedup_obj_destroy, \
 		.obj_full_hash                  = _vt_dedup_obj_full_hash, \
 		.obj_full_equal                 = _vt_dedup_obj_full_equal, \
 	}
@@ -1512,12 +1483,18 @@ nmp_cache_link_connected_needs_toggle_by_ifindex (const NMPCache *cache, int mas
 static const NMDedupMultiEntry *
 _lookup_obj (const NMPCache *cache, const NMPObject *obj)
 {
+	const NMDedupMultiEntry *entry;
+
 	nm_assert (cache);
 	nm_assert (NMP_OBJECT_IS_VALID (obj));
 
-	return nm_dedup_multi_index_lookup_obj (cache->multi_idx,
-	                                        _idx_type_get (cache, NMP_CACHE_ID_TYPE_OBJECT_TYPE),
-	                                        obj);
+	entry = nm_dedup_multi_index_lookup_obj (cache->multi_idx,
+	                                         _idx_type_get (cache, NMP_CACHE_ID_TYPE_OBJECT_TYPE),
+	                                         obj);
+	nm_assert (!entry
+	           || (   NMP_OBJECT_IS_VALID (entry->obj)
+	               && NMP_OBJECT_GET_CLASS (entry->obj) == NMP_OBJECT_GET_CLASS (obj)));
+	return entry;
 }
 
 const NMPObject *
@@ -1529,7 +1506,7 @@ nmp_cache_lookup_obj (const NMPCache *cache, const NMPObject *obj)
 	g_return_val_if_fail (obj, NULL);
 
 	entry = _lookup_obj (cache, obj);
-	return entry ? entry->box->obj : NULL;
+	return entry ? entry->obj : NULL;
 }
 
 const NMDedupMultiEntry *
@@ -1883,33 +1860,29 @@ nmp_cache_lookup_link_full (const NMPCache *cache,
 static void
 _idxcache_update_box_move (NMPCache *cache,
                            NMPCacheIdType cache_id_type,
-                           const NMDedupMultiBox *box_old,
-                           const NMDedupMultiBox *box_new)
+                           const NMPObject *obj_old,
+                           const NMPObject *obj_new)
 {
 	const NMDedupMultiEntry *entry_new;
 	const NMDedupMultiEntry *entry_old;
 	const NMDedupMultiEntry *entry_order;
 	NMDedupMultiIdxType *idx_type;
-	const NMPObject *new, *old;
 
-	new = box_new ? box_new->obj : NULL;
-	old = box_old ? box_old->obj : NULL;
-
-	nm_assert (new || old);
-	nm_assert (!new || NMP_OBJECT_GET_TYPE (new) != NMP_OBJECT_TYPE_UNKNOWN);
-	nm_assert (!old || NMP_OBJECT_GET_TYPE (old) != NMP_OBJECT_TYPE_UNKNOWN);
-	nm_assert (!old || !new || NMP_OBJECT_GET_CLASS (new) == NMP_OBJECT_GET_CLASS (old));
-	nm_assert (!old || !new || !nmp_object_equal (new, old));
-	nm_assert (!box_new || box_new == nm_dedup_multi_box_find (cache->multi_idx, new));
-	nm_assert (!box_old || box_old == nm_dedup_multi_box_find (cache->multi_idx, old));
+	nm_assert (obj_new || obj_old);
+	nm_assert (!obj_new || NMP_OBJECT_GET_TYPE (obj_new) != NMP_OBJECT_TYPE_UNKNOWN);
+	nm_assert (!obj_old || NMP_OBJECT_GET_TYPE (obj_old) != NMP_OBJECT_TYPE_UNKNOWN);
+	nm_assert (!obj_old || !obj_new || NMP_OBJECT_GET_CLASS (obj_new) == NMP_OBJECT_GET_CLASS (obj_old));
+	nm_assert (!obj_old || !obj_new || !nmp_object_equal (obj_new, obj_old));
+	nm_assert (!obj_new || obj_new == nm_dedup_multi_index_obj_find (cache->multi_idx, obj_new));
+	nm_assert (!obj_old || obj_old == nm_dedup_multi_index_obj_find (cache->multi_idx, obj_old));
 
 	idx_type = _idx_type_get (cache, cache_id_type);
 
-	if (old) {
+	if (obj_old) {
 		entry_old = nm_dedup_multi_index_lookup_obj (cache->multi_idx,
 		                                             idx_type,
-		                                             old);
-		if (!new) {
+		                                             obj_old);
+		if (!obj_new) {
 			if (entry_old)
 				nm_dedup_multi_index_remove_entry (cache->multi_idx, entry_old);
 			return;
@@ -1917,34 +1890,33 @@ _idxcache_update_box_move (NMPCache *cache,
 	} else
 		entry_old = NULL;
 
-	if (new) {
-		if (   old
-		    && nm_dedup_multi_idx_type_id_equal (idx_type, old, new)
-		    && nm_dedup_multi_idx_type_partition_equal (idx_type, old, new)) {
-			/* optimize. We just looked up the @old entry and @new compares equal
+	if (obj_new) {
+		if (   obj_old
+		    && nm_dedup_multi_idx_type_id_equal (idx_type, obj_old, obj_new)
+		    && nm_dedup_multi_idx_type_partition_equal (idx_type, obj_old, obj_new)) {
+			/* optimize. We just looked up the @obj_old entry and @obj_new compares equal
 			 * according to idx_obj_id_equal(). entry_new is the same as entry_old. */
 			entry_new = entry_old;
 		} else {
 			entry_new = nm_dedup_multi_index_lookup_obj (cache->multi_idx,
 			                                             idx_type,
-			                                             new);
+			                                             obj_new);
 		}
 
 		if (entry_new)
 			entry_order = entry_new;
 		else if (   entry_old
-		         && nm_dedup_multi_idx_type_partition_equal (idx_type, entry_old->box->obj, new))
+		         && nm_dedup_multi_idx_type_partition_equal (idx_type, entry_old->obj, obj_new))
 			entry_order = entry_old;
 		else
 			entry_order = NULL;
 		nm_dedup_multi_index_add_full (cache->multi_idx,
 		                               idx_type,
-		                               new,
+		                               obj_new,
 		                               NM_DEDUP_MULTI_IDX_MODE_APPEND,
 		                               entry_order,
 		                               entry_new ?: NM_DEDUP_MULTI_ENTRY_MISSING,
 		                               entry_new ? entry_new->head : (entry_order ? entry_order->head : NULL),
-		                               box_new,
 		                               &entry_new,
 		                               NULL);
 
@@ -1952,8 +1924,8 @@ _idxcache_update_box_move (NMPCache *cache,
 		if (entry_new) {
 			nm_assert (idx_type->klass->idx_obj_partitionable);
 			nm_assert (idx_type->klass->idx_obj_partition_equal);
-			nm_assert (idx_type->klass->idx_obj_partitionable (idx_type, entry_new->box->obj));
-			nm_assert (idx_type->klass->idx_obj_partition_equal (idx_type, (gpointer) new, entry_new->box->obj));
+			nm_assert (idx_type->klass->idx_obj_partitionable (idx_type, entry_new->obj));
+			nm_assert (idx_type->klass->idx_obj_partition_equal (idx_type, (gpointer) obj_new, entry_new->obj));
 		}
 #endif
 	} else
@@ -1974,8 +1946,7 @@ _idxcache_update (NMPCache *cache,
 	const guint8 *i_idx_type;
 	NMDedupMultiIdxType *idx_type_o = _idx_type_get (cache, NMP_CACHE_ID_TYPE_OBJECT_TYPE);
 	const NMDedupMultiEntry *entry_new = NULL;
-	const NMDedupMultiBox *box_old;
-	const NMDedupMultiBox *box_old2 = NULL;
+	nm_auto_nmpobj const NMPObject *obj_old = NULL;
 
 	/* we update an object in the cache.
 	 *
@@ -1985,22 +1956,23 @@ _idxcache_update (NMPCache *cache,
 	nm_assert (cache);
 	nm_assert (entry_old || obj_new);
 	nm_assert (!obj_new || nmp_object_is_alive (obj_new));
-	nm_assert (!entry_old || entry_old == nm_dedup_multi_index_lookup_obj (cache->multi_idx, idx_type_o, entry_old->box->obj));
+	nm_assert (!entry_old || entry_old == nm_dedup_multi_index_lookup_obj (cache->multi_idx, idx_type_o, entry_old->obj));
 	nm_assert (!obj_new || entry_old == nm_dedup_multi_index_lookup_obj (cache->multi_idx, idx_type_o, obj_new));
 	nm_assert (!entry_old || entry_old->head->idx_type == idx_type_o);
 	nm_assert (   !entry_old
 	           || !obj_new
-	           || nm_dedup_multi_idx_type_partition_equal (idx_type_o, entry_old->box->obj, obj_new));
+	           || nm_dedup_multi_idx_type_partition_equal (idx_type_o, entry_old->obj, obj_new));
 	nm_assert (   !entry_old
 	           || !obj_new
-	           || nm_dedup_multi_idx_type_id_equal (idx_type_o, entry_old->box->obj, obj_new));
+	           || nm_dedup_multi_idx_type_id_equal (idx_type_o, entry_old->obj, obj_new));
 	nm_assert (   !entry_old
 	           || !obj_new
-	           || (   obj_new->parent.klass == ((const NMPObject *) entry_old->box->obj)->parent.klass
-	               && !obj_new->parent.klass->obj_full_equal ((NMDedupMultiObj *) obj_new, entry_old->box->obj)));
+	           || (   obj_new->parent.klass == ((const NMPObject *) entry_old->obj)->parent.klass
+	               && !obj_new->parent.klass->obj_full_equal ((NMDedupMultiObj *) obj_new, entry_old->obj)));
 
-	/* keep a boxed reference to the pre-existing entry */
-	box_old = entry_old ? nm_dedup_multi_box_ref (entry_old->box) : NULL;
+	/* keep a reference to the pre-existing entry */
+	if (entry_old)
+		obj_old = nmp_object_ref (entry_old->obj);
 
 	/* first update the main index NMP_CACHE_ID_TYPE_OBJECT_TYPE.
 	 * We already know the pre-existing @entry old, so all that
@@ -2009,6 +1981,8 @@ _idxcache_update (NMPCache *cache,
 	 *
 	 * We also get the new boxed object, which we need below. */
 	if (obj_new) {
+		nm_auto_nmpobj NMPObject *obj_old2 = NULL;
+
 		nm_dedup_multi_index_add_full (cache->multi_idx,
 		                               idx_type_o,
 		                               obj_new,
@@ -2016,34 +1990,28 @@ _idxcache_update (NMPCache *cache,
 		                               NULL,
 		                               entry_old ?: NM_DEDUP_MULTI_ENTRY_MISSING,
 		                               NULL,
-		                               NULL,
 		                               &entry_new,
-		                               &box_old2);
+		                               (const NMDedupMultiObj **) &obj_old2);
 		nm_assert (entry_new);
-		nm_assert (box_old == box_old2);
+		nm_assert (obj_old == obj_old2);
 		nm_assert (!entry_old || entry_old == entry_new);
-		if (box_old2)
-			nm_dedup_multi_box_unref (cache->multi_idx, box_old2);
 	} else
 		nm_dedup_multi_index_remove_entry (cache->multi_idx, entry_old);
 
 	/* now update all other indexes. We know the previously boxed entry, and the
 	 * newly boxed one. */
-	klass = NMP_OBJECT_GET_CLASS (entry_new ? entry_new->box->obj : box_old->obj);
+	klass = NMP_OBJECT_GET_CLASS (entry_new ? entry_new->obj : obj_old);
 	for (i_idx_type = klass->supported_cache_ids; *i_idx_type; i_idx_type++) {
 		NMPCacheIdType id_type = *i_idx_type;
 
 		if (id_type == NMP_CACHE_ID_TYPE_OBJECT_TYPE)
 			continue;
 		_idxcache_update_box_move (cache, id_type,
-		                           box_old,
-		                           entry_new ? entry_new->box : NULL);
+		                           obj_old,
+		                           entry_new ? entry_new->obj : NULL);
 	}
 
 	NM_SET_OUT (out_entry_new, entry_new);
-
-	if (box_old)
-		nm_dedup_multi_box_unref (cache->multi_idx, box_old);
 }
 
 NMPCacheOpsType
@@ -2062,7 +2030,7 @@ nmp_cache_remove (NMPCache *cache,
 		return NMP_CACHE_OPS_UNCHANGED;
 	}
 
-	obj_old = entry_old->box->obj;
+	obj_old = entry_old->obj;
 
 	NM_SET_OUT (out_obj_old, nmp_object_ref (obj_old));
 
@@ -2095,7 +2063,7 @@ nmp_cache_remove_netlink (NMPCache *cache,
 		return NMP_CACHE_OPS_UNCHANGED;
 	}
 
-	obj_old = entry_old->box->obj;
+	obj_old = entry_old->obj;
 
 	if (NMP_OBJECT_GET_TYPE (obj_needle) == NMP_OBJECT_TYPE_LINK) {
 		/* For nmp_cache_remove_netlink() we have an incomplete @obj_needle instance to be
@@ -2128,7 +2096,7 @@ nmp_cache_remove_netlink (NMPCache *cache,
 		                  entry_old,
 		                  obj_new,
 		                  &entry_new);
-		NM_SET_OUT (out_obj_new, nmp_object_ref (entry_new->box->obj));
+		NM_SET_OUT (out_obj_new, nmp_object_ref (entry_new->obj));
 		return NMP_CACHE_OPS_UPDATED;
 	}
 
@@ -2182,10 +2150,7 @@ nmp_cache_update_netlink (NMPCache *cache,
 	nm_assert (NMP_OBJECT_GET_TYPE (obj_hand_over) != NMP_OBJECT_TYPE_LINK ||
 	           (   !obj_hand_over->_link.udev.device
 	            && !obj_hand_over->link.driver));
-	nm_assert (({
-	                const NMDedupMultiBox *_b = nm_dedup_multi_box_find (cache->multi_idx, obj_hand_over);
-	                !_b || obj_hand_over != _b->obj;
-	            }));
+	nm_assert (nm_dedup_multi_index_obj_find (cache->multi_idx, obj_hand_over) != obj_hand_over);
 
 	entry_old = _lookup_obj (cache, obj_hand_over);
 
@@ -2207,11 +2172,11 @@ nmp_cache_update_netlink (NMPCache *cache,
 		                  entry_old,
 		                  obj_hand_over,
 		                  &entry_new);
-		NM_SET_OUT (out_obj_new, nmp_object_ref (entry_new->box->obj));
+		NM_SET_OUT (out_obj_new, nmp_object_ref (entry_new->obj));
 		return NMP_CACHE_OPS_ADDED;
 	}
 
-	obj_old = entry_old->box->obj;
+	obj_old = entry_old->obj;
 
 	if (NMP_OBJECT_GET_TYPE (obj_hand_over) == NMP_OBJECT_TYPE_LINK) {
 		if (!obj_hand_over->_link.netlink.is_in_netlink) {
@@ -2244,6 +2209,13 @@ nmp_cache_update_netlink (NMPCache *cache,
 			udev_device_unref (obj_hand_over->_link.udev.device);
 			obj_hand_over->_link.udev.device = obj_old->_link.udev.device ? udev_device_ref (obj_old->_link.udev.device) : NULL;
 			_nmp_object_fixup_link_udev_fields (&obj_hand_over, NULL, cache->use_udev);
+
+			if (obj_hand_over->_link.netlink.lnk) {
+				nm_auto_nmpobj const NMPObject *lnk_old = obj_hand_over->_link.netlink.lnk;
+
+				/* let's dedup/intern the lnk object. */
+				obj_hand_over->_link.netlink.lnk = nm_dedup_multi_index_obj_intern (cache->multi_idx, lnk_old);
+			}
 		}
 	} else
 		is_alive = nmp_object_is_alive (obj_hand_over);
@@ -2267,7 +2239,7 @@ nmp_cache_update_netlink (NMPCache *cache,
 	                  entry_old,
 	                  obj_hand_over,
 	                  &entry_new);
-	NM_SET_OUT (out_obj_new, nmp_object_ref (entry_new->box->obj));
+	NM_SET_OUT (out_obj_new, nmp_object_ref (entry_new->obj));
 	return NMP_CACHE_OPS_UPDATED;
 }
 
@@ -2303,10 +2275,10 @@ nmp_cache_update_link_udev (NMPCache *cache,
 		                  obj_new,
 		                  &entry_new);
 		NM_SET_OUT (out_obj_old, NULL);
-		NM_SET_OUT (out_obj_new, nmp_object_ref (entry_new->box->obj));
+		NM_SET_OUT (out_obj_new, nmp_object_ref (entry_new->obj));
 		return NMP_CACHE_OPS_ADDED;
 	} else {
-		obj_old = entry_old->box->obj;
+		obj_old = entry_old->obj;
 		NM_SET_OUT (out_obj_old, nmp_object_ref (obj_old));
 
 		if (obj_old->_link.udev.device == udevice) {
@@ -2332,7 +2304,7 @@ nmp_cache_update_link_udev (NMPCache *cache,
 		                  entry_old,
 		                  obj_new,
 		                  &entry_new);
-		NM_SET_OUT (out_obj_new, nmp_object_ref (entry_new->box->obj));
+		NM_SET_OUT (out_obj_new, nmp_object_ref (entry_new->obj));
 		return NMP_CACHE_OPS_UPDATED;
 	}
 }
@@ -2356,7 +2328,7 @@ nmp_cache_update_link_master_connected (NMPCache *cache,
 		return NMP_CACHE_OPS_UNCHANGED;
 	}
 
-	obj_old = entry_old->box->obj;
+	obj_old = entry_old->obj;
 
 	if (!nmp_cache_link_connected_needs_toggle (cache, obj_old, NULL, NULL)) {
 		NM_SET_OUT (out_obj_old, nmp_object_ref (obj_old));
@@ -2372,7 +2344,7 @@ nmp_cache_update_link_master_connected (NMPCache *cache,
 	                  entry_old,
 	                  obj_new,
 	                  &entry_new);
-	NM_SET_OUT (out_obj_new, nmp_object_ref (entry_new->box->obj));
+	NM_SET_OUT (out_obj_new, nmp_object_ref (entry_new->obj));
 	return NMP_CACHE_OPS_UPDATED;
 }
 
@@ -2542,6 +2514,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_ip6_route_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_GRE - 1] = {
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_GRE,
 		.sizeof_data                        = sizeof (NMPObjectLnkGre),
 		.sizeof_public                      = sizeof (NMPlatformLnkGre),
@@ -2552,6 +2525,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_gre_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_INFINIBAND - 1] = {
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_INFINIBAND,
 		.sizeof_data                        = sizeof (NMPObjectLnkInfiniband),
 		.sizeof_public                      = sizeof (NMPlatformLnkInfiniband),
@@ -2562,6 +2536,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_infiniband_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_IP6TNL - 1] = {
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_IP6TNL,
 		.sizeof_data                        = sizeof (NMPObjectLnkIp6Tnl),
 		.sizeof_public                      = sizeof (NMPlatformLnkIp6Tnl),
@@ -2572,6 +2547,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_ip6tnl_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_IPIP - 1] = {
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_IPIP,
 		.sizeof_data                        = sizeof (NMPObjectLnkIpIp),
 		.sizeof_public                      = sizeof (NMPlatformLnkIpIp),
@@ -2582,6 +2558,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_ipip_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_MACSEC - 1] = {
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_MACSEC,
 		.sizeof_data                        = sizeof (NMPObjectLnkMacsec),
 		.sizeof_public                      = sizeof (NMPlatformLnkMacsec),
@@ -2592,6 +2569,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_macsec_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_MACVLAN - 1] = {
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_MACVLAN,
 		.sizeof_data                        = sizeof (NMPObjectLnkMacvlan),
 		.sizeof_public                      = sizeof (NMPlatformLnkMacvlan),
@@ -2602,6 +2580,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_macvlan_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_MACVTAP - 1] = {
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_MACVTAP,
 		.sizeof_data                        = sizeof (NMPObjectLnkMacvtap),
 		.sizeof_public                      = sizeof (NMPlatformLnkMacvtap),
@@ -2612,6 +2591,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_macvlan_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_SIT - 1] = {
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_SIT,
 		.sizeof_data                        = sizeof (NMPObjectLnkSit),
 		.sizeof_public                      = sizeof (NMPlatformLnkSit),
@@ -2622,6 +2602,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_sit_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_VLAN - 1] = {
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_VLAN,
 		.sizeof_data                        = sizeof (NMPObjectLnkVlan),
 		.sizeof_public                      = sizeof (NMPlatformLnkVlan),
@@ -2637,6 +2618,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_vlan_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_VXLAN - 1] = {
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_VXLAN,
 		.sizeof_data                        = sizeof (NMPObjectLnkVxlan),
 		.sizeof_public                      = sizeof (NMPlatformLnkVxlan),

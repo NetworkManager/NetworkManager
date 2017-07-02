@@ -26,11 +26,6 @@
 /*****************************************************************************/
 
 typedef struct {
-	NMDedupMultiBox parent;
-	int ref_count;
-} Box;
-
-typedef struct {
 	/* the stack-allocated lookup entry. It has a compatible
 	 * memory layout with NMDedupMultiEntry and NMDedupMultiHeadEntry.
 	 *
@@ -47,13 +42,8 @@ typedef struct {
 struct _NMDedupMultiIndex {
 	int ref_count;
 	GHashTable *idx_entries;
-	GHashTable *idx_box;
+	GHashTable *idx_objs;
 };
-
-/*****************************************************************************/
-
-static void _box_unref (NMDedupMultiIndex *self,
-                        Box *box);
 
 /*****************************************************************************/
 
@@ -142,7 +132,7 @@ _entry_unpack (const NMDedupMultiEntry *entry,
 
 	G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (LookupEntry, lst_entries_sentinel) == G_STRUCT_OFFSET (NMDedupMultiEntry, lst_entries));
 	G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (NMDedupMultiEntry, lst_entries) == G_STRUCT_OFFSET (NMDedupMultiHeadEntry, lst_entries_head));
-	G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (NMDedupMultiEntry, box) == G_STRUCT_OFFSET (NMDedupMultiHeadEntry, idx_type));
+	G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (NMDedupMultiEntry, obj) == G_STRUCT_OFFSET (NMDedupMultiHeadEntry, idx_type));
 	G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (NMDedupMultiEntry, is_head) == G_STRUCT_OFFSET (NMDedupMultiHeadEntry, is_head));
 
 	if (!entry->lst_entries.next) {
@@ -154,11 +144,11 @@ _entry_unpack (const NMDedupMultiEntry *entry,
 	} else if (entry->is_head) {
 		head_entry = (NMDedupMultiHeadEntry *) entry;
 		nm_assert (!c_list_is_empty (&head_entry->lst_entries_head));
-		*out_obj = c_list_entry (head_entry->lst_entries_head.next, NMDedupMultiEntry, lst_entries)->box->obj;
+		*out_obj = c_list_entry (head_entry->lst_entries_head.next, NMDedupMultiEntry, lst_entries)->obj;
 		*out_idx_type = head_entry->idx_type;
 		*out_lookup_head = TRUE;
 	} else {
-		*out_obj = entry->box->obj;
+		*out_obj = entry->obj;
 		*out_idx_type = entry->head->idx_type;
 		*out_lookup_head = FALSE;
 	}
@@ -223,12 +213,11 @@ _add (NMDedupMultiIndex *self,
       NMDedupMultiIdxMode mode,
       const NMDedupMultiEntry *entry_order,
       NMDedupMultiHeadEntry *head_existing,
-      const NMDedupMultiBox *box_existing,
       const NMDedupMultiEntry **out_entry,
-      const NMDedupMultiBox **out_old_box)
+      const NMDedupMultiObj **out_obj_old)
 {
 	NMDedupMultiHeadEntry *head_entry;
-	const NMDedupMultiBox *box, *box_new;
+	const NMDedupMultiObj *obj_new, *obj_old;
 	gboolean add_head_entry = FALSE;
 
 	nm_assert (self);
@@ -239,7 +228,6 @@ _add (NMDedupMultiIndex *self,
 	                      NM_DEDUP_MULTI_IDX_MODE_PREPEND_FORCE,
 	                      NM_DEDUP_MULTI_IDX_MODE_APPEND,
 	                      NM_DEDUP_MULTI_IDX_MODE_APPEND_FORCE));
-	nm_assert (!box_existing || box_existing == nm_dedup_multi_box_find (self, obj));
 	nm_assert (!head_existing || head_existing->idx_type == idx_type);
 	nm_assert (({
 	                const NMDedupMultiHeadEntry *_h;
@@ -299,27 +287,24 @@ _add (NMDedupMultiIndex *self,
 			break;
 		};
 
-		if (   obj == entry->box->obj
+		if (   obj == entry->obj
 		    || obj->klass->obj_full_equal (obj,
-		                                   entry->box->obj)) {
+		                                   entry->obj)) {
 			NM_SET_OUT (out_entry, entry);
-			NM_SET_OUT (out_old_box, nm_dedup_multi_box_ref (entry->box));
+			NM_SET_OUT (out_obj_old, nm_dedup_multi_obj_ref (entry->obj));
 			return FALSE;
 		}
 
-		if (box_existing)
-			box_new = nm_dedup_multi_box_ref (box_existing);
-		else
-			box_new = nm_dedup_multi_box_new (self, obj);
+		obj_new = nm_dedup_multi_index_obj_intern (self, obj);
 
-		box = entry->box;
-		entry->box = box_new;
+		obj_old = entry->obj;
+		entry->obj = obj_new;
 
 		NM_SET_OUT (out_entry, entry);
-		if (out_old_box)
-			*out_old_box = box;
+		if (out_obj_old)
+			*out_obj_old = obj_old;
 		else
-			_box_unref (self, (Box *) box);
+			nm_dedup_multi_obj_unref (obj_old);
 		return TRUE;
 	}
 
@@ -328,18 +313,14 @@ _add (NMDedupMultiIndex *self,
 		/* this object cannot be partitioned by this idx_type. */
 		nm_assert (!head_existing || head_existing == NM_DEDUP_MULTI_HEAD_ENTRY_MISSING);
 		NM_SET_OUT (out_entry, NULL);
-		NM_SET_OUT (out_old_box, NULL);
+		NM_SET_OUT (out_obj_old, NULL);
 		return FALSE;
 	}
 
-	if (box_existing)
-		box_new = nm_dedup_multi_box_ref (box_existing);
-	else
-		box_new = nm_dedup_multi_box_new (self, obj);
-	obj = box_new->obj;
+	obj_new = nm_dedup_multi_index_obj_intern (self, obj);
 
 	if (!head_existing)
-		head_entry = _entry_lookup_head (self, idx_type, obj);
+		head_entry = _entry_lookup_head (self, idx_type, obj_new);
 	else if (head_existing == NM_DEDUP_MULTI_HEAD_ENTRY_MISSING)
 		head_entry = NULL;
 	else
@@ -363,7 +344,7 @@ _add (NMDedupMultiIndex *self,
 	}
 
 	entry = g_slice_new0 (NMDedupMultiEntry);
-	entry->box = box_new;
+	entry->obj = obj_new;
 	entry->head = head_entry;
 
 	switch (mode) {
@@ -393,7 +374,7 @@ _add (NMDedupMultiIndex *self,
 		nm_assert_not_reached ();
 
 	NM_SET_OUT (out_entry, entry);
-	NM_SET_OUT (out_old_box, NULL);
+	NM_SET_OUT (out_obj_old, NULL);
 	return TRUE;
 }
 
@@ -403,7 +384,7 @@ nm_dedup_multi_index_add (NMDedupMultiIndex *self,
                           /*const NMDedupMultiObj * */ gconstpointer obj,
                           NMDedupMultiIdxMode mode,
                           const NMDedupMultiEntry **out_entry,
-                          const NMDedupMultiBox **out_old_box)
+                          /* const NMDedupMultiObj ** */ gpointer out_obj_old)
 {
 	NMDedupMultiEntry *entry;
 
@@ -419,9 +400,9 @@ nm_dedup_multi_index_add (NMDedupMultiIndex *self,
 
 	entry = _entry_lookup_obj (self, idx_type, obj);
 	return _add (self, idx_type, obj,
-	             entry, mode, NULL,
+	             entry, mode,
 	             NULL, NULL,
-	             out_entry, out_old_box);
+	             out_entry, out_obj_old);
 }
 
 /* nm_dedup_multi_index_add_full:
@@ -446,16 +427,13 @@ nm_dedup_multi_index_add (NMDedupMultiIndex *self,
  * @head_existing: an optional argument to safe a lookup for the head. If specified,
  *   it must be identical to nm_dedup_multi_index_lookup_head(), with the pecularity
  *   that if the head is not yet tracked, you may specify %NM_DEDUP_MULTI_HEAD_ENTRY_MISSING
- * @box_existing: optional argument to safe the box lookup. If given, @obj and the boxed
- *   object must be identical, and @box_existing must be tracked by @self. This is to safe
- *   the additional lookup.
  * @out_entry: if give, return the added entry. This entry may have already exists (update)
  *   or be newly created. If @obj is not partitionable according to @idx_type, @obj
  *   is not to be added and it returns %NULL.
- * @out_old_box: if given, return the previously contained boxed object. It only
- *   returns a boxed object, if a matching entry was tracked previously, not if a
- *   new entry was created. Note that when passing @out_old_box you obtain a reference
- *   to the boxed object and MUST return it with nm_dedup_multi_box_unref().
+ * @out_obj_old: if given, return the previously contained object. It only
+ *   returns a  object, if a matching entry was tracked previously, not if a
+ *   new entry was created. Note that when passing @out_obj_old you obtain a reference
+ *   to the boxed object and MUST return it with nm_dedup_multi_obj_unref().
  *
  * Adds and object to the index.
  *
@@ -469,9 +447,8 @@ nm_dedup_multi_index_add_full (NMDedupMultiIndex *self,
                                const NMDedupMultiEntry *entry_order,
                                const NMDedupMultiEntry *entry_existing,
                                const NMDedupMultiHeadEntry *head_existing,
-                               const NMDedupMultiBox *box_existing,
                                const NMDedupMultiEntry **out_entry,
-                               const NMDedupMultiBox **out_old_box)
+                               /* const NMDedupMultiObj ** */ gpointer out_obj_old)
 {
 	NMDedupMultiEntry *entry;
 
@@ -498,8 +475,7 @@ nm_dedup_multi_index_add_full (NMDedupMultiIndex *self,
 	             entry,
 	             mode, entry_order,
 	             (NMDedupMultiHeadEntry *) head_existing,
-	             box_existing,
-	             out_entry, out_old_box);
+	             out_entry, out_obj_old);
 }
 
 /*****************************************************************************/
@@ -509,19 +485,19 @@ _remove_entry (NMDedupMultiIndex *self,
                NMDedupMultiEntry *entry,
                gboolean *out_head_entry_removed)
 {
-	Box *box;
+	const NMDedupMultiObj *obj;
 	NMDedupMultiHeadEntry *head_entry;
 	NMDedupMultiIdxType *idx_type;
 
 	nm_assert (self);
 	nm_assert (entry);
-	nm_assert (entry->box);
+	nm_assert (entry->obj);
 	nm_assert (entry->head);
 	nm_assert (!c_list_is_empty (&entry->lst_entries));
 	nm_assert (g_hash_table_lookup (self->idx_entries, entry) == entry);
 
 	head_entry = (NMDedupMultiHeadEntry *) entry->head;
-	box = (Box *) entry->box;
+	obj = entry->obj;
 
 	nm_assert (head_entry);
 	nm_assert (head_entry->len > 0);
@@ -555,7 +531,7 @@ _remove_entry (NMDedupMultiIndex *self,
 		g_slice_free (NMDedupMultiHeadEntry, head_entry);
 	}
 
-	_box_unref (self, box);
+	nm_dedup_multi_obj_unref (obj);
 }
 
 static guint
@@ -791,20 +767,16 @@ nm_dedup_multi_index_dirty_remove_idx (NMDedupMultiIndex *self,
 /*****************************************************************************/
 
 static guint
-_dict_idx_box_hash (const Box *box)
+_dict_idx_objs_hash (const NMDedupMultiObj *obj)
 {
-	const NMDedupMultiObj *obj = box->parent.obj;
-
 	return obj->klass->obj_full_hash (obj);
 }
 
 static gboolean
-_dict_idx_box_equal (const Box *box_a,
-                     const Box *box_b)
+_dict_idx_objs_equal (const NMDedupMultiObj *obj_a,
+                      const NMDedupMultiObj *obj_b)
 {
 	const NMDedupMultiObjClass *klass;
-	const NMDedupMultiObj *obj_a = box_a->parent.obj;
-	const NMDedupMultiObj *obj_b = box_b->parent.obj;
 
 	klass = obj_a->klass;
 
@@ -824,105 +796,139 @@ _dict_idx_box_equal (const Box *box_a,
 	return klass->obj_full_equal (obj_a, obj_b);
 }
 
-static void
-_box_unref (NMDedupMultiIndex *self,
-            Box *box)
+void
+nm_dedup_multi_index_obj_release (NMDedupMultiIndex *self,
+                                  /* const NMDedupMultiObj * */ gconstpointer obj)
 {
-	nm_assert (box);
-	nm_assert (box->ref_count > 0);
-	nm_assert (g_hash_table_lookup (self->idx_box, box) == box);
-
-	if (--box->ref_count > 0)
-		return;
-
-	if (!g_hash_table_remove (self->idx_box, box))
-		nm_assert_not_reached ();
-
-	((NMDedupMultiObj *) box->parent.obj)->klass->obj_put_ref ((NMDedupMultiObj *) box->parent.obj);
-	g_slice_free (Box, box);
-}
-
-#define BOX_INIT(obj) \
-	(&((const Box) { .parent = { .obj = obj, }, }))
-
-static Box *
-_box_find  (NMDedupMultiIndex *index,
-            /* const NMDedupMultiObj * */ gconstpointer obj)
-{
-	nm_assert (index);
+	nm_assert (self);
 	nm_assert (obj);
+	nm_assert (g_hash_table_lookup (self->idx_objs, obj) == obj);
+	nm_assert (((const NMDedupMultiObj *) obj)->_multi_idx == self);
 
-	return g_hash_table_lookup (index->idx_box, BOX_INIT (obj));
-}
-
-const NMDedupMultiBox *
-nm_dedup_multi_box_find  (NMDedupMultiIndex *index,
-                          /* const NMDedupMultiObj * */ gconstpointer obj)
-{
-	g_return_val_if_fail (index, NULL);
-	g_return_val_if_fail (obj, NULL);
-
-	return (NMDedupMultiBox *) _box_find (index, obj);
-}
-
-const NMDedupMultiBox *
-nm_dedup_multi_box_new (NMDedupMultiIndex *index,
-                        /* const NMDedupMultiObj * */ gconstpointer obj)
-{
-	Box *box;
-	const NMDedupMultiObj *o;
-
-	g_return_val_if_fail (index, NULL);
-	g_return_val_if_fail (obj, NULL);
-
-	box = _box_find (index, obj);
-	if (box) {
-		box->ref_count++;
-		return (NMDedupMultiBox *) box;
-	}
-
-	o = ((const NMDedupMultiObj *) obj)->klass->obj_get_ref (obj);
-	if (!o)
-		g_return_val_if_reached (NULL);
-
-	box = g_slice_new (Box);
-	box->parent.obj = o;
-	box->ref_count = 1;
-
-	nm_assert (_dict_idx_box_equal (box, BOX_INIT (obj)));
-	nm_assert (_dict_idx_box_equal (BOX_INIT (obj), box));
-	nm_assert (_dict_idx_box_hash (BOX_INIT (obj)) == _dict_idx_box_hash (box));
-
-	if (!nm_g_hash_table_add (index->idx_box, box))
+	((NMDedupMultiObj *) obj)->_multi_idx = NULL;
+	if (!g_hash_table_remove (self->idx_objs, obj))
 		nm_assert_not_reached ();
-
-	return &box->parent;
 }
 
-const NMDedupMultiBox *
-nm_dedup_multi_box_ref (const NMDedupMultiBox *box)
-{
-	Box *b;
-
-	b = (Box *) box;
-
-	g_return_val_if_fail (b, NULL);
-	g_return_val_if_fail (b->ref_count > 0, NULL);
-
-	b->ref_count++;
-	return box;
-}
-
-const NMDedupMultiBox *
-nm_dedup_multi_box_unref (NMDedupMultiIndex *self,
-                          const NMDedupMultiBox *box)
+gconstpointer
+nm_dedup_multi_index_obj_find (NMDedupMultiIndex *self,
+                               /* const NMDedupMultiObj * */ gconstpointer obj)
 {
 	g_return_val_if_fail (self, NULL);
-	g_return_val_if_fail (box, NULL);
-	g_return_val_if_fail (((Box *) box)->ref_count > 0, NULL);
+	g_return_val_if_fail (obj, NULL);
 
-	_box_unref (self, (Box *) box);
+	return g_hash_table_lookup (self->idx_objs, obj);
+}
+
+gconstpointer
+nm_dedup_multi_index_obj_intern (NMDedupMultiIndex *self,
+                                 /* const NMDedupMultiObj * */ gconstpointer obj)
+{
+	const NMDedupMultiObj *obj_new = obj;
+	const NMDedupMultiObj *obj_old;
+
+	nm_assert (self);
+	nm_assert (obj_new);
+
+	if (obj_new->_multi_idx == self) {
+		nm_assert (g_hash_table_lookup (self->idx_objs, obj_new) == obj_new);
+		nm_dedup_multi_obj_ref (obj_new);
+		return obj_new;
+	}
+
+	obj_old = g_hash_table_lookup (self->idx_objs, obj_new);
+	nm_assert (obj_old != obj_new);
+
+	if (obj_old) {
+		nm_assert (obj_old->_multi_idx == self);
+		nm_dedup_multi_obj_ref (obj_old);
+		return obj_old;
+	}
+
+	if (nm_dedup_multi_obj_needs_clone (obj_new))
+		obj_new = nm_dedup_multi_obj_clone (obj_new);
+	else
+		obj_new = nm_dedup_multi_obj_ref (obj_new);
+
+	nm_assert (obj_new);
+	nm_assert (!obj_new->_multi_idx);
+
+	if (!nm_g_hash_table_add (self->idx_objs, (gpointer) obj_new))
+		nm_assert_not_reached ();
+
+	((NMDedupMultiObj *) obj_new)->_multi_idx = self;
+	return obj_new;
+}
+
+const NMDedupMultiObj *
+nm_dedup_multi_obj_ref (const NMDedupMultiObj *obj)
+{
+	/* ref and unref accept const pointers. Objects is supposed to be shared
+	 * and kept immutable. Disallowing to take/retrun a reference to a const
+	 * NMPObject is cumbersome, because callers are precisely expected to
+	 * keep a ref on the otherwise immutable object. */
+
+	nm_assert (obj);
+	nm_assert (obj->_ref_count != NM_OBJ_REF_COUNT_STACKINIT);
+	nm_assert (obj->_ref_count > 0);
+
+	((NMDedupMultiObj *) obj)->_ref_count++;
+	return obj;
+}
+
+const NMDedupMultiObj *
+nm_dedup_multi_obj_unref (const NMDedupMultiObj *obj)
+{
+	if (obj) {
+		nm_assert (obj->_ref_count > 0);
+		nm_assert (obj->_ref_count != NM_OBJ_REF_COUNT_STACKINIT);
+
+again:
+		if (--(((NMDedupMultiObj *) obj)->_ref_count) <= 0) {
+			if (obj->_multi_idx) {
+				/* restore the ref-count to 1 and release the object first
+				 * from the index. Then, retry again to unref. */
+				((NMDedupMultiObj *) obj)->_ref_count++;
+				nm_dedup_multi_index_obj_release (obj->_multi_idx, obj);
+				nm_assert (obj->_ref_count == 1);
+				nm_assert (!obj->_multi_idx);
+				goto again;
+			}
+
+			obj->klass->obj_destroy ((NMDedupMultiObj *) obj);
+		}
+	}
+
 	return NULL;
+}
+
+gboolean
+nm_dedup_multi_obj_needs_clone (const NMDedupMultiObj *obj)
+{
+	nm_assert (obj);
+
+	if (   obj->_multi_idx
+	    || obj->_ref_count == NM_OBJ_REF_COUNT_STACKINIT)
+		return TRUE;
+
+	if (   obj->klass->obj_needs_clone
+	    && obj->klass->obj_needs_clone (obj))
+		return TRUE;
+
+	return FALSE;
+}
+
+const NMDedupMultiObj *
+nm_dedup_multi_obj_clone (const NMDedupMultiObj *obj)
+{
+	const NMDedupMultiObj *o;
+
+	nm_assert (obj);
+
+	o = obj->klass->obj_clone (obj);
+	nm_assert (o);
+	nm_assert (o->_ref_count == 1);
+	return o;
 }
 
 /*****************************************************************************/
@@ -935,7 +941,7 @@ nm_dedup_multi_index_new (void)
 	self = g_slice_new0 (NMDedupMultiIndex);
 	self->ref_count = 1;
 	self->idx_entries = g_hash_table_new ((GHashFunc) _dict_idx_entries_hash, (GEqualFunc) _dict_idx_entries_equal);
-	self->idx_box     = g_hash_table_new ((GHashFunc) _dict_idx_box_hash,     (GEqualFunc) _dict_idx_box_equal);
+	self->idx_objs    = g_hash_table_new ((GHashFunc) _dict_idx_objs_hash,    (GEqualFunc) _dict_idx_objs_equal);
 	return self;
 }
 
@@ -955,6 +961,7 @@ nm_dedup_multi_index_unref (NMDedupMultiIndex *self)
 	GHashTableIter iter;
 	const NMDedupMultiIdxType *idx_type;
 	NMDedupMultiEntry *entry;
+	const NMDedupMultiObj *obj;
 
 	g_return_val_if_fail (self, NULL);
 	g_return_val_if_fail (self->ref_count > 0, NULL);
@@ -975,13 +982,15 @@ more:
 
 	nm_assert (g_hash_table_size (self->idx_entries) == 0);
 
-	/* If callers took references to NMDedupMultiBox instances, they
-	 * must keep NMDedupMultiIndex alive for as long as they keep
-	 * the boxed reference. */
-	nm_assert (g_hash_table_size (self->idx_box) == 0);
+	g_hash_table_iter_init (&iter, self->idx_objs);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &obj, NULL)) {
+		nm_assert (obj->_multi_idx == self);
+		((NMDedupMultiObj * )obj)->_multi_idx = NULL;
+	}
+	g_hash_table_remove_all (self->idx_objs);
 
 	g_hash_table_unref (self->idx_entries);
-	g_hash_table_unref (self->idx_box);
+	g_hash_table_unref (self->idx_objs);
 
 	g_slice_free (NMDedupMultiIndex, self);
 	return NULL;

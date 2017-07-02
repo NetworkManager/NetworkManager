@@ -215,7 +215,7 @@ static const NMPlatformIP4Route *
 _entry_iter_get_ip4_route (const CList *iter)
 {
 	const NMDedupMultiEntry *e = c_list_entry (iter, NMDedupMultiEntry, lst_entries);
-	const NMPObject *o = (NMPObject *) e->box->obj;
+	const NMPObject *o = e->obj;
 
 	nm_assert (o);
 	nm_assert (NMP_OBJECT_GET_TYPE (o) == NMP_OBJECT_TYPE_IP4_ROUTE);
@@ -236,8 +236,8 @@ nm_ip4_config_iter_ip4_route_next (NMDedupMultiIter *ipconf_iter, const NMPlatfo
 
 	has_next = nm_dedup_multi_iter_next (ipconf_iter);
 	if (has_next) {
-		nm_assert (NMP_OBJECT_GET_TYPE (ipconf_iter->current->box->obj) == NMP_OBJECT_TYPE_IP4_ROUTE);
-		NM_SET_OUT (out_route, &(((const NMPObject *) ipconf_iter->current->box->obj)->ip4_route));
+		nm_assert (NMP_OBJECT_GET_TYPE (ipconf_iter->current->obj) == NMP_OBJECT_TYPE_IP4_ROUTE);
+		NM_SET_OUT (out_route, &(((const NMPObject *) ipconf_iter->current->obj)->ip4_route));
 	}
 	return has_next;
 }
@@ -1779,7 +1779,7 @@ _add_route (NMIP4Config *config, const NMPObject *o_new, const NMPlatformIP4Rout
 {
 	NMIP4ConfigPrivate *priv;
 	NMPObject o_new_storage;
-	const NMDedupMultiBox *box_old;
+	nm_auto_nmpobj const NMPObject *obj_old = NULL;
 
 	nm_assert (NM_IS_IP4_CONFIG (config));
 
@@ -1812,16 +1812,13 @@ _add_route (NMIP4Config *config, const NMPObject *o_new, const NMPlatformIP4Rout
 	                               o_new,
 	                               NM_DEDUP_MULTI_IDX_MODE_APPEND,
 	                               NULL,
-	                               &box_old)) {
-		if (box_old)
-			nm_dedup_multi_box_unref (priv->multi_idx, box_old);
+	                               &obj_old))
 		return;
-	}
 
-	if (box_old) {
+	if (obj_old) {
 		NMIPConfigSource old_source;
 
-		old_source = ((const NMPObject *) box_old->obj)->ip_route.rt_source;
+		old_source = obj_old->ip_route.rt_source;
 		/* we want to keep the maximum rt_source. But since we expect
 		 * that usually we already add the maxiumum right away, we first try to
 		 * add the new route (replacing the old one). Only if we later
@@ -1842,7 +1839,6 @@ _add_route (NMIP4Config *config, const NMPObject *o_new, const NMPlatformIP4Rout
 			                               NULL))
 				nm_assert_not_reached ();
 		}
-		nm_dedup_multi_box_unref (priv->multi_idx, box_old);
 	}
 
 	_notify (config, PROP_ROUTE_DATA);

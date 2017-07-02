@@ -3295,7 +3295,7 @@ cache_prune_one_type (NMPlatform *platform, NMPObjectType obj_type)
 		if (iter.current->dirty) {
 			nm_auto_nmpobj const NMPObject *obj_old = NULL;
 
-			obj = iter.current->box->obj;
+			obj = iter.current->obj;
 			_LOGt ("cache-prune: prune %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ALL, NULL, 0));
 			cache_op = nmp_cache_remove (cache, obj, TRUE, &obj_old);
 			nm_assert (cache_op == NMP_CACHE_OPS_REMOVED);

@@ -36,10 +36,18 @@ struct {
 static void
 test_obj_base (void)
 {
-	static const GObject *g = NULL;
-	static const GTypeClass *k = NULL;
-	static const NMPObject *o = NULL;
-	static const NMPClass *c = NULL;
+	static const union {
+		GObject g;
+		NMPObject k;
+	} x = { };
+	static const union {
+		GTypeClass k;
+		NMPClass c;
+	} l = { };
+	static const GObject *g = &x.g;
+	static const GTypeClass *k = &l.k;
+	static const NMPObject *o = &x.k;
+	static const NMPClass *c = &l.c;
 
 	NMObjBaseInst *obj;
 	gs_unref_object GCancellable *obj_cancellable = g_cancellable_new ();
@@ -54,9 +62,8 @@ test_obj_base (void)
 
 	STATIC_ASSERT (&g->g_type_instance              == (void *) &o->_class);
 	STATIC_ASSERT (&g->g_type_instance.g_class      == (void *) &o->_class);
-	STATIC_ASSERT (&g->ref_count                    == (void *) &o->_ref_count);
 
-	STATIC_ASSERT (sizeof (o->parent)               == sizeof (GTypeInstance));
+	STATIC_ASSERT (sizeof (o->parent.parent)        == sizeof (GTypeInstance));
 
 	STATIC_ASSERT (&c->parent                       == (void *) c);
 	STATIC_ASSERT (&c->parent.parent.g_type_class   == (void *) c);

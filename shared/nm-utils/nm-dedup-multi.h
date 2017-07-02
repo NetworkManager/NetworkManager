@@ -29,7 +29,6 @@
 
 typedef struct _NMDedupMultiObj             NMDedupMultiObj;
 typedef struct _NMDedupMultiObjClass        NMDedupMultiObjClass;
-typedef struct _NMDedupMultiBox             NMDedupMultiBox;
 typedef struct _NMDedupMultiIdxType         NMDedupMultiIdxType;
 typedef struct _NMDedupMultiIdxTypeClass    NMDedupMultiIdxTypeClass;
 typedef struct _NMDedupMultiEntry           NMDedupMultiEntry;
@@ -57,16 +56,18 @@ struct _NMDedupMultiObj {
 		NMObjBaseInst parent;
 		const NMDedupMultiObjClass *klass;
 	};
+	NMDedupMultiIndex *_multi_idx;
+	guint _ref_count;
 };
 
 struct _NMDedupMultiObjClass {
 	NMObjBaseClass parent;
 
-	/* obj_get_ref() may just increase the ref-count, or it may allocate a new object.
-	 * In any case, it returns ownership of an equal object to @obj.  */
-	NMDedupMultiObj *(*obj_get_ref) (const NMDedupMultiObj *obj);
+	const NMDedupMultiObj *(*obj_clone) (const NMDedupMultiObj *obj);
 
-	void (*obj_put_ref) (NMDedupMultiObj *obj);
+	gboolean (*obj_needs_clone) (const NMDedupMultiObj *obj);
+
+	void (*obj_destroy) (NMDedupMultiObj *obj);
 
 	gboolean obj_full_equality_allows_different_class;
 
@@ -79,14 +80,19 @@ struct _NMDedupMultiObjClass {
 
 /*****************************************************************************/
 
-struct _NMDedupMultiBox {
-	gconstpointer obj;
-};
+const NMDedupMultiObj *nm_dedup_multi_obj_ref         (const NMDedupMultiObj *obj);
+const NMDedupMultiObj *nm_dedup_multi_obj_unref       (const NMDedupMultiObj *obj);
+const NMDedupMultiObj *nm_dedup_multi_obj_clone       (const NMDedupMultiObj *obj);
+gboolean               nm_dedup_multi_obj_needs_clone (const NMDedupMultiObj *obj);
 
-const NMDedupMultiBox *nm_dedup_multi_box_new   (NMDedupMultiIndex *index, /* const NMDedupMultiObj * */ gconstpointer obj);
-const NMDedupMultiBox *nm_dedup_multi_box_find  (NMDedupMultiIndex *index, /* const NMDedupMultiObj * */ gconstpointer obj);
-const NMDedupMultiBox *nm_dedup_multi_box_ref   (const NMDedupMultiBox *box);
-const NMDedupMultiBox *nm_dedup_multi_box_unref (NMDedupMultiIndex *index, const NMDedupMultiBox *box);
+gconstpointer nm_dedup_multi_index_obj_intern (NMDedupMultiIndex *self,
+                                               /* const NMDedupMultiObj * */ gconstpointer obj);
+
+void nm_dedup_multi_index_obj_release (NMDedupMultiIndex *self,
+                                       /* const NMDedupMultiObj * */ gconstpointer obj);
+
+/* const NMDedupMultiObj * */ gconstpointer nm_dedup_multi_index_obj_find (NMDedupMultiIndex *self,
+                                                                           /* const NMDedupMultiObj * */ gconstpointer obj);
 
 /*****************************************************************************/
 
@@ -190,12 +196,7 @@ struct _NMDedupMultiEntry {
 	 * All entries compare equal according to idx_obj_partition_equal(). */
 	CList lst_entries;
 
-	/* the object instance. It is ref-counted and shared.
-	 * Note that this instance must be immutable once it
-	 * is added to the list.
-	 *
-	 * For head entries, @box is NULL and @head points to itself. */
-	const NMDedupMultiBox *box;
+	/* const NMDedupMultiObj * */ gconstpointer obj;
 
 	bool is_head;
 	bool dirty;
@@ -255,16 +256,15 @@ gboolean nm_dedup_multi_index_add_full (NMDedupMultiIndex *self,
                                         const NMDedupMultiEntry *entry_order,
                                         const NMDedupMultiEntry *entry_existing,
                                         const NMDedupMultiHeadEntry *head_existing,
-                                        const NMDedupMultiBox *box_existing,
                                         const NMDedupMultiEntry **out_entry,
-                                        const NMDedupMultiBox **out_old_box);
+                                        /* const NMDedupMultiObj ** */ gpointer out_obj_old);
 
 gboolean nm_dedup_multi_index_add (NMDedupMultiIndex *self,
                                    NMDedupMultiIdxType *idx_type,
                                    /*const NMDedupMultiObj * */ gconstpointer obj,
                                    NMDedupMultiIdxMode mode,
                                    const NMDedupMultiEntry **out_entry,
-                                   const NMDedupMultiBox **out_old_box);
+                                   /* const NMDedupMultiObj ** */ gpointer out_obj_old);
 
 const NMDedupMultiEntry *nm_dedup_multi_index_lookup_obj (NMDedupMultiIndex *self,
                                                           const NMDedupMultiIdxType *idx_type,

@@ -144,7 +144,7 @@ typedef struct {
 		bool is_in_netlink;
 
 		/* Additional data that depends on the link-type (IFLA_INFO_DATA) */
-		NMPObject *lnk;
+		const NMPObject *lnk;
 	} netlink;
 
 	struct {
@@ -232,7 +232,6 @@ struct _NMPObject {
 		NMDedupMultiObj parent;
 		const NMPClass *_class;
 	};
-	guint _ref_count;
 	union {
 		NMPlatformObject        object;
 
@@ -298,7 +297,7 @@ NMP_OBJECT_UP_CAST(const NMPlatformObject *plobj)
 	obj = plobj
 	      ? (NMPObject *) ( &(((char *) plobj)[-((int) G_STRUCT_OFFSET (NMPObject, object))]) )
 	      : NULL;
-	nm_assert (!obj || (obj->_ref_count > 0 && NMP_CLASS_IS_VALID (obj->_class)));
+	nm_assert (!obj || (obj->parent._ref_count > 0 && NMP_CLASS_IS_VALID (obj->_class)));
 	return obj;
 }
 #define NMP_OBJECT_UP_CAST(plobj) (NMP_OBJECT_UP_CAST ((const NMPlatformObject *) (plobj)))
@@ -307,7 +306,7 @@ static inline gboolean
 NMP_OBJECT_IS_VALID (const NMPObject *obj)
 {
 	nm_assert (!obj || (   obj
-	                    && obj->_ref_count > 0
+	                    && obj->parent._ref_count > 0
 	                    && NMP_CLASS_IS_VALID (obj->_class)));
 
 	/* There isn't really much to check. Either @obj is NULL, or we must
@@ -320,7 +319,7 @@ NMP_OBJECT_IS_STACKINIT (const NMPObject *obj)
 {
 	nm_assert (!obj || NMP_OBJECT_IS_VALID (obj));
 
-	return obj && obj->_ref_count == NM_OBJ_REF_COUNT_STACKINIT;
+	return obj && obj->parent._ref_count == NM_OBJ_REF_COUNT_STACKINIT;
 }
 
 static inline const NMPClass *
@@ -377,8 +376,26 @@ NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 
 const NMPClass *nmp_class_from_type (NMPObjectType obj_type);
 
-const NMPObject *nmp_object_ref (const NMPObject *object);
-void nmp_object_unref (const NMPObject *object);
+static inline const NMPObject *
+nmp_object_ref (const NMPObject *obj)
+{
+	/* ref and unref accept const pointers. NMPObject is supposed to be shared
+	 * and kept immutable. Disallowing to take/retrun a reference to a const
+	 * NMPObject is cumbersome, because callers are precisely expected to
+	 * keep a ref on the otherwise immutable object. */
+	g_return_val_if_fail (NMP_OBJECT_IS_VALID (obj), NULL);
+	g_return_val_if_fail (obj->parent._ref_count != NM_OBJ_REF_COUNT_STACKINIT, NULL);
+
+	return (const NMPObject *) nm_dedup_multi_obj_ref ((const NMDedupMultiObj *) obj);
+}
+
+static inline const NMPObject *
+nmp_object_unref (const NMPObject *obj)
+{
+	nm_dedup_multi_obj_unref ((const NMDedupMultiObj *) obj);
+	return NULL;
+}
+
 NMPObject *nmp_object_new (NMPObjectType obj_type, const NMPlatformObject *plob);
 NMPObject *nmp_object_new_link (int ifindex);
 
@@ -470,8 +487,8 @@ nmp_cache_iter_next (NMDedupMultiIter *iter, const NMPObject **out_obj)
 
 	has_next = nm_dedup_multi_iter_next (iter);
 	if (has_next) {
-		nm_assert (NMP_OBJECT_IS_VALID (iter->current->box->obj));
-		NM_SET_OUT (out_obj, iter->current->box->obj);
+		nm_assert (NMP_OBJECT_IS_VALID (iter->current->obj));
+		NM_SET_OUT (out_obj, iter->current->obj);
 	}
 	return has_next;
 }
@@ -483,8 +500,8 @@ nmp_cache_iter_next_link (NMDedupMultiIter *iter, const NMPlatformLink **out_obj
 
 	has_next = nm_dedup_multi_iter_next (iter);
 	if (has_next) {
-		nm_assert (NMP_OBJECT_GET_TYPE (iter->current->box->obj) == NMP_OBJECT_TYPE_LINK);
-		NM_SET_OUT (out_obj, &(((const NMPObject *) iter->current->box->obj)->link));
+		nm_assert (NMP_OBJECT_GET_TYPE (iter->current->obj) == NMP_OBJECT_TYPE_LINK);
+		NM_SET_OUT (out_obj, &(((const NMPObject *) iter->current->obj)->link));
 	}
 	return has_next;
 }
