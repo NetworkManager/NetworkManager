@@ -1155,7 +1155,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 * An array of 8 uint values, where the array index corresponds to the
 	 * Priority Group ID (0 - 7) and the value indicates the percentage of link
 	 * bandwidth allocated to that group.  Allowed values are 0 - 100, and the
-	 * sum of all values must total 100 percent.
+	 * sum of all values must total 100 percents.
 	 *
 	 * Since: 0.9.10
 	 **/
@@ -1173,7 +1173,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 * Priority (0 - 7) and the value indicates the percentage of bandwidth of
 	 * the priority's assigned group that the priority may use.  The sum of all
 	 * percentages for priorities which belong to the same group must total 100
-	 * percent.
+	 * percents.
 	 *
 	 * Since: 0.9.10
 	 **/

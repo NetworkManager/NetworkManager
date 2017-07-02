@@ -865,9 +865,9 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	/**
 	 * NMSettingWired:port:
 	 *
-	 * Specific port type to use if multiple the device supports multiple
+	 * Specific port type to use if the device supports multiple
 	 * attachment methods.  One of "tp" (Twisted Pair), "aui" (Attachment Unit
-	 * Interface), "bnc" (Thin Ethernet) or "mii" (Media Independent Interface.
+	 * Interface), "bnc" (Thin Ethernet) or "mii" (Media Independent Interface).
 	 * If the device supports only one port type, this setting is ignored.
 	 **/
 	g_object_class_install_property

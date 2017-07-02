@@ -1012,9 +1012,9 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_wired_class)
 	/**
 	 * NMSettingWired:port:
 	 *
-	 * Specific port type to use if multiple the device supports multiple
+	 * Specific port type to use if the device supports multiple
 	 * attachment methods.  One of "tp" (Twisted Pair), "aui" (Attachment Unit
-	 * Interface), "bnc" (Thin Ethernet) or "mii" (Media Independent Interface.
+	 * Interface), "bnc" (Thin Ethernet) or "mii" (Media Independent Interface).
 	 * If the device supports only one port type, this setting is ignored.
 	 **/
 	/* ---ifcfg-rh---
@@ -1033,7 +1033,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_wired_class)
 	/**
 	 * NMSettingWired:speed:
 	 *
-	 * Can be set to a value grater than zero only when "auto-negotiate" is "off".
+	 * Can be set to a value greater than zero only when "auto-negotiate" is "off".
 	 * In that case, statically configures the device to use that specified speed.
 	 * In Mbit/s, ie 100 == 100Mbit/s.
 	 * Must be set together with the "duplex" property when non-zero.

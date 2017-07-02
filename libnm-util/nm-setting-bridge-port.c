@@ -264,7 +264,7 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *setting_class)
 	/**
 	 * NMSettingBridgePort:hairpin-mode:
 	 *
-	 * Enables or disabled "hairpin mode" for the port, which allows frames to
+	 * Enables or disables "hairpin mode" for the port, which allows frames to
 	 * be sent back out through the port the frame was received on.
 	 *
 	 * Since: 0.9.8

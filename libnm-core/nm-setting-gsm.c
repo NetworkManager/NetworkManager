@@ -793,7 +793,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 	 * mobile network operator which this connection applies to.  If given,
 	 * the connection will apply to any device also allowed by
 	 * #NMSettingGsm:device-id and #NMSettingGsm:sim-id which contains a SIM
-	 * card provisioined by the given operator.
+	 * card provisioned by the given operator.
 	 *
 	 * Since: 1.2
 	 **/

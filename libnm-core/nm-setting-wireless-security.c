@@ -1843,7 +1843,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 * automatically determine whether it's feasible to start WPS enrollment from
 	 * the Access Point capabilities.
 	 *
-	 * WPS can by disabled by setting this property to a value of 1.
+	 * WPS can be disabled by setting this property to a value of 1.
 	 *
 	 * Since: 1.10
 	 **/
