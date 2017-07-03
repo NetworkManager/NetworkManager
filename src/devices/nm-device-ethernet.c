@@ -108,7 +108,6 @@ typedef struct _NMDeviceEthernetPrivate {
 
 	/* PPPoE */
 	NMPPPManager *ppp_manager;
-	NMIP4Config  *pending_ip4_config;
 	gint32        last_pppoe_time;
 	guint         pppoe_wait_id;
 
@@ -1352,11 +1351,6 @@ deactivate (NMDevice *device)
 	reset_8021x_autoconnect_retries (device);
 
 	nm_clear_g_source (&priv->pppoe_wait_id);
-
-	if (priv->pending_ip4_config) {
-		g_object_unref (priv->pending_ip4_config);
-		priv->pending_ip4_config = NULL;
-	}
 
 	if (priv->ppp_manager) {
 		nm_ppp_manager_stop_sync (priv->ppp_manager);
