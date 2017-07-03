@@ -57,6 +57,8 @@ gboolean nm_device_bring_up (NMDevice *self, gboolean wait, gboolean *no_firmwar
 
 void nm_device_take_down (NMDevice *self, gboolean block);
 
+gboolean nm_device_take_over_link (NMDevice *self, const char *ifname);
+
 gboolean nm_device_hw_addr_set (NMDevice *device,
                                 const char *addr,
                                 const char *detail,

@@ -1258,6 +1258,24 @@ nm_manager_iface_for_uuid (NMManager *self, const char *uuid)
 	return nm_connection_get_interface_name (NM_CONNECTION (connection));
 }
 
+gboolean
+nm_manager_remove_device (NMManager *self, const char *ifname)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+	NMDevice *d;
+
+	for (iter = priv->devices; iter; iter = iter->next) {
+		d = iter->data;
+		if (nm_streq0 (nm_device_get_iface (d), ifname)) {
+			remove_device (self, d, FALSE, FALSE);
+			return TRUE;
+		}
+	}
+
+	return FALSE;
+}
+
 /**
  * system_create_virtual_device:
  * @self: the #NMManager
