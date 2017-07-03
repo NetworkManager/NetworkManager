@@ -202,8 +202,10 @@ get_ip4_domains (GPtrArray *domains, NMIP4Config *ip4)
 static void
 get_ip6_domains (GPtrArray *domains, NMIP6Config *ip6)
 {
+	NMDedupMultiIter ipconf_iter;
 	char *cidr;
-	int i;
+	const NMPlatformIP6Route *routes;
+	guint i;
 
 	/* Extract searches */
 	for (i = 0; i < nm_ip6_config_get_num_searches (ip6); i++)
@@ -223,9 +225,7 @@ get_ip6_domains (GPtrArray *domains, NMIP6Config *ip6)
 		g_ptr_array_add (domains, cidr);
 	}
 
-	for (i = 0; i < nm_ip6_config_get_num_routes (ip6); i++) {
-		const NMPlatformIP6Route *routes = nm_ip6_config_get_route (ip6, i);
-
+	nm_ip6_config_iter_ip6_route_for_each (&ipconf_iter, ip6, &routes) {
 		cidr = g_strdup_printf ("%s/%u",
 		                        nm_utils_inet6_ntop (&routes->network, NULL),
 		                        routes->plen);

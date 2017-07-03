@@ -992,6 +992,8 @@ print_vpn_config (NMVpnConnection *self)
 		_LOGI ("Data: No IPv4 configuration");
 
 	if (priv->ip6_config) {
+		const NMPlatformIP6Route *route;
+
 		_LOGI ("Data: IPv6 configuration:");
 
 		address6 = nm_ip6_config_get_address (priv->ip6_config, 0);
@@ -1003,10 +1005,7 @@ print_vpn_config (NMVpnConnection *self)
 		_LOGI ("Data:   Internal Point-to-Point Address: %s", nm_utils_inet6_ntop (&address6->peer_address, NULL));
 		_LOGI ("Data:   Maximum Segment Size (MSS): %d", nm_ip6_config_get_mss (priv->ip6_config));
 
-		num = nm_ip6_config_get_num_routes (priv->ip6_config);
-		for (i = 0; i < num; i++) {
-			const NMPlatformIP6Route *route = nm_ip6_config_get_route (priv->ip6_config, i);
-
+		nm_ip6_config_iter_ip6_route_for_each (&ipconf_iter, priv->ip6_config, &route) {
 			_LOGI ("Data:   Static Route: %s/%d   Next Hop: %s",
 			       nm_utils_inet6_ntop (&route->network, NULL),
 			       route->plen,
@@ -1578,7 +1577,6 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 	const char *str;
 	GVariant *v;
 	gboolean b;
-	guint i, n;
 	int ip_ifindex;
 
 	g_return_if_fail (dict && g_variant_is_of_type (dict, G_VARIANT_TYPE_VARDICT));
@@ -1669,9 +1667,11 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 	if (   g_variant_lookup (dict, NM_VPN_PLUGIN_IP6_CONFIG_PRESERVE_ROUTES, "b", &b)
 	    && b) {
 		if (priv->ip6_config) {
-			n = nm_ip6_config_get_num_routes (priv->ip6_config);
-			for (i = 0; i < n; i++)
-				nm_ip6_config_add_route (config, nm_ip6_config_get_route (priv->ip6_config, i));
+			NMDedupMultiIter ipconf_iter;
+			const NMPlatformIP6Route *route;
+
+			nm_ip6_config_iter_ip6_route_for_each (&ipconf_iter, priv->ip6_config, &route)
+				nm_ip6_config_add_route (config, route);
 		}
 	} else if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP6_CONFIG_ROUTES, "a(ayuayu)", &iter)) {
 		GVariant *dest, *next_hop;

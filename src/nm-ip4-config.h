@@ -43,6 +43,11 @@ gboolean nm_ip4_config_iter_ip4_route_next (NMDedupMultiIter *iter, const NMPlat
 	     nm_ip4_config_iter_ip4_route_next ((iter), (route)); \
 	     )
 
+gboolean nm_ip_config_obj_id_equal_ip4_route (const NMPlatformIP4Route *r_a,
+                                              const NMPlatformIP4Route *r_b);
+gboolean nm_ip_config_obj_id_equal_ip6_route (const NMPlatformIP6Route *r_a,
+                                              const NMPlatformIP6Route *r_b);
+
 /*****************************************************************************/
 
 #define NM_TYPE_IP4_CONFIG (nm_ip4_config_get_type ())

@@ -46,12 +46,20 @@ G_STATIC_ASSERT (G_MAXUINT >= 0xFFFFFFFF);
 
 /*****************************************************************************/
 
-static gboolean
-_idx_obj_id_equal_ip4_route (const NMPlatformIP4Route *r_a,
-                             const NMPlatformIP4Route *r_b)
+gboolean
+nm_ip_config_obj_id_equal_ip4_route (const NMPlatformIP4Route *r_a,
+                                     const NMPlatformIP4Route *r_b)
 {
 	return    r_a->network == r_b->network
 	       && r_a->plen == r_b->plen;
+}
+
+gboolean
+nm_ip_config_obj_id_equal_ip6_route (const NMPlatformIP6Route *r_a,
+                                     const NMPlatformIP6Route *r_b)
+{
+	return    r_a->plen == r_b->plen
+	       && IN6_ARE_ADDR_EQUAL (&r_a->network, &r_b->network);
 }
 
 static guint
@@ -68,10 +76,13 @@ _idx_obj_id_hash (const NMDedupMultiIdxType *idx_type,
 	case NMP_OBJECT_TYPE_IP4_ROUTE:
 		h = 40303327;
 		h = NM_HASH_COMBINE (h, o->ip4_route.network);
-		h = NM_HASH_COMBINE (h, o->ip4_route.plen);
+		h = NM_HASH_COMBINE (h, o->ip_route.plen);
 		break;
 	case NMP_OBJECT_TYPE_IP6_ROUTE:
-		g_return_val_if_reached (0);
+		h = 577629323;
+		h = NM_HASH_COMBINE_IN6_ADDR (h, &o->ip6_route.network);
+		h = NM_HASH_COMBINE (h, o->ip_route.plen);
+		break;
 	default:
 		g_return_val_if_reached (0);
 	};
@@ -94,9 +105,9 @@ _idx_obj_id_equal (const NMDedupMultiIdxType *idx_type,
 	case NMP_OBJECT_TYPE_IP6_ADDRESS:
 		g_return_val_if_reached (FALSE);
 	case NMP_OBJECT_TYPE_IP4_ROUTE:
-		return _idx_obj_id_equal_ip4_route (&o_a->ip4_route, &o_b->ip4_route);
+		return nm_ip_config_obj_id_equal_ip4_route (&o_a->ip4_route, &o_b->ip4_route);
 	case NMP_OBJECT_TYPE_IP6_ROUTE:
-		g_return_val_if_reached (FALSE);
+		return nm_ip_config_obj_id_equal_ip6_route (&o_a->ip6_route, &o_b->ip6_route);
 	default:
 		g_return_val_if_reached (FALSE);
 	};
@@ -1300,7 +1311,7 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 
 		if (nm_platform_ip4_route_cmp (r_src, r_dst) != 0) {
 			are_equal = FALSE;
-			if (!_idx_obj_id_equal_ip4_route (r_src, r_dst)) {
+			if (!nm_ip_config_obj_id_equal_ip4_route (r_src, r_dst)) {
 				has_relevant_changes = TRUE;
 				break;
 			}

@@ -98,7 +98,7 @@ test_subtract (void)
 	g_assert (nm_ip6_config_get_gateway (dst) == NULL);
 
 	g_assert_cmpuint (nm_ip6_config_get_num_routes (dst), ==, 1);
-	test_route = nm_ip6_config_get_route (dst, 0);
+	test_route = _nmtst_ip6_config_get_route (dst, 0);
 	g_assert (test_route != NULL);
 
 	tmp = *nmtst_inet6_from_string (expected_route_dest);
@@ -207,27 +207,27 @@ test_add_route_with_source (void)
 	route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	nm_ip6_config_add_route (a, &route);
 
-	test_route = nm_ip6_config_get_route (a, 0);
+	test_route = _nmtst_ip6_config_get_route (a, 0);
 	g_assert_cmpint (test_route->rt_source, ==, NM_IP_CONFIG_SOURCE_USER);
 
 	route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
 	nm_ip6_config_add_route (a, &route);
 
-	test_route = nm_ip6_config_get_route (a, 0);
+	test_route = _nmtst_ip6_config_get_route (a, 0);
 	g_assert_cmpint (test_route->rt_source, ==, NM_IP_CONFIG_SOURCE_USER);
 
 	/* Test that a lower priority address source is overwritten */
-	nm_ip6_config_del_route (a, 0);
+	_nmtst_ip6_config_del_route (a, 0);
 	route.rt_source = NM_IP_CONFIG_SOURCE_KERNEL;
 	nm_ip6_config_add_route (a, &route);
 
-	test_route = nm_ip6_config_get_route (a, 0);
+	test_route = _nmtst_ip6_config_get_route (a, 0);
 	g_assert_cmpint (test_route->rt_source, ==, NM_IP_CONFIG_SOURCE_KERNEL);
 
 	route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	nm_ip6_config_add_route (a, &route);
 
-	test_route = nm_ip6_config_get_route (a, 0);
+	test_route = _nmtst_ip6_config_get_route (a, 0);
 	g_assert_cmpint (test_route->rt_source, ==, NM_IP_CONFIG_SOURCE_USER);
 
 	g_object_unref (a);
