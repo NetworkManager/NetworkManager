@@ -4463,6 +4463,29 @@ nla_put_failure:
 	g_return_val_if_reached (NM_PLATFORM_ERROR_UNSPECIFIED);
 }
 
+static NMPlatformError
+link_set_name (NMPlatform *platform, int ifindex, const char *name)
+{
+	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+
+	_LOGD ("link: change %d: name: %s", ifindex, name);
+
+	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
+	                          0,
+	                          ifindex,
+	                          NULL,
+	                          0,
+	                          0);
+	if (!nlmsg)
+		g_return_val_if_reached (NM_PLATFORM_ERROR_UNSPECIFIED);
+
+	NLA_PUT (nlmsg, IFLA_IFNAME, strlen (name) + 1, name);
+
+	return do_change_link (platform, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
+nla_put_failure:
+	g_return_val_if_reached (FALSE);
+}
+
 static gboolean
 link_get_permanent_address (NMPlatform *platform,
                             int ifindex,
@@ -6461,6 +6484,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_set_address = link_set_address;
 	platform_class->link_get_permanent_address = link_get_permanent_address;
 	platform_class->link_set_mtu = link_set_mtu;
+	platform_class->link_set_name = link_set_name;
 	platform_class->link_set_sriov_num_vfs = link_set_sriov_num_vfs;
 
 	platform_class->link_get_physical_port_id = link_get_physical_port_id;

@@ -1462,6 +1462,30 @@ nm_platform_link_get_mtu (NMPlatform *self, int ifindex)
 }
 
 /**
+ * nm_platform_link_set_name:
+ * @self: platform instance
+ * @ifindex: Interface index
+ * @name: The new interface name
+ *
+ * Set interface name.
+ */
+gboolean
+nm_platform_link_set_name (NMPlatform *self, int ifindex, const char *name)
+{
+	_CHECK_SELF (self, klass, FALSE);
+
+	g_return_val_if_fail (ifindex >= 0, FALSE);
+	g_return_val_if_fail (name, FALSE);
+
+	_LOGD ("link: setting '%s' (%d) name %s", nm_platform_link_get_name (self, ifindex), ifindex, name);
+
+	if (strlen (name) + 1 > IFNAMSIZ)
+		return FALSE;
+
+	return klass->link_set_name (self, ifindex, name);
+}
+
+/**
  * nm_platform_link_get_physical_port_id:
  * @self: platform instance
  * @ifindex: Interface index
