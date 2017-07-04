@@ -631,8 +631,6 @@ typedef struct {
 	gboolean    (*mesh_set_channel)      (NMPlatform *, int ifindex, guint32 channel);
 	gboolean    (*mesh_set_ssid)         (NMPlatform *, int ifindex, const guint8 *ssid, gsize len);
 
-	GArray * (*ip4_address_get_all) (NMPlatform *, int ifindex);
-	GArray * (*ip6_address_get_all) (NMPlatform *, int ifindex);
 	gboolean (*ip4_address_add) (NMPlatform *,
 	                             int ifindex,
 	                             in_addr_t address,
@@ -652,8 +650,6 @@ typedef struct {
 	                             guint32 flags);
 	gboolean (*ip4_address_delete) (NMPlatform *, int ifindex, in_addr_t address, guint8 plen, in_addr_t peer_address);
 	gboolean (*ip6_address_delete) (NMPlatform *, int ifindex, struct in6_addr address, guint8 plen);
-	const NMPlatformIP4Address *(*ip4_address_get) (NMPlatform *, int ifindex, in_addr_t address, guint8 plen, in_addr_t peer_address);
-	const NMPlatformIP6Address *(*ip6_address_get) (NMPlatform *, int ifindex, struct in6_addr address);
 
 	gboolean (*ip4_route_add) (NMPlatform *, const NMPlatformIP4Route *route);
 	gboolean (*ip6_route_add) (NMPlatform *, const NMPlatformIP6Route *route);

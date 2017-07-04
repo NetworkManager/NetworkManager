@@ -2652,10 +2652,10 @@ nm_platform_ethtool_get_link_settings (NMPlatform *self, int ifindex, gboolean *
 /*****************************************************************************/
 
 const NMDedupMultiHeadEntry *
-nm_platform_lookup (NMPlatform *platform,
+nm_platform_lookup (NMPlatform *self,
                     const NMPLookup *lookup)
 {
-	return nmp_cache_lookup (nm_platform_get_cache (platform),
+	return nmp_cache_lookup (nm_platform_get_cache (self),
 	                         lookup);
 }
 
@@ -2670,7 +2670,7 @@ nm_platform_lookup_predicate_routes_skip_rtprot_kernel (const NMPObject *obj,
 
 /**
  * nm_platform_lookup_clone:
- * @platform:
+ * @self:
  * @lookup:
  * @predicate: if given, only objects for which @predicate returns %TRUE are included
  *   in the result.
@@ -2687,12 +2687,12 @@ nm_platform_lookup_predicate_routes_skip_rtprot_kernel (const NMPObject *obj,
  * Returns: the result of the lookup.
  */
 GPtrArray *
-nm_platform_lookup_clone (NMPlatform *platform,
+nm_platform_lookup_clone (NMPlatform *self,
                           const NMPLookup *lookup,
                           gboolean (*predicate) (const NMPObject *obj, gpointer user_data),
                           gpointer user_data)
 {
-	return nm_dedup_multi_objs_to_ptr_array_head (nm_platform_lookup (platform, lookup),
+	return nm_dedup_multi_objs_to_ptr_array_head (nm_platform_lookup (self, lookup),
 	                                              (NMDedupMultiFcnSelectPredicate) predicate,
 	                                              user_data);
 }
@@ -2716,6 +2716,20 @@ nm_platform_ip6_address_get_peer (const NMPlatformIP6Address *addr)
 	return &addr->peer_address;
 }
 
+static GArray *
+ipx_address_get_all (NMPlatform *self, int ifindex, NMPObjectType obj_type)
+{
+	NMPLookup lookup;
+
+	nm_assert (NM_IN_SET (obj_type, NMP_OBJECT_TYPE_IP4_ADDRESS, NMP_OBJECT_TYPE_IP6_ADDRESS));
+	nmp_lookup_init_addrroute (&lookup,
+	                           obj_type,
+	                           ifindex);
+	return nmp_cache_lookup_to_array (nmp_cache_lookup (nm_platform_get_cache (self), &lookup),
+	                                  obj_type,
+	                                  FALSE /*addresses are always visible. */);
+}
+
 GArray *
 nm_platform_ip4_address_get_all (NMPlatform *self, int ifindex)
 {
@@ -2723,7 +2737,7 @@ nm_platform_ip4_address_get_all (NMPlatform *self, int ifindex)
 
 	g_return_val_if_fail (ifindex > 0, NULL);
 
-	return klass->ip4_address_get_all (self, ifindex);
+	return ipx_address_get_all (self, ifindex, NMP_OBJECT_TYPE_IP4_ADDRESS);
 }
 
 GArray *
@@ -2733,7 +2747,7 @@ nm_platform_ip6_address_get_all (NMPlatform *self, int ifindex)
 
 	g_return_val_if_fail (ifindex > 0, NULL);
 
-	return klass->ip6_address_get_all (self, ifindex);
+	return ipx_address_get_all (self, ifindex, NMP_OBJECT_TYPE_IP6_ADDRESS);
 }
 
 gboolean
@@ -2848,19 +2862,31 @@ nm_platform_ip6_address_delete (NMPlatform *self, int ifindex, struct in6_addr a
 const NMPlatformIP4Address *
 nm_platform_ip4_address_get (NMPlatform *self, int ifindex, in_addr_t address, guint8 plen, guint32 peer_address)
 {
+	NMPObject obj_id;
+	const NMPObject *obj;
+
 	_CHECK_SELF (self, klass, NULL);
 
 	g_return_val_if_fail (plen <= 32, NULL);
 
-	return klass->ip4_address_get (self, ifindex, address, plen, peer_address);
+	nmp_object_stackinit_id_ip4_address (&obj_id, ifindex, address, plen, peer_address);
+	obj = nmp_cache_lookup_obj (nm_platform_get_cache (self), &obj_id);
+	nm_assert (nmp_object_is_visible (obj));
+	return &obj->ip4_address;
 }
 
 const NMPlatformIP6Address *
 nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr address)
 {
+	NMPObject obj_id;
+	const NMPObject *obj;
+
 	_CHECK_SELF (self, klass, NULL);
 
-	return klass->ip6_address_get (self, ifindex, address);
+	nmp_object_stackinit_id_ip6_address (&obj_id, ifindex, &address);
+	obj = nmp_cache_lookup_obj (nm_platform_get_cache (self), &obj_id);
+	nm_assert (nmp_object_is_visible (obj));
+	return &obj->ip6_address;
 }
 
 static const NMPlatformIP4Address *
@@ -4920,17 +4946,17 @@ nm_platform_netns_get (NMPlatform *self)
 }
 
 gboolean
-nm_platform_netns_push (NMPlatform *platform, NMPNetns **netns)
+nm_platform_netns_push (NMPlatform *self, NMPNetns **netns)
 {
-	g_return_val_if_fail (NM_IS_PLATFORM (platform), FALSE);
+	g_return_val_if_fail (NM_IS_PLATFORM (self), FALSE);
 
-	if (   platform->_netns
-	    && !nmp_netns_push (platform->_netns)) {
+	if (   self->_netns
+	    && !nmp_netns_push (self->_netns)) {
 		NM_SET_OUT (netns, NULL);
 		return FALSE;
 	}
 
-	NM_SET_OUT (netns, platform->_netns);
+	NM_SET_OUT (netns, self->_netns);
 	return TRUE;
 }
 

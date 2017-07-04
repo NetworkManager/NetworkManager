@@ -5722,32 +5722,6 @@ link_get_driver_info (NMPlatform *platform,
 
 /*****************************************************************************/
 
-static GArray *
-ipx_address_get_all (NMPlatform *platform, int ifindex, NMPObjectType obj_type)
-{
-	NMPLookup lookup;
-
-	nm_assert (NM_IN_SET (obj_type, NMP_OBJECT_TYPE_IP4_ADDRESS, NMP_OBJECT_TYPE_IP6_ADDRESS));
-	nmp_lookup_init_addrroute (&lookup,
-	                           obj_type,
-	                           ifindex);
-	return nmp_cache_lookup_to_array (nmp_cache_lookup (nm_platform_get_cache (platform), &lookup),
-	                                  obj_type,
-	                                  FALSE /*addresses are always visible. */);
-}
-
-static GArray *
-ip4_address_get_all (NMPlatform *platform, int ifindex)
-{
-	return ipx_address_get_all (platform, ifindex, NMP_OBJECT_TYPE_IP4_ADDRESS);
-}
-
-static GArray *
-ip6_address_get_all (NMPlatform *platform, int ifindex)
-{
-	return ipx_address_get_all (platform, ifindex, NMP_OBJECT_TYPE_IP6_ADDRESS);
-}
-
 static gboolean
 ip4_address_add (NMPlatform *platform,
                  int ifindex,
@@ -5857,32 +5831,6 @@ ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, gui
 
 	nmp_object_stackinit_id_ip6_address (&obj_id, ifindex, &addr);
 	return do_delete_object (platform, &obj_id, nlmsg);
-}
-
-static const NMPlatformIP4Address *
-ip4_address_get (NMPlatform *platform, int ifindex, in_addr_t addr, guint8 plen, in_addr_t peer_address)
-{
-	NMPObject obj_id;
-	const NMPObject *obj;
-
-	nmp_object_stackinit_id_ip4_address (&obj_id, ifindex, addr, plen, peer_address);
-	obj = nmp_cache_lookup_obj (nm_platform_get_cache (platform), &obj_id);
-	if (nmp_object_is_visible (obj))
-		return &obj->ip4_address;
-	return NULL;
-}
-
-static const NMPlatformIP6Address *
-ip6_address_get (NMPlatform *platform, int ifindex, struct in6_addr addr)
-{
-	NMPObject obj_id;
-	const NMPObject *obj;
-
-	nmp_object_stackinit_id_ip6_address (&obj_id, ifindex, &addr);
-	obj = nmp_cache_lookup_obj (nm_platform_get_cache (platform), &obj_id);
-	if (nmp_object_is_visible (obj))
-		return &obj->ip6_address;
-	return NULL;
 }
 
 /*****************************************************************************/
@@ -6807,10 +6755,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_ipip_add = link_ipip_add;
 	platform_class->link_sit_add = link_sit_add;
 
-	platform_class->ip4_address_get = ip4_address_get;
-	platform_class->ip6_address_get = ip6_address_get;
-	platform_class->ip4_address_get_all = ip4_address_get_all;
-	platform_class->ip6_address_get_all = ip6_address_get_all;
 	platform_class->ip4_address_add = ip4_address_add;
 	platform_class->ip6_address_add = ip6_address_add;
 	platform_class->ip4_address_delete = ip4_address_delete;
