@@ -3858,108 +3858,6 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 
 /*****************************************************************************/
 
-static const NMPObject *
-cache_lookup_link (NMPlatform *platform, int ifindex)
-{
-	const NMPObject *obj_cache;
-
-	obj_cache = nmp_cache_lookup_link (nm_platform_get_cache (platform), ifindex);
-	if (!nmp_object_is_visible (obj_cache))
-		return NULL;
-
-	return obj_cache;
-}
-
-static GArray *
-link_get_all (NMPlatform *platform)
-{
-	NMPLookup lookup;
-
-	nmp_lookup_init_obj_type (&lookup, NMP_OBJECT_TYPE_LINK);
-	return nmp_cache_lookup_to_array (nmp_cache_lookup (nm_platform_get_cache (platform), &lookup),
-	                                  NMP_OBJECT_TYPE_LINK,
-	                                  TRUE);
-}
-
-static const NMPlatformLink *
-_nm_platform_link_get (NMPlatform *platform, int ifindex)
-{
-	const NMPObject *obj;
-
-	obj = cache_lookup_link (platform, ifindex);
-	return obj ? &obj->link : NULL;
-}
-
-static const NMPlatformLink *
-_nm_platform_link_get_by_ifname (NMPlatform *platform,
-                                 const char *ifname)
-{
-	const NMPObject *obj = NULL;
-
-	if (ifname && *ifname) {
-		obj = nmp_cache_lookup_link_full (nm_platform_get_cache (platform),
-		                                  0, ifname, TRUE, NM_LINK_TYPE_NONE, NULL, NULL);
-	}
-	return obj ? &obj->link : NULL;
-}
-
-struct _nm_platform_link_get_by_address_data {
-	gconstpointer address;
-	guint8 length;
-};
-
-static gboolean
-_nm_platform_link_get_by_address_match_link (const NMPObject *obj, struct _nm_platform_link_get_by_address_data *d)
-{
-	return obj->link.addr.len == d->length && !memcmp (obj->link.addr.data, d->address, d->length);
-}
-
-static const NMPlatformLink *
-_nm_platform_link_get_by_address (NMPlatform *platform,
-                                  gconstpointer address,
-                                  size_t length)
-{
-	const NMPObject *obj;
-	struct _nm_platform_link_get_by_address_data d = {
-		.address = address,
-		.length = length,
-	};
-
-	if (length <= 0 || length > NM_UTILS_HWADDR_LEN_MAX)
-		return NULL;
-	if (!address)
-		return NULL;
-
-	obj = nmp_cache_lookup_link_full (nm_platform_get_cache (platform),
-	                                  0, NULL, TRUE, NM_LINK_TYPE_NONE,
-	                                  (NMPObjectMatchFn) _nm_platform_link_get_by_address_match_link, &d);
-	return obj ? &obj->link : NULL;
-}
-
-/*****************************************************************************/
-
-static const NMPObject *
-link_get_lnk (NMPlatform *platform, int ifindex, NMLinkType link_type, const NMPlatformLink **out_link)
-{
-	const NMPObject *obj = cache_lookup_link (platform, ifindex);
-
-	if (!obj)
-		return NULL;
-
-	NM_SET_OUT (out_link, &obj->link);
-
-	if (!obj->_link.netlink.lnk)
-		return NULL;
-	if (   link_type != NM_LINK_TYPE_NONE
-	    && (   link_type != obj->link.type
-	        || link_type != NMP_OBJECT_GET_CLASS (obj->_link.netlink.lnk)->lnk_link_type))
-		return NULL;
-
-	return obj->_link.netlink.lnk;
-}
-
-/*****************************************************************************/
-
 static gboolean
 do_add_link_with_lookup (NMPlatform *platform,
                          NMLinkType link_type,
@@ -4287,55 +4185,11 @@ link_delete (NMPlatform *platform, int ifindex)
 	return do_delete_object (platform, &obj_id, nlmsg);
 }
 
-static const char *
-link_get_type_name (NMPlatform *platform, int ifindex)
-{
-	const NMPObject *obj = cache_lookup_link (platform, ifindex);
-
-	if (!obj)
-		return NULL;
-
-	if (obj->link.type != NM_LINK_TYPE_UNKNOWN) {
-		/* We could detect the @link_type. In this case the function returns
-		 * our internel module names, which differs from rtnl_link_get_type():
-		 *   - NM_LINK_TYPE_INFINIBAND (gives "infiniband", instead of "ipoib")
-		 *   - NM_LINK_TYPE_TAP (gives "tap", instead of "tun").
-		 * Note that this functions is only used by NMDeviceGeneric to
-		 * set type_description. */
-		return nm_link_type_to_string (obj->link.type);
-	}
-	/* Link type not detected. Fallback to rtnl_link_get_type()/IFLA_INFO_KIND. */
-	return obj->link.kind ?: "unknown";
-}
-
-static gboolean
-link_get_unmanaged (NMPlatform *platform, int ifindex, gboolean *unmanaged)
-{
-	const NMPObject *link;
-	struct udev_device *udevice = NULL;
-	const char *uproperty;
-
-	link = nmp_cache_lookup_link (nm_platform_get_cache (platform), ifindex);
-	if (!link)
-		return FALSE;
-
-	udevice = link->_link.udev.device;
-	if (!udevice)
-		return FALSE;
-
-	uproperty = udev_device_get_property_value (udevice, "NM_UNMANAGED");
-	if (!uproperty)
-		return FALSE;
-
-	*unmanaged = nm_udev_utils_property_as_boolean (uproperty);
-	return TRUE;
-}
-
 static gboolean
 link_refresh (NMPlatform *platform, int ifindex)
 {
 	do_request_link (platform, ifindex, NULL);
-	return !!cache_lookup_link (platform, ifindex);
+	return !!nm_platform_link_get_obj (platform, ifindex, TRUE);
 }
 
 static gboolean
@@ -4422,27 +4276,13 @@ link_set_noarp (NMPlatform *platform, int ifindex)
 static const char *
 link_get_udi (NMPlatform *platform, int ifindex)
 {
-	const NMPObject *obj = cache_lookup_link (platform, ifindex);
+	const NMPObject *obj = nm_platform_link_get_obj (platform, ifindex, TRUE);
 
 	if (   !obj
 	    || !obj->_link.netlink.is_in_netlink
 	    || !obj->_link.udev.device)
 		return NULL;
 	return udev_device_get_syspath (obj->_link.udev.device);
-}
-
-static struct udev_device *
-link_get_udev_device (NMPlatform *platform, int ifindex)
-{
-	const NMPObject *obj_cache;
-
-	/* we don't use cache_lookup_link() because this would return NULL
-	 * if the link is not visible in libnl. For link_get_udev_device()
-	 * we want to return whatever we have, even if the link itself
-	 * appears invisible via other platform functions. */
-
-	obj_cache = nmp_cache_lookup_link (nm_platform_get_cache (platform), ifindex);
-	return obj_cache ? obj_cache->_link.udev.device : NULL;
 }
 
 static NMPlatformError
@@ -4509,7 +4349,7 @@ link_supports_vlans (NMPlatform *platform, int ifindex)
 	nm_auto_pop_netns NMPNetns *netns = NULL;
 	const NMPObject *obj;
 
-	obj = cache_lookup_link (platform, ifindex);
+	obj = nm_platform_link_get_obj (platform, ifindex, TRUE);
 
 	/* Only ARPHRD_ETHER links can possibly support VLANs. */
 	if (!obj || obj->link.arptype != ARPHRD_ETHER)
@@ -5623,7 +5463,7 @@ link_can_assume (NMPlatform *platform, int ifindex)
 	if (ifindex <= 0)
 		return FALSE;
 
-	link = cache_lookup_link (platform, ifindex);
+	link = nm_platform_link_get_obj (platform, ifindex, TRUE);
 	if (!link)
 		return FALSE;
 
@@ -5647,7 +5487,7 @@ link_can_assume (NMPlatform *platform, int ifindex)
 	                         &o) {
 		nm_assert (NMP_OBJECT_GET_TYPE (o) == NMP_OBJECT_TYPE_IP6_ADDRESS);
 		if (!IN6_IS_ADDR_LINKLOCAL (&o->ip6_address.address))
-				return TRUE;
+			return TRUE;
 	}
 	return FALSE;
 }
@@ -6679,16 +6519,8 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->sysctl_set = sysctl_set;
 	platform_class->sysctl_get = sysctl_get;
 
-	platform_class->link_get = _nm_platform_link_get;
-	platform_class->link_get_by_ifname = _nm_platform_link_get_by_ifname;
-	platform_class->link_get_by_address = _nm_platform_link_get_by_address;
-	platform_class->link_get_all = link_get_all;
 	platform_class->link_add = link_add;
 	platform_class->link_delete = link_delete;
-	platform_class->link_get_type_name = link_get_type_name;
-	platform_class->link_get_unmanaged = link_get_unmanaged;
-
-	platform_class->link_get_lnk = link_get_lnk;
 
 	platform_class->link_refresh = link_refresh;
 
@@ -6700,7 +6532,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_set_noarp = link_set_noarp;
 
 	platform_class->link_get_udi = link_get_udi;
-	platform_class->link_get_udev_device = link_get_udev_device;
 
 	platform_class->link_set_user_ipv6ll_enabled = link_set_user_ipv6ll_enabled;
 	platform_class->link_set_token = link_set_token;

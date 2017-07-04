@@ -1336,6 +1336,17 @@ nmp_cache_use_udev_get (const NMPCache *cache)
 
 /*****************************************************************************/
 
+gboolean
+nmp_cache_link_connected_for_slave (int ifindex_master, const NMPObject *slave)
+{
+	nm_assert (NMP_OBJECT_GET_TYPE (slave) == NMP_OBJECT_TYPE_LINK);
+
+	return    ifindex_master > 0
+	       && slave->link.master == ifindex_master
+	       && slave->link.connected
+	       && nmp_object_is_visible (slave);
+}
+
 /**
  * nmp_cache_link_connected_needs_toggle:
  * @cache: the platform cache
@@ -1378,12 +1389,9 @@ nmp_cache_link_connected_needs_toggle (const NMPCache *cache, const NMPObject *m
 		potential_slave = NULL;
 
 	if (   potential_slave
-	    && nmp_object_is_visible (potential_slave)
-	    && potential_slave->link.ifindex > 0
-	    && potential_slave->link.master == master->link.ifindex
-	    && potential_slave->link.connected) {
+	    && nmp_cache_link_connected_for_slave (master->link.ifindex, potential_slave))
 		is_lower_up = TRUE;
-	} else {
+	else {
 		NMPLookup lookup;
 		NMDedupMultiIter iter;
 		const NMPlatformLink *link = NULL;
@@ -1397,10 +1405,7 @@ nmp_cache_link_connected_needs_toggle (const NMPCache *cache, const NMPObject *m
 
 			if (   (!potential_slave || potential_slave->link.ifindex != link->ifindex)
 			    && ignore_slave != obj
-			    && link->ifindex > 0
-			    && link->master == master->link.ifindex
-			    && nmp_object_is_visible (obj)
-			    && link->connected) {
+			    && nmp_cache_link_connected_for_slave (master->link.ifindex, obj)) {
 				is_lower_up = TRUE;
 				break;
 			}

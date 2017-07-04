@@ -506,13 +506,6 @@ typedef struct {
 	gboolean (*sysctl_set) (NMPlatform *, const char *pathid, int dirfd, const char *path, const char *value);
 	char * (*sysctl_get) (NMPlatform *, const char *pathid, int dirfd, const char *path);
 
-	const NMPlatformLink *(*link_get) (NMPlatform *platform, int ifindex);
-	const NMPlatformLink *(*link_get_by_ifname) (NMPlatform *platform, const char *ifname);
-	const NMPlatformLink *(*link_get_by_address) (NMPlatform *platform, gconstpointer address, size_t length);
-
-	const NMPObject *(*link_get_lnk) (NMPlatform *platform, int ifindex, NMLinkType link_type, const NMPlatformLink **out_link);
-
-	GArray *(*link_get_all) (NMPlatform *);
 	gboolean (*link_add) (NMPlatform *,
 	                      const char *name,
 	                      NMLinkType type,
@@ -521,8 +514,6 @@ typedef struct {
 	                      size_t address_len,
 	                      const NMPlatformLink **out_link);
 	gboolean (*link_delete) (NMPlatform *, int ifindex);
-	const char *(*link_get_type_name) (NMPlatform *, int ifindex);
-	gboolean (*link_get_unmanaged) (NMPlatform *, int ifindex, gboolean *unmanaged);
 
 	gboolean (*link_refresh) (NMPlatform *, int ifindex);
 
@@ -742,6 +733,9 @@ gboolean nm_platform_sysctl_set_ip6_hop_limit_safe (NMPlatform *self, const char
 const char *nm_platform_if_indextoname (NMPlatform *self, int ifindex, char *out_ifname/* of size IFNAMSIZ */);
 int nm_platform_if_nametoindex (NMPlatform *self, const char *ifname);
 
+const NMPObject *nm_platform_link_get_obj (NMPlatform *self,
+                                           int ifindex,
+                                           gboolean visible_only);
 const NMPlatformLink *nm_platform_link_get (NMPlatform *self, int ifindex);
 const NMPlatformLink *nm_platform_link_get_by_ifname (NMPlatform *self, const char *ifname);
 const NMPlatformLink *nm_platform_link_get_by_address (NMPlatform *self, gconstpointer address, size_t length);

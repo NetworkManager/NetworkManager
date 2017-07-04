@@ -337,13 +337,22 @@ NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 	return obj ? obj->_class->obj_type : NMP_OBJECT_TYPE_UNKNOWN;
 }
 
+#define NMP_OBJECT_CAST_LINK(obj) \
+	({ \
+		typeof (*(obj)) *_obj = (obj); \
+		_nm_unused const NMPObject *_obj_type_check = _obj; \
+		\
+		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_LINK); \
+		_obj ? &_obj->link : NULL; \
+	})
+
 #define NMP_OBJECT_CAST_IP4_ADDRESS(obj) \
 	({ \
 		typeof (*(obj)) *_obj = (obj); \
 		_nm_unused const NMPObject *_obj_type_check = _obj; \
 		\
-		nm_assert (NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_IP4_ADDRESS); \
-		&_obj->ip4_address; \
+		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_IP4_ADDRESS); \
+		_obj ? &_obj->ip4_address : NULL; \
 	})
 
 #define NMP_OBJECT_CAST_IP6_ADDRESS(obj) \
@@ -351,8 +360,8 @@ NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 		typeof (*(obj)) *_obj = (obj); \
 		_nm_unused const NMPObject *_obj_type_check = _obj; \
 		\
-		nm_assert (NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_IP6_ADDRESS); \
-		&_obj->ip6_address; \
+		nm_assert (!_obj || NMP_OBJECT_GET_TYPE (_obj) == NMP_OBJECT_TYPE_IP6_ADDRESS); \
+		_obj ? &_obj->ip6_address : NULL; \
 	})
 
 #define NMP_OBJECT_CAST_IPX_ROUTE(obj) \
@@ -541,6 +550,7 @@ const NMPObject *nmp_cache_lookup_link_full (const NMPCache *cache,
                                              NMPObjectMatchFn match_fn,
                                              gpointer user_data);
 
+gboolean nmp_cache_link_connected_for_slave (int ifindex_master, const NMPObject *slave);
 gboolean nmp_cache_link_connected_needs_toggle (const NMPCache *cache, const NMPObject *master, const NMPObject *potential_slave, const NMPObject *ignore_slave);
 const NMPObject *nmp_cache_link_connected_needs_toggle_by_ifindex (const NMPCache *cache, int master_ifindex, const NMPObject *potential_slave, const NMPObject *ignore_slave);
 

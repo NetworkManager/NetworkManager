@@ -32,10 +32,12 @@
 #include <linux/if_tun.h>
 #include <linux/if_tunnel.h>
 #include <linux/rtnetlink.h>
+#include <libudev.h>
 
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 #include "nm-utils/nm-dedup-multi.h"
+#include "nm-utils/nm-udev-utils.h"
 
 #include "nm-core-utils.h"
 #include "nm-platform-utils.h"
@@ -497,10 +499,14 @@ nm_platform_link_get_all (NMPlatform *self, gboolean sort_by_name)
 	guint i, j, nresult;
 	GHashTable *unseen;
 	NMPlatformLink *item;
+	NMPLookup lookup;
 
 	_CHECK_SELF (self, klass, NULL);
 
-	links = klass->link_get_all (self);
+	nmp_lookup_init_obj_type (&lookup, NMP_OBJECT_TYPE_LINK);
+	links = nmp_cache_lookup_to_array (nmp_cache_lookup (nm_platform_get_cache (self), &lookup),
+	                                   NMP_OBJECT_TYPE_LINK,
+	                                   TRUE);
 
 	if (!links || links->len == 0)
 		return links;
@@ -518,7 +524,7 @@ nm_platform_link_get_all (NMPlatform *self, gboolean sort_by_name)
 			nm_assert_not_reached ();
 	}
 
-#ifndef G_DISABLE_ASSERT
+#if NM_MORE_ASSERTS
 	/* Ensure that link_get_all returns a consistent and valid result. */
 	for (i = 0; i < links->len; i++) {
 		item = &g_array_index (links, NMPlatformLink, i);
@@ -589,6 +595,25 @@ nm_platform_link_get_all (NMPlatform *self, gboolean sort_by_name)
 	return result;
 }
 
+/*****************************************************************************/
+
+const NMPObject *
+nm_platform_link_get_obj (NMPlatform *self,
+                          int ifindex,
+                          gboolean visible_only)
+{
+	const NMPObject *obj_cache;
+
+	obj_cache = nmp_cache_lookup_link (nm_platform_get_cache (self), ifindex);
+	if (   !obj_cache
+	    || (   visible_only
+	        && !nmp_object_is_visible (obj_cache)))
+		return NULL;
+	return obj_cache;
+}
+
+/*****************************************************************************/
+
 /**
  * nm_platform_link_get:
  * @self: platform instance
@@ -604,11 +629,15 @@ nm_platform_link_get_all (NMPlatform *self, gboolean sort_by_name)
 const NMPlatformLink *
 nm_platform_link_get (NMPlatform *self, int ifindex)
 {
+	const NMPObject *obj;
+
 	_CHECK_SELF (self, klass, NULL);
 
-	if (ifindex > 0)
-		return klass->link_get (self, ifindex);
-	return NULL;
+	if (ifindex <= 0)
+		return NULL;
+
+	obj = nm_platform_link_get_obj (self, ifindex, TRUE);
+	return NMP_OBJECT_CAST_LINK (obj);
 }
 
 /**
@@ -621,11 +650,27 @@ nm_platform_link_get (NMPlatform *self, int ifindex)
 const NMPlatformLink *
 nm_platform_link_get_by_ifname (NMPlatform *self, const char *ifname)
 {
+	const NMPObject *obj;
+
 	_CHECK_SELF (self, klass, NULL);
 
-	if (ifname && *ifname)
-		return klass->link_get_by_ifname (self, ifname);
-	return NULL;
+	if (!ifname || !*ifname)
+		return NULL;
+
+	obj = nmp_cache_lookup_link_full (nm_platform_get_cache (self),
+	                                  0, ifname, TRUE, NM_LINK_TYPE_NONE, NULL, NULL);
+	return NMP_OBJECT_CAST_LINK (obj);
+}
+
+struct _nm_platform_link_get_by_address_data {
+	gconstpointer address;
+	guint8 length;
+};
+
+static gboolean
+_nm_platform_link_get_by_address_match_link (const NMPObject *obj, struct _nm_platform_link_get_by_address_data *d)
+{
+	return obj->link.addr.len == d->length && !memcmp (obj->link.addr.data, d->address, d->length);
 }
 
 /**
@@ -642,15 +687,26 @@ nm_platform_link_get_by_address (NMPlatform *self,
                                  gconstpointer address,
                                  size_t length)
 {
+	const NMPObject *obj;
+	struct _nm_platform_link_get_by_address_data d = {
+		.address = address,
+		.length = length,
+	};
+
 	_CHECK_SELF (self, klass, NULL);
 
-	g_return_val_if_fail (length == 0 || address, NULL);
-	if (length > 0) {
-		if (length > NM_UTILS_HWADDR_LEN_MAX)
-			g_return_val_if_reached (NULL);
-		return klass->link_get_by_address (self, address, length);
-	}
-	return NULL;
+	if (length == 0)
+		return NULL;
+
+	if (length > NM_UTILS_HWADDR_LEN_MAX)
+		g_return_val_if_reached (NULL);
+	if (!address)
+		g_return_val_if_reached (NULL);
+
+	obj = nmp_cache_lookup_link_full (nm_platform_get_cache (self),
+	                                  0, NULL, TRUE, NM_LINK_TYPE_NONE,
+	                                  (NMPObjectMatchFn) _nm_platform_link_get_by_address_match_link, &d);
+	return NMP_OBJECT_CAST_LINK (obj);
 }
 
 static NMPlatformError
@@ -880,9 +936,26 @@ nm_platform_link_get_type (NMPlatform *self, int ifindex)
 const char *
 nm_platform_link_get_type_name (NMPlatform *self, int ifindex)
 {
+	const NMPObject *obj;
+
 	_CHECK_SELF (self, klass, NULL);
 
-	return klass->link_get_type_name (self, ifindex);
+	obj = nm_platform_link_get_obj (self, ifindex, TRUE);
+
+	if (!obj)
+		return NULL;
+
+	if (obj->link.type != NM_LINK_TYPE_UNKNOWN) {
+		/* We could detect the @link_type. In this case the function returns
+		 * our internel module names, which differs from rtnl_link_get_type():
+		 *   - NM_LINK_TYPE_INFINIBAND (gives "infiniband", instead of "ipoib")
+		 *   - NM_LINK_TYPE_TAP (gives "tap", instead of "tun").
+		 * Note that this functions is only used by NMDeviceGeneric to
+		 * set type_description. */
+		return nm_link_type_to_string (obj->link.type);
+	}
+	/* Link type not detected. Fallback to rtnl_link_get_type()/IFLA_INFO_KIND. */
+	return obj->link.kind ?: "unknown";
 }
 
 /**
@@ -897,11 +970,26 @@ nm_platform_link_get_type_name (NMPlatform *self, int ifindex)
 gboolean
 nm_platform_link_get_unmanaged (NMPlatform *self, int ifindex, gboolean *unmanaged)
 {
+	const NMPObject *link;
+	struct udev_device *udevice = NULL;
+	const char *uproperty;
+
 	_CHECK_SELF (self, klass, FALSE);
 
-	if (klass->link_get_unmanaged)
-		return klass->link_get_unmanaged (self, ifindex, unmanaged);
-	return FALSE;
+	link = nmp_cache_lookup_link (nm_platform_get_cache (self), ifindex);
+	if (!link)
+		return FALSE;
+
+	udevice = link->_link.udev.device;
+	if (!udevice)
+		return FALSE;
+
+	uproperty = udev_device_get_property_value (udevice, "NM_UNMANAGED");
+	if (!uproperty)
+		return FALSE;
+
+	*unmanaged = nm_udev_utils_property_as_boolean (uproperty);
+	return TRUE;
 }
 
 /**
@@ -1047,13 +1135,14 @@ nm_platform_link_get_udi (NMPlatform *self, int ifindex)
 struct udev_device *
 nm_platform_link_get_udev_device (NMPlatform *self, int ifindex)
 {
+	const NMPObject *obj_cache;
+
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex >= 0, NULL);
 
-	if (klass->link_get_udev_device)
-		return klass->link_get_udev_device (self, ifindex);
-	return NULL;
+	obj_cache = nm_platform_link_get_obj (self, ifindex, FALSE);
+	return obj_cache ? obj_cache->_link.udev.device : NULL;
 }
 
 /**
@@ -1553,13 +1642,28 @@ nm_platform_link_can_assume (NMPlatform *self, int ifindex)
 const NMPObject *
 nm_platform_link_get_lnk (NMPlatform *self, int ifindex, NMLinkType link_type, const NMPlatformLink **out_link)
 {
+	const NMPObject *obj;
+
 	_CHECK_SELF (self, klass, FALSE);
 
 	NM_SET_OUT (out_link, NULL);
 
 	g_return_val_if_fail (ifindex > 0, NULL);
 
-	return klass->link_get_lnk (self, ifindex, link_type, out_link);
+	obj = nm_platform_link_get_obj (self, ifindex, TRUE);
+	if (!obj)
+		return NULL;
+
+	NM_SET_OUT (out_link, &obj->link);
+
+	if (!obj->_link.netlink.lnk)
+		return NULL;
+	if (   link_type != NM_LINK_TYPE_NONE
+	    && (   link_type != obj->link.type
+	        || link_type != NMP_OBJECT_GET_CLASS (obj->_link.netlink.lnk)->lnk_link_type))
+		return NULL;
+
+	return obj->_link.netlink.lnk;
 }
 
 static gconstpointer
@@ -2871,8 +2975,8 @@ nm_platform_ip4_address_get (NMPlatform *self, int ifindex, in_addr_t address, g
 
 	nmp_object_stackinit_id_ip4_address (&obj_id, ifindex, address, plen, peer_address);
 	obj = nmp_cache_lookup_obj (nm_platform_get_cache (self), &obj_id);
-	nm_assert (nmp_object_is_visible (obj));
-	return &obj->ip4_address;
+	nm_assert (!obj || nmp_object_is_visible (obj));
+	return NMP_OBJECT_CAST_IP4_ADDRESS (obj);
 }
 
 const NMPlatformIP6Address *
@@ -2885,8 +2989,8 @@ nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr addr
 
 	nmp_object_stackinit_id_ip6_address (&obj_id, ifindex, &address);
 	obj = nmp_cache_lookup_obj (nm_platform_get_cache (self), &obj_id);
-	nm_assert (nmp_object_is_visible (obj));
-	return &obj->ip6_address;
+	nm_assert (!obj || nmp_object_is_visible (obj));
+	return NMP_OBJECT_CAST_IP6_ADDRESS (obj);
 }
 
 static const NMPlatformIP4Address *

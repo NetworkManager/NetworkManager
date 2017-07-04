@@ -264,7 +264,8 @@ test_slave (int master, int type, SignalData *master_changed)
 	}
 	g_assert (!nm_platform_link_is_up (NM_PLATFORM_GET, ifindex));
 	g_assert (!nm_platform_link_is_connected (NM_PLATFORM_GET, ifindex));
-	if (nm_platform_link_is_connected (NM_PLATFORM_GET, master)) {
+	if (   nmtstp_is_root_test ()
+	    && nm_platform_link_is_connected (NM_PLATFORM_GET, master)) {
 		if (nm_platform_link_get_type (NM_PLATFORM_GET, master) == NM_LINK_TYPE_TEAM) {
 			/* Older team versions (e.g. Fedora 17) have a bug that team master stays
 			 * IFF_LOWER_UP even if its slave is down. Double check it with iproute2 and if
@@ -285,7 +286,7 @@ test_slave (int master, int type, SignalData *master_changed)
 	g_assert (nm_platform_link_is_connected (NM_PLATFORM_GET, master));
 	accept_signals (link_changed, 1, 3);
 	/* NM running, can cause additional change of addrgenmode */
-	accept_signals (master_changed, 1, 2);
+	accept_signals (master_changed, 0, 2);
 
 	/* Enslave again
 	 *
@@ -327,7 +328,7 @@ test_slave (int master, int type, SignalData *master_changed)
 		ensure_no_signal (link_changed);
 		accept_signal (link_removed);
 	}
-	accept_signals (master_changed, 1, 2);
+	accept_signals (master_changed, 0, 2);
 
 	ensure_no_signal (master_changed);
 
