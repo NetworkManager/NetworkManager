@@ -360,6 +360,20 @@ nm_dedup_multi_iter_rewind (NMDedupMultiIter *iter)
 	nm_dedup_multi_iter_init (iter, iter->head);
 }
 
+#define nm_dedup_multi_iter_for_each(iter, head_entry) \
+	for (nm_dedup_multi_iter_init ((iter), (head_entry)); \
+	     nm_dedup_multi_iter_next ((iter)); \
+	     )
+
+/*****************************************************************************/
+
+typedef gboolean (*NMDedupMultiFcnSelectPredicate) (/* const NMDedupMultiObj * */ gconstpointer obj,
+                                                    gpointer user_data);
+
+GPtrArray *nm_dedup_multi_objs_to_ptr_array_head (const NMDedupMultiHeadEntry *head_entry,
+                                                  NMDedupMultiFcnSelectPredicate predicate,
+                                                  gpointer user_data);
+
 /*****************************************************************************/
 
 #endif /* __NM_DEDUP_MULTI_H__ */

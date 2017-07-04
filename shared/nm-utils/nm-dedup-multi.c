@@ -931,6 +931,34 @@ nm_dedup_multi_obj_clone (const NMDedupMultiObj *obj)
 	return o;
 }
 
+GPtrArray *
+nm_dedup_multi_objs_to_ptr_array_head (const NMDedupMultiHeadEntry *head_entry,
+                                       NMDedupMultiFcnSelectPredicate predicate,
+                                       gpointer user_data)
+{
+	GPtrArray *result;
+	NMDedupMultiIter iter;
+
+	if (!head_entry)
+		return NULL;
+
+	result = g_ptr_array_new_full (head_entry->len,
+	                               (GDestroyNotify) nm_dedup_multi_obj_unref);
+	nm_dedup_multi_iter_for_each (&iter, head_entry) {
+		const NMDedupMultiObj *obj = iter.current->obj;
+
+		if (   !predicate
+		    || predicate (obj, user_data))
+			g_ptr_array_add (result, (gpointer) nm_dedup_multi_obj_ref (obj));
+	}
+
+	if (result->len == 0) {
+		g_ptr_array_unref (result);
+		return NULL;
+	}
+	return result;
+}
+
 /*****************************************************************************/
 
 NMDedupMultiIndex *

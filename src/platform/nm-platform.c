@@ -2692,29 +2692,9 @@ nm_platform_lookup_clone (NMPlatform *platform,
                           gboolean (*predicate) (const NMPObject *obj, gpointer user_data),
                           gpointer user_data)
 {
-	const NMDedupMultiHeadEntry *head_entry;
-	GPtrArray *result;
-	NMDedupMultiIter iter;
-	const NMPObject *plobj = NULL;
-
-	head_entry = nm_platform_lookup (platform, lookup);
-	if (!head_entry)
-		return NULL;
-
-	result = g_ptr_array_new_full (head_entry->len,
-	                               (GDestroyNotify) nmp_object_unref);
-	nmp_cache_iter_for_each (&iter, head_entry, &plobj) {
-		if (   predicate
-		    && !predicate (plobj, user_data))
-			continue;
-		g_ptr_array_add (result, (gpointer) nmp_object_ref (plobj));
-	}
-
-	if (result->len == 0) {
-		g_ptr_array_unref (result);
-		return NULL;
-	}
-	return result;
+	return nm_dedup_multi_objs_to_ptr_array_head (nm_platform_lookup (platform, lookup),
+	                                              (NMDedupMultiFcnSelectPredicate) predicate,
+	                                              user_data);
 }
 
 void
