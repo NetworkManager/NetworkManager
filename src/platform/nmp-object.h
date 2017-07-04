@@ -66,14 +66,16 @@ typedef enum { /*< skip >*/
 	 * they don't track all objects.
 	 *
 	 * Hence, this index type is used when looking at all objects (still
-	 * partitioned by type). */
+	 * partitioned by type).
+	 *
+	 * Also, note that links may be considered invisible. This index type
+	 * expose all links, even invisible ones. For addresses/routes, this
+	 * distiction doesn't exist, as all addresses/routes that are alive
+	 * are visible as well. */
 	NMP_CACHE_ID_TYPE_OBJECT_TYPE,
 
 	/* index for the link objects by ifname. */
 	NMP_CACHE_ID_TYPE_LINK_BY_IFNAME,
-
-	/* all the visible objects of a certain type */
-	NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY,
 
 	/* indeces for the visible default-routes, ignoring ifindex.
 	 * This index only contains two partitions: all visible default-routes,
@@ -453,16 +455,12 @@ nmp_cache_lookup (const NMPCache *cache,
 }
 
 const NMPLookup *nmp_lookup_init_obj_type (NMPLookup *lookup,
-                                           NMPObjectType obj_type,
-                                           gboolean visible_only);
-const NMPLookup *nmp_lookup_init_link (NMPLookup *lookup,
-                                       gboolean visible_only);
+                                           NMPObjectType obj_type);
 const NMPLookup *nmp_lookup_init_link_by_ifname (NMPLookup *lookup,
                                                  const char *ifname);
 const NMPLookup *nmp_lookup_init_addrroute (NMPLookup *lookup,
                                             NMPObjectType obj_type,
-                                            int ifindex,
-                                            gboolean visible_only);
+                                            int ifindex);
 const NMPLookup *nmp_lookup_init_route_visible (NMPLookup *lookup,
                                                 NMPObjectType obj_type,
                                                 int ifindex,
@@ -474,7 +472,8 @@ const NMPLookup *nmp_lookup_init_route_by_dest (NMPLookup *lookup,
                                                 guint32 metric);
 
 GArray *nmp_cache_lookup_to_array (const NMDedupMultiHeadEntry *head_entry,
-                                   NMPObjectType obj_type);
+                                   NMPObjectType obj_type,
+                                   gboolean visible_only);
 
 static inline gboolean
 nmp_cache_iter_next (NMDedupMultiIter *iter, const NMPObject **out_obj)
@@ -600,22 +599,11 @@ ASSERT_nmp_cache_ops (const NMPCache *cache,
 
 static inline const NMDedupMultiHeadEntry *
 nm_platform_lookup_obj_type (NMPlatform *platform,
-                             NMPObjectType obj_type,
-                             gboolean visible_only)
+                             NMPObjectType obj_type)
 {
 	NMPLookup lookup;
 
-	nmp_lookup_init_obj_type (&lookup, obj_type, visible_only);
-	return nm_platform_lookup (platform, &lookup);
-}
-
-static inline const NMDedupMultiHeadEntry *
-nm_platform_lookup_link (NMPlatform *platform,
-                         gboolean visible_only)
-{
-	NMPLookup lookup;
-
-	nmp_lookup_init_link (&lookup, visible_only);
+	nmp_lookup_init_obj_type (&lookup, obj_type);
 	return nm_platform_lookup (platform, &lookup);
 }
 
@@ -632,12 +620,11 @@ nm_platform_lookup_link_by_ifname (NMPlatform *platform,
 static inline const NMDedupMultiHeadEntry *
 nm_platform_lookup_addrroute (NMPlatform *platform,
                               NMPObjectType obj_type,
-                              int ifindex,
-                              gboolean visible_only)
+                              int ifindex)
 {
 	NMPLookup lookup;
 
-	nmp_lookup_init_addrroute (&lookup, obj_type, ifindex, visible_only);
+	nmp_lookup_init_addrroute (&lookup, obj_type, ifindex);
 	return nm_platform_lookup (platform, &lookup);
 }
 

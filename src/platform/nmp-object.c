@@ -177,20 +177,6 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 		/* just return 1, to indicate that obj_a is partitionable by this idx_type. */
 		return 1;
 
-	case NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY:
-		if (!nmp_object_is_visible (obj_a))
-			return 0;
-		if (obj_b) {
-			return    NMP_OBJECT_GET_TYPE (obj_a) == NMP_OBJECT_GET_TYPE (obj_b)
-			       && nmp_object_is_visible (obj_b);
-		}
-		if (request_hash) {
-			h = (guint) idx_type->cache_id_type;
-			h = NM_HASH_COMBINE (h, NMP_OBJECT_GET_TYPE (obj_a));
-			return _HASH_NON_ZERO (h);
-		}
-		return 1;
-
 	case NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_DEFAULT:
 		if (   !NM_IN_SET (NMP_OBJECT_GET_TYPE (obj_a), NMP_OBJECT_TYPE_IP4_ROUTE,
 		                                                NMP_OBJECT_TYPE_IP6_ROUTE)
@@ -1263,21 +1249,18 @@ _vt_cmd_obj_is_visible_link (const NMPObject *obj)
 
 static const guint8 _supported_cache_ids_link[] = {
 	NMP_CACHE_ID_TYPE_OBJECT_TYPE,
-	NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY,
 	NMP_CACHE_ID_TYPE_LINK_BY_IFNAME,
 	0,
 };
 
 static const guint8 _supported_cache_ids_ipx_address[] = {
 	NMP_CACHE_ID_TYPE_OBJECT_TYPE,
-	NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY,
 	NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX,
 	0,
 };
 
 static const guint8 _supported_cache_ids_ipx_route[] = {
 	NMP_CACHE_ID_TYPE_OBJECT_TYPE,
-	NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY,
 	NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX,
 	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_DEFAULT,
 	NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION,
@@ -1407,7 +1390,8 @@ nmp_cache_link_connected_needs_toggle (const NMPCache *cache, const NMPObject *m
 
 		nmp_cache_iter_for_each_link (&iter,
 		                              nmp_cache_lookup (cache,
-		                                                nmp_lookup_init_link (&lookup, FALSE)),
+		                                                nmp_lookup_init_obj_type (&lookup,
+		                                                                          NMP_OBJECT_TYPE_LINK)),
 		                              &link) {
 			const NMPObject *obj = NMP_OBJECT_UP_CAST ((NMPlatformObject *) link);
 
@@ -1540,8 +1524,7 @@ _L (const NMPLookup *lookup)
 
 const NMPLookup *
 nmp_lookup_init_obj_type (NMPLookup *lookup,
-                          NMPObjectType obj_type,
-                          gboolean visible_only)
+                          NMPObjectType obj_type)
 {
 	NMPObject *o;
 
@@ -1554,30 +1537,12 @@ nmp_lookup_init_obj_type (NMPLookup *lookup,
 	case NMP_OBJECT_TYPE_IP4_ROUTE:
 	case NMP_OBJECT_TYPE_IP6_ROUTE:
 		o = _nmp_object_stackinit_from_type (&lookup->selector_obj, obj_type);
-		if (visible_only) {
-			lookup->cache_id_type = NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY;
-			o->object.ifindex = 1;
-			if (obj_type == NMP_OBJECT_TYPE_LINK) {
-				o->_link.netlink.is_in_netlink = TRUE;
-				o->link.name[0] = 'x';
-			}
-		} else {
-			lookup->cache_id_type = NMP_CACHE_ID_TYPE_OBJECT_TYPE;
-		}
+		lookup->cache_id_type = NMP_CACHE_ID_TYPE_OBJECT_TYPE;
 		return _L (lookup);
 	default:
 		nm_assert_not_reached ();
 		return NULL;
 	}
-}
-
-const NMPLookup *
-nmp_lookup_init_link (NMPLookup *lookup,
-                      gboolean visible_only)
-{
-	return nmp_lookup_init_obj_type (lookup,
-	                                 NMP_OBJECT_TYPE_LINK,
-	                                 visible_only);
 }
 
 const NMPLookup *
@@ -1600,8 +1565,7 @@ nmp_lookup_init_link_by_ifname (NMPLookup *lookup,
 const NMPLookup *
 nmp_lookup_init_addrroute (NMPLookup *lookup,
                            NMPObjectType obj_type,
-                           int ifindex,
-                           gboolean visible_only)
+                           int ifindex)
 {
 	NMPObject *o;
 
@@ -1613,14 +1577,7 @@ nmp_lookup_init_addrroute (NMPLookup *lookup,
 
 	if (ifindex <= 0) {
 		return nmp_lookup_init_obj_type (lookup,
-		                                 obj_type,
-		                                 visible_only);
-	}
-
-	if (!visible_only) {
-		/* some match combinations are not implemented, as they would require
-		 * an additional index which is expensive to maintain. */
-		g_return_val_if_reached (NULL);
+		                                 obj_type);
 	}
 
 	o = _nmp_object_stackinit_from_type (&lookup->selector_obj, obj_type);
@@ -1644,8 +1601,7 @@ nmp_lookup_init_route_visible (NMPLookup *lookup,
 	if (!only_default) {
 		return nmp_lookup_init_addrroute (lookup,
 		                                  obj_type,
-		                                  ifindex,
-		                                  TRUE);
+		                                  ifindex);
 	}
 
 	if (ifindex > 0) {
@@ -1701,7 +1657,8 @@ nmp_lookup_init_route_by_dest (NMPLookup *lookup,
 
 GArray *
 nmp_cache_lookup_to_array (const NMDedupMultiHeadEntry *head_entry,
-                           NMPObjectType obj_type)
+                           NMPObjectType obj_type,
+                           gboolean visible_only)
 {
 	const NMPClass *klass = nmp_class_from_type (obj_type);
 	NMDedupMultiIter iter;
@@ -1717,6 +1674,9 @@ nmp_cache_lookup_to_array (const NMDedupMultiHeadEntry *head_entry,
 	                         head_entry,
 	                         &o) {
 		nm_assert (NMP_OBJECT_GET_CLASS (o) == klass);
+		if (   visible_only
+		    && !nmp_object_is_visible (o))
+			continue;
 		g_array_append_vals (array, &o->object, 1);
 	}
 	return array;
@@ -1807,10 +1767,8 @@ nmp_cache_lookup_link_full (const NMPCache *cache,
 				return NULL;
 			nmp_lookup_init_link_by_ifname (&lookup, ifname);
 			ifname = NULL;
-		} else {
-			nmp_lookup_init_link (&lookup, visible_only);
-			visible_only = FALSE;
-		}
+		} else
+			nmp_lookup_init_obj_type (&lookup, NMP_OBJECT_TYPE_LINK);
 
 		head_entry = nmp_cache_lookup (cache, &lookup);
 		nmp_cache_iter_for_each_link (&iter, head_entry, &link) {

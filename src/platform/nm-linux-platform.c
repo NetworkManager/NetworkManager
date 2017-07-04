@@ -3286,8 +3286,7 @@ cache_prune_one_type (NMPlatform *platform, NMPObjectType obj_type)
 	NMPCache *cache = nm_platform_get_cache (platform);
 
 	nmp_lookup_init_obj_type (&lookup,
-	                          obj_type,
-	                          FALSE);
+	                          obj_type);
 	nm_dedup_multi_iter_init (&iter,
 	                          nmp_cache_lookup (cache,
 	                                            &lookup));
@@ -3418,7 +3417,7 @@ cache_on_change (NMPlatform *platform,
 				NMDedupMultiIter iter;
 				const NMPlatformLink *l;
 
-				nmp_lookup_init_link (&lookup, FALSE);
+				nmp_lookup_init_obj_type (&lookup, NMP_OBJECT_TYPE_LINK);
 				nmp_cache_iter_for_each_link (&iter,
 				                              nmp_cache_lookup (cache, &lookup),
 				                              &l) {
@@ -3876,9 +3875,10 @@ link_get_all (NMPlatform *platform)
 {
 	NMPLookup lookup;
 
-	nmp_lookup_init_link (&lookup, TRUE);
+	nmp_lookup_init_obj_type (&lookup, NMP_OBJECT_TYPE_LINK);
 	return nmp_cache_lookup_to_array (nmp_cache_lookup (nm_platform_get_cache (platform), &lookup),
-	                                  NMP_OBJECT_TYPE_LINK);
+	                                  NMP_OBJECT_TYPE_LINK,
+	                                  TRUE);
 }
 
 static const NMPlatformLink *
@@ -5635,15 +5635,13 @@ link_can_assume (NMPlatform *platform, int ifindex)
 
 	nmp_lookup_init_addrroute (&lookup,
 	                           NMP_OBJECT_TYPE_IP4_ADDRESS,
-	                           ifindex,
-	                           TRUE);
+	                           ifindex);
 	if (nmp_cache_lookup (cache, &lookup))
 		return TRUE;
 
 	nmp_lookup_init_addrroute (&lookup,
 	                           NMP_OBJECT_TYPE_IP6_ADDRESS,
-	                           ifindex,
-	                           TRUE);
+	                           ifindex);
 	nmp_cache_iter_for_each (&iter,
 	                         nmp_cache_lookup (cache, &lookup),
 	                         &o) {
@@ -5732,10 +5730,10 @@ ipx_address_get_all (NMPlatform *platform, int ifindex, NMPObjectType obj_type)
 	nm_assert (NM_IN_SET (obj_type, NMP_OBJECT_TYPE_IP4_ADDRESS, NMP_OBJECT_TYPE_IP6_ADDRESS));
 	nmp_lookup_init_addrroute (&lookup,
 	                           obj_type,
-	                           ifindex,
-	                           TRUE);
+	                           ifindex);
 	return nmp_cache_lookup_to_array (nmp_cache_lookup (nm_platform_get_cache (platform), &lookup),
-	                                  obj_type);
+	                                  obj_type,
+	                                  FALSE /*addresses are always visible. */);
 }
 
 static GArray *

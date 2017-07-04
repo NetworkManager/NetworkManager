@@ -110,7 +110,7 @@ _nmp_object_equal (const NMPObject *a, const NMPObject *b)
 /*****************************************************************************/
 
 static void
-_assert_cache_multi_lookup_contains (const NMPCache *cache, const NMDedupMultiHeadEntry *head_entry, const NMPObject *obj, gboolean contains)
+_assert_cache_multi_lookup_contains (const NMPCache *cache, const NMDedupMultiHeadEntry *head_entry, const NMPObject *obj, gboolean visible_only, gboolean contains)
 {
 	NMDedupMultiIter iter;
 	gboolean found;
@@ -131,8 +131,11 @@ _assert_cache_multi_lookup_contains (const NMPCache *cache, const NMDedupMultiHe
 	                         &o) {
 		g_assert (NMP_OBJECT_IS_VALID (o));
 		if (obj == o) {
-			g_assert (!found);
-			found = TRUE;
+			if (   !visible_only
+			    || nmp_object_is_visible (o)) {
+				g_assert (!found);
+				found = TRUE;
+			}
 		}
 		i++;
 	}
@@ -152,9 +155,9 @@ _assert_cache_multi_lookup_contains_link (const NMPCache *cache,
 
 	g_assert (cache);
 
-	nmp_lookup_init_link (&lookup, visible_only);
+	nmp_lookup_init_obj_type (&lookup, NMP_OBJECT_TYPE_LINK);
 	head_entry = nmp_cache_lookup (cache, &lookup);
-	_assert_cache_multi_lookup_contains (cache, head_entry, obj, contains);
+	_assert_cache_multi_lookup_contains (cache, head_entry, obj, visible_only, contains);
 }
 
 /*****************************************************************************/
