@@ -143,15 +143,20 @@ update_dev0_ip4 (int ifindex)
 
 
 static GArray *
-ip4_routes (test_fixture *fixture)
+ip_routes (test_fixture *fixture, NMPObjectType obj_type)
 {
+	const NMPClass *klass;
 	GArray *routes;
 	const NMDedupMultiHeadEntry *pl_head_entry;
 	NMDedupMultiIter iter;
 	const NMPObject *plobj = NULL;
 	guint i;
 
-	routes = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Route));
+	g_assert (NM_IN_SET (obj_type, NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
+
+	klass = nmp_class_from_type (obj_type);
+
+	routes = g_array_new (FALSE, FALSE, klass->sizeof_public);
 
 	for (i = 0; i < 2; i++) {
 		int ifindex;
@@ -162,12 +167,12 @@ ip4_routes (test_fixture *fixture)
 			ifindex = fixture->ifindex1;
 
 		pl_head_entry = nm_platform_lookup_route_visible (NM_PLATFORM_GET,
-		                                                  NMP_OBJECT_TYPE_IP4_ROUTE,
+		                                                  obj_type,
 		                                                  ifindex,
 		                                                  FALSE,
 		                                                  TRUE);
 		nmp_cache_iter_for_each (&iter, pl_head_entry, &plobj) {
-			const NMPlatformIP4Route *r = NMP_OBJECT_CAST_IP4_ROUTE (plobj);
+			const NMPlatformIPRoute *r = NMP_OBJECT_CAST_IP_ROUTE (plobj);
 
 			if (r->rt_source == NM_IP_CONFIG_SOURCE_RTPROT_KERNEL)
 				continue;
@@ -346,7 +351,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 	 * - 7.0.0.0/8 route, metric 21021 added
 	 * - 7.0.0.0/8 route, metric 22 added
 	 * - 8.0.0.0/8 could be added. */
-	routes = ip4_routes (fixture);
+	routes = ip_routes (fixture, NMP_OBJECT_TYPE_IP4_ROUTE);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state1));
 	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, state1, routes->len, TRUE);
 	g_array_free (routes, TRUE);
@@ -357,7 +362,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 	setup_dev0_ip4 (fixture->ifindex0, 0, 21);
 
 	/* Ensure nothing changed. */
-	routes = ip4_routes (fixture);
+	routes = ip_routes (fixture, NMP_OBJECT_TYPE_IP4_ROUTE);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state1));
 	state1[0].mss = 0;
 	state1[1].metric = 21;
@@ -367,7 +372,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 	update_dev0_ip4 (fixture->ifindex0);
 
 	/* minor changes in the routes. Quite similar to state1. */
-	routes = ip4_routes (fixture);
+	routes = ip_routes (fixture, NMP_OBJECT_TYPE_IP4_ROUTE);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state2));
 	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, state2, routes->len, TRUE);
 	g_array_free (routes, TRUE);
@@ -379,7 +384,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 	 * 7.0.0.0/8 gone from dev0, still present on dev1
 	 * 8.0.0.0/8 is present on dev1
 	 * No dev0 routes left. */
-	routes = ip4_routes (fixture);
+	routes = ip_routes (fixture, NMP_OBJECT_TYPE_IP4_ROUTE);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state3));
 	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, state3, routes->len, TRUE);
 	g_array_free (routes, TRUE);
@@ -387,7 +392,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 	nm_route_manager_route_flush (route_manager_get (), fixture->ifindex1);
 
 	/* No routes left. */
-	routes = ip4_routes (fixture);
+	routes = ip_routes (fixture, NMP_OBJECT_TYPE_IP4_ROUTE);
 	g_assert_cmpint (routes->len, ==, 0);
 	g_array_free (routes, TRUE);
 }
@@ -542,22 +547,6 @@ update_dev0_ip6 (int ifindex)
 
 	nm_route_manager_ip6_route_sync (route_manager_get (), ifindex, routes, TRUE, TRUE);
 	g_array_free (routes, TRUE);
-}
-
-static GArray *
-ip6_routes (test_fixture *fixture)
-{
-	GArray *routes = nm_platform_ip6_route_get_all (NM_PLATFORM_GET,
-	                                                fixture->ifindex0,
-	                                                NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
-	GArray *routes1 = nm_platform_ip6_route_get_all (NM_PLATFORM_GET,
-	                                                 fixture->ifindex1,
-	                                                 NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
-
-	g_array_append_vals (routes, routes1->data, routes1->len);
-	g_array_free (routes1, TRUE);
-
-	return routes;
 }
 
 static void
@@ -762,7 +751,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 	 * 2001:db8:d34d::/64 on dev1 could not be added
 	 * 2001:db8:1337::/48 on dev0 won over 2001:db8:1337::/48 on dev1 and has metric 1024
 	 * 2001:db8:abad:c0de::/64 routes did not clash */
-	routes = ip6_routes (fixture);
+	routes = ip_routes (fixture, NMP_OBJECT_TYPE_IP6_ROUTE);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state1));
 	nmtst_platform_ip6_routes_equal ((NMPlatformIP6Route *) routes->data, state1, routes->len, TRUE);
 	g_array_free (routes, TRUE);
@@ -773,7 +762,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 	setup_dev0_ip6 (fixture->ifindex0);
 
 	/* Ensure nothing changed. */
-	routes = ip6_routes (fixture);
+	routes = ip_routes (fixture, NMP_OBJECT_TYPE_IP6_ROUTE);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state1));
 	nmtst_platform_ip6_routes_equal ((NMPlatformIP6Route *) routes->data, state1, routes->len, TRUE);
 	g_array_free (routes, TRUE);
@@ -781,7 +770,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 	update_dev0_ip6 (fixture->ifindex0);
 
 	/* 2001:db8:abad:c0de::/64 on dev0 was updated for gateway removal*/
-	routes = ip6_routes (fixture);
+	routes = ip_routes (fixture, NMP_OBJECT_TYPE_IP6_ROUTE);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state2));
 	nmtst_platform_ip6_routes_equal ((NMPlatformIP6Route *) routes->data, state2, routes->len, TRUE);
 	g_array_free (routes, TRUE);
@@ -793,7 +782,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 	 * 2001:db8:1337::/48 is now on dev1, metric of 1024 still applies
 	 * 2001:db8:d34d::/64 is present now that 2001:db8:8086::/48 is on dev1
 	 * No dev0 routes left. */
-	routes = ip6_routes (fixture);
+	routes = ip_routes (fixture, NMP_OBJECT_TYPE_IP6_ROUTE);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state3));
 	nmtst_platform_ip6_routes_equal ((NMPlatformIP6Route *) routes->data, state3, routes->len, TRUE);
 	g_array_free (routes, TRUE);
@@ -801,7 +790,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 	nm_route_manager_route_flush (route_manager_get (), fixture->ifindex1);
 
 	/* No routes left. */
-	routes = ip6_routes (fixture);
+	routes = ip_routes (fixture, NMP_OBJECT_TYPE_IP6_ROUTE);
 	g_assert_cmpint (routes->len, ==, 0);
 	g_array_free (routes, TRUE);
 }

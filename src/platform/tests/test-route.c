@@ -450,7 +450,7 @@ test_ip6_route_options (gconstpointer test_data)
 {
 	const int TEST_IDX = GPOINTER_TO_INT (test_data);
 	const int IFINDEX = nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME);
-	gs_unref_array GArray *routes = NULL;
+	GPtrArray *routes;
 #define RTS_MAX 1
 	NMPlatformIP6Route rts_add[RTS_MAX] = { };
 	NMPlatformIP6Route rts_cmp[RTS_MAX] = { };
@@ -519,9 +519,7 @@ test_ip6_route_options (gconstpointer test_data)
 	for (i = 0; i < rts_n; i++)
 		g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, &rts_add[i]));
 
-	routes = nm_platform_ip6_route_get_all (NM_PLATFORM_GET, IFINDEX,
-	                                        NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT |
-	                                        NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
+	routes = nmtstp_ip6_route_get_all (NM_PLATFORM_GET, IFINDEX);
 	switch (TEST_IDX) {
 	case 1:
 	case 2:
@@ -533,9 +531,9 @@ test_ip6_route_options (gconstpointer test_data)
 	default:
 		g_assert_not_reached ();
 	}
-
 	g_assert_cmpint (routes->len, ==, rts_n);
-	nmtst_platform_ip6_routes_equal ((const NMPlatformIP6Route *) routes->data, rts_cmp, rts_n, TRUE);
+	nmtst_platform_ip6_routes_equal_aptr ((const NMPObject *const*) routes->pdata, rts_cmp, routes->len, TRUE);
+	g_ptr_array_unref (routes);
 
 	for (i = 0; i < rts_n; i++) {
 		g_assert (nm_platform_ip6_route_delete (NM_PLATFORM_GET, IFINDEX,

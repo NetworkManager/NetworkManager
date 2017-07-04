@@ -173,18 +173,6 @@ typedef enum {
 	NM_PLATFORM_SIGNAL_REMOVED,
 } NMPlatformSignalChangeType;
 
-typedef enum { /*< skip >*/
-	NM_PLATFORM_GET_ROUTE_FLAGS_NONE                            = 0,
-
-	/* Whether to include default-routes/non-default-routes. Omitting
-	 * both WITH_DEFAULT and WITH_NON_DEFAULT, is equal to specifying
-	 * both of them. */
-	NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT                    = (1LL << 0),
-	NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT                = (1LL << 1),
-
-	NM_PLATFORM_GET_ROUTE_FLAGS_WITH_RTPROT_KERNEL              = (1LL << 2),
-} NMPlatformGetRouteFlags;
-
 typedef struct {
 	__NMPlatformObject_COMMON;
 } NMPlatformObject;
@@ -980,7 +968,6 @@ gboolean nm_platform_address_flush (NMPlatform *self, int ifindex);
 
 const NMPlatformIP4Route *nm_platform_ip4_route_get (NMPlatform *self, int ifindex, in_addr_t network, guint8 plen, guint32 metric);
 const NMPlatformIP6Route *nm_platform_ip6_route_get (NMPlatform *self, int ifindex, struct in6_addr network, guint8 plen, guint32 metric);
-GArray *nm_platform_ip6_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteFlags flags);
 gboolean nm_platform_ip4_route_add (NMPlatform *self, const NMPlatformIP4Route *route);
 gboolean nm_platform_ip6_route_add (NMPlatform *self, const NMPlatformIP6Route *route);
 gboolean nm_platform_ip4_route_delete (NMPlatform *self, int ifindex, in_addr_t network, guint8 plen, guint32 metric);

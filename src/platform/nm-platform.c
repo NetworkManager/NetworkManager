@@ -3198,56 +3198,6 @@ nm_platform_address_flush (NMPlatform *self, int ifindex)
 
 /*****************************************************************************/
 
-static GArray *
-ipx_route_get_all (NMPlatform *platform, int ifindex, NMPObjectType obj_type, NMPlatformGetRouteFlags flags)
-{
-	NMDedupMultiIter iter;
-	NMPLookup lookup;
-	const NMDedupMultiHeadEntry *head_entry;
-	GArray *array;
-	const NMPClass *klass;
-	const NMPObject *o;
-	gboolean with_rtprot_kernel;
-
-	nm_assert (NM_IN_SET (obj_type, NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
-
-	if (!NM_FLAGS_ANY (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT))
-		flags |= NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT;
-
-	klass = nmp_class_from_type (obj_type);
-
-	head_entry = nmp_cache_lookup (nm_platform_get_cache (platform),
-	                               nmp_lookup_init_route_visible (&lookup,
-	                                                              obj_type,
-	                                                              ifindex,
-	                                                              NM_FLAGS_HAS (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT),
-	                                                              NM_FLAGS_HAS (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT)));
-
-	array = g_array_sized_new (FALSE, FALSE, klass->sizeof_public, head_entry ? head_entry->len : 0);
-
-	with_rtprot_kernel = NM_FLAGS_HAS (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_RTPROT_KERNEL);
-
-	nmp_cache_iter_for_each (&iter,
-	                         head_entry,
-	                         &o) {
-		nm_assert (NMP_OBJECT_GET_CLASS (o) == klass);
-		if (   with_rtprot_kernel
-		    || o->ip_route.rt_source != NM_IP_CONFIG_SOURCE_RTPROT_KERNEL)
-			g_array_append_vals (array, &o->ip_route, 1);
-	}
-	return array;
-}
-
-GArray *
-nm_platform_ip6_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteFlags flags)
-{
-	_CHECK_SELF (self, klass, NULL);
-
-	g_return_val_if_fail (ifindex >= 0, NULL);
-
-	return ipx_route_get_all (self, ifindex, NMP_OBJECT_TYPE_IP6_ROUTE, flags);
-}
-
 /**
  * nm_platform_ip4_route_add:
  * @self:
