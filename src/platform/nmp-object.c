@@ -194,17 +194,17 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 	case NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_DEFAULT:
 		if (   !NM_IN_SET (NMP_OBJECT_GET_TYPE (obj_a), NMP_OBJECT_TYPE_IP4_ROUTE,
 		                                                NMP_OBJECT_TYPE_IP6_ROUTE)
+		    || !NM_PLATFORM_IP_ROUTE_IS_DEFAULT (&obj_a->ip_route)
 		    || !nmp_object_is_visible (obj_a))
 			return 0;
 		if (obj_b) {
 			return    NMP_OBJECT_GET_TYPE (obj_a) == NMP_OBJECT_GET_TYPE (obj_b)
-			       && NM_PLATFORM_IP_ROUTE_IS_DEFAULT (&obj_a->ip_route) == NM_PLATFORM_IP_ROUTE_IS_DEFAULT (&obj_b->ip_route)
+			       && NM_PLATFORM_IP_ROUTE_IS_DEFAULT (&obj_b->ip_route)
 			       && nmp_object_is_visible (obj_b);
 		}
 		if (request_hash) {
 			h = (guint) idx_type->cache_id_type;
 			h = NM_HASH_COMBINE (h, NMP_OBJECT_GET_TYPE (obj_a));
-			h = NM_HASH_COMBINE (h, NM_PLATFORM_IP_ROUTE_IS_DEFAULT (&obj_a->ip_route));
 			return _HASH_NON_ZERO (h);
 		}
 		return 1;
@@ -225,26 +225,6 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 		if (request_hash) {
 			h = (guint) idx_type->cache_id_type;
 			h = NM_HASH_COMBINE (h, NMP_OBJECT_GET_TYPE (obj_a));
-			h = NM_HASH_COMBINE (h, obj_a->object.ifindex);
-			return _HASH_NON_ZERO (h);
-		}
-		return 1;
-
-	case NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_WITH_DEFAULT:
-		if (   !NM_IN_SET (NMP_OBJECT_GET_TYPE (obj_a), NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE)
-		    || obj_a->object.ifindex <= 0
-		    || !nmp_object_is_visible (obj_a))
-			return 0;
-		if (obj_b) {
-			return    NMP_OBJECT_GET_TYPE (obj_a) == NMP_OBJECT_GET_TYPE (obj_b)
-			       && obj_a->object.ifindex == obj_b->object.ifindex
-			       && NM_PLATFORM_IP_ROUTE_IS_DEFAULT (&obj_a->ip_route) == NM_PLATFORM_IP_ROUTE_IS_DEFAULT (&obj_b->ip_route)
-			       && nmp_object_is_visible (obj_b);
-		}
-		if (request_hash) {
-			h = (guint) idx_type->cache_id_type;
-			h = NM_HASH_COMBINE (h, NMP_OBJECT_GET_TYPE (obj_a));
-			h = NM_HASH_COMBINE (h, NM_PLATFORM_IP_ROUTE_IS_DEFAULT (&obj_a->ip_route));
 			h = NM_HASH_COMBINE (h, obj_a->object.ifindex);
 			return _HASH_NON_ZERO (h);
 		}
@@ -1300,7 +1280,6 @@ static const guint8 _supported_cache_ids_ipx_route[] = {
 	NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY,
 	NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX,
 	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_DEFAULT,
-	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_WITH_DEFAULT,
 	NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION,
 	0,
 };
@@ -1654,8 +1633,7 @@ const NMPLookup *
 nmp_lookup_init_route_visible (NMPLookup *lookup,
                                NMPObjectType obj_type,
                                int ifindex,
-                               gboolean with_default,
-                               gboolean with_non_default)
+                               gboolean only_default)
 {
 	NMPObject *o;
 
@@ -1663,24 +1641,22 @@ nmp_lookup_init_route_visible (NMPLookup *lookup,
 	nm_assert (NM_IN_SET (obj_type, NMP_OBJECT_TYPE_IP4_ROUTE,
 	                                NMP_OBJECT_TYPE_IP6_ROUTE));
 
-	if (with_default) {
-		if (with_non_default) {
-			return nmp_lookup_init_addrroute (lookup,
-			                                  obj_type,
-			                                  ifindex,
-			                                  TRUE);
-		}
-	} else if (!with_non_default)
-		g_return_val_if_reached (NULL);
-	o = _nmp_object_stackinit_from_type (&lookup->selector_obj, obj_type);
-	o->ip_route.plen = with_default ? 0 : 1;
-	if (ifindex <= 0) {
-		o->object.ifindex = 1;
-		lookup->cache_id_type = NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_DEFAULT;
-	} else {
-		o->object.ifindex = ifindex;
-		lookup->cache_id_type = NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_WITH_DEFAULT;
+	if (!only_default) {
+		return nmp_lookup_init_addrroute (lookup,
+		                                  obj_type,
+		                                  ifindex,
+		                                  TRUE);
 	}
+
+	if (ifindex > 0) {
+		/* there is no index to lookup a default-route by ifindex.
+		 * You have to lookup all default-routes, and filter yourself */
+		g_return_val_if_reached (NULL);
+	}
+
+	o = _nmp_object_stackinit_from_type (&lookup->selector_obj, obj_type);
+	o->object.ifindex = 1;
+	lookup->cache_id_type = NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_DEFAULT;
 	return _L (lookup);
 }
 

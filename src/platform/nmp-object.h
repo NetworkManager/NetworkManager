@@ -75,16 +75,13 @@ typedef enum { /*< skip >*/
 	/* all the visible objects of a certain type */
 	NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY,
 
-	/* indeces for the visible routes, ignoring ifindex.
-	 * The index separates default routes from non-default routes. */
+	/* indeces for the visible default-routes, ignoring ifindex.
+	 * This index only contains two partitions: all visible default-routes,
+	 * separate for IPv4 and IPv6. */
 	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_DEFAULT,
 
 	/* all the visible addresses/routes (by object-type) for an ifindex. */
 	NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX,
-
-	/* indeces for the visible routes, per ifindex.
-	 * The index separates default routes from non-default routes. */
-	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_WITH_DEFAULT,
 
 	/* Consider all the destination fields of a route, that is, the ID without the ifindex
 	 * and gateway (meaning: network/plen,metric).
@@ -469,8 +466,7 @@ const NMPLookup *nmp_lookup_init_addrroute (NMPLookup *lookup,
 const NMPLookup *nmp_lookup_init_route_visible (NMPLookup *lookup,
                                                 NMPObjectType obj_type,
                                                 int ifindex,
-                                                gboolean with_default,
-                                                gboolean with_non_default);
+                                                gboolean only_default);
 const NMPLookup *nmp_lookup_init_route_by_dest (NMPLookup *lookup,
                                                 int addr_family,
                                                 gconstpointer network,
@@ -649,12 +645,11 @@ static inline const NMDedupMultiHeadEntry *
 nm_platform_lookup_route_visible (NMPlatform *platform,
                                   NMPObjectType obj_type,
                                   int ifindex,
-                                  gboolean with_default,
-                                  gboolean with_non_default)
+                                  gboolean only_default)
 {
 	NMPLookup lookup;
 
-	nmp_lookup_init_route_visible (&lookup, obj_type, ifindex, with_default, with_non_default);
+	nmp_lookup_init_route_visible (&lookup, obj_type, ifindex, only_default);
 	return nm_platform_lookup (platform, &lookup);
 }
 
@@ -662,14 +657,13 @@ static inline GPtrArray *
 nm_platform_lookup_route_visible_clone (NMPlatform *platform,
                                         NMPObjectType obj_type,
                                         int ifindex,
-                                        gboolean with_default,
-                                        gboolean with_non_default,
+                                        gboolean only_default,
                                         gboolean (*predicate) (const NMPObject *obj, gpointer user_data),
                                         gpointer user_data)
 {
 	NMPLookup lookup;
 
-	nmp_lookup_init_route_visible (&lookup, obj_type, ifindex, with_default, with_non_default);
+	nmp_lookup_init_route_visible (&lookup, obj_type, ifindex, only_default);
 	return nm_platform_lookup_clone (platform, &lookup, predicate, user_data);
 }
 

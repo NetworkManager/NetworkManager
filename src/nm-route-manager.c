@@ -314,7 +314,7 @@ _route_index_create_from_platform (const VTableIP *vtable,
                                    GPtrArray **out_storage)
 {
 	RouteIndex *index;
-	guint i, len;
+	guint i, j, len;
 	GPtrArray *storage;
 
 	nm_assert (out_storage && !*out_storage);
@@ -323,7 +323,6 @@ _route_index_create_from_platform (const VTableIP *vtable,
 	                                                  vtable->vt->obj_type,
 	                                                  ifindex,
 	                                                  FALSE,
-	                                                  TRUE,
 	                                                  NULL,
 	                                                  NULL);
 	if (!storage)
@@ -332,17 +331,23 @@ _route_index_create_from_platform (const VTableIP *vtable,
 	len = storage->len;
 	index = g_malloc (sizeof (RouteIndex) + len * sizeof (NMPlatformIPXRoute *));
 
-	index->len = len;
+	j = 0;
 	for (i = 0; i < len; i++) {
+		const NMPlatformIPXRoute *ipx_route = NMP_OBJECT_CAST_IPX_ROUTE ((NMPObject *) storage->pdata[i]);
+
+		if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (ipx_route))
+			continue;
+
 		/* we cast away the const-ness of the NMPObjects. The caller must
 		 * ensure not to modify the object via index->entries. */
-		index->entries[i] = NMP_OBJECT_CAST_IPX_ROUTE ((NMPObject *) storage->pdata[i]);
+		index->entries[j++] = (NMPlatformIPXRoute *) ipx_route;
 	}
-	index->entries[i] = NULL;
+	index->entries[j] = NULL;
+	index->len = j;
 
 	/* this is a stable sort, which is very important at this point. */
 	g_qsort_with_data (index->entries,
-	                   len,
+	                   index->len,
 	                   sizeof (NMPlatformIPXRoute *),
 	                   (GCompareDataFunc) _route_index_create_sort,
 	                   (gpointer) vtable);

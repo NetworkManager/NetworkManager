@@ -169,14 +169,14 @@ ip_routes (test_fixture *fixture, NMPObjectType obj_type)
 		pl_head_entry = nm_platform_lookup_route_visible (NM_PLATFORM_GET,
 		                                                  obj_type,
 		                                                  ifindex,
-		                                                  FALSE,
-		                                                  TRUE);
+		                                                  FALSE);
 		nmp_cache_iter_for_each (&iter, pl_head_entry, &plobj) {
 			const NMPlatformIPRoute *r = NMP_OBJECT_CAST_IP_ROUTE (plobj);
 
+			if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (r))
+				continue;
 			if (r->rt_source == NM_IP_CONFIG_SOURCE_RTPROT_KERNEL)
 				continue;
-			g_assert (!NM_PLATFORM_IP_ROUTE_IS_DEFAULT (r));
 			g_assert (r->ifindex == ifindex);
 			g_assert (nmp_object_is_visible (plobj));
 			g_array_append_vals (routes, r, 1);

@@ -336,7 +336,6 @@ _platform_route_sync_flush (const VTableIP *vtable, NMDefaultRouteManager *self,
 	                                                 vtable->vt->obj_type,
 	                                                 0,
 	                                                 TRUE,
-	                                                 FALSE,
 	                                                 nm_platform_lookup_predicate_routes_skip_rtprot_kernel,
 	                                                 NULL);
 	if (!routes)
@@ -520,7 +519,6 @@ _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *c
 	                                                 vtable->vt->obj_type,
 	                                                 0,
 	                                                 TRUE,
-	                                                 FALSE,
 	                                                 nm_platform_lookup_predicate_routes_skip_rtprot_kernel,
 	                                                 NULL);
 

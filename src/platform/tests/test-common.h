@@ -195,8 +195,7 @@ nmtstp_ip4_route_get_all (NMPlatform *platform,
 	return nm_platform_lookup_route_visible_clone (platform,
 	                                               NMP_OBJECT_TYPE_IP4_ROUTE,
 	                                               ifindex,
-	                                               TRUE,
-	                                               TRUE,
+	                                               FALSE,
 	                                               nm_platform_lookup_predicate_routes_skip_rtprot_kernel,
 	                                               NULL);
 }
@@ -208,8 +207,7 @@ nmtstp_ip6_route_get_all (NMPlatform *platform,
 	return nm_platform_lookup_route_visible_clone (platform,
 	                                               NMP_OBJECT_TYPE_IP6_ROUTE,
 	                                               ifindex,
-	                                               TRUE,
-	                                               TRUE,
+	                                               FALSE,
 	                                               nm_platform_lookup_predicate_routes_skip_rtprot_kernel,
 	                                               NULL);
 }

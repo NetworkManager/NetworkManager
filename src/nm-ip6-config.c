@@ -377,8 +377,7 @@ nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 	pl_head_entry = nm_platform_lookup_route_visible (platform,
 	                                                  NMP_OBJECT_TYPE_IP6_ROUTE,
 	                                                  ifindex,
-	                                                  TRUE,
-	                                                  TRUE);
+	                                                  FALSE);
 
 	/* Extract gateway from default route */
 	old_gateway = priv->gateway;

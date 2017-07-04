@@ -5417,13 +5417,14 @@ _device_get_default_route_from_platform (NMDevice *self, int addr_family, NMPlat
 	                                                  addr_family == AF_INET
 	                                                    ? NMP_OBJECT_TYPE_IP4_ROUTE
 	                                                    : NMP_OBJECT_TYPE_IP6_ROUTE,
-	                                                  ifindex,
-	                                                  TRUE,
-	                                                  FALSE);
+	                                                  0,
+	                                                  TRUE);
 	nmp_cache_iter_for_each (&iter, pl_head_entry, &plobj) {
 		guint32 m;
 		const NMPlatformIPRoute *r = NMP_OBJECT_CAST_IP_ROUTE (plobj);
 
+		if (r->ifindex != ifindex)
+			continue;
 		if (r->rt_source == NM_IP_CONFIG_SOURCE_RTPROT_KERNEL)
 			continue;
 
