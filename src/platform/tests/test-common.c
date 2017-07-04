@@ -156,9 +156,9 @@ link_callback (NMPlatform *platform, int obj_type_i, int ifindex, NMPlatformLink
 {
 	const NMPObjectType obj_type = obj_type_i;
 	const NMPlatformSignalChangeType change_type = change_type_i;
-	GArray *links;
-	NMPlatformLink *cached;
-	int i;
+	NMPLookup lookup;
+	NMDedupMultiIter iter;
+	const NMPlatformLink *cached;
 
 	g_assert_cmpint (obj_type, ==, NMP_OBJECT_TYPE_LINK);
 	g_assert (received);
@@ -188,19 +188,21 @@ link_callback (NMPlatform *platform, int obj_type_i, int ifindex, NMPlatformLink
 
 	/* Check the data */
 	g_assert (received->ifindex > 0);
-	links = nm_platform_link_get_all (NM_PLATFORM_GET, TRUE);
-	for (i = 0; i < links->len; i++) {
-		cached = &g_array_index (links, NMPlatformLink, i);
+
+	nmp_lookup_init_obj_type (&lookup, NMP_OBJECT_TYPE_LINK);
+	nmp_cache_iter_for_each_link (&iter,
+	                              nm_platform_lookup (platform, &lookup),
+	                              &cached) {
+		if (!nmp_object_is_visible (NMP_OBJECT_UP_CAST (cached)))
+			continue;
 		if (cached->ifindex == received->ifindex) {
 			g_assert_cmpint (nm_platform_link_cmp (cached, received), ==, 0);
 			g_assert (!memcmp (cached, received, sizeof (*cached)));
 			if (data->change_type == NM_PLATFORM_SIGNAL_REMOVED)
 				g_error ("Deleted link still found in the local cache.");
-			g_array_unref (links);
 			return;
 		}
 	}
-	g_array_unref (links);
 
 	if (data->change_type != NM_PLATFORM_SIGNAL_REMOVED)
 		g_error ("Added/changed link not found in the local cache.");

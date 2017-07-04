@@ -44,7 +44,7 @@ static void
 test_link_get_all (void)
 {
 	gs_unref_object NMPlatform *platform = NULL;
-	gs_unref_array GArray *links = NULL;
+	gs_unref_ptrarray GPtrArray *links = NULL;
 
 	platform = nm_linux_platform_new (TRUE, NM_PLATFORM_NETNS_SUPPORT_DEFAULT);
 

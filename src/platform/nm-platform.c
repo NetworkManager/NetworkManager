@@ -464,8 +464,8 @@ _link_get_all_presort (gconstpointer  p_a,
                        gconstpointer  p_b,
                        gpointer       sort_by_name)
 {
-	const NMPlatformLink *a = p_a;
-	const NMPlatformLink *b = p_b;
+	const NMPlatformLink *a = NMP_OBJECT_CAST_LINK (*((const NMPObject **) p_a));
+	const NMPlatformLink *b = NMP_OBJECT_CAST_LINK (*((const NMPObject **) p_b));
 
 	/* Loopback always first */
 	if (a->ifindex == 1)
@@ -487,38 +487,47 @@ _link_get_all_presort (gconstpointer  p_a,
 
 /**
  * nm_platform_link_get_all:
- * self: platform instance
+ * @self: platform instance
+ * @sort_by_name: whether to sort by name or ifindex.
  *
  * Retrieve a snapshot of configuration for all links at once. The result is
- * owned by the caller and should be freed with g_array_unref().
+ * owned by the caller and should be freed with g_ptr_array_unref().
  */
-GArray *
+GPtrArray *
 nm_platform_link_get_all (NMPlatform *self, gboolean sort_by_name)
 {
-	GArray *links, *result;
-	guint i, j, nresult;
-	GHashTable *unseen;
-	NMPlatformLink *item;
+	gs_unref_ptrarray GPtrArray *links = NULL;
+	GPtrArray *result;
+	guint i, nresult;
+	gs_unref_hashtable GHashTable *unseen = NULL;
+	const NMPlatformLink *item;
 	NMPLookup lookup;
 
 	_CHECK_SELF (self, klass, NULL);
 
 	nmp_lookup_init_obj_type (&lookup, NMP_OBJECT_TYPE_LINK);
-	links = nmp_cache_lookup_to_array (nmp_cache_lookup (nm_platform_get_cache (self), &lookup),
-	                                   NMP_OBJECT_TYPE_LINK,
-	                                   TRUE);
+	links = nm_dedup_multi_objs_to_ptr_array_head (nm_platform_lookup (self, &lookup),
+	                                               NULL, NULL);
+	if (!links)
+		return NULL;
 
-	if (!links || links->len == 0)
-		return links;
+	for (i = 0; i < links->len; ) {
+		if (!nmp_object_is_visible (links->pdata[i]))
+			g_ptr_array_remove_index_fast (links, i);
+		else
+			i++;
+	}
+
+	if (links->len == 0)
+		return NULL;
 
 	/* first sort the links by their ifindex or name. Below we will sort
 	 * further by moving children/slaves to the end. */
-	g_array_sort_with_data (links, _link_get_all_presort, GINT_TO_POINTER (sort_by_name));
+	g_ptr_array_sort_with_data (links, _link_get_all_presort, GINT_TO_POINTER (sort_by_name));
 
 	unseen = g_hash_table_new (g_direct_hash, g_direct_equal);
 	for (i = 0; i < links->len; i++) {
-		item = &g_array_index (links, NMPlatformLink, i);
-
+		item = NMP_OBJECT_CAST_LINK ((const NMPObject *) links->pdata[i]);
 		nm_assert (item->ifindex > 0);
 		if (!nm_g_hash_table_insert (unseen, GINT_TO_POINTER (item->ifindex), NULL))
 			nm_assert_not_reached ();
@@ -527,7 +536,7 @@ nm_platform_link_get_all (NMPlatform *self, gboolean sort_by_name)
 #if NM_MORE_ASSERTS
 	/* Ensure that link_get_all returns a consistent and valid result. */
 	for (i = 0; i < links->len; i++) {
-		item = &g_array_index (links, NMPlatformLink, i);
+		item = NMP_OBJECT_CAST_LINK ((const NMPObject *) links->pdata[i]);
 
 		if (!item->ifindex)
 			continue;
@@ -547,50 +556,52 @@ nm_platform_link_get_all (NMPlatform *self, gboolean sort_by_name)
 #endif
 
 	/* Re-order the links list such that children/slaves come after all ancestors */
-	nresult = g_hash_table_size (unseen);
-	result = g_array_sized_new (TRUE, TRUE, sizeof (NMPlatformLink), nresult);
-	g_array_set_size (result, nresult);
+	nm_assert (g_hash_table_size (unseen) == links->len);
+	nresult = links->len;
+	result = g_ptr_array_new_full (nresult, (GDestroyNotify) nmp_object_unref);
 
-	j = 0;
-	do {
+	while (TRUE) {
 		gboolean found_something = FALSE;
 		guint first_idx = G_MAXUINT;
 
 		for (i = 0; i < links->len; i++) {
-			item = &g_array_index (links, NMPlatformLink, i);
+			item = NMP_OBJECT_CAST_LINK ((const NMPObject *) links->pdata[i]);
 
-			if (!item->ifindex)
+			if (!item)
 				continue;
-
-			if (first_idx == G_MAXUINT)
-				first_idx = i;
 
 			g_assert (g_hash_table_contains (unseen, GINT_TO_POINTER (item->ifindex)));
 
 			if (item->master > 0 && g_hash_table_contains (unseen, GINT_TO_POINTER (item->master)))
-				continue;
+				goto skip;
 			if (item->parent > 0 && g_hash_table_contains (unseen, GINT_TO_POINTER (item->parent)))
-				continue;
+				goto skip;
 
 			g_hash_table_remove (unseen, GINT_TO_POINTER (item->ifindex));
-			g_array_index (result, NMPlatformLink, j++) = *item;
-			item->ifindex = 0;
+			g_ptr_array_add (result, links->pdata[i]);
+			links->pdata[i] = NULL;
 			found_something = TRUE;
+			continue;
+skip:
+			if (first_idx == G_MAXUINT)
+				first_idx = i;
 		}
 
-		if (!found_something) {
+		if (found_something) {
+			if (first_idx == G_MAXUINT)
+				break;
+		} else {
+			nm_assert (first_idx != G_MAXUINT);
 			/* There is a loop, pop the first (remaining) element from the list.
 			 * This can happen for veth pairs where each peer is parent of the other end. */
-			item = &g_array_index (links, NMPlatformLink, first_idx);
-
+			item = NMP_OBJECT_CAST_LINK ((const NMPObject *) links->pdata[first_idx]);
 			g_hash_table_remove (unseen, GINT_TO_POINTER (item->ifindex));
-			g_array_index (result, NMPlatformLink, j++) = *item;
-			item->ifindex = 0;
+			g_ptr_array_add (result, links->pdata[first_idx]);
+			links->pdata[first_idx] = NULL;
 		}
-	} while (j < nresult);
-
-	g_hash_table_destroy (unseen);
-	g_array_free (links, TRUE);
+		nm_assert (result->len < nresult);
+	}
+	nm_assert (result->len == nresult);
 
 	return result;
 }

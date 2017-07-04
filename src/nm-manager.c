@@ -35,6 +35,7 @@
 #include "devices/nm-device.h"
 #include "devices/nm-device-generic.h"
 #include "platform/nm-platform.h"
+#include "platform/nmp-object.h"
 #include "nm-hostname-manager.h"
 #include "nm-rfkill-manager.h"
 #include "dhcp/nm-dhcp-manager.h"
@@ -2478,8 +2479,7 @@ platform_link_cb (NMPlatform *platform,
 static void
 platform_query_devices (NMManager *self)
 {
-	GArray *links_array;
-	NMPlatformLink *links;
+	gs_unref_ptrarray GPtrArray *links = NULL;
 	int i;
 	gboolean guess_assume;
 	const char *order;
@@ -2489,21 +2489,21 @@ platform_query_devices (NMManager *self)
 	                                         NM_CONFIG_KEYFILE_GROUP_MAIN,
 	                                         NM_CONFIG_KEYFILE_KEY_MAIN_SLAVES_ORDER,
 	                                         NM_CONFIG_GET_VALUE_STRIP);
-	links_array = nm_platform_link_get_all (NM_PLATFORM_GET, !nm_streq0 (order, "index"));
-	links = (NMPlatformLink *) links_array->data;
-	for (i = 0; i < links_array->len; i++) {
+	links = nm_platform_link_get_all (NM_PLATFORM_GET, !nm_streq0 (order, "index"));
+	if (!links)
+		return;
+	for (i = 0; i < links->len; i++) {
+		const NMPlatformLink *link = NMP_OBJECT_CAST_LINK ((const NMPObject *) links->pdata[i]);
 		gs_free NMConfigDeviceStateData *dev_state = NULL;
 
-		dev_state = nm_config_device_state_load (links[i].ifindex);
+		dev_state = nm_config_device_state_load (link->ifindex);
 
 		platform_link_added (self,
-		                     links[i].ifindex,
-		                     &links[i],
+		                     link->ifindex,
+		                     link,
 		                     guess_assume && (!dev_state || !dev_state->connection_uuid),
 		                     dev_state);
 	}
-
-	g_array_unref (links_array);
 }
 
 static void
