@@ -48,12 +48,12 @@ typedef enum { /*< skip >*/
  * but only route objects can be indexed by NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_NO_DEFAULT.
  *
  * Of one index type, there can be multiple indexes or not.
- * For example, of the index type NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX there
+ * For example, of the index type NMP_CACHE_ID_TYPE_ADDRROUTE_BY_IFINDEX there
  * are multiple instances (for different route/addresses, v4/v6, per-ifindex).
  *
  * But one object, can only be indexed by one particular index of a
  * type. For example, a certain address instance is only indexed by
- * the index NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX with
+ * the index NMP_CACHE_ID_TYPE_ADDRROUTE_BY_IFINDEX with
  * matching v4/v6 and ifindex -- or maybe not at all if it isn't visible.
  * */
 typedef enum { /*< skip >*/
@@ -80,10 +80,10 @@ typedef enum { /*< skip >*/
 	/* indeces for the visible default-routes, ignoring ifindex.
 	 * This index only contains two partitions: all visible default-routes,
 	 * separate for IPv4 and IPv6. */
-	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_DEFAULT,
+	NMP_CACHE_ID_TYPE_DEFAULT_ROUTES,
 
-	/* all the visible addresses/routes (by object-type) for an ifindex. */
-	NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX,
+	/* all the addresses/routes (by object-type) for an ifindex. */
+	NMP_CACHE_ID_TYPE_ADDRROUTE_BY_IFINDEX,
 
 	/* Consider all the destination fields of a route, that is, the ID without the ifindex
 	 * and gateway (meaning: network/plen,metric).

@@ -177,7 +177,7 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 		/* just return 1, to indicate that obj_a is partitionable by this idx_type. */
 		return 1;
 
-	case NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_DEFAULT:
+	case NMP_CACHE_ID_TYPE_DEFAULT_ROUTES:
 		if (   !NM_IN_SET (NMP_OBJECT_GET_TYPE (obj_a), NMP_OBJECT_TYPE_IP4_ROUTE,
 		                                                NMP_OBJECT_TYPE_IP6_ROUTE)
 		    || !NM_PLATFORM_IP_ROUTE_IS_DEFAULT (&obj_a->ip_route)
@@ -195,7 +195,7 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 		}
 		return 1;
 
-	case NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX:
+	case NMP_CACHE_ID_TYPE_ADDRROUTE_BY_IFINDEX:
 		if (   !NM_IN_SET (NMP_OBJECT_GET_TYPE (obj_a), NMP_OBJECT_TYPE_IP4_ADDRESS,
 		                                                NMP_OBJECT_TYPE_IP6_ADDRESS,
 		                                                NMP_OBJECT_TYPE_IP4_ROUTE,
@@ -1255,14 +1255,14 @@ static const guint8 _supported_cache_ids_link[] = {
 
 static const guint8 _supported_cache_ids_ipx_address[] = {
 	NMP_CACHE_ID_TYPE_OBJECT_TYPE,
-	NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX,
+	NMP_CACHE_ID_TYPE_ADDRROUTE_BY_IFINDEX,
 	0,
 };
 
 static const guint8 _supported_cache_ids_ipx_route[] = {
 	NMP_CACHE_ID_TYPE_OBJECT_TYPE,
-	NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX,
-	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_DEFAULT,
+	NMP_CACHE_ID_TYPE_ADDRROUTE_BY_IFINDEX,
+	NMP_CACHE_ID_TYPE_DEFAULT_ROUTES,
 	NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION,
 	0,
 };
@@ -1582,7 +1582,7 @@ nmp_lookup_init_addrroute (NMPLookup *lookup,
 
 	o = _nmp_object_stackinit_from_type (&lookup->selector_obj, obj_type);
 	o->object.ifindex = ifindex;
-	lookup->cache_id_type = NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX;
+	lookup->cache_id_type = NMP_CACHE_ID_TYPE_ADDRROUTE_BY_IFINDEX;
 	return _L (lookup);
 }
 
@@ -1612,7 +1612,7 @@ nmp_lookup_init_route_visible (NMPLookup *lookup,
 
 	o = _nmp_object_stackinit_from_type (&lookup->selector_obj, obj_type);
 	o->object.ifindex = 1;
-	lookup->cache_id_type = NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_DEFAULT;
+	lookup->cache_id_type = NMP_CACHE_ID_TYPE_DEFAULT_ROUTES;
 	return _L (lookup);
 }
 
