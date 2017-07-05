@@ -2493,7 +2493,7 @@ platform_query_devices (NMManager *self)
 	if (!links)
 		return;
 	for (i = 0; i < links->len; i++) {
-		const NMPlatformLink *link = NMP_OBJECT_CAST_LINK ((const NMPObject *) links->pdata[i]);
+		const NMPlatformLink *link = NMP_OBJECT_CAST_LINK (links->pdata[i]);
 		gs_free NMConfigDeviceStateData *dev_state = NULL;
 
 		dev_state = nm_config_device_state_load (link->ifindex);

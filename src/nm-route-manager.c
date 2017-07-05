@@ -333,7 +333,7 @@ _route_index_create_from_platform (const VTableIP *vtable,
 
 	j = 0;
 	for (i = 0; i < len; i++) {
-		const NMPlatformIPXRoute *ipx_route = NMP_OBJECT_CAST_IPX_ROUTE ((NMPObject *) storage->pdata[i]);
+		const NMPlatformIPXRoute *ipx_route = NMP_OBJECT_CAST_IPX_ROUTE (storage->pdata[i]);
 
 		if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (ipx_route))
 			continue;

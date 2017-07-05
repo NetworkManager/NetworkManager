@@ -527,7 +527,7 @@ nm_platform_link_get_all (NMPlatform *self, gboolean sort_by_name)
 
 	unseen = g_hash_table_new (g_direct_hash, g_direct_equal);
 	for (i = 0; i < links->len; i++) {
-		item = NMP_OBJECT_CAST_LINK ((const NMPObject *) links->pdata[i]);
+		item = NMP_OBJECT_CAST_LINK (links->pdata[i]);
 		nm_assert (item->ifindex > 0);
 		if (!nm_g_hash_table_insert (unseen, GINT_TO_POINTER (item->ifindex), NULL))
 			nm_assert_not_reached ();
@@ -536,7 +536,7 @@ nm_platform_link_get_all (NMPlatform *self, gboolean sort_by_name)
 #if NM_MORE_ASSERTS
 	/* Ensure that link_get_all returns a consistent and valid result. */
 	for (i = 0; i < links->len; i++) {
-		item = NMP_OBJECT_CAST_LINK ((const NMPObject *) links->pdata[i]);
+		item = NMP_OBJECT_CAST_LINK (links->pdata[i]);
 
 		if (!item->ifindex)
 			continue;
@@ -565,7 +565,7 @@ nm_platform_link_get_all (NMPlatform *self, gboolean sort_by_name)
 		guint first_idx = G_MAXUINT;
 
 		for (i = 0; i < links->len; i++) {
-			item = NMP_OBJECT_CAST_LINK ((const NMPObject *) links->pdata[i]);
+			item = NMP_OBJECT_CAST_LINK (links->pdata[i]);
 
 			if (!item)
 				continue;
@@ -594,7 +594,7 @@ skip:
 			nm_assert (first_idx != G_MAXUINT);
 			/* There is a loop, pop the first (remaining) element from the list.
 			 * This can happen for veth pairs where each peer is parent of the other end. */
-			item = NMP_OBJECT_CAST_LINK ((const NMPObject *) links->pdata[first_idx]);
+			item = NMP_OBJECT_CAST_LINK (links->pdata[first_idx]);
 			g_hash_table_remove (unseen, GINT_TO_POINTER (item->ifindex));
 			g_ptr_array_add (result, links->pdata[first_idx]);
 			links->pdata[first_idx] = NULL;

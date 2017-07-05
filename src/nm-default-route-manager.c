@@ -209,7 +209,7 @@ _vt_routes_has_entry (const VTableIP *vtable, const GPtrArray *routes, const Ent
 
 	if (vtable->vt->is_ip4) {
 		for (i = 0; i < routes->len; i++) {
-			const NMPlatformIP4Route *r = NMP_OBJECT_CAST_IP4_ROUTE ((NMPObject *) routes->pdata[i]);
+			const NMPlatformIP4Route *r = NMP_OBJECT_CAST_IP4_ROUTE (routes->pdata[i]);
 
 			route.rx.rt_source = r->rt_source;
 			if (nm_platform_ip4_route_cmp (r, &route.r4) == 0)
@@ -217,7 +217,7 @@ _vt_routes_has_entry (const VTableIP *vtable, const GPtrArray *routes, const Ent
 		}
 	} else {
 		for (i = 0; i < routes->len; i++) {
-			const NMPlatformIP6Route *r = NMP_OBJECT_CAST_IP6_ROUTE ((NMPObject *) routes->pdata[i]);
+			const NMPlatformIP6Route *r = NMP_OBJECT_CAST_IP6_ROUTE (routes->pdata[i]);
 
 			route.rx.rt_source = r->rt_source;
 			if (nm_platform_ip6_route_cmp (r, &route.r6) == 0)
@@ -346,7 +346,7 @@ _platform_route_sync_flush (const VTableIP *vtable, NMDefaultRouteManager *self,
 		gboolean has_ifindex_synced = FALSE;
 		Entry *entry = NULL;
 
-		route = NMP_OBJECT_CAST_IP_ROUTE ((NMPObject *) routes->pdata[i]);
+		route = NMP_OBJECT_CAST_IP_ROUTE (routes->pdata[i]);
 
 		/* look at all entries and see if the route for this ifindex pair is
 		 * a known entry. */
@@ -442,7 +442,7 @@ _get_assumed_interface_metrics (const VTableIP *vtable, NMDefaultRouteManager *s
 			gboolean ifindex_has_synced_entry = FALSE;
 			const NMPlatformIPRoute *route;
 
-			route = NMP_OBJECT_CAST_IP_ROUTE ((NMPObject *) routes->pdata[i]);
+			route = NMP_OBJECT_CAST_IP_ROUTE (routes->pdata[i]);
 
 			for (j = 0; j < entries->len; j++) {
 				Entry *e = g_ptr_array_index (entries, j);
@@ -571,7 +571,7 @@ _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *c
 			/* However, if there is a matching route (ifindex+metric) for our current entry, we are done. */
 			if (routes) {
 				for (j = 0; j < routes->len; j++) {
-					const NMPlatformIPRoute *r = NMP_OBJECT_CAST_IP_ROUTE ((NMPObject *) routes->pdata[i]);
+					const NMPlatformIPRoute *r = NMP_OBJECT_CAST_IP_ROUTE (routes->pdata[i]);
 
 					if (   r->metric == expected_metric
 					    && r->ifindex == entry->route.rx.ifindex) {

@@ -242,6 +242,35 @@ NM_G_ERROR_MSG (GError *error)
 
 /*****************************************************************************/
 
+#if (defined (__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 9 ))) || (defined (__clang__))
+#define _NM_CC_SUPPORT_GENERIC 1
+#else
+#define _NM_CC_SUPPORT_GENERIC 0
+#endif
+
+#if _NM_CC_SUPPORT_GENERIC
+#define _NM_CONSTCAST(type, obj) \
+	(_Generic ((obj), \
+	           void *           : ((type *) (obj)), \
+	           void *const      : ((type *) (obj)), \
+	           const void *     : ((const type *) (obj)), \
+	           const void *const: ((const type *) (obj)), \
+	           const type *     : (obj), \
+	           const type *const: (obj), \
+	           type *           : (obj), \
+	           type *const      : (obj)))
+#else
+/* _NM_CONSTCAST() is there to preserve constness of a pointer.
+ * It uses C11's _Generic(). If that is not supported, we fall back
+ * to casting away constness. So, with _Generic, we get some additional
+ * static type checking by preserving constness, without, we cast it
+ * to a non-const pointer. */
+#define _NM_CONSTCAST(type, obj) \
+	((type *) (obj))
+#endif
+
+/*****************************************************************************/
+
 #define _NM_IN_SET_EVAL_1( op, _x, y)           (_x == (y))
 #define _NM_IN_SET_EVAL_2( op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_1  (op, _x, __VA_ARGS__)
 #define _NM_IN_SET_EVAL_3( op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_2  (op, _x, __VA_ARGS__)
@@ -537,7 +566,7 @@ _notify (obj_type *obj, _PropertyEnums prop) \
 /* these are implemented as a macro, because they accept self
  * as both (type*) and (const type*), and return a const
  * private pointer accordingly. */
-#define __NM_GET_PRIVATE(self, type, is_check, result_cmd) \
+#define __NM_GET_PRIVATE(self, type, is_check, addrop) \
 	({ \
 		/* preserve the const-ness of self. Unfortunately, that
 		 * way, @self cannot be a void pointer */ \
@@ -547,11 +576,11 @@ _notify (obj_type *obj, _PropertyEnums prop) \
 		_nm_unused const type *const _self2 = (_self); \
 		\
 		nm_assert (is_check (_self)); \
-		( result_cmd ); \
+		( addrop ( _NM_CONSTCAST (type, _self)->_priv) ); \
 	})
 
-#define _NM_GET_PRIVATE(self, type, is_check)     __NM_GET_PRIVATE(self, type, is_check, &_self->_priv)
-#define _NM_GET_PRIVATE_PTR(self, type, is_check) __NM_GET_PRIVATE(self, type, is_check,  _self->_priv)
+#define _NM_GET_PRIVATE(self, type, is_check)     __NM_GET_PRIVATE(self, type, is_check, &)
+#define _NM_GET_PRIVATE_PTR(self, type, is_check) __NM_GET_PRIVATE(self, type, is_check,  )
 
 #define __NM_GET_PRIVATE_VOID(self, type, is_check, result_cmd) \
 	({ \
