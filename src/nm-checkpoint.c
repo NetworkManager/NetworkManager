@@ -275,6 +275,17 @@ activate:
 				_LOGD ("rollback: reactivating connection %s",
 				       nm_settings_connection_get_uuid (connection));
 				subject = nm_auth_subject_new_internal ();
+
+				/* Disconnect the device if needed. This necessary because now
+				 * the manager prevents the reactivation of the same connection by
+				 * an internal subject. */
+				if (   nm_device_get_state (device) > NM_DEVICE_STATE_DISCONNECTED
+				    && nm_device_get_state (device) < NM_DEVICE_STATE_DEACTIVATING) {
+					nm_device_state_changed (device,
+					                         NM_DEVICE_STATE_DEACTIVATING,
+					                         NM_DEVICE_STATE_REASON_NEW_ACTIVATION);
+				}
+
 				if (!nm_manager_activate_connection (priv->manager,
 				                                     connection,
 				                                     dev_checkpoint->applied_connection,
