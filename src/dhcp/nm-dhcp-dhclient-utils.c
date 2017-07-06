@@ -296,7 +296,8 @@ nm_dhcp_dhclient_create_config (const char *interface,
 				continue;
 
 			if (   !intf[0]
-			    && g_str_has_prefix (p, "interface")) {
+			    && g_str_has_prefix (p, "interface")
+			    && !in_req) {
 				if (read_interface (p, intf, sizeof (intf)))
 					continue;
 			}
