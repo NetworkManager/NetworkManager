@@ -24,12 +24,14 @@
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 
-NMIP4Config *nm_dhcp_utils_ip4_config_from_options (int ifindex,
+NMIP4Config *nm_dhcp_utils_ip4_config_from_options (struct _NMDedupMultiIndex *multi_idx,
+                                                    int ifindex,
                                                     const char *iface,
                                                     GHashTable *options,
                                                     guint priority);
 
-NMIP6Config *nm_dhcp_utils_ip6_config_from_options (int ifindex,
+NMIP6Config *nm_dhcp_utils_ip6_config_from_options (struct _NMDedupMultiIndex *multi_idx,
+                                                    int ifindex,
                                                     const char *iface,
                                                     GHashTable *options,
                                                     guint priority,

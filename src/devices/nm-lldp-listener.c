@@ -274,12 +274,12 @@ static guint
 lldp_neighbor_id_hash (gconstpointer ptr)
 {
 	const LldpNeighbor *neigh = ptr;
-	guint hash;
+	guint hash = 23423423u;
 
-	hash =   23423423u  + ((guint) (neigh->chassis_id ? g_str_hash (neigh->chassis_id) : 12321u));
-	hash = (hash * 33u) + ((guint) (neigh->port_id ? g_str_hash (neigh->port_id) : 34342343u));
-	hash = (hash * 33u) + ((guint) neigh->chassis_id_type);
-	hash = (hash * 33u) + ((guint) neigh->port_id_type);
+	hash = NM_HASH_COMBINE (hash, neigh->chassis_id ? g_str_hash (neigh->chassis_id) : 12321u);
+	hash = NM_HASH_COMBINE (hash, neigh->port_id ? g_str_hash (neigh->port_id) : 34342343u);
+	hash = NM_HASH_COMBINE (hash, neigh->chassis_id_type);
+	hash = NM_HASH_COMBINE (hash, neigh->port_id_type);
 	return hash;
 }
 

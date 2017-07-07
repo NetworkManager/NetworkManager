@@ -29,8 +29,8 @@ test_cleanup_internal (void)
 	int ifindex;
 	GArray *addresses4;
 	GArray *addresses6;
-	GArray *routes4;
-	GArray *routes6;
+	GPtrArray *routes4;
+	GPtrArray *routes6;
 	in_addr_t addr4;
 	in_addr_t network4;
 	int plen4 = 24;
@@ -72,8 +72,8 @@ test_cleanup_internal (void)
 
 	addresses4 = nm_platform_ip4_address_get_all (NM_PLATFORM_GET, ifindex);
 	addresses6 = nm_platform_ip6_address_get_all (NM_PLATFORM_GET, ifindex);
-	routes4 = nm_platform_ip4_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
-	routes6 = nm_platform_ip6_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
+	routes4 = nmtstp_ip4_route_get_all (NM_PLATFORM_GET, ifindex);
+	routes6 = nmtstp_ip6_route_get_all (NM_PLATFORM_GET, ifindex);
 
 	g_assert_cmpint (addresses4->len, ==, 1);
 	g_assert_cmpint (addresses6->len, ==, 2); /* also has a IPv6 LL address. */
@@ -82,26 +82,24 @@ test_cleanup_internal (void)
 
 	g_array_unref (addresses4);
 	g_array_unref (addresses6);
-	g_array_unref (routes4);
-	g_array_unref (routes6);
+	g_ptr_array_unref (routes4);
+	g_ptr_array_unref (routes6);
 
 	/* Delete interface with all addresses and routes */
 	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
 
 	addresses4 = nm_platform_ip4_address_get_all (NM_PLATFORM_GET, ifindex);
 	addresses6 = nm_platform_ip6_address_get_all (NM_PLATFORM_GET, ifindex);
-	routes4 = nm_platform_ip4_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
-	routes6 = nm_platform_ip6_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
+	routes4 = nmtstp_ip4_route_get_all (NM_PLATFORM_GET, ifindex);
+	routes6 = nmtstp_ip6_route_get_all (NM_PLATFORM_GET, ifindex);
 
 	g_assert_cmpint (addresses4->len, ==, 0);
 	g_assert_cmpint (addresses6->len, ==, 0);
-	g_assert_cmpint (routes4->len, ==, 0);
-	g_assert_cmpint (routes6->len, ==, 0);
+	g_assert (!routes4);
+	g_assert (!routes6);
 
 	g_array_unref (addresses4);
 	g_array_unref (addresses6);
-	g_array_unref (routes4);
-	g_array_unref (routes6);
 }
 
 NMTstpSetupFunc const _nmtstp_setup_platform_func = SETUP;

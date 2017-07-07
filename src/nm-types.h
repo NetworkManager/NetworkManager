@@ -56,6 +56,8 @@ typedef struct _NMSleepMonitor       NMSleepMonitor;
 typedef struct _NMLldpListener       NMLldpListener;
 typedef struct _NMConfigDeviceStateData NMConfigDeviceStateData;
 
+struct _NMDedupMultiIndex;
+
 /*****************************************************************************/
 
 typedef enum {

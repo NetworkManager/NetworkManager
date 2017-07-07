@@ -30,6 +30,8 @@
 #include <stdlib.h>
 #include <uuid/uuid.h>
 
+#include "nm-utils/nm-dedup-multi.h"
+
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-dhcp-utils.h"
@@ -48,6 +50,7 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+	PROP_MULTI_IDX,
 	PROP_IFACE,
 	PROP_IFINDEX,
 	PROP_HWADDR,
@@ -58,6 +61,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 typedef struct _NMDhcpClientPrivate {
+	NMDedupMultiIndex *multi_idx;
 	char *       iface;
 	int          ifindex;
 	GByteArray * hwaddr;
@@ -89,6 +93,14 @@ nm_dhcp_client_get_pid (NMDhcpClient *self)
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), -1);
 
 	return NM_DHCP_CLIENT_GET_PRIVATE (self)->pid;
+}
+
+NMDedupMultiIndex *
+nm_dhcp_client_get_multi_idx (NMDhcpClient *self)
+{
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
+
+	return NM_DHCP_CLIENT_GET_PRIVATE (self)->multi_idx;
 }
 
 const char *
@@ -765,13 +777,15 @@ nm_dhcp_client_handle_event (gpointer unused,
 		if (g_hash_table_size (str_options)) {
 			if (priv->ipv6) {
 				prefix = nm_dhcp_utils_ip6_prefix_from_options (str_options);
-				ip_config = (GObject *) nm_dhcp_utils_ip6_config_from_options (priv->ifindex,
+				ip_config = (GObject *) nm_dhcp_utils_ip6_config_from_options (nm_dhcp_client_get_multi_idx (self),
+				                                                               priv->ifindex,
 				                                                               priv->iface,
 				                                                               str_options,
 				                                                               priv->priority,
 				                                                               priv->info_only);
 			} else {
-				ip_config = (GObject *) nm_dhcp_utils_ip4_config_from_options (priv->ifindex,
+				ip_config = (GObject *) nm_dhcp_utils_ip4_config_from_options (nm_dhcp_client_get_multi_idx (self),
+				                                                               priv->ifindex,
 				                                                               priv->iface,
 				                                                               str_options,
 				                                                               priv->priority);
@@ -847,6 +861,13 @@ set_property (GObject *object, guint prop_id,
 	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE ((NMDhcpClient *) object);
 
 	switch (prop_id) {
+	case PROP_MULTI_IDX:
+		/* construct-only */
+		priv->multi_idx = g_value_get_pointer (value);
+		if (!priv->multi_idx)
+			g_return_if_reached ();
+		nm_dedup_multi_index_ref (priv->multi_idx);
+		break;
 	case PROP_IFACE:
 		/* construct-only */
 		priv->iface = g_value_dup_string (value);
@@ -924,6 +945,8 @@ dispose (GObject *object)
 	}
 
 	G_OBJECT_CLASS (nm_dhcp_client_parent_class)->dispose (object);
+
+	priv->multi_idx = nm_dedup_multi_index_unref (priv->multi_idx);
 }
 
 static void
@@ -939,6 +962,12 @@ nm_dhcp_client_class_init (NMDhcpClientClass *client_class)
 
 	client_class->stop = stop;
 	client_class->get_duid = get_duid;
+
+	obj_properties[PROP_MULTI_IDX] =
+	    g_param_spec_pointer (NM_DHCP_CLIENT_MULTI_IDX, "", "",
+	                            G_PARAM_WRITABLE
+	                          | G_PARAM_CONSTRUCT_ONLY
+	                          | G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_IFACE] =
 	    g_param_spec_string (NM_DHCP_CLIENT_INTERFACE, "", "",

@@ -5,6 +5,7 @@
 #include <arpa/inet.h>
 
 #include "platform/nm-platform.h"
+#include "platform/nmp-object.h"
 #include "platform/nm-fake-platform.h"
 #include "platform/nm-linux-platform.h"
 
@@ -186,6 +187,30 @@ void nmtstp_ip6_route_add (NMPlatform *platform,
                            struct in6_addr pref_src,
                            guint32 metric,
                            guint32 mss);
+
+static inline GPtrArray *
+nmtstp_ip4_route_get_all (NMPlatform *platform,
+                          int ifindex)
+{
+	return nm_platform_lookup_route_visible_clone (platform,
+	                                               NMP_OBJECT_TYPE_IP4_ROUTE,
+	                                               ifindex,
+	                                               FALSE,
+	                                               nm_platform_lookup_predicate_routes_skip_rtprot_kernel,
+	                                               NULL);
+}
+
+static inline GPtrArray *
+nmtstp_ip6_route_get_all (NMPlatform *platform,
+                          int ifindex)
+{
+	return nm_platform_lookup_route_visible_clone (platform,
+	                                               NMP_OBJECT_TYPE_IP6_ROUTE,
+	                                               ifindex,
+	                                               FALSE,
+	                                               nm_platform_lookup_predicate_routes_skip_rtprot_kernel,
+	                                               NULL);
+}
 
 /*****************************************************************************/
 

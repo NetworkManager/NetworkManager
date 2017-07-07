@@ -4016,16 +4016,16 @@ _nm_utils_strstrdictkey_hash (gconstpointer a)
 		if (((int) k->type) & ~STRSTRDICTKEY_ALL_SET)
 			g_return_val_if_reached (0);
 
-		h = (h << 5) + h + k->type;
+		h = NM_HASH_COMBINE (h, k->type);
 		if (k->type & STRSTRDICTKEY_ALL_SET) {
 			p = (void *) k->data;
 			for (; *p != '\0'; p++)
-				h = (h << 5) + h + *p;
+				h = NM_HASH_COMBINE (h, *p);
 			if (k->type == STRSTRDICTKEY_ALL_SET) {
 				/* the key contains two strings. Continue... */
-				h = (h << 5) + h + '\0';
+				h = NM_HASH_COMBINE (h, '\0');
 				for (p++; *p != '\0'; p++)
-					h = (h << 5) + h + *p;
+					h = NM_HASH_COMBINE (h, *p);
 			}
 		}
 	}

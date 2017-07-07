@@ -80,7 +80,9 @@ get_ip4_rdns_domains (NMIP4Config *ip4)
 {
 	char **strv;
 	GPtrArray *domains = NULL;
-	int i;
+	guint i;
+	NMDedupMultiIter ipconf_iter;
+	const NMPlatformIP4Route *route;
 
 	g_return_val_if_fail (ip4 != NULL, NULL);
 
@@ -92,11 +94,8 @@ get_ip4_rdns_domains (NMIP4Config *ip4)
 		nm_utils_get_reverse_dns_domains_ip4 (address->address, address->plen, domains);
 	}
 
-	for (i = 0; i < nm_ip4_config_get_num_routes (ip4); i++) {
-		const NMPlatformIP4Route *route = nm_ip4_config_get_route (ip4, i);
-
+	nm_ip4_config_iter_ip4_route_for_each (&ipconf_iter, ip4, &route)
 		nm_utils_get_reverse_dns_domains_ip4 (route->network, route->plen, domains);
-	}
 
 	/* Terminating NULL so we can use g_strfreev() to free it */
 	g_ptr_array_add (domains, NULL);
@@ -112,7 +111,9 @@ get_ip6_rdns_domains (NMIP6Config *ip6)
 {
 	char **strv;
 	GPtrArray *domains = NULL;
-	int i;
+	guint i;
+	NMDedupMultiIter ipconf_iter;
+	const NMPlatformIP6Route *route;
 
 	g_return_val_if_fail (ip6 != NULL, NULL);
 
@@ -124,11 +125,8 @@ get_ip6_rdns_domains (NMIP6Config *ip6)
 		nm_utils_get_reverse_dns_domains_ip6 (&address->address, address->plen, domains);
 	}
 
-	for (i = 0; i < nm_ip6_config_get_num_routes (ip6); i++) {
-		const NMPlatformIP6Route *route = nm_ip6_config_get_route (ip6, i);
-
+	nm_ip6_config_iter_ip6_route_for_each (&ipconf_iter, ip6, &route)
 		nm_utils_get_reverse_dns_domains_ip6 (&route->network, route->plen, domains);
-	}
 
 	/* Terminating NULL so we can use g_strfreev() to free it */
 	g_ptr_array_add (domains, NULL);

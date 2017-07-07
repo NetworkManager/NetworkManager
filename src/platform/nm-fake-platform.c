@@ -32,6 +32,7 @@
 
 #include "nm-core-utils.h"
 #include "nm-platform-utils.h"
+#include "nm-platform-private.h"
 #include "nmp-object.h"
 
 #include "nm-test-utils-core.h"
@@ -39,20 +40,14 @@
 /*****************************************************************************/
 
 typedef struct {
-	NMPlatformLink link;
-
+	const NMPObject *obj;
 	char *udi;
-	NMPObject *lnk;
 	struct in6_addr ip6_lladdr;
 } NMFakePlatformLink;
 
 typedef struct {
 	GHashTable *options;
 	GArray *links;
-	GArray *ip4_addresses;
-	GArray *ip6_addresses;
-	GArray *ip4_routes;
-	GArray *ip6_routes;
 } NMFakePlatformPrivate;
 
 struct _NMFakePlatform {
@@ -96,7 +91,24 @@ G_DEFINE_TYPE (NMFakePlatform, nm_fake_platform, NM_TYPE_PLATFORM)
 
 /*****************************************************************************/
 
-static void link_changed (NMPlatform *platform, NMFakePlatformLink *device, gboolean raise_signal);
+static void link_changed (NMPlatform *platform,
+                          NMFakePlatformLink *device,
+                          NMPCacheOpsType cache_op,
+                          const NMPObject *obj_old);
+
+static gboolean ipx_address_delete (NMPlatform *platform,
+                                    int addr_family,
+                                    int ifindex,
+                                    gconstpointer addr,
+                                    const guint8 *plen,
+                                    gconstpointer peer_addr);
+
+static gboolean ipx_route_delete (NMPlatform *platform,
+                                  int addr_family,
+                                  int ifindex,
+                                  gconstpointer network,
+                                  const guint8 *plen,
+                                  const guint32 *metric);
 
 static gboolean ip6_address_add (NMPlatform *platform,
                                  int ifindex,
@@ -107,14 +119,6 @@ static gboolean ip6_address_add (NMPlatform *platform,
                                  guint32 preferred,
                                  guint flags);
 static gboolean ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, guint8 plen);
-
-/*****************************************************************************/
-
-static gboolean
-_ip4_address_equal_peer_net (in_addr_t peer1, in_addr_t peer2, guint8 plen)
-{
-	return ((peer1 ^ peer2) & nm_utils_ip4_prefix_to_netmask (plen)) == 0;
-}
 
 /*****************************************************************************/
 
@@ -158,73 +162,26 @@ sysctl_get (NMPlatform *platform, const char *pathid, int dirfd, const char *pat
 	return g_strdup (g_hash_table_lookup (priv->options, path));
 }
 
-static const char *
-type_to_type_name (NMLinkType type)
-{
-	switch (type) {
-	case NM_LINK_TYPE_UNKNOWN:
-		return "unknown";
-	case NM_LINK_TYPE_LOOPBACK:
-		return "loopback";
-	case NM_LINK_TYPE_ETHERNET:
-		return "ethernet";
-	case NM_LINK_TYPE_DUMMY:
-		return "dummy";
-	case NM_LINK_TYPE_BRIDGE:
-		return "bridge";
-	case NM_LINK_TYPE_BOND:
-		return "bond";
-	case NM_LINK_TYPE_TEAM:
-		return "team";
-	case NM_LINK_TYPE_VLAN:
-		return "vlan";
-	case NM_LINK_TYPE_NONE:
-	default:
-		return NULL;
-	}
-}
-
-static void
-link_init (NMFakePlatformLink *device, int ifindex, int type, const char *name)
-{
-	gs_free char *ip6_lladdr = NULL;
-
-	g_assert (!name || strlen (name) < sizeof(device->link.name));
-
-	memset (device, 0, sizeof (*device));
-
-	ip6_lladdr = ifindex > 0 ? g_strdup_printf ("fe80::fa1e:%0x:%0x", ifindex / 256, ifindex % 256) : NULL;
-
-	device->link.ifindex = name ? ifindex : 0;
-	device->link.type = type;
-	device->link.kind = type_to_type_name (type);
-	device->link.driver = type_to_type_name (type);
-	device->udi = g_strdup_printf ("fake:%d", ifindex);
-	device->link.initialized = TRUE;
-	device->ip6_lladdr = *nmtst_inet6_from_string (ip6_lladdr);
-	if (name)
-		strcpy (device->link.name, name);
-	switch (device->link.type) {
-	case NM_LINK_TYPE_DUMMY:
-		device->link.n_ifi_flags = NM_FLAGS_SET (device->link.n_ifi_flags, IFF_NOARP);
-		break;
-	default:
-		device->link.n_ifi_flags = NM_FLAGS_UNSET (device->link.n_ifi_flags, IFF_NOARP);
-		break;
-	}
-}
-
 static NMFakePlatformLink *
 link_get (NMPlatform *platform, int ifindex)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
 	NMFakePlatformLink *device;
+	int idx;
 
-	if (ifindex >= priv->links->len)
+	if (ifindex <= 0)
+		g_return_val_if_reached (NULL);
+
+	idx = ifindex - 1;
+	if (idx >= priv->links->len)
 		goto not_found;
-	device = &g_array_index (priv->links, NMFakePlatformLink, ifindex);
-	if (!device->link.ifindex)
+
+	device = &g_array_index (priv->links, NMFakePlatformLink, idx);
+	if (!device->obj)
 		goto not_found;
+
+	g_assert (ifindex == NMP_OBJECT_CAST_LINK (device->obj)->ifindex);
+	g_assert (device->obj == nm_platform_link_get_obj (platform, ifindex, FALSE));
 
 	return device;
 not_found:
@@ -232,91 +189,99 @@ not_found:
 	return NULL;
 }
 
-static GArray *
-link_get_all (NMPlatform *platform)
+static void
+link_add_prepare (NMPlatform *platform,
+                  NMFakePlatformLink *device,
+                  NMPObject *obj_tmp)
 {
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
-	GArray *links = g_array_sized_new (TRUE, TRUE, sizeof (NMPlatformLink), priv->links->len);
-	int i;
+	gboolean connected;
 
-	for (i = 0; i < priv->links->len; i++)
-		if (g_array_index (priv->links, NMFakePlatformLink, i).link.ifindex)
-			g_array_append_val (links, g_array_index (priv->links, NMFakePlatformLink, i).link);
+	/* we must clear the driver, because platform cache want's to set it */
+	g_assert (obj_tmp->link.driver == g_intern_string (obj_tmp->link.driver));
+	obj_tmp->link.driver = NULL;
 
-	return links;
-}
+	if (NM_IN_SET (obj_tmp->link.type, NM_LINK_TYPE_BRIDGE,
+	                                   NM_LINK_TYPE_BOND)) {
+		connected = FALSE;
+		if (NM_FLAGS_HAS (obj_tmp->link.n_ifi_flags, IFF_UP)) {
+			NMPLookup lookup;
+			NMDedupMultiIter iter;
+			const NMPObject *slave_candidate = NULL;
 
-static const NMPlatformLink *
-_nm_platform_link_get (NMPlatform *platform, int ifindex)
-{
-	NMFakePlatformLink *device = link_get (platform, ifindex);
-
-	return device ? &device->link : NULL;
-}
-
-static const NMPlatformLink *
-_nm_platform_link_get_by_ifname (NMPlatform *platform, const char *ifname)
-{
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
-	guint i;
-
-	for (i = 0; i < priv->links->len; i++) {
-		NMFakePlatformLink *device = &g_array_index (priv->links, NMFakePlatformLink, i);
-
-		if (!strcmp (device->link.name, ifname))
-			return &device->link;
-	}
-	return NULL;
-}
-
-static const NMPlatformLink *
-_nm_platform_link_get_by_address (NMPlatform *platform,
-                                  gconstpointer address,
-                                  size_t length)
-{
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
-	guint i;
-
-	if (   length == 0
-	    || length > NM_UTILS_HWADDR_LEN_MAX
-	    || !address)
-		g_return_val_if_reached (NULL);
-
-	for (i = 0; i < priv->links->len; i++) {
-		NMFakePlatformLink *device = &g_array_index (priv->links, NMFakePlatformLink, i);
-
-		if (   device->link.addr.len == length
-		    && memcmp (device->link.addr.data, address, length) == 0) {
-			return &device->link;
+			nmp_cache_iter_for_each (&iter,
+			                         nmp_cache_lookup (nm_platform_get_cache (platform),
+			                                           nmp_lookup_init_obj_type (&lookup,
+			                                                                     NMP_OBJECT_TYPE_LINK)),
+			                         &slave_candidate) {
+				if (nmp_cache_link_connected_for_slave (obj_tmp->link.ifindex, slave_candidate)) {
+					connected = TRUE;
+					break;
+				}
+			}
 		}
-	}
-	return NULL;
+	} else
+		connected = NM_FLAGS_HAS (obj_tmp->link.n_ifi_flags, IFF_UP);
+
+	obj_tmp->link.n_ifi_flags = NM_FLAGS_ASSIGN (obj_tmp->link.n_ifi_flags, IFF_LOWER_UP, connected);
+	obj_tmp->link.connected = connected;
 }
 
-static const NMPObject *
-link_get_lnk (NMPlatform *platform,
-              int ifindex,
-              NMLinkType link_type,
-              const NMPlatformLink **out_link)
+static NMFakePlatformLink *
+link_add_pre (NMPlatform *platform,
+              const char *name,
+              NMLinkType type,
+              const void *address,
+              size_t address_len)
 {
-	NMFakePlatformLink *device = link_get (platform, ifindex);
+	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
+	NMFakePlatformLink *device;
+	int ifindex;
+	NMPObject *o;
+	NMPlatformLink *link;
+	gs_free char *ip6_lladdr = NULL;
 
-	if (!device)
-		return NULL;
+	g_assert (!name || strlen (name) < IFNAMSIZ);
 
-	NM_SET_OUT (out_link, &device->link);
+	g_array_set_size (priv->links, priv->links->len + 1);
+	device = &g_array_index (priv->links, NMFakePlatformLink, priv->links->len - 1);
+	ifindex = priv->links->len;
 
-	if (!device->lnk)
-		return NULL;
+	memset (device, 0, sizeof (*device));
 
-	if (link_type == NM_LINK_TYPE_NONE)
-		return device->lnk;
+	o = nmp_object_new_link (ifindex);
+	link = NMP_OBJECT_CAST_LINK (o);
 
-	if (   link_type != device->link.type
-	    || link_type != NMP_OBJECT_GET_CLASS (device->lnk)->lnk_link_type)
-		return NULL;
+	ip6_lladdr = ifindex > 0 ? g_strdup_printf ("fe80::fa1e:%0x:%0x", ifindex / 256, ifindex % 256) : NULL;
 
-	return device->lnk;
+	link->ifindex = name ? ifindex : 0;
+	link->type = type;
+	link->kind = g_intern_string (nm_link_type_to_string (type));
+	link->initialized = TRUE;
+	if (name)
+		strcpy (link->name, name);
+	switch (link->type) {
+	case NM_LINK_TYPE_DUMMY:
+		link->n_ifi_flags = NM_FLAGS_SET (link->n_ifi_flags, IFF_NOARP);
+		break;
+	default:
+		link->n_ifi_flags = NM_FLAGS_UNSET (link->n_ifi_flags, IFF_NOARP);
+		break;
+	}
+
+	o->_link.netlink.is_in_netlink = TRUE;
+
+	if (address) {
+		g_assert (address_len > 0 && address_len <= sizeof (link->addr.data));
+		memcpy (link->addr.data, address, address_len);
+		link->addr.len = address_len;
+	} else
+		g_assert (address_len == 0);
+
+	device->obj = o;
+	device->udi = g_strdup_printf ("fake:%d", ifindex);
+	device->ip6_lladdr = *nmtst_inet6_from_string (ip6_lladdr);
+
+	return device;
 }
 
 static gboolean
@@ -328,135 +293,201 @@ link_add (NMPlatform *platform,
           size_t address_len,
           const NMPlatformLink **out_link)
 {
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
-	NMFakePlatformLink device;
-	NMFakePlatformLink device_veth = { };
-	NMFakePlatformLink *new_device;
+	NMFakePlatformLink *device;
+	NMFakePlatformLink *device_veth = NULL;
+	nm_auto_nmpobj const NMPObject *obj_old = NULL;
+	nm_auto_nmpobj const NMPObject *obj_new = NULL;
+	nm_auto_nmpobj const NMPObject *obj_old_veth = NULL;
+	nm_auto_nmpobj const NMPObject *obj_new_veth = NULL;
+	NMPCacheOpsType cache_op;
+	NMPCacheOpsType cache_op_veth = NMP_CACHE_OPS_UNCHANGED;
 
-	link_init (&device, priv->links->len, type, name);
-
-	if (address) {
-		g_return_val_if_fail (address_len > 0 && address_len <= sizeof (device.link.addr.data), FALSE);
-		memcpy (device.link.addr.data, address, address_len);
-		device.link.addr.len = address_len;
-	}
-
-	g_array_append_val (priv->links, device);
-	new_device = &g_array_index (priv->links, NMFakePlatformLink, priv->links->len - 1);
+	device = link_add_pre (platform, name, type, address, address_len);
 
 	if (veth_peer) {
-		link_init (&device_veth, priv->links->len, type, veth_peer);
-		g_array_append_val (priv->links, device_veth);
-		new_device = &g_array_index (priv->links, NMFakePlatformLink, priv->links->len - 2);
+		g_assert (type == NM_LINK_TYPE_VETH);
+		device_veth = link_add_pre (platform, veth_peer, type, NULL, 0);
 	} else
 		g_assert (type != NM_LINK_TYPE_VETH);
 
+	link_add_prepare (platform, device, (NMPObject *) device->obj);
+	cache_op = nmp_cache_update_netlink (nm_platform_get_cache (platform),
+	                                     (NMPObject *) device->obj,
+	                                     &obj_old, &obj_new);
+	g_assert (cache_op == NMP_CACHE_OPS_ADDED);
+	nmp_object_unref (device->obj);
+	device->obj = nmp_object_ref (obj_new);
+	if (veth_peer) {
+		link_add_prepare (platform, device_veth, (NMPObject *) device_veth->obj);
+		cache_op_veth = nmp_cache_update_netlink (nm_platform_get_cache (platform),
+		                                          (NMPObject *) device_veth->obj,
+		                                          &obj_old_veth, &obj_new_veth);
+		g_assert (cache_op == NMP_CACHE_OPS_ADDED);
+		nmp_object_unref (device->obj);
+		device->obj = nmp_object_ref (obj_new);
+	}
 
 	if (out_link)
-		*out_link = &new_device->link;
+		*out_link = NMP_OBJECT_CAST_LINK (device->obj);
 
-	if (device.link.ifindex) {
-		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, (int) NMP_OBJECT_TYPE_LINK, device.link.ifindex, &device, (int) NM_PLATFORM_SIGNAL_ADDED);
-
-		link_changed (platform, new_device, FALSE);
-	}
-
-	if (veth_peer) {
-		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, (int) NMP_OBJECT_TYPE_LINK, device_veth.link.ifindex, &device_veth, (int) NM_PLATFORM_SIGNAL_ADDED);
-
-		link_changed (platform, &g_array_index (priv->links, NMFakePlatformLink, priv->links->len - 1), FALSE);
-	}
+	link_changed (platform, device, cache_op, NULL);
+	if (veth_peer)
+		link_changed (platform, device_veth, cache_op_veth, NULL);
 
 	return TRUE;
+}
+
+static NMFakePlatformLink *
+link_add_one (NMPlatform *platform,
+              const char *name,
+              NMLinkType link_type,
+              void (*prepare_fcn) (NMPlatform *platform, NMFakePlatformLink *device, gconstpointer user_data),
+              gconstpointer user_data,
+              const NMPlatformLink **out_link)
+{
+	NMFakePlatformLink *device;
+	nm_auto_nmpobj const NMPObject *obj_old = NULL;
+	nm_auto_nmpobj const NMPObject *obj_new = NULL;
+	NMPCacheOpsType cache_op;
+	int ifindex;
+
+	device = link_add_pre (platform, name, NM_LINK_TYPE_VLAN, NULL, 0);
+
+	ifindex = NMP_OBJECT_CAST_LINK (device->obj)->ifindex;
+
+	if (prepare_fcn)
+		prepare_fcn (platform, device, user_data);
+
+	link_add_prepare (platform, device, (NMPObject *) device->obj);
+	cache_op = nmp_cache_update_netlink (nm_platform_get_cache (platform),
+	                                     (NMPObject *) device->obj,
+	                                     &obj_old, &obj_new);
+	g_assert (cache_op == NMP_CACHE_OPS_ADDED);
+	nmp_object_unref (device->obj);
+	device->obj = nmp_object_ref (obj_new);
+
+	link_changed (platform, device, cache_op, obj_old);
+
+	device = link_get (platform, ifindex);
+	if (!device)
+		g_assert_not_reached ();
+
+	NM_SET_OUT (out_link, NMP_OBJECT_CAST_LINK (device->obj));
+	return device;
 }
 
 static gboolean
 link_delete (NMPlatform *platform, int ifindex)
 {
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
 	NMFakePlatformLink *device = link_get (platform, ifindex);
-	NMPlatformLink deleted_device;
-	int i;
+	nm_auto_nmpobj const NMPObject *obj_old = NULL;
+	nm_auto_nmpobj const NMPObject *obj_old2 = NULL;
+	NMPCacheOpsType cache_op;
 
-	if (!device || !device->link.ifindex)
+	if (!device)
 		return FALSE;
 
-	memcpy (&deleted_device, &device->link, sizeof (deleted_device));
-	memset (&device->link, 0, sizeof (device->link));
-	g_clear_pointer (&device->lnk, nmp_object_unref);
+	obj_old = g_steal_pointer (&device->obj);
 	g_clear_pointer (&device->udi, g_free);
 
+	cache_op = nmp_cache_remove (nm_platform_get_cache (platform),
+	                             obj_old,
+	                             FALSE,
+	                             &obj_old2);
+	g_assert (cache_op == NMP_CACHE_OPS_REMOVED);
+	g_assert (obj_old2);
+	g_assert (obj_old == obj_old2);
+
 	/* Remove addresses and routes which belong to the deleted interface */
-	for (i = 0; i < priv->ip4_addresses->len; i++) {
-		NMPlatformIP4Address *address = &g_array_index (priv->ip4_addresses, NMPlatformIP4Address, i);
+	ipx_address_delete (platform, AF_INET, ifindex, NULL, NULL, NULL);
+	ipx_address_delete (platform, AF_INET6, ifindex, NULL, NULL, NULL);
+	ipx_route_delete (platform, AF_INET, ifindex, NULL, NULL, NULL);
+	ipx_route_delete (platform, AF_INET6, ifindex, NULL, NULL, NULL);
 
-		if (address->ifindex == ifindex)
-			memset (address, 0, sizeof (*address));
-	}
-	for (i = 0; i < priv->ip6_addresses->len; i++) {
-		NMPlatformIP6Address *address = &g_array_index (priv->ip6_addresses, NMPlatformIP6Address, i);
-
-		if (address->ifindex == ifindex)
-			memset (address, 0, sizeof (*address));
-	}
-	for (i = 0; i < priv->ip4_routes->len; i++) {
-		NMPlatformIP4Route *route = &g_array_index (priv->ip4_routes, NMPlatformIP4Route, i);
-
-		if (route->ifindex == ifindex)
-			memset (route, 0, sizeof (*route));
-	}
-	for (i = 0; i < priv->ip6_routes->len; i++) {
-		NMPlatformIP6Route *route = &g_array_index (priv->ip6_routes, NMPlatformIP6Route, i);
-
-		if (route->ifindex == ifindex)
-			memset (route, 0, sizeof (*route));
-	}
-
-	g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, (int) NMP_OBJECT_TYPE_LINK, ifindex, &deleted_device, (int) NM_PLATFORM_SIGNAL_REMOVED);
-
+	nm_platform_cache_update_emit_signal (platform,
+	                                      cache_op,
+	                                      obj_old2,
+	                                      NULL);
 	return TRUE;
 }
 
-static const char *
-link_get_type_name (NMPlatform *platform, int ifindex)
+static void
+link_set_obj (NMPlatform *platform,
+              NMFakePlatformLink *device,
+              NMPObject *obj_tmp)
 {
-	return type_to_type_name (nm_platform_link_get_type (platform, ifindex));
+	nm_auto_nmpobj const NMPObject *obj_new = NULL;
+	nm_auto_nmpobj const NMPObject *obj_old = NULL;
+	nm_auto_nmpobj NMPObject *obj_tmp_tmp = NULL;
+	NMPCacheOpsType cache_op;
+
+	g_assert (device);
+	g_assert (NMP_OBJECT_GET_TYPE (device->obj) == NMP_OBJECT_TYPE_LINK);
+
+	if (!obj_tmp) {
+		obj_tmp_tmp = nmp_object_clone (device->obj, FALSE);
+		obj_tmp = obj_tmp_tmp;
+	}
+
+	g_assert (NMP_OBJECT_GET_TYPE (obj_tmp) == NMP_OBJECT_TYPE_LINK);
+
+	link_add_prepare (platform, device, obj_tmp);
+	cache_op = nmp_cache_update_netlink (nm_platform_get_cache (platform),
+	                                     obj_tmp, &obj_old, &obj_new);
+	g_assert (NM_IN_SET (cache_op, NMP_CACHE_OPS_UNCHANGED,
+	                               NMP_CACHE_OPS_UPDATED));
+	g_assert (obj_old == device->obj);
+	g_assert (obj_new);
+
+	nmp_object_unref (device->obj);
+	device->obj = nmp_object_ref (obj_new);
+
+	link_changed (platform, device, cache_op, obj_old);
 }
 
 static void
-link_changed (NMPlatform *platform, NMFakePlatformLink *device, gboolean raise_signal)
+link_set_flags (NMPlatform *platform,
+                NMFakePlatformLink *device,
+                guint n_ifi_flags)
 {
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
-	int i;
+	nm_auto_nmpobj NMPObject *obj_tmp = NULL;
 
-	if (raise_signal)
-		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, (int) NMP_OBJECT_TYPE_LINK, device->link.ifindex, &device->link, (int) NM_PLATFORM_SIGNAL_CHANGED);
+	g_assert (device);
+	g_assert (NMP_OBJECT_GET_TYPE (device->obj) == NMP_OBJECT_TYPE_LINK);
 
-	if (device->link.ifindex && !IN6_IS_ADDR_UNSPECIFIED (&device->ip6_lladdr)) {
-		if (device->link.connected)
-			ip6_address_add (platform, device->link.ifindex, in6addr_any, 64, device->ip6_lladdr, NM_PLATFORM_LIFETIME_PERMANENT, NM_PLATFORM_LIFETIME_PERMANENT, 0);
+	obj_tmp = nmp_object_clone (device->obj, FALSE);
+	obj_tmp->link.n_ifi_flags = n_ifi_flags;
+	link_set_obj (platform, device, obj_tmp);
+}
+
+static void
+link_changed (NMPlatform *platform,
+              NMFakePlatformLink *device,
+              NMPCacheOpsType cache_op,
+              const NMPObject *obj_old)
+{
+	g_assert (device->obj);
+
+	g_assert (!nmp_cache_link_connected_needs_toggle (nm_platform_get_cache (platform),
+	                                                  device->obj, NULL, NULL));
+
+	nm_platform_cache_update_emit_signal (platform,
+	                                      cache_op,
+	                                      obj_old,
+	                                      device->obj);
+
+	if (!IN6_IS_ADDR_UNSPECIFIED (&device->ip6_lladdr)) {
+		if (device->obj->link.connected)
+			ip6_address_add (platform, device->obj->link.ifindex, in6addr_any, 64, device->ip6_lladdr, NM_PLATFORM_LIFETIME_PERMANENT, NM_PLATFORM_LIFETIME_PERMANENT, 0);
 		else
-			ip6_address_delete (platform, device->link.ifindex, device->ip6_lladdr, 64);
+			ip6_address_delete (platform, device->obj->link.ifindex, device->ip6_lladdr, 64);
 	}
 
-	if (device->link.master) {
-		gboolean connected = FALSE;
+	if (device->obj->link.master) {
+		NMFakePlatformLink *master;
 
-		NMFakePlatformLink *master = link_get (platform, device->link.master);
-
-		g_return_if_fail (master && master != device);
-
-		for (i = 0; i < priv->links->len; i++) {
-			NMFakePlatformLink *slave = &g_array_index (priv->links, NMFakePlatformLink, i);
-
-			if (slave && slave->link.master == master->link.ifindex && slave->link.connected)
-				connected = TRUE;
-		}
-
-		if (master->link.connected != connected) {
-			master->link.connected = connected;
-			link_changed (platform, master, TRUE);
-		}
+		master = link_get (platform, device->obj->link.master);
+		link_set_obj (platform, master, NULL);
 	}
 }
 
@@ -464,7 +495,6 @@ static gboolean
 link_set_up (NMPlatform *platform, int ifindex, gboolean *out_no_firmware)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
-	gboolean up, connected;
 
 	if (out_no_firmware)
 		*out_no_firmware = FALSE;
@@ -474,29 +504,9 @@ link_set_up (NMPlatform *platform, int ifindex, gboolean *out_no_firmware)
 		return FALSE;
 	}
 
-	up = TRUE;
-	connected = TRUE;
-	switch (device->link.type) {
-	case NM_LINK_TYPE_DUMMY:
-	case NM_LINK_TYPE_VLAN:
-		break;
-	case NM_LINK_TYPE_BRIDGE:
-	case NM_LINK_TYPE_BOND:
-	case NM_LINK_TYPE_TEAM:
-		connected = FALSE;
-		break;
-	default:
-		connected = FALSE;
-		g_error ("Unexpected device type: %d", device->link.type);
-	}
-
-	if (   NM_FLAGS_HAS (device->link.n_ifi_flags, IFF_UP) != !!up
-	    || device->link.connected != connected) {
-		device->link.n_ifi_flags = NM_FLAGS_ASSIGN (device->link.n_ifi_flags, IFF_UP, up);
-		device->link.connected = connected;
-		link_changed (platform, device, TRUE);
-	}
-
+	link_set_flags (platform,
+	                device,
+	                NM_FLAGS_ASSIGN (device->obj->link.n_ifi_flags, IFF_UP, TRUE));
 	return TRUE;
 }
 
@@ -510,13 +520,9 @@ link_set_down (NMPlatform *platform, int ifindex)
 		return FALSE;
 	}
 
-	if (NM_FLAGS_HAS (device->link.n_ifi_flags, IFF_UP) || device->link.connected) {
-		device->link.n_ifi_flags = NM_FLAGS_UNSET (device->link.n_ifi_flags, IFF_UP);
-		device->link.connected = FALSE;
-
-		link_changed (platform, device, TRUE);
-	}
-
+	link_set_flags (platform,
+	                device,
+	                NM_FLAGS_UNSET (device->obj->link.n_ifi_flags, IFF_UP));
 	return TRUE;
 }
 
@@ -530,10 +536,9 @@ link_set_arp (NMPlatform *platform, int ifindex)
 		return FALSE;
 	}
 
-	device->link.n_ifi_flags = NM_FLAGS_UNSET (device->link.n_ifi_flags, IFF_NOARP);
-
-	link_changed (platform, device, TRUE);
-
+	link_set_flags (platform,
+	                device,
+	                NM_FLAGS_UNSET (device->obj->link.n_ifi_flags, IFF_NOARP));
 	return TRUE;
 }
 
@@ -547,10 +552,9 @@ link_set_noarp (NMPlatform *platform, int ifindex)
 		return FALSE;
 	}
 
-	device->link.n_ifi_flags = NM_FLAGS_SET (device->link.n_ifi_flags, IFF_NOARP);
-
-	link_changed (platform, device, TRUE);
-
+	link_set_flags (platform,
+	                device,
+	                NM_FLAGS_SET (device->obj->link.n_ifi_flags, IFF_NOARP));
 	return TRUE;
 }
 
@@ -558,21 +562,22 @@ static NMPlatformError
 link_set_address (NMPlatform *platform, int ifindex, gconstpointer addr, size_t len)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
+	nm_auto_nmpobj NMPObject *obj_tmp = NULL;
 
-	if (   !device
-	    || len == 0
+	if (   len == 0
 	    || len > NM_UTILS_HWADDR_LEN_MAX
 	    || !addr)
 		g_return_val_if_reached (NM_PLATFORM_ERROR_BUG);
 
-	if (   device->link.addr.len != len
-	    || (   len > 0
-	        && memcmp (device->link.addr.data, addr, len) != 0)) {
-		memcpy (device->link.addr.data, addr, len);
-		device->link.addr.len = len;
-		link_changed (platform, link_get (platform, ifindex), TRUE);
-	}
+	if (!device)
+		return NM_PLATFORM_ERROR_EXISTS;
 
+	obj_tmp = nmp_object_clone (device->obj, FALSE);
+	obj_tmp->link.addr.len = len;
+	memset (obj_tmp->link.addr.data, 0, sizeof (obj_tmp->link.addr.data));
+	memcpy (obj_tmp->link.addr.data, addr, len);
+
+	link_set_obj (platform, device, obj_tmp);
 	return NM_PLATFORM_ERROR_SUCCESS;
 }
 
@@ -580,14 +585,17 @@ static gboolean
 link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
+	nm_auto_nmpobj NMPObject *obj_tmp = NULL;
 
-	if (device) {
-		device->link.mtu = mtu;
-		link_changed (platform, device, TRUE);
-	} else
+	if (!device) {
 		_LOGE ("failure changing link: netlink error (No such device)");
+		return FALSE;
+	}
 
-	return !!device;
+	obj_tmp = nmp_object_clone (device->obj, FALSE);
+	obj_tmp->link.mtu = mtu;
+	link_set_obj (platform, device, obj_tmp);
+	return TRUE;
 }
 
 static gboolean
@@ -631,7 +639,7 @@ link_supports_carrier_detect (NMPlatform *platform, int ifindex)
 	if (!device)
 		return FALSE;
 
-	switch (device->link.type) {
+	switch (device->obj->link.type) {
 	case NM_LINK_TYPE_DUMMY:
 		return FALSE;
 	default:
@@ -647,7 +655,7 @@ link_supports_vlans (NMPlatform *platform, int ifindex)
 	if (!device)
 		return FALSE;
 
-	switch (device->link.type) {
+	switch (device->obj->link.type) {
 	case NM_LINK_TYPE_LOOPBACK:
 		return FALSE;
 	default:
@@ -663,7 +671,7 @@ link_supports_sriov (NMPlatform *platform, int ifindex)
 	if (!device)
 		return FALSE;
 
-	switch (device->link.type) {
+	switch (device->obj->link.type) {
 	case NM_LINK_TYPE_LOOPBACK:
 		return FALSE;
 	default:
@@ -680,15 +688,14 @@ link_enslave (NMPlatform *platform, int master, int slave)
 	g_return_val_if_fail (device, FALSE);
 	g_return_val_if_fail (master_device, FALSE);
 
-	if (device->link.master != master) {
-		device->link.master = master;
+	if (device->obj->link.master != master) {
+		nm_auto_nmpobj NMPObject *obj_tmp = NULL;
 
-		if (NM_IN_SET (master_device->link.type, NM_LINK_TYPE_BOND, NM_LINK_TYPE_TEAM)) {
-			device->link.n_ifi_flags = NM_FLAGS_SET (device->link.n_ifi_flags, IFF_UP);
-			device->link.connected = TRUE;
-		}
-
-		link_changed (platform, device, TRUE);
+		obj_tmp = nmp_object_clone (device->obj, FALSE);
+		obj_tmp->link.master = master;
+		if (NM_IN_SET (master_device->obj->link.type, NM_LINK_TYPE_BOND, NM_LINK_TYPE_TEAM))
+			obj_tmp->link.n_ifi_flags = NM_FLAGS_SET (device->obj->link.n_ifi_flags, IFF_UP);
+		link_set_obj (platform, device, obj_tmp);
 	}
 
 	return TRUE;
@@ -699,40 +706,56 @@ link_release (NMPlatform *platform, int master_idx, int slave_idx)
 {
 	NMFakePlatformLink *master = link_get (platform, master_idx);
 	NMFakePlatformLink *slave = link_get (platform, slave_idx);
+	nm_auto_nmpobj NMPObject *obj_tmp = NULL;
 
 	g_return_val_if_fail (master, FALSE);
 	g_return_val_if_fail (slave, FALSE);
 
-	if (slave->link.master != master->link.ifindex)
+	if (slave->obj->link.master != master->obj->link.ifindex)
 		return FALSE;
 
-	slave->link.master = 0;
-
-	link_changed (platform, slave, TRUE);
-	link_changed (platform, master, TRUE);
-
+	obj_tmp = nmp_object_clone (slave->obj, FALSE);
+	obj_tmp->link.master = 0;
+	link_set_obj (platform, slave, obj_tmp);
 	return TRUE;
+}
+
+struct vlan_add_data {
+	guint32 vlan_flags;
+	int parent;
+	int vlan_id;
+};
+
+static void
+_vlan_add_prepare (NMPlatform *platform,
+                   NMFakePlatformLink *device,
+                   gconstpointer user_data)
+{
+	const struct vlan_add_data *d = user_data;
+	NMPObject *obj_tmp;
+	NMPObject *lnk;
+
+	obj_tmp = (NMPObject *) device->obj;
+
+	lnk = nmp_object_new (NMP_OBJECT_TYPE_LNK_VLAN, NULL);
+	lnk->lnk_vlan.id = d->vlan_id;
+	lnk->lnk_vlan.flags = d->vlan_flags;
+
+	obj_tmp->link.parent = d->parent;
+	obj_tmp->_link.netlink.lnk = lnk;
 }
 
 static gboolean
 vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint32 vlan_flags, const NMPlatformLink **out_link)
 {
-	NMFakePlatformLink *device;
+	const struct vlan_add_data d = {
+		.parent = parent,
+		.vlan_id = vlan_id,
+		.vlan_flags = vlan_flags,
+	};
 
-	if (!link_add (platform, name, NM_LINK_TYPE_VLAN, NULL, NULL, 0, out_link))
-		return FALSE;
-
-	device = link_get (platform, nm_platform_link_get_ifindex (platform, name));
-
-	g_return_val_if_fail (device, FALSE);
-	g_return_val_if_fail (!device->lnk, FALSE);
-
-	device->lnk = nmp_object_new (NMP_OBJECT_TYPE_LNK_VLAN, NULL);
-	device->lnk->lnk_vlan.id = vlan_id;
-	device->link.parent = parent;
-
-	if (out_link)
-		*out_link = &device->link;
+	link_add_one (platform, name, NM_LINK_TYPE_VLAN,
+	              _vlan_add_prepare, &d, out_link);
 	return TRUE;
 }
 
@@ -751,53 +774,76 @@ link_vlan_change (NMPlatform *platform,
 	return FALSE;
 }
 
+static void
+_vxlan_add_prepare (NMPlatform *platform,
+                    NMFakePlatformLink *device,
+                    gconstpointer user_data)
+{
+	const NMPlatformLnkVxlan *props = user_data;
+	NMPObject *obj_tmp;
+	NMPObject *lnk;
+
+	obj_tmp = (NMPObject *) device->obj;
+
+	lnk = nmp_object_new (NMP_OBJECT_TYPE_LNK_VXLAN, NULL);
+	lnk->lnk_vxlan = *props;
+
+	obj_tmp->link.parent = props->parent_ifindex;
+	obj_tmp->_link.netlink.lnk = lnk;
+}
+
 static gboolean
 link_vxlan_add (NMPlatform *platform,
                 const char *name,
                 const NMPlatformLnkVxlan *props,
                 const NMPlatformLink **out_link)
 {
-	NMFakePlatformLink *device;
-
-	if (!link_add (platform, name, NM_LINK_TYPE_VXLAN, NULL, NULL, 0, out_link))
-		return FALSE;
-
-	device = link_get (platform, nm_platform_link_get_ifindex (platform, name));
-
-	g_return_val_if_fail (device, FALSE);
-	g_return_val_if_fail (!device->lnk, FALSE);
-
-	device->lnk = nmp_object_new (NMP_OBJECT_TYPE_LNK_VXLAN, NULL);
-	device->lnk->lnk_vxlan = *props;
-	device->link.parent = props->parent_ifindex;
-
-	if (out_link)
-		*out_link = &device->link;
+	link_add_one (platform, name, NM_LINK_TYPE_VXLAN,
+	              _vxlan_add_prepare, props, out_link);
 	return TRUE;
+}
+
+struct infiniband_add_data {
+	int parent;
+	int p_key;
+};
+
+static void
+_infiniband_add_prepare (NMPlatform *platform,
+                         NMFakePlatformLink *device,
+                         gconstpointer user_data)
+{
+	const struct infiniband_add_data *d = user_data;
+	NMPObject *obj_tmp;
+	NMPObject *lnk;
+
+	obj_tmp = (NMPObject *) device->obj;
+
+	lnk = nmp_object_new (NMP_OBJECT_TYPE_LNK_INFINIBAND, NULL);
+	lnk->lnk_infiniband.p_key = d->p_key;
+	lnk->lnk_infiniband.mode = "datagram";
+
+	obj_tmp->link.parent = d->parent;
+	obj_tmp->_link.netlink.lnk = lnk;
 }
 
 static gboolean
 infiniband_partition_add (NMPlatform *platform, int parent, int p_key, const NMPlatformLink **out_link)
 {
-	NMFakePlatformLink *device, *parent_device;
+	NMFakePlatformLink *parent_device;
 	char name[IFNAMSIZ];
+	const struct infiniband_add_data d = {
+		.parent = parent,
+		.p_key = p_key,
+	};
 
 	parent_device = link_get (platform, parent);
 	g_return_val_if_fail (parent_device != NULL, FALSE);
 
-	nm_utils_new_infiniband_name (name, parent_device->link.name, p_key);
+	nm_utils_new_infiniband_name (name, parent_device->obj->link.name, p_key);
 
-	if (!link_add (platform, name, NM_LINK_TYPE_INFINIBAND, NULL, NULL, 0, out_link))
-		return FALSE;
-
-	device = link_get (platform, nm_platform_link_get_ifindex (platform, name));
-	g_return_val_if_fail (device, FALSE);
-	g_return_val_if_fail (!device->lnk, FALSE);
-
-	device->lnk = nmp_object_new (NMP_OBJECT_TYPE_LNK_VLAN, NULL);
-	device->lnk->lnk_infiniband.p_key = p_key;
-	device->lnk->lnk_infiniband.mode = "datagram";
-	device->link.parent = parent;
+	link_add_one (platform, name, NM_LINK_TYPE_INFINIBAND,
+	              _infiniband_add_prepare, &d, out_link);
 	return TRUE;
 }
 
@@ -810,7 +856,7 @@ infiniband_partition_delete (NMPlatform *platform, int parent, int p_key)
 	parent_device = link_get (platform, parent);
 	g_return_val_if_fail (parent_device != NULL, FALSE);
 
-	nm_utils_new_infiniband_name (name, parent_device->link.name, p_key);
+	nm_utils_new_infiniband_name (name, parent_device->obj->link.name, p_key);
 	return link_delete (platform, nm_platform_link_get_ifindex (platform, name));
 }
 
@@ -821,7 +867,7 @@ wifi_get_capabilities (NMPlatform *platform, int ifindex, NMDeviceWifiCapabiliti
 
 	g_return_val_if_fail (device, FALSE);
 
-	if (device->link.type != NM_LINK_TYPE_WIFI)
+	if (device->obj->link.type != NM_LINK_TYPE_WIFI)
 		return FALSE;
 
 	if (caps) {
@@ -911,59 +957,25 @@ mesh_set_ssid (NMPlatform *platform, int ifindex, const guint8 *ssid, gsize len)
 
 /*****************************************************************************/
 
-static GArray *
-ip4_address_get_all (NMPlatform *platform, int ifindex)
+static gboolean
+ipx_address_add (NMPlatform *platform, int addr_family, const NMPlatformObject *address)
 {
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
-	GArray *addresses;
-	NMPlatformIP4Address *address;
-	int count = 0, i;
+	nm_auto_nmpobj NMPObject *obj = NULL;
+	NMPCacheOpsType cache_op;
+	nm_auto_nmpobj const NMPObject *obj_old = NULL;
+	nm_auto_nmpobj const NMPObject *obj_new = NULL;
+	NMPCache *cache = nm_platform_get_cache (platform);
 
-	/* Count addresses */
-	for (i = 0; i < priv->ip4_addresses->len; i++) {
-		address = &g_array_index (priv->ip4_addresses, NMPlatformIP4Address, i);
-		if (address && address->ifindex == ifindex)
-			count++;
-	}
+	g_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
 
-	addresses = g_array_sized_new (TRUE, TRUE, sizeof (NMPlatformIP4Address), count);
+	obj = nmp_object_new (addr_family == AF_INET
+	                        ? NMP_OBJECT_TYPE_IP4_ADDRESS
+	                        : NMP_OBJECT_TYPE_IP6_ADDRESS,
+	                      address);
 
-	/* Fill addresses */
-	for (i = 0; i < priv->ip4_addresses->len; i++) {
-		address = &g_array_index (priv->ip4_addresses, NMPlatformIP4Address, i);
-		if (address && address->ifindex == ifindex)
-			g_array_append_val (addresses, *address);
-	}
-
-	return addresses;
-}
-
-static GArray *
-ip6_address_get_all (NMPlatform *platform, int ifindex)
-{
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
-	GArray *addresses;
-	NMPlatformIP6Address *address;
-	int count = 0, i;
-
-	/* Count addresses */
-	for (i = 0; i < priv->ip6_addresses->len; i++) {
-		address = &g_array_index (priv->ip6_addresses, NMPlatformIP6Address, i);
-		if (address && address->ifindex == ifindex)
-			count++;
-	}
-
-	addresses = g_array_sized_new (TRUE, TRUE, sizeof (NMPlatformIP6Address), count);
-
-	/* Fill addresses */
-	count = 0;
-	for (i = 0; i < priv->ip6_addresses->len; i++) {
-		address = &g_array_index (priv->ip6_addresses, NMPlatformIP6Address, i);
-		if (address && address->ifindex == ifindex)
-			g_array_append_val (addresses, *address);
-	}
-
-	return addresses;
+	cache_op = nmp_cache_update_netlink (cache, obj, &obj_old, &obj_new);
+	nm_platform_cache_update_emit_signal (platform, cache_op, obj_old, obj_new);
+	return TRUE;
 }
 
 static gboolean
@@ -977,9 +989,7 @@ ip4_address_add (NMPlatform *platform,
                  guint32 flags,
                  const char *label)
 {
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
 	NMPlatformIP4Address address;
-	int i;
 
 	memset (&address, 0, sizeof (address));
 	address.addr_source = NM_IP_CONFIG_SOURCE_KERNEL;
@@ -994,28 +1004,7 @@ ip4_address_add (NMPlatform *platform,
 	if (label)
 		g_strlcpy (address.label, label, sizeof (address.label));
 
-	for (i = 0; i < priv->ip4_addresses->len; i++) {
-		NMPlatformIP4Address *item = &g_array_index (priv->ip4_addresses, NMPlatformIP4Address, i);
-		gboolean changed;
-
-		if (   item->ifindex != address.ifindex
-		    || item->address != address.address
-		    || item->plen != address.plen
-		    || !_ip4_address_equal_peer_net (item->peer_address, address.peer_address, address.plen))
-			continue;
-
-		changed = !nm_platform_ip4_address_cmp (item, &address);
-
-		memcpy (item, &address, sizeof (address));
-		if (changed)
-			g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, (int) NMP_OBJECT_TYPE_IP4_ADDRESS, ifindex, &address, (int) NM_PLATFORM_SIGNAL_CHANGED);
-		return TRUE;
-	}
-
-	g_array_append_val (priv->ip4_addresses, address);
-	g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, (int) NMP_OBJECT_TYPE_IP4_ADDRESS, ifindex, &address, (int) NM_PLATFORM_SIGNAL_ADDED);
-
-	return TRUE;
+	return ipx_address_add (platform, AF_INET, (const NMPlatformObject *) &address);
 }
 
 static gboolean
@@ -1028,9 +1017,7 @@ ip6_address_add (NMPlatform *platform,
                  guint32 preferred,
                  guint32 flags)
 {
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
 	NMPlatformIP6Address address;
-	int i;
 
 	memset (&address, 0, sizeof (address));
 	address.addr_source = NM_IP_CONFIG_SOURCE_KERNEL;
@@ -1043,379 +1030,253 @@ ip6_address_add (NMPlatform *platform,
 	address.preferred = preferred;
 	address.n_ifa_flags = flags;
 
-	for (i = 0; i < priv->ip6_addresses->len; i++) {
-		NMPlatformIP6Address *item = &g_array_index (priv->ip6_addresses, NMPlatformIP6Address, i);
-		gboolean changed;
+	return ipx_address_add (platform, AF_INET6, (const NMPlatformObject *) &address);
+}
 
-		if (   item->ifindex != address.ifindex
-		    || !IN6_ARE_ADDR_EQUAL (&item->address, &address.address))
-			continue;
+static gboolean
+ipx_address_delete (NMPlatform *platform,
+                    int addr_family,
+                    int ifindex,
+                    gconstpointer addr,
+                    const guint8 *plen,
+                    gconstpointer peer_addr)
+{
+	gs_unref_ptrarray GPtrArray *objs = g_ptr_array_new_with_free_func ((GDestroyNotify) nmp_object_unref);
+	NMDedupMultiIter iter;
+	const NMPObject *o = NULL;
+	guint i;
+	guint32 peer_addr_i;
 
-		changed = !nm_platform_ip6_address_cmp (item, &address);
+	g_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
 
-		memcpy (item, &address, sizeof (address));
-		if (changed)
-			g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, (int) NMP_OBJECT_TYPE_IP6_ADDRESS, ifindex, &address, (int) NM_PLATFORM_SIGNAL_CHANGED);
-		return TRUE;
+	peer_addr_i = peer_addr ? *((guint32 *) peer_addr) : 0;
+
+	nmp_cache_iter_for_each (&iter,
+	                         nm_platform_lookup_addrroute (platform,
+	                                                       addr_family == AF_INET
+	                                                         ? NMP_OBJECT_TYPE_IP4_ADDRESS
+	                                                         : NMP_OBJECT_TYPE_IP6_ADDRESS,
+	                                                       0),
+	                         &o) {
+		const NMPObject *obj_old = NULL;
+
+		if (addr_family == AF_INET) {
+			const NMPlatformIP4Address *address = NMP_OBJECT_CAST_IP4_ADDRESS (o);
+
+			if (   address->ifindex != ifindex
+			    || (addr && address->address != *((guint32 *) addr))
+			    || (plen && address->plen != *plen)
+			    || (   peer_addr
+			        && (((peer_addr_i ^ address->peer_address) & nm_utils_ip4_prefix_to_netmask (address->plen)) != 0)))
+				continue;
+		} else {
+			const NMPlatformIP6Address *address = NMP_OBJECT_CAST_IP6_ADDRESS (o);
+
+			g_assert (!peer_addr);
+			if (   address->ifindex != ifindex
+			    || (addr && !IN6_ARE_ADDR_EQUAL (&address->address, addr))
+			    || (plen && address->plen != *plen))
+				continue;
+		}
+
+		if (nmp_cache_remove (nm_platform_get_cache (platform),
+		                      o,
+		                      TRUE,
+		                      &obj_old) != NMP_CACHE_OPS_REMOVED)
+			g_assert_not_reached ();
+		g_assert (obj_old);
+		g_ptr_array_add (objs, (gpointer) obj_old);
 	}
 
-	g_array_append_val (priv->ip6_addresses, address);
-	g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, (int) NMP_OBJECT_TYPE_IP6_ADDRESS, ifindex, &address, (int) NM_PLATFORM_SIGNAL_ADDED);
-
+	for (i = 0; i < objs->len; i++) {
+		nm_platform_cache_update_emit_signal (platform,
+		                                      NMP_CACHE_OPS_REMOVED,
+		                                      objs->pdata[i],
+		                                      NULL);
+	}
 	return TRUE;
 }
 
 static gboolean
 ip4_address_delete (NMPlatform *platform, int ifindex, in_addr_t addr, guint8 plen, in_addr_t peer_address)
 {
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
-	int i;
-
-	for (i = 0; i < priv->ip4_addresses->len; i++) {
-		NMPlatformIP4Address *address = &g_array_index (priv->ip4_addresses, NMPlatformIP4Address, i);
-
-		if (   address->ifindex == ifindex
-		    && address->plen == plen
-		    && address->address == addr
-		    && ((peer_address ^ address->peer_address) & nm_utils_ip4_prefix_to_netmask (plen)) == 0) {
-			NMPlatformIP4Address deleted_address;
-
-			memcpy (&deleted_address, address, sizeof (deleted_address));
-			memset (address, 0, sizeof (*address));
-			g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, (int) NMP_OBJECT_TYPE_IP4_ADDRESS, ifindex, &deleted_address, (int) NM_PLATFORM_SIGNAL_REMOVED);
-			return TRUE;
-		}
-	}
-
-	return TRUE;
+	return ipx_address_delete (platform, AF_INET, ifindex, &addr, &plen, &peer_address);
 }
 
 static gboolean
 ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, guint8 plen)
 {
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
-	int i;
-
-	for (i = 0; i < priv->ip6_addresses->len; i++) {
-		NMPlatformIP6Address *address = &g_array_index (priv->ip6_addresses, NMPlatformIP6Address, i);
-
-		if (   address->ifindex == ifindex
-		    && address->plen == plen
-		    && IN6_ARE_ADDR_EQUAL (&address->address, &addr)) {
-			NMPlatformIP6Address deleted_address;
-
-			memcpy (&deleted_address, address, sizeof (deleted_address));
-			memset (address, 0, sizeof (*address));
-			g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, (int) NMP_OBJECT_TYPE_IP6_ADDRESS, ifindex, &deleted_address, (int) NM_PLATFORM_SIGNAL_REMOVED);
-			return TRUE;
-		}
-	}
-
-	return TRUE;
-}
-
-static const NMPlatformIP4Address *
-ip4_address_get (NMPlatform *platform, int ifindex, in_addr_t addr, guint8 plen, in_addr_t peer_address)
-{
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
-	int i;
-
-	for (i = 0; i < priv->ip4_addresses->len; i++) {
-		NMPlatformIP4Address *address = &g_array_index (priv->ip4_addresses, NMPlatformIP4Address, i);
-
-		if (   address->ifindex == ifindex
-		    && address->plen == plen
-		    && address->address == addr
-		    && _ip4_address_equal_peer_net (address->peer_address, peer_address, plen))
-			return address;
-	}
-
-	return NULL;
-}
-
-static const NMPlatformIP6Address *
-ip6_address_get (NMPlatform *platform, int ifindex, struct in6_addr addr)
-{
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
-	int i;
-
-	for (i = 0; i < priv->ip6_addresses->len; i++) {
-		NMPlatformIP6Address *address = &g_array_index (priv->ip6_addresses, NMPlatformIP6Address, i);
-
-		if (   address->ifindex == ifindex
-		    && IN6_ARE_ADDR_EQUAL (&address->address, &addr))
-			return address;
-	}
-
-	return NULL;
+	return ipx_address_delete (platform, AF_INET6, ifindex, &addr, &plen, NULL);
 }
 
 /*****************************************************************************/
 
-static GArray *
-ip4_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteFlags flags)
+static gboolean
+ipx_route_delete (NMPlatform *platform,
+                  int addr_family,
+                  int ifindex,
+                  gconstpointer network,
+                  const guint8 *plen,
+                  const guint32 *metric)
 {
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
-	GArray *routes;
-	NMPlatformIP4Route *route;
+	gs_unref_ptrarray GPtrArray *objs = g_ptr_array_new_with_free_func ((GDestroyNotify) nmp_object_unref);
+	NMDedupMultiIter iter;
+	const NMPObject *o = NULL;
 	guint i;
 
-	routes = g_array_new (TRUE, TRUE, sizeof (NMPlatformIP4Route));
+	g_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
 
-	if (!NM_FLAGS_ANY (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT))
-		flags |= NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT;
+	nmp_cache_iter_for_each (&iter,
+	                         nm_platform_lookup_addrroute (platform,
+	                                                       addr_family == AF_INET
+	                                                         ? NMP_OBJECT_TYPE_IP4_ROUTE
+	                                                         : NMP_OBJECT_TYPE_IP6_ROUTE,
+	                                                       0),
+	                         &o) {
+		const NMPObject *obj_old = NULL;
 
-	/* Fill routes */
-	for (i = 0; i < priv->ip4_routes->len; i++) {
-		route = &g_array_index (priv->ip4_routes, NMPlatformIP4Route, i);
-		if (route && (!ifindex || route->ifindex == ifindex)) {
-			if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)) {
-				if (NM_FLAGS_HAS (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT))
-					g_array_append_val (routes, *route);
-			} else {
-				if (NM_FLAGS_HAS (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT))
-					g_array_append_val (routes, *route);
-			}
+		if (addr_family == AF_INET) {
+			const NMPlatformIP4Route *route = NMP_OBJECT_CAST_IP4_ROUTE (o);
+
+			if (   route->ifindex != ifindex
+			    || (network && route->network != *((guint32 *) network))
+			    || (plen && route->plen != *plen)
+			    || (metric && route->metric != *metric))
+				continue;
+		} else {
+			const NMPlatformIP6Route *route = NMP_OBJECT_CAST_IP6_ROUTE (o);
+
+			if (   route->ifindex != ifindex
+			    || (network && !IN6_ARE_ADDR_EQUAL (&route->network, network))
+			    || (plen && route->plen != *plen)
+			    || (metric && route->metric != *metric))
+				continue;
 		}
+
+		if (nmp_cache_remove (nm_platform_get_cache (platform),
+		                      o,
+		                      TRUE,
+		                      &obj_old) != NMP_CACHE_OPS_REMOVED)
+			g_assert_not_reached ();
+		g_assert (obj_old);
+		g_ptr_array_add (objs, (gpointer) obj_old);
 	}
 
-	return routes;
-}
-
-static GArray *
-ip6_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteFlags flags)
-{
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
-	GArray *routes;
-	NMPlatformIP6Route *route;
-	guint i;
-
-	routes = g_array_new (TRUE, TRUE, sizeof (NMPlatformIP6Route));
-
-	if (!NM_FLAGS_ANY (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT))
-		flags |= NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT;
-
-	/* Fill routes */
-	for (i = 0; i < priv->ip6_routes->len; i++) {
-		route = &g_array_index (priv->ip6_routes, NMPlatformIP6Route, i);
-		if (route && (!ifindex || route->ifindex == ifindex)) {
-			if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)) {
-				if (NM_FLAGS_HAS (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT))
-					g_array_append_val (routes, *route);
-			} else {
-				if (NM_FLAGS_HAS (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT))
-					g_array_append_val (routes, *route);
-			}
-		}
+	for (i = 0; i < objs->len; i++) {
+		nm_platform_cache_update_emit_signal (platform,
+		                                      NMP_CACHE_OPS_REMOVED,
+		                                      objs->pdata[i],
+		                                      NULL);
 	}
-
-	return routes;
+	return TRUE;
 }
 
 static gboolean
 ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, guint8 plen, guint32 metric)
 {
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
-	int i;
-
-	for (i = 0; i < priv->ip4_routes->len; i++) {
-		NMPlatformIP4Route *route = &g_array_index (priv->ip4_routes, NMPlatformIP4Route, i);
-		NMPlatformIP4Route deleted_route;
-
-		if (   route->ifindex != ifindex
-		    || route->network != network
-		    || route->plen != plen
-		    || route->metric != metric)
-			continue;
-
-		memcpy (&deleted_route, route, sizeof (deleted_route));
-		g_array_remove_index (priv->ip4_routes, i);
-		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, (int) NMP_OBJECT_TYPE_IP4_ROUTE, ifindex, &deleted_route, (int) NM_PLATFORM_SIGNAL_REMOVED);
-	}
-
-	return TRUE;
+	return ipx_route_delete (platform, AF_INET, ifindex, &network, &plen, &metric);
 }
 
 static gboolean
 ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, guint8 plen, guint32 metric)
 {
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
-	int i;
-
 	metric = nm_utils_ip6_route_metric_normalize (metric);
+	return ipx_route_delete (platform, AF_INET6, ifindex, &network, &plen, &metric);
+}
 
-	for (i = 0; i < priv->ip6_routes->len; i++) {
-		NMPlatformIP6Route *route = &g_array_index (priv->ip6_routes, NMPlatformIP6Route, i);
-		NMPlatformIP6Route deleted_route;
+static gboolean
+ipx_route_add (NMPlatform *platform, int addr_family, const NMPlatformObject *route)
+{
+	NMDedupMultiIter iter;
+	nm_auto_nmpobj NMPObject *obj = NULL;
+	NMPlatformIPRoute *rt;
+	NMPCacheOpsType cache_op;
+	const NMPObject *o = NULL;
+	nm_auto_nmpobj const NMPObject *obj_old = NULL;
+	nm_auto_nmpobj const NMPObject *obj_new = NULL;
+	NMPCache *cache = nm_platform_get_cache (platform);
+	gboolean has_gateway = FALSE;
+	NMPlatformIP4Route *rt4 = NULL;
+	NMPlatformIP6Route *rt6 = NULL;
 
-		if (   route->ifindex != ifindex
-		    || !IN6_ARE_ADDR_EQUAL (&route->network, &network)
-		    || route->plen != plen
-		    || route->metric != metric)
-			continue;
+	g_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
 
-		memcpy (&deleted_route, route, sizeof (deleted_route));
-		g_array_remove_index (priv->ip6_routes, i);
-		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, (int) NMP_OBJECT_TYPE_IP6_ROUTE, ifindex, &deleted_route, (int) NM_PLATFORM_SIGNAL_REMOVED);
+	obj = nmp_object_new (addr_family == AF_INET
+	                        ? NMP_OBJECT_TYPE_IP4_ROUTE
+	                        : NMP_OBJECT_TYPE_IP6_ROUTE,
+	                      route);
+	rt = &obj->ip_route;
+	rt->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (rt->rt_source);
+
+	if (addr_family == AF_INET) {
+		rt4 = NMP_OBJECT_CAST_IP4_ROUTE (obj);
+		rt4->scope_inv = nm_platform_route_scope_inv (rt4->gateway ? RT_SCOPE_UNIVERSE : RT_SCOPE_LINK);
+		rt4->network = nm_utils_ip4_address_clear_host_address (rt4->network, rt4->plen);
+		if (rt4->gateway)
+			has_gateway = TRUE;
+	} else {
+		rt6 = NMP_OBJECT_CAST_IP6_ROUTE (obj);
+		rt->metric = nm_utils_ip6_route_metric_normalize (rt->metric);
+		nm_utils_ip6_address_clear_host_address (&rt6->network, &rt6->network, rt->plen);
+		if (!IN6_IS_ADDR_UNSPECIFIED (&rt6->gateway))
+			has_gateway = TRUE;
 	}
 
+	if (has_gateway) {
+		gboolean has_route_to_gw = FALSE;
+
+		nmp_cache_iter_for_each (&iter,
+		                         nm_platform_lookup_addrroute (platform,
+		                                                       NMP_OBJECT_GET_TYPE (obj),
+		                                                       0),
+		                         &o) {
+			if (addr_family == AF_INET) {
+				const NMPlatformIP4Route *item = NMP_OBJECT_CAST_IP4_ROUTE (o);
+				guint32 n = nm_utils_ip4_address_clear_host_address (item->network, item->plen);
+				guint32 g = nm_utils_ip4_address_clear_host_address (rt4->gateway, item->plen);
+
+				if (   rt->ifindex == item->ifindex
+				    && n == g) {
+					has_route_to_gw = TRUE;
+					break;
+				}
+			} else {
+				const NMPlatformIP6Route *item = NMP_OBJECT_CAST_IP6_ROUTE (o);
+
+				if (   rt->ifindex == item->ifindex
+				    && nm_utils_ip6_address_same_prefix (&rt6->gateway, &item->network, item->plen)) {
+					has_route_to_gw = TRUE;
+					break;
+				}
+			}
+		}
+		if (!has_route_to_gw) {
+			if (addr_family == AF_INET) {
+				nm_log_warn (LOGD_PLATFORM, "Fake platform: failure adding ip4-route '%d: %s/%d %d': Network Unreachable",
+				             rt->ifindex, nm_utils_inet4_ntop (rt4->network, NULL), rt->plen, rt->metric);
+			} else {
+				nm_log_warn (LOGD_PLATFORM, "Fake platform: failure adding ip6-route '%d: %s/%d %d': Network Unreachable",
+				             rt->ifindex, nm_utils_inet6_ntop (&rt6->network, NULL), rt->plen, rt->metric);
+			}
+			return FALSE;
+		}
+	}
+
+	cache_op = nmp_cache_update_netlink (cache, obj, &obj_old, &obj_new);
+	nm_platform_cache_update_emit_signal (platform, cache_op, obj_old, obj_new);
 	return TRUE;
 }
 
 static gboolean
 ip4_route_add (NMPlatform *platform, const NMPlatformIP4Route *route)
 {
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
-	NMPlatformIP4Route rt = *route;
-	guint i;
-
-	rt.rt_source = nmp_utils_ip_config_source_round_trip_rtprot (rt.rt_source);
-	rt.network = nm_utils_ip4_address_clear_host_address (rt.network, rt.plen);
-	rt.scope_inv = nm_platform_route_scope_inv (rt.gateway ? RT_SCOPE_UNIVERSE : RT_SCOPE_LINK);
-
-	if (rt.gateway) {
-		for (i = 0; i < priv->ip4_routes->len; i++) {
-			NMPlatformIP4Route *item = &g_array_index (priv->ip4_routes,
-			                                           NMPlatformIP4Route, i);
-			guint32 gate = ntohl (item->network) >> (32 - item->plen);
-			guint32 host = ntohl (rt.gateway) >> (32 - item->plen);
-
-			if (rt.ifindex == item->ifindex && gate == host)
-				break;
-		}
-		if (i == priv->ip4_routes->len) {
-			nm_log_warn (LOGD_PLATFORM, "Fake platform: failure adding ip4-route '%d: %s/%d %d': Network Unreachable",
-			             rt.ifindex, nm_utils_inet4_ntop (rt.network, NULL), rt.plen, rt.metric);
-			return FALSE;
-		}
-	}
-
-	for (i = 0; i < priv->ip4_routes->len; i++) {
-		NMPlatformIP4Route *item = &g_array_index (priv->ip4_routes, NMPlatformIP4Route, i);
-
-		if (item->network != rt.network)
-			continue;
-		if (item->plen != rt.plen)
-			continue;
-		if (item->metric != rt.metric)
-			continue;
-
-		if (item->ifindex != rt.ifindex) {
-			ip4_route_delete (platform, item->ifindex, item->network, item->plen, item->metric);
-			i--;
-			continue;
-		}
-
-		memcpy (item, &rt, sizeof (rt));
-		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, (int) NMP_OBJECT_TYPE_IP4_ROUTE,
-		                       rt.ifindex, &rt, (int) NM_PLATFORM_SIGNAL_CHANGED);
-		return TRUE;
-	}
-
-	g_array_append_val (priv->ip4_routes, rt);
-	g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, (int) NMP_OBJECT_TYPE_IP4_ROUTE,
-	                       rt.ifindex, &rt, (int) NM_PLATFORM_SIGNAL_ADDED);
-
-	return TRUE;
+	return ipx_route_add (platform, AF_INET, (const NMPlatformObject *) route);
 }
 
 static gboolean
 ip6_route_add (NMPlatform *platform, const NMPlatformIP6Route *route)
 {
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
-	NMPlatformIP6Route rt = *route;
-	guint i;
-
-	rt.metric = nm_utils_ip6_route_metric_normalize (rt.metric);
-	rt.rt_source = nmp_utils_ip_config_source_round_trip_rtprot (rt.rt_source);
-	nm_utils_ip6_address_clear_host_address (&rt.network, &rt.network, rt.plen);
-
-	if (!IN6_IS_ADDR_UNSPECIFIED (&rt.gateway)) {
-		for (i = 0; i < priv->ip6_routes->len; i++) {
-			NMPlatformIP6Route *item = &g_array_index (priv->ip6_routes,
-			                                           NMPlatformIP6Route, i);
-			guint8 gate_bits = rt.gateway.s6_addr[item->plen / 8] >> (8 - item->plen % 8);
-			guint8 host_bits = item->network.s6_addr[item->plen / 8] >> (8 - item->plen % 8);
-
-			if (   rt.ifindex == item->ifindex
-			    && memcmp (&rt.gateway, &item->network, item->plen / 8) == 0
-			    && gate_bits == host_bits)
-				break;
-		}
-		if (i == priv->ip6_routes->len) {
-			nm_log_warn (LOGD_PLATFORM, "Fake platform: failure adding ip6-route '%d: %s/%d %d': Network Unreachable",
-			             rt.ifindex, nm_utils_inet6_ntop (&rt.network, NULL), rt.plen, rt.metric);
-			return FALSE;
-		}
-	}
-
-	for (i = 0; i < priv->ip6_routes->len; i++) {
-		NMPlatformIP6Route *item = &g_array_index (priv->ip6_routes, NMPlatformIP6Route, i);
-
-		if (!IN6_ARE_ADDR_EQUAL (&item->network, &rt.network))
-			continue;
-		if (item->plen != rt.plen)
-			continue;
-		if (item->metric != rt.metric)
-			continue;
-
-		if (item->ifindex != rt.ifindex) {
-			ip6_route_delete (platform, item->ifindex, item->network, item->plen, item->metric);
-			i--;
-			continue;
-		}
-
-		memcpy (item, &rt, sizeof (rt));
-		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, (int) NMP_OBJECT_TYPE_IP6_ROUTE,
-		                       rt.ifindex, &rt, (int) NM_PLATFORM_SIGNAL_CHANGED);
-		return TRUE;
-	}
-
-	g_array_append_val (priv->ip6_routes, rt);
-	g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, (int) NMP_OBJECT_TYPE_IP6_ROUTE,
-	                       rt.ifindex, &rt, (int) NM_PLATFORM_SIGNAL_ADDED);
-
-	return TRUE;
-}
-
-static const NMPlatformIP4Route *
-ip4_route_get (NMPlatform *platform, int ifindex, in_addr_t network, guint8 plen, guint32 metric)
-{
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
-	int i;
-
-	for (i = 0; i < priv->ip4_routes->len; i++) {
-		NMPlatformIP4Route *route = &g_array_index (priv->ip4_routes, NMPlatformIP4Route, i);
-
-		if (route->ifindex == ifindex
-				&& route->network == network
-				&& route->plen == plen
-				&& route->metric == metric)
-			return route;
-	}
-
-	return NULL;
-}
-
-static const NMPlatformIP6Route *
-ip6_route_get (NMPlatform *platform, int ifindex, struct in6_addr network, guint8 plen, guint32 metric)
-{
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE ((NMFakePlatform *) platform);
-	int i;
-
-	metric = nm_utils_ip6_route_metric_normalize (metric);
-
-	for (i = 0; i < priv->ip6_routes->len; i++) {
-		NMPlatformIP6Route *route = &g_array_index (priv->ip6_routes, NMPlatformIP6Route, i);
-
-		if (route->ifindex == ifindex
-				&& IN6_ARE_ADDR_EQUAL (&route->network, &network)
-				&& route->plen == plen
-				&& route->metric == metric)
-			return route;
-	}
-
-	return NULL;
+	return ipx_route_add (platform, AF_INET6, (const NMPlatformObject *) route);
 }
 
 /*****************************************************************************/
@@ -1427,10 +1288,6 @@ nm_fake_platform_init (NMFakePlatform *fake_platform)
 
 	priv->options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 	priv->links = g_array_new (TRUE, TRUE, sizeof (NMFakePlatformLink));
-	priv->ip4_addresses = g_array_new (TRUE, TRUE, sizeof (NMPlatformIP4Address));
-	priv->ip6_addresses = g_array_new (TRUE, TRUE, sizeof (NMPlatformIP6Address));
-	priv->ip4_routes = g_array_new (TRUE, TRUE, sizeof (NMPlatformIP4Route));
-	priv->ip6_routes = g_array_new (TRUE, TRUE, sizeof (NMPlatformIP6Route));
 }
 
 void
@@ -1443,9 +1300,6 @@ nm_fake_platform_setup (void)
 	                         NULL);
 
 	nm_platform_setup (platform);
-
-	/* skip zero element */
-	link_add (platform, NULL, NM_LINK_TYPE_NONE, NULL, NULL, 0, NULL);
 
 	/* add loopback interface */
 	link_add (platform, "lo", NM_LINK_TYPE_LOOPBACK, NULL, NULL, 0, NULL);
@@ -1467,13 +1321,9 @@ finalize (GObject *object)
 		NMFakePlatformLink *device = &g_array_index (priv->links, NMFakePlatformLink, i);
 
 		g_free (device->udi);
-		g_clear_pointer (&device->lnk, nmp_object_unref);
+		g_clear_pointer (&device->obj, nmp_object_unref);
 	}
 	g_array_unref (priv->links);
-	g_array_unref (priv->ip4_addresses);
-	g_array_unref (priv->ip6_addresses);
-	g_array_unref (priv->ip4_routes);
-	g_array_unref (priv->ip6_routes);
 
 	G_OBJECT_CLASS (nm_fake_platform_parent_class)->finalize (object);
 }
@@ -1489,15 +1339,8 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->sysctl_set = sysctl_set;
 	platform_class->sysctl_get = sysctl_get;
 
-	platform_class->link_get = _nm_platform_link_get;
-	platform_class->link_get_by_ifname = _nm_platform_link_get_by_ifname;
-	platform_class->link_get_by_address = _nm_platform_link_get_by_address;
-	platform_class->link_get_all = link_get_all;
 	platform_class->link_add = link_add;
 	platform_class->link_delete = link_delete;
-	platform_class->link_get_type_name = link_get_type_name;
-
-	platform_class->link_get_lnk = link_get_lnk;
 
 	platform_class->link_get_udi = link_get_udi;
 
@@ -1541,19 +1384,11 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->mesh_set_channel = mesh_set_channel;
 	platform_class->mesh_set_ssid = mesh_set_ssid;
 
-	platform_class->ip4_address_get = ip4_address_get;
-	platform_class->ip6_address_get = ip6_address_get;
-	platform_class->ip4_address_get_all = ip4_address_get_all;
-	platform_class->ip6_address_get_all = ip6_address_get_all;
 	platform_class->ip4_address_add = ip4_address_add;
 	platform_class->ip6_address_add = ip6_address_add;
 	platform_class->ip4_address_delete = ip4_address_delete;
 	platform_class->ip6_address_delete = ip6_address_delete;
 
-	platform_class->ip4_route_get = ip4_route_get;
-	platform_class->ip6_route_get = ip6_route_get;
-	platform_class->ip4_route_get_all = ip4_route_get_all;
-	platform_class->ip6_route_get_all = ip6_route_get_all;
 	platform_class->ip4_route_add = ip4_route_add;
 	platform_class->ip6_route_add = ip6_route_add;
 	platform_class->ip4_route_delete = ip4_route_delete;

@@ -74,7 +74,7 @@ static inline void c_list_init(CList *what) {
                          offsetof(_t, _m)) - offsetof(_t, _m)))
 
 /**
- * c_list_is_linked() - check whether a entry is linked
+ * c_list_is_linked() - check whether an entry is linked
  * @what:               entry to check, or NULL
  *
  * Return: True if @what is linked in a list, false if not.
@@ -206,71 +206,22 @@ static inline void c_list_swap(CList *list1, CList *list2) {
  * This removes all the entries from @source and splice them into @target.
  * The order of the two lists is preserved and the source is appended
  * to the end of target.
+ *
+ * On return, the source list will be empty.
  */
 static inline void c_list_splice(CList *target, CList *source) {
-        if (c_list_is_empty(source))
-                return;
+        if (!c_list_is_empty(source)) {
+                /* attach the front of @source to the tail of @target */
+                source->next->prev = target->prev;
+                target->prev->next = source->next;
 
-        /* attach the front of @source to the tail of @target */
-        source->next->prev = target->prev;
-        target->prev->next = source->next;
+                /* attach the tail of @source to the front of @target */
+                source->prev->next = target;
+                target->prev = source->prev;
 
-        /* attach the tail of @source to the front of @target */
-        source->prev->next = target;
-        target->prev = source->prev;
-}
-
-/**
- * c_list_loop_first() - return first list element, or head if empty
- * @list:               list to operate on
- *
- * This is an O(1) accessor to the first list element. If the list is empty,
- * this returns a pointer to the list head. Hence, this never returns NULL.
- *
- * Return: Pointer to first list element, or pointer to head if empty.
- */
-static inline CList *c_list_loop_first(CList *list) {
-        return list->next;
-}
-
-/**
- * c_list_loop_last() - return last list element, or head if empty
- * @list:               list to operate on
- *
- * This is an O(1) accessor to the last list element. If the list is empty,
- * this returns a pointer to the list head. Hence, this never returns NULL.
- *
- * Return: Pointer to last list element, or pointer to head if empty.
- */
-static inline CList *c_list_loop_last(CList *list) {
-        return list->prev;
-}
-
-/**
- * c_list_loop_next() - return next list element, or head if none
- * @what:               list entry to operate on
- *
- * This is an O(1) accessor to the next list element. If @what is the list tail
- * this will return a pointer to the list head. Hence, this never returns NULL.
- *
- * Return: Pointer to next list element, or pointer to head if none.
- */
-static inline CList *c_list_loop_next(CList *what) {
-        return what->next;
-}
-
-/**
- * c_list_loop_prev() - return previous list element, or head if none
- * @what:               list entry to operate on
- *
- * This is an O(1) accessor to the previous list element. If @what is the list
- * front this will return a pointer to the list head. Hence, this never returns
- * NULL.
- *
- * Return: Pointer to previous list element, or pointer to head if none.
- */
-static inline CList *c_list_loop_prev(CList *what) {
-        return what->prev;
+                /* clear source */
+                *source = (CList)C_LIST_INIT(*source);
+        }
 }
 
 /**
@@ -281,10 +232,10 @@ static inline CList *c_list_loop_prev(CList *what) {
  * This is a macro to use as for-loop to iterate an entire list. It is meant as
  * convenience macro. Feel free to code your own loop iterator.
  */
-#define c_list_for_each(_iter, _list)                   \
-        for (_iter = c_list_loop_first(_list);          \
-             _iter != (_list);                          \
-             _iter = c_list_loop_next(_iter))
+#define c_list_for_each(_iter, _list)                                           \
+        for (_iter = (_list)->next;                                             \
+             (_iter) != (_list);                                                \
+             _iter = (_iter)->next)
 
 
 /**
@@ -302,10 +253,10 @@ static inline CList *c_list_loop_prev(CList *what) {
  * havoc if you remove other list entries. You better not modify anything but
  * the current list entry.
  */
-#define c_list_for_each_safe(_iter, _safe, _list)                                       \
-        for (_iter = c_list_loop_first(_list), _safe = c_list_loop_next(_iter);         \
-             _iter != (_list);                                                          \
-             _iter = _safe, _safe = c_list_loop_next(_safe))
+#define c_list_for_each_safe(_iter, _safe, _list)                               \
+        for (_iter = (_list)->next, _safe = (_iter)->next;                      \
+             (_iter) != (_list);                                                \
+             _iter = (_safe), _safe = (_safe)->next)
 
 /**
  * c_list_for_each_entry() - loop over all list entries
@@ -316,10 +267,10 @@ static inline CList *c_list_loop_prev(CList *what) {
  * This combines c_list_for_each() with c_list_entry(), making it easy to
  * iterate over a list of a specific type.
  */
-#define c_list_for_each_entry(_iter, _list, _m)                                         \
-        for (_iter = c_list_entry(c_list_loop_first(_list), __typeof__(*_iter), _m);    \
-             &_iter->_m != (_list);                                                     \
-             _iter = c_list_entry(c_list_loop_next(&_iter->_m), __typeof__(*_iter), _m))
+#define c_list_for_each_entry(_iter, _list, _m)                                 \
+        for (_iter = c_list_entry((_list)->next, __typeof__(*_iter), _m);       \
+             &(_iter)->_m != (_list);                                           \
+             _iter = c_list_entry((_iter)->_m.next, __typeof__(*_iter), _m))
 
 /**
  * c_list_for_each_entry_safe() - loop over all list entries, safe for removal
@@ -331,12 +282,12 @@ static inline CList *c_list_loop_prev(CList *what) {
  * This combines c_list_for_each_safe() with c_list_entry(), making it easy to
  * iterate over a list of a specific type.
  */
-#define c_list_for_each_entry_safe(_iter, _safe, _list, _m)                             \
-        for (_iter = c_list_entry(c_list_loop_first(_list), __typeof__(*_iter), _m),    \
-             _safe = c_list_entry(c_list_loop_next(&_iter->_m), __typeof__(*_iter), _m);\
-             &_iter->_m != (_list);                                                     \
-             _iter = _safe,                                                             \
-             _safe = c_list_entry(c_list_loop_next(&_safe->_m), __typeof__(*_iter), _m))
+#define c_list_for_each_entry_safe(_iter, _safe, _list, _m)                     \
+        for (_iter = c_list_entry((_list)->next, __typeof__(*_iter), _m),       \
+             _safe = c_list_entry((_iter)->_m.next, __typeof__(*_iter), _m);    \
+             &(_iter)->_m != (_list);                                           \
+             _iter = (_safe),                                                   \
+             _safe = c_list_entry((_safe)->_m.next, __typeof__(*_iter), _m))    \
 
 /**
  * c_list_first() - return pointer to first element, or NULL if empty
@@ -391,44 +342,54 @@ static inline CList *c_list_last(CList *list) {
         c_list_entry(c_list_last(_list), _t, _m)
 
 /**
- * c_list_length() - return the number of linked entries, excluding the head
+ * c_list_length() - return number of linked entries, excluding the head
  * @list:               list to operate on
  *
- * Returns the number of entires in the list, excluding the list head
- * @list. That is, for a list that is empty according to c_list_is_empty(),
- * the returned length is 0. This requires to iterate the list and has
- * thus O(n) runtime.
+ * Returns the number of entries in the list, excluding the list head @list.
+ * That is, for a list that is empty according to c_list_is_empty(), the
+ * returned length is 0. This requires to iterate the list and has thus O(n)
+ * runtime.
  *
- * Return: the number of items in the list
+ * Note that this function is meant for debugging purposes only. If you need
+ * the list size during normal operation, you should maintain a counter
+ * separately.
+ *
+ * Return: Number of items in @list.
  */
-static inline size_t c_list_length(const CList *list) {
-        CList *iter;
-        size_t n = 0;
+static inline unsigned long c_list_length(const CList *list) {
+        unsigned long n = 0;
+        const CList *iter;
 
-        c_list_for_each(iter, (CList *)list)
-                n++;
+        c_list_for_each(iter, list)
+                ++n;
+
         return n;
 }
 
 /**
- * c_list_contains() - whether an item is linked in a certain list
+ * c_list_contains() - check whether an entry is linked in a certain list
  * @list:               list to operate on
- * @what:               the list entry to find
+ * @what:               entry to look for
  *
- * Searches @list whether @what is a linked entry of the list
- * in O(n). For the head @list, this also returns True.
+ * This checks whether @what is linked into @list. This requires a linear
+ * search through the list, as such runs in O(n). Note that the list-head is
+ * considered part of the list, and hence this returns true if @what equals
+ * @list.
  *
- * Return: True if @what is in @list
+ * Note that this function is meant for debugging purposes, and consistency
+ * checks. You should always be aware whether your objects are linked in a
+ * specific list.
+ *
+ * Return: True if @what is in @list, false otherwise.
  */
 static inline _Bool c_list_contains(const CList *list, const CList *what) {
-        const CList *iter = list;
+        const CList *iter;
 
-        do {
-                if (iter == what)
+        c_list_for_each(iter, list)
+                if (what == iter)
                         return 1;
-                iter = iter->next;
-        } while (iter != list);
-        return 0;
+
+        return what == list;
 }
 
 #ifdef __cplusplus

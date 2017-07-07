@@ -36,7 +36,7 @@ build_test_config (void)
 	NMPlatformIP4Route route;
 
 	/* Build up the config to subtract */
-	config = nm_ip4_config_new (1);
+	config = nmtst_ip4_config_new (1);
 
 	addr = *nmtst_platform_ip4_address ("192.168.1.10", "1.2.3.4", 24);
 	nm_ip4_config_add_address (config, &addr);
@@ -121,7 +121,7 @@ test_subtract (void)
 	g_assert_cmpuint (nm_ip4_config_get_gateway (dst), ==, 0);
 
 	g_assert_cmpuint (nm_ip4_config_get_num_routes (dst), ==, 1);
-	test_route = nm_ip4_config_get_route (dst, 0);
+	test_route = _nmtst_nm_ip4_config_get_route (dst, 0);
 	g_assert (test_route != NULL);
 	g_assert_cmpuint (test_route->network, ==, nmtst_inet4_from_string (expected_route_dest));
 	g_assert_cmpuint (test_route->plen, ==, expected_route_plen);
@@ -156,8 +156,8 @@ test_compare_with_source (void)
 	NMPlatformIP4Address addr;
 	NMPlatformIP4Route route;
 
-	a = nm_ip4_config_new (1);
-	b = nm_ip4_config_new (2);
+	a = nmtst_ip4_config_new (1);
+	b = nmtst_ip4_config_new (2);
 
 	/* Address */
 	addr = *nmtst_platform_ip4_address ("1.2.3.4", NULL, 24);
@@ -189,7 +189,7 @@ test_add_address_with_source (void)
 	NMPlatformIP4Address addr;
 	const NMPlatformIP4Address *test_addr;
 
-	a = nm_ip4_config_new (1);
+	a = nmtst_ip4_config_new (1);
 
 	/* Test that a higher priority source is not overwritten */
 	addr = *nmtst_platform_ip4_address ("1.2.3.4", NULL, 24);
@@ -229,34 +229,34 @@ test_add_route_with_source (void)
 	NMPlatformIP4Route route;
 	const NMPlatformIP4Route *test_route;
 
-	a = nm_ip4_config_new (1);
+	a = nmtst_ip4_config_new (1);
 
 	/* Test that a higher priority source is not overwritten */
 	route = *nmtst_platform_ip4_route ("1.2.3.4", 24, "1.2.3.1");
 	route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	nm_ip4_config_add_route (a, &route);
 
-	test_route = nm_ip4_config_get_route (a, 0);
+	test_route = _nmtst_nm_ip4_config_get_route (a, 0);
 	g_assert_cmpint (test_route->rt_source, ==, NM_IP_CONFIG_SOURCE_USER);
 
 	route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
 	nm_ip4_config_add_route (a, &route);
 
-	test_route = nm_ip4_config_get_route (a, 0);
+	test_route = _nmtst_nm_ip4_config_get_route (a, 0);
 	g_assert_cmpint (test_route->rt_source, ==, NM_IP_CONFIG_SOURCE_USER);
 
 	/* Test that a lower priority address source is overwritten */
-	nm_ip4_config_del_route (a, 0);
+	_nmtst_nm_ip4_config_del_route (a, 0);
 	route.rt_source = NM_IP_CONFIG_SOURCE_KERNEL;
 	nm_ip4_config_add_route (a, &route);
 
-	test_route = nm_ip4_config_get_route (a, 0);
+	test_route = _nmtst_nm_ip4_config_get_route (a, 0);
 	g_assert_cmpint (test_route->rt_source, ==, NM_IP_CONFIG_SOURCE_KERNEL);
 
 	route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	nm_ip4_config_add_route (a, &route);
 
-	test_route = nm_ip4_config_get_route (a, 0);
+	test_route = _nmtst_nm_ip4_config_get_route (a, 0);
 	g_assert_cmpint (test_route->rt_source, ==, NM_IP_CONFIG_SOURCE_USER);
 
 	g_object_unref (a);
@@ -306,7 +306,7 @@ test_strip_search_trailing_dot (void)
 {
 	NMIP4Config *config;
 
-	config = nm_ip4_config_new (1);
+	config = nmtst_ip4_config_new (1);
 
 	nm_ip4_config_add_search (config, ".");
 	nm_ip4_config_add_search (config, "foo");

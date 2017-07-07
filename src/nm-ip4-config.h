@@ -24,6 +24,32 @@
 #include "nm-exported-object.h"
 #include "nm-setting-ip4-config.h"
 
+#include "nm-utils/nm-dedup-multi.h"
+
+/*****************************************************************************/
+
+typedef struct {
+	NMDedupMultiIdxType parent;
+	NMPObjectType obj_type;
+} NMIPConfigDedupMultiIdxType;
+
+void nm_ip_config_dedup_multi_idx_type_init (NMIPConfigDedupMultiIdxType *idx_type, NMPObjectType obj_type);
+
+void nm_ip4_config_iter_ip4_route_init (NMDedupMultiIter *iter, const NMIP4Config *self);
+gboolean nm_ip4_config_iter_ip4_route_next (NMDedupMultiIter *iter, const NMPlatformIP4Route **out_route);
+
+#define nm_ip4_config_iter_ip4_route_for_each(iter, self, route) \
+	for (nm_ip4_config_iter_ip4_route_init ((iter), (self)); \
+	     nm_ip4_config_iter_ip4_route_next ((iter), (route)); \
+	     )
+
+gboolean nm_ip_config_obj_id_equal_ip4_route (const NMPlatformIP4Route *r_a,
+                                              const NMPlatformIP4Route *r_b);
+gboolean nm_ip_config_obj_id_equal_ip6_route (const NMPlatformIP6Route *r_a,
+                                              const NMPlatformIP6Route *r_b);
+
+/*****************************************************************************/
+
 #define NM_TYPE_IP4_CONFIG (nm_ip4_config_get_type ())
 #define NM_IP4_CONFIG(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_IP4_CONFIG, NMIP4Config))
 #define NM_IP4_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_IP4_CONFIG, NMIP4ConfigClass))
@@ -34,6 +60,7 @@
 typedef struct _NMIP4ConfigClass NMIP4ConfigClass;
 
 /* internal */
+#define NM_IP4_CONFIG_MULTI_IDX "multi-idx"
 #define NM_IP4_CONFIG_IFINDEX "ifindex"
 
 /* public*/
@@ -54,12 +81,14 @@ typedef struct _NMIP4ConfigClass NMIP4ConfigClass;
 GType nm_ip4_config_get_type (void);
 
 
-NMIP4Config * nm_ip4_config_new (int ifindex);
+NMIP4Config * nm_ip4_config_new (NMDedupMultiIndex *multi_idx,
+                                 int ifindex);
 
 int nm_ip4_config_get_ifindex (const NMIP4Config *config);
 
+NMDedupMultiIndex *nm_ip4_config_get_multi_idx (const NMIP4Config *self);
 
-NMIP4Config *nm_ip4_config_capture (NMPlatform *platform, int ifindex, gboolean capture_resolv_conf);
+NMIP4Config *nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int ifindex, gboolean capture_resolv_conf);
 gboolean nm_ip4_config_commit (const NMIP4Config *config, NMPlatform *platform, NMRouteManager *route_manager, int ifindex, gboolean routes_full_sync, gint64 default_route_metric);
 void nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIPConfig *setting, guint32 default_route_metric);
 NMSetting *nm_ip4_config_create_setting (const NMIP4Config *config);
@@ -90,9 +119,9 @@ gboolean nm_ip4_config_address_exists (const NMIP4Config *config, const NMPlatfo
 
 void nm_ip4_config_reset_routes (NMIP4Config *config);
 void nm_ip4_config_add_route (NMIP4Config *config, const NMPlatformIP4Route *route);
-void nm_ip4_config_del_route (NMIP4Config *config, guint i);
+void _nmtst_nm_ip4_config_del_route (NMIP4Config *config, guint i);
 guint nm_ip4_config_get_num_routes (const NMIP4Config *config);
-const NMPlatformIP4Route *nm_ip4_config_get_route (const NMIP4Config *config, guint i);
+const NMPlatformIP4Route *_nmtst_nm_ip4_config_get_route (const NMIP4Config *config, guint i);
 
 const NMPlatformIP4Route *nm_ip4_config_get_direct_route_for_host (const NMIP4Config *config, guint32 host);
 

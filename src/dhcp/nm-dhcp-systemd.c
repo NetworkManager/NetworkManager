@@ -28,6 +28,8 @@
 #include <ctype.h>
 #include <net/if_arp.h>
 
+#include "nm-utils/nm-dedup-multi.h"
+
 #include "nm-utils.h"
 #include "nm-dhcp-utils.h"
 #include "NetworkManagerUtils.h"
@@ -216,7 +218,8 @@ G_STMT_START { \
 } G_STMT_END
 
 static NMIP4Config *
-lease_to_ip4_config (const char *iface,
+lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
+                     const char *iface,
                      int ifindex,
                      sd_dhcp_lease *lease,
                      GHashTable *options,
@@ -244,7 +247,7 @@ lease_to_ip4_config (const char *iface,
 
 	g_return_val_if_fail (lease != NULL, NULL);
 
-	ip4_config = nm_ip4_config_new (ifindex);
+	ip4_config = nm_ip4_config_new (multi_idx, ifindex);
 
 	/* Address */
 	sd_dhcp_lease_get_address (lease, &tmp_addr);
@@ -433,7 +436,8 @@ get_leasefile_path (const char *iface, const char *uuid, gboolean ipv6)
 }
 
 static GSList *
-nm_dhcp_systemd_get_lease_ip_configs (const char *iface,
+nm_dhcp_systemd_get_lease_ip_configs (NMDedupMultiIndex *multi_idx,
+                                      const char *iface,
                                       int ifindex,
                                       const char *uuid,
                                       gboolean ipv6,
@@ -451,7 +455,7 @@ nm_dhcp_systemd_get_lease_ip_configs (const char *iface,
 	path = get_leasefile_path (iface, uuid, FALSE);
 	r = dhcp_lease_load (&lease, path);
 	if (r == 0 && lease) {
-		ip4_config = lease_to_ip4_config (iface, ifindex, lease, NULL, default_route_metric, FALSE, NULL);
+		ip4_config = lease_to_ip4_config (multi_idx, iface, ifindex, lease, NULL, default_route_metric, FALSE, NULL);
 		if (ip4_config)
 			leases = g_slist_append (leases, ip4_config);
 		sd_dhcp_lease_unref (lease);
@@ -505,7 +509,8 @@ bound4_handle (NMDhcpSystemd *self)
 	_LOGD ("lease available");
 
 	options = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
-	ip4_config = lease_to_ip4_config (iface,
+	ip4_config = lease_to_ip4_config (nm_dhcp_client_get_multi_idx (NM_DHCP_CLIENT (self)),
+	                                  iface,
 	                                  nm_dhcp_client_get_ifindex (NM_DHCP_CLIENT (self)),
 	                                  lease,
 	                                  options,
@@ -725,7 +730,8 @@ error:
 }
 
 static NMIP6Config *
-lease_to_ip6_config (const char *iface,
+lease_to_ip6_config (NMDedupMultiIndex *multi_idx,
+                     const char *iface,
                      int ifindex,
                      sd_dhcp6_lease *lease,
                      GHashTable *options,
@@ -743,7 +749,7 @@ lease_to_ip6_config (const char *iface,
 	gint32 ts;
 
 	g_return_val_if_fail (lease, NULL);
-	ip6_config = nm_ip6_config_new (ifindex);
+	ip6_config = nm_ip6_config_new (multi_idx, ifindex);
 	ts = nm_utils_get_monotonic_timestamp_s ();
 
 	/* Addresses */
@@ -830,7 +836,8 @@ bound6_handle (NMDhcpSystemd *self)
 	_LOGD ("lease available");
 
 	options = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
-	ip6_config = lease_to_ip6_config (iface,
+	ip6_config = lease_to_ip6_config (nm_dhcp_client_get_multi_idx (NM_DHCP_CLIENT (self)),
+	                                  iface,
 	                                  nm_dhcp_client_get_ifindex (NM_DHCP_CLIENT (self)),
 	                                  lease,
 	                                  options,

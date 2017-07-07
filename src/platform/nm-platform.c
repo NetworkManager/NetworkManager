@@ -32,12 +32,16 @@
 #include <linux/if_tun.h>
 #include <linux/if_tunnel.h>
 #include <linux/rtnetlink.h>
+#include <libudev.h>
 
 #include "nm-utils.h"
 #include "nm-core-internal.h"
+#include "nm-utils/nm-dedup-multi.h"
+#include "nm-utils/nm-udev-utils.h"
 
 #include "nm-core-utils.h"
 #include "nm-platform-utils.h"
+#include "nm-platform-private.h"
 #include "nmp-object.h"
 #include "nmp-netns.h"
 
@@ -79,12 +83,16 @@ static guint signals[_NM_PLATFORM_SIGNAL_ID_LAST] = { 0 };
 enum {
 	PROP_0,
 	PROP_NETNS_SUPPORT,
+	PROP_USE_UDEV,
 	PROP_LOG_WITH_PTR,
 	LAST_PROP,
 };
 
 typedef struct _NMPlatformPrivate {
+	bool use_udev:1;
 	bool log_with_ptr:1;
+	NMDedupMultiIndex *multi_idx;
+	NMPCache *cache;
 } NMPlatformPrivate;
 
 G_DEFINE_TYPE (NMPlatform, nm_platform, G_TYPE_OBJECT)
@@ -92,6 +100,12 @@ G_DEFINE_TYPE (NMPlatform, nm_platform, G_TYPE_OBJECT)
 #define NM_PLATFORM_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR (self, NMPlatform, NM_IS_PLATFORM)
 
 /*****************************************************************************/
+
+gboolean
+nm_platform_get_use_udev (NMPlatform *self)
+{
+	return NM_PLATFORM_GET_PRIVATE (self)->use_udev;
+}
 
 gboolean
 nm_platform_get_log_with_ptr (NMPlatform *self)
@@ -189,6 +203,16 @@ nm_platform_get ()
 	g_assert (singleton_instance);
 
 	return singleton_instance;
+}
+
+/*****************************************************************************/
+
+NMDedupMultiIndex *
+nm_platform_get_multi_idx (NMPlatform *self)
+{
+	g_return_val_if_fail (NM_IS_PLATFORM (self), NULL);
+
+	return NM_PLATFORM_GET_PRIVATE (self)->multi_idx;
 }
 
 /*****************************************************************************/
@@ -440,8 +464,8 @@ _link_get_all_presort (gconstpointer  p_a,
                        gconstpointer  p_b,
                        gpointer       sort_by_name)
 {
-	const NMPlatformLink *a = p_a;
-	const NMPlatformLink *b = p_b;
+	const NMPlatformLink *a = NMP_OBJECT_CAST_LINK (*((const NMPObject **) p_a));
+	const NMPlatformLink *b = NMP_OBJECT_CAST_LINK (*((const NMPObject **) p_b));
 
 	/* Loopback always first */
 	if (a->ifindex == 1)
@@ -463,43 +487,56 @@ _link_get_all_presort (gconstpointer  p_a,
 
 /**
  * nm_platform_link_get_all:
- * self: platform instance
+ * @self: platform instance
+ * @sort_by_name: whether to sort by name or ifindex.
  *
  * Retrieve a snapshot of configuration for all links at once. The result is
- * owned by the caller and should be freed with g_array_unref().
+ * owned by the caller and should be freed with g_ptr_array_unref().
  */
-GArray *
+GPtrArray *
 nm_platform_link_get_all (NMPlatform *self, gboolean sort_by_name)
 {
-	GArray *links, *result;
-	guint i, j, nresult;
-	GHashTable *unseen;
-	NMPlatformLink *item;
+	gs_unref_ptrarray GPtrArray *links = NULL;
+	GPtrArray *result;
+	guint i, nresult;
+	gs_unref_hashtable GHashTable *unseen = NULL;
+	const NMPlatformLink *item;
+	NMPLookup lookup;
 
 	_CHECK_SELF (self, klass, NULL);
 
-	links = klass->link_get_all (self);
+	nmp_lookup_init_obj_type (&lookup, NMP_OBJECT_TYPE_LINK);
+	links = nm_dedup_multi_objs_to_ptr_array_head (nm_platform_lookup (self, &lookup),
+	                                               NULL, NULL);
+	if (!links)
+		return NULL;
 
-	if (!links || links->len == 0)
-		return links;
+	for (i = 0; i < links->len; ) {
+		if (!nmp_object_is_visible (links->pdata[i]))
+			g_ptr_array_remove_index_fast (links, i);
+		else
+			i++;
+	}
+
+	if (links->len == 0)
+		return NULL;
 
 	/* first sort the links by their ifindex or name. Below we will sort
 	 * further by moving children/slaves to the end. */
-	g_array_sort_with_data (links, _link_get_all_presort, GINT_TO_POINTER (sort_by_name));
+	g_ptr_array_sort_with_data (links, _link_get_all_presort, GINT_TO_POINTER (sort_by_name));
 
 	unseen = g_hash_table_new (g_direct_hash, g_direct_equal);
 	for (i = 0; i < links->len; i++) {
-		item = &g_array_index (links, NMPlatformLink, i);
-
+		item = NMP_OBJECT_CAST_LINK (links->pdata[i]);
 		nm_assert (item->ifindex > 0);
 		if (!nm_g_hash_table_insert (unseen, GINT_TO_POINTER (item->ifindex), NULL))
 			nm_assert_not_reached ();
 	}
 
-#ifndef G_DISABLE_ASSERT
+#if NM_MORE_ASSERTS
 	/* Ensure that link_get_all returns a consistent and valid result. */
 	for (i = 0; i < links->len; i++) {
-		item = &g_array_index (links, NMPlatformLink, i);
+		item = NMP_OBJECT_CAST_LINK (links->pdata[i]);
 
 		if (!item->ifindex)
 			continue;
@@ -519,53 +556,74 @@ nm_platform_link_get_all (NMPlatform *self, gboolean sort_by_name)
 #endif
 
 	/* Re-order the links list such that children/slaves come after all ancestors */
-	nresult = g_hash_table_size (unseen);
-	result = g_array_sized_new (TRUE, TRUE, sizeof (NMPlatformLink), nresult);
-	g_array_set_size (result, nresult);
+	nm_assert (g_hash_table_size (unseen) == links->len);
+	nresult = links->len;
+	result = g_ptr_array_new_full (nresult, (GDestroyNotify) nmp_object_unref);
 
-	j = 0;
-	do {
+	while (TRUE) {
 		gboolean found_something = FALSE;
 		guint first_idx = G_MAXUINT;
 
 		for (i = 0; i < links->len; i++) {
-			item = &g_array_index (links, NMPlatformLink, i);
+			item = NMP_OBJECT_CAST_LINK (links->pdata[i]);
 
-			if (!item->ifindex)
+			if (!item)
 				continue;
-
-			if (first_idx == G_MAXUINT)
-				first_idx = i;
 
 			g_assert (g_hash_table_contains (unseen, GINT_TO_POINTER (item->ifindex)));
 
 			if (item->master > 0 && g_hash_table_contains (unseen, GINT_TO_POINTER (item->master)))
-				continue;
+				goto skip;
 			if (item->parent > 0 && g_hash_table_contains (unseen, GINT_TO_POINTER (item->parent)))
-				continue;
+				goto skip;
 
 			g_hash_table_remove (unseen, GINT_TO_POINTER (item->ifindex));
-			g_array_index (result, NMPlatformLink, j++) = *item;
-			item->ifindex = 0;
+			g_ptr_array_add (result, links->pdata[i]);
+			links->pdata[i] = NULL;
 			found_something = TRUE;
+			continue;
+skip:
+			if (first_idx == G_MAXUINT)
+				first_idx = i;
 		}
 
-		if (!found_something) {
+		if (found_something) {
+			if (first_idx == G_MAXUINT)
+				break;
+		} else {
+			nm_assert (first_idx != G_MAXUINT);
 			/* There is a loop, pop the first (remaining) element from the list.
 			 * This can happen for veth pairs where each peer is parent of the other end. */
-			item = &g_array_index (links, NMPlatformLink, first_idx);
-
+			item = NMP_OBJECT_CAST_LINK (links->pdata[first_idx]);
 			g_hash_table_remove (unseen, GINT_TO_POINTER (item->ifindex));
-			g_array_index (result, NMPlatformLink, j++) = *item;
-			item->ifindex = 0;
+			g_ptr_array_add (result, links->pdata[first_idx]);
+			links->pdata[first_idx] = NULL;
 		}
-	} while (j < nresult);
-
-	g_hash_table_destroy (unseen);
-	g_array_free (links, TRUE);
+		nm_assert (result->len < nresult);
+	}
+	nm_assert (result->len == nresult);
 
 	return result;
 }
+
+/*****************************************************************************/
+
+const NMPObject *
+nm_platform_link_get_obj (NMPlatform *self,
+                          int ifindex,
+                          gboolean visible_only)
+{
+	const NMPObject *obj_cache;
+
+	obj_cache = nmp_cache_lookup_link (nm_platform_get_cache (self), ifindex);
+	if (   !obj_cache
+	    || (   visible_only
+	        && !nmp_object_is_visible (obj_cache)))
+		return NULL;
+	return obj_cache;
+}
+
+/*****************************************************************************/
 
 /**
  * nm_platform_link_get:
@@ -582,11 +640,15 @@ nm_platform_link_get_all (NMPlatform *self, gboolean sort_by_name)
 const NMPlatformLink *
 nm_platform_link_get (NMPlatform *self, int ifindex)
 {
+	const NMPObject *obj;
+
 	_CHECK_SELF (self, klass, NULL);
 
-	if (ifindex > 0)
-		return klass->link_get (self, ifindex);
-	return NULL;
+	if (ifindex <= 0)
+		return NULL;
+
+	obj = nm_platform_link_get_obj (self, ifindex, TRUE);
+	return NMP_OBJECT_CAST_LINK (obj);
 }
 
 /**
@@ -599,11 +661,27 @@ nm_platform_link_get (NMPlatform *self, int ifindex)
 const NMPlatformLink *
 nm_platform_link_get_by_ifname (NMPlatform *self, const char *ifname)
 {
+	const NMPObject *obj;
+
 	_CHECK_SELF (self, klass, NULL);
 
-	if (ifname && *ifname)
-		return klass->link_get_by_ifname (self, ifname);
-	return NULL;
+	if (!ifname || !*ifname)
+		return NULL;
+
+	obj = nmp_cache_lookup_link_full (nm_platform_get_cache (self),
+	                                  0, ifname, TRUE, NM_LINK_TYPE_NONE, NULL, NULL);
+	return NMP_OBJECT_CAST_LINK (obj);
+}
+
+struct _nm_platform_link_get_by_address_data {
+	gconstpointer address;
+	guint8 length;
+};
+
+static gboolean
+_nm_platform_link_get_by_address_match_link (const NMPObject *obj, struct _nm_platform_link_get_by_address_data *d)
+{
+	return obj->link.addr.len == d->length && !memcmp (obj->link.addr.data, d->address, d->length);
 }
 
 /**
@@ -620,15 +698,26 @@ nm_platform_link_get_by_address (NMPlatform *self,
                                  gconstpointer address,
                                  size_t length)
 {
+	const NMPObject *obj;
+	struct _nm_platform_link_get_by_address_data d = {
+		.address = address,
+		.length = length,
+	};
+
 	_CHECK_SELF (self, klass, NULL);
 
-	g_return_val_if_fail (length == 0 || address, NULL);
-	if (length > 0) {
-		if (length > NM_UTILS_HWADDR_LEN_MAX)
-			g_return_val_if_reached (NULL);
-		return klass->link_get_by_address (self, address, length);
-	}
-	return NULL;
+	if (length == 0)
+		return NULL;
+
+	if (length > NM_UTILS_HWADDR_LEN_MAX)
+		g_return_val_if_reached (NULL);
+	if (!address)
+		g_return_val_if_reached (NULL);
+
+	obj = nmp_cache_lookup_link_full (nm_platform_get_cache (self),
+	                                  0, NULL, TRUE, NM_LINK_TYPE_NONE,
+	                                  (NMPObjectMatchFn) _nm_platform_link_get_by_address_match_link, &d);
+	return NMP_OBJECT_CAST_LINK (obj);
 }
 
 static NMPlatformError
@@ -858,9 +947,26 @@ nm_platform_link_get_type (NMPlatform *self, int ifindex)
 const char *
 nm_platform_link_get_type_name (NMPlatform *self, int ifindex)
 {
+	const NMPObject *obj;
+
 	_CHECK_SELF (self, klass, NULL);
 
-	return klass->link_get_type_name (self, ifindex);
+	obj = nm_platform_link_get_obj (self, ifindex, TRUE);
+
+	if (!obj)
+		return NULL;
+
+	if (obj->link.type != NM_LINK_TYPE_UNKNOWN) {
+		/* We could detect the @link_type. In this case the function returns
+		 * our internel module names, which differs from rtnl_link_get_type():
+		 *   - NM_LINK_TYPE_INFINIBAND (gives "infiniband", instead of "ipoib")
+		 *   - NM_LINK_TYPE_TAP (gives "tap", instead of "tun").
+		 * Note that this functions is only used by NMDeviceGeneric to
+		 * set type_description. */
+		return nm_link_type_to_string (obj->link.type);
+	}
+	/* Link type not detected. Fallback to rtnl_link_get_type()/IFLA_INFO_KIND. */
+	return obj->link.kind ?: "unknown";
 }
 
 /**
@@ -875,11 +981,26 @@ nm_platform_link_get_type_name (NMPlatform *self, int ifindex)
 gboolean
 nm_platform_link_get_unmanaged (NMPlatform *self, int ifindex, gboolean *unmanaged)
 {
+	const NMPObject *link;
+	struct udev_device *udevice = NULL;
+	const char *uproperty;
+
 	_CHECK_SELF (self, klass, FALSE);
 
-	if (klass->link_get_unmanaged)
-		return klass->link_get_unmanaged (self, ifindex, unmanaged);
-	return FALSE;
+	link = nmp_cache_lookup_link (nm_platform_get_cache (self), ifindex);
+	if (!link)
+		return FALSE;
+
+	udevice = link->_link.udev.device;
+	if (!udevice)
+		return FALSE;
+
+	uproperty = udev_device_get_property_value (udevice, "NM_UNMANAGED");
+	if (!uproperty)
+		return FALSE;
+
+	*unmanaged = nm_udev_utils_property_as_boolean (uproperty);
+	return TRUE;
 }
 
 /**
@@ -1025,13 +1146,14 @@ nm_platform_link_get_udi (NMPlatform *self, int ifindex)
 struct udev_device *
 nm_platform_link_get_udev_device (NMPlatform *self, int ifindex)
 {
+	const NMPObject *obj_cache;
+
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex >= 0, NULL);
 
-	if (klass->link_get_udev_device)
-		return klass->link_get_udev_device (self, ifindex);
-	return NULL;
+	obj_cache = nm_platform_link_get_obj (self, ifindex, FALSE);
+	return obj_cache ? obj_cache->_link.udev.device : NULL;
 }
 
 /**
@@ -1531,13 +1653,28 @@ nm_platform_link_can_assume (NMPlatform *self, int ifindex)
 const NMPObject *
 nm_platform_link_get_lnk (NMPlatform *self, int ifindex, NMLinkType link_type, const NMPlatformLink **out_link)
 {
+	const NMPObject *obj;
+
 	_CHECK_SELF (self, klass, FALSE);
 
 	NM_SET_OUT (out_link, NULL);
 
 	g_return_val_if_fail (ifindex > 0, NULL);
 
-	return klass->link_get_lnk (self, ifindex, link_type, out_link);
+	obj = nm_platform_link_get_obj (self, ifindex, TRUE);
+	if (!obj)
+		return NULL;
+
+	NM_SET_OUT (out_link, &obj->link);
+
+	if (!obj->_link.netlink.lnk)
+		return NULL;
+	if (   link_type != NM_LINK_TYPE_NONE
+	    && (   link_type != obj->link.type
+	        || link_type != NMP_OBJECT_GET_CLASS (obj->_link.netlink.lnk)->lnk_link_type))
+		return NULL;
+
+	return obj->_link.netlink.lnk;
 }
 
 static gconstpointer
@@ -2629,6 +2766,52 @@ nm_platform_ethtool_get_link_settings (NMPlatform *self, int ifindex, gboolean *
 
 /*****************************************************************************/
 
+const NMDedupMultiHeadEntry *
+nm_platform_lookup (NMPlatform *self,
+                    const NMPLookup *lookup)
+{
+	return nmp_cache_lookup (nm_platform_get_cache (self),
+	                         lookup);
+}
+
+gboolean
+nm_platform_lookup_predicate_routes_skip_rtprot_kernel (const NMPObject *obj,
+                                                        gpointer user_data)
+{
+	nm_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ROUTE,
+	                                                 NMP_OBJECT_TYPE_IP6_ROUTE));
+	return obj->ip_route.rt_source != NM_IP_CONFIG_SOURCE_RTPROT_KERNEL;
+}
+
+/**
+ * nm_platform_lookup_clone:
+ * @self:
+ * @lookup:
+ * @predicate: if given, only objects for which @predicate returns %TRUE are included
+ *   in the result.
+ * @user_data: user data for @predicate
+ *
+ * Returns the result of lookup in a GPtrArray. The result array contains
+ * references objects from the cache, it's destroy function will unref them.
+ *
+ * The user must unref the GPtrArray, which will also unref the NMPObject
+ * elements.
+ *
+ * The elements in the array *must* not be modified.
+ *
+ * Returns: the result of the lookup.
+ */
+GPtrArray *
+nm_platform_lookup_clone (NMPlatform *self,
+                          const NMPLookup *lookup,
+                          gboolean (*predicate) (const NMPObject *obj, gpointer user_data),
+                          gpointer user_data)
+{
+	return nm_dedup_multi_objs_to_ptr_array_head (nm_platform_lookup (self, lookup),
+	                                              (NMDedupMultiFcnSelectPredicate) predicate,
+	                                              user_data);
+}
+
 void
 nm_platform_ip4_address_set_addr (NMPlatformIP4Address *addr, in_addr_t address, guint8 plen)
 {
@@ -2648,6 +2831,20 @@ nm_platform_ip6_address_get_peer (const NMPlatformIP6Address *addr)
 	return &addr->peer_address;
 }
 
+static GArray *
+ipx_address_get_all (NMPlatform *self, int ifindex, NMPObjectType obj_type)
+{
+	NMPLookup lookup;
+
+	nm_assert (NM_IN_SET (obj_type, NMP_OBJECT_TYPE_IP4_ADDRESS, NMP_OBJECT_TYPE_IP6_ADDRESS));
+	nmp_lookup_init_addrroute (&lookup,
+	                           obj_type,
+	                           ifindex);
+	return nmp_cache_lookup_to_array (nmp_cache_lookup (nm_platform_get_cache (self), &lookup),
+	                                  obj_type,
+	                                  FALSE /*addresses are always visible. */);
+}
+
 GArray *
 nm_platform_ip4_address_get_all (NMPlatform *self, int ifindex)
 {
@@ -2655,7 +2852,7 @@ nm_platform_ip4_address_get_all (NMPlatform *self, int ifindex)
 
 	g_return_val_if_fail (ifindex > 0, NULL);
 
-	return klass->ip4_address_get_all (self, ifindex);
+	return ipx_address_get_all (self, ifindex, NMP_OBJECT_TYPE_IP4_ADDRESS);
 }
 
 GArray *
@@ -2665,7 +2862,7 @@ nm_platform_ip6_address_get_all (NMPlatform *self, int ifindex)
 
 	g_return_val_if_fail (ifindex > 0, NULL);
 
-	return klass->ip6_address_get_all (self, ifindex);
+	return ipx_address_get_all (self, ifindex, NMP_OBJECT_TYPE_IP6_ADDRESS);
 }
 
 gboolean
@@ -2780,19 +2977,31 @@ nm_platform_ip6_address_delete (NMPlatform *self, int ifindex, struct in6_addr a
 const NMPlatformIP4Address *
 nm_platform_ip4_address_get (NMPlatform *self, int ifindex, in_addr_t address, guint8 plen, guint32 peer_address)
 {
+	NMPObject obj_id;
+	const NMPObject *obj;
+
 	_CHECK_SELF (self, klass, NULL);
 
 	g_return_val_if_fail (plen <= 32, NULL);
 
-	return klass->ip4_address_get (self, ifindex, address, plen, peer_address);
+	nmp_object_stackinit_id_ip4_address (&obj_id, ifindex, address, plen, peer_address);
+	obj = nmp_cache_lookup_obj (nm_platform_get_cache (self), &obj_id);
+	nm_assert (!obj || nmp_object_is_visible (obj));
+	return NMP_OBJECT_CAST_IP4_ADDRESS (obj);
 }
 
 const NMPlatformIP6Address *
 nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr address)
 {
+	NMPObject obj_id;
+	const NMPObject *obj;
+
 	_CHECK_SELF (self, klass, NULL);
 
-	return klass->ip6_address_get (self, ifindex, address);
+	nmp_object_stackinit_id_ip6_address (&obj_id, ifindex, &address);
+	obj = nmp_cache_lookup_obj (nm_platform_get_cache (self), &obj_id);
+	nm_assert (!obj || nmp_object_is_visible (obj));
+	return NMP_OBJECT_CAST_IP6_ADDRESS (obj);
 }
 
 static const NMPlatformIP4Address *
@@ -3130,26 +3339,6 @@ nm_platform_address_flush (NMPlatform *self, int ifindex)
 
 /*****************************************************************************/
 
-GArray *
-nm_platform_ip4_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteFlags flags)
-{
-	_CHECK_SELF (self, klass, NULL);
-
-	g_return_val_if_fail (ifindex >= 0, NULL);
-
-	return klass->ip4_route_get_all (self, ifindex, flags);
-}
-
-GArray *
-nm_platform_ip6_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteFlags flags)
-{
-	_CHECK_SELF (self, klass, NULL);
-
-	g_return_val_if_fail (ifindex >= 0, NULL);
-
-	return klass->ip6_route_get_all (self, ifindex, flags);
-}
-
 /**
  * nm_platform_ip4_route_add:
  * @self:
@@ -3228,17 +3417,33 @@ nm_platform_ip6_route_delete (NMPlatform *self, int ifindex, struct in6_addr net
 const NMPlatformIP4Route *
 nm_platform_ip4_route_get (NMPlatform *self, int ifindex, in_addr_t network, guint8 plen, guint32 metric)
 {
+	NMPObject obj_id;
+	const NMPObject *obj;
+
 	_CHECK_SELF (self, klass, FALSE);
 
-	return klass->ip4_route_get (self ,ifindex, network, plen, metric);
+	nmp_object_stackinit_id_ip4_route (&obj_id, ifindex, network, plen, metric);
+	obj = nmp_cache_lookup_obj (nm_platform_get_cache (self), &obj_id);
+	if (nmp_object_is_visible (obj))
+		return &obj->ip4_route;
+	return NULL;
 }
 
 const NMPlatformIP6Route *
 nm_platform_ip6_route_get (NMPlatform *self, int ifindex, struct in6_addr network, guint8 plen, guint32 metric)
 {
+	NMPObject obj_id;
+	const NMPObject *obj;
+
 	_CHECK_SELF (self, klass, FALSE);
 
-	return klass->ip6_route_get (self, ifindex, network, plen, metric);
+	metric = nm_utils_ip6_route_metric_normalize (metric);
+
+	nmp_object_stackinit_id_ip6_route (&obj_id, ifindex, &network, plen, metric);
+	obj = nmp_cache_lookup_obj (nm_platform_get_cache (self), &obj_id);
+	if (nmp_object_is_visible (obj))
+		return &obj->ip6_route;
+	return NULL;
 }
 
 /*****************************************************************************/
@@ -4130,6 +4335,39 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
             return c < 0 ? -1 : 1;                          \
     } G_STMT_END
 
+guint
+nm_platform_link_hash (const NMPlatformLink *obj)
+{
+	guint h = 99413953;
+	guint8 i8;
+
+	h = NM_HASH_COMBINE (h, obj->ifindex);
+	h = NM_HASH_COMBINE (h, obj->type);
+	h = NM_HASH_COMBINE (h, g_str_hash (obj->name));
+	h = NM_HASH_COMBINE (h, obj->master);
+	h = NM_HASH_COMBINE (h, obj->parent);
+	h = NM_HASH_COMBINE (h, obj->n_ifi_flags);
+	h = NM_HASH_COMBINE (h, obj->connected);
+	h = NM_HASH_COMBINE (h, obj->mtu);
+	h = NM_HASH_COMBINE (h, !!obj->initialized);
+	h = NM_HASH_COMBINE (h, obj->arptype);
+	h = NM_HASH_COMBINE (h, obj->addr.len);
+	h = NM_HASH_COMBINE (h, obj->inet6_addr_gen_mode_inv);
+	if (obj->kind)
+		h = NM_HASH_COMBINE (h, g_str_hash (obj->kind));
+	if (obj->driver)
+		h = NM_HASH_COMBINE (h, g_str_hash (obj->driver));
+	for (i8 = 0; i8 < obj->addr.len; i8++)
+		h = NM_HASH_COMBINE (h, obj->addr.data[i8]);
+	for (i8 = 0; i8 < sizeof (obj->inet6_token); i8++)
+		h = NM_HASH_COMBINE (h, obj->inet6_token.id_u8[i8]);
+	h = NM_HASH_COMBINE (h, obj->rx_packets);
+	h = NM_HASH_COMBINE (h, obj->rx_bytes);
+	h = NM_HASH_COMBINE (h, obj->tx_packets);
+	h = NM_HASH_COMBINE (h, obj->tx_bytes);
+	return h;
+}
+
 int
 nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 {
@@ -4158,6 +4396,24 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 	return 0;
 }
 
+guint
+nm_platform_lnk_gre_hash (const NMPlatformLnkGre *obj)
+{
+	guint h = 1887023311;
+
+	h = NM_HASH_COMBINE (h, obj->parent_ifindex);
+	h = NM_HASH_COMBINE (h, obj->input_flags);
+	h = NM_HASH_COMBINE (h, obj->output_flags);
+	h = NM_HASH_COMBINE (h, obj->input_key);
+	h = NM_HASH_COMBINE (h, obj->output_key);
+	h = NM_HASH_COMBINE (h, obj->local);
+	h = NM_HASH_COMBINE (h, obj->remote);
+	h = NM_HASH_COMBINE (h, obj->ttl);
+	h = NM_HASH_COMBINE (h, obj->tos);
+	h = NM_HASH_COMBINE (h, !obj->path_mtu_discovery);
+	return h;
+}
+
 int
 nm_platform_lnk_gre_cmp (const NMPlatformLnkGre *a, const NMPlatformLnkGre *b)
 {
@@ -4175,6 +4431,17 @@ nm_platform_lnk_gre_cmp (const NMPlatformLnkGre *a, const NMPlatformLnkGre *b)
 	return 0;
 }
 
+guint
+nm_platform_lnk_infiniband_hash (const NMPlatformLnkInfiniband *obj)
+{
+	guint h = 1748638583;
+
+	h = NM_HASH_COMBINE (h, obj->p_key);
+	if (obj->mode)
+		h = NM_HASH_COMBINE (h, g_str_hash (obj->mode));
+	return h;
+}
+
 int
 nm_platform_lnk_infiniband_cmp (const NMPlatformLnkInfiniband *a, const NMPlatformLnkInfiniband *b)
 {
@@ -4182,6 +4449,22 @@ nm_platform_lnk_infiniband_cmp (const NMPlatformLnkInfiniband *a, const NMPlatfo
 	_CMP_FIELD (a, b, p_key);
 	_CMP_FIELD_STR_INTERNED (a, b, mode);
 	return 0;
+}
+
+guint
+nm_platform_lnk_ip6tnl_hash (const NMPlatformLnkIp6Tnl *obj)
+{
+	guint h = 1651660009;
+
+	h = NM_HASH_COMBINE (h, obj->parent_ifindex);
+	h = NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&obj->local));
+	h = NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&obj->remote));
+	h = NM_HASH_COMBINE (h, obj->ttl);
+	h = NM_HASH_COMBINE (h, obj->tclass);
+	h = NM_HASH_COMBINE (h, obj->encap_limit);
+	h = NM_HASH_COMBINE (h, obj->flow_label);
+	h = NM_HASH_COMBINE (h, obj->proto);
+	return h;
 }
 
 int
@@ -4199,6 +4482,20 @@ nm_platform_lnk_ip6tnl_cmp (const NMPlatformLnkIp6Tnl *a, const NMPlatformLnkIp6
 	return 0;
 }
 
+guint
+nm_platform_lnk_ipip_hash (const NMPlatformLnkIpIp *obj)
+{
+	guint h = 861934429;
+
+	h = NM_HASH_COMBINE (h, obj->parent_ifindex);
+	h = NM_HASH_COMBINE (h, obj->local);
+	h = NM_HASH_COMBINE (h, obj->remote);
+	h = NM_HASH_COMBINE (h, obj->ttl);
+	h = NM_HASH_COMBINE (h, obj->tos);
+	h = NM_HASH_COMBINE (h, obj->path_mtu_discovery);
+	return h;
+}
+
 int
 nm_platform_lnk_ipip_cmp (const NMPlatformLnkIpIp *a, const NMPlatformLnkIpIp *b)
 {
@@ -4210,6 +4507,26 @@ nm_platform_lnk_ipip_cmp (const NMPlatformLnkIpIp *a, const NMPlatformLnkIpIp *b
 	_CMP_FIELD (a, b, tos);
 	_CMP_FIELD_BOOL (a, b, path_mtu_discovery);
 	return 0;
+}
+
+guint
+nm_platform_lnk_macsec_hash (const NMPlatformLnkMacsec *obj)
+{
+	guint h = 226984267;
+
+	h = NM_HASH_COMBINE (h, obj->sci);
+	h = NM_HASH_COMBINE_UINT64 (h, obj->icv_length);
+	h = NM_HASH_COMBINE_UINT64 (h, obj->cipher_suite);
+	h = NM_HASH_COMBINE (h, obj->window);
+	h = NM_HASH_COMBINE (h, obj->encoding_sa);
+	h = NM_HASH_COMBINE (h, obj->validation);
+	h = NM_HASH_COMBINE (h, obj->encrypt);
+	h = NM_HASH_COMBINE (h, obj->protect);
+	h = NM_HASH_COMBINE (h, obj->include_sci);
+	h = NM_HASH_COMBINE (h, obj->es);
+	h = NM_HASH_COMBINE (h, obj->scb);
+	h = NM_HASH_COMBINE (h, obj->replay_protect);
+	return h;
 }
 
 int
@@ -4231,13 +4548,41 @@ nm_platform_lnk_macsec_cmp (const NMPlatformLnkMacsec *a, const NMPlatformLnkMac
 	return 0;
 }
 
+guint
+nm_platform_lnk_macvlan_hash (const NMPlatformLnkMacvlan *obj)
+{
+	guint h = 771014989;
+
+	h = NM_HASH_COMBINE (h, obj->mode);
+	h = NM_HASH_COMBINE (h, obj->no_promisc);
+	h = NM_HASH_COMBINE (h, obj->tap);
+	return h;
+}
+
 int
 nm_platform_lnk_macvlan_cmp (const NMPlatformLnkMacvlan *a, const NMPlatformLnkMacvlan *b)
 {
 	_CMP_SELF (a, b);
 	_CMP_FIELD (a, b, mode);
-	_CMP_FIELD_BOOL (a, b, no_promisc);
+	_CMP_FIELD (a, b, no_promisc);
+	_CMP_FIELD (a, b, tap);
 	return 0;
+}
+
+guint
+nm_platform_lnk_sit_hash (const NMPlatformLnkSit *obj)
+{
+	guint h = 1690154969;
+
+	h = NM_HASH_COMBINE (h, obj->parent_ifindex);
+	h = NM_HASH_COMBINE (h, obj->local);
+	h = NM_HASH_COMBINE (h, obj->remote);
+	h = NM_HASH_COMBINE (h, obj->ttl);
+	h = NM_HASH_COMBINE (h, obj->tos);
+	h = NM_HASH_COMBINE (h, obj->path_mtu_discovery);
+	h = NM_HASH_COMBINE (h, obj->flags);
+	h = NM_HASH_COMBINE (h, obj->proto);
+	return h;
 }
 
 int
@@ -4255,6 +4600,16 @@ nm_platform_lnk_sit_cmp (const NMPlatformLnkSit *a, const NMPlatformLnkSit *b)
 	return 0;
 }
 
+guint
+nm_platform_lnk_vlan_hash (const NMPlatformLnkVlan *obj)
+{
+	guint h = 58751383;
+
+	h = NM_HASH_COMBINE (h, obj->id);
+	h = NM_HASH_COMBINE (h, obj->flags);
+	return h;
+}
+
 int
 nm_platform_lnk_vlan_cmp (const NMPlatformLnkVlan *a, const NMPlatformLnkVlan *b)
 {
@@ -4262,6 +4617,32 @@ nm_platform_lnk_vlan_cmp (const NMPlatformLnkVlan *a, const NMPlatformLnkVlan *b
 	_CMP_FIELD (a, b, id);
 	_CMP_FIELD (a, b, flags);
 	return 0;
+}
+
+guint
+nm_platform_lnk_vxlan_hash (const NMPlatformLnkVxlan *obj)
+{
+	guint h = 461041297;
+
+	h = NM_HASH_COMBINE (h, obj->parent_ifindex);
+	h = NM_HASH_COMBINE (h, obj->id);
+	h = NM_HASH_COMBINE (h, obj->group);
+	h = NM_HASH_COMBINE (h, obj->local);
+	h = NM_HASH_COMBINE_IN6_ADDR (h, &obj->group6);
+	h = NM_HASH_COMBINE_IN6_ADDR (h, &obj->local6);
+	h = NM_HASH_COMBINE (h, obj->tos);
+	h = NM_HASH_COMBINE (h, obj->ttl);
+	h = NM_HASH_COMBINE (h, obj->learning);
+	h = NM_HASH_COMBINE (h, obj->ageing);
+	h = NM_HASH_COMBINE (h, obj->limit);
+	h = NM_HASH_COMBINE (h, obj->dst_port);
+	h = NM_HASH_COMBINE (h, obj->src_port_min);
+	h = NM_HASH_COMBINE (h, obj->src_port_max);
+	h = NM_HASH_COMBINE (h, obj->proxy);
+	h = NM_HASH_COMBINE (h, obj->rsc);
+	h = NM_HASH_COMBINE (h, obj->l2miss);
+	h = NM_HASH_COMBINE (h, obj->l3miss);
+	return h;
 }
 
 int
@@ -4289,6 +4670,26 @@ nm_platform_lnk_vxlan_cmp (const NMPlatformLnkVxlan *a, const NMPlatformLnkVxlan
 	return 0;
 }
 
+guint
+nm_platform_ip4_address_hash (const NMPlatformIP4Address *obj)
+{
+	guint h = 469681301;
+
+	if (obj) {
+		h = NM_HASH_COMBINE (h, obj->ifindex);
+		h = NM_HASH_COMBINE (h, obj->address);
+		h = NM_HASH_COMBINE (h, obj->plen);
+		h = NM_HASH_COMBINE (h, obj->peer_address);
+		h = NM_HASH_COMBINE (h, obj->addr_source);
+		h = NM_HASH_COMBINE (h, obj->timestamp);
+		h = NM_HASH_COMBINE (h, obj->lifetime);
+		h = NM_HASH_COMBINE (h, obj->preferred);
+		h = NM_HASH_COMBINE (h, obj->n_ifa_flags);
+		h = NM_HASH_COMBINE (h, g_str_hash (obj->label));
+	}
+	return h;
+}
+
 int
 nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b)
 {
@@ -4304,6 +4705,25 @@ nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4A
 	_CMP_FIELD (a, b, n_ifa_flags);
 	_CMP_FIELD_STR (a, b, label);
 	return 0;
+}
+
+guint
+nm_platform_ip6_address_hash (const NMPlatformIP6Address *obj)
+{
+	guint h = 605908909;
+
+	if (obj) {
+		h = NM_HASH_COMBINE (h, obj->ifindex);
+		h = NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&obj->address));
+		h = NM_HASH_COMBINE (h, obj->plen);
+		h = NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&obj->peer_address));
+		h = NM_HASH_COMBINE (h, obj->addr_source);
+		h = NM_HASH_COMBINE (h, obj->timestamp);
+		h = NM_HASH_COMBINE (h, obj->lifetime);
+		h = NM_HASH_COMBINE (h, obj->preferred);
+		h = NM_HASH_COMBINE (h, obj->n_ifa_flags);
+	}
+	return h;
 }
 
 int
@@ -4324,6 +4744,37 @@ nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6A
 	_CMP_FIELD (a, b, preferred);
 	_CMP_FIELD (a, b, n_ifa_flags);
 	return 0;
+}
+
+guint
+nm_platform_ip4_route_hash (const NMPlatformIP4Route *obj)
+{
+	guint h = 1228913327;
+
+	if (obj) {
+		h = NM_HASH_COMBINE (h, obj->ifindex);
+		h = NM_HASH_COMBINE (h, obj->network);
+		h = NM_HASH_COMBINE (h, obj->plen);
+		h = NM_HASH_COMBINE (h, obj->metric);
+		h = NM_HASH_COMBINE (h, obj->gateway);
+		h = NM_HASH_COMBINE (h, obj->rt_source);
+		h = NM_HASH_COMBINE (h, obj->mss);
+		h = NM_HASH_COMBINE (h, obj->scope_inv);
+		h = NM_HASH_COMBINE (h, obj->pref_src);
+		h = NM_HASH_COMBINE (h, obj->rt_cloned);
+		h = NM_HASH_COMBINE (h, obj->tos);
+		h = NM_HASH_COMBINE (h, obj->lock_window);
+		h = NM_HASH_COMBINE (h, obj->lock_cwnd);
+		h = NM_HASH_COMBINE (h, obj->lock_initcwnd);
+		h = NM_HASH_COMBINE (h, obj->lock_initrwnd);
+		h = NM_HASH_COMBINE (h, obj->lock_mtu);
+		h = NM_HASH_COMBINE (h, obj->window);
+		h = NM_HASH_COMBINE (h, obj->cwnd);
+		h = NM_HASH_COMBINE (h, obj->initcwnd);
+		h = NM_HASH_COMBINE (h, obj->initrwnd);
+		h = NM_HASH_COMBINE (h, obj->mtu);
+	}
+	return h;
 }
 
 int
@@ -4357,6 +4808,38 @@ nm_platform_ip4_route_cmp_full (const NMPlatformIP4Route *a, const NMPlatformIP4
 	_CMP_FIELD (a, b, initrwnd);
 	_CMP_FIELD (a, b, mtu);
 	return 0;
+}
+
+guint
+nm_platform_ip6_route_hash (const NMPlatformIP6Route *obj)
+{
+	guint h = 1053326051;
+
+	if (obj) {
+		h = NM_HASH_COMBINE (h, obj->ifindex);
+		h = NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&obj->network));
+		h = NM_HASH_COMBINE (h, obj->plen);
+		h = NM_HASH_COMBINE (h, obj->metric);
+		h = NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&obj->gateway));
+		h = NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&obj->pref_src));
+		h = NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&obj->src));
+		h = NM_HASH_COMBINE (h, obj->src_plen);
+		h = NM_HASH_COMBINE (h, obj->rt_source);
+		h = NM_HASH_COMBINE (h, obj->mss);
+		h = NM_HASH_COMBINE (h, obj->rt_cloned);
+		h = NM_HASH_COMBINE (h, obj->tos);
+		h = NM_HASH_COMBINE (h, obj->lock_window);
+		h = NM_HASH_COMBINE (h, obj->lock_cwnd);
+		h = NM_HASH_COMBINE (h, obj->lock_initcwnd);
+		h = NM_HASH_COMBINE (h, obj->lock_initrwnd);
+		h = NM_HASH_COMBINE (h, obj->lock_mtu);
+		h = NM_HASH_COMBINE (h, obj->window);
+		h = NM_HASH_COMBINE (h, obj->cwnd);
+		h = NM_HASH_COMBINE (h, obj->initcwnd);
+		h = NM_HASH_COMBINE (h, obj->initrwnd);
+		h = NM_HASH_COMBINE (h, obj->mtu);
+	}
+	return h;
 }
 
 int
@@ -4495,6 +4978,80 @@ log_ip6_route (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatform
 
 /*****************************************************************************/
 
+void
+nm_platform_cache_update_emit_signal (NMPlatform *self,
+                                      NMPCacheOpsType cache_op,
+                                      const NMPObject *obj_old,
+                                      const NMPObject *obj_new)
+{
+	gboolean visible_new;
+	gboolean visible_old;
+	const NMPObject *o;
+	const NMPClass *klass;
+
+	nm_assert (NM_IN_SET ((NMPlatformSignalChangeType) cache_op, (NMPlatformSignalChangeType) NMP_CACHE_OPS_UNCHANGED, NM_PLATFORM_SIGNAL_ADDED, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_SIGNAL_REMOVED));
+
+	ASSERT_nmp_cache_ops (nm_platform_get_cache (self), cache_op, obj_old, obj_new);
+
+	NMTST_ASSERT_PLATFORM_NETNS_CURRENT (self);
+
+	switch (cache_op) {
+	case NMP_CACHE_OPS_ADDED:
+		if (!nmp_object_is_visible (obj_new))
+			return;
+		o = obj_new;
+		break;
+	case NMP_CACHE_OPS_UPDATED:
+		visible_old = nmp_object_is_visible (obj_old);
+		visible_new = nmp_object_is_visible (obj_new);
+		if (!visible_old && visible_new) {
+			o = obj_new;
+			cache_op = NMP_CACHE_OPS_ADDED;
+		} else if (visible_old && !visible_new) {
+			o = obj_old;
+			cache_op = NMP_CACHE_OPS_REMOVED;
+		} else if (!visible_new) {
+			/* it was invisible and stayed invisible. Nothing to do. */
+			return;
+		} else
+			o = obj_new;
+		break;
+	case NMP_CACHE_OPS_REMOVED:
+		if (!nmp_object_is_visible (obj_old))
+			return;
+		o = obj_old;
+		break;
+	default:
+		nm_assert (cache_op == NMP_CACHE_OPS_UNCHANGED);
+		return;
+	}
+
+	klass = NMP_OBJECT_GET_CLASS (o);
+
+	_LOGt ("emit signal %s %s: %s",
+	       klass->signal_type,
+	       nm_platform_signal_change_type_to_string ((NMPlatformSignalChangeType) cache_op),
+	       nmp_object_to_string (o, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+
+	nmp_object_ref (o);
+	g_signal_emit (self,
+	               _nm_platform_signal_id_get (klass->signal_type_id),
+	               0,
+	               (int) klass->obj_type,
+	               o->object.ifindex,
+	               &o->object,
+	               (int) cache_op);
+	nmp_object_unref (o);
+}
+
+/*****************************************************************************/
+
+NMPCache *
+nm_platform_get_cache (NMPlatform *self)
+{
+	return NM_PLATFORM_GET_PRIVATE (self)->cache;
+}
+
 NMPNetns *
 nm_platform_netns_get (NMPlatform *self)
 {
@@ -4504,17 +5061,17 @@ nm_platform_netns_get (NMPlatform *self)
 }
 
 gboolean
-nm_platform_netns_push (NMPlatform *platform, NMPNetns **netns)
+nm_platform_netns_push (NMPlatform *self, NMPNetns **netns)
 {
-	g_return_val_if_fail (NM_IS_PLATFORM (platform), FALSE);
+	g_return_val_if_fail (NM_IS_PLATFORM (self), FALSE);
 
-	if (   platform->_netns
-	    && !nmp_netns_push (platform->_netns)) {
+	if (   self->_netns
+	    && !nmp_netns_push (self->_netns)) {
 		NM_SET_OUT (netns, NULL);
 		return FALSE;
 	}
 
-	NM_SET_OUT (netns, platform->_netns);
+	NM_SET_OUT (netns, self->_netns);
 	return TRUE;
 }
 
@@ -4588,11 +5145,11 @@ _vtr_v6_route_delete_default (NMPlatform *self, int ifindex, guint32 metric)
 
 const NMPlatformVTableRoute nm_platform_vtable_route_v4 = {
 	.is_ip4                         = TRUE,
+	.obj_type                       = NMP_OBJECT_TYPE_IP4_ROUTE,
 	.addr_family                    = AF_INET,
 	.sizeof_route                   = sizeof (NMPlatformIP4Route),
 	.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, gboolean consider_host_part)) nm_platform_ip4_route_cmp_full,
 	.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route, char *buf, gsize len)) nm_platform_ip4_route_to_string,
-	.route_get_all                  = nm_platform_ip4_route_get_all,
 	.route_add                      = _vtr_v4_route_add,
 	.route_delete                   = _vtr_v4_route_delete,
 	.route_delete_default           = _vtr_v4_route_delete_default,
@@ -4601,11 +5158,11 @@ const NMPlatformVTableRoute nm_platform_vtable_route_v4 = {
 
 const NMPlatformVTableRoute nm_platform_vtable_route_v6 = {
 	.is_ip4                         = FALSE,
+	.obj_type                       = NMP_OBJECT_TYPE_IP6_ROUTE,
 	.addr_family                    = AF_INET6,
 	.sizeof_route                   = sizeof (NMPlatformIP6Route),
 	.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, gboolean consider_host_part)) nm_platform_ip6_route_cmp_full,
 	.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route, char *buf, gsize len)) nm_platform_ip6_route_to_string,
-	.route_get_all                  = nm_platform_ip6_route_get_all,
 	.route_add                      = _vtr_v6_route_add,
 	.route_delete                   = _vtr_v6_route_delete,
 	.route_delete_default           = _vtr_v6_route_delete_default,
@@ -4632,6 +5189,10 @@ set_property (GObject *object, guint prop_id,
 				self->_netns = g_object_ref (netns);
 		}
 		break;
+	case PROP_USE_UDEV:
+		/* construct-only */
+		priv->use_udev = g_value_get_boolean (value);
+		break;
 	case PROP_LOG_WITH_PTR:
 		/* construct-only */
 		priv->log_with_ptr = g_value_get_boolean (value);
@@ -4648,12 +5209,37 @@ nm_platform_init (NMPlatform *self)
 	self->_priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_PLATFORM, NMPlatformPrivate);
 }
 
+static GObject *
+constructor (GType type,
+             guint n_construct_params,
+             GObjectConstructParam *construct_params)
+{
+	GObject *object;
+	NMPlatform *self;
+	NMPlatformPrivate *priv;
+
+	object = G_OBJECT_CLASS (nm_platform_parent_class)->constructor (type,
+	                                                                 n_construct_params,
+	                                                                 construct_params);
+	self = NM_PLATFORM (object);
+	priv = NM_PLATFORM_GET_PRIVATE (self);
+
+	priv->multi_idx = nm_dedup_multi_index_new ();
+
+	priv->cache = nmp_cache_new (nm_platform_get_multi_idx (self),
+	                             priv->use_udev);
+	return object;
+}
+
 static void
 finalize (GObject *object)
 {
 	NMPlatform *self = NM_PLATFORM (object);
+	NMPlatformPrivate *priv = NM_PLATFORM_GET_PRIVATE (self);
 
 	g_clear_object (&self->_netns);
+	nm_dedup_multi_index_unref (priv->multi_idx);
+	nmp_cache_free (priv->cache);
 }
 
 static void
@@ -4663,6 +5249,7 @@ nm_platform_class_init (NMPlatformClass *platform_class)
 
 	g_type_class_add_private (object_class, sizeof (NMPlatformPrivate));
 
+	object_class->constructor = constructor;
 	object_class->set_property = set_property;
 	object_class->finalize = finalize;
 
@@ -4672,6 +5259,14 @@ nm_platform_class_init (NMPlatformClass *platform_class)
 	 (object_class, PROP_NETNS_SUPPORT,
 	     g_param_spec_boolean (NM_PLATFORM_NETNS_SUPPORT, "", "",
 	                           NM_PLATFORM_NETNS_SUPPORT_DEFAULT,
+	                           G_PARAM_WRITABLE |
+	                           G_PARAM_CONSTRUCT_ONLY |
+	                           G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property
+	 (object_class, PROP_USE_UDEV,
+	     g_param_spec_boolean (NM_PLATFORM_USE_UDEV, "", "",
+	                           FALSE,
 	                           G_PARAM_WRITABLE |
 	                           G_PARAM_CONSTRUCT_ONLY |
 	                           G_PARAM_STATIC_STRINGS));

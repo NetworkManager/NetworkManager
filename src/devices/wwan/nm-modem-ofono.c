@@ -908,7 +908,8 @@ context_property_changed (GDBusProxy *proxy,
 	 *
 	 * This needs discussion with upstream.
 	 */
-	priv->ip4_config = nm_ip4_config_new (0);
+	priv->ip4_config = nm_ip4_config_new (nm_platform_get_multi_idx (NM_PLATFORM_GET),
+	                                      0);
 
 	/* TODO: simply if/else error logic! */
 

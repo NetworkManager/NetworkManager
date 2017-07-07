@@ -25,6 +25,8 @@
 #include <ctype.h>
 #include <arpa/inet.h>
 
+#include "nm-utils/nm-dedup-multi.h"
+
 #include "nm-dhcp-utils.h"
 #include "nm-ip4-config.h"
 #include "nm-utils.h"
@@ -659,6 +661,7 @@ lease_validity_span (const char *str_expire, GDateTime *now)
 
 /**
  * nm_dhcp_dhclient_read_lease_ip_configs:
+ * @multi_idx: the multi index instance for the ip config object
  * @iface: the interface name to match leases with
  * @ifindex: interface index of @iface
  * @contents: the contents of a dhclient leasefile
@@ -673,7 +676,8 @@ lease_validity_span (const char *str_expire, GDateTime *now)
  * #NMIP6Config objects (if @ipv6 is %TRUE) containing the lease data.
  */
 GSList *
-nm_dhcp_dhclient_read_lease_ip_configs (const char *iface,
+nm_dhcp_dhclient_read_lease_ip_configs (NMDedupMultiIndex *multi_idx,
+                                        const char *iface,
                                         int ifindex,
                                         const char *contents,
                                         gboolean ipv6,
@@ -783,7 +787,7 @@ nm_dhcp_dhclient_read_lease_ip_configs (const char *iface,
 		address.lifetime = address.preferred = expiry;
 		address.addr_source = NM_IP_CONFIG_SOURCE_DHCP;
 
-		ip4 = nm_ip4_config_new (ifindex);
+		ip4 = nm_ip4_config_new (multi_idx, ifindex);
 		nm_ip4_config_add_address (ip4, &address);
 		nm_ip4_config_set_gateway (ip4, gw);
 

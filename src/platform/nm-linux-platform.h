@@ -39,10 +39,4 @@ NMPlatform *nm_linux_platform_new (gboolean log_with_ptr, gboolean netns_support
 
 void nm_linux_platform_setup (void);
 
-struct _NMPCacheId;
-
-const NMPlatformObject *const *nm_linux_platform_lookup (NMPlatform *platform,
-                                                         const struct _NMPCacheId *cache_id,
-                                                         guint *out_len);
-
 #endif /* __NETWORKMANAGER_LINUX_PLATFORM_H__ */

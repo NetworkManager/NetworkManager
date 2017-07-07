@@ -26,6 +26,20 @@
 #include "nm-exported-object.h"
 #include "nm-setting-ip6-config.h"
 
+#include "nm-utils/nm-dedup-multi.h"
+
+/*****************************************************************************/
+
+void nm_ip6_config_iter_ip6_route_init (NMDedupMultiIter *iter, const NMIP6Config *self);
+gboolean nm_ip6_config_iter_ip6_route_next (NMDedupMultiIter *iter, const NMPlatformIP6Route **out_route);
+
+#define nm_ip6_config_iter_ip6_route_for_each(iter, self, route) \
+    for (nm_ip6_config_iter_ip6_route_init ((iter), (self)); \
+         nm_ip6_config_iter_ip6_route_next ((iter), (route)); \
+         )
+
+/*****************************************************************************/
+
 #define NM_TYPE_IP6_CONFIG (nm_ip6_config_get_type ())
 #define NM_IP6_CONFIG(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_IP6_CONFIG, NMIP6Config))
 #define NM_IP6_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_IP6_CONFIG, NMIP6ConfigClass))
@@ -36,6 +50,7 @@
 typedef struct _NMIP6ConfigClass NMIP6ConfigClass;
 
 /* internal */
+#define NM_IP6_CONFIG_MULTI_IDX "multi-idx"
 #define NM_IP6_CONFIG_IFINDEX "ifindex"
 
 /* public */
@@ -55,13 +70,15 @@ typedef struct _NMIP6ConfigClass NMIP6ConfigClass;
 GType nm_ip6_config_get_type (void);
 
 
-NMIP6Config * nm_ip6_config_new (int ifindex);
+NMIP6Config * nm_ip6_config_new (struct _NMDedupMultiIndex *multi_idx, int ifindex);
 NMIP6Config * nm_ip6_config_new_cloned (const NMIP6Config *src);
 
 int nm_ip6_config_get_ifindex (const NMIP6Config *config);
 
+struct _NMDedupMultiIndex *nm_ip6_config_get_multi_idx (const NMIP6Config *self);
 
-NMIP6Config *nm_ip6_config_capture (NMPlatform *platform, int ifindex, gboolean capture_resolv_conf, NMSettingIP6ConfigPrivacy use_temporary);
+NMIP6Config *nm_ip6_config_capture (struct _NMDedupMultiIndex *multi_idx, NMPlatform *platform, int ifindex,
+                                    gboolean capture_resolv_conf, NMSettingIP6ConfigPrivacy use_temporary);
 gboolean nm_ip6_config_commit (const NMIP6Config *config,
                                NMPlatform *platform,
                                NMRouteManager *route_manager,
@@ -98,9 +115,9 @@ gboolean nm_ip6_config_has_any_dad_pending (const NMIP6Config *self,
 
 void nm_ip6_config_reset_routes (NMIP6Config *config);
 void nm_ip6_config_add_route (NMIP6Config *config, const NMPlatformIP6Route *route);
-void nm_ip6_config_del_route (NMIP6Config *config, guint i);
+void _nmtst_ip6_config_del_route (NMIP6Config *config, guint i);
 guint nm_ip6_config_get_num_routes (const NMIP6Config *config);
-const NMPlatformIP6Route *nm_ip6_config_get_route (const NMIP6Config *config, guint i);
+const NMPlatformIP6Route *_nmtst_ip6_config_get_route (const NMIP6Config *config, guint i);
 
 const NMPlatformIP6Route *nm_ip6_config_get_direct_route_for_host (const NMIP6Config *config, const struct in6_addr *host);
 const NMPlatformIP6Address *nm_ip6_config_get_subnet_for_host (const NMIP6Config *config, const struct in6_addr *host);

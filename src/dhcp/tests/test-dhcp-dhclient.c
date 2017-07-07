@@ -24,6 +24,8 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
+#include "nm-utils/nm-dedup-multi.h"
+
 #include "NetworkManagerUtils.h"
 #include "dhcp/nm-dhcp-dhclient-utils.h"
 #include "dhcp/nm-dhcp-utils.h"
@@ -838,6 +840,7 @@ test_interface2 (void)
 static void
 test_read_lease_ip4_config_basic (void)
 {
+	nm_auto_unref_dedup_multi_index NMDedupMultiIndex *multi_idx = nm_dedup_multi_index_new ();
 	GError *error = NULL;
 	char *contents = NULL;
 	gboolean success;
@@ -854,7 +857,7 @@ test_read_lease_ip4_config_basic (void)
 
 	/* Date from before the least expiration */
 	now = g_date_time_new_utc (2013, 11, 1, 19, 55, 32);
-	leases = nm_dhcp_dhclient_read_lease_ip_configs ("wlan0", -1, contents, FALSE, now);
+	leases = nm_dhcp_dhclient_read_lease_ip_configs (multi_idx, "wlan0", -1, contents, FALSE, now);
 	g_assert_cmpint (g_slist_length (leases), ==, 2);
 
 	/* IP4Config #1 */
@@ -915,6 +918,7 @@ test_read_lease_ip4_config_basic (void)
 static void
 test_read_lease_ip4_config_expired (void)
 {
+	nm_auto_unref_dedup_multi_index NMDedupMultiIndex *multi_idx = nm_dedup_multi_index_new ();
 	GError *error = NULL;
 	char *contents = NULL;
 	gboolean success;
@@ -928,7 +932,7 @@ test_read_lease_ip4_config_expired (void)
 
 	/* Date from *after* the lease expiration */
 	now = g_date_time_new_utc (2013, 12, 1, 19, 55, 32);
-	leases = nm_dhcp_dhclient_read_lease_ip_configs ("wlan0", -1, contents, FALSE, now);
+	leases = nm_dhcp_dhclient_read_lease_ip_configs (multi_idx, "wlan0", -1, contents, FALSE, now);
 	g_assert (leases == NULL);
 
 	g_date_time_unref (now);
@@ -938,6 +942,7 @@ test_read_lease_ip4_config_expired (void)
 static void
 test_read_lease_ip4_config_expect_failure (gconstpointer user_data)
 {
+	nm_auto_unref_dedup_multi_index NMDedupMultiIndex *multi_idx = nm_dedup_multi_index_new ();
 	GError *error = NULL;
 	char *contents = NULL;
 	gboolean success;
@@ -950,7 +955,7 @@ test_read_lease_ip4_config_expect_failure (gconstpointer user_data)
 
 	/* Date from before the least expiration */
 	now = g_date_time_new_utc (2013, 11, 1, 1, 1, 1);
-	leases = nm_dhcp_dhclient_read_lease_ip_configs ("wlan0", -1, contents, FALSE, now);
+	leases = nm_dhcp_dhclient_read_lease_ip_configs (multi_idx, "wlan0", -1, contents, FALSE, now);
 	g_assert (leases == NULL);
 
 	g_date_time_unref (now);

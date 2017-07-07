@@ -24,6 +24,8 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
+#include "nm-utils/nm-dedup-multi.h"
+
 #include "nm-dhcp-utils.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
@@ -383,7 +385,8 @@ ip4_add_domain_search (gpointer data, gpointer user_data)
 }
 
 NMIP4Config *
-nm_dhcp_utils_ip4_config_from_options (int ifindex,
+nm_dhcp_utils_ip4_config_from_options (NMDedupMultiIndex *multi_idx,
+                                       int ifindex,
                                        const char *iface,
                                        GHashTable *options,
                                        guint32 priority)
@@ -398,7 +401,7 @@ nm_dhcp_utils_ip4_config_from_options (int ifindex,
 
 	g_return_val_if_fail (options != NULL, NULL);
 
-	ip4_config = nm_ip4_config_new (ifindex);
+	ip4_config = nm_ip4_config_new (multi_idx, ifindex);
 	memset (&address, 0, sizeof (address));
 	address.timestamp = nm_utils_get_monotonic_timestamp_s ();
 
@@ -616,7 +619,8 @@ nm_dhcp_utils_ip6_prefix_from_options (GHashTable *options)
 }
 
 NMIP6Config *
-nm_dhcp_utils_ip6_config_from_options (int ifindex,
+nm_dhcp_utils_ip6_config_from_options (NMDedupMultiIndex *multi_idx,
+                                       int ifindex,
                                        const char *iface,
                                        GHashTable *options,
                                        guint32 priority,
@@ -633,7 +637,7 @@ nm_dhcp_utils_ip6_config_from_options (int ifindex,
 	address.plen = 128;
 	address.timestamp = nm_utils_get_monotonic_timestamp_s ();
 
-	ip6_config = nm_ip6_config_new (ifindex);
+	ip6_config = nm_ip6_config_new (multi_idx, ifindex);
 
 	str = g_hash_table_lookup (options, "max_life");
 	if (str) {

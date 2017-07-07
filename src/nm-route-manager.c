@@ -306,6 +306,55 @@ _route_index_create (const VTableIP *vtable, const GArray *routes)
 	return index;
 }
 
+static RouteIndex *
+_route_index_create_from_platform (const VTableIP *vtable,
+                                   NMPlatform *platform,
+                                   int ifindex,
+                                   gboolean ignore_kernel_routes,
+                                   GPtrArray **out_storage)
+{
+	RouteIndex *index;
+	guint i, j, len;
+	GPtrArray *storage;
+
+	nm_assert (out_storage && !*out_storage);
+
+	storage = nm_platform_lookup_route_visible_clone (platform,
+	                                                  vtable->vt->obj_type,
+	                                                  ifindex,
+	                                                  FALSE,
+	                                                  NULL,
+	                                                  NULL);
+	if (!storage)
+		return _route_index_create (vtable, NULL);
+
+	len = storage->len;
+	index = g_malloc (sizeof (RouteIndex) + len * sizeof (NMPlatformIPXRoute *));
+
+	j = 0;
+	for (i = 0; i < len; i++) {
+		const NMPlatformIPXRoute *ipx_route = NMP_OBJECT_CAST_IPX_ROUTE (storage->pdata[i]);
+
+		if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (ipx_route))
+			continue;
+
+		/* we cast away the const-ness of the NMPObjects. The caller must
+		 * ensure not to modify the object via index->entries. */
+		index->entries[j++] = (NMPlatformIPXRoute *) ipx_route;
+	}
+	index->entries[j] = NULL;
+	index->len = j;
+
+	/* this is a stable sort, which is very important at this point. */
+	g_qsort_with_data (index->entries,
+	                   index->len,
+	                   sizeof (NMPlatformIPXRoute *),
+	                   (GCompareDataFunc) _route_index_create_sort,
+	                   (gpointer) vtable);
+	*out_storage = storage;
+	return index;
+}
+
 static int
 _vx_route_id_cmp_full (const NMPlatformIPXRoute *r1, const NMPlatformIPXRoute *r2, const VTableIP *vtable)
 {
@@ -458,7 +507,7 @@ static gboolean
 _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const GArray *known_routes, gboolean ignore_kernel_routes, gboolean full_sync)
 {
 	NMRouteManagerPrivate *priv = NM_ROUTE_MANAGER_GET_PRIVATE (self);
-	GArray *plat_routes;
+	gs_unref_ptrarray GPtrArray *plat_routes = NULL;
 	RouteEntries *ipx_routes;
 	RouteIndex *plat_routes_idx, *known_routes_idx;
 	gboolean success = TRUE;
@@ -475,16 +524,15 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 	nm_platform_process_events (priv->platform);
 
 	ipx_routes = vtable->vt->is_ip4 ? &priv->ip4_routes : &priv->ip6_routes;
-	plat_routes = vtable->vt->route_get_all (priv->platform, ifindex,
-	                                         ignore_kernel_routes
-	                                             ? NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT
-	                                             : NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_RTPROT_KERNEL);
-	plat_routes_idx = _route_index_create (vtable, plat_routes);
+
+	/* the objects referenced by play_routes_idx are shared from the platform cache. They
+	 * must not be modified. */
+	plat_routes_idx = _route_index_create_from_platform (vtable, priv->platform, ifindex, ignore_kernel_routes, &plat_routes);
+
 	known_routes_idx = _route_index_create (vtable, known_routes);
 
 	effective_metrics = &g_array_index (ipx_routes->effective_metrics, gint64, 0);
 
-	ASSERT_route_index_valid (vtable, plat_routes, plat_routes_idx, TRUE);
 	ASSERT_route_index_valid (vtable, known_routes, known_routes_idx, FALSE);
 
 	_LOGD (vtable->vt->addr_family, "%3d: sync %u IPv%c routes", ifindex, known_routes_idx->len, vtable->vt->is_ip4 ? '4' : '6');
@@ -918,7 +966,6 @@ next:
 
 	g_free (known_routes_idx);
 	g_free (plat_routes_idx);
-	g_array_unref (plat_routes);
 
 	return success;
 }
@@ -1173,7 +1220,7 @@ nm_route_manager_ip4_route_register_device_route_purge_list (NMRouteManager *sel
 		                                      ? "update" : "new",
 		                                  nmp_object_to_string (entry->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 		g_hash_table_replace (priv->ip4_device_routes.entries,
-		                      nmp_object_ref (entry->obj),
+		                      (NMPObject *) nmp_object_ref (entry->obj),
 		                      entry);
 	}
 	if (priv->ip4_device_routes.gc_id == 0) {
