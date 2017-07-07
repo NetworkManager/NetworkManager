@@ -112,7 +112,7 @@ test_subtract (void)
 
 	/* ensure what's left is what we expect */
 	g_assert_cmpuint (nm_ip4_config_get_num_addresses (dst), ==, 1);
-	test_addr = nm_ip4_config_get_address (dst, 0);
+	test_addr = _nmtst_nm_ip4_config_get_address (dst, 0);
 	g_assert (test_addr != NULL);
 	g_assert_cmpuint (test_addr->address, ==, nmtst_inet4_from_string (expected_addr));
 	g_assert_cmpuint (test_addr->peer_address, ==, test_addr->address);
@@ -196,27 +196,27 @@ test_add_address_with_source (void)
 	addr.addr_source = NM_IP_CONFIG_SOURCE_USER;
 	nm_ip4_config_add_address (a, &addr);
 
-	test_addr = nm_ip4_config_get_address (a, 0);
+	test_addr = _nmtst_nm_ip4_config_get_address (a, 0);
 	g_assert_cmpint (test_addr->addr_source, ==, NM_IP_CONFIG_SOURCE_USER);
 
 	addr.addr_source = NM_IP_CONFIG_SOURCE_VPN;
 	nm_ip4_config_add_address (a, &addr);
 
-	test_addr = nm_ip4_config_get_address (a, 0);
+	test_addr = _nmtst_nm_ip4_config_get_address (a, 0);
 	g_assert_cmpint (test_addr->addr_source, ==, NM_IP_CONFIG_SOURCE_USER);
 
 	/* Test that a lower priority address source is overwritten */
-	nm_ip4_config_del_address (a, 0);
+	_nmtst_nm_ip4_config_del_address (a, 0);
 	addr.addr_source = NM_IP_CONFIG_SOURCE_KERNEL;
 	nm_ip4_config_add_address (a, &addr);
 
-	test_addr = nm_ip4_config_get_address (a, 0);
+	test_addr = _nmtst_nm_ip4_config_get_address (a, 0);
 	g_assert_cmpint (test_addr->addr_source, ==, NM_IP_CONFIG_SOURCE_KERNEL);
 
 	addr.addr_source = NM_IP_CONFIG_SOURCE_USER;
 	nm_ip4_config_add_address (a, &addr);
 
-	test_addr = nm_ip4_config_get_address (a, 0);
+	test_addr = _nmtst_nm_ip4_config_get_address (a, 0);
 	g_assert_cmpint (test_addr->addr_source, ==, NM_IP_CONFIG_SOURCE_USER);
 
 	g_object_unref (a);

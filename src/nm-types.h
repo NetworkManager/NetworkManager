@@ -110,6 +110,7 @@ NM_IS_IP_CONFIG_SOURCE_RTPROT (NMIPConfigSource source)
 
 /* platform */
 typedef struct _NMPlatform           NMPlatform;
+typedef struct _NMPlatformObject     NMPlatformObject;
 typedef struct _NMPlatformIP4Address NMPlatformIP4Address;
 typedef struct _NMPlatformIP4Route   NMPlatformIP4Route;
 typedef struct _NMPlatformIP6Address NMPlatformIP6Address;

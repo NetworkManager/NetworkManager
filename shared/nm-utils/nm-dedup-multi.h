@@ -23,7 +23,7 @@
 #define __NM_DEDUP_MULTI_H__
 
 #include "nm-obj.h"
-#include "c-list.h"
+#include "c-list-util.h"
 
 /*****************************************************************************/
 
@@ -370,9 +370,26 @@ nm_dedup_multi_iter_rewind (NMDedupMultiIter *iter)
 typedef gboolean (*NMDedupMultiFcnSelectPredicate) (/* const NMDedupMultiObj * */ gconstpointer obj,
                                                     gpointer user_data);
 
+gconstpointer *nm_dedup_multi_objs_to_array_head (const NMDedupMultiHeadEntry *head_entry,
+                                                  NMDedupMultiFcnSelectPredicate predicate,
+                                                  gpointer user_data,
+                                                  guint *out_len);
 GPtrArray *nm_dedup_multi_objs_to_ptr_array_head (const NMDedupMultiHeadEntry *head_entry,
                                                   NMDedupMultiFcnSelectPredicate predicate,
                                                   gpointer user_data);
+
+static inline void
+nm_dedup_multi_head_entry_sort (const NMDedupMultiHeadEntry *head_entry,
+                                CListSortCmp cmp,
+                                gconstpointer user_data)
+{
+	if (head_entry) {
+		/* the head entry can be sorted directly without messing up the
+		 * index to which it belongs. Of course, this does mess up any
+		 * NMDedupMultiIter instances. */
+		c_list_sort ((CList *) &head_entry->lst_entries_head, cmp, user_data);
+	}
+}
 
 /*****************************************************************************/
 

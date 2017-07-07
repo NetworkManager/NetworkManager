@@ -27,15 +27,47 @@
 #include "nm-setting-ip6-config.h"
 
 #include "nm-utils/nm-dedup-multi.h"
+#include "platform/nmp-object.h"
 
 /*****************************************************************************/
 
-void nm_ip6_config_iter_ip6_route_init (NMDedupMultiIter *iter, const NMIP6Config *self);
-gboolean nm_ip6_config_iter_ip6_route_next (NMDedupMultiIter *iter, const NMPlatformIP6Route **out_route);
+void nm_ip_config_iter_ip6_address_init (NMDedupMultiIter *iter, const NMIP6Config *self);
+void nm_ip_config_iter_ip6_route_init (NMDedupMultiIter *iter, const NMIP6Config *self);
 
-#define nm_ip6_config_iter_ip6_route_for_each(iter, self, route) \
-    for (nm_ip6_config_iter_ip6_route_init ((iter), (self)); \
-         nm_ip6_config_iter_ip6_route_next ((iter), (route)); \
+static inline gboolean
+nm_ip_config_iter_ip6_address_next (NMDedupMultiIter *ipconf_iter, const NMPlatformIP6Address **out_address)
+{
+	gboolean has_next;
+
+	g_return_val_if_fail (out_address, FALSE);
+
+	has_next = nm_dedup_multi_iter_next (ipconf_iter);
+	if (has_next)
+		*out_address = NMP_OBJECT_CAST_IP6_ADDRESS (ipconf_iter->current->obj);
+	return has_next;
+}
+
+static inline gboolean
+nm_ip_config_iter_ip6_route_next (NMDedupMultiIter *ipconf_iter, const NMPlatformIP6Route **out_route)
+{
+	gboolean has_next;
+
+	g_return_val_if_fail (out_route, FALSE);
+
+	has_next = nm_dedup_multi_iter_next (ipconf_iter);
+	if (has_next)
+		*out_route = NMP_OBJECT_CAST_IP6_ROUTE (ipconf_iter->current->obj);
+	return has_next;
+}
+
+#define nm_ip_config_iter_ip6_address_for_each(iter, self, address) \
+    for (*(address) = NULL, nm_ip_config_iter_ip6_address_init ((iter), (self)); \
+         nm_ip_config_iter_ip6_address_next ((iter), (address)); \
+         )
+
+#define nm_ip_config_iter_ip6_route_for_each(iter, self, route) \
+    for (*(route) = NULL, nm_ip_config_iter_ip6_route_init ((iter), (self)); \
+         nm_ip_config_iter_ip6_route_next ((iter), (route)); \
          )
 
 /*****************************************************************************/
@@ -102,17 +134,22 @@ void nm_ip6_config_set_gateway (NMIP6Config *self, const struct in6_addr *);
 const struct in6_addr *nm_ip6_config_get_gateway (const NMIP6Config *self);
 gint64 nm_ip6_config_get_route_metric (const NMIP6Config *self);
 
+const NMDedupMultiHeadEntry *nm_ip6_config_lookup_addresses (const NMIP6Config *self);
 void nm_ip6_config_reset_addresses (NMIP6Config *self);
 void nm_ip6_config_add_address (NMIP6Config *self, const NMPlatformIP6Address *address);
-void nm_ip6_config_del_address (NMIP6Config *self, guint i);
+void _nmtst_nm_ip6_config_del_address (NMIP6Config *self, guint i);
 guint nm_ip6_config_get_num_addresses (const NMIP6Config *self);
-const NMPlatformIP6Address *nm_ip6_config_get_address (const NMIP6Config *self, guint i);
+const NMPlatformIP6Address *nm_ip6_config_get_first_address (const NMIP6Config *self);
+const NMPlatformIP6Address *_nmtst_nm_ip6_config_get_address (const NMIP6Config *self, guint i);
 const NMPlatformIP6Address *nm_ip6_config_get_address_first_nontentative (const NMIP6Config *self, gboolean linklocal);
 gboolean nm_ip6_config_address_exists (const NMIP6Config *self, const NMPlatformIP6Address *address);
-gboolean nm_ip6_config_addresses_sort (NMIP6Config *self);
+const NMPlatformIP6Address *nm_ip6_config_lookup_address (const NMIP6Config *self,
+                                                          const struct in6_addr *addr);
+gboolean _nmtst_nm_ip6_config_addresses_sort (NMIP6Config *self);
 gboolean nm_ip6_config_has_any_dad_pending (const NMIP6Config *self,
                                             const NMIP6Config *candidates);
 
+const NMDedupMultiHeadEntry *nm_ip6_config_lookup_routes (const NMIP6Config *self);
 void nm_ip6_config_reset_routes (NMIP6Config *self);
 void nm_ip6_config_add_route (NMIP6Config *self, const NMPlatformIP6Route *route);
 void _nmtst_ip6_config_del_route (NMIP6Config *self, guint i);

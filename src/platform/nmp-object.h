@@ -345,6 +345,22 @@ NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 		_obj ? &_NM_CONSTCAST (NMPObject, _obj)->link : NULL; \
 	})
 
+#define NMP_OBJECT_CAST_IP_ADDRESS(obj) \
+	({ \
+		typeof (obj) _obj = (obj); \
+		\
+		nm_assert (!_obj || NM_IN_SET (NMP_OBJECT_GET_TYPE (_obj), NMP_OBJECT_TYPE_IP4_ADDRESS, NMP_OBJECT_TYPE_IP6_ADDRESS)); \
+		_obj ? &_NM_CONSTCAST (NMPObject, _obj)->ip_address : NULL; \
+	})
+
+#define NMP_OBJECT_CAST_IPX_ADDRESS(obj) \
+	({ \
+		typeof (obj) _obj = (obj); \
+		\
+		nm_assert (!_obj || NM_IN_SET (NMP_OBJECT_GET_TYPE (_obj), NMP_OBJECT_TYPE_IP4_ADDRESS, NMP_OBJECT_TYPE_IP6_ADDRESS)); \
+		_obj ? &_NM_CONSTCAST (NMPObject, _obj)->ipx_address : NULL; \
+	})
+
 #define NMP_OBJECT_CAST_IP4_ADDRESS(obj) \
 	({ \
 		typeof (obj) _obj = (obj); \
@@ -419,6 +435,15 @@ NMPObject *nmp_object_new (NMPObjectType obj_type, const NMPlatformObject *plob)
 NMPObject *nmp_object_new_link (int ifindex);
 
 const NMPObject *nmp_object_stackinit (NMPObject *obj, NMPObjectType obj_type, const NMPlatformObject *plobj);
+
+static inline NMPObject *
+nmp_object_stackinit_obj (NMPObject *obj, const NMPObject *src)
+{
+	return obj == src
+	         ? obj
+	         : (NMPObject *) nmp_object_stackinit (obj, NMP_OBJECT_GET_TYPE (src), &src->object);
+}
+
 const NMPObject *nmp_object_stackinit_id  (NMPObject *obj, const NMPObject *src);
 const NMPObject *nmp_object_stackinit_id_link (NMPObject *obj, int ifindex);
 const NMPObject *nmp_object_stackinit_id_ip4_address (NMPObject *obj, int ifindex, guint32 address, guint8 plen, guint32 peer_address);

@@ -173,9 +173,9 @@ typedef enum {
 	NM_PLATFORM_SIGNAL_REMOVED,
 } NMPlatformSignalChangeType;
 
-typedef struct {
+struct _NMPlatformObject {
 	__NMPlatformObject_COMMON;
-} NMPlatformObject;
+};
 
 
 #define __NMPlatformIPAddress_COMMON \

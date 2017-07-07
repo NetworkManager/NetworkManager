@@ -114,6 +114,7 @@ dump_ip4_to_props (NMIP4Config *ip4, GVariantBuilder *builder)
 {
 	GVariantBuilder int_builder;
 	NMDedupMultiIter ipconf_iter;
+	gboolean first;
 	guint n, i;
 	const NMPlatformIP4Address *addr;
 	const NMPlatformIP4Route *route;
@@ -121,15 +122,15 @@ dump_ip4_to_props (NMIP4Config *ip4, GVariantBuilder *builder)
 
 	/* Addresses */
 	g_variant_builder_init (&int_builder, G_VARIANT_TYPE ("aau"));
-	n = nm_ip4_config_get_num_addresses (ip4);
-	for (i = 0; i < n; i++) {
-		addr = nm_ip4_config_get_address (ip4, i);
+	first = TRUE;
+	nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, ip4, &addr) {
 		array[0] = addr->address;
 		array[1] = addr->plen;
-		array[2] = (i == 0) ? nm_ip4_config_get_gateway (ip4) : 0;
+		array[2] = first ? nm_ip4_config_get_gateway (ip4) : 0;
 		g_variant_builder_add (&int_builder, "@au",
 		                       g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
 		                                                  array, 3, sizeof (guint32)));
+		first = FALSE;
 	}
 	g_variant_builder_add (builder, "{sv}",
 	                       "addresses",
@@ -164,7 +165,7 @@ dump_ip4_to_props (NMIP4Config *ip4, GVariantBuilder *builder)
 
 	/* Static routes */
 	g_variant_builder_init (&int_builder, G_VARIANT_TYPE ("aau"));
-	nm_ip4_config_iter_ip4_route_for_each (&ipconf_iter, ip4, &route) {
+	nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, ip4, &route) {
 		array[0] = route->network;
 		array[1] = route->plen;
 		array[2] = route->gateway;
@@ -184,24 +185,26 @@ dump_ip6_to_props (NMIP6Config *ip6, GVariantBuilder *builder)
 	GVariantBuilder int_builder;
 	NMDedupMultiIter ipconf_iter;
 	guint n, i;
+	gboolean first;
 	const NMPlatformIP6Address *addr;
-	const struct in6_addr *gw_bytes;
 	const NMPlatformIP6Route *route;
 	GVariant *ip, *gw;
 
 	/* Addresses */
 	g_variant_builder_init (&int_builder, G_VARIANT_TYPE ("a(ayuay)"));
-	n = nm_ip6_config_get_num_addresses (ip6);
-	for (i = 0; i < n; i++) {
-		addr = nm_ip6_config_get_address (ip6, i);
-		gw_bytes = nm_ip6_config_get_gateway (ip6);
+
+	first = TRUE;
+	nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, ip6, &addr) {
 		ip = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
 		                                &addr->address,
 		                                sizeof (struct in6_addr), 1);
 		gw = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
-		                                (i == 0 && gw_bytes) ? gw_bytes : &in6addr_any,
+		                                first
+		                                  ? (nm_ip6_config_get_gateway (ip6) ?: &in6addr_any)
+		                                  : &in6addr_any,
 		                                sizeof (struct in6_addr), 1);
 		g_variant_builder_add (&int_builder, "(@ayu@ay)", ip, addr->plen, gw);
+		first = FALSE;
 	}
 	g_variant_builder_add (builder, "{sv}",
 	                       "addresses",
@@ -231,7 +234,7 @@ dump_ip6_to_props (NMIP6Config *ip6, GVariantBuilder *builder)
 
 	/* Static routes */
 	g_variant_builder_init (&int_builder, G_VARIANT_TYPE ("a(ayuayu)"));
-	nm_ip6_config_iter_ip6_route_for_each (&ipconf_iter, ip6, &route) {
+	nm_ip_config_iter_ip6_route_for_each (&ipconf_iter, ip6, &route) {
 		ip = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
 		                                &route->network,
 		                                sizeof (struct in6_addr), 1);

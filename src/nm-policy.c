@@ -605,6 +605,8 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const 
 	NMIP4Config *ip4_config;
 	NMIP6Config *ip6_config;
 	gboolean external_hostname = FALSE;
+	const NMPlatformIP4Address *addr4;
+	const NMPlatformIP6Address *addr6;
 
 	g_return_if_fail (self != NULL);
 
@@ -746,17 +748,13 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const 
 	ip4_config = best4 ? nm_device_get_ip4_config (best4) : NULL;
 	ip6_config = best6 ? nm_device_get_ip6_config (best6) : NULL;
 
-	if (ip4_config && nm_ip4_config_get_num_addresses (ip4_config) > 0) {
-		const NMPlatformIP4Address *addr4;
-
-		addr4 = nm_ip4_config_get_address (ip4_config, 0);
+	if (   ip4_config
+	    && (addr4 = nm_ip4_config_get_first_address (ip4_config))) {
 		g_clear_object (&priv->lookup.addr);
 		priv->lookup.addr = g_inet_address_new_from_bytes ((guint8 *) &addr4->address,
 		                                                   G_SOCKET_FAMILY_IPV4);
-	} else if (ip6_config && nm_ip6_config_get_num_addresses (ip6_config) > 0) {
-		const NMPlatformIP6Address *addr6;
-
-		addr6 = nm_ip6_config_get_address (ip6_config, 0);
+	} else if (   ip6_config
+	           && (addr6 = nm_ip6_config_get_first_address (ip6_config))) {
 		g_clear_object (&priv->lookup.addr);
 		priv->lookup.addr = g_inet_address_new_from_bytes ((guint8 *) &addr6->address,
 		                                                   G_SOCKET_FAMILY_IPV6);

@@ -105,7 +105,7 @@ test_generic_options (void)
 
 	/* IP4 address */
 	g_assert_cmpint (nm_ip4_config_get_num_addresses (ip4_config), ==, 1);
-	address = nm_ip4_config_get_address (ip4_config, 0);
+	address = _nmtst_nm_ip4_config_get_address (ip4_config, 0);
 	g_assert (inet_pton (AF_INET, expected_addr, &tmp) > 0);
 	g_assert (address->address == tmp);
 	g_assert (address->peer_address == tmp);
@@ -175,7 +175,7 @@ test_wins_options (void)
 
 	/* IP4 address */
 	g_assert_cmpint (nm_ip4_config_get_num_addresses (ip4_config), ==, 1);
-	address = nm_ip4_config_get_address (ip4_config, 0);
+	address = _nmtst_nm_ip4_config_get_address (ip4_config, 0);
 	g_assert (address);
 	g_assert_cmpint (nm_ip4_config_get_num_wins (ip4_config), ==, 2);
 	g_assert (inet_pton (AF_INET, expected_wins1, &tmp) > 0);
@@ -624,7 +624,7 @@ test_ip4_missing_prefix (const char *ip, guint32 expected_prefix)
 	ip4_config = _ip4_config_from_options (1, "eth0", options, 0);
 
 	g_assert_cmpint (nm_ip4_config_get_num_addresses (ip4_config), ==, 1);
-	address = nm_ip4_config_get_address (ip4_config, 0);
+	address = _nmtst_nm_ip4_config_get_address (ip4_config, 0);
 	g_assert (address);
 	g_assert_cmpint (address->plen, ==, expected_prefix);
 
@@ -668,7 +668,7 @@ test_ip4_prefix_classless (void)
 	ip4_config = _ip4_config_from_options (1, "eth0", options, 0);
 
 	g_assert_cmpint (nm_ip4_config_get_num_addresses (ip4_config), ==, 1);
-	address = nm_ip4_config_get_address (ip4_config, 0);
+	address = _nmtst_nm_ip4_config_get_address (ip4_config, 0);
 	g_assert (address);
 	g_assert_cmpint (address->plen, ==, 22);
 

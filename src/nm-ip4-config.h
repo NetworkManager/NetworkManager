@@ -25,6 +25,7 @@
 #include "nm-setting-ip4-config.h"
 
 #include "nm-utils/nm-dedup-multi.h"
+#include "platform/nmp-object.h"
 
 /*****************************************************************************/
 
@@ -35,18 +36,63 @@ typedef struct {
 
 void nm_ip_config_dedup_multi_idx_type_init (NMIPConfigDedupMultiIdxType *idx_type, NMPObjectType obj_type);
 
-void nm_ip4_config_iter_ip4_route_init (NMDedupMultiIter *iter, const NMIP4Config *self);
-gboolean nm_ip4_config_iter_ip4_route_next (NMDedupMultiIter *iter, const NMPlatformIP4Route **out_route);
+/*****************************************************************************/
 
-#define nm_ip4_config_iter_ip4_route_for_each(iter, self, route) \
-	for (nm_ip4_config_iter_ip4_route_init ((iter), (self)); \
-	     nm_ip4_config_iter_ip4_route_next ((iter), (route)); \
-	     )
+void nm_ip_config_iter_ip4_address_init (NMDedupMultiIter *iter, const NMIP4Config *self);
+void nm_ip_config_iter_ip4_route_init (NMDedupMultiIter *iter, const NMIP4Config *self);
 
+static inline gboolean
+nm_ip_config_iter_ip4_address_next (NMDedupMultiIter *ipconf_iter, const NMPlatformIP4Address **out_address)
+{
+	gboolean has_next;
+
+	g_return_val_if_fail (out_address, FALSE);
+
+	has_next = nm_dedup_multi_iter_next (ipconf_iter);
+	if (has_next)
+		*out_address = NMP_OBJECT_CAST_IP4_ADDRESS (ipconf_iter->current->obj);
+	return has_next;
+}
+
+static inline gboolean
+nm_ip_config_iter_ip4_route_next (NMDedupMultiIter *ipconf_iter, const NMPlatformIP4Route **out_route)
+{
+	gboolean has_next;
+
+	g_return_val_if_fail (out_route, FALSE);
+
+	has_next = nm_dedup_multi_iter_next (ipconf_iter);
+	if (has_next)
+		*out_route = NMP_OBJECT_CAST_IP4_ROUTE (ipconf_iter->current->obj);
+	return has_next;
+}
+
+#define nm_ip_config_iter_ip4_address_for_each(iter, self, address) \
+    for (*(address) = NULL, nm_ip_config_iter_ip4_address_init ((iter), (self)); \
+         nm_ip_config_iter_ip4_address_next ((iter), (address)); \
+         )
+
+#define nm_ip_config_iter_ip4_route_for_each(iter, self, route) \
+    for (*(route) = NULL, nm_ip_config_iter_ip4_route_init ((iter), (self)); \
+         nm_ip_config_iter_ip4_route_next ((iter), (route)); \
+         )
+
+/*****************************************************************************/
+
+gboolean nm_ip_config_obj_id_equal_ip4_address (const NMPlatformIP4Address *a,
+                                                const NMPlatformIP4Address *b);
+gboolean nm_ip_config_obj_id_equal_ip6_address (const NMPlatformIP6Address *a,
+                                                const NMPlatformIP6Address *b);
 gboolean nm_ip_config_obj_id_equal_ip4_route (const NMPlatformIP4Route *r_a,
                                               const NMPlatformIP4Route *r_b);
 gboolean nm_ip_config_obj_id_equal_ip6_route (const NMPlatformIP6Route *r_a,
                                               const NMPlatformIP6Route *r_b);
+
+gboolean _nm_ip_config_add_obj (NMDedupMultiIndex *multi_idx,
+                                NMIPConfigDedupMultiIdxType *idx_type,
+                                int ifindex,
+                                const NMPObject *obj_new,
+                                const NMPlatformObject *pl_new);
 
 /*****************************************************************************/
 
@@ -110,13 +156,16 @@ gboolean nm_ip4_config_has_gateway (const NMIP4Config *self);
 guint32 nm_ip4_config_get_gateway (const NMIP4Config *self);
 gint64 nm_ip4_config_get_route_metric (const NMIP4Config *self);
 
+const NMDedupMultiHeadEntry *nm_ip4_config_lookup_addresses (const NMIP4Config *self);
 void nm_ip4_config_reset_addresses (NMIP4Config *self);
 void nm_ip4_config_add_address (NMIP4Config *self, const NMPlatformIP4Address *address);
-void nm_ip4_config_del_address (NMIP4Config *self, guint i);
+void _nmtst_nm_ip4_config_del_address (NMIP4Config *self, guint i);
 guint nm_ip4_config_get_num_addresses (const NMIP4Config *self);
-const NMPlatformIP4Address *nm_ip4_config_get_address (const NMIP4Config *self, guint i);
+const NMPlatformIP4Address *nm_ip4_config_get_first_address (const NMIP4Config *self);
+const NMPlatformIP4Address *_nmtst_nm_ip4_config_get_address (const NMIP4Config *self, guint i);
 gboolean nm_ip4_config_address_exists (const NMIP4Config *self, const NMPlatformIP4Address *address);
 
+const NMDedupMultiHeadEntry *nm_ip4_config_lookup_routes (const NMIP4Config *self);
 void nm_ip4_config_reset_routes (NMIP4Config *self);
 void nm_ip4_config_add_route (NMIP4Config *self, const NMPlatformIP4Route *route);
 void _nmtst_nm_ip4_config_del_route (NMIP4Config *self, guint i);

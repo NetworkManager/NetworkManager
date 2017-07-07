@@ -2454,16 +2454,19 @@ ndisc_set_router_config (NMNDisc *ndisc, NMDevice *self)
 	gint32 now;
 	GArray *addresses, *dns_servers, *dns_domains;
 	guint len, i;
+	const NMDedupMultiHeadEntry *head_entry;
+	NMDedupMultiIter ipconf_iter;
 
 	if (nm_ndisc_get_node_type (ndisc) != NM_NDISC_NODE_TYPE_ROUTER)
 		return;
 
 	now = nm_utils_get_monotonic_timestamp_s ();
 
-	len = nm_ip6_config_get_num_addresses (priv->ip6_config);
-	addresses = g_array_sized_new (FALSE, TRUE, sizeof (NMNDiscAddress), len);
-	for (i = 0; i < len; i++) {
-		const NMPlatformIP6Address *addr = nm_ip6_config_get_address (priv->ip6_config, i);
+	head_entry = nm_ip6_config_lookup_addresses (priv->ip6_config);
+	addresses = g_array_sized_new (FALSE, TRUE, sizeof (NMNDiscAddress),
+	                               head_entry ? head_entry->len : 0);
+	nm_dedup_multi_iter_for_each (&ipconf_iter, head_entry) {
+		const NMPlatformIP6Address *addr = NMP_OBJECT_CAST_IP6_ADDRESS (ipconf_iter.current->obj);
 		NMNDiscAddress *ndisc_addr;
 
 		if (IN6_IS_ADDR_LINKLOCAL (&addr->address))
@@ -5095,17 +5098,17 @@ arping_manager_probe_terminated (NMArpingManager *arping_manager, ArpingData *da
 {
 	NMDevice *self;
 	NMDevicePrivate *priv;
+	NMDedupMultiIter ipconf_iter;
 	const NMPlatformIP4Address *address;
 	gboolean result, success = TRUE;
-	int i, j;
+	int i;
 
 	g_assert (data);
 	self = data->device;
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	for (i = 0; data->configs && data->configs[i]; i++) {
-		for (j = 0; j < nm_ip4_config_get_num_addresses (data->configs[i]); j++) {
-			address = nm_ip4_config_get_address (data->configs[i], j);
+		nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, data->configs[i], &address) {
 			result = nm_arping_manager_check_address (arping_manager, address->address);
 			success &= result;
 
@@ -5139,13 +5142,14 @@ ipv4_dad_start (NMDevice *self, NMIP4Config **configs, ArpingCallback cb)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMArpingManager *arping_manager;
 	const NMPlatformIP4Address *address;
+	NMDedupMultiIter ipconf_iter;
 	ArpingData *data;
 	guint timeout;
 	gboolean ret, addr_found;
 	const guint8 *hw_addr;
 	size_t hw_addr_len = 0;
 	GError *error = NULL;
-	guint i, j;
+	guint i;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 	g_return_if_fail (configs);
@@ -5191,10 +5195,8 @@ ipv4_dad_start (NMDevice *self, NMIP4Config **configs, ArpingCallback cb)
 	data->device = self;
 
 	for (i = 0; configs[i]; i++) {
-		for (j = 0; j < nm_ip4_config_get_num_addresses (configs[i]); j++) {
-			address = nm_ip4_config_get_address (configs[i], j);
+		nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, configs[i], &address)
 			nm_arping_manager_add_address (arping_manager, address->address);
-		}
 	}
 
 	g_signal_connect_data (arping_manager, NM_ARPING_MANAGER_PROBE_TERMINATED,
@@ -6618,7 +6620,6 @@ dhcp6_state_changed (NMDhcpClient *client,
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	guint i;
 
 	g_return_if_fail (nm_dhcp_client_get_ipv6 (client) == TRUE);
 	g_return_if_fail (!ip6_config || NM_IS_IP6_CONFIG (ip6_config));
@@ -6635,10 +6636,11 @@ dhcp6_state_changed (NMDhcpClient *client,
 		    && event_id
 		    && priv->dhcp6.event_id
 		    && !strcmp (event_id, priv->dhcp6.event_id)) {
-			for (i = 0; i < nm_ip6_config_get_num_addresses (ip6_config); i++) {
-				nm_ip6_config_add_address (priv->dhcp6.ip6_config,
-				                           nm_ip6_config_get_address (ip6_config, i));
-			}
+			NMDedupMultiIter ipconf_iter;
+			const NMPlatformIP6Address *a;
+
+			nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, ip6_config, &a)
+				nm_ip6_config_add_address (priv->dhcp6.ip6_config, a);
 		} else {
 			g_clear_object (&priv->dhcp6.ip6_config);
 			g_clear_pointer (&priv->dhcp6.event_id, g_free);
@@ -6978,7 +6980,6 @@ check_and_add_ipv6ll_addr (NMDevice *self)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ip_ifindex = nm_device_get_ip_ifindex (self);
 	struct in6_addr lladdr;
-	guint i, n;
 	NMConnection *connection;
 	NMSettingIP6Config *s_ip6 = NULL;
 	GError *error = NULL;
@@ -6987,11 +6988,10 @@ check_and_add_ipv6ll_addr (NMDevice *self)
 		return;
 
 	if (priv->ip6_config) {
-		n = nm_ip6_config_get_num_addresses (priv->ip6_config);
-		for (i = 0; i < n; i++) {
-			const NMPlatformIP6Address *addr;
+		NMDedupMultiIter ipconf_iter;
+		const NMPlatformIP6Address *addr;
 
-			addr = nm_ip6_config_get_address (priv->ip6_config, i);
+		nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, priv->ip6_config, &addr) {
 			if (   IN6_IS_ADDR_LINKLOCAL (&addr->address)
 			    && !(addr->n_ifa_flags & IFA_F_DADFAILED)) {
 				/* Already have an LL address, nothing to do */
@@ -8292,15 +8292,15 @@ start_sharing (NMDevice *self, NMIP4Config *config)
 	char str_addr[INET_ADDRSTRLEN + 1];
 	char str_mask[INET_ADDRSTRLEN + 1];
 	guint32 netmask, network;
-	const NMPlatformIP4Address *ip4_addr;
+	const NMPlatformIP4Address *ip4_addr = NULL;
 	const char *ip_iface;
 
 	g_return_val_if_fail (config != NULL, FALSE);
 
 	ip_iface = nm_device_get_ip_iface (self);
 
-	ip4_addr = nm_ip4_config_get_address (config, 0);
-	if (!ip4_addr || !ip4_addr->address)
+	ip4_addr = nm_ip4_config_get_first_address (config);
+	if (ip4_addr || !ip4_addr->address)
 		return FALSE;
 
 	netmask = nm_utils_ip4_prefix_to_netmask (ip4_addr->plen);
@@ -8513,7 +8513,8 @@ dad6_get_pending_addresses (NMDevice *self)
 	                         priv->wwan_ip6_config };
 	const NMPlatformIP6Address *addr, *pl_addr;
 	NMIP6Config *dad6_config = NULL;
-	guint i, j, num;
+	NMDedupMultiIter ipconf_iter;
+	guint i;
 	int ifindex;
 
 	ifindex = nm_device_get_ip_ifindex (self);
@@ -8524,9 +8525,8 @@ dad6_get_pending_addresses (NMDevice *self)
 	 */
 	for (i = 0; i < G_N_ELEMENTS (confs); i++) {
 		if (confs[i]) {
-			num = nm_ip6_config_get_num_addresses (confs[i]);
-			for (j = 0; j < num; j++) {
-				addr = nm_ip6_config_get_address (confs[i], j);
+
+			nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, confs[i], &addr) {
 				pl_addr = nm_platform_ip6_address_get (nm_device_get_platform (self),
 				                                       ifindex,
 				                                       addr->address);
@@ -8738,16 +8738,15 @@ static void
 _update_ip4_address (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	guint32 addr;
+	const NMPlatformIP4Address *address;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	if (   priv->ip4_config
 	    && ip_config_valid (priv->state)
-	    && nm_ip4_config_get_num_addresses (priv->ip4_config)) {
-		addr = nm_ip4_config_get_address (priv->ip4_config, 0)->address;
-		if (addr != priv->ip4_address) {
-			priv->ip4_address = addr;
+	    && (address = nm_ip4_config_get_first_address (priv->ip4_config))) {
+		if (address->address != priv->ip4_address) {
+			priv->ip4_address = address->address;
 			_notify (self, PROP_IP4_ADDRESS);
 		}
 	}
@@ -10598,7 +10597,7 @@ find_ip4_lease_config (NMDevice *self,
 	                                               nm_device_get_ip4_route_metric (self));
 	for (liter = leases; liter && !found; liter = liter->next) {
 		NMIP4Config *lease_config = liter->data;
-		const NMPlatformIP4Address *address = nm_ip4_config_get_address (lease_config, 0);
+		const NMPlatformIP4Address *address = nm_ip4_config_get_first_address (lease_config);
 		guint32 gateway = nm_ip4_config_get_gateway (lease_config);
 
 		g_assert (address);
@@ -10624,23 +10623,24 @@ capture_lease_config (NMDevice *self,
 	NMSettingsConnection *const*connections;
 	guint i;
 	gboolean dhcp_used = FALSE;
+	NMDedupMultiIter ipconf_iter;
 
 	/* Ensure at least one address on the device has a non-infinite lifetime,
 	 * otherwise DHCP cannot possibly be active on the device right now.
 	 */
 	if (ext_ip4_config && out_ip4_config) {
-		for (i = 0; i < nm_ip4_config_get_num_addresses (ext_ip4_config); i++) {
-			const NMPlatformIP4Address *addr = nm_ip4_config_get_address (ext_ip4_config, i);
+		const NMPlatformIP4Address *addr;
 
+		nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, ext_ip4_config, &addr) {
 			if (addr->lifetime != NM_PLATFORM_LIFETIME_PERMANENT) {
 				dhcp_used = TRUE;
 				break;
 			}
 		}
 	} else if (ext_ip6_config && out_ip6_config) {
-		for (i = 0; i < nm_ip6_config_get_num_addresses (ext_ip6_config); i++) {
-			const NMPlatformIP6Address *addr = nm_ip6_config_get_address (ext_ip6_config, i);
+		const NMPlatformIP6Address *addr;
 
+		nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, ext_ip6_config, &addr) {
 			if (addr->lifetime != NM_PLATFORM_LIFETIME_PERMANENT) {
 				dhcp_used = TRUE;
 				break;
@@ -12227,15 +12227,13 @@ static char *
 find_dhcp4_address (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	guint i, n;
+	const NMPlatformIP4Address *a;
+	NMDedupMultiIter ipconf_iter;
 
 	if (!priv->ip4_config)
 		return NULL;
 
-	n = nm_ip4_config_get_num_addresses (priv->ip4_config);
-	for (i = 0; i < n; i++) {
-		const NMPlatformIP4Address *a = nm_ip4_config_get_address (priv->ip4_config, i);
-
+	nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, priv->ip4_config, &a) {
 		if (a->addr_source == NM_IP_CONFIG_SOURCE_DHCP)
 			return g_strdup (nm_utils_inet4_ntop (a->address, NULL));
 	}
