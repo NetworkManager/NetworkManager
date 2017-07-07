@@ -1,3 +1,20 @@
+==============================================
+NetworkManager-1.8.2
+Overview of changes since NetworkManager-1.8.0
+==============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Fix bug blocking startup wrongly waiting for carrier.
+* Fix handling of non UTF-8 strings in libnm and fix non NUL
+  terminated string.
+* Handle DNS priority for systemd-resolved DNS plugin.
+* Fix assuming master devices as they wait for slaves to activate.
+* Fix reading managed state from device state file.
+* Fix crash activating bluetooth or WWAN connection.
+* No longer add a direct route to the DHCP server.
+* Several bug fixes and improvements
+
 ============================================
 NetworkManager-1.8
 Overview of changes since NetworkManager-1.6
