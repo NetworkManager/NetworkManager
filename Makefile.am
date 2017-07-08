@@ -414,6 +414,7 @@ libnm_core_lib_h_pub_real = \
 libnm_core_lib_h_pub_mkenums = \
 	libnm-core/nm-core-enum-types.h
 libnm_core_lib_h_priv = \
+	shared/nm-utils/c-list-util.h \
 	shared/nm-utils/nm-dedup-multi.h \
 	shared/nm-utils/nm-enum-utils.h \
 	shared/nm-utils/nm-shared-utils.h \
@@ -429,6 +430,7 @@ libnm_core_lib_h_priv = \
 	libnm-core/nm-setting-private.h \
 	libnm-core/nm-utils-private.h
 libnm_core_lib_c_real = \
+	shared/nm-utils/c-list-util.c \
 	shared/nm-utils/nm-dedup-multi.c \
 	shared/nm-utils/nm-enum-utils.c \
 	shared/nm-utils/nm-shared-utils.c \
@@ -4437,6 +4439,8 @@ EXTRA_DIST += \
 	shared/nm-test-libnm-utils.h \
 	shared/nm-test-utils-impl.c \
 	shared/nm-utils/c-list.h \
+	shared/nm-utils/c-list-util.c \
+	shared/nm-utils/c-list-util.h \
 	shared/nm-utils/gsystem-local-alloc.h \
 	shared/nm-utils/nm-glib.h \
 	shared/nm-utils/nm-obj.h \
