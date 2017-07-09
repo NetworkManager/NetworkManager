@@ -2291,7 +2291,7 @@ activate_connection_cb (GObject *client, GAsyncResult *result, gpointer user_dat
 		activate_connection_info_finish (info);
 	} else {
 		state = nm_active_connection_get_state (active);
-		if (!device) {
+		if (!device && !nm_active_connection_get_vpn (active)) {
 			/* device could be NULL for virtual devices. Fill it here. */
 			ac_devs = nm_active_connection_get_devices (active);
 			device = ac_devs->len > 0 ? g_ptr_array_index (ac_devs, 0) : NULL;
