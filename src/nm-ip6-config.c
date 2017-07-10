@@ -57,7 +57,10 @@ typedef struct {
 	GVariant *address_data_variant;
 	GVariant *addresses_variant;
 	NMDedupMultiIndex *multi_idx;
-	NMDedupMultiIdxType idx_ip6_routes;
+	union {
+		NMIPConfigDedupMultiIdxType idx_ip6_routes_;
+		NMDedupMultiIdxType idx_ip6_routes;
+	};
 } NMIP6ConfigPrivate;
 
 struct _NMIP6Config {
