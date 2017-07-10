@@ -66,17 +66,16 @@ test_config (const char *orig,
 	                                      &new_client_id);
 	g_assert (new != NULL);
 
-#if DEBUG
-	if (   strlen (new) != strlen (expected)
-	    || strcmp (new, expected)) {
-		g_message ("\n- NEW ---------------------------------\n"
+	if (!nm_streq (new, expected)) {
+		g_message ("\n* OLD ---------------------------------\n"
 		           "%s"
-		           "+ EXPECTED ++++++++++++++++++++++++++++++\n"
+		           "\n- NEW -----------------------------------\n"
 		           "%s"
-		           "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n",
-		           new, expected);
+		           "\n+ EXPECTED ++++++++++++++++++++++++++++++\n"
+		           "%s"
+		           "\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n",
+		           orig, new, expected);
 	}
-#endif
 	g_assert_cmpstr (new, ==, expected);
 
 	if (expected_new_client_id) {
@@ -831,6 +830,60 @@ test_interface2 (void)
 	             NULL);
 }
 
+static void
+test_config_req_intf (void)
+{
+	static const char *const orig = \
+		"request subnet-mask, broadcast-address, routers,\n"
+		"	rfc3442-classless-static-routes,\n"
+		"	interface-mtu, host-name, domain-name, domain-search,\n"
+		"	domain-name-servers, nis-domain, nis-servers,\n"
+		"	nds-context, nds-servers, nds-tree-name,\n"
+		"	netbios-name-servers, netbios-dd-server,\n"
+		"	netbios-node-type, netbios-scope, ntp-servers;\n"
+		"";
+	static const char *const expected = \
+		"# Created by NetworkManager\n"
+		"# Merged from /path/to/dhclient.conf\n"
+		"\n"
+		"\n"
+		"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
+		"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
+		"option wpad code 252 = string;\n"
+		"\n"
+		"request; # override dhclient defaults\n"
+		"also request subnet-mask;\n"
+		"also request broadcast-address;\n"
+		"also request routers;\n"
+		"also request rfc3442-classless-static-routes;\n"
+		"also request interface-mtu;\n"
+		"also request host-name;\n"
+		"also request domain-name;\n"
+		"also request domain-search;\n"
+		"also request domain-name-servers;\n"
+		"also request nis-domain;\n"
+		"also request nis-servers;\n"
+		"also request nds-context;\n"
+		"also request nds-servers;\n"
+		"also request nds-tree-name;\n"
+		"also request netbios-name-servers;\n"
+		"also request netbios-dd-server;\n"
+		"also request netbios-node-type;\n"
+		"also request netbios-scope;\n"
+		"also request ntp-servers;\n"
+		"also request ms-classless-static-routes;\n"
+		"also request static-routes;\n"
+		"also request wpad;\n"
+		"\n";
+
+	test_config (orig, expected,
+	             FALSE, NULL, FALSE,
+	             NULL,
+	             NULL,
+	             "eth0",
+	             NULL);
+}
+
 /*****************************************************************************/
 
 static void
@@ -982,6 +1035,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/dhcp/dhclient/duids", test_duids);
 	g_test_add_func ("/dhcp/dhclient/interface/1", test_interface1);
 	g_test_add_func ("/dhcp/dhclient/interface/2", test_interface2);
+	g_test_add_func ("/dhcp/dhclient/config/req_intf", test_config_req_intf);
 
 	g_test_add_func ("/dhcp/dhclient/read_duid_from_leasefile", test_read_duid_from_leasefile);
 	g_test_add_func ("/dhcp/dhclient/read_commented_duid_from_leasefile", test_read_commented_duid_from_leasefile);
