@@ -69,8 +69,6 @@ struct _NMDedupMultiObjClass {
 
 	void (*obj_destroy) (NMDedupMultiObj *obj);
 
-	gboolean obj_full_equality_allows_different_class;
-
 	/* the NMDedupMultiObj can be deduplicated. For that the obj_full_hash()
 	 * and obj_full_equal() compare *all* fields of the object, even minor ones. */
 	guint    (*obj_full_hash)  (const NMDedupMultiObj *obj);
@@ -167,9 +165,10 @@ nm_dedup_multi_idx_type_id_equal (const NMDedupMultiIdxType *idx_type,
                                   /* const NMDedupMultiObj * */ gconstpointer obj_b)
 {
 	nm_assert (idx_type);
-	return idx_type->klass->idx_obj_id_equal (idx_type,
-	                                          obj_a,
-	                                          obj_b);
+	return    obj_a == obj_b
+	       || idx_type->klass->idx_obj_id_equal (idx_type,
+	                                             obj_a,
+	                                             obj_b);
 }
 
 static inline gboolean
@@ -181,9 +180,10 @@ nm_dedup_multi_idx_type_partition_equal (const NMDedupMultiIdxType *idx_type,
 	if (idx_type->klass->idx_obj_partition_equal) {
 		nm_assert (obj_a);
 		nm_assert (obj_b);
-		return idx_type->klass->idx_obj_partition_equal (idx_type,
-		                                                 obj_a,
-		                                                 obj_b);
+		return    obj_a == obj_b
+		       || idx_type->klass->idx_obj_partition_equal (idx_type,
+		                                                    obj_a,
+		                                                    obj_b);
 	}
 	return TRUE;
 }

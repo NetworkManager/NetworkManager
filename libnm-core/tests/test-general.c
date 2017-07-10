@@ -145,7 +145,6 @@ _dedup_obj_full_equal (const NMDedupMultiObj *obj_a,
 static const NMDedupMultiObjClass dedup_obj_class = {
 	.obj_clone = _dedup_obj_clone,
 	.obj_destroy = _dedup_obj_destroy,
-	.obj_full_equality_allows_different_class = FALSE,
 	.obj_full_hash = _dedup_obj_full_hash,
 	.obj_full_equal = _dedup_obj_full_equal,
 };

@@ -155,6 +155,17 @@ _entry_unpack (const NMDedupMultiEntry *entry,
 
 	nm_assert (NM_IN_SET (*out_lookup_head, FALSE, TRUE));
 	ASSERT_idx_type (*out_idx_type);
+
+	/* for lookup of the head, we allow to omit object, but only
+	 * if the idx_type does not parition the objects. Otherwise, we
+	 * require a obj to compare. */
+	nm_assert (   !*out_lookup_head
+	           || (   *out_obj
+	               || !(*out_idx_type)->klass->idx_obj_partition_equal));
+
+	/* lookup of the object requires always an object. */
+	nm_assert (   *out_lookup_head
+	           || *out_obj);
 }
 
 static guint
@@ -286,6 +297,7 @@ _add (NMDedupMultiIndex *self,
 			break;
 		};
 
+		nm_assert (obj->klass == ((const NMDedupMultiObj *) entry->obj)->klass);
 		if (   obj == entry->obj
 		    || obj->klass->obj_full_equal (obj,
 		                                   entry->obj)) {
@@ -775,24 +787,9 @@ static gboolean
 _dict_idx_objs_equal (const NMDedupMultiObj *obj_a,
                       const NMDedupMultiObj *obj_b)
 {
-	const NMDedupMultiObjClass *klass;
-
-	klass = obj_a->klass;
-
-	/* if the class differs, but at least one of them supports calls with
-	 * differing klass, choose it.
-	 *
-	 * Implementing a klass that can compare equality for multiple
-	 * types is hard to get right. E.g. hash(), equal() and get_ref()
-	 * must all agree so that instances of different types look identical. */
-	if (   klass != obj_b->klass
-	    && !klass->obj_full_equality_allows_different_class) {
-		klass = obj_b->klass;
-		if (!klass->obj_full_equality_allows_different_class)
-			return FALSE;
-	}
-
-	return klass->obj_full_equal (obj_a, obj_b);
+	return    obj_a == obj_b
+	       || (   obj_a->klass == obj_b->klass
+	           && obj_a->klass->obj_full_equal (obj_a, obj_b));
 }
 
 void
