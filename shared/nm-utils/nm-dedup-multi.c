@@ -174,10 +174,9 @@ _dict_idx_entries_hash (const NMDedupMultiEntry *entry)
 		h = 1914869417;
 
 	if (!lookup_head)
-		h = idx_type->klass->idx_obj_id_hash (idx_type, obj);
+		h = NM_HASH_COMBINE (h, idx_type->klass->idx_obj_id_hash (idx_type, obj));
 
 	h = NM_HASH_COMBINE (h, GPOINTER_TO_UINT (idx_type));
-	h = NM_HASH_COMBINE (h, lookup_head);
 	return h;
 }
 
