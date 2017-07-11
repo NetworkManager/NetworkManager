@@ -303,6 +303,8 @@ typedef struct {
 	GArray *wins;
 	GVariant *address_data_variant;
 	GVariant *addresses_variant;
+	GVariant *route_data_variant;
+	GVariant *routes_variant;
 	NMDedupMultiIndex *multi_idx;
 	union {
 		NMIPConfigDedupMultiIdxType idx_ip4_addresses_;
@@ -409,6 +411,10 @@ _notify_addresses (NMIP4Config *self)
 static void
 _notify_routes (NMIP4Config *self)
 {
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
+
+	nm_clear_g_variant (&priv->route_data_variant);
+	nm_clear_g_variant (&priv->routes_variant);
 	_notify (self, PROP_ROUTE_DATA);
 	_notify (self, PROP_ROUTES);
 }
@@ -2668,10 +2674,10 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_ADDRESS_DATA:
 	case PROP_ADDRESSES:
-		g_return_if_fail (!!priv->address_data_variant == !!priv->addresses_variant);
+		nm_assert (!!priv->address_data_variant == !!priv->addresses_variant);
 
 		if (priv->address_data_variant)
-			goto return_cached;
+			goto out_addresses_cached;
 
 		g_variant_builder_init (&builder_data, G_VARIANT_TYPE ("aa{sv}"));
 		g_variant_builder_init (&builder_legacy, G_VARIANT_TYPE ("aau"));
@@ -2715,82 +2721,85 @@ get_property (GObject *object, guint prop_id,
 				}
 
 				g_variant_builder_add (&builder_data, "a{sv}", &addr_builder);
-			}
 
-			/* Build addresses variant */
-			for (i = 0; i < naddr; i++) {
-				const NMPlatformIP4Address *address = NMP_OBJECT_CAST_IP4_ADDRESS (addresses[i]);
-				guint32 dbus_addr[3];
+				{
+					const guint32 dbus_addr[3] = {
+					    address->address,
+					    address->plen,
+					    i == 0 ? priv->gateway : 0,
+					};
 
-				dbus_addr[0] = address->address;
-				dbus_addr[1] = address->plen;
-				dbus_addr[2] = i == 0 ? priv->gateway : 0;
-
-				g_variant_builder_add (&builder_legacy, "@au",
-				                       g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
-				                                                  dbus_addr, 3, sizeof (guint32)));
+					g_variant_builder_add (&builder_legacy, "@au",
+					                       g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
+					                                                  dbus_addr, 3, sizeof (guint32)));
+				}
 			}
 		}
 
 		priv->address_data_variant = g_variant_ref_sink (g_variant_builder_end (&builder_data));
 		priv->addresses_variant = g_variant_ref_sink (g_variant_builder_end (&builder_legacy));
 
-return_cached:
+out_addresses_cached:
 		g_value_set_variant (value,
 		                     prop_id == PROP_ADDRESS_DATA ?
 		                     priv->address_data_variant :
 		                     priv->addresses_variant);
 		break;
 	case PROP_ROUTE_DATA:
-		{
-			g_variant_builder_init (&builder_data, G_VARIANT_TYPE ("aa{sv}"));
-			nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, self, &route) {
-				GVariantBuilder route_builder;
-
-				g_variant_builder_init (&route_builder, G_VARIANT_TYPE ("a{sv}"));
-				g_variant_builder_add (&route_builder, "{sv}",
-				                       "dest",
-				                       g_variant_new_string (nm_utils_inet4_ntop (route->network, NULL)));
-				g_variant_builder_add (&route_builder, "{sv}",
-				                       "prefix",
-				                       g_variant_new_uint32 (route->plen));
-				if (route->gateway) {
-					g_variant_builder_add (&route_builder, "{sv}",
-					                       "next-hop",
-					                       g_variant_new_string (nm_utils_inet4_ntop (route->gateway, NULL)));
-				}
-				g_variant_builder_add (&route_builder, "{sv}",
-				                       "metric",
-				                       g_variant_new_uint32 (route->metric));
-
-				g_variant_builder_add (&builder_data, "a{sv}", &route_builder);
-			}
-			g_value_take_variant (value, g_variant_builder_end (&builder_data));
-		}
-		break;
 	case PROP_ROUTES:
-		{
-			g_variant_builder_init (&builder_legacy, G_VARIANT_TYPE ("aau"));
-			nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, self, &route) {
-				guint32 dbus_route[4];
+		nm_assert (!!priv->route_data_variant == !!priv->routes_variant);
 
-				/* legacy versions of nm_ip4_route_set_prefix() in libnm-util assert that the
-				 * plen is positive. Skip the default routes not to break older clients. */
-				if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route))
-					continue;
+		if (priv->route_data_variant)
+			goto out_routes_cached;
 
-				dbus_route[0] = route->network;
-				dbus_route[1] = route->plen;
-				dbus_route[2] = route->gateway;
-				dbus_route[3] = route->metric;
+		g_variant_builder_init (&builder_data, G_VARIANT_TYPE ("aa{sv}"));
+		g_variant_builder_init (&builder_legacy, G_VARIANT_TYPE ("aau"));
+
+		nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, self, &route) {
+			GVariantBuilder route_builder;
+
+			g_variant_builder_init (&route_builder, G_VARIANT_TYPE ("a{sv}"));
+			g_variant_builder_add (&route_builder, "{sv}",
+			                       "dest",
+			                       g_variant_new_string (nm_utils_inet4_ntop (route->network, NULL)));
+			g_variant_builder_add (&route_builder, "{sv}",
+			                       "prefix",
+			                       g_variant_new_uint32 (route->plen));
+			if (route->gateway) {
+				g_variant_builder_add (&route_builder, "{sv}",
+				                       "next-hop",
+				                       g_variant_new_string (nm_utils_inet4_ntop (route->gateway, NULL)));
+			}
+			g_variant_builder_add (&route_builder, "{sv}",
+			                       "metric",
+			                       g_variant_new_uint32 (route->metric));
+
+			g_variant_builder_add (&builder_data, "a{sv}", &route_builder);
+
+			/* legacy versions of nm_ip4_route_set_prefix() in libnm-util assert that the
+			 * plen is positive. Skip the default routes not to break older clients. */
+			if (!NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)) {
+				const guint32 dbus_route[4] = {
+				    route->network,
+				    route->plen,
+				    route->gateway,
+				    route->metric,
+				};
 
 				g_variant_builder_add (&builder_legacy, "@au",
 				                       g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
 				                                                  dbus_route, 4, sizeof (guint32)));
 			}
-
-			g_value_take_variant (value, g_variant_builder_end (&builder_legacy));
 		}
+
+		priv->route_data_variant = g_variant_ref_sink (g_variant_builder_end (&builder_data));
+		priv->routes_variant = g_variant_ref_sink (g_variant_builder_end (&builder_legacy));
+
+out_routes_cached:
+		g_value_set_variant (value,
+		                     prop_id == PROP_ROUTE_DATA ?
+		                     priv->route_data_variant :
+		                     priv->routes_variant);
 		break;
 	case PROP_GATEWAY:
 		if (priv->has_gateway)
@@ -2899,6 +2908,9 @@ finalize (GObject *object)
 
 	nm_clear_g_variant (&priv->address_data_variant);
 	nm_clear_g_variant (&priv->addresses_variant);
+	nm_clear_g_variant (&priv->route_data_variant);
+	nm_clear_g_variant (&priv->routes_variant);
+
 	g_array_unref (priv->nameservers);
 	g_ptr_array_unref (priv->domains);
 	g_ptr_array_unref (priv->searches);

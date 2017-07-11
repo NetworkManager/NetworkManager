@@ -55,6 +55,8 @@ typedef struct {
 	GPtrArray *dns_options;
 	GVariant *address_data_variant;
 	GVariant *addresses_variant;
+	GVariant *route_data_variant;
+	GVariant *routes_variant;
 	NMDedupMultiIndex *multi_idx;
 	union {
 		NMIPConfigDedupMultiIdxType idx_ip6_addresses_;
@@ -175,6 +177,10 @@ _notify_addresses (NMIP6Config *self)
 static void
 _notify_routes (NMIP6Config *self)
 {
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
+
+	nm_clear_g_variant (&priv->route_data_variant);
+	nm_clear_g_variant (&priv->routes_variant);
 	_notify (self, PROP_ROUTE_DATA);
 	_notify (self, PROP_ROUTES);
 }
@@ -2260,10 +2266,10 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_ADDRESS_DATA:
 	case PROP_ADDRESSES:
-		g_return_if_fail (!!priv->address_data_variant == !!priv->addresses_variant);
+		nm_assert (!!priv->address_data_variant == !!priv->addresses_variant);
 
 		if (priv->address_data_variant)
-			goto return_cached;
+			goto out_addresses_cached;
 
 		g_variant_builder_init (&builder_data, G_VARIANT_TYPE ("aa{sv}"));
 		g_variant_builder_init (&builder_legacy, G_VARIANT_TYPE ("a(ayuay)"));
@@ -2301,10 +2307,6 @@ get_property (GObject *object, guint prop_id,
 				}
 
 				g_variant_builder_add (&builder_data, "a{sv}", &addr_builder);
-			}
-
-			for (i = 0; i < naddr; i++) {
-				const NMPlatformIP6Address *address = NMP_OBJECT_CAST_IP6_ADDRESS (addresses[i]);
 
 				g_variant_builder_add (&builder_legacy, "(@ayu@ay)",
 				                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
@@ -2320,50 +2322,48 @@ get_property (GObject *object, guint prop_id,
 
 		priv->address_data_variant = g_variant_ref_sink (g_variant_builder_end (&builder_data));
 		priv->addresses_variant = g_variant_ref_sink (g_variant_builder_end (&builder_legacy));
-return_cached:
+out_addresses_cached:
 		g_value_set_variant (value,
 		                     prop_id == PROP_ADDRESS_DATA ?
 		                     priv->address_data_variant :
 		                     priv->addresses_variant);
 		break;
+
 	case PROP_ROUTE_DATA:
-		{
-			g_variant_builder_init (&builder_data, G_VARIANT_TYPE ("aa{sv}"));
-			nm_ip_config_iter_ip6_route_for_each (&ipconf_iter, self, &route) {
-				GVariantBuilder route_builder;
+	case PROP_ROUTES:
+		nm_assert (!!priv->route_data_variant == !!priv->routes_variant);
 
-				g_variant_builder_init (&route_builder, G_VARIANT_TYPE ("a{sv}"));
-				g_variant_builder_add (&route_builder, "{sv}",
-				                       "dest",
-				                       g_variant_new_string (nm_utils_inet6_ntop (&route->network, NULL)));
-				g_variant_builder_add (&route_builder, "{sv}",
-				                       "prefix",
-				                       g_variant_new_uint32 (route->plen));
-				if (!IN6_IS_ADDR_UNSPECIFIED (&route->gateway)) {
-					g_variant_builder_add (&route_builder, "{sv}",
-					                       "next-hop",
-					                       g_variant_new_string (nm_utils_inet6_ntop (&route->gateway, NULL)));
-				}
+		if (priv->route_data_variant)
+			goto out_routes_cached;
 
-				g_variant_builder_add (&route_builder, "{sv}",
-				                       "metric",
-				                       g_variant_new_uint32 (route->metric));
+		g_variant_builder_init (&builder_data, G_VARIANT_TYPE ("aa{sv}"));
+		g_variant_builder_init (&builder_legacy, G_VARIANT_TYPE ("a(ayuayu)"));
 
-				g_variant_builder_add (&builder_data, "a{sv}", &route_builder);
+		nm_ip_config_iter_ip6_route_for_each (&ipconf_iter, self, &route) {
+			GVariantBuilder route_builder;
+
+			g_variant_builder_init (&route_builder, G_VARIANT_TYPE ("a{sv}"));
+			g_variant_builder_add (&route_builder, "{sv}",
+			                       "dest",
+			                       g_variant_new_string (nm_utils_inet6_ntop (&route->network, NULL)));
+			g_variant_builder_add (&route_builder, "{sv}",
+			                       "prefix",
+			                       g_variant_new_uint32 (route->plen));
+			if (!IN6_IS_ADDR_UNSPECIFIED (&route->gateway)) {
+				g_variant_builder_add (&route_builder, "{sv}",
+				                       "next-hop",
+				                       g_variant_new_string (nm_utils_inet6_ntop (&route->gateway, NULL)));
 			}
 
-			g_value_take_variant (value, g_variant_builder_end (&builder_data));
-		}
-		break;
-	case PROP_ROUTES:
-		{
-			g_variant_builder_init (&builder_legacy, G_VARIANT_TYPE ("a(ayuayu)"));
-			nm_ip_config_iter_ip6_route_for_each (&ipconf_iter, self, &route) {
-				/* legacy versions of nm_ip6_route_set_prefix() in libnm-util assert that the
-				 * plen is positive. Skip the default routes not to break older clients. */
-				if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route))
-					continue;
+			g_variant_builder_add (&route_builder, "{sv}",
+			                       "metric",
+			                       g_variant_new_uint32 (route->metric));
 
+			g_variant_builder_add (&builder_data, "a{sv}", &route_builder);
+
+			/* legacy versions of nm_ip6_route_set_prefix() in libnm-util assert that the
+			 * plen is positive. Skip the default routes not to break older clients. */
+			if (!NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)) {
 				g_variant_builder_add (&builder_legacy, "(@ayu@ayu)",
 				                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
 				                                                  &route->network, 16, 1),
@@ -2372,9 +2372,14 @@ return_cached:
 				                                                  &route->gateway, 16, 1),
 				                       (guint32) route->metric);
 			}
-
-			g_value_take_variant (value, g_variant_builder_end (&builder_legacy));
 		}
+		priv->route_data_variant = g_variant_ref_sink (g_variant_builder_end (&builder_data));
+		priv->routes_variant = g_variant_ref_sink (g_variant_builder_end (&builder_legacy));
+out_routes_cached:
+		g_value_set_variant (value,
+		                     prop_id == PROP_ROUTE_DATA ?
+		                     priv->route_data_variant :
+		                     priv->routes_variant);
 		break;
 	case PROP_GATEWAY:
 		if (!IN6_IS_ADDR_UNSPECIFIED (&priv->gateway))
@@ -2481,12 +2486,15 @@ finalize (GObject *object)
 	nm_dedup_multi_index_remove_idx (priv->multi_idx, &priv->idx_ip6_addresses);
 	nm_dedup_multi_index_remove_idx (priv->multi_idx, &priv->idx_ip6_routes);
 
+	nm_clear_g_variant (&priv->address_data_variant);
+	nm_clear_g_variant (&priv->addresses_variant);
+	nm_clear_g_variant (&priv->route_data_variant);
+	nm_clear_g_variant (&priv->routes_variant);
+
 	g_array_unref (priv->nameservers);
 	g_ptr_array_unref (priv->domains);
 	g_ptr_array_unref (priv->searches);
 	g_ptr_array_unref (priv->dns_options);
-	nm_clear_g_variant (&priv->address_data_variant);
-	nm_clear_g_variant (&priv->addresses_variant);
 
 	G_OBJECT_CLASS (nm_ip6_config_parent_class)->finalize (object);
 
