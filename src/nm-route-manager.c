@@ -58,7 +58,8 @@ typedef struct {
 	NMRouteManager *self;
 	gint64 scheduled_at_ns;
 	guint idle_id;
-	NMPObject *obj;
+	const NMPObject *obj;
+	const NMPObject *obj_cached;
 } IP4DeviceRoutePurgeEntry;
 
 /*****************************************************************************/
@@ -490,8 +491,10 @@ _get_next_plat_route (const RouteIndex *index, gboolean start_at_zero, guint *cu
 		++*cur_idx;
 
 	/* get next route from the platform index. */
-	if (*cur_idx < index->len)
+	if (*cur_idx < index->len) {
+		nm_assert (NMP_OBJECT_UP_CAST (index->entries[*cur_idx]));
 		return index->entries[*cur_idx];
+	}
 	*cur_idx = index->len;
 	return NULL;
 }
@@ -649,7 +652,8 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 				 * in platform. Delete it. */
 				_LOGt (vtable->vt->addr_family, "%3d: platform rt-rm #%u - %s", ifindex, i_plat_routes,
 				       vtable->vt->route_to_string (cur_plat_route, NULL, 0));
-				vtable->vt->route_delete (priv->platform, ifindex, cur_plat_route);
+				nm_assert (ifindex == cur_plat_route->rx.ifindex);
+				nm_platform_ip_route_delete (priv->platform, NMP_OBJECT_UP_CAST (cur_plat_route));
 			}
 		}
 	}
@@ -796,7 +800,7 @@ next:
 		while (cur_plat_route) {
 			int route_dest_cmp_result = 0;
 
-			g_assert (cur_plat_route->rx.ifindex == ifindex);
+			nm_assert (cur_plat_route->rx.ifindex == ifindex);
 
 			_LOGt (vtable->vt->addr_family, "%3d: platform rt    #%u - %s", ifindex, i_plat_routes, vtable->vt->route_to_string (cur_plat_route, NULL, 0));
 
@@ -816,8 +820,10 @@ next:
 			/* if @cur_ipx_route is not equal to @plat_route, the route must be deleted. */
 			if (   !cur_ipx_route
 			    || route_dest_cmp_result != 0
-			    || *p_effective_metric != cur_plat_route->rx.metric)
-				vtable->vt->route_delete (priv->platform, ifindex, cur_plat_route);
+			    || *p_effective_metric != cur_plat_route->rx.metric) {
+				nm_assert (ifindex == cur_plat_route->rx.ifindex);
+				nm_platform_ip_route_delete (priv->platform, NMP_OBJECT_UP_CAST (cur_plat_route));
+			}
 
 			cur_plat_route = _get_next_plat_route (plat_routes_idx, FALSE, &i_plat_routes);
 		}
@@ -1074,6 +1080,7 @@ _ip4_device_routes_purge_entry_create (NMRouteManager *self, const NMPlatformIP4
 	entry->scheduled_at_ns = now_ns;
 	entry->idle_id = 0;
 	entry->obj = nmp_object_new (NMP_OBJECT_TYPE_IP4_ROUTE, (NMPlatformObject *) route);
+	entry->obj_cached = NULL;
 	return entry;
 }
 
@@ -1081,6 +1088,7 @@ static void
 _ip4_device_routes_purge_entry_free (IP4DeviceRoutePurgeEntry *entry)
 {
 	nmp_object_unref (entry->obj);
+	nmp_object_unref (entry->obj_cached);
 	nm_clear_g_source (&entry->idle_id);
 	g_slice_free (IP4DeviceRoutePurgeEntry, entry);
 }
@@ -1100,13 +1108,9 @@ _ip4_device_routes_idle_cb (IP4DeviceRoutePurgeEntry *entry)
 		return G_SOURCE_REMOVE;
 	}
 
-	_LOGt (vtable_v4.vt->addr_family, "device-route: delete %s", nmp_object_to_string (entry->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+	_LOGt (vtable_v4.vt->addr_family, "device-route: delete %s", nmp_object_to_string (entry->obj_cached, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 
-	nm_platform_ip4_route_delete (priv->platform,
-	                              entry->obj->ip4_route.ifindex,
-	                              entry->obj->ip4_route.network,
-	                              entry->obj->ip4_route.plen,
-	                              entry->obj->ip4_route.metric);
+	nm_platform_ip_route_delete (priv->platform, entry->obj_cached);
 
 	g_hash_table_remove (priv->ip4_device_routes.entries, entry->obj);
 	_ip4_device_routes_cancel (self);
@@ -1123,11 +1127,8 @@ _ip4_device_routes_ip4_route_changed (NMPlatform *platform,
 {
 	const NMPlatformSignalChangeType change_type = change_type_i;
 	NMRouteManagerPrivate *priv;
-	NMPObject obj_needle;
+	const NMPObject *obj;
 	IP4DeviceRoutePurgeEntry *entry;
-
-	if (change_type == NM_PLATFORM_SIGNAL_REMOVED)
-		return;
 
 	if (   route->rt_source != NM_IP_CONFIG_SOURCE_RTPROT_KERNEL
 	    || route->metric != 0) {
@@ -1137,8 +1138,9 @@ _ip4_device_routes_ip4_route_changed (NMPlatform *platform,
 
 	priv = NM_ROUTE_MANAGER_GET_PRIVATE (self);
 
-	entry = g_hash_table_lookup (priv->ip4_device_routes.entries,
-	                             nmp_object_stackinit (&obj_needle, NMP_OBJECT_TYPE_IP4_ROUTE, (NMPlatformObject *) route));
+	obj = NMP_OBJECT_UP_CAST (route);
+
+	entry = g_hash_table_lookup (priv->ip4_device_routes.entries, obj);
 	if (!entry)
 		return;
 
@@ -1149,6 +1151,15 @@ _ip4_device_routes_ip4_route_changed (NMPlatform *platform,
 		return;
 	}
 
+	entry->obj_cached = nmp_object_unref (entry->obj_cached);
+
+	if (change_type == NM_PLATFORM_SIGNAL_REMOVED) {
+		if (nm_clear_g_source (&entry->idle_id))
+			_LOGt (vtable_v4.vt->addr_family, "device-route: unschedule %s", nmp_object_to_string (entry->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+		return;
+	}
+
+	entry->obj_cached = nmp_object_ref (obj);
 	if (entry->idle_id == 0) {
 		_LOGt (vtable_v4.vt->addr_family, "device-route: schedule %s", nmp_object_to_string (entry->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 		entry->idle_id = g_idle_add ((GSourceFunc) _ip4_device_routes_idle_cb, entry);

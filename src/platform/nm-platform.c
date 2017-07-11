@@ -3446,29 +3446,19 @@ nm_platform_ip6_route_add (NMPlatform *self, const NMPlatformIP6Route *route)
 }
 
 gboolean
-nm_platform_ip4_route_delete (NMPlatform *self, int ifindex, in_addr_t network, guint8 plen, guint32 metric)
+nm_platform_ip_route_delete (NMPlatform *self,
+                             const NMPObject *obj)
 {
-	char str_dev[TO_STRING_DEV_BUF_SIZE];
-
 	_CHECK_SELF (self, klass, FALSE);
 
-	_LOGD ("route: deleting IPv4 route %s/%d, metric=%"G_GUINT32_FORMAT", ifindex %d%s",
-	       nm_utils_inet4_ntop (network, NULL), plen, metric, ifindex,
-	       _to_string_dev (self, ifindex, str_dev, sizeof (str_dev)));
-	return klass->ip4_route_delete (self, ifindex, network, plen, metric);
-}
+	nm_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ROUTE,
+	                                                 NMP_OBJECT_TYPE_IP6_ROUTE));
 
-gboolean
-nm_platform_ip6_route_delete (NMPlatform *self, int ifindex, struct in6_addr network, guint8 plen, guint32 metric)
-{
-	char str_dev[TO_STRING_DEV_BUF_SIZE];
+	_LOGD ("route: deleting IPv%c route %s",
+	       NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_IP4_ROUTE ? '4' : '6',
+	       nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 
-	_CHECK_SELF (self, klass, FALSE);
-
-	_LOGD ("route: deleting IPv6 route %s/%d, metric=%"G_GUINT32_FORMAT", ifindex %d%s",
-	       nm_utils_inet6_ntop (&network, NULL), plen, metric, ifindex,
-	       _to_string_dev (self, ifindex, str_dev, sizeof (str_dev)));
-	return klass->ip6_route_delete (self, ifindex, network, plen, metric);
+	return klass->ip_route_delete (self, obj);
 }
 
 const NMPlatformIP4Route *
@@ -5160,42 +5150,10 @@ _vtr_v6_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *rout
 	return nm_platform_ip6_route_add (self, &rt);
 }
 
-static gboolean
-_vtr_v4_route_delete (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route)
-{
-	return nm_platform_ip4_route_delete (self,
-	                                     ifindex > 0 ? ifindex : route->rx.ifindex,
-	                                     route->r4.network,
-	                                     route->rx.plen,
-	                                     route->rx.metric);
-}
-
-static gboolean
-_vtr_v6_route_delete (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route)
-{
-	return nm_platform_ip6_route_delete (self,
-	                                     ifindex > 0 ? ifindex : route->rx.ifindex,
-	                                     route->r6.network,
-	                                     route->rx.plen,
-	                                     route->rx.metric);
-}
-
 static guint32
 _vtr_v4_metric_normalize (guint32 metric)
 {
 	return metric;
-}
-
-static gboolean
-_vtr_v4_route_delete_default (NMPlatform *self, int ifindex, guint32 metric)
-{
-	return nm_platform_ip4_route_delete (self, ifindex, 0, 0, metric);
-}
-
-static gboolean
-_vtr_v6_route_delete_default (NMPlatform *self, int ifindex, guint32 metric)
-{
-	return nm_platform_ip6_route_delete (self, ifindex, in6addr_any, 0, metric);
 }
 
 /*****************************************************************************/
@@ -5208,8 +5166,6 @@ const NMPlatformVTableRoute nm_platform_vtable_route_v4 = {
 	.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, gboolean consider_host_part)) nm_platform_ip4_route_cmp_full,
 	.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route, char *buf, gsize len)) nm_platform_ip4_route_to_string,
 	.route_add                      = _vtr_v4_route_add,
-	.route_delete                   = _vtr_v4_route_delete,
-	.route_delete_default           = _vtr_v4_route_delete_default,
 	.metric_normalize               = _vtr_v4_metric_normalize,
 };
 
@@ -5221,8 +5177,6 @@ const NMPlatformVTableRoute nm_platform_vtable_route_v6 = {
 	.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, gboolean consider_host_part)) nm_platform_ip6_route_cmp_full,
 	.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route, char *buf, gsize len)) nm_platform_ip6_route_to_string,
 	.route_add                      = _vtr_v6_route_add,
-	.route_delete                   = _vtr_v6_route_delete,
-	.route_delete_default           = _vtr_v6_route_delete_default,
 	.metric_normalize               = nm_utils_ip6_route_metric_normalize,
 };
 

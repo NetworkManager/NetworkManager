@@ -367,8 +367,6 @@ typedef struct {
 	int (*route_cmp) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, gboolean consider_host_part);
 	const char *(*route_to_string) (const NMPlatformIPXRoute *route, char *buf, gsize len);
 	gboolean (*route_add) (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route, gint64 metric);
-	gboolean (*route_delete) (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route);
-	gboolean (*route_delete_default) (NMPlatform *self, int ifindex, guint32 metric);
 	guint32 (*metric_normalize) (guint32 metric);
 } NMPlatformVTableRoute;
 
@@ -644,8 +642,7 @@ typedef struct {
 
 	gboolean (*ip4_route_add) (NMPlatform *, const NMPlatformIP4Route *route);
 	gboolean (*ip6_route_add) (NMPlatform *, const NMPlatformIP6Route *route);
-	gboolean (*ip4_route_delete) (NMPlatform *, int ifindex, in_addr_t network, guint8 plen, guint32 metric);
-	gboolean (*ip6_route_delete) (NMPlatform *, int ifindex, struct in6_addr network, guint8 plen, guint32 metric);
+	gboolean (*ip_route_delete) (NMPlatform *, const NMPObject *obj);
 
 	gboolean (*check_support_kernel_extended_ifa_flags) (NMPlatform *);
 	gboolean (*check_support_user_ipv6ll) (NMPlatform *);
@@ -931,6 +928,7 @@ NMPlatformError nm_platform_link_sit_add (NMPlatform *self,
                                           const NMPlatformLink **out_link);
 
 const NMPlatformIP6Address *nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr address);
+
 gboolean nm_platform_ip4_address_add (NMPlatform *self,
                                       int ifindex,
                                       in_addr_t address,
@@ -958,8 +956,7 @@ const NMPlatformIP4Route *nm_platform_ip4_route_get (NMPlatform *self, int ifind
 const NMPlatformIP6Route *nm_platform_ip6_route_get (NMPlatform *self, int ifindex, struct in6_addr network, guint8 plen, guint32 metric);
 gboolean nm_platform_ip4_route_add (NMPlatform *self, const NMPlatformIP4Route *route);
 gboolean nm_platform_ip6_route_add (NMPlatform *self, const NMPlatformIP6Route *route);
-gboolean nm_platform_ip4_route_delete (NMPlatform *self, int ifindex, in_addr_t network, guint8 plen, guint32 metric);
-gboolean nm_platform_ip6_route_delete (NMPlatform *self, int ifindex, struct in6_addr network, guint8 plen, guint32 metric);
+gboolean nm_platform_ip_route_delete (NMPlatform *self, const NMPObject *route);
 
 const char *nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len);
 const char *nm_platform_lnk_gre_to_string (const NMPlatformLnkGre *lnk, char *buf, gsize len);

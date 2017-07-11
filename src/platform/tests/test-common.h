@@ -217,6 +217,9 @@ nmtstp_ip6_route_get_all (NMPlatform *platform,
 GArray *nmtstp_platform_ip4_address_get_all (NMPlatform *self, int ifindex);
 GArray *nmtstp_platform_ip6_address_get_all (NMPlatform *self, int ifindex);
 
+gboolean nmtstp_platform_ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, guint8 plen, guint32 metric);
+gboolean nmtstp_platform_ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, guint8 plen, guint32 metric);
+
 const NMPlatformLink *nmtstp_link_get_typed (NMPlatform *platform, int ifindex, const char *name, NMLinkType link_type);
 const NMPlatformLink *nmtstp_link_get (NMPlatform *platform, int ifindex, const char *name);
 

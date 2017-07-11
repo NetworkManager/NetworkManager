@@ -371,7 +371,7 @@ _platform_route_sync_flush (const VTableIP *vtable, NMDefaultRouteManager *self,
 		 */
 		if (   !entry
 		    && (has_ifindex_synced || ifindex_to_flush == route->ifindex)) {
-			vtable->vt->route_delete_default (priv->platform, route->ifindex, route->metric);
+			nm_platform_ip_route_delete (priv->platform, NMP_OBJECT_UP_CAST (route));
 			changed = TRUE;
 		}
 	}

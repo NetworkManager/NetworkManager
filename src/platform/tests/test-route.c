@@ -136,7 +136,7 @@ test_ip4_route_metric0 (void)
 	nmtstp_assert_ip4_route_exists (NULL, TRUE,  DEVICE_NAME, network, plen, metric);
 
 	/* Deleting route with metric 0 does nothing */
-	g_assert (nm_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, network, plen, 0));
+	g_assert (nmtstp_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, network, plen, 0));
 	ensure_no_signal (route_removed);
 
 	nmtstp_assert_ip4_route_exists (NULL, FALSE, DEVICE_NAME, network, plen, 0);
@@ -150,21 +150,21 @@ test_ip4_route_metric0 (void)
 	nmtstp_assert_ip4_route_exists (NULL, TRUE,  DEVICE_NAME, network, plen, metric);
 
 	/* Delete route with metric 0 */
-	g_assert (nm_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, network, plen, 0));
+	g_assert (nmtstp_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, network, plen, 0));
 	accept_signal (route_removed);
 
 	nmtstp_assert_ip4_route_exists (NULL, FALSE, DEVICE_NAME, network, plen, 0);
 	nmtstp_assert_ip4_route_exists (NULL, TRUE,  DEVICE_NAME, network, plen, metric);
 
 	/* Delete route with metric 0 again (we expect nothing to happen) */
-	g_assert (nm_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, network, plen, 0));
+	g_assert (nmtstp_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, network, plen, 0));
 	ensure_no_signal (route_removed);
 
 	nmtstp_assert_ip4_route_exists (NULL, FALSE, DEVICE_NAME, network, plen, 0);
 	nmtstp_assert_ip4_route_exists (NULL, TRUE,  DEVICE_NAME, network, plen, metric);
 
 	/* Delete the other route */
-	g_assert (nm_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, network, plen, metric));
+	g_assert (nmtstp_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, network, plen, metric));
 	accept_signal (route_removed);
 
 	nmtstp_assert_ip4_route_exists (NULL, FALSE, DEVICE_NAME, network, plen, 0);
@@ -250,19 +250,19 @@ test_ip4_route (void)
 	g_ptr_array_unref (routes);
 
 	/* Remove route */
-	g_assert (nm_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, network, plen, metric));
+	g_assert (nmtstp_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, network, plen, metric));
 	nmtstp_assert_ip4_route_exists (NULL, FALSE, DEVICE_NAME, network, plen, metric);
 	accept_signal (route_removed);
 
 	/* Remove route again */
-	g_assert (nm_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, network, plen, metric));
+	g_assert (nmtstp_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, network, plen, metric));
 
 	/* Remove default route */
-	g_assert (nm_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, 0, 0, metric));
+	g_assert (nmtstp_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, 0, 0, metric));
 	accept_signal (route_removed);
 
 	/* Remove route to gateway */
-	g_assert (nm_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, gateway, 32, metric));
+	g_assert (nmtstp_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, gateway, 32, metric));
 	accept_signal (route_removed);
 
 	free_signal (route_added);
@@ -352,19 +352,19 @@ test_ip6_route (void)
 	g_ptr_array_unref (routes);
 
 	/* Remove route */
-	g_assert (nm_platform_ip6_route_delete (NM_PLATFORM_GET, ifindex, network, plen, metric));
+	g_assert (nmtstp_platform_ip6_route_delete (NM_PLATFORM_GET, ifindex, network, plen, metric));
 	g_assert (!nm_platform_ip6_route_get (NM_PLATFORM_GET, ifindex, network, plen, metric));
 	accept_signal (route_removed);
 
 	/* Remove route again */
-	g_assert (nm_platform_ip6_route_delete (NM_PLATFORM_GET, ifindex, network, plen, metric));
+	g_assert (nmtstp_platform_ip6_route_delete (NM_PLATFORM_GET, ifindex, network, plen, metric));
 
 	/* Remove default route */
-	g_assert (nm_platform_ip6_route_delete (NM_PLATFORM_GET, ifindex, in6addr_any, 0, metric));
+	g_assert (nmtstp_platform_ip6_route_delete (NM_PLATFORM_GET, ifindex, in6addr_any, 0, metric));
 	accept_signal (route_removed);
 
 	/* Remove route to gateway */
-	g_assert (nm_platform_ip6_route_delete (NM_PLATFORM_GET, ifindex, gateway, 128, metric));
+	g_assert (nmtstp_platform_ip6_route_delete (NM_PLATFORM_GET, ifindex, gateway, 128, metric));
 	accept_signal (route_removed);
 
 	free_signal (route_added);
@@ -438,11 +438,11 @@ test_ip4_route_options (void)
 	rts[0].lock_cwnd = TRUE;
 	g_assert_cmpint (routes->len, ==, 1);
 	nmtst_platform_ip4_routes_equal_aptr ((const NMPObject *const*) routes->pdata, rts, routes->len, TRUE);
-	g_ptr_array_unref (routes);
 
 	/* Remove route */
-	/*FIXME */
-	//g_assert (nm_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, network, 24, 20));
+	g_assert (nm_platform_ip_route_delete (NM_PLATFORM_GET, routes->pdata[0]));
+
+	g_ptr_array_unref (routes);
 }
 
 
@@ -537,9 +537,9 @@ test_ip6_route_options (gconstpointer test_data)
 	g_ptr_array_unref (routes);
 
 	for (i = 0; i < rts_n; i++) {
-		g_assert (nm_platform_ip6_route_delete (NM_PLATFORM_GET, IFINDEX,
-		                                        rts_add[i].network, rts_add[i].plen,
-		                                        rts_add[i].metric));
+		g_assert (nmtstp_platform_ip6_route_delete (NM_PLATFORM_GET, IFINDEX,
+		                                            rts_add[i].network, rts_add[i].plen,
+		                                            rts_add[i].metric));
 	}
 
 	for (i = 0; i < addr_n; i++) {
