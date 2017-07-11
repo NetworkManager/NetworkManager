@@ -214,6 +214,9 @@ nmtstp_ip6_route_get_all (NMPlatform *platform,
 
 /*****************************************************************************/
 
+GArray *nmtstp_platform_ip4_address_get_all (NMPlatform *self, int ifindex);
+GArray *nmtstp_platform_ip6_address_get_all (NMPlatform *self, int ifindex);
+
 const NMPlatformLink *nmtstp_link_get_typed (NMPlatform *platform, int ifindex, const char *name, NMLinkType link_type);
 const NMPlatformLink *nmtstp_link_get (NMPlatform *platform, int ifindex, const char *name);
 

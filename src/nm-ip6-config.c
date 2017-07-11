@@ -509,26 +509,15 @@ nm_ip6_config_commit (const NMIP6Config *self,
                       int ifindex,
                       gboolean routes_full_sync)
 {
-	gs_unref_array GArray *addresses = NULL;
+	gs_unref_ptrarray GPtrArray *addresses = NULL;
 	const NMDedupMultiHeadEntry *head_entry;
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (self != NULL, FALSE);
 
 	/* Addresses */
-	{
-		NMDedupMultiIter iter;
-
-		head_entry = nm_ip6_config_lookup_addresses (self);
-		addresses = g_array_sized_new (FALSE, FALSE,
-		                               sizeof (NMPlatformIP6Address),
-		                               head_entry ? head_entry->len : 0);
-		nm_dedup_multi_iter_for_each (&iter, head_entry) {
-			g_array_append_vals (addresses,
-			                     NMP_OBJECT_CAST_IP6_ADDRESS (iter.current->obj),
-			                     1);
-		}
-	}
+	addresses = nm_dedup_multi_objs_to_ptr_array_head (nm_ip6_config_lookup_addresses (self),
+	                                                   NULL, NULL);
 
 	nm_platform_ip6_address_sync (platform, ifindex, addresses, TRUE);
 

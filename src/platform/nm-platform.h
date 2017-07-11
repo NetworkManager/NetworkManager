@@ -931,8 +931,6 @@ NMPlatformError nm_platform_link_sit_add (NMPlatform *self,
                                           const NMPlatformLink **out_link);
 
 const NMPlatformIP6Address *nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr address);
-GArray *nm_platform_ip4_address_get_all (NMPlatform *self, int ifindex);
-GArray *nm_platform_ip6_address_get_all (NMPlatform *self, int ifindex);
 gboolean nm_platform_ip4_address_add (NMPlatform *self,
                                       int ifindex,
                                       in_addr_t address,
@@ -952,8 +950,8 @@ gboolean nm_platform_ip6_address_add (NMPlatform *self,
                                       guint32 flags);
 gboolean nm_platform_ip4_address_delete (NMPlatform *self, int ifindex, in_addr_t address, guint8 plen, in_addr_t peer_address);
 gboolean nm_platform_ip6_address_delete (NMPlatform *self, int ifindex, struct in6_addr address, guint8 plen);
-gboolean nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, const GArray *known_addresses, GPtrArray **out_added_addresses);
-gboolean nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, const GArray *known_addresses, gboolean keep_link_local);
+gboolean nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, GPtrArray *known_addresse);
+gboolean nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, const GPtrArray *known_addresses, gboolean keep_link_local);
 gboolean nm_platform_address_flush (NMPlatform *self, int ifindex);
 
 const NMPlatformIP4Route *nm_platform_ip4_route_get (NMPlatform *self, int ifindex, in_addr_t network, guint8 plen, guint32 metric);

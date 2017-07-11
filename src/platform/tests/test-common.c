@@ -70,6 +70,36 @@ _init_platform (NMPlatform **platform, gboolean external_command)
 
 /*****************************************************************************/
 
+static GArray *
+_ipx_address_get_all (NMPlatform *self, int ifindex, NMPObjectType obj_type)
+{
+	NMPLookup lookup;
+
+	g_assert (NM_IS_PLATFORM (self));
+	g_assert (ifindex > 0);
+	g_assert (NM_IN_SET (obj_type, NMP_OBJECT_TYPE_IP4_ADDRESS, NMP_OBJECT_TYPE_IP6_ADDRESS));
+	nmp_lookup_init_addrroute (&lookup,
+	                           obj_type,
+	                           ifindex);
+	return nmp_cache_lookup_to_array (nm_platform_lookup (self, &lookup),
+	                                  obj_type,
+	                                  FALSE /*addresses are always visible. */);
+}
+
+GArray *
+nmtstp_platform_ip4_address_get_all (NMPlatform *self, int ifindex)
+{
+	return _ipx_address_get_all (self, ifindex, NMP_OBJECT_TYPE_IP4_ADDRESS);
+}
+
+GArray *
+nmtstp_platform_ip6_address_get_all (NMPlatform *self, int ifindex)
+{
+	return _ipx_address_get_all (self, ifindex, NMP_OBJECT_TYPE_IP6_ADDRESS);
+}
+
+/*****************************************************************************/
+
 SignalData *
 add_signal_full (const char *name, NMPlatformSignalChangeType change_type, GCallback callback, int ifindex, const char *ifname)
 {

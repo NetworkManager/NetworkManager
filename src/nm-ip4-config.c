@@ -654,30 +654,16 @@ nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 gboolean
 nm_ip4_config_commit (const NMIP4Config *self, NMPlatform *platform, NMRouteManager *route_manager, int ifindex, gboolean routes_full_sync, gint64 default_route_metric)
 {
-	gs_unref_ptrarray GPtrArray *added_addresses = NULL;
-	gs_unref_array GArray *addresses = NULL;
+	gs_unref_ptrarray GPtrArray *addresses = NULL;
 	const NMDedupMultiHeadEntry *head_entry;
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (self != NULL, FALSE);
 
-	/* Addresses */
-	{
-		NMDedupMultiIter iter;
+	addresses = nm_dedup_multi_objs_to_ptr_array_head (nm_ip4_config_lookup_addresses (self),
+	                                                   NULL, NULL);
 
-		head_entry = nm_ip4_config_lookup_addresses (self);
-		addresses = g_array_sized_new (FALSE, FALSE,
-		                               sizeof (NMPlatformIP4Address),
-		                               head_entry ? head_entry->len : 0);
-		nm_dedup_multi_iter_for_each (&iter, head_entry) {
-			g_array_append_vals (addresses,
-			                     NMP_OBJECT_CAST_IP4_ADDRESS (iter.current->obj),
-			                     1);
-		}
-	}
-
-	nm_platform_ip4_address_sync (platform, ifindex, addresses,
-	                              default_route_metric >= 0 ? &added_addresses : NULL);
+	nm_platform_ip4_address_sync (platform, ifindex, addresses);
 
 	/* Routes */
 	{
@@ -691,14 +677,19 @@ nm_ip4_config_commit (const NMIP4Config *self, NMPlatform *platform, NMRouteMana
 		routes = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP4Route), head_entry ? head_entry->len : 0);
 
 		if (   default_route_metric >= 0
-		    && added_addresses) {
+		    && addresses) {
 			/* For IPv6, we explicitly add the device-routes (onlink) to NMIP6Config.
 			 * As we don't do that for IPv4, add it here shortly before syncing
 			 * the routes. For NMRouteManager these routes are very much important. */
-			for (i = 0; i < added_addresses->len; i++) {
-				const NMPlatformIP4Address *addr = added_addresses->pdata[i];
+			for (i = 0; i < addresses->len; i++) {
+				const NMPObject *o = addresses->pdata[i];
+				const NMPlatformIP4Address *addr;
 				NMPlatformIP4Route route = { 0 };
 
+				if (!o)
+					continue;
+
+				addr = NMP_OBJECT_CAST_IP4_ADDRESS (o);
 				if (addr->plen == 0)
 					continue;
 
