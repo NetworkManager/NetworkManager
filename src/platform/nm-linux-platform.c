@@ -4230,7 +4230,7 @@ out:
 	/* such an object still exists in the cache. To be sure, refetch it (and
 	 * hope it's gone) */
 	do_request_one_type (platform, NMP_OBJECT_GET_TYPE (obj_id));
-	return !!nmp_cache_lookup_obj (priv->cache, obj_id);
+	return !nmp_cache_lookup_obj (priv->cache, obj_id);
 }
 
 static WaitForNlResponseResult
