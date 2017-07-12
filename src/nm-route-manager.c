@@ -33,7 +33,7 @@
  * up, we delete it. */
 #define IP4_DEVICE_ROUTES_WAIT_TIME_NS                 (NM_UTILS_NS_PER_SECOND / 2)
 
-#define IP4_DEVICE_ROUTES_GC_INTERVAL_SEC              (IP4_DEVICE_ROUTES_WAIT_TIME_NS * 2)
+#define IP4_DEVICE_ROUTES_GC_INTERVAL_MSEC             ((IP4_DEVICE_ROUTES_WAIT_TIME_NS / 1000000) * 3)
 
 /*****************************************************************************/
 
@@ -1227,7 +1227,7 @@ nm_route_manager_ip4_route_register_device_route_purge_list (NMRouteManager *sel
 	}
 	if (priv->ip4_device_routes.gc_id == 0) {
 		g_signal_connect (priv->platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, G_CALLBACK (_ip4_device_routes_ip4_route_changed), self);
-		priv->ip4_device_routes.gc_id = g_timeout_add (IP4_DEVICE_ROUTES_GC_INTERVAL_SEC, (GSourceFunc) _ip4_device_routes_gc, self);
+		priv->ip4_device_routes.gc_id = g_timeout_add (IP4_DEVICE_ROUTES_GC_INTERVAL_MSEC, (GSourceFunc) _ip4_device_routes_gc, self);
 	}
 }
 
