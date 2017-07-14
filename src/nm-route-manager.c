@@ -323,7 +323,9 @@ _route_index_create_from_platform (const VTableIP *vtable,
 	                                                  vtable->vt->obj_type,
 	                                                  ifindex,
 	                                                  FALSE,
-	                                                  NULL,
+	                                                  ignore_kernel_routes
+	                                                    ? nm_platform_lookup_predicate_routes_skip_rtprot_kernel
+	                                                    : NULL,
 	                                                  NULL);
 	if (!storage)
 		return _route_index_create (vtable, NULL);
