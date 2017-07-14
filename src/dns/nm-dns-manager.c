@@ -158,12 +158,12 @@ G_DEFINE_TYPE (NMDnsManager, nm_dns_manager, NM_TYPE_EXPORTED_OBJECT)
 #define NM_DNS_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDnsManager, NM_IS_DNS_MANAGER)
 
 static gboolean
-domain_is_valid (const gchar *domain)
+domain_is_valid (const gchar *domain, gboolean check_public_suffix)
 {
 	if (*domain == '\0')
 		return FALSE;
 #if WITH_LIBPSL
-	if (psl_is_public_suffix (psl_builtin (), domain))
+	if (check_public_suffix && psl_is_public_suffix (psl_builtin (), domain))
 		return FALSE;
 #endif
 	return TRUE;
@@ -312,7 +312,7 @@ merge_one_ip4_config (NMResolvConfData *rc, NMIP4Config *src)
 		const char *search;
 
 		search = nm_ip4_config_get_search (src, i);
-		if (!domain_is_valid (search))
+		if (!domain_is_valid (search, FALSE))
 			continue;
 		add_string_item (rc->searches, search);
 	}
@@ -322,7 +322,7 @@ merge_one_ip4_config (NMResolvConfData *rc, NMIP4Config *src)
 			const char *domain;
 
 			domain = nm_ip4_config_get_domain (src, i);
-			if (!domain_is_valid (domain))
+			if (!domain_is_valid (domain, FALSE))
 				continue;
 			add_string_item (rc->searches, domain);
 		}
@@ -382,7 +382,7 @@ merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src, const char *iface)
 		const char *search;
 
 		search = nm_ip6_config_get_search (src, i);
-		if (!domain_is_valid (search))
+		if (!domain_is_valid (search, FALSE))
 			continue;
 		add_string_item (rc->searches, search);
 	}
@@ -392,7 +392,7 @@ merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src, const char *iface)
 			const char *domain;
 
 			domain = nm_ip6_config_get_domain (src, i);
-			if (!domain_is_valid (domain))
+			if (!domain_is_valid (domain, FALSE))
 				continue;
 			add_string_item (rc->searches, domain);
 		}
@@ -923,7 +923,7 @@ merge_global_dns_config (NMResolvConfData *rc, NMGlobalDnsConfig *global_conf)
 	options = nm_global_dns_config_get_options (global_conf);
 
 	for (i = 0; searches && searches[i]; i++) {
-		if (domain_is_valid (searches[i]))
+		if (domain_is_valid (searches[i], FALSE))
 			add_string_item (rc->searches, searches[i]);
 	}
 
@@ -1055,9 +1055,9 @@ _collect_resolv_conf_data (NMDnsManager *self, /* only for logging context, no o
 		if (   hostdomain
 		    && !nm_utils_ipaddr_valid (AF_UNSPEC, hostname)) {
 			hostdomain++;
-			if (domain_is_valid (hostdomain))
+			if (domain_is_valid (hostdomain, TRUE))
 				add_string_item (rc.searches, hostdomain);
-			else if (domain_is_valid (hostname))
+			else if (domain_is_valid (hostname, TRUE))
 				add_string_item (rc.searches, hostname);
 		}
 	}
