@@ -1313,7 +1313,9 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 
 		if (nm_platform_ip4_route_cmp (r_src, r_dst) != 0) {
 			are_equal = FALSE;
-			if (!nm_ip_config_obj_id_equal_ip4_route (r_src, r_dst)) {
+			if (   !nm_ip_config_obj_id_equal_ip4_route (r_src, r_dst)
+			    || r_src->gateway != r_dst->gateway
+			    || r_src->metric != r_dst->metric) {
 				has_relevant_changes = TRUE;
 				break;
 			}
