@@ -462,7 +462,6 @@ nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 	 * routes have their route metrics explicitly set. */
 	priv->route_metric = has_gateway ? (gint64) lowest_metric : (gint64) -1;
 
-	nm_dedup_multi_iter_rewind (&iter);
 	nmp_cache_iter_for_each (&iter, head_entry, &plobj) {
 		const NMPlatformIP6Route *route = NMP_OBJECT_CAST_IP6_ROUTE (plobj);
 
@@ -1174,6 +1173,7 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 	NMIP6ConfigPrivate *dst_priv;
 	const NMIP6ConfigPrivate *src_priv;
 	NMDedupMultiIter ipconf_iter_src, ipconf_iter_dst;
+	const NMDedupMultiHeadEntry *head_entry_src;
 
 	g_return_val_if_fail (NM_IS_IP6_CONFIG (src), FALSE);
 	g_return_val_if_fail (NM_IS_IP6_CONFIG (dst), FALSE);
@@ -1212,7 +1212,8 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 	}
 
 	/* addresses */
-	nm_ip_config_iter_ip6_address_init (&ipconf_iter_src, src);
+	head_entry_src = nm_ip6_config_lookup_addresses (src);
+	nm_dedup_multi_iter_init (&ipconf_iter_src, head_entry_src);
 	nm_ip_config_iter_ip6_address_init (&ipconf_iter_dst, dst);
 	are_equal = TRUE;
 	while (TRUE) {
@@ -1241,15 +1242,12 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 		}
 	}
 	if (!are_equal) {
-		const NMPlatformIP6Address *r_src;
-
 		has_minor_changes = TRUE;
 		nm_dedup_multi_index_dirty_set_idx (dst_priv->multi_idx, &dst_priv->idx_ip6_addresses);
-		nm_dedup_multi_iter_rewind (&ipconf_iter_src);
-		while (nm_ip_config_iter_ip6_address_next (&ipconf_iter_src, &r_src)) {
+		nm_dedup_multi_iter_for_each (&ipconf_iter_src, head_entry_src) {
 			nm_dedup_multi_index_add (dst_priv->multi_idx,
 			                          &dst_priv->idx_ip6_addresses,
-			                          NMP_OBJECT_UP_CAST (r_src),
+			                          ipconf_iter_src.current->obj,
 			                          NM_DEDUP_MULTI_IDX_MODE_APPEND_FORCE,
 			                          NULL,
 			                          NULL);
@@ -1258,7 +1256,8 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 	}
 
 	/* routes */
-	nm_ip_config_iter_ip6_route_init (&ipconf_iter_src, src);
+	head_entry_src = nm_ip6_config_lookup_routes (src);
+	nm_dedup_multi_iter_init (&ipconf_iter_src, head_entry_src);
 	nm_ip_config_iter_ip6_route_init (&ipconf_iter_dst, dst);
 	are_equal = TRUE;
 	while (TRUE) {
@@ -1286,15 +1285,12 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 		}
 	}
 	if (!are_equal) {
-		const NMPlatformIP6Route *r_src;
-
 		has_minor_changes = TRUE;
 		nm_dedup_multi_index_dirty_set_idx (dst_priv->multi_idx, &dst_priv->idx_ip6_routes);
-		nm_dedup_multi_iter_rewind (&ipconf_iter_src);
-		while (nm_ip_config_iter_ip6_route_next (&ipconf_iter_src, &r_src)) {
+		nm_dedup_multi_iter_for_each (&ipconf_iter_src, head_entry_src) {
 			nm_dedup_multi_index_add (dst_priv->multi_idx,
 			                          &dst_priv->idx_ip6_routes,
-			                          NMP_OBJECT_UP_CAST (r_src),
+			                          ipconf_iter_src.current->obj,
 			                          NM_DEDUP_MULTI_IDX_MODE_APPEND_FORCE,
 			                          NULL,
 			                          NULL);

@@ -302,9 +302,9 @@ guint nm_dedup_multi_index_dirty_remove_idx (NMDedupMultiIndex *self,
 /*****************************************************************************/
 
 typedef struct _NMDedupMultiIter {
-	const NMDedupMultiHeadEntry *head;
+	const CList *_head;
+	const CList *_next;
 	const NMDedupMultiEntry *current;
-	const NMDedupMultiEntry *next;
 } NMDedupMultiIter;
 
 static inline void
@@ -312,11 +312,14 @@ nm_dedup_multi_iter_init (NMDedupMultiIter *iter, const NMDedupMultiHeadEntry *h
 {
 	g_return_if_fail (iter);
 
-	iter->head = head;
+	if (head && !c_list_is_empty (&head->lst_entries_head)) {
+		iter->_head = &head->lst_entries_head;
+		iter->_next = head->lst_entries_head.next;
+	} else {
+		iter->_head = NULL;
+		iter->_next = NULL;
+	}
 	iter->current = NULL;
-	iter->next = head && !c_list_is_empty (&head->lst_entries_head)
-	             ? c_list_entry (head->lst_entries_head.next, NMDedupMultiEntry, lst_entries)
-	             : NULL;
 }
 
 static inline gboolean
@@ -324,40 +327,17 @@ nm_dedup_multi_iter_next (NMDedupMultiIter *iter)
 {
 	g_return_val_if_fail (iter, FALSE);
 
-	if (!iter->next)
+	if (!iter->_next)
 		return FALSE;
 
-	/* we always look ahead for the @next. This way, the user
+	/* we always look ahead for the next. This way, the user
 	 * may delete the current entry (but no other entries). */
-	iter->current = iter->next;
-	if (iter->next->lst_entries.next == &iter->head->lst_entries_head)
-		iter->next = NULL;
+	iter->current = c_list_entry (iter->_next, NMDedupMultiEntry, lst_entries);
+	if (iter->_next->next == iter->_head)
+		iter->_next = NULL;
 	else
-		iter->next = c_list_entry (iter->next->lst_entries.next, NMDedupMultiEntry, lst_entries);
+		iter->_next = iter->_next->next;
 	return TRUE;
-}
-
-static inline void
-nm_dedup_multi_iter_rewind (NMDedupMultiIter *iter)
-{
-	/* rewind the iterator.
-	 *
-	 * In principle, you can always delete the current entry.
-	 * However, if you delete *all* current entries, the list
-	 * head becomes invalid too and rewinding will crash.
-	 *
-	 * So, either
-	 *  - don't modify the list
-	 *  - if you modify it:
-	 *    - only delete the current entry, don't delete other entries.
-	 *    - you may add more entries, however that may make iteration
-	 *      confusing.
-	 *  - you may rewind the iterator, but only if not all
-	 *    entires were deleted.
-	 *
-	 * Use with care. */
-	g_return_if_fail (iter);
-	nm_dedup_multi_iter_init (iter, iter->head);
 }
 
 #define nm_dedup_multi_iter_for_each(iter, head_entry) \
