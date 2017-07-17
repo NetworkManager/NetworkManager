@@ -179,9 +179,9 @@ get_encodings_for_lang (const char *lang,
                         char **encoding2,
                         char **encoding3)
 {
-	struct EncodingTriplet *	encodings;
-	gboolean				success = FALSE;
-	char *				tmp_lang;
+	struct EncodingTriplet *encodings;
+	gboolean success = FALSE;
+	char *tmp_lang;
 
 	g_return_val_if_fail (lang != NULL, FALSE);
 	g_return_val_if_fail (encoding1 != NULL, FALSE);
