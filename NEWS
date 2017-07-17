@@ -1,4 +1,18 @@
 ==============================================
+NetworkManager-1.6.4
+Overview of changes since NetworkManager-1.6.2
+==============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Start autoactivation for Wi-Fi only after the scan is complete.
+* Improved parsing of dhclient configuration file.
+* Fixed DNS resolution for VPNs when using systemd-resolved.
+* Fixed setting 802-1x.password-raw property in nmcli.
+* Fixed bug that caused the lack of a default route in some cases.
+* Other bug fixes and improvements.
+
+==============================================
 NetworkManager-1.6.2
 Overview of changes since NetworkManager-1.6.0
 ==============================================
