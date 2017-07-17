@@ -36,3 +36,12 @@ with #ifdef MY_DEFINE / #endif in the code.
     GOOD: #define MY_CONSTANT 42
     BAD:  static const unsigned myConstant = 42;
 
+3) Legal:
+
+All original contributions to NetworkManager are licensed under the
+GNU General Public License, version 2 or later, or, if another license
+is specified as governing the file or directory being modified, such
+other license. See the file COPYING in this directory for details.
+
+
+
