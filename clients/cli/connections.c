@@ -4431,6 +4431,8 @@ add_connection_cb (GObject *client,
 	NmCli *nmc = info->nmc;
 	NMRemoteConnection *connection;
 	GError *error = NULL;
+	const GPtrArray *connections;
+	guint i, found;
 
 	connection = nm_client_add_connection_finish (NM_CLIENT (client), result, &error);
 	if (error) {
@@ -4440,6 +4442,28 @@ add_connection_cb (GObject *client,
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 	} else {
+		connections = nm_client_get_connections (nmc->client);
+		if (connections) {
+			found = 0;
+			for (i = 0; i < connections->len; i++) {
+				NMConnection *candidate = NM_CONNECTION (connections->pdata[i]);
+
+				if ((NMConnection *) connection == candidate)
+					continue;
+				if (nm_streq0 (nm_connection_get_id (candidate), info->con_name))
+					found++;
+			}
+			if (found > 0) {
+				g_printerr (g_dngettext (GETTEXT_PACKAGE,
+				                         "Warning: There is another connection with the name '%1$s'. Reference the connection by its uuid '%2$s'\n",
+				                         "Warning: There are %3$u other connections with the name '%1$s'. Reference the connection by its uuid '%2$s'\n",
+				                         found),
+				            info->con_name,
+				            nm_connection_get_uuid (NM_CONNECTION (connection)),
+				            found);
+			}
+		}
+
 		g_print (_("Connection '%s' (%s) successfully added.\n"),
 		         nm_connection_get_id (NM_CONNECTION (connection)),
 		         nm_connection_get_uuid (NM_CONNECTION (connection)));
