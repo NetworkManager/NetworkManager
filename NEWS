@@ -1,4 +1,18 @@
 ==============================================
+NetworkManager-1.4.6
+Overview of changes since NetworkManager-1.4.4
+==============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* The MTU of VLANS is inherited from parent device if not explicitly set.
+* Fixed activation of generic connections.
+* Fixed bug that caused the lack of a default route in some cases.
+* NetworkManager now honors the global default value for
+    wifi.mac-address-randomization when using the ifcfg-rh plugin.
+* Other fixes and improvements
+
+==============================================
 NetworkManager-1.4.4
 Overview of changes since NetworkManager-1.4.2
 ==============================================
