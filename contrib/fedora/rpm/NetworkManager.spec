@@ -552,8 +552,6 @@ fi
 %{systemd_dir}/NetworkManager.service
 %{systemd_dir}/NetworkManager-wait-online.service
 %{systemd_dir}/NetworkManager-dispatcher.service
-%dir %{systemd_dir}/network-online.target.wants
-%{systemd_dir}/network-online.target.wants/NetworkManager-wait-online.service
 %dir %{_datadir}/doc/NetworkManager/examples
 %{_datadir}/doc/NetworkManager/examples/server.conf
 %doc NEWS AUTHORS README CONTRIBUTING TODO

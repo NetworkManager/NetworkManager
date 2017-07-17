@@ -34,7 +34,6 @@ dist_dependencies =
 dist_configure_check =
 install_data_hook =
 install_exec_hook =
-install_exec_local =
 uninstall_hook =
 TESTS =
 BUILT_SOURCES =
@@ -3604,12 +3603,6 @@ data/org.freedesktop.NetworkManager.service: $(srcdir)/data/org.freedesktop.Netw
 
 service_DATA += data/org.freedesktop.NetworkManager.service
 
-install-exec-local-data:
-	install -d $(DESTDIR)$(systemdsystemunitdir)/network-online.target.wants
-	ln -sf $(systemdsystemunitdir)/NetworkManager-wait-online.service $(DESTDIR)$(systemdsystemunitdir)/network-online.target.wants
-
-install_exec_local += install-exec-local-data
-
 endif
 
 examples_DATA += data/server.conf
@@ -4494,8 +4487,6 @@ dist-hook: $(dist_hook)
 ###############################################################################
 
 install-exec-hook: $(install_exec_hook)
-
-install-exec-local: $(install_exec_local)
 
 install-data-hook: $(install_data_hook)
 	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/conf.d
