@@ -1590,6 +1590,33 @@ done:
 	return TRUE;
 }
 
+/*****************************************************************************/
+
+void nm_config_set_connectivity_check_enabled (NMConfig *self,
+											   gboolean enabled)
+{
+	NMConfigPrivate *priv;
+	GKeyFile *keyfile;
+
+	g_return_if_fail (NM_IS_CONFIG (self));
+
+	priv = NM_CONFIG_GET_PRIVATE (self);
+	g_return_if_fail (priv->config_data);
+
+	keyfile = nm_config_data_clone_keyfile_intern (priv->config_data);
+
+	/* Remove existing groups */
+	g_key_file_remove_group (keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, NULL);
+
+	if (!enabled) {
+		g_key_file_set_value (keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY,
+							  "interval", "0");
+	}
+
+	nm_config_set_values (self, keyfile, TRUE, FALSE);
+	g_key_file_unref (keyfile);
+}
+
 /**
  * nm_config_set_values:
  * @self: the NMConfig instance
