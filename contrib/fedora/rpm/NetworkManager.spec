@@ -430,7 +430,11 @@ intltoolize --automake --copy --force
 	--with-systemdsystemunitdir=%{systemd_dir} \
 	--with-system-ca-path=/etc/pki/tls/cert.pem \
 	--with-dbus-sys-dir=%{dbus_sys_dir} \
+%if %{with test}
 	--with-tests=yes \
+%else
+	--with-tests=no \
+%endif
 	--with-valgrind=no \
 	--enable-ifcfg-rh=yes \
 %if %{with ppp}
