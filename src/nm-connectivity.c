@@ -124,6 +124,7 @@ finish_cb_data (ConCheckCbData *cb_data, NMConnectivityState new_state)
 	g_object_unref (cb_data->simple);
 	curl_slist_free_all (cb_data->request_headers);
 	g_free (cb_data->response);
+	g_free (cb_data->ifspec);
 	g_source_remove (cb_data->timeout_id);
 	g_slice_free (ConCheckCbData, cb_data);
 }
