@@ -75,7 +75,7 @@ test_subtract (void)
 	const NMPlatformIP4Route *test_route;
 	const char *expected_addr = "192.168.1.12";
 	guint32 expected_addr_plen = 24;
-	const char *expected_route_dest = "8.7.6.5";
+	const char *expected_route_dest = "8.0.0.0";
 	guint32 expected_route_plen = 8;
 	const char *expected_route_next_hop = "192.168.1.1";
 	guint32 expected_ns1 = nmtst_inet4_from_string ("8.8.8.8");
@@ -232,7 +232,7 @@ test_add_route_with_source (void)
 	a = nmtst_ip4_config_new (1);
 
 	/* Test that a higher priority source is not overwritten */
-	route = *nmtst_platform_ip4_route ("1.2.3.4", 24, "1.2.3.1");
+	route = *nmtst_platform_ip4_route ("1.2.3.0", 24, "1.2.3.1");
 	route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	nm_ip4_config_add_route (a, &route);
 

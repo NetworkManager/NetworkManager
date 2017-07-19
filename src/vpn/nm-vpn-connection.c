@@ -1531,6 +1531,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 				if (plen > 32 || plen == 0)
 					break;
 				route.plen = plen;
+				route.network = nm_utils_ip4_address_clear_host_address (route.network, plen);
 
 				/* Ignore host routes to the VPN gateway since NM adds one itself
 				 * below.  Since NM knows more about the routing situation than

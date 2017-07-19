@@ -37,8 +37,8 @@ build_test_config (void)
 	config = nmtst_ip6_config_new (1);
 
 	nm_ip6_config_add_address (config, nmtst_platform_ip6_address ("abcd:1234:4321::cdde", "1:2:3:4::5", 64));
-	nm_ip6_config_add_route (config, nmtst_platform_ip6_route ("abcd:1234:4321::", 24, "abcd:1234:4321:cdde::2", NULL));
-	nm_ip6_config_add_route (config, nmtst_platform_ip6_route ("2001:abba::", 16, "2001:abba::2234", NULL));
+	nm_ip6_config_add_route (config, nmtst_platform_ip6_route ("abcd:1200::", 24, "abcd:1234:4321:cdde::2", NULL));
+	nm_ip6_config_add_route (config, nmtst_platform_ip6_route ("2001::", 16, "2001:abba::2234", NULL));
 
 	nm_ip6_config_set_gateway (config, nmtst_inet6_from_string ("3001:abba::3234"));
 
@@ -60,7 +60,7 @@ test_subtract (void)
 	const NMPlatformIP6Route *test_route;
 	const char *expected_addr = "1122:3344:5566::7788";
 	guint32 expected_addr_plen = 96;
-	const char *expected_route_dest = "9991:8882:7773::";
+	const char *expected_route_dest = "9991:8800::";
 	guint32 expected_route_plen = 24;
 	const char *expected_route_next_hop = "1119:2228:3337:4446::5555";
 	struct in6_addr expected_ns1;
@@ -139,7 +139,7 @@ test_compare_with_source (void)
 	nm_ip6_config_add_address (b, &addr);
 
 	/* Route */
-	route = *nmtst_platform_ip6_route ("abcd:1234:4321::", 24, "abcd:1234:4321:cdde::2", NULL);
+	route = *nmtst_platform_ip6_route ("abcd:1200::", 24, "abcd:1234:4321:cdde::2", NULL);
 	route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	nm_ip6_config_add_route (a, &route);
 
@@ -203,7 +203,7 @@ test_add_route_with_source (void)
 	a = nmtst_ip6_config_new (1);
 
 	/* Test that a higher priority source is not overwritten */
-	route = *nmtst_platform_ip6_route ("abcd:1234:4321::", 24, "abcd:1234:4321:cdde::2", NULL);
+	route = *nmtst_platform_ip6_route ("abcd:1200::", 24, "abcd:1234:4321:cdde::2", NULL);
 	route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	nm_ip6_config_add_route (a, &route);
 

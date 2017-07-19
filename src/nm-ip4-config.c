@@ -46,6 +46,16 @@ G_STATIC_ASSERT (G_MAXUINT >= 0xFFFFFFFF);
 
 /*****************************************************************************/
 
+static gboolean
+_route_valid (const NMPlatformIP4Route *r)
+{
+	return    r
+	       && r->plen <= 32
+	       && r->network == nm_utils_ip4_address_clear_host_address (r->network, r->plen);
+}
+
+/*****************************************************************************/
+
 gboolean
 nm_ip_config_obj_id_equal_ip4_address (const NMPlatformIP4Address *a,
                                        const NMPlatformIP4Address *b)
@@ -850,6 +860,8 @@ nm_ip4_config_merge_setting (NMIP4Config *self, NMSettingIPConfig *setting, guin
 		else
 			route.metric = nm_ip_route_get_metric (s_route);
 		route.rt_source = NM_IP_CONFIG_SOURCE_USER;
+
+		route.network = nm_utils_ip4_address_clear_host_address (route.network, route.plen);
 
 		merge_route_attributes (s_route, &route);
 		_add_route (self, NULL, &route);
@@ -1987,6 +1999,10 @@ _add_route (NMIP4Config *self, const NMPObject *obj_new, const NMPlatformIP4Rout
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
 
+	nm_assert ((!new) != (!obj_new));
+	nm_assert (!new || _route_valid (new));
+	nm_assert (!obj_new || _route_valid (NMP_OBJECT_CAST_IP4_ROUTE (obj_new)));
+
 	if (_nm_ip_config_add_obj (priv->multi_idx,
 	                           &priv->idx_ip4_routes_,
 	                           priv->ifindex,
@@ -2745,6 +2761,8 @@ out_addresses_cached:
 
 		nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, self, &route) {
 			GVariantBuilder route_builder;
+
+			nm_assert (_route_valid (route));
 
 			g_variant_builder_init (&route_builder, G_VARIANT_TYPE ("a{sv}"));
 			g_variant_builder_add (&route_builder, "{sv}",

@@ -344,12 +344,13 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 
 			if (sd_dhcp_route_get_destination (routes[i], &a) < 0)
 				continue;
-			route.network = a.s_addr;
 
 			if (   sd_dhcp_route_get_destination_prefix_length (routes[i], &plen) < 0
 			    || plen > 32)
 				continue;
+
 			route.plen = plen;
+			route.network = nm_utils_ip4_address_clear_host_address (a.s_addr, plen);
 
 			if (sd_dhcp_route_get_gateway (routes[i], &a) < 0)
 				continue;
