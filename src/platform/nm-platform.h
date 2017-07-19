@@ -329,7 +329,15 @@ typedef union {
 	/* The NMIPConfigSource. For routes that we receive from cache this corresponds
 	 * to the rtm_protocol field (and is one of the NM_IP_CONFIG_SOURCE_RTPROT_* values).
 	 * When adding a route, the source will be coerced to the protocol using
-	 * nmp_utils_ip_config_source_coerce_to_rtprot(). */ \
+	 * nmp_utils_ip_config_source_coerce_to_rtprot().
+	 *
+	 * rtm_protocol is part of the primary key of an IPv4 route (meaning, you can add
+	 * two IPv4 routes that only differ in their rtm_protocol. For IPv6, that is not
+	 * the case.
+	 *
+	 * When deleting an IPv4/IPv6 route, the rtm_protocol field must match (even
+	 * if it is not part of the primary key for IPv6) -- unless rtm_protocol is set
+	 * to zero, in which case the first matching route (with proto ignored) is deleted. */ \
 	NMIPConfigSource rt_source; \
 	\
 	guint8 plen; \

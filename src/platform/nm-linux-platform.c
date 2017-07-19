@@ -2419,7 +2419,6 @@ static struct nl_msg *
 _nl_msg_new_route (int nlmsg_type,
                    int nlmsg_flags,
                    const NMPObject *obj,
-                   NMIPConfigSource source,
                    unsigned char scope,
                    gconstpointer gateway,
                    guint32 mss,
@@ -2440,7 +2439,7 @@ _nl_msg_new_route (int nlmsg_type,
 		.rtm_family = klass->addr_family,
 		.rtm_tos = obj->ip_route.tos,
 		.rtm_table = RT_TABLE_MAIN, /* omit setting RTA_TABLE attribute */
-		.rtm_protocol = nmp_utils_ip_config_source_coerce_to_rtprot (source),
+		.rtm_protocol = nmp_utils_ip_config_source_coerce_to_rtprot (obj->ip_route.rt_source),
 		.rtm_scope = scope,
 		.rtm_type = RTN_UNICAST,
 		.rtm_flags = 0,
@@ -5695,11 +5694,11 @@ ip4_route_add (NMPlatform *platform, const NMPlatformIP4Route *route)
 	nmp_object_stackinit (&obj, NMP_OBJECT_TYPE_IP4_ROUTE, (const NMPlatformObject *) route);
 	r = NMP_OBJECT_CAST_IP4_ROUTE (&obj);
 	r->network = nm_utils_ip4_address_clear_host_address (r->network, r->plen);
+	r->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (r->rt_source),
 
 	nlmsg = _nl_msg_new_route (RTM_NEWROUTE,
 	                           NLM_F_CREATE | NLM_F_REPLACE,
 	                           &obj,
-	                           route->rt_source,
 	                           route->gateway ? RT_SCOPE_UNIVERSE : RT_SCOPE_LINK,
 	                           &route->gateway,
 	                           route->mss,
@@ -5725,11 +5724,11 @@ ip6_route_add (NMPlatform *platform, const NMPlatformIP6Route *route)
 	nmp_object_stackinit (&obj, NMP_OBJECT_TYPE_IP6_ROUTE, (const NMPlatformObject *) route);
 	r = NMP_OBJECT_CAST_IP6_ROUTE (&obj);
 	nm_utils_ip6_address_clear_host_address (&r->network, &r->network, r->plen);
+	r->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (r->rt_source),
 
 	nlmsg = _nl_msg_new_route (RTM_NEWROUTE,
 	                           NLM_F_CREATE | NLM_F_REPLACE,
 	                           &obj,
-	                           route->rt_source,
 	                           IN6_IS_ADDR_UNSPECIFIED (&route->gateway) ? RT_SCOPE_LINK : RT_SCOPE_UNIVERSE,
 	                           &route->gateway,
 	                           route->mss,
@@ -5792,7 +5791,6 @@ ip_route_delete (NMPlatform *platform,
 	nlmsg = _nl_msg_new_route (RTM_DELROUTE,
 	                           0,
 	                           obj,
-	                           NM_IP_CONFIG_SOURCE_UNKNOWN,
 	                           RT_SCOPE_NOWHERE,
 	                           NULL,
 	                           0,
