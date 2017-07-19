@@ -69,9 +69,7 @@ for A; do
             SOURCE_FROM_GIT=1
             ;;
         -Q|--quick)
-            NO_DIST=0
             QUICK=1
-            SOURCE_FROM_GIT=0
             ;;
         -N|--no-dist)
             NO_DIST=1
@@ -145,6 +143,10 @@ if [[ $NO_DIST != 1 ]]; then
     else
         make distcheck -j 7 || die "Error make distcheck"
     fi
+fi
+
+if [[ $QUICK == 1 ]]; then
+    WITH_LIST=(--without test "${WITH_LIST[@]}")
 fi
 
 export SOURCE_FROM_GIT
