@@ -2419,7 +2419,6 @@ static struct nl_msg *
 _nl_msg_new_route (int nlmsg_type,
                    int nlmsg_flags,
                    const NMPObject *obj,
-                   gconstpointer gateway,
                    guint32 mss,
                    gconstpointer pref_src,
                    gconstpointer src,
@@ -2503,9 +2502,12 @@ _nl_msg_new_route (int nlmsg_type,
 	}
 
 	/* We currently don't have need for multi-hop routes... */
-	if (   gateway
-	    && memcmp (gateway, &nm_ip_addr_zero, addr_len) != 0)
-		NLA_PUT (msg, RTA_GATEWAY, addr_len, gateway);
+	if (is_v4) {
+		NLA_PUT (msg, RTA_GATEWAY, addr_len, &obj->ip4_route.gateway);
+	} else {
+		if (!IN6_IS_ADDR_UNSPECIFIED (&obj->ip6_route.gateway))
+			NLA_PUT (msg, RTA_GATEWAY, addr_len, &obj->ip6_route.gateway);
+	}
 	NLA_PUT_U32 (msg, RTA_OIF, obj->ip_route.ifindex);
 
 	return msg;
@@ -5702,7 +5704,6 @@ ip4_route_add (NMPlatform *platform, const NMPlatformIP4Route *route)
 	nlmsg = _nl_msg_new_route (RTM_NEWROUTE,
 	                           NLM_F_CREATE | NLM_F_REPLACE,
 	                           &obj,
-	                           &route->gateway,
 	                           route->mss,
 	                           route->pref_src ? &route->pref_src : NULL,
 	                           NULL,
@@ -5731,7 +5732,6 @@ ip6_route_add (NMPlatform *platform, const NMPlatformIP6Route *route)
 	nlmsg = _nl_msg_new_route (RTM_NEWROUTE,
 	                           NLM_F_CREATE | NLM_F_REPLACE,
 	                           &obj,
-	                           &route->gateway,
 	                           route->mss,
 	                           !IN6_IS_ADDR_UNSPECIFIED (&route->pref_src) ? &route->pref_src : NULL,
 	                           !IN6_IS_ADDR_UNSPECIFIED (&route->src) ? &route->src : NULL,
@@ -5792,7 +5792,6 @@ ip_route_delete (NMPlatform *platform,
 	nlmsg = _nl_msg_new_route (RTM_DELROUTE,
 	                           0,
 	                           obj,
-	                           NULL,
 	                           0,
 	                           NULL,
 	                           NULL,

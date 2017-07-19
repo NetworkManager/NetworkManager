@@ -377,6 +377,8 @@ typedef struct {
 struct _NMPlatformIP4Route {
 	__NMPlatformIPRoute_COMMON;
 	in_addr_t network;
+
+	/* RTA_GATEWAY. The gateway is part of the primary key for a route */
 	in_addr_t gateway;
 
 	/* RTA_PREFSRC/rtnl_route_get_pref_src(). A value of zero means that
@@ -400,7 +402,10 @@ struct _NMPlatformIP4Route {
 struct _NMPlatformIP6Route {
 	__NMPlatformIPRoute_COMMON;
 	struct in6_addr network;
+
+	/* RTA_GATEWAY. The gateway is part of the primary key for a route */
 	struct in6_addr gateway;
+
 	struct in6_addr pref_src;
 	struct in6_addr src;
 	guint8 src_plen;
