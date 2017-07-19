@@ -379,13 +379,22 @@ struct _NMPlatformIP4Route {
 	in_addr_t network;
 	in_addr_t gateway;
 
-	/* The bitwise inverse of the route scope. It is inverted so that the
-	 * default value (RT_SCOPE_NOWHERE) is nul. */
-	guint8 scope_inv;
-
 	/* RTA_PREFSRC/rtnl_route_get_pref_src(). A value of zero means that
 	 * no pref-src is set.  */
 	in_addr_t pref_src;
+
+	/* The bitwise inverse of the route scope rtm_scope. It is inverted so that the
+	 * default value (RT_SCOPE_NOWHERE) is zero. Use nm_platform_route_scope_inv()
+	 * to convert back and forth between the inverese representation and the
+	 * real value.
+	 *
+	 * rtm_scope is part of the primary key for IPv4 routes. When deleting a route,
+	 * the scope must match, unless it is left at RT_SCOPE_NOWHERE, in which case the first
+	 * matching route is deleted.
+	 *
+	 * For IPv6 routes, the scope is ignored and kernel always assumes global scope.
+	 * Hence, this field is only in NMPlatformIP4Route. */
+	guint8 scope_inv;
 };
 
 struct _NMPlatformIP6Route {

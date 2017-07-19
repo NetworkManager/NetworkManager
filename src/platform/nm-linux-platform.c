@@ -2419,7 +2419,6 @@ static struct nl_msg *
 _nl_msg_new_route (int nlmsg_type,
                    int nlmsg_flags,
                    const NMPObject *obj,
-                   unsigned char scope,
                    gconstpointer gateway,
                    guint32 mss,
                    gconstpointer pref_src,
@@ -2440,7 +2439,9 @@ _nl_msg_new_route (int nlmsg_type,
 		.rtm_tos = obj->ip_route.tos,
 		.rtm_table = RT_TABLE_MAIN, /* omit setting RTA_TABLE attribute */
 		.rtm_protocol = nmp_utils_ip_config_source_coerce_to_rtprot (obj->ip_route.rt_source),
-		.rtm_scope = scope,
+		.rtm_scope = is_v4
+		             ? nm_platform_route_scope_inv (obj->ip4_route.scope_inv)
+		             : RT_SCOPE_NOWHERE,
 		.rtm_type = RTN_UNICAST,
 		.rtm_flags = 0,
 		.rtm_dst_len = obj->ip_route.plen,
@@ -5695,11 +5696,12 @@ ip4_route_add (NMPlatform *platform, const NMPlatformIP4Route *route)
 	r = NMP_OBJECT_CAST_IP4_ROUTE (&obj);
 	r->network = nm_utils_ip4_address_clear_host_address (r->network, r->plen);
 	r->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (r->rt_source),
+	r->scope_inv = nm_platform_route_scope_inv (!r->gateway
+	                                            ? RT_SCOPE_LINK : RT_SCOPE_UNIVERSE);
 
 	nlmsg = _nl_msg_new_route (RTM_NEWROUTE,
 	                           NLM_F_CREATE | NLM_F_REPLACE,
 	                           &obj,
-	                           route->gateway ? RT_SCOPE_UNIVERSE : RT_SCOPE_LINK,
 	                           &route->gateway,
 	                           route->mss,
 	                           route->pref_src ? &route->pref_src : NULL,
@@ -5729,7 +5731,6 @@ ip6_route_add (NMPlatform *platform, const NMPlatformIP6Route *route)
 	nlmsg = _nl_msg_new_route (RTM_NEWROUTE,
 	                           NLM_F_CREATE | NLM_F_REPLACE,
 	                           &obj,
-	                           IN6_IS_ADDR_UNSPECIFIED (&route->gateway) ? RT_SCOPE_LINK : RT_SCOPE_UNIVERSE,
 	                           &route->gateway,
 	                           route->mss,
 	                           !IN6_IS_ADDR_UNSPECIFIED (&route->pref_src) ? &route->pref_src : NULL,
@@ -5791,7 +5792,6 @@ ip_route_delete (NMPlatform *platform,
 	nlmsg = _nl_msg_new_route (RTM_DELROUTE,
 	                           0,
 	                           obj,
-	                           RT_SCOPE_NOWHERE,
 	                           NULL,
 	                           0,
 	                           NULL,
