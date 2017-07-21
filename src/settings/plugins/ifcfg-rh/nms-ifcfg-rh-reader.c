@@ -4626,6 +4626,12 @@ handle_bridge_option (NMSetting *setting,
 			              (gboolean) u, NULL);
 		else
 			PARSE_WARNING ("invalid multicast_snooping value '%s'", value);
+	} else if (!strcmp (key, "group_fwd_mask")) {
+		if (get_uint (value, &u) && u <= 0xFFFF && !NM_FLAGS_ANY (u, 7))
+			g_object_set (setting, NM_SETTING_BRIDGE_GROUP_FORWARD_MASK,
+			              (gboolean) u, NULL);
+		else
+			PARSE_WARNING ("invalid group_fwd_mask value '%s'", value);
 	} else
 			PARSE_WARNING ("unhandled bridge option '%s'", key);
 }

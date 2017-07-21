@@ -1434,6 +1434,13 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, GError **error
 		g_string_append_printf (opts, "ageing_time=%u", i);
 	}
 
+	i = nm_setting_bridge_get_group_forward_mask (s_bridge);
+	if (i != get_setting_default_uint (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_GROUP_FORWARD_MASK)) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "group_fwd_mask=%u", i);
+	}
+
 	b = nm_setting_bridge_get_multicast_snooping (s_bridge);
 	if (b != get_setting_default_boolean (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_SNOOPING)) {
 		if (opts->len)

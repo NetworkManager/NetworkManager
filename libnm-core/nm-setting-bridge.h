@@ -46,6 +46,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_BRIDGE_HELLO_TIME     "hello-time"
 #define NM_SETTING_BRIDGE_MAX_AGE        "max-age"
 #define NM_SETTING_BRIDGE_AGEING_TIME    "ageing-time"
+#define NM_SETTING_BRIDGE_GROUP_FORWARD_MASK "group-forward-mask"
 #define NM_SETTING_BRIDGE_MULTICAST_SNOOPING "multicast-snooping"
 
 /**
@@ -81,6 +82,8 @@ guint16      nm_setting_bridge_get_hello_time     (NMSettingBridge *setting);
 guint16      nm_setting_bridge_get_max_age        (NMSettingBridge *setting);
 
 guint32      nm_setting_bridge_get_ageing_time    (NMSettingBridge *setting);
+NM_AVAILABLE_IN_1_10
+guint16      nm_setting_bridge_get_group_forward_mask (NMSettingBridge *setting);
 
 gboolean     nm_setting_bridge_get_multicast_snooping (NMSettingBridge *setting);
 

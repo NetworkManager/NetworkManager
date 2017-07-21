@@ -156,6 +156,7 @@ static const Option master_options[] = {
 	{ NM_SETTING_BRIDGE_HELLO_TIME, "hello_time", TRUE, TRUE },
 	{ NM_SETTING_BRIDGE_MAX_AGE, "max_age", TRUE, TRUE },
 	{ NM_SETTING_BRIDGE_AGEING_TIME, "ageing_time", TRUE, TRUE },
+	{ NM_SETTING_BRIDGE_GROUP_FORWARD_MASK, "group_fwd_mask", TRUE, FALSE },
 	{ NM_SETTING_BRIDGE_MULTICAST_SNOOPING, "multicast_snooping", FALSE, FALSE },
 	{ NULL, NULL }
 };

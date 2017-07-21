@@ -4,5 +4,5 @@ TYPE=Bridge
 BOOTPROTO=dhcp
 STP=on
 DELAY=2
-BRIDGING_OPTS="priority=32744 hello_time=7 max_age=39 ageing_time=235352 multicast_snooping=0"
+BRIDGING_OPTS="priority=32744 hello_time=7 max_age=39 ageing_time=235352 multicast_snooping=0 group_fwd_mask=24"
 MACADDR=00:16:41:11:22:33
