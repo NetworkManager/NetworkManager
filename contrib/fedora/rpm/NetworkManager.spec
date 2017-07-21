@@ -271,8 +271,8 @@ Requires: %{name}-glib%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: glib2-devel
 Requires: pkgconfig
 Requires: dbus-glib-devel >= %{dbus_glib_version}
-Requires: %{name}-devel = %{epoch}:%{version}-%{release}
-Requires: %{name}-devel%{?_isa} = %{epoch}:%{version}-%{release}
+Provides: %{name}-devel = %{epoch}:%{version}-%{release}
+Provides: %{name}-devel%{?_isa} = %{epoch}:%{version}-%{release}
 Obsoletes: %{name}-devel < %{epoch}:%{version}-%{release}
 
 %description glib-devel
