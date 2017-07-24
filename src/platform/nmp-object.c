@@ -1992,7 +1992,7 @@ nmp_cache_remove_netlink (NMPCache *cache,
 	const NMDedupMultiEntry *entry_old;
 	const NMDedupMultiEntry *entry_new = NULL;
 	const NMPObject *obj_old;
-	NMPObject *obj_new;
+	nm_auto_nmpobj NMPObject *obj_new = NULL;
 
 	entry_old = _lookup_obj (cache, obj_needle);
 
