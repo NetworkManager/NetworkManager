@@ -162,7 +162,7 @@ create_dm_cmd_line (const char *iface,
 	const NMPlatformIP4Address *listen_address;
 	guint i, n;
 
-	listen_address = nm_ip4_config_get_address (ip4_config, 0);
+	listen_address = nm_ip4_config_get_first_address (ip4_config);
 	g_return_val_if_fail (listen_address, NULL);
 
 	dm_binary = nm_utils_find_helper ("dnsmasq", DNSMASQ_PATH, error);

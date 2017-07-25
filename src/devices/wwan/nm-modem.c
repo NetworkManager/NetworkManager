@@ -682,7 +682,7 @@ nm_modem_ip4_pre_commit (NMModem *modem,
 	 */
 	if (   priv->ip4_method == NM_MODEM_IP_METHOD_STATIC
 	    || priv->ip4_method == NM_MODEM_IP_METHOD_AUTO) {
-		const NMPlatformIP4Address *address = nm_ip4_config_get_address (config, 0);
+		const NMPlatformIP4Address *address = nm_ip4_config_get_first_address (config);
 
 		g_assert (address);
 		if (address->plen == 32)
@@ -698,7 +698,8 @@ nm_modem_emit_ip6_config_result (NMModem *self,
                                  GError *error)
 {
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
-	guint i, num;
+	NMDedupMultiIter ipconf_iter;
+	const NMPlatformIP6Address *addr;
 	gboolean do_slaac = TRUE;
 
 	if (error) {
@@ -710,11 +711,7 @@ nm_modem_emit_ip6_config_result (NMModem *self,
 		/* If the IPv6 configuration only included a Link-Local address, then
 		 * we have to run SLAAC to get the full IPv6 configuration.
 		 */
-		num = nm_ip6_config_get_num_addresses (config);
-		g_assert (num > 0);
-		for (i = 0; i < num; i++) {
-			const NMPlatformIP6Address * addr = nm_ip6_config_get_address (config, i);
-
+		nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, config, &addr) {
 			if (IN6_IS_ADDR_LINKLOCAL (&addr->address)) {
 				if (!priv->iid.id)
 					priv->iid.id = ((guint64 *)(&addr->address.s6_addr))[1];

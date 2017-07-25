@@ -25,6 +25,7 @@
 #include "nm-setting-ip4-config.h"
 
 #include "nm-utils/nm-dedup-multi.h"
+#include "platform/nmp-object.h"
 
 /*****************************************************************************/
 
@@ -35,18 +36,63 @@ typedef struct {
 
 void nm_ip_config_dedup_multi_idx_type_init (NMIPConfigDedupMultiIdxType *idx_type, NMPObjectType obj_type);
 
-void nm_ip4_config_iter_ip4_route_init (NMDedupMultiIter *iter, const NMIP4Config *self);
-gboolean nm_ip4_config_iter_ip4_route_next (NMDedupMultiIter *iter, const NMPlatformIP4Route **out_route);
+/*****************************************************************************/
 
-#define nm_ip4_config_iter_ip4_route_for_each(iter, self, route) \
-	for (nm_ip4_config_iter_ip4_route_init ((iter), (self)); \
-	     nm_ip4_config_iter_ip4_route_next ((iter), (route)); \
-	     )
+void nm_ip_config_iter_ip4_address_init (NMDedupMultiIter *iter, const NMIP4Config *self);
+void nm_ip_config_iter_ip4_route_init (NMDedupMultiIter *iter, const NMIP4Config *self);
 
+static inline gboolean
+nm_ip_config_iter_ip4_address_next (NMDedupMultiIter *ipconf_iter, const NMPlatformIP4Address **out_address)
+{
+	gboolean has_next;
+
+	g_return_val_if_fail (out_address, FALSE);
+
+	has_next = nm_dedup_multi_iter_next (ipconf_iter);
+	if (has_next)
+		*out_address = NMP_OBJECT_CAST_IP4_ADDRESS (ipconf_iter->current->obj);
+	return has_next;
+}
+
+static inline gboolean
+nm_ip_config_iter_ip4_route_next (NMDedupMultiIter *ipconf_iter, const NMPlatformIP4Route **out_route)
+{
+	gboolean has_next;
+
+	g_return_val_if_fail (out_route, FALSE);
+
+	has_next = nm_dedup_multi_iter_next (ipconf_iter);
+	if (has_next)
+		*out_route = NMP_OBJECT_CAST_IP4_ROUTE (ipconf_iter->current->obj);
+	return has_next;
+}
+
+#define nm_ip_config_iter_ip4_address_for_each(iter, self, address) \
+    for (*(address) = NULL, nm_ip_config_iter_ip4_address_init ((iter), (self)); \
+         nm_ip_config_iter_ip4_address_next ((iter), (address)); \
+         )
+
+#define nm_ip_config_iter_ip4_route_for_each(iter, self, route) \
+    for (*(route) = NULL, nm_ip_config_iter_ip4_route_init ((iter), (self)); \
+         nm_ip_config_iter_ip4_route_next ((iter), (route)); \
+         )
+
+/*****************************************************************************/
+
+gboolean nm_ip_config_obj_id_equal_ip4_address (const NMPlatformIP4Address *a,
+                                                const NMPlatformIP4Address *b);
+gboolean nm_ip_config_obj_id_equal_ip6_address (const NMPlatformIP6Address *a,
+                                                const NMPlatformIP6Address *b);
 gboolean nm_ip_config_obj_id_equal_ip4_route (const NMPlatformIP4Route *r_a,
                                               const NMPlatformIP4Route *r_b);
 gboolean nm_ip_config_obj_id_equal_ip6_route (const NMPlatformIP6Route *r_a,
                                               const NMPlatformIP6Route *r_b);
+
+gboolean _nm_ip_config_add_obj (NMDedupMultiIndex *multi_idx,
+                                NMIPConfigDedupMultiIdxType *idx_type,
+                                int ifindex,
+                                const NMPObject *obj_new,
+                                const NMPlatformObject *pl_new);
 
 /*****************************************************************************/
 
@@ -84,99 +130,102 @@ GType nm_ip4_config_get_type (void);
 NMIP4Config * nm_ip4_config_new (NMDedupMultiIndex *multi_idx,
                                  int ifindex);
 
-int nm_ip4_config_get_ifindex (const NMIP4Config *config);
+int nm_ip4_config_get_ifindex (const NMIP4Config *self);
 
 NMDedupMultiIndex *nm_ip4_config_get_multi_idx (const NMIP4Config *self);
 
 NMIP4Config *nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int ifindex, gboolean capture_resolv_conf);
-gboolean nm_ip4_config_commit (const NMIP4Config *config, NMPlatform *platform, NMRouteManager *route_manager, int ifindex, gboolean routes_full_sync, gint64 default_route_metric);
-void nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIPConfig *setting, guint32 default_route_metric);
-NMSetting *nm_ip4_config_create_setting (const NMIP4Config *config);
+gboolean nm_ip4_config_commit (const NMIP4Config *self, NMPlatform *platform, NMRouteManager *route_manager, int ifindex, gboolean routes_full_sync, gint64 default_route_metric);
+void nm_ip4_config_merge_setting (NMIP4Config *self, NMSettingIPConfig *setting, guint32 default_route_metric);
+NMSetting *nm_ip4_config_create_setting (const NMIP4Config *self);
 
 
 void nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src, NMIPConfigMergeFlags merge_flags);
 void nm_ip4_config_subtract (NMIP4Config *dst, const NMIP4Config *src);
 void nm_ip4_config_intersect (NMIP4Config *dst, const NMIP4Config *src);
 gboolean nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relevant_changes);
-gboolean nm_ip4_config_destination_is_direct (const NMIP4Config *config, guint32 dest, guint8 plen);
-void nm_ip4_config_dump (const NMIP4Config *config, const char *detail);
+gboolean nm_ip4_config_destination_is_direct (const NMIP4Config *self, guint32 dest, guint8 plen);
+void nm_ip4_config_dump (const NMIP4Config *self, const char *detail);
 
 
-void nm_ip4_config_set_never_default (NMIP4Config *config, gboolean never_default);
-gboolean nm_ip4_config_get_never_default (const NMIP4Config *config);
-void nm_ip4_config_set_gateway (NMIP4Config *config, guint32 gateway);
-void nm_ip4_config_unset_gateway (NMIP4Config *config);
-gboolean nm_ip4_config_has_gateway (const NMIP4Config *config);
-guint32 nm_ip4_config_get_gateway (const NMIP4Config *config);
-gint64 nm_ip4_config_get_route_metric (const NMIP4Config *config);
+void nm_ip4_config_set_never_default (NMIP4Config *self, gboolean never_default);
+gboolean nm_ip4_config_get_never_default (const NMIP4Config *self);
+void nm_ip4_config_set_gateway (NMIP4Config *self, guint32 gateway);
+void nm_ip4_config_unset_gateway (NMIP4Config *self);
+gboolean nm_ip4_config_has_gateway (const NMIP4Config *self);
+guint32 nm_ip4_config_get_gateway (const NMIP4Config *self);
+gint64 nm_ip4_config_get_route_metric (const NMIP4Config *self);
 
-void nm_ip4_config_reset_addresses (NMIP4Config *config);
-void nm_ip4_config_add_address (NMIP4Config *config, const NMPlatformIP4Address *address);
-void nm_ip4_config_del_address (NMIP4Config *config, guint i);
-guint nm_ip4_config_get_num_addresses (const NMIP4Config *config);
-const NMPlatformIP4Address *nm_ip4_config_get_address (const NMIP4Config *config, guint i);
-gboolean nm_ip4_config_address_exists (const NMIP4Config *config, const NMPlatformIP4Address *address);
+const NMDedupMultiHeadEntry *nm_ip4_config_lookup_addresses (const NMIP4Config *self);
+void nm_ip4_config_reset_addresses (NMIP4Config *self);
+void nm_ip4_config_add_address (NMIP4Config *self, const NMPlatformIP4Address *address);
+void _nmtst_nm_ip4_config_del_address (NMIP4Config *self, guint i);
+guint nm_ip4_config_get_num_addresses (const NMIP4Config *self);
+const NMPlatformIP4Address *nm_ip4_config_get_first_address (const NMIP4Config *self);
+const NMPlatformIP4Address *_nmtst_nm_ip4_config_get_address (const NMIP4Config *self, guint i);
+gboolean nm_ip4_config_address_exists (const NMIP4Config *self, const NMPlatformIP4Address *address);
 
-void nm_ip4_config_reset_routes (NMIP4Config *config);
-void nm_ip4_config_add_route (NMIP4Config *config, const NMPlatformIP4Route *route);
-void _nmtst_nm_ip4_config_del_route (NMIP4Config *config, guint i);
-guint nm_ip4_config_get_num_routes (const NMIP4Config *config);
-const NMPlatformIP4Route *_nmtst_nm_ip4_config_get_route (const NMIP4Config *config, guint i);
+const NMDedupMultiHeadEntry *nm_ip4_config_lookup_routes (const NMIP4Config *self);
+void nm_ip4_config_reset_routes (NMIP4Config *self);
+void nm_ip4_config_add_route (NMIP4Config *self, const NMPlatformIP4Route *route);
+void _nmtst_nm_ip4_config_del_route (NMIP4Config *self, guint i);
+guint nm_ip4_config_get_num_routes (const NMIP4Config *self);
+const NMPlatformIP4Route *_nmtst_nm_ip4_config_get_route (const NMIP4Config *self, guint i);
 
-const NMPlatformIP4Route *nm_ip4_config_get_direct_route_for_host (const NMIP4Config *config, guint32 host);
+const NMPlatformIP4Route *nm_ip4_config_get_direct_route_for_host (const NMIP4Config *self, guint32 host);
 
-void nm_ip4_config_reset_nameservers (NMIP4Config *config);
-void nm_ip4_config_add_nameserver (NMIP4Config *config, guint32 nameserver);
-void nm_ip4_config_del_nameserver (NMIP4Config *config, guint i);
-guint nm_ip4_config_get_num_nameservers (const NMIP4Config *config);
-guint32 nm_ip4_config_get_nameserver (const NMIP4Config *config, guint i);
+void nm_ip4_config_reset_nameservers (NMIP4Config *self);
+void nm_ip4_config_add_nameserver (NMIP4Config *self, guint32 nameserver);
+void nm_ip4_config_del_nameserver (NMIP4Config *self, guint i);
+guint nm_ip4_config_get_num_nameservers (const NMIP4Config *self);
+guint32 nm_ip4_config_get_nameserver (const NMIP4Config *self, guint i);
 
-void nm_ip4_config_reset_domains (NMIP4Config *config);
-void nm_ip4_config_add_domain (NMIP4Config *config, const char *domain);
-void nm_ip4_config_del_domain (NMIP4Config *config, guint i);
-guint nm_ip4_config_get_num_domains (const NMIP4Config *config);
-const char * nm_ip4_config_get_domain (const NMIP4Config *config, guint i);
+void nm_ip4_config_reset_domains (NMIP4Config *self);
+void nm_ip4_config_add_domain (NMIP4Config *self, const char *domain);
+void nm_ip4_config_del_domain (NMIP4Config *self, guint i);
+guint nm_ip4_config_get_num_domains (const NMIP4Config *self);
+const char * nm_ip4_config_get_domain (const NMIP4Config *self, guint i);
 
-void nm_ip4_config_reset_searches (NMIP4Config *config);
-void nm_ip4_config_add_search (NMIP4Config *config, const char *search);
-void nm_ip4_config_del_search (NMIP4Config *config, guint i);
-guint nm_ip4_config_get_num_searches (const NMIP4Config *config);
-const char * nm_ip4_config_get_search (const NMIP4Config *config, guint i);
+void nm_ip4_config_reset_searches (NMIP4Config *self);
+void nm_ip4_config_add_search (NMIP4Config *self, const char *search);
+void nm_ip4_config_del_search (NMIP4Config *self, guint i);
+guint nm_ip4_config_get_num_searches (const NMIP4Config *self);
+const char * nm_ip4_config_get_search (const NMIP4Config *self, guint i);
 
-void nm_ip4_config_reset_dns_options (NMIP4Config *config);
-void nm_ip4_config_add_dns_option (NMIP4Config *config, const char *option);
-void nm_ip4_config_del_dns_option (NMIP4Config *config, guint i);
-guint nm_ip4_config_get_num_dns_options (const NMIP4Config *config);
-const char * nm_ip4_config_get_dns_option (const NMIP4Config *config, guint i);
+void nm_ip4_config_reset_dns_options (NMIP4Config *self);
+void nm_ip4_config_add_dns_option (NMIP4Config *self, const char *option);
+void nm_ip4_config_del_dns_option (NMIP4Config *self, guint i);
+guint nm_ip4_config_get_num_dns_options (const NMIP4Config *self);
+const char * nm_ip4_config_get_dns_option (const NMIP4Config *self, guint i);
 
-void nm_ip4_config_set_dns_priority (NMIP4Config *config, gint priority);
-gint nm_ip4_config_get_dns_priority (const NMIP4Config *config);
+void nm_ip4_config_set_dns_priority (NMIP4Config *self, gint priority);
+gint nm_ip4_config_get_dns_priority (const NMIP4Config *self);
 
-void nm_ip4_config_set_mss (NMIP4Config *config, guint32 mss);
-guint32 nm_ip4_config_get_mss (const NMIP4Config *config);
+void nm_ip4_config_set_mss (NMIP4Config *self, guint32 mss);
+guint32 nm_ip4_config_get_mss (const NMIP4Config *self);
 
-void nm_ip4_config_reset_nis_servers (NMIP4Config *config);
-void nm_ip4_config_add_nis_server (NMIP4Config *config, guint32 nis);
-void nm_ip4_config_del_nis_server (NMIP4Config *config, guint i);
-guint nm_ip4_config_get_num_nis_servers (const NMIP4Config *config);
-guint32 nm_ip4_config_get_nis_server (const NMIP4Config *config, guint i);
-void nm_ip4_config_set_nis_domain (NMIP4Config *config, const char *domain);
-const char * nm_ip4_config_get_nis_domain (const NMIP4Config *config);
+void nm_ip4_config_reset_nis_servers (NMIP4Config *self);
+void nm_ip4_config_add_nis_server (NMIP4Config *self, guint32 nis);
+void nm_ip4_config_del_nis_server (NMIP4Config *self, guint i);
+guint nm_ip4_config_get_num_nis_servers (const NMIP4Config *self);
+guint32 nm_ip4_config_get_nis_server (const NMIP4Config *self, guint i);
+void nm_ip4_config_set_nis_domain (NMIP4Config *self, const char *domain);
+const char * nm_ip4_config_get_nis_domain (const NMIP4Config *self);
 
-void nm_ip4_config_reset_wins (NMIP4Config *config);
-void nm_ip4_config_add_wins (NMIP4Config *config, guint32 wins);
-void nm_ip4_config_del_wins (NMIP4Config *config, guint i);
-guint nm_ip4_config_get_num_wins (const NMIP4Config *config);
-guint32 nm_ip4_config_get_wins (const NMIP4Config *config, guint i);
+void nm_ip4_config_reset_wins (NMIP4Config *self);
+void nm_ip4_config_add_wins (NMIP4Config *self, guint32 wins);
+void nm_ip4_config_del_wins (NMIP4Config *self, guint i);
+guint nm_ip4_config_get_num_wins (const NMIP4Config *self);
+guint32 nm_ip4_config_get_wins (const NMIP4Config *self, guint i);
 
-void nm_ip4_config_set_mtu (NMIP4Config *config, guint32 mtu, NMIPConfigSource source);
-guint32 nm_ip4_config_get_mtu (const NMIP4Config *config);
-NMIPConfigSource nm_ip4_config_get_mtu_source (const NMIP4Config *config);
+void nm_ip4_config_set_mtu (NMIP4Config *self, guint32 mtu, NMIPConfigSource source);
+guint32 nm_ip4_config_get_mtu (const NMIP4Config *self);
+NMIPConfigSource nm_ip4_config_get_mtu_source (const NMIP4Config *self);
 
-void nm_ip4_config_set_metered (NMIP4Config *config, gboolean metered);
-gboolean nm_ip4_config_get_metered (const NMIP4Config *config);
+void nm_ip4_config_set_metered (NMIP4Config *self, gboolean metered);
+gboolean nm_ip4_config_get_metered (const NMIP4Config *self);
 
-void nm_ip4_config_hash (const NMIP4Config *config, GChecksum *sum, gboolean dns_only);
+void nm_ip4_config_hash (const NMIP4Config *self, GChecksum *sum, gboolean dns_only);
 gboolean nm_ip4_config_equal (const NMIP4Config *a, const NMIP4Config *b);
 
 /*****************************************************************************/

@@ -25,6 +25,8 @@
 
 #include <string.h>
 
+#include "nm-utils/c-list-util.h"
+
 #include "nm-utils.h"
 #include "nm-setting-private.h"
 #include "nm-utils.h"
@@ -73,6 +75,103 @@
  * will just work correctly. */
 G_STATIC_ASSERT (sizeof (gboolean) == sizeof (int));
 G_STATIC_ASSERT (sizeof (bool) <= sizeof (int));
+
+/*****************************************************************************/
+
+typedef struct {
+	int val;
+	int idx;
+	CList lst;
+} CListSort;
+
+static int
+_c_list_sort_cmp (const CList *lst_a, const CList *lst_b, const void *user_data)
+{
+	const CListSort *a, *b;
+
+	g_assert (lst_a);
+	g_assert (lst_b);
+	g_assert (lst_a != lst_b);
+
+	a = c_list_entry (lst_a, CListSort, lst);
+	b = c_list_entry (lst_b, CListSort, lst);
+
+	if (a->val < b->val)
+		return -1;
+	if (a->val > b->val)
+		return 1;
+	return 0;
+}
+
+static void
+test_c_list_sort (void)
+{
+	guint i, n_list, repeat, headless;
+	CList head, *iter, *iter_prev, *lst;
+	CListSort elements[30];
+	const CListSort *el_prev;
+
+	c_list_init (&head);
+	c_list_sort (&head, _c_list_sort_cmp, NULL);
+	g_assert (c_list_length (&head) == 0);
+	g_assert (c_list_is_empty (&head));
+
+	for (repeat = 0; repeat < 10; repeat++) {
+		for (n_list = 1; n_list < G_N_ELEMENTS (elements); n_list++) {
+			for (headless = 0; headless < 2; headless++) {
+				c_list_init (&head);
+				for (i = 0; i < n_list; i++) {
+					CListSort *el;
+
+					el = &elements[i];
+					el->val = nmtst_get_rand_int () % (2*n_list);
+					el->idx = i;
+					c_list_link_tail (&head, &el->lst);
+				}
+
+				if (headless) {
+					lst = head.next;
+					c_list_unlink (&head);
+					lst = c_list_sort_headless (lst, _c_list_sort_cmp, NULL);
+					g_assert (lst);
+					g_assert (lst->next);
+					g_assert (lst->prev);
+					g_assert (c_list_length (lst) == n_list - 1);
+					iter_prev = lst->prev;
+					for (iter = lst; iter != lst; iter = iter->next) {
+						g_assert (iter);
+						g_assert (iter->next);
+						g_assert (iter->prev == iter_prev);
+					}
+					c_list_link_before (lst, &head);
+				} else {
+					c_list_sort (&head, _c_list_sort_cmp, NULL);
+				}
+
+				g_assert (!c_list_is_empty (&head));
+				g_assert (c_list_length (&head) == n_list);
+
+				el_prev = NULL;
+				c_list_for_each (iter, &head) {
+					CListSort *el;
+
+					el = c_list_entry (iter, CListSort, lst);
+					g_assert (el->idx >= 0 && el->idx < n_list);
+					g_assert (el == &elements[el->idx]);
+					if (el_prev) {
+						g_assert (el_prev->val <= el->val);
+						if (el_prev->val == el->val)
+							g_assert (el_prev->idx < el->idx);
+						g_assert (iter->prev == &el_prev->lst);
+						g_assert (el_prev->lst.next == iter);
+					}
+					el_prev = el;
+				}
+				g_assert (head.prev == &el_prev->lst);
+			}
+		}
+	}
+}
 
 /*****************************************************************************/
 
@@ -6078,6 +6177,7 @@ int main (int argc, char **argv)
 {
 	nmtst_init (&argc, &argv, TRUE);
 
+	g_test_add_func ("/core/general/test_c_list_sort", test_c_list_sort);
 	g_test_add_func ("/core/general/test_dedup_multi", test_dedup_multi);
 	g_test_add_func ("/core/general/test_utils_str_utf8safe", test_utils_str_utf8safe);
 	g_test_add_func ("/core/general/test_nm_in_set", test_nm_in_set);

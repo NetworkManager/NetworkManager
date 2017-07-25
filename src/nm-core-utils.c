@@ -287,14 +287,16 @@ nm_utils_ip4_address_clear_host_address (in_addr_t addr, guint8 plen)
  * @plen: prefix length of network
  *
  * Note: this function is self assignment safe, to update @src inplace, set both
- * @dst and @src to the same destination.
+ * @dst and @src to the same destination or set @src NULL.
  */
 const struct in6_addr *
 nm_utils_ip6_address_clear_host_address (struct in6_addr *dst, const struct in6_addr *src, guint8 plen)
 {
 	g_return_val_if_fail (plen <= 128, NULL);
-	g_return_val_if_fail (src, NULL);
 	g_return_val_if_fail (dst, NULL);
+
+	if (!src)
+		src = dst;
 
 	if (plen < 128) {
 		guint nbytes = plen / 8;

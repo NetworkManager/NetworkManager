@@ -37,6 +37,8 @@
 
 #define DEBUG 1
 
+static const int IFINDEX = 5;
+
 static void
 test_config (const char *orig,
              const char *expected,
@@ -910,7 +912,7 @@ test_read_lease_ip4_config_basic (void)
 
 	/* Date from before the least expiration */
 	now = g_date_time_new_utc (2013, 11, 1, 19, 55, 32);
-	leases = nm_dhcp_dhclient_read_lease_ip_configs (multi_idx, "wlan0", -1, contents, FALSE, now);
+	leases = nm_dhcp_dhclient_read_lease_ip_configs (multi_idx, "wlan0", IFINDEX, contents, FALSE, now);
 	g_assert_cmpint (g_slist_length (leases), ==, 2);
 
 	/* IP4Config #1 */
@@ -920,7 +922,7 @@ test_read_lease_ip4_config_basic (void)
 	/* Address */
 	g_assert_cmpint (nm_ip4_config_get_num_addresses (config), ==, 1);
 	expected_addr = nmtst_inet4_from_string ("192.168.1.180");
-	addr = nm_ip4_config_get_address (config, 0);
+	addr = _nmtst_nm_ip4_config_get_address (config, 0);
 	g_assert_cmpint (addr->address, ==, expected_addr);
 	g_assert_cmpint (addr->peer_address, ==, expected_addr);
 	g_assert_cmpint (addr->plen, ==, 24);
@@ -943,7 +945,7 @@ test_read_lease_ip4_config_basic (void)
 	/* Address */
 	g_assert_cmpint (nm_ip4_config_get_num_addresses (config), ==, 1);
 	expected_addr = nmtst_inet4_from_string ("10.77.52.141");
-	addr = nm_ip4_config_get_address (config, 0);
+	addr = _nmtst_nm_ip4_config_get_address (config, 0);
 	g_assert_cmpint (addr->address, ==, expected_addr);
 	g_assert_cmpint (addr->peer_address, ==, expected_addr);
 	g_assert_cmpint (addr->plen, ==, 8);
@@ -985,7 +987,7 @@ test_read_lease_ip4_config_expired (void)
 
 	/* Date from *after* the lease expiration */
 	now = g_date_time_new_utc (2013, 12, 1, 19, 55, 32);
-	leases = nm_dhcp_dhclient_read_lease_ip_configs (multi_idx, "wlan0", -1, contents, FALSE, now);
+	leases = nm_dhcp_dhclient_read_lease_ip_configs (multi_idx, "wlan0", IFINDEX, contents, FALSE, now);
 	g_assert (leases == NULL);
 
 	g_date_time_unref (now);
@@ -1008,7 +1010,7 @@ test_read_lease_ip4_config_expect_failure (gconstpointer user_data)
 
 	/* Date from before the least expiration */
 	now = g_date_time_new_utc (2013, 11, 1, 1, 1, 1);
-	leases = nm_dhcp_dhclient_read_lease_ip_configs (multi_idx, "wlan0", -1, contents, FALSE, now);
+	leases = nm_dhcp_dhclient_read_lease_ip_configs (multi_idx, "wlan0", IFINDEX, contents, FALSE, now);
 	g_assert (leases == NULL);
 
 	g_date_time_unref (now);

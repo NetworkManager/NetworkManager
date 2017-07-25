@@ -102,7 +102,7 @@ test_ip4_address_general (void)
 	accept_signals (address_changed, 0, 1);
 
 	/* Test address listing */
-	addresses = nm_platform_ip4_address_get_all (NM_PLATFORM_GET, ifindex);
+	addresses = nmtstp_platform_ip4_address_get_all (NM_PLATFORM_GET, ifindex);
 	g_assert (addresses);
 	g_assert_cmpint (addresses->len, ==, 1);
 	address = &g_array_index (addresses, NMPlatformIP4Address, 0);
@@ -152,7 +152,7 @@ test_ip6_address_general (void)
 	accept_signals (address_changed, 0, 1);
 
 	/* Test address listing */
-	addresses = nm_platform_ip6_address_get_all (NM_PLATFORM_GET, ifindex);
+	addresses = nmtstp_platform_ip6_address_get_all (NM_PLATFORM_GET, ifindex);
 	g_assert (addresses);
 	g_assert_cmpint (addresses->len, ==, 1);
 	address = &g_array_index (addresses, NMPlatformIP6Address, 0);
@@ -329,7 +329,7 @@ test_ip4_address_peer_zero (void)
 
 		nmtstp_ip4_address_add (NULL, EX, ifindex, addr, plen, r_peers[i], lifetime, preferred, 0, label);
 
-		addrs = nm_platform_ip4_address_get_all (NM_PLATFORM_GET, ifindex);
+		addrs = nmtstp_platform_ip4_address_get_all (NM_PLATFORM_GET, ifindex);
 		g_assert (addrs);
 		g_assert_cmpint (addrs->len, ==, i + 1);
 		g_array_unref (addrs);
@@ -344,7 +344,7 @@ test_ip4_address_peer_zero (void)
 
 		nmtstp_ip4_address_del (NULL, EX, ifindex, addr, plen, r_peers[i]);
 
-		addrs = nm_platform_ip4_address_get_all (NM_PLATFORM_GET, ifindex);
+		addrs = nmtstp_platform_ip4_address_get_all (NM_PLATFORM_GET, ifindex);
 		g_assert (addrs);
 		g_assert_cmpint (addrs->len, ==, G_N_ELEMENTS (peers) - i - 1);
 		g_array_unref (addrs);

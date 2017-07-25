@@ -70,8 +70,8 @@ test_cleanup_internal (void)
 	nmtstp_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network6, plen6, gateway6, in6addr_any, metric, mss);
 	nmtstp_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, in6addr_any, 0, gateway6, in6addr_any, metric, mss);
 
-	addresses4 = nm_platform_ip4_address_get_all (NM_PLATFORM_GET, ifindex);
-	addresses6 = nm_platform_ip6_address_get_all (NM_PLATFORM_GET, ifindex);
+	addresses4 = nmtstp_platform_ip4_address_get_all (NM_PLATFORM_GET, ifindex);
+	addresses6 = nmtstp_platform_ip6_address_get_all (NM_PLATFORM_GET, ifindex);
 	routes4 = nmtstp_ip4_route_get_all (NM_PLATFORM_GET, ifindex);
 	routes6 = nmtstp_ip6_route_get_all (NM_PLATFORM_GET, ifindex);
 
@@ -88,8 +88,8 @@ test_cleanup_internal (void)
 	/* Delete interface with all addresses and routes */
 	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
 
-	addresses4 = nm_platform_ip4_address_get_all (NM_PLATFORM_GET, ifindex);
-	addresses6 = nm_platform_ip6_address_get_all (NM_PLATFORM_GET, ifindex);
+	addresses4 = nmtstp_platform_ip4_address_get_all (NM_PLATFORM_GET, ifindex);
+	addresses6 = nmtstp_platform_ip6_address_get_all (NM_PLATFORM_GET, ifindex);
 	routes4 = nmtstp_ip4_route_get_all (NM_PLATFORM_GET, ifindex);
 	routes6 = nmtstp_ip6_route_get_all (NM_PLATFORM_GET, ifindex);
 

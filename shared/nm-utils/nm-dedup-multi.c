@@ -927,21 +927,60 @@ nm_dedup_multi_obj_clone (const NMDedupMultiObj *obj)
 	return o;
 }
 
+gconstpointer *
+nm_dedup_multi_objs_to_array_head (const NMDedupMultiHeadEntry *head_entry,
+                                   NMDedupMultiFcnSelectPredicate predicate,
+                                   gpointer user_data,
+                                   guint *out_len)
+{
+	gconstpointer *result;
+	CList *iter;
+	guint i;
+
+	if (!head_entry) {
+		NM_SET_OUT (out_len, 0);
+		return NULL;
+	}
+
+	result = g_new (gconstpointer, head_entry->len + 1);
+	i = 0;
+	c_list_for_each (iter, &head_entry->lst_entries_head) {
+		const NMDedupMultiObj *obj = c_list_entry (iter, NMDedupMultiEntry, lst_entries)->obj;
+
+		if (   !predicate
+		    || predicate (obj, user_data)) {
+			nm_assert (i < head_entry->len);
+			result[i++] = obj;
+		}
+	}
+
+	if (i == 0) {
+		g_free (result);
+		NM_SET_OUT (out_len, 0);
+		return NULL;
+	}
+
+	nm_assert (i <= head_entry->len);
+	NM_SET_OUT (out_len, i);
+	result[i++] = NULL;
+	return result;
+}
+
 GPtrArray *
 nm_dedup_multi_objs_to_ptr_array_head (const NMDedupMultiHeadEntry *head_entry,
                                        NMDedupMultiFcnSelectPredicate predicate,
                                        gpointer user_data)
 {
 	GPtrArray *result;
-	NMDedupMultiIter iter;
+	CList *iter;
 
 	if (!head_entry)
 		return NULL;
 
 	result = g_ptr_array_new_full (head_entry->len,
 	                               (GDestroyNotify) nm_dedup_multi_obj_unref);
-	nm_dedup_multi_iter_for_each (&iter, head_entry) {
-		const NMDedupMultiObj *obj = iter.current->obj;
+	c_list_for_each (iter, &head_entry->lst_entries_head) {
+		const NMDedupMultiObj *obj = c_list_entry (iter, NMDedupMultiEntry, lst_entries)->obj;
 
 		if (   !predicate
 		    || predicate (obj, user_data))

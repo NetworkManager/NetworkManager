@@ -106,9 +106,7 @@ static gboolean ipx_address_delete (NMPlatform *platform,
 static gboolean ipx_route_delete (NMPlatform *platform,
                                   int addr_family,
                                   int ifindex,
-                                  gconstpointer network,
-                                  const guint8 *plen,
-                                  const guint32 *metric);
+                                  const NMPObject *obj);
 
 static gboolean ip6_address_add (NMPlatform *platform,
                                  int ifindex,
@@ -401,8 +399,8 @@ link_delete (NMPlatform *platform, int ifindex)
 	/* Remove addresses and routes which belong to the deleted interface */
 	ipx_address_delete (platform, AF_INET, ifindex, NULL, NULL, NULL);
 	ipx_address_delete (platform, AF_INET6, ifindex, NULL, NULL, NULL);
-	ipx_route_delete (platform, AF_INET, ifindex, NULL, NULL, NULL);
-	ipx_route_delete (platform, AF_INET6, ifindex, NULL, NULL, NULL);
+	ipx_route_delete (platform, AF_INET, ifindex, NULL);
+	ipx_route_delete (platform, AF_INET6, ifindex, NULL);
 
 	nm_platform_cache_update_emit_signal (platform,
 	                                      cache_op,
@@ -1115,42 +1113,54 @@ static gboolean
 ipx_route_delete (NMPlatform *platform,
                   int addr_family,
                   int ifindex,
-                  gconstpointer network,
-                  const guint8 *plen,
-                  const guint32 *metric)
+                  const NMPObject *obj)
 {
 	gs_unref_ptrarray GPtrArray *objs = g_ptr_array_new_with_free_func ((GDestroyNotify) nmp_object_unref);
 	NMDedupMultiIter iter;
 	const NMPObject *o = NULL;
 	guint i;
+	NMPObjectType obj_type;
 
-	g_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
+	if (addr_family == AF_UNSPEC) {
+		g_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ROUTE,
+		                                                NMP_OBJECT_TYPE_IP6_ROUTE));
+		g_assert (ifindex == -1);
+		ifindex = obj->object.ifindex;
+		obj_type = NMP_OBJECT_GET_TYPE (obj);
+	} else {
+		g_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
+		g_assert (!obj);
+		g_assert (ifindex > 0);
+		obj_type =   addr_family == AF_INET
+	               ? NMP_OBJECT_TYPE_IP4_ROUTE
+	               : NMP_OBJECT_TYPE_IP6_ROUTE;
+	}
 
 	nmp_cache_iter_for_each (&iter,
 	                         nm_platform_lookup_addrroute (platform,
-	                                                       addr_family == AF_INET
-	                                                         ? NMP_OBJECT_TYPE_IP4_ROUTE
-	                                                         : NMP_OBJECT_TYPE_IP6_ROUTE,
-	                                                       0),
+	                                                       obj_type,
+	                                                       ifindex),
 	                         &o) {
 		const NMPObject *obj_old = NULL;
 
-		if (addr_family == AF_INET) {
-			const NMPlatformIP4Route *route = NMP_OBJECT_CAST_IP4_ROUTE (o);
+		if (obj) {
+			if (obj_type == NMP_OBJECT_TYPE_IP4_ROUTE) {
+				const NMPlatformIP4Route *route = NMP_OBJECT_CAST_IP4_ROUTE (o);
+				const NMPlatformIP4Route *r = NMP_OBJECT_CAST_IP4_ROUTE (obj);
 
-			if (   route->ifindex != ifindex
-			    || (network && route->network != *((guint32 *) network))
-			    || (plen && route->plen != *plen)
-			    || (metric && route->metric != *metric))
-				continue;
-		} else {
-			const NMPlatformIP6Route *route = NMP_OBJECT_CAST_IP6_ROUTE (o);
+				if (   route->network != r->network
+				    || route->plen != r->plen
+				    || route->metric != r->metric)
+					continue;
+			} else {
+				const NMPlatformIP6Route *route = NMP_OBJECT_CAST_IP6_ROUTE (o);
+				const NMPlatformIP6Route *r = NMP_OBJECT_CAST_IP6_ROUTE (obj);
 
-			if (   route->ifindex != ifindex
-			    || (network && !IN6_ARE_ADDR_EQUAL (&route->network, network))
-			    || (plen && route->plen != *plen)
-			    || (metric && route->metric != *metric))
-				continue;
+				if (   !IN6_ARE_ADDR_EQUAL (&route->network, &r->network)
+				    || route->plen != r->plen
+				    || route->metric != r->metric)
+					continue;
+			}
 		}
 
 		if (nmp_cache_remove (nm_platform_get_cache (platform),
@@ -1172,16 +1182,13 @@ ipx_route_delete (NMPlatform *platform,
 }
 
 static gboolean
-ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, guint8 plen, guint32 metric)
+ip_route_delete (NMPlatform *platform, const NMPObject *obj)
 {
-	return ipx_route_delete (platform, AF_INET, ifindex, &network, &plen, &metric);
-}
+	g_assert (NM_IS_FAKE_PLATFORM (platform));
+	g_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ROUTE,
+	                                                NMP_OBJECT_TYPE_IP6_ROUTE));
 
-static gboolean
-ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, guint8 plen, guint32 metric)
-{
-	metric = nm_utils_ip6_route_metric_normalize (metric);
-	return ipx_route_delete (platform, AF_INET6, ifindex, &network, &plen, &metric);
+	return ipx_route_delete (platform, AF_UNSPEC, -1, obj);
 }
 
 static gboolean
@@ -1391,6 +1398,5 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 
 	platform_class->ip4_route_add = ip4_route_add;
 	platform_class->ip6_route_add = ip6_route_add;
-	platform_class->ip4_route_delete = ip4_route_delete;
-	platform_class->ip6_route_delete = ip6_route_delete;
+	platform_class->ip_route_delete = ip_route_delete;
 }

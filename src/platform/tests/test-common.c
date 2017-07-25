@@ -70,6 +70,90 @@ _init_platform (NMPlatform **platform, gboolean external_command)
 
 /*****************************************************************************/
 
+static GArray *
+_ipx_address_get_all (NMPlatform *self, int ifindex, NMPObjectType obj_type)
+{
+	NMPLookup lookup;
+
+	g_assert (NM_IS_PLATFORM (self));
+	g_assert (ifindex > 0);
+	g_assert (NM_IN_SET (obj_type, NMP_OBJECT_TYPE_IP4_ADDRESS, NMP_OBJECT_TYPE_IP6_ADDRESS));
+	nmp_lookup_init_addrroute (&lookup,
+	                           obj_type,
+	                           ifindex);
+	return nmp_cache_lookup_to_array (nm_platform_lookup (self, &lookup),
+	                                  obj_type,
+	                                  FALSE /*addresses are always visible. */);
+}
+
+GArray *
+nmtstp_platform_ip4_address_get_all (NMPlatform *self, int ifindex)
+{
+	return _ipx_address_get_all (self, ifindex, NMP_OBJECT_TYPE_IP4_ADDRESS);
+}
+
+GArray *
+nmtstp_platform_ip6_address_get_all (NMPlatform *self, int ifindex)
+{
+	return _ipx_address_get_all (self, ifindex, NMP_OBJECT_TYPE_IP6_ADDRESS);
+}
+
+/*****************************************************************************/
+
+gboolean
+nmtstp_platform_ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, guint8 plen, guint32 metric)
+{
+	NMDedupMultiIter iter;
+
+	nm_platform_process_events (platform);
+
+	nm_dedup_multi_iter_for_each (&iter,
+	                              nm_platform_lookup_addrroute (platform,
+	                                                            NMP_OBJECT_TYPE_IP4_ROUTE,
+	                                                            ifindex)) {
+		const NMPlatformIP4Route *r = NMP_OBJECT_CAST_IP4_ROUTE (iter.current->obj);
+
+		if (   r->ifindex != ifindex
+		    || r->network != network
+		    || r->plen != plen
+		    || r->metric != metric) {
+			continue;
+		}
+
+		return nm_platform_ip_route_delete (platform, NMP_OBJECT_UP_CAST (r));
+	}
+
+	return TRUE;
+}
+
+gboolean
+nmtstp_platform_ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, guint8 plen, guint32 metric)
+{
+	NMDedupMultiIter iter;
+
+	nm_platform_process_events (platform);
+
+	nm_dedup_multi_iter_for_each (&iter,
+	                              nm_platform_lookup_addrroute (platform,
+	                                                            NMP_OBJECT_TYPE_IP6_ROUTE,
+	                                                            ifindex)) {
+		const NMPlatformIP6Route *r = NMP_OBJECT_CAST_IP6_ROUTE (iter.current->obj);
+
+		if (   r->ifindex != ifindex
+		    || !IN6_ARE_ADDR_EQUAL (&r->network, &network)
+		    || r->plen != plen
+		    || r->metric != metric) {
+			continue;
+		}
+
+		return nm_platform_ip_route_delete (platform, NMP_OBJECT_UP_CAST (r));
+	}
+
+	return TRUE;
+}
+
+/*****************************************************************************/
+
 SignalData *
 add_signal_full (const char *name, NMPlatformSignalChangeType change_type, GCallback callback, int ifindex, const char *ifname)
 {
