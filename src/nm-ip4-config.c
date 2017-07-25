@@ -1490,6 +1490,7 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 			                          NULL);
 		}
 		nm_dedup_multi_index_dirty_remove_idx (dst_priv->multi_idx, &dst_priv->idx_ip4_addresses, FALSE);
+		_notify_addresses (dst);
 	}
 
 	/* routes */
@@ -1533,6 +1534,7 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 			                          NULL);
 		}
 		nm_dedup_multi_index_dirty_remove_idx (dst_priv->multi_idx, &dst_priv->idx_ip4_routes, FALSE);
+		_notify_routes (dst);
 	}
 
 	/* nameservers */
