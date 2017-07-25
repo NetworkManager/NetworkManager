@@ -3233,7 +3233,7 @@ nm_utils_hwaddr_ntoa_buf (gconstpointer addr, gsize addr_len, gboolean upper_cas
 	if (buf_len < addr_len * 3)
 		g_return_val_if_reached (NULL);
 
-	_bin2str (addr, addr_len, ':', TRUE, buf);
+	_bin2str (addr, addr_len, ':', upper_case, buf);
 	return buf;
 }
 
