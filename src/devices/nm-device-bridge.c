@@ -433,20 +433,32 @@ create_and_realize (NMDevice *device,
 	NMSettingBridge *s_bridge;
 	const char *iface = nm_device_get_iface (device);
 	const char *hwaddr;
+	gs_free char *hwaddr_cloned = NULL;
 	guint8 mac_address[NM_UTILS_HWADDR_LEN_MAX];
 	NMPlatformError plerr;
 
-	g_assert (iface);
+	nm_assert (iface);
 
 	s_bridge = nm_connection_get_setting_bridge (connection);
-	g_assert (s_bridge);
+	nm_assert (s_bridge);
+
 	hwaddr = nm_setting_bridge_get_mac_address (s_bridge);
+	if (   !hwaddr
+	    && nm_device_hw_addr_get_cloned (device, connection, FALSE,
+	                                     &hwaddr_cloned, NULL, NULL)) {
+		/* The cloned MAC address might by dynamic, for example with stable-id="${RANDOM}".
+		 * It's a bit odd that we first create the device with one dynamic address,
+		 * and later on may reset it to another. That is, because we don't cache
+		 * the dynamic address in @device, like we do during nm_device_hw_addr_set_cloned(). */
+		hwaddr = hwaddr_cloned;
+	}
+
 	if (hwaddr) {
 		if (!nm_utils_hwaddr_aton (hwaddr, mac_address, ETH_ALEN)) {
 			g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
 			             "Invalid hardware address '%s'",
 			             hwaddr);
-			return FALSE;
+			g_return_val_if_reached (FALSE);
 		}
 	}
 

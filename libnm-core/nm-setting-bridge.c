@@ -392,8 +392,13 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 * NMSettingBridge:mac-address:
 	 *
 	 * If specified, the MAC address of bridge. When creating a new bridge, this
-	 * MAC address will be set. When matching an existing (outside
-	 * NetworkManager created) bridge, this MAC address must match.
+	 * MAC address will be set.
+	 *
+	 * If this field is left unspecified, the "ethernet.cloned-mac-address" is
+	 * referred instead to generate the initial MAC address. Note that setting
+	 * "ethernet.cloned-mac-address" anyway overwrites the MAC address of
+	 * the bridge later while activating the bridge. Hence, this property
+	 * is deprecated.
 	 **/
 	/* ---keyfile---
 	 * property: mac-address
