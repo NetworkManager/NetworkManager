@@ -8300,7 +8300,7 @@ start_sharing (NMDevice *self, NMIP4Config *config)
 	ip_iface = nm_device_get_ip_iface (self);
 
 	ip4_addr = nm_ip4_config_get_first_address (config);
-	if (ip4_addr || !ip4_addr->address)
+	if (!ip4_addr || !ip4_addr->address)
 		return FALSE;
 
 	netmask = nm_utils_ip4_prefix_to_netmask (ip4_addr->plen);
