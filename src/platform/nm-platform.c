@@ -776,18 +776,31 @@ nm_platform_link_add (NMPlatform *self,
                       const NMPlatformLink **out_link)
 {
 	NMPlatformError plerr;
+	char addr_buf[NM_UTILS_HWADDR_LEN_MAX * 3];
 
 	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
 
 	g_return_val_if_fail (name, NM_PLATFORM_ERROR_BUG);
-	g_return_val_if_fail ( (address != NULL) ^ (address_len == 0) , NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail ((address != NULL) ^ (address_len == 0) , NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (address_len <= NM_UTILS_HWADDR_LEN_MAX, NM_PLATFORM_ERROR_BUG);
 	g_return_val_if_fail ((!!veth_peer) == (type == NM_LINK_TYPE_VETH), NM_PLATFORM_ERROR_BUG);
 
 	plerr = _link_add_check_existing (self, name, type, out_link);
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("link: adding %s '%s'", nm_link_type_to_string (type), name);
+	_LOGD ("link: add link '%s' of type '%s' (%d)"
+	       "%s%s" /* address */
+	       "%s%s" /* veth peer */
+	       "",
+	       name,
+	       nm_link_type_to_string (type),
+	       (int) type,
+	       address ? ", address: " : "",
+	       address ? nm_utils_hwaddr_ntoa_buf (address, address_len, FALSE, addr_buf, sizeof (addr_buf)) : "",
+	       veth_peer ? ", veth-peer: " : "",
+	       veth_peer ?: "");
+
 	if (!klass->link_add (self, name, type, veth_peer, address, address_len, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
 	return NM_PLATFORM_ERROR_SUCCESS;

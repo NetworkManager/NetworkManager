@@ -4141,9 +4141,6 @@ link_add (NMPlatform *platform,
 			(void) nm_utils_modprobe (NULL, TRUE, "bonding", "max_bonds=0", NULL);
 	}
 
-	_LOGD ("link: add link '%s' of type '%s' (%d)",
-	       name, nm_link_type_to_string (type), (int) type);
-
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
