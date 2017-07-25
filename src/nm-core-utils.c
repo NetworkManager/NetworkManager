@@ -3474,7 +3474,7 @@ nm_utils_stable_id_parse (const char *stable_id,
 	g_return_val_if_fail (out_generated, NM_UTILS_STABLE_TYPE_RANDOM);
 
 	if (!stable_id) {
-		out_generated = NULL;
+		*out_generated = NULL;
 		return NM_UTILS_STABLE_TYPE_UUID;
 	}
 
