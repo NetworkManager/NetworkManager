@@ -1150,7 +1150,8 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_wired_class)
 	 * Beside explicitly specifying a MAC address, the special values "preserve", "permanent",
 	 * "random" and "stable" are supported.
 	 * "preserve" means not to touch the MAC address on activation.
-	 * "permanent" means to use the permanent hardware address of the device.
+	 * "permanent" means to use the permanent hardware address if the device
+	 * has one (otherwise this is treated as "preserve").
 	 * "random" creates a random MAC address on each connect.
 	 * "stable" creates a hashed MAC address based on connection.stable-id and a
 	 * machine dependent key.

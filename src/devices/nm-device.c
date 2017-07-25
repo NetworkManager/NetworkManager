@@ -13426,8 +13426,17 @@ _hw_addr_get_cloned (NMDevice *self, NMConnection *connection, gboolean is_wifi,
 	}
 
 	if (nm_streq (addr, NM_CLONED_MAC_PERMANENT)) {
-		addr = nm_device_get_permanent_hw_address (self);
-		if (!addr) {
+		gboolean is_fake;
+
+		addr = nm_device_get_permanent_hw_address_full (self, TRUE, &is_fake);
+		if (is_fake) {
+			/* Preserve the current address if the permanent address if fake */
+			NM_SET_OUT (preserve, TRUE);
+			NM_SET_OUT (hwaddr, NULL);
+			NM_SET_OUT (hwaddr_type, HW_ADDR_TYPE_UNSET);
+			NM_SET_OUT (hwaddr_detail, g_steal_pointer (&addr_setting_free) ?: g_strdup (addr_setting));
+			return TRUE;
+		} else if (!addr) {
 			g_set_error_literal (error,
 			                     NM_DEVICE_ERROR,
 			                     NM_DEVICE_ERROR_FAILED,
