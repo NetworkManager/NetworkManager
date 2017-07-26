@@ -554,10 +554,9 @@ nmp_object_stackinit_id  (NMPObject *obj, const NMPObject *src)
 	nm_assert (obj);
 
 	klass = NMP_OBJECT_GET_CLASS (src);
-	if (!klass->cmd_obj_stackinit_id)
-		_nmp_object_stackinit_from_class (obj, klass);
-	else
-		klass->cmd_obj_stackinit_id (obj, src);
+	_nmp_object_stackinit_from_class (obj, klass);
+	if (klass->cmd_plobj_id_copy)
+		klass->cmd_plobj_id_copy (&obj->object, &src->object);
 	return obj;
 }
 
@@ -567,12 +566,6 @@ nmp_object_stackinit_id_link (NMPObject *obj, int ifindex)
 	_nmp_object_stackinit_from_type (obj, NMP_OBJECT_TYPE_LINK);
 	obj->link.ifindex = ifindex;
 	return obj;
-}
-
-static void
-_vt_cmd_obj_stackinit_id_link (NMPObject *obj, const NMPObject *src)
-{
-	nmp_object_stackinit_id_link (obj, src->link.ifindex);
 }
 
 const NMPObject *
@@ -586,12 +579,6 @@ nmp_object_stackinit_id_ip4_address (NMPObject *obj, int ifindex, guint32 addres
 	return obj;
 }
 
-static void
-_vt_cmd_obj_stackinit_id_ip4_address (NMPObject *obj, const NMPObject *src)
-{
-	nmp_object_stackinit_id_ip4_address (obj, src->ip_address.ifindex, src->ip4_address.address, src->ip_address.plen, src->ip4_address.peer_address);
-}
-
 const NMPObject *
 nmp_object_stackinit_id_ip6_address (NMPObject *obj, int ifindex, const struct in6_addr *address)
 {
@@ -600,12 +587,6 @@ nmp_object_stackinit_id_ip6_address (NMPObject *obj, int ifindex, const struct i
 	if (address)
 		obj->ip6_address.address = *address;
 	return obj;
-}
-
-static void
-_vt_cmd_obj_stackinit_id_ip6_address (NMPObject *obj, const NMPObject *src)
-{
-	nmp_object_stackinit_id_ip6_address (obj, src->ip_address.ifindex, &src->ip6_address.address);
 }
 
 const NMPObject *
@@ -619,12 +600,6 @@ nmp_object_stackinit_id_ip4_route (NMPObject *obj, int ifindex, guint32 network,
 	return obj;
 }
 
-static void
-_vt_cmd_obj_stackinit_id_ip4_route (NMPObject *obj, const NMPObject *src)
-{
-	nmp_object_stackinit_id_ip4_route (obj, src->ip_route.ifindex, src->ip4_route.network, src->ip_route.plen, src->ip_route.metric);
-}
-
 const NMPObject *
 nmp_object_stackinit_id_ip6_route (NMPObject *obj, int ifindex, const struct in6_addr *network, guint8 plen, guint32 metric)
 {
@@ -635,12 +610,6 @@ nmp_object_stackinit_id_ip6_route (NMPObject *obj, int ifindex, const struct in6
 	obj->ip6_route.plen = plen;
 	obj->ip6_route.metric = metric;
 	return obj;
-}
-
-static void
-_vt_cmd_obj_stackinit_id_ip6_route (NMPObject *obj, const NMPObject *src)
-{
-	nmp_object_stackinit_id_ip6_route (obj, src->ip_route.ifindex, &src->ip6_route.network, src->ip_route.plen, src->ip_route.metric);
 }
 
 /*****************************************************************************/
@@ -2329,7 +2298,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_obj_hash                       = _vt_cmd_obj_hash_link,
 		.cmd_obj_cmp                        = _vt_cmd_obj_cmp_link,
 		.cmd_obj_copy                       = _vt_cmd_obj_copy_link,
-		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_link,
 		.cmd_obj_dispose                    = _vt_cmd_obj_dispose_link,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_link,
 		.cmd_obj_is_visible                 = _vt_cmd_obj_is_visible_link,
@@ -2353,7 +2321,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.signal_type_id                     = NM_PLATFORM_SIGNAL_ID_IP4_ADDRESS,
 		.signal_type                        = NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED,
 		.supported_cache_ids                = _supported_cache_ids_ipx_address,
-		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip4_address,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_address,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_ip4_address,
 		.cmd_plobj_id_equal                 = _vt_cmd_plobj_id_equal_ip4_address,
@@ -2374,7 +2341,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.signal_type_id                     = NM_PLATFORM_SIGNAL_ID_IP6_ADDRESS,
 		.signal_type                        = NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED,
 		.supported_cache_ids                = _supported_cache_ids_ipx_address,
-		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip6_address,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_address,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_ip6_address,
 		.cmd_plobj_id_equal                 = _vt_cmd_plobj_id_equal_ip6_address,
@@ -2395,7 +2361,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.signal_type_id                     = NM_PLATFORM_SIGNAL_ID_IP4_ROUTE,
 		.signal_type                        = NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,
 		.supported_cache_ids                = _supported_cache_ids_ipx_route,
-		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip4_route,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_route,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_ip4_route,
 		.cmd_plobj_id_equal                 = _vt_cmd_plobj_id_equal_ip4_route,
@@ -2416,7 +2381,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.signal_type_id                     = NM_PLATFORM_SIGNAL_ID_IP6_ROUTE,
 		.signal_type                        = NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED,
 		.supported_cache_ids                = _supported_cache_ids_ipx_route,
-		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip6_route,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_route,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_ip6_route,
 		.cmd_plobj_id_equal                 = _vt_cmd_plobj_id_equal_ip6_route,

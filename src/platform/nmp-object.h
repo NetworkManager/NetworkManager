@@ -118,7 +118,6 @@ typedef struct {
 	guint (*cmd_obj_hash) (const NMPObject *obj);
 	int (*cmd_obj_cmp) (const NMPObject *obj1, const NMPObject *obj2);
 	void (*cmd_obj_copy) (NMPObject *dst, const NMPObject *src);
-	void (*cmd_obj_stackinit_id) (NMPObject *obj, const NMPObject *src);
 	void (*cmd_obj_dispose) (NMPObject *obj);
 	gboolean (*cmd_obj_is_alive) (const NMPObject *obj);
 	gboolean (*cmd_obj_is_visible) (const NMPObject *obj);
