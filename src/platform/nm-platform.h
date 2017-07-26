@@ -426,6 +426,14 @@ struct _NMPlatformIP6Route {
 	 * When deleting a route, pref_src is ignored by kernel. */
 	struct in6_addr pref_src;
 
+	/* RTA_SRC and rtm_src_len (called "from" by iproute2).
+	 *
+	 * Kernel clears the host part of src/src_plen.
+	 *
+	 * src/src_plen is part of the ID of a route just like network/plen. That is,
+	 * Not only `ip route append`, but also `ip route add` allows to add routes that only
+	 * differ in their src/src_plen.
+	 */
 	struct in6_addr src;
 	guint8 src_plen;
 };

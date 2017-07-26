@@ -2018,9 +2018,11 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 			memcpy (&obj->ip6_route.pref_src, nla_data (tb[RTA_PREFSRC]), addr_len);
 	}
 
-	if (!is_v4 && tb[RTA_SRC]) {
-		_check_addr_or_errout (tb, RTA_SRC, addr_len);
-		memcpy (&obj->ip6_route.src, nla_data (tb[RTA_SRC]), addr_len);
+	if (!is_v4) {
+		if (tb[RTA_SRC]) {
+			_check_addr_or_errout (tb, RTA_SRC, addr_len);
+			memcpy (&obj->ip6_route.src, nla_data (tb[RTA_SRC]), addr_len);
+		}
 		obj->ip6_route.src_plen = rtm->rtm_src_len;
 	}
 
@@ -2419,8 +2421,6 @@ static struct nl_msg *
 _nl_msg_new_route (int nlmsg_type,
                    int nlmsg_flags,
                    const NMPObject *obj,
-                   gconstpointer src,
-                   guint8 src_plen,
                    guint32 window,
                    guint32 cwnd,
                    guint32 initcwnd,
@@ -2442,7 +2442,9 @@ _nl_msg_new_route (int nlmsg_type,
 		.rtm_type = RTN_UNICAST,
 		.rtm_flags = 0,
 		.rtm_dst_len = obj->ip_route.plen,
-		.rtm_src_len = src ? src_plen : 0,
+		.rtm_src_len = is_v4
+		               ? 0
+		               : NMP_OBJECT_CAST_IP6_ROUTE (obj)->src_plen,
 	};
 
 	gsize addr_len;
@@ -2466,8 +2468,10 @@ _nl_msg_new_route (int nlmsg_type,
 	           ? (gconstpointer) &obj->ip4_route.network
 	           : (gconstpointer) &obj->ip6_route.network);
 
-	if (src)
-		NLA_PUT (msg, RTA_SRC, addr_len, src);
+	if (!is_v4) {
+		if (!IN6_IS_ADDR_UNSPECIFIED (&NMP_OBJECT_CAST_IP6_ROUTE (obj)->src))
+			NLA_PUT (msg, RTA_SRC, addr_len, &obj->ip6_route.src);
+	}
 
 	NLA_PUT_U32 (msg, RTA_PRIORITY, obj->ip_route.metric);
 
@@ -5708,8 +5712,6 @@ ip4_route_add (NMPlatform *platform, const NMPlatformIP4Route *route)
 	nlmsg = _nl_msg_new_route (RTM_NEWROUTE,
 	                           NLM_F_CREATE | NLM_F_REPLACE,
 	                           &obj,
-	                           NULL,
-	                           0,
 	                           route->window,
 	                           route->cwnd,
 	                           route->initcwnd,
@@ -5730,12 +5732,11 @@ ip6_route_add (NMPlatform *platform, const NMPlatformIP6Route *route)
 	r = NMP_OBJECT_CAST_IP6_ROUTE (&obj);
 	nm_utils_ip6_address_clear_host_address (&r->network, &r->network, r->plen);
 	r->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (r->rt_source),
+	nm_utils_ip6_address_clear_host_address (&r->src, &r->src, r->src_plen);
 
 	nlmsg = _nl_msg_new_route (RTM_NEWROUTE,
 	                           NLM_F_CREATE | NLM_F_REPLACE,
 	                           &obj,
-	                           !IN6_IS_ADDR_UNSPECIFIED (&route->src) ? &route->src : NULL,
-	                           route->src_plen,
 	                           route->window,
 	                           route->cwnd,
 	                           route->initcwnd,
@@ -5792,8 +5793,6 @@ ip_route_delete (NMPlatform *platform,
 	nlmsg = _nl_msg_new_route (RTM_DELROUTE,
 	                           0,
 	                           obj,
-	                           NULL,
-	                           0,
 	                           0,
 	                           0,
 	                           0,
