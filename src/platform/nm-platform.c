@@ -3199,8 +3199,8 @@ nm_platform_ip4_address_sync (NMPlatform *self,
 				goto delete_and_next;
 
 			if (G_UNLIKELY (!known_addresses_idx)) {
-				known_addresses_idx = g_hash_table_new ((GHashFunc) nmp_object_hash,
-				                                        (GEqualFunc) nmp_object_equal);
+				known_addresses_idx = g_hash_table_new ((GHashFunc) nmp_object_id_hash,
+				                                        (GEqualFunc) nmp_object_id_equal);
 			}
 			if (!nm_g_hash_table_insert (known_addresses_idx, (gpointer) o, (gpointer) o)) {
 				/* duplicate? Keep only the first instance. */
