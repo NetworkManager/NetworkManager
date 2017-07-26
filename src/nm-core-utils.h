@@ -111,12 +111,6 @@ extern const NMIPAddr nm_ip_addr_zero;
 
 guint nm_utils_in6_addr_hash (const struct in6_addr *addr);
 
-static inline guint
-NM_HASH_COMBINE_IN6_ADDR (guint h, const struct in6_addr *addr)
-{
-	return NM_HASH_COMBINE (h, addr ? nm_utils_in6_addr_hash (addr) : 0);
-}
-
 gboolean nm_ethernet_address_is_valid (gconstpointer addr, gssize len);
 
 gconstpointer nm_utils_ipx_address_clear_host_address (int family, gpointer dst, gconstpointer src, guint8 plen);
@@ -142,6 +136,26 @@ nm_utils_ip6_address_same_prefix (const struct in6_addr *addr_a, const struct in
         NM_CMP_DIRECT (htonl (nm_utils_ip4_address_clear_host_address (_aa, _plen)), \
                        htonl (nm_utils_ip4_address_clear_host_address (_ab, _plen))); \
     } G_STMT_END
+
+static inline guint
+NM_HASH_COMBINE_IN6ADDR (guint h, const struct in6_addr *addr)
+{
+	if (!addr)
+		g_return_val_if_reached (h);
+	return NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (addr));
+}
+
+static inline guint
+NM_HASH_COMBINE_IN6ADDR_PREFIX (guint h, const struct in6_addr *addr, guint8 plen)
+{
+	struct in6_addr a;
+
+	if (!addr)
+		g_return_val_if_reached (h);
+	nm_utils_ip6_address_clear_host_address (&a, addr, plen);
+	/* we don't hash plen itself. The caller may want to do that.*/
+	return NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&a));
+}
 
 double nm_utils_exp10 (gint16 e);
 

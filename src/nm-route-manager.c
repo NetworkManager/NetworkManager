@@ -428,7 +428,7 @@ _route_equals_ignoring_ifindex (const VTableIP *vtable, const NMPlatformIPXRoute
 			r2_backup.rx.metric = (guint32) r2_metric;
 		r2 = &r2_backup;
 	}
-	return vtable->vt->route_cmp (r1, r2, FALSE) == 0;
+	return vtable->vt->route_cmp (r1, r2, NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) == 0;
 }
 
 static NMPlatformIPXRoute *

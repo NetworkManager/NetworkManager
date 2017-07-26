@@ -212,7 +212,7 @@ _vt_routes_has_entry (const VTableIP *vtable, const GPtrArray *routes, const Ent
 			const NMPlatformIP4Route *r = NMP_OBJECT_CAST_IP4_ROUTE (routes->pdata[i]);
 
 			route.rx.rt_source = r->rt_source;
-			if (nm_platform_ip4_route_cmp (r, &route.r4) == 0)
+			if (nm_platform_ip4_route_cmp_full (r, &route.r4) == 0)
 				return TRUE;
 		}
 	} else {
@@ -220,7 +220,7 @@ _vt_routes_has_entry (const VTableIP *vtable, const GPtrArray *routes, const Ent
 			const NMPlatformIP6Route *r = NMP_OBJECT_CAST_IP6_ROUTE (routes->pdata[i]);
 
 			route.rx.rt_source = r->rt_source;
-			if (nm_platform_ip6_route_cmp (r, &route.r6) == 0)
+			if (nm_platform_ip6_route_cmp_full (r, &route.r6) == 0)
 				return TRUE;
 		}
 	}

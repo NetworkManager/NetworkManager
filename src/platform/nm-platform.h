@@ -73,6 +73,48 @@ struct udev_device;
 /* Redefine this in host's endianness */
 #define NM_GRE_KEY      0x2000
 
+typedef enum {
+	/* compare fields which kernel considers as similar routes.
+	 * It is a looser comparisong then NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID
+	 * and means that `ip route add` would fail to add two routes
+	 * that have the same NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID.
+	 * On the other hand, `ip route append` would allow that, as
+	 * long as NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID differs. */
+	NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID,
+
+	/* compare two routes as kernel would allow to add them with
+	 * `ip route append`. In other words, kernel does not allow you to
+	 * add two routes (at the same time) which compare equal according
+	 * to NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID.
+	 *
+	 * For the ID we can only recognize route fields that we actually implement.
+	 * However, kernel supports more routing options, some of them also part of
+	 * the ID. NetworkManager is oblivious to these options and will wrongly think
+	 * that two routes are idential, while they are not. That can lead to an
+	 * inconsistent platform cache. Not much what we can do about that, except
+	 * implementing all options that kernel supports *sigh*. See rh#1337860.
+	 */
+	NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID,
+
+	/* FIXME: this type is what NMPCache currently uses for object identity.
+	 * Eventually, we want to use NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID,
+	 * which is the same what kernel does. */
+	NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID_CACHE,
+
+	/* compare all fields as they make sense for kernel. For example,
+	 * a route destination 192.168.1.5/24 is not accepted by kernel and
+	 * we treat it identical to 192.168.1.0/24. Semantically these
+	 * routes are identical, but NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL will
+	 * report them as different. */
+	NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY,
+
+	/* compare all fields. This should have the same effect as memcmp(),
+	 * except allowing for undefined data in holes between field alignment.
+	 */
+	NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL,
+
+} NMPlatformIPRouteCmpType;
+
 typedef enum { /*< skip >*/
 
 	/* dummy value, to enforce that the enum type is signed and has a size
@@ -364,7 +406,7 @@ typedef struct {
 	NMPObjectType obj_type;
 	int addr_family;
 	gsize sizeof_route;
-	int (*route_cmp) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, gboolean consider_host_part);
+	int (*route_cmp) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, NMPlatformIPRouteCmpType cmp_type);
 	const char *(*route_to_string) (const NMPlatformIPXRoute *route, char *buf, gsize len);
 	gboolean (*route_add) (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route, gint64 metric);
 	guint32 (*metric_normalize) (guint32 metric);
@@ -991,26 +1033,27 @@ int nm_platform_lnk_vlan_cmp (const NMPlatformLnkVlan *a, const NMPlatformLnkVla
 int nm_platform_lnk_vxlan_cmp (const NMPlatformLnkVxlan *a, const NMPlatformLnkVxlan *b);
 int nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b);
 int nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6Address *b);
-int nm_platform_ip4_route_cmp_full (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b, gboolean consider_host_part);
-int nm_platform_ip6_route_cmp_full (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b, gboolean consider_host_part);
+
+int nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b, NMPlatformIPRouteCmpType cmp_type);
+int nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b, NMPlatformIPRouteCmpType cmp_type);
 
 static inline int
-nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b)
+nm_platform_ip4_route_cmp_full (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b)
 {
-	return nm_platform_ip4_route_cmp_full (a, b, TRUE);
+	return nm_platform_ip4_route_cmp (a, b, NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL);
 }
 
 static inline int
-nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b)
+nm_platform_ip6_route_cmp_full (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b)
 {
-	return nm_platform_ip6_route_cmp_full (a, b, TRUE);
+	return nm_platform_ip6_route_cmp (a, b, NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL);
 }
 
 guint nm_platform_link_hash (const NMPlatformLink *obj);
 guint nm_platform_ip4_address_hash (const NMPlatformIP4Address *obj);
 guint nm_platform_ip6_address_hash (const NMPlatformIP6Address *obj);
-guint nm_platform_ip4_route_hash (const NMPlatformIP4Route *obj);
-guint nm_platform_ip6_route_hash (const NMPlatformIP6Route *obj);
+guint nm_platform_ip4_route_hash (const NMPlatformIP4Route *obj, NMPlatformIPRouteCmpType cmp_type);
+guint nm_platform_ip6_route_hash (const NMPlatformIP6Route *obj, NMPlatformIPRouteCmpType cmp_type);
 guint nm_platform_lnk_gre_hash (const NMPlatformLnkGre *obj);
 guint nm_platform_lnk_infiniband_hash (const NMPlatformLnkInfiniband *obj);
 guint nm_platform_lnk_ip6tnl_hash (const NMPlatformLnkIp6Tnl *obj);
@@ -1020,6 +1063,18 @@ guint nm_platform_lnk_macvlan_hash (const NMPlatformLnkMacvlan *obj);
 guint nm_platform_lnk_sit_hash (const NMPlatformLnkSit *obj);
 guint nm_platform_lnk_vlan_hash (const NMPlatformLnkVlan *obj);
 guint nm_platform_lnk_vxlan_hash (const NMPlatformLnkVxlan *obj);
+
+static inline guint
+nm_platform_ip4_route_hash_full (const NMPlatformIP4Route *obj)
+{
+	return nm_platform_ip4_route_hash (obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL);
+}
+
+static inline guint
+nm_platform_ip6_route_hash_full (const NMPlatformIP6Route *obj)
+{
+	return nm_platform_ip6_route_hash (obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL);
+}
 
 gboolean nm_platform_check_support_kernel_extended_ifa_flags (NMPlatform *self);
 gboolean nm_platform_check_support_user_ipv6ll (NMPlatform *self);

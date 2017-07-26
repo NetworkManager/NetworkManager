@@ -104,7 +104,7 @@ _idx_obj_id_hash (const NMDedupMultiIdxType *idx_type,
 		break;
 	case NMP_OBJECT_TYPE_IP6_ADDRESS:
 		h = 851146661;
-		h = NM_HASH_COMBINE_IN6_ADDR (h, &o->ip6_address.address);
+		h = NM_HASH_COMBINE_IN6ADDR (h, &o->ip6_address.address);
 		break;
 	case NMP_OBJECT_TYPE_IP4_ROUTE:
 		h = 40303327;
@@ -113,7 +113,7 @@ _idx_obj_id_hash (const NMDedupMultiIdxType *idx_type,
 		break;
 	case NMP_OBJECT_TYPE_IP6_ROUTE:
 		h = 577629323;
-		h = NM_HASH_COMBINE_IN6_ADDR (h, &o->ip6_route.network);
+		h = NM_HASH_COMBINE_IN6ADDR (h, &o->ip6_route.network);
 		h = NM_HASH_COMBINE (h, o->ip_route.plen);
 		break;
 	default:
@@ -1512,7 +1512,7 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 		if (!has)
 			break;
 
-		if (nm_platform_ip4_route_cmp (r_src, r_dst) != 0) {
+		if (nm_platform_ip4_route_cmp_full (r_src, r_dst) != 0) {
 			are_equal = FALSE;
 			if (   !nm_ip_config_obj_id_equal_ip4_route (r_src, r_dst)
 			    || r_src->gateway != r_dst->gateway

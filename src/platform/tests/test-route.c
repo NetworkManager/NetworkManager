@@ -69,12 +69,19 @@ ip4_route_callback (NMPlatform *platform, int obj_type_i, int ifindex, const NMP
 {
 	const NMPObjectType obj_type = obj_type_i;
 	const NMPlatformSignalChangeType change_type = change_type_i;
+	NMPObject o_id;
+	nm_auto_nmpobj NMPObject *o_id_p = nmp_object_new (NMP_OBJECT_TYPE_IP4_ROUTE, NULL);
 
 	g_assert_cmpint (obj_type, ==, NMP_OBJECT_TYPE_IP4_ROUTE);
 	g_assert (received);
 	g_assert_cmpint (received->ifindex, ==, ifindex);
 	g_assert (data && data->name);
 	g_assert_cmpstr (data->name, ==, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED);
+
+	/* run code for initializing the ID only */
+	nmp_object_stackinit_id (&o_id, NMP_OBJECT_UP_CAST (received));
+	nmp_object_copy (o_id_p, NMP_OBJECT_UP_CAST (received), TRUE);
+	nmp_object_copy (o_id_p, NMP_OBJECT_UP_CAST (received), FALSE);
 
 	if (data->ifindex && data->ifindex != received->ifindex)
 		return;
@@ -93,12 +100,19 @@ ip6_route_callback (NMPlatform *platform, int obj_type_i, int ifindex, const NMP
 {
 	const NMPObjectType obj_type = obj_type_i;
 	const NMPlatformSignalChangeType change_type = change_type_i;
+	NMPObject o_id;
+	nm_auto_nmpobj NMPObject *o_id_p = nmp_object_new (NMP_OBJECT_TYPE_IP6_ROUTE, NULL);
 
 	g_assert_cmpint (obj_type, ==, NMP_OBJECT_TYPE_IP6_ROUTE);
 	g_assert (received);
 	g_assert_cmpint (received->ifindex, ==, ifindex);
 	g_assert (data && data->name);
 	g_assert_cmpstr (data->name, ==, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED);
+
+	/* run code for initializing the ID only */
+	nmp_object_stackinit_id (&o_id, NMP_OBJECT_UP_CAST (received));
+	nmp_object_copy (o_id_p, NMP_OBJECT_UP_CAST (received), TRUE);
+	nmp_object_copy (o_id_p, NMP_OBJECT_UP_CAST (received), FALSE);
 
 	if (data->ifindex && data->ifindex != received->ifindex)
 		return;

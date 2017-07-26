@@ -1291,7 +1291,7 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 		if (!has)
 			break;
 
-		if (nm_platform_ip6_route_cmp (r_src, r_dst) != 0) {
+		if (nm_platform_ip6_route_cmp_full (r_src, r_dst) != 0) {
 			are_equal = FALSE;
 			if (   !nm_ip_config_obj_id_equal_ip6_route (r_src, r_dst)
 			    || r_src->metric != r_dst->metric
