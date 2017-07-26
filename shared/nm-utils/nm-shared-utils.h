@@ -24,6 +24,83 @@
 
 /*****************************************************************************/
 
+#define NM_CMP_SELF(a, b) \
+    G_STMT_START { \
+        if ((a) == (b)) \
+            return 0; \
+        if (!(a)) \
+            return -1; \
+        if (!(b)) \
+            return 1; \
+    } G_STMT_END
+
+#define NM_CMP_DIRECT(a, b) \
+    G_STMT_START { \
+        if ((a) != (b)) \
+            return ((a) < (b)) ? -1 : 1; \
+    } G_STMT_END
+
+#define NM_CMP_DIRECT_MEMCMP(a, b, size) \
+    G_STMT_START { \
+        int c = memcmp ((a), (b), (size)); \
+        if (c != 0) \
+            return c < 0 ? -1 : 1; \
+    } G_STMT_END
+
+#define NM_CMP_FIELD(a, b, field) \
+    G_STMT_START { \
+        if (((a)->field) != ((b)->field)) \
+            return (((a)->field) < ((b)->field)) ? -1 : 1; \
+    } G_STMT_END
+
+#define NM_CMP_FIELD_BOOL(a, b, field) \
+    G_STMT_START { \
+        if ((!((a)->field)) != (!((b)->field))) \
+            return ((!((a)->field)) < (!((b)->field))) ? -1 : 1; \
+    } G_STMT_END
+
+#define NM_CMP_FIELD_STR(a, b, field) \
+    G_STMT_START { \
+        int c = strcmp ((a)->field, (b)->field); \
+        if (c != 0) \
+            return c < 0 ? -1 : 1; \
+    } G_STMT_END
+
+#define NM_CMP_FIELD_STR_INTERNED(a, b, field) \
+    G_STMT_START { \
+        if (((a)->field) != ((b)->field)) { \
+            /* just to be sure, also do a strcmp() if the pointers don't match */ \
+            int c = g_strcmp0 ((a)->field, (b)->field); \
+            if (c != 0) \
+                return c < 0 ? -1 : 1; \
+        } \
+    } G_STMT_END
+
+#define NM_CMP_FIELD_STR0(a, b, field) \
+    G_STMT_START { \
+        int c = g_strcmp0 ((a)->field, (b)->field); \
+        if (c != 0) \
+            return c < 0 ? -1 : 1; \
+    } G_STMT_END
+
+#define NM_CMP_FIELD_MEMCMP_LEN(a, b, field, len) \
+    G_STMT_START { \
+        int c = memcmp (&((a)->field), &((b)->field), \
+                        MIN (len, sizeof ((a)->field))); \
+        if (c != 0) \
+            return c < 0 ? -1 : 1; \
+    } G_STMT_END
+
+#define NM_CMP_FIELD_MEMCMP(a, b, field) \
+    G_STMT_START { \
+        int c = memcmp (&((a)->field), &((b)->field), \
+                        sizeof ((a)->field)); \
+        if (c != 0) \
+            return c < 0 ? -1 : 1; \
+    } G_STMT_END
+
+/*****************************************************************************/
+
 extern const void *const _NM_PTRARRAY_EMPTY[1];
 
 #define NM_PTRARRAY_EMPTY(type) ((type const*) _NM_PTRARRAY_EMPTY)
