@@ -4320,79 +4320,79 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	return buf;
 }
 
-#define _CMP_SELF(a, b)                                     \
-    G_STMT_START {                                          \
-        if ((a) == (b))                                     \
-            return 0;                                       \
-        if (!(a))                                           \
-            return -1;                                      \
-        if (!(b))                                           \
-            return 1;                                       \
+#define NM_CMP_SELF(a, b) \
+    G_STMT_START { \
+        if ((a) == (b)) \
+            return 0; \
+        if (!(a)) \
+            return -1; \
+        if (!(b)) \
+            return 1; \
     } G_STMT_END
 
-#define _CMP_DIRECT(a, b)                                   \
-    G_STMT_START {                                          \
-        if ((a) != (b))                                     \
-            return ((a) < (b)) ? -1 : 1;                    \
+#define NM_CMP_DIRECT(a, b) \
+    G_STMT_START { \
+        if ((a) != (b)) \
+            return ((a) < (b)) ? -1 : 1; \
     } G_STMT_END
 
-#define _CMP_DIRECT_MEMCMP(a, b, size)                      \
-    G_STMT_START {                                          \
-        int c = memcmp ((a), (b), (size));                  \
-        if (c != 0)                                         \
-            return c < 0 ? -1 : 1;                          \
+#define NM_CMP_DIRECT_MEMCMP(a, b, size) \
+    G_STMT_START { \
+        int c = memcmp ((a), (b), (size)); \
+        if (c != 0) \
+            return c < 0 ? -1 : 1; \
     } G_STMT_END
 
-#define _CMP_FIELD(a, b, field)                             \
-    G_STMT_START {                                          \
-        if (((a)->field) != ((b)->field))                   \
-            return (((a)->field) < ((b)->field)) ? -1 : 1;  \
+#define NM_CMP_FIELD(a, b, field) \
+    G_STMT_START { \
+        if (((a)->field) != ((b)->field)) \
+            return (((a)->field) < ((b)->field)) ? -1 : 1; \
     } G_STMT_END
 
-#define _CMP_FIELD_BOOL(a, b, field)                        \
-    G_STMT_START {                                          \
-        if ((!((a)->field)) != (!((b)->field)))                 \
+#define NM_CMP_FIELD_BOOL(a, b, field) \
+    G_STMT_START { \
+        if ((!((a)->field)) != (!((b)->field))) \
             return ((!((a)->field)) < (!((b)->field))) ? -1 : 1; \
     } G_STMT_END
 
-#define _CMP_FIELD_STR(a, b, field)                         \
-    G_STMT_START {                                          \
-        int c = strcmp ((a)->field, (b)->field);            \
-        if (c != 0)                                         \
-            return c < 0 ? -1 : 1;                          \
+#define NM_CMP_FIELD_STR(a, b, field) \
+    G_STMT_START { \
+        int c = strcmp ((a)->field, (b)->field); \
+        if (c != 0) \
+            return c < 0 ? -1 : 1; \
     } G_STMT_END
 
-#define _CMP_FIELD_STR_INTERNED(a, b, field)                \
-    G_STMT_START {                                          \
-        if (((a)->field) != ((b)->field)) {                 \
+#define NM_CMP_FIELD_STR_INTERNED(a, b, field) \
+    G_STMT_START { \
+        if (((a)->field) != ((b)->field)) { \
             /* just to be sure, also do a strcmp() if the pointers don't match */ \
-            int c = g_strcmp0 ((a)->field, (b)->field);     \
-            if (c != 0)                                     \
-                return c < 0 ? -1 : 1;                      \
+            int c = g_strcmp0 ((a)->field, (b)->field); \
+            if (c != 0) \
+                return c < 0 ? -1 : 1; \
         } \
     } G_STMT_END
 
-#define _CMP_FIELD_STR0(a, b, field)                        \
-    G_STMT_START {                                          \
-        int c = g_strcmp0 ((a)->field, (b)->field);         \
-        if (c != 0)                                         \
-            return c < 0 ? -1 : 1;                          \
+#define NM_CMP_FIELD_STR0(a, b, field) \
+    G_STMT_START { \
+        int c = g_strcmp0 ((a)->field, (b)->field); \
+        if (c != 0) \
+            return c < 0 ? -1 : 1; \
     } G_STMT_END
 
-#define _CMP_FIELD_MEMCMP_LEN(a, b, field, len)             \
-    G_STMT_START {                                          \
-        int c = memcmp (&((a)->field), &((b)->field),       \
-                        MIN (len, sizeof ((a)->field)));    \
-        if (c != 0)                                         \
-            return c < 0 ? -1 : 1;                          \
+#define NM_CMP_FIELD_MEMCMP_LEN(a, b, field, len) \
+    G_STMT_START { \
+        int c = memcmp (&((a)->field), &((b)->field), \
+                        MIN (len, sizeof ((a)->field))); \
+        if (c != 0) \
+            return c < 0 ? -1 : 1; \
     } G_STMT_END
 
-#define _CMP_FIELD_MEMCMP(a, b, field)                      \
-    G_STMT_START {                                          \
-        int c = memcmp (&((a)->field), &((b)->field),       \
-                        sizeof ((a)->field));               \
-        if (c != 0)                                         \
-            return c < 0 ? -1 : 1;                          \
+#define NM_CMP_FIELD_MEMCMP(a, b, field) \
+    G_STMT_START { \
+        int c = memcmp (&((a)->field), &((b)->field), \
+                        sizeof ((a)->field)); \
+        if (c != 0) \
+            return c < 0 ? -1 : 1; \
     } G_STMT_END
 
 guint
@@ -4431,28 +4431,28 @@ nm_platform_link_hash (const NMPlatformLink *obj)
 int
 nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 {
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, ifindex);
-	_CMP_FIELD (a, b, type);
-	_CMP_FIELD_STR (a, b, name);
-	_CMP_FIELD (a, b, master);
-	_CMP_FIELD (a, b, parent);
-	_CMP_FIELD (a, b, n_ifi_flags);
-	_CMP_FIELD (a, b, connected);
-	_CMP_FIELD (a, b, mtu);
-	_CMP_FIELD_BOOL (a, b, initialized);
-	_CMP_FIELD (a, b, arptype);
-	_CMP_FIELD (a, b, addr.len);
-	_CMP_FIELD (a, b, inet6_addr_gen_mode_inv);
-	_CMP_FIELD_STR_INTERNED (a, b, kind);
-	_CMP_FIELD_STR_INTERNED (a, b, driver);
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, ifindex);
+	NM_CMP_FIELD (a, b, type);
+	NM_CMP_FIELD_STR (a, b, name);
+	NM_CMP_FIELD (a, b, master);
+	NM_CMP_FIELD (a, b, parent);
+	NM_CMP_FIELD (a, b, n_ifi_flags);
+	NM_CMP_FIELD (a, b, connected);
+	NM_CMP_FIELD (a, b, mtu);
+	NM_CMP_FIELD_BOOL (a, b, initialized);
+	NM_CMP_FIELD (a, b, arptype);
+	NM_CMP_FIELD (a, b, addr.len);
+	NM_CMP_FIELD (a, b, inet6_addr_gen_mode_inv);
+	NM_CMP_FIELD_STR_INTERNED (a, b, kind);
+	NM_CMP_FIELD_STR_INTERNED (a, b, driver);
 	if (a->addr.len)
-		_CMP_FIELD_MEMCMP_LEN (a, b, addr.data, a->addr.len);
-	_CMP_FIELD_MEMCMP (a, b, inet6_token);
-	_CMP_FIELD (a, b, rx_packets);
-	_CMP_FIELD (a, b, rx_bytes);
-	_CMP_FIELD (a, b, tx_packets);
-	_CMP_FIELD (a, b, tx_bytes);
+		NM_CMP_FIELD_MEMCMP_LEN (a, b, addr.data, a->addr.len);
+	NM_CMP_FIELD_MEMCMP (a, b, inet6_token);
+	NM_CMP_FIELD (a, b, rx_packets);
+	NM_CMP_FIELD (a, b, rx_bytes);
+	NM_CMP_FIELD (a, b, tx_packets);
+	NM_CMP_FIELD (a, b, tx_bytes);
 	return 0;
 }
 
@@ -4477,17 +4477,17 @@ nm_platform_lnk_gre_hash (const NMPlatformLnkGre *obj)
 int
 nm_platform_lnk_gre_cmp (const NMPlatformLnkGre *a, const NMPlatformLnkGre *b)
 {
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, parent_ifindex);
-	_CMP_FIELD (a, b, input_flags);
-	_CMP_FIELD (a, b, output_flags);
-	_CMP_FIELD (a, b, input_key);
-	_CMP_FIELD (a, b, output_key);
-	_CMP_FIELD (a, b, local);
-	_CMP_FIELD (a, b, remote);
-	_CMP_FIELD (a, b, ttl);
-	_CMP_FIELD (a, b, tos);
-	_CMP_FIELD_BOOL (a, b, path_mtu_discovery);
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, parent_ifindex);
+	NM_CMP_FIELD (a, b, input_flags);
+	NM_CMP_FIELD (a, b, output_flags);
+	NM_CMP_FIELD (a, b, input_key);
+	NM_CMP_FIELD (a, b, output_key);
+	NM_CMP_FIELD (a, b, local);
+	NM_CMP_FIELD (a, b, remote);
+	NM_CMP_FIELD (a, b, ttl);
+	NM_CMP_FIELD (a, b, tos);
+	NM_CMP_FIELD_BOOL (a, b, path_mtu_discovery);
 	return 0;
 }
 
@@ -4505,9 +4505,9 @@ nm_platform_lnk_infiniband_hash (const NMPlatformLnkInfiniband *obj)
 int
 nm_platform_lnk_infiniband_cmp (const NMPlatformLnkInfiniband *a, const NMPlatformLnkInfiniband *b)
 {
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, p_key);
-	_CMP_FIELD_STR_INTERNED (a, b, mode);
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, p_key);
+	NM_CMP_FIELD_STR_INTERNED (a, b, mode);
 	return 0;
 }
 
@@ -4530,15 +4530,15 @@ nm_platform_lnk_ip6tnl_hash (const NMPlatformLnkIp6Tnl *obj)
 int
 nm_platform_lnk_ip6tnl_cmp (const NMPlatformLnkIp6Tnl *a, const NMPlatformLnkIp6Tnl *b)
 {
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, parent_ifindex);
-	_CMP_FIELD_MEMCMP (a, b, local);
-	_CMP_FIELD_MEMCMP (a, b, remote);
-	_CMP_FIELD (a, b, ttl);
-	_CMP_FIELD (a, b, tclass);
-	_CMP_FIELD (a, b, encap_limit);
-	_CMP_FIELD (a, b, flow_label);
-	_CMP_FIELD (a, b, proto);
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, parent_ifindex);
+	NM_CMP_FIELD_MEMCMP (a, b, local);
+	NM_CMP_FIELD_MEMCMP (a, b, remote);
+	NM_CMP_FIELD (a, b, ttl);
+	NM_CMP_FIELD (a, b, tclass);
+	NM_CMP_FIELD (a, b, encap_limit);
+	NM_CMP_FIELD (a, b, flow_label);
+	NM_CMP_FIELD (a, b, proto);
 	return 0;
 }
 
@@ -4559,13 +4559,13 @@ nm_platform_lnk_ipip_hash (const NMPlatformLnkIpIp *obj)
 int
 nm_platform_lnk_ipip_cmp (const NMPlatformLnkIpIp *a, const NMPlatformLnkIpIp *b)
 {
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, parent_ifindex);
-	_CMP_FIELD (a, b, local);
-	_CMP_FIELD (a, b, remote);
-	_CMP_FIELD (a, b, ttl);
-	_CMP_FIELD (a, b, tos);
-	_CMP_FIELD_BOOL (a, b, path_mtu_discovery);
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, parent_ifindex);
+	NM_CMP_FIELD (a, b, local);
+	NM_CMP_FIELD (a, b, remote);
+	NM_CMP_FIELD (a, b, ttl);
+	NM_CMP_FIELD (a, b, tos);
+	NM_CMP_FIELD_BOOL (a, b, path_mtu_discovery);
 	return 0;
 }
 
@@ -4592,19 +4592,19 @@ nm_platform_lnk_macsec_hash (const NMPlatformLnkMacsec *obj)
 int
 nm_platform_lnk_macsec_cmp (const NMPlatformLnkMacsec *a, const NMPlatformLnkMacsec *b)
 {
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, sci);
-	_CMP_FIELD (a, b, icv_length);
-	_CMP_FIELD (a, b, cipher_suite);
-	_CMP_FIELD (a, b, window);
-	_CMP_FIELD (a, b, encoding_sa);
-	_CMP_FIELD (a, b, validation);
-	_CMP_FIELD (a, b, encrypt);
-	_CMP_FIELD (a, b, protect);
-	_CMP_FIELD (a, b, include_sci);
-	_CMP_FIELD (a, b, es);
-	_CMP_FIELD (a, b, scb);
-	_CMP_FIELD (a, b, replay_protect);
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, sci);
+	NM_CMP_FIELD (a, b, icv_length);
+	NM_CMP_FIELD (a, b, cipher_suite);
+	NM_CMP_FIELD (a, b, window);
+	NM_CMP_FIELD (a, b, encoding_sa);
+	NM_CMP_FIELD (a, b, validation);
+	NM_CMP_FIELD (a, b, encrypt);
+	NM_CMP_FIELD (a, b, protect);
+	NM_CMP_FIELD (a, b, include_sci);
+	NM_CMP_FIELD (a, b, es);
+	NM_CMP_FIELD (a, b, scb);
+	NM_CMP_FIELD (a, b, replay_protect);
 	return 0;
 }
 
@@ -4622,10 +4622,10 @@ nm_platform_lnk_macvlan_hash (const NMPlatformLnkMacvlan *obj)
 int
 nm_platform_lnk_macvlan_cmp (const NMPlatformLnkMacvlan *a, const NMPlatformLnkMacvlan *b)
 {
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, mode);
-	_CMP_FIELD (a, b, no_promisc);
-	_CMP_FIELD (a, b, tap);
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, mode);
+	NM_CMP_FIELD (a, b, no_promisc);
+	NM_CMP_FIELD (a, b, tap);
 	return 0;
 }
 
@@ -4648,15 +4648,15 @@ nm_platform_lnk_sit_hash (const NMPlatformLnkSit *obj)
 int
 nm_platform_lnk_sit_cmp (const NMPlatformLnkSit *a, const NMPlatformLnkSit *b)
 {
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, parent_ifindex);
-	_CMP_FIELD (a, b, local);
-	_CMP_FIELD (a, b, remote);
-	_CMP_FIELD (a, b, ttl);
-	_CMP_FIELD (a, b, tos);
-	_CMP_FIELD_BOOL (a, b, path_mtu_discovery);
-	_CMP_FIELD (a, b, flags);
-	_CMP_FIELD (a, b, proto);
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, parent_ifindex);
+	NM_CMP_FIELD (a, b, local);
+	NM_CMP_FIELD (a, b, remote);
+	NM_CMP_FIELD (a, b, ttl);
+	NM_CMP_FIELD (a, b, tos);
+	NM_CMP_FIELD_BOOL (a, b, path_mtu_discovery);
+	NM_CMP_FIELD (a, b, flags);
+	NM_CMP_FIELD (a, b, proto);
 	return 0;
 }
 
@@ -4673,9 +4673,9 @@ nm_platform_lnk_vlan_hash (const NMPlatformLnkVlan *obj)
 int
 nm_platform_lnk_vlan_cmp (const NMPlatformLnkVlan *a, const NMPlatformLnkVlan *b)
 {
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, id);
-	_CMP_FIELD (a, b, flags);
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, id);
+	NM_CMP_FIELD (a, b, flags);
 	return 0;
 }
 
@@ -4708,25 +4708,25 @@ nm_platform_lnk_vxlan_hash (const NMPlatformLnkVxlan *obj)
 int
 nm_platform_lnk_vxlan_cmp (const NMPlatformLnkVxlan *a, const NMPlatformLnkVxlan *b)
 {
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, parent_ifindex);
-	_CMP_FIELD (a, b, id);
-	_CMP_FIELD (a, b, group);
-	_CMP_FIELD (a, b, local);
-	_CMP_FIELD_MEMCMP (a, b, group6);
-	_CMP_FIELD_MEMCMP (a, b, local6);
-	_CMP_FIELD (a, b, tos);
-	_CMP_FIELD (a, b, ttl);
-	_CMP_FIELD_BOOL (a, b, learning);
-	_CMP_FIELD (a, b, ageing);
-	_CMP_FIELD (a, b, limit);
-	_CMP_FIELD (a, b, dst_port);
-	_CMP_FIELD (a, b, src_port_min);
-	_CMP_FIELD (a, b, src_port_max);
-	_CMP_FIELD_BOOL (a, b, proxy);
-	_CMP_FIELD_BOOL (a, b, rsc);
-	_CMP_FIELD_BOOL (a, b, l2miss);
-	_CMP_FIELD_BOOL (a, b, l3miss);
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, parent_ifindex);
+	NM_CMP_FIELD (a, b, id);
+	NM_CMP_FIELD (a, b, group);
+	NM_CMP_FIELD (a, b, local);
+	NM_CMP_FIELD_MEMCMP (a, b, group6);
+	NM_CMP_FIELD_MEMCMP (a, b, local6);
+	NM_CMP_FIELD (a, b, tos);
+	NM_CMP_FIELD (a, b, ttl);
+	NM_CMP_FIELD_BOOL (a, b, learning);
+	NM_CMP_FIELD (a, b, ageing);
+	NM_CMP_FIELD (a, b, limit);
+	NM_CMP_FIELD (a, b, dst_port);
+	NM_CMP_FIELD (a, b, src_port_min);
+	NM_CMP_FIELD (a, b, src_port_max);
+	NM_CMP_FIELD_BOOL (a, b, proxy);
+	NM_CMP_FIELD_BOOL (a, b, rsc);
+	NM_CMP_FIELD_BOOL (a, b, l2miss);
+	NM_CMP_FIELD_BOOL (a, b, l3miss);
 	return 0;
 }
 
@@ -4753,17 +4753,17 @@ nm_platform_ip4_address_hash (const NMPlatformIP4Address *obj)
 int
 nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b)
 {
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, ifindex);
-	_CMP_FIELD (a, b, address);
-	_CMP_FIELD (a, b, plen);
-	_CMP_FIELD (a, b, peer_address);
-	_CMP_FIELD (a, b, addr_source);
-	_CMP_FIELD (a, b, timestamp);
-	_CMP_FIELD (a, b, lifetime);
-	_CMP_FIELD (a, b, preferred);
-	_CMP_FIELD (a, b, n_ifa_flags);
-	_CMP_FIELD_STR (a, b, label);
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, ifindex);
+	NM_CMP_FIELD (a, b, address);
+	NM_CMP_FIELD (a, b, plen);
+	NM_CMP_FIELD (a, b, peer_address);
+	NM_CMP_FIELD (a, b, addr_source);
+	NM_CMP_FIELD (a, b, timestamp);
+	NM_CMP_FIELD (a, b, lifetime);
+	NM_CMP_FIELD (a, b, preferred);
+	NM_CMP_FIELD (a, b, n_ifa_flags);
+	NM_CMP_FIELD_STR (a, b, label);
 	return 0;
 }
 
@@ -4791,18 +4791,18 @@ nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6A
 {
 	const struct in6_addr *p_a, *p_b;
 
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, ifindex);
-	_CMP_FIELD_MEMCMP (a, b, address);
-	_CMP_FIELD (a, b, plen);
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, ifindex);
+	NM_CMP_FIELD_MEMCMP (a, b, address);
+	NM_CMP_FIELD (a, b, plen);
 	p_a = nm_platform_ip6_address_get_peer (a);
 	p_b = nm_platform_ip6_address_get_peer (b);
-	_CMP_DIRECT_MEMCMP (p_a, p_b, sizeof (*p_a));
-	_CMP_FIELD (a, b, addr_source);
-	_CMP_FIELD (a, b, timestamp);
-	_CMP_FIELD (a, b, lifetime);
-	_CMP_FIELD (a, b, preferred);
-	_CMP_FIELD (a, b, n_ifa_flags);
+	NM_CMP_DIRECT_MEMCMP (p_a, p_b, sizeof (*p_a));
+	NM_CMP_FIELD (a, b, addr_source);
+	NM_CMP_FIELD (a, b, timestamp);
+	NM_CMP_FIELD (a, b, lifetime);
+	NM_CMP_FIELD (a, b, preferred);
+	NM_CMP_FIELD (a, b, n_ifa_flags);
 	return 0;
 }
 
@@ -4840,33 +4840,33 @@ nm_platform_ip4_route_hash (const NMPlatformIP4Route *obj)
 int
 nm_platform_ip4_route_cmp_full (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b, gboolean consider_host_part)
 {
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, ifindex);
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, ifindex);
 	if (consider_host_part)
-		_CMP_FIELD (a, b, network);
+		NM_CMP_FIELD (a, b, network);
 	else {
-		_CMP_DIRECT (nm_utils_ip4_address_clear_host_address (a->network, a->plen),
-		             nm_utils_ip4_address_clear_host_address (b->network, b->plen));
+		NM_CMP_DIRECT (nm_utils_ip4_address_clear_host_address (a->network, a->plen),
+		               nm_utils_ip4_address_clear_host_address (b->network, b->plen));
 	}
-	_CMP_FIELD (a, b, plen);
-	_CMP_FIELD (a, b, metric);
-	_CMP_FIELD (a, b, gateway);
-	_CMP_FIELD (a, b, rt_source);
-	_CMP_FIELD (a, b, mss);
-	_CMP_FIELD (a, b, scope_inv);
-	_CMP_FIELD (a, b, pref_src);
-	_CMP_FIELD (a, b, rt_cloned);
-	_CMP_FIELD (a, b, tos);
-	_CMP_FIELD (a, b, lock_window);
-	_CMP_FIELD (a, b, lock_cwnd);
-	_CMP_FIELD (a, b, lock_initcwnd);
-	_CMP_FIELD (a, b, lock_initrwnd);
-	_CMP_FIELD (a, b, lock_mtu);
-	_CMP_FIELD (a, b, window);
-	_CMP_FIELD (a, b, cwnd);
-	_CMP_FIELD (a, b, initcwnd);
-	_CMP_FIELD (a, b, initrwnd);
-	_CMP_FIELD (a, b, mtu);
+	NM_CMP_FIELD (a, b, plen);
+	NM_CMP_FIELD (a, b, metric);
+	NM_CMP_FIELD (a, b, gateway);
+	NM_CMP_FIELD (a, b, rt_source);
+	NM_CMP_FIELD (a, b, mss);
+	NM_CMP_FIELD (a, b, scope_inv);
+	NM_CMP_FIELD (a, b, pref_src);
+	NM_CMP_FIELD (a, b, rt_cloned);
+	NM_CMP_FIELD (a, b, tos);
+	NM_CMP_FIELD (a, b, lock_window);
+	NM_CMP_FIELD (a, b, lock_cwnd);
+	NM_CMP_FIELD (a, b, lock_initcwnd);
+	NM_CMP_FIELD (a, b, lock_initrwnd);
+	NM_CMP_FIELD (a, b, lock_mtu);
+	NM_CMP_FIELD (a, b, window);
+	NM_CMP_FIELD (a, b, cwnd);
+	NM_CMP_FIELD (a, b, initcwnd);
+	NM_CMP_FIELD (a, b, initrwnd);
+	NM_CMP_FIELD (a, b, mtu);
 	return 0;
 }
 
@@ -4905,37 +4905,37 @@ nm_platform_ip6_route_hash (const NMPlatformIP6Route *obj)
 int
 nm_platform_ip6_route_cmp_full (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b, gboolean consider_host_part)
 {
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, ifindex);
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, ifindex);
 	if (consider_host_part)
-		_CMP_FIELD_MEMCMP (a, b, network);
+		NM_CMP_FIELD_MEMCMP (a, b, network);
 	else {
 		struct in6_addr n1, n2;
 
 		nm_utils_ip6_address_clear_host_address (&n1, &a->network, a->plen);
 		nm_utils_ip6_address_clear_host_address (&n2, &b->network, b->plen);
-		_CMP_DIRECT_MEMCMP (&n1, &n2, sizeof (struct in6_addr));
+		NM_CMP_DIRECT_MEMCMP (&n1, &n2, sizeof (struct in6_addr));
 	}
-	_CMP_FIELD (a, b, plen);
-	_CMP_FIELD (a, b, metric);
-	_CMP_FIELD_MEMCMP (a, b, gateway);
-	_CMP_FIELD_MEMCMP (a, b, pref_src);
-	_CMP_FIELD_MEMCMP (a, b, src);
-	_CMP_FIELD (a, b, src_plen);
-	_CMP_FIELD (a, b, rt_source);
-	_CMP_FIELD (a, b, mss);
-	_CMP_FIELD (a, b, rt_cloned);
-	_CMP_FIELD (a, b, tos);
-	_CMP_FIELD (a, b, lock_window);
-	_CMP_FIELD (a, b, lock_cwnd);
-	_CMP_FIELD (a, b, lock_initcwnd);
-	_CMP_FIELD (a, b, lock_initrwnd);
-	_CMP_FIELD (a, b, lock_mtu);
-	_CMP_FIELD (a, b, window);
-	_CMP_FIELD (a, b, cwnd);
-	_CMP_FIELD (a, b, initcwnd);
-	_CMP_FIELD (a, b, initrwnd);
-	_CMP_FIELD (a, b, mtu);
+	NM_CMP_FIELD (a, b, plen);
+	NM_CMP_FIELD (a, b, metric);
+	NM_CMP_FIELD_MEMCMP (a, b, gateway);
+	NM_CMP_FIELD_MEMCMP (a, b, pref_src);
+	NM_CMP_FIELD_MEMCMP (a, b, src);
+	NM_CMP_FIELD (a, b, src_plen);
+	NM_CMP_FIELD (a, b, rt_source);
+	NM_CMP_FIELD (a, b, mss);
+	NM_CMP_FIELD (a, b, rt_cloned);
+	NM_CMP_FIELD (a, b, tos);
+	NM_CMP_FIELD (a, b, lock_window);
+	NM_CMP_FIELD (a, b, lock_cwnd);
+	NM_CMP_FIELD (a, b, lock_initcwnd);
+	NM_CMP_FIELD (a, b, lock_initrwnd);
+	NM_CMP_FIELD (a, b, lock_mtu);
+	NM_CMP_FIELD (a, b, window);
+	NM_CMP_FIELD (a, b, cwnd);
+	NM_CMP_FIELD (a, b, initcwnd);
+	NM_CMP_FIELD (a, b, initrwnd);
+	NM_CMP_FIELD (a, b, mtu);
 	return 0;
 }
 
@@ -4957,7 +4957,7 @@ nm_platform_ip_address_cmp_expiry (const NMPlatformIPAddress *a, const NMPlatfor
 {
 	gint64 ta = 0, tb = 0;
 
-	_CMP_SELF (a, b);
+	NM_CMP_SELF (a, b);
 
 	if (a->lifetime == NM_PLATFORM_LIFETIME_PERMANENT || a->lifetime == 0)
 		ta = G_MAXINT64;
