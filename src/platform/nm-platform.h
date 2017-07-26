@@ -391,8 +391,10 @@ struct _NMPlatformIP4Route {
 	/* RTA_GATEWAY. The gateway is part of the primary key for a route */
 	in_addr_t gateway;
 
-	/* RTA_PREFSRC/rtnl_route_get_pref_src(). A value of zero means that
-	 * no pref-src is set.  */
+	/* RTA_PREFSRC (called "src" by iproute2).
+	 *
+	 * pref_src is part of the ID of an IPv4 route. When deleting a route,
+	 * pref_src must match, unless set to 0.0.0.0 to match any. */
 	in_addr_t pref_src;
 
 	/* The bitwise inverse of the route scope rtm_scope. It is inverted so that the
@@ -416,7 +418,14 @@ struct _NMPlatformIP6Route {
 	/* RTA_GATEWAY. The gateway is part of the primary key for a route */
 	struct in6_addr gateway;
 
+	/* RTA_PREFSRC (called "src" by iproute2).
+	 *
+	 * pref_src is not part of the ID for an IPv6 route. You cannot add two
+	 * routes that only differ by pref_src.
+	 *
+	 * When deleting a route, pref_src is ignored by kernel. */
 	struct in6_addr pref_src;
+
 	struct in6_addr src;
 	guint8 src_plen;
 };

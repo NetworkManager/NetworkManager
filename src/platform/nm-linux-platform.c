@@ -2419,7 +2419,6 @@ static struct nl_msg *
 _nl_msg_new_route (int nlmsg_type,
                    int nlmsg_flags,
                    const NMPObject *obj,
-                   gconstpointer pref_src,
                    gconstpointer src,
                    guint8 src_plen,
                    guint32 window,
@@ -2472,8 +2471,13 @@ _nl_msg_new_route (int nlmsg_type,
 
 	NLA_PUT_U32 (msg, RTA_PRIORITY, obj->ip_route.metric);
 
-	if (pref_src)
-		NLA_PUT (msg, RTA_PREFSRC, addr_len, pref_src);
+	if (is_v4) {
+		if (NMP_OBJECT_CAST_IP4_ROUTE (obj)->pref_src)
+			NLA_PUT (msg, RTA_PREFSRC, addr_len, &obj->ip4_route.pref_src);
+	} else {
+		if (!IN6_IS_ADDR_UNSPECIFIED (&NMP_OBJECT_CAST_IP6_ROUTE (obj)->pref_src))
+			NLA_PUT (msg, RTA_PREFSRC, addr_len, &obj->ip6_route.pref_src);
+	}
 
 	if (   obj->ip_route.mss
 	    || window || cwnd || initcwnd || initrwnd || mtu || lock) {
@@ -5704,7 +5708,6 @@ ip4_route_add (NMPlatform *platform, const NMPlatformIP4Route *route)
 	nlmsg = _nl_msg_new_route (RTM_NEWROUTE,
 	                           NLM_F_CREATE | NLM_F_REPLACE,
 	                           &obj,
-	                           route->pref_src ? &route->pref_src : NULL,
 	                           NULL,
 	                           0,
 	                           route->window,
@@ -5731,7 +5734,6 @@ ip6_route_add (NMPlatform *platform, const NMPlatformIP6Route *route)
 	nlmsg = _nl_msg_new_route (RTM_NEWROUTE,
 	                           NLM_F_CREATE | NLM_F_REPLACE,
 	                           &obj,
-	                           !IN6_IS_ADDR_UNSPECIFIED (&route->pref_src) ? &route->pref_src : NULL,
 	                           !IN6_IS_ADDR_UNSPECIFIED (&route->src) ? &route->src : NULL,
 	                           route->src_plen,
 	                           route->window,
@@ -5790,7 +5792,6 @@ ip_route_delete (NMPlatform *platform,
 	nlmsg = _nl_msg_new_route (RTM_DELROUTE,
 	                           0,
 	                           obj,
-	                           NULL,
 	                           NULL,
 	                           0,
 	                           0,
