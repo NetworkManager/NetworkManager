@@ -4363,7 +4363,7 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 	NM_CMP_FIELD (a, b, master);
 	NM_CMP_FIELD (a, b, parent);
 	NM_CMP_FIELD (a, b, n_ifi_flags);
-	NM_CMP_FIELD (a, b, connected);
+	NM_CMP_FIELD_UNSAFE (a, b, connected);
 	NM_CMP_FIELD (a, b, mtu);
 	NM_CMP_FIELD_BOOL (a, b, initialized);
 	NM_CMP_FIELD (a, b, arptype);
@@ -4524,12 +4524,12 @@ nm_platform_lnk_macsec_cmp (const NMPlatformLnkMacsec *a, const NMPlatformLnkMac
 	NM_CMP_FIELD (a, b, window);
 	NM_CMP_FIELD (a, b, encoding_sa);
 	NM_CMP_FIELD (a, b, validation);
-	NM_CMP_FIELD (a, b, encrypt);
-	NM_CMP_FIELD (a, b, protect);
-	NM_CMP_FIELD (a, b, include_sci);
-	NM_CMP_FIELD (a, b, es);
-	NM_CMP_FIELD (a, b, scb);
-	NM_CMP_FIELD (a, b, replay_protect);
+	NM_CMP_FIELD_UNSAFE (a, b, encrypt);
+	NM_CMP_FIELD_UNSAFE (a, b, protect);
+	NM_CMP_FIELD_UNSAFE (a, b, include_sci);
+	NM_CMP_FIELD_UNSAFE (a, b, es);
+	NM_CMP_FIELD_UNSAFE (a, b, scb);
+	NM_CMP_FIELD_UNSAFE (a, b, replay_protect);
 	return 0;
 }
 
@@ -4549,8 +4549,8 @@ nm_platform_lnk_macvlan_cmp (const NMPlatformLnkMacvlan *a, const NMPlatformLnkM
 {
 	NM_CMP_SELF (a, b);
 	NM_CMP_FIELD (a, b, mode);
-	NM_CMP_FIELD (a, b, no_promisc);
-	NM_CMP_FIELD (a, b, tap);
+	NM_CMP_FIELD_UNSAFE (a, b, no_promisc);
+	NM_CMP_FIELD_UNSAFE (a, b, tap);
 	return 0;
 }
 
@@ -4780,13 +4780,13 @@ nm_platform_ip4_route_cmp_full (const NMPlatformIP4Route *a, const NMPlatformIP4
 	NM_CMP_FIELD (a, b, mss);
 	NM_CMP_FIELD (a, b, scope_inv);
 	NM_CMP_FIELD (a, b, pref_src);
-	NM_CMP_FIELD (a, b, rt_cloned);
+	NM_CMP_FIELD_UNSAFE (a, b, rt_cloned);
 	NM_CMP_FIELD (a, b, tos);
-	NM_CMP_FIELD (a, b, lock_window);
-	NM_CMP_FIELD (a, b, lock_cwnd);
-	NM_CMP_FIELD (a, b, lock_initcwnd);
-	NM_CMP_FIELD (a, b, lock_initrwnd);
-	NM_CMP_FIELD (a, b, lock_mtu);
+	NM_CMP_FIELD_UNSAFE (a, b, lock_window);
+	NM_CMP_FIELD_UNSAFE (a, b, lock_cwnd);
+	NM_CMP_FIELD_UNSAFE (a, b, lock_initcwnd);
+	NM_CMP_FIELD_UNSAFE (a, b, lock_initrwnd);
+	NM_CMP_FIELD_UNSAFE (a, b, lock_mtu);
 	NM_CMP_FIELD (a, b, window);
 	NM_CMP_FIELD (a, b, cwnd);
 	NM_CMP_FIELD (a, b, initcwnd);
@@ -4833,29 +4833,29 @@ nm_platform_ip6_route_cmp_full (const NMPlatformIP6Route *a, const NMPlatformIP6
 	NM_CMP_SELF (a, b);
 	NM_CMP_FIELD (a, b, ifindex);
 	if (consider_host_part)
-		NM_CMP_FIELD_MEMCMP (a, b, network);
+		NM_CMP_FIELD_IN6ADDR (a, b, network);
 	else {
 		struct in6_addr n1, n2;
 
 		nm_utils_ip6_address_clear_host_address (&n1, &a->network, a->plen);
 		nm_utils_ip6_address_clear_host_address (&n2, &b->network, b->plen);
-		NM_CMP_DIRECT_MEMCMP (&n1, &n2, sizeof (struct in6_addr));
+		NM_CMP_DIRECT_IN6ADDR (&n1, &n2);
 	}
 	NM_CMP_FIELD (a, b, plen);
 	NM_CMP_FIELD (a, b, metric);
-	NM_CMP_FIELD_MEMCMP (a, b, gateway);
-	NM_CMP_FIELD_MEMCMP (a, b, pref_src);
-	NM_CMP_FIELD_MEMCMP (a, b, src);
+	NM_CMP_FIELD_IN6ADDR (a, b, gateway);
+	NM_CMP_FIELD_IN6ADDR (a, b, pref_src);
+	NM_CMP_FIELD_IN6ADDR (a, b, src);
 	NM_CMP_FIELD (a, b, src_plen);
 	NM_CMP_FIELD (a, b, rt_source);
 	NM_CMP_FIELD (a, b, mss);
-	NM_CMP_FIELD (a, b, rt_cloned);
+	NM_CMP_FIELD_UNSAFE (a, b, rt_cloned);
 	NM_CMP_FIELD (a, b, tos);
-	NM_CMP_FIELD (a, b, lock_window);
-	NM_CMP_FIELD (a, b, lock_cwnd);
-	NM_CMP_FIELD (a, b, lock_initcwnd);
-	NM_CMP_FIELD (a, b, lock_initrwnd);
-	NM_CMP_FIELD (a, b, lock_mtu);
+	NM_CMP_FIELD_UNSAFE (a, b, lock_window);
+	NM_CMP_FIELD_UNSAFE (a, b, lock_cwnd);
+	NM_CMP_FIELD_UNSAFE (a, b, lock_initcwnd);
+	NM_CMP_FIELD_UNSAFE (a, b, lock_initrwnd);
+	NM_CMP_FIELD_UNSAFE (a, b, lock_mtu);
 	NM_CMP_FIELD (a, b, window);
 	NM_CMP_FIELD (a, b, cwnd);
 	NM_CMP_FIELD (a, b, initcwnd);
