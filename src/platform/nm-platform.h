@@ -354,7 +354,17 @@ typedef union {
 	bool lock_mtu:1; \
 	\
 	guint32 metric; \
+	\
+	/* RTA_METRICS.RTAX_ADVMSS. For IPv4 routes, this is part of their
+	 * ID (meaning: you can add otherwise idential IPv4 routes that
+	 * only differ by mss). On the other hand, for IPv6 you cannot add two
+	 * IPv6 routes that only differ by mss.
+	 *
+	 * When deleting a route, kernel seems to ignore RTA_METRICS.RTAX_ADVMSS.
+	 * Which is a problem for IPv4 because you cannot explicitly select which
+	 * route to delete. Kernel just picks the first. */ \
 	guint32 mss; \
+	\
 	guint32 tos; \
 	guint32 window; \
 	guint32 cwnd; \
