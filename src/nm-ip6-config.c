@@ -1641,7 +1641,7 @@ nm_ip6_config_lookup_address (const NMIP6Config *self,
 	                                     priv->ifindex,
 	                                     addr);
 	entry = nm_dedup_multi_index_lookup_obj (priv->multi_idx,
-	                                         &priv->idx_ip6_routes,
+	                                         &priv->idx_ip6_addresses,
 	                                         &obj_stack);
 	return entry
 	       ? NMP_OBJECT_CAST_IP6_ADDRESS (entry->obj)
