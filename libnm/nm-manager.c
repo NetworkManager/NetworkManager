@@ -613,8 +613,13 @@ nm_manager_check_connectivity (NMManager *manager,
 
 	if (nmdbus_manager_call_check_connectivity_sync (priv->proxy,
 	                                                 &connectivity,
-	                                                 cancellable, error))
+	                                                 cancellable, error)) {
+		if (connectivity != priv->connectivity) {
+			priv->connectivity = connectivity;
+			g_object_notify (G_OBJECT (manager), NM_MANAGER_CONNECTIVITY);
+		}
 		return connectivity;
+	}
 	else {
 		if (error && *error)
 			g_dbus_error_strip_remote_error (*error);
@@ -630,12 +635,21 @@ check_connectivity_cb (GObject *object,
 	GSimpleAsyncResult *simple = user_data;
 	guint32 connectivity;
 	GError *error = NULL;
+	NMManager *manager;
+	NMManagerPrivate *priv;
 
 	if (nmdbus_manager_call_check_connectivity_finish (NMDBUS_MANAGER (object),
 	                                                   &connectivity,
-	                                                   result, &error))
+	                                                   result, &error)) {
 		g_simple_async_result_set_op_res_gssize (simple, connectivity);
-	else {
+
+		manager = NM_MANAGER (g_async_result_get_source_object (G_ASYNC_RESULT (simple)));
+		priv = NM_MANAGER_GET_PRIVATE (manager);
+		if (connectivity != priv->connectivity) {
+			priv->connectivity = connectivity;
+			g_object_notify (G_OBJECT (manager), NM_MANAGER_CONNECTIVITY);
+		}
+	} else {
 		g_dbus_error_strip_remote_error (error);
 		g_simple_async_result_take_error (simple, error);
 	}
