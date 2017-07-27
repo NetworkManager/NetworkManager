@@ -347,15 +347,6 @@ typedef union {
 	 * of platform users. This flag is internal to track those hidden
 	 * routes. Such a route is not alive, according to nmp_object_is_alive(). */ \
 	bool rt_cloned:1; \
-	bool lock_window:1; \
-	bool lock_cwnd:1; \
-	bool lock_initcwnd:1; \
-	bool lock_initrwnd:1; \
-	bool lock_mtu:1; \
-	\
-	guint32 metric; \
-	\
-	guint32 tos; \
 	\
 	\
 	/* RTA_METRICS:
@@ -370,6 +361,13 @@ typedef union {
 	 * That is a problem/bug for IPv4 because you cannot explicitly select which
 	 * route to delete. Kernel just picks the first. See rh#1475642. */ \
 	\
+	/* RTA_METRICS.RTAX_LOCK (iproute2: "lock" arguments) */ \
+	bool lock_window:1; \
+	bool lock_cwnd:1; \
+	bool lock_initcwnd:1; \
+	bool lock_initrwnd:1; \
+	bool lock_mtu:1; \
+	\
 	/* RTA_METRICS.RTAX_ADVMSS (iproute2: advmss) */ \
 	guint32 mss; \
 	\
@@ -380,7 +378,11 @@ typedef union {
 	guint32 initcwnd; \
 	guint32 initrwnd; \
 	guint32 mtu; \
-	;
+	guint32 metric; \
+	guint32 tos; \
+	\
+	/*end*/
+
 
 typedef struct {
 	__NMPlatformIPRoute_COMMON;

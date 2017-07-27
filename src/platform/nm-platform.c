@@ -4737,6 +4737,11 @@ nm_platform_ip4_route_hash (const NMPlatformIP4Route *obj, NMPlatformIPRouteCmpT
 				h = NM_HASH_COMBINE (h, obj->mss);
 				h = NM_HASH_COMBINE (h, obj->pref_src);
 				h = NM_HASH_COMBINE (h, obj->window);
+				h = NM_HASH_COMBINE (h, obj->lock_window);
+				h = NM_HASH_COMBINE (h, obj->lock_cwnd);
+				h = NM_HASH_COMBINE (h, obj->lock_initcwnd);
+				h = NM_HASH_COMBINE (h, obj->lock_initrwnd);
+				h = NM_HASH_COMBINE (h, obj->lock_mtu);
 			}
 			break;
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
@@ -4795,6 +4800,11 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 			NM_CMP_FIELD (a, b, mss);
 			NM_CMP_FIELD (a, b, pref_src);
 			NM_CMP_FIELD (a, b, window);
+			NM_CMP_FIELD_UNSAFE (a, b, lock_window);
+			NM_CMP_FIELD_UNSAFE (a, b, lock_cwnd);
+			NM_CMP_FIELD_UNSAFE (a, b, lock_initcwnd);
+			NM_CMP_FIELD_UNSAFE (a, b, lock_initrwnd);
+			NM_CMP_FIELD_UNSAFE (a, b, lock_mtu);
 		}
 		break;
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:

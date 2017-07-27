@@ -2033,11 +2033,11 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 	obj->ip_route.initrwnd = initrwnd;
 	obj->ip_route.mtu = mtu;
 	obj->ip_route.tos = rtm->rtm_tos;
-	obj->ip_route.lock_window = NM_FLAGS_HAS (lock, 1 << RTAX_WINDOW);
-	obj->ip_route.lock_cwnd = NM_FLAGS_HAS (lock, 1 << RTAX_CWND);
+	obj->ip_route.lock_window   = NM_FLAGS_HAS (lock, 1 << RTAX_WINDOW);
+	obj->ip_route.lock_cwnd     = NM_FLAGS_HAS (lock, 1 << RTAX_CWND);
 	obj->ip_route.lock_initcwnd = NM_FLAGS_HAS (lock, 1 << RTAX_INITCWND);
 	obj->ip_route.lock_initrwnd = NM_FLAGS_HAS (lock, 1 << RTAX_INITRWND);
-	obj->ip_route.lock_mtu  = NM_FLAGS_HAS (lock, 1 << RTAX_MTU);
+	obj->ip_route.lock_mtu      = NM_FLAGS_HAS (lock, 1 << RTAX_MTU);
 
 	if (NM_FLAGS_HAS (rtm->rtm_flags, RTM_F_CLONED)) {
 		/* we must not straight way reject cloned routes, because we might have cached
@@ -2416,6 +2416,16 @@ nla_put_failure:
 	g_return_val_if_reached (NULL);
 }
 
+static guint32
+ip_route_get_lock_flag (const NMPlatformIPRoute *route)
+{
+	return   (((guint32) route->lock_window)   << RTAX_WINDOW)
+	       | (((guint32) route->lock_cwnd)     << RTAX_CWND)
+	       | (((guint32) route->lock_initcwnd) << RTAX_INITCWND)
+	       | (((guint32) route->lock_initrwnd) << RTAX_INITRWND)
+	       | (((guint32) route->lock_mtu)      << RTAX_MTU);
+}
+
 /* Copied and modified from libnl3's build_route_msg() and rtnl_route_build_msg(). */
 static struct nl_msg *
 _nl_msg_new_route (int nlmsg_type,
@@ -2424,12 +2434,12 @@ _nl_msg_new_route (int nlmsg_type,
                    guint32 cwnd,
                    guint32 initcwnd,
                    guint32 initrwnd,
-                   guint32 mtu,
-                   guint32 lock)
+                   guint32 mtu)
 {
 	struct nl_msg *msg;
 	const NMPClass *klass = NMP_OBJECT_GET_CLASS (obj);
 	gboolean is_v4 = klass->addr_family == AF_INET;
+	const guint32 lock = ip_route_get_lock_flag (NMP_OBJECT_CAST_IP_ROUTE (obj));
 	struct rtmsg rtmsg = {
 		.rtm_family = klass->addr_family,
 		.rtm_tos = obj->ip_route.tos,
@@ -5689,16 +5699,6 @@ ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, gui
 
 /*****************************************************************************/
 
-static guint32
-ip_route_get_lock_flag (NMPlatformIPRoute *route)
-{
-	return   (((guint32) route->lock_window) << RTAX_WINDOW)
-	       | (((guint32) route->lock_cwnd) << RTAX_CWND)
-	       | (((guint32) route->lock_initcwnd) << RTAX_INITCWND)
-	       | (((guint32) route->lock_initrwnd) << RTAX_INITRWND)
-	       | (((guint32) route->lock_mtu) << RTAX_MTU);
-}
-
 static gboolean
 ip4_route_add (NMPlatform *platform, const NMPlatformIP4Route *route)
 {
@@ -5719,8 +5719,7 @@ ip4_route_add (NMPlatform *platform, const NMPlatformIP4Route *route)
 	                           route->cwnd,
 	                           route->initcwnd,
 	                           route->initrwnd,
-	                           route->mtu,
-	                           ip_route_get_lock_flag ((NMPlatformIPRoute *) route));
+	                           route->mtu);
 	return do_add_addrroute (platform, &obj, nlmsg);
 }
 
@@ -5743,8 +5742,7 @@ ip6_route_add (NMPlatform *platform, const NMPlatformIP6Route *route)
 	                           route->cwnd,
 	                           route->initcwnd,
 	                           route->initrwnd,
-	                           route->mtu,
-	                           ip_route_get_lock_flag ((NMPlatformIPRoute *) route));
+	                           route->mtu);
 	return do_add_addrroute (platform, &obj, nlmsg);
 }
 
@@ -5795,7 +5793,6 @@ ip_route_delete (NMPlatform *platform,
 	nlmsg = _nl_msg_new_route (RTM_DELROUTE,
 	                           0,
 	                           obj,
-	                           0,
 	                           0,
 	                           0,
 	                           0,
