@@ -3091,7 +3091,7 @@ ip4_addr_subnets_build_index (const GPtrArray *addresses,
 				position = 0; /* prepend */
 			g_ptr_array_insert (addr_list, position, p_address);
 		} else {
-			/* we only care about the primay. No need to track the secondaries
+			/* we only care about the primary. No need to track the secondaries
 			 * as a GPtrArray. */
 			nm_assert (ip4_addr_subnets_is_plain_address (addresses, p));
 			if (   consider_flags
@@ -3142,8 +3142,8 @@ ip4_addr_subnets_is_secondary (const NMPObject *address,
 		if (*o != address)
 			return TRUE;
 	} else {
-		nm_assert (address == *((gconstpointer *) p));
 		NM_SET_OUT (out_addr_list, NULL);
+		return address != *((gconstpointer *) p);
 	}
 	return FALSE;
 }
