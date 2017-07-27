@@ -4756,6 +4756,7 @@ nm_platform_ip4_route_hash (const NMPlatformIP4Route *obj, NMPlatformIPRouteCmpT
 				h = NM_HASH_COMBINE (h, obj->gateway);
 				h = NM_HASH_COMBINE (h, obj->mss);
 				h = NM_HASH_COMBINE (h, obj->pref_src);
+				h = NM_HASH_COMBINE (h, obj->window);
 			}
 			break;
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
@@ -4813,6 +4814,7 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 			NM_CMP_FIELD (a, b, gateway);
 			NM_CMP_FIELD (a, b, mss);
 			NM_CMP_FIELD (a, b, pref_src);
+			NM_CMP_FIELD (a, b, window);
 		}
 		break;
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:

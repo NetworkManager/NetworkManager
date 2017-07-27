@@ -355,18 +355,27 @@ typedef union {
 	\
 	guint32 metric; \
 	\
-	/* RTA_METRICS.RTAX_ADVMSS. For IPv4 routes, this is part of their
-	 * ID (meaning: you can add otherwise idential IPv4 routes that
-	 * only differ by mss). On the other hand, for IPv6 you cannot add two
-	 * IPv6 routes that only differ by mss.
+	guint32 tos; \
+	\
+	\
+	/* RTA_METRICS:
 	 *
-	 * When deleting a route, kernel seems to ignore RTA_METRICS.RTAX_ADVMSS.
-	 * Which is a problem for IPv4 because you cannot explicitly select which
-	 * route to delete. Kernel just picks the first. */ \
+	 * For IPv4 routes, these properties are part of their
+	 * ID (meaning: you can add otherwise idential IPv4 routes that
+	 * only differ by the metric property).
+	 * On the other hand, for IPv6 you cannot add two IPv6 routes that only differ
+	 * by an RTA_METRICS property.
+	 *
+	 * When deleting a route, kernel seems to ignore the RTA_METRICS propeties.
+	 * That is a problem/bug for IPv4 because you cannot explicitly select which
+	 * route to delete. Kernel just picks the first. See rh#1475642. */ \
+	\
+	/* RTA_METRICS.RTAX_ADVMSS (iproute2: advmss) */ \
 	guint32 mss; \
 	\
-	guint32 tos; \
+	/* RTA_METRICS.RTAX_WINDOW (iproute2: window) */ \
 	guint32 window; \
+	\
 	guint32 cwnd; \
 	guint32 initcwnd; \
 	guint32 initrwnd; \

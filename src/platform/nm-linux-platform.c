@@ -2421,7 +2421,6 @@ static struct nl_msg *
 _nl_msg_new_route (int nlmsg_type,
                    int nlmsg_flags,
                    const NMPObject *obj,
-                   guint32 window,
                    guint32 cwnd,
                    guint32 initcwnd,
                    guint32 initrwnd,
@@ -2484,7 +2483,12 @@ _nl_msg_new_route (int nlmsg_type,
 	}
 
 	if (   obj->ip_route.mss
-	    || window || cwnd || initcwnd || initrwnd || mtu || lock) {
+	    || obj->ip_route.window
+	    || cwnd
+	    || initcwnd
+	    || initrwnd
+	    || mtu
+	    || lock) {
 		struct nlattr *metrics;
 
 		metrics = nla_nest_start (msg, RTA_METRICS);
@@ -2493,8 +2497,8 @@ _nl_msg_new_route (int nlmsg_type,
 
 		if (obj->ip_route.mss)
 			NLA_PUT_U32 (msg, RTAX_ADVMSS, obj->ip_route.mss);
-		if (window)
-			NLA_PUT_U32 (msg, RTAX_WINDOW, window);
+		if (obj->ip_route.window)
+			NLA_PUT_U32 (msg, RTAX_WINDOW, obj->ip_route.window);
 		if (cwnd)
 			NLA_PUT_U32 (msg, RTAX_CWND, cwnd);
 		if (initcwnd)
@@ -5712,7 +5716,6 @@ ip4_route_add (NMPlatform *platform, const NMPlatformIP4Route *route)
 	nlmsg = _nl_msg_new_route (RTM_NEWROUTE,
 	                           NLM_F_CREATE | NLM_F_REPLACE,
 	                           &obj,
-	                           route->window,
 	                           route->cwnd,
 	                           route->initcwnd,
 	                           route->initrwnd,
@@ -5737,7 +5740,6 @@ ip6_route_add (NMPlatform *platform, const NMPlatformIP6Route *route)
 	nlmsg = _nl_msg_new_route (RTM_NEWROUTE,
 	                           NLM_F_CREATE | NLM_F_REPLACE,
 	                           &obj,
-	                           route->window,
 	                           route->cwnd,
 	                           route->initcwnd,
 	                           route->initrwnd,
@@ -5793,7 +5795,6 @@ ip_route_delete (NMPlatform *platform,
 	nlmsg = _nl_msg_new_route (RTM_DELROUTE,
 	                           0,
 	                           obj,
-	                           0,
 	                           0,
 	                           0,
 	                           0,
