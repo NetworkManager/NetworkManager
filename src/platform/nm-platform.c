@@ -4186,16 +4186,6 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsi
 
 	if (route->tos)
 		nm_sprintf_buf (str_tos, " tos 0x%x", (unsigned) route->tos);
-	if (route->window)
-		nm_sprintf_buf (str_window, " window %s%"G_GUINT32_FORMAT, route->lock_window ? "lock " : "", route->window);
-	if (route->cwnd)
-		nm_sprintf_buf (str_cwnd, " cwnd %s%"G_GUINT32_FORMAT, route->lock_cwnd ? "lock " : "", route->cwnd);
-	if (route->initcwnd)
-		nm_sprintf_buf (str_initcwnd, " initcwnd %s%"G_GUINT32_FORMAT, route->lock_initcwnd ? "lock " : "", route->initcwnd);
-	if (route->initrwnd)
-		nm_sprintf_buf (str_initrwnd, " initrwnd %s%"G_GUINT32_FORMAT, route->lock_initrwnd ? "lock " : "", route->initrwnd);
-	if (route->mtu)
-		nm_sprintf_buf (str_mtu, " mtu %s%"G_GUINT32_FORMAT, route->lock_mtu ? "lock " : "", route->mtu);
 
 	g_snprintf (buf, len,
 	            "%s/%d"
@@ -4227,11 +4217,11 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsi
 	            route->pref_src ? " pref-src " : "",
 	            route->pref_src ? inet_ntop (AF_INET, &route->pref_src, s_pref_src, sizeof(s_pref_src)) : "",
 	            route->tos ? str_tos : "",
-	            route->window ? str_window : "",
-	            route->cwnd ? str_cwnd : "",
-	            route->initcwnd ? str_initcwnd : "",
-	            route->initrwnd ? str_initrwnd : "",
-	            route->mtu ? str_mtu : "");
+	            route->window   || route->lock_window   ? nm_sprintf_buf (str_window,   " window %s%"G_GUINT32_FORMAT,   route->lock_window   ? "lock " : "", route->window)   : "",
+	            route->cwnd     || route->lock_cwnd     ? nm_sprintf_buf (str_cwnd,     " cwnd %s%"G_GUINT32_FORMAT,     route->lock_cwnd     ? "lock " : "", route->cwnd)     : "",
+	            route->initcwnd || route->lock_initcwnd ? nm_sprintf_buf (str_initcwnd, " initcwnd %s%"G_GUINT32_FORMAT, route->lock_initcwnd ? "lock " : "", route->initcwnd) : "",
+	            route->initrwnd || route->lock_initrwnd ? nm_sprintf_buf (str_initrwnd, " initrwnd %s%"G_GUINT32_FORMAT, route->lock_initrwnd ? "lock " : "", route->initrwnd) : "",
+	            route->mtu      || route->lock_mtu      ? nm_sprintf_buf (str_mtu,      " mtu %s%"G_GUINT32_FORMAT,      route->lock_mtu      ? "lock " : "", route->mtu)      : "");
 	return buf;
 }
 
@@ -4271,16 +4261,6 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 
 	if (route->tos)
 		nm_sprintf_buf (str_tos, " tos 0x%x", (unsigned) route->tos);
-	if (route->window)
-		nm_sprintf_buf (str_window, " window %s%"G_GUINT32_FORMAT, route->lock_window ? "lock " : "", route->window);
-	if (route->cwnd)
-		nm_sprintf_buf (str_cwnd, " cwnd %s%"G_GUINT32_FORMAT, route->lock_cwnd ? "lock " : "", route->cwnd);
-	if (route->initcwnd)
-		nm_sprintf_buf (str_initcwnd, " initcwnd %s%"G_GUINT32_FORMAT, route->lock_initcwnd ? "lock " : "", route->initcwnd);
-	if (route->initrwnd)
-		nm_sprintf_buf (str_initrwnd, " initrwnd %s%"G_GUINT32_FORMAT, route->lock_initrwnd ? "lock " : "", route->initrwnd);
-	if (route->mtu)
-		nm_sprintf_buf (str_mtu, " mtu %s%"G_GUINT32_FORMAT, route->lock_mtu ? "lock " : "", route->mtu);
 
 	g_snprintf (buf, len,
 	            "%s/%d"
@@ -4311,11 +4291,11 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	            s_pref_src[0] ? " pref-src " : "",
 	            s_pref_src[0] ? s_pref_src : "",
 	            route->tos ? str_tos : "",
-	            route->window ? str_window : "",
-	            route->cwnd ? str_cwnd : "",
-	            route->initcwnd ? str_initcwnd : "",
-	            route->initrwnd ? str_initrwnd : "",
-	            route->mtu ? str_mtu : "");
+	            route->window   || route->lock_window   ? nm_sprintf_buf (str_window,   " window %s%"G_GUINT32_FORMAT,   route->lock_window   ? "lock " : "", route->window)   : "",
+	            route->cwnd     || route->lock_cwnd     ? nm_sprintf_buf (str_cwnd,     " cwnd %s%"G_GUINT32_FORMAT,     route->lock_cwnd     ? "lock " : "", route->cwnd)     : "",
+	            route->initcwnd || route->lock_initcwnd ? nm_sprintf_buf (str_initcwnd, " initcwnd %s%"G_GUINT32_FORMAT, route->lock_initcwnd ? "lock " : "", route->initcwnd) : "",
+	            route->initrwnd || route->lock_initrwnd ? nm_sprintf_buf (str_initrwnd, " initrwnd %s%"G_GUINT32_FORMAT, route->lock_initrwnd ? "lock " : "", route->initrwnd) : "",
+	            route->mtu      || route->lock_mtu      ? nm_sprintf_buf (str_mtu,      " mtu %s%"G_GUINT32_FORMAT,      route->lock_mtu      ? "lock " : "", route->mtu)      : "");
 
 	return buf;
 }
