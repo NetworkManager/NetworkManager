@@ -400,17 +400,23 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
                                  GVariant *config_dict)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
-	NMIP4Config *config;
+	gs_unref_object NMIP4Config *config = NULL;
 	NMPlatformIP4Address address;
-	guint32 u32;
+	guint32 u32, mtu;
 	GVariantIter *iter;
 
 	_LOGI ("(IPv4 Config Get) reply received.");
 
 	nm_clear_g_source (&priv->ppp_timeout_handler);
 
+	if (!set_ip_config_common (manager, config_dict, NM_PPP_IP4_CONFIG_INTERFACE, &mtu))
+		goto out;
+
 	config = nm_ip4_config_new (nm_platform_get_multi_idx (NM_PLATFORM_GET),
 	                            nm_platform_link_get_ifindex (NM_PLATFORM_GET, priv->ip_iface));
+
+	if (mtu)
+		nm_ip4_config_set_mtu (config, mtu, NM_IP_CONFIG_SOURCE_PPP);
 
 	memset (&address, 0, sizeof (address));
 	address.plen = 32;
@@ -447,17 +453,10 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 		g_variant_iter_free (iter);
 	}
 
-	if (!set_ip_config_common (manager, config_dict, NM_PPP_IP4_CONFIG_INTERFACE, &u32))
-		goto out;
-
-	if (u32)
-		nm_ip4_config_set_mtu (config, u32, NM_IP_CONFIG_SOURCE_PPP);
-
 	/* Push the IP4 config up to the device */
 	g_signal_emit (manager, signals[IP4_CONFIG], 0, priv->ip_iface, config);
 
 out:
-	g_object_unref (config);
 	g_dbus_method_invocation_return_value (context, NULL);
 }
 
@@ -496,7 +495,7 @@ impl_ppp_manager_set_ip6_config (NMPPPManager *manager,
                                  GVariant *config_dict)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
-	NMIP6Config *config;
+	gs_unref_object NMIP6Config *config = NULL;
 	NMPlatformIP6Address addr;
 	struct in6_addr a;
 	NMUtilsIPv6IfaceId iid = NM_UTILS_IPV6_IFACE_ID_INIT;
@@ -505,6 +504,9 @@ impl_ppp_manager_set_ip6_config (NMPPPManager *manager,
 	_LOGI ("(IPv6 Config Get) reply received.");
 
 	nm_clear_g_source (&priv->ppp_timeout_handler);
+
+	if (!set_ip_config_common (manager, config_dict, NM_PPP_IP6_CONFIG_INTERFACE, NULL))
+		goto out;
 
 	config = nm_ip6_config_new (nm_platform_get_multi_idx (NM_PLATFORM_GET),
 	                            nm_platform_link_get_ifindex (NM_PLATFORM_GET, priv->ip_iface));
@@ -523,14 +525,12 @@ impl_ppp_manager_set_ip6_config (NMPPPManager *manager,
 			addr.peer_address = addr.address;
 		nm_ip6_config_add_address (config, &addr);
 
-		if (set_ip_config_common (manager, config_dict, NM_PPP_IP6_CONFIG_INTERFACE, NULL)) {
-			/* Push the IPv6 config and interface identifier up to the device */
-			g_signal_emit (manager, signals[IP6_CONFIG], 0, priv->ip_iface, &iid, config);
-		}
+		/* Push the IPv6 config and interface identifier up to the device */
+		g_signal_emit (manager, signals[IP6_CONFIG], 0, priv->ip_iface, &iid, config);
 	} else
 		_LOGE ("invalid IPv6 address received!");
 
-	g_object_unref (config);
+out:
 	g_dbus_method_invocation_return_value (context, NULL);
 }
 
