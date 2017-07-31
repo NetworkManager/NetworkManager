@@ -101,6 +101,11 @@ typedef enum {
 	 * which is the same what kernel does. */
 	NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID_CACHE,
 
+	/* NMIP4Config and NMIP6Config also track a list of routes. They have their
+	 * own notion of what equality means. Basically, they consider network/plen
+	 * for IPv4 and IPv6. */
+	NM_PLATFORM_IP_ROUTE_CMP_TYPE_DST,
+
 	/* compare all fields as they make sense for kernel. For example,
 	 * a route destination 192.168.1.5/24 is not accepted by kernel and
 	 * we treat it identical to 192.168.1.0/24. Semantically these
