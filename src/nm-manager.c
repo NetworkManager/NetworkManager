@@ -205,6 +205,8 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMManager,
 	PROP_WIMAX_HARDWARE_ENABLED,
 	PROP_ACTIVE_CONNECTIONS,
 	PROP_CONNECTIVITY,
+	PROP_CONNECTIVITY_CHECK_AVAILABLE,
+	PROP_CONNECTIVITY_CHECK_ENABLED,
 	PROP_PRIMARY_CONNECTION,
 	PROP_PRIMARY_CONNECTION_TYPE,
 	PROP_ACTIVATING_CONNECTION,
@@ -6236,6 +6238,16 @@ get_property (GObject *object, guint prop_id,
 	case PROP_CONNECTIVITY:
 		g_value_set_uint (value, priv->connectivity_state);
 		break;
+	case PROP_CONNECTIVITY_CHECK_AVAILABLE:
+		config_data = nm_config_get_data (priv->config);
+		g_value_set_boolean (value, nm_config_data_get_connectivity_uri (config_data) != NULL);
+		break;
+	case PROP_CONNECTIVITY_CHECK_ENABLED:
+		config_data = nm_config_get_data (priv->config);
+		g_value_set_boolean (value,
+							 nm_config_data_get_connectivity_uri (config_data) != NULL &&
+							 nm_config_data_get_connectivity_interval (config_data) != 0);
+		break;
 	case PROP_PRIMARY_CONNECTION:
 		nm_utils_g_value_set_object_path (value, priv->primary_connection);
 		break;
@@ -6298,6 +6310,10 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_WIMAX_ENABLED:
 		/* WIMAX is depreacted. This does nothing. */
+		break;
+	case PROP_CONNECTIVITY_CHECK_ENABLED:
+		nm_config_set_connectivity_check_enabled (priv->config,
+												  g_value_get_boolean (value));
 		break;
 	case PROP_GLOBAL_DNS_CONFIGURATION:
 		dns_config = nm_global_dns_config_from_dbus (value, &error);
@@ -6522,6 +6538,18 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	                       NM_CONNECTIVITY_UNKNOWN, NM_CONNECTIVITY_FULL, NM_CONNECTIVITY_UNKNOWN,
 	                       G_PARAM_READABLE |
 	                       G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_CONNECTIVITY_CHECK_AVAILABLE] =
+		g_param_spec_boolean (NM_MANAGER_CONNECTIVITY_CHECK_AVAILABLE, "", "",
+							  TRUE,
+							  G_PARAM_READABLE |
+							  G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_CONNECTIVITY_CHECK_ENABLED] =
+		g_param_spec_boolean (NM_MANAGER_CONNECTIVITY_CHECK_ENABLED, "", "",
+							  TRUE,
+							  G_PARAM_READWRITE |
+							  G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_PRIMARY_CONNECTION] =
 	    g_param_spec_string (NM_MANAGER_PRIMARY_CONNECTION, "", "",

@@ -444,6 +444,28 @@
     <property name="Connectivity" type="u" access="read"/>
 
     <!--
+        ConnectivityCheckAvailable:
+
+        Indicates whether connectivity checking service has been
+        configured.  This may return true even if the service is not
+        currently enabled.
+
+        This is primarily intended for use in a privacy control panel,
+        as a way to determine whether to show an option to
+        enable/disable the feature.
+    -->
+    <property name="ConnectivityCheckAvailable" type="b" access="read"/>
+
+    <!--
+        ConnectivityCheckEnabled:
+
+        Indicates whether connectivity checking is enabled.  This
+        property can also be written to to disable connectivity
+        checking (as a privacy control panel might want to do).
+    -->
+    <property name="ConnectivityCheckEnabled" type="b" access="readwrite"/>
+
+    <!--
         GlobalDnsConfiguration:
 
         Dictionary of global DNS settings where the key is one of "searches",
