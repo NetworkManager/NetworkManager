@@ -3836,9 +3836,11 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 		case RTM_NEWROUTE:
 		case RTM_GETLINK:
 			cache_op = nmp_cache_update_netlink (cache, obj, &obj_old, &obj_new);
-			cache_on_change (platform, cache_op, obj_old, obj_new);
-			cache_post (platform, msghdr, cache_op, obj, obj_old, obj_new);
-			nm_platform_cache_update_emit_signal (platform, cache_op, obj_old, obj_new);
+			if (cache_op != NMP_CACHE_OPS_UNCHANGED) {
+				cache_on_change (platform, cache_op, obj_old, obj_new);
+				cache_post (platform, msghdr, cache_op, obj, obj_old, obj_new);
+				nm_platform_cache_update_emit_signal (platform, cache_op, obj_old, obj_new);
+			}
 			break;
 
 		case RTM_DELLINK:
