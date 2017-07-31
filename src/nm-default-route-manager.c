@@ -28,6 +28,7 @@
 #include "devices/nm-device.h"
 #include "vpn/nm-vpn-connection.h"
 #include "platform/nm-platform.h"
+#include "platform/nm-platform-utils.h"
 #include "platform/nmp-object.h"
 #include "nm-manager.h"
 #include "nm-ip4-config.h"
@@ -261,6 +262,8 @@ _platform_route_sync_add (const VTableIP *vtable, NMDefaultRouteManager *self, g
 {
 	NMDefaultRouteManagerPrivate *priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
 	GPtrArray *entries = vtable->get_entries (priv);
+	char buf1[sizeof (_nm_utils_to_string_buffer)];
+	char buf2[sizeof (_nm_utils_to_string_buffer)];
 	guint i;
 	Entry *entry_unsynced = NULL;
 	Entry *entry = NULL;
@@ -298,22 +301,69 @@ _platform_route_sync_add (const VTableIP *vtable, NMDefaultRouteManager *self, g
 		return FALSE;
 
 	if (vtable->vt->is_ip4) {
-		NMPlatformIP4Route rt = entry->route.r4;
+		NMPObject obj;
+		NMPlatformIP4Route *rt;
+		const NMPObject *plobj;
 
-		rt.network = 0;
-		rt.plen = 0;
-		rt.metric = entry->effective_metric;
+		nmp_object_stackinit (&obj, NMP_OBJECT_TYPE_IP4_ROUTE, (const NMPlatformObject *) &entry->route.r4);
+		rt = NMP_OBJECT_CAST_IP4_ROUTE (&obj);
+		rt->network = 0;
+		rt->plen = 0;
+		rt->metric = entry->effective_metric;
 
-		success = (nm_platform_ip4_route_add (priv->platform, NMP_NLM_FLAG_REPLACE, &rt) == NM_PLATFORM_ERROR_SUCCESS);
+		nm_platform_ip_route_normalize (AF_INET, (NMPlatformIPRoute *) rt);
+		plobj = nm_dedup_multi_entry_get_obj (nm_platform_lookup_entry (priv->platform,
+		                                                                NMP_CACHE_ID_TYPE_OBJECT_TYPE,
+		                                                                &obj));
+		if (   plobj
+		    && nm_platform_ip4_route_cmp (rt,
+		                                  NMP_OBJECT_CAST_IP4_ROUTE (plobj),
+		                                  NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) == 0) {
+			_LOGt (AF_INET, "already exists: %s",
+			       nm_platform_ip4_route_to_string (rt, NULL, 0));
+			return FALSE;
+		}
+
+		if (plobj) {
+			_LOGt (AF_INET, "update platform route: %s; with route: %s",
+			       nm_platform_ip4_route_to_string (NMP_OBJECT_CAST_IP4_ROUTE (plobj), buf1, sizeof (buf1)),
+			       nm_platform_ip4_route_to_string (rt, buf2, sizeof (buf2)));
+		}
+
+		success = (nm_platform_ip4_route_add (priv->platform, NMP_NLM_FLAG_REPLACE, rt) == NM_PLATFORM_ERROR_SUCCESS);
 	} else {
-		NMPlatformIP6Route rt = entry->route.r6;
+		NMPObject obj;
+		NMPlatformIP6Route *rt;
+		const NMPObject *plobj;
 
-		rt.network = in6addr_any;
-		rt.plen = 0;
-		rt.metric = entry->effective_metric;
+		nmp_object_stackinit (&obj, NMP_OBJECT_TYPE_IP6_ROUTE, (const NMPlatformObject *) &entry->route.r6);
+		rt = NMP_OBJECT_CAST_IP6_ROUTE (&obj);
+		rt->network = in6addr_any;
+		rt->plen = 0;
+		rt->metric = entry->effective_metric;
 
-		success = (nm_platform_ip6_route_add (priv->platform, NMP_NLM_FLAG_REPLACE, &rt) == NM_PLATFORM_ERROR_SUCCESS);
+		nm_platform_ip_route_normalize (AF_INET6, (NMPlatformIPRoute *) rt);
+		plobj = nm_dedup_multi_entry_get_obj (nm_platform_lookup_entry (priv->platform,
+		                                                                NMP_CACHE_ID_TYPE_OBJECT_TYPE,
+		                                                                &obj));
+		if (   plobj
+		    && nm_platform_ip6_route_cmp (rt,
+		                                  NMP_OBJECT_CAST_IP6_ROUTE (plobj),
+		                                  NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) == 0) {
+			_LOGt (AF_INET, "already exists: %s",
+			       nm_platform_ip6_route_to_string (rt, NULL, 0));
+			return FALSE;
+		}
+
+		if (plobj) {
+			_LOGt (AF_INET, "update platform route: %s; with route: %s",
+			       nm_platform_ip6_route_to_string (NMP_OBJECT_CAST_IP6_ROUTE (plobj), buf1, sizeof (buf1)),
+			       nm_platform_ip6_route_to_string (rt, buf2, sizeof (buf2)));
+		}
+
+		success = (nm_platform_ip6_route_add (priv->platform, NMP_NLM_FLAG_REPLACE, rt) == NM_PLATFORM_ERROR_SUCCESS);
 	}
+
 	if (!success) {
 		_LOGW (vtable->vt->addr_family, "failed to add default route %s with effective metric %u",
 		       vtable->vt->route_to_string (&entry->route, NULL, 0), (guint) entry->effective_metric);
