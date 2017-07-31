@@ -28,6 +28,7 @@
 #include "devices/nm-device.h"
 #include "vpn/nm-vpn-connection.h"
 #include "platform/nm-platform.h"
+#include "platform/nm-platform-utils.h"
 #include "nm-manager.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
@@ -266,6 +267,8 @@ _platform_route_sync_add (const VTableIP *vtable, NMDefaultRouteManager *self, g
 {
 	NMDefaultRouteManagerPrivate *priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
 	GPtrArray *entries = vtable->get_entries (priv);
+	char buf1[sizeof (_nm_utils_to_string_buffer)];
+	char buf2[sizeof (_nm_utils_to_string_buffer)];
 	guint i;
 	Entry *entry_unsynced = NULL;
 	Entry *entry = NULL;
@@ -304,21 +307,64 @@ _platform_route_sync_add (const VTableIP *vtable, NMDefaultRouteManager *self, g
 
 	if (vtable->vt->is_ip4) {
 		NMPlatformIP4Route rt = entry->route.r4;
+		const NMPlatformIP4Route *plat_rt;
 
 		rt.network = 0;
 		rt.plen = 0;
 		rt.metric = entry->effective_metric;
+		rt.rt_source = nmp_utils_ip_config_source_round_trip_rtprot (rt.rt_source);
+
+		plat_rt = nm_platform_ip4_route_get (priv->platform,
+		                                     entry->route.r4.ifindex,
+		                                     0,
+		                                     0,
+		                                     entry->effective_metric);
+		if (plat_rt && nm_platform_ip4_route_cmp (plat_rt, &rt) == 0) {
+			_LOGt (AF_INET, "already exists: %s",
+			       nm_platform_ip4_route_to_string (&rt, NULL, 0));
+			return FALSE;
+		}
+
+		rt.rt_source = entry->route.r4.rt_source;
+
+		if (plat_rt) {
+			_LOGt (AF_INET, "update platform route: %s; with route: %s",
+			       nm_platform_ip4_route_to_string (plat_rt, buf1, sizeof (buf1)),
+			       nm_platform_ip4_route_to_string (&rt, buf2, sizeof (buf2)));
+		}
 
 		success = nm_platform_ip4_route_add (priv->platform, &rt);
 	} else {
 		NMPlatformIP6Route rt = entry->route.r6;
+		const NMPlatformIP6Route *plat_rt;
 
 		rt.network = in6addr_any;
 		rt.plen = 0;
 		rt.metric = entry->effective_metric;
+		rt.rt_source = nmp_utils_ip_config_source_round_trip_rtprot (rt.rt_source);
+
+		plat_rt = nm_platform_ip6_route_get (priv->platform,
+		                                     entry->route.r6.ifindex,
+		                                     in6addr_any,
+		                                     0,
+		                                     entry->effective_metric);
+		if (plat_rt && nm_platform_ip6_route_cmp (plat_rt, &rt) == 0) {
+			_LOGt (AF_INET6, "already exists: %s",
+			       nm_platform_ip6_route_to_string (&rt, NULL, 0));
+			return FALSE;
+		}
+
+		rt.rt_source = entry->route.r6.rt_source;
+
+		if (plat_rt) {
+			_LOGt (AF_INET, "update platform route: %s; with route: %s",
+			       nm_platform_ip6_route_to_string (plat_rt, buf1, sizeof (buf1)),
+			       nm_platform_ip6_route_to_string (&rt, buf2, sizeof (buf2)));
+		}
 
 		success = nm_platform_ip6_route_add (priv->platform, &rt);
 	}
+
 	if (!success) {
 		_LOGW (vtable->vt->addr_family, "failed to add default route %s with effective metric %u",
 		       vtable->vt->route_to_string (&entry->route, NULL, 0), (guint) entry->effective_metric);
