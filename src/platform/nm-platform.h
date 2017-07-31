@@ -374,10 +374,19 @@ typedef union {
 	/* RTA_METRICS.RTAX_WINDOW (iproute2: window) */ \
 	guint32 window; \
 	\
+	/* RTA_METRICS.RTAX_CWND (iproute2: cwnd) */ \
 	guint32 cwnd; \
+	\
+	/* RTA_METRICS.RTAX_INITCWND (iproute2: initcwnd) */ \
 	guint32 initcwnd; \
+	\
+	/* RTA_METRICS.RTAX_INITRWND (iproute2: initrwnd) */ \
 	guint32 initrwnd; \
+	\
+	/* RTA_METRICS.RTAX_MTU (iproute2: mtu) */ \
 	guint32 mtu; \
+	\
+	\
 	guint32 metric; \
 	guint32 tos; \
 	\

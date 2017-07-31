@@ -2430,11 +2430,7 @@ ip_route_get_lock_flag (const NMPlatformIPRoute *route)
 static struct nl_msg *
 _nl_msg_new_route (int nlmsg_type,
                    int nlmsg_flags,
-                   const NMPObject *obj,
-                   guint32 cwnd,
-                   guint32 initcwnd,
-                   guint32 initrwnd,
-                   guint32 mtu)
+                   const NMPObject *obj)
 {
 	struct nl_msg *msg;
 	const NMPClass *klass = NMP_OBJECT_GET_CLASS (obj);
@@ -2494,10 +2490,10 @@ _nl_msg_new_route (int nlmsg_type,
 
 	if (   obj->ip_route.mss
 	    || obj->ip_route.window
-	    || cwnd
-	    || initcwnd
-	    || initrwnd
-	    || mtu
+	    || obj->ip_route.cwnd
+	    || obj->ip_route.initcwnd
+	    || obj->ip_route.initrwnd
+	    || obj->ip_route.mtu
 	    || lock) {
 		struct nlattr *metrics;
 
@@ -2509,14 +2505,14 @@ _nl_msg_new_route (int nlmsg_type,
 			NLA_PUT_U32 (msg, RTAX_ADVMSS, obj->ip_route.mss);
 		if (obj->ip_route.window)
 			NLA_PUT_U32 (msg, RTAX_WINDOW, obj->ip_route.window);
-		if (cwnd)
-			NLA_PUT_U32 (msg, RTAX_CWND, cwnd);
-		if (initcwnd)
-			NLA_PUT_U32 (msg, RTAX_INITCWND, initcwnd);
-		if (initrwnd)
-			NLA_PUT_U32 (msg, RTAX_INITRWND, initrwnd);
-		if (mtu)
-			NLA_PUT_U32 (msg, RTAX_MTU, mtu);
+		if (obj->ip_route.cwnd)
+			NLA_PUT_U32 (msg, RTAX_CWND, obj->ip_route.cwnd);
+		if (obj->ip_route.initcwnd)
+			NLA_PUT_U32 (msg, RTAX_INITCWND, obj->ip_route.initcwnd);
+		if (obj->ip_route.initrwnd)
+			NLA_PUT_U32 (msg, RTAX_INITRWND, obj->ip_route.initrwnd);
+		if (obj->ip_route.mtu)
+			NLA_PUT_U32 (msg, RTAX_MTU, obj->ip_route.mtu);
 		if (lock)
 			NLA_PUT_U32 (msg, RTAX_LOCK, lock);
 
@@ -5715,11 +5711,7 @@ ip4_route_add (NMPlatform *platform, const NMPlatformIP4Route *route)
 
 	nlmsg = _nl_msg_new_route (RTM_NEWROUTE,
 	                           NLM_F_CREATE | NLM_F_REPLACE,
-	                           &obj,
-	                           route->cwnd,
-	                           route->initcwnd,
-	                           route->initrwnd,
-	                           route->mtu);
+	                           &obj);
 	return do_add_addrroute (platform, &obj, nlmsg);
 }
 
@@ -5738,11 +5730,7 @@ ip6_route_add (NMPlatform *platform, const NMPlatformIP6Route *route)
 
 	nlmsg = _nl_msg_new_route (RTM_NEWROUTE,
 	                           NLM_F_CREATE | NLM_F_REPLACE,
-	                           &obj,
-	                           route->cwnd,
-	                           route->initcwnd,
-	                           route->initrwnd,
-	                           route->mtu);
+	                           &obj);
 	return do_add_addrroute (platform, &obj, nlmsg);
 }
 
@@ -5792,11 +5780,7 @@ ip_route_delete (NMPlatform *platform,
 
 	nlmsg = _nl_msg_new_route (RTM_DELROUTE,
 	                           0,
-	                           obj,
-	                           0,
-	                           0,
-	                           0,
-	                           0);
+	                           obj);
 	if (!nlmsg)
 		return FALSE;
 	return do_delete_object (platform, obj, nlmsg);
