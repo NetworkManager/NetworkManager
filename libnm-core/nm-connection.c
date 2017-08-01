@@ -2336,6 +2336,22 @@ nm_connection_get_setting_olpc_mesh (NMConnection *connection)
 }
 
 /**
+ * nm_connection_get_setting_ovs_patch:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingOvsPatch the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingOvsPatch if the connection contains one, otherwise %NULL
+ *
+ * Since: 1.10
+ **/
+NMSettingOvsPatch *
+nm_connection_get_setting_ovs_patch (NMConnection *connection)
+{
+	return _connection_get_setting_check (connection, NM_TYPE_SETTING_OVS_PATCH);
+}
+
+/**
  * nm_connection_get_setting_ppp:
  * @connection: the #NMConnection
  *

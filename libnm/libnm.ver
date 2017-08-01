@@ -1190,6 +1190,9 @@ global:
 	nm_ip_route_equal_full;
 	nm_setting_bridge_get_group_forward_mask;
 	nm_setting_ip_config_get_route_table;
+	nm_setting_ovs_patch_get_peer;
+	nm_setting_ovs_patch_get_type;
+	nm_setting_ovs_patch_new;
 	nm_setting_pppoe_get_parent;
 	nm_setting_wireless_security_get_pmf;
 	nm_setting_wireless_security_get_wps_method;
