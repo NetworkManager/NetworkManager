@@ -50,6 +50,7 @@ typedef struct _NMSettingIP6Config        NMSettingIP6Config;
 typedef struct _NMSettingMacsec           NMSettingMacsec;
 typedef struct _NMSettingMacvlan          NMSettingMacvlan;
 typedef struct _NMSettingOlpcMesh         NMSettingOlpcMesh;
+typedef struct _NMSettingOvsInterface     NMSettingOvsInterface;
 typedef struct _NMSettingOvsPatch         NMSettingOvsPatch;
 typedef struct _NMSettingPpp              NMSettingPpp;
 typedef struct _NMSettingPppoe            NMSettingPppoe;
