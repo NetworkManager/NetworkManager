@@ -5804,6 +5804,18 @@ static const NMMetaPropertyInfo *const property_infos_PPPOE[] = {
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_OVS_INTERFACE
+static const NMMetaPropertyInfo *const property_infos_OVS_INTERFACE[] = {
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_INTERFACE_TYPE,
+		.property_type =                &_pt_gobject_string,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			.values_static =        VALUES_STATIC ("internal", "patch"),
+		),
+	),
+	NULL
+};
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_OVS_PATCH
 static const NMMetaPropertyInfo *const property_infos_OVS_PATCH[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_PATCH_PEER,
@@ -6731,6 +6743,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_MACSEC              N_("MACsec connection")
 #define SETTING_PRETTY_NAME_MACVLAN             N_("macvlan connection")
 #define SETTING_PRETTY_NAME_OLPC_MESH           N_("OLPC Mesh connection")
+#define SETTING_PRETTY_NAME_OVS_INTERFACE       N_("OpenVSwitch interface settings")
 #define SETTING_PRETTY_NAME_OVS_PATCH           N_("OpenVSwitch patch interface settings")
 #define SETTING_PRETTY_NAME_PPP                 N_("PPP settings")
 #define SETTING_PRETTY_NAME_PPPOE               N_("PPPoE")
@@ -6880,6 +6893,16 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (OLPC_MESH,             TRUE),
 		),
 		.setting_init_fcn =             _setting_init_fcn_olpc_mesh,
+	),
+	SETTING_INFO (OVS_INTERFACE,
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (OVS_INTERFACE,         TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (OVS_PATCH,             FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (IP4_CONFIG,            FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (IP6_CONFIG,            FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
+		),
 	),
 	SETTING_INFO (OVS_PATCH),
 	SETTING_INFO (PPPOE,
