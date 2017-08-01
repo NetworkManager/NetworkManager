@@ -43,6 +43,7 @@
 #include "nm-setting-macsec.h"
 #include "nm-setting-macvlan.h"
 #include "nm-setting-olpc-mesh.h"
+#include "nm-setting-ovs-bridge.h"
 #include "nm-setting-ovs-interface.h"
 #include "nm-setting-ovs-patch.h"
 #include "nm-setting-ovs-port.h"
@@ -237,6 +238,11 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
 		.meta_type =                NM_META_SETTING_TYPE_OLPC_MESH,
 		.setting_name =             NM_SETTING_OLPC_MESH_SETTING_NAME,
 		.get_setting_gtype =        nm_setting_olpc_mesh_get_type,
+	},
+	[NM_META_SETTING_TYPE_OVS_BRIDGE] = {
+		.meta_type =                NM_META_SETTING_TYPE_OVS_BRIDGE,
+		.setting_name =             NM_SETTING_OVS_BRIDGE_SETTING_NAME,
+		.get_setting_gtype =        nm_setting_ovs_bridge_get_type,
 	},
 	[NM_META_SETTING_TYPE_OVS_INTERFACE] = {
 		.meta_type =                NM_META_SETTING_TYPE_OVS_INTERFACE,
