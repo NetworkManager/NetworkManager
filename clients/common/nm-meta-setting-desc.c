@@ -5804,6 +5804,15 @@ static const NMMetaPropertyInfo *const property_infos_PPPOE[] = {
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_OVS_PATCH
+static const NMMetaPropertyInfo *const property_infos_OVS_PATCH[] = {
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_PATCH_PEER,
+		.property_type =                &_pt_gobject_string,
+	),
+	NULL
+};
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_PPP
 static const NMMetaPropertyInfo *const property_infos_PPP[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_PPP_NOAUTH,
@@ -6722,6 +6731,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_MACSEC              N_("MACsec connection")
 #define SETTING_PRETTY_NAME_MACVLAN             N_("macvlan connection")
 #define SETTING_PRETTY_NAME_OLPC_MESH           N_("OLPC Mesh connection")
+#define SETTING_PRETTY_NAME_OVS_PATCH           N_("OpenVSwitch patch interface settings")
 #define SETTING_PRETTY_NAME_PPP                 N_("PPP settings")
 #define SETTING_PRETTY_NAME_PPPOE               N_("PPPoE")
 #define SETTING_PRETTY_NAME_PROXY               N_("Proxy")
@@ -6871,6 +6881,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 		),
 		.setting_init_fcn =             _setting_init_fcn_olpc_mesh,
 	),
+	SETTING_INFO (OVS_PATCH),
 	SETTING_INFO (PPPOE,
 		/* PPPoE is a base connection type from historical reasons.
 		 * See libnm-core/nm-setting.c:_nm_setting_is_base_type()
