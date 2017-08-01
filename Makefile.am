@@ -2769,6 +2769,63 @@ check_local += check-local-devices-team
 endif
 
 ###############################################################################
+# src/devices/ovs
+###############################################################################
+
+if WITH_OPENVSWITCH
+
+if HAVE_SYSTEMD
+
+systemdnmunitdir = $(systemdsystemunitdir)/NetworkManager.service.d
+systemdnmunit_DATA = \
+	data/NetworkManager-ovs.conf
+
+endif
+
+core_plugins += src/devices/ovs/libnm-device-plugin-ovs.la
+
+src_devices_ovs_libnm_device_plugin_ovs_la_SOURCES = \
+	src/devices/ovs/nm-ovsdb.c \
+	src/devices/ovs/nm-ovsdb.h \
+	src/devices/ovs/nm-ovs-factory.c \
+	src/devices/ovs/nm-device-ovs-interface.c \
+	src/devices/ovs/nm-device-ovs-interface.h \
+	src/devices/ovs/nm-device-ovs-port.c \
+	src/devices/ovs/nm-device-ovs-port.h \
+	src/devices/ovs/nm-device-ovs-bridge.c \
+	src/devices/ovs/nm-device-ovs-bridge.h
+
+src_devices_ovs_libnm_device_plugin_ovs_la_CPPFLAGS = \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(builddir)/libnm-core \
+	-I$(srcdir)/libnm-core \
+	\
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	-DRUNSTATEDIR=\"$(runstatedir)\" \
+	\
+	$(JANSSON_CFLAGS) \
+	$(GLIB_CFLAGS)
+
+src_devices_ovs_libnm_device_plugin_ovs_la_LDFLAGS = \
+	-module -avoid-version \
+	-Wl,--version-script="$(srcdir)/linker-script-devices.ver"
+
+src_devices_ovs_libnm_device_plugin_ovs_la_LIBADD = \
+	introspection/libnmdbus.la \
+	$(JANSSON_LIBS) \
+	$(GLIB_LIBS)
+
+check-local-devices-ovs: src/devices/ovs/libnm-device-plugin-ovs.la
+	$(srcdir)/tools/check-exports.sh $(builddir)/src/devices/ovs/.libs/libnm-device-plugin-ovs.so "$(srcdir)/linker-script-devices.ver"
+	$(call check_so_symbols,$(builddir)/src/devices/ovs/.libs/libnm-device-plugin-ovs.so)
+
+endif
+
+###############################################################################
 # src/dnsmasq/tests
 ###############################################################################
 
