@@ -1190,6 +1190,12 @@ global:
 	nm_ip_route_equal_full;
 	nm_setting_bridge_get_group_forward_mask;
 	nm_setting_ip_config_get_route_table;
+	nm_setting_ovs_bridge_get_fail_mode;
+	nm_setting_ovs_bridge_get_mcast_snooping_enable;
+	nm_setting_ovs_bridge_get_rstp_enable;
+	nm_setting_ovs_bridge_get_stp_enable;
+	nm_setting_ovs_bridge_get_type;
+	nm_setting_ovs_bridge_new;
 	nm_setting_ovs_interface_get_interface_type;
 	nm_setting_ovs_interface_get_type;
 	nm_setting_ovs_interface_new;

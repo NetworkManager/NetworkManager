@@ -729,6 +729,10 @@ _nm_connection_detect_slave_type (NMConnection *connection, NMSetting **out_s_po
 			i_slave_type = NM_SETTING_BRIDGE_SETTING_NAME;
 		else if (!strcmp (name, NM_SETTING_TEAM_PORT_SETTING_NAME))
 			i_slave_type = NM_SETTING_TEAM_SETTING_NAME;
+		else if (!strcmp (name, NM_SETTING_OVS_PORT_SETTING_NAME))
+			i_slave_type = NM_SETTING_OVS_BRIDGE_SETTING_NAME;
+		else if (!strcmp (name, NM_SETTING_OVS_INTERFACE_SETTING_NAME))
+			i_slave_type = NM_SETTING_OVS_PORT_SETTING_NAME;
 		else
 			continue;
 
@@ -2017,6 +2021,7 @@ nm_connection_is_virtual (NMConnection *connection)
 	    || !strcmp (type, NM_SETTING_IP_TUNNEL_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_MACSEC_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_MACVLAN_SETTING_NAME)
+	    || !strcmp (type, NM_SETTING_OVS_BRIDGE_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_OVS_INTERFACE_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_OVS_PORT_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_VXLAN_SETTING_NAME))
@@ -2369,6 +2374,22 @@ NMSettingOlpcMesh *
 nm_connection_get_setting_olpc_mesh (NMConnection *connection)
 {
 	return _connection_get_setting_check (connection, NM_TYPE_SETTING_OLPC_MESH);
+}
+
+/**
+ * nm_connection_get_setting_ovs_bridge:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingOvsBridge the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingOvsBridge if the connection contains one, otherwise %NULL
+ *
+ * Since: 1.10
+ **/
+NMSettingOvsBridge *
+nm_connection_get_setting_ovs_bridge (NMConnection *connection)
+{
+	return _connection_get_setting_check (connection, NM_TYPE_SETTING_OVS_BRIDGE);
 }
 
 /**

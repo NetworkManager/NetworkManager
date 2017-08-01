@@ -1006,6 +1006,18 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
+	if (   g_strcmp0 (priv->type, NM_SETTING_OVS_PORT_SETTING_NAME) != 0
+	    && g_strcmp0 (priv->slave_type, NM_SETTING_OVS_BRIDGE_SETTING_NAME) == 0) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_MISSING_PROPERTY,
+		             _("Only '%s' connections can be enslaved to '%s'"),
+		             NM_SETTING_OVS_PORT_SETTING_NAME,
+		             NM_SETTING_OVS_BRIDGE_SETTING_NAME);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_TYPE);
+		return FALSE;
+	}
+
 	if (priv->metered != NM_METERED_UNKNOWN &&
 	    priv->metered != NM_METERED_YES &&
 	    priv->metered != NM_METERED_NO) {
