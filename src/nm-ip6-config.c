@@ -569,7 +569,6 @@ merge_route_attributes (NMIPRoute *s_route, NMPlatformIP6Route *r)
 	if (variant && g_variant_is_of_type (variant, G_VARIANT_TYPE_ ## variant_type)) \
 		r->field = g_variant_get_ ## type (variant);
 
-	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_TOS,            tos,            BYTE,     byte);
 	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_WINDOW,         window,         UINT32,   uint32);
 	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_CWND,           cwnd,           UINT32,   uint32);
 	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_INITCWND,       initcwnd,       UINT32,   uint32);

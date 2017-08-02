@@ -392,8 +392,8 @@ typedef union {
 	guint32 mtu; \
 	\
 	\
+	/* RTA_PRIORITY (iproute2: metric) */ \
 	guint32 metric; \
-	guint32 tos; \
 	\
 	/*end*/
 
@@ -421,6 +421,13 @@ struct _NMPlatformIP4Route {
 	 * pref_src is part of the ID of an IPv4 route. When deleting a route,
 	 * pref_src must match, unless set to 0.0.0.0 to match any. */
 	in_addr_t pref_src;
+
+	/* rtm_tos (iproute2: tos)
+	 *
+	 * For IPv4, tos is part of the weak-id (like metric).
+	 *
+	 * For IPv6, tos is ignored by kernel.  */
+	guint8 tos;
 
 	/* The bitwise inverse of the route scope rtm_scope. It is inverted so that the
 	 * default value (RT_SCOPE_NOWHERE) is zero. Use nm_platform_route_scope_inv()

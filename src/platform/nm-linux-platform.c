@@ -2018,7 +2018,9 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 			memcpy (&obj->ip6_route.pref_src, nla_data (tb[RTA_PREFSRC]), addr_len);
 	}
 
-	if (!is_v4) {
+	if (is_v4)
+		obj->ip4_route.tos = rtm->rtm_tos;
+	else {
 		if (tb[RTA_SRC]) {
 			_check_addr_or_errout (tb, RTA_SRC, addr_len);
 			memcpy (&obj->ip6_route.src, nla_data (tb[RTA_SRC]), addr_len);
@@ -2032,7 +2034,6 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 	obj->ip_route.initcwnd = initcwnd;
 	obj->ip_route.initrwnd = initrwnd;
 	obj->ip_route.mtu = mtu;
-	obj->ip_route.tos = rtm->rtm_tos;
 	obj->ip_route.lock_window   = NM_FLAGS_HAS (lock, 1 << RTAX_WINDOW);
 	obj->ip_route.lock_cwnd     = NM_FLAGS_HAS (lock, 1 << RTAX_CWND);
 	obj->ip_route.lock_initcwnd = NM_FLAGS_HAS (lock, 1 << RTAX_INITCWND);
@@ -2438,7 +2439,9 @@ _nl_msg_new_route (int nlmsg_type,
 	const guint32 lock = ip_route_get_lock_flag (NMP_OBJECT_CAST_IP_ROUTE (obj));
 	struct rtmsg rtmsg = {
 		.rtm_family = klass->addr_family,
-		.rtm_tos = obj->ip_route.tos,
+		.rtm_tos = is_v4
+		           ? obj->ip4_route.tos
+		           : 0,
 		.rtm_table = RT_TABLE_MAIN, /* omit setting RTA_TABLE attribute */
 		.rtm_protocol = nmp_utils_ip_config_source_coerce_to_rtprot (obj->ip_route.rt_source),
 		.rtm_scope = is_v4
