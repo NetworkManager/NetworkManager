@@ -857,7 +857,7 @@ test_ip4_full_sync (test_fixture *fixture, gconstpointer user_data)
 	_assert_route_check (vtable, TRUE,  (const NMPlatformIPXRoute *) &r02);
 	_assert_route_check (vtable, FALSE, (const NMPlatformIPXRoute *) &r03);
 
-	vtable->route_add (NM_PLATFORM_GET, 0, (const NMPlatformIPXRoute *) &r03, -1);
+	vtable->route_add (NM_PLATFORM_GET, NMP_NLM_FLAG_REPLACE, (const NMPlatformIPXRoute *) &r03, 0, -1);
 
 	_assert_route_check (vtable, TRUE,  (const NMPlatformIPXRoute *) &r01);
 	_assert_route_check (vtable, TRUE,  (const NMPlatformIPXRoute *) &r02);

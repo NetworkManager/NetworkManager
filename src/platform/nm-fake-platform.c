@@ -1192,7 +1192,10 @@ ip_route_delete (NMPlatform *platform, const NMPObject *obj)
 }
 
 static gboolean
-ipx_route_add (NMPlatform *platform, int addr_family, const NMPlatformObject *route)
+ip_route_add (NMPlatform *platform,
+              NMPNlmFlags flags,
+              int addr_family,
+              const NMPlatformIPRoute *route)
 {
 	NMDedupMultiIter iter;
 	nm_auto_nmpobj NMPObject *obj = NULL;
@@ -1208,10 +1211,13 @@ ipx_route_add (NMPlatform *platform, int addr_family, const NMPlatformObject *ro
 
 	g_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
 
+	/* currently, only replace is implemented. */
+	g_assert (flags == NMP_NLM_FLAG_REPLACE);
+
 	obj = nmp_object_new (addr_family == AF_INET
 	                        ? NMP_OBJECT_TYPE_IP4_ROUTE
 	                        : NMP_OBJECT_TYPE_IP6_ROUTE,
-	                      route);
+	                      (const NMPlatformObject *) route);
 	rt = &obj->ip_route;
 	rt->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (rt->rt_source);
 
@@ -1272,18 +1278,6 @@ ipx_route_add (NMPlatform *platform, int addr_family, const NMPlatformObject *ro
 	cache_op = nmp_cache_update_netlink (cache, obj, &obj_old, &obj_new);
 	nm_platform_cache_update_emit_signal (platform, cache_op, obj_old, obj_new);
 	return TRUE;
-}
-
-static gboolean
-ip4_route_add (NMPlatform *platform, const NMPlatformIP4Route *route)
-{
-	return ipx_route_add (platform, AF_INET, (const NMPlatformObject *) route);
-}
-
-static gboolean
-ip6_route_add (NMPlatform *platform, const NMPlatformIP6Route *route)
-{
-	return ipx_route_add (platform, AF_INET6, (const NMPlatformObject *) route);
 }
 
 /*****************************************************************************/
@@ -1396,7 +1390,6 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->ip4_address_delete = ip4_address_delete;
 	platform_class->ip6_address_delete = ip6_address_delete;
 
-	platform_class->ip4_route_add = ip4_route_add;
-	platform_class->ip6_route_add = ip6_route_add;
+	platform_class->ip_route_add = ip_route_add;
 	platform_class->ip_route_delete = ip_route_delete;
 }

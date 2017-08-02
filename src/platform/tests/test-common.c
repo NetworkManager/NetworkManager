@@ -903,7 +903,7 @@ void nmtstp_ip4_route_add (NMPlatform *platform,
 	route.metric = metric;
 	route.mss = mss;
 
-	g_assert (nm_platform_ip4_route_add (platform, &route));
+	g_assert (nm_platform_ip4_route_add (platform, NMP_NLM_FLAG_REPLACE, &route));
 }
 
 void nmtstp_ip6_route_add (NMPlatform *platform,
@@ -927,7 +927,7 @@ void nmtstp_ip6_route_add (NMPlatform *platform,
 	route.metric = metric;
 	route.mss = mss;
 
-	g_assert (nm_platform_ip6_route_add (platform, &route));
+	g_assert (nm_platform_ip6_route_add (platform, NMP_NLM_FLAG_REPLACE, &route));
 }
 
 /*****************************************************************************/

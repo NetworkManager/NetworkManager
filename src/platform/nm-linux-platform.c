@@ -2430,7 +2430,7 @@ ip_route_get_lock_flag (const NMPlatformIPRoute *route)
 /* Copied and modified from libnl3's build_route_msg() and rtnl_route_build_msg(). */
 static struct nl_msg *
 _nl_msg_new_route (int nlmsg_type,
-                   int nlmsg_flags,
+                   NMPNlmFlags nlmsgflags,
                    const NMPObject *obj)
 {
 	struct nl_msg *msg;
@@ -2460,7 +2460,8 @@ _nl_msg_new_route (int nlmsg_type,
 	nm_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
 	nm_assert (NM_IN_SET (nlmsg_type, RTM_NEWROUTE, RTM_DELROUTE));
 
-	msg = nlmsg_alloc_simple (nlmsg_type, nlmsg_flags);
+	nm_assert (((NMPNlmFlags) ((int) nlmsgflags)) == nlmsgflags);
+	msg = nlmsg_alloc_simple (nlmsg_type, (int) nlmsgflags);
 	if (!msg)
 		g_return_val_if_reached (NULL);
 
@@ -5699,41 +5700,39 @@ ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, gui
 /*****************************************************************************/
 
 static gboolean
-ip4_route_add (NMPlatform *platform, const NMPlatformIP4Route *route)
+ip_route_add (NMPlatform *platform,
+              NMPNlmFlags flags,
+              int addr_family,
+              const NMPlatformIPRoute *route)
 {
-	NMPObject obj;
-	NMPlatformIP4Route *r;
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-
-	nmp_object_stackinit (&obj, NMP_OBJECT_TYPE_IP4_ROUTE, (const NMPlatformObject *) route);
-	r = NMP_OBJECT_CAST_IP4_ROUTE (&obj);
-	r->network = nm_utils_ip4_address_clear_host_address (r->network, r->plen);
-	r->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (r->rt_source),
-	r->scope_inv = nm_platform_route_scope_inv (!r->gateway
-	                                            ? RT_SCOPE_LINK : RT_SCOPE_UNIVERSE);
-
-	nlmsg = _nl_msg_new_route (RTM_NEWROUTE,
-	                           NLM_F_CREATE | NLM_F_REPLACE,
-	                           &obj);
-	return do_add_addrroute (platform, &obj, nlmsg);
-}
-
-static gboolean
-ip6_route_add (NMPlatform *platform, const NMPlatformIP6Route *route)
-{
 	NMPObject obj;
-	NMPlatformIP6Route *r;
-	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+	NMPlatformIP4Route *r4;
+	NMPlatformIP6Route *r6;
 
-	nmp_object_stackinit (&obj, NMP_OBJECT_TYPE_IP6_ROUTE, (const NMPlatformObject *) route);
-	r = NMP_OBJECT_CAST_IP6_ROUTE (&obj);
-	nm_utils_ip6_address_clear_host_address (&r->network, &r->network, r->plen);
-	r->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (r->rt_source),
-	nm_utils_ip6_address_clear_host_address (&r->src, &r->src, r->src_plen);
+	switch (addr_family) {
+	case AF_INET:
+		nmp_object_stackinit (&obj, NMP_OBJECT_TYPE_IP4_ROUTE, (const NMPlatformObject *) route);
+		r4 = NMP_OBJECT_CAST_IP4_ROUTE (&obj);
+		r4->network = nm_utils_ip4_address_clear_host_address (r4->network, r4->plen);
+		r4->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (r4->rt_source),
+		r4->scope_inv = nm_platform_route_scope_inv (!r4->gateway
+		                                             ? RT_SCOPE_LINK : RT_SCOPE_UNIVERSE);
+		break;
+	case AF_INET6:
+		nmp_object_stackinit (&obj, NMP_OBJECT_TYPE_IP6_ROUTE, (const NMPlatformObject *) route);
+		r6 = NMP_OBJECT_CAST_IP6_ROUTE (&obj);
+		nm_utils_ip6_address_clear_host_address (&r6->network, &r6->network, r6->plen);
+		r6->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (r6->rt_source),
+		nm_utils_ip6_address_clear_host_address (&r6->src, &r6->src, r6->src_plen);
+		break;
+	default:
+		nm_assert_not_reached ();
+	}
 
-	nlmsg = _nl_msg_new_route (RTM_NEWROUTE,
-	                           NLM_F_CREATE | NLM_F_REPLACE,
-	                           &obj);
+	nlmsg = _nl_msg_new_route (RTM_NEWROUTE, flags, &obj);
+	if (!nlmsg)
+		g_return_val_if_reached (FALSE);
 	return do_add_addrroute (platform, &obj, nlmsg);
 }
 
@@ -5781,11 +5780,9 @@ ip_route_delete (NMPlatform *platform,
 		}
 	}
 
-	nlmsg = _nl_msg_new_route (RTM_DELROUTE,
-	                           0,
-	                           obj);
+	nlmsg = _nl_msg_new_route (RTM_DELROUTE, 0, obj);
 	if (!nlmsg)
-		return FALSE;
+		g_return_val_if_reached (FALSE);
 	return do_delete_object (platform, obj, nlmsg);
 }
 
@@ -6516,8 +6513,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->ip4_address_delete = ip4_address_delete;
 	platform_class->ip6_address_delete = ip6_address_delete;
 
-	platform_class->ip4_route_add = ip4_route_add;
-	platform_class->ip6_route_add = ip6_route_add;
+	platform_class->ip_route_add = ip_route_add;
 	platform_class->ip_route_delete = ip_route_delete;
 
 	platform_class->check_support_kernel_extended_ifa_flags = check_support_kernel_extended_ifa_flags;

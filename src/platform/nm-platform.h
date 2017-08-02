@@ -74,6 +74,25 @@ struct udev_device;
 #define NM_GRE_KEY      0x2000
 
 typedef enum {
+	/* use our own platform enum for the nlmsg-flags. Otherwise, we'd have
+	 * to include <linux/netlink.h> */
+	NMP_NLM_FLAG_F_REPLACE      = 0x100, /* NLM_F_REPLACE, Override existing */
+	NMP_NLM_FLAG_F_EXCL         = 0x200, /* NLM_F_EXCL, Do not touch, if it exists */
+	NMP_NLM_FLAG_F_CREATE       = 0x400, /* NLM_F_CREATE, Create, if it does not exist */
+	NMP_NLM_FLAG_F_APPEND       = 0x800, /* NLM_F_APPEND, Add to end of list */
+
+	/* the following aliases correspond to iproute2's `ip route CMD` for
+	 * RTM_NEWROUTE, with CMD being one of add, change, replace, prepend,
+	 * append and test. */
+	NMP_NLM_FLAG_ADD            = NMP_NLM_FLAG_F_CREATE                          | NMP_NLM_FLAG_F_EXCL,
+	NMP_NLM_FLAG_CHANGE         =                         NMP_NLM_FLAG_F_REPLACE,
+	NMP_NLM_FLAG_REPLACE        = NMP_NLM_FLAG_F_CREATE | NMP_NLM_FLAG_F_REPLACE,
+	NMP_NLM_FLAG_PREPEND        = NMP_NLM_FLAG_F_CREATE,
+	NMP_NLM_FLAG_APPEND         = NMP_NLM_FLAG_F_CREATE                                                | NMP_NLM_FLAG_F_APPEND,
+	NMP_NLM_FLAG_TEST           =                                                  NMP_NLM_FLAG_F_EXCL,
+} NMPNlmFlags;
+
+typedef enum {
 	/* compare fields which kernel considers as similar routes.
 	 * It is a looser comparisong then NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID
 	 * and means that `ip route add` would fail to add two routes
@@ -489,7 +508,11 @@ typedef struct {
 	gsize sizeof_route;
 	int (*route_cmp) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, NMPlatformIPRouteCmpType cmp_type);
 	const char *(*route_to_string) (const NMPlatformIPXRoute *route, char *buf, gsize len);
-	gboolean (*route_add) (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route, gint64 metric);
+	gboolean (*route_add) (NMPlatform *self,
+	                       NMPNlmFlags flags,
+	                       const NMPlatformIPXRoute *route,
+	                       int ifindex,
+	                       gint64 metric);
 	guint32 (*metric_normalize) (guint32 metric);
 } NMPlatformVTableRoute;
 
@@ -763,8 +786,10 @@ typedef struct {
 	gboolean (*ip4_address_delete) (NMPlatform *, int ifindex, in_addr_t address, guint8 plen, in_addr_t peer_address);
 	gboolean (*ip6_address_delete) (NMPlatform *, int ifindex, struct in6_addr address, guint8 plen);
 
-	gboolean (*ip4_route_add) (NMPlatform *, const NMPlatformIP4Route *route);
-	gboolean (*ip6_route_add) (NMPlatform *, const NMPlatformIP6Route *route);
+	gboolean (*ip_route_add) (NMPlatform *,
+	                          NMPNlmFlags flags,
+	                          int addr_family,
+	                          const NMPlatformIPRoute *route);
 	gboolean (*ip_route_delete) (NMPlatform *, const NMPObject *obj);
 
 	gboolean (*check_support_kernel_extended_ifa_flags) (NMPlatform *);
@@ -1077,8 +1102,10 @@ gboolean nm_platform_address_flush (NMPlatform *self, int ifindex);
 
 const NMPlatformIP4Route *nm_platform_ip4_route_get (NMPlatform *self, int ifindex, in_addr_t network, guint8 plen, guint32 metric);
 const NMPlatformIP6Route *nm_platform_ip6_route_get (NMPlatform *self, int ifindex, struct in6_addr network, guint8 plen, guint32 metric);
-gboolean nm_platform_ip4_route_add (NMPlatform *self, const NMPlatformIP4Route *route);
-gboolean nm_platform_ip6_route_add (NMPlatform *self, const NMPlatformIP6Route *route);
+
+gboolean nm_platform_ip4_route_add (NMPlatform *self, NMPNlmFlags flags, const NMPlatformIP4Route *route);
+gboolean nm_platform_ip6_route_add (NMPlatform *self, NMPNlmFlags flags, const NMPlatformIP6Route *route);
+
 gboolean nm_platform_ip_route_delete (NMPlatform *self, const NMPObject *route);
 
 const char *nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len);

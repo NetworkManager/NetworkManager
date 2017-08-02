@@ -432,7 +432,7 @@ test_ip4_route_options (void)
 	route.mtu = 1350;
 	route.lock_cwnd = TRUE;
 
-	g_assert (nm_platform_ip4_route_add (NM_PLATFORM_GET, &route));
+	g_assert (nm_platform_ip4_route_add (NM_PLATFORM_GET, NMP_NLM_FLAG_REPLACE, &route));
 
 	/* Test route listing */
 	routes = nmtstp_ip4_route_get_all (NM_PLATFORM_GET, ifindex);
@@ -532,7 +532,7 @@ test_ip6_route_options (gconstpointer test_data)
 	_wait_for_ipv6_addr_non_tentative (NM_PLATFORM_GET, 400, IFINDEX, addr_n, addr_in6);
 
 	for (i = 0; i < rts_n; i++)
-		g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, &rts_add[i]));
+		g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, NMP_NLM_FLAG_REPLACE, &rts_add[i]));
 
 	routes = nmtstp_ip6_route_get_all (NM_PLATFORM_GET, IFINDEX);
 	switch (TEST_IDX) {

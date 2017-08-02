@@ -3409,53 +3409,60 @@ nm_platform_address_flush (NMPlatform *self, int ifindex)
 
 /*****************************************************************************/
 
-/**
- * nm_platform_ip4_route_add:
- * @self:
- * @route:
- *
- * For kernel, a gateway can be either explicitly set or left
- * at zero (0.0.0.0). In addition, there is the scope of the IPv4
- * route.
- * When adding a route with
- *   $ ip route add default dev $IFNAME
- * the resulting route will have gateway 0.0.0.0 and scope "link".
- * Contrary to
- *   $ ip route add default via 0.0.0.0 dev $IFNAME
- * which adds the route with scope "global".
- *
- * NetworkManager's Platform can currently only add on-link-routes with scope
- * "link" (and gateway 0.0.0.0) or gateway-routes with scope "global" (and
- * gateway not 0.0.0.0).
- *
- * It does not support adding globally scoped routes via 0.0.0.0.
- *
- * Returns: %TRUE in case of success.
- */
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_nmp_nlm_flag_to_string_lookup, NMPNlmFlags,
+	NM_UTILS_LOOKUP_DEFAULT (NULL),
+	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_ADD,     "add"),
+	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_CHANGE,  "change"),
+	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_REPLACE, "replace"),
+	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_PREPEND, "prepend"),
+	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_APPEND,  "append"),
+	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_TEST,    "test"),
+	NM_UTILS_LOOKUP_ITEM_IGNORE (NMP_NLM_FLAG_F_APPEND),
+);
+
+#define _nmp_nlm_flag_to_string(flags) \
+	({ \
+		NMPNlmFlags _flags = (flags); \
+		\
+		_nmp_nlm_flag_to_string_lookup (flags) ?: nm_sprintf_bufa (100, "new[0x%x]", (unsigned) _flags); \
+	})
+
 gboolean
-nm_platform_ip4_route_add (NMPlatform *self, const NMPlatformIP4Route *route)
+nm_platform_ip4_route_add (NMPlatform *self,
+                           NMPNlmFlags flags,
+                           const NMPlatformIP4Route *route)
 {
+	char sbuf[sizeof (_nm_utils_to_string_buffer)];
+
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (route, FALSE);
 	g_return_val_if_fail (route->plen <= 32, FALSE);
 
-	_LOGD ("route: adding or updating IPv4 route: %s", nm_platform_ip4_route_to_string (route, NULL, 0));
+	_LOGD ("route: %-10s IPv4 route: %s",
+	       _nmp_nlm_flag_to_string (flags),
+	       nm_platform_ip4_route_to_string (route, sbuf, sizeof (sbuf)));
 
-	return klass->ip4_route_add (self, route);
+	return klass->ip_route_add (self, flags, AF_INET, (const NMPlatformIPRoute *) route);
 }
 
 gboolean
-nm_platform_ip6_route_add (NMPlatform *self, const NMPlatformIP6Route *route)
+nm_platform_ip6_route_add (NMPlatform *self,
+                           NMPNlmFlags flags,
+                           const NMPlatformIP6Route *route)
 {
+	char sbuf[sizeof (_nm_utils_to_string_buffer)];
+
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (route, FALSE);
 	g_return_val_if_fail (route->plen <= 128, FALSE);
 
-	_LOGD ("route: adding or updating IPv6 route: %s", nm_platform_ip6_route_to_string (route, NULL, 0));
+	_LOGD ("route: %-10s IPv6 route: %s",
+	       _nmp_nlm_flag_to_string (flags),
+	       nm_platform_ip6_route_to_string (route, sbuf, sizeof (sbuf)));
 
-	return klass->ip6_route_add (self, route);
+	return klass->ip_route_add (self, flags, AF_INET6, (const NMPlatformIPRoute *) route);
 }
 
 gboolean
@@ -3467,7 +3474,7 @@ nm_platform_ip_route_delete (NMPlatform *self,
 	nm_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ROUTE,
 	                                                 NMP_OBJECT_TYPE_IP6_ROUTE));
 
-	_LOGD ("route: deleting IPv%c route %s",
+	_LOGD ("route: delete     IPv%c route %s",
 	       NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_IP4_ROUTE ? '4' : '6',
 	       nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 
@@ -5177,7 +5184,11 @@ nm_platform_netns_push (NMPlatform *self, NMPNetns **netns)
 /*****************************************************************************/
 
 static gboolean
-_vtr_v4_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route, gint64 metric)
+_vtr_v4_route_add (NMPlatform *self,
+                   NMPNlmFlags flags,
+                   const NMPlatformIPXRoute *route,
+                   int ifindex,
+                   gint64 metric)
 {
 	NMPlatformIP4Route rt = route->r4;
 
@@ -5186,11 +5197,15 @@ _vtr_v4_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *rout
 	if (metric >= 0)
 		rt.metric = metric;
 
-	return nm_platform_ip4_route_add (self, &rt);
+	return nm_platform_ip4_route_add (self, flags, &rt);
 }
 
 static gboolean
-_vtr_v6_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route, gint64 metric)
+_vtr_v6_route_add (NMPlatform *self,
+                   NMPNlmFlags flags,
+                   const NMPlatformIPXRoute *route,
+                   int ifindex,
+                   gint64 metric)
 {
 	NMPlatformIP6Route rt = route->r6;
 
@@ -5199,7 +5214,7 @@ _vtr_v6_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *rout
 	if (metric >= 0)
 		rt.metric = metric;
 
-	return nm_platform_ip6_route_add (self, &rt);
+	return nm_platform_ip6_route_add (self, flags, &rt);
 }
 
 static guint32
