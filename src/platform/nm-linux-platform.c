@@ -3392,7 +3392,7 @@ cache_prune_one_type (NMPlatform *platform, NMPObjectType obj_type)
 
 			obj = iter.current->obj;
 			_LOGt ("cache-prune: prune %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ALL, NULL, 0));
-			cache_op = nmp_cache_remove (cache, obj, TRUE, &obj_old);
+			cache_op = nmp_cache_remove (cache, obj, TRUE, TRUE, &obj_old);
 			nm_assert (cache_op == NMP_CACHE_OPS_REMOVED);
 			cache_on_change (platform, cache_op, obj_old, NULL);
 			nm_platform_cache_update_emit_signal (platform, cache_op, obj_old, NULL);
@@ -3642,39 +3642,6 @@ cache_on_change (NMPlatform *platform,
 		break;
 	default:
 		break;
-	}
-}
-
-static void
-cache_post (NMPlatform *platform,
-            struct nlmsghdr *msghdr,
-            NMPCacheOpsType cache_op,
-            const NMPObject *obj,
-            const NMPObject *obj_old,
-            const NMPObject *obj_new)
-{
-	if (msghdr->nlmsg_type == RTM_NEWROUTE) {
-		DelayedActionType action_type;
-
-		action_type = NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_IP4_ROUTE
-		                  ? DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES
-		                  : DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES;
-		if (   !delayed_action_refresh_all_in_progress (platform, action_type)
-		    && nmp_cache_find_other_route_for_same_destination (nm_platform_get_cache (platform), obj)) {
-			/* via `iproute route change` the user can update an existing route which effectively
-			 * means that a new object (with a different ID) comes into existance, replacing the
-			 * old on. In other words, as the ID of the object changes, we really see a new
-			 * object with the old one deleted.
-			 * However, kernel decides not to send a RTM_DELROUTE event for that.
-			 *
-			 * To hack around that, check if the update leaves us with multiple routes for the
-			 * same network/plen,metric part. In that case, we cannot do better then requesting
-			 * all routes anew, which sucks.
-			 *
-			 * One mitigation to avoid a dump is only to request a new dump, if we are not in
-			 * the middle of an ongoing dump (delayed_action_refresh_all_in_progress). */
-			delayed_action_schedule (platform, action_type, NULL);
-		}
 	}
 }
 
@@ -3939,15 +3906,72 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 
 		case RTM_NEWLINK:
 		case RTM_NEWADDR:
-		case RTM_NEWROUTE:
 		case RTM_GETLINK:
 			cache_op = nmp_cache_update_netlink (cache, obj, is_dump, &obj_old, &obj_new);
 			if (cache_op != NMP_CACHE_OPS_UNCHANGED) {
 				cache_on_change (platform, cache_op, obj_old, obj_new);
-				cache_post (platform, msghdr, cache_op, obj, obj_old, obj_new);
 				nm_platform_cache_update_emit_signal (platform, cache_op, obj_old, obj_new);
 			}
 			break;
+
+		case RTM_NEWROUTE: {
+			nm_auto_nmpobj const NMPObject *obj_replace = NULL;
+			gboolean resync_required = FALSE;
+			gboolean only_dirty = FALSE;
+
+			cache_op = nmp_cache_update_netlink_route (cache,
+			                                           obj,
+			                                           is_dump,
+			                                           msghdr->nlmsg_flags,
+			                                           &obj_old,
+			                                           &obj_new,
+			                                           &obj_replace,
+			                                           &resync_required);
+			if (cache_op != NMP_CACHE_OPS_UNCHANGED) {
+				if (obj_replace) {
+					const NMDedupMultiEntry *entry_replace;
+
+					/* we found an object that is to be replaced by the RTM_NEWROUTE message.
+					 * While we invoke the signal, the platform cache might change and invalidate
+					 * the findings. Mitigate that (for the most part), by marking the entry as
+					 * dirty and only delete @obj_replace if it is still dirty afterwards.
+					 *
+					 * Yes, there is a tiny tiny chance for still getting it wrong. But in practice,
+					 * the signal handlers do not cause to call the platform again, so the cache
+					 * is not really changing. -- if they would, it would anyway be dangerous to overflow
+					 * the stack and it's not ensured that the processing of netlink messages is
+					 * reentrant (maybe it is).
+					 */
+					entry_replace = nmp_cache_lookup_entry (cache, obj_replace);
+					nm_assert (entry_replace && entry_replace->obj == obj_replace);
+					nm_dedup_multi_entry_set_dirty (entry_replace, TRUE);
+					only_dirty = TRUE;
+				}
+				cache_on_change (platform, cache_op, obj_old, obj_new);
+				nm_platform_cache_update_emit_signal (platform, cache_op, obj_old, obj_new);
+			}
+
+			if (obj_replace) {
+				/* the RTM_NEWROUTE message indicates that another route was replaced.
+				 * Remove it now. */
+				cache_op = nmp_cache_remove (cache, obj_replace, TRUE, only_dirty, NULL);
+				if (cache_op != NMP_CACHE_OPS_UNCHANGED) {
+					nm_assert (cache_op == NMP_CACHE_OPS_REMOVED);
+					cache_on_change (platform, cache_op, obj_replace, NULL);
+					nm_platform_cache_update_emit_signal (platform, cache_op, obj_replace, NULL);
+				}
+			}
+
+			if (resync_required) {
+				/* we'd like to avoid such resyncs as they are expensive and we should only rely on the
+				 * netlink events. This needs investigation. */
+				_LOGT ("schedule resync of routes after RTM_NEWROUTE");
+				delayed_action_schedule (platform,
+				                         delayed_action_refresh_from_object_type (NMP_OBJECT_GET_TYPE (obj)),
+				                         NULL);
+			}
+			break;
+		}
 
 		case RTM_DELLINK:
 		case RTM_DELADDR:
@@ -5829,6 +5853,7 @@ ip_route_add (NMPlatform *platform,
 		r6 = NMP_OBJECT_CAST_IP6_ROUTE (&obj);
 		nm_utils_ip6_address_clear_host_address (&r6->network, &r6->network, r6->plen);
 		r6->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (r6->rt_source),
+		r6->metric = nm_utils_ip6_route_metric_normalize (r6->metric);
 		nm_utils_ip6_address_clear_host_address (&r6->src, &r6->src, r6->src_plen);
 		break;
 	default:

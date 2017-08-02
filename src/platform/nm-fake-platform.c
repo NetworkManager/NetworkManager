@@ -394,6 +394,7 @@ link_delete (NMPlatform *platform, int ifindex)
 	cache_op = nmp_cache_remove (nm_platform_get_cache (platform),
 	                             obj_old,
 	                             FALSE,
+	                             FALSE,
 	                             &obj_old2);
 	g_assert (cache_op == NMP_CACHE_OPS_REMOVED);
 	g_assert (obj_old2);
@@ -1085,6 +1086,7 @@ ipx_address_delete (NMPlatform *platform,
 		if (nmp_cache_remove (nm_platform_get_cache (platform),
 		                      o,
 		                      TRUE,
+		                      FALSE,
 		                      &obj_old) != NMP_CACHE_OPS_REMOVED)
 			g_assert_not_reached ();
 		g_assert (obj_old);
@@ -1171,6 +1173,7 @@ ipx_route_delete (NMPlatform *platform,
 		if (nmp_cache_remove (nm_platform_get_cache (platform),
 		                      o,
 		                      TRUE,
+		                      FALSE,
 		                      &obj_old) != NMP_CACHE_OPS_REMOVED)
 			g_assert_not_reached ();
 		g_assert (obj_old);
@@ -1204,15 +1207,19 @@ ip_route_add (NMPlatform *platform,
 {
 	NMDedupMultiIter iter;
 	nm_auto_nmpobj NMPObject *obj = NULL;
-	NMPlatformIPRoute *rt;
 	NMPCacheOpsType cache_op;
 	const NMPObject *o = NULL;
 	nm_auto_nmpobj const NMPObject *obj_old = NULL;
 	nm_auto_nmpobj const NMPObject *obj_new = NULL;
+	nm_auto_nmpobj const NMPObject *obj_replace = NULL;
 	NMPCache *cache = nm_platform_get_cache (platform);
 	gboolean has_gateway = FALSE;
-	NMPlatformIP4Route *rt4 = NULL;
-	NMPlatformIP6Route *rt6 = NULL;
+	NMPlatformIPRoute *r = NULL;
+	NMPlatformIP4Route *r4 = NULL;
+	NMPlatformIP6Route *r6 = NULL;
+	gboolean has_same_weak_id;
+	gboolean only_dirty;
+	guint16 nlmsgflags;
 
 	g_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
 
@@ -1223,21 +1230,29 @@ ip_route_add (NMPlatform *platform,
 	                        ? NMP_OBJECT_TYPE_IP4_ROUTE
 	                        : NMP_OBJECT_TYPE_IP6_ROUTE,
 	                      (const NMPlatformObject *) route);
-	rt = &obj->ip_route;
-	rt->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (rt->rt_source);
+	r = &obj->ip_route;
 
-	if (addr_family == AF_INET) {
-		rt4 = NMP_OBJECT_CAST_IP4_ROUTE (obj);
-		rt4->scope_inv = nm_platform_route_scope_inv (rt4->gateway ? RT_SCOPE_UNIVERSE : RT_SCOPE_LINK);
-		rt4->network = nm_utils_ip4_address_clear_host_address (rt4->network, rt4->plen);
-		if (rt4->gateway)
+	switch (addr_family) {
+	case AF_INET:
+		r4 = NMP_OBJECT_CAST_IP4_ROUTE (obj);
+		r4->network = nm_utils_ip4_address_clear_host_address (r4->network, r4->plen);
+		r4->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (r4->rt_source),
+		r4->scope_inv = nm_platform_route_scope_inv (!r4->gateway
+		                                             ? RT_SCOPE_LINK : RT_SCOPE_UNIVERSE);
+		if (r4->gateway)
 			has_gateway = TRUE;
-	} else {
-		rt6 = NMP_OBJECT_CAST_IP6_ROUTE (obj);
-		rt->metric = nm_utils_ip6_route_metric_normalize (rt->metric);
-		nm_utils_ip6_address_clear_host_address (&rt6->network, &rt6->network, rt->plen);
-		if (!IN6_IS_ADDR_UNSPECIFIED (&rt6->gateway))
+		break;
+	case AF_INET6:
+		r6 = NMP_OBJECT_CAST_IP6_ROUTE (obj);
+		nm_utils_ip6_address_clear_host_address (&r6->network, &r6->network, r6->plen);
+		r6->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (r6->rt_source),
+		r6->metric = nm_utils_ip6_route_metric_normalize (r6->metric);
+		nm_utils_ip6_address_clear_host_address (&r6->src, &r6->src, r6->src_plen);
+		if (!IN6_IS_ADDR_UNSPECIFIED (&r6->gateway))
 			has_gateway = TRUE;
+		break;
+	default:
+		nm_assert_not_reached ();
 	}
 
 	if (has_gateway) {
@@ -1251,9 +1266,9 @@ ip_route_add (NMPlatform *platform,
 			if (addr_family == AF_INET) {
 				const NMPlatformIP4Route *item = NMP_OBJECT_CAST_IP4_ROUTE (o);
 				guint32 n = nm_utils_ip4_address_clear_host_address (item->network, item->plen);
-				guint32 g = nm_utils_ip4_address_clear_host_address (rt4->gateway, item->plen);
+				guint32 g = nm_utils_ip4_address_clear_host_address (r4->gateway, item->plen);
 
-				if (   rt->ifindex == item->ifindex
+				if (   r->ifindex == item->ifindex
 				    && n == g) {
 					has_route_to_gw = TRUE;
 					break;
@@ -1261,8 +1276,8 @@ ip_route_add (NMPlatform *platform,
 			} else {
 				const NMPlatformIP6Route *item = NMP_OBJECT_CAST_IP6_ROUTE (o);
 
-				if (   rt->ifindex == item->ifindex
-				    && nm_utils_ip6_address_same_prefix (&rt6->gateway, &item->network, item->plen)) {
+				if (   r->ifindex == item->ifindex
+				    && nm_utils_ip6_address_same_prefix (&r6->gateway, &item->network, item->plen)) {
 					has_route_to_gw = TRUE;
 					break;
 				}
@@ -1271,17 +1286,73 @@ ip_route_add (NMPlatform *platform,
 		if (!has_route_to_gw) {
 			if (addr_family == AF_INET) {
 				nm_log_warn (LOGD_PLATFORM, "Fake platform: failure adding ip4-route '%d: %s/%d %d': Network Unreachable",
-				             rt->ifindex, nm_utils_inet4_ntop (rt4->network, NULL), rt->plen, rt->metric);
+				             r->ifindex, nm_utils_inet4_ntop (r4->network, NULL), r->plen, r->metric);
 			} else {
 				nm_log_warn (LOGD_PLATFORM, "Fake platform: failure adding ip6-route '%d: %s/%d %d': Network Unreachable",
-				             rt->ifindex, nm_utils_inet6_ntop (&rt6->network, NULL), rt->plen, rt->metric);
+				             r->ifindex, nm_utils_inet6_ntop (&r6->network, NULL), r->plen, r->metric);
 			}
 			return FALSE;
 		}
 	}
 
-	cache_op = nmp_cache_update_netlink (cache, obj, FALSE, &obj_old, &obj_new);
-	nm_platform_cache_update_emit_signal (platform, cache_op, obj_old, obj_new);
+	has_same_weak_id = FALSE;
+	nmp_cache_iter_for_each (&iter,
+	                         nm_platform_lookup_all (platform,
+	                                                 NMP_CACHE_ID_TYPE_ROUTES_BY_WEAK_ID,
+	                                                 obj),
+	                         &o) {
+		if (addr_family == AF_INET) {
+			if (nm_platform_ip4_route_cmp (NMP_OBJECT_CAST_IP4_ROUTE (o), r4, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) == 0)
+				continue;
+		} else {
+			if (nm_platform_ip6_route_cmp (NMP_OBJECT_CAST_IP6_ROUTE (o), r6, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) == 0)
+				continue;
+		}
+		has_same_weak_id = TRUE;
+	}
+
+	nlmsgflags = 0;
+	if (has_same_weak_id) {
+		switch (flags) {
+		case NMP_NLM_FLAG_REPLACE:
+			nlmsgflags = NLM_F_REPLACE;
+			break;
+		default:
+			g_assert_not_reached ();
+			break;
+		}
+	}
+
+	/* we manipulate the cache the same was as NMLinuxPlatform does it. */
+	cache_op = nmp_cache_update_netlink_route (cache,
+	                                           obj,
+	                                           FALSE,
+	                                           nlmsgflags,
+	                                           &obj_old,
+	                                           &obj_new,
+	                                           &obj_replace,
+	                                           NULL);
+	only_dirty = FALSE;
+	if (cache_op != NMP_CACHE_OPS_UNCHANGED) {
+		if (obj_replace) {
+			const NMDedupMultiEntry *entry_replace;
+
+			entry_replace = nmp_cache_lookup_entry (cache, obj_replace);
+			nm_assert (entry_replace && entry_replace->obj == obj_replace);
+			nm_dedup_multi_entry_set_dirty (entry_replace, TRUE);
+			only_dirty = TRUE;
+		}
+		nm_platform_cache_update_emit_signal (platform, cache_op, obj_old, obj_new);
+	}
+
+	if (obj_replace) {
+		cache_op = nmp_cache_remove (cache, obj_replace, TRUE, only_dirty, NULL);
+		if (cache_op != NMP_CACHE_OPS_UNCHANGED) {
+			nm_assert (cache_op == NMP_CACHE_OPS_REMOVED);
+			nm_platform_cache_update_emit_signal (platform, cache_op, obj_replace, NULL);
+		}
+	}
+
 	return TRUE;
 }
 

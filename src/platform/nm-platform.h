@@ -115,11 +115,6 @@ typedef enum {
 	 */
 	NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID,
 
-	/* FIXME: this type is what NMPCache currently uses for object identity.
-	 * Eventually, we want to use NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID,
-	 * which is the same what kernel does. */
-	NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID_CACHE,
-
 	/* NMIP4Config and NMIP6Config also track a list of routes. They have their
 	 * own notion of what equality means. Basically, they consider network/plen
 	 * for IPv4 and IPv6. */
@@ -1101,9 +1096,6 @@ gboolean nm_platform_ip6_address_delete (NMPlatform *self, int ifindex, struct i
 gboolean nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, GPtrArray *known_addresse);
 gboolean nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, const GPtrArray *known_addresses, gboolean keep_link_local);
 gboolean nm_platform_address_flush (NMPlatform *self, int ifindex);
-
-const NMPlatformIP4Route *nm_platform_ip4_route_get (NMPlatform *self, int ifindex, in_addr_t network, guint8 plen, guint32 metric);
-const NMPlatformIP6Route *nm_platform_ip6_route_get (NMPlatform *self, int ifindex, struct in6_addr network, guint8 plen, guint32 metric);
 
 gboolean nm_platform_ip4_route_add (NMPlatform *self, NMPNlmFlags flags, const NMPlatformIP4Route *route);
 gboolean nm_platform_ip6_route_add (NMPlatform *self, NMPNlmFlags flags, const NMPlatformIP6Route *route);

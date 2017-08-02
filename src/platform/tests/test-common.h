@@ -121,10 +121,45 @@ gboolean nmtstp_run_command_check_external (int external_command);
 
 /*****************************************************************************/
 
-gboolean nmtstp_ip4_route_exists (const char *ifname, guint32 network, int plen, guint32 metric);
+const NMPlatformIP4Route *_nmtstp_assert_ip4_route_exists (const char *file,
+                                                           guint line,
+                                                           const char *func,
+                                                           NMPlatform *platform,
+                                                           int c_exists,
+                                                           const char *ifname,
+                                                           guint32 network,
+                                                           int plen,
+                                                           guint32 metric,
+                                                           guint8 tos);
+#define nmtstp_assert_ip4_route_exists(platform, c_exists, ifname, network, plen, metric, tos) _nmtstp_assert_ip4_route_exists (__FILE__, __LINE__, G_STRFUNC, platform, c_exists, ifname, network, plen, metric, tos)
 
-void _nmtstp_assert_ip4_route_exists (const char *file, guint line, const char *func, NMPlatform *platform, gboolean exists, const char *ifname, guint32 network, int plen, guint32 metric);
-#define nmtstp_assert_ip4_route_exists(platform, exists, ifname, network, plen, metric) _nmtstp_assert_ip4_route_exists (__FILE__, __LINE__, G_STRFUNC, platform, exists, ifname, network, plen, metric)
+const NMPlatformIP4Route *nmtstp_ip4_route_get (NMPlatform *platform,
+                                                int ifindex,
+                                                guint32 network,
+                                                int plen,
+                                                guint32 metric,
+                                                guint8 tos);
+
+const NMPlatformIP6Route *_nmtstp_assert_ip6_route_exists (const char *file,
+                                                           guint line,
+                                                           const char *func,
+                                                           NMPlatform *platform,
+                                                           int c_exists,
+                                                           const char *ifname,
+                                                           const struct in6_addr *network,
+                                                           guint plen,
+                                                           guint32 metric,
+                                                           const struct in6_addr *src,
+                                                           guint8 src_plen);
+#define nmtstp_assert_ip6_route_exists(platform, c_exists, ifname, network, plen, metric, src, src_plen) _nmtstp_assert_ip6_route_exists (__FILE__, __LINE__, G_STRFUNC, platform, c_exists, ifname, network, plen, metric, src, src_plen)
+
+const NMPlatformIP6Route *nmtstp_ip6_route_get (NMPlatform *platform,
+                                                int ifindex,
+                                                const struct in6_addr *network,
+                                                guint plen,
+                                                guint32 metric,
+                                                const struct in6_addr *src,
+                                                guint8 src_plen);
 
 /*****************************************************************************/
 

@@ -370,6 +370,30 @@ GPtrArray *nm_dedup_multi_objs_to_ptr_array_head (const NMDedupMultiHeadEntry *h
                                                   NMDedupMultiFcnSelectPredicate predicate,
                                                   gpointer user_data);
 
+static inline const NMDedupMultiEntry *
+nm_dedup_multi_head_entry_get_idx (const NMDedupMultiHeadEntry *head_entry,
+                                   int idx)
+{
+	CList *iter;
+
+	if (head_entry) {
+		if (idx >= 0) {
+			c_list_for_each (iter, &head_entry->lst_entries_head) {
+				if (idx-- == 0)
+					return c_list_entry (iter, NMDedupMultiEntry, lst_entries);
+			}
+		} else {
+			for (iter = head_entry->lst_entries_head.prev;
+			     iter != &head_entry->lst_entries_head;
+			     iter = iter->prev) {
+				if (++idx == 0)
+					return c_list_entry (iter, NMDedupMultiEntry, lst_entries);
+			}
+		}
+	}
+	return NULL;
+}
+
 static inline void
 nm_dedup_multi_head_entry_sort (const NMDedupMultiHeadEntry *head_entry,
                                 CListSortCmp cmp,
