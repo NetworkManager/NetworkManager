@@ -380,7 +380,7 @@ get_vpn_secret_flags (NMSettingVpn *s_vpn, const char *secret_name)
 static void
 add_vpn_secret_helper (GPtrArray *secrets, NMSettingVpn *s_vpn, const char *name, const char *ui_name)
 {
-	NMSecretAgentSimpleSecret *secret;
+	NMSecretAgentSimpleSecret *secret = NULL;
 	NMSettingSecretFlags flags;
 	int i;
 
@@ -392,7 +392,18 @@ add_vpn_secret_helper (GPtrArray *secrets, NMSettingVpn *s_vpn, const char *name
 		                                            NM_SETTING (s_vpn),
 		                                            name,
 		                                            nm_setting_vpn_get_service_type (s_vpn));
+	} else if (g_str_has_prefix (name, NM_VPN_INTERACTIVE_SECRET_PREFIX)) {
+		secret = nm_secret_agent_simple_secret_new (NM_SECRET_AGENT_SECRET_TYPE_VPN_SECRET,
+		                                            ui_name == name
+		                                                ? name + NM_STRLEN (NM_VPN_INTERACTIVE_SECRET_PREFIX)
+		                                                : ui_name,
+		                                            NM_SETTING (s_vpn),
+		                                            name,
+		                                            nm_setting_vpn_get_service_type (s_vpn));
+		secret->is_secret = g_str_has_prefix (name + NM_STRLEN (NM_VPN_INTERACTIVE_SECRET_PREFIX), "secret");
+	}
 
+	if (secret) {
 		/* Check for duplicates */
 		for (i = 0; i < secrets->len; i++) {
 			NMSecretAgentSimpleSecret *s = secrets->pdata[i];
@@ -578,12 +589,12 @@ request_secrets_from_ui (NMSecretAgentSimpleRequest *request)
 		} else
 			ok = FALSE;
 	} else if (nm_connection_is_type (request->connection, NM_SETTING_VPN_SETTING_NAME)) {
-		title = _("VPN password required");
+		title = _("VPN authentication");
 		msg = NULL;
 
 		ok = add_vpn_secrets (request, secrets, &msg);
 		if (!msg)
-			msg = g_strdup_printf (_("A password is required to connect to '%s'."),
+			msg = g_strdup_printf (_("Secrets are required for VPN '%s'."),
 			                       nm_connection_get_id (request->connection));
 	} else
 		ok = FALSE;
