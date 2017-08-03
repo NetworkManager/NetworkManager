@@ -2018,9 +2018,13 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 			memcpy (&obj->ip6_route.pref_src, nla_data (tb[RTA_PREFSRC]), addr_len);
 	}
 
-	if (!is_v4 && tb[RTA_SRC]) {
-		_check_addr_or_errout (tb, RTA_SRC, addr_len);
-		memcpy (&obj->ip6_route.src, nla_data (tb[RTA_SRC]), addr_len);
+	if (is_v4)
+		obj->ip4_route.tos = rtm->rtm_tos;
+	else {
+		if (tb[RTA_SRC]) {
+			_check_addr_or_errout (tb, RTA_SRC, addr_len);
+			memcpy (&obj->ip6_route.src, nla_data (tb[RTA_SRC]), addr_len);
+		}
 		obj->ip6_route.src_plen = rtm->rtm_src_len;
 	}
 
@@ -2030,12 +2034,11 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 	obj->ip_route.initcwnd = initcwnd;
 	obj->ip_route.initrwnd = initrwnd;
 	obj->ip_route.mtu = mtu;
-	obj->ip_route.tos = rtm->rtm_tos;
-	obj->ip_route.lock_window = NM_FLAGS_HAS (lock, 1 << RTAX_WINDOW);
-	obj->ip_route.lock_cwnd = NM_FLAGS_HAS (lock, 1 << RTAX_CWND);
+	obj->ip_route.lock_window   = NM_FLAGS_HAS (lock, 1 << RTAX_WINDOW);
+	obj->ip_route.lock_cwnd     = NM_FLAGS_HAS (lock, 1 << RTAX_CWND);
 	obj->ip_route.lock_initcwnd = NM_FLAGS_HAS (lock, 1 << RTAX_INITCWND);
 	obj->ip_route.lock_initrwnd = NM_FLAGS_HAS (lock, 1 << RTAX_INITRWND);
-	obj->ip_route.lock_mtu  = NM_FLAGS_HAS (lock, 1 << RTAX_MTU);
+	obj->ip_route.lock_mtu      = NM_FLAGS_HAS (lock, 1 << RTAX_MTU);
 
 	if (NM_FLAGS_HAS (rtm->rtm_flags, RTM_F_CLONED)) {
 		/* we must not straight way reject cloned routes, because we might have cached
@@ -2414,38 +2417,42 @@ nla_put_failure:
 	g_return_val_if_reached (NULL);
 }
 
+static guint32
+ip_route_get_lock_flag (const NMPlatformIPRoute *route)
+{
+	return   (((guint32) route->lock_window)   << RTAX_WINDOW)
+	       | (((guint32) route->lock_cwnd)     << RTAX_CWND)
+	       | (((guint32) route->lock_initcwnd) << RTAX_INITCWND)
+	       | (((guint32) route->lock_initrwnd) << RTAX_INITRWND)
+	       | (((guint32) route->lock_mtu)      << RTAX_MTU);
+}
+
 /* Copied and modified from libnl3's build_route_msg() and rtnl_route_build_msg(). */
 static struct nl_msg *
 _nl_msg_new_route (int nlmsg_type,
-                   int nlmsg_flags,
-                   const NMPObject *obj,
-                   NMIPConfigSource source,
-                   unsigned char scope,
-                   gconstpointer gateway,
-                   guint32 mss,
-                   gconstpointer pref_src,
-                   gconstpointer src,
-                   guint8 src_plen,
-                   guint32 window,
-                   guint32 cwnd,
-                   guint32 initcwnd,
-                   guint32 initrwnd,
-                   guint32 mtu,
-                   guint32 lock)
+                   NMPNlmFlags nlmsgflags,
+                   const NMPObject *obj)
 {
 	struct nl_msg *msg;
 	const NMPClass *klass = NMP_OBJECT_GET_CLASS (obj);
 	gboolean is_v4 = klass->addr_family == AF_INET;
+	const guint32 lock = ip_route_get_lock_flag (NMP_OBJECT_CAST_IP_ROUTE (obj));
 	struct rtmsg rtmsg = {
 		.rtm_family = klass->addr_family,
-		.rtm_tos = obj->ip_route.tos,
+		.rtm_tos = is_v4
+		           ? obj->ip4_route.tos
+		           : 0,
 		.rtm_table = RT_TABLE_MAIN, /* omit setting RTA_TABLE attribute */
-		.rtm_protocol = nmp_utils_ip_config_source_coerce_to_rtprot (source),
-		.rtm_scope = scope,
+		.rtm_protocol = nmp_utils_ip_config_source_coerce_to_rtprot (obj->ip_route.rt_source),
+		.rtm_scope = is_v4
+		             ? nm_platform_route_scope_inv (obj->ip4_route.scope_inv)
+		             : RT_SCOPE_NOWHERE,
 		.rtm_type = RTN_UNICAST,
 		.rtm_flags = 0,
 		.rtm_dst_len = obj->ip_route.plen,
-		.rtm_src_len = src ? src_plen : 0,
+		.rtm_src_len = is_v4
+		               ? 0
+		               : NMP_OBJECT_CAST_IP6_ROUTE (obj)->src_plen,
 	};
 
 	gsize addr_len;
@@ -2453,7 +2460,8 @@ _nl_msg_new_route (int nlmsg_type,
 	nm_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
 	nm_assert (NM_IN_SET (nlmsg_type, RTM_NEWROUTE, RTM_DELROUTE));
 
-	msg = nlmsg_alloc_simple (nlmsg_type, nlmsg_flags);
+	nm_assert (((NMPNlmFlags) ((int) nlmsgflags)) == nlmsgflags);
+	msg = nlmsg_alloc_simple (nlmsg_type, (int) nlmsgflags);
 	if (!msg)
 		g_return_val_if_reached (NULL);
 
@@ -2469,33 +2477,46 @@ _nl_msg_new_route (int nlmsg_type,
 	           ? (gconstpointer) &obj->ip4_route.network
 	           : (gconstpointer) &obj->ip6_route.network);
 
-	if (src)
-		NLA_PUT (msg, RTA_SRC, addr_len, src);
+	if (!is_v4) {
+		if (!IN6_IS_ADDR_UNSPECIFIED (&NMP_OBJECT_CAST_IP6_ROUTE (obj)->src))
+			NLA_PUT (msg, RTA_SRC, addr_len, &obj->ip6_route.src);
+	}
 
 	NLA_PUT_U32 (msg, RTA_PRIORITY, obj->ip_route.metric);
 
-	if (pref_src)
-		NLA_PUT (msg, RTA_PREFSRC, addr_len, pref_src);
+	if (is_v4) {
+		if (NMP_OBJECT_CAST_IP4_ROUTE (obj)->pref_src)
+			NLA_PUT (msg, RTA_PREFSRC, addr_len, &obj->ip4_route.pref_src);
+	} else {
+		if (!IN6_IS_ADDR_UNSPECIFIED (&NMP_OBJECT_CAST_IP6_ROUTE (obj)->pref_src))
+			NLA_PUT (msg, RTA_PREFSRC, addr_len, &obj->ip6_route.pref_src);
+	}
 
-	if (mss || window || cwnd || initcwnd || initrwnd || mtu || lock) {
+	if (   obj->ip_route.mss
+	    || obj->ip_route.window
+	    || obj->ip_route.cwnd
+	    || obj->ip_route.initcwnd
+	    || obj->ip_route.initrwnd
+	    || obj->ip_route.mtu
+	    || lock) {
 		struct nlattr *metrics;
 
 		metrics = nla_nest_start (msg, RTA_METRICS);
 		if (!metrics)
 			goto nla_put_failure;
 
-		if (mss)
-			NLA_PUT_U32 (msg, RTAX_ADVMSS, mss);
-		if (window)
-			NLA_PUT_U32 (msg, RTAX_WINDOW, window);
-		if (cwnd)
-			NLA_PUT_U32 (msg, RTAX_CWND, cwnd);
-		if (initcwnd)
-			NLA_PUT_U32 (msg, RTAX_INITCWND, initcwnd);
-		if (initrwnd)
-			NLA_PUT_U32 (msg, RTAX_INITRWND, initrwnd);
-		if (mtu)
-			NLA_PUT_U32 (msg, RTAX_MTU, mtu);
+		if (obj->ip_route.mss)
+			NLA_PUT_U32 (msg, RTAX_ADVMSS, obj->ip_route.mss);
+		if (obj->ip_route.window)
+			NLA_PUT_U32 (msg, RTAX_WINDOW, obj->ip_route.window);
+		if (obj->ip_route.cwnd)
+			NLA_PUT_U32 (msg, RTAX_CWND, obj->ip_route.cwnd);
+		if (obj->ip_route.initcwnd)
+			NLA_PUT_U32 (msg, RTAX_INITCWND, obj->ip_route.initcwnd);
+		if (obj->ip_route.initrwnd)
+			NLA_PUT_U32 (msg, RTAX_INITRWND, obj->ip_route.initrwnd);
+		if (obj->ip_route.mtu)
+			NLA_PUT_U32 (msg, RTAX_MTU, obj->ip_route.mtu);
 		if (lock)
 			NLA_PUT_U32 (msg, RTAX_LOCK, lock);
 
@@ -2503,9 +2524,12 @@ _nl_msg_new_route (int nlmsg_type,
 	}
 
 	/* We currently don't have need for multi-hop routes... */
-	if (   gateway
-	    && memcmp (gateway, &nm_ip_addr_zero, addr_len) != 0)
-		NLA_PUT (msg, RTA_GATEWAY, addr_len, gateway);
+	if (is_v4) {
+		NLA_PUT (msg, RTA_GATEWAY, addr_len, &obj->ip4_route.gateway);
+	} else {
+		if (!IN6_IS_ADDR_UNSPECIFIED (&obj->ip6_route.gateway))
+			NLA_PUT (msg, RTA_GATEWAY, addr_len, &obj->ip6_route.gateway);
+	}
 	NLA_PUT_U32 (msg, RTA_OIF, obj->ip_route.ifindex);
 
 	return msg;
@@ -5675,73 +5699,40 @@ ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, gui
 
 /*****************************************************************************/
 
-static guint32
-ip_route_get_lock_flag (NMPlatformIPRoute *route)
-{
-	return   (((guint32) route->lock_window) << RTAX_WINDOW)
-	       | (((guint32) route->lock_cwnd) << RTAX_CWND)
-	       | (((guint32) route->lock_initcwnd) << RTAX_INITCWND)
-	       | (((guint32) route->lock_initrwnd) << RTAX_INITRWND)
-	       | (((guint32) route->lock_mtu) << RTAX_MTU);
-}
-
 static gboolean
-ip4_route_add (NMPlatform *platform, const NMPlatformIP4Route *route)
+ip_route_add (NMPlatform *platform,
+              NMPNlmFlags flags,
+              int addr_family,
+              const NMPlatformIPRoute *route)
 {
-	NMPObject obj;
-	NMPlatformIP4Route *r;
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-
-	nmp_object_stackinit (&obj, NMP_OBJECT_TYPE_IP4_ROUTE, (const NMPlatformObject *) route);
-	r = NMP_OBJECT_CAST_IP4_ROUTE (&obj);
-	r->network = nm_utils_ip4_address_clear_host_address (r->network, r->plen);
-
-	nlmsg = _nl_msg_new_route (RTM_NEWROUTE,
-	                           NLM_F_CREATE | NLM_F_REPLACE,
-	                           &obj,
-	                           route->rt_source,
-	                           route->gateway ? RT_SCOPE_UNIVERSE : RT_SCOPE_LINK,
-	                           &route->gateway,
-	                           route->mss,
-	                           route->pref_src ? &route->pref_src : NULL,
-	                           NULL,
-	                           0,
-	                           route->window,
-	                           route->cwnd,
-	                           route->initcwnd,
-	                           route->initrwnd,
-	                           route->mtu,
-	                           ip_route_get_lock_flag ((NMPlatformIPRoute *) route));
-	return do_add_addrroute (platform, &obj, nlmsg);
-}
-
-static gboolean
-ip6_route_add (NMPlatform *platform, const NMPlatformIP6Route *route)
-{
 	NMPObject obj;
-	NMPlatformIP6Route *r;
-	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+	NMPlatformIP4Route *r4;
+	NMPlatformIP6Route *r6;
 
-	nmp_object_stackinit (&obj, NMP_OBJECT_TYPE_IP6_ROUTE, (const NMPlatformObject *) route);
-	r = NMP_OBJECT_CAST_IP6_ROUTE (&obj);
-	nm_utils_ip6_address_clear_host_address (&r->network, &r->network, r->plen);
+	switch (addr_family) {
+	case AF_INET:
+		nmp_object_stackinit (&obj, NMP_OBJECT_TYPE_IP4_ROUTE, (const NMPlatformObject *) route);
+		r4 = NMP_OBJECT_CAST_IP4_ROUTE (&obj);
+		r4->network = nm_utils_ip4_address_clear_host_address (r4->network, r4->plen);
+		r4->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (r4->rt_source),
+		r4->scope_inv = nm_platform_route_scope_inv (!r4->gateway
+		                                             ? RT_SCOPE_LINK : RT_SCOPE_UNIVERSE);
+		break;
+	case AF_INET6:
+		nmp_object_stackinit (&obj, NMP_OBJECT_TYPE_IP6_ROUTE, (const NMPlatformObject *) route);
+		r6 = NMP_OBJECT_CAST_IP6_ROUTE (&obj);
+		nm_utils_ip6_address_clear_host_address (&r6->network, &r6->network, r6->plen);
+		r6->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (r6->rt_source),
+		nm_utils_ip6_address_clear_host_address (&r6->src, &r6->src, r6->src_plen);
+		break;
+	default:
+		nm_assert_not_reached ();
+	}
 
-	nlmsg = _nl_msg_new_route (RTM_NEWROUTE,
-	                           NLM_F_CREATE | NLM_F_REPLACE,
-	                           &obj,
-	                           route->rt_source,
-	                           IN6_IS_ADDR_UNSPECIFIED (&route->gateway) ? RT_SCOPE_LINK : RT_SCOPE_UNIVERSE,
-	                           &route->gateway,
-	                           route->mss,
-	                           !IN6_IS_ADDR_UNSPECIFIED (&route->pref_src) ? &route->pref_src : NULL,
-	                           !IN6_IS_ADDR_UNSPECIFIED (&route->src) ? &route->src : NULL,
-	                           route->src_plen,
-	                           route->window,
-	                           route->cwnd,
-	                           route->initcwnd,
-	                           route->initrwnd,
-	                           route->mtu,
-	                           ip_route_get_lock_flag ((NMPlatformIPRoute *) route));
+	nlmsg = _nl_msg_new_route (RTM_NEWROUTE, flags, &obj);
+	if (!nlmsg)
+		g_return_val_if_reached (FALSE);
 	return do_add_addrroute (platform, &obj, nlmsg);
 }
 
@@ -5789,24 +5780,9 @@ ip_route_delete (NMPlatform *platform,
 		}
 	}
 
-	nlmsg = _nl_msg_new_route (RTM_DELROUTE,
-	                           0,
-	                           obj,
-	                           NM_IP_CONFIG_SOURCE_UNKNOWN,
-	                           RT_SCOPE_NOWHERE,
-	                           NULL,
-	                           0,
-	                           NULL,
-	                           NULL,
-	                           0,
-	                           0,
-	                           0,
-	                           0,
-	                           0,
-	                           0,
-	                           0);
+	nlmsg = _nl_msg_new_route (RTM_DELROUTE, 0, obj);
 	if (!nlmsg)
-		return FALSE;
+		g_return_val_if_reached (FALSE);
 	return do_delete_object (platform, obj, nlmsg);
 }
 
@@ -6537,8 +6513,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->ip4_address_delete = ip4_address_delete;
 	platform_class->ip6_address_delete = ip6_address_delete;
 
-	platform_class->ip4_route_add = ip4_route_add;
-	platform_class->ip6_route_add = ip6_route_add;
+	platform_class->ip_route_add = ip_route_add;
 	platform_class->ip_route_delete = ip_route_delete;
 
 	platform_class->check_support_kernel_extended_ifa_flags = check_support_kernel_extended_ifa_flags;

@@ -3409,53 +3409,60 @@ nm_platform_address_flush (NMPlatform *self, int ifindex)
 
 /*****************************************************************************/
 
-/**
- * nm_platform_ip4_route_add:
- * @self:
- * @route:
- *
- * For kernel, a gateway can be either explicitly set or left
- * at zero (0.0.0.0). In addition, there is the scope of the IPv4
- * route.
- * When adding a route with
- *   $ ip route add default dev $IFNAME
- * the resulting route will have gateway 0.0.0.0 and scope "link".
- * Contrary to
- *   $ ip route add default via 0.0.0.0 dev $IFNAME
- * which adds the route with scope "global".
- *
- * NetworkManager's Platform can currently only add on-link-routes with scope
- * "link" (and gateway 0.0.0.0) or gateway-routes with scope "global" (and
- * gateway not 0.0.0.0).
- *
- * It does not support adding globally scoped routes via 0.0.0.0.
- *
- * Returns: %TRUE in case of success.
- */
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_nmp_nlm_flag_to_string_lookup, NMPNlmFlags,
+	NM_UTILS_LOOKUP_DEFAULT (NULL),
+	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_ADD,     "add"),
+	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_CHANGE,  "change"),
+	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_REPLACE, "replace"),
+	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_PREPEND, "prepend"),
+	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_APPEND,  "append"),
+	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_TEST,    "test"),
+	NM_UTILS_LOOKUP_ITEM_IGNORE (NMP_NLM_FLAG_F_APPEND),
+);
+
+#define _nmp_nlm_flag_to_string(flags) \
+	({ \
+		NMPNlmFlags _flags = (flags); \
+		\
+		_nmp_nlm_flag_to_string_lookup (flags) ?: nm_sprintf_bufa (100, "new[0x%x]", (unsigned) _flags); \
+	})
+
 gboolean
-nm_platform_ip4_route_add (NMPlatform *self, const NMPlatformIP4Route *route)
+nm_platform_ip4_route_add (NMPlatform *self,
+                           NMPNlmFlags flags,
+                           const NMPlatformIP4Route *route)
 {
+	char sbuf[sizeof (_nm_utils_to_string_buffer)];
+
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (route, FALSE);
 	g_return_val_if_fail (route->plen <= 32, FALSE);
 
-	_LOGD ("route: adding or updating IPv4 route: %s", nm_platform_ip4_route_to_string (route, NULL, 0));
+	_LOGD ("route: %-10s IPv4 route: %s",
+	       _nmp_nlm_flag_to_string (flags),
+	       nm_platform_ip4_route_to_string (route, sbuf, sizeof (sbuf)));
 
-	return klass->ip4_route_add (self, route);
+	return klass->ip_route_add (self, flags, AF_INET, (const NMPlatformIPRoute *) route);
 }
 
 gboolean
-nm_platform_ip6_route_add (NMPlatform *self, const NMPlatformIP6Route *route)
+nm_platform_ip6_route_add (NMPlatform *self,
+                           NMPNlmFlags flags,
+                           const NMPlatformIP6Route *route)
 {
+	char sbuf[sizeof (_nm_utils_to_string_buffer)];
+
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (route, FALSE);
 	g_return_val_if_fail (route->plen <= 128, FALSE);
 
-	_LOGD ("route: adding or updating IPv6 route: %s", nm_platform_ip6_route_to_string (route, NULL, 0));
+	_LOGD ("route: %-10s IPv6 route: %s",
+	       _nmp_nlm_flag_to_string (flags),
+	       nm_platform_ip6_route_to_string (route, sbuf, sizeof (sbuf)));
 
-	return klass->ip6_route_add (self, route);
+	return klass->ip_route_add (self, flags, AF_INET6, (const NMPlatformIPRoute *) route);
 }
 
 gboolean
@@ -3467,7 +3474,7 @@ nm_platform_ip_route_delete (NMPlatform *self,
 	nm_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ROUTE,
 	                                                 NMP_OBJECT_TYPE_IP6_ROUTE));
 
-	_LOGD ("route: deleting IPv%c route %s",
+	_LOGD ("route: delete     IPv%c route %s",
 	       NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_IP4_ROUTE ? '4' : '6',
 	       nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 
@@ -4184,18 +4191,6 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsi
 
 	_to_string_dev (NULL, route->ifindex, str_dev, sizeof (str_dev));
 
-	if (route->tos)
-		nm_sprintf_buf (str_tos, " tos 0x%x", (unsigned) route->tos);
-	if (route->window)
-		nm_sprintf_buf (str_window, " window %s%"G_GUINT32_FORMAT, route->lock_window ? "lock " : "", route->window);
-	if (route->cwnd)
-		nm_sprintf_buf (str_cwnd, " cwnd %s%"G_GUINT32_FORMAT, route->lock_cwnd ? "lock " : "", route->cwnd);
-	if (route->initcwnd)
-		nm_sprintf_buf (str_initcwnd, " initcwnd %s%"G_GUINT32_FORMAT, route->lock_initcwnd ? "lock " : "", route->initcwnd);
-	if (route->initrwnd)
-		nm_sprintf_buf (str_initrwnd, " initrwnd %s%"G_GUINT32_FORMAT, route->lock_initrwnd ? "lock " : "", route->initrwnd);
-	if (route->mtu)
-		nm_sprintf_buf (str_mtu, " mtu %s%"G_GUINT32_FORMAT, route->lock_mtu ? "lock " : "", route->mtu);
 
 	g_snprintf (buf, len,
 	            "%s/%d"
@@ -4226,12 +4221,12 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsi
 	            route->scope_inv ? (nm_platform_route_scope2str (nm_platform_route_scope_inv (route->scope_inv), str_scope, sizeof (str_scope))) : "",
 	            route->pref_src ? " pref-src " : "",
 	            route->pref_src ? inet_ntop (AF_INET, &route->pref_src, s_pref_src, sizeof(s_pref_src)) : "",
-	            route->tos ? str_tos : "",
-	            route->window ? str_window : "",
-	            route->cwnd ? str_cwnd : "",
-	            route->initcwnd ? str_initcwnd : "",
-	            route->initrwnd ? str_initrwnd : "",
-	            route->mtu ? str_mtu : "");
+	            route->tos ? nm_sprintf_buf (str_tos, " tos 0x%x", (unsigned) route->tos) : "",
+	            route->window   || route->lock_window   ? nm_sprintf_buf (str_window,   " window %s%"G_GUINT32_FORMAT,   route->lock_window   ? "lock " : "", route->window)   : "",
+	            route->cwnd     || route->lock_cwnd     ? nm_sprintf_buf (str_cwnd,     " cwnd %s%"G_GUINT32_FORMAT,     route->lock_cwnd     ? "lock " : "", route->cwnd)     : "",
+	            route->initcwnd || route->lock_initcwnd ? nm_sprintf_buf (str_initcwnd, " initcwnd %s%"G_GUINT32_FORMAT, route->lock_initcwnd ? "lock " : "", route->initcwnd) : "",
+	            route->initrwnd || route->lock_initrwnd ? nm_sprintf_buf (str_initrwnd, " initrwnd %s%"G_GUINT32_FORMAT, route->lock_initrwnd ? "lock " : "", route->initrwnd) : "",
+	            route->mtu      || route->lock_mtu      ? nm_sprintf_buf (str_mtu,      " mtu %s%"G_GUINT32_FORMAT,      route->lock_mtu      ? "lock " : "", route->mtu)      : "");
 	return buf;
 }
 
@@ -4253,7 +4248,7 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	char s_network[INET6_ADDRSTRLEN], s_gateway[INET6_ADDRSTRLEN], s_pref_src[INET6_ADDRSTRLEN];
 	char s_src[INET6_ADDRSTRLEN];
 	char str_dev[TO_STRING_DEV_BUF_SIZE], s_source[50];
-	char str_tos[32], str_window[32], str_cwnd[32], str_initcwnd[32], str_initrwnd[32], str_mtu[32];
+	char str_window[32], str_cwnd[32], str_initcwnd[32], str_initrwnd[32], str_mtu[32];
 
 	if (!nm_utils_to_string_buffer_init_null (route, &buf, &len))
 		return buf;
@@ -4269,19 +4264,6 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 
 	_to_string_dev (NULL, route->ifindex, str_dev, sizeof (str_dev));
 
-	if (route->tos)
-		nm_sprintf_buf (str_tos, " tos 0x%x", (unsigned) route->tos);
-	if (route->window)
-		nm_sprintf_buf (str_window, " window %s%"G_GUINT32_FORMAT, route->lock_window ? "lock " : "", route->window);
-	if (route->cwnd)
-		nm_sprintf_buf (str_cwnd, " cwnd %s%"G_GUINT32_FORMAT, route->lock_cwnd ? "lock " : "", route->cwnd);
-	if (route->initcwnd)
-		nm_sprintf_buf (str_initcwnd, " initcwnd %s%"G_GUINT32_FORMAT, route->lock_initcwnd ? "lock " : "", route->initcwnd);
-	if (route->initrwnd)
-		nm_sprintf_buf (str_initrwnd, " initrwnd %s%"G_GUINT32_FORMAT, route->lock_initrwnd ? "lock " : "", route->initrwnd);
-	if (route->mtu)
-		nm_sprintf_buf (str_mtu, " mtu %s%"G_GUINT32_FORMAT, route->lock_mtu ? "lock " : "", route->mtu);
-
 	g_snprintf (buf, len,
 	            "%s/%d"
 	            " via %s"
@@ -4292,7 +4274,6 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	            " src %s/%u" /* source */
 	            "%s" /* cloned */
 	            "%s%s" /* pref-src */
-	            "%s" /* tos */
 	            "%s" /* window */
 	            "%s" /* cwnd */
 	            "%s" /* initcwnd */
@@ -4310,90 +4291,14 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	            route->rt_cloned ? " cloned" : "",
 	            s_pref_src[0] ? " pref-src " : "",
 	            s_pref_src[0] ? s_pref_src : "",
-	            route->tos ? str_tos : "",
-	            route->window ? str_window : "",
-	            route->cwnd ? str_cwnd : "",
-	            route->initcwnd ? str_initcwnd : "",
-	            route->initrwnd ? str_initrwnd : "",
-	            route->mtu ? str_mtu : "");
+	            route->window   || route->lock_window   ? nm_sprintf_buf (str_window,   " window %s%"G_GUINT32_FORMAT,   route->lock_window   ? "lock " : "", route->window)   : "",
+	            route->cwnd     || route->lock_cwnd     ? nm_sprintf_buf (str_cwnd,     " cwnd %s%"G_GUINT32_FORMAT,     route->lock_cwnd     ? "lock " : "", route->cwnd)     : "",
+	            route->initcwnd || route->lock_initcwnd ? nm_sprintf_buf (str_initcwnd, " initcwnd %s%"G_GUINT32_FORMAT, route->lock_initcwnd ? "lock " : "", route->initcwnd) : "",
+	            route->initrwnd || route->lock_initrwnd ? nm_sprintf_buf (str_initrwnd, " initrwnd %s%"G_GUINT32_FORMAT, route->lock_initrwnd ? "lock " : "", route->initrwnd) : "",
+	            route->mtu      || route->lock_mtu      ? nm_sprintf_buf (str_mtu,      " mtu %s%"G_GUINT32_FORMAT,      route->lock_mtu      ? "lock " : "", route->mtu)      : "");
 
 	return buf;
 }
-
-#define _CMP_SELF(a, b)                                     \
-    G_STMT_START {                                          \
-        if ((a) == (b))                                     \
-            return 0;                                       \
-        if (!(a))                                           \
-            return -1;                                      \
-        if (!(b))                                           \
-            return 1;                                       \
-    } G_STMT_END
-
-#define _CMP_DIRECT(a, b)                                   \
-    G_STMT_START {                                          \
-        if ((a) != (b))                                     \
-            return ((a) < (b)) ? -1 : 1;                    \
-    } G_STMT_END
-
-#define _CMP_DIRECT_MEMCMP(a, b, size)                      \
-    G_STMT_START {                                          \
-        int c = memcmp ((a), (b), (size));                  \
-        if (c != 0)                                         \
-            return c < 0 ? -1 : 1;                          \
-    } G_STMT_END
-
-#define _CMP_FIELD(a, b, field)                             \
-    G_STMT_START {                                          \
-        if (((a)->field) != ((b)->field))                   \
-            return (((a)->field) < ((b)->field)) ? -1 : 1;  \
-    } G_STMT_END
-
-#define _CMP_FIELD_BOOL(a, b, field)                        \
-    G_STMT_START {                                          \
-        if ((!((a)->field)) != (!((b)->field)))                 \
-            return ((!((a)->field)) < (!((b)->field))) ? -1 : 1; \
-    } G_STMT_END
-
-#define _CMP_FIELD_STR(a, b, field)                         \
-    G_STMT_START {                                          \
-        int c = strcmp ((a)->field, (b)->field);            \
-        if (c != 0)                                         \
-            return c < 0 ? -1 : 1;                          \
-    } G_STMT_END
-
-#define _CMP_FIELD_STR_INTERNED(a, b, field)                \
-    G_STMT_START {                                          \
-        if (((a)->field) != ((b)->field)) {                 \
-            /* just to be sure, also do a strcmp() if the pointers don't match */ \
-            int c = g_strcmp0 ((a)->field, (b)->field);     \
-            if (c != 0)                                     \
-                return c < 0 ? -1 : 1;                      \
-        } \
-    } G_STMT_END
-
-#define _CMP_FIELD_STR0(a, b, field)                        \
-    G_STMT_START {                                          \
-        int c = g_strcmp0 ((a)->field, (b)->field);         \
-        if (c != 0)                                         \
-            return c < 0 ? -1 : 1;                          \
-    } G_STMT_END
-
-#define _CMP_FIELD_MEMCMP_LEN(a, b, field, len)             \
-    G_STMT_START {                                          \
-        int c = memcmp (&((a)->field), &((b)->field),       \
-                        MIN (len, sizeof ((a)->field)));    \
-        if (c != 0)                                         \
-            return c < 0 ? -1 : 1;                          \
-    } G_STMT_END
-
-#define _CMP_FIELD_MEMCMP(a, b, field)                      \
-    G_STMT_START {                                          \
-        int c = memcmp (&((a)->field), &((b)->field),       \
-                        sizeof ((a)->field));               \
-        if (c != 0)                                         \
-            return c < 0 ? -1 : 1;                          \
-    } G_STMT_END
 
 guint
 nm_platform_link_hash (const NMPlatformLink *obj)
@@ -4431,28 +4336,28 @@ nm_platform_link_hash (const NMPlatformLink *obj)
 int
 nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 {
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, ifindex);
-	_CMP_FIELD (a, b, type);
-	_CMP_FIELD_STR (a, b, name);
-	_CMP_FIELD (a, b, master);
-	_CMP_FIELD (a, b, parent);
-	_CMP_FIELD (a, b, n_ifi_flags);
-	_CMP_FIELD (a, b, connected);
-	_CMP_FIELD (a, b, mtu);
-	_CMP_FIELD_BOOL (a, b, initialized);
-	_CMP_FIELD (a, b, arptype);
-	_CMP_FIELD (a, b, addr.len);
-	_CMP_FIELD (a, b, inet6_addr_gen_mode_inv);
-	_CMP_FIELD_STR_INTERNED (a, b, kind);
-	_CMP_FIELD_STR_INTERNED (a, b, driver);
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, ifindex);
+	NM_CMP_FIELD (a, b, type);
+	NM_CMP_FIELD_STR (a, b, name);
+	NM_CMP_FIELD (a, b, master);
+	NM_CMP_FIELD (a, b, parent);
+	NM_CMP_FIELD (a, b, n_ifi_flags);
+	NM_CMP_FIELD_UNSAFE (a, b, connected);
+	NM_CMP_FIELD (a, b, mtu);
+	NM_CMP_FIELD_BOOL (a, b, initialized);
+	NM_CMP_FIELD (a, b, arptype);
+	NM_CMP_FIELD (a, b, addr.len);
+	NM_CMP_FIELD (a, b, inet6_addr_gen_mode_inv);
+	NM_CMP_FIELD_STR_INTERNED (a, b, kind);
+	NM_CMP_FIELD_STR_INTERNED (a, b, driver);
 	if (a->addr.len)
-		_CMP_FIELD_MEMCMP_LEN (a, b, addr.data, a->addr.len);
-	_CMP_FIELD_MEMCMP (a, b, inet6_token);
-	_CMP_FIELD (a, b, rx_packets);
-	_CMP_FIELD (a, b, rx_bytes);
-	_CMP_FIELD (a, b, tx_packets);
-	_CMP_FIELD (a, b, tx_bytes);
+		NM_CMP_FIELD_MEMCMP_LEN (a, b, addr.data, a->addr.len);
+	NM_CMP_FIELD_MEMCMP (a, b, inet6_token);
+	NM_CMP_FIELD (a, b, rx_packets);
+	NM_CMP_FIELD (a, b, rx_bytes);
+	NM_CMP_FIELD (a, b, tx_packets);
+	NM_CMP_FIELD (a, b, tx_bytes);
 	return 0;
 }
 
@@ -4477,17 +4382,17 @@ nm_platform_lnk_gre_hash (const NMPlatformLnkGre *obj)
 int
 nm_platform_lnk_gre_cmp (const NMPlatformLnkGre *a, const NMPlatformLnkGre *b)
 {
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, parent_ifindex);
-	_CMP_FIELD (a, b, input_flags);
-	_CMP_FIELD (a, b, output_flags);
-	_CMP_FIELD (a, b, input_key);
-	_CMP_FIELD (a, b, output_key);
-	_CMP_FIELD (a, b, local);
-	_CMP_FIELD (a, b, remote);
-	_CMP_FIELD (a, b, ttl);
-	_CMP_FIELD (a, b, tos);
-	_CMP_FIELD_BOOL (a, b, path_mtu_discovery);
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, parent_ifindex);
+	NM_CMP_FIELD (a, b, input_flags);
+	NM_CMP_FIELD (a, b, output_flags);
+	NM_CMP_FIELD (a, b, input_key);
+	NM_CMP_FIELD (a, b, output_key);
+	NM_CMP_FIELD (a, b, local);
+	NM_CMP_FIELD (a, b, remote);
+	NM_CMP_FIELD (a, b, ttl);
+	NM_CMP_FIELD (a, b, tos);
+	NM_CMP_FIELD_BOOL (a, b, path_mtu_discovery);
 	return 0;
 }
 
@@ -4505,9 +4410,9 @@ nm_platform_lnk_infiniband_hash (const NMPlatformLnkInfiniband *obj)
 int
 nm_platform_lnk_infiniband_cmp (const NMPlatformLnkInfiniband *a, const NMPlatformLnkInfiniband *b)
 {
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, p_key);
-	_CMP_FIELD_STR_INTERNED (a, b, mode);
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, p_key);
+	NM_CMP_FIELD_STR_INTERNED (a, b, mode);
 	return 0;
 }
 
@@ -4517,8 +4422,8 @@ nm_platform_lnk_ip6tnl_hash (const NMPlatformLnkIp6Tnl *obj)
 	guint h = 1651660009;
 
 	h = NM_HASH_COMBINE (h, obj->parent_ifindex);
-	h = NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&obj->local));
-	h = NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&obj->remote));
+	h = NM_HASH_COMBINE_IN6ADDR (h, &obj->local);
+	h = NM_HASH_COMBINE_IN6ADDR (h, &obj->remote);
 	h = NM_HASH_COMBINE (h, obj->ttl);
 	h = NM_HASH_COMBINE (h, obj->tclass);
 	h = NM_HASH_COMBINE (h, obj->encap_limit);
@@ -4530,15 +4435,15 @@ nm_platform_lnk_ip6tnl_hash (const NMPlatformLnkIp6Tnl *obj)
 int
 nm_platform_lnk_ip6tnl_cmp (const NMPlatformLnkIp6Tnl *a, const NMPlatformLnkIp6Tnl *b)
 {
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, parent_ifindex);
-	_CMP_FIELD_MEMCMP (a, b, local);
-	_CMP_FIELD_MEMCMP (a, b, remote);
-	_CMP_FIELD (a, b, ttl);
-	_CMP_FIELD (a, b, tclass);
-	_CMP_FIELD (a, b, encap_limit);
-	_CMP_FIELD (a, b, flow_label);
-	_CMP_FIELD (a, b, proto);
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, parent_ifindex);
+	NM_CMP_FIELD_MEMCMP (a, b, local);
+	NM_CMP_FIELD_MEMCMP (a, b, remote);
+	NM_CMP_FIELD (a, b, ttl);
+	NM_CMP_FIELD (a, b, tclass);
+	NM_CMP_FIELD (a, b, encap_limit);
+	NM_CMP_FIELD (a, b, flow_label);
+	NM_CMP_FIELD (a, b, proto);
 	return 0;
 }
 
@@ -4559,13 +4464,13 @@ nm_platform_lnk_ipip_hash (const NMPlatformLnkIpIp *obj)
 int
 nm_platform_lnk_ipip_cmp (const NMPlatformLnkIpIp *a, const NMPlatformLnkIpIp *b)
 {
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, parent_ifindex);
-	_CMP_FIELD (a, b, local);
-	_CMP_FIELD (a, b, remote);
-	_CMP_FIELD (a, b, ttl);
-	_CMP_FIELD (a, b, tos);
-	_CMP_FIELD_BOOL (a, b, path_mtu_discovery);
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, parent_ifindex);
+	NM_CMP_FIELD (a, b, local);
+	NM_CMP_FIELD (a, b, remote);
+	NM_CMP_FIELD (a, b, ttl);
+	NM_CMP_FIELD (a, b, tos);
+	NM_CMP_FIELD_BOOL (a, b, path_mtu_discovery);
 	return 0;
 }
 
@@ -4592,19 +4497,19 @@ nm_platform_lnk_macsec_hash (const NMPlatformLnkMacsec *obj)
 int
 nm_platform_lnk_macsec_cmp (const NMPlatformLnkMacsec *a, const NMPlatformLnkMacsec *b)
 {
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, sci);
-	_CMP_FIELD (a, b, icv_length);
-	_CMP_FIELD (a, b, cipher_suite);
-	_CMP_FIELD (a, b, window);
-	_CMP_FIELD (a, b, encoding_sa);
-	_CMP_FIELD (a, b, validation);
-	_CMP_FIELD (a, b, encrypt);
-	_CMP_FIELD (a, b, protect);
-	_CMP_FIELD (a, b, include_sci);
-	_CMP_FIELD (a, b, es);
-	_CMP_FIELD (a, b, scb);
-	_CMP_FIELD (a, b, replay_protect);
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, sci);
+	NM_CMP_FIELD (a, b, icv_length);
+	NM_CMP_FIELD (a, b, cipher_suite);
+	NM_CMP_FIELD (a, b, window);
+	NM_CMP_FIELD (a, b, encoding_sa);
+	NM_CMP_FIELD (a, b, validation);
+	NM_CMP_FIELD_UNSAFE (a, b, encrypt);
+	NM_CMP_FIELD_UNSAFE (a, b, protect);
+	NM_CMP_FIELD_UNSAFE (a, b, include_sci);
+	NM_CMP_FIELD_UNSAFE (a, b, es);
+	NM_CMP_FIELD_UNSAFE (a, b, scb);
+	NM_CMP_FIELD_UNSAFE (a, b, replay_protect);
 	return 0;
 }
 
@@ -4622,10 +4527,10 @@ nm_platform_lnk_macvlan_hash (const NMPlatformLnkMacvlan *obj)
 int
 nm_platform_lnk_macvlan_cmp (const NMPlatformLnkMacvlan *a, const NMPlatformLnkMacvlan *b)
 {
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, mode);
-	_CMP_FIELD (a, b, no_promisc);
-	_CMP_FIELD (a, b, tap);
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, mode);
+	NM_CMP_FIELD_UNSAFE (a, b, no_promisc);
+	NM_CMP_FIELD_UNSAFE (a, b, tap);
 	return 0;
 }
 
@@ -4648,15 +4553,15 @@ nm_platform_lnk_sit_hash (const NMPlatformLnkSit *obj)
 int
 nm_platform_lnk_sit_cmp (const NMPlatformLnkSit *a, const NMPlatformLnkSit *b)
 {
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, parent_ifindex);
-	_CMP_FIELD (a, b, local);
-	_CMP_FIELD (a, b, remote);
-	_CMP_FIELD (a, b, ttl);
-	_CMP_FIELD (a, b, tos);
-	_CMP_FIELD_BOOL (a, b, path_mtu_discovery);
-	_CMP_FIELD (a, b, flags);
-	_CMP_FIELD (a, b, proto);
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, parent_ifindex);
+	NM_CMP_FIELD (a, b, local);
+	NM_CMP_FIELD (a, b, remote);
+	NM_CMP_FIELD (a, b, ttl);
+	NM_CMP_FIELD (a, b, tos);
+	NM_CMP_FIELD_BOOL (a, b, path_mtu_discovery);
+	NM_CMP_FIELD (a, b, flags);
+	NM_CMP_FIELD (a, b, proto);
 	return 0;
 }
 
@@ -4673,9 +4578,9 @@ nm_platform_lnk_vlan_hash (const NMPlatformLnkVlan *obj)
 int
 nm_platform_lnk_vlan_cmp (const NMPlatformLnkVlan *a, const NMPlatformLnkVlan *b)
 {
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, id);
-	_CMP_FIELD (a, b, flags);
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, id);
+	NM_CMP_FIELD (a, b, flags);
 	return 0;
 }
 
@@ -4688,8 +4593,8 @@ nm_platform_lnk_vxlan_hash (const NMPlatformLnkVxlan *obj)
 	h = NM_HASH_COMBINE (h, obj->id);
 	h = NM_HASH_COMBINE (h, obj->group);
 	h = NM_HASH_COMBINE (h, obj->local);
-	h = NM_HASH_COMBINE_IN6_ADDR (h, &obj->group6);
-	h = NM_HASH_COMBINE_IN6_ADDR (h, &obj->local6);
+	h = NM_HASH_COMBINE_IN6ADDR (h, &obj->group6);
+	h = NM_HASH_COMBINE_IN6ADDR (h, &obj->local6);
 	h = NM_HASH_COMBINE (h, obj->tos);
 	h = NM_HASH_COMBINE (h, obj->ttl);
 	h = NM_HASH_COMBINE (h, obj->learning);
@@ -4708,25 +4613,25 @@ nm_platform_lnk_vxlan_hash (const NMPlatformLnkVxlan *obj)
 int
 nm_platform_lnk_vxlan_cmp (const NMPlatformLnkVxlan *a, const NMPlatformLnkVxlan *b)
 {
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, parent_ifindex);
-	_CMP_FIELD (a, b, id);
-	_CMP_FIELD (a, b, group);
-	_CMP_FIELD (a, b, local);
-	_CMP_FIELD_MEMCMP (a, b, group6);
-	_CMP_FIELD_MEMCMP (a, b, local6);
-	_CMP_FIELD (a, b, tos);
-	_CMP_FIELD (a, b, ttl);
-	_CMP_FIELD_BOOL (a, b, learning);
-	_CMP_FIELD (a, b, ageing);
-	_CMP_FIELD (a, b, limit);
-	_CMP_FIELD (a, b, dst_port);
-	_CMP_FIELD (a, b, src_port_min);
-	_CMP_FIELD (a, b, src_port_max);
-	_CMP_FIELD_BOOL (a, b, proxy);
-	_CMP_FIELD_BOOL (a, b, rsc);
-	_CMP_FIELD_BOOL (a, b, l2miss);
-	_CMP_FIELD_BOOL (a, b, l3miss);
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, parent_ifindex);
+	NM_CMP_FIELD (a, b, id);
+	NM_CMP_FIELD (a, b, group);
+	NM_CMP_FIELD (a, b, local);
+	NM_CMP_FIELD_MEMCMP (a, b, group6);
+	NM_CMP_FIELD_MEMCMP (a, b, local6);
+	NM_CMP_FIELD (a, b, tos);
+	NM_CMP_FIELD (a, b, ttl);
+	NM_CMP_FIELD_BOOL (a, b, learning);
+	NM_CMP_FIELD (a, b, ageing);
+	NM_CMP_FIELD (a, b, limit);
+	NM_CMP_FIELD (a, b, dst_port);
+	NM_CMP_FIELD (a, b, src_port_min);
+	NM_CMP_FIELD (a, b, src_port_max);
+	NM_CMP_FIELD_BOOL (a, b, proxy);
+	NM_CMP_FIELD_BOOL (a, b, rsc);
+	NM_CMP_FIELD_BOOL (a, b, l2miss);
+	NM_CMP_FIELD_BOOL (a, b, l3miss);
 	return 0;
 }
 
@@ -4753,17 +4658,17 @@ nm_platform_ip4_address_hash (const NMPlatformIP4Address *obj)
 int
 nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b)
 {
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, ifindex);
-	_CMP_FIELD (a, b, address);
-	_CMP_FIELD (a, b, plen);
-	_CMP_FIELD (a, b, peer_address);
-	_CMP_FIELD (a, b, addr_source);
-	_CMP_FIELD (a, b, timestamp);
-	_CMP_FIELD (a, b, lifetime);
-	_CMP_FIELD (a, b, preferred);
-	_CMP_FIELD (a, b, n_ifa_flags);
-	_CMP_FIELD_STR (a, b, label);
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, ifindex);
+	NM_CMP_FIELD (a, b, address);
+	NM_CMP_FIELD (a, b, plen);
+	NM_CMP_FIELD (a, b, peer_address);
+	NM_CMP_FIELD (a, b, addr_source);
+	NM_CMP_FIELD (a, b, timestamp);
+	NM_CMP_FIELD (a, b, lifetime);
+	NM_CMP_FIELD (a, b, preferred);
+	NM_CMP_FIELD (a, b, n_ifa_flags);
+	NM_CMP_FIELD_STR (a, b, label);
 	return 0;
 }
 
@@ -4774,9 +4679,9 @@ nm_platform_ip6_address_hash (const NMPlatformIP6Address *obj)
 
 	if (obj) {
 		h = NM_HASH_COMBINE (h, obj->ifindex);
-		h = NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&obj->address));
+		h = NM_HASH_COMBINE_IN6ADDR (h, &obj->address);
 		h = NM_HASH_COMBINE (h, obj->plen);
-		h = NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&obj->peer_address));
+		h = NM_HASH_COMBINE_IN6ADDR (h, &obj->peer_address);
 		h = NM_HASH_COMBINE (h, obj->addr_source);
 		h = NM_HASH_COMBINE (h, obj->timestamp);
 		h = NM_HASH_COMBINE (h, obj->lifetime);
@@ -4791,151 +4696,292 @@ nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6A
 {
 	const struct in6_addr *p_a, *p_b;
 
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, ifindex);
-	_CMP_FIELD_MEMCMP (a, b, address);
-	_CMP_FIELD (a, b, plen);
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, ifindex);
+	NM_CMP_FIELD_MEMCMP (a, b, address);
+	NM_CMP_FIELD (a, b, plen);
 	p_a = nm_platform_ip6_address_get_peer (a);
 	p_b = nm_platform_ip6_address_get_peer (b);
-	_CMP_DIRECT_MEMCMP (p_a, p_b, sizeof (*p_a));
-	_CMP_FIELD (a, b, addr_source);
-	_CMP_FIELD (a, b, timestamp);
-	_CMP_FIELD (a, b, lifetime);
-	_CMP_FIELD (a, b, preferred);
-	_CMP_FIELD (a, b, n_ifa_flags);
+	NM_CMP_DIRECT_MEMCMP (p_a, p_b, sizeof (*p_a));
+	NM_CMP_FIELD (a, b, addr_source);
+	NM_CMP_FIELD (a, b, timestamp);
+	NM_CMP_FIELD (a, b, lifetime);
+	NM_CMP_FIELD (a, b, preferred);
+	NM_CMP_FIELD (a, b, n_ifa_flags);
 	return 0;
 }
 
 guint
-nm_platform_ip4_route_hash (const NMPlatformIP4Route *obj)
+nm_platform_ip4_route_hash (const NMPlatformIP4Route *obj, NMPlatformIPRouteCmpType cmp_type)
 {
-	guint h = 1228913327;
+	guint h = NM_HASH_COMBINE (1228913327, cmp_type);
 
 	if (obj) {
-		h = NM_HASH_COMBINE (h, obj->ifindex);
-		h = NM_HASH_COMBINE (h, obj->network);
-		h = NM_HASH_COMBINE (h, obj->plen);
-		h = NM_HASH_COMBINE (h, obj->metric);
-		h = NM_HASH_COMBINE (h, obj->gateway);
-		h = NM_HASH_COMBINE (h, obj->rt_source);
-		h = NM_HASH_COMBINE (h, obj->mss);
-		h = NM_HASH_COMBINE (h, obj->scope_inv);
-		h = NM_HASH_COMBINE (h, obj->pref_src);
-		h = NM_HASH_COMBINE (h, obj->rt_cloned);
-		h = NM_HASH_COMBINE (h, obj->tos);
-		h = NM_HASH_COMBINE (h, obj->lock_window);
-		h = NM_HASH_COMBINE (h, obj->lock_cwnd);
-		h = NM_HASH_COMBINE (h, obj->lock_initcwnd);
-		h = NM_HASH_COMBINE (h, obj->lock_initrwnd);
-		h = NM_HASH_COMBINE (h, obj->lock_mtu);
-		h = NM_HASH_COMBINE (h, obj->window);
-		h = NM_HASH_COMBINE (h, obj->cwnd);
-		h = NM_HASH_COMBINE (h, obj->initcwnd);
-		h = NM_HASH_COMBINE (h, obj->initrwnd);
-		h = NM_HASH_COMBINE (h, obj->mtu);
+		switch (cmp_type) {
+		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_DST:
+			h = NM_HASH_COMBINE (h, nm_utils_ip4_address_clear_host_address (obj->network, obj->plen));
+			h = NM_HASH_COMBINE (h, obj->plen);
+			break;
+		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID_CACHE:
+			h = NM_HASH_COMBINE (h, nm_utils_ip4_address_clear_host_address (obj->network, obj->plen));
+			h = NM_HASH_COMBINE (h, obj->plen);
+			h = NM_HASH_COMBINE (h, obj->metric);
+			h = NM_HASH_COMBINE (h, obj->ifindex);
+			break;
+		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
+		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
+			h = NM_HASH_COMBINE (h, nm_utils_ip4_address_clear_host_address (obj->network, obj->plen));
+			h = NM_HASH_COMBINE (h, obj->plen);
+			h = NM_HASH_COMBINE (h, obj->metric);
+			h = NM_HASH_COMBINE (h, obj->tos);
+			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) {
+				h = NM_HASH_COMBINE (h, obj->ifindex);
+				h = NM_HASH_COMBINE (h, obj->rt_source);
+				h = NM_HASH_COMBINE (h, obj->scope_inv);
+				h = NM_HASH_COMBINE (h, obj->gateway);
+				h = NM_HASH_COMBINE (h, obj->mss);
+				h = NM_HASH_COMBINE (h, obj->pref_src);
+				h = NM_HASH_COMBINE (h, obj->window);
+				h = NM_HASH_COMBINE (h, obj->cwnd);
+				h = NM_HASH_COMBINE (h, obj->initcwnd);
+				h = NM_HASH_COMBINE (h, obj->initrwnd);
+				h = NM_HASH_COMBINE (h, obj->mtu);
+				h = NM_HASH_COMBINE (h, obj->lock_window);
+				h = NM_HASH_COMBINE (h, obj->lock_cwnd);
+				h = NM_HASH_COMBINE (h, obj->lock_initcwnd);
+				h = NM_HASH_COMBINE (h, obj->lock_initrwnd);
+				h = NM_HASH_COMBINE (h, obj->lock_mtu);
+			}
+			break;
+		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
+		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL:
+			h = NM_HASH_COMBINE (h, obj->ifindex);
+			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
+				h = NM_HASH_COMBINE (h, nm_utils_ip4_address_clear_host_address (obj->network, obj->plen));
+			else
+				h = NM_HASH_COMBINE (h, obj->network);
+			h = NM_HASH_COMBINE (h, obj->plen);
+			h = NM_HASH_COMBINE (h, obj->metric);
+			h = NM_HASH_COMBINE (h, obj->gateway);
+			h = NM_HASH_COMBINE (h, obj->rt_source);
+			h = NM_HASH_COMBINE (h, obj->mss);
+			h = NM_HASH_COMBINE (h, obj->scope_inv);
+			h = NM_HASH_COMBINE (h, obj->pref_src);
+			h = NM_HASH_COMBINE (h, obj->rt_cloned);
+			h = NM_HASH_COMBINE (h, obj->tos);
+			h = NM_HASH_COMBINE (h, obj->lock_window);
+			h = NM_HASH_COMBINE (h, obj->lock_cwnd);
+			h = NM_HASH_COMBINE (h, obj->lock_initcwnd);
+			h = NM_HASH_COMBINE (h, obj->lock_initrwnd);
+			h = NM_HASH_COMBINE (h, obj->lock_mtu);
+			h = NM_HASH_COMBINE (h, obj->window);
+			h = NM_HASH_COMBINE (h, obj->cwnd);
+			h = NM_HASH_COMBINE (h, obj->initcwnd);
+			h = NM_HASH_COMBINE (h, obj->initrwnd);
+			h = NM_HASH_COMBINE (h, obj->mtu);
+			break;
+		}
 	}
 	return h;
 }
 
 int
-nm_platform_ip4_route_cmp_full (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b, gboolean consider_host_part)
+nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b, NMPlatformIPRouteCmpType cmp_type)
 {
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, ifindex);
-	if (consider_host_part)
-		_CMP_FIELD (a, b, network);
-	else {
-		_CMP_DIRECT (nm_utils_ip4_address_clear_host_address (a->network, a->plen),
-		             nm_utils_ip4_address_clear_host_address (b->network, b->plen));
+	NM_CMP_SELF (a, b);
+	switch (cmp_type) {
+	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_DST:
+		NM_CMP_DIRECT_IN4ADDR_SAME_PREFIX (a->network, b->network, MIN (a->plen, b->plen));
+		NM_CMP_FIELD (a, b, plen);
+		break;
+	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID_CACHE:
+		NM_CMP_DIRECT_IN4ADDR_SAME_PREFIX (a->network, b->network, MIN (a->plen, b->plen));
+		NM_CMP_FIELD (a, b, plen);
+		NM_CMP_FIELD (a, b, metric);
+		NM_CMP_FIELD (a, b, ifindex);
+		break;
+	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
+	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
+		NM_CMP_DIRECT_IN4ADDR_SAME_PREFIX (a->network, b->network, MIN (a->plen, b->plen));
+		NM_CMP_FIELD (a, b, plen);
+		NM_CMP_FIELD (a, b, metric);
+		NM_CMP_FIELD (a, b, tos);
+		if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) {
+			NM_CMP_FIELD (a, b, ifindex);
+			NM_CMP_FIELD (a, b, rt_source);
+			NM_CMP_FIELD (a, b, scope_inv);
+			NM_CMP_FIELD (a, b, gateway);
+			NM_CMP_FIELD (a, b, mss);
+			NM_CMP_FIELD (a, b, pref_src);
+			NM_CMP_FIELD (a, b, window);
+			NM_CMP_FIELD (a, b, cwnd);
+			NM_CMP_FIELD (a, b, initcwnd);
+			NM_CMP_FIELD (a, b, initrwnd);
+			NM_CMP_FIELD (a, b, mtu);
+			NM_CMP_FIELD_UNSAFE (a, b, lock_window);
+			NM_CMP_FIELD_UNSAFE (a, b, lock_cwnd);
+			NM_CMP_FIELD_UNSAFE (a, b, lock_initcwnd);
+			NM_CMP_FIELD_UNSAFE (a, b, lock_initrwnd);
+			NM_CMP_FIELD_UNSAFE (a, b, lock_mtu);
+		}
+		break;
+	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
+	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL:
+		NM_CMP_FIELD (a, b, ifindex);
+		if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
+			NM_CMP_DIRECT_IN4ADDR_SAME_PREFIX (a->network, b->network, MIN (a->plen, b->plen));
+		else
+			NM_CMP_FIELD (a, b, network);
+		NM_CMP_FIELD (a, b, plen);
+		NM_CMP_FIELD (a, b, metric);
+		NM_CMP_FIELD (a, b, gateway);
+		NM_CMP_FIELD (a, b, rt_source);
+		NM_CMP_FIELD (a, b, mss);
+		NM_CMP_FIELD (a, b, scope_inv);
+		NM_CMP_FIELD (a, b, pref_src);
+		NM_CMP_FIELD_UNSAFE (a, b, rt_cloned);
+		NM_CMP_FIELD (a, b, tos);
+		NM_CMP_FIELD_UNSAFE (a, b, lock_window);
+		NM_CMP_FIELD_UNSAFE (a, b, lock_cwnd);
+		NM_CMP_FIELD_UNSAFE (a, b, lock_initcwnd);
+		NM_CMP_FIELD_UNSAFE (a, b, lock_initrwnd);
+		NM_CMP_FIELD_UNSAFE (a, b, lock_mtu);
+		NM_CMP_FIELD (a, b, window);
+		NM_CMP_FIELD (a, b, cwnd);
+		NM_CMP_FIELD (a, b, initcwnd);
+		NM_CMP_FIELD (a, b, initrwnd);
+		NM_CMP_FIELD (a, b, mtu);
+		break;
 	}
-	_CMP_FIELD (a, b, plen);
-	_CMP_FIELD (a, b, metric);
-	_CMP_FIELD (a, b, gateway);
-	_CMP_FIELD (a, b, rt_source);
-	_CMP_FIELD (a, b, mss);
-	_CMP_FIELD (a, b, scope_inv);
-	_CMP_FIELD (a, b, pref_src);
-	_CMP_FIELD (a, b, rt_cloned);
-	_CMP_FIELD (a, b, tos);
-	_CMP_FIELD (a, b, lock_window);
-	_CMP_FIELD (a, b, lock_cwnd);
-	_CMP_FIELD (a, b, lock_initcwnd);
-	_CMP_FIELD (a, b, lock_initrwnd);
-	_CMP_FIELD (a, b, lock_mtu);
-	_CMP_FIELD (a, b, window);
-	_CMP_FIELD (a, b, cwnd);
-	_CMP_FIELD (a, b, initcwnd);
-	_CMP_FIELD (a, b, initrwnd);
-	_CMP_FIELD (a, b, mtu);
 	return 0;
 }
 
 guint
-nm_platform_ip6_route_hash (const NMPlatformIP6Route *obj)
+nm_platform_ip6_route_hash (const NMPlatformIP6Route *obj, NMPlatformIPRouteCmpType cmp_type)
 {
-	guint h = 1053326051;
+	guint h = NM_HASH_COMBINE (1053326051, cmp_type);
 
 	if (obj) {
-		h = NM_HASH_COMBINE (h, obj->ifindex);
-		h = NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&obj->network));
-		h = NM_HASH_COMBINE (h, obj->plen);
-		h = NM_HASH_COMBINE (h, obj->metric);
-		h = NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&obj->gateway));
-		h = NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&obj->pref_src));
-		h = NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&obj->src));
-		h = NM_HASH_COMBINE (h, obj->src_plen);
-		h = NM_HASH_COMBINE (h, obj->rt_source);
-		h = NM_HASH_COMBINE (h, obj->mss);
-		h = NM_HASH_COMBINE (h, obj->rt_cloned);
-		h = NM_HASH_COMBINE (h, obj->tos);
-		h = NM_HASH_COMBINE (h, obj->lock_window);
-		h = NM_HASH_COMBINE (h, obj->lock_cwnd);
-		h = NM_HASH_COMBINE (h, obj->lock_initcwnd);
-		h = NM_HASH_COMBINE (h, obj->lock_initrwnd);
-		h = NM_HASH_COMBINE (h, obj->lock_mtu);
-		h = NM_HASH_COMBINE (h, obj->window);
-		h = NM_HASH_COMBINE (h, obj->cwnd);
-		h = NM_HASH_COMBINE (h, obj->initcwnd);
-		h = NM_HASH_COMBINE (h, obj->initrwnd);
-		h = NM_HASH_COMBINE (h, obj->mtu);
+		switch (cmp_type) {
+		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_DST:
+			h = NM_HASH_COMBINE_IN6ADDR_PREFIX (h, &obj->network, obj->plen);
+			h = NM_HASH_COMBINE (h, obj->plen);
+			break;
+		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID_CACHE:
+			h = NM_HASH_COMBINE_IN6ADDR_PREFIX (h, &obj->network, obj->plen);
+			h = NM_HASH_COMBINE (h, obj->plen);
+			h = NM_HASH_COMBINE (h, obj->metric);
+			h = NM_HASH_COMBINE (h, obj->ifindex);
+			break;
+		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
+		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
+			h = NM_HASH_COMBINE_IN6ADDR_PREFIX (h, &obj->network, obj->plen);
+			h = NM_HASH_COMBINE (h, obj->plen);
+			h = NM_HASH_COMBINE (h, obj->metric);
+			h = NM_HASH_COMBINE_IN6ADDR_PREFIX (h, &obj->src, obj->src_plen);
+			h = NM_HASH_COMBINE (h, obj->src_plen);
+			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) {
+				h = NM_HASH_COMBINE (h, obj->ifindex);
+				h = NM_HASH_COMBINE_IN6ADDR (h, &obj->gateway);
+			}
+			break;
+		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
+		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL:
+			h = NM_HASH_COMBINE (h, obj->ifindex);
+			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
+				h = NM_HASH_COMBINE_IN6ADDR_PREFIX (h, &obj->network, obj->plen);
+			else
+				h = NM_HASH_COMBINE_IN6ADDR (h, &obj->network);
+			h = NM_HASH_COMBINE (h, obj->plen);
+			h = NM_HASH_COMBINE (h, obj->metric);
+			h = NM_HASH_COMBINE_IN6ADDR (h, &obj->gateway);
+			h = NM_HASH_COMBINE_IN6ADDR (h, &obj->pref_src);
+			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
+				h = NM_HASH_COMBINE_IN6ADDR_PREFIX (h, &obj->src, obj->src_plen);
+				h = NM_HASH_COMBINE (h, obj->src_plen);
+			} else {
+				h = NM_HASH_COMBINE_IN6ADDR (h, &obj->src);
+				h = NM_HASH_COMBINE (h, obj->src_plen);
+			}
+			h = NM_HASH_COMBINE (h, obj->rt_source);
+			h = NM_HASH_COMBINE (h, obj->mss);
+			h = NM_HASH_COMBINE (h, obj->rt_cloned);
+			h = NM_HASH_COMBINE (h, obj->lock_window);
+			h = NM_HASH_COMBINE (h, obj->lock_cwnd);
+			h = NM_HASH_COMBINE (h, obj->lock_initcwnd);
+			h = NM_HASH_COMBINE (h, obj->lock_initrwnd);
+			h = NM_HASH_COMBINE (h, obj->lock_mtu);
+			h = NM_HASH_COMBINE (h, obj->window);
+			h = NM_HASH_COMBINE (h, obj->cwnd);
+			h = NM_HASH_COMBINE (h, obj->initcwnd);
+			h = NM_HASH_COMBINE (h, obj->initrwnd);
+			h = NM_HASH_COMBINE (h, obj->mtu);
+			break;
+		}
 	}
 	return h;
 }
 
 int
-nm_platform_ip6_route_cmp_full (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b, gboolean consider_host_part)
+nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b, NMPlatformIPRouteCmpType cmp_type)
 {
-	_CMP_SELF (a, b);
-	_CMP_FIELD (a, b, ifindex);
-	if (consider_host_part)
-		_CMP_FIELD_MEMCMP (a, b, network);
-	else {
-		struct in6_addr n1, n2;
-
-		nm_utils_ip6_address_clear_host_address (&n1, &a->network, a->plen);
-		nm_utils_ip6_address_clear_host_address (&n2, &b->network, b->plen);
-		_CMP_DIRECT_MEMCMP (&n1, &n2, sizeof (struct in6_addr));
+	NM_CMP_SELF (a, b);
+	switch (cmp_type) {
+	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_DST:
+		NM_CMP_DIRECT_IN6ADDR_SAME_PREFIX (&a->network, &b->network, MIN (a->plen, b->plen));
+		NM_CMP_FIELD (a, b, plen);
+		break;
+	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID_CACHE:
+		NM_CMP_DIRECT_IN6ADDR_SAME_PREFIX (&a->network, &b->network, MIN (a->plen, b->plen));
+		NM_CMP_FIELD (a, b, plen);
+		NM_CMP_FIELD (a, b, metric);
+		NM_CMP_FIELD (a, b, ifindex);
+		break;
+	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
+	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
+		NM_CMP_DIRECT_IN6ADDR_SAME_PREFIX (&a->network, &b->network, MIN (a->plen, b->plen));
+		NM_CMP_FIELD (a, b, plen);
+		NM_CMP_FIELD (a, b, metric);
+		NM_CMP_DIRECT_IN6ADDR_SAME_PREFIX (&a->src, &b->src, MIN (a->src_plen, b->src_plen));
+		NM_CMP_FIELD (a, b, src_plen);
+		if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) {
+			NM_CMP_FIELD (a, b, ifindex);
+			NM_CMP_FIELD_IN6ADDR (a, b, gateway);
+		}
+		break;
+	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
+	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL:
+		NM_CMP_FIELD (a, b, ifindex);
+		if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
+			NM_CMP_DIRECT_IN6ADDR_SAME_PREFIX (&a->network, &b->network, MIN (a->plen, b->plen));
+		else
+			NM_CMP_FIELD_IN6ADDR (a, b, network);
+		NM_CMP_FIELD (a, b, plen);
+		NM_CMP_FIELD (a, b, metric);
+		NM_CMP_FIELD_IN6ADDR (a, b, gateway);
+		NM_CMP_FIELD_IN6ADDR (a, b, pref_src);
+		if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
+			NM_CMP_DIRECT_IN6ADDR_SAME_PREFIX (&a->src, &b->src, MIN (a->src_plen, b->src_plen));
+			NM_CMP_FIELD (a, b, src_plen);
+		} else {
+			NM_CMP_FIELD_IN6ADDR (a, b, src);
+			NM_CMP_FIELD (a, b, src_plen);
+		}
+		NM_CMP_FIELD (a, b, rt_source);
+		NM_CMP_FIELD (a, b, mss);
+		NM_CMP_FIELD_UNSAFE (a, b, rt_cloned);
+		NM_CMP_FIELD_UNSAFE (a, b, lock_window);
+		NM_CMP_FIELD_UNSAFE (a, b, lock_cwnd);
+		NM_CMP_FIELD_UNSAFE (a, b, lock_initcwnd);
+		NM_CMP_FIELD_UNSAFE (a, b, lock_initrwnd);
+		NM_CMP_FIELD_UNSAFE (a, b, lock_mtu);
+		NM_CMP_FIELD (a, b, window);
+		NM_CMP_FIELD (a, b, cwnd);
+		NM_CMP_FIELD (a, b, initcwnd);
+		NM_CMP_FIELD (a, b, initrwnd);
+		NM_CMP_FIELD (a, b, mtu);
+		break;
 	}
-	_CMP_FIELD (a, b, plen);
-	_CMP_FIELD (a, b, metric);
-	_CMP_FIELD_MEMCMP (a, b, gateway);
-	_CMP_FIELD_MEMCMP (a, b, pref_src);
-	_CMP_FIELD_MEMCMP (a, b, src);
-	_CMP_FIELD (a, b, src_plen);
-	_CMP_FIELD (a, b, rt_source);
-	_CMP_FIELD (a, b, mss);
-	_CMP_FIELD (a, b, rt_cloned);
-	_CMP_FIELD (a, b, tos);
-	_CMP_FIELD (a, b, lock_window);
-	_CMP_FIELD (a, b, lock_cwnd);
-	_CMP_FIELD (a, b, lock_initcwnd);
-	_CMP_FIELD (a, b, lock_initrwnd);
-	_CMP_FIELD (a, b, lock_mtu);
-	_CMP_FIELD (a, b, window);
-	_CMP_FIELD (a, b, cwnd);
-	_CMP_FIELD (a, b, initcwnd);
-	_CMP_FIELD (a, b, initrwnd);
-	_CMP_FIELD (a, b, mtu);
 	return 0;
 }
 
@@ -4957,7 +5003,7 @@ nm_platform_ip_address_cmp_expiry (const NMPlatformIPAddress *a, const NMPlatfor
 {
 	gint64 ta = 0, tb = 0;
 
-	_CMP_SELF (a, b);
+	NM_CMP_SELF (a, b);
 
 	if (a->lifetime == NM_PLATFORM_LIFETIME_PERMANENT || a->lifetime == 0)
 		ta = G_MAXINT64;
@@ -5138,7 +5184,11 @@ nm_platform_netns_push (NMPlatform *self, NMPNetns **netns)
 /*****************************************************************************/
 
 static gboolean
-_vtr_v4_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route, gint64 metric)
+_vtr_v4_route_add (NMPlatform *self,
+                   NMPNlmFlags flags,
+                   const NMPlatformIPXRoute *route,
+                   int ifindex,
+                   gint64 metric)
 {
 	NMPlatformIP4Route rt = route->r4;
 
@@ -5147,11 +5197,15 @@ _vtr_v4_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *rout
 	if (metric >= 0)
 		rt.metric = metric;
 
-	return nm_platform_ip4_route_add (self, &rt);
+	return nm_platform_ip4_route_add (self, flags, &rt);
 }
 
 static gboolean
-_vtr_v6_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route, gint64 metric)
+_vtr_v6_route_add (NMPlatform *self,
+                   NMPNlmFlags flags,
+                   const NMPlatformIPXRoute *route,
+                   int ifindex,
+                   gint64 metric)
 {
 	NMPlatformIP6Route rt = route->r6;
 
@@ -5160,7 +5214,7 @@ _vtr_v6_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *rout
 	if (metric >= 0)
 		rt.metric = metric;
 
-	return nm_platform_ip6_route_add (self, &rt);
+	return nm_platform_ip6_route_add (self, flags, &rt);
 }
 
 static guint32
@@ -5176,7 +5230,7 @@ const NMPlatformVTableRoute nm_platform_vtable_route_v4 = {
 	.obj_type                       = NMP_OBJECT_TYPE_IP4_ROUTE,
 	.addr_family                    = AF_INET,
 	.sizeof_route                   = sizeof (NMPlatformIP4Route),
-	.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, gboolean consider_host_part)) nm_platform_ip4_route_cmp_full,
+	.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, NMPlatformIPRouteCmpType cmp_type)) nm_platform_ip4_route_cmp,
 	.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route, char *buf, gsize len)) nm_platform_ip4_route_to_string,
 	.route_add                      = _vtr_v4_route_add,
 	.metric_normalize               = _vtr_v4_metric_normalize,
@@ -5187,7 +5241,7 @@ const NMPlatformVTableRoute nm_platform_vtable_route_v6 = {
 	.obj_type                       = NMP_OBJECT_TYPE_IP6_ROUTE,
 	.addr_family                    = AF_INET6,
 	.sizeof_route                   = sizeof (NMPlatformIP6Route),
-	.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, gboolean consider_host_part)) nm_platform_ip6_route_cmp_full,
+	.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, NMPlatformIPRouteCmpType cmp_type)) nm_platform_ip6_route_cmp,
 	.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route, char *buf, gsize len)) nm_platform_ip6_route_to_string,
 	.route_add                      = _vtr_v6_route_add,
 	.metric_normalize               = nm_utils_ip6_route_metric_normalize,

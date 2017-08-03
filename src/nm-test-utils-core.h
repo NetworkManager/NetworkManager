@@ -195,7 +195,7 @@ nmtst_platform_ip6_route_full (const char *network, guint plen, const char *gate
 static inline int
 _nmtst_platform_ip4_routes_equal_sort (gconstpointer a, gconstpointer b, gpointer user_data)
 {
-	return nm_platform_ip4_route_cmp ((const NMPlatformIP4Route *) a, (const NMPlatformIP4Route *) b);
+	return nm_platform_ip4_route_cmp_full ((const NMPlatformIP4Route *) a, (const NMPlatformIP4Route *) b);
 }
 
 static inline void
@@ -215,7 +215,7 @@ nmtst_platform_ip4_routes_equal (const NMPlatformIP4Route *a, const NMPlatformIP
 	}
 
 	for (i = 0; i < len; i++) {
-		if (nm_platform_ip4_route_cmp (&a[i], &b[i]) != 0) {
+		if (nm_platform_ip4_route_cmp_full (&a[i], &b[i]) != 0) {
 			char buf[sizeof (_nm_utils_to_string_buffer)];
 
 			g_error ("Error comparing IPv4 route[%lu]: %s vs %s", (unsigned long) i,
@@ -248,7 +248,7 @@ nmtst_platform_ip4_routes_equal_aptr (const NMPObject *const*a, const NMPlatform
 static inline int
 _nmtst_platform_ip6_routes_equal_sort (gconstpointer a, gconstpointer b, gpointer user_data)
 {
-	return nm_platform_ip6_route_cmp ((const NMPlatformIP6Route *) a, (const NMPlatformIP6Route *) b);
+	return nm_platform_ip6_route_cmp_full ((const NMPlatformIP6Route *) a, (const NMPlatformIP6Route *) b);
 }
 
 static inline void
@@ -268,7 +268,7 @@ nmtst_platform_ip6_routes_equal (const NMPlatformIP6Route *a, const NMPlatformIP
 	}
 
 	for (i = 0; i < len; i++) {
-		if (nm_platform_ip6_route_cmp (&a[i], &b[i]) != 0) {
+		if (nm_platform_ip6_route_cmp_full (&a[i], &b[i]) != 0) {
 			char buf[sizeof (_nm_utils_to_string_buffer)];
 
 			g_error ("Error comparing IPv6 route[%lu]: %s vs %s", (unsigned long) i,

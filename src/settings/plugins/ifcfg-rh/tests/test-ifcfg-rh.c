@@ -4108,7 +4108,6 @@ test_write_wired_static (void)
 
 	route6 = nm_ip_route_new (AF_INET6, "::", 128, "2222:aaaa::9999", 1, &error);
 	g_assert_no_error (error);
-	nm_ip_route_set_attribute (route6, NM_IP_ROUTE_ATTRIBUTE_TOS, g_variant_new_byte (0xb8));
 	nm_ip_route_set_attribute (route6, NM_IP_ROUTE_ATTRIBUTE_CWND, g_variant_new_uint32 (100));
 	nm_ip_route_set_attribute (route6, NM_IP_ROUTE_ATTRIBUTE_MTU, g_variant_new_uint32 (1280));
 	nm_ip_route_set_attribute (route6, NM_IP_ROUTE_ATTRIBUTE_LOCK_CWND, g_variant_new_boolean (TRUE));

@@ -467,23 +467,25 @@ parse_route_options (NMIPRoute *route, int family, const char *line, GError **er
 	}
 
 	/* tos */
-	regex = g_regex_new ("(?:\\s|^)tos\\s+(\\S+)(?:$|\\s)", 0, 0, NULL);
-	g_regex_match (regex, line, 0, &match_info);
-	if (g_match_info_matches (match_info)) {
-		gs_free char *str = g_match_info_fetch (match_info, 1);
-		gint64 num = _nm_utils_ascii_str_to_int64 (str, 0, 0, G_MAXUINT8, -1);
+	if (family == AF_INET) {
+		regex = g_regex_new ("(?:\\s|^)tos\\s+(\\S+)(?:$|\\s)", 0, 0, NULL);
+		g_regex_match (regex, line, 0, &match_info);
+		if (g_match_info_matches (match_info)) {
+			gs_free char *str = g_match_info_fetch (match_info, 1);
+			gint64 num = _nm_utils_ascii_str_to_int64 (str, 16, 0, G_MAXUINT8, -1);
 
-		if (num == -1) {
-			g_match_info_free (match_info);
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Invalid route %s '%s'", "tos", str);
-			goto out;
+			if (num == -1) {
+				g_match_info_free (match_info);
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+				             "Invalid route %s '%s'", "tos", str);
+				goto out;
+			}
+			nm_ip_route_set_attribute (route, NM_IP_ROUTE_ATTRIBUTE_TOS,
+			                           g_variant_new_byte ((guchar) num));
 		}
-		nm_ip_route_set_attribute (route, NM_IP_ROUTE_ATTRIBUTE_TOS,
-		                           g_variant_new_byte ((guchar) num));
+		g_clear_pointer (&regex, g_regex_unref);
+		g_clear_pointer (&match_info, g_match_info_free);
 	}
-	g_clear_pointer (&regex, g_regex_unref);
-	g_clear_pointer (&match_info, g_match_info_free);
 
 	/* from */
 	if (family == AF_INET6) {

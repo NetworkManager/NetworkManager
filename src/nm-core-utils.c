@@ -316,28 +316,28 @@ nm_utils_ip6_address_clear_host_address (struct in6_addr *dst, const struct in6_
 	return dst;
 }
 
-gboolean
-nm_utils_ip6_address_same_prefix (const struct in6_addr *addr_a, const struct in6_addr *addr_b, guint8 plen)
+int
+nm_utils_ip6_address_same_prefix_cmp (const struct in6_addr *addr_a, const struct in6_addr *addr_b, guint8 plen)
 {
 	int nbytes;
-	guint8 t, m;
+	guint8 va, vb, m;
 
 	if (plen >= 128)
-		return memcmp (addr_a, addr_b, sizeof (struct in6_addr)) == 0;
+		NM_CMP_DIRECT_MEMCMP (addr_a, addr_b, sizeof (struct in6_addr));
+	else {
+		nbytes = plen / 8;
+		if (nbytes)
+			NM_CMP_DIRECT_MEMCMP (addr_a, addr_b, nbytes);
 
-	nbytes = plen / 8;
-	if (nbytes) {
-		if (memcmp (addr_a, addr_b, nbytes) != 0)
-			return FALSE;
+		plen = plen % 8;
+		if (plen != 0) {
+			m = ~((1 << (8 - plen)) - 1);
+			va = ((((const guint8 *) addr_a))[nbytes]) & m;
+			vb = ((((const guint8 *) addr_b))[nbytes]) & m;
+			NM_CMP_DIRECT (va, vb);
+		}
 	}
-
-	plen = plen % 8;
-	if (plen == 0)
-		return TRUE;
-
-	m = ~((1 << (8 - plen)) - 1);
-	t = ((((const guint8 *) addr_a))[nbytes]) ^ ((((const guint8 *) addr_b))[nbytes]);
-	return (t & m) == 0;
+	return 0;
 }
 
 /*****************************************************************************/

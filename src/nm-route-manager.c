@@ -428,7 +428,7 @@ _route_equals_ignoring_ifindex (const VTableIP *vtable, const NMPlatformIPXRoute
 			r2_backup.rx.metric = (guint32) r2_metric;
 		r2 = &r2_backup;
 	}
-	return vtable->vt->route_cmp (r1, r2, FALSE) == 0;
+	return vtable->vt->route_cmp (r1, r2, NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) == 0;
 }
 
 static NMPlatformIPXRoute *
@@ -896,15 +896,16 @@ next:
 					gateway_routes = g_array_new (FALSE, FALSE, sizeof (guint));
 				g_array_append_val (gateway_routes, i_ipx_routes);
 			} else
-				vtable->vt->route_add (priv->platform, 0, cur_ipx_route, *p_effective_metric);
+				vtable->vt->route_add (priv->platform, NMP_NLM_FLAG_REPLACE,
+				                       cur_ipx_route, 0, *p_effective_metric);
 		}
 
 		if (gateway_routes) {
 			for (i = 0; i < gateway_routes->len; i++) {
 				i_ipx_routes = g_array_index (gateway_routes, guint, i);
-				vtable->vt->route_add (priv->platform, 0,
+				vtable->vt->route_add (priv->platform, NMP_NLM_FLAG_REPLACE,
 				                       ipx_routes->index->entries[i_ipx_routes],
-				                       effective_metrics[i_ipx_routes]);
+				                       0, effective_metrics[i_ipx_routes]);
 			}
 			g_array_unref (gateway_routes);
 		}
@@ -953,7 +954,8 @@ next:
 			    || route_dest_cmp_result != 0
 			    || !_route_equals_ignoring_ifindex (vtable, cur_plat_route, cur_ipx_route, *p_effective_metric)) {
 
-				if (!vtable->vt->route_add (priv->platform, ifindex, cur_ipx_route, *p_effective_metric)) {
+				if (!vtable->vt->route_add (priv->platform, NMP_NLM_FLAG_REPLACE,
+				                            cur_ipx_route, ifindex, *p_effective_metric)) {
 					if (cur_ipx_route->rx.rt_source < NM_IP_CONFIG_SOURCE_USER) {
 						_LOGD (vtable->vt->addr_family,
 						       "ignore error adding IPv%c route to kernel: %s",

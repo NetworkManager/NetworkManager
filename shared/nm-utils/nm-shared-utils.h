@@ -24,6 +24,93 @@
 
 /*****************************************************************************/
 
+#define NM_CMP_RETURN(c) \
+    G_STMT_START { \
+        const int _cc = (c); \
+        if (_cc) \
+            return _cc < 0 ? -1 : 1; \
+    } G_STMT_END
+
+#define NM_CMP_SELF(a, b) \
+    G_STMT_START { \
+        typeof (a) _a = (a); \
+        typeof (b) _b = (b); \
+        \
+        if (_a == _b) \
+            return 0; \
+        if (!_a) \
+            return -1; \
+        if (!_b) \
+            return 1; \
+    } G_STMT_END
+
+#define NM_CMP_DIRECT(a, b) \
+    G_STMT_START { \
+        typeof (a) _a = (a); \
+        typeof (b) _b = (b); \
+        \
+        if (_a != _b) \
+            return (_a < _b) ? -1 : 1; \
+    } G_STMT_END
+
+#define NM_CMP_DIRECT_MEMCMP(a, b, size) \
+    NM_CMP_RETURN (memcmp ((a), (b), (size)))
+
+#define NM_CMP_DIRECT_IN6ADDR(a, b) \
+    G_STMT_START { \
+        const struct in6_addr *const _a = (a); \
+        const struct in6_addr *const _b = (b); \
+        NM_CMP_RETURN (memcmp (_a, _b, sizeof (struct in6_addr))); \
+    } G_STMT_END
+
+#define NM_CMP_FIELD(a, b, field) \
+    NM_CMP_DIRECT (((a)->field), ((b)->field))
+
+#define NM_CMP_FIELD_UNSAFE(a, b, field) \
+    G_STMT_START { \
+        /* it's unsafe, because it evaluates the arguments more then once.
+         * This is necessary for bitfields, for which typeof() doesn't work. */ \
+        if (((a)->field) != ((b)->field)) \
+            return ((a)->field < ((b)->field)) ? -1 : 1; \
+    } G_STMT_END
+
+#define NM_CMP_FIELD_BOOL(a, b, field) \
+    NM_CMP_DIRECT (!!((a)->field), !!((b)->field))
+
+#define NM_CMP_FIELD_STR(a, b, field) \
+    NM_CMP_RETURN (strcmp (((a)->field), ((b)->field)))
+
+#define NM_CMP_FIELD_STR_INTERNED(a, b, field) \
+    G_STMT_START { \
+        const char *_a = ((a)->field); \
+        const char *_b = ((b)->field); \
+        \
+        if (_a != _b) { \
+            NM_CMP_RETURN (g_strcmp0 (_a, _b)); \
+        } \
+    } G_STMT_END
+
+#define NM_CMP_FIELD_STR0(a, b, field) \
+    NM_CMP_RETURN (g_strcmp0 (((a)->field), ((b)->field)))
+
+#define NM_CMP_FIELD_MEMCMP_LEN(a, b, field, len) \
+    NM_CMP_RETURN (memcmp (&((a)->field), &((b)->field), \
+                           MIN (len, sizeof ((a)->field))))
+
+#define NM_CMP_FIELD_MEMCMP(a, b, field) \
+    NM_CMP_RETURN (memcmp (&((a)->field), \
+                           &((b)->field), \
+                           sizeof ((a)->field)))
+
+#define NM_CMP_FIELD_IN6ADDR(a, b, field) \
+    G_STMT_START { \
+        const struct in6_addr *const _a = &((a)->field); \
+        const struct in6_addr *const _b = &((b)->field); \
+        NM_CMP_RETURN (memcmp (_a, _b, sizeof (struct in6_addr))); \
+    } G_STMT_END
+
+/*****************************************************************************/
+
 extern const void *const _NM_PTRARRAY_EMPTY[1];
 
 #define NM_PTRARRAY_EMPTY(type) ((type const*) _NM_PTRARRAY_EMPTY)

@@ -73,6 +73,72 @@ struct udev_device;
 /* Redefine this in host's endianness */
 #define NM_GRE_KEY      0x2000
 
+typedef enum {
+	/* use our own platform enum for the nlmsg-flags. Otherwise, we'd have
+	 * to include <linux/netlink.h> */
+	NMP_NLM_FLAG_F_REPLACE      = 0x100, /* NLM_F_REPLACE, Override existing */
+	NMP_NLM_FLAG_F_EXCL         = 0x200, /* NLM_F_EXCL, Do not touch, if it exists */
+	NMP_NLM_FLAG_F_CREATE       = 0x400, /* NLM_F_CREATE, Create, if it does not exist */
+	NMP_NLM_FLAG_F_APPEND       = 0x800, /* NLM_F_APPEND, Add to end of list */
+
+	/* the following aliases correspond to iproute2's `ip route CMD` for
+	 * RTM_NEWROUTE, with CMD being one of add, change, replace, prepend,
+	 * append and test. */
+	NMP_NLM_FLAG_ADD            = NMP_NLM_FLAG_F_CREATE                          | NMP_NLM_FLAG_F_EXCL,
+	NMP_NLM_FLAG_CHANGE         =                         NMP_NLM_FLAG_F_REPLACE,
+	NMP_NLM_FLAG_REPLACE        = NMP_NLM_FLAG_F_CREATE | NMP_NLM_FLAG_F_REPLACE,
+	NMP_NLM_FLAG_PREPEND        = NMP_NLM_FLAG_F_CREATE,
+	NMP_NLM_FLAG_APPEND         = NMP_NLM_FLAG_F_CREATE                                                | NMP_NLM_FLAG_F_APPEND,
+	NMP_NLM_FLAG_TEST           =                                                  NMP_NLM_FLAG_F_EXCL,
+} NMPNlmFlags;
+
+typedef enum {
+	/* compare fields which kernel considers as similar routes.
+	 * It is a looser comparisong then NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID
+	 * and means that `ip route add` would fail to add two routes
+	 * that have the same NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID.
+	 * On the other hand, `ip route append` would allow that, as
+	 * long as NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID differs. */
+	NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID,
+
+	/* compare two routes as kernel would allow to add them with
+	 * `ip route append`. In other words, kernel does not allow you to
+	 * add two routes (at the same time) which compare equal according
+	 * to NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID.
+	 *
+	 * For the ID we can only recognize route fields that we actually implement.
+	 * However, kernel supports more routing options, some of them also part of
+	 * the ID. NetworkManager is oblivious to these options and will wrongly think
+	 * that two routes are idential, while they are not. That can lead to an
+	 * inconsistent platform cache. Not much what we can do about that, except
+	 * implementing all options that kernel supports *sigh*. See rh#1337860.
+	 */
+	NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID,
+
+	/* FIXME: this type is what NMPCache currently uses for object identity.
+	 * Eventually, we want to use NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID,
+	 * which is the same what kernel does. */
+	NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID_CACHE,
+
+	/* NMIP4Config and NMIP6Config also track a list of routes. They have their
+	 * own notion of what equality means. Basically, they consider network/plen
+	 * for IPv4 and IPv6. */
+	NM_PLATFORM_IP_ROUTE_CMP_TYPE_DST,
+
+	/* compare all fields as they make sense for kernel. For example,
+	 * a route destination 192.168.1.5/24 is not accepted by kernel and
+	 * we treat it identical to 192.168.1.0/24. Semantically these
+	 * routes are identical, but NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL will
+	 * report them as different. */
+	NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY,
+
+	/* compare all fields. This should have the same effect as memcmp(),
+	 * except allowing for undefined data in holes between field alignment.
+	 */
+	NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL,
+
+} NMPlatformIPRouteCmpType;
+
 typedef enum { /*< skip >*/
 
 	/* dummy value, to enforce that the enum type is signed and has a size
@@ -287,7 +353,15 @@ typedef union {
 	/* The NMIPConfigSource. For routes that we receive from cache this corresponds
 	 * to the rtm_protocol field (and is one of the NM_IP_CONFIG_SOURCE_RTPROT_* values).
 	 * When adding a route, the source will be coerced to the protocol using
-	 * nmp_utils_ip_config_source_coerce_to_rtprot(). */ \
+	 * nmp_utils_ip_config_source_coerce_to_rtprot().
+	 *
+	 * rtm_protocol is part of the primary key of an IPv4 route (meaning, you can add
+	 * two IPv4 routes that only differ in their rtm_protocol. For IPv6, that is not
+	 * the case.
+	 *
+	 * When deleting an IPv4/IPv6 route, the rtm_protocol field must match (even
+	 * if it is not part of the primary key for IPv6) -- unless rtm_protocol is set
+	 * to zero, in which case the first matching route (with proto ignored) is deleted. */ \
 	NMIPConfigSource rt_source; \
 	\
 	guint8 plen; \
@@ -297,21 +371,51 @@ typedef union {
 	 * of platform users. This flag is internal to track those hidden
 	 * routes. Such a route is not alive, according to nmp_object_is_alive(). */ \
 	bool rt_cloned:1; \
+	\
+	\
+	/* RTA_METRICS:
+	 *
+	 * For IPv4 routes, these properties are part of their
+	 * ID (meaning: you can add otherwise idential IPv4 routes that
+	 * only differ by the metric property).
+	 * On the other hand, for IPv6 you cannot add two IPv6 routes that only differ
+	 * by an RTA_METRICS property.
+	 *
+	 * When deleting a route, kernel seems to ignore the RTA_METRICS propeties.
+	 * That is a problem/bug for IPv4 because you cannot explicitly select which
+	 * route to delete. Kernel just picks the first. See rh#1475642. */ \
+	\
+	/* RTA_METRICS.RTAX_LOCK (iproute2: "lock" arguments) */ \
 	bool lock_window:1; \
 	bool lock_cwnd:1; \
 	bool lock_initcwnd:1; \
 	bool lock_initrwnd:1; \
 	bool lock_mtu:1; \
 	\
-	guint32 metric; \
+	/* RTA_METRICS.RTAX_ADVMSS (iproute2: advmss) */ \
 	guint32 mss; \
-	guint32 tos; \
+	\
+	/* RTA_METRICS.RTAX_WINDOW (iproute2: window) */ \
 	guint32 window; \
+	\
+	/* RTA_METRICS.RTAX_CWND (iproute2: cwnd) */ \
 	guint32 cwnd; \
+	\
+	/* RTA_METRICS.RTAX_INITCWND (iproute2: initcwnd) */ \
 	guint32 initcwnd; \
+	\
+	/* RTA_METRICS.RTAX_INITRWND (iproute2: initrwnd) */ \
 	guint32 initrwnd; \
+	\
+	/* RTA_METRICS.RTAX_MTU (iproute2: mtu) */ \
 	guint32 mtu; \
-	;
+	\
+	\
+	/* RTA_PRIORITY (iproute2: metric) */ \
+	guint32 metric; \
+	\
+	/*end*/
+
 
 typedef struct {
 	__NMPlatformIPRoute_COMMON;
@@ -327,22 +431,60 @@ typedef struct {
 struct _NMPlatformIP4Route {
 	__NMPlatformIPRoute_COMMON;
 	in_addr_t network;
+
+	/* RTA_GATEWAY. The gateway is part of the primary key for a route */
 	in_addr_t gateway;
 
-	/* The bitwise inverse of the route scope. It is inverted so that the
-	 * default value (RT_SCOPE_NOWHERE) is nul. */
-	guint8 scope_inv;
-
-	/* RTA_PREFSRC/rtnl_route_get_pref_src(). A value of zero means that
-	 * no pref-src is set.  */
+	/* RTA_PREFSRC (called "src" by iproute2).
+	 *
+	 * pref_src is part of the ID of an IPv4 route. When deleting a route,
+	 * pref_src must match, unless set to 0.0.0.0 to match any. */
 	in_addr_t pref_src;
+
+	/* rtm_tos (iproute2: tos)
+	 *
+	 * For IPv4, tos is part of the weak-id (like metric).
+	 *
+	 * For IPv6, tos is ignored by kernel.  */
+	guint8 tos;
+
+	/* The bitwise inverse of the route scope rtm_scope. It is inverted so that the
+	 * default value (RT_SCOPE_NOWHERE) is zero. Use nm_platform_route_scope_inv()
+	 * to convert back and forth between the inverese representation and the
+	 * real value.
+	 *
+	 * rtm_scope is part of the primary key for IPv4 routes. When deleting a route,
+	 * the scope must match, unless it is left at RT_SCOPE_NOWHERE, in which case the first
+	 * matching route is deleted.
+	 *
+	 * For IPv6 routes, the scope is ignored and kernel always assumes global scope.
+	 * Hence, this field is only in NMPlatformIP4Route. */
+	guint8 scope_inv;
 };
 
 struct _NMPlatformIP6Route {
 	__NMPlatformIPRoute_COMMON;
 	struct in6_addr network;
+
+	/* RTA_GATEWAY. The gateway is part of the primary key for a route */
 	struct in6_addr gateway;
+
+	/* RTA_PREFSRC (called "src" by iproute2).
+	 *
+	 * pref_src is not part of the ID for an IPv6 route. You cannot add two
+	 * routes that only differ by pref_src.
+	 *
+	 * When deleting a route, pref_src is ignored by kernel. */
 	struct in6_addr pref_src;
+
+	/* RTA_SRC and rtm_src_len (called "from" by iproute2).
+	 *
+	 * Kernel clears the host part of src/src_plen.
+	 *
+	 * src/src_plen is part of the ID of a route just like network/plen. That is,
+	 * Not only `ip route append`, but also `ip route add` allows to add routes that only
+	 * differ in their src/src_plen.
+	 */
 	struct in6_addr src;
 	guint8 src_plen;
 };
@@ -364,9 +506,13 @@ typedef struct {
 	NMPObjectType obj_type;
 	int addr_family;
 	gsize sizeof_route;
-	int (*route_cmp) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, gboolean consider_host_part);
+	int (*route_cmp) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, NMPlatformIPRouteCmpType cmp_type);
 	const char *(*route_to_string) (const NMPlatformIPXRoute *route, char *buf, gsize len);
-	gboolean (*route_add) (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route, gint64 metric);
+	gboolean (*route_add) (NMPlatform *self,
+	                       NMPNlmFlags flags,
+	                       const NMPlatformIPXRoute *route,
+	                       int ifindex,
+	                       gint64 metric);
 	guint32 (*metric_normalize) (guint32 metric);
 } NMPlatformVTableRoute;
 
@@ -640,8 +786,10 @@ typedef struct {
 	gboolean (*ip4_address_delete) (NMPlatform *, int ifindex, in_addr_t address, guint8 plen, in_addr_t peer_address);
 	gboolean (*ip6_address_delete) (NMPlatform *, int ifindex, struct in6_addr address, guint8 plen);
 
-	gboolean (*ip4_route_add) (NMPlatform *, const NMPlatformIP4Route *route);
-	gboolean (*ip6_route_add) (NMPlatform *, const NMPlatformIP6Route *route);
+	gboolean (*ip_route_add) (NMPlatform *,
+	                          NMPNlmFlags flags,
+	                          int addr_family,
+	                          const NMPlatformIPRoute *route);
 	gboolean (*ip_route_delete) (NMPlatform *, const NMPObject *obj);
 
 	gboolean (*check_support_kernel_extended_ifa_flags) (NMPlatform *);
@@ -954,8 +1102,10 @@ gboolean nm_platform_address_flush (NMPlatform *self, int ifindex);
 
 const NMPlatformIP4Route *nm_platform_ip4_route_get (NMPlatform *self, int ifindex, in_addr_t network, guint8 plen, guint32 metric);
 const NMPlatformIP6Route *nm_platform_ip6_route_get (NMPlatform *self, int ifindex, struct in6_addr network, guint8 plen, guint32 metric);
-gboolean nm_platform_ip4_route_add (NMPlatform *self, const NMPlatformIP4Route *route);
-gboolean nm_platform_ip6_route_add (NMPlatform *self, const NMPlatformIP6Route *route);
+
+gboolean nm_platform_ip4_route_add (NMPlatform *self, NMPNlmFlags flags, const NMPlatformIP4Route *route);
+gboolean nm_platform_ip6_route_add (NMPlatform *self, NMPNlmFlags flags, const NMPlatformIP6Route *route);
+
 gboolean nm_platform_ip_route_delete (NMPlatform *self, const NMPObject *route);
 
 const char *nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len);
@@ -991,26 +1141,27 @@ int nm_platform_lnk_vlan_cmp (const NMPlatformLnkVlan *a, const NMPlatformLnkVla
 int nm_platform_lnk_vxlan_cmp (const NMPlatformLnkVxlan *a, const NMPlatformLnkVxlan *b);
 int nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b);
 int nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6Address *b);
-int nm_platform_ip4_route_cmp_full (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b, gboolean consider_host_part);
-int nm_platform_ip6_route_cmp_full (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b, gboolean consider_host_part);
+
+int nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b, NMPlatformIPRouteCmpType cmp_type);
+int nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b, NMPlatformIPRouteCmpType cmp_type);
 
 static inline int
-nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b)
+nm_platform_ip4_route_cmp_full (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b)
 {
-	return nm_platform_ip4_route_cmp_full (a, b, TRUE);
+	return nm_platform_ip4_route_cmp (a, b, NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL);
 }
 
 static inline int
-nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b)
+nm_platform_ip6_route_cmp_full (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b)
 {
-	return nm_platform_ip6_route_cmp_full (a, b, TRUE);
+	return nm_platform_ip6_route_cmp (a, b, NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL);
 }
 
 guint nm_platform_link_hash (const NMPlatformLink *obj);
 guint nm_platform_ip4_address_hash (const NMPlatformIP4Address *obj);
 guint nm_platform_ip6_address_hash (const NMPlatformIP6Address *obj);
-guint nm_platform_ip4_route_hash (const NMPlatformIP4Route *obj);
-guint nm_platform_ip6_route_hash (const NMPlatformIP6Route *obj);
+guint nm_platform_ip4_route_hash (const NMPlatformIP4Route *obj, NMPlatformIPRouteCmpType cmp_type);
+guint nm_platform_ip6_route_hash (const NMPlatformIP6Route *obj, NMPlatformIPRouteCmpType cmp_type);
 guint nm_platform_lnk_gre_hash (const NMPlatformLnkGre *obj);
 guint nm_platform_lnk_infiniband_hash (const NMPlatformLnkInfiniband *obj);
 guint nm_platform_lnk_ip6tnl_hash (const NMPlatformLnkIp6Tnl *obj);
@@ -1020,6 +1171,18 @@ guint nm_platform_lnk_macvlan_hash (const NMPlatformLnkMacvlan *obj);
 guint nm_platform_lnk_sit_hash (const NMPlatformLnkSit *obj);
 guint nm_platform_lnk_vlan_hash (const NMPlatformLnkVlan *obj);
 guint nm_platform_lnk_vxlan_hash (const NMPlatformLnkVxlan *obj);
+
+static inline guint
+nm_platform_ip4_route_hash_full (const NMPlatformIP4Route *obj)
+{
+	return nm_platform_ip4_route_hash (obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL);
+}
+
+static inline guint
+nm_platform_ip6_route_hash_full (const NMPlatformIP6Route *obj)
+{
+	return nm_platform_ip6_route_hash (obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL);
+}
 
 gboolean nm_platform_check_support_kernel_extended_ifa_flags (NMPlatform *self);
 gboolean nm_platform_check_support_user_ipv6ll (NMPlatform *self);
