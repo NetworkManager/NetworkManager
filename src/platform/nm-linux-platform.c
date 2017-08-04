@@ -786,23 +786,91 @@ _nm_auto_nl_msg_cleanup (void *ptr)
 }
 
 static const char *
-_nl_nlmsg_type_to_str (guint16 type, char *buf, gsize len)
+_nl_nlmsghdr_to_str (const struct nlmsghdr *hdr, char *buf, gsize len)
 {
-	const char *str_type = NULL;
+	const char *b;
+	const char *s;
+	guint flags, flags_before;
+	const char *prefix;
 
-	switch (type) {
-	case RTM_NEWLINK:  str_type = "NEWLINK";  break;
-	case RTM_DELLINK:  str_type = "DELLINK";  break;
-	case RTM_NEWADDR:  str_type = "NEWADDR";  break;
-	case RTM_DELADDR:  str_type = "DELADDR";  break;
-	case RTM_NEWROUTE: str_type = "NEWROUTE"; break;
-	case RTM_DELROUTE: str_type = "DELROUTE"; break;
+	nm_utils_to_string_buffer_init (&buf, &len);
+	b = buf;
+
+	switch (hdr->nlmsg_type) {
+	case RTM_NEWLINK:  s = "NEWLINK";  break;
+	case RTM_DELLINK:  s = "DELLINK";  break;
+	case RTM_NEWADDR:  s = "NEWADDR";  break;
+	case RTM_DELADDR:  s = "DELADDR";  break;
+	case RTM_NEWROUTE: s = "NEWROUTE"; break;
+	case RTM_DELROUTE: s = "DELROUTE"; break;
+	default:           s = NULL;       break;
 	}
-	if (str_type)
-		g_strlcpy (buf, str_type, len);
+
+	if (s)
+		nm_utils_strbuf_append (&buf, &len, "RTM_%s", s);
 	else
-		g_snprintf (buf, len, "(%d)", type);
-	return buf;
+		nm_utils_strbuf_append (&buf, &len, "(%u)", (unsigned) hdr->nlmsg_type);
+
+	flags = hdr->nlmsg_flags;
+
+	if (!flags) {
+		nm_utils_strbuf_append_str (&buf, &len, ", flags 0");
+		goto flags_done;
+	}
+
+#define _F(f, n) \
+	G_STMT_START { \
+		if (NM_FLAGS_ALL (flags, f)) { \
+			flags &= ~(f); \
+			nm_utils_strbuf_append (&buf, &len, "%s%s", prefix, n); \
+			if (!flags) \
+				goto flags_done; \
+			prefix = ","; \
+		} \
+	} G_STMT_END
+
+	prefix = ", flags ";
+	flags_before = flags;
+	_F (NLM_F_REQUEST, "request");
+	_F (NLM_F_MULTI, "multi");
+	_F (NLM_F_ACK, "ack");
+	_F (NLM_F_ECHO, "echo");
+	_F (NLM_F_DUMP_INTR, "dump_intr");
+	_F (0x20 /*NLM_F_DUMP_FILTERED*/, "dump_filtered");
+
+	if (flags_before != flags)
+		prefix = ";";
+
+	switch (hdr->nlmsg_type) {
+	case RTM_NEWLINK:
+	case RTM_NEWADDR:
+	case RTM_NEWROUTE:
+		_F (NLM_F_REPLACE, "replace");
+		_F (NLM_F_EXCL, "excl");
+		_F (NLM_F_CREATE, "create");
+		_F (NLM_F_APPEND, "append");
+		break;
+	case RTM_GETLINK:
+	case RTM_GETADDR:
+	case RTM_GETROUTE:
+		_F (NLM_F_DUMP, "dump");
+		_F (NLM_F_ROOT, "root");
+		_F (NLM_F_MATCH, "match");
+		_F (NLM_F_ATOMIC, "atomic");
+		break;
+	}
+
+#undef _F
+
+	if (flags_before != flags)
+		prefix = ";";
+	nm_utils_strbuf_append (&buf, &len, "%s0x%04x", prefix, flags);
+
+flags_done:
+
+	nm_utils_strbuf_append (&buf, &len, ", seq %u", (unsigned) hdr->nlmsg_seq);
+
+	return b;
 }
 
 /******************************************************************
@@ -3821,7 +3889,7 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 	nm_auto_nmpobj NMPObject *obj = NULL;
 	NMPCacheOpsType cache_op;
 	struct nlmsghdr *msghdr;
-	char buf_nlmsg_type[16];
+	char buf_nlmsghdr[400];
 	gboolean id_only = FALSE;
 	NMPCache *cache = nm_platform_get_cache (platform);
 
@@ -3841,16 +3909,16 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 
 	obj = nmp_object_new_from_nl (platform, cache, msg, id_only);
 	if (!obj) {
-		_LOGT ("event-notification: %s, seq %u: ignore",
-		       _nl_nlmsg_type_to_str (msghdr->nlmsg_type, buf_nlmsg_type, sizeof (buf_nlmsg_type)),
-		       msghdr->nlmsg_seq);
+		_LOGT ("event-notification: %s: ignore",
+		       _nl_nlmsghdr_to_str (msghdr, buf_nlmsghdr, sizeof (buf_nlmsghdr)));
 		return;
 	}
 
-	_LOGT ("event-notification: %s, seq %u: %s",
-	       _nl_nlmsg_type_to_str (msghdr->nlmsg_type, buf_nlmsg_type, sizeof (buf_nlmsg_type)),
-	       msghdr->nlmsg_seq, nmp_object_to_string (obj,
-	           id_only ? NMP_OBJECT_TO_STRING_ID : NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+	_LOGT ("event-notification: %s: %s",
+	       _nl_nlmsghdr_to_str (msghdr, buf_nlmsghdr, sizeof (buf_nlmsghdr)),
+	       nmp_object_to_string (obj,
+	                             id_only ? NMP_OBJECT_TO_STRING_ID : NMP_OBJECT_TO_STRING_PUBLIC,
+	                             NULL, 0));
 
 	{
 		nm_auto_nmpobj const NMPObject *obj_old = NULL;
@@ -5908,6 +5976,7 @@ continue_reading:
 		gboolean abort_parsing = FALSE;
 		gboolean process_valid_msg = FALSE;
 		guint32 seq_number;
+		char buf_nlmsghdr[400];
 
 		msg = nlmsg_convert (hdr);
 		if (!msg) {
@@ -5927,8 +5996,8 @@ continue_reading:
 			goto stop;
 		}
 
-		_LOGt ("netlink: recvmsg: new message type %d, seq %u",
-		       hdr->nlmsg_type, hdr->nlmsg_seq);
+		_LOGt ("netlink: recvmsg: new message %s",
+		       _nl_nlmsghdr_to_str (hdr, buf_nlmsghdr, sizeof (buf_nlmsghdr)));
 
 		if (creds)
 			nlmsg_set_creds (msg, creds);
