@@ -2023,26 +2023,23 @@ nmp_cache_remove_netlink (NMPCache *cache,
 /**
  * nmp_cache_update_netlink:
  * @cache: the platform cache
- * @obj: a #NMPObject instance as received from netlink and created via
+ * @obj_hand_over: a #NMPObject instance as received from netlink and created via
  *    nmp_object_from_nl(). Especially for link, it must not have the udev
  *    replated fields set.
  *    This instance will be modified and might be put into the cache. When
  *    calling nmp_cache_update_netlink() you hand @obj over to the cache.
  *    Except, that the cache will increment the ref count as appropriate. You
  *    must still unref the obj to release your part of the ownership.
- * @out_obj: (allow-none): (out): return the object instance that is inside
- *    the cache. If you specify non %NULL, you must always unref the returned
- *    instance. If the return value indicates that the object was removed,
- *    the object is no longer in the cache. Even if the return value indicates
- *    that the object was unchanged, it will still return @out_obj -- if
- *    such an object is in the cache.
- * @out_was_visible: (allow-none): (out): whether the object was visible before
- *    the update operation.
- * @pre_hook: (allow-none): a callback *before* the object gets updated. You cannot
- *    influence the outcome and must not do anything beyong inspecting the changes.
- * @user_data:
+ * @out_obj_old: (allow-none): (out): return the object with same ID as @obj_hand_over,
+ *    that was in the cache before update. If an object is returned, the caller must
+ *    unref it afterwards.
+ * @out_obj_new: (allow-none): (out): return the object from the cache after update.
+ *    The caller must unref this object.
  *
  * Returns: how the cache changed.
+ *
+ * Even if there was no change in the cace (NMP_CACHE_OPS_UNCHANGED), @out_obj_old
+ * and @out_obj_new will be set accordingly.
  **/
 NMPCacheOpsType
 nmp_cache_update_netlink (NMPCache *cache,
