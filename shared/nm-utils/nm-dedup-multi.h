@@ -383,6 +383,10 @@ nm_dedup_multi_head_entry_sort (const NMDedupMultiHeadEntry *head_entry,
 	}
 }
 
+gboolean nm_dedup_multi_entry_reorder (const NMDedupMultiEntry *entry,
+                                       const NMDedupMultiEntry *entry_order,
+                                       gboolean order_after);
+
 /*****************************************************************************/
 
 #endif /* __NM_DEDUP_MULTI_H__ */

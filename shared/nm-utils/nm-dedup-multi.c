@@ -994,6 +994,64 @@ nm_dedup_multi_objs_to_ptr_array_head (const NMDedupMultiHeadEntry *head_entry,
 	return result;
 }
 
+/**
+ * nm_dedup_multi_entry_reorder:
+ * @entry: the entry to reorder. It must not be NULL (and tracked in an index).
+ * @entry_order: (allow-none): an optional other entry. It MUST be in the same
+ *   list as entry. If given, @entry will be ordered after/before @entry_order.
+ *   If left at %NULL, @entry will be moved to the front/end of the list.
+ * @order_after: if @entry_order is given, %TRUE means to move @entry after
+ *   @entry_order (otherwise before).
+ *   If @entry_order is %NULL, %TRUE means to move @entry to the tail of the list
+ *   (otherwise the beginning). Note that "tail of the list" here means that @entry
+ *   will be linked before the head of the circular list.
+ *
+ * Returns: %TRUE, if anything was changed. Otherwise, @entry was already at the
+ * right place and nothing was done.
+ */
+gboolean
+nm_dedup_multi_entry_reorder (const NMDedupMultiEntry *entry,
+                              const NMDedupMultiEntry *entry_order,
+                              gboolean order_after)
+{
+	nm_assert (entry);
+
+	if (!entry_order) {
+		const NMDedupMultiHeadEntry *head_entry = entry->head;
+
+		nm_assert (c_list_contains (&head_entry->lst_entries_head, &entry->lst_entries));
+		if (order_after) {
+			if (head_entry->lst_entries_head.prev != &entry->lst_entries) {
+				c_list_unlink ((CList *) &entry->lst_entries);
+				c_list_link_tail ((CList *) &head_entry->lst_entries_head, (CList *) &entry->lst_entries);
+				return TRUE;
+			}
+		} else {
+			if (head_entry->lst_entries_head.next != &entry->lst_entries) {
+				c_list_unlink ((CList *) &entry->lst_entries);
+				c_list_link_front ((CList *) &head_entry->lst_entries_head, (CList *) &entry->lst_entries);
+				return TRUE;
+			}
+		}
+	} else if (entry != entry_order) {
+		if (order_after) {
+			if (entry_order->lst_entries.next != &entry->lst_entries) {
+				c_list_unlink ((CList *) &entry->lst_entries);
+				c_list_link_after ((CList *) &entry_order->lst_entries, (CList *) &entry->lst_entries);
+				return TRUE;
+			}
+		} else {
+			if (entry_order->lst_entries.prev != &entry->lst_entries) {
+				c_list_unlink ((CList *) &entry->lst_entries);
+				c_list_link_before ((CList *) &entry_order->lst_entries, (CList *) &entry->lst_entries);
+				return TRUE;
+			}
+		}
+	}
+
+	return FALSE;
+}
+
 /*****************************************************************************/
 
 NMDedupMultiIndex *
