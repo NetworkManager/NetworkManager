@@ -3429,9 +3429,7 @@ cache_on_change (NMPlatform *platform,
 	NMPCache *cache = nm_platform_get_cache (platform);
 
 	ASSERT_nmp_cache_ops (cache, cache_op, obj_old, obj_new);
-
-	if (cache_op == NMP_CACHE_OPS_UNCHANGED)
-		return;
+	nm_assert (cache_op != NMP_CACHE_OPS_UNCHANGED);
 
 	klass = obj_old ? NMP_OBJECT_GET_CLASS (obj_old) : NMP_OBJECT_GET_CLASS (obj_new);
 
@@ -3892,6 +3890,7 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 	char buf_nlmsghdr[400];
 	gboolean id_only = FALSE;
 	NMPCache *cache = nm_platform_get_cache (platform);
+	gboolean is_dump;
 
 	msghdr = nlmsg_hdr (msg);
 
@@ -3914,8 +3913,20 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 		return;
 	}
 
-	_LOGT ("event-notification: %s: %s",
+	switch (msghdr->nlmsg_type) {
+	case RTM_NEWADDR:
+	case RTM_NEWLINK:
+	case RTM_NEWROUTE:
+		is_dump = delayed_action_refresh_all_in_progress (platform,
+		                                                  delayed_action_refresh_from_object_type (NMP_OBJECT_GET_TYPE (obj)));
+		break;
+	default:
+		is_dump = FALSE;
+	}
+
+	_LOGT ("event-notification: %s%s: %s",
 	       _nl_nlmsghdr_to_str (msghdr, buf_nlmsghdr, sizeof (buf_nlmsghdr)),
+	       is_dump ? ", in-dump" : "",
 	       nmp_object_to_string (obj,
 	                             id_only ? NMP_OBJECT_TO_STRING_ID : NMP_OBJECT_TO_STRING_PUBLIC,
 	                             NULL, 0));
@@ -3930,7 +3941,7 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 		case RTM_NEWADDR:
 		case RTM_NEWROUTE:
 		case RTM_GETLINK:
-			cache_op = nmp_cache_update_netlink (cache, obj, &obj_old, &obj_new);
+			cache_op = nmp_cache_update_netlink (cache, obj, is_dump, &obj_old, &obj_new);
 			if (cache_op != NMP_CACHE_OPS_UNCHANGED) {
 				cache_on_change (platform, cache_op, obj_old, obj_new);
 				cache_post (platform, msghdr, cache_op, obj, obj_old, obj_new);

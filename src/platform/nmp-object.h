@@ -413,6 +413,11 @@ const NMPClass *nmp_class_from_type (NMPObjectType obj_type);
 static inline const NMPObject *
 nmp_object_ref (const NMPObject *obj)
 {
+	if (!obj) {
+		/* for convenience, allow NULL. */
+		return NULL;
+	}
+
 	/* ref and unref accept const pointers. NMPObject is supposed to be shared
 	 * and kept immutable. Disallowing to take/retrun a reference to a const
 	 * NMPObject is cumbersome, because callers are precisely expected to
@@ -599,7 +604,8 @@ NMPCacheOpsType nmp_cache_remove_netlink (NMPCache *cache,
                                           const NMPObject **out_obj_old,
                                           const NMPObject **out_obj_new);
 NMPCacheOpsType nmp_cache_update_netlink (NMPCache *cache,
-                                          NMPObject *obj,
+                                          NMPObject *obj_hand_over,
+                                          gboolean is_dump,
                                           const NMPObject **out_obj_old,
                                           const NMPObject **out_obj_new);
 NMPCacheOpsType nmp_cache_update_link_udev (NMPCache *cache,

@@ -311,6 +311,7 @@ link_add (NMPlatform *platform,
 	link_add_prepare (platform, device, (NMPObject *) device->obj);
 	cache_op = nmp_cache_update_netlink (nm_platform_get_cache (platform),
 	                                     (NMPObject *) device->obj,
+	                                     FALSE,
 	                                     &obj_old, &obj_new);
 	g_assert (cache_op == NMP_CACHE_OPS_ADDED);
 	nmp_object_unref (device->obj);
@@ -319,6 +320,7 @@ link_add (NMPlatform *platform,
 		link_add_prepare (platform, device_veth, (NMPObject *) device_veth->obj);
 		cache_op_veth = nmp_cache_update_netlink (nm_platform_get_cache (platform),
 		                                          (NMPObject *) device_veth->obj,
+		                                          FALSE,
 		                                          &obj_old_veth, &obj_new_veth);
 		g_assert (cache_op == NMP_CACHE_OPS_ADDED);
 		nmp_object_unref (device->obj);
@@ -359,6 +361,7 @@ link_add_one (NMPlatform *platform,
 	link_add_prepare (platform, device, (NMPObject *) device->obj);
 	cache_op = nmp_cache_update_netlink (nm_platform_get_cache (platform),
 	                                     (NMPObject *) device->obj,
+	                                     FALSE,
 	                                     &obj_old, &obj_new);
 	g_assert (cache_op == NMP_CACHE_OPS_ADDED);
 	nmp_object_unref (device->obj);
@@ -431,7 +434,9 @@ link_set_obj (NMPlatform *platform,
 
 	link_add_prepare (platform, device, obj_tmp);
 	cache_op = nmp_cache_update_netlink (nm_platform_get_cache (platform),
-	                                     obj_tmp, &obj_old, &obj_new);
+	                                     obj_tmp,
+	                                     FALSE,
+	                                     &obj_old, &obj_new);
 	g_assert (NM_IN_SET (cache_op, NMP_CACHE_OPS_UNCHANGED,
 	                               NMP_CACHE_OPS_UPDATED));
 	g_assert (obj_old == device->obj);
@@ -971,7 +976,7 @@ ipx_address_add (NMPlatform *platform, int addr_family, const NMPlatformObject *
 	                        : NMP_OBJECT_TYPE_IP6_ADDRESS,
 	                      address);
 
-	cache_op = nmp_cache_update_netlink (cache, obj, &obj_old, &obj_new);
+	cache_op = nmp_cache_update_netlink (cache, obj, FALSE, &obj_old, &obj_new);
 	nm_platform_cache_update_emit_signal (platform, cache_op, obj_old, obj_new);
 	return TRUE;
 }
@@ -1275,7 +1280,7 @@ ip_route_add (NMPlatform *platform,
 		}
 	}
 
-	cache_op = nmp_cache_update_netlink (cache, obj, &obj_old, &obj_new);
+	cache_op = nmp_cache_update_netlink (cache, obj, FALSE, &obj_old, &obj_new);
 	nm_platform_cache_update_emit_signal (platform, cache_op, obj_old, obj_new);
 	return TRUE;
 }
