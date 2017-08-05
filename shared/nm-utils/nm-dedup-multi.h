@@ -219,6 +219,18 @@ struct _NMDedupMultiHeadEntry {
 	CList lst_idx;
 };
 
+/*****************************************************************************/
+
+static inline gconstpointer
+nm_dedup_multi_entry_get_obj (const NMDedupMultiEntry *entry)
+{
+	/* convenience method that allows to skip the %NULL check on
+	 * @entry. Think of the NULL-conditional operator ?. of C# */
+	return entry ? entry->obj : NULL;
+}
+
+/*****************************************************************************/
+
 static inline void
 nm_dedup_multi_entry_set_dirty (const NMDedupMultiEntry *entry,
                                 gboolean dirty)

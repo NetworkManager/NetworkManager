@@ -1424,7 +1424,9 @@ nmp_cache_link_connected_needs_toggle_by_ifindex (const NMPCache *cache, int mas
 /*****************************************************************************/
 
 static const NMDedupMultiEntry *
-_lookup_obj (const NMPCache *cache, const NMPObject *obj)
+_lookup_entry_with_idx_type (const NMPCache *cache,
+                             NMPCacheIdType cache_id_type,
+                             const NMPObject *obj)
 {
 	const NMDedupMultiEntry *entry;
 
@@ -1432,7 +1434,7 @@ _lookup_obj (const NMPCache *cache, const NMPObject *obj)
 	nm_assert (NMP_OBJECT_IS_VALID (obj));
 
 	entry = nm_dedup_multi_index_lookup_obj (cache->multi_idx,
-	                                         _idx_type_get (cache, NMP_CACHE_ID_TYPE_OBJECT_TYPE),
+	                                         _idx_type_get (cache, cache_id_type),
 	                                         obj);
 	nm_assert (!entry
 	           || (   NMP_OBJECT_IS_VALID (entry->obj)
@@ -1440,16 +1442,31 @@ _lookup_obj (const NMPCache *cache, const NMPObject *obj)
 	return entry;
 }
 
-const NMPObject *
-nmp_cache_lookup_obj (const NMPCache *cache, const NMPObject *obj)
+static const NMDedupMultiEntry *
+_lookup_entry (const NMPCache *cache, const NMPObject *obj)
 {
-	const NMDedupMultiEntry *entry;
+	return _lookup_entry_with_idx_type (cache, NMP_CACHE_ID_TYPE_OBJECT_TYPE, obj);
+}
 
+const NMDedupMultiEntry *
+nmp_cache_lookup_entry_with_idx_type (const NMPCache *cache,
+                                      NMPCacheIdType cache_id_type,
+                                      const NMPObject *obj)
+{
+	g_return_val_if_fail (cache, NULL);
+	g_return_val_if_fail (obj, NULL);
+	g_return_val_if_fail (cache_id_type > NMP_CACHE_ID_TYPE_NONE && cache_id_type <= NMP_CACHE_ID_TYPE_MAX, NULL);
+
+	return _lookup_entry_with_idx_type (cache, cache_id_type, obj);
+}
+
+const NMDedupMultiEntry *
+nmp_cache_lookup_entry (const NMPCache *cache, const NMPObject *obj)
+{
 	g_return_val_if_fail (cache, NULL);
 	g_return_val_if_fail (obj, NULL);
 
-	entry = _lookup_obj (cache, obj);
-	return entry ? entry->obj : NULL;
+	return _lookup_entry (cache, obj);
 }
 
 const NMDedupMultiEntry *
@@ -1457,20 +1474,23 @@ nmp_cache_lookup_entry_link (const NMPCache *cache, int ifindex)
 {
 	NMPObject obj_needle;
 
-	nm_assert (cache);
+	g_return_val_if_fail (cache, NULL);
+	g_return_val_if_fail (ifindex > 0, NULL);
 
 	nmp_object_stackinit_id_link (&obj_needle, ifindex);
-	return nm_dedup_multi_index_lookup_obj (cache->multi_idx,
-	                                        _idx_type_get (cache, NMP_CACHE_ID_TYPE_OBJECT_TYPE),
-	                                        &obj_needle);
+	return _lookup_entry (cache, &obj_needle);
+}
+
+const NMPObject *
+nmp_cache_lookup_obj (const NMPCache *cache, const NMPObject *obj)
+{
+	return nm_dedup_multi_entry_get_obj (nmp_cache_lookup_entry (cache, obj));
 }
 
 const NMPObject *
 nmp_cache_lookup_link (const NMPCache *cache, int ifindex)
 {
-	NMPObject obj_needle;
-
-	return nmp_cache_lookup_obj (cache, nmp_object_stackinit_id_link (&obj_needle, ifindex));
+	return nm_dedup_multi_entry_get_obj (nmp_cache_lookup_entry_link (cache, ifindex));
 }
 
 /*****************************************************************************/
@@ -1937,7 +1957,7 @@ nmp_cache_remove (NMPCache *cache,
 	const NMDedupMultiEntry *entry_old;
 	const NMPObject *obj_old;
 
-	entry_old = _lookup_obj (cache, obj_needle);
+	entry_old = _lookup_entry (cache, obj_needle);
 
 	if (!entry_old) {
 		NM_SET_OUT (out_obj_old, NULL);
@@ -1969,7 +1989,7 @@ nmp_cache_remove_netlink (NMPCache *cache,
 	const NMPObject *obj_old;
 	nm_auto_nmpobj NMPObject *obj_new = NULL;
 
-	entry_old = _lookup_obj (cache, obj_needle);
+	entry_old = _lookup_entry (cache, obj_needle);
 
 	if (!entry_old) {
 		NM_SET_OUT (out_obj_old, NULL);
@@ -2063,7 +2083,7 @@ nmp_cache_update_netlink (NMPCache *cache,
 	            && !obj_hand_over->link.driver));
 	nm_assert (nm_dedup_multi_index_obj_find (cache->multi_idx, obj_hand_over) != obj_hand_over);
 
-	entry_old = _lookup_obj (cache, obj_hand_over);
+	entry_old = _lookup_entry (cache, obj_hand_over);
 
 	if (!entry_old) {
 

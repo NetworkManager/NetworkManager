@@ -483,10 +483,17 @@ typedef struct _NMPCache NMPCache;
 typedef void (*NMPCachePreHook) (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMPCacheOpsType ops_type, gpointer user_data);
 typedef gboolean (*NMPObjectMatchFn) (const NMPObject *obj, gpointer user_data);
 
-const NMDedupMultiEntry *nmp_cache_lookup_entry_link (const NMPCache *cache, int ifindex);
-
-const NMPObject *nmp_cache_lookup_obj (const NMPCache *cache, const NMPObject *obj);
-const NMPObject *nmp_cache_lookup_link (const NMPCache *cache, int ifindex);
+const NMDedupMultiEntry *nmp_cache_lookup_entry (const NMPCache *cache,
+                                                 const NMPObject *obj);
+const NMDedupMultiEntry *nmp_cache_lookup_entry_with_idx_type (const NMPCache *cache,
+                                                               NMPCacheIdType cache_id_type,
+                                                               const NMPObject *obj);
+const NMDedupMultiEntry *nmp_cache_lookup_entry_link (const NMPCache *cache,
+                                                      int ifindex);
+const NMPObject *nmp_cache_lookup_obj (const NMPCache *cache,
+                                       const NMPObject *obj);
+const NMPObject *nmp_cache_lookup_link (const NMPCache *cache,
+                                        int ifindex);
 
 typedef struct _NMPLookup NMPLookup;
 
