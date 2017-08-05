@@ -235,34 +235,24 @@ nm_device_factory_manager_find_factory_for_link_type (NMLinkType link_type)
 NMDeviceFactory *
 nm_device_factory_manager_find_factory_for_connection (NMConnection *connection)
 {
+	NMDeviceFactoryClass *klass;
+	NMDeviceFactory *factory;
 	const char *type;
+	GSList *list;
 
 	g_return_val_if_fail (factories_by_setting, NULL);
 
 	type = nm_connection_get_connection_type (connection);
+	list = g_hash_table_lookup (factories_by_setting, type);
 
-	if (   nm_streq (type, NM_SETTING_BLUETOOTH_SETTING_NAME)
-	    && _nm_connection_get_setting_bluetooth_for_nap (connection)) {
-		/* for Bluetooth NAP connections, we return the bridge factory
-		 * instead of the bluetooth factory.
-		 *
-		 * In a way, this is a hack. The more orthodox solution would
-		 * be that device factories don't only announce supported setting
-		 * types, but instead match on a full fledged NMConnection.
-		 *
-		 * However, our device-factories are known at compile time.
-		 * There is no need to keep this generic. We *know* which
-		 * factory to choose. Making this generic would not make it
-		 * cleaner. */
-		if (!g_hash_table_lookup (factories_by_setting, type)) {
-			/* we need both the bluetooth and the bridge factory
-			 * to make this work. */
-			return NULL;
-		}
-		type = NM_SETTING_BRIDGE_SETTING_NAME;
+	for (; list; list = g_slist_next (list)) {
+		factory = list->data;
+		klass = NM_DEVICE_FACTORY_GET_CLASS (factory);
+		if (!klass->match_connection || klass->match_connection (factory, connection))
+			return factory;
 	}
 
-	return g_hash_table_lookup (factories_by_setting, type);
+	return NULL;
 }
 
 void
@@ -283,9 +273,11 @@ nm_device_factory_manager_for_each_factory (NMDeviceFactoryManagerFactoryFunc ca
 
 	if (factories_by_setting) {
 		g_hash_table_iter_init (&iter, factories_by_setting);
-		while (g_hash_table_iter_next (&iter, NULL, (gpointer) &factory)) {
-			if (!g_slist_find (list, factory))
-				list = g_slist_prepend (list, factory);
+		while (g_hash_table_iter_next (&iter, NULL, (gpointer) &list_iter)) {
+			for (; list_iter; list_iter = g_slist_next (list_iter)) {
+				if (!g_slist_find (list, list_iter->data))
+					list = g_slist_prepend (list, list_iter->data);
+			}
 		}
 	}
 
@@ -303,6 +295,7 @@ _add_factory (NMDeviceFactory *factory,
 {
 	const NMLinkType *link_types = NULL;
 	const char *const*setting_types = NULL;
+	GSList *list;
 	int i;
 
 	g_return_val_if_fail (factories_by_link, FALSE);
@@ -313,8 +306,15 @@ _add_factory (NMDeviceFactory *factory,
 	g_object_set_qdata_full (G_OBJECT (factory), plugin_path_quark (), g_strdup (path), g_free);
 	for (i = 0; link_types && link_types[i] > NM_LINK_TYPE_UNKNOWN; i++)
 		g_hash_table_insert (factories_by_link, GUINT_TO_POINTER (link_types[i]), g_object_ref (factory));
-	for (i = 0; setting_types && setting_types[i]; i++)
-		g_hash_table_insert (factories_by_setting, (char *) setting_types[i], g_object_ref (factory));
+	for (i = 0; setting_types && setting_types[i]; i++) {
+		list = g_hash_table_lookup (factories_by_setting, (char *) setting_types[i]);
+		if (list)
+			list = g_slist_append (list, g_object_ref (factory));
+		else {
+			list = g_slist_append (list, g_object_ref (factory));
+			g_hash_table_insert (factories_by_setting, (char *) setting_types[i], list);
+		}
+	}
 
 	callback (factory, user_data);
 
@@ -333,6 +333,12 @@ _load_internal_factory (GType factory_gtype,
 	_add_factory (factory, "internal", callback, user_data);
 }
 
+static void
+factories_list_unref (GSList *list)
+{
+	g_slist_free_full (list, g_object_unref);
+}
+
 void
 nm_device_factory_manager_load_factories (NMDeviceFactoryManagerFactoryFunc callback,
                                           gpointer user_data)
@@ -345,7 +351,7 @@ nm_device_factory_manager_load_factories (NMDeviceFactoryManagerFactoryFunc call
 	g_return_if_fail (factories_by_setting == NULL);
 
 	factories_by_link = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_object_unref);
-	factories_by_setting = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
+	factories_by_setting = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) factories_list_unref);
 
 #define _ADD_INTERNAL(get_type_fcn) \
 	G_STMT_START { \
@@ -362,6 +368,7 @@ nm_device_factory_manager_load_factories (NMDeviceFactoryManagerFactoryFunc call
 	_ADD_INTERNAL (nm_ip_tunnel_device_factory_get_type);
 	_ADD_INTERNAL (nm_macsec_device_factory_get_type);
 	_ADD_INTERNAL (nm_macvlan_device_factory_get_type);
+	_ADD_INTERNAL (nm_ppp_device_factory_get_type);
 	_ADD_INTERNAL (nm_tun_device_factory_get_type);
 	_ADD_INTERNAL (nm_veth_device_factory_get_type);
 	_ADD_INTERNAL (nm_vlan_device_factory_get_type);

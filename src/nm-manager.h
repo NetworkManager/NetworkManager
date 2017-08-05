@@ -124,4 +124,6 @@ gboolean            nm_manager_deactivate_connection   (NMManager *manager,
 
 void                nm_manager_set_capability   (NMManager *self, NMCapability cap);
 
+gboolean            nm_manager_remove_device (NMManager *self, const char *ifname);
+
 #endif /* __NETWORKMANAGER_MANAGER_H__ */

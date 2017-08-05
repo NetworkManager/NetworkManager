@@ -380,6 +380,7 @@ static const LinkDesc linktypes[] = {
 	{ NM_LINK_TYPE_WWAN_NET,      "wwan",        NULL,          "wwan" },
 	{ NM_LINK_TYPE_WIMAX,         "wimax",       "wimax",       "wimax" },
 
+	{ NM_LINK_TYPE_BNEP,          "bluetooth",   NULL,          "bluetooth" },
 	{ NM_LINK_TYPE_DUMMY,         "dummy",       "dummy",       NULL },
 	{ NM_LINK_TYPE_GRE,           "gre",         "gre",         NULL },
 	{ NM_LINK_TYPE_GRETAP,        "gretap",      "gretap",      NULL },
@@ -391,13 +392,13 @@ static const LinkDesc linktypes[] = {
 	{ NM_LINK_TYPE_MACVLAN,       "macvlan",     "macvlan",     NULL },
 	{ NM_LINK_TYPE_MACVTAP,       "macvtap",     "macvtap",     NULL },
 	{ NM_LINK_TYPE_OPENVSWITCH,   "openvswitch", "openvswitch", NULL },
+	{ NM_LINK_TYPE_PPP,           "ppp",         NULL,          "ppp" },
 	{ NM_LINK_TYPE_SIT,           "sit",         "sit",         NULL },
 	{ NM_LINK_TYPE_TAP,           "tap",         NULL,          NULL },
 	{ NM_LINK_TYPE_TUN,           "tun",         NULL,          NULL },
 	{ NM_LINK_TYPE_VETH,          "veth",        "veth",        NULL },
 	{ NM_LINK_TYPE_VLAN,          "vlan",        "vlan",        "vlan" },
 	{ NM_LINK_TYPE_VXLAN,         "vxlan",       "vxlan",       "vxlan" },
-	{ NM_LINK_TYPE_BNEP,          "bluetooth",   NULL,          "bluetooth" },
 
 	{ NM_LINK_TYPE_BRIDGE,        "bridge",      "bridge",      "bridge" },
 	{ NM_LINK_TYPE_BOND,          "bond",        "bond",        "bond" },
@@ -696,6 +697,8 @@ _linktype_get_type (NMPlatform *platform,
 		return NM_LINK_TYPE_SIT;
 	else if (arptype == ARPHRD_TUNNEL6)
 		return NM_LINK_TYPE_IP6TNL;
+	else if (arptype == ARPHRD_PPP)
+		return NM_LINK_TYPE_PPP;
 
 	{
 		NMPUtilsEthtoolDriverInfo driver_info;
@@ -4463,6 +4466,29 @@ nla_put_failure:
 	g_return_val_if_reached (NM_PLATFORM_ERROR_UNSPECIFIED);
 }
 
+static NMPlatformError
+link_set_name (NMPlatform *platform, int ifindex, const char *name)
+{
+	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+
+	_LOGD ("link: change %d: name: %s", ifindex, name);
+
+	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
+	                          0,
+	                          ifindex,
+	                          NULL,
+	                          0,
+	                          0);
+	if (!nlmsg)
+		g_return_val_if_reached (NM_PLATFORM_ERROR_UNSPECIFIED);
+
+	NLA_PUT (nlmsg, IFLA_IFNAME, strlen (name) + 1, name);
+
+	return do_change_link (platform, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
+nla_put_failure:
+	g_return_val_if_reached (FALSE);
+}
+
 static gboolean
 link_get_permanent_address (NMPlatform *platform,
                             int ifindex,
@@ -6461,6 +6487,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_set_address = link_set_address;
 	platform_class->link_get_permanent_address = link_get_permanent_address;
 	platform_class->link_set_mtu = link_set_mtu;
+	platform_class->link_set_name = link_set_name;
 	platform_class->link_set_sriov_num_vfs = link_set_sriov_num_vfs;
 
 	platform_class->link_get_physical_port_id = link_get_physical_port_id;

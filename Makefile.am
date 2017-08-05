@@ -206,6 +206,8 @@ introspection_sources = \
 	introspection/org.freedesktop.NetworkManager.Device.Modem.h \
 	introspection/org.freedesktop.NetworkManager.Device.OlpcMesh.c \
 	introspection/org.freedesktop.NetworkManager.Device.OlpcMesh.h \
+	introspection/org.freedesktop.NetworkManager.Device.Ppp.c \
+	introspection/org.freedesktop.NetworkManager.Device.Ppp.h \
 	introspection/org.freedesktop.NetworkManager.Device.Statistics.c \
 	introspection/org.freedesktop.NetworkManager.Device.Statistics.h \
 	introspection/org.freedesktop.NetworkManager.Device.Team.c \
@@ -279,6 +281,7 @@ DBUS_INTERFACE_DOCS = \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Tun.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Bridge.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.OlpcMesh.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Ppp.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.DHCP4Config.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Generic.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Infiniband.xml \
@@ -326,6 +329,7 @@ dbusinterfaces_DATA = \
 	introspection/org.freedesktop.NetworkManager.Device.Macvlan.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Modem.xml \
 	introspection/org.freedesktop.NetworkManager.Device.OlpcMesh.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Ppp.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Statistics.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Team.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Tun.xml \
@@ -721,6 +725,7 @@ libnm_lib_h_pub_real = \
 	libnm/nm-device-macvlan.h \
 	libnm/nm-device-modem.h \
 	libnm/nm-device-olpc-mesh.h \
+	libnm/nm-device-ppp.h \
 	libnm/nm-device-team.h \
 	libnm/nm-device-tun.h \
 	libnm/nm-device-vlan.h \
@@ -773,6 +778,7 @@ libnm_lib_c_real = \
 	libnm/nm-device-macvlan.c \
 	libnm/nm-device-modem.c \
 	libnm/nm-device-olpc-mesh.c \
+	libnm/nm-device-ppp.c \
 	libnm/nm-device-team.c \
 	libnm/nm-device-tun.c \
 	libnm/nm-device-vlan.c \
@@ -1388,6 +1394,8 @@ src_libNetworkManager_la_SOURCES = \
 	src/devices/nm-device-macsec.h \
 	src/devices/nm-device-macvlan.c \
 	src/devices/nm-device-macvlan.h \
+	src/devices/nm-device-ppp.c \
+	src/devices/nm-device-ppp.h \
 	src/devices/nm-device-tun.c \
 	src/devices/nm-device-tun.h \
 	src/devices/nm-device-veth.c \

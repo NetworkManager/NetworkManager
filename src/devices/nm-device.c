@@ -1001,6 +1001,40 @@ nm_device_get_iface (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->iface;
 }
 
+gboolean
+nm_device_take_over_link (NMDevice *self, const char *ifname)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	const NMPlatformLink *plink;
+	NMPlatform *platform;
+	gboolean up, success;
+	int ifindex;
+
+	g_return_val_if_fail (priv->ifindex <= 0, FALSE);
+
+	platform = nm_device_get_platform (self);
+	plink = nm_platform_link_get_by_ifname (platform, ifname);
+	if (!plink)
+		return FALSE;
+
+	ifindex = plink->ifindex;
+	up = NM_FLAGS_HAS (plink->n_ifi_flags, IFF_UP);
+
+	/* Rename the link to the device ifname */
+	if (up)
+		nm_platform_link_set_down (platform, ifindex);
+	success = nm_platform_link_set_name (platform, ifindex, nm_device_get_iface (self));
+	if (up)
+		nm_platform_link_set_up (platform, ifindex, NULL);
+
+	if (success) {
+		priv->ifindex = ifindex;
+		_notify (self, PROP_IFINDEX);
+	}
+
+	return success;
+}
+
 int
 nm_device_get_ifindex (NMDevice *self)
 {
@@ -1555,6 +1589,8 @@ nm_device_get_priority (NMDevice *self)
 		return 425;
 	case NM_DEVICE_TYPE_TUN:
 		return 450;
+	case NM_DEVICE_TYPE_PPP:
+		return 460;
 	case NM_DEVICE_TYPE_VXLAN:
 		return 500;
 	case NM_DEVICE_TYPE_DUMMY:
@@ -2909,8 +2945,10 @@ nm_device_create_and_realize (NMDevice *self,
 	if (NM_DEVICE_GET_CLASS (self)->create_and_realize) {
 		if (!NM_DEVICE_GET_CLASS (self)->create_and_realize (self, connection, parent, &plink, error))
 			return FALSE;
-		plink_copy = *plink;
-		plink = &plink_copy;
+		if (plink) {
+			plink_copy = *plink;
+			plink = &plink_copy;
+		}
 	}
 
 	realize_start_setup (self, plink,

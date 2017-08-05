@@ -45,6 +45,7 @@ NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_PPPOE)
 #define NM_SETTING_PPPOE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_PPPOE, NMSettingPppoePrivate))
 
 typedef struct {
+	char *parent;
 	char *service;
 	char *username;
 	char *password;
@@ -53,6 +54,7 @@ typedef struct {
 
 enum {
 	PROP_0,
+	PROP_PARENT,
 	PROP_SERVICE,
 	PROP_USERNAME,
 	PROP_PASSWORD,
@@ -72,6 +74,22 @@ NMSetting *
 nm_setting_pppoe_new (void)
 {
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_PPPOE, NULL);
+}
+
+/**
+ * nm_setting_pppoe_get_parent:
+ * @setting: the #NMSettingPppoe
+ *
+ * Returns: the #NMSettingPppoe:parent property of the setting
+ *
+ * Since: 1.10
+ **/
+const char *
+nm_setting_pppoe_get_parent (NMSettingPppoe *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_PPPOE (setting), NULL);
+
+	return NM_SETTING_PPPOE_GET_PRIVATE (setting)->parent;
 }
 
 /**
@@ -134,6 +152,7 @@ static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingPppoePrivate *priv = NM_SETTING_PPPOE_GET_PRIVATE (setting);
+	gs_free_error GError *local_error = NULL;
 
 	if (!priv->username) {
 		g_set_error_literal (error,
@@ -157,6 +176,16 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_PPPOE_SETTING_NAME, NM_SETTING_PPPOE_SERVICE);
+		return FALSE;
+	}
+
+	if (   priv->parent
+	    && !nm_utils_is_valid_iface_name (priv->parent, &local_error)) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             "'%s': %s", priv->parent, local_error->message);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_PPPOE_SETTING_NAME, NM_SETTING_PPPOE_PARENT);
 		return FALSE;
 	}
 
@@ -192,6 +221,10 @@ set_property (GObject *object, guint prop_id,
 	NMSettingPppoePrivate *priv = NM_SETTING_PPPOE_GET_PRIVATE (object);
 
 	switch (prop_id) {
+	case PROP_PARENT:
+		g_free (priv->parent);
+		priv->parent = g_value_dup_string (value);
+		break;
 	case PROP_SERVICE:
 		g_free (priv->service);
 		priv->service = g_value_dup_string (value);
@@ -220,6 +253,9 @@ get_property (GObject *object, guint prop_id,
 	NMSettingPppoe *setting = NM_SETTING_PPPOE (object);
 
 	switch (prop_id) {
+	case PROP_PARENT:
+		g_value_set_string (value, nm_setting_pppoe_get_parent (setting));
+		break;
 	case PROP_SERVICE:
 		g_value_set_string (value, nm_setting_pppoe_get_service (setting));
 		break;
@@ -266,6 +302,25 @@ nm_setting_pppoe_class_init (NMSettingPppoeClass *setting_class)
 	parent_class->need_secrets = need_secrets;
 
 	/* Properties */
+	/**
+	 * NMSettingPppoe:parent:
+	 *
+	 * If given, specifies the parent interface name on which this PPPoE
+	 * connection should be created.  If this property is not specified,
+	 * the connection is activated on the interface specified in
+	 * #NMSettingConnection:interface-name of #NMSettingConnection.
+	 *
+	 * Since: 1.10
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_PARENT,
+		 g_param_spec_string (NM_SETTING_PPPOE_PARENT, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT |
+		                      NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_STATIC_STRINGS));
+
 	/**
 	 * NMSettingPppoe:service:
 	 *

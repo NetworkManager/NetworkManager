@@ -1952,6 +1952,13 @@ nm_connection_is_virtual (NMConnection *connection)
 	if (nm_streq (type, NM_SETTING_BLUETOOTH_SETTING_NAME))
 		return !!_nm_connection_get_setting_bluetooth_for_nap (connection);
 
+	if (nm_streq (type, NM_SETTING_PPPOE_SETTING_NAME)) {
+		NMSettingPppoe *s_pppoe;
+
+		s_pppoe = nm_connection_get_setting_pppoe (connection);
+		return !!nm_setting_pppoe_get_parent (s_pppoe);
+	}
+
 	return FALSE;
 }
 

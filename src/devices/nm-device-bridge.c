@@ -538,8 +538,24 @@ create_device (NMDeviceFactory *factory,
 	                                  NULL);
 }
 
+static gboolean
+match_connection (NMDeviceFactory *factory,
+                  NMConnection *connection)
+{
+	const char *type = nm_connection_get_connection_type (connection);
+
+	if (nm_streq (type, NM_SETTING_BRIDGE_SETTING_NAME))
+		return TRUE;
+
+	nm_assert (nm_streq (type, NM_SETTING_BLUETOOTH_SETTING_NAME));
+
+	return    nm_bt_vtable_network_server
+	       && _nm_connection_get_setting_bluetooth_for_nap (connection);
+}
+
 NM_DEVICE_FACTORY_DEFINE_INTERNAL (BRIDGE, Bridge, bridge,
 	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES    (NM_LINK_TYPE_BRIDGE)
-	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_BRIDGE_SETTING_NAME),
+	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_BRIDGE_SETTING_NAME, NM_SETTING_BLUETOOTH_SETTING_NAME),
 	factory_class->create_device = create_device;
+	factory_class->match_connection = match_connection;
 );

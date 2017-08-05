@@ -108,7 +108,6 @@ typedef struct _NMDeviceEthernetPrivate {
 
 	/* PPPoE */
 	NMPPPManager *ppp_manager;
-	NMIP4Config  *pending_ip4_config;
 	gint32        last_pppoe_time;
 	guint         pppoe_wait_id;
 
@@ -1353,11 +1352,6 @@ deactivate (NMDevice *device)
 
 	nm_clear_g_source (&priv->pppoe_wait_id);
 
-	if (priv->pending_ip4_config) {
-		g_object_unref (priv->pending_ip4_config);
-		priv->pending_ip4_config = NULL;
-	}
-
 	if (priv->ppp_manager) {
 		nm_ppp_manager_stop_sync (priv->ppp_manager);
 		g_clear_object (&priv->ppp_manager);
@@ -1802,8 +1796,24 @@ create_device (NMDeviceFactory *factory,
 	                                  NULL);
 }
 
+static gboolean
+match_connection (NMDeviceFactory *factory, NMConnection *connection)
+{
+	const char *type = nm_connection_get_connection_type (connection);
+	NMSettingPppoe *s_pppoe;
+
+	if (nm_streq (type, NM_SETTING_WIRED_SETTING_NAME))
+		return TRUE;
+
+	nm_assert (nm_streq (type, NM_SETTING_PPPOE_SETTING_NAME));
+	s_pppoe = nm_connection_get_setting_pppoe (connection);
+
+	return !nm_setting_pppoe_get_parent (s_pppoe);
+}
+
 NM_DEVICE_FACTORY_DEFINE_INTERNAL (ETHERNET, Ethernet, ethernet,
 	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES    (NM_LINK_TYPE_ETHERNET)
 	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_PPPOE_SETTING_NAME),
 	factory_class->create_device = create_device;
+	factory_class->match_connection = match_connection;
 );

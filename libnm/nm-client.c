@@ -63,6 +63,7 @@
 #include "nm-device-macvlan.h"
 #include "nm-device-modem.h"
 #include "nm-device-olpc-mesh.h"
+#include "nm-device-ppp.h"
 #include "nm-device-team.h"
 #include "nm-device-tun.h"
 #include "nm-device-vlan.h"
@@ -2078,6 +2079,8 @@ obj_nm_for_gdbus_object (NMClient *self, GDBusObject *object, GDBusObjectManager
 			type = NM_TYPE_DEVICE_MODEM;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_OLPC_MESH) == 0)
 			type = NM_TYPE_DEVICE_OLPC_MESH;
+		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_PPP) == 0)
+			type = NM_TYPE_DEVICE_PPP;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_TEAM) == 0)
 			type = NM_TYPE_DEVICE_TEAM;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_TUN) == 0)

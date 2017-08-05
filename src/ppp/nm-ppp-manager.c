@@ -678,6 +678,7 @@ create_pppd_cmd_line (NMPPPManager *self,
 	const char *pppd_binary = NULL;
 	NMCmdLine *cmd;
 	gboolean ppp_debug;
+	static int unit;
 
 	g_return_val_if_fail (setting != NULL, NULL);
 
@@ -841,6 +842,15 @@ create_pppd_cmd_line (NMPPPManager *self,
 
 	nm_cmd_line_add_string (cmd, "plugin");
 	nm_cmd_line_add_string (cmd, NM_PPPD_PLUGIN);
+
+	if (pppoe && nm_setting_pppoe_get_parent (pppoe)) {
+		/* The PPP interface is going to be renamed, so pass a
+		 * different unit each time so that activations don't
+		 * race with each others. */
+		nm_cmd_line_add_string (cmd, "unit");
+		nm_cmd_line_add_int (cmd, unit);
+		unit = unit < G_MAXINT ? unit + 1 : 0;
+	}
 
 	return cmd;
 }
