@@ -283,6 +283,15 @@ nmtst_free (void)
 }
 
 static inline void
+_nmtst_log_handler (const gchar   *log_domain,
+                    GLogLevelFlags log_level,
+                    const gchar   *message,
+                    gpointer       user_data)
+{
+	g_print ("%s\n", message);
+}
+
+static inline void
 __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_level, const char *log_domains, gboolean *out_set_logging)
 {
 	const char *nmtst_debug;
@@ -591,6 +600,11 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 		g_assert_no_error (error);
 	}
 #endif
+
+	g_log_set_handler (G_LOG_DOMAIN,
+	                   G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
+	                   _nmtst_log_handler,
+	                   NULL);
 }
 
 #ifndef _NMTST_INSIDE_CORE
