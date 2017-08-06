@@ -549,8 +549,17 @@ match_connection (NMDeviceFactory *factory,
 
 	nm_assert (nm_streq (type, NM_SETTING_BLUETOOTH_SETTING_NAME));
 
-	return    nm_bt_vtable_network_server
-	       && _nm_connection_get_setting_bluetooth_for_nap (connection);
+	if (!_nm_connection_get_setting_bluetooth_for_nap (connection))
+		return FALSE;
+
+	if (!g_type_from_name ("NMBluezManager")) {
+		/* bluetooth NAP connections are handled by bridge factory. However,
+		 * it needs help from the bluetooth plugin, so if the plugin is not loaded,
+		 * we claim not to support it. */
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 NM_DEVICE_FACTORY_DEFINE_INTERNAL (BRIDGE, Bridge, bridge,

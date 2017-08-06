@@ -426,8 +426,7 @@ match_connection (NMDeviceFactory *factory,
 
 	nm_assert (nm_streq (type, NM_SETTING_BLUETOOTH_SETTING_NAME));
 
-	if (   nm_bt_vtable_network_server
-	    && _nm_connection_get_setting_bluetooth_for_nap (connection))
+	if (_nm_connection_get_setting_bluetooth_for_nap (connection))
 		return FALSE;    /* handled by the bridge factory */
 
 	return TRUE;
