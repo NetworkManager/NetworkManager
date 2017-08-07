@@ -183,7 +183,10 @@ static void supplicant_iface_notify_current_bss (NMSupplicantInterface *iface,
                                                  GParamSpec *pspec,
                                                  NMDeviceWifi *self);
 
-static void request_wireless_scan (NMDeviceWifi *self, gboolean periodic, gboolean force_if_scanning, GVariant *scan_options);
+static void request_wireless_scan (NMDeviceWifi *self,
+                                   gboolean periodic,
+                                   gboolean force_if_scanning,
+                                   const GPtrArray *ssids);
 
 static void ap_add_remove (NMDeviceWifi *self,
                            guint signum,
@@ -1192,6 +1195,47 @@ _hw_addr_set_scanning (NMDeviceWifi *self, gboolean do_reset)
 	}
 }
 
+static GPtrArray *
+ssids_options_to_ptrarray (GVariant *value, GError **error)
+{
+	GPtrArray *ssids = NULL;
+	GByteArray *ssid_array;
+	GVariant *v;
+	const guint8 *bytes;
+	gsize len;
+	int num_ssids, i;
+
+	num_ssids = g_variant_n_children (value);
+	if (num_ssids > 32) {
+		g_set_error_literal (error,
+		                     NM_DEVICE_ERROR,
+		                     NM_DEVICE_ERROR_NOT_ALLOWED,
+		                     "too many SSIDs requested to scan");
+		return NULL;
+	}
+
+	if (num_ssids) {
+		ssids = g_ptr_array_new_full (num_ssids, (GDestroyNotify) g_byte_array_unref);
+		for (i = 0; i < num_ssids; i++) {
+			v = g_variant_get_child_value (value, i);
+			bytes = g_variant_get_fixed_array (v, &len, sizeof (guint8));
+			if (len > 32) {
+				g_set_error (error,
+				             NM_DEVICE_ERROR,
+				             NM_DEVICE_ERROR_NOT_ALLOWED,
+				             "SSID at index %d more than 32 bytes", i);
+				g_ptr_array_unref (ssids);
+				return NULL;
+			}
+
+			ssid_array = g_byte_array_new ();
+			g_byte_array_append (ssid_array, bytes, len);
+			g_ptr_array_add (ssids, ssid_array);
+		}
+	}
+	return ssids;
+}
+
 static void
 dbus_request_scan_cb (NMDevice *device,
                       GDBusMethodInvocation *context,
@@ -1201,7 +1245,8 @@ dbus_request_scan_cb (NMDevice *device,
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv;
-	gs_unref_variant GVariant *new_scan_options = user_data;
+	gs_unref_variant GVariant *scan_options = user_data;
+	gs_unref_ptrarray GPtrArray *ssids = NULL;
 
 	if (error) {
 		g_dbus_method_invocation_return_gerror (context, error);
@@ -1218,7 +1263,29 @@ dbus_request_scan_cb (NMDevice *device,
 
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	request_wireless_scan (self, FALSE, FALSE, new_scan_options);
+	if (scan_options) {
+		gs_unref_variant GVariant *val = g_variant_lookup_value (scan_options, "ssids", NULL);
+
+		if (val) {
+			gs_free_error GError *ssid_error = NULL;
+
+			if (!g_variant_is_of_type (val, G_VARIANT_TYPE ("aay"))) {
+				g_dbus_method_invocation_return_error_literal (context,
+				                                               NM_DEVICE_ERROR,
+				                                               NM_DEVICE_ERROR_NOT_ALLOWED,
+				                                               "Invalid 'ssid' scan option");
+				return;
+			}
+
+			ssids = ssids_options_to_ptrarray (val, &ssid_error);
+			if (ssid_error) {
+				g_dbus_method_invocation_return_gerror (context, ssid_error);
+				return;
+			}
+		}
+	}
+
+	request_wireless_scan (self, FALSE, FALSE, ssids);
 	g_dbus_method_invocation_return_value (context, NULL);
 }
 
@@ -1402,32 +1469,11 @@ build_hidden_probe_list (NMDeviceWifi *self)
 	return ssids;
 }
 
-static GPtrArray *
-ssids_options_to_ptrarray (GVariant *value)
-{
-	GPtrArray *ssids = NULL;
-	GByteArray *ssid_array;
-	GVariant *v;
-	const guint8 *bytes;
-	gsize len;
-	int num_ssids, i;
-
-	num_ssids = g_variant_n_children (value);
-	if (num_ssids) {
-		ssids = g_ptr_array_new_full (num_ssids, (GDestroyNotify) g_byte_array_unref);
-		for (i = 0; i < num_ssids; i++) {
-			v = g_variant_get_child_value (value, i);
-			bytes = g_variant_get_fixed_array (v, &len, sizeof (guint8));
-			ssid_array = g_byte_array_new ();
-			g_byte_array_append (ssid_array, bytes, len);
-			g_ptr_array_add (ssids, ssid_array);
-		}
-	}
-	return ssids;
-}
-
 static void
-request_wireless_scan (NMDeviceWifi *self, gboolean periodic, gboolean force_if_scanning, GVariant *scan_options)
+request_wireless_scan (NMDeviceWifi *self,
+                       gboolean periodic,
+                       gboolean force_if_scanning,
+                       const GPtrArray *ssids)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	gboolean request_started = FALSE;
@@ -1440,23 +1486,13 @@ request_wireless_scan (NMDeviceWifi *self, gboolean periodic, gboolean force_if_
 	}
 
 	if (!check_scanning_prohibited (self, periodic)) {
-		gs_unref_ptrarray GPtrArray *ssids = NULL;
+		gs_unref_ptrarray GPtrArray *hidden_ssids = NULL;
 
 		_LOGD (LOGD_WIFI, "wifi-scan: scanning requested");
 
-		if (scan_options) {
-			GVariant *val = g_variant_lookup_value (scan_options, "ssids", NULL);
-
-			if (val) {
-				if (g_variant_is_of_type (val, G_VARIANT_TYPE ("aay")))
-					ssids = ssids_options_to_ptrarray (val);
-				else
-					_LOGD (LOGD_WIFI, "wifi-scan: ignoring invalid 'ssids' scan option");
-				g_variant_unref (val);
-			}
+		if (!ssids) {
+			ssids = hidden_ssids = build_hidden_probe_list (self);
 		}
-		if (!ssids)
-			ssids = build_hidden_probe_list (self);
 
 		if (_LOGD_ENABLED (LOGD_WIFI)) {
 			if (ssids) {
