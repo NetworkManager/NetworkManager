@@ -32,6 +32,7 @@
 #define NM_CONFIG_DATA_CONFIG_DESCRIPTION    "config-description"
 #define NM_CONFIG_DATA_KEYFILE_USER          "keyfile-user"
 #define NM_CONFIG_DATA_KEYFILE_INTERN        "keyfile-intern"
+#define NM_CONFIG_DATA_CONNECTIVITY_ENABLED  "connectivity-enabled"
 #define NM_CONFIG_DATA_CONNECTIVITY_URI      "connectivity-uri"
 #define NM_CONFIG_DATA_CONNECTIVITY_INTERVAL "connectivity-interval"
 #define NM_CONFIG_DATA_CONNECTIVITY_RESPONSE "connectivity-response"
@@ -159,6 +160,7 @@ const char *nm_config_data_get_value_cached (const NMConfigData *config_data, co
 gint nm_config_data_get_value_boolean (const NMConfigData *self, const char *group, const char *key, gint default_value);
 
 char **nm_config_data_get_plugins (const NMConfigData *config_data, gboolean allow_default);
+gboolean nm_config_data_get_connectivity_enabled (const NMConfigData *config_data);
 const char *nm_config_data_get_connectivity_uri (const NMConfigData *config_data);
 guint nm_config_data_get_connectivity_interval (const NMConfigData *config_data);
 const char *nm_config_data_get_connectivity_response (const NMConfigData *config_data);
