@@ -50,6 +50,8 @@ G_BEGIN_DECLS
 #define NM_CLIENT_WIMAX_HARDWARE_ENABLED "wimax-hardware-enabled"
 #define NM_CLIENT_ACTIVE_CONNECTIONS "active-connections"
 #define NM_CLIENT_CONNECTIVITY "connectivity"
+#define NM_CLIENT_CONNECTIVITY_CHECK_AVAILABLE "connectivity-check-available"
+#define NM_CLIENT_CONNECTIVITY_CHECK_ENABLED "connectivity-check-enabled"
 #define NM_CLIENT_PRIMARY_CONNECTION "primary-connection"
 #define NM_CLIENT_ACTIVATING_CONNECTION "activating-connection"
 #define NM_CLIENT_DEVICES "devices"
@@ -125,8 +127,9 @@ typedef enum {
 	NM_CLIENT_PERMISSION_RELOAD = 13,
 	NM_CLIENT_PERMISSION_CHECKPOINT_ROLLBACK = 14,
 	NM_CLIENT_PERMISSION_ENABLE_DISABLE_STATISTICS = 15,
+	NM_CLIENT_PERMISSION_ENABLE_DISABLE_CONNECTIVITY_CHECK = 16,
 
-	NM_CLIENT_PERMISSION_LAST = 15,
+	NM_CLIENT_PERMISSION_LAST = 16,
 } NMClientPermission;
 
 /**
@@ -248,6 +251,11 @@ gboolean nm_client_wwan_hardware_get_enabled (NMClient *client);
 gboolean nm_client_wimax_get_enabled (NMClient *client);
 void     nm_client_wimax_set_enabled (NMClient *client, gboolean enabled);
 gboolean nm_client_wimax_hardware_get_enabled (NMClient *client);
+
+gboolean nm_client_connectivity_check_get_available (NMClient *client);
+gboolean nm_client_connectivity_check_get_enabled (NMClient *client);
+void     nm_client_connectivity_check_set_enabled (NMClient *client,
+                                                   gboolean enabled);
 
 gboolean nm_client_get_logging (NMClient *client,
                                 char **level,
