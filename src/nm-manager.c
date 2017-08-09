@@ -205,6 +205,8 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMManager,
 	PROP_WIMAX_HARDWARE_ENABLED,
 	PROP_ACTIVE_CONNECTIONS,
 	PROP_CONNECTIVITY,
+	PROP_CONNECTIVITY_CHECK_AVAILABLE,
+	PROP_CONNECTIVITY_CHECK_ENABLED,
 	PROP_PRIMARY_CONNECTION,
 	PROP_PRIMARY_CONNECTION_TYPE,
 	PROP_ACTIVATING_CONNECTION,
@@ -4868,6 +4870,7 @@ get_permissions_done_cb (NMAuthChain *chain,
 		get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_RELOAD);
 		get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_CHECKPOINT_ROLLBACK);
 		get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_ENABLE_DISABLE_STATISTICS);
+		get_perm_add_result (self, chain, &results, NM_AUTH_PERMISSION_ENABLE_DISABLE_CONNECTIVITY_CHECK);
 
 		g_dbus_method_invocation_return_value (context,
 		                                       g_variant_new ("(a{ss})", &results));
@@ -4909,6 +4912,7 @@ impl_manager_get_permissions (NMManager *self,
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_RELOAD, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_CHECKPOINT_ROLLBACK, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_STATISTICS, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_CONNECTIVITY_CHECK, FALSE);
 }
 
 static void
@@ -5564,6 +5568,10 @@ prop_filter (GDBusConnection *connection,
 			permission = NM_AUTH_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS;
 			audit_op = NM_AUDIT_OP_NET_CONTROL;
 			expected_type = G_VARIANT_TYPE ("a{sv}");
+		} else if (!strcmp (propname, "ConnectivityCheckEnabled")) {
+			glib_propname = NM_MANAGER_CONNECTIVITY_CHECK_ENABLED;
+			permission = NM_AUTH_PERMISSION_ENABLE_DISABLE_CONNECTIVITY_CHECK;
+			audit_op = NM_AUDIT_OP_NET_CONTROL;
 		} else
 			return message;
 		interface_type = NMDBUS_TYPE_MANAGER_SKELETON;
@@ -6210,6 +6218,7 @@ get_property (GObject *object, guint prop_id,
 	NMConfigData *config_data;
 	const NMGlobalDnsConfig *dns_config;
 	const char *type;
+	NMConnectivity *connectivity;
 
 	switch (prop_id) {
 	case PROP_VERSION:
@@ -6253,6 +6262,14 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_CONNECTIVITY:
 		g_value_set_uint (value, priv->connectivity_state);
+		break;
+	case PROP_CONNECTIVITY_CHECK_AVAILABLE:
+		config_data = nm_config_get_data (priv->config);
+		g_value_set_boolean (value, nm_config_data_get_connectivity_uri (config_data) != NULL);
+		break;
+	case PROP_CONNECTIVITY_CHECK_ENABLED:
+		connectivity = nm_connectivity_get ();
+		g_value_set_boolean (value, nm_connectivity_check_enabled (connectivity));
 		break;
 	case PROP_PRIMARY_CONNECTION:
 		nm_utils_g_value_set_object_path (value, priv->primary_connection);
@@ -6316,6 +6333,10 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_WIMAX_ENABLED:
 		/* WIMAX is depreacted. This does nothing. */
+		break;
+	case PROP_CONNECTIVITY_CHECK_ENABLED:
+		nm_config_set_connectivity_check_enabled (priv->config,
+		                                          g_value_get_boolean (value));
 		break;
 	case PROP_GLOBAL_DNS_CONFIGURATION:
 		dns_config = nm_global_dns_config_from_dbus (value, &error);
@@ -6540,6 +6561,18 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	                       NM_CONNECTIVITY_UNKNOWN, NM_CONNECTIVITY_FULL, NM_CONNECTIVITY_UNKNOWN,
 	                       G_PARAM_READABLE |
 	                       G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_CONNECTIVITY_CHECK_AVAILABLE] =
+	    g_param_spec_boolean (NM_MANAGER_CONNECTIVITY_CHECK_AVAILABLE, "", "",
+	                          TRUE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_CONNECTIVITY_CHECK_ENABLED] =
+	    g_param_spec_boolean (NM_MANAGER_CONNECTIVITY_CHECK_ENABLED, "", "",
+	                          TRUE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_PRIMARY_CONNECTION] =
 	    g_param_spec_string (NM_MANAGER_PRIMARY_CONNECTION, "", "",
