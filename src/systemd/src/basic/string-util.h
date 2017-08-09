@@ -158,7 +158,7 @@ bool string_has_cc(const char *p, const char *ok) _pure_;
 char *ellipsize_mem(const char *s, size_t old_length_bytes, size_t new_length_columns, unsigned percent);
 char *ellipsize(const char *s, size_t length, unsigned percent);
 
-bool nulstr_contains(const char*nulstr, const char *needle);
+bool nulstr_contains(const char *nulstr, const char *needle);
 
 char* strshorten(char *s, size_t l);
 
@@ -200,3 +200,10 @@ DEFINE_TRIVIAL_CLEANUP_FUNC(char *, string_free_erase);
 #define _cleanup_string_free_erase_ _cleanup_(string_free_erasep)
 
 bool string_is_safe(const char *p) _pure_;
+
+static inline size_t strlen_ptr(const char *s) {
+        if (!s)
+                return 0;
+
+        return strlen(s);
+}

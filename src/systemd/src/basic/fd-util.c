@@ -33,6 +33,7 @@
 #include "missing.h"
 #include "parse-util.h"
 #include "path-util.h"
+#include "process-util.h"
 #include "socket-util.h"
 #include "stdio-util.h"
 #include "util.h"
@@ -285,7 +286,7 @@ int same_fd(int a, int b) {
                 return true;
 
         /* Try to use kcmp() if we have it. */
-        pid = getpid();
+        pid = getpid_cached();
         r = kcmp(pid, pid, KCMP_FILE, a, b);
         if (r == 0)
                 return true;

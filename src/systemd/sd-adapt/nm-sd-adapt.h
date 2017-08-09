@@ -168,10 +168,6 @@ static inline pid_t gettid(void) {
         return (pid_t) syscall(SYS_gettid);
 }
 
-static inline bool is_main_thread(void) {
-        return TRUE;
-}
-
 #endif /* (NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_SYSTEMD */
 
 #endif /* NM_SD_ADAPT_H */

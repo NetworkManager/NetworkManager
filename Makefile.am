@@ -1199,6 +1199,8 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/src/basic/path-util.h \
 	src/systemd/src/basic/prioq.c \
 	src/systemd/src/basic/prioq.h \
+	src/systemd/src/basic/process-util.c \
+	src/systemd/src/basic/process-util.h \
 	src/systemd/src/basic/random-util.c \
 	src/systemd/src/basic/random-util.h \
 	src/systemd/src/basic/refcnt.h \

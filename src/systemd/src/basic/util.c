@@ -224,7 +224,7 @@ int fork_agent(pid_t *pid, const int except[], unsigned n_except, const char *pa
         /* Spawns a temporary TTY agent, making sure it goes away when
          * we go away */
 
-        parent_pid = getpid();
+        parent_pid = getpid_cached();
 
         /* First we temporarily block all signals, so that the new
          * child has them blocked initially. This way, we can be sure
@@ -546,7 +546,7 @@ int namespace_enter(int pidns_fd, int mntns_fd, int netns_fd, int userns_fd, int
                 if (asprintf(&userns_fd_path, "/proc/self/fd/%d", userns_fd) < 0)
                         return -ENOMEM;
 
-                r = files_same(userns_fd_path, "/proc/self/ns/user");
+                r = files_same(userns_fd_path, "/proc/self/ns/user", 0);
                 if (r < 0)
                         return r;
                 if (r)
