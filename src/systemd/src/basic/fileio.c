@@ -41,6 +41,7 @@
 #include "missing.h"
 #include "parse-util.h"
 #include "path-util.h"
+#include "process-util.h"
 #include "random-util.h"
 #include "stdio-util.h"
 #include "string-util.h"
@@ -823,29 +824,29 @@ static void write_env_var(FILE *f, const char *v) {
         p = strchr(v, '=');
         if (!p) {
                 /* Fallback */
-                fputs(v, f);
-                fputc('\n', f);
+                fputs_unlocked(v, f);
+                fputc_unlocked('\n', f);
                 return;
         }
 
         p++;
-        fwrite(v, 1, p-v, f);
+        fwrite_unlocked(v, 1, p-v, f);
 
         if (string_has_cc(p, NULL) || chars_intersect(p, WHITESPACE SHELL_NEED_QUOTES)) {
-                fputc('\"', f);
+                fputc_unlocked('\"', f);
 
                 for (; *p; p++) {
                         if (strchr(SHELL_NEED_ESCAPE, *p))
-                                fputc('\\', f);
+                                fputc_unlocked('\\', f);
 
-                        fputc(*p, f);
+                        fputc_unlocked(*p, f);
                 }
 
-                fputc('\"', f);
+                fputc_unlocked('\"', f);
         } else
-                fputs(p, f);
+                fputs_unlocked(p, f);
 
-        fputc('\n', f);
+        fputc_unlocked('\n', f);
 }
 
 int write_env_file(const char *fname, char **l) {
@@ -1399,7 +1400,7 @@ int open_serialization_fd(const char *ident) {
         if (fd < 0) {
                 const char *path;
 
-                path = getpid() == 1 ? "/run/systemd" : "/tmp";
+                path = getpid_cached() == 1 ? "/run/systemd" : "/tmp";
                 fd = open_tmpfile_unlinkable(path, O_RDWR|O_CLOEXEC);
                 if (fd < 0)
                         return fd;
