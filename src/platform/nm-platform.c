@@ -4270,7 +4270,7 @@ const char *
 nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsize len)
 {
 	char s_network[INET6_ADDRSTRLEN], s_gateway[INET6_ADDRSTRLEN], s_pref_src[INET6_ADDRSTRLEN];
-	char s_src[INET6_ADDRSTRLEN];
+	char s_src_all[INET6_ADDRSTRLEN + 40], s_src[INET6_ADDRSTRLEN];
 	char str_dev[TO_STRING_DEV_BUF_SIZE], s_source[50];
 	char str_window[32], str_cwnd[32], str_initcwnd[32], str_initrwnd[32], str_mtu[32];
 
@@ -4279,7 +4279,6 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 
 	inet_ntop (AF_INET6, &route->network, s_network, sizeof (s_network));
 	inet_ntop (AF_INET6, &route->gateway, s_gateway, sizeof (s_gateway));
-	inet_ntop (AF_INET6, &route->src, s_src, sizeof (s_src));
 
 	if (IN6_IS_ADDR_UNSPECIFIED (&route->pref_src))
 		s_pref_src[0] = 0;
@@ -4295,7 +4294,7 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	            " metric %"G_GUINT32_FORMAT
 	            " mss %"G_GUINT32_FORMAT
 	            " rt-src %s" /* protocol */
-	            " src %s/%u" /* source */
+	            "%s" /* source */
 	            "%s" /* cloned */
 	            "%s%s" /* pref-src */
 	            "%s" /* window */
@@ -4311,7 +4310,9 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	            route->metric,
 	            route->mss,
 	            nmp_utils_ip_config_source_to_string (route->rt_source, s_source, sizeof (s_source)),
-	            s_src, route->src_plen,
+	            route->src_plen || !IN6_IS_ADDR_UNSPECIFIED (&route->src)
+	              ? nm_sprintf_buf (s_src_all, " src %s/%u", nm_utils_inet6_ntop (&route->src, s_src), (unsigned) route->src_plen)
+	              : "",
 	            route->rt_cloned ? " cloned" : "",
 	            s_pref_src[0] ? " pref-src " : "",
 	            s_pref_src[0] ? s_pref_src : "",
