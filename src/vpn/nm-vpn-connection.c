@@ -184,11 +184,13 @@ static NMSettingsConnection *_get_settings_connection (NMVpnConnection *self,
 
 static void get_secrets (NMVpnConnection *self,
                          SecretsReq secrets_idx,
-                         const char **hints);
+                         const char **hints,
+                         NMVpnPluginSecretsFlags flags);
 
 static void plugin_interactive_secrets_required (NMVpnConnection *self,
                                                  const char *message,
-                                                 const char **secrets);
+                                                 const char **secrets,
+                                                 NMVpnPluginSecretsFlags flags);
 
 static void _set_vpn_state (NMVpnConnection *self,
                             VpnState vpn_state,
@@ -1930,14 +1932,24 @@ state_changed_cb (GDBusProxy *proxy,
 }
 
 static void
-secrets_required_cb (GDBusProxy  *proxy,
-                     const char  *message,
-                     const char **secrets,
-                     gpointer     user_data)
+secrets_required_with_flags_cb (GDBusProxy *proxy,
+                                const char *message,
+                                const char **secrets,
+                                NMVpnPluginSecretsFlags flags,
+                                gpointer user_data)
 {
 	NMVpnConnection *self = NM_VPN_CONNECTION (user_data);
 
-	plugin_interactive_secrets_required (self, message, secrets);
+	plugin_interactive_secrets_required (self, message, secrets, flags);
+}
+
+static void
+secrets_required_cb (GDBusProxy *proxy,
+                     const char *message,
+                     const char **secrets,
+                     gpointer user_data)
+{
+	secrets_required_cb (proxy, message, NM_VPN_PLUGIN_SECRETS_FLAG_NONE, user_data);
 }
 
 static void
@@ -2005,6 +2017,8 @@ _name_owner_changed (GObject *object,
 		                         G_CALLBACK (state_changed_cb), self);
 		_nm_dbus_signal_connect (priv->proxy, "SecretsRequired", G_VARIANT_TYPE ("(sas)"),
 		                         G_CALLBACK (secrets_required_cb), self);
+		_nm_dbus_signal_connect (priv->proxy, "SecretsRequiredWithFlags", G_VARIANT_TYPE ("(sasu)"),
+		                         G_CALLBACK (secrets_required_with_flags_cb), self);
 		_nm_dbus_signal_connect (priv->proxy, "Config", G_VARIANT_TYPE ("(a{sv})"),
 		                         G_CALLBACK (config_cb), self);
 		_nm_dbus_signal_connect (priv->proxy, "Ip4Config", G_VARIANT_TYPE ("(a{sv})"),
@@ -2019,7 +2033,7 @@ _name_owner_changed (GObject *object,
 		 * secrets from system and from user agents and ask the plugin again,
 		 * and last we ask the user for new secrets if required.
 		 */
-		get_secrets (self, SECRETS_REQ_SYSTEM, NULL);
+		get_secrets (self, SECRETS_REQ_SYSTEM, NULL, NM_VPN_PLUGIN_SECRETS_FLAG_NONE);
 	} else if (!owner && priv->service_running) {
 		/* service went away */
 		priv->service_running = FALSE;
@@ -2426,7 +2440,7 @@ plugin_need_secrets_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 		_set_vpn_state (self, STATE_FAILED, NM_ACTIVE_CONNECTION_STATE_REASON_NO_SECRETS, FALSE);
 	} else {
 		_LOGD ("service indicated additional secrets required");
-		get_secrets (self, priv->secrets_idx + 1, NULL);
+		get_secrets (self, priv->secrets_idx + 1, NULL, NM_VPN_PLUGIN_SECRETS_FLAG_NONE);
 	}
 }
 
@@ -2523,7 +2537,8 @@ get_secrets_cb (NMSettingsConnection *connection,
 static void
 get_secrets (NMVpnConnection *self,
              SecretsReq secrets_idx,
-             const char **hints)
+             const char **hints,
+             NMVpnPluginSecretsFlags vpn_secret_flags)
 {
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 	NMSecretAgentGetSecretsFlags flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE;
@@ -2546,6 +2561,8 @@ get_secrets (NMVpnConnection *self,
 	case SECRETS_REQ_NEW:
 	case SECRETS_REQ_INTERACTIVE:
 		flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
+		if (NM_FLAGS_HAS (vpn_secret_flags, NM_VPN_PLUGIN_SECRETS_FLAG_ONE_TIME))
+			flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_ONE_TIME;
 		break;
 	default:
 		g_assert_not_reached ();
@@ -2568,7 +2585,8 @@ get_secrets (NMVpnConnection *self,
 static void
 plugin_interactive_secrets_required (NMVpnConnection *self,
                                      const char *message,
-                                     const char **secrets)
+                                     const char **secrets,
+                                     NMVpnPluginSecretsFlags flags)
 {
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 	guint32 secrets_len = secrets ? g_strv_length ((char **) secrets) : 0;
@@ -2591,7 +2609,7 @@ plugin_interactive_secrets_required (NMVpnConnection *self,
 	if (message)
 		hints[i] = g_strdup_printf ("x-vpn-message:%s", message);
 
-	get_secrets (self, SECRETS_REQ_INTERACTIVE, (const char **) hints);
+	get_secrets (self, SECRETS_REQ_INTERACTIVE, (const char **) hints, flags);
 	g_strfreev (hints);
 }
 

@@ -139,6 +139,24 @@
     </signal>
 
     <!--
+        SecretsRequiredWithFlags:
+        @message: Informational message, if any, about the request. For example, if a second PIN is required, could indicate to the user to wait for the token code to change until entering the next PIN.
+        @secrets: Array of strings of VPN secret names which the plugin thinks secrets may be required for, or other VPN-specific data to be processed by the VPN's front-end.
+        @flags: (<link linkend="NMVpnPluginSecretsFlags">NMVpnPluginSecretsFlags</link>) Flags which modify the behavior of the secrets request.
+
+        Emitted during an ongoing ConnectInteractive() request when the plugin has
+        determined that new secrets are required. NetworkManager will then call
+        the NewSecrets() method with a connection hash including the new secrets.
+
+        Since: 1.10
+    -->
+    <signal name="SecretsRequiredWithFlags">
+      <arg name="message" type="s" direction="out"/>
+      <arg name="secrets" type="as" direction="out"/>
+      <arg name="flags" type="u" direction="out"/>
+    </signal>
+
+    <!--
         NewSecrets:
         @connection: Describes the connection including the new secrets.
 

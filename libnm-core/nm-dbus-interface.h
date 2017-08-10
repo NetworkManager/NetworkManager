@@ -726,6 +726,8 @@ typedef enum {
  * @NM_SECRET_AGENT_GET_SECRETS_FLAG_WPS_PBC_ACTIVE: indicates that WPS enrollment
  *   is active with PBC method. The agent may suggest that the user pushes a button
  *   on the router instead of supplying a PSK.
+ * @NM_SECRET_AGENT_GET_SECRETS_FLAG_ONE_TIME: the requested secrets are one-time
+ *   secrets that must be asked interactively and must not be stored.
  * @NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM: Internal flag, not part of
  *   the D-Bus API.
  * @NM_SECRET_AGENT_GET_SECRETS_FLAG_NO_ERRORS: Internal flag, not part of
@@ -739,6 +741,7 @@ typedef enum { /*< flags >*/
 	NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW       = 0x2,
 	NM_SECRET_AGENT_GET_SECRETS_FLAG_USER_REQUESTED    = 0x4,
 	NM_SECRET_AGENT_GET_SECRETS_FLAG_WPS_PBC_ACTIVE    = 0x8,
+	NM_SECRET_AGENT_GET_SECRETS_FLAG_ONE_TIME          = 0x10,
 
 	/* Internal to NM; not part of the D-Bus API */
 	NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM       = 0x80000000,

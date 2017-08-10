@@ -1188,4 +1188,5 @@ global:
 	nm_setting_wireless_security_get_wps_method;
 	nm_setting_wireless_security_pmf_get_type;
 	nm_setting_wireless_security_wps_method_get_type;
+	nm_vpn_plugin_secrets_flags_get_type;
 } libnm_1_8_0;

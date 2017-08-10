@@ -170,6 +170,21 @@ typedef enum {
 } NMVpnConnectionStateReason;
 
 /**
+ * NMVpnPluginSecretsFlags:
+ * @NM_VPN_PLUGIN_SECRETS_FLAG_NONE: no special behavior.
+ * @NM_VPN_PLUGIN_SECRETS_FLAG_ONE_TIME: ask for a one-time secret.
+ *
+ * #NMVpnPluginSecretsFlags values modify the behavior of a SecretsRequired
+ * request.
+ *
+ * Since: 1.10
+ */
+typedef enum { /*< flags >*/
+	NM_VPN_PLUGIN_SECRETS_FLAG_NONE              = 0x0,
+	NM_VPN_PLUGIN_SECRETS_FLAG_ONE_TIME          = 0x1,
+} NMVpnPluginSecretsFlags;
+
+/**
  * NMVpnPluginFailure:
  * @NM_VPN_PLUGIN_FAILURE_LOGIN_FAILED: Login failed.
  * @NM_VPN_PLUGIN_FAILURE_CONNECT_FAILED: Connect failed.
