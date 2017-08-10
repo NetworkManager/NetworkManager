@@ -79,6 +79,7 @@ enum {
 	FAILURE,
 	QUIT,
 	SECRETS_REQUIRED,
+	SECRETS_REQUIRED_WITH_FLAGS,
 
 	LAST_SIGNAL
 };
@@ -703,6 +704,49 @@ nm_vpn_service_plugin_secrets_required (NMVpnServicePlugin *plugin,
 	nmdbus_vpn_plugin_emit_secrets_required (priv->dbus_vpn_service_plugin, message, hints);
 }
 
+/**
+ * nm_vpn_service_plugin_secrets_required_with_flags:
+ * @plugin: the #NMVpnServicePlugin
+ * @message: an information message about why secrets are required, if any
+ * @hints: VPN specific secret names for required new secrets
+ * @flags: flags which modify the behavior of the secrets request.
+ *
+ * Called by VPN plugin implementations to signal to NetworkManager that secrets
+ * are required during the connection process.  This signal may be used to
+ * request new secrets when the secrets originally provided by NetworkManager
+ * are insufficient, or the VPN process indicates that it needs additional
+ * information to complete the request.
+ *
+ * Since: 1.10
+ */
+void
+nm_vpn_service_plugin_secrets_required_with_flags (NMVpnServicePlugin *plugin,
+                                                   const char *message,
+                                                   const char **hints,
+                                                   NMVpnPluginSecretsFlags flags)
+{
+	NMVpnServicePluginPrivate *priv = NM_VPN_SERVICE_PLUGIN_GET_PRIVATE (plugin);
+
+	/* Plugin must be able to accept the new secrets if it calls this method */
+	g_return_if_fail (NM_VPN_SERVICE_PLUGIN_GET_CLASS (plugin)->new_secrets);
+
+	/* Plugin cannot call this method if NetworkManager didn't originally call
+	 * ConnectInteractive().
+	 */
+	g_return_if_fail (priv->interactive == TRUE);
+
+	/* Cancel the connect timer since secrets might take a while.  It'll
+	 * get restarted when the secrets come back via NewSecrets().
+	 */
+	nm_clear_g_source (&priv->connect_timer);
+
+	g_signal_emit (plugin, signals[SECRETS_REQUIRED_WITH_FLAGS], 0, message, hints, flags);
+	nmdbus_vpn_plugin_emit_secrets_required_with_flags (priv->dbus_vpn_service_plugin,
+	                                                    message,
+	                                                    hints,
+	                                                    flags);
+}
+
 /*****************************************************************************/
 
 #define DATA_KEY_TAG "DATA_KEY="
@@ -1238,6 +1282,14 @@ nm_vpn_service_plugin_class_init (NMVpnServicePluginClass *plugin_class)
 		              0, NULL, NULL,
 		              NULL,
 		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRV);
+
+	signals[SECRETS_REQUIRED_WITH_FLAGS] =
+		g_signal_new ("secrets-required-with-flags",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL,
+		              NULL,
+		              G_TYPE_NONE, 3, G_TYPE_STRING, G_TYPE_STRV, G_TYPE_UINT);
 
 	signals[CONFIG] =
 		g_signal_new ("config",

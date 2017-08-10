@@ -126,6 +126,12 @@ void               nm_vpn_service_plugin_secrets_required (NMVpnServicePlugin *p
                                                            const char *message,
                                                            const char **hints);
 
+NM_AVAILABLE_IN_1_10
+void               nm_vpn_service_plugin_secrets_required_with_flags (NMVpnServicePlugin *plugin,
+                                                                      const char *message,
+                                                                      const char **hints,
+                                                                      NMVpnPluginSecretsFlags flags);
+
 NM_AVAILABLE_IN_1_2
 void               nm_vpn_service_plugin_set_login_banner (NMVpnServicePlugin *plugin,
                                                            const char *banner);
