@@ -57,6 +57,7 @@ typedef struct {
 	gchar                         *request_id;
 	NMConnection                  *connection;
 	gchar                        **hints;
+	NMSecretAgentGetSecretsFlags   flags;
 	NMSecretAgentOldGetSecretsFunc callback;
 	gpointer                       callback_data;
 } NMSecretAgentSimpleRequest;
@@ -363,7 +364,11 @@ get_vpn_secret_flags (NMSettingVpn *s_vpn, const char *secret_name)
 }
 
 static void
-add_vpn_secret_helper (GPtrArray *secrets, NMSettingVpn *s_vpn, const char *name, const char *ui_name)
+add_vpn_secret_helper (GPtrArray *secrets,
+                       NMSettingVpn *s_vpn,
+                       const char *name,
+                       const char *ui_name,
+                       NMVpnPluginSecretsFlags request_flags)
 {
 	NMSecretAgentSimpleSecret *secret;
 	NMSettingSecretFlags flags;
@@ -379,7 +384,8 @@ add_vpn_secret_helper (GPtrArray *secrets, NMSettingVpn *s_vpn, const char *name
 
 	flags = get_vpn_secret_flags (s_vpn, name);
 	if (   flags & NM_SETTING_SECRET_FLAG_AGENT_OWNED
-	    || flags & NM_SETTING_SECRET_FLAG_NOT_SAVED) {
+	    || flags & NM_SETTING_SECRET_FLAG_NOT_SAVED
+	    || request_flags & NM_VPN_PLUGIN_SECRETS_FLAG_ONE_TIME) {
 		secret = nm_secret_agent_simple_secret_new (ui_name,
 		                                            NM_SETTING (s_vpn),
 		                                            NM_SETTING_VPN_SECRETS,
@@ -408,7 +414,7 @@ add_vpn_secrets (NMSecretAgentSimpleRequest *request,
 			if (!vpn_msg && g_str_has_prefix (*iter, VPN_MSG_TAG))
 				vpn_msg = &(*iter)[NM_STRLEN (VPN_MSG_TAG)];
 			else
-				add_vpn_secret_helper (secrets, s_vpn, *iter, *iter);
+				add_vpn_secret_helper (secrets, s_vpn, *iter, *iter, request->flags);
 		}
 	}
 
@@ -417,7 +423,8 @@ add_vpn_secrets (NMSecretAgentSimpleRequest *request,
 	/* Now add what client thinks might be required, because hints may be empty or incomplete */
 	p = secret_names = nm_vpn_get_secret_names (nm_setting_vpn_get_service_type (s_vpn));
 	while (p && p->name) {
-		add_vpn_secret_helper (secrets, s_vpn, p->name, _(p->ui_name));
+		add_vpn_secret_helper (secrets, s_vpn, p->name, _(p->ui_name),
+		                       NM_VPN_PLUGIN_SECRETS_FLAG_NONE);
 		p++;
 	}
 
@@ -647,6 +654,7 @@ nm_secret_agent_simple_get_secrets (NMSecretAgentOld                 *agent,
 	request->callback = callback;
 	request->callback_data = callback_data;
 	request->request_id = request_id;
+	request->flags = flags;
 	g_hash_table_replace (priv->requests, request->request_id, request);
 
 	if (priv->enabled)
