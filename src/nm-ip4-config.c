@@ -590,10 +590,9 @@ nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 		has_addresses = TRUE;
 	}
 
-	head_entry = nm_platform_lookup_route_visible (platform,
-	                                               NMP_OBJECT_TYPE_IP4_ROUTE,
-	                                               ifindex,
-	                                               FALSE);
+	head_entry = nm_platform_lookup_addrroute (platform,
+	                                           NMP_OBJECT_TYPE_IP4_ROUTE,
+	                                           ifindex);
 
 	/* Extract gateway from default route */
 	old_gateway = priv->gateway;

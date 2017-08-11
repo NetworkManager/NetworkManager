@@ -1556,28 +1556,14 @@ nmp_lookup_init_addrroute (NMPLookup *lookup,
 }
 
 const NMPLookup *
-nmp_lookup_init_route_visible (NMPLookup *lookup,
-                               NMPObjectType obj_type,
-                               int ifindex,
-                               gboolean only_default)
+nmp_lookup_init_route_default (NMPLookup *lookup,
+                               NMPObjectType obj_type)
 {
 	NMPObject *o;
 
 	nm_assert (lookup);
 	nm_assert (NM_IN_SET (obj_type, NMP_OBJECT_TYPE_IP4_ROUTE,
 	                                NMP_OBJECT_TYPE_IP6_ROUTE));
-
-	if (!only_default) {
-		return nmp_lookup_init_addrroute (lookup,
-		                                  obj_type,
-		                                  ifindex);
-	}
-
-	if (ifindex > 0) {
-		/* there is no index to lookup a default-route by ifindex.
-		 * You have to lookup all default-routes, and filter yourself */
-		g_return_val_if_reached (NULL);
-	}
 
 	o = _nmp_object_stackinit_from_type (&lookup->selector_obj, obj_type);
 	o->object.ifindex = 1;

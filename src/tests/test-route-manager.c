@@ -166,10 +166,9 @@ ip_routes (test_fixture *fixture, NMPObjectType obj_type)
 		else
 			ifindex = fixture->ifindex1;
 
-		pl_head_entry = nm_platform_lookup_route_visible (NM_PLATFORM_GET,
-		                                                  obj_type,
-		                                                  ifindex,
-		                                                  FALSE);
+		pl_head_entry = nm_platform_lookup_addrroute (NM_PLATFORM_GET,
+		                                              obj_type,
+		                                              ifindex);
 		nmp_cache_iter_for_each (&iter, pl_head_entry, &plobj) {
 			const NMPlatformIPRoute *r = NMP_OBJECT_CAST_IP_ROUTE (plobj);
 

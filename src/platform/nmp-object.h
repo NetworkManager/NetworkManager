@@ -523,10 +523,8 @@ const NMPLookup *nmp_lookup_init_link_by_ifname (NMPLookup *lookup,
 const NMPLookup *nmp_lookup_init_addrroute (NMPLookup *lookup,
                                             NMPObjectType obj_type,
                                             int ifindex);
-const NMPLookup *nmp_lookup_init_route_visible (NMPLookup *lookup,
-                                                NMPObjectType obj_type,
-                                                int ifindex,
-                                                gboolean only_default);
+const NMPLookup *nmp_lookup_init_route_default (NMPLookup *lookup,
+                                                NMPObjectType obj_type);
 const NMPLookup *nmp_lookup_init_route_by_weak_id (NMPLookup *lookup,
                                                    const NMPObject *obj);
 const NMPLookup *nmp_lookup_init_ip4_route_by_weak_id (NMPLookup *lookup,
@@ -715,29 +713,38 @@ nm_platform_lookup_addrroute (NMPlatform *platform,
 	return nm_platform_lookup (platform, &lookup);
 }
 
-static inline const NMDedupMultiHeadEntry *
-nm_platform_lookup_route_visible (NMPlatform *platform,
-                                  NMPObjectType obj_type,
-                                  int ifindex,
-                                  gboolean only_default)
+static inline GPtrArray *
+nm_platform_lookup_addrroute_clone (NMPlatform *platform,
+                                    NMPObjectType obj_type,
+                                    int ifindex,
+                                    gboolean (*predicate) (const NMPObject *obj, gpointer user_data),
+                                    gpointer user_data)
 {
 	NMPLookup lookup;
 
-	nmp_lookup_init_route_visible (&lookup, obj_type, ifindex, only_default);
+	nmp_lookup_init_addrroute (&lookup, obj_type, ifindex);
+	return nm_platform_lookup_clone (platform, &lookup, predicate, user_data);
+}
+
+static inline const NMDedupMultiHeadEntry *
+nm_platform_lookup_route_default (NMPlatform *platform,
+                                  NMPObjectType obj_type)
+{
+	NMPLookup lookup;
+
+	nmp_lookup_init_route_default (&lookup, obj_type);
 	return nm_platform_lookup (platform, &lookup);
 }
 
 static inline GPtrArray *
-nm_platform_lookup_route_visible_clone (NMPlatform *platform,
+nm_platform_lookup_route_default_clone (NMPlatform *platform,
                                         NMPObjectType obj_type,
-                                        int ifindex,
-                                        gboolean only_default,
                                         gboolean (*predicate) (const NMPObject *obj, gpointer user_data),
                                         gpointer user_data)
 {
 	NMPLookup lookup;
 
-	nmp_lookup_init_route_visible (&lookup, obj_type, ifindex, only_default);
+	nmp_lookup_init_route_default (&lookup, obj_type);
 	return nm_platform_lookup_clone (platform, &lookup, predicate, user_data);
 }
 

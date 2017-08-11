@@ -320,14 +320,13 @@ _route_index_create_from_platform (const VTableIP *vtable,
 
 	nm_assert (out_storage && !*out_storage);
 
-	storage = nm_platform_lookup_route_visible_clone (platform,
-	                                                  vtable->vt->obj_type,
-	                                                  ifindex,
-	                                                  FALSE,
-	                                                  ignore_kernel_routes
-	                                                    ? nm_platform_lookup_predicate_routes_skip_rtprot_kernel
-	                                                    : NULL,
-	                                                  NULL);
+	storage = nm_platform_lookup_addrroute_clone (platform,
+	                                              vtable->vt->obj_type,
+	                                              ifindex,
+	                                              ignore_kernel_routes
+	                                                ? nm_platform_lookup_predicate_routes_skip_rtprot_kernel
+	                                                : NULL,
+	                                              NULL);
 	if (!storage)
 		return _route_index_create (vtable, NULL);
 
