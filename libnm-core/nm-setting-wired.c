@@ -1243,7 +1243,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_wired_class)
 	 * "02:00:00:00:00:00 00:00:00:00:00:00" will create a fully scrambled
 	 * globally-administered, burned-in MAC address.
 	 *
-	 * If the value contains more then one additional MAC addresses, one of
+	 * If the value contains more than one additional MAC addresses, one of
 	 * them is chosen randomly. For example, "02:00:00:00:00:00 00:00:00:00:00:00 02:00:00:00:00:00"
 	 * will create a fully scrambled MAC address, randomly locally or globally
 	 * administered.

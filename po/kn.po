@@ -7066,7 +7066,7 @@ msgid ""
 "Configure method for creating the address for use with RFC4862 IPv6 "
 "Stateless Address Autoconfiguration. The permitted values are: \"eui64\", or "
 "\"stable-privacy\". If the property is set to \"eui64\", the addresses will "
-"be generated using the interface tokens derived from  hardware address. This "
+"be generated using the interface tokens derived from hardware address. This "
 "makes the host part of the address to stay constant, making it possible to "
 "track host's presence when it changes networks. The address changes when the "
 "interface hardware is replaced. The value of \"stable-privacy\" enables use "
@@ -9250,7 +9250,7 @@ msgstr "'%s=%s' ಎನ್ನುವುದು '%s > 0' ನೊಂದಿಗೆ ಹ�
 
 #: ../libnm-core/nm-setting-bond.c:629
 #, c-format
-msgid "'%s' is not a valid for '%s' option: %s"
+msgid "'%s' is not valid for the '%s' option: %s"
 msgstr ""
 
 #: ../libnm-core/nm-setting-bond.c:640 ../libnm-util/nm-setting-bond.c:577

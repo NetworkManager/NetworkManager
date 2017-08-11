@@ -711,7 +711,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 	 * or "stable-privacy".
 	 *
 	 * If the property is set to "eui64", the addresses will be generated
-	 * using the interface tokens derived from  hardware address. This makes
+	 * using the interface tokens derived from hardware address. This makes
 	 * the host part of the address to stay constant, making it possible
 	 * to track host's presence when it changes networks. The address changes
 	 * when the interface hardware is replaced.

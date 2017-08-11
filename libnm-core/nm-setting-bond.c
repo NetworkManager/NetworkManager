@@ -642,7 +642,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("'%s' is not a valid for '%s' option: %s"),
+			             _("'%s' is not valid for the '%s' option: %s"),
 			             primary, NM_SETTING_BOND_OPTION_PRIMARY, tmp_error->message);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
 			g_error_free (tmp_error);
