@@ -5879,37 +5879,6 @@ ip_route_delete (NMPlatform *platform,
 	if (!NMP_OBJECT_IS_STACKINIT (obj))
 		obj_keep_alive = nmp_object_ref (obj);
 
-	if (   NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_IP4_ROUTE
-	    && obj->ip_route.metric == 0) {
-		NMPCache *cache = nm_platform_get_cache (platform);
-
-		/* Deleting an IPv4 route with metric 0 does not only delete an exectly matching route.
-		 * If no route with metric 0 exists, it might delete another route to the same destination.
-		 * For nm_platform_ip4_route_delete() we don't want this semantic.
-		 *
-		 * Instead, make sure that we have the most recent state and process all
-		 * delayed actions (including re-reading data from netlink). */
-
-		/* FIXME: later, we only want to pass in here @obj instances that originate
-		 * from the cache, and where we know that the route with metric 0 exists. */
-		delayed_action_handle_all (platform, TRUE);
-
-		if (!nmp_cache_lookup_obj (cache, obj)) {
-			/* hmm... we are about to delete an IP4 route with metric 0. We must only
-			 * send the delete request if such a route really exists. Above we refreshed
-			 * the platform cache, still no such route exists.
-			 *
-			 * Be extra careful and reload the routes. We must be sure that such a
-			 * route doesn't exists, because when we add an IPv4 address, we immediately
-			 * afterwards try to delete the kernel-added device route with metric 0.
-			 * It might be, that we didn't yet get the notification about that route. */
-			do_request_one_type (platform, NMP_OBJECT_TYPE_IP4_ROUTE);
-
-			if (!nmp_cache_lookup_obj (cache, obj))
-				return TRUE;
-		}
-	}
-
 	nlmsg = _nl_msg_new_route (RTM_DELROUTE, 0, obj);
 	if (!nlmsg)
 		g_return_val_if_reached (FALSE);
