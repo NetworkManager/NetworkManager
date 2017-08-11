@@ -1140,6 +1140,7 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/nm-sd.h \
 	src/systemd/sd-adapt/nm-sd-adapt.c \
 	src/systemd/sd-adapt/nm-sd-adapt.h \
+	src/systemd/sd-adapt/architecture.h \
 	src/systemd/sd-adapt/build.h \
 	src/systemd/sd-adapt/cgroup-util.h \
 	src/systemd/sd-adapt/condition.h \
@@ -1149,11 +1150,12 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/sd-adapt/env-util.h \
 	src/systemd/sd-adapt/format-util.h \
 	src/systemd/sd-adapt/gunicode.h \
+	src/systemd/sd-adapt/ioprio.h \
 	src/systemd/sd-adapt/khash.h \
 	src/systemd/sd-adapt/libudev.h \
 	src/systemd/sd-adapt/missing.h \
 	src/systemd/sd-adapt/mkdir.h \
-	src/systemd/sd-adapt/process-util.h \
+	src/systemd/sd-adapt/raw-clone.h \
 	src/systemd/sd-adapt/sd-daemon.h \
 	src/systemd/sd-adapt/stat-util.h \
 	src/systemd/sd-adapt/udev-util.h \
