@@ -55,6 +55,10 @@ gboolean nm_supplicant_config_add_setting_wireless (NMSupplicantConfig *self,
                                                     guint32 fixed_freq,
                                                     GError **error);
 
+gboolean nm_supplicant_config_add_bgscan           (NMSupplicantConfig *self,
+                                                    NMConnection *connection,
+                                                    GError **error);
+
 gboolean nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
                                                              NMSettingWirelessSecurity *setting,
                                                              NMSetting8021x *setting_8021x,

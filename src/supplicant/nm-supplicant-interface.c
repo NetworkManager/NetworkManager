@@ -1789,6 +1789,7 @@ nm_supplicant_interface_request_scan (NMSupplicantInterface *self, const GPtrArr
 	/* Scan parameters */
 	g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
 	g_variant_builder_add (&builder, "{sv}", "Type", g_variant_new_string ("active"));
+	g_variant_builder_add (&builder, "{sv}", "AllowRoam", g_variant_new_boolean (FALSE));
 	if (ssids) {
 		GVariantBuilder ssids_builder;
 

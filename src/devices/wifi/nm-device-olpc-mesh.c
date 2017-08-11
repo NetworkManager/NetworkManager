@@ -312,13 +312,13 @@ companion_state_changed_cb (NMDeviceWifi *companion,
 }
 
 static gboolean
-companion_scan_allowed_cb (NMDeviceWifi *companion, gpointer user_data)
+companion_scan_prohibited_cb (NMDeviceWifi *companion, gpointer user_data)
 {
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (user_data);
 	NMDeviceState state = nm_device_get_state (NM_DEVICE (self));
 
 	/* Don't allow the companion to scan while configuring the mesh interface */
-	return (state < NM_DEVICE_STATE_PREPARE) || (state > NM_DEVICE_STATE_IP_CONFIG);
+	return (state >= NM_DEVICE_STATE_PREPARE) && (state <= NM_DEVICE_STATE_IP_CONFIG);
 }
 
 static gboolean
@@ -358,8 +358,8 @@ check_companion (NMDeviceOlpcMesh *self, NMDevice *other)
 	g_signal_connect (G_OBJECT (other), "notify::" NM_DEVICE_WIFI_SCANNING,
 	                  G_CALLBACK (companion_notify_cb), self);
 
-	g_signal_connect (G_OBJECT (other), NM_DEVICE_WIFI_SCANNING_ALLOWED,
-	                  G_CALLBACK (companion_scan_allowed_cb), self);
+	g_signal_connect (G_OBJECT (other), NM_DEVICE_WIFI_SCANNING_PROHIBITED,
+	                  G_CALLBACK (companion_scan_prohibited_cb), self);
 
 	g_signal_connect (G_OBJECT (other), NM_DEVICE_AUTOCONNECT_ALLOWED,
 	                  G_CALLBACK (companion_autoconnect_allowed_cb), self);
