@@ -3451,6 +3451,40 @@ nm_platform_address_flush (NMPlatform *self, int ifindex)
 	       && nm_platform_ip6_address_sync (self, ifindex, NULL, FALSE);
 }
 
+void
+nm_platform_ip_route_sync (NMPlatform *self,
+                           int addr_family,
+                           int ifindex,
+                           GPtrArray *routes)
+{
+	guint i;
+	gs_unref_ptrarray GPtrArray *plat_routes = NULL;
+
+	nm_assert (NM_IS_PLATFORM (self));
+	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
+	nm_assert (ifindex > 0);
+	nm_assert (   !routes
+	           || ({
+	                    gboolean valid = TRUE;
+	                    for (i = 0; i < routes->len; i++) {
+	                        NMPObjectType t = NMP_OBJECT_GET_TYPE (routes->pdata[i]);
+	                        if (addr_family == AF_INET)
+	                            valid &= (t == NMP_OBJECT_TYPE_IP4_ROUTE);
+	                        else
+	                            valid &= (t == NMP_OBJECT_TYPE_IP4_ROUTE);
+	                    }
+	                    valid;
+	               }));
+
+	plat_routes = nm_platform_lookup_addrroute_clone (self,
+	                                                  addr_family == AF_INET
+	                                                    ? NMP_OBJECT_TYPE_IP4_ROUTE
+	                                                    : NMP_OBJECT_TYPE_IP6_ROUTE,
+	                                                  ifindex,
+	                                                  NULL,
+	                                                  NULL);
+}
+
 /*****************************************************************************/
 
 NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_nmp_nlm_flag_to_string_lookup, NMPNlmFlags,

@@ -1102,6 +1102,11 @@ gboolean nm_platform_ip6_route_add (NMPlatform *self, NMPNlmFlags flags, const N
 
 gboolean nm_platform_ip_route_delete (NMPlatform *self, const NMPObject *route);
 
+void nm_platform_ip_route_sync (NMPlatform *self,
+                                int addr_family,
+                                int ifindex,
+                                GPtrArray *routes);
+
 const char *nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len);
 const char *nm_platform_lnk_gre_to_string (const NMPlatformLnkGre *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_infiniband_to_string (const NMPlatformLnkInfiniband *lnk, char *buf, gsize len);
